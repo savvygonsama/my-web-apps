@@ -1,0 +1,1563 @@
+<title>ROUNDTABLE 영어 쉐도잉</title>
+<style>
+:root{
+  --paper:#f6f2ea; --card:#fffdf8; --line:#e2dacb; --ink:#1a1917; --sub:#6d665c;
+  --accent:#a4342a; --accent-soft:#f0dcd8; --blue:#2b4d63; --blue-soft:#dfe7ec;
+  --ok:#2f6b4f; --warn:#8a6a1f; --radius:14px;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;
+  --sans:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+html[data-theme="dark"]{
+  --paper:#15171a; --card:#1c1f24; --line:#2e333a; --ink:#e9e5dd; --sub:#9a948a;
+  --accent:#e0715f; --accent-soft:#3a2320; --blue:#8fb6cd; --blue-soft:#1f2a33;
+  --ok:#6fbf94; --warn:#d6b45c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.65;-webkit-text-size-adjust:100%}
+button{font-family:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 90px}
+
+.topbar{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:1px solid var(--line)}
+.topin{max-width:860px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--serif);font-size:19px;letter-spacing:.14em;font-weight:600}
+.brand i{display:block;font-family:var(--sans);font-style:normal;font-size:11px;
+  letter-spacing:.02em;color:var(--sub);margin-top:1px}
+.tabs{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.tabs button{background:none;border:1px solid transparent;padding:6px 11px;border-radius:999px;
+  cursor:pointer;font-size:13px;color:var(--sub)}
+.tabs button.on{background:var(--card);border-color:var(--line);color:var(--ink);font-weight:700}
+
+.view{display:none;animation:fade .25s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:14px 0}
+.hd{font-family:var(--serif);font-size:22px;margin:26px 0 2px;line-height:1.3}
+.hd small{display:block;font-family:var(--sans);font-size:12px;color:var(--sub);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.sub{color:var(--sub);font-size:13.5px}
+.rule{height:1px;background:var(--line);margin:16px 0}
+.btn{background:var(--ink);color:var(--paper);border:none;padding:11px 18px;border-radius:999px;
+  font-size:14px;font-weight:700;cursor:pointer}
+.btn:hover{opacity:.87}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.red{background:var(--accent);color:#fff}
+.btn.sm{padding:6px 12px;font-size:12.5px;font-weight:600}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;
+  background:var(--blue-soft);color:var(--blue);font-weight:700}
+.tag.a{background:var(--accent-soft);color:var(--accent)}
+.muted{color:var(--sub)}
+
+.today{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;position:relative;overflow:hidden}
+.today:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.today h2{font-family:var(--serif);font-size:26px;margin:8px 0 4px;line-height:1.25}
+.today .kotitle{color:var(--sub);font-size:14px;margin-bottom:14px}
+.streak{display:flex;gap:18px;margin:14px 0 0;flex-wrap:wrap}
+.streak div{text-align:center}
+.streak b{display:block;font-family:var(--serif);font-size:25px;line-height:1.1}
+.streak span{font-size:11.5px;color:var(--sub)}
+.dlist{display:grid;gap:8px;margin-top:10px}
+.ditem{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;cursor:pointer}
+.ditem:hover{border-color:var(--accent)}
+.ditem .num{font-family:var(--serif);font-size:16px;width:26px;color:var(--sub);flex:none}
+.ditem .t{flex:1;min-width:0}
+.ditem .t b{display:block;font-size:14.5px;font-weight:600}
+.ditem .t span{font-size:12px;color:var(--sub)}
+.ditem .done{color:var(--ok);font-size:12px;font-weight:700;flex:none}
+
+.steps{display:flex;gap:6px;margin:14px 0 4px}
+.steps div{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.steps div.on{background:var(--accent)}
+.steps div.past{background:var(--ok)}
+.sesshead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.clock{font-family:var(--serif);font-size:19px;margin-left:auto;letter-spacing:.04em}
+.clock.over{color:var(--accent)}
+.stepname{font-size:13px;font-weight:700}
+.stepname em{font-style:normal;color:var(--sub);font-weight:400;margin-left:6px;font-size:12px}
+
+.brief li{margin:7px 0}
+.keyrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+.keyrow:last-child{border:none}
+.keyrow b{font-family:var(--serif);font-size:16px;flex:none;min-width:180px}
+.keyrow span{font-size:13.5px;color:var(--sub)}
+.keyrow .ex{display:block;font-family:var(--serif);font-size:13px;color:var(--sub);font-style:italic;margin-top:2px}
+
+.sline{display:flex;gap:10px;padding:8px 10px;border-radius:9px;margin:2px 0;cursor:pointer}
+.sline.now{background:var(--accent-soft)}
+.sline .sp{font-family:var(--serif);font-weight:700;flex:none;width:20px;color:var(--accent)}
+.sline.b .sp{color:var(--blue)}
+.sline .en{font-family:var(--serif);font-size:16px;line-height:1.55}
+.sline .ko{display:block;font-size:12.5px;color:var(--sub);margin-top:2px}
+
+.shadowbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;margin:12px 0}
+.who{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.who.b{color:var(--blue)}
+.bigen{font-family:var(--serif);font-size:clamp(19px,4.1vw,27px);line-height:1.55;margin:8px 0 4px}
+.chunks{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px}
+.chunk{font-family:var(--serif);font-size:clamp(17px,3.4vw,21px);padding:7px 12px;
+  border-left:3px solid var(--line);cursor:pointer;border-radius:0 8px 8px 0}
+.chunk:hover{background:var(--paper)}
+.chunk.on{border-left-color:var(--accent);background:var(--accent-soft)}
+.bigko{font-size:14px;color:var(--sub);margin-top:8px}
+.blurme{filter:blur(5px);cursor:pointer;user-select:none;transition:filter .15s}
+.blurme.show{filter:none;cursor:auto}
+.notes{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.note{margin:8px 0;font-size:13.5px}
+.note b{font-family:var(--serif);font-size:15px}
+.note .k{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--blue-soft);
+  color:var(--blue);margin-left:6px;font-weight:700;vertical-align:2px}
+.note .tip{display:block;color:var(--sub);font-size:12.5px;margin-top:2px}
+.counter{display:flex;gap:5px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line)}
+.dot.on{background:var(--accent);border-color:var(--accent)}
+.speedbar{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.speedbar button{border:1px solid var(--line);background:none;border-radius:999px;
+  padding:3px 9px;font-size:12px;cursor:pointer}
+.speedbar button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.asr{margin-top:10px;font-size:14px}
+.asr .w{padding:1px 3px;border-radius:3px;font-family:var(--serif)}
+.asr .w.bad{background:var(--accent-soft);color:var(--accent)}
+.asr .w.good{color:var(--ok)}
+.score{font-family:var(--serif);font-size:17px}
+
+.qbox{margin:16px 0}
+.qbox .q{font-family:var(--serif);font-size:17px;margin-bottom:4px}
+.qbox .hint{font-size:12.5px;color:var(--sub)}
+textarea{width:100%;min-height:70px;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical}
+input[type=text]{padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:14px}
+select{padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--paper);
+  color:var(--ink);font-family:inherit;font-size:13.5px;max-width:100%}
+
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.cal div{aspect-ratio:1;border-radius:6px;background:var(--line);display:flex;
+  align-items:center;justify-content:center;font-size:10.5px;color:var(--sub)}
+.cal div.done{background:var(--accent);color:#fff;font-weight:700}
+.histrow{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;align-items:center}
+.histrow b{font-family:var(--serif);font-size:15px}
+.bankrow{padding:11px 0;border-bottom:1px solid var(--line)}
+.bankrow b{font-family:var(--serif);font-size:16px}
+.bankrow .m{font-size:13px;color:var(--sub)}
+.bankrow .ex{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--sub)}
+.star{cursor:pointer;float:right;font-size:15px;opacity:.28}
+.star.on{opacity:1}
+pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:12px;font-size:11.5px;max-height:240px;overflow:auto;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);
+  color:var(--paper);padding:10px 20px;border-radius:999px;font-size:13.5px;z-index:99;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+.footbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-top:1px solid var(--line);padding:9px 16px;z-index:30;display:none}
+.footbar.on{display:block}
+.footin{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.credit{max-width:860px;margin:0 auto;padding:0 16px 30px;font-size:11.5px;color:var(--sub);
+  letter-spacing:.02em;text-align:center;opacity:.8}
+.credit b{font-family:var(--serif);font-weight:600;letter-spacing:.06em}
+@media(max-width:560px){
+  .keyrow{flex-direction:column;gap:2px}
+  .keyrow b{min-width:0}
+  .brand i{display:none}
+}
+</style>
+<div class="topbar"><div class="topin">
+  <div class="brand">ROUNDTABLE<i>데일리 영어 쉐도잉</i></div>
+  <nav class="tabs" id="tabs">
+    <button data-view="home" class="on">홈</button>
+    <button data-view="log">기록</button>
+    <button data-view="bank">표현장</button>
+    <button data-view="add">자료 추가</button>
+    <button data-view="settings">설정</button>
+  </nav>
+</div></div>
+
+<div class="wrap">
+  <section id="view-home" class="view on"></section>
+  <section id="view-session" class="view"></section>
+  <section id="view-log" class="view"></section>
+  <section id="view-bank" class="view"></section>
+  <section id="view-add" class="view"></section>
+  <section id="view-settings" class="view"></section>
+</div>
+<div class="credit">ROUNDTABLE — 데일리 영어 쉐도잉 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.</div>
+<div class="footbar" id="footbar"><div class="footin" id="footin"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const CONTENT_BUILTIN = [
+{
+ id:"w1d1", day:1, cat:"경제", level:"B2",
+ title:"When Money Stops Being Cheap",
+ titleKo:"돈이 더는 싸지 않을 때 — 금리와 투자 결정",
+ names:{A:"Nora (재무)", B:"Sam (영업·운영)"},
+ brief:[
+  "기업이 설비 투자를 결정할 때 보는 것은 수요만이 아니라 <b>자본비용(cost of capital)</b>이다. 돈을 빌리는 값이 오르면, 같은 수요·같은 프로젝트라도 승인 기준이 올라간다.",
+  "금리 인상의 충격은 즉시 오지 않고 <b>시차를 두고(with a lag)</b> 온다. 낮은 금리로 고정해 둔 기존 부채가 만기를 맞아 <b>차환(roll over)</b>될 때 비로소 이자 부담이 드러나기 때문이다.",
+  "그래서 실무에서 쓰는 개념이 <b>hurdle rate(투자 승인 최저 수익률)</b>와 <b>payback period(회수 기간)</b>다. 자본이 비쌀수록 회수 기간이 짧은 안건만 살아남는다.",
+  "재고도 마찬가지다. 저금리 시절엔 재고를 쌓아두는 비용이 사실상 공짜에 가까웠지만, 고금리에서는 야적장의 한 톤 한 톤이 <b>빌린 돈</b>이 된다."
+ ],
+ lines:[
+  {s:"A",en:"So the board pushed back on the expansion plan again. I'm not surprised, honestly.",
+   ko:"결국 이사회가 증설안에 또 제동을 걸었어요. 솔직히 놀랍지도 않네요.",
+   notes:[{t:"push back on ~",k:"phrasal",m:"~에 반대하다, 제동을 걸다",tip:"reject보다 훨씬 부드럽고 실무적입니다. 회의에서 반대할 때 한국인이 자주 쓰는 'I don't agree'를 이걸로 바꾸면 톤이 좋아집니다."},
+          {t:"honestly",k:"colloquial",m:"솔직히 말해서",tip:"문장 끝에 붙이면 '내 개인 의견인데'라는 완충 역할을 합니다."}]},
+  {s:"B",en:"Really? The demand numbers looked solid to me. What's the sticking point?",
+   ko:"그래요? 수요 숫자는 탄탄해 보이던데요. 걸리는 게 뭔가요?",
+   notes:[{t:"the sticking point",k:"idiom",m:"합의를 막는 결정적 걸림돌",tip:"problem이 뭉뚱그린 표현이라면, sticking point는 '논의가 딱 멈춘 지점'을 콕 집습니다."},
+          {t:"solid",k:"collocation",m:"(수치가) 탄탄한, 믿을 만한",tip:"solid numbers / solid evidence / solid track record 로 자주 붙습니다."}]},
+  {s:"A",en:"It's not demand. It's the cost of capital. Money isn't cheap anymore.",
+   ko:"수요가 문제가 아니에요. 자본비용이죠. 이제 돈이 싸지 않으니까요.",
+   notes:[{t:"cost of capital",k:"business",m:"자본비용(자금 조달 비용)",tip:"발음은 '코스트 오브 캐피털'에서 of를 거의 /əv/로 흘립니다. 붙여서 한 덩어리로 연습하세요."}]},
+  {s:"B",en:"Fair enough, but we've been living with higher rates for a while now. Why is it biting only now?",
+   ko:"일리는 있어요. 그런데 고금리는 한참 겪어 왔잖아요. 왜 하필 지금 타격이 오죠?",
+   notes:[{t:"Fair enough, but ~",k:"idiom",m:"그 말도 일리는 있는데, 다만 ~",tip:"상대 말을 인정하고 반박으로 넘어가는 가장 자연스러운 다리입니다. 토론 필수 표현."},
+          {t:"bite",k:"idiom",m:"(정책·비용이) 실제로 아프게 작용하다",tip:"When do the sanctions start to bite? 처럼 씁니다."}]},
+  {s:"A",en:"Because the old debt was locked in at low rates. It's rolling over now, and the new terms are brutal.",
+   ko:"예전 부채는 낮은 금리로 고정해 뒀거든요. 그게 지금 차환되는데 새 조건이 가혹해요.",
+   notes:[{t:"locked in at ~",k:"phrasal",m:"(금리·가격을) ~로 고정해 둔",tip:"We locked in the price for two years. 가격 협상에서 그대로 씁니다."},
+          {t:"roll over",k:"business",m:"(만기 부채를) 차환하다, 연장하다",tip:"계약에도 씁니다. The contract rolls over automatically. = 자동 갱신된다."},
+          {t:"brutal",k:"colloquial",m:"(조건이) 가혹한, 살벌한",tip:"very bad의 구어체 강조. The schedule was brutal.도 자주 씁니다."}]},
+  {s:"B",en:"Ah, so the pain shows up with a lag. That's the part people always miss.",
+   ko:"아, 그래서 고통이 시차를 두고 나타나는군요. 다들 놓치는 부분이 그거죠.",
+   notes:[{t:"with a lag",k:"business",m:"시차를 두고",tip:"경제 기사에 대단히 자주 나옵니다. Policy works with a lag."},
+          {t:"show up",k:"phrasal",m:"(수치·증상이) 나타나다, 드러나다",tip:"appear보다 훨씬 구어적입니다. It'll show up in next quarter's numbers."}]},
+  {s:"A",en:"Exactly. On paper we look fine, but the interest bill quietly eats the margin.",
+   ko:"맞아요. 서류상으론 멀쩡해 보이지만, 이자 비용이 조용히 마진을 갉아먹죠.",
+   notes:[{t:"on paper",k:"idiom",m:"서류상으로는, 이론상으로는",tip:"뒤에 but이 오는 게 거의 공식입니다. On paper it works, but in practice..."},
+          {t:"eat the margin",k:"collocation",m:"마진을 잠식하다",tip:"eat into the margin 형태도 똑같이 많이 씁니다."}]},
+  {s:"B",en:"Still, if we sit on our hands, we hand the market to competitors. There's a cost to doing nothing.",
+   ko:"그래도 손 놓고 있으면 시장을 경쟁사에 넘겨주는 거예요. 아무것도 안 하는 데도 비용이 있죠.",
+   notes:[{t:"sit on our hands",k:"idiom",m:"팔짱 끼고 아무것도 안 하다",tip:"do nothing을 그림으로 바꾼 표현. 회의에서 쓰면 확 살아납니다."},
+          {t:"hand ~ to ...",k:"phrasal",m:"~을 …에게 그냥 넘겨주다",tip:"give away의 뉘앙스로, '싸워보지도 않고 내줬다'는 아쉬움이 깔립니다."}]},
+  {s:"A",en:"I'd push back on that a little. Not every year is a land-grab year.",
+   ko:"그 부분은 조금 반박하고 싶네요. 매년이 땅따먹기 하는 해는 아니잖아요.",
+   notes:[{t:"I'd push back on that",k:"idiom",m:"거기엔 이견이 있습니다",tip:"I disagree.(직설)보다 훨씬 안전한 반박. would 덕분에 톤이 눌립니다."},
+          {t:"land-grab",k:"colloquial",m:"점유율 확보 경쟁, 땅따먹기",tip:"시장 초기 무리한 확장을 가리킬 때 씁니다."}]},
+  {s:"B",en:"Meaning what, exactly?",
+   ko:"정확히 무슨 뜻이죠?",
+   notes:[{t:"Meaning what, exactly?",k:"colloquial",m:"그게 정확히 무슨 말이죠?",tip:"짧게 되묻는 실전 표현. 공격적이지 않게 하려면 톤을 낮추고 exactly를 부드럽게."}]},
+  {s:"A",en:"Meaning when capital is expensive, the bar for a project goes up. Payback has to be shorter.",
+   ko:"자본이 비싸지면 프로젝트 통과 기준이 올라간다는 뜻이에요. 회수 기간이 더 짧아야 하죠.",
+   notes:[{t:"the bar goes up",k:"idiom",m:"기준(문턱)이 높아지다",tip:"raise the bar / set a high bar 로도 확장됩니다."},
+          {t:"payback",k:"business",m:"투자금 회수(기간)",tip:"a two-year payback = 2년 회수. 숫자+year+payback 형태를 통째로 외우세요."}]},
+  {s:"B",en:"So a project that made sense at two percent doesn't make sense at six.",
+   ko:"그럼 2%에서 말이 되던 안건이 6%에서는 말이 안 된다는 거네요.",
+   notes:[{t:"make sense",k:"collocation",m:"타당하다, 말이 되다",tip:"'이해된다'가 아니라 '사업적으로 성립한다'는 뜻으로도 씁니다. Does the math make sense?"}]},
+  {s:"A",en:"Right. Same project, same demand, different hurdle rate.",
+   ko:"그렇죠. 같은 프로젝트, 같은 수요, 다른 승인 기준이요.",
+   notes:[{t:"hurdle rate",k:"business",m:"투자 승인 최저 수익률",tip:"이 정도 수익률은 넘어야 한다는 '허들'. 재무 회의에서 그대로 쓰입니다."}]},
+  {s:"B",en:"That's a cleaner way to put it than what I said in the meeting.",
+   ko:"제가 회의에서 말한 것보다 훨씬 깔끔한 표현이네요.",
+   notes:[{t:"a cleaner way to put it",k:"idiom",m:"더 깔끔하게 표현하는 방식",tip:"put it = 표현하다. To put it simply / Let me put it this way 로 확장됩니다."}]},
+  {s:"A",en:"The other thing is inventory. Holding stock used to be almost free. Now it's a financing decision.",
+   ko:"또 하나는 재고예요. 재고를 쥐고 있는 게 예전엔 거의 공짜였는데, 지금은 금융 결정이죠.",
+   notes:[{t:"The other thing is ~",k:"colloquial",m:"그리고 또 하나는 ~",tip:"논점을 추가할 때 쓰는 자연스러운 신호. Also보다 대화답습니다."},
+          {t:"used to be",k:"grammar",m:"예전엔 ~였다 (지금은 아니다)",tip:"변화를 설명할 때 핵심 문법. 발음은 '유스트 비'로 붙여서."}]},
+  {s:"B",en:"I hadn't thought of it that way, but yes, every ton sitting in the yard is borrowed money.",
+   ko:"그렇게는 생각 못 했는데, 맞네요. 야적장에 있는 1톤 1톤이 다 빌린 돈이죠.",
+   notes:[{t:"I hadn't thought of it that way",k:"idiom",m:"그런 식으로는 생각 못 했네요",tip:"상대 논점을 인정하는 고급 리액션. 통째로 외워 두면 토론에서 바로 씁니다."},
+          {t:"sitting in the yard",k:"collocation",m:"야적장에 놀고 있는",tip:"sit = (쓰이지 않고) 놀고 있다. Cash sitting in the account 처럼도 씁니다."}]},
+  {s:"A",en:"That's the thing. High rates don't just kill projects. They change how you run the day-to-day.",
+   ko:"바로 그거예요. 고금리는 프로젝트만 죽이는 게 아니라, 일상 운영 방식 자체를 바꿔요.",
+   notes:[{t:"That's the thing.",k:"colloquial",m:"바로 그게 핵심이에요",tip:"상대가 방금 짚은 걸 받아 강조할 때. 원어민 대화에서 매우 빈번합니다."},
+          {t:"the day-to-day",k:"colloquial",m:"일상 업무, 매일의 운영",tip:"명사로 씁니다. I'm buried in the day-to-day."}]},
+  {s:"B",en:"So what would you actually propose? We can't just freeze everything.",
+   ko:"그럼 실제로 뭘 제안하시겠어요? 전부 동결할 수는 없잖아요.",
+   notes:[{t:"What would you actually propose?",k:"business",m:"그래서 실제 제안은 뭔가요?",tip:"actually가 '비판만 하지 말고 대안을'이라는 압박을 부드럽게 실어 줍니다."}]},
+  {s:"A",en:"Phase it. Build the part with a two-year payback now, and keep the rest on the shelf.",
+   ko:"단계로 나누죠. 2년이면 회수되는 부분만 지금 짓고, 나머지는 보류해 두는 거예요.",
+   notes:[{t:"phase it",k:"business",m:"단계적으로 나눠 진행하다",tip:"a phased approach / phase in / phase out 세트로 외우면 좋습니다."},
+          {t:"keep ~ on the shelf",k:"idiom",m:"~을 서랍에 넣어 두다, 보류하다",tip:"버리는 게 아니라 '언제든 꺼낼 수 있게 대기'라는 뉘앙스입니다."}]},
+  {s:"B",en:"I can sell that upstairs. It sounds disciplined rather than defensive.",
+   ko:"그거라면 윗선에 설득할 수 있겠어요. 방어적이라기보다 절제된 것처럼 들리니까요.",
+   notes:[{t:"sell it upstairs",k:"idiom",m:"윗선(경영진)을 설득하다",tip:"sell = 설득하다. sell an idea to the team 처럼 씁니다."},
+          {t:"A rather than B",k:"grammar",m:"B라기보다 A인",tip:"평가를 뒤집을 때 강력합니다. cautious rather than slow 처럼."}]}
+ ],
+ keys:[
+  {en:"the sticking point",ko:"합의를 막는 결정적 걸림돌",ex:"Price isn't the sticking point; delivery time is."},
+  {en:"Fair enough, but ~",ko:"일리는 있는데, 다만 ~",ex:"Fair enough, but that assumes demand holds up."},
+  {en:"I'd push back on that",ko:"그 부분엔 이견이 있습니다",ex:"I'd push back on that — the data says otherwise."},
+  {en:"sit on our hands",ko:"손 놓고 아무것도 안 하다",ex:"We can't sit on our hands until the market recovers."},
+  {en:"with a lag",ko:"시차를 두고",ex:"Cost increases show up with a lag of about two quarters."},
+  {en:"the bar goes up",ko:"통과 기준이 높아지다",ex:"When budgets tighten, the bar for approval goes up."},
+  {en:"That's the thing.",ko:"바로 그게 핵심입니다",ex:"That's the thing — nobody owns the decision."},
+  {en:"sell it upstairs",ko:"윗선을 설득하다",ex:"Give me one number I can sell upstairs."}
+ ],
+ out:[
+  {q:"Describe one investment or purchase your team postponed. Why was the timing wrong?",hint:"the sticking point / with a lag / on paper"},
+  {q:"Do you agree that doing nothing has a cost? Argue for one side.",hint:"sit on our hands / I'd push back on that / Fair enough, but"},
+  {q:"Explain 'hurdle rate' to a new colleague in three sentences.",hint:"the bar goes up / payback / make sense"}
+ ]
+},
+{
+ id:"w1d2", day:2, cat:"신기술", level:"B2",
+ title:"The Part the Machine Can't Sign Off On",
+ titleKo:"기계가 결재할 수 없는 부분 — AI와 사무직의 일",
+ names:{A:"Ravi (기획)", B:"Elena (현업 팀장)"},
+ brief:[
+  "AI가 일자리에 미치는 영향은 '직업(job)'이 아니라 <b>작업(task)</b> 단위로 보는 것이 정확하다. 한 직업은 수십 개 작업의 묶음이고, AI는 그중 일부만 잘한다.",
+  "그래서 현장에서 실제로 갈리는 기준은 <b>automation(대체)</b>이냐 <b>augmentation(증강)</b>이냐이다. 초안 작성·요약·정리는 증강 쪽, 판단과 책임은 여전히 사람 쪽에 남는다.",
+  "핵심 병목은 성능이 아니라 <b>검증 비용(the cost of checking)</b>이다. 결과를 사람이 다시 확인해야 한다면, 절약한 시간의 일부는 되돌아온다.",
+  "결국 조직에서 남는 질문은 하나다 — <b>누가 서명하는가(who signs off)</b>. 책임은 위임되지 않기 때문에, 이 지점이 사람의 자리를 정의한다."
+ ],
+ lines:[
+  {s:"A",en:"Everyone keeps asking whether AI will replace these roles. I think that's the wrong question.",
+   ko:"다들 AI가 이 직무를 대체할까만 묻는데, 저는 그게 잘못된 질문이라고 봐요.",
+   notes:[{t:"keep -ing",k:"grammar",m:"계속 ~하다",tip:"People keep asking / He keeps missing deadlines. 반복에 대한 은근한 짜증이 담깁니다."}]},
+  {s:"B",en:"Go on. What would you ask instead?",
+   ko:"계속해 보세요. 대신 뭘 물으시겠어요?",
+   notes:[{t:"Go on.",k:"colloquial",m:"계속 말해 보세요",tip:"짧지만 매우 자연스러운 맞장구. 억양을 올리면 '설마?'가 되니 평평하게."}]},
+  {s:"A",en:"Which tasks, not which jobs. A job is a bundle of twenty things, and the tool is good at maybe six.",
+   ko:"어떤 직업이 아니라 어떤 작업이냐죠. 직업은 스무 가지 일의 묶음이고, 도구는 그중 여섯 개쯤 잘해요.",
+   notes:[{t:"a bundle of ~",k:"collocation",m:"~의 묶음",tip:"a bundle of tasks / a bundle of rights. 추상적인 '한 덩어리'에 씁니다."},
+          {t:"be good at ~",k:"grammar",m:"~을 잘하다",tip:"뒤에는 반드시 명사나 -ing. good at writing drafts."}]},
+  {s:"B",en:"That tracks with what I see. It drafts fast, but I still rewrite the parts that matter.",
+   ko:"제가 보는 것과 일치하네요. 초안은 빨리 뽑는데, 정작 중요한 부분은 제가 다시 씁니다.",
+   notes:[{t:"That tracks.",k:"colloquial",m:"말이 되네요, 제 경험과 맞아요",tip:"최근 구어에서 매우 자주 쓰입니다. That tracks with my experience."},
+          {t:"the parts that matter",k:"collocation",m:"정말 중요한 부분",tip:"matter를 동사로 쓰는 감각이 한국인에게 약합니다. What matters here is speed."}]},
+  {s:"A",en:"Right, and that's the whole debate in one sentence: automation versus augmentation.",
+   ko:"맞아요, 그 한 문장에 논쟁 전체가 들어 있죠. 대체냐 증강이냐.",
+   notes:[{t:"in one sentence",k:"collocation",m:"한 문장으로 말하면",tip:"발표에서 쓰기 좋습니다. Here's the problem in one sentence."}]},
+  {s:"B",en:"Augmentation sounds nice, but it's often a polite word for cutting headcount later.",
+   ko:"증강이란 말은 듣기 좋지만, 나중에 인원을 줄이겠다는 말의 완곡한 표현일 때가 많죠.",
+   notes:[{t:"a polite word for ~",k:"idiom",m:"~을 완곡하게 돌려 말한 것",tip:"냉소를 담아 비판할 때 유용합니다."},
+          {t:"headcount",k:"business",m:"인원수, 정원",tip:"cut headcount / freeze headcount. HR 회의 필수어."}]},
+  {s:"A",en:"Sometimes, yes. But look at where the time actually goes when a team adopts it.",
+   ko:"때로는 그렇죠. 그런데 팀이 도입했을 때 시간이 실제로 어디로 가는지 보세요.",
+   notes:[{t:"where the time goes",k:"idiom",m:"시간이 어디로 새는지",tip:"where the money goes 로도 그대로 씁니다."}]},
+  {s:"B",en:"Let me guess. You save an hour writing and lose forty minutes checking.",
+   ko:"맞혀 볼게요. 쓰는 데 한 시간 아끼고, 확인하는 데 40분 잃는다.",
+   notes:[{t:"Let me guess.",k:"colloquial",m:"내가 맞혀 볼게요",tip:"상대 말을 앞질러 받는 리듬감 있는 표현."}]},
+  {s:"A",en:"That's exactly it. The bottleneck moves from producing to verifying.",
+   ko:"정확히 그거예요. 병목이 생산에서 검증으로 옮겨 가죠.",
+   notes:[{t:"That's exactly it.",k:"colloquial",m:"바로 그겁니다",tip:"Exactly.만 쓰지 말고 이 형태도 섞으세요."},
+          {t:"the bottleneck moves",k:"collocation",m:"병목이 이동하다",tip:"제조·물류·업무 흐름 어디에나 쓰입니다."}]},
+  {s:"B",en:"And verification is harder to measure, so it never shows up in the savings slide.",
+   ko:"그리고 검증은 측정이 어려우니, 절감 효과 장표에는 절대 안 나오죠.",
+   notes:[{t:"the savings slide",k:"business",m:"절감 효과를 보여주는 발표 장표",tip:"영어권에서도 슬라이드 한 장을 the X slide로 부릅니다."}]},
+  {s:"A",en:"Fair point. Though I'd argue checking a draft still beats staring at a blank page.",
+   ko:"타당한 지적이에요. 그래도 초안을 확인하는 게 빈 화면을 노려보는 것보단 낫다고 봅니다.",
+   notes:[{t:"Fair point.",k:"idiom",m:"타당한 지적입니다",tip:"짧게 인정하고 넘어가는 토론 필수 리액션."},
+          {t:"A beats B",k:"colloquial",m:"A가 B보다 낫다",tip:"Anything beats doing it manually. 비교급 대신 쓰면 훨씬 생동감 있습니다."},
+          {t:"stare at a blank page",k:"idiom",m:"백지 앞에서 막막해하다",tip:"작문·기획 업무의 고통을 그대로 그립니다."}]},
+  {s:"B",en:"I'll give you that one. The first draft was always the slowest part for my team.",
+   ko:"그건 인정할게요. 우리 팀도 첫 초안이 늘 제일 오래 걸렸어요.",
+   notes:[{t:"I'll give you that.",k:"idiom",m:"그건 인정합니다",tip:"부분 인정 후 반박으로 넘어가는 다리. 토론에서 성숙해 보입니다."}]},
+  {s:"A",en:"So the real risk isn't unemployment. It's people signing off on work they didn't really read.",
+   ko:"그래서 진짜 위험은 실업이 아니라, 제대로 읽지도 않은 문서에 결재하는 거예요.",
+   notes:[{t:"sign off on ~",k:"phrasal",m:"~을 승인하다, 결재하다",tip:"approve의 실무 구어. Who needs to sign off on this?"}]},
+  {s:"B",en:"We've already had a near miss with that. A number went out that nobody had traced back.",
+   ko:"그건 이미 아찔했던 적이 있어요. 아무도 근거를 되짚지 않은 숫자가 나갔거든요.",
+   notes:[{t:"a near miss",k:"idiom",m:"아슬아슬하게 피한 사고",tip:"안전 관리에서 그대로 쓰는 용어이자 일상 표현입니다."},
+          {t:"trace back",k:"phrasal",m:"근거를 거슬러 확인하다",tip:"trace the number back to the source."}]},
+  {s:"A",en:"That's the accountability gap. The tool has no skin in the game.",
+   ko:"그게 책임의 공백이죠. 도구는 걸린 게 아무것도 없으니까요.",
+   notes:[{t:"skin in the game",k:"idiom",m:"직접 걸린 이해관계, 책임",tip:"경제·경영 담론의 대표 관용구. He has no skin in the game."}]},
+  {s:"B",en:"Then the answer is process, not policy. Somebody's name has to stay on the document.",
+   ko:"그럼 답은 정책이 아니라 프로세스네요. 문서에 누군가의 이름은 남아 있어야죠.",
+   notes:[{t:"A, not B",k:"grammar",m:"B가 아니라 A",tip:"대조를 짧게 찍는 강력한 구조. 말할 때 not 앞에서 살짝 쉬세요."}]},
+  {s:"A",en:"Agreed. And train people to ask where a claim came from, not just whether it reads well.",
+   ko:"동의해요. 그리고 문장이 매끄러운지만 보지 말고, 그 주장이 어디서 왔는지 묻도록 훈련해야죠.",
+   notes:[{t:"where it came from",k:"collocation",m:"출처가 어디인지",tip:"기자·감사 업무의 기본 질문. 회의에서 그대로 쓰세요."},
+          {t:"read well",k:"collocation",m:"(글이) 잘 읽히다",tip:"주어가 글입니다. The report reads well."}]},
+  {s:"B",en:"That's a skill we never taught, honestly. We taught people to produce, not to audit.",
+   ko:"솔직히 우리가 한 번도 안 가르친 능력이죠. 생산하는 법만 가르치고 검증하는 법은 안 가르쳤어요.",
+   notes:[{t:"audit",k:"business",m:"검증하다, 따져보다",tip:"회계 감사 외에 '내용을 따져본다'는 넓은 뜻으로도 씁니다."}]},
+  {s:"A",en:"Give it a year and that becomes the differentiator between two people with the same title.",
+   ko:"1년만 지나면 그게 같은 직급 두 사람을 가르는 차이가 될 거예요.",
+   notes:[{t:"Give it a year",k:"colloquial",m:"1년만 지나 보세요",tip:"명령문으로 예측을 말하는 세련된 형태. Give it a month and you'll see."},
+          {t:"the differentiator",k:"business",m:"차별화 요소",tip:"What's our differentiator? 마케팅 회의 단골."}]},
+  {s:"B",en:"Then let's stop calling it a tools problem and start calling it a judgment problem.",
+   ko:"그럼 이걸 도구 문제라 부르지 말고 판단력 문제라고 부르기 시작합시다.",
+   notes:[{t:"stop calling it A and start calling it B",k:"collocation",m:"A가 아니라 B라고 부르자",tip:"프레임을 바꾸자고 제안하는 강한 수사입니다."}]}
+ ],
+ keys:[
+  {en:"That tracks.",ko:"말이 되네요 / 제 경험과 맞습니다",ex:"That tracks with what the field team reported."},
+  {en:"the parts that matter",ko:"정작 중요한 부분",ex:"Automate the routine parts and protect the parts that matter."},
+  {en:"sign off on ~",ko:"~을 승인·결재하다",ex:"Legal has to sign off on the wording."},
+  {en:"skin in the game",ko:"직접 걸린 이해관계·책임",ex:"Vendors with skin in the game work harder."},
+  {en:"a near miss",ko:"아슬아슬하게 피한 사고",ex:"We logged it as a near miss and changed the check."},
+  {en:"Fair point.",ko:"타당한 지적입니다",ex:"Fair point. Let me rephrase that."},
+  {en:"I'll give you that.",ko:"그건 인정합니다",ex:"I'll give you that, but it doesn't change the schedule."},
+  {en:"the bottleneck moves",ko:"병목이 옮겨간다",ex:"Fix one line and the bottleneck just moves downstream."}
+ ],
+ out:[
+  {q:"Name one task in your week you would hand to a tool, and one you never would. Why?",hint:"the parts that matter / sign off on / skin in the game"},
+  {q:"Has your team ever had a near miss caused by trusting a number too quickly?",hint:"a near miss / trace back / where it came from"},
+  {q:"Do you think checking work is a real skill? Defend your answer.",hint:"That tracks / Fair point / the differentiator"}
+ ]
+},
+{
+ id:"w1d3", day:3, cat:"국제정세·안보", level:"B2",
+ title:"Supply Chains Learn to Worry",
+ titleKo:"공급망이 불안을 배우다 — 효율에서 회복탄력성으로",
+ names:{A:"Julia (구매)", B:"Marc (전략)"},
+ brief:[
+  "수십 년간 글로벌 공급망의 설계 원칙은 <b>효율(just-in-time)</b>이었다. 재고를 최소화하고, 가장 싼 곳에서 조달하고, 공급처를 하나로 모아 단가를 낮추는 방식이다.",
+  "팬데믹과 지정학적 충돌을 겪으며 원칙이 <b>회복탄력성(just-in-case)</b>으로 이동했다. 이중 조달(dual sourcing), 재고 완충, 지역 분산이 다시 비용을 감수할 가치가 있는 것으로 평가된다.",
+  "여기에 <b>수출통제(export controls)</b>와 <b>프렌드쇼어링(friend-shoring)</b>이 겹친다. 어디서 만드느냐가 단가 문제가 아니라 <b>정치적 노출(exposure)</b>의 문제가 되었다.",
+  "다만 회복탄력성은 공짜가 아니다. 이중화는 규모의 경제를 깎고, 재고는 자금을 묶는다. 실무의 질문은 '분산하느냐'가 아니라 <b>'어디까지 이중화할 것인가'</b>다."
+ ],
+ lines:[
+  {s:"A",en:"Procurement wants to dual-source the alloy. Finance says we're gold-plating the risk.",
+   ko:"구매는 그 합금을 이중 조달하자고 하고, 재무는 리스크에 과하게 돈을 쓴다고 해요.",
+   notes:[{t:"dual-source",k:"business",m:"공급처를 둘로 이원화하다",tip:"single-source(단일 조달)의 반대. 명사 dual sourcing으로도 씁니다."},
+          {t:"gold-plate",k:"idiom",m:"필요 이상으로 과하게 하다",tip:"원래 '금도금하다'. 사양·비용이 과잉일 때 비판적으로 씁니다."}]},
+  {s:"B",en:"Both are right, which is why this always ends in a standoff.",
+   ko:"둘 다 맞아요. 그래서 이 논의는 늘 교착으로 끝나죠.",
+   notes:[{t:"a standoff",k:"idiom",m:"교착 상태, 대치",tip:"협상·노사·외교 모두에 씁니다. The talks ended in a standoff."}]},
+  {s:"A",en:"For thirty years the rule was simple. Squeeze the inventory, chase the lowest landed cost.",
+   ko:"30년간 규칙은 단순했어요. 재고는 쥐어짜고, 가장 낮은 도착원가를 좇는 거죠.",
+   notes:[{t:"squeeze the inventory",k:"collocation",m:"재고를 최소로 줄이다",tip:"squeeze costs / squeeze margins 로 확장됩니다."},
+          {t:"landed cost",k:"business",m:"도착원가(운임·관세 포함 원가)",tip:"무역 실무 필수어. 단순 단가와 구별해서 쓰세요."}]},
+  {s:"B",en:"And it worked beautifully until the day it didn't.",
+   ko:"그리고 그 방식은 안 통하는 날이 오기 전까지는 훌륭하게 작동했죠.",
+   notes:[{t:"until the day it didn't",k:"idiom",m:"안 되기 전까지는 (잘 됐다)",tip:"영어 특유의 냉소적 반전 구문. 통째로 외워 두면 강력합니다."}]},
+  {s:"A",en:"Now the same executives who preached just-in-time want buffer stock. Overnight.",
+   ko:"이제는 적시 생산을 설파하던 바로 그 임원들이 완충 재고를 원해요. 하룻밤 사이에요.",
+   notes:[{t:"preach",k:"colloquial",m:"(주의·방침을) 설파하다",tip:"약간 비꼬는 뉘앙스가 있습니다. He preaches efficiency."},
+          {t:"buffer stock",k:"business",m:"완충 재고, 안전 재고",tip:"safety stock과 사실상 같은 뜻으로 쓰입니다."}]},
+  {s:"B",en:"To be fair, the ground shifted. Cost isn't the only variable anymore.",
+   ko:"공정하게 말하면 판이 바뀌었어요. 이제 비용만 변수인 게 아니니까요.",
+   notes:[{t:"To be fair",k:"idiom",m:"공정하게 말하자면",tip:"상대를 변호하며 균형을 잡는 표현. 토론에서 신뢰를 줍니다."},
+          {t:"the ground shifted",k:"idiom",m:"전제(판)가 바뀌었다",tip:"the goalposts moved(기준이 바뀌었다)와 짝으로 알아 두세요."}]},
+  {s:"A",en:"You mean export controls. Where you make something now decides who can buy it.",
+   ko:"수출통제 말이군요. 어디서 만드느냐가 누가 살 수 있는지를 결정하죠.",
+   notes:[{t:"export controls",k:"business",m:"수출통제",tip:"보통 복수형. subject to export controls = 수출통제 대상."}]},
+  {s:"B",en:"Exactly. Geography used to be a cost question. It's a permission question now.",
+   ko:"바로 그거예요. 지리는 예전엔 비용 문제였는데, 지금은 허가 문제죠.",
+   notes:[{t:"used to be A, it's B now",k:"grammar",m:"예전엔 A였지만 지금은 B다",tip:"변화 설명의 뼈대 문형. 이 대비 구조를 입에 붙이세요."}]},
+  {s:"A",en:"That's what my counterpart in Nagoya keeps hinting at, without ever saying it outright.",
+   ko:"나고야 쪽 담당자가 계속 그걸 돌려서 암시해요. 대놓고 말하진 않고요.",
+   notes:[{t:"my counterpart",k:"business",m:"(상대 회사의) 같은 직급 담당자",tip:"해외 업무에서 매일 쓰는 단어입니다. your counterpart at the supplier."},
+          {t:"hint at",k:"phrasal",m:"~을 넌지시 비치다",tip:"say outright(대놓고 말하다)와 대비해서 기억하세요."}]},
+  {s:"B",en:"Nobody says it outright. They just ask where your feedstock comes from.",
+   ko:"아무도 대놓고 말 안 하죠. 그냥 원료가 어디서 오는지 물을 뿐이에요.",
+   notes:[{t:"feedstock",k:"business",m:"(공정에 투입되는) 원료",tip:"철강·화학 업계 필수어. raw material보다 구체적입니다."}]},
+  {s:"A",en:"So we're being asked to prove a negative. That's expensive.",
+   ko:"결국 '아니라는 걸 증명하라'는 요구를 받는 셈이죠. 그건 비쌉니다.",
+   notes:[{t:"prove a negative",k:"idiom",m:"없다는 것을 증명하다(사실상 불가능한 요구)",tip:"논리학 표현이 실무 회의에 자주 들어옵니다."}]},
+  {s:"B",en:"It is, but resilience always shows up as a line item somewhere.",
+   ko:"맞아요. 그런데 회복탄력성은 결국 어딘가 비용 항목으로 나타나기 마련이죠.",
+   notes:[{t:"a line item",k:"business",m:"(예산·명세의) 개별 항목",tip:"It's a line item in the budget. 예산 논의 필수어."}]},
+  {s:"A",en:"Fine, but let's not pretend redundancy is free. Two suppliers means half the volume each.",
+   ko:"좋아요. 그래도 이중화가 공짜인 척은 맙시다. 공급처가 둘이면 각각 물량이 절반이잖아요.",
+   notes:[{t:"redundancy",k:"business",m:"(안전을 위한) 이중화, 여분",tip:"영국 영어에서는 '정리해고'라는 뜻도 있어 문맥 주의."},
+          {t:"let's not pretend ~",k:"idiom",m:"~인 척은 하지 맙시다",tip:"불편한 진실을 꺼낼 때 쓰는 강한 표현."}]},
+  {s:"B",en:"Which kills your leverage on price. I know. I've had that argument twice this month.",
+   ko:"그럼 가격 협상력이 죽죠. 압니다. 이번 달에만 그 논쟁을 두 번 했어요.",
+   notes:[{t:"leverage",k:"business",m:"협상력, 지렛대",tip:"발음 주의: 미국식 /ˈlevərɪdʒ/. lose leverage / gain leverage."}]},
+  {s:"A",en:"So where do you actually draw the line?",
+   ko:"그럼 선을 실제로 어디에 긋죠?",
+   notes:[{t:"draw the line",k:"idiom",m:"선을 긋다, 한계를 정하다",tip:"Where do you draw the line? 은 원칙을 묻는 정석 질문입니다."}]},
+  {s:"B",en:"Only where a single failure stops the whole line. Everything else stays single-sourced.",
+   ko:"한 번 끊기면 라인 전체가 멈추는 곳만요. 나머지는 단일 조달로 갑니다.",
+   notes:[{t:"a single failure",k:"collocation",m:"단일 지점의 고장",tip:"single point of failure(단일 장애점)라는 정식 용어도 함께."}]},
+  {s:"A",en:"That I can defend in front of the steering committee.",
+   ko:"그거라면 운영위원회 앞에서 방어할 수 있겠네요.",
+   notes:[{t:"That I can defend",k:"grammar",m:"그거라면 방어할 수 있다",tip:"목적어를 앞으로 뺀 도치. 강조 효과가 큽니다. That I don't know."},
+          {t:"steering committee",k:"business",m:"운영위원회",tip:"프로젝트 의사결정 기구. 회의체 이름은 통째로 외우세요."}]},
+  {s:"B",en:"And frame it as insurance, not as distrust of the supplier. Wording matters here.",
+   ko:"그리고 공급사 불신이 아니라 보험이라고 프레임을 잡으세요. 여기선 표현이 중요합니다.",
+   notes:[{t:"frame it as ~",k:"business",m:"~로 규정하다, 프레임을 잡다",tip:"협상·보고에서 핵심 동사. Let's frame it as an upgrade."},
+          {t:"Wording matters.",k:"collocation",m:"표현(문구)이 중요합니다",tip:"계약·공문 협의에서 그대로 씁니다."}]},
+  {s:"A",en:"Especially with a partner we've worked with for twenty years.",
+   ko:"20년 거래한 파트너라면 더욱 그렇죠.",
+   notes:[{t:"work with",k:"collocation",m:"거래하다, 협업하다",tip:"a supplier we've worked with for years. 완료형과 잘 붙습니다."}]},
+  {s:"B",en:"Then we're aligned. Let me write it up before someone reopens the whole debate.",
+   ko:"그럼 의견이 맞은 거네요. 누가 논의를 다시 열기 전에 정리해서 올릴게요.",
+   notes:[{t:"we're aligned",k:"business",m:"의견이 일치했다",tip:"글로벌 기업 회의 최다 빈출. Are we aligned on this?"},
+          {t:"write it up",k:"phrasal",m:"문서로 정리하다",tip:"I'll write it up and send it around."},
+          {t:"reopen the debate",k:"collocation",m:"논의를 다시 열다",tip:"부정적 뉘앙스가 있습니다. 이미 끝난 걸 되돌린다는 뜻."}]}
+ ],
+ keys:[
+  {en:"To be fair, ~",ko:"공정하게 말하자면 ~",ex:"To be fair, they warned us in January."},
+  {en:"the ground shifted",ko:"판(전제)이 바뀌었다",ex:"The ground shifted when the tariffs came in."},
+  {en:"draw the line",ko:"한계를 긋다",ex:"We draw the line at critical components."},
+  {en:"landed cost",ko:"도착원가",ex:"Compare landed cost, not list price."},
+  {en:"leverage",ko:"협상력",ex:"Splitting the order costs us leverage."},
+  {en:"frame it as ~",ko:"~로 규정하다",ex:"Frame it as risk management, not as cost."},
+  {en:"we're aligned",ko:"의견이 일치했습니다",ex:"Good — we're aligned on scope, then."},
+  {en:"write it up",ko:"문서로 정리하다",ex:"I'll write it up before Friday."}
+ ],
+ out:[
+  {q:"Explain one supply risk in your own industry and how you would hedge it.",hint:"dual-source / draw the line / a single failure"},
+  {q:"Is resilience worth its cost? Take a position and defend it for 30 seconds.",hint:"To be fair / a line item / let's not pretend"},
+  {q:"How would you raise a sensitive sourcing question with a long-time partner?",hint:"frame it as / wording matters / my counterpart"}
+ ]
+},
+{
+ id:"w1d4", day:4, cat:"리더십·조직갈등", level:"B2",
+ title:"The Meeting Where Nobody Says Anything",
+ titleKo:"아무도 말하지 않는 회의 — 침묵과 갈등의 두 얼굴",
+ names:{A:"Priya (팀장)", B:"Tom (동료 팀장)"},
+ brief:[
+  "조직심리학에서 갈등은 두 종류로 나뉜다. <b>task conflict(과업 갈등)</b>은 '무엇이 옳은가'를 두고 다투는 것이고, <b>relationship conflict(관계 갈등)</b>은 사람 자체를 겨냥한다. 전자는 성과를 높일 수 있지만, 후자는 거의 항상 성과를 깎는다.",
+  "문제는 둘이 쉽게 섞인다는 점이다. 과업 갈등이 오래 방치되면 인신공격으로 변질되고, 그때부터 팀은 <b>말을 아끼기(hold back)</b> 시작한다.",
+  "에이미 에드먼슨의 <b>psychological safety(심리적 안전감)</b> 연구가 말하는 핵심은 '사이좋은 팀'이 아니라, <b>반대 의견을 냈을 때 벌 받지 않는다는 확신</b>이다. 안전한 팀은 오히려 실수를 더 많이 보고한다.",
+  "리더가 쓸 수 있는 가장 값싼 도구는 <b>말하는 순서</b>다. 상급자가 먼저 결론을 말하면 반대 의견은 사라진다(anchoring). 그래서 '리더가 마지막에 말하기'가 실전 처방으로 자주 권장된다."
+ ],
+ lines:[
+  {s:"A",en:"Something's off in my team meetings. Everyone agrees, and nothing improves.",
+   ko:"우리 팀 회의가 뭔가 이상해요. 다들 동의하는데, 나아지는 게 없어요.",
+   notes:[{t:"Something's off.",k:"colloquial",m:"뭔가 이상해요",tip:"근거를 못 대지만 감이 이상할 때. wrong보다 훨씬 자연스럽습니다."}]},
+  {s:"B",en:"That's usually not agreement. That's people waiting for the meeting to end.",
+   ko:"그건 보통 동의가 아니에요. 회의가 끝나기만 기다리는 거죠.",
+   notes:[{t:"wait for ~ to end",k:"grammar",m:"~이 끝나기를 기다리다",tip:"wait for + 목적어 + to부정사 구조. 입에 붙여 두세요."}]},
+  {s:"A",en:"Ouch. Fair, though. Silence is easy to mistake for buy-in.",
+   ko:"아프네요. 그래도 맞는 말이에요. 침묵은 동의로 착각하기 쉽죠.",
+   notes:[{t:"Ouch.",k:"colloquial",m:"아, 아프다 (뼈 맞았다)",tip:"뼈아픈 지적을 유머로 받는 리액션. 회의 분위기를 부드럽게 합니다."},
+          {t:"buy-in",k:"business",m:"(구성원의) 동의와 지지",tip:"get buy-in from the team. 명사로 씁니다."},
+          {t:"mistake A for B",k:"grammar",m:"A를 B로 착각하다",tip:"Don't mistake politeness for agreement."}]},
+  {s:"B",en:"Can I ask something blunt? Do you say what you think before or after they do?",
+   ko:"직설적으로 하나 물어도 될까요? 팀원들보다 먼저 의견을 말하나요, 나중에 말하나요?",
+   notes:[{t:"Can I ask something blunt?",k:"idiom",m:"직설적인 질문 하나 해도 될까요?",tip:"민감한 질문 전에 까는 완충 장치. 매우 유용합니다."},
+          {t:"blunt",k:"colloquial",m:"직설적인, 돌직구의",tip:"rude와 다릅니다. 예의는 지키되 돌려 말하지 않는 것."}]},
+  {s:"A",en:"Before, obviously. I'm trying to give them direction.",
+   ko:"당연히 먼저죠. 방향을 주려는 거니까요.",
+   notes:[{t:"give direction",k:"collocation",m:"방향을 제시하다",tip:"give guidance / set direction 도 같이 쓰입니다."}]},
+  {s:"B",en:"Then you've already anchored the room. After that, disagreeing costs them something.",
+   ko:"그럼 이미 회의실 전체를 한 방향으로 고정한 거예요. 그다음부터 반대는 대가를 치르는 일이 되죠.",
+   notes:[{t:"anchor the room",k:"business",m:"좌중의 의견을 한쪽에 고정시키다",tip:"행동경제학의 anchoring에서 온 실무 표현입니다."},
+          {t:"it costs them something",k:"idiom",m:"그들에게는 대가가 따른다",tip:"cost를 '돈' 아닌 '위험 부담'으로 확장해서 쓰는 감각이 중요합니다."}]},
+  {s:"A",en:"I hear that a lot, but doesn't a leader have to lead?",
+   ko:"그런 말 많이 듣는데요, 그래도 리더는 이끌어야 하지 않나요?",
+   notes:[{t:"I hear that a lot, but ~",k:"idiom",m:"그 말 많이 듣는데, 다만 ~",tip:"흔한 조언에 반론을 다는 부드러운 도입."}]},
+  {s:"B",en:"Lead the question, not the answer. Ask first, decide last.",
+   ko:"답이 아니라 질문을 이끄세요. 먼저 묻고, 마지막에 결정하는 겁니다.",
+   notes:[{t:"Ask first, decide last.",k:"idiom",m:"먼저 묻고 나중에 결정하라",tip:"짧은 대구 문장은 기억에 남습니다. 스피킹 시험에서도 인상적입니다."}]},
+  {s:"A",en:"And when the disagreement does come out, it gets personal fast.",
+   ko:"그리고 막상 이견이 터져 나오면 금세 감정 싸움이 돼요.",
+   notes:[{t:"get personal",k:"idiom",m:"인신공격으로 흐르다",tip:"Let's not make this personal. 갈등 상황 필수 표현."},
+          {t:"come out",k:"phrasal",m:"(숨겨진 것이) 드러나다",tip:"The real reason came out later."}]},
+  {s:"B",en:"That's the line to watch. Arguing about the plan is healthy. Arguing about the person isn't.",
+   ko:"바로 그 경계를 지켜봐야 해요. 계획을 두고 다투는 건 건강하지만, 사람을 두고 다투는 건 아니죠.",
+   notes:[{t:"the line to watch",k:"collocation",m:"주시해야 할 경계선",tip:"watch the line / cross the line 세트로 기억하세요."}]},
+  {s:"A",en:"How do you pull it back once it's crossed that line?",
+   ko:"이미 그 선을 넘은 다음엔 어떻게 되돌리죠?",
+   notes:[{t:"pull it back",k:"phrasal",m:"(상황을) 되돌리다, 수습하다",tip:"Let me pull this back to the agenda. 회의 진행에 유용."},
+          {t:"cross the line",k:"idiom",m:"선을 넘다",tip:"That comment crossed the line."}]},
+  {s:"B",en:"Name it out loud, gently. Something like, we're arguing about trust now, not about the schedule.",
+   ko:"부드럽게, 소리 내어 이름을 붙이세요. '지금 우리는 일정이 아니라 신뢰를 두고 다투고 있다'처럼요.",
+   notes:[{t:"name it out loud",k:"idiom",m:"입 밖으로 규정해 말하다",tip:"중재의 기본 기술. 감정을 언어로 옮기면 온도가 내려갑니다."},
+          {t:"Something like ~",k:"colloquial",m:"이를테면 ~ 같은 식으로",tip:"예시를 던질 때 원어민이 가장 흔히 쓰는 도입."}]},
+  {s:"A",en:"That feels risky. You're putting the tension on the table.",
+   ko:"그건 위험해 보이는데요. 긴장을 테이블 위에 올려놓는 거잖아요.",
+   notes:[{t:"put ~ on the table",k:"idiom",m:"~을 공개 논의에 부치다",tip:"협상에서 제안을 꺼낼 때도 씁니다. put an offer on the table."}]},
+  {s:"B",en:"It is risky. It's also the only way it stops running underneath everything.",
+   ko:"위험하죠. 하지만 그래야만 그게 모든 일 밑에서 계속 흐르는 걸 멈춥니다.",
+   notes:[{t:"run underneath everything",k:"idiom",m:"모든 일 밑에 깔려 흐르다",tip:"드러나지 않은 갈등을 묘사하는 비유. 인상적인 표현입니다."}]},
+  {s:"A",en:"My worry is that people will read it as me picking a side.",
+   ko:"제 걱정은 사람들이 그걸 제가 편드는 걸로 읽을까 하는 거예요.",
+   notes:[{t:"read it as ~",k:"phrasal",m:"~로 받아들이다, 해석하다",tip:"interpret의 구어. Don't read it as criticism."},
+          {t:"pick a side",k:"idiom",m:"편을 들다",tip:"take sides도 같은 뜻으로 자주 씁니다."}]},
+  {s:"B",en:"Then describe the behavior, not the character. Late data is a fact. Careless is a verdict.",
+   ko:"그럼 성격이 아니라 행동을 묘사하세요. '자료가 늦었다'는 사실이고, '부주의하다'는 판결이에요.",
+   notes:[{t:"a verdict",k:"idiom",m:"단정, 판결",tip:"평가가 아니라 사실을 말하라는 조언에 강한 대비를 만듭니다."}]},
+  {s:"A",en:"That distinction alone would have saved me two arguments last quarter.",
+   ko:"그 구분 하나만으로도 지난 분기 논쟁 두 건은 피했겠네요.",
+   notes:[{t:"that alone would have ~",k:"grammar",m:"그것만으로도 ~했을 것이다",tip:"가정법 과거완료. 후회·복기를 말할 때 고급스럽게 들립니다."}]},
+  {s:"B",en:"And do one more thing. Thank the first person who disagrees, in front of everyone.",
+   ko:"하나 더 하세요. 처음 반대한 사람에게 모두 앞에서 고맙다고 하는 거예요.",
+   notes:[{t:"in front of everyone",k:"collocation",m:"모두가 보는 앞에서",tip:"칭찬은 공개적으로, 지적은 개별적으로 — 영어권 매니지먼트 원칙."}]},
+  {s:"A",en:"Because that's the price signal for whether it's safe to speak up.",
+   ko:"그게 말해도 안전한지 알려주는 가격 신호라서군요.",
+   notes:[{t:"speak up",k:"phrasal",m:"목소리를 내다, 이의를 제기하다",tip:"침묵의 반대말. Nobody spoke up in the meeting."},
+          {t:"price signal",k:"business",m:"가격 신호",tip:"경제 용어를 조직 문화에 은유로 쓰는 세련된 화법입니다."}]},
+  {s:"B",en:"Exactly. People don't read your values statement. They watch what happens to the first dissenter.",
+   ko:"맞아요. 사람들은 가치 선언문을 읽지 않아요. 첫 반대자에게 무슨 일이 생기는지를 볼 뿐이죠.",
+   notes:[{t:"the first dissenter",k:"business",m:"처음으로 반대한 사람",tip:"dissent(반대)는 격식 있는 단어라 논평·기사에 자주 나옵니다."}]}
+ ],
+ keys:[
+  {en:"Something's off.",ko:"뭔가 이상합니다",ex:"Something's off with these numbers."},
+  {en:"buy-in",ko:"구성원의 동의·지지",ex:"We got buy-in from the plant before rolling it out."},
+  {en:"get personal",ko:"인신공격으로 흐르다",ex:"The review got personal, and we lost an hour."},
+  {en:"cross the line",ko:"선을 넘다",ex:"That email crossed the line."},
+  {en:"put ~ on the table",ko:"~을 공개 논의에 부치다",ex:"Let me put the real constraint on the table."},
+  {en:"speak up",ko:"이의를 제기하다, 목소리를 내다",ex:"I should have spoken up earlier."},
+  {en:"describe the behavior, not the character",ko:"성격이 아니라 행동을 말하라",ex:"Describe the behavior, not the character — it lands better."},
+  {en:"Ask first, decide last.",ko:"먼저 묻고 마지막에 결정하라",ex:"As the lead, ask first and decide last."}
+ ],
+ out:[
+  {q:"Describe a meeting where everyone agreed but nothing changed. What was really going on?",hint:"Something's off / buy-in / speak up"},
+  {q:"How do you separate an argument about the work from an argument about the person?",hint:"get personal / cross the line / describe the behavior"},
+  {q:"Should a leader give their opinion first? Argue one side for 30 seconds.",hint:"anchor the room / Ask first, decide last / I hear that a lot, but"}
+ ]
+},
+{
+ id:"w1d5", day:5, cat:"에너지", level:"B2",
+ title:"The Grid Is the Bottleneck",
+ titleKo:"병목은 전력망이다 — 재생에너지와 산업의 열",
+ names:{A:"Hana (설비)", B:"Owen (에너지 담당)"},
+ brief:[
+  "재생에너지의 근본 과제는 발전 단가가 아니라 <b>간헐성(intermittency)</b>이다. 태양광·풍력은 필요한 시간이 아니라 자연이 허락하는 시간에 발전한다.",
+  "그래서 초점이 발전기에서 <b>전력망(grid)</b>과 <b>저장(storage)</b>으로 옮겨간다. 배터리는 시간 단위 이동에는 강하지만, 며칠 단위의 <b>장주기 저장(long-duration storage)</b>은 여전히 어려운 문제다.",
+  "송전선 건설은 기술이 아니라 <b>인허가(permitting)</b>와 부지 문제로 지연되는 경우가 많다. 전력 수요지와 발전 적지가 지리적으로 어긋나 있기 때문이다.",
+  "제조업의 진짜 난제는 전기가 아니라 <b>고온의 열(industrial heat)</b>이다. 철강의 경우 석탄 대신 수소를 쓰는 <b>수소환원제철(hydrogen-based direct reduction)</b>이 논의되지만, 저렴한 청정 수소와 대규모 전력이 전제 조건이다."
+ ],
+ lines:[
+  {s:"A",en:"The board wants a number for going green. I keep telling them it isn't one number.",
+   ko:"이사회가 친환경 전환 비용을 숫자 하나로 달래요. 하나로 안 나온다고 계속 말하는 중이고요.",
+   notes:[{t:"go green",k:"colloquial",m:"친환경으로 전환하다",tip:"가벼운 구어. 공식 문서에서는 decarbonize를 씁니다."}]},
+  {s:"B",en:"It never is. The generation cost is the easy half.",
+   ko:"당연히 아니죠. 발전 단가는 쉬운 쪽 절반이에요.",
+   notes:[{t:"It never is.",k:"colloquial",m:"늘 그렇지 않죠",tip:"앞 문장의 be동사를 받아 짧게 되받는 리듬. 원어민다운 축약입니다."},
+          {t:"the easy half",k:"idiom",m:"쉬운 쪽 절반",tip:"the hard part과 짝지어 씁니다."}]},
+  {s:"A",en:"Right. Solar is cheap at noon and worth nothing at seven in the evening.",
+   ko:"맞아요. 태양광은 정오엔 싸고 저녁 7시엔 아무 값어치가 없죠.",
+   notes:[{t:"worth nothing",k:"collocation",m:"아무 가치가 없는",tip:"worthless보다 구어적이고 강조가 됩니다."}]},
+  {s:"B",en:"That's intermittency in one line. The power shows up when nature decides, not when we do.",
+   ko:"그게 간헐성을 한 줄로 말한 거예요. 전기는 우리가 아니라 자연이 정한 시간에 나오죠.",
+   notes:[{t:"intermittency",k:"business",m:"간헐성",tip:"에너지 논의의 핵심어. 형용사는 intermittent."},
+          {t:"in one line",k:"collocation",m:"한 줄로 요약하면",tip:"in one sentence와 같은 용법입니다."}]},
+  {s:"A",en:"So we store it. Batteries have come down a lot, haven't they?",
+   ko:"그럼 저장하면 되죠. 배터리 값이 많이 내려오지 않았나요?",
+   notes:[{t:"come down",k:"phrasal",m:"(가격이) 내려가다",tip:"Prices have come down sharply. 부가의문문 haven't they?로 확인 요청."}]},
+  {s:"B",en:"For a few hours, yes. For a windless week in winter, not even close.",
+   ko:"몇 시간짜리는 그래요. 바람 없는 겨울 한 주는 어림도 없고요.",
+   notes:[{t:"not even close",k:"colloquial",m:"어림도 없다, 근처에도 못 간다",tip:"강한 부정. Is it enough? Not even close."}]},
+  {s:"A",en:"That's the long-duration problem everyone waves at and nobody solves.",
+   ko:"그게 다들 손짓만 하고 아무도 못 푸는 장주기 저장 문제군요.",
+   notes:[{t:"wave at ~",k:"idiom",m:"~을 대충 언급하고 넘어가다",tip:"hand-wave(얼버무리다)와 같은 계열. 비판적 뉘앙스."}]},
+  {s:"B",en:"And even if we solved it tomorrow, the lines wouldn't be there.",
+   ko:"그리고 내일 그걸 풀어도, 송전선이 없을 거예요.",
+   notes:[{t:"even if ~",k:"grammar",m:"설령 ~라 해도",tip:"even though(사실)와 구별. even if는 가정입니다."}]},
+  {s:"A",en:"Transmission. Everyone forgets the boring part.",
+   ko:"송전이요. 다들 지루한 부분은 잊죠.",
+   notes:[{t:"the boring part",k:"colloquial",m:"재미없지만 중요한 부분",tip:"the unglamorous part도 같은 뜻으로 씁니다."}]},
+  {s:"B",en:"It's not a technology problem, either. It's permitting, land, and local objections.",
+   ko:"기술 문제도 아니에요. 인허가, 부지, 지역 반대 문제죠.",
+   notes:[{t:"permitting",k:"business",m:"인허가 절차",tip:"permitting delays / permitting process. 인프라 기사 필수어."},
+          {t:"local objections",k:"collocation",m:"지역 주민 반대",tip:"완곡하지만 정확한 표현입니다."}]},
+  {s:"A",en:"Which takes a decade, while a plant takes three years. The timelines don't line up.",
+   ko:"그건 10년이 걸리는데 발전소는 3년이면 돼요. 일정이 안 맞죠.",
+   notes:[{t:"line up",k:"phrasal",m:"(일정·조건이) 맞아떨어지다",tip:"The dates don't line up. 매우 자주 씁니다."}]},
+  {s:"B",en:"That mismatch is the whole story, honestly. Not the panels.",
+   ko:"솔직히 그 불일치가 이야기의 전부예요. 패널이 아니라요.",
+   notes:[{t:"mismatch",k:"business",m:"불일치, 미스매치",tip:"a mismatch between supply and demand."}]},
+  {s:"A",en:"Now bring it back to us. Our furnaces don't run on electricity anyway.",
+   ko:"이제 우리 얘기로 돌아와 보죠. 어차피 우리 용광로는 전기로 돌지 않잖아요.",
+   notes:[{t:"bring it back to ~",k:"phrasal",m:"논의를 ~로 되돌리다",tip:"회의 진행에 유용. Let me bring it back to the agenda."},
+          {t:"run on ~",k:"phrasal",m:"~로 작동하다, ~를 연료로 쓰다",tip:"run on gas / run on batteries."}]},
+  {s:"B",en:"That's the harder half. High-temperature heat is where the easy answers run out.",
+   ko:"그게 더 어려운 쪽이에요. 고온 열은 쉬운 답이 바닥나는 지점이죠.",
+   notes:[{t:"run out",k:"phrasal",m:"바닥나다, 떨어지다",tip:"We ran out of options."}]},
+  {s:"A",en:"Hydrogen keeps coming up in every presentation I sit through.",
+   ko:"제가 앉아 있는 모든 발표에서 수소가 계속 나와요.",
+   notes:[{t:"come up",k:"phrasal",m:"(주제가) 거론되다",tip:"That came up in the last meeting."},
+          {t:"sit through",k:"phrasal",m:"(지루한 것을) 끝까지 앉아 듣다",tip:"약간의 인내가 담긴 표현입니다."}]},
+  {s:"B",en:"It's chemically sound. The catch is that clean hydrogen needs cheap, steady power.",
+   ko:"화학적으로는 타당해요. 함정은 청정 수소가 싸고 안정적인 전기를 필요로 한다는 거죠.",
+   notes:[{t:"the catch is ~",k:"idiom",m:"함정은 ~라는 점이다",tip:"What's the catch? = 뭐가 문제죠? 협상에서 자주 씁니다."},
+          {t:"chemically sound",k:"collocation",m:"화학적으로 타당한",tip:"sound = 논리적으로 탄탄한. a sound argument."}]},
+  {s:"A",en:"So we're back to the grid. Everything routes through the same bottleneck.",
+   ko:"결국 다시 전력망으로 돌아오네요. 모든 게 같은 병목을 통과하죠.",
+   notes:[{t:"route through ~",k:"collocation",m:"~을 거쳐 가다",tip:"물류·전력·의사결정 모두에 씁니다."}]},
+  {s:"B",en:"Which is why I'd rather we talk about power contracts than about slogans.",
+   ko:"그래서 저는 슬로건보다 전력 구매 계약 얘기를 하고 싶어요.",
+   notes:[{t:"I'd rather ~ than ...",k:"grammar",m:"…보다 차라리 ~하겠다",tip:"뒤에 동사원형이 옵니다. I'd rather wait than rush."}]},
+  {s:"A",en:"Give me two slides on that and I'll get it in front of the committee.",
+   ko:"그거 두 장으로 만들어 주면 제가 위원회에 올릴게요.",
+   notes:[{t:"get it in front of ~",k:"idiom",m:"~에게 보고·상정하다",tip:"put it in front of the board 도 같은 뜻."}]},
+  {s:"B",en:"Deal. Two slides, no slogans, one honest number with a range.",
+   ko:"좋아요. 두 장, 슬로건 없이, 범위를 붙인 정직한 숫자 하나로요.",
+   notes:[{t:"Deal.",k:"colloquial",m:"좋습니다, 그렇게 하죠",tip:"합의를 한 단어로 마무리하는 표현."},
+          {t:"a number with a range",k:"business",m:"범위를 함께 제시한 수치",tip:"단정적 숫자보다 신뢰를 줍니다. give a range."}]}
+ ],
+ keys:[
+  {en:"not even close",ko:"어림도 없다",ex:"Is the budget enough? Not even close."},
+  {en:"the catch is ~",ko:"함정은 ~라는 점이다",ex:"The catch is that it only works at scale."},
+  {en:"line up",ko:"(일정·조건이) 맞아떨어지다",ex:"The delivery dates don't line up with the shutdown."},
+  {en:"come up",ko:"(주제가) 거론되다",ex:"Hydrogen came up again this morning."},
+  {en:"run out",ko:"바닥나다",ex:"We're running out of easy savings."},
+  {en:"bring it back to ~",ko:"논의를 ~로 되돌리다",ex:"Let me bring it back to the schedule."},
+  {en:"I'd rather A than B",ko:"B보다 차라리 A하겠다",ex:"I'd rather delay than ship it broken."},
+  {en:"a number with a range",ko:"범위를 붙인 수치",ex:"Give me a number with a range, not a guess."}
+ ],
+ out:[
+  {q:"Explain intermittency to someone outside the industry, using one everyday example.",hint:"worth nothing / in one line / the catch is"},
+  {q:"What is the real bottleneck in your own factory or process? Why does it stay unsolved?",hint:"the boring part / line up / route through"},
+  {q:"Is it fair to ask industry to decarbonize before clean power is cheap? Take a side.",hint:"To be fair / I'd rather A than B / not even close"}
+ ]
+},
+{
+ id:"w1d6", day:6, cat:"심리·학습", level:"B2",
+ title:"Why You Forget What You Just Read",
+ titleKo:"방금 읽은 걸 잊는 이유 — 기억과 학습의 작동 방식",
+ names:{A:"Dan (교육팀)", B:"Mia (인지심리 전공)"},
+ brief:[
+  "학습 연구에서 가장 반복적으로 확인된 두 가지가 <b>spacing effect(간격 효과)</b>와 <b>retrieval practice(인출 연습)</b>다. 몰아서 보는 것보다 나눠서 보는 것이, 다시 읽는 것보다 <b>기억에서 꺼내 보는 것</b>이 오래간다.",
+  "다시 읽기가 인기 있는 이유는 <b>fluency illusion(유창성 착각)</b> 때문이다. 눈에 익어 술술 읽히면 '안다'고 느끼지만, 그 매끄러움은 이해가 아니라 익숙함의 신호일 뿐이다.",
+  "그래서 효과적인 학습은 대체로 <b>불편하다</b>. 어렵게 꺼낼수록 기억은 단단해지는데, 이를 <b>desirable difficulty(바람직한 어려움)</b>라고 부른다.",
+  "수면은 학습의 마무리 공정에 가깝다. 잠자는 동안 기억이 정리·강화되는 <b>consolidation(공고화)</b>이 일어나므로, 밤을 새워 채워 넣는 방식은 투입 대비 손해가 크다."
+ ],
+ lines:[
+  {s:"A",en:"I read a whole report yesterday and today I couldn't summarize it to save my life.",
+   ko:"어제 보고서를 통째로 읽었는데, 오늘은 도저히 요약을 못 하겠더라고요.",
+   notes:[{t:"to save my life",k:"idiom",m:"죽었다 깨어나도 (못 하다)",tip:"부정문에서만 씁니다. I can't sing to save my life."}]},
+  {s:"B",en:"That's not a memory defect. That's what reading does when you never test yourself.",
+   ko:"그건 기억력 결함이 아니에요. 스스로 시험해 보지 않은 읽기가 원래 그래요.",
+   notes:[{t:"a defect",k:"business",m:"결함",tip:"제조 품질에서 쓰는 단어를 사람에게 은유로 쓴 표현입니다."}]},
+  {s:"A",en:"But it felt easy while I was reading. Everything made sense.",
+   ko:"그런데 읽을 땐 쉬웠거든요. 다 이해되는 것 같았고요.",
+   notes:[{t:"it felt easy",k:"grammar",m:"쉽게 느껴졌다",tip:"feel + 형용사. It feels wrong. 감각동사 뒤에 부사 아님 주의."}]},
+  {s:"B",en:"That's the trap. Smooth reading feels like understanding, but it's mostly familiarity.",
+   ko:"그게 함정이에요. 매끄럽게 읽히면 이해한 것 같지만, 대개는 익숙함일 뿐이죠.",
+   notes:[{t:"That's the trap.",k:"colloquial",m:"바로 그게 함정이에요",tip:"That's the thing. 계열의 짧은 강조 표현."},
+          {t:"familiarity",k:"business",m:"익숙함",tip:"understanding과 대비시켜 쓰면 논지가 선명해집니다."}]},
+  {s:"A",en:"So the fix is to close the file and try to say it out loud?",
+   ko:"그럼 해결책은 파일을 닫고 소리 내어 말해 보는 건가요?",
+   notes:[{t:"the fix",k:"colloquial",m:"해결책",tip:"solution의 캐주얼한 대체어. a quick fix = 임시방편."}]},
+  {s:"B",en:"That's the whole trick, and it's annoyingly simple. Pull it out instead of putting it back in.",
+   ko:"그게 요령의 전부인데, 짜증날 만큼 단순해요. 다시 집어넣지 말고 꺼내 보세요.",
+   notes:[{t:"the trick is ~",k:"idiom",m:"요령은 ~이다",tip:"The trick is to start small."},
+          {t:"annoyingly simple",k:"colloquial",m:"짜증날 정도로 단순한",tip:"부사+형용사 조합으로 감정을 싣는 원어민식 표현."}]},
+  {s:"A",en:"I've heard that, but rereading feels more productive. I get through more pages.",
+   ko:"들어는 봤는데, 다시 읽는 게 더 생산적으로 느껴져요. 진도가 더 나가니까요.",
+   notes:[{t:"get through",k:"phrasal",m:"(분량을) 해치우다, 끝내다",tip:"I got through half the book."}]},
+  {s:"B",en:"Pages aren't the unit that matters. What you can retrieve cold is.",
+   ko:"중요한 단위는 페이지가 아니에요. 아무 단서 없이 꺼낼 수 있는 게 중요하죠.",
+   notes:[{t:"retrieve",k:"business",m:"(기억에서) 인출하다",tip:"retrieval practice = 인출 연습. 학습 연구의 핵심 용어."},
+          {t:"cold",k:"colloquial",m:"준비 없이, 맨몸으로",tip:"go in cold = 준비 없이 들어가다. 면접·발표에 씁니다."}]},
+  {s:"A",en:"And spacing it out actually beats one long session?",
+   ko:"그리고 나눠서 하는 게 정말 한 번에 몰아서 하는 것보다 낫나요?",
+   notes:[{t:"space it out",k:"phrasal",m:"간격을 두고 나누다",tip:"space out the sessions. 학습 계획에 그대로 씁니다."}]},
+  {s:"B",en:"By a wide margin, and it's one of the oldest findings we have.",
+   ko:"큰 차이로요. 게다가 가장 오래된 연구 결과 중 하나예요.",
+   notes:[{t:"by a wide margin",k:"idiom",m:"큰 차이로",tip:"win by a wide margin. 비교를 강조할 때."}]},
+  {s:"A",en:"Then why does everyone still cram the night before?",
+   ko:"그런데 왜 다들 여전히 전날 밤에 몰아서 할까요?",
+   notes:[{t:"cram",k:"colloquial",m:"벼락치기 하다",tip:"cram for an exam. 명사 cramming으로도 씁니다."}]},
+  {s:"B",en:"Because cramming works just well enough for tomorrow, and then it drains away.",
+   ko:"벼락치기는 딱 내일까지만 통하고, 그 뒤엔 다 빠져나가니까요.",
+   notes:[{t:"just well enough",k:"collocation",m:"딱 될 만큼만",tip:"'충분하지만 겨우'라는 뉘앙스를 짧게 실어 줍니다."},
+          {t:"drain away",k:"phrasal",m:"서서히 빠져나가다",tip:"Motivation drained away. 비유적으로도 자주."}]},
+  {s:"A",en:"Where does sleep fit into all this? People treat it as time they can borrow.",
+   ko:"이 안에서 수면은 어디에 들어가죠? 다들 잠을 빌려 쓸 수 있는 시간으로 취급하잖아요.",
+   notes:[{t:"fit into",k:"phrasal",m:"~안에 들어맞다, 어디에 해당하다",tip:"How does this fit into the plan?"},
+          {t:"time you can borrow",k:"idiom",m:"빌려 쓸 수 있는 시간",tip:"영어권에서 수면 부채를 말할 때 흔한 비유."}]},
+  {s:"B",en:"It's closer to the final step of the process. What you learned gets filed while you're out.",
+   ko:"수면은 오히려 마지막 공정에 가까워요. 자는 동안 배운 게 정리되어 보관되죠.",
+   notes:[{t:"get filed",k:"idiom",m:"정리되어 보관되다",tip:"file = 서류를 철하다. 기억을 서류 정리에 비유한 표현."},
+          {t:"while you're out",k:"colloquial",m:"의식이 없는 동안, 자는 동안",tip:"be out = 곯아떨어지다. He was out in five minutes."}]},
+  {s:"A",en:"So pulling an all-nighter is borrowing against the thing that does the filing.",
+   ko:"그럼 밤샘은 정리를 담당하는 그 기능에서 빚을 내는 셈이네요.",
+   notes:[{t:"pull an all-nighter",k:"idiom",m:"밤을 새우다",tip:"완전한 관용구. 동사 pull에 주의하세요."},
+          {t:"borrow against ~",k:"business",m:"~을 담보로 빌리다",tip:"금융 용어를 비유로 쓴 세련된 문장입니다."}]},
+  {s:"B",en:"Nicely put. And the last piece is that effective study usually feels worse.",
+   ko:"잘 표현하셨네요. 그리고 마지막 조각은, 효과적인 공부는 대개 더 불편하게 느껴진다는 거예요.",
+   notes:[{t:"Nicely put.",k:"colloquial",m:"표현 좋네요",tip:"Well put.도 같은 뜻. 상대 표현을 칭찬하는 짧은 리액션."}]},
+  {s:"A",en:"That's a hard sell to a room full of busy adults.",
+   ko:"바쁜 성인들로 가득한 방에서 그건 설득하기 어려운 얘기죠.",
+   notes:[{t:"a hard sell",k:"idiom",m:"설득하기 어려운 것",tip:"That's a hard sell to management. 명사구로 씁니다."}]},
+  {s:"B",en:"Then don't sell the discomfort. Sell the fact that they'll still have it in March.",
+   ko:"그럼 불편함을 팔지 말고, 3월에도 여전히 기억하고 있을 거라는 사실을 파세요.",
+   notes:[{t:"sell the fact that ~",k:"idiom",m:"~라는 점을 내세워 설득하다",tip:"sell = 설득하다. 앞선 sell it upstairs와 같은 계열."}]},
+  {s:"A",en:"Fine. Twenty minutes a day, out loud, and no rereading.",
+   ko:"알겠어요. 하루 20분, 소리 내어, 다시 읽기는 없이요.",
+   notes:[{t:"out loud",k:"collocation",m:"소리 내어",tip:"read out loud / say it out loud. aloud보다 구어에서 흔합니다."}]},
+  {s:"B",en:"And test yourself before you look. That single habit does most of the work.",
+   ko:"그리고 보기 전에 스스로 시험해 보세요. 그 습관 하나가 대부분의 일을 해냅니다.",
+   notes:[{t:"does most of the work",k:"idiom",m:"대부분의 효과를 낸다",tip:"One change does most of the work. 강조에 좋습니다."}]}
+ ],
+ keys:[
+  {en:"That's the trap.",ko:"바로 그게 함정입니다",ex:"That's the trap — it looks free at first."},
+  {en:"get through",ko:"(분량을) 해치우다",ex:"I got through the deck but remembered nothing."},
+  {en:"space it out",ko:"간격을 두고 나누다",ex:"Space it out over four days instead of one."},
+  {en:"by a wide margin",ko:"큰 차이로",ex:"Option B won by a wide margin."},
+  {en:"pull an all-nighter",ko:"밤을 새우다",ex:"Don't pull an all-nighter before the audit."},
+  {en:"a hard sell",ko:"설득하기 어려운 것",ex:"A budget freeze is a hard sell right now."},
+  {en:"Nicely put.",ko:"표현이 좋네요",ex:"Nicely put — can I use that line?"},
+  {en:"out loud",ko:"소리 내어",ex:"Try saying the summary out loud first."}
+ ],
+ out:[
+  {q:"Describe how you currently study or prepare. Which part is really working?",hint:"get through / That's the trap / out loud"},
+  {q:"Convince a busy colleague to stop cramming, in 30 seconds.",hint:"a hard sell / by a wide margin / space it out"},
+  {q:"Explain in your own words why rereading feels effective but often isn't.",hint:"familiarity / retrieve / does most of the work"}
+ ]
+},
+{
+ id:"w1d7", day:7, cat:"문화·트렌드", level:"B2",
+ title:"Where Work Happens Now",
+ titleKo:"일은 이제 어디서 일어나는가 — 하이브리드 근무와 도시",
+ names:{A:"Sofia (HR)", B:"Ken (현업)"},
+ brief:[
+  "하이브리드 근무 논쟁이 갈리는 이유는 업무의 성격이 다르기 때문이다. <b>집중 업무(deep work)</b>는 원격이 유리하고, <b>조율·신뢰 형성</b>은 대면이 유리하다는 것이 대체적인 관찰이다.",
+  "가장 자주 지적되는 손실은 <b>weak ties(약한 유대)</b>다. 다른 팀 사람과 우연히 마주치는 접점이 사라지면, 정보는 부서 안에서만 돌게 된다.",
+  "재택은 도시 구조도 바꿨다. 도심 오피스 상권의 평일 수요가 줄고 주거지 인근 상권이 살아나는 변화가 여러 도시에서 관찰된다.",
+  "실무의 결론은 '주 며칠'이 아니라 <b>어떤 일을 위해 모이는가</b>이다. 출근한 날에 각자 헤드폰을 끼고 화상회의만 한다면, 이동 시간만 지불한 셈이 된다."
+ ],
+ lines:[
+  {s:"A",en:"Leadership wants everyone back four days a week. I'm not sure that's the real question.",
+   ko:"경영진은 주 4일 출근을 원해요. 저는 그게 진짜 질문인지 모르겠어요.",
+   notes:[{t:"back four days a week",k:"collocation",m:"주 4일 사무실 복귀",tip:"return-to-office(RTO)라는 약어도 실무에서 흔합니다."}]},
+  {s:"B",en:"What would the real question be, then?",
+   ko:"그럼 진짜 질문은 뭔가요?",
+   notes:[{t:"then (문미)",k:"colloquial",m:"그럼 (문장 끝에서)",tip:"What is it, then? 억양을 내려 자연스럽게."}]},
+  {s:"A",en:"Not how many days, but what we come in for. Those are completely different policies.",
+   ko:"며칠이냐가 아니라 뭘 하러 나오느냐죠. 그건 완전히 다른 정책이에요.",
+   notes:[{t:"come in",k:"phrasal",m:"출근하다",tip:"Are you coming in tomorrow? go to work보다 사무실 맥락에서 자연스럽습니다."}]},
+  {s:"B",en:"Honestly, half my office days are video calls with people in other countries.",
+   ko:"솔직히 제 출근일의 절반은 다른 나라 사람들과의 화상회의예요.",
+   notes:[{t:"Honestly,",k:"colloquial",m:"솔직히",tip:"문두에 두면 속내를 꺼내는 신호가 됩니다."}]},
+  {s:"A",en:"Which is the worst of both worlds. You paid the commute and got the isolation.",
+   ko:"그게 양쪽의 나쁜 점만 합친 거죠. 출퇴근은 치르고 고립은 그대로 얻고요.",
+   notes:[{t:"the worst of both worlds",k:"idiom",m:"양쪽의 단점만 모은 것",tip:"the best of both worlds의 반대. 통째로 외우세요."},
+          {t:"the commute",k:"business",m:"통근",tip:"명사·동사 모두 됩니다. I commute two hours a day."}]},
+  {s:"B",en:"Right. But I'd defend the office for one thing: I learn what other teams are doing by accident.",
+   ko:"맞아요. 그래도 사무실을 한 가지로는 옹호하겠어요. 다른 팀이 뭘 하는지 우연히 알게 되거든요.",
+   notes:[{t:"I'd defend ~ for one thing",k:"idiom",m:"한 가지 이유로는 ~을 옹호하겠다",tip:"부분적 지지를 표하는 균형 잡힌 화법입니다."},
+          {t:"by accident",k:"collocation",m:"우연히",tip:"on purpose(의도적으로)의 반대. by chance와 호환."}]},
+  {s:"A",en:"That's the weak-tie argument, and it's the strongest one on your side.",
+   ko:"그게 약한 유대 논거인데, 그쪽 편에서 가장 강한 주장이에요.",
+   notes:[{t:"weak ties",k:"business",m:"약한 유대 관계",tip:"사회학 개념이지만 실무 회의에서도 그대로 쓰입니다."},
+          {t:"on your side",k:"collocation",m:"당신 쪽 주장에서",tip:"the argument on your side. 토론 정리에 유용합니다."}]},
+  {s:"B",en:"Explain it the way you'd explain it to my director. He'll roll his eyes at the theory.",
+   ko:"제 임원한테 설명하듯 말해 주세요. 이론이라고 하면 눈을 굴릴 사람이거든요.",
+   notes:[{t:"roll one's eyes",k:"idiom",m:"어이없다는 듯 눈을 굴리다",tip:"신체 동작 관용구. 회의 묘사에 생생함을 더합니다."}]},
+  {s:"A",en:"Your close colleagues know what you know. New information tends to come from people you rarely see.",
+   ko:"가까운 동료는 당신이 아는 걸 똑같이 알아요. 새 정보는 잘 안 보는 사람들에게서 오는 편이죠.",
+   notes:[{t:"tend to ~",k:"grammar",m:"~하는 경향이 있다",tip:"단정 대신 경향을 말해 신뢰를 얻는 표현. 시험에서도 유리합니다."}]},
+  {s:"B",en:"That lands. So the office is for bumping into people, not for typing.",
+   ko:"그건 와닿네요. 그러니까 사무실은 타이핑이 아니라 사람과 마주치기 위한 곳이군요.",
+   notes:[{t:"That lands.",k:"colloquial",m:"그 말 와닿네요",tip:"설득이 먹혔다는 최신 구어. That didn't land.도 씁니다."},
+          {t:"bump into ~",k:"phrasal",m:"우연히 마주치다",tip:"I bumped into him at the elevator."}]},
+  {s:"A",en:"For that, and for the conversations nobody would schedule a meeting about.",
+   ko:"그것과, 아무도 회의를 잡지는 않을 대화들을 위해서죠.",
+   notes:[{t:"nobody would schedule a meeting about",k:"collocation",m:"굳이 회의까지 잡지는 않을",tip:"관계절로 개념을 정의하는 세련된 방식입니다."}]},
+  {s:"B",en:"Meanwhile my neighborhood has completely changed. The cafes are full on Tuesday mornings.",
+   ko:"한편 저희 동네는 완전히 달라졌어요. 화요일 아침에도 카페가 꽉 차요.",
+   notes:[{t:"Meanwhile",k:"collocation",m:"한편",tip:"화제를 나란히 붙일 때. 발표에서도 좋은 전환어입니다."}]},
+  {s:"A",en:"That shift is real, and it's not going back. The money moved out of the business district.",
+   ko:"그 변화는 실재하고, 되돌아가지 않아요. 돈이 업무 지구 밖으로 옮겨 갔죠.",
+   notes:[{t:"it's not going back",k:"colloquial",m:"되돌아가지 않는다",tip:"현재진행형으로 미래를 단언하는 자연스러운 어법."}]},
+  {s:"B",en:"My parents' generation would find that bizarre. Work was a place you went to.",
+   ko:"부모님 세대는 그걸 기이하게 여길 거예요. 일은 가는 장소였으니까요.",
+   notes:[{t:"a place you went to",k:"grammar",m:"가던 장소",tip:"관계절 + 전치사가 끝에 남는 구어 어순. 자연스럽습니다."}]},
+  {s:"A",en:"For a lot of people it still is. We should be careful about generalizing from desk jobs.",
+   ko:"많은 사람에겐 여전히 그래요. 사무직 기준으로 일반화하는 건 조심해야 해요.",
+   notes:[{t:"generalize from ~",k:"business",m:"~을 근거로 일반화하다",tip:"토론에서 상대의 표본 편향을 짚을 때 씁니다."}]},
+  {s:"B",en:"Good catch. Nobody runs a rolling mill from a kitchen table.",
+   ko:"좋은 지적이에요. 압연기를 식탁에서 돌리는 사람은 없죠.",
+   notes:[{t:"Good catch.",k:"colloquial",m:"잘 짚었어요",tip:"상대가 놓친 걸 지적했을 때. 실무에서 매우 자주 씁니다."},
+          {t:"a kitchen table",k:"idiom",m:"식탁(재택근무의 상징)",tip:"kitchen-table 는 '소박한 규모의'라는 형용사로도 쓰입니다."}]},
+  {s:"A",en:"So write the policy around the work, not around the calendar.",
+   ko:"그러니 달력이 아니라 업무를 중심으로 정책을 쓰세요.",
+   notes:[{t:"around ~",k:"collocation",m:"~을 중심으로",tip:"build the process around the customer. 매우 자주 쓰는 전치사 용법."}]},
+  {s:"B",en:"And say it in one line, or it'll get rewritten by three people before Friday.",
+   ko:"그리고 한 줄로 말하세요. 안 그러면 금요일 전에 세 사람이 고쳐 놓을 테니까요.",
+   notes:[{t:"get rewritten",k:"grammar",m:"고쳐지다 (수동)",tip:"get + 과거분사는 구어에서 be동사보다 흔합니다. It got cancelled."}]},
+  {s:"A",en:"One line it is. Come in for the parts of the job that need other people.",
+   ko:"한 줄로 가죠. 다른 사람이 필요한 업무를 위해 출근한다.",
+   notes:[{t:"One line it is.",k:"colloquial",m:"그럼 한 줄로 하죠",tip:"'~ it is'는 결정을 확정하는 관용 어순. Coffee it is."}]},
+  {s:"B",en:"I'm stealing that sentence for the announcement, and I won't credit you.",
+   ko:"그 문장 공지에 그대로 훔쳐 쓸게요. 출처는 안 밝히고요.",
+   notes:[{t:"I'm stealing that",k:"colloquial",m:"그 표현 좀 훔쳐 쓸게요",tip:"좋은 표현을 들었을 때 하는 농담 섞인 칭찬. 원어민이 자주 씁니다."},
+          {t:"credit someone",k:"business",m:"공을 돌리다, 출처를 밝히다",tip:"credit the team for the result. 명사 credit도 같이."}]}
+ ],
+ keys:[
+  {en:"the worst of both worlds",ko:"양쪽 단점만 모은 것",ex:"Half-remote and half-present is the worst of both worlds."},
+  {en:"That lands.",ko:"그 말 와닿네요",ex:"That lands — I'll use that framing."},
+  {en:"bump into ~",ko:"우연히 마주치다",ex:"I bumped into the plant manager and solved it in a minute."},
+  {en:"weak ties",ko:"약한 유대 관계",ex:"Weak ties are where new information comes from."},
+  {en:"Good catch.",ko:"잘 짚었습니다",ex:"Good catch — the units are wrong."},
+  {en:"tend to ~",ko:"~하는 경향이 있다",ex:"Costs tend to appear later than benefits."},
+  {en:"generalize from ~",ko:"~을 근거로 일반화하다",ex:"We shouldn't generalize from one plant."},
+  {en:"build it around ~",ko:"~을 중심으로 설계하다",ex:"Build the policy around the work."}
+ ],
+ out:[
+  {q:"Describe your ideal work week. What exactly would you come into the office for?",hint:"come in for / the worst of both worlds / bump into"},
+  {q:"Has remote work changed your neighborhood or your city? Give one concrete example.",hint:"Meanwhile / the shift is real / tend to"},
+  {q:"Argue against your own preference on hybrid work for 30 seconds.",hint:"I'd defend it for one thing / Good catch / generalize from"}
+ ]
+}
+];
+/* ================= ROUNDTABLE : 데일리 영어 쉐도잉 ================= */
+const K = "rt1-";
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(K+k); return v===null? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(K+k, JSON.stringify(v)); }catch(e){ toast("저장 공간이 부족합니다"); } }
+};
+const S = {
+  prog:   store.get("prog", {}),      // {dayId:{reps:{},done:true,doneAt,stepIdx}}
+  log:    store.get("log", {}),       // {"YYYY-MM-DD":{dayId,min,lines,ts}}
+  star:   store.get("star", {}),
+  out:    store.get("out", {}),       // {dayId:[답변 텍스트]}
+  custom: store.get("custom", []),
+  cfg:    store.get("cfg", {voiceA:"", voiceB:"", rate:0.95, reps:3, showKo:false, theme:"auto"})
+};
+function save(){ store.set("prog",S.prog); store.set("log",S.log); store.set("star",S.star);
+  store.set("out",S.out); store.set("custom",S.custom); store.set("cfg",S.cfg); }
+
+let CONTENT = [];
+function rebuild(){ CONTENT = CONTENT_BUILTIN.concat(S.custom); }
+rebuild();
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today = () => new Date().toISOString().slice(0,10);
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove("on"),1900); }
+function pad(n){ return n<10?"0"+n:""+n; }
+function dayById(id){ return CONTENT.find(d=>d.id===id); }
+function isDone(id){ return !!(S.prog[id] && S.prog[id].done); }
+function nextUndone(){ return CONTENT.find(d=>!isDone(d.id)) || CONTENT[CONTENT.length-1]; }
+function prevOf(id){ const i=CONTENT.findIndex(d=>d.id===id); return i>0?CONTENT[i-1]:null; }
+
+/* ---------- 음성 (TTS) ---------- */
+let VOICES = [];
+function loadVoices(){
+  const all = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  VOICES = all.filter(v=>/^en(-|_|$)/i.test(v.lang));
+  if(!VOICES.length) VOICES = all;
+}
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = ()=>{ loadVoices(); if(cur.view==="settings") render(); }; }
+function pickVoice(who){
+  const want = who==="B" ? S.cfg.voiceB : S.cfg.voiceA;
+  let v = VOICES.find(x=>x.name===want);
+  if(!v){
+    const f = VOICES.filter(x=>/female|zira|aria|jenny|samantha|karen|libby|sonia/i.test(x.name));
+    const m = VOICES.filter(x=>/male|david|guy|ryan|daniel|alex|mark/i.test(x.name));
+    v = who==="B" ? (m[0]||VOICES[1]||VOICES[0]) : (f[0]||VOICES[0]);
+  }
+  return v;
+}
+let speakingSeq = null, autoTok = null;
+function stopSpeak(){ speakingSeq=null; autoTok=null; if(window.speechSynthesis) speechSynthesis.cancel(); }
+function speak(text, who, rate, cb){
+  if(!window.speechSynthesis){ toast("이 브라우저는 음성 재생을 지원하지 않습니다"); cb&&cb(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(who); if(v){ u.voice=v; u.lang=v.lang; } else u.lang="en-US";
+  u.rate = rate || S.cfg.rate; u.pitch = who==="B" ? 0.95 : 1.05;
+  u.onend = ()=> cb && cb();
+  u.onerror = ()=> cb && cb();
+  speechSynthesis.speak(u);
+}
+function speakSeq(items, rate, onStep, onDone){
+  const token = {}; speakingSeq = token;
+  let i = 0;
+  (function step(){
+    if(speakingSeq!==token) return;
+    if(i>=items.length){ onDone&&onDone(); return; }
+    onStep && onStep(i);
+    speak(items[i].en, items[i].s, rate, ()=>{ i++; setTimeout(step, 260); });
+  })();
+}
+
+/* ---------- 청크 자동 분할 ---------- */
+function chunkify(s){
+  const sents = (s.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [s]).map(x=>x.trim()).filter(Boolean);
+  const brkBefore = /^(but|and|so|because|which|that|when|if|though|although|while|or|then|unless)$/i;
+  const prep = /^(in|on|at|of|for|to|with|from|about|into|by|as|over|under|before|after)$/i;
+  const clean = w => w.replace(/[^\w']/g,"");
+  let out = [];
+  sents.forEach(sen=>{
+    const toks = sen.split(/\s+/);
+    const parts = []; let c = [];
+    toks.forEach(w=>{
+      if(c.length>=4 && brkBefore.test(clean(w))){ parts.push(c.join(" ")); c=[]; }
+      c.push(w);
+      if(/[,;:]$/.test(w) && c.length>=3){ parts.push(c.join(" ")); c=[]; }
+    });
+    if(c.length) parts.push(c.join(" "));
+    parts.forEach(p=>{
+      let t = p.split(/\s+/);
+      while(t.length > 10){
+        let cut = -1, mid = Math.floor(t.length/2);
+        for(let i=Math.max(3, mid-3); i<Math.min(t.length-3, mid+4); i++){
+          if(prep.test(clean(t[i]))){ cut = i; break; }
+        }
+        if(cut < 0) cut = mid;
+        out.push(t.slice(0,cut).join(" ")); t = t.slice(cut);
+      }
+      out.push(t.join(" "));
+    });
+  });
+  const merged=[];
+  out.forEach(c=>{ if(merged.length && c.split(/\s+/).length<3) merged[merged.length-1]+=" "+c; else merged.push(c); });
+  return merged;
+}
+
+/* ---------- 발음 체크 (음성인식) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function normWords(s){ return s.toLowerCase().replace(/[^a-z0-9'\s]/g," ").split(/\s+/).filter(Boolean); }
+function compareSpoken(target, said){
+  const t = normWords(target), h = normWords(said);
+  const pool = h.slice();
+  const marks = t.map(w=>{ const i = pool.indexOf(w); if(i>=0){ pool.splice(i,1); return {w, ok:true}; } return {w, ok:false}; });
+  const hit = marks.filter(m=>m.ok).length;
+  return { marks, score: t.length ? Math.round(hit/t.length*100) : 0 };
+}
+
+/* ---------- 세션 상태 ---------- */
+const STEPS = [
+  {k:"review", n:"전날 복습",   m:2,  d:"어제 표현을 소리 내어 떠올립니다"},
+  {k:"brief",  n:"배경 브리핑", m:2,  d:"오늘 주제의 배경 지식을 읽습니다"},
+  {k:"listen", n:"통으로 듣기", m:3,  d:"대화 전체를 눈으로 따라가며 듣습니다"},
+  {k:"shadow", n:"한 줄 쉐도잉",m:11, d:"덩어리 → 문장 순으로 소리 내어 따라 읽습니다"},
+  {k:"output", n:"말해보기",    m:2,  d:"배운 표현으로 직접 말합니다"}
+];
+let cur = { view:"home", dayId:null, step:0, line:0, chunk:-1, reps:{}, t0:0, tick:null, showKo:false, asr:null };
+
+function startSession(id){
+  stopSpeak();
+  cur.dayId=id; cur.step=0; cur.line=0; cur.chunk=-1; cur.showKo=S.cfg.showKo;
+  cur.reps = (S.prog[id]&&S.prog[id].reps) ? S.prog[id].reps : {};
+  cur.t0 = Date.now();
+  clearInterval(cur.tick); cur.tick = setInterval(updClock, 1000);
+  go("session");
+}
+function elapsedMin(){ return Math.max(0, Math.round((Date.now()-cur.t0)/60000)); }
+function updClock(){
+  const el = $("#clock"); if(!el) return;
+  const s = Math.floor((Date.now()-cur.t0)/1000);
+  el.textContent = pad(Math.floor(s/60))+":"+pad(s%60);
+  el.classList.toggle("over", s>20*60);
+}
+function endSession(){ clearInterval(cur.tick); stopSpeak(); }
+
+/* ---------- 라우팅 ---------- */
+function go(v){
+  if(cur.view==="session" && v!=="session") endSession();
+  cur.view=v;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  $("#view-"+v).classList.add("on");
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.view===v));
+  window.scrollTo(0,0);
+  render();
+}
+document.querySelectorAll("#tabs button").forEach(b=> b.onclick = ()=> go(b.dataset.view));
+
+function render(){
+  if(cur.view==="home") renderHome();
+  else if(cur.view==="session") renderSession();
+  else if(cur.view==="log") renderLog();
+  else if(cur.view==="bank") renderBank();
+  else if(cur.view==="add") renderAdd();
+  else if(cur.view==="settings") renderSettings();
+  const fb=$("#footbar"); fb.classList.toggle("on", cur.view==="session");
+}
+
+/* ---------- 홈 ---------- */
+function streakInfo(){
+  const days = Object.keys(S.log).sort();
+  let total=0, mins=0, lines=0;
+  days.forEach(d=>{ total++; mins+=S.log[d].min||0; lines+=S.log[d].lines||0; });
+  let st=0; const d=new Date();
+  for(;;){ const key=d.toISOString().slice(0,10);
+    if(S.log[key]){ st++; d.setDate(d.getDate()-1); }
+    else if(st===0 && key===today()){ d.setDate(d.getDate()-1); }
+    else break;
+    if(st>999) break;
+  }
+  return {total, mins, lines, streak:st};
+}
+function renderHome(){
+  const d = nextUndone(); const info = streakInfo();
+  const doneToday = !!S.log[today()];
+  let h = "";
+  h += '<div class="hd" style="margin-top:20px"><small>Today\'s session · 20 min</small></div>';
+  h += '<div class="today">';
+  h +=   '<span class="tag a">DAY '+d.day+'</span> <span class="tag">'+esc(d.cat)+'</span>';
+  h +=   '<h2>'+esc(d.title)+'</h2>';
+  h +=   '<div class="kotitle">'+d.titleKo+'</div>';
+  h +=   '<div class="row"><button class="btn red" id="goSess">'+(S.prog[d.id]?"이어서 시작":"오늘 훈련 시작")+' →</button>';
+  h +=   '<span class="sub">'+d.lines.length+'문장 · 핵심표현 '+d.keys.length+'개</span></div>';
+  h +=   '<div class="streak"><div><b>'+info.streak+'</b><span>연속일</span></div><div><b>'+info.total+'</b><span>총 학습일</span></div>';
+  h +=   '<div><b>'+info.mins+'</b><span>총 분</span></div><div><b>'+info.lines+'</b><span>누적 문장</span></div></div>';
+  h += '</div>';
+  if(doneToday) h += '<div class="card" style="border-color:var(--ok)"><b style="color:var(--ok)">오늘 훈련 완료</b> <span class="sub">— 더 하고 싶으면 아래에서 다른 회차를 골라 복습하세요.</span></div>';
+  h += '<div class="hd"><small>Week list</small>이번 주 커리큘럼</div><div class="dlist">';
+  CONTENT.forEach(x=>{
+    h += '<div class="ditem" data-id="'+x.id+'"><div class="num">'+x.day+'</div><div class="t"><b>'+esc(x.title)+'</b>'+
+         '<span>'+esc(x.cat)+' · '+x.titleKo+'</span></div>'+
+         (isDone(x.id)?'<div class="done">완료</div>':'<div class="sub" style="font-size:12px">'+x.lines.length+'문장</div>')+'</div>';
+  });
+  h += '</div>';
+  h += '<div class="card sub">한 세션은 <b>20분</b> 기준입니다 — 복습 2분 · 브리핑 2분 · 통듣기 3분 · 쉐도잉 11분 · 말하기 2분. '+
+       '시간이 없으면 <b>쉐도잉 단계만</b> 해도 효과의 대부분이 나옵니다.</div>';
+  $("#view-home").innerHTML = h;
+  $("#goSess").onclick = ()=> startSession(d.id);
+  document.querySelectorAll(".ditem").forEach(el=> el.onclick = ()=> startSession(el.dataset.id));
+}
+
+/* ---------- 세션 ---------- */
+function renderSession(){
+  const d = dayById(cur.dayId); if(!d){ go("home"); return; }
+  const st = STEPS[cur.step];
+  let h = "";
+  h += '<div class="steps">'+STEPS.map((s,i)=>'<div class="'+(i<cur.step?"past":i===cur.step?"on":"")+'"></div>').join("")+'</div>';
+  h += '<div class="sesshead"><span class="tag a">DAY '+d.day+'</span><span class="stepname">'+(cur.step+1)+'. '+st.n+'<em>권장 '+st.m+'분 · '+st.d+'</em></span>';
+  h += '<span class="clock" id="clock">00:00</span></div>';
+  h += '<div id="stepbody"></div>';
+  $("#view-session").innerHTML = h;
+  updClock();
+  ({review:stepReview, brief:stepBrief, listen:stepListen, shadow:stepShadow, output:stepOutput})[st.k](d);
+  renderFoot(d);
+}
+function renderFoot(d){
+  const last = cur.step===STEPS.length-1;
+  let h = '<button class="btn ghost sm" id="fPrev">← 이전</button>';
+  h += '<span class="sub" style="font-size:12px">'+(cur.step+1)+'/'+STEPS.length+'</span>';
+  h += '<span style="flex:1"></span>';
+  h += '<button class="btn ghost sm" id="fHome">나가기</button>';
+  h += '<button class="btn '+(last?"red":"")+'" id="fNext">'+(last?"훈련 완료 ✓":"다음 단계 →")+'</button>';
+  $("#footin").innerHTML = h;
+  $("#fPrev").onclick = ()=>{ if(cur.step>0){ stopSpeak(); cur.step--; renderSession(); } };
+  $("#fHome").onclick = ()=>{ saveProgress(); go("home"); };
+  $("#fNext").onclick = ()=>{
+    stopSpeak();
+    if(cur.step<STEPS.length-1){ cur.step++; renderSession(); }
+    else finishSession(d);
+  };
+  $("#fPrev").disabled = cur.step===0;
+}
+function saveProgress(){
+  if(!cur.dayId) return;
+  const p = S.prog[cur.dayId] || {};
+  p.reps = cur.reps; p.stepIdx = cur.step;
+  S.prog[cur.dayId] = p; save();
+}
+function finishSession(d){
+  const p = S.prog[d.id] || {}; p.reps=cur.reps; p.done=true; p.doneAt=today(); S.prog[d.id]=p;
+  const t = today(); const prev = S.log[t] || {min:0, lines:0};
+  const repLines = Object.keys(cur.reps).filter(k=>cur.reps[k]>0).length;
+  S.log[t] = { dayId:d.id, min: prev.min + Math.max(1, elapsedMin()), lines: prev.lines + repLines, ts: Date.now() };
+  save(); endSession();
+  const info = streakInfo();
+  $("#view-session").innerHTML =
+    '<div class="hd" style="margin-top:30px"><small>Session complete</small>오늘 훈련 완료</div>'+
+    '<div class="card"><div style="font-family:var(--serif);font-size:22px">'+esc(d.title)+'</div>'+
+    '<div class="sub" style="margin:6px 0 14px">'+d.titleKo+'</div>'+
+    '<div class="streak"><div><b>'+elapsedMin()+'</b><span>오늘 분</span></div><div><b>'+repLines+'</b><span>따라 읽은 문장</span></div>'+
+    '<div><b>'+info.streak+'</b><span>연속일</span></div></div>'+
+    '<div class="rule"></div><div class="sub">내일 첫 단계에서 오늘 표현 8개를 다시 물어봅니다. 그때 <b>보지 않고</b> 말해 보세요.</div>'+
+    '<div class="row" style="margin-top:14px"><button class="btn" id="cHome">홈으로</button>'+
+    '<button class="btn ghost" id="cBank">표현장에서 복습</button></div></div>';
+  $("#footbar").classList.remove("on");
+  $("#cHome").onclick=()=>go("home"); $("#cBank").onclick=()=>go("bank");
+}
+
+/* --- step 1 : 복습 --- */
+function stepReview(d){
+  const p = prevOf(d.id);
+  let h = "";
+  if(!p){
+    h = '<div class="card"><b>첫 회차입니다.</b><div class="sub" style="margin-top:6px">복습할 이전 회차가 없으니 바로 다음 단계로 넘어가세요. '+
+        '내일부터 이 자리에서 전날 표현을 물어봅니다.</div></div>';
+  } else {
+    h = '<div class="card"><div class="sub">DAY '+p.day+' · '+esc(p.title)+'</div>'+
+        '<div style="margin:10px 0 4px;font-size:13.5px">영어를 보고 <b>먼저 소리 내어</b> 뜻과 예문을 말한 뒤, 가려진 부분을 눌러 확인하세요.</div><div class="rule"></div>';
+    p.keys.forEach((k,i)=>{
+      h += '<div class="keyrow"><b>'+esc(k.en)+' <button class="btn ghost sm rv" data-t="'+esc(k.en)+'">▶</button></b>'+
+           '<span><span class="blurme" data-blur="1">'+esc(k.ko)+'</span>'+
+           '<span class="ex blurme" data-blur="1">'+esc(k.ex)+'</span></span></div>';
+    });
+    h += '</div>';
+  }
+  $("#stepbody").innerHTML = h;
+  bindBlur(); bindPlay();
+}
+function bindBlur(){
+  document.querySelectorAll(".blurme").forEach(el=> el.onclick = ()=> el.classList.toggle("show"));
+}
+function bindPlay(){
+  document.querySelectorAll(".rv").forEach(b=> b.onclick = e=>{ e.stopPropagation(); speak(b.dataset.t, "A", S.cfg.rate); });
+}
+
+/* --- step 2 : 브리핑 --- */
+function stepBrief(d){
+  let h = '<div class="card"><span class="tag">'+esc(d.cat)+'</span>'+
+    '<div style="font-family:var(--serif);font-size:23px;margin:8px 0 2px">'+esc(d.title)+'</div>'+
+    '<div class="sub">'+d.titleKo+'</div><div class="rule"></div><ul class="brief">'+
+    d.brief.map(b=>'<li>'+b+'</li>').join("")+'</ul></div>';
+  h += '<div class="card"><b>오늘의 핵심 표현 '+d.keys.length+'개</b><div class="sub" style="margin:4px 0 8px">지금은 눈으로만 훑으세요. 외우는 건 쉐도잉 단계에서 저절로 됩니다.</div><div class="rule"></div>';
+  d.keys.forEach(k=>{
+    h += '<div class="keyrow"><b>'+esc(k.en)+' <button class="btn ghost sm rv" data-t="'+esc(k.en)+'">▶</button></b>'+
+         '<span>'+esc(k.ko)+'<span class="ex">'+esc(k.ex)+'</span></span></div>';
+  });
+  h += '</div>';
+  $("#stepbody").innerHTML = h; bindPlay();
+}
+
+/* --- step 3 : 통으로 듣기 --- */
+function stepListen(d){
+  let h = '<div class="card"><div class="row" style="margin-bottom:6px">'+
+    '<button class="btn" id="playAll">전체 재생 ▶</button>'+
+    '<button class="btn ghost sm" id="stopAll">정지 ■</button>'+
+    '<button class="btn ghost sm" id="koTog">한국어 '+(cur.showKo?"숨기기":"보기")+'</button>'+
+    speedBar("lsSpeed")+'</div>'+
+    '<div class="sub">문장을 누르면 그 줄만 다시 들을 수 있습니다. 지금은 <b>따라 읽지 말고</b> 흐름과 억양만 잡으세요.</div>'+
+    '<div class="rule"></div><div id="script">'+d.lines.map((l,i)=>lineHTML(l,i)).join("")+'</div></div>';
+  $("#stepbody").innerHTML = h;
+  bindSpeed("lsSpeed");
+  $("#koTog").onclick = ()=>{ cur.showKo=!cur.showKo; stepListen(d); };
+  $("#stopAll").onclick = ()=> stopSpeak();
+  $("#playAll").onclick = ()=>{
+    speakSeq(d.lines, S.cfg.rate, i=>{
+      document.querySelectorAll("#script .sline").forEach(e=>e.classList.remove("now"));
+      const el = document.querySelector('#script .sline[data-i="'+i+'"]');
+      if(el){ el.classList.add("now"); el.scrollIntoView({block:"center", behavior:"smooth"}); }
+    }, ()=> toast("전체 재생 완료"));
+  };
+  document.querySelectorAll("#script .sline").forEach(el=> el.onclick = ()=>{
+    stopSpeak(); const i=+el.dataset.i; speak(d.lines[i].en, d.lines[i].s, S.cfg.rate);
+  });
+}
+function lineHTML(l,i){
+  return '<div class="sline '+(l.s==="B"?"b":"")+'" data-i="'+i+'"><div class="sp">'+l.s+'</div>'+
+    '<div><span class="en">'+esc(l.en)+'</span>'+(cur.showKo?'<span class="ko">'+esc(l.ko)+'</span>':'')+'</div></div>';
+}
+function speedBar(id){
+  return '<span class="speedbar" id="'+id+'">속도 '+[0.7,0.85,0.95,1.1].map(r=>
+    '<button data-r="'+r+'" class="'+(Math.abs(S.cfg.rate-r)<0.01?"on":"")+'">'+r+'x</button>').join("")+'</span>';
+}
+function bindSpeed(id){
+  document.querySelectorAll("#"+id+" button").forEach(b=> b.onclick = ()=>{
+    S.cfg.rate = +b.dataset.r; save();
+    document.querySelectorAll("#"+id+" button").forEach(x=>x.classList.toggle("on", x===b));
+  });
+}
+
+/* --- step 4 : 쉐도잉 (핵심) --- */
+function stepShadow(d){
+  const i = cur.line, l = d.lines[i];
+  const reps = cur.reps[i]||0, target = S.cfg.reps;
+  const chunks = chunkify(l.en);
+  let h = '<div class="row" style="margin:10px 0 0"><span class="sub">문장 '+(i+1)+' / '+d.lines.length+'</span>';
+  h += '<span style="flex:1"></span>'+speedBar("shSpeed")+'</div>';
+  h += '<div class="shadowbox">';
+  h +=   '<div class="who '+(l.s==="B"?"b":"")+'">'+(l.s==="B"?esc(d.names.B):esc(d.names.A))+'</div>';
+  h +=   '<div class="bigen">'+esc(l.en)+'</div>';
+  if(chunks.length>1){
+    h += '<div class="sub" style="font-size:12px;margin-top:6px">덩어리로 끊어 읽기 — 각 줄을 눌러 따라 하세요</div>';
+    h += '<div class="chunks">'+chunks.map((c,ci)=>'<div class="chunk" data-c="'+ci+'">'+esc(c)+'</div>').join("")+'</div>';
+  }
+  h +=   '<div class="bigko blurme'+(cur.showKo?" show":"")+'">'+esc(l.ko)+'</div>';
+  h +=   '<div class="rule"></div>';
+  h +=   '<div class="row"><button class="btn" id="pLine">듣기 ▶</button>'+
+         '<button class="btn ghost sm" id="pSlow">천천히 0.7x</button>'+
+         '<button class="btn '+(autoTok?"red":"ghost")+' sm" id="pAuto">'+(autoTok?"■ 자동 정지":"자동 진행 ▶▶")+'</button>'+
+         (SR?'<button class="btn ghost sm" id="pAsr">🎤 발음 체크</button>':'')+
+         '<span style="flex:1"></span><span class="counter" id="dots">'+
+         Array.from({length:target},(_,k)=>'<span class="dot '+(k<reps?"on":"")+'"></span>').join("")+'</span></div>';
+  h +=   '<div id="asrOut"></div>';
+  if(l.notes && l.notes.length){
+    h += '<div class="notes"><div class="sub" style="font-size:12px;margin-bottom:4px">표현 노트</div>';
+    l.notes.forEach(n=>{
+      h += '<div class="note"><b>'+esc(n.t)+'</b><span class="k">'+esc(kLabel(n.k))+'</span> — '+esc(n.m)+
+           (n.tip?'<span class="tip">'+esc(n.tip)+'</span>':'')+'</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<div class="row"><button class="btn ghost" id="sPrev">← 앞 문장</button>'+
+       '<button class="btn" id="sNext">다음 문장 →</button>'+
+       '<span class="sub" style="font-size:12px">스페이스바=듣기, Enter=다음</span></div>';
+  $("#stepbody").innerHTML = h;
+  bindSpeed("shSpeed"); bindBlur();
+
+  const play = (rate)=>{ stopSpeak(); bumpRep(i); speak(l.en, l.s, rate||S.cfg.rate); };
+  $("#pLine").onclick = ()=> play();
+  $("#pSlow").onclick = ()=> play(0.7);
+  $("#pAuto").onclick = ()=>{ if(autoTok){ stopSpeak(); stepShadow(d); } else autoShadow(d); };
+  document.querySelectorAll(".chunk").forEach(el=> el.onclick = ()=>{
+    stopSpeak();
+    document.querySelectorAll(".chunk").forEach(x=>x.classList.remove("on"));
+    el.classList.add("on"); speak(chunks[+el.dataset.c], l.s, Math.min(S.cfg.rate,0.9));
+  });
+  $("#sPrev").onclick = ()=>{ if(cur.line>0){ cur.line--; stopSpeak(); stepShadow(d);} };
+  $("#sNext").onclick = ()=>{
+    if(cur.line < d.lines.length-1){ cur.line++; stopSpeak(); stepShadow(d); }
+    else { toast("마지막 문장입니다 — 다음 단계로"); }
+  };
+  if(SR) $("#pAsr").onclick = ()=> runAsr(l.en);
+}
+function bumpRep(i){
+  cur.reps[i] = Math.min(S.cfg.reps, (cur.reps[i]||0)+1);
+  const dots = $("#dots");
+  if(dots) dots.innerHTML = Array.from({length:S.cfg.reps},(_,k)=>'<span class="dot '+(k<cur.reps[i]?"on":"")+'"></span>').join("");
+  saveProgress();
+}
+/* 자동 진행 — 재생 → 따라 읽을 여유 → 재생 … 반복 후 다음 문장 */
+function autoShadow(d){
+  const token = {}; autoTok = token;
+  const gap = t => Math.max(1000, t.split(/\s+/).length * 340);
+  stepShadow(d);
+  (function run(rep){
+    if(autoTok!==token) return;
+    const l = d.lines[cur.line];
+    speak(l.en, l.s, S.cfg.rate, ()=>{
+      if(autoTok!==token) return;
+      bumpRep(cur.line);
+      setTimeout(()=>{
+        if(autoTok!==token) return;
+        if(rep+1 < S.cfg.reps) run(rep+1);
+        else if(cur.line < d.lines.length-1){ cur.line++; stepShadow(d); setTimeout(()=>run(0), 500); }
+        else { autoTok=null; stepShadow(d); toast("마지막 문장까지 끝냈습니다 — 다음 단계로"); }
+      }, gap(l.en));
+    });
+  })(0);
+}
+function kLabel(k){
+  return ({idiom:"관용", colloquial:"구어", phrasal:"구동사", collocation:"연어", business:"실무어", grammar:"문법"})[k] || k;
+}
+function runAsr(target){
+  const box = $("#asrOut");
+  let rec;
+  try{ rec = new SR(); }catch(e){ box.innerHTML='<div class="sub">이 브라우저에서는 발음 체크를 쓸 수 없습니다.</div>'; return; }
+  rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=1;
+  box.innerHTML = '<div class="asr sub">🎤 듣고 있습니다… 문장을 소리 내어 읽으세요.</div>';
+  rec.onresult = e=>{
+    const said = e.results[0][0].transcript;
+    const r = compareSpoken(target, said);
+    box.innerHTML = '<div class="asr"><span class="score">'+r.score+'점</span> <span class="sub">— 인식된 문장: '+esc(said)+'</span><div style="margin-top:6px">'+
+      r.marks.map(m=>'<span class="w '+(m.ok?"good":"bad")+'">'+esc(m.w)+'</span>').join(" ")+'</div>'+
+      '<div class="sub" style="font-size:12px;margin-top:4px">빨간 단어는 인식되지 않은 부분입니다. 그 단어만 천천히 다시 읽어 보세요.</div></div>';
+  };
+  rec.onerror = ev=>{ box.innerHTML='<div class="asr sub">인식 실패('+esc(ev.error)+'). 마이크 권한과 인터넷 연결을 확인하세요.</div>'; };
+  rec.onend = ()=>{};
+  try{ rec.start(); }catch(e){ box.innerHTML='<div class="asr sub">마이크를 시작할 수 없습니다.</div>'; }
+}
+document.addEventListener("keydown", e=>{
+  if(cur.view!=="session" || STEPS[cur.step].k!=="shadow") return;
+  if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  const d = dayById(cur.dayId); if(!d) return;
+  if(e.code==="Space"){ e.preventDefault(); const l=d.lines[cur.line]; stopSpeak(); bumpRep(cur.line); speak(l.en, l.s, S.cfg.rate); }
+  if(e.code==="Enter"){ e.preventDefault(); if(cur.line<d.lines.length-1){ cur.line++; stopSpeak(); stepShadow(d);} }
+});
+
+/* --- step 5 : 말해보기 --- */
+function stepOutput(d){
+  const saved = S.out[d.id] || [];
+  let h = '<div class="card"><b>오늘 배운 표현으로 직접 말하기</b>'+
+    '<div class="sub" style="margin:4px 0 0">각 질문에 <b>30초씩 소리 내어</b> 답하세요. 말한 뒤 기억나는 문장을 한 줄만 적어 두면 다음에 비교할 수 있습니다.</div><div class="rule"></div>';
+  d.out.forEach((q,i)=>{
+    h += '<div class="qbox"><div class="q">'+esc(q.q)+' <button class="btn ghost sm rv" data-t="'+esc(q.q)+'">▶</button></div>'+
+         '<div class="hint">써야 할 표현 — '+esc(q.hint)+'</div>'+
+         '<div class="row" style="margin:6px 0"><button class="btn ghost sm timer" data-i="'+i+'">30초 타이머</button>'+
+         '<span class="sub" id="tm'+i+'"></span></div>'+
+         '<textarea data-i="'+i+'" placeholder="말한 내용 중 한 문장만 적어 두세요 (선택)">'+esc(saved[i]||"")+'</textarea></div>';
+  });
+  h += '</div>';
+  $("#stepbody").innerHTML = h; bindPlay();
+  document.querySelectorAll("#stepbody textarea").forEach(t=> t.onchange = ()=>{
+    const arr = S.out[d.id] || []; arr[+t.dataset.i]=t.value; S.out[d.id]=arr; save();
+  });
+  document.querySelectorAll(".timer").forEach(b=> b.onclick = ()=>{
+    let s=30; const out=$("#tm"+b.dataset.i);
+    clearInterval(b._t); out.textContent="00:30 — 지금 말하세요";
+    b._t = setInterval(()=>{ s--; out.textContent = s>0 ? "00:"+pad(s) : "끝 — 잘했습니다"; if(s<=0) clearInterval(b._t); }, 1000);
+  });
+}
+
+/* ---------- 기록 ---------- */
+function renderLog(){
+  const info = streakInfo();
+  let h = '<div class="hd" style="margin-top:20px"><small>Progress</small>학습 기록</div>';
+  h += '<div class="card"><div class="streak"><div><b>'+info.streak+'</b><span>연속일</span></div>'+
+       '<div><b>'+info.total+'</b><span>학습일</span></div><div><b>'+info.mins+'</b><span>총 분</span></div>'+
+       '<div><b>'+info.lines+'</b><span>누적 문장</span></div></div>';
+  h += '<div class="rule"></div><div class="sub" style="font-size:12px">최근 4주</div><div class="cal">';
+  const arr=[]; const dd=new Date();
+  for(let i=27;i>=0;i--){ const x=new Date(dd); x.setDate(dd.getDate()-i); arr.push(x); }
+  arr.forEach(x=>{ const key=x.toISOString().slice(0,10);
+    h += '<div class="'+(S.log[key]?"done":"")+'" title="'+key+'">'+x.getDate()+'</div>'; });
+  h += '</div></div>';
+  const keys = Object.keys(S.log).sort().reverse();
+  h += '<div class="card"><b>세션 기록</b><div class="rule"></div>';
+  if(!keys.length) h += '<div class="sub">아직 기록이 없습니다.</div>';
+  keys.forEach(k=>{ const r=S.log[k]; const d=dayById(r.dayId);
+    h += '<div class="histrow"><b>'+k.slice(5)+'</b><span style="flex:1">'+(d?esc(d.title):"—")+'</span>'+
+         '<span class="sub">'+r.min+'분 · '+r.lines+'문장</span></div>'; });
+  h += '</div>';
+  h += '<div class="card"><b>데이터 백업</b><div class="sub" style="margin:4px 0 10px">이 앱은 브라우저 안에 기록을 저장합니다. '+
+       '브라우저 데이터를 지우면 사라지므로, 가끔 백업 파일을 내려받아 두세요. 공유 링크 화면에서는 내려받기가 막힐 수 있습니다 — 그때는 원본 파일 버전에서 백업하세요.</div>'+
+       '<div class="row"><button class="btn ghost sm" id="expBtn">백업 파일 내보내기</button>'+
+       '<label class="btn ghost sm" style="cursor:pointer">백업 불러오기<input type="file" id="impFile" accept="application/json" style="display:none"></label></div></div>';
+  $("#view-log").innerHTML = h;
+  $("#expBtn").onclick = exportData;
+  $("#impFile").onchange = importData;
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify({v:1, prog:S.prog, log:S.log, star:S.star, out:S.out, custom:S.custom, cfg:S.cfg}, null, 1)],
+    {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "roundtable-backup-"+today()+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("백업 파일을 내려받았습니다");
+}
+function importData(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const o = JSON.parse(r.result);
+      ["prog","log","star","out","custom","cfg"].forEach(k=>{ if(o[k]) S[k]=o[k]; });
+      rebuild(); save(); toast("복원했습니다"); render();
+    }catch(err){ toast("파일을 읽을 수 없습니다"); }
+  };
+  r.readAsText(f);
+}
+
+/* ---------- 표현장 ---------- */
+let bankQ = "";
+function renderBank(){
+  const rows=[];
+  CONTENT.forEach(d=> d.keys.forEach(k=> rows.push({d, k})));
+  const q = bankQ.trim().toLowerCase();
+  const filtered = rows.filter(r=> !q || (r.k.en+r.k.ko+r.k.ex).toLowerCase().includes(q));
+  let h = '<div class="hd" style="margin-top:20px"><small>Expression bank</small>표현장 <span class="sub" style="font-size:13px">('+rows.length+'개)</span></div>';
+  h += '<div class="card"><div class="row"><input type="text" id="bq" placeholder="영어·한국어로 검색" value="'+esc(bankQ)+'" style="flex:1;min-width:180px">'+
+       '<button class="btn ghost sm" id="bStar">⭐만 보기</button><button class="btn ghost sm" id="bDrill">랜덤 10개 훈련</button></div></div>';
+  h += '<div class="card" id="bankList">';
+  filtered.forEach((r,i)=>{
+    const on = S.star[r.k.en] ? "on":"";
+    h += '<div class="bankrow"><span class="star '+on+'" data-k="'+esc(r.k.en)+'">★</span>'+
+         '<b>'+esc(r.k.en)+'</b> <button class="btn ghost sm rv" data-t="'+esc(r.k.en)+'">▶</button>'+
+         '<div class="m">'+esc(r.k.ko)+' <span class="sub" style="font-size:11.5px">· DAY '+r.d.day+'</span></div>'+
+         '<div class="ex">'+esc(r.k.ex)+'</div></div>';
+  });
+  if(!filtered.length) h += '<div class="sub">검색 결과가 없습니다.</div>';
+  h += '</div>';
+  $("#view-bank").innerHTML = h; bindPlay();
+  $("#bq").oninput = e=>{ bankQ=e.target.value; const p=e.target.selectionStart; renderBank(); const el=$("#bq"); el.focus(); el.setSelectionRange(p,p); };
+  $("#bStar").onclick = ()=>{ bankQ=""; renderBank();
+    document.querySelectorAll("#bankList .bankrow").forEach(row=>{
+      const s=row.querySelector(".star"); if(!s.classList.contains("on")) row.style.display="none"; }); };
+  $("#bDrill").onclick = ()=> drill(rows);
+  document.querySelectorAll(".star").forEach(s=> s.onclick = ()=>{
+    const k=s.dataset.k; if(S.star[k]) delete S.star[k]; else S.star[k]=1; save(); s.classList.toggle("on"); });
+}
+function drill(rows){
+  const pool = rows.slice(); const pick=[];
+  while(pick.length<10 && pool.length) pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  let h = '<div class="hd" style="margin-top:20px"><small>Quick drill</small>랜덤 10개 — 보지 말고 먼저 말하기</div><div class="card">';
+  pick.forEach(r=>{
+    h += '<div class="keyrow"><b>'+esc(r.k.en)+' <button class="btn ghost sm rv" data-t="'+esc(r.k.en)+'">▶</button></b>'+
+         '<span><span class="blurme">'+esc(r.k.ko)+'</span><span class="ex blurme">'+esc(r.k.ex)+'</span></span></div>';
+  });
+  h += '</div><div class="row"><button class="btn ghost" id="bBack">← 표현장으로</button><button class="btn" id="bAgain">다시 뽑기</button></div>';
+  $("#view-bank").innerHTML = h; bindBlur(); bindPlay();
+  $("#bBack").onclick = ()=> renderBank();
+  $("#bAgain").onclick = ()=> drill(rows);
+}
+
+/* ---------- 자료 추가 ---------- */
+const GEN_PROMPT =
+`아래 형식에 맞춰 영어 쉐도잉 회화 1회차를 JSON 배열로 만들어 줘.
+
+[조건]
+- 학습자: 한국인 직장인, 토익스피킹 6~7급. 목표는 정확한 표현·자연스러운 구어체.
+- 두 사람(A/B)이 한 주제로 토론하는 형태, 문장 20줄(A/B 번갈아), 한 줄 10~18단어.
+- 소재: (여기에 주제를 적으세요 — 예: 인플레이션, 반도체 규제, 조직문화, 도시화, 우주산업 등)
+- 반드시 지킬 것: 지어낸 통계·날짜·인용 금지. 속보성 뉴스 대신 오래 유효한 구조와 메커니즘을 다룰 것.
+- 관용어·구동사·구어체·연어를 문장마다 자연스럽게 섞고, notes로 설명할 것.
+- notes의 k 값은 idiom / colloquial / phrasal / collocation / business / grammar 중 하나.
+- tip에는 한국인이 흔히 틀리는 지점이나 함께 외울 확장 표현을 적을 것.
+- 출력은 JSON 배열 하나만. 설명 문장 없이.
+
+[형식]
+[{
+ "id":"w2d1","day":8,"cat":"주제분류","level":"B2",
+ "title":"영어 제목","titleKo":"한국어 제목 — 부제",
+ "names":{"A":"이름 (역할)","B":"이름 (역할)"},
+ "brief":["한국어 배경설명 1","2","3","4"],
+ "lines":[
+   {"s":"A","en":"영어 문장","ko":"한국어 번역",
+    "notes":[{"t":"표현","k":"idiom","m":"뜻","tip":"쓰임·주의점"}]}
+ ],
+ "keys":[{"en":"표현","ko":"뜻","ex":"예문"}],
+ "out":[{"q":"영어 질문","hint":"써야 할 표현"}]
+}]`;
+function renderAdd(){
+  let h = '<div class="hd" style="margin-top:20px"><small>Add content</small>새 회화 추가</div>';
+  h += '<div class="card"><b>1단계 — 프롬프트 복사</b><div class="sub" style="margin:4px 0 8px">아래 내용을 복사해서 Claude에게 붙여넣고, 원하는 주제를 적으세요.</div>'+
+       '<pre class="prompt" id="pmt">'+esc(GEN_PROMPT)+'</pre>'+
+       '<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="copyP">프롬프트 복사</button></div></div>';
+  h += '<div class="card"><b>2단계 — 받은 JSON 붙여넣기</b><div class="sub" style="margin:4px 0 8px">Claude가 준 JSON을 그대로 붙여넣고 추가를 누르면 커리큘럼 맨 뒤에 붙습니다.</div>'+
+       '<textarea id="jin" style="min-height:150px" placeholder="[ { &quot;id&quot;: ... } ]"></textarea>'+
+       '<div class="row" style="margin-top:8px"><button class="btn" id="addJ">회차 추가</button>'+
+       '<span class="sub" id="addMsg"></span></div></div>';
+  if(S.custom.length){
+    h += '<div class="card"><b>내가 추가한 회차 ('+S.custom.length+')</b><div class="rule"></div>';
+    S.custom.forEach((c,i)=>{ h += '<div class="histrow"><b>'+c.day+'</b><span style="flex:1">'+esc(c.title||"(제목 없음)")+'</span>'+
+      '<button class="btn ghost sm delc" data-i="'+i+'">삭제</button></div>'; });
+    h += '</div>';
+  }
+  $("#view-add").innerHTML = h;
+  $("#copyP").onclick = ()=>{ navigator.clipboard.writeText(GEN_PROMPT).then(()=>toast("복사했습니다"),()=>{
+    const r=document.createRange(); r.selectNode($("#pmt")); getSelection().removeAllRanges(); getSelection().addRange(r);
+    toast("직접 복사하세요 (Ctrl+C)"); }); };
+  $("#addJ").onclick = ()=>{
+    const raw = $("#jin").value.trim(); if(!raw) return;
+    try{
+      let o = JSON.parse(raw); if(!Array.isArray(o)) o=[o];
+      const bad = o.find(x=> !x.id || !Array.isArray(x.lines) || !x.lines.length);
+      if(bad) throw new Error("형식");
+      o.forEach(x=>{
+        x.cat=x.cat||"기타"; x.brief=x.brief||[]; x.keys=x.keys||[]; x.out=x.out||[];
+        x.names=x.names||{A:"A",B:"B"}; x.titleKo=x.titleKo||"";
+        x.day = x.day || (CONTENT.length+1);
+        if(CONTENT.some(c=>c.id===x.id)) x.id = x.id+"-"+Math.random().toString(36).slice(2,6);
+        S.custom.push(x);
+      });
+      save(); rebuild(); toast(o.length+"개 회차를 추가했습니다"); $("#jin").value=""; renderAdd();
+    }catch(err){ $("#addMsg").textContent = "JSON 형식이 맞지 않습니다. 대괄호 [ ] 로 시작하는지 확인하세요."; }
+  };
+  document.querySelectorAll(".delc").forEach(b=> b.onclick = ()=>{
+    S.custom.splice(+b.dataset.i,1); save(); rebuild(); renderAdd(); });
+}
+
+/* ---------- 설정 ---------- */
+function renderSettings(){
+  const vopt = who => VOICES.map(v=>'<option value="'+esc(v.name)+'"'+
+    ((who==="A"?S.cfg.voiceA:S.cfg.voiceB)===v.name?" selected":"")+'>'+esc(v.name)+' ('+esc(v.lang)+')</option>').join("");
+  let h = '<div class="hd" style="margin-top:20px"><small>Settings</small>설정</div>';
+  h += '<div class="card"><b>목소리</b><div class="sub" style="margin:4px 0 10px">A와 B를 다른 목소리로 두면 토론처럼 들립니다. 목록이 비어 있으면 브라우저를 새로고침하세요.</div>'+
+    '<div class="row" style="margin-bottom:8px">A(첫 번째 화자) <select id="vA">'+vopt("A")+'</select><button class="btn ghost sm rv" data-t="This is how speaker A sounds.">시험 재생</button></div>'+
+    '<div class="row">B(두 번째 화자) <select id="vB">'+vopt("B")+'</select><button class="btn ghost sm" id="tB">시험 재생</button></div></div>';
+  h += '<div class="card"><b>훈련 설정</b><div class="rule"></div>'+
+    '<div class="row" style="margin-bottom:10px">기본 속도 '+speedBar("stSpeed")+'</div>'+
+    '<div class="row" style="margin-bottom:10px">문장당 반복 목표 <select id="rp">'+[2,3,5].map(n=>'<option'+(S.cfg.reps===n?" selected":"")+'>'+n+'</option>').join("")+'</select> 회</div>'+
+    '<div class="row"><label><input type="checkbox" id="ko"'+(S.cfg.showKo?" checked":"")+'> 한국어 번역을 처음부터 보이기</label></div></div>';
+  h += '<div class="card"><b>화면</b><div class="row" style="margin-top:8px"><button class="btn ghost sm" id="th">'+
+    (S.cfg.theme==="dark"?"밝은 화면으로":"어두운 화면으로")+'</button></div></div>';
+  h += '<div class="card"><b>기록 초기화</b><div class="sub" style="margin:4px 0 8px">모든 학습 기록과 추가한 회차가 지워집니다. 되돌릴 수 없습니다.</div>'+
+    '<button class="btn ghost sm" id="reset" style="color:var(--accent);border-color:var(--accent)">전체 초기화</button></div>';
+  h += '<div class="card sub" style="font-size:12.5px"><b>이 앱에 대해</b><br>ROUNDTABLE · 데일리 영어 쉐도잉<br>'+
+    '<b>© 2026 곤사마 (Gonsama). All rights reserved.</b><br><br>인터넷 없이 동작하지만, '+
+    '음성은 브라우저에 설치된 영어 음성을 사용합니다(일부 고품질 음성은 온라인일 때만 나옵니다). '+
+    '발음 체크는 Chrome·Edge에서 마이크 권한과 인터넷이 있을 때 동작합니다.</div>';
+  $("#view-settings").innerHTML = h;
+  bindSpeed("stSpeed"); bindPlay();
+  $("#vA").onchange = e=>{ S.cfg.voiceA=e.target.value; save(); };
+  $("#vB").onchange = e=>{ S.cfg.voiceB=e.target.value; save(); };
+  $("#tB").onclick = ()=> speak("And this is how speaker B sounds.", "B", S.cfg.rate);
+  $("#rp").onchange = e=>{ S.cfg.reps=+e.target.value; save(); };
+  $("#ko").onchange = e=>{ S.cfg.showKo=e.target.checked; save(); };
+  $("#th").onclick = ()=>{ S.cfg.theme = S.cfg.theme==="dark"?"light":"dark"; save(); applyTheme(); renderSettings(); };
+  $("#reset").onclick = ()=>{
+    if(confirm("모든 기록을 지웁니다. 계속할까요?")){
+      S.prog={}; S.log={}; S.star={}; S.out={}; S.custom=[]; save(); rebuild(); toast("초기화했습니다"); go("home");
+    }
+  };
+}
+function applyTheme(){
+  let t = S.cfg.theme;
+  if(t!=="dark" && t!=="light")
+    t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+}
+
+/* ---------- 시작 ---------- */
+applyTheme();
+render();
+</script>

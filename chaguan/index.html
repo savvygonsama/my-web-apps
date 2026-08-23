@@ -1,0 +1,2069 @@
+<title>茶馆 CHÁGUǍN</title>
+<style>
+:root{
+  --paper:#f7f5ef; --card:#fffdf9; --line:#e0d9c9; --ink:#1d1c19; --sub:#6f6a5f;
+  --accent:#2f5d8c; --accent-soft:#dde7f0; --red:#b0462f; --red-soft:#f2e0da;
+  --ok:#2f6b4f; --radius:14px;
+  --t1:#c0392b; --t2:#b9770e; --t3:#2e7d5b; --t4:#3a5fa8; --t0:#8c857a;
+  --han:"KaiTi","楷体","STKaiti","Kaiti SC","Microsoft YaHei","맑은 고딕",serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --pyf:"Segoe UI","Lucida Sans Unicode",Tahoma,sans-serif;
+}
+html[data-han="hei"]{ --han:"Microsoft YaHei","微软雅黑","PingFang SC","Malgun Gothic",sans-serif; }
+html[data-theme="dark"]{
+  --paper:#16181a; --card:#1d2023; --line:#2f343a; --ink:#e9e6de; --sub:#9a948a;
+  --accent:#8fbde0; --accent-soft:#1f2d38; --red:#e0836b; --red-soft:#37231e;
+  --ok:#6fbf94;
+  --t1:#ef7d70; --t2:#e0ac54; --t3:#63c79b; --t4:#89aaf0; --t0:#9a948a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.65;-webkit-text-size-adjust:100%}
+button{font-family:inherit;color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 96px}
+
+.topbar{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:1px solid var(--line)}
+.topin{max-width:860px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--han);font-size:22px;letter-spacing:.10em;font-weight:600}
+.brand em{font-family:var(--pyf);font-style:normal;font-size:13px;letter-spacing:.18em;color:var(--accent);margin-left:7px}
+.brand i{display:block;font-family:var(--sans);font-style:normal;font-size:11px;
+  letter-spacing:.02em;color:var(--sub);margin-top:1px}
+.tabs{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.tabs button{background:none;border:1px solid transparent;padding:6px 11px;border-radius:999px;
+  cursor:pointer;font-size:13px;color:var(--sub)}
+.tabs button.on{background:var(--card);border-color:var(--line);color:var(--ink);font-weight:700}
+
+.view{display:none;animation:fade .25s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:14px 0}
+.hd{font-family:var(--han);font-size:23px;margin:26px 0 2px;line-height:1.3}
+.hd small{display:block;font-family:var(--serif);font-size:11.5px;color:var(--sub);
+  letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+.sub{color:var(--sub);font-size:13.5px}
+.rule{height:1px;background:var(--line);margin:16px 0}
+.btn{background:var(--ink);color:var(--paper);border:none;padding:11px 18px;border-radius:999px;
+  font-size:14px;font-weight:700;cursor:pointer}
+.btn:hover{opacity:.87}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.blue{background:var(--accent);color:#fff}
+html[data-theme="dark"] .btn.blue{color:#12171c}
+.btn.sm{padding:6px 12px;font-size:12.5px;font-weight:600}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-weight:700}
+.tag.r{background:var(--red-soft);color:var(--red)}
+.muted{color:var(--sub)}
+
+/* ---- 한자 / 병음 ---- */
+.hz{font-family:var(--han)}
+.py{font-family:var(--pyf);letter-spacing:.01em}
+.t1{color:var(--t1)} .t2{color:var(--t2)} .t3{color:var(--t3)} .t4{color:var(--t4)} .t0{color:var(--t0)}
+html[data-tone="off"] .t1,html[data-tone="off"] .t2,html[data-tone="off"] .t3,
+html[data-tone="off"] .t4,html[data-tone="off"] .t0{color:inherit}
+html[data-py="blur"] .py{filter:blur(4px);cursor:pointer}
+html[data-py="blur"] .py.show{filter:none}
+html[data-py="off"] .py{display:none}
+
+.today{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:22px;position:relative;overflow:hidden}
+.today:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.today h2{font-family:var(--han);font-size:30px;margin:8px 0 2px;line-height:1.25;letter-spacing:.03em}
+.today .tpy{font-family:var(--pyf);font-size:13.5px;color:var(--sub)}
+.today .kotitle{color:var(--sub);font-size:14px;margin:6px 0 14px}
+.streak{display:flex;gap:18px;margin:14px 0 0;flex-wrap:wrap}
+.streak div{text-align:center}
+.streak b{display:block;font-family:var(--serif);font-size:25px;line-height:1.1}
+.streak span{font-size:11.5px;color:var(--sub)}
+.dlist{display:grid;gap:8px;margin-top:10px}
+.ditem{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--card);
+  border:1px solid var(--line);border-radius:11px;cursor:pointer}
+.ditem:hover{border-color:var(--accent)}
+.ditem .num{font-family:var(--serif);font-size:16px;width:26px;color:var(--sub);flex:none}
+.ditem .t{flex:1;min-width:0}
+.ditem .t b{display:block;font-size:17px;font-weight:600;font-family:var(--han);letter-spacing:.02em}
+.ditem .t span{font-size:12px;color:var(--sub)}
+.ditem .done{color:var(--ok);font-size:12px;font-weight:700;flex:none}
+
+.steps{display:flex;gap:6px;margin:14px 0 4px}
+.steps div{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.steps div.on{background:var(--accent)}
+.steps div.past{background:var(--ok)}
+.sesshead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.clock{font-family:var(--serif);font-size:19px;margin-left:auto;letter-spacing:.04em}
+.clock.over{color:var(--red)}
+.stepname{font-size:13px;font-weight:700}
+.stepname em{font-style:normal;color:var(--sub);font-weight:400;margin-left:6px;font-size:12px}
+
+.brief li{margin:7px 0}
+.brief b{color:var(--accent)}
+.vrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+.vrow:last-child{border:none}
+.vrow .w{flex:none;min-width:150px}
+.vrow .w b{font-family:var(--han);font-size:21px;letter-spacing:.02em}
+.vrow .w .py{display:block;font-size:12px}
+.vrow .m{font-size:13.5px;flex:1;min-width:120px}
+.vrow .lv{font-size:10.5px;color:var(--sub);border:1px solid var(--line);border-radius:999px;padding:0 7px;flex:none}
+.keyrow{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);align-items:baseline}
+.keyrow:last-child{border:none}
+.keyrow .k{flex:none;min-width:170px}
+.keyrow .k b{font-family:var(--han);font-size:20px}
+.keyrow .k .py{display:block;font-size:12px}
+.keyrow .m{font-size:13.5px;color:var(--sub);flex:1;min-width:140px}
+.keyrow .ex{display:block;font-family:var(--han);font-size:16px;color:var(--ink);margin-top:3px}
+.keyrow .exko{display:block;font-size:12px;color:var(--sub)}
+
+.sline{display:flex;gap:10px;padding:8px 10px;border-radius:9px;margin:2px 0;cursor:pointer}
+.sline.now{background:var(--accent-soft)}
+.sline .sp{font-family:var(--serif);font-weight:700;flex:none;width:20px;color:var(--accent)}
+.sline.b .sp{color:var(--red)}
+.sline .zh{font-family:var(--han);font-size:20px;line-height:1.5;letter-spacing:.02em}
+.sline .py{display:block;font-size:12px;margin-top:1px}
+.sline .ko{display:block;font-size:12.5px;color:var(--sub);margin-top:2px}
+
+.shadowbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 18px;margin:12px 0}
+.who{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+.who.b{color:var(--red)}
+.bigzh{font-family:var(--han);font-size:clamp(26px,6.4vw,40px);line-height:1.45;margin:10px 0 2px;letter-spacing:.03em}
+.bigpy{font-family:var(--pyf);font-size:clamp(14px,3vw,17px);margin-bottom:6px}
+.chunks{display:flex;flex-direction:column;gap:6px;margin:12px 0 4px}
+.chunk{padding:7px 12px;border-left:3px solid var(--line);cursor:pointer;border-radius:0 8px 8px 0}
+.chunk:hover{background:var(--paper)}
+.chunk.on{border-left-color:var(--accent);background:var(--accent-soft)}
+.chunk .zh{font-family:var(--han);font-size:clamp(20px,4.4vw,25px);letter-spacing:.03em}
+.chunk .py{display:block;font-size:12.5px}
+.bigko{font-size:14px;color:var(--sub);margin-top:8px}
+.blurme{filter:blur(5px);cursor:pointer;user-select:none;transition:filter .15s}
+.blurme.show{filter:none;cursor:auto}
+.notes{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.note{margin:9px 0;font-size:13.5px}
+.note b{font-family:var(--han);font-size:18px}
+.note .np{font-family:var(--pyf);font-size:12px;color:var(--sub);margin-left:5px}
+.note .k{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);
+  color:var(--accent);margin-left:6px;font-weight:700;vertical-align:2px}
+.note .tip{display:block;color:var(--sub);font-size:12.5px;margin-top:2px}
+.counter{display:flex;gap:5px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--line)}
+.dot.on{background:var(--accent);border-color:var(--accent)}
+.speedbar{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.speedbar button{border:1px solid var(--line);background:none;border-radius:999px;
+  padding:3px 9px;font-size:12px;cursor:pointer}
+.speedbar button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.asr{margin-top:10px;font-size:14px}
+.asr .w{padding:1px 3px;border-radius:3px;font-family:var(--han);font-size:20px}
+.asr .w.bad{background:var(--red-soft);color:var(--red)}
+.asr .w.good{color:var(--ok)}
+.score{font-family:var(--serif);font-size:17px}
+
+.qbox{margin:16px 0}
+.qbox .q{font-size:15px;margin-bottom:2px;font-weight:600}
+.qbox .hint{font-size:12.5px;color:var(--sub)}
+.qbox .hint b{font-family:var(--han);font-size:16px;color:var(--ink);font-weight:400}
+textarea{width:100%;min-height:70px;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:14px;resize:vertical}
+input[type=text]{padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  background:var(--paper);color:var(--ink);font-family:inherit;font-size:14px}
+select{padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--paper);
+  color:var(--ink);font-family:inherit;font-size:13.5px;max-width:100%}
+
+.rp{display:flex;gap:10px;padding:10px 12px;border-radius:10px;margin:6px 0;align-items:flex-start}
+.rp.mine{background:var(--accent-soft);border:1px dashed var(--accent)}
+.rp.now{outline:2px solid var(--accent)}
+.rp .sp{font-weight:700;flex:none;width:22px;color:var(--sub)}
+.rp .zh{font-family:var(--han);font-size:19px}
+.rp .py{display:block;font-size:11.5px}
+.rp .ko{display:block;font-size:12px;color:var(--sub)}
+
+.copy{display:flex;gap:14px;align-items:flex-start;border-color:var(--red)}
+.copy .seal{flex:none;width:54px;height:54px;border:2px solid var(--red);color:var(--red);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--han);font-size:21px;letter-spacing:.02em}
+.copy .ct b{font-family:var(--pyf);letter-spacing:.06em;font-size:15px}
+.copy .ct .r{color:var(--red);font-weight:700}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.cal div{aspect-ratio:1;border-radius:6px;background:var(--line);display:flex;
+  align-items:center;justify-content:center;font-size:10.5px;color:var(--sub)}
+.cal div.done{background:var(--accent);color:#fff;font-weight:700}
+.histrow{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;align-items:center}
+.histrow b{font-family:var(--serif);font-size:15px}
+.bankrow{padding:11px 0;border-bottom:1px solid var(--line)}
+.bankrow b{font-family:var(--han);font-size:21px}
+.bankrow .m{font-size:13px;color:var(--sub)}
+.bankrow .ex{font-family:var(--han);font-size:16px;color:var(--sub)}
+.star{cursor:pointer;float:right;font-size:15px;opacity:.28}
+.star.on{opacity:1}
+pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:12px;font-size:11.5px;max-height:240px;overflow:auto;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);
+  color:var(--paper);padding:10px 20px;border-radius:999px;font-size:13.5px;z-index:99;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+.footbar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-top:1px solid var(--line);padding:9px 16px;z-index:30;display:none}
+.footbar.on{display:block}
+.footin{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.credit{max-width:860px;margin:0 auto;padding:0 16px 30px;font-size:11.5px;color:var(--sub);
+  letter-spacing:.02em;text-align:center;opacity:.8}
+.credit b{font-family:var(--serif);font-weight:600;letter-spacing:.06em}
+@media(max-width:560px){
+  .vrow,.keyrow{flex-direction:column;gap:2px}
+  .vrow .w,.keyrow .k{min-width:0}
+  .brand i{display:none}
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#16181a; --card:#1d2023; --line:#2f343a; --ink:#e9e6de; --sub:#9a948a;
+    --accent:#8fbde0; --accent-soft:#1f2d38; --red:#e0836b; --red-soft:#37231e;
+    --ok:#6fbf94;
+    --t1:#ef7d70; --t2:#e0ac54; --t3:#63c79b; --t4:#89aaf0; --t0:#9a948a;
+  }
+  :root:not([data-theme="light"]) .btn.blue{color:#12171c}
+}
+@media (prefers-reduced-motion: reduce){
+  .view{animation:none}
+  .blurme,.btn{transition:none}
+}
+</style>
+<div class="topbar"><div class="topin">
+  <div class="brand">茶馆<em>CHÁGUǍN</em><i>데일리 중국어 쉐도잉 · 하루 20분</i></div>
+  <nav class="tabs" id="tabs">
+    <button data-view="home" class="on">홈</button>
+    <button data-view="log">기록</button>
+    <button data-view="bank">단어장</button>
+    <button data-view="add">자료 추가</button>
+    <button data-view="settings">설정</button>
+  </nav>
+</div></div>
+
+<div class="wrap">
+  <section id="view-home" class="view on"></section>
+  <section id="view-session" class="view"></section>
+  <section id="view-log" class="view"></section>
+  <section id="view-bank" class="view"></section>
+  <section id="view-add" class="view"></section>
+  <section id="view-settings" class="view"></section>
+</div>
+<div class="credit">茶馆 CHÁGUǍN — 데일리 중국어 쉐도잉 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.</div>
+<div class="footbar" id="footbar"><div class="footin" id="footin"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const CONTENT_BUILTIN = [
+{
+ id:"c1d1", day:1, cat:"회식·술자리", level:"HSK 5~6",
+ title:"饭局", titlePy:"fànjú", titleKo:"술자리 — 권하고, 사양하고, 계산을 다투기",
+ names:{A:"志勋 (한국 측)", B:"老周 (중국 측 거래처)"},
+ brief:[
+  "중국에서 <b>饭局(fànjú)</b>은 단순한 식사가 아니라 관계를 만드는 자리입니다. 계산을 서로 하겠다고 다투는 것은 실랑이가 아니라 <b>예의의 절차</b>입니다. 한 번에 물러서면 오히려 성의가 없어 보입니다.",
+  "핵심은 <b>见外(jiànwài, 남처럼 굴다)</b>와 <b>做东(zuòdōng, 내가 자리를 내다)</b> 두 단어입니다. 「您太见外了」로 상대의 호의를 받아치고, 「改天我做东」으로 다음을 기약하면 대화가 완성됩니다.",
+  "술은 거절하는 것이 아니라 <b>조절</b>하는 것입니다. 「我酒量一般，悠着点儿(살살 하겠습니다)」처럼 말하면 분위기를 깨지 않으면서 빠져나올 수 있습니다.",
+  "이 회차에는 <b>说什么也得… / 可不是嘛 / 还不如 / 图的是… / 光…就…</b> 같은 구어 골격이 들어 있습니다. 단어를 늘리는 것보다 이 골격을 통째로 입에 붙이는 편이 훨씬 빠릅니다."
+ ],
+ vocab:[
+  {w:"饭局",p:"fànjú",m:"(사교 목적의) 술자리, 회식",lv:"HSK6"},
+  {w:"结账",p:"jiézhàng",m:"계산하다",lv:"HSK5"},
+  {w:"见外",p:"jiànwài",m:"남처럼 굴다, 서먹하게 대하다",lv:"HSK6"},
+  {w:"纯粹",p:"chúncuì",m:"순전히, 순수하게",lv:"HSK6"},
+  {w:"做东",p:"zuòdōng",m:"한턱내다, 자리를 마련하다",lv:"HSK6"},
+  {w:"一言为定",p:"yì yán wéi dìng",m:"약속한 겁니다 (성어)",lv:"성어"},
+  {w:"酒量",p:"jiǔliàng",m:"주량",lv:"HSK5"},
+  {w:"悠着点儿",p:"yōu zhe diǎnr",m:"살살 하다, 무리하지 않다",lv:"구어"},
+  {w:"讲究",p:"jiǎngjiu",m:"따지다, 중시하다",lv:"HSK5"},
+  {w:"下馆子",p:"xià guǎnzi",m:"외식하다",lv:"구어"},
+  {w:"自在",p:"zìzai",m:"편안하다, 홀가분하다",lv:"HSK5"},
+  {w:"心疼",p:"xīnténg",m:"아깝다, 안쓰럽다",lv:"HSK5"}
+ ],
+ lines:[
+  {s:"B",zh:"来来来，别客气，今天这顿说什么也得我来。",py:"Lái lái lái, bié kèqi, jīntiān zhè dùn shuō shénme yě děi wǒ lái.",
+   ko:"자자, 사양 마세요, 오늘 이 자리는 무슨 일이 있어도 제가 냅니다.",
+   ck:[["来来来，别客气","lái lái lái, bié kèqi"],["今天这顿","jīntiān zhè dùn"],["说什么也得我来","shuō shénme yě děi wǒ lái"]],
+   notes:[{t:"说什么也得…",p:"shuō shénme yě děi…",k:"expr",m:"무슨 일이 있어도 ~해야 한다",tip:"무조건이라는 뜻의 구어 골격입니다. 说什么也不能答应 = 절대 승낙할 수 없다."},
+          {t:"顿",p:"dùn",k:"measure",m:"끼니를 세는 양사",tip:"一顿饭 / 三顿 / 请你吃顿饭. 식사에는 次가 아니라 顿을 씁니다."}]},
+  {s:"A",zh:"老周，您太见外了，上回就是您结的账。",py:"Lǎo Zhōu, nín tài jiànwài le, shàng huí jiùshì nín jié de zhàng.",
+   ko:"저우 선생님, 너무 남처럼 대하시네요, 지난번에도 선생님이 계산하셨잖아요.",
+   ck:[["老周，您太见外了","Lǎo Zhōu, nín tài jiànwài le"],["上回就是您结的账","shàng huí jiùshì nín jié de zhàng"]],
+   notes:[{t:"见外",p:"jiànwài",k:"expr",m:"남처럼 굴다",tip:"상대의 지나친 배려를 부드럽게 막는 말입니다. 你太见外了 한마디면 [우리 사이에 뭘] 이라는 뜻이 됩니다."},
+          {t:"是…的",p:"shì…de",k:"grammar",m:"이미 일어난 일의 주체·시간·방법을 강조",tip:"就是您结的账 = 계산한 사람은 다름 아닌 당신이었다. 结账을 떼어 结的账으로 쓰는 점에 주의하세요."}]},
+  {s:"B",zh:"那不一样，上回是公事，今天纯粹是朋友聚聚。",py:"Nà bù yíyàng, shàng huí shì gōngshì, jīntiān chúncuì shì péngyou jùju.",
+   ko:"그건 다르죠, 지난번은 업무였고 오늘은 순전히 친구끼리 모이는 겁니다.",
+   ck:[["那不一样","nà bù yíyàng"],["上回是公事","shàng huí shì gōngshì"],["今天纯粹是朋友聚聚","jīntiān chúncuì shì péngyou jùju"]],
+   notes:[{t:"纯粹",p:"chúncuì",k:"word",m:"순전히, 오로지",tip:"부사로 쓰면 只是보다 단호합니다. 纯粹是浪费时间 = 순전히 시간 낭비다."},
+          {t:"聚聚",p:"jùju",k:"grammar",m:"모이다 (동사 중첩)",tip:"聚会를 가볍게 만든 형태. 找机会聚聚 = 기회 봐서 한번 모이자."}]},
+  {s:"A",zh:"那我也不跟您争了，改天我在首尔做东。",py:"Nà wǒ yě bù gēn nín zhēng le, gǎitiān wǒ zài Shǒu'ěr zuòdōng.",
+   ko:"그럼 더 다투지 않겠습니다, 다음에 서울에서 제가 대접하죠.",
+   ck:[["那我也不跟您争了","nà wǒ yě bù gēn nín zhēng le"],["改天我在首尔做东","gǎitiān wǒ zài Shǒu'ěr zuòdōng"]],
+   notes:[{t:"做东",p:"zuòdōng",k:"culture",m:"주인 노릇을 하다, 한턱내다",tip:"请客보다 격이 있습니다. 계산 다툼을 마무리하는 정답에 가까운 문장입니다."},
+          {t:"跟…争",p:"gēn…zhēng",k:"grammar",m:"~와 다투다",tip:"跟你争什么 = 뭘 다투겠어요. 물러설 때 쓰는 표현입니다."}]},
+  {s:"B",zh:"一言为定。来，先走一个，祝合作顺利。",py:"Yì yán wéi dìng. Lái, xiān zǒu yí ge, zhù hézuò shùnlì.",
+   ko:"약속한 겁니다. 자, 먼저 한 잔 하시죠, 협력이 순조롭기를.",
+   ck:[["一言为定","yì yán wéi dìng"],["来，先走一个","lái, xiān zǒu yí ge"],["祝合作顺利","zhù hézuò shùnlì"]],
+   notes:[{t:"一言为定",p:"yì yán wéi dìng",k:"idiom",m:"한 말은 그대로다, 약속한 겁니다",tip:"약속을 못 박는 성어. 회의·상담 마무리에도 그대로 씁니다."},
+          {t:"走一个",p:"zǒu yí ge",k:"culture",m:"한 잔 하다",tip:"술자리 전용 구어입니다. 咱们走一个 = 우리 한 잔 합시다."}]},
+  {s:"A",zh:"干杯。不过我酒量实在一般，一会儿得悠着点儿。",py:"Gānbēi. Búguò wǒ jiǔliàng shízài yìbān, yíhuìr děi yōu zhe diǎnr.",
+   ko:"건배. 그런데 제가 주량이 정말 별로라, 이따 좀 살살 해야 합니다.",
+   ck:[["干杯","gānbēi"],["不过我酒量实在一般","búguò wǒ jiǔliàng shízài yìbān"],["一会儿得悠着点儿","yíhuìr děi yōu zhe diǎnr"]],
+   notes:[{t:"悠着点儿",p:"yōu zhe diǎnr",k:"expr",m:"살살 하다, 정도껏 하다",tip:"술·일·운동 모두에 씁니다. 悠着点儿，别累着 = 무리하지 마세요. 거절하지 않으면서 빠져나오는 최고의 표현입니다."},
+          {t:"实在",p:"shízài",k:"word",m:"정말이지, 참으로",tip:"真的보다 무게가 있습니다. 实在不好意思 / 实在没办法."}]},
+  {s:"B",zh:"理解，能喝多少喝多少，咱们重在气氛。",py:"Lǐjiě, néng hē duōshao hē duōshao, zánmen zhòng zài qìfēn.",
+   ko:"이해합니다, 마실 수 있는 만큼만 하시고, 우리는 분위기가 중요하니까요.",
+   ck:[["理解","lǐjiě"],["能喝多少喝多少","néng hē duōshao hē duōshao"],["咱们重在气氛","zánmen zhòng zài qìfēn"]],
+   notes:[{t:"能…多少…多少",p:"néng…duōshao…duōshao",k:"grammar",m:"~할 수 있는 만큼 ~하다",tip:"같은 의문사를 두 번 써서 [되는 만큼]을 만듭니다. 能做多少做多少 = 할 수 있는 만큼만 하세요."},
+          {t:"咱们",p:"zánmen",k:"word",m:"우리 (듣는 사람 포함)",tip:"我们은 상대를 뺄 수도 있지만 咱们은 반드시 포함합니다. 북방에서 특히 친근하게 들립니다."}]},
+  {s:"A",zh:"这道菜叫什么？我在韩国还真没见过。",py:"Zhè dào cài jiào shénme? Wǒ zài Hánguó hái zhēn méi jiàn guo.",
+   ko:"이 요리는 뭐라고 하나요? 한국에선 정말 못 봤어요.",
+   ck:[["这道菜叫什么","zhè dào cài jiào shénme"],["我在韩国还真没见过","wǒ zài Hánguó hái zhēn méi jiàn guo"]],
+   notes:[{t:"道",p:"dào",k:"measure",m:"요리를 세는 양사",tip:"一道菜 / 四道凉菜. 个를 쓰면 바로 초급으로 들립니다."},
+          {t:"还真",p:"hái zhēn",k:"expr",m:"정말이지, 의외로",tip:"예상과 달랐음을 나타냅니다. 这个还真好吃 = 이거 의외로 맛있네요."}]},
+  {s:"B",zh:"这叫毛血旺，看着吓人，其实一点儿也不腻。",py:"Zhè jiào máoxuèwàng, kàn zhe xiàrén, qíshí yìdiǎnr yě bú nì.",
+   ko:"이건 마오쉐왕이라고 해요, 보기엔 무섭지만 사실 전혀 느끼하지 않습니다.",
+   ck:[["这叫毛血旺","zhè jiào máoxuèwàng"],["看着吓人","kàn zhe xiàrén"],["其实一点儿也不腻","qíshí yìdiǎnr yě bú nì"]],
+   notes:[{t:"看着…其实…",p:"kàn zhe…qíshí…",k:"grammar",m:"보기엔 ~하지만 사실은 ~",tip:"겉과 속을 대비하는 골격. 看着简单，其实很难 = 쉬워 보여도 사실 어렵다."},
+          {t:"腻",p:"nì",k:"word",m:"느끼하다 / 물리다",tip:"음식뿐 아니라 사람에게도 씁니다. 听腻了 = 듣기 질렸다."}]},
+  {s:"A",zh:"那我尝尝。麻是麻，可是越吃越上瘾。",py:"Nà wǒ chángchang. Má shì má, kěshì yuè chī yuè shàngyǐn.",
+   ko:"그럼 먹어 볼게요. 얼얼하긴 얼얼한데, 먹을수록 중독되네요.",
+   ck:[["那我尝尝","nà wǒ chángchang"],["麻是麻","má shì má"],["可是越吃越上瘾","kěshì yuè chī yuè shàngyǐn"]],
+   notes:[{t:"A是A，可是…",p:"A shì A, kěshì…",k:"grammar",m:"~하긴 ~한데, 다만",tip:"상대 말을 일단 인정하고 뒤집는 고급 골격입니다. 贵是贵，可是质量好 = 비싸긴 비싼데 품질이 좋다."},
+          {t:"越…越…",p:"yuè…yuè…",k:"grammar",m:"~할수록 ~하다",tip:"越说越激动 / 越想越气. 두 동사 앞에 각각 越를 놓습니다."}]},
+  {s:"B",zh:"就是这个道理，川菜讲究的就是个层次。",py:"Jiùshì zhège dàoli, chuāncài jiǎngjiu de jiùshì ge céngcì.",
+   ko:"바로 그겁니다, 쓰촨 요리가 따지는 게 바로 그 층층이 쌓인 맛이죠.",
+   ck:[["就是这个道理","jiùshì zhège dàoli"],["川菜讲究的就是个层次","chuāncài jiǎngjiu de jiùshì ge céngcì"]],
+   notes:[{t:"讲究",p:"jiǎngjiu",k:"word",m:"따지다, 중시하다 / 격식",tip:"명사로도 씁니다. 这里面有讲究 = 여기엔 나름의 법도가 있다."},
+          {t:"…的就是个…",p:"…de jiùshì ge…",k:"grammar",m:"~하는 건 바로 ~다",tip:"강조 구문에 个를 넣는 것이 구어체의 맛입니다. 图的就是个方便."}]},
+  {s:"A",zh:"说到吃，我发现你们这边下馆子特别频繁。",py:"Shuō dào chī, wǒ fāxiàn nǐmen zhèbiān xià guǎnzi tèbié pínfán.",
+   ko:"먹는 얘기가 나와서 말인데, 여기는 외식이 유난히 잦더군요.",
+   ck:[["说到吃","shuō dào chī"],["我发现你们这边","wǒ fāxiàn nǐmen zhèbiān"],["下馆子特别频繁","xià guǎnzi tèbié pínfán"]],
+   notes:[{t:"说到…",p:"shuō dào…",k:"expr",m:"~얘기가 나왔으니 말인데",tip:"화제를 자연스럽게 옮기는 다리입니다. 说到这个，我想起一件事."},
+          {t:"下馆子",p:"xià guǎnzi",k:"expr",m:"외식하다",tip:"在外面吃饭의 구어체. 馆子는 식당의 옛 구어입니다."}]},
+  {s:"B",zh:"可不是嘛，家里做一顿又累又麻烦，还不如出来。",py:"Kě bú shì ma, jiā li zuò yí dùn yòu lèi yòu máfan, hái bùrú chūlái.",
+   ko:"그러니까요, 집에서 한 끼 하려면 힘들고 번거로워서 나오는 게 낫죠.",
+   ck:[["可不是嘛","kě bú shì ma"],["家里做一顿又累又麻烦","jiā li zuò yí dùn yòu lèi yòu máfan"],["还不如出来","hái bùrú chūlái"]],
+   notes:[{t:"可不是嘛",p:"kě bú shì ma",k:"expr",m:"그러니까요, 내 말이 그 말입니다",tip:"강한 맞장구. 是的만 반복하는 습관을 이걸로 바꾸면 대화가 살아납니다."},
+          {t:"还不如",p:"hái bùrú",k:"grammar",m:"차라리 ~하는 편이 낫다",tip:"与其…还不如… 형태로도 씁니다. 与其等他，还不如自己去."}]},
+  {s:"A",zh:"也是。不过在家吃，图的是个自在。",py:"Yě shì. Búguò zài jiā chī, tú de shì ge zìzai.",
+   ko:"그렇긴 하죠. 그래도 집에서 먹는 건 편한 맛에 먹는 거고요.",
+   ck:[["也是","yě shì"],["不过在家吃","búguò zài jiā chī"],["图的是个自在","tú de shì ge zìzai"]],
+   notes:[{t:"图的是…",p:"tú de shì…",k:"expr",m:"~을 노리는 것이다, ~때문이다",tip:"图는 [바라다]. 图的就是个便宜 / 图省事. 동기를 설명하는 세련된 표현입니다."},
+          {t:"自在",p:"zìzai",k:"word",m:"홀가분하다, 마음 편하다",tip:"舒服가 몸이라면 自在는 마음입니다. 一个人待着挺自在."}]},
+  {s:"B",zh:"那倒是。哎，你这筷子使得可比我还溜。",py:"Nà dào shì. Āi, nǐ zhè kuàizi shǐ de kě bǐ wǒ hái liū.",
+   ko:"그건 그렇네요. 아니, 젓가락질이 저보다 더 능숙하신데요.",
+   ck:[["那倒是","nà dào shì"],["哎，你这筷子使得","āi, nǐ zhè kuàizi shǐ de"],["可比我还溜","kě bǐ wǒ hái liū"]],
+   notes:[{t:"那倒是",p:"nà dào shì",k:"expr",m:"그건 그렇네요",tip:"상대 말을 일부 인정할 때. 倒가 [의외로 그렇다]는 뉘앙스를 만듭니다."},
+          {t:"溜",p:"liū",k:"word",m:"능숙하다, 매끄럽다 (구어)",tip:"说得真溜 = 정말 유창하다. 熟练의 구어체 칭찬입니다."}]},
+  {s:"A",zh:"您就别拿我开玩笑了，我这是练出来的。",py:"Nín jiù bié ná wǒ kāi wánxiào le, wǒ zhè shì liàn chūlái de.",
+   ko:"놀리지 마세요, 이건 연습해서 된 겁니다.",
+   ck:[["您就别拿我开玩笑了","nín jiù bié ná wǒ kāi wánxiào le"],["我这是练出来的","wǒ zhè shì liàn chūlái de"]],
+   notes:[{t:"拿…开玩笑",p:"ná…kāi wánxiào",k:"expr",m:"~를 놀리다",tip:"别拿我开玩笑 = 놀리지 마세요. 拿는 [~를 가지고]라는 뜻의 개사입니다."},
+          {t:"练出来的",p:"liàn chūlái de",k:"grammar",m:"연습해서 만들어진 것",tip:"[동사+出来] = 없던 것이 생겨나다. 想出来 / 看出来 / 做出来."}]},
+  {s:"B",zh:"服务员，把这几个菜打个包，剩下的别浪费。",py:"Fúwùyuán, bǎ zhè jǐ ge cài dǎ ge bāo, shèngxià de bié làngfèi.",
+   ko:"저기요, 이 요리들 포장해 주세요, 남은 건 낭비하지 말고요.",
+   ck:[["服务员","fúwùyuán"],["把这几个菜打个包","bǎ zhè jǐ ge cài dǎ ge bāo"],["剩下的别浪费","shèngxià de bié làngfèi"]],
+   notes:[{t:"把…打个包",p:"bǎ…dǎ ge bāo",k:"grammar",m:"~를 포장하다",tip:"把자문은 [대상을 어떻게 처리한다]를 말할 때 씁니다. 打包 사이에 个를 넣으면 한결 가벼워집니다."},
+          {t:"剩下的",p:"shèngxià de",k:"grammar",m:"남은 것",tip:"[동사+的] = ~한 것. 剩下的明天吃 = 남은 건 내일 먹자."}]},
+  {s:"A",zh:"对，光看着满桌子剩菜就心疼。",py:"Duì, guāng kàn zhe mǎn zhuōzi shèngcài jiù xīnténg.",
+   ko:"맞아요, 상 가득 남은 음식만 봐도 아깝습니다.",
+   ck:[["对，光看着","duì, guāng kàn zhe"],["满桌子剩菜就心疼","mǎn zhuōzi shèngcài jiù xīnténg"]],
+   notes:[{t:"光…就…",p:"guāng…jiù…",k:"grammar",m:"~만 해도 ~하다",tip:"光听就够了 = 듣기만 해도 충분하다. 只보다 구어적이고 강조가 셉니다."},
+          {t:"心疼",p:"xīnténg",k:"word",m:"아깝다 / 안쓰럽다",tip:"돈·물건에는 [아깝다], 사람에게는 [안쓰럽다]. 我心疼你 = 네가 안쓰럽다."}]},
+  {s:"B",zh:"那今天就到这儿，改天咱们再好好聊。",py:"Nà jīntiān jiù dào zhèr, gǎitiān zánmen zài hǎohāo liáo.",
+   ko:"그럼 오늘은 여기까지 하고, 다음에 또 제대로 얘기하죠.",
+   ck:[["那今天就到这儿","nà jīntiān jiù dào zhèr"],["改天咱们再好好聊","gǎitiān zánmen zài hǎohāo liáo"]],
+   notes:[{t:"就到这儿",p:"jiù dào zhèr",k:"expr",m:"여기까지 하죠",tip:"모임·회의를 닫는 정형 문장입니다. 今天就到这儿吧."},
+          {t:"好好",p:"hǎohāo",k:"pron",m:"제대로, 잘",tip:"구어에서는 뒤 글자가 1성으로 바뀌어 hǎohāo(r)로 들립니다. 好好休息 / 好好想想."}]},
+  {s:"A",zh:"好，那我先谢过了，回头我请您尝尝韩餐。",py:"Hǎo, nà wǒ xiān xiè guo le, huítóu wǒ qǐng nín chángchang Háncān.",
+   ko:"네, 미리 감사드립니다, 다음에 한식 대접하겠습니다.",
+   ck:[["好，那我先谢过了","hǎo, nà wǒ xiān xiè guo le"],["回头我请您尝尝韩餐","huítóu wǒ qǐng nín chángchang Háncān"]],
+   notes:[{t:"谢过了",p:"xiè guo le",k:"expr",m:"미리 감사드립니다",tip:"谢谢보다 격식이 있고 남자다운 어감입니다. 先谢过了 형태로 자주 씁니다."},
+          {t:"回头",p:"huítóu",k:"word",m:"이따가, 나중에",tip:"回头再说 / 回头联系. 시간적으로 가까운 미래를 가리키는 구어입니다."}]}
+ ],
+ keys:[
+  {zh:"说什么也得…",py:"shuō shénme yě děi…",ko:"무슨 일이 있어도 ~해야 한다",ex:"这顿说什么也得我请。",exPy:"Zhè dùn shuō shénme yě děi wǒ qǐng.",exKo:"이번 자리는 무슨 일이 있어도 제가 삽니다."},
+  {zh:"太见外了",py:"tài jiànwài le",ko:"너무 남처럼 대하시네요",ex:"你这么说就太见外了。",exPy:"Nǐ zhème shuō jiù tài jiànwài le.",exKo:"그렇게 말씀하시면 너무 서운하죠."},
+  {zh:"改天我做东",py:"gǎitiān wǒ zuòdōng",ko:"다음엔 제가 대접하죠",ex:"改天我做东，一定要来。",exPy:"Gǎitiān wǒ zuòdōng, yídìng yào lái.",exKo:"다음엔 제가 낼 테니 꼭 오세요."},
+  {zh:"悠着点儿",py:"yōu zhe diǎnr",ko:"살살 하세요, 무리하지 마세요",ex:"你悠着点儿，别累着。",exPy:"Nǐ yōu zhe diǎnr, bié lèi zhe.",exKo:"살살 하세요, 무리하지 마시고요."},
+  {zh:"A是A，可是…",py:"A shì A, kěshì…",ko:"~하긴 한데, 다만",ex:"贵是贵，可是质量确实好。",exPy:"Guì shì guì, kěshì zhìliàng quèshí hǎo.",exKo:"비싸긴 비싼데 품질은 확실히 좋아요."},
+  {zh:"可不是嘛",py:"kě bú shì ma",ko:"그러니까요, 내 말이요",ex:"可不是嘛，我也这么觉得。",exPy:"Kě bú shì ma, wǒ yě zhème juéde.",exKo:"그러니까요, 저도 그렇게 생각해요."},
+  {zh:"图的是…",py:"tú de shì…",ko:"~때문에 그러는 것이다",ex:"我图的就是个方便。",exPy:"Wǒ tú de jiùshì ge fāngbiàn.",exKo:"저는 그저 편해서 그러는 거예요."},
+  {zh:"光…就…",py:"guāng…jiù…",ko:"~만 해도 ~하다",ex:"光路上就花了三个小时。",exPy:"Guāng lùshang jiù huā le sān ge xiǎoshí.",exKo:"길에서만 세 시간이 걸렸어요."}
+ ],
+ out:[
+  {q:"상대가 계산하겠다고 할 때, 두 번 사양했다가 다음을 기약해 보세요.",hint:"您太见外了 / 上回就是您结的账 / 改天我做东"},
+  {q:"술을 완전히 거절하지 않으면서 조절하겠다고 말해 보세요.",hint:"我酒量实在一般 / 能喝多少喝多少 / 悠着点儿"},
+  {q:"어떤 음식이나 습관을 [A是A，可是…] 골격으로 평가해 보세요.",hint:"辣是辣，可是… / 越吃越上瘾 / 图的是个自在"}
+ ]
+},
+{
+ id:"c1d2", day:2, cat:"쇼핑·분쟁", level:"HSK 5~6",
+ title:"退换货", titlePy:"tuì huàn huò", titleKo:"환불 협상 — 안 된다는 답을 뒤집기",
+ names:{A:"志勋 (손님)", B:"店员 (매장 직원)"},
+ brief:[
+  "중국에서 환불·교환은 <b>규정(按规定)</b>과 <b>재량(通融)</b>이 함께 작동합니다. 규정상 안 된다는 말을 들었을 때 화를 내면 재량이 닫히고, 사정을 담담히 설명하면 열립니다.",
+  "협상의 핵심 문장은 세 개입니다. <b>得看情况(경우에 따라 다릅니다) · 恐怕不行(아마 어려울 것 같습니다) · 要不这样(그럼 이렇게 하시죠)</b>. 상대가 앞의 둘을 쓰면, 내가 세 번째를 꺼내면 됩니다.",
+  "<b>省得 / 免得</b>는 [~하지 않도록]이라는 뜻으로, 상대에게 이익이 되는 이유를 붙일 때 씁니다. 이 한 마디가 요구를 부탁으로 바꿔 줍니다.",
+  "감사는 <b>多亏您(당신 덕분에)</b>로 마무리하세요. 谢谢만 반복하는 것과 인상이 완전히 달라집니다."
+ ],
+ vocab:[
+  {w:"退款",p:"tuìkuǎn",m:"환불(하다)",lv:"HSK5"},
+  {w:"按规定",p:"àn guīdìng",m:"규정에 따르면",lv:"HSK5"},
+  {w:"恐怕",p:"kǒngpà",m:"아마 ~일 것이다 (완곡 부정)",lv:"HSK5"},
+  {w:"款式",p:"kuǎnshì",m:"디자인, 스타일",lv:"HSK5"},
+  {w:"撞衫",p:"zhuàngshān",m:"옷이 겹치다",lv:"신조어"},
+  {w:"百搭",p:"bǎidā",m:"무엇에나 잘 어울리다",lv:"구어"},
+  {w:"省得",p:"shěngde",m:"~하지 않도록",lv:"HSK5"},
+  {w:"白跑一趟",p:"bái pǎo yí tàng",m:"헛걸음하다",lv:"구어"},
+  {w:"合身",p:"héshēn",m:"몸에 잘 맞다",lv:"HSK5"},
+  {w:"差价",p:"chājià",m:"차액",lv:"실용"},
+  {w:"折腾",p:"zhēteng",m:"부산 떨다, 왔다 갔다 고생하다",lv:"HSK6"},
+  {w:"多亏",p:"duōkuī",m:"~덕분에",lv:"HSK5"}
+ ],
+ lines:[
+  {s:"A",zh:"你好，这件衣服我上周买的，能退吗？",py:"Nǐ hǎo, zhè jiàn yīfu wǒ shàng zhōu mǎi de, néng tuì ma?",
+   ko:"안녕하세요, 이 옷 지난주에 산 건데 환불 되나요?",
+   ck:[["你好，这件衣服","nǐ hǎo, zhè jiàn yīfu"],["我上周买的","wǒ shàng zhōu mǎi de"],["能退吗","néng tuì ma"]],
+   notes:[{t:"是…的 (생략형)",p:"…de",k:"grammar",m:"~에 산 것이다",tip:"我上周买的 처럼 是를 생략해도 강조가 살아 있습니다. 시점을 짚을 때 원어민이 가장 자주 쓰는 형태입니다."}]},
+  {s:"B",zh:"得看情况。您把小票和吊牌都带来了吗？",py:"Děi kàn qíngkuàng. Nín bǎ xiǎopiào hé diàopái dōu dài lái le ma?",
+   ko:"경우에 따라 다릅니다. 영수증이랑 택은 다 가져오셨나요?",
+   ck:[["得看情况","děi kàn qíngkuàng"],["您把小票和吊牌","nín bǎ xiǎopiào hé diàopái"],["都带来了吗","dōu dài lái le ma"]],
+   notes:[{t:"得看情况",p:"děi kàn qíngkuàng",k:"expr",m:"경우에 따라 다릅니다",tip:"즉답을 피하는 표준 답변. 회사에서도 그대로 씁니다. 那得看情况."},
+          {t:"把…带来",p:"bǎ…dài lái",k:"grammar",m:"~를 가져오다",tip:"把자문 + 방향보어. 대상을 어디로 옮겼는지를 말할 때의 기본 형식입니다."}]},
+  {s:"A",zh:"小票在，吊牌我一时找不着，是不是就不行了？",py:"Xiǎopiào zài, diàopái wǒ yìshí zhǎo bu zháo, shì bu shì jiù bùxíng le?",
+   ko:"영수증은 있는데 택을 당장 못 찾겠어요, 그럼 안 되는 건가요?",
+   ck:[["小票在","xiǎopiào zài"],["吊牌我一时找不着","diàopái wǒ yìshí zhǎo bu zháo"],["是不是就不行了","shì bu shì jiù bùxíng le"]],
+   notes:[{t:"找不着",p:"zhǎo bu zháo",k:"pron",m:"찾지 못하다",tip:"着는 zhe가 아니라 zháo로 읽습니다. 睡不着(잠들지 못하다)와 같은 계열입니다."},
+          {t:"一时",p:"yìshí",k:"word",m:"당장, 갑자기는",tip:"一时想不起来 = 당장은 생각이 안 나네요. 아주 유용한 완충어입니다."}]},
+  {s:"B",zh:"按规定是不行，不过我可以帮您问问经理。",py:"Àn guīdìng shì bùxíng, búguò wǒ kěyǐ bāng nín wènwen jīnglǐ.",
+   ko:"규정상은 안 되는데, 제가 매니저에게 여쭤봐 드릴 수는 있어요.",
+   ck:[["按规定是不行","àn guīdìng shì bùxíng"],["不过我可以帮您问问经理","búguò wǒ kěyǐ bāng nín wènwen jīnglǐ"]],
+   notes:[{t:"按规定",p:"àn guīdìng",k:"expr",m:"규정에 따르면",tip:"按+명사 = ~에 따라. 按合同 / 按计划 / 按你说的."},
+          {t:"帮您问问",p:"bāng nín wènwen",k:"grammar",m:"대신 여쭤봐 드리다",tip:"[帮+사람+동사] = ~해 드리다. 帮我看看 = 좀 봐 주세요."}]},
+  {s:"A",zh:"那就麻烦您了，实在是尺码差得有点儿多。",py:"Nà jiù máfan nín le, shízài shì chǐmǎ chà de yǒudiǎnr duō.",
+   ko:"그럼 부탁드립니다, 사이즈가 정말 많이 차이가 나서요.",
+   ck:[["那就麻烦您了","nà jiù máfan nín le"],["实在是尺码差得有点儿多","shízài shì chǐmǎ chà de yǒudiǎnr duō"]],
+   notes:[{t:"差得多",p:"chà de duō",k:"grammar",m:"차이가 크다",tip:"[동사/형용사+得+정도]. 差得远 / 好得多 / 贵得离谱."}]},
+  {s:"B",zh:"您稍等，我去后面打个电话，五分钟就好。",py:"Nín shāo děng, wǒ qù hòumian dǎ ge diànhuà, wǔ fēnzhōng jiù hǎo.",
+   ko:"잠시만요, 뒤에서 전화 한 통 하고 오겠습니다, 5분이면 됩니다.",
+   ck:[["您稍等","nín shāo děng"],["我去后面打个电话","wǒ qù hòumian dǎ ge diànhuà"],["五分钟就好","wǔ fēnzhōng jiù hǎo"]],
+   notes:[{t:"稍等",p:"shāo děng",k:"expr",m:"잠시만 기다려 주세요",tip:"等一下의 격식체. 전화·매장 응대의 표준어입니다."}]},
+  {s:"B",zh:"让您久等了。经理说可以换，退款恐怕不行，您看行吗？",py:"Ràng nín jiǔ děng le. Jīnglǐ shuō kěyǐ huàn, tuìkuǎn kǒngpà bùxíng, nín kàn xíng ma?",
+   ko:"오래 기다리셨습니다. 교환은 된다는데 환불은 어려울 것 같습니다, 괜찮으실까요?",
+   ck:[["让您久等了","ràng nín jiǔ děng le"],["经理说可以换","jīnglǐ shuō kěyǐ huàn"],["退款恐怕不行","tuìkuǎn kǒngpà bùxíng"],["您看行吗","nín kàn xíng ma"]],
+   notes:[{t:"让您久等了",p:"ràng nín jiǔ děng le",k:"expr",m:"오래 기다리게 해서 죄송합니다",tip:"자리를 비웠다 돌아왔을 때의 정형 문장. 사과와 인사를 한 번에 처리합니다."},
+          {t:"恐怕",p:"kǒngpà",k:"expr",m:"아마 ~일 것 같습니다 (완곡한 부정)",tip:"不行보다 훨씬 부드럽습니다. 恐怕来不及了 = 아무래도 늦을 것 같아요."},
+          {t:"您看行吗",p:"nín kàn xíng ma",k:"expr",m:"이렇게 하면 괜찮으시겠어요?",tip:"제안 뒤에 붙여 상대에게 결정권을 넘기는 말입니다."}]},
+  {s:"A",zh:"换也行，就是这个款式我怕撞衫。",py:"Huàn yě xíng, jiùshì zhège kuǎnshì wǒ pà zhuàngshān.",
+   ko:"교환도 괜찮은데, 다만 이 디자인은 남들과 겹칠까 봐요.",
+   ck:[["换也行","huàn yě xíng"],["就是这个款式我怕撞衫","jiùshì zhège kuǎnshì wǒ pà zhuàngshān"]],
+   notes:[{t:"就是…",p:"jiùshì…",k:"grammar",m:"다만 ~이 걸린다",tip:"수락 뒤에 조건을 다는 골격. 都行，就是时间有点儿紧."},
+          {t:"撞衫",p:"zhuàngshān",k:"word",m:"같은 옷이 겹치다",tip:"撞은 [부딪히다]. 撞名(이름이 겹치다), 撞车(일정이 겹치다)로도 씁니다."}]},
+  {s:"B",zh:"那您看看别的颜色，深灰的最近卖得特别好。",py:"Nà nín kànkan bié de yánsè, shēnhuī de zuìjìn mài de tèbié hǎo.",
+   ko:"그럼 다른 색도 보세요, 진회색이 요즘 아주 잘 나갑니다.",
+   ck:[["那您看看别的颜色","nà nín kànkan bié de yánsè"],["深灰的最近卖得特别好","shēnhuī de zuìjìn mài de tèbié hǎo"]],
+   notes:[{t:"卖得好",p:"mài de hǎo",k:"grammar",m:"잘 팔리다",tip:"정도보어. 卖得不错 / 走得快. 得를 빼면 바로 어색해집니다."}]},
+  {s:"A",zh:"深灰倒是百搭，可惜我已经有两件类似的了。",py:"Shēnhuī dàoshi bǎidā, kěxī wǒ yǐjīng yǒu liǎng jiàn lèisì de le.",
+   ko:"진회색이 어디나 잘 어울리긴 하죠, 아쉽게도 비슷한 게 이미 두 벌 있어요.",
+   ck:[["深灰倒是百搭","shēnhuī dàoshi bǎidā"],["可惜我已经有两件类似的了","kěxī wǒ yǐjīng yǒu liǎng jiàn lèisì de le"]],
+   notes:[{t:"倒是",p:"dàoshi",k:"grammar",m:"~하기는 하다 (양보)",tip:"뒤에 반전이 옵니다. 便宜倒是便宜 = 싸긴 싸다(그런데)."},
+          {t:"百搭",p:"bǎidā",k:"word",m:"어디에나 잘 어울리는",tip:"옷·색·소품에 씁니다. 黑色最百搭."}]},
+  {s:"B",zh:"那要不这样，您换成同价位的裤子也可以。",py:"Nà yàobù zhèyàng, nín huàn chéng tóng jiàwèi de kùzi yě kěyǐ.",
+   ko:"그럼 이렇게 하시죠, 같은 가격대의 바지로 바꾸셔도 됩니다.",
+   ck:[["那要不这样","nà yàobù zhèyàng"],["您换成同价位的裤子也可以","nín huàn chéng tóng jiàwèi de kùzi yě kěyǐ"]],
+   notes:[{t:"要不这样",p:"yàobù zhèyàng",k:"expr",m:"그럼 이렇게 하시죠",tip:"막힌 협상을 푸는 결정적 한마디입니다. 뒤에 대안을 붙이면 됩니다."},
+          {t:"换成",p:"huàn chéng",k:"grammar",m:"~로 바꾸다",tip:"[동사+成] = ~로 되게 하다. 翻译成中文 / 改成明天."}]},
+  {s:"A",zh:"这个主意不错，省得我白跑一趟。",py:"Zhège zhǔyi búcuò, shěngde wǒ bái pǎo yí tàng.",
+   ko:"좋은 생각이네요, 헛걸음하지 않아도 되고요.",
+   ck:[["这个主意不错","zhège zhǔyi búcuò"],["省得我白跑一趟","shěngde wǒ bái pǎo yí tàng"]],
+   notes:[{t:"省得",p:"shěngde",k:"grammar",m:"~하지 않아도 되도록",tip:"免得와 거의 같습니다. 早点儿走，省得堵车 = 일찍 가면 막히지 않죠."},
+          {t:"白跑一趟",p:"bái pǎo yí tàng",k:"expr",m:"헛걸음하다",tip:"白은 [헛되이]. 白等 / 白花钱 / 白忙一场."}]},
+  {s:"B",zh:"裤子在那边，您试完了叫我一声。",py:"Kùzi zài nàbiān, nín shì wán le jiào wǒ yì shēng.",
+   ko:"바지는 저쪽에 있어요, 입어 보시고 부르세요.",
+   ck:[["裤子在那边","kùzi zài nàbiān"],["您试完了叫我一声","nín shì wán le jiào wǒ yì shēng"]],
+   notes:[{t:"叫我一声",p:"jiào wǒ yì shēng",k:"expr",m:"한 번 불러 주세요",tip:"说一声 = 한마디 해 주세요. 声을 세는 一声이 부담을 덜어 줍니다."}]},
+  {s:"A",zh:"这条腰有点儿松，腿又稍微紧了一点儿。",py:"Zhè tiáo yāo yǒudiǎnr sōng, tuǐ yòu shāowēi jǐn le yìdiǎnr.",
+   ko:"이건 허리가 좀 헐렁하고, 다리는 또 살짝 끼네요.",
+   ck:[["这条腰有点儿松","zhè tiáo yāo yǒudiǎnr sōng"],["腿又稍微紧了一点儿","tuǐ yòu shāowēi jǐn le yìdiǎnr"]],
+   notes:[{t:"有点儿 vs 一点儿",p:"yǒudiǎnr / yìdiǎnr",k:"grammar",m:"좀 (불만) / 조금 (정도)",tip:"有点儿松은 [헐렁해서 별로], 紧了一点儿은 [조금 낀 정도]. 형용사 앞뒤 위치가 뜻을 가릅니다."},
+          {t:"稍微",p:"shāowēi",k:"word",m:"약간, 조금",tip:"뒤에 一点儿과 짝을 이룹니다. 稍微等一下."}]},
+  {s:"B",zh:"那是版型的问题，您试试这条直筒的。",py:"Nà shì bǎnxíng de wèntí, nín shìshi zhè tiáo zhítǒng de.",
+   ko:"그건 핏 문제예요, 이 일자 핏으로 입어 보세요.",
+   ck:[["那是版型的问题","nà shì bǎnxíng de wèntí"],["您试试这条直筒的","nín shìshi zhè tiáo zhítǒng de"]],
+   notes:[{t:"版型",p:"bǎnxíng",k:"word",m:"옷의 재단, 핏",tip:"版型好 = 핏이 좋다. 옷 이야기에서 자주 나옵니다."}]},
+  {s:"A",zh:"这条合身多了，就它吧，差价怎么算？",py:"Zhè tiáo héshēn duō le, jiù tā ba, chājià zěnme suàn?",
+   ko:"이게 훨씬 잘 맞네요, 이걸로 할게요, 차액은 어떻게 되나요?",
+   ck:[["这条合身多了","zhè tiáo héshēn duō le"],["就它吧","jiù tā ba"],["差价怎么算","chājià zěnme suàn"]],
+   notes:[{t:"…多了",p:"…duō le",k:"grammar",m:"훨씬 ~하다",tip:"비교의 강조는 형용사 뒤 多了. 好多了 / 便宜多了. 很多了는 틀립니다."},
+          {t:"怎么算",p:"zěnme suàn",k:"expr",m:"어떻게 계산하나요?",tip:"금액·조건을 물을 때. 加班费怎么算?"}]},
+  {s:"B",zh:"一样的价，不用补差价，我给您重新开票。",py:"Yíyàng de jià, búyòng bǔ chājià, wǒ gěi nín chóngxīn kāipiào.",
+   ko:"같은 가격이라 차액 내실 필요 없고요, 영수증 다시 발행해 드릴게요.",
+   ck:[["一样的价，不用补差价","yíyàng de jià, búyòng bǔ chājià"],["我给您重新开票","wǒ gěi nín chóngxīn kāipiào"]],
+   notes:[{t:"补差价",p:"bǔ chājià",k:"word",m:"차액을 추가로 내다",tip:"补는 [모자란 것을 채우다]. 补钱 / 补交 / 补办."}]},
+  {s:"A",zh:"太好了。以后是不是把吊牌留着才保险？",py:"Tài hǎo le. Yǐhòu shì bu shì bǎ diàopái liú zhe cái bǎoxiǎn?",
+   ko:"잘됐네요. 앞으로는 택을 남겨 둬야 안전한 거죠?",
+   ck:[["太好了","tài hǎo le"],["以后是不是把吊牌留着","yǐhòu shì bu shì bǎ diàopái liú zhe"],["才保险","cái bǎoxiǎn"]],
+   notes:[{t:"才保险",p:"cái bǎoxiǎn",k:"grammar",m:"그래야 안전하다",tip:"才 = [그래야 비로소]. 早点儿出发才保险 = 일찍 나서야 안심이다."},
+          {t:"留着",p:"liú zhe",k:"grammar",m:"남겨 두다",tip:"[동사+着]는 그 상태의 지속. 留着以后用 = 나중에 쓰게 놔두다."}]},
+  {s:"B",zh:"对，最好连包装袋也别扔，免得来回折腾。",py:"Duì, zuìhǎo lián bāozhuāngdài yě bié rēng, miǎnde láihuí zhēteng.",
+   ko:"네, 포장 봉투까지 버리지 않는 게 좋아요, 왔다 갔다 고생하지 않게요.",
+   ck:[["对，最好连包装袋也别扔","duì, zuìhǎo lián bāozhuāngdài yě bié rēng"],["免得来回折腾","miǎnde láihuí zhēteng"]],
+   notes:[{t:"连…也…",p:"lián…yě…",k:"grammar",m:"~까지도",tip:"连我也不知道 = 나조차 모른다. 都와 也 둘 다 쓸 수 있습니다."},
+          {t:"折腾",p:"zhēteng",k:"word",m:"부산 떨다, 헛고생하다",tip:"来回折腾 = 왔다 갔다 고생하다. 别折腾了 = 그만 좀 해라."}]},
+  {s:"A",zh:"记住了，这次多亏您帮忙，谢谢啊。",py:"Jì zhù le, zhè cì duōkuī nín bāngmáng, xièxie a.",
+   ko:"기억해 둘게요, 이번엔 도와주신 덕분입니다, 고맙습니다.",
+   ck:[["记住了","jì zhù le"],["这次多亏您帮忙","zhè cì duōkuī nín bāngmáng"],["谢谢啊","xièxie a"]],
+   notes:[{t:"多亏",p:"duōkuī",k:"expr",m:"~덕분에",tip:"多亏你提醒我 = 알려 주신 덕분이에요. 감사를 구체적으로 만드는 단어입니다."}]}
+ ],
+ keys:[
+  {zh:"得看情况",py:"děi kàn qíngkuàng",ko:"경우에 따라 다릅니다",ex:"这个得看情况，不好一概而论。",exPy:"Zhège děi kàn qíngkuàng, bù hǎo yígài'érlùn.",exKo:"이건 경우에 따라 달라서 일률적으로 말하기 어렵습니다."},
+  {zh:"按规定",py:"àn guīdìng",ko:"규정에 따르면",ex:"按规定这样是不行的。",exPy:"Àn guīdìng zhèyàng shì bùxíng de.",exKo:"규정상 이렇게는 안 됩니다."},
+  {zh:"恐怕不行",py:"kǒngpà bùxíng",ko:"아마 어려울 것 같습니다",ex:"今天恐怕不行，改天吧。",exPy:"Jīntiān kǒngpà bùxíng, gǎitiān ba.",exKo:"오늘은 어려울 것 같아요, 다음에 하죠."},
+  {zh:"要不这样",py:"yàobù zhèyàng",ko:"그럼 이렇게 하시죠",ex:"要不这样，我们各让一步。",exPy:"Yàobù zhèyàng, wǒmen gè ràng yí bù.",exKo:"그럼 이렇게 하죠, 서로 한 발씩 양보합시다."},
+  {zh:"省得 / 免得",py:"shěngde / miǎnde",ko:"~하지 않도록",ex:"早点儿说，省得大家都着急。",exPy:"Zǎodiǎnr shuō, shěngde dàjiā dōu zháojí.",exKo:"일찍 말하면 다들 조급해하지 않아도 되죠."},
+  {zh:"白跑一趟",py:"bái pǎo yí tàng",ko:"헛걸음하다",ex:"幸好打了电话，不然白跑一趟。",exPy:"Xìnghǎo dǎ le diànhuà, bùrán bái pǎo yí tàng.",exKo:"다행히 전화했지, 안 그랬으면 헛걸음할 뻔했어요."},
+  {zh:"倒是",py:"dàoshi",ko:"~하기는 하다 (그런데)",ex:"便宜倒是便宜，就是质量差点儿。",exPy:"Piányi dàoshi piányi, jiùshì zhìliàng chà diǎnr.",exKo:"싸긴 싼데 품질이 좀 떨어져요."},
+  {zh:"多亏您",py:"duōkuī nín",ko:"당신 덕분입니다",ex:"多亏您提醒，我差点儿忘了。",exPy:"Duōkuī nín tíxǐng, wǒ chàdiǎnr wàng le.",exKo:"알려 주신 덕분이에요, 하마터면 잊을 뻔했어요."}
+ ],
+ out:[
+  {q:"규정상 안 된다는 답을 들은 뒤, 사정을 설명하고 대안을 제시해 보세요.",hint:"我知道按规定… / 实在是… / 要不这样"},
+  {q:"상대의 제안을 받아들이되 조건 하나를 덧붙여 말해 보세요.",hint:"…也行，就是… / 倒是… / 您看行吗"},
+  {q:"도움을 받은 뒤 구체적으로 감사를 표현해 보세요.",hint:"多亏您 / 省得我白跑一趟 / 麻烦您了"}
+ ]
+},
+{
+ id:"c1d3", day:3, cat:"교통·응대", level:"HSK 5~6",
+ title:"打车绕路", titlePy:"dǎ chē rào lù", titleKo:"택시 — 돌아가는 것 같을 때 말 꺼내기",
+ names:{A:"志勋 (승객)", B:"司机 (기사)"},
+ brief:[
+  "기사에게 <b>돌아가는 것 아니냐</b>고 묻는 것은 사실상 의심을 표현하는 것입니다. 중국어에서는 이럴 때 직접 따지지 않고 <b>사실 확인의 형식</b>을 빌립니다 — 「是不是往东偏得有点儿远了？」",
+  "상대가 이유를 설명하면 <b>是我多心了(제가 괜히 의심했네요)</b>로 물러서는 것이 정석입니다. 이 한마디가 분위기를 되돌립니다. 상대는 <b>哪儿的话(무슨 말씀을요)</b>로 받습니다.",
+  "기사와의 잡담은 <b>일 → 건강 → 위로</b> 순서로 흘러갑니다. 이때 쓰이는 <b>忙归忙(바쁜 건 바쁜 거고) · 身体是本钱(몸이 밑천이다)</b> 같은 표현은 회사 대화에도 그대로 옮겨 쓸 수 있습니다.",
+  "이 회차의 문법 축은 <b>只要…就… / A归A / 扛得住 / 不等于</b>입니다. 특히 <b>V得住·V不住</b>는 체력·상황을 말할 때 원어민이 즐겨 쓰는 형식입니다."
+ ],
+ vocab:[
+  {w:"赶时间",p:"gǎn shíjiān",m:"시간에 쫓기다",lv:"구어"},
+  {w:"尽量",p:"jǐnliàng",m:"가능한 한",lv:"HSK5"},
+  {w:"绕开",p:"rào kāi",m:"우회하다, 피해 가다",lv:"HSK5"},
+  {w:"看着办",p:"kàn zhe bàn",m:"알아서 하다",lv:"구어"},
+  {w:"踏实",p:"tāshi",m:"마음이 놓이다, 착실하다",lv:"HSK5"},
+  {w:"滞后",p:"zhìhòu",m:"뒤처지다, 늦게 반영되다",lv:"HSK6"},
+  {w:"多心",p:"duōxīn",m:"괜히 의심하다",lv:"HSK6"},
+  {w:"活儿",p:"huór",m:"일, 일감",lv:"구어"},
+  {w:"扛得住",p:"káng de zhù",m:"버틸 수 있다",lv:"구어"},
+  {w:"老毛病",p:"lǎo máobìng",m:"고질병, 오랜 버릇",lv:"구어"},
+  {w:"在理",p:"zài lǐ",m:"일리가 있다",lv:"HSK6"},
+  {w:"小看",p:"xiǎokàn",m:"얕보다",lv:"HSK5"}
+ ],
+ lines:[
+  {s:"A",zh:"师傅，麻烦去国贸，赶时间，走最快的路。",py:"Shīfu, máfan qù Guómào, gǎn shíjiān, zǒu zuì kuài de lù.",
+   ko:"기사님, 궈마오로 가 주세요, 시간이 급해서 제일 빠른 길로요.",
+   ck:[["师傅，麻烦去国贸","shīfu, máfan qù Guómào"],["赶时间","gǎn shíjiān"],["走最快的路","zǒu zuì kuài de lù"]],
+   notes:[{t:"赶时间",p:"gǎn shíjiān",k:"expr",m:"시간에 쫓기다",tip:"我赶时间 한마디면 서둘러 달라는 뜻이 다 전달됩니다. 赶는 [쫓다/서두르다]."},
+          {t:"走…路",p:"zǒu…lù",k:"grammar",m:"~길로 가다",tip:"走高速 / 走小路. 이때 走는 [걷다]가 아니라 [경로를 택하다]입니다."}]},
+  {s:"B",zh:"这个点儿哪条都堵，我尽量给您绕开主路。",py:"Zhège diǎnr nǎ tiáo dōu dǔ, wǒ jǐnliàng gěi nín rào kāi zhǔlù.",
+   ko:"이 시간엔 어느 길이나 막혀요, 최대한 큰길은 피해 가 볼게요.",
+   ck:[["这个点儿哪条都堵","zhège diǎnr nǎ tiáo dōu dǔ"],["我尽量给您绕开主路","wǒ jǐnliàng gěi nín rào kāi zhǔlù"]],
+   notes:[{t:"哪…都…",p:"nǎ…dōu…",k:"grammar",m:"어느 ~든 다 ~하다",tip:"의문사+都 = 전체 긍정/부정. 哪儿都一样 = 어디나 마찬가지다."},
+          {t:"尽量",p:"jǐnliàng",k:"word",m:"가능한 한",tip:"약속을 완전히 하지 않으면서 노력을 표시합니다. 我尽量早点儿到."}]},
+  {s:"A",zh:"行，您看着办，只要别晚点就成。",py:"Xíng, nín kàn zhe bàn, zhǐyào bié wǎndiǎn jiù chéng.",
+   ko:"네, 알아서 해 주세요, 늦지만 않으면 됩니다.",
+   ck:[["行，您看着办","xíng, nín kàn zhe bàn"],["只要别晚点就成","zhǐyào bié wǎndiǎn jiù chéng"]],
+   notes:[{t:"看着办",p:"kàn zhe bàn",k:"expr",m:"상황 봐서 알아서 하다",tip:"你看着办吧 = 알아서 하세요. 신뢰를 표시하는 말이지만, 톤에 따라 냉정하게도 들립니다."},
+          {t:"只要…就…",p:"zhǐyào…jiù…",k:"grammar",m:"~하기만 하면 ~다",tip:"조건의 기본 골격. 只要你说一声，我就去."}]},
+  {s:"B",zh:"放心，我在这一带跑了十几年了，闭着眼都熟。",py:"Fàngxīn, wǒ zài zhè yídài pǎo le shí jǐ nián le, bì zhe yǎn dōu shú.",
+   ko:"걱정 마세요, 이 일대를 십몇 년 돌아다녀서 눈 감고도 압니다.",
+   ck:[["放心","fàngxīn"],["我在这一带跑了十几年了","wǒ zài zhè yídài pǎo le shí jǐ nián le"],["闭着眼都熟","bì zhe yǎn dōu shú"]],
+   notes:[{t:"一带",p:"yídài",k:"word",m:"일대, 근방",tip:"这一带 / 车站一带. 범위를 뭉뚱그릴 때 씁니다."},
+          {t:"闭着眼都…",p:"bì zhe yǎn dōu…",k:"expr",m:"눈 감고도 ~한다",tip:"익숙함을 과장하는 구어. 闭着眼都能找到."}]},
+  {s:"A",zh:"那我就踏实了。刚才导航好像提示前面有事故。",py:"Nà wǒ jiù tāshi le. Gāngcái dǎoháng hǎoxiàng tíshì qiánmiàn yǒu shìgù.",
+   ko:"그럼 마음이 놓이네요. 아까 내비에 앞쪽 사고 알림이 뜬 것 같던데요.",
+   ck:[["那我就踏实了","nà wǒ jiù tāshi le"],["刚才导航好像提示","gāngcái dǎoháng hǎoxiàng tíshì"],["前面有事故","qiánmiàn yǒu shìgù"]],
+   notes:[{t:"踏实",p:"tāshi",k:"word",m:"마음이 놓이다",tip:"心里踏实 = 마음이 든든하다. 사람에 쓰면 [착실하다]는 칭찬이 됩니다."},
+          {t:"好像",p:"hǎoxiàng",k:"grammar",m:"~인 것 같다",tip:"지적을 부드럽게 만드는 완충 장치. 직접 단정하지 않는 것이 요령입니다."}]},
+  {s:"B",zh:"导航有时候滞后，实际早通了，您信我的。",py:"Dǎoháng yǒu shíhou zhìhòu, shíjì zǎo tōng le, nín xìn wǒ de.",
+   ko:"내비가 늦게 반영될 때가 있어요, 실제론 벌써 뚫렸습니다, 저를 믿으세요.",
+   ck:[["导航有时候滞后","dǎoháng yǒu shíhou zhìhòu"],["实际早通了","shíjì zǎo tōng le"],["您信我的","nín xìn wǒ de"]],
+   notes:[{t:"早…了",p:"zǎo…le",k:"grammar",m:"진작에 ~했다",tip:"早知道了 / 早走了. 早가 [벌써, 진작]을 뜻합니다."},
+          {t:"信我的",p:"xìn wǒ de",k:"expr",m:"제 말을 믿으세요",tip:"뒤에 的를 붙이는 것이 구어의 맛입니다. 听我的 = 내 말대로 하세요."}]},
+  {s:"A",zh:"不过咱们是不是往东偏得有点儿远了？",py:"Búguò zánmen shì bu shì wǎng dōng piān de yǒudiǎnr yuǎn le?",
+   ko:"그런데 우리 동쪽으로 좀 많이 치우친 것 아닌가요?",
+   ck:[["不过咱们是不是","búguò zánmen shì bu shì"],["往东偏得有点儿远了","wǎng dōng piān de yǒudiǎnr yuǎn le"]],
+   notes:[{t:"是不是…？",p:"shì bu shì",k:"grammar",m:"~한 것 아닌가요?",tip:"의심을 [사실 확인]의 형식으로 바꿔 주는 장치입니다. 따지지 않으면서 짚을 수 있습니다."},
+          {t:"偏",p:"piān",k:"word",m:"한쪽으로 치우치다",tip:"偏东 / 偏贵 / 偏小. 방향과 정도 모두에 붙습니다."}]},
+  {s:"B",zh:"是绕了点儿，可主路正修，硬走反而更慢。",py:"Shì rào le diǎnr, kě zhǔlù zhèng xiū, yìng zǒu fǎn'ér gèng màn.",
+   ko:"좀 돌아가긴 합니다, 그런데 큰길은 공사 중이라 억지로 가면 오히려 더 느려요.",
+   ck:[["是绕了点儿","shì rào le diǎnr"],["可主路正修","kě zhǔlù zhèng xiū"],["硬走反而更慢","yìng zǒu fǎn'ér gèng màn"]],
+   notes:[{t:"硬+동사",p:"yìng",k:"grammar",m:"억지로 ~하다",tip:"硬撑 / 硬要 / 硬着头皮. 무리하게 밀어붙인다는 뜻이 붙습니다."},
+          {t:"反而",p:"fǎn'ér",k:"grammar",m:"오히려",tip:"예상과 반대의 결과. 越急反而越慢 = 급할수록 오히려 늦어진다."}]},
+  {s:"A",zh:"明白了，是我多心了，您别介意。",py:"Míngbai le, shì wǒ duōxīn le, nín bié jièyì.",
+   ko:"알겠습니다, 제가 괜히 의심했네요, 마음에 두지 마세요.",
+   ck:[["明白了","míngbai le"],["是我多心了","shì wǒ duōxīn le"],["您别介意","nín bié jièyì"]],
+   notes:[{t:"多心",p:"duōxīn",k:"expr",m:"괜히 의심하다, 지나치게 신경 쓰다",tip:"你别多心 = 오해하지 마세요. 오해를 스스로 거두는 성숙한 표현입니다."},
+          {t:"别介意",p:"bié jièyì",k:"expr",m:"마음에 두지 마세요",tip:"실례했을 때 쓰는 완충어. 请别介意 형태로도 씁니다."}]},
+  {s:"B",zh:"哪儿的话，客人问一句是应该的。",py:"Nǎr de huà, kèrén wèn yí jù shì yīnggāi de.",
+   ko:"무슨 말씀을요, 손님이 한마디 묻는 건 당연하죠.",
+   ck:[["哪儿的话","nǎr de huà"],["客人问一句是应该的","kèrén wèn yí jù shì yīnggāi de"]],
+   notes:[{t:"哪儿的话",p:"nǎr de huà",k:"expr",m:"무슨 말씀을요",tip:"사과나 과한 겸손을 받았을 때. 不客气보다 훨씬 어른스럽게 들립니다."},
+          {t:"…是应该的",p:"shì yīnggāi de",k:"expr",m:"~하는 게 당연하죠",tip:"감사 인사를 받았을 때도 씁니다. 这是应该的."}]},
+  {s:"A",zh:"您这活儿一天得开多长时间？",py:"Nín zhè huór yì tiān děi kāi duō cháng shíjiān?",
+   ko:"이 일은 하루에 몇 시간이나 운전하세요?",
+   ck:[["您这活儿","nín zhè huór"],["一天得开多长时间","yì tiān děi kāi duō cháng shíjiān"]],
+   notes:[{t:"活儿",p:"huór",k:"word",m:"일, 일감",tip:"工作의 구어체. 干活儿 = 일하다. 这活儿不好干 = 이 일 쉽지 않다."}]},
+  {s:"B",zh:"十来个小时吧，早上五点出车，晚上才收。",py:"Shí lái ge xiǎoshí ba, zǎoshang wǔ diǎn chū chē, wǎnshang cái shōu.",
+   ko:"열 시간쯤이요, 아침 다섯 시에 나와서 밤에야 접습니다.",
+   ck:[["十来个小时吧","shí lái ge xiǎoshí ba"],["早上五点出车","zǎoshang wǔ diǎn chū chē"],["晚上才收","wǎnshang cái shōu"]],
+   notes:[{t:"十来个",p:"shí lái ge",k:"grammar",m:"열 개 남짓",tip:"[숫자+来+양사] = ~쯤. 三十来岁 / 二十来分钟."},
+          {t:"才",p:"cái",k:"grammar",m:"~에야 비로소",tip:"늦음을 나타냅니다. 十点才回家 = 열 시에야 집에 갔다."}]},
+  {s:"A",zh:"那可真够辛苦的，身体扛得住吗？",py:"Nà kě zhēn gòu xīnkǔ de, shēntǐ káng de zhù ma?",
+   ko:"정말 고되시겠네요, 몸이 버텨 주나요?",
+   ck:[["那可真够辛苦的","nà kě zhēn gòu xīnkǔ de"],["身体扛得住吗","shēntǐ káng de zhù ma"]],
+   notes:[{t:"够…的",p:"gòu…de",k:"grammar",m:"꽤 ~하다",tip:"够累的 / 够呛. 감탄과 동정이 섞인 구어 형식입니다."},
+          {t:"扛得住 / 扛不住",p:"káng de zhù / káng bu zhù",k:"grammar",m:"버틸 수 있다 / 없다",tip:"체력·압박에 씁니다. 这压力我扛不住 = 이 압박은 못 버티겠어요."}]},
+  {s:"B",zh:"习惯了，就是腰不太好，老毛病了。",py:"Xíguàn le, jiùshì yāo bú tài hǎo, lǎo máobìng le.",
+   ko:"익숙해졌죠, 다만 허리가 좀 안 좋아요, 고질병입니다.",
+   ck:[["习惯了","xíguàn le"],["就是腰不太好","jiùshì yāo bú tài hǎo"],["老毛病了","lǎo máobìng le"]],
+   notes:[{t:"老毛病",p:"lǎo máobìng",k:"expr",m:"고질병, 오래된 나쁜 버릇",tip:"몸과 습관 둘 다에 씁니다. 这是我的老毛病了."}]},
+  {s:"A",zh:"那更得注意，忙归忙，身体是本钱。",py:"Nà gèng děi zhùyì, máng guī máng, shēntǐ shì běnqián.",
+   ko:"그럼 더 조심하셔야죠, 바쁜 건 바쁜 거고 몸이 밑천이잖아요.",
+   ck:[["那更得注意","nà gèng děi zhùyì"],["忙归忙","máng guī máng"],["身体是本钱","shēntǐ shì běnqián"]],
+   notes:[{t:"A归A",p:"A guī A",k:"grammar",m:"~한 건 ~한 거고 (별개다)",tip:"说归说，做归做 = 말은 말이고 행동은 행동이다. 아주 세련된 구어 골격입니다."},
+          {t:"身体是本钱",p:"shēntǐ shì běnqián",k:"culture",m:"몸이 밑천이다",tip:"중국인이 건강 이야기에서 늘 쓰는 관용구입니다."}]},
+  {s:"B",zh:"您说得在理。到了，前面掉个头就是门口。",py:"Nín shuō de zài lǐ. Dào le, qiánmiàn diào ge tóu jiùshì ménkǒu.",
+   ko:"말씀이 옳습니다. 다 왔어요, 앞에서 유턴하면 바로 입구입니다.",
+   ck:[["您说得在理","nín shuō de zài lǐ"],["到了","dào le"],["前面掉个头就是门口","qiánmiàn diào ge tóu jiùshì ménkǒu"]],
+   notes:[{t:"在理",p:"zài lǐ",k:"expr",m:"일리가 있다",tip:"有道理와 같지만 더 구어적입니다. 说得在理."},
+          {t:"掉头",p:"diào tóu",k:"word",m:"유턴하다",tip:"掉个头 형태로 자주 씁니다. 前面路口掉头."}]},
+  {s:"A",zh:"太好了，比我预计的还早了十分钟。",py:"Tài hǎo le, bǐ wǒ yùjì de hái zǎo le shí fēnzhōng.",
+   ko:"잘됐네요, 예상보다 10분이나 빠릅니다.",
+   ck:[["太好了","tài hǎo le"],["比我预计的还早了十分钟","bǐ wǒ yùjì de hái zǎo le shí fēnzhōng"]],
+   notes:[{t:"比…还…",p:"bǐ…hái…",k:"grammar",m:"~보다 더 ~하다",tip:"比…更…과 같지만 还가 더 감탄이 섞입니다. 뒤의 [수량]은 형용사 뒤에 놓입니다."}]},
+  {s:"B",zh:"我说什么来着，绕远不等于绕慢。",py:"Wǒ shuō shénme láizhe, rào yuǎn bù děngyú rào màn.",
+   ko:"제가 뭐라고 했습니까, 멀리 도는 게 느린 건 아니라니까요.",
+   ck:[["我说什么来着","wǒ shuō shénme láizhe"],["绕远不等于绕慢","rào yuǎn bù děngyú rào màn"]],
+   notes:[{t:"我说什么来着",p:"wǒ shuō shénme láizhe",k:"expr",m:"내가 뭐랬어요",tip:"来着는 방금 한 말을 되짚는 어기조사입니다. 你刚才说什么来着?"},
+          {t:"A不等于B",p:"bù děngyú",k:"grammar",m:"A가 곧 B는 아니다",tip:"논리를 정리하는 표현. 便宜不等于不好."}]},
+  {s:"A",zh:"是我小看您了，钱不用找了，您留着。",py:"Shì wǒ xiǎokàn nín le, qián búyòng zhǎo le, nín liú zhe.",
+   ko:"제가 얕봤네요, 거스름돈은 됐습니다, 가지세요.",
+   ck:[["是我小看您了","shì wǒ xiǎokàn nín le"],["钱不用找了","qián búyòng zhǎo le"],["您留着","nín liú zhe"]],
+   notes:[{t:"小看",p:"xiǎokàn",k:"word",m:"얕보다",tip:"别小看他 = 그를 얕보지 마라. 스스로에게 쓰면 겸손한 인정이 됩니다."},
+          {t:"找钱",p:"zhǎo qián",k:"word",m:"거스름돈을 주다",tip:"不用找了 = 잔돈은 됐어요. 找는 [찾다]가 아니라 [거슬러 주다]입니다."}]},
+  {s:"B",zh:"那多不好意思，您慢走，路上注意安全。",py:"Nà duō bù hǎoyìsi, nín màn zǒu, lùshang zhùyì ānquán.",
+   ko:"그럼 너무 죄송하죠, 조심히 가시고 안전 운전하세요.",
+   ck:[["那多不好意思","nà duō bù hǎoyìsi"],["您慢走","nín màn zǒu"],["路上注意安全","lùshang zhùyì ānquán"]],
+   notes:[{t:"多…",p:"duō",k:"grammar",m:"얼마나 ~한가 (감탄)",tip:"多不好意思 / 多可惜 / 多好. 감탄문의 多는 [정말]로 옮기면 자연스럽습니다."}]}
+ ],
+ keys:[
+  {zh:"我赶时间",py:"wǒ gǎn shíjiān",ko:"제가 시간이 급합니다",ex:"我赶时间，麻烦您快一点儿。",exPy:"Wǒ gǎn shíjiān, máfan nín kuài yìdiǎnr.",exKo:"시간이 급해서요, 좀 서둘러 주세요."},
+  {zh:"您看着办",py:"nín kàn zhe bàn",ko:"알아서 해 주세요",ex:"这件事你看着办吧。",exPy:"Zhè jiàn shì nǐ kàn zhe bàn ba.",exKo:"이 일은 알아서 처리하세요."},
+  {zh:"是不是…？",py:"shì bu shì",ko:"~한 것 아닌가요? (완곡한 지적)",ex:"是不是哪里弄错了？",exPy:"Shì bu shì nǎli nòng cuò le?",exKo:"어딘가 잘못된 것 아닐까요?"},
+  {zh:"是我多心了",py:"shì wǒ duōxīn le",ko:"제가 괜히 의심했네요",ex:"对不起，是我多心了。",exPy:"Duìbuqǐ, shì wǒ duōxīn le.",exKo:"죄송해요, 제가 넘겨짚었네요."},
+  {zh:"哪儿的话",py:"nǎr de huà",ko:"무슨 말씀을요",ex:"哪儿的话，应该的。",exPy:"Nǎr de huà, yīnggāi de.",exKo:"무슨 말씀을요, 당연한 일인데요."},
+  {zh:"扛得住吗？",py:"káng de zhù ma",ko:"버틸 수 있겠어요?",ex:"这么忙，你身体扛得住吗？",exPy:"Zhème máng, nǐ shēntǐ káng de zhù ma?",exKo:"이렇게 바쁜데 몸이 버텨요?"},
+  {zh:"A归A",py:"A guī A",ko:"~한 건 ~한 거고",ex:"说归说，做起来没那么容易。",exPy:"Shuō guī shuō, zuò qǐlái méi nàme róngyì.",exKo:"말은 그렇지만 막상 해 보면 쉽지 않아요."},
+  {zh:"A不等于B",py:"A bù děngyú B",ko:"A가 곧 B는 아니다",ex:"忙不等于有效率。",exPy:"Máng bù děngyú yǒu xiàolǜ.",exKo:"바쁘다고 효율이 좋은 건 아니죠."}
+ ],
+ out:[
+  {q:"택시가 돌아가는 것 같을 때, 따지지 않고 완곡하게 확인해 보세요.",hint:"是不是…偏得有点儿远了 / 导航好像提示…"},
+  {q:"오해였음을 알고 물러서는 말과, 그것을 받아 주는 말을 둘 다 해 보세요.",hint:"是我多心了 / 您别介意 / 哪儿的话"},
+  {q:"바쁘게 일하는 사람을 A归A 골격으로 위로해 보세요.",hint:"忙归忙 / 身体是本钱 / 扛得住吗"}
+ ]
+},
+{
+ id:"c1d4", day:4, cat:"하소연·위로", level:"HSK 5~6",
+ title:"吐槽与安慰", titlePy:"tùcáo yǔ ānwèi", titleKo:"하소연과 위로 — 힘들다는 말을 주고받기",
+ names:{A:"志勋 (동료)", B:"小美 (동료)"},
+ brief:[
+  "중국어의 하소연은 <b>别提了(말도 마세요)</b>로 시작합니다. 이 한마디가 [지금부터 넋두리를 하겠다]는 신호가 되어 상대가 들을 준비를 하게 만듭니다.",
+  "위로에는 순서가 있습니다. ① 상황 인정(我懂) ② 관점 제시(要我说…) ③ 실질적 제안(要不这周五你早走). 위로만 하고 제안이 없으면 빈말로 들립니다.",
+  "부탁이나 호의를 받아들일 때는 <b>领情(마음을 받다)</b>과 <b>下次换我(다음엔 제가)</b>를 씁니다. 그냥 谢谢로 끝내면 관계가 한 번에 정리되어 버립니다.",
+  "이 회차에는 <b>无精打采 · 脚不沾地 · 说到心坎儿上</b> 같은 관용 표현이 들어 있습니다. 하나씩만 제대로 써도 중국어 인상이 크게 달라집니다."
+ ],
+ vocab:[
+  {w:"无精打采",p:"wú jīng dǎ cǎi",m:"기운이 없다 (성어)",lv:"성어"},
+  {w:"别提了",p:"bié tí le",m:"말도 마세요",lv:"구어"},
+  {w:"手头",p:"shǒutóu",m:"당장 맡고 있는 (일·돈)",lv:"HSK6"},
+  {w:"走不开",p:"zǒu bu kāi",m:"자리를 뜰 수 없다",lv:"구어"},
+  {w:"硬撑",p:"yìngchēng",m:"억지로 버티다",lv:"구어"},
+  {w:"白搭",p:"báidā",m:"헛일이다",lv:"구어"},
+  {w:"较真",p:"jiàozhēn",m:"곧이곧대로 따지다",lv:"HSK6"},
+  {w:"舍不得",p:"shěbude",m:"~하기 아깝다, 놓지 못하다",lv:"HSK5"},
+  {w:"帮衬",p:"bāngchèn",m:"서로 거들다",lv:"구어"},
+  {w:"领情",p:"lǐngqíng",m:"호의를 고맙게 받다",lv:"HSK6"},
+  {w:"脚不沾地",p:"jiǎo bù zhān dì",m:"눈코 뜰 새 없다",lv:"관용"},
+  {w:"退烧",p:"tuìshāo",m:"열이 내리다",lv:"실용"}
+ ],
+ lines:[
+  {s:"B",zh:"你今天怎么无精打采的，是不是没睡好？",py:"Nǐ jīntiān zěnme wújīngdǎcǎi de, shì bu shì méi shuì hǎo?",
+   ko:"오늘 왜 이렇게 기운이 없어요, 잠을 못 잤어요?",
+   ck:[["你今天怎么无精打采的","nǐ jīntiān zěnme wújīngdǎcǎi de"],["是不是没睡好","shì bu shì méi shuì hǎo"]],
+   notes:[{t:"无精打采",p:"wú jīng dǎ cǎi",k:"idiom",m:"기운이 없다, 축 처지다",tip:"没精神의 격이 있는 표현. 사람의 상태를 묘사하는 성어 중 가장 자주 쓰입니다."},
+          {t:"怎么…的",p:"zěnme…de",k:"grammar",m:"왜 이렇게 ~한가요",tip:"놀람과 걱정이 섞인 질문. 你怎么瘦成这样了?"}]},
+  {s:"A",zh:"别提了，昨晚孩子发烧，折腾到快三点。",py:"Bié tí le, zuówǎn háizi fāshāo, zhēteng dào kuài sān diǎn.",
+   ko:"말도 마세요, 어젯밤에 애가 열이 나서 세 시 다 돼서까지 씨름했어요.",
+   ck:[["别提了","bié tí le"],["昨晚孩子发烧","zuówǎn háizi fāshāo"],["折腾到快三点","zhēteng dào kuài sān diǎn"]],
+   notes:[{t:"别提了",p:"bié tí le",k:"expr",m:"말도 마세요",tip:"하소연의 시작 신호. 뒤에 반드시 이유가 따라옵니다."},
+          {t:"折腾到…",p:"zhēteng dào…",k:"grammar",m:"~까지 씨름하다",tip:"[동사+到+시점] = 그 시점까지 계속. 忙到半夜 / 聊到很晚."}]},
+  {s:"B",zh:"那你还来上班，换我早请假了。",py:"Nà nǐ hái lái shàngbān, huàn wǒ zǎo qǐngjià le.",
+   ko:"그런데도 출근했어요? 저 같으면 진작 휴가 냈어요.",
+   ck:[["那你还来上班","nà nǐ hái lái shàngbān"],["换我早请假了","huàn wǒ zǎo qǐngjià le"]],
+   notes:[{t:"换我…",p:"huàn wǒ…",k:"expr",m:"나 같으면 ~했을 것이다",tip:"换成我 / 要是我. 상대에게 공감을 표시하는 가장 간단한 방법입니다."}]},
+  {s:"A",zh:"手头这个项目一堆事，实在走不开。",py:"Shǒutóu zhège xiàngmù yì duī shì, shízài zǒu bu kāi.",
+   ko:"지금 맡은 프로젝트에 일이 산더미라 도저히 자리를 못 비웁니다.",
+   ck:[["手头这个项目一堆事","shǒutóu zhège xiàngmù yì duī shì"],["实在走不开","shízài zǒu bu kāi"]],
+   notes:[{t:"手头",p:"shǒutóu",k:"word",m:"지금 손에 쥔 (일·돈)",tip:"手头的工作 / 手头紧(요즘 주머니 사정이 안 좋다)."},
+          {t:"走不开",p:"zǒu bu kāi",k:"grammar",m:"자리를 뜰 수 없다",tip:"가능보어. 抽不开身도 같은 뜻입니다. 거절 사유로 아주 자연스럽습니다."}]},
+  {s:"B",zh:"你也别硬撑，身体垮了什么都白搭。",py:"Nǐ yě bié yìngchēng, shēntǐ kuǎ le shénme dōu báidā.",
+   ko:"무리하지 마세요, 몸이 무너지면 다 헛일이에요.",
+   ck:[["你也别硬撑","nǐ yě bié yìngchēng"],["身体垮了什么都白搭","shēntǐ kuǎ le shénme dōu báidā"]],
+   notes:[{t:"硬撑",p:"yìngchēng",k:"word",m:"억지로 버티다",tip:"别硬撑了 = 무리하지 마. 撑은 [떠받치다]."},
+          {t:"白搭",p:"báidā",k:"expr",m:"헛일이다, 소용없다",tip:"说了也白搭 = 말해 봐야 소용없다. 白费劲과 같은 계열입니다."}]},
+  {s:"A",zh:"道理我都懂，可这活儿总得有人干。",py:"Dàoli wǒ dōu dǒng, kě zhè huór zǒng děi yǒu rén gàn.",
+   ko:"이치는 다 알죠, 그래도 이 일은 누군가는 해야 하니까요.",
+   ck:[["道理我都懂","dàoli wǒ dōu dǒng"],["可这活儿总得有人干","kě zhè huór zǒng děi yǒu rén gàn"]],
+   notes:[{t:"道理我都懂",p:"dàoli wǒ dōu dǒng",k:"expr",m:"머리로는 다 알지만",tip:"충고를 받아들이면서도 사정을 설명할 때 쓰는 완충 문장입니다."},
+          {t:"总得",p:"zǒng děi",k:"grammar",m:"어쨌든 ~해야 한다",tip:"总得有个人负责 = 어쨌든 누군가는 책임져야 한다."}]},
+  {s:"B",zh:"要我说，你就是太较真，凡事都想做到完美。",py:"Yào wǒ shuō, nǐ jiùshì tài jiàozhēn, fánshì dōu xiǎng zuò dào wánměi.",
+   ko:"제가 보기엔 너무 곧이곧대로예요, 뭐든 완벽하게 하려고 하시잖아요.",
+   ck:[["要我说","yào wǒ shuō"],["你就是太较真","nǐ jiùshì tài jiàozhēn"],["凡事都想做到完美","fánshì dōu xiǎng zuò dào wánměi"]],
+   notes:[{t:"要我说",p:"yào wǒ shuō",k:"expr",m:"내가 보기엔",tip:"我觉得보다 적극적으로 의견을 낼 때. 조언 앞에 붙이면 자연스럽습니다."},
+          {t:"较真",p:"jiàozhēn",k:"word",m:"곧이곧대로 따지다",tip:"别太较真 = 너무 진지하게 받아들이지 마. 성격을 평할 때 자주 씁니다."}]},
+  {s:"A",zh:"可能吧，从小就这个性子，改不了。",py:"Kěnéng ba, cóngxiǎo jiù zhège xìngzi, gǎi bu liǎo.",
+   ko:"그럴지도요, 어릴 때부터 이런 성격이라 못 고칩니다.",
+   ck:[["可能吧","kěnéng ba"],["从小就这个性子","cóngxiǎo jiù zhège xìngzi"],["改不了","gǎi bu liǎo"]],
+   notes:[{t:"改不了",p:"gǎi bu liǎo",k:"grammar",m:"고칠 수 없다",tip:"[동사+不了] = ~할 수 없다. 吃不了 / 忘不了 / 受不了."},
+          {t:"性子",p:"xìngzi",k:"word",m:"성미, 기질",tip:"性格의 구어체. 急性子 = 성질 급한 사람."}]},
+  {s:"B",zh:"那至少学着分轻重，能放的就放一放。",py:"Nà zhìshǎo xué zhe fēn qīngzhòng, néng fàng de jiù fàng yi fàng.",
+   ko:"그럼 적어도 경중을 가리는 걸 배우세요, 놓을 수 있는 건 좀 놓고요.",
+   ck:[["那至少学着分轻重","nà zhìshǎo xué zhe fēn qīngzhòng"],["能放的就放一放","néng fàng de jiù fàng yi fàng"]],
+   notes:[{t:"分轻重",p:"fēn qīngzhòng",k:"expr",m:"경중을 가리다",tip:"分不清轻重 = 우선순위를 못 가린다. 업무 대화에서도 유용합니다."},
+          {t:"V一V",p:"V yi V",k:"grammar",m:"좀 ~해 보다",tip:"放一放 / 想一想 / 等一等. 중첩보다 어감이 더 느슨합니다."}]},
+  {s:"A",zh:"说是这么说，真到跟前又舍不得撒手。",py:"Shuō shì zhème shuō, zhēn dào gēnqián yòu shěbude sāshǒu.",
+   ko:"말은 그렇게 하지만, 막상 닥치면 또 손을 못 놓겠더라고요.",
+   ck:[["说是这么说","shuō shì zhème shuō"],["真到跟前","zhēn dào gēnqián"],["又舍不得撒手","yòu shěbude sāshǒu"]],
+   notes:[{t:"说是这么说",p:"shuō shì zhème shuō",k:"expr",m:"말은 그렇지만",tip:"이론과 현실의 간극을 말할 때. 뒤에 但是 없이 바로 이어도 됩니다."},
+          {t:"舍不得",p:"shěbude",k:"word",m:"아까워서 못 하다",tip:"舍不得花钱 / 舍不得走. 반대는 舍得입니다."}]},
+  {s:"B",zh:"我懂。不过孩子这两年最需要陪，工作跑不了。",py:"Wǒ dǒng. Búguò háizi zhè liǎng nián zuì xūyào péi, gōngzuò pǎo bu liǎo.",
+   ko:"이해해요. 그래도 아이는 요 몇 년이 가장 곁에 있어 줘야 할 때고, 일은 도망 안 가요.",
+   ck:[["我懂","wǒ dǒng"],["不过孩子这两年最需要陪","búguò háizi zhè liǎng nián zuì xūyào péi"],["工作跑不了","gōngzuò pǎo bu liǎo"]],
+   notes:[{t:"跑不了",p:"pǎo bu liǎo",k:"expr",m:"도망가지 않는다, 없어지지 않는다",tip:"机会跑不了 = 기회는 어디 안 갑니다. 조급함을 달래는 표현입니다."},
+          {t:"陪",p:"péi",k:"word",m:"곁에 있어 주다",tip:"陪孩子 / 陪你去 / 陪客户. 한국어의 [함께하다]보다 훨씬 자주 씁니다."}]},
+  {s:"A",zh:"这话说到我心坎儿上了。",py:"Zhè huà shuō dào wǒ xīnkǎnr shàng le.",
+   ko:"그 말이 딱 제 마음에 와닿네요.",
+   ck:[["这话说到我心坎儿上了","zhè huà shuō dào wǒ xīnkǎnr shàng le"]],
+   notes:[{t:"说到心坎儿上",p:"shuō dào xīnkǎnr shàng",k:"idiom",m:"정곡을 찌르다, 마음에 와닿다",tip:"상대의 말에 감동했을 때. 你这话说到我心坎儿上了."}]},
+  {s:"B",zh:"要不这周五你早走，剩下的我替你盯着。",py:"Yàobù zhè zhōuwǔ nǐ zǎo zǒu, shèngxià de wǒ tì nǐ dīng zhe.",
+   ko:"그럼 이번 금요일엔 일찍 가세요, 나머지는 제가 대신 봐 드릴게요.",
+   ck:[["要不这周五你早走","yàobù zhè zhōuwǔ nǐ zǎo zǒu"],["剩下的我替你盯着","shèngxià de wǒ tì nǐ dīng zhe"]],
+   notes:[{t:"替",p:"tì",k:"grammar",m:"~를 대신하여",tip:"替我谢谢他 = 저 대신 고맙다고 전해 주세요. 给와 헷갈리지 마세요."},
+          {t:"盯着",p:"dīng zhe",k:"word",m:"지켜보다, 챙기다",tip:"盯项目 / 盯进度. 업무에서 [챙긴다]는 뜻으로 매우 자주 씁니다."}]},
+  {s:"A",zh:"那怎么好意思，你自己也忙得脚不沾地。",py:"Nà zěnme hǎoyìsi, nǐ zìjǐ yě máng de jiǎo bù zhān dì.",
+   ko:"그러면 제가 미안하죠, 본인도 눈코 뜰 새 없이 바쁘잖아요.",
+   ck:[["那怎么好意思","nà zěnme hǎoyìsi"],["你自己也忙得脚不沾地","nǐ zìjǐ yě máng de jiǎo bù zhān dì"]],
+   notes:[{t:"怎么好意思",p:"zěnme hǎoyìsi",k:"expr",m:"어떻게 그러겠어요 (사양)",tip:"호의를 한 번 밀어내는 정형 표현입니다."},
+          {t:"忙得脚不沾地",p:"máng de jiǎo bù zhān dì",k:"idiom",m:"발이 땅에 닿지 않을 만큼 바쁘다",tip:"정도보어 得와 함께 씁니다. 忙得团团转도 같은 계열입니다."}]},
+  {s:"B",zh:"互相帮衬呗，谁还没个难处的时候。",py:"Hùxiāng bāngchèn bei, shéi hái méi ge nánchu de shíhou.",
+   ko:"서로 돕는 거죠, 누군들 힘든 때가 없겠어요.",
+   ck:[["互相帮衬呗","hùxiāng bāngchèn bei"],["谁还没个难处的时候","shéi hái méi ge nánchu de shíhou"]],
+   notes:[{t:"谁还没个…",p:"shéi hái méi ge…",k:"expr",m:"누군들 ~이 없겠어요",tip:"반어법으로 위로합니다. 谁还没个难的时候 = 누구나 어려울 때가 있죠."},
+          {t:"呗",p:"bei",k:"grammar",m:"~인 거죠 (당연함)",tip:"문장 끝의 가벼운 어기조사. 뻔한 사실을 말할 때 씁니다."}]},
+  {s:"A",zh:"那我领你这个情，下次换我顶你。",py:"Nà wǒ lǐng nǐ zhège qíng, xià cì huàn wǒ dǐng nǐ.",
+   ko:"그럼 이 마음 고맙게 받을게요, 다음엔 제가 대신 서겠습니다.",
+   ck:[["那我领你这个情","nà wǒ lǐng nǐ zhège qíng"],["下次换我顶你","xià cì huàn wǒ dǐng nǐ"]],
+   notes:[{t:"领情",p:"lǐngqíng",k:"culture",m:"호의를 고맙게 받다",tip:"我领你的情 = 그 마음 받겠습니다. 부정형 不领情은 [호의를 몰라준다]는 뜻입니다."},
+          {t:"顶",p:"dǐng",k:"word",m:"대신 맡다, 메우다",tip:"顶班 = 대신 근무하다. 我来顶 = 제가 대신할게요."}]},
+  {s:"B",zh:"行，就这么着。对了，孩子退烧了没有？",py:"Xíng, jiù zhème zhe. Duì le, háizi tuìshāo le méiyǒu?",
+   ko:"좋아요, 그렇게 하죠. 참, 아이 열은 내렸어요?",
+   ck:[["行，就这么着","xíng, jiù zhème zhe"],["对了，孩子退烧了没有","duì le, háizi tuìshāo le méiyǒu"]],
+   notes:[{t:"就这么着",p:"jiù zhème zhe",k:"expr",m:"그렇게 하죠",tip:"就这么定了의 더 가벼운 구어판입니다."}]},
+  {s:"A",zh:"早上量过了，三十七度出头，比昨天强多了。",py:"Zǎoshang liáng guo le, sānshíqī dù chūtóu, bǐ zuótiān qiáng duō le.",
+   ko:"아침에 재 보니 37도 좀 넘어요, 어제보단 훨씬 낫습니다.",
+   ck:[["早上量过了","zǎoshang liáng guo le"],["三十七度出头","sānshíqī dù chūtóu"],["比昨天强多了","bǐ zuótiān qiáng duō le"]],
+   notes:[{t:"出头",p:"chūtóu",k:"word",m:"~을 조금 넘다",tip:"三十出头 = 서른 남짓. 나이·수치에 두루 씁니다."},
+          {t:"强多了",p:"qiáng duō le",k:"expr",m:"훨씬 낫다",tip:"好多了와 같지만 [비교해서 낫다]는 어감이 더 강합니다."}]},
+  {s:"B",zh:"那就好，小孩儿嘛，来得快去得也快。",py:"Nà jiù hǎo, xiǎoháir ma, lái de kuài qù de yě kuài.",
+   ko:"다행이네요, 애들이야 뭐, 오는 것도 빠르고 가는 것도 빠르죠.",
+   ck:[["那就好","nà jiù hǎo"],["小孩儿嘛","xiǎoháir ma"],["来得快去得也快","lái de kuài qù de yě kuài"]],
+   notes:[{t:"…嘛",p:"ma",k:"grammar",m:"~이잖아요 (당연함)",tip:"설명조의 어기조사. 孩子嘛，哪有不生病的."}]},
+  {s:"A",zh:"但愿如此。谢了啊，回头请你喝咖啡。",py:"Dànyuàn rúcǐ. Xiè le a, huítóu qǐng nǐ hē kāfēi.",
+   ko:"그러길 바라야죠. 고마워요, 나중에 커피 살게요.",
+   ck:[["但愿如此","dànyuàn rúcǐ"],["谢了啊","xiè le a"],["回头请你喝咖啡","huítóu qǐng nǐ hē kāfēi"]],
+   notes:[{t:"但愿如此",p:"dànyuàn rúcǐ",k:"idiom",m:"그랬으면 좋겠네요",tip:"희망 섞인 마무리. 격식과 구어 모두에서 씁니다."},
+          {t:"谢了",p:"xiè le",k:"expr",m:"고마워요 (가벼운 감사)",tip:"동료·친구 사이의 짧은 감사. 谢谢보다 편한 사이에 씁니다."}]}
+ ],
+ keys:[
+  {zh:"别提了",py:"bié tí le",ko:"말도 마세요",ex:"别提了，昨天忙到半夜。",exPy:"Bié tí le, zuótiān máng dào bànyè.",exKo:"말도 마세요, 어제 한밤중까지 바빴어요."},
+  {zh:"换我…",py:"huàn wǒ…",ko:"나 같으면 ~했을 거예요",ex:"换我早就不干了。",exPy:"Huàn wǒ zǎo jiù bú gàn le.",exKo:"저 같으면 진작 그만뒀어요."},
+  {zh:"走不开",py:"zǒu bu kāi",ko:"자리를 뜰 수 없다",ex:"手头有事，实在走不开。",exPy:"Shǒutóu yǒu shì, shízài zǒu bu kāi.",exKo:"일이 있어서 도저히 자리를 못 비웁니다."},
+  {zh:"要我说",py:"yào wǒ shuō",ko:"내가 보기엔",ex:"要我说，这事儿没那么复杂。",exPy:"Yào wǒ shuō, zhè shìr méi nàme fùzá.",exKo:"제가 보기엔 그렇게 복잡한 일이 아니에요."},
+  {zh:"说是这么说",py:"shuō shì zhème shuō",ko:"말은 그렇지만",ex:"说是这么说，做起来很难。",exPy:"Shuō shì zhème shuō, zuò qǐlái hěn nán.",exKo:"말은 그렇지만 막상 하기는 어려워요."},
+  {zh:"说到心坎儿上了",py:"shuō dào xīnkǎnr shàng le",ko:"마음에 와닿는다",ex:"你这话说到我心坎儿上了。",exPy:"Nǐ zhè huà shuō dào wǒ xīnkǎnr shàng le.",exKo:"그 말씀이 정말 제 마음에 와닿네요."},
+  {zh:"忙得脚不沾地",py:"máng de jiǎo bù zhān dì",ko:"눈코 뜰 새 없이 바쁘다",ex:"这几天忙得脚不沾地。",exPy:"Zhè jǐ tiān máng de jiǎo bù zhān dì.",exKo:"요 며칠 눈코 뜰 새 없이 바빴어요."},
+  {zh:"我领你这个情",py:"wǒ lǐng nǐ zhège qíng",ko:"그 마음 고맙게 받겠습니다",ex:"这个情我领了，下次换我。",exPy:"Zhège qíng wǒ lǐng le, xià cì huàn wǒ.",exKo:"이 마음 받을게요, 다음엔 제가 하겠습니다."}
+ ],
+ out:[
+  {q:"요즘 가장 힘든 일을 别提了로 시작해 세 문장으로 하소연해 보세요.",hint:"别提了 / 手头一堆事 / 实在走不开"},
+  {q:"힘들어하는 동료에게 인정 → 관점 → 제안 순으로 위로해 보세요.",hint:"我懂 / 要我说… / 要不这样"},
+  {q:"동료의 호의를 받아들이면서 다음을 기약해 보세요.",hint:"那怎么好意思 / 我领你这个情 / 下次换我"}
+ ]
+},
+{
+ id:"c1d5", day:5, cat:"건강·검진", level:"HSK 5~6",
+ title:"体检报告", titlePy:"tǐjiǎn bàogào", titleKo:"건강검진 상담 — 수치, 술자리, 생활습관",
+ names:{A:"志勋 (수검자)", B:"大夫 (의사)"},
+ brief:[
+  "검진 상담에서 가장 많이 듣는 말이 <b>够不上…(아직 ~할 정도는 아니다)</b>입니다. 「够不上吃药」는 [약을 먹을 단계까지는 아니다]라는 뜻으로, 안심과 경고를 동시에 담습니다.",
+  "직장인의 최대 변수는 <b>应酬(yìngchou, 접대 자리)</b>입니다. 「推不掉(거절할 수 없다)」와 「能少则少(가능한 한 줄이다)」를 짝으로 알아 두면 이 주제를 끝까지 끌고 갈 수 있습니다.",
+  "중국 의사·어른들은 습관 이야기를 할 때 속담을 즐겨 씁니다. <b>三天打鱼两天晒网</b>은 [작심삼일], <b>风雨无阻</b>는 [비가 오나 눈이 오나]입니다.",
+  "이 회차의 문법 축은 <b>能…则… / 非得…才… / 比…重要得多 / 把…压下去</b>입니다. 수치와 변화를 말하는 문형이라 업무 보고에도 그대로 쓸 수 있습니다."
+ ],
+ vocab:[
+  {w:"体检",p:"tǐjiǎn",m:"건강검진",lv:"HSK5"},
+  {w:"指标",p:"zhǐbiāo",m:"지표, 수치",lv:"HSK6"},
+  {w:"血脂",p:"xuèzhī",m:"혈중 지질",lv:"실용"},
+  {w:"够不上",p:"gòu bu shàng",m:"~할 정도는 못 된다",lv:"구어"},
+  {w:"下手",p:"xiàshǒu",m:"착수하다, 손을 대다",lv:"HSK6"},
+  {w:"应酬",p:"yìngchou",m:"접대 자리, 사교 모임",lv:"HSK6"},
+  {w:"推不掉",p:"tuī bu diào",m:"거절할 수 없다",lv:"구어"},
+  {w:"勉强",p:"miǎnqiǎng",m:"간신히, 억지로",lv:"HSK5"},
+  {w:"心虚",p:"xīnxū",m:"켕기다, 뜨끔하다",lv:"HSK6"},
+  {w:"见效",p:"jiànxiào",m:"효과가 나타나다",lv:"HSK6"},
+  {w:"复查",p:"fùchá",m:"재검사하다",lv:"실용"},
+  {w:"养生",p:"yǎngshēng",m:"건강 관리, 양생",lv:"HSK6"}
+ ],
+ lines:[
+  {s:"B",zh:"报告我看了一遍，总体还行，就是几项偏高。",py:"Bàogào wǒ kàn le yí biàn, zǒngtǐ hái xíng, jiùshì jǐ xiàng piān gāo.",
+   ko:"보고서를 한 번 봤는데 전반적으론 괜찮고, 다만 몇 항목이 좀 높습니다.",
+   ck:[["报告我看了一遍","bàogào wǒ kàn le yí biàn"],["总体还行","zǒngtǐ hái xíng"],["就是几项偏高","jiùshì jǐ xiàng piān gāo"]],
+   notes:[{t:"看了一遍",p:"kàn le yí biàn",k:"measure",m:"한 번 훑어봤다",tip:"遍은 처음부터 끝까지 한 차례. 次와 달리 [전체를 통과한 횟수]입니다."},
+          {t:"偏高",p:"piān gāo",k:"expr",m:"다소 높다",tip:"검진·보고서의 단골 표현. 偏低 / 偏瘦 / 偏贵로 확장됩니다."}]},
+  {s:"A",zh:"哪几项？严重到需要吃药的程度吗？",py:"Nǎ jǐ xiàng? Yánzhòng dào xūyào chī yào de chéngdù ma?",
+   ko:"어느 항목인가요? 약을 먹어야 할 정도로 심각한가요?",
+   ck:[["哪几项","nǎ jǐ xiàng"],["严重到需要吃药的程度吗","yánzhòng dào xūyào chī yào de chéngdù ma"]],
+   notes:[{t:"…到…的程度",p:"dào…de chéngdù",k:"grammar",m:"~할 정도로 ~하다",tip:"累到走不动的程度. 정도를 구체적으로 묻는 고급 문형입니다."}]},
+  {s:"B",zh:"血脂和尿酸，眼下还够不上吃药，先从饮食下手。",py:"Xuèzhī hé niàosuān, yǎnxià hái gòu bu shàng chī yào, xiān cóng yǐnshí xiàshǒu.",
+   ko:"혈중 지질과 요산이요, 지금은 약 먹을 단계까진 아니고 식습관부터 손대시죠.",
+   ck:[["血脂和尿酸","xuèzhī hé niàosuān"],["眼下还够不上吃药","yǎnxià hái gòu bu shàng chī yào"],["先从饮食下手","xiān cóng yǐnshí xiàshǒu"]],
+   notes:[{t:"够不上",p:"gòu bu shàng",k:"grammar",m:"~에는 못 미친다",tip:"够不上标准 / 够不上资格. 기준에 이르지 못했다는 뜻입니다."},
+          {t:"从…下手",p:"cóng…xiàshǒu",k:"expr",m:"~부터 착수하다",tip:"不知道从哪儿下手 = 어디부터 손대야 할지 모르겠다. 업무에도 그대로 씁니다."}]},
+  {s:"A",zh:"具体该忌什么？我平时应酬多，不太好控制。",py:"Jùtǐ gāi jì shénme? Wǒ píngshí yìngchou duō, bú tài hǎo kòngzhì.",
+   ko:"구체적으로 뭘 피해야 하나요? 평소 접대가 많아서 조절이 쉽지 않습니다.",
+   ck:[["具体该忌什么","jùtǐ gāi jì shénme"],["我平时应酬多","wǒ píngshí yìngchou duō"],["不太好控制","bú tài hǎo kòngzhì"]],
+   notes:[{t:"应酬",p:"yìngchou",k:"culture",m:"접대 자리, 사교적 술자리",tip:"동사로도 씁니다. 今晚有个应酬 = 오늘 저녁 접대가 있어요."},
+          {t:"不太好+동사",p:"bú tài hǎo",k:"grammar",m:"~하기가 쉽지 않다",tip:"不太好说 / 不太好办. 완곡하게 어려움을 표시합니다."}]},
+  {s:"B",zh:"内脏、海鲜、啤酒少碰，尤其别空腹喝酒。",py:"Nèizàng, hǎixiān, píjiǔ shǎo pèng, yóuqí bié kōngfù hē jiǔ.",
+   ko:"내장, 해산물, 맥주는 되도록 손대지 마시고, 특히 빈속에 술은 금물입니다.",
+   ck:[["内脏、海鲜、啤酒少碰","nèizàng, hǎixiān, píjiǔ shǎo pèng"],["尤其别空腹喝酒","yóuqí bié kōngfù hē jiǔ"]],
+   notes:[{t:"少+동사",p:"shǎo",k:"grammar",m:"되도록 ~하지 마라",tip:"少喝点儿 / 少说两句. 금지보다 부드러운 권고입니다."},
+          {t:"尤其",p:"yóuqí",k:"word",m:"특히",tip:"특별히 강조할 항목 앞에 놓습니다. 尤其是晚上."}]},
+  {s:"A",zh:"应酬上桌就得喝，总不能一口不动吧。",py:"Yìngchou shàng zhuō jiù děi hē, zǒng bù néng yì kǒu bú dòng ba.",
+   ko:"접대 자리에선 앉으면 마셔야 하는데, 설마 한 모금도 안 댈 수는 없잖아요.",
+   ck:[["应酬上桌就得喝","yìngchou shàng zhuō jiù děi hē"],["总不能一口不动吧","zǒng bù néng yì kǒu bú dòng ba"]],
+   notes:[{t:"总不能…吧",p:"zǒng bù néng…ba",k:"grammar",m:"설마 ~할 수는 없잖아요",tip:"반박을 부드럽게 만드는 골격입니다. 总不能一直等下去吧."}]},
+  {s:"B",zh:"能少则少。实在推不掉，就用水兑着慢慢喝。",py:"Néng shǎo zé shǎo. Shízài tuī bu diào, jiù yòng shuǐ duì zhe mànmàn hē.",
+   ko:"가능한 한 줄이세요. 도저히 못 뺄 자리면 물을 타서 천천히 드시고요.",
+   ck:[["能少则少","néng shǎo zé shǎo"],["实在推不掉","shízài tuī bu diào"],["就用水兑着慢慢喝","jiù yòng shuǐ duì zhe mànmàn hē"]],
+   notes:[{t:"能…则…",p:"néng…zé…",k:"grammar",m:"가능하면 ~하게",tip:"能省则省 = 아낄 수 있으면 아끼자. 문어적이면서도 회화에서 자주 들립니다."},
+          {t:"推不掉",p:"tuī bu diào",k:"grammar",m:"거절할 수 없다",tip:"推는 [밀어내다] = 거절하다. 推掉一个饭局 = 술자리 하나를 뺐다."}]},
+  {s:"A",zh:"运动方面呢？我一周勉强能挤出两次。",py:"Yùndòng fāngmiàn ne? Wǒ yì zhōu miǎnqiǎng néng jǐ chū liǎng cì.",
+   ko:"운동은요? 일주일에 간신히 두 번 정도 시간을 냅니다.",
+   ck:[["运动方面呢","yùndòng fāngmiàn ne"],["我一周勉强能挤出两次","wǒ yì zhōu miǎnqiǎng néng jǐ chū liǎng cì"]],
+   notes:[{t:"挤出时间",p:"jǐ chū shíjiān",k:"expr",m:"시간을 쥐어짜 내다",tip:"挤는 [짜내다]. 挤出两个小时 = 두 시간을 겨우 냈다."},
+          {t:"…方面呢？",p:"fāngmiàn ne",k:"expr",m:"~쪽은 어떤가요?",tip:"화제를 옮기는 간결한 방법입니다. 价格方面呢?"}]},
+  {s:"B",zh:"两次也比不动强，关键是别三天打鱼两天晒网。",py:"Liǎng cì yě bǐ bú dòng qiáng, guānjiàn shì bié sān tiān dǎ yú liǎng tiān shài wǎng.",
+   ko:"두 번도 안 하는 것보단 낫죠, 관건은 작심삼일이 되지 않는 겁니다.",
+   ck:[["两次也比不动强","liǎng cì yě bǐ bú dòng qiáng"],["关键是别三天打鱼两天晒网","guānjiàn shì bié sān tiān dǎ yú liǎng tiān shài wǎng"]],
+   notes:[{t:"三天打鱼两天晒网",p:"sān tiān dǎ yú liǎng tiān shài wǎng",k:"idiom",m:"작심삼일",tip:"사흘 고기 잡고 이틀 그물 말린다는 속담. 학습·운동 이야기의 단골입니다."},
+          {t:"关键是…",p:"guānjiàn shì…",k:"expr",m:"관건은 ~이다",tip:"회의에서 핵심을 짚을 때 그대로 씁니다."}]},
+  {s:"A",zh:"这话说得我心虚，我确实老是断断续续的。",py:"Zhè huà shuō de wǒ xīnxū, wǒ quèshí lǎoshì duànduànxùxù de.",
+   ko:"그 말씀에 뜨끔하네요, 실제로 늘 끊겼다 이어졌다 합니다.",
+   ck:[["这话说得我心虚","zhè huà shuō de wǒ xīnxū"],["我确实老是断断续续的","wǒ quèshí lǎoshì duànduànxùxù de"]],
+   notes:[{t:"说得我…",p:"shuō de wǒ…",k:"grammar",m:"그 말에 내가 ~해졌다",tip:"[동사+得+대상+상태]. 说得我都不好意思了 = 그 말에 민망해졌어요."},
+          {t:"老是",p:"lǎoshì",k:"word",m:"늘, 자꾸",tip:"总是의 구어체. 你老是这样 = 넌 늘 이런 식이야."}]},
+  {s:"B",zh:"那就从走路开始，每天四十分钟，风雨无阻。",py:"Nà jiù cóng zǒulù kāishǐ, měitiān sìshí fēnzhōng, fēngyǔ wúzǔ.",
+   ko:"그럼 걷기부터 시작하세요, 매일 40분씩, 비가 오나 눈이 오나요.",
+   ck:[["那就从走路开始","nà jiù cóng zǒulù kāishǐ"],["每天四十分钟","měitiān sìshí fēnzhōng"],["风雨无阻","fēngyǔ wúzǔ"]],
+   notes:[{t:"风雨无阻",p:"fēngyǔ wúzǔ",k:"idiom",m:"비바람에도 거르지 않는다",tip:"약속·습관의 굳건함을 강조하는 성어입니다."}]},
+  {s:"A",zh:"走路见效吗？我以为非得出汗才算数。",py:"Zǒulù jiànxiào ma? Wǒ yǐwéi fēiděi chū hàn cái suànshù.",
+   ko:"걷는 게 효과가 있나요? 저는 땀을 흘려야만 인정되는 줄 알았어요.",
+   ck:[["走路见效吗","zǒulù jiànxiào ma"],["我以为非得出汗才算数","wǒ yǐwéi fēiděi chū hàn cái suànshù"]],
+   notes:[{t:"非得…才…",p:"fēiděi…cái…",k:"grammar",m:"반드시 ~해야만 ~하다",tip:"非得你去才行 = 네가 가야만 된다. 강한 조건을 나타냅니다."},
+          {t:"我以为",p:"wǒ yǐwéi",k:"grammar",m:"(잘못) ~인 줄 알았다",tip:"我以为는 사실과 다른 생각. 我觉得와 혼동하면 어색해집니다."}]},
+  {s:"B",zh:"那是误解。持续比强度重要得多。",py:"Nà shì wùjiě. Chíxù bǐ qiángdù zhòngyào de duō.",
+   ko:"그건 오해입니다. 강도보다 지속이 훨씬 중요해요.",
+   ck:[["那是误解","nà shì wùjiě"],["持续比强度重要得多","chíxù bǐ qiángdù zhòngyào de duō"]],
+   notes:[{t:"比…重要得多",p:"bǐ…zhòngyào de duō",k:"grammar",m:"~보다 훨씬 중요하다",tip:"비교문의 강조는 형용사 뒤 得多 또는 多了. 很/非常을 앞에 두면 틀립니다."}]},
+  {s:"A",zh:"受教了。那多久复查一次比较合适？",py:"Shòujiào le. Nà duō jiǔ fùchá yí cì bǐjiào héshì?",
+   ko:"배웠습니다. 그럼 얼마 만에 재검사하는 게 좋을까요?",
+   ck:[["受教了","shòujiào le"],["那多久复查一次比较合适","nà duō jiǔ fùchá yí cì bǐjiào héshì"]],
+   notes:[{t:"受教了",p:"shòujiào le",k:"expr",m:"가르침 잘 받았습니다",tip:"윗사람·전문가의 조언에 대한 격식 있는 응답입니다."},
+          {t:"多久…一次",p:"duō jiǔ…yí cì",k:"grammar",m:"얼마 만에 한 번",tip:"多久见一次面? 빈도를 묻는 표준 형식입니다."}]},
+  {s:"B",zh:"三个月复查一次，看看指标往哪个方向走。",py:"Sān ge yuè fùchá yí cì, kànkan zhǐbiāo wǎng nǎge fāngxiàng zǒu.",
+   ko:"3개월에 한 번 재검사해서 수치가 어느 방향으로 가는지 봅시다.",
+   ck:[["三个月复查一次","sān ge yuè fùchá yí cì"],["看看指标往哪个方向走","kànkan zhǐbiāo wǎng nǎge fāngxiàng zǒu"]],
+   notes:[{t:"往…方向走",p:"wǎng…fāngxiàng zǒu",k:"expr",m:"~방향으로 가다",tip:"수치·상황의 추세를 말할 때. 업무 보고에도 그대로 씁니다."}]},
+  {s:"A",zh:"要是三个月后没降下来呢？",py:"Yàoshi sān ge yuè hòu méi jiàng xiàlái ne?",
+   ko:"만약 3개월 뒤에도 안 내려가면요?",
+   ck:[["要是三个月后","yàoshi sān ge yuè hòu"],["没降下来呢","méi jiàng xiàlái ne"]],
+   notes:[{t:"降下来",p:"jiàng xiàlái",k:"grammar",m:"내려오다, 낮아지다",tip:"[동사+下来] = 높은 데서 낮은 데로, 또는 고정되다. 定下来 / 慢下来."}]},
+  {s:"B",zh:"那再考虑用药，不过我估计你自己就能压下去。",py:"Nà zài kǎolǜ yòngyào, búguò wǒ gūjì nǐ zìjǐ jiù néng yā xiàqù.",
+   ko:"그때 약을 고려하죠, 그런데 제 짐작엔 스스로 충분히 낮추실 겁니다.",
+   ck:[["那再考虑用药","nà zài kǎolǜ yòngyào"],["不过我估计","búguò wǒ gūjì"],["你自己就能压下去","nǐ zìjǐ jiù néng yā xiàqù"]],
+   notes:[{t:"估计",p:"gūjì",k:"word",m:"짐작하다, ~일 것이다",tip:"我估计他不来了 = 아마 안 올 겁니다. 회화에서 大概보다 자주 씁니다."},
+          {t:"压下去",p:"yā xiàqù",k:"expr",m:"눌러 내리다, 낮추다",tip:"把血压压下去 / 把成本压下去. 수치 관리에 두루 씁니다."}]},
+  {s:"A",zh:"但愿如此。说实话，这几年确实不如从前了。",py:"Dànyuàn rúcǐ. Shuō shíhuà, zhè jǐ nián quèshí bùrú cóngqián le.",
+   ko:"그러길 바랍니다. 솔직히 요 몇 년은 확실히 예전 같지 않네요.",
+   ck:[["但愿如此","dànyuàn rúcǐ"],["说实话","shuō shíhuà"],["这几年确实不如从前了","zhè jǐ nián quèshí bùrú cóngqián le"]],
+   notes:[{t:"不如从前",p:"bùrú cóngqián",k:"expr",m:"예전만 못하다",tip:"A不如B = A가 B만 못하다. 体力不如从前 / 记性不如从前."},
+          {t:"说实话",p:"shuō shíhuà",k:"expr",m:"솔직히 말하면",tip:"속내를 꺼내는 신호어. 说心里话도 같은 계열입니다."}]},
+  {s:"B",zh:"谁不是呢。四十以后，养生这事儿躲不过去。",py:"Shéi bú shì ne. Sìshí yǐhòu, yǎngshēng zhè shìr duǒ bu guòqù.",
+   ko:"누군들 안 그렇겠습니까. 마흔 넘으면 건강 관리는 피해 갈 수 없죠.",
+   ck:[["谁不是呢","shéi bú shì ne"],["四十以后","sìshí yǐhòu"],["养生这事儿躲不过去","yǎngshēng zhè shìr duǒ bu guòqù"]],
+   notes:[{t:"谁不是呢",p:"shéi bú shì ne",k:"expr",m:"누군들 안 그렇겠어요",tip:"공감의 반어법. 상대의 한탄을 받아 주는 표현입니다."},
+          {t:"躲不过去",p:"duǒ bu guòqù",k:"grammar",m:"피할 수 없다",tip:"가능보어. 躲得过初一，躲不过十五 라는 속담으로도 유명합니다."}]},
+  {s:"A",zh:"明白，我这就把烟酒先减下来，谢谢大夫。",py:"Míngbai, wǒ zhè jiù bǎ yānjiǔ xiān jiǎn xiàlái, xièxie dàifu.",
+   ko:"알겠습니다, 당장 술담배부터 줄이겠습니다, 감사합니다 선생님.",
+   ck:[["明白","míngbai"],["我这就把烟酒先减下来","wǒ zhè jiù bǎ yānjiǔ xiān jiǎn xiàlái"],["谢谢大夫","xièxie dàifu"]],
+   notes:[{t:"这就",p:"zhè jiù",k:"expr",m:"지금 당장",tip:"我这就去 = 지금 바로 갈게요. 马上보다 즉각성이 강합니다."},
+          {t:"把…减下来",p:"bǎ…jiǎn xiàlái",k:"grammar",m:"~를 줄이다",tip:"把자문 + 방향보어. 把成本降下来 처럼 업무에도 그대로 씁니다."}]}
+ ],
+ keys:[
+  {zh:"够不上…",py:"gòu bu shàng…",ko:"~할 정도는 아니다",ex:"这还够不上重大事故。",exPy:"Zhè hái gòu bu shàng zhòngdà shìgù.",exKo:"이건 아직 중대 사고라고 할 정도는 아닙니다."},
+  {zh:"从…下手",py:"cóng…xiàshǒu",ko:"~부터 착수하다",ex:"先从简单的地方下手。",exPy:"Xiān cóng jiǎndān de dìfang xiàshǒu.",exKo:"쉬운 데부터 손대시죠."},
+  {zh:"总不能…吧",py:"zǒng bù néng…ba",ko:"설마 ~할 수는 없잖아요",ex:"总不能一直拖下去吧。",exPy:"Zǒng bù néng yìzhí tuō xiàqù ba.",exKo:"계속 미룰 수는 없잖아요."},
+  {zh:"能少则少",py:"néng shǎo zé shǎo",ko:"가능한 한 줄이다",ex:"应酬能少则少。",exPy:"Yìngchou néng shǎo zé shǎo.",exKo:"접대 자리는 가능한 한 줄이세요."},
+  {zh:"推不掉",py:"tuī bu diào",ko:"거절할 수 없다",ex:"这个饭局实在推不掉。",exPy:"Zhège fànjú shízài tuī bu diào.",exKo:"이 자리는 도저히 뺄 수가 없어요."},
+  {zh:"三天打鱼两天晒网",py:"sān tiān dǎ yú liǎng tiān shài wǎng",ko:"작심삼일",ex:"学语言最怕三天打鱼两天晒网。",exPy:"Xué yǔyán zuì pà sān tiān dǎ yú liǎng tiān shài wǎng.",exKo:"언어 공부는 작심삼일이 제일 무섭죠."},
+  {zh:"非得…才…",py:"fēiděi…cái…",ko:"반드시 ~해야만 ~하다",ex:"非得他同意才行。",exPy:"Fēiděi tā tóngyì cái xíng.",exKo:"그 사람이 동의해야만 됩니다."},
+  {zh:"不如从前",py:"bùrú cóngqián",ko:"예전만 못하다",ex:"体力真是不如从前了。",exPy:"Tǐlì zhēn shì bùrú cóngqián le.",exKo:"체력이 정말 예전 같지 않네요."}
+ ],
+ out:[
+  {q:"자신의 건강 상태와 생활 습관을 세 문장으로 설명해 보세요.",hint:"几项偏高 / 应酬多 / 一周勉强挤出两次"},
+  {q:"거절하기 어려운 술자리를 어떻게 넘길지 중국어로 말해 보세요.",hint:"实在推不掉 / 能少则少 / 用水兑着慢慢喝"},
+  {q:"작심삼일을 인정하고 새 계획을 선언해 보세요.",hint:"三天打鱼两天晒网 / 从走路开始 / 风雨无阻"}
+ ]
+},
+{
+ id:"c1d6", day:6, cat:"부탁·인간관계", level:"HSK 5~6",
+ title:"求人办事", titlePy:"qiú rén bàn shì", titleKo:"부탁하기 — 꺼내기 어려운 말을 꺼내는 법",
+ names:{A:"志勋 (부탁하는 쪽)", B:"小美 (부탁받는 쪽)"},
+ brief:[
+  "중국어에서 부탁은 <b>본론을 바로 꺼내지 않습니다.</b> 먼저 「有件事想请你帮个忙，不知道方不方便」처럼 <b>상대가 거절할 여지</b>를 만들어 두고 시작합니다. 이 예열이 없으면 부담을 떠넘기는 말이 됩니다.",
+  "부탁받은 쪽은 <b>不好说 / 不归我管 / 不敢保证</b>으로 기대치를 낮춥니다. 이건 거절이 아니라 <b>안전장치</b>입니다. 이 말을 거절로 오해하면 대화가 끊깁니다.",
+  "핵심 개념은 <b>人情(rénqíng)</b>입니다. 「人情用一次少一次」— 부탁은 쓸수록 줄어드는 자산이라는 감각이 깔려 있습니다. 그래서 부탁 전에 망설이고(犹豫), 부탁 후에 갚습니다(下次换我).",
+  "<b>走后门(연줄로 처리하다)</b>은 부정적인 말입니다. 그래서 A는 먼저 「我不是让你走后门」이라고 선을 긋습니다. 이 한마디가 부탁의 격을 지켜 줍니다."
+ ],
+ vocab:[
+  {w:"帮个忙",p:"bāng ge máng",m:"도움을 좀 주다",lv:"HSK4"},
+  {w:"不好说",p:"bù hǎo shuō",m:"뭐라 말하기 어렵다",lv:"구어"},
+  {w:"不归我管",p:"bù guī wǒ guǎn",m:"내 소관이 아니다",lv:"구어"},
+  {w:"走后门",p:"zǒu hòumén",m:"연줄로 처리하다",lv:"관용"},
+  {w:"打听",p:"dǎting",m:"알아보다, 수소문하다",lv:"HSK5"},
+  {w:"名额",p:"míng'é",m:"정원, 자리",lv:"HSK6"},
+  {w:"保证",p:"bǎozhèng",m:"보장하다",lv:"HSK4"},
+  {w:"简历",p:"jiǎnlì",m:"이력서",lv:"HSK5"},
+  {w:"期望",p:"qīwàng",m:"기대",lv:"HSK5"},
+  {w:"准信儿",p:"zhǔnxìnr",m:"확실한 소식",lv:"구어"},
+  {w:"人情",p:"rénqíng",m:"인정, 신세",lv:"HSK6"},
+  {w:"开口",p:"kāikǒu",m:"말을 꺼내다",lv:"HSK5"}
+ ],
+ lines:[
+  {s:"A",zh:"小美，有件事想请你帮个忙，不知道方不方便。",py:"Xiǎo Měi, yǒu jiàn shì xiǎng qǐng nǐ bāng ge máng, bù zhīdào fāng bu fāngbiàn.",
+   ko:"샤오메이, 부탁할 일이 하나 있는데 괜찮을지 모르겠네요.",
+   ck:[["小美，有件事","Xiǎo Měi, yǒu jiàn shì"],["想请你帮个忙","xiǎng qǐng nǐ bāng ge máng"],["不知道方不方便","bù zhīdào fāng bu fāngbiàn"]],
+   notes:[{t:"不知道方不方便",p:"bù zhīdào fāng bu fāngbiàn",k:"expr",m:"괜찮으실지 모르겠습니다",tip:"부탁의 문을 여는 정형 문장. 상대에게 물러설 자리를 먼저 만들어 줍니다."},
+          {t:"帮个忙",p:"bāng ge máng",k:"grammar",m:"도움을 좀 주다",tip:"帮忙 사이에 个를 끼워 넣어 가볍게 만듭니다. 帮我个忙 형태도 자주 씁니다."}]},
+  {s:"B",zh:"你说，能帮的我肯定帮。",py:"Nǐ shuō, néng bāng de wǒ kěndìng bāng.",
+   ko:"말해 보세요, 도울 수 있는 거면 당연히 돕죠.",
+   ck:[["你说","nǐ shuō"],["能帮的我肯定帮","néng bāng de wǒ kěndìng bāng"]],
+   notes:[{t:"能…的…",p:"néng…de…",k:"grammar",m:"~할 수 있는 것은",tip:"[동사+的]로 명사 자리를 채우는 구어 형식. 能改的都改了."}]},
+  {s:"A",zh:"我表弟下个月来这边找工作，想问问你们公司招不招人。",py:"Wǒ biǎodì xià ge yuè lái zhèbiān zhǎo gōngzuò, xiǎng wènwen nǐmen gōngsī zhāo bu zhāo rén.",
+   ko:"사촌 동생이 다음 달에 여기로 일자리를 구하러 오는데, 회사에서 사람 뽑는지 여쭤보고 싶어서요.",
+   ck:[["我表弟下个月来这边找工作","wǒ biǎodì xià ge yuè lái zhèbiān zhǎo gōngzuò"],["想问问你们公司","xiǎng wènwen nǐmen gōngsī"],["招不招人","zhāo bu zhāo rén"]],
+   notes:[{t:"招人",p:"zhāo rén",k:"word",m:"사람을 채용하다",tip:"招聘의 구어체. 我们在招人 = 우리 채용 중이에요."},
+          {t:"表弟",p:"biǎodì",k:"culture",m:"외사촌·고종사촌 동생",tip:"친가 쪽은 堂, 외가·고모 쪽은 表. 중국어는 친척 호칭이 매우 세분화되어 있습니다."}]},
+  {s:"B",zh:"这个我还真不好说，人事那边不归我管。",py:"Zhège wǒ hái zhēn bù hǎo shuō, rénshì nàbiān bù guī wǒ guǎn.",
+   ko:"이건 정말 뭐라 말하기 어려워요, 인사 쪽은 제 소관이 아니라서요.",
+   ck:[["这个我还真不好说","zhège wǒ hái zhēn bù hǎo shuō"],["人事那边不归我管","rénshì nàbiān bù guī wǒ guǎn"]],
+   notes:[{t:"不好说",p:"bù hǎo shuō",k:"expr",m:"뭐라 말하기 어렵다",tip:"모른다는 뜻이 아니라 [단정할 수 없다]입니다. 회사 대화의 필수 완충어."},
+          {t:"不归我管",p:"bù guī wǒ guǎn",k:"expr",m:"제 담당이 아닙니다",tip:"归 = ~에 속하다. 这事儿归他管 = 그건 그분 담당입니다."}]},
+  {s:"A",zh:"我不是让你走后门，就是想打听打听有没有名额。",py:"Wǒ bú shì ràng nǐ zǒu hòumén, jiùshì xiǎng dǎting dǎting yǒu méiyǒu míng'é.",
+   ko:"연줄을 대 달라는 게 아니라, 자리가 있는지만 좀 알아봐 달라는 겁니다.",
+   ck:[["我不是让你走后门","wǒ bú shì ràng nǐ zǒu hòumén"],["就是想打听打听","jiùshì xiǎng dǎting dǎting"],["有没有名额","yǒu méiyǒu míng'é"]],
+   notes:[{t:"走后门",p:"zǒu hòumén",k:"culture",m:"뒷문으로 들어가다, 연줄을 쓰다",tip:"부정적인 뉘앙스입니다. 먼저 선을 그으면 부탁이 훨씬 깔끔해집니다."},
+          {t:"不是…就是…",p:"bú shì…jiùshì…",k:"grammar",m:"~가 아니라 그저 ~일 뿐이다",tip:"오해를 막고 의도를 좁히는 골격입니다."}]},
+  {s:"B",zh:"那我可以帮你问，不过话说在前头，成不成我不敢保证。",py:"Nà wǒ kěyǐ bāng nǐ wèn, búguò huà shuō zài qiántou, chéng bu chéng wǒ bù gǎn bǎozhèng.",
+   ko:"그럼 물어봐 줄 수는 있어요, 다만 미리 말해 두는데 될지 안 될지는 장담 못 합니다.",
+   ck:[["那我可以帮你问","nà wǒ kěyǐ bāng nǐ wèn"],["不过话说在前头","búguò huà shuō zài qiántou"],["成不成我不敢保证","chéng bu chéng wǒ bù gǎn bǎozhèng"]],
+   notes:[{t:"话说在前头",p:"huà shuō zài qiántou",k:"expr",m:"미리 말해 두겠습니다",tip:"조건이나 한계를 먼저 못 박는 표현. 계약·협상에서도 그대로 씁니다."},
+          {t:"成不成",p:"chéng bu chéng",k:"grammar",m:"될지 안 될지",tip:"成 = 성사되다. 这事儿成了 = 그 일 성사됐어요."}]},
+  {s:"A",zh:"那是自然，能问一句我就已经很感激了。",py:"Nà shì zìrán, néng wèn yí jù wǒ jiù yǐjīng hěn gǎnjī le.",
+   ko:"당연하죠, 한마디 물어봐 주시는 것만으로도 정말 감사합니다.",
+   ck:[["那是自然","nà shì zìrán"],["能问一句","néng wèn yí jù"],["我就已经很感激了","wǒ jiù yǐjīng hěn gǎnjī le"]],
+   notes:[{t:"那是自然",p:"nà shì zìrán",k:"expr",m:"그야 당연하죠",tip:"当然보다 격식 있고 어른스럽게 들립니다."}]},
+  {s:"B",zh:"他什么专业？我们这儿技术岗多，文科的机会少。",py:"Tā shénme zhuānyè? Wǒmen zhèr jìshù gǎng duō, wénkē de jīhuì shǎo.",
+   ko:"전공이 뭐예요? 우리 쪽은 기술직이 많고 문과는 기회가 적어요.",
+   ck:[["他什么专业","tā shénme zhuānyè"],["我们这儿技术岗多","wǒmen zhèr jìshù gǎng duō"],["文科的机会少","wénkē de jīhuì shǎo"]],
+   notes:[{t:"岗",p:"gǎng",k:"word",m:"직무, 자리",tip:"岗位의 줄임. 技术岗 / 管理岗 / 在岗(재직 중)."}]},
+  {s:"A",zh:"学机械的，做过两年设备维护，动手能力还行。",py:"Xué jīxiè de, zuò guo liǎng nián shèbèi wéihù, dòngshǒu nénglì hái xíng.",
+   ko:"기계 전공이고, 설비 유지보수를 2년 했어요, 손재주는 괜찮은 편입니다.",
+   ck:[["学机械的","xué jīxiè de"],["做过两年设备维护","zuò guo liǎng nián shèbèi wéihù"],["动手能力还行","dòngshǒu nénglì hái xíng"]],
+   notes:[{t:"学…的",p:"xué…de",k:"grammar",m:"~를 전공한 사람",tip:"你是学什么的? = 전공이 뭐예요? 자기소개의 기본 문형입니다."},
+          {t:"动手能力",p:"dòngshǒu nénglì",k:"word",m:"실무·손으로 하는 능력",tip:"채용 이야기에서 자주 나오는 평가어입니다."}]},
+  {s:"B",zh:"那还有点儿希望，你把简历发我，我转给同事看看。",py:"Nà hái yǒudiǎnr xīwàng, nǐ bǎ jiǎnlì fā wǒ, wǒ zhuǎn gěi tóngshì kànkan.",
+   ko:"그럼 좀 가능성이 있겠네요, 이력서 보내 주시면 동료에게 전달해 볼게요.",
+   ck:[["那还有点儿希望","nà hái yǒudiǎnr xīwàng"],["你把简历发我","nǐ bǎ jiǎnlì fā wǒ"],["我转给同事看看","wǒ zhuǎn gěi tóngshì kànkan"]],
+   notes:[{t:"转给",p:"zhuǎn gěi",k:"word",m:"~에게 전달하다",tip:"메일·메시지에 그대로 씁니다. 我转给你 = 제가 전달해 드릴게요."}]},
+  {s:"A",zh:"太感谢了，晚上我就发过去。",py:"Tài gǎnxiè le, wǎnshang wǒ jiù fā guòqù.",
+   ko:"정말 감사합니다, 저녁에 바로 보내겠습니다.",
+   ck:[["太感谢了","tài gǎnxiè le"],["晚上我就发过去","wǎnshang wǒ jiù fā guòqù"]],
+   notes:[{t:"发过去",p:"fā guòqù",k:"grammar",m:"보내다 (상대 쪽으로)",tip:"방향보어 过去/过来가 시점을 정합니다. 发过来 = 이쪽으로 보내 주세요."}]},
+  {s:"B",zh:"别客气。不过有句话我得提醒你。",py:"Bié kèqi. Búguò yǒu jù huà wǒ děi tíxǐng nǐ.",
+   ko:"별말씀을요. 그런데 한마디 일러 둘 게 있어요.",
+   ck:[["别客气","bié kèqi"],["不过有句话我得提醒你","búguò yǒu jù huà wǒ děi tíxǐng nǐ"]],
+   notes:[{t:"有句话…",p:"yǒu jù huà…",k:"expr",m:"할 말이 하나 있는데",tip:"충고를 꺼내는 예열 문장입니다. 有句话不知当讲不当讲 형태도 유명합니다."}]},
+  {s:"A",zh:"您说，我听着呢。",py:"Nín shuō, wǒ tīng zhe ne.",
+   ko:"말씀하세요, 듣고 있습니다.",
+   ck:[["您说","nín shuō"],["我听着呢","wǒ tīng zhe ne"]],
+   notes:[{t:"…着呢",p:"zhe ne",k:"grammar",m:"~하고 있어요",tip:"진행을 강조하는 구어. 我等着呢 / 忙着呢."}]},
+  {s:"B",zh:"这种事别抱太大期望，免得他白高兴一场。",py:"Zhè zhǒng shì bié bào tài dà qīwàng, miǎnde tā bái gāoxìng yì chǎng.",
+   ko:"이런 일은 기대를 너무 크게 하지 마세요, 괜히 헛물켜지 않게요.",
+   ck:[["这种事别抱太大期望","zhè zhǒng shì bié bào tài dà qīwàng"],["免得他白高兴一场","miǎnde tā bái gāoxìng yì chǎng"]],
+   notes:[{t:"抱期望",p:"bào qīwàng",k:"word",m:"기대를 품다",tip:"别抱太大期望 = 너무 기대하지 마세요. 抱希望도 같습니다."},
+          {t:"白高兴一场",p:"bái gāoxìng yì chǎng",k:"expr",m:"괜히 좋아하다 말다",tip:"白 = 헛되이, 一场 = 한바탕. 白忙一场도 같은 구조입니다."}]},
+  {s:"A",zh:"有道理，我先不跟他说，等有准信儿再讲。",py:"Yǒu dàoli, wǒ xiān bù gēn tā shuō, děng yǒu zhǔnxìnr zài jiǎng.",
+   ko:"일리 있네요, 일단 말 안 하고 확실한 소식이 오면 얘기하겠습니다.",
+   ck:[["有道理","yǒu dàoli"],["我先不跟他说","wǒ xiān bù gēn tā shuō"],["等有准信儿再讲","děng yǒu zhǔnxìnr zài jiǎng"]],
+   notes:[{t:"等…再…",p:"děng…zài…",k:"grammar",m:"~한 뒤에 ~하다",tip:"等他回来再说 = 그가 오면 그때 얘기하죠. 순서를 정하는 기본 골격입니다."},
+          {t:"准信儿",p:"zhǔnxìnr",k:"word",m:"확실한 소식",tip:"有准信儿了吗? = 확실한 소식 나왔나요? 업무에서도 그대로 씁니다."}]},
+  {s:"B",zh:"这样最稳妥。人情这东西，用一次少一次。",py:"Zhèyàng zuì wěntuǒ. Rénqíng zhè dōngxi, yòng yí cì shǎo yí cì.",
+   ko:"그게 제일 안전하죠. 인정이란 게 한 번 쓰면 한 번 줄어드니까요.",
+   ck:[["这样最稳妥","zhèyàng zuì wěntuǒ"],["人情这东西","rénqíng zhè dōngxi"],["用一次少一次","yòng yí cì shǎo yí cì"]],
+   notes:[{t:"稳妥",p:"wěntuǒ",k:"word",m:"안전하고 확실하다",tip:"这么办比较稳妥 = 이렇게 하는 편이 안전합니다."},
+          {t:"用一次少一次",p:"yòng yí cì shǎo yí cì",k:"culture",m:"쓸수록 줄어든다",tip:"인정·기회를 아껴 쓰라는 중국식 감각. 见一次少一次(만날 날이 줄어든다)도 자주 씁니다."}]},
+  {s:"A",zh:"这话在理，所以我才犹豫了好几天才开口。",py:"Zhè huà zài lǐ, suǒyǐ wǒ cái yóuyù le hǎo jǐ tiān cái kāikǒu.",
+   ko:"맞는 말씀이라, 그래서 며칠을 망설이다 겨우 말을 꺼낸 겁니다.",
+   ck:[["这话在理","zhè huà zài lǐ"],["所以我才犹豫了好几天","suǒyǐ wǒ cái yóuyù le hǎo jǐ tiān"],["才开口","cái kāikǒu"]],
+   notes:[{t:"开口",p:"kāikǒu",k:"expr",m:"말을 꺼내다",tip:"不好意思开口 = 말을 꺼내기가 민망하다. 부탁의 어려움을 표현하는 핵심어입니다."},
+          {t:"好几天",p:"hǎo jǐ tiān",k:"grammar",m:"며칠씩이나",tip:"好+수량 = 꽤 많은. 好几次 / 好多人."}]},
+  {s:"B",zh:"咱俩之间用不着这么见外，有事直说就行。",py:"Zán liǎ zhījiān yòng bu zháo zhème jiànwài, yǒu shì zhí shuō jiù xíng.",
+   ko:"우리 사이에 그렇게 격식 차릴 필요 없어요, 일 있으면 바로 말하면 됩니다.",
+   ck:[["咱俩之间","zán liǎ zhījiān"],["用不着这么见外","yòng bu zháo zhème jiànwài"],["有事直说就行","yǒu shì zhí shuō jiù xíng"]],
+   notes:[{t:"用不着",p:"yòng bu zháo",k:"grammar",m:"~할 필요 없다",tip:"不用보다 강한 어감. 用不着你操心 = 네가 걱정할 필요 없어."},
+          {t:"咱俩",p:"zán liǎ",k:"word",m:"우리 둘",tip:"咱们两个의 축약. 친밀함을 드러내는 북방 구어입니다."}]},
+  {s:"A",zh:"那我记下了。以后你有用得着我的地方，尽管开口。",py:"Nà wǒ jì xià le. Yǐhòu nǐ yǒu yòng de zháo wǒ de dìfang, jǐnguǎn kāikǒu.",
+   ko:"새겨 두겠습니다. 앞으로 제가 쓸모 있을 일이 있으면 언제든 말씀하세요.",
+   ck:[["那我记下了","nà wǒ jì xià le"],["以后你有用得着我的地方","yǐhòu nǐ yǒu yòng de zháo wǒ de dìfang"],["尽管开口","jǐnguǎn kāikǒu"]],
+   notes:[{t:"用得着",p:"yòng de zháo",k:"grammar",m:"쓸모가 있다, 필요하다",tip:"用不着의 반대. 有用得着我的地方 = 제가 도움이 될 일이 있으면."},
+          {t:"尽管",p:"jǐnguǎn",k:"grammar",m:"얼마든지, 마음껏",tip:"尽管说 / 尽管用. 뒤에 동사를 놓아 [부담 갖지 말고]를 나타냅니다."}]},
+  {s:"B",zh:"一定。行了，别耽误你干活了，回聊。",py:"Yídìng. Xíng le, bié dānwu nǐ gàn huó le, huí liáo.",
+   ko:"그럼요. 자, 일 방해하지 않을게요, 나중에 얘기해요.",
+   ck:[["一定","yídìng"],["行了，别耽误你干活了","xíng le, bié dānwu nǐ gàn huó le"],["回聊","huí liáo"]],
+   notes:[{t:"耽误",p:"dānwu",k:"word",m:"(시간을) 지체시키다, 방해하다",tip:"不耽误您时间了 = 시간 뺏지 않겠습니다. 대화를 끝내는 예의 표현입니다."},
+          {t:"回聊",p:"huí liáo",k:"expr",m:"나중에 얘기해요",tip:"回头聊의 축약. 메신저에서 특히 자주 씁니다."}]}
+ ],
+ keys:[
+  {zh:"不知道方不方便",py:"bù zhīdào fāng bu fāngbiàn",ko:"괜찮으실지 모르겠습니다",ex:"想请您帮个忙，不知道方不方便。",exPy:"Xiǎng qǐng nín bāng ge máng, bù zhīdào fāng bu fāngbiàn.",exKo:"부탁을 하나 드리고 싶은데 괜찮으실지요."},
+  {zh:"不好说",py:"bù hǎo shuō",ko:"뭐라 말하기 어렵다",ex:"这个还真不好说。",exPy:"Zhège hái zhēn bù hǎo shuō.",exKo:"이건 정말 뭐라 말씀드리기 어렵네요."},
+  {zh:"不归我管",py:"bù guī wǒ guǎn",ko:"제 소관이 아닙니다",ex:"这块儿不归我管，我帮您问问。",exPy:"Zhè kuàir bù guī wǒ guǎn, wǒ bāng nín wènwen.",exKo:"이 부분은 제 담당이 아니라, 대신 여쭤볼게요."},
+  {zh:"话说在前头",py:"huà shuō zài qiántou",ko:"미리 말씀드리자면",ex:"话说在前头，我不敢保证。",exPy:"Huà shuō zài qiántou, wǒ bù gǎn bǎozhèng.",exKo:"미리 말씀드리는데 장담은 못 합니다."},
+  {zh:"别抱太大期望",py:"bié bào tài dà qīwàng",ko:"너무 기대하지 마세요",ex:"你别抱太大期望，免得失望。",exPy:"Nǐ bié bào tài dà qīwàng, miǎnde shīwàng.",exKo:"실망하지 않게 너무 기대하진 마세요."},
+  {zh:"等有准信儿再说",py:"děng yǒu zhǔnxìnr zài shuō",ko:"확실한 소식이 오면 얘기하죠",ex:"等有准信儿再说吧。",exPy:"Děng yǒu zhǔnxìnr zài shuō ba.",exKo:"확실해지면 그때 얘기하죠."},
+  {zh:"用不着这么见外",py:"yòng bu zháo zhème jiànwài",ko:"그렇게 격식 차릴 필요 없어요",ex:"咱们之间用不着这么见外。",exPy:"Zánmen zhījiān yòng bu zháo zhème jiànwài.",exKo:"우리 사이에 그럴 필요 없어요."},
+  {zh:"尽管开口",py:"jǐnguǎn kāikǒu",ko:"언제든 말씀하세요",ex:"有需要尽管开口。",exPy:"Yǒu xūyào jǐnguǎn kāikǒu.",exKo:"필요하시면 언제든 말씀하세요."}
+ ],
+ out:[
+  {q:"꺼내기 어려운 부탁을 예열 문장부터 시작해 말해 보세요.",hint:"有件事想请你帮个忙 / 不知道方不方便 / 我不是让你…"},
+  {q:"부탁을 받았지만 확답할 수 없을 때, 돕겠다는 뜻은 남기고 기대는 낮춰 보세요.",hint:"不好说 / 不归我管 / 话说在前头 / 不敢保证"},
+  {q:"신세를 진 뒤 갚겠다는 뜻을 자연스럽게 표현해 보세요.",hint:"我领你这个情 / 有用得着我的地方 / 尽管开口"}
+ ]
+},
+{
+ id:"c1d7", day:7, cat:"클레임·협상", level:"HSK 5~6",
+ title:"投诉", titlePy:"tóusù", titleKo:"클레임 — 화내지 않고 요구를 관철하기",
+ names:{A:"志勋 (투숙객)", B:"大堂经理 (호텔 지배인)"},
+ brief:[
+  "중국어 클레임의 원칙은 <b>사실 → 영향 → 요구</b> 순서입니다. 감정을 앞세우면 상대가 방어에 들어가고, 사실부터 깔면 상대가 해결책을 내놓습니다.",
+  "호텔·서비스 측의 사과 표현은 정해져 있습니다. <b>失职(직무를 다하지 못했다) · 做得不到位(미흡했다) · 给您添麻烦了</b>. 이 말이 나오면 사과가 공식화된 것이고, 다음은 보상 협의입니다.",
+  "제안이 과할 때는 받지 않는 편이 낫습니다. <b>升级就不必了，我只想要…</b>처럼 <b>진짜 원하는 것 하나</b>로 좁히면 협상이 빨라집니다.",
+  "마무리는 <b>我也不是要为难谁(누굴 곤란하게 하려는 게 아닙니다)</b>가 좋습니다. 요구는 관철하면서 관계는 남기는, 가장 어른스러운 문장입니다."
+ ],
+ vocab:[
+  {w:"投诉",p:"tóusù",m:"클레임을 걸다, 항의하다",lv:"HSK6"},
+  {w:"装修",p:"zhuāngxiū",m:"인테리어 공사",lv:"HSK5"},
+  {w:"一宿",p:"yì xiǔ",m:"하룻밤",lv:"구어"},
+  {w:"失职",p:"shīzhí",m:"직무를 다하지 못하다",lv:"HSK6"},
+  {w:"值班",p:"zhíbān",m:"당직을 서다",lv:"HSK5"},
+  {w:"升级",p:"shēngjí",m:"업그레이드하다",lv:"HSK5"},
+  {w:"背街",p:"bèi jiē",m:"큰길을 등진 (조용한) 쪽",lv:"실용"},
+  {w:"施工",p:"shīgōng",m:"공사하다",lv:"HSK6"},
+  {w:"不到位",p:"bú dàowèi",m:"미흡하다",lv:"구어"},
+  {w:"为难",p:"wéinán",m:"곤란하게 하다",lv:"HSK5"},
+  {w:"交接",p:"jiāojiē",m:"인수인계하다",lv:"HSK6"},
+  {w:"费心",p:"fèixīn",m:"신경 써 주다",lv:"HSK6"}
+ ],
+ lines:[
+  {s:"A",zh:"我住三零八，昨晚楼上装修，吵得一宿没睡。",py:"Wǒ zhù sān líng bā, zuówǎn lóushàng zhuāngxiū, chǎo de yì xiǔ méi shuì.",
+   ko:"308호에 묵고 있는데, 어젯밤 위층 공사 때문에 시끄러워서 한숨도 못 잤습니다.",
+   ck:[["我住三零八","wǒ zhù sān líng bā"],["昨晚楼上装修","zuówǎn lóushàng zhuāngxiū"],["吵得一宿没睡","chǎo de yì xiǔ méi shuì"]],
+   notes:[{t:"吵得…",p:"chǎo de…",k:"grammar",m:"시끄러워서 ~하다",tip:"정도보어로 결과를 붙입니다. 吵得睡不着 = 시끄러워서 잠을 못 자다."},
+          {t:"一宿",p:"yì xiǔ",k:"pron",m:"하룻밤",tip:"宿은 여기서 sù가 아니라 xiǔ로 읽습니다. 一宿没睡 = 밤을 꼬박 새우다."}]},
+  {s:"B",zh:"实在抱歉，按规定施工不该在夜间进行。",py:"Shízài bàoqiàn, àn guīdìng shīgōng bù gāi zài yèjiān jìnxíng.",
+   ko:"정말 죄송합니다, 규정상 공사는 야간에 하면 안 됩니다.",
+   ck:[["实在抱歉","shízài bàoqiàn"],["按规定施工","àn guīdìng shīgōng"],["不该在夜间进行","bù gāi zài yèjiān jìnxíng"]],
+   notes:[{t:"不该",p:"bù gāi",k:"grammar",m:"~해서는 안 된다",tip:"应该의 부정. 本来不该这样 = 원래 이래선 안 되는 겁니다."}]},
+  {s:"A",zh:"我打了三次前台电话，一直没人处理。",py:"Wǒ dǎ le sān cì qiántái diànhuà, yìzhí méi rén chǔlǐ.",
+   ko:"프런트에 세 번이나 전화했는데 아무도 처리해 주지 않았습니다.",
+   ck:[["我打了三次前台电话","wǒ dǎ le sān cì qiántái diànhuà"],["一直没人处理","yìzhí méi rén chǔlǐ"]],
+   notes:[{t:"打了三次电话",p:"dǎ le sān cì diànhuà",k:"grammar",m:"세 번 전화했다",tip:"[동사+了+횟수+목적어]. 횟수는 동사 바로 뒤에 옵니다."},
+          {t:"没人…",p:"méi rén…",k:"grammar",m:"아무도 ~하지 않다",tip:"没人管 / 没人知道. 주어 자리에 그대로 씁니다."}]},
+  {s:"B",zh:"这是我们的失职，我先替值班人员向您道歉。",py:"Zhè shì wǒmen de shīzhí, wǒ xiān tì zhíbān rényuán xiàng nín dàoqiàn.",
+   ko:"저희 잘못입니다, 우선 당직 직원을 대신해 사과드립니다.",
+   ck:[["这是我们的失职","zhè shì wǒmen de shīzhí"],["我先替值班人员","wǒ xiān tì zhíbān rényuán"],["向您道歉","xiàng nín dàoqiàn"]],
+   notes:[{t:"替…道歉",p:"tì…dàoqiàn",k:"grammar",m:"~를 대신해 사과하다",tip:"替는 [대신하여], 向은 [~에게]. 두 개사가 한 문장에 함께 오는 전형적인 형태입니다."},
+          {t:"失职",p:"shīzhí",k:"word",m:"직무 태만, 잘못",tip:"공식 사과의 단어입니다. 是我们工作的失误 도 같은 자리에 씁니다."}]},
+  {s:"A",zh:"道歉我接受，可我今天还有一整天的会。",py:"Dàoqiàn wǒ jiēshòu, kě wǒ jīntiān hái yǒu yì zhěng tiān de huì.",
+   ko:"사과는 받겠습니다, 그런데 저는 오늘 하루 종일 회의가 있어요.",
+   ck:[["道歉我接受","dàoqiàn wǒ jiēshòu"],["可我今天还有一整天的会","kě wǒ jīntiān hái yǒu yì zhěng tiān de huì"]],
+   notes:[{t:"…我接受",p:"wǒ jiēshòu",k:"grammar",m:"~는 받아들이겠습니다",tip:"목적어를 문장 앞으로 빼면 [그건 그거고]라는 뉘앙스가 생깁니다."},
+          {t:"一整天",p:"yì zhěng tiān",k:"word",m:"하루 종일",tip:"一整年 / 一整套. 整이 [통째로]를 뜻합니다."}]},
+  {s:"B",zh:"我完全理解。您看这样处理行不行？",py:"Wǒ wánquán lǐjiě. Nín kàn zhèyàng chǔlǐ xíng bu xíng?",
+   ko:"충분히 이해합니다. 이렇게 처리하면 어떠실까요?",
+   ck:[["我完全理解","wǒ wánquán lǐjiě"],["您看这样处理行不行","nín kàn zhèyàng chǔlǐ xíng bu xíng"]],
+   notes:[{t:"您看…行不行",p:"nín kàn…xíng bu xíng",k:"expr",m:"이렇게 하면 어떠실까요?",tip:"해결책을 제시하면서 결정권을 상대에게 넘기는 서비스업 정형 문장입니다."}]},
+  {s:"A",zh:"您说，看合不合理。",py:"Nín shuō, kàn hé bu hélǐ.",
+   ko:"말씀해 보세요, 합리적인지 보죠.",
+   ck:[["您说","nín shuō"],["看合不合理","kàn hé bu hélǐ"]],
+   notes:[{t:"合不合理",p:"hé bu hélǐ",k:"grammar",m:"합리적인지 아닌지",tip:"두 글자 형용사의 정반의문문은 앞 글자만 반복합니다. 合不合适 / 方不方便."}]},
+  {s:"B",zh:"今晚免费给您升级到行政楼层，昨天的房费也免掉。",py:"Jīnwǎn miǎnfèi gěi nín shēngjí dào xíngzhèng lóucéng, zuótiān de fángfèi yě miǎn diào.",
+   ko:"오늘 밤은 이그제큐티브 층으로 무료 업그레이드해 드리고, 어제 숙박비도 면제하겠습니다.",
+   ck:[["今晚免费给您升级到行政楼层","jīnwǎn miǎnfèi gěi nín shēngjí dào xíngzhèng lóucéng"],["昨天的房费也免掉","zuótiān de fángfèi yě miǎn diào"]],
+   notes:[{t:"免掉",p:"miǎn diào",k:"grammar",m:"면제하다, 빼 주다",tip:"[동사+掉] = 없애 버리다. 忘掉 / 扔掉 / 去掉."}]},
+  {s:"A",zh:"升级就不必了，我只想要一个能睡觉的房间。",py:"Shēngjí jiù bú bì le, wǒ zhǐ xiǎng yào yí ge néng shuìjiào de fángjiān.",
+   ko:"업그레이드는 됐고요, 저는 잠잘 수 있는 방 하나면 됩니다.",
+   ck:[["升级就不必了","shēngjí jiù bú bì le"],["我只想要一个能睡觉的房间","wǒ zhǐ xiǎng yào yí ge néng shuìjiào de fángjiān"]],
+   notes:[{t:"就不必了",p:"jiù bú bì le",k:"expr",m:"그건 됐습니다",tip:"과한 제안을 정중히 사양하는 말. 不用了보다 격식이 있습니다."},
+          {t:"只想要…",p:"zhǐ xiǎng yào…",k:"grammar",m:"~하나만 원한다",tip:"요구를 하나로 좁히면 협상이 훨씬 빨리 끝납니다."}]},
+  {s:"B",zh:"明白，那我给您换到背街的一侧，绝对安静。",py:"Míngbai, nà wǒ gěi nín huàn dào bèi jiē de yí cè, juéduì ānjìng.",
+   ko:"알겠습니다, 그럼 큰길 반대쪽으로 바꿔 드리죠, 확실히 조용합니다.",
+   ck:[["明白，那我给您换到","míngbai, nà wǒ gěi nín huàn dào"],["背街的一侧","bèi jiē de yí cè"],["绝对安静","juéduì ānjìng"]],
+   notes:[{t:"背街",p:"bèi jiē",k:"word",m:"큰길을 등진 쪽",tip:"背은 [등지다]. 靠里边 / 背阴(응달) 등과 함께 방을 고를 때 씁니다."}]},
+  {s:"A",zh:"那行。行李我不想自己搬，能帮忙吗？",py:"Nà xíng. Xíngli wǒ bù xiǎng zìjǐ bān, néng bāngmáng ma?",
+   ko:"그럼 좋습니다. 짐은 제가 옮기고 싶지 않은데 도와주실 수 있나요?",
+   ck:[["那行","nà xíng"],["行李我不想自己搬","xíngli wǒ bù xiǎng zìjǐ bān"],["能帮忙吗","néng bāngmáng ma"]],
+   notes:[{t:"행위자 강조 自己",p:"zìjǐ",k:"grammar",m:"직접, 스스로",tip:"我自己来 = 제가 직접 할게요. 부정문에 쓰면 [내가 하기는 싫다]가 됩니다."}]},
+  {s:"B",zh:"当然，行李员十分钟内到您房间。",py:"Dāngrán, xínglǐyuán shí fēnzhōng nèi dào nín fángjiān.",
+   ko:"물론입니다, 벨보이가 10분 안에 객실로 가겠습니다.",
+   ck:[["当然","dāngrán"],["行李员十分钟内到您房间","xínglǐyuán shí fēnzhōng nèi dào nín fángjiān"]],
+   notes:[{t:"…内",p:"nèi",k:"grammar",m:"~이내에",tip:"三天内 / 一周内 / 十分钟内. 기한을 못 박는 형식입니다."}]},
+  {s:"A",zh:"另外，装修还得持续几天吧？",py:"Lìngwài, zhuāngxiū hái děi chíxù jǐ tiān ba?",
+   ko:"그리고, 공사는 며칠 더 이어지겠죠?",
+   ck:[["另外","lìngwài"],["装修还得持续几天吧","zhuāngxiū hái děi chíxù jǐ tiān ba"]],
+   notes:[{t:"另外",p:"lìngwài",k:"word",m:"그리고, 그 밖에",tip:"항목을 추가할 때. 另外还有一件事 = 그리고 한 가지 더 있습니다."}]},
+  {s:"B",zh:"大概一周，但从今天起只在白天施工。",py:"Dàgài yì zhōu, dàn cóng jīntiān qǐ zhǐ zài báitiān shīgōng.",
+   ko:"대략 일주일이요, 다만 오늘부터는 낮에만 공사합니다.",
+   ck:[["大概一周","dàgài yì zhōu"],["但从今天起","dàn cóng jīntiān qǐ"],["只在白天施工","zhǐ zài báitiān shīgōng"]],
+   notes:[{t:"从…起",p:"cóng…qǐ",k:"grammar",m:"~부터 (시작해서)",tip:"从明天起 / 从下个月起. 정책·규칙 안내의 정형입니다."}]},
+  {s:"A",zh:"那我就放心了。不过话说回来，事先通知一声多好。",py:"Nà wǒ jiù fàngxīn le. Búguò huà shuō huílái, shìxiān tōngzhī yì shēng duō hǎo.",
+   ko:"그럼 안심이네요. 그런데 말이 나온 김에, 미리 한마디만 알려 주셨으면 좋았을 텐데요.",
+   ck:[["那我就放心了","nà wǒ jiù fàngxīn le"],["不过话说回来","búguò huà shuō huílái"],["事先通知一声多好","shìxiān tōngzhī yì shēng duō hǎo"]],
+   notes:[{t:"话说回来",p:"huà shuō huílái",k:"expr",m:"그런데 말이 나온 김에",tip:"화제를 되돌리거나 균형을 잡을 때. 话说回来，他也不容易."},
+          {t:"…多好",p:"duō hǎo",k:"grammar",m:"~했으면 얼마나 좋았을까",tip:"아쉬움을 나타내는 감탄. 早说多好 = 진작 말하지 그랬어요."}]},
+  {s:"B",zh:"您批评得对，这一点我们确实做得不到位。",py:"Nín pīpíng de duì, zhè yì diǎn wǒmen quèshí zuò de bú dàowèi.",
+   ko:"지적하신 말씀이 맞습니다, 이 점은 저희가 확실히 미흡했습니다.",
+   ck:[["您批评得对","nín pīpíng de duì"],["这一点我们确实做得不到位","zhè yì diǎn wǒmen quèshí zuò de bú dàowèi"]],
+   notes:[{t:"做得不到位",p:"zuò de bú dàowèi",k:"expr",m:"제대로 하지 못했다",tip:"到位 = 기준에 도달하다. 服务不到位 / 沟通不到位. 업무 반성의 정형어입니다."},
+          {t:"您批评得对",p:"nín pīpíng de duì",k:"culture",m:"지적이 옳으십니다",tip:"批评을 [비난]으로만 알면 어색합니다. 여기서는 [지적]이라는 중립적 뜻입니다."}]},
+  {s:"A",zh:"我也不是要为难谁，就是希望以后别再这样。",py:"Wǒ yě bú shì yào wéinán shéi, jiùshì xīwàng yǐhòu bié zài zhèyàng.",
+   ko:"누굴 곤란하게 하려는 게 아니라, 다음부턴 이러지 않았으면 하는 겁니다.",
+   ck:[["我也不是要为难谁","wǒ yě bú shì yào wéinán shéi"],["就是希望以后别再这样","jiùshì xīwàng yǐhòu bié zài zhèyàng"]],
+   notes:[{t:"不是要为难谁",p:"bú shì yào wéinán shéi",k:"expr",m:"누굴 곤란하게 하려는 게 아니다",tip:"클레임의 격을 지키는 문장. 상대의 방어를 풀어 줍니다."},
+          {t:"别再…",p:"bié zài…",k:"grammar",m:"다시는 ~하지 마라",tip:"别再迟到了. 再가 [또다시]를 담당합니다."}]},
+  {s:"B",zh:"您放心，我会把这件事写进交接记录。",py:"Nín fàngxīn, wǒ huì bǎ zhè jiàn shì xiě jìn jiāojiē jìlù.",
+   ko:"안심하십시오, 이 건은 인수인계 기록에 남기겠습니다.",
+   ck:[["您放心","nín fàngxīn"],["我会把这件事写进交接记录","wǒ huì bǎ zhè jiàn shì xiě jìn jiāojiē jìlù"]],
+   notes:[{t:"把…写进…",p:"bǎ…xiě jìn…",k:"grammar",m:"~을 ~에 써넣다",tip:"把자문 + 방향보어 进. 把意见写进报告 = 의견을 보고서에 반영하다."}]},
+  {s:"A",zh:"那就这样吧，麻烦您费心了。",py:"Nà jiù zhèyàng ba, máfan nín fèixīn le.",
+   ko:"그럼 그렇게 하죠, 신경 써 주셔서 감사합니다.",
+   ck:[["那就这样吧","nà jiù zhèyàng ba"],["麻烦您费心了","máfan nín fèixīn le"]],
+   notes:[{t:"费心",p:"fèixīn",k:"expr",m:"신경 써 주시다",tip:"让您费心了 = 신경 쓰게 해 드렸네요. 감사와 미안함을 함께 담습니다."}]},
+  {s:"B",zh:"应该的。您有任何需要，直接找我，我姓陈。",py:"Yīnggāi de. Nín yǒu rènhé xūyào, zhíjiē zhǎo wǒ, wǒ xìng Chén.",
+   ko:"당연한 일입니다. 필요한 게 있으시면 저를 바로 찾으세요, 저는 천이라고 합니다.",
+   ck:[["应该的","yīnggāi de"],["您有任何需要，直接找我","nín yǒu rènhé xūyào, zhíjiē zhǎo wǒ"],["我姓陈","wǒ xìng Chén"]],
+   notes:[{t:"找我",p:"zhǎo wǒ",k:"word",m:"저를 찾으세요",tip:"找은 [사람을 찾아가다]. 有事找我 = 일 있으면 저한테 오세요."}]}
+ ],
+ keys:[
+  {zh:"吵得一宿没睡",py:"chǎo de yì xiǔ méi shuì",ko:"시끄러워서 밤을 새웠다",ex:"隔壁太吵，吵得我一宿没睡。",exPy:"Gébì tài chǎo, chǎo de wǒ yì xiǔ méi shuì.",exKo:"옆방이 너무 시끄러워 한숨도 못 잤어요."},
+  {zh:"这是我们的失职",py:"zhè shì wǒmen de shīzhí",ko:"저희 잘못입니다",ex:"这是我们的失职，非常抱歉。",exPy:"Zhè shì wǒmen de shīzhí, fēicháng bàoqiàn.",exKo:"저희 불찰입니다, 대단히 죄송합니다."},
+  {zh:"您看这样行不行",py:"nín kàn zhèyàng xíng bu xíng",ko:"이렇게 하면 어떠실까요?",ex:"您看这样处理行不行？",exPy:"Nín kàn zhèyàng chǔlǐ xíng bu xíng?",exKo:"이렇게 처리하면 괜찮으실까요?"},
+  {zh:"就不必了",py:"jiù bú bì le",ko:"그건 됐습니다",ex:"礼物就不必了，心意我领了。",exPy:"Lǐwù jiù bú bì le, xīnyì wǒ lǐng le.",exKo:"선물은 됐습니다, 마음만 받을게요."},
+  {zh:"话说回来",py:"huà shuō huílái",ko:"그런데 말이 나온 김에",ex:"话说回来，他也有难处。",exPy:"Huà shuō huílái, tā yě yǒu nánchu.",exKo:"그런데 생각해 보면 그 사람도 사정이 있죠."},
+  {zh:"做得不到位",py:"zuò de bú dàowèi",ko:"미흡했다",ex:"这次沟通做得不到位。",exPy:"Zhè cì gōutōng zuò de bú dàowèi.",exKo:"이번엔 소통이 미흡했습니다."},
+  {zh:"不是要为难谁",py:"bú shì yào wéinán shéi",ko:"누굴 곤란하게 하려는 게 아니다",ex:"我不是要为难你，只是想说清楚。",exPy:"Wǒ bú shì yào wéinán nǐ, zhǐshì xiǎng shuō qīngchu.",exKo:"곤란하게 하려는 게 아니라 분명히 하고 싶을 뿐이에요."},
+  {zh:"麻烦您费心了",py:"máfan nín fèixīn le",ko:"신경 써 주셔서 감사합니다",ex:"这件事麻烦您费心了。",exPy:"Zhè jiàn shì máfan nín fèixīn le.",exKo:"이 일로 신경 써 주셔서 고맙습니다."}
+ ],
+ out:[
+  {q:"어젯밤 겪은 불편을 사실 → 영향 → 요구 순서로 말해 보세요.",hint:"楼上装修 / 吵得一宿没睡 / 今天还有一整天的会"},
+  {q:"상대의 과한 보상 제안을 사양하고, 진짜 원하는 것 하나만 요구해 보세요.",hint:"升级就不必了 / 我只想要… / 能帮忙吗"},
+  {q:"요구는 관철하되 관계는 남기는 마무리를 해 보세요.",hint:"我也不是要为难谁 / 希望以后别再这样 / 麻烦您费心了"}
+ ]
+}
+];
+/* ================= 茶馆 CHÁGUǍN : 데일리 중국어 쉐도잉 ================= */
+const K = "cg1-";
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(K+k); return v===null? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(K+k, JSON.stringify(v)); }catch(e){ toast("저장 공간이 부족합니다"); } }
+};
+const S = {
+  prog:   store.get("prog", {}),
+  log:    store.get("log", {}),
+  star:   store.get("star", {}),
+  out:    store.get("out", {}),
+  custom: store.get("custom", []),
+  cfg:    store.get("cfg", {voiceA:"", voiceB:"", rate:0.9, reps:3, showKo:false,
+                            py:"on", tone:"on", han:"kai", theme:"auto", myRole:"A"})
+};
+function save(){ store.set("prog",S.prog); store.set("log",S.log); store.set("star",S.star);
+  store.set("out",S.out); store.set("custom",S.custom); store.set("cfg",S.cfg); }
+
+let CONTENT = [];
+function rebuild(){ CONTENT = CONTENT_BUILTIN.concat(S.custom); }
+rebuild();
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today = () => new Date().toISOString().slice(0,10);
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("on"); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove("on"),1900); }
+function pad(n){ return n<10?"0"+n:""+n; }
+function dayById(id){ return CONTENT.find(d=>d.id===id); }
+function isDone(id){ return !!(S.prog[id] && S.prog[id].done); }
+function nextUndone(){ return CONTENT.find(d=>!isDone(d.id)) || CONTENT[CONTENT.length-1]; }
+function prevOf(id){ const i=CONTENT.findIndex(d=>d.id===id); return i>0?CONTENT[i-1]:null; }
+function cLen(s){ return (String(s).match(/[一-鿿]/g)||[]).length; }
+
+/* ---------- 병음: 음절 분리 + 성조 색 ---------- */
+const TONE_MAP = {
+  "ā":["a",1],"á":["a",2],"ǎ":["a",3],"à":["a",4],
+  "ē":["e",1],"é":["e",2],"ě":["e",3],"è":["e",4],
+  "ī":["i",1],"í":["i",2],"ǐ":["i",3],"ì":["i",4],
+  "ō":["o",1],"ó":["o",2],"ǒ":["o",3],"ò":["o",4],
+  "ū":["u",1],"ú":["u",2],"ǔ":["u",3],"ù":["u",4],
+  "ǖ":["ü",1],"ǘ":["ü",2],"ǚ":["ü",3],"ǜ":["ü",4],
+  "ń":["n",2],"ň":["n",3],"ǹ":["n",4]
+};
+const INITIALS = ["zh","ch","sh","b","p","m","f","d","t","n","l","g","k","h","j","q","x","r","z","c","s","y","w"];
+const FINALS = ["iang","iong","uang","ueng","üan","uai","uan","ian","iao","ing","ong","eng","ang",
+  "van","iu","ie","ia","in","un","ün","vn","ua","uo","ui","ue","üe","ve","ai","ei","ao","ou","an","en","er","ng",
+  "a","o","e","i","u","ü","v"];
+function plainOf(tok){
+  let plain="", tones=[];
+  for(const ch of tok){
+    const m = TONE_MAP[ch.toLowerCase()];
+    if(m){ plain += (ch===ch.toLowerCase()? m[0] : m[0].toUpperCase()); tones.push([plain.length-1, m[1]]); }
+    else plain += ch;
+  }
+  return {plain, tones};
+}
+function splitSyllables(tok){
+  const {plain, tones} = plainOf(tok);
+  const low = plain.toLowerCase();
+  if(!/^[a-zü]+$/.test(low)) return [{text:tok, tone:-1}];
+  if(!tones.length && /[A-Z]/.test(tok)) return [{text:tok, tone:-1}];
+  const cuts=[]; let i=0, guard=0;
+  while(i<low.length && guard++<40){
+    let st=i;
+    for(const ini of INITIALS){ if(low.startsWith(ini,i)){ i+=ini.length; break; } }
+    let matched=false;
+    for(const f of FINALS){ if(low.startsWith(f,i)){ i+=f.length; matched=true; break; } }
+    if(!matched){ i=st+1; }
+    if(low[i]==="r" && i===low.length-1) i++;
+    if(i<=st){ i=st+1; }
+    cuts.push([st,i]);
+  }
+  if(!cuts.length) return [{text:tok, tone:-1}];
+  return cuts.map(([a,b])=>{
+    let tone = 0;
+    tones.forEach(([idx,t])=>{ if(idx>=a && idx<b) tone=t; });
+    return {text: tok.slice(a,b), tone};
+  });
+}
+function pyHTML(s){
+  if(!s) return "";
+  return String(s).split(/(\s+|[,.;:?!'’，。？！、…]+)/).map(tok=>{
+    if(!tok) return "";
+    if(/^(\s+|[,.;:?!'’，。？！、…]+)$/.test(tok)) return esc(tok);
+    return splitSyllables(tok).map(sy=>
+      sy.tone<0 ? esc(sy.text) : '<span class="t'+sy.tone+'">'+esc(sy.text)+'</span>').join("");
+  }).join("");
+}
+function pyBox(s, cls){ return '<span class="py '+(cls||"")+'">'+pyHTML(s)+'</span>'; }
+
+/* ---------- 음성 (TTS) ---------- */
+let VOICES = [];
+function loadVoices(){
+  const all = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  VOICES = all.filter(v=>/^zh(-|_|$)/i.test(v.lang) || /chinese|中文|普通话|mandarin/i.test(v.name));
+  if(!VOICES.length) VOICES = all;
+}
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = ()=>{ loadVoices(); if(cur.view==="settings") render(); }; }
+function pickVoice(who){
+  const want = who==="B" ? S.cfg.voiceB : S.cfg.voiceA;
+  let v = VOICES.find(x=>x.name===want);
+  if(!v){
+    const cn = VOICES.filter(x=>/zh-CN|zh_CN/i.test(x.lang));
+    const pool = cn.length? cn : VOICES;
+    const f = pool.filter(x=>/xiaoxiao|huihui|yaoyao|female|xiaoyi|xiaochen|晓/i.test(x.name));
+    const m = pool.filter(x=>/yunxi|kangkang|male|yunyang|yunjian|云/i.test(x.name));
+    v = who==="B" ? (m[0]||pool[1]||pool[0]) : (f[0]||pool[0]);
+  }
+  return v;
+}
+let speakingSeq = null, autoTok = null, rpTok = null;
+function stopSpeak(){ speakingSeq=null; autoTok=null; rpTok=null; if(window.speechSynthesis) speechSynthesis.cancel(); }
+function speak(text, who, rate, cb){
+  if(!window.speechSynthesis){ toast("이 브라우저는 음성 재생을 지원하지 않습니다"); cb&&cb(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(who); if(v){ u.voice=v; u.lang=v.lang; } else u.lang="zh-CN";
+  u.rate = rate || S.cfg.rate; u.pitch = who==="B" ? 0.95 : 1.06;
+  u.onend = ()=> cb && cb();
+  u.onerror = ()=> cb && cb();
+  speechSynthesis.speak(u);
+}
+function speakSeq(items, rate, onStep, onDone){
+  const token = {}; speakingSeq = token;
+  let i = 0;
+  (function step(){
+    if(speakingSeq!==token) return;
+    if(i>=items.length){ onDone&&onDone(); return; }
+    onStep && onStep(i);
+    speak(items[i].zh, items[i].s, rate, ()=>{ i++; setTimeout(step, 280); });
+  })();
+}
+
+/* ---------- 청크 ---------- */
+function chunksOf(l){
+  if(Array.isArray(l.ck) && l.ck.length) return l.ck.map(c=>({zh:c[0], py:c[1]}));
+  return [{zh:l.zh, py:l.py}];
+}
+
+/* ---------- 발음 체크 (음성인식) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function normChars(s){ return (String(s).match(/[一-鿿A-Za-z0-9]/g)||[]); }
+function compareSpoken(target, said){
+  const t = normChars(target), h = normChars(said);
+  const pool = h.slice();
+  const marks = t.map(w=>{ const i = pool.indexOf(w); if(i>=0){ pool.splice(i,1); return {w, ok:true}; } return {w, ok:false}; });
+  const hit = marks.filter(m=>m.ok).length;
+  return { marks, score: t.length ? Math.round(hit/t.length*100) : 0 };
+}
+
+/* ---------- 세션 상태 ---------- */
+const STEPS = [
+  {k:"review", n:"전날 복습",   m:2,  d:"어제 표현을 보지 않고 먼저 말해 봅니다"},
+  {k:"words",  n:"단어·표현",   m:3,  d:"오늘 나올 단어와 표현을 눈으로 훑습니다"},
+  {k:"listen", n:"통으로 듣기", m:3,  d:"대화 전체를 들으며 흐름과 성조를 잡습니다"},
+  {k:"shadow", n:"한 줄 쉐도잉",m:10, d:"덩어리 → 문장 순으로 소리 내어 따라 읽습니다"},
+  {k:"output", n:"역할극·말하기",m:2, d:"상대 대사는 앱이, 내 대사는 내가 말합니다"}
+];
+let cur = { view:"home", dayId:null, step:0, line:0, reps:{}, t0:0, tick:null, showKo:false };
+
+function startSession(id){
+  stopSpeak();
+  cur.dayId=id; cur.step=0; cur.line=0; cur.showKo=S.cfg.showKo;
+  cur.reps = (S.prog[id]&&S.prog[id].reps) ? S.prog[id].reps : {};
+  cur.t0 = Date.now();
+  clearInterval(cur.tick); cur.tick = setInterval(updClock, 1000);
+  go("session");
+}
+function elapsedMin(){ return Math.max(0, Math.round((Date.now()-cur.t0)/60000)); }
+function updClock(){
+  const el = $("#clock"); if(!el) return;
+  const s = Math.floor((Date.now()-cur.t0)/1000);
+  el.textContent = pad(Math.floor(s/60))+":"+pad(s%60);
+  el.classList.toggle("over", s>20*60);
+}
+function endSession(){ clearInterval(cur.tick); stopSpeak(); }
+
+/* ---------- 라우팅 ---------- */
+function go(v){
+  if(cur.view==="session" && v!=="session") endSession();
+  cur.view=v;
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  $("#view-"+v).classList.add("on");
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.view===v));
+  window.scrollTo(0,0);
+  render();
+}
+document.querySelectorAll("#tabs button").forEach(b=> b.onclick = ()=> go(b.dataset.view));
+
+function render(){
+  if(cur.view==="home") renderHome();
+  else if(cur.view==="session") renderSession();
+  else if(cur.view==="log") renderLog();
+  else if(cur.view==="bank") renderBank();
+  else if(cur.view==="add") renderAdd();
+  else if(cur.view==="settings") renderSettings();
+  $("#footbar").classList.toggle("on", cur.view==="session");
+  bindPyClick();
+}
+/* 병음 가림 모드일 때 눌러서 확인 */
+function bindPyClick(){
+  if(S.cfg.py!=="blur") return;
+  document.querySelectorAll(".py").forEach(el=>{
+    if(el._pb) return; el._pb=1;
+    el.addEventListener("click", e=>{ e.stopPropagation(); el.classList.toggle("show"); });
+  });
+}
+
+/* ---------- 홈 ---------- */
+function streakInfo(){
+  const days = Object.keys(S.log).sort();
+  let total=0, mins=0, lines=0;
+  days.forEach(d=>{ total++; mins+=S.log[d].min||0; lines+=S.log[d].lines||0; });
+  let st=0; const d=new Date();
+  for(;;){ const key=d.toISOString().slice(0,10);
+    if(S.log[key]){ st++; d.setDate(d.getDate()-1); }
+    else if(st===0 && key===today()){ d.setDate(d.getDate()-1); }
+    else break;
+    if(st>999) break;
+  }
+  return {total, mins, lines, streak:st};
+}
+function renderHome(){
+  const d = nextUndone(); const info = streakInfo();
+  const doneToday = !!S.log[today()];
+  let h = "";
+  h += '<div class="hd" style="margin-top:20px"><small>Today · 20 min</small></div>';
+  h += '<div class="today">';
+  h +=   '<span class="tag r">DAY '+d.day+'</span> <span class="tag">'+esc(d.cat)+'</span>';
+  h +=   '<h2>'+esc(d.title)+'</h2>';
+  h +=   '<div class="tpy">'+pyHTML(d.titlePy)+'</div>';
+  h +=   '<div class="kotitle">'+esc(d.titleKo)+'</div>';
+  h +=   '<div class="row"><button class="btn blue" id="goSess">'+(S.prog[d.id]?"이어서 시작":"오늘 훈련 시작")+' →</button>';
+  h +=   '<span class="sub">'+d.lines.length+'문장 · 단어 '+(d.vocab?d.vocab.length:0)+'개 · 표현 '+d.keys.length+'개</span></div>';
+  h +=   '<div class="streak"><div><b>'+info.streak+'</b><span>연속일</span></div><div><b>'+info.total+'</b><span>총 학습일</span></div>';
+  h +=   '<div><b>'+info.mins+'</b><span>총 분</span></div><div><b>'+info.lines+'</b><span>누적 문장</span></div></div>';
+  h += '</div>';
+  if(doneToday) h += '<div class="card" style="border-color:var(--ok)"><b style="color:var(--ok)">오늘 훈련 완료</b> <span class="sub">— 더 하고 싶으면 아래에서 다른 회차를 골라 복습하세요.</span></div>';
+  h += '<div class="hd"><small>Week list</small>이번 주 커리큘럼</div><div class="dlist">';
+  CONTENT.forEach(x=>{
+    h += '<div class="ditem" data-id="'+x.id+'"><div class="num">'+x.day+'</div><div class="t"><b>'+esc(x.title)+'</b>'+
+         '<span>'+esc(x.cat)+' · '+esc(x.titleKo)+'</span></div>'+
+         (isDone(x.id)?'<div class="done">완료</div>':'<div class="sub" style="font-size:12px">'+x.lines.length+'문장</div>')+'</div>';
+  });
+  h += '</div>';
+  h += '<div class="card sub">한 세션은 <b>20분</b>입니다 — 복습 2분 · 단어 3분 · 통듣기 3분 · 쉐도잉 10분 · 역할극 2분. '+
+       '시간이 없으면 <b>쉐도잉 단계만</b> 해도 효과의 대부분이 나옵니다. 난이도는 <b>HSK 5~6</b> 기준입니다.</div>';
+  h += '<div class="card copy"><div class="seal">茶馆</div><div class="ct">'+
+       '<b>茶馆 CHÁGUǍN — 데일리 중국어 쉐도잉</b><br>'+
+       '<span class="r">© 2026 곤사마 (Gonsama). All rights reserved.</span>'+
+       '<div class="sub" style="margin-top:6px">이 앱의 기획·구성과 모든 콘텐츠(대화문·병음·번역·표현 노트·커리큘럼)의 저작권은 '+
+       '<b>곤사마</b>에게 있습니다. 개인 학습 목적으로는 자유롭게 쓰시되, 무단 복제·배포·상업적 이용은 금합니다.</div></div></div>';
+  $("#view-home").innerHTML = h;
+  $("#goSess").onclick = ()=> startSession(d.id);
+  document.querySelectorAll(".ditem").forEach(el=> el.onclick = ()=> startSession(el.dataset.id));
+}
+
+/* ---------- 세션 ---------- */
+function renderSession(){
+  const d = dayById(cur.dayId); if(!d){ go("home"); return; }
+  const st = STEPS[cur.step];
+  let h = "";
+  h += '<div class="steps">'+STEPS.map((s,i)=>'<div class="'+(i<cur.step?"past":i===cur.step?"on":"")+'"></div>').join("")+'</div>';
+  h += '<div class="sesshead"><span class="tag r">DAY '+d.day+'</span><span class="stepname">'+(cur.step+1)+'. '+st.n+'<em>권장 '+st.m+'분 · '+st.d+'</em></span>';
+  h += '<span class="clock" id="clock">00:00</span></div>';
+  h += '<div id="stepbody"></div>';
+  $("#view-session").innerHTML = h;
+  updClock();
+  ({review:stepReview, words:stepWords, listen:stepListen, shadow:stepShadow, output:stepOutput})[st.k](d);
+  renderFoot(d);
+  bindPyClick();
+}
+function renderFoot(d){
+  const last = cur.step===STEPS.length-1;
+  let h = '<button class="btn ghost sm" id="fPrev">← 이전</button>';
+  h += '<span class="sub" style="font-size:12px">'+(cur.step+1)+'/'+STEPS.length+'</span>';
+  h += '<span style="flex:1"></span>';
+  h += '<button class="btn ghost sm" id="fHome">나가기</button>';
+  h += '<button class="btn '+(last?"blue":"")+'" id="fNext">'+(last?"훈련 완료 ✓":"다음 단계 →")+'</button>';
+  $("#footin").innerHTML = h;
+  $("#fPrev").onclick = ()=>{ if(cur.step>0){ stopSpeak(); cur.step--; renderSession(); } };
+  $("#fHome").onclick = ()=>{ saveProgress(); go("home"); };
+  $("#fNext").onclick = ()=>{
+    stopSpeak();
+    if(cur.step<STEPS.length-1){ cur.step++; renderSession(); }
+    else finishSession(d);
+  };
+  $("#fPrev").disabled = cur.step===0;
+}
+function saveProgress(){
+  if(!cur.dayId) return;
+  const p = S.prog[cur.dayId] || {};
+  p.reps = cur.reps; p.stepIdx = cur.step;
+  S.prog[cur.dayId] = p; save();
+}
+function finishSession(d){
+  const p = S.prog[d.id] || {}; p.reps=cur.reps; p.done=true; p.doneAt=today(); S.prog[d.id]=p;
+  const t = today(); const prev = S.log[t] || {min:0, lines:0};
+  const repLines = Object.keys(cur.reps).filter(k=>cur.reps[k]>0).length;
+  S.log[t] = { dayId:d.id, min: prev.min + Math.max(1, elapsedMin()), lines: prev.lines + repLines, ts: Date.now() };
+  save(); endSession();
+  const info = streakInfo();
+  $("#view-session").innerHTML =
+    '<div class="hd" style="margin-top:30px"><small>Session complete</small>오늘 훈련 완료</div>'+
+    '<div class="card"><div class="hz" style="font-size:26px">'+esc(d.title)+'</div>'+
+    '<div class="sub" style="margin:6px 0 14px">'+esc(d.titleKo)+'</div>'+
+    '<div class="streak"><div><b>'+elapsedMin()+'</b><span>오늘 분</span></div><div><b>'+repLines+'</b><span>따라 읽은 문장</span></div>'+
+    '<div><b>'+info.streak+'</b><span>연속일</span></div></div>'+
+    '<div class="rule"></div><div class="sub">내일 첫 단계에서 오늘 표현 8개를 다시 물어봅니다. 그때 <b>병음을 보지 말고</b> 소리부터 내 보세요.</div>'+
+    '<div class="row" style="margin-top:14px"><button class="btn" id="cHome">홈으로</button>'+
+    '<button class="btn ghost" id="cBank">단어장에서 복습</button></div></div>';
+  $("#footbar").classList.remove("on");
+  $("#cHome").onclick=()=>go("home"); $("#cBank").onclick=()=>go("bank");
+}
+
+/* --- step 1 : 복습 --- */
+function stepReview(d){
+  const p = prevOf(d.id);
+  let h = "";
+  if(!p){
+    h = '<div class="card"><b>첫 회차입니다.</b><div class="sub" style="margin-top:6px">복습할 이전 회차가 없으니 바로 다음 단계로 넘어가세요. '+
+        '내일부터 이 자리에서 전날 표현을 물어봅니다.</div></div>';
+  } else {
+    h = '<div class="card"><div class="sub">DAY '+p.day+' · '+esc(p.title)+' — '+esc(p.titleKo)+'</div>'+
+        '<div style="margin:10px 0 4px;font-size:13.5px">한자를 보고 <b>먼저 소리 내어</b> 읽은 뒤, 가려진 뜻을 눌러 확인하세요.</div><div class="rule"></div>';
+    p.keys.forEach(k=>{
+      h += '<div class="keyrow"><div class="k"><b>'+esc(k.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(k.zh)+'">▶</button>'+pyBox(k.py)+'</div>'+
+           '<div class="m"><span class="blurme">'+esc(k.ko)+'</span>'+
+           '<span class="ex blurme">'+esc(k.ex)+'</span><span class="exko blurme">'+esc(k.exKo||"")+'</span></div></div>';
+    });
+    h += '</div>';
+  }
+  $("#stepbody").innerHTML = h;
+  bindBlur(); bindPlay();
+}
+function bindBlur(){
+  document.querySelectorAll(".blurme").forEach(el=>{ if(el._bb) return; el._bb=1;
+    el.addEventListener("click", ()=> el.classList.toggle("show")); });
+}
+function bindPlay(){
+  document.querySelectorAll(".rv").forEach(b=> b.onclick = e=>{ e.stopPropagation(); speak(b.dataset.t, "A", S.cfg.rate); });
+}
+
+/* --- step 2 : 단어·표현 --- */
+function stepWords(d){
+  let h = '<div class="card"><span class="tag">'+esc(d.cat)+'</span>'+
+    '<div class="hz" style="font-size:26px;margin:8px 0 2px">'+esc(d.title)+'</div>'+
+    '<div class="tpy py">'+pyHTML(d.titlePy)+'</div>'+
+    '<div class="sub">'+esc(d.titleKo)+'</div><div class="rule"></div><ul class="brief">'+
+    d.brief.map(b=>'<li>'+b+'</li>').join("")+'</ul></div>';
+  if(d.vocab && d.vocab.length){
+    h += '<div class="card"><b>오늘의 단어 '+d.vocab.length+'개</b>'+
+         '<div class="sub" style="margin:4px 0 8px">지금은 눈으로만 훑으세요. 외우는 건 쉐도잉에서 저절로 됩니다. ▶를 누르면 발음이 나옵니다.</div><div class="rule"></div>';
+    d.vocab.forEach(v=>{
+      h += '<div class="vrow"><div class="w"><b>'+esc(v.w)+'</b> <button class="btn ghost sm rv" data-t="'+esc(v.w)+'">▶</button>'+pyBox(v.p)+'</div>'+
+           '<div class="m">'+esc(v.m)+'</div><div class="lv">'+esc(v.lv||"")+'</div></div>';
+    });
+    h += '</div>';
+  }
+  h += '<div class="card"><b>오늘의 핵심 표현 '+d.keys.length+'개</b><div class="rule"></div>';
+  d.keys.forEach(k=>{
+    h += '<div class="keyrow"><div class="k"><b>'+esc(k.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(k.zh)+'">▶</button>'+pyBox(k.py)+'</div>'+
+         '<div class="m">'+esc(k.ko)+'<span class="ex">'+esc(k.ex)+'</span>'+pyBox(k.exPy)+'<span class="exko">'+esc(k.exKo||"")+'</span></div></div>';
+  });
+  h += '</div>';
+  $("#stepbody").innerHTML = h; bindPlay(); bindPyClick();
+}
+
+/* --- step 3 : 통으로 듣기 --- */
+function stepListen(d){
+  let h = '<div class="card"><div class="row" style="margin-bottom:6px">'+
+    '<button class="btn" id="playAll">전체 재생 ▶</button>'+
+    '<button class="btn ghost sm" id="stopAll">정지 ■</button>'+
+    '<button class="btn ghost sm" id="koTog">한국어 '+(cur.showKo?"숨기기":"보기")+'</button>'+
+    speedBar("lsSpeed")+'</div>'+
+    '<div class="sub">문장을 누르면 그 줄만 다시 들을 수 있습니다. 지금은 <b>따라 읽지 말고</b> 흐름과 성조만 잡으세요.</div>'+
+    '<div class="rule"></div><div id="script">'+d.lines.map((l,i)=>lineHTML(l,i)).join("")+'</div></div>';
+  $("#stepbody").innerHTML = h;
+  bindSpeed("lsSpeed"); bindPyClick();
+  $("#koTog").onclick = ()=>{ cur.showKo=!cur.showKo; stepListen(d); };
+  $("#stopAll").onclick = ()=> stopSpeak();
+  $("#playAll").onclick = ()=>{
+    speakSeq(d.lines, S.cfg.rate, i=>{
+      document.querySelectorAll("#script .sline").forEach(e=>e.classList.remove("now"));
+      const el = document.querySelector('#script .sline[data-i="'+i+'"]');
+      if(el){ el.classList.add("now"); el.scrollIntoView({block:"center", behavior:"smooth"}); }
+    }, ()=> toast("전체 재생 완료"));
+  };
+  document.querySelectorAll("#script .sline").forEach(el=> el.onclick = ()=>{
+    stopSpeak(); const i=+el.dataset.i; speak(d.lines[i].zh, d.lines[i].s, S.cfg.rate);
+  });
+}
+function lineHTML(l,i){
+  return '<div class="sline '+(l.s==="B"?"b":"")+'" data-i="'+i+'"><div class="sp">'+l.s+'</div>'+
+    '<div><span class="zh">'+esc(l.zh)+'</span>'+pyBox(l.py)+
+    (cur.showKo?'<span class="ko">'+esc(l.ko)+'</span>':'')+'</div></div>';
+}
+function speedBar(id){
+  return '<span class="speedbar" id="'+id+'">속도 '+[0.6,0.75,0.9,1.0].map(r=>
+    '<button data-r="'+r+'" class="'+(Math.abs(S.cfg.rate-r)<0.01?"on":"")+'">'+r+'x</button>').join("")+'</span>';
+}
+function bindSpeed(id){
+  document.querySelectorAll("#"+id+" button").forEach(b=> b.onclick = ()=>{
+    S.cfg.rate = +b.dataset.r; save();
+    document.querySelectorAll("#"+id+" button").forEach(x=>x.classList.toggle("on", x===b));
+  });
+}
+
+/* --- step 4 : 쉐도잉 (핵심) --- */
+function stepShadow(d){
+  const i = cur.line, l = d.lines[i];
+  const reps = cur.reps[i]||0, target = S.cfg.reps;
+  const chunks = chunksOf(l);
+  let h = '<div class="row" style="margin:10px 0 0"><span class="sub">문장 '+(i+1)+' / '+d.lines.length+'</span>';
+  h += '<span style="flex:1"></span>'+speedBar("shSpeed")+'</div>';
+  h += '<div class="shadowbox">';
+  h +=   '<div class="who '+(l.s==="B"?"b":"")+'">'+(l.s==="B"?esc(d.names.B):esc(d.names.A))+'</div>';
+  h +=   '<div class="bigzh">'+esc(l.zh)+'</div>';
+  h +=   '<div class="bigpy py">'+pyHTML(l.py)+'</div>';
+  if(chunks.length>1){
+    h += '<div class="sub" style="font-size:12px;margin-top:6px">덩어리로 끊어 읽기 — 각 줄을 눌러 따라 하세요</div>';
+    h += '<div class="chunks">'+chunks.map((c,ci)=>'<div class="chunk" data-c="'+ci+'"><span class="zh">'+esc(c.zh)+'</span>'+pyBox(c.py)+'</div>').join("")+'</div>';
+  }
+  h +=   '<div class="bigko blurme'+(cur.showKo?" show":"")+'">'+esc(l.ko)+'</div>';
+  h +=   '<div class="rule"></div>';
+  h +=   '<div class="row"><button class="btn" id="pLine">듣기 ▶</button>'+
+         '<button class="btn ghost sm" id="pSlow">천천히 0.6x</button>'+
+         '<button class="btn '+(autoTok?"blue":"ghost")+' sm" id="pAuto">'+(autoTok?"■ 자동 정지":"자동 진행 ▶▶")+'</button>'+
+         (SR?'<button class="btn ghost sm" id="pAsr">🎤 발음 체크</button>':'')+
+         '<span style="flex:1"></span><span class="counter" id="dots">'+
+         Array.from({length:target},(_,k)=>'<span class="dot '+(k<reps?"on":"")+'"></span>').join("")+'</span></div>';
+  h +=   '<div id="asrOut"></div>';
+  if(l.notes && l.notes.length){
+    h += '<div class="notes"><div class="sub" style="font-size:12px;margin-bottom:4px">표현 노트</div>';
+    l.notes.forEach(n=>{
+      h += '<div class="note"><b>'+esc(n.t)+'</b><span class="np">'+pyHTML(n.p||"")+'</span><span class="k">'+esc(kLabel(n.k))+'</span> — '+esc(n.m)+
+           (n.tip?'<span class="tip">'+esc(n.tip)+'</span>':'')+'</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<div class="row"><button class="btn ghost" id="sPrev">← 앞 문장</button>'+
+       '<button class="btn" id="sNext">다음 문장 →</button>'+
+       '<span class="sub" style="font-size:12px">스페이스바=듣기, Enter=다음</span></div>';
+  $("#stepbody").innerHTML = h;
+  bindSpeed("shSpeed"); bindBlur(); bindPyClick();
+
+  const play = (rate)=>{ stopSpeak(); bumpRep(i); speak(l.zh, l.s, rate||S.cfg.rate); };
+  $("#pLine").onclick = ()=> play();
+  $("#pSlow").onclick = ()=> play(0.6);
+  $("#pAuto").onclick = ()=>{ if(autoTok){ stopSpeak(); stepShadow(d); } else autoShadow(d); };
+  document.querySelectorAll(".chunk").forEach(el=> el.onclick = ()=>{
+    stopSpeak();
+    document.querySelectorAll(".chunk").forEach(x=>x.classList.remove("on"));
+    el.classList.add("on"); speak(chunks[+el.dataset.c].zh, l.s, Math.min(S.cfg.rate,0.75));
+  });
+  $("#sPrev").onclick = ()=>{ if(cur.line>0){ cur.line--; stopSpeak(); stepShadow(d);} };
+  $("#sNext").onclick = ()=>{
+    if(cur.line < d.lines.length-1){ cur.line++; stopSpeak(); stepShadow(d); }
+    else { toast("마지막 문장입니다 — 다음 단계로"); }
+  };
+  if(SR) $("#pAsr").onclick = ()=> runAsr(l.zh);
+}
+function bumpRep(i){
+  cur.reps[i] = Math.min(S.cfg.reps, (cur.reps[i]||0)+1);
+  const dots = $("#dots");
+  if(dots) dots.innerHTML = Array.from({length:S.cfg.reps},(_,k)=>'<span class="dot '+(k<cur.reps[i]?"on":"")+'"></span>').join("");
+  saveProgress();
+}
+/* 자동 진행 — 재생 → 따라 읽을 여유 → 재생 … 반복 후 다음 문장 */
+function autoShadow(d){
+  const token = {}; autoTok = token;
+  const gap = zh => Math.max(1100, cLen(zh) * 420);
+  stepShadow(d);
+  (function run(rep){
+    if(autoTok!==token) return;
+    const l = d.lines[cur.line];
+    speak(l.zh, l.s, S.cfg.rate, ()=>{
+      if(autoTok!==token) return;
+      bumpRep(cur.line);
+      setTimeout(()=>{
+        if(autoTok!==token) return;
+        if(rep+1 < S.cfg.reps) run(rep+1);
+        else if(cur.line < d.lines.length-1){ cur.line++; stepShadow(d); setTimeout(()=>run(0), 500); }
+        else { autoTok=null; stepShadow(d); toast("마지막 문장까지 끝냈습니다 — 다음 단계로"); }
+      }, gap(l.zh));
+    });
+  })(0);
+}
+function kLabel(k){
+  return ({word:"단어", expr:"표현", grammar:"문법", measure:"양사", pron:"발음", culture:"문화", idiom:"관용"})[k] || k;
+}
+function runAsr(target){
+  const box = $("#asrOut");
+  let rec;
+  try{ rec = new SR(); }catch(e){ box.innerHTML='<div class="sub">이 브라우저에서는 발음 체크를 쓸 수 없습니다.</div>'; return; }
+  rec.lang="zh-CN"; rec.interimResults=false; rec.maxAlternatives=1;
+  box.innerHTML = '<div class="asr sub">🎤 듣고 있습니다… 문장을 소리 내어 읽으세요.</div>';
+  rec.onresult = e=>{
+    const said = e.results[0][0].transcript;
+    const r = compareSpoken(target, said);
+    box.innerHTML = '<div class="asr"><span class="score">'+r.score+'점</span> <span class="sub">— 인식된 문장: '+esc(said)+'</span><div style="margin-top:6px">'+
+      r.marks.map(m=>'<span class="w '+(m.ok?"good":"bad")+'">'+esc(m.w)+'</span>').join("")+'</div>'+
+      '<div class="sub" style="font-size:12px;margin-top:4px">빨간 글자는 전달되지 않은 부분입니다. 그 글자만 천천히 다시 읽어 보세요. '+
+      '※ 성조까지 채점하지는 못합니다. 성조는 앱 발음을 따라 하며 귀로 잡으세요.</div></div>';
+  };
+  rec.onerror = ev=>{ box.innerHTML='<div class="asr sub">인식 실패('+esc(ev.error)+'). 마이크 권한과 인터넷 연결을 확인하세요.</div>'; };
+  try{ rec.start(); }catch(e){ box.innerHTML='<div class="asr sub">마이크를 시작할 수 없습니다.</div>'; }
+}
+document.addEventListener("keydown", e=>{
+  if(cur.view!=="session" || STEPS[cur.step].k!=="shadow") return;
+  if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  const d = dayById(cur.dayId); if(!d) return;
+  if(e.code==="Space"){ e.preventDefault(); const l=d.lines[cur.line]; stopSpeak(); bumpRep(cur.line); speak(l.zh, l.s, S.cfg.rate); }
+  if(e.code==="Enter"){ e.preventDefault(); if(cur.line<d.lines.length-1){ cur.line++; stopSpeak(); stepShadow(d);} }
+});
+
+/* --- step 5 : 역할극 + 말해보기 --- */
+function stepOutput(d){
+  const me = S.cfg.myRole || "A";
+  const other = me==="A" ? "B" : "A";
+  const saved = S.out[d.id] || [];
+  let h = '<div class="card"><b>역할극 — 내 대사를 내가 말하기</b>'+
+    '<div class="sub" style="margin:4px 0 8px">상대 대사는 앱이 읽어 줍니다. 내 대사 차례에는 화면이 파랗게 바뀌고 잠시 멈춥니다. 그때 소리 내어 말하세요.</div>'+
+    '<div class="row"><span class="sub">내 역할</span>'+
+    '<button class="btn '+(me==="A"?"blue":"ghost")+' sm rrole" data-r="A">A · '+esc(d.names.A)+'</button>'+
+    '<button class="btn '+(me==="B"?"blue":"ghost")+' sm rrole" data-r="B">B · '+esc(d.names.B)+'</button></div>'+
+    '<div class="row" style="margin-top:8px"><button class="btn" id="rpStart">역할극 시작 ▶</button>'+
+    '<button class="btn ghost sm" id="rpStop">정지 ■</button>'+
+    '<button class="btn ghost sm" id="rpHide">내 대사 '+(cur.showKo?"가리기":"가린 채 보기")+'</button></div>'+
+    '<div class="rule"></div><div id="rpList">'+
+    d.lines.map((l,i)=>'<div class="rp '+(l.s===me?"mine":"")+'" data-i="'+i+'"><div class="sp">'+l.s+'</div>'+
+      '<div><span class="zh'+(l.s===me?" blurme":"")+'">'+esc(l.zh)+'</span>'+pyBox(l.py)+
+      '<span class="ko">'+esc(l.ko)+'</span></div></div>').join("")+'</div></div>';
+  h += '<div class="card"><b>내 말로 말해 보기</b>'+
+    '<div class="sub" style="margin:4px 0 0">각 질문에 <b>30초씩 소리 내어</b> 답하세요. 말한 뒤 기억나는 문장을 한 줄만 적어 두면 다음에 비교할 수 있습니다.</div><div class="rule"></div>';
+  d.out.forEach((q,i)=>{
+    h += '<div class="qbox"><div class="q">'+esc(q.q)+'</div>'+
+         '<div class="hint">쓸 표현 — <b>'+esc(q.hint)+'</b></div>'+
+         '<div class="row" style="margin:6px 0"><button class="btn ghost sm timer" data-i="'+i+'">30초 타이머</button>'+
+         '<span class="sub" id="tm'+i+'"></span></div>'+
+         '<textarea data-i="'+i+'" placeholder="말한 내용 중 한 문장만 적어 두세요 (선택)">'+esc(saved[i]||"")+'</textarea></div>';
+  });
+  h += '</div>';
+  $("#stepbody").innerHTML = h; bindBlur(); bindPyClick();
+
+  document.querySelectorAll(".rrole").forEach(b=> b.onclick = ()=>{
+    S.cfg.myRole = b.dataset.r; save(); stopSpeak(); stepOutput(d); });
+  $("#rpHide").onclick = ()=>{ document.querySelectorAll("#rpList .blurme").forEach(x=>x.classList.toggle("show")); };
+  $("#rpStop").onclick = ()=> stopSpeak();
+  $("#rpStart").onclick = ()=> runRolePlay(d, me, other);
+  document.querySelectorAll("#rpList .rp").forEach(el=> el.onclick = ()=>{
+    stopSpeak(); const i=+el.dataset.i; speak(d.lines[i].zh, d.lines[i].s, S.cfg.rate); });
+  document.querySelectorAll("#stepbody textarea").forEach(t=> t.onchange = ()=>{
+    const arr = S.out[d.id] || []; arr[+t.dataset.i]=t.value; S.out[d.id]=arr; save();
+  });
+  document.querySelectorAll(".timer").forEach(b=> b.onclick = ()=>{
+    let s=30; const out=$("#tm"+b.dataset.i);
+    clearInterval(b._t); out.textContent="00:30 — 지금 말하세요";
+    b._t = setInterval(()=>{ s--; out.textContent = s>0 ? "00:"+pad(s) : "끝 — 잘했습니다"; if(s<=0) clearInterval(b._t); }, 1000);
+  });
+}
+function runRolePlay(d, me, other){
+  const token = {}; rpTok = token;
+  let i = 0;
+  const mark = (idx)=>{
+    document.querySelectorAll("#rpList .rp").forEach(e=>e.classList.remove("now"));
+    const el = document.querySelector('#rpList .rp[data-i="'+idx+'"]');
+    if(el){ el.classList.add("now"); el.scrollIntoView({block:"center", behavior:"smooth"}); }
+  };
+  (function step(){
+    if(rpTok!==token) return;
+    if(i>=d.lines.length){ rpTok=null; toast("역할극 끝 — 수고하셨습니다"); return; }
+    const l = d.lines[i]; mark(i);
+    if(l.s===other){
+      speak(l.zh, l.s, S.cfg.rate, ()=>{ i++; setTimeout(step, 300); });
+    } else {
+      const wait = Math.max(1600, cLen(l.zh)*520);
+      setTimeout(()=>{ if(rpTok!==token) return; i++; step(); }, wait);
+    }
+  })();
+}
+
+/* ---------- 기록 ---------- */
+function renderLog(){
+  const info = streakInfo();
+  let h = '<div class="hd" style="margin-top:20px"><small>Progress</small>학습 기록</div>';
+  h += '<div class="card"><div class="streak"><div><b>'+info.streak+'</b><span>연속일</span></div>'+
+       '<div><b>'+info.total+'</b><span>학습일</span></div><div><b>'+info.mins+'</b><span>총 분</span></div>'+
+       '<div><b>'+info.lines+'</b><span>누적 문장</span></div></div>';
+  h += '<div class="rule"></div><div class="sub" style="font-size:12px">최근 4주</div><div class="cal">';
+  const arr=[]; const dd=new Date();
+  for(let i=27;i>=0;i--){ const x=new Date(dd); x.setDate(dd.getDate()-i); arr.push(x); }
+  arr.forEach(x=>{ const key=x.toISOString().slice(0,10);
+    h += '<div class="'+(S.log[key]?"done":"")+'" title="'+key+'">'+x.getDate()+'</div>'; });
+  h += '</div></div>';
+  const keys = Object.keys(S.log).sort().reverse();
+  h += '<div class="card"><b>세션 기록</b><div class="rule"></div>';
+  if(!keys.length) h += '<div class="sub">아직 기록이 없습니다.</div>';
+  keys.forEach(k=>{ const r=S.log[k]; const d=dayById(r.dayId);
+    h += '<div class="histrow"><b>'+k.slice(5)+'</b><span style="flex:1" class="hz">'+(d?esc(d.title):"—")+'</span>'+
+         '<span class="sub">'+r.min+'분 · '+r.lines+'문장</span></div>'; });
+  h += '</div>';
+  h += '<div class="card"><b>데이터 백업</b><div class="sub" style="margin:4px 0 10px">이 앱은 브라우저 안에 기록을 저장합니다. '+
+       '브라우저 데이터를 지우면 사라지므로, 가끔 백업 파일을 내려받아 두세요.</div>'+
+       '<div class="row"><button class="btn ghost sm" id="expBtn">백업 내보내기</button>'+
+       '<label class="btn ghost sm" style="cursor:pointer">백업 불러오기<input type="file" id="impFile" accept="application/json" style="display:none"></label></div>'+
+       '<div id="bkOut"></div></div>';
+  $("#view-log").innerHTML = h;
+  $("#expBtn").onclick = exportData;
+  $("#impFile").onchange = importData;
+}
+/* 파일로 저장할 수 없는 화면(공유 페이지 등)에서는 내용을 직접 복사하게 한다 */
+function showBackupText(json){
+  const box = $("#bkOut"); if(!box) return;
+  box.innerHTML = '<div class="sub" style="margin:10px 0 6px">이 화면에서는 파일로 바로 저장할 수 없습니다. '+
+    '아래 내용을 <b>전체 복사</b>해서 메모장에 붙여넣고 <b>.json</b>으로 저장해 두세요.</div>'+
+    '<textarea id="bkTa" style="min-height:120px;font-size:12px"></textarea>'+
+    '<div class="row" style="margin-top:6px"><button class="btn ghost sm" id="bkCopy">전체 복사</button>'+
+    '<button class="btn ghost sm" id="bkClose">닫기</button></div>';
+  $("#bkTa").value = json;
+  $("#bkCopy").onclick = ()=>{
+    const t = $("#bkTa"); t.focus(); t.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject())
+      .then(()=> toast("복사했습니다"), ()=> toast("Ctrl+C로 복사하세요"));
+  };
+  $("#bkClose").onclick = ()=>{ box.innerHTML = ""; };
+}
+function exportData(){
+  const json = JSON.stringify({v:1, prog:S.prog, log:S.log, star:S.star, out:S.out, custom:S.custom, cfg:S.cfg}, null, 1);
+  const name = "chaguan-backup-"+today()+".json";
+  const embedded = (window.top !== window.self) || !!window.claude;
+  if(embedded){ showBackupText(json); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([json], {type:"application/json"}));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("백업 파일을 내려받았습니다");
+}
+function importData(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const o = JSON.parse(r.result);
+      if(o.prog) S.prog=o.prog; if(o.log) S.log=o.log; if(o.star) S.star=o.star;
+      if(o.out) S.out=o.out; if(o.custom) S.custom=o.custom; if(o.cfg) S.cfg=Object.assign(S.cfg,o.cfg);
+      save(); rebuild(); applyLook(); toast("백업을 불러왔습니다"); render();
+    }catch(err){ toast("파일을 읽을 수 없습니다"); }
+  };
+  r.readAsText(f);
+}
+
+/* ---------- 단어장 ---------- */
+let bankQ = "", bankTab = "all";
+function bankRows(){
+  const rows=[];
+  CONTENT.forEach(d=>{
+    (d.vocab||[]).forEach(v=> rows.push({type:"w", day:d.day, zh:v.w, py:v.p, ko:v.m, ex:"", exKo:"", lv:v.lv||""}));
+    (d.keys||[]).forEach(k=> rows.push({type:"k", day:d.day, zh:k.zh, py:k.py, ko:k.ko, ex:k.ex||"", exKo:k.exKo||"", lv:""}));
+  });
+  return rows;
+}
+function renderBank(){
+  const all = bankRows();
+  const q = bankQ.trim().toLowerCase();
+  const rows = all.filter(r=>{
+    if(bankTab==="w" && r.type!=="w") return false;
+    if(bankTab==="k" && r.type!=="k") return false;
+    if(bankTab==="star" && !S.star[r.zh]) return false;
+    return !q || (r.zh+r.py+r.ko+r.ex).toLowerCase().includes(q);
+  });
+  let h = '<div class="hd" style="margin-top:20px"><small>Word bank</small>단어장 <span class="sub" style="font-size:13px">('+all.length+'개)</span></div>';
+  h += '<div class="card"><div class="row" style="margin-bottom:10px">'+
+       '<input type="text" id="bq" placeholder="한자·병음·뜻으로 검색" value="'+esc(bankQ)+'" style="flex:1;min-width:160px">'+
+       '<button class="btn ghost sm bt '+(bankTab==="all"?"blue":"")+'" data-t="all">전체</button>'+
+       '<button class="btn ghost sm bt '+(bankTab==="w"?"blue":"")+'" data-t="w">단어</button>'+
+       '<button class="btn ghost sm bt '+(bankTab==="k"?"blue":"")+'" data-t="k">표현</button>'+
+       '<button class="btn ghost sm bt '+(bankTab==="star"?"blue":"")+'" data-t="star">★ 표시</button>'+
+       '<button class="btn sm" id="bDrill">랜덤 10개 훈련</button></div><div id="bankList">';
+  if(!rows.length) h += '<div class="sub">해당하는 항목이 없습니다.</div>';
+  rows.forEach(r=>{
+    const on = S.star[r.zh] ? "on":"";
+    h += '<div class="bankrow"><span class="star '+on+'" data-k="'+esc(r.zh)+'">★</span>'+
+         '<b>'+esc(r.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(r.zh)+'">▶</button> '+
+         '<span class="sub" style="font-size:11px">DAY '+r.day+(r.lv?' · '+esc(r.lv):'')+'</span>'+
+         pyBox(r.py)+'<div class="m">'+esc(r.ko)+'</div>'+
+         (r.ex?'<div class="ex">'+esc(r.ex)+'</div><div class="m" style="font-size:12px">'+esc(r.exKo)+'</div>':'')+'</div>';
+  });
+  h += '</div></div>';
+  $("#view-bank").innerHTML = h;
+  bindPlay(); bindPyClick();
+  $("#bq").oninput = e=>{ bankQ=e.target.value; const p=e.target.selectionStart; renderBank();
+    const el=$("#bq"); el.focus(); el.setSelectionRange(p,p); };
+  document.querySelectorAll(".bt").forEach(b=> b.onclick = ()=>{ bankTab=b.dataset.t; renderBank(); });
+  $("#bDrill").onclick = ()=> drill(rows);
+  document.querySelectorAll(".star").forEach(s=> s.onclick = ()=>{
+    const k=s.dataset.k; if(S.star[k]) delete S.star[k]; else S.star[k]=1; save(); s.classList.toggle("on"); });
+}
+function drill(rows){
+  if(!rows.length){ toast("훈련할 항목이 없습니다"); return; }
+  const pool = rows.slice(); const pick=[];
+  while(pick.length<10 && pool.length) pick.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  let h = '<div class="hd" style="margin-top:20px"><small>Quick drill</small>랜덤 10개 — 한국어를 보고 먼저 말하기</div><div class="card">'+
+    '<div class="sub" style="margin-bottom:8px">뜻만 보고 중국어를 소리 내어 말한 뒤, 가려진 한자를 눌러 확인하세요.</div><div class="rule"></div>';
+  pick.forEach(r=>{
+    h += '<div class="keyrow"><div class="k"><b class="blurme">'+esc(r.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(r.zh)+'">▶</button>'+
+         '<span class="py blurme">'+pyHTML(r.py)+'</span></div>'+
+         '<div class="m">'+esc(r.ko)+'</div></div>';
+  });
+  h += '</div><div class="row"><button class="btn ghost" id="bBack">← 단어장으로</button><button class="btn" id="bAgain">다시 뽑기</button></div>';
+  $("#view-bank").innerHTML = h; bindBlur(); bindPlay();
+  $("#bBack").onclick = ()=> renderBank();
+  $("#bAgain").onclick = ()=> drill(rows);
+}
+
+/* ---------- 자료 추가 ---------- */
+const GEN_PROMPT =
+`아래 형식에 맞춰 중국어 일상회화 쉐도잉 1회차를 JSON 배열로 만들어 줘.
+
+[학습자]
+- 한국인 직장인. 중국어 말하기는 중상급(HSK 5~6 수준). 기본 회화는 되지만 **어른스러운 구어와 관용 표현**이 부족함.
+- 목표는 시사·비즈니스 용어가 아니라 **성인의 일상 회화**. 사교·부탁·거절·하소연·협상처럼
+  실제 관계 속에서 오가는 말을 늘리는 것.
+
+[조건]
+- 두 사람(A/B)이 한 장면에서 나누는 자연스러운 대화 20줄(A/B 번갈아).
+- 한 줄은 한자 15~28자. 짧은 초급 문장을 쓰지 말 것.
+- 어휘 난이도는 HSK 5~6 중심. 회차마다 성어·관용어를 2~4개, 구어체 표현(别提了/可不是嘛/要我说 등)을 넉넉히 섞을 것.
+- 반드시 넣을 문법: 가능보어(V得住/V不了/推不掉), 把자문, 连…都…, A是A可是…, A归A,
+  越…越…, 能…则…, 非得…才…, 总不能…吧, 说是这么说 같은 **구어 골격**.
+- 소재: (여기에 장면을 적으세요 — 예: 이사 집 보기, 아이 담임과 상담, 중고차 흥정, 회사 동료의 부탁 거절,
+  이웃과의 소음 문제, 오랜만에 만난 친구, 명절 친척 모임)
+- notes에는 단어 뜻만 쓰지 말고, **비슷한 말과의 차이·언제 쓰면 실례가 되는지·확장형**을 적을 것.
+- 병음(py)은 성조 부호를 정확히 넣고, 一/不 성조 변화도 반영할 것(예: yí ge, yìdiǎnr, búcuò).
+  儿化는 붙여 쓸 것(diǎnr, xìnr). 병음 음절 수는 한자 수와 일치해야 한다(儿화 제외).
+- ck는 끊어 읽기 덩어리다. 한 줄을 2~4덩어리로 나누고, 각 덩어리의 [한자, 병음] 쌍으로 적을 것.
+  덩어리를 모두 이으면 원문과 정확히 같아야 한다.
+- notes의 k 값은 word / expr / grammar / measure / pron / culture / idiom 중 하나.
+- 지어낸 통계·인용은 쓰지 말 것. 일상 장면의 사실적인 대화만.
+- 출력은 JSON 배열 하나만. 설명 문장 없이.
+
+[형식]
+[{
+ "id":"c2d1","day":8,"cat":"장면분류","level":"HSK 5~6",
+ "title":"中文标题","titlePy":"zhōngwén biāotí","titleKo":"한국어 제목 — 부제",
+ "names":{"A":"이름 (역할)","B":"이름 (역할)"},
+ "brief":["한국어 배경설명 1","2","3","4"],
+ "vocab":[{"w":"单词","p":"dāncí","m":"뜻","lv":"HSK5"}],
+ "lines":[
+   {"s":"A","zh":"중국어 문장","py":"pīnyīn","ko":"한국어 번역",
+    "ck":[["앞 덩어리","pīnyīn"],["뒤 덩어리","pīnyīn"]],
+    "notes":[{"t":"표현","p":"pīnyīn","k":"grammar","m":"뜻","tip":"쓰임·주의점"}]}
+ ],
+ "keys":[{"zh":"표현","py":"pīnyīn","ko":"뜻","ex":"예문","exPy":"pīnyīn","exKo":"예문 뜻"}],
+ "out":[{"q":"한국어 질문","hint":"써야 할 중국어 표현"}]
+}]`;
+function renderAdd(){
+  let h = '<div class="hd" style="margin-top:20px"><small>Add content</small>새 회화 추가</div>';
+  h += '<div class="card"><b>1단계 — 프롬프트 복사</b><div class="sub" style="margin:4px 0 8px">아래 내용을 복사해서 Claude에게 붙여넣고, 원하는 장면을 적으세요.</div>'+
+       '<pre class="prompt" id="pmt">'+esc(GEN_PROMPT)+'</pre>'+
+       '<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="copyP">프롬프트 복사</button></div></div>';
+  h += '<div class="card"><b>2단계 — 받은 JSON 붙여넣기</b><div class="sub" style="margin:4px 0 8px">Claude가 준 JSON을 그대로 붙여넣고 추가를 누르면 커리큘럼 맨 뒤에 붙습니다.</div>'+
+       '<textarea id="jin" style="min-height:150px" placeholder="[ { &quot;id&quot;: ... } ]"></textarea>'+
+       '<div class="row" style="margin-top:8px"><button class="btn" id="addJ">회차 추가</button>'+
+       '<span class="sub" id="addMsg"></span></div></div>';
+  if(S.custom.length){
+    h += '<div class="card"><b>내가 추가한 회차 ('+S.custom.length+')</b><div class="rule"></div>';
+    S.custom.forEach((c,i)=>{ h += '<div class="histrow"><b>'+c.day+'</b><span style="flex:1" class="hz">'+esc(c.title||"(제목 없음)")+'</span>'+
+      '<button class="btn ghost sm delc" data-i="'+i+'">삭제</button></div>'; });
+    h += '</div>';
+  }
+  $("#view-add").innerHTML = h;
+  $("#copyP").onclick = ()=>{ navigator.clipboard.writeText(GEN_PROMPT).then(()=>toast("복사했습니다"),()=>{
+    const r=document.createRange(); r.selectNode($("#pmt")); getSelection().removeAllRanges(); getSelection().addRange(r);
+    toast("직접 복사하세요 (Ctrl+C)"); }); };
+  $("#addJ").onclick = ()=>{
+    const raw = $("#jin").value.trim(); if(!raw) return;
+    try{
+      let o = JSON.parse(raw); if(!Array.isArray(o)) o=[o];
+      const bad = o.find(x=> !x.id || !Array.isArray(x.lines) || !x.lines.length);
+      if(bad) throw new Error("형식");
+      o.forEach(x=>{
+        x.cat=x.cat||"기타"; x.brief=x.brief||[]; x.keys=x.keys||[]; x.out=x.out||[]; x.vocab=x.vocab||[];
+        x.names=x.names||{A:"A",B:"B"}; x.titleKo=x.titleKo||""; x.titlePy=x.titlePy||"";
+        x.day = x.day || (CONTENT.length+1);
+        if(CONTENT.some(c=>c.id===x.id)) x.id = x.id+"-"+Math.random().toString(36).slice(2,6);
+        S.custom.push(x);
+      });
+      save(); rebuild(); toast(o.length+"개 회차를 추가했습니다"); $("#jin").value=""; renderAdd();
+    }catch(err){ $("#addMsg").textContent = "JSON 형식이 맞지 않습니다. 대괄호 [ ] 로 시작하는지 확인하세요."; }
+  };
+  document.querySelectorAll(".delc").forEach(b=> b.onclick = ()=>{
+    S.custom.splice(+b.dataset.i,1); save(); rebuild(); renderAdd(); });
+}
+
+/* ---------- 설정 ---------- */
+function renderSettings(){
+  const vopt = who => VOICES.map(v=>'<option value="'+esc(v.name)+'"'+
+    ((who==="A"?S.cfg.voiceA:S.cfg.voiceB)===v.name?" selected":"")+'>'+esc(v.name)+' ('+esc(v.lang)+')</option>').join("");
+  let h = '<div class="hd" style="margin-top:20px"><small>Settings</small>설정</div>';
+  h += '<div class="card"><b>목소리</b><div class="sub" style="margin:4px 0 10px">A와 B를 다른 목소리로 두면 대화처럼 들립니다. '+
+    '목록에 중국어 음성이 없으면 윈도우 설정 → 시간 및 언어 → 언어에서 <b>중국어(간체) 음성</b>을 추가하세요.</div>'+
+    '<div class="row" style="margin-bottom:8px">A(첫 번째 화자) <select id="vA">'+vopt("A")+'</select><button class="btn ghost sm rv" data-t="你好，这是A的声音。">시험 재생</button></div>'+
+    '<div class="row">B(두 번째 화자) <select id="vB">'+vopt("B")+'</select><button class="btn ghost sm" id="tB">시험 재생</button></div>'+
+    (VOICES.length?'':'<div class="sub" style="margin-top:8px;color:var(--red)">중국어 음성을 찾지 못했습니다. 브라우저를 새로고침하거나 Chrome·Edge에서 열어 보세요.</div>')+'</div>';
+  h += '<div class="card"><b>병음 표시</b><div class="sub" style="margin:4px 0 8px">실력이 붙으면 <b>가리기</b>로 바꾸세요. 눌러야 보이므로 한자와 소리를 먼저 떠올리게 됩니다.</div>'+
+    '<div class="row">'+
+    ["on","blur","off"].map(v=>'<button class="btn '+(S.cfg.py===v?"blue":"ghost")+' sm pyb" data-v="'+v+'">'+
+      ({on:"항상 보기",blur:"가리기(눌러서 확인)",off:"완전히 숨기기"})[v]+'</button>').join("")+'</div></div>';
+  h += '<div class="card"><b>성조 색</b><div class="sub" style="margin:4px 0 8px">병음에 성조별 색을 입힙니다 — '+
+    '<span class="t1">1성</span> · <span class="t2">2성</span> · <span class="t3">3성</span> · <span class="t4">4성</span> · <span class="t0">경성</span></div>'+
+    '<div class="row">'+["on","off"].map(v=>'<button class="btn '+(S.cfg.tone===v?"blue":"ghost")+' sm tnb" data-v="'+v+'">'+
+      (v==="on"?"색 입히기":"색 없이")+'</button>').join("")+'</div></div>';
+  h += '<div class="card"><b>한자 서체</b><div class="sub" style="margin:4px 0 8px">楷体(해서)는 붓글씨에 가까워 획을 익히기 좋고, 黑体(고딕)는 화면에서 또렷합니다.</div>'+
+    '<div class="row">'+[["kai","楷体 (해서)"],["hei","黑体 (고딕)"]].map(v=>'<button class="btn '+(S.cfg.han===v[0]?"blue":"ghost")+' sm hnb" data-v="'+v[0]+'">'+v[1]+'</button>').join("")+'</div></div>';
+  h += '<div class="card"><b>훈련 설정</b><div class="rule"></div>'+
+    '<div class="row" style="margin-bottom:10px">기본 속도 '+speedBar("stSpeed")+'</div>'+
+    '<div class="row" style="margin-bottom:10px">문장당 반복 목표 <select id="rp">'+[2,3,5].map(n=>'<option'+(S.cfg.reps===n?" selected":"")+'>'+n+'</option>').join("")+'</select> 회</div>'+
+    '<div class="row"><label><input type="checkbox" id="ko"'+(S.cfg.showKo?" checked":"")+'> 한국어 번역을 처음부터 보이기</label></div></div>';
+  h += '<div class="card"><b>화면</b><div class="row" style="margin-top:8px"><button class="btn ghost sm" id="th">'+
+    (S.cfg.theme==="dark"?"밝은 화면으로":"어두운 화면으로")+'</button></div></div>';
+  h += '<div class="card"><b>기록 초기화</b><div class="sub" style="margin:4px 0 8px">모든 학습 기록과 추가한 회차가 지워집니다. 되돌릴 수 없습니다.</div>'+
+    '<button class="btn ghost sm" id="reset" style="color:var(--red);border-color:var(--red)">전체 초기화</button></div>';
+  h += '<div class="card sub" style="font-size:12.5px"><b>이 앱에 대해</b><br>茶馆 CHÁGUǍN · 데일리 중국어 쉐도잉<br>'+
+    '<b>© 2026 곤사마 (Gonsama). All rights reserved.</b><br><br>인터넷 없이 열리지만, '+
+    '음성은 컴퓨터에 설치된 중국어 음성을 사용합니다(고품질 온라인 음성은 인터넷이 있을 때 더 잘 나옵니다). '+
+    '발음 체크는 Chrome·Edge에서 마이크 권한과 인터넷이 있을 때 동작하며, 글자 인식만 대조할 뿐 성조는 채점하지 못합니다.</div>';
+  $("#view-settings").innerHTML = h;
+  bindSpeed("stSpeed"); bindPlay();
+  $("#vA").onchange = e=>{ S.cfg.voiceA=e.target.value; save(); };
+  $("#vB").onchange = e=>{ S.cfg.voiceB=e.target.value; save(); };
+  $("#tB").onclick = ()=> speak("你好，这是B的声音。", "B", S.cfg.rate);
+  document.querySelectorAll(".pyb").forEach(b=> b.onclick = ()=>{ S.cfg.py=b.dataset.v; save(); applyLook(); renderSettings(); });
+  document.querySelectorAll(".tnb").forEach(b=> b.onclick = ()=>{ S.cfg.tone=b.dataset.v; save(); applyLook(); renderSettings(); });
+  document.querySelectorAll(".hnb").forEach(b=> b.onclick = ()=>{ S.cfg.han=b.dataset.v; save(); applyLook(); renderSettings(); });
+  $("#rp").onchange = e=>{ S.cfg.reps=+e.target.value; save(); };
+  $("#ko").onchange = e=>{ S.cfg.showKo=e.target.checked; save(); };
+  $("#th").onclick = ()=>{ S.cfg.theme = S.cfg.theme==="dark"?"light":"dark"; save(); applyLook(); renderSettings(); };
+  $("#reset").onclick = ()=>{
+    if(confirm("모든 기록을 지웁니다. 계속할까요?")){
+      S.prog={}; S.log={}; S.star={}; S.out={}; S.custom=[]; save(); rebuild(); toast("초기화했습니다"); go("home");
+    }
+  };
+}
+function applyLook(){
+  const r = document.documentElement;
+  let t = S.cfg.theme;
+  if(t!=="dark" && t!=="light")
+    t = (function(){ var h = r.getAttribute("data-theme"); if(h==="dark"||h==="light") return h;
+      return (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light"; })();
+  r.setAttribute("data-theme", t);
+  r.setAttribute("data-py", S.cfg.py||"on");
+  r.setAttribute("data-tone", S.cfg.tone||"on");
+  r.setAttribute("data-han", S.cfg.han||"kai");
+}
+
+/* ---------- 시작 ---------- */
+applyLook();
+render();
+</script>

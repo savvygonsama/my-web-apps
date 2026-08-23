@@ -1,0 +1,1186 @@
+<title>자정 열차</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+
+<style>
+/* ── 자정 열차 ─ 밤 객차라는 하나의 시각 세계로 의도적으로 고정한 팔레트 ── */
+:root{
+  --glass:#0B0E14;        /* 창유리 */
+  --carriage:#141A24;     /* 객차 패널 */
+  --carriage-2:#1B2331;   /* 좌석 */
+  --lamp:#E9B36A;         /* 객차 등불 */
+  --lamp-dim:#8A6B3E;
+  --steel:#7B8798;        /* 강철빛 회청 */
+  --steel-dim:#4A5563;
+  --paper:#E8E3D7;        /* 표 종이 */
+  --signal:#B8503F;       /* 신호등 */
+  --line:#28313F;
+
+  --serif:'Gowun Batang','Nanum Myeongjo',Batang,serif;
+  --sans:'IBM Plex Sans KR','Malgun Gothic',system-ui,sans-serif;
+
+  --measure:34rem;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--glass);
+  color:var(--paper);
+  font-family:var(--serif);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── 배경: 지나가는 불빛 + 창에 맺힌 비 ── */
+#bg{position:fixed;inset:0;z-index:0;opacity:.55;pointer-events:none}
+#vig{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 42%,rgba(11,14,20,0) 30%,rgba(11,14,20,.82) 100%)}
+
+/* ── 뼈대 ── */
+.wrap{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column}
+.rail-bar{
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(var(--glass) 62%,rgba(11,14,20,0));
+  padding:.9rem 1.25rem 1.4rem;
+}
+.rail-inner{
+  max-width:var(--measure);margin:0 auto;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  font-family:var(--sans);font-size:.68rem;font-weight:400;
+  letter-spacing:.14em;color:var(--steel);
+}
+.route{display:flex;align-items:center;gap:0;flex:1;min-width:9rem}
+.stop{width:6px;height:6px;border-radius:50%;background:var(--steel-dim);flex:none;transition:background .5s,box-shadow .5s}
+.seg{height:1px;background:var(--steel-dim);flex:1;min-width:8px;transition:background .5s}
+.stop.on{background:var(--lamp);box-shadow:0 0 0 3px rgba(233,179,106,.16)}
+.stop.now{background:var(--lamp);box-shadow:0 0 0 4px rgba(233,179,106,.28),0 0 12px rgba(233,179,106,.7)}
+.seg.on{background:var(--lamp-dim)}
+.meta{display:flex;gap:.9rem;align-items:center;white-space:nowrap}
+.meta b{color:var(--lamp);font-weight:500;font-variant-numeric:tabular-nums}
+
+main{flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:0 1.25rem 3.5rem;width:100%;max-width:calc(var(--measure) + 2.5rem);margin:0 auto}
+
+/* ── 표제 화면: 출발 안내판 ── */
+.board{text-align:center;padding:1rem 0 0}
+.board .kicker{font-family:var(--sans);font-size:.65rem;letter-spacing:.42em;color:var(--steel);margin-bottom:2.2rem}
+.board h1{
+  font-size:clamp(3.4rem,17vw,5.6rem);line-height:.94;margin:0;font-weight:700;
+  letter-spacing:.06em;color:var(--paper);text-wrap:balance;
+  text-shadow:0 0 46px rgba(233,179,106,.16);
+}
+.board .rule{height:1px;background:linear-gradient(90deg,transparent,var(--lamp-dim),transparent);margin:2rem auto;max-width:16rem}
+.dep{display:flex;justify-content:center;gap:0;font-family:var(--sans);font-size:.7rem;letter-spacing:.16em;color:var(--steel);flex-wrap:wrap}
+.dep div{padding:.5rem 1.1rem;border-left:1px solid var(--line)}
+.dep div:first-child{border-left:0}
+.dep span{display:block;color:var(--paper);font-size:.9rem;font-weight:500;margin-top:.4rem;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.dep span.amber{color:var(--lamp)}
+.tagline{font-size:1.02rem;line-height:2;color:#B9BDC4;margin:2.4rem auto 2.8rem;max-width:26rem}
+
+/* ── 장면 ── */
+.scene-label{font-family:var(--sans);font-size:.64rem;font-weight:500;letter-spacing:.4em;
+  color:var(--lamp);margin-bottom:1.6rem}
+.prose p{font-size:1.09rem;line-height:2.05;margin:0 0 1.35rem;color:#D9D5CB;text-wrap:pretty}
+.prose p.say{color:var(--paper);padding-left:1.1rem;border-left:1px solid var(--lamp-dim)}
+.prose p.hush{color:var(--steel);font-size:1rem}
+
+.reveal{opacity:0;transform:translateY(9px);animation:rise .85s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ── 선택지: 절취선 있는 승차권 ── */
+.choices{display:flex;flex-direction:column;gap:.55rem;margin-top:2.6rem}
+.choice{
+  display:flex;align-items:flex-start;gap:.95rem;width:100%;text-align:left;
+  font-family:var(--serif);font-size:1.03rem;line-height:1.7;color:#CFCBC2;
+  background:var(--carriage);border:1px solid var(--line);border-left:3px solid var(--steel-dim);
+  padding:1.02rem 1.15rem;cursor:pointer;
+  transition:border-left-color .25s,background .25s,color .25s,transform .25s;
+}
+.choice:hover,.choice:focus-visible{
+  background:var(--carriage-2);border-left-color:var(--lamp);color:var(--paper);
+  transform:translateX(4px);outline:none;
+}
+.choice:focus-visible{border-color:var(--lamp)}
+.choice .n{
+  font-family:var(--sans);font-size:.6rem;font-weight:600;letter-spacing:.1em;color:var(--lamp-dim);
+  border:1px dashed var(--steel-dim);padding:.2rem .42rem;flex:none;margin-top:.28rem;
+  font-variant-numeric:tabular-nums;transition:color .25s,border-color .25s;
+}
+.choice:hover .n,.choice:focus-visible .n{color:var(--lamp);border-color:var(--lamp-dim)}
+.choice.lock{border-left-color:var(--signal)}
+
+/* ── 결말 ── */
+.ending-tag{font-family:var(--sans);font-size:.62rem;letter-spacing:.4em;color:var(--signal);margin-bottom:1rem}
+.ending-name{font-size:2.35rem;font-weight:700;line-height:1.25;margin:0 0 2.2rem;letter-spacing:.02em;text-wrap:balance}
+.epi{font-family:var(--serif);font-size:1.05rem;line-height:1.95;color:var(--lamp);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:1.6rem 0;margin:2.4rem 0}
+.recap{margin:2.4rem 0}
+.recap h3,.coll-h{font-family:var(--sans);font-size:.64rem;font-weight:500;letter-spacing:.36em;color:var(--steel);margin:0 0 1.1rem}
+.recap ol{list-style:none;margin:0;padding:0;counter-reset:r}
+.recap li{counter-increment:r;font-size:.95rem;line-height:1.6;color:#ADB2BA;padding:.42rem 0 .42rem 2.5rem;position:relative}
+.recap li::before{content:counter(r,decimal-leading-zero);position:absolute;left:0;top:.5rem;
+  font-family:var(--sans);font-size:.6rem;color:var(--steel-dim);letter-spacing:.06em}
+.recap li::after{content:'';position:absolute;left:1.55rem;top:0;bottom:0;width:1px;background:var(--line)}
+.recap li:first-child::after{top:.7rem}
+.recap li:last-child::after{bottom:calc(100% - .95rem)}
+.recap li:only-child::after{display:none}
+
+/* ── 결말 수집 ── */
+.collection{margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:.5rem}
+.slot{border:1px solid var(--line);background:var(--carriage);padding:.75rem .85rem;font-family:var(--sans)}
+.slot .k{font-size:.55rem;letter-spacing:.22em;color:var(--steel-dim);display:block;margin-bottom:.35rem}
+.slot .v{font-size:.86rem;color:var(--steel-dim);font-family:var(--serif)}
+.slot.got{border-color:var(--lamp-dim);background:var(--carriage-2)}
+.slot.got .k{color:var(--lamp-dim)}
+.slot.got .v{color:var(--paper)}
+.slot.secret.got{border-color:var(--signal)}
+.slot.secret.got .k{color:var(--signal)}
+
+/* ── 버튼 ── */
+.acts{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:2.6rem}
+.btn{
+  font-family:var(--sans);font-size:.74rem;font-weight:500;letter-spacing:.16em;
+  padding:.85rem 1.5rem;background:transparent;color:var(--steel);
+  border:1px solid var(--steel-dim);cursor:pointer;transition:all .25s;
+}
+.btn:hover,.btn:focus-visible{color:var(--glass);background:var(--lamp);border-color:var(--lamp);outline:none}
+.btn.ghost{border-color:var(--line)}
+.btn.ghost:hover,.btn.ghost:focus-visible{background:var(--carriage-2);color:var(--paper);border-color:var(--steel-dim)}
+.btn.wide{width:100%;text-align:center;padding:1.05rem;font-size:.8rem;
+  border-color:var(--lamp-dim);color:var(--lamp)}
+.btn.wide:hover,.btn.wide:focus-visible{background:var(--lamp);color:var(--glass)}
+.btn.ghost.wide{border-color:var(--line);color:var(--steel)}
+.btn.ghost.wide:hover{background:var(--carriage-2);color:var(--paper)}
+
+.pocket{font-family:var(--sans);font-size:.63rem;letter-spacing:.1em;color:var(--steel-dim);
+  display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+.pocket i{font-style:normal;border:1px dashed var(--steel-dim);padding:.16rem .45rem;color:var(--steel)}
+
+.lurch{animation:lurch .5s ease-out}
+@keyframes lurch{0%{transform:translateX(0)}18%{transform:translateX(-5px)}52%{transform:translateX(3px)}100%{transform:translateX(0)}}
+
+.foot{font-family:var(--sans);font-size:.6rem;letter-spacing:.2em;color:var(--steel-dim);
+  text-align:center;padding:2rem 1rem 2.5rem}
+
+@media (max-width:560px){
+  .prose p{font-size:1.03rem;line-height:1.95}
+  .choice{font-size:.99rem;padding:.92rem 1rem}
+  .ending-name{font-size:1.9rem}
+  .rail-inner{font-size:.62rem;gap:.7rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal{animation:none;opacity:1;transform:none}
+  .lurch{animation:none}
+  .choice:hover{transform:none}
+}
+</style>
+
+<canvas id="bg"></canvas>
+<div id="vig"></div>
+
+<div class="wrap">
+  <div class="rail-bar">
+    <div class="rail-inner">
+      <div class="route" id="route"></div>
+      <div class="meta">
+        <span id="stagename">승강장</span>
+        <span>결말 <b id="ecount">0</b>/11</span>
+      </div>
+      <div class="pocket" id="pocket"></div>
+    </div>
+  </div>
+  <main id="stage"></main>
+  <div class="foot">자정 열차 · 행선지는 손님이 정하십니다</div>
+</div>
+
+<script>
+const STAGES = ['승강장','객차','1998','약속','터널','종착역'];
+
+const ITEMS = {
+  watch:'회중시계', thread:'붉은 실', letter:'편지',
+  truth:'차장의 이름', companion:'동행', debt:'외상', torn:'찢어낸 장'
+};
+
+const TOTAL_ENDINGS = 11;
+
+const STORY = {
+
+/* ══ 1. 승강장 ══ */
+start:{ s:0, label:'승강장 · 23:48',
+  t:[
+    '비가 온다. 마지막 열차는 12분 전에 떠났다.',
+    '전광판은 아무것도 띄우지 않는다. 역무원도, 다른 사람도 없다. 우산 끝에서 떨어진 물이 발밑에 작은 웅덩이를 만든다.',
+    '그때 선로 저편에서 불빛이 다가온다. 시간표에 없는 열차가 소리도 없이 승강장에 선다. 문이 열리고, 검은 제복의 차장이 내려선다.',
+    {c:'say', t:'「자정 열차입니다. 행선지는 손님이 정하십니다.」'}
+  ],
+  c:[
+    {t:'열차에 오른다', to:'board'},
+    {t:'어디로 가는 열차냐고 먼저 묻는다', to:'ask_conductor'},
+    {t:'한 걸음 물러선다', to:'stay'}
+  ]},
+
+ask_conductor:{ s:0, label:'승강장',
+  t:[
+    {c:'say', t:'「어디로 가는 열차입니까.」'},
+    '차장이 모자챙을 살짝 들어 올린다. 얼굴은 여전히 그늘 속에 있다.',
+    {c:'say', t:'「손님이 아직 가보지 못한 곳으로요. 아니면 다시 가보고 싶은 곳으로. 저희는 선로만 깔아드립니다.」'},
+    '그가 회중시계를 열어본다. 초침이 반대로 돌고 있다.'
+  ],
+  c:[
+    {t:'그래도 오른다', to:'board', set:['asked']},
+    {t:'듣고 나니 더 무섭다. 물러선다', to:'stay'}
+  ]},
+
+stay:{ s:0, label:'승강장',
+  t:[
+    '당신은 뒤로 물러선다. 문이 닫히고, 열차가 미끄러지듯 움직이기 시작한다.',
+    '그런데 마지막 칸의 문 하나가 아직 열려 있다. 안에서 노란 불빛이 새어나온다. 열차는 아직 느리다.'
+  ],
+  c:[
+    {t:'우산을 버리고 달린다', to:'board_run'},
+    {t:'끝내 보낸다', to:'end_missed'}
+  ]},
+
+board_run:{ s:1, label:'객차', set:['wet'],
+  t:[
+    '당신은 우산을 놓치고 달린다. 손잡이를 잡고, 겨우 올라탄다.',
+    '우산은 승강장 위에 남았다. 문이 닫힌다. 신발도 어깨도 흠뻑 젖었다. 객차 안은 이상할 만큼 따뜻하다.'
+  ],
+  c:[{t:'숨을 고른다', to:'ticket'}]},
+
+board:{ s:1, label:'객차',
+  t:[
+    '한 발을 올리는 순간, 빗소리가 뚝 끊긴다.',
+    '객차 안은 따뜻하다. 낡은 벨벳 좌석, 천장의 노란 등, 어딘가에서 나는 오래된 종이 냄새. 문이 조용히 닫힌다.'
+  ],
+  c:[{t:'자리를 찾는다', to:'ticket'}]},
+
+/* ══ 2. 표 ══ */
+ticket:{ s:1, label:'검표',
+  t:[
+    '차장이 통로 끝에서 다가온다. 「표를 보여주시겠습니까.」',
+    '주머니를 뒤진다. 표는 없다. 애초에 이 열차의 표를 파는 곳을 본 적도 없다.',
+    '차장은 서두르지 않는다.',
+    {c:'say', t:'「무엇이든 괜찮습니다. 값을 치르셨다는 증거만 있으면.」'}
+  ],
+  c:[
+    {t:'할아버지에게 물려받은 회중시계를 내민다', to:'pay_watch'},
+    {t:'이름을 말한다', to:'pay_name'},
+    {t:'가진 게 없다고 말한다', to:'pay_nothing'}
+  ]},
+
+pay_watch:{ s:1, label:'검표', set:['watch'],
+  t:[
+    '낡은 회중시계. 유리에 실금이 가 있고, 뚜껑 안쪽에는 지워진 이름이 있다.',
+    '차장은 그것을 오래 들여다본다. 그리고 돌려준다.',
+    {c:'say', t:'「이미 값이 치러진 물건입니다. 예전에 한 분이 같은 시계로 표를 사셨거든요.」'},
+    {c:'say', t:'「그때도 비가 왔습니다.」'}
+  ],
+  c:[{t:'시계를 다시 주머니에 넣는다', to:'passengers'}]},
+
+pay_name:{ s:1, label:'검표', set:['name_given'],
+  t:[
+    {c:'say', t:'「이름을 드리겠습니다.」'},
+    '차장이 수첩을 펼치고 무언가를 적는다. 당신은 그 순간 자기 이름을 소리 내어 확인해보려다 실패한다.',
+    '혀끝에 아무것도 남아 있지 않다. 차장이 수첩을 덮는다. 「좋은 표입니다.」'
+  ],
+  c:[{t:'자리에 앉는다', to:'passengers'}]},
+
+pay_nothing:{ s:1, label:'검표', set:['debt'],
+  t:[
+    {c:'say', t:'「아무것도 없습니다.」'},
+    '차장이 고개를 끄덕인다. 「그럼 외상으로 하겠습니다. 종착역에서 정산하시죠.」',
+    '그가 지나간 자리에 오래된 종이 냄새가 남는다. 외상, 이라는 말이 좌석 아래 어딘가로 가라앉는다.'
+  ],
+  c:[{t:'자리에 앉는다', to:'passengers'}]},
+
+/* ══ 3. 동승자 ══ */
+passengers:{ s:1, label:'객차',
+  t:[
+    '객차에는 세 사람이 있다.',
+    '창가에 앉은 노인. 무릎 위에서 뜨개질을 하는 여자. 그리고 통로 건너, 혼자 앉은 아이.',
+    '열차는 어둠 속을 달린다. 창밖에는 아직 아무 풍경도 없다.'
+  ],
+  rt:[ '객차는 여전히 조용하다. 열차는 속도를 줄이지 않는다.' ],
+  c:[
+    {t:'노인의 맞은편에 앉는다', to:'old_man', once:true},
+    {t:'뜨개질하는 여자에게 말을 건다', to:'woman', once:true},
+    {t:'아이 곁으로 간다', to:'child', once:true},
+    {t:'빈자리에 앉아 창밖을 본다', to:'stop1'}
+  ]},
+
+old_man:{ s:1, label:'창가의 노인', set:['oldman'],
+  t:[
+    '노인은 창에 비친 자신을 보고 있다. 당신이 앉자 시선을 옮기지 않은 채 말한다.',
+    '「몇 번째요?」 「…네?」 「이 열차 말이오. 나는 네 번째요.」',
+    '그가 손등으로 유리를 문지른다. 김이 잠깐 지워졌다가 다시 찬다.',
+    {c:'say', t:'「매번 내리질 못했소. 종착역이 어딘지 알아야 내리든 말든 할 텐데. 차장한테 이름을 물어보시오. 이름이 불리면 저 사람도 사람이 되거든.」'},
+    {if:f=>f.watch, c:'hush', t:'그가 당신의 회중시계를 흘끗 본다. 「그 시계, 어디서 났소.」 대답하기도 전에 그는 고개를 돌린다. 「됐소. 알고 싶지 않아.」'}
+  ],
+  c:[{t:'자리에서 일어난다', to:'passengers'}]},
+
+woman:{ s:1, label:'뜨개질하는 여자', set:['thread'],
+  t:[
+    '여자의 손이 쉬지 않는다. 대바늘이 딸깍거리고, 붉은 실이 끝없이 풀려나온다. 바구니는 비어 있는데도.',
+    '「뭘 뜨세요?」 「끝을 안 내려고 뜨는 거예요.」',
+    '그녀가 실 한 가닥을 끊어 당신 손목에 감아준다. 매듭은 없는데 풀리지 않는다.',
+    {c:'say', t:'「길을 잃으면 이걸 놓지 마세요. 이 열차엔 문이 많거든요.」'}
+  ],
+  c:[{t:'고맙다고 말한다', to:'passengers'}]},
+
+child:{ s:1, label:'혼자 앉은 아이',
+  t:[
+    '아이는 여덟 살쯤 됐다. 무릎 위에 봉투 하나를 올려두고 두 손으로 누르고 있다.',
+    '「누가 앉아도 돼요.」 아이가 먼저 말한다.',
+    '봉투에는 이름이 적혀 있다. 잉크가 번져서 성만 겨우 읽힌다.',
+    {c:'say', t:'「다음 역에서 줘야 하는데요. 저는 못 내려요. 표가 편도가 아니라서요.」'}
+  ],
+  c:[
+    {t:'편지를 받는다', to:'child_take'},
+    {t:'그건 네가 직접 줘야 한다고 말한다', to:'child_refuse'}
+  ]},
+
+child_take:{ s:1, label:'혼자 앉은 아이', set:['letter'],
+  t:[
+    '봉투는 생각보다 가볍다. 아이는 그제야 무릎에서 손을 뗀다.',
+    '「고맙습니다. 답장은 안 받으셔도 돼요.」'
+  ],
+  c:[{t:'봉투를 주머니에 넣는다', to:'passengers'}]},
+
+child_refuse:{ s:1, label:'혼자 앉은 아이',
+  t:[
+    '아이는 잠깐 당신을 본다. 화내지도, 조르지도 않는다.',
+    '「네.」 하고 다시 봉투를 누른다. 열차가 커브를 돌고, 아이의 얼굴이 창밖 어둠 쪽으로 돌아간다.'
+  ],
+  c:[{t:'자리로 돌아간다', to:'passengers'}]},
+
+/* ══ 4. 첫 번째 정차 ══ */
+stop1:{ s:2, label:'첫 번째 정차역 · 1998',
+  t:[
+    '안내방송이 나온다. 여자 목소리인데, 어딘가 익숙하다.',
+    {c:'say', t:'「첫 번째 정차역, 1998. 내리실 문은 오른쪽입니다.」'},
+    '창밖에 처음으로 풍경이 생겼다. 낮은 담장, 파란 대문, 골목 끝 문방구의 불빛. 비는 여기에도 온다.',
+    '당신이 열 살이던 해의 동네가 승강장 너머에 통째로 놓여 있다.'
+  ],
+  c:[
+    {t:'내린다', to:'n1998'},
+    {t:'자리에서 창밖만 본다', to:'stop1_watch'},
+    {t:'눈을 감는다', to:'stop1_close'}
+  ]},
+
+stop1_watch:{ s:2, label:'1998',
+  t:[
+    '당신은 내리지 않는다. 유리 한 장을 사이에 두고 골목이 천천히 흘러간다.',
+    '문방구 앞에 아이가 쪼그려 앉아 있다. 뭘 살지 아직 못 정한 얼굴이다. 늘 그랬다.',
+    '문이 닫힌다. 그 아이는 끝내 고개를 들지 않았다.'
+  ],
+  c:[{t:'창에서 눈을 뗀다', to:'stop2_announce'}]},
+
+stop1_close:{ s:2, label:'1998', set:['regret'],
+  t:[
+    '당신은 눈을 감는다. 소리가 더 선명해진다. 셔터 내리는 소리, 자전거 벨, 누군가 이름을 부르는 소리.',
+    '그 이름이 당신의 것인지 확인하지 않는다. 열차가 다시 움직인다.'
+  ],
+  c:[{t:'눈을 뜬다', to:'stop2_announce'}]},
+
+n1998:{ s:2, label:'파란 대문',
+  t:[
+    '승강장에서 골목까지는 열 걸음이다. 공기가 다르다. 비 냄새에 연탄 냄새가 섞여 있다.',
+    '파란 대문 앞에 아이가 서 있다. 열쇠를 잃어버려서 못 들어가는 중이다. 당신은 그날을 정확히 기억한다.'
+  ],
+  c:[
+    {t:'말을 건다', to:'n1998_talk'},
+    {t:'멀찍이서 지켜본다', to:'n1998_watch'},
+    {t:'대문을 대신 두드린다', to:'n1998_door'}
+  ]},
+
+n1998_talk:{ s:2, label:'파란 대문',
+  t:[
+    '「열쇠, 화분 밑에 있어.」',
+    '아이가 돌아본다. 놀라지 않는다. 오히려 오래 기다린 사람을 보는 눈이다.',
+    '「아저씨, 아니 아줌마…」 아이가 호칭을 고르다 만다. 「거기, 괜찮아요?」',
+    {c:'hush', t:'당신에게 주어진 시간은 한 문장이다.'}
+  ],
+  c:[
+    {t:'「괜찮아질 거야.」', to:'n1998_comfort'},
+    {t:'「그 사람 말은 듣지 마.」', to:'n1998_warn'},
+    {t:'아무 말도 하지 못한다', to:'n1998_silence'}
+  ]},
+
+n1998_comfort:{ s:2, label:'파란 대문', set:['comfort'],
+  t:[
+    '아이가 고개를 끄덕인다. 믿는 것 같지는 않다. 그래도 어깨가 조금 내려간다.',
+    '「알겠어요.」 아이는 화분을 들추고 열쇠를 찾아낸다. 대문이 열린다.'
+  ],
+  c:[{t:'돌아선다', to:'n1998_return'}]},
+
+n1998_warn:{ s:2, label:'파란 대문', set:['warn'],
+  t:[
+    '아이의 얼굴이 굳는다. 「누구요?」',
+    '당신은 대답하지 못한다. 그 사람이 누구인지 말하는 순간 아이는 다른 인생을 살게 될 것이다. 어쩌면 지금의 당신은 태어나지 않는다.',
+    '아이는 열쇠를 찾아 대문을 열고, 한 번 더 돌아본다. 이번엔 무서워하는 눈이다.'
+  ],
+  c:[{t:'돌아선다', to:'n1998_return'}]},
+
+n1998_silence:{ s:2, label:'파란 대문', set:['silence'],
+  t:[
+    '입이 열리지 않는다. 비만 계속 온다.',
+    '아이는 잠시 기다리다가 혼자 화분을 들추고 열쇠를 찾는다. 대문이 닫힌다.',
+    '당신은 그 자리에 서 있다. 서른 해 동안 그랬던 것처럼.'
+  ],
+  c:[{t:'돌아선다', to:'n1998_return'}]},
+
+n1998_watch:{ s:2, label:'담벼락 그늘',
+  t:[
+    '당신은 담벼락 그늘에 서서 본다.',
+    '아이는 한참 대문을 두드리다 포기하고, 계단에 앉아 무릎에 얼굴을 묻는다. 비는 그치지 않는다.',
+    '그때 누군가 나타나 우산을 씌워줬던 것 같은데, 지금 보니 아무도 오지 않는다. 당신은 그 기억을 대체 어디서 만들어냈을까.'
+  ],
+  c:[{t:'그늘에서 나온다', to:'n1998_return'}]},
+
+n1998_door:{ s:2, label:'파란 대문',
+  t:[
+    '당신은 대문을 두드린다. 문이 열린다.',
+    '젊은 여자가 서 있다. 앞치마에 물이 묻어 있고, 머리를 대충 묶었고, 당신이 기억하는 것보다 훨씬 어리다.',
+    '「누구세요?」',
+    {c:'hush', t:'목이 막힌다. 뒤에서 열차의 기적이 울린다. 한 번. 출발 3분 전.'}
+  ],
+  c:[
+    {t:'「…죄송합니다, 집을 잘못 찾았습니다.」', to:'n1998_return'},
+    {t:'문 안으로 들어간다', to:'end_1998'}
+  ]},
+
+n1998_return:{ s:2, label:'골목 끝',
+  t:[
+    '기적이 두 번 울린다. 승강장의 불빛이 점점 옅어진다.',
+    '골목은 여전히 거기 있다. 마음만 먹으면 남을 수 있다.'
+  ],
+  c:[
+    {t:'열차로 뛴다', to:'stop2_announce'},
+    {t:'골목에 남는다', to:'end_1998'}
+  ]},
+
+/* ══ 5. 행선지 ══ */
+stop2_announce:{ s:3, label:'행선지',
+  t:[
+    '자리로 돌아오자 차장이 서 있다. 통로 건너 아이의 자리가 비어 있다.',
+    {c:'say', t:'「손님. 아직 행선지를 말씀해 주지 않으셨습니다.」'}
+  ],
+  rt:[ '차장은 여전히 대답을 기다리고 있다.' ],
+  c:[
+    {t:'비어 있는 좌석 위의 봉투를 집는다', to:'seat_letter',
+      if:(f,v)=>v('child') && !f.letter},
+    {t:'「집으로 갑니다.」', to:'dest_home'},
+    {t:'「모르겠습니다.」', to:'dest_unknown'},
+    {t:'「당신 이름이 뭡니까.」', to:'dest_ask', if:f=>f.oldman}
+  ]},
+
+seat_letter:{ s:3, label:'빈 좌석', set:['letter'],
+  t:[
+    '좌석 위에 봉투가 남아 있다. 아이는 없다.',
+    '잉크가 아까보다 더 번졌다. 이제 성도 잘 안 읽힌다. 그래도 당신은 그걸 주머니에 넣는다.'
+  ],
+  c:[{t:'차장에게 돌아선다', to:'stop2_announce'}]},
+
+dest_home:{ s:3, label:'행선지',
+  t:[
+    '「집으로 갑니다.」',
+    '차장이 수첩에 적는다. 그러다 손을 멈춘다. 「그 집은 아직 있습니까?」',
+    '당신은 대답하지 않는다. 그도 더 묻지 않는다.'
+  ],
+  c:[{t:'창밖을 본다', to:'stop2'}]},
+
+dest_unknown:{ s:3, label:'행선지',
+  t:[
+    '「모르겠습니다.」',
+    '「그게 제일 정직한 대답입니다.」 차장이 수첩을 덮는다. 「모르는 손님은 종착역까지 가십니다. 규정입니다.」'
+  ],
+  c:[{t:'창밖을 본다', to:'stop2'}]},
+
+dest_ask:{ s:3, label:'차장의 이름', set:['truth'],
+  t:[
+    '「당신 이름이 뭡니까.」',
+    '차장이 처음으로 멈춰 선다. 오래 서 있다. 등이 조금 작아진 것 같다.',
+    '「…오래 안 불렸습니다.」 그가 모자를 벗는다. 모자 안쪽에 이름이 자수로 박혀 있다. 반쯤 닳아 있다.',
+    '당신은 그것을 소리 내어 읽는다. 그의 눈이 젖는다.'
+  ],
+  c:[{t:'모자를 돌려준다', to:'stop2'}]},
+
+/* ══ 6. 두 번째 정차 ══ */
+stop2:{ s:3, label:'두 번째 정차역 · 약속',
+  t:[
+    {c:'say', t:'「두 번째 정차역, 약속. 내리실 문은 왼쪽입니다.」'},
+    '승강장에 사람이 하나 서 있다. 우산도 없이, 아주 오래 기다린 자세로.',
+    '당신은 그 사람을 안다. 그리고 당신이 왜 그날 그 자리에 나가지 않았는지도 안다.'
+  ],
+  c:[
+    {t:'내린다', to:'promise'},
+    {t:'창문을 열고 편지만 건넨다', to:'letter_throw', if:f=>f.letter},
+    {t:'지나친다', to:'stop3_announce'}
+  ]},
+
+letter_throw:{ s:3, label:'약속', set:['letter_given'],
+  t:[
+    '창을 내리자 빗소리가 다시 들어온다. 당신은 봉투를 내민다.',
+    '그 사람이 몇 걸음 다가와 받는다. 봉투를 보고, 당신을 보고, 다시 봉투를 본다.',
+    '「이거… 누가 보낸 거예요?」',
+    '열차가 움직인다. 대답할 시간은 없다. 그 사람이 봉투를 가슴에 안는 것까지만 보인다.'
+  ],
+  c:[{t:'창을 올린다', to:'stop3_announce'}]},
+
+promise:{ s:3, label:'약속',
+  t:[
+    '당신이 내리자 그 사람이 고개를 든다. 화내지 않는다. 그게 더 나쁘다.',
+    '「올 줄 알았어.」',
+    '「…미안해.」',
+    '「그 말 들으려고 기다린 건 아닌데.」'
+  ],
+  c:[
+    {t:'그래도 처음부터 끝까지 사과한다', to:'promise_sorry'},
+    {t:'편지를 건넨다', to:'promise_letter', if:f=>f.letter},
+    {t:'아무 말 없이 안는다', to:'promise_hug'}
+  ]},
+
+promise_sorry:{ s:3, label:'약속',
+  t:[
+    '당신은 다 말한다. 왜 못 갔는지, 왜 연락하지 않았는지, 그 뒤로 몇 년을 어떻게 지냈는지.',
+    '그 사람은 끝까지 듣는다. 다 듣고 나서 말한다. 「생각보다 별거 아니네.」',
+    '둘 다 웃는다. 웃다가 한 명이 먼저 운다.'
+  ],
+  c:[{t:'기적 소리가 들린다', to:'promise_end'}]},
+
+promise_letter:{ s:3, label:'약속', set:['letter_given','together_ok'],
+  t:[
+    '당신은 봉투를 건넨다. 그 사람이 이름을 확인하고, 손이 떨린다.',
+    '「이거 내 이름이야. 내 옛날 이름.」 봉투를 열자 아이 글씨가 나온다.',
+    '「…이거 내가 쓴 거야. 여덟 살 때. 부치지도 못한 건데.」',
+    '그 사람은 자기가 자기에게 쓴 편지를 읽는다. 당신은 옆에 서서, 빗속에서, 그걸 지켜본다.'
+  ],
+  c:[{t:'기적 소리가 들린다', to:'promise_end'}]},
+
+promise_hug:{ s:3, label:'약속',
+  t:[
+    '당신은 말 대신 다가간다. 그 사람은 피하지 않는다.',
+    '우산이 없어서 둘 다 젖는다. 어깨가 축축하고 따뜻하다. 그동안 준비한 문장들은 아무 데도 쓰이지 않는다.'
+  ],
+  c:[{t:'기적 소리가 들린다', to:'promise_end'}]},
+
+promise_end:{ s:3, label:'약속',
+  t:[
+    '기적이 울린다.',
+    '「가야지.」 그 사람이 먼저 말한다. 「가서, 이번엔 도착해.」'
+  ],
+  c:[
+    {t:'열차에 오른다', to:'stop3_announce'},
+    {t:'같이 가자고 말한다', to:'together_board', if:f=>f.together_ok},
+    {t:'승강장에 남는다', to:'end_promise'}
+  ]},
+
+together_board:{ s:3, label:'약속', set:['companion'],
+  t:[
+    '「같이 가자.」',
+    '그 사람이 당신 손을 본다. 오래 본다.',
+    '「표는?」 「외상이래.」',
+    '둘이 함께 올라탄다. 차장은 아무 말도 하지 않는다. 대신 수첩에 줄 하나를 더 긋는다.'
+  ],
+  c:[{t:'나란히 앉는다', to:'stop3_announce'}]},
+
+/* ══ 7. 터널 ══ */
+stop3_announce:{ s:4, label:'터널',
+  t:[
+    '열차가 긴 터널로 들어간다.',
+    '천장의 등이 하나씩 꺼진다. 앞칸부터, 차례대로. 마지막으로 당신 머리 위의 등이 꺼진다.',
+    '차장은 없다. 노인도 없다. 뜨개질하던 여자의 자리에는 붉은 실 한 가닥만 남아, 통로를 따라 앞쪽으로 이어져 있다.'
+  ],
+  c:[
+    {t:'실을 따라 기관실 쪽으로 간다', to:'engine_door'},
+    {t:'반대쪽, 마지막 칸으로 간다', to:'last_car'},
+    {t:'자리에 앉아 기다린다', to:'wait_dark'}
+  ]},
+
+last_car:{ s:4, label:'마지막 칸',
+  t:[
+    '마지막 칸에는 좌석이 없다. 화물칸이다. 그리고 열차 끝의 문이 활짝 열려 있다.',
+    '바깥은 터널도 아니고 밤도 아니다. 아무것도 없다. 소리도 바람도 냄새도 없는 검은 면.',
+    '선로는 열차 뒤에서 끝난다. 지나온 자리가 그대로 지워지고 있다.'
+  ],
+  c:[
+    {t:'문을 닫고 돌아간다', to:'engine_door'},
+    {t:'뛰어내린다', to:'end_jump'}
+  ]},
+
+wait_dark:{ s:4, label:'어둠 속',
+  t:[
+    '당신은 앉아 있는다. 어둠은 생각보다 편안하다.',
+    '얼마 뒤 누군가 옆자리에 앉는 기척. 오래된 종이 냄새.',
+    '「무섭지 않으십니까.」 「무서워요.」 「그럼 됐습니다. 무서운 건 살아 있다는 뜻이라서요.」',
+    '차장은 한참 말이 없다가 덧붙인다. 「저는 이 열차에서 한 번도 안 내렸습니다.」'
+  ],
+  c:[
+    {t:'「왜요?」', to:'wait_why'},
+    {t:'「그럼 같이 내려요.」', to:'wait_together'},
+    {t:'아무 말 없이 앉아 있는다', to:'terminus_announce'}
+  ]},
+
+wait_why:{ s:4, label:'어둠 속', set:['truth'],
+  t:[
+    '「내릴 역을 못 정해서요.」 그가 웃는다. 「손님들 행선지를 받아적다 보니, 제 건 못 적었습니다.」',
+    '그가 모자를 벗어 무릎에 올린다. 어둠 속에서도 안쪽의 자수가 보인다. 당신은 그 이름을 읽는다.',
+    '등이 하나씩 다시 켜진다. 앞칸부터가 아니라, 당신 쪽부터.'
+  ],
+  c:[{t:'이름을 외워둔다', to:'terminus_announce'}]},
+
+wait_together:{ s:4, label:'어둠 속', set:['hat_offer'],
+  t:[
+    '「그럼 같이 내려요.」',
+    '차장이 오래 침묵한다. 어둠 속에서 모자챙이 아주 조금 움직인다.',
+    '「그 말을 백 년 만에 듣습니다.」'
+  ],
+  c:[{t:'대답을 기다린다', to:'terminus_announce'}]},
+
+engine_door:{ s:4, label:'기관실 문',
+  t:[
+    '실은 객차 세 칸을 지나 기관실 문 아래로 사라진다. 문은 잠겨 있다.',
+    '손잡이는 차갑고, 안쪽에서는 아무 소리도 나지 않는다.'
+  ],
+  c:[
+    {t:'붉은 실을 문틈으로 밀어 넣는다', to:'engine_thread', if:f=>f.thread},
+    {t:'차장의 이름을 부른다', to:'engine_name', if:f=>f.truth},
+    {t:'문을 세 번 두드린다', to:'engine_knock'},
+    {t:'문을 걷어찬다', to:'engine_kick'}
+  ]},
+
+engine_thread:{ s:4, label:'기관실 문',
+  t:[
+    '붉은 실을 문틈에 밀어 넣자, 반대쪽에서 누가 당기는 느낌이 든다.',
+    '딸깍. 잠금이 풀린다. 그 여자의 목소리가 아주 멀리서 들린다. 「문이 많다고 했잖아요.」'
+  ],
+  c:[{t:'문을 연다', to:'engine_room'}]},
+
+engine_name:{ s:4, label:'기관실 문',
+  t:[
+    '당신은 모자 안쪽에서 읽은 이름을 부른다.',
+    '이름이 복도에 울리자 열차 전체가 한 번 숨을 쉬는 것 같다. 문이 스스로 열린다.'
+  ],
+  c:[{t:'안으로 들어간다', to:'engine_room'}]},
+
+engine_knock:{ s:4, label:'기관실 문',
+  t:[
+    '세 번 두드린다. 대답이 없다. 다시 세 번.',
+    '문이 안으로 열린다. 밀지도 않았는데.'
+  ],
+  c:[{t:'안으로 들어간다', to:'engine_room'}]},
+
+engine_kick:{ s:4, label:'기관실 문', set:['hurt'],
+  t:[
+    '당신은 문을 걷어찬다. 두 번, 세 번. 손잡이가 부러지고 문이 열린다.',
+    '손등이 까졌다. 피가 난다. 이 열차에서 처음으로 아픈 것이 생겼다.'
+  ],
+  c:[{t:'안으로 들어간다', to:'engine_room'}]},
+
+engine_room:{ s:4, label:'기관실',
+  t:[
+    '기관실에는 아무도 없다.',
+    '계기판의 바늘은 전부 0을 가리키고, 창밖으로는 선로가 보이지 않는다. 열차는 스스로 간다.',
+    '벽에 두꺼운 명부가 걸려 있다. 승객 명단이다. 수천 개의 이름.',
+    {if:f=>f.name_given, t:'당신은 자기 이름을 찾을 수 없다. 있어야 할 자리가 잉크로 두껍게 덧칠되어 있다.'},
+    {if:f=>!f.name_given, t:'맨 뒷장에 당신 이름이 있다. 그런데 잉크가 오래됐다. 아주 오래됐다. 당신이 태어나기 한참 전에 적힌 글씨다.'},
+    '명부 옆에 붉은 레버가 하나 있다. 손잡이가 닳아 있다. 누군가 여러 번 당겼다.'
+  ],
+  c:[
+    {t:'레버를 당긴다', to:'lever'},
+    {t:'명부에서 그 장을 찢는다', to:'list_tear'},
+    {t:'아무것도 건드리지 않고 나온다', to:'terminus_announce'}
+  ]},
+
+lever:{ s:4, label:'기관실',
+  t:[
+    '레버를 당긴다. 저항이 크다. 온몸으로 당기자 마침내 넘어간다.',
+    '열차가 멈춘다. 소리도 흔들림도 없이. 시간이 통째로 멎는다.',
+    {if:f=>f.watch, c:'say', t:'주머니 속 회중시계가 뜨거워진다.'}
+  ],
+  c:[
+    {t:'회중시계를 꺼내 태엽을 감는다', to:'end_417', if:f=>f.watch, lock:true},
+    {t:'레버를 원위치로 돌린다', to:'lever_back'}
+  ]},
+
+lever_back:{ s:4, label:'기관실',
+  t:[
+    '열차가 다시 움직인다. 아무 일도 없었던 것처럼.',
+    '다만 계기판의 바늘 하나가 이제 아주 조금 떨린다.'
+  ],
+  c:[{t:'기관실을 나온다', to:'terminus_announce'}]},
+
+list_tear:{ s:4, label:'기관실', set:['torn'],
+  t:[
+    '당신은 당신 이름이 적힌 장을 찢는다. 종이가 예상보다 두껍고, 찢기는 소리가 길다.',
+    '아무 일도 일어나지 않는다. 그런데 손이 가벼워진다. 아니, 몸 전체가.',
+    '명부를 다시 보니 찢긴 장 다음에 당신 이름이 또 있다. 이번엔 방금 쓴 것처럼 잉크가 젖어 있다.'
+  ],
+  c:[{t:'찢어낸 장을 접어 넣고 나온다', to:'terminus_announce'}]},
+
+/* ══ 8. 종착역 ══ */
+terminus_announce:{ s:5, label:'종착역',
+  t:[
+    {c:'say', t:'「이번 역은 종착역입니다. 내리실 문은…」'},
+    '방송이 끝을 맺지 못하고 끊긴다.',
+    '창밖이 밝다. 새벽이다. 낯익은 도시, 낯익은 역. 승강장에는 첫차를 기다리는 사람들이 있다. 살아 있는 사람들이다.',
+    '차장이 문 앞에 서 있다. 그가 문을 연다. 찬 공기가 들어온다.',
+    {if:f=>f.asked, c:'hush', t:'「손님이 아직 가보지 못한 곳으로.」 처음에 그가 한 말이 이제야 이해된다.'},
+    {if:f=>f.hurt, c:'hush', t:'손등의 상처가 아직 쓰라리다. 이 열차에서 유일하게 진짜인 것.'},
+    {if:f=>f.companion, c:'hush', t:'옆 사람이 당신 손을 잡는다.'},
+    {if:f=>f.debt, c:'hush', t:'「정산하시겠습니까.」 차장이 말한다.'}
+  ],
+  c:[
+    {t:'둘이 함께 내린다', to:'end_together', if:f=>f.companion},
+    {t:'내린다', to:'end_home', if:f=>!f.companion && !f.name_given},
+    {t:'내린다 — 이름 없이', to:'end_nameless', if:f=>f.name_given},
+    {t:'찢어낸 장을 차장에게 보인다', to:'end_first', if:f=>f.torn && f.watch && f.letter_given, lock:true},
+    {t:'차장의 모자를 받는다', to:'end_conductor', if:f=>f.truth || f.hat_offer},
+    {t:'내리지 않는다', to:'end_stay'}
+  ]},
+
+/* ══ 결말 ══ */
+end_missed:{ s:0, label:'결말', e:{name:'놓친 열차', kind:'흔한 결말',
+  t:[
+    '당신은 그 자리에 서 있는다. 열차의 붉은 후미등이 곡선을 돌아 사라진다.',
+    '빗소리가 다시 커진다. 전광판에 다음 첫차 시각이 뜬다. 04:17.',
+    '당신은 벤치에 앉아 네 시간을 기다린다. 아무 일도 일어나지 않는다. 어쩌면 그게 당신이 고른 것이다.'
+  ],
+  ep:'타지 않은 열차는 평생 시간표에 남는다.'}},
+
+end_1998:{ s:2, label:'결말', e:{name:'돌아가지 않는 사람', kind:'회귀',
+  t:[
+    '당신은 골목에 남는다. 기적이 세 번 울리고, 승강장이 있던 자리에는 담벼락뿐이다.',
+    '1998년의 비는 오래 온다. 당신은 그 동네에서 사는 법을 익힌다. 이름을 하나 새로 만들고, 아무도 모르는 사람으로 늙는다.',
+    '가끔 파란 대문 앞을 지나간다. 아이가 자라는 것을 멀리서 본다. 그 아이는 언젠가 비 오는 밤에 열차를 놓칠 것이다.',
+    '당신은 그때 승강장에 나가 있을 생각이다. 우산을 하나 더 들고.'
+  ],
+  ep:'과거는 살 수 있는 곳이다. 다만 돌아올 수는 없다.'}},
+
+end_promise:{ s:3, label:'결말', e:{name:'남겨진 자리', kind:'잔류',
+  t:[
+    '당신은 승강장에 남는다. 열차가 떠나고, 두 사람만 남는다.',
+    '「이제 어떡해?」 「몰라. 근데 여기 있을게.」',
+    '역 이름이 적힌 표지판을 올려다본다. 글자가 없다. 원래 없었던 것 같다.',
+    '그래도 상관없다. 어떤 역들은 이름 없이도 충분하다.'
+  ],
+  ep:'도착하지 못한 곳에 남는 것도 하나의 도착이다.'}},
+
+end_jump:{ s:4, label:'결말', e:{name:'지워진 선로', kind:'이탈',
+  t:[
+    '당신은 뛰어내린다.',
+    '떨어지지 않는다. 부딪히지도 않는다. 그냥, 열차가 멀어진다. 소리 없이, 아주 빠르게.',
+    '검은 면 위에 당신 발이 놓인다. 발밑에 선로가 한 칸씩 생긴다. 당신이 걷는 만큼만.',
+    '어디로 가는지는 모른다. 다만 이 길은 당신 뒤에서 지워지지 않는다.'
+  ],
+  ep:'아무 데도 아닌 곳에서 시작하는 사람도 있다.'}},
+
+end_417:{ s:4, label:'결말', e:{name:'새벽 4시 17분', kind:'되감기',
+  t:[
+    '당신은 태엽을 감는다. 유리에 간 실금을 따라 빛이 번진다.',
+    '초침이 정방향으로 돌기 시작하고, 열차가 뒤로 달린다. 두 번째 역, 첫 번째 역, 터널, 객차의 등이 하나씩 다시 켜진다.',
+    '정신을 차리니 승강장이다. 비가 온다. 우산이 손에 있다. 전광판에는 04:17.',
+    '선로 저편에서 불빛이 다가온다. 당신은 이번엔 놀라지 않는다.',
+    '차장이 내려서서 말한다. 「자정 열차입니다. 행선지는—」',
+    '「압니다.」 당신이 말한다. 「이번엔 정하고 왔습니다.」'
+  ],
+  ep:'어떤 사람은 같은 열차를 두 번 탄다. 두 번째는 표를 들고.'}},
+
+end_home:{ s:5, label:'결말', e:{name:'젖은 신발', kind:'귀환',
+  t:[
+    '당신은 내린다. 발이 승강장에 닿는 순간 열차 소리가 끊긴다.',
+    '돌아보면 선로에는 아무것도 없다. 첫차를 기다리는 사람들이 하품을 하고, 커피 자판기가 덜컹거린다.',
+    '휴대폰을 켠다. 오전 5시 02분. 부재중 전화 없음.',
+    '집까지는 걸어서 이십 분. 신발이 젖었고 어깨가 시리고 배가 고프다. 전부 살아 있는 사람의 느낌이다.',
+    {if:f=>f.comfort, t:'집 앞 화분을 지나며 잠깐 멈춘다. 들춰보지는 않는다. 이미 아는 자리다.'},
+    {if:f=>f.warn, t:'골목 어귀에서 이유 없이 한 번 뒤를 확인한다. 아무도 없다. 그 버릇은 아주 오래됐다.'},
+    {if:f=>f.silence, t:'하고 싶었던 말이 이제야 떠오른다. 늘 이런 식이다. 그래도 이번엔 소리 내어 해본다. 아무도 없는 골목에서.'},
+    {if:f=>f.regret, t:'누군가 이름을 부르던 그 목소리가 아직 귀에 남아 있다. 끝내 확인하지 않은 채로.'},
+    {if:f=>f.wet, t:'승강장 어딘가에 두고 온 우산이 뒤늦게 생각난다. 아깝지 않다. 그걸 버려서 탔으니까.'},
+    '골목을 돌기 전에 한 번 더 뒤를 본다. 아무것도 없다. 그래도 손을 한 번 들어 보인다.'
+  ],
+  ep:'돌아온다는 건 대단한 일이 아니다. 다만 매번 선택이다.'}},
+
+end_stay:{ s:5, label:'결말', e:{name:'종착역 없음', kind:'잔류',
+  t:[
+    '당신은 앉은 채로 문이 닫히는 것을 본다.',
+    '차장이 옆에 와 앉는다. 아무 말도 하지 않는다. 열차가 다시 움직이고, 창밖이 어두워진다.',
+    '얼마 뒤 승강장이 나타난다. 비가 오고, 사람이 하나 서 있다. 열차를 놓친 얼굴이다.',
+    '당신은 그 얼굴을 안다. 이 열차의 모든 승객은 언젠가 저 승강장에 서 있었다.'
+  ],
+  ep:'내리지 않기로 한 사람은 계속 누군가를 태운다.'}},
+
+end_conductor:{ s:5, label:'결말', e:{name:'다음 차장', kind:'계승',
+  t:[
+    '차장이 모자를 벗어 당신에게 건넨다. 안쪽의 자수는 이제 완전히 닳아 없어졌다.',
+    '「감사합니다.」 그가 말한다. 백 년치 목소리다.',
+    '그는 문으로 걸어가 승강장에 내려선다. 첫차를 기다리는 사람들 사이로 섞여 들어가 아주 평범한 노인이 된다. 한 번도 돌아보지 않는다.',
+    '문이 닫힌다. 모자는 당신 머리에 잘 맞는다.',
+    '통로 끝에서 누군가 두리번거리고 있다. 표가 없는 얼굴이다. 당신은 다가가 말한다. 「무엇이든 괜찮습니다.」'
+  ],
+  ep:'누군가 내리려면, 누군가는 남아야 한다.'}},
+
+end_together:{ s:5, label:'결말', e:{name:'두 사람의 표', kind:'재회',
+  t:[
+    '둘이 함께 내린다. 손은 계속 잡은 채로.',
+    '승강장은 시끄럽다. 첫차, 안내방송, 캐리어 바퀴 소리. 살아 있는 소음이 이렇게 좋은 줄 몰랐다.',
+    '「배고파.」 「국밥 먹자.」 「이 시간에 하는 데 있어?」 「역 앞에 있어. 옛날에 갔었잖아.」',
+    '그 집이 아직 있는지 없는지는 가봐야 안다. 둘 다 그걸 확인하러 간다.',
+    '뒤에서 열차가 떠나는 소리가 난다. 아무도 돌아보지 않는다.'
+  ],
+  ep:'약속은 지키는 게 아니라, 다시 하는 것이다.'}},
+
+end_nameless:{ s:5, label:'결말', e:{name:'이름 없는 승객', kind:'상실',
+  t:[
+    '당신은 내린다. 첫차를 기다리던 사람 하나가 당신을 힐끗 보고 곧 눈을 돌린다.',
+    '개찰구를 지나고, 익숙한 골목을 걷고, 익숙한 문 앞에 선다. 초인종을 누른다.',
+    '문이 열린다. 아는 얼굴이 당신을 본다. 「누구세요?」',
+    '당신은 이름을 말하려고 입을 연다. 아무것도 나오지 않는다.',
+    '표는 표였다. 값은 이미 치러졌다.'
+  ],
+  ep:'값을 부르지 않은 표가 제일 비싸다.'}},
+
+end_first:{ s:5, label:'숨은 결말', secret:true, e:{name:'첫 번째 승객', kind:'숨은 결말',
+  t:[
+    '당신은 찢어낸 장을 펼쳐 차장에게 내민다. 오래된 잉크, 오래된 이름.',
+    '차장이 그것을 본다. 그리고 회중시계를 꺼낸다. 당신의 것과 똑같은 시계다. 유리에 똑같은 실금이 가 있다.',
+    '「예전에 한 분이 같은 시계로 표를 사셨다고 했지요.」 그가 말한다. 「그게 손님이셨습니다.」',
+    '첫 번째 승객. 이 열차를 처음 세운 사람. 내리지 못해서 선로를 놓았고, 놓다가 잊었고, 잊어서 다시 탄 사람.',
+    '「이제 정산하시겠습니까.」',
+    '당신은 시계를 그의 손에 올린다. 두 개의 시계가 겹쳐지고, 초침이 같은 방향으로 돈다.',
+    '열차가 처음으로 완전히 멈춘다. 승강장의 사람들이 이쪽을 본다. 선로 위로 첫 햇빛이 든다.'
+  ],
+  ep:'가장 오래 탄 사람이 마지막에 내린다.'}}
+
+};
+
+const ENDING_ORDER = ['end_home','end_together','end_promise','end_1998','end_missed',
+  'end_stay','end_conductor','end_nameless','end_jump','end_417','end_first'];
+
+/* ══════════ 엔진 ══════════ */
+const K_SAVE='mt_save_v1', K_END='mt_endings_v1';
+const $ = s => document.querySelector(s);
+
+let G = null;
+let seen = loadEndings();
+
+function loadEndings(){
+  try{ return new Set(JSON.parse(localStorage.getItem(K_END)||'[]')); }
+  catch(e){ return new Set(); }
+}
+function saveEndings(){
+  try{ localStorage.setItem(K_END, JSON.stringify([...seen])); }catch(e){}
+}
+function saveGame(){
+  if(!G) return;
+  try{
+    localStorage.setItem(K_SAVE, JSON.stringify({
+      node:G.node, flags:G.flags, visited:[...G.visited], path:G.path
+    }));
+  }catch(e){}
+}
+function loadSaved(){
+  try{
+    const d = JSON.parse(localStorage.getItem(K_SAVE)||'null');
+    if(!d || !STORY[d.node] || STORY[d.node].e) return null;
+    return {node:d.node, flags:d.flags||{}, visited:new Set(d.visited||[]),
+            path:d.path||[], history:[]};
+  }catch(e){ return null; }
+}
+function clearGame(){ try{ localStorage.removeItem(K_SAVE); }catch(e){} }
+
+function newGame(){
+  G = {node:'start', flags:{}, visited:new Set(), path:[], history:[]};
+}
+
+const visited = id => G.visited.has(id);
+const okChoice = ch => (!ch.if || !!ch.if(G.flags, visited)) && !(ch.once && visited(ch.to));
+
+function renderRail(){
+  const n = STORY[G ? G.node : 'start'];
+  const cur = n ? (n.s||0) : 0;
+  const r = $('#route'); r.innerHTML='';
+  STAGES.forEach((_,i)=>{
+    if(i>0){ const g=document.createElement('div'); g.className='seg'+(i<=cur?' on':''); r.appendChild(g); }
+    const d=document.createElement('div');
+    d.className='stop'+(i<cur?' on':'')+(i===cur?' now':'');
+    d.title=STAGES[i];
+    r.appendChild(d);
+  });
+  $('#stagename').textContent = G ? (n.label||STAGES[cur]) : '승강장';
+  $('#ecount').textContent = seen.size;
+
+  const pk = $('#pocket'); pk.innerHTML='';
+  if(G){
+    Object.keys(ITEMS).forEach(k=>{
+      if(G.flags[k]){ const i=document.createElement('i'); i.textContent=ITEMS[k]; pk.appendChild(i); }
+    });
+  }
+}
+
+function para(entry, i){
+  if(typeof entry === 'string') entry = {t:entry};
+  if(entry.if && !entry.if(G.flags, visited)) return null;
+  const p=document.createElement('p');
+  if(entry.c) p.className=entry.c;
+  p.classList.add('reveal');
+  p.style.animationDelay = (0.12 + i*0.16)+'s';
+  p.textContent = entry.t;
+  return p;
+}
+
+function go(id, choiceLabel){
+  G.history.push({node:G.node, flags:{...G.flags}, visited:[...G.visited], path:[...G.path]});
+  if(G.history.length>60) G.history.shift();
+  G.visited.add(G.node);
+  if(choiceLabel) G.path.push(choiceLabel);
+  G.node = id;
+  (STORY[id].set||[]).forEach(f => G.flags[f]=true);
+  saveGame();
+  const st=$('#stage');
+  st.classList.remove('lurch'); void st.offsetWidth; st.classList.add('lurch');
+  render();
+  window.scrollTo(0,0);
+}
+
+function back(){
+  if(!G || !G.history.length) return;
+  const p = G.history.pop();
+  G = {node:p.node, flags:p.flags, visited:new Set(p.visited), path:p.path, history:G.history};
+  saveGame(); render(); window.scrollTo(0,0);
+}
+
+function endingGrid(){
+  const grid=document.createElement('div'); grid.className='collection';
+  ENDING_ORDER.forEach((id,k)=>{
+    const node=STORY[id]; const got=seen.has(id);
+    const d=document.createElement('div');
+    d.className='slot'+(got?' got':'')+(node.secret?' secret':'');
+    const key=document.createElement('span'); key.className='k';
+    key.textContent=String(k+1).padStart(2,'0')+(node.secret?' 숨은':'');
+    const val=document.createElement('span'); val.className='v';
+    val.textContent = got ? node.e.name : (node.secret?'???':'· · · ·');
+    d.appendChild(key); d.appendChild(val); grid.appendChild(d);
+  });
+  return grid;
+}
+
+function render(){
+  const st=$('#stage'); st.innerHTML='';
+  const n=STORY[G.node];
+  if(n.e){ renderEnding(n); renderRail(); return; }
+
+  const lab=document.createElement('div');
+  lab.className='scene-label reveal'; lab.textContent = n.label || STAGES[n.s||0];
+  st.appendChild(lab);
+
+  const body=document.createElement('div'); body.className='prose';
+  const src = (visited(G.node) && n.rt) ? n.rt : n.t;
+  let i=0;
+  src.forEach(e=>{ const p=para(e,i); if(p){ body.appendChild(p); i++; } });
+  st.appendChild(body);
+
+  const box=document.createElement('div'); box.className='choices reveal';
+  box.style.animationDelay = (0.2 + i*0.16)+'s';
+  const live = (n.c||[]).filter(okChoice);
+  live.forEach((ch,k)=>{
+    const b=document.createElement('button');
+    b.className='choice'+(ch.lock?' lock':'');
+    const num=document.createElement('span'); num.className='n';
+    num.textContent=String(k+1).padStart(2,'0');
+    const tx=document.createElement('span'); tx.textContent=ch.t;
+    b.appendChild(num); b.appendChild(tx);
+    b.onclick=()=>go(ch.to, ch.t);
+    box.appendChild(b);
+  });
+  st.appendChild(box);
+  window.__live = live;
+
+  if(G.history.length){
+    const acts=document.createElement('div'); acts.className='acts reveal';
+    acts.style.animationDelay=(0.3+i*0.16)+'s';
+    const u=document.createElement('button'); u.className='btn ghost';
+    u.textContent='한 걸음 되돌리기'; u.onclick=back; acts.appendChild(u);
+    const q=document.createElement('button'); q.className='btn ghost';
+    q.textContent='처음으로';
+    q.onclick=()=>{ if(confirm('지금까지의 이야기를 버리고 승강장으로 돌아갑니다.')){ clearGame(); title(); } };
+    acts.appendChild(q);
+    st.appendChild(acts);
+  }
+  renderRail();
+}
+
+function renderEnding(n){
+  const st=$('#stage');
+  const e=n.e;
+  const isNew = !seen.has(G.node);
+  seen.add(G.node); saveEndings();
+  clearGame();
+
+  const tag=document.createElement('div'); tag.className='ending-tag reveal';
+  tag.textContent = (isNew ? '새로운 결말 · ' : '결말 · ') + e.kind;
+  st.appendChild(tag);
+
+  const h=document.createElement('h2'); h.className='ending-name reveal';
+  h.style.animationDelay='.1s'; h.textContent=e.name; st.appendChild(h);
+
+  const body=document.createElement('div'); body.className='prose';
+  let i=1;
+  e.t.forEach(x=>{ const p=para(x,i); if(p){ body.appendChild(p); i++; } });
+  st.appendChild(body);
+
+  const ep=document.createElement('div'); ep.className='epi reveal';
+  ep.style.animationDelay=(0.2+i*0.16)+'s'; ep.textContent=e.ep; st.appendChild(ep);
+
+  if(G.path.length){
+    const r=document.createElement('div'); r.className='recap reveal';
+    r.style.animationDelay=(0.3+i*0.16)+'s';
+    const rh=document.createElement('h3'); rh.textContent='당신이 만든 이야기'; r.appendChild(rh);
+    const ol=document.createElement('ol');
+    G.path.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ol.appendChild(li); });
+    r.appendChild(ol); st.appendChild(r);
+  }
+
+  const coll=document.createElement('div'); coll.className='reveal';
+  coll.style.animationDelay=(0.36+i*0.16)+'s';
+  const ch=document.createElement('h3'); ch.className='coll-h';
+  ch.textContent='수집한 결말 '+seen.size+' / '+TOTAL_ENDINGS;
+  coll.appendChild(ch); coll.appendChild(endingGrid()); st.appendChild(coll);
+
+  const acts=document.createElement('div'); acts.className='acts reveal';
+  acts.style.animationDelay=(0.42+i*0.16)+'s';
+  if(G.history.length){
+    const u=document.createElement('button'); u.className='btn';
+    u.textContent='마지막 갈림길로 되돌아가기'; u.onclick=back; acts.appendChild(u);
+  }
+  const again=document.createElement('button'); again.className='btn ghost';
+  again.textContent='다시 승강장으로'; again.onclick=()=>{ title(); window.scrollTo(0,0); };
+  acts.appendChild(again);
+  st.appendChild(acts);
+  window.__live=[];
+}
+
+function title(){
+  const save = loadSaved();
+  const st=$('#stage'); st.innerHTML='';
+
+  const b=document.createElement('div'); b.className='board';
+  b.innerHTML =
+    '<div class="kicker reveal">시간표에 없는 열차</div>'+
+    '<h1 class="reveal" style="animation-delay:.1s">자정 열차</h1>'+
+    '<div class="rule reveal" style="animation-delay:.25s"></div>'+
+    '<div class="dep reveal" style="animation-delay:.3s">'+
+      '<div>출발<span>00:00</span></div>'+
+      '<div>정차<span>4</span></div>'+
+      '<div>행선지<span class="amber">미정</span></div>'+
+      '<div>결말<span>'+seen.size+' / '+TOTAL_ENDINGS+'</span></div>'+
+    '</div>'+
+    '<p class="tagline reveal" style="animation-delay:.4s">비 오는 밤, 마지막 열차를 놓친 당신 앞에 시간표에 없는 열차가 선다.<br>선택마다 길이 갈리고, 손에 쥔 것이 나중에 열릴 문을 정한다.<br>결말은 열한 가지. 그중 하나는 아직 아무도 모른다.</p>';
+  st.appendChild(b);
+
+  const acts=document.createElement('div'); acts.className='acts reveal';
+  acts.style.animationDelay='.5s'; acts.style.flexDirection='column';
+  if(save){
+    const c=document.createElement('button'); c.className='btn wide';
+    c.textContent='이어서 타기 — '+(STORY[save.node].label||'객차');
+    c.onclick=()=>{ G=save; render(); window.scrollTo(0,0); }; acts.appendChild(c);
+  }
+  const s=document.createElement('button');
+  s.className = save ? 'btn ghost wide' : 'btn wide';
+  s.textContent = save ? '처음부터 다시 타기' : '열차에 오른다';
+  s.onclick=()=>{ if(save && !confirm('저장된 이야기를 버리고 처음부터 시작합니다.')) return;
+                  clearGame(); newGame(); render(); window.scrollTo(0,0); };
+  acts.appendChild(s);
+  st.appendChild(acts);
+
+  if(seen.size){
+    const wrap=document.createElement('div'); wrap.className='reveal';
+    wrap.style.animationDelay='.6s'; wrap.style.marginTop='2.6rem';
+    const h=document.createElement('h3'); h.className='coll-h';
+    h.textContent='수집한 결말 '+seen.size+' / '+TOTAL_ENDINGS;
+    wrap.appendChild(h); wrap.appendChild(endingGrid()); st.appendChild(wrap);
+  }
+
+  G=null; window.__live=[];
+  renderRail();
+}
+
+addEventListener('keydown', ev=>{
+  const live = window.__live;
+  if(!live || !live.length) return;
+  if(ev.metaKey||ev.ctrlKey||ev.altKey) return;
+  const k = parseInt(ev.key,10);
+  if(k>=1 && k<=live.length){
+    ev.preventDefault();
+    go(live[k-1].to, live[k-1].t);
+  }
+});
+
+/* ── 배경: 지나가는 불빛과 창에 맺힌 비 ── */
+(function bg(){
+  const cv=$('#bg'), ctx=cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dpr = Math.min(devicePixelRatio||1, 2);
+  let W,H,streaks,drops;
+  function size(){
+    W=cv.width=innerWidth*dpr; H=cv.height=innerHeight*dpr;
+    cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+    streaks=[]; drops=[];
+    for(let i=0;i<26;i++) streaks.push({
+      y:Math.random()*H, x:Math.random()*W, w:(40+Math.random()*260)*dpr,
+      v:(0.4+Math.random()*2.6)*dpr, a:0.04+Math.random()*0.16,
+      h:(1+Math.random()*2)*dpr
+    });
+    for(let i=0;i<70;i++) drops.push({
+      x:Math.random()*W, y:Math.random()*H, l:(6+Math.random()*22)*dpr,
+      v:(1.2+Math.random()*3)*dpr, a:0.05+Math.random()*0.14
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    for(const s of streaks){
+      const g=ctx.createLinearGradient(s.x,0,s.x+s.w,0);
+      g.addColorStop(0,'rgba(233,179,106,0)');
+      g.addColorStop(.5,'rgba(233,179,106,'+s.a+')');
+      g.addColorStop(1,'rgba(233,179,106,0)');
+      ctx.fillStyle=g; ctx.fillRect(s.x,s.y,s.w,s.h);
+      if(!reduce){ s.x-=s.v; if(s.x+s.w<0){ s.x=W; s.y=Math.random()*H; } }
+    }
+    ctx.lineCap='round'; ctx.lineWidth=1*dpr;
+    for(const d of drops){
+      ctx.strokeStyle='rgba(160,180,200,'+d.a+')';
+      ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-1.5*dpr,d.y+d.l); ctx.stroke();
+      if(!reduce){ d.y+=d.v*2.2; if(d.y>H){ d.y=-d.l; d.x=Math.random()*W; } }
+    }
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  size(); draw();
+  addEventListener('resize',()=>{ size(); if(reduce) draw(); });
+})();
+
+/* ── 데이터 검증 ── */
+(function check(){
+  const miss=[], noExit=[];
+  for(const id in STORY){
+    const n=STORY[id];
+    if(!n.e && (!n.c || !n.c.length)) noExit.push(id);
+    (n.c||[]).forEach(c=>{ if(!STORY[c.to]) miss.push(id+' -> '+c.to); });
+  }
+  const reach=new Set(), q=['start'];
+  while(q.length){ const id=q.pop(); if(reach.has(id))continue; reach.add(id);
+    (STORY[id].c||[]).forEach(c=>{ if(STORY[c.to]) q.push(c.to); }); }
+  const orphan=Object.keys(STORY).filter(id=>!reach.has(id));
+  const ends=Object.keys(STORY).filter(id=>STORY[id].e);
+  console.log('[자정열차] 노드', Object.keys(STORY).length,
+    '| 결말', ends.length, '/ 선언', TOTAL_ENDINGS,
+    '| 깨진링크', JSON.stringify(miss),
+    '| 막다른노드', JSON.stringify(noExit),
+    '| 도달불가', JSON.stringify(orphan),
+    '| 목록일치', ENDING_ORDER.length===ends.length && ENDING_ORDER.every(id=>STORY[id]&&STORY[id].e));
+})();
+
+title();
+</script>

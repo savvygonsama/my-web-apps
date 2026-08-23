@@ -1,0 +1,1675 @@
+<title>이번 주 식탁</title>
+
+<style>
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --surface-2:#F7F9F8; --surface-3:#EAEFED;
+  --ink:#14211E; --ink-2:#4A5C58; --ink-3:#7F908C;
+  --line:#DBE3E0; --line-2:#C3CFCB;
+  --accent:#0D6B5C; --on-accent:#FFFFFF; --accent-soft:#DBEDE7;
+  --warm:#A8501C; --warm-soft:#F5E5D9;
+  --mb:#B8860B; --ml:#2E8B78; --md:#3D5DA6; --ms:#8E5AA6; --mn:#5F7079;
+  --shadow:0 1px 2px rgba(20,33,30,.05), 0 8px 24px -12px rgba(20,33,30,.18);
+  --radius:10px;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Cascadia Mono","D2Coding",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1614; --surface:#18201E; --surface-2:#1D2724; --surface-3:#232E2B;
+    --ink:#E7EDEA; --ink-2:#A5B4B0; --ink-3:#7C8D89;
+    --line:#2A3532; --line-2:#3B4945;
+    --accent:#4FC7AC; --on-accent:#07201B; --accent-soft:#16332C;
+    --warm:#E09A69; --warm-soft:#32241B;
+    --mb:#DDB652; --ml:#5FC0A9; --md:#849FE2; --ms:#C08ED4; --mn:#93A5AE;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1614; --surface:#18201E; --surface-2:#1D2724; --surface-3:#232E2B;
+  --ink:#E7EDEA; --ink-2:#A5B4B0; --ink-3:#7C8D89;
+  --line:#2A3532; --line-2:#3B4945;
+  --accent:#4FC7AC; --on-accent:#07201B; --accent-soft:#16332C;
+  --warm:#E09A69; --warm-soft:#32241B;
+  --mb:#DDB652; --ml:#5FC0A9; --md:#849FE2; --ms:#C08ED4; --mn:#93A5AE;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit; font-size:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+
+.wrap{max-width:1280px; margin:0 auto; padding:22px 20px 64px}
+
+/* ---------- header ---------- */
+.top{
+  display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px 24px;
+  padding-bottom:16px; margin-bottom:22px; border-bottom:1px solid var(--line-2);
+}
+.brand h1{
+  margin:0; font-size:29px; font-weight:800; letter-spacing:-.035em; line-height:1.1;
+}
+.brand p{margin:5px 0 0; color:var(--ink-2); font-size:13.5px}
+.top-actions{display:flex; flex-wrap:wrap; gap:8px; margin-left:auto}
+
+.btn{
+  border:1px solid var(--line-2); background:var(--surface); color:var(--ink);
+  padding:9px 14px; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px;
+  transition:background .12s, border-color .12s, transform .06s;
+}
+.btn:hover{background:var(--surface-3); border-color:var(--ink-3)}
+.btn:active{transform:translateY(1px)}
+.btn-main{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.btn-main:hover{background:var(--accent); border-color:var(--accent); filter:brightness(1.08)}
+.btn-sm{padding:5px 10px; font-size:12.5px; font-weight:600}
+
+/* ---------- layout ---------- */
+.cols{display:grid; grid-template-columns:296px minmax(0,1fr); gap:26px; align-items:start}
+
+/* ---------- filter rail ---------- */
+.rail{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); position:sticky; top:16px;
+  max-height:calc(100vh - 32px); overflow:auto;
+}
+.rail-head{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:14px 16px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--surface); z-index:2;
+}
+.rail-head strong{font-size:15px; letter-spacing:-.02em}
+.rail-body{padding:6px 16px 18px}
+
+.grp{padding:14px 0; border-bottom:1px dashed var(--line)}
+.grp:last-child{border-bottom:0}
+.grp-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:9px}
+.grp-name{
+  font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+.grp-hint{font-size:11.5px; color:var(--ink-3); margin:-4px 0 9px; line-height:1.45}
+.grp-clear{
+  background:none; border:0; padding:0; cursor:pointer; font-size:11.5px; color:var(--accent);
+  font-weight:600; text-decoration:underline; text-underline-offset:2px;
+}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{
+  border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink-2);
+  padding:5px 10px; border-radius:999px; cursor:pointer; font-size:13px; font-weight:600;
+  transition:background .12s, color .12s, border-color .12s;
+}
+.chip:hover{border-color:var(--ink-3); color:var(--ink)}
+.chip[aria-pressed="true"]{
+  background:var(--accent); border-color:var(--accent); color:var(--on-accent);
+}
+.chip-w[aria-pressed="true"]{background:var(--warm); border-color:var(--warm); color:#fff}
+.chip.ex[aria-pressed="true"]{
+  background:var(--warm-soft); border-color:var(--warm); color:var(--warm);
+  text-decoration:line-through; text-decoration-thickness:1.5px;
+}
+.chip.ex[aria-pressed="true"]::after{content:" ✕"; font-size:10px; text-decoration:none}
+
+.modesw{display:flex; border:1px solid var(--line-2); border-radius:6px; overflow:hidden}
+.modesw button{
+  border:0; background:var(--surface-2); color:var(--ink-3); cursor:pointer;
+  font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.02em; padding:3px 7px;
+}
+.modesw button + button{border-left:1px solid var(--line-2)}
+.modesw button.on{background:var(--accent); color:var(--on-accent)}
+.modesw button.on[data-mv="ex"]{background:var(--warm); color:#fff}
+
+/* ---------- match bar ---------- */
+.matchbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--accent-soft); border:1px solid var(--line);
+  border-radius:var(--radius); padding:11px 14px; margin-bottom:16px;
+}
+.matchbar .n{font-family:var(--mono); font-weight:700; font-size:19px; letter-spacing:-.02em}
+.matchbar p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.matchbar.warn{background:var(--warm-soft)}
+.matchbar.warn .n{color:var(--warm)}
+
+/* ---------- plan ---------- */
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden; margin-bottom:22px;
+}
+.panel-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  padding:13px 16px; border-bottom:1px solid var(--line); background:var(--surface-2);
+}
+.panel-head h2{margin:0; font-size:15.5px; font-weight:700; letter-spacing:-.02em}
+.panel-head .sub{font-size:12.5px; color:var(--ink-3); font-family:var(--mono)}
+.panel-head .note{
+  margin-left:6px; font-size:12px; font-weight:600; color:var(--accent);
+  letter-spacing:0; vertical-align:1px;
+}
+
+.scroller{overflow-x:auto}
+.plan{width:100%; border-collapse:collapse; min-width:940px}
+.plan th, .plan td{border:1px solid var(--line); padding:0; vertical-align:top}
+.plan thead th{
+  background:var(--surface-2); padding:9px 10px; text-align:center;
+  font-size:13px; font-weight:700; letter-spacing:.01em; color:var(--ink-2);
+}
+.plan thead th.today{color:var(--accent)}
+.plan thead th .dnum{display:block; font-family:var(--mono); font-size:11px; color:var(--ink-3); font-weight:600}
+.rowlab{
+  width:74px; background:var(--surface-2); text-align:center; vertical-align:middle;
+  font-size:13px; font-weight:700; padding:8px 4px;
+}
+.rowlab span{display:block; border-left:3px solid var(--mc); padding-left:6px; text-align:left}
+
+.cell{position:relative; width:calc((100% - 74px)/7)}
+.cellbox{
+  display:flex; flex-direction:column; gap:1px; min-height:76px;
+  border-left:3px solid var(--mc); padding:5px 5px 5px 4px;
+}
+.cellempty{
+  flex:1; width:100%; text-align:left; background:transparent; border:0; cursor:pointer;
+  color:var(--ink-3); font-size:13px; font-weight:500; padding:5px; border-radius:6px;
+}
+.cellempty:hover{background:var(--surface-3); color:var(--ink-2)}
+.item{
+  display:block; width:100%; text-align:left; background:transparent; border:0;
+  cursor:pointer; padding:4px 5px; border-radius:6px; transition:background .12s;
+}
+.item:hover{background:var(--surface-3)}
+.item .role{
+  display:inline-block; font-family:var(--mono); font-size:9.5px; font-weight:700;
+  letter-spacing:.04em; padding:0 4px; border-radius:3px; margin-right:4px;
+  vertical-align:1px; background:var(--surface-3); border:1px solid var(--line); color:var(--ink-3);
+}
+.item .role.r-국{background:var(--accent-soft); border-color:var(--accent); color:var(--accent)}
+.item .role.r-메인{background:var(--warm-soft); border-color:var(--warm); color:var(--warm)}
+.item .nm{font-size:13px; font-weight:650; line-height:1.35; letter-spacing:-.01em; word-break:keep-all}
+.item .nm.custom{color:var(--warm)}
+.item .tm{margin-left:4px; font-family:var(--mono); font-size:10px; color:var(--ink-3)}
+.nutr{display:flex; gap:3px; padding:4px 5px 1px; flex-wrap:nowrap}
+.nutr span{
+  font-family:var(--mono); font-size:9.5px; font-weight:700; padding:1px 5px; border-radius:3px;
+  border:1px solid var(--line); color:var(--ink-3); background:var(--surface-2);
+  white-space:nowrap; opacity:.55;
+}
+.nutr span.ok{opacity:1}
+.nutr span.ok{border-color:var(--accent); color:var(--accent); background:var(--accent-soft)}
+.additem{
+  align-self:flex-start; background:transparent; border:0; cursor:pointer; padding:2px 5px;
+  font-family:var(--mono); font-size:10px; font-weight:700; color:var(--ink-3); border-radius:4px;
+}
+.additem:hover{background:var(--surface-3); color:var(--accent)}
+
+.cell .reroll{
+  position:absolute; top:5px; right:5px; opacity:0; transition:opacity .12s;
+  border:1px solid var(--line-2); background:var(--surface); border-radius:6px;
+  width:24px; height:24px; line-height:1; cursor:pointer; font-size:13px; padding:0;
+  display:flex; align-items:center; justify-content:center; color:var(--ink-2);
+}
+.cell:hover .reroll, .reroll:focus-visible{opacity:1}
+.cell .reroll:hover{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+
+/* ---------- shopping ---------- */
+.shop-body{padding:6px 16px 18px}
+.shop-list{list-style:none; margin:0; padding:0; columns:3; column-gap:26px}
+.shop-list li{break-inside:avoid; padding:3px 0}
+.shop-list label{display:flex; gap:8px; align-items:baseline; cursor:pointer; font-size:13.5px}
+.shop-list input{margin:0; accent-color:var(--accent); transform:translateY(1px)}
+.shop-list .cnt{margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--ink-3)}
+.shop-list label.done span.nm{text-decoration:line-through; color:var(--ink-3)}
+.empty-note{padding:18px 16px; color:var(--ink-3); font-size:13.5px}
+
+/* ---------- picker dialog ---------- */
+dialog{
+  border:1px solid var(--line-2); border-radius:12px; background:var(--surface); color:var(--ink);
+  padding:0; width:min(560px, calc(100vw - 28px)); max-height:min(680px, calc(100vh - 60px));
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.45); overflow:hidden;
+}
+dialog::backdrop{background:rgba(10,20,18,.45)}
+.dlg{display:flex; flex-direction:column; max-height:inherit}
+.dlg-head{padding:14px 16px 12px; border-bottom:1px solid var(--line); background:var(--surface-2)}
+.dlg-head h3{margin:0 0 2px; font-size:16px; letter-spacing:-.02em}
+.dlg-head p{margin:0; font-size:12.5px; color:var(--ink-3)}
+.dlg-tools{display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line)}
+.dlg-tools input{
+  flex:1; min-width:0; padding:8px 11px; border-radius:8px; font-size:14px;
+  border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink); font-family:inherit;
+}
+.dlg-list{overflow:auto; padding:8px 10px 12px; flex:1}
+.opt{
+  display:block; width:100%; text-align:left; background:transparent; border:0;
+  border-radius:8px; padding:8px 10px; cursor:pointer;
+}
+.opt:hover{background:var(--surface-3)}
+.opt .nm{display:block; font-size:14px; font-weight:650; letter-spacing:-.01em}
+.opt .mt{display:block; margin-top:2px; font-family:var(--mono); font-size:10.5px; color:var(--ink-3)}
+.opt-head{
+  padding:12px 10px 5px; font-family:var(--mono); font-size:10.5px; font-weight:700;
+  letter-spacing:.12em; color:var(--ink-3); border-bottom:1px solid var(--line); margin-bottom:4px;
+}
+.dlg-foot{display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); background:var(--surface-2)}
+.dlg-foot .btn{flex:1}
+
+/* 요리 카드 */
+.rc-art{background:var(--surface-2); border-bottom:1px solid var(--line); padding:10px 0 4px; text-align:center}
+.rc-art svg{width:min(260px,70%); height:auto; display:inline-block}
+.rc-scroll{overflow:auto; flex:1; padding:0 18px 6px}
+.rc-head{padding:14px 0 10px; border-bottom:1px solid var(--line)}
+.rc-head h3{margin:0; font-size:20px; font-weight:800; letter-spacing:-.03em}
+.rc-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px}
+.rc-tags span{
+  font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.04em;
+  background:var(--surface-3); border:1px solid var(--line); color:var(--ink-2);
+  padding:2px 7px; border-radius:5px;
+}
+.rc-tags span.hi{background:var(--accent-soft); border-color:var(--accent); color:var(--accent)}
+.rc-sect{padding:14px 0 4px}
+.rc-sect h4{
+  margin:0 0 7px; font-family:var(--mono); font-size:10.5px; font-weight:700;
+  letter-spacing:.14em; color:var(--ink-3);
+}
+.rc-sect p{margin:0; font-size:14px; color:var(--ink-2); line-height:1.65}
+.rc-steps{margin:0; padding:0; list-style:none; counter-reset:st}
+.rc-steps li{
+  counter-increment:st; position:relative; padding:0 0 12px 30px; font-size:14.5px; line-height:1.6;
+}
+.rc-steps li::before{
+  content:counter(st); position:absolute; left:0; top:2px;
+  width:20px; height:20px; border-radius:50%; background:var(--accent); color:var(--on-accent);
+  font-family:var(--mono); font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.rc-steps li:last-child{padding-bottom:2px}
+
+.opt{display:flex; gap:10px; align-items:center}
+.opt .thumb{flex:0 0 42px; width:42px; line-height:0}
+.opt .thumb svg{width:42px; height:auto}
+.opt .txt{min-width:0}
+
+.tip{margin:0 0 18px; font-size:12.5px; color:var(--ink-3)}
+.mobile-only{display:none}
+
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,12px);
+  background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px;
+  font-size:13.5px; font-weight:600; box-shadow:0 10px 30px -10px rgba(0,0,0,.5);
+  opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:99;
+  max-width:calc(100vw - 32px); text-align:center;
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .cols{grid-template-columns:1fr}
+  .rail{position:static; max-height:none}
+  .mobile-only{display:block}
+  .shop-list{columns:2}
+}
+@media (max-width:560px){
+  .wrap{padding:16px 13px 48px}
+  .brand h1{font-size:24px}
+  .shop-list{columns:1}
+  .top-actions{margin-left:0; width:100%}
+  .top-actions .btn{flex:1}
+}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--bg:#fff; --surface:#fff; --surface-2:#fff; --surface-3:#fff;
+        --ink:#000; --ink-2:#333; --ink-3:#555; --line:#999; --line-2:#666; --shadow:none}
+  body{background:#fff}
+  .wrap{max-width:none; padding:0}
+  .rail, .top-actions, .reroll, .matchbar, .tip, .toast, .panel-head .btn{display:none !important}
+  .cols{display:block}
+  .panel{border-color:#999; box-shadow:none; break-inside:avoid}
+  .plan{min-width:0; font-size:11px}
+  .cellbtn{min-height:56px}
+  .shop-list{columns:4}
+}
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1>이번 주 식탁</h1>
+      <p>조건을 고르면 그 조건에 맞는 요리로 일주일 식단표를 짜 드립니다.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-main" id="gen">일주일 자동 짜기</button>
+      <button class="btn" id="clear">표 비우기</button>
+      <button class="btn" id="print">인쇄</button>
+    </div>
+  </header>
+
+  <div class="cols">
+
+    <!-- ============ 조건 ============ -->
+    <aside class="rail" aria-label="조건 고르기">
+      <div class="rail-head">
+        <strong>조건 고르기</strong>
+        <button class="grp-clear" id="resetAll">전부 초기화</button>
+      </div>
+      <div class="rail-body" id="filters"></div>
+    </aside>
+
+    <!-- ============ 결과 ============ -->
+    <main>
+      <div class="matchbar" id="matchbar">
+        <span class="n" id="matchNum">0</span>
+        <p id="matchTxt">조건에 맞는 요리</p>
+      </div>
+
+      <p class="tip mobile-only">표는 옆으로 밀어서 볼 수 있어요.</p>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>주간 식단표 <span class="note" id="planNote"></span></h2>
+          <span class="sub" id="planSum">비어 있음</span>
+        </div>
+        <div class="scroller">
+          <table class="plan">
+            <thead><tr id="planHead"></tr></thead>
+            <tbody id="planBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>장보기 목록</h2>
+          <button class="btn btn-sm" id="copyShop">목록 복사</button>
+        </div>
+        <div class="shop-body" id="shopBody"></div>
+      </section>
+
+      <p class="tip">요리 이름을 누르면 완성 그림과 만드는 법이 나옵니다. “+ 추가”로 한 칸에 요리를 더 넣거나 원하는 메뉴를 직접 적을 수도 있어요. 한상차림에서 칸 아래 <b>단·채·밥</b>은 그 상에 단백질·채소·탄수화물이 들어 있는지 알려 줍니다. 고른 조건과 식단표는 이 브라우저에 자동으로 저장됩니다.</p>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+  </div>
+</div>
+
+<dialog id="recipe">
+  <div class="dlg">
+    <div class="rc-art" id="rcArt"></div>
+    <div class="rc-scroll">
+      <div class="rc-head">
+        <h3 id="rcName"></h3>
+        <div class="rc-tags" id="rcTags"></div>
+      </div>
+      <div class="rc-sect">
+        <h4>재료</h4>
+        <p id="rcIng"></p>
+      </div>
+      <div class="rc-sect">
+        <h4>만드는 법</h4>
+        <ol class="rc-steps" id="rcSteps"></ol>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" id="rcSwap">다른 요리로 바꾸기</button>
+      <button class="btn btn-main" id="rcClose">닫기</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="picker">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h3 id="dlgTitle">요리 고르기</h3>
+      <p id="dlgSub"></p>
+    </div>
+    <div class="dlg-tools">
+      <input id="dlgSearch" type="text" placeholder="요리 이름 검색 · 없으면 직접 입력" autocomplete="off">
+      <button class="btn btn-sm" id="dlgAdd">직접 넣기</button>
+    </div>
+    <div class="dlg-list" id="dlgList"></div>
+    <div class="dlg-foot">
+      <button class="btn" id="dlgEmpty">이 칸 비우기</button>
+      <button class="btn" id="dlgClose">닫기</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* =======================================================================
+   요리 데이터
+   n 이름 / c 나라 / m 끼니 / a 연령 / s 상황 / t 조리시간(분)
+   w 조리방법 / d 식단유형 / i 재료
+   ======================================================================= */
+const A_ALL = ["유아","어린이","청소년","성인","노년"];
+const A_KID = ["어린이","청소년","성인","노년"];
+const A_TEEN = ["청소년","성인"];
+const A_TEEN_OLD = ["청소년","성인","노년"];
+const A_SOFT = ["유아","어린이","청소년","성인","노년"];
+
+const DISHES = [
+/* ---------------- 한식 ---------------- */
+{n:"소고기미역국",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","회복식"],t:30,w:["끓이기"],d:["육류","고단백","저염"],i:["건미역","소고기 양지","국간장","다진마늘","참기름"]},
+{n:"된장찌개",c:"한식",m:["아침","점심","저녁"],a:A_KID,s:["일상"],t:20,w:["끓이기"],d:["채식"],i:["된장","두부","애호박","양파","감자","대파"]},
+{n:"김치찌개",c:"한식",m:["점심","저녁","야식"],a:A_TEEN_OLD,s:["일상","술안주"],t:25,w:["끓이기"],d:["육류"],i:["묵은지","돼지고기 목살","두부","대파","고춧가루"]},
+{n:"순두부찌개",c:"한식",m:["아침","점심","저녁"],a:A_KID,s:["일상","야근·간편"],t:20,w:["끓이기"],d:["해산물"],i:["순두부","바지락","달걀","대파","고춧가루"]},
+{n:"콩나물국밥",c:"한식",m:["아침","점심","야식"],a:A_KID,s:["일상","회복식","야근·간편"],t:20,w:["끓이기"],d:["채식","저염"],i:["콩나물","밥","달걀","국간장","대파"]},
+{n:"북엇국",c:"한식",m:["아침"],a:A_ALL,s:["회복식","일상"],t:20,w:["끓이기"],d:["해산물","저염","고단백"],i:["북어채","달걀","무","두부","참기름"]},
+{n:"아욱된장국",c:"한식",m:["아침","점심"],a:A_ALL,s:["일상","저염 식단"],t:20,w:["끓이기"],d:["채식","저염"],i:["아욱","된장","다시마","대파"]},
+{n:"육개장",c:"한식",m:["점심","저녁"],a:A_TEEN_OLD,s:["일상","손님상"],t:60,w:["끓이기"],d:["육류","고단백"],i:["소고기 양지","고사리","토란대","숙주","대파","고춧가루"]},
+{n:"삼계탕",c:"한식",m:["점심","저녁"],a:A_ALL,s:["회복식","손님상"],t:90,w:["끓이기"],d:["육류","고단백"],i:["영계","찹쌀","수삼","대추","마늘"]},
+{n:"닭볶음탕",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["일상","손님상"],t:40,w:["끓이기"],d:["육류","고단백"],i:["닭볶음용 닭","감자","당근","양파","고추장","고춧가루"]},
+{n:"부대찌개",c:"한식",m:["저녁","야식"],a:A_TEEN,s:["일상","술안주"],t:25,w:["끓이기"],d:["육류"],i:["스팸","소시지","김치","두부","라면사리","대파"]},
+{n:"청국장찌개",c:"한식",m:["아침","점심","저녁"],a:A_TEEN_OLD,s:["일상"],t:25,w:["끓이기"],d:["채식","고단백"],i:["청국장","두부","김치","애호박","대파"]},
+{n:"떡국",c:"한식",m:["아침","점심"],a:A_ALL,s:["명절","일상"],t:20,w:["끓이기"],d:["육류"],i:["떡국떡","소고기 양지","달걀","김가루","대파"]},
+{n:"잔치국수",c:"한식",m:["점심"],a:A_KID,s:["일상","야근·간편"],t:15,w:["끓이기"],d:["해산물"],i:["소면","멸치","다시마","애호박","달걀","김가루"]},
+{n:"소불고기",c:"한식",m:["점심","저녁"],a:A_ALL,s:["일상","손님상","명절"],t:30,w:["볶기","굽기"],d:["육류","고단백"],i:["소고기 불고기감","양파","대파","간장","배","다진마늘"]},
+{n:"뚝배기 불고기",c:"한식",m:["점심","저녁"],a:A_ALL,s:["일상","손님상"],t:25,w:["끓이기"],d:["육류","고단백"],i:["소고기 불고기감","당면","팽이버섯","양파","간장"]},
+{n:"제육볶음",c:"한식",m:["점심","저녁"],a:A_TEEN_OLD,s:["일상","도시락"],t:25,w:["볶기"],d:["육류","고단백"],i:["돼지고기 앞다리","고추장","양파","대파","고춧가루"]},
+{n:"닭갈비",c:"한식",m:["저녁"],a:A_TEEN,s:["일상","손님상"],t:30,w:["볶기"],d:["육류","고단백"],i:["닭다리살","양배추","고구마","떡","고추장","깻잎"]},
+{n:"삼겹살구이",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["일상","술안주"],t:20,w:["굽기"],d:["육류","저탄수"],i:["삼겹살","상추","깻잎","마늘","쌈장"]},
+{n:"보쌈",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["손님상","술안주"],t:60,w:["끓이기"],d:["육류","고단백"],i:["돼지고기 목살","된장","월계수잎","배추","무","새우젓"]},
+{n:"갈비찜",c:"한식",m:["저녁"],a:A_ALL,s:["명절","손님상"],t:90,w:["조림"],d:["육류","고단백"],i:["소갈비","무","당근","밤","대추","간장"]},
+{n:"훈제오리구이",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["일상","술안주"],t:20,w:["굽기","에어프라이어"],d:["육류","저탄수","고단백"],i:["훈제오리","부추","양파","머스터드"]},
+{n:"고등어구이",c:"한식",m:["아침","점심","저녁"],a:A_KID,s:["일상"],t:15,w:["굽기","에어프라이어"],d:["해산물","고단백","저탄수"],i:["고등어자반","레몬","무"]},
+{n:"코다리조림",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["일상"],t:30,w:["조림"],d:["해산물","고단백"],i:["코다리","무","고춧가루","간장","대파"]},
+{n:"갈치조림",c:"한식",m:["저녁"],a:A_TEEN_OLD,s:["일상","손님상"],t:35,w:["조림"],d:["해산물","고단백"],i:["갈치","무","감자","고춧가루","간장"]},
+{n:"오징어볶음",c:"한식",m:["점심","저녁"],a:A_TEEN_OLD,s:["일상","술안주"],t:20,w:["볶기"],d:["해산물","고단백"],i:["오징어","양배추","양파","당근","고추장"]},
+{n:"낙지볶음",c:"한식",m:["저녁","야식"],a:A_TEEN,s:["술안주","일상"],t:25,w:["볶기"],d:["해산물","고단백"],i:["낙지","양파","대파","고춧가루","미나리"]},
+{n:"해물파전",c:"한식",m:["저녁","야식"],a:A_KID,s:["술안주","손님상"],t:25,w:["부치기"],d:["해산물"],i:["쪽파","오징어","새우살","부침가루","달걀"]},
+{n:"애호박전",c:"한식",m:["점심","저녁"],a:A_ALL,s:["명절","일상"],t:15,w:["부치기"],d:["채식"],i:["애호박","달걀","부침가루","소금"]},
+{n:"동그랑땡",c:"한식",m:["점심","저녁"],a:A_ALL,s:["명절","도시락"],t:30,w:["부치기"],d:["육류","고단백"],i:["다진 돼지고기","두부","당근","양파","달걀"]},
+{n:"계란말이",c:"한식",m:["아침","점심","간식"],a:A_ALL,s:["일상","도시락","야근·간편"],t:10,w:["부치기"],d:["채식","고단백"],i:["달걀","당근","대파","소금"]},
+{n:"계란찜",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","회복식"],t:15,w:["찌기"],d:["채식","고단백","저염"],i:["달걀","소금","대파","참기름"]},
+{n:"두부조림",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상","도시락"],t:20,w:["조림"],d:["채식","비건","고단백"],i:["두부","간장","고춧가루","대파","다진마늘"]},
+{n:"두부부침과 양념장",c:"한식",m:["아침","저녁"],a:A_ALL,s:["일상","야근·간편"],t:10,w:["부치기"],d:["채식","비건","고단백","저탄수"],i:["두부","간장","쪽파","참기름"]},
+{n:"감자조림",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","도시락"],t:20,w:["조림"],d:["채식","비건"],i:["감자","간장","물엿","깨"]},
+{n:"멸치볶음",c:"한식",m:["아침","점심","저녁"],a:A_KID,s:["일상","도시락"],t:15,w:["볶기"],d:["해산물"],i:["잔멸치","견과류","간장","물엿"]},
+{n:"시금치나물",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","명절"],t:10,w:["무침·생채"],d:["채식","비건","저염"],i:["시금치","다진마늘","참기름","깨"]},
+{n:"콩나물무침",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","명절"],t:10,w:["무침·생채"],d:["채식","비건","저염"],i:["콩나물","다진마늘","참기름","쪽파"]},
+{n:"오이무침",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상","다이어트"],t:10,w:["무침·생채"],d:["채식","비건","저탄수"],i:["오이","고춧가루","식초","설탕","깨"]},
+{n:"무생채",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상","명절"],t:10,w:["무침·생채"],d:["채식","비건","저탄수"],i:["무","고춧가루","식초","설탕"]},
+{n:"배추겉절이",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상"],t:15,w:["무침·생채"],d:["채식","비건"],i:["알배추","고춧가루","매실청","쪽파","다진마늘"]},
+{n:"애호박볶음",c:"한식",m:["아침","점심","저녁"],a:A_ALL,s:["일상"],t:10,w:["볶기"],d:["채식","비건","저염"],i:["애호박","양파","소금","참기름"]},
+{n:"비빔밥",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상","다이어트"],t:20,w:["무침·생채"],d:["채식"],i:["밥","시금치","콩나물","당근","달걀","고추장"]},
+{n:"김밥",c:"한식",m:["아침","점심","간식"],a:A_ALL,s:["도시락","일상"],t:30,w:["안 익힘"],d:["채식"],i:["김","밥","단무지","당근","시금치","달걀","우엉조림"]},
+{n:"김치볶음밥",c:"한식",m:["점심","야식"],a:A_KID,s:["야근·간편","일상"],t:15,w:["볶기"],d:["채식"],i:["김치","밥","달걀","참기름","김가루"]},
+{n:"비빔국수",c:"한식",m:["점심","야식"],a:A_KID,s:["일상","야근·간편"],t:15,w:["무침·생채"],d:["채식"],i:["소면","고추장","오이","달걀","식초"]},
+{n:"열무국수",c:"한식",m:["점심"],a:A_KID,s:["일상","다이어트"],t:15,w:["무침·생채"],d:["채식","비건"],i:["소면","열무김치","오이","깨"]},
+{n:"물냉면",c:"한식",m:["점심","저녁"],a:A_KID,s:["일상"],t:15,w:["끓이기"],d:["육류"],i:["냉면사리","냉면육수","오이","무절임","삶은달걀"]},
+{n:"떡볶이",c:"한식",m:["간식","야식"],a:A_KID,s:["일상","야근·간편"],t:20,w:["끓이기"],d:["채식"],i:["떡볶이떡","양배추","고추장","대파","삶은달걀"]},
+{n:"오뎅탕",c:"한식",m:["저녁","야식"],a:A_KID,s:["술안주","야근·간편"],t:20,w:["끓이기"],d:["해산물"],i:["어묵","무","대파","다시마","간장"]},
+{n:"골뱅이소면무침",c:"한식",m:["야식"],a:A_TEEN,s:["술안주"],t:15,w:["무침·생채"],d:["해산물"],i:["골뱅이 통조림","소면","오이","양파","고추장"]},
+{n:"황태채무침",c:"한식",m:["저녁","야식"],a:A_TEEN_OLD,s:["술안주"],t:10,w:["무침·생채"],d:["해산물","고단백"],i:["황태채","고추장","마요네즈","물엿"]},
+{n:"소고기채소죽",c:"한식",m:["아침","저녁"],a:A_ALL,s:["회복식","일상"],t:30,w:["끓이기"],d:["육류","저염"],i:["쌀","다진 소고기","애호박","당근","참기름"]},
+{n:"전복죽",c:"한식",m:["아침","저녁"],a:A_ALL,s:["회복식","손님상"],t:40,w:["끓이기"],d:["해산물","저염"],i:["전복","쌀","참기름","당근","김가루"]},
+{n:"단호박죽",c:"한식",m:["아침","간식"],a:A_ALL,s:["회복식","일상"],t:40,w:["끓이기"],d:["채식","비건","저염"],i:["단호박","찹쌀가루","소금","꿀"]},
+{n:"잡채",c:"한식",m:["점심","저녁"],a:A_ALL,s:["명절","손님상"],t:45,w:["볶기"],d:["채식"],i:["당면","시금치","당근","양파","목이버섯","간장"]},
+{n:"연두부와 간장",c:"한식",m:["아침","간식"],a:A_ALL,s:["회복식","다이어트"],t:5,w:["안 익힘"],d:["채식","비건","저염","저탄수"],i:["연두부","간장","쪽파","참기름"]},
+{n:"찐만두",c:"한식",m:["점심","간식","야식"],a:A_KID,s:["야근·간편","일상"],t:15,w:["찌기"],d:["육류"],i:["냉동만두","간장","식초"]},
+{n:"들깨미역국",c:"한식",m:["아침","점심"],a:A_ALL,s:["회복식","일상"],t:25,w:["끓이기"],d:["채식","비건","저염"],i:["건미역","들깨가루","들기름","국간장"]},
+
+/* ---------------- 일식 ---------------- */
+{n:"연어덮밥",c:"일식",m:["점심","저녁"],a:A_TEEN_OLD,s:["일상","다이어트"],t:15,w:["안 익힘"],d:["해산물","고단백"],i:["생연어","밥","아보카도","간장","와사비","쪽파"]},
+{n:"소고기덮밥",c:"일식",m:["점심","저녁"],a:A_ALL,s:["일상","야근·간편"],t:20,w:["조림"],d:["육류","고단백"],i:["소고기 불고기감","양파","간장","맛술","밥"]},
+{n:"닭고기달걀덮밥",c:"일식",m:["점심","저녁"],a:A_ALL,s:["일상","야근·간편"],t:20,w:["끓이기"],d:["육류","고단백"],i:["닭다리살","달걀","양파","간장","밥"]},
+{n:"돈가스덮밥",c:"일식",m:["점심","저녁"],a:A_KID,s:["일상"],t:25,w:["튀기기"],d:["육류"],i:["돈가스","달걀","양파","간장","밥"]},
+{n:"연어구이",c:"일식",m:["아침","점심","저녁"],a:A_KID,s:["일상","다이어트","운동 후"],t:15,w:["굽기"],d:["해산물","고단백","저탄수"],i:["연어 스테이크용","소금","레몬","버터"]},
+{n:"미소된장국",c:"일식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","회복식"],t:10,w:["끓이기"],d:["채식","저염"],i:["미소된장","두부","미역","쪽파"]},
+{n:"차완무시",c:"일식",m:["아침","저녁"],a:A_ALL,s:["손님상","회복식"],t:20,w:["찌기"],d:["해산물","고단백","저염"],i:["달걀","다시마 육수","새우","표고버섯","은행"]},
+{n:"닭가라아게",c:"일식",m:["저녁","야식"],a:A_KID,s:["술안주","손님상"],t:30,w:["튀기기","에어프라이어"],d:["육류","고단백"],i:["닭다리살","감자전분","간장","생강","마늘"]},
+{n:"데리야키 치킨",c:"일식",m:["점심","저녁"],a:A_ALL,s:["일상","도시락"],t:25,w:["굽기"],d:["육류","고단백"],i:["닭다리살","간장","맛술","설탕","쪽파"]},
+{n:"야키소바",c:"일식",m:["점심","야식"],a:A_KID,s:["야근·간편","일상"],t:20,w:["볶기"],d:["육류"],i:["중화면","양배추","돼지고기","숙주","우스터소스"]},
+{n:"우동",c:"일식",m:["점심","야식"],a:A_ALL,s:["야근·간편","일상"],t:15,w:["끓이기"],d:["해산물"],i:["우동면","가쓰오 육수","유부","쪽파","어묵"]},
+{n:"오코노미야키",c:"일식",m:["저녁","야식"],a:A_KID,s:["술안주","일상"],t:25,w:["부치기"],d:["해산물"],i:["양배추","부침가루","달걀","오징어","가쓰오부시"]},
+{n:"간장라멘",c:"일식",m:["점심","야식"],a:A_KID,s:["야근·간편"],t:20,w:["끓이기"],d:["육류"],i:["생라면","차슈","달걀","숙주","쪽파"]},
+{n:"가지 미소구이",c:"일식",m:["저녁"],a:A_KID,s:["일상","술안주"],t:20,w:["오븐"],d:["채식","비건"],i:["가지","미소된장","맛술","깨"]},
+
+/* ---------------- 중식 ---------------- */
+{n:"마파두부",c:"중식",m:["점심","저녁"],a:A_KID,s:["일상","야근·간편"],t:20,w:["볶기"],d:["육류","고단백"],i:["두부","다진 돼지고기","두반장","대파","전분"]},
+{n:"토마토달걀볶음",c:"중식",m:["아침","점심","저녁"],a:A_ALL,s:["일상","야근·간편","다이어트"],t:10,w:["볶기"],d:["채식","고단백","저탄수"],i:["토마토","달걀","대파","설탕","소금"]},
+{n:"새우볶음밥",c:"중식",m:["점심","야식"],a:A_ALL,s:["야근·간편","도시락"],t:15,w:["볶기"],d:["해산물"],i:["칵테일 새우","밥","달걀","대파","완두콩"]},
+{n:"짜장면",c:"중식",m:["점심"],a:A_KID,s:["일상"],t:30,w:["볶기"],d:["육류"],i:["춘장","돼지고기","양파","감자","중화면","오이"]},
+{n:"짬뽕",c:"중식",m:["점심","저녁"],a:A_TEEN_OLD,s:["일상"],t:30,w:["끓이기"],d:["해산물"],i:["중화면","오징어","홍합","양배추","고춧가루","돼지고기"]},
+{n:"탕수육",c:"중식",m:["저녁"],a:A_ALL,s:["손님상","술안주"],t:45,w:["튀기기"],d:["육류"],i:["돼지 등심","감자전분","당근","오이","파인애플","식초"]},
+{n:"깐풍기",c:"중식",m:["저녁"],a:A_TEEN,s:["손님상","술안주"],t:40,w:["튀기기"],d:["육류","고단백"],i:["닭다리살","감자전분","건고추","간장","식초"]},
+{n:"유린기",c:"중식",m:["저녁"],a:A_KID,s:["손님상"],t:35,w:["튀기기"],d:["육류","고단백"],i:["닭다리살","양상추","간장","식초","다진 채소"]},
+{n:"어향가지볶음",c:"중식",m:["점심","저녁"],a:A_KID,s:["일상"],t:20,w:["볶기"],d:["채식","비건"],i:["가지","두반장","대파","마늘","전분"]},
+{n:"청경채 마늘볶음",c:"중식",m:["점심","저녁"],a:A_ALL,s:["일상","다이어트"],t:10,w:["볶기"],d:["채식","비건","저탄수"],i:["청경채","간장","마늘","참기름"]},
+{n:"군만두",c:"중식",m:["간식","야식"],a:A_KID,s:["야근·간편","술안주"],t:15,w:["굽기","에어프라이어"],d:["육류"],i:["냉동만두","간장","식초","고춧가루"]},
+{n:"꿔바로우",c:"중식",m:["저녁"],a:A_TEEN,s:["손님상","술안주"],t:45,w:["튀기기"],d:["육류"],i:["돼지 등심","감자전분","설탕","식초","당근"]},
+
+/* ---------------- 양식 ---------------- */
+{n:"토마토 스파게티",c:"양식",m:["점심","저녁"],a:A_ALL,s:["일상","야근·간편"],t:20,w:["끓이기","볶기"],d:["채식"],i:["스파게티면","토마토소스","마늘","양파","바질"]},
+{n:"크림 파스타",c:"양식",m:["점심","저녁"],a:A_ALL,s:["일상","손님상"],t:20,w:["볶기"],d:["육류"],i:["파스타면","생크림","베이컨","양송이","파르메산"]},
+{n:"알리오 올리오",c:"양식",m:["점심","야식"],a:A_KID,s:["야근·간편","일상"],t:15,w:["볶기"],d:["채식","비건"],i:["스파게티면","마늘","올리브유","페퍼론치노","파슬리"]},
+{n:"봉골레 파스타",c:"양식",m:["점심","저녁"],a:A_KID,s:["손님상","일상"],t:20,w:["볶기"],d:["해산물"],i:["링귀니","바지락","화이트와인","마늘","올리브유"]},
+{n:"소고기 스테이크",c:"양식",m:["저녁"],a:A_ALL,s:["손님상","운동 후"],t:20,w:["굽기"],d:["육류","고단백","저탄수"],i:["채끝등심","버터","로즈마리","마늘","굵은소금"]},
+{n:"연어 스테이크",c:"양식",m:["점심","저녁"],a:A_KID,s:["다이어트","운동 후","손님상"],t:20,w:["굽기"],d:["해산물","고단백","저탄수"],i:["연어","아스파라거스","레몬","버터","후추"]},
+{n:"로스트 치킨",c:"양식",m:["저녁"],a:A_ALL,s:["손님상","명절"],t:60,w:["오븐"],d:["육류","고단백"],i:["통닭","감자","당근","로즈마리","올리브유"]},
+{n:"햄버그 스테이크",c:"양식",m:["점심","저녁"],a:A_ALL,s:["일상","손님상"],t:30,w:["굽기"],d:["육류","고단백"],i:["다진 소고기","다진 돼지고기","양파","빵가루","데미글라스"]},
+{n:"라자냐",c:"양식",m:["저녁"],a:A_ALL,s:["손님상"],t:60,w:["오븐"],d:["육류"],i:["라자냐면","다진 소고기","토마토소스","모차렐라","베샤멜"]},
+{n:"감자 그라탕",c:"양식",m:["저녁"],a:A_ALL,s:["손님상","일상"],t:45,w:["오븐"],d:["채식"],i:["감자","생크림","모차렐라","버터","넛맥"]},
+{n:"버섯 리조또",c:"양식",m:["점심","저녁"],a:A_ALL,s:["손님상","일상"],t:30,w:["볶기"],d:["채식"],i:["쌀","양송이","표고","생크림","파르메산","양파"]},
+{n:"미네스트로네",c:"양식",m:["아침","점심"],a:A_ALL,s:["다이어트","회복식"],t:30,w:["끓이기"],d:["채식","비건","저염"],i:["토마토","양배추","셀러리","당근","강낭콩","양파"]},
+{n:"단호박 수프",c:"양식",m:["아침","간식"],a:A_ALL,s:["회복식","일상"],t:20,w:["끓이기"],d:["채식"],i:["단호박","우유","양파","버터","생크림"]},
+{n:"비프 스튜",c:"양식",m:["저녁"],a:A_ALL,s:["손님상","일상"],t:90,w:["끓이기"],d:["육류","고단백"],i:["소고기 사태","감자","당근","양파","토마토페이스트","레드와인"]},
+{n:"오믈렛",c:"양식",m:["아침","간식"],a:A_ALL,s:["일상","야근·간편"],t:10,w:["부치기"],d:["채식","고단백","저탄수"],i:["달걀","치즈","양파","피망","버터"]},
+{n:"스크램블에그와 토스트",c:"양식",m:["아침"],a:A_ALL,s:["야근·간편","일상"],t:10,w:["부치기"],d:["채식","고단백"],i:["달걀","식빵","버터","우유","후추"]},
+{n:"아보카도 토스트",c:"양식",m:["아침","간식"],a:A_KID,s:["다이어트","야근·간편"],t:10,w:["굽기"],d:["채식","비건"],i:["아보카도","통밀식빵","레몬","올리브유","방울토마토"]},
+{n:"프렌치 토스트",c:"양식",m:["아침","간식"],a:A_ALL,s:["일상"],t:15,w:["부치기"],d:["채식"],i:["식빵","달걀","우유","버터","메이플시럽"]},
+{n:"팬케이크",c:"양식",m:["아침","간식"],a:A_ALL,s:["일상"],t:20,w:["부치기"],d:["채식"],i:["팬케이크 믹스","달걀","우유","버터","메이플시럽"]},
+{n:"그릭요거트 볼",c:"양식",m:["아침","간식"],a:A_ALL,s:["다이어트","운동 후","야근·간편"],t:5,w:["안 익힘"],d:["채식","고단백"],i:["그릭요거트","블루베리","바나나","그래놀라","꿀"]},
+{n:"시저 샐러드",c:"양식",m:["점심","저녁"],a:A_KID,s:["다이어트","손님상"],t:10,w:["안 익힘"],d:["채식","저탄수"],i:["로메인","시저드레싱","크루통","파르메산","방울토마토"]},
+{n:"닭가슴살 샐러드",c:"양식",m:["점심","저녁"],a:A_TEEN_OLD,s:["다이어트","운동 후","도시락"],t:15,w:["굽기"],d:["육류","고단백","저탄수"],i:["닭가슴살","베이비채소","방울토마토","올리브유","발사믹"]},
+{n:"BLT 샌드위치",c:"양식",m:["아침","점심","간식"],a:A_KID,s:["도시락","야근·간편"],t:10,w:["안 익힘"],d:["육류"],i:["식빵","베이컨","양상추","토마토","마요네즈"]},
+{n:"참치마요 샌드위치",c:"양식",m:["아침","점심","간식"],a:A_KID,s:["도시락","야근·간편"],t:10,w:["안 익힘"],d:["해산물","고단백"],i:["식빵","참치캔","마요네즈","양파","오이피클"]},
+{n:"치킨 너겟",c:"양식",m:["간식","야식"],a:A_KID,s:["야근·간편","일상"],t:15,w:["에어프라이어"],d:["육류"],i:["냉동 치킨너겟","케첩","머스터드"]},
+{n:"피자 토스트",c:"양식",m:["아침","간식"],a:A_KID,s:["야근·간편","일상"],t:15,w:["오븐","에어프라이어"],d:["채식"],i:["식빵","토마토소스","모차렐라","피망","옥수수콘"]},
+{n:"두부면 파스타",c:"양식",m:["점심","저녁"],a:A_TEEN_OLD,s:["다이어트","운동 후"],t:15,w:["볶기"],d:["채식","저탄수","고단백"],i:["두부면","토마토소스","양송이","마늘","바질"]},
+{n:"달걀흰자 오믈렛",c:"양식",m:["아침"],a:A_TEEN_OLD,s:["다이어트","운동 후"],t:10,w:["부치기"],d:["채식","고단백","저탄수","저염"],i:["달걀흰자","시금치","방울토마토","올리브유"]},
+{n:"프로틴 셰이크",c:"양식",m:["아침","간식"],a:A_TEEN,s:["운동 후","다이어트"],t:5,w:["안 익힘"],d:["채식","고단백"],i:["프로틴 파우더","우유","바나나","땅콩버터"]},
+
+/* ---------------- 동남아 ---------------- */
+{n:"팟타이",c:"동남아",m:["점심","저녁"],a:A_KID,s:["일상","손님상"],t:20,w:["볶기"],d:["해산물"],i:["쌀국수","새우","숙주","달걀","타마린드소스","땅콩"]},
+{n:"소고기 쌀국수",c:"동남아",m:["점심","저녁"],a:A_ALL,s:["일상","회복식"],t:30,w:["끓이기"],d:["육류","저염"],i:["쌀국수","소고기 양지","숙주","고수","라임","양파"]},
+{n:"나시고랭",c:"동남아",m:["점심","야식"],a:A_TEEN_OLD,s:["야근·간편"],t:20,w:["볶기"],d:["육류"],i:["밥","닭고기","달걀","케찹마니스","양파","고추"]},
+{n:"똠얌꿍",c:"동남아",m:["저녁"],a:A_TEEN,s:["손님상","다이어트"],t:25,w:["끓이기"],d:["해산물","저탄수"],i:["새우","레몬그라스","고수","라임","양송이","코코넛밀크"]},
+{n:"그린 커리",c:"동남아",m:["저녁"],a:A_TEEN,s:["일상","손님상"],t:30,w:["끓이기"],d:["육류"],i:["그린커리 페이스트","닭다리살","코코넛밀크","가지","바질"]},
+{n:"월남쌈",c:"동남아",m:["점심","저녁"],a:A_KID,s:["다이어트","손님상"],t:20,w:["안 익힘"],d:["채식","비건","저탄수"],i:["라이스페이퍼","파프리카","오이","당근","쌈채소","땅콩소스"]},
+{n:"태국식 볶음밥",c:"동남아",m:["점심","야식"],a:A_KID,s:["야근·간편"],t:15,w:["볶기"],d:["해산물"],i:["밥","새우","달걀","마늘","피시소스","라임"]},
+{n:"반미 샌드위치",c:"동남아",m:["아침","점심","간식"],a:A_KID,s:["도시락","야근·간편"],t:15,w:["안 익힘"],d:["육류"],i:["바게트","돼지고기","고수","무당근 절임","마요네즈"]},
+
+/* ---------------- 인도 ---------------- */
+{n:"버터 치킨커리",c:"인도",m:["점심","저녁"],a:A_KID,s:["손님상","일상"],t:40,w:["끓이기"],d:["육류","고단백"],i:["닭다리살","토마토","생크림","커리가루","버터","양파"]},
+{n:"달 커리",c:"인도",m:["점심","저녁"],a:A_KID,s:["일상","다이어트"],t:30,w:["끓이기"],d:["채식","비건","고단백"],i:["렌틸콩","토마토","양파","커민","강황","마늘"]},
+{n:"탄두리 치킨",c:"인도",m:["저녁"],a:A_KID,s:["손님상","운동 후"],t:40,w:["오븐","에어프라이어"],d:["육류","고단백","저탄수"],i:["닭다리","플레인요거트","커리가루","레몬","마늘"]},
+{n:"채소 커리",c:"인도",m:["점심","저녁"],a:A_KID,s:["일상","다이어트"],t:30,w:["끓이기"],d:["채식","비건"],i:["감자","완두콩","콜리플라워","토마토","커리가루","코코넛밀크"]},
+{n:"치킨 비리야니",c:"인도",m:["저녁"],a:A_TEEN_OLD,s:["손님상"],t:50,w:["끓이기"],d:["육류"],i:["바스마티쌀","닭다리살","요거트","사프란","양파","향신료"]},
+
+/* ---------------- 멕시코 ---------------- */
+{n:"치킨 타코",c:"멕시코",m:["점심","저녁"],a:A_KID,s:["손님상","일상"],t:20,w:["볶기"],d:["육류","고단백"],i:["또띠아","닭다리살","양상추","살사","라임","사워크림"]},
+{n:"부리또 볼",c:"멕시코",m:["점심","저녁"],a:A_TEEN_OLD,s:["도시락","운동 후"],t:20,w:["볶기"],d:["육류","고단백"],i:["밥","다진 소고기","검은콩","아보카도","살사","치즈"]},
+{n:"케사디야",c:"멕시코",m:["간식","야식"],a:A_KID,s:["야근·간편","술안주"],t:15,w:["굽기"],d:["채식"],i:["또띠아","모차렐라","피망","양파","살사"]},
+{n:"과카몰리와 나초",c:"멕시코",m:["간식","야식"],a:A_KID,s:["술안주","손님상"],t:10,w:["안 익힘"],d:["채식","비건"],i:["아보카도","라임","양파","토마토","나초칩"]},
+{n:"칠리 콘 카르네",c:"멕시코",m:["저녁"],a:A_KID,s:["일상","손님상"],t:40,w:["끓이기"],d:["육류","고단백"],i:["다진 소고기","강낭콩","토마토","양파","칠리파우더"]},
+{n:"파히타",c:"멕시코",m:["저녁"],a:A_KID,s:["손님상","일상"],t:25,w:["볶기"],d:["육류"],i:["또띠아","소고기 등심","파프리카","양파","라임","사워크림"]},
+
+/* ---------------- 지중해·중동 ---------------- */
+{n:"슈크슈카",c:"지중해",m:["아침","점심"],a:A_KID,s:["일상","다이어트"],t:20,w:["끓이기"],d:["채식","고단백","저탄수"],i:["토마토","달걀","파프리카","양파","커민","바게트"]},
+{n:"그릭 샐러드",c:"지중해",m:["점심","저녁"],a:A_KID,s:["다이어트","손님상"],t:10,w:["안 익힘"],d:["채식","저탄수"],i:["오이","토마토","페타치즈","올리브","적양파","올리브유"]},
+{n:"후무스와 피타",c:"지중해",m:["간식","점심"],a:A_KID,s:["다이어트","술안주"],t:10,w:["안 익힘"],d:["채식","비건","고단백"],i:["병아리콩","타히니","레몬","마늘","피타빵"]},
+{n:"팔라펠",c:"지중해",m:["점심","저녁"],a:A_KID,s:["다이어트","손님상"],t:30,w:["튀기기","에어프라이어"],d:["채식","비건","고단백"],i:["병아리콩","파슬리","양파","커민","마늘"]},
+{n:"케밥 라이스",c:"지중해",m:["점심","저녁"],a:A_KID,s:["운동 후","일상"],t:30,w:["굽기"],d:["육류","고단백"],i:["양고기 또는 소고기","밥","요거트소스","양상추","적양파"]},
+
+/* ---------------- 간식·기본 ---------------- */
+{n:"찐 고구마",c:"한식",m:["아침","간식"],a:A_ALL,s:["다이어트","일상"],t:30,w:["찌기"],d:["채식","비건","저염"],i:["고구마"]},
+{n:"삶은 달걀",c:"한식",m:["아침","간식"],a:A_ALL,s:["다이어트","운동 후","야근·간편"],t:10,w:["끓이기"],d:["채식","고단백","저탄수","저염"],i:["달걀","소금"]},
+{n:"제철 과일 플레이트",c:"한식",m:["간식"],a:A_ALL,s:["일상","회복식"],t:5,w:["안 익힘"],d:["채식","비건","저염"],i:["사과","배","방울토마토","포도"]},
+{n:"견과류와 요거트",c:"양식",m:["간식","야식"],a:A_KID,s:["다이어트","야근·간편"],t:5,w:["안 익힘"],d:["채식","고단백"],i:["플레인요거트","아몬드","호두","꿀"]},
+{n:"치즈스틱",c:"양식",m:["간식","야식"],a:A_KID,s:["술안주","야근·간편"],t:15,w:["에어프라이어"],d:["채식"],i:["냉동 치즈스틱","케첩"]},
+{n:"닭가슴살과 고구마",c:"한식",m:["점심","저녁","간식"],a:A_TEEN_OLD,s:["운동 후","다이어트","도시락"],t:20,w:["굽기"],d:["육류","고단백"],i:["닭가슴살","고구마","브로콜리","올리브유","후추"]},
+{n:"포케 볼",c:"양식",m:["점심","저녁"],a:A_TEEN_OLD,s:["다이어트","운동 후","도시락"],t:15,w:["안 익힘"],d:["해산물","고단백"],i:["생연어","현미밥","아보카도","오이","간장","깨"]},
+{n:"곤약 비빔면",c:"한식",m:["점심","야식"],a:A_TEEN_OLD,s:["다이어트"],t:10,w:["무침·생채"],d:["채식","저탄수"],i:["곤약면","고추장","오이","달걀","식초"]},
+{n:"바나나 팬케이크",c:"양식",m:["아침","간식"],a:A_ALL,s:["일상"],t:15,w:["부치기"],d:["채식"],i:["바나나","달걀","오트밀가루","우유"]},
+{n:"닭안심 채소볼",c:"한식",m:["점심","저녁"],a:A_ALL,s:["일상","회복식"],t:20,w:["찌기"],d:["육류","고단백","저염"],i:["닭안심","브로콜리","당근","감자","달걀"]},
+
+/* ---------------- 간식 · 야식 (분식·전통·야식거리) ---------------- */
+{n:"가래떡 구이",c:"한식",m:["간식","야식"],a:A_KID,s:["일상","야근·간편"],t:10,w:["굽기"],d:["채식","비건"],i:["가래떡","조청","꿀","참기름"]},
+{n:"인절미 구이",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:10,w:["굽기"],d:["채식","비건"],i:["인절미","콩고물","꿀"]},
+{n:"호떡",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:25,w:["부치기"],d:["채식"],i:["호떡믹스","흑설탕","땅콩 분태","계핏가루","식용유"]},
+{n:"고구마 맛탕",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:25,w:["튀기기"],d:["채식","비건"],i:["고구마","설탕","물엿","검은깨"]},
+{n:"군고구마",c:"한식",m:["아침","간식"],a:A_ALL,s:["다이어트","일상"],t:40,w:["에어프라이어"],d:["채식","비건","저염"],i:["고구마"]},
+{n:"찐 옥수수",c:"한식",m:["간식"],a:A_ALL,s:["일상","다이어트"],t:30,w:["찌기"],d:["채식","비건","저염"],i:["찰옥수수","소금","설탕"]},
+{n:"군밤",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:25,w:["에어프라이어"],d:["채식","비건","저염"],i:["생밤"]},
+{n:"감자 버터구이",c:"한식",m:["간식","야식"],a:A_ALL,s:["일상","술안주"],t:20,w:["에어프라이어"],d:["채식"],i:["알감자","버터","소금","파슬리"]},
+{n:"감자튀김",c:"양식",m:["간식","야식"],a:A_KID,s:["야근·간편","술안주"],t:15,w:["에어프라이어"],d:["채식","비건"],i:["냉동 감자튀김","소금","케첩"]},
+{n:"떡꼬치",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:15,w:["굽기"],d:["채식"],i:["떡볶이떡","고추장","케첩","물엿","나무꼬치"]},
+{n:"감자전",c:"한식",m:["간식","야식","점심"],a:A_ALL,s:["일상","술안주"],t:25,w:["부치기"],d:["채식","비건"],i:["감자","소금","식용유","쪽파"]},
+{n:"김치전",c:"한식",m:["간식","야식","점심"],a:A_KID,s:["야근·간편","술안주"],t:20,w:["부치기"],d:["채식"],i:["김치","부침가루","달걀","쪽파","식용유"]},
+{n:"부추전",c:"한식",m:["간식","야식","점심"],a:A_KID,s:["일상","술안주"],t:20,w:["부치기"],d:["채식","비건"],i:["부추","부침가루","청양고추","식용유"]},
+{n:"찐빵",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:20,w:["찌기"],d:["채식"],i:["냉동 찐빵","팥앙금"]},
+{n:"계란빵",c:"한식",m:["아침","간식"],a:A_ALL,s:["일상"],t:30,w:["오븐"],d:["채식","고단백"],i:["핫케이크 가루","달걀","우유","설탕","버터"]},
+{n:"팥죽",c:"한식",m:["아침","간식"],a:A_ALL,s:["일상","회복식"],t:60,w:["끓이기"],d:["채식","비건"],i:["팥","찹쌀가루","소금","설탕"]},
+{n:"누룽지",c:"한식",m:["아침","야식"],a:A_ALL,s:["회복식","야근·간편"],t:15,w:["끓이기"],d:["채식","비건","저염"],i:["누룽지","물"]},
+{n:"유부초밥",c:"한식",m:["점심","간식"],a:A_ALL,s:["도시락","야근·간편"],t:20,w:["안 익힘"],d:["채식"],i:["유부초밥 세트","밥","당근","단무지","깨"]},
+{n:"주먹밥",c:"한식",m:["아침","점심","간식"],a:A_ALL,s:["도시락","야근·간편"],t:15,w:["안 익힘"],d:["채식"],i:["밥","김가루","참기름","깨","소금"]},
+{n:"견과 강정",c:"한식",m:["간식"],a:A_KID,s:["일상"],t:20,w:["볶기"],d:["채식","비건","고단백"],i:["아몬드","호두","땅콩","물엿","설탕"]},
+{n:"육포",c:"한식",m:["간식","야식"],a:A_TEEN_OLD,s:["술안주","운동 후"],t:5,w:["안 익힘"],d:["육류","고단백","저탄수"],i:["육포"]},
+
+/* 야식 · 술안주 */
+{n:"라면",c:"한식",m:["야식","점심"],a:A_KID,s:["야근·간편"],t:10,w:["끓이기"],d:["채식"],i:["봉지라면","달걀","대파","청양고추"]},
+{n:"짜장라면",c:"한식",m:["야식","점심"],a:A_KID,s:["야근·간편"],t:10,w:["끓이기"],d:["채식"],i:["짜장라면","달걀","오이","양파"]},
+{n:"만둣국",c:"한식",m:["아침","점심","야식"],a:A_ALL,s:["야근·간편","일상"],t:20,w:["끓이기"],d:["육류"],i:["냉동만두","달걀","김가루","대파","국간장"]},
+{n:"수제비",c:"한식",m:["점심","야식"],a:A_KID,s:["일상","야근·간편"],t:30,w:["끓이기"],d:["해산물"],i:["밀가루","감자","애호박","멸치","다시마","대파"]},
+{n:"칼국수",c:"한식",m:["점심","야식"],a:A_ALL,s:["일상"],t:30,w:["끓이기"],d:["해산물"],i:["칼국수면","바지락","애호박","감자","다시마","대파"]},
+{n:"김치말이국수",c:"한식",m:["점심","야식"],a:A_KID,s:["야근·간편","다이어트"],t:15,w:["무침·생채"],d:["채식"],i:["소면","김치","김칫국물","오이","삶은달걀"]},
+{n:"콩국수",c:"한식",m:["점심"],a:A_ALL,s:["일상","다이어트"],t:20,w:["안 익힘"],d:["채식","비건","고단백"],i:["콩국물","소면","오이","소금","깨"]},
+{n:"냉모밀",c:"일식",m:["점심","야식"],a:A_KID,s:["일상","다이어트"],t:15,w:["끓이기"],d:["해산물"],i:["메밀면","쯔유","무","쪽파","김가루","와사비"]},
+{n:"두부김치",c:"한식",m:["저녁","야식"],a:A_TEEN_OLD,s:["술안주","일상"],t:20,w:["볶기"],d:["채식","고단백"],i:["두부","김치","돼지고기","대파","참기름"]},
+{n:"콘치즈",c:"양식",m:["간식","야식"],a:A_KID,s:["술안주","야근·간편"],t:15,w:["굽기"],d:["채식"],i:["옥수수콘","모차렐라","마요네즈","설탕","버터"]},
+{n:"후라이드 치킨",c:"한식",m:["저녁","야식"],a:A_KID,s:["술안주","손님상"],t:40,w:["튀기기","에어프라이어"],d:["육류","고단백"],i:["닭다리","튀김가루","우유","소금","후추"]},
+{n:"양념치킨",c:"한식",m:["저녁","야식"],a:A_KID,s:["술안주","손님상"],t:45,w:["튀기기"],d:["육류"],i:["닭다리","튀김가루","고추장","케첩","물엿","다진마늘"]},
+{n:"닭강정",c:"한식",m:["간식","야식"],a:A_KID,s:["술안주","일상"],t:40,w:["튀기기"],d:["육류","고단백"],i:["닭다리살","감자전분","고추장","물엿","견과류"]},
+{n:"닭똥집볶음",c:"한식",m:["야식"],a:A_TEEN,s:["술안주"],t:25,w:["볶기"],d:["육류","고단백","저탄수"],i:["닭똥집","마늘","청양고추","대파","소금"]},
+{n:"매운 닭발",c:"한식",m:["야식"],a:A_TEEN,s:["술안주"],t:40,w:["볶기"],d:["육류","저탄수"],i:["무뼈 닭발","고추장","고춧가루","물엿","대파"]},
+{n:"쥐포구이",c:"한식",m:["야식","간식"],a:A_TEEN_OLD,s:["술안주"],t:10,w:["굽기"],d:["해산물","고단백","저탄수"],i:["쥐포","마요네즈","고추장"]},
+{n:"오징어 버터구이",c:"한식",m:["야식"],a:A_TEEN_OLD,s:["술안주"],t:15,w:["굽기"],d:["해산물","고단백","저탄수"],i:["오징어","버터","간장","마늘","쪽파"]},
+
+/* 토스트 · 빵 */
+{n:"길거리 토스트",c:"한식",m:["아침","간식"],a:A_ALL,s:["야근·간편","도시락"],t:15,w:["부치기"],d:["채식"],i:["식빵","달걀","양배추","당근","설탕","케첩"]},
+{n:"버터 잼 토스트",c:"양식",m:["아침","간식"],a:A_ALL,s:["야근·간편"],t:5,w:["굽기"],d:["채식"],i:["식빵","버터","딸기잼"]},
+{n:"마늘빵",c:"양식",m:["간식","야식"],a:A_KID,s:["술안주","일상"],t:15,w:["오븐"],d:["채식"],i:["바게트","버터","다진마늘","설탕","파슬리"]},
+{n:"크로크무슈",c:"양식",m:["아침","간식"],a:A_KID,s:["손님상","일상"],t:20,w:["오븐"],d:["육류"],i:["식빵","햄","모차렐라","베샤멜","머스터드"]},
+{n:"와플",c:"양식",m:["간식"],a:A_ALL,s:["일상"],t:20,w:["굽기"],d:["채식"],i:["와플 믹스","달걀","우유","버터","생크림"]},
+
+/* 과일 · 마실 것 */
+{n:"수박 화채",c:"한식",m:["간식"],a:A_ALL,s:["일상"],t:10,w:["안 익힘"],d:["채식","저염"],i:["수박","우유","사이다","얼음"]},
+{n:"미숫가루",c:"한식",m:["아침","간식"],a:A_ALL,s:["야근·간편","운동 후"],t:5,w:["안 익힘"],d:["채식","고단백"],i:["미숫가루","우유","꿀","얼음"]},
+{n:"과일 스무디",c:"양식",m:["아침","간식"],a:A_ALL,s:["다이어트","운동 후"],t:5,w:["안 익힘"],d:["채식"],i:["딸기","바나나","우유","꿀","얼음"]},
+{n:"딸기 우유",c:"한식",m:["간식"],a:A_ALL,s:["일상"],t:5,w:["안 익힘"],d:["채식"],i:["딸기","우유","설탕"]}
+];
+
+/* =======================================================================
+   만드는 법 — 요리 이름 : 순서 3~4단계
+   ======================================================================= */
+const STEPS = {
+"소고기미역국":["미역을 20분 불려 씻고 먹기 좋게 자른다.","냄비에 참기름을 두르고 소고기를 볶다가 미역을 넣어 함께 볶는다.","물 1.5L를 붓고 20분 끓인 뒤 국간장과 다진마늘로 간한다."],
+"된장찌개":["물 500ml에 된장 2큰술을 풀어 끓인다.","감자·양파·애호박을 넣고 10분 끓인다.","두부와 대파를 넣고 3분 더 끓인다."],
+"김치찌개":["돼지고기를 냄비에 넣고 겉면이 익을 때까지 볶는다.","묵은지를 넣고 5분 더 볶아 신맛을 날린다.","물을 자작하게 붓고 15분 끓인 뒤 두부·대파·고춧가루를 넣는다."],
+"순두부찌개":["기름에 고춧가루를 살짝 볶아 고추기름을 낸다.","물과 바지락을 넣고 조개 입이 벌어질 때까지 끓인다.","순두부를 큼직하게 떠 넣고 달걀과 대파를 올려 마무리한다."],
+"콩나물국밥":["멸치 육수에 콩나물을 넣고 뚜껑을 덮은 채 5분 끓인다.","밥을 넣고 한소끔 더 끓인다.","국간장으로 간하고 달걀과 대파를 올린다."],
+"북엇국":["북어채를 물에 살짝 헹궈 참기름에 볶는다.","물과 무를 넣고 15분 끓인다.","두부를 넣고 달걀을 풀어 넣은 뒤 소금으로 간한다."],
+"아욱된장국":["아욱을 손으로 주물러 씻어 풋내를 뺀다.","다시마 육수에 된장을 풀고 아욱을 넣어 15분 끓인다.","대파를 넣고 한소끔 더 끓인다."],
+"육개장":["소고기 양지를 40분 삶아 건져 결대로 찢는다.","고사리·토란대·숙주를 고춧가루 양념에 무쳐 육수에 넣는다.","고기를 다시 넣고 15분 더 끓인 뒤 대파를 넉넉히 넣는다."],
+"삼계탕":["영계 뱃속에 불린 찹쌀·수삼·대추·마늘을 채우고 다리를 묶는다.","물을 넉넉히 붓고 센 불에서 끓이다 중불로 낮춰 1시간 푹 끓인다.","국물이 뽀얘지면 소금·후추를 곁들여 낸다."],
+"닭볶음탕":["닭을 끓는 물에 데쳐 기름과 잡내를 뺀다.","고추장·고춧가루·간장 양념과 물을 넣고 20분 끓인다.","감자·당근·양파를 넣고 15분 더 조린다."],
+"부대찌개":["냄비에 김치·스팸·소시지·두부를 색깔별로 돌려 담는다.","육수를 붓고 양념장을 올려 센 불에서 끓인다.","끓어오르면 라면사리와 대파를 넣고 3분 더 끓인다."],
+"청국장찌개":["육수에 김치와 애호박을 넣고 5분 끓인다.","청국장을 풀어 넣고 5분 더 끓인다.","두부와 대파를 넣고 한소끔 끓인다. 오래 끓이면 향이 날아간다."],
+"떡국":["떡국떡을 찬물에 20분 담가 둔다.","소고기를 참기름에 볶다가 물을 붓고 끓여 육수를 낸다.","떡을 넣고 떠오를 때까지 끓인 뒤 달걀지단·김가루·대파를 올린다."],
+"잔치국수":["멸치와 다시마로 15분 우린 육수를 준비한다.","애호박을 채 썰어 볶고 달걀지단을 부친다.","소면을 3분 삶아 찬물에 헹군 뒤 육수를 붓고 고명을 올린다."],
+"소불고기":["간장·설탕·배·마늘로 양념을 만들어 고기를 30분 재운다.","팬을 달궈 고기를 센 불에 볶는다.","양파와 대파를 넣고 국물이 자작해질 때까지 볶는다."],
+"뚝배기 불고기":["재운 불고기와 채소를 뚝배기에 담는다.","육수를 자작하게 붓고 끓인다.","불린 당면과 팽이버섯을 넣고 3분 더 끓인다."],
+"제육볶음":["고추장·고춧가루·간장 양념에 돼지고기를 20분 재운다.","센 불에 고기를 먼저 볶아 익힌다.","양파와 대파를 넣고 물기가 날아갈 때까지 볶는다."],
+"닭갈비":["닭다리살을 한입 크기로 잘라 고추장 양념에 재운다.","넓은 팬에 닭과 양배추·고구마를 넣고 뚜껑을 덮어 익힌다.","떡과 깻잎을 넣고 국물이 졸아들 때까지 볶는다."],
+"삼겹살구이":["팬이나 불판을 충분히 달군다.","삼겹살을 올려 한 면이 노릇해지면 뒤집어 굽는다.","마늘을 함께 구워 상추·깻잎·쌈장과 낸다."],
+"보쌈":["물에 된장·월계수잎·통후추를 넣고 끓인다.","목살을 넣고 40분 삶아 젓가락이 쑥 들어가면 건진다.","한 김 식혀 썰고 배추·무채·새우젓과 함께 낸다."],
+"갈비찜":["갈비를 찬물에 1시간 담가 핏물을 뺀 뒤 데친다.","간장 양념과 물을 붓고 40분 푹 끓인다.","무·당근·밤·대추를 넣고 30분 더 조린다."],
+"훈제오리구이":["팬을 달궈 기름 없이 훈제오리를 굽는다.","기름이 나오면 키친타월로 닦아 낸다.","부추와 양파를 곁들여 머스터드와 함께 낸다."],
+"고등어구이":["고등어에 물기를 닦고 후추를 뿌린다.","에어프라이어 190도에서 12분 굽는다.","레몬과 무를 곁들여 낸다."],
+"코다리조림":["코다리를 씻어 지느러미를 자른다.","냄비에 무를 깔고 코다리를 올린 뒤 간장 양념과 물을 붓는다.","20분 조리다가 대파를 올려 5분 더 조린다."],
+"갈치조림":["갈치를 토막 내고 비늘을 긁어낸다.","냄비 바닥에 무와 감자를 깔고 갈치를 올린다.","양념과 물을 붓고 25분 조린다. 중간에 국물을 끼얹는다."],
+"오징어볶음":["오징어를 손질해 칼집을 넣고 한입 크기로 자른다.","센 불에 채소를 먼저 볶는다.","오징어와 고추장 양념을 넣고 3분만 빠르게 볶는다."],
+"낙지볶음":["낙지를 밀가루로 주물러 씻는다.","양파·대파를 볶다가 고춧가루 양념을 넣는다.","낙지를 넣고 센 불에 3분 볶은 뒤 미나리를 올린다."],
+"해물파전":["부침가루에 물과 달걀을 섞어 반죽한다.","팬에 기름을 넉넉히 두르고 쪽파를 가지런히 깐다.","반죽을 붓고 해물을 올려 양면을 노릇하게 부친다."],
+"애호박전":["애호박을 0.5cm 두께로 썰어 소금을 살짝 뿌린다.","부침가루를 묻히고 달걀물을 입힌다.","약불에서 양면을 노릇하게 부친다."],
+"동그랑땡":["다진 고기·으깬 두부·다진 채소를 소금 간해 치댄다.","동글납작하게 빚어 달걀물을 입힌다.","약불에서 양면을 천천히 부친다."],
+"계란말이":["달걀을 풀어 소금 간하고 다진 당근·대파를 섞는다.","약불 팬에 얇게 부어 반쯤 익으면 한쪽부터 말아 준다.","남은 달걀물을 부어 가며 3~4번 반복해 만다."],
+"계란찜":["달걀 3개에 물 반 컵을 섞어 체에 거른다.","뚝배기에 부어 약불에서 저어 가며 익힌다.","반쯤 굳으면 뚜껑을 덮고 5분 더 익힌 뒤 대파·참기름을 올린다."],
+"두부조림":["두부를 도톰하게 썰어 물기를 닦고 노릇하게 지진다.","간장·고춧가루·마늘 양념과 물을 붓는다.","약불에서 10분 조리며 국물을 끼얹는다."],
+"두부부침과 양념장":["두부를 1cm 두께로 썰어 키친타월로 물기를 뺀다.","기름 두른 팬에 양면을 노릇하게 지진다.","간장·쪽파·참기름을 섞은 양념장을 곁들인다."],
+"감자조림":["감자를 한입 크기로 썰어 물에 헹군다.","기름에 볶다가 간장과 물을 붓는다.","국물이 졸아들 때까지 조린 뒤 물엿과 깨를 넣는다."],
+"멸치볶음":["잔멸치를 기름 없이 팬에 볶아 비린내를 날린다.","간장·물엿 양념을 넣고 재빨리 볶는다.","불을 끄고 견과류와 깨를 섞는다."],
+"시금치나물":["끓는 소금물에 시금치를 30초만 데친다.","찬물에 헹궈 물기를 꼭 짠다.","마늘·참기름·소금·깨로 조물조물 무친다."],
+"콩나물무침":["콩나물을 뚜껑 덮고 5분 삶아 찬물에 헹군다.","물기를 뺀다.","마늘·참기름·소금·쪽파로 무친다."],
+"오이무침":["오이를 얇게 썰어 소금에 10분 절인 뒤 물기를 짠다.","고춧가루·식초·설탕을 섞는다.","오이와 버무리고 깨를 뿌린다."],
+"무생채":["무를 곱게 채 썬다.","고춧가루를 먼저 넣어 색을 입힌다.","식초·설탕·소금으로 간해 버무린다."],
+"배추겉절이":["알배추를 손으로 뜯어 씻는다.","고춧가루·매실청·마늘로 양념을 만든다.","배추와 쪽파를 넣고 살살 버무린다."],
+"애호박볶음":["애호박을 반달 모양으로 썬다.","기름에 양파를 볶다가 애호박을 넣는다.","소금으로 간하고 참기름을 둘러 마무리한다."],
+"비빔밥":["나물을 각각 데쳐 무치고 달걀 프라이를 준비한다.","그릇에 밥을 담고 나물을 색깔별로 돌려 담는다.","고추장과 참기름을 올려 비벼 먹는다."],
+"김밥":["밥에 참기름과 소금을 섞어 한 김 식힌다.","김 위에 밥을 얇게 펴고 속재료를 가지런히 올린다.","단단히 말아 겉에 참기름을 바르고 한입 크기로 썬다."],
+"김치볶음밥":["김치를 잘게 썰어 기름에 볶는다.","밥을 넣고 눌러 가며 볶는다.","참기름을 두르고 달걀 프라이와 김가루를 올린다."],
+"비빔국수":["고추장·식초·설탕으로 양념장을 만든다.","소면을 3분 삶아 찬물에 여러 번 헹군다.","면에 양념장을 넣어 비비고 오이와 삶은달걀을 올린다."],
+"열무국수":["열무김치와 국물을 준비한다.","소면을 삶아 찬물에 헹궈 물기를 뺀다.","면에 열무김치를 올리고 국물을 부은 뒤 오이와 깨를 얹는다."],
+"물냉면":["냉면육수를 살얼음이 낄 정도로 차갑게 둔다.","면을 표시된 시간만큼 삶아 찬물에 비벼 헹군다.","그릇에 면을 담고 육수를 부은 뒤 고명을 올린다."],
+"떡볶이":["물에 고추장·설탕·간장을 풀어 끓인다.","떡과 양배추를 넣고 10분 끓인다.","국물이 걸쭉해지면 대파와 삶은달걀을 올린다."],
+"오뎅탕":["무와 다시마를 넣고 15분 끓여 육수를 낸다.","어묵을 꼬치에 꿰어 넣는다.","간장으로 간하고 대파를 올려 5분 더 끓인다."],
+"골뱅이소면무침":["골뱅이를 건져 한입 크기로 썬다.","고추장·식초·설탕 양념에 오이·양파와 함께 버무린다.","삶아 헹군 소면을 곁들여 낸다."],
+"황태채무침":["황태채를 물에 살짝 적셨다 물기를 꼭 짠다.","고추장·마요네즈·물엿을 섞는다.","황태채와 버무려 깨를 뿌린다."],
+"소고기채소죽":["쌀을 30분 불려 참기름에 볶는다.","다진 소고기와 채소를 넣고 함께 볶는다.","물을 6배 붓고 저어 가며 20분 끓인 뒤 소금으로 약하게 간한다."],
+"전복죽":["전복을 솔로 씻어 내장을 따로 떼 둔다.","참기름에 불린 쌀과 전복을 볶고 내장을 으깨 넣는다.","물을 붓고 저어 가며 25분 끓인다."],
+"단호박죽":["단호박을 껍질째 쪄서 속을 파낸다.","으깨어 물과 함께 끓인다.","찹쌀가루를 물에 풀어 넣고 저어 가며 걸쭉하게 만든다."],
+"잡채":["당면을 뜨거운 물에 20분 불려 삶는다.","채소를 각각 볶아 따로 둔다.","당면을 간장 양념에 볶고 채소와 함께 버무린다."],
+"연두부와 간장":["연두부를 그릇에 통째로 담는다.","간장·참기름·쪽파를 섞는다.","양념장을 끼얹어 낸다."],
+"찐만두":["찜기에 물을 끓이고 젖은 면포를 깐다.","냉동만두를 붙지 않게 올린다.","센 불에서 10분 찐다. 간장·식초를 곁들인다."],
+"들깨미역국":["불린 미역을 들기름에 볶는다.","물을 붓고 15분 끓인다.","들깨가루를 풀어 넣고 국간장으로 간해 5분 더 끓인다."],
+
+"연어덮밥":["생연어를 도톰하게 썬다.","밥에 밥을 깔고 아보카도를 올린다.","연어를 얹고 간장·와사비·쪽파를 곁들인다."],
+"소고기덮밥":["양파를 채 썰어 간장·맛술·설탕 국물에 넣고 끓인다.","얇은 소고기를 넣어 익힌다.","밥 위에 국물째 올린다."],
+"닭고기달걀덮밥":["닭다리살과 양파를 간장 국물에 넣고 5분 끓인다.","달걀을 풀어 반만 저어 넣고 뚜껑을 덮는다.","반숙일 때 불을 끄고 밥 위에 올린다."],
+"돈가스덮밥":["돈가스를 튀겨 먹기 좋게 썬다.","간장 국물에 양파를 끓이고 돈가스를 올린다.","달걀을 풀어 넣고 반숙으로 익혀 밥에 올린다."],
+"연어구이":["연어에 소금·후추를 뿌려 10분 둔다.","껍질 쪽부터 센 불에 3분 굽는다.","뒤집어 버터를 넣고 약불에 3분 더 굽고 레몬을 짠다."],
+"미소된장국":["물을 끓여 두부와 미역을 넣는다.","불을 줄이고 미소된장을 체에 걸러 푼다.","끓기 직전에 불을 끄고 쪽파를 올린다."],
+"차완무시":["달걀 1개에 육수 3배를 섞어 체에 거른다.","그릇에 새우·표고·은행을 담고 달걀물을 붓는다.","김 오른 찜기에 약불로 12분 찐다."],
+"닭가라아게":["닭다리살을 간장·생강·마늘에 20분 재운다.","감자전분을 두툼하게 묻힌다.","170도 기름에 2번 튀기거나 에어프라이어 200도 15분 굽는다."],
+"데리야키 치킨":["닭다리살을 껍질부터 노릇하게 굽는다.","간장·맛술·설탕을 넣고 조린다.","소스가 윤기 나게 졸면 썰어 쪽파를 뿌린다."],
+"야키소바":["돼지고기와 양배추를 센 불에 볶는다.","면을 넣고 물을 조금 부어 풀어 준다.","우스터소스로 간하고 숙주를 넣어 재빨리 볶는다."],
+"우동":["가쓰오 육수를 끓인다.","어묵과 유부를 넣고 5분 끓인다.","우동면을 넣어 2분 데우고 쪽파를 올린다."],
+"오코노미야키":["양배추를 잘게 썰어 부침가루·달걀과 섞는다.","팬에 두툼하게 올리고 오징어를 얹어 약불에 굽는다.","뒤집어 8분 더 굽고 소스와 가쓰오부시를 뿌린다."],
+"간장라멘":["육수에 간장 양념을 풀어 끓인다.","생라면을 삶아 건져 그릇에 담는다.","육수를 붓고 차슈·달걀·숙주·쪽파를 올린다."],
+"가지 미소구이":["가지를 반으로 갈라 칼집을 낸다.","미소된장과 맛술을 섞어 단면에 바른다.","200도 오븐에 15분 굽고 깨를 뿌린다."],
+
+"마파두부":["두부를 깍둑 썰어 소금물에 살짝 데친다.","다진 고기를 볶다가 두반장을 넣고 볶는다.","물을 붓고 두부를 넣어 끓인 뒤 전분물로 걸쭉하게 만든다."],
+"토마토달걀볶음":["달걀을 풀어 반숙으로 볶아 따로 덜어 둔다.","토마토를 넣고 즙이 나올 때까지 볶는다.","달걀을 다시 넣고 설탕·소금으로 간해 살짝 볶는다."],
+"새우볶음밥":["팬을 세게 달궈 달걀을 먼저 볶는다.","새우와 대파를 넣고 볶는다.","밥과 완두콩을 넣어 고슬하게 볶고 소금으로 간한다."],
+"짜장면":["춘장을 기름에 5분 볶아 쓴맛을 뺀다.","돼지고기·양파·감자를 볶다가 볶은 춘장을 넣는다.","물을 붓고 끓인 뒤 전분물로 농도를 맞춰 면에 붓는다."],
+"짬뽕":["돼지고기와 채소를 센 불에 볶는다.","고춧가루를 넣어 고추기름을 내고 육수를 붓는다.","해물을 넣고 5분 끓여 삶은 면에 붓는다."],
+"탕수육":["돼지 등심을 전분물에 버무려 10분 둔다.","170도에서 튀기고 190도에서 한 번 더 튀긴다.","물·식초·설탕·간장을 끓여 전분물로 걸쭉하게 만들어 곁들인다."],
+"깐풍기":["닭을 튀겨 낸다.","건고추와 마늘을 볶아 향을 낸다.","간장·식초·설탕 소스를 넣고 튀긴 닭을 버무린다."],
+"유린기":["닭다리살을 튀겨 한입 크기로 썬다.","간장·식초·설탕에 다진 채소를 섞어 소스를 만든다.","양상추를 깔고 닭을 올린 뒤 소스를 끼얹는다."],
+"어향가지볶음":["가지를 길게 썰어 기름에 살짝 튀기듯 볶는다.","마늘·대파를 볶다가 두반장을 넣는다.","가지를 넣고 전분물로 농도를 맞춰 버무린다."],
+"청경채 마늘볶음":["청경채를 반으로 갈라 깨끗이 씻는다.","기름에 마늘을 볶아 향을 낸다.","청경채를 넣고 센 불에 2분 볶은 뒤 간장·참기름으로 마무리한다."],
+"군만두":["팬에 기름을 얇게 두르고 만두를 올린다.","물 3큰술을 붓고 뚜껑을 덮어 5분 익힌다.","뚜껑을 열고 물기를 날리며 바닥을 바삭하게 굽는다."],
+"꿔바로우":["등심을 넓게 저며 전분 반죽에 재운다.","170도에서 튀기고 한 번 더 바삭하게 튀긴다.","설탕·식초 소스를 끓여 튀긴 고기와 당근을 버무린다."],
+
+"토마토 스파게티":["면을 소금 넣은 물에 8분 삶는다.","마늘과 양파를 볶다가 토마토소스를 넣고 끓인다.","면과 면수를 넣어 버무리고 바질을 올린다."],
+"크림 파스타":["베이컨을 바삭하게 볶는다.","양송이를 넣고 볶다가 생크림을 붓고 졸인다.","삶은 면을 넣어 버무리고 파르메산을 뿌린다."],
+"알리오 올리오":["올리브유에 편 썬 마늘을 약불로 천천히 볶는다.","페퍼론치노를 넣고 면수를 한 국자 넣어 유화시킨다.","삶은 면을 넣어 재빨리 버무리고 파슬리를 뿌린다."],
+"봉골레 파스타":["바지락을 소금물에 30분 해감한다.","마늘을 볶다가 바지락과 화이트와인을 넣고 뚜껑을 덮는다.","입이 벌어지면 삶은 면과 면수를 넣어 버무린다."],
+"소고기 스테이크":["고기를 30분 실온에 두고 굵은소금·후추를 뿌린다.","센 불 팬에서 한 면 2분씩 굽는다.","버터·마늘·로즈마리를 넣어 끼얹고 5분 쉬게 둔 뒤 썬다."],
+"연어 스테이크":["연어에 소금·후추를 뿌린다.","껍질 쪽부터 4분, 뒤집어 3분 굽는다.","아스파라거스를 함께 굽고 레몬을 짠다."],
+"로스트 치킨":["닭에 소금·후추·올리브유를 골고루 바른다.","감자·당근·로즈마리와 함께 팬에 담는다.","200도 오븐에서 50분 굽고 중간에 육즙을 끼얹는다."],
+"햄버그 스테이크":["다진 고기에 볶은 양파·빵가루를 섞어 치댄다.","타원형으로 빚어 가운데를 눌러 준다.","팬에 양면을 굽고 뚜껑을 덮어 속까지 익힌 뒤 소스를 끼얹는다."],
+"라자냐":["다진 고기와 토마토소스로 미트소스를 만든다.","면·미트소스·베샤멜·치즈를 번갈아 층층이 쌓는다.","180도 오븐에서 30분 굽는다."],
+"감자 그라탕":["감자를 얇게 썰어 생크림·소금·넛맥과 버무린다.","버터 바른 그릇에 겹쳐 담는다.","치즈를 올려 190도에서 35분 굽는다."],
+"버섯 리조또":["양파와 버섯을 버터에 볶는다.","쌀을 넣고 볶다가 육수를 조금씩 부어 저어 가며 익힌다.","20분 뒤 생크림과 파르메산을 넣어 마무리한다."],
+"미네스트로네":["채소를 모두 깍둑 썬다.","올리브유에 양파·당근·셀러리를 볶는다.","토마토와 물을 붓고 20분 끓인 뒤 강낭콩을 넣는다."],
+"단호박 수프":["단호박을 쪄서 껍질을 벗긴다.","버터에 양파를 볶고 단호박과 우유를 넣어 끓인다.","블렌더로 곱게 갈고 생크림을 조금 올린다."],
+"비프 스튜":["사태를 큼직하게 썰어 겉면을 센 불에 굽는다.","양파·토마토페이스트·레드와인을 넣고 졸인다.","물을 붓고 1시간 끓이다 감자·당근을 넣어 20분 더 끓인다."],
+"오믈렛":["달걀을 곱게 풀어 소금 간한다.","버터 두른 팬에 부어 젓가락으로 저으며 반숙으로 만든다.","치즈와 채소를 올리고 반으로 접는다."],
+"스크램블에그와 토스트":["달걀에 우유를 조금 섞어 푼다.","약불에서 천천히 저어 촉촉하게 익힌다.","구운 식빵에 올리고 후추를 뿌린다."],
+"아보카도 토스트":["빵을 바삭하게 굽는다.","아보카도를 으깨 레몬·소금과 섞는다.","빵에 펴 바르고 방울토마토와 올리브유를 올린다."],
+"프렌치 토스트":["달걀·우유·설탕을 섞어 식빵을 적신다.","버터 두른 팬에 약불로 양면을 굽는다.","메이플시럽을 뿌린다."],
+"팬케이크":["믹스에 달걀과 우유를 넣어 덩어리 없이 섞는다.","약불 팬에 한 국자씩 부어 기포가 올라오면 뒤집는다.","버터와 메이플시럽을 곁들인다."],
+"그릭요거트 볼":["그릇에 그릭요거트를 담는다.","바나나와 블루베리를 올린다.","그래놀라를 뿌리고 꿀을 두른다."],
+"시저 샐러드":["로메인을 씻어 물기를 완전히 뺀다.","드레싱과 가볍게 버무린다.","크루통·파르메산·방울토마토를 올린다."],
+"닭가슴살 샐러드":["닭가슴살에 소금·후추를 뿌려 굽고 한 김 식혀 썬다.","채소를 씻어 물기를 뺀다.","올리브유와 발사믹을 섞어 뿌린다."],
+"BLT 샌드위치":["베이컨을 바삭하게 굽는다.","식빵을 굽고 마요네즈를 바른다.","양상추·토마토·베이컨을 올려 덮고 반으로 자른다."],
+"참치마요 샌드위치":["참치캔의 기름을 꼭 짜낸다.","다진 양파·피클·마요네즈와 섞는다.","식빵 사이에 넉넉히 채우고 눌러 자른다."],
+"치킨 너겟":["에어프라이어를 200도로 예열한다.","너겟을 겹치지 않게 펴 담는다.","10분 굽고 뒤집어 3분 더 굽는다."],
+"피자 토스트":["식빵에 토마토소스를 바른다.","피망·옥수수콘을 올리고 모차렐라를 덮는다.","에어프라이어 180도에서 8분, 치즈가 녹을 때까지 굽는다."],
+"두부면 파스타":["두부면을 체에 밭쳐 물기를 뺀다.","마늘과 양송이를 볶고 토마토소스를 넣는다.","두부면을 넣어 2분만 버무리고 바질을 올린다."],
+"달걀흰자 오믈렛":["달걀흰자를 가볍게 푼다.","올리브유에 시금치와 방울토마토를 볶는다.","흰자를 부어 약불로 익히고 반으로 접는다."],
+"프로틴 셰이크":["믹서에 우유와 바나나를 넣는다.","프로틴 파우더와 땅콩버터를 넣는다.","30초 갈아 바로 마신다."],
+
+"팟타이":["쌀국수를 미지근한 물에 30분 불린다.","달걀과 새우를 볶고 불린 면을 넣는다.","타마린드소스로 볶고 숙주와 땅콩을 올린다."],
+"소고기 쌀국수":["양지와 양파를 넣고 향신료와 함께 40분 끓여 육수를 낸다.","쌀국수를 데쳐 그릇에 담는다.","육수를 붓고 고기·숙주·고수·라임을 올린다."],
+"나시고랭":["닭고기와 양파를 볶는다.","밥을 넣고 케찹마니스로 볶아 색을 낸다.","달걀 프라이를 올리고 고추를 곁들인다."],
+"똠얌꿍":["물에 레몬그라스와 라임잎을 넣고 끓인다.","새우와 양송이를 넣어 익힌다.","코코넛밀크와 라임즙을 넣고 고수를 올린다."],
+"그린 커리":["코코넛밀크 윗부분으로 커리 페이스트를 볶는다.","닭고기를 넣고 볶다가 남은 코코넛밀크를 붓는다.","가지를 넣고 10분 끓인 뒤 바질을 올린다."],
+"월남쌈":["채소를 가늘게 채 썬다.","라이스페이퍼를 따뜻한 물에 3초 적신다.","채소를 올려 말고 땅콩소스에 찍어 먹는다."],
+"태국식 볶음밥":["센 불에 마늘과 새우를 볶는다.","달걀을 넣어 스크램블한다.","밥을 넣고 피시소스로 볶은 뒤 라임을 짠다."],
+"반미 샌드위치":["무·당근을 식초·설탕에 30분 절인다.","바게트를 갈라 마요네즈를 바른다.","고기·절임채소·고수를 채운다."],
+
+"버터 치킨커리":["닭을 요거트와 커리가루에 30분 재운다.","버터에 양파를 볶고 토마토를 넣어 으깬다.","닭을 넣고 20분 끓인 뒤 생크림을 넣는다."],
+"달 커리":["렌틸콩을 씻어 물과 함께 20분 끓인다.","양파·마늘을 볶고 커민·강황을 넣어 향을 낸다.","토마토와 삶은 렌틸을 넣고 10분 더 끓인다."],
+"탄두리 치킨":["닭다리에 칼집을 내고 요거트·커리가루·레몬에 1시간 재운다.","에어프라이어 190도에서 20분 굽는다.","뒤집어 10분 더 굽는다."],
+"채소 커리":["감자와 콜리플라워를 한입 크기로 썬다.","양파를 볶고 커리가루를 넣어 향을 낸다.","토마토·코코넛밀크를 붓고 채소가 무를 때까지 20분 끓인다."],
+"치킨 비리야니":["바스미티쌀을 30분 불린다.","닭을 요거트·향신료에 재워 볶는다.","쌀을 위에 얹고 사프란 물을 뿌려 뚜껑 덮고 25분 뜸 들인다."],
+
+"치킨 타코":["닭다리살을 양념해 센 불에 볶는다.","또띠아를 마른 팬에 데운다.","닭·양상추·살사·사워크림을 올리고 라임을 짠다."],
+"부리또 볼":["다진 소고기를 볶아 양념한다.","그릇에 밥을 깔고 검은콩을 올린다.","고기·아보카도·살사·치즈를 얹는다."],
+"케사디야":["또띠아 반쪽에 치즈와 채소를 올린다.","반으로 접어 마른 팬에 굽는다.","치즈가 녹으면 뒤집어 굽고 삼각형으로 자른다."],
+"과카몰리와 나초":["아보카도를 포크로 굵게 으깬다.","라임즙·소금·다진 양파·토마토를 섞는다.","나초칩과 함께 낸다."],
+"칠리 콘 카르네":["다진 소고기와 양파를 볶는다.","칠리파우더를 넣어 향을 내고 토마토를 붓는다.","강낭콩을 넣고 30분 뭉근히 끓인다."],
+"파히타":["소고기와 파프리카·양파를 굵게 썬다.","센 불에 재빨리 볶아 겉면을 그을린다.","따뜻한 또띠아에 싸고 라임과 사워크림을 곁들인다."],
+
+"슈크슈카":["올리브유에 양파와 파프리카를 볶는다.","토마토와 커민을 넣고 10분 졸인다.","달걀을 톡톡 깨 넣고 뚜껑을 덮어 반숙으로 익힌다."],
+"그릭 샐러드":["오이·토마토를 큼직하게 썬다.","적양파와 올리브를 섞는다.","페타치즈를 올리고 올리브유·소금·오레가노를 뿌린다."],
+"후무스와 피타":["삶은 병아리콩과 타히니·레몬·마늘을 믹서에 넣는다.","물을 조금씩 넣으며 곱게 간다.","올리브유를 두르고 데운 피타빵과 낸다."],
+"팔라펠":["불린 병아리콩과 파슬리·양파·커민을 다진다.","한입 크기로 동그랗게 빚는다.","에어프라이어 190도에서 15분 굽거나 기름에 튀긴다."],
+"케밥 라이스":["고기를 향신료에 재워 센 불에 굽는다.","밥을 그릇에 담는다.","고기와 양상추·적양파를 올리고 요거트소스를 끼얹는다."],
+
+"찐 고구마":["고구마를 깨끗이 씻는다.","찜기에 넣고 김이 오른 뒤 25분 찐다.","젓가락이 쑥 들어가면 다 된 것이다."],
+"삶은 달걀":["냄비에 달걀이 잠기도록 물을 붓고 소금을 넣는다.","끓기 시작하면 반숙 7분, 완숙 12분 삶는다.","찬물에 담가 식히면 껍질이 잘 벗겨진다."],
+"제철 과일 플레이트":["과일을 흐르는 물에 씻는다.","한입 크기로 썬다.","접시에 색깔이 섞이도록 담는다."],
+"견과류와 요거트":["그릇에 요거트를 담는다.","아몬드와 호두를 굵게 부숴 올린다.","꿀을 조금 두른다."],
+"치즈스틱":["에어프라이어를 200도로 예열한다.","냉동 치즈스틱을 겹치지 않게 넣는다.","8분 굽고 바로 낸다. 식으면 치즈가 굳는다."],
+"닭가슴살과 고구마":["고구마를 썰어 찌거나 에어프라이어에 굽는다.","닭가슴살에 소금·후추를 뿌려 팬에 굽는다.","브로콜리를 데쳐 함께 담는다."],
+"포케 볼":["생연어를 깍둑 썰어 간장·참기름에 버무린다.","그릇에 현미밥을 담는다.","연어·아보카도·오이를 올리고 깨를 뿌린다."],
+"곤약 비빔면":["곤약면을 끓는 물에 1분 데쳐 찬물에 헹군다.","고추장·식초·설탕으로 양념장을 만든다.","면과 버무리고 오이·삶은달걀을 올린다."],
+"바나나 팬케이크":["바나나를 포크로 으깬다.","달걀·오트밀가루·우유를 섞는다.","약불 팬에 작게 부어 양면을 굽는다."],
+"닭안심 채소볼":["닭안심과 채소를 잘게 다진다.","달걀을 섞어 한입 크기로 동그랗게 빚는다.","김 오른 찜기에 12분 찐다."],
+
+"가래떡 구이":["가래떡을 손가락 길이로 자른다.","기름 두른 팬에 약불로 굴려 가며 겉을 노릇하게 굽는다.","말랑해지면 조청이나 꿀을 찍어 먹는다."],
+"인절미 구이":["인절미를 한 조각씩 떼어 놓는다.","마른 팬에 약불로 양면을 부풀 때까지 굽는다.","콩고물을 다시 묻히고 꿀을 곁들인다."],
+"호떡":["호떡믹스를 반죽해 30분 부풀린다.","반죽을 떼어 흑설탕과 땅콩 분태를 넣고 오므린다.","기름 두른 팬에 눌러 가며 양면을 노릇하게 굽는다."],
+"고구마 맛탕":["고구마를 한입 크기로 썰어 찬물에 헹군다.","기름에 노릇하게 튀기듯 굽는다.","설탕과 물엿을 끓여 시럽을 만들고 버무린 뒤 깨를 뿌린다."],
+"군고구마":["고구마를 씻어 물기를 닦는다.","에어프라이어 180도에서 20분 굽는다.","뒤집어 15분 더 굽는다. 젓가락이 쑥 들어가면 완성."],
+"찐 옥수수":["옥수수 껍질을 벗기고 씻는다.","냄비에 잠기도록 물을 붓고 소금과 설탕을 넣는다.","뚜껑을 덮고 25분 삶은 뒤 불을 끄고 5분 더 둔다."],
+"군밤":["밤 껍질에 칼집을 깊게 낸다.","에어프라이어 180도에서 15분 굽는다.","흔들어 준 뒤 10분 더 굽는다."],
+"감자 버터구이":["알감자를 씻어 껍질째 반으로 자른다.","소금을 뿌려 에어프라이어 190도에서 15분 굽는다.","뜨거울 때 버터를 올려 녹이고 파슬리를 뿌린다."],
+"감자튀김":["에어프라이어를 200도로 예열한다.","냉동 감자를 겹치지 않게 펴 담는다.","12분 굽고 중간에 한 번 흔들어 준 뒤 소금을 뿌린다."],
+"떡꼬치":["떡을 끓는 물에 30초 데쳐 말랑하게 만든다.","꼬치에 네 개씩 꿴다.","기름에 겉을 굽고 고추장·케첩·물엿 소스를 발라 한 번 더 굽는다."],
+"감자전":["감자를 강판에 갈아 체에 밭쳐 물기를 뺀다.","가라앉은 전분을 다시 섞고 소금으로 간한다.","기름 넉넉한 팬에 얇게 펴 양면을 바삭하게 부친다."],
+"김치전":["김치를 잘게 썰고 김칫국물을 조금 남긴다.","부침가루·물·달걀을 섞어 반죽한다.","기름 두른 팬에 얇게 펴 양면을 바삭하게 부친다."],
+"부추전":["부추를 5cm 길이로 자른다.","부침가루와 물을 1:1로 섞어 부추와 버무린다.","기름 두른 팬에 얇게 펴고 청양고추를 올려 양면을 부친다."],
+"찐빵":["찜기에 물을 올려 김을 낸다.","젖은 면포를 깔고 찐빵을 올린다.","센 불에서 12분 찐다. 겉이 촉촉해지면 완성."],
+"계란빵":["핫케이크 가루에 우유·달걀 1개·설탕을 섞어 반죽한다.","버터 바른 틀에 반죽을 반쯤 붓고 달걀을 하나씩 깨 넣는다.","180도 오븐에서 20분 굽는다."],
+"팥죽":["팥을 씻어 한 번 끓인 물은 버리고 새 물에 40분 삶는다.","팥이 무르면 주걱으로 으깨며 끓인다.","찹쌀가루를 물에 풀어 넣고 저어 가며 걸쭉하게 만든 뒤 소금으로 간한다."],
+"누룽지":["냄비에 누룽지와 물을 4배로 붓는다.","중불에서 10분 끓인다.","누룽지가 퍼지면 불을 끈다. 취향에 따라 소금을 아주 조금 넣는다."],
+"유부초밥":["밥에 동봉된 배합초를 섞어 한 김 식힌다.","다진 당근·단무지와 깨를 섞는다.","유부의 물기를 살짝 짜고 밥을 채워 모양을 잡는다."],
+"주먹밥":["밥에 참기름·소금·깨를 섞는다.","김가루를 넣고 고루 버무린다.","한입 크기로 동그랗게 꼭꼭 뭉친다."],
+"견과 강정":["견과류를 마른 팬에 약불로 볶아 고소하게 만든다.","다른 팬에 설탕과 물엿을 녹여 시럽을 낸다.","견과를 넣어 재빨리 버무리고 종이 위에 펴서 식힌다."],
+"육포":["육포를 먹기 좋은 크기로 찢는다.","마른 팬에 살짝 데우면 더 부드럽다.","그대로 낸다."],
+
+"라면":["물 550ml를 끓인다.","면과 스프를 넣고 4분 끓인다.","달걀을 풀어 넣고 대파·청양고추를 올려 30초 더 끓인다."],
+"짜장라면":["물을 끓여 면을 4분 삶는다.","물을 8큰술만 남기고 따라 버린다.","분말스프를 넣고 비빈 뒤 오이채와 달걀 프라이를 올린다."],
+"만둣국":["육수를 끓인다.","냉동만두를 넣고 떠오를 때까지 5분 끓인다.","달걀을 풀어 넣고 국간장으로 간한 뒤 김가루와 대파를 올린다."],
+"수제비":["밀가루에 물을 넣어 반죽해 30분 냉장고에 둔다.","멸치·다시마 육수에 감자를 넣고 끓인다.","반죽을 얇게 떼어 넣고 애호박과 함께 10분 더 끓인다."],
+"칼국수":["바지락을 소금물에 해감한다.","다시마 육수에 감자와 바지락을 넣고 끓인다.","면을 넣고 5분 끓인 뒤 애호박과 대파를 넣는다."],
+"김치말이국수":["김치를 잘게 썰어 김칫국물과 찬물을 섞어 육수를 만든다.","소면을 삶아 찬물에 여러 번 헹군다.","면에 육수를 붓고 김치·오이·삶은달걀을 올린다."],
+"콩국수":["콩국물을 차갑게 준비한다.","소면을 삶아 찬물에 비벼 헹군다.","면에 콩국물을 붓고 오이채를 올린 뒤 소금으로 간해 먹는다."],
+"냉모밀":["쯔유를 물에 희석해 차갑게 둔다.","메밀면을 3분 삶아 찬물에 여러 번 헹군다.","면을 담고 무즙·와사비·쪽파를 곁들여 쯔유에 찍어 먹는다."],
+"두부김치":["두부를 도톰하게 썰어 끓는 물에 3분 데친다.","돼지고기와 김치를 볶다가 참기름을 두른다.","접시 가장자리에 두부를 돌려 담고 가운데에 김치를 올린다."],
+"콘치즈":["옥수수콘의 물기를 뺀다.","마요네즈·설탕·버터와 섞는다.","치즈를 덮고 뚜껑 덮은 팬이나 에어프라이어에서 치즈가 녹을 때까지 익힌다."],
+"후라이드 치킨":["닭을 우유에 20분 재워 잡내를 뺀다.","튀김가루를 두툼하게 묻혀 10분 둔다.","170도에서 8분 튀기고 건졌다가 190도에서 2분 더 튀긴다."],
+"양념치킨":["닭을 튀겨 기름을 뺀다.","고추장·케첩·물엿·마늘을 끓여 소스를 만든다.","불을 끄고 튀긴 닭을 넣어 재빨리 버무린다."],
+"닭강정":["닭다리살을 한입 크기로 잘라 전분을 묻혀 두 번 튀긴다.","고추장과 물엿으로 소스를 졸인다.","튀긴 닭을 버무리고 견과류를 뿌린다."],
+"닭똥집볶음":["닭똥집을 소금과 밀가루로 주물러 씻는다.","끓는 물에 3분 데친다.","마늘·청양고추와 함께 센 불에 볶고 소금·후추로 간한다."],
+"매운 닭발":["닭발을 끓는 물에 5분 데쳐 헹군다.","고추장·고춧가루·물엿 양념에 넣고 20분 조린다.","센 불에 볶아 국물을 날리고 대파를 올린다."],
+"쥐포구이":["쥐포를 마른 팬이나 석쇠에 약불로 굽는다.","부풀어 오르면 뒤집어 굽는다.","가위로 잘라 마요네즈·고추장에 찍어 먹는다."],
+"오징어 버터구이":["오징어를 손질해 칼집을 넣고 큼직하게 자른다.","버터를 녹인 팬에 마늘과 함께 굽는다.","간장을 살짝 둘러 향을 내고 쪽파를 뿌린다."],
+
+"길거리 토스트":["양배추와 당근을 채 썰어 달걀에 섞는다.","버터 두른 팬에 네모나게 부치고 식빵도 함께 굽는다.","식빵에 달걀부침을 올리고 설탕과 케첩을 뿌려 덮는다."],
+"버터 잼 토스트":["식빵을 노릇하게 굽는다.","뜨거울 때 버터를 발라 녹인다.","잼을 얹어 반으로 자른다."],
+"마늘빵":["버터를 실온에 두어 부드럽게 만든다.","다진마늘·설탕·파슬리를 섞어 마늘버터를 만든다.","바게트에 발라 190도 오븐에서 8분 굽는다."],
+"크로크무슈":["식빵에 머스터드를 바르고 햄과 치즈를 넣어 덮는다.","위에 베샤멜을 바르고 치즈를 더 올린다.","200도 오븐에서 12분, 노릇해질 때까지 굽는다."],
+"와플":["믹스에 달걀·우유·녹인 버터를 섞는다.","예열한 와플팬에 붓고 4분 굽는다.","생크림이나 잼을 곁들인다."],
+
+"수박 화채":["수박을 한입 크기로 잘라 씨를 뺀다.","그릇에 담고 우유와 사이다를 붓는다.","얼음을 넣어 차갑게 낸다."],
+"미숫가루":["컵에 미숫가루 3큰술을 담는다.","우유를 조금씩 부으며 덩어리 없이 푼다.","꿀과 얼음을 넣어 젓는다."],
+"과일 스무디":["과일을 한입 크기로 자른다.","믹서에 과일·우유·꿀·얼음을 넣는다.","30초 갈아 바로 마신다."],
+"딸기 우유":["딸기를 씻어 꼭지를 뗀다.","설탕을 넣고 포크로 으깨 10분 둔다.","우유를 부어 젓는다."]
+};
+
+/* 밑반찬으로만 쓰는 요리 — 자동으로 뽑을 때는 메인에서 빼고,
+   고르기 창에서는 "곁들임 반찬"으로 따로 모아 보여 준다. */
+const SIDE_NAMES = new Set([
+  "시금치나물","콩나물무침","오이무침","무생채","배추겉절이","애호박볶음",
+  "감자조림","멸치볶음","애호박전","황태채무침","청경채 마늘볶음",
+  "계란찜","두부조림","연두부와 간장","가지 미소구이"
+]);
+DISHES.forEach(d => { if(SIDE_NAMES.has(d.n)) d.x = 1; d.r = STEPS[d.n] || []; });
+
+/* =======================================================================
+   완성 그림 — 실제 사진은 넣을 수 없어서, 그 요리의 재료 색을 모아
+   접시에 담은 모습으로 그린다. 요리마다 모양이 고정된다.
+   ======================================================================= */
+const ING_COLORS = [
+  [/연어/, "#E4855F"],
+  [/새우|오징어|낙지|바지락|홍합|멸치|북어|황태|어묵|골뱅이|전복|고등어|갈치|코다리|참치|가쓰오|해물|생선|맛살/, "#D98C74"],
+  [/소고기|돼지|닭|오리|베이컨|스팸|소시지|양고기|차슈|고기|갈비|삼겹|등심|안심|사태|양지|돈가스|너겟/, "#9B5A41"],
+  [/달걀|계란|지단|흰자/, "#EFC04A"],
+  [/김치|고추장|고춧가루|살사|칠리|두반장|춘장/, "#BF3F2C"],
+  [/토마토/, "#CB4038"],
+  [/미역|다시마|김$|김가루|파래/, "#2F5C4C"],
+  [/시금치|부추|청경채|브로콜리|깻잎|쪽파|대파|파슬리|바질|고수|양상추|로메인|아욱|열무|미나리|콩나물|숙주|오이|피망|완두|아스파라거스|양배추|배추|나물|셀러리|고사리|아보카도|가지|올리브|청양|고추/, "#5B9152"],
+  [/당근|고구마|단호박|파프리카|호박|망고/, "#DD8A34"],
+  [/치즈|우유|생크림|요거트|버터|마요네즈|파르메산|모차렐라|베샤멜|코코넛/, "#F3E6C4"],
+  [/버섯|표고|양송이|목이|팽이|우엉/, "#A78B6A"],
+  [/밥|쌀|면|국수|소면|떡|식빵|빵|또띠아|당면|우동|라면|피타|바게트|파스타|스파게티|그래놀라|오트밀|만두|크루통|나초/, "#E8DCBE"],
+  [/렌틸|병아리콩|땅콩|아몬드|호두|견과|강낭콩|검은콩|콩$/, "#C8A96B"],
+  [/사과|포도|바나나|블루베리|과일|딸기|대추|밤/, "#B85572"],
+  [/된장|간장|미소|청국장|커리|카레|소스|타히니/, "#8A6A3E"],
+  [/감자|양파|무|마늘|배|두부|유부|연두부|순두부/, "#EDE3CB"]
+];
+function ingColor(name){
+  for(const [re, c] of ING_COLORS){ if(re.test(name)) return c; }
+  return "#BFAE8E";
+}
+function hashOf(s){
+  let h = 2166136261;
+  for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rngOf(seed){
+  let s = seed || 1;
+  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+}
+function dishArt(d){
+  const W = 260, H = 172, cx = 130, cy = 98;
+  const txt = d.n + " " + d.i.join(" ");
+  const soup = d.w.includes("끓이기") || /국|탕|찌개|죽|수프|스튜|커리|라멘/.test(d.n);
+  const noodle = /면|국수|파스타|스파게티|우동|라멘|당면|소면|냉면/.test(txt);
+  const hot = !d.w.includes("안 익힘");
+  const cols = d.i.map(ingColor);
+  const rnd = rngOf(hashOf(d.n));
+  let broth = "#E0D2AF";
+  if(/단호박|호박죽|토마토/.test(d.n)) broth = "#DC9A44";
+  else if(/김치|고추장|고춧가루|칠리|짬뽕|육개장/.test(txt)) broth = "#C6553C";
+  else if(/된장|미소|청국장|간장|춘장|커리|스튜|짜장/.test(txt)) broth = "#A87F4C";
+  else if(/생크림|우유|코코넛|크림/.test(txt)) broth = "#EDDFC2";
+
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(d.n) + ' 그림">';
+  s += '<ellipse cx="' + cx + '" cy="' + (cy + 50) + '" rx="72" ry="8" fill="rgba(0,0,0,.10)"/>';
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="62" fill="var(--surface-3)" stroke="var(--line-2)" stroke-width="1.5"/>';
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="49" fill="var(--surface)" stroke="var(--line)" stroke-width="1"/>';
+
+  if(soup){
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="46" fill="' + broth + '" opacity=".85"/>';
+    for(let i = 0; i < 9; i++){
+      const a = rnd() * Math.PI * 2, rr = 7 + rnd() * 30;
+      const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * .82;
+      const c = cols[Math.floor(rnd() * cols.length)];
+      s += '<ellipse cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" rx="' + (5 + rnd() * 5).toFixed(1) +
+           '" ry="' + (4 + rnd() * 4).toFixed(1) + '" fill="' + c + '" opacity=".95"/>';
+    }
+  }else{
+    for(let i = 0; i < 14; i++){
+      const a = rnd() * Math.PI * 2, rr = rnd() * 32;
+      const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * .72;
+      const c = cols[i % cols.length];
+      const w = 9 + rnd() * 11, h = 6 + rnd() * 7;
+      s += '<rect x="' + (x - w / 2).toFixed(1) + '" y="' + (y - h / 2).toFixed(1) + '" width="' + w.toFixed(1) +
+           '" height="' + h.toFixed(1) + '" rx="' + (h / 2).toFixed(1) + '" fill="' + c +
+           '" transform="rotate(' + (rnd() * 180 - 90).toFixed(0) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"/>';
+    }
+  }
+
+  if(noodle){
+    for(let i = 0; i < 5; i++){
+      const y0 = cy - 22 + i * 11 + rnd() * 3;
+      s += '<path d="M' + (cx - 38) + ' ' + y0.toFixed(1) + ' q 19 ' + (9 - rnd() * 18).toFixed(1) +
+           ' 38 0 q 19 ' + (9 - rnd() * 18).toFixed(1) + ' 38 0" fill="none" stroke="#E8DCBE" stroke-width="4" stroke-linecap="round" opacity=".92"/>';
+    }
+  }
+
+  s += '<circle cx="' + (cx - 18) + '" cy="' + (cy - 19) + '" r="3" fill="#6FA35F" opacity=".9"/>';
+  s += '<circle cx="' + (cx + 14) + '" cy="' + (cy + 16) + '" r="2.5" fill="#6FA35F" opacity=".9"/>';
+
+  if(hot){
+    for(let i = 0; i < 3; i++){
+      const x = cx - 24 + i * 24;
+      s += '<path d="M' + x + ' 30 q 6 -6 0 -12 q -6 -6 0 -12" fill="none" stroke="var(--ink-3)" ' +
+           'stroke-width="2.2" stroke-linecap="round" opacity=".38"/>';
+    }
+  }
+  s += '<circle cx="' + cx + '" cy="' + cy + '" r="49" fill="none" stroke="var(--line)" stroke-width="1"/>';
+  return s + '</svg>';
+}
+
+/* =======================================================================
+   요리의 역할 — 국 / 메인 / 반찬 / 한그릇 / 간식
+   한상차림은 국+메인+반찬을 함께 뽑고, 한 그릇은 그 자체로 한 끼인 요리만 뽑는다.
+   ======================================================================= */
+["계란말이","두부부침과 양념장","차완무시"].forEach(n => SIDE_NAMES.add(n));
+
+const ROLE_SOUP = ["소고기미역국","된장찌개","김치찌개","순두부찌개","북엇국","아욱된장국",
+  "육개장","부대찌개","청국장찌개","미소된장국","들깨미역국","오뎅탕","똠얌꿍","미네스트로네",
+  "만둣국"];
+
+const ROLE_BOWL = ["떡국","잔치국수","콩나물국밥","비빔밥","김밥","김치볶음밥","비빔국수","열무국수",
+  "물냉면","떡볶이","골뱅이소면무침","소고기채소죽","전복죽","단호박죽","삼계탕",
+  "연어덮밥","소고기덮밥","닭고기달걀덮밥","돈가스덮밥","야키소바","우동","간장라멘",
+  "새우볶음밥","짜장면","짬뽕",
+  "토마토 스파게티","크림 파스타","알리오 올리오","봉골레 파스타","라자냐","버섯 리조또",
+  "단호박 수프","비프 스튜","오믈렛","스크램블에그와 토스트","아보카도 토스트","프렌치 토스트",
+  "팬케이크","그릭요거트 볼","시저 샐러드","닭가슴살 샐러드","BLT 샌드위치","참치마요 샌드위치",
+  "피자 토스트","두부면 파스타","달걀흰자 오믈렛","프로틴 셰이크",
+  "팟타이","소고기 쌀국수","나시고랭","그린 커리","월남쌈","태국식 볶음밥","반미 샌드위치",
+  "버터 치킨커리","달 커리","채소 커리","치킨 비리야니",
+  "치킨 타코","부리또 볼","케사디야","칠리 콘 카르네",
+  "슈크슈카","그릭 샐러드","후무스와 피타","케밥 라이스",
+  "포케 볼","곤약 비빔면","바나나 팬케이크","닭가슴살과 고구마",
+  "라면","짜장라면","수제비","칼국수","김치말이국수","콩국수","냉모밀",
+  "누룽지","팥죽","유부초밥","주먹밥","길거리 토스트","크로크무슈"];
+
+const ROLE_SNACK = ["찐 고구마","삶은 달걀","제철 과일 플레이트","견과류와 요거트","치즈스틱",
+  "치킨 너겟","군만두","찐만두","과카몰리와 나초",
+  "가래떡 구이","인절미 구이","호떡","고구마 맛탕","군고구마","찐 옥수수","군밤",
+  "감자 버터구이","감자튀김","떡꼬치","찐빵","계란빵","견과 강정","육포",
+  "콘치즈","마늘빵","버터 잼 토스트","와플",
+  "수박 화채","미숫가루","과일 스무디","딸기 우유"];
+
+DISHES.forEach(d => {
+  if(SIDE_NAMES.has(d.n)) d.x = 1;
+  d.g = SIDE_NAMES.has(d.n) ? "반찬"
+      : ROLE_SOUP.includes(d.n) ? "국"
+      : ROLE_BOWL.includes(d.n) ? "한그릇"
+      : ROLE_SNACK.includes(d.n) ? "간식"
+      : "메인";
+});
+
+/* 못 먹는 재료 걸러내기 */
+const ING_EX = {
+  "우유·유제품":/우유|생크림|치즈|요거트|버터|파르메산|모차렐라|베샤멜|페타|사워크림/,
+  "달걀":/달걀|계란|지단|흰자|마요네즈/,
+  "밀가루":/식빵|빵|면$|면 |면·|국수|파스타|스파게티|부침가루|밀가루|튀김가루|또띠아|만두|라면|우동|바게트|피타|크루통|라자냐|중화면|소면|팬케이크|그래놀라|나초|수제비|칼국수|호떡|찐빵|와플|핫케이크|메밀면|돈가스|너겟/,
+  "견과류":/아몬드|호두|땅콩|견과|캐슈|잣/,
+  "갑각류":/새우|게살|꽃게|랍스터/,
+  "돼지고기":/돼지|삼겹|베이컨|스팸|소시지|돈가스|차슈|햄$/,
+  "소고기":/소고기|소갈비|채끝|사태|양지|불고기감|우삼겹/,
+  "해산물":/새우|오징어|낙지|바지락|홍합|멸치|북어|황태|어묵|골뱅이|전복|고등어|갈치|코다리|참치|가쓰오|해물|생선|연어|액젓|피시소스|굴소스|맛살|다시마|미역/,
+  "오이":/오이/,
+  "고수":/고수/,
+  "버섯":/버섯|표고|양송이|목이|팽이/,
+  "매운 것":/고추장|고춧가루|청양|두반장|칠리|페퍼론치노|건고추|와사비|커리 페이스트/
+};
+
+/* ======================= 조건 정의 ======================= */
+const MEALS = ["아침","점심","저녁","간식","야식"];
+const BIG_MEALS = ["아침","점심","저녁"];
+const MEAL_COLOR = {"아침":"var(--mb)","점심":"var(--ml)","저녁":"var(--md)","간식":"var(--ms)","야식":"var(--mn)"};
+const DAYS = ["월","화","수","목","금","토","일"];
+const ROLE_ORDER = ["국","메인","반찬","한그릇","간식"];
+
+const GROUPS = [
+  {key:"m", name:"끼니", hint:"고른 끼니만 표에 줄로 나옵니다.", mode:"multi", opts:MEALS},
+  {key:"set", name:"차림 방식", mode:"single",
+   hint:"한상차림은 국·메인·반찬을 한 번에 뽑고 영양이 고루 담겼는지 표시해 줍니다. 간식·야식 줄은 늘 한 가지만 나옵니다.",
+   opts:[{v:"free",l:"상관없음"},{v:"table",l:"한상차림"},{v:"bowl",l:"한 그릇"}]},
+  {key:"t", name:"조리 시간", hint:"하나만 고를 수 있어요.", mode:"single",
+   opts:[{v:10,l:"10분 이내"},{v:20,l:"20분 이내"},{v:30,l:"30분 이내"},{v:60,l:"1시간 이내"},{v:0,l:"제한 없음"}]},
+  {key:"c", name:"나라", mode:"multi", canEx:true,
+   opts:["한식","일식","중식","양식","동남아","인도","멕시코","지중해"]},
+  {key:"d", name:"고기·채식", mode:"multi", canEx:true,
+   opts:["육류","해산물","채식","비건","고단백","저탄수","저염"]},
+  {key:"a", name:"연령대", hint:"고른 연령 모두가 함께 먹기 좋은 요리만 나옵니다.", mode:"multi", opts:A_ALL},
+  {key:"s", name:"상황", mode:"multi", canEx:true,
+   opts:["일상","다이어트","손님상","도시락","야근·간편","술안주","명절","회복식","운동 후"]},
+  {key:"w", name:"조리 방법", mode:"multi", canEx:true, warm:true,
+   opts:["끓이기","볶기","굽기","부치기","찌기","조림","튀기기","무침·생채","오븐","에어프라이어","안 익힘"]},
+  {key:"ing", name:"못 먹는 재료", mode:"multi", exOnly:true,
+   hint:"여기서 고른 재료가 들어간 요리는 빼고 보여 줍니다.",
+   opts:Object.keys(ING_EX)}
+];
+
+/* ======================= 상태 ======================= */
+const KEY = "weekly-table-v2";
+const blankF  = () => ({m:["아침","점심","저녁"], set:"free", t:0, c:[], d:[], a:[], s:[], w:[]});
+const blankFx = () => ({c:[], d:[], s:[], w:[], ing:[]});
+const blankMode = () => ({c:"in", d:"in", s:"in", w:"in"});
+
+let state = {
+  f:blankF(),      // 고른 것
+  fx:blankFx(),    // 뺀 것
+  mode:blankMode(),// 조건별 고르기/빼기
+  plan:{},         // "0|아침" -> [{t:'d'|'c', n:"이름"}]
+  checked:[]
+};
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+function load(){
+  try{
+    const o = JSON.parse(localStorage.getItem(KEY) || "null");
+    if(!o) return;
+    state.f    = Object.assign(blankF(), o.f || {});
+    state.fx   = Object.assign(blankFx(), o.fx || {});
+    state.mode = Object.assign(blankMode(), o.mode || {});
+    state.checked = Array.isArray(o.checked) ? o.checked : [];
+    state.plan = {};
+    Object.entries(o.plan || {}).forEach(([k, v]) => {
+      state.plan[k] = Array.isArray(v) ? v : [v];   // 예전 저장본도 읽히게
+    });
+  }catch(e){}
+}
+
+/* ======================= 조건 맞추기 ======================= */
+function selOf(key){
+  const ex = (key === "ing") || state.mode[key] === "ex";
+  return {ex, list: ex ? (state.fx[key] || []) : (state.f[key] || [])};
+}
+function checkGroup(sel, hit){
+  if(!sel.list.length) return true;
+  return sel.ex ? !hit : hit;
+}
+function fits(dish, opts){
+  const f = state.f, o = opts || {};
+  if(o.meal && !dish.m.includes(o.meal)) return false;
+  if(o.role && dish.g !== o.role) return false;
+  if(f.t && dish.t > f.t) return false;
+
+  const sc = selOf("c"); if(!checkGroup(sc, sc.list.includes(dish.c))) return false;
+  const sd = selOf("d"); if(!checkGroup(sd, sd.list.some(x => dish.d.includes(x)))) return false;
+  const ss = selOf("s"); if(!checkGroup(ss, ss.list.some(x => dish.s.includes(x)))) return false;
+  const sw = selOf("w"); if(!checkGroup(sw, sw.list.some(x => dish.w.includes(x)))) return false;
+
+  if(f.a.length && !f.a.every(x => dish.a.includes(x))) return false;   // 연령은 모두 충족
+
+  const bad = state.fx.ing || [];
+  if(bad.length){
+    const txt = dish.n + " " + dish.i.join(" ");
+    if(bad.some(k => ING_EX[k] && ING_EX[k].test(txt))) return false;
+  }
+  return true;
+}
+const poolAll  = () => DISHES.filter(d => fits(d, {}));
+const poolMeal = (meal) => DISHES.filter(d => fits(d, {meal}));
+const poolRole = (meal, role) => DISHES.filter(d => fits(d, {meal, role}));
+const byName   = (n) => DISHES.find(d => d.n === n);
+const isBig    = (meal) => BIG_MEALS.includes(meal);
+
+/* 자동으로 뽑을 때 쓰는 후보 (한 가지만 뽑는 경우) */
+function mainPool(meal){
+  const p = poolMeal(meal);
+  if(state.f.set === "bowl" && isBig(meal)){
+    const b = p.filter(d => d.g === "한그릇");
+    if(b.length) return b;
+  }
+  const m = p.filter(d => d.g !== "반찬");
+  return m.length ? m : p;
+}
+
+/* ======================= 조건 화면 ======================= */
+function buildFilters(){
+  const host = document.getElementById("filters");
+  host.innerHTML = "";
+  GROUPS.forEach(g => {
+    const box = document.createElement("div");
+    box.className = "grp";
+
+    const top = document.createElement("div");
+    top.className = "grp-top";
+    top.innerHTML = '<span class="grp-name">' + g.name + '</span>';
+
+    if(g.canEx){
+      const sw = document.createElement("div");
+      sw.className = "modesw";
+      [["in","고르기"],["ex","빼기"]].forEach(([v, l]) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = l;
+        b.dataset.mg = g.key; b.dataset.mv = v;
+        b.onclick = () => { state.mode[g.key] = v; sync(); };
+        sw.appendChild(b);
+      });
+      top.appendChild(sw);
+    }else if(g.mode === "multi"){
+      const c = document.createElement("button");
+      c.className = "grp-clear"; c.textContent = (g.key === "m") ? "전체" : "지우기";
+      c.onclick = () => {
+        if(g.key === "m") state.f.m = MEALS.slice();
+        else if(g.exOnly) state.fx[g.key] = [];
+        else state.f[g.key] = [];
+        sync();
+      };
+      top.appendChild(c);
+    }
+    box.appendChild(top);
+
+    if(g.hint){
+      const h = document.createElement("p");
+      h.className = "grp-hint"; h.textContent = g.hint;
+      box.appendChild(h);
+    }
+
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    g.opts.forEach(raw => {
+      const v = (typeof raw === "object") ? raw.v : raw;
+      const l = (typeof raw === "object") ? raw.l : raw;
+      const b = document.createElement("button");
+      b.className = "chip" + (g.warm ? " chip-w" : "");
+      b.type = "button"; b.textContent = l;
+      b.dataset.g = g.key; b.dataset.v = String(v);
+      b.onclick = () => {
+        if(g.mode === "single"){ state.f[g.key] = v; sync(); return; }
+        const ex = g.exOnly || state.mode[g.key] === "ex";
+        const arr = ex ? state.fx[g.key] : state.f[g.key];
+        const i = arr.indexOf(v);
+        if(i > -1){
+          if(g.key === "m" && arr.length === 1) return;   // 끼니는 최소 하나
+          arr.splice(i, 1);
+        }else arr.push(v);
+        sync();
+      };
+      chips.appendChild(b);
+    });
+    box.appendChild(chips);
+    host.appendChild(box);
+  });
+}
+
+function paintFilters(){
+  document.querySelectorAll(".modesw button").forEach(b => {
+    b.classList.toggle("on", state.mode[b.dataset.mg] === b.dataset.mv);
+  });
+  document.querySelectorAll(".chip").forEach(b => {
+    const k = b.dataset.g, v = b.dataset.v;
+    const g = GROUPS.find(x => x.key === k);
+    const ex = g.exOnly || state.mode[k] === "ex";
+    const cur = ex ? state.fx[k] : state.f[k];
+    const on = Array.isArray(cur) ? cur.includes(v) : String(cur) === v;
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.classList.toggle("ex", !!ex);
+  });
+}
+
+/* ======================= 매칭 개수 ======================= */
+function paintMatch(){
+  const n = poolAll().length;
+  const bar = document.getElementById("matchbar");
+  document.getElementById("matchNum").textContent = n;
+
+  let txt = "가지 요리가 조건에 맞습니다.";
+  let warn = false;
+
+  if(n === 0){
+    txt = "맞는 요리가 없어요. 조리 시간을 늘리거나 뺀 조건을 줄여 보세요.";
+    warn = true;
+  }else if(state.f.set === "table"){
+    const big = state.f.m.filter(isBig);
+    const lack = [];
+    ["국","메인","반찬"].forEach(r => {
+      const c = big.length ? Math.max(...big.map(m => poolRole(m, r).length)) : 0;
+      if(c === 0) lack.push(r);
+    });
+    if(big.length && lack.length){
+      txt = "가지가 맞지만 " + lack.join("·") + " 후보가 없어 그 자리는 비워집니다.";
+      warn = true;
+    }else{
+      txt = "가지 요리가 맞습니다. 한상차림은 국·메인·반찬을 함께 뽑습니다.";
+    }
+  }else{
+    const thin = state.f.m.filter(m => mainPool(m).length < 4);
+    if(thin.length){
+      txt = "가지가 맞습니다. 다만 " + thin.join("·") + " 후보가 적어 같은 메뉴가 반복될 수 있어요.";
+      warn = true;
+    }
+  }
+  document.getElementById("matchTxt").textContent = txt;
+  bar.classList.toggle("warn", warn);
+}
+
+/* ======================= 영양 체크 ======================= */
+const VEG_RE = /채소|시금치|콩나물|오이|무|배추|양배추|브로콜리|당근|호박|가지|버섯|파프리카|양상추|나물|샐러드|토마토|아욱|열무|숙주|청경채|미역|부추|깻잎|감자|고구마/;
+const CARB_RE = /밥|쌀|면|국수|파스타|스파게티|빵|떡|또띠아|당면|우동|라면|피타|바게트|감자|고구마|오트밀|그래놀라/;
+function nutrOf(items){
+  const ds = items.map(v => v.t === "d" && byName(v.n)).filter(Boolean);
+  const txt = ds.map(d => d.n + " " + d.i.join(" ")).join(" ");
+  return {
+    p: ds.some(d => d.d.some(x => ["육류","해산물","고단백"].includes(x))),
+    v: ds.some(d => d.g === "반찬" || d.d.some(x => ["채식","비건"].includes(x))) || VEG_RE.test(txt),
+    c: state.f.set === "table" || CARB_RE.test(txt)
+  };
+}
+
+/* ======================= 식단표 ======================= */
+function rows(){ return MEALS.filter(m => state.f.m.includes(m)); }
+function cellLimit(meal){ return (state.f.set === "table" && isBig(meal)) ? 4 : 3; }
+
+function paintPlan(){
+  const head = document.getElementById("planHead");
+  const body = document.getElementById("planBody");
+  const todayIdx = (new Date().getDay() + 6) % 7;
+
+  head.innerHTML = '<th class="rowlab"></th>' + DAYS.map((d, i) =>
+    '<th class="' + (i === todayIdx ? 'today' : '') + '">' + d +
+    '<span class="dnum">' + (i === todayIdx ? "오늘" : "&nbsp;") + '</span></th>').join("");
+
+  body.innerHTML = "";
+  rows().forEach(meal => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.className = "rowlab";
+    th.style.setProperty("--mc", MEAL_COLOR[meal]);
+    th.innerHTML = "<span>" + meal + "</span>";
+    tr.appendChild(th);
+
+    DAYS.forEach((_, di) => {
+      const td = document.createElement("td");
+      td.className = "cell";
+      const id = di + "|" + meal;
+      const items = state.plan[id] || [];
+      const box = document.createElement("div");
+      box.className = "cellbox";
+      box.style.setProperty("--mc", MEAL_COLOR[meal]);
+
+      if(!items.length){
+        const b = document.createElement("button");
+        b.className = "cellempty";
+        b.textContent = "+ 고르기";
+        b.onclick = () => openPicker(di, meal, -1);
+        box.appendChild(b);
+      }else{
+        items.forEach((v, idx) => {
+          const b = document.createElement("button");
+          b.className = "item";
+          const d = v.t === "d" && byName(v.n);
+          const role = d ? d.g : "직접";
+          b.innerHTML = '<span class="role r-' + role + '">' + role + '</span>' +
+            '<span class="nm' + (d ? "" : " custom") + '">' + esc(v.n) + '</span>' +
+            (d ? '<span class="tm">' + d.t + '분</span>' : "");
+          b.title = d ? "눌러서 만드는 법 보기" : "눌러서 고치기";
+          b.onclick = () => d ? openRecipe(di, meal, idx) : openPicker(di, meal, idx);
+          box.appendChild(b);
+        });
+
+        if(state.f.set === "table" && isBig(meal)){
+          const n = nutrOf(items);
+          const nb = document.createElement("div");
+          nb.className = "nutr";
+          nb.innerHTML =
+            '<span class="' + (n.p ? "ok" : "") + '" title="단백질">단</span>' +
+            '<span class="' + (n.v ? "ok" : "") + '" title="채소">채</span>' +
+            '<span class="' + (n.c ? "ok" : "") + '" title="밥·탄수화물">밥</span>';
+          nb.title = "단 = 단백질, 채 = 채소, 밥 = 탄수화물. 색이 들어오면 그 상에 들어 있다는 뜻입니다.";
+          box.appendChild(nb);
+        }
+
+        if(items.length < cellLimit(meal)){
+          const add = document.createElement("button");
+          add.className = "additem";
+          add.textContent = "+ 추가";
+          add.onclick = () => openPicker(di, meal, -1);
+          box.appendChild(add);
+        }
+      }
+      td.appendChild(box);
+
+      const rr = document.createElement("button");
+      rr.className = "reroll"; rr.type = "button"; rr.title = "이 칸만 다시 뽑기";
+      rr.setAttribute("aria-label", DAYS[di] + "요일 " + meal + " 다시 뽑기");
+      rr.textContent = "↻";
+      rr.onclick = (e) => { e.stopPropagation(); rollCell(di, meal); };
+      td.appendChild(rr);
+
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+
+  let cnt = 0, mins = 0;
+  Object.values(state.plan).forEach(arr => arr.forEach(v => {
+    cnt++;
+    const d = v.t === "d" && byName(v.n);
+    if(d) mins += d.t;
+  }));
+  document.getElementById("planSum").textContent =
+    cnt ? (cnt + "가지 · 총 조리 " + mins + "분") : "비어 있음";
+  document.getElementById("planNote").textContent =
+    state.f.set === "table" ? "국 · 메인 · 반찬 한 상 (밥은 기본)"
+    : state.f.set === "bowl" ? "그 자체로 한 끼가 되는 요리"
+    : "";
+}
+
+function shuffle(a){
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function pickFrom(pool, used, prefer){
+  if(!pool || !pool.length) return null;
+  let cand = pool.filter(d => !used.has(d.n));
+  if(!cand.length){ cand = pool.slice(); used.clear(); }
+  if(prefer){
+    const pc = cand.filter(prefer);
+    if(pc.length) cand = pc;
+  }
+  const d = cand[Math.floor(Math.random() * cand.length)];
+  used.add(d.n);
+  return d;
+}
+const hasProtein = (d) => d.d.some(x => ["육류","해산물","고단백"].includes(x));
+const isVeggie   = (d) => d.d.some(x => ["채식","비건"].includes(x));
+
+/* 한 칸 채우기 */
+function fillCell(meal, used){
+  const out = [];
+  if(state.f.set === "table" && isBig(meal)){
+    const soup = pickFrom(poolRole(meal, "국"), used.국);
+    const main = pickFrom(poolRole(meal, "메인"), used.메인, hasProtein)
+              || pickFrom(poolRole(meal, "한그릇"), used.메인, hasProtein);
+    const side = pickFrom(poolRole(meal, "반찬"), used.반찬, isVeggie);
+    [soup, main, side].forEach(d => { if(d) out.push({t:"d", n:d.n}); });
+    if(!out.length){
+      const any = pickFrom(mainPool(meal), used.메인);
+      if(any) out.push({t:"d", n:any.n});
+    }
+  }else{
+    const d = pickFrom(mainPool(meal), used.메인);
+    if(d) out.push({t:"d", n:d.n});
+  }
+  return out;
+}
+const freshUsed = () => ({국:new Set(), 메인:new Set(), 반찬:new Set()});
+
+function rollCell(di, meal){
+  const out = fillCell(meal, freshUsed());
+  if(!out.length){ toast(meal + "에 맞는 요리가 없어요. 조건을 조금 풀어 주세요."); return; }
+  state.plan[di + "|" + meal] = out;
+  sync();
+}
+
+function generate(){
+  const ms = rows();
+  if(!ms.some(m => mainPool(m).length)){
+    toast("조건에 맞는 요리가 없어요. 조리 시간을 늘리거나 뺀 조건을 줄여 보세요.");
+    return;
+  }
+  state.plan = {};
+  ms.forEach(meal => {
+    const used = freshUsed();
+    DAYS.forEach((_, di) => {
+      const out = fillCell(meal, used);
+      if(out.length) state.plan[di + "|" + meal] = out;
+    });
+  });
+  state.checked = [];
+  sync();
+  toast("일주일 식단표를 새로 짰어요.");
+}
+
+/* ======================= 장보기 목록 ======================= */
+function shopMap(){
+  const map = new Map();
+  Object.values(state.plan).forEach(arr => arr.forEach(v => {
+    if(v.t !== "d") return;
+    const d = byName(v.n);
+    if(!d) return;
+    d.i.forEach(ing => map.set(ing, (map.get(ing) || 0) + 1));
+  }));
+  if(state.f.set === "table" && Object.keys(state.plan).length) map.set("쌀", map.get("쌀") || 1);
+  return map;
+}
+function paintShop(){
+  const host = document.getElementById("shopBody");
+  const map = shopMap();
+  if(!map.size){
+    host.innerHTML = '<p class="empty-note">식단표를 채우면 필요한 재료가 여기에 모입니다.</p>';
+    return;
+  }
+  const items = [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"));
+  const ul = document.createElement("ul");
+  ul.className = "shop-list";
+  items.forEach(([nm, cnt]) => {
+    const li = document.createElement("li");
+    const lab = document.createElement("label");
+    const done = state.checked.includes(nm);
+    if(done) lab.classList.add("done");
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = done;
+    cb.onchange = () => {
+      if(cb.checked){ if(!state.checked.includes(nm)) state.checked.push(nm); }
+      else state.checked = state.checked.filter(x => x !== nm);
+      save(); paintShop();
+    };
+    const span = document.createElement("span");
+    span.className = "nm"; span.textContent = nm;
+    const c = document.createElement("span");
+    c.className = "cnt"; c.textContent = cnt > 1 ? (cnt + "회") : "";
+    lab.append(cb, span, c);
+    li.appendChild(lab);
+    ul.appendChild(li);
+  });
+  host.innerHTML = "";
+  host.appendChild(ul);
+}
+
+/* ======================= 요리 고르기 창 ======================= */
+let target = null;            // {di, meal, idx}  idx -1 이면 새로 넣기
+const dlg = document.getElementById("picker");
+
+function openPicker(di, meal, idx){
+  target = {di, meal, idx:(idx === undefined ? -1 : idx)};
+  document.getElementById("dlgTitle").textContent = DAYS[di] + "요일 " + meal;
+  const pool = poolMeal(meal);
+  document.getElementById("dlgSub").textContent =
+    (target.idx >= 0 ? "이 자리를 바꿉니다 · " : "이 칸에 더합니다 · ") +
+    "조건에 맞는 " + meal + " 요리 " + pool.length + "가지";
+  document.getElementById("dlgEmpty").textContent = target.idx >= 0 ? "이 요리 빼기" : "이 칸 비우기";
+  document.getElementById("dlgSearch").value = "";
+  paintOptions("");
+  if(typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open","");
+  setTimeout(() => document.getElementById("dlgSearch").focus(), 30);
+}
+
+function putDish(name, isCustom){
+  const id = target.di + "|" + target.meal;
+  const arr = state.plan[id] || [];
+  const item = {t:isCustom ? "c" : "d", n:name};
+  if(target.idx >= 0 && arr[target.idx]) arr[target.idx] = item;
+  else{
+    if(arr.length >= cellLimit(target.meal)){ toast("이 칸에는 " + cellLimit(target.meal) + "가지까지 담을 수 있어요."); return; }
+    arr.push(item);
+  }
+  state.plan[id] = arr;
+  closeDlg(); sync();
+}
+
+function paintOptions(q){
+  const list = document.getElementById("dlgList");
+  let pool = poolMeal(target.meal);
+  if(q) pool = DISHES.filter(d => d.n.includes(q) || d.c.includes(q));
+  list.innerHTML = "";
+  if(!pool.length){
+    list.innerHTML = '<p class="empty-note">맞는 요리가 없습니다. 위 칸에 직접 적고 “직접 넣기”를 눌러 주세요.</p>';
+    return;
+  }
+  const put = (d) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.type = "button";
+    b.innerHTML = '<span class="thumb">' + dishArt(d) + '</span><span class="txt">' +
+      '<span class="nm">' + esc(d.n) + '</span><span class="mt">' +
+      d.c + " · " + d.t + "분 · " + d.w.join("/") + " · " + d.d.join("/") + '</span></span>';
+    b.onclick = () => putDish(d.n, false);
+    list.appendChild(b);
+  };
+  ROLE_ORDER.forEach(role => {
+    const grp = pool.filter(d => d.g === role);
+    if(!grp.length) return;
+    const h = document.createElement("div");
+    h.className = "opt-head"; h.textContent = role;
+    list.appendChild(h);
+    grp.forEach(put);
+  });
+}
+
+function closeDlg(){ if(dlg.open) dlg.close(); else dlg.removeAttribute("open"); }
+
+document.getElementById("dlgSearch").addEventListener("input", e => paintOptions(e.target.value.trim()));
+document.getElementById("dlgAdd").onclick = () => {
+  const v = document.getElementById("dlgSearch").value.trim();
+  if(!v){ document.getElementById("dlgSearch").focus(); return; }
+  putDish(v, true);
+};
+document.getElementById("dlgEmpty").onclick = () => {
+  const id = target.di + "|" + target.meal;
+  const arr = state.plan[id] || [];
+  if(target.idx >= 0){
+    arr.splice(target.idx, 1);
+    if(arr.length) state.plan[id] = arr; else delete state.plan[id];
+  }else delete state.plan[id];
+  closeDlg(); sync();
+};
+document.getElementById("dlgClose").onclick = closeDlg;
+
+/* ======================= 요리 카드(만드는 법) ======================= */
+const rdlg = document.getElementById("recipe");
+
+function openRecipe(di, meal, idx){
+  const arr = state.plan[di + "|" + meal] || [];
+  const val = arr[idx];
+  const d = val && val.t === "d" && byName(val.n);
+  if(!d){ openPicker(di, meal, idx); return; }
+  target = {di, meal, idx};
+
+  document.getElementById("rcArt").innerHTML = dishArt(d);
+  document.getElementById("rcName").textContent = d.n;
+
+  const tags = document.getElementById("rcTags");
+  tags.innerHTML = "";
+  const add = (t, hi) => {
+    const s = document.createElement("span");
+    if(hi) s.className = "hi";
+    s.textContent = t; tags.appendChild(s);
+  };
+  add(DAYS[di] + "요일 " + meal, true);
+  add(d.g, true);
+  add(d.c); add(d.t + "분");
+  d.w.forEach(x => add(x)); d.d.forEach(x => add(x));
+
+  document.getElementById("rcIng").textContent = d.i.join(" · ");
+
+  const ol = document.getElementById("rcSteps");
+  ol.innerHTML = "";
+  (d.r.length ? d.r : ["조리법이 아직 준비되지 않은 요리예요."]).forEach(t => {
+    const li = document.createElement("li");
+    li.textContent = t; ol.appendChild(li);
+  });
+
+  document.querySelector(".rc-scroll").scrollTop = 0;
+  if(typeof rdlg.showModal === "function") rdlg.showModal(); else rdlg.setAttribute("open","");
+}
+function closeRecipe(){ if(rdlg.open) rdlg.close(); else rdlg.removeAttribute("open"); }
+document.getElementById("rcClose").onclick = closeRecipe;
+document.getElementById("rcSwap").onclick = () => {
+  const t = target;
+  closeRecipe();
+  openPicker(t.di, t.meal, t.idx);
+};
+
+/* ======================= 버튼 ======================= */
+document.getElementById("gen").onclick = generate;
+
+let armed = false, armTimer = null;
+const clearBtn = document.getElementById("clear");
+clearBtn.onclick = () => {
+  if(!Object.keys(state.plan).length){ toast("표가 이미 비어 있어요."); return; }
+  if(!armed){
+    armed = true; clearBtn.textContent = "한 번 더 누르면 비워져요";
+    clearTimeout(armTimer);
+    armTimer = setTimeout(() => { armed = false; clearBtn.textContent = "표 비우기"; }, 4000);
+    return;
+  }
+  clearTimeout(armTimer); armed = false; clearBtn.textContent = "표 비우기";
+  state.plan = {}; state.checked = []; sync(); toast("식단표를 비웠어요.");
+};
+
+document.getElementById("print").onclick = () => {
+  try{ window.print(); }
+  catch(e){ toast("인쇄창이 안 열리면 Ctrl+P 를 눌러 주세요."); }
+};
+document.getElementById("resetAll").onclick = () => {
+  state.f = blankF(); state.fx = blankFx(); state.mode = blankMode();
+  sync(); toast("조건을 처음 상태로 되돌렸어요.");
+};
+document.getElementById("copyShop").onclick = async () => {
+  const map = shopMap();
+  if(!map.size){ toast("아직 담긴 재료가 없어요."); return; }
+  const txt = [...map.keys()].map(x => "· " + x).join("\n");
+  const btn = document.getElementById("copyShop");
+  let ok = false;
+  try{ await navigator.clipboard.writeText(txt); ok = true; }catch(e){ ok = false; }
+  btn.textContent = ok ? "복사했어요" : "복사가 안 돼요";
+  if(!ok) toast("복사가 막혀 있어요. 목록을 드래그해서 직접 복사해 주세요.");
+  setTimeout(() => { btn.textContent = "목록 복사"; }, 1800);
+};
+
+/* ======================= 공통 ======================= */
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 3200);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function sync(){ paintFilters(); paintMatch(); paintPlan(); paintShop(); save(); }
+
+load();
+buildFilters();
+sync();
+</script>
