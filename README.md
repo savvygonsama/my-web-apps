@@ -41,8 +41,9 @@
 | 스킬 | 대상 앱 | 폴더 |
 |---|---|---|
 | ことば日和 | `kotoba-biyori/` | [`skills/kotoba-biyori/`](skills/kotoba-biyori/) |
-| 스틸링고 | `steel-lingo/lite/`, `steel-lingo/pro/` | [`skills/steel-lingo/`](skills/steel-lingo/) |
-| 철강 일본어 매일 훈련 | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
+| 스틸링고 Lite | `steel-lingo/lite/` | [`skills/steel-lingo-lite/`](skills/steel-lingo-lite/) |
+| 스틸링고 Pro | `steel-lingo/pro/` | [`skills/steel-lingo-pro/`](skills/steel-lingo-pro/) |
+| 철강 일본어 매일 훈련 (팀원용, 앱과 별개) | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 茶馆 CHÁGUǍN | `chaguan/` | [`skills/chaguan/`](skills/chaguan/) |
 | ROUNDTABLE | `roundtable/` | [`skills/roundtable/`](skills/roundtable/) |
 
