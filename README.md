@@ -46,5 +46,6 @@
 | 철강 일본어 매일 훈련 (팀원용, 앱과 별개) | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 茶馆 CHÁGUǍN | `chaguan/` | [`skills/chaguan/`](skills/chaguan/) |
 | ROUNDTABLE | `roundtable/` | [`skills/roundtable/`](skills/roundtable/) |
+| 업무 스타일 진단 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
 
-`workstyle/`, `meal-planner/`, `midnight-train/`은 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.
+`meal-planner/`, `midnight-train/`은 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.

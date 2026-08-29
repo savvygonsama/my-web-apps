@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>업무 스타일 진단 — 문항 설계안 v1</title>
+<style>
+:root{--bg:#f7f5f1;--card:#fff;--ink:#1d2226;--ink2:#565e66;--ink3:#8a929a;
+--line:#e4dfd7;--accent:#1f5f63;--soft:#eaf1f0;--warn:#8a5a2b;--warnsoft:#f8f1e7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.75;
+font-family:"Pretendard","Malgun Gothic","맑은 고딕",system-ui,sans-serif;font-size:15.5px}
+.wrap{max-width:760px;margin:0 auto;padding:44px 22px 90px}
+h1{font-size:27px;letter-spacing:-.025em;margin:0 0 8px}
+.lead{color:var(--ink2);font-size:15px;margin:0 0 34px;padding-bottom:26px;border-bottom:1px solid var(--line)}
+h2{font-size:20px;letter-spacing:-.02em;margin:52px 0 14px;padding-top:8px}
+h3{font-size:17px;letter-spacing:-.02em;margin:0 0 4px}
+p{margin:0 0 14px}
+.tag{display:inline-block;font-size:11.5px;letter-spacing:.06em;color:var(--accent);
+background:var(--soft);border-radius:4px;padding:3px 8px;vertical-align:2px;margin-left:8px}
+.axis{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 24px 10px;margin-bottom:16px}
+.poles{color:var(--ink2);font-size:14.5px;margin:0 0 16px}
+.poles b{color:var(--accent);font-weight:600}
+.basis{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:13.5px;
+color:#1b4a4d;line-height:1.7;margin:0 0 20px}
+.basis b{display:block;font-size:12px;letter-spacing:.05em;margin-bottom:5px}
+ol{margin:0;padding:0 0 0 22px}
+ol li{margin-bottom:18px}
+.sit{font-weight:600;letter-spacing:-.01em;display:block;margin-bottom:7px}
+.ab{font-size:14.5px;color:var(--ink2);padding-left:2px}
+.ab i{font-style:normal;color:var(--accent);font-weight:700;margin-right:5px}
+.ab div{margin-bottom:3px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink3);font-size:12.5px;letter-spacing:.04em;font-weight:600}
+.caution{background:var(--warnsoft);border-left:3px solid var(--warn);border-radius:0 10px 10px 0;
+padding:18px 20px;margin-bottom:14px;font-size:14.5px}
+.caution h3{color:var(--warn);font-size:15.5px;margin-bottom:5px}
+.caution p{margin:0;color:#5f4a33;line-height:1.72}
+.refs{font-size:13px;color:var(--ink3);line-height:1.85}
+.refs div{margin-bottom:3px}
+@media print{body{background:#fff;font-size:11pt}.axis,.caution{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>업무 스타일 진단 — 문항 설계안 v1</h1>
+<p class="lead">
+8개 축 · 40문항 · 응답 시간 약 6분<br>
+읽으시면서 <b>어색한 문항, 우리 회사에서 안 맞는 상황, 빠진 축</b>을 짚어주시면 반영하겠습니다.
+축 하나가 문항 5개 + 결과 문구 + 궁합 조언 전체를 끌고 가므로, 축 구성을 여기서 확정하는 게 가장 중요합니다.
+</p>
+
+<h2>축을 이렇게 잡은 이유</h2>
+<p>
+앞의 네 축(추진 템포·우선순위·의사결정·시야)은 <b>일하는 방식</b>이고,
+뒤의 네 축(변화 대응·피드백·위임·압박)은 <b>사람 사이에서 사고가 나는 지점</b>입니다.
+실제 상사-부하 갈등의 대부분은 뒤의 네 축에서 생기는데, 흔한 성격검사들은 여기를 거의 다루지 않습니다.
+</p>
+<table>
+<tr><th style="width:24%">축</th><th style="width:38%">양쪽 끝</th><th>바탕이 된 연구</th></tr>
+<tr><td>1. 추진 템포</td><td>속도형 ↔ 완성도형</td><td>성실성(Big Five)의 신중성 요인</td></tr>
+<tr><td>2. 우선순위</td><td>과업 중심 ↔ 관계 중심</td><td>오하이오 리더십 2요인(과업주도·배려)</td></tr>
+<tr><td>3. 의사결정</td><td>주도형 ↔ 조율형</td><td>주장성 연구, 참여적 의사결정 모형</td></tr>
+<tr><td>4. 시야</td><td>큰그림형 ↔ 디테일형</td><td>해석수준이론(추상 vs 구체)</td></tr>
+<tr><td>5. 변화 대응</td><td>검증 후 이동 ↔ 일단 시도</td><td>조절초점이론(예방초점 vs 향상초점)</td></tr>
+<tr><td>6. 피드백 방식</td><td>직설형 ↔ 완곡형</td><td>공손성 이론, 피드백 개입 메타분석</td></tr>
+<tr><td>7. 일 맡기고 받기</td><td>자율 선호 ↔ 절차 선호</td><td>자기결정이론, 직무특성모형</td></tr>
+<tr><td>8. 압박 상황</td><td>정면 돌파 ↔ 거리 두고 재정비</td><td>스트레스 대처 이론(문제중심 vs 정서중심)</td></tr>
+</table>
+<p style="font-size:14px;color:var(--ink2)">
+※ 모든 문항은 <b>양쪽 다 괜찮은 선택지</b>로 썼습니다. 한쪽이 정답처럼 보이면 사람들은 실제 모습이 아니라
+바람직해 보이는 쪽을 고릅니다(사회적 바람직성 편향). 읽으시면서 <b>한쪽이 더 좋아 보이는 문항</b>이 있으면
+알려주세요 — 그 문항은 고쳐야 합니다.
+</p>
+
+<!-- 1 -->
+<div class="axis">
+<h3>축 1. 추진 템포<span class="tag">속도형 ↔ 완성도형</span></h3>
+<p class="poles">산출물을 <b>언제 세상에 내보내는가</b>. 덜 여물어도 빨리 굴리는 쪽과, 다 만들어서 내는 쪽.</p>
+<div class="basis"><b>근거</b>
+성실성은 거의 모든 직군에서 직무성과를 예측하는 가장 일관된 성격 특성입니다(Barrick &amp; Mount, 1991 메타분석).
+다만 그 하위 요인인 '신중성'은 많을수록 좋은 게 아니라, 일정 수준을 넘으면 오히려 성과가 떨어지는
+역U자 관계가 보고됩니다(Le et al., 2011). 속도와 완성도 어느 쪽도 우월하지 않다는 뜻입니다.</div>
+<ol>
+<li><span class="sit">상사가 "간단히 정리해서 오늘 중 달라"고 했다. 자료는 아직 70% 정도다.</span>
+<div class="ab"><div><i>A</i>지금 상태로 먼저 드리고, 보완해서 다시 드리겠다고 한다.</div><div><i>B</i>퇴근을 미뤄서라도 채워서 완성본으로 낸다.</div></div></li>
+<li><span class="sit">고객사 메일에 답을 해야 하는데, 확인이 안 끝난 항목이 두어 개 남았다.</span>
+<div class="ab"><div><i>A</i>아는 부분까지 먼저 회신하고 나머지는 추후 안내한다.</div><div><i>B</i>전부 확인한 뒤 한 번에 정확하게 회신한다.</div></div></li>
+<li><span class="sit">회의 자료를 만들고 있다.</span>
+<div class="ab"><div><i>A</i>거친 초안이라도 빨리 돌리고 피드백으로 고쳐 나간다.</div><div><i>B</i>어느 정도 모양이 잡힌 뒤에 공유한다.</div></div></li>
+<li><span class="sit">마감이 이틀 남았는데 할 일은 대략 끝났다.</span>
+<div class="ab"><div><i>A</i>다음 일을 앞당겨 시작한다.</div><div><i>B</i>남은 시간에 처음부터 다시 검토한다.</div></div></li>
+<li><span class="sit">결정을 내려야 하는데 필요한 정보가 70%쯤 모였다.</span>
+<div class="ab"><div><i>A</i>지금 결정하고 가면서 수정한다.</div><div><i>B</i>나머지 정보를 더 모은 뒤 결정한다.</div></div></li>
+</ol>
+</div>
+
+<!-- 2 -->
+<div class="axis">
+<h3>축 2. 우선순위<span class="tag">과업 중심 ↔ 관계 중심</span></h3>
+<p class="poles">문제가 생겼을 때 <b>일을 먼저 잡는가, 사람을 먼저 잡는가</b>.</p>
+<div class="basis"><b>근거</b>
+1950년대 오하이오 주립대 리더십 연구는 리더 행동이 '과업주도'와 '배려' 두 축으로 나뉜다는 것을 밝혔고,
+이후 메타분석에서 배려는 부하의 만족·동기와, 과업주도는 집단 성과와 더 강하게 연결되는 것으로 확인됐습니다
+(Judge, Piccolo &amp; Ilies, 2004). 둘 다 필요하지만 <b>급할 때 무엇을 먼저 집느냐</b>에서 사람이 갈립니다.</div>
+<ol>
+<li><span class="sit">팀원이 실수로 잘못된 납기 자료를 고객사에 보냈다.</span>
+<div class="ab"><div><i>A</i>어디가 잘못됐고 어떻게 수습할지부터 짚는다.</div><div><i>B</i>우선 상황을 듣고 진정시킨 뒤 수습에 들어간다.</div></div></li>
+<li><span class="sit">회의가 길어지고 분위기가 어색해졌다.</span>
+<div class="ab"><div><i>A</i>그래도 결론을 내는 데 집중한다.</div><div><i>B</i>분위기를 한 번 풀고 나서 이야기를 이어간다.</div></div></li>
+<li><span class="sit">협업 부서가 요청한 자료를 계속 늦게 준다.</span>
+<div class="ab"><div><i>A</i>기한과 필요한 이유를 분명히 해서 다시 요청한다.</div><div><i>B</i>사정을 먼저 물어보고 함께 방법을 찾는다.</div></div></li>
+<li><span class="sit">새로 온 팀원의 첫 주. 내가 먼저 하는 일은</span>
+<div class="ab"><div><i>A</i>업무 범위와 해야 할 일을 정확히 알려주는 것.</div><div><i>B</i>사람들과 이어주고 편하게 적응하게 하는 것.</div></div></li>
+<li><span class="sit">성과가 좋았던 프로젝트가 끝났다. 먼저 떠오르는 생각은</span>
+<div class="ab"><div><i>A</i>무엇이 통했고 다음엔 어떻게 더 잘할까.</div><div><i>B</i>누가 고생했고 어떻게 챙겨줄까.</div></div></li>
+</ol>
+</div>
+
+<!-- 3 -->
+<div class="axis">
+<h3>축 3. 의사결정<span class="tag">주도형 ↔ 조율형</span></h3>
+<p class="poles">결론이 안 날 때 <b>내가 방향을 만드는가, 접점을 만드는가</b>.</p>
+<div class="basis"><b>근거</b>
+주장성(assertiveness)은 리더십 효과와 역U자 관계를 보입니다 — 너무 약해도, 너무 강해도 평가가 떨어지고
+중간 구간에서 가장 높습니다(Ames &amp; Flynn, 2007). 또한 브룸-예튼 의사결정 모형은 독단형·상담형·집단형 중
+어느 것이 최적인지가 <b>상황(시간 압박, 정보 분산, 수용 필요성)에 따라 달라진다</b>고 봅니다.
+즉 이 축은 우열이 아니라 상황 적합성의 문제입니다.</div>
+<ol>
+<li><span class="sit">의견이 갈려 회의가 30분째 제자리다.</span>
+<div class="ab"><div><i>A</i>내 안을 근거와 함께 밀어 결론을 낸다.</div><div><i>B</i>각자 의견을 정리해 접점을 만든다.</div></div></li>
+<li><span class="sit">내가 옳다고 확신하는데 상사는 다른 방향을 원한다.</span>
+<div class="ab"><div><i>A</i>근거를 들어 다시 설득해 본다.</div><div><i>B</i>상사 방향을 따르되 우려되는 점은 기록해 둔다.</div></div></li>
+<li><span class="sit">팀 업무 분담을 정해야 한다.</span>
+<div class="ab"><div><i>A</i>내가 안을 짜서 제시하고 조정을 받는다.</div><div><i>B</i>각자 원하는 바를 먼저 듣고 맞춘다.</div></div></li>
+<li><span class="sit">고객사가 받아들이기 어려운 조건을 요구한다.</span>
+<div class="ab"><div><i>A</i>안 되는 선을 분명히 긋고 대안을 제시한다.</div><div><i>B</i>양쪽 사정을 살펴 접점을 찾아본다.</div></div></li>
+<li><span class="sit">누가 맡을지 애매한 일이 하나 생겼다.</span>
+<div class="ab"><div><i>A</i>내가 가져와서 정리한다.</div><div><i>B</i>누가 맡는 게 맞는지 정리해 합의한다.</div></div></li>
+</ol>
+</div>
+
+<!-- 4 -->
+<div class="axis">
+<h3>축 4. 시야<span class="tag">큰그림형 ↔ 디테일형</span></h3>
+<p class="poles">같은 일을 두고 <b>"왜 하는가"를 먼저 보는가, "어떻게 하는가"를 먼저 보는가</b>.</p>
+<div class="basis"><b>근거</b>
+해석수준이론(Trope &amp; Liberman)에 따르면 사람은 같은 행동을 추상적 목적('왜')으로도, 구체적 절차('어떻게')로도
+표상하며, 어느 쪽을 기본값으로 쓰는지에 안정적인 개인차가 있습니다(Vallacher &amp; Wegner의 행동 식별 연구).
+회의에서 한 사람은 방향을 말하고 다른 사람은 일정을 묻는, 서로 딴 얘기처럼 들리는 상황의 원인이 이것입니다.</div>
+<ol>
+<li><span class="sit">새 프로젝트 설명을 들을 때 먼저 궁금한 것은</span>
+<div class="ab"><div><i>A</i>이걸 왜 하는지, 어디로 가는 일인지.</div><div><i>B</i>언제까지 무엇을 어떻게 해야 하는지.</div></div></li>
+<li><span class="sit">20장짜리 보고서를 받았다.</span>
+<div class="ab"><div><i>A</i>결론과 흐름을 먼저 훑는다.</div><div><i>B</i>숫자와 근거를 앞에서부터 확인한다.</div></div></li>
+<li><span class="sit">내 자료에서 오타나 단위 표기가 틀린 걸 발견했다.</span>
+<div class="ab"><div><i>A</i>내용이 맞으면 크게 개의치 않는다.</div><div><i>B</i>신경이 쓰여서 바로 고친다.</div></div></li>
+<li><span class="sit">계획을 세울 때 나는</span>
+<div class="ab"><div><i>A</i>큰 방향을 잡고 세부는 하면서 정한다.</div><div><i>B</i>단계와 일정을 미리 촘촘히 짜둔다.</div></div></li>
+<li><span class="sit">문제가 생겼을 때 먼저 보는 것은</span>
+<div class="ab"><div><i>A</i>왜 이런 문제가 반복되는가 하는 구조.</div><div><i>B</i>정확히 어느 지점에서 틀어졌는가 하는 경로.</div></div></li>
+</ol>
+</div>
+
+<!-- 5 -->
+<div class="axis">
+<h3>축 5. 변화 대응<span class="tag">검증 후 이동 ↔ 일단 시도</span></h3>
+<p class="poles">해보지 않은 것을 앞에 뒀을 때 <b>잃을 것을 먼저 보는가, 얻을 것을 먼저 보는가</b>.</p>
+<div class="basis"><b>근거</b>
+조절초점이론(Higgins, 1997)은 사람이 '예방초점'(손실 회피·안전·의무)과 '향상초점'(획득·성장·이상) 중
+어느 쪽으로 기울어 있는지에 안정적 차이가 있다고 봅니다. 직장 맥락 메타분석에서 향상초점은 과업성과·창의성과,
+예방초점은 오류 감소·안전행동과 더 강하게 연결됐습니다(Lanaj, Chang &amp; Johnson, 2012).
+<b>철강·수출처럼 한 번의 실수가 큰 손실로 이어지는 업무에서는 예방초점이 강점이 되는 자리가 분명히 있습니다.</b></div>
+<ol>
+<li><span class="sit">팀이 5년째 써온 양식이 있는데, 더 나은 방식이 떠올랐다.</span>
+<div class="ab"><div><i>A</i>지금 방식이 자리 잡은 이유가 있으니 리스크부터 따진다.</div><div><i>B</i>일단 이번 건에 적용해보고 판단한다.</div></div></li>
+<li><span class="sit">새 시스템 도입 이야기가 나왔다. 먼저 드는 생각은</span>
+<div class="ab"><div><i>A</i>지금 잘 되던 것 중에 뭐가 깨질까.</div><div><i>B</i>이걸로 뭐가 좋아질까.</div></div></li>
+<li><span class="sit">전례 없는 형태의 거래 문의가 들어왔다.</span>
+<div class="ab"><div><i>A</i>왜 안 되는지, 어디가 걸리는지부터 점검한다.</div><div><i>B</i>되게 하려면 무엇이 필요한지부터 본다.</div></div></li>
+<li><span class="sit">목표를 세울 때 나는</span>
+<div class="ab"><div><i>A</i>확실히 달성 가능한 선을 잡는다.</div><div><i>B</i>다소 무리여도 높은 선을 잡는다.</div></div></li>
+<li><span class="sit">더 신경 쓰이는 쪽은</span>
+<div class="ab"><div><i>A</i>잘못해서 잃는 것.</div><div><i>B</i>해보지 않아서 놓치는 것.</div></div></li>
+</ol>
+</div>
+
+<!-- 6 -->
+<div class="axis">
+<h3>축 6. 피드백 방식<span class="tag">직설형 ↔ 완곡형</span></h3>
+<p class="poles">지적을 <b>어떻게 하고, 어떻게 받는가</b>. 상사-부하 사이에서 가장 자주 사고가 나는 축입니다.</p>
+<div class="basis"><b>근거</b>
+공손성 이론(Brown &amp; Levinson)은 지적을 본질적으로 상대의 체면을 위협하는 행위로 보고, 이를 얼마나 완화해
+전달하는지에 개인·문화 차이가 크다고 봅니다. 그리고 607건을 분석한 피드백 메타분석(Kluger &amp; DeNisi, 1996)의
+결과는 이 축의 조언이 왜 중요한지를 보여줍니다 — <b>피드백 개입의 약 3분의 1은 성과를 오히려 떨어뜨렸고,
+특히 피드백이 '일'이 아니라 '사람'을 향할 때 그랬습니다.</b></div>
+<ol>
+<li><span class="sit">후배의 보고서에 문제가 있다.</span>
+<div class="ab"><div><i>A</i>어디가 왜 잘못됐는지 바로 말한다.</div><div><i>B</i>잘한 점을 먼저 말하고 돌려서 짚는다.</div></div></li>
+<li><span class="sit">내가 지적을 받을 때 더 편한 쪽은</span>
+<div class="ab"><div><i>A</i>돌리지 말고 바로 말해주는 것.</div><div><i>B</i>상황을 배려해서 말해주는 것.</div></div></li>
+<li><span class="sit">회의에서 상사 의견에 문제가 보인다.</span>
+<div class="ab"><div><i>A</i>그 자리에서 이견을 말한다.</div><div><i>B</i>회의 후 따로 말하거나 넘어간다.</div></div></li>
+<li><span class="sit">상대가 "괜찮습니다"라고 답했을 때</span>
+<div class="ab"><div><i>A</i>괜찮다는 뜻으로 받아들이고 넘어간다.</div><div><i>B</i>정말 괜찮은지 표정과 맥락을 한 번 더 살핀다.</div></div></li>
+<li><span class="sit">거절해야 할 때 나는</span>
+<div class="ab"><div><i>A</i>안 되는 이유를 분명히 말한다.</div><div><i>B</i>여지를 남기며 부드럽게 표현한다.</div></div></li>
+</ol>
+</div>
+
+<!-- 7 -->
+<div class="axis">
+<h3>축 7. 일 맡기고 받기<span class="tag">자율 선호 ↔ 절차 선호</span></h3>
+<p class="poles">일을 줄 때와 받을 때 <b>맡기는 쪽이 편한가, 맞춰두는 쪽이 편한가</b>.</p>
+<div class="basis"><b>근거</b>
+자기결정이론(Deci &amp; Ryan)은 자율성을 인간의 기본 심리 욕구로 보며, 자율성이 충족될 때 내적 동기와
+지속적 성과가 올라간다고 봅니다. 직무특성모형(Hackman &amp; Oldham)에서도 자율성은 동기를 만드는 핵심 요소입니다.
+다만 <b>경험이 적거나 과업이 모호할 때는 구조를 주는 편이 오히려 도움이 됩니다</b>(상황적 리더십).
+'마이크로매니지먼트'라는 불만과 '방치당했다'는 불만은 이 축의 양쪽 끝에서 각각 나옵니다.</div>
+<ol>
+<li><span class="sit">일을 맡길 때 나는</span>
+<div class="ab"><div><i>A</i>목표만 주고 방법은 맡긴다.</div><div><i>B</i>방식과 중간 점검 시점을 정해준다.</div></div></li>
+<li><span class="sit">일을 받을 때 더 편한 쪽은</span>
+<div class="ab"><div><i>A</i>알아서 하도록 두는 것.</div><div><i>B</i>기대치를 구체적으로 알려주는 것.</div></div></li>
+<li><span class="sit">진행 중인 일에 대해 나는</span>
+<div class="ab"><div><i>A</i>물어보기 전에는 굳이 보고하지 않는다.</div><div><i>B</i>묻지 않아도 중간중간 공유한다.</div></div></li>
+<li><span class="sit">팀원이 내가 생각한 것과 다른 방식으로 일하고 있다.</span>
+<div class="ab"><div><i>A</i>결과가 나오면 그때 판단한다.</div><div><i>B</i>지금 방식을 확인하고 조정한다.</div></div></li>
+<li><span class="sit">정해진 절차와 매뉴얼에 대해 나는</span>
+<div class="ab"><div><i>A</i>상황마다 다르니 유연해야 한다고 본다.</div><div><i>B</i>있으면 서로 편해진다고 본다.</div></div></li>
+</ol>
+</div>
+
+<!-- 8 -->
+<div class="axis">
+<h3>축 8. 압박 상황<span class="tag">정면 돌파 ↔ 거리 두고 재정비</span></h3>
+<p class="poles">일이 크게 틀어졌을 때 <b>바로 부딪히는가, 한 걸음 물러서서 다시 짜는가</b>.</p>
+<div class="basis"><b>근거</b>
+스트레스 대처 연구(Lazarus &amp; Folkman)는 대처를 '문제중심'과 '정서중심'으로 나누고,
+<b>어느 쪽이 우월한 게 아니라 상황에 따라 효과가 갈린다</b>고 봅니다 — 내가 통제할 수 있는 상황에서는
+문제중심이, 통제할 수 없는 상황에서는 정서중심 대처가 더 나은 결과를 냅니다.
+이 축이 다른 축과 다른 점은, <b>평소가 아니라 위기 때만 드러난다</b>는 것입니다. 그래서 서로 몰랐다가 위기에 부딪힙니다.</div>
+<ol>
+<li><span class="sit">일이 크게 틀어졌다. 그 순간 나는</span>
+<div class="ab"><div><i>A</i>바로 대책 회의를 잡는다.</div><div><i>B</i>상황을 정리할 시간을 잠깐 갖는다.</div></div></li>
+<li><span class="sit">압박이 심할 때 나는</span>
+<div class="ab"><div><i>A</i>평소보다 더 몰아쳐서 일한다.</div><div><i>B</i>페이스를 조절하며 버틴다.</div></div></li>
+<li><span class="sit">감정이 상하는 일이 생겼을 때</span>
+<div class="ab"><div><i>A</i>빨리 이야기해서 털고 가는 게 낫다.</div><div><i>B</i>가라앉은 뒤에 이야기하는 게 낫다.</div></div></li>
+<li><span class="sit">예상치 못한 악재가 터졌다.</span>
+<div class="ab"><div><i>A</i>원인 파악과 대응을 동시에 밀어붙인다.</div><div><i>B</i>통제할 수 있는 것과 아닌 것부터 구분한다.</div></div></li>
+<li><span class="sit">감당하기 어려운 양의 일이 몰렸을 때</span>
+<div class="ab"><div><i>A</i>일단 붙잡고 끝까지 밀어붙인다.</div><div><i>B</i>우선순위를 다시 짜거나 도움을 청한다.</div></div></li>
+</ol>
+</div>
+
+<h2>궁합 조언은 무엇에 근거하는가</h2>
+<p>
+두 사람의 8축 결과를 축별로 비교해서, <b>같은 쪽인지 / 반대쪽인지 / 한쪽이 중간인지</b>에 따라 조언을 만듭니다.
+상사·동료·후배 중 어느 관계인지에 따라 같은 조합도 다른 조언이 나갑니다.
+조언의 뼈대는 다음 네 가지입니다.
+</p>
+<table>
+<tr><th style="width:32%">근거</th><th>이 앱에서 하는 일</th></tr>
+<tr><td>기본적 귀인 오류<br><span style="color:var(--ink3);font-size:13px">Ross, 1977</span></td>
+<td>사람은 남의 행동은 성격 탓으로, 자기 행동은 상황 탓으로 돌립니다. "저 사람은 원래 저렇다"를
+<b>"기본값이 다르다"</b>로 바꿔 읽게 하는 것이 이 앱의 핵심 효용입니다.</td></tr>
+<tr><td>심리적 안전감<br><span style="color:var(--ink3);font-size:13px">Edmondson, 1999</span></td>
+<td>팀 성과를 예측하는 가장 강력한 변수 중 하나입니다. 스타일 차이를 <b>말로 꺼낼 수 있는 상태</b>를
+만드는 것 자체가 성과에 기여합니다. 워크숍용으로 쓰기 좋은 이유이기도 합니다.</td></tr>
+<tr><td>리더-구성원 교환관계(LMX)<br><span style="color:var(--ink3);font-size:13px">Graen &amp; Uhl-Bien, 1995</span></td>
+<td>상사-부하 관계의 질이 성과·만족·이직 의도를 예측합니다. 상하 조합 조언이 동료 조합보다
+더 구체적이어야 하는 근거입니다.</td></tr>
+<tr><td>유사성의 이점과 대가<br><span style="color:var(--ink3);font-size:13px">Byrne, 1971 외</span></td>
+<td>닮은 조합은 편하지만 <b>같은 맹점을 공유</b>합니다. 그래서 "잘 맞음"으로 끝내지 않고,
+닮은 조합에는 "둘 다 놓칠 가능성이 큰 것"을 반드시 같이 알려줍니다.</td></tr>
+</table>
+
+<h2>솔직하게 짚어둘 한계</h2>
+
+<div class="caution">
+<h3>뇌과학은 근거로 쓰지 않습니다</h3>
+<p>업무 스타일·대인 궁합 영역에서 뇌과학이 실제로 말해줄 수 있는 것은 거의 없습니다.
+좌뇌형/우뇌형, 도파민형 같은 표현은 대중서에서 만들어진 것으로 연구가 뒷받침하지 않습니다.
+넣으면 그럴듯해 보이지만, 아는 사람이 보는 순간 앱 전체의 신뢰가 무너집니다.
+대신 위의 성격심리학·조직심리학 실증 연구로 채웠습니다.</p>
+</div>
+
+<div class="caution">
+<h3>MBTI를 근거로 쓰지 않는 이유</h3>
+<p>MBTI는 재검사 신뢰도가 낮아(몇 주 뒤 다시 하면 유형이 바뀌는 비율이 상당합니다)
+학계에서 성격 측정의 표준으로 쓰이지 않습니다. 또 사람을 이분법으로 나누지만
+실제 성격 특성은 연속적으로 분포합니다. <b>그래서 이 앱은 "당신은 ○○형"이라고 딱 잘라 말하지 않고,
+축마다 어느 쪽으로 얼마나 기울었는지를 막대로 보여줍니다.</b></p>
+</div>
+
+<div class="caution">
+<h3>이 앱 자체는 타당화된 검사가 아닙니다</h3>
+<p>위 이론들은 <b>문항과 조언을 만드는 근거</b>이지, 이 40문항이 학술적으로 검증됐다는 뜻이 아닙니다.
+정식 심리 측정 도구는 수백 명 표본으로 신뢰도·타당도를 검증해야 합니다.
+그래서 앱 안에 이 사실을 명시하고, <b>인사 평가·배치·채용의 근거로 쓰지 말 것</b>을 함께 안내하려 합니다.
+이 문구가 있어야 회사에서 안심하고 쓸 수 있습니다.</p>
+</div>
+
+<h2>다음 단계</h2>
+<p>
+이 문서에서 <b>축 구성과 문항</b>을 확정해 주시면, 그다음은 이 순서입니다.
+</p>
+<ol style="padding-left:20px">
+<li style="margin-bottom:8px">진단 앱 제작 — 40문항, 8축 그래프, 강점·주의 카드, 결과 코드 발급</li>
+<li style="margin-bottom:8px">궁합 조언 콘텐츠 작성 — 축 8개 × 조합 유형 × 관계 방향(상사/동료/후배)</li>
+<li style="margin-bottom:8px">코드 입력 → 조합 결과 화면 연결</li>
+</ol>
+<p style="font-size:14.5px;color:var(--ink2)">
+읽으시고 알려주시면 좋은 것: <b>①</b> 빼거나 합쳐야 할 축 <b>②</b> 우리 회사 상황에 안 맞는 문항
+<b>③</b> 한쪽 선택지가 더 좋아 보이는 문항 <b>④</b> 빠졌다고 느끼는 축.
+</p>
+
+<div class="refs" style="margin-top:40px;padding-top:20px;border-top:1px solid var(--line)">
+<div>Barrick, M. &amp; Mount, M. (1991). Personnel Psychology.</div>
+<div>Le, H. et al. (2011). Journal of Applied Psychology.</div>
+<div>Judge, T., Piccolo, R. &amp; Ilies, R. (2004). Journal of Applied Psychology.</div>
+<div>Ames, D. &amp; Flynn, F. (2007). Journal of Personality and Social Psychology.</div>
+<div>Trope, Y. &amp; Liberman, N. (2010). Psychological Review.</div>
+<div>Vallacher, R. &amp; Wegner, D. (1987). Psychological Review.</div>
+<div>Higgins, E. T. (1997). American Psychologist.</div>
+<div>Lanaj, K., Chang, C. &amp; Johnson, R. (2012). Psychological Bulletin.</div>
+<div>Brown, P. &amp; Levinson, S. (1987). Politeness: Some Universals in Language Usage.</div>
+<div>Kluger, A. &amp; DeNisi, A. (1996). Psychological Bulletin.</div>
+<div>Deci, E. &amp; Ryan, R. (2000). Psychological Inquiry.</div>
+<div>Hackman, J. R. &amp; Oldham, G. (1976). Organizational Behavior and Human Performance.</div>
+<div>Lazarus, R. &amp; Folkman, S. (1984). Stress, Appraisal, and Coping.</div>
+<div>Ross, L. (1977). Advances in Experimental Social Psychology.</div>
+<div>Edmondson, A. (1999). Administrative Science Quarterly.</div>
+<div>Graen, G. &amp; Uhl-Bien, M. (1995). The Leadership Quarterly.</div>
+</div>
+
+</div>
+</body>
+</html>
