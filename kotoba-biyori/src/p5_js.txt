@@ -1,0 +1,339 @@
+];
+
+const TOTAL = DAYS.length;
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("kb-" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("kb-" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const attr = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/* 발음 — 기기 내장 음성.
+   브라우저는 음성 목록을 늦게 채우는 경우가 많다. 누른 시점에 목록이
+   비어 있으면 잠시 기다렸다 다시 본다. 일본어 음성을 못 찾아도 곧바로
+   포기하지 않고 lang만 지정해 한 번 시도한다 — 그래도 소리가 없으면
+   무엇이 막고 있는지 안내한다. */
+function waitVoices() {
+  return new Promise(res => {
+    if (!("speechSynthesis" in window)) return res([]);
+    const now = speechSynthesis.getVoices();
+    if (now.length) return res(now);
+    const t = setTimeout(() => res(speechSynthesis.getVoices()), 1500);
+    speechSynthesis.addEventListener("voiceschanged", () => {
+      clearTimeout(t); res(speechSynthesis.getVoices());
+    }, { once: true });
+  });
+}
+if ("speechSynthesis" in window) speechSynthesis.getVoices();
+
+let sayingBtn = null;
+function showNote(voices) {
+  const box = document.getElementById("note");
+  const d = document.getElementById("diag");
+  if (!("speechSynthesis" in window)) {
+    d.textContent = "이 브라우저는 음성 기능 자체를 지원하지 않습니다.";
+  } else if (!voices.length) {
+    d.textContent = "브라우저가 음성을 하나도 찾지 못했습니다. 브라우저를 완전히 종료한 뒤 다시 켜 보세요.";
+  } else {
+    d.innerHTML = "브라우저가 찾은 음성 " + voices.length + "개 — 일본어 없음<br><span style='color:var(--sumi-3)'>"
+      + voices.slice(0, 8).map(v => v.lang).join(" · ") + "</span>";
+  }
+  box.hidden = false;
+}
+async function say(text, btn) {
+  if (!("speechSynthesis" in window)) { showNote([]); return; }
+  const voices = await waitVoices();
+  const ja = voices.find(v => /^ja/i.test(v.lang)) || null;
+  speechSynthesis.cancel();
+  if (sayingBtn) sayingBtn.classList.remove("on");
+  const u = new SpeechSynthesisUtterance(text);
+  if (ja) u.voice = ja;
+  u.lang = "ja-JP"; u.rate = .9;
+  btn.classList.add("on"); sayingBtn = btn;
+  let started = false;
+  u.onstart = () => { started = true; };
+  u.onend = u.onerror = () => btn.classList.remove("on");
+  speechSynthesis.speak(u);
+  setTimeout(() => { if (!started) { btn.classList.remove("on"); showNote(voices); } }, 1400);
+}
+const sayBtn = t => `<button class="say" data-say="${attr(t)}" title="발음 듣기">🔊</button>`;
+
+const mkKey = (d, i) => `m-${d}-${i}`;
+const doneKey = d => "done-" + d;
+let cur = Math.min(Math.max(store.get("day", 1), 1), TOTAL);
+let quizState = {};
+
+/* ── 복습 ────────────────────────────────────────
+   어제 배운 열 개를 그대로 불러오고, 그 이전 날들 중
+   「あやしい」로 표시해 둔 말을 뒤에 붙인다. 콘텐츠를
+   따로 쓰지 않으므로 자료가 두 벌이 되지 않는다.        */
+function reviewItems(dayNo) {
+  const prev = DAYS.find(d => d.no === dayNo - 1);
+  const list = [];
+  if (prev) prev.words.forEach((w, i) => list.push({ w, mark: store.get(mkKey(prev.no, i), null), from: prev.no }));
+  const carry = [];
+  DAYS.filter(d => d.no < dayNo - 1).forEach(d => {
+    d.words.forEach((w, i) => {
+      if (store.get(mkKey(d.no, i), null) === "unsure") carry.push({ w, mark: "unsure", from: d.no });
+    });
+  });
+  carry.sort((a, b) => b.from - a.from);
+  const out = list.concat(carry.slice(0, 10));
+  return out.sort((a, b) => (a.mark === "unsure" ? -1 : 0) - (b.mark === "unsure" ? -1 : 0));
+}
+
+function doneCount() { return DAYS.filter(d => store.get(doneKey(d.no), false)).length; }
+function firstUndone() {
+  const d = DAYS.find(x => !store.get(doneKey(x.no), false));
+  return d ? d.no : TOTAL;
+}
+
+function paintProg() {
+  const n = doneCount(), pct = Math.round(n / TOTAL * 100);
+  const box = document.getElementById("prog");
+  box.querySelector("i").style.width = pct + "%";
+  box.querySelector("span").textContent = n + " / " + TOTAL;
+  document.getElementById("pick").textContent = cur + "日目";
+}
+
+function paintGrid() {
+  document.getElementById("grid30").innerHTML = DAYS.map(d => {
+    const done = store.get(doneKey(d.no), false);
+    return `<button class="dcell ${done ? "done" : ""}" data-go="${d.no}" aria-current="${d.no === cur}" title="${attr(d.themeKo)}">
+      <span>${d.no}</span><span class="dot"></span></button>`;
+  }).join("");
+  const n = doneCount();
+  document.getElementById("sheetNote").innerHTML = n === TOTAL
+    ? "서른 칸을 모두 채우셨습니다. 처음부터 한 번 더 돌면 훨씬 빠릅니다."
+    : `끝낸 날 <b>${n}일</b> · 남은 날 <b>${TOTAL - n}일</b><br>금색 점이 찍힌 칸은 「今日はおしまい」를 누른 날입니다.`;
+}
+
+function renderDay(d) {
+  const rev = reviewItems(d.no);
+  const revBlock = d.no === 1
+    ? `<div class="rev-empty">오늘이 첫날입니다.<br>내일부터 이 자리에서 어제 배운 말을 먼저 확인합니다.</div>`
+    : rev.length
+      ? `<p class="rev-lead">뜻을 가려 두었습니다. 떠올린 뒤 눌러서 확인하세요.</p>
+         <div class="rev-cap"><span>어제 배운 말</span><span class="f">지난번에 헷갈린 말</span></div>
+         <div class="rev">${rev.map(r => `
+           <div class="rv ${r.mark === "unsure" ? "flag" : ""}" role="button" tabindex="0" aria-expanded="false">
+             <span class="from">${r.from}日</span>
+             <span><span class="rvq jp">${ruby(r.w.ja)}</span><br><span class="k">${r.w.kana}</span></span>
+             <span class="a">${r.w.ko}</span>
+           </div>`).join("")}</div>`
+      : `<div class="rev-empty">복습할 말이 없습니다.</div>`;
+
+  const words = d.words.map((w, i) => {
+    const mk = store.get(mkKey(d.no, i), null);
+    const exs = w.exs.map((e, j) => `
+      <div class="ex">
+        <span class="mk-n">${j + 1}</span>
+        <div class="s jp">${ruby(e.s)}</div>
+        ${sayBtn(e.s)}
+        <div class="t">${e.t}</div>
+      </div>`).join("");
+    return `
+    <div class="w ${mk || ""}" data-wi="${i}">
+      <div class="w-top">
+        <div class="w-num jp">${i + 1}</div>
+        <div class="w-main">
+          <div class="w-ja jp">${ruby(w.ja)}</div>
+          <div class="w-kana">${w.kana}</div>
+          <div class="w-ko">${w.ko}</div>
+        </div>
+        ${sayBtn(w.ja.split(" / ")[0])}
+      </div>
+      <div class="w-exs">${exs}</div>
+      <div class="w-note">${ruby(w.note)}</div>
+      <div class="mk">
+        <button data-mk="known" class="${mk === "known" ? "on" : ""}">おぼえた · 외웠어요</button>
+        <button data-mk="unsure" class="${mk === "unsure" ? "on" : ""}">あやしい · 헷갈려요</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  const branches = d.branches.map(b => `
+    <div class="br">
+      <span class="br-ja jp">${ruby(b.ja)}</span>
+      <span class="br-ko">${b.ko}</span>
+      <span class="br-kana">${b.kana}</span>
+      <span class="br-note">${ruby(b.note)}</span>
+    </div>`).join("");
+
+  const quiz = d.quiz.map((q, i) => `
+    <div class="q" data-qi="${i}">
+      <div class="q-t"><span class="n jp">${["一","二","三","四","五","六"][i] || (i + 1)}</span><span class="jpq">${ruby(q.q)}</span></div>
+      <div class="op">${q.opts.map((o, j) => `<button data-oi="${j}">${ruby(o)}</button>`).join("")}</div>
+    </div>`).join("");
+
+  const b = d.bunka;
+  const done = store.get(doneKey(d.no), false);
+  const exN = d.words.reduce((s, w) => s + w.exs.length, 0);
+
+  return `
+    <div class="dayhead">
+      <div class="no jp">${d.no} / ${TOTAL} 日目 · ${d.lv || "N3"}</div>
+      <h2 class="th jp">${ruby(d.theme)}</h2>
+      <div class="thko">${d.themeKo}</div>
+      <div class="seam"></div>
+    </div>
+
+    <section>
+      <div class="shead"><span class="ja jp">きのうの復習</span><span class="ko">어제의 복습</span><div class="seam"></div></div>
+      ${revBlock}
+    </section>
+
+    <section>
+      <div class="shead"><span class="ja jp">今日のことば</span><span class="ko">${d.themeKo} · 열 개 · 예문 ${exN}개</span><div class="seam"></div></div>
+      <div class="words">${words}</div>
+    </section>
+
+    <section>
+      <div class="shead"><span class="ja jp">ことばを広げる</span><span class="ko">한 뿌리에서 뻗어나가기</span><div class="seam"></div></div>
+      <div class="root jp">${ruby(d.root)}</div>
+      <div class="root-ko">${ruby(d.rootKo)}</div>
+      <div class="branches">${branches}</div>
+    </section>
+
+    <section>
+      <div class="shead"><span class="ja jp">たしかめ</span><span class="ko">확인 여섯 문제</span><div class="seam"></div></div>
+      ${quiz}
+      <div id="tally">아직 풀지 않았습니다</div>
+    </section>
+
+    <section>
+      <div class="shead"><span class="ja jp">${b.cap}</span><span class="ko">오늘의 토막 상식</span><div class="seam"></div></div>
+      <div class="bunka">
+        <div class="cap jp">${b.cap}</div>
+        <h4 class="jp">${ruby(b.title)}</h4>
+        <div class="h4ko">${b.titleKo}</div>
+        ${b.body.map(p => `<p>${ruby(p)}</p>`).join("")}
+        <div class="vs">${ruby(b.vs)}</div>
+        ${b.body2.map(p => `<p>${ruby(p)}</p>`).join("")}
+        <div class="sign">${b.sign}</div>
+      </div>
+    </section>
+
+    <div class="fin">
+      <button id="fin" aria-pressed="${done}">${done ? "今日はおしまい · 완료했습니다" : "今日はおしまい"}</button>
+    </div>
+
+    <div class="movebar">
+      <button data-move="-1" ${d.no === 1 ? "disabled" : ""}>← ${d.no - 1}日目</button>
+      <button data-move="1" ${d.no === TOTAL ? "disabled" : ""}>${d.no + 1}日目 →</button>
+    </div>`;
+}
+
+function tally() {
+  const d = DAYS.find(x => x.no === cur) || DAYS[0];
+  const el = document.getElementById("tally"); if (!el) return;
+  const n = Object.keys(quizState).length, ok = Object.values(quizState).filter(Boolean).length;
+  if (!n) { el.innerHTML = "아직 풀지 않았습니다"; return; }
+  if (n < d.quiz.length) { el.innerHTML = `${n} / ${d.quiz.length} — 지금까지 ${ok}개 정답`; return; }
+  const msg = ok === d.quiz.length ? "전부 맞혔습니다. 오늘 말은 손에 들어왔네요."
+            : ok >= d.quiz.length - 1 ? "거의 다 맞혔습니다. 틀린 것만 다시 보세요."
+            : "틀린 말에 「あやしい」를 눌러 두면 내일 복습에 먼저 나옵니다.";
+  el.innerHTML = `<span class="big jp">${ok} / ${d.quiz.length}</span>${msg}`;
+}
+
+function go(n) {
+  cur = Math.min(Math.max(n, 1), TOTAL);
+  store.set("day", cur);
+  paint();
+}
+
+function paint() {
+  quizState = {};
+  document.getElementById("app").innerHTML = renderDay(DAYS.find(x => x.no === cur) || DAYS[0]);
+  paintProg(); paintGrid(); tally();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+const sheet = document.getElementById("sheet");
+const openSheet = () => { paintGrid(); sheet.setAttribute("open", ""); };
+const closeSheet = () => sheet.removeAttribute("open");
+
+document.addEventListener("click", e => {
+  const s = e.target.closest(".say");
+  if (s) { e.stopPropagation(); say(s.dataset.say, s); return; }
+  if (e.target.id === "noteX") { document.getElementById("note").hidden = true; return; }
+
+  if (e.target.closest("#pick")) { openSheet(); return; }
+  if (e.target.closest("[data-close]")) { closeSheet(); return; }
+  if (e.target.closest("#goNext")) { closeSheet(); go(firstUndone()); return; }
+
+  const cell = e.target.closest(".dcell");
+  if (cell) { closeSheet(); go(+cell.dataset.go); return; }
+
+  const mv = e.target.closest("[data-move]");
+  if (mv) { go(cur + (+mv.dataset.move)); return; }
+
+  const mk = e.target.closest(".mk button");
+  if (mk) {
+    const card = mk.closest(".w"), i = +card.dataset.wi, key = mkKey(cur, i);
+    const val = store.get(key, null) === mk.dataset.mk ? null : mk.dataset.mk;
+    store.set(key, val);
+    card.classList.remove("known", "unsure"); if (val) card.classList.add(val);
+    card.querySelectorAll(".mk button").forEach(bt => bt.classList.toggle("on", val === bt.dataset.mk));
+    return;
+  }
+
+  const rv = e.target.closest(".rv");
+  if (rv) { rv.setAttribute("aria-expanded", rv.getAttribute("aria-expanded") === "true" ? "false" : "true"); return; }
+
+  const op = e.target.closest(".op button");
+  if (op) {
+    const box = op.closest(".q"), qi = +box.dataset.qi;
+    if (qi in quizState) return;
+    const a = (DAYS.find(x => x.no === cur) || DAYS[0]).quiz[qi].a;
+    quizState[qi] = (+op.dataset.oi === a);
+    box.querySelectorAll(".op button").forEach((bt, j) => {
+      bt.disabled = true;
+      if (j === a) bt.classList.add("ok"); else if (bt === op) bt.classList.add("ng");
+    });
+    tally(); return;
+  }
+
+  const fin = e.target.closest("#fin");
+  if (fin) {
+    const now = !store.get(doneKey(cur), false);
+    store.set(doneKey(cur), now);
+    fin.setAttribute("aria-pressed", now);
+    fin.textContent = now ? "今日はおしまい · 완료했습니다" : "今日はおしまい";
+    paintProg(); paintGrid();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && sheet.hasAttribute("open")) { closeSheet(); return; }
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const rv = e.target.closest(".rv"); if (!rv) return;
+  e.preventDefault();
+  rv.setAttribute("aria-expanded", rv.getAttribute("aria-expanded") === "true" ? "false" : "true");
+});
+
+const koBtn = document.getElementById("t-ko");
+const koOn = store.get("showKo", true);
+koBtn.setAttribute("aria-pressed", koOn);
+document.body.classList.toggle("hide-ko", !koOn);
+koBtn.addEventListener("click", () => {
+  const next = koBtn.getAttribute("aria-pressed") !== "true";
+  koBtn.setAttribute("aria-pressed", next);
+  document.body.classList.toggle("hide-ko", !next);
+  store.set("showKo", next);
+});
+
+const furiBtn = document.getElementById("t-furi");
+const furiOn = store.get("showFuri", true);
+furiBtn.setAttribute("aria-pressed", furiOn);
+document.body.classList.toggle("no-furi", !furiOn);
+furiBtn.addEventListener("click", () => {
+  const next = furiBtn.getAttribute("aria-pressed") !== "true";
+  furiBtn.setAttribute("aria-pressed", next);
+  document.body.classList.toggle("no-furi", !next);
+  store.set("showFuri", next);
+});
+
+paint();
+</script>

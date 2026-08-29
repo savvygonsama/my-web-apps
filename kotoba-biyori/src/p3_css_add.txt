@@ -1,0 +1,116 @@
+
+/* ─────────────────────────────────────────────
+   30일 개편분 — 예문 여러 개 · 일차 선택 · 진도 · 저작권
+   ───────────────────────────────────────────── */
+
+/* 상단 바 개편 */
+.bar-in { justify-content: space-between; gap: 8px 12px; }
+.bar-l { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.bar-r { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.navb {
+  font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 13px;
+  border-radius: 2px; border: 1px solid var(--hair); background: transparent;
+  color: var(--sumi-2); cursor: pointer; white-space: nowrap; transition: .18s;
+}
+.navb:hover:not(:disabled) { border-color: var(--ai); color: var(--ai); }
+.navb:disabled { opacity: .3; cursor: default; }
+.navb.pick { font-family: var(--jp); font-size: 15px; letter-spacing: .06em; padding: 4px 16px; color: var(--sumi); border-color: var(--sumi-3); }
+
+/* 진도 막대 */
+.prog { display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--sumi-3); letter-spacing: .04em; }
+.prog-bar { width: 84px; height: 3px; background: var(--paper-2); border-radius: 2px; overflow: hidden; }
+.prog-bar i { display: block; height: 100%; background: var(--kin); transition: width .35s; }
+
+/* 일차 선택판 */
+.sheet { position: fixed; inset: 0; z-index: 60; display: none; }
+.sheet[open] { display: block; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(20,22,26,.45); backdrop-filter: blur(3px); }
+.sheet-in {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 64px); overflow-y: auto;
+  background: var(--paper); border: 1px solid var(--hair); border-radius: 4px;
+  padding: 30px 26px 26px; box-shadow: 0 24px 70px -20px rgba(0,0,0,.5);
+}
+.sheet-h { text-align: center; margin-bottom: 22px; }
+.sheet-h .ja { font-family: var(--jp); font-size: 21px; letter-spacing: .12em; display: block; }
+.sheet-h .ko { font-size: 12px; color: var(--sumi-3); margin-top: 6px; display: block; }
+.grid30 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+.dcell {
+  font: inherit; font-size: 13px; font-weight: 700; aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 1px solid var(--hair); border-radius: 2px; background: transparent;
+  color: var(--sumi-2); cursor: pointer; transition: .15s; position: relative;
+}
+.dcell:hover { border-color: var(--ai); color: var(--ai); }
+.dcell .dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; }
+.dcell.done .dot { background: var(--kin); }
+.dcell[aria-current="true"] { background: var(--ai); border-color: var(--ai); color: var(--paper); }
+:root[data-theme="dark"] .dcell[aria-current="true"], html:not([data-theme="light"]) .dcell[aria-current="true"] { color: var(--washi); }
+.dcell[aria-current="true"] .dot { background: var(--paper); }
+.sheet-f { margin-top: 20px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.sheet-note { margin-top: 16px; text-align: center; font-size: 12px; color: var(--sumi-3); line-height: 1.8; }
+
+/* 오늘의 머리말 */
+.dayhead { text-align: center; margin-bottom: 40px; }
+.dayhead .no { font-family: var(--jp); font-size: 12px; letter-spacing: .4em; color: var(--kin); text-indent: .4em; }
+.dayhead .th { font-family: var(--jp); font-size: clamp(26px, 6vw, 34px); font-weight: 400; margin: 10px 0 4px; letter-spacing: .08em; }
+.dayhead .thko { font-size: 13px; color: var(--sumi-3); }
+.dayhead .seam { margin-top: 18px; max-width: 120px; }
+
+/* 단어 카드 — 예문 여러 개 */
+.w-num { font-family: var(--jp); font-size: 13px; color: var(--sumi-3); flex: 0 0 auto; padding-top: 8px; min-width: 18px; }
+.w-exs { margin-top: 15px; padding-top: 14px; border-top: 1px dashed var(--hair); display: grid; gap: 13px; }
+.ex { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 9px; align-items: start; }
+.ex .mk-n { font-size: 10.5px; color: var(--kin); font-weight: 700; padding-top: 7px; letter-spacing: .05em; }
+.ex .s { font-family: var(--gothic); font-size: 16.5px; line-height: 1.95; grid-column: 2; }
+.ex .t { font-size: 13px; color: var(--sumi-2); grid-column: 2; line-height: 1.7; }
+.ex .say { grid-column: 3; grid-row: 1; }
+body.hide-ko .ex .t { visibility: hidden; }
+
+/* 복습 */
+.rev-cap { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+.rev-cap span { font-size: 11px; padding: 3px 10px; border-radius: 2px; border: 1px solid var(--hair); color: var(--sumi-3); }
+.rev-cap .f { border-color: var(--kobai); color: var(--kobai); }
+.rv .from { font-size: 10.5px; color: var(--sumi-3); border: 1px solid var(--hair); border-radius: 2px; padding: 1px 6px; flex: 0 0 auto; }
+.rv[aria-expanded="false"] .a { filter: blur(4px); opacity: .55; }
+.rv .a { transition: filter .18s, opacity .18s; }
+
+/* 하단 이동 */
+.movebar { display: flex; gap: 8px; justify-content: space-between; margin-top: 30px; }
+.movebar button { flex: 1 1 0; font: inherit; font-size: 13px; font-weight: 700; padding: 12px 10px; border-radius: 2px; border: 1px solid var(--hair); background: transparent; color: var(--sumi-2); cursor: pointer; }
+.movebar button:hover:not(:disabled) { border-color: var(--ai); color: var(--ai); }
+.movebar button:disabled { opacity: .3; cursor: default; }
+
+/* 저작권 */
+.credit { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--hair); font-size: 11.5px; color: var(--sumi-3); letter-spacing: .02em; line-height: 1.9; }
+.credit b { color: var(--sumi-2); }
+
+@media (max-width: 540px) {
+  .grid30 { grid-template-columns: repeat(5, 1fr); }
+  .sheet-in { padding: 24px 18px 20px; }
+  .ex .s { font-size: 15.5px; }
+  .prog-bar { width: 56px; }
+  .bar-in { gap: 6px; }
+  .navb { padding: 5px 10px; font-size: 12px; }
+}
+
+/* ── 후리가나 ── */
+ruby { ruby-align: center; }
+rt {
+  font-family: var(--gothic); font-size: .48em; font-weight: 400;
+  color: var(--sumi-3); letter-spacing: .01em; line-height: 1.25;
+  user-select: none; -webkit-user-select: none;
+}
+body.no-furi rt { display: none; }
+.w-ja { line-height: 1.75; }
+.ex .s { line-height: 2.35; }
+.rv .rvq { line-height: 1.9; }
+.bunka p, .bunka .vs { line-height: 2.25; }
+.br-ja { line-height: 1.9; }
+.q-t { line-height: 2.1; }
+.op button { line-height: 1.9; }
+.root { line-height: 1.6; }
+.nofuri { color: var(--kobai); }
+@media (max-width: 540px) { rt { font-size: .5em; } }
+.navb[aria-pressed="true"] { color: var(--sumi); background: var(--paper); border-color: var(--sumi-3); }
+.navb[aria-pressed="false"] { opacity: .55; }

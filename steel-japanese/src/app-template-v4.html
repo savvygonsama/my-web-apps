@@ -1,0 +1,2439 @@
+<title>스틸링고 트레이닝</title>
+<style>
+@font-face { font-family: "NotoSansJP"; src: url(data:font/woff2;base64,__NJP400__) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "NotoSansJP"; src: url(data:font/woff2;base64,__NJP700__) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "ZenOldMincho"; src: url(data:font/woff2;base64,__ZOM400__) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard"; src: url(data:font/woff2;base64,__PRE400__) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard"; src: url(data:font/woff2;base64,__PRE700__) format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+:root {
+  --ground: #eef1f4; --surface: #ffffff; --surface-2: #e5ebf0;
+  --ink: #151b21; --ink-2: #4b565f; --ink-3: #78848e;
+  --line: #d3dbe1; --line-strong: #b6c1c9;
+  --accent: #1d566f; --accent-soft: #dfeaf1;
+  --ember: #a8501c; --ember-soft: #f5e9e0;
+  --good: #2c6a4d; --good-soft: #dcece3;
+  --bad: #9d3730; --bad-soft: #f3e0de;
+  --hl: rgba(255, 205, 88, .58);
+  --shadow: 0 1px 2px rgba(21, 27, 33, .06), 0 8px 24px -12px rgba(21, 27, 33, .18);
+  --sans: "Pretendard", "NotoSansJP", system-ui, sans-serif;
+  --mincho: "ZenOldMincho", "Pretendard", serif;
+  --mono: "Pretendard", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f141a; --surface: #171e26; --surface-2: #1f2831;
+    --ink: #e3e9ef; --ink-2: #a4b1bd; --ink-3: #7a8792;
+    --line: #2a343e; --line-strong: #3b4751;
+    --accent: #82b7d6; --accent-soft: #16303e;
+    --ember: #dd9159; --ember-soft: #372415;
+    --good: #6bc59a; --good-soft: #17322a;
+    --bad: #de8b84; --bad-soft: #35201f;
+    --hl: rgba(221, 160, 71, .34);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0f141a; --surface: #171e26; --surface-2: #1f2831;
+  --ink: #e3e9ef; --ink-2: #a4b1bd; --ink-3: #7a8792;
+  --line: #2a343e; --line-strong: #3b4751;
+  --accent: #82b7d6; --accent-soft: #16303e;
+  --ember: #dd9159; --ember-soft: #372415;
+  --good: #6bc59a; --good-soft: #17322a;
+  --bad: #de8b84; --bad-soft: #35201f;
+  --hl: rgba(221, 160, 71, .34);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: var(--sans); font-size: 16px; line-height: 1.75;
+  letter-spacing: -.003em; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+}
+.jp { font-feature-settings: "palt" 1; letter-spacing: .015em; }
+.wrap { max-width: 830px; margin: 0 auto; padding: 0 20px 96px; }
+#prog { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 40; transition: width .1s linear; }
+
+/* 오늘의 용어 하이라이트 — 형광펜 */
+mark.hl {
+  background: linear-gradient(transparent 56%, var(--hl) 56%);
+  color: inherit; font-weight: 700; padding: 0 1px; border-radius: 1px;
+}
+
+/* ── masthead ─────────────────────────────── */
+.masthead { padding: 44px 0 22px; border-bottom: 1px solid var(--line); }
+.byline {
+  margin: 0 0 14px; font-size: 12px; font-weight: 700;
+  letter-spacing: .2em; color: var(--ember);
+}
+.brand { display: flex; align-items: center; gap: 18px; }
+.logo { width: clamp(78px, 14vw, 104px); height: auto; flex: 0 0 auto; overflow: visible; }
+.lg-body   { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.6; }
+/* 몸통은 채우기만 — 테두리를 그리면 세로선이 생겨 상자처럼 보인다 */
+.lg-fill   { fill: var(--accent-soft); }
+.lg-edge   { stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; }
+.lg-face   { fill: var(--surface); stroke: var(--accent); stroke-width: 2.6; }
+.lg-spiral { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
+.lg-eye    { fill: var(--accent); }
+.lg-smile  { fill: none; stroke: var(--accent); stroke-width: 2.3; stroke-linecap: round; }
+.lg-cheek  { fill: var(--ember); opacity: .4; }
+.masthead h1 { font-family: var(--mincho); font-size: clamp(28px, 5.2vw, 42px); line-height: 1.2; font-weight: 400; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+.masthead p { color: var(--ink-2); margin: 16px 0 0; max-width: 60ch; font-size: 15px; }
+
+/* ── 난이도 선택 ──────────────────────────── */
+.pick { display: grid; gap: 14px; max-width: 560px; margin: 10px auto 0; }
+.pick-lead { text-align: center; color: var(--ink-2); font-size: 15px; margin: 0 0 22px; line-height: 1.9; }
+.pick-lead b { color: var(--ink); }
+.lvcard {
+  text-align: left; font: inherit; cursor: pointer; width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px 24px; box-shadow: var(--shadow); transition: border-color .15s, transform .12s;
+}
+.lvcard:hover { border-color: var(--accent); transform: translateY(-1px); }
+.lvcard h4 { margin: 0; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+.lvcard .tagline { font-size: 12px; font-weight: 700; color: var(--surface); background: var(--accent); border-radius: 999px; padding: 3px 10px; }
+html:not([data-theme="light"]) .lvcard .tagline, :root[data-theme="dark"] .lvcard .tagline { color: var(--ground); }
+.lvcard.mid .tagline { background: var(--ember); }
+.lvcard p { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); line-height: 1.8; }
+.lvcard ul { margin: 12px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--ink-2); line-height: 1.9; }
+.lvcard .sample { margin-top: 14px; padding: 12px 14px; background: var(--surface-2); border-radius: 8px; font-size: 16px; line-height: 2.1; }
+.lvcard .sample .sk { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+.lvnote { text-align: center; font-size: 12.5px; color: var(--ink-3); margin-top: 20px; }
+.lvchip {
+  font: inherit; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.lvchip:hover { border-color: var(--accent); color: var(--accent); }
+body.lv-easy .sw#sw-mask { display: none; }
+.art-ko.open .line-ko { display: block !important; }
+.pick { max-width: 620px; }
+
+/* ── bar ──────────────────────────────────── */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--ground) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  margin: 0 -20px 30px; padding: 10px 20px;
+}
+.bar-inner { max-width: 830px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
+.navs { display: flex; gap: 6px; overflow-x: auto; }
+.chip {
+  flex: 0 0 auto; font: inherit; font-size: 13px; font-weight: 700; padding: 6px 14px;
+  border-radius: 999px; border: 1px solid var(--line-strong); background: transparent;
+  color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+html:not([data-theme="light"]) .chip[aria-pressed="true"], :root[data-theme="dark"] .chip[aria-pressed="true"] { color: var(--ground); }
+.switches { display: flex; gap: 5px; }
+.sw {
+  font: inherit; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 7px;
+  border: 1px solid var(--line); background: transparent; color: var(--ink-3); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px; transition: background .15s, color .15s, border-color .15s;
+}
+.sw::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); transition: background .15s; }
+.sw[aria-pressed="true"] { color: var(--ink); border-color: var(--line-strong); background: var(--surface); }
+.sw[aria-pressed="true"]::before { background: var(--accent); }
+body.home .switches { display: none; }
+
+/* ── home ─────────────────────────────────── */
+.hi { font-family: var(--mincho); font-size: 26px; margin: 0 0 4px; font-weight: 400; }
+.hi button {
+  font: inherit; font-size: 13px; font-family: var(--sans); border: 1px dashed var(--line-strong);
+  background: transparent; color: var(--ink-3); border-radius: 7px; padding: 3px 10px;
+  cursor: pointer; margin-left: 8px; vertical-align: 3px;
+}
+.hi button:hover { border-color: var(--accent); color: var(--accent); }
+.hisub { color: var(--ink-2); font-size: 14.5px; margin: 0 0 26px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 26px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; box-shadow: var(--shadow); }
+.stat .ico { font-size: 20px; line-height: 1; }
+.stat .val { font-size: 30px; font-weight: 700; line-height: 1.2; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.stat .val small { font-size: 15px; font-weight: 700; color: var(--ink-3); margin-left: 2px; }
+.stat .lab { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.todaycard {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px; box-shadow: var(--shadow); margin-bottom: 22px;
+}
+.todaycard.ok { background: var(--good-soft); border-color: var(--good); }
+.todaycard h4 { margin: 0 0 6px; font-size: 16px; }
+.todaycard p { margin: 0; font-size: 14px; color: var(--ink-2); }
+.todaycard.ok p { color: var(--good); }
+.cta {
+  font: inherit; font-size: 15px; font-weight: 700; padding: 14px 30px; border-radius: 999px;
+  border: none; background: var(--accent); color: var(--surface); cursor: pointer;
+  margin-top: 16px; transition: transform .12s;
+}
+html:not([data-theme="light"]) .cta, :root[data-theme="dark"] .cta { color: var(--ground); }
+.cta:hover { transform: translateY(-1px); }
+.histlist { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.histrow { background: var(--surface); padding: 12px 15px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.histrow .d { font-variant-numeric: tabular-nums; color: var(--ink-3); font-size: 13px; }
+.histrow .r { margin-left: auto; font-weight: 700; font-size: 13px; }
+.empty { background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 26px; text-align: center; color: var(--ink-3); font-size: 14px; }
+.sharebox { width: 100%; margin-top: 12px; font: inherit; font-size: 13px; font-family: var(--mono); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); resize: vertical; line-height: 1.7; }
+.ghost {
+  font: inherit; font-size: 13.5px; font-weight: 700; padding: 10px 18px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── day header ───────────────────────────── */
+.dayhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 34px; }
+.dayhead h2 { font-family: var(--mincho); font-size: 28px; font-weight: 400; margin: 0; letter-spacing: .01em; }
+.meta { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ember); font-weight: 700; }
+
+/* ── sections ─────────────────────────────── */
+section { margin-bottom: 48px; }
+.shead { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; }
+.emoji { font-size: 20px; line-height: 1; }
+.shead h3 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.shead .hint { font-size: 12px; color: var(--ink-3); font-weight: 400; margin-left: auto; text-align: right; line-height: 1.5; }
+
+/* ── speak ────────────────────────────────── */
+.speak {
+  font: inherit; font-size: 13px; line-height: 1; padding: 5px 9px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-3);
+  cursor: pointer; flex: 0 0 auto; transition: border-color .15s, color .15s;
+}
+.speak:hover { border-color: var(--accent); color: var(--accent); }
+.speak.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+#ttsNote {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px)); z-index: 50;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: 16px 18px; box-shadow: 0 10px 40px -10px rgba(0,0,0,.4); font-size: 13.5px; line-height: 1.75;
+}
+#ttsNote h5 { margin: 0 0 6px; font-size: 14.5px; }
+#ttsNote p { margin: 0 0 6px; color: var(--ink-2); }
+#ttsNote button { font: inherit; font-size: 12.5px; font-weight: 700; margin-top: 8px; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink-2); cursor: pointer; }
+
+/* ── terms ────────────────────────────────── */
+.terms { display: grid; gap: 8px; }
+.term {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 15px 17px; cursor: pointer; box-shadow: var(--shadow); transition: border-color .15s;
+}
+.term:hover { border-color: var(--line-strong); }
+.term-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.term-no { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 2px 7px; }
+.term-jp { font-size: 21px; font-weight: 700; font-feature-settings: "palt" 1; letter-spacing: .02em; }
+.term-kana { font-size: 13px; color: var(--ink-3); }
+.term-caret { margin-left: auto; color: var(--ink-3); font-size: 12px; transition: transform .2s; }
+.term[aria-expanded="true"] .term-caret { transform: rotate(180deg); }
+.term-body { margin-top: 11px; padding-top: 11px; border-top: 1px dashed var(--line); }
+.term-mean { font-weight: 700; font-size: 15px; }
+.term-note { font-size: 13.5px; color: var(--ink-2); margin-top: 5px; line-height: 1.7; }
+.term-where { font-size: 11.5px; color: var(--ink-3); margin-top: 14px; }
+.term-prompt { font-size: 12px; color: var(--ink-3); margin-top: 9px; }
+.term-flag { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.term-flag.known { background: var(--good-soft); color: var(--good); }
+.term-flag.unsure { background: var(--bad-soft); color: var(--bad); }
+.term-ex { margin-top: 14px; padding: 14px 16px; background: var(--surface-2); border-radius: 10px; }
+.ex-cap { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.term-ex .sent-jp { font-size: 18px; line-height: 2.3; }
+.term-ex .sent-ko { font-size: 14.5px; margin-top: 7px; color: var(--ink-2); }
+.term-ex .sent-tip { font-size: 13px; color: var(--ink-2); margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line-strong); line-height: 1.7; }
+.smk-cap { font-size: 12px; color: var(--ink-3); align-self: center; margin-right: 4px; }
+.smk { align-items: center; flex-wrap: wrap; margin-top: 16px; padding-top: 13px; border-top: 1px dashed var(--line); }
+.term[aria-expanded="false"] .term-body { display: none; }
+.term[aria-expanded="true"] .term-prompt { display: none; }
+
+/* ── sentences ────────────────────────────── */
+.sent {
+  background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 4px 10px 10px 4px; padding: 15px 18px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.sent-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.drill { font-size: 11px; font-weight: 700; color: var(--ember); background: var(--ember-soft); border-radius: 5px; padding: 3px 9px; }
+.sent-jp { font-size: 19px; line-height: 2.4; }
+.sent-ko { font-size: 15px; margin-top: 8px; color: var(--ink-2); }
+.sent-tip { font-size: 13.5px; color: var(--ink-2); margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--line); line-height: 1.7; }
+.sent-tip::before { content: "→ "; color: var(--ember); font-weight: 700; }
+
+ruby > rt { font-size: .45em; color: var(--ink-3); font-weight: 400; letter-spacing: 0; font-feature-settings: normal; }
+body.no-furi rt { visibility: hidden; }
+body.no-ko .sent-ko, body.no-ko .turn-ko, body.no-ko .line-ko { display: none; }
+
+/* ── article ──────────────────────────────── */
+.src { font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 11px 14px; margin-bottom: 14px; }
+.src a { color: var(--accent); }
+.tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .08em; padding: 2px 8px; border-radius: 4px; margin-right: 8px; vertical-align: 2px; }
+.tag.real { background: var(--good-soft); color: var(--good); }
+.tag.drill2 { background: var(--ember-soft); color: var(--ember); }
+.passage {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 22px 24px; font-family: var(--mincho); font-size: 19px; line-height: 2.6;
+  box-shadow: var(--shadow); font-feature-settings: "palt" 1;
+}
+.lines { margin-top: 14px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.line { background: var(--surface); padding: 11px 15px; }
+.line-jp { font-size: 15px; }
+.line-ko { font-size: 13.5px; color: var(--ink-2); margin-top: 3px; }
+.summary { margin-top: 14px; background: var(--accent-soft); border-radius: 10px; padding: 15px 17px; font-size: 14.5px; line-height: 1.8; }
+.summary h4 { margin: 0 0 7px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.picks { margin-top: 14px; width: 100%; border-collapse: collapse; font-size: 14px; }
+.picks th, .picks td { text-align: left; padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.picks th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.picks td:first-child { white-space: nowrap; font-weight: 700; }
+.scroller { overflow-x: auto; }
+
+/* ── dialogue ─────────────────────────────── */
+.situation { background: var(--ember-soft); color: var(--ink); border-radius: 8px; padding: 12px 15px; font-size: 14.5px; margin-bottom: 18px; }
+.situation b { color: var(--ember); }
+.turn { margin-bottom: 16px; display: flex; gap: 12px; }
+.turn.me { flex-direction: row-reverse; }
+.who { flex: 0 0 auto; width: 48px; font-size: 11px; font-weight: 700; line-height: 1.4; color: var(--ink-3); padding-top: 13px; text-align: center; }
+.bubble { flex: 1 1 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 13px 16px; box-shadow: var(--shadow); min-width: 0; }
+.turn.me .bubble { background: var(--accent-soft); border-color: transparent; }
+.turn-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.turn-jp { font-size: 17px; line-height: 2.35; }
+.turn-ko { font-size: 14px; margin-top: 6px; color: var(--ink-2); }
+.warns { margin-top: 22px; display: grid; gap: 8px; }
+.warn { border: 1px solid var(--line); border-left: 3px solid var(--bad); background: var(--surface); border-radius: 4px 10px 10px 4px; padding: 13px 16px; font-size: 14px; }
+.warn.soft { border-left-color: var(--ember); }
+.warn h5 { margin: 0 0 5px; font-size: 15px; }
+.warn p { margin: 0; color: var(--ink-2); font-size: 13.5px; line-height: 1.7; }
+
+/* ── quiz ─────────────────────────────────── */
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; box-shadow: var(--shadow); }
+.q-text { font-weight: 700; font-size: 15px; line-height: 1.8; }
+.q-text .num { font-family: var(--mono); color: var(--accent); margin-right: 9px; font-variant-numeric: tabular-nums; }
+.opts { display: grid; gap: 6px; margin-top: 12px; }
+.opt { font: inherit; font-size: 14.5px; text-align: left; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; transition: border-color .15s, background .15s; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; opacity: .5; }
+.opt.right { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; opacity: 1; animation: pop .32s cubic-bezier(.34,1.56,.64,1); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); opacity: 1; animation: shake .3s; }
+.opt.right::after { content: " ⭕"; }
+.opt.wrong::after { content: " ❌"; }
+@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.035); } 100% { transform: scale(1); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.reveal { font: inherit; font-size: 13px; font-weight: 700; margin-top: 12px; padding: 8px 14px; border: 1px dashed var(--line-strong); border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; }
+.reveal:hover { border-color: var(--accent); color: var(--accent); }
+.answer { margin-top: 12px; padding: 12px 14px; background: var(--good-soft); border-radius: 8px; font-size: 16px; color: var(--ink); line-height: 2; }
+.answer b { color: var(--good); font-size: 11px; letter-spacing: .1em; display: block; margin-bottom: 2px; }
+#score { margin-top: 14px; border-radius: 10px; padding: 16px 18px; text-align: center; background: var(--surface-2); font-size: 15px; font-weight: 700; }
+#score .big { font-size: 30px; display: block; margin-bottom: 4px; }
+#score.done { background: var(--good-soft); color: var(--good); animation: rise .4s ease-out; }
+
+/* ── 칼럼 (한일 말의 온도차) ───────────────── */
+.col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 30px 30px 26px; box-shadow: var(--shadow); }
+.col-word { text-align: center; padding-bottom: 22px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.col-jp { font-family: var(--mincho); font-size: clamp(34px, 6vw, 46px); line-height: 1.3; letter-spacing: .06em; font-feature-settings: "palt" 1; }
+.col-kana { font-size: 13px; color: var(--ink-3); margin-top: 6px; letter-spacing: .08em; }
+.col-ko { font-size: 14px; color: var(--ember); font-weight: 700; margin-top: 8px; }
+.col h4 { font-size: 19px; margin: 0 0 18px; line-height: 1.6; text-wrap: balance; }
+.col p { margin: 0 0 15px; font-size: 15px; line-height: 1.95; }
+.col p:last-of-type { margin-bottom: 0; }
+.col .kw { font-weight: 700; color: var(--accent); }
+.col .vs { margin: 20px 0; padding: 18px 20px; background: var(--surface-2); border-radius: 10px; font-size: 14.5px; line-height: 2; }
+.col .vs b { color: var(--ember); }
+.col-sign { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); text-align: right; }
+
+/* ── 복습 ─────────────────────────────────── */
+.rev-lead { font-size: 14px; color: var(--ink-2); margin-bottom: 16px; }
+.rev-lead b { color: var(--bad); }
+.rev { display: grid; gap: 8px; margin-bottom: 22px; }
+.rv { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 17px; cursor: pointer; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow); }
+.rv.flag { border-left: 3px solid var(--bad); }
+.rv .rq { font-size: 19px; font-weight: 700; font-feature-settings: "palt" 1; }
+.rv .rk { font-size: 11.5px; color: var(--ink-3); }
+.rv .ra { margin-left: auto; font-size: 14.5px; font-weight: 700; color: var(--accent); text-align: right; }
+.rv[aria-expanded="false"] .ra { color: var(--ink-3); font-weight: 400; font-size: 12.5px; }
+.rev-empty { text-align: center; color: var(--ink-3); font-size: 14px; padding: 28px 20px; border: 1px dashed var(--line-strong); border-radius: 10px; }
+.rev-sub { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin: 22px 0 10px; }
+
+/* ── 용어 암기 표시 ───────────────────────── */
+.smk { display: flex; gap: 7px; margin-top: 13px; }
+.smk button { font: inherit; font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 7px; border: 1px solid var(--line); background: transparent; color: var(--ink-3); cursor: pointer; transition: .15s; }
+.smk button:hover { border-color: var(--ink-3); }
+.smk button.on[data-sm="known"] { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.smk button.on[data-sm="unsure"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.term.known { border-left: 3px solid var(--good); }
+.term.unsure { border-left: 3px solid var(--bad); }
+
+/* ── 회화 가리기 ──────────────────────────── */
+.cover {
+  display: none; margin-top: 4px; padding: 14px 16px; border: 1px dashed var(--line-strong);
+  border-radius: 10px; text-align: center; font-size: 13.5px; color: var(--ink-3); cursor: pointer;
+}
+/* 가릴 때 일본어만 감춘다. 한국어는 남겨야 "이걸 일본어로 어떻게
+   말하지?" 하고 스스로 만들어보는 연습이 된다. */
+body.mask .turn.me:not(.chunked) .bubble { display: flex; flex-direction: column; }
+body.mask .turn.me:not(.chunked) .turn-head { order: 0; }
+body.mask .turn.me:not(.chunked) .turn-ko { order: 1; margin-top: 0; color: var(--ink); font-size: 15px; }
+body.mask .turn.me:not(.chunked) .cover { order: 2; }
+body.mask .turn.me:not(.chunked) .turn-jp { display: none; order: 3; }
+body.mask .turn.me:not(.chunked).open .turn-jp { display: block; margin-top: 10px; }
+body.mask .turn.me:not(.chunked).open .cover { display: none; }
+/* 해석을 꺼둔 상태에서도 가리기 모드에서는 한국어가 보여야 한다 */
+body.mask.no-ko .turn.me .turn-ko { display: block; }
+
+/* ── 조각 맞추기 ───────────────────────────
+   한국어 조각을 누르면 그 자리에 대응하는 일본어가 채워진다.
+   위에 문장이 조립되는 것을 보면서 어순 감각이 함께 붙는다. */
+.asm {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
+  background: var(--surface-2); border-radius: 10px; padding: 14px 16px;
+  min-height: 52px; font-size: 17px; line-height: 2.2;
+}
+.slot .ph { color: var(--ink-3); letter-spacing: .12em; }
+.slot.on .ph { display: none; }
+.slot .rv { display: none; }
+.slot.on .rv { display: inline; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.chip-ko {
+  font: inherit; font-size: 14px; padding: 7px 13px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--ink); cursor: pointer; transition: .15s;
+}
+.chip-ko:hover { border-color: var(--accent); color: var(--accent); }
+.chip-ko.used { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.asm-all {
+  font: inherit; font-size: 12.5px; font-weight: 700; margin-top: 11px;
+  padding: 7px 14px; border: 1px dashed var(--line-strong); border-radius: 999px;
+  background: transparent; color: var(--ink-3); cursor: pointer;
+}
+.asm-all:hover { border-color: var(--accent); color: var(--accent); }
+.asm-cap { font-size: 11.5px; color: var(--ink-3); margin-bottom: 7px; }
+.turn.chunked .turn-jp { margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--line); }
+
+/* ── 작문 입력 ────────────────────────────── */
+.wr { margin-top: 12px; display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.wr input {
+  flex: 1 1 240px; font: inherit; font-size: 16px; padding: 11px 14px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--surface); color: var(--ink); min-width: 0;
+}
+.wr input:focus { border-color: var(--accent); }
+.wr button { font: inherit; font-size: 13.5px; font-weight: 700; padding: 11px 20px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; }
+html:not([data-theme="light"]) .wr button, :root[data-theme="dark"] .wr button { color: var(--ground); }
+.wr button:disabled { opacity: .4; cursor: not-allowed; }
+.wr-hint { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+.wr-res { margin-top: 12px; padding: 13px 15px; border-radius: 8px; font-size: 15px; line-height: 2; }
+.wr-res.ok { background: var(--good-soft); color: var(--ink); }
+.wr-res.ng { background: var(--bad-soft); color: var(--ink); }
+.wr-res .lab { font-size: 11px; font-weight: 700; letter-spacing: .1em; display: block; margin-bottom: 4px; }
+.wr-res.ok .lab { color: var(--good); }
+.wr-res.ng .lab { color: var(--bad); }
+.wr-res .mine { font-size: 13.5px; color: var(--ink-2); margin-top: 6px; }
+
+.done { margin-top: 44px; display: flex; justify-content: center; }
+.done button { font: inherit; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: all .15s; }
+.done button[aria-pressed="true"] { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.done button.cheer { animation: pop .45s cubic-bezier(.34,1.56,.64,1); }
+footer { margin-top: 60px; padding-top: 26px; border-top: 1px solid var(--line); text-align: center; }
+footer .cr { font-family: var(--mincho); font-size: 15px; color: var(--ink-2); letter-spacing: .04em; }
+footer .cr-sub { font-size: 11.5px; color: var(--ink-3); letter-spacing: .06em; margin-top: 5px; }
+footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { *, #prog { transition: none !important; animation: none !important; } }
+@media (max-width: 560px) {
+  .wrap { padding: 0 14px 72px; }
+  .bar { margin: 0 -14px 22px; padding: 9px 14px; }
+  .who { width: 38px; font-size: 10px; }
+  .turn { gap: 8px; }
+  .passage { padding: 18px 16px; font-size: 17px; }
+}
+</style>
+
+<div id="prog"></div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="navs" id="navs"></div>
+    <div class="switches">
+      <button class="lvchip" id="lvBtn">난이도</button>
+      <button class="sw" id="sw-furi" aria-pressed="true">후리가나 · 전부</button>
+      <button class="sw" id="sw-ko" aria-pressed="true">해석</button>
+      <button class="sw" id="sw-mask" aria-pressed="false">내 대사 가리기</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="masthead">
+    <p class="byline">© 2026 곤사마</p>
+    <div class="brand">
+      <!-- 스틸링고 — 옆에서 본 강판 코일 -->
+      <svg class="logo" viewBox="0 0 76 58" role="img" aria-label="스틸링고 로고">
+        <ellipse cx="56" cy="29" rx="10" ry="19" class="lg-body"/>
+        <rect x="20" y="10" width="36" height="38" class="lg-fill"/>
+        <line x1="20" y1="10" x2="56" y2="10" class="lg-edge"/>
+        <line x1="20" y1="48" x2="56" y2="48" class="lg-edge"/>
+        <ellipse cx="20" cy="29" rx="10" ry="19" class="lg-face"/>
+        <path d="M20 16 a7 13 0 1 1 -6.2 12.6 a4.2 7.6 0 1 0 6.2 -6.6" class="lg-spiral"/>
+        <circle cx="36" cy="26" r="2.7" class="lg-eye"/>
+        <circle cx="47" cy="26" r="2.7" class="lg-eye"/>
+        <path d="M37.5 34.5 q4 3.6 8 0" class="lg-smile"/>
+        <ellipse cx="31" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+        <ellipse cx="52" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+      </svg>
+      <h1>스틸링고 트레이닝</h1>
+    </div>
+    <p>일본 철강 비즈니스에서 실제로 오가는 일본어만 담았습니다. 하루 20분.</p>
+  </div>
+  <div id="app"></div>
+  <footer>
+    <div class="cr-sub">스틸링고 트레이닝 &middot; 기획·구성 곤사마</div>
+    <div class="fine">
+      학습 진도는 이 브라우저에만 저장됩니다. 다른 기기에서 열면 처음부터 시작합니다.<br>
+      기사 지문은 출처를 밝힌 실제 보도와 학습용 예시 지문을 구분해 표기합니다.<br>
+      글꼴 Noto Sans JP &middot; Zen Old Mincho &middot; Pretendard (SIL Open Font License 1.1)
+    </div>
+  </footer>
+</div>
+
+<div id="ttsNote" hidden>
+  <h5>🔇 소리를 재생하지 못했습니다</h5>
+  <p><b>Windows</b> — 설정 → 시간 및 언어 → 언어 및 지역 → 언어 추가 → <b>日本語</b> → 설치할 때 <b>음성</b> 항목 체크. 설치 후 브라우저를 완전히 껐다 켜야 인식됩니다.</p>
+  <p><b>휴대폰</b> — 아이폰은 대부분 바로 됩니다. 안드로이드는 Google 음성 서비스에서 일본어를 내려받으면 됩니다.</p>
+  <p><b>링크로 열면 브라우저가 소리를 막는 경우가 있습니다.</b> 바탕화면에 저장된 파일 쪽에서는 재생되는 경우가 많으니 그쪽으로도 시도해 보세요.</p>
+  <button id="ttsClose">알겠습니다</button>
+</div>
+
+<script>
+const DATA = [
+  {
+    no: 1, date: "8월 16일", theme: "가격·계약", minutes: 20,
+    terms: [
+      { jp: "引合い", kana: "ひきあい", mean: "인콰이어리, 구매 문의", note: "「引合いをいただく」 형태로 씁니다. 견적 요청이 들어온 단계이고 아직 발주는 아닙니다.", where: "예문 1 · 회화 1턴 · 퀴즈 5", ez: ["引合[ひきあ]いをいただきました。","인콰이어리를 받았습니다."] },
+      { jp: "見積書", kana: "みつもりしょ", mean: "견적서", note: "상대에게 말할 때는 「お見積り」로 「お」를 붙입니다. 「見積もりを出す」= 견적을 내다.", where: "예문 2 · 회화 1턴", ez: ["見積書[みつもりしょ]を送[おく]ります。","견적서를 보냅니다."] },
+      { jp: "単価", kana: "たんか", mean: "단가", note: "「単価を詰める」= 단가를 조율하다. 협상 자리에서 가장 자주 나오는 동사 조합입니다.", where: "예문 3 · 회화 3·5·6턴 · 퀴즈 6", ez: ["単価[たんか]を教[おし]えてください。","단가를 알려 주세요."] },
+      { jp: "価格改定", kana: "かかくかいてい", mean: "가격 개정", note: "인상·인하 어느 쪽에도 쓰는 중립어입니다. 「値上げ」보다 부드러워 공식 문서에는 대부분 이쪽을 씁니다.", where: "예문 4 · 회화 7턴", ez: ["来月[らいげつ]、価格改定[かかくかいてい]があります。","다음 달에 가격 개정이 있습니다."] },
+      { jp: "据え置き", kana: "すえおき", mean: "동결, 가격 유지", note: "협상 결과는 値上げ(인상) / 値下げ(인하) / 据え置き(동결) 세 갈래로 갈립니다.", where: "예문 5 · 기사 지문 · 퀴즈 1", ez: ["今回[こんかい]は据[す]え置[お]きです。","이번에는 동결입니다."] },
+      { jp: "妥結", kana: "だけつ", mean: "타결", note: "「交渉が妥結した」= 협상이 타결됐다. 가격 협상 기사에 거의 반드시 등장합니다.", where: "예문 6 · 기사 지문 · 퀴즈 3" },
+      { jp: "転嫁", kana: "てんか", mean: "(원가) 전가", note: "「コスト転嫁」 형태로 씁니다. 가격 인상을 요청할 때 논리의 축이 되는 단어입니다.", where: "예문 7 · 회화 4턴 · 퀴즈 2" },
+      { jp: "支払条件", kana: "しはらいじょうけん", mean: "지불 조건", note: "「支払サイト」는 대금 결제까지의 기간을 뜻합니다. 가격만큼 중요한 협상 항목입니다.", where: "예문 8 · 회화 6턴" }
+    ],
+    sentences: [
+      { drill: "引合い", jp: "先日[せんじつ]いただいた《引合[ひきあ]い》の件[けん]、社内[しゃない]で検討[けんとう]しております。", ko: "지난번 주신 인콰이어리 건, 사내에서 검토하고 있습니다.", tip: "문의를 받고 아직 답을 못 줬을 때 쓰는 중간 보고입니다. 「〜しております」로 진행 중임을 알리면 상대가 기다려 줍니다." },
+      { drill: "見積書", jp: "《見積書[みつもりしょ]》は明日中[あすじゅう]にお送[おく]りいたします。", ko: "견적서는 내일 중으로 보내드리겠습니다.", tip: "「明日中(あすじゅう)に」= 내일 중으로. 날짜에 「中に」를 붙이면 그날 안이라는 여유가 생겨 실무에서 안전합니다." },
+      { drill: "単価", jp: "《単価[たんか]》につきましては、数量次第[すうりょうしだい]で調整[ちょうせい]の余地[よち]がございます。", ko: "단가에 대해서는 수량에 따라 조정의 여지가 있습니다.", tip: "「〜次第(しだい)」= 〜에 따라. 조건부로 문을 열어두는 표현이라 협상에서 활용도가 높습니다." },
+      { drill: "価格改定", jp: "来期[らいき]の《価格改定[かかくかいてい]》について、ご相談[そうだん]させていただけますでしょうか。", ko: "다음 기 가격 개정에 대해 상의드릴 수 있을까요?", tip: "민감한 화제를 꺼낼 때의 정석입니다. 「ご相談」으로 시작하면 통보가 아니라 협의로 들립니다." },
+      { drill: "据え置き", jp: "今回[こんかい]は《据[す]え置[お]き》でお願[ねが]いできませんでしょうか。", ko: "이번에는 동결로 부탁드릴 수 없을까요?", tip: "인하 압박을 방어하는 문장입니다. 부정형 의문(〜できませんでしょうか)이 「〜してください」보다 훨씬 부드럽습니다." },
+      { drill: "妥結", jp: "前回[ぜんかい]の交渉[こうしょう]は、双方合意[そうほうごうい]のうえ《妥結[だけつ]》いたしました。", ko: "지난번 협상은 쌍방 합의하에 타결되었습니다.", tip: "「〜のうえ」= 〜한 후에, 〜한 결과. 절차를 밟았음을 강조하는 딱딱한 표현이라 보고·기록에 적합합니다." },
+      { drill: "転嫁", jp: "原料価格[げんりょうかかく]の上昇分[じょうしょうぶん]を《転嫁[てんか]》させていただきたく存[ぞん]じます。", ko: "원료 가격 상승분을 반영하고자 합니다.", tip: "가격 인상을 꺼낼 때 쓰는 정중한 형태입니다. 「〜させていただきたく存じます」는 내 쪽 행동을 최대한 낮춘 말투입니다." },
+      { drill: "支払条件", jp: "《支払条件[しはらいじょうけん]》は従来[じゅうらい]どおりでお願[ねが]いいたします。", ko: "지불 조건은 종전대로 부탁드립니다.", tip: "「従来どおり」= 기존대로. 바꾸고 싶지 않은 항목을 지킬 때 쓰는 한마디입니다." }
+    ],
+    article: {
+      real: true,
+      source: "日本経済新聞 「トヨタ、鋼板価格据え置き 部品会社向け、下げ止まり 日鉄と妥結」",
+      url: "https://www.nikkei.com/article/DGXZQOFD273WG0X20C26A2000000/",
+      note: "아래 지문은 위 보도 내용을 학습용으로 요약해 다시 쓴 것입니다. 기사 원문 그대로가 아닙니다.",
+      body: "トヨタ自動車[じどうしゃ]は、{2026年度}[にせんにじゅうろくねんど]上期[かみき]の部品会社[ぶひんがいしゃ]向[む]けの鋼板価格[こうはんかかく]を、日本製鉄[にっぽんせいてつ]と《据[す]え置[お]き》で《妥結[だけつ]》した。据[す]え置[お]きは{4四半期}[よんしはんき]ぶりで、前期[ぜんき]までは{3期}[さんき]連続[れんぞく]の引[ひ]き下[さ]げが続[つづ]いていた。鉄鉱石[てっこうせき]など原料価格[げんりょうかかく]の下落幅[げらくはば]が小[ちい]さかったことを反映[はんえい]した形[かたち]だ。",
+      lines: [
+        { jp: "トヨタ自動車は、2026年度上期の部品会社向けの鋼板価格を、日本製鉄と据え置きで妥結した。", ko: "도요타자동차는 2026년도 상반기 부품사向 강판 가격을 일본제철과 동결로 타결했다." },
+        { jp: "据え置きは4四半期ぶりで、前期までは3期連続の引き下げが続いていた。", ko: "동결은 4분기 만이며, 전기까지는 3분기 연속 인하가 이어지고 있었다." },
+        { jp: "鉄鉱石など原料価格の下落幅が小さかったことを反映した形だ。", ko: "철광석 등 원료 가격의 하락 폭이 작았던 점을 반영한 형태다." }
+      ],
+      summary: "도요타가 일본제철과의 강판 가격 협상에서 <b>3분기 연속 인하 흐름을 끊고 동결로 마무리</b>했습니다. 원료 가격 하락세 둔화가 근거입니다. 하락 사이클이 바닥을 쳤다는 신호로 읽을 수 있고, 우리 쪽 대일 가격 전략에 직접 영향을 주는 대목입니다. 오늘 배운 <b>据え置き·妥結</b>이 지문에 그대로 나옵니다 — 형광펜 표시를 보세요.",
+      picks: [
+        { jp: "〜向け", read: "〜むけ", ko: "〜용, 〜대상", from: "部品会社向けの" },
+        { jp: "〜ぶり", read: "〜ぶり", ko: "〜만에", from: "4四半期ぶりで" },
+        { jp: "上期", read: "かみき", ko: "상반기. 반대는 下期(しもき)", from: "2026年度上期の" },
+        { jp: "引き下げ", read: "ひきさげ", ko: "인하. 반대는 引き上げ", from: "3期連続の引き下げ" },
+        { jp: "下落幅", read: "げらくはば", ko: "하락 폭", from: "原料価格の下落幅が" },
+        { jp: "〜した形だ", read: "〜したかたちだ", ko: "〜한 모양새다. 기사에서 해석을 덧붙일 때", from: "反映した形だ" }
+      ]
+    },
+    dialogue: {
+      situation: "보낸 견적서를 두고 고객(일본계 자동차사 조달 담당)이 단가에 이의를 제기합니다.",
+      turns: [
+        { me: false, jp: "お世話[せわ]になっております。先日[せんじつ]の《引合[ひきあ]い》の件[けん]、《見積書[みつもりしょ]》を拝見[はいけん]しました。", ko: "신세 지고 있습니다. 지난번 인콰이어리 건, 견적서 잘 받아 봤습니다." },
+        { me: true, jp: "ありがとうございます。ご不明[ふめい]な点[てん]はございましたでしょうか。", ko: "감사합니다. 불명확한 점은 없으셨는지요?", ch: [["감사합니다","ありがとうございます。"],["불명확한 점은","ご不明[ふめい]な点[てん]は"],["없으셨는지요?","ございましたでしょうか。"]] },
+        { me: false, jp: "《単価[たんか]》が前回[ぜんかい]より上[あ]がっていますね。理由[りゆう]を伺[うかが]えますか。", ko: "단가가 지난번보다 올랐네요. 이유를 여쭤도 될까요?" },
+        { me: true, jp: "原料炭[げんりょうたん]の価格[かかく]が上昇[じょうしょう]しておりまして、その分[ぶん]を《転嫁[てんか]》させていただいた形[かたち]でございます。", ko: "원료탄 가격이 상승하고 있어, 그만큼을 반영한 형태입니다.", ch: [["원료탄 가격이","原料炭[げんりょうたん]の価格[かかく]が"],["상승하고 있어","上昇[じょうしょう]しておりまして、"],["그만큼을","その分[ぶん]を"],["반영한 형태입니다","《転嫁[てんか]》させていただいた形[かたち]でございます。"]] },
+        { me: false, jp: "なるほど。ただ、この《単価[たんか]》では社内[しゃない]を通[とお]すのが難[むずか]しい状況[じょうきょう]です。", ko: "그렇군요. 다만 이 단가로는 사내를 통과시키기 어려운 상황입니다." },
+        { me: true, jp: "承知[しょうち]いたしました。数量[すうりょう]を増[ふ]やしていただけるようでしたら、《単価[たんか]》の見直[みなお]しを検討[けんとう]いたします。《支払条件[しはらいじょうけん]》は従来[じゅうらい]どおりで結構[けっこう]でございます。", ko: "알겠습니다. 수량을 늘려 주실 수 있다면 단가 재검토를 검토하겠습니다. 지불 조건은 종전대로면 됩니다.", ch: [["알겠습니다","承知[しょうち]いたしました。"],["수량을 늘려 주실 수 있다면","数量[すうりょう]を増[ふ]やしていただけるようでしたら、"],["단가 재검토를","《単価[たんか]》の見直[みなお]しを"],["검토하겠습니다","検討[けんとう]いたします。"],["지불 조건은","《支払条件[しはらいじょうけん]》は"],["종전대로면 됩니다","従来[じゅうらい]どおりで結構[けっこう]でございます。"]] },
+        { me: false, jp: "分[わ]かりました。次期[じき]の《価格改定[かかくかいてい]》の時期[じき]に合[あ]わせて、一度[いちど]整理[せいり]しましょう。", ko: "알겠습니다. 다음 기 가격 개정 시기에 맞춰 한번 정리합시다." },
+        { me: true, jp: "ありがとうございます。来週半[らいしゅうなか]ばごろ、進捗[しんちょく]をご確認[かくにん]させていただいてもよろしいでしょうか。", ko: "감사합니다. 다음 주 중반쯤 진척 상황을 확인드려도 괜찮을까요?", ch: [["감사합니다","ありがとうございます。"],["다음 주 중반쯤","来週半[らいしゅうなか]ばごろ、"],["진척 상황을","進捗[しんちょく]を"],["확인드려도 괜찮을까요?","ご確認[かくにん]させていただいてもよろしいでしょうか。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 「できません」 (할 수 없습니다)", body: "너무 직설적이라 대화가 거기서 끊깁니다. 위 6번째 턴처럼 「難しい」로 받은 뒤 반드시 대안(수량 연동)을 붙입니다." },
+        { hard: true, head: "✗ 「他社はもっと高いですよ」 (타사는 더 비쌉니다)", body: "경쟁사를 깎아내리는 말은 신뢰를 잃습니다. 근거는 원료탄·환율처럼 객관적으로 확인 가능한 요소로만 댑니다. 4번째 턴이 그 방식입니다." },
+        { hard: false, head: "△ 마지막 턴을 생략하지 말 것", body: "일본 상담은 당일 결론이 안 나는 것이 정상입니다. 그래서 헤어지기 전에 다음 확인 시점을 못박는 한마디가 실무에서 결정적입니다." }
+      ]
+    },
+    quiz: [
+      { q: "「据え置き」의 뜻은?", opts: ["인상", "인하", "동결 (유지)"], ans: 2 },
+      { q: "빈칸에 들어갈 말은?　原料価格の上昇分を（　　）させていただきたく存じます。", opts: ["転嫁", "妥結", "引合い"], ans: 0 },
+      { q: "「妥結」을 히라가나로 쓰면?", answer: "だけつ" },
+      { q: "고객이 「この単価では難しい状況です」라고 했습니다. 실제 의미는?", opts: ["조금만 깎으면 된다", "그 단가로는 받아들일 수 없다", "사내 절차를 밟겠다"], ans: 1 },
+      { q: "아직 발주가 아니라 \"문의가 들어온 단계\"를 뜻하는 말은?", opts: ["引合い", "妥結", "支払条件"], ans: 0 },
+      { q: "\"단가에 대해서는 수량에 따라 조정의 여지가 있습니다\"를 일본어로.", answer: "単価につきましては、数量次第で調整の余地がございます。" }
+    ],
+    column: {
+      word: "検討", kana: "けんとう", ko: "검토",
+      title: "「検討します」를 검토로 들으면 안 됩니다",
+      body: [
+        "한국에서 \"검토하겠습니다\"는 진짜로 들여다보겠다는 뜻입니다. 일본 상담에서 <span class='kw'>検討します</span>는 그렇지 않은 경우가 훨씬 많습니다.",
+        "이 말은 그 자리에서 거절하지 않기 위한 완충재에 가깝습니다. 상대의 체면을 세워주면서 대화를 부드럽게 닫는 장치예요. 35년을 살면서 이걸 곧이곧대로 듣고 낭패를 본 한국 주재원을 여럿 봤습니다."
+      ],
+      vs: "「前向きに検討します」 → <b>가능성은 있음.</b> 그래도 확답은 아님<br>「検討します」 → <b>대체로 보류</b><br>「検討させていただきます」 → 정중하지만 <b>거절에 가까울 때가 많음</b>",
+      body2: [
+        "그래서 일본 담당자가 「検討します」라고 했다고 \"긍정적입니다\"라고 보고하면 나중에 뒤집힙니다. 판단은 말이 아니라 <b>그다음 행동</b>으로 하세요. 자료를 더 달라고 하는지, 일정을 잡자고 하는지를 보면 됩니다.",
+        "반대로 우리가 쓸 때는 유용합니다. 곤란한 자리에서 시간을 벌어주니까요. 다만 진짜로 검토할 생각이라면 「社内(しゃない)で確認(かくにん)のうえ、改(あらた)めてご連絡(れんらく)いたします」처럼 <b>다음 행동을 붙여</b> 말하세요. 그래야 오해가 없습니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 2일차 · 제품·규격 ═══════════ */
+  {
+    no: 2, date: "8월 17일", theme: "제품·규격", minutes: 20,
+    terms: [
+      { jp: "高張力鋼板", kana: "こうちょうりょくこうはん", mean: "고장력강판", note: "현장에서는 「ハイテン」이라고 부르는 쪽이 압도적으로 많습니다. 정식 명칭만 알고 가면 회의에서 못 알아듣습니다.", where: "예문 1 · 기사 지문 · 회화 1턴 · 퀴즈 1", ez: ["これは高張力鋼板[こうちょうりょくこうはん]です。","이것은 고장력강판입니다."] },
+      { jp: "溶融亜鉛めっき鋼板", kana: "ようゆうあえんめっきこうはん", mean: "용융아연도금강판 (GI)", note: "합금화한 것은 「合金化溶融亜鉛めっき鋼板」= GA로, 자동차 외판의 주력입니다.", where: "예문 2 · 회화 6턴", ez: ["溶融亜鉛[ようゆうあえん]めっき鋼板[こうはん]もあります。","용융아연도금강판도 있습니다."] },
+      { jp: "板厚", kana: "いたあつ", mean: "판 두께", note: "폭은 「板幅(いたはば)」. 도면 검토에서 늘 짝으로 나옵니다.", where: "예문 3 · 회화 3턴", ez: ["板厚[いたあつ]は{2mm}[にミリ]です。","판 두께는 2mm입니다."] },
+      { jp: "公差", kana: "こうさ", mean: "공차", note: "「公差内(こうさない)」= 공차 이내. 품질 논의에서 합격·불합격을 가르는 말입니다.", where: "예문 4 · 회화 5턴 · 퀴즈 3", ez: ["公差[こうさ]を確認[かくにん]します。","공차를 확인합니다."] },
+      { jp: "目付量", kana: "めつけりょう", mean: "도금 부착량", note: "「片面45g/㎡」처럼 단위와 함께 씁니다. 도금재 상담의 핵심 수치입니다.", where: "예문 5 · 회화 6턴 · 퀴즈 2", ez: ["目付量[めつけりょう]はいくつですか。","도금 부착량은 얼마입니까?"] },
+      { jp: "引張強さ", kana: "ひっぱりつよさ", mean: "인장강도", note: "「引張強度(ひっぱりきょうど)」도 씁니다. 「590MPa級(きゅう)」처럼 급수로 부릅니다.", where: "예문 6 · 회화 2턴" },
+      { jp: "成形性", kana: "せいけいせい", mean: "성형성", note: "하이텐은 강도가 오를수록 성형성이 떨어져 「スプリングバック」 문제가 따라옵니다.", where: "예문 7 · 회화 4턴 · 퀴즈 5" },
+      { jp: "ミルシート", kana: "―", mean: "밀시트, 재질증명서", note: "정식 명칭은 「検査証明書(けんさしょうめいしょ)」. 출하 서류에서 반드시 언급됩니다.", where: "예문 8 · 회화 8턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "高張力鋼板", jp: "今回[こんかい]ご提案[ていあん]するのは《高張力鋼板[こうちょうりょくこうはん]》、いわゆるハイテンでございます。", ko: "이번에 제안드리는 것은 고장력강판, 이른바 하이텐입니다.", tip: "「いわゆる」= 이른바. 정식 명칭 뒤에 현장 약칭을 붙여 주면 상대가 즉시 이해합니다." },
+      { drill: "溶融亜鉛めっき鋼板", jp: "外板[がいはん]用[よう]には《溶融亜鉛[ようゆうあえん]めっき鋼板[こうはん]》をご提案[ていあん]いたします。", ko: "외판용으로는 용융아연도금강판을 제안드립니다.", tip: "「〜用には」= 〜용으로는. 용도별로 강종을 나눠 제안할 때의 기본 틀입니다." },
+      { drill: "板厚", jp: "《板厚[いたあつ]》は{1.6mm}[いってんろくミリ]から{2.3mm}[にーてんさんミリ]まで対応[たいおう]可能[かのう]です。", ko: "판 두께는 1.6mm에서 2.3mm까지 대응 가능합니다.", tip: "숫자를 소리 내어 읽는 연습이 핵심입니다. 「〜から〜まで」로 범위를 말하는 형태를 통째로 익히세요." },
+      { drill: "公差", jp: "《公差[こうさ]》はJIS規格[きかく]の範囲内[はんいない]に収[おさ]まっております。", ko: "공차는 JIS 규격 범위 내에 들어와 있습니다.", tip: "「収(おさ)まる」= (범위 안에) 들어가다. 품질 보고에서 합격을 알리는 동사입니다." },
+      { drill: "目付量", jp: "《目付量[めつけりょう]》は片面[かためん]{45g/㎡}[よんじゅうごグラムまいへいほうメートル]でご手配[てはい]いたします。", ko: "도금 부착량은 편면 45g/㎡로 준비하겠습니다.", tip: "「g/㎡」는 「グラム毎平方メートル」로 읽습니다. 회의에서 가장 자주 얼어붙는 단위입니다." },
+      { drill: "引張強さ", jp: "《引張強[ひっぱりつよ]さ》は{590MPa}[ごひゃくきゅうじゅうメガパスカル]級[きゅう]でございます。", ko: "인장강도는 590MPa급입니다.", tip: "강종은 「〜級(きゅう)」으로 부릅니다. 「590(ごひゃくきゅうじゅう)」 숫자 읽기를 입에 붙여 두세요." },
+      { drill: "成形性", jp: "《成形性[せいけいせい]》につきましては、試作[しさく]段階[だんかい]でご評価[ひょうか]いただければと存[ぞん]じます。", ko: "성형성에 대해서는 시작 단계에서 평가해 주시면 좋겠습니다.", tip: "확답을 미루면서도 협조적으로 들리는 표현입니다. 「〜いただければと存じます」는 부드러운 제안의 정형입니다." },
+      { drill: "ミルシート", jp: "《ミルシート》は出荷[しゅっか]時[じ]に併[あわ]せてお送[おく]りいたします。", ko: "밀시트는 출하 시에 함께 보내드리겠습니다.", tip: "「併(あわ)せて」= 아울러, 함께. 서류와 물품을 같이 보낼 때 쓰는 사무적인 표현입니다." }
+    ],
+    article: {
+      real: true,
+      source: "マイナビニュース 「日本製鉄、3000億円投じた40年ぶりの新熱延ラインが竣工 EV向け鋼板生産を強化」",
+      url: "https://news.mynavi.jp/techplus/article/20260807-4788765/",
+      note: "아래 지문은 위 보도 내용을 학습용으로 요약해 다시 쓴 것입니다. 기사 원문 그대로가 아닙니다.",
+      body: "日本製鉄[にっぽんせいてつ]は、{3000億円}[さんぜんおくえん]を投[とう]じた新[あたら]しい熱延[ねつえん]ラインを竣工[しゅんこう]させた。世界最大級[せかいさいだいきゅう]の圧延機[あつえんき]を備[そな]え、超[ちょう]《高張力鋼板[こうちょうりょくこうはん]》などの高級[こうきゅう]薄板[うすいた]の生産[せいさん]能力[のうりょく]を強化[きょうか]する。{1963年}[せんきゅうひゃくろくじゅうさんねん]から稼働[かどう]してきた既存[きそん]ラインは、{2026年度}[にせんにじゅうろくねんど]中[ちゅう]に休止[きゅうし]する予定[よてい]だ。",
+      lines: [
+        { jp: "日本製鉄は、3000億円を投じた新しい熱延ラインを竣工させた。", ko: "일본제철은 3000억 엔을 투입한 새 열연 라인을 준공했다." },
+        { jp: "世界最大級の圧延機を備え、超高張力鋼板などの高級薄板の生産能力を強化する。", ko: "세계 최대급 압연기를 갖추고, 초고장력강판 등 고급 박판의 생산 능력을 강화한다." },
+        { jp: "1963年から稼働してきた既存ラインは、2026年度中に休止する予定だ。", ko: "1963년부터 가동해 온 기존 라인은 2026년도 중에 휴지할 예정이다." }
+      ],
+      summary: "일본제철이 <b>40년 만의 신규 열연 라인</b>에 3000억 엔을 투입했습니다. 초하이텐 같은 고급 박판, 즉 <b>우리와 정면으로 겹치는 품목</b>의 생산 능력을 키우는 투자입니다. 1963년 라인을 세우고 신규 라인으로 갈아타는 구조 전환이라, 대일 수출 전략에 중장기로 영향을 줍니다. 오늘 배운 <b>高張力鋼板</b>이 지문에 그대로 나옵니다.",
+      picks: [
+        { jp: "〜を投じる", read: "〜をとうじる", ko: "(자금을) 투입하다", from: "3000億円を投じた" },
+        { jp: "竣工", read: "しゅんこう", ko: "준공", from: "ラインを竣工させた" },
+        { jp: "〜を備え", read: "〜をそなえ", ko: "〜을 갖추고", from: "圧延機を備え" },
+        { jp: "強化する", read: "きょうかする", ko: "강화하다", from: "生産能力を強化する" },
+        { jp: "既存", read: "きそん", ko: "기존", from: "既存ラインは" },
+        { jp: "〜する予定だ", read: "〜するよていだ", ko: "〜할 예정이다", from: "休止する予定だ" }
+      ]
+    },
+    dialogue: {
+      situation: "고객사 기술부에 신규 하이텐 강종을 제안하는 자리입니다. 상대는 성형성을 걱정하고 있습니다.",
+      turns: [
+        { me: true, jp: "本日[ほんじつ]はお時間[じかん]をいただきありがとうございます。早速[さっそく]ですが、新[あたら]しい《高張力鋼板[こうちょうりょくこうはん]》のご提案[ていあん]をさせていただきます。", ko: "오늘 시간 내주셔서 감사합니다. 바로 본론입니다만, 새로운 고장력강판을 제안드리겠습니다.", ch: [["오늘 시간 내주셔서","本日[ほんじつ]はお時間[じかん]をいただき"],["감사합니다","ありがとうございます。"],["바로 본론입니다만","早速[さっそく]ですが、"],["새로운 고장력강판을","新[あたら]しい《高張力鋼板[こうちょうりょくこうはん]》の"],["제안드리겠습니다","ご提案[ていあん]をさせていただきます。"]] },
+        { me: false, jp: "よろしくお願[ねが]いします。《引張強[ひっぱりつよ]さ》はどのくらいでしょうか。", ko: "잘 부탁드립니다. 인장강도는 어느 정도인가요?" },
+        { me: true, jp: "{590MPa}[ごひゃくきゅうじゅうメガパスカル]級[きゅう]でございます。従来品[じゅうらいひん]より《板厚[いたあつ]》を薄[うす]くでき、軽量化[けいりょうか]に貢献[こうけん]できるかと存[ぞん]じます。", ko: "590MPa급입니다. 기존 제품보다 판 두께를 얇게 할 수 있어 경량화에 기여할 수 있을 것으로 봅니다.", ch: [["590MPa급입니다","{590MPa}[ごひゃくきゅうじゅうメガパスカル]級[きゅう]でございます。"],["기존 제품보다","従来品[じゅうらいひん]より"],["판 두께를 얇게 할 수 있어","《板厚[いたあつ]》を薄[うす]くでき、"],["경량화에 기여할 수 있을 것으로 봅니다","軽量化[けいりょうか]に貢献[こうけん]できるかと存[ぞん]じます。"]] },
+        { me: false, jp: "強度[きょうど]が上[あ]がると《成形性[せいけいせい]》が心配[しんぱい]ですね。スプリングバックの影響[えいきょう]はいかがですか。", ko: "강도가 올라가면 성형성이 걱정되네요. 스프링백 영향은 어떻습니까?" },
+        { me: true, jp: "ご懸念[けねん]はごもっともでございます。試験[しけん]データをお持[も]ちいたしました。《公差[こうさ]》もJIS規格[きかく]の範囲内[はんいない]に収[おさ]まっております。", ko: "우려는 지당하십니다. 시험 데이터를 가져왔습니다. 공차도 JIS 규격 범위 내에 들어와 있습니다.", ch: [["우려는 지당하십니다","ご懸念[けねん]はごもっともでございます。"],["시험 데이터를","試験[しけん]データを"],["가져왔습니다","お持[も]ちいたしました。"],["공차도","《公差[こうさ]》も"],["JIS 규격 범위 내에","JIS規格[きかく]の範囲内[はんいない]に"],["들어와 있습니다","収[おさ]まっております。"]] },
+        { me: false, jp: "めっきの仕様[しよう]も確認[かくにん]したいのですが、《溶融亜鉛[ようゆうあえん]めっき鋼板[こうはん]》の《目付量[めつけりょう]》は。", ko: "도금 사양도 확인하고 싶은데요, 용융아연도금강판의 도금 부착량은요?" },
+        { me: true, jp: "片面[かためん]{45g/㎡}[よんじゅうごグラムまいへいほうメートル]で手配[てはい]可能[かのう]でございます。ご要望[ようぼう]があれば調整[ちょうせい]いたします。", ko: "편면 45g/㎡로 준비 가능합니다. 요청이 있으시면 조정하겠습니다.", ch: [["편면 45g/㎡로","片面[かためん]{45g/㎡}[よんじゅうごグラムまいへいほうメートル]で"],["준비 가능합니다","手配[てはい]可能[かのう]でございます。"],["요청이 있으시면","ご要望[ようぼう]があれば"],["조정하겠습니다","調整[ちょうせい]いたします。"]] },
+        { me: false, jp: "分[わ]かりました。技術[ぎじゅつ]の担当[たんとう]と共有[きょうゆう]します。", ko: "알겠습니다. 기술 담당과 공유하겠습니다." },
+        { me: true, jp: "ありがとうございます。《ミルシート》と試験成績書[しけんせいせきしょ]も併[あわ]せてお送[おく]りいたします。来週[らいしゅう]、ご状況[じょうきょう]を伺[うかが]ってもよろしいでしょうか。", ko: "감사합니다. 밀시트와 시험성적서도 함께 보내드리겠습니다. 다음 주에 상황을 여쭤봐도 괜찮을까요?", ch: [["감사합니다","ありがとうございます。"],["밀시트와 시험성적서도","《ミルシート》と試験成績書[しけんせいせきしょ]も"],["함께 보내드리겠습니다","併[あわ]せてお送[おく]りいたします。"],["다음 주에","来週[らいしゅう]、"],["상황을 여쭤봐도 괜찮을까요?","ご状況[じょうきょう]を伺[うかが]ってもよろしいでしょうか。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 「問題ないです」로 우려를 끊어내기", body: "기술적 우려를 곧바로 부정하면 검토를 안 했다는 인상을 줍니다. 5번째 턴처럼 「ご懸念はごもっともです」로 먼저 받아들인 뒤 데이터를 제시하는 순서를 지킵니다." },
+        { hard: true, head: "✗ 자기 회사 사람에게 존칭 쓰기", body: "고객 앞에서 「部長様がおっしゃいました」는 결례입니다. 사내 인물은 낮춰서 「部長の◯◯が申しておりました」로 말합니다." },
+        { hard: false, head: "△ 「検討します」를 채용 결정으로 읽지 말 것", body: "기술 협의에서의 「検討」는 시작 평가를 해보겠다는 정도입니다. 다음 마일스톤을 그 자리에서 확인해 둡니다." }
+      ]
+    },
+    quiz: [
+      { q: "현장에서 「高張力鋼板」을 줄여 부르는 말은?", opts: ["ハイテン", "ミルシート", "コウハン"], ans: 0 },
+      { q: "「目付量」이 가리키는 것은?", opts: ["판 두께", "도금 부착량", "인장강도"], ans: 1 },
+      { q: "「公差」를 히라가나로 쓰면?", answer: "こうさ" },
+      { q: "출하 시 함께 보내는 재질증명서를 뭐라고 부릅니까?", opts: ["ミルシート", "見積書", "承認図"], ans: 0 },
+      { q: "하이텐의 강도가 올라갈 때 따라오는 대표적 문제는?", opts: ["내식성 저하", "성형성 저하와 스프링백", "도금 불량"], ans: 1 },
+      { q: "\"판 두께는 1.6mm에서 2.3mm까지 대응 가능합니다\"를 일본어로.", answer: "板厚は1.6mmから2.3mmまで対応可能です。" }
+    ],
+    column: {
+      word: "大丈夫", kana: "だいじょうぶ", ko: "괜찮다",
+      title: "「大丈夫です」는 예일까요, 아니오일까요",
+      body: [
+        "한국어 \"괜찮아요\"도 두 가지로 쓰입니다. 문제없다는 뜻과 사양한다는 뜻. 일본어 <span class='kw'>大丈夫です</span>도 똑같이 갈리는데, <b>갈리는 지점이 다릅니다.</b>",
+        "편의점에서 「袋(ふくろ)、ご利用(りよう)ですか」에 「大丈夫です」라고 답하면 \"필요 없다\"는 뜻입니다. 반면 「体調(たいちょう)は大丈夫ですか」에 같은 말로 답하면 \"문제없다\"가 됩니다."
+      ],
+      vs: "권유·제안에 대한 「大丈夫です」 → <b>사양</b> (필요 없습니다)<br>상태·안부에 대한 「大丈夫です」 → <b>긍정</b> (문제없습니다)",
+      body2: [
+        "업무에서 위험한 쪽은 앞의 경우입니다. 「サンプルもお送(おく)りしましょうか」— 「大丈夫です」 를 \"네, 보내주세요\"로 들으면 헛일을 하게 됩니다.",
+        "애매하면 되물으세요. 「送(おく)らなくてよろしいでしょうか」처럼 <b>부정형으로 확인</b>하면 상대가 분명히 답합니다. 젊은 세대일수록 이 용법을 많이 써서 요즘은 일본인끼리도 헷갈려 합니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 3일차 · 납기·물류 ═══════════ */
+  {
+    no: 3, date: "8월 18일", theme: "납기·물류", minutes: 20,
+    terms: [
+      { jp: "納期", kana: "のうき", mean: "납기", note: "「納期を切る」= 납기를 정하다, 「納期に間に合う」= 납기를 맞추다. 짝으로 쓰이는 동사까지 외웁니다.", where: "예문 1 · 회화 1·5턴 · 퀴즈 1", ez: ["納期[のうき]はいつですか。","납기는 언제입니까?"] },
+      { jp: "出荷", kana: "しゅっか", mean: "출하", note: "공장에서 물건이 나가는 시점입니다. 「出荷済み(しゅっかずみ)」= 출하 완료.", where: "예문 2 · 회화 3턴", ez: ["明日[あした]、出荷[しゅっか]します。","내일 출하합니다."] },
+      { jp: "船積み", kana: "ふなづみ", mean: "선적", note: "수출 업무의 핵심어입니다. 「船積み書類(しょるい)」= 선적 서류.", where: "예문 3 · 회화 3턴 · 퀴즈 3", ez: ["船積[ふなづ]みが終[お]わりました。","선적이 끝났습니다."] },
+      { jp: "前倒し", kana: "まえだおし", mean: "앞당김", note: "반대는 「後ろ倒し(うしろだおし)」. 「納期を前倒しする」 형태로 씁니다.", where: "예문 4 · 회화 6턴 · 퀴즈 2", ez: ["納期[のうき]を前倒[まえだお]しできますか。","납기를 앞당길 수 있습니까?"] },
+      { jp: "手配", kana: "てはい", mean: "수배, 준비, 조치", note: "일본 실무에서 가장 자주 쓰이는 단어 중 하나입니다. 「手配します」 한마디로 \"조치하겠습니다\"가 됩니다.", where: "예문 5 · 회화 6턴", ez: ["すぐに手配[てはい]します。","바로 준비하겠습니다."] },
+      { jp: "在庫", kana: "ざいこ", mean: "재고", note: "「在庫を積み増す(つみます)」= 재고를 늘리다, 「在庫を圧縮する」= 재고를 줄이다.", where: "예문 6 · 기사 지문 · 회화 4턴" },
+      { jp: "分納", kana: "ぶんのう", mean: "분할 납품", note: "납기를 다 못 맞출 때 꺼내는 협상 카드입니다. 전량 지연보다 훨씬 잘 받아들여집니다.", where: "예문 7 · 기사 지문 · 회화 6턴 · 퀴즈 5" },
+      { jp: "遅延", kana: "ちえん", mean: "지연", note: "「遅延が発生する」= 지연이 발생하다. 사과와 세트로 나오는 단어입니다.", where: "예문 8 · 회화 1턴" }
+    ],
+    sentences: [
+      { drill: "納期", jp: "《納期[のうき]》につきまして、ご相談[そうだん]したいことがございます。", ko: "납기에 대해 상의드리고 싶은 것이 있습니다.", tip: "나쁜 소식을 꺼내는 첫 문장입니다. 결론부터 말하지 않고 「ご相談」으로 열어야 상대가 방어 자세를 풀습니다." },
+      { drill: "出荷", jp: "《出荷[しゅっか]》は{来月}[らいげつ]{15日}[じゅうごにち]を予定[よてい]しております。", ko: "출하는 다음 달 15일을 예정하고 있습니다.", tip: "「〜を予定しております」는 확정이 아닌 예정임을 남기는 안전한 표현입니다." },
+      { drill: "船積み", jp: "《船積[ふなづ]み》の日程[にってい]が確定[かくてい]しましたら、すぐにご連絡[れんらく]いたします。", ko: "선적 일정이 확정되면 즉시 연락드리겠습니다.", tip: "「〜しましたら」= 〜하면. 조건절을 정중하게 만드는 형태로, 약속을 붙일 때 자주 씁니다." },
+      { drill: "前倒し", jp: "《前倒[まえだお]し》のご要望[ようぼう]につきましては、工場[こうじょう]と調整[ちょうせい]させていただきます。", ko: "앞당겨 달라는 요청에 대해서는 공장과 조율하겠습니다.", tip: "즉답을 피하면서도 움직이겠다는 의지를 보이는 표현입니다. 「調整させていただきます」가 그 역할을 합니다." },
+      { drill: "手配", jp: "代替品[だいたいひん]をすぐに《手配[てはい]》いたします。", ko: "대체품을 즉시 준비하겠습니다.", tip: "문제 발생 시 가장 먼저 나와야 할 문장입니다. 원인 설명보다 조치가 앞서야 신뢰를 잃지 않습니다." },
+      { drill: "在庫", jp: "現在[げんざい]の《在庫[ざいこ]》で{200トン}[にひゃくトン]まで対応[たいおう]可能[かのう]でございます。", ko: "현재 재고로 200톤까지 대응 가능합니다.", tip: "숫자를 앞세워 가능 범위를 명확히 제시하면 협상이 빨라집니다." },
+      { drill: "分納", jp: "全量[ぜんりょう]は難[むずか]しいため、《分納[ぶんのう]》という形[かたち]ではいかがでしょうか。", ko: "전량은 어렵기 때문에 분할 납품 형태는 어떠신지요?", tip: "「〜という形ではいかがでしょうか」는 대안을 제시하는 만능 틀입니다. 거절 뒤에 반드시 붙이세요." },
+      { drill: "遅延", jp: "《遅延[ちえん]》が発生[はっせい]し、誠[まこと]に申[もう]し訳[わけ]ございません。", ko: "지연이 발생하여 대단히 죄송합니다.", tip: "지연 통보는 사과가 먼저입니다. 이유 설명을 앞에 두면 변명으로 들립니다." }
+    ],
+    article: {
+      real: true,
+      source: "日本鉄鋼連盟 「鉄鋼業界の物流に関する概要」 (国土交通省 提出資料)",
+      url: "https://www.mlit.go.jp/kowan/content/001965451.pdf",
+      note: "아래 지문은 위 자료의 내용을 학습용으로 요약해 다시 쓴 것입니다. 원문 그대로가 아닙니다.",
+      body: "日本鉄鋼連盟[にほんてっこうれんめい]は、鋼材[こうざい]物流[ぶつりゅう]に関[かん]するガイドラインを公表[こうひょう]した。トラック運転手[うんてんしゅ]の不足[ふそく]を背景[はいけい]に、荷待[にま]ち時間[じかん]の削減[さくげん]や《手配[てはい]》の平準化[へいじゅんか]を求[もと]めている。《納期[のうき]》の急[きゅう]な変更[へんこう]は現場[げんば]の負担[ふたん]につながるとして、サプライチェーン全体[ぜんたい]での協力[きょうりょく]を呼[よ]びかけている。",
+      lines: [
+        { jp: "日本鉄鋼連盟は、鋼材物流に関するガイドラインを公表した。", ko: "일본철강연맹은 강재 물류에 관한 가이드라인을 공표했다." },
+        { jp: "トラック運転手の不足を背景に、荷待ち時間の削減や手配の平準化を求めている。", ko: "트럭 운전기사 부족을 배경으로, 대기 시간 단축과 수배의 평준화를 요구하고 있다." },
+        { jp: "納期の急な変更は現場の負担につながるとして、サプライチェーン全体での協力を呼びかけている。", ko: "납기의 급한 변경은 현장의 부담으로 이어진다며, 공급망 전체의 협력을 호소하고 있다." }
+      ],
+      summary: "일본 물류 현장이 <b>운전기사 부족</b>으로 한계에 와 있고, 업계가 공식적으로 \"급한 납기 변경을 자제해 달라\"고 요청한 문서입니다. 우리 쪽에서 앞당김 요청을 남발하면 그 자체가 부담이 된다는 뜻이라, <b>납기 협상의 전제가 바뀌고 있다</b>는 신호로 읽어야 합니다. 오늘 배운 <b>手配·納期</b>가 지문에 그대로 나옵니다.",
+      picks: [
+        { jp: "〜に関する", read: "〜にかんする", ko: "〜에 관한", from: "鋼材物流に関する" },
+        { jp: "公表した", read: "こうひょうした", ko: "공표했다", from: "ガイドラインを公表した" },
+        { jp: "〜を背景に", read: "〜をはいけいに", ko: "〜을 배경으로", from: "不足を背景に" },
+        { jp: "削減", read: "さくげん", ko: "삭감, 단축", from: "荷待ち時間の削減" },
+        { jp: "〜につながる", read: "〜につながる", ko: "〜로 이어지다", from: "現場の負担につながる" },
+        { jp: "呼びかけている", read: "よびかけている", ko: "호소하고 있다", from: "協力を呼びかけている" }
+      ]
+    },
+    dialogue: {
+      situation: "설비 문제로 납기가 2주 지연됩니다. 고객에게 먼저 알리고 대안을 제시해야 합니다.",
+      turns: [
+        { me: true, jp: "お世話[せわ]になっております。《納期[のうき]》の件[けん]でご連絡[れんらく]いたしました。{2週間}[にしゅうかん]ほどの《遅延[ちえん]》が見込[みこ]まれる状況[じょうきょう]でございます。", ko: "신세 지고 있습니다. 납기 건으로 연락드렸습니다. 2주 정도의 지연이 예상되는 상황입니다.", ch: [["신세 지고 있습니다","お世話[せわ]になっております。"],["납기 건으로 연락드렸습니다","《納期[のうき]》の件[けん]でご連絡[れんらく]いたしました。"],["2주 정도의 지연이","{2週間}[にしゅうかん]ほどの《遅延[ちえん]》が"],["예상되는 상황입니다","見込[みこ]まれる状況[じょうきょう]でございます。"]] },
+        { me: false, jp: "{2週間}[にしゅうかん]ですか。それは困[こま]りますね。理由[りゆう]を教[おし]えていただけますか。", ko: "2주요? 그건 곤란한데요. 이유를 알려주실 수 있습니까?" },
+        { me: true, jp: "設備[せつび]の不具合[ふぐあい]により、《出荷[しゅっか]》と《船積[ふなづ]み》の日程[にってい]が後[うし]ろにずれております。ご迷惑[めいわく]をおかけし、誠[まこと]に申[もう]し訳[わけ]ございません。", ko: "설비 결함으로 출하와 선적 일정이 뒤로 밀렸습니다. 폐를 끼쳐 대단히 죄송합니다.", ch: [["설비 결함으로","設備[せつび]の不具合[ふぐあい]により、"],["출하와 선적 일정이","《出荷[しゅっか]》と《船積[ふなづ]み》の日程[にってい]が"],["뒤로 밀렸습니다","後[うし]ろにずれております。"],["폐를 끼쳐","ご迷惑[めいわく]をおかけし、"],["대단히 죄송합니다","誠[まこと]に申[もう]し訳[わけ]ございません。"]] },
+        { me: false, jp: "ラインを止[と]めるわけにはいきません。御社[おんしゃ]の《在庫[ざいこ]》で一部[いちぶ]でも先[さき]に出[だ]せませんか。", ko: "라인을 세울 수는 없습니다. 귀사 재고로 일부라도 먼저 낼 수 없습니까?" },
+        { me: true, jp: "承知[しょうち]いたしました。在庫[ざいこ]分[ぶん]で{200トン}[にひゃくトン]、当初[とうしょ]の《納期[のうき]》どおりお出[だ]しできます。", ko: "알겠습니다. 재고분으로 200톤은 당초 납기대로 낼 수 있습니다.", ch: [["알겠습니다","承知[しょうち]いたしました。"],["재고분으로 200톤은","在庫[ざいこ]分[ぶん]で{200トン}[にひゃくトン]、"],["당초 납기대로","当初[とうしょ]の《納期[のうき]》どおり"],["낼 수 있습니다","お出[だ]しできます。"]] },
+        { me: false, jp: "助[たす]かります。残[のこ]りはどうなりますか。", ko: "다행이네요. 나머지는 어떻게 됩니까?" },
+        { me: true, jp: "残[のこ]りは《分納[ぶんのう]》という形[かたち]で、{2回}[にかい]に分[わ]けて《手配[てはい]》いたします。可能[かのう]な限[かぎ]り《前倒[まえだお]し》できるよう工場[こうじょう]と調整[ちょうせい]いたします。", ko: "나머지는 분할 납품 형태로 2회에 나눠 준비하겠습니다. 가능한 한 앞당길 수 있도록 공장과 조율하겠습니다.", ch: [["나머지는","残[のこ]りは"],["분할 납품 형태로","《分納[ぶんのう]》という形[かたち]で、"],["2회에 나눠 준비하겠습니다","{2回}[にかい]に分[わ]けて《手配[てはい]》いたします。"],["가능한 한 앞당길 수 있도록","可能[かのう]な限[かぎ]り《前倒[まえだお]し》できるよう"],["공장과 조율하겠습니다","工場[こうじょう]と調整[ちょうせい]いたします。"]] },
+        { me: false, jp: "分[わ]かりました。では、その内容[ないよう]を書面[しょめん]でいただけますか。", ko: "알겠습니다. 그럼 그 내용을 서면으로 주시겠습니까?" }
+      ],
+      warns: [
+        { hard: true, head: "✗ 이유부터 길게 설명하기", body: "지연 통보는 첫 마디가 사실 고지, 그다음이 사과, 그다음이 대안입니다. 이유를 앞세우면 변명으로 들립니다. 1번째 턴을 보세요." },
+        { hard: true, head: "✗ 대안 없이 「難しいです」만 말하기", body: "납기 문제에서 대안 없는 거절은 거래를 흔듭니다. 재고 선출하 + 분납처럼 반드시 손에 쥔 카드를 꺼냅니다." },
+        { hard: false, head: "△ 늦게 알리는 것이 가장 큰 잘못", body: "일본 고객은 지연 자체보다 늦은 보고를 문제 삼습니다. 확정 전이라도 「見込まれる状況です」로 미리 알리는 편이 낫습니다." }
+      ]
+    },
+    quiz: [
+      { q: "「納期」의 뜻은?", opts: ["출하일", "납기", "선적 서류"], ans: 1 },
+      { q: "\"납기를 앞당기다\"에 해당하는 말은?", opts: ["後ろ倒し", "前倒し", "分納"], ans: 1 },
+      { q: "「船積み」를 히라가나로 쓰면?", answer: "ふなづみ" },
+      { q: "\"조치하겠습니다\"에 가장 가까운 일본어 한마디는?", opts: ["手配します", "検討します", "確認します"], ans: 0 },
+      { q: "전량 납품이 어려울 때 꺼내는 협상 카드는?", opts: ["値引き", "分納", "据え置き"], ans: 1 },
+      { q: "\"대체품을 즉시 준비하겠습니다\"를 일본어로.", answer: "代替品をすぐに手配いたします。" }
+    ],
+    column: {
+      word: "すみません", kana: "すみません", ko: "미안합니다 / 고맙습니다 / 저기요",
+      title: "사과도 감사도 되는 말",
+      body: [
+        "<span class='kw'>すみません</span>은 한국어 한 단어로 옮길 수 없습니다. 미안합니다, 감사합니다, 저기요 — 세 가지를 다 합니다.",
+        "특히 <b>감사의 자리에서 쓰인다는 점</b>이 한국인에게는 낯섭니다. 무거운 짐을 들어주면 「ありがとう」보다 「すみません」이 먼저 나오는 경우가 많아요. \"당신에게 수고를 끼쳐 죄송하다\"는 감각이 고마움보다 앞에 오기 때문입니다."
+      ],
+      vs: "발을 밟았을 때 → <b>미안합니다</b><br>문을 잡아줬을 때 → <b>고맙습니다</b> (수고를 끼쳐 죄송하다는 결)<br>점원을 부를 때 → <b>저기요</b>",
+      body2: [
+        "다만 업무 문서에서는 무게가 다릅니다. 사과가 필요한 자리에 「すみません」만 쓰면 <b>가볍게 보입니다.</b> 「申(もう)し訳(わけ)ございません」을 써야 합니다.",
+        "반대로 사소한 부탁에 「申し訳ございません」을 쓰면 과합니다. 이 무게를 맞추는 감각은 결국 상대가 쓰는 말을 따라가며 익히게 됩니다. 상대보다 반 단계만 정중하게 — 그게 안전선입니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 4일차 · 품질·클레임 ═══════════ */
+  {
+    no: 4, date: "8월 19일", theme: "품질·클레임", minutes: 20,
+    terms: [
+      { jp: "不具合", kana: "ふぐあい", mean: "불량, 결함", note: "일본 제조업 최빈출어입니다. 「不良(ふりょう)」보다 이쪽을 훨씬 많이 씁니다.", where: "예문 1 · 기사 지문 · 회화 1턴 · 퀴즈 1", ez: ["不具合[ふぐあい]がありました。","불량이 있었습니다."] },
+      { jp: "クレーム", kana: "―", mean: "클레임, 항의", note: "영어 claim과 달리 \"불만·항의\"라는 뜻입니다. \"청구\"로 오해하면 대화가 어긋납니다.", where: "예문 2 · 회화 2턴 · 퀴즈 4", ez: ["クレームを受[う]けました。","클레임을 받았습니다."] },
+      { jp: "暫定対策", kana: "ざんていたいさく", mean: "잠정 대책", note: "짝은 「恒久対策(こうきゅうたいさく)」= 항구 대책. 보고서에 두 가지를 나눠 적습니다.", where: "예문 3 · 기사 지문 · 회화 4턴", ez: ["暫定対策[ざんていたいさく]を取[と]ります。","잠정 대책을 취합니다."] },
+      { jp: "原因究明", kana: "げんいんきゅうめい", mean: "원인 규명", note: "「原因究明を進める」 형태로 씁니다. 잠정 대책과 동시에 진행하는 것이 원칙입니다.", where: "예문 4 · 기사 지문 · 회화 4턴 · 퀴즈 2", ez: ["原因究明[げんいんきゅうめい]を進[すす]めます。","원인 규명을 진행합니다."] },
+      { jp: "再発防止", kana: "さいはつぼうし", mean: "재발 방지", note: "「再発防止策(さく)」로 자주 씁니다. 이 문서 제출까지가 클레임 대응의 끝입니다.", where: "예문 5 · 기사 지문 · 회화 6턴 · 퀴즈 5", ez: ["再発防止[さいはつぼうし]が大切[たいせつ]です。","재발 방지가 중요합니다."] },
+      { jp: "立会い", kana: "たちあい", mean: "입회", note: "「立会検査(たちあいけんさ)」= 입회 검사. 고객이 직접 와서 보는 것을 말합니다.", where: "예문 6 · 회화 6턴" },
+      { jp: "疵", kana: "きず", mean: "흠, 스크래치", note: "「キズ」로 가타카나 표기도 흔합니다. 표면 결함 전반을 가리킵니다.", where: "예문 7 · 회화 3턴 · 퀴즈 3" },
+      { jp: "歩留まり", kana: "ぶどまり", mean: "수율", note: "「歩留まりが落ちる」= 수율이 떨어지다. 고객이 손실을 설명할 때 쓰는 말입니다.", where: "예문 8 · 회화 3턴" }
+    ],
+    sentences: [
+      { drill: "不具合", jp: "この度[たび]は《不具合[ふぐあい]》によりご迷惑[めいわく]をおかけし、誠[まこと]に申[もう]し訳[わけ]ございません。", ko: "이번에 불량으로 폐를 끼쳐 대단히 죄송합니다.", tip: "클레임 대응의 첫 문장입니다. 「この度は」로 시작하는 것이 정형이며, 여기서 변명하면 관계가 상합니다." },
+      { drill: "クレーム", jp: "お客様[きゃくさま]からの《クレーム》の内容[ないよう]を、社内[しゃない]で共有[きょうゆう]いたしました。", ko: "고객으로부터의 클레임 내용을 사내에서 공유했습니다.", tip: "「共有(きょうゆう)いたしました」는 조직이 움직이고 있음을 알리는 표현으로, 상대를 안심시킵니다." },
+      { drill: "暫定対策", jp: "取[と]り急[いそ]ぎ、《暫定対策[ざんていたいさく]》として代替品[だいたいひん]を手配[てはい]いたしました。", ko: "우선 급한 대로, 잠정 대책으로 대체품을 준비했습니다.", tip: "「取り急ぎ」= 우선 급한 대로. 완전한 해결 전에 먼저 손을 썼다는 것을 알리는 부사입니다." },
+      { drill: "原因究明", jp: "現在[げんざい]、《原因究明[げんいんきゅうめい]》を進[すす]めております。", ko: "현재 원인 규명을 진행하고 있습니다.", tip: "결과가 안 나왔을 때 상황을 알리는 문장입니다. 침묵보다 이 한 줄이 신뢰를 지킵니다." },
+      { drill: "再発防止", jp: "《再発防止策[さいはつぼうしさく]》をまとめ、{来週}[らいしゅう]ご報告[ほうこく]いたします。", ko: "재발 방지책을 정리해 다음 주에 보고드리겠습니다.", tip: "기한을 함께 말하는 것이 핵심입니다. 기한 없는 약속은 일본 고객에게 약속으로 인정되지 않습니다." },
+      { drill: "立会い", jp: "次回[じかい]の出荷[しゅっか]分[ぶん]につきましては、《立会[たちあ]い》検査[けんさ]をお願[ねが]いできればと存[ぞん]じます。", ko: "다음 출하분에 대해서는 입회 검사를 부탁드리고자 합니다.", tip: "고객을 대응 과정에 끌어들이는 제안입니다. 신뢰 회복 국면에서 매우 효과적입니다." },
+      { drill: "疵", jp: "表面[ひょうめん]に《疵[きず]》が確認[かくにん]された件[けん]、詳細[しょうさい]を調査[ちょうさ]しております。", ko: "표면에 흠이 확인된 건, 상세를 조사하고 있습니다.", tip: "「確認された」처럼 수동형을 쓰면 사실만 담담히 전달돼 감정적 대립을 피할 수 있습니다." },
+      { drill: "歩留まり", jp: "《歩留[ぶど]まり》への影響[えいきょう]について、あらためて確認[かくにん]させてください。", ko: "수율에 미친 영향에 대해 다시 확인하게 해 주십시오.", tip: "고객의 실제 손실 규모를 묻는 표현입니다. 「〜させてください」로 낮춰 물으면 거부감이 적습니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 품질 관리 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "自動車[じどうしゃ]メーカー各社[かくしゃ]は、素材[そざい]の《不具合[ふぐあい]》に対[たい]する管理[かんり]を強化[きょうか]している。指摘[してき]を受[う]けた場合[ばあい]、まず《暫定対策[ざんていたいさく]》を講[こう]じ、並行[へいこう]して《原因究明[げんいんきゅうめい]》を進[すす]めるのが一般的[いっぱんてき]だ。《再発防止策[さいはつぼうしさく]》の提出[ていしゅつ]までを含[ふく]めて評価[ひょうか]されるため、初動[しょどう]の速[はや]さが取引[とりひき]の継続[けいぞく]を左右[さゆう]する。",
+      lines: [
+        { jp: "自動車メーカー各社は、素材の不具合に対する管理を強化している。", ko: "자동차 업체 각사는 소재 불량에 대한 관리를 강화하고 있다." },
+        { jp: "指摘を受けた場合、まず暫定対策を講じ、並行して原因究明を進めるのが一般的だ。", ko: "지적을 받은 경우, 우선 잠정 대책을 강구하고 병행하여 원인 규명을 진행하는 것이 일반적이다." },
+        { jp: "再発防止策の提出までを含めて評価されるため、初動の速さが取引の継続を左右する。", ko: "재발 방지책 제출까지 포함해 평가되기 때문에, 초기 대응의 속도가 거래 지속을 좌우한다." }
+      ],
+      summary: "클레임 대응이 <b>잠정 대책 → 원인 규명 → 재발 방지책</b>의 3단 구조로 평가된다는 것이 핵심입니다. 오늘 배운 세 용어가 그대로 지문에 나옵니다. 마지막 문장의 \"초기 대응 속도가 거래를 좌우한다\"는 대일 영업에서 그대로 사실입니다.",
+      picks: [
+        { jp: "〜に対する", read: "〜にたいする", ko: "〜에 대한", from: "不具合に対する管理" },
+        { jp: "指摘を受ける", read: "してきをうける", ko: "지적을 받다", from: "指摘を受けた場合" },
+        { jp: "講じる", read: "こうじる", ko: "(대책을) 강구하다", from: "暫定対策を講じ" },
+        { jp: "並行して", read: "へいこうして", ko: "병행하여", from: "並行して原因究明を" },
+        { jp: "〜のが一般的だ", read: "〜のがいっぱんてきだ", ko: "〜하는 것이 일반적이다", from: "進めるのが一般的だ" },
+        { jp: "左右する", read: "さゆうする", ko: "좌우하다", from: "取引の継続を左右する" }
+      ]
+    },
+    dialogue: {
+      situation: "납품한 코일 표면에 흠이 발견되어 고객이 항의해 왔습니다.",
+      turns: [
+        { me: false, jp: "先日[せんじつ]納入[のうにゅう]いただいたコイルに《不具合[ふぐあい]》がありました。ラインを止[と]めております。", ko: "지난번 납품하신 코일에 불량이 있었습니다. 라인을 세우고 있습니다." },
+        { me: true, jp: "ご迷惑[めいわく]をおかけし、誠[まこと]に申[もう]し訳[わけ]ございません。《クレーム》の内容[ないよう]を至急[しきゅう]確認[かくにん]いたします。", ko: "폐를 끼쳐 대단히 죄송합니다. 클레임 내용을 시급히 확인하겠습니다.", ch: [["폐를 끼쳐","ご迷惑[めいわく]をおかけし、"],["대단히 죄송합니다","誠[まこと]に申[もう]し訳[わけ]ございません。"],["클레임 내용을","《クレーム》の内容[ないよう]を"],["시급히 확인하겠습니다","至急[しきゅう]確認[かくにん]いたします。"]] },
+        { me: false, jp: "表面[ひょうめん]に《疵[きず]》が出[で]ています。《歩留[ぶど]まり》が{3割}[さんわり]落[お]ちました。", ko: "표면에 흠이 나 있습니다. 수율이 30% 떨어졌습니다." },
+        { me: true, jp: "承知[しょうち]いたしました。取[と]り急[いそ]ぎ《暫定対策[ざんていたいさく]》として代替品[だいたいひん]を手配[てはい]し、並行[へいこう]して《原因究明[げんいんきゅうめい]》を進[すす]めます。", ko: "알겠습니다. 우선 잠정 대책으로 대체품을 준비하고, 병행하여 원인 규명을 진행하겠습니다.", ch: [["알겠습니다","承知[しょうち]いたしました。"],["우선 급한 대로","取[と]り急[いそ]ぎ"],["잠정 대책으로 대체품을 준비하고","《暫定対策[ざんていたいさく]》として代替品[だいたいひん]を手配[てはい]し、"],["병행하여","並行[へいこう]して"],["원인 규명을 진행하겠습니다","《原因究明[げんいんきゅうめい]》を進[すす]めます。"]] },
+        { me: false, jp: "いつまでに報告[ほうこく]いただけますか。", ko: "언제까지 보고해 주실 수 있습니까?" },
+        { me: true, jp: "{来週}[らいしゅう]{金曜日}[きんようび]までに《再発防止策[さいはつぼうしさく]》をまとめてご報告[ほうこく]いたします。次回[じかい]出荷[しゅっか]分[ぶん]は《立会[たちあ]い》検査[けんさ]をお願[ねが]いできればと存[ぞん]じます。", ko: "다음 주 금요일까지 재발 방지책을 정리해 보고드리겠습니다. 다음 출하분은 입회 검사를 부탁드리고자 합니다.", ch: [["다음 주 금요일까지","{来週}[らいしゅう]{金曜日}[きんようび]までに"],["재발 방지책을 정리해","《再発防止策[さいはつぼうしさく]》をまとめて"],["보고드리겠습니다","ご報告[ほうこく]いたします。"],["다음 출하분은","次回[じかい]出荷[しゅっか]分[ぶん]は"],["입회 검사를 부탁드리고자 합니다","《立会[たちあ]い》検査[けんさ]をお願[ねが]いできればと存[ぞん]じます。"]] },
+        { me: false, jp: "分[わ]かりました。そこまでしていただけるなら、こちらも社内[しゃない]を説得[せっとく]できます。", ko: "알겠습니다. 거기까지 해 주신다면 저희도 사내를 설득할 수 있습니다." },
+        { me: true, jp: "ありがとうございます。本日中[ほんじつじゅう]に一次[いちじ]報告[ほうこく]を書面[しょめん]でお送[おく]りいたします。", ko: "감사합니다. 오늘 중으로 1차 보고를 서면으로 보내드리겠습니다.", ch: [["감사합니다","ありがとうございます。"],["오늘 중으로","本日中[ほんじつじゅう]に"],["1차 보고를 서면으로","一次[いちじ]報告[ほうこく]を書面[しょめん]で"],["보내드리겠습니다","お送[おく]りいたします。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 원인을 모른 채 \"저희 문제가 아닙니다\"", body: "조사 전 책임 부인은 최악입니다. 4번째 턴처럼 대책과 조사를 먼저 약속하고, 원인은 확인된 뒤에 말합니다." },
+        { hard: true, head: "✗ 기한 없이 「早めに報告します」", body: "일본 고객에게 기한 없는 약속은 약속이 아닙니다. \"다음 주 금요일까지\"처럼 날짜를 못박습니다." },
+        { hard: false, head: "△ 사과의 무게를 사안에 맞추기", body: "가벼운 착오는 「申し訳ありません」, 품질 사고는 「ご迷惑をおかけし、誠に申し訳ございません」입니다. 과하거나 모자라면 둘 다 어색합니다." }
+      ]
+    },
+    quiz: [
+      { q: "일본 제조업에서 \"불량·결함\"을 가장 흔히 가리키는 말은?", opts: ["不具合", "不便", "不足"], ans: 0 },
+      { q: "「原因究明」의 뜻은?", opts: ["원가 절감", "원인 규명", "원료 조달"], ans: 1 },
+      { q: "표면의 흠·스크래치를 뜻하는 「疵」를 히라가나로 쓰면?", answer: "きず" },
+      { q: "일본어 「クレーム」의 실제 의미는?", opts: ["금전 청구", "불만·항의", "보증 연장"], ans: 1 },
+      { q: "클레임 대응에서 「暫定対策」과 짝을 이루는 말은?", opts: ["恒久対策", "価格改定", "立会い"], ans: 0 },
+      { q: "\"현재 원인 규명을 진행하고 있습니다\"를 일본어로.", answer: "現在、原因究明を進めております。" }
+    ],
+    column: {
+      word: "お疲れ様", kana: "おつかれさま", ko: "수고하셨습니다",
+      title: "「ご苦労様」를 상사에게 쓰면 안 되는 이유",
+      body: [
+        "한국어 \"수고하셨습니다\"는 위아래를 크게 가리지 않습니다. 일본어는 여기서 <b>두 갈래로 갈립니다.</b>",
+        "<span class='kw'>お疲れ様です</span>는 누구에게나 쓸 수 있습니다. 반면 <span class='kw'>ご苦労様です</span>는 윗사람이 아랫사람에게 쓰는 말이라, 상사에게 쓰면 결례가 됩니다. 한국어 감각으로는 둘 다 \"수고하셨습니다\"라서 구분이 잘 안 됩니다."
+      ],
+      vs: "「お疲れ様です」 → <b>모든 상대에게 안전</b>. 사내 인사의 기본값<br>「ご苦労様です」 → <b>윗사람 → 아랫사람.</b> 택배 기사에게 건네는 정도",
+      body2: [
+        "사실 「お疲れ様です」는 인사말 그 자체입니다. 아침에 만나도, 복도에서 스쳐도, 사내 메일 첫 줄에도 씁니다. 뜻을 따지지 말고 <b>통째로</b> 쓰세요.",
+        "다만 <b>사외에는 쓰지 않습니다.</b> 고객에게는 「お世話(せわ)になっております」입니다. 이 둘을 상황에 맞게 나눠 쓰는 것만으로도 \"일본 회사 물을 좀 먹었구나\" 하는 인상을 줍니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 5일차 · 업계 동향 ═══════════ */
+  {
+    no: 5, date: "8월 20일", theme: "업계 동향", minutes: 20,
+    terms: [
+      { jp: "粗鋼生産", kana: "そこうせいさん", mean: "조강 생산", note: "업계 규모를 말할 때 기준이 되는 지표입니다. 기사 첫 문장에 자주 등장합니다.", where: "예문 1 · 기사 지문 · 퀴즈 1", ez: ["粗鋼生産[そこうせいさん]が減[へ]りました。","조강 생산이 줄었습니다."] },
+      { jp: "高炉", kana: "こうろ", mean: "고로", note: "「高炉1基(いっき)」처럼 「基(き)」로 셉니다. 「高炉メーカー」= 일관제철사.", where: "예문 2 · 기사 지문 · 회화 2턴", ez: ["高炉[こうろ]を止[と]めます。","고로를 세웁니다."] },
+      { jp: "電炉", kana: "でんろ", mean: "전기로", note: "탈탄소 전환의 핵심어입니다. 「電炉転換(てんかん)」 형태로 기사에 계속 나옵니다.", where: "예문 3 · 기사 지문 · 회화 4턴 · 퀴즈 3", ez: ["電炉[でんろ]に変[か]えます。","전기로로 바꿉니다."] },
+      { jp: "減産", kana: "げんさん", mean: "감산", note: "반대는 「増産(ぞうさん)」. 「減産に踏み切る」= 감산을 단행하다.", where: "예문 4 · 회화 2턴 · 퀴즈 2", ez: ["今年[ことし]は減産[げんさん]です。","올해는 감산입니다."] },
+      { jp: "稼働率", kana: "かどうりつ", mean: "가동률", note: "설비가 얼마나 돌고 있는지를 나타냅니다. 수급 판단의 기본 수치입니다.", where: "예문 5 · 회화 2턴", ez: ["稼働率[かどうりつ]が下[さ]がりました。","가동률이 떨어졌습니다."] },
+      { jp: "市況", kana: "しきょう", mean: "시황", note: "「市況が悪化する」= 시황이 악화되다. 가격 협상의 배경 설명에 쓰입니다.", where: "예문 6 · 회화 6턴" },
+      { jp: "前年同期比", kana: "ぜんねんどうきひ", mean: "전년 동기 대비", note: "기사에서 숫자 옆에 거의 자동으로 붙습니다. 통째로 한 덩어리로 외웁니다.", where: "예문 7 · 회화 6턴 · 퀴즈 5" },
+      { jp: "脱炭素", kana: "だつたんそ", mean: "탈탄소", note: "「脱炭素に向けた」 형태가 정형입니다. 일본 철강 기사의 최대 화두입니다.", where: "예문 8 · 기사 지문 · 회화 4턴" }
+    ],
+    sentences: [
+      { drill: "粗鋼生産", jp: "{2026年度}[にせんにじゅうろくねんど]の《粗鋼生産[そこうせいさん]》は前年度[ぜんねんど]を下回[したまわ]る見通[みとお]しです。", ko: "2026년도 조강 생산은 전년도를 밑돌 전망입니다.", tip: "「〜を下回る見通しです」는 전망을 말하는 기사·보고의 정형입니다. 통째로 외우면 그대로 쓸 수 있습니다." },
+      { drill: "高炉", jp: "《高炉[こうろ]》{1基}[いっき]の休止[きゅうし]が発表[はっぴょう]されました。", ko: "고로 1기의 휴지가 발표되었습니다.", tip: "고로는 「基(き)」로 셉니다. 「1基(いっき)」 「2基(にき)」 발음이 불규칙하니 주의하세요." },
+      { drill: "電炉", jp: "大手[おおて]各社[かくしゃ]は《電炉[でんろ]》への転換[てんかん]を進[すす]めております。", ko: "대형 각사는 전기로로의 전환을 추진하고 있습니다.", tip: "「〜への転換を進める」는 산업 구조 변화를 말할 때의 기본 표현입니다." },
+      { drill: "減産", jp: "需要[じゅよう]の減少[げんしょう]を受[う]けて、《減産[げんさん]》に踏[ふ]み切[き]る動[うご]きが出[で]ております。", ko: "수요 감소를 받아, 감산을 단행하는 움직임이 나오고 있습니다.", tip: "「〜を受けて」= 〜을 받아, 〜에 따라. 원인과 결과를 잇는 기사체 접속 표현입니다." },
+      { drill: "稼働率", jp: "設備[せつび]の《稼働率[かどうりつ]》は{80%}[はちじゅっパーセント]前後[ぜんご]で推移[すいい]しております。", ko: "설비 가동률은 80% 전후로 추이하고 있습니다.", tip: "「〜で推移(すいい)しております」는 수치의 흐름을 보고할 때 쓰는 정형입니다." },
+      { drill: "市況", jp: "足元[あしもと]の《市況[しきょう]》を踏[ふ]まえて、価格[かかく]をご相談[そうだん]させていただきたく存[ぞん]じます。", ko: "현재 시황을 감안하여 가격을 상의드리고자 합니다.", tip: "「足元(あしもと)」= 현재, 최근. 「〜を踏まえて」= 〜을 감안하여. 둘 다 비즈니스 필수 표현입니다." },
+      { drill: "前年同期比", jp: "出荷量[しゅっかりょう]は《前年同期比[ぜんねんどうきひ]》で{5%}[ごパーセント]の減少[げんしょう]となりました。", ko: "출하량은 전년 동기 대비 5% 감소했습니다.", tip: "실적 보고의 기본 문형입니다. 「〜となりました」로 맺으면 담담한 사실 보고가 됩니다." },
+      { drill: "脱炭素", jp: "《脱炭素[だつたんそ]》に向[む]けた取[と]り組[く]みについてもご説明[せつめい]いたします。", ko: "탈탄소를 향한 노력에 대해서도 설명드리겠습니다.", tip: "「〜に向けた取り組み」= 〜을 향한 노력. 요즘 일본 고객이 반드시 묻는 주제입니다." }
+    ],
+    article: {
+      real: true,
+      source: "日本鉄鋼連盟 「2026年度の鉄鋼需要見通し」 및 日刊鉄鋼新聞 「ＪＦＥ／倉敷・高炉１基を一時休止」 보도",
+      url: "https://www.jisf.or.jp/news/topics/documents/2026tekkoujyuyoumitoshi.pdf",
+      note: "아래 지문은 위 자료와 보도 내용을 학습용으로 요약해 다시 쓴 것입니다. 원문 그대로가 아닙니다.",
+      body: "日本鉄鋼連盟[にほんてっこうれんめい]は、{2026年度}[にせんにじゅうろくねんど]の《粗鋼生産[そこうせいさん]》が前年度[ぜんねんど]を下回[したまわ]るとの見通[みとお]しを示[しめ]した。JFEスチールは需要[じゅよう]の減少[げんしょう]を受[う]け、倉敷地区[くらしきちく]の《高炉[こうろ]》{1基}[いっき]を休止[きゅうし]し、年間[ねんかん]{400万トン}[よんひゃくまんトン]の能力[のうりょく]を削減[さくげん]する。《脱炭素[だつたんそ]》に向[む]けた《電炉[でんろ]》への転換[てんかん]も本格化[ほんかくか]しており、大手[おおて]は{2028〜29年度}[にせんにじゅうはちからにじゅうくねんど]に大型電炉[おおがたでんろ]の稼働[かどう]を計画[けいかく]している。",
+      lines: [
+        { jp: "日本鉄鋼連盟は、2026年度の粗鋼生産が前年度を下回るとの見通しを示した。", ko: "일본철강연맹은 2026년도 조강 생산이 전년도를 밑돌 것이라는 전망을 제시했다." },
+        { jp: "JFEスチールは需要の減少を受け、倉敷地区の高炉1基を休止し、年間400万トンの能力を削減する。", ko: "JFE스틸은 수요 감소를 받아, 구라시키 지구의 고로 1기를 휴지하고 연간 400만 톤의 능력을 삭감한다." },
+        { jp: "脱炭素に向けた電炉への転換も本格化しており、大手は2028〜29年度に大型電炉の稼働を計画している。", ko: "탈탄소를 향한 전기로 전환도 본격화되고 있어, 대형사는 2028~29년도에 대형 전기로 가동을 계획하고 있다." }
+      ],
+      summary: "일본 철강업이 <b>수요 감소에 따른 감산</b>과 <b>탈탄소 전기로 전환</b>이라는 두 축으로 움직이고 있습니다. JFE의 고로 1기 휴지는 연 400만 톤 규모로, 일본 내 공급 여력이 줄어든다는 뜻입니다. 우리 쪽 대일 수출 물량과 가격 협상 양쪽에 직결되는 사안이라 반드시 따라가야 할 흐름입니다.",
+      picks: [
+        { jp: "下回る", read: "したまわる", ko: "밑돌다. 반대는 上回る(うわまわる)", from: "前年度を下回るとの" },
+        { jp: "見通しを示す", read: "みとおしをしめす", ko: "전망을 제시하다", from: "見通しを示した" },
+        { jp: "〜を受け", read: "〜をうけ", ko: "〜을 받아, 〜에 따라", from: "需要の減少を受け" },
+        { jp: "休止", read: "きゅうし", ko: "휴지, 가동 중단", from: "高炉1基を休止し" },
+        { jp: "〜に向けた", read: "〜にむけた", ko: "〜을 향한", from: "脱炭素に向けた" },
+        { jp: "本格化", read: "ほんかくか", ko: "본격화", from: "転換も本格化しており" }
+      ]
+    },
+    dialogue: {
+      situation: "일본 고객사 조달 담당과의 정기 미팅에서 업계 동향을 화제로 꺼냅니다.",
+      turns: [
+        { me: true, jp: "本日[ほんじつ]は最近[さいきん]の業界[ぎょうかい]動向[どうこう]についてもお話[はなし]できればと存[ぞん]じます。", ko: "오늘은 최근 업계 동향에 대해서도 말씀 나눌 수 있으면 합니다.", ch: [["오늘은","本日[ほんじつ]は"],["최근 업계 동향에 대해서도","最近[さいきん]の業界[ぎょうかい]動向[どうこう]についても"],["말씀 나눌 수 있으면 합니다","お話[はなし]できればと存[ぞん]じます。"]] },
+        { me: false, jp: "ぜひ。国内[こくない]では《高炉[こうろ]》の休止[きゅうし]や《減産[げんさん]》の話[はなし]が続[つづ]いていますね。《稼働率[かどうりつ]》も下[さ]がっていると聞[き]きます。", ko: "그러시죠. 국내에서는 고로 휴지나 감산 이야기가 이어지고 있죠. 가동률도 떨어지고 있다고 들었습니다." },
+        { me: true, jp: "はい。日本鉄鋼連盟[にほんてっこうれんめい]の見通[みとお]しでも、{2026年度}[にせんにじゅうろくねんど]は前年度[ぜんねんど]を下回[したまわ]るとされております。", ko: "네. 일본철강연맹의 전망에서도 2026년도는 전년도를 밑돌 것으로 되어 있습니다.", ch: [["네","はい。"],["일본철강연맹의 전망에서도","日本鉄鋼連盟[にほんてっこうれんめい]の見通[みとお]しでも、"],["2026년도는 전년도를","{2026年度}[にせんにじゅうろくねんど]は前年度[ぜんねんど]を"],["밑돌 것으로 되어 있습니다","下回[したまわ]るとされております。"]] },
+        { me: false, jp: "そうですね。当社[とうしゃ]としては《脱炭素[だつたんそ]》の対応[たいおう]も気[き]になっています。御社[おんしゃ]の《電炉[でんろ]》の計画[けいかく]はいかがですか。", ko: "그렇죠. 저희로서는 탈탄소 대응도 신경 쓰입니다. 귀사의 전기로 계획은 어떻습니까?" },
+        { me: true, jp: "弊社[へいしゃ]も低炭素[ていたんそ]鋼材[こうざい]の供給[きょうきゅう]体制[たいせい]を整[ととの]えております。次回[じかい]、資料[しりょう]をお持[も]ちいたします。", ko: "저희도 저탄소 강재 공급 체제를 갖추고 있습니다. 다음번에 자료를 가져오겠습니다.", ch: [["저희도","弊社[へいしゃ]も"],["저탄소 강재 공급 체제를","低炭素[ていたんそ]鋼材[こうざい]の供給[きょうきゅう]体制[たいせい]を"],["갖추고 있습니다","整[ととの]えております。"],["다음번에 자료를 가져오겠습니다","次回[じかい]、資料[しりょう]をお持[も]ちいたします。"]] },
+        { me: false, jp: "助[たす]かります。価格[かかく]の面[めん]はどうでしょうか。", ko: "도움이 되겠네요. 가격 면은 어떻습니까?" },
+        { me: true, jp: "足元[あしもと]の《市況[しきょう]》では、出荷量[しゅっかりょう]が《前年同期比[ぜんねんどうきひ]》で減少[げんしょう]しております。次期[じき]の条件[じょうけん]は改[あらた]めてご相談[そうだん]させてください。", ko: "현재 시황에서는 출하량이 전년 동기 대비 감소하고 있습니다. 다음 기 조건은 다시 상의드리게 해 주십시오.", ch: [["현재 시황에서는","足元[あしもと]の《市況[しきょう]》では、"],["출하량이 전년 동기 대비","出荷量[しゅっかりょう]が《前年同期比[ぜんねんどうきひ]》で"],["감소하고 있습니다","減少[げんしょう]しております。"],["다음 기 조건은","次期[じき]の条件[じょうけん]は"],["다시 상의드리게 해 주십시오","改[あらた]めてご相談[そうだん]させてください。"]] },
+        { me: false, jp: "承知[しょうち]しました。資料[しりょう]をいただいてから、社内[しゃない]で検討[けんとう]します。", ko: "알겠습니다. 자료를 받고 나서 사내에서 검토하겠습니다." }
+      ],
+      warns: [
+        { hard: true, head: "✗ 확인 안 된 수치를 말하기", body: "업계 동향은 출처가 생명입니다. 「日本鉄鋼連盟の見通しでは」처럼 근거를 붙이지 않은 숫자는 꺼내지 않습니다. 틀리면 그 자리에서 신뢰가 무너집니다." },
+        { hard: true, head: "✗ 경쟁사 사정을 함부로 전하기", body: "\"○○사는 감산한다더라\" 같은 전언은 위험합니다. 공개 보도로 확인된 것만, 출처와 함께 말합니다." },
+        { hard: false, head: "△ 동향 이야기는 가격 협상의 밑돌", body: "업계 이야기를 먼저 나누면 가격 논의가 훨씬 부드러워집니다. 7번째 턴처럼 시황을 깔고 조건을 꺼내는 순서를 익혀 두세요." }
+      ]
+    },
+    quiz: [
+      { q: "「粗鋼生産」의 뜻은?", opts: ["조강 생산", "철광석 채굴", "강재 수출"], ans: 0 },
+      { q: "「減産」의 반대말은?", opts: ["休止", "増産", "稼働"], ans: 1 },
+      { q: "탈탄소 전환의 핵심 설비인 「電炉」를 히라가나로 쓰면?", answer: "でんろ" },
+      { q: "「下回る」의 뜻은?", opts: ["웃돌다", "밑돌다", "유지되다"], ans: 1 },
+      { q: "기사에서 숫자 옆에 거의 자동으로 붙는 \"전년 동기 대비\"는?", opts: ["前年同期比", "前月末比", "前期実績"], ans: 0 },
+      { q: "\"2026년도 조강 생산은 전년도를 밑돌 전망입니다\"를 일본어로.", answer: "2026年度の粗鋼生産は前年度を下回る見通しです。" }
+    ],
+    column: {
+      word: "空気を読む", kana: "くうきをよむ", ko: "분위기를 읽다",
+      title: "눈치와 「空気を読む」는 무엇이 다른가",
+      body: [
+        "둘 다 분위기를 읽는 능력입니다. 다른 것은 <b>읽은 다음에 무엇을 하느냐</b>입니다.",
+        "한국의 눈치는 읽고 나서 내가 유리하게 움직이는 쪽으로도 씁니다. \"눈치가 빠르다\"는 칭찬이죠. 일본의 <span class='kw'>空気を読む</span>는 읽고 나서 <b>그 자리의 흐름을 깨지 않는 쪽</b>으로 움직이는 것을 말합니다. 나를 위한 것이 아니라 자리를 위한 것입니다."
+      ],
+      vs: "「空気が読めない」 → <b>분위기 파악을 못 한다.</b> 줄여서 KY(ケーワイ)라고도 함<br>「눈치가 없다」 → <b>상황 파악이 느리다</b>",
+      body2: [
+        "회의에서 이 차이가 그대로 드러납니다. 일본 회의에서 반대 의견을 곧바로 꺼내면 「空気を読まない」 사람으로 보일 수 있습니다. 그래서 <b>회의 전에 미리 조율하는 문화</b>가 발달했습니다 — 다음 회차에서 다룰 「根回(ねまわ)し」입니다.",
+        "다만 절대적인 규범은 아닙니다. 요즘 젊은 세대는 이 압력을 부담스러워해서 「空気を読みすぎるのも良(よ)くない」는 말도 자주 들립니다. 일본도 변하고 있다는 걸 알고 보면 사람이 달리 보입니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 6일차 · 계약 조건 ═══════════ */
+  {
+    no: 6, date: "8월 23일", theme: "계약 조건", minutes: 20,
+    terms: [
+      { jp: "契約書", kana: "けいやくしょ", mean: "계약서", note: "「契約書を交わす(かわす)」= 계약서를 주고받다, 체결하다. 「結ぶ(むすぶ)」도 씁니다.", where: "예문 1 · 회화 2턴 · 퀴즈 1", ez: ["契約書[けいやくしょ]を作[つく]ります。","계약서를 만듭니다."] },
+      { jp: "年間契約", kana: "ねんかんけいやく", mean: "연간 계약", note: "일본 대형 수요가와의 거래는 반기·연간 단위가 기본입니다. 스팟 거래는 「スポット」라고 부릅니다.", where: "예문 2 · 회화 1턴", ez: ["年間契約[ねんかんけいやく]にしませんか。","연간 계약으로 하지 않겠습니까?"] },
+      { jp: "締結", kana: "ていけつ", mean: "체결", note: "「契約を締結する」. 「妥結(だけつ)」은 협상 타결, 「締結」은 문서 서명까지 간 상태입니다.", where: "예문 3 · 기사 지문 · 퀴즈 3", ez: ["来月[らいげつ]、締結[ていけつ]します。","다음 달에 체결합니다."] },
+      { jp: "覚書", kana: "おぼえがき", mean: "각서, 양해각서", note: "정식 계약 전에 합의 사항을 남기는 문서입니다. 「MOU」라고도 하지만 일본에서는 이쪽이 더 흔합니다.", where: "예문 4 · 회화 6턴", ez: ["覚書[おぼえがき]を交[か]わします。","각서를 주고받습니다."] },
+      { jp: "有効期限", kana: "ゆうこうきげん", mean: "유효기간", note: "견적서에 반드시 붙습니다. 「見積有効期限」 형태로 씁니다.", where: "예문 5 · 회화 4턴 · 퀴즈 5", ez: ["有効期限[ゆうこうきげん]は{30日}[さんじゅうにち]です。","유효기간은 30일입니다."] },
+      { jp: "最低数量", kana: "さいていすうりょう", mean: "최소 수량 (MOQ)", note: "「最低発注数量(さいていはっちゅうすうりょう)」의 줄임입니다. 조업 효율상 물러설 수 없는 선입니다.", where: "예문 6 · 회화 3턴 · 퀴즈 2" },
+      { jp: "値引き", kana: "ねびき", mean: "할인, 에누리", note: "일회성 할인입니다. 「値下げ(ねさげ)」는 가격 자체를 내리는 것이라 뉘앙스가 다릅니다.", where: "예문 7 · 회화 5턴 · 퀴즈 4" },
+      { jp: "支払サイト", kana: "しはらいサイト", mean: "결제 기일", note: "납품 후 대금을 받기까지의 기간입니다. 「サイトが長い」= 결제가 늦다. 자금 부담과 직결됩니다.", where: "예문 8 · 회화 7턴" }
+    ],
+    sentences: [
+      { drill: "契約書", jp: "《契約書[けいやくしょ]》の案[あん]をお送[おく]りいたしますので、ご確認[かくにん]いただけますでしょうか。", ko: "계약서 초안을 보내드리오니 확인해 주실 수 있을까요?", tip: "「案(あん)」= 초안. 확정본이 아님을 밝혀 두면 수정 요청을 받기 쉬워집니다." },
+      { drill: "年間契約", jp: "《年間契約[ねんかんけいやく]》であれば、より安定[あんてい]した条件[じょうけん]をご提示[ていじ]できます。", ko: "연간 계약이라면 보다 안정적인 조건을 제시할 수 있습니다.", tip: "「〜であれば」로 조건을 걸어 상대의 결정을 유도하는 화법입니다." },
+      { drill: "締結", jp: "《締結[ていけつ]》は{来月}[らいげつ]{初旬}[しょじゅん]を目処[めど]としております。", ko: "체결은 다음 달 초순을 목표로 하고 있습니다.", tip: "「〜を目処(めど)としております」= 〜을 목표로 하고 있습니다. 확약을 피하면서 일정을 공유하는 표현입니다." },
+      { drill: "覚書", jp: "正式[せいしき]な契約[けいやく]の前[まえ]に、《覚書[おぼえがき]》を交[か]わしておきたく存[ぞん]じます。", ko: "정식 계약 전에 각서를 주고받아 두고자 합니다.", tip: "「〜ておきたく存じます」= 미리 〜해 두고 싶습니다. 준비 단계를 제안할 때의 정중형입니다." },
+      { drill: "有効期限", jp: "お見積[みつも]りの《有効期限[ゆうこうきげん]》は発行日[はっこうび]から{30日}[さんじゅうにち]でございます。", ko: "견적의 유효기간은 발행일로부터 30일입니다.", tip: "환율·원료가 변동에 대비한 방어 장치입니다. 견적을 낼 때 반드시 붙이세요." },
+      { drill: "最低数量", jp: "《最低数量[さいていすうりょう]》は{1回}[いっかい]あたり{50トン}[ごじゅっトン]とさせていただいております。", ko: "최소 수량은 1회당 50톤으로 하고 있습니다.", tip: "「〜とさせていただいております」는 이미 정해진 사내 규칙임을 알리는 표현으로, 개인 재량이 아님을 전합니다." },
+      { drill: "値引き", jp: "今回[こんかい]に限[かぎ]り、{3%}[さんパーセント]の《値引[ねび]き》で対応[たいおう]させていただきます。", ko: "이번에 한해 3% 할인으로 대응하겠습니다.", tip: "「今回に限り」= 이번에 한해. 이 한마디가 없으면 다음에도 같은 조건을 요구받습니다." },
+      { drill: "支払サイト", jp: "《支払[しはら]いサイト》につきましては、従来[じゅうらい]どおり{60日}[ろくじゅうにち]でお願[ねが]いいたします。", ko: "결제 기일에 대해서는 종전대로 60일로 부탁드립니다.", tip: "가격만 보고 결제 기일을 놓치면 실질 수익이 달라집니다. 협상 항목으로 반드시 챙기세요." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 계약 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "鋼材[こうざい]の取引[とりひき]では、半期[はんき]ごとの価格[かかく]交渉[こうしょう]を経[へ]て契約[けいやく]を《締結[ていけつ]》するのが一般的[いっぱんてき]である。近年[きんねん]は原料[げんりょう]価格[かかく]の変動[へんどう]が大[おお]きく、一定[いってい]の指標[しひょう]に連動[れんどう]させる方式[ほうしき]を採[と]る動[うご]きも広[ひろ]がっている。長期[ちょうき]の安定[あんてい]供給[きょうきゅう]を求[もと]める需要家[じゅようか]との間[あいだ]では、複数年[ふくすうねん]にわたる枠組[わくぐ]みが検討[けんとう]されるケースもある。",
+      lines: [
+        { jp: "鋼材の取引では、半期ごとの価格交渉を経て契約を締結するのが一般的である。", ko: "강재 거래에서는 반기별 가격 협상을 거쳐 계약을 체결하는 것이 일반적이다." },
+        { jp: "近年は原料価格の変動が大きく、一定の指標に連動させる方式を採る動きも広がっている。", ko: "최근에는 원료 가격 변동이 커서, 일정 지표에 연동시키는 방식을 취하는 움직임도 확산되고 있다." },
+        { jp: "長期の安定供給を求める需要家との間では、複数年にわたる枠組みが検討されるケースもある。", ko: "장기 안정 공급을 원하는 수요가와의 사이에서는 복수년에 걸친 틀이 검토되는 사례도 있다." }
+      ],
+      summary: "일본 철강 거래의 기본은 <b>반기 협상 → 체결</b>이고, 여기에 원료가 연동 방식과 복수년 계약이 더해지는 흐름입니다. 「〜を経て」「〜に連動させる」는 계약 구조를 설명할 때 그대로 쓸 수 있는 표현이니 입에 붙여 두세요.",
+      picks: [
+        { jp: "〜を経て", read: "〜をへて", ko: "〜을 거쳐", from: "価格交渉を経て" },
+        { jp: "〜のが一般的である", read: "〜のがいっぱんてきである", ko: "〜하는 것이 일반적이다", from: "締結するのが一般的である" },
+        { jp: "〜に連動させる", read: "〜にれんどうさせる", ko: "〜에 연동시키다", from: "指標に連動させる方式" },
+        { jp: "方式を採る", read: "ほうしきをとる", ko: "방식을 취하다", from: "方式を採る動きも" },
+        { jp: "〜にわたる", read: "〜にわたる", ko: "〜에 걸친", from: "複数年にわたる枠組み" },
+        { jp: "枠組み", read: "わくぐみ", ko: "틀, 프레임워크", from: "複数年にわたる枠組みが" }
+      ]
+    },
+    dialogue: {
+      situation: "고객이 연간 계약으로의 전환을 제안해 왔습니다. 조건을 하나씩 맞춰가는 자리입니다.",
+      turns: [
+        { me: false, jp: "来期[らいき]から《年間契約[ねんかんけいやく]》に切[き]り替[か]えたいと考[かんが]えております。", ko: "다음 기부터 연간 계약으로 전환하고 싶다고 생각하고 있습니다." },
+        { me: true, jp: "ありがとうございます。それでしたら《契約書[けいやくしょ]》の案[あん]をご用意[ようい]いたします。", ko: "감사합니다. 그러시면 계약서 초안을 준비하겠습니다.", ch: [["감사합니다","ありがとうございます。"],["그러시면","それでしたら"],["계약서 초안을","《契約書[けいやくしょ]》の案[あん]を"],["준비하겠습니다","ご用意[ようい]いたします。"]] },
+        { me: false, jp: "その前[まえ]に条件[じょうけん]を確認[かくにん]させてください。《最低数量[さいていすうりょう]》はどのくらいでしょうか。", ko: "그 전에 조건을 확인하게 해 주십시오. 최소 수량은 어느 정도인가요?" },
+        { me: true, jp: "{1回}[いっかい]あたり{50トン}[ごじゅっトン]でお願[ねが]いしております。なお、お見積[みつも]りの《有効期限[ゆうこうきげん]》は{30日}[さんじゅうにち]でございます。", ko: "1회당 50톤으로 부탁드리고 있습니다. 또한 견적의 유효기간은 30일입니다.", ch: [["1회당 50톤으로","{1回}[いっかい]あたり{50トン}[ごじゅっトン]で"],["부탁드리고 있습니다","お願[ねが]いしております。"],["또한","なお、"],["견적의 유효기간은","お見積[みつも]りの《有効期限[ゆうこうきげん]》は"],["30일입니다","{30日}[さんじゅうにち]でございます。"]] },
+        { me: false, jp: "数量[すうりょう]をまとめる分[ぶん]、《値引[ねび]き》は難[むずか]しいでしょうか。", ko: "수량을 모으는 만큼 할인은 어렵겠습니까?" },
+        { me: true, jp: "年間[ねんかん]でお約束[やくそく]いただけるのであれば、社内[しゃない]で検討[けんとう]いたします。まずは《覚書[おぼえがき]》を交[か]わしておければと存[ぞん]じます。", ko: "연간으로 약속해 주실 수 있다면 사내에서 검토하겠습니다. 우선 각서를 주고받아 둘 수 있으면 합니다.", ch: [["연간으로 약속해 주실 수 있다면","年間[ねんかん]でお約束[やくそく]いただけるのであれば、"],["사내에서 검토하겠습니다","社内[しゃない]で検討[けんとう]いたします。"],["우선","まずは"],["각서를 주고받아","《覚書[おぼえがき]》を交[か]わして"],["둘 수 있으면 합니다","おければと存[ぞん]じます。"]] },
+        { me: false, jp: "分[わ]かりました。《支払[しはら]いサイト》は従来[じゅうらい]どおりで問題[もんだい]ありません。", ko: "알겠습니다. 결제 기일은 종전대로 문제없습니다." },
+        { me: true, jp: "ありがとうございます。それでは案[あん]を{今週中}[こんしゅうちゅう]にお送[おく]りし、来週[らいしゅう]すり合[あ]わせをお願[ねが]いできればと存[ぞん]じます。", ko: "감사합니다. 그럼 초안을 이번 주 중에 보내드리고, 다음 주에 조율을 부탁드리고자 합니다.", ch: [["감사합니다","ありがとうございます。"],["그럼 초안을","それでは案[あん]を"],["이번 주 중에 보내드리고","{今週中}[こんしゅうちゅう]にお送[おく]りし、"],["다음 주에 조율을","来週[らいしゅう]すり合[あ]わせを"],["부탁드리고자 합니다","お願[ねが]いできればと存[ぞん]じます。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 「値引き」와 「値下げ」를 섞어 쓰기", body: "「値引き」는 이번 한 번의 할인, 「値下げ」는 가격 자체를 내리는 것입니다. 잘못 말하면 앞으로 계속 낮은 가격이 기준이 됩니다." },
+        { hard: true, head: "✗ 가격만 합의하고 결제 기일을 흘려보내기", body: "「支払いサイト」가 30일에서 90일로 늘면 같은 가격이라도 자금 부담이 완전히 달라집니다. 7번째 턴처럼 반드시 확인하고 넘어갑니다." },
+        { hard: false, head: "△ 「妥結」과 「締結」 구분", body: "「妥結」은 협상이 타결된 상태, 「締結」은 문서에 서명까지 간 상태입니다. 보고할 때 이 둘을 섞으면 진행 단계가 잘못 전달됩니다." }
+      ]
+    },
+    quiz: [
+      { q: "「契約書」의 뜻은?", opts: ["견적서", "계약서", "각서"], ans: 1 },
+      { q: "1회 발주의 최소 물량을 뜻하는 말은?", opts: ["最低数量", "有効期限", "支払サイト"], ans: 0 },
+      { q: "문서 서명까지 마친 상태를 뜻하는 「締結」을 히라가나로 쓰면?", answer: "ていけつ" },
+      { q: "\"이번 한 번의 할인\"에 해당하는 말은?", opts: ["値下げ", "値引き", "据え置き"], ans: 1 },
+      { q: "견적서에 반드시 붙여야 할 방어 장치는?", opts: ["有効期限", "覚書", "年間契約"], ans: 0 },
+      { q: "\"계약서 초안을 보내드리겠습니다\"를 일본어로.", answer: "契約書の案をお送りいたします。" }
+    ],
+    column: {
+      word: "根回し", kana: "ねまわし", ko: "사전 조율",
+      title: "회의는 이미 끝난 이야기를 확인하는 자리",
+      body: [
+        "<span class='kw'>根回し</span>는 원래 나무를 옮겨 심기 전에 뿌리 주변을 미리 손질하는 일입니다. 비즈니스에서는 <b>회의 전에 관계자를 개별로 만나 미리 합의를 만들어 두는 것</b>을 말합니다.",
+        "한국에도 \"미리 말해두기\"가 있지만, 일본에서는 이것이 거의 제도에 가깝습니다. 정식 회의는 이미 정해진 것을 확인하고 기록에 남기는 자리인 경우가 많습니다."
+      ],
+      vs: "사전 조율 없이 회의에서 처음 제안 → <b>거의 통과되지 않음</b><br>담당자와 미리 맞춘 뒤 회의 상정 → <b>정상적인 절차</b>",
+      body2: [
+        "그래서 일본 고객사에 제안할 때 <b>회의 자리만 잡고 거기서 승부를 보려 하면 실패합니다.</b> 회의 전에 자료를 보내 의견을 듣고, 그 의견을 반영해 가는 과정이 사실상 협상 본편입니다.",
+        "「事前(じぜん)にご相談(そうだん)させていただけますか」 한마디가 그 문을 엽니다. 뒤에서 손쓰는 것이 아니라 <b>공식적으로 인정된 일하는 방식</b>이니, 부담 없이 꺼내셔도 됩니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 7일차 · 사양·승인 ═══════════ */
+  {
+    no: 7, date: "8월 24일", theme: "사양·승인", minutes: 20,
+    terms: [
+      { jp: "表面処理", kana: "ひょうめんしょり", mean: "표면처리", note: "도금·도장·화성처리를 아우르는 상위 개념입니다. 자동차용 강판 사양의 큰 축입니다.", where: "예문 1 · 기사 지문 · 회화 2턴 · 퀴즈 1", ez: ["表面処理[ひょうめんしょり]をします。","표면처리를 합니다."] },
+      { jp: "化成処理", kana: "かせいしょり", mean: "화성처리", note: "도장 밀착성과 내식성을 위해 표면에 피막을 만드는 공정입니다. 「クロムフリー」 사양 요구가 늘고 있습니다.", where: "예문 2 · 회화 3턴", ez: ["化成処理[かせいしょり]も必要[ひつよう]です。","화성처리도 필요합니다."] },
+      { jp: "単重", kana: "たんじゅう", mean: "단중 (코일 1개 중량)", note: "「たんじゅう」로 읽습니다. 고객 설비의 크레인 능력과 직결되므로 반드시 확인합니다.", where: "예문 3 · 회화 4턴 · 퀴즈 2", ez: ["単重[たんじゅう]は{15トン}[じゅうごトン]です。","단중은 15톤입니다."] },
+      { jp: "内径", kana: "ないけい", mean: "내경 (코일 안지름)", note: "보통 508mm 또는 610mm입니다. 고객 언코일러 사양에 맞춰야 합니다.", where: "예문 4 · 회화 4턴", ez: ["内径[ないけい]を教[おし]えてください。","내경을 알려 주세요."] },
+      { jp: "承認図", kana: "しょうにんず", mean: "승인도", note: "고객이 승인한 도면입니다. 여기서 벗어나면 규격 외가 되므로 변경 시 재승인이 필요합니다.", where: "예문 5 · 회화 5턴 · 퀴즈 5", ez: ["承認図[しょうにんず]を送[おく]ります。","승인도를 보냅니다."] },
+      { jp: "材料認定", kana: "ざいりょうにんてい", mean: "재료 승인", note: "신규 소재가 양산에 쓰이기까지 거쳐야 하는 관문입니다. 통과에 수개월이 걸립니다.", where: "예문 6 · 기사 지문 · 회화 6턴" },
+      { jp: "規格外", kana: "きかくがい", mean: "규격 외", note: "「規格外品(ひん)」= 규격 외품. 특별 승인을 받지 못하면 납품할 수 없습니다.", where: "예문 7 · 회화 7턴 · 퀴즈 3" },
+      { jp: "代替材", kana: "だいたいざい", mean: "대체재", note: "지정 재료를 못 댈 때 제안하는 대체 소재입니다. 반드시 재승인 절차가 따릅니다.", where: "예문 8 · 회화 7턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "表面処理", jp: "《表面処理[ひょうめんしょり]》の仕様[しよう]につきまして、ご確認[かくにん]をお願[ねが]いいたします。", ko: "표면처리 사양에 대해 확인을 부탁드립니다.", tip: "「仕様(しよう)」= 사양. 「使用(しよう)」와 발음이 같으니 문맥으로 구분해 들어야 합니다." },
+      { drill: "化成処理", jp: "《化成処理[かせいしょり]》はクロムフリー仕様[しよう]で対応[たいおう]可能[かのう]でございます。", ko: "화성처리는 크롬프리 사양으로 대응 가능합니다.", tip: "환경 규제 대응 사양은 먼저 제시하면 좋은 인상을 줍니다. 일본 고객이 특히 민감한 부분입니다." },
+      { drill: "単重", jp: "コイルの《単重[たんじゅう]》は{最大}[さいだい]{20トン}[にじゅっトン]まで対応[たいおう]しております。", ko: "코일의 단중은 최대 20톤까지 대응하고 있습니다.", tip: "고객 크레인 능력을 넘으면 하역이 불가능합니다. 숫자를 먼저 못박아 두세요." },
+      { drill: "内径", jp: "《内径[ないけい]》は{508mm}[ごひゃくはちミリ]と{610mm}[ろっぴゃくじゅうミリ]のいずれかをお選[えら]びいただけます。", ko: "내경은 508mm와 610mm 중 하나를 선택하실 수 있습니다.", tip: "「いずれか」= 둘 중 하나. 선택지를 명확히 주면 회신이 빨라집니다." },
+      { drill: "承認図", jp: "《承認図[しょうにんず]》からの変更[へんこう]となりますので、再承認[さいしょうにん]をお願[ねが]いいたします。", ko: "승인도로부터의 변경이 되므로 재승인을 부탁드립니다.", tip: "승인도 이탈은 그냥 넘어갈 수 없습니다. 먼저 알리는 쪽이 반드시 유리합니다." },
+      { drill: "材料認定", jp: "《材料認定[ざいりょうにんてい]》の取得[しゅとく]までに{3か月}[さんかげつ]ほど要[よう]する見込[みこ]みです。", ko: "재료 승인 취득까지 3개월 정도 소요될 전망입니다.", tip: "「〜を要する(ようする)」= 〜이 걸리다. 일정 안내에 쓰는 딱딱한 표현입니다." },
+      { drill: "規格外", jp: "この寸法[すんぽう]は《規格外[きかくがい]》となるため、特別[とくべつ]な手続[てつづ]きが必要[ひつよう]でございます。", ko: "이 치수는 규격 외가 되기 때문에 특별한 절차가 필요합니다.", tip: "「〜となるため」로 이유를 앞세우면 거절이 아니라 절차 안내로 들립니다." },
+      { drill: "代替材", jp: "ご指定[してい]の材料[ざいりょう]が難[むずか]しい場合[ばあい]、《代替材[だいたいざい]》をご提案[ていあん]させていただきます。", ko: "지정하신 재료가 어려운 경우, 대체재를 제안드리겠습니다.", tip: "\"안 된다\"로 끝내지 않고 대안을 세트로 붙이는 것이 이 스킬 전체의 원칙입니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 사양·승인 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "自動車[じどうしゃ]用[よう]鋼板[こうはん]では、防錆[ぼうせい]性能[せいのう]への要求[ようきゅう]が年々[ねんねん]高[たか]まっており、《表面処理[ひょうめんしょり]》の仕様[しよう]が細[こま]かく指定[してい]されるようになった。新[あたら]しい素材[そざい]を採用[さいよう]するには《材料認定[ざいりょうにんてい]》を経[へ]る必要[ひつよう]があり、取得[しゅとく]までに数[すう]か月[げつ]を要[よう]するのが通例[つうれい]だ。そのため、開発[かいはつ]の初期[しょき]段階[だんかい]から素材[そざい]メーカーが関与[かんよ]する事例[じれい]が増[ふ]えている。",
+      lines: [
+        { jp: "自動車用鋼板では、防錆性能への要求が年々高まっており、表面処理の仕様が細かく指定されるようになった。", ko: "자동차용 강판에서는 방청 성능에 대한 요구가 해마다 높아져, 표면처리 사양이 세밀하게 지정되게 되었다." },
+        { jp: "新しい素材を採用するには材料認定を経る必要があり、取得までに数か月を要するのが通例だ。", ko: "새로운 소재를 채용하려면 재료 승인을 거칠 필요가 있고, 취득까지 수개월이 걸리는 것이 통례다." },
+        { jp: "そのため、開発の初期段階から素材メーカーが関与する事例が増えている。", ko: "그 때문에 개발 초기 단계부터 소재 업체가 관여하는 사례가 늘고 있다." }
+      ],
+      summary: "요구 사양이 까다로워질수록 <b>승인 절차가 길어지고, 그래서 개발 초기부터 소재사가 들어간다</b>는 흐름입니다. 우리가 시작 단계에서 먼저 제안해야 하는 이유가 이 문단에 그대로 들어 있습니다. 「〜のが通例だ」와 「そのため」는 기사에서 원인과 결과를 잇는 정형입니다.",
+      picks: [
+        { jp: "年々", read: "ねんねん", ko: "해마다", from: "要求が年々高まっており" },
+        { jp: "〜ようになった", read: "〜ようになった", ko: "〜하게 되었다 (변화)", from: "指定されるようになった" },
+        { jp: "〜を経る", read: "〜をへる", ko: "〜을 거치다", from: "材料認定を経る必要" },
+        { jp: "〜を要する", read: "〜をようする", ko: "〜이 걸리다, 필요하다", from: "数か月を要する" },
+        { jp: "〜のが通例だ", read: "〜のがつうれいだ", ko: "〜하는 것이 통례다", from: "要するのが通例だ" },
+        { jp: "そのため", read: "そのため", ko: "그 때문에", from: "そのため、開発の" }
+      ]
+    },
+    dialogue: {
+      situation: "신규 부품용 강판 사양을 협의합니다. 고객이 지정한 치수가 규격을 벗어나 있습니다.",
+      turns: [
+        { me: false, jp: "図面[ずめん]をお送[おく]りしました。仕様[しよう]をご確認[かくにん]いただけますか。", ko: "도면을 보내드렸습니다. 사양을 확인해 주시겠습니까?" },
+        { me: true, jp: "拝見[はいけん]いたしました。《表面処理[ひょうめんしょり]》は溶融亜鉛[ようゆうあえん]めっきで承[うけたまわ]っております。", ko: "잘 보았습니다. 표면처리는 용융아연도금으로 알고 있습니다.", ch: [["잘 보았습니다","拝見[はいけん]いたしました。"],["표면처리는","《表面処理[ひょうめんしょり]》は"],["용융아연도금으로","溶融亜鉛[ようゆうあえん]めっきで"],["알고 있습니다","承[うけたまわ]っております。"]] },
+        { me: false, jp: "はい。《化成処理[かせいしょり]》はクロムフリーでお願[ねが]いします。環境[かんきょう]規制[きせい]の対応[たいおう]が必要[ひつよう]でして。", ko: "네. 화성처리는 크롬프리로 부탁드립니다. 환경 규제 대응이 필요해서요." },
+        { me: true, jp: "承知[しょうち]いたしました。コイルの《単重[たんじゅう]》と《内径[ないけい]》のご希望[きぼう]も伺[うかが]えますでしょうか。", ko: "알겠습니다. 코일의 단중과 내경 희망 사항도 여쭤봐도 될까요?", ch: [["알겠습니다","承知[しょうち]いたしました。"],["코일의 단중과 내경","コイルの《単重[たんじゅう]》と《内径[ないけい]》の"],["희망 사항도","ご希望[きぼう]も"],["여쭤봐도 될까요?","伺[うかが]えますでしょうか。"]] },
+        { me: false, jp: "{単重}[たんじゅう]は{15トン}[じゅうごトン]まで、内径[ないけい]は{508mm}[ごひゃくはちミリ]です。《承認図[しょうにんず]》もあわせてお送[おく]りします。", ko: "단중은 15톤까지, 내경은 508mm입니다. 승인도도 함께 보내드리겠습니다." },
+        { me: true, jp: "ありがとうございます。新規[しんき]の銘柄[めいがら]となりますので、《材料認定[ざいりょうにんてい]》に{3か月}[さんかげつ]ほど要[よう]する見込[みこ]みでございます。", ko: "감사합니다. 신규 강종이 되므로 재료 승인에 3개월 정도 소요될 전망입니다.", ch: [["감사합니다","ありがとうございます。"],["신규 강종이 되므로","新規[しんき]の銘柄[めいがら]となりますので、"],["재료 승인에","《材料認定[ざいりょうにんてい]》に"],["3개월 정도 소요될 전망입니다","{3か月}[さんかげつ]ほど要[よう]する見込[みこ]みでございます。"]] },
+        { me: false, jp: "分[わ]かりました。ところで、板幅[いたはば]はこの寸法[すんぽう]で問題[もんだい]ないでしょうか。", ko: "알겠습니다. 그런데 판 폭은 이 치수로 문제없을까요?" },
+        { me: true, jp: "恐[おそ]れ入[い]りますが、その寸法[すんぽう]は《規格外[きかくがい]》となります。近[ちか]い寸法[すんぽう]で《代替材[だいたいざい]》をご提案[ていあん]させていただいてもよろしいでしょうか。", ko: "송구합니다만, 그 치수는 규격 외가 됩니다. 가까운 치수로 대체재를 제안드려도 괜찮을까요?", ch: [["송구합니다만","恐[おそ]れ入[い]りますが、"],["그 치수는 규격 외가 됩니다","その寸法[すんぽう]は《規格外[きかくがい]》となります。"],["가까운 치수로","近[ちか]い寸法[すんぽう]で"],["대체재를 제안드려도 괜찮을까요?","《代替材[だいたいざい]》をご提案[ていあん]させていただいてもよろしいでしょうか。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 규격 외인 것을 나중에 알리기", body: "승인 절차가 진행된 뒤 규격 외가 드러나면 일정 전체가 무너집니다. 8번째 턴처럼 그 자리에서 대안과 함께 말합니다." },
+        { hard: true, head: "✗ 승인도와 다른 조건으로 그냥 만들기", body: "「承認図」에서 벗어나면 규격 외입니다. 아무리 사소해도 재승인을 받아야 하며, 이를 건너뛰면 클레임이 됩니다." },
+        { hard: false, head: "△ 「仕様(しよう)」와 「使用(しよう)」", body: "발음이 같습니다. 전화 통화에서 헷갈리면 「スペックのほうです」처럼 되물어 확인하세요." }
+      ]
+    },
+    quiz: [
+      { q: "도금·도장·화성처리를 아우르는 말은?", opts: ["表面処理", "材料認定", "承認図"], ans: 0 },
+      { q: "「単重」이 가리키는 것은?", opts: ["코일 1개의 중량", "판 두께", "도금 부착량"], ans: 0 },
+      { q: "「規格外」를 히라가나로 쓰면?", answer: "きかくがい" },
+      { q: "지정 재료를 못 댈 때 제안하는 소재는?", opts: ["代替材", "規格外品", "承認図"], ans: 0 },
+      { q: "고객이 승인한 도면을 뜻하는 말은?", opts: ["見積書", "承認図", "覚書"], ans: 1 },
+      { q: "\"표면처리 사양에 대해 확인을 부탁드립니다\"를 일본어로.", answer: "表面処理の仕様につきまして、ご確認をお願いいたします。" }
+    ],
+    column: {
+      word: "一応", kana: "いちおう", ko: "일단, 우선",
+      title: "「一応」이라는 애매함의 기술",
+      body: [
+        "사전에는 \"일단, 우선\"이라고 나옵니다. 그런데 실제로는 훨씬 자주, 훨씬 넓은 자리에서 쓰입니다.",
+        "핵심은 <b>단정을 피하는 것</b>입니다. 「一応(いちおう)できます」는 \"할 수 있긴 합니다\"에 가깝고, 완전한 자신감은 아닙니다. 여지를 반쯤 남겨두는 말이에요."
+      ],
+      vs: "「一応、確認(かくにん)しました」 → <b>확인은 했습니다</b> (완벽하진 않을 수 있음)<br>「一応、大丈夫です」 → <b>지금으로선 문제없습니다</b><br>「一応、持(も)ってきました」 → <b>혹시 몰라 가져왔습니다</b>",
+      body2: [
+        "한국인에게는 이 말이 무책임하게 들릴 수 있습니다. 하지만 일본에서는 <b>단정을 피하는 것이 신중함의 표현</b>입니다. 「できます」라고 잘라 말했다가 못 하면 신뢰가 크게 깎이기 때문입니다.",
+        "우리도 쓸 수 있습니다. 확실하지 않은 것을 보고할 때 「一応」을 붙이면 뒤에 여지가 남습니다. 다만 남발하면 준비가 부족한 사람으로 보이니, <b>확실한 것은 확실하게</b> 말하세요."
+      ]
+    }
+  },
+
+  /* ═══════════ 8일차 · 수출·통관 ═══════════ */
+  {
+    no: 8, date: "8월 25일", theme: "수출·통관", minutes: 20,
+    terms: [
+      { jp: "通関", kana: "つうかん", mean: "통관", note: "「通関手続き(てつづき)」= 통관 절차. 서류 하나 빠지면 화물이 항구에 묶입니다.", where: "예문 1 · 기사 지문 · 회화 3턴 · 퀴즈 1", ez: ["通関[つうかん]に{2日}[ふつか]かかります。","통관에 2일 걸립니다."] },
+      { jp: "船積書類", kana: "ふなづみしょるい", mean: "선적 서류", note: "B/L, 인보이스, 패킹리스트 등을 묶어 부르는 말입니다. 「書類一式(いっしき)」로도 씁니다.", where: "예문 2 · 회화 4턴 · 퀴즈 2", ez: ["船積書類[ふなづみしょるい]を送[おく]ります。","선적 서류를 보냅니다."] },
+      { jp: "原産地証明", kana: "げんさんちしょうめい", mean: "원산지 증명", note: "「原産地証明書(しょ)」. FTA 특혜 관세를 받으려면 반드시 필요합니다.", where: "예문 3 · 기사 지문 · 회화 5턴 · 퀴즈 5", ez: ["原産地証明[げんさんちしょうめい]が要[い]ります。","원산지 증명이 필요합니다."] },
+      { jp: "保税倉庫", kana: "ほぜいそうこ", mean: "보세창고", note: "관세를 내기 전 화물을 보관하는 창고입니다. 재고 운영의 완충 장치로 쓰입니다.", where: "예문 4 · 회화 6턴", ez: ["保税倉庫[ほぜいそうこ]に置[お]きます。","보세창고에 둡니다."] },
+      { jp: "欠品", kana: "けっぴん", mean: "결품, 재고 없음", note: "「欠品を起こす(おこす)」= 결품을 내다. 자동차 라인에서는 가장 무서운 단어입니다.", where: "예문 5 · 회화 1턴 · 퀴즈 3", ez: ["欠品[けっぴん]は困[こま]ります。","결품은 곤란합니다."] },
+      { jp: "引取り", kana: "ひきとり", mean: "인수, 인도받음", note: "「引取り日(び)」= 인수일. 창고에서 고객이 가져가는 시점을 가리킵니다.", where: "예문 6 · 회화 6턴" },
+      { jp: "リードタイム", kana: "―", mean: "리드타임", note: "발주부터 납품까지의 소요 기간입니다. 「LT」로 줄여 쓰기도 합니다.", where: "예문 7 · 기사 지문 · 회화 2턴" },
+      { jp: "輸送費", kana: "ゆそうひ", mean: "운송비", note: "「輸送費の高騰(こうとう)」= 운송비 급등. 가격 협상의 근거로 자주 등장합니다.", where: "예문 8 · 회화 7턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "通関", jp: "《通関[つうかん]》の手続[てつづ]きに{2日}[ふつか]ほどお時間[じかん]をいただいております。", ko: "통관 절차에 2일 정도 시간을 받고 있습니다.", tip: "수출 일정을 설명할 때 통관 소요를 미리 밝혀 두면 납기 오해가 줄어듭니다." },
+      { drill: "船積書類", jp: "《船積書類[ふなづみしょるい]》一式[いっしき]を本日中[ほんじつじゅう]にお送[おく]りいたします。", ko: "선적 서류 일체를 오늘 중으로 보내드리겠습니다.", tip: "「一式(いっしき)」= 한 세트, 일체. 서류를 묶어 말할 때 쓰는 편리한 표현입니다." },
+      { drill: "原産地証明", jp: "《原産地証明書[げんさんちしょうめいしょ]》は別途[べっと]手配[てはい]いたします。", ko: "원산지 증명서는 별도로 준비하겠습니다.", tip: "「別途(べっと)」= 별도로. 다른 서류와 절차가 다름을 알릴 때 씁니다." },
+      { drill: "保税倉庫", jp: "《保税倉庫[ほぜいそうこ]》での保管[ほかん]も可能[かのう]でございます。", ko: "보세창고에서의 보관도 가능합니다.", tip: "재고 부담을 줄이는 제안입니다. 고객의 자금 사정을 배려한 카드로 쓸 수 있습니다." },
+      { drill: "欠品", jp: "《欠品[けっぴん]》が発生[はっせい]しないよう、在庫[ざいこ]を厚[あつ]めに確保[かくほ]しております。", ko: "결품이 발생하지 않도록 재고를 넉넉히 확보하고 있습니다.", tip: "「厚めに(あつめに)」= 넉넉히. 안심을 주는 표현이라 신뢰 형성에 효과적입니다." },
+      { drill: "引取り", jp: "《引取[ひきと]り》の日程[にってい]をご指定[してい]いただけますでしょうか。", ko: "인수 일정을 지정해 주실 수 있을까요?" , tip: "「ご指定いただけますでしょうか」는 상대에게 결정권을 넘기는 정중한 요청 형태입니다." },
+      { drill: "リードタイム", jp: "現在[げんざい]の《リードタイム》は発注[はっちゅう]から{45日}[よんじゅうごにち]でございます。", ko: "현재 리드타임은 발주로부터 45일입니다.", tip: "숫자를 먼저 제시하면 상대가 계획을 세울 수 있어 협상이 빨라집니다." },
+      { drill: "輸送費", jp: "《輸送費[ゆそうひ]》の高騰[こうとう]により、価格[かかく]の見直[みなお]しをお願[ねが]いしたく存[ぞん]じます。", ko: "운송비 급등으로 가격 재검토를 부탁드리고자 합니다.", tip: "원료가와 함께 운송비도 정당한 가격 인상 근거입니다. 「〜により」로 원인을 명확히 하세요." }
+    ],
+    article: {
+      real: true,
+      source: "ジェトロ 「世界的な過剰供給と保護主義が塗り替える鉄鋼サプライチェーン」",
+      url: "https://www.jetro.go.jp/biz/areareports/special/2026/0401/7d1080d3ba6dcfaa.html",
+      note: "아래 지문은 위 보고 내용을 학습용으로 요약해 다시 쓴 것입니다. 원문 그대로가 아닙니다.",
+      body: "{2026年}[にせんにじゅうろくねん]{6月末}[ろくがつまつ]に終了[しゅうりょう]する鉄鋼[てっこう]セーフガード措置[そち]について、後継[こうけい]措置[そち]の政治[せいじ]合意[ごうい]が成立[せいりつ]した。関税[かんぜい]割当枠[わりあてわく]は年間[ねんかん]{約1830万トン}[やくせんはっぴゃくさんじゅうまんトン]に削減[さくげん]され、超過分[ちょうかぶん]への税率[ぜいりつ]は引[ひ]き上[あ]げられる。輸出国[ゆしゅつこく]にとっては、《通関[つうかん]》や数量[すうりょう]管理[かんり]の重要性[じゅうようせい]が一段[いちだん]と高[たか]まることになる。",
+      lines: [
+        { jp: "2026年6月末に終了する鉄鋼セーフガード措置について、後継措置の政治合意が成立した。", ko: "2026년 6월 말에 종료되는 철강 세이프가드 조치에 대해, 후속 조치의 정치 합의가 성립했다." },
+        { jp: "関税割当枠は年間約1830万トンに削減され、超過分への税率は引き上げられる。", ko: "관세 할당 물량은 연간 약 1830만 톤으로 축소되고, 초과분에 대한 세율은 인상된다." },
+        { jp: "輸出国にとっては、通関や数量管理の重要性が一段と高まることになる。", ko: "수출국 입장에서는 통관과 물량 관리의 중요성이 한층 높아지게 된다." }
+      ],
+      summary: "보호무역이 강해지면서 <b>할당 물량 안에 들어가느냐가 곧 가격</b>이 되는 국면입니다. 물량을 넘기면 세율이 올라가므로, 통관 일정과 수량 관리가 예전보다 훨씬 중요해집니다. 오늘 배운 <b>通関</b>이 지문에 그대로 나오고, 서류 하나가 늦어 물량이 다음 기로 밀리면 그대로 손실이 된다는 뜻이기도 합니다.",
+      picks: [
+        { jp: "〜について", read: "〜について", ko: "〜에 대해", from: "セーフガード措置について" },
+        { jp: "成立した", read: "せいりつした", ko: "성립했다", from: "政治合意が成立した" },
+        { jp: "削減され", read: "さくげんされ", ko: "삭감되어 (수동)", from: "1830万トンに削減され" },
+        { jp: "引き上げられる", read: "ひきあげられる", ko: "인상되다 (수동)", from: "税率は引き上げられる" },
+        { jp: "〜にとっては", read: "〜にとっては", ko: "〜에게 있어서는", from: "輸出国にとっては" },
+        { jp: "一段と", read: "いちだんと", ko: "한층 더", from: "重要性が一段と高まる" }
+      ]
+    },
+    dialogue: {
+      situation: "고객이 결품을 우려하며 수출 일정 전반을 확인하려 합니다.",
+      turns: [
+        { me: false, jp: "ラインを止[と]めるわけにいかないので、《欠品[けっぴん]》だけは避[さ]けたいのですが。", ko: "라인을 세울 수는 없으니 결품만은 피하고 싶습니다만." },
+        { me: true, jp: "承知[しょうち]しております。現在[げんざい]の《リードタイム》は発注[はっちゅう]から{45日}[よんじゅうごにち]でございます。", ko: "잘 알고 있습니다. 현재 리드타임은 발주로부터 45일입니다.", ch: [["잘 알고 있습니다","承知[しょうち]しております。"],["현재 리드타임은","現在[げんざい]の《リードタイム》は"],["발주로부터 45일입니다","発注[はっちゅう]から{45日}[よんじゅうごにち]でございます。"]] },
+        { me: false, jp: "その中[なか]に《通関[つうかん]》の時間[じかん]も入[はい]っていますか。", ko: "그 안에 통관 시간도 들어가 있습니까?" },
+        { me: true, jp: "はい、{2日}[ふつか]ほど見込[みこ]んでおります。《船積書類[ふなづみしょるい]》一式[いっしき]は出港[しゅっこう]後[ご]すぐにお送[おく]りいたします。", ko: "네, 2일 정도 예상하고 있습니다. 선적 서류 일체는 출항 후 즉시 보내드리겠습니다.", ch: [["네, 2일 정도","はい、{2日}[ふつか]ほど"],["예상하고 있습니다","見込[みこ]んでおります。"],["선적 서류 일체는","《船積書類[ふなづみしょるい]》一式[いっしき]は"],["출항 후 즉시 보내드리겠습니다","出港[しゅっこう]後[ご]すぐにお送[おく]りいたします。"]] },
+        { me: false, jp: "FTAの適用[てきよう]をお願[ねが]いしたいのですが、書類[しょるい]は大丈夫[だいじょうぶ]でしょうか。", ko: "FTA 적용을 부탁드리고 싶은데, 서류는 괜찮을까요?" },
+        { me: true, jp: "《原産地証明書[げんさんちしょうめいしょ]》を別途[べっと]手配[てはい]いたします。ご希望[きぼう]であれば《保税倉庫[ほぜいそうこ]》で保管[ほかん]し、《引取[ひきと]り》を分[わ]けることも可能[かのう]です。", ko: "원산지 증명서를 별도로 준비하겠습니다. 원하시면 보세창고에 보관하고 인수를 나누는 것도 가능합니다.", ch: [["원산지 증명서를","《原産地証明書[げんさんちしょうめいしょ]》を"],["별도로 준비하겠습니다","別途[べっと]手配[てはい]いたします。"],["원하시면","ご希望[きぼう]であれば"],["보세창고에 보관하고","《保税倉庫[ほぜいそうこ]》で保管[ほかん]し、"],["인수를 나누는 것도 가능합니다","《引取[ひきと]り》を分[わ]けることも可能[かのう]です。"]] },
+        { me: false, jp: "それは助[たす]かります。ただ、価格[かかく]への影響[えいきょう]が気[き]になります。", ko: "그건 도움이 되겠네요. 다만 가격에 미칠 영향이 신경 쓰입니다." },
+        { me: true, jp: "《輸送費[ゆそうひ]》の高騰[こうとう]が続[つづ]いておりますので、次期[じき]は改[あらた]めてご相談[そうだん]させてください。まずは書類[しょるい]と日程[にってい]を確定[かくてい]させましょう。", ko: "운송비 급등이 계속되고 있어, 다음 기는 다시 상의드리게 해 주십시오. 우선 서류와 일정을 확정합시다.", ch: [["운송비 급등이 계속되고 있어","《輸送費[ゆそうひ]》の高騰[こうとう]が続[つづ]いておりますので、"],["다음 기는","次期[じき]は"],["다시 상의드리게 해 주십시오","改[あらた]めてご相談[そうだん]させてください。"],["우선 서류와 일정을","まずは書類[しょるい]と日程[にってい]を"],["확정합시다","確定[かくてい]させましょう。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 통관 소요를 빼고 납기를 말하기", body: "국내 감각으로 출하일만 말하면 고객은 그날 받는 줄 압니다. 수출은 통관·선적을 포함한 날짜로 말해야 합니다." },
+        { hard: true, head: "✗ 서류 준비를 구두로만 약속하기", body: "「原産地証明」이 하루 늦으면 화물이 항구에 묶입니다. 서류는 항목과 발송일을 문서로 남깁니다." },
+        { hard: false, head: "△ 「欠品」이라는 말의 무게", body: "자동차 조달에서 결품은 라인 정지를 뜻합니다. 가볍게 쓰지 말고, 쓸 때는 반드시 방지책과 함께 말합니다." }
+      ]
+    },
+    quiz: [
+      { q: "「通関」의 뜻은?", opts: ["통관", "선적", "보관"], ans: 0 },
+      { q: "B/L·인보이스·패킹리스트를 묶어 부르는 말은?", opts: ["承認図", "船積書類", "覚書"], ans: 1 },
+      { q: "\"결품\"을 뜻하는 「欠品」을 히라가나로 쓰면?", answer: "けっぴん" },
+      { q: "가격 인상의 정당한 근거가 되는 물류 항목은?", opts: ["輸送費の高騰", "引取り日", "内径"], ans: 0 },
+      { q: "FTA 특혜 관세를 받으려면 반드시 필요한 서류는?", opts: ["原産地証明書", "ミルシート", "承認図"], ans: 0 },
+      { q: "\"선적 서류 일체를 오늘 중으로 보내드리겠습니다\"를 일본어로.", answer: "船積書類一式を本日中にお送りいたします。" }
+    ],
+    column: {
+      word: "微妙", kana: "びみょう", ko: "미묘하다 → 별로다",
+      title: "「微妙」는 미묘하지 않습니다",
+      body: [
+        "한자만 보면 \"미묘하다\"입니다. 그런데 일본어 회화에서 <span class='kw'>微妙</span>는 대체로 <b>부정적인 평가</b>입니다. \"별로다\"에 가깝습니다.",
+        "「あの店(みせ)どうだった？」— 「うーん、微妙(びみょう)」 는 \"그저 그랬어, 별로였어\"입니다. 애매해서 판단이 어렵다는 뜻이 아닙니다."
+      ],
+      vs: "한국어 「미묘하다」 → <b>차이가 섬세하다</b> (중립 또는 긍정)<br>일본어 「微妙」 → <b>애매하게 별로다</b> (완곡한 부정)",
+      body2: [
+        "업무에서도 나옵니다. 제안에 대해 「ちょっと微妙(びみょう)ですね」라고 하면 <b>좋게 보고 있지 않다는 신호</b>입니다. 「難(むずか)しい」와 같은 계열로 들으셔야 합니다.",
+        "다만 문어체에서는 원래 뜻대로 쓰입니다. 「微妙な調整(ちょうせい)が必要(ひつよう)だ」는 \"섬세한 조정이 필요하다\"입니다. <b>말할 때와 쓸 때가 다르다</b>는 점만 기억하시면 됩니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 9일차 · 클레임 처리 ═══════════ */
+  {
+    no: 9, date: "8월 26일", theme: "클레임 처리", minutes: 20,
+    terms: [
+      { jp: "特別採用", kana: "とくべつさいよう", mean: "특별 채용 (특채)", note: "현장에서는 「特採(とくさい)」로 줄여 부릅니다. 규격을 살짝 벗어났지만 사용 가능하다고 고객이 승인해 주는 것입니다.", where: "예문 1 · 회화 5턴 · 퀴즈 1", ez: ["特別採用[とくべつさいよう]をお願[ねが]いします。","특별 채용을 부탁드립니다."] },
+      { jp: "選別", kana: "せんべつ", mean: "선별", note: "「全数選別(ぜんすうせんべつ)」= 전수 선별. 불량 혼입 시 가장 먼저 요구받는 조치입니다.", where: "예문 2 · 회화 3턴 · 퀴즈 2", ez: ["全部[ぜんぶ]選別[せんべつ]します。","전부 선별합니다."] },
+      { jp: "返品", kana: "へんぴん", mean: "반품", note: "「返品を受ける」= 반품을 받다. 비용 부담 주체를 반드시 함께 정합니다.", where: "예문 3 · 회화 4턴", ez: ["返品[へんぴん]をお願[ねが]いします。","반품을 부탁드립니다."] },
+      { jp: "恒久対策", kana: "こうきゅうたいさく", mean: "항구 대책", note: "「暫定対策」과 짝입니다. 보고서에서 이 둘을 나눠 쓰지 않으면 대응이 미흡하다고 평가됩니다.", where: "예문 4 · 기사 지문 · 회화 6턴 · 퀴즈 5", ez: ["恒久対策[こうきゅうたいさく]を出[だ]します。","항구 대책을 냅니다."] },
+      { jp: "水平展開", kana: "すいへいてんかい", mean: "수평 전개 (횡전개)", note: "같은 문제가 생길 수 있는 다른 라인·품종에도 대책을 넓히는 것입니다. 일본 제조업에서 매우 중시합니다.", where: "예문 5 · 기사 지문 · 회화 6턴 · 퀴즈 4", ez: ["他[ほか]にも水平展開[すいへいてんかい]します。","다른 곳에도 수평 전개합니다."] },
+      { jp: "検査成績書", kana: "けんさせいせきしょ", mean: "검사 성적서", note: "「ミルシート」와 함께 품질을 증명하는 문서입니다. 클레임 시 가장 먼저 요구받습니다.", where: "예문 6 · 회화 2턴" },
+      { jp: "補償", kana: "ほしょう", mean: "보상", note: "「補償(보상)」과 「保証(ほしょう, 보증)」은 발음이 같습니다. 문맥으로 구분해야 합니다.", where: "예문 7 · 회화 7턴 · 퀴즈 3" },
+      { jp: "現地確認", kana: "げんちかくにん", mean: "현지 확인", note: "직접 고객 공장에 가서 보는 것입니다. 심각한 클레임에서는 방문 자체가 성의로 평가됩니다.", where: "예문 8 · 회화 8턴" }
+    ],
+    sentences: [
+      { drill: "特別採用", jp: "今回[こんかい]に限[かぎ]り、《特別採用[とくべつさいよう]》をご検討[けんとう]いただけないでしょうか。", ko: "이번에 한해 특별 채용을 검토해 주실 수 없을까요?", tip: "규격을 살짝 벗어난 제품을 살리는 마지막 카드입니다. 반드시 「今回に限り」를 붙입니다." },
+      { drill: "選別", jp: "弊社[へいしゃ]の負担[ふたん]で全数[ぜんすう]《選別[せんべつ]》を実施[じっし]いたします。", ko: "저희 부담으로 전수 선별을 실시하겠습니다.", tip: "「弊社の負担で」를 먼저 말하는 것이 핵심입니다. 비용 이야기를 미루면 성의를 의심받습니다." },
+      { drill: "返品", jp: "《返品[へんぴん]》分[ぶん]につきましては、輸送費[ゆそうひ]も含[ふく]めて弊社[へいしゃ]で対応[たいおう]いたします。", ko: "반품분에 대해서는 운송비도 포함해 저희가 대응하겠습니다.", tip: "「〜も含めて」로 범위를 명확히 하지 않으면 나중에 비용 다툼이 생깁니다." },
+      { drill: "恒久対策", jp: "《恒久対策[こうきゅうたいさく]》につきましては、{来月}[らいげつ]{15日}[じゅうごにち]までにご報告[ほうこく]いたします。", ko: "항구 대책에 대해서는 다음 달 15일까지 보고드리겠습니다.", tip: "잠정 대책은 즉시, 항구 대책은 기한을 정해 보고합니다. 이 두 박자가 일본식 클레임 대응의 기본입니다." },
+      { drill: "水平展開", jp: "同様[どうよう]の工程[こうてい]にも《水平展開[すいへいてんかい]》し、再発[さいはつ]を防[ふせ]ぎます。", ko: "동일한 공정에도 수평 전개하여 재발을 막겠습니다.", tip: "이 한마디가 있고 없고의 차이가 큽니다. 일본 고객은 \"다른 데는 괜찮은가\"를 반드시 봅니다." },
+      { drill: "検査成績書", jp: "該当[がいとう]ロットの《検査成績書[けんさせいせきしょ]》をお送[おく]りいたします。", ko: "해당 로트의 검사 성적서를 보내드리겠습니다.", tip: "「該当(がいとう)ロット」= 해당 로트. 문제 범위를 특정해 말하면 대응이 통제되고 있다는 인상을 줍니다." },
+      { drill: "補償", jp: "《補償[ほしょう]》の範囲[はんい]につきましては、社内[しゃない]で確認[かくにん]のうえご回答[かいとう]いたします。", ko: "보상 범위에 대해서는 사내 확인 후 답변드리겠습니다.", tip: "금액이 걸린 사안은 절대 그 자리에서 답하지 않습니다. 이 문장으로 시간을 확보하세요." },
+      { drill: "現地確認", jp: "{明日}[あす]、担当[たんとう]が《現地確認[げんちかくにん]》に伺[うかが]います。", ko: "내일 담당자가 현지 확인차 찾아뵙겠습니다.", tip: "「伺(うかが)います」= 찾아뵙겠습니다. 방문 의사를 밝히는 것 자체가 강력한 성의 표시입니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 품질 대응 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "品質[ひんしつ]問題[もんだい]が起[お]きた際[さい]、日本[にほん]の製造業[せいぞうぎょう]では原因[げんいん]の特定[とくてい]だけでなく、同種[どうしゅ]の工程[こうてい]への《水平展開[すいへいてんかい]》までを求[もと]められることが多[おお]い。暫定[ざんてい]の処置[しょち]で止血[しけつ]したうえで、《恒久対策[こうきゅうたいさく]》を期限[きげん]付[つ]きで示[しめ]すことが信頼[しんらい]回復[かいふく]の条件[じょうけん]となる。対応[たいおう]の巧拙[こうせつ]がその後[ご]の取引[とりひき]量[りょう]を左右[さゆう]するため、初動[しょどう]体制[たいせい]の整備[せいび]が欠[か]かせない。",
+      lines: [
+        { jp: "品質問題が起きた際、日本の製造業では原因の特定だけでなく、同種の工程への水平展開までを求められることが多い。", ko: "품질 문제가 발생했을 때, 일본 제조업에서는 원인 특정뿐 아니라 동종 공정으로의 수평 전개까지를 요구받는 경우가 많다." },
+        { jp: "暫定の処置で止血したうえで、恒久対策を期限付きで示すことが信頼回復の条件となる。", ko: "잠정 조치로 지혈한 후에, 항구 대책을 기한을 붙여 제시하는 것이 신뢰 회복의 조건이 된다." },
+        { jp: "対応の巧拙がその後の取引量を左右するため、初動体制の整備が欠かせない。", ko: "대응의 능숙함이 이후 거래량을 좌우하기 때문에, 초기 대응 체제 정비가 빠질 수 없다." }
+      ],
+      summary: "일본 고객이 보는 것은 <b>원인 규명이 아니라 수평 전개와 기한 있는 항구 대책</b>이라는 점이 핵심입니다. \"다른 데는 괜찮은가\"에 답하지 못하면 대응이 끝난 것으로 인정받지 못합니다. 「〜だけでなく〜まで」와 「〜たうえで」는 보고서에 그대로 쓸 수 있습니다.",
+      picks: [
+        { jp: "〜際", read: "〜さい", ko: "〜할 때 (격식체)", from: "問題が起きた際" },
+        { jp: "〜だけでなく", read: "〜だけでなく", ko: "〜뿐만 아니라", from: "特定だけでなく" },
+        { jp: "〜たうえで", read: "〜たうえで", ko: "〜한 후에", from: "止血したうえで" },
+        { jp: "期限付き", read: "きげんつき", ko: "기한을 붙인", from: "恒久対策を期限付きで" },
+        { jp: "巧拙", read: "こうせつ", ko: "잘하고 못함, 능숙함의 정도", from: "対応の巧拙が" },
+        { jp: "欠かせない", read: "かかせない", ko: "빠뜨릴 수 없다", from: "整備が欠かせない" }
+      ]
+    },
+    dialogue: {
+      situation: "4일차의 표면 흠 건이 이어집니다. 조사 결과를 들고 대책을 협의하는 자리입니다.",
+      turns: [
+        { me: true, jp: "先日[せんじつ]の件[けん]、原因[げんいん]が特定[とくてい]できましたのでご報告[ほうこく]に伺[うかが]いました。", ko: "지난번 건, 원인을 특정할 수 있어 보고차 찾아뵈었습니다.", ch: [["지난번 건","先日[せんじつ]の件[けん]、"],["원인을 특정할 수 있어","原因[げんいん]が特定[とくてい]できましたので"],["보고차 찾아뵈었습니다","ご報告[ほうこく]に伺[うかが]いました。"]] },
+        { me: false, jp: "ありがとうございます。該当[がいとう]ロットの《検査成績書[けんさせいせきしょ]》も拝見[はいけん]しました。", ko: "감사합니다. 해당 로트의 검사 성적서도 봤습니다." },
+        { me: true, jp: "圧延[あつえん]工程[こうてい]のロール摩耗[まもう]が原因[げんいん]でございました。在庫[ざいこ]分[ぶん]は弊社[へいしゃ]の負担[ふたん]で全数[ぜんすう]《選別[せんべつ]》を実施[じっし]いたします。", ko: "압연 공정의 롤 마모가 원인이었습니다. 재고분은 저희 부담으로 전수 선별을 실시하겠습니다.", ch: [["압연 공정의 롤 마모가","圧延[あつえん]工程[こうてい]のロール摩耗[まもう]が"],["원인이었습니다","原因[げんいん]でございました。"],["재고분은 저희 부담으로","在庫[ざいこ]分[ぶん]は弊社[へいしゃ]の負担[ふたん]で"],["전수 선별을 실시하겠습니다","全数[ぜんすう]《選別[せんべつ]》を実施[じっし]いたします。"]] },
+        { me: false, jp: "すでに使[つか]えないものは《返品[へんぴん]》でよろしいですか。", ko: "이미 쓸 수 없는 것은 반품으로 괜찮겠습니까?" },
+        { me: true, jp: "はい、輸送費[ゆそうひ]も含[ふく]めて弊社[へいしゃ]で対応[たいおう]いたします。軽微[けいび]なものにつきましては、今回[こんかい]に限[かぎ]り《特別採用[とくべつさいよう]》をご検討[けんとう]いただけないでしょうか。", ko: "네, 운송비도 포함해 저희가 대응하겠습니다. 경미한 것에 대해서는 이번에 한해 특별 채용을 검토해 주실 수 없을까요?", ch: [["네, 운송비도 포함해","はい、輸送費[ゆそうひ]も含[ふく]めて"],["저희가 대응하겠습니다","弊社[へいしゃ]で対応[たいおう]いたします。"],["경미한 것에 대해서는","軽微[けいび]なものにつきましては、"],["이번에 한해","今回[こんかい]に限[かぎ]り"],["특별 채용을 검토해 주실 수 없을까요?","《特別採用[とくべつさいよう]》をご検討[けんとう]いただけないでしょうか。"]] },
+        { me: false, jp: "工程[こうてい]で確認[かくにん]してみます。ところで、他[ほか]の品種[ひんしゅ]は大丈夫[だいじょうぶ]ですか。", ko: "공정에서 확인해 보겠습니다. 그런데 다른 품종은 괜찮습니까?" },
+        { me: true, jp: "同様[どうよう]の工程[こうてい]にも《水平展開[すいへいてんかい]》し、点検[てんけん]を完了[かんりょう]しております。《恒久対策[こうきゅうたいさく]》は{来月}[らいげつ]{15日}[じゅうごにち]までにご報告[ほうこく]いたします。《補償[ほしょう]》の範囲[はんい]は社内[しゃない]確認[かくにん]のうえご回答[かいとう]いたします。", ko: "동일 공정에도 수평 전개하여 점검을 완료했습니다. 항구 대책은 다음 달 15일까지 보고드리겠습니다. 보상 범위는 사내 확인 후 답변드리겠습니다.", ch: [["동일 공정에도 수평 전개하여","同様[どうよう]の工程[こうてい]にも《水平展開[すいへいてんかい]》し、"],["점검을 완료했습니다","点検[てんけん]を完了[かんりょう]しております。"],["항구 대책은 다음 달 15일까지","《恒久対策[こうきゅうたいさく]》は{来月}[らいげつ]{15日}[じゅうごにち]までに"],["보고드리겠습니다","ご報告[ほうこく]いたします。"],["보상 범위는","《補償[ほしょう]》の範囲[はんい]は"],["사내 확인 후 답변드리겠습니다","社内[しゃない]確認[かくにん]のうえご回答[かいとう]いたします。"]] },
+        { me: false, jp: "そこまで動[うご]いていただけるなら、こちらも前向[まえむ]きに考[かんが]えます。", ko: "거기까지 움직여 주신다면 저희도 긍정적으로 생각하겠습니다." }
+      ],
+      warns: [
+        { hard: true, head: "✗ 보상 금액을 그 자리에서 말하기", body: "금액은 사내 승인 사항입니다. 「社内で確認のうえご回答いたします」로 반드시 시간을 확보합니다. 즉답한 금액은 그대로 기준이 됩니다." },
+        { hard: true, head: "✗ 「他の品種は大丈夫です」를 근거 없이 말하기", body: "6번째 턴의 질문은 반드시 나옵니다. 점검을 실제로 마친 뒤 「水平展開し、点検を完了しております」라고 답해야 합니다." },
+        { hard: false, head: "△ 특채는 부탁이지 권리가 아니다", body: "「特別採用」은 고객이 손해를 감수해 주는 것입니다. 당연한 듯 요구하면 관계가 상합니다. 「今回に限り」와 함께 낮춰 부탁합니다." }
+      ]
+    },
+    quiz: [
+      { q: "규격을 살짝 벗어났지만 사용을 승인받는 것을 뭐라고 합니까?", opts: ["特別採用", "水平展開", "現地確認"], ans: 0 },
+      { q: "불량 혼입 시 가장 먼저 요구받는 조치는?", opts: ["返品", "全数選別", "補償"], ans: 1 },
+      { q: "\"보상\"을 뜻하는 「補償」을 히라가나로 쓰면?", answer: "ほしょう" },
+      { q: "같은 문제가 생길 수 있는 다른 공정에도 대책을 넓히는 것은?", opts: ["水平展開", "恒久対策", "選別"], ans: 0 },
+      { q: "「暫定対策」과 짝을 이루며 기한을 붙여 보고하는 것은?", opts: ["恒久対策", "特別採用", "現地確認"], ans: 0 },
+      { q: "\"저희 부담으로 전수 선별을 실시하겠습니다\"를 일본어로.", answer: "弊社の負担で全数選別を実施いたします。" }
+    ],
+    column: {
+      word: "遠慮", kana: "えんりょ", ko: "사양, 삼감",
+      title: "「ご遠慮ください」는 부탁이 아니라 금지입니다",
+      body: [
+        "<span class='kw'>遠慮</span>는 사양, 삼감을 뜻합니다. 그런데 안내문에서 「ご遠慮(えんりょ)ください」를 만나면 정중한 부탁이 아니라 <b>사실상 금지</b>입니다.",
+        "「車内(しゃない)での通話(つうわ)はご遠慮ください」는 직역하면 \"차내 통화는 삼가 주십시오\"이지만, 실제 의미는 <b>하지 마세요</b>입니다. 한국어의 \"삼가 주세요\"보다 훨씬 강한 금지입니다."
+      ],
+      vs: "「ご遠慮ください」 → <b>하지 마세요</b> (정중한 형식의 금지)<br>「遠慮しないでください」 → <b>사양하지 말고 편하게 하세요</b>",
+      body2: [
+        "재미있는 건 정반대의 두 표현이 같은 단어에서 나온다는 점입니다. 권할 때는 「遠慮しないで」, 막을 때는 「ご遠慮ください」예요. 한국 사람들이 가장 많이 헷갈리는 대목입니다.",
+        "우리가 거절할 때도 유용합니다. 「今回(こんかい)は遠慮させていただきます」는 「お断(ことわ)りします」보다 훨씬 부드럽고 관계를 상하지 않게 합니다. <b>실무에서 자주 쓰게 될 표현</b>이니 통째로 외워두세요."
+      ]
+    }
+  },
+
+  /* ═══════════ 10일차 · 실적·투자 ═══════════ */
+  {
+    no: 10, date: "8월 27일", theme: "실적·투자", minutes: 20,
+    terms: [
+      { jp: "決算", kana: "けっさん", mean: "결산", note: "「決算発表(はっぴょう)」= 결산 발표. 분기마다 나오며 고객사 사정을 읽는 1차 자료입니다.", where: "예문 1 · 회화 2턴 · 퀴즈 1", ez: ["決算[けっさん]を見[み]ました。","결산을 봤습니다."] },
+      { jp: "営業利益", kana: "えいぎょうりえき", mean: "영업이익", note: "「経常利益(けいじょうりえき)」과 구분합니다. 일본 기업 실적 기사의 중심 지표입니다.", where: "예문 2 · 회화 2턴 · 퀴즈 5", ez: ["営業利益[えいぎょうりえき]が増[ふ]えました。","영업이익이 늘었습니다."] },
+      { jp: "通期", kana: "つうき", mean: "통기, 연간 (전체 회계연도)", note: "「通期見通し」= 연간 전망. 「上期·下期」와 함께 쓰이는 기간 단위입니다.", where: "예문 3 · 회화 3턴", ez: ["通期[つうき]の見通[みとお]しはどうですか。","연간 전망은 어떻습니까?"] },
+      { jp: "下方修正", kana: "かほうしゅうせい", mean: "하향 조정", note: "반대는 「上方修正(じょうほうしゅうせい)」. 전망치를 낮출 때 쓰며, 나오면 조달 축소 신호입니다.", where: "예문 4 · 회화 3턴 · 퀴즈 2", ez: ["下方修正[かほうしゅうせい]がありました。","하향 조정이 있었습니다."] },
+      { jp: "円安", kana: "えんやす", mean: "엔저", note: "반대는 「円高(えんだか)」. 한국에서 일본으로 수출할 때 엔저는 우리에게 불리합니다.", where: "예문 5 · 회화 5턴 · 퀴즈 3", ez: ["円安[えんやす]が続[つづ]いています。","엔저가 이어지고 있습니다."] },
+      { jp: "関税", kana: "かんぜい", mean: "관세", note: "「関税がかかる」= 관세가 붙다. FTA 적용 여부로 실질 가격이 크게 달라집니다.", where: "예문 6 · 회화 6턴" },
+      { jp: "需給", kana: "じゅきゅう", mean: "수급", note: "「需給が緩む(ゆるむ)」= 수급이 완화되다(공급 과잉). 「締まる(しまる)」= 타이트해지다.", where: "예문 7 · 기사 지문 · 회화 4턴" },
+      { jp: "設備投資", kana: "せつびとうし", mean: "설비 투자", note: "「設備投資を積み増す」= 설비 투자를 늘리다. 업계 방향을 읽는 핵심 지표입니다.", where: "예문 8 · 기사 지문 · 회화 7턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "決算", jp: "御社[おんしゃ]の《決算[けっさん]》発表[はっぴょう]を拝見[はいけん]いたしました。", ko: "귀사의 결산 발표를 잘 보았습니다.", tip: "고객사 실적을 챙겨 봤다는 신호입니다. 미팅 첫머리에 놓으면 준비된 상대라는 인상을 줍니다." },
+      { drill: "営業利益", jp: "《営業利益[えいぎょうりえき]》は前年[ぜんねん]を上回[うわまわ]る結果[けっか]となりました。", ko: "영업이익은 전년을 웃도는 결과가 되었습니다.", tip: "「上回る」와 「下回る」는 실적 이야기의 기본 동사 한 쌍입니다. 반드시 짝으로 외우세요." },
+      { drill: "通期", jp: "《通期[つうき]》の見通[みとお]しについてもお聞[き]かせいただけますでしょうか。", ko: "연간 전망에 대해서도 들려주실 수 있을까요?", tip: "「お聞かせいただけますでしょうか」는 정보를 청하는 가장 정중한 형태입니다." },
+      { drill: "下方修正", jp: "需要[じゅよう]の減少[げんしょう]により、《下方修正[かほうしゅうせい]》を発表[はっぴょう]する企業[きぎょう]が増[ふ]えております。", ko: "수요 감소로 하향 조정을 발표하는 기업이 늘고 있습니다.", tip: "고객사의 하향 조정은 우리 물량 축소의 예고입니다. 기사에서 이 단어를 놓치지 마세요." },
+      { drill: "円安", jp: "《円安[えんやす]》の影響[えいきょう]もあり、輸入[ゆにゅう]材[ざい]の価格[かかく]が上昇[じょうしょう]しております。", ko: "엔저의 영향도 있어 수입재 가격이 상승하고 있습니다.", tip: "환율을 가격 협상의 근거로 삼을 때 쓰는 문장입니다. 「〜の影響もあり」로 부드럽게 엮습니다." },
+      { drill: "関税", jp: "FTAの適用[てきよう]により、《関税[かんぜい]》の負担[ふたん]を抑[おさ]えることができます。", ko: "FTA 적용으로 관세 부담을 억제할 수 있습니다.", tip: "가격이 아닌 총비용으로 설득하는 화법입니다. 「〜を抑える」= 억제하다." },
+      { drill: "需給", jp: "足元[あしもと]の《需給[じゅきゅう]》は緩[ゆる]んでいるとの見方[みかた]が多[おお]いようです。", ko: "현재 수급은 완화되고 있다는 견해가 많은 듯합니다.", tip: "「〜との見方が多い」= 〜라는 견해가 많다. 단정을 피하면서 정보를 전하는 안전한 형태입니다." },
+      { drill: "設備投資", jp: "脱炭素[だつたんそ]に向[む]けた《設備投資[せつびとうし]》が各社[かくしゃ]で進[すす]んでおります。", ko: "탈탄소를 향한 설비 투자가 각사에서 진행되고 있습니다.", tip: "5일차의 「〜に向けた」가 다시 나왔습니다. 이런 표현은 반복해서 만나야 손에 붙습니다." }
+    ],
+    article: {
+      real: true,
+      source: "日本経済新聞 「日本製鉄･JFE、長期戦の電炉転換 CO2は1/4も鉄価格4割高」",
+      url: "https://www.nikkei.com/article/DGXZQOUB260UF0W6A620C2000000/",
+      note: "아래 지문은 위 보도 내용을 학습용으로 요약해 다시 쓴 것입니다. 기사 원문 그대로가 아닙니다.",
+      body: "日本製鉄[にっぽんせいてつ]とJFEスチールは、高炉[こうろ]から電炉[でんろ]への転換[てんかん]を長期[ちょうき]の課題[かだい]として進[すす]めている。電炉[でんろ]で作[つく]る鋼材[こうざい]はCO2排出[はいしゅつ]を約[やく]{4分の1}[よんぶんのいち]に抑[おさ]えられる一方[いっぽう]、コストは高[たか]く、鉄[てつ]の価格[かかく]は{4割}[よんわり]ほど上[あ]がるとされる。大規模[だいきぼ]な《設備投資[せつびとうし]》が必要[ひつよう]なため、《需給[じゅきゅう]》と価格[かかく]の両面[りょうめん]で長期戦[ちょうきせん]になる見通[みとお]しだ。",
+      lines: [
+        { jp: "日本製鉄とJFEスチールは、高炉から電炉への転換を長期の課題として進めている。", ko: "일본제철과 JFE스틸은 고로에서 전기로로의 전환을 장기 과제로 삼아 추진하고 있다." },
+        { jp: "電炉で作る鋼材はCO2排出を約4分の1に抑えられる一方、コストは高く、鉄の価格は4割ほど上がるとされる。", ko: "전기로로 만드는 강재는 CO2 배출을 약 4분의 1로 억제할 수 있는 한편, 비용은 높아 철 가격은 40% 정도 오른다고 여겨진다." },
+        { jp: "大規模な設備投資が必要なため、需給と価格の両面で長期戦になる見通しだ。", ko: "대규모 설비 투자가 필요하기 때문에, 수급과 가격 양면에서 장기전이 될 전망이다." }
+      ],
+      summary: "탈탄소 전환이 <b>가격을 40% 올릴 수 있는 구조 변화</b>라는 점이 핵심입니다. 일본 고객도 이 비용을 어떻게 나눌지 고민하고 있다는 뜻이므로, 우리가 저탄소 강재와 총비용 논리를 준비해 두면 협상에서 앞설 수 있습니다. 5일차에서 본 전기로 전환 이야기가 가격 문제로 이어지는 대목입니다.",
+      picks: [
+        { jp: "〜として", read: "〜として", ko: "〜로서, 〜로 삼아", from: "長期の課題として" },
+        { jp: "抑えられる", read: "おさえられる", ko: "억제할 수 있다", from: "約4分の1に抑えられる" },
+        { jp: "〜一方", read: "〜いっぽう", ko: "〜하는 한편 (대비)", from: "抑えられる一方、コストは" },
+        { jp: "〜とされる", read: "〜とされる", ko: "〜라고 여겨진다", from: "上がるとされる" },
+        { jp: "〜なため", read: "〜なため", ko: "〜하기 때문에", from: "必要なため" },
+        { jp: "見通しだ", read: "みとおしだ", ko: "〜할 전망이다", from: "長期戦になる見通しだ" }
+      ]
+    },
+    dialogue: {
+      situation: "반기 정기 미팅입니다. 고객사 실적과 업계 투자 동향을 놓고 다음 기 조건을 가늠합니다.",
+      turns: [
+        { me: true, jp: "本日[ほんじつ]はお時間[じかん]をいただきありがとうございます。御社[おんしゃ]の《決算[けっさん]》発表[はっぴょう]も拝見[はいけん]いたしました。", ko: "오늘 시간 내주셔서 감사합니다. 귀사의 결산 발표도 잘 보았습니다.", ch: [["오늘 시간 내주셔서 감사합니다","本日[ほんじつ]はお時間[じかん]をいただきありがとうございます。"],["귀사의 결산 발표도","御社[おんしゃ]の《決算[けっさん]》発表[はっぴょう]も"],["잘 보았습니다","拝見[はいけん]いたしました。"]] },
+        { me: false, jp: "ありがとうございます。《営業利益[えいぎょうりえき]》は何[なん]とか前年[ぜんねん]を上回[うわまわ]りました。", ko: "감사합니다. 영업이익은 그럭저럭 전년을 웃돌았습니다." },
+        { me: true, jp: "《通期[つうき]》の見通[みとお]しはいかがでしょうか。業界[ぎょうかい]では《下方修正[かほうしゅうせい]》の発表[はっぴょう]も出[で]ておりますが。", ko: "연간 전망은 어떻습니까? 업계에서는 하향 조정 발표도 나오고 있습니다만.", ch: [["연간 전망은 어떻습니까?","《通期[つうき]》の見通[みとお]しはいかがでしょうか。"],["업계에서는","業界[ぎょうかい]では"],["하향 조정 발표도","《下方修正[かほうしゅうせい]》の発表[はっぴょう]も"],["나오고 있습니다만","出[で]ておりますが。"]] },
+        { me: false, jp: "正直[しょうじき]、慎重[しんちょう]に見[み]ています。《需給[じゅきゅう]》も緩[ゆる]んでいますし。", ko: "솔직히 신중하게 보고 있습니다. 수급도 완화되고 있고요." },
+        { me: true, jp: "承知[しょうち]いたしました。加[くわ]えて《円安[えんやす]》の影響[えいきょう]もあり、輸入[ゆにゅう]材[ざい]の価格[かかく]は上[あ]がっております。", ko: "알겠습니다. 더불어 엔저의 영향도 있어 수입재 가격은 오르고 있습니다.", ch: [["알겠습니다","承知[しょうち]いたしました。"],["더불어 엔저의 영향도 있어","加[くわ]えて《円安[えんやす]》の影響[えいきょう]もあり、"],["수입재 가격은","輸入[ゆにゅう]材[ざい]の価格[かかく]は"],["오르고 있습니다","上[あ]がっております。"]] },
+        { me: false, jp: "そこが悩[なや]ましいところです。総[そう]コストで見[み]ると、どうなりますか。", ko: "그게 고민되는 부분입니다. 총비용으로 보면 어떻게 됩니까?" },
+        { me: true, jp: "FTAの適用[てきよう]で《関税[かんぜい]》の負担[ふたん]を抑[おさ]えられます。また、脱炭素[だつたんそ]に向[む]けた《設備投資[せつびとうし]》により、低炭素[ていたんそ]鋼材[こうざい]のご提供[ていきょう]も可能[かのう]でございます。", ko: "FTA 적용으로 관세 부담을 억제할 수 있습니다. 또한 탈탄소를 향한 설비 투자로 저탄소 강재 제공도 가능합니다.", ch: [["FTA 적용으로","FTAの適用[てきよう]で"],["관세 부담을 억제할 수 있습니다","《関税[かんぜい]》の負担[ふたん]を抑[おさ]えられます。"],["또한","また、"],["탈탄소를 향한 설비 투자로","脱炭素[だつたんそ]に向[む]けた《設備投資[せつびとうし]》により、"],["저탄소 강재 제공도 가능합니다","低炭素[ていたんそ]鋼材[こうざい]のご提供[ていきょう]も可能[かのう]でございます。"]] },
+        { me: false, jp: "その資料[しりょう]をいただけますか。社内[しゃない]で検討[けんとう]します。", ko: "그 자료를 주시겠습니까? 사내에서 검토하겠습니다." }
+      ],
+      warns: [
+        { hard: true, head: "✗ 상대 실적을 숫자로 평가하기", body: "\"이익이 낮으시네요\" 같은 말은 금물입니다. 결산은 읽되, 언급은 「拝見いたしました」 정도로 두고 판단은 상대에게 맡깁니다." },
+        { hard: true, head: "✗ 환율을 우리 사정으로만 설명하기", body: "「円安なので値上げします」는 일방적으로 들립니다. 5번째 턴처럼 시장 전반의 이야기로 깔고, 총비용 논리로 넘어갑니다." },
+        { hard: false, head: "△ 가격이 아니라 총비용으로 말하기", body: "관세·물류·탄소 대응까지 묶어 「総コスト」로 제시하면 단가 경쟁에서 빠져나올 수 있습니다. 7번째 턴이 그 방식입니다." }
+      ]
+    },
+    quiz: [
+      { q: "「決算」의 뜻은?", opts: ["결산", "결제", "결품"], ans: 0 },
+      { q: "전망치를 낮추는 것을 뭐라고 합니까?", opts: ["上方修正", "下方修正", "通期見通し"], ans: 1 },
+      { q: "\"엔저\"를 뜻하는 「円安」을 히라가나로 쓰면?", answer: "えんやす" },
+      { q: "업계의 방향을 읽을 수 있는 핵심 지표는?", opts: ["設備投資", "関税", "決算日"], ans: 0 },
+      { q: "일본 기업 실적 기사의 중심 지표는?", opts: ["営業利益", "粗鋼生産", "稼働率"], ans: 0 },
+      { q: "\"연간 전망에 대해서도 들려주실 수 있을까요?\"를 일본어로.", answer: "通期の見通しについてもお聞かせいただけますでしょうか。" }
+    ],
+    column: {
+      word: "お世話になっております", kana: "おせわになっております", ko: "(대응하는 한국어가 없음)",
+      title: "한국어에 대응이 없는 인사",
+      body: [
+        "직역하면 \"신세를 지고 있습니다\"입니다. 그런데 <b>실제로 신세를 졌는지와는 무관하게</b>, 사외 사람에게 건네는 첫마디로 씁니다. 오늘 처음 통화하는 상대에게도 씁니다.",
+        "한국어에는 대응하는 말이 없습니다. \"안녕하세요\"로 옮기지만 하는 일이 다릅니다. 이 말은 인사라기보다 <b>\"우리는 거래 관계에 있습니다\"를 확인하는 신호</b>에 가깝습니다."
+      ],
+      vs: "사외(고객·거래처)에게 → <b>お世話になっております</b><br>사내 사람에게 → <b>お疲れ様です</b>",
+      body2: [
+        "그래서 이 한마디를 빼면 첫 문장에서 바로 티가 납니다. 메일이든 전화든 예외 없이 첫 줄에 놓으세요. 「いつも大変(たいへん)お世話になっております」로 늘리면 더 정중해집니다.",
+        "답할 때도 같은 말로 받습니다. 「お世話になっております」 — 「こちらこそお世話になっております」. <b>이 주고받음이 끝나야 본론이 시작됩니다.</b> 4일차에서 다룬 「お疲れ様です」와 짝으로 외워두시면, 사내와 사외를 헷갈릴 일이 없습니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 11일차 · 원가·지표 ═══════════ */
+  {
+    no: 11, date: "8월 30일", theme: "원가·지표", minutes: 20,
+    terms: [
+      { jp: "原価", kana: "げんか", mean: "원가", note: "「原価を割る(わる)」= 원가 밑으로 떨어지다. 가격 방어의 마지노선을 말할 때 씁니다.", where: "예문 1 · 기사 지문 · 회화 4턴 · 퀴즈 1", ez: ["原価[げんか]が上[あ]がりました。","원가가 올랐습니다."] },
+      { jp: "指標", kana: "しひょう", mean: "지표", note: "「公表(こうひょう)指標」= 공표 지표. 가격을 무엇에 연동할지 정할 때 기준이 됩니다.", where: "예문 2 · 기사 지문 · 회화 5턴", ez: ["指標[しひょう]を確認[かくにん]します。","지표를 확인합니다."] },
+      { jp: "連動", kana: "れんどう", mean: "연동", note: "「〜に連動させる」 형태로 씁니다. 원료가 연동 계약이 늘면서 필수어가 됐습니다.", where: "예문 3 · 기사 지문 · 회화 5턴 · 퀴즈 2", ez: ["価格[かかく]を連動[れんどう]させます。","가격을 연동시킵니다."] },
+      { jp: "内訳", kana: "うちわけ", mean: "내역", note: "「内訳を出す」= 내역을 내다. 고객이 원가 근거를 요구할 때 반드시 나옵니다.", where: "예문 4 · 회화 3턴 · 퀴즈 5", ez: ["内訳[うちわけ]を送[おく]ります。","내역을 보냅니다."] },
+      { jp: "積算", kana: "せきさん", mean: "적산, 원가 산출", note: "비용을 항목별로 쌓아 계산하는 것입니다. 「積算根拠(こんきょ)」= 산출 근거.", where: "예문 5 · 회화 3턴", ez: ["積算[せきさん]をやり直[なお]します。","적산을 다시 합니다."] },
+      { jp: "相場", kana: "そうば", mean: "시세", note: "「相場観(そうばかん)」= 시세 감각. 「市況」이 흐름이라면 「相場」는 지금 값입니다.", where: "예문 6 · 회화 2턴 · 퀴즈 3" },
+      { jp: "上振れ", kana: "うわぶれ", mean: "상회, 예상보다 높음", note: "반대는 「下振れ(したぶれ)」. 실적·비용 전망을 말할 때 짝으로 씁니다.", where: "예문 7 · 회화 2턴" },
+      { jp: "折り合い", kana: "おりあい", mean: "절충, 합의점", note: "「折り合いをつける」= 절충하다. 협상이 타결로 가는 마지막 단계의 말입니다.", where: "예문 8 · 회화 7턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "原価", jp: "現在[げんざい]の価格[かかく]では《原価[げんか]》を割[わ]ってしまいます。", ko: "현재 가격으로는 원가를 밑돌게 됩니다.", tip: "더 이상 못 내린다는 뜻을 감정 없이 전하는 문장입니다. 숫자로 말하는 것보다 강합니다." },
+      { drill: "指標", jp: "公表[こうひょう]されている《指標[しひょう]》を基準[きじゅん]にしたいと考[かんが]えております。", ko: "공표되어 있는 지표를 기준으로 하고자 합니다.", tip: "\"우리 주장\"이 아니라 \"공개된 기준\"으로 옮기면 협상이 훨씬 부드러워집니다." },
+      { drill: "連動", jp: "原料価格[げんりょうかかく]に《連動[れんどう]》させる方式[ほうしき]はいかがでしょうか。", ko: "원료 가격에 연동시키는 방식은 어떠신지요?", tip: "「〜方式はいかがでしょうか」는 구조 자체를 제안할 때 쓰는 틀입니다." },
+      { drill: "内訳", jp: "コストの《内訳[うちわけ]》をお示[しめ]しいたします。", ko: "비용의 내역을 제시하겠습니다.", tip: "「お示しいたします」= 제시하겠습니다. 자료를 내놓겠다는 적극적인 태도가 전해집니다." },
+      { drill: "積算", jp: "《積算[せきさん]》の根拠[こんきょ]もあわせてご説明[せつめい]いたします。", ko: "산출 근거도 함께 설명드리겠습니다.", tip: "근거를 먼저 내미는 쪽이 협상의 주도권을 잡습니다." },
+      { drill: "相場", jp: "足元[あしもと]の《相場[そうば]》はやや落[お]ち着[つ]いております。", ko: "현재 시세는 다소 안정되어 있습니다.", tip: "「やや」= 다소. 단정을 피하는 부사로, 일본 실무 문장에 자주 붙습니다." },
+      { drill: "上振れ", jp: "想定[そうてい]よりコストが《上振[うわぶ]れ》しております。", ko: "예상보다 비용이 상회하고 있습니다.", tip: "「想定より」= 예상보다. 계획과 실제의 차이를 말할 때의 정형입니다." },
+      { drill: "折り合い", jp: "何[なん]とか《折[お]り合[あ]い》をつけられればと存[ぞん]じます。", ko: "어떻게든 절충점을 찾을 수 있으면 합니다.", tip: "「何とか」가 붙으면 \"쉽지 않지만 노력하겠다\"는 뉘앙스가 실립니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 가격 결정 구조에 관한 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "鋼材[こうざい]価格[かかく]の決[き]め方[かた]が変[か]わりつつある。従来[じゅうらい]は交渉[こうしょう]ごとに水準[すいじゅん]を決[き]めていたが、原料[げんりょう]の《相場[そうば]》変動[へんどう]が大[おお]きくなり、公表[こうひょう]《指標[しひょう]》に《連動[れんどう]》させる方式[ほうしき]を採[と]る例[れい]が増[ふ]えている。《原価[げんか]》の《内訳[うちわけ]》を開示[かいじ]し、双方[そうほう]が納得[なっとく]したうえで決[き]める流[なが]れが強[つよ]まっているという。",
+      lines: [
+        { jp: "鋼材価格の決め方が変わりつつある。", ko: "강재 가격을 정하는 방식이 바뀌고 있다." },
+        { jp: "従来は交渉ごとに水準を決めていたが、原料の相場変動が大きくなり、公表指標に連動させる方式を採る例が増えている。", ko: "종래에는 협상마다 수준을 정했으나, 원료 시세 변동이 커지면서 공표 지표에 연동시키는 방식을 취하는 사례가 늘고 있다." },
+        { jp: "原価の内訳を開示し、双方が納得したうえで決める流れが強まっているという。", ko: "원가 내역을 공개하고 쌍방이 납득한 뒤 정하는 흐름이 강해지고 있다고 한다." }
+      ],
+      summary: "가격이 <b>힘겨루기에서 기준 맞추기로</b> 옮겨가고 있다는 이야기입니다. 이 흐름에서는 원가 내역을 먼저 내놓는 쪽이 신뢰를 얻습니다. 오늘 배운 相場·指標·連動·原価·内訳이 한 문단에 모두 나옵니다.",
+      picks: [
+        { jp: "〜つつある", read: "〜つつある", ko: "〜해 가고 있다 (진행)", from: "変わりつつある" },
+        { jp: "〜ごとに", read: "〜ごとに", ko: "〜마다", from: "交渉ごとに水準を" },
+        { jp: "方式を採る", read: "ほうしきをとる", ko: "방식을 취하다", from: "方式を採る例が" },
+        { jp: "開示", read: "かいじ", ko: "개시, 공개", from: "内訳を開示し" },
+        { jp: "〜たうえで", read: "〜たうえで", ko: "〜한 뒤에", from: "納得したうえで" },
+        { jp: "強まっている", read: "つよまっている", ko: "강해지고 있다", from: "流れが強まっているという" }
+      ]
+    },
+    dialogue: {
+      situation: "고객이 인상 근거를 요구합니다. 숫자와 기준으로 설득해야 하는 자리입니다.",
+      turns: [
+        { me: false, jp: "値上[ねあ]げのお話[はなし]ですが、根拠[こんきょ]をもう少[すこ]し伺[うかが]えますか。", ko: "인상 이야기입니다만, 근거를 조금 더 들을 수 있을까요?" },
+        { me: true, jp: "はい。足元[あしもと]の《相場[そうば]》は落[お]ち着[つ]いておりますが、副資材[ふくしざい]と物流[ぶつりゅう]が想定[そうてい]より《上振[うわぶ]れ》しております。", ko: "네. 현재 시세는 안정되어 있습니다만, 부자재와 물류가 예상보다 상회하고 있습니다.", ch: [["네","はい。"],["현재 시세는 안정되어 있습니다만","足元[あしもと]の《相場[そうば]》は落[お]ち着[つ]いておりますが、"],["부자재와 물류가","副資材[ふくしざい]と物流[ぶつりゅう]が"],["예상보다 상회하고 있습니다","想定[そうてい]より《上振[うわぶ]れ》しております。"]] },
+        { me: false, jp: "その部分[ぶぶん]の数字[すうじ]は出[だ]していただけますか。", ko: "그 부분의 숫자는 내주실 수 있습니까?" },
+        { me: true, jp: "コストの《内訳[うちわけ]》と《積算[せきさん]》の根拠[こんきょ]をお示[しめ]しいたします。現在[げんざい]の価格[かかく]では《原価[げんか]》を割[わ]ってしまう状況[じょうきょう]でございます。", ko: "비용 내역과 산출 근거를 제시하겠습니다. 현재 가격으로는 원가를 밑도는 상황입니다.", ch: [["비용 내역과","コストの《内訳[うちわけ]》と"],["산출 근거를 제시하겠습니다","《積算[せきさん]》の根拠[こんきょ]をお示[しめ]しいたします。"],["현재 가격으로는","現在[げんざい]の価格[かかく]では"],["원가를 밑도는 상황입니다","《原価[げんか]》を割[わ]ってしまう状況[じょうきょう]でございます。"]] },
+        { me: true, jp: "あわせて、公表[こうひょう]されている《指標[しひょう]》に《連動[れんどう]》させる方式[ほうしき]もご提案[ていあん]したく存[ぞん]じます。", ko: "아울러 공표되어 있는 지표에 연동시키는 방식도 제안드리고자 합니다.", ch: [["아울러","あわせて、"],["공표되어 있는 지표에","公表[こうひょう]されている《指標[しひょう]》に"],["연동시키는 방식도","《連動[れんどう]》させる方式[ほうしき]も"],["제안드리고자 합니다","ご提案[ていあん]したく存[ぞん]じます。"]] },
+        { me: false, jp: "それなら毎回[まいかい]もめずに済[す]みますね。社内[しゃない]で検討[けんとう]します。", ko: "그러면 매번 다투지 않아도 되겠네요. 사내에서 검토하겠습니다." },
+        { me: true, jp: "ありがとうございます。今回[こんかい]の分[ぶん]につきましても、何[なん]とか《折[お]り合[あ]い》をつけられればと存[ぞん]じます。", ko: "감사합니다. 이번 건에 대해서도 어떻게든 절충점을 찾을 수 있으면 합니다.", ch: [["감사합니다","ありがとうございます。"],["이번 건에 대해서도","今回[こんかい]の分[ぶん]につきましても、"],["어떻게든 절충점을","何[なん]とか《折[お]り合[あ]い》を"],["찾을 수 있으면 합니다","つけられればと存[ぞん]じます。"]] },
+        { me: false, jp: "分[わ]かりました。資料[しりょう]をいただいてから返事[へんじ]します。", ko: "알겠습니다. 자료를 받고 나서 답하겠습니다." }
+      ],
+      warns: [
+        { hard: true, head: "✗ 근거 없이 \"어렵습니다\"만 반복하기", body: "인상은 감정이 아니라 숫자로 설득하는 일입니다. 4번째 턴처럼 내역과 산출 근거를 먼저 내미는 쪽이 이깁니다." },
+        { hard: true, head: "✗ 원가를 이유로 들면서 자료는 안 주기", body: "「原価が上がった」고 말했으면 내역 요구가 반드시 옵니다. 낼 수 있는 범위를 미리 정해두고 꺼내세요." },
+        { hard: false, head: "△ 구조를 바꾸는 제안이 가장 강하다", body: "이번 가격만 다투면 다음에 또 다툽니다. 지표 연동처럼 규칙을 제안하면 협상 자체가 줄어듭니다." }
+      ]
+    },
+    quiz: [
+      { q: "「原価を割る」の意味は？", opts: ["원가를 낮추다", "원가 밑으로 떨어지다", "원가를 나누다"], ans: 1 },
+      { q: "가격을 어떤 기준에 맞춰 자동으로 움직이게 하는 것은?", opts: ["連動", "積算", "折り合い"], ans: 0 },
+      { q: "\"시세\"를 뜻하는 「相場」를 히라가나로 쓰면?", answer: "そうば" },
+      { q: "협상에서 절충점을 찾는다고 할 때 쓰는 말은?", opts: ["折り合いをつける", "上振れする", "内訳を出す"], ans: 0 },
+      { q: "고객이 원가 근거를 요구할 때 내놓는 것은?", opts: ["内訳", "相場", "指標"], ans: 0 },
+      { q: "\"비용의 내역을 제시하겠습니다\"를 일본어로.", answer: "コストの内訳をお示しいたします。" }
+    ],
+    column: {
+      word: "そこを何とか", kana: "そこをなんとか", ko: "거기를 어떻게 좀",
+      title: "일본식 떼쓰기의 정해진 형식",
+      body: [
+        "논리로 안 될 때 마지막에 나오는 말이 <span class='kw'>そこを何(なん)とか</span>입니다. 직역하면 \"거기를 어떻게든\"인데, 한국어의 \"좀 봐주세요\"에 가깝습니다.",
+        "재미있는 건 <b>이게 무례하게 받아들여지지 않는다</b>는 점입니다. 논리를 다 폈고 상대도 사정을 안다는 것을 서로 확인한 뒤에 나오는 말이라, 오히려 관계가 가깝다는 신호로 읽힙니다."
+      ],
+      vs: "「そこを何とかお願いできませんか」 → <b>사정은 알지만 부탁드립니다</b><br>「무리인 건 아는데 좀 부탁드려요」 → 거의 같은 자리에서 쓰는 한국어",
+      body2: [
+        "다만 <b>순서를 지켜야 합니다.</b> 근거를 대지 않고 처음부터 이 말을 꺼내면 그냥 떼쓰기가 됩니다. 오늘 회화처럼 내역과 산출 근거를 먼저 내민 뒤에야 이 카드가 힘을 갖습니다.",
+        "받는 쪽이 되었을 때도 알아두면 좋습니다. 상대가 이 말을 꺼냈다면 <b>더 물러설 곳이 없다는 뜻</b>입니다. 그 자리에서 자르지 말고 「持ち帰って検討します」로 받아두는 편이 관계를 지킵니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 12일차 · 개발·시작 ═══════════ */
+  {
+    no: 12, date: "8월 31일", theme: "개발·시작", minutes: 20,
+    terms: [
+      { jp: "共同開発", kana: "きょうどうかいはつ", mean: "공동 개발", note: "고객과 함께 소재를 만드는 것입니다. 여기까지 가면 경쟁사가 끼어들기 어려워집니다.", where: "예문 1 · 기사 지문 · 회화 1턴 · 퀴즈 1", ez: ["共同開発[きょうどうかいはつ]を進[すす]めます。","공동 개발을 진행합니다."] },
+      { jp: "試作品", kana: "しさくひん", mean: "시작품, 시제품", note: "「試作(しさく)」만으로도 씁니다. 양산 전 단계의 핵심 관문입니다.", where: "예문 2 · 회화 3턴 · 퀴즈 2", ez: ["試作品[しさくひん]を送[おく]ります。","시작품을 보냅니다."] },
+      { jp: "仕様変更", kana: "しようへんこう", mean: "사양 변경", note: "「スペック変更」이라고도 합니다. 일정과 비용에 바로 영향을 줍니다.", where: "예문 3 · 회화 5턴 · 퀴즈 5", ez: ["仕様変更[しようへんこう]がありました。","사양 변경이 있었습니다."] },
+      { jp: "検証", kana: "けんしょう", mean: "검증", note: "「検証を行(おこな)う」. 데이터로 확인하는 절차 전반을 가리킵니다.", where: "예문 4 · 기사 지문 · 회화 3턴", ez: ["データを検証[けんしょう]します。","데이터를 검증합니다."] },
+      { jp: "量産化", kana: "りょうさんか", mean: "양산화", note: "시작에서 양산으로 넘어가는 것입니다. 「量産立ち上げ(たちあげ)」도 함께 씁니다.", where: "예문 5 · 기사 지문 · 회화 7턴", ez: ["来年[らいねん]、量産化[りょうさんか]します。","내년에 양산화합니다."] },
+      { jp: "課題", kana: "かだい", mean: "과제, 해결할 문제", note: "「問題」보다 부드럽습니다. 남 탓처럼 들리지 않아 협의 자리에서 안전합니다.", where: "예문 6 · 회화 5턴 · 퀴즈 3" },
+      { jp: "図面", kana: "ずめん", mean: "도면", note: "「図面を引く(ひく)」= 도면을 그리다. 7일차의 「承認図」와 짝으로 기억하세요.", where: "예문 7 · 회화 1턴" },
+      { jp: "打ち合わせ", kana: "うちあわせ", mean: "협의, 사전 미팅", note: "「会議」보다 작고 실무적인 자리입니다. 일본 업무에서 가장 자주 쓰는 말 중 하나입니다.", where: "예문 8 · 회화 7턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "共同開発", jp: "次期[じき]モデル向[む]けに《共同開発[きょうどうかいはつ]》をご提案[ていあん]したく存[ぞん]じます。", ko: "차기 모델용으로 공동 개발을 제안드리고자 합니다.", tip: "「〜向けに」= 〜용으로. 목적을 먼저 밝히면 제안이 구체적으로 들립니다." },
+      { drill: "試作品", jp: "《試作品[しさくひん]》は{来月}[らいげつ]{上旬}[じょうじゅん]にお届[とど]けできます。", ko: "시작품은 다음 달 상순에 전달드릴 수 있습니다.", tip: "「上旬·中旬·下旬」은 일정 이야기에서 매번 나옵니다. 세트로 외우세요." },
+      { drill: "仕様変更", jp: "《仕様変更[しようへんこう]》があれば、早[はや]めにご連絡[れんらく]いただけますでしょうか。", ko: "사양 변경이 있으면 일찍 연락 주실 수 있을까요?", tip: "「早めに」 한마디가 나중의 일정 사고를 크게 줄입니다." },
+      { drill: "検証", jp: "試験[しけん]データの《検証[けんしょう]》を進[すす]めております。", ko: "시험 데이터의 검증을 진행하고 있습니다.", tip: "결과가 안 나왔을 때 상황을 알리는 문장입니다. 침묵보다 낫습니다." },
+      { drill: "量産化", jp: "《量産化[りょうさんか]》の時期[じき]についても、あわせてご相談[そうだん]させてください。", ko: "양산화 시기에 대해서도 함께 상의하게 해 주십시오.", tip: "「あわせて」로 안건을 묶으면 미팅 한 번에 여러 건을 정리할 수 있습니다." },
+      { drill: "課題", jp: "現時点[げんじてん]での《課題[かだい]》を整理[せいり]いたしました。", ko: "현시점에서의 과제를 정리했습니다.", tip: "「問題」 대신 「課題」를 쓰면 책임 추궁이 아니라 함께 풀 일이라는 인상이 됩니다." },
+      { drill: "図面", jp: "最新[さいしん]の《図面[ずめん]》をご送付[そうふ]いただけますでしょうか。", ko: "최신 도면을 송부해 주실 수 있을까요?", tip: "「ご送付いただく」= 보내 주시다. 서류 요청의 정중한 형태입니다." },
+      { drill: "打ち合わせ", jp: "来週[らいしゅう]、一度[いちど]《打[う]ち合[あ]わせ》のお時間[じかん]をいただけますか。", ko: "다음 주에 한 번 협의 시간을 주실 수 있을까요?", tip: "「一度」가 붙으면 부담이 줄어 승낙을 받기 쉬워집니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 소재 개발 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "自動車[じどうしゃ]メーカーと素材[そざい]メーカーの《共同開発[きょうどうかいはつ]》が広[ひろ]がっている。車体[しゃたい]の設計[せっけい]段階[だんかい]から素材[そざい]側[がわ]が加[くわ]わることで、性能[せいのう]と加工性[かこうせい]の両立[りょうりつ]を図[はか]る狙[ねら]いだ。ただし《検証[けんしょう]》に時間[じかん]がかかるため、《量産化[りょうさんか]》までに数年[すうねん]を要[よう]する案件[あんけん]も少[すく]なくない。",
+      lines: [
+        { jp: "自動車メーカーと素材メーカーの共同開発が広がっている。", ko: "자동차 업체와 소재 업체의 공동 개발이 확산되고 있다." },
+        { jp: "車体の設計段階から素材側が加わることで、性能と加工性の両立を図る狙いだ。", ko: "차체 설계 단계부터 소재 측이 참여함으로써, 성능과 가공성의 양립을 도모하려는 의도다." },
+        { jp: "ただし検証に時間がかかるため、量産化までに数年を要する案件も少なくない。", ko: "다만 검증에 시간이 걸리기 때문에, 양산화까지 수년이 걸리는 안건도 적지 않다." }
+      ],
+      summary: "설계 초기부터 들어가야 한다는 것이 요지입니다. 다 만들어진 도면에 견적만 내는 위치에 머물면 가격으로만 비교당합니다. <b>양산까지 수년</b>이 걸린다는 말은 뒤집으면 <b>한번 들어가면 오래 간다</b>는 뜻이기도 합니다.",
+      picks: [
+        { jp: "〜ことで", read: "〜ことで", ko: "〜함으로써", from: "素材側が加わることで" },
+        { jp: "両立を図る", read: "りょうりつをはかる", ko: "양립을 도모하다", from: "両立を図る狙いだ" },
+        { jp: "狙い", read: "ねらい", ko: "노림, 의도", from: "図る狙いだ" },
+        { jp: "ただし", read: "ただし", ko: "다만 (단서를 붙일 때)", from: "ただし検証に" },
+        { jp: "〜を要する", read: "〜をようする", ko: "〜이 걸리다", from: "数年を要する案件" },
+        { jp: "少なくない", read: "すくなくない", ko: "적지 않다", from: "案件も少なくない" }
+      ]
+    },
+    dialogue: {
+      situation: "고객사 개발부와 차기 모델용 소재를 함께 만드는 이야기를 시작합니다.",
+      turns: [
+        { me: true, jp: "次期[じき]モデル向[む]けに《共同開発[きょうどうかいはつ]》をご提案[ていあん]したく、最新[さいしん]の《図面[ずめん]》を拝見[はいけん]できればと存[ぞん]じます。", ko: "차기 모델용으로 공동 개발을 제안드리고자 하며, 최신 도면을 볼 수 있으면 합니다.", ch: [["차기 모델용으로","次期[じき]モデル向[む]けに"],["공동 개발을 제안드리고자 하며","《共同開発[きょうどうかいはつ]》をご提案[ていあん]したく、"],["최신 도면을","最新[さいしん]の《図面[ずめん]》を"],["볼 수 있으면 합니다","拝見[はいけん]できればと存[ぞん]じます。"]] },
+        { me: false, jp: "設計[せっけい]段階[だんかい]から入[はい]っていただけるのは助[たす]かります。ただ、社内[しゃない]の承認[しょうにん]が要[い]りますね。", ko: "설계 단계부터 들어와 주시는 건 도움이 됩니다. 다만 사내 승인이 필요하겠네요." },
+        { me: true, jp: "承知[しょうち]いたしました。まずは《試作品[しさくひん]》をお届[とど]けし、《検証[けんしょう]》を進[すす]めていただく形[かたち]はいかがでしょうか。", ko: "알겠습니다. 우선 시작품을 전달드리고 검증을 진행해 주시는 형태는 어떠신지요?", ch: [["알겠습니다","承知[しょうち]いたしました。"],["우선 시작품을 전달드리고","まずは《試作品[しさくひん]》をお届[とど]けし、"],["검증을 진행해 주시는 형태는","《検証[けんしょう]》を進[すす]めていただく形[かたち]は"],["어떠신지요?","いかがでしょうか。"]] },
+        { me: false, jp: "それなら動[うご]きやすいです。いつごろになりますか。", ko: "그러면 움직이기 쉽습니다. 언제쯤 될까요?" },
+        { me: true, jp: "{来月}[らいげつ]{上旬}[じょうじゅん]を予定[よてい]しております。現時点[げんじてん]での《課題[かだい]》も整理[せいり]しておりますので、《仕様変更[しようへんこう]》があれば早[はや]めにお知[し]らせください。", ko: "다음 달 상순을 예정하고 있습니다. 현시점의 과제도 정리해 두었으니, 사양 변경이 있으면 일찍 알려 주십시오.", ch: [["다음 달 상순을 예정하고 있습니다","{来月}[らいげつ]{上旬}[じょうじゅん]を予定[よてい]しております。"],["현시점의 과제도 정리해 두었으니","現時点[げんじてん]での《課題[かだい]》も整理[せいり]しておりますので、"],["사양 변경이 있으면","《仕様変更[しようへんこう]》があれば"],["일찍 알려 주십시오","早[はや]めにお知[し]らせください。"]] },
+        { me: false, jp: "分[わ]かりました。こちらも設計[せっけい]と共有[きょうゆう]しておきます。", ko: "알겠습니다. 저희도 설계와 공유해 두겠습니다." },
+        { me: true, jp: "ありがとうございます。《量産化[りょうさんか]》の時期[じき]についても、次回[じかい]の《打[う]ち合[あ]わせ》であわせてご相談[そうだん]させてください。", ko: "감사합니다. 양산화 시기에 대해서도 다음 협의에서 함께 상의하게 해 주십시오.", ch: [["감사합니다","ありがとうございます。"],["양산화 시기에 대해서도","《量産化[りょうさんか]》の時期[じき]についても、"],["다음 협의에서 함께","次回[じかい]の《打[う]ち合[あ]わせ》であわせて"],["상의하게 해 주십시오","ご相談[そうだん]させてください。"]] },
+        { me: false, jp: "了解[りょうかい]です。日程[にってい]は追[お]ってご連絡[れんらく]します。", ko: "알겠습니다. 일정은 추후 연락드리겠습니다." }
+      ],
+      warns: [
+        { hard: true, head: "✗ 도면을 받고 나서야 움직이기", body: "완성된 도면에 견적만 내는 위치에 머물면 가격으로만 비교당합니다. 설계 단계에 들어가는 것이 이 회화의 목적입니다." },
+        { hard: true, head: "✗ 「問題」를 남발하기", body: "「問題があります」는 상대 탓처럼 들릴 수 있습니다. 「課題」로 바꾸면 함께 풀 일이 됩니다. 5번째 턴이 그 방식입니다." },
+        { hard: false, head: "△ 사양 변경은 반드시 온다", body: "개발 안건에서 사양 변경은 예외가 아니라 전제입니다. 미리 「早めにお知らせください」를 깔아두면 나중에 일정 다툼이 줄어듭니다." }
+      ]
+    },
+    quiz: [
+      { q: "고객과 함께 소재를 만드는 것을 뭐라고 합니까?", opts: ["共同開発", "仕様変更", "打ち合わせ"], ans: 0 },
+      { q: "양산 전에 만들어 보내는 것은?", opts: ["図面", "試作品", "検証"], ans: 1 },
+      { q: "「問題」보다 부드러워 협의 자리에서 쓰기 좋은 말은?", opts: ["課題", "苦情", "欠陥"], ans: 0 },
+      { q: "「打ち合わせ」를 히라가나로 쓰면?", answer: "うちあわせ" },
+      { q: "일정과 비용에 바로 영향을 주는 것은?", opts: ["仕様変更", "量産化", "検証"], ans: 0 },
+      { q: "\"현시점에서의 과제를 정리했습니다\"를 일본어로.", answer: "現時点での課題を整理いたしました。" }
+    ],
+    column: {
+      word: "前向きに", kana: "まえむきに", ko: "긍정적으로",
+      title: "「前向きに検討します」는 얼마나 긍정적인가",
+      body: [
+        "1일차에서 <span class='kw'>検討します</span>가 대체로 보류라는 이야기를 했습니다. 여기에 <span class='kw'>前向(まえむ)きに</span>가 붙으면 조금 달라집니다.",
+        "한국어 \"긍정적으로 검토하겠습니다\"와 온도가 비슷해 보이지만, 일본 쪽이 <b>한 단계 더 조심스럽습니다.</b> 확답을 피하면서도 문을 열어두는, 딱 그 중간 자리의 말입니다."
+      ],
+      vs: "「検討します」 → <b>대체로 보류</b><br>「前向きに検討します」 → <b>가능성 있음.</b> 다만 약속은 아님<br>「ぜひ進めさせてください」 → <b>사실상 승낙</b>",
+      body2: [
+        "판단은 역시 <b>다음 행동</b>으로 하세요. 자료를 더 달라고 하는지, 사내 관계자를 소개해 주는지, 다음 미팅을 잡는지. 오늘 회화의 마지막 턴처럼 <b>다음 자리를 만들어 두면</b> 그 자체가 진행 신호입니다.",
+        "우리가 쓸 때도 유용합니다. 사내 결재가 남았는데 상대를 실망시키고 싶지 않을 때, 「前向きに検討させていただきます」가 딱 맞습니다. 다만 <b>세 번 이상 반복하면</b> 상대는 거절로 받아들입니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 13일차 · 재고·운영 ═══════════ */
+  {
+    no: 13, date: "9월 1일", theme: "재고·운영", minutes: 20,
+    terms: [
+      { jp: "適正在庫", kana: "てきせいざいこ", mean: "적정 재고", note: "많아도 적어도 안 되는 선입니다. 「適正在庫を保(たも)つ」 형태로 씁니다.", where: "예문 1 · 기사 지문 · 회화 2턴 · 퀴즈 1", ez: ["適正在庫[てきせいざいこ]を保[たも]ちます。","적정 재고를 유지합니다."] },
+      { jp: "補充", kana: "ほじゅう", mean: "보충", note: "「補充する」. 줄어든 만큼 채우는 운영 방식에서 핵심어입니다.", where: "예문 2 · 회화 4턴", ez: ["在庫[ざいこ]を補充[ほじゅう]します。","재고를 보충합니다."] },
+      { jp: "消化", kana: "しょうか", mean: "소진, 소비", note: "「在庫を消化する」= 재고를 소진하다. 먹는다는 뜻이 아닙니다.", where: "예문 3 · 회화 3턴 · 퀴즈 2", ez: ["在庫[ざいこ]が消化[しょうか]されました。","재고가 소진되었습니다."] },
+      { jp: "滞留", kana: "たいりゅう", mean: "체류, 장기 재고", note: "「滞留在庫」= 오래 묵은 재고. 창고에 눌러앉은 물건을 가리킵니다.", where: "예문 4 · 기사 지문 · 회화 3턴 · 퀴즈 5", ez: ["滞留[たいりゅう]が増[ふ]えました。","체류 재고가 늘었습니다."] },
+      { jp: "引当", kana: "ひきあて", mean: "충당, 할당", note: "「在庫を引き当てる」= 특정 주문에 재고를 배정하다. 시스템 용어로도 씁니다.", where: "예문 5 · 회화 4턴", ez: ["この分[ぶん]は引当[ひきあて]済[ず]みです。","이 몫은 할당이 끝났습니다."] },
+      { jp: "発注点", kana: "はっちゅうてん", mean: "발주점", note: "재고가 이 선까지 줄면 자동으로 발주하는 기준입니다.", where: "예문 6 · 회화 5턴 · 퀴즈 3" },
+      { jp: "平準化", kana: "へいじゅんか", mean: "평준화", note: "3일차 물류 기사에 나왔던 말입니다. 몰림을 없애 현장 부담을 줄이는 것입니다.", where: "예문 7 · 기사 지문 · 회화 5턴" },
+      { jp: "見込み", kana: "みこみ", mean: "전망, 예상", note: "「見込み生産」= 예측 생산. 「見込みが立つ(たつ)」= 전망이 서다.", where: "예문 8 · 회화 6턴 · 퀴즈 4" }
+    ],
+    sentences: [
+      { drill: "適正在庫", jp: "《適正在庫[てきせいざいこ]》の水準[すいじゅん]をご相談[そうだん]させてください。", ko: "적정 재고 수준을 상의하게 해 주십시오.", tip: "재고는 어느 쪽이 떠안느냐의 문제입니다. 숫자를 정하는 자리를 먼저 만드세요." },
+      { drill: "補充", jp: "減[へ]った分[ぶん]だけ《補充[ほじゅう]》する形[かたち]でいかがでしょうか。", ko: "줄어든 만큼만 보충하는 형태는 어떠신지요?", tip: "「〜だけ」로 범위를 좁히면 상대의 부담이 줄어 승낙을 받기 쉽습니다." },
+      { drill: "消化", jp: "先月[せんげつ]の在庫[ざいこ]はほぼ《消化[しょうか]》されております。", ko: "지난달 재고는 거의 소진되었습니다.", tip: "「ほぼ」= 거의. 단정을 피하면서 상황을 전하는 부사입니다." },
+      { drill: "滞留", jp: "《滞留[たいりゅう]》している分[ぶん]の扱[あつか]いを決[き]めたいと考[かんが]えております。", ko: "체류하고 있는 몫의 처리를 정하고자 합니다.", tip: "「扱いを決める」= 처리를 정하다. 묵은 재고 이야기를 꺼낼 때의 정형입니다." },
+      { drill: "引当", jp: "こちらの分[ぶん]はすでに《引当[ひきあて]》済[ず]みでございます。", ko: "이쪽 몫은 이미 할당이 끝났습니다.", tip: "「〜済み」= 〜완료. 「確認済み」「出荷済み」처럼 널리 씁니다." },
+      { drill: "発注点", jp: "《発注点[はっちゅうてん]》を下回[したまわ]りましたら、自動[じどう]で手配[てはい]いたします。", ko: "발주점을 밑돌면 자동으로 준비하겠습니다.", tip: "5일차의 「下回る」가 여기서 다시 나옵니다. 반복해서 만나야 손에 붙습니다." },
+      { drill: "平準化", jp: "発注[はっちゅう]の《平準化[へいじゅんか]》にご協力[きょうりょく]いただけますと助[たす]かります。", ko: "발주 평준화에 협력해 주시면 도움이 됩니다.", tip: "「〜いただけますと助かります」는 부탁을 가장 부드럽게 만드는 형태입니다." },
+      { drill: "見込み", jp: "来期[らいき]の《見込[みこ]み》をいただければ、事前[じぜん]に準備[じゅんび]いたします。", ko: "다음 기 전망을 주시면 사전에 준비하겠습니다.", tip: "정보를 받는 대가로 무엇을 해주겠다고 붙이면 상대가 움직입니다." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 재고 운영에 관한 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "鋼材[こうざい]の在庫[ざいこ]運営[うんえい]を見直[みなお]す動[うご]きが出[で]ている。需要[じゅよう]の振[ふ]れが大[おお]きくなり、《滞留[たいりゅう]》在庫[ざいこ]を抱[かか]えるリスクが高[たか]まったためだ。発注[はっちゅう]の《平準化[へいじゅんか]》と《適正在庫[てきせいざいこ]》の共有[きょうゆう]によって、供給[きょうきゅう]側[がわ]と需要[じゅよう]側[がわ]の双方[そうほう]が負担[ふたん]を減[へ]らす取[と]り組[く]みが進[すす]んでいる。",
+      lines: [
+        { jp: "鋼材の在庫運営を見直す動きが出ている。", ko: "강재 재고 운영을 재검토하는 움직임이 나오고 있다." },
+        { jp: "需要の振れが大きくなり、滞留在庫を抱えるリスクが高まったためだ。", ko: "수요의 진폭이 커져 체류 재고를 떠안을 위험이 높아졌기 때문이다." },
+        { jp: "発注の平準化と適正在庫の共有によって、供給側と需要側の双方が負担を減らす取り組みが進んでいる。", ko: "발주 평준화와 적정 재고 공유를 통해, 공급 측과 수요 측 쌍방이 부담을 줄이는 노력이 진행되고 있다." }
+      ],
+      summary: "재고는 <b>누가 떠안느냐의 싸움</b>이었는데, 이제 <b>같이 줄이자</b>는 쪽으로 옮겨가고 있습니다. 고객의 발주 정보를 받는 대신 우리가 준비를 앞당기는 거래가 성립하는 구조입니다. 3일차에서 본 「平準化」가 여기서 다시 나옵니다.",
+      picks: [
+        { jp: "見直す", read: "みなおす", ko: "재검토하다", from: "在庫運営を見直す動き" },
+        { jp: "振れ", read: "ふれ", ko: "진폭, 흔들림", from: "需要の振れが" },
+        { jp: "抱える", read: "かかえる", ko: "떠안다", from: "在庫を抱えるリスク" },
+        { jp: "〜ためだ", read: "〜ためだ", ko: "〜때문이다", from: "高まったためだ" },
+        { jp: "〜によって", read: "〜によって", ko: "〜을 통해, 〜에 의해", from: "共有によって" },
+        { jp: "取り組み", read: "とりくみ", ko: "노력, 대응", from: "減らす取り組みが" }
+      ]
+    },
+    dialogue: {
+      situation: "재고를 누가 얼마나 떠안을지 조율하는 자리입니다.",
+      turns: [
+        { me: false, jp: "毎回[まいかい]の発注[はっちゅう]量[りょう]が読[よ]めなくて、こちらも在庫[ざいこ]が膨[ふく]らんでいます。", ko: "매번 발주량을 읽을 수 없어서 저희도 재고가 불어나고 있습니다." },
+        { me: true, jp: "承知[しょうち]いたしました。《適正在庫[てきせいざいこ]》の水準[すいじゅん]を一度[いちど]すり合[あ]わせさせていただけますでしょうか。", ko: "알겠습니다. 적정 재고 수준을 한번 맞춰볼 수 있을까요?", ch: [["알겠습니다","承知[しょうち]いたしました。"],["적정 재고 수준을","《適正在庫[てきせいざいこ]》の水準[すいじゅん]を"],["한번 맞춰볼 수 있을까요?","一度[いちど]すり合[あ]わせさせていただけますでしょうか。"]] },
+        { me: false, jp: "助[たす]かります。先月[せんげつ]の分[ぶん]はどうなっていますか。", ko: "도움이 되겠네요. 지난달 몫은 어떻게 되어 있습니까?" },
+        { me: true, jp: "先月[せんげつ]の在庫[ざいこ]はほぼ《消化[しょうか]》されております。ただ、一部[いちぶ]に《滞留[たいりゅう]》している分[ぶん]がございまして、扱[あつか]いを決[き]めたいと考[かんが]えております。", ko: "지난달 재고는 거의 소진되었습니다. 다만 일부 체류하고 있는 몫이 있어, 처리를 정하고자 합니다.", ch: [["지난달 재고는","先月[せんげつ]の在庫[ざいこ]は"],["거의 소진되었습니다","ほぼ《消化[しょうか]》されております。"],["다만 일부 체류하고 있는 몫이 있어","ただ、一部[いちぶ]に《滞留[たいりゅう]》している分[ぶん]がございまして、"],["처리를 정하고자 합니다","扱[あつか]いを決[き]めたいと考[かんが]えております。"]] },
+        { me: true, jp: "今後[こんご]は減[へ]った分[ぶん]だけ《補充[ほじゅう]》する形[かたち]とし、こちらの分[ぶん]はすでに《引当[ひきあて]》済[ず]みとしております。", ko: "앞으로는 줄어든 만큼만 보충하는 형태로 하고, 이쪽 몫은 이미 할당해 두었습니다.", ch: [["앞으로는","今後[こんご]は"],["줄어든 만큼만 보충하는 형태로 하고","減[へ]った分[ぶん]だけ《補充[ほじゅう]》する形[かたち]とし、"],["이쪽 몫은","こちらの分[ぶん]は"],["이미 할당해 두었습니다","すでに《引当[ひきあて]》済[ず]みとしております。"]] },
+        { me: true, jp: "《発注点[はっちゅうてん]》を下回[したまわ]りましたら自動[じどう]で手配[てはい]いたしますので、発注[はっちゅう]の《平準化[へいじゅんか]》にもご協力[きょうりょく]いただけますと助[たす]かります。", ko: "발주점을 밑돌면 자동으로 준비하겠사오니, 발주 평준화에도 협력해 주시면 도움이 됩니다.", ch: [["발주점을 밑돌면","《発注点[はっちゅうてん]》を下回[したまわ]りましたら"],["자동으로 준비하겠사오니","自動[じどう]で手配[てはい]いたしますので、"],["발주 평준화에도","発注[はっちゅう]の《平準化[へいじゅんか]》にも"],["협력해 주시면 도움이 됩니다","ご協力[きょうりょく]いただけますと助[たす]かります。"]] },
+        { me: false, jp: "分[わ]かりました。来期[らいき]の数字[すうじ]は月末[げつまつ]までにお出[だ]しします。", ko: "알겠습니다. 다음 기 숫자는 월말까지 내드리겠습니다." },
+        { me: true, jp: "ありがとうございます。《見込[みこ]み》をいただければ、事前[じぜん]に準備[じゅんび]いたします。", ko: "감사합니다. 전망을 주시면 사전에 준비하겠습니다.", ch: [["감사합니다","ありがとうございます。"],["전망을 주시면","《見込[みこ]み》をいただければ、"],["사전에 준비하겠습니다","事前[じぜん]に準備[じゅんび]いたします。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 재고 부담을 상대에게만 넘기기", body: "\"발주를 정확히 해달라\"만 반복하면 대화가 막힙니다. 우리가 무엇을 해줄지(자동 수배, 사전 준비)를 함께 내놓아야 움직입니다." },
+        { hard: true, head: "✗ 묵은 재고를 덮어두기", body: "「滞留」는 시간이 갈수록 처리 비용이 커집니다. 4번째 턴처럼 먼저 꺼내 처리를 정하는 편이 낫습니다." },
+        { hard: false, head: "△ 정보를 받으려면 대가를 붙인다", body: "「見込みをください」만으로는 잘 안 옵니다. 「いただければ事前に準備いたします」처럼 상대의 이득을 붙이세요." }
+      ]
+    },
+    quiz: [
+      { q: "많아도 적어도 안 되는 재고 수준을 뭐라고 합니까?", opts: ["適正在庫", "滞留在庫", "発注点"], ans: 0 },
+      { q: "「在庫を消化する」の意味は？", opts: ["재고를 폐기하다", "재고를 소진하다", "재고를 늘리다"], ans: 1 },
+      { q: "재고가 이 선까지 줄면 발주하는 기준은?", opts: ["発注点", "引当", "見込み"], ans: 0 },
+      { q: "「見込み」를 히라가나로 쓰면?", answer: "みこみ" },
+      { q: "창고에 오래 눌러앉은 재고를 뭐라고 합니까?", opts: ["滞留在庫", "適正在庫", "引当在庫"], ans: 0 },
+      { q: "\"줄어든 만큼만 보충하는 형태는 어떠신지요?\"를 일본어로.", answer: "減った分だけ補充する形でいかがでしょうか。" }
+    ],
+    column: {
+      word: "すり合わせ", kana: "すりあわせ", ko: "맞춰보기, 조율",
+      title: "회의보다 중요한 「すり合わせ」",
+      body: [
+        "<span class='kw'>すり合(あ)わせ</span>는 원래 금속 면을 서로 문질러 딱 맞게 다듬는 작업입니다. 일본 제조업에서 이 말이 <b>서로의 생각을 맞춰가는 과정</b>이라는 뜻으로 굳었습니다.",
+        "한국어 \"조율\"과 비슷하지만, 일본 쪽이 <b>훨씬 자주, 훨씬 작은 단위로</b> 일어납니다. 큰 회의 하나보다 작은 すり合わせ 열 번으로 일이 돌아간다고 보시면 됩니다."
+      ],
+      vs: "「会議(かいぎ)」 → <b>결정을 확인하는 자리</b>. 이미 정해진 것을 기록<br>「打ち合わせ」 → <b>실무 협의</b>. 일정과 역할을 정함<br>「すり合わせ」 → <b>생각의 간격을 좁히는 과정</b>. 결론이 없어도 됨",
+      body2: [
+        "6일차에서 다룬 <span class='kw'>根回(ねまわ)し</span>와 짝입니다. 根回し가 회의 전에 미리 합의를 만들어 두는 것이라면, すり合わせ는 그 합의를 만들기 위해 오가는 대화 자체입니다.",
+        "그래서 「一度(いちど)すり合わせさせてください」는 대단히 쓸모 있는 한마디입니다. <b>결론을 내자는 압박 없이 자리를 만드는 말</b>이라, 상대가 부담 없이 응합니다. 오늘 회화 2번째 턴이 바로 그 쓰임입니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 14일차 · 감사·인증 ═══════════ */
+  {
+    no: 14, date: "9월 2일", theme: "감사·인증", minutes: 20,
+    terms: [
+      { jp: "監査", kana: "かんさ", mean: "감사", note: "「工程監査(こうていかんさ)」= 공정 감사. 고객이 우리 공장을 보러 오는 것입니다.", where: "예문 1 · 기사 지문 · 회화 1턴 · 퀴즈 1", ez: ["来月[らいげつ]、監査[かんさ]があります。","다음 달에 감사가 있습니다."] },
+      { jp: "指摘事項", kana: "してきじこう", mean: "지적 사항", note: "감사에서 나온 문제 목록입니다. 「指摘」만으로도 씁니다.", where: "예문 2 · 회화 3턴 · 퀴즈 2", ez: ["指摘事項[してきじこう]を確認[かくにん]します。","지적 사항을 확인합니다."] },
+      { jp: "是正", kana: "ぜせい", mean: "시정", note: "4일차의 「是正処置」의 뿌리입니다. 「是正する」= 바로잡다.", where: "예문 3 · 회화 3턴", ez: ["すぐに是正[ぜせい]します。","바로 시정하겠습니다."] },
+      { jp: "認証", kana: "にんしょう", mean: "인증", note: "ISO 같은 제3자 인증입니다. 7일차의 「認定(にんてい)」은 고객 승인이라 다릅니다.", where: "예문 4 · 기사 지문 · 회화 5턴 · 퀴즈 5", ez: ["認証[にんしょう]を取[と]りました。","인증을 취득했습니다."] },
+      { jp: "更新", kana: "こうしん", mean: "갱신", note: "「認証の更新」= 인증 갱신. 기한이 지나면 효력이 사라집니다.", where: "예문 5 · 회화 5턴", ez: ["認証[にんしょう]を更新[こうしん]します。","인증을 갱신합니다."] },
+      { jp: "手順書", kana: "てじゅんしょ", mean: "절차서", note: "작업 순서를 적은 문서입니다. 감사에서 가장 먼저 확인하는 서류입니다.", where: "예문 6 · 회화 4턴 · 퀴즈 3" },
+      { jp: "記録", kana: "きろく", mean: "기록", note: "「記録を残(のこ)す」= 기록을 남기다. 일본 제조업에서는 하지 않은 것과 기록이 없는 것을 같게 봅니다.", where: "예문 7 · 기사 지문 · 회화 4턴 · 퀴즈 4" },
+      { jp: "力量", kana: "りきりょう", mean: "역량", note: "ISO 용어로, 작업자가 그 일을 할 자격과 능력이 있는지를 가리킵니다.", where: "예문 8 · 회화 6턴" }
+    ],
+    sentences: [
+      { drill: "監査", jp: "《監査[かんさ]》の日程[にってい]をご調整[ちょうせい]いただけますでしょうか。", ko: "감사 일정을 조정해 주실 수 있을까요?", tip: "감사는 받는 쪽이 일정을 맞추는 것이 보통입니다. 먼저 물어보는 편이 인상이 좋습니다." },
+      { drill: "指摘事項", jp: "前回[ぜんかい]の《指摘事項[してきじこう]》はすべて対応[たいおう]済[ず]みでございます。", ko: "지난번 지적 사항은 전부 대응이 끝났습니다.", tip: "감사 첫머리에 이 문장을 놓으면 분위기가 완전히 달라집니다." },
+      { drill: "是正", jp: "残[のこ]りの{2件}[にけん]につきましても、今月中[こんげつちゅう]に《是正[ぜせい]》いたします。", ko: "남은 2건에 대해서도 이달 중으로 시정하겠습니다.", tip: "끝나지 않은 것은 숨기지 말고 기한과 함께 밝히는 것이 원칙입니다." },
+      { drill: "認証", jp: "ISOの《認証[にんしょう]》は取得[しゅとく]済[ず]みでございます。", ko: "ISO 인증은 취득이 끝났습니다.", tip: "「取得済み」= 취득 완료. 서류상 상태를 한마디로 전합니다." },
+      { drill: "更新", jp: "《更新[こうしん]》の時期[じき]が近[ちか]づいておりますので、準備[じゅんび]を進[すす]めております。", ko: "갱신 시기가 다가오고 있어 준비를 진행하고 있습니다.", tip: "묻기 전에 먼저 말하면 관리가 되고 있다는 인상을 줍니다." },
+      { drill: "手順書", jp: "作業[さぎょう]の《手順書[てじゅんしょ]》もご確認[かくにん]いただけます。", ko: "작업 절차서도 확인하실 수 있습니다.", tip: "「ご確認いただけます」= 확인하실 수 있습니다. 열어놓겠다는 자신감의 표현입니다." },
+      { drill: "記録", jp: "検査[けんさ]の《記録[きろく]》はすべて保管[ほかん]しております。", ko: "검사 기록은 전부 보관하고 있습니다.", tip: "일본 감사에서는 \"했다\"가 아니라 \"기록이 있다\"가 답입니다." },
+      { drill: "力量", jp: "作業者[さぎょうしゃ]の《力量[りきりょう]》管理[かんり]も実施[じっし]しております。", ko: "작업자의 역량 관리도 실시하고 있습니다.", tip: "ISO 감사에서 반드시 물어보는 항목이니 표현을 통째로 외워두세요." }
+    ],
+    article: {
+      real: false, source: "학습용 예시 지문", url: "",
+      note: "실제 보도가 아닙니다. 품질 감사 관련 기사체 문장에 익숙해지기 위한 연습용 지문입니다.",
+      body: "取引先[とりひきさき]に対[たい]する《監査[かんさ]》を強化[きょうか]する動[うご]きが続[つづ]いている。品質[ひんしつ]データの改[かい]ざんが相次[あいつ]いだことを受[う]け、《記録[きろく]》の管理[かんり]状況[じょうきょう]まで踏[ふ]み込[こ]んで確認[かくにん]する例[れい]が増[ふ]えた。《認証[にんしょう]》の有無[うむ]だけでなく、日常[にちじょう]の運用[うんよう]が問[と]われるようになっている。",
+      lines: [
+        { jp: "取引先に対する監査を強化する動きが続いている。", ko: "거래처에 대한 감사를 강화하는 움직임이 이어지고 있다." },
+        { jp: "品質データの改ざんが相次いだことを受け、記録の管理状況まで踏み込んで確認する例が増えた。", ko: "품질 데이터 조작이 잇따른 것을 받아, 기록 관리 상황까지 파고들어 확인하는 사례가 늘었다." },
+        { jp: "認証の有無だけでなく、日常の運用が問われるようになっている。", ko: "인증의 유무뿐 아니라 일상의 운용이 문제시되게 되었다." }
+      ],
+      summary: "<b>인증서를 갖고 있느냐가 아니라 평소에 어떻게 하고 있느냐</b>를 본다는 이야기입니다. 그래서 기록이 결정적입니다. 일본 제조업에서는 \"했지만 기록이 없다\"를 \"하지 않았다\"와 같게 봅니다. 이 감각을 놓치면 감사에서 크게 다칩니다.",
+      picks: [
+        { jp: "〜に対する", read: "〜にたいする", ko: "〜에 대한", from: "取引先に対する監査" },
+        { jp: "相次ぐ", read: "あいつぐ", ko: "잇따르다", from: "改ざんが相次いだ" },
+        { jp: "〜を受け", read: "〜をうけ", ko: "〜을 받아, 〜에 따라", from: "相次いだことを受け" },
+        { jp: "踏み込む", read: "ふみこむ", ko: "파고들다", from: "踏み込んで確認する" },
+        { jp: "〜だけでなく", read: "〜だけでなく", ko: "〜뿐만 아니라", from: "有無だけでなく" },
+        { jp: "問われる", read: "とわれる", ko: "문제시되다, 추궁받다", from: "運用が問われる" }
+      ]
+    },
+    dialogue: {
+      situation: "고객사 품질보증부가 공장 감사를 오기로 했습니다. 사전 협의 자리입니다.",
+      turns: [
+        { me: false, jp: "来月[らいげつ]、工程[こうてい]《監査[かんさ]》に伺[うかが]いたいのですが、ご都合[つごう]はいかがでしょうか。", ko: "다음 달에 공정 감사를 가고 싶습니다만, 사정은 어떠신지요?" },
+        { me: true, jp: "承知[しょうち]いたしました。《監査[かんさ]》の日程[にってい]をご調整[ちょうせい]させていただきます。", ko: "알겠습니다. 감사 일정을 조정하겠습니다.", ch: [["알겠습니다","承知[しょうち]いたしました。"],["감사 일정을","《監査[かんさ]》の日程[にってい]を"],["조정하겠습니다","ご調整[ちょうせい]させていただきます。"]] },
+        { me: false, jp: "前回[ぜんかい]の《指摘事項[してきじこう]》の状況[じょうきょう]も見[み]せていただけますか。", ko: "지난번 지적 사항의 상황도 보여주실 수 있습니까?" },
+        { me: true, jp: "はい。前回[ぜんかい]の《指摘事項[してきじこう]》はすべて対応[たいおう]済[ず]みでございます。残[のこ]りの{2件}[にけん]も今月中[こんげつちゅう]に《是正[ぜせい]》いたします。", ko: "네. 지난번 지적 사항은 전부 대응이 끝났습니다. 남은 2건도 이달 중으로 시정하겠습니다.", ch: [["네","はい。"],["지난번 지적 사항은","前回[ぜんかい]の《指摘事項[してきじこう]》は"],["전부 대응이 끝났습니다","すべて対応[たいおう]済[ず]みでございます。"],["남은 2건도 이달 중으로","残[のこ]りの{2件}[にけん]も今月中[こんげつちゅう]に"],["시정하겠습니다","《是正[ぜせい]》いたします。"]] },
+        { me: true, jp: "作業[さぎょう]の《手順書[てじゅんしょ]》と検査[けんさ]の《記録[きろく]》もご確認[かくにん]いただけるよう準備[じゅんび]しております。", ko: "작업 절차서와 검사 기록도 확인하실 수 있도록 준비하고 있습니다.", ch: [["작업 절차서와","作業[さぎょう]の《手順書[てじゅんしょ]》と"],["검사 기록도","検査[けんさ]の《記録[きろく]》も"],["확인하실 수 있도록","ご確認[かくにん]いただけるよう"],["준비하고 있습니다","準備[じゅんび]しております。"]] },
+        { me: true, jp: "ISOの《認証[にんしょう]》は取得[しゅとく]済[ず]みで、《更新[こうしん]》の時期[じき]が近[ちか]づいておりますので準備[じゅんび]を進[すす]めております。", ko: "ISO 인증은 취득이 끝났고, 갱신 시기가 다가오고 있어 준비를 진행하고 있습니다.", ch: [["ISO 인증은 취득이 끝났고","ISOの《認証[にんしょう]》は取得[しゅとく]済[ず]みで、"],["갱신 시기가 다가오고 있어","《更新[こうしん]》の時期[じき]が近[ちか]づいておりますので"],["준비를 진행하고 있습니다","準備[じゅんび]を進[すす]めております。"]] },
+        { me: false, jp: "助[たす]かります。作業者[さぎょうしゃ]の教育[きょういく]記録[きろく]も見[み]せてください。", ko: "도움이 되겠네요. 작업자 교육 기록도 보여주세요." },
+        { me: true, jp: "かしこまりました。《力量[りきりょう]》管理[かんり]の資料[しりょう]もあわせてご用意[ようい]いたします。", ko: "알겠습니다. 역량 관리 자료도 함께 준비하겠습니다.", ch: [["알겠습니다","かしこまりました。"],["역량 관리 자료도","《力量[りきりょう]》管理[かんり]の資料[しりょう]も"],["함께 준비하겠습니다","あわせてご用意[ようい]いたします。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 「やっています」만 말하고 서류가 없기", body: "일본 감사에서 기록이 없으면 하지 않은 것으로 봅니다. 「記録はすべて保管しております」라고 말할 수 있어야 합니다." },
+        { hard: true, head: "✗ 끝나지 않은 지적을 덮기", body: "남은 건이 있으면 기한과 함께 먼저 밝히세요. 감사에서 숨긴 것이 드러나면 항목 하나가 아니라 신뢰 전체가 무너집니다." },
+        { hard: false, head: "△ 「認定」과 「認証」은 다르다", body: "「認定(にんてい)」은 고객이 우리 소재를 승인하는 것(7일차), 「認証(にんしょう)」은 ISO 같은 제3자 인증입니다. 보고할 때 섞으면 오해가 생깁니다." }
+      ]
+    },
+    quiz: [
+      { q: "고객이 우리 공장을 보러 오는 것을 뭐라고 합니까?", opts: ["監査", "認証", "検証"], ans: 0 },
+      { q: "감사에서 나온 문제 목록은?", opts: ["手順書", "指摘事項", "記録"], ans: 1 },
+      { q: "작업 순서를 적은 문서는?", opts: ["手順書", "承認図", "覚書"], ans: 0 },
+      { q: "「記録」を平仮名で書くと？", answer: "きろく" },
+      { q: "ISO 같은 제3자 인증을 가리키는 말은?", opts: ["認証", "認定", "検定"], ans: 0 },
+      { q: "\"검사 기록은 전부 보관하고 있습니다\"를 일본어로.", answer: "検査の記録はすべて保管しております。" }
+    ],
+    column: {
+      word: "エビデンス", kana: "えびでんす", ko: "근거 자료",
+      title: "일본 제조업의 「기록이 없으면 안 한 것」",
+      body: [
+        "감사 자리에서 반드시 나오는 말이 <span class='kw'>エビデンス</span>입니다. 영어 evidence에서 왔고, 실무에서는 <b>그 일을 했다는 증거 서류</b>를 뜻합니다.",
+        "한국 현장에서도 \"증빙\"을 챙기지만, 일본 제조업은 여기에 <b>훨씬 더 무게를 둡니다.</b> \"제대로 했습니다\"라고 아무리 설명해도 서류가 없으면 하지 않은 것으로 처리됩니다."
+      ],
+      vs: "「やっています」 → <b>했다는 주장</b>. 감사에서는 인정되지 않음<br>「記録が残っております」 → <b>확인 가능한 사실</b><br>「エビデンスはございますか」 → <b>증거 서류 있습니까</b> (감사관의 단골 질문)",
+      body2: [
+        "이 감각 차이가 실제 사고로 이어집니다. 한국 담당자는 \"당연히 하고 있는 일\"이라 기록을 안 남기고, 일본 감사관은 그 항목을 <b>부적합으로 올립니다.</b> 서로 악의가 없는데 결과는 지적 사항이 됩니다.",
+        "그래서 감사 전 준비의 절반은 <b>기록을 찾아 정리하는 일</b>입니다. 오늘 배운 手順書·記録·力量이 그 목록의 앞자리에 옵니다. 이 세 가지만 갖춰져 있어도 감사 분위기가 달라집니다."
+      ]
+    }
+  },
+
+  /* ═══════════ 15일차 · 통상·정책 ═══════════ */
+  {
+    no: 15, date: "9월 3일", theme: "통상·정책", minutes: 20,
+    terms: [
+      { jp: "通商", kana: "つうしょう", mean: "통상", note: "국가 간 무역 정책 전반을 가리킵니다. 「通商交渉(こうしょう)」= 통상 협상.", where: "예문 1 · 기사 지문 · 회화 2턴 · 퀴즈 1", ez: ["通商[つうしょう]の話[はなし]をします。","통상 이야기를 합니다."] },
+      { jp: "保護主義", kana: "ほごしゅぎ", mean: "보호주의", note: "자국 산업을 지키려 수입을 막는 흐름입니다. 요즘 기사에서 매일 보입니다.", where: "예문 2 · 기사 지문 · 회화 2턴 · 퀴즈 2", ez: ["保護主義[ほごしゅぎ]が強[つよ]まっています。","보호주의가 강해지고 있습니다."] },
+      { jp: "枠", kana: "わく", mean: "쿼터, 틀", note: "「輸入枠(ゆにゅうわく)」= 수입 쿼터. 이 안에 들어가느냐가 곧 가격이 됩니다.", where: "예문 3 · 기사 지문 · 회화 3턴 · 퀴즈 3", ez: ["枠[わく]の中[なか]に入[はい]ります。","쿼터 안에 들어갑니다."] },
+      { jp: "規制", kana: "きせい", mean: "규제", note: "「規制を強(つよ)める」= 규제를 강화하다. 「緩(ゆる)める」= 완화하다.", where: "예문 4 · 기사 지문 · 회화 4턴", ez: ["規制[きせい]が増[ふ]えました。","규제가 늘었습니다."] },
+      { jp: "補助金", kana: "ほじょきん", mean: "보조금", note: "정부 지원금입니다. 이것이 있으면 상계관세의 대상이 될 수 있습니다.", where: "예문 5 · 회화 5턴 · 퀴즈 5", ez: ["補助金[ほじょきん]を受[う]けます。","보조금을 받습니다."] },
+      { jp: "相殺関税", kana: "そうさいかんぜい", mean: "상계관세", note: "보조금을 받은 수입품에 그만큼 물리는 관세입니다. 「CVD」라고도 합니다.", where: "예문 6 · 회화 5턴" },
+      { jp: "提訴", kana: "ていそ", mean: "제소", note: "「提訴する」. 무역 구제 절차를 시작하는 것을 말합니다.", where: "예문 7 · 회화 6턴 · 퀴즈 4" },
+      { jp: "優遇", kana: "ゆうぐう", mean: "우대", note: "「優遇措置(そち)」= 우대 조치. FTA 특혜 관세도 여기에 들어갑니다.", where: "예문 8 · 회화 7턴" }
+    ],
+    sentences: [
+      { drill: "通商", jp: "《通商[つうしょう]》環境[かんきょう]の変化[へんか]を注視[ちゅうし]しております。", ko: "통상 환경의 변화를 주시하고 있습니다.", tip: "「注視する」= 주시하다. 아직 판단하지 않았지만 보고 있다는 신중한 표현입니다." },
+      { drill: "保護主義", jp: "世界的[せかいてき]に《保護主義[ほごしゅぎ]》が強[つよ]まっております。", ko: "세계적으로 보호주의가 강해지고 있습니다.", tip: "상황을 크게 깔고 시작하면, 뒤에 오는 가격 이야기가 우리 사정이 아니라 환경 이야기가 됩니다." },
+      { drill: "枠", jp: "輸入[ゆにゅう]《枠[わく]》の範囲内[はんいない]で調整[ちょうせい]させていただきます。", ko: "수입 쿼터 범위 내에서 조정하겠습니다.", tip: "「範囲内で」는 7일차 공차 이야기에서도 나왔습니다. 규격이든 쿼터든 같은 틀을 씁니다." },
+      { drill: "規制", jp: "《規制[きせい]》の内容[ないよう]を確認[かくにん]のうえ、ご連絡[れんらく]いたします。", ko: "규제 내용을 확인한 후 연락드리겠습니다.", tip: "1일차의 「確認のうえ」가 다시 나옵니다. 이 형태는 어디서든 쓸 수 있습니다." },
+      { drill: "補助金", jp: "《補助金[ほじょきん]》は受[う]けておりません。", ko: "보조금은 받고 있지 않습니다.", tip: "상계관세 조사에서 반드시 확인받는 항목입니다. 짧고 분명하게 답하는 편이 낫습니다." },
+      { drill: "相殺関税", jp: "《相殺関税[そうさいかんぜい]》の対象[たいしょう]にはなっておりません。", ko: "상계관세의 대상은 되어 있지 않습니다.", tip: "「対象になる」= 대상이 되다. 부정형으로 답하는 연습을 해두세요." },
+      { drill: "提訴", jp: "業界[ぎょうかい]団体[だんたい]が《提訴[ていそ]》を検討[けんとう]しているとの報道[ほうどう]がございました。", ko: "업계 단체가 제소를 검토하고 있다는 보도가 있었습니다.", tip: "「〜との報道がございました」로 출처를 밝히면, 확인되지 않은 이야기를 안전하게 전할 수 있습니다." },
+      { drill: "優遇", jp: "FTAの《優遇[ゆうぐう]》措置[そち]を活用[かつよう]できます。", ko: "FTA 우대 조치를 활용할 수 있습니다.", tip: "10일차의 관세 이야기와 이어집니다. 총비용으로 설득하는 논리의 한 축입니다." }
+    ],
+    article: {
+      real: true,
+      source: "金属フォーカス 「韓国政府がEUに鉄鋼セーフガード措置の公平性を要請」",
+      url: "https://www.kinzokufocus.com/2026/06/eu_01504420797.html",
+      note: "아래 지문은 위 보도 내용을 학습용으로 요약해 다시 쓴 것입니다. 기사 원문 그대로가 아닙니다.",
+      body: "韓国政府[かんこくせいふ]は、EUが導入[どうにゅう]する新[あら]たな鉄鋼[てっこう]セーフガード措置[そち]について、公平[こうへい]な市場[しじょう]アクセスを求[もと]めている。世界的[せかいてき]な《保護主義[ほごしゅぎ]》の広[ひろ]がりを背景[はいけい]に、輸入[ゆにゅう]《枠[わく]》は年間[ねんかん]{1830万トン}[せんはっぴゃくさんじゅうまんトン]に削減[さくげん]され、超過分[ちょうかぶん]には高[たか]い関税[かんぜい]が課[か]される。各国[かっこく]が自国[じこく]産業[さんぎょう]を守[まも]る《規制[きせい]》を強[つよ]めており、《通商[つうしょう]》をめぐる交渉[こうしょう]は一段[いちだん]と難[むずか]しくなっている。",
+      lines: [
+        { jp: "韓国政府は、EUが導入する新たな鉄鋼セーフガード措置について、公平な市場アクセスを求めている。", ko: "한국 정부는 EU가 도입하는 새로운 철강 세이프가드 조치에 대해, 공평한 시장 접근을 요구하고 있다." },
+        { jp: "世界的な保護主義の広がりを背景に、輸入枠は年間1830万トンに削減され、超過分には高い関税が課される。", ko: "세계적인 보호주의 확산을 배경으로, 수입 쿼터는 연간 1830만 톤으로 축소되고 초과분에는 높은 관세가 부과된다." },
+        { jp: "各国が自国産業を守る規制を強めており、通商をめぐる交渉は一段と難しくなっている。", ko: "각국이 자국 산업을 지키는 규제를 강화하고 있어, 통상을 둘러싼 협상은 한층 어려워지고 있다." }
+      ],
+      summary: "<b>우리 회사가 직접 걸려 있는 사안</b>입니다. 쿼터 안에 들어가느냐가 곧 가격이 되고, 초과하면 관세가 붙습니다. 8일차에서 다룬 세이프가드 이야기의 후속이기도 합니다. 일본 고객과 이야기할 때 이 배경을 알고 있으면 대화의 격이 달라집니다.",
+      picks: [
+        { jp: "〜について", read: "〜について", ko: "〜에 대해", from: "措置について" },
+        { jp: "求めている", read: "もとめている", ko: "요구하고 있다", from: "アクセスを求めている" },
+        { jp: "〜を背景に", read: "〜をはいけいに", ko: "〜을 배경으로", from: "広がりを背景に" },
+        { jp: "課される", read: "かされる", ko: "부과되다", from: "高い関税が課される" },
+        { jp: "強めており", read: "つよめており", ko: "강화하고 있어", from: "規制を強めており" },
+        { jp: "一段と", read: "いちだんと", ko: "한층 더", from: "一段と難しくなっている" }
+      ]
+    },
+    dialogue: {
+      situation: "일본 고객이 통상 환경 변화가 공급에 미칠 영향을 묻습니다.",
+      turns: [
+        { me: false, jp: "最近[さいきん]の通商[つうしょう]の動[うご]きですが、供給[きょうきゅう]に影響[えいきょう]はありますか。", ko: "최근 통상 움직임 말입니다만, 공급에 영향은 있습니까?" },
+        { me: true, jp: "《通商[つうしょう]》環境[かんきょう]の変化[へんか]は注視[ちゅうし]しております。世界的[せかいてき]に《保護主義[ほごしゅぎ]》が強[つよ]まっているのは事実[じじつ]でございます。", ko: "통상 환경의 변화는 주시하고 있습니다. 세계적으로 보호주의가 강해지고 있는 것은 사실입니다.", ch: [["통상 환경의 변화는","《通商[つうしょう]》環境[かんきょう]の変化[へんか]は"],["주시하고 있습니다","注視[ちゅうし]しております。"],["세계적으로 보호주의가 강해지고 있는 것은","世界的[せかいてき]に《保護主義[ほごしゅぎ]》が強[つよ]まっているのは"],["사실입니다","事実[じじつ]でございます。"]] },
+        { me: false, jp: "御社[おんしゃ]の対欧州[たいおうしゅう]の分[ぶん]はどうなりますか。", ko: "귀사의 대유럽 물량은 어떻게 됩니까?" },
+        { me: true, jp: "輸入[ゆにゅう]《枠[わく]》の範囲内[はんいない]で調整[ちょうせい]しております。《規制[きせい]》の内容[ないよう]を確認[かくにん]のうえ、改[あらた]めてご連絡[れんらく]いたします。", ko: "수입 쿼터 범위 내에서 조정하고 있습니다. 규제 내용을 확인한 후 다시 연락드리겠습니다.", ch: [["수입 쿼터 범위 내에서","輸入[ゆにゅう]《枠[わく]》の範囲内[はんいない]で"],["조정하고 있습니다","調整[ちょうせい]しております。"],["규제 내용을 확인한 후","《規制[きせい]》の内容[ないよう]を確認[かくにん]のうえ、"],["다시 연락드리겠습니다","改[あらた]めてご連絡[れんらく]いたします。"]] },
+        { me: true, jp: "なお、弊社[へいしゃ]は《補助金[ほじょきん]》は受[う]けておらず、《相殺関税[そうさいかんぜい]》の対象[たいしょう]にもなっておりません。", ko: "덧붙여, 저희는 보조금은 받고 있지 않으며 상계관세의 대상도 아닙니다.", ch: [["덧붙여","なお、"],["저희는 보조금은 받고 있지 않으며","弊社[へいしゃ]は《補助金[ほじょきん]》は受[う]けておらず、"],["상계관세의 대상도 아닙니다","《相殺関税[そうさいかんぜい]》の対象[たいしょう]にもなっておりません。"]] },
+        { me: false, jp: "分[わ]かりました。業界[ぎょうかい]の提訴[ていそ]の話[はなし]も聞[き]きますが。", ko: "알겠습니다. 업계의 제소 이야기도 듣습니다만." },
+        { me: true, jp: "業界[ぎょうかい]団体[だんたい]が《提訴[ていそ]》を検討[けんとう]しているとの報道[ほうどう]がございました。確定[かくてい]した情報[じょうほう]ではございませんので、動[うご]きがあれば共有[きょうゆう]いたします。", ko: "업계 단체가 제소를 검토하고 있다는 보도가 있었습니다. 확정된 정보는 아니므로, 움직임이 있으면 공유하겠습니다.", ch: [["업계 단체가 제소를 검토하고 있다는","業界[ぎょうかい]団体[だんたい]が《提訴[ていそ]》を検討[けんとう]しているとの"],["보도가 있었습니다","報道[ほうどう]がございました。"],["확정된 정보는 아니므로","確定[かくてい]した情報[じょうほう]ではございませんので、"],["움직임이 있으면 공유하겠습니다","動[うご]きがあれば共有[きょうゆう]いたします。"]] },
+        { me: true, jp: "日本[にほん]向[む]けにつきましては、FTAの《優遇[ゆうぐう]》措置[そち]を活用[かつよう]できますので、総[そう]コストでご検討[けんとう]いただければと存[ぞん]じます。", ko: "일본향에 대해서는 FTA 우대 조치를 활용할 수 있으므로, 총비용으로 검토해 주시면 좋겠습니다.", ch: [["일본향에 대해서는","日本[にほん]向[む]けにつきましては、"],["FTA 우대 조치를 활용할 수 있으므로","FTAの《優遇[ゆうぐう]》措置[そち]を活用[かつよう]できますので、"],["총비용으로 검토해 주시면 좋겠습니다","総[そう]コストでご検討[けんとう]いただければと存[ぞん]じます。"]] }
+      ],
+      warns: [
+        { hard: true, head: "✗ 확정되지 않은 통상 정보를 단정하기", body: "정책은 하루아침에 뒤집힙니다. 「〜との報道がございました」「確定した情報ではございません」으로 반드시 감싸세요. 틀리면 회사 신용이 걸립니다." },
+        { hard: true, head: "✗ 정치 이야기로 번지기", body: "통상은 국가 간 문제라 감정이 붙기 쉽습니다. 어느 나라가 옳으냐로 가면 안 됩니다. 물량·가격·일정이라는 실무 언어로만 말하세요." },
+        { hard: false, head: "△ 불리한 환경을 우리 강점으로 돌리기", body: "마지막 턴처럼 FTA 우대와 총비용으로 화제를 옮기면, 보호주의 이야기가 오히려 우리 제안의 근거가 됩니다." }
+      ]
+    },
+    quiz: [
+      { q: "국가 간 무역 정책 전반을 가리키는 말은?", opts: ["通商", "商談", "取引"], ans: 0 },
+      { q: "자국 산업을 지키려 수입을 막는 흐름은?", opts: ["自由貿易", "保護主義", "優遇措置"], ans: 1 },
+      { q: "「輸入枠」の「枠」の意味は？", opts: ["쿼터, 한도", "가격", "서류"], ans: 0 },
+      { q: "「提訴」を平仮名で書くと？", answer: "ていそ" },
+      { q: "보조금을 받은 수입품에 물리는 관세는?", opts: ["相殺関税", "反ダンピング関税", "優遇関税"], ans: 0 },
+      { q: "\"보조금은 받고 있지 않습니다\"를 일본어로.", answer: "補助金は受けておりません。" }
+    ],
+    column: {
+      word: "〜とのことです", kana: "とのことです", ko: "〜라고 합니다",
+      title: "확인 안 된 이야기를 안전하게 전하는 법",
+      body: [
+        "통상처럼 하루아침에 뒤집히는 화제에서는 <b>말하는 방식이 곧 신용</b>입니다. 일본어에는 전해 들은 이야기임을 표시하는 장치가 여러 개 있고, 실무자는 이것을 자유자재로 씁니다.",
+        "가장 흔한 것이 <span class='kw'>〜とのことです</span>입니다. \"〜라고 합니다\"에 해당하며, 내 판단이 아니라 전달임을 분명히 합니다."
+      ],
+      vs: "「〜です」 → <b>내가 단언함.</b> 틀리면 내 책임<br>「〜とのことです」 → <b>그렇게 들었습니다</b><br>「〜との報道がございました」 → <b>보도가 있었습니다</b> (출처가 언론)<br>「〜ようです」 → <b>그런 것 같습니다</b> (내 관찰과 추측)",
+      body2: [
+        "한국어에서도 \"라고 하더라\"를 쓰지만, 일본 비즈니스에서는 이 구분이 <b>훨씬 엄격하게 지켜집니다.</b> 확정되지 않은 것을 단정해 말했다가 뒤집히면, 그 사람의 말 전체가 가벼워집니다.",
+        "오늘 회화의 6번째 턴이 그 표본입니다. 「報道がございました」로 출처를 대고, 「確定した情報ではございません」으로 한 번 더 못을 박고, 「動きがあれば共有いたします」로 다음 행동까지 약속했습니다. <b>이 세 박자가 통상 화제를 다루는 안전한 방식</b>입니다."
+      ]
+    }
+  }
+];
+
+/* ── ruby & highlight ────────────────────────
+   漢字[かんじ]          한자 후리가나
+   {2026年度}[にせん…]   숫자·단위 후리가나
+   《…》                 오늘의 용어 형광펜 */
+const BRACE = /\{([^{}]+)\}\[([^\[\]]+)\]/g;
+const KANJI = /([一-鿿々〆ヶ]+)\[([ぁ-ゟ゠-ヿー]+)\]/g;
+const MARK  = /《([\s\S]*?)》/g;
+
+/* 후리가나 표시 방식
+   all   전부 — 매번 가나를 단다
+   first 처음만 — 하루 안에서 같은 한자에는 한 번만 (기본값)
+   off   끄기
+
+   "처음만"이 기본인 이유: 같은 한자에 계속 가나가 붙으면 눈이 가나만
+   따라가고 한자를 읽으려 하지 않는다. 한 번 본 뒤에는 스스로 읽게 둔다. */
+let furiMode = "all";
+let seenRuby = new Set();
+const resetRuby = () => { seenRuby = new Set(); };
+function ruby(base, read) {
+  if (furiMode === "off") return base;
+  if (furiMode === "first") {
+    const key = base + "|" + read;
+    if (seenRuby.has(key)) return base;
+    seenRuby.add(key);
+  }
+  return `<ruby>${base}<rt>${read}</rt></ruby>`;
+}
+const rubify = s => s
+  .replace(BRACE, (m, b, r) => ruby(b, r))
+  .replace(KANJI, (m, b, r) => ruby(b, r))
+  .replace(MARK, '<mark class="hl">$1</mark>');
+const plain = s => s.replace(BRACE, '$1').replace(KANJI, '$1').replace(MARK, '$1').replace(/<[^>]+>/g, "");
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const attr = s => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("sjt-" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("sjt-" + k, JSON.stringify(v)); } catch (e) {} }
+};
+const today = () => new Date().toISOString().slice(0, 10);
+
+/* ── 발음 듣기 ───────────────────────────────
+   음성은 브라우저가 뒤늦게 목록을 채우므로, 숨기지 않고
+   누른 시점에 찾는다. 없으면 설치 방법을 안내한다. */
+function findJa() {
+  if (!("speechSynthesis" in window)) return undefined;
+  return speechSynthesis.getVoices().find(v => /^ja/i.test(v.lang)) || null;
+}
+if ("speechSynthesis" in window) { speechSynthesis.onvoiceschanged = () => {}; speechSynthesis.getVoices(); }
+
+let speakingBtn = null;
+
+function speak(text, btn) {
+  const v = findJa();
+  if (v === undefined || v === null) { document.getElementById("ttsNote").hidden = false; return; }
+  speechSynthesis.cancel();
+  if (speakingBtn) speakingBtn.classList.remove("on");
+  const u = new SpeechSynthesisUtterance(text);
+  u.voice = v; u.lang = "ja-JP"; u.rate = .88;
+  btn.classList.add("on"); speakingBtn = btn;
+  u.onend = u.onerror = () => btn.classList.remove("on");
+  speechSynthesis.speak(u);
+}
+const spk = t => `<button class="speak" data-say="${attr(plain(t))}" title="발음 듣기">🔊</button>`;
+
+let view = "home";
+let current = store.get("day", 1);
+let quizState = {};
+
+/* 난이도
+   easy 초급 — 용어 다섯 개, 짧은 기본 문장, 기사 독해 없음, 회화 앞부분만,
+               객관식 퀴즈만. 후리가나와 해석은 항상 켜둔다.
+   mid  중급 — 지금까지 만들어 온 그대로.
+   고르지 않았으면 선택 화면을 먼저 보여준다. */
+// 난이도는 저장하지 않는다. 열 때마다 오늘 어느 쪽으로 할지 고르게 한다.
+let level = null;
+const isEasy = () => level === "easy";
+const LV_NAME = { easy: "초급", mid: "중급" };
+
+function setSw(id, on, text) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.setAttribute("aria-pressed", on);
+  if (text) b.textContent = text;
+}
+
+function applyLevel(lv) {
+  level = lv;
+  document.body.classList.toggle("lv-easy", lv === "easy");
+  document.body.classList.toggle("lv-mid", lv === "mid");
+
+  if (lv === "easy") {
+    /* 초급은 보조를 전부 켠 채 고정한다. 끌 수 있게 두면 실수로 꺼서
+       벽에 부딪히고 그대로 그만두게 된다. */
+    furiMode = "all"; store.set("furi", "all");
+    store.set("ko", true); document.body.classList.remove("no-ko");
+    store.set("mask", false); document.body.classList.remove("mask");
+    setSw("sw-furi", true, "후리가나 · 전부");
+    setSw("sw-ko", true); setSw("sw-mask", false);
+  }
+  const b = document.getElementById("lvBtn");
+  if (b) b.textContent = "난이도 · " + (LV_NAME[lv] || "");
+}
+
+function renderPick() {
+  return `
+    <p class="pick-lead">먼저 난이도를 고르세요.<br>언제든 위 <b>난이도</b> 버튼으로 바꿀 수 있습니다.</p>
+    <div class="pick">
+      <button class="lvcard" data-lv="easy">
+        <h4>초급 <span class="tagline">처음 시작하는 분</span></h4>
+        <p>히라가나·가타카나는 읽지만 업무 일본어는 처음인 분을 위한 과정입니다. 용어를 다섯 개로 줄이고, 문장을 짧게 끊었습니다.</p>
+        <ul>
+          <li>용어 5개 · 짧은 기본 문장</li>
+          <li>기사 독해 없음</li>
+          <li>회화 앞부분 4턴</li>
+          <li>퀴즈는 객관식만</li>
+          <li>후리가나·해석 항상 표시</li>
+        </ul>
+        <div class="sample jp">見積書[みつもりしょ]を送[おく]ります。<span class="sk">견적서를 보냅니다.</span></div>
+      </button>
+      <button class="lvcard mid" data-lv="mid">
+        <h4>중급 <span class="tagline">실무에 바로 쓰실 분</span></h4>
+        <p>고객과 실제로 주고받는 수준입니다. 겸양 표현과 기사체까지 다룹니다.</p>
+        <ul>
+          <li>용어 8개 · 실무 문장</li>
+          <li>일본 업계 기사 독해</li>
+          <li>회화 8턴 · 조각 맞추기</li>
+          <li>퀴즈에 작문 문항 포함</li>
+          <li>후리가나·해석 끄기 가능</li>
+        </ul>
+        <div class="sample jp">見積書[みつもりしょ]は明日中[あすじゅう]にお送[おく]りいたします。<span class="sk">견적서는 내일 중으로 보내드리겠습니다.</span></div>
+      </button>
+    </div>
+    <p class="lvnote">두 과정 모두 같은 자료이며, 배우는 용어도 같습니다.<br>초급을 한 바퀴 돈 뒤 중급으로 다시 오면, 아는 단어를 실무 문장으로 다시 만나게 됩니다.</p>`;
+}
+
+const smKey = (day, i) => `sm-${day}-${i}`;
+const wrongKey = day => `wrong-${day}`;
+
+/* 지난 복습
+   ① 전날 용어 전부
+   ② 그 이전 날짜 중 "헷갈려요"로 표시해 둔 용어 (계속 따라온다)
+   ③ 지난 회차에서 틀린 객관식 문제 (모아둔 기록을 실제로 쓴다)
+   콘텐츠를 새로 쓰지 않고 기존 데이터를 끌어오므로 자료가 두 벌이 되지 않는다. */
+function reviewData(d) {
+  const prev = DATA.find(x => x.no === d.no - 1);
+  const terms = [];
+  if (prev) (isEasy() ? prev.terms.slice(0, 5) : prev.terms).forEach((t, i) => terms.push({ t, from: prev.no, mark: store.get(smKey(prev.no, i), null) }));
+  DATA.filter(x => x.no < d.no - 1).forEach(x => {
+    (isEasy() ? x.terms.slice(0, 5) : x.terms).forEach((t, i) => {
+      if (store.get(smKey(x.no, i), null) === "unsure") terms.push({ t, from: x.no, mark: "unsure" });
+    });
+  });
+  terms.sort((a, b) => (a.mark === "unsure" ? -1 : 0) - (b.mark === "unsure" ? -1 : 0));
+
+  const wrongs = [];
+  DATA.filter(x => x.no < d.no).forEach(x => {
+    (store.get(wrongKey(x.no), []) || []).forEach(qi => {
+      const q = x.quiz[qi];
+      if (q && q.opts) wrongs.push({ q, from: x.no });
+    });
+  });
+  return { terms, wrongs };
+}
+
+function renderReview(d) {
+  if (d.no === 1) return `<div class="rev-empty">오늘이 첫날입니다.<br>내일부터 이 자리에 <b>어제 배운 용어</b>와 <b>틀린 문제</b>가 먼저 올라옵니다.<br><br>용어 카드를 열면 맨 아래에 <b>「외웠어요 / 헷갈려요」</b> 버튼이 있습니다. 헷갈린다고 표시해 두면 외웠다고 바꿀 때까지 매일 복습에 따라옵니다.</div>`;
+  const { terms, wrongs } = reviewData(d);
+  if (!terms.length && !wrongs.length) return `<div class="rev-empty">복습할 것이 없습니다.</div>`;
+
+  const tHtml = terms.length ? `
+    <p class="rev-lead">뜻을 떠올린 뒤 눌러 확인하세요. <b>붉은 선</b>은 용어 카드에서 직접 「헷갈려요」로 표시해 둔 것으로, 외웠다고 바꿀 때까지 계속 따라옵니다.</p>
+    <div class="rev">${terms.map(r => `
+      <div class="rv ${r.mark === "unsure" ? "flag" : ""}" role="button" tabindex="0" aria-expanded="false">
+        <span><span class="rq jp">${r.t.jp}</span><br><span class="rk jp">${r.t.kana} · ${r.from}일차</span></span>
+        <span class="ra">${r.t.mean}</span>
+      </div>`).join("")}</div>` : "";
+
+  const wHtml = wrongs.length ? `
+    <div class="rev-sub">지난번에 틀린 문제 다시 풀기</div>
+    ${wrongs.map((w, i) => `
+      <div class="q" data-rqi="${i}">
+        <div class="q-text"><span class="num">${w.from}일차</span>${esc(w.q.q)}</div>
+        <div class="opts">${w.q.opts.map((o, j) => `<button class="opt jp" data-roi="${j}" data-rans="${w.q.ans}">${esc(o)}</button>`).join("")}</div>
+      </div>`).join("")}` : "";
+
+  return tHtml + wHtml;
+}
+
+function renderNavs() {
+  const items = [`<button class="chip" data-view="home" aria-pressed="${view === "home"}">🏠 내 진도</button>`]
+    .concat(DATA.map(d => `<button class="chip" data-view="study" data-day="${d.no}" aria-pressed="${view === "study" && d.no === current}">${d.no}일차 · ${d.theme}</button>`));
+  document.getElementById("navs").innerHTML = items.join("");
+}
+
+/* ── HOME ─────────────────────────────────── */
+function stats() {
+  const doneDays = DATA.filter(d => store.get("done-" + d.no, false));
+  const words = doneDays.reduce((a, d) => a + (isEasy() ? Math.min(5, d.terms.length) : d.terms.length), 0);
+  let right = 0, total = 0;
+  DATA.forEach(d => { const q = store.get("quiz-" + d.no, null); if (q) { right += q.right; total += q.total; } });
+  return { doneDays, words, right, total, rate: total ? Math.round(right / total * 100) : null, streak: store.get("streak", 0) };
+}
+
+function renderHome() {
+  const s = stats();
+  const name = store.get("name", "");
+  const doneToday = store.get("lastDone", null) === today();
+  const hist = DATA.map(d => ({ d, rec: store.get("rec-" + d.no, null) })).filter(x => x.rec).sort((a, b) => b.rec.date.localeCompare(a.rec.date));
+
+  return `
+    <h3 class="hi">${name ? esc(name) + "님, 안녕하세요" : "안녕하세요"}<button id="nameBtn">${name ? "이름 변경" : "이름 입력"}</button></h3>
+    <p class="hisub">${doneToday ? "오늘 학습을 마치셨습니다. 내일 또 뵙겠습니다." : "오늘 학습이 아직 남아 있습니다."}</p>
+
+    <div class="stats">
+      <div class="stat"><div class="ico">🔥</div><div class="val">${s.streak}<small>일</small></div><div class="lab">연속 학습</div></div>
+      <div class="stat"><div class="ico">✅</div><div class="val">${s.doneDays.length}<small>/${DATA.length}</small></div><div class="lab">완료한 일차</div></div>
+      <div class="stat"><div class="ico">🎯</div><div class="val">${s.rate === null ? "–" : s.rate + "<small>%</small>"}</div><div class="lab">퀴즈 정답률</div></div>
+      <div class="stat"><div class="ico">📚</div><div class="val">${s.words}<small>개</small></div><div class="lab">익힌 용어</div></div>
+    </div>
+
+    <div class="todaycard ${doneToday ? "ok" : ""}">
+      <h4>${doneToday ? "🎉 오늘 완료" : "📖 오늘의 학습"}</h4>
+      <p>${doneToday ? "연속 기록이 이어지고 있습니다. 복습하고 싶으면 아래로 들어가세요." : `${current}일차 · ${(DATA.find(d => d.no === current) || DATA[0]).theme} · 20분 분량`}</p>
+      <button class="cta" data-view="study" data-day="${current}">${doneToday ? "다시 보기" : "오늘 학습 시작하기"}</button>
+    </div>
+
+    <section>
+      <div class="shead"><span class="emoji">🗂️</span><h3>학습 기록</h3></div>
+      ${hist.length
+        ? `<div class="histlist">${hist.map(x => `<div class="histrow"><span>${x.d.no}일차 · ${x.d.theme}</span><span class="d">${x.rec.date}</span><span class="r">${x.rec.right != null ? `🎯 ${x.rec.right}/${x.rec.total}` : "완료"}</span></div>`).join("")}</div>`
+        : `<div class="empty">아직 완료한 학습이 없습니다.<br>위 버튼으로 시작해 보세요.</div>`}
+    </section>
+
+    <section>
+      <div class="shead"><span class="emoji">📤</span><h3>진도 공유</h3><span class="hint">팀에 보고할 때</span></div>
+      <button class="ghost" id="shareBtn">진도 요약 만들기</button>
+      <textarea class="sharebox" id="shareBox" rows="5" readonly hidden></textarea>
+    </section>`;
+}
+
+/* ── STUDY ────────────────────────────────── */
+function renderDay(d) {
+  /* 용어와 예문을 한 카드에 묶는다.
+     예문은 그 용어를 연습하려고 만든 것이므로 떨어져 있을 이유가 없다.
+     sentences의 drill 값이 용어와 1:1로 대응하므로 그것으로 짝을 찾는다. */
+  const byDrill = {};
+  d.sentences.forEach(s => { byDrill[s.drill] = s; });
+
+  /* 초급은 앞 다섯 용어만, 예문도 짧은 기본 문장(ez)으로 바꾼다 */
+  const useTerms = isEasy() ? d.terms.slice(0, 5) : d.terms;
+
+  const terms = useTerms.map((t, i) => {
+    const sm = store.get(smKey(d.no, i), null);
+    const s = (isEasy() && t.ez)
+      ? { jp: t.ez[0], ko: t.ez[1], tip: "" }
+      : (byDrill[t.jp] || d.sentences[i]);
+    return `
+    <div class="term ${sm || ""}" data-ti="${i}" role="button" tabindex="0" aria-expanded="false">
+      <div class="term-top">
+        <span class="term-no">${String(i + 1).padStart(2, "0")}</span>
+        <span class="term-jp jp">${t.jp}</span>
+        <span class="term-kana jp">${t.kana}</span>
+        ${spk(t.kana && t.kana !== "―" ? t.kana : t.jp)}
+        ${sm ? `<span class="term-flag ${sm}">${sm === "known" ? "외웠어요" : "헷갈려요"}</span>` : ""}
+        <span class="term-caret">▾</span>
+      </div>
+      <div class="term-prompt">👆 눌러서 뜻과 예문 확인</div>
+      <div class="term-body">
+        <div class="term-mean">${t.mean}</div>
+        <div class="term-note">${t.note}</div>
+        ${s ? `
+        <div class="term-ex">
+          <div class="ex-cap">이 용어가 쓰인 문장 ${spk(s.jp)}</div>
+          <div class="sent-jp jp">${rubify(s.jp)}</div>
+          <div class="sent-ko">${s.ko}</div>
+          ${s.tip ? `<div class="sent-tip">${s.tip}</div>` : ""}
+        </div>` : ""}
+        ${isEasy() ? "" : `<div class="term-where">📍 오늘 또 나오는 곳 — ${t.where}</div>`}
+        <div class="smk">
+          <span class="smk-cap">이 용어, 외우셨나요?</span>
+          <button data-sm="known" class="${sm === "known" ? "on" : ""}">외웠어요</button>
+          <button data-sm="unsure" class="${sm === "unsure" ? "on" : ""}">헷갈려요</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  const a = d.article;
+  const article = `
+    <div class="src">
+      <span class="tag ${a.real ? "real" : "drill2"}">${a.real ? "실제 보도" : "학습용"}</span>
+      ${a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${a.source}</a>` : a.source}
+      <div style="margin-top:6px;color:var(--ink-3)">${a.note}</div>
+    </div>
+    <div class="passage jp">${rubify(a.body)}</div>
+
+    <div class="art-ko">
+      <div class="lines">${a.lines.map(l => `<div class="line"><div class="line-jp jp">${l.jp}</div><div class="line-ko">${l.ko}</div></div>`).join("")}</div>
+      <div class="summary"><h4>요약</h4>${a.summary}</div>
+    </div>
+    <div class="scroller"><table class="picks">
+      <thead><tr><th>표현</th><th>읽기</th><th>뜻</th><th>지문 속 위치</th></tr></thead>
+      <tbody>${a.picks.map(p => `<tr><td class="jp">${p.jp}</td><td class="jp">${p.read}</td><td>${p.ko}</td><td class="jp" style="color:var(--ink-3)">${p.from}</td></tr>`).join("")}</tbody>
+    </table></div>`;
+
+  const dg = d.dialogue;
+  const dialogue = `
+    <div class="situation"><b>상황</b> · ${dg.situation}</div>
+    ${(isEasy() ? dg.turns.slice(0, 4) : dg.turns).map((t, i) => {
+      const ch = t.me && t.ch && t.ch.length ? t.ch : null;
+      return `
+      <div class="turn ${t.me ? "me" : ""} ${ch ? "chunked" : ""}">
+        <div class="who">${t.me ? "나<br>POSCO" : "담당자<br>고객"}</div>
+        <div class="bubble">
+          <div class="turn-head">${spk(t.jp)}<span style="font-size:11px;color:var(--ink-3)">${i + 1}턴</span></div>
+          ${ch ? `
+            <div class="asm-cap">한국어 조각을 누르면 여기에 일본어가 채워집니다</div>
+            <div class="asm jp">${ch.map((c, j) => `<span class="slot" data-si="${j}"><span class="ph">‥‥</span><span class="rv">${rubify(c[1])}</span></span>`).join("")}</div>
+            <div class="chips">${ch.map((c, j) => `<button class="chip-ko" data-ci="${j}">${c[0]}</button>`).join("")}</div>
+            <button class="asm-all">전체 보기</button>
+          ` : `
+            ${t.me ? `<div class="cover">🤔 이 말을 일본어로 어떻게? &nbsp;·&nbsp; 눌러서 확인</div>` : ""}
+            <div class="turn-jp jp">${rubify(t.jp)}</div>
+            <div class="turn-ko">${t.ko}</div>
+          `}
+        </div>
+      </div>`;
+    }).join("")}
+    <div class="warns">${dg.warns.map(w => `<div class="warn ${w.hard ? "" : "soft"}"><h5 class="jp">${w.head}</h5><p>${w.body}</p></div>`).join("")}</div>`;
+
+  const useQuiz = isEasy() ? d.quiz.filter(q => q.opts) : d.quiz;
+  /* 초급에서는 문항이 걸러지므로 정답을 문항에 직접 실어 둔다.
+     걸러진 뒤의 순번과 원본 순번이 어긋나도 채점과 오답 기록이 맞는다. */
+  const quiz = useQuiz.map((q, i) => `
+    <div class="q" data-qi="${i}" data-oq="${d.quiz.indexOf(q)}" ${q.opts ? `data-ans="${q.ans}"` : `data-answer="${attr(q.answer)}"`}>
+      <div class="q-text"><span class="num">${i + 1}</span>${esc(q.q)}</div>
+      ${q.opts
+        ? `<div class="opts">${q.opts.map((o, j) => `<button class="opt jp" data-oi="${j}">${esc(o)}</button>`).join("")}</div>`
+        : `<div class="wr">
+             <input type="text" lang="ja" placeholder="일본어로 직접 입력해 보세요" autocomplete="off" autocapitalize="off" spellcheck="false">
+             <button class="wr-go" disabled>확인</button>
+           </div>
+           <div class="wr-hint">직접 써 봐야 입에서 나옵니다. 한자가 어려우면 히라가나로 써도 됩니다.</div>`}
+    </div>`).join("");
+
+  const isDone = store.get("done-" + d.no, false);
+  const mc = useQuiz.filter(q => q.opts).length;
+
+  return `
+    <div class="dayhead">
+      <h2>${d.no}일차 · ${d.theme}</h2>
+      <span class="meta">${d.date} · 소요 <b>${isEasy() ? 12 : d.minutes}분</b> · 용어 ${useTerms.length}개</span>
+    </div>
+    <section>
+      <div class="shead"><span class="emoji">🔁</span><h3>지난 복습</h3><span class="hint">먼저 떠올린 뒤 눌러 확인</span></div>
+      ${renderReview(d)}
+    </section>
+    <section>
+      <div class="shead"><span class="emoji">📌</span><h3>오늘의 용어와 예문</h3><span class="hint">카드를 눌러 뜻·예문 확인<br>맨 아래에서 <b>외웠어요/헷갈려요</b> 표시</span></div>
+      <div class="terms">${terms}</div>
+    </section>
+    ${isEasy() ? "" : `
+    <section>
+      <div class="shead"><span class="emoji">📰</span><h3>기사 독해</h3><span class="hint">표현표는 지문에 나온 것만</span></div>
+      ${article}
+    </section>`}
+    <section>
+      <div class="shead"><span class="emoji">🤝</span><h3>상담 회화</h3><span class="hint">${isEasy() ? "앞부분 4턴만" : "오늘 용어가 다시 등장<br>위 <b>내 대사 가리기</b>로 작문 연습"}</span></div>
+      ${dialogue}
+    </section>
+    <section>
+      <div class="shead"><span class="emoji">🎯</span><h3>확인 퀴즈</h3><span class="hint">객관식 ${mc}문항 자동 채점</span></div>
+      ${quiz}
+      <div id="score">아직 풀지 않았습니다 · 객관식 ${mc}문항</div>
+    </section>
+    <section>
+      <div class="shead"><span class="emoji">🌏</span><h3>한일 말의 온도차</h3><span class="hint">송일본 칼럼</span></div>
+      <div class="col">
+        <div class="col-word">
+          <div class="col-jp jp">${d.column.word}</div>
+          <div class="col-kana jp">${d.column.kana}</div>
+          <div class="col-ko">${d.column.ko}</div>
+        </div>
+        <h4>${d.column.title}</h4>
+        ${d.column.body.map(p => `<p>${p}</p>`).join("")}
+        <div class="vs">${d.column.vs}</div>
+        ${d.column.body2.map(p => `<p>${p}</p>`).join("")}
+        <div class="col-sign">송일본 · 도쿄 거주 35년</div>
+      </div>
+    </section>
+    <div class="done">
+      <button id="doneBtn" aria-pressed="${isDone}">${isDone ? "🎉 오늘도 완료! 수고하셨습니다" : "오늘 학습 완료 표시"}</button>
+    </div>`;
+}
+
+function updateScore() {
+  const d = DATA.find(x => x.no === current) || DATA[0];
+  const total = d.quiz.filter(q => q.opts).length;
+  const answered = Object.keys(quizState).length;
+  const right = Object.values(quizState).filter(Boolean).length;
+  const el = document.getElementById("score");
+  if (!el) return;
+  if (answered === 0) { el.className = ""; el.textContent = `아직 풀지 않았습니다 · 객관식 ${total}문항`; return; }
+  if (answered < total) { el.className = ""; el.textContent = `${answered} / ${total} 진행 중 — 지금까지 ${right}개 정답`; return; }
+  el.className = "done";
+  store.set("quiz-" + current, { right, total });
+  const mark = right === total ? "🎉" : right >= total - 1 ? "👏" : "💪";
+  const msg = right === total ? "전부 맞혔습니다. 오늘 용어는 손에 넣으셨네요."
+            : right >= total - 1 ? "거의 다 맞혔습니다. 틀린 것만 다시 보세요."
+            : "틀린 문항의 용어 카드를 다시 열어보고 오세요.";
+  el.innerHTML = `<span class="big">${mark} ${right} / ${total}</span>${msg}`;
+}
+
+function paint() {
+  quizState = {};
+  resetRuby();
+  if (!level) {
+    document.body.classList.add("home");
+    document.getElementById("app").innerHTML = renderPick();
+    document.getElementById("navs").innerHTML = "";
+    window.scrollTo({ top: 0, behavior: "instant" });
+    return;
+  }
+  document.body.classList.toggle("home", view === "home");
+  document.getElementById("app").innerHTML = view === "home" ? renderHome() : renderDay(DATA.find(x => x.no === current) || DATA[0]);
+  renderNavs();
+  if (view === "study") updateScore();
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+document.addEventListener("click", e => {
+  const lvc = e.target.closest(".lvcard");
+  if (lvc) { applyLevel(lvc.dataset.lv); view = "home"; paint(); return; }
+  if (e.target.id === "lvBtn") { level = null; paint(); return; }
+
+  const sp = e.target.closest(".speak");
+  if (sp) { e.stopPropagation(); speak(sp.dataset.say, sp); return; }
+
+  if (e.target.id === "ttsClose") { document.getElementById("ttsNote").hidden = true; return; }
+
+  const nav = e.target.closest("[data-view]");
+  if (nav) {
+    view = nav.dataset.view;
+    if (nav.dataset.day) { current = +nav.dataset.day; store.set("day", current); }
+    paint(); return;
+  }
+
+  if (e.target.id === "nameBtn") {
+    const v = prompt("이름을 입력하세요", store.get("name", "") || "");
+    if (v !== null) { store.set("name", v.trim()); paint(); }
+    return;
+  }
+
+  if (e.target.id === "shareBtn") {
+    const s = stats();
+    const name = store.get("name", "") || "이름미입력";
+    const txt = `[철강 일본어 트레이닝 진도] ${name}\n`
+      + `· 연속 학습 ${s.streak}일\n`
+      + `· 완료 ${s.doneDays.length}/${DATA.length}일차\n`
+      + `· 퀴즈 정답률 ${s.rate === null ? "기록 없음" : s.rate + "%"}\n`
+      + `· 익힌 용어 ${s.words}개\n`
+      + `(기준일 ${today()})`;
+    const box = document.getElementById("shareBox");
+    box.hidden = false; box.value = txt; box.select();
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+    return;
+  }
+
+  /* 암기 표시 버튼은 카드 안에 있으므로 카드 접기보다 먼저 걸러낸다 */
+  const smBtn = e.target.closest(".smk button");
+  if (smBtn) {
+    const card = smBtn.closest(".term"), i = +card.dataset.ti, key = smKey(current, i);
+    const val = store.get(key, null) === smBtn.dataset.sm ? null : smBtn.dataset.sm;
+    store.set(key, val);
+    card.classList.remove("known", "unsure"); if (val) card.classList.add(val);
+    card.querySelectorAll(".smk button").forEach(b => b.classList.toggle("on", val === b.dataset.sm));
+    // 접었을 때도 상태가 보이도록 머리말의 표시를 갱신한다
+    const old = card.querySelector(".term-flag");
+    if (old) old.remove();
+    if (val) {
+      const chip = document.createElement("span");
+      chip.className = "term-flag " + val;
+      chip.textContent = val === "known" ? "외웠어요" : "헷갈려요";
+      card.querySelector(".term-caret").before(chip);
+    }
+    return;
+  }
+
+  const term = e.target.closest(".term");
+  if (term) { term.setAttribute("aria-expanded", term.getAttribute("aria-expanded") === "true" ? "false" : "true"); return; }
+
+  /* 회화 가리기 — 눌러서 내 대사 확인 */
+  const cov = e.target.closest(".cover");
+  if (cov) { cov.closest(".turn").classList.add("open"); return; }
+
+  /* 조각 맞추기 — 한국어 조각을 누르면 그 자리에 일본어가 들어간다 */
+  const chip = e.target.closest(".chip-ko");
+  if (chip) {
+    const b = chip.closest(".bubble");
+    b.querySelector('.slot[data-si="' + chip.dataset.ci + '"]').classList.add("on");
+    chip.classList.add("used");
+    // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
+    if (!b.querySelectorAll(".slot:not(.on)").length) {
+      const all = b.querySelector(".asm-all"); if (all) all.remove();
+      b.querySelector(".asm-cap").textContent = "완성했습니다";
+    }
+    return;
+  }
+  const asmAll = e.target.closest(".asm-all");
+  if (asmAll) {
+    const b = asmAll.closest(".bubble");
+    b.querySelectorAll(".slot").forEach(s => s.classList.add("on"));
+    b.querySelectorAll(".chip-ko").forEach(c => c.classList.add("used"));
+    b.querySelector(".asm-cap").textContent = "완성했습니다";
+    asmAll.remove();
+    return;
+  }
+
+  /* 복습 카드 뒤집기 */
+  const rv = e.target.closest(".rv");
+  if (rv) { rv.setAttribute("aria-expanded", rv.getAttribute("aria-expanded") === "true" ? "false" : "true"); return; }
+
+  /* 복습용 재출제 문제 */
+  const ropt = e.target.closest(".opt[data-roi]");
+  if (ropt) {
+    const box = ropt.closest(".q");
+    if (box.dataset.done) return;
+    box.dataset.done = "1";
+    const ans = +ropt.dataset.rans;
+    box.querySelectorAll(".opt").forEach((b, j) => {
+      b.disabled = true;
+      if (j === ans) b.classList.add("right"); else if (b === ropt) b.classList.add("wrong");
+    });
+    return;
+  }
+
+  const opt = e.target.closest(".opt");
+  if (opt) {
+    const box = opt.closest(".q");
+    const qi = +box.dataset.qi;
+    if (qi in quizState) return;
+    const correct = +box.dataset.ans;
+    const ok = (+opt.dataset.oi === correct);
+    quizState[qi] = ok;
+    if (!ok) {
+      const oq = +box.dataset.oq;
+      const list = store.get(wrongKey(current), []) || [];
+      if (!list.includes(oq)) { list.push(oq); store.set(wrongKey(current), list); }
+    }
+    box.querySelectorAll(".opt").forEach((b, j) => {
+      b.disabled = true;
+      if (j === correct) b.classList.add("right");
+      else if (b === opt) b.classList.add("wrong");
+    });
+    updateScore();
+    return;
+  }
+
+  /* 작문 — 직접 입력해야 정답이 나온다 */
+  const go = e.target.closest(".wr-go");
+  if (go) {
+    const box = go.closest(".q");
+    const input = box.querySelector(".wr input");
+    const mine = (input.value || "").trim();
+    if (!mine) return;
+    const ans = box.dataset.answer;
+    const norm = s => s.replace(/[\s　]/g, "").replace(/[。．.]$/, "");
+    const ok = norm(mine) === norm(ans);
+    input.disabled = true; go.disabled = true;
+    box.querySelector(".wr-hint").remove();
+    const res = document.createElement("div");
+    res.className = "wr-res " + (ok ? "ok" : "ng");
+    res.innerHTML = `<span class="lab">${ok ? "정확합니다" : "정답"}</span><span class="jp">${esc(ans)}</span>`
+      + (ok ? "" : `<div class="mine">쓰신 문장 — ${esc(mine)}</div>`);
+    box.appendChild(res);
+    return;
+  }
+
+  const done = e.target.closest("#doneBtn");
+  if (done) {
+    const key = "done-" + current;
+    const now = !store.get(key, false);
+    store.set(key, now);
+    done.setAttribute("aria-pressed", now);
+    done.textContent = now ? "🎉 오늘도 완료! 수고하셨습니다" : "오늘 학습 완료 표시";
+    if (now) {
+      done.classList.remove("cheer"); void done.offsetWidth; done.classList.add("cheer");
+      const t = today(), last = store.get("lastDone", null);
+      if (last !== t) {
+        const y = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        store.set("streak", last === y ? store.get("streak", 0) + 1 : 1);
+        store.set("lastDone", t);
+      }
+      const q = store.get("quiz-" + current, null);
+      store.set("rec-" + current, { date: t, right: q ? q.right : null, total: q ? q.total : null });
+    }
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const term = e.target.closest(".term");
+  if (!term) return;
+  e.preventDefault();
+  term.setAttribute("aria-expanded", term.getAttribute("aria-expanded") === "true" ? "false" : "true");
+});
+
+/* 해석 토글 */
+(() => {
+  const btn = document.getElementById("sw-ko");
+  const on = store.get("ko", true);
+  btn.setAttribute("aria-pressed", on);
+  document.body.classList.toggle("no-ko", !on);
+  btn.addEventListener("click", () => {
+    const next = btn.getAttribute("aria-pressed") !== "true";
+    btn.setAttribute("aria-pressed", next);
+    document.body.classList.toggle("no-ko", !next);
+    store.set("ko", next);
+  });
+})();
+
+/* 후리가나 3단계 — 처음만 / 전부 / 끄기 */
+(() => {
+  const btn = document.getElementById("sw-furi");
+  const order = ["first", "all", "off"];
+  const label = { first: "후리가나 · 처음만", all: "후리가나 · 전부", off: "후리가나 · 끄기" };
+  furiMode = store.get("furi", "all");
+  const apply = () => {
+    btn.textContent = label[furiMode];
+    btn.setAttribute("aria-pressed", furiMode !== "off");
+    store.set("furi", furiMode);
+  };
+  apply();
+  btn.addEventListener("click", () => {
+    furiMode = order[(order.indexOf(furiMode) + 1) % order.length];
+    apply(); paint();
+  });
+})();
+
+/* 회화 가리기 — 내 대사를 가리고 스스로 떠올린다 */
+(() => {
+  const btn = document.getElementById("sw-mask");
+  const on = store.get("mask", false);
+  btn.setAttribute("aria-pressed", on);
+  document.body.classList.toggle("mask", on);
+  btn.addEventListener("click", () => {
+    const next = btn.getAttribute("aria-pressed") !== "true";
+    btn.setAttribute("aria-pressed", next);
+    document.body.classList.toggle("mask", next);
+    store.set("mask", next);
+  });
+})();
+
+/* 작문 입력칸 — 뭔가 써야 확인 버튼이 열린다 */
+document.addEventListener("input", e => {
+  const inp = e.target.closest(".wr input");
+  if (!inp) return;
+  const go = inp.closest(".wr").querySelector(".wr-go");
+  go.disabled = !inp.value.trim();
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  const inp = e.target.closest(".wr input");
+  if (!inp) return;
+  const go = inp.closest(".wr").querySelector(".wr-go");
+  if (!go.disabled) go.click();
+});
+
+addEventListener("scroll", () => {
+  const h = document.documentElement.scrollHeight - innerHeight;
+  document.getElementById("prog").style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+}, { passive: true });
+
+
+paint();
+</script>

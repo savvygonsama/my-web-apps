@@ -1,0 +1,61 @@
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-l">
+      <button class="navb pick" id="pick" aria-haspopup="dialog">日目を選ぶ</button>
+      <div class="prog" id="prog"><div class="prog-bar"><i style="width:0%"></i></div><span>0 / 30</span></div>
+    </div>
+    <div class="bar-r">
+      <button class="navb" id="t-furi" aria-pressed="true">ふりがな</button>
+      <button class="navb" id="t-ko" aria-pressed="true">뜻 보기</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <p class="mark">ことばひより</p>
+    <h1>ことば日和</h1>
+    <p class="sub">JLPT N3 어휘 30일 · 하루 20분</p>
+  </div>
+  <div class="seam"></div>
+  <div id="app"></div>
+  <footer>
+    ことば日和 &middot; JLPT N3 어휘 집중 훈련 30일<br>
+    학습 기록은 이 브라우저에만 남습니다
+    <div class="credit">
+      ことば日和 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.<br>
+      기획·구성 곤사마 &nbsp;·&nbsp; 개인 학습 목적의 이용은 자유로우며, 무단 복제·배포·상업적 이용은 금합니다.
+    </div>
+  </footer>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="일차 선택">
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-in">
+    <div class="sheet-h">
+      <span class="ja jp">三十日のことば</span>
+      <span class="ko">하루 한 칸씩, 서른 칸</span>
+      <div class="seam"></div>
+    </div>
+    <div class="grid30" id="grid30"></div>
+    <div class="sheet-note" id="sheetNote"></div>
+    <div class="sheet-f">
+      <button class="navb" id="goNext">이어서 하기</button>
+      <button class="navb" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="note" hidden>
+  <h5>소리를 재생하지 못했습니다</h5>
+  <p id="diag" style="font-size:12.5px"></p>
+  <p><b>브라우저를 완전히 종료했다 다시 켜 보세요.</b> 창 하나만 닫으면 그대로입니다. 새로 설치한 음성은 브라우저를 다시 켜야 인식됩니다.</p>
+  <p><b>이 페이지가 링크로 열려 있다면</b>, 바탕화면에 저장된 파일 쪽을 열어 보세요. 그쪽에서는 되는 경우가 있습니다.</p>
+  <p><b>Windows에 일본어 음성이 없다면</b> — 설정 → 시간 및 언어 → 언어 및 지역 → 언어 추가 → 日本語 → 설치 시 <b>음성</b> 항목 체크</p>
+  <button id="noteX">알겠습니다</button>
+</div>
+
+<script>
+const DAYS = [
