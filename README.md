@@ -32,3 +32,17 @@
 전부 [Claude Code](https://claude.com/claude-code)로 만들었습니다.
 학습 기록이나 진행 상황은 브라우저 안(localStorage)에만 저장되고 어디로도 전송되지 않습니다.
 서버가 없으니 계정도, 로그인도 없습니다.
+
+## 스킬 (skills/)
+
+앱 화면(`index.html`)과는 별개로, 각 앱에 **새 회차·새 단어를 만들어 넣을 때 쓰는 작업 설명서**입니다. Claude에게 "오늘 일본어", "새 회화 추가" 같은 말을 하면 이 설명서를 보고 형식에 맞는 원고를 만들어 줍니다. 사람이 직접 열어볼 일은 거의 없고, 백업 겸 참고용으로 올려둡니다.
+
+| 스킬 | 대상 앱 | 폴더 |
+|---|---|---|
+| ことば日和 | `kotoba-biyori/` | [`skills/kotoba-biyori/`](skills/kotoba-biyori/) |
+| 스틸링고 | `steel-japanese/` (Lite·트레이닝) | [`skills/steel-lingo/`](skills/steel-lingo/) |
+| 철강 일본어 매일 훈련 | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
+| 茶馆 CHÁGUǍN | `chaguan/` | [`skills/chaguan/`](skills/chaguan/) |
+| ROUNDTABLE | `roundtable/` | [`skills/roundtable/`](skills/roundtable/) |
+
+`workstyle/`, `meal-planner/`, `midnight-train/`은 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.
