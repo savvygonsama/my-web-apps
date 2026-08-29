@@ -9,7 +9,8 @@
 | 앱 | 무엇을 하는가 | 폴더 |
 |---|---|---|
 | 🚂 **자정 열차** | 선택으로 이야기를 만들어가는 인터랙티브 소설. 장면 65개, 결말 11개(숨은 결말 1개) | [`midnight-train/`](midnight-train/) |
-| 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo-pro/`](steel-lingo-pro/) |
+| 🏭 **스틸링고 Lite** | 철강·자동차 업계 일본어 입문. 생활 소재로 가볍게 시작 | [`steel-lingo/lite/`](steel-lingo/lite/) |
+| 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
@@ -40,7 +41,7 @@
 | 스킬 | 대상 앱 | 폴더 |
 |---|---|---|
 | ことば日和 | `kotoba-biyori/` | [`skills/kotoba-biyori/`](skills/kotoba-biyori/) |
-| 스틸링고 | `steel-lingo-pro/` (Pro. Lite는 아직 별도 폴더 없음) | [`skills/steel-lingo/`](skills/steel-lingo/) |
+| 스틸링고 | `steel-lingo/lite/`, `steel-lingo/pro/` | [`skills/steel-lingo/`](skills/steel-lingo/) |
 | 철강 일본어 매일 훈련 | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 茶馆 CHÁGUǍN | `chaguan/` | [`skills/chaguan/`](skills/chaguan/) |
 | ROUNDTABLE | `roundtable/` | [`skills/roundtable/`](skills/roundtable/) |
