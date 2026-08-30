@@ -4,8 +4,12 @@
 
    캐시에 있으면 그것을 즉시 내주고, 새 버전은 뒤에서 조용히 받아 둔다.
    받아 둔 것은 다음에 열 때 반영된다. 내용이 실제로 바뀌었으면 화면에 알린다. */
-const CACHE = 'steel-lingo-lite-v7';
-const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'steel-lingo-lite-v8';
+const SHELL = [
+  './index.html', './manifest.json', './icon-192.png', './icon-512.png',
+  /* 글꼴은 화면에 바로 필요하므로 미리 받아 둔다. 음성은 누를 때 받아서 캐시한다. */
+  './fonts/f1.woff2', './fonts/f2.woff2', './fonts/f3.woff2', './fonts/f4.woff2', './fonts/f5.woff2'
+];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
