@@ -1,4 +1,4 @@
-const CACHE = 'steel-lingo-lite-v1';
+const CACHE = 'steel-lingo-lite-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
