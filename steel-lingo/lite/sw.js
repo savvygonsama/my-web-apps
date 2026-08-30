@@ -1,7 +1,7 @@
 /* 스틸링고 Lite — 서비스워커
    내용(회차)이 계속 늘어나는 앱이라, 본문 HTML은 항상 새것을 먼저 받는다.
    네트워크가 없을 때만 캐시로 떨어진다. 아이콘 같은 정적 파일은 캐시를 먼저 쓴다. */
-const CACHE = 'steel-lingo-lite-v3';
+const CACHE = 'steel-lingo-lite-v4';
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
