@@ -146,7 +146,8 @@ html:not([data-theme="light"]) .chip[aria-pressed="true"], :root[data-theme="dar
 .sw::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); transition: background .15s; }
 .sw[aria-pressed="true"] { color: var(--ink); border-color: var(--line-strong); background: var(--surface); }
 .sw[aria-pressed="true"]::before { background: var(--accent); }
-body.home .switches { display: none; }
+/* 홈에서는 학습용 스위치를 감추되, 설치 버튼은 남긴다 */
+body.home .switches > :not(#installBtn) { display: none; }
 
 /* ── home ─────────────────────────────────── */
 .hi { font-family: var(--mincho); font-size: 26px; margin: 0 0 4px; font-weight: 400; }
@@ -511,8 +512,7 @@ footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top:
 
 <div id="installNote" hidden>
   <h5>📲 홈 화면에 설치하기</h5>
-  <p><b>아이폰(Safari)</b> — 화면 아래 <b>공유</b> 버튼을 누른 뒤 <b>"홈 화면에 추가"</b>를 선택하세요.</p>
-  <p>설치하면 아이콘을 눌러 주소창 없이 앱처럼 바로 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다.</p>
+  <div id="installSteps"></div>
   <button id="installNoteClose">알겠습니다</button>
 </div>
 
@@ -2461,34 +2461,51 @@ paint();
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
   }
 
-  const installBtn = document.getElementById("installBtn");
-  const installNote = document.getElementById("installNote");
-  const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const btn = document.getElementById("installBtn");
+  const note = document.getElementById("installNote");
+  const steps = document.getElementById("installSteps");
+  const ua = navigator.userAgent;
 
-  if (isStandalone()) return;
+  /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
+  if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
 
-  let deferredPrompt = null;
+  const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  /* 카카오톡·네이버 같은 앱 안 브라우저는 설치 자체를 지원하지 않는다 */
+  const inApp = /KAKAOTALK|NAVER|Instagram|FB_IAB|FBAN|FBAV|Line\/|DaumApps|band/i.test(ua);
 
-  if (isIOS()) {
-    installBtn.hidden = false;
-    installBtn.addEventListener("click", () => { installNote.hidden = false; });
-  } else {
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.hidden = false;
-    });
-    installBtn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      installBtn.hidden = true;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-    });
-    window.addEventListener("appinstalled", () => { installBtn.hidden = true; });
-  }
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
+  window.addEventListener("appinstalled", () => { btn.hidden = true; });
 
-  document.getElementById("installNoteClose").addEventListener("click", () => { installNote.hidden = true; });
+  /* 브라우저가 설치 안내를 안 띄우는 경우가 많아, 버튼은 항상 두고 눌렀을 때 상황에 맞게 안내한다 */
+  btn.hidden = false;
+
+  const guide = () => {
+    if (inApp) {
+      return '<p><b>지금 카카오톡 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>' +
+             '<p>화면 <b>오른쪽 위 메뉴</b>를 눌러 <b>"다른 브라우저로 열기"</b>나 <b>Chrome</b>을 고른 뒤, 다시 <b>설치</b>를 눌러 주세요.</p>';
+    }
+    if (isIOS) {
+      return '<p><b>아이폰 · 아이패드 (Safari)</b></p>' +
+             '<p>화면 <b>아래쪽 공유 버튼</b>을 누른 뒤, 목록을 내려 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
+    }
+    return '<p><b>안드로이드 (Chrome)</b></p>' +
+           '<p>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누른 뒤 <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
+  };
+
+  btn.addEventListener("click", async () => {
+    if (deferred) {
+      deferred.prompt();
+      const { outcome } = await deferred.userChoice;
+      deferred = null;
+      if (outcome === "accepted") btn.hidden = true;
+      return;
+    }
+    steps.innerHTML = guide() +
+      '<p>설치하면 아이콘을 눌러 주소창 없이 앱처럼 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다.</p>';
+    note.hidden = false;
+  });
+
+  document.getElementById("installNoteClose").addEventListener("click", () => { note.hidden = true; });
 })();
 </script>
