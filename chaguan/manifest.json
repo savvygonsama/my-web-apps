@@ -1,0 +1,19 @@
+{
+  "name": "茶馆 CHÁGUǍN 중국어 쉐도잉",
+  "short_name": "茶馆 CHÁGUǍN",
+  "description": "중국어 일상 회화 쉐도잉 — HSK 3~4급, 병음과 성조 색 표시",
+  "id": "/chaguan/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f5ef",
+  "theme_color": "#2f5d8c",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

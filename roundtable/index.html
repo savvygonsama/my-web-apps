@@ -1,3 +1,13 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#a4342a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ROUNDTABLE">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
 <title>ROUNDTABLE 영어 쉐도잉</title>
 <style>
 :root{
@@ -165,6 +175,37 @@ pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--l
   .keyrow b{min-width:0}
   .brand i{display:none}
 }
+
+/* ---- 앱으로 설치하기 ---- */
+.instbtn{background:var(--accent);color:var(--paper);border:none;padding:6px 12px;
+  border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.instbtn[hidden]{display:none}
+@media(max-width:560px){ .instbtn{margin-left:auto} }
+
+#openChrome{position:fixed;inset:auto 12px 12px;max-width:520px;margin:0 auto;z-index:60;
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  background:var(--accent);color:var(--paper);border-radius:14px;padding:16px 18px;
+  box-shadow:0 12px 40px -8px rgba(0,0,0,.45)}
+#openChrome[hidden]{display:none}   /* display:flex가 hidden 속성을 이기므로 명시한다 */
+#openChrome .oc-body{flex:1 1 240px;font-size:13.5px;line-height:1.7}
+#openChrome .oc-body b{display:block;font-size:15px;margin-bottom:3px}
+#openChrome .oc-body span{opacity:.9}
+#openChrome button{border:none;border-radius:9px;padding:10px 16px;cursor:pointer;
+  font-weight:700;font-size:14px;background:var(--paper);color:var(--accent)}
+#openChrome button.ghost{background:transparent;color:inherit;font-weight:400;opacity:.85;padding:10px 8px}
+
+#installNote{position:fixed;inset:auto 16px 16px;max-width:460px;margin:0 auto;z-index:50;
+  background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;box-shadow:0 12px 40px -8px rgba(0,0,0,.4)}
+#installNote h5{margin:0 0 10px;font-size:15px}
+#installNote p{margin:0 0 10px;font-size:13px;color:var(--sub);line-height:1.8}
+#installNote ol{margin:0 0 12px;padding-left:20px;font-size:13px;color:var(--sub);line-height:1.95}
+#installNote ol li{margin-bottom:3px}
+#installNote b{color:var(--ink)}
+#installNote button{border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  border-radius:8px;padding:7px 16px;cursor:pointer;font-size:13.5px}
+#installNote .inst-btns{display:flex;gap:8px;flex-wrap:wrap}
+#installNote #installNow{background:var(--accent);color:var(--paper);border-color:var(--accent);font-weight:700}
 </style>
 <div class="topbar"><div class="topin">
   <div class="brand">ROUNDTABLE<i>데일리 영어 쉐도잉</i></div>
@@ -175,6 +216,7 @@ pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--l
     <button data-view="add">자료 추가</button>
     <button data-view="settings">설정</button>
   </nav>
+  <button class="instbtn" id="installBtn" hidden>📲 설치</button>
 </div></div>
 
 <div class="wrap">
@@ -188,6 +230,26 @@ pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--l
 <div class="credit">ROUNDTABLE — 데일리 영어 쉐도잉 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.</div>
 <div class="footbar" id="footbar"><div class="footin" id="footin"></div></div>
 <div class="toast" id="toast"></div>
+
+<div id="openChrome" hidden>
+  <div class="oc-body">
+    <b id="ocApp">지금은 다른 앱 안에서 열려 있습니다.</b>
+    <span id="ocMsg"></span>
+  </div>
+  <button id="ocGo">브라우저로 열기</button>
+  <button id="ocCopy" class="ghost">주소 복사</button>
+  <button id="ocClose" class="ghost">그냥 보기</button>
+</div>
+
+<div id="installNote" hidden>
+  <h5 id="installTitle">📲 홈 화면에 설치하기</h5>
+  <div id="installSteps"></div>
+  <div class="inst-btns">
+    <button id="installNow" hidden>지금 설치</button>
+    <button id="installNoteClose">알겠습니다</button>
+  </div>
+</div>
+
 <script>
 const CONTENT_BUILTIN = [
 {
@@ -1560,4 +1622,167 @@ function applyTheme(){
 /* ---------- 시작 ---------- */
 applyTheme();
 render();
+
+/* ═══════════ 앱으로 설치하기 ═══════════
+   링크를 카카오톡·팀즈로 보내면 대개 그 앱 안의 브라우저로 열린다.
+   거기서는 설치도 소리도 되지 않으므로, 그 경우를 가장 먼저 잡아 크롬·사파리로 넘긴다. */
+(function(){
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=> navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+    /* 화면은 캐시로 즉시 띄우므로, 새 본문은 뒤에서 받아 둔 뒤에 알린다 */
+    navigator.serviceWorker.addEventListener("message", e=>{
+      if(e.data && e.data.type==="update-ready") toast("새 내용을 받았습니다. 앱을 다시 열면 반영됩니다.");
+    });
+  }
+
+  const UA = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/i.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(UA);
+  const isMobile = isIOS || isAndroid;
+  /* 앱 안 브라우저 — 카카오톡·팀즈·네이버·라인·밴드·페북·인스타 */
+  const inApp = /KAKAOTALK|Teams|MSTeams|NAVER|Line\/|band|DaumApps|Instagram|FB_IAB|FBAN|FBAV|everytime/i.test(UA);
+  /* 아이폰은 사파리로, 안드로이드는 크롬으로 넘긴다.
+     그 기기에 처음부터 깔려 있는 브라우저라야 아무도 무엇을 설치하지 않는다. */
+  const TARGET = isIOS ? "사파리" : "크롬";
+  const TO = isIOS ? "사파리로" : "크롬으로";
+
+  function openOutside(){
+    const url = location.href;
+    /* 카카오톡은 바깥 브라우저로 넘기는 자기 방식이 있다.
+       기기의 기본 브라우저가 열리므로 아이폰이면 사파리, 안드로이드면 크롬이다. */
+    if(/KAKAOTALK/i.test(UA)){
+      location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url);
+      return;
+    }
+    if(isIOS){
+      /* 사파리로 넘기는 전용 방식. 막히면 주소만 복사해 준다. */
+      location.href = url.replace(/^https:/, "x-safari-https:").replace(/^http:/, "x-safari-http:");
+      setTimeout(()=>{ if(!document.hidden) copyLink(); }, 1200);
+      return;
+    }
+    if(isAndroid){
+      location.href = "intent://" + url.replace(/^https?:\/\//, "") +
+        "#Intent;scheme=" + location.protocol.replace(":", "") +
+        ";package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+      return;
+    }
+    window.open(url, "_blank");
+  }
+
+  /* 마지막 수단 — 주소를 복사해 주고 붙여 넣으라고 알린다. */
+  function copyLink(){
+    const url = location.href;
+    const done = ()=> toast("주소를 복사했습니다. " + TARGET + "에 붙여 넣어 주세요.");
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(done, done);
+    }else{
+      const ta = document.createElement("textarea");
+      ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(ta); done();
+    }
+  }
+
+  if(inApp && isMobile){
+    const box = $("#openChrome");
+    box.hidden = false;
+    $("#ocApp").textContent = /KAKAOTALK/i.test(UA) ? "지금은 카카오톡 안에서 열려 있습니다."
+                                                    : "지금은 다른 앱 안에서 열려 있습니다.";
+    $("#ocMsg").textContent = "여기서는 영어 발음이 나오지 않고 설치도 되지 않습니다. " +
+                              TO + " 열면 소리가 납니다.";
+    $("#ocGo").textContent = TO + " 열기";
+    $("#ocGo").onclick = openOutside;
+    $("#ocCopy").onclick = copyLink;
+    $("#ocClose").onclick = ()=>{ box.hidden = true; };
+  }
+
+  const btn = $("#installBtn"), note = $("#installNote");
+  const title = $("#installTitle"), steps = $("#installSteps"), nowBtn = $("#installNow");
+
+  /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
+  if(window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
+
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", e=>{
+    e.preventDefault(); deferred = e;
+    if(!note.hidden) open();     /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
+  });
+  window.addEventListener("appinstalled", ()=>{ btn.hidden = true; hide(); });
+
+  /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
+  btn.hidden = false;
+
+  function hide(){ note.hidden = true; }
+
+  function build(){
+    if(inApp){
+      title.textContent = "📲 먼저 브라우저로 열어 주세요";
+      return "<p><b>지금 카카오톡·팀즈 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>" +
+             "<ol>" +
+               "<li>화면 <b>오른쪽 위 메뉴</b>(⋯ 또는 ⋮)를 누릅니다</li>" +
+               "<li><b>「다른 브라우저로 열기」</b>를 고릅니다" +
+                 (isIOS ? " — 아이폰은 <b>Safari</b>" : isAndroid ? " — 안드로이드는 <b>Chrome</b>" : "") + "</li>" +
+               "<li>열린 화면에서 이 안내가 다시 나오면 그대로 따라 하시면 됩니다</li>" +
+             "</ol>";
+    }
+    if(isIOS){
+      title.textContent = "📲 홈 화면에 추가하기";
+      return "<p><b>아이폰 · 아이패드 (Safari)</b></p>" +
+             "<ol>" +
+               "<li>화면 <b>아래쪽 공유 버튼</b>(□ 위에 화살표)을 누릅니다</li>" +
+               "<li>목록을 내려 <b>「홈 화면에 추가」</b>를 고릅니다</li>" +
+               "<li>오른쪽 위 <b>「추가」</b>를 누르면 끝입니다</li>" +
+             "</ol>";
+    }
+    if(isAndroid){
+      title.textContent = "📲 앱으로 설치하기";
+      /* 크롬이 설치 신호를 준 경우에만 버튼을 안내한다. 없는 버튼을 누르라고 하면 그대로 막힌다. */
+      return "<p><b>안드로이드 (Chrome)</b></p>" +
+             "<ol>" +
+               (deferred
+                 ? "<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>"
+                 : "<li>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누릅니다</li>" +
+                   "<li><b>「앱 설치」</b> 또는 <b>「홈 화면에 추가」</b>를 고릅니다</li>") +
+             "</ol>";
+    }
+    title.textContent = "📲 앱으로 설치하기";
+    return "<p><b>컴퓨터 (Chrome · Edge)</b></p>" +
+           "<ol>" +
+             (deferred ? "<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>" : "") +
+             "<li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 누릅니다</li>" +
+             "<li>없으면 메뉴 → <b>「앱 설치」</b></li>" +
+           "</ol>";
+  }
+
+  function open(){
+    steps.innerHTML = build() +
+      "<p>설치하면 아이콘을 눌러 주소창 없이 앱처럼 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다. 지금까지의 기록은 그대로 남습니다.</p>";
+    nowBtn.hidden = !deferred;
+    note.hidden = false;
+  }
+
+  /* 처음 연 사람에게는 한 번 저절로 띄운다. 닫으면 다시 띄우지 않는다. */
+  const SEEN = "roundtable-install-seen";
+  let seen = false;
+  try{ seen = localStorage.getItem(SEEN) === "1"; }catch(e){}
+  if(!seen && isMobile && $("#openChrome").hidden)
+    setTimeout(()=>{ if(note.hidden) open(); }, 1200);
+
+  btn.onclick = open;
+
+  nowBtn.onclick = async ()=>{
+    if(!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    nowBtn.hidden = true;
+    if(outcome === "accepted"){ btn.hidden = true; hide(); }
+  };
+
+  $("#installNoteClose").onclick = ()=>{
+    hide();
+    try{ localStorage.setItem(SEEN, "1"); }catch(e){}
+  };
+})();
 </script>

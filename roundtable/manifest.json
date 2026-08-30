@@ -1,0 +1,19 @@
+{
+  "name": "ROUNDTABLE 영어 쉐도잉",
+  "short_name": "ROUNDTABLE",
+  "description": "토론형 영어 회화 쉐도잉 — 하루 20분, 브리핑·쉐도잉·표현장·복습",
+  "id": "/roundtable/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f6f2ea",
+  "theme_color": "#a4342a",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
