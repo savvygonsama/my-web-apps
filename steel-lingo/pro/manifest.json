@@ -1,0 +1,19 @@
+{
+  "name": "스틸링고 Pro",
+  "short_name": "스틸링고 Pro",
+  "description": "철강·자동차 업계 실무 일본어 훈련 — 용어·예문·기사 독해·상담 회화·퀴즈",
+  "id": "/steel-lingo/pro/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef1f4",
+  "theme_color": "#1d566f",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
