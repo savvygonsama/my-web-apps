@@ -385,6 +385,11 @@ html:not([data-theme="light"]) #openChrome button, :root[data-theme="dark"] #ope
 #ttsNote h5, #installNote h5 { margin: 0 0 10px; font-size: 15px; }
 #ttsNote p, #installNote p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
 #ttsNote button, #installNote button { border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
+#installNote ol { margin: 0 0 12px; padding-left: 20px; font-size: 13px; color: var(--ink-2); line-height: 1.95; }
+#installNote ol li { margin-bottom: 3px; }
+#installNote .inst-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+#installNote #installNow { background: var(--accent); color: var(--surface); border-color: var(--accent); font-weight: 700; }
+html:not([data-theme="light"]) #installNote #installNow, :root[data-theme="dark"] #installNote #installNow { color: var(--ground); }
 @media (max-width: 560px) {
   .ex, .story, .hero { padding-left: 18px; padding-right: 18px; }
   .parts td.p { white-space: normal; }
@@ -455,9 +460,12 @@ html:not([data-theme="light"]) #openChrome button, :root[data-theme="dark"] #ope
 </div>
 
 <div id="installNote" hidden>
-  <h5>📲 홈 화면에 설치하기</h5>
+  <h5 id="installTitle">📲 홈 화면에 설치하기</h5>
   <div id="installSteps"></div>
-  <button id="installNoteClose">알겠습니다</button>
+  <div class="inst-btns">
+    <button id="installNow" hidden>지금 설치</button>
+    <button id="installNoteClose">알겠습니다</button>
+  </div>
 </div>
 
 <script>
@@ -5296,58 +5304,113 @@ window.addEventListener("scroll", () => {
 
 paint();
 
-/* ═══════════ PWA 설치 ═══════════ */
+/* ═══════════ PWA 설치 안내 ═══════════
+   링크를 카카오톡·팀즈로 보내면 대개 그 앱 안의 브라우저로 열린다.
+   거기서는 설치가 아예 되지 않으므로, 그 경우를 가장 먼저 잡아 크롬·사파리로 넘긴다. */
 (function () {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
   }
 
-  const btn = document.getElementById("installBtn");
-  const note = document.getElementById("installNote");
+  const btn   = document.getElementById("installBtn");
+  const note  = document.getElementById("installNote");
+  const title = document.getElementById("installTitle");
   const steps = document.getElementById("installSteps");
+  const nowBtn = document.getElementById("installNow");
   const ua = navigator.userAgent;
 
   /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
   if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
 
   const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  /* 카카오톡·네이버 같은 앱 안 브라우저는 설치 자체를 지원하지 않는다 */
-  const inApp = /KAKAOTALK|NAVER|Instagram|FB_IAB|FBAN|FBAV|Line\/|DaumApps|band/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  /* 앱 안 브라우저 — 카카오톡·팀즈·네이버·라인·밴드·페북·인스타 */
+  const inApp = /KAKAOTALK|Teams|MSTeams|NAVER|Line\/|band|DaumApps|Instagram|FB_IAB|FBAN|FBAV|everytime/i.test(ua);
+  const isMobile = isIOS || isAndroid;
 
   let deferred = null;
-  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; });
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); deferred = e;
+    if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
+  });
+  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); });
 
-  /* 브라우저가 설치 안내를 안 띄우는 경우가 많아, 버튼은 항상 두고 눌렀을 때 상황에 맞게 안내한다 */
+  /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
 
-  const guide = () => {
+  function showNow() { nowBtn.hidden = !deferred; }
+  function hide() { note.hidden = true; }
+
+  function build() {
     if (inApp) {
-      return '<p><b>지금 카카오톡 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>' +
-             '<p>화면 <b>오른쪽 위 메뉴</b>를 눌러 <b>"다른 브라우저로 열기"</b>나 <b>Chrome</b>을 고른 뒤, 다시 <b>설치</b>를 눌러 주세요.</p>';
+      title.textContent = "📲 먼저 브라우저로 열어 주세요";
+      return '<p><b>지금 카카오톡·팀즈 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>' +
+             '<ol>' +
+               '<li>화면 <b>오른쪽 위 메뉴</b>(⋯ 또는 ⋮)를 누릅니다</li>' +
+               '<li><b>「다른 브라우저로 열기」</b>를 고릅니다' +
+                 (isIOS ? ' — 아이폰은 <b>Safari</b>' : isAndroid ? ' — 안드로이드는 <b>Chrome</b>' : '') + '</li>' +
+               '<li>열린 화면에서 이 안내가 다시 나오면 그대로 따라 하시면 됩니다</li>' +
+             '</ol>';
     }
     if (isIOS) {
+      title.textContent = "📲 홈 화면에 추가하기";
       return '<p><b>아이폰 · 아이패드 (Safari)</b></p>' +
-             '<p>화면 <b>아래쪽 공유 버튼</b>을 누른 뒤, 목록을 내려 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
+             '<ol>' +
+               '<li>화면 <b>아래쪽 공유 버튼</b>(□ 위에 화살표)을 누릅니다</li>' +
+               '<li>목록을 내려 <b>「홈 화면에 추가」</b>를 고릅니다</li>' +
+               '<li>오른쪽 위 <b>「추가」</b>를 누르면 끝입니다</li>' +
+             '</ol>';
     }
-    return '<p><b>안드로이드 (Chrome)</b></p>' +
-           '<p>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누른 뒤 <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
-  };
+    if (isAndroid) {
+      title.textContent = "📲 앱으로 설치하기";
+      /* 크롬이 설치 신호를 준 경우에만 버튼을 안내한다. 없는 버튼을 누르라고 하면 그대로 막힌다. */
+      return '<p><b>안드로이드 (Chrome)</b></p>' +
+             '<ol>' +
+               (deferred
+                 ? '<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>'
+                 : '<li>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누릅니다</li>' +
+                   '<li><b>「앱 설치」</b> 또는 <b>「홈 화면에 추가」</b>를 고릅니다</li>') +
+             '</ol>';
+    }
+    title.textContent = "📲 앱으로 설치하기";
+    return '<p><b>컴퓨터 (Chrome · Edge)</b></p>' +
+           '<ol>' +
+             (deferred ? '<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>' : '') +
+             '<li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 누릅니다</li>' +
+             '<li>없으면 메뉴 → <b>「앱 설치」</b></li>' +
+           '</ol>';
+  }
 
-  btn.addEventListener("click", async () => {
-    if (deferred) {
-      deferred.prompt();
-      const { outcome } = await deferred.userChoice;
-      deferred = null;
-      if (outcome === "accepted") btn.hidden = true;
-      return;
-    }
-    steps.innerHTML = guide() +
+  function open() {
+    steps.innerHTML = build() +
       '<p>설치하면 아이콘을 눌러 주소창 없이 앱처럼 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다.</p>';
+    showNow();
     note.hidden = false;
+  }
+
+  /* 처음 연 사람에게는 한 번 저절로 띄운다. 닫으면 다시 띄우지 않는다. */
+  const SEEN = "steel-lingo-lite-install-seen";
+  let seen = false;
+  try { seen = localStorage.getItem(SEEN) === "1"; } catch (e) {}
+  if (!seen && (isMobile || inApp)) {
+    setTimeout(() => { if (note.hidden) open(); }, 1200);
+  }
+
+  btn.addEventListener("click", open);
+
+  nowBtn.addEventListener("click", async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    nowBtn.hidden = true;
+    if (outcome === "accepted") { btn.hidden = true; hide(); }
   });
 
-  document.getElementById("installNoteClose").addEventListener("click", () => { note.hidden = true; });
+  document.getElementById("installNoteClose").addEventListener("click", () => {
+    hide();
+    try { localStorage.setItem(SEEN, "1"); } catch (e) {}
+  });
 })();
 </script>
 

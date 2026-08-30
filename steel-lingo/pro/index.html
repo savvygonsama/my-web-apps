@@ -221,6 +221,11 @@ section { margin-bottom: 48px; }
 #ttsNote h5, #installNote h5 { margin: 0 0 6px; font-size: 14.5px; }
 #ttsNote p, #installNote p { margin: 0 0 6px; color: var(--ink-2); }
 #ttsNote button, #installNote button { font: inherit; font-size: 12.5px; font-weight: 700; margin-top: 8px; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink-2); cursor: pointer; }
+#installNote ol { margin: 0 0 10px; padding-left: 20px; line-height: 1.95; color: var(--ink-2); }
+#installNote ol li { margin-bottom: 3px; }
+#installNote .inst-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+#installNote #installNow { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+html:not([data-theme="light"]) #installNote #installNow, :root[data-theme="dark"] #installNote #installNow { color: var(--ground); }
 
 /* ── terms ────────────────────────────────── */
 .terms { display: grid; gap: 8px; }
@@ -434,6 +439,27 @@ html:not([data-theme="light"]) .wr button, :root[data-theme="dark"] .wr button {
 .wr-res.ng .lab { color: var(--bad); }
 .wr-res .mine { font-size: 13.5px; color: var(--ink-2); margin-top: 6px; }
 
+/* 여기까지 하고 저장 — 20분을 한 번에 못 끝낼 때가 많아, 읽던 자리를 남겨 둔다 */
+.saveout {
+  margin: 34px 0 0; padding: 24px; text-align: center;
+  border: 1px dashed var(--line-strong); border-radius: 14px; background: var(--surface);
+}
+.saveout button {
+  font: inherit; border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  border-radius: 11px; padding: 13px 26px; cursor: pointer; font-weight: 700; font-size: 15px;
+}
+html:not([data-theme="light"]) .saveout button, :root[data-theme="dark"] .saveout button { color: var(--ground); }
+.saveout button:hover { filter: brightness(1.08); }
+.saveout p { margin: 12px 0 0; font-size: 13px; color: var(--ink-3); line-height: 1.8; }
+#toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); z-index: 70;
+  background: var(--ink); color: var(--ground); padding: 13px 22px; border-radius: 999px;
+  font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px -8px rgba(0,0,0,.5);
+  opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s;
+}
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+.todaycard .cta.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line-strong); margin-left: 8px; }
 .done { margin-top: 44px; display: flex; justify-content: center; }
 .done button { font: inherit; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); cursor: pointer; transition: all .15s; }
 .done button[aria-pressed="true"] { background: var(--good-soft); border-color: var(--good); color: var(--good); }
@@ -455,6 +481,7 @@ footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top:
 </style>
 
 <div id="prog"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <div class="bar">
   <div class="bar-inner">
@@ -511,9 +538,12 @@ footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top:
 </div>
 
 <div id="installNote" hidden>
-  <h5>📲 홈 화면에 설치하기</h5>
+  <h5 id="installTitle">📲 홈 화면에 설치하기</h5>
   <div id="installSteps"></div>
-  <button id="installNoteClose">알겠습니다</button>
+  <div class="inst-btns">
+    <button id="installNow" hidden>지금 설치</button>
+    <button id="installNoteClose">알겠습니다</button>
+  </div>
 </div>
 
 <script>
@@ -2272,6 +2302,27 @@ let view = "home";
 let current = store.get("day", 1);
 let quizState = {};
 
+/* 읽던 자리
+   하루치가 20분이라 한 번에 끝내지 못하는 날이 많다. 회차만 기억하면 매번 맨 위부터
+   다시 찾아 내려와야 하므로, 어디까지 봤는지까지 담아 두고 다음에 그 자리로 데려간다. */
+const getSpot = () => store.get("spot", null);
+function saveSpot(silent) {
+  if (view !== "study") return;
+  store.set("spot", { day: current, y: Math.round(window.scrollY) });
+  if (!silent) toast("여기까지 저장했습니다. 다음에 열면 이어집니다.");
+}
+function clearSpot() { store.set("spot", null); }
+let pendingY = 0;
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
+}
+
 /* 난이도
    easy 중급 — 용어 다섯 개, 짧은 기본 문장, 기사 독해 없음, 회화 앞부분만,
                객관식 퀴즈만. 후리가나와 해석은 항상 켜둔다.
@@ -2413,6 +2464,8 @@ function renderHome() {
   const name = store.get("name", "");
   const doneToday = store.get("lastDone", null) === today();
   const hist = DATA.map(d => ({ d, rec: store.get("rec-" + d.no, null) })).filter(x => x.rec).sort((a, b) => b.rec.date.localeCompare(a.rec.date));
+  const spot = getSpot();
+  const spotDay = spot && DATA.find(d => d.no === spot.day);
 
   return `
     <h3 class="hi">${name ? esc(name) + "님, 안녕하세요" : "안녕하세요"}<button id="nameBtn">${name ? "이름 변경" : "이름 입력"}</button></h3>
@@ -2424,6 +2477,14 @@ function renderHome() {
       <div class="stat"><div class="ico">🎯</div><div class="val">${s.rate === null ? "–" : s.rate + "<small>%</small>"}</div><div class="lab">퀴즈 정답률</div></div>
       <div class="stat"><div class="ico">📚</div><div class="val">${s.words}<small>개</small></div><div class="lab">익힌 용어</div></div>
     </div>
+
+    ${spotDay ? `
+    <div class="todaycard">
+      <h4>📌 읽던 자리</h4>
+      <p>${spot.day}일차 · ${spotDay.theme} — 지난번에 보던 자리가 남아 있습니다.</p>
+      <button class="cta" data-view="study" data-day="${spot.day}" data-resume="1">읽던 자리에서 이어서</button>
+      <button class="cta ghost" data-view="study" data-day="${spot.day}">처음부터 다시</button>
+    </div>` : ""}
 
     <div class="todaycard ${doneToday ? "ok" : ""}">
       <h4>${doneToday ? "🎉 오늘 완료" : "📖 오늘의 학습"}</h4>
@@ -2595,6 +2656,10 @@ function renderDay(d) {
         <div class="col-sign">송일본 · 도쿄 거주 35년</div>
       </div>
     </section>
+    <div class="saveout">
+      <button id="saveExit">📌 여기까지 하고 저장</button>
+      <p>다음에 열면 <b>이 자리</b>에서 이어집니다. 그냥 닫아도 회차는 기억합니다.</p>
+    </div>
     <div class="done">
       <button id="doneBtn" aria-pressed="${isDone}">${isDone ? "🎉 오늘도 완료! 수고하셨습니다" : "오늘 학습 완료 표시"}</button>
     </div>`;
@@ -2632,7 +2697,9 @@ function paint() {
   document.getElementById("app").innerHTML = view === "home" ? renderHome() : renderDay(DATA.find(x => x.no === current) || DATA[0]);
   renderNavs();
   if (view === "study") updateScore();
-  window.scrollTo({ top: 0, behavior: "instant" });
+  /* 읽던 자리에서 이어 갈 때만 그 높이로, 아니면 맨 위로 */
+  window.scrollTo({ top: pendingY, behavior: "instant" });
+  pendingY = 0;
 }
 
 document.addEventListener("click", e => {
@@ -2645,10 +2712,14 @@ document.addEventListener("click", e => {
 
   if (e.target.id === "ttsClose") { document.getElementById("ttsNote").hidden = true; return; }
 
+  if (e.target.closest("#saveExit")) { saveSpot(false); return; }
+
   const nav = e.target.closest("[data-view]");
   if (nav) {
     view = nav.dataset.view;
     if (nav.dataset.day) { current = +nav.dataset.day; store.set("day", current); }
+    const spot = getSpot();
+    pendingY = (nav.dataset.resume && view === "study" && spot && spot.day === current) ? spot.y : 0;
     paint(); return;
   }
 
@@ -2800,6 +2871,9 @@ document.addEventListener("click", e => {
       }
       const q = store.get("quiz-" + current, null);
       store.set("rec-" + current, { date: t, right: q ? q.right : null, total: q ? q.total : null });
+      /* 다 본 회차의 읽던 자리는 지운다. 남겨 두면 홈에서 끝난 회차로 계속 부른다. */
+      const spot = getSpot();
+      if (spot && spot.day === current) clearSpot();
     }
   }
 });
@@ -2881,57 +2955,112 @@ addEventListener("scroll", () => {
 
 paint();
 
-/* ═══════════ PWA 설치 ═══════════ */
+/* ═══════════ PWA 설치 안내 ═══════════
+   링크를 카카오톡·팀즈로 보내면 대개 그 앱 안의 브라우저로 열린다.
+   거기서는 설치가 아예 되지 않으므로, 그 경우를 가장 먼저 잡아 크롬·사파리로 넘긴다. */
 (function () {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
   }
 
-  const btn = document.getElementById("installBtn");
-  const note = document.getElementById("installNote");
+  const btn   = document.getElementById("installBtn");
+  const note  = document.getElementById("installNote");
+  const title = document.getElementById("installTitle");
   const steps = document.getElementById("installSteps");
+  const nowBtn = document.getElementById("installNow");
   const ua = navigator.userAgent;
 
   /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
   if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
 
   const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  /* 카카오톡·네이버 같은 앱 안 브라우저는 설치 자체를 지원하지 않는다 */
-  const inApp = /KAKAOTALK|NAVER|Instagram|FB_IAB|FBAN|FBAV|Line\/|DaumApps|band/i.test(ua);
+  const isAndroid = /android/i.test(ua);
+  /* 앱 안 브라우저 — 카카오톡·팀즈·네이버·라인·밴드·페북·인스타 */
+  const inApp = /KAKAOTALK|Teams|MSTeams|NAVER|Line\/|band|DaumApps|Instagram|FB_IAB|FBAN|FBAV|everytime/i.test(ua);
+  const isMobile = isIOS || isAndroid;
 
   let deferred = null;
-  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; });
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); deferred = e;
+    if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
+  });
+  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); });
 
-  /* 브라우저가 설치 안내를 안 띄우는 경우가 많아, 버튼은 항상 두고 눌렀을 때 상황에 맞게 안내한다 */
+  /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
 
-  const guide = () => {
+  function showNow() { nowBtn.hidden = !deferred; }
+  function hide() { note.hidden = true; }
+
+  function build() {
     if (inApp) {
-      return '<p><b>지금 카카오톡 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>' +
-             '<p>화면 <b>오른쪽 위 메뉴</b>를 눌러 <b>"다른 브라우저로 열기"</b>나 <b>Chrome</b>을 고른 뒤, 다시 <b>설치</b>를 눌러 주세요.</p>';
+      title.textContent = "📲 먼저 브라우저로 열어 주세요";
+      return '<p><b>지금 카카오톡·팀즈 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p>' +
+             '<ol>' +
+               '<li>화면 <b>오른쪽 위 메뉴</b>(⋯ 또는 ⋮)를 누릅니다</li>' +
+               '<li><b>「다른 브라우저로 열기」</b>를 고릅니다' +
+                 (isIOS ? ' — 아이폰은 <b>Safari</b>' : isAndroid ? ' — 안드로이드는 <b>Chrome</b>' : '') + '</li>' +
+               '<li>열린 화면에서 이 안내가 다시 나오면 그대로 따라 하시면 됩니다</li>' +
+             '</ol>';
     }
     if (isIOS) {
+      title.textContent = "📲 홈 화면에 추가하기";
       return '<p><b>아이폰 · 아이패드 (Safari)</b></p>' +
-             '<p>화면 <b>아래쪽 공유 버튼</b>을 누른 뒤, 목록을 내려 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
+             '<ol>' +
+               '<li>화면 <b>아래쪽 공유 버튼</b>(□ 위에 화살표)을 누릅니다</li>' +
+               '<li>목록을 내려 <b>「홈 화면에 추가」</b>를 고릅니다</li>' +
+               '<li>오른쪽 위 <b>「추가」</b>를 누르면 끝입니다</li>' +
+             '</ol>';
     }
-    return '<p><b>안드로이드 (Chrome)</b></p>' +
-           '<p>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누른 뒤 <b>"앱 설치"</b> 또는 <b>"홈 화면에 추가"</b>를 고르세요.</p>';
-  };
+    if (isAndroid) {
+      title.textContent = "📲 앱으로 설치하기";
+      /* 크롬이 설치 신호를 준 경우에만 버튼을 안내한다. 없는 버튼을 누르라고 하면 그대로 막힌다. */
+      return '<p><b>안드로이드 (Chrome)</b></p>' +
+             '<ol>' +
+               (deferred
+                 ? '<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>'
+                 : '<li>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누릅니다</li>' +
+                   '<li><b>「앱 설치」</b> 또는 <b>「홈 화면에 추가」</b>를 고릅니다</li>') +
+             '</ol>';
+    }
+    title.textContent = "📲 앱으로 설치하기";
+    return '<p><b>컴퓨터 (Chrome · Edge)</b></p>' +
+           '<ol>' +
+             (deferred ? '<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>' : '') +
+             '<li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 누릅니다</li>' +
+             '<li>없으면 메뉴 → <b>「앱 설치」</b></li>' +
+           '</ol>';
+  }
 
-  btn.addEventListener("click", async () => {
-    if (deferred) {
-      deferred.prompt();
-      const { outcome } = await deferred.userChoice;
-      deferred = null;
-      if (outcome === "accepted") btn.hidden = true;
-      return;
-    }
-    steps.innerHTML = guide() +
+  function open() {
+    steps.innerHTML = build() +
       '<p>설치하면 아이콘을 눌러 주소창 없이 앱처럼 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다.</p>';
+    showNow();
     note.hidden = false;
+  }
+
+  /* 처음 연 사람에게는 한 번 저절로 띄운다. 닫으면 다시 띄우지 않는다. */
+  const SEEN = "steel-lingo-pro-install-seen";
+  let seen = false;
+  try { seen = localStorage.getItem(SEEN) === "1"; } catch (e) {}
+  if (!seen && (isMobile || inApp)) {
+    setTimeout(() => { if (note.hidden) open(); }, 1200);
+  }
+
+  btn.addEventListener("click", open);
+
+  nowBtn.addEventListener("click", async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    nowBtn.hidden = true;
+    if (outcome === "accepted") { btn.hidden = true; hide(); }
   });
 
-  document.getElementById("installNoteClose").addEventListener("click", () => { note.hidden = true; });
+  document.getElementById("installNoteClose").addEventListener("click", () => {
+    hide();
+    try { localStorage.setItem(SEEN, "1"); } catch (e) {}
+  });
 })();
 </script>
