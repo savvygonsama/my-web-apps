@@ -1,7 +1,10 @@
 /* 스틸링고 Pro — 서비스워커
-   내용(회차)이 계속 늘어나는 앱이라, 본문 HTML은 항상 새것을 먼저 받는다.
-   네트워크가 없을 때만 캐시로 떨어진다. 아이콘 같은 정적 파일은 캐시를 먼저 쓴다. */
-const CACHE = 'steel-lingo-pro-v5';
+   본문 HTML이 7MB를 넘는다(글꼴이 파일 안에 들어 있다).
+   그래서 열 때마다 네트워크에서 받으면 휴대폰에서 수십 초가 걸린다.
+
+   캐시에 있으면 그것을 즉시 내주고, 새 버전은 뒤에서 조용히 받아 둔다.
+   받아 둔 것은 다음에 열 때 반영된다. 내용이 실제로 바뀌었으면 화면에 알린다. */
+const CACHE = 'steel-lingo-pro-v6';
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -25,6 +28,22 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+/* 뒤에서 새 본문을 받아 캐시를 갈아 끼운다. 내용이 바뀌었으면 열려 있는 화면에 알린다. */
+function refresh(req) {
+  return fetch(req).then(async (res) => {
+    if (!res || !res.ok) return;
+    const c = await caches.open(CACHE);
+    const old = await c.match('./index.html');
+    const oldTag = old && (old.headers.get('etag') || old.headers.get('last-modified'));
+    const newTag = res.headers.get('etag') || res.headers.get('last-modified');
+    await c.put('./index.html', res.clone());
+    if (old && oldTag && newTag && oldTag !== newTag) {
+      const cs = await self.clients.matchAll({ type: 'window' });
+      cs.forEach((cl) => cl.postMessage({ type: 'update-ready' }));
+    }
+  }).catch(() => {});
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -32,17 +51,20 @@ self.addEventListener('fetch', (e) => {
   const isDoc = req.mode === 'navigate' || req.destination === 'document';
 
   if (isDoc) {
-    // 새 회차를 놓치지 않도록 네트워크 우선
     e.respondWith(
-      fetch(req)
-        .then((res) => {
+      caches.match('./index.html').then((cached) => {
+        if (cached) {
+          e.waitUntil(refresh(req));   // 화면은 캐시로 즉시 띄우고, 갱신은 뒤에서
+          return cached;
+        }
+        return fetch(req).then((res) => {
           if (res.ok) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put('./index.html', copy));
           }
           return res;
-        })
-        .catch(() => caches.match('./index.html').then((r) => r || caches.match(req)))
+        });
+      })
     );
     return;
   }

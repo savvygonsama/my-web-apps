@@ -2961,6 +2961,12 @@ paint();
 (function () {
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    /* 화면은 캐시로 즉시 띄우므로, 새 회차는 뒤에서 받아 둔 뒤에 알린다 */
+    navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "update-ready") {
+        toast("새 내용을 받았습니다. 앱을 다시 열면 반영됩니다.");
+      }
+    });
   }
 
   const btn   = document.getElementById("installBtn");
