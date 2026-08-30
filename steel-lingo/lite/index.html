@@ -129,8 +129,12 @@ html:not([data-theme="light"]) .nav.on, :root[data-theme="dark"] .nav.on { color
   padding: 13px 26px; border-radius: 11px; cursor: pointer; font-size: 15.5px;
 }
 html:not([data-theme="light"]) .go, :root[data-theme="dark"] .go { color: var(--ground); }
+/* 위 규칙은 배경이 accent로 채워진 버튼을 위한 것이다. 배경이 비어 있는 ghost까지
+   같이 밝혀 버리면 흰 바탕에 흰 글씨가 되어 아예 보이지 않는다. 되돌려 놓는다. */
+html:not([data-theme="light"]) .go.ghost, :root[data-theme="dark"] .go.ghost { color: var(--ink); }
 .go:hover { filter: brightness(1.08); }
-.go.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line-strong); margin-left: 8px; font-weight: 400; }
+/* 보조 버튼이지만 읽히기는 해야 한다. 흐린 회색이면 눌러야 할 것이 있는 줄도 모른다. */
+.go.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line-strong); margin-left: 8px; font-weight: 700; }
 .go.ghost:hover { border-color: var(--accent); color: var(--accent); filter: none; }
 .daylist { display: grid; gap: 12px; }
 .daycard {
@@ -139,7 +143,7 @@ html:not([data-theme="light"]) .go, :root[data-theme="dark"] .go { color: var(--
   padding: 18px 20px; box-shadow: var(--shadow); transition: border-color .15s, transform .12s;
 }
 .daycard:hover { border-color: var(--accent); transform: translateY(-1px); }
-.daycard .no { font-family: var(--mincho); font-size: 22px; color: var(--accent); min-width: 34px; }
+.daycard .no { font-family: var(--mincho); font-size: 22px; color: var(--accent); min-width: 56px; white-space: nowrap; }
 .daycard .tt { flex: 1; }
 .daycard .tt b { display: block; font-size: 16.5px; }
 .daycard .tt span { font-size: 13.5px; color: var(--ink-3); }
@@ -4894,7 +4898,7 @@ function renderHome() {
     <div class="daylist">
       ${DATA.map(d => `
         <button class="daycard" data-day="${d.no}">
-          <span class="no">${d.no}</span>
+          <span class="no">${d.no}과</span>
           <span class="tt"><b class="jp">${plain(d.title)}</b><span>${d.titleKo}</span>
             <span class="peek jp">${d.words.slice(0, 3).map(w => w.jp).join(" · ")} …</span></span>
           ${isDone(d.no) ? '<span class="done">✓ 봤어요</span>' : ""}
@@ -5093,7 +5097,7 @@ function renderColumn(d) {
 function renderDay(d) {
   return `
     <div class="dayhead">
-      <div class="no">${d.no}번째</div>
+      <div class="no">${d.no}과</div>
       <h2 class="jp">${rubify(d.title)} <span style="font-family:var(--sans);font-size:.55em;color:var(--ink-3)">${d.titleKo}</span></h2>
     </div>
     ${renderWords(d)}${renderDialogue(d)}${renderQuiz(d)}${renderColumn(d)}

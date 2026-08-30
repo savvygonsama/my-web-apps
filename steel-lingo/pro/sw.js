@@ -4,7 +4,7 @@
 
    캐시에 있으면 그것을 즉시 내주고, 새 버전은 뒤에서 조용히 받아 둔다.
    받아 둔 것은 다음에 열 때 반영된다. 내용이 실제로 바뀌었으면 화면에 알린다. */
-const CACHE = 'steel-lingo-pro-v6';
+const CACHE = 'steel-lingo-pro-v7';
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
