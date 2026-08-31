@@ -340,6 +340,31 @@ body.no-ko .sent-ko, body.no-ko .turn-ko, body.no-ko .line-ko { display: none; }
 #score .big { font-size: 30px; display: block; margin-bottom: 4px; }
 #score.done { background: var(--good-soft); color: var(--good); animation: rise .4s ease-out; }
 
+/* 네이버 사전 바로가기 */
+.dic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex: 0 0 auto;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface);
+  font-size: 14px; text-decoration: none; line-height: 1;
+}
+.dic:hover { border-color: var(--accent); }
+
+/* 따라다니는 저장 버튼
+   하루치가 20분이라 한 번에 못 끝내는 날이 많다. 맨 아래까지 내려가야
+   저장할 수 있으면 중간에 덮은 날은 자리를 남기지 못한다. */
+#saveFab {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 25;
+  display: none; align-items: center; gap: 7px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  border-radius: 999px; padding: 11px 18px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; line-height: 1;
+  box-shadow: 0 8px 22px -6px rgba(0,0,0,.45);
+}
+html:not([data-theme="light"]) #saveFab, :root[data-theme="dark"] #saveFab { color: var(--ground); }
+body.in-study #saveFab { display: inline-flex; }
+#saveFab:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { #saveFab:active { transform: none; } }
+
 /* ── 칼럼 (한일 말의 온도차) ───────────────── */
 .col { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 30px 30px 26px; box-shadow: var(--shadow); }
 .col-word { text-align: center; padding-bottom: 22px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
@@ -394,8 +419,9 @@ body.mask .turn.me:not(.chunked).open .cover { display: none; }
 body.mask.no-ko .turn.me .turn-ko { display: block; }
 
 /* ── 조각 맞추기 ───────────────────────────
-   한국어 조각을 누르면 그 자리에 대응하는 일본어가 채워진다.
-   위에 문장이 조립되는 것을 보면서 어순 감각이 함께 붙는다. */
+   일본어 조각을 순서대로 눌러 문장을 세운다. 조각은 섞어서 내놓는다.
+   이 앱을 쓰는 사람은 이미 읽을 줄 아는 단계라, 한국어를 거치지 않고
+   일본어 어순을 바로 손에 붙이는 편이 낫다. */
 .asm {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
   background: var(--surface-2); border-radius: 10px; padding: 14px 16px;
@@ -413,6 +439,12 @@ body.mask.no-ko .turn.me .turn-ko { display: block; }
 }
 .chip-ko:hover { border-color: var(--accent); color: var(--accent); }
 .chip-ko.used { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.chip-ko.jp { font-size: 15.5px; font-feature-settings: "palt" 1; }
+.chip-ko.used { opacity: .5; pointer-events: none; }
+/* 순서가 아닌 조각을 누르면 잠깐 흔들어 알려 준다 */
+@keyframes chipNo { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.chip-ko.no { animation: chipNo .28s; border-color: var(--bad); color: var(--bad); }
+@media (prefers-reduced-motion: reduce) { .chip-ko.no { animation: none; } }
 .asm-all {
   font: inherit; font-size: 12.5px; font-weight: 700; margin-top: 11px;
   padding: 7px 14px; border: 1px dashed var(--line-strong); border-radius: 999px;
@@ -499,6 +531,8 @@ footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top:
     </div>
   </div>
 </div>
+
+<button id="saveFab" type="button" title="여기까지 저장">📌 <span>여기 저장</span></button>
 
 <div class="wrap">
   <div class="masthead">
@@ -2302,6 +2336,10 @@ function speak(text, btn) {
 }
 const spk = t => `<button class="speak" data-say="${attr(plain(t))}" title="발음 듣기">🔊</button>`;
 
+/* 네이버 일본어사전으로 바로 보낸다. 링크 한 줄뿐이라 앱이 무거워지지 않는다.
+   설치한 앱에서 눌러도 바깥 브라우저가 열리므로 학습 화면은 그대로 남는다. */
+const dic = w => `<a class="dic" href="https://ja.dict.naver.com/#/search?query=${encodeURIComponent(plain(w))}" target="_blank" rel="noopener" title="네이버 사전에서 「${attr(plain(w))}」 찾기">📖</a>`;
+
 let view = "home";
 let current = store.get("day", 1);
 let quizState = {};
@@ -2463,6 +2501,16 @@ function stats() {
   return { doneDays, words, right, total, rate: total ? Math.round(right / total * 100) : null, streak: store.get("streak", 0) };
 }
 
+/* 조각을 섞는다. 원래 순서 그대로 내놓으면 왼쪽부터 누르기만 하면 되어 연습이 되지 않는다. */
+function shuffledIdx(n) {
+  const r = Array.from({ length: n }, (_, i) => i);
+  for (let i = r.length - 1; i > 0; i--) {
+    const k = Math.floor(Math.random() * (i + 1));
+    [r[i], r[k]] = [r[k], r[i]];
+  }
+  return n > 2 && r.every((v, i) => v === i) ? shuffledIdx(n) : r;
+}
+
 function renderHome() {
   const s = stats();
   const name = store.get("name", "");
@@ -2533,6 +2581,7 @@ function renderDay(d) {
         <span class="term-jp jp">${t.jp}</span>
         <span class="term-kana jp">${t.kana}</span>
         ${spk(t.kana && t.kana !== "―" ? t.kana : t.jp)}
+        ${dic(t.jp)}
         ${sm ? `<span class="term-flag ${sm}">${sm === "known" ? "외웠어요" : "헷갈려요"}</span>` : ""}
         <span class="term-caret">▾</span>
       </div>
@@ -2586,9 +2635,9 @@ function renderDay(d) {
         <div class="bubble">
           <div class="turn-head">${spk(t.jp)}<span style="font-size:11px;color:var(--ink-3)">${i + 1}턴</span></div>
           ${ch ? `
-            <div class="asm-cap">한국어 조각을 누르면 여기에 일본어가 채워집니다</div>
+            <div class="asm-cap">일본어 조각을 <b>순서대로</b> 눌러 문장을 맞춰 보세요</div>
             <div class="asm jp">${ch.map((c, j) => `<span class="slot" data-si="${j}"><span class="ph">‥‥</span><span class="rv">${rubify(c[1])}</span></span>`).join("")}</div>
-            <div class="chips">${ch.map((c, j) => `<button class="chip-ko" data-ci="${j}">${c[0]}</button>`).join("")}</div>
+            <div class="chips">${shuffledIdx(ch.length).map(j => `<button class="chip-ko jp" data-ci="${j}">${rubify(ch[j][1])}</button>`).join("")}</div>
             <button class="asm-all">전체 보기</button>
           ` : `
             ${t.me ? `<div class="cover">🤔 이 말을 일본어로 어떻게? &nbsp;·&nbsp; 눌러서 확인</div>` : ""}
@@ -2701,8 +2750,12 @@ function paint() {
   document.getElementById("app").innerHTML = view === "home" ? renderHome() : renderDay(DATA.find(x => x.no === current) || DATA[0]);
   renderNavs();
   if (view === "study") updateScore();
-  /* 읽던 자리에서 이어 갈 때만 그 높이로, 아니면 맨 위로 */
-  window.scrollTo({ top: pendingY, behavior: "instant" });
+  document.body.classList.toggle("in-study", view === "study");   // 따라다니는 저장 버튼은 학습 화면에서만
+  /* 읽던 자리에서 이어 갈 때만 그 높이로, 아니면 맨 위로.
+     그린 직후에는 아직 높이가 다 잡히지 않아 어긋날 때가 있어 한 번 더 잡아 준다. */
+  const y = pendingY;
+  window.scrollTo({ top: y, behavior: "instant" });
+  if (y > 0) requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "instant" })));
   pendingY = 0;
 }
 
@@ -2714,9 +2767,12 @@ document.addEventListener("click", e => {
   const sp = e.target.closest(".speak");
   if (sp) { e.stopPropagation(); speak(sp.dataset.say, sp); return; }
 
+  /* 사전 링크는 그대로 열리게 두고, 용어 카드가 함께 접히지 않도록 여기서 끊는다 */
+  if (e.target.closest(".dic")) return;
+
   if (e.target.id === "ttsClose") { document.getElementById("ttsNote").hidden = true; return; }
 
-  if (e.target.closest("#saveExit")) { saveSpot(false); return; }
+  if (e.target.closest("#saveExit") || e.target.closest("#saveFab")) { saveSpot(false); return; }
 
   const nav = e.target.closest("[data-view]");
   if (nav) {
@@ -2775,16 +2831,25 @@ document.addEventListener("click", e => {
   const cov = e.target.closest(".cover");
   if (cov) { cov.closest(".turn").classList.add("open"); return; }
 
-  /* 조각 맞추기 — 한국어 조각을 누르면 그 자리에 일본어가 들어간다 */
+  /* 조각 맞추기 — 일본어 조각을 순서대로 눌러 문장을 세운다 */
   const chip = e.target.closest(".chip-ko");
   if (chip) {
     const b = chip.closest(".bubble");
-    b.querySelector('.slot[data-si="' + chip.dataset.ci + '"]').classList.add("on");
+    const next = b.querySelector(".slot:not(.on)");
+    if (!next) return;
+    if (next.dataset.si !== chip.dataset.ci) {      // 순서가 아니면 흔들어 알린다
+      chip.classList.remove("no"); void chip.offsetWidth; chip.classList.add("no");
+      setTimeout(() => chip.classList.remove("no"), 320);
+      return;
+    }
+    next.classList.add("on");
     chip.classList.add("used");
     // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
     if (!b.querySelectorAll(".slot:not(.on)").length) {
       const all = b.querySelector(".asm-all"); if (all) all.remove();
       b.querySelector(".asm-cap").textContent = "완성했습니다";
+      const say = b.querySelector(".turn-head .speak");
+      if (say) setTimeout(() => speak(say.dataset.say, say), 200);   // 완성하면 소리로 확인시켜 준다
     }
     return;
   }
