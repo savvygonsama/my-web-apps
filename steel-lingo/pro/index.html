@@ -62,7 +62,10 @@ body {
   letter-spacing: -.003em; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
 }
 .jp { font-feature-settings: "palt" 1; letter-spacing: .015em; }
-.wrap { max-width: 830px; margin: 0 auto; padding: 0 20px 96px; }
+/* 아래 바에 본문이 가리지 않도록 그만큼 자리를 비워 둔다.
+   바 높이는 화면 너비에 따라 한 줄이 되기도 여러 줄이 되기도 해서,
+   실제 높이를 재어 --barH 로 넣어 준다(아래 syncBar). */
+.wrap { max-width: 830px; margin: 0 auto; padding: 0 20px calc(var(--barH, 110px) + 28px); }
 #prog { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 40; transition: width .1s linear; }
 
 /* 오늘의 용어 하이라이트 — 형광펜 */
@@ -74,9 +77,10 @@ mark.hl {
 /* ── masthead ─────────────────────────────── */
 .masthead { padding: 44px 0 22px; border-bottom: 1px solid var(--line); }
 .byline {
-  margin: 0 0 14px; font-size: 12px; font-weight: 700;
+  margin: 0 0 8px; font-size: 12px; font-weight: 700;
   letter-spacing: .2em; color: var(--ember);
 }
+.thanks { margin: 0 0 16px; font-size: 12.5px; color: var(--ink-3); letter-spacing: .01em; }
 .brand { display: flex; align-items: center; gap: 18px; }
 .logo { width: clamp(78px, 14vw, 104px); height: auto; flex: 0 0 auto; overflow: visible; }
 .lg-body   { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.6; }
@@ -119,12 +123,14 @@ body.lv-easy .sw#sw-mask { display: none; }
 .art-ko.open .line-ko { display: block !important; }
 .pick { max-width: 620px; }
 
-/* ── bar ──────────────────────────────────── */
+/* ── bar ──────────────────────────────────────
+   일차를 고르는 줄은 화면 아래에 둔다. 위쪽은 폰에 따라 카메라 구멍이 겹쳐
+   눌리지 않는 기기가 있었다. 아래쪽은 엄지가 닿는 자리이기도 하다. */
 .bar {
-  position: sticky; top: 0; z-index: 20;
-  background: color-mix(in srgb, var(--ground) 92%, transparent);
-  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
-  margin: 0 -20px 30px; padding: 10px 20px;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: color-mix(in srgb, var(--ground) 94%, transparent);
+  backdrop-filter: blur(8px); border-top: 1px solid var(--line);
+  padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
 }
 .bar-inner { max-width: 830px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; }
 .navs { display: flex; gap: 6px; overflow-x: auto; }
@@ -353,7 +359,7 @@ body.no-ko .sent-ko, body.no-ko .turn-ko, body.no-ko .line-ko { display: none; }
    하루치가 20분이라 한 번에 못 끝내는 날이 많다. 맨 아래까지 내려가야
    저장할 수 있으면 중간에 덮은 날은 자리를 남기지 못한다. */
 #saveFab {
-  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 25;
+  position: fixed; right: 16px; bottom: calc(var(--barTop, 122px) + 12px); z-index: 25;
   display: none; align-items: center; gap: 7px;
   border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
   border-radius: 999px; padding: 11px 18px; cursor: pointer;
@@ -537,6 +543,7 @@ footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top:
 <div class="wrap">
   <div class="masthead">
     <p class="byline">© 2026 곤사마</p>
+    <p class="thanks">Special Thanks to 규한화, 실버찬</p>
     <div class="brand">
       <!-- 스틸링고 — 옆에서 본 강판 코일 -->
       <svg class="logo" viewBox="0 0 76 58" role="img" aria-label="스틸링고 로고">
@@ -2329,7 +2336,8 @@ function speak(text, btn) {
   speechSynthesis.cancel();
   if (speakingBtn) speakingBtn.classList.remove("on");
   const u = new SpeechSynthesisUtterance(text);
-  u.voice = v; u.lang = "ja-JP"; u.rate = .88;
+  /* 실무자용이라 조금 빠른 편이 실제 상담 속도에 가깝다 */
+  u.voice = v; u.lang = "ja-JP"; u.rate = 1.02;
   btn.classList.add("on"); speakingBtn = btn;
   u.onend = u.onerror = () => btn.classList.remove("on");
   speechSynthesis.speak(u);
@@ -2490,6 +2498,26 @@ function renderNavs() {
   const items = [`<button class="chip" data-view="home" aria-pressed="${view === "home"}">🏠 내 진도</button>`]
     .concat(DATA.map(d => `<button class="chip" data-view="study" data-day="${d.no}" aria-pressed="${view === "study" && d.no === current}">${d.no}일차 · ${d.theme}</button>`));
   document.getElementById("navs").innerHTML = items.join("");
+  syncBar();
+}
+
+/* 아래 바는 화면 너비와 난이도(스위치 개수)에 따라 줄 수가 달라진다.
+   높이만 재면 기기에 따라 바가 화면 맨 아래에 딱 붙지 않는 경우를 놓쳐,
+   저장 버튼이 바를 덮는다. 그래서 바 윗변까지의 실제 거리도 함께 재어 둔다. */
+function syncBar() {
+  const bar = document.querySelector(".bar");
+  if (!bar) return;
+  const r = bar.getBoundingClientRect();
+  document.documentElement.style.setProperty("--barH", Math.round(r.height) + "px");
+  document.documentElement.style.setProperty("--barTop", Math.max(0, Math.round(window.innerHeight - r.top)) + "px");
+}
+window.addEventListener("resize", syncBar);
+window.addEventListener("orientationchange", syncBar);
+window.addEventListener("load", syncBar);
+/* 글꼴이 늦게 들어오거나 스위치가 바뀌면 줄 수가 달라진다. 바 자체를 지켜본다. */
+if ("ResizeObserver" in window) {
+  const bar = document.querySelector(".bar");
+  if (bar) new ResizeObserver(syncBar).observe(bar);
 }
 
 /* ── HOME ─────────────────────────────────── */
@@ -2741,8 +2769,10 @@ function paint() {
   resetRuby();
   if (!level) {
     document.body.classList.add("home");
+    document.body.classList.remove("in-study");
     document.getElementById("app").innerHTML = renderPick();
     document.getElementById("navs").innerHTML = "";
+    syncBar();                                  // 일차 목록이 비면 바가 낮아진다
     window.scrollTo({ top: 0, behavior: "instant" });
     return;
   }
@@ -3059,10 +3089,11 @@ paint();
     e.preventDefault(); deferred = e;
     if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
   });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); });
+  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); syncBar(); });
 
   /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
+  syncBar();                           // 버튼이 생기면 바가 한 줄 늘어날 수 있다
 
   function showNow() { nowBtn.hidden = !deferred; }
   function hide() { note.hidden = true; }
