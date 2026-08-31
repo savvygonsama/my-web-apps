@@ -78,11 +78,11 @@ mark.hl {
 .masthead { padding: 44px 0 22px; border-bottom: 1px solid var(--line); }
 /* Lite와 같은 모양으로 맞춘다. 글자가 길어져 자간은 Lite 쪽 값을 쓴다. */
 .byline {
-  margin: 0 0 8px; font-size: 12.5px; font-weight: 700; line-height: 1.7;
+  margin: 0 0 8px; font-size: 14px; font-weight: 700; line-height: 1.7;
   letter-spacing: .01em; color: var(--ember);
 }
 .byline .c { letter-spacing: .16em; margin-right: 8px; }
-.thanks { margin: 0 0 16px; font-size: 12.5px; color: var(--ink-3); letter-spacing: .01em; }
+.thanks { margin: 0 0 16px; font-size: 13.5px; color: var(--ink-3); letter-spacing: .01em; }
 .brand { display: flex; align-items: center; gap: 18px; }
 .logo { width: clamp(78px, 14vw, 104px); height: auto; flex: 0 0 auto; overflow: visible; }
 .lg-body   { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.6; }
@@ -435,6 +435,14 @@ body.mask.no-ko .turn.me .turn-ko { display: block; }
   background: var(--surface-2); border-radius: 10px; padding: 14px 16px;
   min-height: 52px; font-size: 17px; line-height: 2.2;
 }
+/* 조각 맞추기의 문제 문장.
+   해석 끄기(no-ko)에 걸리면 문제 자체가 사라져 맞출 수가 없으므로,
+   .turn-ko 와 다른 이름을 써서 그 규칙을 피한다. */
+.asm-ko {
+  font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.7;
+  background: var(--accent-soft); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 10px 14px; margin-bottom: 11px;
+}
 .slot .ph { color: var(--ink-3); letter-spacing: .12em; }
 .slot.on .ph { display: none; }
 .slot .rv { display: none; }
@@ -510,7 +518,7 @@ html:not([data-theme="light"]) .saveout button, :root[data-theme="dark"] .saveou
 .done button.cheer { animation: pop .45s cubic-bezier(.34,1.56,.64,1); }
 footer { margin-top: 60px; padding-top: 26px; border-top: 1px solid var(--line); text-align: center; }
 footer .cr { font-family: var(--mincho); font-size: 15px; color: var(--ink-2); letter-spacing: .04em; }
-footer .cr-sub { font-size: 11.5px; color: var(--ink-3); letter-spacing: .06em; margin-top: 5px; }
+footer .cr-sub { font-size: 13px; color: var(--ink-3); letter-spacing: .06em; margin-top: 5px; }
 footer .fine { font-size: 11px; color: var(--ink-3); line-height: 2; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
@@ -2665,9 +2673,10 @@ function renderDay(d) {
         <div class="bubble">
           <div class="turn-head">${spk(t.jp)}<span style="font-size:11px;color:var(--ink-3)">${i + 1}턴</span></div>
           ${ch ? `
-            <div class="asm-cap">일본어 조각을 <b>순서대로</b> 눌러 문장을 맞춰 보세요</div>
+            <div class="asm-ko">${t.ko}</div>
+            <div class="asm-cap">이 말을 일본어로. 조각을 <b>순서대로</b> 눌러 맞춰 보세요</div>
             <div class="asm jp">${ch.map((c, j) => `<span class="slot" data-si="${j}"><span class="ph">‥‥</span><span class="rv">${rubify(c[1])}</span></span>`).join("")}</div>
-            <div class="chips">${shuffledIdx(ch.length).map(j => `<button class="chip-ko jp" data-ci="${j}">${rubify(ch[j][1])}</button>`).join("")}</div>
+            <div class="chips">${shuffledIdx(ch.length).map(j => `<button class="chip-ko jp" data-ci="${j}" data-say="${attr(plain(ch[j][1]))}">${rubify(ch[j][1])}</button>`).join("")}</div>
             <button class="asm-all">전체 보기</button>
           ` : `
             ${t.me ? `<div class="cover">🤔 이 말을 일본어로 어떻게? &nbsp;·&nbsp; 눌러서 확인</div>` : ""}
@@ -2876,12 +2885,17 @@ document.addEventListener("click", e => {
     }
     next.classList.add("on");
     chip.classList.add("used");
-    // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
-    if (!b.querySelectorAll(".slot:not(.on)").length) {
+    const complete = !b.querySelectorAll(".slot:not(.on)").length;
+    if (complete) {
+      // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
       const all = b.querySelector(".asm-all"); if (all) all.remove();
       b.querySelector(".asm-cap").textContent = "완성했습니다";
+      /* 마지막 조각은 따로 읽지 않는다. 바로 뒤에 문장 전체가 이어지므로
+         조각 소리가 잘리기만 한다. */
       const say = b.querySelector(".turn-head .speak");
-      if (say) setTimeout(() => speak(say.dataset.say, say), 200);   // 완성하면 소리로 확인시켜 준다
+      if (say) speak(say.dataset.say, say);
+    } else if (chip.dataset.say) {
+      speak(chip.dataset.say, chip);          // 맞춘 조각을 그 자리에서 들려준다
     }
     return;
   }
@@ -3080,6 +3094,14 @@ paint();
   /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
   if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
 
+  /* 한 번 설치한 사람에게는 다시 권하지 않는다.
+     설치한 뒤 브라우저 탭으로 들어오면 standalone이 아니라 위 조건에 걸리지 않는다. */
+  const DONE = "steel-lingo-pro-installed";
+  const markInstalled = () => { try { localStorage.setItem(DONE, "1"); } catch (e) {} };
+  let already = false;
+  try { already = localStorage.getItem(DONE) === "1"; } catch (e) {}
+  if (already) return;
+
   const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const isAndroid = /android/i.test(ua);
   /* 앱 안 브라우저 — 카카오톡·팀즈·네이버·라인·밴드·페북·인스타 */
@@ -3091,7 +3113,7 @@ paint();
     e.preventDefault(); deferred = e;
     if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
   });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); syncBar(); });
+  window.addEventListener("appinstalled", () => { markInstalled(); btn.hidden = true; hide(); syncBar(); });
 
   /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
@@ -3163,7 +3185,7 @@ paint();
     const { outcome } = await deferred.userChoice;
     deferred = null;
     nowBtn.hidden = true;
-    if (outcome === "accepted") { btn.hidden = true; hide(); }
+    if (outcome === "accepted") { markInstalled(); btn.hidden = true; hide(); syncBar(); }
   });
 
   document.getElementById("installNoteClose").addEventListener("click", () => {

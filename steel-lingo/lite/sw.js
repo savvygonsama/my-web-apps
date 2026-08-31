@@ -9,7 +9,7 @@
    캐시에 넣어 둔다(그때는 화면에 한 줄 알린다).
 
    글꼴·음성은 내용이 바뀌지 않으므로 캐시를 먼저 쓴다. */
-const CACHE = 'steel-lingo-lite-v13';
+const CACHE = 'steel-lingo-lite-v14';
 const DOC_TIMEOUT = 2500;
 const SHELL = [
   './index.html', './manifest.json', './icon-192.png', './icon-512.png',

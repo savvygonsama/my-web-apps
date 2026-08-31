@@ -69,11 +69,11 @@ button { font: inherit; }
 /* ── 머리말 ───────────────────────────────── */
 .masthead { padding: 40px 0 24px; border-bottom: 1px solid var(--line); }
 .byline {
-  margin: 0 0 16px; font-size: 12.5px; font-weight: 700; line-height: 1.7;
+  margin: 0 0 16px; font-size: 14px; font-weight: 700; line-height: 1.7;
   color: var(--ember); letter-spacing: .01em;
 }
 .byline .c { letter-spacing: .16em; margin-right: 8px; }
-.thanks { margin: -8px 0 16px; font-size: 12.5px; color: var(--ink-3); letter-spacing: .01em; }
+.thanks { margin: -8px 0 16px; font-size: 13.5px; color: var(--ink-3); letter-spacing: .01em; }
 .brand { display: flex; align-items: center; gap: 16px; }
 .logo { width: clamp(64px, 12vw, 84px); height: auto; flex: 0 0 auto; }
 .lg-body { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.6; }
@@ -391,8 +391,8 @@ html:not([data-theme="light"]) .saveout button, :root[data-theme="dark"] .saveou
 .speak.on { background: var(--accent-soft); border-color: var(--accent); }
 
 footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); }
-.cr-sub { font-size: 13px; color: var(--ink-2); font-weight: 700; }
-.cr-thanks { margin-top: 3px; font-size: 12.5px; color: var(--ink-3); }
+.cr-sub { font-size: 14px; color: var(--ink-2); font-weight: 700; }
+.cr-thanks { margin-top: 3px; font-size: 13.5px; color: var(--ink-3); }
 .fine { margin-top: 10px; font-size: 12px; color: var(--ink-3); line-height: 1.9; }
 
 #openChrome {
@@ -5408,6 +5408,14 @@ paint();
   /* 이미 홈 화면 아이콘으로 열렸으면 설치를 권할 이유가 없다 */
   if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
 
+  /* 한 번 설치한 사람에게는 다시 권하지 않는다.
+     설치한 뒤 브라우저 탭으로 들어오면 standalone이 아니라 위 조건에 걸리지 않는다. */
+  const DONE = "steel-lingo-lite-installed";
+  const markInstalled = () => { try { localStorage.setItem(DONE, "1"); } catch (e) {} };
+  let already = false;
+  try { already = localStorage.getItem(DONE) === "1"; } catch (e) {}
+  if (already) return;
+
   const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const isAndroid = /android/i.test(ua);
   /* 앱 안 브라우저 — 카카오톡·팀즈·네이버·라인·밴드·페북·인스타 */
@@ -5419,7 +5427,7 @@ paint();
     e.preventDefault(); deferred = e;
     if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
   });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); syncBar(); });
+  window.addEventListener("appinstalled", () => { markInstalled(); btn.hidden = true; hide(); syncBar(); });
 
   /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
@@ -5491,7 +5499,7 @@ paint();
     const { outcome } = await deferred.userChoice;
     deferred = null;
     nowBtn.hidden = true;
-    if (outcome === "accepted") { btn.hidden = true; hide(); }
+    if (outcome === "accepted") { markInstalled(); btn.hidden = true; hide(); syncBar(); }
   });
 
   document.getElementById("installNoteClose").addEventListener("click", () => {
