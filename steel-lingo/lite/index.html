@@ -4835,23 +4835,30 @@ function stopSpeaking() {
   speakingBtn = null;
 }
 
-function speak(text, btn, rate, key) {
+/* after — 다 읽고 난 뒤에 할 일. 조각을 맞춘 뒤 문장 전체를 이어 읽을 때 쓴다.
+   중간에 다른 재생이 끼어들면 부르지 않는다(아래 mySeq 로 가린다). */
+let speakSeq = 0;
+
+function speak(text, btn, rate, key, after) {
   const again = speakingBtn === btn;
   stopSpeaking();
   if (again) return;                 // 재생 중에 같은 버튼을 누르면 멈춘다
 
+  const mySeq = ++speakSeq;
+  const done = () => { if (after && mySeq === speakSeq) after(); };
+
   /* 기기에 일본어 목소리가 있으면 그쪽을 먼저 쓴다(남성 우선).
      미리 뽑아 둔 녹음본은 톤이 높아 오래 듣기 부담스럽다는 이야기가 있었다.
      일본어 목소리가 없는 기기에서만 녹음본으로 물러난다. */
-  if (pickedVoice()) { synth(text, btn, rate); return; }
+  if (pickedVoice()) { synth(text, btn, rate, done); return; }
 
   const srcs = AUDIO_DATA[key] ? [AUDIO_DATA[key]]
              : (key && !audioMissing.has(key) ? [AUDIO_DIR + key + ".mp3"] : []);
-  if (!srcs.length) { synth(text, btn, rate); return; }
-  playFrom(srcs, 0, text, btn, rate, key);
+  if (!srcs.length) { synth(text, btn, rate, done); return; }
+  playFrom(srcs, 0, text, btn, rate, key, done);
 }
 
-function playFrom(srcs, i, text, btn, rate, key) {
+function playFrom(srcs, i, text, btn, rate, key, done) {
   const slow = Number(rate) < .8;
   const a = new Audio(srcs[i]);
   /* 느리게 들을 때 음높이가 같이 내려가면 남자 목소리처럼 뭉개진다. 높이는 지킨다. */
@@ -4865,17 +4872,20 @@ function playFrom(srcs, i, text, btn, rate, key) {
     if (fell) return;
     fell = true;
     if (speakingBtn !== btn) return;
-    if (i + 1 < srcs.length) { playFrom(srcs, i + 1, text, btn, rate, key); return; }
+    if (i + 1 < srcs.length) { playFrom(srcs, i + 1, text, btn, rate, key, done); return; }
     if (key && !AUDIO_DATA[key]) audioMissing.add(key);   // 이 문장만 mp3가 없다
     speakingBtn = null; btn.classList.remove("on");
-    synth(text, btn, rate);
+    synth(text, btn, rate, done);
   };
-  a.onended = () => { if (speakingBtn === btn) { btn.classList.remove("on"); speakingBtn = null; } };
+  a.onended = () => {
+    if (speakingBtn === btn) { btn.classList.remove("on"); speakingBtn = null; }
+    if (done) done();
+  };
   a.onerror = fallback;
   a.play().catch(fallback);
 }
 
-function synth(text, btn, rate) {
+function synth(text, btn, rate, done) {
   const v = pickedVoice();
   if (v === undefined || v === null) { document.getElementById("ttsNote").hidden = false; return; }
   const r = Number(rate) || 1;
@@ -4885,7 +4895,7 @@ function synth(text, btn, rate) {
   const next = () => {
     if (speakingBtn !== btn) return;
     const part = sayQueue.shift();
-    if (part === undefined) { btn.classList.remove("on"); speakingBtn = null; return; }
+    if (part === undefined) { btn.classList.remove("on"); speakingBtn = null; if (done) done(); return; }
     const u = new SpeechSynthesisUtterance(part);
     u.voice = v; u.lang = "ja-JP"; u.rate = r; u.pitch = 1;
     u.onend = () => setTimeout(next, r < .8 ? 260 : 130);   // 문절 사이의 숨
@@ -5201,13 +5211,14 @@ function paint() {
   pendingY = 0;
 }
 
-/* 문장이 다 맞춰지면 일본어를 드러내고 소리를 들려준다. */
-function finishBuild(bubble, t) {
+/* 문장이 다 맞춰지면 일본어를 드러낸다.
+   silent 가 참이면 읽지 않고 화면만 연다. 마지막 조각을 먼저 읽어야 할 때 쓴다. */
+function finishBuild(bubble, t, silent) {
   bubble.classList.add("done", "open");
   const gt = bubble.querySelector(".gtoggle");
   if (gt) gt.textContent = "🔍 닫기";
   const btn = bubble.querySelector(".ja .speak");
-  if (btn) setTimeout(() => speak(btn.dataset.say, btn, btn.dataset.rate, btn.dataset.key), 250);
+  if (btn && !silent) setTimeout(() => speak(btn.dataset.say, btn, btn.dataset.rate, btn.dataset.key), 250);
 }
 
 function goDay(no, resume) {
@@ -5262,11 +5273,23 @@ document.addEventListener("click", e => {
       return;
     }
     chip.closest(".chipwrap").classList.add("used");
-    const say = chip.parentElement.querySelector(".chipsay");
-    if (say) speak(say.dataset.say, say, say.dataset.rate, say.dataset.key);
     const built = bubble.querySelector(".built");
     built.innerHTML = t.parts.slice(0, next + 1).map(p => rubify(p.p)).join("");
-    if (next + 1 === t.parts.length) finishBuild(bubble, t);
+
+    const say = chip.parentElement.querySelector(".chipsay");
+    const last = next + 1 === t.parts.length;
+
+    if (!last) { if (say) speak(say.dataset.say, say, say.dataset.rate, say.dataset.key); return; }
+
+    /* 마지막 조각이면 그 조각을 먼저 읽고, 다 읽은 뒤에 문장 전체를 이어 읽는다.
+       화면은 기다리지 않고 곧바로 연다. */
+    finishBuild(bubble, t, true);
+    const whole = () => {
+      const b = bubble.querySelector(".ja .speak");
+      if (b) speak(b.dataset.say, b, b.dataset.rate, b.dataset.key);
+    };
+    if (say) speak(say.dataset.say, say, say.dataset.rate, say.dataset.key, whole);
+    else whole();
     return;
   }
 

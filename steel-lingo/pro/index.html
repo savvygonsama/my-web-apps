@@ -2340,7 +2340,11 @@ if ("speechSynthesis" in window) { speechSynthesis.onvoiceschanged = () => {}; s
 
 let speakingBtn = null;
 
-function speak(text, btn) {
+/* after — 다 읽고 난 뒤에 할 일. 조각을 맞춘 뒤 문장 전체를 이어 읽을 때 쓴다.
+   중간에 다른 재생이 끼어들면 부르지 않는다(mySeq 로 가린다). */
+let speakSeq = 0;
+
+function speak(text, btn, after) {
   const v = findJa();
   if (v === undefined || v === null) { document.getElementById("ttsNote").hidden = false; return; }
   speechSynthesis.cancel();
@@ -2349,7 +2353,11 @@ function speak(text, btn) {
   /* 실무자용이라 조금 빠른 편이 실제 상담 속도에 가깝다 */
   u.voice = v; u.lang = "ja-JP"; u.rate = 1.02;
   btn.classList.add("on"); speakingBtn = btn;
-  u.onend = u.onerror = () => btn.classList.remove("on");
+  const mySeq = ++speakSeq;
+  u.onend = u.onerror = () => {
+    btn.classList.remove("on");
+    if (after && mySeq === speakSeq) after();
+  };
   speechSynthesis.speak(u);
 }
 const spk = t => `<button class="speak" data-say="${attr(plain(t))}" title="발음 듣기">🔊</button>`;
@@ -2886,17 +2894,18 @@ document.addEventListener("click", e => {
     next.classList.add("on");
     chip.classList.add("used");
     const complete = !b.querySelectorAll(".slot:not(.on)").length;
-    if (complete) {
-      // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
-      const all = b.querySelector(".asm-all"); if (all) all.remove();
-      b.querySelector(".asm-cap").textContent = "완성했습니다";
-      /* 마지막 조각은 따로 읽지 않는다. 바로 뒤에 문장 전체가 이어지므로
-         조각 소리가 잘리기만 한다. */
-      const say = b.querySelector(".turn-head .speak");
-      if (say) speak(say.dataset.say, say);
-    } else if (chip.dataset.say) {
-      speak(chip.dataset.say, chip);          // 맞춘 조각을 그 자리에서 들려준다
+    if (!complete) {
+      if (chip.dataset.say) speak(chip.dataset.say, chip);   // 맞춘 조각을 그 자리에서 들려준다
+      return;
     }
+    // 다 채우면 조립판 자체가 완성 문장이므로 따로 더 보여주지 않는다
+    const all = b.querySelector(".asm-all"); if (all) all.remove();
+    b.querySelector(".asm-cap").textContent = "완성했습니다";
+    /* 마지막 조각을 먼저 읽고, 다 읽은 뒤에 문장 전체를 이어 읽는다. */
+    const say = b.querySelector(".turn-head .speak");
+    const whole = () => { if (say) speak(say.dataset.say, say); };
+    if (chip.dataset.say) speak(chip.dataset.say, chip, whole);
+    else whole();
     return;
   }
   const asmAll = e.target.closest(".asm-all");
