@@ -90,14 +90,20 @@ html:not([data-theme="light"]) .masthead h1 .lite, :root[data-theme="dark"] .mas
 .masthead .lead { color: var(--ink-2); margin: 18px 0 0; max-width: 54ch; font-size: 15.5px; line-height: 1.95; }
 .masthead .lead b { color: var(--ink); font-weight: 700; }
 
-/* ── 상단 바 ──────────────────────────────── */
+/* ── 아래 바 ──────────────────────────────────
+   과를 고르는 줄은 화면 아래에 둔다. 위쪽은 폰에 따라 카메라 구멍이 겹쳐
+   눌리지 않는 기기가 있었다. 아래쪽은 엄지가 닿는 자리이기도 하다. */
 .bar {
-  position: sticky; top: 0; z-index: 20;
-  background: color-mix(in srgb, var(--ground) 92%, transparent);
-  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
-  margin: 0 -20px 30px; padding: 10px 20px;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: color-mix(in srgb, var(--ground) 94%, transparent);
+  backdrop-filter: blur(8px); border-top: 1px solid var(--line);
+  padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
 }
 .bar-inner { max-width: 780px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+/* 아래 바에 본문이 가리지 않도록 그만큼 자리를 비워 둔다.
+   바 높이는 과 개수와 화면 너비에 따라 한 줄이 되기도 두 줄이 되기도 해서,
+   실제 높이를 재어 --barH 로 넣어 준다(아래 syncBar). */
+.wrap { padding-bottom: calc(var(--barH, 100px) + 28px); }
 .navs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .navs::-webkit-scrollbar { display: none; }
 .nav {
@@ -202,6 +208,14 @@ body.no-ko .ko, body.no-ko .story .ko { display: none; }
 }
 .wb-t { flex: 0 0 auto; }
 .wb-ja { font-family: var(--mincho); font-size: 27px; line-height: 1.4; }
+/* 네이버 사전 바로가기 */
+.dic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; margin-left: 4px; vertical-align: middle;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface);
+  font-size: 15px; text-decoration: none; line-height: 1;
+}
+.dic:hover { border-color: var(--accent); }
 .wb-kana { font-size: 13px; color: var(--ink-3); margin-top: 1px; }
 .wb-mean { font-size: 16px; font-weight: 700; color: var(--accent); }
 .wb-note { margin-top: 12px; font-size: 13.5px; color: var(--ink-2); line-height: 1.9; }
@@ -331,6 +345,24 @@ body.no-ko .ko, body.no-ko .story .ko { display: none; }
 .end .msg { margin-top: 22px; font-size: 14.5px; color: var(--ink-2); line-height: 1.95; }
 .end .go { margin-top: 20px; }
 
+/* 따라다니는 저장 버튼
+   맨 아래까지 내려가야 저장할 수 있으면, 중간에 덮은 날은 자리를 남기지 못한다.
+   화면을 따라다니게 두어 읽던 그 자리에서 바로 눌러 두게 한다. */
+#saveFab {
+  position: fixed; right: 16px; z-index: 25;
+  bottom: calc(var(--barH, 100px) + 12px);
+  display: none; align-items: center; gap: 7px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  border-radius: 999px; padding: 11px 18px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700;
+  white-space: nowrap; line-height: 1;
+  box-shadow: 0 8px 22px -6px rgba(0,0,0,.45);
+}
+html:not([data-theme="light"]) #saveFab, :root[data-theme="dark"] #saveFab { color: var(--ground); }
+body.in-day #saveFab { display: inline-flex; }
+#saveFab:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { #saveFab:active { transform: none; } }
+
 .saveout {
   margin: 34px 0 0; padding: 24px; text-align: center;
   border: 1px dashed var(--line-strong); border-radius: 14px; background: var(--surface);
@@ -401,6 +433,8 @@ html:not([data-theme="light"]) #installNote #installNow, :root[data-theme="dark"
 </style>
 
 <div id="prog"></div>
+
+<button id="saveFab" type="button" title="여기까지 저장">📌 <span>여기 저장</span></button>
 
 <div class="bar">
   <div class="bar-inner">
@@ -4730,10 +4764,16 @@ const VOICE_RANK = [
   /ayumi|ichiro|sayaka/i,                 // 윈도우 (구세대)
   /./                                     // 그 밖의 일본어 음성
 ];
+/* 남성 목소리를 먼저 고른다.
+   여성 음성은 기기에 따라 톤이 높아 오래 듣기 부담스럽다는 이야기가 있었다.
+   이름으로만 가릴 수 있어 알려진 남성 음성을 적어 둔다. 없으면 그냥 품질 순서대로 간다. */
+const VOICE_MALE = /otoya|hattori|keita|daichi|naoki|ichiro|takumi|masaru|男/i;
 function jaVoices() {
   if (!("speechSynthesis" in window)) return null;
   const all = speechSynthesis.getVoices().filter(v => /^ja/i.test(v.lang));
   return all.sort((a, b) => {
+    const male = v => (VOICE_MALE.test(v.name) ? 0 : 1);    // 남성이 먼저
+    if (male(a) !== male(b)) return male(a) - male(b);
     const r = v => VOICE_RANK.findIndex(re => re.test(v.name));
     return r(a) - r(b);
   });
@@ -4801,6 +4841,11 @@ function speak(text, btn, rate, key) {
   stopSpeaking();
   if (again) return;                 // 재생 중에 같은 버튼을 누르면 멈춘다
 
+  /* 기기에 일본어 목소리가 있으면 그쪽을 먼저 쓴다(남성 우선).
+     미리 뽑아 둔 녹음본은 톤이 높아 오래 듣기 부담스럽다는 이야기가 있었다.
+     일본어 목소리가 없는 기기에서만 녹음본으로 물러난다. */
+  if (pickedVoice()) { synth(text, btn, rate); return; }
+
   const srcs = AUDIO_DATA[key] ? [AUDIO_DATA[key]]
              : (key && !audioMissing.has(key) ? [AUDIO_DIR + key + ".mp3"] : []);
   if (!srcs.length) { synth(text, btn, rate); return; }
@@ -4854,6 +4899,10 @@ function synth(text, btn, rate) {
 const spk = t => { const x = sayable(t); return `<button class="speak" data-say="${attr(x)}" data-key="${keyOf(x)}" data-rate="1" title="발음 듣기 (다시 누르면 멈춤)">🔊</button>`; };
 /* 초심자는 한 번 듣고 따라 하기 어렵습니다. 느리게 한 번 더 들을 수 있게 둡니다. */
 const spk2 = t => { const x = sayable(t); return spk(t) + `<button class="speak slow" data-say="${attr(x)}" data-key="${keyOf(x)}" data-rate=".6" title="천천히 듣기">🐢</button>`; };
+
+/* 네이버 일본어사전으로 바로 보낸다. 링크 한 줄뿐이라 앱이 무거워지지 않는다.
+   설치한 앱에서 눌러도 바깥 브라우저가 열리므로 학습 화면은 그대로 남는다. */
+const dic = w => `<a class="dic" href="https://ja.dict.naver.com/#/search?query=${encodeURIComponent(w)}" target="_blank" rel="noopener" title="네이버 사전에서 「${attr(w)}」 찾기">📖</a>`;
 
 /* ═══════════ 상태 ═══════════ */
 let view = store.get("view", "home");
@@ -4997,7 +5046,7 @@ function renderWords(d) {
           <div class="wb-head">
             <span class="wb-no">${n + 1}</span>
             <div class="wb-t">
-              <div class="wb-ja jp">${rubify(b.w.disp || b.w.jp)}${spk2(b.w.jp)}</div>
+              <div class="wb-ja jp">${rubify(b.w.disp || b.w.jp)}${spk2(b.w.jp)}${dic(b.w.jp)}</div>
               ${b.w.kana !== "―" ? `<div class="wb-kana jp">${b.w.kana}</div>` : ""}
             </div>
             <div class="wb-mean">${b.w.mean}</div>
@@ -5114,7 +5163,18 @@ function renderNavs() {
   document.getElementById("navs").innerHTML =
     `<button class="nav ${view === "home" ? "on" : ""}" data-go="home">🏠 목록</button>` +
     DATA.map(d => `<button class="nav ${view === "day" && current === d.no ? "on" : ""}" data-go="${d.no}">${isDone(d.no) ? '<span class="dot">✓</span>' : ""}${d.no}</button>`).join("");
+  syncBar();
 }
+
+/* 아래 바는 화면 너비에 따라 한 줄이 되기도 두 줄이 되기도 한다.
+   실제 높이를 재어 두어야 본문 여백과 저장 버튼이 바에 겹치지 않는다. */
+function syncBar() {
+  const bar = document.querySelector(".bar");
+  if (!bar) return;
+  document.documentElement.style.setProperty("--barH", bar.offsetHeight + "px");
+}
+window.addEventListener("resize", syncBar);
+window.addEventListener("orientationchange", syncBar);
 
 function paint() {
   stopSpeaking();
@@ -5123,7 +5183,12 @@ function paint() {
   else app.innerHTML = renderDay(DATA.find(d => d.no === current) || DATA[0]);
   renderNavs();
   store.set("view", view); store.set("day", current);
-  window.scrollTo(0, pendingY);
+  document.body.classList.toggle("in-day", view === "day");   // 따라다니는 저장 버튼은 회차 안에서만
+  /* 화면을 그린 직후에는 아직 높이가 다 잡히지 않아 그 자리로 못 갈 때가 있다.
+     한 번 더 자리를 잡아 준다. */
+  const y = pendingY;
+  window.scrollTo(0, y);
+  if (y > 0) requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
   pendingY = 0;
 }
 
@@ -5157,7 +5222,7 @@ document.addEventListener("click", e => {
   const day = e.target.closest("[data-day]");
   if (day) { goDay(day.dataset.day, day.dataset.resume); return; }
 
-  if (e.target.closest("#saveExit")) { saveSpot(false); return; }
+  if (e.target.closest("#saveExit") || e.target.closest("#saveFab")) { saveSpot(false); return; }
 
   const word = e.target.closest(".word");
   if (word) { word.classList.toggle("open"); return; }
@@ -5345,10 +5410,11 @@ paint();
     e.preventDefault(); deferred = e;
     if (!note.hidden) open();          /* 안내가 떠 있는 중에 신호가 오면 버튼과 문구를 함께 고친다 */
   });
-  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); });
+  window.addEventListener("appinstalled", () => { btn.hidden = true; hide(); syncBar(); });
 
   /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
   btn.hidden = false;
+  syncBar();                           // 버튼이 생기면 바가 한 줄 늘어날 수 있다
 
   function showNow() { nowBtn.hidden = !deferred; }
   function hide() { note.hidden = true; }
