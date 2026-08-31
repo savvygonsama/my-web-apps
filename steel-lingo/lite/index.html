@@ -4897,8 +4897,9 @@ function synth(text, btn, rate) {
 }
 
 const spk = t => { const x = sayable(t); return `<button class="speak" data-say="${attr(x)}" data-key="${keyOf(x)}" data-rate="1" title="발음 듣기 (다시 누르면 멈춤)">🔊</button>`; };
-/* 초심자는 한 번 듣고 따라 하기 어렵습니다. 느리게 한 번 더 들을 수 있게 둡니다. */
-const spk2 = t => { const x = sayable(t); return spk(t) + `<button class="speak slow" data-say="${attr(x)}" data-key="${keyOf(x)}" data-rate=".6" title="천천히 듣기">🐢</button>`; };
+/* 느리게 듣기(🐢)는 뺐다. 0.6배는 말이 늘어져 오히려 알아듣기 어려웠다.
+   spk2 는 부르는 곳이 많아 이름만 남기고 보통 속도 버튼 하나로 돌린다. */
+const spk2 = spk;
 
 /* 네이버 일본어사전으로 바로 보낸다. 링크 한 줄뿐이라 앱이 무거워지지 않는다.
    설치한 앱에서 눌러도 바깥 브라우저가 열리므로 학습 화면은 그대로 남는다. */
