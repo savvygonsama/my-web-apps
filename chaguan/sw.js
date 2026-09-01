@@ -79,6 +79,22 @@ function docStrategy(req) {
   });
 }
 
+/* 설치한 앱은 한 번 열어 두면 다시 불러와도 화면을 새로 받지 않는다.
+   그래서 화면 쪽에서 확인해 달라고 하면 그때도 서버에 물어본다. */
+self.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'check-update') return;
+  e.waitUntil(
+    fresh('./index.html')
+      .then(async (res) => {
+        if (!res || !res.ok) return;
+        if (!(await putDoc(res))) return;
+        const cs = await self.clients.matchAll({ type: 'window' });
+        cs.forEach((cl) => cl.postMessage({ type: 'update-ready' }));
+      })
+      .catch(() => {})
+  );
+});
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
