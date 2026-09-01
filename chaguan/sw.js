@@ -5,7 +5,7 @@
 
    회차를 「자료 추가」로 직접 붙여 넣은 것은 브라우저 안(localStorage)에 남으므로
    본문이 갱신되어도 그대로 남는다. */
-const CACHE = 'chaguan-v1';
+const CACHE = 'chaguan-v2';
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -31,7 +31,10 @@ self.addEventListener('activate', (e) => {
 
 /* 뒤에서 새 본문을 받아 캐시를 갈아 끼운다. 내용이 바뀌었으면 열려 있는 화면에 알린다. */
 function refresh(req) {
-  return fetch(req).then(async (res) => {
+  /* GitHub Pages는 10분짜리 캐시를 붙여 보낸다. 그대로 fetch하면 브라우저가
+     그 캐시를 내주어, 갱신을 올려도 한동안 못 받는다. 매번 서버에 물어보게 한다.
+     바뀐 것이 없으면 서버가 304로 답하므로 오가는 것은 거의 없다. */
+  return fetch(new Request(req.url, { cache: 'no-cache' })).then(async (res) => {
     if (!res || !res.ok) return;
     const c = await caches.open(CACHE);
     const old = await c.match('./index.html');
