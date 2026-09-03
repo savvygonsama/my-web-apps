@@ -193,9 +193,10 @@ function checkLite(d, tag) {
     warn(`${tag}.quiz: 앞 네 문항의 정답이 모두 ${front[0].ans}번입니다. `
        + `학습자가 낱말이 아니라 자리를 외웁니다 — 보기 순서를 섞어 주세요`);
   }
-  /* 뜻을 몰라도 가장 긴 보기를 누르면 맞는 문항을 잡는다 */
+  /* 뜻을 몰라도 가장 긴 보기를 누르면 맞는 문항을 잡는다.
+     한글도 전각이다 — 빼먹으면 한국어 보기가 절반 폭으로 세어져 이 검사가 무력해진다. */
   const cols = s => [...String(s).replace(BRACE, "$1").replace(KANJI, "$1")]
-    .reduce((a, c) => a + (/[\u3000-\u9fff\uff00-\uffef]/.test(c) ? 2 : 1), 0);
+    .reduce((a, c) => a + (/[\u1100-\u11ff\u3000-\u9fff\uac00-\ud7a3\uf900-\ufaff\uff00-\uffef]/.test(c) ? 2 : 1), 0);
   Q.forEach((q, i) => {
     const w = (q.opts || []).map(cols);
     if (!w.length) return;
