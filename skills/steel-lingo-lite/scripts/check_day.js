@@ -187,7 +187,10 @@ function checkLite(d, tag) {
   }
 
   const Q = d.quiz || [];
-  if (Q.length !== 4) err(`${tag}.quiz 는 4문항이어야 합니다 (지금 ${Q.length}문항)`);
+  if (Q.length !== 8) err(`${tag}.quiz 는 8문항이어야 합니다 (지금 ${Q.length}문항)`);
+  if (Q.length && Q.every(q => q.ans === Q[0].ans)) {
+    warn(`${tag}.quiz: 정답이 모두 같은 자리(${Q[0].ans}번)에 있습니다. 자리를 섞어 주세요`);
+  }
   Q.forEach((q, i) => {
     const lab = `${tag}.quiz[${i}]`;
     need(q, "q", lab); need(q, "msg", lab);
