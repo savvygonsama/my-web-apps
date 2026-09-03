@@ -188,9 +188,22 @@ function checkLite(d, tag) {
 
   const Q = d.quiz || [];
   if (Q.length !== 8) err(`${tag}.quiz 는 8문항이어야 합니다 (지금 ${Q.length}문항)`);
-  if (Q.length && Q.every(q => q.ans === Q[0].ans)) {
-    warn(`${tag}.quiz: 정답이 모두 같은 자리(${Q[0].ans}번)에 있습니다. 자리를 섞어 주세요`);
+  const front = Q.slice(0, 4);
+  if (front.length === 4 && front.every(q => q.ans === front[0].ans)) {
+    warn(`${tag}.quiz: 앞 네 문항의 정답이 모두 ${front[0].ans}번입니다. `
+       + `학습자가 낱말이 아니라 자리를 외웁니다 — 보기 순서를 섞어 주세요`);
   }
+  /* 뜻을 몰라도 가장 긴 보기를 누르면 맞는 문항을 잡는다 */
+  const cols = s => [...String(s).replace(BRACE, "$1").replace(KANJI, "$1")]
+    .reduce((a, c) => a + (/[\u3000-\u9fff\uff00-\uffef]/.test(c) ? 2 : 1), 0);
+  Q.forEach((q, i) => {
+    const w = (q.opts || []).map(cols);
+    if (!w.length) return;
+    if (w[q.ans] === Math.max(...w) && Math.max(...w) - Math.min(...w) >= 14) {
+      warn(`${tag}.quiz[${i}]: 정답이 눈에 띄게 가장 긴 보기입니다. `
+         + `오답도 비슷한 길이의 실제로 쓰이는 표현으로 채워 주세요`);
+    }
+  });
   Q.forEach((q, i) => {
     const lab = `${tag}.quiz[${i}]`;
     need(q, "q", lab); need(q, "msg", lab);
