@@ -166,11 +166,6 @@ html[data-py="off"] .py{display:none}
 .speedbar button{border:1px solid var(--line);background:none;border-radius:999px;
   padding:3px 9px;font-size:12px;cursor:pointer}
 .speedbar button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.asr{margin-top:10px;font-size:14px}
-.asr .w{padding:1px 3px;border-radius:3px;font-family:var(--han);font-size:20px}
-.asr .w.bad{background:var(--red-soft);color:var(--red)}
-.asr .w.good{color:var(--ok)}
-.score{font-family:var(--serif);font-size:17px}
 
 .qbox{margin:16px 0}
 .qbox .q{font-size:15px;margin-bottom:2px;font-weight:600}
@@ -279,7 +274,6 @@ pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--l
     <button data-view="log">기록</button>
     <button data-view="bank">단어장</button>
     <button data-view="add">자료 추가</button>
-    <button data-view="settings">설정</button>
   </nav>
   <button class="instbtn" id="installBtn" hidden>📲 설치</button>
 </div></div>
@@ -290,7 +284,6 @@ pre.prompt{white-space:pre-wrap;background:var(--paper);border:1px solid var(--l
   <section id="view-log" class="view"></section>
   <section id="view-bank" class="view"></section>
   <section id="view-add" class="view"></section>
-  <section id="view-settings" class="view"></section>
 </div>
 <div class="credit">茶馆 CHÁGUǍN — 데일리 중국어 쉐도잉 &nbsp;·&nbsp; © 2026 <b>곤사마</b> (Gonsama). All rights reserved.</div>
 <div class="footbar" id="footbar"><div class="footin" id="footin"></div></div>
@@ -1742,11 +1735,12 @@ const S = {
   star:   store.get("star", {}),
   out:    store.get("out", {}),
   custom: store.get("custom", []),
+  spot:   store.get("spot", null),   // 훈련을 멈춘 자리 {dayId,step,line}
   cfg:    store.get("cfg", {voiceA:"", voiceB:"", rate:0.9, reps:3, showKo:false,
                             py:"on", tone:"on", han:"kai", theme:"auto", myRole:"A"})
 };
 function save(){ store.set("prog",S.prog); store.set("log",S.log); store.set("star",S.star);
-  store.set("out",S.out); store.set("custom",S.custom); store.set("cfg",S.cfg); }
+  store.set("out",S.out); store.set("custom",S.custom); store.set("cfg",S.cfg); store.set("spot",S.spot); }
 
 let CONTENT = [];
 function rebuild(){ CONTENT = CONTENT_BUILTIN.concat(S.custom); }
@@ -1761,7 +1755,6 @@ function pad(n){ return n<10?"0"+n:""+n; }
 function dayById(id){ return CONTENT.find(d=>d.id===id); }
 function isDone(id){ return !!(S.prog[id] && S.prog[id].done); }
 function nextUndone(){ return CONTENT.find(d=>!isDone(d.id)) || CONTENT[CONTENT.length-1]; }
-function prevOf(id){ const i=CONTENT.findIndex(d=>d.id===id); return i>0?CONTENT[i-1]:null; }
 function cLen(s){ return (String(s).match(/[一-鿿]/g)||[]).length; }
 
 /* ---------- 병음: 음절 분리 + 성조 색 ---------- */
@@ -1828,7 +1821,7 @@ function loadVoices(){
   VOICES = all.filter(v=>/^zh(-|_|$)/i.test(v.lang) || /chinese|中文|普通话|mandarin/i.test(v.name));
   if(!VOICES.length) VOICES = all;
 }
-if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = ()=>{ loadVoices(); if(cur.view==="settings") render(); }; }
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged = ()=>{ loadVoices(); }; }
 function pickVoice(who){
   const want = who==="B" ? S.cfg.voiceB : S.cfg.voiceA;
   let v = VOICES.find(x=>x.name===want);
@@ -1870,25 +1863,14 @@ function chunksOf(l){
   return [{zh:l.zh, py:l.py}];
 }
 
-/* ---------- 발음 체크 (음성인식) ---------- */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function normChars(s){ return (String(s).match(/[一-鿿A-Za-z0-9]/g)||[]); }
-function compareSpoken(target, said){
-  const t = normChars(target), h = normChars(said);
-  const pool = h.slice();
-  const marks = t.map(w=>{ const i = pool.indexOf(w); if(i>=0){ pool.splice(i,1); return {w, ok:true}; } return {w, ok:false}; });
-  const hit = marks.filter(m=>m.ok).length;
-  return { marks, score: t.length ? Math.round(hit/t.length*100) : 0 };
-}
-
 /* ---------- 세션 상태 ---------- */
 const STEPS = [
-  {k:"review", n:"전날 복습",   m:2,  d:"어제 표현을 보지 않고 먼저 말해 봅니다"},
-  {k:"words",  n:"단어·표현",   m:3,  d:"오늘 나올 단어와 표현을 눈으로 훑습니다"},
   {k:"listen", n:"통으로 듣기", m:3,  d:"대화 전체를 들으며 흐름과 성조를 잡습니다"},
   {k:"shadow", n:"한 줄 쉐도잉",m:10, d:"덩어리 → 문장 순으로 소리 내어 따라 읽습니다"},
   {k:"output", n:"역할극·말하기",m:2, d:"상대 대사는 앱이, 내 대사는 내가 말합니다"}
 ];
+const SESS_MIN = STEPS.reduce((a,x)=>a+x.m, 0);
 let cur = { view:"home", dayId:null, step:0, line:0, reps:{}, t0:0, tick:null, showKo:false };
 
 /* ---------- 새 회차 자동 반영 ----------
@@ -1903,9 +1885,13 @@ function applyUpdate(){
   location.reload();
 }
 
-function startSession(id){
+function startSession(id, resume){
   stopSpeak();
-  cur.dayId=id; cur.step=0; cur.line=0; cur.showKo=S.cfg.showKo;
+  const sp = (resume && S.spot && S.spot.dayId===id) ? S.spot : null;
+  cur.dayId=id; cur.showKo=S.cfg.showKo;
+  cur.step = sp ? Math.max(0, Math.min(sp.step, STEPS.length-1)) : 0;
+  cur.line = sp ? Math.max(0, sp.line||0) : 0;
+  const dd = dayById(id); if(dd) cur.line = Math.min(cur.line, dd.lines.length-1);
   cur.reps = (S.prog[id]&&S.prog[id].reps) ? S.prog[id].reps : {};
   cur.t0 = Date.now();
   clearInterval(cur.tick); cur.tick = setInterval(updClock, 1000);
@@ -1916,7 +1902,7 @@ function updClock(){
   const el = $("#clock"); if(!el) return;
   const s = Math.floor((Date.now()-cur.t0)/1000);
   el.textContent = pad(Math.floor(s/60))+":"+pad(s%60);
-  el.classList.toggle("over", s>20*60);
+  el.classList.toggle("over", s>SESS_MIN*60);
 }
 function endSession(){ clearInterval(cur.tick); stopSpeak(); }
 
@@ -1938,7 +1924,6 @@ function render(){
   else if(cur.view==="log") renderLog();
   else if(cur.view==="bank") renderBank();
   else if(cur.view==="add") renderAdd();
-  else if(cur.view==="settings") renderSettings();
   $("#footbar").classList.toggle("on", cur.view==="session");
   bindPyClick();
   applyUpdate();   // 훈련에서 빠져나온 자리에서 새 회차를 반영한다
@@ -1970,13 +1955,24 @@ function renderHome(){
   const d = nextUndone(); const info = streakInfo();
   const doneToday = !!S.log[today()];
   let h = "";
-  h += '<div class="hd" style="margin-top:20px"><small>Today · 20 min</small></div>';
+  h += '<div class="hd" style="margin-top:20px"><small>Today · '+SESS_MIN+' min</small></div>';
+  /* 멈춘 자리가 남아 있으면 그것을 가장 먼저 내민다 */
+  const sp = S.spot, spd = sp ? dayById(sp.dayId) : null;
+  if(spd && !isDone(spd.id) && spd.id!==d.id){
+    h += '<div class="card" style="border-color:var(--accent)">'+
+         '<b>📌 이어서 하기</b>'+
+         '<div class="sub" style="margin:4px 0 10px">DAY '+spd.day+' · '+esc(spd.title)+' — '+
+         (sp.step+1)+'단계 '+STEPS[Math.min(sp.step, STEPS.length-1)].n+', '+(sp.line+1)+'번째 문장에서 멈췄습니다.</div>'+
+         '<button class="btn blue" id="goResume">이어서 하기 →</button></div>';
+  }
   h += '<div class="today">';
   h +=   '<span class="tag r">DAY '+d.day+'</span> <span class="tag">'+esc(d.cat)+'</span>';
   h +=   '<h2>'+esc(d.title)+'</h2>';
   h +=   '<div class="tpy">'+pyHTML(d.titlePy)+'</div>';
   h +=   '<div class="kotitle">'+esc(d.titleKo)+'</div>';
-  h +=   '<div class="row"><button class="btn blue" id="goSess">'+(S.prog[d.id]?"이어서 시작":"오늘 훈련 시작")+' →</button>';
+  if(sp && sp.dayId===d.id) h += '<div class="sub" style="margin:-6px 0 12px">📌 '+(sp.step+1)+'단계 '+
+    STEPS[Math.min(sp.step, STEPS.length-1)].n+', '+(sp.line+1)+'번째 문장에서 멈췄습니다.</div>';
+  h +=   '<div class="row"><button class="btn blue" id="goSess">'+((sp&&sp.dayId===d.id)?"이어서 시작":S.prog[d.id]?"다시 하기":"오늘 훈련 시작")+' →</button>';
   h +=   '<span class="sub">'+d.lines.length+'문장 · 단어 '+(d.vocab?d.vocab.length:0)+'개 · 표현 '+d.keys.length+'개</span></div>';
   h +=   '<div class="streak"><div><b>'+info.streak+'</b><span>연속일</span></div><div><b>'+info.total+'</b><span>총 학습일</span></div>';
   h +=   '<div><b>'+info.mins+'</b><span>총 분</span></div><div><b>'+info.lines+'</b><span>누적 문장</span></div></div>';
@@ -1989,16 +1985,20 @@ function renderHome(){
          (isDone(x.id)?'<div class="done">완료</div>':'<div class="sub" style="font-size:12px">'+x.lines.length+'문장</div>')+'</div>';
   });
   h += '</div>';
-  h += '<div class="card sub">한 세션은 <b>20분</b>입니다 — 복습 2분 · 단어 3분 · 통듣기 3분 · 쉐도잉 10분 · 역할극 2분. '+
-       '시간이 없으면 <b>쉐도잉 단계만</b> 해도 효과의 대부분이 나옵니다. 난이도는 <b>HSK 5~6</b> 기준입니다.</div>';
+  h += '<div class="card sub">한 세션은 <b>'+SESS_MIN+'분</b>입니다 — 통듣기 3분 · 쉐도잉 10분 · 역할극 2분. '+
+       '시간이 없으면 <b>쉐도잉 단계만</b> 해도 효과의 대부분이 나옵니다. 난이도는 <b>HSK 5~6</b> 기준입니다. '+
+       '한 번에 못 끝내는 날에는 아래 <b>「여기까지 하고 저장」</b>을 누르세요 — 다음에 열면 그 자리에서 이어집니다.</div>';
   h += '<div class="card copy"><div class="seal">茶馆</div><div class="ct">'+
        '<b>茶馆 CHÁGUǍN — 데일리 중국어 쉐도잉</b><br>'+
        '<span class="r">© 2026 곤사마 (Gonsama). All rights reserved.</span>'+
        '<div class="sub" style="margin-top:6px">이 앱의 기획·구성과 모든 콘텐츠(대화문·병음·번역·표현 노트·커리큘럼)의 저작권은 '+
        '<b>곤사마</b>에게 있습니다. 개인 학습 목적으로는 자유롭게 쓰시되, 무단 복제·배포·상업적 이용은 금합니다.</div></div></div>';
   $("#view-home").innerHTML = h;
-  $("#goSess").onclick = ()=> startSession(d.id);
-  document.querySelectorAll(".ditem").forEach(el=> el.onclick = ()=> startSession(el.dataset.id));
+  $("#goSess").onclick = ()=> startSession(d.id, !!(sp && sp.dayId===d.id));
+  const rb = $("#goResume"); if(rb) rb.onclick = ()=> startSession(sp.dayId, true);
+  /* 목록에서 골라도, 그 회차가 멈춘 자리라면 그 자리에서 이어 간다 */
+  document.querySelectorAll(".ditem").forEach(el=> el.onclick = ()=>
+    startSession(el.dataset.id, !!(sp && sp.dayId===el.dataset.id)));
 }
 
 /* ---------- 세션 ---------- */
@@ -2012,20 +2012,20 @@ function renderSession(){
   h += '<div id="stepbody"></div>';
   $("#view-session").innerHTML = h;
   updClock();
-  ({review:stepReview, words:stepWords, listen:stepListen, shadow:stepShadow, output:stepOutput})[st.k](d);
+  ({listen:stepListen, shadow:stepShadow, output:stepOutput})[st.k](d);
   renderFoot(d);
   bindPyClick();
 }
 function renderFoot(d){
   const last = cur.step===STEPS.length-1;
-  let h = '<button class="btn ghost sm" id="fPrev">← 이전</button>';
+  let h = '<button class="btn ghost sm" id="fPrev" title="이전 단계">←</button>';
   h += '<span class="sub" style="font-size:12px">'+(cur.step+1)+'/'+STEPS.length+'</span>';
   h += '<span style="flex:1"></span>';
-  h += '<button class="btn ghost sm" id="fHome">나가기</button>';
-  h += '<button class="btn '+(last?"blue":"")+'" id="fNext">'+(last?"훈련 완료 ✓":"다음 단계 →")+'</button>';
+  h += '<button class="btn ghost sm" id="fSave">📌 여기까지 저장</button>';
+  h += '<button class="btn '+(last?"blue":"")+'" id="fNext">'+(last?"훈련 완료 ✓":"다음 →")+'</button>';
   $("#footin").innerHTML = h;
   $("#fPrev").onclick = ()=>{ if(cur.step>0){ stopSpeak(); cur.step--; renderSession(); } };
-  $("#fHome").onclick = ()=>{ saveProgress(); go("home"); };
+  $("#fSave").onclick = saveAndExit;
   $("#fNext").onclick = ()=>{
     stopSpeak();
     if(cur.step<STEPS.length-1){ cur.step++; renderSession(); }
@@ -2033,14 +2033,28 @@ function renderFoot(d){
   };
   $("#fPrev").disabled = cur.step===0;
 }
+/* ---------- 여기까지 하고 저장 ----------
+   20분을 한 자리에서 다 내지 못하는 날이 많다. 어디까지 했는지 적어 두고,
+   다음에 열면 홈의 「이어서 하기」로 그 단계, 그 문장에서 다시 시작한다.
+   따라 읽을 때마다(bumpRep) 불리므로 자리는 늘 최신이다. */
 function saveProgress(){
   if(!cur.dayId) return;
   const p = S.prog[cur.dayId] || {};
   p.reps = cur.reps; p.stepIdx = cur.step;
-  S.prog[cur.dayId] = p; save();
+  S.prog[cur.dayId] = p;
+  if(!p.done) S.spot = { dayId:cur.dayId, step:cur.step, line:cur.line, at:Date.now() };
+  save();
 }
+function saveAndExit(){
+  saveProgress();
+  toast("여기까지 저장했습니다. 다음에 열면 이어집니다.");
+  go("home");
+}
+/* 버튼을 누르지 않고 그냥 화면을 덮거나 앱을 내려도 자리를 잃지 않게 한다 */
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden && cur.view==="session") saveProgress(); });
+window.addEventListener("pagehide", ()=>{ if(cur.view==="session") saveProgress(); });
 function finishSession(d){
-  const p = S.prog[d.id] || {}; p.reps=cur.reps; p.done=true; p.doneAt=today(); S.prog[d.id]=p;
+  const p = S.prog[d.id] || {}; p.reps=cur.reps; p.done=true; p.doneAt=today(); S.prog[d.id]=p; S.spot=null;
   const t = today(); const prev = S.log[t] || {min:0, lines:0};
   const repLines = Object.keys(cur.reps).filter(k=>cur.reps[k]>0).length;
   S.log[t] = { dayId:d.id, min: prev.min + Math.max(1, elapsedMin()), lines: prev.lines + repLines, ts: Date.now() };
@@ -2060,25 +2074,6 @@ function finishSession(d){
 }
 
 /* --- step 1 : 복습 --- */
-function stepReview(d){
-  const p = prevOf(d.id);
-  let h = "";
-  if(!p){
-    h = '<div class="card"><b>첫 회차입니다.</b><div class="sub" style="margin-top:6px">복습할 이전 회차가 없으니 바로 다음 단계로 넘어가세요. '+
-        '내일부터 이 자리에서 전날 표현을 물어봅니다.</div></div>';
-  } else {
-    h = '<div class="card"><div class="sub">DAY '+p.day+' · '+esc(p.title)+' — '+esc(p.titleKo)+'</div>'+
-        '<div style="margin:10px 0 4px;font-size:13.5px">한자를 보고 <b>먼저 소리 내어</b> 읽은 뒤, 가려진 뜻을 눌러 확인하세요.</div><div class="rule"></div>';
-    p.keys.forEach(k=>{
-      h += '<div class="keyrow"><div class="k"><b>'+esc(k.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(k.zh)+'">▶</button>'+pyBox(k.py)+'</div>'+
-           '<div class="m"><span class="blurme">'+esc(k.ko)+'</span>'+
-           '<span class="ex blurme">'+esc(k.ex)+'</span><span class="exko blurme">'+esc(k.exKo||"")+'</span></div></div>';
-    });
-    h += '</div>';
-  }
-  $("#stepbody").innerHTML = h;
-  bindBlur(); bindPlay();
-}
 function bindBlur(){
   document.querySelectorAll(".blurme").forEach(el=>{ if(el._bb) return; el._bb=1;
     el.addEventListener("click", ()=> el.classList.toggle("show")); });
@@ -2088,30 +2083,6 @@ function bindPlay(){
 }
 
 /* --- step 2 : 단어·표현 --- */
-function stepWords(d){
-  let h = '<div class="card"><span class="tag">'+esc(d.cat)+'</span>'+
-    '<div class="hz" style="font-size:26px;margin:8px 0 2px">'+esc(d.title)+'</div>'+
-    '<div class="tpy py">'+pyHTML(d.titlePy)+'</div>'+
-    '<div class="sub">'+esc(d.titleKo)+'</div><div class="rule"></div><ul class="brief">'+
-    d.brief.map(b=>'<li>'+b+'</li>').join("")+'</ul></div>';
-  if(d.vocab && d.vocab.length){
-    h += '<div class="card"><b>오늘의 단어 '+d.vocab.length+'개</b>'+
-         '<div class="sub" style="margin:4px 0 8px">지금은 눈으로만 훑으세요. 외우는 건 쉐도잉에서 저절로 됩니다. ▶를 누르면 발음이 나옵니다.</div><div class="rule"></div>';
-    d.vocab.forEach(v=>{
-      h += '<div class="vrow"><div class="w"><b>'+esc(v.w)+'</b> <button class="btn ghost sm rv" data-t="'+esc(v.w)+'">▶</button>'+pyBox(v.p)+'</div>'+
-           '<div class="m">'+esc(v.m)+'</div><div class="lv">'+esc(v.lv||"")+'</div></div>';
-    });
-    h += '</div>';
-  }
-  h += '<div class="card"><b>오늘의 핵심 표현 '+d.keys.length+'개</b><div class="rule"></div>';
-  d.keys.forEach(k=>{
-    h += '<div class="keyrow"><div class="k"><b>'+esc(k.zh)+'</b> <button class="btn ghost sm rv" data-t="'+esc(k.zh)+'">▶</button>'+pyBox(k.py)+'</div>'+
-         '<div class="m">'+esc(k.ko)+'<span class="ex">'+esc(k.ex)+'</span>'+pyBox(k.exPy)+'<span class="exko">'+esc(k.exKo||"")+'</span></div></div>';
-  });
-  h += '</div>';
-  $("#stepbody").innerHTML = h; bindPlay(); bindPyClick();
-}
-
 /* --- step 3 : 통으로 듣기 --- */
 function stepListen(d){
   let h = '<div class="card"><div class="row" style="margin-bottom:6px">'+
@@ -2167,15 +2138,13 @@ function stepShadow(d){
     h += '<div class="sub" style="font-size:12px;margin-top:6px">덩어리로 끊어 읽기 — 각 줄을 눌러 따라 하세요</div>';
     h += '<div class="chunks">'+chunks.map((c,ci)=>'<div class="chunk" data-c="'+ci+'"><span class="zh">'+esc(c.zh)+'</span>'+pyBox(c.py)+'</div>').join("")+'</div>';
   }
-  h +=   '<div class="bigko blurme'+(cur.showKo?" show":"")+'">'+esc(l.ko)+'</div>';
+  h +=   '<div class="bigko">'+esc(l.ko)+'</div>';
   h +=   '<div class="rule"></div>';
   h +=   '<div class="row"><button class="btn" id="pLine">듣기 ▶</button>'+
          '<button class="btn ghost sm" id="pSlow">천천히 0.6x</button>'+
          '<button class="btn '+(autoTok?"blue":"ghost")+' sm" id="pAuto">'+(autoTok?"■ 자동 정지":"자동 진행 ▶▶")+'</button>'+
-         (SR?'<button class="btn ghost sm" id="pAsr">🎤 발음 체크</button>':'')+
          '<span style="flex:1"></span><span class="counter" id="dots">'+
          Array.from({length:target},(_,k)=>'<span class="dot '+(k<reps?"on":"")+'"></span>').join("")+'</span></div>';
-  h +=   '<div id="asrOut"></div>';
   if(l.notes && l.notes.length){
     h += '<div class="notes"><div class="sub" style="font-size:12px;margin-bottom:4px">표현 노트</div>';
     l.notes.forEach(n=>{
@@ -2205,7 +2174,6 @@ function stepShadow(d){
     if(cur.line < d.lines.length-1){ cur.line++; stopSpeak(); stepShadow(d); }
     else { toast("마지막 문장입니다 — 다음 단계로"); }
   };
-  if(SR) $("#pAsr").onclick = ()=> runAsr(l.zh);
 }
 function bumpRep(i){
   cur.reps[i] = Math.min(S.cfg.reps, (cur.reps[i]||0)+1);
@@ -2235,23 +2203,6 @@ function autoShadow(d){
 }
 function kLabel(k){
   return ({word:"단어", expr:"표현", grammar:"문법", measure:"양사", pron:"발음", culture:"문화", idiom:"관용"})[k] || k;
-}
-function runAsr(target){
-  const box = $("#asrOut");
-  let rec;
-  try{ rec = new SR(); }catch(e){ box.innerHTML='<div class="sub">이 브라우저에서는 발음 체크를 쓸 수 없습니다.</div>'; return; }
-  rec.lang="zh-CN"; rec.interimResults=false; rec.maxAlternatives=1;
-  box.innerHTML = '<div class="asr sub">🎤 듣고 있습니다… 문장을 소리 내어 읽으세요.</div>';
-  rec.onresult = e=>{
-    const said = e.results[0][0].transcript;
-    const r = compareSpoken(target, said);
-    box.innerHTML = '<div class="asr"><span class="score">'+r.score+'점</span> <span class="sub">— 인식된 문장: '+esc(said)+'</span><div style="margin-top:6px">'+
-      r.marks.map(m=>'<span class="w '+(m.ok?"good":"bad")+'">'+esc(m.w)+'</span>').join("")+'</div>'+
-      '<div class="sub" style="font-size:12px;margin-top:4px">빨간 글자는 전달되지 않은 부분입니다. 그 글자만 천천히 다시 읽어 보세요. '+
-      '※ 성조까지 채점하지는 못합니다. 성조는 앱 발음을 따라 하며 귀로 잡으세요.</div></div>';
-  };
-  rec.onerror = ev=>{ box.innerHTML='<div class="asr sub">인식 실패('+esc(ev.error)+'). 마이크 권한과 인터넷 연결을 확인하세요.</div>'; };
-  try{ rec.start(); }catch(e){ box.innerHTML='<div class="asr sub">마이크를 시작할 수 없습니다.</div>'; }
 }
 document.addEventListener("keydown", e=>{
   if(cur.view!=="session" || STEPS[cur.step].k!=="shadow") return;
@@ -2352,7 +2303,14 @@ function renderLog(){
        '<div class="row"><button class="btn ghost sm" id="expBtn">백업 내보내기</button>'+
        '<label class="btn ghost sm" style="cursor:pointer">백업 불러오기<input type="file" id="impFile" accept="application/json" style="display:none"></label></div>'+
        '<div id="bkOut"></div></div>';
+  h += '<div class="card"><b>기록 초기화</b><div class="sub" style="margin:4px 0 8px">모든 학습 기록과 추가한 회차가 지워집니다. 되돌릴 수 없습니다.</div>'+
+       '<button class="btn ghost sm" id="reset" style="color:var(--accent);border-color:var(--accent)">전체 초기화</button></div>';
   $("#view-log").innerHTML = h;
+  $("#reset").onclick = ()=>{
+    if(confirm("모든 기록을 지웁니다. 계속할까요?")){
+      S.prog={}; S.log={}; S.star={}; S.out={}; S.custom=[]; S.spot=null; save(); rebuild(); toast("초기화했습니다"); go("home");
+    }
+  };
   $("#expBtn").onclick = exportData;
   $("#impFile").onchange = importData;
 }
@@ -2541,54 +2499,6 @@ function renderAdd(){
 }
 
 /* ---------- 설정 ---------- */
-function renderSettings(){
-  const vopt = who => VOICES.map(v=>'<option value="'+esc(v.name)+'"'+
-    ((who==="A"?S.cfg.voiceA:S.cfg.voiceB)===v.name?" selected":"")+'>'+esc(v.name)+' ('+esc(v.lang)+')</option>').join("");
-  let h = '<div class="hd" style="margin-top:20px"><small>Settings</small>설정</div>';
-  h += '<div class="card"><b>목소리</b><div class="sub" style="margin:4px 0 10px">A와 B를 다른 목소리로 두면 대화처럼 들립니다. '+
-    '목록에 중국어 음성이 없으면 윈도우 설정 → 시간 및 언어 → 언어에서 <b>중국어(간체) 음성</b>을 추가하세요.</div>'+
-    '<div class="row" style="margin-bottom:8px">A(첫 번째 화자) <select id="vA">'+vopt("A")+'</select><button class="btn ghost sm rv" data-t="你好，这是A的声音。">시험 재생</button></div>'+
-    '<div class="row">B(두 번째 화자) <select id="vB">'+vopt("B")+'</select><button class="btn ghost sm" id="tB">시험 재생</button></div>'+
-    (VOICES.length?'':'<div class="sub" style="margin-top:8px;color:var(--red)">중국어 음성을 찾지 못했습니다. 브라우저를 새로고침하거나 Chrome·Edge에서 열어 보세요.</div>')+'</div>';
-  h += '<div class="card"><b>병음 표시</b><div class="sub" style="margin:4px 0 8px">실력이 붙으면 <b>가리기</b>로 바꾸세요. 눌러야 보이므로 한자와 소리를 먼저 떠올리게 됩니다.</div>'+
-    '<div class="row">'+
-    ["on","blur","off"].map(v=>'<button class="btn '+(S.cfg.py===v?"blue":"ghost")+' sm pyb" data-v="'+v+'">'+
-      ({on:"항상 보기",blur:"가리기(눌러서 확인)",off:"완전히 숨기기"})[v]+'</button>').join("")+'</div></div>';
-  h += '<div class="card"><b>성조 색</b><div class="sub" style="margin:4px 0 8px">병음에 성조별 색을 입힙니다 — '+
-    '<span class="t1">1성</span> · <span class="t2">2성</span> · <span class="t3">3성</span> · <span class="t4">4성</span> · <span class="t0">경성</span></div>'+
-    '<div class="row">'+["on","off"].map(v=>'<button class="btn '+(S.cfg.tone===v?"blue":"ghost")+' sm tnb" data-v="'+v+'">'+
-      (v==="on"?"색 입히기":"색 없이")+'</button>').join("")+'</div></div>';
-  h += '<div class="card"><b>한자 서체</b><div class="sub" style="margin:4px 0 8px">楷体(해서)는 붓글씨에 가까워 획을 익히기 좋고, 黑体(고딕)는 화면에서 또렷합니다.</div>'+
-    '<div class="row">'+[["kai","楷体 (해서)"],["hei","黑体 (고딕)"]].map(v=>'<button class="btn '+(S.cfg.han===v[0]?"blue":"ghost")+' sm hnb" data-v="'+v[0]+'">'+v[1]+'</button>').join("")+'</div></div>';
-  h += '<div class="card"><b>훈련 설정</b><div class="rule"></div>'+
-    '<div class="row" style="margin-bottom:10px">기본 속도 '+speedBar("stSpeed")+'</div>'+
-    '<div class="row" style="margin-bottom:10px">문장당 반복 목표 <select id="rp">'+[2,3,5].map(n=>'<option'+(S.cfg.reps===n?" selected":"")+'>'+n+'</option>').join("")+'</select> 회</div>'+
-    '<div class="row"><label><input type="checkbox" id="ko"'+(S.cfg.showKo?" checked":"")+'> 한국어 번역을 처음부터 보이기</label></div></div>';
-  h += '<div class="card"><b>화면</b><div class="row" style="margin-top:8px"><button class="btn ghost sm" id="th">'+
-    (S.cfg.theme==="dark"?"밝은 화면으로":"어두운 화면으로")+'</button></div></div>';
-  h += '<div class="card"><b>기록 초기화</b><div class="sub" style="margin:4px 0 8px">모든 학습 기록과 추가한 회차가 지워집니다. 되돌릴 수 없습니다.</div>'+
-    '<button class="btn ghost sm" id="reset" style="color:var(--red);border-color:var(--red)">전체 초기화</button></div>';
-  h += '<div class="card sub" style="font-size:12.5px"><b>이 앱에 대해</b><br>茶馆 CHÁGUǍN · 데일리 중국어 쉐도잉<br>'+
-    '<b>© 2026 곤사마 (Gonsama). All rights reserved.</b><br><br>인터넷 없이 열리지만, '+
-    '음성은 컴퓨터에 설치된 중국어 음성을 사용합니다(고품질 온라인 음성은 인터넷이 있을 때 더 잘 나옵니다). '+
-    '발음 체크는 Chrome·Edge에서 마이크 권한과 인터넷이 있을 때 동작하며, 글자 인식만 대조할 뿐 성조는 채점하지 못합니다.</div>';
-  $("#view-settings").innerHTML = h;
-  bindSpeed("stSpeed"); bindPlay();
-  $("#vA").onchange = e=>{ S.cfg.voiceA=e.target.value; save(); };
-  $("#vB").onchange = e=>{ S.cfg.voiceB=e.target.value; save(); };
-  $("#tB").onclick = ()=> speak("你好，这是B的声音。", "B", S.cfg.rate);
-  document.querySelectorAll(".pyb").forEach(b=> b.onclick = ()=>{ S.cfg.py=b.dataset.v; save(); applyLook(); renderSettings(); });
-  document.querySelectorAll(".tnb").forEach(b=> b.onclick = ()=>{ S.cfg.tone=b.dataset.v; save(); applyLook(); renderSettings(); });
-  document.querySelectorAll(".hnb").forEach(b=> b.onclick = ()=>{ S.cfg.han=b.dataset.v; save(); applyLook(); renderSettings(); });
-  $("#rp").onchange = e=>{ S.cfg.reps=+e.target.value; save(); };
-  $("#ko").onchange = e=>{ S.cfg.showKo=e.target.checked; save(); };
-  $("#th").onclick = ()=>{ S.cfg.theme = S.cfg.theme==="dark"?"light":"dark"; save(); applyLook(); renderSettings(); };
-  $("#reset").onclick = ()=>{
-    if(confirm("모든 기록을 지웁니다. 계속할까요?")){
-      S.prog={}; S.log={}; S.star={}; S.out={}; S.custom=[]; save(); rebuild(); toast("초기화했습니다"); go("home");
-    }
-  };
-}
 function applyLook(){
   const r = document.documentElement;
   let t = S.cfg.theme;
@@ -2602,6 +2512,11 @@ function applyLook(){
 }
 
 /* ---------- 시작 ---------- */
+/* 설정 화면을 없앴으므로, 예전에 저장해 둔 화면 설정에 갇히지 않도록 되돌린다.
+   화면 밝기는 휴대폰 설정을 따라가고, 병음·성조 색·서체는 기본값으로 연다. */
+if(S.cfg.theme!=="auto" || S.cfg.py!=="on" || S.cfg.tone!=="on" || S.cfg.han!=="kai"){
+  S.cfg.theme="auto"; S.cfg.py="on"; S.cfg.tone="on"; S.cfg.han="kai"; save();
+}
 applyLook();
 render();
 
