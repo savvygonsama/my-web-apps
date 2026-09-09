@@ -2055,38 +2055,60 @@ function speakSeq(items, rate, onStep, onDone){
   })();
 }
 
-/* ---------- 청크 자동 분할 ---------- */
+/* 새 끊어읽기 — 「덩어리 수를 먼저 정하고, 끊어도 되는 자리에서만 끊는다」
+
+   예전 방식은 접속사와 쉼표를 만날 때마다 끊고, 10단어가 넘으면 가운데를 억지로
+   갈랐다. 그래서 평균 3.5덩어리가 나왔고, 무엇보다 for a / while now 처럼
+   구 한가운데가 잘렸다. 쉐도잉은 숨을 쉬는 자리에서 끊어야 의미가 있다. */
 function chunkify(s){
-  const sents = (s.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [s]).map(x=>x.trim()).filter(Boolean);
-  const brkBefore = /^(but|and|so|because|which|that|when|if|though|although|while|or|then|unless)$/i;
-  const prep = /^(in|on|at|of|for|to|with|from|about|into|by|as|over|under|before|after)$/i;
-  const clean = w => w.replace(/[^\w']/g,"");
-  let out = [];
-  sents.forEach(sen=>{
-    const toks = sen.split(/\s+/);
-    const parts = []; let c = [];
-    toks.forEach(w=>{
-      if(c.length>=4 && brkBefore.test(clean(w))){ parts.push(c.join(" ")); c=[]; }
-      c.push(w);
-      if(/[,;:]$/.test(w) && c.length>=3){ parts.push(c.join(" ")); c=[]; }
-    });
-    if(c.length) parts.push(c.join(" "));
-    parts.forEach(p=>{
-      let t = p.split(/\s+/);
-      while(t.length > 10){
-        let cut = -1, mid = Math.floor(t.length/2);
-        for(let i=Math.max(3, mid-3); i<Math.min(t.length-3, mid+4); i++){
-          if(prep.test(clean(t[i]))){ cut = i; break; }
-        }
-        if(cut < 0) cut = mid;
-        out.push(t.slice(0,cut).join(" ")); t = t.slice(cut);
-      }
-      out.push(t.join(" "));
-    });
-  });
-  const merged=[];
-  out.forEach(c=>{ if(merged.length && c.split(/\s+/).length<3) merged[merged.length-1]+=" "+c; else merged.push(c); });
-  return merged;
+  const toks = String(s).trim().split(/\s+/).filter(Boolean);
+  const W = toks.length;
+  /* 한 덩어리가 12단어 안팎이 되도록 목표 수를 먼저 정한다. 최대 세 덩어리. */
+  const target = Math.min(3, Math.ceil(W / 12));
+  if(target <= 1) return [toks.join(" ")];
+
+  const MIN = 4;                                   // 덩어리는 최소 네 단어
+  const clean = w => w.replace(/[^\w']/g, "").toLowerCase();
+  const SUB  = /^(but|because|so|although|though|while|unless|whereas|since|before|after|until|once|if|whether|provided)$/;
+  const REL  = /^(which|that|when|where|who|whose)$/;
+  const COORD= /^(and|or|yet)$/;                   // 등위접속 — 마땅한 자리가 없을 때만
+  const PREP = /^(in|on|at|of|for|to|with|from|about|into|by|over|under|through|without|against|between)$/;
+
+  /* i번째 단어 앞에서 끊을 때의 점수. 음수면 그 자리에서는 끊지 않는다. */
+  function score(i){
+    if(i < MIN || W - i < MIN) return -1;
+    const prev = toks[i-1], w = clean(toks[i]);
+    if(/[.!?]["')\]]?$/.test(prev)) return 100;    // 문장이 끝난 자리
+    if(/[;:—]$/.test(prev))         return 90;
+    if(/,$/.test(prev))             return 80;     // 쉼표 뒤
+    if(SUB.test(w))                 return 60;     // 접속사 앞
+    if(REL.test(w))                 return 50;     // 관계사 앞
+    if(COORD.test(w))               return 40;     // 등위접속 앞
+    /* 전치사구가 시작되는 자리. 앞뒤로 충분히 길 때만 쓴다 —
+       마땅한 자리가 없는 긴 문장을 통째로 두지 않기 위한 마지막 수단이다. */
+    if(PREP.test(w) && i >= 5 && W - i >= 5) return 30;
+    return -1;                                     // 그 밖에는 끊지 않는다
+  }
+
+  const cuts = [];
+  for(let k = 1; k < target; k++){
+    const ideal = Math.round(W * k / target);
+    let best = -1, bestVal = 0;
+    for(let i = 1; i < W; i++){
+      const sc = score(i);
+      if(sc < 0) continue;
+      if(cuts.some(c => Math.abs(c - i) < MIN)) continue;   // 이미 고른 자리와 너무 붙지 않게
+      const val = sc - Math.abs(i - ideal) * 6;             // 고른 자리에 가까울수록 좋다
+      if(val > bestVal){ bestVal = val; best = i; }
+    }
+    if(best > 0) cuts.push(best);
+  }
+  if(!cuts.length) return [toks.join(" ")];        // 끊을 자리가 마땅찮으면 통째로 둔다
+
+  cuts.sort((a,b)=>a-b);
+  const out = []; let prev = 0;
+  cuts.concat([W]).forEach(c => { out.push(toks.slice(prev, c).join(" ")); prev = c; });
+  return out;
 }
 
 function normWords(s){ return s.toLowerCase().replace(/[^a-z0-9'\s]/g," ").split(/\s+/).filter(Boolean); }
