@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>스틸 워크 스타일</title>
 <meta name="description" content="스틸 워크 스타일 — 8개 축 32문항으로 내 업무 스타일을 보고, 같이 일하는 사람과의 궁합을 확인하는 진단 앱.">
-<meta name="theme-color" content="#1d566f" media="(prefers-color-scheme:light)">
-<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme:dark)">
+<meta name="theme-color" content="#1a5570">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -41,32 +40,9 @@
   --r-card:20px; --r-inner:13px;
   /* 코드 카드처럼 짙은 판은 테마와 무관하게 짙어야 흰 글씨가 읽힌다 */
   --panel-a:#1c6183; --panel-b:#10394d; --panel-ink:#ffffff; --panel-on:#12455c;
-}
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --ground:#0d1218; --ground-2:#121922;
-  --surface:#161d26; --surface-2:#1e2831; --surface-3:#1a222c;
-  --ink:#e5ebf1; --ink-2:#a6b3bf; --ink-3:#7d8a96;
-  --line:#28323d; --line-strong:#3c4956;
-  --accent:#79b4d6; --accent-2:#9ccbe6; --accent-soft:#14303f;
-  --ember:#e09a63; --ember-2:#eab182; --ember-soft:#3a2617;
-  --good:#63c396; --good-soft:#16332a;
-  --ring:0 0 0 3px rgba(121,180,214,.28);
-  --panel-a:#1b4a61; --panel-b:#0e2b3a; --panel-ink:#eef5f9; --panel-on:#0e2b3a;
-  --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -12px rgba(0,0,0,.62);
-  --shadow-lg:0 2px 6px rgba(0,0,0,.4), 0 28px 56px -24px rgba(0,0,0,.7);
-}}
-:root[data-theme="dark"]{
-  --ground:#0d1218; --ground-2:#121922;
-  --surface:#161d26; --surface-2:#1e2831; --surface-3:#1a222c;
-  --ink:#e5ebf1; --ink-2:#a6b3bf; --ink-3:#7d8a96;
-  --line:#28323d; --line-strong:#3c4956;
-  --accent:#79b4d6; --accent-2:#9ccbe6; --accent-soft:#14303f;
-  --ember:#e09a63; --ember-2:#eab182; --ember-soft:#3a2617;
-  --good:#63c396; --good-soft:#16332a;
-  --ring:0 0 0 3px rgba(121,180,214,.28);
-  --panel-a:#1b4a61; --panel-b:#0e2b3a; --panel-ink:#eef5f9; --panel-on:#0e2b3a;
-  --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -12px rgba(0,0,0,.62);
-  --shadow-lg:0 2px 6px rgba(0,0,0,.4), 0 28px 56px -24px rgba(0,0,0,.7);
+  /* 밝은 화면 한 벌로 간다. 이 선언이 없으면 브라우저가 다크 모드일 때
+     스크롤바와 입력창을 제 마음대로 어둡게 칠해 화면이 반쯤 뒤집힌다 */
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 /* .btn 의 display:block 이 hidden 속성을 눌러버린다. 브라우저 기본 규칙은
@@ -264,8 +240,6 @@ h1 .en{display:block;font-size:10.5px;font-weight:700;letter-spacing:.26em;
   transition:transform .12s ease,filter .14s ease,box-shadow .14s ease}
 .btn:hover{filter:brightness(1.07);box-shadow:0 2px 4px rgba(17,24,32,.16), 0 10px 20px -8px rgba(26,85,112,.55)}
 .btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(17,24,32,.18)}
-:root[data-theme="dark"] .btn:not(.ghost),
-:root:not([data-theme="light"]) .btn:not(.ghost){color:#0d1218}
 .btn.ghost{background:none;color:var(--ink-2);border:1px solid var(--line-strong);box-shadow:none;font-weight:600}
 .btn.ghost:hover{filter:none;border-color:var(--accent);color:var(--accent);background:var(--surface-3);box-shadow:none}
 .ask{margin:0 0 12px !important;color:var(--ink) !important;font-size:15px !important;font-weight:600;letter-spacing:-.02em}
