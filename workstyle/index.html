@@ -12,33 +12,61 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="스틸 워크">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- 본문 글꼴은 Pretendard. 다만 이 앱은 망이 없어도 열려야 하고 사내망에서는
+     외부 CDN이 막히거나 늦게 답하는 일이 흔하다. media 트릭으로 화면 표시를
+     막지 않게 받아오고, 못 받으면 시스템 글꼴로 그냥 굴러간다. -->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<noscript><link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript>
 <style>
 :root{
-  --ground:#eef1f4; --surface:#ffffff; --surface-2:#e5ebf0;
-  --ink:#151b21; --ink-2:#4b565f; --ink-3:#78848e;
-  --line:#d3dbe1; --line-strong:#b6c1c9;
-  --accent:#1d566f; --accent-soft:#dfeaf1;
-  --ember:#a8501c; --ember-soft:#f5e9e0;
-  --good:#2c6a4d; --good-soft:#dcece3;
-  --shadow:0 1px 2px rgba(21,27,33,.06), 0 8px 24px -12px rgba(21,27,33,.18);
-  --sans:"Pretendard","Malgun Gothic","맑은 고딕",system-ui,-apple-system,sans-serif;
+  --ground:#eaeef2; --ground-2:#f3f6f8;
+  --surface:#ffffff; --surface-2:#e9eef2; --surface-3:#f6f8fa;
+  --ink:#111820; --ink-2:#48555f; --ink-3:#7b8894;
+  --line:#dbe2e8; --line-strong:#b9c4cd;
+  --accent:#1a5570; --accent-2:#2c7ea0; --accent-soft:#e0edf4;
+  --ember:#a8501c; --ember-2:#c9702e; --ember-soft:#f8ece2;
+  --good:#256b4c; --good-soft:#dcece3;
+  /* 그림자는 세 겹으로 쌓아야 종이처럼 앉는다 — 한 겹짜리는 스티커처럼 뜬다 */
+  --shadow:0 1px 1px rgba(17,24,32,.04), 0 2px 6px -1px rgba(17,24,32,.06),
+           0 12px 28px -14px rgba(17,24,32,.22);
+  --shadow-lg:0 2px 4px rgba(17,24,32,.05), 0 10px 22px -6px rgba(17,24,32,.10),
+              0 28px 54px -26px rgba(17,24,32,.32);
+  --ring:0 0 0 3px rgba(26,85,112,.22);
+  --sans:"Pretendard Variable","Pretendard","Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",
+    system-ui,-apple-system,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --r-card:20px; --r-inner:13px;
+  /* 코드 카드처럼 짙은 판은 테마와 무관하게 짙어야 흰 글씨가 읽힌다 */
+  --panel-a:#1c6183; --panel-b:#10394d; --panel-ink:#ffffff; --panel-on:#12455c;
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --ground:#0f141a; --surface:#171e26; --surface-2:#1f2831;
-  --ink:#e3e9ef; --ink-2:#a4b1bd; --ink-3:#7a8792;
-  --line:#2a343e; --line-strong:#3b4751;
-  --accent:#82b7d6; --accent-soft:#16303e;
-  --ember:#dd9159; --ember-soft:#372415;
-  --good:#6bc59a; --good-soft:#17322a;
-  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  --ground:#0d1218; --ground-2:#121922;
+  --surface:#161d26; --surface-2:#1e2831; --surface-3:#1a222c;
+  --ink:#e5ebf1; --ink-2:#a6b3bf; --ink-3:#7d8a96;
+  --line:#28323d; --line-strong:#3c4956;
+  --accent:#79b4d6; --accent-2:#9ccbe6; --accent-soft:#14303f;
+  --ember:#e09a63; --ember-2:#eab182; --ember-soft:#3a2617;
+  --good:#63c396; --good-soft:#16332a;
+  --ring:0 0 0 3px rgba(121,180,214,.28);
+  --panel-a:#1b4a61; --panel-b:#0e2b3a; --panel-ink:#eef5f9; --panel-on:#0e2b3a;
+  --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -12px rgba(0,0,0,.62);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.4), 0 28px 56px -24px rgba(0,0,0,.7);
 }}
 :root[data-theme="dark"]{
-  --ground:#0f141a; --surface:#171e26; --surface-2:#1f2831;
-  --ink:#e3e9ef; --ink-2:#a4b1bd; --ink-3:#7a8792;
-  --line:#2a343e; --line-strong:#3b4751;
-  --accent:#82b7d6; --accent-soft:#16303e;
-  --ember:#dd9159; --ember-soft:#372415;
-  --good:#6bc59a; --good-soft:#17322a;
+  --ground:#0d1218; --ground-2:#121922;
+  --surface:#161d26; --surface-2:#1e2831; --surface-3:#1a222c;
+  --ink:#e5ebf1; --ink-2:#a6b3bf; --ink-3:#7d8a96;
+  --line:#28323d; --line-strong:#3c4956;
+  --accent:#79b4d6; --accent-2:#9ccbe6; --accent-soft:#14303f;
+  --ember:#e09a63; --ember-2:#eab182; --ember-soft:#3a2617;
+  --good:#63c396; --good-soft:#16332a;
+  --ring:0 0 0 3px rgba(121,180,214,.28);
+  --panel-a:#1b4a61; --panel-b:#0e2b3a; --panel-ink:#eef5f9; --panel-on:#0e2b3a;
+  --shadow:0 1px 2px rgba(0,0,0,.34), 0 10px 26px -12px rgba(0,0,0,.62);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.4), 0 28px 56px -24px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box}
 /* .btn 의 display:block 이 hidden 속성을 눌러버린다. 브라우저 기본 규칙은
@@ -46,9 +74,19 @@
    이게 없으면 "앱으로 설치" 버튼이 눌러도 아무 일 없는 채로 늘 떠 있게 된다 */
 [hidden]{display:none !important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
-  font-size:16px;line-height:1.72;-webkit-font-smoothing:antialiased}
-.wrap{max-width:660px;margin:0 auto;padding:38px 20px 96px}
+body{margin:0;color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.72;-webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word;
+  /* 평평한 회색 한 장보다, 위가 살짝 밝은 쪽이 화면이 덜 답답하다 */
+  background:var(--ground);
+  background-image:linear-gradient(180deg,var(--ground-2) 0%,var(--ground) 340px);
+  background-repeat:no-repeat;background-attachment:fixed}
+.wrap{max-width:660px;margin:0 auto;padding:30px 20px 96px}
+:focus-visible{outline:0;box-shadow:var(--ring);border-radius:8px}
+@media (prefers-reduced-motion:no-preference){
+  section{animation:rise .34s cubic-bezier(.22,.68,.36,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+}
 
 /* ── 마스코트 ── */
 .coil{flex:0 0 auto;overflow:visible}
@@ -63,18 +101,57 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 .lg-cheek{fill:var(--ember);opacity:.4}
 
 /* ── 표지 ── */
-.hero{display:flex;align-items:center;gap:18px;margin-bottom:22px}
-.hero .coil{width:96px}
-h1{font-size:clamp(26px,6vw,34px);letter-spacing:-.035em;font-weight:700;margin:0;line-height:1.25}
-.hero p{margin:5px 0 0;color:var(--ink-2);font-size:14.5px;letter-spacing:-.01em}
-h1 .en{display:block;font-size:11.5px;font-weight:600;letter-spacing:.22em;
-  color:var(--ink-3);margin-bottom:3px}
-.hero .by{margin-top:7px;font-size:12.5px;color:var(--ink-3);letter-spacing:-.01em}
+.hero{position:relative;display:flex;align-items:center;gap:20px;margin-bottom:16px;
+  padding:26px 24px;border-radius:var(--r-card);overflow:hidden;
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface-3) 58%,var(--accent-soft) 100%);
+  border:1px solid var(--line);box-shadow:var(--shadow)}
+/* 압연강판의 결 — 아주 옅게만 깔아서 질감만 남긴다 */
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(115deg,transparent 0 12px,rgba(26,85,112,.035) 12px 13px)}
+.hero > *{position:relative;z-index:1}
+.hero .coil{width:88px;filter:drop-shadow(0 6px 14px rgba(17,24,32,.14))}
+h1{font-size:clamp(28px,7vw,38px);letter-spacing:-.045em;font-weight:800;margin:0;line-height:1.16}
+.hero p{margin:7px 0 0;color:var(--ink-2);font-size:14px;letter-spacing:-.012em;line-height:1.6}
+.hero .sub .meta{display:inline-block;margin-top:3px;font-size:12.5px;color:var(--ink-3);
+  letter-spacing:.01em}
+h1 .en{display:block;font-size:10.5px;font-weight:700;letter-spacing:.26em;
+  color:var(--accent);opacity:.72;margin-bottom:5px}
+.hero .by{margin-top:9px;font-size:12px;color:var(--ink-3);letter-spacing:-.01em}
 .hero .by b{font-weight:700;color:var(--accent)}
+@media (max-width:420px){
+  .hero{gap:15px;padding:22px 18px}
+  .hero .coil{width:66px}
+}
+
+/* ── 내 코드 (표지 상단) ── */
+.mycode{margin-bottom:14px;padding:20px 22px;border-radius:var(--r-card);
+  background:linear-gradient(160deg,var(--panel-a) 0%,var(--panel-b) 100%);
+  box-shadow:var(--shadow-lg);color:var(--panel-ink);position:relative;overflow:hidden}
+.mycode::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.035) 14px 15px)}
+.mycode > *{position:relative;z-index:1}
+.mycode .lab{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;
+  letter-spacing:.14em;opacity:.72;margin:0 0 9px}
+.mycode .val{font-family:var(--mono);font-size:clamp(19px,5.6vw,26px);font-weight:700;
+  letter-spacing:.08em;margin:0;word-break:break-all;line-height:1.3}
+.mycode .sum{margin:9px 0 0;font-size:13.5px;line-height:1.6;opacity:.85;letter-spacing:-.01em}
+.mycode .acts{display:flex;gap:8px;margin-top:15px;flex-wrap:wrap}
+.mycode .acts button.wide{flex:1 1 100%}
+.mycode .acts button{flex:1 1 120px;padding:12px 14px;border:0;border-radius:11px;
+  font-family:inherit;font-size:14px;font-weight:700;letter-spacing:-.02em;cursor:pointer;
+  background:rgba(255,255,255,.17);color:var(--panel-ink);
+  transition:background .14s ease,transform .12s ease}
+.mycode .acts button:hover{background:rgba(255,255,255,.26)}
+.mycode .acts button:active{transform:translateY(1px)}
+.mycode .acts button.solid{background:#fff;color:var(--panel-on)}
+.mycode .acts button.solid:hover{background:#eaf3f8}
+.mycode .again{margin:12px 0 0;font-size:12px;opacity:.66}
+.mycode .again button{background:none;border:0;color:inherit;font:inherit;
+  text-decoration:underline;cursor:pointer;padding:0;opacity:.9}
 
 /* ── 설치 ── */
-.install{margin-top:14px;border:1px solid var(--line);border-radius:16px;
-  background:var(--surface);padding:18px 20px;box-shadow:var(--shadow)}
+.install{margin-top:14px;border:1px solid var(--line);border-radius:var(--r-card);
+  background:var(--surface);padding:20px 22px;box-shadow:var(--shadow)}
 .install h3{margin:0 0 6px;font-size:15px;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
 .install > p{margin:0 0 14px;font-size:13.5px;line-height:1.62;color:var(--ink-3)}
 .install .row{display:flex;gap:9px;flex-wrap:wrap}
@@ -95,8 +172,8 @@ h1 .en{display:block;font-size:11.5px;font-weight:600;letter-spacing:.22em;
 .install .guide .x:hover{color:var(--ink)}
 
 /* ── 에피소드 ── */
-.ep{background:var(--surface);border:1px solid var(--line);border-radius:16px;
-  padding:22px 22px 20px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+.ep{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:24px 23px 21px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
 .epnote{margin:-6px 0 14px;font-size:13.5px;line-height:1.7;color:var(--ink-3)}
 .epnote b{color:var(--ink-2);font-weight:600}
 .ep h3{margin:0 0 12px;font-size:17px;font-weight:700;letter-spacing:-.03em;color:var(--accent)}
@@ -176,24 +253,30 @@ h1 .en{display:block;font-size:11.5px;font-weight:600;letter-spacing:.22em;
 .tverdict.lean{background:var(--accent-soft);border:1px solid var(--accent)}
 .tverdict h3{margin:0 0 6px;font-size:15.5px;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
 .tverdict .who{font-size:13px;color:var(--ink-2);margin-top:7px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
   padding:26px 24px;box-shadow:var(--shadow);margin-bottom:14px}
 .card > p{margin:0 0 18px;color:var(--ink-2);font-size:15.5px}
 .card > p b{color:var(--ink);font-weight:600}
-.btn{display:block;width:100%;padding:16px;border:0;border-radius:12px;background:var(--accent);
-  color:var(--surface);font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-.02em;cursor:pointer;
-  transition:transform .12s ease,filter .12s ease}
-.btn:hover{filter:brightness(1.1)}
-.btn:active{transform:translateY(1px)}
-.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line-strong)}
-.btn.ghost:hover{filter:none;border-color:var(--accent);color:var(--accent)}
+.btn{display:block;width:100%;padding:16px;border:0;border-radius:var(--r-inner);
+  background:linear-gradient(180deg,var(--accent-2) 0%,var(--accent) 100%);
+  color:#fff;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:-.025em;cursor:pointer;
+  box-shadow:0 1px 2px rgba(17,24,32,.16), 0 6px 14px -6px rgba(26,85,112,.5);
+  transition:transform .12s ease,filter .14s ease,box-shadow .14s ease}
+.btn:hover{filter:brightness(1.07);box-shadow:0 2px 4px rgba(17,24,32,.16), 0 10px 20px -8px rgba(26,85,112,.55)}
+.btn:active{transform:translateY(1px);box-shadow:0 1px 2px rgba(17,24,32,.18)}
+:root[data-theme="dark"] .btn:not(.ghost),
+:root:not([data-theme="light"]) .btn:not(.ghost){color:#0d1218}
+.btn.ghost{background:none;color:var(--ink-2);border:1px solid var(--line-strong);box-shadow:none;font-weight:600}
+.btn.ghost:hover{filter:none;border-color:var(--accent);color:var(--accent);background:var(--surface-3);box-shadow:none}
 .ask{margin:0 0 12px !important;color:var(--ink) !important;font-size:15px !important;font-weight:600;letter-spacing:-.02em}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.role{padding:20px 12px;border:1px solid var(--line);background:var(--surface);border-radius:14px;
-  font-family:inherit;cursor:pointer;text-align:center;transition:.15s;color:var(--ink-2)}
+.role{padding:22px 12px;border:1px solid var(--line);background:var(--surface-3);border-radius:var(--r-inner);
+  font-family:inherit;cursor:pointer;text-align:center;color:var(--ink-2);
+  transition:border-color .15s ease,background .15s ease,transform .12s ease,box-shadow .15s ease}
+.role:active{transform:translateY(1px)}
 .role b{display:block;font-size:17px;font-weight:700;letter-spacing:-.03em;color:var(--ink);margin-bottom:5px}
 .role span{display:block;font-size:12.5px;line-height:1.5;color:var(--ink-3)}
-.role:hover{border-color:var(--accent);background:var(--accent-soft)}
+.role:hover{border-color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow)}
 .role:hover b,.role:hover span{color:var(--accent)}
 .rolenote{margin:14px 0 0 !important;font-size:12.5px !important;line-height:1.6;color:var(--ink-3) !important}
 .rolechip{display:inline-block;font-size:12.5px;font-weight:600;color:var(--surface);
@@ -205,9 +288,11 @@ h1 .en{display:block;font-size:11.5px;font-weight:600;letter-spacing:.22em;
 /* ── 진행 ── */
 .railbar{display:flex;align-items:center;gap:11px;margin-bottom:6px}
 .railbar .coil{width:40px}
-.rail{flex:1;height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden}
-.rail i{display:block;height:100%;width:0;border-radius:4px;
-  background:linear-gradient(90deg,var(--accent),var(--accent));transition:width .3s cubic-bezier(.4,0,.2,1)}
+.rail{flex:1;height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden;
+  box-shadow:inset 0 1px 2px rgba(17,24,32,.08)}
+.rail i{display:block;height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--accent) 0%,var(--accent-2) 100%);
+  transition:width .34s cubic-bezier(.4,0,.2,1)}
 .stat{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-3);
   letter-spacing:.02em;margin-bottom:26px}
 .stat b{color:var(--accent);font-weight:600}
@@ -245,13 +330,17 @@ h2{font-size:12.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-3);margi
 .arow .deg.flat{color:var(--ink-3);font-weight:400}
 .poles{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-2);margin-bottom:6px}
 .poles b{color:var(--ink);font-weight:600}
-.track{position:relative;height:9px;background:var(--surface-2);border-radius:5px}
-.track:after{content:"";position:absolute;left:50%;top:-3px;width:1px;height:15px;background:var(--line-strong)}
-.fill{position:absolute;top:0;height:100%;background:var(--accent);border-radius:5px;opacity:.9}
-.dot{position:absolute;top:-3.5px;width:16px;height:16px;border-radius:50%;background:var(--accent);
-  border:3.5px solid var(--surface);transform:translateX(-50%);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.track{position:relative;height:10px;background:var(--surface-2);border-radius:6px;
+  box-shadow:inset 0 1px 2px rgba(17,24,32,.09)}
+.track:after{content:"";position:absolute;left:50%;top:-4px;width:1px;height:18px;background:var(--line-strong)}
+.fill{position:absolute;top:0;height:100%;border-radius:6px;z-index:1;
+  background:linear-gradient(90deg,var(--accent-2) 0%,var(--accent) 100%)}
+.dot{position:absolute;top:-4px;width:18px;height:18px;border-radius:50%;z-index:2;
+  background:linear-gradient(180deg,var(--accent-2),var(--accent));
+  border:3.5px solid var(--surface);transform:translateX(-50%);
+  box-shadow:0 2px 6px rgba(17,24,32,.28)}
 .item{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--good);
-  border-radius:0 14px 14px 0;padding:18px 20px;margin-bottom:11px;box-shadow:var(--shadow)}
+  border-radius:0 var(--r-inner) var(--r-inner) 0;padding:18px 20px;margin-bottom:11px;box-shadow:var(--shadow)}
 .item.w{border-left-color:var(--ember)}
 .item h3{margin:0 0 6px;font-size:16px;font-weight:700;letter-spacing:-.025em;color:var(--good)}
 .item.w h3{color:var(--ember)}
@@ -280,12 +369,17 @@ h2{font-size:12.5px;font-weight:700;letter-spacing:.1em;color:var(--ink-3);margi
   line-height:1.75;color:var(--ink)}
 .mirror div{padding-left:15px;text-indent:-15px;margin-bottom:5px}
 .mirror div:last-child{margin-bottom:0}
-.codebox{background:var(--surface);border:1px solid var(--line);border-radius:16px;
-  padding:22px;text-align:center;box-shadow:var(--shadow)}
-.code{font-size:27px;font-weight:700;letter-spacing:.14em;color:var(--accent);margin:6px 0 10px;
-  font-variant-numeric:tabular-nums}
-.codebox p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.65}
-details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0;margin-top:14px}
+.codebox{position:relative;overflow:hidden;border-radius:var(--r-card);
+  padding:26px 22px;text-align:center;box-shadow:var(--shadow-lg);color:var(--panel-ink);
+  background:linear-gradient(160deg,var(--panel-a) 0%,var(--panel-b) 100%)}
+.codebox::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,transparent 0 14px,rgba(255,255,255,.035) 14px 15px)}
+.codebox > *{position:relative;z-index:1}
+.code{font-family:var(--mono);font-size:clamp(21px,6.4vw,30px);font-weight:700;
+  letter-spacing:.1em;margin:0 0 12px;word-break:break-all;line-height:1.3}
+.codebox p{margin:0;font-size:13px;line-height:1.68;opacity:.82}
+.codebox p b{color:var(--panel-ink);font-weight:700}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-inner);padding:0;margin-top:14px}
 summary{padding:15px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink-2);
   letter-spacing:-.01em;list-style:none}
 summary::-webkit-details-marker{display:none}
@@ -365,10 +459,25 @@ details[open] summary{border-bottom:1px solid var(--line)}
     <svg class="coil" viewBox="0 0 76 58" id="mascotHero" role="img" aria-label="코일 마스코트"></svg>
     <div>
       <h1><span class="en">STEEL WORK STYLE</span>스틸 워크 스타일</h1>
-      <p class="sub">내 업무 스타일과 사람 사이 궁합 · 8개 축 32문항 · 약 5분</p>
+      <p class="sub">내 업무 스타일과 사람 사이 궁합<br><span class="meta">8개 축 · 32문항 · 약 5분</span></p>
       <p class="by">기획과 구성 <b>by 곤사마</b></p>
     </div>
   </div>
+
+  <!-- ══ 내 코드 — 저장해 둔 결과가 있을 때만 뜬다 ══ -->
+  <div class="mycode" id="myCode" hidden>
+    <p class="lab">내 결과 코드</p>
+    <p class="val" id="myCodeVal"></p>
+    <p class="sum" id="myCodeSum"></p>
+    <div class="acts">
+      <button class="solid wide" onclick="shareSaved()">공유하기</button>
+      <button onclick="copySaved()">코드 복사</button>
+      <button onclick="openSaved(0)">내 결과 보기</button>
+    </div>
+    <p class="again">상대에게 이 코드를 보내고 상대 코드를 받으면 둘의 궁합이 나옵니다.
+      <button onclick="hideMyCode()">숨기기</button></p>
+  </div>
+
   <div class="card">
     <p>
       내가 일할 때 실제로 어떻게 움직이는 사람인지 확인합니다.
@@ -400,7 +509,7 @@ details[open] summary{border-bottom:1px solid var(--line)}
       워크숍 현장처럼 망이 불안한 곳에서 쓸 때를 위한 것입니다.</p>
     <div class="row">
       <button class="btn" id="pwaBtn" onclick="openInstall()">앱으로 설치</button>
-      <button class="btn ghost" onclick="saveOffline()">HTML 파일로 저장</button>
+      <button class="btn ghost" id="saveFileBtn" onclick="saveOffline()">HTML 파일로 저장</button>
     </div>
 
     <div class="guide" id="installNote" hidden>
@@ -1391,8 +1500,9 @@ const how = html => { const n = $("installHow"); if (n) n.innerHTML = html; };
 function refreshInstallUI(){
   const btn = $("pwaBtn"); if (!btn) return;          /* 저장본에는 설치 카드가 없다 */
   if (installed){
-    btn.hidden = true;
-    how('<span class="ok">이미 설치된 앱으로 실행 중입니다.</span>');
+    /* 이미 앱으로 열고 있는 사람에게 설치도, 파일 저장도 권할 이유가 없다.
+       카드째로 접는다 — 쓸모없는 버튼이 표지에서 자리만 차지한다 */
+    $("installBox").hidden = true;
     return;
   }
   btn.hidden = false;                                  /* 신호가 없어도 늘 보인다 */
@@ -1567,6 +1677,8 @@ function saveMine(){
   kept.unshift(rec);
   if (store.set(KEY_ME, kept.slice(0, 10))){
     toast("저장했습니다. 다음에 열면 표지에서 바로 볼 수 있어요.");
+    try { localStorage.removeItem("sws.hideCode"); } catch(e){}   /* 새로 저장하면 다시 보여준다 */
+    renderMyCode();
     renderSaved();
   } else {
     toast("이 브라우저가 저장을 막고 있습니다. 인쇄나 코드 복사를 써주세요.");
@@ -1574,22 +1686,27 @@ function saveMine(){
 }
 
 /* 결과 코드는 그 자체가 전달 수단이다. 문장에 담아 통째로 보낸다 */
-function shareText(){
+function shareText(r){
   return "스틸 워크 스타일 — 제 업무 스타일 결과입니다.\n\n"
-       + "· " + summaryOf(MY.sc) + "\n"
-       + "· 결과 코드: " + MY.code + "\n\n"
+       + "· " + r.sum + "\n"
+       + "· 결과 코드: " + r.code + "\n\n"
        + "같은 진단을 하시고 결과 코드를 주고받으면, 우리 둘이 어디서 부딪히고 "
        + "어떻게 하면 통하는지가 나옵니다.\n" + location.href;
 }
 
-async function shareMine(){
-  if (!MY){ toast("먼저 진단을 마쳐주세요."); return; }
-  const text = shareText();
+/* 안드로이드·아이폰은 시스템 공유창이 뜨고, 없는 곳은 복사로 떨어진다 */
+async function shareOf(r){
+  const text = shareText(r);
   if (navigator.share){
     try { await navigator.share({title:"스틸 워크 스타일 결과", text: text}); return; }
     catch(e){ if (e && e.name === "AbortError") return; }   /* 사용자가 닫은 것 — 조용히 */
   }
   copy(text, "결과를 복사했습니다. 메신저에 붙여넣으세요.");
+}
+
+function shareMine(){
+  if (!MY){ toast("먼저 진단을 마쳐주세요."); return; }
+  shareOf({code: MY.code, sum: summaryOf(MY.sc)});
 }
 
 function copyCode(){
@@ -1614,11 +1731,39 @@ function copy(text, ok){
   } else legacy();
 }
 
+/* ── 표지의 내 코드 ──
+   결과 코드는 이 앱에서 주고받는 유일한 물건이다. 그런데 지금까지는 진단을
+   끝까지 다시 봐야만 나왔다. 저장해 둔 게 있으면 표지에서 바로 집어 갈 수 있게 한다. */
+function latest(){ return store.get(KEY_ME, [])[0] || null; }
+
+function renderMyCode(){
+  const box = $("myCode"), r = latest();
+  if (!box) return;
+  let hid = false;
+  try { hid = localStorage.getItem("sws.hideCode") === "1"; } catch(e){}
+  box.hidden = !r || hid;
+  if (!r || hid) return;
+  $("myCodeVal").textContent = r.code;
+  $("myCodeSum").textContent = ROLE[r.role] + " · " + r.sum;
+}
+function hideMyCode(){
+  try { localStorage.setItem("sws.hideCode", "1"); } catch(e){}
+  $("myCode").hidden = true;
+  renderSaved();            /* 코드를 접었으면 목록으로 다시 꺼내 준다 */
+  toast("숨겼습니다. 아래 목록에서 계속 볼 수 있고, 결과를 다시 저장하면 또 나옵니다.");
+}
+
+/* 표지에서 누르는 공유·복사는 저장된 최신 결과를 쓴다 (MY가 아직 없다) */
+function shareSaved(){ const r = latest(); if (r) shareOf(r); }
+function copySaved(){ const r = latest(); if (r) copy(r.code, "결과 코드를 복사했습니다."); }
+
 /* ── 표지의 지난 결과 목록 ── */
 function renderSaved(){
   const box = $("savedBox"), list = store.get(KEY_ME, []);
   if (!box) return;
-  box.hidden = list.length === 0;
+  /* 맨 위 코드 카드가 최신 한 건을 이미 보여준다. 한 건뿐이면 목록은 접는다 */
+  const codeShown = $("myCode") && !$("myCode").hidden;
+  box.hidden = list.length === 0 || (list.length === 1 && codeShown);
   $("savedList").innerHTML = list.map((r, k) =>
     '<div class="row"><div class="meta"><b>' + ROLE[r.role] + " · " + r.sum + "</b>" +
     "<span>" + r.code + " · " + stamp(new Date(r.at)) + "</span></div>" +
@@ -1635,7 +1780,7 @@ function openSaved(k){
 }
 function dropSaved(k){
   const list = store.get(KEY_ME, []);
-  list.splice(k, 1); store.set(KEY_ME, list); renderSaved();
+  list.splice(k, 1); store.set(KEY_ME, list); renderMyCode(); renderSaved();
   toast("지웠습니다.");
 }
 
@@ -1761,6 +1906,7 @@ function backToResult(){
 
 /* ─────────── 시작 ───────────
    store와 TEAM이 const라 선언보다 먼저 부르면 터진다. 그래서 초기화는 맨 끝에서 한 번에 한다 */
+renderMyCode();
 renderSaved();
 renderRoster();
 </script>

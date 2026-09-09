@@ -2,7 +2,7 @@
    앱이 HTML 한 장이라 캐시 전략이 단순하다. 설치할 때 전부 받아두고,
    그다음부터는 캐시를 먼저 주되 뒤에서 조용히 새 판을 받아둔다(stale-while-revalidate).
    워크숍 현장에서 망이 끊겨도 열려야 하는 것이 이 앱의 전제다. */
-const VER   = "steel-work-style-v3.1";
+const VER   = "steel-work-style-v3.2";
 const ASSETS = [
   "./",
   "./index.html",
