@@ -14,7 +14,7 @@
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
-| 🧭 **업무 스타일 진단** | 8축 40문항 자가진단. 코드를 주고받아 서로의 궁합도 확인 | [`workstyle/`](workstyle/) |
+| 🧭 **스틸 워크 스타일** | 8축 32문항 자가진단. 결과를 에피소드로 읽고, 코드를 주고받아 1:1 궁합과 팀 지도까지 | [`workstyle/`](workstyle/) |
 | 🍚 **이번 주 식탁** | 조건을 고르면 주간 식단표·레시피·장보기 목록을 뽑아줌 | [`meal-planner/`](meal-planner/) |
 
 ## 쓰는 법
@@ -27,7 +27,7 @@
 
 ### 휴대폰에 앱으로 두기
 
-스틸링고 Lite·Pro, ROUNDTABLE, 茶馆 CHÁGUǍN 네 개는 **홈 화면에 설치**해서 쓸 수 있습니다.
+스틸링고 Lite·Pro, ROUNDTABLE, 茶馆 CHÁGUǍN, 스틸 워크 스타일 다섯 개는 **홈 화면에 설치**해서 쓸 수 있습니다.
 웹 주소로 앱을 열면 우측 상단에 **📲 설치** 버튼이 뜹니다. 안드로이드는 그 버튼으로 바로 설치되고,
 아이폰은 Safari의 공유 → **「홈 화면에 추가」**를 쓰면 됩니다.
 설치하면 주소창 없이 앱처럼 열리고 인터넷이 끊겨도 그대로 돌아갑니다.
@@ -55,6 +55,6 @@
 | 스틸링고 Pro | `steel-lingo/pro/` | [`skills/steel-lingo-pro/`](skills/steel-lingo-pro/) |
 | 철강 일본어 매일 훈련 (팀원용, 앱과 별개) | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 쉐도잉 회차 (茶馆·ROUNDTABLE 공용) | `chaguan/`, `roundtable/` | [`skills/shadowing-decks/`](skills/shadowing-decks/) |
-| 업무 스타일 진단 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
+| 스틸 워크 스타일 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
 
 `meal-planner/`, `midnight-train/`은 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.

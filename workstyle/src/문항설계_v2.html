@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>업무 스타일 진단 — 문항 설계안 v1</title>
+<title>스틸 워크 스타일 — 문항 설계안 v2</title>
 <style>
 :root{--bg:#f7f5f1;--card:#fff;--ink:#1d2226;--ink2:#565e66;--ink3:#8a929a;
 --line:#e4dfd7;--accent:#1f5f63;--soft:#eaf1f0;--warn:#8a5a2b;--warnsoft:#f8f1e7}
@@ -27,6 +27,14 @@ color:#1b4a4d;line-height:1.7;margin:0 0 20px}
 ol{margin:0;padding:0 0 0 22px}
 ol li{margin-bottom:18px}
 .sit{font-weight:600;letter-spacing:-.01em;display:block;margin-bottom:7px}
+ol li.cut{opacity:.5}
+ol li.cut .sit{text-decoration:line-through;text-decoration-thickness:1px}
+.cutmark{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
+  color:#fff;background:var(--ink3);border-radius:5px;padding:1px 7px;margin-left:7px;
+  vertical-align:2px;text-decoration:none}
+.cutwhy{margin:26px 0 0;padding:16px 18px;border:1px dashed var(--line);border-radius:12px;
+  font-size:13.5px;line-height:1.75;color:var(--ink2)}
+.cutwhy b{color:var(--ink)}
 .ab{font-size:14.5px;color:var(--ink2);padding-left:2px}
 .ab i{font-style:normal;color:var(--accent);font-weight:700;margin-right:5px}
 .ab div{margin-bottom:3px}
@@ -45,11 +53,11 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <body>
 <div class="wrap">
 
-<h1>업무 스타일 진단 — 문항 설계안 v1</h1>
+<h1>스틸 워크 스타일 — 문항 설계안 v2</h1>
 <p class="lead">
-8개 축 · 40문항 · 응답 시간 약 6분<br>
+8개 축 · <b>32문항</b> · 응답 시간 약 5분<br>
 읽으시면서 <b>어색한 문항, 우리 회사에서 안 맞는 상황, 빠진 축</b>을 짚어주시면 반영하겠습니다.
-축 하나가 문항 5개 + 결과 문구 + 궁합 조언 전체를 끌고 가므로, 축 구성을 여기서 확정하는 게 가장 중요합니다.
+축 하나가 문항 4개 + 결과 문구 + 궁합 조언 전체를 끌고 가므로, 축 구성을 여기서 확정하는 게 가장 중요합니다.
 </p>
 
 <h2>축을 이렇게 잡은 이유</h2>
@@ -75,6 +83,18 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 알려주세요 — 그 문항은 고쳐야 합니다.
 </p>
 
+<div class="cutwhy">
+<b>v2에서 40문항 → 32문항으로 줄였습니다.</b> 축은 여덟 개 그대로 두고 축마다 다섯 문항 중 하나씩 뺐습니다.
+아래에서 <span class="cutmark" style="margin-left:0">v2에서 뺌</span> 표시가 붙은 것이 빠진 문항이며, 옆에 뺀 이유를 적었습니다.
+기준은 하나입니다 — <b>같은 것을 두 번 묻는 문항</b>부터 뺐습니다.
+답이 길어질수록 뒤로 갈수록 대충 고르게 되고(응답 피로), 그러면 뒤쪽 축의 점수가 실제보다 흐려집니다.
+<br><br>
+채점은 <b>축마다 원점수를 -10~+10 척도로 환산</b>하도록 바꿨습니다. 문항이 넷이면 원점수는 -8~+8이지만
+환산을 거치므로 그래프·결과 코드·궁합 판정은 v1과 같은 자로 잽니다. 그래서
+<b>v1에서 발급받은 결과 코드(SL-…)도 v2에서 그대로 쓸 수 있습니다.</b>
+<b>역할 분기 문항 일곱 개는 하나도 빼지 않았습니다</b> — 직책자·팀원이 같은 축을 재게 하는 장치라서입니다.
+</div>
+
 <!-- 1 -->
 <div class="axis">
 <h3>축 1. 추진 템포<span class="tag">속도형 ↔ 완성도형</span></h3>
@@ -86,7 +106,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <ol>
 <li><span class="sit">상사가 "간단히 정리해서 오늘 중 달라"고 했다. 자료는 아직 70% 정도다.</span>
 <div class="ab"><div><i>A</i>지금 상태로 먼저 드리고, 보완해서 다시 드리겠다고 한다.</div><div><i>B</i>퇴근을 미뤄서라도 채워서 완성본으로 낸다.</div></div></li>
-<li><span class="sit">고객사 메일에 답을 해야 하는데, 확인이 안 끝난 항목이 두어 개 남았다.</span>
+<li class="cut"><span class="sit">고객사 메일에 답을 해야 하는데, 확인이 안 끝난 항목이 두어 개 남았다.</span><span class="cutmark">v2에서 뺌 · 1번과 같은 구조(부분 제출 ↔ 완성 후 제출)라 겹침</span>
 <div class="ab"><div><i>A</i>아는 부분까지 먼저 회신하고 나머지는 추후 안내한다.</div><div><i>B</i>전부 확인한 뒤 한 번에 정확하게 회신한다.</div></div></li>
 <li><span class="sit">회의 자료를 만들고 있다.</span>
 <div class="ab"><div><i>A</i>거친 초안이라도 빨리 돌리고 피드백으로 고쳐 나간다.</div><div><i>B</i>어느 정도 모양이 잡힌 뒤에 공유한다.</div></div></li>
@@ -110,7 +130,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>어디가 잘못됐고 어떻게 수습할지부터 짚는다.</div><div><i>B</i>우선 상황을 듣고 진정시킨 뒤 수습에 들어간다.</div></div></li>
 <li><span class="sit">회의가 길어지고 분위기가 어색해졌다.</span>
 <div class="ab"><div><i>A</i>그래도 결론을 내는 데 집중한다.</div><div><i>B</i>분위기를 한 번 풀고 나서 이야기를 이어간다.</div></div></li>
-<li><span class="sit">협업 부서가 요청한 자료를 계속 늦게 준다.</span>
+<li class="cut"><span class="sit">협업 부서가 요청한 자료를 계속 늦게 준다.</span><span class="cutmark">v2에서 뺌 · 축 6(피드백 방식)의 직설 ↔ 완곡과 겹침</span>
 <div class="ab"><div><i>A</i>기한과 필요한 이유를 분명히 해서 다시 요청한다.</div><div><i>B</i>사정을 먼저 물어보고 함께 방법을 찾는다.</div></div></li>
 <li><span class="sit">새로 온 팀원의 첫 주. 내가 먼저 하는 일은</span>
 <div class="ab"><div><i>A</i>업무 범위와 해야 할 일을 정확히 알려주는 것.</div><div><i>B</i>사람들과 이어주고 편하게 적응하게 하는 것.</div></div></li>
@@ -135,7 +155,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>근거를 들어 다시 설득해 본다.</div><div><i>B</i>상사 방향을 따르되 우려되는 점은 기록해 둔다.</div></div></li>
 <li><span class="sit">팀 업무 분담을 정해야 한다.</span>
 <div class="ab"><div><i>A</i>내가 안을 짜서 제시하고 조정을 받는다.</div><div><i>B</i>각자 원하는 바를 먼저 듣고 맞춘다.</div></div></li>
-<li><span class="sit">고객사가 받아들이기 어려운 조건을 요구한다.</span>
+<li class="cut"><span class="sit">고객사가 받아들이기 어려운 조건을 요구한다.</span><span class="cutmark">v2에서 뺌 · 축 6의 '거절해야 할 때' 문항과 겹침</span>
 <div class="ab"><div><i>A</i>안 되는 선을 분명히 긋고 대안을 제시한다.</div><div><i>B</i>양쪽 사정을 살펴 접점을 찾아본다.</div></div></li>
 <li><span class="sit">누가 맡을지 애매한 일이 하나 생겼다.</span>
 <div class="ab"><div><i>A</i>내가 가져와서 정리한다.</div><div><i>B</i>누가 맡는 게 맞는지 정리해 합의한다.</div></div></li>
@@ -157,7 +177,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>결론과 흐름을 먼저 훑는다.</div><div><i>B</i>숫자와 근거를 앞에서부터 확인한다.</div></div></li>
 <li><span class="sit">내 자료에서 오타나 단위 표기가 틀린 걸 발견했다.</span>
 <div class="ab"><div><i>A</i>내용이 맞으면 크게 개의치 않는다.</div><div><i>B</i>신경이 쓰여서 바로 고친다.</div></div></li>
-<li><span class="sit">계획을 세울 때 나는</span>
+<li class="cut"><span class="sit">계획을 세울 때 나는</span><span class="cutmark">v2에서 뺌 · 축 7(일 맡기고 받기)의 절차 선호와 겹침</span>
 <div class="ab"><div><i>A</i>큰 방향을 잡고 세부는 하면서 정한다.</div><div><i>B</i>단계와 일정을 미리 촘촘히 짜둔다.</div></div></li>
 <li><span class="sit">문제가 생겼을 때 먼저 보는 것은</span>
 <div class="ab"><div><i>A</i>왜 이런 문제가 반복되는가 하는 구조.</div><div><i>B</i>정확히 어느 지점에서 틀어졌는가 하는 경로.</div></div></li>
@@ -178,7 +198,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>지금 방식이 자리 잡은 이유가 있으니 리스크부터 따진다.</div><div><i>B</i>일단 이번 건에 적용해보고 판단한다.</div></div></li>
 <li><span class="sit">새 시스템 도입 이야기가 나왔다. 먼저 드는 생각은</span>
 <div class="ab"><div><i>A</i>지금 잘 되던 것 중에 뭐가 깨질까.</div><div><i>B</i>이걸로 뭐가 좋아질까.</div></div></li>
-<li><span class="sit">전례 없는 형태의 거래 문의가 들어왔다.</span>
+<li class="cut"><span class="sit">전례 없는 형태의 거래 문의가 들어왔다.</span><span class="cutmark">v2에서 뺌 · 같은 축 1번(5년째 쓰던 양식)과 겹침</span>
 <div class="ab"><div><i>A</i>왜 안 되는지, 어디가 걸리는지부터 점검한다.</div><div><i>B</i>되게 하려면 무엇이 필요한지부터 본다.</div></div></li>
 <li><span class="sit">목표를 세울 때 나는</span>
 <div class="ab"><div><i>A</i>확실히 달성 가능한 선을 잡는다.</div><div><i>B</i>다소 무리여도 높은 선을 잡는다.</div></div></li>
@@ -201,7 +221,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>어디가 왜 잘못됐는지 바로 말한다.</div><div><i>B</i>잘한 점을 먼저 말하고 돌려서 짚는다.</div></div></li>
 <li><span class="sit">내가 지적을 받을 때 더 편한 쪽은</span>
 <div class="ab"><div><i>A</i>돌리지 말고 바로 말해주는 것.</div><div><i>B</i>상황을 배려해서 말해주는 것.</div></div></li>
-<li><span class="sit">회의에서 상사 의견에 문제가 보인다.</span>
+<li class="cut"><span class="sit">회의에서 상사 의견에 문제가 보인다.</span><span class="cutmark">v2에서 뺌 · 축 3(의사결정)의 '상사가 다른 방향을 원한다'와 겹침</span>
 <div class="ab"><div><i>A</i>그 자리에서 이견을 말한다.</div><div><i>B</i>회의 후 따로 말하거나 넘어간다.</div></div></li>
 <li><span class="sit">상대가 "괜찮습니다"라고 답했을 때</span>
 <div class="ab"><div><i>A</i>괜찮다는 뜻으로 받아들이고 넘어간다.</div><div><i>B</i>정말 괜찮은지 표정과 맥락을 한 번 더 살핀다.</div></div></li>
@@ -228,7 +248,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <div class="ab"><div><i>A</i>물어보기 전에는 굳이 보고하지 않는다.</div><div><i>B</i>묻지 않아도 중간중간 공유한다.</div></div></li>
 <li><span class="sit">팀원이 내가 생각한 것과 다른 방식으로 일하고 있다.</span>
 <div class="ab"><div><i>A</i>결과가 나오면 그때 판단한다.</div><div><i>B</i>지금 방식을 확인하고 조정한다.</div></div></li>
-<li><span class="sit">정해진 절차와 매뉴얼에 대해 나는</span>
+<li class="cut"><span class="sit">정해진 절차와 매뉴얼에 대해 나는</span><span class="cutmark">v2에서 뺌 · 상황이 아닌 태도를 묻는 문항이라 응답 편향이 큼</span>
 <div class="ab"><div><i>A</i>상황마다 다르니 유연해야 한다고 본다.</div><div><i>B</i>있으면 서로 편해진다고 본다.</div></div></li>
 </ol>
 </div>
@@ -245,7 +265,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 <ol>
 <li><span class="sit">일이 크게 틀어졌다. 그 순간 나는</span>
 <div class="ab"><div><i>A</i>바로 대책 회의를 잡는다.</div><div><i>B</i>상황을 정리할 시간을 잠깐 갖는다.</div></div></li>
-<li><span class="sit">압박이 심할 때 나는</span>
+<li class="cut"><span class="sit">압박이 심할 때 나는</span><span class="cutmark">v2에서 뺌 · 같은 축 5번(감당하기 어려운 양의 일)과 겹침</span>
 <div class="ab"><div><i>A</i>평소보다 더 몰아쳐서 일한다.</div><div><i>B</i>페이스를 조절하며 버틴다.</div></div></li>
 <li><span class="sit">감정이 상하는 일이 생겼을 때</span>
 <div class="ab"><div><i>A</i>빨리 이야기해서 털고 가는 게 낫다.</div><div><i>B</i>가라앉은 뒤에 이야기하는 게 낫다.</div></div></li>
@@ -298,7 +318,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 
 <div class="caution">
 <h3>이 앱 자체는 타당화된 검사가 아닙니다</h3>
-<p>위 이론들은 <b>문항과 조언을 만드는 근거</b>이지, 이 40문항이 학술적으로 검증됐다는 뜻이 아닙니다.
+<p>위 이론들은 <b>문항과 조언을 만드는 근거</b>이지, 이 32문항이 학술적으로 검증됐다는 뜻이 아닙니다.
 정식 심리 측정 도구는 수백 명 표본으로 신뢰도·타당도를 검증해야 합니다.
 그래서 앱 안에 이 사실을 명시하고, <b>인사 평가·배치·채용의 근거로 쓰지 말 것</b>을 함께 안내하려 합니다.
 이 문구가 있어야 회사에서 안심하고 쓸 수 있습니다.</p>
@@ -309,7 +329,7 @@ padding:18px 20px;margin-bottom:14px;font-size:14.5px}
 이 문서에서 <b>축 구성과 문항</b>을 확정해 주시면, 그다음은 이 순서입니다.
 </p>
 <ol style="padding-left:20px">
-<li style="margin-bottom:8px">진단 앱 제작 — 40문항, 8축 그래프, 강점·주의 카드, 결과 코드 발급</li>
+<li style="margin-bottom:8px">진단 앱 제작 — 32문항, 8축 그래프, 강점·주의 카드, 결과 코드 발급</li>
 <li style="margin-bottom:8px">궁합 조언 콘텐츠 작성 — 축 8개 × 조합 유형 × 관계 방향(상사/동료/후배)</li>
 <li style="margin-bottom:8px">코드 입력 → 조합 결과 화면 연결</li>
 </ol>

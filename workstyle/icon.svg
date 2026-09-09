@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="스틸 워크 스타일">
+  <rect width="512" height="512" rx="112" fill="#1d566f"/>
+  <g transform="translate(0 0)">
+    <ellipse cx="356" cy="256" rx="49" ry="159" fill="#dfeaf1"/>
+    <rect x="153" y="97" width="203" height="318" fill="#dfeaf1"/>
+    <ellipse cx="153" cy="256" rx="49" ry="159" fill="#ffffff"/>
+    <ellipse cx="153" cy="256" rx="28.5" ry="92.7" fill="#1d566f"/>
+  </g>
+</svg>
