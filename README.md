@@ -12,6 +12,9 @@
 | 🏭 **스틸링고 Lite** | 철강·자동차 업계 일본어 입문. 생활 소재로 가볍게 시작 | [`steel-lingo/lite/`](steel-lingo/lite/) |
 | 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
 | 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
+
+> ハングリンゴ Lite는 파일 하나로 끝나는 판이 따로 있습니다 — [`hangul-lingo/lite/hangul-lingo-lite.html`](hangul-lingo/lite/hangul-lingo-lite.html).
+> 이 파일 한 개만 받아서 더블클릭하면 바로 열립니다. 남에게 보낼 때도 이것만 보내면 됩니다.
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
