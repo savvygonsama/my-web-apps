@@ -1,0 +1,2455 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d566f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ハングリンゴ Lite">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<title>ハングリンゴ Lite</title>
+<style>
+@font-face { font-family: "NotoSansJP"; src: url("fonts/f1.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "NotoSansJP"; src: url("fonts/f2.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "ZenOldMincho"; src: url("fonts/f3.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard"; src: url("fonts/f4.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pretendard"; src: url("fonts/f5.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+:root {
+  --ground: #eef1f4; --surface: #ffffff; --surface-2: #e5ebf0;
+  --ink: #151b21; --ink-2: #4b565f; --ink-3: #78848e;
+  --line: #d3dbe1; --line-strong: #b6c1c9;
+  --accent: #1d566f; --accent-soft: #dfeaf1;
+  --ember: #a8501c; --ember-soft: #f5e9e0;
+  --good: #2c6a4d; --good-soft: #dcece3;
+  --bad: #9d3730; --bad-soft: #f3e0de;
+  --hl: rgba(255, 205, 88, .58);
+  --shadow: 0 1px 2px rgba(21, 27, 33, .06), 0 8px 24px -12px rgba(21, 27, 33, .18);
+  --sans: "Pretendard", "NotoSansJP", system-ui, sans-serif;
+  --mincho: "ZenOldMincho", "Pretendard", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f141a; --surface: #171e26; --surface-2: #1f2831;
+    --ink: #e3e9ef; --ink-2: #a4b1bd; --ink-3: #7a8792;
+    --line: #2a343e; --line-strong: #3b4751;
+    --accent: #82b7d6; --accent-soft: #16303e;
+    --ember: #dd9159; --ember-soft: #372415;
+    --good: #6bc59a; --good-soft: #17322a;
+    --bad: #de8b84; --bad-soft: #35201f;
+    --hl: rgba(221, 160, 71, .34);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0f141a; --surface: #171e26; --surface-2: #1f2831;
+  --ink: #e3e9ef; --ink-2: #a4b1bd; --ink-3: #7a8792;
+  --line: #2a343e; --line-strong: #3b4751;
+  --accent: #82b7d6; --accent-soft: #16303e;
+  --ember: #dd9159; --ember-soft: #372415;
+  --good: #6bc59a; --good-soft: #17322a;
+  --bad: #de8b84; --bad-soft: #35201f;
+  --hl: rgba(221, 160, 71, .34);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .6);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: var(--sans); font-size: 16px; line-height: 1.8;
+  letter-spacing: -.003em; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased;
+}
+.tgt { font-feature-settings: "palt" 1; letter-spacing: .015em; }
+ruby rt { font-size: .5em; color: var(--ink-3); font-weight: 400; }
+.wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 96px; }
+mark.hl { background: linear-gradient(transparent 56%, var(--hl) 56%); color: inherit; font-weight: 700; padding: 0 1px; border-radius: 1px; }
+button { font: inherit; }
+
+/* ── 머리말 ───────────────────────────────── */
+.masthead { padding: 40px 0 24px; border-bottom: 1px solid var(--line); }
+.byline {
+  margin: 0 0 16px; font-size: 14px; font-weight: 700; line-height: 1.7;
+  color: var(--ember); letter-spacing: .01em;
+}
+.byline .c { letter-spacing: .16em; margin-right: 8px; }
+.thanks { margin: -8px 0 16px; font-size: 13.5px; color: var(--ink-3); letter-spacing: .01em; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.logo { width: clamp(64px, 12vw, 84px); height: auto; flex: 0 0 auto; }
+.lg-body { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.6; }
+.lg-fill { fill: var(--accent-soft); }
+.lg-edge { stroke: var(--accent); stroke-width: 2.6; stroke-linecap: round; }
+.lg-face { fill: var(--surface); stroke: var(--accent); stroke-width: 2.6; }
+.lg-spiral { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
+.lg-eye { fill: var(--accent); }
+.lg-smile { fill: none; stroke: var(--accent); stroke-width: 2.3; stroke-linecap: round; }
+.lg-cheek { fill: var(--ember); opacity: .4; }
+.masthead h1 { font-family: var(--mincho); font-size: clamp(27px, 5vw, 40px); line-height: 1.2; font-weight: 400; margin: 0; letter-spacing: .01em; }
+.masthead h1 .lite { font-family: var(--sans); font-size: .42em; font-weight: 700; color: var(--surface); background: var(--accent); border-radius: 999px; padding: 4px 12px; vertical-align: .38em; margin-left: 12px; letter-spacing: .06em; }
+html:not([data-theme="light"]) .masthead h1 .lite, :root[data-theme="dark"] .masthead h1 .lite { color: var(--ground); }
+.masthead .lead { color: var(--ink-2); margin: 18px 0 0; max-width: 54ch; font-size: 15.5px; line-height: 1.95; }
+.masthead .lead b { color: var(--ink); font-weight: 700; }
+
+/* ── 아래 바 ──────────────────────────────────
+   과를 고르는 줄은 화면 아래에 둔다. 위쪽은 폰에 따라 카메라 구멍이 겹쳐
+   눌리지 않는 기기가 있었다. 아래쪽은 엄지가 닿는 자리이기도 하다. */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: color-mix(in srgb, var(--ground) 94%, transparent);
+  backdrop-filter: blur(8px); border-top: 1px solid var(--line);
+  padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.bar-inner { max-width: 780px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+/* 아래 바에 본문이 가리지 않도록 그만큼 자리를 비워 둔다.
+   바 높이는 과 개수와 화면 너비에 따라 한 줄이 되기도 두 줄이 되기도 해서,
+   실제 높이를 재어 --barH 로 넣어 준다(아래 syncBar). */
+.wrap { padding-bottom: calc(var(--barH, 100px) + 28px); }
+.navs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.navs::-webkit-scrollbar { display: none; }
+.nav {
+  flex: 0 0 auto; border: 1px solid transparent; background: none; color: var(--ink-2);
+  padding: 5px 11px; border-radius: 8px; font-size: 13.5px; cursor: pointer; white-space: nowrap;
+}
+.nav:hover { color: var(--ink); background: var(--surface-2); }
+.nav.on { background: var(--accent); color: var(--surface); border-color: var(--accent); font-weight: 700; }
+html:not([data-theme="light"]) .nav.on, :root[data-theme="dark"] .nav.on { color: var(--ground); }
+.nav .dot { color: var(--good); margin-right: 3px; }
+.switches { display: flex; gap: 6px; }
+.sw {
+  font-size: 12.5px; padding: 5px 11px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-3);
+}
+.sw[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+#prog { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 40; transition: width .1s linear; }
+
+/* ── 홈 ───────────────────────────────────── */
+.hero {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 30px 28px; box-shadow: var(--shadow); margin-bottom: 26px;
+}
+.hero .kicker { font-size: 12.5px; font-weight: 700; letter-spacing: .14em; color: var(--ember); margin: 0 0 10px; }
+.hero h2 { font-family: var(--mincho); font-weight: 400; font-size: 26px; margin: 0 0 10px; }
+.hero p { margin: 0 0 20px; color: var(--ink-2); font-size: 15px; }
+.go {
+  border: none; background: var(--accent); color: var(--surface); font-weight: 700;
+  padding: 13px 26px; border-radius: 11px; cursor: pointer; font-size: 15.5px;
+}
+html:not([data-theme="light"]) .go, :root[data-theme="dark"] .go { color: var(--ground); }
+/* 위 규칙은 배경이 accent로 채워진 버튼을 위한 것이다. 배경이 비어 있는 ghost까지
+   같이 밝혀 버리면 흰 바탕에 흰 글씨가 되어 아예 보이지 않는다. 되돌려 놓는다. */
+html:not([data-theme="light"]) .go.ghost, :root[data-theme="dark"] .go.ghost { color: var(--ink); }
+.go:hover { filter: brightness(1.08); }
+/* 보조 버튼이지만 읽히기는 해야 한다. 흐린 회색이면 눌러야 할 것이 있는 줄도 모른다. */
+.go.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line-strong); margin-left: 8px; font-weight: 700; }
+.go.ghost:hover { border-color: var(--accent); color: var(--accent); filter: none; }
+.daylist { display: grid; gap: 12px; }
+.daycard {
+  display: flex; align-items: center; gap: 16px; text-align: left; width: 100%; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+  padding: 18px 20px; box-shadow: var(--shadow); transition: border-color .15s, transform .12s;
+}
+.daycard:hover { border-color: var(--accent); transform: translateY(-1px); }
+.daycard .no { font-family: var(--mincho); font-size: 22px; color: var(--accent); min-width: 56px; white-space: nowrap; }
+.daycard .tt { flex: 1; }
+.daycard .tt b { display: block; font-size: 16.5px; }
+.daycard .tt span { font-size: 13.5px; color: var(--ink-3); }
+.daycard .tt .peek { display: block; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+.daycard .done { color: var(--good); font-weight: 700; font-size: 13.5px; }
+.homenote { margin-top: 26px; font-size: 13.5px; color: var(--ink-3); line-height: 1.9; }
+
+/* ── 섹션 ─────────────────────────────────── */
+.sec { margin: 0 0 42px; }
+.sec > h3 {
+  display: flex; align-items: baseline; gap: 10px; margin: 0 0 6px;
+  font-family: var(--mincho); font-weight: 400; font-size: 23px;
+}
+.sec > h3 .ic { font-size: 19px; }
+.sec > .subt { margin: 0 0 20px; color: var(--ink-3); font-size: 13.5px; }
+.qway { margin: 26px 0 16px; padding-top: 18px; border-top: 1px solid var(--line); }
+.qway .qmore-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface-2); color: var(--ink-2);
+  font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.qway .qmore-toggle::after { content: "▾"; font-size: 10px; }
+.qway .qmore-toggle[aria-expanded="false"]::after { content: "▸"; }
+.qway p { margin: 8px 2px 0; font-size: 12.5px; line-height: 1.7; color: var(--ink-3); }
+.dayhead { margin: 0 0 30px; }
+.dayhead .no { font-size: 12.5px; font-weight: 700; letter-spacing: .14em; color: var(--ember); }
+.dayhead h2 { font-family: var(--mincho); font-weight: 400; font-size: clamp(24px, 4.4vw, 32px); margin: 6px 0 0; }
+
+/* 이야기 */
+.story { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 26px 20px; box-shadow: var(--shadow); }
+.tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 6px; background: var(--ember-soft); color: var(--ember); margin-bottom: 14px; }
+.story .line { padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.story .line:last-of-type { border-bottom: none; }
+.story .tline { font-size: 19px; line-height: 2.3; }
+.story .nline { font-size: 14px; color: var(--ink-2); margin-top: 4px; }
+.story .src { margin-top: 16px; font-size: 12.5px; color: var(--ink-3); line-height: 1.8; }
+.story .src a { color: var(--accent); }
+body.no-nl .nline, body.no-nl .story .nline { display: none; }
+
+/* 낱말 */
+.words { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.word {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+  padding: 18px 18px 16px; box-shadow: var(--shadow); cursor: pointer; text-align: left;
+}
+.word:hover { border-color: var(--accent); }
+.word .tline { font-size: 21px; line-height: 1.6; }
+.word .kana { font-size: 13.5px; color: var(--ink-3); margin-top: 2px; }
+.word .mean { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 8px; }
+.word .note { font-size: 13px; color: var(--ink-2); margin-top: 8px; line-height: 1.85; display: none; }
+.word.open .note { display: block; }
+.word .more { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+.word.open .more { display: none; }
+
+/* 단어 + 예문 한 상자 */
+.wordbox {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 15px;
+  padding: 22px 24px 20px; box-shadow: var(--shadow); margin-bottom: 18px;
+}
+.wb-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.wb-no {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.wb-t { flex: 0 0 auto; }
+.wb-tl { font-family: var(--mincho); font-size: 27px; line-height: 1.4; }
+/* 네이버 사전 바로가기 */
+.dic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; margin-left: 4px; vertical-align: middle;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface);
+  font-size: 15px; text-decoration: none; line-height: 1;
+}
+.dic:hover { border-color: var(--accent); }
+.wb-kana { font-size: 13px; color: var(--ink-3); margin-top: 1px; }
+.wb-mean { font-size: 16px; font-weight: 700; color: var(--accent); }
+.wb-note { margin-top: 12px; font-size: 13.5px; color: var(--ink-2); line-height: 2.1; }
+.wb-only { margin-top: 14px; padding: 12px 14px; background: var(--surface-2); border-radius: 9px; font-size: 13.5px; color: var(--ink-3); }
+.wordbox .ex { border: none; box-shadow: none; background: var(--surface-2); border-radius: 11px; margin: 16px 0 0; padding: 18px 18px 6px; }
+.wordbox .ex .why { background: var(--surface); }
+.wordbox .ex .parts th, .wordbox .ex .parts td { border-color: var(--line-strong); }
+
+/* 예문 + 문법 */
+.ex { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px 24px 8px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.ex .tline { font-size: 20px; line-height: 2.35; }
+.ex .nline { font-size: 14.5px; color: var(--ink-2); margin-top: 6px; }
+.exmeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+.wchip { font-size: 13.5px; font-weight: 700; background: var(--ember-soft); color: var(--ember); padding: 5px 11px; border-radius: 7px; }
+.ex .frame {
+  display: inline-block; font-size: 13.5px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent); padding: 5px 12px; border-radius: 7px;
+}
+.gtoggle {
+  display: block; width: 100%; text-align: left; margin: 16px 0 0; padding: 11px 14px; cursor: pointer;
+  border: 1px dashed var(--line-strong); border-radius: 9px; background: none; color: var(--ink-2); font-size: 13.5px;
+}
+.gtoggle:hover { border-color: var(--accent); color: var(--accent); }
+.gbody { display: none; padding: 4px 0 18px; }
+.ex.open .gbody { display: block; }
+.ex.open .gtoggle { border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 700; margin-bottom: 14px; }
+.parts { width: 100%; border-collapse: collapse; margin: 6px 0 18px; font-size: 14px; }
+.parts th { text-align: left; font-size: 12px; color: var(--ink-3); font-weight: 700; padding: 0 10px 8px 0; border-bottom: 1px solid var(--line); }
+.parts td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.parts td.p { font-size: 16px; white-space: nowrap; }
+.parts td.r { color: var(--ink-2); }
+.parts td.w { color: var(--ink-3); font-size: 13px; line-height: 2.05; }
+.why { margin: 0 0 16px; padding: 16px 18px; background: var(--surface-2); border-radius: 10px; font-size: 14.5px; line-height: 2.15; }
+.why p { margin: 0 0 10px; }
+.why p:last-child { margin: 0; }
+.why b { color: var(--accent); }
+.swap { padding: 14px 18px; border-left: 3px solid var(--ember); background: var(--ember-soft); border-radius: 0 10px 10px 0; }
+.swap .lbl { font-size: 12px; font-weight: 700; color: var(--ember); letter-spacing: .08em; }
+.swap .tline { font-size: 17px; line-height: 2.2; margin-top: 6px; }
+.swap .nline { font-size: 13.5px; color: var(--ink-2); }
+
+/* 마당 표시 · 소제목 */
+.partmark { font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--ember); margin-bottom: 6px; }
+.sec-tight { margin-top: -18px; }
+.subhead { font-family: var(--mincho); font-weight: 400; font-size: 19px; margin: 0 0 6px; color: var(--ink-2); }
+
+/* 조각 맞추기 */
+.bubble.build .tline, .bubble.build .nline, .bubble.build .tip, .bubble.build .gtoggle, .bubble.build .gbody { display: none; }
+.bubble.build.done .gbody { display: block; }
+.bubble.build.done .tline, .bubble.build.done .nline, .bubble.build.done .tip, .bubble.build.done .gtoggle { display: block; }
+.bubble.build.done .chips, .bubble.build.done .built, .bubble.build.done .reveal { display: none; }
+.qhint { font-size: 14px; color: var(--ink-2); margin-bottom: 12px; padding-left: 10px; border-left: 3px solid var(--line-strong); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chipwrap { display: inline-flex; align-items: stretch; }
+.chip.tgt { font-size: 17px; line-height: 1.9; padding: 7px 12px; border-radius: 9px 0 0 9px; }
+.chipsay { margin-left: -1px; border-radius: 0 9px 9px 0; padding: 1px 8px; }
+.chipwrap.used { opacity: .3; pointer-events: none; }
+.chip {
+  border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink);
+  border-radius: 9px; padding: 8px 13px; font-size: 14px; cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+
+.chip.wrong { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
+.built { margin-top: 12px; min-height: 30px; font-size: 18px; line-height: 2.2; color: var(--accent); }
+.built:empty::before { content: "韓国語のかけらを順番に押してみてください"; color: var(--ink-3); font-size: 13.5px; }
+.reveal {
+  margin-top: 10px; border: 1px dashed var(--line-strong); background: none; color: var(--ink-3);
+  border-radius: 8px; padding: 6px 12px; font-size: 12.5px; cursor: pointer;
+}
+.reveal:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 칼럼 */
+.column {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 30px 30px 26px; box-shadow: var(--shadow);
+  border-top: 3px solid var(--ember);
+}
+.col-tag { font-size: 12px; font-weight: 700; letter-spacing: .16em; color: var(--ember); }
+.col-word { font-family: var(--mincho); font-size: clamp(28px, 5vw, 38px); line-height: 1.5; margin-top: 10px; }
+.col-read { font-size: 14px; color: var(--ink-3); margin-top: 2px; }
+.column h4 { font-family: var(--mincho); font-weight: 400; font-size: 21px; margin: 22px 0 14px; line-height: 1.5; }
+.column p { margin: 0 0 16px; font-size: 15px; line-height: 2.15; color: var(--ink-2); }
+.column p b { color: var(--ink); }
+.col-note { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-3); line-height: 2.05; }
+
+.situation { padding: 14px 18px; background: var(--surface-2); border-radius: 10px; font-size: 14px; color: var(--ink-2); margin-bottom: 20px; }
+.turn { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+.turn .who { flex: 0 0 auto; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 6px; margin-top: 6px; }
+.turn.me .who { background: var(--accent-soft); color: var(--accent); }
+.turn.you .who { background: var(--surface-2); color: var(--ink-3); }
+.turn .bubble { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 14px 18px; box-shadow: var(--shadow); }
+.turn.me .bubble { border-color: var(--accent); }
+.turn .gtoggle { margin: 12px 0 0; padding: 9px 12px; font-size: 12.5px; }
+.turn .gbody { display: none; padding: 2px 0 0; }
+.turn .bubble.open .gbody { display: block; }
+.turn .bubble.open .gtoggle { border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+.turn .parts { margin: 4px 0 6px; font-size: 13px; }
+.turn .parts td { padding: 8px 10px 8px 0; }
+.turn .parts td.p { font-size: 15px; }
+.turn .tip {
+  margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
+  font-size: 12.5px; line-height: 2.05; color: var(--ink-3);
+}
+.turn .tip b { color: var(--ink-2); }
+.turn .tline { font-size: 18px; line-height: 2.25; }
+.turn .nline { font-size: 13.5px; color: var(--ink-2); margin-top: 4px; }
+
+/* 확인 */
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 14px; }
+/* 한국어는 낱말 가운데서 끊지 않는다 — 「말은?」이 「말」/「은?」로 갈리던 자리다.
+   일본어 보기에는 후리가나가 얹히므로 줄높이를 다른 구역과 같게 넉넉히 둔다. */
+.q .qt { font-size: 15.5px; margin-bottom: 12px; line-height: 2; word-break: keep-all; overflow-wrap: anywhere; }
+.opts { display: grid; gap: 8px; }
+.opts.tight { grid-template-columns: repeat(3, 1fr); }
+.opt {
+  text-align: left; cursor: pointer; padding: 11px 15px; border-radius: 9px; font-size: 15px;
+  line-height: 2; word-break: keep-all; overflow-wrap: anywhere;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+}
+.opts.tight .opt { text-align: center; padding: 11px 8px; }
+.opt:hover { border-color: var(--accent); }
+.opt.ok { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; }
+.opt.no { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.qmsg { margin-top: 12px; font-size: 13.5px; line-height: 2; color: var(--ink-2); display: none; word-break: keep-all; overflow-wrap: anywhere; }
+.q.done .qmsg { display: block; }
+
+/* 마무리 */
+.end { text-align: center; padding: 34px 26px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+.end .tline { font-family: var(--mincho); font-size: 24px; line-height: 2; }
+.end .nline { color: var(--ink-2); font-size: 14.5px; margin-top: 6px; }
+.end .msg { margin-top: 22px; font-size: 14.5px; color: var(--ink-2); line-height: 1.95; }
+.end .go { margin-top: 20px; }
+
+/* 따라다니는 저장 버튼
+   맨 아래까지 내려가야 저장할 수 있으면, 중간에 덮은 날은 자리를 남기지 못한다.
+   화면을 따라다니게 두어 읽던 그 자리에서 바로 눌러 두게 한다. */
+#saveFab {
+  position: fixed; right: 16px; z-index: 25;
+  bottom: calc(var(--barTop, 100px) + 12px);
+  display: none; align-items: center; gap: 7px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  border-radius: 999px; padding: 11px 18px; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700;
+  white-space: nowrap; line-height: 1;
+  box-shadow: 0 8px 22px -6px rgba(0,0,0,.45);
+}
+html:not([data-theme="light"]) #saveFab, :root[data-theme="dark"] #saveFab { color: var(--ground); }
+body.in-day #saveFab { display: inline-flex; }
+#saveFab:active { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { #saveFab:active { transform: none; } }
+
+.saveout {
+  margin: 34px 0 0; padding: 24px; text-align: center;
+  border: 1px dashed var(--line-strong); border-radius: 14px; background: var(--surface);
+}
+.saveout button {
+  border: 1px solid var(--accent); background: var(--accent); color: var(--surface);
+  border-radius: 11px; padding: 13px 26px; cursor: pointer; font-weight: 700; font-size: 15px;
+}
+html:not([data-theme="light"]) .saveout button, :root[data-theme="dark"] .saveout button { color: var(--ground); }
+.saveout button:hover { filter: brightness(1.08); }
+.saveout p { margin: 12px 0 0; font-size: 13.5px; color: var(--ink-3); }
+#toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px); z-index: 70;
+  background: var(--ink); color: var(--ground); padding: 13px 22px; border-radius: 999px;
+  font-size: 14px; font-weight: 700; box-shadow: 0 10px 30px -8px rgba(0,0,0,.5);
+  opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s;
+}
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+.speak {
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-3);
+  border-radius: 7px; padding: 1px 7px; font-size: 13px; cursor: pointer; margin-left: 6px; vertical-align: middle;
+}
+.speak:hover { border-color: var(--accent); }
+.speak.slow { margin-left: 3px; }
+.speak.on { background: var(--accent-soft); border-color: var(--accent); }
+
+footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); }
+.cr-sub { font-size: 14px; color: var(--ink-2); font-weight: 700; }
+.cr-thanks { margin-top: 3px; font-size: 13.5px; color: var(--ink-3); }
+.fine { margin-top: 10px; font-size: 12px; color: var(--ink-3); line-height: 1.9; }
+
+#openChrome {
+  position: fixed; inset: auto 12px 12px; max-width: 520px; margin: 0 auto; z-index: 60;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  background: var(--accent); color: var(--surface);
+  border-radius: 14px; padding: 16px 18px; box-shadow: 0 12px 40px -8px rgba(0,0,0,.45);
+}
+#openChrome[hidden] { display: none; }   /* display:flex가 hidden 속성을 이기므로 명시한다 */
+html:not([data-theme="light"]) #openChrome, :root[data-theme="dark"] #openChrome { color: var(--ground); }
+#openChrome .oc-body { flex: 1 1 240px; font-size: 13.5px; line-height: 1.7; }
+#openChrome .oc-body b { display: block; font-size: 15px; margin-bottom: 3px; }
+#openChrome .oc-body span { opacity: .88; }
+#openChrome button {
+  border: none; border-radius: 9px; padding: 10px 16px; cursor: pointer; font-weight: 700; font-size: 14px;
+  background: var(--surface); color: var(--accent);
+}
+html:not([data-theme="light"]) #openChrome button, :root[data-theme="dark"] #openChrome button { background: var(--ground); color: var(--accent); }
+#openChrome button.ghost { background: transparent; color: inherit; font-weight: 400; opacity: .85; padding: 10px 8px; }
+
+#ttsNote, #installNote {
+  position: fixed; inset: auto 16px 16px; max-width: 460px; margin: 0 auto; z-index: 50;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px;
+  padding: 20px 22px; box-shadow: 0 12px 40px -8px rgba(0,0,0,.4);
+}
+#ttsNote h5, #installNote h5 { margin: 0 0 10px; font-size: 15px; }
+#ttsNote p, #installNote p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
+#ttsNote button, #installNote button { border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
+#installNote ol { margin: 0 0 12px; padding-left: 20px; font-size: 13px; color: var(--ink-2); line-height: 1.95; }
+#installNote ol li { margin-bottom: 3px; }
+#installNote .inst-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+#installNote #installNow { background: var(--accent); color: var(--surface); border-color: var(--accent); font-weight: 700; }
+html:not([data-theme="light"]) #installNote #installNow, :root[data-theme="dark"] #installNote #installNow { color: var(--ground); }
+/* 읽기 칸은 한 줄로 둔다. 일본어판의 가나 읽기와 달리 한국어의 가타카나 읽기는
+   길어서, 좁은 칸에 들어가면 「ハ/ン/グ/ゲ/ソ/ヌ/ン」처럼 낱자로 쪼개진다. */
+.parts td.r { white-space: nowrap; }
+
+@media (max-width: 560px) {
+  .ex, .story, .hero { padding-left: 18px; padding-right: 18px; }
+  /* 폰에서는 세 칸이 나란히 들어가지 않는다. 줄로 세워 위에서 아래로 읽게 한다. */
+  .parts, .parts tbody, .parts tr, .parts td { display: block; width: 100%; }
+  .parts tr:first-child { display: none; }
+  .parts tr { border-bottom: 1px solid var(--line); padding: 10px 0 12px; }
+  .parts tr:last-child { border-bottom: none; }
+  .parts td { border: none; padding: 0; }
+  .parts td.p { white-space: normal; font-size: 17px; line-height: 2.1; }
+  .parts td.r { white-space: normal; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .parts td.w { margin-top: 6px; }
+  .turn .parts td.p { font-size: 16px; }
+}
+
+/* ── 한글 위의 가타카나 ────────────────────────
+   일본인 학습자에게 후리가나 자리를 대신하는 것이 가타카나 읽기다.
+   다만 한국어에는 가타카나로 적을 수 없는 소리가 있어 어디까지나 길잡이다.
+   그 사실을 머리말에서 한 줄로 밝혀 둔다. */
+.masthead .lead.small { font-size: 13.5px; color: var(--ink-3); margin-top: 12px; line-height: 1.9; }
+.masthead .lead.small b { color: var(--ink-2); }
+</style>
+
+<div id="prog"></div>
+
+<button id="saveFab" type="button" title="ここまで保存">📌 <span>ここを保存</span></button>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="navs" id="navs"></div>
+    <button class="sw" id="installBtn" hidden>📲 インストール</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="masthead">
+    <p class="byline"><span class="c">&copy; 2026</span>企画・構成 by ゴンサマ @POSCO</p>
+    <p class="thanks">Special Thanks to 도야가오, 휘바, 골드만</p>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 76 58" role="img" aria-label="ハングリンゴ ロゴ">
+        <ellipse cx="56" cy="29" rx="10" ry="19" class="lg-body"/>
+        <rect x="20" y="10" width="36" height="38" class="lg-fill"/>
+        <line x1="20" y1="10" x2="56" y2="10" class="lg-edge"/>
+        <line x1="20" y1="48" x2="56" y2="48" class="lg-edge"/>
+        <ellipse cx="20" cy="29" rx="10" ry="19" class="lg-face"/>
+        <path d="M20 16 a7 13 0 1 1 -6.2 12.6 a4.2 7.6 0 1 0 6.2 -6.6" class="lg-spiral"/>
+        <circle cx="36" cy="26" r="2.7" class="lg-eye"/>
+        <circle cx="47" cy="26" r="2.7" class="lg-eye"/>
+        <path d="M37.5 34.5 q4 3.6 8 0" class="lg-smile"/>
+        <ellipse cx="31" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+        <ellipse cx="52" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+      </svg>
+      <h1>ハングリンゴ<span class="lite">Lite</span></h1>
+    </div>
+    <p class="lead">韓国語をはじめたばかりの方のための入り口です。今日のことばを例文といっしょに覚え、そのことばが行き交う短い会話をかけらから組み立てます。<b>今日ひと足、明日もうひと足。</b>そうやって少しずつ積んでいけば大丈夫です。</p>
+    <p class="lead small">ハングルの上のカタカナは<b>目安</b>です。ことば一つずつの読みを載せているので、続けて言うと音が変わります — 「한국」＋「에서는」は、つなげると<b>ハングゲソヌン</b>。つないだときの本当の音は、例文の<b>ばらして見る</b>にある「読み」の欄に出ます。最後は🔊を押して、耳で直してください。</p>
+  </div>
+  <div id="app"></div>
+  <footer>
+    <div class="cr-sub">ハングリンゴ Lite &middot; 企画・構成 by ゴンサマ @POSCO</div>
+    <div class="cr-thanks">Special Thanks to 도야가오, 휘바, 골드만</div>
+    <div class="fine">
+      学習の記録はこのブラウザのなかだけに残ります。ほかの端末で開くと最初からになります。<br>
+      書体 Noto Sans JP &middot; Zen Old Mincho &middot; Pretendard (SIL Open Font License 1.1)
+    </div>
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="openChrome" hidden>
+  <div class="oc-body">
+    <b>いまアプリのなかのブラウザで開いています。</b>
+    <span id="ocMsg">ここでは韓国語の音が出ません。</span>
+  </div>
+  <button id="ocGo">ブラウザで開く</button>
+  <button id="ocCopy" class="ghost">アドレスをコピー</button>
+  <button id="ocClose" class="ghost">このまま見る</button>
+</div>
+
+<div id="ttsNote" hidden>
+  <h5>🔇 韓国語の音声が入っていません</h5>
+  <p><b>Windows</b> — 設定 → 時刻と言語 → 言語と地域 → 言語の追加 → <b>한국어(韓国語)</b> → 追加するとき<b>音声</b>にチェック。入れたあとブラウザを完全に閉じてから開き直すと認識されます。</p>
+  <p><b>iPhone</b> — 設定 → アクセシビリティ → 読み上げコンテンツ → 声 → 韓国語 を追加します。たいていは何もしなくても鳴ります。</p>
+  <p><b>Android</b> — Google 音声サービスで韓国語をダウンロードすると鳴ります。</p>
+  <p><b>音が不自然に聞こえるときは声を替えてみてください。</b>自然な順は <b>Siri/高品質 &gt; Google 한국의 &gt; Edge の InJoon・SunHi</b> です。Windows 標準の Heami はいちばん機械的に聞こえます — <b>Microsoft Edge</b> で開くとニューラル音声が使えて、ずっと聞きやすくなります。</p>
+  <button id="ttsClose">わかりました</button>
+</div>
+
+<div id="installNote" hidden>
+  <h5 id="installTitle">📲 ホーム画面に入れる</h5>
+  <div id="installSteps"></div>
+  <div class="inst-btns">
+    <button id="installNow" hidden>いますぐ入れる</button>
+    <button id="installNoteClose">わかりました</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ハングリンゴ Lite — 학습 자료
+   일본인 입문자를 위한 한국어 과정. 지문은 한국의 생활 뉴스 문체를 따라
+   학습용으로 새로 쓴 글이며 기사 원문이 아니다.
+   규칙: 한 문장은 짧게 / 어려운 말은 쉬운 말로 / 한글 위에 가타카나 /
+        어휘는 TOPIK 1급 언저리 / 「-ㅂ니다」와 「-아/어요」를 차례로
+   ═══════════════════════════════════════════════════════════ */
+
+const DATA = [
+/* ═══════════ 1 · 큰비 ═══════════ */
+{
+  no: 1, title: "큰비[クンビ]", titleJa: "大雨",
+  story: {
+    topic: "災害・天気のニュース",
+    lines: [
+      { ko: "어제[オジェ] 한국[ハングク] 남쪽[ナムッチョク]에[エ] 《비[ピ]》가[ガ] 《많이[マニ]》 왔습니다[ワッスムニダ].",
+        ja: "昨日、韓国の南のほうで雨がたくさん降りました。" },
+      { ko: "《바람[パラム]》도[ド] 많이[マニ] 불었습니다[プロッスムニダ].",
+        ja: "風もたくさん吹きました。" },
+      { ko: "사람[サラム]들은[ドゥルン] 모두[モドゥ] 《우산[ウサン]》을[ウル] 썼습니다[ソッスムニダ].",
+        ja: "人はみんな傘をさしました。" },
+      { ko: "오늘[オヌル]도[ド] 비[ピ]가[ガ] 《옵니다[オムニダ]》. 길[キル]에서[エソ] 《조심하세요[チョシマセヨ]》.",
+        ja: "今日も雨が降ります。道で気をつけてください。" }
+    ]
+  },
+  words: [
+    { ko: "비", disp: "비[ピ]", kana: "ピ", mean: "雨",
+      note: "「비가[ピガ] 오다[オダ]」で組にして覚えます。「비가[ピガ] 내리다[ネリダ]」とも言いますが、話しことばでは「오다[オダ]」のほうがずっと多いです。" },
+    { ko: "오다", disp: "오다[オダ]", kana: "オダ", mean: "来る、(雨・雪が)降る",
+      note: "韓国語では雨は「降る」ではなく「来る」と言います。「비가[ピガ] 와요[ワヨ](雨が降ります)」がいちばんよく使う言い方です。「눈이[ヌニ] 오다[オダ](雪が降る)」も同じ組み合わせです。" },
+    { ko: "많이", disp: "많이[マニ]", kana: "マニ", mean: "たくさん、多く",
+      note: "「많다[マンタ](多い)」から出た副詞です。つづりは「많이[マニ]」ですが、読むと「マニ」。「ㅎ」は音になりません。食卓での「많이[マニ] 드세요[トゥセヨ](たくさん召し上がってください)」は決まり文句です。" },
+    { ko: "바람", disp: "바람[パラム]", kana: "パラム", mean: "風",
+      note: "風は「불다[プルダ](吹く)」と組みます。「바람이[パラミ] 불다[プルダ]」。雨は「오다[オダ]」、風は「불다[プルダ]」— 相棒が違うので、ことば単位ではなく組で覚えてください。" },
+    { ko: "우산", disp: "우산[ウサン]", kana: "ウサン", mean: "傘",
+      note: "漢字で書けば「雨傘」。傘は「쓰다[ッスダ](かぶる・さす)」と組みます。「우산을[ウサヌル] 쓰다[ッスダ]」。日本語の「さす」につられて別の動詞を当てると通じません。" },
+    { ko: "조심하다", disp: "조심하다[チョシマダ]", kana: "チョシマダ", mean: "気をつける",
+      note: "漢字語「操心」から来たことばです。別れぎわの「조심해서[チョシメソ] 가세요[カセヨ](気をつけてお帰りください)」は毎日使う挨拶です。読むときは「ㅎ」が弱まって「チョシマダ」になります。" }
+  ],
+  sentences: [
+    { for: "비",
+      ko: "한국[ハングク]에서는[エソヌン] 여름[ヨルム]에[エ] 《비[ピ]》가[ガ] 많이[マニ] 옵니다[オムニダ].",
+      ja: "韓国では夏に雨がたくさん降ります。",
+      frame: "A 에서는  B 에  ~ㅂ니다",
+      parts: [
+        { p: "한국[ハングク]에서는[エソヌン]", r: "ハングゲソヌン", w: "韓国では", why: "「에서[エソ]」は動きが起きている場所を指します。パッチム「ㄱ」が次の母音に移って「ハングゲ」と読みます。" },
+        { p: "여름[ヨルム]에[エ]", r: "ヨルメ", w: "夏に", why: "「에[エ]」は時点を指す印です。" },
+        { p: "《비[ピ]》가[ガ]", r: "ピガ", w: "雨が", why: "「이[イ]/가[ガ]」は、実際にその動作をする主人公を指します。パッチムがないので「가[ガ]」です。" },
+        { p: "많이[マニ]", r: "マニ", w: "たくさん", why: "動詞の前に置きます。ここは日本語と同じ語順です。" },
+        { p: "옵니다[オムニダ].", r: "オムニダ", w: "降ります", why: "「오다[オダ]」のかしこまった形。「ㅂ니다」の「ㅂ」は「ム」と読みます。" }
+      ],
+      why: [
+        "<b>에[エ]</b>と<b>에서[エソ]</b>は形が似ていますが、役わりが違います。「에[エ]」は行き先や時点、「에서[エソ]」は動きが起きている場所です。",
+        "だから「여름에[ヨルメ]」は時点なので「에[エ]」、「한국에서[ハングゲソ]」は雨が降っている場所なので「에서[エソ]」になります。ここを取り違えると、聞き手は一瞬止まります。",
+        "「에서[エソ]」に「는[ヌン]」がついた<b>에서는[エソヌン]</b>は、「よその国はさておき韓国では」と土俵を限る言い方です。比べる話をするときによく出ます。"
+      ],
+      swap: { ko: "일본[イルボン]에서는[エソヌン] 가을[カウル]에[エ] 태풍[テプン]이[イ] 많이[マニ] 옵니다[オムニダ].", ja: "日本では秋に台風がたくさん来ます。" } },
+
+    { for: "오다",
+      ko: "오늘[オヌル]은[ウン] 《비[ピ]》가[ガ] 《옵니다[オムニダ]》.",
+      ja: "今日は雨が降ります。",
+      frame: "A 은/는  B 이/가  ~ㅂ니다",
+      parts: [
+        { p: "오늘[オヌル]은[ウン]", r: "オヌルン", w: "今日は", why: "「은[ウン]/는[ヌン]」は「これについて話します」と話題を立てる印です。パッチムがあれば「은[ウン]」、なければ「는[ヌン]」。" },
+        { p: "《비[ピ]》가[ガ]", r: "ピガ", w: "雨が", why: "その場の主人公を指す印です。" },
+        { p: "《옵니다[オムニダ]》.", r: "オムニダ", w: "降ります", why: "「오다[オダ]」の語幹「오」に「ㅂ니다」がついた形です。" }
+      ],
+      why: [
+        "韓国語の入り口でいちばんつまずくのが <b>은[ウン]/는[ヌン]</b> と <b>이[イ]/가[ガ]</b> です。「은[ウン]/는[ヌン]」は話の土俵を置き、「이[イ]/가[ガ]」はその上で動く主人公を指します。",
+        "だから「오늘[オヌル]<b>이[イ]</b> 비가[ピガ] 옵니다[オムニダ]」とは言いません。土俵は一つで十分で、「오늘[オヌル]」は主人公ではなく話の枠だからです。",
+        "天気のように人の思いどおりにならないことは「이[イ]/가[ガ]」とよく結びつきます。「눈이[ヌニ] 옵니다[オムニダ](雪が降ります)」も同じ形です。"
+      ],
+      swap: { ko: "내일[ネイル]은[ウン] 눈[ヌン]이[イ] 옵니다[オムニダ].", ja: "明日は雪が降ります。" } },
+
+    { for: "많이",
+      ko: "어제[オジェ]는[ヌン] 비[ピ]가[ガ] 《많이[マニ]》 왔습니다[ワッスムニダ].",
+      ja: "昨日は雨がたくさん降りました。",
+      frame: "A 은/는  B 이/가  많이 ~았/었습니다",
+      parts: [
+        { p: "어제[オジェ]는[ヌン]", r: "オジェヌン", w: "昨日は", why: "パッチムがないので「는[ヌン]」がつきます。" },
+        { p: "비[ピ]가[ガ]", r: "ピガ", w: "雨が", why: "主人公を指す印です。" },
+        { p: "《많이[マニ]》", r: "マニ", w: "たくさん", why: "つづりは「많이[マニ]」、読みは「マニ」。「ㅎ」は音になりません。" },
+        { p: "왔습니다[ワッスムニダ].", r: "ワッスムニダ", w: "降りました", why: "「오다[オダ]」の過去。「오+았」が縮まって「왔」になります。" }
+      ],
+      why: [
+        "過去は<b>았/었</b>を挟みます。語幹の母音が「ㅏ・ㅗ」なら「았」、それ以外は「었」です。",
+        "「오다[オダ]」は語幹が「오」なので「았」。ただし「오았」とは書かず、縮めて<b>왔</b>と書きます。ここは形で覚えてしまうのが早道です。",
+        "「왔습니다[ワッスムニダ]」は文字どおりなら「ワッスプニダ」ですが、「ㅂ」が次の「ㄴ」につられて<b>ム</b>になります。「スムニダ」はこの形すべてに共通です。"
+      ],
+      swap: { ko: "주말[チュマル]에는[エヌン] 눈[ヌン]이[イ] 많이[マニ] 왔습니다[ワッスムニダ].", ja: "週末は雪がたくさん降りました。" } },
+
+    { for: "바람",
+      ko: "오늘[オヌル]은[ウン] 《바람[パラム]》이[イ] 많이[マニ] 붑니다[プムニダ].",
+      ja: "今日は風がたくさん吹きます。",
+      frame: "A 은/는  B 이/가  많이 ~ㅂ니다",
+      parts: [
+        { p: "오늘[オヌル]은[ウン]", r: "オヌルン", w: "今日は", why: "話題を立てる印です。" },
+        { p: "《바람[パラム]》이[イ]", r: "パラミ", w: "風が", why: "パッチムがあるので「가[ガ]」ではなく「이[イ]」。続けて「パラミ」と読みます。" },
+        { p: "많이[マニ]", r: "マニ", w: "たくさん", why: "動詞の前に置きます。" },
+        { p: "붑니다[プムニダ].", r: "プムニダ", w: "吹きます", why: "「불다[プルダ]」のかしこまった形。「ㄹ」が落ちて「붑니다[プムニダ]」になります。" }
+      ],
+      why: [
+        "「이[イ]/가[ガ]」は前のことばにパッチムがあるかで決まります。あれば<b>이[イ]</b>、なければ<b>가[ガ]</b>。「바람[パラム]」は「ㅁ」で終わるので「이[イ]」です。",
+        "語幹が「ㄹ」で終わる動詞は、「ㅂ니다」がつくとき<b>ㄹが落ちます</b>。「불다[プルダ] → 붑니다[プムニダ]」「살다[サルダ] → 삽니다[サムニダ]」。例外ではなく決まった動きです。",
+        "雨は「오다[オダ]」、風は「불다[プルダ]」。相棒が違うので、日本語の「吹く・降る」から当てるより、韓国語の組のまま覚えるほうが速いです。"
+      ],
+      swap: { ko: "바다[パダ] 쪽[ッチョク]에서[エソ] 바람[パラム]이[イ] 붑니다[プムニダ].", ja: "海のほうから風が吹きます。" } },
+
+    { for: "우산",
+      ko: "저[チョ]는[ヌン] 《우산[ウサン]》을[ウル] 씁니다[ッスムニダ].",
+      ja: "私は傘をさします。",
+      frame: "A 은/는  B 을/를  ~ㅂ니다",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "「저[チョ]」はへりくだった「わたし」。目上の人や初対面では必ずこちらを使います。" },
+        { p: "《우산[ウサン]》을[ウル]", r: "ウサヌル", w: "傘を", why: "「을[ウル]/를[ルル]」は動作の相手を指す印。パッチムがあるので「을[ウル]」、続けて「ウサヌル」と読みます。" },
+        { p: "씁니다[ッスムニダ].", r: "ッスムニダ", w: "さします", why: "「쓰다[ッスダ]」のかしこまった形です。" }
+      ],
+      why: [
+        "<b>을[ウル]/를[ルル]</b>は日本語の「を」にあたります。パッチムがあれば「을[ウル]」、なければ「를[ルル]」。",
+        "傘は「쓰다[ッスダ](かぶる)」と組みます。頭より上にかぶせるものは、だいたい「쓰다[ッスダ]」です。「모자를[モジャルル] 쓰다[ッスダ](帽子をかぶる)」。",
+        "「쓰다[ッスダ]」には「書く」「使う」の意味もあります。どの意味かは相棒のことばが決めます。「편지를[ピョンジルル] 쓰다[ッスダ](手紙を書く)」「돈을[トヌル] 쓰다[ッスダ](お金を使う)」。"
+      ],
+      swap: { ko: "친구[チング]는[ヌン] 모자[モジャ]를[ルル] 씁니다[ッスムニダ].", ja: "友だちは帽子をかぶります。" } },
+
+    { for: "조심하다",
+      ko: "오늘[オヌル]은[ウン] 계단[ケダン]에서[エソ] 《조심하세요[チョシマセヨ]》.",
+      ja: "今日は階段で気をつけてください。",
+      frame: "A 은/는  B 에서  ~세요",
+      parts: [
+        { p: "오늘[オヌル]은[ウン]", r: "オヌルン", w: "今日は", why: "話題を立てる印です。" },
+        { p: "계단[ケダン]에서[エソ]", r: "ケダネソ", w: "階段で", why: "「에서[エソ]」は動きが起きる場所。「계단에서[ケダネソ]」は続けて「ケダネソ」と読みます。" },
+        { p: "《조심하세요[チョシマセヨ]》.", r: "チョシマセヨ", w: "気をつけてください", why: "「하다[ハダ]」に「세요[セヨ]」がついた、やわらかい頼み方です。" }
+      ],
+      why: [
+        "<b>~세요[セヨ]</b>は「~してください」。命令というより丁寧なお願いで、日常でいちばんよく使う語尾です。",
+        "「하다[ハダ]」で終わることばはすべて同じ形になります。「조심하다[チョシマダ] → 조심하세요[チョシマセヨ]」「전화하다[チョヌァハダ] → 전화하세요[チョヌァハセヨ]」。",
+        "書くときは「조심하세요[チョシマセヨ]」ですが、読むと「ㅎ」が弱まって<b>チョシマセヨ</b>。「하」の前にパッチムがあるとき、よく起こります。"
+      ],
+      swap: { ko: "길[キル]에서[エソ] 조심하세요[チョシマセヨ].", ja: "道で気をつけてください。" } }
+  ],
+  dialogue: {
+    situation: "雨がひどく降る朝、マンションの入り口で隣の人と会いました。",
+    turns: [
+      { me: false, ko: "안녕하세요[アンニョンハセヨ]. 오늘[オヌル]은[ウン] 《비[ピ]》가[ガ] 《많이[マニ]》 오네요[オネヨ].",
+        ja: "こんにちは。今日は雨がたくさん降りますね。",
+        tip: "「~네요[ネヨ]」はいまその場で気づいたことに言う語尾です。天気の話で口を開くのは、韓国でも同じです。",
+        parts: [
+          { p: "안녕하세요[アンニョンハセヨ].", r: "アンニョンハセヨ", w: "こんにちは", why: "朝も昼も夜もこれ一つで通ります。" },
+          { p: "오늘[オヌル]은[ウン]", r: "オヌルン", w: "今日は", why: "話題を立てる印です。" },
+          { p: "《비[ピ]》가[ガ]", r: "ピガ", w: "雨が", why: "主人公を指す印です。" },
+          { p: "《많이[マニ]》", r: "マニ", w: "たくさん", why: "動詞の前に置きます。" },
+          { p: "오네요[オネヨ].", r: "オネヨ", w: "降りますね", why: "「오다[オダ]」に「네요[ネヨ]」。同意を求めるやわらかい言い方です。" }
+        ] },
+      { me: true, ko: "네[ネ], 아침[アチム]부터[ブト] 계속[ケソク] 옵니다[オムニダ].",
+        ja: "はい、朝からずっと降っています。",
+        tip: "「부터[ブト]」は「~から」。時間の始まりを指します。場所なら「에서[エソ]」を使います。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "「예」も同じ意味で、こちらのほうが少しかしこまります。" },
+          { p: "아침[アチム]부터[ブト]", r: "アチムブト", w: "朝から", why: "時間の出発点を指します。" },
+          { p: "계속[ケソク]", r: "ケソク", w: "ずっと", why: "漢字語「継続」から。副詞としてそのまま使えます。" },
+          { p: "옵니다[オムニダ].", r: "オムニダ", w: "降っています", why: "韓国語は現在形のまま「~している」を表せます。" }
+        ] },
+      { me: false, ko: "《바람[パラム]》도[ド] 많이[マニ] 붑니다[プムニダ].",
+        ja: "風もたくさん吹いています。",
+        tip: "「도[ド]」は「~も」。前のことばにそのままくっつきます。「바람도[パラムド]」で「風も」。",
+        parts: [
+          { p: "《바람[パラム]》도[ド]", r: "パラムド", w: "風も", why: "「도[ド]」は「~も」。「이[イ]/가[ガ]」や「은[ウン]/는[ヌン]」と入れかわります。" },
+          { p: "많이[マニ]", r: "マニ", w: "たくさん", why: "動詞の前に置きます。" },
+          { p: "붑니다[プムニダ].", r: "プムニダ", w: "吹いています", why: "「불다[プルダ]」の「ㄹ」が落ちた形です。" }
+        ] },
+      { me: true, ko: "그래서[クレソ] 저[チョ]도[ド] 《우산[ウサン]》을[ウル] 씁니다[ッスムニダ].",
+        ja: "だから私も傘をさします。",
+        tip: "「그래서[クレソ]」は「だから」。前の話を受けて続けるときのつなぎことばです。",
+        parts: [
+          { p: "그래서[クレソ]", r: "クレソ", w: "だから", why: "理由を受けて結果を言うつなぎです。" },
+          { p: "저[チョ]도[ド]", r: "チョド", w: "私も", why: "「저[チョ]」に「도[ド]」がついた形です。" },
+          { p: "《우산[ウサン]》을[ウル]", r: "ウサヌル", w: "傘を", why: "パッチムがあるので「을[ウル]」。" },
+          { p: "씁니다[ッスムニダ].", r: "ッスムニダ", w: "さします", why: "「쓰다[ッスダ]」のかしこまった形です。" }
+        ] },
+      { me: false, ko: "길[キル]이[イ] 미끄럽습니다[ミックロプスムニダ]. 《조심하세요[チョシマセヨ]》.",
+        ja: "道が滑ります。気をつけてください。",
+        tip: "別れぎわの「조심하세요[チョシマセヨ]」は「お気をつけて」にあたる、毎日使う一言です。",
+        parts: [
+          { p: "길[キル]이[イ]", r: "キリ", w: "道が", why: "パッチムがあるので「이[イ]」。続けて「キリ」と読みます。" },
+          { p: "미끄럽습니다[ミックロプスムニダ].", r: "ミックロプスムニダ", w: "滑ります", why: "「미끄럽다[ミックロプタ](滑りやすい)」のかしこまった形です。" },
+          { p: "《조심하세요[チョシマセヨ]》.", r: "チョシマセヨ", w: "気をつけてください", why: "やわらかい頼み方です。" }
+        ] },
+      { me: true, ko: "감사합니다[カムサハムニダ]. 오늘[オヌル]도[ド] 좋은[チョウン] 하루[ハル] 되세요[トゥェセヨ].",
+        ja: "ありがとうございます。今日もよい一日をお過ごしください。",
+        tip: "「좋은[チョウン] 하루[ハル] 되세요[トゥェセヨ]」は別れぎわの決まり文句です。メールの結びにもそのまま使えます。",
+        parts: [
+          { p: "감사합니다[カムサハムニダ].", r: "カムサハムニダ", w: "ありがとうございます", why: "「고맙습니다[コマプスムニダ]」も同じ意味で、こちらは少しやわらかく響きます。" },
+          { p: "오늘[オヌル]도[ド]", r: "オヌルド", w: "今日も", why: "「도[ド]」は「~も」。" },
+          { p: "좋은[チョウン]", r: "チョウン", w: "よい", why: "「좋다[チョタ]」が名詞の前に来た形。「ㅎ」は音になりません。" },
+          { p: "하루[ハル]", r: "ハル", w: "一日", why: "「하루[ハル], 이틀[イトゥル], 사흘[サフル]」と続く固有語の数え方です。" },
+          { p: "되세요[トゥェセヨ].", r: "トゥェセヨ", w: "お過ごしください", why: "もとは「~になってください」。決まり文句としてまるごと覚えます。" }
+        ] }
+    ]
+  },
+  quiz: [
+    { q: "「비[ピ](雨)」と組になる動詞はどれですか。",
+      opts: ["쓰다[ッスダ]", "오다[オダ]", "불다[プルダ]"], ans: 1,
+      msg: "雨は「오다[オダ]」と組みます。「비가[ピガ] 와요[ワヨ]」でまるごと覚えてください。日本語の「降る」から探すと見つかりません。" },
+    { q: "「바람[パラム](風)」と組になる動詞はどれですか。",
+      opts: ["불다[プルダ]", "오다[オダ]", "쓰다[ッスダ]"], ans: 0,
+      msg: "風は「불다[プルダ](吹く)」。「바람이[パラミ] 불다[プルダ]」。雨と風で相棒が違うので、組のまま覚えます。" },
+    { q: "「우산을[ウサヌル] ___」 傘をさす、に合うのはどれですか。",
+      opts: ["옵니다[オムニダ]", "붑니다[プムニダ]", "씁니다[ッスムニダ]"], ans: 2,
+      msg: "傘は「쓰다[ッスダ]」。頭より上にかぶせるものは、だいたい「쓰다[ッスダ]」です。「모자를[モジャルル] 쓰다[ッスダ]」も同じです。" },
+    { q: "「바람[パラム]」のあとに来る助詞はどれですか。",
+      opts: ["가[ガ]", "이[イ]", "를[ルル]"], ans: 1,
+      msg: "「바람[パラム]」は「ㅁ」で終わる — パッチムがあるので「이[イ]」です。「바람이[パラミ] 붑니다[プムニダ]」。" },
+    { q: "「많이[マニ]」の意味はどれですか。",
+      opts: ["たくさん", "すこしだけ", "ゆっくり"], ans: 0,
+      msg: "「많다[マンタ](多い)」から出た副詞です。読みは「マニ」。「ㅎ」は音になりません。「조금[チョグム]」が「少し」、「천천히[チョンチョニ]」が「ゆっくり」です。" },
+    { q: "「오다[オダ]」をかしこまった形にすると、どれになりますか。",
+      opts: ["오습니다[オスムニダ]", "오다[オダ]", "옵니다[オムニダ]"], ans: 2,
+      msg: "パッチムのない語幹には「ㅂ니다」がそのままつきます。「오 + ㅂ니다 → 옵니다[オムニダ]」。「오습니다[オスムニダ]」という形はありません。" },
+    { q: "別れぎわに「お気をつけて」と言うなら、どれですか。",
+      opts: ["조심하세요[チョシマセヨ]", "안녕하세요[アンニョンハセヨ]", "감사합니다[カムサハムニダ]"], ans: 0,
+      msg: "「조심하세요[チョシマセヨ]」「조심해서[チョシメソ] 가세요[カセヨ]」。帰る人を見送るときの決まり文句です。" },
+    { q: "「雨がたくさん降りました」は、どれですか。",
+      opts: ["비가[ピガ] 많이[マニ] 오았습니다[オアッスムニダ]", "비가[ピガ] 많이[マニ] 붑니다[プムニダ]", "비가[ピガ] 많이[マニ] 왔습니다[ワッスムニダ]"], ans: 2,
+      msg: "過去は「았/었」を挟みます。ただし「오았」とは書かず、縮めて「왔」。「붑니다[プムニダ]」は風のほうです。" }
+  ],
+  column: {
+    word: "장마[チャンマ]", kana: "チャンマ", ja: "梅雨",
+    title: "日本の梅雨、韓国の장마[チャンマ] — 同じ季節、違う顔",
+    body: [
+      "韓国にも梅雨があります。「장마[チャンマ]」といって、だいたい六月の終わりから七月の半ばまで。日本の梅雨より<b>短くて、強い</b>のが特徴です。しとしと続くのではなく、一日に一年分の何割かが落ちてくる日が何度かある、という降り方をします。",
+      "だからニュースでよく聞くのが「집중호우[チプチュンホウ](集中豪雨)」ということばです。梅雨入りは「장마가[チャンマガ] 시작되다[シジャクトゥェダ]」、梅雨明けは「장마가[チャンマガ] 끝나다[ックンナダ]」。天気予報では「장마전선[チャンマジョンソン](梅雨前線)」が北へ上がったり下がったりする様子を毎日伝えます。",
+      "仕事の場でも、この時期は「장마철이라[チャンマチョリラ] 길이[キリ] 많이[マニ] 막힙니다[マキムニダ](梅雨どきなので道がとても混みます)」がそのまま遅刻の断りになります。訪問の約束をした日に大雨が出たら、前日のうちに<b>「비가[ピガ] 많이[マニ] 와서[ワソ] 조금[チョグム] 늦을[ヌジュル] 수도[スド] 있습니다[イッスムニダ]」</b>と一報を入れておく — これだけで、相手の受け取り方がずいぶん変わります。"
+    ],
+    note: "「장마[チャンマ]」は名詞です。「장마가[チャンマガ] 오다[オダ](梅雨が来る)」「장마가[チャンマガ] 끝나다[ックンナダ](梅雨が明ける)」のように使います。"
+  }
+},
+/* ═══════════ 2 · 지하철 ═══════════ */
+{
+  no: 2, title: "지하철[チハチョル]", titleJa: "地下鉄",
+  story: {
+    topic: "暮らしの情報ニュース",
+    lines: [
+      { ko: "서울[ソウル]에는[エヌン] 《지하철[チハチョル]》이[イ] 많습니다[マンスムニダ].",
+        ja: "ソウルには地下鉄がたくさんあります。" },
+      { ko: "아침[アチム]에는[エヌン] 《사람[サラム]》이[イ] 아주[アジュ] 많습니다[マンスムニダ].",
+        ja: "朝は人がとても多いです。" },
+      { ko: "《역[ヨク]》에서[エソ] 지하철[チハチョル]을[ウル] 《탑니다[タムニダ]》.",
+        ja: "駅で地下鉄に乗ります。" },
+      { ko: "다음[タウム] 역[ヨク]에서[エソ] 《갈아탑니다[カラタムニダ]》. 그리고[クリゴ] 회사[フェサ] 앞[アプ]에서[エソ] 《내립니다[ネリムニダ]》.",
+        ja: "次の駅で乗り換えます。そして会社の前で降ります。" }
+    ]
+  },
+  words: [
+    { ko: "지하철", disp: "지하철[チハチョル]", kana: "チハチョル", mean: "地下鉄",
+      note: "漢字語「地下鉄」。ソウルの地下鉄は路線ごとに番号と色があり、「2호선[ホソン](2号線)」のように番号で呼びます。数字は漢数字読みです。" },
+    { ko: "타다", disp: "타다[タダ]", kana: "タダ", mean: "乗る",
+      note: "日本語は「バス<b>に</b>乗る」ですが、韓国語は「버스[ポス]<b>를[ルル]</b> 타다[タダ]」。助詞が「を」にあたる「을[ウル]/를[ルル]」になります。日本語につられやすい、最初の関門です。" },
+    { ko: "내리다", disp: "내리다[ネリダ]", kana: "ネリダ", mean: "降りる",
+      note: "「지하철에서[チハチョレソ] 내리다[ネリダ](地下鉄から降りる)」。降りる場所には「에서[エソ]」がつきます。雨に使えば「비가[ピガ] 내리다[ネリダ](雨が降る)」にもなります。" },
+    { ko: "갈아타다", disp: "갈아타다[カラタダ]", kana: "カラタダ", mean: "乗り換える",
+      note: "「갈다[カルダ](替える)+아[ア]+타다[タダ](乗る)」。続けて「カラタダ」と読みます。駅の案内板では漢字語の「환승[ファンスン](換乗)」も見かけます。" },
+    { ko: "역", disp: "역[ヨク]", kana: "ヨク", mean: "駅",
+      note: "漢字語「駅」。駅名のうしろにつけて「서울역[ソウルリョク](ソウル駅)」のように言います。「역에서[ヨゲソ] 만나요[マンナヨ](駅で会いましょう)」は待ち合わせの定番です。" },
+    { ko: "사람", disp: "사람[サラム]", kana: "サラム", mean: "人",
+      note: "「사람이[サラミ] 많다[マンタ](人が多い)」で組にして覚えます。数えるときは「한[ハン] 사람[サラム](一人)」「두[トゥ] 사람[サラム](二人)」。かしこまった場では「한[ハン] 분[プン](お一方)」を使います。" }
+  ],
+  sentences: [
+    { for: "지하철",
+      ko: "저[チョ]는[ヌン] 매일[メイル] 《지하철[チハチョル]》을[ウル] 《탑니다[タムニダ]》.",
+      ja: "私は毎日、地下鉄に乗ります。",
+      frame: "A 은/는  B 을/를  ~ㅂ니다",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "へりくだった「わたし」に話題の印がついた形です。" },
+        { p: "매일[メイル]", r: "メイル", w: "毎日", why: "漢字語「毎日」。「날마다[ナルマダ]」とも言えます。" },
+        { p: "《지하철[チハチョル]》을[ウル]", r: "チハチョルル", w: "地下鉄に", why: "韓国語では乗り物に「을[ウル]/를[ルル]」。続けて「チハチョルル」と読みます。" },
+        { p: "《탑니다[タムニダ]》.", r: "タムニダ", w: "乗ります", why: "「타다[タダ]」のかしこまった形です。" }
+      ],
+      why: [
+        "<b>을[ウル]/를[ルル]</b>は日本語の「を」にあたりますが、乗り物だけは日本語が「に」なので、ここで必ずずれます。",
+        "「지하철[チハチョル]<b>을[ウル]</b> 탑니다[タムニダ]」「버스[ポス]<b>를[ルル]</b> 탑니다[タムニダ]」「택시[テクシ]<b>를[ルル]</b> 탑니다[タムニダ]」— 全部「을[ウル]/를[ルル]」です。例外はないので、いっそ丸ごと覚えるほうが早いです。",
+        "逆に降りるときは「지하철[チハチョル]<b>에서[エソ]</b> 내립니다[ネリムニダ]」。乗るは「을[ウル]/를[ルル]」、降りるは「에서[エソ]」— 対にして覚えてください。"
+      ],
+      swap: { ko: "동생[トンセン]은[ウン] 매일[メイル] 버스[ポス]를[ルル] 탑니다[タムニダ].", ja: "弟(妹)は毎日バスに乗ります。" } },
+
+    { for: "타다",
+      ko: "버스[ポス]는[ヌン] 저기[チョギ]에서[エソ] 《탑니다[タムニダ]》.",
+      ja: "バスはあそこで乗ります。",
+      frame: "A 은/는  B 에서  ~ㅂ니다",
+      parts: [
+        { p: "버스[ポス]는[ヌン]", r: "ポスヌン", w: "バスは", why: "「는[ヌン]」は「バスのほうは」と、ほかと比べて土俵を置く言い方です。" },
+        { p: "저기[チョギ]에서[エソ]", r: "チョギエソ", w: "あそこで", why: "「에서[エソ]」は動きが起きる場所。乗る場所は「에서[エソ]」です。" },
+        { p: "《탑니다[タムニダ]》.", r: "タムニダ", w: "乗ります", why: "「타다[タダ]」のかしこまった形です。" }
+      ],
+      why: [
+        "<b>여기[ヨギ](ここ)・거기[コギ](そこ)・저기[チョギ](あそこ)</b>の三つ組です。日本語と同じ三分けなので、そのまま置きかえられます。",
+        "乗り物そのものには「을[ウル]/를[ルル]」、乗る場所には「에서[エソ]」。一つの文に両方出ることもあります。「여기에서[ヨギエソ] 버스를[ポスルル] 탑니다[タムニダ]」。",
+        "「는[ヌン]」は比べる気持ちを含みます。「버스는[ポスヌン] 저기에서[チョギエソ] 탑니다[タムニダ]」と言えば、「地下鉄は別のところ」という含みが自然に生まれます。"
+      ],
+      swap: { ko: "택시[テクシ]는[ヌン] 호텔[ホテル] 앞[アプ]에서[エソ] 탑니다[タムニダ].", ja: "タクシーはホテルの前で乗ります。" } },
+
+    { for: "내리다",
+      ko: "다음[タウム] 《역[ヨク]》에서[エソ] 《내립니다[ネリムニダ]》.",
+      ja: "次の駅で降ります。",
+      frame: "다음 A 에서  ~ㅂ니다",
+      parts: [
+        { p: "다음[タウム]", r: "タウム", w: "次の", why: "名詞の前に置くだけで「次の~」になります。「의[エ]」は要りません。" },
+        { p: "《역[ヨク]》에서[エソ]", r: "ヨゲソ", w: "駅で", why: "パッチム「ㄱ」が次の母音に移って「ヨゲソ」と読みます。" },
+        { p: "《내립니다[ネリムニダ]》.", r: "ネリムニダ", w: "降ります", why: "「내리다[ネリダ]」の語幹が母音で終わるので「ㅂ니다」がそのままつきます。" }
+      ],
+      why: [
+        "「내리다[ネリダ]」は「降りる」。降りる場所には<b>에서[エソ]</b>がつきます。「역에서[ヨゲソ] 내립니다[ネリムニダ]」。",
+        "名詞を並べるだけで「~の~」になるのが韓国語の身軽なところです。「다음[タウム] 역[ヨク]」「회사[フェサ] 앞[アプ]」「역[ヨク] 앞[アプ]」。",
+        "「내리다[ネリダ]」は雨にも使えます。「비가[ピガ] 내립니다[ネリムニダ]」。ただし話しことばでは「비가[ピガ] 와요[ワヨ]」のほうがずっと自然です。"
+      ],
+      swap: { ko: "저[チョ]는[ヌン] 시장[シジャン] 앞[アプ]에서[エソ] 내립니다[ネリムニダ].", ja: "私は市場の前で降ります。" } },
+
+    { for: "갈아타다",
+      ko: "여기[ヨギ]에서[エソ] {2호선}[이호선/イホソン]으로[ウロ] 《갈아탑니다[カラタムニダ]》.",
+      ja: "ここで2号線に乗り換えます。",
+      frame: "A 에서  B (으)로  ~ㅂ니다",
+      parts: [
+        { p: "여기[ヨギ]에서[エソ]", r: "ヨギエソ", w: "ここで", why: "動きが起きる場所を指します。" },
+        { p: "{2호선}[이호선/イホソン]으로[ウロ]", r: "イホソヌロ", w: "2号線に", why: "「(으)로」は方向を指します。「2호선[ホソン]」は「ㄴ」で終わるので「으로[ウロ]」です。" },
+        { p: "《갈아탑니다[カラタムニダ]》.", r: "カラタムニダ", w: "乗り換えます", why: "「갈아타다[カラタダ]」のかしこまった形です。" }
+      ],
+      why: [
+        "<b>(으)로</b>は方向と手段を指します。パッチムがあれば「으로[ウロ]」、なければ「로」。ただし「ㄹ」で終わるときだけ「로」です。",
+        "数字は「2」と書いても読みは<b>이[イ]</b>。号線・番・階・月・分は漢数字読みです。人数や個数だけが固有数詞になります。",
+        "乗り換え先には「(으)로」。「2호선으로[ホソヌロ] 갈아타다[カラタダ]」。降りる場所の「에서[エソ]」と混ざらないよう、向かう先=로、と覚えてください。"
+      ],
+      swap: { ko: "다음[タウム] 역[ヨク]에서[エソ] {3호선}[삼호선/サモソン]으로[ウロ] 갈아탑니다[カラタムニダ].", ja: "次の駅で3号線に乗り換えます。" } },
+
+    { for: "역",
+      ko: "《역[ヨク]》에[エ] 《사람[サラム]》이[イ] 많습니다[マンスムニダ].",
+      ja: "駅に人が多いです。",
+      frame: "A 에  B 이/가  많습니다",
+      parts: [
+        { p: "《역[ヨク]》에[エ]", r: "ヨゲ", w: "駅に", why: "存在する場所には「에[エ]」。動きが起きる場所の「에서[エソ]」とは役わりが違います。" },
+        { p: "《사람[サラム]》이[イ]", r: "サラミ", w: "人が", why: "パッチムがあるので「이[イ]」。続けて「サラミ」と読みます。" },
+        { p: "많습니다[マンスムニダ].", r: "マンスムニダ", w: "多いです", why: "「많다[マンタ]」に「습니다[スムニダ]」。パッチムのある語幹には「습니다[スムニダ]」がつきます。" }
+      ],
+      why: [
+        "<b>에[エ]</b>は「ある・いる」の場所、<b>에서[エソ]</b>は「する」の場所。「역에[ヨゲ] 사람이[サラミ] 많다[マンタ]」は存在の話なので「에[エ]」です。",
+        "語幹にパッチムがあれば<b>습니다[スムニダ]</b>、なければ<b>ㅂ니다</b>。「많다[マンタ]→많습니다[マンスムニダ]」「오다[オダ]→옵니다[オムニダ]」。ここは一度きりの決まりです。",
+        "書くと「많습니다[マンスムニダ]」、読むと「マンスムニダ」。「ㅎ」は消え、「ㅂ」は次の「ㄴ」につられて「ム」になります。"
+      ],
+      swap: { ko: "회사[フェサ]에[エ] 사람[サラム]이[イ] 적습니다[チョクスムニダ].", ja: "会社に人が少ないです。" } },
+
+    { for: "사람",
+      ko: "아침[アチム]에는[エヌン] 《사람[サラム]》이[イ] 아주[アジュ] 많습니다[マンスムニダ].",
+      ja: "朝は人がとても多いです。",
+      frame: "A 에는  B 이/가  아주 ~습니다",
+      parts: [
+        { p: "아침[アチム]에는[エヌン]", r: "アチメヌン", w: "朝は", why: "「에[エ]」に「는[ヌン]」がついて、時を土俵に置く言い方になります。" },
+        { p: "《사람[サラム]》이[イ]", r: "サラミ", w: "人が", why: "主人公を指す印です。" },
+        { p: "아주[アジュ]", r: "アジュ", w: "とても", why: "程度を強めることばです。" },
+        { p: "많습니다[マンスムニダ].", r: "マンスムニダ", w: "多いです", why: "「많다[マンタ]」のかしこまった形です。" }
+      ],
+      why: [
+        "<b>에는[エヌン]</b>は「朝のほうは」と時を限る言い方です。「저녁에는[チョニョゲヌン](夕方は)」と続ければ、自然に比べる話になります。",
+        "<b>많이[マニ]</b>は量、<b>아주[アジュ]</b>は程度です。「많이[マニ] 많습니다[マンスムニダ]」とは言わず、「아주[アジュ] 많습니다[マンスムニダ]」と言います。",
+        "「사람이[サラミ] 많다[マンタ]」で数の話は足ります。「사람들이[サラムドゥリ]」と複数形にしなくても通じるので、まずは単数のままで大丈夫です。"
+      ],
+      swap: { ko: "주말[チュマル]에는[エヌン] 차[チャ]가[ガ] 아주[アジュ] 많습니다[マンスムニダ].", ja: "週末は車がとても多いです。" } }
+  ],
+  dialogue: {
+    situation: "ソウルの地下鉄の駅で、駅員さんに乗り換えを聞いています。",
+    turns: [
+      { me: false, ko: "안녕하세요[アンニョンハセヨ]. 어디[オディ]까지[ッカジ] 가세요[カセヨ]?",
+        ja: "こんにちは。どちらまで行かれますか。",
+        tip: "「세요[セヨ]」は頼むときにも尋ねるときにも使えます。「가세요[カセヨ]?」で「行かれますか」。",
+        parts: [
+          { p: "안녕하세요[アンニョンハセヨ].", r: "アンニョンハセヨ", w: "こんにちは", why: "時間帯を選ばない挨拶です。" },
+          { p: "어디[オディ]까지[ッカジ]", r: "オディッカジ", w: "どこまで", why: "「까지[ッカジ]」は「~まで」。「부터[ブト]」と対で使います。" },
+          { p: "가세요[カセヨ]?", r: "カセヨ", w: "行かれますか", why: "「세요[セヨ]」に上げ調子をつけると質問になります。" }
+        ] },
+      { me: true, ko: "강남[カンナム]까지[ッカジ] 갑니다[カムニダ]. 어디[オディ]에서[エソ] 《갈아탑니까[カラタムニッカ]》?",
+        ja: "江南まで行きます。どこで乗り換えますか。",
+        tip: "「ㅂ니다」の疑問形は「ㅂ니까?」。語尾だけ替えれば質問になります。",
+        parts: [
+          { p: "강남[カンナム]까지[ッカジ]", r: "カンナムッカジ", w: "江南まで", why: "行き先の終点を指します。" },
+          { p: "갑니다[カムニダ].", r: "カムニダ", w: "行きます", why: "「가다[カダ]」の「ㅂ니다」形です。" },
+          { p: "어디[オディ]에서[エソ]", r: "オディエソ", w: "どこで", why: "動きが起きる場所を尋ねています。" },
+          { p: "《갈아탑니까[カラタムニッカ]》?", r: "カラタムニッカ", w: "乗り換えますか", why: "「ㅂ니다 → ㅂ니까?」。書きことばでも会話でも使えます。" }
+        ] },
+      { me: false, ko: "다음[タウム] 《역[ヨク]》에서[エソ] {2호선}[이호선/イホソン]으로[ウロ] 《갈아타세요[カラタセヨ]》.",
+        ja: "次の駅で2号線に乗り換えてください。",
+        tip: "案内では「~세요[セヨ]」が基本です。命令ではなく、丁寧な指示として響きます。",
+        parts: [
+          { p: "다음[タウム]", r: "タウム", w: "次の", why: "名詞の前に置くだけで「次の~」です。" },
+          { p: "《역[ヨク]》에서[エソ]", r: "ヨゲソ", w: "駅で", why: "続けて「ヨゲソ」と読みます。" },
+          { p: "{2호선}[이호선/イホソン]으로[ウロ]", r: "イホソヌロ", w: "2号線に", why: "向かう先を指す「으로[ウロ]」です。" },
+          { p: "《갈아타세요[カラタセヨ]》.", r: "カラタセヨ", w: "乗り換えてください", why: "「갈아타다[カラタダ]」に「세요[セヨ]」がついた形です。" }
+        ] },
+      { me: true, ko: "그럼[クロム] 거기[コギ]에서[エソ] 《내립니까[ネリムニッカ]》?",
+        ja: "では、そこで降りますか。",
+        tip: "「그럼[クロム]」は「では」。相手の話を受けて次を尋ねるときの一言です。",
+        parts: [
+          { p: "그럼[クロム]", r: "クロム", w: "では", why: "「그러면[クロミョン]」を縮めた形です。" },
+          { p: "거기[コギ]에서[エソ]", r: "コギエソ", w: "そこで", why: "相手が今言った場所を指します。" },
+          { p: "《내립니까[ネリムニッカ]》?", r: "ネリムニッカ", w: "降りますか", why: "「내립니다[ネリムニダ]」の疑問形です。" }
+        ] },
+      { me: false, ko: "네[ネ], 거기[コギ]에서[エソ] 《내리세요[ネリセヨ]》. 《사람[サラム]》이[イ] 아주[アジュ] 많습니다[マンスムニダ].",
+        ja: "はい、そこで降りてください。人がとても多いです。",
+        tip: "混みぐあいを先に伝えてくれるのは親切です。「조심하세요[チョシマセヨ]」がこのあとに続くこともよくあります。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "거기[コギ]에서[エソ]", r: "コギエソ", w: "そこで", why: "降りる場所を指します。" },
+          { p: "《내리세요[ネリセヨ]》.", r: "ネリセヨ", w: "降りてください", why: "「내리다[ネリダ]」に「세요[セヨ]」。" },
+          { p: "《사람[サラム]》이[イ]", r: "サラミ", w: "人が", why: "続けて「サラミ」と読みます。" },
+          { p: "아주[アジュ]", r: "アジュ", w: "とても", why: "程度を強めます。" },
+          { p: "많습니다[マンスムニダ].", r: "マンスムニダ", w: "多いです", why: "「많다[マンタ]」のかしこまった形です。" }
+        ] },
+      { me: true, ko: "알겠습니다[アルゲッスムニダ]. 감사합니다[カムサハムニダ].",
+        ja: "わかりました。ありがとうございます。",
+        tip: "「알겠습니다[アルゲッスムニダ]」は「承知しました」。仕事の場でもそのまま使えます。「알았습니다[アラッスムニダ]」よりこちらのほうが丁寧に響きます。",
+        parts: [
+          { p: "알겠습니다[アルゲッスムニダ].", r: "アルゲッスムニダ", w: "わかりました", why: "これから受け止める、という含みを持つ形です。" },
+          { p: "감사합니다[カムサハムニダ].", r: "カムサハムニダ", w: "ありがとうございます", why: "お礼の基本形です。" }
+        ] }
+    ]
+  },
+  quiz: [
+    { q: "「버스[ポス](バス)に乗る」のとき、「버스[ポス]」のあとに来る助詞はどれですか。",
+      opts: ["에[エ]", "를[ルル]", "에서[エソ]"], ans: 1,
+      msg: "韓国語では乗り物に「을[ウル]/를[ルル]」がつきます。「버스를[ポスルル] 타다[タダ]」。日本語の「に」につられやすいところです。" },
+    { q: "「지하철[チハチョル]___ 내립니다[ネリムニダ](地下鉄から降ります)」の空きに入るのはどれですか。",
+      opts: ["에서[エソ]", "에[エ]", "으로[ウロ]"], ans: 0,
+      msg: "降りる場所には「에서[エソ]」。乗るときは「을[ウル]/를[ルル]」、降りるときは「에서[エソ]」— 対にして覚えます。" },
+    { q: "「지하철을[チハチョルル] ___」 に合うのはどれですか。",
+      opts: ["내립니다[ネリムニダ]", "많습니다[マンスムニダ]", "탑니다[タムニダ]"], ans: 2,
+      msg: "「을[ウル]/를[ルル]」を取るのは「타다[タダ]」のほうです。「내리다[ネリダ]」なら「지하철에서[チハチョレソ] 내립니다[ネリムニダ]」になります。" },
+    { q: "「갑니다[カムニダ]」を「行きますか」と尋ねる形に変えると、どれになりますか。",
+      opts: ["갑니까[カムニッカ]?", "갑니다[カムニダ]?", "갑세요[カプセヨ]?"], ans: 0,
+      msg: "「ㅂ니다 → ㅂ니까?」。語尾だけ替えます。「갑세요[カプセヨ]」という形はありません。" },
+    { q: "「사람[サラム]」の意味はどれですか。",
+      opts: ["駅", "人", "道"], ans: 1,
+      msg: "「사람이[サラミ] 많다[マンタ](人が多い)」で組にして覚えます。「역[ヨク]」が駅、「길[キル]」が道です。" },
+    { q: "「2호선」の読みはどれですか。",
+      opts: ["이호선[イホソン]", "두호선[トゥホソン]", "이번호선[イボンホソン]"], ans: 0,
+      msg: "号線は漢数字読みで「이호선[イホソン]」。「두[トゥ]」は個数や人数のときの固有数詞です。" },
+    { q: "「{2호선}[이호선/イホソン] ___ 갈아탑니다[カラタムニダ](2号線に乗り換えます)」の空きに入るのはどれですか。",
+      opts: ["에서[エソ]", "을[ウル]", "으로[ウロ]"], ans: 2,
+      msg: "向かう先には「(으)로」。「2호선[ホソン]」はパッチムがあるので「으로[ウロ]」です。" },
+    { q: "「次の駅で降りてください」は、どれですか。",
+      opts: ["다음[タウム] 역에서[ヨゲソ] 내립니다[ネリムニダ]", "다음[タウム] 역에서[ヨゲソ] 내리세요[ネリセヨ]", "다음[タウム] 역에서[ヨゲソ] 탑니다[タムニダ]"], ans: 1,
+      msg: "相手に頼む・案内するときは「세요[セヨ]」。「내립니다[ネリムニダ]」は自分の行動を述べる形です。" }
+  ],
+  column: {
+    word: "환승[ファンスン]", kana: "ファンスン", ja: "乗り換え",
+    title: "ソウルの「환승[ファンスン]」— 乗り換えても、料金は続いている",
+    body: [
+      "ソウルで交通カードを使って地下鉄からバスへ、バスから地下鉄へ乗り継ぐと、カードの読み取り機が<b>「환승입니다[ファンスンイムニダ](乗り換えです)」</b>と声を出します。このとき、追加の料金はほとんどかかりません。地下鉄とバスが一つの運賃体系でつながっているからです。降りるときにもカードをかざす — これを忘れると乗り換えが成立しません。",
+      "だから道を聞くときも、答えは「何号線に乗って、どこで환승[ファンスン]して」という形で返ってきます。「환승[ファンスン]」は漢字語の「換乗」。動詞にすると「환승하다[ファンスンハダ]」で、話しことばの「갈아타다[カラタダ]」とまったく同じ意味です。案内板は「환승[ファンスン]」、人の口は「갈아타다[カラタダ]」— そう覚えておくと、どちらを聞いても迷いません。",
+      "仕事で人と会うときに知っておくと助かるのが<b>出口番号</b>です。ソウルの駅は出口が十を超えることも珍しくないので、待ち合わせは「강남역[カンナムニョク] 11번[ボン] 출구에서[チュルグエソ] 뵙겠습니다[プェプケッスムニダ](江南駅11番出口でお目にかかります)」のように番号で指定します。訪問先の案内メールにも、たいてい「○○역[ヨク] ○번[ボン] 출구[チュルグ] 도보[トボ] 5분[プン]」と書いてあります。"
+    ],
+    note: "「환승[ファンスン]」は漢字語「換乗」。動詞は「환승하다[ファンスンハダ]」です。話しことばでは「갈아타다[カラタダ]」のほうがよく使われます。"
+  }
+},
+/* ═══════════ 3 · 편의점 ═══════════ */
+{
+  no: 3, title: "편의점[ピョニジョム]", titleJa: "コンビニ",
+  story: {
+    topic: "暮らしの情報ニュース",
+    lines: [
+      { ko: "《편의점[ピョニジョム]》은[ウン] {24시간}[이십사 시간/イシプサシガン] 문[ムン]을[ウル] 엽니다[ヨムニダ].",
+        ja: "コンビニは24時間開いています。" },
+      { ko: "사람[サラム]들은[ドゥルン] 여기[ヨギ]에서[エソ] 김밥[キムパプ]과[グァ] 물[ムル]을[ウル] 《삽니다[サムニダ]》.",
+        ja: "人はここでキンパと水を買います。" },
+      { ko: "《봉투[ポントゥ]》가[ガ] 《필요[ピリョ]하면[ハミョン]》 {100원}[백 원/ペグォン]을[ウル] 냅니다[ネムニダ].",
+        ja: "袋が必要なら100ウォンを払います。" },
+      { ko: "요즘[ヨジュム]은[ウン] 《돈[トン]》보다[ボダ] 카드[カドゥ]를[ルル] 많이[マニ] 씁니다[ッスムニダ].",
+        ja: "最近は現金よりカードをたくさん使います。" }
+    ]
+  },
+  words: [
+    { ko: "편의점", disp: "편의점[ピョニジョム]", kana: "ピョニジョム", mean: "コンビニ",
+      note: "漢字語「便宜店」。書くと「편의점[ピョニジョム]」ですが、読むと「ピョニジョム」。「의[エ]」は語中で「이[イ]」に近く読まれます。看板は「CU」「GS25」「세븐일레븐[セブンイルレブン]」などです。" },
+    { ko: "사다", disp: "사다[サダ]", kana: "サダ", mean: "買う",
+      note: "「팔다[パルダ](売る)」と対です。「사다[サダ]」は語幹が母音で終わるので、活用がとても素直です。「사요[サヨ](買います)」「샀어요[サッソヨ](買いました)」。" },
+    { ko: "얼마", disp: "얼마[オルマ]", kana: "オルマ", mean: "いくら",
+      note: "「얼마예요[オルマエヨ]?(いくらですか)」だけで値段が聞けます。指をさしながら言えば十分通じます。「얼마나[オルマナ](どれくらい)」は時間や量を尋ねる別のことばです。" },
+    { ko: "봉투", disp: "봉투[ポントゥ]", kana: "ポントゥ", mean: "袋、封筒",
+      note: "漢字語「封套」。買い物袋にも封筒にも使います。レジの袋は「비닐봉투[ピニルボントゥ]」とも言います。ご祝儀や香典を入れる白い封筒も「봉투[ポントゥ]」です。" },
+    { ko: "필요하다", disp: "필요하다[ピリョハダ]", kana: "ピリョハダ", mean: "必要だ",
+      note: "漢字語「必要」+하다[ハダ]。日本語と同じく「~が必要だ」で、助詞も「이[イ]/가[ガ]」です。断るときの「필요[ピリョ] 없어요[オプソヨ](要りません)」もセットで覚えてください。" },
+    { ko: "돈", disp: "돈[トン]", kana: "トン", mean: "お金、現金",
+      note: "「돈이[トニ] 없어요[オプソヨ](お金がありません)」。カードと区別して言いたいときは「현금[ヒョングム](現金)」を使います。「돈을[トヌル] 내다[ネダ](お金を払う)」も組で覚えます。" }
+  ],
+  sentences: [
+    { for: "편의점",
+      ko: "우리[ウリ] 회사[フェサ] 앞[アプ]에[エ] 《편의점[ピョニジョム]》이[イ] 있어요[イッソヨ].",
+      ja: "うちの会社の前にコンビニがあります。",
+      frame: "A 에  B 이/가  있어요",
+      parts: [
+        { p: "우리[ウリ]", r: "ウリ", w: "うちの", why: "「私の」より「우리[ウリ](私たち)」を好みます。「우리[ウリ] 집[チプ]」「우리[ウリ] 나라[ナラ]」も同じです。" },
+        { p: "회사[フェサ]", r: "フェサ", w: "会社", why: "漢字語「会社」です。" },
+        { p: "앞[アプ]에[エ]", r: "アペ", w: "前に", why: "存在する場所には「에[エ]」。パッチム「ㅍ」が移って「アペ」と読みます。" },
+        { p: "《편의점[ピョニジョム]》이[イ]", r: "ピョニジョミ", w: "コンビニが", why: "パッチムがあるので「이[イ]」。続けて「ピョニジョミ」と読みます。" },
+        { p: "있어요[イッソヨ].", r: "イッソヨ", w: "あります", why: "「있다[イッタ]」のやわらかい形。ものにも人にも使えます。" }
+      ],
+      why: [
+        "「~요」で終わる言い方を<b>해요체[ヘヨチェ]</b>といいます。「~ㅂ니다」よりやわらかく、日常の会話はほとんどこちらです。仕事でも社内ではこれで十分です。",
+        "<b>있어요[イッソヨ]</b>は「あります」も「います」も兼ねます。日本語のように、ものと人で言い分ける必要はありません。",
+        "名詞を並べるだけで「~の~」になります。「우리[ウリ] 회사[フェサ] 앞[アプ]」に「의[エ]」は要りません。むしろ入れると、かたく不自然に響きます。"
+      ],
+      swap: { ko: "역[ヨク] 앞[アプ]에[エ] 은행[ウネン]이[イ] 있어요[イッソヨ].", ja: "駅の前に銀行があります。" } },
+
+    { for: "사다",
+      ko: "저[チョ]는[ヌン] 여기[ヨギ]에서[エソ] 커피[コピ]를[ルル] 《사요[サヨ]》.",
+      ja: "私はここでコーヒーを買います。",
+      frame: "A 은/는  B 에서  C 을/를  ~아/어요",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "話題を立てる印です。" },
+        { p: "여기[ヨギ]에서[エソ]", r: "ヨギエソ", w: "ここで", why: "動きが起きる場所です。" },
+        { p: "커피[コピ]를[ルル]", r: "コピルル", w: "コーヒーを", why: "パッチムがないので「를[ルル]」。" },
+        { p: "《사요[サヨ]》.", r: "サヨ", w: "買います", why: "「사다[サダ]」に「아요[アヨ]」がついて縮まった形です。" }
+      ],
+      why: [
+        "語幹の母音が「ㅏ・ㅗ」なら<b>아요[アヨ]</b>、それ以外は<b>어요[オヨ]</b>。「먹다[モクタ]→먹어요[モゴヨ]」「사다[サダ]→사아요[サアヨ]」。",
+        "ただし「사아요[サアヨ]」とは書かず、同じ母音が重なるので縮めて<b>사요[サヨ]</b>になります。「가다[カダ]→가요[カヨ]」も同じ動きです。",
+        "「사요[サヨ]」は述べる形も尋ねる形も字が同じです。語尾を上げれば「買いますか?」になります。해요체[ヘヨチェ]の便利なところです。"
+      ],
+      swap: { ko: "친구[チング]는[ヌン] 빵[ッパン]을[ウル] 사요[サヨ].", ja: "友だちはパンを買います。" } },
+
+    { for: "얼마",
+      ko: "이거[イゴ] 《얼마[オルマ]》예요[エヨ]?",
+      ja: "これ、いくらですか。",
+      frame: "이거  A 예요?",
+      parts: [
+        { p: "이거[イゴ]", r: "イゴ", w: "これ", why: "「이것[イゴッ]」のくだけた形。話すときはほとんど「이거[イゴ]」です。" },
+        { p: "《얼마[オルマ]》예요[エヨ]?", r: "オルマエヨ", w: "いくらですか", why: "「예요[エヨ]」は「~です」。パッチムがないので「이에요[イエヨ]」ではなく「예요[エヨ]」です。" }
+      ],
+      why: [
+        "<b>얼마예요[オルマエヨ]?</b>はこれだけで値段が聞けます。店で最初に覚えるべき一言です。",
+        "「예요[エヨ]/이에요[イエヨ]」は「~です」。前の名詞にパッチムがなければ<b>예요[エヨ]</b>、あれば<b>이에요[イエヨ]</b>。「얼마[オルマ]」はパッチムがないので「예요[エヨ]」です。",
+        "「을[ウル]/를[ルル]」は話しことばでよく省かれます。「이거[イゴ] 얼마예요[オルマエヨ]?」に助詞が入っていないのは、間違いではなく自然な省略です。"
+      ],
+      swap: { ko: "이[イ] 봉투[ポントゥ]는[ヌン] 얼마[オルマ]예요[エヨ]?", ja: "この袋はいくらですか。" } },
+
+    { for: "봉투",
+      ko: "《봉투[ポントゥ]》 하나[ハナ] 주세요[チュセヨ].",
+      ja: "袋を一つください。",
+      frame: "A  하나  주세요",
+      parts: [
+        { p: "《봉투[ポントゥ]》", r: "ポントゥ", w: "袋", why: "助詞「를[ルル]」は省いています。話しことばではこのほうが自然です。" },
+        { p: "하나[ハナ]", r: "ハナ", w: "一つ", why: "「하나[ハナ], 둘[トゥル], 셋[セッ]」と続く固有数詞です。" },
+        { p: "주세요[チュセヨ].", r: "チュセヨ", w: "ください", why: "「주다[チュダ](くれる)」に「세요[セヨ]」。買い物でいちばん使う一言です。" }
+      ],
+      why: [
+        "<b>주세요[チュセヨ]</b>は「ください」。ものを頼むときも、注文するときも、これ一つで進みます。",
+        "数えるときは<b>固有数詞</b>です。「하나[ハナ], 둘[トゥル], 셋[セッ], 넷[ネッ]」。値段や号線の漢数字読み(일, 이[イ], 삼)とは別の系統なので、混ぜないように気をつけます。",
+        "「~을[ウル]/를[ルル] 주세요[チュセヨ]」と助詞を入れても正しいですが、店では省くほうがずっと多いです。短いほうが伝わります。"
+      ],
+      swap: { ko: "물[ムル] 하나[ハナ] 주세요[チュセヨ].", ja: "水を一つください。" } },
+
+    { for: "필요하다",
+      ko: "《봉투[ポントゥ]》가[ガ] 《필요해요[ピリョヘヨ]》.",
+      ja: "袋が必要です。",
+      frame: "A 이/가  필요해요",
+      parts: [
+        { p: "《봉투[ポントゥ]》가[ガ]", r: "ポントゥガ", w: "袋が", why: "パッチムがないので「가[ガ]」。ここは日本語の「が」と同じです。" },
+        { p: "《필요해요[ピリョヘヨ]》.", r: "ピリョヘヨ", w: "必要です", why: "「필요하다[ピリョハダ]」の해요체[ヘヨチェ]。読みは「ピリョヘヨ」です。" }
+      ],
+      why: [
+        "日本語は「袋<b>が</b>必要」、韓国語も「봉투[ポントゥ]<b>가[ガ]</b> 필요해요[ピリョヘヨ]」。助詞がずれない、ありがたい組み合わせです。",
+        "<b>하다[ハダ]</b>で終わることばは、해요체[ヘヨチェ]にすると必ず「해요[ヘヨ]」になります。「필요하다[ピリョハダ]→필요해요[ピリョヘヨ]」「전화하다[チョヌァハダ]→전화해요[チョヌァヘヨ]」「조심하다[チョシマダ]→조심해요[チョシメヨ]」。",
+        "断るときは<b>필요[ピリョ] 없어요[オプソヨ]</b>。レジで袋を辞退するときの決まり文句です。ただし少しそっけないので、「괜찮아요[クェンチャナヨ]」のほうがやわらかく響きます。"
+      ],
+      swap: { ko: "카드[カドゥ]가[ガ] 필요해요[ピリョヘヨ].", ja: "カードが必要です。" } },
+
+    { for: "돈",
+      ko: "저[チョ]는[ヌン] 지금[チグム] 《돈[トン]》이[イ] 없어요[オプソヨ].",
+      ja: "私は今、お金がありません。",
+      frame: "A 은/는  B 이/가  없어요",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "話題を立てる印です。" },
+        { p: "지금[チグム]", r: "チグム", w: "今", why: "漢字語「只今」から来たことばです。" },
+        { p: "《돈[トン]》이[イ]", r: "トニ", w: "お金が", why: "パッチムがあるので「이[イ]」。続けて「トニ」と読みます。" },
+        { p: "없어요[オプソヨ].", r: "オプソヨ", w: "ありません", why: "「없다[オプタ]」の해요체[ヘヨチェ]。読みは「オプソヨ」です。" }
+      ],
+      why: [
+        "<b>있어요[イッソヨ](ある)</b>の反対が<b>없어요[オプソヨ](ない)</b>です。「안 있어요[イッソヨ]」とは言いません。形がまったく違うので、二つセットで覚えます。",
+        "「없다[オプタ]」は「업따[オプタ]」と読みます。パッチムが二つ並ぶとき、音になるのは片方だけ。「없어요[オプソヨ]」は後ろの「ㅅ」が次に移って「オプソヨ」です。",
+        "「돈이[トニ] 없어요[オプソヨ]」「시간이[シガニ] 없어요[オプソヨ](時間がない)」「자리가[チャリガ] 없어요[オプソヨ](席がない)」— 同じ形で毎日使えます。"
+      ],
+      swap: { ko: "오늘[オヌル]은[ウン] 시간[シガン]이[イ] 없어요[オプソヨ].", ja: "今日は時間がありません。" } }
+  ],
+  dialogue: {
+    situation: "会社の前のコンビニで、レジに並んでいます。",
+    turns: [
+      { me: false, ko: "어서[オソ] 오세요[オセヨ].",
+        ja: "いらっしゃいませ。",
+        tip: "「어서[オソ] 오세요[オセヨ]」は「いらっしゃいませ」。店に入ると必ず言われます。返事はしなくてかまいません。",
+        parts: [
+          { p: "어서[オソ]", r: "オソ", w: "どうぞ、はやく", why: "せかす意味ではなく、迎え入れる勢いを添えることばです。" },
+          { p: "오세요[オセヨ].", r: "オセヨ", w: "いらしてください", why: "「오다[オダ]」に「세요[セヨ]」がついた形です。" }
+        ] },
+      { me: true, ko: "이거[イゴ] 《얼마[オルマ]》예요[エヨ]?",
+        ja: "これ、いくらですか。",
+        tip: "指をさしながら言えば十分通じます。まずこの一言から始めてください。",
+        parts: [
+          { p: "이거[イゴ]", r: "イゴ", w: "これ", why: "「이것[イゴッ]」のくだけた形です。" },
+          { p: "《얼마[オルマ]》예요[エヨ]?", r: "オルマエヨ", w: "いくらですか", why: "値段を尋ねる決まり文句です。" }
+        ] },
+      { me: false, ko: "{2500원}[이천오백 원/イチョノベグォン]이에요[イエヨ].",
+        ja: "2500ウォンです。",
+        tip: "値段は漢数字で読みます。「이천오백[イチョノベク]」。聞き取れなければ、レジの表示を見せてもらえば大丈夫です。",
+        parts: [
+          { p: "{2500원}[이천오백 원/イチョノベグォン]이에요[イエヨ].", r: "イチョノベグォニエヨ", w: "2500ウォンです", why: "「원」はパッチムがあるので「이에요[イエヨ]」がつきます。" }
+        ] },
+      { me: true, ko: "《봉투[ポントゥ]》도[ド] 《필요해요[ピリョヘヨ]》.",
+        ja: "袋も必要です。",
+        tip: "「도[ド]」は「~も」。「봉투도[ポントゥド]」で「袋も」。助詞「가[ガ]」と入れかわります。",
+        parts: [
+          { p: "《봉투[ポントゥ]》도[ド]", r: "ポントゥド", w: "袋も", why: "「도[ド]」がつくと「이[イ]/가[ガ]」は消えます。" },
+          { p: "《필요해요[ピリョヘヨ]》.", r: "ピリョヘヨ", w: "必要です", why: "「필요하다[ピリョハダ]」の해요체[ヘヨチェ]です。" }
+        ] },
+      { me: false, ko: "《봉투[ポントゥ]》는[ヌン] {100원}[백 원/ペグォン]이에요[イエヨ]. 괜찮으세요[クェンチャヌセヨ]?",
+        ja: "袋は100ウォンです。よろしいですか。",
+        tip: "「괜찮으세요[クェンチャヌセヨ]?」は「よろしいですか」。店でも会社でも、相手の都合をうかがうときに使えます。",
+        parts: [
+          { p: "《봉투[ポントゥ]》는[ヌン]", r: "ポントゥヌン", w: "袋は", why: "「袋のほうは」と土俵を置いています。" },
+          { p: "{100원}[백 원/ペグォン]이에요[イエヨ].", r: "ペグォニエヨ", w: "100ウォンです", why: "「백」は漢数字。「백 원」は続けて「ペグォン」と読みます。" },
+          { p: "괜찮으세요[クェンチャヌセヨ]?", r: "クェンチャヌセヨ", w: "よろしいですか", why: "「괜찮다[クェンチャンタ]」に「으세요[ウセヨ]」がついた形です。" }
+        ] },
+      { me: true, ko: "네[ネ], 주세요[チュセヨ]. 감사합니다[カムサハムニダ].",
+        ja: "はい、ください。ありがとうございます。",
+        tip: "「주세요[チュセヨ]」ひとつで注文も会計も進みます。まずこれを覚えておけば、店で困ることはほとんどありません。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "주세요[チュセヨ].", r: "チュセヨ", w: "ください", why: "「주다[チュダ]」に「세요[セヨ]」。" },
+          { p: "감사합니다[カムサハムニダ].", r: "カムサハムニダ", w: "ありがとうございます", why: "お礼の基本形です。" }
+        ] }
+    ]
+  },
+  quiz: [
+    { q: "「얼마예요[オルマエヨ]?」の意味はどれですか。",
+      opts: ["いくらですか", "どこにありますか", "これは何ですか"], ans: 0,
+      msg: "値段を尋ねる一言です。「어디예요[オディエヨ]?」が「どこですか」、「뭐예요[ムォエヨ]?」が「何ですか」。" },
+    { q: "「袋を一つください」は、どれですか。",
+      opts: ["봉투[ポントゥ] 하나[ハナ] 사세요[サセヨ]", "봉투[ポントゥ] 하나[ハナ] 주세요[チュセヨ]", "봉투[ポントゥ] 하나[ハナ] 있어요[イッソヨ]"], ans: 1,
+      msg: "自分がもらうのは「주세요[チュセヨ]」。「사세요[サセヨ]」は相手に「買ってください」と言う形になってしまいます。" },
+    { q: "「있어요[イッソヨ]」の反対はどれですか。",
+      opts: ["아니에요[アニエヨ]", "몰라요[モルラヨ]", "없어요[オプソヨ]"], ans: 2,
+      msg: "「안 있어요[イッソヨ]」とは言いません。「있다[イッタ]/없다[オプタ]」はまったく別の形なので、二つセットで覚えます。" },
+    { q: "「필요하다[ピリョハダ]」を해요체[ヘヨチェ]にすると、どれになりますか。",
+      opts: ["필요해요[ピリョヘヨ]", "필요아요[ピリョアヨ]", "필요어요[ピリョオヨ]"], ans: 0,
+      msg: "「하다[ハダ]」で終わることばは、해요체[ヘヨチェ]にすると必ず「해요[ヘヨ]」になります。「전화하다[チョヌァハダ]→전화해요[チョヌァヘヨ]」も同じです。" },
+    { q: "「돈[トン]」の意味はどれですか。",
+      opts: ["買い物袋", "お金", "お店の人"], ans: 1,
+      msg: "「봉투[ポントゥ]」が袋、「가게[カゲ]」が店、「점원[チョムォン]」が店員です。「돈이[トニ] 없어요[オプソヨ]」で「お金がありません」。" },
+    { q: "「100원」の読みはどれですか。",
+      opts: ["하나 원[ハナウォン]", "한 원[ハヌォン]", "백 원[ペグォン]"], ans: 2,
+      msg: "値段は漢数字読みです。「백」。「하나[ハナ]」「한[ハン]」は個数や人数を数えるときの固有数詞です。" },
+    { q: "「사다[サダ]」を해요체[ヘヨチェ]にすると、どれになりますか。",
+      opts: ["삽니다[サムニダ]", "사요[サヨ]", "사어요[サオヨ]"], ans: 1,
+      msg: "「사+아요[アヨ]」が縮まって「사요[サヨ]」。「삽니다[サムニダ]」は해요체[ヘヨチェ]ではなく、かしこまった「ㅂ니다」の形です。" },
+    { q: "レジで袋を断るとき、いちばんやわらかいのはどれですか。",
+      opts: ["필요해요[ピリョヘヨ]", "괜찮아요[クェンチャナヨ]", "얼마예요[オルマエヨ]"], ans: 1,
+      msg: "「괜찮아요[クェンチャナヨ]」は「結構です」。「필요[ピリョ] 없어요[オプソヨ]」も通じますが、少しそっけなく響きます。" }
+  ],
+  column: {
+    word: "봉투[ポントゥ]", kana: "ポントゥ", ja: "袋、封筒",
+    title: "レジで「봉투[ポントゥ] 드릴까요[トゥリルッカヨ]?」と聞かれたら",
+    body: [
+      "韓国のコンビニやスーパーで会計をすると、たいてい<b>「봉투[ポントゥ] 드릴까요[トゥリルッカヨ]?(袋をお出ししましょうか)」</b>と聞かれます。使い捨てのビニール袋が有料になってからは、要るかどうかを必ず確かめるようになりました。要るなら「네[ネ], 주세요[チュセヨ]」、要らないなら「아니요[アニヨ], 괜찮아요[クェンチャナヨ]」。この二つで足ります。",
+      "おもしろいのは、同じ「봉투[ポントゥ]」が<b>封筒</b>でもあることです。手紙を入れるのも봉투[ポントゥ]、買い物を入れるのも봉투[ポントゥ]。区別したいときは、買い物袋を「비닐봉투[ピニルボントゥ](ビニール袋)」、紙の封筒を「편지봉투[ピョンジボントゥ](手紙の封筒)」と呼び分けます。",
+      "そしてもう一つ、仕事で韓国に関わるなら覚えておきたい봉투[ポントゥ]があります。<b>慶弔の封筒</b>です。韓国では結婚式やお葬式に現金を白い封筒に入れて渡す習わしがあり、それぞれ「축의금[チュギグム] 봉투[ポントゥ](ご祝儀袋)」「부의금[プイグム] 봉투[ポントゥ](香典袋)」と言います。取引先の慶弔に呼ばれることは実際にあるので、「봉투를[ポントゥルル] 준비했습니다[チュンビヘッスムニダ](封筒を用意しました)」と言えるようにしておくと、その場で慌てずに済みます。"
+    ],
+    note: "「봉투[ポントゥ]」は袋にも封筒にも使います。買い物袋だとはっきり言いたいときは「비닐봉투[ピニルボントゥ]」と呼びます。"
+  }
+},
+/* ═══════════ 4 · 벚꽃 ═══════════ */
+{
+  no: 4, title: "벚꽃[ポッコッ]", titleJa: "桜",
+  story: {
+    topic: "季節の行事のニュース",
+    lines: [
+      { ko: "한국[ハングク]의[エ] 《봄[ポム]》은[ウン] {3월}[삼월/サムォル]에[エ] 시작합니다[シジャカムニダ].",
+        ja: "韓国の春は3月に始まります。" },
+      { ko: "{4월}[사월/サウォル]에는[エヌン] 《벚꽃[ポッコッ]》이[イ] 《핍니다[ピムニダ]》.",
+        ja: "4月には桜が咲きます。" },
+      { ko: "사람[サラム]들은[ドゥルン] 《공원[コンウォン]》에[エ] 갑니다[カムニダ].",
+        ja: "人々は公園に行きます。" },
+      { ko: "그리고[クリゴ] 벚꽃[ポッコッ] 앞[アプ]에서[エソ] 《사진[サジン]》을[ウル] 《찍습니다[ッチクスムニダ]》.",
+        ja: "そして桜の前で写真を撮ります。" }
+    ]
+  },
+  words: [
+    { ko: "벚꽃", disp: "벚꽃[ポッコッ]", kana: "ポッコッ", mean: "桜(の花)",
+      note: "「벚[ポッ](桜の木)+꽃[ッコッ](花)」。書くと「벚꽃[ポッコッ]」ですが、読みは「ポッコッ」。パッチムが次の音を強くします。木そのものは「벚나무[ポンナム]」です。" },
+    { ko: "피다", disp: "피다[ピダ]", kana: "ピダ", mean: "咲く",
+      note: "花と組む動詞です。「꽃이[ッコチ] 피다[ピダ](花が咲く)」。散るときは「지다[チダ]」で、「꽃이[ッコチ] 지다[チダ]」。咲くと散るを対で覚えておくと、季節の話がひととおりできます。" },
+    { ko: "봄", disp: "봄[ポム]", kana: "ポム", mean: "春",
+      note: "「봄[ポム]・여름[ヨルム]・가을[カウル]・겨울[キョウル](春夏秋冬)」。四季はすべて漢字語ではなく固有語です。「봄에[ポメ](春に)」のように「에[エ]」をつけて使います。" },
+    { ko: "공원", disp: "공원[コンウォン]", kana: "コンウォン", mean: "公園",
+      note: "漢字語「公園」。ソウルでは「여의도[ヨイド] 공원[コンウォン]」「올림픽[オルリムピク] 공원[コンウォン]」が花見の定番です。「공원에[コンウォネ] 가다[カダ](公園に行く)」で組にして覚えます。" },
+    { ko: "사진", disp: "사진[サジン]", kana: "サジン", mean: "写真",
+      note: "漢字語「写真」。「사진을[サジヌル] 찍다[ッチクタ](写真を撮る)」で組にします。「사진을[サジヌル] 보내다[ポネダ](写真を送る)」は仕事でもよく使います。" },
+    { ko: "찍다", disp: "찍다[ッチクタ]", kana: "ッチクタ", mean: "撮る、押す",
+      note: "「사진을[サジヌル] 찍다[ッチクタ](写真を撮る)」「도장을[トジャンウル] 찍다[ッチクタ](はんこを押す)」。書類に判を押すのも「찍다[ッチクタ]」です。読みは「ッチクタ」で、パッチムが次の音を強くします。" }
+  ],
+  sentences: [
+    { for: "벚꽃",
+      ko: "《공원[コンウォン]》에[エ] 《벚꽃[ポッコッ]》이[イ] 많아요[マナヨ].",
+      ja: "公園に桜がたくさんあります。",
+      frame: "A 에  B 이/가  많아요",
+      parts: [
+        { p: "《공원[コンウォン]》에[エ]", r: "コンウォネ", w: "公園に", why: "存在する場所には「에[エ]」。続けて「コンウォネ」と読みます。" },
+        { p: "《벚꽃[ポッコッ]》이[イ]", r: "ポッコチ", w: "桜が", why: "パッチム「ㅊ」が次の母音に移って「ポッコチ」と読みます。" },
+        { p: "많아요[マナヨ].", r: "マナヨ", w: "多いです", why: "「많다[マンタ]」の해요체[ヘヨチェ]。「ㅎ」は音になりません。" }
+      ],
+      why: [
+        "<b>많아요[マナヨ]</b>は「많습니다[マンスムニダ]」のやわらかい形です。同じ意味で、社内や友人との会話ならこちらが自然です。",
+        "「벚꽃이[ポッコチ]」を「ポッコッイ」と切って読むと通じません。パッチムは次の母音にそのまま移って<b>ポッコチ</b>になります。これを連音といい、韓国語の聞き取りの要です。",
+        "「많아요[マナヨ]」は数にも量にも使えます。日本語の「多い」とほぼ同じ範囲なので、そのまま置きかえて大丈夫です。"
+      ],
+      swap: { ko: "공원[コンウォン]에[エ] 사람[サラム]이[イ] 많아요[マナヨ].", ja: "公園に人が多いです。" } },
+
+    { for: "피다",
+      ko: "{4월}[사월/サウォル]에[エ] 《벚꽃[ポッコッ]》이[イ] 《피어요[ピオヨ]》.",
+      ja: "4月に桜が咲きます。",
+      frame: "A 에  B 이/가  ~아/어요",
+      parts: [
+        { p: "{4월}[사월/サウォル]에[エ]", r: "サウォレ", w: "4月に", why: "月は漢数字読み。「사월에[サウォレ]」は続けて「サウォレ」と読みます。" },
+        { p: "《벚꽃[ポッコッ]》이[イ]", r: "ポッコチ", w: "桜が", why: "連音して「ポッコチ」です。" },
+        { p: "《피어요[ピオヨ]》.", r: "ピオヨ", w: "咲きます", why: "「피다[ピダ]」の語幹「피」に「어요[オヨ]」がついた形です。" }
+      ],
+      why: [
+        "月は<b>漢数字</b>で読みます。一月から順に「일월[イルォル], 이월[イウォル], 삼월[サムォル], 사월[サウォル]…」。ただし<b>유월[ユウォル](6月)・시월[シウォル](10月)</b>の二つだけ形が変わります。「육월[ユグォル]」「십월[シプォル]」とは言いません。",
+        "「피다[ピダ]」の語幹は「피」。母音が「ㅏ・ㅗ」ではないので「어요[オヨ]」がついて<b>피어요[ピオヨ]</b>になります。話しことばでは「펴요[ピョヨ]」と縮めることもあります。",
+        "「꽃이[ッコチ] 피어요[ピオヨ]」は決まった組です。日本語の「花が出る」にあたる言い方はないので、この組のまま覚えてください。"
+      ],
+      swap: { ko: "{5월}[오월/オウォル]에[エ] 장미[チャンミ]가[ガ] 피어요[ピオヨ].", ja: "5月にバラが咲きます。" } },
+
+    { for: "봄",
+      ko: "저[チョ]는[ヌン] 《봄[ポム]》을[ウル] 제일[チェイル] 좋아해요[チョアヘヨ].",
+      ja: "私は春がいちばん好きです。",
+      frame: "A 은/는  B 을/를  제일  좋아해요",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "話題を立てる印です。" },
+        { p: "《봄[ポム]》을[ウル]", r: "ポムル", w: "春が", why: "韓国語では「좋아하다[チョアハダ]」の相手に「을[ウル]/를[ルル]」がつきます。続けて「ポムル」。" },
+        { p: "제일[チェイル]", r: "チェイル", w: "いちばん", why: "漢字語「第一」から。「가장[カジャン]」も同じ意味です。" },
+        { p: "좋아해요[チョアヘヨ].", r: "チョアヘヨ", w: "好きです", why: "「좋아하다[チョアハダ]」の해요체[ヘヨチェ]。「ㅎ」は音になりません。" }
+      ],
+      why: [
+        "日本語は「春<b>が</b>好き」ですが、韓国語は「봄[ポム]<b>을[ウル]</b> 좋아해요[チョアヘヨ]」。ここは助詞がずれるので、意識して直す必要があります。",
+        "<b>좋아하다[チョアハダ]</b>は「好む」で、好きだと思う人が主語です。<b>좋다[チョタ]</b>は「よい」で、よいものが主語です。「봄이[ポミ] 좋아요[チョアヨ]」とも言えますが、少し感想寄りの響きになります。",
+        "「제일[チェイル]」は話しことば、「가장[カジャン]」は書きことばに多く出ます。どちらを使っても失礼にはなりません。"
+      ],
+      swap: { ko: "저[チョ]는[ヌン] 가을[カウル]을[ウル] 제일[チェイル] 좋아해요[チョアヘヨ].", ja: "私は秋がいちばん好きです。" } },
+
+    { for: "공원",
+      ko: "주말[チュマル]에[エ] 《공원[コンウォン]》에[エ] 갔어요[カッソヨ].",
+      ja: "週末に公園に行きました。",
+      frame: "A 에  B 에  ~았/었어요",
+      parts: [
+        { p: "주말[チュマル]에[エ]", r: "チュマレ", w: "週末に", why: "時点を指す「에[エ]」。続けて「チュマレ」と読みます。" },
+        { p: "《공원[コンウォン]》에[エ]", r: "コンウォネ", w: "公園に", why: "こちらの「에[エ]」は行き先です。" },
+        { p: "갔어요[カッソヨ].", r: "カッソヨ", w: "行きました", why: "「가다[カダ]」の過去。「가[ガ]+았」が縮まって「갔」になります。" }
+      ],
+      why: [
+        "해요체[ヘヨチェ]の過去は<b>았/었어요[オッソヨ]</b>です。語幹の母音が「ㅏ・ㅗ」なら「았」、それ以外は「었」。「가다[カダ]→갔어요[カッソヨ]」「먹다[モクタ]→먹었어요[モゴッソヨ]」。",
+        "「가았어요[カアッソヨ]」とは書かず、同じ母音が重なるので縮めて<b>갔어요[カッソヨ]</b>になります。「오다[オダ]→왔어요[ワッソヨ]」も同じ動きです。",
+        "一つの文に「에[エ]」が二つ出ています。前は<b>時</b>、後ろは<b>行き先</b>。同じ形で二つの役わりを持つので、場所を見て読み分けます。"
+      ],
+      swap: { ko: "어제[オジェ] 회사[フェサ]에[エ] 갔어요[カッソヨ].", ja: "昨日、会社に行きました。" } },
+
+    { for: "사진",
+      ko: "이[イ] 《사진[サジン]》은[ウン] 작년[チャンニョン] 《봄[ポム]》에[エ] 찍었어요[ッチゴッソヨ].",
+      ja: "この写真は去年の春に撮りました。",
+      frame: "이 A 은/는  B 에  ~았/었어요",
+      parts: [
+        { p: "이[イ]", r: "イ", w: "この", why: "「이[イ]/그/저[チョ]」は「この・その・あの」。名詞の前に置きます。" },
+        { p: "《사진[サジン]》은[ウン]", r: "サジヌン", w: "写真は", why: "パッチムがあるので「은[ウン]」。続けて「サジヌン」。" },
+        { p: "작년[チャンニョン]", r: "チャンニョン", w: "去年", why: "書くと「작년[チャンニョン]」、読むと「チャンニョン」。「ㄱ」が「ㄴ」につられて変わります。" },
+        { p: "《봄[ポム]》에[エ]", r: "ポメ", w: "春に", why: "時点を指す「에[エ]」。続けて「ポメ」と読みます。" },
+        { p: "찍었어요[ッチゴッソヨ].", r: "ッチゴッソヨ", w: "撮りました", why: "「찍다[ッチクタ]」の語幹の母音が「ㅣ」なので「었어요[オッソヨ]」がつきます。" }
+      ],
+      why: [
+        "<b>이[イ]・그・저[チョ]</b>は日本語の「こ・そ・あ」とぴったり重なります。「이[イ] 사진[サジン]」「그 사람[サラム]」「저[チョ] 건물[コンムル]」。",
+        "「작년[チャンニョン]」の「ㄱ」が「ン」に変わるのは、次の「ㄴ」に引っぱられるからです。同じことが「국내[クンネ]→궁내[クンネ]」「한국말[ハングンマル]→한궁말[ハングンマル]」でも起きます。文字より<b>耳</b>で覚えるところです。",
+        "「찍었어요[ッチゴッソヨ]」は「찍-었-어요[オヨ]」の三つに区切れます。長く見えても、まんなかの「었」が過去の印だと分かれば読めます。"
+      ],
+      swap: { ko: "이[イ] 사진[サジン]은[ウン] 작년[チャンニョン] 가을[カウル]에[エ] 찍었어요[ッチゴッソヨ].", ja: "この写真は去年の秋に撮りました。" } },
+
+    { for: "찍다",
+      ko: "같이[カチ] 《사진[サジン]》 《찍고[ッチクコ]》 싶어요[シポヨ].",
+      ja: "いっしょに写真を撮りたいです。",
+      frame: "같이  A  ~고 싶어요",
+      parts: [
+        { p: "같이[カチ]", r: "カチ", w: "いっしょに", why: "書くと「같이[カチ]」、読むと「カチ」。「ㅌ」と「이[イ]」が出会うと「치」になります。" },
+        { p: "《사진[サジン]》", r: "サジン", w: "写真を", why: "助詞「을[ウル]」は省いています。話しことばでは自然な省略です。" },
+        { p: "《찍고[ッチクコ]》", r: "ッチクコ", w: "撮り", why: "語幹に「고[コ]」がついた形です。" },
+        { p: "싶어요[シポヨ].", r: "シポヨ", w: "~たいです", why: "「고[コ] 싶어요[シポヨ]」でひとかたまりの意味になります。" }
+      ],
+      why: [
+        "<b>~고[コ] 싶어요[シポヨ]</b>で「~したいです」。動詞の語幹にそのままつけるだけなので、活用を考えなくて済みます。「가고[カゴ] 싶어요[シポヨ]」「먹고[モクコ] 싶어요[シポヨ]」。",
+        "ただし<b>三人称には使えません</b>。「弟が行きたがっています」は「동생이[トンセンイ] 가고[カゴ] 싶어[シポ] 해요[ヘヨ]」と形が変わります。まずは自分と相手の話で使ってください。",
+        "誘うときは「같이[カチ] ~해요[ヘヨ]」。<b>「같이[カチ] 가요[カヨ](いっしょに行きましょう)」</b>は、韓国でいちばん耳にする誘い文句です。"
+      ],
+      swap: { ko: "같이[カチ] 점심[チョムシム] 먹고[モクコ] 싶어요[シポヨ].", ja: "いっしょに昼ごはんを食べたいです。" } }
+  ],
+  dialogue: {
+    situation: "春の週末、韓国の同僚と公園に花を見に来ました。",
+    turns: [
+      { me: false, ko: "우와[ウワ], 《벚꽃[ポッコッ]》이[イ] 많이[マニ] 《피었어요[ピオッソヨ]》.",
+        ja: "わあ、桜がたくさん咲きましたね。",
+        tip: "「우와[ウワ]」は「わあ」。感嘆をそのまま声に出すと、会話がやわらかくなります。",
+        parts: [
+          { p: "우와[ウワ],", r: "ウワ", w: "わあ", why: "驚きや感心をそのまま表します。" },
+          { p: "《벚꽃[ポッコッ]》이[イ]", r: "ポッコチ", w: "桜が", why: "連音して「ポッコチ」です。" },
+          { p: "많이[マニ]", r: "マニ", w: "たくさん", why: "動詞の前に置きます。" },
+          { p: "《피었어요[ピオッソヨ]》.", r: "ピオッソヨ", w: "咲きました", why: "「피다[ピダ]」の過去です。" }
+        ] },
+      { me: true, ko: "네[ネ], 정말[チョンマル] 예뻐요[イェッポヨ].",
+        ja: "はい、本当にきれいです。",
+        tip: "「예뻐요[イェッポヨ]」は「きれいです」。花にも人にも使えます。「아름다워요[アルムダウォヨ]」はもっとあらたまった響きです。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "정말[チョンマル]", r: "チョンマル", w: "本当に", why: "「진짜[チンッチャ]」はもっとくだけた言い方です。" },
+          { p: "예뻐요[イェッポヨ].", r: "イェッポヨ", w: "きれいです", why: "「예쁘다[イェップダ]」の해요체[ヘヨチェ]です。" }
+        ] },
+      { me: false, ko: "여기[ヨギ]에서[エソ] 《사진[サジン]》 《찍을까요[ッチグルッカヨ]》?",
+        ja: "ここで写真を撮りましょうか。",
+        tip: "「~을까요[ウルッカヨ]?」は「~しましょうか」。相手の気持ちを尋ねながら誘う形です。",
+        parts: [
+          { p: "여기[ヨギ]에서[エソ]", r: "ヨギエソ", w: "ここで", why: "動きが起きる場所です。" },
+          { p: "《사진[サジン]》", r: "サジン", w: "写真を", why: "助詞は省いています。" },
+          { p: "《찍을까요[ッチグルッカヨ]》?", r: "ッチグルッカヨ", w: "撮りましょうか", why: "パッチムがあるので「을까요[ウルッカヨ]」。続けて「ッチグルッカヨ」。" }
+        ] },
+      { me: true, ko: "좋아요[チョアヨ]. 같이[カチ] 《찍고[ッチクコ]》 싶어요[シポヨ].",
+        ja: "いいですね。いっしょに撮りたいです。",
+        tip: "「좋아요[チョアヨ]」は同意の返事。「いいですね」にあたり、これ一つで話が前に進みます。",
+        parts: [
+          { p: "좋아요[チョアヨ].", r: "チョアヨ", w: "いいですね", why: "「좋다[チョタ]」の해요체[ヘヨチェ]。「ㅎ」は音になりません。" },
+          { p: "같이[カチ]", r: "カチ", w: "いっしょに", why: "読みは「カチ」です。" },
+          { p: "《찍고[ッチクコ]》", r: "ッチクコ", w: "撮り", why: "語幹に「고[コ]」。" },
+          { p: "싶어요[シポヨ].", r: "シポヨ", w: "~たいです", why: "「고[コ] 싶어요[シポヨ]」でひとかたまりです。" }
+        ] },
+      { me: false, ko: "그럼[クロム] 저기[チョギ] 나무[ナム] 앞[アプ]에서[エソ] 찍어요[ッチゴヨ].",
+        ja: "では、あそこの木の前で撮りましょう。",
+        tip: "「~아[ア]/어요[オヨ]」は「~しましょう」の意味にもなります。文の終わりを下げれば述べる形、上げれば尋ねる形です。",
+        parts: [
+          { p: "그럼[クロム]", r: "クロム", w: "では", why: "話を受けて次に進むつなぎです。" },
+          { p: "저기[チョギ]", r: "チョギ", w: "あそこの", why: "「여기[ヨギ]・거기[コギ]・저기[チョギ]」の三つ組です。" },
+          { p: "나무[ナム]", r: "ナム", w: "木", why: "「벚나무[ポンナム]」なら桜の木です。" },
+          { p: "앞[アプ]에서[エソ]", r: "アペソ", w: "前で", why: "続けて「アペソ」と読みます。" },
+          { p: "찍어요[ッチゴヨ].", r: "ッチゴヨ", w: "撮りましょう", why: "連音して「ッチゴヨ」です。" }
+        ] },
+      { me: true, ko: "네[ネ], 좋아요[チョアヨ]. 오늘[オヌル] 정말[チョンマル] 좋은[チョウン] 《봄[ポム]》이에요[イエヨ].",
+        ja: "はい、いいですね。今日は本当によい春です。",
+        tip: "「좋은[チョウン] ~이에요[イエヨ]」は、その場をやわらかく締めるひとことです。別れぎわでなくても使えます。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "좋아요[チョアヨ].", r: "チョアヨ", w: "いいですね", why: "同意の返事です。" },
+          { p: "오늘[オヌル]", r: "オヌル", w: "今日は", why: "助詞「은[ウン]」は省いています。" },
+          { p: "정말[チョンマル]", r: "チョンマル", w: "本当に", why: "程度を強めます。" },
+          { p: "좋은[チョウン]", r: "チョウン", w: "よい", why: "「좋다[チョタ]」が名詞の前に来た形です。" },
+          { p: "《봄[ポム]》이에요[イエヨ].", r: "ポミエヨ", w: "春です", why: "パッチムがあるので「이에요[イエヨ]」。続けて「ポミエヨ」。" }
+        ] }
+    ]
+  },
+  quiz: [
+    { q: "「꽃이[ッコチ] ___」 花が咲く、に合うのはどれですか。",
+      opts: ["피어요[ピオヨ]", "찍어요[ッチゴヨ]", "가요[カヨ]"], ans: 0,
+      msg: "花は「피다[ピダ]」と組みます。散るときは「지다[チダ]」で「꽃이[ッコチ] 져요[チョヨ]」。" },
+    { q: "「사진을[サジヌル] ___」 写真を撮る、に合うのはどれですか。",
+      opts: ["봐요[ポァヨ]", "피어요[ピオヨ]", "찍어요[ッチゴヨ]"], ans: 2,
+      msg: "写真は「찍다[ッチクタ]」。「봐요[ポァヨ]」は「見ます」で、撮った写真を見るときの言い方です。" },
+    { q: "「가다[カダ]」を해요체[ヘヨチェ]の過去にすると、どれになりますか。",
+      opts: ["가요[カヨ]", "갔어요[カッソヨ]", "가았어요[カアッソヨ]"], ans: 1,
+      msg: "「가[ガ]+았어요[アッソヨ]」が縮まって「갔어요[カッソヨ]」。「가았어요[カアッソヨ]」とは書きません。" },
+    { q: "「~したいです」を表すのはどれですか。",
+      opts: ["~고[コ] 싶어요[シポヨ]", "~고[コ] 있어요[イッソヨ]", "~고[コ] 없어요[オプソヨ]"], ans: 0,
+      msg: "「고[コ] 싶어요[シポヨ]」が「~したい」。「고[コ] 있어요[イッソヨ]」は「~している」で、別の意味です。" },
+    { q: "「봄[ポム]」の意味はどれですか。",
+      opts: ["秋", "夏", "春"], ans: 2,
+      msg: "「봄[ポム]・여름[ヨルム]・가을[カウル]・겨울[キョウル]」で春夏秋冬。「가을[カウル]」が秋、「여름[ヨルム]」が夏です。" },
+    { q: "「4월」の読みはどれですか。",
+      opts: ["오월[オウォル]", "사월[サウォル]", "넷월[ネットゥォル]"], ans: 1,
+      msg: "月は漢数字読みです。「사월[サウォル]」。「오월[オウォル]」は5月。「넷월[ネットゥォル]」という形はありません。" },
+    { q: "「春がいちばん好きです」として正しいのはどれですか。",
+      opts: ["봄이[ポミ] 제일[チェイル] 좋아해요[チョアヘヨ]", "봄을[ポムル] 제일[チェイル] 좋아해요[チョアヘヨ]", "봄에[ポメ] 제일[チェイル] 좋아해요[チョアヘヨ]"], ans: 1,
+      msg: "「좋아하다[チョアハダ]」の相手には「을[ウル]/를[ルル]」がつきます。日本語の「が」につられやすいところです。" },
+    { q: "「같이[カチ]」の読みはどれですか。",
+      opts: ["カチ", "カティ", "カッチ"], ans: 0,
+      msg: "「ㅌ」と「이[イ]」が出会うと「치」になります。「같이[カチ] = カチ」。「해돋이[ヘドジ] = ヘドジ」も同じ仲間です。" }
+  ],
+  column: {
+    word: "꽃놀이[ッコンノリ]", kana: "ッコンノリ", ja: "花見",
+    title: "韓国の花見は、座らずに歩く",
+    body: [
+      "韓国にも花見はあります。「꽃놀이[ッコンノリ]」といって、直訳すれば「花遊び」。ただし日本のように木の下にシートを敷いて宴会をする、という形ではありません。公園や川沿いの並木道を<b>歩きながら見る</b>のが基本です。屋台でトッポッキやホットクを買い、写真を撮りながらゆっくり歩く — それが韓国の花見です。",
+      "場所取りをしないのは、公園の多くで飲酒や火の使用が制限されているからでもあります。そのぶん、桜の名所は夜遅くまで人が絶えません。鎮海(진해[チネ])の軍港祭、汝矣島(여의도[ヨイド])の輪中路が特に有名で、ニュースでも毎年「벚꽃[ポッコッ] 명소[ミョンソ](桜の名所)」として取り上げられます。",
+      "仕事の場では、春先の世間話としてそのまま使えます。取引先を訪ねたときの<b>「벚꽃[ポッコッ] 보러[ポロ] 가셨어요[カショッソヨ]?(桜を見にいらっしゃいましたか)」</b>は、季節の挨拶としてちょうどよい重さです。そこから食事の話につなげたければ、「식사[シクサ] 한번[ハンボン] 하시죠[ハシジョ](一度お食事でも)」と続けます。これは社交辞令でもあり、本当の誘いでもある — どちらかは、そのあと日取りの話が出るかどうかで決まります。"
+    ],
+    note: "「꽃놀이[ッコンノリ]」は書くと「꽃놀이[ッコンノリ]」ですが、読むと「ッコンノリ」。「ㅊ」が次の「ㄴ」につられて「ン」になります。"
+  }
+},
+/* ═══════════ 5 · 식당 ═══════════ */
+{
+  no: 5, title: "식당[シクタン]", titleJa: "食堂",
+  story: {
+    topic: "暮らしの情報ニュース",
+    lines: [
+      { ko: "한국[ハングク] 《식당[シクタン]》에는[エヌン] 반찬[パンチャン]이[イ] 많습니다[マンスムニダ].",
+        ja: "韓国の食堂にはおかずがたくさんあります。" },
+      { ko: "반찬[パンチャン]과[グァ] 《물[ムル]》은[ウン] 돈[トン]을[ウル] 내지[ネジ] 않습니다[アンスムニダ].",
+        ja: "おかずと水はお金を払いません。" },
+      { ko: "김치[キムチ]는[ヌン] 《조금[チョグム]》 《맵습니다[メプスムニダ]》. 하지만[ハジマン] 아주[アジュ] 《맛있습니다[マシッスムニダ]》.",
+        ja: "キムチは少し辛いです。でも、とてもおいしいです。" },
+      { ko: "손님[ソンニム]은[ウン] 자리[チャリ]에서[エソ] 《주문합니다[チュムナムニダ]》.",
+        ja: "客は席で注文します。" }
+    ]
+  },
+  words: [
+    { ko: "식당", disp: "식당[シクタン]", kana: "シクタン", mean: "食堂",
+      note: "漢字語「食堂」。書くと「식당[シクタン]」、読むと「シクタン」。パッチムが次の「ㄷ」を強くします。会社のまわりの店はだいたい「식당[シクタン]」と呼びます。" },
+    { ko: "맵다", disp: "맵다[メプタ]", kana: "メプタ", mean: "辛い",
+      note: "「ㅂ」で終わる形容詞で、「아[ア]/어요[オヨ]」がつくと「ㅂ」が「우[ウ]」に変わり「매워요[メウォヨ]」になります。「덥다[トプタ]→더워요[トウォヨ](暑い)」「춥다[チュプタ]→추워요[チュウォヨ](寒い)」も同じ仲間です。" },
+    { ko: "맛있다", disp: "맛있다[マシッタ]", kana: "マシッタ", mean: "おいしい",
+      note: "「맛[マッ](味)+있다[イッタ](ある)」。まずいは「맛없다[マドプタ](マドプタ)」。食事のあとの「맛있었어요[マシッソッソヨ](おいしかったです)」は、言われた相手の顔がほぐれる一言です。" },
+    { ko: "주문하다", disp: "주문하다[チュムナダ]", kana: "チュムナダ", mean: "注文する",
+      note: "漢字語「注文」+하다[ハダ]。書くと「주문하다[チュムナダ]」、読むと「チュムナダ」。店での注文にも、会社の発注にも使えます。" },
+    { ko: "물", disp: "물[ムル]", kana: "ムル", mean: "水",
+      note: "韓国の食堂では水はたいてい無料で、自分で取りに行く形です。「물[ムル] 좀[チョム] 주세요[チュセヨ](お水ください)」が言えれば、まず困りません。" },
+    { ko: "조금", disp: "조금[チョグム]", kana: "チョグム", mean: "少し",
+      note: "話しことばでは「좀[チョム]」と縮まります。「좀[チョム] 주세요[チュセヨ]」「좀[チョム] 기다려[キダリョ] 주세요[チュセヨ]」。「좀[チョム]」は量を言うだけでなく、頼みをやわらげる働きもします。" }
+  ],
+  sentences: [
+    { for: "식당",
+      ko: "회사[フェサ] 앞[アプ] 《식당[シクタン]》이[イ] 《맛있어요[マシッソヨ]》.",
+      ja: "会社の前の食堂がおいしいです。",
+      frame: "A 앞  B 이/가  ~아/어요",
+      parts: [
+        { p: "회사[フェサ]", r: "フェサ", w: "会社", why: "漢字語「会社」です。" },
+        { p: "앞[アプ]", r: "アプ", w: "前の", why: "名詞を並べるだけで「~の~」になります。「의[エ]」は要りません。" },
+        { p: "《식당[シクタン]》이[イ]", r: "シクタンイ", w: "食堂が", why: "パッチムがあるので「이[イ]」。「식당[シクタン]」自体の読みは「シクタン」です。" },
+        { p: "《맛있어요[マシッソヨ]》.", r: "マシッソヨ", w: "おいしいです", why: "「맛있다[マシッタ]」の해요체[ヘヨチェ]。連音して「マシッソヨ」と読みます。" }
+      ],
+      why: [
+        "<b>맛있다[マシッタ]</b>はもともと「味がある」という形です。だから反対は「맛없다[マドプタ](味がない)」。「있다[イッタ]/없다[オプタ]」の対がそのまま生きています。",
+        "日本語では「あの店はおいしい」と言いますが、韓国語でも「식당이[シクタンイ] 맛있어요[マシッソヨ]」と、店そのものを主語にできます。ここは同じ感覚で大丈夫です。",
+        "「맛있어요[マシッソヨ]」は「マシッソヨ」。「맛[マッ]」のパッチムが次に移り、さらに「있」のパッチムも移るので、文字の見た目とはかなり違って聞こえます。"
+      ],
+      swap: { ko: "역[ヨク] 앞[アプ] 카페[カペ]가[ガ] 맛있어요[マシッソヨ].", ja: "駅の前のカフェがおいしいです。" } },
+
+    { for: "맵다",
+      ko: "이[イ] 김치[キムチ]는[ヌン] 《조금[チョグム]》 《매워요[メウォヨ]》.",
+      ja: "このキムチは少し辛いです。",
+      frame: "이 A 은/는  조금  ~아/어요",
+      parts: [
+        { p: "이[イ]", r: "イ", w: "この", why: "名詞の前に置きます。" },
+        { p: "김치[キムチ]는[ヌン]", r: "キムチヌン", w: "キムチは", why: "パッチムがないので「는[ヌン]」。" },
+        { p: "《조금[チョグム]》", r: "チョグム", w: "少し", why: "程度をやわらげることばです。" },
+        { p: "《매워요[メウォヨ]》.", r: "メウォヨ", w: "辛いです", why: "「맵다[メプタ]」のパッチム「ㅂ」が「우[ウ]」に変わった形です。" }
+      ],
+      why: [
+        "「맵다[メプタ]」に「어요[オヨ]」がつくと、パッチムの<b>ㅂが우[ウ]に変わり</b>、「매우[メウ]+어요[オヨ]」が縮まって<b>매워요[メウォヨ]</b>になります。これを「ㅂ不規則」といいます。",
+        "同じ仲間がたくさんあります。「덥다[トプタ]→더워요[トウォヨ](暑い)」「춥다[チュプタ]→추워요[チュウォヨ](寒い)」「어렵다[オリョプタ]→어려워요[オリョウォヨ](難しい)」「가깝다[カッカプタ]→가까워요[カッカウォヨ](近い)」。一つ覚えると全部つながります。",
+        "「조금[チョグム] 매워요[メウォヨ]」で「少し辛い」、「많이[マニ] 매워요[メウォヨ]」で「とても辛い」。辛さの度合いはこの二つで十分伝わります。"
+      ],
+      swap: { ko: "오늘[オヌル]은[ウン] 조금[チョグム] 더워요[トウォヨ].", ja: "今日は少し暑いです。" } },
+
+    { for: "맛있다",
+      ko: "불고기[プルゴギ]가[ガ] 아주[アジュ] 《맛있었어요[マシッソッソヨ]》.",
+      ja: "プルコギがとてもおいしかったです。",
+      frame: "A 이/가  아주  ~았/었어요",
+      parts: [
+        { p: "불고기[プルゴギ]가[ガ]", r: "プルゴギガ", w: "プルコギが", why: "パッチムがないので「가[ガ]」。" },
+        { p: "아주[アジュ]", r: "アジュ", w: "とても", why: "程度を強めます。" },
+        { p: "《맛있었어요[マシッソッソヨ]》.", r: "マシッソッソヨ", w: "おいしかったです", why: "「맛있다[マシッタ]」の過去。区切りは「맛있-었-어요[オヨ]」です。" }
+      ],
+      why: [
+        "過去は<b>았/었어요[オッソヨ]</b>。「맛있다[マシッタ]」の語幹は「맛있」で母音が「ㅣ」なので「었」がついて「맛있었어요[マシッソッソヨ]」になります。",
+        "長く見えますが、「맛있-었-어요[オヨ]」と三つに区切れば読めます。まんなかの<b>었</b>が過去の印です。",
+        "食事のあとにこの一言を言うと、誘った側は必ずほっとします。ごちそうになったときは<b>「잘 먹었습니다[モゴッスムニダ](ごちそうさまでした)」</b>と続けてください。"
+      ],
+      swap: { ko: "김치찌개[キムチッチゲ]가[ガ] 아주[アジュ] 맛있었어요[マシッソッソヨ].", ja: "キムチチゲがとてもおいしかったです。" } },
+
+    { for: "주문하다",
+      ko: "저[チョ]는[ヌン] 비빔밥[ピビムパプ]을[ウル] 《주문했어요[チュムネッソヨ]》.",
+      ja: "私はビビンバを注文しました。",
+      frame: "A 은/는  B 을/를  ~했어요",
+      parts: [
+        { p: "저[チョ]는[ヌン]", r: "チョヌン", w: "私は", why: "話題を立てる印です。" },
+        { p: "비빔밥[ピビムパプ]을[ウル]", r: "ピビムパブル", w: "ビビンバを", why: "パッチムがあるので「을[ウル]」。連音して「ピビムパブル」。" },
+        { p: "《주문했어요[チュムネッソヨ]》.", r: "チュムネッソヨ", w: "注文しました", why: "「하다[ハダ]」の過去は「했어요[ヘッソヨ]」。読みは「チュムネッソヨ」です。" }
+      ],
+      why: [
+        "<b>하다[ハダ]</b>の過去は「했어요[ヘッソヨ]」です。「주문하다[チュムナダ]→주문했어요[チュムネッソヨ]」「전화하다[チョヌァハダ]→전화했어요[チョヌァヘッソヨ]」。例外がないので、ここは覚えるだけで済みます。",
+        "「주문하다[チュムナダ]」は店での注文にも、会社の発注にも使えます。取引の場では「발주[パルッチュ](発注)」という漢字語と使い分けることもあります。",
+        "注文をまとめて頼むときは<b>「주문할게요[チュムナルッケヨ]」</b>。店員を呼んでからこう言えば、「注文します」と伝わります。"
+      ],
+      swap: { ko: "과장[クァジャン]님[ニム]은[ウン] 냉면[ネンミョン]을[ウル] 주문했어요[チュムネッソヨ].", ja: "課長は冷麺を注文しました。" } },
+
+    { for: "물",
+      ko: "《물[ムル]》 좀[チョム] 주세요[チュセヨ].",
+      ja: "お水ください。",
+      frame: "A  좀  주세요",
+      parts: [
+        { p: "《물[ムル]》", r: "ムル", w: "水を", why: "助詞は省いています。店ではこのほうが自然です。" },
+        { p: "좀[チョム]", r: "チョム", w: "ちょっと", why: "「조금[チョグム]」の縮まった形。ここでは量ではなく、頼みをやわらげています。" },
+        { p: "주세요[チュセヨ].", r: "チュセヨ", w: "ください", why: "「주다[チュダ]」に「세요[セヨ]」がついた形です。" }
+      ],
+      why: [
+        "<b>좀[チョム]</b>は「조금[チョグム]」の縮まった形ですが、この位置では量の話ではありません。頼みの角を取るための一語です。",
+        "「물[ムル] 주세요[チュセヨ]」でも通じます。ただ「좀[チョム]」が一つ入るだけで、命令に聞こえる危険がぐっと減ります。頼みごとには入れる癖をつけてください。",
+        "韓国の食堂では水がセルフのことも多いので、まず水差しを探して、見つからなければ声をかけると早いです。"
+      ],
+      swap: { ko: "휴지[ヒュジ] 좀[チョム] 주세요[チュセヨ].", ja: "ティッシュをください。" } },
+
+    { for: "조금",
+      ko: "《조금[チョグム]》 덜[トル] 맵게[メプケ] 해[ヘ] 주세요[チュセヨ].",
+      ja: "少し辛さを控えめにしてください。",
+      frame: "조금  덜  ~게  해 주세요",
+      parts: [
+        { p: "《조금[チョグム]》", r: "チョグム", w: "少し", why: "程度をやわらげます。" },
+        { p: "덜[トル]", r: "トル", w: "より少なく", why: "「더[ト](もっと)」の反対。日本語に一語で置きかえにくいことばです。" },
+        { p: "맵게[メプケ]", r: "メプケ", w: "辛く", why: "「맵다[メプタ]」に「게」がついて副詞になった形。読みは「メプケ」です。" },
+        { p: "해[ヘ]", r: "ヘ", w: "して", why: "「하다[ハダ]」が「어」とつながった形です。" },
+        { p: "주세요[チュセヨ].", r: "チュセヨ", w: "ください", why: "「~아[ア]/어 주세요[チュセヨ]」で「~してください」。" }
+      ],
+      why: [
+        "<b>덜[トル]</b>は「より少なく」。「덜[トル] 맵게[メプケ](辛さ控えめに)」「덜[トル] 짜게[ッチャゲ](しょっぱさ控えめに)」「덜[トル] 달게[タルゲ](甘さ控えめに)」。注文のときに効くことばです。",
+        "<b>~아[ア]/어 주세요[チュセヨ]</b>は「~してください」。「주세요[チュセヨ]」だけならものを頼む形、動詞を前に置けば動作を頼む形になります。",
+        "この一言が言えると、辛いものが苦手でも韓国の食堂が怖くなくなります。接待の席でも遠慮はいりません。相手はむしろ、先に言ってくれたことをありがたく思います。"
+      ],
+      swap: { ko: "조금[チョグム] 덜[トル] 짜게[ッチャゲ] 해[ヘ] 주세요[チュセヨ].", ja: "少ししょっぱさを控えめにしてください。" } }
+  ],
+  dialogue: {
+    situation: "取引先の方と、会社の近くの食堂に入りました。",
+    turns: [
+      { me: false, ko: "어서[オソ] 오세요[オセヨ]. 몇[ミョッ] 분[ップン]이세요[イセヨ]?",
+        ja: "いらっしゃいませ。何名様ですか。",
+        tip: "「몇[ミョッ] 분이세요[プニセヨ]?」は人数を尋ねる決まり文句です。「분[プン]」は「名様」にあたる、人を高める数え方です。",
+        parts: [
+          { p: "어서[オソ]", r: "オソ", w: "どうぞ", why: "迎え入れる勢いを添えることばです。" },
+          { p: "오세요[オセヨ].", r: "オセヨ", w: "いらしてください", why: "「오다[オダ]」に「세요[セヨ]」。" },
+          { p: "몇[ミョッ]", r: "ミョッ", w: "何", why: "数を尋ねることばです。" },
+          { p: "분[ップン]이세요[イセヨ]?", r: "ップニセヨ", w: "名様ですか", why: "「명[ミョン](名)」を高めた言い方が「분[プン]」です。" }
+        ] },
+      { me: true, ko: "두[トゥ] 명[ミョン]이에요[イエヨ].",
+        ja: "2名です。",
+        tip: "人数は固有数詞で数えます。「한[ハン] 명[ミョン], 두[トゥ] 명[ミョン], 세[セ] 명[ミョン]」。自分のことなので「분[プン]」ではなく「명[ミョン]」を使います。",
+        parts: [
+          { p: "두[トゥ]", r: "トゥ", w: "二", why: "「둘[トゥル]」が名詞の前で「두[トゥ]」に変わります。" },
+          { p: "명[ミョン]이에요[イエヨ].", r: "ミョンイエヨ", w: "名です", why: "パッチムがあるので「이에요[イエヨ]」。" }
+        ] },
+      { me: false, ko: "네[ネ], 이쪽[イッチョク]으로[ウロ] 오세요[オセヨ]. 《주문[チュムン]》은[ウン] 여기[ヨギ]에서[エソ] 하세요[ハセヨ].",
+        ja: "はい、こちらへどうぞ。ご注文はこちらでどうぞ。",
+        tip: "「이쪽으로[イッチョグロ] 오세요[オセヨ]」は案内の決まり文句です。会社で来客を案内するときにもそのまま使えます。",
+        parts: [
+          { p: "네[ネ],", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "이쪽[イッチョク]으로[ウロ]", r: "イッチョグロ", w: "こちらへ", why: "向かう先を指す「으로[ウロ]」。続けて「イッチョグロ」。" },
+          { p: "오세요[オセヨ].", r: "オセヨ", w: "どうぞ", why: "「오다[オダ]」に「세요[セヨ]」。" },
+          { p: "《주문[チュムン]》은[ウン]", r: "チュムヌン", w: "注文は", why: "話題を立てる印です。" },
+          { p: "여기[ヨギ]에서[エソ]", r: "ヨギエソ", w: "ここで", why: "動きが起きる場所です。" },
+          { p: "하세요[ハセヨ].", r: "ハセヨ", w: "なさってください", why: "「하다[ハダ]」に「세요[セヨ]」。" }
+        ] },
+      { me: true, ko: "김치찌개[キムチッチゲ] 두[トゥ] 개[ケ] 《주문할게요[チュムナルッケヨ]》.",
+        ja: "キムチチゲを二つ注文します。",
+        tip: "「~할게요[ハルッケヨ]」は「~します」と自分の意思を伝える形です。店でも会社でも、引き受けるときに使えます。",
+        parts: [
+          { p: "김치찌개[キムチッチゲ]", r: "キムチッチゲ", w: "キムチチゲを", why: "助詞は省いています。" },
+          { p: "두[トゥ]", r: "トゥ", w: "二", why: "固有数詞です。" },
+          { p: "개[ケ]", r: "ケ", w: "つ", why: "ものを数える単位です。" },
+          { p: "《주문할게요[チュムナルッケヨ]》.", r: "チュムナルッケヨ", w: "注文します", why: "読みは「チュムナルッケヨ」です。" }
+        ] },
+      { me: false, ko: "네[ネ]. 《조금[チョグム]》 《맵습니다[メプスムニダ]》. 괜찮으세요[クェンチャヌセヨ]?",
+        ja: "はい。少し辛いです。よろしいですか。",
+        tip: "辛さを先に確かめてくれる店は多いです。ここで無理をしないでください。言えば、そのとおりに作ってくれます。",
+        parts: [
+          { p: "네[ネ].", r: "ネ", w: "はい", why: "うなずきの返事です。" },
+          { p: "《조금[チョグム]》", r: "チョグム", w: "少し", why: "程度をやわらげます。" },
+          { p: "《맵습니다[メプスムニダ]》.", r: "メプスムニダ", w: "辛いです", why: "「맵다[メプタ]」のかしこまった形です。" },
+          { p: "괜찮으세요[クェンチャヌセヨ]?", r: "クェンチャヌセヨ", w: "よろしいですか", why: "相手の都合をうかがう形です。" }
+        ] },
+      { me: true, ko: "《조금[チョグム]》 덜[トル] 맵게[メプケ] 해[ヘ] 주세요[チュセヨ]. 감사합니다[カムサハムニダ].",
+        ja: "少し辛さを控えめにしてください。ありがとうございます。",
+        tip: "頼んだあとに「감사합니다[カムサハムニダ]」を一つ添えるだけで、注文がずいぶんやわらかくなります。",
+        parts: [
+          { p: "《조금[チョグム]》", r: "チョグム", w: "少し", why: "程度をやわらげます。" },
+          { p: "덜[トル]", r: "トル", w: "より少なく", why: "「더[ト]」の反対です。" },
+          { p: "맵게[メプケ]", r: "メプケ", w: "辛く", why: "「맵다[メプタ]」に「게」がついた形です。" },
+          { p: "해[ヘ]", r: "ヘ", w: "して", why: "「하다[ハダ]」が「어」とつながった形です。" },
+          { p: "주세요[チュセヨ].", r: "チュセヨ", w: "ください", why: "「~아[ア]/어 주세요[チュセヨ]」で動作を頼みます。" },
+          { p: "감사합니다[カムサハムニダ].", r: "カムサハムニダ", w: "ありがとうございます", why: "お礼の基本形です。" }
+        ] }
+    ]
+  },
+  quiz: [
+    { q: "「맵다[メプタ]」を해요체[ヘヨチェ]にすると、どれになりますか。",
+      opts: ["맵습니다[メプスムニダ]", "매워요[メウォヨ]", "맵어요[メボヨ]"], ans: 1,
+      msg: "「ㅂ」が「우[ウ]」に変わって「매워요[メウォヨ]」。「맵습니다[メプスムニダ]」はかしこまった形で、해요체[ヘヨチェ]ではありません。" },
+    { q: "「まずい」はどれですか。",
+      opts: ["맛있어요[マシッソヨ]", "매워요[メウォヨ]", "맛없어요[マドプソヨ]"], ans: 2,
+      msg: "「맛있다[マシッタ](味がある)」の反対が「맛없다[マドプタ](味がない)」です。「매워요[メウォヨ]」は辛いという別の話です。" },
+    { q: "「お水ください」は、どれですか。",
+      opts: ["물[ムル] 좀[チョム] 주세요[チュセヨ]", "물[ムル] 좀[チョム] 사세요[サセヨ]", "물[ムル] 좀[チョム] 보세요[ポセヨ]"], ans: 0,
+      msg: "自分がもらうのは「주세요[チュセヨ]」。「사세요[サセヨ]」は「買ってください」、「보세요[ポセヨ]」は「見てください」になります。" },
+    { q: "「하다[ハダ]」を해요체[ヘヨチェ]の過去にすると、どれになりますか。",
+      opts: ["해요[ヘヨ]", "했어요[ヘッソヨ]", "하었어요[ハオッソヨ]"], ans: 1,
+      msg: "「하다[ハダ]」の過去は「했어요[ヘッソヨ]」。「주문하다[チュムナダ]→주문했어요[チュムネッソヨ]」も同じです。" },
+    { q: "「조금[チョグム]」の意味はどれですか。",
+      opts: ["たくさん", "とても", "少し"], ans: 2,
+      msg: "話しことばでは「좀[チョム]」と縮まります。「많이[マニ]」がたくさん、「아주[アジュ]」がとてもです。" },
+    { q: "「辛さを控えめにしてください」は、どれですか。",
+      opts: ["더[ト] 맵게[メプケ] 해[ヘ] 주세요[チュセヨ]", "덜[トル] 맵게[メプケ] 해[ヘ] 주세요[チュセヨ]", "많이[マニ] 맵게[メプケ] 해[ヘ] 주세요[チュセヨ]"], ans: 1,
+      msg: "「덜[トル]」は「より少なく」。「더[ト]」は「もっと」なので、正反対の注文になってしまいます。" },
+    { q: "「덥다[トプタ](暑い)」を해요체[ヘヨチェ]にすると、どれになりますか。",
+      opts: ["더워요[トウォヨ]", "덥습니다[トプスムニダ]", "덥어요[トボヨ]"], ans: 0,
+      msg: "「맵다[メプタ]→매워요[メウォヨ]」と同じ仲間です。「ㅂ」が「우[ウ]」に変わります。「덥습니다[トプスムニダ]」はかしこまった形です。" },
+    { q: "食事のあと、誘ってくれた相手に言う一言はどれですか。",
+      opts: ["맛있었어요[マシッソッソヨ]", "괜찮으세요[クェンチャヌセヨ]", "어서 오세요[オソオセヨ]"], ans: 0,
+      msg: "「맛있었어요[マシッソッソヨ]」に「잘 먹었습니다[モゴッスムニダ](ごちそうさまでした)」を続ければ完璧です。" }
+  ],
+  column: {
+    word: "반찬[パンチャン]", kana: "パンチャン", ja: "おかず",
+    title: "頼まなくても出てくる「반찬[パンチャン]」— おかわりもできる",
+    body: [
+      "韓国の食堂で注文すると、頼んでもいない小皿がいくつも並びます。これが<b>반찬[パンチャン]</b>、漢字で書けば「飯饌」。キムチ、もやし、煮豆、海苔 — 店によって顔ぶれが違い、たいていは<b>無料でおかわりができます</b>。足りなければ「반찬[パンチャン] 좀[チョム] 더[ト] 주세요[チュセヨ](おかずをもう少しください)」と言えば、その場で足してくれます。",
+      "残しても失礼にはなりません。もともと多めに出す前提の文化なので、食べきれないことを気に病む必要はありません。ただし、小皿はみんなで囲んで取るものです。自分の箸で直接取るのがふつうですが、気になるようなら取り皿をもらってください。「앞접시[アプチョプシ] 주세요[チュセヨ](取り皿ください)」で通じます。",
+      "会食の席では、作法がもう少しあります。<b>目上の人より先に箸をつけない</b>、酒を注がれるときは両手でグラスを持つ、飲むときは体を横に向ける。そして相手のグラスが空いたら「제가[チェガ] 따라[ッタラ] 드릴게요[トゥリルッケヨ](私がお注ぎします)」— これが言えると、その場の空気が変わります。知らなければ黙っていてもかまいませんが、知っていて使えば、ずっと近くなります。"
+    ],
+    note: "「반찬[パンチャン]」は漢字語「飯饌」。おかわりを頼むときは「반찬[パンチャン] 좀[チョム] 더[ト] 주세요[チュセヨ]」。"
+  }
+}
+];
+
+/* ═══════════ 표기 규칙 ═══════════
+   한글[カタカナ]  화면에는 한글 위에 가타카나 루비, 음성 엔진에는 한글 그대로.
+   {표기}[한글읽기/カナ]  숫자·단위처럼 적는 것과 읽는 것이 다를 때.
+                         엔진에는 슬래시 앞의 한글을, 루비에는 슬래시 뒤의 가타카나를 준다.
+   《…》  그 회차 단어가 문장에 나온 자리. 노란 형광펜. */
+const BRACE  = /\{([^{}]+)\}\[([^\[\]]+)\]/g;
+const HANGUL = /([가-힣]+)\[([ァ-ヿ]+)\]/g;
+const MARK   = /《([\s\S]*?)》/g;
+
+let furiOn = true;
+function ruby(base, read) { return furiOn ? `<ruby>${base}<rt>${read}</rt></ruby>` : base; }
+const kanaOf = r => r.includes("/") ? r.split("/")[1] : r;
+const readOf = r => r.includes("/") ? r.split("/")[0] : r;
+
+const rubify = s => s
+  .replace(BRACE, (m, b, r) => ruby(b, kanaOf(r)))
+  .replace(HANGUL, (m, b, r) => ruby(b, r))
+  .replace(MARK, '<mark class="hl">$1</mark>');
+const plain = s => s.replace(BRACE, '$1').replace(HANGUL, '$1').replace(MARK, '$1').replace(/<[^>]+>/g, "");
+/* 음성 엔진에 넘길 텍스트.
+   한글은 그대로 넘긴다 — 가타카나로 바꿔 넘기면 엔진이 한국어로 읽지 못한다.
+   숫자만은 엔진이 자주 틀린다. 「3시」를 「삼시」로, 「2호선」을 엉뚱하게 읽는다.
+   그래서 {…}[…] 형태는 슬래시 앞의 한글 읽기를 넘긴다. */
+const sayable = s => s.replace(BRACE, (m, b, r) => readOf(r)).replace(HANGUL, '$1').replace(MARK, '$1').replace(/<[^>]+>/g, "");
+const attr = s => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/* 조각(parts)은 띄어쓰기로 이어 붙이면 문장이 된다.
+   한국어는 낱말 사이를 띄우므로 일본어판처럼 그냥 붙이면 문장이 달라진다. */
+const joinParts = ps => ps.map(p => p.p).join(" ");
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("hl-" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("hl-" + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ═══════════ 발음 듣기 ═══════════
+   음성 품질은 기기에 깔린 목소리가 정한다. 좋은 것부터 순서를 매겨 고른다.
+   아이폰은 시리·고품질 음성이, 안드로이드와 크롬은 Google 한국의가 가장 낫다.
+   윈도우 기본 Heami가 가장 기계적이다. Edge의 InJoon·SunHi는 신경망 음성이라 훨씬 자연스럽다. */
+const VOICE_RANK = [
+  /siri|premium|enhanced|拡張|高品質/i,      // 애플 고품질
+  /google/i,                                 // 크롬·안드로이드의 Google 한국의
+  /natural|neural|injoon|sunhi|hyunsu|인준/i, // Edge 신경망 음성
+  /yuna|유나|sora|jimin/i,                   // 애플 기본
+  /heami|미선/i,                             // 윈도우 (구세대)
+  /./                                        // 그 밖의 한국어 음성
+];
+/* 남성 목소리를 먼저 고른다. 스틸링고와 같은 규칙이다. */
+const VOICE_MALE = /injoon|hyunsu|minsu|jinho|gook|인준|현수|男/i;
+function koVoices() {
+  if (!("speechSynthesis" in window)) return null;
+  const all = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+  return all.sort((a, b) => {
+    const male = v => (VOICE_MALE.test(v.name) ? 0 : 1);
+    if (male(a) !== male(b)) return male(a) - male(b);
+    const r = v => VOICE_RANK.findIndex(re => re.test(v.name));
+    return r(a) - r(b);
+  });
+}
+function pickedVoice() {
+  const list = koVoices();
+  if (list === null) return undefined;
+  return list.length ? list[0] : null;
+}
+if ("speechSynthesis" in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => {};
+}
+
+let speakingBtn = null;
+let sayQueue = [];
+
+/* ═══════════ 원어민 음성 파일 ═══════════
+   스틸링고 Lite는 VOICEVOX로 뽑아 둔 mp3를 먼저 쓴다. 이 앱은 아직 그 녹음본이 없어
+   자리만 남겨 둔다(AUDIO_DATA에 심으면 그때부터 쓰인다). 없으면 브라우저 음성으로 간다.
+   그래서 새 회차를 넣어도 앱은 멈추지 않고 소리도 난다. */
+const AUDIO_DATA = {};   /* __AUDIO_EMBED__ */
+let audioEl = null;
+
+function keyOf(t) {
+  const b = new TextEncoder().encode(t);
+  let h = 0x811c9dc5;
+  for (const x of b) { h ^= x; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, "0");
+}
+
+/* 문장을 통째로 던지면 엔진이 한 호흡으로 밀어붙여 억양이 뭉개진다.
+   문장 끝에서만 끊어 차례로 넘긴다. 쉼표에서까지 자르면 엔진이 그때마다
+   문장이 끝난 줄 알고 억양을 떨어뜨려 오히려 더 어색해진다. */
+function phrases(text) {
+  const out = [];
+  let buf = "";
+  for (const ch of text) {
+    buf += ch;
+    if (".!?。！？".includes(ch)) { out.push(buf); buf = ""; }
+  }
+  if (buf) out.push(buf);
+  return out.map(t => t.trim()).filter(Boolean);
+}
+
+function stopSpeaking() {
+  sayQueue = [];
+  if (audioEl) { audioEl.onended = audioEl.onerror = null; audioEl.pause(); audioEl = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  if (speakingBtn) speakingBtn.classList.remove("on");
+  speakingBtn = null;
+}
+
+/* after — 다 읽고 난 뒤에 할 일. 조각을 맞춘 뒤 문장 전체를 이어 읽을 때 쓴다. */
+let speakSeq = 0;
+
+function speak(text, btn, rate, key, after) {
+  const again = speakingBtn === btn;
+  stopSpeaking();
+  if (again) return;                 // 재생 중에 같은 버튼을 누르면 멈춘다
+
+  const mySeq = ++speakSeq;
+  const done = () => { if (after && mySeq === speakSeq) after(); };
+
+  if (pickedVoice()) { synth(text, btn, rate, done); return; }
+  if (key && AUDIO_DATA[key]) { playSrc(AUDIO_DATA[key], text, btn, rate, done); return; }
+  synth(text, btn, rate, done);
+}
+
+function playSrc(src, text, btn, rate, done) {
+  const a = new Audio(src);
+  a.preservesPitch = true; a.mozPreservesPitch = true; a.webkitPreservesPitch = true;
+  a.playbackRate = Number(rate) < .8 ? .65 : 1;
+  btn.classList.add("on"); speakingBtn = btn; audioEl = a;
+
+  let fell = false;
+  const fallback = () => {
+    if (fell) return;
+    fell = true;
+    if (speakingBtn !== btn) return;
+    speakingBtn = null; btn.classList.remove("on");
+    synth(text, btn, rate, done);
+  };
+  a.onended = () => {
+    if (speakingBtn === btn) { btn.classList.remove("on"); speakingBtn = null; }
+    if (done) done();
+  };
+  a.onerror = fallback;
+  a.play().catch(fallback);
+}
+
+function synth(text, btn, rate, done) {
+  const v = pickedVoice();
+  if (v === undefined || v === null) { document.getElementById("ttsNote").hidden = false; return; }
+  const r = Number(rate) || 1;
+  sayQueue = phrases(text);
+  btn.classList.add("on"); speakingBtn = btn;
+
+  const next = () => {
+    if (speakingBtn !== btn) return;
+    const part = sayQueue.shift();
+    if (part === undefined) { btn.classList.remove("on"); speakingBtn = null; if (done) done(); return; }
+    const u = new SpeechSynthesisUtterance(part);
+    u.voice = v; u.lang = "ko-KR"; u.rate = r; u.pitch = 1;
+    u.onend = () => setTimeout(next, r < .8 ? 260 : 130);
+    u.onerror = () => { btn.classList.remove("on"); speakingBtn = null; };
+    speechSynthesis.speak(u);
+  };
+  next();
+}
+
+const spk = t => { const x = sayable(t); return `<button class="speak" data-say="${attr(x)}" data-key="${keyOf(x)}" data-rate="1" title="発音を聞く（もう一度押すと止まります）">🔊</button>`; };
+
+/* NAVER の日韓辞書へそのまま飛ばす。リンク一行なのでアプリは重くならない。 */
+const dic = w => `<a class="dic" href="https://ja.dict.naver.com/#/search?query=${encodeURIComponent(plain(w))}" target="_blank" rel="noopener" title="NAVER 辞書で「${attr(plain(w))}」を引く">📖</a>`;
+
+/* ═══════════ 상태 ═══════════ */
+let view = store.get("view", "home");
+let current = store.get("day", 1);
+const doneKey = no => "done-" + no;
+const isDone = no => store.get(doneKey(no), false);
+
+/* 읽던 자리 — 회차만 기억하면 매번 맨 위부터 다시 찾아 내려와야 한다. */
+const getSpot = () => store.get("spot", null);
+function saveSpot(silent) {
+  if (view !== "day") return;
+  store.set("spot", { day: current, y: Math.round(window.scrollY) });
+  if (!silent) toast("ここまで保存しました。次に開くと続きから始まります。");
+}
+let pendingY = 0;
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
+}
+
+/* ═══════════ ホーム ═══════════ */
+function renderHome() {
+  const spot = getSpot();
+  const spotDay = spot && DATA.find(d => d.no === spot.day);
+  const next = DATA.find(d => !isDone(d.no)) || DATA[DATA.length - 1];
+  const anyDone = DATA.some(d => isDone(d.no));
+  const head = spotDay || next;
+  return `
+    <div class="hero">
+      <p class="kicker">${spotDay ? "読みかけのところ" : anyDone ? "つづきから" : "はじめから"}</p>
+      <h2 class="tgt">${rubify(head.title)}</h2>
+      <p>${spotDay ? "前回読みかけのところが残っています。そこから続けます。"
+         : anyDone ? "前回の次の話です。都合のいいときにゆっくり続けてください。"
+         : "やさしい韓国語で書かれた短い話から始めます。気楽に一度開いてみてください。"}</p>
+      <button class="go" data-day="${head.no}"${spotDay ? ' data-resume="1"' : ""}>${spotDay ? "読みかけのところから" : anyDone ? "つづきを見る" : "はじめる"}</button>
+      ${spotDay ? `<button class="go ghost" data-day="${head.no}">はじめから読み直す</button>` : ""}
+    </div>
+    <div class="daylist">
+      ${DATA.map(d => `
+        <button class="daycard" data-day="${d.no}">
+          <span class="no">第${d.no}課</span>
+          <span class="tt"><b class="tgt">${plain(d.title)}</b><span>${d.titleJa}</span>
+            <span class="peek tgt">${d.words.slice(0, 3).map(w => w.ko).join(" · ")} …</span></span>
+          ${isDone(d.no) ? '<span class="done">✓ 見ました</span>' : ""}
+        </button>`).join("")}
+    </div>
+    <p class="homenote">
+      順番どおりでもいいし、気になる話から開いてもかまいません。<br>
+      わからないものが出てきたら飛ばして大丈夫です。またどこかで出会います。
+    </p>`;
+}
+
+/* ═══════════ 회차 ═══════════ */
+function renderStory(d) {
+  return `
+    <section class="sec">
+      <h3><span class="ic">📖</span> 今日の話</h3>
+      <p class="subt">やさしい韓国語で書かれた短い文です。まず音から聞いてみてください。</p>
+      <div class="story">
+        <span class="tag">学習用の文 · ${d.story.topic}</span>
+        ${d.story.lines.map(l => `
+          <div class="line">
+            <div class="tline tgt">${rubify(l.ko)}${spk(l.ko)}</div>
+            <div class="nline">${l.ja}</div>
+          </div>`).join("")}
+        <p class="src">
+          この文は、短い文・やさしいことば・ハングルの上にカタカナ、という決まりで<b>学習用に書き下ろした</b>ものです。実際の記事ではありません。
+        </p>
+      </div>
+    </section>`;
+}
+
+/* 예문이 어느 단어의 것인지는 for 에 적어 두었다. 추측하지 않는다. */
+function pairUp(d) {
+  const box = d.words.map(w => ({ w, ex: [] }));
+  const at = {};
+  box.forEach((b, i) => { at[b.w.ko] = i; });
+  d.sentences.forEach((se, si) => {
+    const i = at[se.for];
+    if (i !== undefined) box[i].ex.push(si);
+  });
+  return box;
+}
+
+/* 예문이 없는 단어라도 회화에 나오면 그렇다고 알려 준다.
+   한국어는 어간이 바뀌므로 「-다」를 떼고 견준다. 못 잡으면 아무 말도 하지 않는다. */
+function stemOf(w) {
+  const m = plain(w);
+  return m.endsWith("다") && m.length >= 3 ? m.slice(0, -1) : m;
+}
+function inDialogue(d, ko) {
+  const t = d.dialogue.turns.map(x => plain(x.ko)).join(" ");
+  return t.includes(stemOf(ko));
+}
+
+function partsTable(ps) {
+  return `
+    <table class="parts">
+      <tr><th>かけら</th><th>読み</th><th>意味と役わり</th></tr>
+      ${ps.map(p => `
+        <tr>
+          <td class="p tgt">${rubify(p.p)}</td>
+          <td class="r">${p.r}</td>
+          <td class="w"><b>${p.w}</b>${p.why ? `<br>${rubify(p.why)}` : ""}</td>
+        </tr>`).join("")}
+    </table>`;
+}
+
+function renderExample(s, i) {
+  return `
+    <div class="ex" data-ex="${i}">
+      <div class="tline tgt">${rubify(s.ko)}${spk(s.ko)}</div>
+      <div class="nline">${s.ja}</div>
+      <div class="exmeta"><span class="frame tgt">${rubify(s.frame)}</span></div>
+      <button class="gtoggle">🔍 ばらして見る</button>
+      <div class="gbody">
+        ${partsTable(s.parts)}
+        <div class="why">${s.why.map(t => `<p>${rubify(t)}</p>`).join("")}</div>
+        <div class="swap">
+          <div class="lbl">こうも言いかえられます</div>
+          <div class="tline tgt">${rubify(s.swap.ko)}${spk(s.swap.ko)}</div>
+          <div class="nline">${s.swap.ja}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* disp 의 루비를 이어 붙인 것과 kana 가 똑같으면 같은 말을 두 번 적는 꼴이다.
+   조심하다처럼 통째 읽기가 조각별 읽기와 다를 때만 한 줄 더 보여 준다. */
+const kanaOfDisp = s => (s.match(/\[[ァ-ヿ]+\]/g) || []).map(x => x.slice(1, -1)).join("");
+const showKana = w => w.kana && w.kana !== "\u2015" && w.kana !== kanaOfDisp(w.disp || "");
+
+function renderWords(d) {
+  return `
+    <section class="sec">
+      <div class="partmark">第一部</div>
+      <h3><span class="ic">📌</span> 今日おぼえることば</h3>
+      <p class="subt">ことば一つに例文一つ。例文の下の<b>ばらして見る</b>を押すと、かけらごとの意味と役わりが出ます。</p>
+      ${pairUp(d).map((b, n) => `
+        <div class="wordbox">
+          <div class="wb-head">
+            <span class="wb-no">${n + 1}</span>
+            <div class="wb-t">
+              <div class="wb-tl tgt">${rubify(b.w.disp || b.w.ko)}${spk(b.w.ko)}${dic(b.w.ko)}</div>
+              ${showKana(b.w) ? `<div class="wb-kana">${b.w.kana}</div>` : ""}
+            </div>
+            <div class="wb-mean">${b.w.mean}</div>
+          </div>
+          <div class="wb-note">${rubify(b.w.note)}</div>
+          ${b.ex.length
+            ? b.ex.map(si => renderExample(d.sentences[si], si)).join("")
+            : (inDialogue(d, b.w.ko) ? `<div class="wb-only">このことばは今日の<b>模擬会話</b>で出てきます。</div>` : "")}
+        </div>`).join("")}
+    </section>`;
+}
+
+/* 조각을 섞는다. 원래 순서 그대로 나오면 맞히는 재미가 없으므로 한 번 더 섞는다. */
+function shuffled(a) {
+  const r = a.slice();
+  for (let i = r.length - 1; i > 0; i--) {
+    const k = Math.floor(Math.random() * (i + 1));
+    [r[i], r[k]] = [r[k], r[i]];
+  }
+  return r.length > 2 && r.every((v, i) => v === i) ? shuffled(a) : r;
+}
+
+function renderDialogue(d) {
+  return `
+    <section class="sec">
+      <div class="partmark">第二部</div>
+      <h3><span class="ic">🤝</span> 模擬会話</h3>
+      <p class="subt">自分のせりふは<b>韓国語のかけらを順番に</b>押して組み立てます。かけらごとに🔊で発音が聞け、そろうと文が音といっしょに現れて解説が開きます。</p>
+      <div class="situation">${d.dialogue.situation}</div>
+      ${d.dialogue.turns.map((t, i) => `
+        <div class="turn ${t.me ? "me" : "you"}">
+          <span class="who">${t.me ? "自分" : "相手"}</span>
+          <div class="bubble${t.me && t.parts && t.parts.length > 1 ? " build" : ""}" data-i="${i}">
+            ${t.me && t.parts && t.parts.length > 1 ? `
+              <div class="qhint">${t.ja}</div>
+              <div class="chips">
+                ${shuffled(t.parts.map((p, j) => j)).map(j => `
+                  <span class="chipwrap">
+                    <button class="chip tgt" data-j="${j}">${rubify(t.parts[j].p)}</button>
+                    <button class="speak chipsay" data-say="${attr(sayable(t.parts[j].p))}" data-key="${keyOf(sayable(t.parts[j].p))}" data-rate="1" title="このかけらだけ聞く">🔊</button>
+                  </span>`).join("")}
+              </div>
+              <div class="built tgt"></div>
+              <button class="reveal">答えを見る</button>` : ""}
+            <div class="tline tgt">${rubify(t.ko)}${spk(t.ko)}</div>
+            <div class="nline">${t.ja}</div>
+            ${t.tip ? `<div class="tip">${rubify(t.tip)}</div>` : ""}
+            ${t.parts ? `
+              <button class="gtoggle turn-g">🔍 この行をばらして見る</button>
+              <div class="gbody">${partsTable(t.parts)}</div>` : ""}
+          </div>
+        </div>`).join("")}
+    </section>`;
+}
+
+/* 확인 퀴즈 여덟 문항 중 앞 넷은 그날 배운 것을 그대로 확인하고,
+   뒤 넷은 5회차 묶음마다 묻는 방식이 한 칸씩 깊어진다.
+   새로운 문법을 더하지는 않는다 — 묻는 각도만 바꾼다. */
+const QUIZ_WAYS = [
+  ["ことばと相棒",      "今日出てきたことばの意味と、どのことばと組んで使うのかを見ます。"],
+  ["かたちを変える",    "習ったことばを今日の文型に合わせて変えてみます。"],
+  ["穴うめ",            "文のなかの助詞と語尾を選んでみます。"],
+  ["場面に合うことば",  "場面を見て、その場に合う言い方を選びます。"],
+  ["正しい文を選ぶ",    "似ている三つの文から、正しいものを探します。"],
+  ["言外の意味",        "ことばのニュアンスと、仕事でそれが何を指すのかまで見ます。"]
+];
+const wayOf = no => QUIZ_WAYS[Math.min(Math.floor((no - 1) / 5), QUIZ_WAYS.length - 1)];
+
+/* 보기가 셋 다 짧으면(조사 고르기 같은 것) 가로로 나란히 놓는다. */
+const shortOpts = q => q.opts.every(o => plain(o).length <= 5);
+
+const quizCard = (q, i) => `
+        <div class="q" data-q="${i}">
+          <div class="qt tgt">${rubify(q.q)}</div>
+          <div class="opts${shortOpts(q) ? " tight" : ""}">
+            ${q.opts.map((o, j) => `<button class="opt tgt" data-opt="${j}">${rubify(o)}</button>`).join("")}
+          </div>
+          <div class="qmsg">${rubify(q.msg)}</div>
+        </div>`;
+
+function renderQuiz(d) {
+  const way = wayOf(d.no);
+  return `
+    <section class="sec">
+      <h3><span class="ic">🎯</span> 軽くたしかめ</h3>
+      <p class="subt">当てるために解くのではありません。間違えたらその場で説明が出るので、もう一度見ればいいだけです。</p>
+      ${d.quiz.slice(0, 4).map((q, i) => quizCard(q, i)).join("")}
+      <div class="qway">
+        <button class="qmore-toggle" aria-expanded="true">ここから — ${way[0]}</button>
+        <p>${way[1]}</p>
+      </div>
+      <div class="qmore">${d.quiz.slice(4).map((q, i) => quizCard(q, i + 4)).join("")}</div>
+    </section>`;
+}
+
+function renderColumn(d) {
+  const c = d.column;
+  if (!c) return "";
+  return `
+    <section class="sec">
+      <div class="column">
+        <div class="col-tag">今日の韓国の話</div>
+        <div class="col-word tgt">${rubify(c.word)}${spk(c.word)}</div>
+        <div class="col-read">${c.kana !== "―" ? c.kana + " · " : ""}${c.ja}</div>
+        <h4>${rubify(c.title)}</h4>
+        ${c.body.map(p => `<p>${rubify(p)}</p>`).join("")}
+        <div class="col-note">${rubify(c.note)}</div>
+      </div>
+    </section>`;
+}
+
+function renderDay(d) {
+  return `
+    <div class="dayhead">
+      <div class="no">第${d.no}課</div>
+      <h2 class="tgt">${rubify(d.title)} <span style="font-family:var(--sans);font-size:.55em;color:var(--ink-3)">${d.titleJa}</span></h2>
+    </div>
+    ${renderStory(d)}${renderWords(d)}${renderDialogue(d)}${renderQuiz(d)}${renderColumn(d)}
+    <div class="saveout">
+      <button id="saveExit">📌 ここまでにして保存</button>
+      <p>次に開くと<b>この場所</b>から続きます。そのまま閉じても課は覚えています。</p>
+    </div>`;
+}
+
+/* ═══════════ 그리기 ═══════════ */
+function renderNavs() {
+  document.getElementById("navs").innerHTML =
+    `<button class="nav ${view === "home" ? "on" : ""}" data-go="home">🏠 一覧</button>` +
+    DATA.map(d => `<button class="nav ${view === "day" && current === d.no ? "on" : ""}" data-go="${d.no}">${isDone(d.no) ? '<span class="dot">✓</span>' : ""}${d.no}</button>`).join("");
+  syncBar();
+}
+
+/* 아래 바는 화면 너비에 따라 한 줄이 되기도 두 줄이 되기도 한다. 실제 높이를 재어 둔다. */
+function syncBar() {
+  const bar = document.querySelector(".bar");
+  if (!bar) return;
+  const r = bar.getBoundingClientRect();
+  document.documentElement.style.setProperty("--barH", Math.round(r.height) + "px");
+  document.documentElement.style.setProperty("--barTop", Math.max(0, Math.round(window.innerHeight - r.top)) + "px");
+}
+window.addEventListener("resize", syncBar);
+window.addEventListener("orientationchange", syncBar);
+window.addEventListener("load", syncBar);
+if ("ResizeObserver" in window) {
+  const barEl = document.querySelector(".bar");
+  if (barEl) new ResizeObserver(syncBar).observe(barEl);
+}
+
+function paint() {
+  stopSpeaking();
+  const app = document.getElementById("app");
+  if (view === "home") app.innerHTML = renderHome();
+  else app.innerHTML = renderDay(DATA.find(d => d.no === current) || DATA[0]);
+  renderNavs();
+  store.set("view", view); store.set("day", current);
+  document.body.classList.toggle("in-day", view === "day");
+  const y = pendingY;
+  window.scrollTo(0, y);
+  if (y > 0) requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+  pendingY = 0;
+}
+
+/* 문장이 다 맞춰지면 한국어를 드러낸다. silent 가 참이면 읽지 않고 화면만 연다. */
+function finishBuild(bubble, t, silent) {
+  bubble.classList.add("done", "open");
+  const gt = bubble.querySelector(".gtoggle");
+  if (gt) gt.textContent = "🔍 閉じる";
+  const btn = bubble.querySelector(".tline .speak");
+  if (btn && !silent) setTimeout(() => speak(btn.dataset.say, btn, btn.dataset.rate, btn.dataset.key), 250);
+}
+
+function goDay(no, resume) {
+  if (no === "home") { view = "home"; }
+  else {
+    view = "day"; current = Number(no); store.set(doneKey(current), true);
+    const spot = getSpot();
+    pendingY = resume && spot && spot.day === current ? spot.y : 0;
+  }
+  paint();
+}
+
+/* ═══════════ 이벤트 ═══════════ */
+document.addEventListener("click", e => {
+  const say = e.target.closest(".speak");
+  if (say) { speak(say.dataset.say, say, say.dataset.rate, say.dataset.key); return; }
+
+  const go = e.target.closest("[data-go]");
+  if (go) { goDay(go.dataset.go); return; }
+
+  const day = e.target.closest("[data-day]");
+  if (day) { goDay(day.dataset.day, day.dataset.resume); return; }
+
+  if (e.target.closest("#saveExit") || e.target.closest("#saveFab")) { saveSpot(false); return; }
+
+  const gt = e.target.closest(".gtoggle");
+  if (gt) {
+    if (gt.classList.contains("turn-g")) {
+      const bubble = gt.closest(".bubble");
+      bubble.classList.toggle("open");
+      gt.textContent = bubble.classList.contains("open") ? "🔍 閉じる" : "🔍 この行をばらして見る";
+      return;
+    }
+    const ex = gt.closest(".ex");
+    ex.classList.toggle("open");
+    gt.textContent = ex.classList.contains("open") ? "🔍 解説を閉じる" : "🔍 ばらして見る";
+    return;
+  }
+
+  const chip = e.target.closest(".chip");
+  if (chip) {
+    const bubble = chip.closest(".bubble");
+    if (bubble.classList.contains("done")) return;
+    const t = DATA.find(x => x.no === current).dialogue.turns[Number(bubble.dataset.i)];
+    const next = bubble.querySelectorAll(".chipwrap.used").length;
+    if (Number(chip.dataset.j) !== next) {           // 순서가 다르면 알려만 준다
+      chip.classList.add("wrong");
+      setTimeout(() => chip.classList.remove("wrong"), 400);
+      return;
+    }
+    chip.closest(".chipwrap").classList.add("used");
+    const built = bubble.querySelector(".built");
+    built.innerHTML = t.parts.slice(0, next + 1).map(p => rubify(p.p)).join(" ");
+
+    const say = chip.parentElement.querySelector(".chipsay");
+    const last = next + 1 === t.parts.length;
+
+    if (!last) { if (say) speak(say.dataset.say, say, say.dataset.rate, say.dataset.key); return; }
+
+    /* 마지막 조각이면 그 조각을 먼저 읽고, 다 읽은 뒤에 문장 전체를 이어 읽는다. */
+    finishBuild(bubble, t, true);
+    const whole = () => {
+      const b = bubble.querySelector(".tline .speak");
+      if (b) speak(b.dataset.say, b, b.dataset.rate, b.dataset.key);
+    };
+    if (say) speak(say.dataset.say, say, say.dataset.rate, say.dataset.key, whole);
+    else whole();
+    return;
+  }
+
+  const rv = e.target.closest(".reveal");
+  if (rv) {
+    const bubble = rv.closest(".bubble");
+    const t = DATA.find(x => x.no === current).dialogue.turns[Number(bubble.dataset.i)];
+    bubble.querySelectorAll(".chipwrap").forEach(c => c.classList.add("used"));
+    bubble.querySelector(".built").innerHTML = t.parts.map(p => rubify(p.p)).join(" ");
+    finishBuild(bubble, t);
+    return;
+  }
+
+  const more = e.target.closest(".qmore-toggle");
+  if (more) {
+    const open = more.getAttribute("aria-expanded") === "true";
+    more.setAttribute("aria-expanded", open ? "false" : "true");
+    more.closest(".qway").nextElementSibling.hidden = open;
+    return;
+  }
+
+  const opt = e.target.closest(".opt");
+  if (opt) {
+    const q = opt.closest(".q");
+    if (q.classList.contains("done")) return;
+    const d = DATA.find(x => x.no === current);
+    const ans = d.quiz[Number(q.dataset.q)].ans;
+    q.classList.add("done");
+    q.querySelectorAll(".opt").forEach((b, j) => {
+      if (j === ans) b.classList.add("ok");
+      else if (b === opt) b.classList.add("no");
+    });
+    return;
+  }
+});
+
+document.getElementById("ttsClose").addEventListener("click", () => { document.getElementById("ttsNote").hidden = true; });
+
+/* ═══════════ 바깥 브라우저로 열기 ═══════════
+   LINE·인스타그램 같은 앱 안 브라우저는 음성 기능을 막아 두는 경우가 많다. */
+const UA = navigator.userAgent;
+const inAppBrowser = /KAKAOTALK|NAVER\(inapp|Line\/|FBAN|FBAV|Instagram|DaumApps/i.test(UA);
+const isAndroid = /Android/i.test(UA);
+const isIOS = /iPhone|iPad|iPod/i.test(UA);
+
+const TARGET = isIOS ? "Safari" : "Chrome";
+
+function openOutside() {
+  const url = location.href;
+  if (/KAKAOTALK/i.test(UA)) {
+    location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(url);
+    return;
+  }
+  if (isIOS) {
+    location.href = url.replace(/^https:/, "x-safari-https:").replace(/^http:/, "x-safari-http:");
+    setTimeout(() => { if (!document.hidden) copyLink(); }, 1200);
+    return;
+  }
+  if (isAndroid) {
+    location.href = "intent://" + url.replace(/^https?:\/\//, "") +
+      "#Intent;scheme=" + location.protocol.replace(":", "") +
+      ";package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+    return;
+  }
+  window.open(url, "_blank");
+}
+
+/* 마지막 수단 — 주소를 복사해 주고 붙여 넣으라고 알린다. */
+function copyLink() {
+  const url = location.href;
+  const done = () => toast("アドレスをコピーしました。" + TARGET + "に貼り付けてください。");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done, done);
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+}
+
+if (inAppBrowser && (isAndroid || isIOS)) {
+  const box = document.getElementById("openChrome");
+  box.hidden = false;
+  document.getElementById("ocGo").textContent = TARGET + "で開く";
+  document.getElementById("ocMsg").textContent =
+    "ここでは韓国語の発音が出ません。" + TARGET + "で開くと音が出ます。入れるものは何もありません。";
+  document.getElementById("ocGo").addEventListener("click", openOutside);
+  document.getElementById("ocCopy").addEventListener("click", copyLink);
+  document.getElementById("ocClose").addEventListener("click", () => { box.hidden = true; });
+}
+
+/* 버튼을 누르지 않고 그냥 닫아도 자리를 잃지 않도록 조용히 적어 둔다. */
+document.addEventListener("visibilitychange", () => { if (document.hidden) saveSpot(true); });
+window.addEventListener("pagehide", () => saveSpot(true));
+
+window.addEventListener("scroll", () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById("prog").style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+});
+
+/* ═══════════ 시작 ═══════════ */
+(() => {
+  const spot = getSpot();
+  if (view === "day" && spot && spot.day === current) pendingY = spot.y;
+})();
+
+paint();
+
+/* ═══════════ PWA 설치 안내 ═══════════ */
+(function () {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "update-ready") {
+        toast("新しい内容を受け取りました。開き直すと反映されます。");
+      }
+    });
+  }
+
+  const btn   = document.getElementById("installBtn");
+  const note  = document.getElementById("installNote");
+  const title = document.getElementById("installTitle");
+  const steps = document.getElementById("installSteps");
+  const nowBtn = document.getElementById("installNow");
+  const ua = navigator.userAgent;
+
+  if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true) return;
+
+  const DONE = "hangul-lingo-lite-installed";
+  const markInstalled = () => { try { localStorage.setItem(DONE, "1"); } catch (e) {} };
+  let already = false;
+  try { already = localStorage.getItem(DONE) === "1"; } catch (e) {}
+  if (already) return;
+
+  const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(ua);
+  const inApp = /KAKAOTALK|Teams|MSTeams|NAVER|Line\/|band|DaumApps|Instagram|FB_IAB|FBAN|FBAV/i.test(ua);
+  const isMobile = isIOS || isAndroid;
+
+  let deferred = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); deferred = e;
+    if (!note.hidden) open();
+  });
+  window.addEventListener("appinstalled", () => { markInstalled(); btn.hidden = true; hide(); syncBar(); });
+
+  btn.hidden = false;
+  syncBar();
+
+  function showNow() { nowBtn.hidden = !deferred; }
+  function hide() { note.hidden = true; }
+
+  function build() {
+    if (inApp) {
+      title.textContent = "📲 まずブラウザで開いてください";
+      return '<p><b>いま LINE などアプリのなかで開いています。</b>ここではインストールできません。</p>' +
+             '<ol>' +
+               '<li>画面<b>右上のメニュー</b>（⋯ または ⋮）を押します</li>' +
+               '<li><b>「ほかのブラウザで開く」</b>を選びます' +
+                 (isIOS ? ' — iPhone は <b>Safari</b>' : isAndroid ? ' — Android は <b>Chrome</b>' : '') + '</li>' +
+               '<li>開いた画面でこの案内がまた出たら、そのまま進めてください</li>' +
+             '</ol>';
+    }
+    if (isIOS) {
+      title.textContent = "📲 ホーム画面に追加する";
+      return '<p><b>iPhone · iPad（Safari）</b></p>' +
+             '<ol>' +
+               '<li>画面<b>下の共有ボタン</b>（□の上に矢印）を押します</li>' +
+               '<li>下へたどって<b>「ホーム画面に追加」</b>を選びます</li>' +
+               '<li>右上の<b>「追加」</b>を押せば終わりです</li>' +
+             '</ol>';
+    }
+    if (isAndroid) {
+      title.textContent = "📲 アプリとして入れる";
+      return '<p><b>Android（Chrome）</b></p>' +
+             '<ol>' +
+               (deferred
+                 ? '<li>下の<b>「いますぐ入れる」</b>を押します</li>'
+                 : '<li>画面<b>右上のメニュー（⋮）</b>を押します</li>' +
+                   '<li><b>「アプリをインストール」</b>または<b>「ホーム画面に追加」</b>を選びます</li>') +
+             '</ol>';
+    }
+    title.textContent = "📲 アプリとして入れる";
+    return '<p><b>パソコン（Chrome · Edge）</b></p>' +
+           '<ol>' +
+             (deferred ? '<li>下の<b>「いますぐ入れる」</b>を押します</li>' : '') +
+             '<li>アドレスバー右端の<b>インストールのアイコン</b>を押します</li>' +
+             '<li>なければメニュー → <b>「アプリをインストール」</b></li>' +
+           '</ol>';
+  }
+
+  function open() {
+    steps.innerHTML = build() +
+      '<p>入れておくと、アイコンから、アドレスバーなしでアプリのように開きます。通信が切れても使えます。</p>';
+    showNow();
+    note.hidden = false;
+  }
+
+  const SEEN = "hangul-lingo-lite-install-seen";
+  let seen = false;
+  try { seen = localStorage.getItem(SEEN) === "1"; } catch (e) {}
+  if (!seen && (isMobile || inApp)) {
+    setTimeout(() => { if (note.hidden) open(); }, 1200);
+  }
+
+  btn.addEventListener("click", open);
+
+  nowBtn.addEventListener("click", async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    nowBtn.hidden = true;
+    if (outcome === "accepted") { markInstalled(); btn.hidden = true; hide(); syncBar(); }
+  });
+
+  document.getElementById("installNoteClose").addEventListener("click", () => {
+    hide();
+    try { localStorage.setItem(SEEN, "1"); } catch (e) {}
+  });
+})();
+</script>
