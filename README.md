@@ -11,6 +11,7 @@
 | 🚂 **자정 열차** | 선택으로 이야기를 만들어가는 인터랙티브 소설. 장면 65개, 결말 11개(숨은 결말 1개) | [`midnight-train/`](midnight-train/) |
 | 🏭 **스틸링고 Lite** | 철강·자동차 업계 일본어 입문. 생활 소재로 가볍게 시작 | [`steel-lingo/lite/`](steel-lingo/lite/) |
 | 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
+| 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
@@ -27,7 +28,7 @@
 
 ### 휴대폰에 앱으로 두기
 
-스틸링고 Lite·Pro, ROUNDTABLE, 茶馆 CHÁGUǍN, 스틸 워크 스타일 다섯 개는 **홈 화면에 설치**해서 쓸 수 있습니다.
+스틸링고 Lite·Pro, ハングリンゴ Lite, ROUNDTABLE, 茶馆 CHÁGUǍN, 스틸 워크 스타일 여섯 개는 **홈 화면에 설치**해서 쓸 수 있습니다.
 웹 주소로 앱을 열면 우측 상단에 **📲 설치** 버튼이 뜹니다. 안드로이드는 그 버튼으로 바로 설치되고,
 아이폰은 Safari의 공유 → **「홈 화면에 추가」**를 쓰면 됩니다.
 설치하면 주소창 없이 앱처럼 열리고 인터넷이 끊겨도 그대로 돌아갑니다.
@@ -53,6 +54,7 @@
 | ことば日和 | `kotoba-biyori/` | [`skills/kotoba-biyori/`](skills/kotoba-biyori/) |
 | 스틸링고 Lite | `steel-lingo/lite/` | [`skills/steel-lingo-lite/`](skills/steel-lingo-lite/) |
 | 스틸링고 Pro | `steel-lingo/pro/` | [`skills/steel-lingo-pro/`](skills/steel-lingo-pro/) |
+| ハングリンゴ Lite | `hangul-lingo/lite/` | [`skills/hangul-lingo-lite/`](skills/hangul-lingo-lite/) |
 | 철강 일본어 매일 훈련 (팀원용, 앱과 별개) | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 쉐도잉 회차 (茶馆·ROUNDTABLE 공용) | `chaguan/`, `roundtable/` | [`skills/shadowing-decks/`](skills/shadowing-decks/) |
 | 스틸 워크 스타일 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
