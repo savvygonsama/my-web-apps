@@ -1948,11 +1948,110 @@ function buildDecision(s, ui) {
 }
 
 /* ============================================================
-   공장 그림
+   공장 조감도 — 아이소메트릭
+   격자 좌표 (x, y, z)를 화면 좌표로 옮겨 그린다. x는 오른쪽 아래로,
+   y는 왼쪽 아래로, z는 위로 간다. 그래서 보는 사람 쪽을 향한 면은
+   언제나 x+w 면과 y+d 면이고, 나머지 두 면은 뒤로 숨는다.
    ============================================================ */
-function coil(x, y, r, cls) {
-  return `<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>` +
-         `<circle cx="${x}" cy="${y}" r="${r * .34}" fill="#fffdf8" opacity=".9"/>`;
+const U = 16;                                   // 격자 한 칸 (px)
+const IX = (x, y) => (x - y) * 0.866 * U;
+const IY = (x, y, z = 0) => ((x + y) * 0.5 - z) * U;
+const PT = (x, y, z = 0) => `${IX(x, y).toFixed(1)},${IY(x, y, z).toFixed(1)}`;
+
+// 면마다 밝기를 달리해야 입체로 읽힌다
+function dim(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  return '#' + [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map(v => Math.round(Math.min(255, v * f)).toString(16).padStart(2, '0')).join('');
+}
+
+// 직육면체 — 윗면 + 앞면 두 장
+function cube(x, y, w, d, h, color, z = 0, op) {
+  const o = op == null ? '' : ` opacity="${op}"`;
+  return `<polygon points="${PT(x,y,z+h)} ${PT(x+w,y,z+h)} ${PT(x+w,y+d,z+h)} ${PT(x,y+d,z+h)}" fill="${color}"${o}/>`
+       + `<polygon points="${PT(x,y+d,z+h)} ${PT(x+w,y+d,z+h)} ${PT(x+w,y+d,z)} ${PT(x,y+d,z)}" fill="${dim(color,.80)}"${o}/>`
+       + `<polygon points="${PT(x+w,y,z+h)} ${PT(x+w,y+d,z+h)} ${PT(x+w,y+d,z)} ${PT(x+w,y,z)}" fill="${dim(color,.62)}"${o}/>`;
+}
+// 바닥면 한 장
+function pad(x, y, w, d, fill, stroke, z = 0, cls) {
+  return `<polygon points="${PT(x,y,z)} ${PT(x+w,y,z)} ${PT(x+w,y+d,z)} ${PT(x,y+d,z)}"`
+       + ` fill="${fill}"${stroke ? ` stroke="${stroke}" stroke-width="1.4"` : ''}${cls ? ` class="${cls}"` : ''}/>`;
+}
+// 코일 — 참고 그림처럼 단면이 보이게 원으로 그린다
+function coilP(x, y, z, r, color) {
+  return `<circle cx="${IX(x,y).toFixed(1)}" cy="${IY(x,y,z).toFixed(1)}" r="${r}"`
+       + ` fill="${color}" stroke="${dim(color,.66)}" stroke-width="1.3"/>`
+       + `<circle cx="${IX(x,y).toFixed(1)}" cy="${IY(x,y,z).toFixed(1)}" r="${(r*.33).toFixed(1)}" fill="#fdfbf6"/>`;
+}
+// 팔레트에 쌓은 가공 판재
+function stackP(x, y, c) {
+  return cube(x, y, 2.1, 1.6, 0.22, '#b5814f')
+       + cube(x + 0.1, y + 0.1, 1.9, 1.4, 0.5, c, 0.22);
+}
+function txt(x, y, z, s, cls) {
+  return `<text x="${IX(x,y).toFixed(1)}" y="${IY(x,y,z).toFixed(1)}" class="${cls}">${s}</text>`;
+}
+
+/* ---- 설비 세 종류. 베이 한 칸(4.2 × 2.6)에 들어간다 ----
+   왼쪽에서 원코일이 들어가 오른쪽으로 제품이 나오는 배치로 통일한다.
+   그래야 공장동 안을 훑었을 때 흐름이 한눈에 읽힌다. */
+function mSlitter(x, y) {
+  return cube(x, y, 3.9, 2.4, 0.28, '#e0b64a')                    // 노란 데크
+       + coilP(x + 0.6, y + 1.2, 1.15, 9.5, '#9aa4ad')            // 입측 원코일
+       + cube(x + 1.6, y + 0.35, 1.0, 1.7, 1.45, '#3f6f9e', 0.28) // 슬리터 본체
+       + cube(x + 1.74, y + 0.5, 0.2, 1.4, 1.0, '#d5dde3', 0.5)   // 칼날부
+       + coilP(x + 3.3, y + 0.8, 1.05, 6, '#aeb7bf')              // 출측 소폭 코일
+       + coilP(x + 3.3, y + 1.7, 1.05, 6, '#aeb7bf');
+}
+function mLeveler(x, y) {
+  return cube(x, y, 3.9, 2.4, 0.28, '#d8cfbc')
+       + coilP(x + 0.6, y + 1.2, 1.12, 9, '#9aa4ad')
+       + cube(x + 1.5, y + 0.4, 1.4, 1.6, 1.15, '#4f8f6f', 0.28)  // 롤러 하우징
+       + stackP(x + 3.0, y + 0.5, '#e6edf1');                     // 나온 평판
+}
+function mBlank(x, y) {
+  return cube(x, y, 3.9, 2.4, 0.28, '#d8cfbc')
+       + coilP(x + 0.55, y + 1.2, 1.1, 8.5, '#9aa4ad')
+       + cube(x + 1.5, y + 0.3, 0.3, 1.8, 2.3, '#cfc8ba', 0.28)   // 프레스 기둥
+       + cube(x + 2.35, y + 0.3, 0.3, 1.8, 2.3, '#cfc8ba', 0.28)
+       + cube(x + 1.45, y + 0.3, 1.25, 1.8, 0.45, '#b8443a', 2.1) // 상부 프레스
+       + cube(x + 1.5, y + 0.55, 1.15, 1.3, 0.28, '#b8443a', 0.28)
+       + stackP(x + 3.05, y + 0.55, '#e6edf1');
+}
+const MACHINE = { SLIT: mSlitter, LEVEL: mLeveler, BLANK: mBlank };
+
+/* ---- 공장동 ----
+   뒤쪽 두 벽만 세우고 앞은 터놓는다. 앞에도 벽을 세우면 안이 안 보인다.
+   지붕은 참고 그림처럼 유리로 덮어 설비가 비쳐 보이게 한다. */
+function hallShell(w, d, wh, rh) {
+  const glass = '#bcd4e0';
+  return `
+    ${pad(0, 0, w, d, '#efe9dc')}
+    <polygon points="${PT(0,0,0)} ${PT(w,0,0)} ${PT(w,0,wh)} ${PT(0,0,wh)}" fill="#e7e0d0"/>
+    <polygon points="${PT(0,0,0)} ${PT(0,d,0)} ${PT(0,d,wh)} ${PT(0,0,wh)}" fill="#dcd4c2"/>
+    <polygon points="${PT(0.3,0,1.1)} ${PT(w-0.3,0,1.1)} ${PT(w-0.3,0,2.1)} ${PT(0.3,0,2.1)}" fill="#a9c4d4" opacity=".75"/>
+    <polygon points="${PT(0,0.3,1.1)} ${PT(0,d-0.3,1.1)} ${PT(0,d-0.3,2.1)} ${PT(0,0.3,2.1)}" fill="#96b4c6" opacity=".75"/>`;
+}
+function hallRoof(w, d, wh, rh) {
+  const g = '#b9d3e2', ridge = wh + rh, my = d / 2;
+  return `
+    <polygon points="${PT(0,0,wh)} ${PT(w,0,wh)} ${PT(w,my,ridge)} ${PT(0,my,ridge)}"
+      fill="${g}" opacity=".42" stroke="#8fb0c4" stroke-width="1.2"/>
+    <polygon points="${PT(0,my,ridge)} ${PT(w,my,ridge)} ${PT(w,d,wh)} ${PT(0,d,wh)}"
+      fill="${g}" opacity=".26" stroke="#8fb0c4" stroke-width="1.2"/>
+    <polygon points="${PT(w,0,wh)} ${PT(w,my,ridge)} ${PT(w,d,wh)}" fill="#cfe0ea" opacity=".5" stroke="#8fb0c4" stroke-width="1.2"/>
+    <polygon points="${PT(0,0,wh)} ${PT(0,my,ridge)} ${PT(0,d,wh)}" fill="#cfe0ea" opacity=".35" stroke="#8fb0c4" stroke-width="1.2"/>`;
+}
+/* 천장 크레인 — 참고 그림의 노란 갠트리. 야드에서 라인으로 코일을 옮긴다. */
+function gantry(w, d, wh, bx, ty) {
+  const h = wh - 0.55;
+  return cube(bx, 0, 0.45, 0.45, h, '#e0b64a')
+       + cube(bx, d - 0.45, 0.45, 0.45, h, '#e0b64a')
+       + cube(bx, 0, 0.45, d, 0.4, '#eec659', h)
+       + cube(bx - 0.25, ty, 0.95, 0.95, 0.42, '#4a6fa5', h - 0.42)
+       + `<line x1="${IX(bx+0.22,ty+0.48).toFixed(1)}" y1="${IY(bx+0.22,ty+0.48,h-0.42).toFixed(1)}"
+                x2="${IX(bx+0.22,ty+0.48).toFixed(1)}" y2="${IY(bx+0.22,ty+0.48,1.5).toFixed(1)}" class="hook"/>`
+       + coilP(bx + 0.22, ty + 0.48, 1.2, 8, '#9aa4ad');
 }
 
 function factorySVG(s, L) {
@@ -1960,73 +2059,120 @@ function factorySVG(s, L) {
   const raw = s.invRaw.reduce((a, l) => a + l.qty, 0);
   const fg = s.invFg.reduce((a, l) => a + l.qty, 0);
   const over = (raw + fg) > CFG.WAREHOUSE_CAP_BASE;
-  const per = 2200;
 
-  let yard = '';
-  for (let i = 0; i < Math.min(28, Math.round(raw / per)); i++) {
-    const col = i % 7, row = (i / 7) | 0;
-    yard += coil(200 + col * 28, 218 - row * 26, 11, over ? 'coil bad' : 'coil');
-  }
-  let out = '';
-  for (let i = 0; i < Math.min(12, Math.round(fg / per)); i++) {
-    const col = i % 4, row = (i / 4) | 0;
-    out += coil(790 + col * 27, 160 - row * 25, 10, 'coil fgc');
-  }
+  /* 참고 그림처럼 공장동과 설비를 각각 하나의 아이콘으로 떼어 놓는다.
+     한 건물 안에 다 우겨넣으면 작아져서 아무것도 안 보인다.
+     위 줄에 공장동과 가공 설비, 아래 줄에 소재 야드와 제품 창고를 둔다. */
+  const CX = [300, 592, 812], RY = [132, 306];
+  const cap = (x, y, t, v, cls) =>
+    `<text x="${x}" y="${y}" class="lbl" style="font-size:12px">${t}</text>` +
+    (v ? `<text x="${x}" y="${y + 15}" class="tiny ${cls || ''}">${v}</text>` : '');
 
-  const ships = s.poOpen.reduce((acc, p) => {
-    const k = acc.find(x => x.eta === p.etaTurn);
-    if (k) k.qty += p.qty; else acc.push({ eta: p.etaTurn, qty: p.qty });
-    return acc;
+  /* --- 바다에 떠 있는 배 = 미착 발주 --- */
+  const ships = s.poOpen.reduce((a, p) => {
+    const k = a.find(x => x.eta === p.etaTurn);
+    if (k) k.qty += p.qty; else a.push({ eta: p.etaTurn, qty: p.qty });
+    return a;
   }, []).sort((a, b) => a.eta - b.eta).slice(0, 3);
-  let sea = ships.length
-    ? ships.map((sh, i) => `<g transform="translate(14,${68 + i * 62})">
-        <path d="M0 14 L56 14 L48 28 L8 28 Z" class="ship"/>
-        <rect x="17" y="1" width="22" height="13" rx="2" class="ship"/>
-        <text x="28" y="43" class="tiny mid">${sh.eta}월 ${fmt(sh.qty)}t</text></g>`).join('')
-    : `<text x="44" y="150" class="tiny mid dim">바다에 배가 없습니다</text>`;
+  const sea = ships.length
+    ? ships.map((sh, i) => `<g transform="translate(9,${86 + i * 92})">
+        <path d="M0 13 L52 13 L45 26 L7 26 Z" fill="#6f8794"/>
+        <rect x="16" y="1" width="20" height="12" rx="2" fill="#5d7581"/>
+        <circle cx="22" cy="7" r="2" fill="#cfdee6"/><circle cx="30" cy="7" r="2" fill="#cfdee6"/>
+        <text x="26" y="41" class="tiny mid b">${sh.eta}월</text>
+        <text x="26" y="54" class="tiny mid">${fmt(sh.qty)}t</text></g>`).join('')
+    : `<text x="40" y="210" class="tiny mid dim">바다에</text>
+       <text x="40" y="226" class="tiny mid dim">배가 없습니다</text>`;
 
-  const lines = s.lines.map((l, i) => {
-    const u = l.type === 'SLIT' ? (L.now.SLIT || 0) / Math.max(1, c.SLIT)
-            : l.type === 'LEVEL' ? (L.now.LEVEL || 0) / Math.max(1, c.LEVEL)
+  /* --- 공장동: 건물과 천장 크레인. 라인이 몇 개 도는지가 여기 뜬다 --- */
+  const HW = 7.6, HD = 6.4, WH = 3.6, RH = 2.3;
+  let inside = '';
+  for (let i = 0; i < 5; i++) inside += coilP(1.4 + (i % 3) * 1.9, 1.6 + ((i / 3) | 0) * 2.2, 0.95, 12, '#9aa4ad');
+  const hall = `<g transform="translate(${CX[0]},${RY[0]})">
+      ${hallShell(HW, HD, WH, RH)}
+      ${gantry(HW, HD, WH, 0.25, 4.6)}
+      ${inside}
+      ${hallRoof(HW, HD, WH, RH)}
+    </g>`;
+
+  /* --- 가공 설비 세 대를 따로 --- */
+  const SLOT = [
+    { type: 'SLIT',  x: CX[1], y: RY[0] },
+    { type: 'LEVEL', x: CX[2], y: RY[0] },
+    { type: 'BLANK', x: CX[1], y: RY[1] },
+  ];
+  const util = t => {
+    const u = t === 'SLIT' ? (L.now.SLIT || 0) / Math.max(1, c.SLIT)
+            : t === 'LEVEL' ? (L.now.LEVEL || 0) / Math.max(1, c.LEVEL)
             : ((L.now.TRAP || 0) + (L.now.DIE || 0)) / Math.max(1, c.BLANK);
-    const util = Math.max(0, Math.min(1, u)), w = 190;
-    return `<g transform="translate(440,${78 + i * 58})">
-      <rect width="${w}" height="42" rx="8" class="line"/>
-      <rect x="8" y="25" width="${w - 16}" height="10" rx="5" class="utilbg"/>
-      <rect x="8" y="25" width="${(w - 16) * util}" height="10" rx="5" class="util ${util > .92 ? 'hot' : ''}"/>
-      <text x="12" y="19" class="lbl">${CFG.LINE[l.type].label}</text>
-      <text x="${w - 12}" y="19" class="lbl end">${Math.round(util * 100)}%</text></g>`;
+    return Math.max(0, Math.min(1, u));
+  };
+  const machines = SLOT.map(m => {
+    const have = s.lines.filter(l => l.type === m.type).length;
+    const building = (s.buildQueue || []).find(b => b.type === m.type);
+    const lx = m.x - 50, ly = m.y + 86;          // 캡션 자리
+    let body, label, sub, cls = '';
+    if (have) {
+      const u = util(m.type);
+      body = pad(0, 0, 5.4, 3.4, '#e9e2d2', '#d8cfba') + MACHINE[m.type](0.6, 0.45);
+      label = `${CFG.LINE[m.type].label}${have > 1 ? ` ×${have}` : ''}`;
+      sub = `가동률 ${Math.round(u * 100)}%`;
+      body += '';
+      var bar = `<rect x="${lx}" y="${ly + 7}" width="96" height="8" rx="4" class="utilbg"/>
+                 <rect x="${lx}" y="${ly + 7}" width="${(96 * u).toFixed(1)}" height="8" rx="4"
+                   class="util ${u > 0.92 ? 'hot' : ''}"/>`;
+    } else if (building) {
+      body = pad(0, 0, 5.4, 3.4, 'none', '#cfc6b4', 0, 'slot')
+           + cube(1.8, 1.0, 1.9, 1.4, 1.0, '#c3a882');
+      label = CFG.LINE[m.type].label; sub = `설치 중 · ${building.readyTurn}월 가동`; cls = 'dim';
+      var bar = '';
+    } else {
+      body = pad(0, 0, 5.4, 3.4, 'none', '#cfc6b4', 0, 'slot');
+      label = CFG.LINE[m.type].label; sub = '없음'; cls = 'dim';
+      var bar = '';
+    }
+    return `<g transform="translate(${m.x},${m.y})">${body}</g>`
+         + cap(lx, ly, label, sub, cls) + bar;
   }).join('');
 
-  let slots = '';
-  for (let i = 0; i < CFG.MAX_LINES - s.lines.length; i++)
-    slots += `<g transform="translate(440,${78 + (s.lines.length + i) * 58})">
-      <rect width="190" height="42" rx="8" class="slot"/>
-      <text x="95" y="26" class="tiny mid dim">빈 자리</text></g>`;
+  /* --- 소재 야드 --- */
+  const nRaw = Math.max(0, Math.min(24, Math.round(raw / 1800)));
+  let yard = pad(0, 0, 8.2, 6.0, '#e3d9c3', '#d2c6ac');
+  for (let i = 0; i < nRaw; i++) {
+    const col = i % 5, row = (i / 5) | 0;
+    yard += coilP(1.0 + col * 1.45, 1.1 + (row % 3) * 1.8, 0.95 + ((row / 3) | 0) * 1.4, 12,
+                  over ? '#c2857c' : '#9aa4ad');
+  }
 
-  return `<svg viewBox="0 0 960 296" class="plant">
-    <rect width="90" height="296" class="sea"/>
-    <rect x="90" width="870" height="296" class="ground"/>
+  /* --- 제품 창고와 출하 --- */
+  const nFg = Math.max(0, Math.min(9, Math.round(fg / 1600)));
+  let ship = pad(0, 0, 6.0, 4.8, '#e3d9c3', '#d2c6ac');
+  for (let i = 0; i < nFg; i++) {
+    const col = i % 3, row = (i / 3) | 0;
+    ship += stackP(0.45 + col * 1.85, 0.35 + row * 1.5, '#dfe7ec');
+  }
+  ship += cube(3.5, 3.3, 2.0, 1.1, 0.95, '#b5814f')
+        + cube(5.3, 3.46, 0.9, 0.78, 0.7, '#a2723f');
+
+  return `<svg viewBox="0 0 936 470" class="plant">
+    <rect width="78" height="470" class="sea"/>
+    <rect x="78" width="858" height="470" class="ground"/>
     ${sea}
-    <rect x="112" y="46" width="298" height="204" rx="10" class="zone"/>
-    <text x="124" y="67" class="lbl">소재 야드</text>
-    <text x="398" y="67" class="lbl end ${over ? 'warn' : 'dim'}">${fmt(raw)}t</text>
-    ${yard}
-    ${over ? `<text x="261" y="240" class="tiny mid warn">야드가 넘쳤습니다 · 동선이 막힙니다</text>` : ''}
-    <rect x="426" y="46" width="220" height="204" rx="10" class="zone"/>
-    <text x="438" y="67" class="lbl">공장동</text>
-    ${lines}${slots}
-    <rect x="662" y="46" width="286" height="204" rx="10" class="zone"/>
-    <text x="674" y="67" class="lbl">제품 창고 · 출하</text>
-    <text x="936" y="67" class="lbl end dim">${fmt(fg)}t</text>
-    ${out}
-    <g transform="translate(700,198)">
-      <rect width="48" height="27" rx="3" class="truck"/>
-      <rect x="48" y="9" width="23" height="18" rx="3" class="truck"/>
-      <circle cx="14" cy="29" r="5" class="wheel"/><circle cx="58" cy="29" r="5" class="wheel"/></g>
-    <text x="804" y="238" class="tiny mid dim">출하</text>
+
+    ${hall}
+    ${cap(CX[0] - 92, RY[0] + 110, '공장동', `${s.lines.length} / ${CFG.MAX_LINES} 라인 가동`)}
+    ${machines}
+
+    <g transform="translate(${CX[0]},${RY[1]})">${yard}</g>
+    ${cap(CX[0] - 84, RY[1] + 118, '소재 야드', `${fmt(raw)}t`, over ? 'warn b' : 'b')}
+    ${over ? `<text x="${CX[0] - 84}" y="${RY[1] + 148}" class="tiny warn">야드가 넘쳤습니다 · 동선이 막힙니다</text>` : ''}
+
+    <g transform="translate(${CX[2]},${RY[1]})">${ship}</g>
+    ${cap(CX[2] - 68, RY[1] + 100, '제품 창고 · 출하', `${fmt(fg)}t`, 'b')}
   </svg>`;
 }
+
+
 
 /* ============================================================
    스테이터스 창
