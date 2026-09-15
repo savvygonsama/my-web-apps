@@ -249,9 +249,16 @@
 /* ---------- 설정 ---------- */
 
 const CFG = {
-  // 판매 유형별 마진·수율 (v3 §1-2)
-  COIL_MARGIN: 10,                                    // 전 유형 공통
-  PROC_MARGIN: { C2C: 0, SLIT: 30, LEVEL: 30, TRAP: 45, DIE: 75 },
+  /* ---- 판매 유형별 마진·수율 ----
+     톤당 마진에서 변동비·고정비·감가상각·이자·대손이 차례로 빠진다.
+     처음 잡았던 값(통코일 $10, 가공 $40)으로는 매출총이익이 톤당 $27밖에 안 나와
+     영업이익 $10에 이자 $7.6과 대손 $4.5를 물고 나면 순이익이 구조적으로 적자였다.
+     몇 년을 그렇게 두면 자본이 잠식되어 법인이 없어진다 — 그렇게 굴러가는
+     코일센터는 없다. 통상 매출 대비 영업이익 2~3%, 순이익 1~1.5% 선이므로
+     톤당 매출 $870에 맞춰 영업이익 $20 안팎이 나오도록 잡았다.
+     불황이 오면 이 마진에서도 적자가 난다 — 그건 구조가 아니라 시황이다. */
+  COIL_MARGIN: 18,                                    // 전 유형 공통 (통코일도 이만큼은 붙는다)
+  PROC_MARGIN: { C2C: 0, SLIT: 38, LEVEL: 38, TRAP: 55, DIE: 95 },
   YIELD:       { C2C: 1.00, SLIT: 0.98, LEVEL: 0.98, TRAP: 0.98, DIE: 0.85 },
   VAR_COST:    { C2C: 3, SLIT: 12, LEVEL: 12, TRAP: 25, DIE: 25 }, // 처리톤당
 
@@ -515,8 +522,8 @@ const CFG = {
      본사 기여 = 본사(P사)가 우리에게 소재를 팔아 벌어들인 영업이익 누계
      법인 손익 = 코일센터 자체 영업이익 누계
      이 둘은 같이 가지 않는다. 그게 이 게임의 전부다. */
-  HQ_PROFIT_TARGET: 40_000_000,
-  SOLO_OP_TARGET: 6_000_000,
+  HQ_PROFIT_TARGET: 44_000_000,
+  SOLO_OP_TARGET: 19_000_000,
 };
 
 const PROC_LIST = ['C2C', 'SLIT', 'LEVEL', 'TRAP', 'DIE'];
@@ -731,7 +738,7 @@ function capacityOf(state) {
 /* 기저 수요 (실무자 확인) — 연 25만톤 코일센터.
      가공  슬리터 연 10만톤 + 레벨러 연 5만톤 = 연 15만톤 (설비 캐파가 상한)
      통코일 연 10만톤 — 라인을 안 쓰므로 캐파 상한이 없다
-   통코일이 판매의 40%다. 마진은 톤당 $10뿐이라 얇지만, 가공을 안 하니
+   통코일이 판매의 40%다. 마진은 코일마진 톤당 $18뿐이라 얇지만, 가공을 안 하니
    변동비도 $3뿐이고 수율 손실이 없다. 대신 소재는 똑같이 사와야 하므로
    자금은 가공품과 똑같이 묶인다 — 물량의 절반이 여기 있다는 사실이
    이 회사의 운전자금 규모를 정한다.
@@ -2565,7 +2572,7 @@ function investOpt(s, it) {
     const cx = CFG.LINE[it.type].capex, cap = CFG.LINE[it.type].cap;
     const lab = CFG.LINE[it.type].label;
     const gain = it.type === 'BLANK'
-      ? `없던 시장이 열립니다 · 톤당 가공마진 $45~75`
+      ? `없던 시장이 열립니다 · 톤당 가공마진 $${CFG.PROC_MARGIN.TRAP}~${CFG.PROC_MARGIN.DIE}`
       : `가공 캐파 월 +${fmt(cap)}톤`;
     return { label: it.type === 'BLANK' ? '블랭킹 라인을 새로 놓는다' : `${lab}를 한 대 더 놓는다`,
       hint: `${K(cx)}천U$ · ${CFG.INSTALL_TURNS}개월 뒤 가동 · ${gain} · ${fin(cx)}`,
@@ -2976,7 +2983,12 @@ function balanceSheet(s) {
     ${row('자본 <span class="muted">납입 + 누적손익</span>', equity)}
     <tr class="tot"><td>부채와 자본 합계</td><td>${K(ap + debt + fac + equity)}</td></tr>
   </table>
-  <p class="hint">차입 여력 ${K(s.debt.limit - s.debt.principal)}천U$ · 소재 시세 $${fmt(s.market.pm)}/톤 · 직원 사기 ${Math.round(s.morale)}</p>`;
+  <p class="hint">차입 여력 ${K(s.debt.limit - s.debt.principal)}천U$ · 소재 시세 $${fmt(s.market.pm)}/톤 · 직원 사기 ${Math.round(s.morale)}</p>
+  ${equity < s.paidIn * 0.6 ? `<div class="note bad"><b>자본이 줄고 있습니다.</b>
+    납입자본금 ${K(s.paidIn)}천U$ 가운데 ${K(equity)}천U$만 남았습니다.
+    이게 0이 되면 회사는 이익을 내든 못 내든 없어집니다.</div>`
+   : equity > s.paidIn ? `<p class="hint">납입자본금 ${K(s.paidIn)}천U$에 그동안 번 돈
+     ${K(equity - s.paidIn)}천U$가 쌓였습니다.</p>` : ''}`;
 }
 
 // 시세가 어느 쪽으로 가고 있는지
