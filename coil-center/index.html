@@ -2,140 +2,191 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>코일센터 경영 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ============================================================
+     스틸 그레이드 가챠와 같은 결 — 큐비즘
+       · 모서리를 자른 면(clip-path)으로 판을 만든다. 둥근 모서리를 쓰지 않는다
+       · 그라데이션은 부드럽게 섞지 않고 각진 면처럼 딱딱 끊는다 (0 40% / 40% 72% / 72% 100%)
+       · 차가운 청회색 바탕에 감청색 강조
+     ============================================================ */
   :root{
-    --bg:#f4f1ea; --panel:#fffdf8; --ink:#2e2a24; --dim:#7b7268; --line:#e2dbcf;
-    --accent:#c8622e; --accent2:#3f7d68; --warn:#b8443a; --good:#3f7d68;
-    --chip:#efe9dd; --shadow:0 2px 0 #e2dbcf, 0 8px 24px rgba(60,50,35,.08);
+    --bg:#E3E9EF;
+    --f1:#F2F5F8; --f2:#E0E7ED; --f3:#D0DAE4; --edge:#BCC8D4;
+    --ink:#16202B; --ink-2:#53616F; --ink-3:#8593A2;
+    --blue:#1F5C99; --blue-l:#4C8AC4; --deep:#243342;
+    --po:#BE473D; --ok:#2E7D53; --amber:#A0722A; --teal:#1A7B83;
+    --cut:14px;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.65 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1080px;margin:0 auto;padding:18px 16px 64px}
-  h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
-  h2{font-size:15px;margin:0 0 10px;letter-spacing:-.01em}
-  .sub{color:var(--dim);font-size:13px;margin:0 0 20px}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
-  .grid{display:grid;gap:14px}
-  @media(min-width:820px){ .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} }
+  /* 배경 파편 */
+  .facets{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .facets svg{position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:1400px;height:1400px;opacity:.55}
 
-  /* 상단 스테이터스 */
-  .hud{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:14px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;
-    padding:8px 12px;min-width:104px;flex:1 1 auto}
-  .stat .k{font-size:11px;color:var(--dim);letter-spacing:.02em}
-  .stat .v{font-size:17px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-  .v.neg{color:var(--warn)} .v.pos{color:var(--good)}
+  .wrap{max-width:780px;margin:0 auto;padding:22px 16px 60px;position:relative;z-index:1}
+  .cut{clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+       calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
 
-  .phase{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700}
-  .ph-BUST{background:#f2dedc;color:#a13a30}
-  .ph-NORMAL{background:#e7e2d6;color:#6b6357}
-  .ph-BOOM{background:#dbeade;color:#2f6b55}
+  h1{font-size:clamp(26px,6vw,34px);font-weight:700;letter-spacing:-.03em;margin:0 0 6px;line-height:1.08;
+     background:linear-gradient(112deg,#3E7FBF 0 34%,#1F5C99 34% 62%,#123F6E 62% 100%);
+     -webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:14px;margin:0 0 12px;letter-spacing:-.01em;font-weight:700}
+  .kicker{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 7px}
+  .sub{color:var(--ink-2);font-size:13px;margin:0 0 18px}
+  .rule{height:2px;background:linear-gradient(90deg,var(--blue) 0 22%,var(--edge) 22% 100%);margin:12px 0 18px}
 
-  /* 캐릭터 말풍선 */
-  .say{display:flex;gap:11px;align-items:flex-start;margin:0 0 12px}
-  .face{width:38px;height:38px;border-radius:11px;flex:0 0 38px;display:grid;place-items:center;
-    font-size:19px;background:var(--chip);border:1px solid var(--line)}
-  .bubble{background:var(--chip);border:1px solid var(--line);border-radius:4px 13px 13px 13px;
-    padding:9px 13px;font-size:14px;max-width:640px}
-  .bubble .who{font-size:11px;color:var(--dim);display:block;margin-bottom:1px}
-
-  /* 컨트롤 */
-  label.row{display:block;margin:14px 0 0}
-  .row .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px}
-  .row .lab b{font-size:15px;font-variant-numeric:tabular-nums}
-  input[type=range]{width:100%;accent-color:var(--accent);height:22px}
-  .hint{font-size:12px;color:var(--dim);margin-top:3px}
-
-  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);
-    background:var(--panel);color:var(--ink);padding:9px 15px;transition:.12s}
-  button:hover{transform:translateY(-1px)}
-  button:disabled{opacity:.4;cursor:not-allowed;transform:none}
-  .primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;
-    padding:13px 26px;font-size:16px;box-shadow:0 3px 0 #a04d22}
-  .primary:hover{box-shadow:0 4px 0 #a04d22}
-  .choice{display:flex;gap:8px;flex-wrap:wrap}
-  .choice button.on{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:700}
-
-  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-  th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:right}
-  th:first-child,td:first-child{text-align:left}
-  th{color:var(--dim);font-weight:500;font-size:11px}
-  tr.tot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
-
-  .bars{display:flex;flex-direction:column;gap:7px;margin-top:4px}
-  .bar{display:grid;grid-template-columns:64px 1fr 74px;gap:9px;align-items:center;font-size:12px}
-  .track{height:16px;background:var(--chip);border-radius:5px;overflow:hidden;position:relative}
-  .fill{height:100%;background:var(--accent2);border-radius:5px}
-  .fill.over{background:var(--warn)}
-  .cap{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.45}
-  .bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)}
-
-  .note{background:#fdf6e7;border:1px solid #ecdfbe;border-radius:10px;padding:10px 13px;
-    font-size:13px;margin:10px 0}
-  .note.bad{background:#fbeceb;border-color:#efcfcc}
-  .note.good{background:#e9f2ec;border-color:#cfe2d6}
-
-  dialog{border:none;border-radius:16px;padding:0;max-width:660px;width:calc(100% - 32px);
-    background:var(--panel);color:var(--ink);box-shadow:0 24px 70px rgba(50,40,25,.3)}
-  dialog::backdrop{background:rgba(46,42,36,.42)}
-  .dlg{padding:20px}
-  .dlg h2{font-size:18px}
-  .ok{text-align:right;margin-top:16px}
-
-  .big{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+  .card{background:var(--f1);border:1px solid var(--edge);padding:16px 18px;margin-bottom:14px}
+  .sep{height:1px;background:var(--edge);margin:14px 0}
+  .muted{color:var(--ink-3)}
+  .hint{font-size:12px;color:var(--ink-3);margin-top:6px}
   .center{text-align:center}
-  .muted{color:var(--dim)}
-  .sep{height:1px;background:var(--line);margin:14px 0}
-  .tag{display:inline-block;background:var(--chip);border:1px solid var(--line);
-    border-radius:99px;padding:1px 9px;font-size:11px;color:var(--dim);margin-right:4px}
 
-  /* ---- 새 화면 ---- */
-  .topbar{display:flex;justify-content:space-between;align-items:center;
-    margin:0 0 12px;font-size:15px}
-  .topbar b{font-size:17px;letter-spacing:-.02em}
-  .goal{display:flex;gap:12px;align-items:flex-start;margin:12px 0}
-  .goal .gnum{width:26px;height:26px;border-radius:50%;flex:0 0 26px;display:grid;
-    place-items:center;background:var(--accent);color:#fff;font-weight:800;font-size:14px}
-  .goal b{display:block;font-size:15px}
-  .goal span{display:block;font-size:13px;color:var(--dim);margin-top:2px}
-  table.perf th{font-size:11px}
+  /* 지표 타일 */
+  .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--edge);
+    border:1px solid var(--edge);margin-bottom:14px}
+  .stat{background:var(--f1);padding:11px 13px}
+  .stat .k{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .v{font-size:19px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    margin-top:3px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+  @media(max-width:560px){ .hud{grid-template-columns:repeat(2,1fr)} }
+  .v.neg,td.neg,.neg{color:var(--po)} .v.pos,td.pos,.pos{color:var(--ok)}
+
+  /* 시황 배지 */
+  .phase{display:inline-block;padding:3px 11px;font-size:11px;font-weight:700;letter-spacing:.02em;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;--cut:7px;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+  .ph-BUST{background:#F0DCDA;color:#8F332A}
+  .ph-NORMAL{background:var(--f3);color:var(--ink-2)}
+  .ph-BOOM{background:#D7E6DC;color:#1F5F40}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 14px}
+  .topbar b{font-size:20px;letter-spacing:-.025em}
+
+  /* 표 */
+  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--edge);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:9.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-3);font-weight:400}
+  tr.tot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none}
   table.perf td:first-child{font-weight:600}
-  table.perf tr.hq td{background:#f6f1e6}
-  td.pos,.v.pos{color:var(--good)} td.neg,.v.neg{color:var(--warn)}
-  .deck .dec{border-top:1px solid var(--line);padding:16px 0 4px}
-  .deck .dec:first-of-type{border-top:none}
-  .dhead{display:flex;gap:8px;align-items:baseline;margin-bottom:8px}
-  .dhead b{font-size:15px;letter-spacing:-.01em}
+  table.perf tr.hq td{background:var(--f2)}
+  td:not(:first-child){font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+  /* 버튼 */
+  button{font:inherit;font-family:inherit;cursor:pointer;border:0;transition:filter .1s,transform .08s}
+  .primary{width:100%;max-width:340px;padding:16px;font-size:16px;font-weight:700;letter-spacing:-.01em;
+    color:#F2F7FB;--cut:16px;
+    background:linear-gradient(104deg,#3B82C4 0 40%,#1F5C99 40% 72%,#154270 72% 100%);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+  .primary:hover:not(:disabled){filter:brightness(1.08)}
+  .primary:active:not(:disabled){transform:translateY(2px)}
+  .primary:disabled{background:var(--f2);color:var(--ink-3);cursor:default;
+    border:1px solid var(--edge);clip-path:none}
+
+  /* 알림 상자 */
+  .note{background:var(--f2);border-left:3px solid var(--blue);padding:11px 13px;
+    font-size:13px;margin:11px 0;color:var(--ink-2)}
+  .note b{color:var(--ink)}
+  .note.bad{background:#F6E6E4;border-left-color:var(--po)}
+  .note.good{background:#E1EDE6;border-left-color:var(--ok)}
+
+  /* 등장인물 말 */
+  .say{display:flex;gap:11px;align-items:flex-start;margin:0 0 12px}
+  .face{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;font-size:17px;
+    background:var(--f3);border:1px solid var(--edge)}
+  .bubble{background:var(--f2);border:1px solid var(--edge);padding:9px 13px;font-size:13.5px;
+    color:var(--ink-2);flex:1}
+  .bubble .who{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+    color:var(--ink-3);display:block;margin-bottom:3px;text-transform:uppercase}
+
+  /* 목적 */
+  .goal{display:flex;gap:12px;align-items:flex-start;margin:13px 0}
+  .goal .gnum{width:26px;height:26px;flex:0 0 26px;display:grid;place-items:center;
+    background:linear-gradient(104deg,#3B82C4 0 45%,#1F5C99 45% 100%);color:#fff;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:13px}
+  .goal b{display:block;font-size:14.5px}
+  .goal span{display:block;font-size:12.5px;color:var(--ink-2);margin-top:2px}
+
+  /* 결재 */
+  .tag{display:inline-block;background:var(--f3);color:var(--ink-2);padding:2px 8px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;margin-right:7px}
+  .dec{border-top:1px solid var(--edge);padding:16px 0 4px}
+  .dec:first-of-type{border-top:none;padding-top:4px}
+  .dhead{display:flex;gap:6px;align-items:baseline;margin-bottom:9px;flex-wrap:wrap}
+  .dhead b{font-size:15px;letter-spacing:-.015em}
   .opts{display:flex;gap:8px;flex-wrap:wrap}
-  .opts button{flex:1 1 180px;text-align:left;padding:11px 14px;border-radius:11px;line-height:1.4}
-  .opts button b{display:block;font-size:14px;font-weight:600}
-  .opts button span{display:block;font-size:12px;color:var(--dim);margin-top:2px}
-  .opts button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .opts button{flex:1 1 190px;text-align:left;padding:11px 13px;line-height:1.4;
+    background:var(--f2);border:1px solid var(--edge);color:var(--ink)}
+  .opts button b{display:block;font-size:13.5px;font-weight:600}
+  .opts button span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .opts button:hover{background:var(--f3)}
+  .opts button.on{color:#F2F7FB;border-color:transparent;
+    background:linear-gradient(104deg,#3B82C4 0 40%,#1F5C99 40% 72%,#154270 72% 100%)}
   .opts button.on b{font-weight:700}
-  .opts button.on span{color:#dbece4}
-  .dec.done .dhead b{color:var(--dim)}
-  .fb{border-top:1px solid var(--line);padding:11px 0;font-size:14px}
+  .opts button.on span{color:#CFE0EF}
+  .dec.done .dhead b{color:var(--ink-3)}
+
+  /* 결산 피드백 */
+  .fb{border-top:1px solid var(--edge);padding:11px 0;font-size:13.5px}
   .fb:first-of-type{border-top:none}
-  .fbc{font-size:14px;margin-top:2px}
-  .fbm{font-size:13px;color:var(--dim);margin-top:3px}
+  .fbc{margin-top:3px}
+  .fbm{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+
   details.fold{padding:12px 16px}
-  details.fold summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--dim)}
-  details.fold[open] summary{margin-bottom:6px}
-  .goalres{margin:0 0 18px}
-  .goalres .gv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin:3px 0 6px}
+  details.fold summary{cursor:pointer;font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  details.fold[open] summary{margin-bottom:8px}
+
+  /* 성적표 */
+  .big{font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    background:linear-gradient(112deg,#3E7FBF 0 34%,#1F5C99 34% 62%,#123F6E 62% 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .goalres{margin:0 0 20px}
+  .goalres .gv{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;margin:4px 0 7px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .track{height:10px;background:var(--f3);border:1px solid var(--edge);position:relative;overflow:hidden}
+  .fill{height:100%;background:linear-gradient(104deg,#3B82C4 0 45%,#1F5C99 45% 100%)}
+  .fill.over{background:linear-gradient(104deg,#C86A5E 0 45%,#BE473D 45% 100%)}
 </style>
+<div class="facets" aria-hidden="true">
+  <svg viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMin slice">
+    <polygon points="0,0 560,0 200,430" fill="#D6DFE8"/>
+    <polygon points="560,0 1400,0 1400,260 790,390" fill="#DDE5EC"/>
+    <polygon points="0,400 430,250 660,680 150,800" fill="#D9E2EA"/>
+    <polygon points="790,340 1400,240 1400,720 930,680" fill="#CFDAE5"/>
+    <polygon points="150,790 710,650 930,1140 230,1230" fill="#DFE6ED"/>
+    <polygon points="930,680 1400,700 1400,1160 1000,1140" fill="#D4DEE7"/>
+    <polygon points="230,1220 1000,1130 1160,1400 0,1400" fill="#DAE3EB"/>
+    <g opacity=".5" stroke="#A9BAC9" stroke-width="1.2" fill="none">
+      <path d="M200 430 L660 680 L930 1140 L1160 1400"/>
+      <path d="M560 0 L790 390 L930 680 L1000 1140"/>
+      <path d="M0 400 L430 250 L790 340 L1400 240"/>
+    </g>
+  </svg>
+</div>
 <div class="wrap" id="app"></div>
 <style>
   /* 공장 조감도 — 아이소메트릭. 면 색은 전부 인라인으로 칠하고
      여기서는 글자와 몇 가지 선만 잡는다. */
   .plant{width:100%;height:auto;display:block;border-radius:10px}
-  .plant .sea{fill:#cfdee6}
-  .plant .ground{fill:#ece5d7}
-  .plant .zone{fill:#fffdf8;stroke:#ded6c7;stroke-width:1.5}
+  .plant .sea{fill:#C3D2DF}
+  .plant .ground{fill:#DFE6ED}
+  .plant .zone{fill:#F2F5F8;stroke:#BCC8D4;stroke-width:1.5}
   .plant .coil{fill:#9aa4ad;stroke:#78828b;stroke-width:1.5}
   .plant .coil.bad{fill:#c98a80;stroke:#a9645a}
   .plant .coil.fgc{fill:#7fa892;stroke:#5f8874}
@@ -143,45 +194,20 @@
   .plant .line{fill:#f4efe3;stroke:#d9d0be;stroke-width:1.5}
   .plant .truck{fill:#b5814f}
   .plant .wheel{fill:#4a423a}
-  .plant .slot{fill:none;stroke:#cfc6b4;stroke-width:1.6;stroke-dasharray:5 4}
+  .plant .slot{fill:none;stroke:#A9BAC9;stroke-width:1.6;stroke-dasharray:5 4}
   .plant .rail{stroke:#c9bfa9;stroke-width:1.6}
   .plant .hook{stroke:#7b7268;stroke-width:1.2}
-  .plant .utilbg{fill:#ddd4c2}
-  .plant .util{fill:#3f7d68}
-  .plant .util.hot{fill:#c8622e}
-  .plant .cap{font:700 11px ui-sans-serif,system-ui;fill:#4d463d;text-anchor:middle}
-  .plant .lbl{font:700 13px ui-sans-serif,system-ui;fill:#3c352d}
+  .plant .utilbg{fill:#D0DAE4}
+  .plant .util{fill:#1F5C99}
+  .plant .util.hot{fill:#BE473D}
+  .plant .cap{font:700 11px ui-sans-serif,system-ui;fill:#16202B;text-anchor:middle}
+  .plant .lbl{font:700 13px ui-sans-serif,system-ui;fill:#16202B}
   .plant .lbl.end{text-anchor:end}
-  .plant .lbl.dim,.plant .tiny.dim{fill:#8d8579}
-  .plant .lbl.warn,.plant .tiny.warn{fill:#b8443a}
-  .plant .tiny{font:500 11px ui-sans-serif,system-ui;fill:#6b6357}
+  .plant .lbl.dim,.plant .tiny.dim{fill:#8593A2}
+  .plant .lbl.warn,.plant .tiny.warn{fill:#BE473D}
+  .plant .tiny{font:500 11px ui-sans-serif,system-ui;fill:#53616F}
   .plant .tiny.mid{text-anchor:middle}
   .plant .tiny.b{font-weight:700}
-</style>
-<style>
-  dialog.deck{max-width:560px}
-  .dlgtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
-  .optlist{display:flex;flex-direction:column;gap:9px;margin-top:14px}
-  .optlist button{text-align:left;padding:13px 16px;border-radius:12px;line-height:1.45}
-  .optlist button b{display:block;font-size:15px}
-  .optlist button span{display:block;font-size:12px;color:var(--dim);margin-top:2px}
-  .optlist button:hover{border-color:var(--accent2);background:#f4f9f6}
-  .verdict{text-align:center;padding:22px 8px 6px}
-  .vlabel{font-size:12px;color:var(--dim);letter-spacing:.06em}
-  .vchoice{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:4px 0 12px;color:var(--accent)}
-  .vmsg{font-size:15px;line-height:1.6;margin:0 auto 14px;max-width:420px}
-  .chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-  .chip{display:inline-block;padding:4px 11px;border-radius:99px;font-size:13px;font-weight:700;
-    font-variant-numeric:tabular-nums}
-  .chip.up{background:#e2efe6;color:#2f6b55}
-  .chip.down{background:#f7e2e0;color:#a5382e}
-
-  /* 스테이터스 창 — 회사 / 지난달 실적 / 이달 말 잔액 세 줄 */
-  .bandlab{font-size:11px;color:var(--dim);letter-spacing:.04em;margin:0 0 5px 2px;font-weight:700}
-  .bandlab span{font-weight:400;letter-spacing:0}
-  .hud.tight .stat{min-width:78px;padding:7px 10px}
-  .hud.tight .stat .v{font-size:15px}
-  .stat.lead{background:var(--chip)}
 </style>
 <script>
 /* ============================================================
@@ -407,11 +433,21 @@ const CFG = {
   INSTALL_TURNS: 4,               // 설비 발주에서 가동까지 (실무자 확인 필요)
   TOTAL_TURNS: 48,
   START_YEAR: 2026,                // 2026년 1월에 부임한다
+  /* ---- 부임 시점의 기반 (실무자 확인) ----
+     빈 공장을 물려받는 게 아니다. 이미 돌아가던 회사를 넘겨받는다.
+     창고에 소재가 있고, 매달 나가는 물량이 있고, 아직 못 받은 대금이 있다.
+     이게 없으면 첫 넉 달 동안 판매가 0으로 찍혀 화면이 죽어 있다. */
+  OPEN_STOCK_TON: 10_000,          // 넘겨받는 소재 재고 (판매 3개월치쯤)
+  OPEN_AR_MONTHS: 2,               // 전임자가 팔고 아직 못 받은 대금 (개월치)
+  /* 부임 시점 월 판매는 3,000톤 남짓이고, 여기서부터 키워 나간다.
+     캐파(월 12,500톤 가공 + 통코일)를 다 채우는 것이 센터장의 일이다. */
+  RAMP_START: 0.11,
+  RAMP_TURNS: 18,
   /* 4년 뒤 성적표를 가르는 두 축.
      본사 기여 = 본사(P사)가 우리에게 소재를 팔아 벌어들인 영업이익 누계
      법인 손익 = 코일센터 자체 영업이익 누계
      이 둘은 같이 가지 않는다. 그게 이 게임의 전부다. */
-  HQ_PROFIT_TARGET: 58_000_000,
+  HQ_PROFIT_TARGET: 75_000_000,
   SOLO_OP_TARGET: 6_000_000,
 };
 
@@ -504,7 +540,21 @@ function createInitialState(opt = {}) {
     rng: opt.seed ?? 12345,
   };
 
-  // 개업하기 전에 이미 몇 달치 내시를 받아둔다. 사장은 첫날부터 이 숫자를 보고 발주를 건다.
+  /* 돌아가던 회사를 넘겨받는다.
+     창고의 소재와 아직 못 받은 대금은 그냥 생기는 게 아니라 운전자금 차입으로
+     받쳐져 있다. 그래서 차입잔액을 그만큼 얹어 대차를 맞춘다.
+       자산  고정자산 22,000 + 재고 + 매출채권 + 현금 3,000
+       부채  차입(= 재고 + 매출채권) + 자본금 25,000 */
+  const openCost = CFG.P_M_BASE * CFG.GRADE.PREMIUM.pmMult;
+  st.invRaw.push({ qty: CFG.OPEN_STOCK_TON, unitCost: openCost,
+                   arrivalTurn: 1, dt: 'FIRM', gr: 'PREMIUM' });
+  const openTons = DEMAND_BASE.C2C + DEMAND_BASE.SLIT + DEMAND_BASE.LEVEL;
+  const openMonthly = openTons * CFG.RAMP_START * 0.9 * (openCost / CFG.YIELD.SLIT + CFG.COIL_MARGIN);
+  for (let i = 1; i <= CFG.OPEN_AR_MONTHS; i++)
+    st.ar.push({ amount: openMonthly, dueTurn: i });
+  st.debt.principal = CFG.OPEN_STOCK_TON * openCost + openMonthly * CFG.OPEN_AR_MONTHS;
+
+  // 내시는 몇 달 앞까지 미리 받아둔다. 센터장은 첫날부터 이 숫자를 보고 발주를 건다.
   const rng = makeRng((opt.seed ?? 12345) + 104729);
   for (let i = 0; i < CFG.NASI_LEAD; i++) st.nasi.push(makeNasi(st, st.turn + i, rng));
   return st;
@@ -643,6 +693,12 @@ function nasiCeiling(state) {
   };
 }
 
+/* 부임 직후에는 물량이 작다. 영업으로 키워야 캐파가 찬다.
+   이 곡선이 없으면 첫 달부터 월 2만톤이 쏟아져 '키운다'는 이야기가 사라진다. */
+function rampOf(turn) {
+  return Math.min(1, CFG.RAMP_START + (1 - CFG.RAMP_START) * (turn - 1) / CFG.RAMP_TURNS);
+}
+
 function makeNasi(state, turn, rng) {
   const p = CFG.PHASE[state.market.phase];
   const trustCoef = 0.5 + state.trust / 200;
@@ -650,7 +706,7 @@ function makeNasi(state, turn, rng) {
   const tons = {}, potential = {};
   for (const k of PROC_LIST) {
     if (!procAvailable(state, k)) { tons[k] = 0; potential[k] = 0; continue; }
-    const v = DEMAND_BASE[k] * CFG.PREMIUM_DEMAND_SHARE * p.mkt
+    const v = DEMAND_BASE[k] * CFG.PREMIUM_DEMAND_SHARE * p.mkt * rampOf(turn)
             * (state.myShare / 0.10) * trustCoef * (1 + CFG.DEMAND_NOISE_AUTO * gauss(rng));
     potential[k] = Math.max(0, Math.round(v));          // 본사가 주고 싶어 하는 양
     tons[k] = Math.max(0, Math.round(Math.min(v, ceil[k])));  // 우리 캐파가 받을 수 있는 양
@@ -1406,53 +1462,174 @@ function ymLabel(turn) { const d = ym(turn); return `${d.y}년 ${d.m}월`; }
    card.text 는 문자열 또는 (s, ctx) => 문자열
    ============================================================ */
 
-const ROUTINE = [
-  { id: 'r-sales', kind: '영업', who: 'jung',
-    title: '이번 달 판매 방침',
-    text: (s, c) => `이번 달 나갈 수 있는 물량은 ${fmt(c.sellable)}톤입니다. `
-      + (c.phase === 'BUST' ? '시황이 나빠 고객들이 단가를 누르고 있습니다.'
-        : c.phase === 'BOOM' ? '주문이 밀립니다. 지금은 우리가 아쉬울 게 없습니다.'
-        : '특별히 밀리지도 남지도 않습니다.'),
-    opts: [
-      { label: '단가를 깎아 물량을 민다', hint: '톤당 −$12 · 거래처 늘어남',
-        apply: (s, g) => { g.turnDiscount += 12; s.myShare *= 1.03;
-          return '단가를 깎아 물량을 밀었습니다. 거래처가 조금 늘었습니다.'; } },
-      { label: '지금 조건대로', hint: '',
-        apply: () => '판매 조건을 그대로 둡니다.' },
-      { label: '단가를 지킨다', hint: '마진 우선 · 물량은 줄어듦',
-        apply: (s) => { s.myShare *= 0.975; s.trust += 1;
-          return '단가를 지켰습니다. 물량은 조금 줄어듭니다.'; } },
-    ] },
+/* ---- 루틴 셋: 영업 · 소재구매 · 생산 ----
+   매달 같은 질문이 올라오면 결재가 아니라 클릭 노동이 된다.
+   그래서 각 자리마다 상황별로 다른 카드가 선다 — 시황, 재고, 시세, 가동률을 보고
+   그 달에 실제로 고민할 만한 것을 묻는다. 고르는 축(물량이냐 마진이냐,
+   지금 사느냐 미루느냐, 돌리느냐 손보느냐)은 같지만 이유와 숫자가 매달 다르다. */
 
-  { id: 'r-buy', kind: '소재구매', who: 'seo',
+function salesCard(s, c) {
+  const base = { id: 'r-sales', kind: '영업', who: 'jung' };
+  const push = { label: '단가를 깎아 물량을 민다', hint: '톤당 −$12 · 거래처 늘어남',
+    apply: (s2, g) => { g.turnDiscount += 12; s2.myShare *= 1.03;
+      return '단가를 깎아 물량을 밀었습니다. 거래처가 조금 늘었습니다.'; } };
+  const hold = { label: '지금 조건대로', hint: '', apply: () => '판매 조건을 그대로 둡니다.' };
+  const keep = { label: '단가를 지킨다', hint: '마진 우선 · 물량은 줄어듦',
+    apply: (s2) => { s2.myShare *= 0.975; s2.trust += 1;
+      return '단가를 지켰습니다. 물량은 조금 줄어듭니다.'; } };
+
+  if (c.cover > 4.5) return { ...base,
+    title: '창고가 무겁습니다. 밀어낼까요',
+    text: `재고가 ${c.cover.toFixed(1)}개월치입니다. 이대로 두면 오래된 것부터 값이 떨어집니다. `
+        + `값을 깎아서라도 돌릴지, 제값 받을 때까지 안고 갈지 정해야 합니다.`,
+    opts: [{ ...push, label: '깎아서라도 돌린다', hint: '톤당 −$15 · 재고가 빠집니다',
+      apply: (s2, g) => { g.turnDiscount += 15; s2.myShare *= 1.05;
+        return '값을 깎아 재고를 돌렸습니다.'; } }, hold, keep] };
+
+  if (c.phase === 'BUST') return { ...base,
+    title: '고객들이 단가를 누르고 있습니다',
+    text: `시황이 나빠 다들 값을 깎아달라고 합니다. 경쟁사도 사정은 같을 텐데, `
+        + `먼저 무너지는 쪽이 물량을 가져갑니다. 이번 달 나갈 수 있는 물량은 ${fmt(c.sellable)}톤입니다.`,
+    opts: [
+      { label: '맞춰준다', hint: '톤당 −$14 · 고객을 지킴',
+        apply: (s2, g) => { g.turnDiscount += 14; s2.trust += 1;
+          return '값을 맞춰줬습니다. 고객은 지켰습니다.'; } },
+      hold,
+      { label: '수익 나는 곳만 받는다', hint: '물량 −5% · 마진 방어',
+        apply: (s2) => { s2.myShare *= 0.95; s2.trust += 2;
+          return '수익이 나는 거래만 남겼습니다. 물량은 줄었습니다.'; } }] };
+
+  if (c.phase === 'BOOM') return { ...base,
+    title: '주문이 밀립니다. 값을 올릴까요',
+    text: `이번 달 나갈 수 있는 물량이 ${fmt(c.sellable)}톤인데 그보다 더 달라는 곳이 많습니다. `
+        + `지금은 우리가 아쉬울 게 없습니다. 다만 올린 값은 시황이 꺾여도 고객이 기억합니다.`,
+    opts: [
+      { label: '단가를 올린다', hint: '톤당 +$10 · 고객이 서운해함',
+        apply: (s2, g) => { g.turnDiscount -= 10; s2.myShare *= 0.98; s2.trust -= 2;
+          return '값을 올렸습니다. 몇 곳이 떨떠름해합니다.'; } },
+      hold,
+      { label: '값은 그대로 두고 물량을 늘린다', hint: '거래처 +4%',
+        apply: (s2) => { s2.myShare *= 1.04; s2.trust += 2;
+          return '값을 안 올리고 물량을 받았습니다. 고객이 오래 기억할 겁니다.'; } }] };
+
+  return { ...base,
+    title: '이번 달 판매 방침',
+    text: `이번 달 나갈 수 있는 물량은 ${fmt(c.sellable)}톤입니다. 특별히 밀리지도 남지도 않습니다. `
+        + `물량을 키울지 마진을 지킬지가 매달의 선택입니다.`,
+    opts: [push, hold, keep] };
+}
+
+function buyCard(s, c) {
+  const base = { id: 'r-buy', kind: '소재구매', who: 'seo' };
+  const lead = `소재는 주문하고 넉 달 뒤에 들어오고, 대금은 도착 한 달 뒤에 나갑니다.`;
+
+  if (c.cover > 4.5) return { ...base,
+    title: '재고가 많은데 얼마나 시킬까요',
+    text: `창고와 바다에 ${c.cover.toFixed(1)}개월치가 있습니다. 여기서 더 시키면 자금이 오래 묶입니다. ${lead}`,
+    opts: [
+      { label: '이번 달은 건너뛴다', hint: '계획의 0.4배', mult: 0.4,
+        apply: () => '발주를 크게 줄였습니다. 넉 달 뒤 라인이 빌 수 있습니다.' },
+      { label: '줄여서 시킨다', hint: '계획의 0.7배', mult: 0.7,
+        apply: () => '줄여서 걸었습니다.' },
+      { label: '계획대로', hint: '', mult: 1.0, apply: () => '계획대로 발주했습니다.' }] };
+
+  if (c.cover < 2.2) return { ...base,
+    title: '재고가 얇습니다',
+    text: `창고와 바다를 합쳐 ${c.cover.toFixed(1)}개월치뿐입니다. 지금 시켜도 넉 달 뒤에 옵니다 — `
+        + `그 사이에 물량이 늘면 결품이 납니다. 결품을 낸 고객은 돌아오지 않습니다.`,
+    opts: [
+      { label: '넉넉히 채운다', hint: '계획의 1.35배 · 자금이 묶임', mult: 1.35,
+        apply: () => '넉넉히 걸었습니다. 그만큼 자금이 오래 묶입니다.' },
+      { label: '계획대로', hint: '', mult: 1.0, apply: () => '계획대로 발주했습니다.' },
+      { label: '현금을 아낀다', hint: '계획의 0.7배 · 결품 위험', mult: 0.7,
+        apply: () => '현금을 아꼈습니다. 넉 달 뒤가 걱정입니다.' }] };
+
+  if (c.pmTrend < -8) return { ...base,
+    title: '소재 시세가 빠지고 있습니다',
+    text: `지난달보다 톤당 $${fmt(-c.pmTrend)} 내렸습니다. 더 빠질 것 같기도 하고 여기가 바닥 같기도 합니다. `
+        + `지금 거는 값이 넉 달 뒤 우리 원가가 됩니다.`,
+    opts: [
+      { label: '바닥 볼 때까지 줄인다', hint: '계획의 0.6배 · 반등하면 비싸게 산다', mult: 0.6,
+        apply: () => '지켜보기로 했습니다.' },
+      { label: '계획대로', hint: '', mult: 1.0, apply: () => '계획대로 발주했습니다.' },
+      { label: '싸니까 더 산다', hint: '계획의 1.35배 · 더 빠지면 평가손', mult: 1.35,
+        apply: () => '싸다고 보고 더 걸었습니다.' }] };
+
+  if (c.pmTrend > 8) return { ...base,
+    title: '소재 시세가 오르고 있습니다',
+    text: `지난달보다 톤당 $${fmt(c.pmTrend)} 올랐습니다. 더 오르기 전에 확보할지, `
+        + `꼭지에서 사는 꼴이 될지 모릅니다. ${lead}`,
+    opts: [
+      { label: '지금 확보한다', hint: '계획의 1.35배', mult: 1.35,
+        apply: () => '오르기 전에 걸어뒀습니다.' },
+      { label: '계획대로', hint: '', mult: 1.0, apply: () => '계획대로 발주했습니다.' },
+      { label: '한 박자 쉰다', hint: '계획의 0.7배', mult: 0.7,
+        apply: () => '한 달 지켜보기로 했습니다.' }] };
+
+  return { ...base,
     title: '이번 달 소재 발주',
-    text: (s, c) => `지금 창고와 바다에 ${c.cover.toFixed(1)}개월치가 있습니다. `
-      + `소재는 주문하고 넉 달 뒤에 들어오고, 대금은 도착 한 달 뒤에 나갑니다.`,
+    text: `창고와 바다에 ${c.cover.toFixed(1)}개월치가 있습니다. ${lead}`,
     opts: [
       { label: '줄인다', hint: '계획의 0.7배 · 현금을 아낌', mult: 0.7,
-        apply: () => '발주를 줄였습니다. 넉 달 뒤 라인이 빌 수 있습니다.' },
-      { label: '계획대로', hint: '', mult: 1.0,
-        apply: () => '계획대로 발주했습니다.' },
+        apply: () => '발주를 줄였습니다.' },
+      { label: '계획대로', hint: '', mult: 1.0, apply: () => '계획대로 발주했습니다.' },
       { label: '넉넉히 시킨다', hint: '계획의 1.35배 · 자금이 묶임', mult: 1.35,
-        apply: () => '넉넉히 걸었습니다. 그만큼 자금이 오래 묶입니다.' },
-    ] },
+        apply: () => '넉넉히 걸었습니다.' }] };
+}
 
-  { id: 'r-prod', kind: '생산', who: 'gu',
-    title: '이번 달 조업 방침',
-    text: (s, c) => `이번 달 주문은 캐파의 ${Math.round(c.load * 100)}%입니다. `
-      + (c.load > 0.97 ? '정규 시간으로는 빠듯합니다.'
-        : c.load < 0.6 ? '라인이 놉니다. 사람은 그대로 있습니다.'
-        : '무리 없이 돌릴 수 있습니다.'),
+function prodCard(s, c) {
+  const base = { id: 'r-prod', kind: '생산', who: 'gu' };
+  const tune = { label: '정비에 시간을 쓴다', hint: '$50,000 · 수율 ↑ · 사기 ↑',
+    apply: (s2, g) => { g.ui.yieldSpend = 50_000; s2.morale += 2;
+      return '라인을 손봤습니다. 수율이 조금 올라갑니다.'; } };
+  const normal = { label: '정상 조업', hint: '', apply: () => '정상 조업합니다.' };
+
+  if (c.load > 0.97) return { ...base,
+    title: '주문이 캐파를 넘습니다',
+    text: `이번 달 주문이 캐파의 ${Math.round(c.load * 100)}%입니다. 정규 시간으로는 못 맞춥니다. `
+        + `못 맞추면 그 고객은 다른 데를 알아봅니다.`,
     opts: [
       { label: '잔업을 돌린다', hint: '캐파 +20% · $60,000 · 사기 −5', ot: true,
-        apply: () => '잔업을 돌립니다.' },
-      { label: '정상 조업', hint: '',
-        apply: () => '정상 조업합니다.' },
-      { label: '정비에 시간을 쓴다', hint: '$50,000 · 수율이 올라감 · 사기 ↑',
-        apply: (s, g) => { g.ui.yieldSpend = 50_000; s.morale += 2;
-          return '라인을 손봤습니다. 수율이 조금 올라갑니다.'; } },
-    ] },
-];
+        apply: () => '잔업을 돌립니다. 현장이 힘들어합니다.' },
+      normal,
+      { label: '무리하지 않는다', hint: '못 맞춘 물량은 포기',
+        apply: (s2) => { s2.trust -= 2; return '무리하지 않기로 했습니다. 일부 물량을 놓칩니다.'; } }] };
+
+  if (c.load < 0.6) return { ...base,
+    title: '라인이 놉니다',
+    text: `이번 달 주문이 캐파의 ${Math.round(c.load * 100)}%뿐입니다. `
+        + `사람은 그대로 있고 고정비도 그대로 나갑니다. 놀 때 할 일을 정해야 합니다.`,
+    opts: [
+      { label: '이참에 대정비를 한다', hint: '$90,000 · 수율 ↑↑ · 사기 ↑',
+        apply: (s2, g) => { g.ui.yieldSpend = 90_000; s2.morale += 4;
+          return '놀 때 손봤습니다. 잘한 선택입니다.'; } },
+      normal,
+      { label: '교대를 줄인다', hint: '고정비 −$40,000 · 사기 ↓',
+        apply: (s2, g) => { g.extraFixed = (g.extraFixed || 0) - 40_000; s2.morale -= 6;
+          return '한 개 반을 쉬게 했습니다. 사람들이 불안해합니다.'; } }] };
+
+  if (s.morale < 55) return { ...base,
+    title: '현장 분위기가 가라앉아 있습니다',
+    text: `사기가 ${Math.round(s.morale)}까지 내려갔습니다. 이대로 두면 수율이 먼저 빠지고 `
+        + `그 다음에 사람이 빠집니다. 가동률은 캐파의 ${Math.round(c.load * 100)}%입니다.`,
+    opts: [
+      { label: '현장에 돈을 쓴다', hint: '$70,000 · 사기 ↑↑',
+        apply: (s2) => { s2.cash -= 70_000; s2.morale += 10;
+          return '식당을 고치고 작업복을 새로 맞췄습니다. 분위기가 달라졌습니다.'; } },
+      tune,
+      normal] };
+
+  return { ...base,
+    title: '이번 달 조업 방침',
+    text: `이번 달 주문은 캐파의 ${Math.round(c.load * 100)}%입니다. 무리 없이 돌릴 수 있습니다. `
+        + `여유가 있을 때 손을 봐 둘지, 그냥 돌릴지 정합니다.`,
+    opts: [
+      { label: '잔업까지 돌려 앞당긴다', hint: '캐파 +20% · $60,000 · 사기 −5', ot: true,
+        apply: () => '잔업을 돌려 앞당겼습니다.' },
+      normal, tune] };
+}
+
+const ROUTINE = [salesCard, buyCard, prodCard];
 
 const EVENTS = [
   /* ---- 이 게임의 주제를 정면으로 건드리는 카드 ---- */
@@ -1852,7 +2029,7 @@ const app = $('#app');
 const fmt = n => Math.round(n).toLocaleString('en-US');
 const money = n => (n < 0 ? '−$' : '$') + fmt(Math.abs(n));
 const M = n => (n < 0 ? '−$' : '$') + (Math.abs(n) / 1e6).toFixed(1) + 'M';
-const K = n => (n < 0 ? '−' : '') + fmt(Math.abs(n) / 1000);        // 천불
+const K = n => (n < 0 ? '−' : '') + fmt(Math.abs(n) / 1000);        // 천U$
 const sign = n => (n > 0 ? '+' : n < 0 ? '−' : '');
 const dK = n => Math.abs(n) < 500 ? '0' : sign(n) + fmt(Math.abs(n) / 1000);
 const dPct = (a, b) => (!b || !isFinite(a / b)) ? '−' : sign(a / b - 1) + (Math.abs(a / b - 1) * 100).toFixed(1) + '%';
@@ -1871,7 +2048,7 @@ const COUNTRIES = {
   VN: { name: '베트남', emoji: '🇻🇳' }, ID: { name: '인도네시아', emoji: '🇮🇩' },
   TH: { name: '태국', emoji: '🇹🇭' },   PL: { name: '폴란드', emoji: '🇵🇱' },
 };
-const START = { country: 'MX', name: '멕시코 코일센터', lines: ['SLIT', 'LEVEL'], equity: CFG.START_EQUITY };
+const START = { name: '코일센터', lines: ['SLIT', 'LEVEL'], equity: CFG.START_EQUITY };
 
 let G = null;
 
@@ -1954,9 +2131,9 @@ const MACHINE = { SLIT: mSlitter, LEVEL: mLeveler, BLANK: mBlank };
 function hallShell(w, d, wh, rh) {
   const glass = '#bcd4e0';
   return `
-    ${pad(0, 0, w, d, '#efe9dc')}
-    <polygon points="${PT(0,0,0)} ${PT(w,0,0)} ${PT(w,0,wh)} ${PT(0,0,wh)}" fill="#e7e0d0"/>
-    <polygon points="${PT(0,0,0)} ${PT(0,d,0)} ${PT(0,d,wh)} ${PT(0,0,wh)}" fill="#dcd4c2"/>
+    ${pad(0, 0, w, d, '#EDF1F5')}
+    <polygon points="${PT(0,0,0)} ${PT(w,0,0)} ${PT(w,0,wh)} ${PT(0,0,wh)}" fill="#E2E9EF"/>
+    <polygon points="${PT(0,0,0)} ${PT(0,d,0)} ${PT(0,d,wh)} ${PT(0,0,wh)}" fill="#D4DDE5"/>
     <polygon points="${PT(0.3,0,1.1)} ${PT(w-0.3,0,1.1)} ${PT(w-0.3,0,2.1)} ${PT(0.3,0,2.1)}" fill="#a9c4d4" opacity=".75"/>
     <polygon points="${PT(0,0.3,1.1)} ${PT(0,d-0.3,1.1)} ${PT(0,d-0.3,2.1)} ${PT(0,0.3,2.1)}" fill="#96b4c6" opacity=".75"/>`;
 }
@@ -2042,7 +2219,7 @@ function factorySVG(s, L) {
     let body, label, sub, cls = '';
     if (have) {
       const u = util(m.type);
-      body = pad(0, 0, 5.4, 3.4, '#e9e2d2', '#d8cfba') + MACHINE[m.type](0.6, 0.45);
+      body = pad(0, 0, 5.4, 3.4, '#E7EDF2', '#BCC8D4') + MACHINE[m.type](0.6, 0.45);
       label = `${CFG.LINE[m.type].label}${have > 1 ? ` ×${have}` : ''}`;
       sub = `가동률 ${Math.round(u * 100)}%`;
       body += '';
@@ -2050,12 +2227,12 @@ function factorySVG(s, L) {
                  <rect x="${lx}" y="${ly + 7}" width="${(96 * u).toFixed(1)}" height="8" rx="4"
                    class="util ${u > 0.92 ? 'hot' : ''}"/>`;
     } else if (building) {
-      body = pad(0, 0, 5.4, 3.4, 'none', '#cfc6b4', 0, 'slot')
+      body = pad(0, 0, 5.4, 3.4, 'none', '#A9BAC9', 0, 'slot')
            + cube(1.8, 1.0, 1.9, 1.4, 1.0, '#c3a882');
       label = CFG.LINE[m.type].label; sub = `설치 중 · ${building.readyTurn}월 가동`; cls = 'dim';
       var bar = '';
     } else {
-      body = pad(0, 0, 5.4, 3.4, 'none', '#cfc6b4', 0, 'slot');
+      body = pad(0, 0, 5.4, 3.4, 'none', '#A9BAC9', 0, 'slot');
       label = CFG.LINE[m.type].label; sub = '없음'; cls = 'dim';
       var bar = '';
     }
@@ -2065,7 +2242,7 @@ function factorySVG(s, L) {
 
   /* --- 소재 야드 --- */
   const nRaw = Math.max(0, Math.min(24, Math.round(raw / 1800)));
-  let yard = pad(0, 0, 8.2, 6.0, '#e3d9c3', '#d2c6ac');
+  let yard = pad(0, 0, 8.2, 6.0, '#DDE4EB', '#BCC8D4');
   for (let i = 0; i < nRaw; i++) {
     const col = i % 5, row = (i / 5) | 0;
     yard += coilP(1.0 + col * 1.45, 1.1 + (row % 3) * 1.8, 0.95 + ((row / 3) | 0) * 1.4, 12,
@@ -2074,7 +2251,7 @@ function factorySVG(s, L) {
 
   /* --- 제품 창고와 출하 --- */
   const nFg = Math.max(0, Math.min(9, Math.round(fg / 1600)));
-  let ship = pad(0, 0, 6.0, 4.8, '#e3d9c3', '#d2c6ac');
+  let ship = pad(0, 0, 6.0, 4.8, '#DDE4EB', '#BCC8D4');
   for (let i = 0; i < nFg; i++) {
     const col = i % 3, row = (i / 3) | 0;
     ship += stackP(0.45 + col * 1.85, 0.35 + row * 1.5, '#dfe7ec');
@@ -2231,11 +2408,11 @@ function expandCardDef(type, s) {
   const capex = CFG.LINE[type].capex, need = CFG.LINE[type].cap * 3 * s.market.pm;
   return { id: 'x-expand', kind: '투자', who: 'gu',
     title: `${CFG.LINE[type].label}를 한 대 더 놓겠습니까`,
-    text: `본사가 주고 싶어 하는 물량이 우리 한계를 넘습니다. 설비는 ${K(capex)}천불인데, `
-        + `그 설비를 채울 소재값이 석 달치로 ${K(need)}천불입니다. 설비값보다 소재값이 훨씬 큽니다. `
+    text: `본사가 주고 싶어 하는 물량이 우리 한계를 넘습니다. 설비는 ${K(capex)}천U$인데, `
+        + `그 설비를 채울 소재값이 석 달치로 ${K(need)}천U$입니다. 설비값보다 소재값이 훨씬 큽니다. `
         + `주문해서 도는 데 넉 달 걸립니다.`,
     opts: [
-      { label: '짓는다', hint: `${K(capex)}천불 · ${CFG.INSTALL_TURNS}개월 뒤 가동`,
+      { label: '짓는다', hint: `${K(capex)}천U$ · ${CFG.INSTALL_TURNS}개월 뒤 가동`,
         apply: (s2, g) => { g.ui.expandPick = type;
           return `${CFG.LINE[type].label}를 발주했습니다. ${ymLabel(s2.turn + CFG.INSTALL_TURNS)}부터 돕니다.`; } },
       { label: '이번엔 넘어간다', hint: '현금을 지킵니다',
@@ -2247,7 +2424,7 @@ function dealTurn() {
   const s = G.s, ctx = cardCtx(s);
   G.mult = 1; G.beta = 1; G.turnDiscount = 0; G.feedback = [];
   Object.assign(G.ui, { hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0 });
-  G.deck = ROUTINE.map(c => ({ c, chosen: null }));
+  G.deck = ROUTINE.map(f => ({ c: f(s, ctx), chosen: null }));
 
   const extra = [];
   const big = BIG.find(b => b.at === s.turn);
@@ -2326,7 +2503,8 @@ function render() {
 function renderIntro() {
   app.innerHTML = `
     <h1>코일센터 경영 시뮬레이터</h1>
-    <p class="sub">${COUNTRIES[START.country].emoji} ${COUNTRIES[START.country].name} · 2026년 1월 ~ 2029년 12월 · 48개월</p>
+    <p class="kicker">COIL CENTER MANAGEMENT · 2026 – 2029</p>
+    <div class="rule"></div>
 
     <div class="card">
       <h2>당신은 코일센터 센터장으로 부임했습니다</h2>
@@ -2371,14 +2549,15 @@ function renderBrief() {
   for (const t of START.lines) c[t] += CFG.LINE[t].cap;
   app.innerHTML = `
     <h1>부임</h1>
-    <p class="sub">2026년 1월 · ${START.name}</p>
+    <p class="kicker">2026년 1월 · 부임 첫날</p>
+    <div class="rule"></div>
     <div class="card">
       <div class="say"><div class="face">${CAST.han.face}</div><div class="bubble">
         <span class="who">${CAST.han.name} · ${CAST.han.role}</span>
         센터장님, 인수인계 장부입니다. 공장은 다 지어 놨습니다.
-        그런데 자본금을 거의 다 거기에 쓰는 바람에, 통장에 남은 게 <b>${K(rest)}천불</b>뿐입니다.</div></div>
+        그런데 자본금을 거의 다 거기에 쓰는 바람에, 통장에 남은 게 <b>${K(rest)}천U$</b>뿐입니다.</div></div>
 
-      <h2>회사 장부 <span class="muted" style="font-weight:400">· 천불</span></h2>
+      <h2>회사 장부 <span class="muted" style="font-weight:400">· 천U$</span></h2>
       <table>
         <tr><td>납입자본금</td><td>${K(START.equity)}</td></tr>
         <tr><td class="muted">　토지</td><td class="muted">−${K(CFG.LAND)}</td></tr>
@@ -2394,7 +2573,7 @@ function renderBrief() {
       <p class="hint">통코일은 라인을 쓰지 않아 이 한도 밖입니다. 공장동에는 3라인까지 들어갑니다.</p>
 
       <div class="note">운전자금은 본사 지급보증을 끼고 은행에서 빌립니다.
-        기본 한도 ${K(CFG.CREDIT_LINE_BASE)}천불에서 시작하고,
+        기본 한도 ${K(CFG.CREDIT_LINE_BASE)}천U$에서 시작하고,
         <b>장사가 커지면 본사를 설득해 한도를 키울 수 있습니다.</b>
         본사 신뢰가 낮으면 아무리 장사가 커져도 한도는 그대로입니다.</div>
 
@@ -2411,8 +2590,8 @@ function metricRow(s) {
   const cover = L.need > 0 ? stock / L.need : 0;
   const cell = (k, v, c2) => `<div class="stat"><div class="k">${k}</div><div class="v ${c2 || ''}">${v}</div></div>`;
   return `<div class="hud">
-    ${cell('현금 <span style="opacity:.6">천불</span>', K(s.cash), s.cash < 1e6 ? 'neg' : '')}
-    ${cell('차입 / 한도 <span style="opacity:.6">천불</span>',
+    ${cell('현금 <span style="opacity:.6">천U$</span>', K(s.cash), s.cash < 1e6 ? 'neg' : '')}
+    ${cell('차입 / 한도 <span style="opacity:.6">천U$</span>',
            `${K(s.debt.principal)}<span class="muted" style="font-size:12px"> / ${K(s.debt.limit)}</span>`,
            canBorrow < s.debt.limit * 0.15 ? 'neg' : '')}
     ${cell('재고', `${cover.toFixed(1)}<span class="muted" style="font-size:12px">개월</span>`,
@@ -2448,7 +2627,7 @@ function perfTable(s) {
       <td class="${momC}">${mom}</td><td>${ytdTxt}</td><td class="${yoyC}">${yoy}</td></tr>`;
   }).join('');
   return `<div class="card">
-    <h2>실적 <span class="muted" style="font-weight:400">· 수량 톤 · 금액 천불</span></h2>
+    <h2>실적 <span class="muted" style="font-weight:400">· 수량 톤 · 금액 천U$</span></h2>
     <table class="perf">
       <tr><th></th><th>${p.month}월</th><th>전월비</th><th>${p.year}년 누계</th>
           <th>${p.hasYoy ? '전년동기비' : '전년동기'}</th></tr>
@@ -2476,7 +2655,7 @@ function renderTurn() {
   app.innerHTML = `
     <div class="topbar">
       <div><b>${d.y}년 ${d.m}월</b>
-        <span class="muted">· ${s.turn}/48개월 · ${s.companyName}</span></div>
+        <span class="muted">· ${s.turn} / 48개월</span></div>
       <span class="phase ph-${s.market.phase}">${ch.label.split(' · ')[1] || CFG.PHASE[s.market.phase].label}</span>
     </div>
     ${metricRow(s)}
@@ -2507,7 +2686,7 @@ function ledger(s) {
   const last = s.history[s.history.length - 1];
   const sh = last ? last.shipped : {};
   return `<table style="margin-top:10px">
-    <tr><th>자금</th><th>천불</th></tr>
+    <tr><th>자금</th><th>천U$</th></tr>
     <tr><td>통장</td><td>${K(s.cash)}</td></tr>
     <tr><td>받을 돈 (매출채권)</td><td>${K(r.total)}</td></tr>
     <tr><td class="muted">　그중 약속일을 넘긴 것</td><td class="muted">${K(r.late)}</td></tr>
@@ -2548,7 +2727,7 @@ function renderClose() {
     </div>
 
     <div class="card">
-      <h2>${d.m}월 손익 <span class="muted" style="font-weight:400">· 천불</span></h2>
+      <h2>${d.m}월 손익 <span class="muted" style="font-weight:400">· 천U$</span></h2>
       <table>
         <tr><td>판매량</td><td>${fmt(R.shippedTotal)}t</td></tr>
         <tr><td class="muted">　통코일 / 가공</td><td class="muted">${fmt(R.shippedC2C)}t / ${fmt(R.shippedProc)}t</td></tr>
@@ -2588,7 +2767,7 @@ function renderEnd() {
   };
   app.innerHTML = `
     <div class="card center" style="padding:34px 24px">
-      <p class="muted">${s.companyName} · ${h.length}개월 · ${ymLabel(1)} ~ ${ymLabel(h.length)}</p>
+      <p class="kicker">${h.length}개월 · ${ymLabel(1)} ~ ${ymLabel(h.length)}</p>
       <div class="big">${g.grade}</div>
       <h1 style="margin:6px 0 14px">${g.title}</h1>
       <p class="sub" style="max-width:540px;margin:0 auto 24px">${g.desc}</p>
@@ -2597,13 +2776,13 @@ function renderEnd() {
         <div class="goalres">
           <div><b>① 본사 기여</b><span class="muted"> · 본사가 우리에게 소재를 팔아 번 영업이익</span></div>
           <div class="gv ${g.hqProfit >= g.hqTarget ? 'pos' : 'neg'}">${K(g.hqProfit)}
-            <span class="muted" style="font-size:12px">/ 목표 ${K(g.hqTarget)}천불</span></div>
+            <span class="muted" style="font-size:12px">/ 목표 ${K(g.hqTarget)}천U$</span></div>
           ${bar(g.hqProfit, g.hqTarget)}
         </div>
         <div class="goalres">
           <div><b>② 코일센터 영업이익</b></div>
           <div class="gv ${g.soloOp >= g.soloTarget ? 'pos' : 'neg'}">${K(g.soloOp)}
-            <span class="muted" style="font-size:12px">/ 목표 ${K(g.soloTarget)}천불</span></div>
+            <span class="muted" style="font-size:12px">/ 목표 ${K(g.soloTarget)}천U$</span></div>
           ${bar(g.soloOp, g.soloTarget)}
         </div>
       </div>
@@ -2612,8 +2791,8 @@ function renderEnd() {
       <table style="max-width:460px;margin:0 auto;text-align:left">
         <tr><td>4년 누적 판매량</td><td>${fmt(g.soldTons)}t</td></tr>
         <tr><td>본사에서 사온 소재</td><td>${fmt(g.hqTons)}t</td></tr>
-        <tr><td>제일 좋았던 달</td><td>${ymLabel(best.turn)} · ${K(best.op)}천불</td></tr>
-        <tr><td>제일 나빴던 달</td><td>${ymLabel(worst.turn)} · ${K(worst.op)}천불</td></tr></table>
+        <tr><td>제일 좋았던 달</td><td>${ymLabel(best.turn)} · ${K(best.op)}천U$</td></tr>
+        <tr><td>제일 나빴던 달</td><td>${ymLabel(worst.turn)} · ${K(worst.op)}천U$</td></tr></table>
 
       <div style="margin-top:26px"><button class="primary" id="again">다시 하기</button></div>
     </div>`;
