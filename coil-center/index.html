@@ -162,6 +162,36 @@
   .track{height:10px;background:var(--f3);border:1px solid var(--edge);position:relative;overflow:hidden}
   .fill{height:100%;background:linear-gradient(104deg,#3B82C4 0 45%,#1F5C99 45% 100%)}
   .fill.over{background:linear-gradient(104deg,#C86A5E 0 45%,#BE473D 45% 100%)}
+
+  /* 공장 자리 — 나중에 그림이 들어온다 */
+  .plantslot{border:1px dashed var(--edge);background:var(--f2);height:132px;
+    display:grid;place-items:center;margin-bottom:14px}
+  .plantslot .kicker{color:var(--ink-3)}
+
+  /* 시황 — 제일 먼저 눈에 들어와야 한다 */
+  .market{border:1px solid var(--edge);border-left:5px solid var(--ink-3);
+    background:var(--f1);padding:13px 16px;margin-bottom:14px}
+  .market.ph-BOOM{border-left-color:var(--ok);background:linear-gradient(100deg,#E4F0E9 0 42%,#EDF4F0 42% 100%)}
+  .market.ph-NORMAL{border-left-color:var(--slate,#7F9DB8);background:var(--f1)}
+  .market.ph-BUST{border-left-color:var(--po);background:linear-gradient(100deg,#F6E4E2 0 42%,#F7EDEC 42% 100%)}
+  .market .mk{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .market .mk b{font-size:16px;letter-spacing:-.02em}
+  .market .mtag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;font-weight:600;
+    letter-spacing:.1em;padding:3px 10px;background:var(--ink);color:#F2F7FB;--cut:6px;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+  .market.ph-BOOM .mtag{background:#1F5F40}
+  .market.ph-BUST .mtag{background:#8F332A}
+  .market p{margin:7px 0 0;font-size:13px;color:var(--ink-2)}
+  .market .mrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;font-size:13px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace}
+  .market .mrow b{font-size:15px;font-weight:600}
+
+  /* 산업군 행 */
+  table.perf tr.segrow td{color:var(--ink-2);font-size:12px;padding-top:4px;padding-bottom:4px}
+  table.perf tr.segrow td:first-child{font-weight:400}
+  tr.segrow td{color:var(--ink-2);font-size:12px}
+
 </style>
 <div class="facets" aria-hidden="true">
   <svg viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMin slice">
@@ -316,6 +346,26 @@ const CFG = {
      그래서 "남는 캐파를 일반재로 채워 자금 회전을 돌린다"는 길은 애초에 없다.
      내시가 줄면 라인은 그냥 논다. 고정비는 그대로 나간다.
      증설이 무서운 결정인 이유가 이것이다 — 놀아도 메울 방법이 없다. */
+  /* ---- 판매 산업군 ----
+     같은 톤이라도 어디에 파느냐에 따라 회사가 달라진다.
+       marginAdd  톤당 판가 가산 — 값을 더 쳐주는 곳이 있고 깎는 곳이 있다
+       dso        판매대금 회수까지 걸리는 개월 — 이게 운전자금을 정한다
+       risk       대손 상대 위험 — 떼이는 건 대개 한쪽에서 난다
+       noise      월별 수요 변동 — 예측이 되는 곳과 안 되는 곳
+       gr         쓰는 소재 — 본사 소재냐 3자 일반재냐
+     물건이 모자라면 어디부터 채울지가 매달의 결정이고, 그 누적이 4년 성적표다. */
+  SEGMENT: {
+    AUTO: { label: '자동차', gr: 'PREMIUM', marginAdd:   0, dso: 2, risk: 0.15, noise: 0.05, base: 0.55,
+            note: '본사 소재를 쓰는 주력. 물량이 크고 예측이 됩니다. 대신 결품을 내면 그 고객은 돌아오지 않습니다.' },
+    APPL: { label: '가전',   gr: 'PREMIUM', marginAdd:  14, dso: 1, risk: 0.6,  noise: 0.16, base: 0.15,
+            note: '값을 제일 잘 쳐주고 대금도 한 달이면 들어옵니다. 다만 물량이 들쭉날쭉합니다.' },
+    CONS: { label: '건재',   gr: 'PREMIUM', marginAdd:  -8, dso: 4, risk: 3.5,  noise: 0.28, base: 0.18,
+            note: '물량은 크지만 값을 깎고 대금이 넉 달 뒤에 들어옵니다. 떼이는 것도 대개 여기서 납니다.' },
+    DIST: { label: '일반유통', gr: 'COMMON', marginAdd: -12, dso: 1, risk: 1.2,  noise: 0.35, base: 0.12,
+            note: '현금은 제일 빨리 돕니다. 대신 마진이 거의 없고 전체 판매의 15%까지만 나갑니다.' },
+  },
+  SEG_LIST: ['AUTO', 'APPL', 'CONS', 'DIST'],
+
   PREMIUM_DEMAND_SHARE: 1.0,
   COMMON_SALES_CAP: 0.15,          // 본사가 풀었을 때조차 이 선을 못 넘는다
   NASI_LEAD: 3,                    // 내시량을 몇 달 앞까지 미리 받는가
@@ -447,7 +497,7 @@ const CFG = {
      본사 기여 = 본사(P사)가 우리에게 소재를 팔아 벌어들인 영업이익 누계
      법인 손익 = 코일센터 자체 영업이익 누계
      이 둘은 같이 가지 않는다. 그게 이 게임의 전부다. */
-  HQ_PROFIT_TARGET: 75_000_000,
+  HQ_PROFIT_TARGET: 40_000_000,
   SOLO_OP_TARGET: 6_000_000,
 };
 
@@ -711,8 +761,17 @@ function makeNasi(state, turn, rng) {
     potential[k] = Math.max(0, Math.round(v));          // 본사가 주고 싶어 하는 양
     tons[k] = Math.max(0, Math.round(Math.min(v, ceil[k])));  // 우리 캐파가 받을 수 있는 양
   }
+  /* 같은 물량도 어느 산업군에서 오느냐가 매달 다르다. 가전은 들쭉날쭉하고
+     자동차는 안정적이다. 이 구성이 흔들리는 것이 배분 결정을 매달 다르게 만든다. */
+  const seg = {};
+  for (const k of CFG.SEG_LIST) {
+    const S = CFG.SEGMENT[k];
+    seg[k] = {};
+    for (const q of PROC_LIST)
+      seg[k][q] = Math.max(0, tons[q] * S.base * (1 + S.noise * gauss(rng)));
+  }
   // 둘의 차이가 곧 "지금 증설하면 더 받을 수 있는 물량"이다. 이게 증설 신호다.
-  return { turn, tons, potential };
+  return { turn, tons, potential, seg };
 }
 
 /* 유통향에는 "시장 수요"라는 게 따로 없다. 본사가 푼 물량이 곧 팔 수 있는 물량이고,
@@ -1026,101 +1085,97 @@ function resolveTurn(state, decision) {
     }
   }
 
-  /* STEP 9~10. 판가 산출 및 판매 */
+  /* STEP 9~10. 판매 — 산업군별로 배분한다.
+     물건이 모자라면 센터장이 정한 우선순위대로 채운다. 뒤로 밀린 곳은 결품이 나고,
+     결품을 낸 고객은 돌아오지 않는다. 산업군마다 판가도 회수기간도 다르므로,
+     같은 톤을 팔아도 어디에 파느냐에 따라 이익과 자금이 갈린다. */
   let revenue = 0, cogs = 0, yieldGainTotal = 0, shippedTotal = 0;
   const shortageEvents = [];
   const shipped = {};
-  // 본사가 코일센터를 볼 때 제일 먼저 보는 숫자: 내시 물량을 얼마나 쳐냈는가
+  const shippedSeg = {};
+  for (const q of PROC_LIST) shipped[q] = 0;
+  for (const k of CFG.SEG_LIST) shippedSeg[k] = 0;
   let autoShippedTurn = 0, commonShippedTurn = 0;
-  const autoDemandTurn = PROC_LIST.reduce((a, k) => a + demandAuto[k], 0);
+  const autoDemandTurn = PROC_LIST.reduce((a2, k) => a2 + demandAuto[k], 0);
+  const segNow = nasiNow.seg || {};
+  const segWant = {}, segGot = {};
 
-  /* 유통향 15% 상한을 걸려면 이번 달 실수요 출하량을 먼저 알아야 한다.
-     그래서 한 번 훑어서 실수요분을 잡고, 거기에 비례해 유통 예산을 배분한다. */
-  const plan = {};
-  let autoPlan = 0;
-  for (const proc of PROC_LIST) {
-    const wantAll = Math.min(d.sell[proc] || 0, demand[proc] || 0);
-    const prAvail = s.invFg.filter(l => l.proc === proc && l.gr === 'PREMIUM')
-                           .reduce((a, l) => a + l.qty, 0);
-    const wantP = Math.max(0, Math.min(demandAuto[proc], prAvail, wantAll));
-    plan[proc] = { wantAll, prAvail, wantP };
-    autoPlan += wantP;
+  /* 유통(일반유통)은 전체 판매의 15%까지만 나간다. 그 한도를 알려면 실수요가
+     얼마나 나갈지를 먼저 어림잡아야 하므로, 본사 소재 쪽 계획량을 한 번 훑는다. */
+  let firmPlan = 0;
+  for (const k of CFG.SEG_LIST) {
+    if (CFG.SEGMENT[k].gr !== 'PREMIUM') continue;
+    for (const q of PROC_LIST) {
+      const avail = s.invFg.filter(l => l.proc === q && l.gr === 'PREMIUM').reduce((x, l) => x + l.qty, 0);
+      firmPlan += Math.min((segNow[k] && segNow[k][q]) || 0, avail, d.sell[q] || 0);
+    }
   }
-  const capShare = CFG.COMMON_SALES_CAP;
-  /* 유통향(일반재)은 출처가 어디든 전체 판매의 15%까지만 나간다.
-     본사가 불황기에 밀어넣은 물량이든 우리가 3자에서 싸게 사 온 물량이든 똑같다.
-     예전에는 "본사가 푼 양"으로 한 번 더 조였는데, 그러면 3자 소재로 산 일반재는
-     팔 데가 아예 없어 창고에서 죽는다. 그건 전략이 아니라 함정이다.
-     한도를 넘겨 사 온 일반재는 그대로 남아 늙고, 녹슬고, 반값에 나간다 —
-     그게 과다 매입의 대가지 '판매 금지'가 대가는 아니다. */
-  const commonBudget = autoPlan * capShare / (1 - capShare);
-  const commonDemandTotal = PROC_LIST.reduce((a, k) => a + demandCommon[k], 0);
+  let distBudget = firmPlan * CFG.COMMON_SALES_CAP / (1 - CFG.COMMON_SALES_CAP);
 
-  for (const proc of PROC_LIST) {
-    const wantAll = plan[proc].wantAll;
-    if (wantAll <= 0.01) { shipped[proc] = 0; continue; }
+  // 센터장이 정한 배분 우선순위. 안 정했으면 자동차부터.
+  const order = (d.options.segPriority && d.options.segPriority.length)
+    ? d.options.segPriority : CFG.SEG_LIST;
 
-    /* 고급강 수요는 따로 있고, 없는 물건은 팔 수 없다.
-       고급강을 안 들이면 그 22%는 그냥 경쟁사로 간다 — 약속을 깬 게 아니니 결품이 아니다.
-       대신 고급강을 수요 이상으로 사 오면 창고에 눕고, 5개월치 자금이 거기 묶인다.
-       결품 페널티는 일반재 쪽에서만 문다. */
-    /* 내시는 약속이다. 확정 물량을 먼저 채우고, 남는 것만 유통으로 돌린다.
-       비례 배분을 하면 자동차 고객에게 갈 물건이 유통으로 새어 나가고,
-       사장이 "본사 물량부터 채우겠다"는 당연한 선택을 할 수 없게 된다.
-       그리고 유통으로 돌릴 수 있는 양은 본사 정책상 전체의 15%까지다. */
-    const wantP = plan[proc].wantP;
-    const share = commonDemandTotal > 0 ? demandCommon[proc] / commonDemandTotal : 0;
-    const wantC = Math.min(demandCommon[proc], wantAll - wantP, commonBudget * share);
-    const wantBy = { PREMIUM: wantP, COMMON: Math.max(0, wantC) };
-    const want = wantBy.PREMIUM + wantBy.COMMON;
-    if (want <= 0.01) { shipped[proc] = 0; continue; }
+  for (const segKey of order) {
+    const S = CFG.SEGMENT[segKey];
+    if (!S) continue;
+    for (const proc of PROC_LIST) {
+      let want = Math.min((segNow[segKey] && segNow[segKey][proc]) || 0, d.sell[proc] || Infinity);
+      if (S.gr === 'COMMON') { want = Math.min(want, distBudget); }
+      if (want <= 0.01) continue;
 
-    let lineRevenue = 0, lineCogs = 0, ship = 0;
-    for (const gr of ['PREMIUM', 'COMMON']) {
-      const pool = s.invFg.filter(l => l.proc === proc && (l.gr || 'COMMON') === gr);
-      const avail = pool.reduce((a, l) => a + l.qty, 0);
-      let need = Math.min(wantBy[gr], avail);
-      if (need <= 1e-9) continue;
-      ship += need;
+      const pool = s.invFg.filter(l => l.proc === proc && (l.gr || 'COMMON') === S.gr);
+      let need = Math.min(want, pool.reduce((x, l) => x + l.qty, 0));
+      const got = need;
+      let segRevenue = 0;
 
-      // lot을 하나씩 출고하며 태그별로 판가를 따로 매긴다.
-      // FIRM은 매입가 연동이라 스프레드가 고정된다. SPOT은 당월 시세로 팔되 마진 자체가 얇다.
-      if (gr === 'PREMIUM') autoShippedTurn += need; else commonShippedTurn += need;
       for (const lot of pool) {
         if (need <= 1e-9) break;
         const t = Math.min(lot.qty, need);
         const isSpot = lot.dt === 'SPOT';
-        const pmRef = isSpot ? pm * CFG.GRADE[gr].pmMult : lot.unitCost * CFG.YIELD[proc];
+        const pmRef = isSpot ? pm * CFG.GRADE[S.gr].pmMult : lot.unitCost * CFG.YIELD[proc];
         const price = unitPrice(proc, pmRef, lot.ya, lot.ra, {
           discount: d.options.discount,
-          gradeMargin: CFG.GRADE[gr].marginAdd,
+          gradeMargin: S.marginAdd,                       // 산업군이 값을 정한다
           spotAdj: isSpot ? CFG.SPOT_MARGIN_ADJ : 0,
         });
-        lineRevenue += t * price;
-        lineCogs += t * lot.unitCost;
+        segRevenue += t * price;
+        cogs += t * lot.unitCost;
         if (proc !== 'C2C') yieldGainTotal += yieldGainPerTon(pmRef, lot.ra, lot.ya, lot.yActual) * t;
         lot.qty -= t; need -= t;
       }
+      for (let i = s.invFg.length - 1; i >= 0; i--) if (s.invFg[i].qty <= 1e-9) s.invFg.splice(i, 1);
+
+      if (got <= 1e-9) continue;
+      revenue += segRevenue;
+      // 회수기간도 산업군이 정한다. 건재는 넉 달, 가전은 한 달.
+      s.ar.push({ amount: segRevenue, dueTurn: s.turn + S.dso, seg: segKey });
+      shipped[proc] += got;
+      shippedSeg[segKey] += got;
+      shippedTotal += got;
+      if (S.gr === 'COMMON') { distBudget -= got; commonShippedTurn += got; }
+      else autoShippedTurn += got;
+
+      segWant[segKey] = (segWant[segKey] || 0) + want;
+      segGot[segKey] = (segGot[segKey] || 0) + got;
     }
-    for (let i = s.invFg.length - 1; i >= 0; i--) if (s.invFg[i].qty <= 1e-9) s.invFg.splice(i, 1);
-    if (ship <= 1e-9) { shipped[proc] = 0; continue; }
+  }
 
-    revenue += lineRevenue;
-    cogs += lineCogs;
-    s.ar.push({ amount: lineRevenue, dueTurn: s.turn + CFG.DSO_TURNS });
-    shipped[proc] = ship;
-    shippedTotal += ship;
-
-    // 결품은 신뢰를 깎는 정도가 아니다. 실무자 확인: 결품을 내면 그 고객은 영영 끝이다.
-    // 그래서 점유율을 영구히 깎는다. 이게 3개월 안전재고를 드는 이유다.
-    const shortRate = (want - ship) / Math.max(want, 1);
-    if (shortRate > 0.05 && s.turn > CFG.LEAD_TURNS) {
-      const lost = CFG.SHORTAGE_SHARE_LOSS * Math.min(1, shortRate * 2);
-      s.myShare *= 1 - lost;
-      // 잃은 고객은 점유율에서 이미 영구히 뺐다. 평판 타격까지 영구로 두면 이중 계산이다.
-      s.trust -= Math.min(3, shortRate * 8);
-      shortageEvents.push(proc);
-      flags.push(`${proc} 결품 ${Math.round(want - ship)}톤. 그 고객은 돌아오지 않습니다. 점유율 ${(lost * 100).toFixed(1)}% 영구 상실.`);
+  /* 결품은 산업군마다 한 번씩만 따진다. 제품별로 스무 번 물리면 한 달 만에
+     점유율이 무너진다. 그리고 유통향은 약속한 물량이 아니라 남는 것을 파는
+     자리이므로, 일반재가 없어서 못 판 것은 결품이 아니다. */
+  for (const segKey of CFG.SEG_LIST) {
+    const S = CFG.SEGMENT[segKey];
+    if (S.gr !== 'PREMIUM') continue;
+    const want = segWant[segKey] || 0, got = segGot[segKey] || 0;
+    const miss = want - got;
+    if (miss > want * 0.08 && s.turn > CFG.LEAD_TURNS && want > 1) {
+      const sev = Math.min(1, miss / want);
+      const weight = segKey === 'AUTO' ? 1 : segKey === 'APPL' ? 0.6 : 0.4;
+      s.myShare *= 1 - CFG.SHORTAGE_SHARE_LOSS * sev * weight;
+      s.trust -= Math.min(3, sev * 6 * weight);
+      shortageEvents.push(S.label);
+      flags.push(`${S.label} 쪽 ${Math.round(miss).toLocaleString()}톤을 못 채웠습니다. 그 고객은 돌아오지 않습니다.`);
     }
   }
 
@@ -1237,16 +1292,21 @@ function resolveTurn(state, decision) {
     let need = Math.min(want, s.ar.reduce((a, x) => a + x.amount, 0));
     if (need > 1) {
       badDebt = need;
-      // 오래된 채권부터 턴다 — 못 받고 있던 그 돈이 결국 못 받는 돈이 된다.
-      s.ar.sort((a, b) => a.dueTurn - b.dueTurn);
+      /* 떼이는 곳은 정해져 있다. 건재가 제일 위험하고 자동차는 거의 안 난다.
+         위험한 산업군의 채권부터 턴다 — 어디에 팔았는지가 여기서 청구된다. */
+      s.ar.sort((x, y) => (CFG.SEGMENT[y.seg] || { risk: 1 }).risk
+                        - (CFG.SEGMENT[x.seg] || { risk: 1 }).risk);
+      const hit = {};
       for (const a of s.ar) {
         if (need <= 1e-9) break;
         const t = Math.min(a.amount, need);
+        if (t > 1) hit[a.seg || '기타'] = (hit[a.seg || '기타'] || 0) + t;
         a.amount -= t; need -= t;
       }
       s.ar = s.ar.filter(a => a.amount > 1e-9);
       s.trust -= 2;
-      flags.push(`가전·건설 쪽 고객사 한 곳이 부도났습니다. 받을 돈 $${Math.round(badDebt).toLocaleString()}을 털었습니다.`);
+      const who = Object.keys(hit).map(k => (CFG.SEGMENT[k] || {}).label || '기존').join('·');
+      flags.push(`${who} 쪽 고객사가 부도났습니다. 받을 돈 $${Math.round(badDebt).toLocaleString()}을 털었습니다.`);
     }
   }
 
@@ -1317,6 +1377,8 @@ function resolveTurn(state, decision) {
   // 램프업 구간은 분모에서 뺀다. 배가 아직 안 왔는데 못 쳤다고 탓할 수는 없다.
   if (s.turn > CFG.LEAD_TURNS + CFG.GRADE.PREMIUM.leadAdd) s.hq.cumAutoDemand = (s.hq.cumAutoDemand || 0) + autoDemandTurn;
   s.hq.cumAutoShipped = (s.hq.cumAutoShipped || 0) + autoShippedTurn;
+  s.segTons = s.segTons || {};
+  for (const k of CFG.SEG_LIST) s.segTons[k] = (s.segTons[k] || 0) + shippedSeg[k];
 
   /* 비재무 갱신 — 설계서는 "3턴 연속 적자"일 때만 사기를 깎는다. 회복 경로도 둔다. */
   s.lossStreak = op < 0 ? (s.lossStreak || 0) + 1 : 0;
@@ -1344,6 +1406,7 @@ function resolveTurn(state, decision) {
     ar: receivables(s).total,
     arLate: receivables(s).late,
     shippedTotal,
+    shippedSeg,
     shippedC2C: shipped.C2C || 0,
     shippedProc: (shipped.SLIT || 0) + (shipped.LEVEL || 0) + (shipped.TRAP || 0) + (shipped.DIE || 0),
     log, flags,
@@ -1468,55 +1531,34 @@ function ymLabel(turn) { const d = ym(turn); return `${d.y}년 ${d.m}월`; }
    그 달에 실제로 고민할 만한 것을 묻는다. 고르는 축(물량이냐 마진이냐,
    지금 사느냐 미루느냐, 돌리느냐 손보느냐)은 같지만 이유와 숫자가 매달 다르다. */
 
+/* 영업 자리 — 이번 달 물건을 어느 산업군부터 채울지.
+   물량이 넉넉하면 다 채워지지만, 모자라면 뒤로 밀린 곳에서 결품이 난다.
+   산업군마다 값도 회수기간도 위험도 다르므로 이게 매달 진짜 결정이 된다. */
 function salesCard(s, c) {
-  const base = { id: 'r-sales', kind: '영업', who: 'jung' };
-  const push = { label: '단가를 깎아 물량을 민다', hint: '톤당 −$12 · 거래처 늘어남',
-    apply: (s2, g) => { g.turnDiscount += 12; s2.myShare *= 1.03;
-      return '단가를 깎아 물량을 밀었습니다. 거래처가 조금 늘었습니다.'; } };
-  const hold = { label: '지금 조건대로', hint: '', apply: () => '판매 조건을 그대로 둡니다.' };
-  const keep = { label: '단가를 지킨다', hint: '마진 우선 · 물량은 줄어듦',
-    apply: (s2) => { s2.myShare *= 0.975; s2.trust += 1;
-      return '단가를 지켰습니다. 물량은 조금 줄어듭니다.'; } };
+  const seg = c.segNow || {};
+  const tons = k => Math.round(CFG.SEG_LIST.includes(k)
+    ? PROC_LIST.reduce((a, q) => a + ((seg[k] && seg[k][q]) || 0), 0) : 0);
+  const a_ = tons('AUTO'), p_ = tons('APPL'), c_ = tons('CONS'), d_ = tons('DIST');
+  const stock = c.fgTons;                 // 창고의 소재 + 제품
+  const total = a_ + p_ + c_ + d_;
+  const tight = stock < total * 1.05;     // 이번 달 주문을 다 못 채울 만큼 얇은가
+  const line = `이번 달 들어온 주문은 자동차 ${fmt(a_)}t · 가전 ${fmt(p_)}t · 건재 ${fmt(c_)}t · 유통 ${fmt(d_)}t입니다.`;
+  const opt = (label, hint, order, msg) => ({ label, hint,
+    apply: (s2, g) => { g.segPriority = order; return msg; } });
 
-  if (c.cover > 4.5) return { ...base,
-    title: '창고가 무겁습니다. 밀어낼까요',
-    text: `재고가 ${c.cover.toFixed(1)}개월치입니다. 이대로 두면 오래된 것부터 값이 떨어집니다. `
-        + `값을 깎아서라도 돌릴지, 제값 받을 때까지 안고 갈지 정해야 합니다.`,
-    opts: [{ ...push, label: '깎아서라도 돌린다', hint: '톤당 −$15 · 재고가 빠집니다',
-      apply: (s2, g) => { g.turnDiscount += 15; s2.myShare *= 1.05;
-        return '값을 깎아 재고를 돌렸습니다.'; } }, hold, keep] };
-
-  if (c.phase === 'BUST') return { ...base,
-    title: '고객들이 단가를 누르고 있습니다',
-    text: `시황이 나빠 다들 값을 깎아달라고 합니다. 경쟁사도 사정은 같을 텐데, `
-        + `먼저 무너지는 쪽이 물량을 가져갑니다. 이번 달 나갈 수 있는 물량은 ${fmt(c.sellable)}톤입니다.`,
+  return { id: 'r-sales', kind: '영업', who: 'jung',
+    title: tight ? '물건이 모자랍니다. 어디부터 채울까요' : '이번 달 판매 배분',
+    text: line + ' ' + (tight
+      ? `창고에 ${fmt(stock)}t뿐입니다. 뒤로 밀린 곳에서는 결품이 납니다.`
+      : `창고에 ${fmt(stock)}t이 있어 물량은 됩니다. 그래도 어디부터 실을지에 따라 값과 대금 회수가 달라집니다.`),
     opts: [
-      { label: '맞춰준다', hint: '톤당 −$14 · 고객을 지킴',
-        apply: (s2, g) => { g.turnDiscount += 14; s2.trust += 1;
-          return '값을 맞춰줬습니다. 고객은 지켰습니다.'; } },
-      hold,
-      { label: '수익 나는 곳만 받는다', hint: '물량 −5% · 마진 방어',
-        apply: (s2) => { s2.myShare *= 0.95; s2.trust += 2;
-          return '수익이 나는 거래만 남겼습니다. 물량은 줄었습니다.'; } }] };
-
-  if (c.phase === 'BOOM') return { ...base,
-    title: '주문이 밀립니다. 값을 올릴까요',
-    text: `이번 달 나갈 수 있는 물량이 ${fmt(c.sellable)}톤인데 그보다 더 달라는 곳이 많습니다. `
-        + `지금은 우리가 아쉬울 게 없습니다. 다만 올린 값은 시황이 꺾여도 고객이 기억합니다.`,
-    opts: [
-      { label: '단가를 올린다', hint: '톤당 +$10 · 고객이 서운해함',
-        apply: (s2, g) => { g.turnDiscount -= 10; s2.myShare *= 0.98; s2.trust -= 2;
-          return '값을 올렸습니다. 몇 곳이 떨떠름해합니다.'; } },
-      hold,
-      { label: '값은 그대로 두고 물량을 늘린다', hint: '거래처 +4%',
-        apply: (s2) => { s2.myShare *= 1.04; s2.trust += 2;
-          return '값을 안 올리고 물량을 받았습니다. 고객이 오래 기억할 겁니다.'; } }] };
-
-  return { ...base,
-    title: '이번 달 판매 방침',
-    text: `이번 달 나갈 수 있는 물량은 ${fmt(c.sellable)}톤입니다. 특별히 밀리지도 남지도 않습니다. `
-        + `물량을 키울지 마진을 지킬지가 매달의 선택입니다.`,
-    opts: [push, hold, keep] };
+      opt('자동차부터', '본사 소재 주력 · 결품을 내면 끝', ['AUTO', 'APPL', 'CONS', 'DIST'],
+          '자동차 물량부터 채웠습니다.'),
+      opt('가전부터', '톤당 +$14 · 대금 한 달이면 회수', ['APPL', 'AUTO', 'DIST', 'CONS'],
+          '값을 잘 쳐주는 가전부터 채웠습니다. 현금도 빨리 돕니다.'),
+      opt('건재부터', '물량은 크지만 넉 달 뒤 회수 · 떼일 위험', ['CONS', 'AUTO', 'APPL', 'DIST'],
+          '건재 물량부터 채웠습니다. 대금은 넉 달 뒤에 봅니다.'),
+    ] };
 }
 
 function buyCard(s, c) {
@@ -2318,7 +2360,8 @@ function buildDecision(s, ui) {
     buy: { totalTon: buy, alpha: 1, beta: G ? (G.beta != null ? G.beta : 1) : 1, hqSpotTon: ui.hqTake },
     invest: { addLine: ui.expandPick, newBuilding: s.lines.length >= CFG.MAX_LINES,
               yieldProgram: ui.yieldSpend, salesEffort: 0 },
-    options: { overtime: ui.overtime, discount: G ? G.turnDiscount : 0, trimYield: 0 },
+    options: { overtime: ui.overtime, discount: G ? G.turnDiscount : 0, trimYield: 0,
+               segPriority: (G && G.segPriority) || CFG.SEG_LIST },
     run: { SLIT: runS, LEVEL: runL, TRAP: runT, DIE: runD },
     sell: { C2C: n.C2C || 0, SLIT: runS * CFG.YIELD.SLIT, LEVEL: runL * CFG.YIELD.LEVEL,
             TRAP: runT * CFG.YIELD.TRAP, DIE: runD * CFG.YIELD.DIE },
@@ -2353,6 +2396,7 @@ function newGame() {
   G = { s, ui: { cover: 0.5, hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0 },
         pending: [], seen: {}, deck: [], screen: 'turn',
         mult: 1, beta: 1, turnDiscount: 0, extraFixed: 0, yieldPenalty: 0,
+        segPriority: CFG.SEG_LIST.slice(),
         report: null, feedback: [] };
   dealTurn(); render();
 }
@@ -2368,6 +2412,8 @@ function cardCtx(s) {
   return { load, phase: s.market.phase,
            pmTrend: h.length > 1 ? h[h.length - 1].pm - h[h.length - 2].pm : 0,
            cover: L.need > 0 ? stock / L.need : 0,
+           segNow: (s.nasi[0] && s.nasi[0].seg) || {},
+           fgTons: Math.round(inventoryTons(s)),
            sellable: Math.round(PROC_LIST.reduce((a, k) => a + (n[k] || 0), 0)) };
 }
 
@@ -2423,6 +2469,7 @@ function expandCardDef(type, s) {
 function dealTurn() {
   const s = G.s, ctx = cardCtx(s);
   G.mult = 1; G.beta = 1; G.turnDiscount = 0; G.feedback = [];
+  G.segPriority = CFG.SEG_LIST.slice();
   Object.assign(G.ui, { hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0 });
   G.deck = ROUTINE.map(f => ({ c: f(s, ctx), chosen: null }));
 
@@ -2602,27 +2649,29 @@ function metricRow(s) {
 
 function perfTable(s) {
   const p = perf(s);
-  if (!p) return `<div class="card"><h2>실적</h2>
-    <p class="hint">아직 닫은 달이 없습니다. 첫 결산이 나오면 여기에 실적이 뜹니다.</p></div>`;
+  if (!p) return '';
   const rows = [
     { t: '판매량', k: 'shippedTotal', unit: 't', pct: true },
+    ...CFG.SEG_LIST.map(k => ({ t: '　' + CFG.SEGMENT[k].label, seg: k, unit: 't', pct: true, dim: 1 })),
     { t: '매출액', k: 'revenue', pct: true },
     { t: '영업이익', k: 'op' },
     { t: '순이익', k: 'np' },
     { t: '본사 영업이익', k: 'hqMargin', hi: true },
   ];
+  const pick = (h, r) => h ? (r.seg ? ((h.shippedSeg && h.shippedSeg[r.seg]) || 0) : (h[r.k] || 0)) : 0;
+  const sumR = (arr, r) => arr.reduce((a, h) => a + pick(h, r), 0);
   const body = rows.map(r => {
-    const cur = p.cur[r.k] || 0;
-    const prev = p.prev ? (p.prev[r.k] || 0) : null;
-    const ytd = p.sum(p.ytd, r.k);
-    const ytdPrev = p.sum(p.ytdPrev, r.k);
+    const cur = pick(p.cur, r);
+    const prev = p.prev ? pick(p.prev, r) : null;
+    const ytd = sumR(p.ytd, r);
+    const ytdPrev = sumR(p.ytdPrev, r);
     const curTxt = r.unit === 't' ? fmt(cur) + 't' : K(cur);
     const ytdTxt = r.unit === 't' ? fmt(ytd) + 't' : K(ytd);
     const mom = prev === null ? '−' : (r.pct ? dPct(cur, prev) : dK(cur - prev));
     const momC = prev === null ? '' : cls(cur - prev);
     const yoy = (!p.hasYoy || !ytdPrev) ? '−' : (r.pct ? dPct(ytd, ytdPrev) : dK(ytd - ytdPrev));
     const yoyC = (!p.hasYoy || !ytdPrev) ? '' : cls(ytd - ytdPrev);
-    return `<tr class="${r.hi ? 'hq' : ''}"><td>${r.t}</td>
+    return `<tr class="${r.hi ? 'hq' : ''}${r.dim ? ' segrow' : ''}"><td>${r.t}</td>
       <td class="${r.k === 'op' || r.k === 'np' ? cls(cur) : ''}">${curTxt}</td>
       <td class="${momC}">${mom}</td><td>${ytdTxt}</td><td class="${yoyC}">${yoy}</td></tr>`;
   }).join('');
@@ -2656,7 +2705,22 @@ function renderTurn() {
     <div class="topbar">
       <div><b>${d.y}년 ${d.m}월</b>
         <span class="muted">· ${s.turn} / 48개월</span></div>
-      <span class="phase ph-${s.market.phase}">${ch.label.split(' · ')[1] || CFG.PHASE[s.market.phase].label}</span>
+    </div>
+
+    <div class="plantslot">
+      <span class="kicker" style="margin:0">공장 전경</span>
+    </div>
+
+    <div class="market ph-${s.market.phase}">
+      <div class="mk">
+        <span class="mtag">${CFG.PHASE[s.market.phase].label}</span>
+        <b>${ch.label}</b>
+      </div>
+      <p>${ch.brief}</p>
+      <div class="mrow">
+        <span>소재 시세 <b>$${fmt(s.market.pm)}</b>/톤</span>
+        <span>${pmArrow(s)}</span>
+      </div>
     </div>
     ${metricRow(s)}
     ${perfTable(s)}
@@ -2670,9 +2734,7 @@ function renderTurn() {
       </div>
     </div>
 
-    <details class="card fold"><summary>공장 보기</summary>
-      <div style="margin-top:10px">${factorySVG(s, look(s))}</div></details>
-    <details class="card fold"><summary>장부 보기</summary>${ledger(s)}</details>`;
+    <details class="card fold"><summary>${d.m}월 말 재무상태표</summary>${balanceSheet(s)}</details>`;
 
   app.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
     G.deck[+b.dataset.d].chosen = +b.dataset.o; renderTurn();
@@ -2680,30 +2742,50 @@ function renderTurn() {
   $('#ok').onclick = () => { if (G.deck.every(x => x.chosen !== null)) confirmTurn(); };
 }
 
-// 평소엔 접어 둔다. 매달 볼 필요는 없지만 궁금할 때는 있어야 한다.
-function ledger(s) {
-  const r = receivables(s), inv = inventoryTons(s), invL = longInventoryTons(s);
-  const last = s.history[s.history.length - 1];
-  const sh = last ? last.shipped : {};
+/* 월말 재무상태표. 장부를 늘어놓는 대신 회사가 지금 어떤 모양인지 한 장으로 본다.
+   자산이 어디에 묶여 있고 그걸 누구 돈으로 받치고 있는지가 이 게임의 전부다. */
+function balanceSheet(s) {
+  const r = receivables(s);
+  const invT = inventoryTons(s);
+  const invVal = [...s.invRaw, ...s.invFg].reduce((a, l) => a + l.qty * l.unitCost, 0);
+  const transit = s.poOpen.reduce((a, p2) => a + p2.qty * p2.unitPriceFixed, 0);
+  const land = s.fa.land, bld = s.fa.buildingNbv;
+  const mach = Math.max(0, s.fa.machineCost - s.fa.machineAccDep);
+  const assets = s.cash + r.total + invVal + transit + land + bld + mach;
+  const ap = s.ap.reduce((a, x) => a + x.amount, 0);
+  const debt = s.debt.principal;
+  const equity = assets - ap - debt;
+  const row = (t, v, c2) => `<tr class="${c2 || ''}"><td>${t}</td><td>${K(v)}</td></tr>`;
   return `<table style="margin-top:10px">
-    <tr><th>자금</th><th>천U$</th></tr>
-    <tr><td>통장</td><td>${K(s.cash)}</td></tr>
-    <tr><td>받을 돈 (매출채권)</td><td>${K(r.total)}</td></tr>
-    <tr><td class="muted">　그중 약속일을 넘긴 것</td><td class="muted">${K(r.late)}</td></tr>
-    <tr><td>창고에 잠긴 돈</td><td>${K(inv * s.market.pm)}</td></tr>
-    <tr><td>바다에 잠긴 돈</td><td>${K(s.poOpen.reduce((a, p) => a + p.qty * p.unitPriceFixed, 0))}</td></tr>
-    <tr><td>줄 돈 (소재값)</td><td class="neg">−${K(s.ap.reduce((a, x) => a + x.amount, 0))}</td></tr>
-    <tr class="tot"><td>더 빌릴 수 있는 돈</td><td>${K(s.debt.limit - s.debt.principal)}</td></tr></table>
+    <tr><th>자산</th><th>천U$</th></tr>
+    ${row('현금', s.cash)}
+    ${row('매출채권', r.total)}
+    ${r.late > 1 ? `<tr class="segrow"><td>　약속일을 넘긴 것</td><td class="neg">${K(r.late)}</td></tr>` : ''}
+    ${row(`재고 <span class="muted">${fmt(invT)}t</span>`, invVal)}
+    ${row('미착 소재 <span class="muted">바다 위</span>', transit)}
+    ${row('토지', land)}
+    ${row('건물', bld)}
+    ${row('설비', mach)}
+    <tr class="tot"><td>자산 합계</td><td>${K(assets)}</td></tr>
+  </table>
   <table style="margin-top:14px">
-    <tr><th>재고 · 판매</th><th></th></tr>
-    <tr><td>총재고</td><td>${fmt(inv)}t</td></tr>
-    <tr><td class="muted">　3개월 넘은 것</td><td class="muted">${fmt(invL)}t</td></tr>
-    <tr><td>지난달 통코일</td><td>${fmt(sh.C2C || 0)}t</td></tr>
-    <tr><td>지난달 슬리팅</td><td>${fmt(sh.SLIT || 0)}t</td></tr>
-    <tr><td>지난달 레벨링</td><td>${fmt(sh.LEVEL || 0)}t</td></tr>
-    ${(sh.TRAP || sh.DIE) ? `<tr><td>지난달 블랭킹</td><td>${fmt((sh.TRAP || 0) + (sh.DIE || 0))}t</td></tr>` : ''}
-    <tr><td>소재 시세</td><td>$${fmt(s.market.pm)}/톤</td></tr>
-    <tr><td>직원 사기</td><td>${Math.round(s.morale)}</td></tr></table>`;
+    <tr><th>부채와 자본</th><th>천U$</th></tr>
+    ${row('매입채무 <span class="muted">아직 안 낸 소재값</span>', ap)}
+    ${row('차입금', debt)}
+    <tr class="tot"><td>부채 합계</td><td>${K(ap + debt)}</td></tr>
+    ${row('자본 <span class="muted">납입 + 누적손익</span>', equity)}
+    <tr class="tot"><td>부채와 자본 합계</td><td>${K(ap + debt + equity)}</td></tr>
+  </table>
+  <p class="hint">차입 여력 ${K(s.debt.limit - s.debt.principal)}천U$ · 소재 시세 $${fmt(s.market.pm)}/톤 · 직원 사기 ${Math.round(s.morale)}</p>`;
+}
+
+// 시세가 어느 쪽으로 가고 있는지
+function pmArrow(s) {
+  const h = s.history;
+  if (h.length < 2) return '<span class="muted">지난달 대비 —</span>';
+  const d2 = s.market.pm - h[h.length - 1].pm;
+  if (Math.abs(d2) < 1) return '<span class="muted">지난달과 같음</span>';
+  return `<span class="${d2 > 0 ? 'neg' : 'pos'}">지난달 대비 ${d2 > 0 ? '▲' : '▼'} $${fmt(Math.abs(d2))}</span>`;
 }
 
 /* ---- 4. 결산 — 결정의 결과와 그 달 손익 ---- */
