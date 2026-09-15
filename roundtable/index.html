@@ -118,6 +118,13 @@ button{font-family:inherit;color:inherit}
 .chunk:hover{background:var(--paper)}
 .chunk.on{border-left-color:var(--accent);background:var(--accent-soft)}
 .bigko{font-size:14px;color:var(--sub);margin-top:8px}
+.rp{display:flex;gap:10px;padding:10px 12px;border-radius:10px;margin:6px 0;align-items:flex-start;cursor:pointer}
+.rp.mine{background:var(--accent-soft);border:1px dashed var(--accent)}
+.rp.now{outline:2px solid var(--accent)}
+.rp .sp{font-family:var(--serif);font-weight:700;flex:none;width:22px;color:var(--accent)}
+.rp.b .sp{color:var(--blue)}
+.rp .en{font-family:var(--serif);font-size:16px;line-height:1.55}
+.rp .ko{display:block;font-size:12.5px;color:var(--sub);margin-top:3px}
 .blurme{filter:blur(5px);cursor:pointer;user-select:none;transition:filter .15s}
 .blurme.show{filter:none;cursor:auto}
 .notes{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
@@ -2710,7 +2717,8 @@ function pickVoice(who){
   return v;
 }
 let speakingSeq = null, autoTok = null;
-function stopSpeak(){ speakingSeq=null; autoTok=null; if(window.speechSynthesis) speechSynthesis.cancel(); }
+let rpTok = null;
+function stopSpeak(){ speakingSeq=null; autoTok=null; rpTok=null; if(window.speechSynthesis) speechSynthesis.cancel(); }
 function speak(text, who, rate, cb){
   if(!window.speechSynthesis){ toast("이 브라우저는 음성 재생을 지원하지 않습니다"); cb&&cb(); return; }
   speechSynthesis.cancel();
@@ -2798,7 +2806,7 @@ function normWords(s){ return s.toLowerCase().replace(/[^a-z0-9'\s]/g," ").split
 const STEPS = [
   {k:"listen", n:"통으로 듣기", m:3,  d:"대화 전체를 눈으로 따라가며 듣습니다"},
   {k:"shadow", n:"한 줄 쉐도잉",m:11, d:"덩어리 → 문장 순으로 소리 내어 따라 읽습니다"},
-  {k:"output", n:"말해보기",    m:2,  d:"배운 표현으로 직접 말합니다"}
+  {k:"replay", n:"역할극으로 마무리", m:3, d:"대화를 처음부터 다시 — 상대 대사는 앱이, 내 대사는 내가"}
 ];
 const SESS_MIN = STEPS.reduce((a,x)=>a+x.m, 0);
 let cur = { view:"home", dayId:null, step:0, line:0, chunk:-1, reps:{}, t0:0, tick:null, showKo:false };
@@ -2905,7 +2913,7 @@ function renderHome(){
          (isDone(x.id)?'<div class="done">완료</div>':'<div class="sub" style="font-size:12px">'+x.lines.length+'문장</div>')+'</div>';
   });
   h += '</div>';
-  h += '<div class="card sub">한 세션은 <b>'+SESS_MIN+'분</b> 기준입니다 — 통듣기 3분 · 쉐도잉 11분 · 말하기 2분. '+
+  h += '<div class="card sub">한 세션은 <b>'+SESS_MIN+'분</b> 기준입니다 — 통듣기 3분 · 쉐도잉 11분 · 역할극 3분. '+
        '시간이 없으면 <b>쉐도잉 단계만</b> 해도 효과의 대부분이 나옵니다. '+
        '한 번에 못 끝내는 날에는 아래 <b>「여기까지 하고 저장」</b>을 누르세요 — 다음에 열면 그 자리에서 이어집니다.</div>';
   $("#view-home").innerHTML = h;
@@ -2927,7 +2935,7 @@ function renderSession(){
   h += '<div id="stepbody"></div>';
   $("#view-session").innerHTML = h;
   updClock();
-  ({listen:stepListen, shadow:stepShadow, output:stepOutput})[st.k](d);
+  ({listen:stepListen, shadow:stepShadow, replay:stepReplay})[st.k](d);
   renderFoot(d);
 }
 function renderFoot(d){
@@ -2988,7 +2996,7 @@ function finishSession(d){
     '<div class="sub" style="margin:6px 0 14px">'+d.titleKo+'</div>'+
     '<div class="streak"><div><b>'+elapsedMin()+'</b><span>오늘 분</span></div><div><b>'+repLines+'</b><span>따라 읽은 문장</span></div>'+
     '<div><b>'+info.streak+'</b><span>연속일</span></div></div>'+
-    '<div class="rule"></div><div class="sub">내일 첫 단계에서 오늘 표현 8개를 다시 물어봅니다. 그때 <b>보지 않고</b> 말해 보세요.</div>'+
+    '<div class="rule"></div><div class="sub">오늘 표현 8개는 <b>표현장</b>에 쌓여 있습니다. 내일 시작하기 전에 <b>보지 않고</b> 한 번 말해 보세요.</div>'+
     '<div class="row" style="margin-top:14px"><button class="btn" id="cHome">홈으로</button>'+
     '<button class="btn ghost" id="cBank">표현장에서 복습</button></div></div>';
   $("#footbar").classList.remove("on");
@@ -3132,27 +3140,68 @@ document.addEventListener("keydown", e=>{
 });
 
 /* --- step 5 : 말해보기 --- */
-function stepOutput(d){
-  const saved = S.out[d.id] || [];
-  let h = '<div class="card"><b>오늘 배운 표현으로 직접 말하기</b>'+
-    '<div class="sub" style="margin:4px 0 0">각 질문에 <b>30초씩 소리 내어</b> 답하세요. 말한 뒤 기억나는 문장을 한 줄만 적어 두면 다음에 비교할 수 있습니다.</div><div class="rule"></div>';
-  d.out.forEach((q,i)=>{
-    h += '<div class="qbox"><div class="q">'+esc(q.q)+' <button class="btn ghost sm rv" data-t="'+esc(q.q)+'">▶</button></div>'+
-         '<div class="hint">써야 할 표현 — '+esc(q.hint)+'</div>'+
-         '<div class="row" style="margin:6px 0"><button class="btn ghost sm timer" data-i="'+i+'">30초 타이머</button>'+
-         '<span class="sub" id="tm'+i+'"></span></div>'+
-         '<textarea data-i="'+i+'" placeholder="말한 내용 중 한 문장만 적어 두세요 (선택)">'+esc(saved[i]||"")+'</textarea></div>';
+function stepReplay(d){
+  const me = S.cfg.myRole || "A";
+  const other = me === "A" ? "B" : "A";
+  let h = '<div class="card"><b>대화를 처음부터 다시 — 역할극</b>'+
+    '<div class="sub" style="margin:4px 0 8px">상대 대사는 앱이 읽어 줍니다. 내 대사 차례에는 그 줄이 표시된 채 잠시 멈추니, 그때 소리 내어 말하세요. '+
+    '<b>아무 줄이나 누르면</b> 그 줄만 다시 들을 수 있습니다.</div>'+
+    '<div class="row"><span class="sub">내 역할</span>'+
+    '<button class="btn '+(me==="A"?"":"ghost")+' sm rrole" data-r="A">A · '+esc(d.names.A)+'</button>'+
+    '<button class="btn '+(me==="B"?"":"ghost")+' sm rrole" data-r="B">B · '+esc(d.names.B)+'</button></div>'+
+    '<div class="row" style="margin-top:8px"><button class="btn" id="rpStart">역할극 시작 ▶</button>'+
+    '<button class="btn ghost sm" id="rpAll">전체 재생 ▶▶</button>'+
+    '<button class="btn ghost sm" id="rpStop">정지 ■</button>'+
+    '<button class="btn ghost sm" id="rpHide">내 대사 가리기</button>'+
+    speedBar("rpSpeed")+'</div>'+
+    '<div class="rule"></div><div id="rpList">'+
+    d.lines.map((l,i)=>'<div class="rp '+(l.s==="B"?"b ":"")+(l.s===me?"mine":"")+'" data-i="'+i+'">'+
+      '<div class="sp">'+l.s+'</div><div><span class="en">'+esc(l.en)+'</span>'+
+      '<span class="ko">'+esc(l.ko)+'</span></div></div>').join("")+'</div></div>';
+  $("#stepbody").innerHTML = h;
+  bindSpeed("rpSpeed");
+
+  document.querySelectorAll(".rrole").forEach(b=> b.onclick = ()=>{
+    S.cfg.myRole = b.dataset.r; save(); stopSpeak(); stepReplay(d); });
+
+  /* 내 대사를 가려 두면 한국어만 보고 영어를 만들어 내야 한다. 기본은 보이는 상태다. */
+  $("#rpHide").onclick = ()=>{
+    const on = !document.querySelector("#rpList .rp.mine .en.blurme");
+    document.querySelectorAll("#rpList .rp.mine .en").forEach(x=> x.classList.toggle("blurme", on));
+    $("#rpHide").textContent = on ? "내 대사 보기" : "내 대사 가리기";
+  };
+  $("#rpStop").onclick = ()=> stopSpeak();
+  $("#rpStart").onclick = ()=> runRolePlay(d, me, other);
+  $("#rpAll").onclick = ()=>{
+    stopSpeak();
+    speakSeq(d.lines, S.cfg.rate, i=>markRp(i), ()=> toast("전체 재생 완료"));
+  };
+  document.querySelectorAll("#rpList .rp").forEach(el=> el.onclick = ()=>{
+    stopSpeak(); const i = +el.dataset.i; markRp(i);
+    speak(d.lines[i].en, d.lines[i].s, S.cfg.rate);
   });
-  h += '</div>';
-  $("#stepbody").innerHTML = h; bindPlay();
-  document.querySelectorAll("#stepbody textarea").forEach(t=> t.onchange = ()=>{
-    const arr = S.out[d.id] || []; arr[+t.dataset.i]=t.value; S.out[d.id]=arr; save();
-  });
-  document.querySelectorAll(".timer").forEach(b=> b.onclick = ()=>{
-    let s=30; const out=$("#tm"+b.dataset.i);
-    clearInterval(b._t); out.textContent="00:30 — 지금 말하세요";
-    b._t = setInterval(()=>{ s--; out.textContent = s>0 ? "00:"+pad(s) : "끝 — 잘했습니다"; if(s<=0) clearInterval(b._t); }, 1000);
-  });
+}
+function markRp(idx){
+  document.querySelectorAll("#rpList .rp").forEach(e=>e.classList.remove("now"));
+  const el = document.querySelector('#rpList .rp[data-i="'+idx+'"]');
+  if(el){ el.classList.add("now"); el.scrollIntoView({block:"center", behavior:"smooth"}); }
+}
+function wLen(s){ return String(s).trim().split(/\s+/).filter(Boolean).length; }
+function runRolePlay(d, me, other){
+  const token = {}; rpTok = token;
+  let i = 0;
+  (function step(){
+    if(rpTok !== token) return;
+    if(i >= d.lines.length){ rpTok = null; toast("역할극 끝 — 수고하셨습니다"); return; }
+    const l = d.lines[i]; markRp(i);
+    if(l.s === other){
+      speak(l.en, l.s, S.cfg.rate, ()=>{ i++; setTimeout(step, 300); });
+    } else {
+      /* 내 차례 — 말할 시간을 준다. 영어는 한 단어에 0.42초쯤으로 잡는다. */
+      const wait = Math.max(2000, wLen(l.en) * 420);
+      setTimeout(()=>{ if(rpTok !== token) return; i++; step(); }, wait);
+    }
+  })();
 }
 
 /* ---------- 기록 ---------- */

@@ -9,7 +9,7 @@
 
    회차를 「자료 추가」로 붙여 넣은 것은 브라우저 안(localStorage)에 남으므로
    본문이 갱신되어도 그대로 남는다. */
-const CACHE = 'roundtable-v5';
+const CACHE = 'roundtable-v6';
 const DOC_TIMEOUT = 2500;
 const SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
