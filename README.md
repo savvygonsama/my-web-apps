@@ -16,6 +16,7 @@
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
 | 🍵 **茶馆 CHÁGUǍN** | 중국어 일상 회화 쉐도잉. HSK 3~4급, 병음과 성조 색 표시 | [`chaguan/`](chaguan/) |
 | 🧭 **스틸 워크 스타일** | 8축 32문항 자가진단. 결과를 에피소드로 읽고, 코드를 주고받아 1:1 궁합과 팀 지도까지 | [`workstyle/`](workstyle/) |
+| 🏭 **코일센터 경영 시뮬레이터** | 해외 코일센터 사장으로 4년. 호황·공급과잉·불황·회복을 한 번씩 겪으며 발주·재고·증설을 결정 | [`coil-center/`](coil-center/) |
 | 🍚 **이번 주 식탁** | 조건을 고르면 주간 식단표·레시피·장보기 목록을 뽑아줌 | [`meal-planner/`](meal-planner/) |
 
 > ハングリンゴ Lite는 파일 하나로 끝나는 판이 따로 있습니다 — [`hangul-lingo/lite/hangul-lingo-lite.html`](hangul-lingo/lite/hangul-lingo-lite.html).
@@ -62,4 +63,4 @@
 | 쉐도잉 회차 (茶馆·ROUNDTABLE 공용) | `chaguan/`, `roundtable/` | [`skills/shadowing-decks/`](skills/shadowing-decks/) |
 | 스틸 워크 스타일 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
 
-`meal-planner/`, `midnight-train/`은 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.
+`meal-planner/`, `midnight-train/`, `coil-center/`는 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.
