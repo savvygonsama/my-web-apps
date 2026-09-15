@@ -134,6 +134,13 @@
     font-variant-numeric:tabular-nums}
   .chip.up{background:#e2efe6;color:#2f6b55}
   .chip.down{background:#f7e2e0;color:#a5382e}
+
+  /* 스테이터스 창 — 회사 / 지난달 실적 / 이달 말 잔액 세 줄 */
+  .bandlab{font-size:11px;color:var(--dim);letter-spacing:.04em;margin:0 0 5px 2px;font-weight:700}
+  .bandlab span{font-weight:400;letter-spacing:0}
+  .hud.tight .stat{min-width:78px;padding:7px 10px}
+  .hud.tight .stat .v{font-size:15px}
+  .stat.lead{background:var(--chip)}
 </style>
 <script>
 /* ============================================================
@@ -159,12 +166,28 @@ const CFG = {
   },
   MAX_LINES: 3,                    // 공장동 1개 수용 한도. 4라인째는 신규 인프라 $16M
 
-  // 투자비 (v3 §0, 역산 확정)
-  INFRA_TOTAL: 16_000_000,
+  /* ---- 투자비 ----
+     자본금 $25M으로 시작해 $22M을 설립에 쓴다. 남는 현금은 $3M뿐이다.
+       토지        $4M  (비상각)
+       공장동     $12M  (20년)
+       사무동      $2M  (20년)
+       설비 2라인  $4M  (10년)
+     이 얇은 현금이 이 게임의 출발점이다. 소재 한 배가 $10M을 넘으니
+     첫 발주부터 은행을 끼지 않으면 배를 띄울 수가 없다. */
+  INFRA_TOTAL: 18_000_000,         // 토지 4 + 공장동 12 + 사무동 2
   LAND: 4_000_000,                 // 비상각
-  BUILDING: 12_000_000,            // 20년 = 240개월
+  BUILDING: 14_000_000,            // 공장동 12 + 사무동 2, 20년 = 240개월
   BUILDING_LIFE_M: 240,
   MACHINE_LIFE_M: 120,             // 10년 정액 (확정)
+  START_EQUITY: 25_000_000,        // 납입자본금
+  /* ---- 본사 지급보증 여신한도 ----
+     자본금 $25M짜리 회사에 $50M 한도는 커 보이지만, 이 장사의 운전자금이 원래 그렇다.
+     월 15,700톤을 $885에 사면 매달 $13.9M이 나간다. 소재값은 도착 한 달 뒤에 내고
+     판매대금은 두 달 뒤에 받으니, 그 시차만큼이 늘 은행에 물려 있다.
+     거기에 개업 후 다섯 달은 매출이 0인 채로 고정비만 나간다.
+     실제로 해외 코일센터가 본사 지급보증을 끼고 출발하는 이유가 이것이다.
+     재고와 매출채권이 쌓이면 그걸 담보로 한도가 더 붙는다(BORROW_BASE_RATE). */
+  CREDIT_LINE_BASE: 50_000_000,
 
   // 소재·시장 [가정]
   P_M_BASE: 750,
@@ -185,7 +208,11 @@ const CFG = {
      이걸 도착 기준 90일로 잡으면 본사가 두 달치를 공짜로 대주는 게 되어
      코일센터가 현금이 넘치는 이상한 회사가 된다. */
   DPO_TURNS: 1,
-  DSO_TURNS: 3,                    // Net 60 + 실제 지연
+  /* Net 60. 예전에는 여기에 지연 한 달을 더해 3턴으로 잡았는데, 연체는 아래
+     DELAY_RATE로 이미 따로 굴리고 있어 이중 계산이었다. 소재값은 도착 한 달 뒤에
+     나가고 판매대금은 두 달 뒤에 들어온다 — 그 한 달이 이 회사의 운전자금이다. */
+  DSO_TURNS: 2,
+  BUY_MAX_MULT: 1.25,              // 한 달에 시킬 수 있는 최대치 (월 소비량 대비)
   TARGET_DIO_DAYS: 52.5,
 
   /* ---- 강종 (실무자 확인) — 이 게임의 진짜 축 ----
@@ -365,7 +392,7 @@ function createInitialState(opt = {}) {
     id: `L${i + 1}`, type: t, cap: CFG.LINE[t].cap, capex: CFG.LINE[t].capex,
   }));
   const machineCost = lines.reduce((a, l) => a + l.capex, 0);
-  const equity = opt.equity ?? 25_000_000;
+  const equity = opt.equity ?? CFG.START_EQUITY;
 
   const st = {
     turn: 1,
@@ -382,7 +409,7 @@ function createInitialState(opt = {}) {
 
     lines,
     fa: { land: CFG.LAND, buildingNbv: CFG.BUILDING, machineCost, machineAccDep: 0 },
-    debt: { principal: 0, limit: opt.debtLimit ?? 15_000_000 },
+    debt: { principal: 0, limit: opt.debtLimit ?? CFG.CREDIT_LINE_BASE },
     equity,
     paidIn: equity,
 
@@ -460,6 +487,24 @@ function inventoryAging(state) {
     b.qty += l.qty; b.cost += l.qty * l.unitCost;
   }
   return buckets;
+}
+
+/* 장기재고 — 들어온 지 석 달이 넘은 물건. 열화가 시작되는 경계와 같은 선이다.
+   총재고만 보면 안 보인다. 이 숫자가 늘면 회사가 물건을 못 팔고 있다는 뜻이다. */
+function longInventoryTons(state) {
+  let t = 0;
+  for (const pool of [state.invRaw, state.invFg]) for (const l of pool) {
+    const age = state.turn - (l.arrivalTurn ?? l.madeTurn ?? state.turn);
+    if (age > CFG.DEGRADE_FREE_TURNS) t += l.qty;
+  }
+  return t;
+}
+
+// 받을 돈과, 그중 약속한 날을 넘긴 돈
+function receivables(state) {
+  let total = 0, late = 0;
+  for (const a of state.ar) { total += a.amount; if (a.late) late += a.amount; }
+  return { total, late };
 }
 
 function capacityOf(state) {
@@ -1035,7 +1080,11 @@ function resolveTurn(state, decision) {
     if (a.dueTurn > s.turn) { arKeep.push(a); continue; }
     const r = rng();
     if (r < CFG.BAD_DEBT_RATE * 12) { badDebt += a.amount; s.trust -= 2; }
-    else if (r < CFG.DELAY_RATE) { a.dueTurn += 1; arKeep.push(a); }
+    // 약속한 날에 안 들어온 돈. 한 번 밀리면 그 채권은 계속 '지연'으로 남는다.
+    // 화면 맨 위에 이 금액이 뜨는 이유가 있다 — 매출채권 전체보다 이쪽이 먼저 아프다.
+    else if (r < CFG.DELAY_RATE) {
+      a.dueTurn += 1; a.late = (a.late || 0) + 1; arKeep.push(a);
+    }
     else cashIn += a.amount;
   }
   s.ar = arKeep;
@@ -1053,7 +1102,7 @@ function resolveTurn(state, decision) {
      불황에 재고가 빠지는 순간 은행 한도까지 같이 빠지는 게 진짜 무서운 지점이다. */
   {
     const base = inventoryTons(s) * pm + s.ar.reduce((a, x) => a + x.amount, 0);
-    s.debt.limit = Math.max(s.paidIn * 0.4, base * CFG.BORROW_BASE_RATE);
+    s.debt.limit = Math.max(CFG.CREDIT_LINE_BASE, base * CFG.BORROW_BASE_RATE);
   }
 
   /* STEP 17. 현금 정산 및 부도 판정 */
@@ -1111,6 +1160,14 @@ function resolveTurn(state, decision) {
     shipped, produced, demand, demandAuto, demandCommon, nasi: s.nasi.map(n => ({ turn: n.turn, tons: { ...n.tons }, potential: { ...(n.potential || n.tons) } })), nasiPotential: nasiNow.potential || nasiNow.tons, commonShareOfSales, hqSpotCredit: s.hqSpotCredit, cashIn, cashOut,
     spotExposure: spotExposure(s),
     invTons: inventoryTons(s),
+    // 화면 맨 위 스테이터스가 읽는 값들. 판매량은 이번 달 실적,
+    // 재고·채권은 이번 달을 닫은 시점의 잔액이다.
+    invLong: longInventoryTons(s),
+    ar: receivables(s).total,
+    arLate: receivables(s).late,
+    shippedTotal,
+    shippedC2C: shipped.C2C || 0,
+    shippedProc: (shipped.SLIT || 0) + (shipped.LEVEL || 0) + (shipped.TRAP || 0) + (shipped.DIE || 0),
     log, flags,
   };
   s.history.push(report);
@@ -1630,6 +1687,8 @@ const app = $('#app');
 const fmt = n => Math.round(n).toLocaleString('en-US');
 const money = n => (n < 0 ? '−$' : '$') + fmt(Math.abs(n));
 const M = n => (n < 0 ? '−$' : '$') + (Math.abs(n) / 1e6).toFixed(1) + 'M';
+// 스테이터스 창 전용. 금액은 전부 천불 단위로 읽는다 — $1,234,567 → 1,235
+const K = n => (n < 0 ? '−' : '') + fmt(Math.abs(n) / 1000);
 
 const CAST = {
   seo:  { face: '📋', name: '서 대리', role: '구매' },
@@ -1656,14 +1715,25 @@ let G = null;
    나중에 터지는 것은 G.pending에 넣어 몇 달 뒤에 청구된다.
    ============================================================ */
 
-/* ---------- 시작 ---------- */
-function newGame(opt) {
+/* ---------- 시작 ----------
+   설립 조건은 고르지 않는다. 모두가 같은 회사를 물려받아 같은 자리에서 출발해야
+   "그때 그 선택이 갈랐다"는 이야기가 된다. 사장이 정하는 것은 이 달부터다. */
+const START = {
+  country: 'MX',
+  name: '멕시코 코일센터',
+  lines: ['SLIT', 'LEVEL'],
+  equity: CFG.START_EQUITY,
+};
+
+function newGame() {
   const s = createInitialState({
     seed: (Math.random() * 1e9) | 0,
-    equity: opt.equity, debtLimit: Math.round(opt.equity * 0.6),
-    lines: opt.lines, country: opt.country, companyName: opt.name,
+    equity: START.equity,
+    lines: START.lines, country: START.country, companyName: START.name,
   });
-  G = { s, ui: { cover: 1, hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0, salesSpend: 0 },
+  // cover는 리드타임 위에 얹는 여유 재고(개월). 0.5에서 시작한다 —
+  // 올리면 결품은 줄지만 자금이 묶여 부도가 가까워진다. 이 게임의 핵심 다이얼이다.
+  G = { s, ui: { cover: 0.5, hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0, salesSpend: 0 },
         pending: [], seen: {}, cards: {}, picks: {},
         turnDiscount: 0, yieldPenalty: 0, extraFixed: 0 };
   dealTurn(); openDecisions();
@@ -1794,8 +1864,16 @@ function look(s) {
 // 고른 카드들이 이번 달 발주량에 거는 배수
 function buildDecision(s, ui) {
   const L = look(s);
-  const gap = L.need * (CFG.LEAD_TURNS + CFG.GRADE.PREMIUM.leadAdd + ui.cover) - L.haveP;
-  const buy = Math.max(0, Math.min(gap, L.need * 1.6)) * (G ? (G.mult || 1) : 1);
+  /* 이번 달 발주량.
+     목표는 "리드타임 + 여유"만큼의 재고(미착 포함)를 들고 있는 것이지만,
+     모자란 만큼을 한 달에 다 시키면 안 된다. 1월에 5개월치를 한꺼번에 걸면
+     그 대금이 6월에 통째로 터져 회사가 그 달에 죽는다. 실제로도 그렇게 사지 않는다.
+     매달 '이번 달 쓸 만큼 + 모자란 파이프라인의 3분의 1'씩 시켜서
+     소재값이 나가는 리듬과 판매대금이 들어오는 리듬을 맞춘다. */
+  const target = L.need * (CFG.LEAD_TURNS + CFG.GRADE.PREMIUM.leadAdd + ui.cover);
+  const shortfall = Math.max(0, target - L.haveP);
+  const buy = Math.max(0, Math.min(L.need + shortfall / 3, L.need * CFG.BUY_MAX_MULT))
+            * (G ? (G.mult || 1) : 1);
   const n = L.now, hasCommon = (s.hqSpotCredit || 0) > 1;
   const idleS = Math.max(0, L.c.SLIT - (n.SLIT || 0)), idleL = Math.max(0, L.c.LEVEL - (n.LEVEL || 0));
   const runS = Math.min(L.c.SLIT, (n.SLIT || 0) + (hasCommon ? idleS : 0));
@@ -1896,6 +1974,64 @@ function factorySVG(s, L) {
   </svg>`;
 }
 
+/* ============================================================
+   스테이터스 창
+   세 줄로 나눈다. 성격이 다른 숫자를 한 줄에 붙이면 읽히지 않는다.
+     1줄 회사        — 지금 어디에 서 있나 (개월차·시황·시세·통장·빚)
+     2줄 지난달 실적 — 흘러간 양 (판매량·매출·이익). 결산이 끝난 직전 달 숫자다
+     3줄 이달 말 잔액 — 쌓여 있는 양 (재고·채권). 지금 이 순간의 잔고다
+   수량은 톤, 금액은 전부 천불.
+   ============================================================ */
+function statusBar(s) {
+  const L = s.history[s.history.length - 1];
+  const sh = L ? L.shipped : {};
+  const inv = inventoryTons(s), invLong = longInventoryTons(s);
+  const ar = receivables(s);
+  const hasBlank = s.lines.some(l => l.type === 'BLANK');
+  const ph = CFG.PHASE[s.market.phase];
+  // 1개월차에는 아직 닫은 달이 없다. 빈 값을 0으로 보여주면 거짓말이 된다.
+  const n = (v, f) => L ? f(v) : '—';
+  const sign = v => L && v < 0 ? 'neg' : (L && v > 0 ? 'pos' : '');
+
+  const cell = (k, v, cls) =>
+    `<div class="stat"><div class="k">${k}</div><div class="v ${cls || ''}">${v}</div></div>`;
+
+  return `
+    <div class="bandlab">회사</div>
+    <div class="hud">
+      ${cell(s.companyName, `${s.turn}<span class="muted" style="font-size:12px">/48개월</span>`)}
+      ${cell('시황', `<span class="phase ph-${s.market.phase}">${ph.label}</span>`)}
+      ${cell('소재 시세 <span style="opacity:.7">$/톤</span>', fmt(s.market.pm))}
+      ${cell('통장 <span style="opacity:.7">천불</span>', K(s.cash), s.cash < 1e6 ? 'neg' : '')}
+      ${cell('은행 빚 <span style="opacity:.7">천불</span>', K(s.debt.principal),
+             s.debt.principal > s.debt.limit * 0.8 ? 'neg' : '')}
+      ${cell('직원 사기', Math.round(s.morale))}
+    </div>
+
+    <div class="bandlab">지난달 실적 <span>· 수량 톤 · 금액 천불</span></div>
+    <div class="hud tight">
+      ${cell('총판매량', n(0, () => fmt(L.shippedTotal)), 'lead')}
+      ${cell('└ 통코일 C2C', n(0, () => fmt(L.shippedC2C)))}
+      ${cell('└ 가공 계', n(0, () => fmt(L.shippedProc)))}
+      ${cell('　· 슬리팅', n(0, () => fmt(sh.SLIT || 0)))}
+      ${cell('　· 레벨링', n(0, () => fmt(sh.LEVEL || 0)))}
+      ${hasBlank ? cell('　· 사다리꼴', n(0, () => fmt(sh.TRAP || 0))) : ''}
+      ${hasBlank ? cell('　· 이형', n(0, () => fmt(sh.DIE || 0))) : ''}
+      ${cell('매출액', n(0, () => K(L.revenue)))}
+      ${cell('영업이익', n(0, () => K(L.op)), L ? sign(L.op) : '')}
+      ${cell('순이익', n(0, () => K(L.np)), L ? sign(L.np) : '')}
+    </div>
+
+    <div class="bandlab">이달 말 잔액 <span>· 수량 톤 · 금액 천불</span></div>
+    <div class="hud tight">
+      ${cell('총재고', fmt(inv), inv > CFG.WAREHOUSE_CAP_BASE ? 'neg' : '')}
+      ${cell('└ 장기재고 <span style="opacity:.7">3개월↑</span>', fmt(invLong),
+             invLong > inv * 0.25 && invLong > 1 ? 'neg' : '')}
+      ${cell('매출채권', K(ar.total))}
+      ${cell('└ 지연채권', K(ar.late), ar.late > 1 ? 'neg' : '')}
+    </div>`;
+}
+
 /* ---------- 렌더 ---------- */
 function render() {
   if (!G) return renderSetup();
@@ -1903,56 +2039,56 @@ function render() {
   renderPlay();
 }
 
+/* 설립은 이미 끝나 있다. 사장은 개업 첫날 아침에 부임한다.
+   고를 것은 없고, 넘겨받은 장부를 확인하고 시작한다. */
 function renderSetup() {
-  const pick = { country: 'MX', name: '', lines: ['SLIT', 'LEVEL'], equity: 65_000_000 };
-  const draw = () => {
-    const machine = pick.lines.reduce((a, t) => a + CFG.LINE[t].capex, 0);
-    const rest = pick.equity - CFG.INFRA_TOTAL - machine;
-    app.innerHTML = `
-      <h1>코일센터 경영 시뮬레이터</h1>
-      <p class="sub">해외 코일센터 사장으로 4년을 보냅니다. 호황 · 공급과잉 · 불황 · 회복이 한 번씩 옵니다.</p>
-      <div class="card">
-        <div class="say"><div class="face">${CAST.han.face}</div><div class="bubble">
-          <span class="who">${CAST.han.name} · ${CAST.han.role}</span>
-          사장님, 법인 설립 서류입니다. 나중에 바꾸기 어려운 것들이라…</div></div>
-        <h2>어느 나라에 세우시겠습니까</h2>
-        <div class="choice">${Object.entries(COUNTRIES).map(([k, v]) =>
-          `<button data-c="${k}" class="${pick.country === k ? 'on' : ''}">${v.emoji} ${v.name}</button>`).join('')}</div>
-        <p class="hint">${COUNTRIES[pick.country].desc}</p>
-        <label class="row"><div class="lab"><span>회사 이름</span></div>
-          <input id="nm" value="${pick.name}" placeholder="예: 한빛 코일센터"
-            style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--panel);color:var(--ink)"></label>
-        <h2 style="margin-top:20px">설비 구성</h2>
-        <div class="choice">
-          <button data-l="SLIT,LEVEL" class="${pick.lines.join() === 'SLIT,LEVEL' ? 'on' : ''}">슬리터 1 + 레벨러 1</button>
-          <button data-l="SLIT,SLIT" class="${pick.lines.join() === 'SLIT,SLIT' ? 'on' : ''}">슬리터 2</button>
-          <button data-l="SLIT,LEVEL,BLANK" class="${pick.lines.join() === 'SLIT,LEVEL,BLANK' ? 'on' : ''}">슬리터 1 + 레벨러 1 + 블랭킹 1</button>
-        </div>
-        <p class="hint">슬리터 연 10만톤 · 레벨러 연 5만톤 · 블랭킹 연 2.4만톤. 공장동 하나에 3라인까지.</p>
-        <label class="row"><div class="lab"><span>자본금</span><b>${M(pick.equity)}</b></div>
-          <input type="range" id="eq" min="35" max="95" step="5" value="${pick.equity / 1e6}">
-          <p class="hint">은행 한도는 자본금의 60%까지 붙습니다 (${M(pick.equity * 0.6)}).</p></label>
-        <div class="sep"></div>
-        <table>
-          <tr><td>토지·공장동</td><td>${money(CFG.INFRA_TOTAL)}</td></tr>
-          <tr><td>설비 ${pick.lines.length}라인</td><td>${money(machine)}</td></tr>
-          <tr class="tot"><td>개업 후 남는 현금</td><td class="${rest < 20e6 ? 'v neg' : ''}">${money(rest)}</td></tr></table>
-        ${rest < 20e6 ? `<div class="note bad">소재 한 배가 ${money(9e6)}쯤 합니다. 이 현금으로는 빠듯합니다.</div>` : ''}
-        <div style="margin-top:18px"><button class="primary" id="go">법인 설립</button></div>
-      </div>`;
-    app.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { pick.country = b.dataset.c; draw(); });
-    app.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { pick.lines = b.dataset.l.split(','); draw(); });
-    $('#eq').oninput = e => { pick.equity = +e.target.value * 1e6; draw(); };
-    $('#nm').oninput = e => { pick.name = e.target.value; };
-    $('#go').onclick = () => { pick.name = $('#nm').value.trim() || (COUNTRIES[pick.country].name + ' 코일센터'); newGame(pick); };
-  };
-  draw();
+  const machine = START.lines.reduce((a, t) => a + CFG.LINE[t].capex, 0);
+  const spent = CFG.INFRA_TOTAL + machine;
+  const rest = START.equity - spent;
+  const c = { SLIT: 0, LEVEL: 0 };
+  for (const t of START.lines) c[t] += CFG.LINE[t].cap;
+
+  app.innerHTML = `
+    <h1>코일센터 경영 시뮬레이터</h1>
+    <p class="sub">${COUNTRIES[START.country].emoji} ${COUNTRIES[START.country].name} 코일센터 사장으로 48개월을 보냅니다.
+      호황 · 공급과잉 · 불황 · 회복이 한 번씩 옵니다.</p>
+    <div class="card">
+      <div class="say"><div class="face">${CAST.han.face}</div><div class="bubble">
+        <span class="who">${CAST.han.name} · ${CAST.han.role}</span>
+        사장님, 인수인계 장부입니다. 공장은 다 지어 놨습니다.
+        그런데… 자본금을 거의 다 거기에 쓰는 바람에, 통장에 남은 게 <b>${K(rest)}천불</b>뿐입니다.</div></div>
+
+      <h2>넘겨받은 회사</h2>
+      <table>
+        <tr><th>계정</th><th>천불</th></tr>
+        <tr><td>납입자본금</td><td>${K(START.equity)}</td></tr>
+        <tr><td class="muted">　토지</td><td class="muted">−${K(CFG.LAND)}</td></tr>
+        <tr><td class="muted">　공장동 · 사무동</td><td class="muted">−${K(CFG.BUILDING)}</td></tr>
+        <tr><td class="muted">　설비 ${START.lines.length}라인 (슬리터 1 · 레벨러 1)</td><td class="muted">−${K(machine)}</td></tr>
+        <tr><td>설립 투자 합계</td><td>−${K(spent)}</td></tr>
+        <tr class="tot"><td>통장에 남은 현금</td><td class="v neg">${K(rest)}</td></tr></table>
+
+      <div class="note bad">소재 한 배가 <b>${K(c.SLIT * 3 * CFG.P_M_BASE)}천불</b>쯤 합니다.
+        <b>남은 현금으로는 배 한 척도 못 띄웁니다.</b> 첫 발주부터 은행을 껴야 합니다.
+        차입 한도는 재고와 매출채권을 담보로 늘어납니다 — 장사가 커져야 한도도 커집니다.</div>
+
+      <h2 style="margin-top:20px">가진 설비</h2>
+      <table>
+        <tr><th>라인</th><th>월 캐파 (톤)</th></tr>
+        <tr><td>슬리터 1기</td><td>${fmt(c.SLIT)}</td></tr>
+        <tr><td>레벨러 1기</td><td>${fmt(c.LEVEL)}</td></tr>
+        <tr class="tot"><td>합계</td><td>${fmt(c.SLIT + c.LEVEL)}</td></tr></table>
+      <p class="hint">통코일(C2C)은 라인을 쓰지 않으니 이 한도 밖입니다.
+        공장동 하나에 3라인까지 들어갑니다 — 증설은 게임 중에 결정합니다.</p>
+
+      <div style="margin-top:20px"><button class="primary" id="go">1개월차 시작</button></div>
+    </div>`;
+  $('#go').onclick = () => newGame();
 }
 
 function renderPlay() {
   const s = G.s, ui = G.ui;
   const d = buildDecision(s, ui), L = d._L;
-  const ph = CFG.PHASE[s.market.phase];
   const stock = inventoryTons(s), transit = s.poOpen.reduce((a, p) => a + p.qty, 0);
   const coverNow = L.need > 0 ? (stock + transit) / L.need : 0;
   const canBorrow = s.debt.limit - s.debt.principal;
@@ -1962,19 +2098,7 @@ function renderPlay() {
   const spendNow = (ui.overtime ? CFG.OT_COST : 0);
 
   app.innerHTML = `
-    <div class="hud">
-      <div class="stat"><div class="k">${s.companyName}</div>
-        <div class="v">${s.turn}<span class="muted" style="font-size:12px">/48개월</span></div></div>
-      <div class="stat"><div class="k">시황</div><div class="v" style="font-size:15px">
-        <span class="phase ph-${s.market.phase}">${ph.label}</span></div></div>
-      <div class="stat"><div class="k">소재 시세</div><div class="v">$${fmt(s.market.pm)}</div></div>
-      <div class="stat"><div class="k">통장</div><div class="v ${s.cash < 3e6 ? 'neg' : ''}">${M(s.cash)}</div></div>
-      <div class="stat"><div class="k">은행 빚</div>
-        <div class="v ${s.debt.principal > s.debt.limit * .8 ? 'neg' : ''}">${M(s.debt.principal)}</div></div>
-      <div class="stat"><div class="k">본사 이익 누계</div>
-        <div class="v ${s.hq.cumConsolidated < 0 ? 'neg' : 'pos'}">${M(s.hq.cumConsolidated)}</div></div>
-      <div class="stat"><div class="k">직원 사기</div><div class="v">${Math.round(s.morale)}</div></div>
-    </div>
+    ${statusBar(s)}
 
     <div class="card" style="padding:12px 16px;border-color:#ddd3c2;background:#fbf7ee">
       <b>${chapterOf(s.turn).label}</b>
