@@ -259,9 +259,27 @@ const CFG = {
   LINE: {
     SLIT:  { cap: 8333, capex: 2_000_000, procs: ['SLIT'],          label: '슬리터' },
     LEVEL: { cap: 4167, capex: 2_000_000, procs: ['LEVEL'],         label: '레벨러' },
-    BLANK: { cap: 2000, capex: 5_000_000, procs: ['TRAP', 'DIE'],   label: '블랭킹' },
+    BLANK: { cap: 4000, capex: 5_000_000, procs: ['TRAP', 'DIE'],   label: '블랭킹' },
   },
-  MAX_LINES: 3,                    // 공장동 1개 수용 한도. 4라인째는 신규 인프라 $16M
+  MAX_LINES: 3,                    // 공장동 한 동이 수용하는 라인 수. 네 대째는 동을 하나 더 올려야 한다
+
+  /* ---- 증설 투자 (센터장이 직접 올리는 안건) ----
+     설비만 사면 되는 장사가 아니다. 공장동 한 동에 라인 세 대가 들어가고,
+     네 대째를 놓으려면 건물부터 올려야 한다. 그 건물값이 설비값의 몇 배다.
+     야드도 같다 — 물량이 늘면 코일 놓을 자리부터 모자라고, 자리가 모자라면
+     전략과 무관하게 외부창고비가 톤당 원가에 통째로 얹힌다.
+     돈은 결재하는 달에 나가고 물건은 몇 달 뒤에 돈다. 그 사이가 건설중인자산이다. */
+  /* 설비투자를 운전자금 한도로 막는 코일센터는 없다. 그렇게 하면 소재 살 돈이
+     그대로 설비로 빠져 다음 배를 못 띄운다. 실제로는 본사 지급보증을 끼고
+     시설자금 대출을 따로 일으켜 몇 년에 걸쳐 갚는다. 그래서 증설의 진짜 질문은
+     "지금 현금이 있는가"가 아니라 "몇 년치 원리금을 감당할 수 있는가"다. */
+  FACILITY_SHARE: 0.80,            // 투자비의 80%까지 시설자금으로 조달, 나머지는 자기 돈
+  FACILITY_TERM_M: 60,             // 5년 균등분할상환
+  FACILITY_RATE_ANNUAL: 0.055,     // 운전자금보다 조금 높다 (장기)
+  get FACILITY_RATE_MONTHLY() { return this.FACILITY_RATE_ANNUAL / 12; },
+  HALL_TURNS: 8,                   // 공장동 준공까지 (설비는 4개월)
+  HALL_FC: 25_000,                 // 동이 늘면 관리·전력·인원도 는다
+  YARD: { capex: 2_200_000, add: 30_000, fc: 10_000, turns: 3 },
 
   /* ---- 투자비 ----
      자본금 $25M으로 시작해 $22M을 설립에 쓴다. 남는 현금은 $3M뿐이다.
@@ -570,8 +588,10 @@ function createInitialState(opt = {}) {
     ap: [],              // {amount, dueTurn}
 
     lines,
-    fa: { land: CFG.LAND, buildingNbv: CFG.BUILDING, machineCost, machineAccDep: 0 },
-    debt: { principal: 0, limit: opt.debtLimit ?? CFG.CREDIT_LINE_BASE },
+    fa: { land: CFG.LAND, buildingCost: CFG.BUILDING, buildingNbv: CFG.BUILDING,
+          machineCost, machineAccDep: 0 },
+    debt: { principal: 0, limit: opt.debtLimit ?? CFG.CREDIT_LINE_BASE,
+            facility: [] },      // 시설자금 — {bal, left} 분할상환 중인 건들
     equity,
     paidIn: equity,
 
@@ -583,9 +603,10 @@ function createInitialState(opt = {}) {
     hq: { cumMaterialTons: 0, cumHqMargin: 0, cumConsolidated: 0 },
 
     nasi: [],
-    buildQueue: [],
+    buildQueue: [],          // {kind:'LINE'|'HALL'|'YARD', ...} — 돈은 나갔고 아직 안 도는 것
     hqSpotCredit: 0,
     buildings: 1,
+    yardCap: CFG.WAREHOUSE_CAP_BASE,
     history: [],
     rng: opt.seed ?? 12345,
   };
@@ -683,6 +704,24 @@ function receivables(state) {
   return { total, late };
 }
 
+/* 공장동 한 동에 라인 MAX_LINES대. 동을 더 올리면 자리도 그만큼 늘어난다. */
+function bayLimit(state) { return (state.buildings || 1) * CFG.MAX_LINES; }
+function facilityBalance(state) {
+  return (state.debt.facility || []).reduce((a, f) => a + f.bal, 0);
+}
+/* 투자비를 조달한다. 8할은 시설자금, 2할은 우리 돈. */
+function fundCapex(state, capex) {
+  const loan = capex * CFG.FACILITY_SHARE;
+  state.debt.facility = state.debt.facility || [];
+  state.debt.facility.push({ bal: loan, left: CFG.FACILITY_TERM_M });
+  state.cash -= capex - loan;
+  return loan;
+}
+function yardCapOf(state) { return state.yardCap || CFG.WAREHOUSE_CAP_BASE; }
+function cipValue(state) {
+  return (state.buildQueue || []).reduce((a, b) => a + (b.capex || 0), 0);
+}
+
 function capacityOf(state) {
   const cap = { SLIT: 0, LEVEL: 0, BLANK: 0 };
   for (const l of state.lines) cap[l.type] += l.cap;
@@ -697,8 +736,10 @@ function capacityOf(state) {
    자금은 가공품과 똑같이 묶인다 — 물량의 절반이 여기 있다는 사실이
    이 회사의 운전자금 규모를 정한다.
    이 값이 게임의 생명선이다. 너무 크면 증설이 무조건 정답이 되어 게임이 죽고,
-   너무 작으면 첫 판부터 재고가 쌓여 초보가 무조건 부도난다. */
-const DEMAND_BASE = { C2C: 9800, SLIT: 10600, LEVEL: 5300, TRAP: 1500, DIE: 1500 };
+   너무 작으면 첫 판부터 재고가 쌓여 초보가 무조건 부도난다.
+   블랭킹(TRAP/DIE) 연 5만톤은 라인을 놓기 전에는 우리 앞에 오지 않는 수요다.
+   안 하던 장사를 여는 것이므로 연 25만톤 밖에 있다 — 증설의 보상이 이것이다. */
+const DEMAND_BASE = { C2C: 9800, SLIT: 10600, LEVEL: 5300, TRAP: 2200, DIE: 2000 };
 
 /* 설비가 없으면 그 수요는 애초에 우리 앞에 오지 않는다.
    블랭킹 라인이 없는 코일센터에 블랭킹 내시를 줄 리가 없다.
@@ -900,28 +941,39 @@ function resolveTurn(state, decision) {
   const demand = {};
   for (const k of PROC_LIST) demand[k] = demandAuto[k] + demandCommon[k];
 
-  /* STEP 3. 설비 증설 */
-  if (d.invest.addLine) {
-    const t = d.invest.addLine;
-    if (s.lines.length >= CFG.MAX_LINES && !d.invest.newBuilding) {
-      flags.push('공장동은 3라인까지만 수용합니다. 4라인째는 신규 인프라 $16M이 필요합니다.');
-    } else {
-      // 4라인째는 공장동을 하나 더 지어야 한다. 설비값보다 건물값이 훨씬 크다.
-      if (s.lines.length >= CFG.MAX_LINES) {
-        s.cash -= CFG.INFRA_TOTAL;
-        s.fa.land += CFG.LAND;
-        s.fa.buildingNbv += CFG.BUILDING;
-        s.buildings = (s.buildings || 1) + 1;
-        log.push(`공장동을 한 동 더 지었습니다. 인프라 $${(CFG.INFRA_TOTAL / 1e6).toFixed(0)}M — 설비값의 8배입니다.`);
+  /* STEP 3. 투자 집행 — 설비 · 공장동 · 야드.
+     설비는 돈을 낸다고 그 달에 도는 게 아니다. 발주·제작·선적·설치·시운전에 넉 달,
+     건물은 여덟 달이다. 호황을 보고 지르면 도착했을 때 호황이 끝나 있다.
+     그래서 증설은 지금 숫자가 아니라 넉 달 뒤 숫자를 보고 거는 결정이다. */
+  if (d.invest.order) {
+    const o = d.invest.order;
+    const q = (s.buildQueue = s.buildQueue || []);
+    const won = v => Math.round(v / 1000).toLocaleString('en-US');
+    if (o.kind === 'LINE') {
+      const queued = q.filter(b => b.kind === 'LINE').length;
+      const bays = bayLimit(s) + q.filter(b => b.kind === 'HALL').length * CFG.MAX_LINES;
+      if (s.lines.length + queued >= bays) {
+        flags.push(`공장동 한 동은 라인 ${CFG.MAX_LINES}대가 한계입니다. 동을 먼저 올려야 합니다.`);
+      } else {
+        const capex = CFG.LINE[o.type].capex;
+        const loan = fundCapex(s, capex);
+        q.push({ kind: 'LINE', type: o.type, capex, readyTurn: s.turn + CFG.INSTALL_TURNS });
+        log.push(`${CFG.LINE[o.type].label} 1기를 발주했습니다. ${won(capex)}천U$ 중 `
+               + `${won(loan)}천U$는 본사 보증 시설자금으로 5년에 걸쳐 갚습니다. `
+               + `${ymLabel(s.turn + CFG.INSTALL_TURNS)}부터 돕니다.`);
       }
-      /* 설비는 돈을 낸다고 그 달에 도는 게 아니다. 발주·제작·선적·설치·시운전에 넉 달.
-         호황을 보고 지르면 도착했을 때 호황이 끝나 있다. 이게 증설 타이밍의 전부다. */
-      const capex = CFG.LINE[t].capex;
-      s.cash -= capex;
-      s.buildQueue = s.buildQueue || [];
-      s.buildQueue.push({ type: t, capex, readyTurn: s.turn + CFG.INSTALL_TURNS });
-      log.push(`${CFG.LINE[t].label} 1기를 발주했습니다. $${(capex / 1e6).toFixed(1)}M · ` +
-               `${CFG.INSTALL_TURNS}개월 뒤인 ${s.turn + CFG.INSTALL_TURNS}월부터 돕니다.`);
+    } else if (o.kind === 'HALL') {
+      const loan = fundCapex(s, CFG.INFRA_TOTAL);
+      s.fa.land += CFG.LAND;                     // 땅은 사는 즉시 우리 것이고 감가도 안 된다
+      q.push({ kind: 'HALL', capex: CFG.BUILDING, readyTurn: s.turn + CFG.HALL_TURNS });
+      log.push(`공장동을 한 동 더 올립니다. 토지·건물 ${won(CFG.INFRA_TOTAL)}천U$ 중 `
+             + `${won(loan)}천U$는 시설자금입니다. 준공은 ${ymLabel(s.turn + CFG.HALL_TURNS)}, `
+             + `원리금은 그 전달부터 나갑니다.`);
+    } else if (o.kind === 'YARD') {
+      fundCapex(s, CFG.YARD.capex);
+      q.push({ kind: 'YARD', capex: CFG.YARD.capex, readyTurn: s.turn + CFG.YARD.turns });
+      log.push(`야드를 ${CFG.YARD.add.toLocaleString('en-US')}톤 넓힙니다. ${won(CFG.YARD.capex)}천U$ · `
+             + `${ymLabel(s.turn + CFG.YARD.turns)} 완공.`);
     }
   }
   if (d.invest.salesEffort > 0) {
@@ -993,7 +1045,7 @@ function resolveTurn(state, decision) {
 
   /* STEP 5b. 창고 정체 — 재고가 야드를 넘치면 동선이 막혀 가동이 떨어지고 외부창고비가 붙는다 */
   const stockNow = inventoryTons(s);
-  const whCap = CFG.WAREHOUSE_CAP_BASE;
+  const whCap = yardCapOf(s);
   const overTons = Math.max(0, stockNow - whCap);
   let congestionPenalty = 0;
   if (overTons > 0) {
@@ -1258,7 +1310,12 @@ function resolveTurn(state, decision) {
 
   /* STEP 14. 비용 */
   const extraLines = Math.max(0, s.lines.length - 2);
-  const fixedCost = CFG.FC_BASE + extraLines * CFG.FC_PER_EXTRA_LINE + (d.options.overtime ? CFG.OT_COST : 0);
+  // 증설은 감가상각만 남기는 게 아니다. 동이 늘면 관리비가, 야드가 넓어지면 운영비가 붙는다.
+  const extraHalls = Math.max(0, (s.buildings || 1) - 1);
+  const extraYards = Math.max(0, (yardCapOf(s) - CFG.WAREHOUSE_CAP_BASE) / CFG.YARD.add);
+  const fixedCost = CFG.FC_BASE + extraLines * CFG.FC_PER_EXTRA_LINE
+                  + extraHalls * CFG.HALL_FC + extraYards * CFG.YARD.fc
+                  + (d.options.overtime ? CFG.OT_COST : 0);
   let varCost = 0;
   for (const proc of ['SLIT', 'LEVEL', 'TRAP', 'DIE']) varCost += d.run[proc] * CFG.VAR_COST[proc];
   varCost += (produced.C2C || 0) * CFG.VAR_COST.C2C;
@@ -1268,8 +1325,9 @@ function resolveTurn(state, decision) {
   const carryCost = stockEnd * CFG.CARRY_COST_PER_TON
                   + overTons * CFG.WAREHOUSE_OVER_COST;
   varCost += carryCost;
-  const depreciation = (s.buildings || 1) * CFG.BUILDING / CFG.BUILDING_LIFE_M + s.fa.machineCost / CFG.MACHINE_LIFE_M;
-  const interest = s.debt.principal * CFG.DEBT_RATE_MONTHLY;
+  const depreciation = s.fa.buildingCost / CFG.BUILDING_LIFE_M + s.fa.machineCost / CFG.MACHINE_LIFE_M;
+  const interest = s.debt.principal * CFG.DEBT_RATE_MONTHLY
+                 + facilityBalance(s) * CFG.FACILITY_RATE_MONTHLY;
 
   /* STEP 15. 채권 회수 */
   let cashIn = 0, badDebt = 0;
@@ -1336,8 +1394,19 @@ function resolveTurn(state, decision) {
                             rev3 * CFG.CREDIT_MONTHS_OF_SALES * persuade);
   }
 
+  /* STEP 16c. 시설자금 원금 상환. 이자는 손익으로 가고 원금은 현금만 줄인다.
+     증설의 진짜 무게가 여기 있다 — 설비는 4년 쓰는데 돈은 5년에 걸쳐 매달 나간다. */
+  let facilityRepay = 0;
+  if ((s.debt.facility || []).length) {
+    for (const f of s.debt.facility) {
+      const pay = Math.min(f.bal, f.bal / Math.max(1, f.left));
+      f.bal -= pay; f.left -= 1; facilityRepay += pay;
+    }
+    s.debt.facility = s.debt.facility.filter(f => f.bal > 1 && f.left > 0);
+  }
+
   /* STEP 17. 현금 정산 및 부도 판정 */
-  s.cash += cashIn - cashOut - fixedCost - varCost - interest - lcFee;
+  s.cash += cashIn - cashOut - fixedCost - varCost - interest - lcFee - facilityRepay;
   if (s.cash < 0) {
     const need = -s.cash;
     if (s.debt.principal + need <= s.debt.limit) {
@@ -1360,7 +1429,7 @@ function resolveTurn(state, decision) {
   const ebitda = gp - fixedCost - varCost;
   const op = ebitda - depreciation;
   const np = op - interest - badDebt;
-  s.fa.buildingNbv = Math.max(0, s.fa.buildingNbv - (s.buildings || 1) * CFG.BUILDING / CFG.BUILDING_LIFE_M);
+  s.fa.buildingNbv = Math.max(0, s.fa.buildingNbv - s.fa.buildingCost / CFG.BUILDING_LIFE_M);
   s.fa.machineAccDep += s.fa.machineCost / CFG.MACHINE_LIFE_M;
   s.equity += np;
 
@@ -1394,6 +1463,7 @@ function resolveTurn(state, decision) {
     turn: s.turn, phase: s.market.phase, pm, hqPerTon,
     revenue, gp, ebitda, op, np, hqMargin, consolidated,
     fixedCost, varCost, depreciation, interest, valuationLoss, badDebt,
+    facilityRepay, facilityBal: facilityBalance(s),
     scrapTon, scrapRevenue, yieldGain: yieldGainTotal,
     degradeLoss, degradeTon, dumpLoss, dumpTon, carryCost, overTons, shortageEvents,
     hqSpotOffer, hqSpotTon,
@@ -1438,10 +1508,20 @@ function resolveTurn(state, decision) {
      호황을 보고 지르면 도착했을 때 호황이 끝나 있다. */
   s.buildQueue = (s.buildQueue || []).filter(b => {
     if (b.readyTurn > s.turn + 1) return true;
-    s.lines.push({ id: `L${s.lines.length + 1}`, type: b.type,
-                   cap: CFG.LINE[b.type].cap, capex: b.capex });
-    s.fa.machineCost += b.capex;
-    report.lineReady = `${CFG.LINE[b.type].label} 설치가 끝났습니다. 다음 달부터 돕니다.`;
+    if (b.kind === 'YARD') {
+      s.yardCap = yardCapOf(s) + CFG.YARD.add;
+      report.lineReady = `야드 확장이 끝났습니다. 이제 ${Math.round(s.yardCap).toLocaleString('en-US')}톤까지 받습니다.`;
+    } else if (b.kind === 'HALL') {
+      s.buildings = (s.buildings || 1) + 1;
+      s.fa.buildingCost += CFG.BUILDING;
+      s.fa.buildingNbv  += CFG.BUILDING;
+      report.lineReady = `새 공장동이 준공됐습니다. 라인을 ${CFG.MAX_LINES}대까지 더 놓을 수 있습니다.`;
+    } else {
+      s.lines.push({ id: `L${s.lines.length + 1}`, type: b.type,
+                     cap: CFG.LINE[b.type].cap, capex: b.capex });
+      s.fa.machineCost += b.capex;
+      report.lineReady = `${CFG.LINE[b.type].label} 설치가 끝났습니다. 다음 달부터 돕니다.`;
+    }
     return false;
   });
 
@@ -1689,7 +1769,7 @@ const EVENTS = [
         apply: (s) => { s.trust += 3; return '본사 소재를 그대로 씁니다. 구매팀이 좋아했습니다.'; } },
     ] },
 
-  { id: 'e-yard', kind: '생산', who: 'gu', when: (s) => inventoryTons(s) > CFG.WAREHOUSE_CAP_BASE * 0.75,
+  { id: 'e-yard', kind: '생산', who: 'gu', when: (s) => inventoryTons(s) > yardCapOf(s) * 0.75,
     title: '야드가 거의 찼습니다',
     text: '코일 하나 빼려고 세 개를 옮기고 있습니다. 이대로 더 들어오면 동선이 막힙니다.',
     opts: [
@@ -2031,10 +2111,14 @@ const BIG = [
       { label: '고객을 흡수한다', hint: '$150,000 · 물량 +12%',
         apply: s => { s.cash -= 150_000; s.myShare *= 1.12;
           return '영업을 총동원했습니다. 고객 넷을 데려왔습니다.'; } },
-      { label: '설비를 헐값에 산다', hint: '슬리터 1기를 $1.2M에 · 4개월 뒤 가동',
-        apply: s => { s.cash -= 1_200_000;
+      { label: '설비를 헐값에 산다', hint: '슬리터 1기를 1,200천U$에 · 4개월 뒤 가동 · 공장동에 자리가 있어야 합니다',
+        apply: s => {
           s.buildQueue = s.buildQueue || [];
-          s.buildQueue.push({ type: 'SLIT', capex: 1_200_000, readyTurn: s.turn + CFG.INSTALL_TURNS });
+          if (s.lines.length + s.buildQueue.filter(b => b.kind === 'LINE').length >= bayLimit(s))
+            return '자리가 없어 포기했습니다. 공장동이 이미 꽉 찼습니다.';
+          s.cash -= 1_200_000;
+          s.buildQueue.push({ kind: 'LINE', type: 'SLIT', capex: 1_200_000,
+                              readyTurn: s.turn + CFG.INSTALL_TURNS });
           return '경매에서 슬리터를 반값에 잡았습니다.'; } },
       { label: '조용히 지켜본다', hint: '현금을 지킵니다',
         apply: () => '남의 일입니다. 다음이 우리가 아니길 바랄 뿐입니다.' },
@@ -2205,7 +2289,7 @@ function factorySVG(s, L) {
   const c = L.c;
   const raw = s.invRaw.reduce((a, l) => a + l.qty, 0);
   const fg = s.invFg.reduce((a, l) => a + l.qty, 0);
-  const over = (raw + fg) > CFG.WAREHOUSE_CAP_BASE;
+  const over = (raw + fg) > yardCapOf(s);
 
   /* 참고 그림처럼 공장동과 설비를 각각 하나의 아이콘으로 떼어 놓는다.
      한 건물 안에 다 우겨넣으면 작아져서 아무것도 안 보인다.
@@ -2307,7 +2391,7 @@ function factorySVG(s, L) {
     ${sea}
 
     ${hall}
-    ${cap(CX[0] - 92, RY[0] + 110, '공장동', `${s.lines.length} / ${CFG.MAX_LINES} 라인 가동`)}
+    ${cap(CX[0] - 92, RY[0] + 110, '공장동', `${s.lines.length} / ${bayLimit(s)} 라인 가동`)}
     ${machines}
 
     <g transform="translate(${CX[0]},${RY[1]})">${yard}</g>
@@ -2331,8 +2415,25 @@ function look(s) {
     avg[k] = xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
     pot[k] = ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : 0;
   }
-  const need = Math.min(c.SLIT, avg.SLIT) + Math.min(c.LEVEL, avg.LEVEL)
-             + avg.C2C + Math.min(c.BLANK, (avg.TRAP || 0) + (avg.DIE || 0));
+  let need = Math.min(c.SLIT, avg.SLIT) + Math.min(c.LEVEL, avg.LEVEL)
+           + avg.C2C + Math.min(c.BLANK, (avg.TRAP || 0) + (avg.DIE || 0));
+  /* 짓고 있는 라인 몫은 미리 사 둬야 한다. 소재도 넉 달, 설비도 넉 달이다.
+     준공하고 나서 주문하면 그 라인은 다섯 달을 빈 채로 서 있고,
+     그 사이에 못 쳐낸 물량은 결품이 되어 점유율을 영구히 깎는다.
+     증설을 결재한 달부터 발주가 커지는 이유가 이것이다. */
+  for (const b of (s.buildQueue || [])) {
+    if (b.kind && b.kind !== 'LINE') continue;
+    let extra = 0;
+    for (const k of CFG.LINE[b.type].procs) {
+      // 이미 우리 앞에 와 있는데 캐파가 없어 못 받던 물량
+      const have = (k === 'TRAP' || k === 'DIE') ? c.BLANK : c[k];
+      extra += Math.max(0, (pot[k] || 0) - (have || 0));
+      // 아직 열리지 않은 시장(블랭킹)은 내시에 안 잡히니 기저 수요로 어림한다
+      if (!procAvailable(s, k))
+        extra += DEMAND_BASE[k] * rampOf(s.turn) * Math.min(2, s.myShare / 0.10);
+    }
+    need += Math.min(CFG.LINE[b.type].cap, extra);
+  }
   const haveP = s.poOpen.concat(s.invRaw, s.invFg).reduce((a, l) => a + l.qty, 0);
   const isBust = s.market.phase === 'BUST';
   return { c, now, avg, pot, need, haveP, isBust,
@@ -2358,8 +2459,7 @@ function buildDecision(s, ui) {
   return {
     // beta는 본사 소재 비중. 1이면 전량 본사, 낮추면 그만큼 3자 소재를 쓴다.
     buy: { totalTon: buy, alpha: 1, beta: G ? (G.beta != null ? G.beta : 1) : 1, hqSpotTon: ui.hqTake },
-    invest: { addLine: ui.expandPick, newBuilding: s.lines.length >= CFG.MAX_LINES,
-              yieldProgram: ui.yieldSpend, salesEffort: 0 },
+    invest: { order: ui.investOrder, yieldProgram: ui.yieldSpend, salesEffort: 0 },
     options: { overtime: ui.overtime, discount: G ? G.turnDiscount : 0, trimYield: 0,
                segPriority: (G && G.segPriority) || CFG.SEG_LIST },
     run: { SLIT: runS, LEVEL: runL, TRAP: runT, DIE: runD },
@@ -2393,7 +2493,7 @@ function newGame() {
     equity: START.equity, lines: START.lines,
     country: START.country, companyName: START.name,
   });
-  G = { s, ui: { cover: 0.5, hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0 },
+  G = { s, ui: { cover: 0.5, hqTake: 0, investOrder: null, overtime: false, yieldSpend: 0 },
         pending: [], seen: {}, deck: [], screen: 'turn',
         mult: 1, beta: 1, turnDiscount: 0, extraFixed: 0, yieldPenalty: 0,
         segPriority: CFG.SEG_LIST.slice(),
@@ -2420,16 +2520,89 @@ function cardCtx(s) {
 /* 이번 달 결재판을 짠다.
    루틴 셋은 매달 반드시 올라오고, 그 위에 돌발이 두셋 붙는다.
    본사 스팟과 증설은 해당되는 달에만 돌발 자리에 들어간다. */
-function expandableType(s) {
-  const L = look(s);
-  if (s.lines.length >= CFG.MAX_LINES) return null;
-  if ((s.buildQueue || []).length) return null;
-  if (s.turn < 13) return null;              // 첫 해에는 그럴 현금이 없다
-  if (L.gapSlit > 800) return 'SLIT';
-  if (L.gapLevel > 500) return 'LEVEL';
-  if (!s.lines.some(l => l.type === 'BLANK')) return 'BLANK';
-  return null;
+function investItems(s) {
+  const L = look(s), out = [];
+  if ((s.buildQueue || []).length) return out;     // 공사 중에는 새 안건을 안 올린다
+  const has = t => s.lines.some(l => l.type === t);
+  const stock = inventoryTons(s);
+  const bays = bayLimit(s) - s.lines.length;
+
+  if (bays > 0) {
+    if (L.gapSlit > 2500)
+      out.push({ kind: 'LINE', type: 'SLIT', urgent: true,
+        why: `슬리팅 주문이 캐파보다 월 ${fmt(L.gapSlit)}톤 많습니다` });
+    if (L.gapLevel > 1500)
+      out.push({ kind: 'LINE', type: 'LEVEL', urgent: true,
+        why: `레벨링 주문이 캐파보다 월 ${fmt(L.gapLevel)}톤 많습니다` });
+    if (!has('BLANK'))
+      out.push({ kind: 'LINE', type: 'BLANK',
+        why: '블랭킹은 우리가 아직 안 하는 장사입니다' });
+  } else if (L.gapSlit > 2500 || L.gapLevel > 1500 || !has('BLANK')) {
+    /* 자리가 없다. 그런데 자리를 늘릴 이유가 실제로 있을 때만 올린다.
+       채울 물량도 없는데 동을 올리는 건 그냥 돈을 버리는 것이다. */
+    out.push({ kind: 'HALL',
+      why: `공장동 ${s.buildings}동이 라인 ${s.lines.length}대로 꽉 찼는데 물량은 더 있습니다` });
+  }
+  if (stock > yardCapOf(s) * 0.85)
+    out.push({ kind: 'YARD', urgent: true,
+      why: `재고 ${fmt(stock)}톤이 야드 한도 ${fmt(yardCapOf(s))}톤에 닿았습니다` });
+  return out.slice(0, 3);
 }
+
+/* 투자 안건 한 건을 결재 버튼 한 줄로 만든다.
+   설비값은 우리 현금에서 나간다. 모자라면 차입이고, 그 이자는 다음 달부터 문다.
+   돌아오는 건 넉 달 뒤(건물은 여덟 달 뒤)다 — 그 시차가 증설 결정의 전부다. */
+function investOpt(s, it) {
+  /* 투자비의 8할은 본사 보증 시설자금이고 2할이 우리 돈이다.
+     매달 나가는 건 원금 1/60과 이자 — 그 부담을 숫자로 보여준다. */
+  const own = cx => cx * (1 - CFG.FACILITY_SHARE);
+  const mon = cx => cx * CFG.FACILITY_SHARE
+                    * (1 / CFG.FACILITY_TERM_M + CFG.FACILITY_RATE_MONTHLY);
+  const fin = cx => `자기부담 ${K(own(cx))} · 시설자금 원리금 월 ${K(mon(cx))}천U$`;
+  const set = (it2, msg) => (s2, g) => { g.ui.investOrder = it2; return msg; };
+
+  if (it.kind === 'LINE') {
+    const cx = CFG.LINE[it.type].capex, cap = CFG.LINE[it.type].cap;
+    const lab = CFG.LINE[it.type].label;
+    const gain = it.type === 'BLANK'
+      ? `없던 시장이 열립니다 · 톤당 가공마진 $45~75`
+      : `가공 캐파 월 +${fmt(cap)}톤`;
+    return { label: it.type === 'BLANK' ? '블랭킹 라인을 새로 놓는다' : `${lab}를 한 대 더 놓는다`,
+      hint: `${K(cx)}천U$ · ${CFG.INSTALL_TURNS}개월 뒤 가동 · ${gain} · ${fin(cx)}`,
+      apply: set(it, `${lab} 증설을 결재했습니다. 자기부담분 ${K(own(cx))}천U$만 이번 달에 나가고 `
+                   + `나머지는 시설자금으로 5년에 걸쳐 갚습니다.`) };
+  }
+  if (it.kind === 'HALL') {
+    const cx = CFG.INFRA_TOTAL;
+    return { label: '공장동을 한 동 더 올린다',
+      hint: `${K(cx)}천U$ · ${CFG.HALL_TURNS}개월 · 라인 ${CFG.MAX_LINES}대 자리 · ${fin(cx)}`,
+      apply: set(it, '공장동 증설을 결재했습니다. 준공까지 여덟 달입니다.') };
+  }
+  const cx = CFG.YARD.capex;
+  return { label: '야드를 넓힌다',
+    hint: `${K(cx)}천U$ · ${CFG.YARD.turns}개월 · +${fmt(CFG.YARD.add)}톤 · 외부창고비가 없어집니다 · ${fin(cx)}`,
+    apply: set(it, '야드 확장을 결재했습니다.') };
+}
+
+function investCardDef(s, items) {
+  const urgent = items.find(i => i.urgent);
+  const head = urgent
+    ? `${urgent.why}. 지금 결정해야 넉 달 뒤에 씁니다.`
+    : '당장 급한 건 없습니다. 그래도 지금 걸어야 넉 달 뒤에 돕니다.';
+  return { id: 'r-invest', kind: '투자', who: 'gu',
+    title: urgent ? '증설을 올려야 할 것 같습니다' : '분기 투자 심의',
+    text: `${head} 설비는 넉 달, 건물은 여덟 달 걸립니다. `
+        + `투자비의 ${Math.round(CFG.FACILITY_SHARE * 100)}%는 본사 보증 시설자금으로 따로 빌려 `
+        + `${CFG.FACILITY_TERM_M / 12}년에 걸쳐 갚습니다 — 소재 살 운전자금 한도는 건드리지 않습니다. `
+        + `대신 원리금이 준공 전부터 매달 나갑니다.`
+        + (facilityBalance(s) > 1
+            ? ` 지금 갚고 있는 시설자금이 ${K(facilityBalance(s))}천U$ 남아 있습니다.` : ''),
+    opts: [...items.map(it => investOpt(s, it)),
+      { label: '이번엔 넘어간다', hint: '현금을 지킵니다',
+        apply: (s2, g) => { g.ui.investOrder = null;
+          return '투자는 다음 심의로 넘겼습니다.'; } }] };
+}
+
 function hqSpotCard(s) {
   const L = look(s), q = Math.round(L.quota);
   return { id: 'x-spot', kind: '소재구매', who: 'jung',
@@ -2470,15 +2643,20 @@ function dealTurn() {
   const s = G.s, ctx = cardCtx(s);
   G.mult = 1; G.beta = 1; G.turnDiscount = 0; G.feedback = [];
   G.segPriority = CFG.SEG_LIST.slice();
-  Object.assign(G.ui, { hqTake: 0, expandPick: null, overtime: false, yieldSpend: 0 });
+  Object.assign(G.ui, { hqTake: 0, investOrder: null, overtime: false, yieldSpend: 0 });
   G.deck = ROUTINE.map(f => ({ c: f(s, ctx), chosen: null }));
 
   const extra = [];
   const big = BIG.find(b => b.at === s.turn);
   if (big) extra.push(big);
   if (s.market.phase === 'BUST') extra.push(hqSpotCard(s));
-  const ex = expandableType(s);
-  if (ex) extra.push(expandCardDef(ex, s));
+  /* 투자 안건. 급한 건이 있으면 그 달에 바로 올라오고,
+     없어도 분기마다 한 번은 "지금 뭘 지을까"를 묻는다 — 증설 타이밍은 센터장이 잡는다. */
+  if (s.turn >= 7) {
+    const items = investItems(s);
+    if (items.length && (items.some(i => i.urgent) || s.turn % 3 === 1))
+      extra.push(investCardDef(s, items));
+  }
 
   const want = 2 + (Math.random() < 0.5 ? 1 : 0);
   const pool = EVENTS.filter(c => (!c.when || c.when(s, ctx)) && (s.turn - (G.seen[c.id] || -99)) > 6);
@@ -2617,7 +2795,14 @@ function renderBrief() {
         <tr><td>슬리터 1기</td><td>월 ${fmt(c.SLIT)}톤 · 연 10만톤</td></tr>
         <tr><td>레벨러 1기</td><td>월 ${fmt(c.LEVEL)}톤 · 연 5만톤</td></tr>
         <tr class="tot"><td>가공 캐파</td><td>월 ${fmt(c.SLIT + c.LEVEL)}톤</td></tr></table>
-      <p class="hint">통코일은 라인을 쓰지 않아 이 한도 밖입니다. 공장동에는 3라인까지 들어갑니다.</p>
+      <p class="hint">통코일은 라인을 쓰지 않아 이 한도 밖입니다. 공장동 한 동에는 ${CFG.MAX_LINES}라인까지 들어갑니다.</p>
+
+      <div class="note"><b>설비는 늘릴 수 있습니다.</b> 슬리터·레벨러를 더 놓거나,
+        아직 안 하는 <b>블랭킹</b>을 새로 시작하거나, 자리가 모자라면 공장동을 한 동 더 올리거나,
+        야드를 넓힐 수 있습니다. 투자비의 ${Math.round(CFG.FACILITY_SHARE * 100)}%는
+        본사 보증 <b>시설자금</b>으로 따로 빌려 ${CFG.FACILITY_TERM_M / 12}년에 걸쳐 갚으므로
+        소재 살 운전자금 한도는 줄지 않습니다. 다만 설비는 넉 달, 건물은 여덟 달 뒤에야 돕니다 —
+        <b>지금 숫자가 아니라 그때 숫자를 보고 걸어야 합니다.</b></div>
 
       <div class="note">운전자금은 본사 지급보증을 끼고 은행에서 빌립니다.
         기본 한도 ${K(CFG.CREDIT_LINE_BASE)}천U$에서 시작하고,
@@ -2685,8 +2870,18 @@ function perfTable(s) {
   </div>`;
 }
 
+/* 공사 중인 것. 돈은 이미 나갔고 아직 안 도는 물건이라 화면에 남겨 둔다. */
+function buildRow(s) {
+  const q = s.buildQueue || [];
+  if (!q.length) return '';
+  const name = b => b.kind === 'HALL' ? '새 공장동'
+                  : b.kind === 'YARD' ? '야드 확장' : CFG.LINE[b.type].label;
+  return `<div class="mrow"><span>🏗 ${q.map(b =>
+    `${name(b)} 공사 중 · ${ymLabel(b.readyTurn)} 가동`).join(' · ')}</span></div>`;
+}
+
 function renderTurn() {
-  const s = G.s, d = ym(s.turn), ch = chapterOf(s.turn);
+  const s = G.s, d = ym(s.turn), ch = chapterOf(s.turn), cp = capacityOf(s);
   const ready = G.deck.every(x => x.chosen !== null);
   const deckHTML = G.deck.map((x, i) => {
     const c = x.c, who = CAST[c.who];
@@ -2720,7 +2915,9 @@ function renderTurn() {
       <div class="mrow">
         <span>소재 시세 <b>$${fmt(s.market.pm)}</b>/톤</span>
         <span>${pmArrow(s)}</span>
+        <span>가공 캐파 월 <b>${fmt(cp.SLIT + cp.LEVEL + cp.BLANK)}</b>t · 라인 ${s.lines.length}/${bayLimit(s)}</span>
       </div>
+      ${buildRow(s)}
     </div>
     ${metricRow(s)}
     ${perfTable(s)}
@@ -2751,10 +2948,11 @@ function balanceSheet(s) {
   const transit = s.poOpen.reduce((a, p2) => a + p2.qty * p2.unitPriceFixed, 0);
   const land = s.fa.land, bld = s.fa.buildingNbv;
   const mach = Math.max(0, s.fa.machineCost - s.fa.machineAccDep);
-  const assets = s.cash + r.total + invVal + transit + land + bld + mach;
+  const cip = cipValue(s);                    // 돈은 나갔는데 아직 안 도는 것
+  const assets = s.cash + r.total + invVal + transit + land + bld + mach + cip;
   const ap = s.ap.reduce((a, x) => a + x.amount, 0);
-  const debt = s.debt.principal;
-  const equity = assets - ap - debt;
+  const debt = s.debt.principal, fac = facilityBalance(s);
+  const equity = assets - ap - debt - fac;
   const row = (t, v, c2) => `<tr class="${c2 || ''}"><td>${t}</td><td>${K(v)}</td></tr>`;
   return `<table style="margin-top:10px">
     <tr><th>자산</th><th>천U$</th></tr>
@@ -2766,15 +2964,17 @@ function balanceSheet(s) {
     ${row('토지', land)}
     ${row('건물', bld)}
     ${row('설비', mach)}
+    ${cip > 1 ? row('건설중인자산 <span class="muted">공사 중</span>', cip) : ''}
     <tr class="tot"><td>자산 합계</td><td>${K(assets)}</td></tr>
   </table>
   <table style="margin-top:14px">
     <tr><th>부채와 자본</th><th>천U$</th></tr>
     ${row('매입채무 <span class="muted">아직 안 낸 소재값</span>', ap)}
-    ${row('차입금', debt)}
-    <tr class="tot"><td>부채 합계</td><td>${K(ap + debt)}</td></tr>
+    ${row('운전자금 차입', debt)}
+    ${fac > 1 ? row('시설자금 차입 <span class="muted">설비·건물</span>', fac) : ''}
+    <tr class="tot"><td>부채 합계</td><td>${K(ap + debt + fac)}</td></tr>
     ${row('자본 <span class="muted">납입 + 누적손익</span>', equity)}
-    <tr class="tot"><td>부채와 자본 합계</td><td>${K(ap + debt + equity)}</td></tr>
+    <tr class="tot"><td>부채와 자본 합계</td><td>${K(ap + debt + fac + equity)}</td></tr>
   </table>
   <p class="hint">차입 여력 ${K(s.debt.limit - s.debt.principal)}천U$ · 소재 시세 $${fmt(s.market.pm)}/톤 · 직원 사기 ${Math.round(s.morale)}</p>`;
 }
@@ -2821,6 +3021,8 @@ function renderClose() {
         ${R.interest > 500 ? `<tr><td>이자</td><td>−${K(R.interest)}</td></tr>` : ''}
         ${R.badDebt > 1 ? `<tr><td>대손</td><td class="neg">−${K(R.badDebt)}</td></tr>` : ''}
         <tr class="tot"><td>순이익</td><td class="${cls(R.np)}">${K(R.np)}</td></tr>
+        ${R.facilityRepay > 1 ? `<tr><td class="muted">시설자금 원금 상환 <span class="muted">· 손익이 아니라 현금</span></td>
+          <td class="muted">−${K(R.facilityRepay)}</td></tr>` : ''}
       </table>
       <div class="sep"></div>
       <table>
