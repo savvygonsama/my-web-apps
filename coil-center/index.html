@@ -315,9 +315,15 @@ const CFG = {
   SALES_EFFORT_GAIN: 0.008,        // $100,000 투자당 점유율 증분 [가정]
   TRUST_SHARE_COEF: 0.001,
 
-  // 부실·연체 [가정]
-  BAD_DEBT_RATE: 0.006 / 12,
-  DELAY_RATE: 0.12,
+  /* ---- 대손 (실무자 확인) ----
+     자동차 고객사에서는 대손이 거의 나지 않는다. 터지는 곳은 가전·건설·일반
+     고객사이고, 2~3년에 한 번쯤 2~3백만불 규모로 온다. 그것도 꼭 나는 게 아니라
+     진짜 케바케다. 그래서 매달 조금씩 떼이는 방식이 아니라 확률로 굴린다.
+     한 판(48개월)에 한 번도 안 터지는 경우가 넷 중 하나쯤 된다. */
+  BAD_DEBT_PROB: 1 / 30,           // 월 확률 — 평균 2.5년에 한 번
+  BAD_DEBT_MIN: 2_000_000,
+  BAD_DEBT_MAX: 3_000_000,
+  DELAY_RATE: 0.12,                // 연체(떼이는 건 아니고 한 달 밀리는 것)
 
   /* ---- 재고 보유의 대가 (실무자 확인 반영) ----
      현물 전략의 비용은 가격 폭락 하나가 아니다. 네 가지가 같이 붙는다.
@@ -531,16 +537,16 @@ function capacityOf(state) {
   return cap;
 }
 
-/* 기저 수요 (실무자 확인) — 연 30만톤 코일센터.
+/* 기저 수요 (실무자 확인) — 연 25만톤 코일센터.
      가공  슬리터 연 10만톤 + 레벨러 연 5만톤 = 연 15만톤 (설비 캐파가 상한)
-     통코일 연 15만톤 — 라인을 안 쓰므로 캐파 상한이 없다
-   통코일이 판매의 절반이다. 마진은 톤당 $10뿐이라 얇지만, 가공을 안 하니
+     통코일 연 10만톤 — 라인을 안 쓰므로 캐파 상한이 없다
+   통코일이 판매의 40%다. 마진은 톤당 $10뿐이라 얇지만, 가공을 안 하니
    변동비도 $3뿐이고 수율 손실이 없다. 대신 소재는 똑같이 사와야 하므로
    자금은 가공품과 똑같이 묶인다 — 물량의 절반이 여기 있다는 사실이
    이 회사의 운전자금 규모를 정한다.
    이 값이 게임의 생명선이다. 너무 크면 증설이 무조건 정답이 되어 게임이 죽고,
    너무 작으면 첫 판부터 재고가 쌓여 초보가 무조건 부도난다. */
-const DEMAND_BASE = { C2C: 14700, SLIT: 10600, LEVEL: 5300, TRAP: 1500, DIE: 1500 };
+const DEMAND_BASE = { C2C: 9800, SLIT: 10600, LEVEL: 5300, TRAP: 1500, DIE: 1500 };
 
 /* 설비가 없으면 그 수요는 애초에 우리 앞에 오지 않는다.
    블랭킹 라인이 없는 코일센터에 블랭킹 내시를 줄 리가 없다.
@@ -1102,17 +1108,34 @@ function resolveTurn(state, decision) {
   const arKeep = [];
   for (const a of s.ar) {
     if (a.dueTurn > s.turn) { arKeep.push(a); continue; }
-    const r = rng();
-    if (r < CFG.BAD_DEBT_RATE * 12) { badDebt += a.amount; s.trust -= 2; }
     // 약속한 날에 안 들어온 돈. 한 번 밀리면 그 채권은 계속 '지연'으로 남는다.
     // 화면 맨 위에 이 금액이 뜨는 이유가 있다 — 매출채권 전체보다 이쪽이 먼저 아프다.
-    else if (r < CFG.DELAY_RATE) {
+    if (rng() < CFG.DELAY_RATE) {
       a.dueTurn += 1; a.late = (a.late || 0) + 1; arKeep.push(a);
     }
     else cashIn += a.amount;
   }
   s.ar = arKeep;
-  if (badDebt > 0) log.push(`대손이 발생했습니다. $${Math.round(badDebt).toLocaleString()}`);
+
+  /* STEP 15b. 대손 — 자동차 고객사가 아니라 가전·건설 쪽에서 몇 년에 한 번 크게 온다.
+     매달 0.05%씩 떼이는 회사는 없다. 안 터지다가 어느 달 갑자기 온다. */
+  if (rng() < CFG.BAD_DEBT_PROB) {
+    const want = CFG.BAD_DEBT_MIN + rng() * (CFG.BAD_DEBT_MAX - CFG.BAD_DEBT_MIN);
+    let need = Math.min(want, s.ar.reduce((a, x) => a + x.amount, 0));
+    if (need > 1) {
+      badDebt = need;
+      // 오래된 채권부터 턴다 — 못 받고 있던 그 돈이 결국 못 받는 돈이 된다.
+      s.ar.sort((a, b) => a.dueTurn - b.dueTurn);
+      for (const a of s.ar) {
+        if (need <= 1e-9) break;
+        const t = Math.min(a.amount, need);
+        a.amount -= t; need -= t;
+      }
+      s.ar = s.ar.filter(a => a.amount > 1e-9);
+      s.trust -= 2;
+      flags.push(`가전·건설 쪽 고객사 한 곳이 부도났습니다. 받을 돈 $${Math.round(badDebt).toLocaleString()}을 털었습니다.`);
+    }
+  }
 
   /* STEP 16. 채무 지급 */
   let cashOut = 0;
