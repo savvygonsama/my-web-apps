@@ -95,6 +95,8 @@
 </style>
 <div class="wrap" id="app"></div>
 <style>
+  /* 공장 조감도 — 아이소메트릭. 면 색은 전부 인라인으로 칠하고
+     여기서는 글자와 몇 가지 선만 잡는다. */
   .plant{width:100%;height:auto;display:block;border-radius:10px}
   .plant .sea{fill:#cfdee6}
   .plant .ground{fill:#ece5d7}
@@ -104,18 +106,22 @@
   .plant .coil.fgc{fill:#7fa892;stroke:#5f8874}
   .plant .ship{fill:#6f8794}
   .plant .line{fill:#f4efe3;stroke:#d9d0be;stroke-width:1.5}
-  .plant .slot{fill:none;stroke:#d9d0be;stroke-width:1.5;stroke-dasharray:5 4}
-  .plant .utilbg{fill:#e4ddce}
-  .plant .util{fill:#3f7d68}
-  .plant .util.hot{fill:#c8622e}
   .plant .truck{fill:#b5814f}
   .plant .wheel{fill:#4a423a}
-  .plant .lbl{font:600 13px ui-sans-serif,system-ui;fill:#4d463d}
+  .plant .slot{fill:none;stroke:#cfc6b4;stroke-width:1.6;stroke-dasharray:5 4}
+  .plant .rail{stroke:#c9bfa9;stroke-width:1.6}
+  .plant .hook{stroke:#7b7268;stroke-width:1.2}
+  .plant .utilbg{fill:#ddd4c2}
+  .plant .util{fill:#3f7d68}
+  .plant .util.hot{fill:#c8622e}
+  .plant .cap{font:700 11px ui-sans-serif,system-ui;fill:#4d463d;text-anchor:middle}
+  .plant .lbl{font:700 13px ui-sans-serif,system-ui;fill:#3c352d}
   .plant .lbl.end{text-anchor:end}
   .plant .lbl.dim,.plant .tiny.dim{fill:#8d8579}
   .plant .lbl.warn,.plant .tiny.warn{fill:#b8443a}
   .plant .tiny{font:500 11px ui-sans-serif,system-ui;fill:#6b6357}
   .plant .tiny.mid{text-anchor:middle}
+  .plant .tiny.b{font-weight:700}
 </style>
 <style>
   dialog.deck{max-width:560px}
@@ -269,8 +275,12 @@ const CFG = {
   OT_CAP_MULT: 1.20,
   LC_FEE_RATE: 0.002,
 
-  // 자금 [가정]
-  DEBT_RATE_MONTHLY: 0.08 / 12,
+  /* ---- 조달 금리 ----
+     현지에서 법인 단독으로 빌리면 금리가 훨씬 세지만, 이 회사는 본사가 지급보증을
+     서고 은행에서 빌린다. 본사 신용이 좋아 조달 금리가 크게 높지 않다.
+     나라마다 다르므로 한 곳에서 고칠 수 있게 여기 둔다. */
+  DEBT_RATE_ANNUAL: 0.05,
+  get DEBT_RATE_MONTHLY() { return this.DEBT_RATE_ANNUAL / 12; },
   BORROW_BASE_RATE: 0.70,          // 재고+매출채권의 70%까지 운전자본 대출이 붙는다 [가정]
 
   // 시황 국면 (v3 §5 STEP 0)
@@ -1115,6 +1125,13 @@ function resolveTurn(state, decision) {
     } else {
       s.over = true; s.overReason = 'INSOLVENT';
     }
+  }
+  /* 여윳돈이 생기면 먼저 빚부터 갚는다.
+     이게 없으면 통장에 현금을 쌓아 둔 채로 그 돈에 이자를 무는 회사가 된다.
+     한 달 고정비 정도만 남기고 나머지는 상환한다 — 실제 운전자금 대출이 그렇게 돌아간다. */
+  else if (s.cash > CFG.FC_BASE && s.debt.principal > 0) {
+    const pay = Math.min(s.cash - CFG.FC_BASE, s.debt.principal);
+    s.cash -= pay; s.debt.principal -= pay;
   }
 
   /* STEP 18. 재무제표 */
