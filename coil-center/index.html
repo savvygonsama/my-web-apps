@@ -194,6 +194,11 @@ const CFG = {
      실제로 해외 코일센터가 본사 지급보증을 끼고 출발하는 이유가 이것이다.
      재고와 매출채권이 쌓이면 그걸 담보로 한도가 더 붙는다(BORROW_BASE_RATE). */
   CREDIT_LINE_BASE: 80_000_000,
+  /* 여신한도는 최근 매출의 이 개월치까지 따라 올라간다. 단 본사를 설득해야 한다 —
+     신뢰가 CREDIT_TRUST_FLOOR 이하면 한 푼도 못 올리고, CREDIT_TRUST_FULL이면 전부 받는다. */
+  CREDIT_MONTHS_OF_SALES: 3.5,
+  CREDIT_TRUST_FLOOR: 40,
+  CREDIT_TRUST_FULL: 85,
 
   // 소재·시장 [가정]
   P_M_BASE: 750,
@@ -219,6 +224,10 @@ const CFG = {
      나가고 판매대금은 두 달 뒤에 들어온다 — 그 한 달이 이 회사의 운전자금이다. */
   DSO_TURNS: 2,
   BUY_MAX_MULT: 1.25,              // 한 달에 시킬 수 있는 최대치 (월 소비량 대비)
+  /* 재고 상한. 리드타임 위에 이 개월치를 더한 선을 넘으면 더 시키지 않는다.
+     카드에서 매달 "넉넉히 시킨다"를 골라도 여기서 멈춘다 — 창고도 은행도
+     무한하지 않다. 이 선이 없으면 발주 카드 하나로 회사가 죽는다. */
+  STOCK_CEIL: 1.6,
   TARGET_DIO_DAYS: 52.5,
 
   /* ---- 강종 (실무자 확인) — 이 게임의 진짜 축 ----
@@ -1149,7 +1158,18 @@ function resolveTurn(state, decision) {
      불황에 재고가 빠지는 순간 은행 한도까지 같이 빠지는 게 진짜 무서운 지점이다. */
   {
     const base = inventoryTons(s) * pm + s.ar.reduce((a, x) => a + x.amount, 0);
-    s.debt.limit = Math.max(CFG.CREDIT_LINE_BASE, base * CFG.BORROW_BASE_RATE);
+    /* 장사가 커지면 본사에 얘기해 여신을 키운다 (실무자 확인).
+       다만 본사가 자동으로 올려주지는 않는다 — 설득해야 한다.
+       그 설득력이 곧 본사 신뢰다. 내시를 꼬박꼬박 쳐내고 불황기에 본사 물량을
+       받아준 법인은 한도를 키워 받고, 결품 내고 본사 지시를 거절한 법인은
+       장사가 아무리 커져도 기본 한도에 묶인다.
+       성장이 곧 자금 압박인데, 그 압박을 풀 열쇠를 평소에 쌓아 두는 구조다. */
+    const recent = s.history.slice(-3);
+    const rev3 = recent.length ? recent.reduce((a, h) => a + h.revenue, 0) / recent.length : 0;
+    const persuade = Math.max(0, Math.min(1, (s.trust - CFG.CREDIT_TRUST_FLOOR)
+                                            / (CFG.CREDIT_TRUST_FULL - CFG.CREDIT_TRUST_FLOOR)));
+    s.debt.limit = Math.max(CFG.CREDIT_LINE_BASE, base * CFG.BORROW_BASE_RATE,
+                            rev3 * CFG.CREDIT_MONTHS_OF_SALES * persuade);
   }
 
   /* STEP 17. 현금 정산 및 부도 판정 */
@@ -1926,8 +1946,15 @@ function buildDecision(s, ui) {
      소재값이 나가는 리듬과 판매대금이 들어오는 리듬을 맞춘다. */
   const target = L.need * (CFG.LEAD_TURNS + CFG.GRADE.PREMIUM.leadAdd + ui.cover);
   const shortfall = Math.max(0, target - L.haveP);
-  const buy = Math.max(0, Math.min(L.need + shortfall / 3, L.need * CFG.BUY_MAX_MULT))
-            * (G ? (G.mult || 1) : 1);
+  const want = Math.max(0, Math.min(L.need + shortfall / 3, L.need * CFG.BUY_MAX_MULT))
+             * (G ? (G.mult || 1) : 1);
+  /* 아무리 지르라고 해도 넘지 못하는 선이 있다.
+     창고가 이미 찼는데 구매 담당이 계속 배를 부르지는 않는다. 카드에서 "넉넉히
+     시킨다"를 매달 고르면 재고가 폭주해 자금이 터지는데, 그건 사장의 결정이
+     아니라 시스템이 못 막아 준 것이다. 재고와 미착을 합쳐 리드타임 + STOCK_CEIL
+     개월치를 넘기면 그 초과분은 발주하지 않는다. */
+  const ceil = L.need * (CFG.LEAD_TURNS + CFG.GRADE.PREMIUM.leadAdd + CFG.STOCK_CEIL);
+  const buy = Math.max(0, Math.min(want, ceil - L.haveP));
   const n = L.now, hasCommon = (s.hqSpotCredit || 0) > 1;
   const idleS = Math.max(0, L.c.SLIT - (n.SLIT || 0)), idleL = Math.max(0, L.c.LEVEL - (n.LEVEL || 0));
   const runS = Math.min(L.c.SLIT, (n.SLIT || 0) + (hasCommon ? idleS : 0));
