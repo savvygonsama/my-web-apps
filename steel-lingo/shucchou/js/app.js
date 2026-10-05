@@ -12,8 +12,8 @@
     v: 1,
     settings: { easy: true, rate: 1 },
     exp: 0,
-    chapters: {}, // id → { done, plays, delta, flags, grades, missed, bestCount }
-    run: null, // { ch, at, hist:[{id,pick?}], delta, flags, grades, missed, order:{} }
+    chapters: {}, // id → { done, plays, earned, max, flags, grades, missed, bestCount }
+    run: null, // { ch, at, hist:[{id,pick?}], earned, max, flags, grades, missed, order:{} }
     notes: {}, // "c3:moushimasu" → { t, ok, ng }
     seenIntro: false
   });
@@ -21,17 +21,21 @@
   S.settings = Object.assign(fresh().settings, S.settings);
   const save = () => { S.savedAt = Date.now(); return SH.store.save(S); };
 
-  const STEP = 5; // 데이터의 효과 1점 = 게이지 5
-  const clamp = (n) => Math.max(0, Math.min(100, n));
-  function gauges() {
-    let t = 0, l = 0;
+  /* 출장 점수 — 하나뿐인 점수. ◎ 2점 · △ 1점 · ✕ 0점.
+     지금까지 고른 선택 지점 기준 백분율이라, 모두 ◎이면 언제나 100점.
+     챕터를 다시 하면 그 챕터는 마지막 플레이 기록으로 바뀐다. */
+  const POINTS = { best: 2, awkward: 1, rude: 0 };
+  const MAXPT = 2;
+  function score() {
+    let earned = 0, max = 0;
     Object.entries(S.chapters).forEach(([id, c]) => {
-      if (c.done && (!S.run || S.run.ch !== id)) { t += c.delta.trust || 0; l += c.delta.like || 0; }
+      if (c.done && (!S.run || S.run.ch !== id)) { earned += c.earned || 0; max += c.max || 0; }
     });
-    if (S.run) { t += S.run.delta.trust || 0; l += S.run.delta.like || 0; }
-    const lv = Math.floor(S.exp / 20) + 1;
-    return { trust: clamp(50 + t * STEP), like: clamp(50 + l * STEP), jp: S.exp, lv, lvPct: ((S.exp % 20) / 20) * 100 };
+    if (S.run) { earned += S.run.earned || 0; max += S.run.max || 0; }
+    return { earned, max, pct: max ? Math.round((earned / max) * 100) : 0 };
   }
+  /* 출장은 순서대로 — 앞 장을 모두 마쳐야 다음 장이 열린다(앞 장의 선택이 뒤로 이어지므로) */
+  const unlocked = (c) => SH.chapters.filter((x) => x.no < c.no).every((x) => S.chapters[x.id] && S.chapters[x.id].done);
   function flags() {
     const f = new Set();
     Object.entries(S.chapters).forEach(([id, c]) => { if (c.done && (!S.run || S.run.ch !== id)) (c.flags || []).forEach((x) => f.add(x)); });
@@ -103,7 +107,6 @@
     awkward: { mark: "△", title: "뜻은 통하지만 어색해요", sub: "조금만 바꾸면 완벽" },
     rude: { mark: "✕", title: "실례가 될 수 있어요", sub: "게임오버는 없어요. 여기서 배우면 됩니다" }
   };
-  const GAUGE_NAME = { trust: "信頼度", like: "好感度" };
 
   function bar({ title, sub, back, right = "" }) {
     return `<header class="bar">
@@ -112,23 +115,19 @@
   }
   const saveBtn = () => `<button class="save-btn" data-act="save" aria-label="지금까지 저장">💾 저장</button>`;
 
-  function gaugeCards() {
-    const g = gauges();
-    const card = (k, name, ko, val, pct, cls) =>
-      `<div class="gauge"><div class="gl"><b>${name}</b><span class="gv">${val}</span></div>
-       <div class="meter ${cls}" role="meter" aria-label="${ko}" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
-       <div class="gl"><span>${ko}</span></div></div>`;
-    return `<div class="gauges">
-      ${card("trust", "信頼度", "고객 신뢰", g.trust, g.trust, "")}
-      ${card("like", "好感度", "인간관계", g.like, g.like, "like")}
-      ${card("jp", "日本語力", "경험치", "Lv." + g.lv, g.lvPct, "jp")}</div>`;
+  function scoreCard() {
+    const s = score();
+    const done = SH.chapters.filter((c) => S.chapters[c.id] && S.chapters[c.id].done).length;
+    return `<div class="scorecard">
+      <div class="sc-top"><span class="sc-label">출장 점수</span>
+        <span class="sc-num">${s.max ? s.pct : "–"}<small>${s.max ? "점" : ""}</small></span></div>
+      <div class="meter" role="meter" aria-label="출장 점수" aria-valuenow="${s.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${s.pct}%"></i></div>
+      <div class="sc-sub"><span>${done} / ${SH.chapters.length}장 완료</span><span>모은 표현 ${Object.keys(S.notes).length}개</span></div></div>`;
   }
-  function miniGauges() {
-    const g = gauges();
-    return `<div class="mini-g" aria-label="신뢰 ${g.trust}, 호감 ${g.like}, 일본어 레벨 ${g.lv}">
-      <span>信<span class="meter"><i style="width:${g.trust}%"></i></span></span>
-      <span>好<span class="meter like"><i style="width:${g.like}%"></i></span></span>
-      <span>Lv${g.lv}<span class="meter jp"><i style="width:${g.lvPct}%"></i></span></span></div>`;
+  function miniScore() {
+    const s = score();
+    return `<div class="mini-g" aria-label="출장 점수 ${s.pct}점"><span class="mini-num">${s.max ? s.pct : "–"}<small>점</small></span>
+      <span class="meter"><i style="width:${s.pct}%"></i></span></div>`;
   }
 
   let toastTimer = 0;
@@ -146,6 +145,7 @@
     view = Object.assign({ v }, params);
     if (push) try { history.pushState(view, ""); } catch (e) { /* file:// 등 */ }
     closeSheet();
+    $("#toast").classList.remove("toast-on");
     if ("speechSynthesis" in window) try { speechSynthesis.cancel(); } catch (e) {}
     ({ title: renderTitle, map: renderMap, play: renderPlay, result: renderResult, note: renderNote, ending: renderEnding }[v] || renderTitle)(params);
   }
@@ -178,7 +178,7 @@
           <div class="perf"></div>
           <div class="ticket-grid">
             <div class="route"><div class="tf"><b>FROM</b><span class="big">GMP</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">HND</span></div></div>
-            <div class="tf"><b>PASSENGER</b><span class="ja">金 / 漢江スチール</span></div>
+            <div class="tf"><b>PASSENGER</b><span class="ja">金リンゴ / ミレ製鉄</span></div>
             <div class="tf"><b>CLASS</b><span>영업 · 3박 4일</span></div>
           </div>
           <div class="barcode" aria-hidden="true"></div>
@@ -202,7 +202,7 @@
           ${any ? '<button class="btn ghost" data-act="reset">처음부터 다시하기</button>' : ""}
         </div>
         <p class="install-hint" id="installHint" hidden>앱처럼 쓰려면 <button data-act="install">📲 홈 화면에 설치</button></p>
-        <p class="credit">기획과 구성 by 곤사마</p>
+        <p class="credit">기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
       </div></div>`;
     Install.hint();
   }
@@ -212,10 +212,12 @@
     const items = SH.chapters.map((c) => {
       const st = S.chapters[c.id];
       const running = S.run && S.run.ch === c.id;
-      const cls = c.status !== "open" ? "soon" : st && st.done ? "done" : "open";
+      const locked = c.status === "open" && !unlocked(c);
+      const cls = c.status !== "open" || locked ? "soon" : st && st.done ? "done" : "open";
       const pill = c.status !== "open" ? '<span class="pill">준비 중</span>'
+        : locked ? '<span class="pill">🔒 잠김</span>'
         : running ? '<span class="pill mid">진행 중</span>'
-        : st && st.done ? `<span class="pill done">◎ ${st.bestCount}/${st.total}</span>`
+        : st && st.done ? `<span class="pill done">${st.earned || 0}/${st.max || 0}점</span>`
         : '<span class="pill go">플레이</span>';
       return `<li class="stop ${cls}">
         <span class="dot" aria-hidden="true">${st && st.done ? "✓" : c.no}</span>
@@ -227,7 +229,7 @@
     }).join("");
     app.innerHTML = `<div class="screen">
       ${bar({ title: '<span class="ja">出張スケジュール</span>', sub: "출장 일정표", back: "title", right: `<button class="icon-btn" data-act="note" aria-label="出張ノート">${ICON.book}</button>` })}
-      <div class="scroll">${gaugeCards()}<p class="sec-h">ITINERARY · 3박 4일</p><ol class="itin">${items}</ol></div></div>`;
+      <div class="scroll">${scoreCard()}<p class="sec-h">ITINERARY · 3박 4일</p><ol class="itin">${items}</ol></div></div>`;
   }
 
   /* ═══════════ 플레이 ═══════════ */
@@ -242,7 +244,7 @@
   function startChapter(id) {
     const ch = SH.getChapter(id);
     if (!ch || ch.status !== "open") return;
-    S.run = { ch: id, at: ch.start, hist: [], delta: { trust: 0, like: 0 }, flags: [], grades: { best: 0, awkward: 0, rude: 0 }, missed: [], got: [], order: {} };
+    S.run = { ch: id, at: ch.start, hist: [], earned: 0, max: 0, flags: [], grades: { best: 0, awkward: 0, rude: 0 }, missed: [], got: [], order: {} };
     save();
     go("play");
   }
@@ -252,7 +254,7 @@
     if (!s.ja) return "";
     const me = s.speaker === "自分";
     return `<div class="msg ${me ? "me" : "them"} ${isNew ? "new" : ""}">
-      <span class="who">${me ? "나 · <span class='ja'>金</span>" : ruby(s.speaker || "")}</span>
+      <span class="who">${me ? "나 · 김링고" : ruby(s.speaker || "")}</span>
       ${s.act ? `<span class="act">${ruby(s.act)}</span>` : ""}
       <div class="bubble"><p class="ja">${ruby(s.ja)}</p>
         <p class="ko" ${easy() ? "" : "hidden"}>${esc(s.ko)}</p>
@@ -262,7 +264,7 @@
   }
   function pickHTML(c, isNew) {
     return `<div class="msg me ${isNew ? "new" : ""}">
-      <span class="who">나 · <span class="ja">金</span> <span class="grade-tag g-${c.grade}">${GRADE[c.grade].mark}</span></span>
+      <span class="who">나 · 김링고 <span class="grade-tag g-${c.grade}">${GRADE[c.grade].mark}</span></span>
       <div class="bubble"><p class="ja">${ruby(c.ja)}</p>
         <p class="ko" ${easy() ? "" : "hidden"}>${esc(c.ko)}</p>
         <div class="tools">${ttsBtn(c.ja)}${koBtn()}${glossBtn(c.parts)}</div>${glossHTML(c.parts)}</div></div>`;
@@ -299,7 +301,7 @@
       return lineHTML(s, false) + (h.pick != null ? pickHTML(s.choices[h.pick], false) : "");
     });
     app.innerHTML = `<div class="screen" id="play">
-      ${bar({ title: `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`, sub: esc(ch.ko + " · " + ch.day), back: "map", right: miniGauges() + saveBtn() })}
+      ${bar({ title: `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`, sub: esc(ch.ko + " · " + ch.day), back: "map", right: miniScore() + saveBtn() })}
       <div class="scroll" id="logScroll"><div class="log" id="log">${logParts.join("")}</div></div>
       <div class="dock" id="dock"></div></div>`;
     showCurrent(false);
@@ -307,7 +309,7 @@
 
   function refreshMini() {
     const g = $(".mini-g");
-    if (g) g.outerHTML = miniGauges();
+    if (g) g.outerHTML = miniScore();
   }
 
   function scrollDown(smooth) {
@@ -369,11 +371,11 @@
     const c = s.choices[i];
     const best = s.choices.find((x) => x.grade === "best") || c;
     run.hist.push({ id: s.id, pick: i });
-    Object.entries(c.effects || {}).forEach(([k, v]) => (run.delta[k] = (run.delta[k] || 0) + v));
     if (c.flag && !run.flags.includes(c.flag)) run.flags.push(c.flag);
     run.grades[c.grade] = (run.grades[c.grade] || 0) + 1;
-    const xp = c.grade === "best" ? 3 : 1;
-    S.exp += xp;
+    const pt = POINTS[c.grade] || 0;
+    run.earned = (run.earned || 0) + pt;
+    run.max = (run.max || 0) + MAXPT;
     if (c.grade !== "best") (best.learn || []).forEach((k) => { if (!run.missed.includes(k)) run.missed.push(k); });
     const got = collect(ch.id, [...(best.learn || []), ...(c.learn || [])], run.got);
     run.at = c.next;
@@ -383,18 +385,16 @@
     $("#log").insertAdjacentHTML("beforeend", pickHTML(c, true));
     scrollDown(true);
     refreshMini();
-    feedbackSheet(ch, c, best, xp, got);
+    feedbackSheet(ch, c, best, pt, got);
   }
 
-  function feedbackSheet(ch, c, best, xp, got) {
+  function feedbackSheet(ch, c, best, pt, got) {
     const g = GRADE[c.grade];
-    const effs = Object.entries(c.effects || {}).filter(([, v]) => v)
-      .map(([k, v]) => `<span class="eff ${v > 0 ? "up" : "down"}">${GAUGE_NAME[k]} ${(v > 0 ? "▲" : "▼").repeat(Math.min(3, Math.abs(v)))}</span>`).join("");
     const gotList = got.map((k) => plain(ch.expressions[k].ja)).join(" · ");
     openSheet(`
       <div class="verdict v-${c.grade}"><span class="mark" aria-hidden="true">${g.mark}</span>
         <div><h2>${g.title}</h2><p>${g.sub}</p></div></div>
-      <div class="effects">${effs}<span class="eff up">日本語力 +${xp}</span></div>
+      <div class="effects"><span class="eff ${pt === MAXPT ? "up" : pt ? "" : "down"}">+${pt}점 / ${MAXPT}점</span><span class="eff">출장 점수 ${score().pct}점</span></div>
       <p class="note">${ruby(c.note)}</p>
       ${c.grade !== "best" ? `<div class="model"><b>원어민이라면</b>
         <p class="ja">${ruby(best.ja)}</p><p class="k">${esc(best.ko)}</p>
@@ -413,7 +413,7 @@
     const total = ch.scenes.filter((s) => s.choices).length;
     const bestNow = run.grades.best || 0;
     S.chapters[ch.id] = {
-      done: true, plays: (prev ? prev.plays : 0) + 1, delta: run.delta, flags: run.flags,
+      done: true, plays: (prev ? prev.plays : 0) + 1, earned: run.earned || 0, max: run.max || 0, flags: run.flags,
       grades: run.grades, missed: run.missed, got: run.got, total,
       bestCount: Math.max(bestNow, prev ? prev.bestCount : 0), lastBest: bestNow
     };
@@ -430,7 +430,7 @@
     const x = (k) => ch.expressions[k];
     const li = (k) => `<li><span class="ja">${ruby(x(k).ja)}</span>${x(k).trap ? '<span class="trap-b">주의</span>' : ""}<span class="k">${esc(x(k).ko)}</span></li>`;
     const perfect = r.lastBest === r.total;
-    const eff = (k) => { const v = r.delta[k] || 0; return `<span class="eff ${v > 0 ? "up" : v < 0 ? "down" : ""}">${GAUGE_NAME[k]} ${v > 0 ? "+" : ""}${v * STEP}</span>`; };
+    const chPct = r.max ? Math.round((r.earned / r.max) * 100) : 0;
     const next = SH.chapters.find((c) => c.no > ch.no);
     app.innerHTML = `<div class="screen">
       ${bar({ title: "챕터 결과", back: "map" })}
@@ -442,10 +442,10 @@
           <div><b class="g-best">${r.grades.best || 0}</b><span>◎ 자연스러움</span></div>
           <div><b class="g-awkward">${r.grades.awkward || 0}</b><span>△ 어색함</span></div>
           <div><b class="g-rude">${r.grades.rude || 0}</b><span>✕ 실례</span></div></div>
-        <div class="effects" style="justify-content:center">${eff("trust")}${eff("like")}</div>
+        <div class="effects" style="justify-content:center"><span class="eff ${perfect ? "up" : ""}">이번 장 ${r.earned} / ${r.max}점 (${chPct}점)</span><span class="eff">출장 점수 ${score().pct}점</span></div>
         ${r.missed.length ? `<div class="panel"><h3>놓친 핵심 표현 · ${r.missed.length}</h3><ul class="xlist">${r.missed.map(li).join("")}</ul></div>` : ""}
         <div class="panel"><h3>이번 챕터에서 모은 표현 · ${r.got.length}</h3><ul class="xlist">${r.got.map(li).join("")}</ul></div>
-        <p class="fine">${perfect ? "모든 선택이 ◎. 이대로 다음 챕터로!" : "다시 하면 다른 대화가 펼쳐집니다. 결과는 마지막 플레이 기준으로 게이지에 반영돼요."}</p>
+        <p class="fine">${perfect ? "모든 선택이 ◎. 이대로 다음 챕터로!" : "다시 하면 다른 대화가 펼쳐집니다. 점수는 마지막 플레이 기준으로 바뀌어요."}</p>
       </div>
       <div class="dock btn-col">
         ${next && next.status === "open" ? `<button class="btn primary" data-ch="${next.id}">다음 챕터 · <span class="ja">${ruby(next.title)}</span></button>` : ""}
@@ -456,9 +456,9 @@
 
   /* ═══════════ 시즌 엔딩 ═══════════ */
   function renderEnding() {
-    const g = gauges();
+    const s = score();
     const def = SH.seasonDef;
-    const e = def.endings.find((x) => x.when(g)) || def.endings[def.endings.length - 1];
+    const e = def.endings.find((x) => x.when(s.pct, flags())) || def.endings[def.endings.length - 1];
     const missed = [];
     SH.chapters.forEach((c) => (S.chapters[c.id] ? S.chapters[c.id].missed : []).forEach((k) => missed.push([c, k])));
     const retry = SH.chapters.filter((c) => S.chapters[c.id] && S.chapters[c.id].lastBest < S.chapters[c.id].total)
@@ -468,10 +468,11 @@
         <div class="stamp" aria-hidden="true">${e.id === "big" ? "祝" : e.id === "kentou" ? "検" : "再"}</div>
         <h2 class="ja">${ruby(e.ja)}</h2><p>${esc(e.ko)}</p></div>
         <div class="panel"><p class="note">${ruby(e.text)}</p></div>
-        ${gaugeCards()}
-        <div class="tally"><div><b>${Object.keys(S.notes).length}</b><span>획득 표현</span></div>
-          <div><b>${missed.length}</b><span>놓친 표현</span></div><div><b>Lv.${g.lv}</b><span>日本語力</span></div></div>
+        ${scoreCard()}
+        <div class="tally"><div><b>${s.pct}</b><span>출장 점수</span></div>
+          <div><b>${Object.keys(S.notes).length}</b><span>획득 표현</span></div><div><b>${missed.length}</b><span>놓친 표현</span></div></div>
         ${retry.length ? `<div class="panel"><h3>다시 해 볼 챕터</h3>${retry.map((c) => `<button class="btn" style="margin-top:8px" data-replay="${c.id}"><span class="ja">第${c.no}章 ${ruby(c.title)}</span></button>`).join("")}</div>` : ""}
+        <p class="credit">스틸링고 <span class="ja">出張編</span> · 기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
       </div><div class="dock"><button class="btn primary" data-act="note">出張ノート 복습</button></div></div>`;
   }
 
@@ -677,6 +678,7 @@
     if (d.ch != null) {
       const c = SH.getChapter(d.ch);
       if (!c || c.status !== "open") return toast("준비 중인 챕터예요. 다음 업데이트에서 열립니다.");
+      if (!unlocked(c)) return toast("출장은 순서대로! 앞 장을 먼저 마쳐 주세요.");
       if (S.run && S.run.ch === d.ch) return go("play");
       return startChapter(d.ch);
     }

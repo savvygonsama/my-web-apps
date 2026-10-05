@@ -10,7 +10,7 @@
 importScripts("data/index.js");
 
 const PREFIX = "shucchou-";
-const CACHE = PREFIX + "v3";
+const CACHE = PREFIX + "v4";
 const TIMEOUT = 2500;
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",

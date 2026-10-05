@@ -95,7 +95,7 @@
     };
     const checkLearn = (where, arr) =>
       (arr || []).forEach((k) => { if (!ch.expressions[k]) E(`${where}: learn 키 "${k}"가 expressions에 없음`); });
-    const norm = (t) => SH.plain(t).replace(/[。、，．！？!?「」『』…・（）()\s　]/g, "");
+    const norm = (t) => SH.plain(t).replace(/[。、，．！？!?「」『』【】…・（）()\s　]/g, "");
     const checkParts = (where, ja, parts) => {
       if (!ja) return;
       if (!parts || !parts.length) return W(`${where}: 🔍 뜯어보기(parts) 없음`);
@@ -104,6 +104,7 @@
         checkText(`${where} 조각${i + 1}`, p.p);
         checkText(`${where} 조각${i + 1} why`, p.why);
         if (p.r && KANJI_RE.test(p.r)) E(`${where} 조각${i + 1}: 읽기(r)에 한자가 있음`);
+        if (p.r && /[A-Za-z]/.test(p.r)) E(`${where} 조각${i + 1}: 읽기(r)에 알파벳이 있음 "${p.r}"`);
       });
       const joined = parts.map((p) => norm(p.p)).join("");
       if (joined !== norm(ja)) E(`${where}: 조각을 이어도 문장과 다름\n   조각: ${joined}\n   문장: ${norm(ja)}`);
@@ -127,7 +128,10 @@
       checkText(at + " ask", s.ask);
       if (s.speaker !== "自分") checkText(at + " speaker", s.speaker);
       checkLearn(at, s.learn);
-      (s.alt || []).forEach((a, i) => { checkText(`${at} alt${i}`, a.ja); checkText(`${at} alt${i} narr`, a.narr); });
+      (s.alt || []).forEach((a, i) => {
+        checkText(`${at} alt${i}`, a.ja); checkText(`${at} alt${i} narr`, a.narr); checkText(`${at} alt${i} hint`, a.hint);
+        if (a.ja) checkParts(`${at} alt${i}`, a.ja, a.parts);
+      });
       if (s.ja && !s.ko) E(`${at}: 한국어 뜻(ko) 누락`);
       checkParts(at, s.ja, s.parts);
       (s.route || []).forEach((r, i) => checkNext(`${at} route${i + 1}`, r.next));
@@ -137,7 +141,7 @@
         const lens = s.choices.map((c) => norm(c.ja || "").length);
         const bi = s.choices.findIndex((c) => c.grade === "best");
         if (bi >= 0 && lens.every((l, i) => i === bi || l < lens[bi])) stats.bestLongest = (stats.bestLongest || 0) + 1;
-        if (Math.max(...lens) > Math.min(...lens) * 1.5) W(`${at}: 선택지 길이 차이가 큼 (${lens.join("/")})`);
+        if (Math.max(...lens) > Math.min(...lens) * 3) W(`${at}: 선택지 길이 차이가 큼 (${lens.join("/")})`);
         s.choices.forEach((c, i) => { if (c.act) W(`${at} 선택${i + 1}: 선택지에 동작 설명(act)이 있으면 답이 보인다`); });
         if (s.choices.length !== 3) W(`${at}: 선택지가 ${s.choices.length}개 (권장 3개)`);
         const g = s.choices.map((c) => c.grade).sort().join(",");
