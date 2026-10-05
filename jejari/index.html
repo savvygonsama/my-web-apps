@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>제자리</title>
+<meta name="description" content="업무 중 긴장될 때 1분 동안 숨 고르기나 주의 돌리기를 따라 하는 휴식 도구입니다. 의료기기가 아니며 질병을 진단·치료하지 않습니다. 기록은 각자 휴대폰에만 저장됩니다.">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F3F0E9">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14181D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="제자리">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<div class="app">
+  <header class="top" id="top"></header>
+  <main id="view" tabindex="-1"></main>
+</div>
+<div id="live" class="sr-only" aria-live="polite"></div>
+<noscript><p>이 앱은 자바스크립트가 켜져 있어야 동작해요.</p></noscript>
+</body>
+</html>
