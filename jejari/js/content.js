@@ -4,7 +4,7 @@
    화면 문구의 원본은 기획 패키지의 copy deck(4-copy.md)이고, 여기 있는 것은 그 사본이다.
    위기 번호는 배포 직전과 해마다 한 번 다시 확인하고, 확인일도 같이 고친다. */
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 
 /* 상담 창구. 2026-10-05 보건복지부·129.go.kr에서 확인 */
 export const CONTACTS = {

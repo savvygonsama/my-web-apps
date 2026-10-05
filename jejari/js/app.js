@@ -365,7 +365,7 @@ function dizzyScreen() {
       h('p', { class: 'safety' }, '처음 겪는 가슴 통증, 심한 숨참, 쓰러질 것 같은 느낌이면 119로 전화하세요.'),
       link('119 전화', `tel:${CONTACTS.emergency.tel}`, 'block', { 'aria-label': '119에 전화하기' }),
       h('p', { class: 'muted' }, '괜찮아지면 숨 대신 눈에 보이는 것으로 이어 갈 수 있어요.')),
-    actions(btn('호흡 없이 이어 하기', () => done('continue'), 'primary block'), btn('여기서 끝내기', () => done('end'))))));
+    actions(btn('호흡 없이 이어 하기', () => done('continue'), 'primary block'), btn('여기서 끝내기', () => done('end')))));
 }
 
 /* 호흡 단계를 돌리고, 바꾸기·어지러움을 처리한다.
@@ -800,7 +800,7 @@ function onboard() {
     h('h2', {}, '숨에 집중하면 오히려 더 불편하거나 어지러웠던 적이 있나요?'),
     screeningButtons((msg) => { qBox.replaceWith(result); result.append(h('p', { class: 'result' }, msg), start); start.focus(); }));
   render({},
-    h('div', { class: 'btn-row' }, h('span', { class: 'grow' }),
+    h('div', { class: 'btn-row top-action' }, h('span', { class: 'grow' }),
       btn('지금 바로 SOS', () => {
         saveSettings({ onboarded: true, skippedOnboarding: true, firstSosNotice: true, askScreenAfter: true });
         go('sos?route=breath');

@@ -6,7 +6,7 @@
    새 버전을 올릴 때는 CACHE의 숫자를 반드시 올린다. 그래야 브라우저가 바뀐 것을 알아챈다.
    새 버전은 받아 두기만 하고 바로 바꾸지 않는다. 호흡 중에 화면이 바뀌면 안 되기 때문이다.
    앱을 다시 열 때 화면 쪽이 'skip-waiting'을 보내면 그때 갈아 끼운다. */
-const CACHE = 'jejari-v1';
+const CACHE = 'jejari-v2';
 const ASSETS = [
   './',
   './index.html',
