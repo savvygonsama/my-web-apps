@@ -9,8 +9,8 @@
    - 나머지(HTML·JS·CSS·데이터): 네트워크 먼저, 2.5초 안에 안 오면 저장본 → 인터넷이 없어도 열린다 */
 importScripts("data/index.js");
 
-const PREFIX = "shucchou-";
-const CACHE = PREFIX + "v4";
+const PREFIX = (self.SH_APP && self.SH_APP.cachePrefix) || "shucchou-";
+const CACHE = PREFIX + "v5";
 const TIMEOUT = 2500;
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",

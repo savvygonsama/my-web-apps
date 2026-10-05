@@ -38,7 +38,7 @@
       .replace(/〜/g, "");
 
   /* ── 저장 ───────────────────────────────── */
-  const KEY = "shucchou.v1";
+  const KEY = (self.SH_APP && self.SH_APP.storeKey) || "shucchou.v1";
   SH.store = {
     load() {
       try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; }

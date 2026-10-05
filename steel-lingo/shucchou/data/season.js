@@ -6,6 +6,7 @@ SH.season({
   endings: [
     {
       id: "big",
+      stamp: "祝",
       ja: "大口受注{おおぐちじゅちゅう}",
       ko: "대형 수주",
       when: (score) => score >= 90,
@@ -13,6 +14,7 @@ SH.season({
     },
     {
       id: "kentou",
+      stamp: "検",
       ja: "検討{けんとう}します",
       ko: "보류",
       when: (score) => score >= 60,
@@ -20,6 +22,7 @@ SH.season({
     },
     {
       id: "denaoshi",
+      stamp: "再",
       ja: "出直{でなお}し",
       ko: "재도전",
       when: () => true,

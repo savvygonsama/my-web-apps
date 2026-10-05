@@ -6,6 +6,7 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const app = $("#app");
   const html = document.documentElement;
+  const CFG = self.SH_APP || {};
 
   /* ═══════════ 상태 ═══════════ */
   const fresh = () => ({
@@ -83,7 +84,7 @@
     gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     book: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>'
   };
-  const MASCOT = `<svg class="mascot" viewBox="0 0 100 80" role="img" aria-label="출장 가는 코일 마스코트">
+  const MASCOT = `<svg class="mascot" viewBox="0 0 100 80" role="img" aria-label="${CFG.mascotLabel}">
     <g transform="translate(2 6)">
       <ellipse cx="56" cy="29" rx="10" ry="19" class="lg-body"/>
       <rect x="20" y="10" width="36" height="38" class="lg-fill"/>
@@ -119,14 +120,14 @@
     const s = score();
     const done = SH.chapters.filter((c) => S.chapters[c.id] && S.chapters[c.id].done).length;
     return `<div class="scorecard">
-      <div class="sc-top"><span class="sc-label">출장 점수</span>
+      <div class="sc-top"><span class="sc-label">${CFG.scoreLabel}</span>
         <span class="sc-num">${s.max ? s.pct : "–"}<small>${s.max ? "점" : ""}</small></span></div>
-      <div class="meter" role="meter" aria-label="출장 점수" aria-valuenow="${s.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${s.pct}%"></i></div>
+      <div class="meter" role="meter" aria-label="${CFG.scoreLabel}" aria-valuenow="${s.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${s.pct}%"></i></div>
       <div class="sc-sub"><span>${done} / ${SH.chapters.length}장 완료</span><span>모은 표현 ${Object.keys(S.notes).length}개</span></div></div>`;
   }
   function miniScore() {
     const s = score();
-    return `<div class="mini-g" aria-label="출장 점수 ${s.pct}점"><span class="mini-num">${s.max ? s.pct : "–"}<small>점</small></span>
+    return `<div class="mini-g" aria-label="${CFG.scoreLabel} ${s.pct}점"><span class="mini-num">${s.max ? s.pct : "–"}<small>점</small></span>
       <span class="meter"><i style="width:${s.pct}%"></i></span></div>`;
   }
 
@@ -172,14 +173,14 @@
         <p class="byline">STEEL LINGO SERIES</p>
         <div class="ticket">
           <div class="ticket-top">${MASCOT}
-            <div><h1 class="logo-title"><span class="series">스틸링고</span><span class="ja"><ruby>出張<rt>しゅっちょう</rt></ruby><ruby>編<rt>へん</rt></ruby></span></h1>
-            <p class="tagline">철강맨의 일본 출장 서바이벌</p></div>
+            <div><h1 class="logo-title"><span class="series">스틸링고</span><span class="ja">${CFG.titleHTML}</span></h1>
+            <p class="tagline">${CFG.tagline}</p></div>
           </div>
           <div class="perf"></div>
           <div class="ticket-grid">
-            <div class="route"><div class="tf"><b>FROM</b><span class="big">GMP</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">HND</span></div></div>
-            <div class="tf"><b>PASSENGER</b><span class="ja">金リンゴ / ミレ製鉄</span></div>
-            <div class="tf"><b>CLASS</b><span>영업 · 3박 4일</span></div>
+            <div class="route"><div class="tf"><b>FROM</b><span class="big">${CFG.from}</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">${CFG.to}</span></div></div>
+            <div class="tf"><b>PASSENGER</b><span class="ja">${CFG.passenger}</span></div>
+            <div class="tf"><b>CLASS</b><span>${CFG.cls}</span></div>
           </div>
           <div class="barcode" aria-hidden="true"></div>
         </div>
@@ -195,10 +196,10 @@
           ${run
             ? `<button class="btn primary resume" data-act="resume"><span>이어하기 · <span class="ja">第${run.no}章 ${esc(plain(run.title))}</span></span>
                  ${S.savedAt ? `<small>마지막 저장 ${fmtTime(S.savedAt)}</small>` : ""}</button>
-               <div class="btn-row"><button class="btn" data-act="map">출장 일정표</button>
-                 <button class="btn" data-act="note"><span class="ja">出張ノート</span><small>${nNotes}</small></button></div>`
-            : `<button class="btn primary" data-act="map">${any ? "출장 일정표" : "출장 떠나기"}</button>
-               <button class="btn" data-act="note"><span class="ja">出張ノート</span><small>${nNotes}</small></button>`}
+               <div class="btn-row"><button class="btn" data-act="map">${CFG.trip} 일정표</button>
+                 <button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span><small>${nNotes}</small></button></div>`
+            : `<button class="btn primary" data-act="map">${any ? CFG.trip + " 일정표" : CFG.trip + " 떠나기"}</button>
+               <button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span><small>${nNotes}</small></button>`}
           ${any ? '<button class="btn ghost" data-act="reset">처음부터 다시하기</button>' : ""}
         </div>
         <p class="install-hint" id="installHint" hidden>앱처럼 쓰려면 <button data-act="install">📲 홈 화면에 설치</button></p>
@@ -228,8 +229,8 @@
         </button></li>`;
     }).join("");
     app.innerHTML = `<div class="screen">
-      ${bar({ title: '<span class="ja">出張スケジュール</span>', sub: "출장 일정표", back: "title", right: `<button class="icon-btn" data-act="note" aria-label="出張ノート">${ICON.book}</button>` })}
-      <div class="scroll">${scoreCard()}<p class="sec-h">ITINERARY · 3박 4일</p><ol class="itin">${items}</ol></div></div>`;
+      ${bar({ title: `<span class="ja">${CFG.mapTitle}</span>`, sub: CFG.trip + " 일정표", back: "title", right: `<button class="icon-btn" data-act="note" aria-label="${CFG.noteName}">${ICON.book}</button>` })}
+      <div class="scroll">${scoreCard()}<p class="sec-h">${CFG.itin}</p><ol class="itin">${items}</ol></div></div>`;
   }
 
   /* ═══════════ 플레이 ═══════════ */
@@ -394,7 +395,7 @@
     openSheet(`
       <div class="verdict v-${c.grade}"><span class="mark" aria-hidden="true">${g.mark}</span>
         <div><h2>${g.title}</h2><p>${g.sub}</p></div></div>
-      <div class="effects"><span class="eff ${pt === MAXPT ? "up" : pt ? "" : "down"}">+${pt}점 / ${MAXPT}점</span><span class="eff">출장 점수 ${score().pct}점</span></div>
+      <div class="effects"><span class="eff ${pt === MAXPT ? "up" : pt ? "" : "down"}">+${pt}점 / ${MAXPT}점</span><span class="eff">${CFG.scoreLabel} ${score().pct}점</span></div>
       <p class="note">${ruby(c.note)}</p>
       ${c.grade !== "best" ? `<div class="model"><b>원어민이라면</b>
         <p class="ja">${ruby(best.ja)}</p><p class="k">${esc(best.ko)}</p>
@@ -442,7 +443,7 @@
           <div><b class="g-best">${r.grades.best || 0}</b><span>◎ 자연스러움</span></div>
           <div><b class="g-awkward">${r.grades.awkward || 0}</b><span>△ 어색함</span></div>
           <div><b class="g-rude">${r.grades.rude || 0}</b><span>✕ 실례</span></div></div>
-        <div class="effects" style="justify-content:center"><span class="eff ${perfect ? "up" : ""}">이번 장 ${r.earned} / ${r.max}점 (${chPct}점)</span><span class="eff">출장 점수 ${score().pct}점</span></div>
+        <div class="effects" style="justify-content:center"><span class="eff ${perfect ? "up" : ""}">이번 장 ${r.earned} / ${r.max}점 (${chPct}점)</span><span class="eff">${CFG.scoreLabel} ${score().pct}점</span></div>
         ${r.missed.length ? `<div class="panel"><h3>놓친 핵심 표현 · ${r.missed.length}</h3><ul class="xlist">${r.missed.map(li).join("")}</ul></div>` : ""}
         <div class="panel"><h3>이번 챕터에서 모은 표현 · ${r.got.length}</h3><ul class="xlist">${r.got.map(li).join("")}</ul></div>
         <p class="fine">${perfect ? "모든 선택이 ◎. 이대로 다음 챕터로!" : "다시 하면 다른 대화가 펼쳐집니다. 점수는 마지막 플레이 기준으로 바뀌어요."}</p>
@@ -465,15 +466,15 @@
       .sort((a, b) => S.chapters[a.id].lastBest / S.chapters[a.id].total - S.chapters[b.id].lastBest / S.chapters[b.id].total).slice(0, 2);
     app.innerHTML = `<div class="screen">${bar({ title: "シーズン1 ENDING", back: "map" })}
       <div class="scroll"><div class="result-head"><div class="cn">ENDING</div>
-        <div class="stamp" aria-hidden="true">${e.id === "big" ? "祝" : e.id === "kentou" ? "検" : "再"}</div>
+        <div class="stamp" aria-hidden="true">${e.stamp || "済"}</div>
         <h2 class="ja">${ruby(e.ja)}</h2><p>${esc(e.ko)}</p></div>
         <div class="panel"><p class="note">${ruby(e.text)}</p></div>
         ${scoreCard()}
-        <div class="tally"><div><b>${s.pct}</b><span>출장 점수</span></div>
+        <div class="tally"><div><b>${s.pct}</b><span>${CFG.scoreLabel}</span></div>
           <div><b>${Object.keys(S.notes).length}</b><span>획득 표현</span></div><div><b>${missed.length}</b><span>놓친 표현</span></div></div>
         ${retry.length ? `<div class="panel"><h3>다시 해 볼 챕터</h3>${retry.map((c) => `<button class="btn" style="margin-top:8px" data-replay="${c.id}"><span class="ja">第${c.no}章 ${ruby(c.title)}</span></button>`).join("")}</div>` : ""}
-        <p class="credit">스틸링고 <span class="ja">出張編</span> · 기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
-      </div><div class="dock"><button class="btn primary" data-act="note">出張ノート 복습</button></div></div>`;
+        <p class="credit">스틸링고 <span class="ja">${CFG.titleText}</span> · 기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
+      </div><div class="dock"><button class="btn primary" data-act="note"><span class="ja">${CFG.noteName}</span> 복습</button></div></div>`;
   }
 
   /* ═══════════ 出張ノート ═══════════ */
@@ -497,8 +498,8 @@
       .map(([k, l]) => `<button role="tab" aria-selected="${noteState.tab === k}" data-tab="${k}">${l}</button>`).join("");
     let body = "", dock = "";
     if (!list.length) {
-      body = `<div class="empty">아직 모은 표현이 없어요.<br>출장을 떠나면 장면에서 배운 표현이<br>여기에 자동으로 쌓입니다.</div>`;
-      dock = `<button class="btn primary" data-act="map">출장 일정표로</button>`;
+      body = `<div class="empty">아직 모은 표현이 없어요.<br>${CFG.trip}을 떠나면 장면에서 배운 표현이<br>여기에 자동으로 쌓입니다.</div>`;
+      dock = `<button class="btn primary" data-act="map">${CFG.trip} 일정표로</button>`;
     } else if (noteState.tab === "list") {
       let lastCh = null;
       body = list.map((e) => {
@@ -521,7 +522,7 @@
       dock = quizDock();
     }
     app.innerHTML = `<div class="screen">
-      ${bar({ title: '<span class="ja">出張ノート</span>', sub: `모은 표현 ${list.length}개`, back: "back" })}
+      ${bar({ title: `<span class="ja">${CFG.noteName}</span>`, sub: `모은 표현 ${list.length}개`, back: "back" })}
       <div class="tabs" role="tablist">${tabs}</div>
       <div class="scroll">${body}</div>${dock ? `<div class="dock">${dock}</div>` : ""}</div>`;
   }
@@ -605,7 +606,7 @@
   }
   function resetSheet() {
     openSheet(`<h2 class="set-h">처음부터 다시할까요?</h2>
-      <p class="note">게이지, 챕터 기록, <span class="ja">出張ノート</span>가 모두 지워집니다. 난이도는 그대로 둡니다.</p>
+      <p class="note">게이지, 챕터 기록, <span class="ja">${CFG.noteName}</span>가 모두 지워집니다. 난이도는 그대로 둡니다.</p>
       <div class="btn-row"><button class="btn" data-act="close">취소</button><button class="btn primary" data-act="doreset">지우고 시작</button></div>`, { label: "초기화 확인" });
   }
 
@@ -678,7 +679,7 @@
     if (d.ch != null) {
       const c = SH.getChapter(d.ch);
       if (!c || c.status !== "open") return toast("준비 중인 챕터예요. 다음 업데이트에서 열립니다.");
-      if (!unlocked(c)) return toast("출장은 순서대로! 앞 장을 먼저 마쳐 주세요.");
+      if (!unlocked(c)) return toast(CFG.trip + "은 순서대로! 앞 장을 먼저 마쳐 주세요.");
       if (S.run && S.run.ch === d.ch) return go("play");
       return startChapter(d.ch);
     }
@@ -750,7 +751,7 @@
 
   /* ═══════════ 시작 ═══════════ */
   applySettings();
-  app.innerHTML = '<div class="loading">출장 준비 중…</div>';
+  app.innerHTML = `<div class="loading">${CFG.trip} 준비 중…</div>`;
   SH.loadData("data/").then((res) => {
     const bad = res.filter((r) => !r.ok);
     if (bad.length) console.warn("불러오지 못한 데이터:", bad.map((r) => r.f).join(", "));
