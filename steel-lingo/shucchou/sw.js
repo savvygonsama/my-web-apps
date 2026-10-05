@@ -1,4 +1,4 @@
-/* 스틸링고 出張？ — 서비스워커
+/* 스틸링고 出張編 — 서비스워커
 
    같은 주소(savvygonsama.github.io)에 스틸링고 Lite·Pro 등 다른 앱이 함께 산다.
    캐시 저장소는 주소 단위로 공유되므로, 지울 때는 "shucchou-"로 시작하는 내 것만 지운다.
@@ -10,7 +10,7 @@
 importScripts("data/index.js");
 
 const PREFIX = "shucchou-";
-const CACHE = PREFIX + "v1";
+const CACHE = PREFIX + "v2";
 const TIMEOUT = 2500;
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",

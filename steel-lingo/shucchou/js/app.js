@@ -1,4 +1,4 @@
-/* 스틸링고 出張？ — 화면과 진행.
+/* 스틸링고 出張編 — 화면과 진행.
    화면: 표지(title) → 일정표(map) → 플레이(play) → 챕터 결과(result) / 出張ノート(note) / 시즌 엔딩(ending) */
 (function () {
   "use strict";
@@ -10,7 +10,7 @@
   /* ═══════════ 상태 ═══════════ */
   const fresh = () => ({
     v: 1,
-    settings: { furi: true, ko: false, rate: 1, big: false },
+    settings: { furi: true, ko: false, easy: false, rate: 1, big: false },
     exp: 0,
     chapters: {}, // id → { done, plays, delta, flags, grades, missed, bestCount }
     run: null, // { ch, at, hist:[{id,pick?}], delta, flags, grades, missed, order:{} }
@@ -41,6 +41,7 @@
   function applySettings() {
     html.classList.toggle("no-furi", !S.settings.furi);
     html.classList.toggle("big", !!S.settings.big);
+    html.classList.toggle("easy", !!S.settings.easy);
   }
 
   /* ═══════════ 음성 ═══════════ */
@@ -159,10 +160,10 @@
     const nNotes = Object.keys(S.notes).length;
     app.innerHTML = `<div class="screen">
       <div class="scroll title-scroll">
-        <p class="byline">STEEL LINGO · 出張編</p>
+        <p class="byline">STEEL LINGO SERIES</p>
         <div class="ticket">
           <div class="ticket-top">${MASCOT}
-            <div><h1 class="logo-title ja"><ruby>出張<rt>しゅっちょう</rt></ruby><span class="q">？</span></h1>
+            <div><h1 class="logo-title"><span class="series">스틸링고</span><span class="ja"><ruby>出張<rt>しゅっちょう</rt></ruby><ruby>編<rt>へん</rt></ruby></span></h1>
             <p class="tagline">철강맨의 일본 출장 서바이벌</p></div>
           </div>
           <div class="perf"></div>
@@ -185,6 +186,7 @@
           ${any ? '<button class="btn ghost" data-act="reset">처음부터 다시하기</button>' : ""}
         </div>
         <p class="install-hint" id="installHint" hidden>앱처럼 쓰려면 <button data-act="install">📲 홈 화면에 설치</button></p>
+        <p class="credit">기획과 구성 by 곤사마</p>
       </div></div>`;
     Install.hint();
   }
@@ -238,17 +240,27 @@
       ${s.act ? `<span class="act">${ruby(s.act)}</span>` : ""}
       <div class="bubble"><p class="ja">${ruby(s.ja)}</p>
         <p class="ko" ${S.settings.ko ? "" : "hidden"}>${esc(s.ko)}</p>
-        <div class="tools">${ttsBtn(s.ja)}${koBtn()}</div></div>
+        <div class="tools">${ttsBtn(s.ja)}${koBtn()}${glossBtn(s.parts)}</div>${glossHTML(s.parts)}</div>
       ${s.hint ? `<div class="hint"><b>💡 포인트</b> ${ruby(s.hint)}</div>` : ""}
     </div>`;
   }
   function pickHTML(c, isNew) {
     return `<div class="msg me ${isNew ? "new" : ""}">
       <span class="who">나 · <span class="ja">金</span> <span class="grade-tag g-${c.grade}">${GRADE[c.grade].mark}</span></span>
-      ${c.act ? `<span class="act">${ruby(c.act)}</span>` : ""}
       <div class="bubble"><p class="ja">${ruby(c.ja)}</p>
         <p class="ko" ${S.settings.ko ? "" : "hidden"}>${esc(c.ko)}</p>
-        <div class="tools">${ttsBtn(c.ja)}${koBtn()}</div></div></div>`;
+        <div class="tools">${ttsBtn(c.ja)}${koBtn()}${glossBtn(c.parts)}</div>${glossHTML(c.parts)}</div></div>`;
+  }
+
+  /* 🔍 뜯어보기 — 스틸링고와 같은 조각 · 읽기 · 뜻과 역할 표. 초보자용이라 기본은 접어 둔다 */
+  const glossBtn = (parts) => (parts && parts.length ? `<button class="chip" data-gloss aria-expanded="false">🔍 뜯어보기</button>` : "");
+  function glossHTML(parts) {
+    if (!parts || !parts.length) return "";
+    return `<div class="gbody" hidden><table class="parts">
+      <tr><th>조각 · 읽기</th><th>뜻과 역할</th></tr>
+      ${parts.map((p) => `<tr><td class="p"><span class="ja">${ruby(p.p)}</span><span class="r ja">${esc(p.r)}</span></td>
+        <td class="w"><b>${esc(p.w)}</b>${p.why ? `<span class="why">${ruby(p.why)}</span>` : ""}</td></tr>`).join("")}
+    </table></div>`;
   }
 
   function collect(chId, keys, list) {
@@ -303,12 +315,12 @@
       save();
       const order = run.order[s.id];
       dock.innerHTML = `<div class="choices-wrap">
-        <div class="ask"><span>${esc(s.ask || "어떻게 말할까?")}</span><button class="chip" data-cko aria-pressed="${S.settings.ko}">뜻 보기</button></div>
+        <div class="ask"><span>${ruby(s.ask || "어떻게 말할까?")}</span><span class="pill easy-pill">쉬움 모드</span></div>
         <div class="choices">${order.map((i, n) => {
           const c = s.choices[i];
+          // 선택지에는 동작 설명·뜻을 보이지 않는다(일본어만 보고 고르게). 쉬움 모드에서만 뜻을 단다
           return `<button class="choice" data-pick="${i}"><span class="n">${n + 1}</span><span class="cb">
-            ${c.act ? `<span class="ca">${ruby(c.act)}</span>` : ""}
-            <span class="ja">${ruby(c.ja)}</span><span class="ck" ${S.settings.ko ? "" : "hidden"}>${esc(c.ko)}</span></span></button>`;
+            <span class="ja">${ruby(c.ja)}</span><span class="ck">${esc(c.ko)}</span></span></button>`;
         }).join("")}</div></div>`;
     } else if (s.end) {
       dock.innerHTML = `<button class="btn primary" data-act="finish">챕터 결과 보기</button>`;
@@ -323,7 +335,13 @@
     const s = ch.byId[run.at];
     if (!s || s.choices || s.end) return;
     run.hist.push({ id: s.id });
-    run.at = s.next;
+    // route: 이 챕터에서 지금까지 고른 성적·플래그로 다음 장면이 갈린다
+    const r = (s.route || []).find((x) =>
+      (x.best == null || (run.grades.best || 0) >= x.best) &&
+      (x.rude == null || (run.grades.rude || 0) >= x.rude) &&
+      (x.ifFlag == null || flags().has(x.ifFlag)));
+    if (r && r.flag && !run.flags.includes(r.flag)) run.flags.push(r.flag);
+    run.at = r ? r.next : s.next;
     save();
     showCurrent(true);
   }
@@ -363,9 +381,8 @@
       <div class="effects">${effs}<span class="eff up">日本語力 +${xp}</span></div>
       <p class="note">${ruby(c.note)}</p>
       ${c.grade !== "best" ? `<div class="model"><b>원어민이라면</b>
-        ${best.act ? `<p class="k">(${ruby(best.act)})</p>` : ""}
         <p class="ja">${ruby(best.ja)}</p><p class="k">${esc(best.ko)}</p>
-        <div class="tools">${ttsBtn(best.ja)}</div></div>` : ""}
+        <div class="tools">${ttsBtn(best.ja)}${glossBtn(best.parts)}</div>${glossHTML(best.parts)}</div>` : ""}
       ${gotList ? `<p class="got">📒 <span class="ja">ノート</span>에 추가: <span class="ja">${esc(gotList)}</span></p>` : ""}
       <button class="btn primary" data-act="cont">계속</button>`, { onClose: () => showCurrent(true), label: g.title });
   }
@@ -566,13 +583,15 @@
     openSheet(`<h2 class="set-h">설정</h2>
       ${sw("furi", "후리가나 표시", "한자 위 읽기. 익숙해지면 꺼 보세요")}
       ${sw("ko", "한국어 뜻 항상 보기", "끄면 '뜻' 버튼을 눌렀을 때만 보여요")}
+      ${sw("easy", "쉬움 모드", "선택지 밑에 한국어 뜻을 달아 줘요. 처음 하는 분용")}
       ${sw("big", "큰 글씨", "일본어 문장을 크게")}
       <div class="row tts"><span class="rl">발음 속도</span><div class="seg">
         <button data-rate="0.75" aria-pressed="${st.rate === 0.75}">느리게</button><button data-rate="1" aria-pressed="${st.rate === 1}">보통</button></div></div>
       <div class="row"><span class="rl">홈 화면에 설치<small>앱처럼 열리고, 인터넷 없이도 돌아가요</small></span><button class="chip" data-act="install">방법 보기</button></div>
       <div class="row"><span class="rl danger">처음부터 다시하기<small>진행·노트를 모두 지웁니다</small></span><button class="chip danger" data-act="reset">초기화</button></div>
       <p class="fine">진행 기록은 이 기기에만 저장됩니다. 발음은 기기에 일본어 음성이 있을 때만 나와요(아이폰·안드로이드는 대부분 기본 지원).<br>
-      글꼴 Noto Sans JP · Pretendard (SIL OFL 1.1) · 스틸링고 出張？ 기획·구성 곤사마</p>
+      글꼴 Noto Sans JP · Pretendard (SIL OFL 1.1)</p>
+      <p class="credit">스틸링고 <span class="ja">出張編</span> · 기획과 구성 by 곤사마</p>
       <button class="btn primary" data-act="close">닫기</button>`, { label: "설정" });
   }
   function resetSheet() {
@@ -638,10 +657,12 @@
       t.setAttribute("aria-pressed", String(!ko.hidden));
       return;
     }
-    if (d.cko != null) {
-      const on = t.getAttribute("aria-pressed") !== "true";
-      t.setAttribute("aria-pressed", String(on));
-      document.querySelectorAll(".choice .ck").forEach((el) => (el.hidden = !on));
+    if (d.gloss != null) {
+      const g = t.closest(".bubble, .model").querySelector(".gbody");
+      g.hidden = !g.hidden;
+      t.setAttribute("aria-expanded", String(!g.hidden));
+      t.textContent = g.hidden ? "🔍 뜯어보기" : "🔍 닫기";
+      if (!g.hidden) g.scrollIntoView({ block: "nearest", behavior: "smooth" });
       return;
     }
     if (d.pick != null) return pick(+d.pick);
@@ -700,8 +721,8 @@
     save();
     applySettings();
     if (k === "ko") {
-      document.querySelectorAll(".bubble .ko, .choice .ck").forEach((el) => (el.hidden = !S.settings.ko));
-      document.querySelectorAll("[data-ko], [data-cko]").forEach((el) => el.setAttribute("aria-pressed", String(S.settings.ko)));
+      document.querySelectorAll(".bubble .ko").forEach((el) => (el.hidden = !S.settings.ko));
+      document.querySelectorAll("[data-ko]").forEach((el) => el.setAttribute("aria-pressed", String(S.settings.ko)));
     }
   });
 

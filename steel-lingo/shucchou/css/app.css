@@ -1,4 +1,4 @@
-/* 스틸링고 出張？ — 스틸링고 Lite·Pro와 같은 색·글꼴 체계 */
+/* 스틸링고 出張編 — 스틸링고 Lite·Pro와 같은 색·글꼴 체계 */
 @font-face { font-family: "NotoSansJP"; src: url("../fonts/notojp-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "NotoSansJP"; src: url("../fonts/notojp-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Pretendard"; src: url("../fonts/pretendard-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -383,3 +383,25 @@ rt { font-size: .5em; font-weight: 400; color: var(--ink-3); letter-spacing: 0; 
 }
 .loading { display: grid; place-items: center; height: 100%; color: var(--ink-3); font-size: 14px; }
 .has-tts .row.tts { display: flex !important; }
+
+/* ── R2: 쉬움 모드 · 뜯어보기 · 제목 ─── */
+.choice .ck, .easy-pill { display: none; }
+.easy .choice .ck { display: block; }
+.easy .easy-pill { display: inline-block; }
+.gbody { margin-top: 10px; overflow-x: auto; }
+.gbody[hidden] { display: none; }
+table.parts { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.55; }
+table.parts th { text-align: left; font-size: 11.5px; font-weight: 700; color: var(--ink-3); padding: 4px 6px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+table.parts td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.parts tr:last-child td { border-bottom: 0; }
+table.parts td.p { width: 46%; color: var(--ink); }
+table.parts td.p .ja { display: block; font-size: 15.5px; line-height: 1.9; }
+table.parts td.p .r { display: block; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); }
+table.parts td.w { color: var(--ink-2); }
+table.parts td.w b { color: var(--ink); }
+table.parts rt { font-size: .55em; }
+[data-gloss][aria-expanded="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.logo-title .series { display: block; font-family: var(--sans); font-size: 15px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); margin-bottom: 2px; }
+.logo-title .ja { display: block; }
+.credit { margin: 18px 0 0; text-align: center; font-size: 12.5px; color: var(--ink-3); letter-spacing: .02em; }
+table.parts td.w .why { display: block; font-size: 12.5px; line-height: 1.75; margin-top: 1px; }

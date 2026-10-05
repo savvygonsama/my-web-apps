@@ -11,6 +11,7 @@
 | 🚂 **자정 열차** | 선택으로 이야기를 만들어가는 인터랙티브 소설. 장면 65개, 결말 11개(숨은 결말 1개) | [`midnight-train/`](midnight-train/) |
 | 🏭 **스틸링고 Lite** | 철강·자동차 업계 일본어 입문. 생활 소재로 가볍게 시작 | [`steel-lingo/lite/`](steel-lingo/lite/) |
 | 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
+| ✈️ **스틸링고 出張編** | 일본 출장 서바이벌 분기형 스토리. 고객사 방문·회식·상담에서 경어 수위를 골라 익힘. 문장마다 🔍 뜯어보기 | [`steel-lingo/shucchou/`](steel-lingo/shucchou/) |
 | 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |

@@ -1,7 +1,7 @@
 {
-  "name": "스틸링고 出張？ — 철강맨의 일본 출장 서바이벌",
-  "short_name": "出張？",
-  "description": "선택과 결과로 익히는 비즈니스 일본어. 일본 출장을 앞둔 철강 영업 직장인을 위한 분기형 스토리 게임",
+  "name": "스틸링고 出張編",
+  "short_name": "出張編",
+  "description": "기획과 구성 by 곤사마 · 선택과 결과로 익히는 비즈니스 일본어. 일본 출장을 앞둔 철강 영업 직장인을 위한 분기형 스토리 게임",
   "id": "/steel-lingo/shucchou/",
   "start_url": "./index.html",
   "scope": "./",
