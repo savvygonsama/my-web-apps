@@ -4,9 +4,9 @@
    위기 화면도 저장본에 들어 있으므로 연결이 끊겨도 열린다.
 
    새 버전을 올릴 때는 CACHE의 숫자를 반드시 올린다. 그래야 브라우저가 바뀐 것을 알아챈다.
-   새 버전은 받아 두기만 하고 바로 바꾸지 않는다. 호흡 중에 화면이 바뀌면 안 되기 때문이다.
-   앱을 다시 열 때 화면 쪽이 'skip-waiting'을 보내면 그때 갈아 끼운다. */
-const CACHE = 'jejari-v2';
+   새 버전은 받자마자 갈아 끼운다. 이미 열린 화면은 파일을 다시 받지 않으므로 호흡 중인 화면은 그대로 돈다.
+   화면 쪽은 세션 중이 아닐 때만 새로고침한다(app.js). */
+const CACHE = 'jejari-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -26,7 +26,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) => Promise.all(
       ASSETS.map((u) => fetch(new Request(u, { cache: 'reload' })).then((res) => { if (res.ok) return c.put(u, res); }))
-    ))
+    )).then(() => self.skipWaiting())
   );
 });
 

@@ -1223,12 +1223,16 @@ if (window.matchMedia) {
 }
 window.addEventListener('hashchange', route);
 
-/* 새 버전은 세션 중에 바꾸지 않는다. 앱을 새로 열 때(세션이 없을 때) 적용한다. */
+/* 새 버전이 들어오면 세션 중이 아닐 때만 새로고침한다. 호흡 중인 화면은 건드리지 않는다.
+   처음 방문해 서비스워커가 막 자리를 잡을 때는 새로고침하지 않는다(첫 안내를 읽는 중일 수 있다). */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   let reloading = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloading && !S) { reloading = true; location.reload(); } });
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !reloading && !S) { reloading = true; location.reload(); }
+  });
   navigator.serviceWorker.register('./sw.js').then((reg) => {
-    if (reg.waiting && navigator.serviceWorker.controller) reg.waiting.postMessage({ type: 'skip-waiting' });
+    if (reg.waiting && hadController) reg.waiting.postMessage({ type: 'skip-waiting' });
     reg.addEventListener('updatefound', () => {
       const nw = reg.installing;
       if (!nw) return;
