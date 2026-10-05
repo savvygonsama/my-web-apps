@@ -6,7 +6,7 @@ SH.chapter({
   day: "DAY 1 · 오전",
   title: "出国{しゅっこく}",
   ko: "출국",
-  place: "인천공항 → 하네다",
+  place: "김포공항 → 하네다",
   summary: "기내식 주문부터 입국심사의 '출장 목적은?'까지.",
   scenes: []
 });

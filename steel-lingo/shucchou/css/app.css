@@ -405,3 +405,18 @@ table.parts rt { font-size: .55em; }
 .logo-title .ja { display: block; }
 .credit { margin: 18px 0 0; text-align: center; font-size: 12.5px; color: var(--ink-3); letter-spacing: .02em; }
 table.parts td.w .why { display: block; font-size: 12.5px; line-height: 1.75; margin-top: 1px; }
+
+/* ── R3: 난이도 · 저장 ─── */
+.level { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+.level-l { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.level-seg { flex: 1; max-width: 260px; background: var(--surface); }
+.level-seg button { flex: 1; min-height: 46px; font-size: 15px; }
+.level-desc { margin: 8px 2px 0; font-size: 13px; color: var(--ink-3); line-height: 1.6; min-height: 2.6em; }
+.title-actions { margin-top: 12px; }
+.btn.resume { flex-direction: column; gap: 2px; }
+.btn.resume small { font-size: 12px; opacity: .85; }
+.save-btn {
+  flex: 0 0 auto; min-height: 40px; padding: 0 12px; margin-left: 4px; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--surface); font-size: 13px; font-weight: 700; color: var(--ink-2);
+}
+.save-btn:active { background: var(--surface-2); }

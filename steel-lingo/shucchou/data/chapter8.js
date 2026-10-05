@@ -7,7 +7,7 @@ SH.chapter({
   day: "DAY 4",
   title: "帰国{きこく}",
   ko: "귀국",
-  place: "하네다 → 인천",
+  place: "하네다 → 김포",
   summary: "마무리 인사, 감사 메일, 그리고 다음 출장.",
   scenes: []
 });

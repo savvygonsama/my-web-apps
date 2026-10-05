@@ -10,7 +10,7 @@
   /* ═══════════ 상태 ═══════════ */
   const fresh = () => ({
     v: 1,
-    settings: { furi: true, ko: false, easy: false, rate: 1, big: false },
+    settings: { easy: true, rate: 1 },
     exp: 0,
     chapters: {}, // id → { done, plays, delta, flags, grades, missed, bestCount }
     run: null, // { ch, at, hist:[{id,pick?}], delta, flags, grades, missed, order:{} }
@@ -19,7 +19,7 @@
   });
   let S = Object.assign(fresh(), SH.store.load() || {});
   S.settings = Object.assign(fresh().settings, S.settings);
-  const save = () => SH.store.save(S);
+  const save = () => { S.savedAt = Date.now(); return SH.store.save(S); };
 
   const STEP = 5; // 데이터의 효과 1점 = 게이지 5
   const clamp = (n) => Math.max(0, Math.min(100, n));
@@ -38,10 +38,12 @@
     if (S.run) S.run.flags.forEach((x) => f.add(x));
     return f;
   }
+  /* 설정은 난이도 하나뿐이다.
+     쉬움 = 대사 해석이 처음부터 보이고, 선택지 밑에도 한국어 뜻이 붙는다.
+     어려움 = 해석은 '뜻' 버튼을 눌러야 보이고, 선택지는 일본어만 보고 고른다. 후리가나는 둘 다 켜 둔다. */
+  const easy = () => !!S.settings.easy;
   function applySettings() {
-    html.classList.toggle("no-furi", !S.settings.furi);
-    html.classList.toggle("big", !!S.settings.big);
-    html.classList.toggle("easy", !!S.settings.easy);
+    html.classList.toggle("easy", easy());
   }
 
   /* ═══════════ 음성 ═══════════ */
@@ -69,7 +71,7 @@
     }
   };
   const ttsBtn = (text) => `<button class="chip tts" data-say="${esc(text)}" aria-label="일본어 발음 듣기">🔊 듣기</button>`;
-  const koBtn = () => `<button class="chip" data-ko aria-pressed="${S.settings.ko}">뜻</button>`;
+  const koBtn = () => `<button class="chip" data-ko aria-pressed="${easy()}">뜻</button>`;
 
   /* ═══════════ 공용 조각 ═══════════ */
   const ICON = {
@@ -108,7 +110,7 @@
       ${back ? `<button class="icon-btn" data-act="${back}" aria-label="뒤로">${ICON.back}</button>` : '<span style="width:8px"></span>'}
       <h1>${title}${sub ? `<small>${sub}</small>` : ""}</h1>${right}</header>`;
   }
-  const gearBtn = () => `<button class="icon-btn" data-act="settings" aria-label="설정">${ICON.gear}</button>`;
+  const saveBtn = () => `<button class="save-btn" data-act="save" aria-label="지금까지 저장">💾 저장</button>`;
 
   function gaugeCards() {
     const g = gauges();
@@ -154,6 +156,13 @@
   });
 
   /* ═══════════ 표지 ═══════════ */
+  const levelDesc = () => easy()
+    ? "대사 해석이 처음부터 보이고, 선택지 밑에 한국어 뜻이 붙어요."
+    : "일본어만 보고 골라요. 해석은 '뜻' 버튼을 눌러야 보여요.";
+  const fmtTime = (t) => {
+    const d = new Date(t);
+    return `${d.getMonth() + 1}월 ${d.getDate()}일 ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
   function renderTitle() {
     const run = S.run && SH.getChapter(S.run.ch);
     const any = run || Object.keys(S.chapters).length || Object.keys(S.notes).length;
@@ -168,21 +177,28 @@
           </div>
           <div class="perf"></div>
           <div class="ticket-grid">
-            <div class="route"><div class="tf"><b>FROM</b><span class="big">ICN</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">HND</span></div></div>
+            <div class="route"><div class="tf"><b>FROM</b><span class="big">GMP</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">HND</span></div></div>
             <div class="tf"><b>PASSENGER</b><span class="ja">金 / 漢江スチール</span></div>
             <div class="tf"><b>CLASS</b><span>영업 · 3박 4일</span></div>
           </div>
           <div class="barcode" aria-hidden="true"></div>
         </div>
+        <div class="level">
+          <span class="level-l">난이도</span>
+          <div class="seg level-seg" role="radiogroup" aria-label="난이도">
+            <button role="radio" data-level="easy" aria-checked="${easy()}" aria-pressed="${easy()}">쉬움</button>
+            <button role="radio" data-level="hard" aria-checked="${!easy()}" aria-pressed="${!easy()}">어려움</button>
+          </div>
+        </div>
+        <p class="level-desc" id="levelDesc">${levelDesc()}</p>
         <div class="title-actions btn-col">
           ${run
-            ? `<button class="btn primary" data-act="resume">이어하기 <small class="ja">第${run.no}章 ${esc(plain(run.title))}</small></button>
-               <button class="btn" data-act="map">출장 일정표</button>`
-            : `<button class="btn primary" data-act="map">${any ? "출장 일정표" : "출장 떠나기"}</button>`}
-          <div class="btn-row">
-            <button class="btn" data-act="note"><span class="ja">出張ノート</span><small>${nNotes}</small></button>
-            <button class="btn" data-act="settings">설정</button>
-          </div>
+            ? `<button class="btn primary resume" data-act="resume"><span>이어하기 · <span class="ja">第${run.no}章 ${esc(plain(run.title))}</span></span>
+                 ${S.savedAt ? `<small>마지막 저장 ${fmtTime(S.savedAt)}</small>` : ""}</button>
+               <div class="btn-row"><button class="btn" data-act="map">출장 일정표</button>
+                 <button class="btn" data-act="note"><span class="ja">出張ノート</span><small>${nNotes}</small></button></div>`
+            : `<button class="btn primary" data-act="map">${any ? "출장 일정표" : "출장 떠나기"}</button>
+               <button class="btn" data-act="note"><span class="ja">出張ノート</span><small>${nNotes}</small></button>`}
           ${any ? '<button class="btn ghost" data-act="reset">처음부터 다시하기</button>' : ""}
         </div>
         <p class="install-hint" id="installHint" hidden>앱처럼 쓰려면 <button data-act="install">📲 홈 화면에 설치</button></p>
@@ -210,7 +226,7 @@
         </button></li>`;
     }).join("");
     app.innerHTML = `<div class="screen">
-      ${bar({ title: '<span class="ja">出張スケジュール</span>', sub: "출장 일정표", back: "title", right: `<button class="icon-btn" data-act="note" aria-label="出張ノート">${ICON.book}</button>${gearBtn()}` })}
+      ${bar({ title: '<span class="ja">出張スケジュール</span>', sub: "출장 일정표", back: "title", right: `<button class="icon-btn" data-act="note" aria-label="出張ノート">${ICON.book}</button>` })}
       <div class="scroll">${gaugeCards()}<p class="sec-h">ITINERARY · 3박 4일</p><ol class="itin">${items}</ol></div></div>`;
   }
 
@@ -239,7 +255,7 @@
       <span class="who">${me ? "나 · <span class='ja'>金</span>" : ruby(s.speaker || "")}</span>
       ${s.act ? `<span class="act">${ruby(s.act)}</span>` : ""}
       <div class="bubble"><p class="ja">${ruby(s.ja)}</p>
-        <p class="ko" ${S.settings.ko ? "" : "hidden"}>${esc(s.ko)}</p>
+        <p class="ko" ${easy() ? "" : "hidden"}>${esc(s.ko)}</p>
         <div class="tools">${ttsBtn(s.ja)}${koBtn()}${glossBtn(s.parts)}</div>${glossHTML(s.parts)}</div>
       ${s.hint ? `<div class="hint"><b>💡 포인트</b> ${ruby(s.hint)}</div>` : ""}
     </div>`;
@@ -248,7 +264,7 @@
     return `<div class="msg me ${isNew ? "new" : ""}">
       <span class="who">나 · <span class="ja">金</span> <span class="grade-tag g-${c.grade}">${GRADE[c.grade].mark}</span></span>
       <div class="bubble"><p class="ja">${ruby(c.ja)}</p>
-        <p class="ko" ${S.settings.ko ? "" : "hidden"}>${esc(c.ko)}</p>
+        <p class="ko" ${easy() ? "" : "hidden"}>${esc(c.ko)}</p>
         <div class="tools">${ttsBtn(c.ja)}${koBtn()}${glossBtn(c.parts)}</div>${glossHTML(c.parts)}</div></div>`;
   }
 
@@ -283,7 +299,7 @@
       return lineHTML(s, false) + (h.pick != null ? pickHTML(s.choices[h.pick], false) : "");
     });
     app.innerHTML = `<div class="screen" id="play">
-      ${bar({ title: `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`, sub: esc(ch.ko + " · " + ch.day), back: "map", right: miniGauges() + gearBtn() })}
+      ${bar({ title: `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`, sub: esc(ch.ko + " · " + ch.day), back: "map", right: miniGauges() + saveBtn() })}
       <div class="scroll" id="logScroll"><div class="log" id="log">${logParts.join("")}</div></div>
       <div class="dock" id="dock"></div></div>`;
     showCurrent(false);
@@ -576,27 +592,19 @@
     if (run && f) f();
   }
 
-  function settingsSheet() {
-    const st = S.settings;
-    const sw = (k, label, sub) => `<div class="row"><label for="s-${k}">${label}${sub ? `<small>${sub}</small>` : ""}</label>
-      <span class="switch"><input type="checkbox" id="s-${k}" data-set="${k}" ${st[k] ? "checked" : ""}><i></i></span></div>`;
-    openSheet(`<h2 class="set-h">설정</h2>
-      ${sw("furi", "후리가나 표시", "한자 위 읽기. 익숙해지면 꺼 보세요")}
-      ${sw("ko", "한국어 뜻 항상 보기", "끄면 '뜻' 버튼을 눌렀을 때만 보여요")}
-      ${sw("easy", "쉬움 모드", "선택지 밑에 한국어 뜻을 달아 줘요. 처음 하는 분용")}
-      ${sw("big", "큰 글씨", "일본어 문장을 크게")}
-      <div class="row tts"><span class="rl">발음 속도</span><div class="seg">
-        <button data-rate="0.75" aria-pressed="${st.rate === 0.75}">느리게</button><button data-rate="1" aria-pressed="${st.rate === 1}">보통</button></div></div>
-      <div class="row"><span class="rl">홈 화면에 설치<small>앱처럼 열리고, 인터넷 없이도 돌아가요</small></span><button class="chip" data-act="install">방법 보기</button></div>
-      <div class="row"><span class="rl danger">처음부터 다시하기<small>진행·노트를 모두 지웁니다</small></span><button class="chip danger" data-act="reset">초기화</button></div>
-      <p class="fine">진행 기록은 이 기기에만 저장됩니다. 발음은 기기에 일본어 음성이 있을 때만 나와요(아이폰·안드로이드는 대부분 기본 지원).<br>
-      글꼴 Noto Sans JP · Pretendard (SIL OFL 1.1)</p>
-      <p class="credit">스틸링고 <span class="ja">出張編</span> · 기획과 구성 by 곤사마</p>
-      <button class="btn primary" data-act="close">닫기</button>`, { label: "설정" });
+  /* 💾 저장 — 진행은 장면마다 자동으로도 저장되지만, 눌러서 확인하고 나갈 수 있게 한다 */
+  function saveSheet() {
+    const ok = save();
+    const run = S.run && SH.getChapter(S.run.ch);
+    openSheet(`<h2 class="set-h">${ok ? "💾 저장했어요" : "저장하지 못했어요"}</h2>
+      <p class="note">${ok
+        ? `<span class="ja">第${run.no}章 ${ruby(run.title)}</span>, 지금 장면까지 이 기기에 저장됐어요. 다음에 앱을 켜면 표지에서 <b>이어하기</b>를 누르면 됩니다.`
+        : "이 브라우저는 저장을 막고 있어요(시크릿 창 등). 일반 창이나 설치한 앱에서 열어 주세요."}</p>
+      <div class="btn-row"><button class="btn" data-act="title">저장하고 나가기</button><button class="btn primary" data-act="close">계속하기</button></div>`, { label: "저장" });
   }
   function resetSheet() {
     openSheet(`<h2 class="set-h">처음부터 다시할까요?</h2>
-      <p class="note">게이지, 챕터 기록, <span class="ja">出張ノート</span>가 모두 지워집니다. 설정은 그대로 둡니다.</p>
+      <p class="note">게이지, 챕터 기록, <span class="ja">出張ノート</span>가 모두 지워집니다. 난이도는 그대로 둡니다.</p>
       <div class="btn-row"><button class="btn" data-act="close">취소</button><button class="btn primary" data-act="doreset">지우고 시작</button></div>`, { label: "초기화 확인" });
   }
 
@@ -683,10 +691,16 @@
       return renderNote();
     }
     if (d.q != null) return answerQuiz(+d.q);
-    if (d.rate != null) {
-      S.settings.rate = +d.rate; save();
-      t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === t)));
-      return TTS.speak("よろしくお願{ねが}いいたします。");
+    if (d.level != null) {
+      S.settings.easy = d.level === "easy";
+      save();
+      applySettings();
+      t.parentElement.querySelectorAll("button").forEach((b) => {
+        b.setAttribute("aria-pressed", String(b === t));
+        b.setAttribute("aria-checked", String(b === t));
+      });
+      $("#levelDesc").textContent = levelDesc();
+      return;
     }
     switch (d.act) {
       case "title": return go("title");
@@ -695,7 +709,7 @@
       case "resume": return go("play");
       case "note": noteState.tab = "list"; return go("note");
       case "quiz": noteState.tab = "quiz"; noteState.quiz = null; return go("note", { tab: "quiz" });
-      case "settings": return settingsSheet();
+      case "save": return saveSheet();
       case "install": return Install.sheet();
       case "installnow": return Install.now();
       case "reset": return resetSheet();
@@ -711,18 +725,6 @@
       case "flip": noteState.flipped = !noteState.flipped; $(".flip").classList.toggle("on", noteState.flipped); return;
       case "qnext": noteState.quiz.i++; return renderNote();
       case "requiz": noteState.quiz = null; return renderNote();
-    }
-  });
-
-  document.addEventListener("change", (ev) => {
-    const k = ev.target.dataset && ev.target.dataset.set;
-    if (!k) return;
-    S.settings[k] = ev.target.checked;
-    save();
-    applySettings();
-    if (k === "ko") {
-      document.querySelectorAll(".bubble .ko").forEach((el) => (el.hidden = !S.settings.ko));
-      document.querySelectorAll("[data-ko]").forEach((el) => el.setAttribute("aria-pressed", String(S.settings.ko)));
     }
   });
 
