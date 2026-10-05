@@ -1,0 +1,19 @@
+{
+  "name": "스틸링고 大阪編",
+  "short_name": "大阪編",
+  "description": "기획과 구성 by 곤사마 · 여행편 ① 오사카. 선택과 결과로 익히는 일상 일본어. 일본 여행을 앞둔 초급 학습자를 위한 분기형 스토리 게임",
+  "id": "/steel-lingo/osaka/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4efe9",
+  "theme_color": "#b4531f",
+  "lang": "ko",
+  "categories": ["education", "games", "travel"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,18 @@
+/* 大阪編 테마 — 출장편(강철 블루)과 구분되게 타코야키 주황을 주색으로 */
+:root {
+  --ground: #f4efe9; --surface-2: #efe6dc;
+  --accent: #b4531f; --accent-soft: #f7e8dd;
+  --ember: #1d566f; --ember-soft: #dfeaf1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #15110e; --surface: #1e1915; --surface-2: #2a231d;
+    --accent: #e39a66; --accent-ink: #15110e; --accent-soft: #3a2416;
+    --ember: #82b7d6; --ember-soft: #16303e;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #15110e; --surface: #1e1915; --surface-2: #2a231d;
+  --accent: #e39a66; --accent-ink: #15110e; --accent-soft: #3a2416;
+  --ember: #82b7d6; --ember-soft: #16303e;
+}
