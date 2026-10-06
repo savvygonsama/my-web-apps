@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>데이터 점검</title>
+<style>body{font:15px/1.6 system-ui,sans-serif;max-width:860px;margin:0 auto;padding:20px}h1{font-size:20px}
+.ok{color:#2c6a4d}.err{color:#9d3730}.warn{color:#8a6410}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:4px 8px;text-align:left}pre{white-space:pre-wrap}</style></head>
+<body><h1>데이터 자동 점검</h1><p>모든 장면의 다음 장면 존재 · 막다른 장면 · 도달 불가 · 후리가나 누락 · 학습 표현 연결 · 플래그(켜는 곳 없이 쓰는 조건) · 엔딩 연결을 검사합니다.</p>
+<div id="out">점검 중…</div>
+<script>window.SH = {};</script>
+<script src="../data/index.js"></script>
+<script src="../js/core.js"></script>
+<script>
+SH.loadData("../data/").then((res) => {
+  const out = document.getElementById("out");
+  const missing = res.filter((r) => !r.ok).map((r) => r.f);
+  const v = SH.validateAll();
+  const errors = missing.map((f) => "파일을 불러오지 못함: " + f).concat(v.errors), warns = v.warns;
+  const rows = v.rows.map(({ ch, stats: s }) =>
+    `<tr><td>${ch.no}</td><td>${SH.plain(ch.title)}</td><td>${s.scenes}</td><td>${s.reachable}</td><td>${s.choicePoints}</td><td>${s.options}</td><td>${s.expressions}</td><td>${s.endings}</td></tr>`).join("");
+  const verdict = errors.length ? `<p class="err"><b>❌ 오류 ${errors.length}건</b></p>` : `<p class="ok"><b>✅ 오류 0건</b> (경고 ${warns.length}건)</p>`;
+  out.innerHTML = verdict + `<table><tr><th>장</th><th>제목</th><th>장면</th><th>도달</th><th>선택 지점</th><th>선택지</th><th>표현</th><th>끝</th></tr>${rows}</table>` +
+    `<p>엔딩 ${SH.seasonDef ? SH.seasonDef.endings.length : 0}개 · 플래그 ${v.flags.length}개: <small>${v.flags.join(", ")}</small></p>` +
+    (errors.length ? `<h2 class="err">오류</h2><pre>${errors.join("\n")}</pre>` : "") +
+    (warns.length ? `<h2 class="warn">경고</h2><pre>${warns.join("\n")}</pre>` : "");
+  window.CHECK = { errors, warns };
+});
+document.title = ((self.SH_APP && self.SH_APP.titleText) || "") + " 데이터 점검";
+</script></body></html>
