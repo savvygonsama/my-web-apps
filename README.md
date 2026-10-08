@@ -13,7 +13,7 @@
 | 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
 | ✈️ **스틸링고 出張編** | 일본 출장 서바이벌 분기형 스토리. 고객사 방문·회식·상담에서 경어 수위를 골라 익힘. 문장마다 🔍 뜯어보기 | [`steel-lingo/shucchou/`](steel-lingo/shucchou/) |
 | 🐙 **스틸링고 大阪編** | 여행편 ①. 오사카 2박 3일 먹방 여행으로 익히는 일상 일본어(초급). 간사이 사투리와 현지 매너, 문장마다 🔍 뜯어보기 | [`steel-lingo/osaka/`](steel-lingo/osaka/) |
-| 🏮 **스틸링고 大阪物語** | 大阪編을 **정답 없는 분기 이야기**로 다시 쓴 판. 점수도 정답 예문도 없이, 내가 한 말에 상대가 반응하고 뒤 이야기가 갈라진다. 엔딩 18개와 엔딩 앨범, 장 골라 다시 걷기 | [`steel-lingo/osaka-monogatari/`](steel-lingo/osaka-monogatari/) |
+| 🏮 **스틸링고 大阪物語** | 공항에서 **바뀐 캐리어의 주인을 2박 3일 안에 찾는** 분기형 이야기. 시간대마다 갈 곳을 한 곳만 고르고, 주인의 마감(라이브·상담·설명회)에 맞추느냐와 그 사람의 고민에 건넨 한마디로 엔딩 16개가 갈린다. 정답·점수 없음 | [`steel-lingo/osaka-monogatari/`](steel-lingo/osaka-monogatari/) |
 | 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |

@@ -3,6 +3,7 @@
 
    이 앱에는 점수도, 정답도 없다. 선택은 '플래그'로 남고, 플래그가 뒤 장면·뒤 장·엔딩을 바꾼다.
    - choice.flag / route.flag / scene.flag : 문자열 하나 또는 배열. 지나가면 켜진다
+   - scene.move = true 이면 선택지가 '장소 고르기'다(label·sub, 일본어 없음). 한 시간대에 한 곳만 갈 수 있다
    - if: ["a", "!b"] = a가 켜져 있고 b는 꺼져 있을 때 / any: ["a", "b"] = 둘 중 하나라도
      → route(갈림길), alt(같은 장면의 다른 판), choice(그 기억이 있어야 보이는 선택지)에 쓴다 */
 (function () {
@@ -55,7 +56,7 @@
       .replace(/〜/g, "");
 
   /* ── 저장 ───────────────────────────────── */
-  const KEY = (self.SH_APP && self.SH_APP.storeKey) || "osakamono.v1";
+  const KEY = (self.SH_APP && self.SH_APP.storeKey) || "osakamono.v2";
   SH.store = {
     load() {
       try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; }
@@ -177,6 +178,13 @@
         s.choices.forEach((c, i) => {
           const ca = `${at} 선택${i + 1}`;
           if (c.grade || c.note) E(`${ca}: 이 앱에는 등급(grade)·해설(note)이 없다`);
+          if (s.move) {
+            // 장소 고르기: 일본어 대사 대신 장소 이름(label)과 한 줄 설명(sub)
+            if (!c.label) E(`${ca}: 장소 고르기에는 label이 필요`);
+            checkText(ca + " label", c.label); checkText(ca + " sub", c.sub); checkText(ca + " then", c.then);
+            useCond(ca, c); addSets(c.flag); checkNext(ca, c.next);
+            return;
+          }
           if (!c.ja || !c.ko) E(`${ca}: ja/ko 누락`);
           checkText(ca, c.ja);
           checkText(ca + " then", c.then);

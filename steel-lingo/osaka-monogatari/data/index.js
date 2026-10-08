@@ -2,11 +2,11 @@
 // 大阪物語는 大阪編(steel-lingo/osaka)과 같은 여행을 정답 없는 분기 이야기로 다시 쓴 별도 앱이다.
 // 기록이 섞이지 않게 저장 이름과 오프라인 저장 이름을 大阪編과 다르게 둔다.
 self.SH_APP = {
-  storeKey: "osakamono.v1",         // 기기 저장 이름
+  storeKey: "osakamono.v2",         // 기기 저장 이름 (v2: 바뀐 캐리어 이야기로 새로 씀)
   cachePrefix: "osakamono-",        // 오프라인 저장 이름
   titleText: "大阪物語",
   titleHTML: "<ruby>大阪<rt>おおさか</rt></ruby><ruby>物語<rt>ものがたり</rt></ruby>",
-  tagline: "여행편 ①′ 말 한마디로 갈라지는 오사카 2박 3일",
+  tagline: "바뀐 캐리어의 주인을 찾아라. 말 한마디로 갈라지는 오사카 2박 3일",
   from: "GMP",
   to: "KIX",
   passenger: "金リンゴ / 休暇中",

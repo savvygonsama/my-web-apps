@@ -10,7 +10,7 @@
 importScripts("data/index.js");
 
 const PREFIX = (self.SH_APP && self.SH_APP.cachePrefix) || "osakamono-";
-const CACHE = PREFIX + "v1";
+const CACHE = PREFIX + "v2";
 const TIMEOUT = 2500;
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
