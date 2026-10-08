@@ -279,6 +279,8 @@
     </div>`;
   }
   function pickHTML(c, isNew) {
+    // 장소 고르기(move)는 말이 아니라 이동이라 말풍선 대신 한 줄로 남긴다
+    if (!c.ja) return `<p class="narr moved ${isNew ? "new" : ""}">📍 ${ruby(c.label)}</p>${c.then ? `<p class="narr then ${isNew ? "new" : ""}">${ruby(c.then)}</p>` : ""}`;
     return `<div class="msg me ${isNew ? "new" : ""}">
       <span class="who">나 · 김링고</span>
       <div class="bubble"><p class="ja">${ruby(c.ja)}</p>
@@ -349,9 +351,13 @@
       const vis = s.choices.map((c, i) => [c, i]).filter(([c]) => SH.test(c, f));
       const seen = S.seen[s.id] || [];
       dock.innerHTML = `<div class="choices-wrap">
-        <div class="ask"><span>${ruby(s.ask || "뭐라고 할까?")}</span><span class="pill easy-pill">쉬움 모드</span></div>
-        <div class="choices">${vis.map(([c, i], n) =>
-          `<button class="choice${c.tag ? " memory" : ""}" data-pick="${i}"><span class="n">${n + 1}</span><span class="cb">
+        <div class="ask"><span>${ruby(s.ask || (s.move ? "어디로 갈까?" : "뭐라고 할까?"))}</span>${s.move ? '<span class="pill">⏱ 한 곳만</span>' : '<span class="pill easy-pill">쉬움 모드</span>'}</div>
+        <div class="choices">${vis.map(([c, i], n) => s.move
+          ? `<button class="choice place${c.tag ? " memory" : ""}" data-pick="${i}"><span class="n">📍</span><span class="cb">
+            ${c.tag ? `<span class="ctag">✨ ${esc(c.tag)}</span>` : ""}
+            <span class="pl ja">${ruby(c.label)}</span>${c.sub ? `<span class="ps">${ruby(c.sub)}</span>` : ""}</span>
+            ${seen.includes(i) ? '<span class="been" title="전에 가 본 곳">✓</span>' : ""}</button>`
+          : `<button class="choice${c.tag ? " memory" : ""}" data-pick="${i}"><span class="n">${n + 1}</span><span class="cb">
             ${c.tag ? `<span class="ctag">✨ ${esc(c.tag)}</span>` : ""}
             <span class="ja">${ruby(c.ja)}</span><span class="ck">${esc(c.ko)}</span></span>
             ${seen.includes(i) ? '<span class="been" title="전에 골라 본 말">✓</span>' : ""}</button>`).join("")}</div></div>`;
@@ -385,7 +391,7 @@
     const s = r.s, c = s.choices[i];
     run.hist.push({ id: s.id, a: r.a, pick: i });
     if (c.flag) addFlags(c.flag);
-    run.picks.push(c.ja);
+    if (c.ja) run.picks.push(c.ja);
     const seen = (S.seen[s.id] = S.seen[s.id] || []);
     if (!seen.includes(i)) seen.push(i);
     const got = collect(ch.id, c.learn, run.got);
