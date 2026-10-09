@@ -1,7 +1,7 @@
 {
   "name": "스틸링고 大阪物語",
   "short_name": "大阪物語",
-  "description": "기획과 구성 by 곤사마 · 공항에서 바뀐 캐리어의 주인을 2박 3일 안에 찾는 오사카 이야기. 고른 말과 갈 곳에 따라 엔딩이 갈리는 초급 일본어 학습 게임",
+  "description": "기획과 구성 by 곤사마 · 정답 없는 분기형 오사카 여행. 내가 한 말에 상대가 반응하고, 이야기와 엔딩이 갈라진다. 초급 일본어 학습 게임",
   "id": "/steel-lingo/osaka-monogatari/",
   "start_url": "./index.html",
   "scope": "./",
