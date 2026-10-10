@@ -829,3 +829,10 @@ const IMGS = {
                                 ["battery_lower",35,85,"하부 플레이트","r"],["motor_core",82,48,"모터 코어","l"]] }],
   pt:       [{ file:"engine", pins:[["oil_pan",28,70,"오일팬","r"],["heat_shield",86,50,"차열판","l"]] }]
 };
+
+/* 그림에 따로 핀이 없는 부품은 비슷한 부품의 핀 위치로 보여 준다 [대신 보여 줄 부품, 안내 문구] */
+const FOCUS_ALIAS = {
+  door_outer_r: ["door_outer_f", "앞문 분해도로 보여 줍니다. 뒷문도 구조가 같습니다."],
+  door_inner_r: ["door_inner_f", "앞문 분해도로 보여 줍니다. 뒷문도 구조가 같습니다."],
+  door_beam_r:  ["door_beam_f",  "앞문 분해도로 보여 줍니다. 뒷문도 구조가 같습니다."]
+};

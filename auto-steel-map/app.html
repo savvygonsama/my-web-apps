@@ -76,6 +76,37 @@
   .num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--deep);color:#fff;
        font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;margin-right:6px;vertical-align:1px}
   .credit{font-size:11px;color:var(--ink-3);margin:0 0 16px}
+  /* 부품 카드 위 그림: 그 부품 쪽으로 확대 */
+  .pfig{position:relative;background:#fff;border:1px solid var(--edge);overflow:hidden;margin:4px auto 6px;max-width:620px}
+  .pfig .zin{transition:transform .35s ease}
+  .pfig .zin img{display:block;width:100%;height:auto}
+  .pfig.zoom .zin{transform:scale(var(--z,1.9))}
+  .pfig .dot{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+       background:rgba(22,32,43,.55);color:#fff;font:600 11px "IBM Plex Mono",monospace;transition:opacity .2s}
+  .pfig .dot:hover{background:var(--blue)}
+  .pfig.zoom .dot{opacity:0;pointer-events:none}
+  .pfig .me{position:absolute;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;
+       border:4px solid var(--red);background:transparent;box-shadow:0 0 0 2px #fff,inset 0 0 0 2px #fff;pointer-events:none}
+  .pfig .me::after{content:"";position:absolute;inset:-12px;border-radius:50%;border:3px solid var(--red);animation:ping 1.6s ease-out infinite}
+  @keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+  .pfig .ztog{position:absolute;right:8px;bottom:8px;background:rgba(22,32,43,.85);color:#fff;font-size:12.5px;font-weight:700;
+       padding:7px 12px;border-radius:16px;min-height:34px}
+  .pfig .ztog:hover{background:var(--blue)}
+  /* 위치 추적 줄: 상위 단계 그림을 작게 이어 붙인다 */
+  .trail{display:flex;align-items:center;gap:4px;margin:0 0 14px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}
+  .trail .tr{flex:1 1 0;min-width:104px;max-width:230px;display:block;background:#fff;border:1px solid var(--edge);padding:4px 4px 6px;border-radius:6px}
+  .trail .tr:hover{border-color:var(--blue-l)}
+  .trail .tr .ti{position:relative}
+  .trail .tr img{display:block;width:100%;height:auto;border-radius:3px}
+  .trail .tr .ring{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;
+       border:3px solid var(--red);box-shadow:0 0 0 1.5px #fff,inset 0 0 0 1.5px #fff}
+  .trail .tr .tl{font-size:11px;color:var(--ink-3);margin-top:4px;line-height:1.3}
+  .trail .tr .tl b{display:block;font-size:13px;color:var(--ink)}
+  .trail .ar{flex:none;color:var(--ink-3);font-weight:700}
+  .trail .now{flex:0 1 auto;min-width:84px;max-width:150px;align-self:stretch;display:flex;flex-direction:column;justify-content:center;
+       background:var(--deep);color:#C8D8E8;border-radius:6px;padding:8px 10px;font-size:11px;line-height:1.3}
+  .trail .now b{display:block;color:#fff;font-size:13.5px;margin-top:2px}
+  .pcap{font-size:12px;color:var(--ink-3);margin:0 auto 14px;max-width:620px}
 
   /* 하위 분류 타일 */
   .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:18px}
@@ -343,7 +374,8 @@ function renderNode(id){
     });
     return;
   }
-  let h = `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
+  const chain = nodeChain(id);
+  let h = trailHTML(chain, chain.length - 1) + `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
            <p class="desc">${esc(t.desc)}</p>`;
   if(t.why) h += `<div class="why"><b>이 그룹은 왜 이 소재인가</b>${esc(t.why)}</div>`;
   h += figHTML(id);
@@ -384,7 +416,59 @@ function renderNode(id){
   $("#view").querySelectorAll("[data-hide]").forEach(b => b.onclick = () => { filt.hideNonSheet = !filt.hideNonSheet; renderNode(id); });
 }
 
+/* ---------- 위치 추적 줄 ----------
+   path: 자동차부터 지금 보는 것까지의 id 목록 (분류들 + 마지막에 부품 id 가능)
+   upto: 그림으로 보여 줄 상위 단계 수 (마지막 단계는 본문 큰 그림이 맡는다)
+   각 단계 그림에서, 경로상 그 뒤에 오는 것 중 핀이 있는 가장 가까운 것에 고리를 친다 */
+function trailHTML(path, upto, nowLabel){
+  const name = id => TREE[id] ? TREE[id].name : PMAP[id] ? PMAP[id].n : "";
+  const cells = [];
+  path.slice(0, upto).forEach((n, i) => {
+    const rest = path.slice(i + 1);
+    let hit = null;
+    for(const r of rest){
+      for(const im of imgsOf(n)){ const pn = im.pins.find(x => x[0] === r); if(pn){ hit = { im, r, x:pn[1], y:pn[2] }; break; } }
+      if(hit) break;
+    }
+    if(!hit) return;   // 그림이 없는 단계(예: 시트·파워트레인 묶음)는 건너뛴다
+    cells.push(`<a class="tr" href="#/n/${n}" title="${esc(name(n))}로 가기">
+      <div class="ti"><img src="${IMG_SRC[hit.im.file]}" alt=""><span class="ring" style="left:${hit.x}%;top:${hit.y}%"></span></div>
+      <div class="tl">${esc(name(n))}<b>${esc(name(hit.r))}</b></div></a>`);
+  });
+  if(cells.length && nowLabel) cells.push(`<div class="now">지금 보는 것<b>${esc(nowLabel)}</b></div>`);
+  return cells.length ? `<nav class="trail" aria-label="차에서의 위치">${cells.join(`<span class="ar">›</span>`)}</nav>` : "";
+}
+
 /* ---------- 부품 카드 ---------- */
+/* 이 부품이 핀으로 찍힌 그림을 찾는다. 자기 분류의 그림을 먼저 본다 */
+function focusOf(p){
+  const alias = FOCUS_ALIAS[p.id], target = alias ? alias[0] : p.id;
+  const order = [p.g, ...Object.keys(IMGS).filter(k => k !== p.g)];
+  for(const node of order){
+    for(const im of imgsOf(node)){
+      const pin = im.pins.find(pn => pn[0] === target);
+      if(pin) return { node, im, x:pin[1], y:pin[2], note: alias ? alias[1] : "" };
+    }
+  }
+  return null;
+}
+let zoomed = true;
+function partFigHTML(p){
+  const f = focusOf(p); if(!f) return "";
+  const nums = pinNums(f.node);
+  const others = f.im.pins.filter(pn => pn[0] !== (FOCUS_ALIAS[p.id] || [p.id])[0] && PMAP[pn[0]])
+    .map(([to, x, y, lb]) => `<a class="dot" href="#/p/${to}" title="${esc(PMAP[to].n)}" style="left:${x}%;top:${y}%">${nums[to] || ""}</a>`).join("");
+  return `<div class="pfig ${zoomed ? "zoom" : ""}" style="--ox:${f.x}%;--oy:${f.y}%">
+      <div class="zin" style="transform-origin:${f.x}% ${f.y}%"><img src="${IMG_SRC[f.im.file]}" alt="${esc(p.n)} 위치"></div>
+      ${others}<span class="me" style="left:${f.x}%;top:${f.y}%"></span>
+      <button class="ztog" id="ztog">${zoomed ? "전체 보기" : "부품 확대"}</button>
+    </div>
+    <p class="pcap">${f.note ? esc(f.note) + " " : ""}빨간 원이 이 부품입니다. 전체 보기에서 다른 번호를 누르면 그 부품으로 갑니다.</p>`;
+}
+function bindFig(){
+  const b = $("#ztog"); if(!b) return;
+  b.onclick = () => { zoomed = !zoomed; const f = b.closest(".pfig"); f.classList.toggle("zoom", zoomed); b.textContent = zoomed ? "전체 보기" : "부품 확대"; };
+}
 let tab = "std";
 function partHTML(p){
   const stds = p.cls.map(k => CLS[k]).filter(Boolean).map(c => `
@@ -396,6 +480,8 @@ function partHTML(p){
   <span class="kind cut k-${p.k}">${p.k}</span>
   <h2 class="title" style="margin-top:6px">${esc(p.n)}</h2>
   <p class="en">${esc(p.en)}${p.al ? ` · <span style="font-family:inherit;letter-spacing:0">${esc(p.al)}</span>` : ""}</p>
+  ${trailHTML(nodeChain(p.g).concat(p.id), nodeChain(p.g).length - (focusOf(p) && focusOf(p).node === p.g ? 1 : 0), p.n)}
+  ${partFigHTML(p)}
   <div class="pcard cut">
     <dl class="facts">
       <dt>품종</dt><dd>${esc(p.b)}${p.c && p.c !== "—" ? ` <span style="color:var(--blue)">· ${esc(p.c)}</span>` : ""}</dd>
@@ -439,6 +525,7 @@ function partHTML(p){
 }
 function bindTabs(rerender){
   $("#view").querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; rerender(); });
+  bindFig();
 }
 function renderPart(id){
   const p = PMAP[id]; if(!p) return renderNode("root");
