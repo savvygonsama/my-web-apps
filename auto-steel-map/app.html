@@ -60,6 +60,11 @@
   .figs{display:grid;gap:12px;margin:0 0 6px}
   .fig{position:relative;background:#fff;border:1px solid var(--edge);overflow:hidden;max-width:720px;width:100%;margin:0 auto}
   .fig img{display:block;width:100%;height:auto}
+  .fig svg.areas{position:absolute;inset:0;width:100%;height:100%}
+  .fig svg.areas polygon{fill:transparent;stroke:transparent;cursor:pointer;transition:fill .12s}
+  .fig svg.areas a:hover polygon,.fig svg.areas a:focus polygon{fill:rgba(31,92,153,.16);stroke:rgba(31,92,153,.6);stroke-width:.35}
+  .fig.hero{max-width:none;border:0;background:transparent}
+  body.home .crumbbar{display:none}
   .pin{position:absolute;transform:translate(-16px,-50%);display:inline-flex;align-items:center;gap:6px;
        background:rgba(22,32,43,.9);color:#fff;font-size:12.5px;font-weight:700;padding:4px 9px 4px 4px;min-height:32px;
        white-space:nowrap;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
@@ -289,24 +294,28 @@ let filt = { kind:"전체", hideNonSheet:false };
 const pinOk = to => (TREE[to] && (TREE[to].parent === undefined || nodeChain(to).every(n => !TREE[n].parent || TREE[TREE[n].parent].kids.includes(n)))) || PMAP[to];
 function imgsOf(id){
   return (IMGS[id] || []).filter(im => IMG_SRC[im.file] && (!im.v || im.v === MODE))
-    .map(im => ({ file:im.file, pins:im.pins.filter(pn => pinOk(pn[0])) }));
+    .map(im => ({ file:im.file, pins:im.pins.filter(pn => pinOk(pn[0])), areas:(im.areas || []).filter(a => pinOk(a[0])) }));
 }
 function pinNums(id){
   const m = {}; let n = 0;
   imgsOf(id).forEach(im => im.pins.forEach(pn => { if(!(pn[0] in m)) m[pn[0]] = ++n; }));
   return m;
 }
-function figHTML(id){
+function figHTML(id, hero){
   const ims = imgsOf(id);
   if(!ims.length) return "";
   const nums = pinNums(id);
-  const one = im => `<div class="fig"><img src="${IMG_SRC[im.file]}" alt="${esc(TREE[id].name)} 그림" loading="lazy">` +
+  const hrefOf = to => TREE[to] ? "#/n/" + to : "#/p/" + to;
+  const areas = im => !im.areas || !im.areas.length ? "" :
+    `<svg class="areas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">` +
+    im.areas.map(([to, pts]) => `<a data-go="${hrefOf(to)}" tabindex="0"><polygon points="${pts}"/></a>`).join("") + `</svg>`;
+  const one = im => `<div class="fig ${hero ? "hero" : ""}"><img src="${IMG_SRC[im.file]}" alt="${esc(TREE[id].name)} 그림" loading="lazy">` + areas(im) +
     im.pins.map(([to, x, y, lb, dir]) => {
       const href = TREE[to] ? "#/n/" + to : "#/p/" + to;
       const full = TREE[to] ? TREE[to].name : PMAP[to].n;
       return `<a class="pin ${(dir ? dir === "l" : x > 58) ? "rt" : ""} ${seen.has(to) ? "seen" : ""}" href="${href}" title="${esc(full)}" style="left:${x}%;top:${y}%"><i>${nums[to]}</i><span>${esc(lb || full)}</span></a>`;
     }).join("") + `</div>`;
-  return `<div class="figs ${ims.length > 1 ? "two" : ""}">${ims.map(one).join("")}</div><p class="credit">${esc(IMG_CREDIT)}</p>`;
+  return `<div class="figs">${ims.map(one).join("")}</div>` + (hero ? "" : `<p class="credit">${esc(IMG_CREDIT)}</p>`);
 }
 function partRow(p, num){
   const nonSheet = p.sh === "하";
@@ -322,6 +331,18 @@ function renderNode(id){
   const t = TREE[id]; if(!t || !pinOk(id)) return renderNode("root");
   setTool(id === "root" ? "home" : "");
   setCrumbs(nodeCrumbs(id), t.parent ? "#/n/" + t.parent : null);
+  document.body.classList.toggle("home", id === "root");
+  /* 첫 화면은 설명 없이 차 그림만. 부위를 누르면 아래 단계로 들어간다 */
+  if(id === "root" && imgsOf(id).length){
+    $("#view").innerHTML = figHTML(id, true);
+    /* 부위(다각형)를 누르면 그 분류로 */
+    $("#view").querySelectorAll("[data-go]").forEach(a => {
+      const go = () => { location.hash = a.dataset.go; };
+      a.addEventListener("click", go);
+      a.addEventListener("keydown", e => { if(e.key === "Enter") go(); });
+    });
+    return;
+  }
   let h = `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
            <p class="desc">${esc(t.desc)}</p>`;
   if(t.why) h += `<div class="why"><b>이 그룹은 왜 이 소재인가</b>${esc(t.why)}</div>`;
@@ -605,6 +626,7 @@ function route(){
   const h = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
   const [r, ...rest] = h.split("/"); const arg = rest.join("/");
   window.scrollTo(0, 0);
+  document.body.classList.remove("home");
   if(r === "n") renderNode(arg);
   else if(r === "p"){ renderPart(arg); }
   else if(r === "c") renderCourse(+arg || 0);
