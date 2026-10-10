@@ -57,11 +57,19 @@
   .why b{display:block;font-size:12px;color:var(--blue);letter-spacing:.04em;margin-bottom:2px}
 
   /* 이미지 + 핀 */
-  .fig{position:relative;background:#fff;border:1px solid var(--edge);margin:0 0 6px;overflow:hidden}
+  .figs{display:grid;gap:12px;margin:0 0 6px}
+  .fig{position:relative;background:#fff;border:1px solid var(--edge);overflow:hidden;max-width:720px;width:100%;margin:0 auto}
   .fig img{display:block;width:100%;height:auto}
-  .pin{position:absolute;transform:translate(-50%,-50%);background:var(--deep);color:#fff;font-size:13px;font-weight:700;
-       padding:9px 12px;min-height:40px;min-width:44px;white-space:nowrap;--cut:7px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-  .pin:hover{background:var(--blue)}
+  .pin{position:absolute;transform:translate(-16px,-50%);display:inline-flex;align-items:center;gap:6px;
+       background:rgba(22,32,43,.9);color:#fff;font-size:12.5px;font-weight:700;padding:4px 9px 4px 4px;min-height:32px;
+       white-space:nowrap;border-radius:16px;box-shadow:0 2px 6px rgba(0,0,0,.28)}
+  .pin i{font-style:normal;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#fff;color:var(--deep);
+       font-family:"IBM Plex Mono",monospace;font-size:12px;flex:none}
+  .pin.rt{flex-direction:row-reverse;padding:4px 4px 4px 9px;transform:translate(calc(-100% + 16px),-50%)}
+  .pin:hover,.pin:focus{background:var(--blue);z-index:2}
+  .pin.seen i{background:#BFE3CC;color:#1F5F40}
+  .num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--deep);color:#fff;
+       font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;margin-right:6px;vertical-align:1px}
   .credit{font-size:11px;color:var(--ink-3);margin:0 0 16px}
 
   /* 하위 분류 타일 */
@@ -182,6 +190,9 @@
     .prow .kindcell{display:none}
     .tabs button{padding:10px 11px;font-size:13.5px}
     .crumbs{white-space:normal;line-height:1.5}
+    .pin,.pin.rt{padding:4px;min-height:0;transform:translate(-50%,-50%)}
+    .pin span{display:none}
+    .pin i{width:26px;height:26px}
   }
 </style>
 </head>
@@ -212,6 +223,9 @@
 
 <script>
 /*@@DATA@@*/
+</script>
+<script>
+/*@@IMG@@*/
 </script>
 <script>
 (function(){
@@ -257,21 +271,29 @@ function nodeCrumbs(id){ return nodeChain(id).map(n => [TREE[n].name, "#/n/" + n
 
 /* ---------- 분류 화면 ---------- */
 let filt = { kind:"전체", hideNonSheet:false };
-function figHTML(t){
-  if(!t.img) return "";
-  const pins = (t.img.pins || []).map(pn => {
-    const target = TREE[pn.to] ? { href:"#/n/" + pn.to, label:TREE[pn.to].name } : PMAP[pn.to] ? { href:"#/p/" + pn.to, label:PMAP[pn.to].n } : null;
-    if(!target) return "";
-    return `<a class="pin cut" href="${target.href}" style="left:${pn.x}%;top:${pn.y}%">${esc(pn.label || target.label)}</a>`;
-  }).join("");
-  return `<div class="fig"><img src="${esc(t.img.src)}" alt="${esc(t.name)}">${pins}</div>
-          <p class="credit">${esc(t.img.credit || "")}</p>`;
+/* 그림 위 핀 번호 — 목록·타일의 번호와 짝을 이룬다 */
+function pinNums(id){
+  const m = {}; let n = 0;
+  (IMGS[id] || []).forEach(im => im.pins.forEach(pn => { if(!(pn[0] in m)) m[pn[0]] = ++n; }));
+  return m;
 }
-function partRow(p){
+function figHTML(id){
+  const ims = (IMGS[id] || []).filter(im => IMG_SRC[im.file]);
+  if(!ims.length) return "";
+  const nums = pinNums(id);
+  const one = im => `<div class="fig"><img src="${IMG_SRC[im.file]}" alt="${esc(TREE[id].name)} 그림" loading="lazy">` +
+    im.pins.map(([to, x, y, lb]) => {
+      const href = TREE[to] ? "#/n/" + to : "#/p/" + to;
+      const full = TREE[to] ? TREE[to].name : PMAP[to].n;
+      return `<a class="pin ${x > 58 ? "rt" : ""} ${seen.has(to) ? "seen" : ""}" href="${href}" title="${esc(full)}" style="left:${x}%;top:${y}%"><i>${nums[to]}</i><span>${esc(lb || full)}</span></a>`;
+    }).join("") + `</div>`;
+  return `<div class="figs ${ims.length > 1 ? "two" : ""}">${ims.map(one).join("")}</div><p class="credit">${esc(IMG_CREDIT)}</p>`;
+}
+function partRow(p, num){
   const nonSheet = p.sh === "하";
   return `<a class="prow cut ${seen.has(p.id) ? "seen" : ""} ${nonSheet ? "dim" : ""}" href="#/p/${p.id}">
     <span class="ck">${seen.has(p.id) ? "✓" : ""}</span>
-    <span><div class="pn">${esc(p.n)}</div>
+    <span><div class="pn">${num ? `<span class="num">${num}</span>` : ""}${esc(p.n)}</div>
       <div class="ps">${esc(summary(p))}</div>
       ${p.al ? `<div class="pa">${esc(p.al)}</div>` : ""}</span>
     <span class="kindcell"><span class="kind cut k-${p.k}">${p.k}</span>${nonSheet ? `<div class="pa" style="text-align:right">판재 비중 낮음</div>` : ""}</span>
@@ -284,12 +306,13 @@ function renderNode(id){
   let h = `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
            <p class="desc">${esc(t.desc)}</p>`;
   if(t.why) h += `<div class="why"><b>이 그룹은 왜 이 소재인가</b>${esc(t.why)}</div>`;
-  h += figHTML(t);
+  h += figHTML(id);
+  const nums = pinNums(id), numTag = k => nums[k] ? `<span class="num">${nums[k]}</span>` : "";
   if(t.kids){
     h += `<div class="tiles">` + t.kids.map(k => {
       const c = TREE[k], ps = partsUnder(k), sn = ps.filter(p => seen.has(p.id)).length;
       return `<a class="tile cut ${id === "root" ? "big" : ""}" href="#/n/${k}">
-        <div class="tn">${esc(c.name)}</div><div class="te">${esc(c.en || "")}</div>
+        <div class="tn">${numTag(k)}${esc(c.name)}</div><div class="te">${esc(c.en || "")}</div>
         <div class="td">${esc(c.desc)}</div>
         <div class="tc">부품 ${ps.length}개 · 본 것 <b>${sn}</b></div></a>`;
     }).join("") + `</div>`;
@@ -312,7 +335,7 @@ function renderNode(id){
       const list = shown.filter(p => p.s === sk);
       if(!list.length) return;
       h += `<h3 class="sub">${esc(sn)} <span class="mono" style="color:var(--ink-3);font-weight:400">${list.length}</span></h3>
-            <div class="plist">${list.map(partRow).join("")}</div>`;
+            <div class="plist">${list.map(p => partRow(p, nums[p.id])).join("")}</div>`;
     });
     if(!shown.length) h += `<p class="desc">조건에 맞는 부품이 없습니다.</p>`;
   }
@@ -549,8 +572,9 @@ function renderAbout(){
       아래 버튼으로 전체 데이터를 엑셀용 CSV로 받아 검수에 쓰세요.
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary cut" id="csv">검수용 CSV 내려받기</button>
       <button class="btn cut" id="reset">본 부품 기록 지우기</button></div></div>
-    <div class="note"><h3>이미지</h3>
-      그림 자리는 분류마다 준비되어 있고, 이미지가 들어오면 그 위에 누를 수 있는 핀이 붙습니다. 지금은 글자 목록으로 길을 찾습니다.</div>`;
+    <div class="note"><h3>그림</h3>
+      분류 화면의 그림은 이미지 생성 AI로 만든 교육용 개념도입니다. 부품이 차의 어디쯤 있는지 감을 잡는 용도이고, 실제 형상·분할선과는 다를 수 있습니다.
+      그림 위 번호 핀과 아래 목록의 번호가 같은 부품입니다. 휴대폰에서는 핀에 번호만 보입니다.</div>`;
   $("#csv").onclick = csv;
   $("#reset").onclick = () => { if(confirm("본 부품 체크 기록을 모두 지울까요?")){ seen = new Set(); store.set(SEEN_KEY, []); setProgress(); } };
 }

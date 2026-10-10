@@ -753,3 +753,36 @@ const GLOSS = [
 /* ---------- 5. 5분 기본 코스 (대표 부품 순서) ---------- */
 const COURSE = ["door_outer_f","door_inner_f","hood_outer","side_outer","b_pillar_reinf","front_side_member",
   "front_bumper_beam","front_floor","seat_cross","lower_arm_f","subframe_f","motor_core"];
+
+/* ---------- 6. 분류별 그림과 핀 ----------
+   file : img/ 폴더의 파일 번호 (build.sh 가 index.html 안에 그림을 넣는다)
+   pins : [가리킬 id(분류 또는 부품), 가로 %, 세로 %, 핀에 보일 짧은 이름]
+   그림은 이미지 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있다.
+*/
+const IMG_CREDIT = "그림: 이미지 생성 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있습니다.";
+const IMGS = {
+  root:     [{ file:"01", pins:[["biw",52,18,"BIW 차체"],["chassis",42,86,"섀시"],["seat",62,36,"시트"],["ev",75,66,"EV 배터리"]] }],
+  biw:      [{ file:"02", pins:[["closure",17,52,"개폐부"],["frame",55,35,"차체 골격"]] }],
+  closure:  [{ file:"03", pins:[["door_outer_f",15,62,"도어 아우터"],["door_belt_reinf",45,31,"벨트라인 보강"],["door_beam_f",44,48,"임팩트빔"],
+                                ["door_hinge_reinf",33,58,"힌지 보강"],["door_inner_f",70,47,"도어 이너"],["door_sash",88,38,"도어 프레임"]] },
+             { file:"04", pins:[["hood_outer",20,35,"후드 아우터"],["hood_inner",53,35,"후드 이너"],["fender",82,40,"펜더"],
+                                ["trunk_outer",20,68,"트렁크 아우터"],["trunk_inner",55,70,"트렁크 이너"],["fuel_door",87,73,"주유구"]] }],
+  frame:    [{ file:"05", pins:[["roof_panel",55,12,"루프 패널"],["roof_bow",47,25,"루프 보우"],["a_pillar_reinf",22,33,"A필러 보강"],
+                                ["b_pillar_reinf",55,55,"B필러 보강"],["side_sill_reinf",60,72,"사이드실"],["front_side_member",32,60,"프론트 사이드멤버"],
+                                ["front_bumper_beam",15,80,"프론트 범퍼빔"],["rear_bumper_beam",88,32,"리어 범퍼빔"]] },
+             { file:"06", pins:[["front_side_member_rr",7,52,"사이드멤버 리어"],["seat_cross",37,37,"시트 크로스멤버"],["center_tunnel",28,53,"센터 터널"],
+                                ["front_floor",48,60,"프론트 플로어"],["floor_member",30,32,"플로어 사이드멤버"],["rear_floor",75,27,"리어 플로어"],
+                                ["rear_cross",73,40,"리어 크로스멤버"],["rear_side_member",88,45,"리어 사이드멤버"]] }],
+  chassis:  [{ file:"07", pins:[["wheel",17,22,"휠"],["subframe",15,48,"서브프레임"],["susp",80,32,"서스펜션"],["brake",63,45,"연료·배기"]] }],
+  susp:     [{ file:"08", pins:[["coil_spring",15,25,"코일 스프링"],["shock_tube",14,42,"쇼크업소버"],["knuckle",8,58,"너클"],["lower_arm_f",22,76,"프론트 로어암"],
+                                ["lateral_link",46,30,"래터럴 링크"],["lower_arm_r",43,64,"리어 로어암"],["ctba",72,48,"토션빔 (CTBA)"]] }],
+  subframe: [{ file:"09", pins:[["subframe_f",25,55,"프론트 서브프레임"],["engine_mount_brkt",28,32,"마운트 브라켓"],["subframe_brkt",6,45,"마운팅 브라켓"],["subframe_r",72,47,"리어 서브프레임"]] }],
+  wheel:    [{ file:"10", pins:[["wheel_disc",22,50,"휠 디스크"],["wheel_rim",52,38,"휠 림"]] }],
+  steer:    [{ file:"11", pins:[["cowl_crossbar",25,28,"카울 크로스바"],["steering_column",66,22,"스티어링 컬럼"],["rack_housing",45,70,"기어 하우징"],["tie_rod",8,60,"타이로드"]] }],
+  brake:    [{ file:"12", pins:[["brake_disc",10,40,"브레이크 디스크"],["brake_cover",28,27,"더스트 커버"],["fuel_tank",65,30,"연료탱크"],
+                                ["heat_shield",60,57,"차열판"],["muffler",60,73,"머플러"],["exhaust_pipe",16,72,"배기관"]] }],
+  seat:     [{ file:"13", pins:[["seat_back_frame",55,25,"시트백 프레임"],["seat_cushion_frame",30,57,"쿠션 프레임"],["seat_recliner",66,55,"리클라이너"],["seat_rail",40,80,"시트 레일"]] }],
+  ev:       [{ file:"14", pins:[["battery_top",25,14,"상부 커버"],["battery_cross",13,44,"크로스멤버"],["battery_side",25,60,"사이드 프레임"],
+                                ["battery_lower",25,76,"하부 플레이트"],["motor_core",72,50,"모터 코어"]] }],
+  pt:       [{ file:"15", pins:[["oil_pan",30,72,"오일팬"],["heat_shield",76,35,"차열판"]] }]
+};

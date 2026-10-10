@@ -5,11 +5,12 @@
 - `index.html` : 배포용. 이 파일 하나만 열면 됩니다 (오프라인 동작)
 - `data.js` : 부품·규격·용어 데이터 원본. **검수·수정은 여기서**
 - `app.html` : 화면 틀
-- `build.sh` : `data.js` + `app.html` → `index.html`
+- `img/` : 분류 화면 그림
+- `build.sh` : `data.js` + `app.html` + `img/` → `index.html`
 
 ## 상태
 
 - 모든 값은 **일반적인 업계 경향 초안**입니다. 사내 TS 검수 전에는 배포하지 마세요.
 - 영업 항목(구매 주체·공급 경로·대당 사용량·기회와 약점)은 비어 있습니다. `PARTS` 각 항목에 `sales:{buyer, route, kg, swot}` 로 채웁니다.
-- 이미지는 아직 없습니다. `TREE` 각 분류의 `img` 에 `{src, credit, pins:[{to, x, y}]}` 를 넣으면 그림 위에 누를 수 있는 핀이 붙습니다.
+- 그림 15장(`img/*.webp`)은 이미지 생성 AI로 만든 개념도입니다(`IMAGE_PROMPTS.md`). 핀 좌표는 `data.js` 의 `IMGS` 에서 고칩니다. 그림을 바꾸면 같은 번호 파일로 덮어쓰고 `build.sh` 를 돌리세요.
 - 앱의 「안내」 화면에서 검수용 CSV(엑셀)를 내려받을 수 있습니다.
