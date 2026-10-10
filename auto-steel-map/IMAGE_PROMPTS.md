@@ -2,6 +2,38 @@
 
 자동차강판 부품 지도에 들어갈 그림을 다른 이미지 AI(ChatGPT, Gemini, Midjourney 등)로 만들 때 쓰는 프롬프트입니다.
 
+## 한 번에 붙여넣는 통합 프롬프트
+
+아래 블록 하나만 붙여 넣으면 됩니다. 한 번에 여러 장을 그리는 도구는 15장을 다 그리고, 한 장씩만 그리는 도구는 1번부터 그린 뒤 `next`라고 칠 때마다 다음 장을 그립니다.
+
+```
+I need a set of 15 technical illustrations for a steel sales training course. Please create them all in the order below, one separate image per item. If you can output several images in one reply, output all 15 now. If you can only make one image per reply, make image 1 now and then make the next one each time I reply "next".
+
+STYLE FOR EVERY IMAGE (keep identical across all 15 so they look like one set):
+Clean technical illustration, flat vector style with subtle shading, consistent dark graphite outlines of even weight. Palette only: steel blue #1F5C99, light steel gray #D3DDE6, graphite #243342, warm red #B8463C, white. Plain pure white background. Wide 16:9 landscape, highest resolution available. Even soft lighting. Generic car with no brand features. Bare unpainted metal look. ABSOLUTELY NO text, labels, letters, numbers, arrows, callouts, logos or watermarks anywhere in the image. Every listed part must be clearly visible and visually separate so it can be pointed at.
+Color rule: ultra high strength reinforcements = warm red, crash-absorbing members and outer skin panels = steel blue, other sheet metal = light steel gray, cast/forged/mechanical parts = graphite.
+
+1. Whole car: three-quarter front cutaway of a mid-size electric sedan. Upper body shell (body in white) in steel blue with semi-transparent outer panels showing pillars and roof rails; chassis in graphite underneath (front and rear suspension, subframes, four wheels, steering rack); bare metal front seat frames visible through the windows; flat battery pack under the floor between the axles.
+2. Body in white, exploded isometric: main body structure in the center (light steel gray); four doors, hood, two front fenders and trunk lid pulled outward and floating apart (steel blue). No glass, no wheels.
+3. Front door, exploded isometric, parts separated left to right with even gaps: outer skin panel (steel blue), beltline reinforcement strip, long diagonal side impact beam (warm red), hinge reinforcement plate, deep-drawn inner panel with speaker and regulator cut-outs (light steel gray), thin window frame loop (door sash).
+4. Closure parts laid out in two neat rows: hood outer panel, hood inner panel with lattice ribs, front fender with wheel arch; trunk lid outer panel, trunk lid inner panel, small round fuel filler door.
+5. Body structure, three-quarter front isometric, doors/hood/fenders/trunk lid removed and near-side outer side panel removed. Warm red: A-pillar, B-pillar, side sill (rocker), roof side rail, front and rear bumper beams. Steel blue: front side members through the engine bay, crash boxes behind the front bumper beam. Light steel gray: roof panel, roof bows, C-pillar, strut towers, fender aprons, dash panel (firewall), cowl, radiator support.
+6. Underbody floor assembly alone, isometric from above, car front on the left: flat front floor panels split by a raised center tunnel (light steel gray), seat cross members across the floor (warm red), floor side members front to back (steel blue), rear floor with deep round spare tire well, rear side members (steel blue), rear cross member, front side member extensions bending under the front of the floor (warm red).
+7. Chassis seen from directly underneath, car front on the left, body floor as a faint gray outline: front subframe with two lower control arms, steering rack with tie rods, front brake discs, rear subframe with multi-link arms, coil springs and shock absorbers at each corner, front and rear stabilizer bars, four wheels, fuel tank ahead of the rear axle (steel blue), exhaust pipe to a rear muffler (warm red).
+8. Three suspension units side by side, slightly exploded, isometric: left, front MacPherson strut corner with pressed steel lower control arm (steel blue), cast steering knuckle (graphite), coil spring (warm red) around the shock absorber, stabilizer bar; center, rear multi-link corner with lower spring arm, two thin lateral links, trailing arm, upper arm; right, twist beam rear axle with U-shaped cross beam joining two trailing arms.
+9. Two welded pressed steel subframes side by side, isometric: front subframe (engine cradle) with corner mounting brackets and an engine mount bracket on top; rear multi-link subframe with mounting brackets.
+10. Stamped steel car wheel, exploded three-quarter view: wheel disc with bolt and vent holes (steel blue) pulled forward out of the cylindrical rim (light steel gray), tire as a faint gray outline behind.
+11. Steering system without dashboard, isometric: long tubular cross car beam (cowl cross bar, steel blue) spanning left to right, steering column tube with its mounting bracket on the beam, steering wheel outline, intermediate shaft down to the steering rack housing (graphite) with tie rods to both sides.
+12. Three groups left to right, isometric: disc brake corner with cast iron disc (graphite), caliper and thin pressed steel dust shield behind the disc (steel blue); pressed steel fuel tank with edge seam welds (steel blue); exhaust pipe into an oval muffler (warm red) with a thin embossed heat shield plate above it.
+13. Bare front car seat skeleton without foam or fabric, three-quarter view: seat back frame (steel blue), seat cushion frame and pan (light steel gray), round recliner mechanism at the back-cushion joint (warm red), two long seat rails underneath (graphite).
+14. Left two thirds: electric vehicle battery pack exploded vertically: thin top cover (light steel gray), rows of battery modules (graphite), internal cross members between modules (warm red), strong side frame around the edge (warm red), flat bottom plate (steel blue). Right third: electric traction motor cutaway showing stator and rotor made of many thin stacked laminated steel sheets (steel blue).
+15. Engine block outline in light gray with a deep-drawn sheet steel oil pan attached underneath (steel blue), and a thin embossed heat shield plate (steel blue) next to the exhaust manifold.
+```
+
+아래 개별 프롬프트는 특정 그림만 다시 뽑을 때 씁니다.
+
+---
+
 ## 쓰는 법
 
 1. 아래 프롬프트를 **한 장씩 통째로** 복사해 붙여 넣습니다. 앞부분 스타일 문장이 모든 프롬프트에 똑같이 들어 있어서, 그림들의 화풍이 맞춰집니다.
