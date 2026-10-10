@@ -782,7 +782,6 @@ const COURSE = ["door_outer_f","door_inner_f","hood_outer","side_outer","b_pilla
    pins : [가리킬 id(분류 또는 부품), 가로 %, 세로 %, 핀에 보일 짧은 이름, 이름 펼칠 방향("l" 왼쪽·"r" 오른쪽, 생략하면 자동)]
           지금 판에서 숨겨진 분류·부품을 가리키는 핀은 저절로 빠진다
    그림은 이미지 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있다.
-   old_ 로 시작하는 그림은 1판(저해상도) 그림. 새 그림이 오면 바꿔 끼운다. (남은 것: old_engine)
 */
 const IMG_CREDIT = "그림: 이미지 생성 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있습니다.";
 const IMGS = {
@@ -821,5 +820,5 @@ const IMGS = {
                                 ["seat_cushion_frame",35,55,"쿠션 프레임","r"],["seat_rail",28,80,"시트 레일","r"]] }],
   ev:       [{ file:"ev", pins:[["battery_top",30,12,"상부 커버","r"],["battery_cross",25,31,"크로스멤버","r"],["battery_side",10,55,"사이드 프레임","r"],
                                 ["battery_lower",35,85,"하부 플레이트","r"],["motor_core",82,48,"모터 코어","l"]] }],
-  pt:       [{ file:"old_engine", pins:[["oil_pan",30,72,"오일팬"],["heat_shield",76,35,"차열판"]] }]
+  pt:       [{ file:"engine", pins:[["oil_pan",28,70,"오일팬","r"],["heat_shield",86,50,"차열판","l"]] }]
 };
