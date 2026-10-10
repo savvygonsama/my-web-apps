@@ -200,7 +200,7 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <p class="kicker">Auto Steel Map</p>
+      <p class="kicker">Auto Steel Map · <span id="edition"></span></p>
       <h1>자동차강판 부품 지도</h1>
     </div>
     <div class="progress cut" id="progress"></div>
@@ -228,11 +228,17 @@
 /*@@IMG@@*/
 </script>
 <script>
+/* 이 판의 차종. "ice" 내연차, 나중에 "ev" 전기차판을 붙일 수 있게 데이터는 둘 다 들고 있다 */
+const MODE = "ice", MODE_NAME = { ice:"내연차편", ev:"전기차편" }[MODE];
+const ALL_PARTS = PARTS;
 (function(){
 "use strict";
 const $ = s => document.querySelector(s);
+/* 이 판에서 보일 부품만 남긴다 */
+const PARTS = ALL_PARTS.filter(p => !p.v || p.v === MODE);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const PMAP = {}; PARTS.forEach(p => PMAP[p.id] = p);
+const COURSE_V = COURSE.filter(id => PMAP[id]);
 
 /* 진도 저장 — 저장이 막힌 환경에서도 화면은 그대로 동작 */
 const store = {
@@ -252,6 +258,14 @@ function partsUnder(id){
 }
 function subName(p){ const t = TREE[p.g]; const s = (t.subs || []).find(x => x[0] === p.s); return s ? s[1] : ""; }
 function pathText(p){ return nodeChain(p.g).slice(1).map(n => TREE[n].name).concat(subName(p)).filter(Boolean).join(" › "); }
+/* 분류 이름·설명을 이 판 기준으로 바꾸고, 보일 부품이 없는 분류는 뺀다 */
+Object.values(TREE).forEach(t => {
+  ["name","desc","why"].forEach(f => { const by = t[f + "By"]; if(by && by[MODE]) t[f] = by[MODE]; });
+});
+Object.keys(TREE).forEach(id => {
+  const t = TREE[id];
+  if(t.kids) t.kids = t.kids.filter(k => (!TREE[k].v || TREE[k].v === MODE) && partsUnder(k).length);
+});
 function summary(p){ return [p.b + (p.c && p.c !== "—" ? " " + p.c : ""), p.gr, p.t + (/\d/.test(p.t) ? " mm" : "")].join(" · "); }
 
 /* 화면 위쪽 공통 */
@@ -272,20 +286,25 @@ function nodeCrumbs(id){ return nodeChain(id).map(n => [TREE[n].name, "#/n/" + n
 /* ---------- 분류 화면 ---------- */
 let filt = { kind:"전체", hideNonSheet:false };
 /* 그림 위 핀 번호 — 목록·타일의 번호와 짝을 이룬다 */
+const pinOk = to => (TREE[to] && (TREE[to].parent === undefined || nodeChain(to).every(n => !TREE[n].parent || TREE[TREE[n].parent].kids.includes(n)))) || PMAP[to];
+function imgsOf(id){
+  return (IMGS[id] || []).filter(im => IMG_SRC[im.file] && (!im.v || im.v === MODE))
+    .map(im => ({ file:im.file, pins:im.pins.filter(pn => pinOk(pn[0])) }));
+}
 function pinNums(id){
   const m = {}; let n = 0;
-  (IMGS[id] || []).forEach(im => im.pins.forEach(pn => { if(!(pn[0] in m)) m[pn[0]] = ++n; }));
+  imgsOf(id).forEach(im => im.pins.forEach(pn => { if(!(pn[0] in m)) m[pn[0]] = ++n; }));
   return m;
 }
 function figHTML(id){
-  const ims = (IMGS[id] || []).filter(im => IMG_SRC[im.file]);
+  const ims = imgsOf(id);
   if(!ims.length) return "";
   const nums = pinNums(id);
   const one = im => `<div class="fig"><img src="${IMG_SRC[im.file]}" alt="${esc(TREE[id].name)} 그림" loading="lazy">` +
-    im.pins.map(([to, x, y, lb]) => {
+    im.pins.map(([to, x, y, lb, dir]) => {
       const href = TREE[to] ? "#/n/" + to : "#/p/" + to;
       const full = TREE[to] ? TREE[to].name : PMAP[to].n;
-      return `<a class="pin ${x > 58 ? "rt" : ""} ${seen.has(to) ? "seen" : ""}" href="${href}" title="${esc(full)}" style="left:${x}%;top:${y}%"><i>${nums[to]}</i><span>${esc(lb || full)}</span></a>`;
+      return `<a class="pin ${(dir ? dir === "l" : x > 58) ? "rt" : ""} ${seen.has(to) ? "seen" : ""}" href="${href}" title="${esc(full)}" style="left:${x}%;top:${y}%"><i>${nums[to]}</i><span>${esc(lb || full)}</span></a>`;
     }).join("") + `</div>`;
   return `<div class="figs ${ims.length > 1 ? "two" : ""}">${ims.map(one).join("")}</div><p class="credit">${esc(IMG_CREDIT)}</p>`;
 }
@@ -300,7 +319,7 @@ function partRow(p, num){
   </a>`;
 }
 function renderNode(id){
-  const t = TREE[id]; if(!t) return renderNode("root");
+  const t = TREE[id]; if(!t || !pinOk(id)) return renderNode("root");
   setTool(id === "root" ? "home" : "");
   setCrumbs(nodeCrumbs(id), t.parent ? "#/n/" + t.parent : null);
   let h = `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
@@ -318,7 +337,7 @@ function renderNode(id){
     }).join("") + `</div>`;
     if(id === "root"){
       h += `<div class="tiles">
-        <a class="tile cut" href="#/c/0"><div class="tn">5분 기본 코스</div><div class="td">대표 부품 ${COURSE.length}개를 순서대로 훑습니다. 처음이라면 여기부터.</div></a>
+        <a class="tile cut" href="#/c/0"><div class="tn">5분 기본 코스</div><div class="td">대표 부품 ${COURSE_V.length}개를 순서대로 훑습니다. 처음이라면 여기부터.</div></a>
         <a class="tile cut" href="#/s/"><div class="tn">부품 검색</div><div class="td">상담 직전에 부품명으로 바로 찾기. 현장 통칭으로도 찾아집니다.</div></a>
         <a class="tile cut" href="#/quiz"><div class="tn">확인 문제 3개</div><div class="td">본 내용을 떠올려 보는 짧은 문제. 매번 새로 나옵니다.</div></a>
       </div>`;
@@ -382,6 +401,7 @@ function partHTML(p){
       <p style="font-size:13px;color:var(--ink-3)">실제 수주는 OEM 자체 규격(현대 MS, GM, VW TL 등)으로 승인받습니다. 위 규격은 같은 계열을 가리키는 참고명입니다.</p>
       <h4>경쟁 소재</h4><p>${esc(p.alt)}</p>
       ${p.note ? `<h4>비고</h4><p>${esc(p.note)}</p>` : ""}
+      ${p.evn && MODE === "ice" ? `<h4>전기차에서는</h4><p>${esc(p.evn)}</p>` : ""}
       <h4>출처·검수</h4><p>업계 일반 경향 기반 초안 · TS 검수 <span class="blank">미완료</span></p>` : ""}
     ${tab === "qa" ? `
       <div class="qa"><div class="q">${esc(p.q)}</div><div class="a">${esc(p.a)}</div></div>
@@ -417,15 +437,15 @@ function renderPart(id){
 
 /* ---------- 5분 코스 ---------- */
 function renderCourse(i){
-  i = Math.max(0, Math.min(COURSE.length - 1, i | 0));
-  const p = PMAP[COURSE[i]];
+  i = Math.max(0, Math.min(COURSE_V.length - 1, i | 0));
+  const p = PMAP[COURSE_V[i]];
   setTool("c");
   markSeen(p.id); setProgress();
   setCrumbs([["자동차", "#/"], ["5분 기본 코스", null]], "#/");
-  const last = i === COURSE.length - 1;
+  const last = i === COURSE_V.length - 1;
   $("#view").innerHTML = `
-    <div class="coursebar cut"><b>5분 기본 코스 ${i + 1} / ${COURSE.length}</b>
-      <div class="bar"><i style="width:${(i + 1) / COURSE.length * 100}%"></i></div>
+    <div class="coursebar cut"><b>5분 기본 코스 ${i + 1} / ${COURSE_V.length}</b>
+      <div class="bar"><i style="width:${(i + 1) / COURSE_V.length * 100}%"></i></div>
       <span style="font-size:13px;color:#C8D8E8">${esc(pathText(p))}</span></div>
     ${partHTML(p)}
     <div class="pager">
@@ -480,7 +500,7 @@ function makeQuiz(){
     qs.push({ text:`'${p.n}'에 주로 쓰는 소재는?`, opts:shuffle(opts).map(o => ({ t:label(o), right:o === p })), part:p });
   });
   // 유형 B: 소재 → 부품 (1문항)
-  const tpl = shuffle(TEMPLATES)[0];
+  const tpl = shuffle(TEMPLATES).find(t => (t.pool ? t.pool() : sheetParts()).some(t.ok));
   const pool = tpl.pool ? tpl.pool() : sheetParts();
   const ans = shuffle(pool.filter(tpl.ok))[0];
   const wrong = shuffle(sheetParts().filter(x => !tpl.ok(x))).slice(0, 3);
@@ -540,13 +560,13 @@ function renderGloss(){
 
 /* ---------- 안내 ---------- */
 function csv(){
-  const head = ["id","대분류","그룹","세부","부품명","영문","현장통칭","구분","소재기반","표면처리","공법","강도등급","규격분류","JIS·JFS","EN·VDA","두께(mm)","선택이유","확신도","판재비중","경쟁소재","고객질문","답","상담멘트","구매주체","공급경로","대당사용량","기회·약점","TS검수자","검수일"];
+  const head = ["id","차종","대분류","그룹","세부","부품명","영문","현장통칭","구분","소재기반","표면처리","공법","강도등급","규격분류","JIS·JFS","EN·VDA","두께(mm)","선택이유","확신도","판재비중","경쟁소재","고객질문","답","상담멘트","구매주체","공급경로","대당사용량","기회·약점","전기차에서 달라지는 점","TS검수자","검수일"];
   const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-  const rows = PARTS.map(p => {
+  const rows = ALL_PARTS.map(p => {
     const ch = nodeChain(p.g), cl = p.cls.map(k => CLS[k]).filter(Boolean), s = p.sales || {};
-    return [p.id, TREE[ch[1]].name, TREE[p.g].name, subName(p), p.n, p.en, p.al, p.k, p.b, p.c, p.p, p.gr,
+    return [p.id, { ice:"내연차 전용", ev:"전기차 전용" }[p.v] || "공통", TREE[ch[1]].name, TREE[p.g].name, subName(p), p.n, p.en, p.al, p.k, p.b, p.c, p.p, p.gr,
       cl.map(c => c.label).join(" / "), cl.map(c => c.jis).join(" / "), cl.map(c => c.en).join(" / "),
-      p.t, p.why, p.cf, p.sh, p.alt, p.q, p.a, p.talk, s.buyer, s.route, s.kg, s.swot, "", ""].map(q).join(",");
+      p.t, p.why, p.cf, p.sh, p.alt, p.q, p.a, p.talk, s.buyer, s.route, s.kg, s.swot, p.evn, "", ""].map(q).join(",");
   });
   const blob = new Blob(["﻿" + [head.map(q).join(","), ...rows].join("\r\n")], { type:"text/csv;charset=utf-8" });
   const a = document.createElement("a");
@@ -561,7 +581,8 @@ function renderAbout(){
   $("#view").innerHTML = `<h2 class="title">안내</h2>
     <div class="note"><h3>이 자료는</h3>
       자동차강판 판매 직원이 차 한 대를 위에서부터 쪼개 보며, 부품마다 어떤 품종·강도·두께가 들어가는지 익히는 지도입니다.
-      부품 ${PARTS.length}개 (BIW ${cnt.biw || 0} · 섀시 ${cnt.chassis || 0} · 시트·EV·파워트레인 ${cnt.etc || 0}), 용어 ${GLOSS.length}개.</div>
+      ${MODE_NAME}에는 부품 ${PARTS.length}개 (BIW ${cnt.biw || 0} · 섀시 ${cnt.chassis || 0} · ${esc(TREE.etc.name)} ${cnt.etc || 0}), 용어 ${GLOSS.length}개가 들어 있습니다.
+      전기차 전용 부품(배터리 케이스·모터 코어)은 전기차편에서 다룹니다. 공통 부품 카드의 「전기차에서는」 항목에 차이를 적어 두었습니다.</div>
     <div class="note"><h3>값을 읽는 법</h3><ul>
       <li>모든 값은 <b>일반적인 업계 경향의 범위</b>입니다. OEM·차급·세대마다 다릅니다.</li>
       <li>확신도 상·중·하는 그 값이 업계 전반에 얼마나 통하는지에 대한 초안 판단입니다.</li>
@@ -601,6 +622,8 @@ window.addEventListener("hashchange", () => {
   if(key !== lastPart){ tab = "std"; lastPart = key; }
   route();
 });
+$("#edition").textContent = MODE_NAME;
+document.title = "자동차강판 부품 지도 · " + MODE_NAME;
 setProgress(); route();
 })();
 </script>
