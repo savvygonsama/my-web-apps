@@ -255,7 +255,7 @@
   </div>
   <main id="view"></main>
 </div>
-<footer class="draft">검수 전 초안입니다 · 값은 일반적인 업계 경향이며 특정 OEM·차종 기준이 아닙니다 · 고객 앞에서는 반드시 도면·규격서로 확인하세요</footer>
+<footer class="draft">검수 전 초안입니다 · 값은 일본계 OEM 기준의 일반적인 경향이며 특정 차종 기준이 아닙니다 · 고객 앞에서는 반드시 도면·규격서로 확인하세요</footer>
 
 <script>
 /*@@DATA@@*/
@@ -491,7 +491,7 @@ function partHTML(p){
     </dl>
     <div class="badges">
       <span class="badge cut c-${p.cf}">확신도 ${esc(p.cf)}</span>
-      <span class="badge cut">일반 경향 · 특정 OEM 기준 아님</span>
+      <span class="badge cut">일본계 OEM 기준 · 일반 경향</span>
       <span class="badge cut">판재 비중 ${esc(p.sh)}</span>
       <span class="badge cut draft">검수 전</span>
     </div>
@@ -505,7 +505,7 @@ function partHTML(p){
     ${tab === "std" ? `
       <h4>공법</h4><p>${esc(p.p)}</p>
       <h4>대응 규격 예시 (업계 통용 규격명)</h4>${stds}
-      <p style="font-size:13px;color:var(--ink-3)">실제 수주는 OEM 자체 규격(현대 MS, GM, VW TL 등)으로 승인받습니다. 위 규격은 같은 계열을 가리키는 참고명입니다.</p>
+      <p style="font-size:13px;color:var(--ink-3)">실제 수주는 일본계 OEM 자체 소재 규격(사내 승인 사양서)으로 승인받습니다. 일본계는 JIS·JFS 계열 이름이 기준이고, EN·VDA는 유럽계 대응 참고용입니다. 위 규격은 같은 계열을 가리키는 참고명입니다.</p>
       <h4>경쟁 소재</h4><p>${esc(p.alt)}</p>
       ${p.note ? `<h4>비고</h4><p>${esc(p.note)}</p>` : ""}
       ${p.evn && MODE === "ice" ? `<h4>전기차에서는</h4><p>${esc(p.evn)}</p>` : ""}
@@ -692,7 +692,7 @@ function renderAbout(){
       ${MODE_NAME}에는 부품 ${PARTS.length}개 (BIW ${cnt.biw || 0} · 섀시 ${cnt.chassis || 0} · ${esc(TREE.etc.name)} ${cnt.etc || 0}), 용어 ${GLOSS.length}개가 들어 있습니다.
       전기차 전용 부품(배터리 케이스·모터 코어)은 전기차편에서 다룹니다. 공통 부품 카드의 「전기차에서는」 항목에 차이를 적어 두었습니다.</div>
     <div class="note"><h3>값을 읽는 법</h3><ul>
-      <li>모든 값은 <b>일반적인 업계 경향의 범위</b>입니다. OEM·차급·세대마다 다릅니다.</li>
+      <li>모든 값은 <b>일본계 OEM 기준의 일반적인 경향 범위</b>입니다. 도금은 일본계 주력인 <b>GA</b>로 적었습니다(미국·유럽계는 GI 중심). 차급·세대마다 다릅니다.</li>
       <li>확신도 상·중·하는 그 값이 업계 전반에 얼마나 통하는지에 대한 초안 판단입니다.</li>
       <li>규격명은 JIS·JFS·EN·VDA 같은 통용 규격의 같은 계열 이름입니다. 실제 승인은 OEM 자체 규격으로 합니다.</li>
       <li>"판재 비중 낮음"은 단조·주조·선재·강관 등 판재 영업 대상이 아니거나 적은 부품입니다.</li></ul></div>

@@ -60,3 +60,12 @@
 - TI Fluid Systems: [PHEV sealed fuel tanks](https://tifluidsystems.com/tifs-blog-7/)
 - Outokumpu: [stainless fuel tanks](https://www.outokumpu.com/en/expertise/2022/sustainable-stainless-steel-fuel-tanks-for-hybrid-and-ice-vehicles)
 - AISI: [Bumper fact sheet](https://www.steel.org/wp-content/uploads/2020/10/AISI-Bumper-Team-Fact-Sheet-06242020.pdf)
+
+## 기준 변경: 일본계 OEM (2026-10-10)
+
+일본계 완성차를 상대하는 조직 기준으로 자료를 맞췄습니다.
+
+- 도금: 일본계 주력인 **GA** 기준으로 표기 (미국·유럽계는 GI 중심). 일본계 GA 선호는 도장 밀착성 때문이라는 설명이 있음 ([ITB 강연 요약](https://itb.ac.id/news/dr-daisuke-mizuno-corrosion-and-protection-in-automotives/5438))
+- 규격명: JIS·JFS를 기준, EN·VDA는 유럽계 대응 참고
+- 초고강도: 일본계 OEM·1차 협력사는 1.5GPa급까지 냉간 프레스 비중을 늘리는 중 ([SSAB](https://www.ssab.com/en-us/brands-and-products/ssab-docol/automotive-steel-resources/automotive-insights/cold-stamping-1500-and-1700-mpa-automotive-steels)), 닛산 로그 B필러는 SHF980·SHF1180 TWB 냉간 성형 ([AHSS Guidelines](https://ahssinsights.org/tag/hot-forming/))
+- 일본계 OEM 자체 소재 규격 번호는 공개 자료로 확인할 수 없어 적지 않음
