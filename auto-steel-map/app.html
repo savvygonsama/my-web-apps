@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자동차강판 부품 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* 스틸 계열 앱(코일센터 시뮬레이터)과 같은 결: 모서리를 자른 면, 청회색 바탕, 감청색 강조 */
+  :root{
+    --bg:#E3E9EF;
+    --f1:#F4F7F9; --f2:#E6ECF1; --f3:#D3DDE6; --edge:#BCC8D4;
+    --ink:#16202B; --ink-2:#4A5866; --ink-3:#7D8B9A;
+    --blue:#1F5C99; --blue-l:#4C8AC4; --deep:#243342;
+    --red:#B8463C; --ok:#2E7D53; --amber:#9A6B22; --teal:#1A7B83; --slate:#56677A; --green:#3E7A3A;
+    --cut:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-size:16px;
+    font-family:"IBM Plex Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  .cut{clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+  .wrap{max-width:900px;margin:0 auto;padding:18px 16px 90px}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .kicker{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+  h1{font-size:clamp(24px,5.5vw,32px);font-weight:700;letter-spacing:-.03em;margin:0;line-height:1.1;
+     background:linear-gradient(112deg,#3E7FBF 0 34%,#1F5C99 34% 62%,#123F6E 62% 100%);
+     -webkit-background-clip:text;background-clip:text;color:transparent}
+  .progress{font-size:13px;color:var(--ink-2);background:var(--f1);border:1px solid var(--edge);padding:6px 12px;--cut:8px;white-space:nowrap}
+  .progress b{color:var(--blue);font-family:"IBM Plex Mono",monospace}
+
+  nav.tools{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  nav.tools a{background:var(--f1);border:1px solid var(--edge);padding:8px 13px;font-size:14px;font-weight:600;color:var(--ink-2);--cut:8px;min-height:40px;display:inline-flex;align-items:center;gap:6px}
+  nav.tools a:hover,nav.tools a.on{background:var(--deep);color:#fff;border-color:var(--deep)}
+
+  .crumbbar{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:2px solid var(--edge);margin-bottom:16px}
+  .back{background:var(--blue);color:#fff;font-weight:700;padding:9px 15px;--cut:8px;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
+  .back:hover{filter:brightness(1.1)}
+  .back[hidden]{display:none}
+  .crumbs{font-size:13.5px;color:var(--ink-3);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+  .crumbs a{color:var(--ink-2);font-weight:600}
+  .crumbs a:hover{color:var(--blue);text-decoration:underline}
+  .crumbs .sep{margin:0 6px;color:var(--edge)}
+  .crumbs .here{color:var(--ink);font-weight:700}
+
+  h2.title{font-size:clamp(22px,5vw,28px);letter-spacing:-.025em;margin:0 0 2px;line-height:1.2}
+  .en{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.06em;color:var(--ink-3);margin:0 0 10px}
+  .desc{color:var(--ink-2);margin:0 0 14px;font-size:15.5px}
+  .why{background:var(--f1);border-left:4px solid var(--blue);padding:12px 16px;margin:0 0 18px;font-size:15px}
+  .why b{display:block;font-size:12px;color:var(--blue);letter-spacing:.04em;margin-bottom:2px}
+
+  /* 이미지 + 핀 */
+  .fig{position:relative;background:#fff;border:1px solid var(--edge);margin:0 0 6px;overflow:hidden}
+  .fig img{display:block;width:100%;height:auto}
+  .pin{position:absolute;transform:translate(-50%,-50%);background:var(--deep);color:#fff;font-size:13px;font-weight:700;
+       padding:9px 12px;min-height:40px;min-width:44px;white-space:nowrap;--cut:7px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .pin:hover{background:var(--blue)}
+  .credit{font-size:11px;color:var(--ink-3);margin:0 0 16px}
+
+  /* 하위 분류 타일 */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--f1);border:1px solid var(--edge);padding:16px 18px 14px;display:block;min-height:120px;transition:transform .08s}
+  .tile:hover{background:#fff;border-color:var(--blue-l);transform:translateY(-1px)}
+  .tile .tn{font-size:19px;font-weight:700;letter-spacing:-.02em}
+  .tile .te{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);letter-spacing:.05em}
+  .tile .td{font-size:14px;color:var(--ink-2);margin-top:6px}
+  .tile .tc{font-size:12px;color:var(--ink-3);margin-top:8px}
+  .tile .tc b{color:var(--blue)}
+  .tile.big{border-top:4px solid var(--blue)}
+
+  /* 필터 칩 */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+  .chip{background:var(--f1);border:1px solid var(--edge);padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink-2);min-height:36px;--cut:6px}
+  .chip.on{background:var(--deep);border-color:var(--deep);color:#fff}
+
+  /* 부품 목록 */
+  h3.sub{font-size:14px;letter-spacing:.02em;color:var(--ink-2);margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+  .plist{display:grid;gap:8px}
+  .prow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;background:var(--f1);border:1px solid var(--edge);padding:11px 14px;min-height:56px;--cut:8px}
+  .prow:hover{background:#fff;border-color:var(--blue-l)}
+  .prow .ck{width:22px;height:22px;border:2px solid var(--edge);display:grid;place-items:center;font-size:13px;color:#fff}
+  .prow.seen .ck{background:var(--ok);border-color:var(--ok)}
+  .prow .pn{font-weight:700;font-size:15.5px;line-height:1.3}
+  .prow .pa{font-size:12.5px;color:var(--ink-3)}
+  .prow .ps{font-size:13px;color:var(--ink-2);margin-top:2px}
+  .prow.dim{opacity:.62}
+
+  .kind{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;color:#fff;--cut:5px;white-space:nowrap}
+  .k-외판{background:var(--blue)} .k-내판{background:var(--teal)} .k-골격{background:var(--slate)}
+  .k-보강{background:var(--red)} .k-섀시{background:var(--green)} .k-기타{background:var(--amber)}
+
+  /* 부품 카드 */
+  .pcard{background:#fff;border:1px solid var(--edge);padding:20px 20px 16px;margin-bottom:14px}
+  .facts{display:grid;grid-template-columns:88px 1fr;gap:0;margin:6px 0 12px;border-top:1px solid var(--f3)}
+  .facts dt,.facts dd{margin:0;padding:10px 0;border-bottom:1px solid var(--f3)}
+  .facts dt{font-size:13px;font-weight:700;color:var(--ink-3)}
+  .facts dd{font-size:16.5px;font-weight:600;letter-spacing:-.01em}
+  .facts dd.whyline{font-size:15px;font-weight:500;color:var(--ink-2);line-height:1.6}
+  .facts dd .mono{font-size:17px}
+  .badges{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{font-size:12px;font-weight:600;padding:3px 9px;background:var(--f2);color:var(--ink-2);--cut:5px}
+  .badge.c-상,.badge.c-중상{background:#D7E6DC;color:#1F5F40}
+  .badge.c-중{background:#E8E3D2;color:#6C5413}
+  .badge.c-중하,.badge.c-하{background:#F0DCDA;color:#8F332A}
+  .badge.draft{background:#FFF1C9;color:#7A5A00}
+
+  .tabs{display:flex;gap:2px;margin:0;border-bottom:2px solid var(--deep)}
+  .tabs button{padding:10px 16px;font-weight:700;font-size:14.5px;color:var(--ink-2);background:var(--f2);min-height:44px}
+  .tabs button.on{background:var(--deep);color:#fff}
+  .tabpane{background:var(--f1);border:1px solid var(--edge);border-top:0;padding:16px 18px;margin-bottom:16px;font-size:15px}
+  .tabpane h4{margin:14px 0 6px;font-size:13px;color:var(--ink-3);letter-spacing:.02em}
+  .tabpane h4:first-child{margin-top:0}
+  .tabpane p{margin:0 0 6px}
+  .std{border:1px solid var(--edge);background:#fff;padding:10px 12px;margin-bottom:8px;font-size:14px}
+  .std .sl{font-weight:700;margin-bottom:4px}
+  .std .sr{display:grid;grid-template-columns:70px 1fr;gap:4px;color:var(--ink-2)}
+  .std .sr span:nth-child(odd){font-size:12px;color:var(--ink-3);font-weight:700;padding-top:2px}
+  .qa{background:#fff;border:1px solid var(--edge);padding:12px 14px;margin-bottom:10px}
+  .qa .q{font-weight:700}
+  .qa .q::before{content:"Q. ";color:var(--blue)}
+  .qa .a{color:var(--ink-2);margin-top:4px}
+  .qa .a::before{content:"A. ";color:var(--ok);font-weight:700}
+  .talk{background:var(--deep);color:#fff;padding:12px 16px;font-weight:600;--cut:8px}
+  .talk::before{content:"상담 한 줄  ";color:#9EC3EA;font-size:12px;font-weight:700}
+  .blank{color:var(--ink-3);font-style:italic}
+  .sales{display:grid;grid-template-columns:120px 1fr;border-top:1px solid var(--f3)}
+  .sales div{padding:9px 0;border-bottom:1px solid var(--f3)}
+  .sales div:nth-child(odd){font-size:13px;font-weight:700;color:var(--ink-3)}
+
+  .pager{display:flex;justify-content:space-between;gap:8px;margin-top:6px}
+  .pager a,.btn{background:var(--f1);border:1px solid var(--edge);padding:10px 14px;font-weight:600;font-size:14px;min-height:44px;display:inline-flex;align-items:center;--cut:8px;max-width:48%}
+  .pager a:hover,.btn:hover{background:#fff;border-color:var(--blue-l)}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.primary:hover{background:var(--blue-l)}
+  .coursebar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--deep);color:#fff;padding:10px 14px;margin-bottom:14px;--cut:8px;flex-wrap:wrap}
+  .coursebar .bar{flex:1;min-width:120px;height:6px;background:rgba(255,255,255,.2)}
+  .coursebar .bar i{display:block;height:100%;background:#7FB3E6}
+
+  /* 검색 */
+  .searchbox{display:flex;gap:8px;margin:0 0 16px}
+  .searchbox input{flex:1;font:inherit;font-size:16px;padding:12px 14px;border:2px solid var(--edge);background:#fff;min-height:48px;outline:none}
+  .searchbox input:focus{border-color:var(--blue)}
+  .path{font-size:12px;color:var(--ink-3)}
+
+  /* 퀴즈 */
+  .quiz .qn{font-size:12px;color:var(--ink-3);font-weight:700;letter-spacing:.06em}
+  .quiz .qt{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:4px 0 14px;line-height:1.4}
+  .opts{display:grid;gap:8px}
+  .opt{text-align:left;background:var(--f1);border:2px solid var(--edge);padding:12px 14px;font-size:15.5px;font-weight:600;min-height:52px}
+  .opt:hover:not([disabled]){border-color:var(--blue-l);background:#fff}
+  .opt.right{border-color:var(--ok);background:#E3F1E8}
+  .opt.wrong{border-color:var(--red);background:#F7E4E2}
+  .opt[disabled]{cursor:default}
+  .explain{margin-top:12px;background:#fff;border-left:4px solid var(--ok);padding:10px 14px;font-size:14.5px}
+  .score{font-size:42px;font-weight:700;font-family:"IBM Plex Mono",monospace;color:var(--blue);letter-spacing:-.03em}
+
+  /* 용어 */
+  .gl{display:grid;grid-template-columns:minmax(120px,190px) 1fr;border-top:1px solid var(--edge)}
+  .gl dt,.gl dd{margin:0;padding:10px 0;border-bottom:1px solid var(--edge)}
+  .gl dt{font-weight:700;padding-right:12px}
+  .gl dd{color:var(--ink-2);font-size:15px}
+  .glbtn{display:inline-block;font-size:12px;font-weight:700;color:var(--blue);border-bottom:1px dashed var(--blue-l)}
+
+  .note{background:var(--f1);border:1px solid var(--edge);padding:14px 18px;margin-bottom:12px;font-size:14.5px;color:var(--ink-2)}
+  .note h3{margin:0 0 6px;color:var(--ink);font-size:16px}
+  .note ul{margin:4px 0 0;padding-left:20px}
+
+  footer.draft{position:fixed;left:0;right:0;bottom:0;background:#FFF1C9;color:#6B4F00;font-size:12.5px;text-align:center;padding:7px 12px;border-top:1px solid #E8D290;z-index:6}
+  @media(max-width:560px){
+    .facts{grid-template-columns:72px 1fr}
+    .sales{grid-template-columns:96px 1fr}
+    .gl{grid-template-columns:1fr}
+    .gl dt{border-bottom:0;padding-bottom:0}
+    .prow{grid-template-columns:24px 1fr}
+    .prow .kindcell{display:none}
+    .tabs button{padding:10px 11px;font-size:13.5px}
+    .crumbs{white-space:normal;line-height:1.5}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">Auto Steel Map</p>
+      <h1>자동차강판 부품 지도</h1>
+    </div>
+    <div class="progress cut" id="progress"></div>
+  </header>
+  <nav class="tools" id="tools">
+    <a class="cut" href="#/" data-r="home">처음으로</a>
+    <a class="cut" href="#/s/" data-r="s">부품 검색</a>
+    <a class="cut" href="#/c/0" data-r="c">5분 기본 코스</a>
+    <a class="cut" href="#/quiz" data-r="quiz">확인 문제</a>
+    <a class="cut" href="#/gloss" data-r="gloss">용어 풀이</a>
+    <a class="cut" href="#/about" data-r="about">안내</a>
+  </nav>
+  <div class="crumbbar">
+    <a class="back cut" id="back" href="#/">← 전단계</a>
+    <div class="crumbs" id="crumbs"></div>
+  </div>
+  <main id="view"></main>
+</div>
+<footer class="draft">검수 전 초안입니다 · 값은 일반적인 업계 경향이며 특정 OEM·차종 기준이 아닙니다 · 고객 앞에서는 반드시 도면·규격서로 확인하세요</footer>
+
+<script>
+/*@@DATA@@*/
+</script>
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const PMAP = {}; PARTS.forEach(p => PMAP[p.id] = p);
+
+/* 진도 저장 — 저장이 막힌 환경에서도 화면은 그대로 동작 */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const SEEN_KEY = "autoSteelMap.seen.v1";
+let seen = new Set(store.get(SEEN_KEY, []).filter(id => PMAP[id]));
+function markSeen(id){ if(!seen.has(id)){ seen.add(id); store.set(SEEN_KEY, [...seen]); } }
+
+/* 트리 도우미 */
+function nodeChain(id){ const out = []; let n = id; while(n){ out.unshift(n); n = TREE[n].parent; } return out; }
+function partsUnder(id){
+  const t = TREE[id]; if(!t) return [];
+  if(t.kids) return t.kids.flatMap(partsUnder);
+  return PARTS.filter(p => p.g === id);
+}
+function subName(p){ const t = TREE[p.g]; const s = (t.subs || []).find(x => x[0] === p.s); return s ? s[1] : ""; }
+function pathText(p){ return nodeChain(p.g).slice(1).map(n => TREE[n].name).concat(subName(p)).filter(Boolean).join(" › "); }
+function summary(p){ return [p.b + (p.c && p.c !== "—" ? " " + p.c : ""), p.gr, p.t + (/\d/.test(p.t) ? " mm" : "")].join(" · "); }
+
+/* 화면 위쪽 공통 */
+function setProgress(){
+  $("#progress").innerHTML = `본 부품 <b>${seen.size}</b> / ${PARTS.length}`;
+}
+function setCrumbs(items, backHref){
+  // items: [[label, href|null], ...]
+  $("#crumbs").innerHTML = items.map((it, i) => i === items.length - 1
+      ? `<span class="here">${esc(it[0])}</span>`
+      : `<a href="${it[1]}">${esc(it[0])}</a><span class="sep">›</span>`).join("");
+  const b = $("#back");
+  if(backHref){ b.hidden = false; b.href = backHref; } else { b.hidden = true; }
+}
+function setTool(r){ document.querySelectorAll("#tools a").forEach(a => a.classList.toggle("on", a.dataset.r === r)); }
+function nodeCrumbs(id){ return nodeChain(id).map(n => [TREE[n].name, "#/n/" + n]); }
+
+/* ---------- 분류 화면 ---------- */
+let filt = { kind:"전체", hideNonSheet:false };
+function figHTML(t){
+  if(!t.img) return "";
+  const pins = (t.img.pins || []).map(pn => {
+    const target = TREE[pn.to] ? { href:"#/n/" + pn.to, label:TREE[pn.to].name } : PMAP[pn.to] ? { href:"#/p/" + pn.to, label:PMAP[pn.to].n } : null;
+    if(!target) return "";
+    return `<a class="pin cut" href="${target.href}" style="left:${pn.x}%;top:${pn.y}%">${esc(pn.label || target.label)}</a>`;
+  }).join("");
+  return `<div class="fig"><img src="${esc(t.img.src)}" alt="${esc(t.name)}">${pins}</div>
+          <p class="credit">${esc(t.img.credit || "")}</p>`;
+}
+function partRow(p){
+  const nonSheet = p.sh === "하";
+  return `<a class="prow cut ${seen.has(p.id) ? "seen" : ""} ${nonSheet ? "dim" : ""}" href="#/p/${p.id}">
+    <span class="ck">${seen.has(p.id) ? "✓" : ""}</span>
+    <span><div class="pn">${esc(p.n)}</div>
+      <div class="ps">${esc(summary(p))}</div>
+      ${p.al ? `<div class="pa">${esc(p.al)}</div>` : ""}</span>
+    <span class="kindcell"><span class="kind cut k-${p.k}">${p.k}</span>${nonSheet ? `<div class="pa" style="text-align:right">판재 비중 낮음</div>` : ""}</span>
+  </a>`;
+}
+function renderNode(id){
+  const t = TREE[id]; if(!t) return renderNode("root");
+  setTool(id === "root" ? "home" : "");
+  setCrumbs(nodeCrumbs(id), t.parent ? "#/n/" + t.parent : null);
+  let h = `<h2 class="title">${esc(t.name)}</h2>${t.en ? `<p class="en">${esc(t.en)}</p>` : ""}
+           <p class="desc">${esc(t.desc)}</p>`;
+  if(t.why) h += `<div class="why"><b>이 그룹은 왜 이 소재인가</b>${esc(t.why)}</div>`;
+  h += figHTML(t);
+  if(t.kids){
+    h += `<div class="tiles">` + t.kids.map(k => {
+      const c = TREE[k], ps = partsUnder(k), sn = ps.filter(p => seen.has(p.id)).length;
+      return `<a class="tile cut ${id === "root" ? "big" : ""}" href="#/n/${k}">
+        <div class="tn">${esc(c.name)}</div><div class="te">${esc(c.en || "")}</div>
+        <div class="td">${esc(c.desc)}</div>
+        <div class="tc">부품 ${ps.length}개 · 본 것 <b>${sn}</b></div></a>`;
+    }).join("") + `</div>`;
+    if(id === "root"){
+      h += `<div class="tiles">
+        <a class="tile cut" href="#/c/0"><div class="tn">5분 기본 코스</div><div class="td">대표 부품 ${COURSE.length}개를 순서대로 훑습니다. 처음이라면 여기부터.</div></a>
+        <a class="tile cut" href="#/s/"><div class="tn">부품 검색</div><div class="td">상담 직전에 부품명으로 바로 찾기. 현장 통칭으로도 찾아집니다.</div></a>
+        <a class="tile cut" href="#/quiz"><div class="tn">확인 문제 3개</div><div class="td">본 내용을 떠올려 보는 짧은 문제. 매번 새로 나옵니다.</div></a>
+      </div>`;
+    }
+  } else {
+    const ps = partsUnder(id);
+    const kinds = ["전체", ...new Set(ps.map(p => p.k))];
+    if(!kinds.includes(filt.kind)) filt.kind = "전체";
+    h += `<div class="chips">` + kinds.map(k => `<button class="chip cut ${filt.kind === k ? "on" : ""}" data-kind="${k}">${k}</button>`).join("")
+       + (ps.some(p => p.sh === "하") ? `<button class="chip cut ${filt.hideNonSheet ? "on" : ""}" data-hide="1">판재 비중 낮은 부품 숨기기</button>` : "")
+       + `</div>`;
+    const shown = ps.filter(p => (filt.kind === "전체" || p.k === filt.kind) && !(filt.hideNonSheet && p.sh === "하"));
+    (t.subs || [["", ""]]).forEach(([sk, sn]) => {
+      const list = shown.filter(p => p.s === sk);
+      if(!list.length) return;
+      h += `<h3 class="sub">${esc(sn)} <span class="mono" style="color:var(--ink-3);font-weight:400">${list.length}</span></h3>
+            <div class="plist">${list.map(partRow).join("")}</div>`;
+    });
+    if(!shown.length) h += `<p class="desc">조건에 맞는 부품이 없습니다.</p>`;
+  }
+  $("#view").innerHTML = h;
+  $("#view").querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { filt.kind = b.dataset.kind; renderNode(id); });
+  $("#view").querySelectorAll("[data-hide]").forEach(b => b.onclick = () => { filt.hideNonSheet = !filt.hideNonSheet; renderNode(id); });
+}
+
+/* ---------- 부품 카드 ---------- */
+let tab = "std";
+function partHTML(p){
+  const stds = p.cls.map(k => CLS[k]).filter(Boolean).map(c => `
+    <div class="std"><div class="sl">${esc(c.label)}</div>
+      <div class="sr"><span>JIS·JFS</span><span>${esc(c.jis)}</span><span>EN·VDA</span><span>${esc(c.en)}</span><span>확신도</span><span>${esc(c.cf)}</span></div></div>`).join("");
+  const sales = p.sales || {};
+  const sv = v => v ? esc(v) : `<span class="blank">영업 경력자 입력 필요</span>`;
+  return `
+  <span class="kind cut k-${p.k}">${p.k}</span>
+  <h2 class="title" style="margin-top:6px">${esc(p.n)}</h2>
+  <p class="en">${esc(p.en)}${p.al ? ` · <span style="font-family:inherit;letter-spacing:0">${esc(p.al)}</span>` : ""}</p>
+  <div class="pcard cut">
+    <dl class="facts">
+      <dt>품종</dt><dd>${esc(p.b)}${p.c && p.c !== "—" ? ` <span style="color:var(--blue)">· ${esc(p.c)}</span>` : ""}</dd>
+      <dt>강도</dt><dd>${esc(p.gr)}</dd>
+      <dt>두께</dt><dd><span class="mono">${esc(p.t)}</span>${/\d/.test(p.t) ? " mm" : ""}</dd>
+      <dt>왜</dt><dd class="whyline">${esc(p.why)}</dd>
+    </dl>
+    <div class="badges">
+      <span class="badge cut c-${p.cf}">확신도 ${esc(p.cf)}</span>
+      <span class="badge cut">일반 경향 · 특정 OEM 기준 아님</span>
+      <span class="badge cut">판재 비중 ${esc(p.sh)}</span>
+      <span class="badge cut draft">검수 전</span>
+    </div>
+  </div>
+  <div class="tabs">
+    <button data-tab="std" class="${tab === "std" ? "on" : ""}">규격·근거</button>
+    <button data-tab="qa" class="${tab === "qa" ? "on" : ""}">고객 질문</button>
+    <button data-tab="sales" class="${tab === "sales" ? "on" : ""}">영업</button>
+  </div>
+  <div class="tabpane">
+    ${tab === "std" ? `
+      <h4>공법</h4><p>${esc(p.p)}</p>
+      <h4>대응 규격 예시 (업계 통용 규격명)</h4>${stds}
+      <p style="font-size:13px;color:var(--ink-3)">실제 수주는 OEM 자체 규격(현대 MS, GM, VW TL 등)으로 승인받습니다. 위 규격은 같은 계열을 가리키는 참고명입니다.</p>
+      <h4>경쟁 소재</h4><p>${esc(p.alt)}</p>
+      ${p.note ? `<h4>비고</h4><p>${esc(p.note)}</p>` : ""}
+      <h4>출처·검수</h4><p>업계 일반 경향 기반 초안 · TS 검수 <span class="blank">미완료</span></p>` : ""}
+    ${tab === "qa" ? `
+      <div class="qa"><div class="q">${esc(p.q)}</div><div class="a">${esc(p.a)}</div></div>
+      <div class="talk cut">${esc(p.talk)}</div>` : ""}
+    ${tab === "sales" ? `
+      <div class="sales">
+        <div>구매 주체</div><div>${sv(sales.buyer)}</div>
+        <div>공급 경로</div><div>${sv(sales.route)}</div>
+        <div>대당 사용량</div><div>${sv(sales.kg)}</div>
+        <div>기회·약점</div><div>${sv(sales.swot)}</div>
+      </div>
+      <p style="font-size:13px;color:var(--ink-3);margin-top:10px">이 칸은 OEM·차종·시기마다 다릅니다. 기준과 출처를 함께 적어 주세요. 출처 없는 대당 사용량은 넣지 않습니다.</p>` : ""}
+  </div>`;
+}
+function bindTabs(rerender){
+  $("#view").querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { tab = b.dataset.tab; rerender(); });
+}
+function renderPart(id){
+  const p = PMAP[id]; if(!p) return renderNode("root");
+  setTool("");
+  markSeen(id); setProgress();
+  setCrumbs(nodeCrumbs(p.g).concat([[p.n, null]]), "#/n/" + p.g);
+  // 같은 그룹 안에서 앞뒤 부품
+  const sibs = PARTS.filter(x => x.g === p.g);
+  const i = sibs.indexOf(p), prev = sibs[i - 1], next = sibs[i + 1];
+  $("#view").innerHTML = partHTML(p) + `
+    <div class="pager">
+      ${prev ? `<a class="cut" href="#/p/${prev.id}">← ${esc(prev.n)}</a>` : "<span></span>"}
+      ${next ? `<a class="cut" href="#/p/${next.id}">${esc(next.n)} →</a>` : `<a class="cut" href="#/n/${p.g}">목록으로</a>`}
+    </div>`;
+  bindTabs(() => renderPart(id));
+}
+
+/* ---------- 5분 코스 ---------- */
+function renderCourse(i){
+  i = Math.max(0, Math.min(COURSE.length - 1, i | 0));
+  const p = PMAP[COURSE[i]];
+  setTool("c");
+  markSeen(p.id); setProgress();
+  setCrumbs([["자동차", "#/"], ["5분 기본 코스", null]], "#/");
+  const last = i === COURSE.length - 1;
+  $("#view").innerHTML = `
+    <div class="coursebar cut"><b>5분 기본 코스 ${i + 1} / ${COURSE.length}</b>
+      <div class="bar"><i style="width:${(i + 1) / COURSE.length * 100}%"></i></div>
+      <span style="font-size:13px;color:#C8D8E8">${esc(pathText(p))}</span></div>
+    ${partHTML(p)}
+    <div class="pager">
+      ${i > 0 ? `<a class="cut" href="#/c/${i - 1}">← 이전</a>` : "<span></span>"}
+      ${last ? `<a class="cut btn primary" href="#/quiz">코스 끝 · 확인 문제 풀기 →</a>` : `<a class="cut btn primary" href="#/c/${i + 1}">다음 부품 →</a>`}
+    </div>`;
+  bindTabs(() => renderCourse(i));
+}
+
+/* ---------- 검색 ---------- */
+const norm = s => String(s || "").toLowerCase().replace(/[\s·\-()\/,]/g, "");
+function renderSearch(q){
+  setTool("s");
+  setCrumbs([["자동차", "#/"], ["부품 검색", null]], "#/");
+  $("#view").innerHTML = `<h2 class="title">부품 검색</h2>
+    <p class="desc">부품명, 영문, 현장 통칭(예: 휀다, 쇼바, 로커)으로 찾습니다.</p>
+    <div class="searchbox"><input id="q" type="search" placeholder="예: B필러, 로어암, 범퍼빔" value="${esc(q)}" autocomplete="off"></div>
+    <div id="res"></div>`;
+  const inp = $("#q");
+  const run = () => {
+    const k = norm(inp.value);
+    const res = !k ? [] : PARTS.filter(p => [p.n, p.en, p.al, p.id, subName(p)].some(f => norm(f).includes(k)));
+    $("#res").innerHTML = !k ? `<p class="desc">검색어를 입력하세요. 전체 ${PARTS.length}개 부품이 들어 있습니다.</p>`
+      : res.length ? `<div class="plist">` + res.map(p => partRow(p).replace(`<div class="ps">`, `<div class="path">${esc(pathText(p))}</div><div class="ps">`)).join("") + `</div>`
+      : `<p class="desc">"${esc(inp.value)}"에 맞는 부품이 없습니다. 다른 이름으로 찾아보세요.</p>`;
+    history.replaceState(null, "", "#/s/" + encodeURIComponent(inp.value));
+  };
+  inp.oninput = run; run();
+  setTimeout(() => inp.focus(), 0);
+}
+
+/* ---------- 확인 문제 ---------- */
+const shuffle = a => { a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sheetParts = () => PARTS.filter(p => p.sh !== "하");
+const label = p => `${p.b}${p.c && p.c !== "—" ? " " + p.c : ""} · ${p.gr}`;
+const famKey = p => p.cls[0];
+const TEMPLATES = [
+  { q:"핫스탬핑(1500급)이 주로 쓰이는 부품은?", ok:p => p.cls[0] === "PHS" },
+  { q:"열연 산세(PO)를 주로 쓰는 부품은?", ok:p => p.c.indexOf("PO") === 0 },
+  { q:"외관 품질 때문에 BH강을 주로 쓰는 부품은?", ok:p => p.cls[0] === "BH" },
+  { q:"무방향성 전기강판이 쓰이는 부품은?", ok:p => p.cls.indexOf("NOES") >= 0 },
+  { q:"판재가 아닌(주조·단조·선재) 부품은?", ok:p => p.cls.some(c => c === "CAST" || c === "FORGE" || c === "SPRING"), pool:() => PARTS }
+];
+function makeQuiz(){
+  const qs = [];
+  // 유형 A: 부품 → 소재 (2문항)
+  shuffle(sheetParts()).slice(0, 2).forEach(p => {
+    // 오답은 같은 규격 계열이 아니고, 소재 기반이나 표면처리도 달라야 헷갈림 없이 하나만 정답이 된다
+    const wrong = shuffle(sheetParts().filter(x => famKey(x) !== famKey(p) && (x.b !== p.b || x.c !== p.c)));
+    const opts = [p], used = new Set([label(p)]);
+    for(const w of wrong){ if(opts.length >= 4) break; if(!used.has(label(w))){ used.add(label(w)); opts.push(w); } }
+    qs.push({ text:`'${p.n}'에 주로 쓰는 소재는?`, opts:shuffle(opts).map(o => ({ t:label(o), right:o === p })), part:p });
+  });
+  // 유형 B: 소재 → 부품 (1문항)
+  const tpl = shuffle(TEMPLATES)[0];
+  const pool = tpl.pool ? tpl.pool() : sheetParts();
+  const ans = shuffle(pool.filter(tpl.ok))[0];
+  const wrong = shuffle(sheetParts().filter(x => !tpl.ok(x))).slice(0, 3);
+  qs.push({ text:tpl.q, opts:shuffle([ans, ...wrong]).map(o => ({ t:o.n, right:o === ans })), part:ans });
+  return qs;
+}
+let quiz = null;
+function renderQuiz(){
+  setTool("quiz");
+  setCrumbs([["자동차", "#/"], ["확인 문제", null]], "#/");
+  if(!quiz || quiz.done) quiz = { qs:makeQuiz(), i:0, score:0, answered:false, done:false };
+  const Q = quiz.qs[quiz.i];
+  $("#view").innerHTML = `<div class="quiz">
+    <p class="qn">문제 ${quiz.i + 1} / ${quiz.qs.length}</p>
+    <div class="qt">${esc(Q.text)}</div>
+    <div class="opts">${Q.opts.map((o, k) => `<button class="opt cut" data-k="${k}">${esc(o.t)}</button>`).join("")}</div>
+    <div id="ex"></div></div>`;
+  $("#view").querySelectorAll(".opt").forEach(b => b.onclick = () => {
+    if(quiz.answered) return;
+    quiz.answered = true;
+    const o = Q.opts[+b.dataset.k];
+    if(o.right) quiz.score++;
+    $("#view").querySelectorAll(".opt").forEach((x, k) => { x.disabled = true; if(Q.opts[k].right) x.classList.add("right"); else if(x === b) x.classList.add("wrong"); });
+    const p = Q.part, last = quiz.i === quiz.qs.length - 1;
+    $("#ex").innerHTML = `<div class="explain"><b>${o.right ? "맞았습니다." : "아쉽습니다."}</b> ${esc(p.n)}: ${esc(label(p))}, ${esc(p.t)}${/\d/.test(p.t) ? " mm" : ""}<br>${esc(p.why)}
+      <div style="margin-top:6px"><a class="glbtn" href="#/p/${p.id}">부품 카드 보기</a></div></div>
+      <div class="pager" style="justify-content:flex-end;margin-top:12px"><button class="btn primary cut" id="nx">${last ? "결과 보기" : "다음 문제 →"}</button></div>`;
+    $("#nx").onclick = () => {
+      if(last){ quiz.done = true; renderQuizResult(); }
+      else { quiz.i++; quiz.answered = false; renderQuiz(); }
+    };
+  });
+}
+function renderQuizResult(){
+  $("#view").innerHTML = `<div class="quiz pcard cut" style="text-align:center">
+    <p class="qn">결과</p><div class="score">${quiz.score} / ${quiz.qs.length}</div>
+    <p class="desc">${quiz.score === quiz.qs.length ? "다 맞았습니다. 다른 부품 그룹도 둘러보세요." : "틀린 문제의 부품 카드를 한 번 더 보고 다시 풀어 보세요."}</p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn primary cut" id="again">새 문제 풀기</button><a class="btn cut" href="#/">처음으로</a></div></div>`;
+  $("#again").onclick = () => { quiz = null; renderQuiz(); };
+}
+
+/* ---------- 용어 ---------- */
+function renderGloss(){
+  setTool("gloss");
+  setCrumbs([["자동차", "#/"], ["용어 풀이", null]], "#/");
+  $("#view").innerHTML = `<h2 class="title">용어 풀이</h2>
+    <p class="desc">미팅에서 자주 듣는 약어와 말. ${GLOSS.length}개.</p>
+    <div class="searchbox"><input id="gq" type="search" placeholder="예: GA, DP, 핫스탬핑" autocomplete="off"></div>
+    <dl class="gl" id="gl"></dl>`;
+  const run = () => {
+    const k = norm($("#gq").value);
+    $("#gl").innerHTML = GLOSS.filter(g => !k || norm(g[0] + g[1]).includes(k)).map(g => `<dt>${esc(g[0])}</dt><dd>${esc(g[1])}</dd>`).join("");
+  };
+  $("#gq").oninput = run; run();
+}
+
+/* ---------- 안내 ---------- */
+function csv(){
+  const head = ["id","대분류","그룹","세부","부품명","영문","현장통칭","구분","소재기반","표면처리","공법","강도등급","규격분류","JIS·JFS","EN·VDA","두께(mm)","선택이유","확신도","판재비중","경쟁소재","고객질문","답","상담멘트","구매주체","공급경로","대당사용량","기회·약점","TS검수자","검수일"];
+  const q = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  const rows = PARTS.map(p => {
+    const ch = nodeChain(p.g), cl = p.cls.map(k => CLS[k]).filter(Boolean), s = p.sales || {};
+    return [p.id, TREE[ch[1]].name, TREE[p.g].name, subName(p), p.n, p.en, p.al, p.k, p.b, p.c, p.p, p.gr,
+      cl.map(c => c.label).join(" / "), cl.map(c => c.jis).join(" / "), cl.map(c => c.en).join(" / "),
+      p.t, p.why, p.cf, p.sh, p.alt, p.q, p.a, p.talk, s.buyer, s.route, s.kg, s.swot, "", ""].map(q).join(",");
+  });
+  const blob = new Blob(["﻿" + [head.map(q).join(","), ...rows].join("\r\n")], { type:"text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "자동차강판_부품지도_검수용.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function renderAbout(){
+  setTool("about");
+  setCrumbs([["자동차", "#/"], ["안내", null]], "#/");
+  const cnt = {}; PARTS.forEach(p => { const top = nodeChain(p.g)[1]; cnt[top] = (cnt[top] || 0) + 1; });
+  $("#view").innerHTML = `<h2 class="title">안내</h2>
+    <div class="note"><h3>이 자료는</h3>
+      자동차강판 판매 직원이 차 한 대를 위에서부터 쪼개 보며, 부품마다 어떤 품종·강도·두께가 들어가는지 익히는 지도입니다.
+      부품 ${PARTS.length}개 (BIW ${cnt.biw || 0} · 섀시 ${cnt.chassis || 0} · 시트·EV·파워트레인 ${cnt.etc || 0}), 용어 ${GLOSS.length}개.</div>
+    <div class="note"><h3>값을 읽는 법</h3><ul>
+      <li>모든 값은 <b>일반적인 업계 경향의 범위</b>입니다. OEM·차급·세대마다 다릅니다.</li>
+      <li>확신도 상·중·하는 그 값이 업계 전반에 얼마나 통하는지에 대한 초안 판단입니다.</li>
+      <li>규격명은 JIS·JFS·EN·VDA 같은 통용 규격의 같은 계열 이름입니다. 실제 승인은 OEM 자체 규격으로 합니다.</li>
+      <li>"판재 비중 낮음"은 단조·주조·선재·강관 등 판재 영업 대상이 아니거나 적은 부품입니다.</li></ul></div>
+    <div class="note"><h3>검수 상태</h3>
+      TS 검수와 영업 항목(구매 주체·공급 경로·대당 사용량·기회와 약점) 입력이 아직 안 됐습니다.
+      아래 버튼으로 전체 데이터를 엑셀용 CSV로 받아 검수에 쓰세요.
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary cut" id="csv">검수용 CSV 내려받기</button>
+      <button class="btn cut" id="reset">본 부품 기록 지우기</button></div></div>
+    <div class="note"><h3>이미지</h3>
+      그림 자리는 분류마다 준비되어 있고, 이미지가 들어오면 그 위에 누를 수 있는 핀이 붙습니다. 지금은 글자 목록으로 길을 찾습니다.</div>`;
+  $("#csv").onclick = csv;
+  $("#reset").onclick = () => { if(confirm("본 부품 체크 기록을 모두 지울까요?")){ seen = new Set(); store.set(SEEN_KEY, []); setProgress(); } };
+}
+
+/* ---------- 길잡이 ---------- */
+function route(){
+  const h = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const [r, ...rest] = h.split("/"); const arg = rest.join("/");
+  window.scrollTo(0, 0);
+  if(r === "n") renderNode(arg);
+  else if(r === "p"){ renderPart(arg); }
+  else if(r === "c") renderCourse(+arg || 0);
+  else if(r === "s") renderSearch(arg);
+  else if(r === "quiz") renderQuiz();
+  else if(r === "gloss") renderGloss();
+  else if(r === "about") renderAbout();
+  else renderNode("root");
+}
+let lastPart = null;
+window.addEventListener("hashchange", () => {
+  // 다른 부품으로 넘어가면 탭은 '규격·근거'부터
+  const m = location.hash.match(/^#\/(p|c)\/(.+)$/);
+  const key = m ? m[0] : null;
+  if(key !== lastPart){ tab = "std"; lastPart = key; }
+  route();
+});
+setProgress(); route();
+})();
+</script>
+</body>
+</html>
