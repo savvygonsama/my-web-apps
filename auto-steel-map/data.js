@@ -782,7 +782,7 @@ const COURSE = ["door_outer_f","door_inner_f","hood_outer","side_outer","b_pilla
    pins : [가리킬 id(분류 또는 부품), 가로 %, 세로 %, 핀에 보일 짧은 이름, 이름 펼칠 방향("l" 왼쪽·"r" 오른쪽, 생략하면 자동)]
           지금 판에서 숨겨진 분류·부품을 가리키는 핀은 저절로 빠진다
    그림은 이미지 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있다.
-   old_ 로 시작하는 그림은 1판(저해상도) 그림. 새 그림이 오면 바꿔 끼운다.
+   old_ 로 시작하는 그림은 1판(저해상도) 그림. 새 그림이 오면 바꿔 끼운다. (남은 것: old_engine)
 */
 const IMG_CREDIT = "그림: 이미지 생성 AI로 만든 교육용 개념도. 실제 부품 형상·분할선과 다를 수 있습니다.";
 const IMGS = {
@@ -812,12 +812,14 @@ const IMGS = {
                                 ["trailing_arm",56,45,"트레일링암"],["spring_seat",48,61,"스프링 시트"],["lower_arm_r",48,75,"리어 로어암"],["ctba",80,45,"토션빔 (CTBA)","r"]] }],
   subframe: [{ file:"subframe", pins:[["subframe_brkt",5,50,"마운팅 브라켓"],["subframe_f",25,50,"프론트 서브프레임"],["engine_mount_brkt",33,20,"엔진 마운트 브라켓"],
                                 ["subframe_r",75,40,"리어 서브프레임"]] }],
-  wheel:    [{ file:"old_wheel", pins:[["wheel_disc",22,50,"휠 디스크"],["wheel_rim",52,38,"휠 림"]] }],
-  steer:    [{ file:"old_steering", pins:[["cowl_crossbar",25,28,"카울 크로스바"],["steering_column",66,22,"스티어링 컬럼"],["rack_housing",45,70,"기어 하우징"],["tie_rod",8,60,"타이로드"]] }],
-  brake:    [{ file:"old_brake", pins:[["brake_disc",10,40,"브레이크 디스크"],["brake_cover",28,27,"더스트 커버"],["fuel_tank",65,30,"연료탱크"],
-                                ["heat_shield",60,57,"차열판"],["muffler",60,73,"머플러"],["exhaust_pipe",16,72,"배기관"]] }],
-  seat:     [{ file:"old_seat", pins:[["seat_back_frame",55,25,"시트백 프레임"],["seat_cushion_frame",30,57,"쿠션 프레임"],["seat_recliner",66,55,"리클라이너"],["seat_rail",40,80,"시트 레일"]] }],
-  ev:       [{ file:"old_ev", pins:[["battery_top",25,14,"상부 커버"],["battery_cross",13,44,"크로스멤버"],["battery_side",25,60,"사이드 프레임"],
-                                ["battery_lower",25,76,"하부 플레이트"],["motor_core",72,50,"모터 코어"]] }],
+  wheel:    [{ file:"wheel", pins:[["wheel_disc",20,50,"휠 디스크"],["wheel_rim",55,30,"휠 림"]] }],
+  steer:    [{ file:"steering", pins:[["cowl_crossbar",70,35,"카울 크로스바"],["steering_column",40,22,"스티어링 컬럼","r"],
+                                ["rack_housing",42,76,"기어 하우징","r"],["tie_rod",8,72,"타이로드","r"]] }],
+  brake:    [{ file:"brake", pins:[["brake_cover",8,25,"더스트 커버","r"],["brake_disc",17,50,"브레이크 디스크","r"],["fuel_tank",52,45,"연료탱크","r"],
+                                ["exhaust_pipe",63,22,"배기관","l"],["heat_shield",88,28,"차열판","l"],["muffler",82,45,"머플러","l"]] }],
+  seat:     [{ file:"seat", pins:[["seat_back_frame",63,15,"시트백 프레임","r"],["seat_recliner",70,46,"리클라이너","r"],
+                                ["seat_cushion_frame",35,55,"쿠션 프레임","r"],["seat_rail",28,80,"시트 레일","r"]] }],
+  ev:       [{ file:"ev", pins:[["battery_top",30,12,"상부 커버","r"],["battery_cross",25,31,"크로스멤버","r"],["battery_side",10,55,"사이드 프레임","r"],
+                                ["battery_lower",35,85,"하부 플레이트","r"],["motor_core",82,48,"모터 코어","l"]] }],
   pt:       [{ file:"old_engine", pins:[["oil_pan",30,72,"오일팬"],["heat_shield",76,35,"차열판"]] }]
 };
