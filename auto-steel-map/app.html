@@ -678,7 +678,7 @@ function csv(){
   });
   const blob = new Blob(["﻿" + [head.map(q).join(","), ...rows].join("\r\n")], { type:"text/csv;charset=utf-8" });
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "자동차강판_부품지도_검수용.csv";
+  a.href = URL.createObjectURL(blob); a.download = "자동차부품지도_검수용.csv";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -732,7 +732,7 @@ window.addEventListener("hashchange", () => {
   route();
 });
 $("#edition").textContent = MODE_NAME;
-document.title = "자동차강판 부품 지도 · " + MODE_NAME;
+document.title = "자동차부품지도 · " + MODE_NAME;
 setProgress(); route();
 })();
 </script>
