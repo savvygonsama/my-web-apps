@@ -8,6 +8,7 @@
 - 15장이 한 장에 격자로 묶여 나와 해상도가 낮았음 → 한 번에 한 장만, 격자 금지
 - 크래시박스·대시 패널·스트럿 타워·C필러·스태빌라이저 등 핀을 못 찍은 부품이 있었음 → 부품 목록을 늘리고, 부품끼리 띄워서 그리게 함
 - 차체 골격을 측면(5)·프론트 엔드(6)·바닥과 뒤쪽(7) 세 장으로 나눔
+- 전기차·내연차가 섞여 있던 것 → 내연차(가솔린)로 통일하고, 전기차 전용 부품(배터리 팩·모터)만 15번에 따로 그림
 
 붙여 넣으면 1번이 나오고, `next`라고 칠 때마다 다음 장이 나옵니다. 다시 뽑을 때는 `redo 5`처럼 칩니다.
 
@@ -18,11 +19,12 @@ I need 16 technical illustrations for a steel sales training course. Rules for t
 
 STYLE FOR EVERY IMAGE (identical across all 16 so they look like one set):
 Clean technical illustration, flat vector style with subtle shading, consistent dark graphite outlines of even weight. Palette only: steel blue #1F5C99, light steel gray #D3DDE6, graphite #243342, warm red #B8463C, white. Plain pure white background. Landscape 3:2, highest resolution available. Even soft lighting. Generic car with no brand features. Bare unpainted metal look. Whenever a car or car body is shown, its front points to the LEFT.
+Vehicle type: every image shows a conventional gasoline car with an internal combustion engine. The ONLY exception is image 15, which shows electric-vehicle-only parts on their own, with no car.
 Layout: every listed part must be clearly visible, drawn large, and separated from the others by a clear white gap so each one can be pointed at. No overlapping between listed parts. Keep a white margin around the edges; nothing touches the border.
 ABSOLUTELY NO text, labels, letters, numbers, arrows, leader lines, callouts, logos or watermarks anywhere.
 Color rule: ultra high strength reinforcements = warm red, crash-absorbing members and outer skin panels = steel blue, other sheet metal = light steel gray, cast/forged/mechanical parts = graphite.
 
-1. Whole car overview: three-quarter front cutaway of a mid-size electric sedan. Upper body shell in steel blue with semi-transparent outer panels showing pillars and roof rails; chassis in graphite underneath (front and rear suspension, subframes, four wheels, steering rack); bare metal front seat frames visible through the windows; flat battery pack under the floor between the axles, clearly visible from the side.
+1. Whole car overview: three-quarter front cutaway of a generic mid-size gasoline sedan. Upper body shell in steel blue with semi-transparent outer panels showing pillars and roof rails; engine and transmission in the engine bay (graphite); chassis in graphite underneath (front and rear suspension, subframes, four wheels, steering rack); fuel tank ahead of the rear axle and the exhaust pipe running back to the muffler; bare metal front seat frames visible through the windows. No battery pack.
 2. Body in white, exploded isometric: main body structure in the center (light steel gray); four doors, hood, two front fenders and trunk lid pulled far outward and floating apart (steel blue). No glass, no wheels.
 3. Front door exploded isometric, six parts in a row from left to right with wide even gaps: smooth outer skin panel (steel blue); horizontal beltline reinforcement strip (light steel gray); long diagonal side impact beam (warm red); small thick hinge reinforcement plate (light steel gray); deep-drawn inner panel with speaker and window regulator cut-outs (light steel gray); thin window frame loop (door sash, graphite).
 4. Closure parts in two neat rows with wide gaps. Top row: hood outer panel (steel blue), hood inner panel with lattice ribs (light steel gray), a pair of small hood hinges (graphite), front fender with wheel arch (steel blue). Bottom row: trunk lid outer panel (steel blue), trunk lid inner panel (light steel gray), small round fuel filler door (steel blue).
@@ -36,8 +38,8 @@ Color rule: ultra high strength reinforcements = warm red, crash-absorbing membe
 12. Steering system without dashboard, isometric: long tubular cross car beam (cowl cross bar, steel blue) spanning left to right; steering column tube with its tilt mounting bracket (light steel gray) attached to the beam; steering wheel outline; intermediate shaft down to the steering rack housing (graphite) with tie rods reaching out to both sides.
 13. Three groups left to right with wide gaps, isometric: disc brake corner with cast iron brake disc (graphite), caliper and thin pressed steel dust shield behind the disc (steel blue); pressed steel fuel tank with edge seam welds (steel blue); exhaust pipe into an oval muffler (warm red) with a thin embossed heat shield plate floating above it (light steel gray).
 14. Bare front car seat skeleton without foam or fabric, three-quarter view, parts slightly separated: seat back frame (steel blue), seat cushion frame and pan (light steel gray), round recliner mechanism at the back-cushion joint (warm red), two long seat rails underneath (graphite).
-15. Left two thirds: electric vehicle battery pack exploded vertically with clear gaps: thin top cover (light steel gray), rows of battery modules (graphite), internal cross members between the modules (warm red), strong side frame around the edge (warm red), flat bottom plate (steel blue). Right third: electric traction motor cutaway showing stator and rotor made of many thin stacked laminated steel sheets (steel blue).
-16. Engine block outline in light gray with a deep-drawn sheet steel oil pan pulled slightly downward from its underside (steel blue), and a thin embossed heat shield plate (steel blue) floating next to the exhaust manifold (graphite).
+15. Electric-vehicle-only parts, shown on their own with no car. Left two thirds: battery pack exploded vertically with clear gaps: thin top cover (light steel gray), rows of battery modules (graphite), internal cross members between the modules (warm red), strong side frame around the edge (warm red), flat bottom plate (steel blue). Right third: electric traction motor cutaway showing stator and rotor made of many thin stacked laminated steel sheets (steel blue).
+16. Gasoline engine block outline in light gray with a deep-drawn sheet steel oil pan pulled slightly downward from its underside (steel blue), and a thin embossed heat shield plate (steel blue) floating next to the exhaust manifold (graphite).
 ```
 
 아래 개별 프롬프트는 특정 그림만 다시 뽑을 때 씁니다.
