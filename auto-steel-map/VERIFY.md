@@ -69,3 +69,28 @@
 - 규격명: JIS·JFS를 기준, EN·VDA는 유럽계 대응 참고
 - 초고강도: 일본계 OEM·1차 협력사는 1.5GPa급까지 냉간 프레스 비중을 늘리는 중 ([SSAB](https://www.ssab.com/en-us/brands-and-products/ssab-docol/automotive-steel-resources/automotive-insights/cold-stamping-1500-and-1700-mpa-automotive-steels)), 닛산 로그 B필러는 SHF980·SHF1180 TWB 냉간 성형 ([AHSS Guidelines](https://ahssinsights.org/tag/hot-forming/))
 - 일본계 OEM 자체 소재 규격 번호는 공개 자료로 확인할 수 없어 적지 않음
+
+## 2차 검증: 부품별 품종·규격 (2026-10-11)
+
+**발견한 근본 오류**: 품종이 GA(도금)인 차체 부품에 비도금 냉연 규격명(JFS **JSC**)을 붙였음. 일본계 자동차용 강판 규격은 바탕재·도금으로 이름이 갈림.
+
+| 바탕재·도금 | 일본계 규격 | 근거 |
+|---|---|---|
+| 냉연 + GA (차체 대부분) | JFS A 3011 **JAC** (JAC270C·D·E·F, JAC260G, JAC340H, JAC440W, JAC590R·Y, JAC780Y, JAC980Y, JAC1180YL) | [JAC 계열 목록](https://www.steelestores.com/standard/jfs-a3011/), [혼다 GA 품목 JAC270F·JAH270C](http://steel-coils-sheets.mststeel.com/item/galvannealed-steel/c071-04-honda-galvannealed-steel/jac270f), [JFE GA 1180·닛산 JAC1180YL 채용](https://www.jfe-steel.co.jp/en/products/sheets/c33.html) |
+| 냉연 비도금 (시트·롤포밍) | JFS A 2001 **JSC**, JIS G3135 **SPFC** (SPFC980Y 등), JSC1180Y·YL·YH | [AHSS Guidelines JFS A2001](https://ahssinsights.org/tag/jfs-a2001/), [SPFC980Y](http://steeljis.com/jis_steel_datasheet.php?name_id=369) |
+| 열연 PO (섀시) | JIS G3113 **SAPH**310~440, JIS G3134 **SPFH**490~590, JFS A 1001 **JSH** | [Kobe Steel](https://www.kobelco.co.jp/english/products/download/steel-aluminum/files/heating.pdf), [CSVC PO 카탈로그](https://www.csvc.com.vn/pdf/201502%20PO%20Catalogue.pdf) |
+| 열연 + GA | JFS A 3011 **JAH** (JAH270C, JAH440W, JAH590R) | [JAH 계열](https://www.steelestores.com/grade/jfs-jah440w-jfs-a3011.html) |
+| 핫스탬핑 | JFS 규격명 없음. 22MnB5 계열, 철강사 규격 | [ArcelorMittal Usibor](https://automotive.arcelormittal.com/products/flat/PHS/usibor_ductibor) |
+| 1310·1470MPa 마르텐사이트 (범퍼·임팩트빔 롤포밍) | JFS 규격명 없음. 철강사 규격 (JFE·고베제강) | [JFE 1470MPa](https://www.jfe-steel.co.jp/en/release/2016/161124.html), [Kobelco 1300·1500MPa](https://www.kobelco.co.jp/english/r-d/technology-review/pdf/35_034-038.pdf) |
+
+**반영**
+- 부품마다 대표 규격명(`sp`)을 직접 지정해 말풍선에 표시 (81개 + EV 5개 전부)
+- GA 차체 부품: JSC → **JAC**로 전면 교체 (외판 JAC340H, 내판 JAC270E·F, 골격 JAC590Y~JAC1180YL)
+- 범퍼빔·도어 임팩트빔·롤포밍재: 품종을 "비도금"으로, 규격은 1310·1470MPa급 마르텐사이트(철강사 규격)
+- 시트 프레임·레일: 비도금 SPFC 계열 (SPFC980Y 등)
+- 섀시: SAPH440·SPFH590·JSH590R~JSH780R
+- 오일팬: SPCD·SPCE ([STEELMAX](https://steelmax.co.kr/2015/01/08/spce-steel-plate-cold-deep-drawn-extra/)), 쇼크업소버 외통: STKM 전봉관 ([특허](https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/4880087))
+- 연료탱크: 용융알루미늄도금 또는 Sn-Zn 도금 (일본제철 ECOKOTE-S) ([일본제철](https://www.nipponsteel.com/en/tech/report/nsc/pdf/103-17.pdf))
+- 규격 분류(CLS) 설명도 "GA: JAC / 비도금: JSC·SPFC"로 나눠 표기
+
+**남은 한계**: 부품별로 어느 등급(예: JAC590Y냐 JAC780Y냐)을 쓰는지는 OEM·차종마다 다름. 표기는 일본계에서 흔한 범위의 대표값이며 실제는 고객 승인 사양서로 확인.

@@ -484,7 +484,7 @@ function bubbleHTML(p, note, inline){
     <span class="bk k-${p.k}">${p.k}</span>
     <b class="bn">${esc(p.n)}</b>
     <dl><dt>품종</dt><dd>${esc(p.b + coat)}</dd>
-        <dt>규격</dt><dd>${esc(specOf(p))}<small>${esc(p.gr)}</small></dd>
+        <dt>규격</dt><dd>${esc(p.sp || specOf(p))}<small>${esc(p.gr)}</small></dd>
         <dt>두께</dt><dd>${esc(thick(p.t))}</dd></dl>
     ${note ? `<div class="bnote">${esc(note)}</div>` : ""}
     <a class="more" href="#/d/${p.id}">자세히 ›</a></div>`;
