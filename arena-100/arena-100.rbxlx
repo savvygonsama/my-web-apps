@@ -8359,8 +8359,14 @@ do
 		end
 		local model = clone :: Model
 		model.Name = "AuraPreview"
+		local strip = {}
 		for _, d in ipairs(model:GetDescendants()) do
 			if d:IsA("BaseScript") or d:IsA("BillboardGui") then
+				table.insert(strip, d)
+			end
+		end
+		for _, d in ipairs(strip) do
+			if d.Parent then
 				d:Destroy()
 			end
 		end
