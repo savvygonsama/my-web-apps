@@ -11058,11 +11058,12 @@ function Effects.warningFill(warn: BasePart)
 		TweenService:Create(fill, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = Vector3.new(warn.Size.X + 0.05, warn.Size.Y, warn.Size.Z) }):Play()
 	else
 		-- 길 경고는 시작점에서 끝까지 차오른다
-		local length = warn.Size.Z
+		local wsize = warn.Size
+		local length = wsize.Z
 		local back = warn.CFrame * CFrame.new(0, 0, length / 2)
 		animate(duration, function(t)
 			if fill.Parent then
-				fill.Size = Vector3.new(warn.Size.X, warn.Size.Y + 0.05, math.max(0.1, length * t))
+				fill.Size = Vector3.new(wsize.X, wsize.Y + 0.05, math.max(0.1, length * t))
 				fill.CFrame = back * CFrame.new(0, 0, -length * t / 2)
 			end
 		end)
