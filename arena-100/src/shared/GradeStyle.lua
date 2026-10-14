@@ -7,6 +7,8 @@
 -- 3. 장식: 등급이 오를 때마다 룬, 가시, 보석, 구슬, 고리, 날개, 빛줄기, 파편, 검 왕관이 하나씩 늘어난다
 -- 4. 재질: 녹슨 쇠 → 쇠 → 광택 금속 → 금박 → 거울 강철 → 유리 → 수정 → 얼음 → 흑요석 → 우주 → 심연 수정 → 백금 → 근원
 -- 5. 모양: 톱날(15~), 금빛 문양(30~), 갈라진 칼끝(35~), 소용돌이 가드(40~), 사슬(55~), 떠 있는 칼날 조각(75~)
+-- 6. 칼날 모양 12종: 등급마다 바뀐다. 낮은 등급은 단순한 모양, 높을수록 복잡한 모양이 섞인다
+--    곧은 날 · 나뭇잎 · 식칼 · 곡도 · 물결 · 언월 · 빈 틀 · 쌍날 · 갈고리 · 초승달 · 용골 · 수정
 
 local Style = {}
 
@@ -53,6 +55,27 @@ local MATERIALS = {
 	{ to = 100, blade = Enum.Material.ForceField, reflect = 0, name = "근원" },
 }
 
+-- 칼날 모양: 등급이 오를수록 고를 수 있는 모양이 늘어난다 (이웃 등급끼리는 항상 다르다)
+Style.SHAPES = {
+	{ id = "straight", name = "곧은 날" },
+	{ id = "leaf", name = "나뭇잎 날" },
+	{ id = "cleaver", name = "식칼 날" },
+	{ id = "curved", name = "곡도" },
+	{ id = "flamberge", name = "물결 날" },
+	{ id = "falchion", name = "언월 날" },
+	{ id = "hollow", name = "빈 틀 날" },
+	{ id = "twin", name = "쌍날" },
+	{ id = "hook", name = "갈고리 날" },
+	{ id = "crescent", name = "초승달 날" },
+	{ id = "spine", name = "용골 날" },
+	{ id = "crystal", name = "수정 날" },
+}
+
+local function shapeFor(g: number)
+	local n = (g <= 10 and 3) or (g <= 30 and 6) or (g <= 50 and 9) or 12
+	return Style.SHAPES[((g * 5) % n) + 1]
+end
+
 local cache: { [number]: any } = {}
 
 local function hsv(h: number, s: number, v: number): Color3
@@ -97,6 +120,8 @@ function Style.get(grade: number)
 		bladeDark = mat.dark == true,
 		reflect = mat.reflect,
 		materialName = mat.name,
+		shape = shapeFor(g).id,
+		shapeName = shapeFor(g).name,
 		-- 크기
 		scale = 1 + p * 0.55,
 		lengthMul = 1 + p * 0.35,

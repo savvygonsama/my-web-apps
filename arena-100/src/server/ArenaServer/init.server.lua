@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
 local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
+local AuraBuilder = require(ReplicatedStorage:WaitForChild("AuraBuilder"))
 local World = require(script:WaitForChild("WorldBuilder"))
 local EnemyBuilder = require(script:WaitForChild("EnemyBuilder"))
 local EnemyAI = require(script:WaitForChild("EnemyAI"))
@@ -60,6 +61,9 @@ local lobbySpawn: CFrame = World.buildLobby({
 	train = function(player: Player)
 		Push:FireClient(player, "openPage", "train")
 	end,
+	shrine = function(player: Player)
+		Push:FireClient(player, "openPage", "cosmetics")
+	end,
 })
 
 local arenas: { [number]: World.Arena } = {}
@@ -98,6 +102,11 @@ type Profile = {
 	maxStage: number,
 	inv: { [string]: number },
 	equipped: string,
+	enh: { [string]: number }, -- 무기별 강화 단계
+	auras: { [string]: boolean }, -- 산 아우라 (키는 단계 번호 문자열)
+	kills: { [string]: boolean }, -- 산 킬 이펙트
+	aura: number, -- 장착한 아우라 단계 (0 = 없음)
+	kill: number, -- 장착한 킬 이펙트 단계 (0 = 없음)
 }
 
 local function defaultProfile(): Profile
@@ -109,13 +118,18 @@ local function defaultProfile(): Profile
 		maxStage = 0,
 		inv = { [Config.STARTER_KEY] = 1 },
 		equipped = Config.STARTER_KEY,
+		enh = {},
+		auras = {},
+		kills = {},
+		aura = 0,
+		kill = 0,
 	}
 end
 
 local function bestKey(p: Profile): string
 	local best, bestPower = Config.STARTER_KEY, -1
 	for key in pairs(p.inv) do
-		local power = Config.playerStats(key, p.atkLv, p.hpLv).power
+		local power = Config.profileStats(p, key).power
 		if power > bestPower then
 			best, bestPower = key, power
 		end
@@ -137,7 +151,7 @@ local function sanitize(data: any): Profile
 	p.coins = num(data.coins, 0, math.huge)
 	p.atkLv = math.floor(num(data.atkLv, 0, 100000))
 	p.hpLv = math.floor(num(data.hpLv, 0, 100000))
-	p.maxStage = math.floor(num(data.maxStage, 0, Config.MAX_GRADE))
+	p.maxStage = math.floor(num(data.maxStage, 0, Config.MAX_STAGE))
 	if type(data.inv) == "table" then
 		local inv = {}
 		for k, v in pairs(data.inv) do
@@ -149,6 +163,31 @@ local function sanitize(data: any): Profile
 			p.inv = inv
 		end
 	end
+	if type(data.enh) == "table" then
+		for k, v in pairs(data.enh) do
+			if Config.parseKey(k) and type(v) == "number" and v >= 1 then
+				p.enh[k] = math.clamp(math.floor(v), 0, Config.MAX_ENHANCE)
+			end
+		end
+	end
+	local function owned(src: any, list: { any }): { [string]: boolean }
+		local out = {}
+		if type(src) == "table" then
+			for k, v in pairs(src) do
+				local n = tonumber(k)
+				if v == true and n and list[n] then
+					out[tostring(math.floor(n))] = true
+				end
+			end
+		end
+		return out
+	end
+	p.auras = owned(data.auras, Config.Auras)
+	p.kills = owned(data.kills, Config.KillFx)
+	local a = math.floor(num(data.aura, 0, #Config.Auras))
+	p.aura = (a > 0 and p.auras[tostring(a)]) and a or 0
+	local k = math.floor(num(data.kill, 0, #Config.KillFx))
+	p.kill = (k > 0 and p.kills[tostring(k)]) and k or 0
 	if type(data.equipped) == "string" and p.inv[data.equipped] then
 		p.equipped = data.equipped
 	else
@@ -171,8 +210,8 @@ end
 -- 만렙 계정: 모든 스테이지가 열려 있고, 계열마다 여러 등급 무기를 미리 넣어 둔다
 local function testerProfile(): Profile
 	local p = defaultProfile()
-	p.coins = 1e30
-	p.maxStage = Config.MAX_GRADE
+	p.coins = 1e40
+	p.maxStage = Config.MAX_STAGE
 	p.inv = {}
 	for _, g in ipairs({ 1, 15, 30, 45, 60, 75, 90, 100 }) do
 		for t = 1, 5 do
@@ -181,6 +220,18 @@ local function testerProfile(): Profile
 	end
 	p.inv[Config.ALLROUNDER_KEY] = 1
 	p.equipped = Config.itemKey(100, 1)
+	-- 100등급과 올라운더는 +10 강화
+	for t = 0, 5 do
+		p.enh[Config.itemKey(100, t)] = Config.MAX_ENHANCE
+	end
+	for i = 1, #Config.Auras do
+		p.auras[tostring(i)] = true
+	end
+	for i = 1, #Config.KillFx do
+		p.kills[tostring(i)] = true
+	end
+	p.aura = #Config.Auras
+	p.kill = #Config.KillFx
 	return p
 end
 
@@ -237,6 +288,11 @@ type Enemy = {
 	fill: Frame,
 	walkTrack: AnimationTrack?,
 	walking: boolean,
+	baseSpeed: number,
+	elite: any?,
+	phaseUntil: number,
+	isMini: boolean,
+	animN: number?,
 }
 
 type Session = {
@@ -263,6 +319,8 @@ type Session = {
 	marks: { [Enemy]: boolean },
 	skillTier: number,
 	zones: { any },
+	comboStep: number,
+	nextPulse: number,
 }
 
 type State = {
@@ -311,8 +369,7 @@ local function getRoot(player: Player): (BasePart?, Humanoid?)
 end
 
 local function currentStats(player: Player)
-	local p = profiles[player]
-	return Config.playerStats(p.equipped, p.atkLv, p.hpLv)
+	return Config.profileStats(profiles[player])
 end
 
 local function toast(player: Player, text: string)
@@ -331,6 +388,11 @@ local function pushState(player: Player)
 		maxStage = p.maxStage,
 		inv = p.inv,
 		equipped = p.equipped,
+		enh = p.enh,
+		auras = p.auras,
+		kills = p.kills,
+		aura = p.aura,
+		kill = p.kill,
 		power = currentStats(player).power,
 		auto = st.auto,
 		canSave = st.canSave,
@@ -407,7 +469,7 @@ local function updateTitle(player: Player)
 		return
 	end
 	local ls = player:FindFirstChild("leaderstats")
-	local rankName = p.maxStage > 0 and Config.getGrade(p.maxStage).en or "-"
+	local rankName = p.maxStage > 0 and (Config.stageName(p.maxStage)) or "-"
 	if ls then
 		local rankValue = ls:FindFirstChild("등급")
 		local stageValue = ls:FindFirstChild("스테이지")
@@ -457,15 +519,19 @@ local function updateTitle(player: Player)
 		main.Text = "NO RANK"
 		main.TextColor3 = Color3.fromRGB(170, 170, 170)
 	else
-		local section, sectionIndex = Config.getSection(p.maxStage)
-		local style = GradeStyle.get(p.maxStage)
-		top.Text = string.format("%d구간 %s · %s의 기운", sectionIndex, section.name, style.motif.name)
+		local section, sectionIndex = Config.getSection(math.min(p.maxStage, Config.MAX_GRADE))
+		local style = GradeStyle.get(Config.stageGrade(p.maxStage))
+		if Config.isBeyond(p.maxStage) then
+			top.Text = string.format("초월자 · %d층 돌파 · %s의 기운", p.maxStage - Config.MAX_GRADE, style.motif.name)
+		else
+			top.Text = string.format("%d구간 %s · %s의 기운", sectionIndex, section.name, style.motif.name)
+		end
 		top.TextColor3 = style.glow
 		main.Text = string.format("[%d] %s", p.maxStage, rankName)
 		main.TextColor3 = Color3.new(1, 1, 1)
 		main.TextStrokeColor3 = style.primary:Lerp(Color3.new(0, 0, 0), 0.75)
 		local g = Instance.new("UIGradient")
-		g.Color = GradeStyle.gradient(p.maxStage)
+		g.Color = Config.isBeyond(p.maxStage) and GradeStyle.RAINBOW or GradeStyle.gradient(Config.stageGrade(p.maxStage))
 		g.Parent = main
 		-- 높은 등급은 칭호 주위에도 입자가 흩날린다
 		if p.maxStage >= 30 then
@@ -475,13 +541,13 @@ local function updateTitle(player: Player)
 			glowPart.Parent = head
 			local pe = Instance.new("ParticleEmitter")
 			pe.Texture = style.motif.tex
-			pe.Rate = 4 + p.maxStage * 0.1
+			pe.Rate = 4 + math.min(p.maxStage, 150) * 0.1
 			pe.Lifetime = NumberRange.new(0.6, 1.2)
 			pe.Speed = NumberRange.new(0.5, 1.5)
 			pe.SpreadAngle = Vector2.new(180, 30)
 			pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
 			pe.LightEmission = 1
-			pe.Color = GradeStyle.gradient(p.maxStage)
+			pe.Color = g.Color
 			pe.Parent = glowPart
 		end
 	end
@@ -513,6 +579,7 @@ local function attachWeapon(player: Player)
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
 		rarity = info.rarity.rank,
 		scale = 1,
+		enh = p.enh[p.equipped] or 0,
 	}
 	local holder = Instance.new("Model")
 	holder.Name = "ArenaWeapon"
@@ -521,7 +588,13 @@ local function attachWeapon(player: Player)
 	if info.typeId == 2 and left and left:IsA("BasePart") then
 		WeaponBuilder.build(holder, left, 2, look)
 	end
-	WeaponBuilder.applyAura(char, grade)
+	-- 산 아우라를 장착했으면 그걸, 아니면 무기 등급 오라
+	if p.aura > 0 then
+		AuraBuilder.apply(char, p.aura)
+	else
+		AuraBuilder.clear(char)
+		WeaponBuilder.applyAura(char, grade)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -641,9 +714,17 @@ local function makeHpBar(root: BasePart, title: string, sub: string, color: Colo
 	return fill
 end
 
-local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean?)
+local ELITE_BY_ID: { [string]: any } = {}
+for _, a in ipairs(Config.EliteAffixes) do
+	ELITE_BY_ID[a.id] = a
+end
+
+-- opts: { elite = 정예 특성 id, mini = 분열된 작은 몸, hp = 체력 직접 지정 }
+local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean?, opts: any?)
 	local cfg = Config.EnemyTypes[kind] or Config.EnemyTypes.grunt
-	local grade = s.stage
+	local o = opts or {}
+	local elite = o.elite and ELITE_BY_ID[o.elite] or nil
+	local grade = Config.stageGrade(s.stage)
 	local model = getRigTemplate():Clone()
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	local root = model:FindFirstChild("HumanoidRootPart")
@@ -653,19 +734,25 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 	end
 	local style = GradeStyle.get(grade)
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	hum.WalkSpeed = isBoss and 11 or cfg.speed
+	local baseSpeed = (isBoss and 11 or cfg.speed) * (elite and elite.speed or 1)
+	hum.WalkSpeed = baseSpeed
 	hum.BreakJointsOnDeath = false
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
 	-- 등급이 오를수록 조금씩 커진다
-	local scale = (1 + (grade - 1) * 0.006) * cfg.scale * (isBoss and 1.8 or 1)
+	local scale = (1 + (grade - 1) * 0.006) * cfg.scale * (isBoss and 1.8 or 1) * (elite and elite.scale or 1) * (o.mini and 0.6 or 1)
 	pcall(function()
 		model:ScaleTo(scale)
 	end)
-	model.Name = (isBoss and "BOSS " or "") .. Config.getGrade(grade).en
+	local stageEn = Config.stageName(s.stage)
+	model.Name = (isBoss and "BOSS " or "") .. stageEn
 	model:SetAttribute("Enemy", true)
+	model:SetAttribute("Kind", kind)
+	if isBoss then
+		model:SetAttribute("Boss", true)
+	end
 	model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 4 * scale, 0), s.arena.center + Vector3.new(0, 4 * scale, 0)))
-	EnemyBuilder.dress(model, kind, grade, isBoss == true, scale)
+	EnemyBuilder.dress(model, kind, grade, isBoss == true, scale, { elite = elite and elite.id, beyond = Config.isBeyond(s.stage) })
 	model.Parent = s.folder
 	pcall(function()
 		(root :: BasePart):SetNetworkOwner(nil)
@@ -687,10 +774,22 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 
 	local info = s.info
 	local hp = isBoss and info.bossHp or info.unitHp * cfg.hp
-	local dmg = isBoss and info.bossDmg or info.unitDmg * cfg.dmg
-	local title = string.format("%s[%d] %s", isBoss and "👑 " or "", grade, Config.getGrade(grade).en)
+	if elite then
+		hp *= 1.5 * (elite.hp or 1)
+	end
+	if o.hp then
+		hp = o.hp
+	end
+	local dmg = (isBoss and info.bossDmg or info.unitDmg * cfg.dmg) * (elite and elite.dmg or 1) * (o.mini and 0.6 or 1)
+	local title = string.format("%s[%d] %s", isBoss and "👑 " or "", s.stage, stageEn)
 	local sub = isBoss and ("BOSS · " .. cfg.name) or cfg.name
-	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or GradeStyle.textColor(grade), 3.4 * scale, isBoss == true)
+	if elite then
+		sub = string.format("★정예 %s · %s", elite.name, cfg.name)
+	elseif o.mini then
+		sub = "작은 " .. cfg.name
+	end
+	local barColor = isBoss and Color3.fromRGB(255, 110, 90) or (elite and Color3.fromRGB(255, 210, 90) or GradeStyle.textColor(grade))
+	local fill = makeHpBar(root, title, sub, barColor, 3.4 * scale, isBoss == true)
 	local now = os.clock()
 	table.insert(s.enemies, {
 		model = model,
@@ -723,6 +822,10 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 		fill = fill,
 		walkTrack = walkTrack,
 		walking = false,
+		baseSpeed = baseSpeed,
+		elite = elite,
+		phaseUntil = 0,
+		isMini = o.mini == true,
 	})
 end
 
@@ -798,6 +901,24 @@ local function weaponColor(stats: any): Color3
 	return stats.weapon.typeId == 0 and Color3.fromRGB(255, 235, 160) or stats.weapon.rarity.color
 end
 
+local hitEnemy: (Player, Session, Enemy, number, boolean, Vector3, { any }, any?) -> number
+local sendHits: (Player, { any }) -> ()
+
+-- 킬 이펙트 폭발: 쓰러진 자리가 터져 주위 적에게 피해 (그 폭발로 또 쓰러지면 연쇄)
+local function killBlast(player: Player, s: Session, pos: Vector3)
+	local fx = s.stats.killFx
+	if not fx or not s.running then
+		return
+	end
+	local hits = {}
+	for _, other in ipairs(s.enemies) do
+		if other.alive and other.root.Parent and (flat(other.root.Position) - flat(pos)).Magnitude <= fx.blast.radius + other.bodyRadius then
+			hitEnemy(player, s, other, s.stats.atk * fx.blast.mult, false, pos, hits, { pierce = true, kind = "blast" })
+		end
+	end
+	sendHits(player, hits)
+end
+
 local function killEnemy(player: Player, s: Session, e: Enemy, selfDestruct: boolean?)
 	if not e.alive then
 		return
@@ -806,8 +927,41 @@ local function killEnemy(player: Player, s: Session, e: Enemy, selfDestruct: boo
 	e.model:SetAttribute("Dead", true)
 	e.hum.WalkSpeed = 0
 	s.marks[e] = nil
+	local pos = e.root.Position
 	if not selfDestruct then
-		Push:FireClient(player, "kill", { pos = e.root.Position, color = e.accent, boss = e.isBoss, scale = e.scale, model = e.model })
+		local fx = s.stats.killFx
+		local near = {}
+		if fx then
+			for _, other in ipairs(s.enemies) do
+				if other.alive and other.root.Parent and #near < 5 and (flat(other.root.Position) - flat(pos)).Magnitude <= fx.blast.radius * 1.5 then
+					table.insert(near, other.root.Position)
+				end
+			end
+		end
+		Push:FireClient(player, "kill", {
+			near = near,
+			pos = pos,
+			color = e.accent,
+			boss = e.isBoss,
+			scale = e.scale,
+			model = e.model,
+			fx = fx and fx.id or 0,
+			radius = fx and fx.blast.radius or 0,
+		})
+		if fx then
+			task.delay(0.12, killBlast, player, s, pos)
+		end
+	end
+	-- 분열체: 작은 분열체 둘로 갈라진다
+	if e.kind == "splitter" and not e.isMini and not selfDestruct and s.running then
+		local n = e.cfg.splitCount or 2
+		for i = 1, n do
+			local a = (i / n) * math.pi * 2
+			local spot = Vector3.new(pos.X + math.cos(a) * 3, s.arena.center.Y, pos.Z + math.sin(a) * 3)
+			Push:FireClient(player, "summon", { pos = spot })
+			spawnUnit(s, "splitter", spot, false, { mini = true, hp = e.maxHp * (e.cfg.splitHp or 0.35) })
+		end
+		pushBattle(player)
 	end
 	for _, d in ipairs(e.model:GetDescendants()) do
 		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
@@ -820,11 +974,16 @@ local function killEnemy(player: Player, s: Session, e: Enemy, selfDestruct: boo
 end
 
 -- 적 하나에게 피해. 방패병은 앞에서 오는 공격을 막고, 치명타는 적을 날려 보낸다
-local function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit: boolean, fromPos: Vector3, hits: { any }, opts: any?)
+-- 망령이 흐려진 동안에는 피해가 들어가지 않는다
+function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit: boolean, fromPos: Vector3, hits: { any }, opts: any?): number
 	if not e.alive then
 		return 0
 	end
-	local kind = crit and "crit" or "hit"
+	if os.clock() < e.phaseUntil then
+		table.insert(hits, { pos = e.root.Position + Vector3.new(0, 2.5 * e.scale, 0), text = "MISS", kind = "miss", model = e.model, from = fromPos })
+		return 0
+	end
+	local kind = crit and "crit" or (opts and opts.kind or "hit")
 	local reduce = e.cfg.frontReduce
 	if reduce and not (opts and opts.pierce) and os.clock() >= e.stunUntil then
 		local facing = flatUnit(e.root.CFrame.LookVector)
@@ -844,10 +1003,11 @@ local function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit:
 	})
 	if not e.isBoss then
 		local away = flatUnit(e.root.Position - fromPos)
+		local push = opts and opts.knock or 1
 		if crit then
-			e.root.AssemblyLinearVelocity = away * 38 + Vector3.new(0, 22, 0)
+			e.root.AssemblyLinearVelocity = away * 38 * push + Vector3.new(0, 22, 0)
 		elseif kind ~= "block" then
-			e.root.AssemblyLinearVelocity = away * 12 + Vector3.new(0, 4, 0)
+			e.root.AssemblyLinearVelocity = away * 12 * push + Vector3.new(0, 4 * push, 0)
 		end
 	end
 	if e.hp <= 0 then
@@ -858,7 +1018,7 @@ local function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit:
 	return dmg
 end
 
-local function sendHits(player: Player, hits: { any })
+function sendHits(player: Player, hits: { any })
 	if #hits > 0 then
 		Push:FireClient(player, "hits", hits)
 	end
@@ -1049,12 +1209,23 @@ local function performAttack(player: Player, st: State, s: Session)
 		table.insert(targets, inRange[1].e)
 	end
 
+	-- 3단 콤보: 이어서 때리면 1 → 2 → 3타. 3타는 피해 1.6배에 크게 밀쳐 낸다
+	if now - s.lastAttack <= stats.cooldown + 0.7 then
+		s.comboStep = (s.comboStep % 3) + 1
+	else
+		s.comboStep = 1
+	end
+	local finisher = s.comboStep == 3
 	s.lastAttack = now
 	local hits = {}
 	local healed = 0
 	local anyCrit = false
+	local hitOpts = finisher and { knock = 1.8 } or nil
 	for i, e in ipairs(targets) do
 		local dmg, crit = rollDamage(stats)
+		if finisher then
+			dmg *= 1.6
+		end
 		if i == 1 and s.smokeCrit and s.smokeCharges > 0 then
 			dmg = stats.atk * (wt.critMult or 2) * s.smokeCrit
 			crit = true
@@ -1064,7 +1235,7 @@ local function performAttack(player: Player, st: State, s: Session)
 			end
 		end
 		anyCrit = anyCrit or crit
-		hitEnemy(player, s, e, dmg, crit, root.Position, hits)
+		hitEnemy(player, s, e, dmg, crit, root.Position, hits, hitOpts)
 		Skills.onBasicHit(ctx, player, s, e, hits)
 		if wt.lifesteal then
 			healed += dmg * wt.lifesteal
@@ -1085,6 +1256,10 @@ local function performAttack(player: Player, st: State, s: Session)
 		color = weaponColor(stats),
 		crit = anyCrit,
 		poison = now < s.poisonUntil,
+		step = s.comboStep,
+		cooldown = stats.cooldown,
+		enh = stats.enh,
+		target = targets[1] and targets[1].root.Position or nil,
 	})
 	sendHits(player, hits)
 	pushBattle(player)
@@ -1251,17 +1426,18 @@ local function spawnWave(player: Player, s: Session, index: number)
 	local isLast = index == #info.waves
 	local count = #list
 	local spin = math.random() * math.pi * 2
+	local eliteList = info.elites and info.elites[index] or {}
 	for i, kind in ipairs(list) do
 		local a = spin + (i / count) * math.pi * 2
 		local pos = s.arena.center + Vector3.new(math.cos(a), 0, math.sin(a)) * ENEMY_SPAWN_RADIUS
-		Push:FireClient(player, "summon", { pos = pos })
-		spawnUnit(s, kind, pos, false)
+		Push:FireClient(player, "summon", { pos = pos, elite = eliteList[i] ~= nil })
+		spawnUnit(s, kind, pos, false, { elite = eliteList[i] })
 	end
 	if info.isBoss and isLast then
 		local pos = s.arena.center + Vector3.new(0, 0, -ENEMY_SPAWN_RADIUS)
 		spawnUnit(s, info.bossType, pos, true)
 		Push:FireClient(player, "boss", {
-			name = Config.getGrade(s.stage).en,
+			name = (Config.stageName(s.stage)),
 			kind = Config.EnemyTypes[info.bossType].name,
 			pos = pos,
 		})
@@ -1279,7 +1455,7 @@ local function winBattle(player: Player, st: State, s: Session)
 	local drops = {}
 	local count = info.dropCount + ((math.random() < info.bonusDropChance) and 1 or 0)
 	for _ = 1, count do
-		local key = Config.itemKey(n, math.random(1, 5))
+		local key = Config.itemKey(math.min(n, Config.MAX_GRADE), math.random(1, 5))
 		p.inv[key] = (p.inv[key] or 0) + 1
 		table.insert(drops, key)
 	end
@@ -1391,6 +1567,30 @@ local function battleLoop(player: Player, st: State, s: Session)
 		sendHits(player, poisonHits)
 		Skills.tickZones(ctx, player, s, now)
 
+		-- 정예 재생
+		for _, e in ipairs(s.enemies) do
+			local el = e.elite
+			if e.alive and el and el.regen and e.hp < e.maxHp then
+				e.hp = math.min(e.maxHp, e.hp + e.maxHp * el.regen * 0.1)
+				e.fill.Size = UDim2.fromScale(math.clamp(e.hp / e.maxHp, 0, 1), 1)
+			end
+		end
+
+		-- 아우라 파동: 주기적으로 내 주위 적에게 피해
+		local aura = s.stats.aura
+		if aura and aura.pulse and now >= s.nextPulse and not s.ulting then
+			s.nextPulse = now + aura.pulse.interval
+			local pulseHits = {}
+			local center = root.Position
+			for _, e in ipairs(aliveList(s)) do
+				if (flat(e.root.Position) - flat(center)).Magnitude <= aura.pulse.radius + e.bodyRadius then
+					hitEnemy(player, s, e, s.stats.atk * aura.pulse.mult, false, center, pulseHits, { pierce = true, kind = "aura" })
+				end
+			end
+			Push:FireClient(player, "auraPulse", { pos = center, radius = aura.pulse.radius, tier = aura.id, hit = #pulseHits })
+			sendHits(player, pulseHits)
+		end
+
 		if alive == 0 and not s.ulting and not s.waveSpawning then
 			if s.waveIndex < #s.info.waves then
 				s.waveSpawning = true
@@ -1424,7 +1624,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		return
 	end
 	local n = math.floor(tonumber(stageArg) or 0)
-	if n < 1 or n > Config.MAX_GRADE then
+	if n < 1 or n > Config.MAX_STAGE then
 		return
 	end
 	if n > p.maxStage + 1 then
@@ -1450,7 +1650,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	end
 	local arena = arenas[slot :: number]
 	local info = Config.stageInfo(n)
-	World.themeArena(arena, n, info.isBoss)
+	World.themeArena(arena, Config.stageGrade(n), info.isBoss, info.beyond)
 	local folder = Instance.new("Folder")
 	folder.Name = "P_" .. player.UserId
 	folder.Parent = battleRoot
@@ -1479,10 +1679,12 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		marks = {},
 		skillTier = Config.skillTier(stats.weapon.grade, stats.weapon.typeId),
 		zones = {},
+		comboStep = 0,
+		nextPulse = os.clock() + 1.5,
 	}
 	st.session = s
 	char:PivotTo(CFrame.new(arena.center + Vector3.new(0, 4, 0)))
-	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = GradeStyle.get(n).glow, boss = info.isBoss })
+	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = GradeStyle.get(info.grade).glow, boss = info.isBoss, beyond = info.beyond })
 	spawnWave(player, s, 1)
 	pushState(player)
 	task.spawn(battleLoop, player, st, s)
@@ -1531,6 +1733,11 @@ local function mergeOnce(p: Profile, key: string): string?
 	p.inv[key] = left > 0 and left or nil
 	local newKey = Config.itemKey(g + 1, t)
 	p.inv[newKey] = (p.inv[newKey] or 0) + 1
+	-- 강화 단계의 절반을 물려받는다
+	local inherit = (p.enh[key] or 0) // 2
+	if inherit > (p.enh[newKey] or 0) then
+		p.enh[newKey] = inherit
+	end
 	if p.equipped == key and left <= 0 then
 		p.equipped = newKey
 	end
@@ -1633,6 +1840,84 @@ local function train(player: Player, kind: any)
 	refreshStats(player)
 end
 
+-- 강화: 장착한 무기를 한 단계 올린다
+local function enhance(player: Player)
+	local p = profiles[player]
+	local key = p.equipped
+	local g, t = Config.parseKey(key)
+	if not g then
+		return
+	end
+	local level = p.enh[key] or 0
+	if level >= Config.MAX_ENHANCE then
+		toast(player, "이미 최대 강화(+" .. Config.MAX_ENHANCE .. ")예요")
+		return
+	end
+	local cost = Config.enhanceCost(t == 0 and Config.MAX_GRADE + 5 or g, level)
+	if p.coins < cost then
+		toast(player, "코인이 부족해요 (💰" .. Config.formatNumber(cost) .. ")")
+		return
+	end
+	p.coins -= cost
+	p.enh[key] = level + 1
+	Push:FireClient(player, "enhanced", { key = key, level = level + 1, look = Config.EnhanceLooks[level + 1] })
+	forgeFlash(key)
+	refreshStats(player)
+end
+
+-- 아우라·킬 이펙트 사기와 장착. kind = "aura" | "kill"
+local function cosmeticList(kind: string): ({ any }, string, string)
+	if kind == "aura" then
+		return Config.Auras, "auras", "aura"
+	end
+	return Config.KillFx, "kills", "kill"
+end
+
+local function buyCosmetic(player: Player, kind: any, tier: any)
+	if kind ~= "aura" and kind ~= "kill" then
+		return
+	end
+	local p = profiles[player]
+	local list, ownedField, equipField = cosmeticList(kind)
+	local k = math.floor(tonumber(tier) or 0)
+	local item = list[k]
+	if not item then
+		return
+	end
+	local owned = (p :: any)[ownedField]
+	if owned[tostring(k)] then
+		(p :: any)[equipField] = k
+		refreshStats(player)
+		Push:FireClient(player, "cosmetic", { kind = kind, tier = k, bought = false })
+		return
+	end
+	if p.maxStage < item.unlock then
+		toast(player, string.format("%d스테이지를 깨면 열려요", item.unlock))
+		return
+	end
+	if p.coins < item.cost then
+		toast(player, "코인이 부족해요 (💰" .. Config.formatNumber(item.cost) .. ")")
+		return
+	end
+	p.coins -= item.cost
+	owned[tostring(k)] = true;
+	(p :: any)[equipField] = k
+	Push:FireClient(player, "cosmetic", { kind = kind, tier = k, bought = true })
+	refreshStats(player)
+end
+
+local function unequipCosmetic(player: Player, kind: any)
+	local p = profiles[player]
+	if kind == "aura" then
+		p.aura = 0
+	elseif kind == "kill" then
+		p.kill = 0
+	else
+		return
+	end
+	refreshStats(player)
+end
+
 local function setAuto(player: Player, st: State, on: boolean)
 	local s = st.session
 	if not on then
@@ -1715,6 +2000,16 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 		makeAllRounder(player)
 	elseif action == "train" then
 		train(player, arg)
+	elseif action == "enhance" then
+		enhance(player)
+	elseif action == "buyCosmetic" then
+		buyCosmetic(player, arg, arg2)
+	elseif action == "unequipCosmetic" then
+		unequipCosmetic(player, arg)
+	elseif action == "testEnhance" and st.tester then
+		-- 장착한 무기의 강화 단계를 바로 정한다
+		p.enh[p.equipped] = math.clamp(math.floor(tonumber(arg) or 0), 0, Config.MAX_ENHANCE)
+		refreshStats(player)
 	elseif action == "testGive" and st.tester then
 		-- 원하는 등급·계열 무기를 바로 받고 장착
 		local g = math.clamp(math.floor(tonumber(arg) or 1), 1, Config.MAX_GRADE)

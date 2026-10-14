@@ -193,6 +193,9 @@ local HIT_STYLE = {
 	hurt = { color = Color3.fromRGB(255, 70, 70), size = 26 },
 	block = { color = Color3.fromRGB(170, 185, 210), size = 18 },
 	poison = { color = Color3.fromRGB(120, 255, 110), size = 20 },
+	aura = { color = Color3.fromRGB(200, 160, 255), size = 21 },
+	blast = { color = Color3.fromRGB(255, 140, 60), size = 23 },
+	miss = { color = Color3.fromRGB(170, 170, 190), size = 18 },
 }
 
 function Effects.hits(list: { any })
@@ -217,6 +220,10 @@ function Effects.hits(list: { any })
 			label.Text = "🛡" .. h.text
 		elseif h.kind == "poison" then
 			label.Text = "☠" .. h.text
+		elseif h.kind == "aura" then
+			label.Text = "✨" .. h.text
+		elseif h.kind == "blast" then
+			label.Text = "🔥" .. h.text
 		else
 			label.Text = isCrit and ("💥" .. h.text) or h.text
 		end
@@ -1155,7 +1162,7 @@ skillFx.poison = function(data)
 	local weapon = char and char:FindFirstChild("ArenaWeapon")
 	if weapon then
 		for _, d in ipairs(weapon:GetDescendants()) do
-			if d:IsA("BasePart") and string.sub(d.Name, 1, 5) == "Blade" then
+			if d:IsA("BasePart") and (d.Name == "BladeCoreLine" or d.Name == "Shaft") then
 				local drip = Instance.new("ParticleEmitter")
 				drip.Rate = 20
 				drip.Lifetime = NumberRange.new(0.4, 0.8)
@@ -1371,5 +1378,20 @@ function Effects.skill(data: any)
 		fn(data)
 	end
 end
+
+-- 다른 연출 모듈(킬 이펙트, 아우라 파동)이 같이 쓰는 기본 도구
+Effects.prim = {
+	fxPart = fxPart,
+	fade = fade,
+	arc = arc,
+	ring = ring,
+	flyingBits = flyingBits,
+	lightningBolt = lightningBolt,
+	animate = animate,
+	addTrail = addTrail,
+	floorOf = floorOf,
+	streak = streak,
+	RAINBOW = RAINBOW_COLORS,
+}
 
 return Effects

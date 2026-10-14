@@ -1,5 +1,5 @@
 -- EnemyBuilder (ModuleScript, ArenaServer 아래)
--- 적 7종의 생김새. 기본 인형에 투구, 방패, 활, 지팡이, 폭탄 같은 장비를 붙인다.
+-- 적 12종의 생김새. 기본 인형에 투구, 방패, 활, 지팡이, 폭탄 같은 장비를 붙인다.
 -- 등급마다 몸 색, 재질, 등 가시 개수, 속성 오라가 다르다. 보스는 왕관과 망토.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +22,19 @@ local TINT = {
 	bomber = { tint = Color3.fromRGB(150, 110, 60), eye = Color3.fromRGB(255, 230, 60) },
 	shaman = { tint = Color3.fromRGB(100, 60, 140), eye = Color3.fromRGB(220, 120, 255) },
 	assassin = { tint = Color3.fromRGB(40, 35, 50), eye = Color3.fromRGB(255, 40, 90) },
+	golem = { tint = Color3.fromRGB(120, 110, 100), eye = Color3.fromRGB(255, 170, 60) },
+	ghost = { tint = Color3.fromRGB(170, 200, 230), eye = Color3.fromRGB(140, 255, 255) },
+	splitter = { tint = Color3.fromRGB(90, 160, 90), eye = Color3.fromRGB(230, 255, 90) },
+	priest = { tint = Color3.fromRGB(230, 220, 190), eye = Color3.fromRGB(120, 255, 160) },
+	knight = { tint = Color3.fromRGB(35, 35, 45), eye = Color3.fromRGB(255, 50, 50) },
+}
+
+-- 정예 특성마다 오라 색
+local ELITE_COLOR = {
+	swift = Color3.fromRGB(90, 220, 255),
+	giant = Color3.fromRGB(255, 170, 60),
+	regen = Color3.fromRGB(110, 255, 120),
+	fury = Color3.fromRGB(255, 50, 60),
 }
 
 local function weld(model: Model, base: BasePart, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
@@ -231,6 +244,125 @@ dressers.assassin = function(model, s, accent, grade)
 	end
 end
 
+dressers.golem = function(model, s, accent, grade)
+	local ROCK = Color3.fromRGB(105, 98, 90)
+	for _, name in ipairs({ "UpperTorso", "LeftUpperArm", "RightUpperArm", "LeftLowerArm", "RightLowerArm" }) do
+		local part = find(model, name)
+		if part then
+			for i = 1, 2 do
+				weld(model, part, "Rock", Vector3.new(0.9, 0.7, 0.8) * s, CFrame.new((i - 1.5) * 0.5 * s, 0.2 * s * i, -0.3 * s) * CFrame.Angles(math.rad(i * 30), math.rad(i * 50), 0), ROCK, Enum.Material.Slate)
+			end
+			weld(model, part, "Crack", Vector3.new(0.1, part.Size.Y * 0.8, 0.12), CFrame.new(0, 0, -part.Size.Z / 2 - 0.02), accent, Enum.Material.Neon)
+		end
+	end
+	local head = find(model, "Head")
+	if head then
+		weld(model, head, "Brow", Vector3.new(1.5, 0.45, 0.6) * s, CFrame.new(0, 0.35 * s, -0.35 * s), ROCK, Enum.Material.Slate)
+	end
+	for _, side in ipairs({ "LeftHand", "RightHand" }) do
+		local hand = find(model, side)
+		if hand then
+			weld(model, hand, "Fist", Vector3.new(1.3, 1.3, 1.3) * s, CFrame.new(0, -0.3 * s, 0), ROCK, Enum.Material.Slate, Enum.PartType.Ball)
+		end
+	end
+	local upper = find(model, "UpperTorso")
+	if upper then
+		particles(upper, Color3.fromRGB(180, 160, 130), 4, 0.8 * s, 1, "Dust")
+	end
+	local _ = grade
+end
+
+dressers.ghost = function(model, s, accent, grade)
+	local head = find(model, "Head")
+	local lower = find(model, "LowerTorso")
+	if head then
+		weld(model, head, "Shroud", Vector3.new(1.5, 1.6, 1.5) * s, CFrame.new(0, 0.15 * s, 0.1 * s), Color3.fromRGB(200, 220, 240), Enum.Material.Glass, Enum.PartType.Ball).Transparency = 0.35
+	end
+	if lower then
+		local tail = weld(model, lower, "Tail", Vector3.new(2.2, 2.6, 1.6) * s, CFrame.new(0, -1.3 * s, 0.1 * s), Color3.fromRGB(190, 215, 240), Enum.Material.Glass)
+		tail.Transparency = 0.45
+		particles(tail, accent, 10, 0.7 * s, 1.5, "Wisp")
+	end
+	for _, d in ipairs(model:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+			d.Transparency = math.max(d.Transparency, 0.25)
+		end
+	end
+	local hand = find(model, "RightHand")
+	if hand then
+		WeaponBuilder.build(model, hand, 5, { grade = grade, accent = accent, rarity = 1, scale = 0.6 * s, lite = true })
+	end
+end
+
+dressers.splitter = function(model, s, accent, _grade)
+	local SLIME = Color3.fromRGB(90, 200, 100)
+	for _, name in ipairs({ "UpperTorso", "Head", "LowerTorso" }) do
+		local part = find(model, name)
+		if part then
+			local blob = weld(model, part, "Blob", part.Size * 1.25, CFrame.new(), SLIME, Enum.Material.Glass, Enum.PartType.Ball)
+			blob.Transparency = 0.4
+		end
+	end
+	local upper = find(model, "UpperTorso")
+	if upper then
+		weld(model, upper, "Core", Vector3.new(0.7, 0.7, 0.7) * s, CFrame.new(0, 0.1 * s, 0), accent, Enum.Material.Neon, Enum.PartType.Ball)
+		particles(upper, SLIME, 6, 0.4 * s, 1, "Drip").Acceleration = Vector3.new(0, -8, 0)
+	end
+end
+
+dressers.priest = function(model, s, accent, _grade)
+	local head = find(model, "Head")
+	local lower = find(model, "LowerTorso")
+	local hand = find(model, "RightHand")
+	local WHITE = Color3.fromRGB(240, 235, 220)
+	if head then
+		weld(model, head, "Mitre", Vector3.new(0.9, 1.4, 0.6) * s, CFrame.new(0, 0.95 * s, 0), WHITE, Enum.Material.Fabric)
+		weld(model, head, "MitreBand", Vector3.new(0.95, 0.15, 0.65) * s, CFrame.new(0, 0.55 * s, 0), GOLD, Enum.Material.Foil)
+		for i = 0, 7 do
+			local a = (i / 8) * math.pi * 2
+			weld(model, head, "PriestHalo", Vector3.new(0.12, 0.12, 0.45) * s, CFrame.new(math.cos(a) * 0.8 * s, 1.9 * s, math.sin(a) * 0.8 * s) * CFrame.Angles(0, -a, 0), GOLD, Enum.Material.Neon)
+		end
+	end
+	if lower then
+		weld(model, lower, "Robe", Vector3.new(2.2, 2.0, 2.0) * s, CFrame.new(0, -0.95 * s, 0) * CFrame.Angles(0, 0, math.rad(90)), WHITE, Enum.Material.Fabric, Enum.PartType.Cylinder)
+	end
+	if hand then
+		weld(model, hand, "Staff", Vector3.new(0.22, 5, 0.22) * s, CFrame.new(0, 1.2 * s, 0), GOLD, Enum.Material.Foil)
+		weld(model, hand, "CrossH", Vector3.new(1.2, 0.22, 0.22) * s, CFrame.new(0, 3.3 * s, 0), GOLD, Enum.Material.Foil)
+		local orb = weld(model, hand, "HolyOrb", Vector3.new(0.8, 0.8, 0.8) * s, CFrame.new(0, 3.9 * s, 0), Color3.fromRGB(140, 255, 170), Enum.Material.Neon, Enum.PartType.Ball)
+		particles(orb, Color3.fromRGB(140, 255, 170), 10, 0.4 * s, 2, "HolyGlow")
+	end
+	local _ = accent
+end
+
+dressers.knight = function(model, s, accent, grade)
+	local head = find(model, "Head")
+	local upper = find(model, "UpperTorso")
+	local arm = find(model, "LeftLowerArm")
+	local hand = find(model, "RightHand")
+	local BLACK = Color3.fromRGB(30, 30, 38)
+	if head then
+		weld(model, head, "Helm", Vector3.new(1.35, 1.35, 1.35) * s, CFrame.new(0, 0.1 * s, 0), BLACK, Enum.Material.Metal)
+		weld(model, head, "Slit", Vector3.new(1.0, 0.1, 0.08) * s, CFrame.new(0, 0.1 * s, -0.69 * s), accent, Enum.Material.Neon)
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, head, "HelmHorn", Vector3.new(0.22, 1.0, 0.22) * s, CFrame.new(0.55 * x * s, 0.75 * s, 0) * CFrame.Angles(0, 0, math.rad(-35 * x)), BLACK, Enum.Material.Metal)
+		end
+	end
+	if upper then
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, upper, "Pauldron", Vector3.new(1.3, 0.6, 1.3) * s, CFrame.new(1.1 * x * s, 0.7 * s, 0), BLACK, Enum.Material.Metal)
+		end
+		weld(model, upper, "Cape", Vector3.new(upper.Size.X * 1.1, 3 * s, 0.1), CFrame.new(0, -0.8 * s, upper.Size.Z / 2 + 0.1) * CFrame.Angles(math.rad(8), 0, 0), Color3.fromRGB(90, 15, 25), Enum.Material.Fabric)
+	end
+	if arm then
+		local sh = weld(model, arm, "Shield", Vector3.new(2.0, 2.8, 0.3) * s, CFrame.new(-0.2 * s, -0.2 * s, -0.75 * s), BLACK, Enum.Material.Metal)
+		weld(model, sh, "ShieldMark", Vector3.new(0.2, 1.4, 0.1) * s, CFrame.new(0, 0, -0.18 * s), accent, Enum.Material.Neon)
+	end
+	if hand then
+		WeaponBuilder.build(model, hand, 1, { grade = grade, accent = accent, rarity = 3, scale = 0.75 * s, lite = true })
+	end
+end
+
 -- 몸 재질과 색: 등급마다 다르다
 local function bodyMaterial(grade: number): Enum.Material
 	if grade < 10 then
@@ -267,7 +399,8 @@ local function paintBody(model: Model, kind: string, style: any, isBoss: boolean
 	end
 end
 
-function EnemyBuilder.dress(model: Model, kind: string, grade: number, isBoss: boolean, scale: number)
+-- opts: { elite = 정예 특성 id, beyond = 초월 스테이지 }
+function EnemyBuilder.dress(model: Model, kind: string, grade: number, isBoss: boolean, scale: number, opts: any?)
 	local style = GradeStyle.get(grade)
 	paintBody(model, kind, style, isBoss)
 	local t = TINT[kind] or TINT.grunt
@@ -333,6 +466,33 @@ function EnemyBuilder.dress(model: Model, kind: string, grade: number, isBoss: b
 		end
 		if upper then
 			weld(model, upper, "Cape", Vector3.new(upper.Size.X * 1.2, 3.2 * scale, 0.1), CFrame.new(0, -0.9 * scale, upper.Size.Z / 2 + 0.1) * CFrame.Angles(math.rad(8), 0, 0), style.primary:Lerp(Color3.fromRGB(140, 15, 25), 0.6), Enum.Material.Fabric)
+		end
+	end
+	local o = opts or {}
+	-- 초월 스테이지: 검은 뿔 왕관과 무지개 기운
+	if o.beyond and head then
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, head, "BeyondHorn", Vector3.new(0.25, 1.3, 0.25) * scale, CFrame.new(0.45 * x * scale, 0.9 * scale, 0.1 * scale) * CFrame.Angles(math.rad(-20), 0, math.rad(-25 * x)), Color3.fromRGB(20, 15, 30), Enum.Material.Metal)
+		end
+		local pe = particles(head, GradeStyle.RAINBOW, 6, 0.5 * scale, 2, "BeyondAura")
+		pe.LightEmission = 1
+	end
+	-- 정예: 특성 색 오라와 발밑 고리
+	local eliteColor = o.elite and ELITE_COLOR[o.elite]
+	if eliteColor then
+		local base = find(model, "HumanoidRootPart")
+		if base then
+			local ring = weld(model, base, "EliteRing", Vector3.new(0.15, 5 * scale, 5 * scale), CFrame.new(0, -2.8 * scale, 0) * CFrame.Angles(0, 0, math.rad(90)), eliteColor, Enum.Material.Neon, Enum.PartType.Cylinder)
+			ring.Transparency = 0.5
+			local pe = particles(base, eliteColor, 14, 0.7 * scale, 3, "EliteAura")
+			pe.SpreadAngle = Vector2.new(60, 60)
+		end
+		if head then
+			local light = Instance.new("PointLight")
+			light.Color = eliteColor
+			light.Range = 10
+			light.Brightness = 1.5
+			light.Parent = head
 		end
 	end
 end

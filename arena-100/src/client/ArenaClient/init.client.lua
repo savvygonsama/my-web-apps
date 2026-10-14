@@ -12,7 +12,10 @@ local CollectionService = game:GetService("CollectionService")
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
 local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
+local AuraBuilder = require(ReplicatedStorage:WaitForChild("AuraBuilder"))
 local Effects = require(script:WaitForChild("Effects"))
+local Motion = require(script:WaitForChild("Motion"))
+local KillFx = require(script:WaitForChild("KillFx"))
 local remotes = ReplicatedStorage:WaitForChild("ArenaRemotes")
 local Request = remotes:WaitForChild("Request") :: RemoteEvent
 local Push = remotes:WaitForChild("Push") :: RemoteEvent
@@ -165,15 +168,35 @@ local function setGradeColor(label: TextLabel, grade: number)
 	new("UIGradient", { Color = GradeStyle.gradient(grade), Parent = label })
 end
 
+-- 스테이지 이름 색: 1~100은 등급 색, 초월 스테이지는 무지개
+local function setStageColor(label: TextLabel, n: number)
+	if Config.isBeyond(n) then
+		local old = label:FindFirstChildOfClass("UIGradient")
+		if old then
+			old:Destroy()
+		end
+		label.TextColor3 = Color3.new(1, 1, 1)
+		new("UIGradient", { Color = GradeStyle.RAINBOW, Parent = label })
+	else
+		setGradeColor(label, n)
+	end
+end
+
+local function enhOf(key: string): number
+	return (state and type(state.enh) == "table" and state.enh[key]) or 0
+end
+
 local function weaponTitle(key: string): (string, any)
 	local info = Config.weaponInfo(key)
 	if not info then
 		return "?", nil
 	end
 	if info.typeId == 0 then
-		return "올라운더", info
+		local lv0 = enhOf(key)
+		return "올라운더" .. (lv0 > 0 and (" +" .. lv0) or ""), info
 	end
-	return string.format("[%d] %s %s", info.grade, info.gradeData.en, info.type.name), info
+	local lv = enhOf(key)
+	return string.format("[%d] %s %s%s", info.grade, info.gradeData.en, info.type.name, lv > 0 and (" +" .. lv) or ""), info
 end
 
 local function weaponColor(info: any): Color3
@@ -186,7 +209,7 @@ end
 local fmt = Config.formatNumber
 
 -- 무기 3D 미리보기
-local function weaponViewport(parent: GuiObject, key: string, spin: boolean): ViewportFrame?
+local function weaponViewport(parent: GuiObject, key: string, spin: boolean, enh: number?): ViewportFrame?
 	local info = Config.weaponInfo(key)
 	if not info then
 		return nil
@@ -213,6 +236,7 @@ local function weaponViewport(parent: GuiObject, key: string, spin: boolean): Vi
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
 		rarity = info.rarity.rank,
 		scale = 1,
+		enh = enh or 0,
 	}, CFrame.new(0, -3, 0))
 	local cam = new("Camera", { FieldOfView = 38, Parent = vp })
 	vp.CurrentCamera = cam
@@ -298,7 +322,7 @@ coinLabel.TextColor3 = C.gold
 local menu = new("Frame", {
 	AnchorPoint = Vector2.new(0, 0.5),
 	Position = UDim2.new(0, 12, 0.5, 0),
-	Size = UDim2.new(0, 136, 0, 5 * 56),
+	Size = UDim2.new(0, 136, 0, 6 * 56),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
@@ -380,6 +404,7 @@ local PAGE_TITLES = {
 	stage = "⚔  스테이지",
 	armory = "🗡  무기고",
 	train = "💪  훈련장",
+	cosmetics = "✨  치장 상점 · 아우라와 킬 이펙트",
 	help = "📜  도움말",
 	test = "🧪  테스트 (만렙 계정)",
 }
@@ -410,6 +435,7 @@ for _, item in ipairs({
 	{ "stage", "⚔", "스테이지", C.red },
 	{ "armory", "🗡", "무기고", C.blue },
 	{ "train", "💪", "훈련", C.green },
+	{ "cosmetics", "✨", "치장", Color3.fromRGB(150, 80, 200) },
 	{ "help", "📜", "도움말", C.panel3 },
 	{ "test", "🧪", "테스트", Color3.fromRGB(120, 60, 180) },
 }) do
@@ -483,7 +509,7 @@ do
 		Size = UDim2.new(1, 0, 0, 36),
 		TextSize = 13,
 		TextColor3 = C.dim,
-		Text = "🔒 잠김   ⚔ 도전 가능   ✅ 승리   🔁 자동 반복 가능 (이긴 스테이지 + 권장 전투력 1.5배)\n👑 10스테이지마다 보스가 나와요.",
+		Text = "🔒 잠김   ⚔ 도전 가능   ✅ 승리   🔁 자동 반복 가능 (이긴 스테이지 + 권장 전투력 1.5배)\n👑 10스테이지마다 보스 · 🌌 101~200은 초월 스테이지 (강화·아우라·킬 이펙트가 필요해요)",
 		Parent = stagePage,
 	})
 	local stageList = new("ScrollingFrame", {
@@ -518,11 +544,13 @@ do
 		Request:FireServer("start", n, auto)
 	end
 
-	for n = 1, Config.MAX_GRADE do
+	for n = 1, Config.MAX_STAGE do
 		local isBoss = n % 10 == 0
-		local section = { color = GradeStyle.get(n).glow }
-		local top = isBoss and Color3.fromRGB(105, 34, 30) or C.panel3
-		local bottom = isBoss and Color3.fromRGB(55, 16, 16) or C.panel2
+		local beyond = Config.isBeyond(n)
+		local vg = Config.stageGrade(n)
+		local section = { color = GradeStyle.get(vg).glow }
+		local top = isBoss and Color3.fromRGB(105, 34, 30) or (beyond and Color3.fromRGB(60, 35, 95) or C.panel3)
+		local bottom = isBoss and Color3.fromRGB(55, 16, 16) or (beyond and Color3.fromRGB(25, 15, 45) or C.panel2)
 		local row = new("Frame", {
 			LayoutOrder = n,
 			Size = UDim2.new(1, -12, 0, 52),
@@ -536,7 +564,7 @@ do
 			BorderSizePixel = 0,
 			Parent = row,
 		}, { corner(3) })
-		local grade = Config.getGrade(n)
+		local stageEn, stageKo = Config.stageName(n)
 		local nameLabel = text({
 			Position = UDim2.new(0, 20, 0, 4),
 			Size = UDim2.new(0.52, -20, 0, 26),
@@ -545,10 +573,10 @@ do
 			TextStrokeTransparency = 0.5,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			TextWrapped = false,
-			Text = string.format("%s%d. %s", isBoss and "👑 " or "", n, grade.en),
+			Text = string.format("%s%d. %s", isBoss and "👑 " or (beyond and "🌌 " or ""), n, stageEn),
 			Parent = row,
 		})
-		setGradeColor(nameLabel, n)
+		setStageColor(nameLabel, n)
 		text({
 			Position = UDim2.new(0, 20, 0, 29),
 			Size = UDim2.new(0.52, -20, 0, 18),
@@ -556,7 +584,7 @@ do
 			TextColor3 = C.dim,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			TextWrapped = false,
-			Text = grade.ko .. "  ·  " .. GradeStyle.get(n).motif.name .. (isBoss and "  ·  BOSS" or ""),
+			Text = stageKo .. "  ·  " .. GradeStyle.get(vg).motif.name .. (isBoss and "  ·  BOSS" or ""),
 			Parent = row,
 		})
 		local powerLabel2 = text({
@@ -620,7 +648,7 @@ do
 				row.status.Text = "🔒"
 			end
 		end
-		local target = math.clamp(state.maxStage - 2, 0, Config.MAX_GRADE)
+		local target = math.clamp(state.maxStage - 2, 0, Config.MAX_STAGE)
 		stageList.CanvasPosition = Vector2.new(0, target * 57)
 	end
 
@@ -653,7 +681,7 @@ do
 	})
 	local equipName = text({
 		Position = UDim2.new(0, 110, 0, 24),
-		Size = UDim2.new(1, -120, 0, 26),
+		Size = UDim2.new(1, -250, 0, 26),
 		TextSize = 20,
 		Font = Enum.Font.GothamBlack,
 		TextStrokeTransparency = 0.5,
@@ -663,13 +691,35 @@ do
 	})
 	local equipInfo = text({
 		Position = UDim2.new(0, 110, 0, 52),
-		Size = UDim2.new(1, -120, 0, 46),
+		Size = UDim2.new(1, -250, 0, 46),
 		TextSize = 13,
 		TextColor3 = C.dim,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Parent = equipCard,
 	})
 	local shownEquipKey = ""
+	-- 강화 버튼: 장착한 무기를 한 단계 올린다
+	local enhBtn = button({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -8, 0, 8),
+		Size = UDim2.new(0, 128, 0, 50),
+		Text = "🔥 강화",
+		TextSize = 15,
+		BackgroundColor3 = Color3.fromRGB(200, 80, 30),
+		Parent = equipCard,
+	}, function()
+		Request:FireServer("enhance")
+	end)
+	local enhCost = text({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -8, 0, 60),
+		Size = UDim2.new(0, 128, 0, 38),
+		TextSize = 11,
+		TextColor3 = C.dim,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = equipCard,
+	})
 
 	local armoryButtons = new("Frame", {
 		Position = UDim2.new(0, 0, 0, 112),
@@ -725,23 +775,34 @@ do
 			equipStroke.Color = wc
 			equipTag.Text = string.format("장착 중  ·  %s  ·  %s", info.typeId == 0 and "최종 무기" or info.rarity.name, info.type.desc)
 			equipTag.TextColor3 = wc
+			local lv = enhOf(state.equipped)
 			equipInfo.Text = string.format(
-				"공격력 %s   ·   공격 간격 %.2f초   ·   체력 %s\n치명타 %d%% (%.1f배)   ·   전투력 %s",
+				"공격력 %s · 간격 %.2f초 · 체력 %s\n치명타 %d%% (%.1f배) · 강화 +%d · 전투력 %s",
 				fmt(myStats.atk),
 				myStats.cooldown,
 				fmt(myStats.maxHp),
 				math.floor((info.type.critChance or 0) * 100 + 0.5),
 				info.type.critMult or 1,
+				lv,
 				fmt(state.power)
 			)
-			if shownEquipKey ~= state.equipped then
-				shownEquipKey = state.equipped
+			if lv >= Config.MAX_ENHANCE then
+				enhBtn.Text = "🔥 최대 +" .. lv
+				enhCost.Text = "모든 장식이 열렸어요"
+			else
+				enhBtn.Text = string.format("🔥 강화 +%d → +%d", lv, lv + 1)
+				local g = info.typeId == 0 and Config.MAX_GRADE + 5 or info.grade
+				enhCost.Text = string.format("💰%s\n다음: %s", fmt(Config.enhanceCost(g, lv)), Config.EnhanceLooks[lv + 1])
+			end
+			local viewKey = state.equipped .. "#" .. lv
+			if shownEquipKey ~= viewKey then
+				shownEquipKey = viewKey
 				for _, c in ipairs(equipView:GetChildren()) do
 					if c:IsA("ViewportFrame") then
 						c:Destroy()
 					end
 				end
-				weaponViewport(equipView, state.equipped, true)
+				weaponViewport(equipView, state.equipped, true, lv)
 			end
 		end
 
@@ -926,6 +987,251 @@ do
 
 	------------------------------------------------------------------------
 end
+-- 치장 상점: 아우라와 킬 이펙트
+------------------------------------------------------------------------
+do
+	local cosPage = makePage("cosmetics")
+	local cosTab = "aura"
+	local tabRow = new("Frame", {
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundTransparency = 1,
+		Parent = cosPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+	local auraTab, killTab
+	local cosInfo = text({
+		Position = UDim2.new(0, 0, 0, 42),
+		Size = UDim2.new(1, 0, 0, 34),
+		TextSize = 12,
+		TextColor3 = C.dim,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = cosPage,
+	})
+	local cosList = new("ScrollingFrame", {
+		Position = UDim2.new(0, 0, 0, 80),
+		Size = UDim2.new(1, 0, 1, -80),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 8,
+		ScrollBarImageColor3 = C.gold,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = cosPage,
+	}, {
+		new("UIGridLayout", {
+			CellSize = UDim2.new(0, 206, 0, 132),
+			CellPadding = UDim2.new(0, 7, 0, 7),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+
+	-- 미리보기: 내 분신이 앞에 나타나 아우라를 두르고 몇 초 뒤 사라진다
+	local function previewAura(tier: number)
+		local char = player.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if not char or not root or not root:IsA("BasePart") then
+			return
+		end
+		window.Visible = false
+		local old = workspace:FindFirstChild("AuraPreview")
+		if old then
+			old:Destroy()
+		end
+		local was = char.Archivable
+		char.Archivable = true
+		local ok, clone = pcall(function()
+			return char:Clone()
+		end)
+		char.Archivable = was
+		if not ok or not clone then
+			return
+		end
+		local model = clone :: Model
+		model.Name = "AuraPreview"
+		for _, d in ipairs(model:GetDescendants()) do
+			if d:IsA("BaseScript") or d:IsA("BillboardGui") then
+				d:Destroy()
+			end
+		end
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		end
+		local croot = model:FindFirstChild("HumanoidRootPart")
+		if croot and croot:IsA("BasePart") then
+			croot.Anchored = true
+		end
+		model:PivotTo(root.CFrame * CFrame.new(0, 0, -10) * CFrame.Angles(0, math.pi, 0))
+		model.Parent = workspace
+		AuraBuilder.apply(model, tier)
+		Effects.burst(model:GetPivot().Position, C.gold, 30, 20, 0.6)
+		toast(string.format("👁 [%d] %s 미리보기 (7초)", tier, Config.Auras[tier].name))
+		task.delay(7, function()
+			if model.Parent then
+				model:Destroy()
+			end
+		end)
+	end
+
+	local function previewKill(tier: number)
+		local char = player.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if not root or not root:IsA("BasePart") then
+			return
+		end
+		window.Visible = false
+		local look = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+		local pos = root.Position + look * 14
+		local f = Config.KillFx[tier]
+		local near = { pos + Vector3.new(5, 0, 0), pos + Vector3.new(-4, 0, 4), pos + Vector3.new(0, 0, -6) }
+		toast(string.format("👁 [%d] %s 미리보기", tier, f.name))
+		KillFx.play({ pos = pos, fx = tier, radius = f.blast.radius, near = near })
+		task.delay(1.6, function()
+			KillFx.play({ pos = pos, fx = tier, radius = f.blast.radius, near = near })
+		end)
+	end
+
+	local function bonusText(kind: string, item: any): string
+		if kind == "aura" then
+			local t = string.format("공격력 ×%.2f · 체력 ×%.2f", item.atk, item.hp)
+			if item.pulse then
+				t ..= string.format("\n파동: %.1f초마다 반경 %d, 공격력 %.0f%%", item.pulse.interval, math.floor(item.pulse.radius), item.pulse.mult * 100)
+			else
+				t ..= "\n파동: 4단계부터"
+			end
+			return t
+		end
+		return string.format("공격력 ×%.2f\n처치 폭발: 반경 %d, 공격력 %.0f%%", item.atk, math.floor(item.blast.radius), item.blast.mult * 100)
+	end
+
+	local function refreshCos()
+		if not state then
+			return
+		end
+		setButtonColor(auraTab, cosTab == "aura" and C.gold or C.panel3)
+		setButtonColor(killTab, cosTab == "kill" and C.gold or C.panel3)
+		local list = cosTab == "aura" and Config.Auras or Config.KillFx
+		local owned = (cosTab == "aura" and state.auras or state.kills) or {}
+		local equipped = (cosTab == "aura" and state.aura or state.kill) or 0
+		local cur = list[equipped]
+		if cosTab == "aura" then
+			cosInfo.Text = "아우라: 공격력·체력이 오르고, 4단계부터 주기적으로 주위 적을 때리는 파동이 나가요. 모두에게 보여요.\n장착 중: " .. (cur and string.format("[%d] %s", equipped, cur.name) or "없음 (무기 등급 오라)")
+		else
+			cosInfo.Text = "킬 이펙트: 공격력이 오르고, 적을 잡으면 그 자리가 터져 주위 적에게 피해를 줘요. 터져서 또 잡으면 연쇄 폭발!\n장착 중: " .. (cur and string.format("[%d] %s", equipped, cur.name) or "없음")
+		end
+		for _, child in ipairs(cosList:GetChildren()) do
+			if child:IsA("Frame") then
+				child:Destroy()
+			end
+		end
+		for i, item in ipairs(list) do
+			local style = GradeStyle.get(i >= #list and 100 or item.motif + ((i - 1) // 10) * 30)
+			local isOwned = owned[tostring(i)] == true
+			local isEquipped = equipped == i
+			local unlocked = state.maxStage >= item.unlock
+			local card = new("Frame", {
+				LayoutOrder = i,
+				BackgroundColor3 = Color3.new(1, 1, 1),
+				Parent = cosList,
+			}, {
+				corner(10),
+				stroke(isEquipped and C.gold or style.glow, isEquipped and 3 or 1.2),
+				shade(darken(style.primary, 0.5), C.panel, 90),
+			})
+			local title = text({
+				Position = UDim2.new(0, 8, 0, 4),
+				Size = UDim2.new(1, -16, 0, 22),
+				TextSize = 15,
+				Font = Enum.Font.GothamBlack,
+				TextStrokeTransparency = 0.5,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextWrapped = false,
+				Text = string.format("%d. %s", i, item.name),
+				Parent = card,
+			})
+			if i >= #list then
+				new("UIGradient", { Color = GradeStyle.RAINBOW, Parent = title })
+			else
+				title.TextColor3 = lighten(style.glow, 0.3)
+			end
+			text({
+				Position = UDim2.new(0, 8, 0, 25),
+				Size = UDim2.new(1, -16, 0, 16),
+				TextSize = 11,
+				TextColor3 = C.dim,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextWrapped = false,
+				Text = item.desc,
+				Parent = card,
+			})
+			text({
+				Position = UDim2.new(0, 8, 0, 42),
+				Size = UDim2.new(1, -16, 0, 32),
+				TextSize = 11,
+				TextColor3 = C.text,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				Text = bonusText(cosTab, item),
+				Parent = card,
+			})
+			local kind = cosTab
+			button({
+				Position = UDim2.new(0, 6, 1, -40),
+				Size = UDim2.new(0.36, -6, 0, 34),
+				Text = "👁 보기",
+				TextSize = 12,
+				BackgroundColor3 = C.panel3,
+				Parent = card,
+			}, function()
+				if kind == "aura" then
+					previewAura(i)
+				else
+					previewKill(i)
+				end
+			end)
+			local label, color
+			if isEquipped then
+				label, color = "장착 중", C.goldDeep
+			elseif isOwned then
+				label, color = "장착", C.blue
+			elseif not unlocked then
+				label, color = string.format("🔒 %d스테이지", item.unlock), C.panel2
+			else
+				label, color = "💰" .. fmt(item.cost), C.green
+			end
+			local act = button({
+				Position = UDim2.new(0.36, 4, 1, -40),
+				Size = UDim2.new(0.64, -10, 0, 34),
+				Text = label,
+				TextSize = 12,
+				BackgroundColor3 = color,
+				Parent = card,
+			}, function()
+				if isEquipped then
+					Request:FireServer("unequipCosmetic", kind)
+				else
+					Request:FireServer("buyCosmetic", kind, i)
+				end
+			end)
+			if not unlocked and not isOwned then
+				act.TextTransparency = 0.4
+			end
+		end
+	end
+	refreshers.cosmetics = refreshCos
+
+	auraTab = button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "🌟 아우라 30종", TextSize = 13, Parent = tabRow }, function()
+		cosTab = "aura"
+		refreshCos()
+	end)
+	killTab = button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "💀 킬 이펙트 30종", TextSize = 13, Parent = tabRow }, function()
+		cosTab = "kill"
+		refreshCos()
+	end)
+	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "해제", TextSize = 13, BackgroundColor3 = C.red, Parent = tabRow }, function()
+		Request:FireServer("unequipCosmetic", cosTab)
+	end)
+
+	------------------------------------------------------------------------
+end
 -- 도움말 페이지
 ------------------------------------------------------------------------
 do
@@ -958,6 +1264,11 @@ do
 			bomber = "달려와 붙으면 1초 뒤 터진다. 원 밖으로 대시!",
 			shaman = "멀리서 발밑에 불길 원을 띄운다. 원이 다 차기 전에 나가세요",
 			assassin = "주기적으로 내 등 뒤로 순간이동해 찌른다",
+			golem = "느리고 단단하다. 제자리 땅을 내려쳐 둘레를 터뜨린다",
+			ghost = "몸이 흐려진 동안은 공격이 안 통한다 (MISS). 다시 보일 때 때리세요",
+			splitter = "쓰러지면 작은 분열체 둘로 갈라진다",
+			priest = "주위 적의 체력을 회복시킨다. 먼저 잡으세요!",
+			knight = "앞 공격을 50% 막고, 빨간 길을 그린 뒤 세 번 연속 벤다",
 		})[id] or ""
 		table.insert(enemyLines, string.format("· %s (%d스테이지부터): %s", e.name, e.unlock, how))
 	end
@@ -977,6 +1288,8 @@ do
 			"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, E·F로 무기 스킬, R로 필살기",
 			"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 스킬 버튼 둘, 💥 필살기",
 			"· 공격하면 가장 가까운 적에게 알아서 다가가요",
+			"· 이어서 때리면 3단 콤보! 3타째는 피해 1.6배에 적을 크게 밀어내요",
+			"· 대시는 앞으로 구르는 회피예요",
 			"· 대시하는 순간에는 잠깐 무적이에요. 보스의 빨간 원을 피하세요!",
 			"",
 			"🌀 무기 스킬 (E, F)",
@@ -989,7 +1302,23 @@ do
 			table.concat(enemyLines, "\n"),
 			"· 바닥의 빨간 경고 안에서 밝은 원이 차오르면 곧 공격이 들어와요",
 			"· 웨이브를 깰 때마다 체력 30%를 회복해요",
-			"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환 중 몇 가지를 섞어 써요",
+			"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환, 탄막, 운석비 중 몇 가지를 섞어 써요",
+			"· 40스테이지부터 ★정예 적이 나와요: 신속(빠름), 거대(체력 2배), 재생(체력 회복), 광폭(공격 1.6배)",
+			"",
+			"🌌 초월 스테이지 (101~200)",
+			"· 100스테이지 뒤로 100층이 더 있어요. 한 층마다 6.5%씩 강해져요",
+			"· 무기만으로는 부족해요. 강화, 아우라, 킬 이펙트로 힘을 키우세요",
+			"",
+			"🔥 강화 (무기고)",
+			"· 장착한 무기를 +1 ~ +10까지 강화해요. 단계마다 공격력 +10%, 체력 +5%",
+			"· 단계마다 칼에 장식이 하나씩 붙어요: " .. table.concat(Config.EnhanceLooks, " → "),
+			"· 합성하면 다음 등급 칼이 강화 단계의 절반을 물려받아요",
+			"",
+			"✨ 아우라 · 💀 킬 이펙트 (아우라 제단, 치장 메뉴)",
+			"· 스테이지를 깨면 하나씩 열리고 코인으로 사요. 각 30단계",
+			"· 아우라: 공격력 최대 3배, 체력 최대 2배. 4단계부터 주위 적을 때리는 파동",
+			"· 킬 이펙트: 공격력 최대 2.5배. 적을 잡으면 터져서 주위 적에게 피해 (연쇄 폭발)",
+			"· 👁 보기 버튼으로 미리 볼 수 있어요",
 			"",
 			"🎯 치명타",
 			"· 모든 무기 5% 확률로 1.8배, 단검은 30% 확률로 2.5배",
@@ -1002,6 +1331,7 @@ do
 			"· 단검: 치명타가 잘 터져요",
 			"· 낫: 내 주위를 한 바퀴 베고, 피해의 10%만큼 체력을 회복해요",
 			"· 등급 구간이 오를수록 무기와 내 캐릭터가 점점 화려하게 빛나요",
+			"· 칼날 모양 12종(곧은 날, 나뭇잎, 식칼, 곡도, 물결, 언월, 빈 틀, 쌍날, 갈고리, 초승달, 용골, 수정)이 등급마다 바뀌어요",
 			"",
 			"✨ 희귀도",
 			"· 같은 등급 안에서 일반 < 고급 < 희귀 < 영웅 < 전설",
@@ -1020,6 +1350,7 @@ do
 			"· 🔨 합성 용광로: 모루 앞에서 합성 창을 열어요. 누가 합성하면 용광로가 불을 뿜어요",
 			"· 💪 훈련장: 허수아비 앞에서 훈련 창을 열어요",
 			"· ⚔ 무기 전시대: 구간마다 무기가 얼마나 화려해지는지 보여 줘요",
+			"· ✨ 아우라 제단: 광장 가운데 떠 있는 수정. 아우라와 킬 이펙트를 사요",
 		}, "\n"),
 		Parent = helpScroll,
 	})
@@ -1080,8 +1411,56 @@ do
 		BackgroundTransparency = 1,
 		Parent = testPage,
 	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+	local enhRow = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 284),
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5) }) })
+	local cosRow = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 330),
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5) }) })
+	text({ Size = UDim2.new(0, 96, 1, 0), Text = "장착 무기 강화", TextSize = 12, TextColor3 = C.dim, Parent = enhRow })
+	for _, lv in ipairs({ 0, 3, 5, 7, 10 }) do
+		button({ Size = UDim2.new(0, 56, 1, 0), Text = "+" .. lv, TextSize = 13, BackgroundColor3 = Color3.fromRGB(170, 70, 30), Parent = enhRow }, function()
+			Request:FireServer("testEnhance", lv)
+		end)
+	end
+	local testAura, testKill = 30, 30
+	local auraLabel, killLabel
+	local function cosStepper(kind: string, labelText: string): TextLabel
+		button({ Size = UDim2.new(0, 34, 1, 0), Text = "◀", Parent = cosRow }, function()
+			if kind == "aura" then
+				testAura = math.max(1, testAura - 1)
+				Request:FireServer("buyCosmetic", "aura", testAura)
+				auraLabel.Text = string.format("%s %d", labelText, testAura)
+			else
+				testKill = math.max(1, testKill - 1)
+				Request:FireServer("buyCosmetic", "kill", testKill)
+				killLabel.Text = string.format("%s %d", labelText, testKill)
+			end
+		end)
+		local l = text({ Size = UDim2.new(0, 96, 1, 0), Text = labelText .. " 30", TextSize = 13, TextXAlignment = Enum.TextXAlignment.Center, Font = Enum.Font.GothamBlack, Parent = cosRow })
+		button({ Size = UDim2.new(0, 34, 1, 0), Text = "▶", Parent = cosRow }, function()
+			if kind == "aura" then
+				testAura = math.min(#Config.Auras, testAura + 1)
+				Request:FireServer("buyCosmetic", "aura", testAura)
+				auraLabel.Text = string.format("%s %d", labelText, testAura)
+			else
+				testKill = math.min(#Config.KillFx, testKill + 1)
+				Request:FireServer("buyCosmetic", "kill", testKill)
+				killLabel.Text = string.format("%s %d", labelText, testKill)
+			end
+		end)
+		return l
+	end
+	auraLabel = cosStepper("aura", "아우라")
+	killLabel = cosStepper("kill", "킬")
 	text({
-		Position = UDim2.new(0, 0, 0, 286),
+		Position = UDim2.new(0, 0, 0, 376),
 		Size = UDim2.new(1, 0, 0, 60),
 		TextSize = 12,
 		TextColor3 = C.dim,
@@ -1099,10 +1478,11 @@ do
 			testInfo.Text = testType == 0 and "올라운더" or string.format("[%d] %s %s", testGrade, info.gradeData.en, info.type.name)
 			setGradeColor(testInfo, testType == 0 and 100 or testGrade)
 			testSub.Text = string.format(
-				"%s · %s의 기운 · %s 재질 · 스킬 Lv.%d",
+				"%s · %s의 기운 · %s · %s · 스킬 Lv.%d\n(미리보기는 +10 강화 모습)",
 				testType == 0 and "최종" or info.rarity.name,
 				style.motif.name,
 				style.materialName,
+				style.shapeName,
 				Config.skillTier(testGrade, testType)
 			)
 		end
@@ -1111,7 +1491,7 @@ do
 				c:Destroy()
 			end
 		end
-		weaponViewport(testView, key, true)
+		weaponViewport(testView, key, true, Config.MAX_ENHANCE)
 		for id, b in pairs(typeButtons) do
 			setButtonColor(b, id == testType and C.gold or C.panel3)
 		end
@@ -1141,10 +1521,13 @@ do
 	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "💥 필살기 게이지 채우기", BackgroundColor3 = C.blue, Parent = actionRow }, function()
 		Request:FireServer("testGauge")
 	end)
-	godBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "🛡 무적 OFF", Parent = toggleRow }, function()
+	godBtn = button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "🛡 무적 OFF", Parent = toggleRow }, function()
 		Request:FireServer("testToggle", "god")
 	end)
-	cdBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "⏱ 쿨타임 없음 OFF", Parent = toggleRow }, function()
+	button({ Size = UDim2.new(0.34, 0, 1, 0), Text = "🌌 초월 스테이지 (등급+100)", TextSize = 12, BackgroundColor3 = Color3.fromRGB(110, 60, 180), Parent = toggleRow }, function()
+		requestStart(testGrade + Config.MAX_GRADE, false)
+	end)
+	cdBtn = button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⏱ 쿨타임 없음 OFF", Parent = toggleRow }, function()
 		Request:FireServer("testToggle", "cooldown")
 	end)
 
@@ -1594,8 +1977,8 @@ end
 
 -- 등급 상승: 화면 가득 축포
 local function celebrate(stage: number)
-	local color = GradeStyle.get(stage).glow
-	showBigBanner("RANK UP!", string.format("[%d] %s", stage, Config.getGrade(stage).en), color, 1.8)
+	local color = GradeStyle.get(Config.stageGrade(stage)).glow
+	showBigBanner(Config.isBeyond(stage) and "BEYOND!" or "RANK UP!", string.format("[%d] %s", stage, (Config.stageName(stage))), color, 1.8)
 	for i = 1, 70 do
 		local piece = new("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1675,8 +2058,8 @@ do
 				task.delay(0.4, function()
 					celebrate(data.stage)
 				end)
-				local g = Config.getGrade(data.stage)
-				line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), GradeStyle.textColor(data.stage), 19)
+				local en = Config.stageName(data.stage)
+				line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, en), GradeStyle.textColor(Config.stageGrade(data.stage)), 19)
 			end
 			for _, key in ipairs(data.drops or {}) do
 				local title, info = weaponTitle(key)
@@ -1798,9 +2181,9 @@ local function refreshTop()
 	coinLabel.Text = "💰 " .. fmt(state.coins)
 	powerLabel.Text = "⚔ " .. fmt(state.power)
 	if state.maxStage > 0 then
-		rankLabel.Text = string.format("🏅 %s", Config.getGrade(state.maxStage).en)
-		setGradeColor(rankLabel, state.maxStage)
-		rankStroke.Color = GradeStyle.get(state.maxStage).glow
+		rankLabel.Text = string.format("🏅 %s", (Config.stageName(state.maxStage)))
+		setStageColor(rankLabel, state.maxStage)
+		rankStroke.Color = GradeStyle.get(Config.stageGrade(state.maxStage)).glow
 	else
 		rankLabel.Text = "🏅 NO RANK"
 		rankLabel.TextColor3 = C.dim
@@ -1820,10 +2203,10 @@ local function refreshBattle()
 	if not active then
 		return
 	end
-	local g = Config.getGrade(battle.stage)
-	local section = { color = GradeStyle.get(battle.stage).glow }
-	hudTitle.Text = string.format("%sSTAGE %d  ·  %s", battle.boss and "👑 " or "", battle.stage, g.en)
-	setGradeColor(hudTitle, battle.stage)
+	local stageEn = Config.stageName(battle.stage)
+	local section = { color = GradeStyle.get(Config.stageGrade(battle.stage)).glow }
+	hudTitle.Text = string.format("%sSTAGE %d  ·  %s", battle.boss and "👑 " or (Config.isBeyond(battle.stage) and "🌌 " or ""), battle.stage, stageEn)
+	setStageColor(hudTitle, battle.stage)
 	hudStroke.Color = battle.boss and C.red or section.color
 	local ratio = math.clamp(battle.hp / math.max(battle.maxHp, 1), 0, 1)
 	hpFill.Size = UDim2.fromScale(ratio, 1)
@@ -1896,47 +2279,20 @@ local function getChar(): (BasePart?, Humanoid?)
 	return nil, nil
 end
 Effects.init(fxFolder, getChar)
-
--- 로블록스 기본 R15 칼 휘두르기 동작
-local slashAnim = new("Animation", { AnimationId = "rbxassetid://522635514" })
-local slashTrack: AnimationTrack? = nil
-local slashHum: Humanoid? = nil
-local function playSlash(hum: Humanoid)
-	if slashHum ~= hum then
-		slashHum = hum
-		slashTrack = nil
-		pcall(function()
-			local animator = hum:FindFirstChildOfClass("Animator")
-			if animator then
-				slashTrack = animator:LoadAnimation(slashAnim)
-			end
-		end)
-	end
-	local track = slashTrack
-	if track then
-		track:Play(0.05)
-	end
-end
+KillFx.init(Effects)
+Motion.setCharacter(player.Character)
+player.CharacterAdded:Connect(function(char)
+	task.wait(0.3)
+	Motion.setCharacter(char)
+end)
 
 -- 히트스톱: 맞는 순간 내 휘두르기 동작을 아주 잠깐 멈춘다
-local hitStopUntil = 0
 local function hitStop(duration: number)
-	local track = slashTrack
-	if not track or not track.IsPlaying then
-		return
-	end
-	local now = os.clock()
-	if now < hitStopUntil then
-		return
-	end
-	hitStopUntil = now + duration
-	track:AdjustSpeed(0.05)
-	task.delay(duration, function()
-		if track.IsPlaying then
-			track:AdjustSpeed(1)
-		end
-	end)
+	Motion.hitStop(duration)
 end
+
+-- 칼이 닿는 순간: 휘두르기 동작이 내려오는 때에 맞춰 타격 연출을 보여 준다
+local impactAt = 0
 
 -- 줌 반동: 화면이 순간 앞으로 당겨졌다 돌아온다
 local baseFov = 70
@@ -2100,6 +2456,7 @@ local function dash()
 		end
 	end
 	Request:FireServer("dash")
+	Motion.roll()
 	Effects.burst(root.Position - Vector3.new(0, 2, 0), Color3.fromRGB(220, 230, 255), 10, 12, 0.7)
 	dashBtn.TextTransparency = 0.6
 	task.delay(Config.DASH_COOLDOWN, function()
@@ -2161,50 +2518,82 @@ end)
 Push.OnClientEvent:Connect(function(kind: string, data: any)
 	if kind == "state" then
 		state = data
-		myStats = Config.playerStats(data.equipped, data.atkLv, data.hpLv)
+		myStats = Config.profileStats(data)
 		refreshAll()
 	elseif kind == "battle" then
 		battle = data
 		if not data.active then
 			attackHeld = false
 		end
+		Motion.setCombat(data.active and data.typeId or nil)
 		refreshBattle()
 	elseif kind == "hits" then
-		Effects.hits(data)
-		local landed = 0
-		local anyCrit = false
-		local heavy = HEAVY[lastSwingType] or 1
-		for _, h in ipairs(data) do
-			if h.kind == "hurt" then
-				hurtFlash = 0.55
-				fovPunch(-2)
-			elseif h.kind ~= "poison" then
-				landed += 1
-				anyCrit = anyCrit or h.kind == "crit"
-				Effects.impact(h, heavy)
-				Effects.hitFlash(h.model, h.kind == "crit")
+		-- 기본 공격 타격은 칼이 내려오는 순간에, 나머지(독, 아우라, 폭발)는 바로
+		local function process()
+			Effects.hits(data)
+			local landed = 0
+			local anyCrit = false
+			local heavy = HEAVY[lastSwingType] or 1
+			for _, h in ipairs(data) do
+				if h.kind == "hurt" then
+					hurtFlash = 0.55
+					fovPunch(-2)
+					Motion.flinch(player.Character, 0.8)
+				elseif h.kind == "aura" or h.kind == "blast" then
+					Effects.hitFlash(h.model, false)
+					Motion.flinch(h.model, 0.6)
+				elseif h.kind ~= "poison" and h.kind ~= "miss" then
+					landed += 1
+					anyCrit = anyCrit or h.kind == "crit"
+					Effects.impact(h, heavy)
+					Effects.hitFlash(h.model, h.kind == "crit")
+					Motion.flinch(h.model, h.kind == "crit" and 1.3 or 0.8)
+				end
+			end
+			if landed > 0 then
+				addCombo(landed)
+				hitStop(anyCrit and 0.1 or 0.045 * heavy)
+				fovPunch(anyCrit and 4 or 1.2 * heavy)
+				Effects.shake((anyCrit and 0.45 or 0.12) * heavy, anyCrit and 0.14 or 0.07)
+				Effects.sound("lunge", anyCrit and 0.45 or 0.2, (anyCrit and 1.0 or 1.5) + math.random() * 0.2)
 			end
 		end
-		if landed > 0 then
-			addCombo(landed)
-			hitStop(anyCrit and 0.1 or 0.045 * heavy)
-			fovPunch(anyCrit and 4 or 1.2 * heavy)
-			Effects.shake((anyCrit and 0.45 or 0.12) * heavy, anyCrit and 0.14 or 0.07)
-			Effects.sound("lunge", anyCrit and 0.45 or 0.2, (anyCrit and 1.0 or 1.5) + math.random() * 0.2)
+		local first = data[1]
+		local wait = impactAt - os.clock()
+		if first and (first.kind == "hit" or first.kind == "crit" or first.kind == "block") and wait > 0 then
+			task.delay(wait, process)
+		else
+			process()
 		end
 	elseif kind == "swing" then
 		lastSwingType = data.typeId or 1
-		local _, hum = getChar()
-		if hum then
-			playSlash(hum)
+		local delay = Motion.attack(data.typeId or 1, data.step or 1, data.cooldown or 0.5)
+		impactAt = os.clock() + delay
+		-- 3타째는 앞으로 한 걸음 내디딘다
+		local root = getChar()
+		if root and data.step == 3 and data.target then
+			local d = Vector3.new(data.target.X - root.Position.X, 0, data.target.Z - root.Position.Z)
+			if d.Magnitude > 3 then
+				pushSelf(d.Unit, 26, 0.12)
+			end
 		end
-		Effects.swing(data)
+		task.delay(delay, function()
+			Effects.swing(data)
+			if data.step == 3 then
+				Effects.shake(0.35, 0.12)
+				fovPunch(3)
+			end
+		end)
 	elseif kind == "ult" then
+		Motion.ult(data.typeId or 1)
 		showUltBanner(data.name, data.color or C.gold)
 		Effects.ultimate(data)
 	elseif kind == "slam" then
 		Effects.slam(data)
 	elseif kind == "result" then
+		if data.win then
+			Motion.victory()
+		end
 		showResult(data)
 	elseif kind == "toast" then
 		toast(data)
@@ -2213,6 +2602,7 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 	elseif kind == "equipped" then
 		Effects.sound("unsheath", 0.6, 1)
 	elseif kind == "skill" then
+		Motion.skill(data.id)
 		if data.id == "mark" then
 			attachMarkRune(data.model, data.stacks, data.color)
 		elseif data.id == "charge" or data.id == "phantom" then
@@ -2258,10 +2648,38 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 	elseif kind == "kill" then
 		Effects.shatter(data.model, data.color)
 		Effects.kill(data)
+		if (data.fx or 0) > 0 then
+			KillFx.play(data)
+		end
 		onKill()
+	elseif kind == "auraPulse" then
+		KillFx.pulse(data)
+	elseif kind == "heal" then
+		KillFx.heal(data)
+	elseif kind == "enhanced" then
+		local root = getChar()
+		if root then
+			Effects.flash(root.Position, C.gold, 10, 0.4)
+			Effects.burst(root.Position, Color3.fromRGB(255, 150, 60), 40, 26, 0.7)
+		end
+		Effects.sound("ping", 0.6, 1.2)
+		toast(string.format("🔥 강화 성공! +%d · %s", data.level, data.look or ""))
+	elseif kind == "cosmetic" then
+		local list = data.kind == "aura" and Config.Auras or Config.KillFx
+		local item = list[data.tier]
+		if item then
+			toast(string.format("%s %s [%d] %s", data.bought and "🎉 구매!" or "✔", data.kind == "aura" and "아우라" or "킬 이펙트", data.tier, item.name))
+		end
+		local root = getChar()
+		if root and data.kind == "kill" then
+			KillFx.play({ pos = root.Position + root.CFrame.LookVector * 10, fx = data.tier, radius = Config.KillFx[data.tier].blast.radius })
+		elseif root then
+			Effects.flash(root.Position, C.gold, 8, 0.4)
+		end
 	elseif kind == "battleStart" then
 		Effects.battleStart(data)
-		showBigBanner(string.format("STAGE %d", data.stage), Config.getGrade(data.stage).en, data.color, 1.1)
+		local en, ko = Config.stageName(data.stage)
+		showBigBanner(string.format("%sSTAGE %d", data.beyond and "🌌 " or "", data.stage), data.beyond and ko or en, data.color, 1.1)
 		for _, sb in ipairs(skillButtons) do
 			sb.readyAt = 0
 		end
@@ -2421,6 +2839,27 @@ local function watchEnemy(model: Instance)
 	if not model:IsA("Model") then
 		return
 	end
+	-- 공격 동작: 서버가 AnimN을 올릴 때마다 팔을 들었다 내려친다
+	model:GetAttributeChangedSignal("AnimN"):Connect(function()
+		local kindName = model:GetAttribute("AnimKind")
+		local t = model:GetAttribute("AnimT")
+		Motion.enemy(model :: Model, type(kindName) == "string" and kindName or "swing", type(t) == "number" and t or 0.35)
+	end)
+	-- 망령: 흐려진 동안 반투명
+	model:GetAttributeChangedSignal("Phase"):Connect(function()
+		local on = model:GetAttribute("Phase") == true
+		for _, d in ipairs(model:GetDescendants()) do
+			if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+				d.LocalTransparencyModifier = on and 0.75 or 0
+			end
+		end
+		if on then
+			local r = model:FindFirstChild("HumanoidRootPart")
+			if r and r:IsA("BasePart") then
+				Effects.burst(r.Position, Color3.fromRGB(170, 220, 255), 16, 8, 0.8)
+			end
+		end
+	end)
 	model:GetAttributeChangedSignal("Poison"):Connect(function()
 		local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
 		if not head then
@@ -2539,6 +2978,10 @@ do
 		useRot: boolean,
 		flat: boolean,
 		tumble: number,
+		bob: number,
+		bobSpeed: number,
+		offset: CFrame,
+		axis: string,
 	}
 	local orbits: { [BasePart]: Orbit } = {}
 	local function trackOrbit(inst: Instance)
@@ -2559,7 +3002,21 @@ do
 			useRot = part:GetAttribute("UseRotation") == true,
 			flat = part:GetAttribute("Flat") == true,
 			tumble = part:GetAttribute("Tumble") or 0,
+			bob = part:GetAttribute("Bob") or 0,
+			bobSpeed = part:GetAttribute("BobSpeed") or 2,
+			offset = CFrame.identity,
+			axis = part:GetAttribute("Axis") or "Y",
 		}
+		local op = part:GetAttribute("OffsetPos")
+		local orot = part:GetAttribute("OffsetRot")
+		local off = CFrame.identity
+		if typeof(op) == "Vector3" then
+			off = CFrame.new(op)
+		end
+		if typeof(orot) == "Vector3" then
+			off = off * CFrame.Angles(math.rad(orot.X), math.rad(orot.Y), math.rad(orot.Z))
+		end
+		orbits[part].offset = off
 	end
 	for _, inst in ipairs(CollectionService:GetTagged("ArenaOrbit")) do
 		task.spawn(trackOrbit, inst)
@@ -2582,8 +3039,21 @@ do
 				local c = o.ref.Value
 				if c and c:IsA("BasePart") and c.Parent then
 					local center = c :: BasePart
-					local base = o.useRot and center.CFrame or CFrame.new(center.Position)
-					local cf = base * CFrame.new(0, o.height, 0) * CFrame.Angles(0, t * o.speed + o.phase, 0) * CFrame.new(o.radius, 0, 0)
+					local base = (o.useRot and center.CFrame or CFrame.new(center.Position)) * o.offset
+					local h = o.height
+					if o.bob ~= 0 then
+						h += math.sin(t * o.bobSpeed + o.phase) * o.bob
+					end
+					local a = t * o.speed + o.phase
+					local spin
+					if o.axis == "Z" then
+						spin = CFrame.Angles(0, 0, a)
+					elseif o.axis == "X" then
+						spin = CFrame.Angles(a, 0, 0)
+					else
+						spin = CFrame.Angles(0, a, 0)
+					end
+					local cf = base * CFrame.new(0, h, 0) * spin * CFrame.new(o.radius, 0, 0)
 					if o.tumble ~= 0 then
 						cf = cf * CFrame.Angles(t * o.tumble, t * o.tumble * 0.7, 0)
 					end

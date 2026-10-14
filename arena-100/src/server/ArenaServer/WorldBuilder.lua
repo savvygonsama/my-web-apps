@@ -527,6 +527,77 @@ local function buildAmbient(lobby: Instance)
 	end
 end
 
+-- 아우라 제단: 떠 있는 수정 둘레를 고리 세 겹이 돌고, 아우라·킬 이펙트 상점을 연다
+local function buildShrine(lobby: Instance, onUse: (Player) -> ())
+	local model = Instance.new("Model")
+	model.Name = "AuraShrine"
+	model.Parent = lobby
+	local center = Vector3.new(0, 0, 17)
+	disc(model, center + Vector3.new(0, 0.5, 0), 0.4, 9, GOLD, Enum.Material.Metal)
+	disc(model, center + Vector3.new(0, 0.75, 0), 0.4, 7.6, Color3.fromRGB(40, 30, 60), Enum.Material.Slate)
+	local rune = disc(model, center + Vector3.new(0, 0.97, 0), 0.05, 6.4, Color3.fromRGB(170, 110, 255), Enum.Material.Neon)
+	rune.CanCollide = false
+	for i = 0, 5 do
+		local a = (i / 6) * math.pi * 2
+		local pos = center + Vector3.new(math.cos(a) * 4.1, 0, math.sin(a) * 4.1)
+		pillar(model, pos + Vector3.new(0, 2.2, 0), 3.4, 0.7, MARBLE, Enum.Material.Marble)
+		local orb = part({
+			Name = "ShrineOrb",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.9, 0.9, 0.9),
+			Position = pos + Vector3.new(0, 4.4, 0),
+			Color = Color3.fromHSV(i / 6, 0.6, 1),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			Parent = model,
+		})
+		tagBob(orb, 0.3, 1.6)
+	end
+	local crystal = part({
+		Name = "ShrineCrystal",
+		Size = Vector3.new(1.8, 3.6, 1.8),
+		CFrame = CFrame.new(center + Vector3.new(0, 5.2, 0)) * CFrame.Angles(0, 0, math.rad(45)) * CFrame.Angles(math.rad(45), 0, 0),
+		Color = Color3.fromRGB(190, 140, 255),
+		Material = Enum.Material.Glass,
+		Transparency = 0.15,
+		CanCollide = false,
+		Parent = model,
+	})
+	tagSpin(crystal, "Y", 0.8)
+	tagBob(crystal, 0.5, 1.2)
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(190, 140, 255)
+	light.Range = 18
+	light.Brightness = 2
+	light.Parent = crystal
+	local pe = Instance.new("ParticleEmitter")
+	pe.Rate = 18
+	pe.Lifetime = NumberRange.new(1.5, 2.5)
+	pe.Speed = NumberRange.new(1, 3)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0) })
+	pe.LightEmission = 1
+	pe.Color = GradeStyle.RAINBOW
+	pe.Parent = crystal
+	for r = 1, 3 do
+		local ringPart = part({
+			Name = "ShrineRing",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.12, 3 + r * 1.3, 3 + r * 1.3),
+			CFrame = CFrame.new(center + Vector3.new(0, 5.2, 0)) * CFrame.Angles(math.rad(r * 50), 0, math.rad(90)),
+			Color = (r % 2 == 0) and GOLD or Color3.fromRGB(170, 110, 255),
+			Material = Enum.Material.ForceField,
+			CanCollide = false,
+			Parent = model,
+		})
+		tagSpin(ringPart, r == 2 and "X" or "Y", 0.6 + r * 0.3)
+	end
+	local sign = part({ Name = "ShrineSign", Size = Vector3.new(6, 1.3, 0.3), CFrame = CFrame.lookAt(center + Vector3.new(0, 1.9, -4.9), center + Vector3.new(0, 1.9, -20)), Color = Color3.fromRGB(40, 30, 60), Material = Enum.Material.Slate, Parent = model })
+	local gui = surfaceText(sign, Enum.NormalId.Front, 40)
+	label(gui, "✨ 아우라 제단", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(220, 190, 255), Enum.Font.GothamBlack)
+	prompt(rune, "치장 상점", "아우라 · 킬 이펙트", onUse)
+end
+
 function World.buildLobby(handlers: { [string]: (Player) -> () }): CFrame
 	local folder = Instance.new("Folder")
 	folder.Name = "Lobby"
@@ -805,6 +876,7 @@ function World.buildLobby(handlers: { [string]: (Player) -> () }): CFrame
 	buildForge(folder, handlers.forge)
 	buildShowcase(folder)
 	buildTrainingYard(folder, handlers.train)
+	buildShrine(folder, handlers.shrine)
 	buildAmbient(folder)
 
 	if spawn then
@@ -885,8 +957,8 @@ function World.setHallOfFame(entries: { { name: string, stage: number } })
 		local e = entries[i]
 		if e then
 			local medal = (i == 1 and "🥇") or (i == 2 and "🥈") or (i == 3 and "🥉") or ("  " .. i .. ".")
-			row.Text = string.format("%s  %s  ·  [%d] %s", medal, e.name, e.stage, Config.getGrade(e.stage).en)
-			row.TextColor3 = Config.getSection(e.stage).color:Lerp(Color3.new(1, 1, 1), 0.3)
+			row.Text = string.format("%s  %s  ·  [%d] %s", medal, e.name, e.stage, (Config.stageName(e.stage)))
+			row.TextColor3 = Config.getSection(math.min(e.stage, Config.MAX_GRADE)).color:Lerp(Color3.new(1, 1, 1), 0.3)
 		else
 			row.Text = ""
 		end
@@ -1016,7 +1088,7 @@ function World.buildArena(center: Vector3, radius: number, name: string): Arena
 end
 
 -- 스테이지 등급의 색과 속성으로 투기장을 물들인다. 보스전은 붉은 불꽃
-function World.themeArena(arena: Arena, grade: number, isBoss: boolean)
+function World.themeArena(arena: Arena, grade: number, isBoss: boolean, beyond: boolean?)
 	local style = GradeStyle.get(grade)
 	local color = style.glow
 	for i, p in ipairs(arena.trim) do
@@ -1033,8 +1105,16 @@ function World.themeArena(arena: Arena, grade: number, isBoss: boolean)
 	for _, b in ipairs(arena.banners) do
 		b.Color = isBoss and CRIMSON or color:Lerp(Color3.new(0, 0, 0), 0.35)
 	end
+	if beyond and ambient then
+		-- 초월 스테이지: 무지개 입자가 더 많이 흩날린다
+		ambient.Color = GradeStyle.RAINBOW
+		ambient.Rate = 140
+	end
 	for _, f in ipairs(arena.fires) do
-		if isBoss then
+		if beyond and not isBoss then
+			f.Color = Color3.fromRGB(150, 80, 255)
+			f.SecondaryColor = Color3.fromRGB(60, 220, 255)
+		elseif isBoss then
 			f.Color = Color3.fromRGB(255, 40, 60)
 			f.SecondaryColor = Color3.fromRGB(120, 0, 30)
 		else
