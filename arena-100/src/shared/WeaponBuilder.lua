@@ -1,6 +1,6 @@
 -- WeaponBuilder (ModuleScript, ReplicatedStorage)
 -- 서버는 캐릭터 손에, 클라이언트는 무기고 미리보기에 같은 모양을 만든다.
--- 무기 모양, 등급별 빛 효과, 플레이어 오라, 적 장식을 만든다.
+-- 무기 모양, 등급별 빛 효과, 플레이어 오라를 만든다.
 --
 -- 구간이 오를수록 화려해진다
 --   1구간: 쇠 칼날
@@ -343,67 +343,6 @@ function Builder.applyAura(char: Model, section: number, color: Color3)
 		light.Range = 10
 		light.Brightness = 1.2
 		light.Parent = root
-	end
-end
-
--- 적 장식: 높은 구간일수록 무기와 오라, 보스는 왕관과 붉은 오라
-function Builder.decorateEnemy(model: Model, grade: number, section: number, color: Color3, isBoss: boolean, scale: number)
-	local hand = model:FindFirstChild("RightHand")
-	if hand and hand:IsA("BasePart") and (section >= 2 or isBoss) then
-		Builder.build(model, hand, (grade % 5) + 1, {
-			accent = isBoss and Color3.fromRGB(255, 60, 50) or color,
-			section = math.max(1, section - 1),
-			rarity = isBoss and 5 or 1,
-			scale = scale,
-		})
-	end
-	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart")
-	if torso and (section >= 3 or isBoss) then
-		local aura = Instance.new("ParticleEmitter")
-		aura.Name = "EnemyAura"
-		aura.Rate = isBoss and 18 or 6
-		aura.Lifetime = NumberRange.new(0.6, 1.2)
-		aura.Speed = NumberRange.new(1, 3)
-		aura.EmissionDirection = Enum.NormalId.Top
-		aura.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.8 * scale),
-			NumberSequenceKeypoint.new(1, 0),
-		})
-		aura.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.5),
-			NumberSequenceKeypoint.new(1, 1),
-		})
-		aura.LightEmission = 0.7
-		aura.Color = ColorSequence.new(isBoss and Color3.fromRGB(255, 50, 40) or color)
-		aura.Parent = torso
-	end
-	local head = model:FindFirstChild("Head")
-	if isBoss and head and head:IsA("BasePart") then
-		-- 왕관: 머리 위에 금빛 뿔 다섯 개
-		local top = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.1 * scale, 0)
-		for i = 0, 4 do
-			local a = (i / 5) * math.pi * 2
-			local r = head.Size.X * 0.38
-			local spike = Instance.new("Part")
-			spike.Name = "Crown" .. i
-			spike.Size = Vector3.new(0.22, 0.6, 0.22) * scale
-			spike.Color = GOLD
-			spike.Material = Enum.Material.Neon
-			spike.CanCollide = false
-			spike.CanQuery = false
-			spike.Massless = true
-			spike.CFrame = top * CFrame.new(math.cos(a) * r, 0.25 * scale, math.sin(a) * r)
-			local w = Instance.new("WeldConstraint")
-			w.Part0 = head
-			w.Part1 = spike
-			w.Parent = spike
-			spike.Parent = model
-		end
-		local light = Instance.new("PointLight")
-		light.Color = Color3.fromRGB(255, 70, 50)
-		light.Range = 16
-		light.Brightness = 2
-		light.Parent = head
 	end
 end
 

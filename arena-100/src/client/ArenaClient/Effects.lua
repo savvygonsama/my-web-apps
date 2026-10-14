@@ -6,6 +6,11 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
 
 local Effects = {}
 
@@ -180,6 +185,8 @@ local HIT_STYLE = {
 	hit = { color = Color3.fromRGB(255, 248, 230), size = 24 },
 	crit = { color = Color3.fromRGB(255, 170, 40), size = 34 },
 	hurt = { color = Color3.fromRGB(255, 70, 70), size = 26 },
+	block = { color = Color3.fromRGB(170, 185, 210), size = 18 },
+	poison = { color = Color3.fromRGB(120, 255, 110), size = 20 },
 }
 
 function Effects.hits(list: { any })
@@ -200,7 +207,19 @@ function Effects.hits(list: { any })
 		label.TextSize = style.size
 		label.TextColor3 = style.color
 		label.TextStrokeTransparency = 0.1
-		label.Text = isCrit and ("💥" .. h.text) or h.text
+		if h.kind == "block" then
+			label.Text = "🛡" .. h.text
+		elseif h.kind == "poison" then
+			label.Text = "☠" .. h.text
+		else
+			label.Text = isCrit and ("💥" .. h.text) or h.text
+		end
+		-- 맞을 때마다 작은 불꽃
+		if h.kind == "hit" then
+			Effects.burst(h.pos, h.color or Color3.fromRGB(255, 230, 180), 5, 14, 0.3)
+		elseif h.kind == "poison" then
+			Effects.burst(h.pos, Color3.fromRGB(120, 255, 110), 4, 6, 0.4)
+		end
 		label.Parent = bb
 		if isCrit then
 			label.TextColor3 = Color3.new(1, 1, 1)
@@ -437,6 +456,632 @@ function Effects.ultimate(data: any)
 	end
 	if root then
 		Effects.flash(root.Position, color, 6, 0.3)
+	end
+end
+
+------------------------------------------------------------------------
+-- 움직이는 물체: 매 프레임 위치를 정해 주는 함수를 받아 일정 시간 돌린다
+------------------------------------------------------------------------
+local function animate(duration: number, step: (number) -> (), done: (() -> ())?)
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = (os.clock() - start) / duration
+		if t >= 1 then
+			conn:Disconnect()
+			step(1)
+			if done then
+				done()
+			end
+			return
+		end
+		step(t)
+	end)
+end
+
+local function addTrail(p: BasePart, color: Color3, width: number, life: number)
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, width / 2, 0)
+	a0.Parent = p
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, -width / 2, 0)
+	a1.Parent = p
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = life
+	tr.LightEmission = 1
+	tr.Color = ColorSequence.new(color)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	tr.Parent = p
+end
+
+local function floorOf(pos: Vector3): Vector3
+	local root = getChar()
+	local y = root and (root.Position.Y - 2.9) or pos.Y
+	return Vector3.new(pos.X, y, pos.Z)
+end
+
+------------------------------------------------------------------------
+-- 바닥 경고: 서버가 띄운 빨간 경고 안에서 밝은 원이 차오른다 (언제 터지는지 보인다)
+------------------------------------------------------------------------
+function Effects.warningFill(warn: BasePart)
+	local duration = warn:GetAttribute("Warn")
+	if type(duration) ~= "number" or duration <= 0 then
+		return
+	end
+	local isDisc = warn:IsA("Part") and (warn :: Part).Shape == Enum.PartType.Cylinder
+	local fill = fxPart(isDisc and Vector3.new(warn.Size.X + 0.05, 0.1, 0.1) or Vector3.new(warn.Size.X, warn.Size.Y + 0.05, 0.1), warn.CFrame, Color3.fromRGB(255, 120, 60), 0.35, isDisc and Enum.PartType.Cylinder or nil)
+	if isDisc then
+		TweenService:Create(fill, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = Vector3.new(warn.Size.X + 0.05, warn.Size.Y, warn.Size.Z) }):Play()
+	else
+		-- 길 경고는 시작점에서 끝까지 차오른다
+		local length = warn.Size.Z
+		local back = warn.CFrame * CFrame.new(0, 0, length / 2)
+		animate(duration, function(t)
+			if fill.Parent then
+				fill.Size = Vector3.new(warn.Size.X, warn.Size.Y + 0.05, math.max(0.1, length * t))
+				fill.CFrame = back * CFrame.new(0, 0, -length * t / 2)
+			end
+		end)
+	end
+	Debris:AddItem(fill, duration)
+	-- 테두리
+	if isDisc then
+		ring(warn.Position + Vector3.new(0, 0.1, 0), Color3.fromRGB(255, 60, 40), warn.Size.Y, warn.Size.Y * 1.02, duration, 0.3)
+	end
+end
+
+------------------------------------------------------------------------
+-- 적의 공격
+------------------------------------------------------------------------
+function Effects.projectile(data: any)
+	local color: Color3 = data.color or Color3.fromRGB(255, 120, 80)
+	local from: Vector3 = data.from
+	local dir: Vector3 = data.dir
+	local arrow = fxPart(Vector3.new(0.25, 0.25, 2.8), CFrame.lookAt(from, from + dir), color, 0)
+	addTrail(arrow, color, 0.5, 0.25)
+	local head = fxPart(Vector3.new(0.6, 0.6, 0.6), arrow.CFrame * CFrame.new(0, 0, -1.4), Color3.new(1, 1, 1), 0, Enum.PartType.Ball)
+	animate(data.range / data.speed, function(t)
+		local p = from + dir * (data.range * t)
+		arrow.CFrame = CFrame.lookAt(p, p + dir)
+		head.CFrame = arrow.CFrame * CFrame.new(0, 0, -1.4)
+	end, function()
+		fade(arrow, 0.1)
+		fade(head, 0.1)
+	end)
+	Effects.sound("slash", 0.25, 1.8)
+end
+
+function Effects.explode(data: any)
+	local pos: Vector3 = data.pos
+	local r: number = data.radius or 8
+	Effects.flash(pos, Color3.fromRGB(255, 200, 80), r * 1.6, 0.35)
+	Effects.flash(pos, Color3.fromRGB(255, 80, 30), r * 2.2, 0.5)
+	ring(floorOf(pos) + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 120, 40), 2, r * 2.4, 0.45, 0.5)
+	Effects.burst(pos, Color3.fromRGB(255, 150, 50), 40, 40, 1)
+	Effects.burst(pos, Color3.fromRGB(60, 50, 50), 20, 12, 2)
+	local root = getChar()
+	if root and (root.Position - pos).Magnitude < 30 then
+		Effects.shake(1.0, 0.35)
+	end
+	Effects.sound("lunge", 0.8, 0.4)
+end
+
+function Effects.flame(data: any)
+	local base = floorOf(data.pos)
+	local r: number = data.radius or 7
+	local pillarPart = fxPart(Vector3.new(16, r * 1.4, r * 1.4), CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 90, 255), 0.2, Enum.PartType.Cylinder)
+	fade(pillarPart, 0.6, { Size = Vector3.new(26, r * 0.3, r * 0.3) })
+	ring(base + Vector3.new(0, 0.2, 0), Color3.fromRGB(220, 120, 255), r * 1.2, r * 2.6, 0.5, 0.4)
+	Effects.burst(base + Vector3.new(0, 2, 0), Color3.fromRGB(230, 140, 255), 25, 25, 0.8)
+	Effects.sound("lunge", 0.5, 0.8)
+end
+
+function Effects.meteor(data: any)
+	local target = floorOf(data.pos)
+	local start = target + Vector3.new(14, 70, -8)
+	local rock = fxPart(Vector3.new(3, 3, 3), CFrame.new(start), Color3.fromRGB(255, 90, 30), 0, Enum.PartType.Ball)
+	rock.Material = Enum.Material.Neon
+	addTrail(rock, Color3.fromRGB(255, 140, 40), 2.5, 0.35)
+	animate(0.25, function(t)
+		rock.CFrame = CFrame.new(start:Lerp(target, t))
+	end, function()
+		fade(rock, 0.05)
+		Effects.explode({ pos = target + Vector3.new(0, 1, 0), radius = data.radius or 6 })
+	end)
+end
+
+function Effects.spinFx(data: any)
+	local cf = CFrame.new(data.pos)
+	arc(cf, data.radius * 0.9, 0, 360, 20, 2.2, Color3.fromRGB(255, 200, 70), 0.3)
+	arc(cf * CFrame.new(0, 1.5, 0), data.radius * 0.7, 0, 360, 16, 1.4, Color3.fromRGB(255, 120, 40), 0.3)
+	Effects.sound("slash", 0.45, 0.6)
+end
+
+function Effects.summonFx(data: any)
+	local base: Vector3 = data.pos
+	ring(base + Vector3.new(0, 0.2, 0), Color3.fromRGB(170, 80, 255), 1, 9, 0.7, 0.4)
+	local beam = fxPart(Vector3.new(30, 4, 4), CFrame.new(base + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 110, 255), 0.3, Enum.PartType.Cylinder)
+	fade(beam, 0.6, { Size = Vector3.new(30, 0.2, 0.2) })
+	Effects.burst(base + Vector3.new(0, 1, 0), Color3.fromRGB(200, 140, 255), 18, 14, 0.6)
+end
+
+function Effects.blink(data: any)
+	for _, p in ipairs({ data.from, data.to }) do
+		Effects.burst(p, Color3.fromRGB(40, 20, 50), 26, 10, 1.6)
+		Effects.flash(p, Color3.fromRGB(150, 50, 200), 5, 0.25)
+	end
+	Effects.sound("slash", 0.4, 2)
+end
+
+function Effects.dust(data: any)
+	Effects.burst(floorOf(data.pos) + Vector3.new(0, 1, 0), Color3.fromRGB(200, 175, 135), 24, 22, 1.4)
+	Effects.shake(0.5, 0.2)
+end
+
+-- 적이 쓰러질 때: 몸이 터지고 영혼이 하늘로, 보스는 거대한 빛기둥
+function Effects.kill(data: any)
+	local pos: Vector3 = data.pos
+	local color: Color3 = data.color or Color3.new(1, 1, 1)
+	local scale: number = data.scale or 1
+	Effects.flash(pos, color, 6 * scale, 0.3)
+	Effects.burst(pos, color, 22, 26, 0.7 * scale)
+	Effects.burst(pos, Color3.fromRGB(255, 215, 90), 8, 12, 0.4)
+	ring(floorOf(pos) + Vector3.new(0, 0.25, 0), color, 2, 10 * scale, 0.4, 0.3)
+	local soul = fxPart(Vector3.new(1, 1, 1) * scale, CFrame.new(pos), color:Lerp(Color3.new(1, 1, 1), 0.5), 0.1, Enum.PartType.Ball)
+	addTrail(soul, color, 0.8 * scale, 0.4)
+	TweenService:Create(soul, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Position = pos + Vector3.new(0, 14, 0), Transparency = 1, Size = Vector3.new(0.2, 0.2, 0.2) }):Play()
+	Debris:AddItem(soul, 1)
+	if data.boss then
+		local beam = fxPart(Vector3.new(200, 12, 12), CFrame.new(pos + Vector3.new(0, 100, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 230, 150), 0.1, Enum.PartType.Cylinder)
+		fade(beam, 1.4, { Size = Vector3.new(200, 0.5, 0.5) })
+		for i = 0, 4 do
+			task.delay(i * 0.12, function()
+				Effects.explode({ pos = pos + Vector3.new((math.random() - 0.5) * 8, math.random() * 4, (math.random() - 0.5) * 8), radius = 6 })
+			end)
+		end
+		Effects.shake(1.6, 0.8)
+	else
+		Effects.shake(0.15, 0.08)
+		Effects.sound("ping", 0.25, 1.6 + math.random() * 0.3)
+	end
+end
+
+-- 대시 잔상: 내 몸 모양 그대로 빛나는 껍데기를 남긴다
+function Effects.afterimage(char: Model, color: Color3)
+	for _, d in ipairs(char:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 1 then
+			local ghost = fxPart(d.Size, d.CFrame, color, 0.55)
+			ghost.Material = Enum.Material.ForceField
+			fade(ghost, 0.35)
+		end
+	end
+end
+
+-- 전투 시작: 내 자리에 빛기둥이 떨어진다
+function Effects.battleStart(data: any)
+	local base = Vector3.new(data.pos.X, data.pos.Y, data.pos.Z)
+	local beam = fxPart(Vector3.new(120, 9, 9), CFrame.new(base + Vector3.new(0, 60, 0)) * CFrame.Angles(0, 0, math.rad(90)), data.color, 0.1, Enum.PartType.Cylinder)
+	fade(beam, 0.8, { Size = Vector3.new(120, 0.5, 0.5) })
+	ring(base + Vector3.new(0, 0.3, 0), data.color, 4, 50, 0.7, 0.4)
+	Effects.burst(base + Vector3.new(0, 2, 0), data.color, 40, 40, 1)
+	Effects.shake(0.6, 0.3)
+	Effects.sound("lunge", 0.7, 0.6)
+end
+
+------------------------------------------------------------------------
+-- 로비 합성 용광로
+------------------------------------------------------------------------
+function Effects.forge(data: any)
+	local lobby = workspace:FindFirstChild("Lobby")
+	local forge = lobby and lobby:FindFirstChild("Forge")
+	if not forge then
+		return
+	end
+	local color: Color3 = data.color or Color3.fromRGB(255, 160, 60)
+	local mouth = forge:FindFirstChild("ForgeMouth")
+	local anvil = forge:FindFirstChild("ForgeAnvil")
+	local lava = forge:FindFirstChild("ForgeLava")
+	local liquid = forge:FindFirstChild("ForgeLiquid")
+	local ringPart = forge:FindFirstChild("ForgeRing")
+	if mouth and mouth:IsA("BasePart") then
+		Effects.flash(mouth.Position, color, 9, 0.4)
+		local glow = mouth:FindFirstChild("ForgeGlow")
+		if glow and glow:IsA("PointLight") then
+			glow.Brightness = 12
+			glow.Color = color
+			TweenService:Create(glow, TweenInfo.new(1.2), { Brightness = 3, Color = Color3.fromRGB(255, 140, 50) }):Play()
+		end
+		local embers = mouth:FindFirstChild("Embers")
+		if embers and embers:IsA("ParticleEmitter") then
+			embers:Emit(50)
+		end
+	end
+	if anvil and anvil:IsA("BasePart") then
+		local top = anvil.Position + Vector3.new(0, 0.6, 0)
+		Effects.burst(top, color, 40, 30, 0.5)
+		Effects.burst(top, Color3.fromRGB(255, 230, 150), 25, 22, 0.3)
+		local beam = fxPart(Vector3.new(30, 2.2, 2.2), CFrame.new(top + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90)), color, 0.2, Enum.PartType.Cylinder)
+		fade(beam, data.legendary and 1.2 or 0.6, { Size = Vector3.new(30, 0.2, 0.2) })
+		if data.legendary then
+			ring(top - Vector3.new(0, 2.5, 0), color, 2, 26, 0.9, 0.3)
+		end
+	end
+	if lava and lava:IsA("BasePart") then
+		Effects.burst(lava.Position + Vector3.new(0, 1, 0), Color3.fromRGB(255, 140, 40), 30, 26, 0.6)
+	end
+	if liquid and liquid:IsA("BasePart") then
+		local old = liquid.Color
+		liquid.Color = color
+		TweenService:Create(liquid, TweenInfo.new(1.5), { Color = old }):Play()
+	end
+	if ringPart and ringPart:IsA("BasePart") then
+		ringPart.Color = color
+		ringPart.Transparency = 0
+		TweenService:Create(ringPart, TweenInfo.new(1.2), { Transparency = 0.4, Color = Color3.fromRGB(222, 178, 72) }):Play()
+	end
+	local root = getChar()
+	if root and anvil and anvil:IsA("BasePart") and (root.Position - anvil.Position).Magnitude < 40 then
+		Effects.shake(0.3, 0.2)
+		Effects.sound("lunge", 0.7, 0.7)
+		Effects.sound("ping", 0.5, 1.4)
+	end
+end
+
+------------------------------------------------------------------------
+-- 무기 스킬 연출
+------------------------------------------------------------------------
+local skillFx: { [string]: (any) -> () } = {}
+
+skillFx.charge = function(data)
+	local from: Vector3 = data.origin
+	local to: Vector3 = data.target
+	for i = 0, 6 do
+		task.delay(i * 0.03, function()
+			local p = from:Lerp(to, i / 6)
+			Effects.burst(floorOf(p) + Vector3.new(0, 1, 0), Color3.fromRGB(210, 180, 140), 6, 16, 0.9)
+		end)
+	end
+	local ram = fxPart(Vector3.new(6, 4, 1), CFrame.lookAt(from, to) * CFrame.new(0, 0, -2), data.color, 0.3)
+	animate(0.2, function(t)
+		ram.CFrame = CFrame.lookAt(from:Lerp(to, t), to) * CFrame.new(0, 0, -2)
+	end, function()
+		fade(ram, 0.15)
+		ring(floorOf(to) + Vector3.new(0, 0.2, 0), data.color, 2, 16, 0.35, 0.4)
+	end)
+	Effects.shake(0.8, 0.3)
+	Effects.sound("lunge", 0.8, 0.7)
+end
+
+skillFx.boomerang = function(data)
+	local origin: Vector3 = data.origin
+	local look: Vector3 = data.look
+	local anchor = fxPart(Vector3.new(0.4, 0.4, 0.4), CFrame.new(origin), Color3.new(1, 1, 1), 1)
+	local holder = Instance.new("Model")
+	holder.Parent = folder
+	pcall(function()
+		WeaponBuilder.build(holder, anchor, 1, { accent = data.color, section = 4, rarity = 5, scale = 1.1 }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
+	end)
+	local spinRing = fxPart(Vector3.new(0.2, 9, 9), CFrame.new(origin), data.color, 0.6, Enum.PartType.Cylinder)
+	local far = origin + look * data.range
+	animate(data.duration, function(t)
+		local pos
+		if t <= 0.5 then
+			pos = origin:Lerp(far, t / 0.5)
+		else
+			local r = getChar()
+			pos = far:Lerp(r and r.Position or origin, (t - 0.5) / 0.5)
+		end
+		local spin = CFrame.Angles(0, os.clock() * 25, 0)
+		anchor.CFrame = CFrame.new(pos) * spin
+		spinRing.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90))
+	end, function()
+		holder:Destroy()
+		fade(anchor, 0.05)
+		fade(spinRing, 0.1)
+	end)
+	Effects.sound("slash", 0.6, 0.7)
+end
+
+skillFx.markBoom = function(data)
+	Effects.flash(data.pos, Color3.fromRGB(255, 80, 180), 10, 0.35)
+	local cf = CFrame.new(data.pos)
+	arc(cf * CFrame.Angles(0, 0, math.rad(55)), 5, -80, 80, 10, 1.2, Color3.fromRGB(255, 120, 200), 0.3)
+	arc(cf * CFrame.Angles(0, 0, math.rad(-55)), 5, -80, 80, 10, 1.2, Color3.fromRGB(255, 120, 200), 0.3)
+	ring(floorOf(data.pos) + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 100, 190), 2, 16, 0.4, 0.4)
+	Effects.burst(data.pos, Color3.fromRGB(255, 120, 200), 35, 32, 0.7)
+	Effects.shake(0.9, 0.3)
+	Effects.sound("lunge", 0.8, 1.2)
+end
+
+local function streak(from: Vector3, to: Vector3, color: Color3, width: number, life: number)
+	local mid = (from + to) / 2
+	local dist = (to - from).Magnitude
+	if dist < 0.1 then
+		return
+	end
+	local p = fxPart(Vector3.new(width, width, dist), CFrame.lookAt(mid, to), color, 0.1)
+	fade(p, life, { Size = Vector3.new(0.05, 0.05, dist) })
+end
+
+local function silhouettes(from: Vector3, to: Vector3, color: Color3, count: number, life: number)
+	for i = 1, count do
+		local p = from:Lerp(to, i / (count + 1))
+		local body = fxPart(Vector3.new(4.6, 1.8, 1.8), CFrame.lookAt(p, to) * CFrame.Angles(0, 0, math.rad(90)), color, 0.5, Enum.PartType.Cylinder)
+		body.Material = Enum.Material.ForceField
+		fade(body, life + i * 0.03)
+	end
+end
+
+skillFx.phantom = function(data)
+	streak(data.origin, data.target, data.color, 1.2, 0.35)
+	silhouettes(data.origin, data.target, data.color, 5, 0.6)
+	Effects.sound("slash", 0.5, 1.5)
+end
+
+skillFx.phantomEcho = function(data)
+	streak(data.origin, data.target, Color3.fromRGB(200, 120, 255), 1.6, 0.3)
+	for i = 1, 4 do
+		local p = data.origin:Lerp(data.target, i / 5)
+		arc(CFrame.lookAt(p, data.target) * CFrame.Angles(0, 0, math.rad(90 + (i % 2 == 0 and 40 or -40))), 3.5, -70, 70, 8, 0.8, Color3.fromRGB(210, 140, 255), 0.18)
+	end
+	Effects.shake(0.4, 0.15)
+	Effects.sound("slash", 0.6, 1.2)
+end
+
+skillFx.wave = function(data)
+	local origin: Vector3 = data.origin
+	local look: Vector3 = data.look
+	local color: Color3 = data.color
+	local segs = 9
+	local parts = {}
+	for i = 0, segs - 1 do
+		local a0 = math.rad(-75 + 150 * i / segs)
+		local a1 = math.rad(-75 + 150 * (i + 1) / segs)
+		local r = data.width * 0.9
+		local p0 = Vector3.new(math.sin(a0) * r, 0, -math.cos(a0) * r)
+		local p1 = Vector3.new(math.sin(a1) * r, 0, -math.cos(a1) * r)
+		local mid = (p0 + p1) / 2
+		local t = i / (segs - 1)
+		local w = 1.6 * (1 - math.abs(t * 2 - 1) * 0.7)
+		local offset = CFrame.lookAt(mid, p1)
+		local part = fxPart(Vector3.new(w, 0.3, (p1 - p0).Magnitude + 0.1), CFrame.new(origin), color, 0.05)
+		table.insert(parts, { part = part, offset = offset })
+	end
+	local core = fxPart(Vector3.new(1, 1, 1), CFrame.new(origin), Color3.new(1, 1, 1), 0.2, Enum.PartType.Ball)
+	addTrail(core, color, 4, 0.3)
+	local duration = data.range / data.speed
+	animate(duration, function(t)
+		local d = data.range * t
+		local base = CFrame.lookAt(origin + look * d, origin + look * (d + 1))
+		for _, item in ipairs(parts) do
+			item.part.CFrame = base * item.offset
+		end
+		core.CFrame = base
+	end, function()
+		for _, item in ipairs(parts) do
+			fade(item.part, 0.15)
+		end
+		fade(core, 0.15)
+	end)
+	Effects.sound("lunge", 0.6, 1.3)
+end
+
+skillFx.parry = function(data)
+	local root = getChar()
+	if not root then
+		return
+	end
+	local bubble = fxPart(Vector3.new(8, 8, 8), root.CFrame, data.color, 0.4, Enum.PartType.Ball)
+	bubble.Material = Enum.Material.ForceField
+	animate(data.window, function()
+		local r = getChar()
+		if r and bubble.Parent then
+			bubble.CFrame = r.CFrame
+		end
+	end, function()
+		fade(bubble, 0.15)
+	end)
+	Effects.sound("unsheath", 0.6, 1.3)
+end
+
+skillFx.parryCounter = function(data)
+	Effects.flash(data.pos, Color3.new(1, 1, 1), 14, 0.3)
+	ring(floorOf(data.pos) + Vector3.new(0, 0.3, 0), data.color, 3, data.radius * 2.2, 0.4, 0.5)
+	arc(CFrame.new(data.pos), data.radius * 0.8, 0, 360, 22, 2, Color3.new(1, 1, 1), 0.3)
+	local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), CFrame.new(data.pos + Vector3.new(0, 5, 0)), Color3.new(1, 1, 1), 1)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(0, 300, 0, 70)
+	bb.AlwaysOnTop = true
+	bb.Parent = anchor
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.fromScale(1, 1)
+	l.BackgroundTransparency = 1
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.Text = "COUNTER!"
+	l.TextColor3 = Color3.fromRGB(255, 240, 160)
+	l.TextStrokeTransparency = 0
+	l.Parent = bb
+	TweenService:Create(anchor, TweenInfo.new(0.8), { Position = anchor.Position + Vector3.new(0, 3, 0) }):Play()
+	TweenService:Create(l, TweenInfo.new(0.4, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0.5), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	Debris:AddItem(anchor, 1)
+	Effects.shake(1.0, 0.3)
+	Effects.sound("lunge", 0.9, 1.5)
+end
+
+skillFx.poison = function(data)
+	local char = Players.LocalPlayer.Character
+	local weapon = char and char:FindFirstChild("ArenaWeapon")
+	if weapon then
+		for _, d in ipairs(weapon:GetDescendants()) do
+			if d:IsA("BasePart") and string.sub(d.Name, 1, 5) == "Blade" then
+				local drip = Instance.new("ParticleEmitter")
+				drip.Rate = 20
+				drip.Lifetime = NumberRange.new(0.4, 0.8)
+				drip.Speed = NumberRange.new(0.5, 1.5)
+				drip.Acceleration = Vector3.new(0, -12, 0)
+				drip.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+				drip.LightEmission = 0.8
+				drip.Color = ColorSequence.new(Color3.fromRGB(120, 255, 90))
+				drip.Parent = d
+				Debris:AddItem(drip, data.duration)
+			end
+		end
+	end
+	local root = getChar()
+	if root then
+		Effects.burst(root.Position, Color3.fromRGB(120, 255, 90), 25, 12, 0.6)
+	end
+	Effects.sound("unsheath", 0.6, 0.8)
+end
+
+skillFx.smoke = function(data)
+	Effects.burst(data.pos, Color3.fromRGB(70, 65, 80), 40, 14, 3)
+	Effects.burst(data.pos, Color3.fromRGB(150, 140, 160), 20, 8, 2)
+	local char = Players.LocalPlayer.Character
+	if char then
+		for _, d in ipairs(char:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.LocalTransparencyModifier = 0.75
+			end
+		end
+		task.delay(data.duration, function()
+			for _, d in ipairs(char:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.LocalTransparencyModifier = 0
+				end
+			end
+		end)
+	end
+	Effects.sound("slash", 0.4, 0.5)
+end
+
+skillFx.hook = function(data)
+	local origin: Vector3 = data.origin
+	for _, v in ipairs(data.victims or {}) do
+		local links = {}
+		local dist = (v - origin).Magnitude
+		local n = math.max(3, math.floor(dist / 2))
+		for i = 1, n do
+			local p = origin:Lerp(v, i / n)
+			local link = fxPart(Vector3.new(0.5, 0.5, 1.2), CFrame.lookAt(p, v), Color3.fromRGB(190, 190, 205), 0)
+			link.Material = Enum.Material.Metal
+			table.insert(links, { part = link, t = i / n })
+		end
+		animate(0.3, function(t)
+			for _, l in ipairs(links) do
+				local p = origin:Lerp(v, l.t * (1 - t))
+				l.part.CFrame = CFrame.lookAt(p, v)
+			end
+		end, function()
+			for _, l in ipairs(links) do
+				fade(l.part, 0.1)
+			end
+		end)
+		Effects.burst(v, data.color, 10, 14, 0.5)
+	end
+	Effects.shake(0.4, 0.15)
+	Effects.sound("lunge", 0.6, 0.9)
+end
+
+skillFx.zone = function(data)
+	local base = Vector3.new(data.pos.X, data.pos.Y + 0.15, data.pos.Z)
+	local d = data.radius * 2
+	local circle = fxPart(Vector3.new(0.15, d, d), CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(80, 255, 170), 0.5, Enum.PartType.Cylinder)
+	local runes = {}
+	for i = 0, 7 do
+		local rune = fxPart(Vector3.new(1.4, 0.2, 1.4), CFrame.new(base), Color3.fromRGB(150, 255, 200), 0.1)
+		table.insert(runes, { part = rune, a = i * math.pi / 4 })
+	end
+	local souls = Instance.new("ParticleEmitter")
+	souls.Rate = 25
+	souls.Lifetime = NumberRange.new(1, 1.6)
+	souls.Speed = NumberRange.new(3, 6)
+	souls.EmissionDirection = Enum.NormalId.Right
+	souls.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+	souls.LightEmission = 1
+	souls.Color = ColorSequence.new(Color3.fromRGB(150, 255, 200))
+	souls.Parent = circle
+	animate(data.duration, function(t)
+		local spin = os.clock() * 1.5
+		for _, r in ipairs(runes) do
+			local a = r.a + spin
+			r.part.CFrame = CFrame.new(base + Vector3.new(math.cos(a) * data.radius * 0.85, 0.2, math.sin(a) * data.radius * 0.85)) * CFrame.Angles(0, -a, 0)
+		end
+		circle.Transparency = 0.45 + math.sin(t * 30) * 0.1
+	end, function()
+		souls.Enabled = false
+		fade(circle, 0.3)
+		for _, r in ipairs(runes) do
+			fade(r.part, 0.3)
+		end
+	end)
+	Effects.sound("unsheath", 0.6, 0.6)
+end
+
+skillFx.rain = function(data)
+	for i, pos in ipairs(data.positions or {}) do
+		task.delay((i - 1) * 0.07, function()
+			local ground = floorOf(pos)
+			local start = ground + Vector3.new(0, 60, 0)
+			local anchor = fxPart(Vector3.new(0.3, 0.3, 0.3), CFrame.new(start), Color3.new(1, 1, 1), 1)
+			local holder = Instance.new("Model")
+			holder.Parent = folder
+			pcall(function()
+				WeaponBuilder.build(holder, anchor, 1, { accent = Color3.fromRGB(255, 235, 160), section = 6, rarity = 5, scale = 1.2 }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
+			end)
+			animate(0.35, function(t)
+				anchor.CFrame = CFrame.new(start:Lerp(ground + Vector3.new(0, 4, 0), t * t))
+			end, function()
+				Effects.flash(ground + Vector3.new(0, 1, 0), Color3.fromRGB(255, 240, 180), 6, 0.25)
+				ring(ground + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 220, 120), 1, 9, 0.35, 0.3)
+				Effects.burst(ground + Vector3.new(0, 1, 0), Color3.fromRGB(255, 230, 150), 12, 20, 0.5)
+				Effects.shake(0.25, 0.08)
+				task.delay(0.5, function()
+					holder:Destroy()
+					anchor:Destroy()
+				end)
+			end)
+		end)
+	end
+	Effects.sound("lunge", 0.8, 0.8)
+end
+
+skillFx.timestop = function(data)
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "TimeStop"
+	cc.Saturation = -0.9
+	cc.TintColor = Color3.fromRGB(200, 225, 255)
+	cc.Parent = Lighting
+	task.delay(data.duration - 0.4, function()
+		TweenService:Create(cc, TweenInfo.new(0.4), { Saturation = 0, TintColor = Color3.new(1, 1, 1) }):Play()
+		Debris:AddItem(cc, 0.45)
+	end)
+	for _, m in ipairs(data.models or {}) do
+		if m and m.Parent then
+			local h = Instance.new("Highlight")
+			h.FillColor = Color3.fromRGB(150, 220, 255)
+			h.FillTransparency = 0.4
+			h.OutlineColor = Color3.new(1, 1, 1)
+			h.Parent = m
+			Debris:AddItem(h, data.duration)
+		end
+	end
+	local root = getChar()
+	if root then
+		ring(floorOf(root.Position) + Vector3.new(0, 0.3, 0), Color3.fromRGB(200, 230, 255), 4, 120, 0.8, 0.4)
+		arc(CFrame.new(root.Position + Vector3.new(0, 4, 0)) * CFrame.Angles(math.rad(90), 0, 0), 6, 0, 360, 24, 0.6, Color3.fromRGB(220, 240, 255), 0.8)
+	end
+	Effects.shake(0.6, 0.3)
+	Effects.sound("ping", 0.8, 0.5)
+end
+
+function Effects.skill(data: any)
+	local fn = skillFx[data.id]
+	if fn then
+		fn(data)
 	end
 end
 

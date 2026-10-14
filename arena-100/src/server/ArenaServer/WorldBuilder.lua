@@ -2,6 +2,7 @@
 -- 조명, 로비 광장, 투기장을 만든다. 맵은 전부 코드로 짓는다.
 
 local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
@@ -15,6 +16,7 @@ local GOLD = Color3.fromRGB(222, 178, 72)
 local STONE = Color3.fromRGB(92, 82, 76)
 local CRIMSON = Color3.fromRGB(150, 35, 40)
 local FIRE = Color3.fromRGB(255, 150, 60)
+local WOOD_COLOR = Color3.fromRGB(95, 65, 40)
 
 local function part(props: { [string]: any }): Part
 	local p = Instance.new("Part")
@@ -144,7 +146,384 @@ end
 local hallRows: { TextLabel } = {}
 local lobbyFolder: Folder? = nil
 
-function World.buildLobby(onGate: (Player) -> ()): CFrame
+-- 클라이언트가 돌리고 흔드는 장식 (각자 화면에서 부드럽게 움직인다)
+local function tagSpin(p: BasePart, axis: string, speed: number)
+	p:SetAttribute("Axis", axis)
+	p:SetAttribute("Speed", speed)
+	CollectionService:AddTag(p, "ArenaSpin")
+end
+
+local function tagBob(p: BasePart, amp: number, speed: number)
+	p:SetAttribute("Amp", amp)
+	p:SetAttribute("BobSpeed", speed)
+	p:SetAttribute("Phase", math.random() * math.pi * 2)
+	CollectionService:AddTag(p, "ArenaBob")
+end
+
+local function prompt(parent: Instance, action: string, object: string, onUse: (Player) -> ())
+	local pp = Instance.new("ProximityPrompt")
+	pp.ActionText = action
+	pp.ObjectText = object
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 14
+	pp.RequiresLineOfSight = false
+	pp.Parent = parent
+	pp.Triggered:Connect(onUse)
+end
+
+-- 톱니바퀴: 가운데 원판(고정) + 둘레 톱니(용접). 원판을 돌리면 톱니도 같이 돈다
+local function gear(parent: Instance, cf: CFrame, diameter: number, color: Color3, speed: number, name: string)
+	local center = part({
+		Name = name,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.7, diameter, diameter),
+		CFrame = cf,
+		Color = color,
+		Material = Enum.Material.Metal,
+		Parent = parent,
+	})
+	part({
+		Name = name .. "Hub",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.9, diameter * 0.3, diameter * 0.3),
+		CFrame = cf,
+		Color = GOLD,
+		Material = Enum.Material.Metal,
+		Anchored = false,
+		Massless = true,
+		CanCollide = false,
+		Parent = parent,
+	})
+	local teeth = 12
+	for i = 0, teeth - 1 do
+		local a = (i / teeth) * math.pi * 2
+		local r = diameter / 2 + 0.3
+		local tooth = part({
+			Name = name .. "Tooth",
+			Size = Vector3.new(0.7, 0.7, 0.9),
+			CFrame = cf * CFrame.Angles(a, 0, 0) * CFrame.new(0, r, 0),
+			Color = color,
+			Material = Enum.Material.Metal,
+			Anchored = false,
+			Massless = true,
+			CanCollide = false,
+			Parent = parent,
+		})
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = center
+		w.Part1 = tooth
+		w.Parent = tooth
+	end
+	for _, child in ipairs(parent:GetChildren()) do
+		if child.Name == name .. "Hub" and child:IsA("BasePart") and not child:FindFirstChildOfClass("WeldConstraint") then
+			local w = Instance.new("WeldConstraint")
+			w.Part0 = center
+			w.Part1 = child
+			w.Parent = child
+		end
+	end
+	tagSpin(center, "X", speed)
+	return center
+end
+
+-- 합성 용광로: 불을 뿜는 화로, 돌아가는 톱니, 빛나는 약물 탱크, 모루
+local function buildForge(lobby: Instance, onUse: (Player) -> ())
+	local model = Instance.new("Model")
+	model.Name = "Forge"
+	model.Parent = lobby
+	local base = Vector3.new(28, 0, 12)
+	local cf = CFrame.lookAt(base, Vector3.new(0, 0, 0))
+	local IRON = Color3.fromRGB(58, 52, 52)
+	local COPPER = Color3.fromRGB(190, 110, 60)
+
+	part({ Name = "Platform", Size = Vector3.new(20, 1, 17), CFrame = cf * CFrame.new(0, 0.5, 0), Color = Color3.fromRGB(60, 55, 52), Material = Enum.Material.Slate, Parent = model })
+	part({ Name = "PlatformTrim", Size = Vector3.new(20.4, 0.3, 17.4), CFrame = cf * CFrame.new(0, 0.9, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = model })
+
+	-- 화로 몸통
+	pillar(model, (cf * CFrame.new(0, 6, 2.5)).Position, 10, 9, IRON, Enum.Material.Metal)
+	for _, y in ipairs({ 2.6, 9.2 }) do
+		pillar(model, (cf * CFrame.new(0, y, 2.5)).Position, 0.6, 9.5, GOLD, Enum.Material.Metal)
+	end
+	local lava = disc(model, (cf * CFrame.new(0, 11.05, 2.5)).Position, 0.2, 7.4, Color3.fromRGB(255, 120, 30), Enum.Material.Neon)
+	lava.Name = "ForgeLava"
+	local lavaFire = Instance.new("Fire")
+	lavaFire.Size = 7
+	lavaFire.Heat = 12
+	lavaFire.Color = Color3.fromRGB(255, 120, 30)
+	lavaFire.SecondaryColor = Color3.fromRGB(255, 220, 90)
+	lavaFire.Parent = lava
+
+	-- 화구: 앞쪽으로 붉게 열린 입
+	local mouth = part({
+		Name = "ForgeMouth",
+		Size = Vector3.new(4.4, 3.4, 0.6),
+		CFrame = cf * CFrame.new(0, 4.2, -2.1),
+		Color = Color3.fromRGB(255, 110, 25),
+		Material = Enum.Material.Neon,
+		Parent = model,
+	})
+	part({ Name = "MouthFrame", Size = Vector3.new(5.4, 0.5, 0.8), CFrame = cf * CFrame.new(0, 6.1, -2.1), Color = GOLD, Material = Enum.Material.Metal, Parent = model })
+	local glow = Instance.new("PointLight")
+	glow.Name = "ForgeGlow"
+	glow.Color = Color3.fromRGB(255, 140, 50)
+	glow.Range = 26
+	glow.Brightness = 3
+	glow.Shadows = true
+	glow.Parent = mouth
+	local embers = Instance.new("ParticleEmitter")
+	embers.Name = "Embers"
+	embers.Rate = 14
+	embers.Lifetime = NumberRange.new(1, 2)
+	embers.Speed = NumberRange.new(3, 6)
+	embers.EmissionDirection = Enum.NormalId.Front
+	embers.SpreadAngle = Vector2.new(35, 35)
+	embers.Acceleration = Vector3.new(0, 4, 0)
+	embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0) })
+	embers.LightEmission = 1
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 220, 100), Color3.fromRGB(255, 80, 30))
+	embers.Parent = mouth
+
+	-- 굴뚝과 연기
+	pillar(model, (cf * CFrame.new(2.2, 14.5, 4)).Position, 7, 2.4, IRON, Enum.Material.Metal)
+	local chimneyTop = pillar(model, (cf * CFrame.new(2.2, 18.1, 4)).Position, 0.4, 2.9, GOLD, Enum.Material.Metal)
+	local smoke = Instance.new("Smoke")
+	smoke.Color = Color3.fromRGB(90, 80, 80)
+	smoke.Opacity = 0.15
+	smoke.RiseVelocity = 6
+	smoke.Size = 3
+	smoke.Parent = chimneyTop
+
+	-- 톱니바퀴 둘
+	gear(model, cf * CFrame.new(5.6, 6.2, 2.5), 6, Color3.fromRGB(150, 120, 70), 0.9, "GearBig")
+	gear(model, cf * CFrame.new(5.6, 10.6, -0.6), 3.6, COPPER, -1.6, "GearSmall")
+
+	-- 빛나는 약물 탱크와 관
+	local tankPos = (cf * CFrame.new(-6.4, 4.6, 2)).Position
+	local liquid = pillar(model, tankPos - Vector3.new(0, 0.6, 0), 5.4, 2.8, Color3.fromRGB(170, 90, 255), Enum.Material.Neon)
+	liquid.Name = "ForgeLiquid"
+	local glass = pillar(model, tankPos, 7.2, 3.4, Color3.fromRGB(200, 230, 255), Enum.Material.Glass)
+	glass.Transparency = 0.55
+	glass.Name = "ForgeTank"
+	pillar(model, tankPos + Vector3.new(0, 3.8, 0), 0.5, 3.8, GOLD, Enum.Material.Metal)
+	pillar(model, tankPos - Vector3.new(0, 3.8, 0), 0.5, 3.8, GOLD, Enum.Material.Metal)
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Rate = 6
+	bubbles.Lifetime = NumberRange.new(1.2, 2)
+	bubbles.Speed = NumberRange.new(1.5, 2.5)
+	bubbles.EmissionDirection = Enum.NormalId.Top
+	bubbles.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0.1) })
+	bubbles.LightEmission = 0.8
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 200, 255))
+	bubbles.Parent = liquid
+	local tankLight = Instance.new("PointLight")
+	tankLight.Color = Color3.fromRGB(170, 90, 255)
+	tankLight.Range = 12
+	tankLight.Brightness = 1.5
+	tankLight.Parent = liquid
+	part({
+		Name = "Pipe",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3.4, 0.8, 0.8),
+		CFrame = cf * CFrame.new(-3.4, 7.6, 2),
+		Color = COPPER,
+		Material = Enum.Material.Metal,
+		Parent = model,
+	})
+
+	-- 모루와 바닥 마법진
+	local anvilPos = cf * CFrame.new(0, 0, -6.2)
+	part({ Name = "AnvilBase", Size = Vector3.new(1.6, 1.8, 1.6), CFrame = anvilPos * CFrame.new(0, 1.9, 0), Color = IRON, Material = Enum.Material.Metal, Parent = model })
+	local anvil = part({ Name = "ForgeAnvil", Size = Vector3.new(3.8, 0.9, 1.7), CFrame = anvilPos * CFrame.new(0, 3.2, 0), Color = Color3.fromRGB(75, 75, 82), Material = Enum.Material.Metal, Parent = model })
+	part({ Name = "AnvilHorn", Size = Vector3.new(1.2, 0.5, 0.5), CFrame = anvilPos * CFrame.new(2.4, 3.35, 0), Color = Color3.fromRGB(75, 75, 82), Material = Enum.Material.Metal, Parent = model })
+	local ring = disc(model, (anvilPos * CFrame.new(0, 1.05, 0)).Position, 0.06, 7, GOLD, Enum.Material.Neon)
+	ring.Name = "ForgeRing"
+	ring.Transparency = 0.4
+	ring.CanCollide = false
+	prompt(anvil, "합성하기", "합성 용광로", onUse)
+
+	-- 간판
+	local sign = part({ Name = "ForgeSign", Size = Vector3.new(9, 1.8, 0.3), CFrame = cf * CFrame.new(0, 8.2, -2.4), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
+	local gui = surfaceText(sign, Enum.NormalId.Front, 40)
+	label(gui, "🔨 합성 용광로", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 200, 90), Enum.Font.GothamBlack)
+end
+
+-- 무기 전시대: 구간 1~6의 무기가 받침대 위에서 떠서 돈다
+local function buildShowcase(lobby: Instance)
+	local model = Instance.new("Model")
+	model.Name = "Showcase"
+	model.Parent = lobby
+	local types = { 1, 2, 3, 4, 5, 0 }
+	for i = 1, 6 do
+		local section = Config.Sections[i]
+		local a = math.rad(62 + (i - 1) * 11.2)
+		local pos = Vector3.new(math.cos(a) * 31, 0, math.sin(a) * 31)
+		local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
+		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.8, GOLD, Enum.Material.Metal)
+		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.6, 3.4, 2.6), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
+		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 3, section.color, Enum.Material.Neon)
+		local light = Instance.new("PointLight")
+		light.Color = section.color
+		light.Range = 10
+		light.Brightness = 1.5
+		light.Parent = top
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Rate = 3 + i
+		sparkle.Lifetime = NumberRange.new(1, 2)
+		sparkle.Speed = NumberRange.new(1, 2)
+		sparkle.EmissionDirection = Enum.NormalId.Right
+		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+		sparkle.LightEmission = 1
+		sparkle.Color = section.rainbow and WeaponBuilder.RAINBOW or ColorSequence.new(section.color)
+		sparkle.Parent = top
+
+		local anchor = part({
+			Name = "ShowAnchor",
+			Size = Vector3.new(0.4, 0.4, 0.4),
+			CFrame = CFrame.new(pos + Vector3.new(0, 6.8, 0)),
+			Transparency = 1,
+			CanCollide = false,
+			Parent = model,
+		})
+		WeaponBuilder.build(model, anchor, types[i], {
+			accent = section.rainbow and Color3.fromRGB(255, 235, 160) or section.color,
+			section = i,
+			rarity = 5,
+			scale = 0.85,
+		}, CFrame.new(anchor.Position - Vector3.new(0, 2.6, 0)))
+		tagSpin(anchor, "Y", 0.7)
+		tagBob(anchor, 0.35, 1.4)
+
+		local gui = surfaceText(column, Enum.NormalId.Front, 50)
+		label(gui, string.format("%d구간", i), UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.3), section.color, Enum.Font.GothamBlack)
+		label(gui, section.name, UDim2.fromScale(0.05, 0.42), UDim2.fromScale(0.9, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
+		label(gui, string.format("%d~%d등급", section.from, section.to), UDim2.fromScale(0.05, 0.68), UDim2.fromScale(0.9, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
+	end
+end
+
+-- 훈련장: 허수아비 세 개와 무기 걸이
+local function buildTrainingYard(lobby: Instance, onUse: (Player) -> ())
+	local model = Instance.new("Model")
+	model.Name = "TrainingYard"
+	model.Parent = lobby
+	local center = Vector3.new(-28, 0, 12)
+	local cf = CFrame.lookAt(center, Vector3.new(0, 0, 0))
+	disc(model, center + Vector3.new(0, 0.48, 0), 0.1, 18, Color3.fromRGB(205, 175, 120), Enum.Material.Sand)
+	disc(model, center + Vector3.new(0, 0.46, 0), 0.1, 19, Color3.fromRGB(120, 85, 50), Enum.Material.Wood)
+	local STRAW = Color3.fromRGB(214, 180, 105)
+	local mainDummy: BasePart? = nil
+	for i, x in ipairs({ -5, 0, 5 }) do
+		local d = cf * CFrame.new(x, 0, (i == 2) and -1.5 or 0)
+		pillar(model, (d * CFrame.new(0, 3.3, 0)).Position, 6, 0.6, WOOD_COLOR, Enum.Material.Wood)
+		local body = part({ Name = "DummyBody", Size = Vector3.new(2.2, 2.6, 1.3), CFrame = d * CFrame.new(0, 4.3, 0), Color = STRAW, Material = Enum.Material.Fabric, Parent = model })
+		part({ Name = "DummyHead", Shape = Enum.PartType.Ball, Size = Vector3.new(1.7, 1.7, 1.7), CFrame = d * CFrame.new(0, 6.4, 0), Color = STRAW, Material = Enum.Material.Fabric, Parent = model })
+		part({ Name = "DummyArms", Size = Vector3.new(4.4, 0.5, 0.5), CFrame = d * CFrame.new(0, 5, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+		part({
+			Name = "DummyTarget",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.1, 1.2, 1.2),
+			CFrame = d * CFrame.new(0, 4.5, -0.7) * CFrame.Angles(0, math.rad(90), 0),
+			Color = Color3.fromRGB(220, 50, 40),
+			Material = Enum.Material.Neon,
+			Parent = model,
+		})
+		for _, y in ipairs({ 3.5, 5.1 }) do
+			part({ Name = "Rope", Size = Vector3.new(2.3, 0.15, 1.4), CFrame = d * CFrame.new(0, y, 0), Color = Color3.fromRGB(120, 85, 50), Material = Enum.Material.Fabric, Parent = model })
+		end
+		if i == 2 then
+			mainDummy = body
+		end
+	end
+	-- 무기 걸이
+	local rack = cf * CFrame.new(0, 0, 6.5)
+	for _, x in ipairs({ -3.5, 3.5 }) do
+		part({ Name = "RackPost", Size = Vector3.new(0.5, 4, 0.5), CFrame = rack * CFrame.new(x, 2.5, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	end
+	local bar = part({ Name = "RackBar", Size = Vector3.new(7.6, 0.4, 0.4), CFrame = rack * CFrame.new(0, 4.3, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	for i, t in ipairs({ 1, 3, 5 }) do
+		local holder = part({
+			Name = "RackHook",
+			Size = Vector3.new(0.3, 0.3, 0.3),
+			CFrame = rack * CFrame.new(-2.4 + (i - 1) * 2.4, 4.3, -0.4),
+			Transparency = 1,
+			CanCollide = false,
+			Parent = model,
+		})
+		WeaponBuilder.build(model, holder, t, { accent = Color3.fromRGB(190, 190, 190), section = 1, rarity = 1, scale = 0.6 }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
+	end
+	local _ = bar
+	local sign = part({ Name = "TrainSign", Size = Vector3.new(7, 1.6, 0.3), CFrame = cf * CFrame.new(0, 8.6, 1), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
+	part({ Name = "SignPost", Size = Vector3.new(0.4, 8.4, 0.4), CFrame = cf * CFrame.new(0, 4.2, 1.3), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	local gui = surfaceText(sign, Enum.NormalId.Front, 40)
+	label(gui, "💪 훈련장", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 220, 140), Enum.Font.GothamBlack)
+	if mainDummy then
+		prompt(mainDummy, "훈련하기", "훈련장", onUse)
+	end
+end
+
+-- 반딧불과 떠다니는 등불
+local function buildAmbient(lobby: Instance)
+	local area = part({
+		Name = "Fireflies",
+		Size = Vector3.new(90, 8, 90),
+		Position = Vector3.new(0, 7, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = lobby,
+	})
+	local flies = Instance.new("ParticleEmitter")
+	flies.Rate = 22
+	flies.Lifetime = NumberRange.new(4, 7)
+	flies.Speed = NumberRange.new(0.2, 0.8)
+	flies.SpreadAngle = Vector2.new(180, 180)
+	flies.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.2, 0.22),
+		NumberSequenceKeypoint.new(0.8, 0.22),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	flies.LightEmission = 1
+	flies.Color = ColorSequence.new(Color3.fromRGB(255, 225, 140))
+	flies.Parent = area
+
+	for i = 1, 10 do
+		local a = (i / 10) * math.pi * 2 + 0.3
+		local r = 22 + (i % 3) * 6
+		local lantern = part({
+			Name = "Lantern",
+			Size = Vector3.new(1.3, 1.7, 1.3),
+			Position = Vector3.new(math.cos(a) * r, 15 + (i % 4) * 2, math.sin(a) * r),
+			Color = Color3.fromRGB(255, 190, 110),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			Parent = lobby,
+		})
+		local cap = part({
+			Name = "LanternCap",
+			Size = Vector3.new(1.6, 0.3, 1.6),
+			CFrame = lantern.CFrame * CFrame.new(0, 1, 0),
+			Color = Color3.fromRGB(120, 40, 35),
+			Material = Enum.Material.Fabric,
+			Anchored = false,
+			Massless = true,
+			CanCollide = false,
+			Parent = lobby,
+		})
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = lantern
+		w.Part1 = cap
+		w.Parent = cap
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 180, 100)
+		light.Range = 12
+		light.Brightness = 1.2
+		light.Parent = lantern
+		tagBob(lantern, 0.8, 0.6 + (i % 3) * 0.2)
+	end
+end
+
+function World.buildLobby(handlers: { [string]: (Player) -> () }): CFrame
 	local folder = Instance.new("Folder")
 	folder.Name = "Lobby"
 	folder.Parent = workspace
@@ -338,14 +717,14 @@ function World.buildLobby(onGate: (Player) -> ()): CFrame
 	embers.LightEmission = 1
 	embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 80, 40))
 	embers.Parent = portal
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "투기장 입장"
-	prompt.ObjectText = Config.GAME_TITLE
-	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 20
-	prompt.RequiresLineOfSight = false
-	prompt.Parent = portal
-	prompt.Triggered:Connect(onGate)
+	local gatePrompt = Instance.new("ProximityPrompt")
+	gatePrompt.ActionText = "투기장 입장"
+	gatePrompt.ObjectText = Config.GAME_TITLE
+	gatePrompt.HoldDuration = 0
+	gatePrompt.MaxActivationDistance = 20
+	gatePrompt.RequiresLineOfSight = false
+	gatePrompt.Parent = portal
+	gatePrompt.Triggered:Connect(handlers.gate)
 
 	-- 광장에서 문까지 붉은 융단
 	part({
@@ -418,6 +797,11 @@ function World.buildLobby(onGate: (Player) -> ()): CFrame
 	local plaque = surfaceText(body, Enum.NormalId.Right, 40)
 	label(plaque, "CHAMPION", UDim2.new(0, 0, 0.2, 0), UDim2.new(1, 0, 0.3, 0), GOLD, Enum.Font.GothamBlack)
 	label(plaque, "100등급의 끝에 선 자", UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.2, 0), Color3.fromRGB(80, 60, 40), Enum.Font.GothamBold)
+
+	buildForge(folder, handlers.forge)
+	buildShowcase(folder)
+	buildTrainingYard(folder, handlers.train)
+	buildAmbient(folder)
 
 	if spawn then
 		return CFrame.new(spawn.Position + Vector3.new(0, 4, 0))

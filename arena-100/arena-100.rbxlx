@@ -221,6 +221,67 @@ Config.DASH_COOLDOWN = 1.5
 Config.DASH_INVULN = 0.4
 
 ------------------------------------------------------------------------
+-- 무기 스킬: 계열마다 둘 (E, F). 필살기(R)와 따로 쓴다
+-- mult는 공격력 배율, cd는 재사용 대기 시간(초)
+------------------------------------------------------------------------
+Config.SKILL_KEYS = { "E", "F" }
+Config.Skills = {
+	[1] = { -- 대검
+		{ id = "charge", icon = "🐗", name = "파쇄 돌격", desc = "앞으로 돌진해 부딪힌 적을 날리고 2초 기절시킨다", cd = 7, mult = 3, length = 16, width = 4, stun = 2 },
+		{ id = "boomerang", icon = "🌀", name = "대검 투척", desc = "회전하는 대검을 던진다. 갈 때와 돌아올 때 모두 벤다", cd = 9, mult = 2.5, range = 24, width = 4.5 },
+	},
+	[2] = { -- 쌍검
+		{ id = "mark", icon = "🎯", name = "표식 연격", desc = "가까운 적에게 표식. 그 적을 6번 베면 표식이 폭발한다", cd = 8, mult = 6, stacks = 6, splash = 3 },
+		{ id = "phantom", icon = "👥", name = "잔상 돌파", desc = "적을 꿰뚫고 지나가고, 0.5초 뒤 잔상이 같은 길을 다시 벤다", cd = 7, mult = 2, length = 18, width = 4 },
+	},
+	[3] = { -- 장검
+		{ id = "wave", icon = "🌙", name = "검기 발사", desc = "적을 꿰뚫고 날아가는 초승달 검기", cd = 5, mult = 3, range = 42, width = 5, speed = 70 },
+		{ id = "parry", icon = "🛡", name = "반격 자세", desc = "1.2초 동안 막는 자세. 그사이 맞으면 막아 내고 주위를 크게 벤다", cd = 9, mult = 8, window = 1.2, radius = 11 },
+	},
+	[4] = { -- 단검
+		{ id = "poison", icon = "☠", name = "맹독 칼날", desc = "6초 동안 베는 적마다 독이 묻어 계속 피해를 준다", cd = 10, duration = 6, dotMult = 0.3, dotTime = 3 },
+		{ id = "smoke", icon = "💨", name = "연막 순보", desc = "연막 속으로 숨어 2초 무적. 다음 공격은 3배 확정 치명타", cd = 9, invuln = 2, mult = 3 },
+	},
+	[5] = { -- 낫
+		{ id = "hook", icon = "⛓", name = "사슬 낚아채기", desc = "앞쪽 적들을 사슬로 끌어당겨 잠깐 기절시킨다", cd = 6, mult = 1.5, range = 24, cone = 0.3, stun = 0.8 },
+		{ id = "zone", icon = "💀", name = "망자의 원", desc = "4초 동안 원 안의 적을 계속 베고 나를 치유한다", cd = 11, radius = 12, duration = 4, tickMult = 0.6, heal = 0.03 },
+	},
+	[0] = { -- 올라운더
+		{ id = "rain", icon = "⚔", name = "만검 강림", desc = "하늘에서 검 12자루가 적에게 꽂힌다", cd = 6, mult = 3, count = 12 },
+		{ id = "timestop", icon = "⏳", name = "시공 정지", desc = "3초 동안 모든 적의 시간을 멈춘다", cd = 12, duration = 3 },
+	},
+}
+
+------------------------------------------------------------------------
+-- 적 7종. hp와 dmg는 그 스테이지 기준치에 곱하는 배율
+-- unlock: 이 스테이지부터 나온다
+------------------------------------------------------------------------
+Config.EnemyTypes = {
+	grunt = { name = "돌격병", hp = 1.0, dmg = 1.0, speed = 13, scale = 1.0, unlock = 1, weight = 4 },
+	archer = { name = "궁수", hp = 0.7, dmg = 0.9, speed = 12, scale = 0.95, unlock = 4, weight = 2, keep = 22, shotCd = 2.8 },
+	shield = { name = "방패병", hp = 1.6, dmg = 1.0, speed = 9, scale = 1.15, unlock = 8, weight = 2, frontReduce = 0.7 },
+	brute = { name = "돌진꾼", hp = 2.0, dmg = 2.2, speed = 10, scale = 1.35, unlock = 12, weight = 1.5, chargeCd = 6 },
+	bomber = { name = "자폭병", hp = 0.5, dmg = 3.0, speed = 19, scale = 0.8, unlock = 16, weight = 1.5 },
+	shaman = { name = "주술사", hp = 0.8, dmg = 1.6, speed = 10, scale = 1.0, unlock = 21, weight = 1.2, keep = 24, castCd = 4.5 },
+	assassin = { name = "암살자", hp = 0.8, dmg = 1.4, speed = 16, scale = 0.95, unlock = 26, weight = 1.2, blinkCd = 5 },
+}
+Config.ENEMY_ORDER = { "grunt", "archer", "shield", "brute", "bomber", "shaman", "assassin" }
+
+-- 보스 번호(스테이지 ÷ 10)마다 쓰는 기술 조합
+Config.BossPatterns = {
+	{ "slam", "charge" },
+	{ "slam", "summon" },
+	{ "slam", "spin", "charge" },
+	{ "slam", "meteor", "summon" },
+	{ "slam", "spin", "meteor" },
+	{ "slam", "charge", "summon", "meteor" },
+	{ "slam", "spin", "charge", "meteor" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+}
+
+------------------------------------------------------------------------
 -- 함수
 ------------------------------------------------------------------------
 function Config.getGrade(g)
@@ -347,16 +408,80 @@ function Config.canAutoRepeat(stage, maxStage, power)
 	return stage <= maxStage and power >= Config.recommendedPower(stage) * Config.AUTO_POWER_RATIO
 end
 
+-- 스테이지마다 같은 구성이 나오도록 고정된 난수 (Park-Miller)
+local function seeded(seed: number)
+	local s = (seed % 2147483646) + 1
+	return function(): number
+		s = (s * 16807) % 2147483647
+		return s / 2147483647
+	end
+end
+
+local function pickType(pool: { string }, rand: () -> number): string
+	local total = 0
+	for _, id in ipairs(pool) do
+		total += Config.EnemyTypes[id].weight
+	end
+	local r = rand() * total
+	for _, id in ipairs(pool) do
+		r -= Config.EnemyTypes[id].weight
+		if r <= 0 then
+			return id
+		end
+	end
+	return pool[#pool]
+end
+
 -- 스테이지 n: 적 등급도 n. 10스테이지마다 보스
+-- 스테이지가 오를수록 웨이브 수, 웨이브당 적 수, 적 종류가 늘어난다
 function Config.stageInfo(n)
 	local isBoss = (n % 10 == 0)
 	local gr = growth(n)
-	local count
-	if isBoss then
-		count = 2
-	else
-		count = math.min(5, 2 + math.ceil(n / 2))
+	local rand = seeded(n * 7919 + 13)
+
+	local pool = {}
+	for _, id in ipairs(Config.ENEMY_ORDER) do
+		if n >= Config.EnemyTypes[id].unlock then
+			table.insert(pool, id)
+		end
 	end
+
+	local perWave = math.min(3 + math.floor(n / 8), 7)
+	local waveCount
+	if isBoss then
+		waveCount = 2
+	elseif n < 8 then
+		waveCount = 1
+	elseif n < 35 then
+		waveCount = 2
+	else
+		waveCount = 3
+	end
+
+	local waves = {}
+	local hpWeight = 0
+	for w = 1, waveCount do
+		local list = {}
+		local count = (isBoss and w == waveCount) and 2 or perWave
+		for i = 1, count do
+			local id = pickType(pool, rand)
+			-- 새로 열린 적은 그 스테이지에 꼭 한 번 나온다
+			if w == 1 and i == 1 then
+				for _, nid in ipairs(Config.ENEMY_ORDER) do
+					if Config.EnemyTypes[nid].unlock == n then
+						id = nid
+					end
+				end
+			end
+			list[i] = id
+			hpWeight += Config.EnemyTypes[id].hp
+		end
+		waves[w] = list
+	end
+
+	-- 일반 적 전체 체력 예산. 무기 등급이 같으면 한 판에 20~40초
+	local budget = 300 * gr * (1 + n / 150)
+	local bossNo = math.max(1, n // 10)
 	local coins = math.floor(20 * 1.6 ^ (n - 1))
 	if isBoss then
 		coins *= 5
@@ -364,13 +489,15 @@ function Config.stageInfo(n)
 	return {
 		stage = n,
 		isBoss = isBoss,
-		enemyCount = count,
-		-- 같은 등급 칼로 싸우면 적 하나에 3~4초, 보스는 15~25초 (일반 칼로 안 피하면 질 수 있음)
-		enemyHp = 60 * gr,
-		enemyDmg = 1.5 * gr,
+		waves = waves,
+		unitHp = budget / hpWeight,
+		-- 적이 많을수록 한 명의 공격력을 낮춰 전체 압박을 비슷하게 맞춘다
+		unitDmg = 1.5 * gr * math.min(1, 5 / perWave),
 		bossHp = 60 * gr * 5,
 		bossDmg = 3 * gr,
 		slamDmg = 20 * gr,
+		bossType = Config.ENEMY_ORDER[((bossNo - 1) % #Config.ENEMY_ORDER) + 1],
+		bossPatterns = Config.BossPatterns[math.clamp(bossNo, 1, #Config.BossPatterns)],
 		coins = coins,
 		dropCount = isBoss and 3 or 1,
 		bonusDropChance = isBoss and 0 or 0.35,
@@ -415,7 +542,7 @@ return Config
         <string name="Name">WeaponBuilder</string>
         <string name="Source"><![CDATA[-- WeaponBuilder (ModuleScript, ReplicatedStorage)
 -- 서버는 캐릭터 손에, 클라이언트는 무기고 미리보기에 같은 모양을 만든다.
--- 무기 모양, 등급별 빛 효과, 플레이어 오라, 적 장식을 만든다.
+-- 무기 모양, 등급별 빛 효과, 플레이어 오라를 만든다.
 --
 -- 구간이 오를수록 화려해진다
 --   1구간: 쇠 칼날
@@ -761,67 +888,6 @@ function Builder.applyAura(char: Model, section: number, color: Color3)
 	end
 end
 
--- 적 장식: 높은 구간일수록 무기와 오라, 보스는 왕관과 붉은 오라
-function Builder.decorateEnemy(model: Model, grade: number, section: number, color: Color3, isBoss: boolean, scale: number)
-	local hand = model:FindFirstChild("RightHand")
-	if hand and hand:IsA("BasePart") and (section >= 2 or isBoss) then
-		Builder.build(model, hand, (grade % 5) + 1, {
-			accent = isBoss and Color3.fromRGB(255, 60, 50) or color,
-			section = math.max(1, section - 1),
-			rarity = isBoss and 5 or 1,
-			scale = scale,
-		})
-	end
-	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart")
-	if torso and (section >= 3 or isBoss) then
-		local aura = Instance.new("ParticleEmitter")
-		aura.Name = "EnemyAura"
-		aura.Rate = isBoss and 18 or 6
-		aura.Lifetime = NumberRange.new(0.6, 1.2)
-		aura.Speed = NumberRange.new(1, 3)
-		aura.EmissionDirection = Enum.NormalId.Top
-		aura.Size = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.8 * scale),
-			NumberSequenceKeypoint.new(1, 0),
-		})
-		aura.Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.5),
-			NumberSequenceKeypoint.new(1, 1),
-		})
-		aura.LightEmission = 0.7
-		aura.Color = ColorSequence.new(isBoss and Color3.fromRGB(255, 50, 40) or color)
-		aura.Parent = torso
-	end
-	local head = model:FindFirstChild("Head")
-	if isBoss and head and head:IsA("BasePart") then
-		-- 왕관: 머리 위에 금빛 뿔 다섯 개
-		local top = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.1 * scale, 0)
-		for i = 0, 4 do
-			local a = (i / 5) * math.pi * 2
-			local r = head.Size.X * 0.38
-			local spike = Instance.new("Part")
-			spike.Name = "Crown" .. i
-			spike.Size = Vector3.new(0.22, 0.6, 0.22) * scale
-			spike.Color = GOLD
-			spike.Material = Enum.Material.Neon
-			spike.CanCollide = false
-			spike.CanQuery = false
-			spike.Massless = true
-			spike.CFrame = top * CFrame.new(math.cos(a) * r, 0.25 * scale, math.sin(a) * r)
-			local w = Instance.new("WeldConstraint")
-			w.Part0 = head
-			w.Part1 = spike
-			w.Parent = spike
-			spike.Parent = model
-		end
-		local light = Instance.new("PointLight")
-		light.Color = Color3.fromRGB(255, 70, 50)
-		light.Range = 16
-		light.Brightness = 2
-		light.Parent = head
-	end
-end
-
 return Builder
 ]]></string>
       </Properties>
@@ -836,7 +902,11 @@ return Builder
         <string name="Name">ArenaServer</string>
         <token name="RunContext">0</token>
         <string name="Source"><![CDATA[-- ArenaServer (Script, ServerScriptService)
--- 전투, 필살기, 합성, 훈련, 저장을 맡는다. 맵은 WorldBuilder, 무기 모양은 WeaponBuilder가 만든다.
+-- 전투, 웨이브, 스킬, 필살기, 합성, 훈련, 저장을 맡는다.
+--   WorldBuilder  조명, 로비, 투기장
+--   EnemyBuilder  적 7종의 생김새
+--   EnemyAI       적 종류별 행동과 보스 기술
+--   Skills        무기 스킬 (E, F)
 -- 중요한 계산은 전부 서버에서 하고, 클라이언트는 요청만 보낸다.
 
 local Players = game:GetService("Players")
@@ -846,13 +916,16 @@ local ServerStorage = game:GetService("ServerStorage")
 local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
-local World = require(script:WaitForChild("WorldBuilder"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local World = require(script:WaitForChild("WorldBuilder"))
+local EnemyBuilder = require(script:WaitForChild("EnemyBuilder"))
+local EnemyAI = require(script:WaitForChild("EnemyAI"))
+local Skills = require(script:WaitForChild("Skills"))
 
 local ARENA_ORIGIN = Vector3.new(0, 300, 1600)
 local ARENA_SPACING = 320
 local ARENA_RADIUS = 60
-local ENEMY_SPAWN_RADIUS = 35
+local ENEMY_SPAWN_RADIUS = 36
 local SAVE_INTERVAL = 90
 local DATASTORE_NAME = "Arena100_v1"
 local WALK_ANIM_ID = "rbxassetid://507777826" -- 로블록스 기본 R15 걷기
@@ -878,9 +951,17 @@ battleRoot.Parent = workspace
 -- 맵
 ------------------------------------------------------------------------
 World.setupLighting()
-local lobbySpawn: CFrame = World.buildLobby(function(player: Player)
-	Push:FireClient(player, "openPage", "stage")
-end)
+local lobbySpawn: CFrame = World.buildLobby({
+	gate = function(player: Player)
+		Push:FireClient(player, "openPage", "stage")
+	end,
+	forge = function(player: Player)
+		Push:FireClient(player, "openPage", "armory")
+	end,
+	train = function(player: Player)
+		Push:FireClient(player, "openPage", "train")
+	end,
+})
 
 local arenas: { [number]: World.Arena } = {}
 local slotOwner: { [number]: Player } = {}
@@ -1003,6 +1084,9 @@ type Enemy = {
 	model: Model,
 	hum: Humanoid,
 	root: BasePart,
+	kind: string,
+	cfg: any,
+	accent: Color3,
 	hp: number,
 	maxHp: number,
 	dmg: number,
@@ -1014,8 +1098,16 @@ type Enemy = {
 	bodyRadius: number,
 	scale: number,
 	nextAttack: number,
-	nextSlam: number,
+	nextSpecial: number,
 	nextMove: number,
+	stunUntil: number,
+	frozenUntil: number,
+	poisonUntil: number,
+	poisonDmg: number,
+	nextPoison: number,
+	markStacks: number,
+	patterns: { string },
+	patternIndex: number,
 	fill: Frame,
 	walkTrack: AnimationTrack?,
 	walking: boolean,
@@ -1027,6 +1119,8 @@ type Session = {
 	arena: World.Arena,
 	folder: Folder,
 	enemies: { Enemy },
+	waveIndex: number,
+	waveSpawning: boolean,
 	stats: any,
 	hp: number,
 	maxHp: number,
@@ -1035,6 +1129,12 @@ type Session = {
 	gauge: number,
 	ulting: boolean,
 	running: boolean,
+	skillReadyAt: { number },
+	poisonUntil: number,
+	smokeCrit: number?,
+	parryUntil: number,
+	markTarget: Enemy?,
+	zones: { any },
 }
 
 type State = {
@@ -1106,6 +1206,16 @@ local function pushState(player: Player)
 	})
 end
 
+local function aliveList(s: Session): { Enemy }
+	local list = {}
+	for _, e in ipairs(s.enemies) do
+		if e.alive and e.root.Parent then
+			table.insert(list, e)
+		end
+	end
+	return list
+end
+
 local function aliveCount(s: Session): number
 	local n = 0
 	for _, e in ipairs(s.enemies) do
@@ -1131,8 +1241,11 @@ local function pushBattle(player: Player)
 		maxHp = s.maxHp,
 		left = aliveCount(s),
 		total = #s.enemies,
+		wave = s.waveIndex,
+		waveTotal = #s.info.waves,
 		auto = st.auto,
 		gauge = s.gauge,
+		typeId = s.stats.weapon.typeId,
 	})
 end
 
@@ -1263,7 +1376,7 @@ local function attachWeapon(player: Player)
 end
 
 ------------------------------------------------------------------------
--- 적
+-- 적 만들기
 ------------------------------------------------------------------------
 local rigTemplate: Model? = nil
 local rigLoading = false
@@ -1322,26 +1435,36 @@ local function getRigTemplate(): Model
 	return model
 end
 
-local function makeHpBar(root: BasePart, labelText: string, color: Color3, height: number, isBoss: boolean): Frame
+local function makeHpBar(root: BasePart, title: string, sub: string, color: Color3, height: number, isBoss: boolean): Frame
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "HpBar"
-	gui.Size = isBoss and UDim2.new(0, 230, 0, 46) or UDim2.new(0, 150, 0, 34)
+	gui.Size = isBoss and UDim2.new(0, 240, 0, 54) or UDim2.new(0, 150, 0, 42)
 	gui.StudsOffset = Vector3.new(0, height, 0)
 	gui.AlwaysOnTop = true
 	gui.MaxDistance = 130
 	gui.LightInfluence = 0
+	local tag = Instance.new("TextLabel")
+	tag.Size = UDim2.new(1, 0, 0.28, 0)
+	tag.BackgroundTransparency = 1
+	tag.Font = Enum.Font.GothamBold
+	tag.TextScaled = true
+	tag.TextColor3 = Color3.fromRGB(235, 225, 210)
+	tag.TextStrokeTransparency = 0.3
+	tag.Text = sub
+	tag.Parent = gui
 	local name = Instance.new("TextLabel")
-	name.Size = UDim2.new(1, 0, 0.55, 0)
+	name.Position = UDim2.new(0, 0, 0.26, 0)
+	name.Size = UDim2.new(1, 0, 0.4, 0)
 	name.BackgroundTransparency = 1
 	name.Font = Enum.Font.GothamBlack
 	name.TextScaled = true
 	name.TextColor3 = color
 	name.TextStrokeTransparency = 0.2
-	name.Text = labelText
+	name.Text = title
 	name.Parent = gui
 	local back = Instance.new("Frame")
-	back.Size = UDim2.new(1, 0, 0.35, 0)
-	back.Position = UDim2.new(0, 0, 0.62, 0)
+	back.Size = UDim2.new(1, 0, 0.26, 0)
+	back.Position = UDim2.new(0, 0, 0.72, 0)
 	back.BackgroundColor3 = Color3.fromRGB(25, 15, 15)
 	back.BorderSizePixel = 0
 	back.Parent = gui
@@ -1355,7 +1478,7 @@ local function makeHpBar(root: BasePart, labelText: string, color: Color3, heigh
 	local fill = Instance.new("Frame")
 	fill.Name = "Fill"
 	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = Color3.fromRGB(235, 70, 60)
+	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	fill.BorderSizePixel = 0
 	fill.Parent = back
 	local fillCorner = Instance.new("UICorner")
@@ -1369,7 +1492,9 @@ local function makeHpBar(root: BasePart, labelText: string, color: Color3, heigh
 	return fill
 end
 
-local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vector3, hp: number, dmg: number)
+local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean?)
+	local cfg = Config.EnemyTypes[kind] or Config.EnemyTypes.grunt
+	local grade = s.stage
 	local model = getRigTemplate():Clone()
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	local root = model:FindFirstChild("HumanoidRootPart")
@@ -1378,43 +1503,24 @@ local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vecto
 		return
 	end
 	local section, sectionIndex = Config.getSection(grade)
-	local bodyColor = section.color:Lerp(Color3.fromRGB(40, 35, 35), 0.25)
-	if isBoss then
-		bodyColor = section.color:Lerp(Color3.fromRGB(110, 0, 10), 0.5)
-	end
-	for _, d in ipairs(model:GetDescendants()) do
-		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
-			d.Color = bodyColor
-			if sectionIndex >= 5 then
-				d.Material = Enum.Material.ForceField
-			elseif isBoss or sectionIndex >= 4 then
-				d.Material = Enum.Material.Neon
-			elseif sectionIndex >= 2 then
-				d.Material = Enum.Material.Metal
-			else
-				d.Material = Enum.Material.SmoothPlastic
-			end
-		end
-	end
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	hum.WalkSpeed = isBoss and 11 or 13
+	hum.WalkSpeed = isBoss and 11 or cfg.speed
 	hum.BreakJointsOnDeath = false
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-	local scale = section.scale * (isBoss and 1.8 or 1)
+	local scale = section.scale * cfg.scale * (isBoss and 1.8 or 1)
 	pcall(function()
 		model:ScaleTo(scale)
 	end)
 	model.Name = (isBoss and "BOSS " or "") .. Config.getGrade(grade).en
 	model:SetAttribute("Enemy", true)
 	model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 4 * scale, 0), s.arena.center + Vector3.new(0, 4 * scale, 0)))
-	WeaponBuilder.decorateEnemy(model, grade, sectionIndex, section.color, isBoss, scale)
+	EnemyBuilder.dress(model, kind, section.color, sectionIndex, isBoss == true, scale, WeaponBuilder.RAINBOW)
 	model.Parent = s.folder
 	pcall(function()
 		(root :: BasePart):SetNetworkOwner(nil)
 	end)
 
-	-- 로블록스 기본 R15 걷기 동작. 블록 인형이면 조용히 건너뛴다
 	local walkTrack: AnimationTrack? = nil
 	pcall(function()
 		local animator = hum:FindFirstChildOfClass("Animator")
@@ -1429,38 +1535,53 @@ local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vecto
 		walkTrack = track
 	end)
 
-	local label = string.format("%s[%d] %s", isBoss and "👑 BOSS " or "", grade, Config.getGrade(grade).en)
-	local fill = makeHpBar(root, label, isBoss and Color3.fromRGB(255, 110, 90) or section.color, 3.2 * scale, isBoss)
+	local info = s.info
+	local hp = isBoss and info.bossHp or info.unitHp * cfg.hp
+	local dmg = isBoss and info.bossDmg or info.unitDmg * cfg.dmg
+	local title = string.format("%s[%d] %s", isBoss and "👑 " or "", grade, Config.getGrade(grade).en)
+	local sub = isBoss and ("BOSS · " .. cfg.name) or cfg.name
+	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or section.color, 3.4 * scale, isBoss == true)
 	local now = os.clock()
 	table.insert(s.enemies, {
 		model = model,
 		hum = hum,
 		root = root,
+		kind = kind,
+		cfg = cfg,
+		accent = section.color,
 		hp = hp,
 		maxHp = hp,
 		dmg = dmg,
-		slamDmg = s.info.slamDmg,
-		isBoss = isBoss,
+		slamDmg = info.slamDmg,
+		isBoss = isBoss == true,
 		alive = true,
 		busy = false,
 		reach = 4.5 * scale,
 		bodyRadius = 1.2 * scale,
 		scale = scale,
 		nextAttack = now + 1 + math.random(),
-		nextSlam = now + 4,
+		nextSpecial = now + 2 + math.random() * 2,
 		nextMove = 0,
+		stunUntil = 0,
+		frozenUntil = 0,
+		poisonUntil = 0,
+		poisonDmg = 0,
+		nextPoison = 0,
+		markStacks = 0,
+		patterns = isBoss and info.bossPatterns or {},
+		patternIndex = 1,
 		fill = fill,
 		walkTrack = walkTrack,
 		walking = false,
 	})
 end
 
-local function updateWalk(e: Enemy)
+local function updateWalk(e: Enemy, now: number)
 	local track = e.walkTrack
 	if not track then
 		return
 	end
-	local moving = e.alive and e.root.AssemblyLinearVelocity.Magnitude > 1.5
+	local moving = e.alive and now >= e.frozenUntil and e.root.AssemblyLinearVelocity.Magnitude > 1.5
 	if moving ~= e.walking then
 		e.walking = moving
 		if moving then
@@ -1468,6 +1589,11 @@ local function updateWalk(e: Enemy)
 		else
 			track:Stop(0.15)
 		end
+	end
+	if now < e.frozenUntil then
+		track:AdjustSpeed(0)
+	elseif track.Speed == 0 then
+		track:AdjustSpeed(1)
 	end
 end
 
@@ -1482,7 +1608,7 @@ local function flashEnemy(e: Enemy, color: Color3, duration: number)
 end
 
 ------------------------------------------------------------------------
--- 전투
+-- 전투 기본
 ------------------------------------------------------------------------
 local startStage: (Player, any, boolean) -> ()
 local loseBattle: (Player, State, Session) -> ()
@@ -1518,8 +1644,79 @@ local function flatUnit(v: Vector3): Vector3
 	return f.Unit
 end
 
+local function weaponColor(stats: any): Color3
+	return stats.weapon.typeId == 0 and Color3.fromRGB(255, 235, 160) or stats.weapon.rarity.color
+end
+
+local function killEnemy(player: Player, s: Session, e: Enemy, selfDestruct: boolean?)
+	if not e.alive then
+		return
+	end
+	e.alive = false
+	e.model:SetAttribute("Dead", true)
+	e.hum.WalkSpeed = 0
+	if s.markTarget == e then
+		s.markTarget = nil
+	end
+	if not selfDestruct then
+		Push:FireClient(player, "kill", { pos = e.root.Position, color = e.accent, boss = e.isBoss, scale = e.scale })
+	end
+	for _, d in ipairs(e.model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+			d.Transparency = 0.6
+		elseif d:IsA("ParticleEmitter") or d:IsA("Sparkles") or d:IsA("Fire") then
+			d.Enabled = false
+		end
+	end
+	Debris:AddItem(e.model, selfDestruct and 0.05 or 0.45)
+end
+
+-- 적 하나에게 피해. 방패병은 앞에서 오는 공격을 막고, 치명타는 적을 날려 보낸다
+local function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit: boolean, fromPos: Vector3, hits: { any }, opts: any?)
+	if not e.alive then
+		return 0
+	end
+	local kind = crit and "crit" or "hit"
+	local reduce = e.cfg.frontReduce
+	if reduce and not (opts and opts.pierce) and os.clock() >= e.stunUntil then
+		local facing = flatUnit(e.root.CFrame.LookVector)
+		if facing:Dot(flatUnit(fromPos - e.root.Position)) > 0.3 then
+			dmg *= (1 - reduce)
+			kind = "block"
+		end
+	end
+	e.hp -= dmg
+	table.insert(hits, {
+		pos = e.root.Position + Vector3.new(0, 2.5 * e.scale, 0),
+		text = Config.formatNumber(dmg),
+		kind = kind,
+		color = e.accent,
+	})
+	if crit and not e.isBoss then
+		e.root.AssemblyLinearVelocity = flatUnit(e.root.Position - fromPos) * 38 + Vector3.new(0, 22, 0)
+	end
+	if e.hp <= 0 then
+		killEnemy(player, s, e)
+	else
+		e.fill.Size = UDim2.fromScale(math.clamp(e.hp / e.maxHp, 0, 1), 1)
+	end
+	return dmg
+end
+
+local function sendHits(player: Player, hits: { any })
+	if #hits > 0 then
+		Push:FireClient(player, "hits", hits)
+	end
+end
+
+-- 모듈들이 쓰는 도구 묶음 (아래에서 채운다)
+local ctx: any = nil
+
 local function damagePlayer(player: Player, st: State, s: Session, amount: number)
 	if not s.running or os.clock() < s.invulnUntil then
+		return
+	end
+	if Skills.tryParry(ctx, player, s) then
 		return
 	end
 	s.hp -= amount
@@ -1537,43 +1734,6 @@ local function damagePlayer(player: Player, st: State, s: Session, amount: numbe
 	end
 end
 
-local function killEnemy(e: Enemy)
-	e.alive = false
-	e.model:SetAttribute("Dead", true)
-	e.hum.WalkSpeed = 0
-	for _, d in ipairs(e.model:GetDescendants()) do
-		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
-			d.Transparency = 0.6
-		elseif d:IsA("ParticleEmitter") then
-			d.Enabled = false
-		end
-	end
-	Debris:AddItem(e.model, 0.45)
-end
-
--- 적 하나에게 피해. 치명타면 날려 보낸다
-local function hitEnemy(s: Session, e: Enemy, dmg: number, crit: boolean, fromPos: Vector3, hits: { any })
-	if not e.alive then
-		return 0
-	end
-	e.hp -= dmg
-	table.insert(hits, {
-		pos = e.root.Position + Vector3.new(0, 2.5 * e.scale, 0),
-		text = Config.formatNumber(dmg),
-		kind = crit and "crit" or "hit",
-	})
-	if crit and not e.isBoss then
-		local away = flatUnit(e.root.Position - fromPos)
-		e.root.AssemblyLinearVelocity = away * 38 + Vector3.new(0, 22, 0)
-	end
-	if e.hp <= 0 then
-		killEnemy(e)
-	else
-		e.fill.Size = UDim2.fromScale(math.clamp(e.hp / e.maxHp, 0, 1), 1)
-	end
-	return dmg
-end
-
 local function rollDamage(stats: any): (number, boolean)
 	local wt = stats.weapon.type
 	local dmg = stats.atk * (0.9 + math.random() * 0.2)
@@ -1584,10 +1744,102 @@ local function rollDamage(stats: any): (number, boolean)
 	return dmg, crit
 end
 
-local function weaponColor(stats: any): Color3
-	return stats.weapon.typeId == 0 and Color3.fromRGB(255, 235, 160) or stats.weapon.rarity.color
+-- 경고 표시: 바닥 원, 바닥 길
+local function warnDisc(s: Session, pos: Vector3, radius: number, duration: number)
+	local disc = World.part({
+		Name = "Warning",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.25, radius * 2, radius * 2),
+		CFrame = CFrame.new(pos.X, s.arena.center.Y + 0.15, pos.Z) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = Color3.fromRGB(255, 40, 40),
+		Material = Enum.Material.Neon,
+		Transparency = 0.6,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = s.folder,
+	})
+	disc:SetAttribute("Warn", duration)
+	Debris:AddItem(disc, duration)
+	return disc
 end
 
+local function warnLane(s: Session, from: Vector3, dir: Vector3, length: number, width: number, duration: number)
+	local mid = Vector3.new(from.X, s.arena.center.Y + 0.15, from.Z) + dir * (length / 2)
+	local lane = World.part({
+		Name = "Warning",
+		Size = Vector3.new(width, 0.2, length),
+		CFrame = CFrame.lookAt(mid, mid + dir),
+		Color = Color3.fromRGB(255, 40, 40),
+		Material = Enum.Material.Neon,
+		Transparency = 0.6,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = s.folder,
+	})
+	lane:SetAttribute("Warn", duration)
+	Debris:AddItem(lane, duration)
+	return lane
+end
+
+local function nearSegment(s: Session, a: Vector3, b: Vector3, width: number): { Enemy }
+	local list = {}
+	local ab = flat(b - a)
+	local len = ab.Magnitude
+	local dir = len > 0 and ab.Unit or Vector3.new(0, 0, -1)
+	for _, e in ipairs(aliveList(s)) do
+		local off = flat(e.root.Position - a)
+		local along = math.clamp(off:Dot(dir), 0, len)
+		if (off - dir * along).Magnitude <= width + e.bodyRadius then
+			table.insert(list, e)
+		end
+	end
+	return list
+end
+
+ctx = {
+	arenaRadius = ARENA_RADIUS,
+	push = function(player: Player, kind: string, data: any)
+		Push:FireClient(player, kind, data)
+	end,
+	toast = toast,
+	getRoot = getRoot,
+	alive = aliveList,
+	aliveCount = aliveCount,
+	nearSegment = nearSegment,
+	hitEnemy = hitEnemy,
+	sendHits = sendHits,
+	killEnemy = killEnemy,
+	pushBattle = pushBattle,
+	flash = flashEnemy,
+	warnDisc = warnDisc,
+	warnLane = warnLane,
+	spawnUnit = function(s: Session, kind: string, pos: Vector3)
+		spawnUnit(s, kind, pos, false)
+	end,
+	heal = function(s: Session, amount: number)
+		s.hp = math.min(s.maxHp, s.hp + amount)
+	end,
+	color = function(s: Session): Color3
+		return weaponColor(s.stats)
+	end,
+	isCurrent = function(s: Session): boolean
+		for _, st in pairs(states) do
+			if st.session == s then
+				return true
+			end
+		end
+		return false
+	end,
+	damagePlayer = function(player: Player, st: State, s: Session, amount: number)
+		damagePlayer(player, st, s, amount)
+	end,
+}
+
+------------------------------------------------------------------------
+-- 기본 공격
+------------------------------------------------------------------------
 local function performAttack(player: Player, st: State, s: Session)
 	if not s.running or s.ulting then
 		return
@@ -1605,15 +1857,12 @@ local function performAttack(player: Player, st: State, s: Session)
 	local origin = flat(root.Position)
 	local look = flatUnit(root.CFrame.LookVector)
 
-	-- 사거리 안의 적을 가까운 순으로
 	local inRange = {}
-	for _, e in ipairs(s.enemies) do
-		if e.alive and e.root.Parent then
-			local offset = flat(e.root.Position) - origin
-			local dist = offset.Magnitude - e.bodyRadius
-			if dist <= wt.range then
-				table.insert(inRange, { e = e, dist = dist, offset = offset })
-			end
+	for _, e in ipairs(aliveList(s)) do
+		local offset = flat(e.root.Position) - origin
+		local dist = offset.Magnitude - e.bodyRadius
+		if dist <= wt.range then
+			table.insert(inRange, { e = e, dist = dist, offset = offset })
 		end
 	end
 	if #inRange == 0 then
@@ -1649,10 +1898,16 @@ local function performAttack(player: Player, st: State, s: Session)
 	local hits = {}
 	local healed = 0
 	local anyCrit = false
-	for _, e in ipairs(targets) do
+	for i, e in ipairs(targets) do
 		local dmg, crit = rollDamage(stats)
+		if i == 1 and s.smokeCrit then
+			dmg = stats.atk * (wt.critMult or 2) * s.smokeCrit
+			crit = true
+			s.smokeCrit = nil
+		end
 		anyCrit = anyCrit or crit
-		hitEnemy(s, e, dmg, crit, root.Position, hits)
+		hitEnemy(player, s, e, dmg, crit, root.Position, hits)
+		Skills.onBasicHit(ctx, player, s, e, hits)
 		if wt.lifesteal then
 			healed += dmg * wt.lifesteal
 		end
@@ -1670,41 +1925,15 @@ local function performAttack(player: Player, st: State, s: Session)
 		section = stats.weapon.typeId == 0 and 6 or sectionIndex,
 		color = weaponColor(stats),
 		crit = anyCrit,
+		poison = now < s.poisonUntil,
 	})
-	Push:FireClient(player, "hits", hits)
+	sendHits(player, hits)
 	pushBattle(player)
 end
 
 ------------------------------------------------------------------------
 -- 필살기
 ------------------------------------------------------------------------
-local function aliveEnemies(s: Session): { Enemy }
-	local list = {}
-	for _, e in ipairs(s.enemies) do
-		if e.alive and e.root.Parent then
-			table.insert(list, e)
-		end
-	end
-	return list
-end
-
--- 선분(a→b) 근처에 있는 적
-local function enemiesNearSegment(s: Session, a: Vector3, b: Vector3, width: number): { Enemy }
-	local list = {}
-	local ab = flat(b - a)
-	local len = ab.Magnitude
-	local dir = len > 0 and ab.Unit or Vector3.new(0, 0, -1)
-	for _, e in ipairs(aliveEnemies(s)) do
-		local off = flat(e.root.Position - a)
-		local along = math.clamp(off:Dot(dir), 0, len)
-		local closest = dir * along
-		if (off - closest).Magnitude <= width + e.bodyRadius then
-			table.insert(list, e)
-		end
-	end
-	return list
-end
-
 local function runUltimate(player: Player, st: State, s: Session)
 	local root = getRoot(player)
 	local char = player.Character
@@ -1721,6 +1950,7 @@ local function runUltimate(player: Player, st: State, s: Session)
 	local origin = root.Position
 	local look = flatUnit(root.CFrame.LookVector)
 	local hits = {}
+	local pierce = { pierce = true }
 	local data: { [string]: any } = {
 		typeId = typeId,
 		name = ult.name,
@@ -1733,24 +1963,20 @@ local function runUltimate(player: Player, st: State, s: Session)
 		if heal and heal > 0 then
 			s.hp = math.min(s.maxHp, s.hp + s.maxHp * heal)
 		end
-		if #hits > 0 then
-			Push:FireClient(player, "hits", hits)
-		end
+		sendHits(player, hits)
 		pushBattle(player)
 	end
 
 	if typeId == 1 then
-		-- 대지 가르기: 앞으로 일직선
 		local target = origin + look * ult.length
 		data.length = ult.length
 		Push:FireClient(player, "ult", data)
 		task.wait(0.25)
-		for _, e in ipairs(enemiesNearSegment(s, origin, target, ult.width)) do
-			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		for _, e in ipairs(nearSegment(s, origin, target, ult.width)) do
+			hitEnemy(player, s, e, stats.atk * ult.mult, true, origin, hits, pierce)
 		end
 		finish()
 	elseif typeId == 2 then
-		-- 칼날 폭풍: 2.5초 동안 주위를 계속 벤다
 		data.radius = ult.radius
 		data.duration = ult.ticks * ult.interval
 		Push:FireClient(player, "ult", data)
@@ -1763,22 +1989,19 @@ local function runUltimate(player: Player, st: State, s: Session)
 				break
 			end
 			hits = {}
-			for _, e in ipairs(aliveEnemies(s)) do
+			for _, e in ipairs(aliveList(s)) do
 				if (flat(e.root.Position) - flat(r.Position)).Magnitude <= ult.radius + e.bodyRadius then
 					local dmg, crit = rollDamage(stats)
-					hitEnemy(s, e, dmg * ult.mult, crit, r.Position, hits)
+					hitEnemy(player, s, e, dmg * ult.mult, crit, r.Position, hits, pierce)
 				end
 			end
-			if #hits > 0 then
-				Push:FireClient(player, "hits", hits)
-			end
+			sendHits(player, hits)
 			pushBattle(player)
 			task.wait(ult.interval)
 		end
 		hits = {}
 		finish()
 	elseif typeId == 3 then
-		-- 일섬: 앞으로 순간 돌진. 투기장 밖으로는 못 나간다
 		local center = s.arena.center
 		local target = origin + look * ult.length
 		local fromCenter = flat(target - center)
@@ -1789,14 +2012,13 @@ local function runUltimate(player: Player, st: State, s: Session)
 		data.target = target
 		Push:FireClient(player, "ult", data)
 		char:PivotTo(CFrame.lookAt(target, target + look))
-		for _, e in ipairs(enemiesNearSegment(s, origin, target, ult.width)) do
-			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		for _, e in ipairs(nearSegment(s, origin, target, ult.width)) do
+			hitEnemy(player, s, e, stats.atk * ult.mult, true, origin, hits, pierce)
 		end
 		finish()
 	elseif typeId == 4 then
-		-- 그림자 처형: 체력이 가장 많은 적 뒤로 순간이동해 치명타 5연타
 		local best: Enemy? = nil
-		for _, e in ipairs(aliveEnemies(s)) do
+		for _, e in ipairs(aliveList(s)) do
 			if not best or e.hp > best.hp then
 				best = e
 			end
@@ -1813,8 +2035,8 @@ local function runUltimate(player: Player, st: State, s: Session)
 					break
 				end
 				hits = {}
-				hitEnemy(s, victim, stats.atk * (wt.critMult or 2) * ult.mult, true, behind, hits)
-				Push:FireClient(player, "hits", hits)
+				hitEnemy(player, s, victim, stats.atk * (wt.critMult or 2) * ult.mult, true, behind, hits, pierce)
+				sendHits(player, hits)
 				task.wait(0.12)
 			end
 			hits = {}
@@ -1823,10 +2045,9 @@ local function runUltimate(player: Player, st: State, s: Session)
 		end
 		finish()
 	elseif typeId == 5 then
-		-- 영혼 수확: 넓은 원 + 큰 회복
 		local inCircle = {}
 		local victims = {}
-		for _, e in ipairs(aliveEnemies(s)) do
+		for _, e in ipairs(aliveList(s)) do
 			if (flat(e.root.Position) - flat(origin)).Magnitude <= ult.radius + e.bodyRadius then
 				table.insert(inCircle, e)
 				table.insert(victims, e.root.Position)
@@ -1837,16 +2058,15 @@ local function runUltimate(player: Player, st: State, s: Session)
 		Push:FireClient(player, "ult", data)
 		task.wait(0.3)
 		for _, e in ipairs(inCircle) do
-			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+			hitEnemy(player, s, e, stats.atk * ult.mult, true, origin, hits, pierce)
 		end
 		finish(ult.heal)
 	else
-		-- 천지개벽: 투기장 전체
 		data.radius = ARENA_RADIUS
 		Push:FireClient(player, "ult", data)
 		task.wait(0.4)
-		for _, e in ipairs(aliveEnemies(s)) do
-			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		for _, e in ipairs(aliveList(s)) do
+			hitEnemy(player, s, e, stats.atk * ult.mult, true, origin, hits, pierce)
 		end
 		finish(ult.heal)
 	end
@@ -1864,68 +2084,33 @@ local function useUltimate(player: Player, st: State, s: Session)
 end
 
 ------------------------------------------------------------------------
--- 적의 공격
+-- 웨이브와 승패
 ------------------------------------------------------------------------
-local function enemyStrike(player: Player, st: State, s: Session, e: Enemy)
-	local now = os.clock()
-	e.busy = true
-	e.nextAttack = now + (e.isBoss and 1.4 or 1.6)
-	e.hum:MoveTo(e.root.Position)
-	flashEnemy(e, Color3.fromRGB(255, 60, 60), 0.35)
-	task.delay(0.35, function()
-		e.busy = false
-		if not (s.running and st.session == s and e.alive) then
-			return
-		end
-		local root = getRoot(player)
-		if root and (flat(e.root.Position) - flat(root.Position)).Magnitude <= e.reach + 2 then
-			damagePlayer(player, st, s, e.dmg)
-		end
-	end)
+local function spawnWave(player: Player, s: Session, index: number)
+	local info = s.info
+	local list = info.waves[index]
+	local isLast = index == #info.waves
+	local count = #list
+	local spin = math.random() * math.pi * 2
+	for i, kind in ipairs(list) do
+		local a = spin + (i / count) * math.pi * 2
+		local pos = s.arena.center + Vector3.new(math.cos(a), 0, math.sin(a)) * ENEMY_SPAWN_RADIUS
+		Push:FireClient(player, "summon", { pos = pos })
+		spawnUnit(s, kind, pos, false)
+	end
+	if info.isBoss and isLast then
+		local pos = s.arena.center + Vector3.new(0, 0, -ENEMY_SPAWN_RADIUS)
+		spawnUnit(s, info.bossType, pos, true)
+		Push:FireClient(player, "boss", {
+			name = Config.getGrade(s.stage).en,
+			kind = Config.EnemyTypes[info.bossType].name,
+			pos = pos,
+		})
+	end
+	Push:FireClient(player, "wave", { index = index, total = #info.waves, boss = info.isBoss and isLast })
+	pushBattle(player)
 end
 
-local function bossSlam(player: Player, st: State, s: Session, e: Enemy, targetPos: Vector3)
-	local now = os.clock()
-	e.busy = true
-	e.nextSlam = now + 6
-	e.hum:MoveTo(e.root.Position)
-	flashEnemy(e, Color3.fromRGB(255, 140, 0), 1.3)
-	local radius = 12
-	local floorY = s.arena.center.Y
-	local disc = World.part({
-		Name = "SlamWarning",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.3, radius * 2, radius * 2),
-		CFrame = CFrame.new(targetPos.X, floorY + 0.2, targetPos.Z) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromRGB(255, 40, 40),
-		Material = Enum.Material.Neon,
-		Transparency = 0.55,
-		CanCollide = false,
-		CanQuery = false,
-		CanTouch = false,
-		Parent = s.folder,
-	})
-	task.delay(1.3, function()
-		disc:Destroy()
-		e.busy = false
-		e.nextAttack = os.clock() + 0.8
-		if not (s.running and st.session == s and e.alive) then
-			return
-		end
-		Push:FireClient(player, "slam", { pos = Vector3.new(targetPos.X, floorY, targetPos.Z), radius = radius })
-		local root = getRoot(player)
-		if root then
-			local d = (flat(root.Position) - Vector3.new(targetPos.X, 0, targetPos.Z)).Magnitude
-			if d <= radius then
-				damagePlayer(player, st, s, e.slamDmg)
-			end
-		end
-	end)
-end
-
-------------------------------------------------------------------------
--- 승패
-------------------------------------------------------------------------
 local function winBattle(player: Player, st: State, s: Session)
 	s.running = false
 	local p = profiles[player]
@@ -1993,6 +2178,26 @@ loseBattle = function(player: Player, st: State, s: Session)
 	end)
 end
 
+local function autoSkills(player: Player, st: State, s: Session, root: BasePart, now: number)
+	if s.gauge >= 100 then
+		task.spawn(useUltimate, player, st, s)
+		return
+	end
+	local nearest = math.huge
+	for _, e in ipairs(aliveList(s)) do
+		nearest = math.min(nearest, (flat(e.root.Position) - flat(root.Position)).Magnitude)
+	end
+	if nearest < 16 then
+		for slot = 1, 2 do
+			if now >= s.skillReadyAt[slot] then
+				Skills.cast(ctx, player, st, s, slot)
+				return
+			end
+		end
+	end
+	performAttack(player, st, s)
+end
+
 local function battleLoop(player: Player, st: State, s: Session)
 	while s.running and st.session == s do
 		local root = getRoot(player)
@@ -2002,37 +2207,53 @@ local function battleLoop(player: Player, st: State, s: Session)
 		end
 		local now = os.clock()
 		local alive = 0
+		local poisonHits = {}
 		for _, e in ipairs(s.enemies) do
 			if e.alive then
 				if not e.root.Parent then
 					e.alive = false
 				else
 					alive += 1
-					updateWalk(e)
-					if not e.busy then
-						local dist = (flat(e.root.Position) - flat(root.Position)).Magnitude
-						if e.isBoss and now >= e.nextSlam and dist < 45 then
-							bossSlam(player, st, s, e, root.Position)
-						elseif dist <= e.reach and now >= e.nextAttack then
-							enemyStrike(player, st, s, e)
-						elseif now >= e.nextMove then
-							e.nextMove = now + 0.25
-							e.hum:MoveTo(root.Position)
-						end
+					updateWalk(e, now)
+					if now < e.poisonUntil and now >= e.nextPoison then
+						e.nextPoison = now + 0.5
+						hitEnemy(player, s, e, e.poisonDmg, false, e.root.Position, poisonHits, { pierce = true })
+						poisonHits[#poisonHits].kind = "poison"
+					elseif now >= e.poisonUntil and e.poisonUntil > 0 then
+						e.poisonUntil = 0
+						e.model:SetAttribute("Poison", nil)
+					end
+					if e.alive then
+						EnemyAI.tick(ctx, player, st, s, e, root, now)
 					end
 				end
 			end
 		end
-		if alive == 0 and not s.ulting then
-			winBattle(player, st, s)
-			return
+		sendHits(player, poisonHits)
+		Skills.tickZones(ctx, player, s, now)
+
+		if alive == 0 and not s.ulting and not s.waveSpawning then
+			if s.waveIndex < #s.info.waves then
+				s.waveSpawning = true
+				s.waveIndex += 1
+				local nextWave = s.waveIndex
+				task.delay(1.2, function()
+					if s.running and st.session == s then
+						spawnWave(player, s, nextWave)
+					end
+					s.waveSpawning = false
+				end)
+				-- 웨이브를 깨면 체력 30% 회복
+				s.hp = math.min(s.maxHp, s.hp + s.maxHp * 0.3)
+				Push:FireClient(player, "waveClear", { index = nextWave - 1, heal = 0.3 })
+				pushBattle(player)
+			else
+				winBattle(player, st, s)
+				return
+			end
 		end
 		if st.auto and not s.ulting then
-			if s.gauge >= 100 then
-				task.spawn(useUltimate, player, st, s)
-			else
-				performAttack(player, st, s)
-			end
+			autoSkills(player, st, s, root, now)
 		end
 		task.wait(0.1)
 	end
@@ -2081,6 +2302,8 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		arena = arena,
 		folder = folder,
 		enemies = {},
+		waveIndex = 1,
+		waveSpawning = false,
 		stats = stats,
 		hp = stats.maxHp,
 		maxHp = stats.maxHp,
@@ -2089,22 +2312,17 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		gauge = 0,
 		ulting = false,
 		running = true,
+		skillReadyAt = { 0, 0 },
+		poisonUntil = 0,
+		smokeCrit = nil,
+		parryUntil = 0,
+		markTarget = nil,
+		zones = {},
 	}
 	st.session = s
 	char:PivotTo(CFrame.new(arena.center + Vector3.new(0, 4, 0)))
-
-	local count = info.enemyCount
-	local spin = math.random() * math.pi * 2
-	for i = 1, count do
-		local a = spin + (i / count) * math.pi * 2
-		local pos = arena.center + Vector3.new(math.cos(a), 0, math.sin(a)) * ENEMY_SPAWN_RADIUS
-		spawnEnemy(s, n, false, pos, info.enemyHp, info.enemyDmg)
-	end
-	if info.isBoss then
-		spawnEnemy(s, n, true, arena.center + Vector3.new(0, 0, -ENEMY_SPAWN_RADIUS), info.bossHp, info.bossDmg)
-	end
-
-	pushBattle(player)
+	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = Config.getSection(n).color, boss = info.isBoss })
+	spawnWave(player, s, 1)
 	pushState(player)
 	task.spawn(battleLoop, player, st, s)
 end
@@ -2158,6 +2376,13 @@ local function mergeOnce(p: Profile, key: string): string?
 	return newKey
 end
 
+-- 합성할 때마다 로비 용광로가 불을 뿜는다 (모두에게 보인다)
+local function forgeFlash(key: string)
+	local info = Config.weaponInfo(key)
+	local color = info and (info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color) or Color3.fromRGB(255, 160, 60)
+	Push:FireAllClients("forge", { color = color, legendary = info ~= nil and info.rarity.rank >= 5 })
+end
+
 local function merge(player: Player, key: any)
 	local p = profiles[player]
 	if type(key) ~= "string" then
@@ -2173,6 +2398,7 @@ local function merge(player: Player, key: any)
 		return
 	end
 	Push:FireClient(player, "merged", { from = key, to = newKey, count = 1 })
+	forgeFlash(newKey)
 	refreshStats(player)
 end
 
@@ -2198,6 +2424,9 @@ local function mergeAll(player: Player)
 		return
 	end
 	Push:FireClient(player, "merged", { count = count, to = best })
+	if best then
+		forgeFlash(best)
+	end
 	refreshStats(player)
 end
 
@@ -2217,6 +2446,7 @@ local function makeAllRounder(player: Player)
 	p.inv[Config.ALLROUNDER_KEY] = (p.inv[Config.ALLROUNDER_KEY] or 0) + 1
 	p.equipped = Config.ALLROUNDER_KEY
 	Push:FireClient(player, "merged", { to = Config.ALLROUNDER_KEY, count = 1 })
+	forgeFlash(Config.ALLROUNDER_KEY)
 	refreshStats(player)
 end
 
@@ -2238,6 +2468,7 @@ local function train(player: Player, kind: any)
 	end
 	p.coins -= cost;
 	(p :: any)[field] = level + 1
+	Push:FireClient(player, "trained", kind)
 	refreshStats(player)
 end
 
@@ -2282,6 +2513,12 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 		local s = st.session
 		if s and s.running then
 			performAttack(player, st, s)
+		end
+	elseif action == "skill" then
+		local s = st.session
+		if s and s.running and (arg == 1 or arg == 2) then
+			Skills.cast(ctx, player, st, s, arg)
+			pushBattle(player)
 		end
 	elseif action == "ultimate" then
 		local s = st.session
@@ -2457,11 +2694,1084 @@ end)
       </Properties>
       <Item class="ModuleScript" referent="6">
         <Properties>
+          <string name="Name">EnemyAI</string>
+          <string name="Source"><![CDATA[-- EnemyAI (ModuleScript, ArenaServer 아래)
+-- 적 종류별 행동. 공격은 모두 바닥이나 몸에 미리 경고를 띄운 뒤 들어온다.
+--   돌격병  다가와서 벤다
+--   궁수    거리를 벌리고, 빨간 선으로 조준한 뒤 화살을 쏜다
+--   방패병  느리지만 앞에서 오는 공격을 70% 막는다
+--   돌진꾼  길게 빨간 길을 그린 뒤 그 길로 돌진한다
+--   자폭병  빠르게 달려와 붙으면 1초 뒤 터진다
+--   주술사  멀리서 내 발밑에 불길 원을 띄운다
+--   암살자  주기적으로 내 등 뒤로 순간이동해 찌른다
+-- 보스는 내려찍기, 돌진, 회전, 운석, 부하 소환 중 정해진 조합을 번갈아 쓴다.
+
+local EnemyAI = {}
+
+local function flat(v: Vector3): Vector3
+	return Vector3.new(v.X, 0, v.Z)
+end
+
+local function flatUnit(v: Vector3): Vector3
+	local f = flat(v)
+	if f.Magnitude < 0.001 then
+		return Vector3.new(0, 0, -1)
+	end
+	return f.Unit
+end
+
+local function canAct(e: any, now: number): boolean
+	return not e.busy and now >= e.stunUntil and now >= e.frozenUntil
+end
+
+local function chase(e: any, target: Vector3, now: number)
+	if now >= e.nextMove then
+		e.nextMove = now + 0.25
+		e.hum:MoveTo(target)
+	end
+end
+
+local function hold(e: any)
+	e.hum:MoveTo(e.root.Position)
+end
+
+local function alive(ctx: any, s: any, e: any): boolean
+	return s.running and ctx.isCurrent(s) and e.alive
+end
+
+-- 근접 공격: 빨갛게 번쩍인 뒤 0.35초 후 벤다
+local function strike(ctx: any, player: Player, st: any, s: any, e: any, windup: number?)
+	local now = os.clock()
+	e.busy = true
+	e.nextAttack = now + (e.isBoss and 1.4 or 1.6)
+	hold(e)
+	ctx.flash(e, Color3.fromRGB(255, 60, 60), windup or 0.35)
+	task.delay(windup or 0.35, function()
+		e.busy = false
+		if not alive(ctx, s, e) then
+			return
+		end
+		local root = ctx.getRoot(player)
+		if root and (flat(e.root.Position) - flat(root.Position)).Magnitude <= e.reach + 2 then
+			ctx.damagePlayer(player, st, s, e.dmg)
+		end
+	end)
+end
+
+-- 직선으로 날아가는 공격 (화살, 보스 탄). 서버가 경로를 따라 맞았는지 본다
+local function projectile(ctx: any, player: Player, st: any, s: any, from: Vector3, dir: Vector3, speed: number, range: number, dmg: number, kind: string, color: Color3)
+	ctx.push(player, "proj", { from = from, dir = dir, speed = speed, range = range, kind = kind, color = color })
+	task.spawn(function()
+		local traveled = 0
+		local step = 0.05
+		while traveled < range do
+			task.wait(step)
+			if not (s.running and ctx.isCurrent(s)) then
+				return
+			end
+			traveled += speed * step
+			local pos = from + dir * traveled
+			local root = ctx.getRoot(player)
+			if root and (flat(root.Position) - flat(pos)).Magnitude < 2.6 then
+				ctx.damagePlayer(player, st, s, dmg)
+				return
+			end
+		end
+	end)
+end
+
+-- 돌진: 빨간 길을 그리고 그 길로 몸을 날린다
+local function charge(ctx: any, player: Player, st: any, s: any, e: any, root: BasePart, width: number, dmg: number)
+	local now = os.clock()
+	e.busy = true
+	hold(e)
+	local start = e.root.Position
+	local dir = flatUnit(root.Position - start)
+	local length = math.min((flat(root.Position) - flat(start)).Magnitude + 10, 36)
+	ctx.warnLane(s, start, dir, length, width, 0.9)
+	ctx.flash(e, Color3.fromRGB(255, 150, 0), 0.9)
+	task.delay(0.9, function()
+		if not alive(ctx, s, e) then
+			e.busy = false
+			return
+		end
+		local hit = false
+		local steps = 12
+		for i = 1, steps do
+			if not alive(ctx, s, e) then
+				break
+			end
+			local p = start + dir * length * (i / steps)
+			e.model:PivotTo(CFrame.lookAt(p, p + dir))
+			local r = ctx.getRoot(player)
+			if not hit and r and (flat(r.Position) - flat(p)).Magnitude < width * 0.6 + e.bodyRadius then
+				hit = true
+				ctx.damagePlayer(player, st, s, dmg)
+				ctx.push(player, "knock", { dir = dir, power = 70 })
+			end
+			task.wait(0.035)
+		end
+		ctx.push(player, "dust", { pos = e.root.Position })
+		e.busy = false
+		e.nextAttack = os.clock() + 0.8
+	end)
+	e.nextSpecial = now + (e.cfg.chargeCd or 6)
+end
+
+local function groundCircle(ctx: any, player: Player, st: any, s: any, center: Vector3, radius: number, delay: number, dmg: number, fx: string)
+	local floorPos = Vector3.new(center.X, s.arena.center.Y, center.Z)
+	ctx.warnDisc(s, floorPos, radius, delay)
+	task.delay(delay, function()
+		if not (s.running and ctx.isCurrent(s)) then
+			return
+		end
+		ctx.push(player, fx, { pos = floorPos, radius = radius })
+		local r = ctx.getRoot(player)
+		if r and (flat(r.Position) - flat(floorPos)).Magnitude <= radius then
+			ctx.damagePlayer(player, st, s, dmg)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- 종류별 행동
+------------------------------------------------------------------------
+local behaviors: { [string]: (any, Player, any, any, any, BasePart, number, number) -> () } = {}
+
+behaviors.grunt = function(ctx, player, st, s, e, root, dist, now)
+	if dist <= e.reach and now >= e.nextAttack then
+		strike(ctx, player, st, s, e)
+	else
+		chase(e, root.Position, now)
+	end
+end
+
+behaviors.shield = behaviors.grunt
+
+behaviors.archer = function(ctx, player, st, s, e, root, dist, now)
+	local keep = e.cfg.keep or 22
+	if dist < 11 then
+		chase(e, e.root.Position + flatUnit(e.root.Position - root.Position) * 12, now)
+	elseif dist > keep + 8 then
+		chase(e, root.Position, now)
+	elseif now >= e.nextSpecial then
+		e.busy = true
+		e.nextSpecial = now + (e.cfg.shotCd or 2.8) * (0.8 + math.random() * 0.4)
+		hold(e)
+		local from = e.root.Position + Vector3.new(0, 0.5, 0)
+		local dir = flatUnit(root.Position - from)
+		e.model:PivotTo(CFrame.lookAt(e.root.Position, e.root.Position + dir))
+		ctx.warnLane(s, from, dir, 46, 1.4, 0.6)
+		task.delay(0.6, function()
+			e.busy = false
+			if alive(ctx, s, e) then
+				projectile(ctx, player, st, s, from, dir, 65, 46, e.dmg * 1.2, "arrow", e.accent)
+			end
+		end)
+	else
+		hold(e)
+	end
+end
+
+behaviors.brute = function(ctx, player, st, s, e, root, dist, now)
+	if now >= e.nextSpecial and dist > 7 and dist < 34 then
+		charge(ctx, player, st, s, e, root, 5, e.dmg * 1.8)
+	elseif dist <= e.reach and now >= e.nextAttack then
+		strike(ctx, player, st, s, e, 0.5)
+	else
+		chase(e, root.Position, now)
+	end
+end
+
+behaviors.bomber = function(ctx, player, st, s, e, root, dist, now)
+	if dist > 5 then
+		chase(e, root.Position, now)
+		return
+	end
+	-- 붙으면 1초 뒤 폭발
+	e.busy = true
+	hold(e)
+	local radius = 8 * e.scale
+	ctx.warnDisc(s, Vector3.new(e.root.Position.X, s.arena.center.Y, e.root.Position.Z), radius, 1.0)
+	for i = 0, 3 do
+		task.delay(i * 0.25, function()
+			if e.alive then
+				ctx.flash(e, Color3.new(1, 1, 1), 0.12)
+			end
+		end)
+	end
+	task.delay(1.0, function()
+		if not alive(ctx, s, e) then
+			return
+		end
+		local pos = e.root.Position
+		ctx.push(player, "explode", { pos = pos, radius = radius })
+		local r = ctx.getRoot(player)
+		if r and (flat(r.Position) - flat(pos)).Magnitude <= radius then
+			ctx.damagePlayer(player, st, s, e.dmg)
+		end
+		ctx.killEnemy(player, s, e, true)
+	end)
+end
+
+behaviors.shaman = function(ctx, player, st, s, e, root, dist, now)
+	local keep = e.cfg.keep or 24
+	if dist < 12 then
+		chase(e, e.root.Position + flatUnit(e.root.Position - root.Position) * 12, now)
+	elseif dist > keep + 10 then
+		chase(e, root.Position, now)
+	elseif now >= e.nextSpecial then
+		e.busy = true
+		e.nextSpecial = now + (e.cfg.castCd or 4.5) * (0.85 + math.random() * 0.3)
+		hold(e)
+		ctx.flash(e, e.accent, 0.6)
+		groundCircle(ctx, player, st, s, root.Position, 7, 1.3, e.dmg * 1.3, "flame")
+		task.delay(0.6, function()
+			e.busy = false
+		end)
+	else
+		hold(e)
+	end
+end
+
+behaviors.assassin = function(ctx, player, st, s, e, root, dist, now)
+	if now >= e.nextSpecial and dist > 6 then
+		e.nextSpecial = now + (e.cfg.blinkCd or 5)
+		local look = flatUnit(root.CFrame.LookVector)
+		local behind = root.Position - look * 4
+		local from = e.root.Position
+		e.model:PivotTo(CFrame.lookAt(behind, Vector3.new(root.Position.X, behind.Y, root.Position.Z)))
+		ctx.push(player, "blink", { from = from, to = behind })
+		strike(ctx, player, st, s, e, 0.45)
+	elseif dist <= e.reach and now >= e.nextAttack then
+		strike(ctx, player, st, s, e, 0.3)
+	else
+		chase(e, root.Position, now)
+	end
+end
+
+------------------------------------------------------------------------
+-- 보스
+------------------------------------------------------------------------
+local bossMoves: { [string]: (any, Player, any, any, any, BasePart) -> () } = {}
+
+bossMoves.slam = function(ctx, player, st, s, e, root)
+	e.busy = true
+	hold(e)
+	ctx.flash(e, Color3.fromRGB(255, 140, 0), 1.3)
+	groundCircle(ctx, player, st, s, root.Position, 12, 1.3, e.slamDmg, "slam")
+	task.delay(1.3, function()
+		e.busy = false
+		e.nextAttack = os.clock() + 0.8
+	end)
+end
+
+bossMoves.charge = function(ctx, player, st, s, e, root)
+	charge(ctx, player, st, s, e, root, 8, e.slamDmg * 0.8)
+end
+
+bossMoves.spin = function(ctx, player, st, s, e, _root)
+	e.busy = true
+	hold(e)
+	local radius = 11 * (e.scale / 1.8)
+	ctx.warnDisc(s, Vector3.new(e.root.Position.X, s.arena.center.Y, e.root.Position.Z), radius, 0.8)
+	ctx.flash(e, Color3.fromRGB(255, 200, 60), 0.8)
+	task.delay(0.8, function()
+		for _ = 1, 5 do
+			if not alive(ctx, s, e) then
+				break
+			end
+			ctx.push(player, "spin", { pos = e.root.Position, radius = radius })
+			local r = ctx.getRoot(player)
+			if r and (flat(r.Position) - flat(e.root.Position)).Magnitude <= radius then
+				ctx.damagePlayer(player, st, s, e.dmg * 1.2)
+			end
+			e.model:PivotTo(e.model:GetPivot() * CFrame.Angles(0, math.rad(72), 0))
+			task.wait(0.3)
+		end
+		e.busy = false
+	end)
+end
+
+bossMoves.meteor = function(ctx, player, st, s, e, root)
+	e.busy = true
+	hold(e)
+	ctx.flash(e, Color3.fromRGB(255, 80, 30), 0.6)
+	local spots = { root.Position }
+	for _ = 1, 4 do
+		local a = math.random() * math.pi * 2
+		local d = 5 + math.random() * 10
+		table.insert(spots, root.Position + Vector3.new(math.cos(a) * d, 0, math.sin(a) * d))
+	end
+	for i, p in ipairs(spots) do
+		task.delay((i - 1) * 0.12, function()
+			if s.running and ctx.isCurrent(s) then
+				groundCircle(ctx, player, st, s, p, 6, 1.5, e.slamDmg * 0.6, "meteor")
+			end
+		end)
+	end
+	task.delay(0.6, function()
+		e.busy = false
+	end)
+end
+
+bossMoves.summon = function(ctx, player, st, s, e, _root)
+	if ctx.aliveCount(s) >= 7 then
+		return
+	end
+	e.busy = true
+	hold(e)
+	ctx.flash(e, Color3.fromRGB(180, 80, 255), 0.8)
+	task.delay(0.8, function()
+		e.busy = false
+		if not alive(ctx, s, e) then
+			return
+		end
+		for i = 1, 2 do
+			local a = math.random() * math.pi * 2
+			local pos = e.root.Position + Vector3.new(math.cos(a) * 8, 0, math.sin(a) * 8)
+			ctx.push(player, "summon", { pos = Vector3.new(pos.X, s.arena.center.Y, pos.Z) })
+			ctx.spawnUnit(s, i == 1 and "grunt" or "bomber", Vector3.new(pos.X, s.arena.center.Y, pos.Z))
+		end
+		ctx.pushBattle(player)
+	end)
+end
+
+local function bossTick(ctx: any, player: Player, st: any, s: any, e: any, root: BasePart, dist: number, now: number)
+	if now >= e.nextSpecial and dist < 55 then
+		local list = e.patterns
+		local move = list[e.patternIndex]
+		e.patternIndex = (e.patternIndex % #list) + 1
+		e.nextSpecial = now + 5
+		local fn = bossMoves[move]
+		if fn then
+			fn(ctx, player, st, s, e, root)
+			return
+		end
+	end
+	if dist <= e.reach and now >= e.nextAttack then
+		strike(ctx, player, st, s, e, 0.45)
+	else
+		chase(e, root.Position, now)
+	end
+end
+
+function EnemyAI.tick(ctx: any, player: Player, st: any, s: any, e: any, root: BasePart, now: number)
+	if not canAct(e, now) then
+		if now < e.stunUntil or now < e.frozenUntil then
+			hold(e)
+		end
+		return
+	end
+	local dist = (flat(e.root.Position) - flat(root.Position)).Magnitude
+	if e.isBoss then
+		bossTick(ctx, player, st, s, e, root, dist, now)
+	else
+		local fn = behaviors[e.kind] or behaviors.grunt
+		fn(ctx, player, st, s, e, root, dist, now)
+	end
+end
+
+return EnemyAI
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">EnemyBuilder</string>
+          <string name="Source"><![CDATA[-- EnemyBuilder (ModuleScript, ArenaServer 아래)
+-- 적 7종의 생김새. 기본 인형에 투구, 방패, 활, 지팡이, 폭탄 같은 장비를 붙인다.
+-- 구간이 오를수록 재질이 금속 → 빛 → 우주로 바뀌고 오라가 생긴다. 보스는 왕관과 망토.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+
+local EnemyBuilder = {}
+
+local GOLD = Color3.fromRGB(225, 180, 70)
+local IRON = Color3.fromRGB(70, 72, 80)
+local WOOD = Color3.fromRGB(95, 65, 40)
+local LEATHER = Color3.fromRGB(80, 55, 38)
+
+-- 종류마다 몸 색에 섞는 색, 눈 색
+local TINT = {
+	grunt = { tint = Color3.fromRGB(150, 120, 100), eye = Color3.fromRGB(255, 70, 50) },
+	archer = { tint = Color3.fromRGB(70, 120, 70), eye = Color3.fromRGB(180, 255, 120) },
+	shield = { tint = Color3.fromRGB(110, 120, 150), eye = Color3.fromRGB(120, 200, 255) },
+	brute = { tint = Color3.fromRGB(140, 60, 50), eye = Color3.fromRGB(255, 140, 30) },
+	bomber = { tint = Color3.fromRGB(150, 110, 60), eye = Color3.fromRGB(255, 230, 60) },
+	shaman = { tint = Color3.fromRGB(100, 60, 140), eye = Color3.fromRGB(220, 120, 255) },
+	assassin = { tint = Color3.fromRGB(40, 35, 50), eye = Color3.fromRGB(255, 40, 90) },
+}
+
+local function weld(model: Model, base: BasePart, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
+	local p = Instance.new("Part")
+	p.Name = name
+	if shape then
+		p.Shape = shape
+	end
+	p.Size = size
+	p.Color = color
+	p.Material = material
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.CastShadow = false
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.CFrame = base.CFrame * offset
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = base
+	w.Part1 = p
+	w.Parent = p
+	p.Parent = model
+	return p
+end
+
+local function find(model: Model, name: string): BasePart?
+	local p = model:FindFirstChild(name)
+	if p and p:IsA("BasePart") then
+		return p
+	end
+	return nil
+end
+
+local function particles(parent: Instance, color: Color3 | ColorSequence, rate: number, size: number, speed: number, name: string?)
+	local pe = Instance.new("ParticleEmitter")
+	pe.Name = name or "Aura"
+	pe.Rate = rate
+	pe.Lifetime = NumberRange.new(0.6, 1.2)
+	pe.Speed = NumberRange.new(speed * 0.5, speed)
+	pe.EmissionDirection = Enum.NormalId.Top
+	pe.SpreadAngle = Vector2.new(30, 30)
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size), NumberSequenceKeypoint.new(1, 0) })
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) })
+	pe.LightEmission = 0.8
+	pe.Color = typeof(color) == "ColorSequence" and color or ColorSequence.new(color :: Color3)
+	pe.Parent = parent
+	return pe
+end
+
+-- 종류별 장비
+local dressers: { [string]: (Model, number, Color3, number) -> () } = {}
+
+dressers.grunt = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local hand = find(model, "RightHand")
+	if head then
+		weld(model, head, "Helmet", Vector3.new(1.35, 0.75, 1.35) * s, CFrame.new(0, 0.3 * s, 0), IRON, Enum.Material.Metal, Enum.PartType.Ball)
+		weld(model, head, "Crest", Vector3.new(0.15, 0.5, 1.1) * s, CFrame.new(0, 0.75 * s, 0), accent, section >= 3 and Enum.Material.Neon or Enum.Material.Metal)
+	end
+	if hand then
+		WeaponBuilder.build(model, hand, 1, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.7 * s })
+	end
+end
+
+dressers.archer = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local left = find(model, "LeftHand")
+	local torso = find(model, "UpperTorso")
+	if head then
+		weld(model, head, "Hood", Vector3.new(1.45, 1.45, 1.45) * s, CFrame.new(0, 0.12 * s, 0.12 * s), Color3.fromRGB(45, 70, 45), Enum.Material.Fabric, Enum.PartType.Ball)
+	end
+	if left then
+		-- 활: 세로로 휜 다섯 조각 + 빛나는 시위
+		local radius, segs = 1.6 * s, 5
+		for i = 0, segs - 1 do
+			local a0 = math.rad(-60 + 120 * i / segs)
+			local a1 = math.rad(-60 + 120 * (i + 1) / segs)
+			local y0, z0 = math.sin(a0) * radius, -math.cos(a0) * radius + radius - 0.6 * s
+			local y1, z1 = math.sin(a1) * radius, -math.cos(a1) * radius + radius - 0.6 * s
+			local len = math.sqrt((y1 - y0) ^ 2 + (z1 - z0) ^ 2) + 0.05
+			local ang = math.atan2(z1 - z0, y1 - y0)
+			weld(model, left, "Bow" .. i, Vector3.new(0.18 * s, len, 0.22 * s), CFrame.new(0, (y0 + y1) / 2, (z0 + z1) / 2) * CFrame.Angles(ang, 0, 0), WOOD, Enum.Material.Wood)
+		end
+		weld(model, left, "BowString", Vector3.new(0.05, radius * 1.7, 0.05), CFrame.new(0, 0, 0.15 * s), accent, Enum.Material.Neon)
+	end
+	if torso then
+		weld(model, torso, "Quiver", Vector3.new(1.6 * s, 0.55 * s, 0.55 * s), CFrame.new(0.3 * s, 0.2 * s, 0.55 * s) * CFrame.Angles(0, 0, math.rad(70)), LEATHER, Enum.Material.Fabric, Enum.PartType.Cylinder)
+		for i = 1, 3 do
+			weld(model, torso, "Arrow" .. i, Vector3.new(0.08, 0.6, 0.08) * s, CFrame.new((-0.05 + i * 0.12) * s, 1.05 * s, 0.55 * s), accent, Enum.Material.Neon)
+		end
+	end
+end
+
+dressers.shield = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local arm = find(model, "LeftLowerArm")
+	local hand = find(model, "RightHand")
+	if head then
+		weld(model, head, "Helm", Vector3.new(1.3, 1.25, 1.3) * s, CFrame.new(0, 0.1 * s, 0), Color3.fromRGB(150, 155, 170), Enum.Material.Metal)
+		weld(model, head, "Visor", Vector3.new(1.0, 0.12, 0.1) * s, CFrame.new(0, 0.05 * s, -0.66 * s), accent, Enum.Material.Neon)
+		weld(model, head, "Plume", Vector3.new(0.2, 0.9, 1.2) * s, CFrame.new(0, 0.95 * s, 0.1 * s), accent, section >= 2 and Enum.Material.Neon or Enum.Material.Fabric)
+	end
+	if arm then
+		local shieldPart = weld(model, arm, "Shield", Vector3.new(2.4, 3.2, 0.3) * s, CFrame.new(-0.2 * s, -0.2 * s, -0.75 * s), Color3.fromRGB(120, 125, 140), Enum.Material.Metal)
+		weld(model, shieldPart, "ShieldRim", Vector3.new(2.6, 3.4, 0.2) * s, CFrame.new(0, 0, 0.08 * s), GOLD, Enum.Material.Metal)
+		weld(model, shieldPart, "ShieldEmblem", Vector3.new(0.12, 1.2, 1.2) * s, CFrame.new(0, 0.2 * s, -0.18 * s) * CFrame.Angles(0, math.rad(90), 0), accent, Enum.Material.Neon, Enum.PartType.Cylinder)
+	end
+	if hand then
+		WeaponBuilder.build(model, hand, 3, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.6 * s })
+	end
+end
+
+dressers.brute = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local hand = find(model, "RightHand")
+	for _, side in ipairs({ "Left", "Right" }) do
+		local arm = find(model, side .. "UpperArm")
+		if arm then
+			weld(model, arm, side .. "Pad", Vector3.new(1.4, 1.1, 1.4) * s, CFrame.new(0, 0.45 * s, 0), IRON, Enum.Material.Metal, Enum.PartType.Ball)
+			weld(model, arm, side .. "Spike", Vector3.new(0.25, 0.7, 0.25) * s, CFrame.new(0, 1.1 * s, 0), accent, Enum.Material.Neon)
+		end
+	end
+	if head then
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, head, "Horn", Vector3.new(0.3, 1.1, 0.3) * s, CFrame.new(0.5 * x * s, 0.6 * s, -0.1 * s) * CFrame.Angles(0, 0, math.rad(-30 * x)), Color3.fromRGB(235, 225, 200), Enum.Material.SmoothPlastic)
+		end
+	end
+	if hand then
+		-- 거대한 몽둥이
+		weld(model, hand, "ClubHandle", Vector3.new(0.4, 2.6, 0.4) * s, CFrame.new(0, -0.3 * s, -1.0 * s) * CFrame.Angles(math.rad(-90), 0, 0), WOOD, Enum.Material.Wood)
+		local headPart = weld(model, hand, "ClubHead", Vector3.new(1.2, 1.2, 1.2) * s, CFrame.new(0, -0.3 * s, -2.6 * s), IRON, Enum.Material.Metal, Enum.PartType.Ball)
+		for i = 0, 3 do
+			local a = i * math.pi / 2
+			weld(model, headPart, "ClubSpike" .. i, Vector3.new(0.2, 0.6, 0.2) * s, CFrame.Angles(a, 0, 0) * CFrame.new(0, 0.7 * s, 0), accent, section >= 3 and Enum.Material.Neon or Enum.Material.Metal)
+		end
+	end
+end
+
+dressers.bomber = function(model, s, accent, _section)
+	local head = find(model, "Head")
+	local torso = find(model, "UpperTorso")
+	if head then
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, head, "Goggle", Vector3.new(0.12, 0.35, 0.35) * s, CFrame.new(0.2 * x * s, 0.1 * s, -0.62 * s) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(255, 220, 60), Enum.Material.Neon, Enum.PartType.Cylinder)
+		end
+	end
+	if torso then
+		local barrel = weld(model, torso, "Barrel", Vector3.new(1.6, 1.2, 1.2) * s, CFrame.new(0, 0.1 * s, 0.85 * s) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(110, 70, 40), Enum.Material.Wood, Enum.PartType.Cylinder)
+		for _, y in ipairs({ -0.5, 0.5 }) do
+			weld(model, barrel, "Band", Vector3.new(0.15, 1.3, 1.3) * s, CFrame.new(y * s, 0, 0), IRON, Enum.Material.Metal, Enum.PartType.Cylinder)
+		end
+		local fuse = weld(model, torso, "Fuse", Vector3.new(0.12, 0.6, 0.12) * s, CFrame.new(0, 1.0 * s, 0.85 * s), Color3.fromRGB(255, 80, 40), Enum.Material.Neon)
+		local spark = Instance.new("Sparkles")
+		spark.SparkleColor = Color3.fromRGB(255, 160, 60)
+		spark.Parent = fuse
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 120, 40)
+		light.Range = 8
+		light.Brightness = 2
+		light.Parent = fuse
+	end
+	local _ = accent
+end
+
+dressers.shaman = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local lower = find(model, "LowerTorso")
+	local hand = find(model, "RightHand")
+	if head then
+		weld(model, head, "Hat", Vector3.new(0.9, 1.6, 0.9) * s, CFrame.new(0, 1.05 * s, 0.1 * s) * CFrame.Angles(math.rad(-12), 0, 0), Color3.fromRGB(70, 40, 100), Enum.Material.Fabric)
+		weld(model, head, "HatBrim", Vector3.new(0.1, 1.9, 1.9) * s, CFrame.new(0, 0.42 * s, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(60, 35, 90), Enum.Material.Fabric, Enum.PartType.Cylinder)
+	end
+	if lower then
+		weld(model, lower, "Robe", Vector3.new(2.2, 1.9, 1.9) * s, CFrame.new(0, -0.9 * s, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(80, 45, 115), Enum.Material.Fabric, Enum.PartType.Cylinder)
+	end
+	if hand then
+		weld(model, hand, "Staff", Vector3.new(0.25, 5, 0.25) * s, CFrame.new(0, 1.2 * s, 0), WOOD, Enum.Material.Wood)
+		local orb = weld(model, hand, "Orb", Vector3.new(0.9, 0.9, 0.9) * s, CFrame.new(0, 3.9 * s, 0), accent, Enum.Material.Neon, Enum.PartType.Ball)
+		local light = Instance.new("PointLight")
+		light.Color = accent
+		light.Range = 10
+		light.Brightness = 2
+		light.Parent = orb
+		particles(orb, accent, 10, 0.4 * s, 2, "OrbGlow")
+	end
+	local _ = section
+end
+
+dressers.assassin = function(model, s, accent, section)
+	local head = find(model, "Head")
+	local torso = find(model, "UpperTorso")
+	if head then
+		weld(model, head, "Hood", Vector3.new(1.4, 1.4, 1.4) * s, CFrame.new(0, 0.1 * s, 0.1 * s), Color3.fromRGB(25, 22, 30), Enum.Material.Fabric, Enum.PartType.Ball)
+		weld(model, head, "Mask", Vector3.new(1.1, 0.45, 0.1) * s, CFrame.new(0, -0.2 * s, -0.62 * s), Color3.fromRGB(20, 20, 24), Enum.Material.SmoothPlastic)
+	end
+	if torso then
+		weld(model, torso, "Scarf", Vector3.new(0.5, 2.2, 0.1) * s, CFrame.new(0.3 * s, -0.2 * s, 0.6 * s) * CFrame.Angles(math.rad(20), 0, 0), Color3.fromRGB(200, 30, 60), Enum.Material.Fabric)
+		particles(torso, Color3.fromRGB(60, 30, 80), 6, 0.9 * s, 1, "Shadow")
+	end
+	for _, side in ipairs({ "RightHand", "LeftHand" }) do
+		local hand = find(model, side)
+		if hand then
+			WeaponBuilder.build(model, hand, 4, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.9 * s })
+		end
+	end
+end
+
+-- 몸 재질과 색
+local function paintBody(model: Model, kind: string, sectionColor: Color3, sectionIndex: number, isBoss: boolean)
+	local t = TINT[kind] or TINT.grunt
+	local body = t.tint:Lerp(sectionColor, 0.45)
+	if isBoss then
+		body = body:Lerp(Color3.fromRGB(120, 10, 20), 0.35)
+	end
+	for _, d in ipairs(model:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+			d.Color = body
+			if sectionIndex >= 5 then
+				d.Material = Enum.Material.ForceField
+			elseif sectionIndex >= 4 then
+				d.Material = Enum.Material.Neon
+			elseif sectionIndex >= 2 then
+				d.Material = Enum.Material.Metal
+			else
+				d.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	end
+end
+
+function EnemyBuilder.dress(model: Model, kind: string, sectionColor: Color3, sectionIndex: number, isBoss: boolean, scale: number, rainbow: ColorSequence?)
+	paintBody(model, kind, sectionColor, sectionIndex, isBoss)
+	local t = TINT[kind] or TINT.grunt
+	local accent = isBoss and Color3.fromRGB(255, 70, 50) or sectionColor:Lerp(t.eye, 0.35)
+
+	-- 빛나는 두 눈
+	local head = find(model, "Head")
+	if head then
+		for _, x in ipairs({ -1, 1 }) do
+			weld(model, head, "Eye", Vector3.new(0.2, 0.09, 0.06) * scale, CFrame.new(0.2 * x * scale, 0.08 * scale, -head.Size.Z / 2 - 0.01), sectionIndex >= 4 and Color3.new(1, 1, 1) or t.eye, Enum.Material.Neon)
+		end
+	end
+
+	local dresser = dressers[kind] or dressers.grunt
+	pcall(dresser, model, scale, accent, sectionIndex)
+
+	local torso = find(model, "UpperTorso") or find(model, "HumanoidRootPart")
+	if torso and (sectionIndex >= 3 or isBoss) then
+		local auraColor: Color3 | ColorSequence = isBoss and Color3.fromRGB(255, 50, 40) or sectionColor
+		if sectionIndex >= 6 and rainbow then
+			auraColor = rainbow
+		end
+		particles(torso, auraColor, isBoss and 18 or 4 + sectionIndex, 0.8 * scale, 2.5)
+	end
+
+	if isBoss then
+		if head then
+			local top = CFrame.new(0, head.Size.Y / 2 + 0.25 * scale, 0)
+			weld(model, head, "CrownBand", Vector3.new(0.3, head.Size.X * 1.05, head.Size.X * 1.05) * Vector3.new(1, 1, 1), top * CFrame.Angles(0, 0, math.rad(90)), GOLD, Enum.Material.Metal, Enum.PartType.Cylinder)
+			for i = 0, 4 do
+				local a = (i / 5) * math.pi * 2
+				local r = head.Size.X * 0.42
+				weld(model, head, "Crown" .. i, Vector3.new(0.22, 0.6, 0.22) * scale, top * CFrame.new(math.cos(a) * r, 0.4 * scale, math.sin(a) * r), GOLD, Enum.Material.Neon)
+			end
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 70, 50)
+			light.Range = 18
+			light.Brightness = 2.2
+			light.Parent = head
+		end
+		local upper = find(model, "UpperTorso")
+		if upper then
+			weld(model, upper, "Cape", Vector3.new(upper.Size.X * 1.2, 3.2 * scale, 0.1), CFrame.new(0, -0.9 * scale, upper.Size.Z / 2 + 0.1) * CFrame.Angles(math.rad(8), 0, 0), Color3.fromRGB(140, 15, 25), Enum.Material.Fabric)
+		end
+	end
+end
+
+return EnemyBuilder
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="8">
+        <Properties>
+          <string name="Name">Skills</string>
+          <string name="Source"><![CDATA[-- Skills (ModuleScript, ArenaServer 아래)
+-- 무기 계열마다 두 개씩 있는 스킬(E, F). 피해 계산은 서버, 연출은 클라이언트가 한다.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
+
+local Skills = {}
+
+local function flat(v: Vector3): Vector3
+	return Vector3.new(v.X, 0, v.Z)
+end
+
+local function flatUnit(v: Vector3): Vector3
+	local f = flat(v)
+	if f.Magnitude < 0.001 then
+		return Vector3.new(0, 0, -1)
+	end
+	return f.Unit
+end
+
+-- 투기장 밖으로 나가지 않게 끝점을 줄인다
+local function clampToArena(ctx: any, s: any, origin: Vector3, target: Vector3): Vector3
+	local center = s.arena.center
+	local fromCenter = flat(target - center)
+	local limit = ctx.arenaRadius - 6
+	if fromCenter.Magnitude > limit then
+		return center + fromCenter.Unit * limit + Vector3.new(0, origin.Y - center.Y, 0)
+	end
+	return target
+end
+
+local function stun(ctx: any, player: Player, e: any, duration: number)
+	if e.isBoss then
+		duration *= 0.4
+	end
+	e.stunUntil = math.max(e.stunUntil, os.clock() + duration)
+	ctx.push(player, "stun", { model = e.model, duration = duration })
+end
+
+local function knock(e: any, dir: Vector3, power: number)
+	if e.isBoss or not e.alive then
+		return
+	end
+	e.root.AssemblyLinearVelocity = dir * power + Vector3.new(0, power * 0.5, 0)
+end
+
+local casters: { [string]: (any, Player, any, any, any, BasePart, Vector3, Vector3) -> () } = {}
+
+-- 대검 · 파쇄 돌격
+casters.charge = function(ctx, player, _st, s, sk, _root, origin, look)
+	local target = clampToArena(ctx, s, origin, origin + look * sk.length)
+	ctx.push(player, "skill", { id = "charge", origin = origin, target = target, look = look, color = ctx.color(s) })
+	local hits = {}
+	for _, e in ipairs(ctx.nearSegment(s, origin, target, sk.width)) do
+		ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, false, origin, hits)
+		local side = look:Cross(Vector3.yAxis)
+		if side:Dot(flat(e.root.Position - origin)) < 0 then
+			side = -side
+		end
+		knock(e, side, 35)
+		stun(ctx, player, e, sk.stun)
+	end
+	ctx.sendHits(player, hits)
+end
+
+-- 대검 · 대검 투척 (갔다가 돌아온다)
+casters.boomerang = function(ctx, player, _st, s, sk, _root, origin, look)
+	local duration = 1.0
+	ctx.push(player, "skill", { id = "boomerang", origin = origin, look = look, range = sk.range, duration = duration, color = ctx.color(s), typeId = s.stats.weapon.typeId })
+	task.spawn(function()
+		local hitOut, hitBack = {}, {}
+		local steps = 20
+		local far = clampToArena(ctx, s, origin, origin + look * sk.range)
+		for i = 1, steps do
+			task.wait(duration / steps)
+			if not (s.running and ctx.isCurrent(s)) then
+				return
+			end
+			local t = i / steps
+			local pos
+			local seen
+			if t <= 0.5 then
+				pos = origin:Lerp(far, t / 0.5)
+				seen = hitOut
+			else
+				local r = ctx.getRoot(player)
+				local home = r and r.Position or origin
+				pos = far:Lerp(home, (t - 0.5) / 0.5)
+				seen = hitBack
+			end
+			local hits = {}
+			for _, e in ipairs(ctx.alive(s)) do
+				if not seen[e] and (flat(e.root.Position) - flat(pos)).Magnitude <= sk.width + e.bodyRadius then
+					seen[e] = true
+					ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, false, pos, hits)
+				end
+			end
+			ctx.sendHits(player, hits)
+		end
+	end)
+end
+
+-- 쌍검 · 표식 연격
+casters.mark = function(ctx, player, _st, s, sk, root, _origin, _look)
+	local best, bestDist = nil, 26
+	for _, e in ipairs(ctx.alive(s)) do
+		local d = (flat(e.root.Position) - flat(root.Position)).Magnitude
+		if d < bestDist then
+			best, bestDist = e, d
+		end
+	end
+	if not best then
+		ctx.toast(player, "가까이에 표식을 남길 적이 없어요")
+		s.skillReadyAt[1] = 0
+		return
+	end
+	if s.markTarget and s.markTarget.model then
+		s.markTarget.model:SetAttribute("Mark", nil)
+	end
+	s.markTarget = best
+	best.markStacks = 0
+	best.model:SetAttribute("Mark", 0)
+	ctx.push(player, "skill", { id = "mark", model = best.model, stacks = sk.stacks, color = ctx.color(s) })
+end
+
+-- 표식이 다 차면 폭발 (일반 공격에서 부른다)
+function Skills.onBasicHit(ctx: any, player: Player, s: any, e: any, hits: { any })
+	local now = os.clock()
+	local skills = Config.Skills[s.stats.weapon.typeId]
+	if s.markTarget == e and e.alive then
+		local sk = skills and skills[1]
+		if sk and sk.id == "mark" then
+			e.markStacks += 1
+			e.model:SetAttribute("Mark", e.markStacks)
+			if e.markStacks >= sk.stacks then
+				s.markTarget = nil
+				e.model:SetAttribute("Mark", nil)
+				local pos = e.root.Position
+				ctx.push(player, "skill", { id = "markBoom", pos = pos, color = ctx.color(s) })
+				ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, true, pos, hits)
+				for _, other in ipairs(ctx.alive(s)) do
+					if other ~= e and (flat(other.root.Position) - flat(pos)).Magnitude <= 8 then
+						ctx.hitEnemy(player, s, other, s.stats.atk * sk.splash, false, pos, hits)
+					end
+				end
+			end
+		end
+	end
+	if now < s.poisonUntil and e.alive then
+		local sk = skills and skills[1]
+		if sk and sk.id == "poison" then
+			e.poisonUntil = now + sk.dotTime
+			e.poisonDmg = s.stats.atk * sk.dotMult
+			e.model:SetAttribute("Poison", true)
+		end
+	end
+end
+
+-- 쌍검 · 잔상 돌파
+casters.phantom = function(ctx, player, _st, s, sk, _root, origin, look)
+	local target = clampToArena(ctx, s, origin, origin + look * sk.length)
+	ctx.push(player, "skill", { id = "phantom", origin = origin, target = target, look = look, color = ctx.color(s) })
+	local hits = {}
+	for _, e in ipairs(ctx.nearSegment(s, origin, target, sk.width)) do
+		ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, false, origin, hits)
+	end
+	ctx.sendHits(player, hits)
+	task.delay(0.5, function()
+		if not (s.running and ctx.isCurrent(s)) then
+			return
+		end
+		ctx.push(player, "skill", { id = "phantomEcho", origin = origin, target = target, color = ctx.color(s) })
+		local echo = {}
+		for _, e in ipairs(ctx.nearSegment(s, origin, target, sk.width)) do
+			ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, true, origin, echo)
+		end
+		ctx.sendHits(player, echo)
+	end)
+end
+
+-- 장검 · 검기 발사
+casters.wave = function(ctx, player, _st, s, sk, _root, origin, look)
+	ctx.push(player, "skill", { id = "wave", origin = origin, look = look, range = sk.range, speed = sk.speed, width = sk.width, color = ctx.color(s) })
+	task.spawn(function()
+		local seen = {}
+		local traveled = 0
+		local step = 0.04
+		while traveled < sk.range do
+			task.wait(step)
+			if not (s.running and ctx.isCurrent(s)) then
+				return
+			end
+			traveled += sk.speed * step
+			local pos = origin + look * traveled
+			local hits = {}
+			for _, e in ipairs(ctx.alive(s)) do
+				if not seen[e] and (flat(e.root.Position) - flat(pos)).Magnitude <= sk.width + e.bodyRadius then
+					seen[e] = true
+					ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, false, pos, hits, { pierce = true })
+				end
+			end
+			ctx.sendHits(player, hits)
+		end
+	end)
+end
+
+-- 장검 · 반격 자세 (막는 건 damagePlayer에서 처리)
+casters.parry = function(ctx, player, _st, s, sk, _root, _origin, _look)
+	s.parryUntil = os.clock() + sk.window
+	ctx.push(player, "skill", { id = "parry", window = sk.window, color = ctx.color(s) })
+end
+
+-- 막기에 성공했을 때 반격
+function Skills.tryParry(ctx: any, player: Player, s: any): boolean
+	if os.clock() >= s.parryUntil then
+		return false
+	end
+	s.parryUntil = 0
+	local sk = Config.Skills[3][2]
+	local root = ctx.getRoot(player)
+	local pos = root and root.Position or s.arena.center
+	s.invulnUntil = math.max(s.invulnUntil, os.clock() + 0.6)
+	ctx.push(player, "skill", { id = "parryCounter", pos = pos, radius = sk.radius, color = ctx.color(s) })
+	local hits = {}
+	for _, e in ipairs(ctx.alive(s)) do
+		if (flat(e.root.Position) - flat(pos)).Magnitude <= sk.radius + e.bodyRadius then
+			ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, true, pos, hits, { pierce = true })
+			stun(ctx, player, e, 1)
+		end
+	end
+	ctx.sendHits(player, hits)
+	return true
+end
+
+-- 단검 · 맹독 칼날
+casters.poison = function(ctx, player, _st, s, sk, _root, _origin, _look)
+	s.poisonUntil = os.clock() + sk.duration
+	ctx.push(player, "skill", { id = "poison", duration = sk.duration })
+end
+
+-- 단검 · 연막 순보
+casters.smoke = function(ctx, player, _st, s, sk, root, _origin, _look)
+	s.invulnUntil = math.max(s.invulnUntil, os.clock() + sk.invuln)
+	s.smokeCrit = sk.mult
+	ctx.push(player, "skill", { id = "smoke", pos = root.Position, duration = sk.invuln })
+end
+
+-- 낫 · 사슬 낚아채기
+casters.hook = function(ctx, player, _st, s, sk, _root, origin, look)
+	local victims = {}
+	local hits = {}
+	local idx = 0
+	for _, e in ipairs(ctx.alive(s)) do
+		local off = flat(e.root.Position - origin)
+		if off.Magnitude <= sk.range and off.Magnitude > 0.1 and off.Unit:Dot(look) >= sk.cone then
+			idx += 1
+			table.insert(victims, e.root.Position)
+			if not e.isBoss then
+				local side = look:Cross(Vector3.yAxis) * ((idx % 2 == 0) and 1 or -1) * (idx // 2) * 2
+				local dest = origin + look * 4 + side
+				e.model:PivotTo(CFrame.lookAt(Vector3.new(dest.X, e.root.Position.Y, dest.Z), Vector3.new(origin.X, e.root.Position.Y, origin.Z)))
+			end
+			ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, false, origin, hits)
+			stun(ctx, player, e, sk.stun)
+		end
+	end
+	ctx.push(player, "skill", { id = "hook", origin = origin, victims = victims, color = ctx.color(s) })
+	ctx.sendHits(player, hits)
+end
+
+-- 낫 · 망자의 원 (틱은 battleLoop에서)
+casters.zone = function(ctx, player, _st, s, sk, _root, origin, _look)
+	local pos = Vector3.new(origin.X, s.arena.center.Y, origin.Z)
+	table.insert(s.zones, { pos = pos, radius = sk.radius, untilT = os.clock() + sk.duration, nextTick = 0, mult = sk.tickMult, heal = sk.heal })
+	ctx.push(player, "skill", { id = "zone", pos = pos, radius = sk.radius, duration = sk.duration })
+end
+
+function Skills.tickZones(ctx: any, player: Player, s: any, now: number)
+	for i = #s.zones, 1, -1 do
+		local z = s.zones[i]
+		if now >= z.untilT then
+			table.remove(s.zones, i)
+		elseif now >= z.nextTick then
+			z.nextTick = now + 0.5
+			local hits = {}
+			for _, e in ipairs(ctx.alive(s)) do
+				if (flat(e.root.Position) - flat(z.pos)).Magnitude <= z.radius + e.bodyRadius then
+					ctx.hitEnemy(player, s, e, s.stats.atk * z.mult, false, z.pos, hits)
+				end
+			end
+			ctx.heal(s, s.maxHp * z.heal)
+			ctx.sendHits(player, hits)
+			ctx.pushBattle(player)
+		end
+	end
+end
+
+-- 올라운더 · 만검 강림
+casters.rain = function(ctx, player, _st, s, sk, _root, _origin, _look)
+	local list = ctx.alive(s)
+	if #list == 0 then
+		s.skillReadyAt[1] = 0
+		return
+	end
+	local targets = {}
+	for i = 1, sk.count do
+		table.insert(targets, list[((i - 1) % #list) + 1])
+	end
+	local positions = {}
+	for _, e in ipairs(targets) do
+		table.insert(positions, e.root.Position + Vector3.new((math.random() - 0.5) * 2, 0, (math.random() - 0.5) * 2))
+	end
+	ctx.push(player, "skill", { id = "rain", positions = positions })
+	for i, e in ipairs(targets) do
+		task.delay(0.35 + (i - 1) * 0.07, function()
+			if s.running and ctx.isCurrent(s) and e.alive then
+				local hits = {}
+				ctx.hitEnemy(player, s, e, s.stats.atk * sk.mult, true, positions[i], hits, { pierce = true })
+				ctx.sendHits(player, hits)
+			end
+		end)
+	end
+end
+
+-- 올라운더 · 시공 정지
+casters.timestop = function(ctx, player, _st, s, sk, _root, _origin, _look)
+	local untilT = os.clock() + sk.duration
+	local models = {}
+	for _, e in ipairs(ctx.alive(s)) do
+		e.frozenUntil = untilT
+		table.insert(models, e.model)
+	end
+	ctx.push(player, "skill", { id = "timestop", duration = sk.duration, models = models })
+end
+
+-- slot: 1(E) 또는 2(F)
+function Skills.cast(ctx: any, player: Player, st: any, s: any, slot: number): boolean
+	if not s.running or s.ulting then
+		return false
+	end
+	local list = Config.Skills[s.stats.weapon.typeId]
+	local sk = list and list[slot]
+	if not sk then
+		return false
+	end
+	local now = os.clock()
+	if now < s.skillReadyAt[slot] then
+		return false
+	end
+	local root = ctx.getRoot(player)
+	if not root then
+		return false
+	end
+	local fn = casters[sk.id]
+	if not fn then
+		return false
+	end
+	s.skillReadyAt[slot] = now + sk.cd
+	local origin = root.Position
+	local look = flatUnit(root.CFrame.LookVector)
+	local ok, err = pcall(fn, ctx, player, st, s, sk, root, origin, look)
+	if not ok then
+		warn("[Arena] 스킬 오류:", sk.id, err)
+	end
+	-- 실패해서 대기 시간을 되돌린 경우(대상 없음)는 알리지 않는다
+	if s.skillReadyAt[slot] > now then
+		ctx.push(player, "cooldown", { slot = slot, duration = sk.cd })
+		return true
+	end
+	return false
+end
+
+return Skills
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="9">
+        <Properties>
           <string name="Name">WorldBuilder</string>
           <string name="Source"><![CDATA[-- WorldBuilder (ModuleScript, ArenaServer 아래)
 -- 조명, 로비 광장, 투기장을 만든다. 맵은 전부 코드로 짓는다.
 
 local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
@@ -2475,6 +3785,7 @@ local GOLD = Color3.fromRGB(222, 178, 72)
 local STONE = Color3.fromRGB(92, 82, 76)
 local CRIMSON = Color3.fromRGB(150, 35, 40)
 local FIRE = Color3.fromRGB(255, 150, 60)
+local WOOD_COLOR = Color3.fromRGB(95, 65, 40)
 
 local function part(props: { [string]: any }): Part
 	local p = Instance.new("Part")
@@ -2604,7 +3915,384 @@ end
 local hallRows: { TextLabel } = {}
 local lobbyFolder: Folder? = nil
 
-function World.buildLobby(onGate: (Player) -> ()): CFrame
+-- 클라이언트가 돌리고 흔드는 장식 (각자 화면에서 부드럽게 움직인다)
+local function tagSpin(p: BasePart, axis: string, speed: number)
+	p:SetAttribute("Axis", axis)
+	p:SetAttribute("Speed", speed)
+	CollectionService:AddTag(p, "ArenaSpin")
+end
+
+local function tagBob(p: BasePart, amp: number, speed: number)
+	p:SetAttribute("Amp", amp)
+	p:SetAttribute("BobSpeed", speed)
+	p:SetAttribute("Phase", math.random() * math.pi * 2)
+	CollectionService:AddTag(p, "ArenaBob")
+end
+
+local function prompt(parent: Instance, action: string, object: string, onUse: (Player) -> ())
+	local pp = Instance.new("ProximityPrompt")
+	pp.ActionText = action
+	pp.ObjectText = object
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 14
+	pp.RequiresLineOfSight = false
+	pp.Parent = parent
+	pp.Triggered:Connect(onUse)
+end
+
+-- 톱니바퀴: 가운데 원판(고정) + 둘레 톱니(용접). 원판을 돌리면 톱니도 같이 돈다
+local function gear(parent: Instance, cf: CFrame, diameter: number, color: Color3, speed: number, name: string)
+	local center = part({
+		Name = name,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.7, diameter, diameter),
+		CFrame = cf,
+		Color = color,
+		Material = Enum.Material.Metal,
+		Parent = parent,
+	})
+	part({
+		Name = name .. "Hub",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.9, diameter * 0.3, diameter * 0.3),
+		CFrame = cf,
+		Color = GOLD,
+		Material = Enum.Material.Metal,
+		Anchored = false,
+		Massless = true,
+		CanCollide = false,
+		Parent = parent,
+	})
+	local teeth = 12
+	for i = 0, teeth - 1 do
+		local a = (i / teeth) * math.pi * 2
+		local r = diameter / 2 + 0.3
+		local tooth = part({
+			Name = name .. "Tooth",
+			Size = Vector3.new(0.7, 0.7, 0.9),
+			CFrame = cf * CFrame.Angles(a, 0, 0) * CFrame.new(0, r, 0),
+			Color = color,
+			Material = Enum.Material.Metal,
+			Anchored = false,
+			Massless = true,
+			CanCollide = false,
+			Parent = parent,
+		})
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = center
+		w.Part1 = tooth
+		w.Parent = tooth
+	end
+	for _, child in ipairs(parent:GetChildren()) do
+		if child.Name == name .. "Hub" and child:IsA("BasePart") and not child:FindFirstChildOfClass("WeldConstraint") then
+			local w = Instance.new("WeldConstraint")
+			w.Part0 = center
+			w.Part1 = child
+			w.Parent = child
+		end
+	end
+	tagSpin(center, "X", speed)
+	return center
+end
+
+-- 합성 용광로: 불을 뿜는 화로, 돌아가는 톱니, 빛나는 약물 탱크, 모루
+local function buildForge(lobby: Instance, onUse: (Player) -> ())
+	local model = Instance.new("Model")
+	model.Name = "Forge"
+	model.Parent = lobby
+	local base = Vector3.new(28, 0, 12)
+	local cf = CFrame.lookAt(base, Vector3.new(0, 0, 0))
+	local IRON = Color3.fromRGB(58, 52, 52)
+	local COPPER = Color3.fromRGB(190, 110, 60)
+
+	part({ Name = "Platform", Size = Vector3.new(20, 1, 17), CFrame = cf * CFrame.new(0, 0.5, 0), Color = Color3.fromRGB(60, 55, 52), Material = Enum.Material.Slate, Parent = model })
+	part({ Name = "PlatformTrim", Size = Vector3.new(20.4, 0.3, 17.4), CFrame = cf * CFrame.new(0, 0.9, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = model })
+
+	-- 화로 몸통
+	pillar(model, (cf * CFrame.new(0, 6, 2.5)).Position, 10, 9, IRON, Enum.Material.Metal)
+	for _, y in ipairs({ 2.6, 9.2 }) do
+		pillar(model, (cf * CFrame.new(0, y, 2.5)).Position, 0.6, 9.5, GOLD, Enum.Material.Metal)
+	end
+	local lava = disc(model, (cf * CFrame.new(0, 11.05, 2.5)).Position, 0.2, 7.4, Color3.fromRGB(255, 120, 30), Enum.Material.Neon)
+	lava.Name = "ForgeLava"
+	local lavaFire = Instance.new("Fire")
+	lavaFire.Size = 7
+	lavaFire.Heat = 12
+	lavaFire.Color = Color3.fromRGB(255, 120, 30)
+	lavaFire.SecondaryColor = Color3.fromRGB(255, 220, 90)
+	lavaFire.Parent = lava
+
+	-- 화구: 앞쪽으로 붉게 열린 입
+	local mouth = part({
+		Name = "ForgeMouth",
+		Size = Vector3.new(4.4, 3.4, 0.6),
+		CFrame = cf * CFrame.new(0, 4.2, -2.1),
+		Color = Color3.fromRGB(255, 110, 25),
+		Material = Enum.Material.Neon,
+		Parent = model,
+	})
+	part({ Name = "MouthFrame", Size = Vector3.new(5.4, 0.5, 0.8), CFrame = cf * CFrame.new(0, 6.1, -2.1), Color = GOLD, Material = Enum.Material.Metal, Parent = model })
+	local glow = Instance.new("PointLight")
+	glow.Name = "ForgeGlow"
+	glow.Color = Color3.fromRGB(255, 140, 50)
+	glow.Range = 26
+	glow.Brightness = 3
+	glow.Shadows = true
+	glow.Parent = mouth
+	local embers = Instance.new("ParticleEmitter")
+	embers.Name = "Embers"
+	embers.Rate = 14
+	embers.Lifetime = NumberRange.new(1, 2)
+	embers.Speed = NumberRange.new(3, 6)
+	embers.EmissionDirection = Enum.NormalId.Front
+	embers.SpreadAngle = Vector2.new(35, 35)
+	embers.Acceleration = Vector3.new(0, 4, 0)
+	embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0) })
+	embers.LightEmission = 1
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 220, 100), Color3.fromRGB(255, 80, 30))
+	embers.Parent = mouth
+
+	-- 굴뚝과 연기
+	pillar(model, (cf * CFrame.new(2.2, 14.5, 4)).Position, 7, 2.4, IRON, Enum.Material.Metal)
+	local chimneyTop = pillar(model, (cf * CFrame.new(2.2, 18.1, 4)).Position, 0.4, 2.9, GOLD, Enum.Material.Metal)
+	local smoke = Instance.new("Smoke")
+	smoke.Color = Color3.fromRGB(90, 80, 80)
+	smoke.Opacity = 0.15
+	smoke.RiseVelocity = 6
+	smoke.Size = 3
+	smoke.Parent = chimneyTop
+
+	-- 톱니바퀴 둘
+	gear(model, cf * CFrame.new(5.6, 6.2, 2.5), 6, Color3.fromRGB(150, 120, 70), 0.9, "GearBig")
+	gear(model, cf * CFrame.new(5.6, 10.6, -0.6), 3.6, COPPER, -1.6, "GearSmall")
+
+	-- 빛나는 약물 탱크와 관
+	local tankPos = (cf * CFrame.new(-6.4, 4.6, 2)).Position
+	local liquid = pillar(model, tankPos - Vector3.new(0, 0.6, 0), 5.4, 2.8, Color3.fromRGB(170, 90, 255), Enum.Material.Neon)
+	liquid.Name = "ForgeLiquid"
+	local glass = pillar(model, tankPos, 7.2, 3.4, Color3.fromRGB(200, 230, 255), Enum.Material.Glass)
+	glass.Transparency = 0.55
+	glass.Name = "ForgeTank"
+	pillar(model, tankPos + Vector3.new(0, 3.8, 0), 0.5, 3.8, GOLD, Enum.Material.Metal)
+	pillar(model, tankPos - Vector3.new(0, 3.8, 0), 0.5, 3.8, GOLD, Enum.Material.Metal)
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Rate = 6
+	bubbles.Lifetime = NumberRange.new(1.2, 2)
+	bubbles.Speed = NumberRange.new(1.5, 2.5)
+	bubbles.EmissionDirection = Enum.NormalId.Top
+	bubbles.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0.1) })
+	bubbles.LightEmission = 0.8
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 200, 255))
+	bubbles.Parent = liquid
+	local tankLight = Instance.new("PointLight")
+	tankLight.Color = Color3.fromRGB(170, 90, 255)
+	tankLight.Range = 12
+	tankLight.Brightness = 1.5
+	tankLight.Parent = liquid
+	part({
+		Name = "Pipe",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3.4, 0.8, 0.8),
+		CFrame = cf * CFrame.new(-3.4, 7.6, 2),
+		Color = COPPER,
+		Material = Enum.Material.Metal,
+		Parent = model,
+	})
+
+	-- 모루와 바닥 마법진
+	local anvilPos = cf * CFrame.new(0, 0, -6.2)
+	part({ Name = "AnvilBase", Size = Vector3.new(1.6, 1.8, 1.6), CFrame = anvilPos * CFrame.new(0, 1.9, 0), Color = IRON, Material = Enum.Material.Metal, Parent = model })
+	local anvil = part({ Name = "ForgeAnvil", Size = Vector3.new(3.8, 0.9, 1.7), CFrame = anvilPos * CFrame.new(0, 3.2, 0), Color = Color3.fromRGB(75, 75, 82), Material = Enum.Material.Metal, Parent = model })
+	part({ Name = "AnvilHorn", Size = Vector3.new(1.2, 0.5, 0.5), CFrame = anvilPos * CFrame.new(2.4, 3.35, 0), Color = Color3.fromRGB(75, 75, 82), Material = Enum.Material.Metal, Parent = model })
+	local ring = disc(model, (anvilPos * CFrame.new(0, 1.05, 0)).Position, 0.06, 7, GOLD, Enum.Material.Neon)
+	ring.Name = "ForgeRing"
+	ring.Transparency = 0.4
+	ring.CanCollide = false
+	prompt(anvil, "합성하기", "합성 용광로", onUse)
+
+	-- 간판
+	local sign = part({ Name = "ForgeSign", Size = Vector3.new(9, 1.8, 0.3), CFrame = cf * CFrame.new(0, 8.2, -2.4), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
+	local gui = surfaceText(sign, Enum.NormalId.Front, 40)
+	label(gui, "🔨 합성 용광로", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 200, 90), Enum.Font.GothamBlack)
+end
+
+-- 무기 전시대: 구간 1~6의 무기가 받침대 위에서 떠서 돈다
+local function buildShowcase(lobby: Instance)
+	local model = Instance.new("Model")
+	model.Name = "Showcase"
+	model.Parent = lobby
+	local types = { 1, 2, 3, 4, 5, 0 }
+	for i = 1, 6 do
+		local section = Config.Sections[i]
+		local a = math.rad(62 + (i - 1) * 11.2)
+		local pos = Vector3.new(math.cos(a) * 31, 0, math.sin(a) * 31)
+		local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
+		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.8, GOLD, Enum.Material.Metal)
+		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.6, 3.4, 2.6), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
+		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 3, section.color, Enum.Material.Neon)
+		local light = Instance.new("PointLight")
+		light.Color = section.color
+		light.Range = 10
+		light.Brightness = 1.5
+		light.Parent = top
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Rate = 3 + i
+		sparkle.Lifetime = NumberRange.new(1, 2)
+		sparkle.Speed = NumberRange.new(1, 2)
+		sparkle.EmissionDirection = Enum.NormalId.Right
+		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+		sparkle.LightEmission = 1
+		sparkle.Color = section.rainbow and WeaponBuilder.RAINBOW or ColorSequence.new(section.color)
+		sparkle.Parent = top
+
+		local anchor = part({
+			Name = "ShowAnchor",
+			Size = Vector3.new(0.4, 0.4, 0.4),
+			CFrame = CFrame.new(pos + Vector3.new(0, 6.8, 0)),
+			Transparency = 1,
+			CanCollide = false,
+			Parent = model,
+		})
+		WeaponBuilder.build(model, anchor, types[i], {
+			accent = section.rainbow and Color3.fromRGB(255, 235, 160) or section.color,
+			section = i,
+			rarity = 5,
+			scale = 0.85,
+		}, CFrame.new(anchor.Position - Vector3.new(0, 2.6, 0)))
+		tagSpin(anchor, "Y", 0.7)
+		tagBob(anchor, 0.35, 1.4)
+
+		local gui = surfaceText(column, Enum.NormalId.Front, 50)
+		label(gui, string.format("%d구간", i), UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.3), section.color, Enum.Font.GothamBlack)
+		label(gui, section.name, UDim2.fromScale(0.05, 0.42), UDim2.fromScale(0.9, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
+		label(gui, string.format("%d~%d등급", section.from, section.to), UDim2.fromScale(0.05, 0.68), UDim2.fromScale(0.9, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
+	end
+end
+
+-- 훈련장: 허수아비 세 개와 무기 걸이
+local function buildTrainingYard(lobby: Instance, onUse: (Player) -> ())
+	local model = Instance.new("Model")
+	model.Name = "TrainingYard"
+	model.Parent = lobby
+	local center = Vector3.new(-28, 0, 12)
+	local cf = CFrame.lookAt(center, Vector3.new(0, 0, 0))
+	disc(model, center + Vector3.new(0, 0.48, 0), 0.1, 18, Color3.fromRGB(205, 175, 120), Enum.Material.Sand)
+	disc(model, center + Vector3.new(0, 0.46, 0), 0.1, 19, Color3.fromRGB(120, 85, 50), Enum.Material.Wood)
+	local STRAW = Color3.fromRGB(214, 180, 105)
+	local mainDummy: BasePart? = nil
+	for i, x in ipairs({ -5, 0, 5 }) do
+		local d = cf * CFrame.new(x, 0, (i == 2) and -1.5 or 0)
+		pillar(model, (d * CFrame.new(0, 3.3, 0)).Position, 6, 0.6, WOOD_COLOR, Enum.Material.Wood)
+		local body = part({ Name = "DummyBody", Size = Vector3.new(2.2, 2.6, 1.3), CFrame = d * CFrame.new(0, 4.3, 0), Color = STRAW, Material = Enum.Material.Fabric, Parent = model })
+		part({ Name = "DummyHead", Shape = Enum.PartType.Ball, Size = Vector3.new(1.7, 1.7, 1.7), CFrame = d * CFrame.new(0, 6.4, 0), Color = STRAW, Material = Enum.Material.Fabric, Parent = model })
+		part({ Name = "DummyArms", Size = Vector3.new(4.4, 0.5, 0.5), CFrame = d * CFrame.new(0, 5, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+		part({
+			Name = "DummyTarget",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.1, 1.2, 1.2),
+			CFrame = d * CFrame.new(0, 4.5, -0.7) * CFrame.Angles(0, math.rad(90), 0),
+			Color = Color3.fromRGB(220, 50, 40),
+			Material = Enum.Material.Neon,
+			Parent = model,
+		})
+		for _, y in ipairs({ 3.5, 5.1 }) do
+			part({ Name = "Rope", Size = Vector3.new(2.3, 0.15, 1.4), CFrame = d * CFrame.new(0, y, 0), Color = Color3.fromRGB(120, 85, 50), Material = Enum.Material.Fabric, Parent = model })
+		end
+		if i == 2 then
+			mainDummy = body
+		end
+	end
+	-- 무기 걸이
+	local rack = cf * CFrame.new(0, 0, 6.5)
+	for _, x in ipairs({ -3.5, 3.5 }) do
+		part({ Name = "RackPost", Size = Vector3.new(0.5, 4, 0.5), CFrame = rack * CFrame.new(x, 2.5, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	end
+	local bar = part({ Name = "RackBar", Size = Vector3.new(7.6, 0.4, 0.4), CFrame = rack * CFrame.new(0, 4.3, 0), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	for i, t in ipairs({ 1, 3, 5 }) do
+		local holder = part({
+			Name = "RackHook",
+			Size = Vector3.new(0.3, 0.3, 0.3),
+			CFrame = rack * CFrame.new(-2.4 + (i - 1) * 2.4, 4.3, -0.4),
+			Transparency = 1,
+			CanCollide = false,
+			Parent = model,
+		})
+		WeaponBuilder.build(model, holder, t, { accent = Color3.fromRGB(190, 190, 190), section = 1, rarity = 1, scale = 0.6 }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
+	end
+	local _ = bar
+	local sign = part({ Name = "TrainSign", Size = Vector3.new(7, 1.6, 0.3), CFrame = cf * CFrame.new(0, 8.6, 1), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
+	part({ Name = "SignPost", Size = Vector3.new(0.4, 8.4, 0.4), CFrame = cf * CFrame.new(0, 4.2, 1.3), Color = WOOD_COLOR, Material = Enum.Material.Wood, Parent = model })
+	local gui = surfaceText(sign, Enum.NormalId.Front, 40)
+	label(gui, "💪 훈련장", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 220, 140), Enum.Font.GothamBlack)
+	if mainDummy then
+		prompt(mainDummy, "훈련하기", "훈련장", onUse)
+	end
+end
+
+-- 반딧불과 떠다니는 등불
+local function buildAmbient(lobby: Instance)
+	local area = part({
+		Name = "Fireflies",
+		Size = Vector3.new(90, 8, 90),
+		Position = Vector3.new(0, 7, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = lobby,
+	})
+	local flies = Instance.new("ParticleEmitter")
+	flies.Rate = 22
+	flies.Lifetime = NumberRange.new(4, 7)
+	flies.Speed = NumberRange.new(0.2, 0.8)
+	flies.SpreadAngle = Vector2.new(180, 180)
+	flies.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.2, 0.22),
+		NumberSequenceKeypoint.new(0.8, 0.22),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	flies.LightEmission = 1
+	flies.Color = ColorSequence.new(Color3.fromRGB(255, 225, 140))
+	flies.Parent = area
+
+	for i = 1, 10 do
+		local a = (i / 10) * math.pi * 2 + 0.3
+		local r = 22 + (i % 3) * 6
+		local lantern = part({
+			Name = "Lantern",
+			Size = Vector3.new(1.3, 1.7, 1.3),
+			Position = Vector3.new(math.cos(a) * r, 15 + (i % 4) * 2, math.sin(a) * r),
+			Color = Color3.fromRGB(255, 190, 110),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			Parent = lobby,
+		})
+		local cap = part({
+			Name = "LanternCap",
+			Size = Vector3.new(1.6, 0.3, 1.6),
+			CFrame = lantern.CFrame * CFrame.new(0, 1, 0),
+			Color = Color3.fromRGB(120, 40, 35),
+			Material = Enum.Material.Fabric,
+			Anchored = false,
+			Massless = true,
+			CanCollide = false,
+			Parent = lobby,
+		})
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = lantern
+		w.Part1 = cap
+		w.Parent = cap
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 180, 100)
+		light.Range = 12
+		light.Brightness = 1.2
+		light.Parent = lantern
+		tagBob(lantern, 0.8, 0.6 + (i % 3) * 0.2)
+	end
+end
+
+function World.buildLobby(handlers: { [string]: (Player) -> () }): CFrame
 	local folder = Instance.new("Folder")
 	folder.Name = "Lobby"
 	folder.Parent = workspace
@@ -2798,14 +4486,14 @@ function World.buildLobby(onGate: (Player) -> ()): CFrame
 	embers.LightEmission = 1
 	embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 80, 40))
 	embers.Parent = portal
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "투기장 입장"
-	prompt.ObjectText = Config.GAME_TITLE
-	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 20
-	prompt.RequiresLineOfSight = false
-	prompt.Parent = portal
-	prompt.Triggered:Connect(onGate)
+	local gatePrompt = Instance.new("ProximityPrompt")
+	gatePrompt.ActionText = "투기장 입장"
+	gatePrompt.ObjectText = Config.GAME_TITLE
+	gatePrompt.HoldDuration = 0
+	gatePrompt.MaxActivationDistance = 20
+	gatePrompt.RequiresLineOfSight = false
+	gatePrompt.Parent = portal
+	gatePrompt.Triggered:Connect(handlers.gate)
 
 	-- 광장에서 문까지 붉은 융단
 	part({
@@ -2878,6 +4566,11 @@ function World.buildLobby(onGate: (Player) -> ()): CFrame
 	local plaque = surfaceText(body, Enum.NormalId.Right, 40)
 	label(plaque, "CHAMPION", UDim2.new(0, 0, 0.2, 0), UDim2.new(1, 0, 0.3, 0), GOLD, Enum.Font.GothamBlack)
 	label(plaque, "100등급의 끝에 선 자", UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.2, 0), Color3.fromRGB(80, 60, 40), Enum.Font.GothamBold)
+
+	buildForge(folder, handlers.forge)
+	buildShowcase(folder)
+	buildTrainingYard(folder, handlers.train)
+	buildAmbient(folder)
 
 	if spawn then
 		return CFrame.new(spawn.Position + Vector3.new(0, 4, 0))
@@ -3087,15 +4780,15 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="7">
+  <Item class="StarterPlayer" referent="10">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="8">
+    <Item class="StarterPlayerScripts" referent="11">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="9">
+      <Item class="LocalScript" referent="12">
         <Properties>
           <string name="Name">ArenaClient</string>
           <string name="Source"><![CDATA[-- ArenaClient (LocalScript, StarterPlayer > StarterPlayerScripts)
@@ -3107,6 +4800,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
@@ -3121,6 +4815,11 @@ local playerGui = player:WaitForChild("PlayerGui")
 local state: any = nil
 local myStats: any = nil
 local battle: any = { active = false }
+
+-- 아래쪽에서 정의하는 도움 함수 (서버 메시지 처리에서 쓴다)
+local attachMarkRune: (Model?, number, Color3) -> ()
+local showStun: (Model?, number) -> ()
+local pushSelf: (Vector3, number, number) -> ()
 
 ------------------------------------------------------------------------
 -- UI 도구
@@ -4029,6 +5728,27 @@ local helpScroll = new("ScrollingFrame", {
 	CanvasSize = UDim2.new(),
 	Parent = helpPage,
 })
+local skillLines = {}
+for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+	local wt = Config.weaponType(id)
+	local list = Config.Skills[id]
+	table.insert(skillLines, string.format("· %s  [E] %s %s: %s", wt.name, list[1].icon, list[1].name, list[1].desc))
+	table.insert(skillLines, string.format("        [F] %s %s: %s", list[2].icon, list[2].name, list[2].desc))
+end
+local enemyLines = {}
+for _, id in ipairs(Config.ENEMY_ORDER) do
+	local e = Config.EnemyTypes[id]
+	local how = ({
+		grunt = "다가와서 벤다",
+		archer = "거리를 벌리고 빨간 선으로 조준한 뒤 화살을 쏜다. 선에서 비켜서세요",
+		shield = "앞에서 오는 공격을 70% 막는다. 뒤나 옆을 노리거나 기절시키세요",
+		brute = "빨간 길을 그린 뒤 그 길로 돌진한다. 옆으로 피하세요",
+		bomber = "달려와 붙으면 1초 뒤 터진다. 원 밖으로 대시!",
+		shaman = "멀리서 발밑에 불길 원을 띄운다. 원이 다 차기 전에 나가세요",
+		assassin = "주기적으로 내 등 뒤로 순간이동해 찌른다",
+	})[id] or ""
+	table.insert(enemyLines, string.format("· %s (%d스테이지부터): %s", e.name, e.unlock, how))
+end
 local ultLines = {}
 for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
 	local wt = Config.weaponType(id)
@@ -4042,13 +5762,22 @@ text({
 	TextYAlignment = Enum.TextYAlignment.Top,
 	Text = table.concat({
 		"⚔ 싸우는 법",
-		"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, R로 필살기",
-		"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 💥 필살기",
+		"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, E·F로 무기 스킬, R로 필살기",
+		"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 스킬 버튼 둘, 💥 필살기",
 		"· 공격하면 가장 가까운 적에게 알아서 다가가요",
 		"· 대시하는 순간에는 잠깐 무적이에요. 보스의 빨간 원을 피하세요!",
 		"",
+		"🌀 무기 스킬 (E, F)",
+		table.concat(skillLines, "\n"),
+		"",
 		"💥 필살기 (때릴수록 게이지가 차요)",
 		table.concat(ultLines, "\n"),
+		"",
+		"👹 적",
+		table.concat(enemyLines, "\n"),
+		"· 바닥의 빨간 경고 안에서 밝은 원이 차오르면 곧 공격이 들어와요",
+		"· 웨이브를 깰 때마다 체력 30%를 회복해요",
+		"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환 중 몇 가지를 섞어 써요",
 		"",
 		"🎯 치명타",
 		"· 모든 무기 5% 확률로 1.8배, 단검은 30% 확률로 2.5배",
@@ -4073,7 +5802,12 @@ text({
 		"",
 		"🔁 자동 반복",
 		"· 이긴 적 있는 스테이지 + 전투력이 권장의 1.5배 이상이면 자동으로 계속 싸워요",
-		"· 자동 반복 중에는 게이지가 차면 필살기도 알아서 써요",
+		"· 자동 반복 중에는 스킬과 필살기도 알아서 써요",
+		"",
+		"🏛 로비",
+		"· 🔨 합성 용광로: 모루 앞에서 합성 창을 열어요. 누가 합성하면 용광로가 불을 뿜어요",
+		"· 💪 훈련장: 허수아비 앞에서 훈련 창을 열어요",
+		"· ⚔ 무기 전시대: 구간마다 무기가 얼마나 화려해지는지 보여 줘요",
 	}, "\n"),
 	Parent = helpScroll,
 })
@@ -4153,7 +5887,7 @@ end)
 local actionPad = new("Frame", {
 	AnchorPoint = Vector2.new(1, 1),
 	Position = UDim2.new(1, -20, 1, -28),
-	Size = UDim2.new(0, 230, 0, 210),
+	Size = UDim2.new(0, 300, 0, 230),
 	BackgroundTransparency = 1,
 	Visible = false,
 	Parent = gui,
@@ -4184,19 +5918,111 @@ local attackBtn = roundButton({
 }, C.red, C.gold)
 local dashBtn = roundButton({
 	AnchorPoint = Vector2.new(1, 1),
-	Position = UDim2.new(1, -134, 1, -6),
-	Size = UDim2.new(0, 76, 0, 76),
+	Position = UDim2.new(1, -132, 1, 0),
+	Size = UDim2.new(0, 72, 0, 72),
 	Text = "💨",
 	TextSize = 32,
 }, C.blue, C.text)
 local ultBtn = roundButton({
 	AnchorPoint = Vector2.new(1, 1),
 	Position = UDim2.new(1, -24, 1, -134),
-	Size = UDim2.new(0, 76, 0, 76),
+	Size = UDim2.new(0, 80, 0, 80),
 	Text = "💥",
 	TextSize = 34,
 }, C.goldDeep, C.gold)
 local ultBtnStroke = ultBtn:FindFirstChildOfClass("UIStroke") :: UIStroke
+
+-- 무기 스킬 버튼 (E, F). 재사용 대기 중에는 어두운 막이 내려온다
+type SkillButton = { button: TextButton, cover: Frame, timer: TextLabel, name: TextLabel, readyAt: number, duration: number }
+local skillButtons: { SkillButton } = {}
+local SKILL_POS = { UDim2.new(1, -150, 1, -84), UDim2.new(1, -212, 1, 0) }
+local SKILL_COLOR = { Color3.fromRGB(130, 70, 190), Color3.fromRGB(30, 140, 130) }
+for slot = 1, 2 do
+	local b = roundButton({
+		AnchorPoint = Vector2.new(1, 1),
+		Position = SKILL_POS[slot],
+		Size = UDim2.new(0, 72, 0, 72),
+		Text = "",
+		TextSize = 30,
+	}, SKILL_COLOR[slot], C.text)
+	b.ClipsDescendants = true
+	local cover = new("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.fromScale(1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.35,
+		BorderSizePixel = 0,
+		ZIndex = 3,
+		Parent = b,
+	})
+	local timer = text({
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 24,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.2,
+		ZIndex = 4,
+		Parent = b,
+	})
+	text({
+		Position = UDim2.new(0, 6, 0, 2),
+		Size = UDim2.new(0, 20, 0, 18),
+		TextSize = 13,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = C.gold,
+		TextStrokeTransparency = 0.3,
+		Text = Config.SKILL_KEYS[slot],
+		ZIndex = 5,
+		Parent = b,
+	})
+	-- 이름표: E는 버튼 위, F는 버튼 아래
+	local pos = SKILL_POS[slot]
+	local nameLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(1, pos.X.Offset - 36, 1, slot == 1 and pos.Y.Offset - 88 or pos.Y.Offset + 2),
+		Size = UDim2.new(0, 90, 0, 16),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 11,
+		TextStrokeTransparency = 0.3,
+		Parent = actionPad,
+	})
+	skillButtons[slot] = { button = b, cover = cover, timer = timer, name = nameLabel, readyAt = 0, duration = 1 }
+	b.Activated:Connect(function()
+		if battle.active then
+			Request:FireServer("skill", slot)
+		end
+	end)
+end
+
+local shownSkillType = -1
+local function setSkillIcons(typeId: number)
+	if typeId == shownSkillType then
+		return
+	end
+	shownSkillType = typeId
+	local list = Config.Skills[typeId] or Config.Skills[1]
+	for slot, sb in ipairs(skillButtons) do
+		local sk = list[slot]
+		sb.button.Text = sk.icon
+		sb.name.Text = sk.name
+		sb.readyAt = 0
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	local now = os.clock()
+	for _, sb in ipairs(skillButtons) do
+		local rem = sb.readyAt - now
+		if rem > 0 then
+			sb.cover.Size = UDim2.fromScale(1, math.clamp(rem / sb.duration, 0, 1))
+			sb.timer.Text = tostring(math.ceil(rem))
+		elseif sb.timer.Text ~= "" then
+			sb.cover.Size = UDim2.fromScale(1, 0)
+			sb.timer.Text = ""
+		end
+	end
+end)
 
 local controlHint = text({
 	AnchorPoint = Vector2.new(0.5, 1),
@@ -4206,7 +6032,7 @@ local controlHint = text({
 	TextColor3 = C.dim,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextStrokeTransparency = 0.5,
-	Text = "클릭(누르고 있기): 공격   ·   Q / Shift: 대시 (잠깐 무적)   ·   R: 필살기",
+	Text = "클릭: 공격   ·   Q / Shift: 대시   ·   E / F: 무기 스킬   ·   R: 필살기",
 	Visible = false,
 	Parent = gui,
 })
@@ -4241,6 +6067,191 @@ local function showUltBanner(name: string, color: Color3)
 		if ultBannerToken == my then
 			TweenService:Create(ultBanner, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		end
+	end)
+end
+
+-- 큰 배너: 웨이브, 보스 등장, 전투 시작
+local bigBanner = text({
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(0.5, 0, 0.38, 0),
+	Size = UDim2.new(0, 800, 0, 90),
+	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 64,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0,
+	Visible = false,
+	ZIndex = 14,
+	Parent = gui,
+})
+local bigSub = text({
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 1, 0),
+	Size = UDim2.new(1, 0, 0, 30),
+	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 24,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0.2,
+	ZIndex = 14,
+	Parent = bigBanner,
+})
+local bigScale = new("UIScale", { Parent = bigBanner })
+local bigToken = 0
+local function showBigBanner(title: string, sub: string, color: Color3, hold: number?)
+	bigToken += 1
+	local my = bigToken
+	bigBanner.Text = title
+	bigBanner.TextColor3 = lighten(color, 0.25)
+	bigBanner.TextStrokeColor3 = darken(color, 0.75)
+	bigBanner.TextTransparency = 0
+	bigBanner.TextStrokeTransparency = 0
+	bigSub.Text = sub
+	bigSub.TextColor3 = C.text
+	bigSub.TextTransparency = 0
+	bigBanner.Visible = true
+	bigScale.Scale = uiScaleValue * 2.2
+	TweenService:Create(bigScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+	task.delay(hold or 1.3, function()
+		if bigToken == my then
+			local info = TweenInfo.new(0.35)
+			TweenService:Create(bigBanner, info, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			TweenService:Create(bigSub, info, { TextTransparency = 1 }):Play()
+		end
+	end)
+end
+
+-- 화면 가장자리 붉은 테두리: 맞을 때 번쩍, 체력이 낮으면 숨 쉬듯
+local vignette = new("Frame", {
+	Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1,
+	ZIndex = 1,
+	Parent = gui,
+})
+local vignetteEdges: { Frame } = {}
+for i, spec in ipairs({
+	{ UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.18, 0), 90 },
+	{ UDim2.new(0, 0, 0.82, 0), UDim2.new(1, 0, 0.18, 0), -90 },
+	{ UDim2.new(0, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 0 },
+	{ UDim2.new(0.88, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 180 },
+}) do
+	local edge = new("Frame", {
+		Position = spec[1],
+		Size = spec[2],
+		BackgroundColor3 = Color3.fromRGB(200, 0, 0),
+		BorderSizePixel = 0,
+		BackgroundTransparency = 1,
+		Parent = vignette,
+	})
+	new("UIGradient", {
+		Rotation = spec[3],
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }),
+		Parent = edge,
+	})
+	vignetteEdges[i] = edge
+end
+local hurtFlash = 0
+local lowHp = false
+local function setVignette(alpha: number, color: Color3)
+	for _, e in ipairs(vignetteEdges) do
+		e.BackgroundTransparency = 1 - alpha
+		e.BackgroundColor3 = color
+	end
+end
+RunService.RenderStepped:Connect(function(dt)
+	hurtFlash = math.max(0, hurtFlash - dt * 2.5)
+	local pulse = lowHp and (0.25 + 0.2 * math.sin(os.clock() * 6)) or 0
+	local a = math.max(hurtFlash, pulse)
+	setVignette(math.clamp(a, 0, 0.85), Color3.fromRGB(200, 0, 0))
+end)
+
+-- 콤보: 1.6초 안에 계속 때리면 숫자가 커지고 색이 바뀐다
+local comboLabel = text({
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -30, 0.42, 0),
+	Size = UDim2.new(0, 300, 0, 70),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	TextSize = 54,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0,
+	Visible = false,
+	ZIndex = 12,
+	Parent = gui,
+})
+local comboSub = text({
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, 0, 1, -8),
+	Size = UDim2.new(1, 0, 0, 24),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	TextSize = 20,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0.2,
+	Text = "COMBO",
+	ZIndex = 12,
+	Parent = comboLabel,
+})
+local comboScale = new("UIScale", { Parent = comboLabel })
+local combo = 0
+local comboAt = 0
+local COMBO_COLORS = {
+	{ 0, Color3.fromRGB(255, 250, 235) },
+	{ 10, Color3.fromRGB(255, 220, 90) },
+	{ 25, Color3.fromRGB(255, 140, 40) },
+	{ 50, Color3.fromRGB(255, 60, 60) },
+	{ 100, Color3.fromRGB(200, 90, 255) },
+}
+local function addCombo(n: number)
+	local now = os.clock()
+	if now - comboAt > 1.6 then
+		combo = 0
+	end
+	combo += n
+	comboAt = now
+	local color = COMBO_COLORS[1][2]
+	for _, c in ipairs(COMBO_COLORS) do
+		if combo >= c[1] then
+			color = c[2]
+		end
+	end
+	comboLabel.Text = tostring(combo)
+	comboLabel.TextColor3 = color
+	comboLabel.TextStrokeColor3 = darken(color, 0.8)
+	comboSub.TextColor3 = color
+	comboLabel.Visible = combo >= 3
+	comboScale.Scale = uiScaleValue * (1.35 + math.min(combo, 100) / 250)
+	TweenService:Create(comboScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+end
+RunService.Heartbeat:Connect(function()
+	if comboLabel.Visible and os.clock() - comboAt > 1.6 then
+		comboLabel.Visible = false
+		combo = 0
+	end
+end)
+
+-- 등급 상승: 화면 가득 축포
+local function celebrate(stage: number)
+	local section = Config.getSection(stage)
+	local color = section.color
+	showBigBanner("RANK UP!", string.format("[%d] %s", stage, Config.getGrade(stage).en), color, 1.8)
+	for i = 1, 70 do
+		local piece = new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(math.random(), 0, -0.05, 0),
+			Size = UDim2.new(0, math.random(8, 16), 0, math.random(12, 22)),
+			BackgroundColor3 = (i % 3 == 0) and C.gold or (i % 3 == 1 and color or Color3.new(1, 1, 1)),
+			BorderSizePixel = 0,
+			Rotation = math.random(0, 360),
+			ZIndex = 13,
+			Parent = gui,
+		})
+		local dur = 1.6 + math.random() * 1.4
+		TweenService:Create(piece, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(piece.Position.X.Scale + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
+			Rotation = piece.Rotation + math.random(-540, 540),
+		}):Play()
+		Debris:AddItem(piece, dur)
+	end
+	Effects.sound("ping", 0.8, 0.9)
+	task.delay(0.15, function()
+		Effects.sound("ping", 0.8, 1.2)
 	end)
 end
 
@@ -4294,6 +6305,9 @@ local function showResult(data: any)
 		line("VICTORY", nil, 46, ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(230, 140, 30)))
 		line("+ 💰 " .. fmt(data.coins), C.gold, 20)
 		if data.firstClear then
+			task.delay(0.4, function()
+				celebrate(data.stage)
+			end)
 			local g = Config.getGrade(data.stage)
 			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), Config.getSection(data.stage).color, 19)
 		end
@@ -4425,6 +6439,9 @@ end
 
 local function refreshBattle()
 	local active = battle.active == true
+	if not active then
+		lowHp = false
+	end
 	hud.Visible = active
 	hudButtons.Visible = active
 	actionPad.Visible = active
@@ -4456,7 +6473,11 @@ local function refreshBattle()
 	gaugeText.Text = ready and "💥 필살기 준비! (R)" or string.format("필살기 %d%%", math.floor(gauge * 100))
 	ultBtn.TextTransparency = ready and 0 or 0.55
 	ultBtnStroke.Thickness = ready and 5 or 3
-	enemyText.Text = string.format("남은 적  %d / %d", battle.left, battle.total)
+	enemyText.Text = string.format("WAVE %d / %d   ·   남은 적  %d", battle.wave or 1, battle.waveTotal or 1, battle.left)
+	lowHp = ratio < 0.3
+	if battle.typeId ~= nil then
+		setSkillIcons(battle.typeId)
+	end
 	autoBtn.Text = battle.auto and "🔁 자동 ON" or "🔁 자동 OFF"
 	setButtonColor(autoBtn, battle.auto and C.green or C.panel3)
 end
@@ -4600,6 +6621,14 @@ local function dash()
 		Parent = root,
 	})
 	Debris:AddItem(lv, 0.18)
+	local char = player.Character
+	if char then
+		for i = 0, 2 do
+			task.delay(i * 0.05, function()
+				Effects.afterimage(char, Color3.fromRGB(150, 200, 255))
+			end)
+		end
+	end
 	Request:FireServer("dash")
 	Effects.burst(root.Position - Vector3.new(0, 2, 0), Color3.fromRGB(220, 230, 255), 10, 12, 0.7)
 	dashBtn.TextTransparency = 0.6
@@ -4638,6 +6667,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		dash()
 	elseif input.KeyCode == Enum.KeyCode.R then
 		ultimate()
+	elseif input.KeyCode == Enum.KeyCode.E and battle.active then
+		Request:FireServer("skill", 1)
+	elseif input.KeyCode == Enum.KeyCode.F and battle.active then
+		Request:FireServer("skill", 2)
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -4668,6 +6701,17 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 		refreshBattle()
 	elseif kind == "hits" then
 		Effects.hits(data)
+		local landed = 0
+		for _, h in ipairs(data) do
+			if h.kind == "hurt" then
+				hurtFlash = 0.55
+			elseif h.kind ~= "poison" then
+				landed += 1
+			end
+		end
+		if landed > 0 then
+			addCombo(landed)
+		end
 	elseif kind == "swing" then
 		local _, hum = getChar()
 		if hum then
@@ -4687,6 +6731,87 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 		openPage(data, true)
 	elseif kind == "equipped" then
 		Effects.sound("unsheath", 0.6, 1)
+	elseif kind == "skill" then
+		if data.id == "mark" then
+			attachMarkRune(data.model, data.stacks, data.color)
+		elseif data.id == "charge" or data.id == "phantom" then
+			local root = getChar()
+			if root then
+				local dir = (data.target - data.origin)
+				local dist = Vector3.new(dir.X, 0, dir.Z).Magnitude
+				if dist > 0.5 then
+					pushSelf(Vector3.new(dir.X, 0, dir.Z).Unit, dist / 0.2, 0.2)
+				end
+			end
+			Effects.skill(data)
+		else
+			Effects.skill(data)
+		end
+	elseif kind == "cooldown" then
+		local sb = skillButtons[data.slot]
+		if sb then
+			sb.readyAt = os.clock() + data.duration
+			sb.duration = data.duration
+		end
+	elseif kind == "stun" then
+		showStun(data.model, data.duration)
+	elseif kind == "proj" then
+		Effects.projectile(data)
+	elseif kind == "knock" then
+		pushSelf(data.dir, data.power, 0.15)
+		Effects.shake(0.7, 0.2)
+	elseif kind == "dust" then
+		Effects.dust(data)
+	elseif kind == "explode" then
+		Effects.explode(data)
+	elseif kind == "flame" then
+		Effects.flame(data)
+	elseif kind == "meteor" then
+		Effects.meteor(data)
+	elseif kind == "spin" then
+		Effects.spinFx(data)
+	elseif kind == "summon" then
+		Effects.summonFx(data)
+	elseif kind == "blink" then
+		Effects.blink(data)
+	elseif kind == "kill" then
+		Effects.kill(data)
+	elseif kind == "battleStart" then
+		Effects.battleStart(data)
+		showBigBanner(string.format("STAGE %d", data.stage), Config.getGrade(data.stage).en, data.color, 1.1)
+		for _, sb in ipairs(skillButtons) do
+			sb.readyAt = 0
+		end
+		combo = 0
+	elseif kind == "wave" then
+		if data.boss then
+			-- 보스 웨이브는 따로 크게 알린다
+		elseif data.index > 1 then
+			showBigBanner(string.format("WAVE %d", data.index), string.format("%d / %d", data.index, data.total), C.gold, 1.0)
+			Effects.sound("unsheath", 0.6, 0.8)
+		end
+	elseif kind == "waveClear" then
+		Effects.sound("ping", 0.5, 1.0)
+		local root = getChar()
+		if root then
+			Effects.burst(root.Position, C.green, 30, 14, 0.6)
+			Effects.flash(root.Position, C.green, 8, 0.35)
+		end
+		toast(string.format("✨ 웨이브 %d 돌파! 체력 %d%% 회복", data.index, math.floor((data.heal or 0) * 100)))
+	elseif kind == "boss" then
+		showBigBanner("👑 BOSS", string.format("%s · %s", data.name, data.kind), C.red, 1.8)
+		hurtFlash = 0.8
+		Effects.shake(1.2, 0.6)
+		Effects.sound("lunge", 1, 0.4)
+	elseif kind == "forge" then
+		Effects.forge(data)
+	elseif kind == "trained" then
+		local root = getChar()
+		if root then
+			Effects.burst(root.Position, data == "atk" and C.red or C.green, 30, 18, 0.6)
+			Effects.flash(root.Position, data == "atk" and C.red or C.green, 7, 0.3)
+		end
+		Effects.sound("ping", 0.5, 1.3)
 	elseif kind == "merged" then
 		if data.to then
 			showMerge(data.to, data.count or 1)
@@ -4696,10 +6821,229 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 	end
 end)
 
+------------------------------------------------------------------------
+-- 적 머리 위 표시: 표식, 기절, 독
+------------------------------------------------------------------------
+function attachMarkRune(target: Model?, maxStacks: number, color: Color3)
+	if not target or not target.Parent then
+		return
+	end
+	local model = target :: Model
+	local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+	if not head then
+		return
+	end
+	local old = head:FindFirstChild("MarkRune")
+	if old then
+		old:Destroy()
+	end
+	local bb = new("BillboardGui", {
+		Name = "MarkRune",
+		Size = UDim2.new(0, 90, 0, 90),
+		StudsOffset = Vector3.new(0, 4.5, 0),
+		AlwaysOnTop = true,
+		LightInfluence = 0,
+		Parent = head,
+	})
+	local rune = text({
+		Size = UDim2.fromScale(1, 0.7),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 46,
+		Text = "🎯",
+		Parent = bb,
+	})
+	local count = text({
+		Position = UDim2.fromScale(0, 0.68),
+		Size = UDim2.fromScale(1, 0.32),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 18,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = lighten(color, 0.3),
+		TextStrokeTransparency = 0,
+		Text = "0 / " .. maxStacks,
+		Parent = bb,
+	})
+	local spin = new("UIScale", { Parent = rune })
+	local conn
+	conn = model:GetAttributeChangedSignal("Mark"):Connect(function()
+		local v = model:GetAttribute("Mark")
+		if v == nil then
+			conn:Disconnect()
+			bb:Destroy()
+			return
+		end
+		count.Text = string.format("%d / %d", v, maxStacks)
+		spin.Scale = 1.5
+		TweenService:Create(spin, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+end
+
+function showStun(target: Model?, duration: number)
+	if not target or not target.Parent then
+		return
+	end
+	local model = target :: Model
+	local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+	if not head then
+		return
+	end
+	local bb = new("BillboardGui", {
+		Size = UDim2.new(0, 80, 0, 40),
+		StudsOffset = Vector3.new(0, 3.5, 0),
+		AlwaysOnTop = true,
+		Parent = head,
+	})
+	local stars = text({
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 30,
+		Text = "💫💫",
+		Parent = bb,
+	})
+	local start = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		if not bb.Parent or os.clock() - start > duration then
+			conn:Disconnect()
+			bb:Destroy()
+			return
+		end
+		stars.Rotation = math.sin(os.clock() * 10) * 15
+	end)
+end
+
+-- 내 캐릭터를 잠깐 한쪽으로 민다 (돌격, 넉백)
+function pushSelf(dir: Vector3, speed: number, duration: number)
+	local root = getChar()
+	if not root then
+		return
+	end
+	local att = root:FindFirstChild("RootAttachment")
+	if not att or not att:IsA("Attachment") then
+		att = new("Attachment", { Name = "PushAttachment", Parent = root })
+	end
+	local lv = new("LinearVelocity", {
+		Attachment0 = att,
+		MaxForce = 1e7,
+		VelocityConstraintMode = Enum.VelocityConstraintMode.Vector,
+		RelativeTo = Enum.ActuatorRelativeTo.World,
+		VectorVelocity = dir * speed,
+		Parent = root,
+	})
+	Debris:AddItem(lv, duration)
+end
+
+-- 독에 걸린 적은 초록 거품을 뿜는다
+local function watchEnemy(model: Instance)
+	if not model:IsA("Model") then
+		return
+	end
+	model:GetAttributeChangedSignal("Poison"):Connect(function()
+		local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+		if not head then
+			return
+		end
+		local old = head:FindFirstChild("PoisonFx")
+		if model:GetAttribute("Poison") then
+			if not old then
+				new("ParticleEmitter", {
+					Name = "PoisonFx",
+					Rate = 14,
+					Lifetime = NumberRange.new(0.6, 1),
+					Speed = NumberRange.new(1, 3),
+					Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 0) }),
+					LightEmission = 0.8,
+					Color = ColorSequence.new(Color3.fromRGB(120, 255, 90)),
+					Parent = head,
+				})
+			end
+		elseif old then
+			old:Destroy()
+		end
+	end)
+end
+
+-- 전투 폴더 감시: 적이 생기면 감시하고, 바닥 경고가 생기면 차오르는 원을 그린다
+task.spawn(function()
+	local battles = workspace:WaitForChild("ArenaBattles")
+	battles.DescendantAdded:Connect(function(d)
+		if d.Name == "Warning" and d:IsA("BasePart") then
+			task.defer(function()
+				Effects.warningFill(d)
+			end)
+		elseif d:IsA("Model") and d.Parent and d.Parent.Parent == battles then
+			watchEnemy(d)
+		end
+	end)
+end)
+
+------------------------------------------------------------------------
+-- 로비 장식: 톱니와 전시 무기는 돌고, 등불은 둥실 떠다닌다
+------------------------------------------------------------------------
+type Deco = { part: BasePart, base: CFrame, spin: boolean, bob: boolean }
+local decos: { [BasePart]: Deco } = {}
+local function track(inst: Instance, kind: string)
+	if not inst:IsA("BasePart") then
+		return
+	end
+	local part = inst :: BasePart
+	local d = decos[part]
+	if not d then
+		d = { part = part, base = part.CFrame, spin = false, bob = false }
+		decos[part] = d
+	end
+	if kind == "spin" then
+		d.spin = true
+	else
+		d.bob = true
+	end
+end
+for _, tag in ipairs({ "ArenaSpin", "ArenaBob" }) do
+	local kind = tag == "ArenaSpin" and "spin" or "bob"
+	for _, inst in ipairs(CollectionService:GetTagged(tag)) do
+		track(inst, kind)
+	end
+	CollectionService:GetInstanceAddedSignal(tag):Connect(function(inst)
+		track(inst, kind)
+	end)
+end
+local forgeBoostUntil = 0
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	local boost = t < forgeBoostUntil and 6 or 1
+	for part, d in pairs(decos) do
+		if not part.Parent then
+			decos[part] = nil
+		else
+			local cf = d.base
+			if d.bob then
+				local amp = part:GetAttribute("Amp") or 0.5
+				local speed = part:GetAttribute("BobSpeed") or 1
+				local phase = part:GetAttribute("Phase") or 0
+				cf = cf + Vector3.new(0, math.sin(t * speed + phase) * amp, 0)
+			end
+			if d.spin then
+				local speed = (part:GetAttribute("Speed") or 1) * (part.Name:sub(1, 4) == "Gear" and boost or 1)
+				if part:GetAttribute("Axis") == "X" then
+					cf = cf * CFrame.Angles(t * speed, 0, 0)
+				else
+					cf = cf * CFrame.Angles(0, t * speed, 0)
+				end
+			end
+			part.CFrame = cf
+		end
+	end
+end)
+Push.OnClientEvent:Connect(function(kind: string)
+	if kind == "forge" then
+		forgeBoostUntil = os.clock() + 1.5
+	end
+end)
+
 Request:FireServer("hello")
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="10">
+        <Item class="ModuleScript" referent="13">
           <Properties>
             <string name="Name">Effects</string>
             <string name="Source"><![CDATA[-- Effects (ModuleScript, ArenaClient 아래)
@@ -4710,6 +7054,11 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
 
 local Effects = {}
 
@@ -4884,6 +7233,8 @@ local HIT_STYLE = {
 	hit = { color = Color3.fromRGB(255, 248, 230), size = 24 },
 	crit = { color = Color3.fromRGB(255, 170, 40), size = 34 },
 	hurt = { color = Color3.fromRGB(255, 70, 70), size = 26 },
+	block = { color = Color3.fromRGB(170, 185, 210), size = 18 },
+	poison = { color = Color3.fromRGB(120, 255, 110), size = 20 },
 }
 
 function Effects.hits(list: { any })
@@ -4904,7 +7255,19 @@ function Effects.hits(list: { any })
 		label.TextSize = style.size
 		label.TextColor3 = style.color
 		label.TextStrokeTransparency = 0.1
-		label.Text = isCrit and ("💥" .. h.text) or h.text
+		if h.kind == "block" then
+			label.Text = "🛡" .. h.text
+		elseif h.kind == "poison" then
+			label.Text = "☠" .. h.text
+		else
+			label.Text = isCrit and ("💥" .. h.text) or h.text
+		end
+		-- 맞을 때마다 작은 불꽃
+		if h.kind == "hit" then
+			Effects.burst(h.pos, h.color or Color3.fromRGB(255, 230, 180), 5, 14, 0.3)
+		elseif h.kind == "poison" then
+			Effects.burst(h.pos, Color3.fromRGB(120, 255, 110), 4, 6, 0.4)
+		end
 		label.Parent = bb
 		if isCrit then
 			label.TextColor3 = Color3.new(1, 1, 1)
@@ -5144,6 +7507,632 @@ function Effects.ultimate(data: any)
 	end
 end
 
+------------------------------------------------------------------------
+-- 움직이는 물체: 매 프레임 위치를 정해 주는 함수를 받아 일정 시간 돌린다
+------------------------------------------------------------------------
+local function animate(duration: number, step: (number) -> (), done: (() -> ())?)
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = (os.clock() - start) / duration
+		if t >= 1 then
+			conn:Disconnect()
+			step(1)
+			if done then
+				done()
+			end
+			return
+		end
+		step(t)
+	end)
+end
+
+local function addTrail(p: BasePart, color: Color3, width: number, life: number)
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, width / 2, 0)
+	a0.Parent = p
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, -width / 2, 0)
+	a1.Parent = p
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = life
+	tr.LightEmission = 1
+	tr.Color = ColorSequence.new(color)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	tr.Parent = p
+end
+
+local function floorOf(pos: Vector3): Vector3
+	local root = getChar()
+	local y = root and (root.Position.Y - 2.9) or pos.Y
+	return Vector3.new(pos.X, y, pos.Z)
+end
+
+------------------------------------------------------------------------
+-- 바닥 경고: 서버가 띄운 빨간 경고 안에서 밝은 원이 차오른다 (언제 터지는지 보인다)
+------------------------------------------------------------------------
+function Effects.warningFill(warn: BasePart)
+	local duration = warn:GetAttribute("Warn")
+	if type(duration) ~= "number" or duration <= 0 then
+		return
+	end
+	local isDisc = warn:IsA("Part") and (warn :: Part).Shape == Enum.PartType.Cylinder
+	local fill = fxPart(isDisc and Vector3.new(warn.Size.X + 0.05, 0.1, 0.1) or Vector3.new(warn.Size.X, warn.Size.Y + 0.05, 0.1), warn.CFrame, Color3.fromRGB(255, 120, 60), 0.35, isDisc and Enum.PartType.Cylinder or nil)
+	if isDisc then
+		TweenService:Create(fill, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = Vector3.new(warn.Size.X + 0.05, warn.Size.Y, warn.Size.Z) }):Play()
+	else
+		-- 길 경고는 시작점에서 끝까지 차오른다
+		local length = warn.Size.Z
+		local back = warn.CFrame * CFrame.new(0, 0, length / 2)
+		animate(duration, function(t)
+			if fill.Parent then
+				fill.Size = Vector3.new(warn.Size.X, warn.Size.Y + 0.05, math.max(0.1, length * t))
+				fill.CFrame = back * CFrame.new(0, 0, -length * t / 2)
+			end
+		end)
+	end
+	Debris:AddItem(fill, duration)
+	-- 테두리
+	if isDisc then
+		ring(warn.Position + Vector3.new(0, 0.1, 0), Color3.fromRGB(255, 60, 40), warn.Size.Y, warn.Size.Y * 1.02, duration, 0.3)
+	end
+end
+
+------------------------------------------------------------------------
+-- 적의 공격
+------------------------------------------------------------------------
+function Effects.projectile(data: any)
+	local color: Color3 = data.color or Color3.fromRGB(255, 120, 80)
+	local from: Vector3 = data.from
+	local dir: Vector3 = data.dir
+	local arrow = fxPart(Vector3.new(0.25, 0.25, 2.8), CFrame.lookAt(from, from + dir), color, 0)
+	addTrail(arrow, color, 0.5, 0.25)
+	local head = fxPart(Vector3.new(0.6, 0.6, 0.6), arrow.CFrame * CFrame.new(0, 0, -1.4), Color3.new(1, 1, 1), 0, Enum.PartType.Ball)
+	animate(data.range / data.speed, function(t)
+		local p = from + dir * (data.range * t)
+		arrow.CFrame = CFrame.lookAt(p, p + dir)
+		head.CFrame = arrow.CFrame * CFrame.new(0, 0, -1.4)
+	end, function()
+		fade(arrow, 0.1)
+		fade(head, 0.1)
+	end)
+	Effects.sound("slash", 0.25, 1.8)
+end
+
+function Effects.explode(data: any)
+	local pos: Vector3 = data.pos
+	local r: number = data.radius or 8
+	Effects.flash(pos, Color3.fromRGB(255, 200, 80), r * 1.6, 0.35)
+	Effects.flash(pos, Color3.fromRGB(255, 80, 30), r * 2.2, 0.5)
+	ring(floorOf(pos) + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 120, 40), 2, r * 2.4, 0.45, 0.5)
+	Effects.burst(pos, Color3.fromRGB(255, 150, 50), 40, 40, 1)
+	Effects.burst(pos, Color3.fromRGB(60, 50, 50), 20, 12, 2)
+	local root = getChar()
+	if root and (root.Position - pos).Magnitude < 30 then
+		Effects.shake(1.0, 0.35)
+	end
+	Effects.sound("lunge", 0.8, 0.4)
+end
+
+function Effects.flame(data: any)
+	local base = floorOf(data.pos)
+	local r: number = data.radius or 7
+	local pillarPart = fxPart(Vector3.new(16, r * 1.4, r * 1.4), CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 90, 255), 0.2, Enum.PartType.Cylinder)
+	fade(pillarPart, 0.6, { Size = Vector3.new(26, r * 0.3, r * 0.3) })
+	ring(base + Vector3.new(0, 0.2, 0), Color3.fromRGB(220, 120, 255), r * 1.2, r * 2.6, 0.5, 0.4)
+	Effects.burst(base + Vector3.new(0, 2, 0), Color3.fromRGB(230, 140, 255), 25, 25, 0.8)
+	Effects.sound("lunge", 0.5, 0.8)
+end
+
+function Effects.meteor(data: any)
+	local target = floorOf(data.pos)
+	local start = target + Vector3.new(14, 70, -8)
+	local rock = fxPart(Vector3.new(3, 3, 3), CFrame.new(start), Color3.fromRGB(255, 90, 30), 0, Enum.PartType.Ball)
+	rock.Material = Enum.Material.Neon
+	addTrail(rock, Color3.fromRGB(255, 140, 40), 2.5, 0.35)
+	animate(0.25, function(t)
+		rock.CFrame = CFrame.new(start:Lerp(target, t))
+	end, function()
+		fade(rock, 0.05)
+		Effects.explode({ pos = target + Vector3.new(0, 1, 0), radius = data.radius or 6 })
+	end)
+end
+
+function Effects.spinFx(data: any)
+	local cf = CFrame.new(data.pos)
+	arc(cf, data.radius * 0.9, 0, 360, 20, 2.2, Color3.fromRGB(255, 200, 70), 0.3)
+	arc(cf * CFrame.new(0, 1.5, 0), data.radius * 0.7, 0, 360, 16, 1.4, Color3.fromRGB(255, 120, 40), 0.3)
+	Effects.sound("slash", 0.45, 0.6)
+end
+
+function Effects.summonFx(data: any)
+	local base: Vector3 = data.pos
+	ring(base + Vector3.new(0, 0.2, 0), Color3.fromRGB(170, 80, 255), 1, 9, 0.7, 0.4)
+	local beam = fxPart(Vector3.new(30, 4, 4), CFrame.new(base + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 110, 255), 0.3, Enum.PartType.Cylinder)
+	fade(beam, 0.6, { Size = Vector3.new(30, 0.2, 0.2) })
+	Effects.burst(base + Vector3.new(0, 1, 0), Color3.fromRGB(200, 140, 255), 18, 14, 0.6)
+end
+
+function Effects.blink(data: any)
+	for _, p in ipairs({ data.from, data.to }) do
+		Effects.burst(p, Color3.fromRGB(40, 20, 50), 26, 10, 1.6)
+		Effects.flash(p, Color3.fromRGB(150, 50, 200), 5, 0.25)
+	end
+	Effects.sound("slash", 0.4, 2)
+end
+
+function Effects.dust(data: any)
+	Effects.burst(floorOf(data.pos) + Vector3.new(0, 1, 0), Color3.fromRGB(200, 175, 135), 24, 22, 1.4)
+	Effects.shake(0.5, 0.2)
+end
+
+-- 적이 쓰러질 때: 몸이 터지고 영혼이 하늘로, 보스는 거대한 빛기둥
+function Effects.kill(data: any)
+	local pos: Vector3 = data.pos
+	local color: Color3 = data.color or Color3.new(1, 1, 1)
+	local scale: number = data.scale or 1
+	Effects.flash(pos, color, 6 * scale, 0.3)
+	Effects.burst(pos, color, 22, 26, 0.7 * scale)
+	Effects.burst(pos, Color3.fromRGB(255, 215, 90), 8, 12, 0.4)
+	ring(floorOf(pos) + Vector3.new(0, 0.25, 0), color, 2, 10 * scale, 0.4, 0.3)
+	local soul = fxPart(Vector3.new(1, 1, 1) * scale, CFrame.new(pos), color:Lerp(Color3.new(1, 1, 1), 0.5), 0.1, Enum.PartType.Ball)
+	addTrail(soul, color, 0.8 * scale, 0.4)
+	TweenService:Create(soul, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Position = pos + Vector3.new(0, 14, 0), Transparency = 1, Size = Vector3.new(0.2, 0.2, 0.2) }):Play()
+	Debris:AddItem(soul, 1)
+	if data.boss then
+		local beam = fxPart(Vector3.new(200, 12, 12), CFrame.new(pos + Vector3.new(0, 100, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(255, 230, 150), 0.1, Enum.PartType.Cylinder)
+		fade(beam, 1.4, { Size = Vector3.new(200, 0.5, 0.5) })
+		for i = 0, 4 do
+			task.delay(i * 0.12, function()
+				Effects.explode({ pos = pos + Vector3.new((math.random() - 0.5) * 8, math.random() * 4, (math.random() - 0.5) * 8), radius = 6 })
+			end)
+		end
+		Effects.shake(1.6, 0.8)
+	else
+		Effects.shake(0.15, 0.08)
+		Effects.sound("ping", 0.25, 1.6 + math.random() * 0.3)
+	end
+end
+
+-- 대시 잔상: 내 몸 모양 그대로 빛나는 껍데기를 남긴다
+function Effects.afterimage(char: Model, color: Color3)
+	for _, d in ipairs(char:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 1 then
+			local ghost = fxPart(d.Size, d.CFrame, color, 0.55)
+			ghost.Material = Enum.Material.ForceField
+			fade(ghost, 0.35)
+		end
+	end
+end
+
+-- 전투 시작: 내 자리에 빛기둥이 떨어진다
+function Effects.battleStart(data: any)
+	local base = Vector3.new(data.pos.X, data.pos.Y, data.pos.Z)
+	local beam = fxPart(Vector3.new(120, 9, 9), CFrame.new(base + Vector3.new(0, 60, 0)) * CFrame.Angles(0, 0, math.rad(90)), data.color, 0.1, Enum.PartType.Cylinder)
+	fade(beam, 0.8, { Size = Vector3.new(120, 0.5, 0.5) })
+	ring(base + Vector3.new(0, 0.3, 0), data.color, 4, 50, 0.7, 0.4)
+	Effects.burst(base + Vector3.new(0, 2, 0), data.color, 40, 40, 1)
+	Effects.shake(0.6, 0.3)
+	Effects.sound("lunge", 0.7, 0.6)
+end
+
+------------------------------------------------------------------------
+-- 로비 합성 용광로
+------------------------------------------------------------------------
+function Effects.forge(data: any)
+	local lobby = workspace:FindFirstChild("Lobby")
+	local forge = lobby and lobby:FindFirstChild("Forge")
+	if not forge then
+		return
+	end
+	local color: Color3 = data.color or Color3.fromRGB(255, 160, 60)
+	local mouth = forge:FindFirstChild("ForgeMouth")
+	local anvil = forge:FindFirstChild("ForgeAnvil")
+	local lava = forge:FindFirstChild("ForgeLava")
+	local liquid = forge:FindFirstChild("ForgeLiquid")
+	local ringPart = forge:FindFirstChild("ForgeRing")
+	if mouth and mouth:IsA("BasePart") then
+		Effects.flash(mouth.Position, color, 9, 0.4)
+		local glow = mouth:FindFirstChild("ForgeGlow")
+		if glow and glow:IsA("PointLight") then
+			glow.Brightness = 12
+			glow.Color = color
+			TweenService:Create(glow, TweenInfo.new(1.2), { Brightness = 3, Color = Color3.fromRGB(255, 140, 50) }):Play()
+		end
+		local embers = mouth:FindFirstChild("Embers")
+		if embers and embers:IsA("ParticleEmitter") then
+			embers:Emit(50)
+		end
+	end
+	if anvil and anvil:IsA("BasePart") then
+		local top = anvil.Position + Vector3.new(0, 0.6, 0)
+		Effects.burst(top, color, 40, 30, 0.5)
+		Effects.burst(top, Color3.fromRGB(255, 230, 150), 25, 22, 0.3)
+		local beam = fxPart(Vector3.new(30, 2.2, 2.2), CFrame.new(top + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90)), color, 0.2, Enum.PartType.Cylinder)
+		fade(beam, data.legendary and 1.2 or 0.6, { Size = Vector3.new(30, 0.2, 0.2) })
+		if data.legendary then
+			ring(top - Vector3.new(0, 2.5, 0), color, 2, 26, 0.9, 0.3)
+		end
+	end
+	if lava and lava:IsA("BasePart") then
+		Effects.burst(lava.Position + Vector3.new(0, 1, 0), Color3.fromRGB(255, 140, 40), 30, 26, 0.6)
+	end
+	if liquid and liquid:IsA("BasePart") then
+		local old = liquid.Color
+		liquid.Color = color
+		TweenService:Create(liquid, TweenInfo.new(1.5), { Color = old }):Play()
+	end
+	if ringPart and ringPart:IsA("BasePart") then
+		ringPart.Color = color
+		ringPart.Transparency = 0
+		TweenService:Create(ringPart, TweenInfo.new(1.2), { Transparency = 0.4, Color = Color3.fromRGB(222, 178, 72) }):Play()
+	end
+	local root = getChar()
+	if root and anvil and anvil:IsA("BasePart") and (root.Position - anvil.Position).Magnitude < 40 then
+		Effects.shake(0.3, 0.2)
+		Effects.sound("lunge", 0.7, 0.7)
+		Effects.sound("ping", 0.5, 1.4)
+	end
+end
+
+------------------------------------------------------------------------
+-- 무기 스킬 연출
+------------------------------------------------------------------------
+local skillFx: { [string]: (any) -> () } = {}
+
+skillFx.charge = function(data)
+	local from: Vector3 = data.origin
+	local to: Vector3 = data.target
+	for i = 0, 6 do
+		task.delay(i * 0.03, function()
+			local p = from:Lerp(to, i / 6)
+			Effects.burst(floorOf(p) + Vector3.new(0, 1, 0), Color3.fromRGB(210, 180, 140), 6, 16, 0.9)
+		end)
+	end
+	local ram = fxPart(Vector3.new(6, 4, 1), CFrame.lookAt(from, to) * CFrame.new(0, 0, -2), data.color, 0.3)
+	animate(0.2, function(t)
+		ram.CFrame = CFrame.lookAt(from:Lerp(to, t), to) * CFrame.new(0, 0, -2)
+	end, function()
+		fade(ram, 0.15)
+		ring(floorOf(to) + Vector3.new(0, 0.2, 0), data.color, 2, 16, 0.35, 0.4)
+	end)
+	Effects.shake(0.8, 0.3)
+	Effects.sound("lunge", 0.8, 0.7)
+end
+
+skillFx.boomerang = function(data)
+	local origin: Vector3 = data.origin
+	local look: Vector3 = data.look
+	local anchor = fxPart(Vector3.new(0.4, 0.4, 0.4), CFrame.new(origin), Color3.new(1, 1, 1), 1)
+	local holder = Instance.new("Model")
+	holder.Parent = folder
+	pcall(function()
+		WeaponBuilder.build(holder, anchor, 1, { accent = data.color, section = 4, rarity = 5, scale = 1.1 }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
+	end)
+	local spinRing = fxPart(Vector3.new(0.2, 9, 9), CFrame.new(origin), data.color, 0.6, Enum.PartType.Cylinder)
+	local far = origin + look * data.range
+	animate(data.duration, function(t)
+		local pos
+		if t <= 0.5 then
+			pos = origin:Lerp(far, t / 0.5)
+		else
+			local r = getChar()
+			pos = far:Lerp(r and r.Position or origin, (t - 0.5) / 0.5)
+		end
+		local spin = CFrame.Angles(0, os.clock() * 25, 0)
+		anchor.CFrame = CFrame.new(pos) * spin
+		spinRing.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90))
+	end, function()
+		holder:Destroy()
+		fade(anchor, 0.05)
+		fade(spinRing, 0.1)
+	end)
+	Effects.sound("slash", 0.6, 0.7)
+end
+
+skillFx.markBoom = function(data)
+	Effects.flash(data.pos, Color3.fromRGB(255, 80, 180), 10, 0.35)
+	local cf = CFrame.new(data.pos)
+	arc(cf * CFrame.Angles(0, 0, math.rad(55)), 5, -80, 80, 10, 1.2, Color3.fromRGB(255, 120, 200), 0.3)
+	arc(cf * CFrame.Angles(0, 0, math.rad(-55)), 5, -80, 80, 10, 1.2, Color3.fromRGB(255, 120, 200), 0.3)
+	ring(floorOf(data.pos) + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 100, 190), 2, 16, 0.4, 0.4)
+	Effects.burst(data.pos, Color3.fromRGB(255, 120, 200), 35, 32, 0.7)
+	Effects.shake(0.9, 0.3)
+	Effects.sound("lunge", 0.8, 1.2)
+end
+
+local function streak(from: Vector3, to: Vector3, color: Color3, width: number, life: number)
+	local mid = (from + to) / 2
+	local dist = (to - from).Magnitude
+	if dist < 0.1 then
+		return
+	end
+	local p = fxPart(Vector3.new(width, width, dist), CFrame.lookAt(mid, to), color, 0.1)
+	fade(p, life, { Size = Vector3.new(0.05, 0.05, dist) })
+end
+
+local function silhouettes(from: Vector3, to: Vector3, color: Color3, count: number, life: number)
+	for i = 1, count do
+		local p = from:Lerp(to, i / (count + 1))
+		local body = fxPart(Vector3.new(4.6, 1.8, 1.8), CFrame.lookAt(p, to) * CFrame.Angles(0, 0, math.rad(90)), color, 0.5, Enum.PartType.Cylinder)
+		body.Material = Enum.Material.ForceField
+		fade(body, life + i * 0.03)
+	end
+end
+
+skillFx.phantom = function(data)
+	streak(data.origin, data.target, data.color, 1.2, 0.35)
+	silhouettes(data.origin, data.target, data.color, 5, 0.6)
+	Effects.sound("slash", 0.5, 1.5)
+end
+
+skillFx.phantomEcho = function(data)
+	streak(data.origin, data.target, Color3.fromRGB(200, 120, 255), 1.6, 0.3)
+	for i = 1, 4 do
+		local p = data.origin:Lerp(data.target, i / 5)
+		arc(CFrame.lookAt(p, data.target) * CFrame.Angles(0, 0, math.rad(90 + (i % 2 == 0 and 40 or -40))), 3.5, -70, 70, 8, 0.8, Color3.fromRGB(210, 140, 255), 0.18)
+	end
+	Effects.shake(0.4, 0.15)
+	Effects.sound("slash", 0.6, 1.2)
+end
+
+skillFx.wave = function(data)
+	local origin: Vector3 = data.origin
+	local look: Vector3 = data.look
+	local color: Color3 = data.color
+	local segs = 9
+	local parts = {}
+	for i = 0, segs - 1 do
+		local a0 = math.rad(-75 + 150 * i / segs)
+		local a1 = math.rad(-75 + 150 * (i + 1) / segs)
+		local r = data.width * 0.9
+		local p0 = Vector3.new(math.sin(a0) * r, 0, -math.cos(a0) * r)
+		local p1 = Vector3.new(math.sin(a1) * r, 0, -math.cos(a1) * r)
+		local mid = (p0 + p1) / 2
+		local t = i / (segs - 1)
+		local w = 1.6 * (1 - math.abs(t * 2 - 1) * 0.7)
+		local offset = CFrame.lookAt(mid, p1)
+		local part = fxPart(Vector3.new(w, 0.3, (p1 - p0).Magnitude + 0.1), CFrame.new(origin), color, 0.05)
+		table.insert(parts, { part = part, offset = offset })
+	end
+	local core = fxPart(Vector3.new(1, 1, 1), CFrame.new(origin), Color3.new(1, 1, 1), 0.2, Enum.PartType.Ball)
+	addTrail(core, color, 4, 0.3)
+	local duration = data.range / data.speed
+	animate(duration, function(t)
+		local d = data.range * t
+		local base = CFrame.lookAt(origin + look * d, origin + look * (d + 1))
+		for _, item in ipairs(parts) do
+			item.part.CFrame = base * item.offset
+		end
+		core.CFrame = base
+	end, function()
+		for _, item in ipairs(parts) do
+			fade(item.part, 0.15)
+		end
+		fade(core, 0.15)
+	end)
+	Effects.sound("lunge", 0.6, 1.3)
+end
+
+skillFx.parry = function(data)
+	local root = getChar()
+	if not root then
+		return
+	end
+	local bubble = fxPart(Vector3.new(8, 8, 8), root.CFrame, data.color, 0.4, Enum.PartType.Ball)
+	bubble.Material = Enum.Material.ForceField
+	animate(data.window, function()
+		local r = getChar()
+		if r and bubble.Parent then
+			bubble.CFrame = r.CFrame
+		end
+	end, function()
+		fade(bubble, 0.15)
+	end)
+	Effects.sound("unsheath", 0.6, 1.3)
+end
+
+skillFx.parryCounter = function(data)
+	Effects.flash(data.pos, Color3.new(1, 1, 1), 14, 0.3)
+	ring(floorOf(data.pos) + Vector3.new(0, 0.3, 0), data.color, 3, data.radius * 2.2, 0.4, 0.5)
+	arc(CFrame.new(data.pos), data.radius * 0.8, 0, 360, 22, 2, Color3.new(1, 1, 1), 0.3)
+	local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), CFrame.new(data.pos + Vector3.new(0, 5, 0)), Color3.new(1, 1, 1), 1)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(0, 300, 0, 70)
+	bb.AlwaysOnTop = true
+	bb.Parent = anchor
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.fromScale(1, 1)
+	l.BackgroundTransparency = 1
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.Text = "COUNTER!"
+	l.TextColor3 = Color3.fromRGB(255, 240, 160)
+	l.TextStrokeTransparency = 0
+	l.Parent = bb
+	TweenService:Create(anchor, TweenInfo.new(0.8), { Position = anchor.Position + Vector3.new(0, 3, 0) }):Play()
+	TweenService:Create(l, TweenInfo.new(0.4, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0.5), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	Debris:AddItem(anchor, 1)
+	Effects.shake(1.0, 0.3)
+	Effects.sound("lunge", 0.9, 1.5)
+end
+
+skillFx.poison = function(data)
+	local char = Players.LocalPlayer.Character
+	local weapon = char and char:FindFirstChild("ArenaWeapon")
+	if weapon then
+		for _, d in ipairs(weapon:GetDescendants()) do
+			if d:IsA("BasePart") and string.sub(d.Name, 1, 5) == "Blade" then
+				local drip = Instance.new("ParticleEmitter")
+				drip.Rate = 20
+				drip.Lifetime = NumberRange.new(0.4, 0.8)
+				drip.Speed = NumberRange.new(0.5, 1.5)
+				drip.Acceleration = Vector3.new(0, -12, 0)
+				drip.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+				drip.LightEmission = 0.8
+				drip.Color = ColorSequence.new(Color3.fromRGB(120, 255, 90))
+				drip.Parent = d
+				Debris:AddItem(drip, data.duration)
+			end
+		end
+	end
+	local root = getChar()
+	if root then
+		Effects.burst(root.Position, Color3.fromRGB(120, 255, 90), 25, 12, 0.6)
+	end
+	Effects.sound("unsheath", 0.6, 0.8)
+end
+
+skillFx.smoke = function(data)
+	Effects.burst(data.pos, Color3.fromRGB(70, 65, 80), 40, 14, 3)
+	Effects.burst(data.pos, Color3.fromRGB(150, 140, 160), 20, 8, 2)
+	local char = Players.LocalPlayer.Character
+	if char then
+		for _, d in ipairs(char:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.LocalTransparencyModifier = 0.75
+			end
+		end
+		task.delay(data.duration, function()
+			for _, d in ipairs(char:GetDescendants()) do
+				if d:IsA("BasePart") then
+					d.LocalTransparencyModifier = 0
+				end
+			end
+		end)
+	end
+	Effects.sound("slash", 0.4, 0.5)
+end
+
+skillFx.hook = function(data)
+	local origin: Vector3 = data.origin
+	for _, v in ipairs(data.victims or {}) do
+		local links = {}
+		local dist = (v - origin).Magnitude
+		local n = math.max(3, math.floor(dist / 2))
+		for i = 1, n do
+			local p = origin:Lerp(v, i / n)
+			local link = fxPart(Vector3.new(0.5, 0.5, 1.2), CFrame.lookAt(p, v), Color3.fromRGB(190, 190, 205), 0)
+			link.Material = Enum.Material.Metal
+			table.insert(links, { part = link, t = i / n })
+		end
+		animate(0.3, function(t)
+			for _, l in ipairs(links) do
+				local p = origin:Lerp(v, l.t * (1 - t))
+				l.part.CFrame = CFrame.lookAt(p, v)
+			end
+		end, function()
+			for _, l in ipairs(links) do
+				fade(l.part, 0.1)
+			end
+		end)
+		Effects.burst(v, data.color, 10, 14, 0.5)
+	end
+	Effects.shake(0.4, 0.15)
+	Effects.sound("lunge", 0.6, 0.9)
+end
+
+skillFx.zone = function(data)
+	local base = Vector3.new(data.pos.X, data.pos.Y + 0.15, data.pos.Z)
+	local d = data.radius * 2
+	local circle = fxPart(Vector3.new(0.15, d, d), CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(80, 255, 170), 0.5, Enum.PartType.Cylinder)
+	local runes = {}
+	for i = 0, 7 do
+		local rune = fxPart(Vector3.new(1.4, 0.2, 1.4), CFrame.new(base), Color3.fromRGB(150, 255, 200), 0.1)
+		table.insert(runes, { part = rune, a = i * math.pi / 4 })
+	end
+	local souls = Instance.new("ParticleEmitter")
+	souls.Rate = 25
+	souls.Lifetime = NumberRange.new(1, 1.6)
+	souls.Speed = NumberRange.new(3, 6)
+	souls.EmissionDirection = Enum.NormalId.Right
+	souls.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0) })
+	souls.LightEmission = 1
+	souls.Color = ColorSequence.new(Color3.fromRGB(150, 255, 200))
+	souls.Parent = circle
+	animate(data.duration, function(t)
+		local spin = os.clock() * 1.5
+		for _, r in ipairs(runes) do
+			local a = r.a + spin
+			r.part.CFrame = CFrame.new(base + Vector3.new(math.cos(a) * data.radius * 0.85, 0.2, math.sin(a) * data.radius * 0.85)) * CFrame.Angles(0, -a, 0)
+		end
+		circle.Transparency = 0.45 + math.sin(t * 30) * 0.1
+	end, function()
+		souls.Enabled = false
+		fade(circle, 0.3)
+		for _, r in ipairs(runes) do
+			fade(r.part, 0.3)
+		end
+	end)
+	Effects.sound("unsheath", 0.6, 0.6)
+end
+
+skillFx.rain = function(data)
+	for i, pos in ipairs(data.positions or {}) do
+		task.delay((i - 1) * 0.07, function()
+			local ground = floorOf(pos)
+			local start = ground + Vector3.new(0, 60, 0)
+			local anchor = fxPart(Vector3.new(0.3, 0.3, 0.3), CFrame.new(start), Color3.new(1, 1, 1), 1)
+			local holder = Instance.new("Model")
+			holder.Parent = folder
+			pcall(function()
+				WeaponBuilder.build(holder, anchor, 1, { accent = Color3.fromRGB(255, 235, 160), section = 6, rarity = 5, scale = 1.2 }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
+			end)
+			animate(0.35, function(t)
+				anchor.CFrame = CFrame.new(start:Lerp(ground + Vector3.new(0, 4, 0), t * t))
+			end, function()
+				Effects.flash(ground + Vector3.new(0, 1, 0), Color3.fromRGB(255, 240, 180), 6, 0.25)
+				ring(ground + Vector3.new(0, 0.2, 0), Color3.fromRGB(255, 220, 120), 1, 9, 0.35, 0.3)
+				Effects.burst(ground + Vector3.new(0, 1, 0), Color3.fromRGB(255, 230, 150), 12, 20, 0.5)
+				Effects.shake(0.25, 0.08)
+				task.delay(0.5, function()
+					holder:Destroy()
+					anchor:Destroy()
+				end)
+			end)
+		end)
+	end
+	Effects.sound("lunge", 0.8, 0.8)
+end
+
+skillFx.timestop = function(data)
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "TimeStop"
+	cc.Saturation = -0.9
+	cc.TintColor = Color3.fromRGB(200, 225, 255)
+	cc.Parent = Lighting
+	task.delay(data.duration - 0.4, function()
+		TweenService:Create(cc, TweenInfo.new(0.4), { Saturation = 0, TintColor = Color3.new(1, 1, 1) }):Play()
+		Debris:AddItem(cc, 0.45)
+	end)
+	for _, m in ipairs(data.models or {}) do
+		if m and m.Parent then
+			local h = Instance.new("Highlight")
+			h.FillColor = Color3.fromRGB(150, 220, 255)
+			h.FillTransparency = 0.4
+			h.OutlineColor = Color3.new(1, 1, 1)
+			h.Parent = m
+			Debris:AddItem(h, data.duration)
+		end
+	end
+	local root = getChar()
+	if root then
+		ring(floorOf(root.Position) + Vector3.new(0, 0.3, 0), Color3.fromRGB(200, 230, 255), 4, 120, 0.8, 0.4)
+		arc(CFrame.new(root.Position + Vector3.new(0, 4, 0)) * CFrame.Angles(math.rad(90), 0, 0), 6, 0, 360, 24, 0.6, Color3.fromRGB(220, 240, 255), 0.8)
+	end
+	Effects.shake(0.6, 0.3)
+	Effects.sound("ping", 0.8, 0.5)
+end
+
+function Effects.skill(data: any)
+	local fn = skillFx[data.id]
+	if fn then
+		fn(data)
+	end
+end
+
 return Effects
 ]]></string>
           </Properties>
@@ -5151,13 +8140,13 @@ return Effects
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="11">
+  <Item class="Workspace" referent="14">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Part" referent="12">
+    <Item class="Part" referent="15">
       <Properties>
         <string name="Name">Baseplate</string>
         <bool name="Anchored">true</bool>
@@ -5187,7 +8176,7 @@ return Effects
         <token name="TopSurface">0</token>
       </Properties>
     </Item>
-    <Item class="SpawnLocation" referent="13">
+    <Item class="SpawnLocation" referent="16">
       <Properties>
         <string name="Name">LobbySpawn</string>
         <bool name="Anchored">true</bool>

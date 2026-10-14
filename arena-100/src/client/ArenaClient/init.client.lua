@@ -7,6 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
@@ -21,6 +22,11 @@ local playerGui = player:WaitForChild("PlayerGui")
 local state: any = nil
 local myStats: any = nil
 local battle: any = { active = false }
+
+-- 아래쪽에서 정의하는 도움 함수 (서버 메시지 처리에서 쓴다)
+local attachMarkRune: (Model?, number, Color3) -> ()
+local showStun: (Model?, number) -> ()
+local pushSelf: (Vector3, number, number) -> ()
 
 ------------------------------------------------------------------------
 -- UI 도구
@@ -929,6 +935,27 @@ local helpScroll = new("ScrollingFrame", {
 	CanvasSize = UDim2.new(),
 	Parent = helpPage,
 })
+local skillLines = {}
+for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+	local wt = Config.weaponType(id)
+	local list = Config.Skills[id]
+	table.insert(skillLines, string.format("· %s  [E] %s %s: %s", wt.name, list[1].icon, list[1].name, list[1].desc))
+	table.insert(skillLines, string.format("        [F] %s %s: %s", list[2].icon, list[2].name, list[2].desc))
+end
+local enemyLines = {}
+for _, id in ipairs(Config.ENEMY_ORDER) do
+	local e = Config.EnemyTypes[id]
+	local how = ({
+		grunt = "다가와서 벤다",
+		archer = "거리를 벌리고 빨간 선으로 조준한 뒤 화살을 쏜다. 선에서 비켜서세요",
+		shield = "앞에서 오는 공격을 70% 막는다. 뒤나 옆을 노리거나 기절시키세요",
+		brute = "빨간 길을 그린 뒤 그 길로 돌진한다. 옆으로 피하세요",
+		bomber = "달려와 붙으면 1초 뒤 터진다. 원 밖으로 대시!",
+		shaman = "멀리서 발밑에 불길 원을 띄운다. 원이 다 차기 전에 나가세요",
+		assassin = "주기적으로 내 등 뒤로 순간이동해 찌른다",
+	})[id] or ""
+	table.insert(enemyLines, string.format("· %s (%d스테이지부터): %s", e.name, e.unlock, how))
+end
 local ultLines = {}
 for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
 	local wt = Config.weaponType(id)
@@ -942,13 +969,22 @@ text({
 	TextYAlignment = Enum.TextYAlignment.Top,
 	Text = table.concat({
 		"⚔ 싸우는 법",
-		"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, R로 필살기",
-		"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 💥 필살기",
+		"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, E·F로 무기 스킬, R로 필살기",
+		"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 스킬 버튼 둘, 💥 필살기",
 		"· 공격하면 가장 가까운 적에게 알아서 다가가요",
 		"· 대시하는 순간에는 잠깐 무적이에요. 보스의 빨간 원을 피하세요!",
 		"",
+		"🌀 무기 스킬 (E, F)",
+		table.concat(skillLines, "\n"),
+		"",
 		"💥 필살기 (때릴수록 게이지가 차요)",
 		table.concat(ultLines, "\n"),
+		"",
+		"👹 적",
+		table.concat(enemyLines, "\n"),
+		"· 바닥의 빨간 경고 안에서 밝은 원이 차오르면 곧 공격이 들어와요",
+		"· 웨이브를 깰 때마다 체력 30%를 회복해요",
+		"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환 중 몇 가지를 섞어 써요",
 		"",
 		"🎯 치명타",
 		"· 모든 무기 5% 확률로 1.8배, 단검은 30% 확률로 2.5배",
@@ -973,7 +1009,12 @@ text({
 		"",
 		"🔁 자동 반복",
 		"· 이긴 적 있는 스테이지 + 전투력이 권장의 1.5배 이상이면 자동으로 계속 싸워요",
-		"· 자동 반복 중에는 게이지가 차면 필살기도 알아서 써요",
+		"· 자동 반복 중에는 스킬과 필살기도 알아서 써요",
+		"",
+		"🏛 로비",
+		"· 🔨 합성 용광로: 모루 앞에서 합성 창을 열어요. 누가 합성하면 용광로가 불을 뿜어요",
+		"· 💪 훈련장: 허수아비 앞에서 훈련 창을 열어요",
+		"· ⚔ 무기 전시대: 구간마다 무기가 얼마나 화려해지는지 보여 줘요",
 	}, "\n"),
 	Parent = helpScroll,
 })
@@ -1053,7 +1094,7 @@ end)
 local actionPad = new("Frame", {
 	AnchorPoint = Vector2.new(1, 1),
 	Position = UDim2.new(1, -20, 1, -28),
-	Size = UDim2.new(0, 230, 0, 210),
+	Size = UDim2.new(0, 300, 0, 230),
 	BackgroundTransparency = 1,
 	Visible = false,
 	Parent = gui,
@@ -1084,19 +1125,111 @@ local attackBtn = roundButton({
 }, C.red, C.gold)
 local dashBtn = roundButton({
 	AnchorPoint = Vector2.new(1, 1),
-	Position = UDim2.new(1, -134, 1, -6),
-	Size = UDim2.new(0, 76, 0, 76),
+	Position = UDim2.new(1, -132, 1, 0),
+	Size = UDim2.new(0, 72, 0, 72),
 	Text = "💨",
 	TextSize = 32,
 }, C.blue, C.text)
 local ultBtn = roundButton({
 	AnchorPoint = Vector2.new(1, 1),
 	Position = UDim2.new(1, -24, 1, -134),
-	Size = UDim2.new(0, 76, 0, 76),
+	Size = UDim2.new(0, 80, 0, 80),
 	Text = "💥",
 	TextSize = 34,
 }, C.goldDeep, C.gold)
 local ultBtnStroke = ultBtn:FindFirstChildOfClass("UIStroke") :: UIStroke
+
+-- 무기 스킬 버튼 (E, F). 재사용 대기 중에는 어두운 막이 내려온다
+type SkillButton = { button: TextButton, cover: Frame, timer: TextLabel, name: TextLabel, readyAt: number, duration: number }
+local skillButtons: { SkillButton } = {}
+local SKILL_POS = { UDim2.new(1, -150, 1, -84), UDim2.new(1, -212, 1, 0) }
+local SKILL_COLOR = { Color3.fromRGB(130, 70, 190), Color3.fromRGB(30, 140, 130) }
+for slot = 1, 2 do
+	local b = roundButton({
+		AnchorPoint = Vector2.new(1, 1),
+		Position = SKILL_POS[slot],
+		Size = UDim2.new(0, 72, 0, 72),
+		Text = "",
+		TextSize = 30,
+	}, SKILL_COLOR[slot], C.text)
+	b.ClipsDescendants = true
+	local cover = new("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.fromScale(1, 0),
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.35,
+		BorderSizePixel = 0,
+		ZIndex = 3,
+		Parent = b,
+	})
+	local timer = text({
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 24,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.2,
+		ZIndex = 4,
+		Parent = b,
+	})
+	text({
+		Position = UDim2.new(0, 6, 0, 2),
+		Size = UDim2.new(0, 20, 0, 18),
+		TextSize = 13,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = C.gold,
+		TextStrokeTransparency = 0.3,
+		Text = Config.SKILL_KEYS[slot],
+		ZIndex = 5,
+		Parent = b,
+	})
+	-- 이름표: E는 버튼 위, F는 버튼 아래
+	local pos = SKILL_POS[slot]
+	local nameLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(1, pos.X.Offset - 36, 1, slot == 1 and pos.Y.Offset - 88 or pos.Y.Offset + 2),
+		Size = UDim2.new(0, 90, 0, 16),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 11,
+		TextStrokeTransparency = 0.3,
+		Parent = actionPad,
+	})
+	skillButtons[slot] = { button = b, cover = cover, timer = timer, name = nameLabel, readyAt = 0, duration = 1 }
+	b.Activated:Connect(function()
+		if battle.active then
+			Request:FireServer("skill", slot)
+		end
+	end)
+end
+
+local shownSkillType = -1
+local function setSkillIcons(typeId: number)
+	if typeId == shownSkillType then
+		return
+	end
+	shownSkillType = typeId
+	local list = Config.Skills[typeId] or Config.Skills[1]
+	for slot, sb in ipairs(skillButtons) do
+		local sk = list[slot]
+		sb.button.Text = sk.icon
+		sb.name.Text = sk.name
+		sb.readyAt = 0
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	local now = os.clock()
+	for _, sb in ipairs(skillButtons) do
+		local rem = sb.readyAt - now
+		if rem > 0 then
+			sb.cover.Size = UDim2.fromScale(1, math.clamp(rem / sb.duration, 0, 1))
+			sb.timer.Text = tostring(math.ceil(rem))
+		elseif sb.timer.Text ~= "" then
+			sb.cover.Size = UDim2.fromScale(1, 0)
+			sb.timer.Text = ""
+		end
+	end
+end)
 
 local controlHint = text({
 	AnchorPoint = Vector2.new(0.5, 1),
@@ -1106,7 +1239,7 @@ local controlHint = text({
 	TextColor3 = C.dim,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextStrokeTransparency = 0.5,
-	Text = "클릭(누르고 있기): 공격   ·   Q / Shift: 대시 (잠깐 무적)   ·   R: 필살기",
+	Text = "클릭: 공격   ·   Q / Shift: 대시   ·   E / F: 무기 스킬   ·   R: 필살기",
 	Visible = false,
 	Parent = gui,
 })
@@ -1141,6 +1274,191 @@ local function showUltBanner(name: string, color: Color3)
 		if ultBannerToken == my then
 			TweenService:Create(ultBanner, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		end
+	end)
+end
+
+-- 큰 배너: 웨이브, 보스 등장, 전투 시작
+local bigBanner = text({
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(0.5, 0, 0.38, 0),
+	Size = UDim2.new(0, 800, 0, 90),
+	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 64,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0,
+	Visible = false,
+	ZIndex = 14,
+	Parent = gui,
+})
+local bigSub = text({
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 1, 0),
+	Size = UDim2.new(1, 0, 0, 30),
+	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 24,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0.2,
+	ZIndex = 14,
+	Parent = bigBanner,
+})
+local bigScale = new("UIScale", { Parent = bigBanner })
+local bigToken = 0
+local function showBigBanner(title: string, sub: string, color: Color3, hold: number?)
+	bigToken += 1
+	local my = bigToken
+	bigBanner.Text = title
+	bigBanner.TextColor3 = lighten(color, 0.25)
+	bigBanner.TextStrokeColor3 = darken(color, 0.75)
+	bigBanner.TextTransparency = 0
+	bigBanner.TextStrokeTransparency = 0
+	bigSub.Text = sub
+	bigSub.TextColor3 = C.text
+	bigSub.TextTransparency = 0
+	bigBanner.Visible = true
+	bigScale.Scale = uiScaleValue * 2.2
+	TweenService:Create(bigScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+	task.delay(hold or 1.3, function()
+		if bigToken == my then
+			local info = TweenInfo.new(0.35)
+			TweenService:Create(bigBanner, info, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			TweenService:Create(bigSub, info, { TextTransparency = 1 }):Play()
+		end
+	end)
+end
+
+-- 화면 가장자리 붉은 테두리: 맞을 때 번쩍, 체력이 낮으면 숨 쉬듯
+local vignette = new("Frame", {
+	Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1,
+	ZIndex = 1,
+	Parent = gui,
+})
+local vignetteEdges: { Frame } = {}
+for i, spec in ipairs({
+	{ UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.18, 0), 90 },
+	{ UDim2.new(0, 0, 0.82, 0), UDim2.new(1, 0, 0.18, 0), -90 },
+	{ UDim2.new(0, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 0 },
+	{ UDim2.new(0.88, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 180 },
+}) do
+	local edge = new("Frame", {
+		Position = spec[1],
+		Size = spec[2],
+		BackgroundColor3 = Color3.fromRGB(200, 0, 0),
+		BorderSizePixel = 0,
+		BackgroundTransparency = 1,
+		Parent = vignette,
+	})
+	new("UIGradient", {
+		Rotation = spec[3],
+		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }),
+		Parent = edge,
+	})
+	vignetteEdges[i] = edge
+end
+local hurtFlash = 0
+local lowHp = false
+local function setVignette(alpha: number, color: Color3)
+	for _, e in ipairs(vignetteEdges) do
+		e.BackgroundTransparency = 1 - alpha
+		e.BackgroundColor3 = color
+	end
+end
+RunService.RenderStepped:Connect(function(dt)
+	hurtFlash = math.max(0, hurtFlash - dt * 2.5)
+	local pulse = lowHp and (0.25 + 0.2 * math.sin(os.clock() * 6)) or 0
+	local a = math.max(hurtFlash, pulse)
+	setVignette(math.clamp(a, 0, 0.85), Color3.fromRGB(200, 0, 0))
+end)
+
+-- 콤보: 1.6초 안에 계속 때리면 숫자가 커지고 색이 바뀐다
+local comboLabel = text({
+	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.new(1, -30, 0.42, 0),
+	Size = UDim2.new(0, 300, 0, 70),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	TextSize = 54,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0,
+	Visible = false,
+	ZIndex = 12,
+	Parent = gui,
+})
+local comboSub = text({
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, 0, 1, -8),
+	Size = UDim2.new(1, 0, 0, 24),
+	TextXAlignment = Enum.TextXAlignment.Right,
+	TextSize = 20,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0.2,
+	Text = "COMBO",
+	ZIndex = 12,
+	Parent = comboLabel,
+})
+local comboScale = new("UIScale", { Parent = comboLabel })
+local combo = 0
+local comboAt = 0
+local COMBO_COLORS = {
+	{ 0, Color3.fromRGB(255, 250, 235) },
+	{ 10, Color3.fromRGB(255, 220, 90) },
+	{ 25, Color3.fromRGB(255, 140, 40) },
+	{ 50, Color3.fromRGB(255, 60, 60) },
+	{ 100, Color3.fromRGB(200, 90, 255) },
+}
+local function addCombo(n: number)
+	local now = os.clock()
+	if now - comboAt > 1.6 then
+		combo = 0
+	end
+	combo += n
+	comboAt = now
+	local color = COMBO_COLORS[1][2]
+	for _, c in ipairs(COMBO_COLORS) do
+		if combo >= c[1] then
+			color = c[2]
+		end
+	end
+	comboLabel.Text = tostring(combo)
+	comboLabel.TextColor3 = color
+	comboLabel.TextStrokeColor3 = darken(color, 0.8)
+	comboSub.TextColor3 = color
+	comboLabel.Visible = combo >= 3
+	comboScale.Scale = uiScaleValue * (1.35 + math.min(combo, 100) / 250)
+	TweenService:Create(comboScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+end
+RunService.Heartbeat:Connect(function()
+	if comboLabel.Visible and os.clock() - comboAt > 1.6 then
+		comboLabel.Visible = false
+		combo = 0
+	end
+end)
+
+-- 등급 상승: 화면 가득 축포
+local function celebrate(stage: number)
+	local section = Config.getSection(stage)
+	local color = section.color
+	showBigBanner("RANK UP!", string.format("[%d] %s", stage, Config.getGrade(stage).en), color, 1.8)
+	for i = 1, 70 do
+		local piece = new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(math.random(), 0, -0.05, 0),
+			Size = UDim2.new(0, math.random(8, 16), 0, math.random(12, 22)),
+			BackgroundColor3 = (i % 3 == 0) and C.gold or (i % 3 == 1 and color or Color3.new(1, 1, 1)),
+			BorderSizePixel = 0,
+			Rotation = math.random(0, 360),
+			ZIndex = 13,
+			Parent = gui,
+		})
+		local dur = 1.6 + math.random() * 1.4
+		TweenService:Create(piece, TweenInfo.new(dur, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(piece.Position.X.Scale + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
+			Rotation = piece.Rotation + math.random(-540, 540),
+		}):Play()
+		Debris:AddItem(piece, dur)
+	end
+	Effects.sound("ping", 0.8, 0.9)
+	task.delay(0.15, function()
+		Effects.sound("ping", 0.8, 1.2)
 	end)
 end
 
@@ -1194,6 +1512,9 @@ local function showResult(data: any)
 		line("VICTORY", nil, 46, ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(230, 140, 30)))
 		line("+ 💰 " .. fmt(data.coins), C.gold, 20)
 		if data.firstClear then
+			task.delay(0.4, function()
+				celebrate(data.stage)
+			end)
 			local g = Config.getGrade(data.stage)
 			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), Config.getSection(data.stage).color, 19)
 		end
@@ -1325,6 +1646,9 @@ end
 
 local function refreshBattle()
 	local active = battle.active == true
+	if not active then
+		lowHp = false
+	end
 	hud.Visible = active
 	hudButtons.Visible = active
 	actionPad.Visible = active
@@ -1356,7 +1680,11 @@ local function refreshBattle()
 	gaugeText.Text = ready and "💥 필살기 준비! (R)" or string.format("필살기 %d%%", math.floor(gauge * 100))
 	ultBtn.TextTransparency = ready and 0 or 0.55
 	ultBtnStroke.Thickness = ready and 5 or 3
-	enemyText.Text = string.format("남은 적  %d / %d", battle.left, battle.total)
+	enemyText.Text = string.format("WAVE %d / %d   ·   남은 적  %d", battle.wave or 1, battle.waveTotal or 1, battle.left)
+	lowHp = ratio < 0.3
+	if battle.typeId ~= nil then
+		setSkillIcons(battle.typeId)
+	end
 	autoBtn.Text = battle.auto and "🔁 자동 ON" or "🔁 자동 OFF"
 	setButtonColor(autoBtn, battle.auto and C.green or C.panel3)
 end
@@ -1500,6 +1828,14 @@ local function dash()
 		Parent = root,
 	})
 	Debris:AddItem(lv, 0.18)
+	local char = player.Character
+	if char then
+		for i = 0, 2 do
+			task.delay(i * 0.05, function()
+				Effects.afterimage(char, Color3.fromRGB(150, 200, 255))
+			end)
+		end
+	end
 	Request:FireServer("dash")
 	Effects.burst(root.Position - Vector3.new(0, 2, 0), Color3.fromRGB(220, 230, 255), 10, 12, 0.7)
 	dashBtn.TextTransparency = 0.6
@@ -1538,6 +1874,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		dash()
 	elseif input.KeyCode == Enum.KeyCode.R then
 		ultimate()
+	elseif input.KeyCode == Enum.KeyCode.E and battle.active then
+		Request:FireServer("skill", 1)
+	elseif input.KeyCode == Enum.KeyCode.F and battle.active then
+		Request:FireServer("skill", 2)
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -1568,6 +1908,17 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 		refreshBattle()
 	elseif kind == "hits" then
 		Effects.hits(data)
+		local landed = 0
+		for _, h in ipairs(data) do
+			if h.kind == "hurt" then
+				hurtFlash = 0.55
+			elseif h.kind ~= "poison" then
+				landed += 1
+			end
+		end
+		if landed > 0 then
+			addCombo(landed)
+		end
 	elseif kind == "swing" then
 		local _, hum = getChar()
 		if hum then
@@ -1587,12 +1938,312 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 		openPage(data, true)
 	elseif kind == "equipped" then
 		Effects.sound("unsheath", 0.6, 1)
+	elseif kind == "skill" then
+		if data.id == "mark" then
+			attachMarkRune(data.model, data.stacks, data.color)
+		elseif data.id == "charge" or data.id == "phantom" then
+			local root = getChar()
+			if root then
+				local dir = (data.target - data.origin)
+				local dist = Vector3.new(dir.X, 0, dir.Z).Magnitude
+				if dist > 0.5 then
+					pushSelf(Vector3.new(dir.X, 0, dir.Z).Unit, dist / 0.2, 0.2)
+				end
+			end
+			Effects.skill(data)
+		else
+			Effects.skill(data)
+		end
+	elseif kind == "cooldown" then
+		local sb = skillButtons[data.slot]
+		if sb then
+			sb.readyAt = os.clock() + data.duration
+			sb.duration = data.duration
+		end
+	elseif kind == "stun" then
+		showStun(data.model, data.duration)
+	elseif kind == "proj" then
+		Effects.projectile(data)
+	elseif kind == "knock" then
+		pushSelf(data.dir, data.power, 0.15)
+		Effects.shake(0.7, 0.2)
+	elseif kind == "dust" then
+		Effects.dust(data)
+	elseif kind == "explode" then
+		Effects.explode(data)
+	elseif kind == "flame" then
+		Effects.flame(data)
+	elseif kind == "meteor" then
+		Effects.meteor(data)
+	elseif kind == "spin" then
+		Effects.spinFx(data)
+	elseif kind == "summon" then
+		Effects.summonFx(data)
+	elseif kind == "blink" then
+		Effects.blink(data)
+	elseif kind == "kill" then
+		Effects.kill(data)
+	elseif kind == "battleStart" then
+		Effects.battleStart(data)
+		showBigBanner(string.format("STAGE %d", data.stage), Config.getGrade(data.stage).en, data.color, 1.1)
+		for _, sb in ipairs(skillButtons) do
+			sb.readyAt = 0
+		end
+		combo = 0
+	elseif kind == "wave" then
+		if data.boss then
+			-- 보스 웨이브는 따로 크게 알린다
+		elseif data.index > 1 then
+			showBigBanner(string.format("WAVE %d", data.index), string.format("%d / %d", data.index, data.total), C.gold, 1.0)
+			Effects.sound("unsheath", 0.6, 0.8)
+		end
+	elseif kind == "waveClear" then
+		Effects.sound("ping", 0.5, 1.0)
+		local root = getChar()
+		if root then
+			Effects.burst(root.Position, C.green, 30, 14, 0.6)
+			Effects.flash(root.Position, C.green, 8, 0.35)
+		end
+		toast(string.format("✨ 웨이브 %d 돌파! 체력 %d%% 회복", data.index, math.floor((data.heal or 0) * 100)))
+	elseif kind == "boss" then
+		showBigBanner("👑 BOSS", string.format("%s · %s", data.name, data.kind), C.red, 1.8)
+		hurtFlash = 0.8
+		Effects.shake(1.2, 0.6)
+		Effects.sound("lunge", 1, 0.4)
+	elseif kind == "forge" then
+		Effects.forge(data)
+	elseif kind == "trained" then
+		local root = getChar()
+		if root then
+			Effects.burst(root.Position, data == "atk" and C.red or C.green, 30, 18, 0.6)
+			Effects.flash(root.Position, data == "atk" and C.red or C.green, 7, 0.3)
+		end
+		Effects.sound("ping", 0.5, 1.3)
 	elseif kind == "merged" then
 		if data.to then
 			showMerge(data.to, data.count or 1)
 		else
 			toast(string.format("%d번 합성했어요!", data.count or 0))
 		end
+	end
+end)
+
+------------------------------------------------------------------------
+-- 적 머리 위 표시: 표식, 기절, 독
+------------------------------------------------------------------------
+function attachMarkRune(target: Model?, maxStacks: number, color: Color3)
+	if not target or not target.Parent then
+		return
+	end
+	local model = target :: Model
+	local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+	if not head then
+		return
+	end
+	local old = head:FindFirstChild("MarkRune")
+	if old then
+		old:Destroy()
+	end
+	local bb = new("BillboardGui", {
+		Name = "MarkRune",
+		Size = UDim2.new(0, 90, 0, 90),
+		StudsOffset = Vector3.new(0, 4.5, 0),
+		AlwaysOnTop = true,
+		LightInfluence = 0,
+		Parent = head,
+	})
+	local rune = text({
+		Size = UDim2.fromScale(1, 0.7),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 46,
+		Text = "🎯",
+		Parent = bb,
+	})
+	local count = text({
+		Position = UDim2.fromScale(0, 0.68),
+		Size = UDim2.fromScale(1, 0.32),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 18,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = lighten(color, 0.3),
+		TextStrokeTransparency = 0,
+		Text = "0 / " .. maxStacks,
+		Parent = bb,
+	})
+	local spin = new("UIScale", { Parent = rune })
+	local conn
+	conn = model:GetAttributeChangedSignal("Mark"):Connect(function()
+		local v = model:GetAttribute("Mark")
+		if v == nil then
+			conn:Disconnect()
+			bb:Destroy()
+			return
+		end
+		count.Text = string.format("%d / %d", v, maxStacks)
+		spin.Scale = 1.5
+		TweenService:Create(spin, TweenInfo.new(0.15), { Scale = 1 }):Play()
+	end)
+end
+
+function showStun(target: Model?, duration: number)
+	if not target or not target.Parent then
+		return
+	end
+	local model = target :: Model
+	local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+	if not head then
+		return
+	end
+	local bb = new("BillboardGui", {
+		Size = UDim2.new(0, 80, 0, 40),
+		StudsOffset = Vector3.new(0, 3.5, 0),
+		AlwaysOnTop = true,
+		Parent = head,
+	})
+	local stars = text({
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 30,
+		Text = "💫💫",
+		Parent = bb,
+	})
+	local start = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		if not bb.Parent or os.clock() - start > duration then
+			conn:Disconnect()
+			bb:Destroy()
+			return
+		end
+		stars.Rotation = math.sin(os.clock() * 10) * 15
+	end)
+end
+
+-- 내 캐릭터를 잠깐 한쪽으로 민다 (돌격, 넉백)
+function pushSelf(dir: Vector3, speed: number, duration: number)
+	local root = getChar()
+	if not root then
+		return
+	end
+	local att = root:FindFirstChild("RootAttachment")
+	if not att or not att:IsA("Attachment") then
+		att = new("Attachment", { Name = "PushAttachment", Parent = root })
+	end
+	local lv = new("LinearVelocity", {
+		Attachment0 = att,
+		MaxForce = 1e7,
+		VelocityConstraintMode = Enum.VelocityConstraintMode.Vector,
+		RelativeTo = Enum.ActuatorRelativeTo.World,
+		VectorVelocity = dir * speed,
+		Parent = root,
+	})
+	Debris:AddItem(lv, duration)
+end
+
+-- 독에 걸린 적은 초록 거품을 뿜는다
+local function watchEnemy(model: Instance)
+	if not model:IsA("Model") then
+		return
+	end
+	model:GetAttributeChangedSignal("Poison"):Connect(function()
+		local head = model:FindFirstChild("Head") or model:FindFirstChild("HumanoidRootPart")
+		if not head then
+			return
+		end
+		local old = head:FindFirstChild("PoisonFx")
+		if model:GetAttribute("Poison") then
+			if not old then
+				new("ParticleEmitter", {
+					Name = "PoisonFx",
+					Rate = 14,
+					Lifetime = NumberRange.new(0.6, 1),
+					Speed = NumberRange.new(1, 3),
+					Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 0) }),
+					LightEmission = 0.8,
+					Color = ColorSequence.new(Color3.fromRGB(120, 255, 90)),
+					Parent = head,
+				})
+			end
+		elseif old then
+			old:Destroy()
+		end
+	end)
+end
+
+-- 전투 폴더 감시: 적이 생기면 감시하고, 바닥 경고가 생기면 차오르는 원을 그린다
+task.spawn(function()
+	local battles = workspace:WaitForChild("ArenaBattles")
+	battles.DescendantAdded:Connect(function(d)
+		if d.Name == "Warning" and d:IsA("BasePart") then
+			task.defer(function()
+				Effects.warningFill(d)
+			end)
+		elseif d:IsA("Model") and d.Parent and d.Parent.Parent == battles then
+			watchEnemy(d)
+		end
+	end)
+end)
+
+------------------------------------------------------------------------
+-- 로비 장식: 톱니와 전시 무기는 돌고, 등불은 둥실 떠다닌다
+------------------------------------------------------------------------
+type Deco = { part: BasePart, base: CFrame, spin: boolean, bob: boolean }
+local decos: { [BasePart]: Deco } = {}
+local function track(inst: Instance, kind: string)
+	if not inst:IsA("BasePart") then
+		return
+	end
+	local part = inst :: BasePart
+	local d = decos[part]
+	if not d then
+		d = { part = part, base = part.CFrame, spin = false, bob = false }
+		decos[part] = d
+	end
+	if kind == "spin" then
+		d.spin = true
+	else
+		d.bob = true
+	end
+end
+for _, tag in ipairs({ "ArenaSpin", "ArenaBob" }) do
+	local kind = tag == "ArenaSpin" and "spin" or "bob"
+	for _, inst in ipairs(CollectionService:GetTagged(tag)) do
+		track(inst, kind)
+	end
+	CollectionService:GetInstanceAddedSignal(tag):Connect(function(inst)
+		track(inst, kind)
+	end)
+end
+local forgeBoostUntil = 0
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	local boost = t < forgeBoostUntil and 6 or 1
+	for part, d in pairs(decos) do
+		if not part.Parent then
+			decos[part] = nil
+		else
+			local cf = d.base
+			if d.bob then
+				local amp = part:GetAttribute("Amp") or 0.5
+				local speed = part:GetAttribute("BobSpeed") or 1
+				local phase = part:GetAttribute("Phase") or 0
+				cf = cf + Vector3.new(0, math.sin(t * speed + phase) * amp, 0)
+			end
+			if d.spin then
+				local speed = (part:GetAttribute("Speed") or 1) * (part.Name:sub(1, 4) == "Gear" and boost or 1)
+				if part:GetAttribute("Axis") == "X" then
+					cf = cf * CFrame.Angles(t * speed, 0, 0)
+				else
+					cf = cf * CFrame.Angles(0, t * speed, 0)
+				end
+			end
+			part.CFrame = cf
+		end
+	end
+end)
+Push.OnClientEvent:Connect(function(kind: string)
+	if kind == "forge" then
+		forgeBoostUntil = os.clock() + 1.5
 	end
 end)
 

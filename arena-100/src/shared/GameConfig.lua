@@ -192,6 +192,67 @@ Config.DASH_COOLDOWN = 1.5
 Config.DASH_INVULN = 0.4
 
 ------------------------------------------------------------------------
+-- 무기 스킬: 계열마다 둘 (E, F). 필살기(R)와 따로 쓴다
+-- mult는 공격력 배율, cd는 재사용 대기 시간(초)
+------------------------------------------------------------------------
+Config.SKILL_KEYS = { "E", "F" }
+Config.Skills = {
+	[1] = { -- 대검
+		{ id = "charge", icon = "🐗", name = "파쇄 돌격", desc = "앞으로 돌진해 부딪힌 적을 날리고 2초 기절시킨다", cd = 7, mult = 3, length = 16, width = 4, stun = 2 },
+		{ id = "boomerang", icon = "🌀", name = "대검 투척", desc = "회전하는 대검을 던진다. 갈 때와 돌아올 때 모두 벤다", cd = 9, mult = 2.5, range = 24, width = 4.5 },
+	},
+	[2] = { -- 쌍검
+		{ id = "mark", icon = "🎯", name = "표식 연격", desc = "가까운 적에게 표식. 그 적을 6번 베면 표식이 폭발한다", cd = 8, mult = 6, stacks = 6, splash = 3 },
+		{ id = "phantom", icon = "👥", name = "잔상 돌파", desc = "적을 꿰뚫고 지나가고, 0.5초 뒤 잔상이 같은 길을 다시 벤다", cd = 7, mult = 2, length = 18, width = 4 },
+	},
+	[3] = { -- 장검
+		{ id = "wave", icon = "🌙", name = "검기 발사", desc = "적을 꿰뚫고 날아가는 초승달 검기", cd = 5, mult = 3, range = 42, width = 5, speed = 70 },
+		{ id = "parry", icon = "🛡", name = "반격 자세", desc = "1.2초 동안 막는 자세. 그사이 맞으면 막아 내고 주위를 크게 벤다", cd = 9, mult = 8, window = 1.2, radius = 11 },
+	},
+	[4] = { -- 단검
+		{ id = "poison", icon = "☠", name = "맹독 칼날", desc = "6초 동안 베는 적마다 독이 묻어 계속 피해를 준다", cd = 10, duration = 6, dotMult = 0.3, dotTime = 3 },
+		{ id = "smoke", icon = "💨", name = "연막 순보", desc = "연막 속으로 숨어 2초 무적. 다음 공격은 3배 확정 치명타", cd = 9, invuln = 2, mult = 3 },
+	},
+	[5] = { -- 낫
+		{ id = "hook", icon = "⛓", name = "사슬 낚아채기", desc = "앞쪽 적들을 사슬로 끌어당겨 잠깐 기절시킨다", cd = 6, mult = 1.5, range = 24, cone = 0.3, stun = 0.8 },
+		{ id = "zone", icon = "💀", name = "망자의 원", desc = "4초 동안 원 안의 적을 계속 베고 나를 치유한다", cd = 11, radius = 12, duration = 4, tickMult = 0.6, heal = 0.03 },
+	},
+	[0] = { -- 올라운더
+		{ id = "rain", icon = "⚔", name = "만검 강림", desc = "하늘에서 검 12자루가 적에게 꽂힌다", cd = 6, mult = 3, count = 12 },
+		{ id = "timestop", icon = "⏳", name = "시공 정지", desc = "3초 동안 모든 적의 시간을 멈춘다", cd = 12, duration = 3 },
+	},
+}
+
+------------------------------------------------------------------------
+-- 적 7종. hp와 dmg는 그 스테이지 기준치에 곱하는 배율
+-- unlock: 이 스테이지부터 나온다
+------------------------------------------------------------------------
+Config.EnemyTypes = {
+	grunt = { name = "돌격병", hp = 1.0, dmg = 1.0, speed = 13, scale = 1.0, unlock = 1, weight = 4 },
+	archer = { name = "궁수", hp = 0.7, dmg = 0.9, speed = 12, scale = 0.95, unlock = 4, weight = 2, keep = 22, shotCd = 2.8 },
+	shield = { name = "방패병", hp = 1.6, dmg = 1.0, speed = 9, scale = 1.15, unlock = 8, weight = 2, frontReduce = 0.7 },
+	brute = { name = "돌진꾼", hp = 2.0, dmg = 2.2, speed = 10, scale = 1.35, unlock = 12, weight = 1.5, chargeCd = 6 },
+	bomber = { name = "자폭병", hp = 0.5, dmg = 3.0, speed = 19, scale = 0.8, unlock = 16, weight = 1.5 },
+	shaman = { name = "주술사", hp = 0.8, dmg = 1.6, speed = 10, scale = 1.0, unlock = 21, weight = 1.2, keep = 24, castCd = 4.5 },
+	assassin = { name = "암살자", hp = 0.8, dmg = 1.4, speed = 16, scale = 0.95, unlock = 26, weight = 1.2, blinkCd = 5 },
+}
+Config.ENEMY_ORDER = { "grunt", "archer", "shield", "brute", "bomber", "shaman", "assassin" }
+
+-- 보스 번호(스테이지 ÷ 10)마다 쓰는 기술 조합
+Config.BossPatterns = {
+	{ "slam", "charge" },
+	{ "slam", "summon" },
+	{ "slam", "spin", "charge" },
+	{ "slam", "meteor", "summon" },
+	{ "slam", "spin", "meteor" },
+	{ "slam", "charge", "summon", "meteor" },
+	{ "slam", "spin", "charge", "meteor" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+	{ "slam", "spin", "charge", "meteor", "summon" },
+}
+
+------------------------------------------------------------------------
 -- 함수
 ------------------------------------------------------------------------
 function Config.getGrade(g)
@@ -318,16 +379,80 @@ function Config.canAutoRepeat(stage, maxStage, power)
 	return stage <= maxStage and power >= Config.recommendedPower(stage) * Config.AUTO_POWER_RATIO
 end
 
+-- 스테이지마다 같은 구성이 나오도록 고정된 난수 (Park-Miller)
+local function seeded(seed: number)
+	local s = (seed % 2147483646) + 1
+	return function(): number
+		s = (s * 16807) % 2147483647
+		return s / 2147483647
+	end
+end
+
+local function pickType(pool: { string }, rand: () -> number): string
+	local total = 0
+	for _, id in ipairs(pool) do
+		total += Config.EnemyTypes[id].weight
+	end
+	local r = rand() * total
+	for _, id in ipairs(pool) do
+		r -= Config.EnemyTypes[id].weight
+		if r <= 0 then
+			return id
+		end
+	end
+	return pool[#pool]
+end
+
 -- 스테이지 n: 적 등급도 n. 10스테이지마다 보스
+-- 스테이지가 오를수록 웨이브 수, 웨이브당 적 수, 적 종류가 늘어난다
 function Config.stageInfo(n)
 	local isBoss = (n % 10 == 0)
 	local gr = growth(n)
-	local count
-	if isBoss then
-		count = 2
-	else
-		count = math.min(5, 2 + math.ceil(n / 2))
+	local rand = seeded(n * 7919 + 13)
+
+	local pool = {}
+	for _, id in ipairs(Config.ENEMY_ORDER) do
+		if n >= Config.EnemyTypes[id].unlock then
+			table.insert(pool, id)
+		end
 	end
+
+	local perWave = math.min(3 + math.floor(n / 8), 7)
+	local waveCount
+	if isBoss then
+		waveCount = 2
+	elseif n < 8 then
+		waveCount = 1
+	elseif n < 35 then
+		waveCount = 2
+	else
+		waveCount = 3
+	end
+
+	local waves = {}
+	local hpWeight = 0
+	for w = 1, waveCount do
+		local list = {}
+		local count = (isBoss and w == waveCount) and 2 or perWave
+		for i = 1, count do
+			local id = pickType(pool, rand)
+			-- 새로 열린 적은 그 스테이지에 꼭 한 번 나온다
+			if w == 1 and i == 1 then
+				for _, nid in ipairs(Config.ENEMY_ORDER) do
+					if Config.EnemyTypes[nid].unlock == n then
+						id = nid
+					end
+				end
+			end
+			list[i] = id
+			hpWeight += Config.EnemyTypes[id].hp
+		end
+		waves[w] = list
+	end
+
+	-- 일반 적 전체 체력 예산. 무기 등급이 같으면 한 판에 20~40초
+	local budget = 300 * gr * (1 + n / 150)
+	local bossNo = math.max(1, n // 10)
 	local coins = math.floor(20 * 1.6 ^ (n - 1))
 	if isBoss then
 		coins *= 5
@@ -335,13 +460,15 @@ function Config.stageInfo(n)
 	return {
 		stage = n,
 		isBoss = isBoss,
-		enemyCount = count,
-		-- 같은 등급 칼로 싸우면 적 하나에 3~4초, 보스는 15~25초 (일반 칼로 안 피하면 질 수 있음)
-		enemyHp = 60 * gr,
-		enemyDmg = 1.5 * gr,
+		waves = waves,
+		unitHp = budget / hpWeight,
+		-- 적이 많을수록 한 명의 공격력을 낮춰 전체 압박을 비슷하게 맞춘다
+		unitDmg = 1.5 * gr * math.min(1, 5 / perWave),
 		bossHp = 60 * gr * 5,
 		bossDmg = 3 * gr,
 		slamDmg = 20 * gr,
+		bossType = Config.ENEMY_ORDER[((bossNo - 1) % #Config.ENEMY_ORDER) + 1],
+		bossPatterns = Config.BossPatterns[math.clamp(bossNo, 1, #Config.BossPatterns)],
 		coins = coins,
 		dropCount = isBoss and 3 or 1,
 		bonusDropChance = isBoss and 0 or 0.35,
