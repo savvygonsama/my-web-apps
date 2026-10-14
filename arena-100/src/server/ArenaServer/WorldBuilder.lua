@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local World = {}
 
@@ -126,9 +127,9 @@ function World.setupLighting()
 	atmosphere.Haze = 1.4
 
 	local bloom = ensure("BloomEffect", "ArenaBloom")
-	bloom.Intensity = 0.7
-	bloom.Size = 28
-	bloom.Threshold = 1.1
+	bloom.Intensity = 0.9
+	bloom.Size = 32
+	bloom.Threshold = 0.95
 
 	local cc = ensure("ColorCorrectionEffect", "ArenaColor")
 	cc.Saturation = 0.12
@@ -347,56 +348,59 @@ local function buildForge(lobby: Instance, onUse: (Player) -> ())
 	label(gui, "🔨 합성 용광로", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 200, 90), Enum.Font.GothamBlack)
 end
 
--- 무기 전시대: 구간 1~6의 무기가 받침대 위에서 떠서 돈다
+-- 무기 전시대: 등급이 다른 무기 10자루가 받침대 위에서 떠서 돈다. 속성이 모두 다르게 골랐다
 local function buildShowcase(lobby: Instance)
 	local model = Instance.new("Model")
 	model.Name = "Showcase"
 	model.Parent = lobby
-	local types = { 1, 2, 3, 4, 5, 0 }
-	for i = 1, 6 do
-		local section = Config.Sections[i]
-		local a = math.rad(62 + (i - 1) * 11.2)
-		local pos = Vector3.new(math.cos(a) * 31, 0, math.sin(a) * 31)
+	local types = { 1, 2, 3, 4, 5, 1, 2, 3, 4, 0 }
+	local grades = { 8, 19, 27, 36, 45, 53, 64, 72, 81, 100 }
+	for i = 1, 10 do
+		local grade = grades[i]
+		local style = GradeStyle.get(grade)
+		local a = math.rad(48 + (i - 1) * 9.33)
+		local pos = Vector3.new(math.cos(a) * 33, 0, math.sin(a) * 33)
 		local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
-		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.8, GOLD, Enum.Material.Metal)
-		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.6, 3.4, 2.6), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
-		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 3, section.color, Enum.Material.Neon)
+		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.6, GOLD, Enum.Material.Metal)
+		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.4, 3.4, 2.4), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
+		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 2.8, style.glow, Enum.Material.Neon)
 		local light = Instance.new("PointLight")
-		light.Color = section.color
-		light.Range = 10
-		light.Brightness = 1.5
+		light.Color = style.glow
+		light.Range = 8 + i
+		light.Brightness = 1 + i * 0.15
 		light.Parent = top
 		local sparkle = Instance.new("ParticleEmitter")
-		sparkle.Rate = 3 + i
+		sparkle.Texture = style.motif.tex
+		sparkle.Rate = 3 + i * 1.5
 		sparkle.Lifetime = NumberRange.new(1, 2)
-		sparkle.Speed = NumberRange.new(1, 2)
+		sparkle.Speed = NumberRange.new(1, 2.5)
 		sparkle.EmissionDirection = Enum.NormalId.Right
-		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2 + i * 0.03), NumberSequenceKeypoint.new(1, 0) })
 		sparkle.LightEmission = 1
-		sparkle.Color = section.rainbow and WeaponBuilder.RAINBOW or ColorSequence.new(section.color)
+		sparkle.Color = GradeStyle.gradient(grade)
 		sparkle.Parent = top
 
 		local anchor = part({
 			Name = "ShowAnchor",
 			Size = Vector3.new(0.4, 0.4, 0.4),
-			CFrame = CFrame.new(pos + Vector3.new(0, 6.8, 0)),
+			CFrame = CFrame.new(pos + Vector3.new(0, 6.6, 0)),
 			Transparency = 1,
 			CanCollide = false,
 			Parent = model,
 		})
 		WeaponBuilder.build(model, anchor, types[i], {
-			accent = section.rainbow and Color3.fromRGB(255, 235, 160) or section.color,
-			section = i,
+			grade = grade,
+			accent = Color3.fromRGB(255, 170, 40),
 			rarity = 5,
-			scale = 0.85,
+			scale = 0.7,
 		}, CFrame.new(anchor.Position - Vector3.new(0, 2.6, 0)))
 		tagSpin(anchor, "Y", 0.7)
 		tagBob(anchor, 0.35, 1.4)
 
 		local gui = surfaceText(column, Enum.NormalId.Front, 50)
-		label(gui, string.format("%d구간", i), UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.3), section.color, Enum.Font.GothamBlack)
-		label(gui, section.name, UDim2.fromScale(0.05, 0.42), UDim2.fromScale(0.9, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
-		label(gui, string.format("%d~%d등급", section.from, section.to), UDim2.fromScale(0.05, 0.68), UDim2.fromScale(0.9, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
+		label(gui, string.format("%d등급", grade), UDim2.fromScale(0, 0.06), UDim2.fromScale(1, 0.28), GradeStyle.textColor(grade), Enum.Font.GothamBlack)
+		label(gui, Config.getGrade(grade).en, UDim2.fromScale(0.04, 0.4), UDim2.fromScale(0.92, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
+		label(gui, style.motif.name .. " · " .. style.materialName, UDim2.fromScale(0.04, 0.68), UDim2.fromScale(0.92, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
 	end
 end
 
@@ -448,7 +452,7 @@ local function buildTrainingYard(lobby: Instance, onUse: (Player) -> ())
 			CanCollide = false,
 			Parent = model,
 		})
-		WeaponBuilder.build(model, holder, t, { accent = Color3.fromRGB(190, 190, 190), section = 1, rarity = 1, scale = 0.6 }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
+		WeaponBuilder.build(model, holder, t, { grade = 1 + i * 2, accent = Color3.fromRGB(190, 190, 190), rarity = 1, scale = 0.6, lite = true }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
 	end
 	local _ = bar
 	local sign = part({ Name = "TrainSign", Size = Vector3.new(7, 1.6, 0.3), CFrame = cf * CFrame.new(0, 8.6, 1), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
@@ -859,7 +863,7 @@ function World.buildStatue(rig: Model?)
 		if hand and hand:IsA("BasePart") then
 			local yaw = select(2, statue:GetPivot():ToEulerAnglesYXZ())
 			local grip = CFrame.new(hand.Position) * CFrame.Angles(0, yaw, 0)
-			WeaponBuilder.build(statue, hand, 0, { accent = GOLD, section = 4, rarity = 5, scale = 2.4 }, grip)
+			WeaponBuilder.build(statue, hand, 0, { grade = 100, accent = GOLD, rarity = 5, scale = 1.6 }, grip)
 		end
 	end)
 	if not ok then
@@ -872,7 +876,7 @@ function World.buildStatue(rig: Model?)
 			CanCollide = false,
 			Parent = folder,
 		})
-		WeaponBuilder.build(folder, anchor, 1, { accent = GOLD, section = 4, rarity = 5, scale = 3 }, CFrame.new(anchor.Position + Vector3.new(0, 4, 0)))
+		WeaponBuilder.build(folder, anchor, 1, { grade = 100, accent = GOLD, rarity = 5, scale = 2 }, CFrame.new(anchor.Position + Vector3.new(0, 4, 0)))
 	end
 end
 
@@ -898,6 +902,7 @@ export type Arena = {
 	trim: { BasePart },
 	banners: { BasePart },
 	fires: { Fire },
+	ambient: ParticleEmitter?,
 }
 
 local CROWD_COLORS = {
@@ -912,7 +917,31 @@ local CROWD_COLORS = {
 function World.buildArena(center: Vector3, radius: number, name: string): Arena
 	local model = Instance.new("Model")
 	model.Name = name
-	local arena: Arena = { center = center, model = model, trim = {}, banners = {}, fires = {} }
+	local arena: Arena = { center = center, model = model, trim = {}, banners = {}, fires = {}, ambient = nil }
+	-- 투기장 하늘에 흩날리는 속성 입자 (스테이지마다 바뀐다)
+	local sky = part({
+		Name = "ArenaAmbient",
+		Size = Vector3.new(radius * 2, 12, radius * 2),
+		Position = center + Vector3.new(0, 14, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = model,
+	})
+	local ambient = Instance.new("ParticleEmitter")
+	ambient.Rate = 40
+	ambient.Lifetime = NumberRange.new(3, 6)
+	ambient.Speed = NumberRange.new(0.5, 2)
+	ambient.SpreadAngle = Vector2.new(180, 180)
+	ambient.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.2, 0.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	ambient.LightEmission = 1
+	ambient.Parent = sky
+	arena.ambient = ambient
 
 	disc(model, center - Vector3.new(0, 2, 0), 4, radius * 2, Color3.fromRGB(212, 182, 128), Enum.Material.Sand)
 	local ring = disc(model, center + Vector3.new(0, 0.03, 0), 0.12, 30, Color3.fromRGB(255, 200, 80), Enum.Material.Neon)
@@ -986,10 +1015,20 @@ function World.buildArena(center: Vector3, radius: number, name: string): Arena
 	return arena
 end
 
--- 스테이지 구간 색으로 투기장을 물들인다. 보스전은 붉은 불꽃
-function World.themeArena(arena: Arena, color: Color3, isBoss: boolean)
-	for _, p in ipairs(arena.trim) do
-		p.Color = color
+-- 스테이지 등급의 색과 속성으로 투기장을 물들인다. 보스전은 붉은 불꽃
+function World.themeArena(arena: Arena, grade: number, isBoss: boolean)
+	local style = GradeStyle.get(grade)
+	local color = style.glow
+	for i, p in ipairs(arena.trim) do
+		p.Color = (i % 2 == 0) and style.secondary or color
+	end
+	local ambient = arena.ambient
+	if ambient then
+		ambient.Texture = style.motif.tex
+		ambient.Color = GradeStyle.gradient(grade)
+		ambient.Acceleration = style.motif.drift * 0.4
+		ambient.Rate = 25 + grade * 0.6
+		ambient.LightEmission = (style.motif.id == "shadow" or style.motif.id == "void") and 0.2 or 1
 	end
 	for _, b in ipairs(arena.banners) do
 		b.Color = isBoss and CRIMSON or color:Lerp(Color3.new(0, 0, 0), 0.35)

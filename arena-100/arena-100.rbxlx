@@ -539,23 +539,36 @@ return Config
     </Item>
     <Item class="ModuleScript" referent="3">
       <Properties>
-        <string name="Name">WeaponBuilder</string>
-        <string name="Source"><![CDATA[-- WeaponBuilder (ModuleScript, ReplicatedStorage)
--- 서버는 캐릭터 손에, 클라이언트는 무기고 미리보기에 같은 모양을 만든다.
--- 무기 모양, 등급별 빛 효과, 플레이어 오라를 만든다.
+        <string name="Name">GradeStyle</string>
+        <string name="Source"><![CDATA[-- GradeStyle (ModuleScript, ReplicatedStorage)
+-- 등급 1~100마다 다른 디자인을 정한다. 무기, 캐릭터 오라, 적, 칭호, UI가 모두 이걸 본다.
 --
--- 구간이 오를수록 화려해진다
---   1구간: 쇠 칼날
---   2구간: + 희귀도 색 보석, 휘두를 때 궤적
---   3구간: + 칼날 가운데 빛나는 홈, 은은한 빛
---   4구간: + 유리 칼날, 반짝이 파티클
---   5구간: + 우주 칼날(포스필드), 별 파티클
---   6구간: + 빛나는 칼날, 무지개 궤적과 파티클
--- 전설 희귀도는 어느 구간이든 금빛 반짝임이 더해진다
+-- 1. 색: 등급마다 황금각만큼 색상을 돌려서 바로 옆 등급끼리도 확 달라 보인다.
+--        등급이 오를수록 채도와 밝기가 올라간다
+-- 2. 속성: 화염 → 서리 → 번개 → 생명 → 그림자 → 성광 → 선혈 → 공허 → 별빛 → 수정이 등급마다 돌아간다
+-- 3. 장식: 등급이 오를 때마다 룬, 가시, 보석, 구슬, 고리, 날개, 빛줄기, 파편, 검 왕관이 하나씩 늘어난다
+-- 4. 재질: 녹슨 쇠 → 쇠 → 광택 금속 → 금박 → 유리 → 빛 → 우주 → 겹친 빛
 
-local Builder = {}
+local Style = {}
 
-local RAINBOW = ColorSequence.new({
+local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
+local FIRE = "rbxasset://textures/particles/fire_main.dds"
+local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+
+Style.MOTIFS = {
+	{ id = "flame", name = "화염", tex = FIRE, a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 220, 90), drift = Vector3.new(0, 6, 0) },
+	{ id = "frost", name = "서리", tex = SPARKLE, a = Color3.fromRGB(120, 200, 255), b = Color3.fromRGB(235, 250, 255), drift = Vector3.new(0, -2, 0) },
+	{ id = "storm", name = "번개", tex = SPARKLE, a = Color3.fromRGB(255, 240, 90), b = Color3.fromRGB(150, 130, 255), drift = Vector3.new(0, 0, 0) },
+	{ id = "nature", name = "생명", tex = SPARKLE, a = Color3.fromRGB(80, 220, 90), b = Color3.fromRGB(210, 255, 140), drift = Vector3.new(0, 2, 0) },
+	{ id = "shadow", name = "그림자", tex = SMOKE, a = Color3.fromRGB(100, 50, 150), b = Color3.fromRGB(30, 15, 45), drift = Vector3.new(0, 3, 0) },
+	{ id = "holy", name = "성광", tex = SPARKLE, a = Color3.fromRGB(255, 235, 170), b = Color3.fromRGB(255, 255, 255), drift = Vector3.new(0, 5, 0) },
+	{ id = "blood", name = "선혈", tex = SPARKLE, a = Color3.fromRGB(210, 20, 45), b = Color3.fromRGB(255, 100, 100), drift = Vector3.new(0, -6, 0) },
+	{ id = "void", name = "공허", tex = SMOKE, a = Color3.fromRGB(70, 0, 110), b = Color3.fromRGB(190, 90, 255), drift = Vector3.new(0, 1, 0) },
+	{ id = "star", name = "별빛", tex = SPARKLE, a = Color3.fromRGB(150, 175, 255), b = Color3.fromRGB(255, 255, 255), drift = Vector3.new(0, 1, 0) },
+	{ id = "crystal", name = "수정", tex = SPARKLE, a = Color3.fromRGB(110, 255, 230), b = Color3.fromRGB(255, 170, 240), drift = Vector3.new(0, 2, 0) },
+}
+
+Style.RAINBOW = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
 	ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 200, 60)),
 	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(90, 230, 110)),
@@ -563,19 +576,161 @@ local RAINBOW = ColorSequence.new({
 	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(150, 100, 255)),
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 90, 200)),
 })
-Builder.RAINBOW = RAINBOW
 
-local STEEL = Color3.fromRGB(205, 208, 214)
-local DARK_STEEL = Color3.fromRGB(70, 72, 80)
+-- 재질 단계: 등급이 오를수록 칼날 재질이 바뀐다
+local MATERIALS = {
+	{ to = 3, blade = Enum.Material.CorrodedMetal, reflect = 0, name = "녹슨 쇠" },
+	{ to = 8, blade = Enum.Material.Metal, reflect = 0, name = "쇠" },
+	{ to = 14, blade = Enum.Material.Metal, reflect = 0.25, name = "광택 금속" },
+	{ to = 20, blade = Enum.Material.Foil, reflect = 0.15, name = "금박" },
+	{ to = 27, blade = Enum.Material.Metal, reflect = 0.35, name = "빛 새긴 금속" },
+	{ to = 35, blade = Enum.Material.Glass, reflect = 0.2, name = "유리" },
+	{ to = 44, blade = Enum.Material.Glass, reflect = 0.35, name = "빛 머금은 유리" },
+	{ to = 54, blade = Enum.Material.Ice, reflect = 0.3, name = "얼음 결정" },
+	{ to = 64, blade = Enum.Material.Neon, reflect = 0, name = "빛" },
+	{ to = 74, blade = Enum.Material.ForceField, reflect = 0, name = "우주" },
+	{ to = 84, blade = Enum.Material.ForceField, reflect = 0, name = "겹친 우주" },
+	{ to = 93, blade = Enum.Material.Neon, reflect = 0, name = "초월의 빛" },
+	{ to = 100, blade = Enum.Material.Neon, reflect = 0, name = "근원의 빛" },
+}
+
+local cache: { [number]: any } = {}
+
+local function hsv(h: number, s: number, v: number): Color3
+	return Color3.fromHSV(h % 1, math.clamp(s, 0, 1), math.clamp(v, 0, 1))
+end
+
+function Style.get(grade: number)
+	local g = math.clamp(math.floor(grade), 1, 100)
+	local hit = cache[g]
+	if hit then
+		return hit
+	end
+	local p = (g - 1) / 99
+	local motif = Style.MOTIFS[((g - 1) % #Style.MOTIFS) + 1]
+
+	-- 색: 황금각(0.382)씩 색상을 돌린다
+	local hue = (g * 0.381966) % 1
+	local primary = hsv(hue, 0.45 + 0.5 * p, 0.78 + 0.22 * p):Lerp(motif.a, 0.35)
+	if g <= 3 then
+		primary = Color3.fromRGB(150, 95, 60):Lerp(motif.a, 0.15)
+	end
+	local secondary = motif.b:Lerp(primary, 0.3)
+	local glow = primary:Lerp(Color3.new(1, 1, 1), 0.35)
+
+	local mat = MATERIALS[#MATERIALS]
+	for _, m in ipairs(MATERIALS) do
+		if g <= m.to then
+			mat = m
+			break
+		end
+	end
+
+	local s = {
+		grade = g,
+		power = p,
+		motif = motif,
+		primary = primary,
+		secondary = secondary,
+		glow = glow,
+		rainbow = g >= 94,
+		bladeMaterial = mat.blade,
+		reflect = mat.reflect,
+		materialName = mat.name,
+		-- 크기
+		scale = 1 + p * 0.55,
+		lengthMul = 1 + p * 0.35,
+		widthMul = 1 + p * 0.25,
+		-- 장식 개수 (등급이 오를 때마다 하나씩 늘어난다)
+		runes = math.min(12, (g + 4) // 5),
+		spikes = math.min(8, (g + 3) // 7),
+		gems = 1 + math.min(4, g // 20),
+		edge = g >= 21,
+		halo = g >= 30 and math.min(3, 1 + (g - 30) // 25) or 0, -- 칼날을 두른 빛 고리 수
+		wings = g >= 45,
+		wingSize = g >= 45 and (1 + (g - 45) / 30) or 0,
+		beams = g >= 50,
+		auraBlade = g >= 60,
+		orbs = g >= 12 and math.min(6, 1 + (g - 12) // 14) or 0,
+		shards = g >= 70 and math.min(12, 4 + (g - 70) // 3) or 0,
+		crown = g >= 85,
+		-- 빛과 입자
+		particleRate = 3 + g * 0.45,
+		particleSize = 0.18 + p * 0.45,
+		lightRange = 5 + g * 0.14,
+		lightBrightness = 0.7 + p * 2.3,
+		trailLife = 0.16 + p * 0.3,
+		fire = motif.id == "flame" and g >= 10,
+		smoke = (motif.id == "shadow" or motif.id == "void") and g >= 10,
+		sparkles = motif.id == "star" or g >= 40,
+		-- 캐릭터 오라
+		aura = g >= 3,
+		auraRate = 2 + g * 0.3,
+		groundRing = g >= 10,
+		secondRing = g >= 40,
+		bodyOrbs = g >= 20 and math.min(6, 1 + (g - 20) // 12) or 0,
+		bodyWings = g >= 65,
+		bodyHalo = g >= 80,
+		bodyLight = g >= 25,
+		-- 적
+		enemySpikes = math.min(6, g // 12),
+		enemyAura = g >= 8,
+	}
+	cache[g] = s
+	return s
+end
+
+-- 색 띠: 등급 고유 두 색, 94등급부터는 무지개
+function Style.gradient(grade: number): ColorSequence
+	local s = Style.get(grade)
+	if s.rainbow then
+		return Style.RAINBOW
+	end
+	return ColorSequence.new(s.primary:Lerp(Color3.new(1, 1, 1), 0.15), s.secondary)
+end
+
+-- 글자에 쓰기 좋게 밝힌 색
+function Style.textColor(grade: number): Color3
+	local s = Style.get(grade)
+	local h, sat, v = s.primary:ToHSV()
+	return Color3.fromHSV(h, math.min(sat, 0.85), math.max(v, 0.9))
+end
+
+return Style
+]]></string>
+      </Properties>
+    </Item>
+    <Item class="ModuleScript" referent="4">
+      <Properties>
+        <string name="Name">WeaponBuilder</string>
+        <string name="Source"><![CDATA[-- WeaponBuilder (ModuleScript, ReplicatedStorage)
+-- 서버는 캐릭터 손에, 클라이언트는 무기고 미리보기에 같은 모양을 만든다.
+-- 무기 모양과 장식은 GradeStyle이 정한 등급별 디자인을 따른다. 등급이 하나만 달라도 모양이 다르다.
+--
+-- 모든 등급: 등급 고유 색, 속성 입자, 휘두를 때 궤적
+-- 등급이 오를 때마다: 룬 문자 → 가시 → 보석 → 떠다니는 구슬(12~) → 빛 테두리(21~) → 빛 고리(30~)
+--                   → 날개(45~) → 구슬을 잇는 빛줄기(50~) → 두 겹 칼날(60~) → 회전 파편(70~) → 검 왕관(85~)
+-- 희귀도는 보석 색과 궤적 끝 색으로 보이고, 전설은 금빛 반짝임이 붙는다.
+
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
+
+local Builder = {}
+Builder.RAINBOW = GradeStyle.RAINBOW
+
+local DARK_STEEL = Color3.fromRGB(60, 62, 70)
 local LEATHER = Color3.fromRGB(70, 45, 30)
 local GOLD = Color3.fromRGB(225, 180, 70)
 local WOOD = Color3.fromRGB(85, 58, 38)
 
 export type Look = {
-	accent: Color3, -- 희귀도 색
-	section: number, -- 1~6
+	grade: number, -- 1~100 (올라운더는 100)
 	rarity: number, -- 1~5
-	scale: number,
+	accent: Color3, -- 희귀도 색
+	scale: number?,
+	lite: boolean?, -- 적 무기: 떠다니는 장식은 뺀다
 }
 
 type Ctx = {
@@ -615,119 +770,302 @@ local function at(y: number, z: number?, rx: number?): CFrame
 	return CFrame.new(0, y, z or 0) * CFrame.Angles(math.rad(rx or 0), 0, 0)
 end
 
--- 구간에 따른 칼날 재질과 색
-local function bladeStyle(look: Look): (Color3, Enum.Material)
-	local s = look.section
-	if s >= 6 then
-		return Color3.fromRGB(255, 235, 245), Enum.Material.Neon
-	elseif s == 5 then
-		return look.accent, Enum.Material.ForceField
-	elseif s == 4 then
-		return STEEL:Lerp(look.accent, 0.55), Enum.Material.Glass
-	elseif s == 3 then
-		return STEEL:Lerp(look.accent, 0.3), Enum.Material.Metal
+-- 클라이언트가 매 프레임 중심 주위로 돌리는 장식 (고정 파트, 무게 없음)
+local function orbitPart(parent: Instance, center: BasePart, size: Vector3, color: Color3, material: Enum.Material, shape: Enum.PartType?, opts: { [string]: any }): Part
+	local p = Instance.new("Part")
+	p.Name = opts.name or "Orbit"
+	if shape then
+		p.Shape = shape
 	end
-	return STEEL:Lerp(look.accent, 0.15), Enum.Material.Metal
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Massless = true
+	p.Size = size
+	p.Color = color
+	p.Material = material
+	p.Transparency = opts.transparency or 0
+	p.CFrame = center.CFrame * CFrame.new(opts.radius or 0, opts.height or 0, 0)
+	local ref = Instance.new("ObjectValue")
+	ref.Name = "Center"
+	ref.Value = center
+	ref.Parent = p
+	p:SetAttribute("Radius", opts.radius or 0)
+	p:SetAttribute("Height", opts.height or 0)
+	p:SetAttribute("Speed", opts.speed or 1)
+	p:SetAttribute("Phase", opts.phase or 0)
+	p:SetAttribute("UseRotation", opts.useRotation == true)
+	p:SetAttribute("Flat", opts.flat == true)
+	p:SetAttribute("Tumble", opts.tumble or 0)
+	CollectionService:AddTag(p, "ArenaOrbit")
+	p.Parent = parent
+	return p
+end
+Builder.orbitPart = orbitPart
+
+local function emitter(parent: Instance, style: any, rate: number, size: number, opts: { [string]: any }?): ParticleEmitter
+	local o = opts or {}
+	local pe = Instance.new("ParticleEmitter")
+	pe.Name = o.name or "StyleParticles"
+	pe.Texture = style.motif.tex
+	pe.Rate = rate
+	pe.Lifetime = o.lifetime or NumberRange.new(0.5, 1.1)
+	pe.Speed = o.speed or NumberRange.new(0.4, 1.8)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Acceleration = o.accel or style.motif.drift
+	pe.RotSpeed = NumberRange.new(-120, 120)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, size),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	pe.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	local dark = style.motif.id == "shadow" or style.motif.id == "void"
+	pe.LightEmission = dark and 0.1 or 1
+	pe.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, style.secondary)
+	pe.Parent = parent
+	return pe
 end
 
--- 칼날 가운데 홈. 3구간부터 빛난다
-local function fuller(ctx: Ctx, look: Look, thickness: number, length: number, y: number)
-	if look.section >= 3 then
-		mk(ctx, "Fuller", Vector3.new(thickness + 0.04, length, 0.16), at(y), look.accent, Enum.Material.Neon)
-	else
-		mk(ctx, "Fuller", Vector3.new(thickness + 0.02, length, 0.12), at(y), DARK_STEEL, Enum.Material.Metal)
+------------------------------------------------------------------------
+-- 칼날 장식
+------------------------------------------------------------------------
+type BladeInfo = { thick: number, width: number, length: number, startY: number }
+
+local function decorateBlade(ctx: Ctx, style: any, look: Look, blade: BasePart, b: BladeInfo)
+	local midY = b.startY + b.length / 2
+	-- 가운데 홈과 빛 테두리
+	mk(ctx, "Fuller", Vector3.new(b.thick + 0.03, b.length * 0.75, math.max(0.08, b.width * 0.16)), at(midY - b.length * 0.05), style.grade >= 21 and style.glow or DARK_STEEL, style.grade >= 21 and Enum.Material.Neon or Enum.Material.Metal)
+	if style.edge then
+		for _, side in ipairs({ 1, -1 }) do
+			mk(ctx, "Edge", Vector3.new(b.thick + 0.02, b.length * 0.92, 0.07), at(midY, side * (b.width / 2 - 0.02)), style.secondary, Enum.Material.Neon)
+		end
+	end
+	-- 룬 문자: 칼날을 따라 빛나는 점
+	local runes = math.min(style.runes, math.floor(b.length / 0.55))
+	for i = 1, runes do
+		local y = b.startY + 0.35 + (b.length - 0.9) * (i - 0.5) / runes
+		mk(ctx, "Rune", Vector3.new(b.thick + 0.06, 0.2, 0.2), at(y, 0, 45), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon)
+	end
+	-- 가시: 칼날 한쪽을 따라 바깥으로
+	local spikes = style.spikes
+	for i = 1, spikes do
+		local y = b.startY + b.length * (0.12 + 0.6 * (i - 1) / math.max(spikes, 1))
+		local size = 0.18 + 0.03 * style.grade / 10
+		mk(ctx, "Spike", Vector3.new(b.thick * 0.9, size, size), at(y, -(b.width / 2 + size * 0.25), 45), style.primary, Enum.Material.Metal)
+	end
+	-- 두 겹 칼날: 칼날을 감싼 반투명 빛
+	if style.auraBlade and not look.lite then
+		local outer = mk(ctx, "AuraBlade", Vector3.new(b.thick * 2.2, b.length * 1.08, b.width * 1.45), at(midY + b.length * 0.03), style.secondary, Enum.Material.ForceField)
+		outer.Transparency = 0.25
+	end
+	-- 빛 고리: 칼날을 두른 고리들
+	for r = 1, style.halo do
+		local y = b.startY + b.length * (0.3 + 0.25 * (r - 1))
+		local radius = b.width * 0.75 + 0.35 + r * 0.1
+		for i = 0, 9 do
+			local a = (i / 10) * math.pi * 2
+			mk(ctx, "Halo", Vector3.new(0.14, 0.14, radius * 0.66), CFrame.new(math.cos(a) * radius, y, math.sin(a) * radius) * CFrame.Angles(0, -a, 0), (r % 2 == 1) and style.glow or style.secondary, Enum.Material.Neon)
+		end
+	end
+	-- 궤적
+	local a0 = Instance.new("Attachment")
+	a0.Name = "TrailBase"
+	a0.Position = Vector3.new(0, -blade.Size.Y / 2 + 0.1, 0)
+	a0.Parent = blade
+	local a1 = Instance.new("Attachment")
+	a1.Name = "TrailTip"
+	a1.Position = Vector3.new(0, blade.Size.Y / 2, 0)
+	a1.Parent = blade
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	trail.Lifetime = style.trailLife
+	trail.MinLength = 0.05
+	trail.LightEmission = 0.9
+	trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	trail.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, look.accent)
+	trail.Parent = blade
+
+	-- 빛과 입자
+	if style.grade >= 4 then
+		local light = Instance.new("PointLight")
+		light.Color = style.glow
+		light.Range = style.lightRange
+		light.Brightness = style.lightBrightness
+		light.Parent = blade
+	end
+	emitter(blade, style, look.lite and style.particleRate * 0.4 or style.particleRate, style.particleSize)
+	if style.fire and not look.lite then
+		local fire = Instance.new("Fire")
+		fire.Size = 2 + style.grade * 0.04
+		fire.Heat = 6
+		fire.Color = style.primary
+		fire.SecondaryColor = style.secondary
+		fire.Parent = blade
+	end
+	if style.smoke and not look.lite then
+		local smoke = Instance.new("Smoke")
+		smoke.Color = style.primary
+		smoke.Opacity = 0.12
+		smoke.RiseVelocity = 2
+		smoke.Size = 1.5
+		smoke.Parent = blade
+	end
+	if style.sparkles or look.rarity >= 5 then
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = look.rarity >= 5 and GOLD or style.glow
+		sp.Parent = blade
+	end
+
+	-- 떠다니는 구슬, 빛줄기, 파편 (클라이언트가 돌린다)
+	if look.lite then
+		return
+	end
+	local tip = Instance.new("Attachment")
+	tip.Name = "BeamTip"
+	tip.Position = Vector3.new(0, blade.Size.Y / 2, 0)
+	tip.Parent = blade
+	for i = 1, style.orbs do
+		local orb = orbitPart(ctx.parent, blade, Vector3.new(0.45, 0.45, 0.45) * ctx.scale * (1 + style.power * 0.6), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon, Enum.PartType.Ball, {
+			name = "Orb",
+			radius = (b.width * 0.8 + 0.7) * ctx.scale,
+			height = (-blade.Size.Y / 2) + blade.Size.Y * (i / (style.orbs + 1)),
+			speed = 2.2,
+			phase = i * (math.pi * 2 / style.orbs),
+			useRotation = true,
+		})
+		if style.beams then
+			local att = Instance.new("Attachment")
+			att.Parent = orb
+			local beam = Instance.new("Beam")
+			beam.Attachment0 = tip
+			beam.Attachment1 = att
+			beam.Width0 = 0.12
+			beam.Width1 = 0.05
+			beam.FaceCamera = true
+			beam.LightEmission = 1
+			beam.Segments = 8
+			beam.CurveSize0 = 0.8
+			beam.CurveSize1 = -0.8
+			beam.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, style.secondary)
+			beam.Transparency = NumberSequence.new(0.15)
+			beam.Parent = orb
+		end
+	end
+	for i = 1, style.shards do
+		orbitPart(ctx.parent, blade, Vector3.new(0.12, 0.45, 0.22) * ctx.scale, (i % 3 == 0) and style.secondary or style.glow, Enum.Material.Glass, nil, {
+			name = "Shard",
+			radius = (b.width * 1.2 + 1.3) * ctx.scale,
+			height = (-blade.Size.Y / 2) + blade.Size.Y * ((i % 6) + 1) / 7,
+			speed = -3.2,
+			phase = i * 0.9,
+			useRotation = true,
+			tumble = 4,
+		})
 	end
 end
 
-local function gem(ctx: Ctx, look: Look, y: number, size: number)
-	if look.section >= 2 or look.rarity >= 4 then
-		mk(ctx, "Gem", Vector3.new(size, size, size), at(y, 0, 45), look.accent, Enum.Material.Neon)
+-- 가드: 보석, 날개, 검 왕관
+local function decorateGuard(ctx: Ctx, style: any, look: Look, guardY: number, guardW: number)
+	local n = style.gems
+	for i = 1, n do
+		local z = (n == 1) and 0 or (-guardW * 0.35 + guardW * 0.7 * (i - 1) / (n - 1))
+		mk(ctx, "Gem", Vector3.new(0.34, 0.34, 0.34), at(guardY, z, 45), (i == (n + 1) // 2) and look.accent or style.glow, Enum.Material.Neon)
+	end
+	if style.wings then
+		local w = style.wingSize
+		for _, side in ipairs({ 1, -1 }) do
+			for f = 0, 2 do
+				local len = (1.6 - f * 0.35) * w
+				mk(ctx, "Wing", Vector3.new(0.12, len, 0.38 * w), at(guardY + 0.25 + f * 0.18, side * (guardW / 2 + len * 0.3), side * (35 + f * 18)), (f == 0) and style.glow or style.secondary, style.grade >= 70 and Enum.Material.ForceField or Enum.Material.Neon)
+			end
+		end
+	end
+	if style.crown and not look.lite then
+		for i = 0, 7 do
+			local a = (i / 8) * math.pi * 2
+			mk(ctx, "CrownBlade", Vector3.new(0.1, 0.9, 0.22), CFrame.new(math.cos(a) * 0.5, guardY - 0.5, math.sin(a) * 0.5) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, math.rad(-55)), style.glow, Enum.Material.Neon)
+		end
 	end
 end
 
--- 칼끝: 45도 돌린 네모로 뾰족하게
-local function tip(ctx: Ctx, color: Color3, material: Enum.Material, thickness: number, width: number, y: number): Part
-	local d = width * 0.71
-	return mk(ctx, "Tip", Vector3.new(thickness, d, d), at(y, 0, 45), color, material)
-end
+------------------------------------------------------------------------
+-- 계열별 모양
+------------------------------------------------------------------------
+type Dims = { handle: number, guardW: number, bladeW: number, bladeL: number, bladeT: number, pommel: boolean }
 
--- 무기 모양들. 각각 궤적 시작점과 끝점이 될 파트를 돌려준다
-local shapes: { [number]: (Ctx, Look) -> (BasePart, Vector3, Vector3) } = {}
+local DIMS: { [number]: Dims } = {
+	[1] = { handle = 1.8, guardW = 2.8, bladeW = 1.25, bladeL = 5.6, bladeT = 0.26, pommel = true }, -- 대검
+	[2] = { handle = 1.0, guardW = 1.1, bladeW = 0.5, bladeL = 3.0, bladeT = 0.16, pommel = false }, -- 쌍검
+	[3] = { handle = 1.7, guardW = 1.8, bladeW = 0.52, bladeL = 7.0, bladeT = 0.18, pommel = true }, -- 장검
+	[4] = { handle = 0.9, guardW = 0.9, bladeW = 0.44, bladeL = 1.9, bladeT = 0.15, pommel = false }, -- 단검
+	[0] = { handle = 1.9, guardW = 3.0, bladeW = 1.4, bladeL = 6.6, bladeT = 0.3, pommel = true }, -- 올라운더
+}
 
--- 대검: 넓고 두꺼운 칼날, 커다란 십자 가드
-shapes[1] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.36, 1.8, 0.36), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.62, 0.62, 0.62), at(-1.05), guardColor, Enum.Material.Metal, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.5, 0.36, 2.8), at(1.05), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardL", Vector3.new(0.5, 0.7, 0.36), at(1.25, 1.3), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardR", Vector3.new(0.5, 0.7, 0.36), at(1.25, -1.3), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 1.05, 0.5)
-	local blade = mk(ctx, "Blade", Vector3.new(0.26, 5.6, 1.25), at(4.03), bc, bm)
-	fuller(ctx, look, 0.26, 4.4, 3.6)
-	tip(ctx, bc, bm, 0.26, 1.25, 6.83)
-	return blade, Vector3.new(0, -2.6, 0), Vector3.new(0, 3.1, 0)
-end
-
--- 쌍검: 짧고 날렵한 칼날 (손마다 하나)
-shapes[2] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.28, 1.0, 0.28), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Guard", Vector3.new(0.36, 0.2, 1.1), at(0.6, 0, -12), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.6, 0.3)
-	local blade = mk(ctx, "Blade", Vector3.new(0.16, 3.0, 0.5), at(2.2, 0.08, 4), bc, bm)
-	tip(ctx, bc, bm, 0.16, 0.5, 3.75)
-	if look.section >= 3 then
-		mk(ctx, "Edge", Vector3.new(0.18, 2.6, 0.08), at(2.1, 0.3, 4), look.accent, Enum.Material.Neon)
+local function straightSword(ctx: Ctx, style: any, look: Look, typeId: number): BasePart
+	local d = DIMS[typeId] or DIMS[1]
+	local bladeL = d.bladeL * style.lengthMul
+	local bladeW = d.bladeW * style.widthMul
+	local guardColor = look.rarity >= 5 and GOLD or style.primary:Lerp(DARK_STEEL, 0.55)
+	local handleColor = style.grade >= 50 and style.primary:Lerp(Color3.new(0, 0, 0), 0.6) or LEATHER
+	mk(ctx, "Grip", Vector3.new(0.34, d.handle, 0.34), at(0), handleColor, Enum.Material.Fabric)
+	for i = 1, 3 do
+		mk(ctx, "Wrap", Vector3.new(0.38, 0.08, 0.38), at(-d.handle / 2 + d.handle * i / 4), guardColor, Enum.Material.Metal)
 	end
-	return blade, Vector3.new(0, -1.4, 0), Vector3.new(0, 1.6, 0)
-end
-
--- 장검: 아주 길고 가는 칼날, 고리 모양 가드
-shapes[3] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.3, 1.7, 0.3), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.45, 0.45, 0.45), at(-0.95), guardColor, Enum.Material.Metal, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.4, 0.26, 1.8), at(0.95), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardL", Vector3.new(0.4, 0.55, 0.26), at(0.75, 0.9), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardR", Vector3.new(0.4, 0.55, 0.26), at(0.75, -0.9), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.95, 0.36)
-	local blade = mk(ctx, "Blade", Vector3.new(0.18, 7.0, 0.52), at(4.6), bc, bm)
-	fuller(ctx, look, 0.18, 5.8, 4.2)
-	tip(ctx, bc, bm, 0.18, 0.52, 8.1)
-	return blade, Vector3.new(0, -3.3, 0), Vector3.new(0, 3.6, 0)
-end
-
--- 단검: 짧은 칼날과 손가락 보호대
-shapes[4] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.3, 0.9, 0.3), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Guard", Vector3.new(0.4, 0.2, 0.9), at(0.55), guardColor, Enum.Material.Metal)
-	mk(ctx, "Knuckle", Vector3.new(0.2, 1.1, 0.16), at(0, -0.45), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.55, 0.28)
-	local blade = mk(ctx, "Blade", Vector3.new(0.15, 1.9, 0.44), at(1.6), bc, bm)
-	tip(ctx, bc, bm, 0.15, 0.44, 2.55)
-	if look.section >= 3 then
-		mk(ctx, "Edge", Vector3.new(0.17, 1.7, 0.08), at(1.5, 0.22), look.accent, Enum.Material.Neon)
+	if d.pommel then
+		local pommel = mk(ctx, "Pommel", Vector3.new(0.6, 0.6, 0.6), at(-d.handle / 2 - 0.2), guardColor, style.grade >= 30 and Enum.Material.Neon or Enum.Material.Metal, Enum.PartType.Ball)
+		if style.grade >= 30 then
+			pommel.Color = style.glow
+		end
 	end
-	return blade, Vector3.new(0, -0.9, 0), Vector3.new(0, 1.0, 0)
+	local guardY = d.handle / 2 + 0.12
+	mk(ctx, "Guard", Vector3.new(0.48, 0.32, d.guardW), at(guardY), guardColor, Enum.Material.Metal)
+	if typeId == 1 or typeId == 0 or typeId == 3 then
+		for _, side in ipairs({ 1, -1 }) do
+			mk(ctx, "GuardTip", Vector3.new(0.48, 0.6, 0.3), at(guardY + 0.18, side * d.guardW / 2), guardColor, Enum.Material.Metal)
+		end
+	end
+	if typeId == 4 then
+		mk(ctx, "Knuckle", Vector3.new(0.2, d.handle * 1.1, 0.14), at(0, -0.42), guardColor, Enum.Material.Metal)
+	end
+	decorateGuard(ctx, style, look, guardY, d.guardW)
+
+	local bladeColor = style.primary:Lerp(Color3.fromRGB(230, 232, 238), style.grade < 55 and 0.45 or 0.1)
+	local startY = guardY + 0.16
+	local blade = mk(ctx, "Blade", Vector3.new(d.bladeT, bladeL, bladeW), at(startY + bladeL / 2), bladeColor, style.bladeMaterial)
+	blade.Reflectance = style.reflect
+	-- 칼끝: 45도 돌린 네모로 뾰족하게
+	local tipSize = bladeW * 0.71
+	local tipPart = mk(ctx, "BladeTip", Vector3.new(d.bladeT, tipSize, tipSize), at(startY + bladeL, 0, 45), bladeColor, style.bladeMaterial)
+	tipPart.Reflectance = style.reflect
+	if typeId == 0 then
+		mk(ctx, "Core", Vector3.new(d.bladeT + 0.05, bladeL * 0.85, 0.3), at(startY + bladeL * 0.45), Color3.fromRGB(255, 150, 210), Enum.Material.Neon)
+	end
+	decorateBlade(ctx, style, look, blade, { thick = d.bladeT, width = bladeW, length = bladeL, startY = startY })
+	return blade
 end
 
--- 낫: 긴 자루 끝에서 아래로 휘어 내려오는 날
-shapes[5] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local ringColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Shaft", Vector3.new(0.3, 6.4, 0.3), at(2.6), WOOD, Enum.Material.Wood)
-	for i, y in ipairs({ 0.2, 2.8, 5.4 }) do
-		mk(ctx, "Band" .. i, Vector3.new(0.4, 0.22, 0.4), at(y), ringColor, Enum.Material.Metal)
+local function scythe(ctx: Ctx, style: any, look: Look): BasePart
+	local bc = style.primary:Lerp(Color3.fromRGB(230, 232, 238), style.grade < 55 and 0.45 or 0.1)
+	local ringColor = look.rarity >= 5 and GOLD or style.primary:Lerp(DARK_STEEL, 0.5)
+	local shaftLen = 6.4 * (1 + style.power * 0.2)
+	local shaft = mk(ctx, "Shaft", Vector3.new(0.3, shaftLen, 0.3), at(shaftLen / 2 - 0.6), style.grade >= 50 and style.primary:Lerp(Color3.new(0, 0, 0), 0.55) or WOOD, Enum.Material.Wood)
+	local bands = 3 + math.min(4, style.grade // 15)
+	for i = 1, bands do
+		mk(ctx, "Band", Vector3.new(0.4, 0.2, 0.4), at(-0.4 + (shaftLen - 0.4) * i / (bands + 1)), ringColor, Enum.Material.Metal)
 	end
-	gem(ctx, look, 5.85, 0.36)
-	-- 날: 자루 끝(O)에서 시작해 원을 따라 아래로, 뒤로 휜다
-	local oy, radius, segs, sweep = 5.8, 2.6, 5, 110
+	local oy = shaftLen - 0.8
+	decorateGuard(ctx, style, look, oy, 0.8)
+	-- 날: 자루 끝에서 원을 따라 아래로, 뒤로 휜다
+	local radius = 2.6 * style.lengthMul
+	local segs = 6
+	local sweep = 115
 	local last: Part? = nil
 	for i = 0, segs - 1 do
 		local a0 = math.rad(sweep * i / segs)
@@ -736,81 +1074,23 @@ shapes[5] = function(ctx, look)
 		local y1, z1 = oy - radius + radius * math.cos(a1), -radius * math.sin(a1)
 		local dy, dz = y1 - y0, z1 - z0
 		local len = math.sqrt(dy * dy + dz * dz) + 0.08
-		local width = 0.7 - 0.45 * (i / (segs - 1))
+		local width = (0.75 - 0.5 * (i / (segs - 1))) * style.widthMul
 		local angle = math.deg(math.atan2(dz, dy))
-		-- 날은 바깥쪽(자루 쪽 반대)으로 폭을 준다
 		local cf = CFrame.new(0, (y0 + y1) / 2, (z0 + z1) / 2) * CFrame.Angles(math.rad(angle), 0, 0) * CFrame.new(0, 0, width / 2 - 0.1)
-		last = mk(ctx, "Blade" .. i, Vector3.new(0.14, len, width), cf, bc, bm)
-		if look.section >= 3 then
-			mk(ctx, "Edge" .. i, Vector3.new(0.16, len, 0.08), cf * CFrame.new(0, 0, width / 2), look.accent, Enum.Material.Neon)
+		local seg = mk(ctx, "Blade" .. i, Vector3.new(0.14, len, width), cf, bc, style.bladeMaterial)
+		seg.Reflectance = style.reflect
+		if style.edge then
+			mk(ctx, "Edge" .. i, Vector3.new(0.16, len, 0.08), cf * CFrame.new(0, 0, width / 2), style.secondary, Enum.Material.Neon)
 		end
+		if i % 2 == 0 and style.runes > i then
+			mk(ctx, "Rune" .. i, Vector3.new(0.2, 0.18, 0.18), cf * CFrame.Angles(math.rad(45), 0, 0), style.glow, Enum.Material.Neon)
+		end
+		last = seg
 	end
-	tip(ctx, bc, bm, 0.14, 0.5, oy + 0.35)
-	return (last :: Part), Vector3.new(0, 0, 0), Vector3.new(0, 0, 0)
-end
-
--- 올라운더: 거대한 백금 칼날, 날개 가드, 칼날을 감싼 빛 고리
-shapes[0] = function(ctx, look)
-	local bc = Color3.fromRGB(255, 248, 225)
-	mk(ctx, "Grip", Vector3.new(0.38, 1.9, 0.38), at(0), Color3.fromRGB(40, 30, 60), Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.7, 0.7, 0.7), at(-1.1), GOLD, Enum.Material.Neon, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.55, 0.4, 3.0), at(1.1), GOLD, Enum.Material.Metal)
-	mk(ctx, "WingL", Vector3.new(0.3, 2.2, 0.5), at(1.6, 1.6, 35), Color3.fromRGB(255, 240, 200), Enum.Material.Neon)
-	mk(ctx, "WingR", Vector3.new(0.3, 2.2, 0.5), at(1.6, -1.6, -35), Color3.fromRGB(255, 240, 200), Enum.Material.Neon)
-	mk(ctx, "Gem", Vector3.new(0.6, 0.6, 0.6), at(1.1, 0, 45), Color3.fromRGB(255, 120, 200), Enum.Material.Neon)
-	local blade = mk(ctx, "Blade", Vector3.new(0.3, 6.6, 1.4), at(4.6), bc, Enum.Material.Neon)
-	mk(ctx, "Core", Vector3.new(0.34, 5.6, 0.3), at(4.3), Color3.fromRGB(255, 150, 210), Enum.Material.Neon)
-	tip(ctx, bc, Enum.Material.Neon, 0.3, 1.4, 7.9)
-	for i = 0, 9 do
-		local a = (i / 10) * math.pi * 2
-		local cf = CFrame.new(math.cos(a) * 1.3, 5.2, math.sin(a) * 1.3) * CFrame.Angles(0, -a, 0)
-		mk(ctx, "Halo" .. i, Vector3.new(0.2, 0.2, 0.85), cf, GOLD, Enum.Material.Neon)
-	end
-	return blade, Vector3.new(0, -3.1, 0), Vector3.new(0, 3.6, 0)
-end
-
-local function addTrail(blade: BasePart, a0Pos: Vector3, a1Pos: Vector3, look: Look, rainbow: boolean)
-	if a0Pos == a1Pos then
-		a0Pos = Vector3.new(0, -blade.Size.Y / 2, 0)
-		a1Pos = Vector3.new(0, blade.Size.Y / 2, 0)
-	end
-	local a0 = Instance.new("Attachment")
-	a0.Name = "TrailBase"
-	a0.Position = a0Pos
-	a0.Parent = blade
-	local a1 = Instance.new("Attachment")
-	a1.Name = "TrailTip"
-	a1.Position = a1Pos
-	a1.Parent = blade
-	local trail = Instance.new("Trail")
-	trail.Attachment0 = a0
-	trail.Attachment1 = a1
-	trail.Lifetime = look.section >= 4 and 0.28 or 0.18
-	trail.MinLength = 0.05
-	trail.LightEmission = look.section >= 3 and 0.8 or 0.3
-	trail.FaceCamera = false
-	trail.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.25),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	trail.Color = rainbow and RAINBOW or ColorSequence.new(look.accent)
-	trail.Parent = blade
-end
-
-local function addSparkles(blade: BasePart, look: Look, rainbow: boolean)
-	local p = Instance.new("ParticleEmitter")
-	p.Name = "BladeSparkle"
-	p.Rate = look.section >= 5 and 14 or 8
-	p.Lifetime = NumberRange.new(0.5, 1.0)
-	p.Speed = NumberRange.new(0.3, 1.2)
-	p.SpreadAngle = Vector2.new(180, 180)
-	p.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, look.section >= 5 and 0.3 or 0.2),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	p.LightEmission = 1
-	p.Color = rainbow and RAINBOW or ColorSequence.new(look.accent)
-	p.Parent = blade
+	mk(ctx, "TopSpike", Vector3.new(0.14, 0.5, 0.5) * (1 + style.power), at(oy + 0.35, 0, 45), bc, style.bladeMaterial)
+	-- 장식은 자루 기준으로 붙인다 (구슬은 자루 위쪽을 돈다)
+	decorateBlade(ctx, style, look, shaft, { thick = 0.3, width = 0.5, length = shaftLen, startY = -0.6 })
+	return (last :: Part)
 end
 
 -- 무기 하나를 손에 붙인다. 손에 붙은 Model을 돌려준다
@@ -818,72 +1098,117 @@ function Builder.build(parent: Instance, hand: BasePart, typeId: number, look: L
 	local model = Instance.new("Model")
 	model.Name = "Weapon"
 	model.Parent = parent
+	local grade = typeId == 0 and 100 or look.grade
+	local style = GradeStyle.get(grade)
 	local grip = gripOverride or (hand.CFrame * CFrame.new(0, -hand.Size.Y / 2, 0) * CFrame.Angles(math.rad(-90), 0, 0))
-	local ctx: Ctx = { parent = model, hand = hand, grip = grip, scale = look.scale }
-	local shape = shapes[typeId] or shapes[1]
-	local blade, a0, a1 = shape(ctx, look)
-	local rainbow = look.section >= 6 or typeId == 0
-
-	if look.section >= 2 or typeId == 0 then
-		addTrail(blade, a0 * look.scale, a1 * look.scale, look, rainbow)
-	end
-	if look.section >= 3 or typeId == 0 then
-		local light = Instance.new("PointLight")
-		light.Color = rainbow and Color3.fromRGB(255, 220, 240) or look.accent
-		light.Range = 6 + look.section * 1.5
-		light.Brightness = 0.8 + look.section * 0.3
-		light.Parent = blade
-	end
-	if look.section >= 4 or typeId == 0 then
-		addSparkles(blade, look, rainbow)
-	end
-	if look.rarity >= 5 and look.section >= 2 then
-		local glint = Instance.new("Sparkles")
-		glint.SparkleColor = GOLD
-		glint.Parent = blade
+	local ctx: Ctx = { parent = model, hand = hand, grip = grip, scale = (look.scale or 1) * style.scale }
+	if typeId == 5 then
+		scythe(ctx, style, look)
+	else
+		straightSword(ctx, style, look, typeId)
 	end
 	return model
 end
 
--- 장착 무기 구간에 따라 캐릭터 주위에 오라를 붙인다
-function Builder.applyAura(char: Model, section: number, color: Color3)
+------------------------------------------------------------------------
+-- 캐릭터 오라: 장착한 무기 등급마다 다르다
+------------------------------------------------------------------------
+function Builder.applyAura(char: Model, grade: number)
 	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then
+	if not (root and root:IsA("BasePart")) then
 		return
+	end
+	local old = char:FindFirstChild("ArenaAura")
+	if old then
+		old:Destroy()
 	end
 	for _, child in ipairs(root:GetChildren()) do
 		if child.Name == "RankAura" then
 			child:Destroy()
 		end
 	end
-	if section < 3 then
-		return
+	local style = GradeStyle.get(grade)
+	local holder = Instance.new("Model")
+	holder.Name = "ArenaAura"
+	holder.Parent = char
+
+	if style.aura then
+		local pe = emitter(root, style, style.auraRate, 0.5 + style.power * 0.9, {
+			name = "RankAura",
+			lifetime = NumberRange.new(0.8, 1.5),
+			speed = NumberRange.new(1, 3),
+		})
+		pe.SpreadAngle = Vector2.new(40, 40)
+		pe.EmissionDirection = Enum.NormalId.Top
 	end
-	local rainbow = section >= 6
-	local aura = Instance.new("ParticleEmitter")
-	aura.Name = "RankAura"
-	aura.Rate = 4 + (section - 3) * 4
-	aura.Lifetime = NumberRange.new(0.8, 1.4)
-	aura.Speed = NumberRange.new(1.5, 3)
-	aura.SpreadAngle = Vector2.new(25, 25)
-	aura.EmissionDirection = Enum.NormalId.Top
-	aura.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.6 + section * 0.1),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	aura.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.4),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	aura.LightEmission = 0.8
-	aura.Color = rainbow and RAINBOW or ColorSequence.new(color)
-	aura.Parent = root
-	if section >= 5 then
+	if style.groundRing then
+		orbitPart(holder, root, Vector3.new(0.12, 4.5 + style.grade * 0.05, 4.5 + style.grade * 0.05), style.glow, Enum.Material.Neon, Enum.PartType.Cylinder, {
+			name = "AuraRing",
+			height = -2.85,
+			speed = 0.8,
+			flat = true,
+			transparency = 0.55,
+		})
+	end
+	if style.secondRing then
+		orbitPart(holder, root, Vector3.new(0.1, 7 + style.grade * 0.04, 7 + style.grade * 0.04), style.secondary, Enum.Material.ForceField, Enum.PartType.Cylinder, {
+			name = "AuraRing2",
+			height = -2.8,
+			speed = -0.6,
+			flat = true,
+			transparency = 0.2,
+		})
+	end
+	for i = 1, style.bodyOrbs do
+		local orb = orbitPart(holder, root, Vector3.new(0.6, 0.6, 0.6) * (1 + style.power * 0.5), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon, Enum.PartType.Ball, {
+			name = "AuraOrb",
+			radius = 3.2,
+			height = 0.2 + (i % 3) * 0.6,
+			speed = 1.6,
+			phase = i * (math.pi * 2 / style.bodyOrbs),
+		})
+		local tr = Instance.new("Trail")
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, 0.25, 0)
+		a0.Parent = orb
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, -0.25, 0)
+		a1.Parent = orb
+		tr.Attachment0 = a0
+		tr.Attachment1 = a1
+		tr.Lifetime = 0.35
+		tr.LightEmission = 1
+		tr.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(orb.Color)
+		tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+		tr.Parent = orb
+	end
+	local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+	if style.bodyWings and torso and torso:IsA("BasePart") then
+		local size = 1 + (style.grade - 65) / 25
+		local ctx: Ctx = { parent = holder, hand = torso, grip = torso.CFrame * CFrame.new(0, 0.4, torso.Size.Z / 2 + 0.25), scale = 1 }
+		for _, side in ipairs({ 1, -1 }) do
+			for f = 0, 3 do
+				local len = (2.8 - f * 0.45) * size
+				local cf = CFrame.new(side * (0.5 + len * 0.35), 0.4 - f * 0.35, f * 0.05) * CFrame.Angles(0, 0, math.rad(side * (-60 + f * 22)))
+				local feather = mk(ctx, "Wing", Vector3.new(0.12, len, 0.55 * size), CFrame.new(cf.Position) * cf.Rotation * CFrame.Angles(0, math.rad(90), 0), (f % 2 == 0) and style.glow or style.secondary, style.grade >= 85 and Enum.Material.ForceField or Enum.Material.Neon)
+				feather.Transparency = 0.1
+			end
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	if style.bodyHalo and head and head:IsA("BasePart") then
+		local ctx: Ctx = { parent = holder, hand = head, grip = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.7, 0), scale = 1 }
+		for i = 0, 11 do
+			local a = (i / 12) * math.pi * 2
+			mk(ctx, "Halo", Vector3.new(0.12, 0.12, 0.5), CFrame.new(math.cos(a) * 0.95, 0, math.sin(a) * 0.95) * CFrame.Angles(0, -a, 0), style.glow, Enum.Material.Neon)
+		end
+	end
+	if style.bodyLight then
 		local light = Instance.new("PointLight")
 		light.Name = "RankAura"
-		light.Color = rainbow and Color3.fromRGB(255, 200, 235) or color
-		light.Range = 10
-		light.Brightness = 1.2
+		light.Color = style.glow
+		light.Range = 8 + style.power * 10
+		light.Brightness = 0.8 + style.power * 1.5
 		light.Parent = root
 	end
 end
@@ -893,11 +1218,11 @@ return Builder
       </Properties>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="4">
+  <Item class="ServerScriptService" referent="5">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="5">
+    <Item class="Script" referent="6">
       <Properties>
         <string name="Name">ArenaServer</string>
         <token name="RunContext">0</token>
@@ -917,6 +1242,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 local World = require(script:WaitForChild("WorldBuilder"))
 local EnemyBuilder = require(script:WaitForChild("EnemyBuilder"))
 local EnemyAI = require(script:WaitForChild("EnemyAI"))
@@ -1289,9 +1615,11 @@ local function updateTitle(player: Player)
 	if not head then
 		return
 	end
-	local old = head:FindFirstChild("RankTitle")
-	if old then
-		old:Destroy()
+	for _, name in ipairs({ "RankTitle", "TitleSparkle" }) do
+		local old = head:FindFirstChild(name)
+		if old then
+			old:Destroy()
+		end
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "RankTitle"
@@ -1321,16 +1649,31 @@ local function updateTitle(player: Player)
 		main.TextColor3 = Color3.fromRGB(170, 170, 170)
 	else
 		local section, sectionIndex = Config.getSection(p.maxStage)
-		top.Text = string.format("%d구간 · %s", sectionIndex, section.name)
+		local style = GradeStyle.get(p.maxStage)
+		top.Text = string.format("%d구간 %s · %s의 기운", sectionIndex, section.name, style.motif.name)
+		top.TextColor3 = style.glow
 		main.Text = string.format("[%d] %s", p.maxStage, rankName)
-		main.TextStrokeColor3 = section.color:Lerp(Color3.new(0, 0, 0), 0.7)
-		if section.rainbow then
-			main.TextColor3 = Color3.new(1, 1, 1)
-			local g = Instance.new("UIGradient")
-			g.Color = WeaponBuilder.RAINBOW
-			g.Parent = main
-		else
-			main.TextColor3 = section.color
+		main.TextColor3 = Color3.new(1, 1, 1)
+		main.TextStrokeColor3 = style.primary:Lerp(Color3.new(0, 0, 0), 0.75)
+		local g = Instance.new("UIGradient")
+		g.Color = GradeStyle.gradient(p.maxStage)
+		g.Parent = main
+		-- 높은 등급은 칭호 주위에도 입자가 흩날린다
+		if p.maxStage >= 30 then
+			local glowPart = Instance.new("Attachment")
+			glowPart.Name = "TitleSparkle"
+			glowPart.Position = Vector3.new(0, 3.2, 0)
+			glowPart.Parent = head
+			local pe = Instance.new("ParticleEmitter")
+			pe.Texture = style.motif.tex
+			pe.Rate = 4 + p.maxStage * 0.1
+			pe.Lifetime = NumberRange.new(0.6, 1.2)
+			pe.Speed = NumberRange.new(0.5, 1.5)
+			pe.SpreadAngle = Vector2.new(180, 30)
+			pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+			pe.LightEmission = 1
+			pe.Color = GradeStyle.gradient(p.maxStage)
+			pe.Parent = glowPart
 		end
 	end
 	gui.Parent = head
@@ -1355,15 +1698,12 @@ local function attachWeapon(player: Player)
 	if not (right and right:IsA("BasePart")) then
 		return
 	end
-	local section, sectionIndex = Config.getSection(info.grade)
-	if info.typeId == 0 then
-		sectionIndex = 6
-	end
+	local grade = info.typeId == 0 and 100 or info.grade
 	local look = {
+		grade = grade,
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
-		section = sectionIndex,
 		rarity = info.rarity.rank,
-		scale = 1 + (sectionIndex - 1) * 0.06,
+		scale = 1,
 	}
 	local holder = Instance.new("Model")
 	holder.Name = "ArenaWeapon"
@@ -1372,7 +1712,7 @@ local function attachWeapon(player: Player)
 	if info.typeId == 2 and left and left:IsA("BasePart") then
 		WeaponBuilder.build(holder, left, 2, look)
 	end
-	WeaponBuilder.applyAura(char, sectionIndex, section.color)
+	WeaponBuilder.applyAura(char, grade)
 end
 
 ------------------------------------------------------------------------
@@ -1502,20 +1842,21 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 		model:Destroy()
 		return
 	end
-	local section, sectionIndex = Config.getSection(grade)
+	local style = GradeStyle.get(grade)
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum.WalkSpeed = isBoss and 11 or cfg.speed
 	hum.BreakJointsOnDeath = false
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-	local scale = section.scale * cfg.scale * (isBoss and 1.8 or 1)
+	-- 등급이 오를수록 조금씩 커진다
+	local scale = (1 + (grade - 1) * 0.006) * cfg.scale * (isBoss and 1.8 or 1)
 	pcall(function()
 		model:ScaleTo(scale)
 	end)
 	model.Name = (isBoss and "BOSS " or "") .. Config.getGrade(grade).en
 	model:SetAttribute("Enemy", true)
 	model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 4 * scale, 0), s.arena.center + Vector3.new(0, 4 * scale, 0)))
-	EnemyBuilder.dress(model, kind, section.color, sectionIndex, isBoss == true, scale, WeaponBuilder.RAINBOW)
+	EnemyBuilder.dress(model, kind, grade, isBoss == true, scale)
 	model.Parent = s.folder
 	pcall(function()
 		(root :: BasePart):SetNetworkOwner(nil)
@@ -1540,7 +1881,7 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 	local dmg = isBoss and info.bossDmg or info.unitDmg * cfg.dmg
 	local title = string.format("%s[%d] %s", isBoss and "👑 " or "", grade, Config.getGrade(grade).en)
 	local sub = isBoss and ("BOSS · " .. cfg.name) or cfg.name
-	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or section.color, 3.4 * scale, isBoss == true)
+	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or GradeStyle.textColor(grade), 3.4 * scale, isBoss == true)
 	local now = os.clock()
 	table.insert(s.enemies, {
 		model = model,
@@ -1548,7 +1889,7 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 		root = root,
 		kind = kind,
 		cfg = cfg,
-		accent = section.color,
+		accent = style.glow,
 		hp = hp,
 		maxHp = hp,
 		dmg = dmg,
@@ -1923,6 +2264,7 @@ local function performAttack(player: Player, st: State, s: Session)
 		mode = wt.mode,
 		range = wt.range,
 		section = stats.weapon.typeId == 0 and 6 or sectionIndex,
+		grade = stats.weapon.typeId == 0 and 100 or stats.weapon.grade,
 		color = weaponColor(stats),
 		crit = anyCrit,
 		poison = now < s.poisonUntil,
@@ -2291,7 +2633,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	end
 	local arena = arenas[slot :: number]
 	local info = Config.stageInfo(n)
-	World.themeArena(arena, Config.getSection(n).color, info.isBoss)
+	World.themeArena(arena, n, info.isBoss)
 	local folder = Instance.new("Folder")
 	folder.Name = "P_" .. player.UserId
 	folder.Parent = battleRoot
@@ -2321,7 +2663,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	}
 	st.session = s
 	char:PivotTo(CFrame.new(arena.center + Vector3.new(0, 4, 0)))
-	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = Config.getSection(n).color, boss = info.isBoss })
+	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = GradeStyle.get(n).glow, boss = info.isBoss })
 	spawnWave(player, s, 1)
 	pushState(player)
 	task.spawn(battleLoop, player, st, s)
@@ -2692,7 +3034,7 @@ game:BindToClose(function()
 end)
 ]]></string>
       </Properties>
-      <Item class="ModuleScript" referent="6">
+      <Item class="ModuleScript" referent="7">
         <Properties>
           <string name="Name">EnemyAI</string>
           <string name="Source"><![CDATA[-- EnemyAI (ModuleScript, ArenaServer 아래)
@@ -3076,15 +3418,16 @@ return EnemyAI
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="7">
+      <Item class="ModuleScript" referent="8">
         <Properties>
           <string name="Name">EnemyBuilder</string>
           <string name="Source"><![CDATA[-- EnemyBuilder (ModuleScript, ArenaServer 아래)
 -- 적 7종의 생김새. 기본 인형에 투구, 방패, 활, 지팡이, 폭탄 같은 장비를 붙인다.
--- 구간이 오를수록 재질이 금속 → 빛 → 우주로 바뀌고 오라가 생긴다. 보스는 왕관과 망토.
+-- 등급마다 몸 색, 재질, 등 가시 개수, 속성 오라가 다르다. 보스는 왕관과 망토.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local EnemyBuilder = {}
 
@@ -3156,19 +3499,19 @@ end
 -- 종류별 장비
 local dressers: { [string]: (Model, number, Color3, number) -> () } = {}
 
-dressers.grunt = function(model, s, accent, section)
+dressers.grunt = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local hand = find(model, "RightHand")
 	if head then
 		weld(model, head, "Helmet", Vector3.new(1.35, 0.75, 1.35) * s, CFrame.new(0, 0.3 * s, 0), IRON, Enum.Material.Metal, Enum.PartType.Ball)
-		weld(model, head, "Crest", Vector3.new(0.15, 0.5, 1.1) * s, CFrame.new(0, 0.75 * s, 0), accent, section >= 3 and Enum.Material.Neon or Enum.Material.Metal)
+		weld(model, head, "Crest", Vector3.new(0.15, 0.5, 1.1) * s, CFrame.new(0, 0.75 * s, 0), accent, grade >= 20 and Enum.Material.Neon or Enum.Material.Metal)
 	end
 	if hand then
-		WeaponBuilder.build(model, hand, 1, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.7 * s })
+		WeaponBuilder.build(model, hand, 1, { grade = grade, accent = accent, rarity = 1, scale = 0.7 * s, lite = true })
 	end
 end
 
-dressers.archer = function(model, s, accent, section)
+dressers.archer = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local left = find(model, "LeftHand")
 	local torso = find(model, "UpperTorso")
@@ -3197,14 +3540,14 @@ dressers.archer = function(model, s, accent, section)
 	end
 end
 
-dressers.shield = function(model, s, accent, section)
+dressers.shield = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local arm = find(model, "LeftLowerArm")
 	local hand = find(model, "RightHand")
 	if head then
 		weld(model, head, "Helm", Vector3.new(1.3, 1.25, 1.3) * s, CFrame.new(0, 0.1 * s, 0), Color3.fromRGB(150, 155, 170), Enum.Material.Metal)
 		weld(model, head, "Visor", Vector3.new(1.0, 0.12, 0.1) * s, CFrame.new(0, 0.05 * s, -0.66 * s), accent, Enum.Material.Neon)
-		weld(model, head, "Plume", Vector3.new(0.2, 0.9, 1.2) * s, CFrame.new(0, 0.95 * s, 0.1 * s), accent, section >= 2 and Enum.Material.Neon or Enum.Material.Fabric)
+		weld(model, head, "Plume", Vector3.new(0.2, 0.9, 1.2) * s, CFrame.new(0, 0.95 * s, 0.1 * s), accent, grade >= 10 and Enum.Material.Neon or Enum.Material.Fabric)
 	end
 	if arm then
 		local shieldPart = weld(model, arm, "Shield", Vector3.new(2.4, 3.2, 0.3) * s, CFrame.new(-0.2 * s, -0.2 * s, -0.75 * s), Color3.fromRGB(120, 125, 140), Enum.Material.Metal)
@@ -3212,11 +3555,11 @@ dressers.shield = function(model, s, accent, section)
 		weld(model, shieldPart, "ShieldEmblem", Vector3.new(0.12, 1.2, 1.2) * s, CFrame.new(0, 0.2 * s, -0.18 * s) * CFrame.Angles(0, math.rad(90), 0), accent, Enum.Material.Neon, Enum.PartType.Cylinder)
 	end
 	if hand then
-		WeaponBuilder.build(model, hand, 3, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.6 * s })
+		WeaponBuilder.build(model, hand, 3, { grade = grade, accent = accent, rarity = 1, scale = 0.6 * s, lite = true })
 	end
 end
 
-dressers.brute = function(model, s, accent, section)
+dressers.brute = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local hand = find(model, "RightHand")
 	for _, side in ipairs({ "Left", "Right" }) do
@@ -3237,12 +3580,12 @@ dressers.brute = function(model, s, accent, section)
 		local headPart = weld(model, hand, "ClubHead", Vector3.new(1.2, 1.2, 1.2) * s, CFrame.new(0, -0.3 * s, -2.6 * s), IRON, Enum.Material.Metal, Enum.PartType.Ball)
 		for i = 0, 3 do
 			local a = i * math.pi / 2
-			weld(model, headPart, "ClubSpike" .. i, Vector3.new(0.2, 0.6, 0.2) * s, CFrame.Angles(a, 0, 0) * CFrame.new(0, 0.7 * s, 0), accent, section >= 3 and Enum.Material.Neon or Enum.Material.Metal)
+			weld(model, headPart, "ClubSpike" .. i, Vector3.new(0.2, 0.6, 0.2) * s, CFrame.Angles(a, 0, 0) * CFrame.new(0, 0.7 * s, 0), accent, grade >= 20 and Enum.Material.Neon or Enum.Material.Metal)
 		end
 	end
 end
 
-dressers.bomber = function(model, s, accent, _section)
+dressers.bomber = function(model, s, accent, _grade)
 	local head = find(model, "Head")
 	local torso = find(model, "UpperTorso")
 	if head then
@@ -3268,7 +3611,7 @@ dressers.bomber = function(model, s, accent, _section)
 	local _ = accent
 end
 
-dressers.shaman = function(model, s, accent, section)
+dressers.shaman = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local lower = find(model, "LowerTorso")
 	local hand = find(model, "RightHand")
@@ -3289,10 +3632,10 @@ dressers.shaman = function(model, s, accent, section)
 		light.Parent = orb
 		particles(orb, accent, 10, 0.4 * s, 2, "OrbGlow")
 	end
-	local _ = section
+	local _ = grade
 end
 
-dressers.assassin = function(model, s, accent, section)
+dressers.assassin = function(model, s, accent, grade)
 	local head = find(model, "Head")
 	local torso = find(model, "UpperTorso")
 	if head then
@@ -3306,63 +3649,100 @@ dressers.assassin = function(model, s, accent, section)
 	for _, side in ipairs({ "RightHand", "LeftHand" }) do
 		local hand = find(model, side)
 		if hand then
-			WeaponBuilder.build(model, hand, 4, { accent = accent, section = math.max(1, section - 1), rarity = 1, scale = 0.9 * s })
+			WeaponBuilder.build(model, hand, 4, { grade = grade, accent = accent, rarity = 1, scale = 0.9 * s, lite = true })
 		end
 	end
 end
 
--- 몸 재질과 색
-local function paintBody(model: Model, kind: string, sectionColor: Color3, sectionIndex: number, isBoss: boolean)
-	local t = TINT[kind] or TINT.grunt
-	local body = t.tint:Lerp(sectionColor, 0.45)
-	if isBoss then
-		body = body:Lerp(Color3.fromRGB(120, 10, 20), 0.35)
+-- 몸 재질과 색: 등급마다 다르다
+local function bodyMaterial(grade: number): Enum.Material
+	if grade < 10 then
+		return Enum.Material.SmoothPlastic
+	elseif grade < 30 then
+		return Enum.Material.Metal
+	elseif grade < 50 then
+		return Enum.Material.Foil
+	elseif grade < 65 then
+		return Enum.Material.Glass
+	elseif grade < 80 then
+		return Enum.Material.Neon
+	elseif grade < 94 then
+		return Enum.Material.ForceField
 	end
+	return Enum.Material.Neon
+end
+
+local function paintBody(model: Model, kind: string, style: any, isBoss: boolean)
+	local t = TINT[kind] or TINT.grunt
+	local body = t.tint:Lerp(style.primary, 0.55)
+	if isBoss then
+		body = body:Lerp(Color3.fromRGB(120, 10, 20), 0.3)
+	end
+	local mat = bodyMaterial(style.grade)
 	for _, d in ipairs(model:GetChildren()) do
 		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
 			d.Color = body
-			if sectionIndex >= 5 then
-				d.Material = Enum.Material.ForceField
-			elseif sectionIndex >= 4 then
-				d.Material = Enum.Material.Neon
-			elseif sectionIndex >= 2 then
-				d.Material = Enum.Material.Metal
-			else
-				d.Material = Enum.Material.SmoothPlastic
+			d.Material = mat
+			if d.Name == "LeftHand" or d.Name == "RightHand" or d.Name == "LeftFoot" or d.Name == "RightFoot" then
+				d.Color = style.secondary:Lerp(body, 0.4)
 			end
 		end
 	end
 end
 
-function EnemyBuilder.dress(model: Model, kind: string, sectionColor: Color3, sectionIndex: number, isBoss: boolean, scale: number, rainbow: ColorSequence?)
-	paintBody(model, kind, sectionColor, sectionIndex, isBoss)
+function EnemyBuilder.dress(model: Model, kind: string, grade: number, isBoss: boolean, scale: number)
+	local style = GradeStyle.get(grade)
+	paintBody(model, kind, style, isBoss)
 	local t = TINT[kind] or TINT.grunt
-	local accent = isBoss and Color3.fromRGB(255, 70, 50) or sectionColor:Lerp(t.eye, 0.35)
+	local accent = isBoss and Color3.fromRGB(255, 70, 50) or style.glow
 
 	-- 빛나는 두 눈
 	local head = find(model, "Head")
 	if head then
 		for _, x in ipairs({ -1, 1 }) do
-			weld(model, head, "Eye", Vector3.new(0.2, 0.09, 0.06) * scale, CFrame.new(0.2 * x * scale, 0.08 * scale, -head.Size.Z / 2 - 0.01), sectionIndex >= 4 and Color3.new(1, 1, 1) or t.eye, Enum.Material.Neon)
+			weld(model, head, "Eye", Vector3.new(0.2, 0.09, 0.06) * scale, CFrame.new(0.2 * x * scale, 0.08 * scale, -head.Size.Z / 2 - 0.01), grade >= 40 and Color3.new(1, 1, 1) or t.eye:Lerp(style.glow, 0.4), Enum.Material.Neon)
 		end
 	end
 
 	local dresser = dressers[kind] or dressers.grunt
-	pcall(dresser, model, scale, accent, sectionIndex)
+	pcall(dresser, model, scale, accent, grade)
 
-	local torso = find(model, "UpperTorso") or find(model, "HumanoidRootPart")
-	if torso and (sectionIndex >= 3 or isBoss) then
-		local auraColor: Color3 | ColorSequence = isBoss and Color3.fromRGB(255, 50, 40) or sectionColor
-		if sectionIndex >= 6 and rainbow then
-			auraColor = rainbow
+	-- 등 가시: 등급이 오를수록 늘어난다
+	local upper = find(model, "UpperTorso")
+	if upper then
+		for i = 1, style.enemySpikes do
+			local y = upper.Size.Y * (0.35 - (i - 1) * 0.16)
+			local size = (0.25 + style.power * 0.35) * scale
+			weld(model, upper, "BackSpike", Vector3.new(size, size * 2.2, size), CFrame.new(0, y, upper.Size.Z / 2 + size * 0.6) * CFrame.Angles(math.rad(-35), 0, 0), grade >= 30 and style.secondary or style.primary, grade >= 30 and Enum.Material.Neon or Enum.Material.Metal)
 		end
-		particles(torso, auraColor, isBoss and 18 or 4 + sectionIndex, 0.8 * scale, 2.5)
+	end
+
+	-- 속성 오라
+	local torso = upper or find(model, "HumanoidRootPart")
+	if torso and (style.enemyAura or isBoss) then
+		local color: Color3 | ColorSequence = isBoss and Color3.fromRGB(255, 50, 40) or ColorSequence.new(style.glow, style.secondary)
+		if style.rainbow then
+			color = GradeStyle.RAINBOW
+		end
+		local pe = particles(torso, color, isBoss and 20 or 3 + grade * 0.15, (0.5 + style.power * 0.8) * scale, 2.5)
+		pe.Texture = style.motif.tex
+		pe.Acceleration = style.motif.drift
+		if style.motif.id == "shadow" or style.motif.id == "void" then
+			pe.LightEmission = 0.1
+		end
+	end
+	if grade >= 25 and head then
+		local light = Instance.new("PointLight")
+		light.Color = style.glow
+		light.Range = 6 + style.power * 8
+		light.Brightness = 0.8 + style.power
+		light.Parent = head
 	end
 
 	if isBoss then
 		if head then
 			local top = CFrame.new(0, head.Size.Y / 2 + 0.25 * scale, 0)
-			weld(model, head, "CrownBand", Vector3.new(0.3, head.Size.X * 1.05, head.Size.X * 1.05) * Vector3.new(1, 1, 1), top * CFrame.Angles(0, 0, math.rad(90)), GOLD, Enum.Material.Metal, Enum.PartType.Cylinder)
+			weld(model, head, "CrownBand", Vector3.new(0.3, head.Size.X * 1.05, head.Size.X * 1.05), top * CFrame.Angles(0, 0, math.rad(90)), GOLD, Enum.Material.Metal, Enum.PartType.Cylinder)
 			for i = 0, 4 do
 				local a = (i / 5) * math.pi * 2
 				local r = head.Size.X * 0.42
@@ -3374,9 +3754,8 @@ function EnemyBuilder.dress(model: Model, kind: string, sectionColor: Color3, se
 			light.Brightness = 2.2
 			light.Parent = head
 		end
-		local upper = find(model, "UpperTorso")
 		if upper then
-			weld(model, upper, "Cape", Vector3.new(upper.Size.X * 1.2, 3.2 * scale, 0.1), CFrame.new(0, -0.9 * scale, upper.Size.Z / 2 + 0.1) * CFrame.Angles(math.rad(8), 0, 0), Color3.fromRGB(140, 15, 25), Enum.Material.Fabric)
+			weld(model, upper, "Cape", Vector3.new(upper.Size.X * 1.2, 3.2 * scale, 0.1), CFrame.new(0, -0.9 * scale, upper.Size.Z / 2 + 0.1) * CFrame.Angles(math.rad(8), 0, 0), style.primary:Lerp(Color3.fromRGB(140, 15, 25), 0.6), Enum.Material.Fabric)
 		end
 	end
 end
@@ -3385,7 +3764,7 @@ return EnemyBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="8">
+      <Item class="ModuleScript" referent="9">
         <Properties>
           <string name="Name">Skills</string>
           <string name="Source"><![CDATA[-- Skills (ModuleScript, ArenaServer 아래)
@@ -3456,7 +3835,7 @@ end
 -- 대검 · 대검 투척 (갔다가 돌아온다)
 casters.boomerang = function(ctx, player, _st, s, sk, _root, origin, look)
 	local duration = 1.0
-	ctx.push(player, "skill", { id = "boomerang", origin = origin, look = look, range = sk.range, duration = duration, color = ctx.color(s), typeId = s.stats.weapon.typeId })
+	ctx.push(player, "skill", { id = "boomerang", origin = origin, look = look, range = sk.range, duration = duration, color = ctx.color(s), grade = s.stats.weapon.grade })
 	task.spawn(function()
 		local hitOut, hitBack = {}, {}
 		local steps = 20
@@ -3764,7 +4143,7 @@ return Skills
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="10">
         <Properties>
           <string name="Name">WorldBuilder</string>
           <string name="Source"><![CDATA[-- WorldBuilder (ModuleScript, ArenaServer 아래)
@@ -3776,6 +4155,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local World = {}
 
@@ -3895,9 +4275,9 @@ function World.setupLighting()
 	atmosphere.Haze = 1.4
 
 	local bloom = ensure("BloomEffect", "ArenaBloom")
-	bloom.Intensity = 0.7
-	bloom.Size = 28
-	bloom.Threshold = 1.1
+	bloom.Intensity = 0.9
+	bloom.Size = 32
+	bloom.Threshold = 0.95
 
 	local cc = ensure("ColorCorrectionEffect", "ArenaColor")
 	cc.Saturation = 0.12
@@ -4116,56 +4496,59 @@ local function buildForge(lobby: Instance, onUse: (Player) -> ())
 	label(gui, "🔨 합성 용광로", UDim2.fromScale(0, 0.05), UDim2.fromScale(1, 0.9), Color3.fromRGB(255, 200, 90), Enum.Font.GothamBlack)
 end
 
--- 무기 전시대: 구간 1~6의 무기가 받침대 위에서 떠서 돈다
+-- 무기 전시대: 등급이 다른 무기 10자루가 받침대 위에서 떠서 돈다. 속성이 모두 다르게 골랐다
 local function buildShowcase(lobby: Instance)
 	local model = Instance.new("Model")
 	model.Name = "Showcase"
 	model.Parent = lobby
-	local types = { 1, 2, 3, 4, 5, 0 }
-	for i = 1, 6 do
-		local section = Config.Sections[i]
-		local a = math.rad(62 + (i - 1) * 11.2)
-		local pos = Vector3.new(math.cos(a) * 31, 0, math.sin(a) * 31)
+	local types = { 1, 2, 3, 4, 5, 1, 2, 3, 4, 0 }
+	local grades = { 8, 19, 27, 36, 45, 53, 64, 72, 81, 100 }
+	for i = 1, 10 do
+		local grade = grades[i]
+		local style = GradeStyle.get(grade)
+		local a = math.rad(48 + (i - 1) * 9.33)
+		local pos = Vector3.new(math.cos(a) * 33, 0, math.sin(a) * 33)
 		local face = CFrame.lookAt(pos, Vector3.new(0, 0, 0))
-		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.8, GOLD, Enum.Material.Metal)
-		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.6, 3.4, 2.6), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
-		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 3, section.color, Enum.Material.Neon)
+		pillar(model, pos + Vector3.new(0, 0.8, 0), 0.7, 3.6, GOLD, Enum.Material.Metal)
+		local column = part({ Name = "ShowColumn", Size = Vector3.new(2.4, 3.4, 2.4), CFrame = face * CFrame.new(0, 2.85, 0), Color = MARBLE, Material = Enum.Material.Marble, Parent = model })
+		local top = disc(model, pos + Vector3.new(0, 4.62, 0), 0.15, 2.8, style.glow, Enum.Material.Neon)
 		local light = Instance.new("PointLight")
-		light.Color = section.color
-		light.Range = 10
-		light.Brightness = 1.5
+		light.Color = style.glow
+		light.Range = 8 + i
+		light.Brightness = 1 + i * 0.15
 		light.Parent = top
 		local sparkle = Instance.new("ParticleEmitter")
-		sparkle.Rate = 3 + i
+		sparkle.Texture = style.motif.tex
+		sparkle.Rate = 3 + i * 1.5
 		sparkle.Lifetime = NumberRange.new(1, 2)
-		sparkle.Speed = NumberRange.new(1, 2)
+		sparkle.Speed = NumberRange.new(1, 2.5)
 		sparkle.EmissionDirection = Enum.NormalId.Right
-		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+		sparkle.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2 + i * 0.03), NumberSequenceKeypoint.new(1, 0) })
 		sparkle.LightEmission = 1
-		sparkle.Color = section.rainbow and WeaponBuilder.RAINBOW or ColorSequence.new(section.color)
+		sparkle.Color = GradeStyle.gradient(grade)
 		sparkle.Parent = top
 
 		local anchor = part({
 			Name = "ShowAnchor",
 			Size = Vector3.new(0.4, 0.4, 0.4),
-			CFrame = CFrame.new(pos + Vector3.new(0, 6.8, 0)),
+			CFrame = CFrame.new(pos + Vector3.new(0, 6.6, 0)),
 			Transparency = 1,
 			CanCollide = false,
 			Parent = model,
 		})
 		WeaponBuilder.build(model, anchor, types[i], {
-			accent = section.rainbow and Color3.fromRGB(255, 235, 160) or section.color,
-			section = i,
+			grade = grade,
+			accent = Color3.fromRGB(255, 170, 40),
 			rarity = 5,
-			scale = 0.85,
+			scale = 0.7,
 		}, CFrame.new(anchor.Position - Vector3.new(0, 2.6, 0)))
 		tagSpin(anchor, "Y", 0.7)
 		tagBob(anchor, 0.35, 1.4)
 
 		local gui = surfaceText(column, Enum.NormalId.Front, 50)
-		label(gui, string.format("%d구간", i), UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.3), section.color, Enum.Font.GothamBlack)
-		label(gui, section.name, UDim2.fromScale(0.05, 0.42), UDim2.fromScale(0.9, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
-		label(gui, string.format("%d~%d등급", section.from, section.to), UDim2.fromScale(0.05, 0.68), UDim2.fromScale(0.9, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
+		label(gui, string.format("%d등급", grade), UDim2.fromScale(0, 0.06), UDim2.fromScale(1, 0.28), GradeStyle.textColor(grade), Enum.Font.GothamBlack)
+		label(gui, Config.getGrade(grade).en, UDim2.fromScale(0.04, 0.4), UDim2.fromScale(0.92, 0.22), Color3.fromRGB(70, 55, 40), Enum.Font.GothamBold)
+		label(gui, style.motif.name .. " · " .. style.materialName, UDim2.fromScale(0.04, 0.68), UDim2.fromScale(0.92, 0.18), Color3.fromRGB(110, 95, 80), Enum.Font.GothamBold)
 	end
 end
 
@@ -4217,7 +4600,7 @@ local function buildTrainingYard(lobby: Instance, onUse: (Player) -> ())
 			CanCollide = false,
 			Parent = model,
 		})
-		WeaponBuilder.build(model, holder, t, { accent = Color3.fromRGB(190, 190, 190), section = 1, rarity = 1, scale = 0.6 }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
+		WeaponBuilder.build(model, holder, t, { grade = 1 + i * 2, accent = Color3.fromRGB(190, 190, 190), rarity = 1, scale = 0.6, lite = true }, holder.CFrame * CFrame.Angles(math.rad(180), 0, 0))
 	end
 	local _ = bar
 	local sign = part({ Name = "TrainSign", Size = Vector3.new(7, 1.6, 0.3), CFrame = cf * CFrame.new(0, 8.6, 1), Color = Color3.fromRGB(45, 30, 22), Material = Enum.Material.Wood, Parent = model })
@@ -4628,7 +5011,7 @@ function World.buildStatue(rig: Model?)
 		if hand and hand:IsA("BasePart") then
 			local yaw = select(2, statue:GetPivot():ToEulerAnglesYXZ())
 			local grip = CFrame.new(hand.Position) * CFrame.Angles(0, yaw, 0)
-			WeaponBuilder.build(statue, hand, 0, { accent = GOLD, section = 4, rarity = 5, scale = 2.4 }, grip)
+			WeaponBuilder.build(statue, hand, 0, { grade = 100, accent = GOLD, rarity = 5, scale = 1.6 }, grip)
 		end
 	end)
 	if not ok then
@@ -4641,7 +5024,7 @@ function World.buildStatue(rig: Model?)
 			CanCollide = false,
 			Parent = folder,
 		})
-		WeaponBuilder.build(folder, anchor, 1, { accent = GOLD, section = 4, rarity = 5, scale = 3 }, CFrame.new(anchor.Position + Vector3.new(0, 4, 0)))
+		WeaponBuilder.build(folder, anchor, 1, { grade = 100, accent = GOLD, rarity = 5, scale = 2 }, CFrame.new(anchor.Position + Vector3.new(0, 4, 0)))
 	end
 end
 
@@ -4667,6 +5050,7 @@ export type Arena = {
 	trim: { BasePart },
 	banners: { BasePart },
 	fires: { Fire },
+	ambient: ParticleEmitter?,
 }
 
 local CROWD_COLORS = {
@@ -4681,7 +5065,31 @@ local CROWD_COLORS = {
 function World.buildArena(center: Vector3, radius: number, name: string): Arena
 	local model = Instance.new("Model")
 	model.Name = name
-	local arena: Arena = { center = center, model = model, trim = {}, banners = {}, fires = {} }
+	local arena: Arena = { center = center, model = model, trim = {}, banners = {}, fires = {}, ambient = nil }
+	-- 투기장 하늘에 흩날리는 속성 입자 (스테이지마다 바뀐다)
+	local sky = part({
+		Name = "ArenaAmbient",
+		Size = Vector3.new(radius * 2, 12, radius * 2),
+		Position = center + Vector3.new(0, 14, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+		Parent = model,
+	})
+	local ambient = Instance.new("ParticleEmitter")
+	ambient.Rate = 40
+	ambient.Lifetime = NumberRange.new(3, 6)
+	ambient.Speed = NumberRange.new(0.5, 2)
+	ambient.SpreadAngle = Vector2.new(180, 180)
+	ambient.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.2, 0.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	ambient.LightEmission = 1
+	ambient.Parent = sky
+	arena.ambient = ambient
 
 	disc(model, center - Vector3.new(0, 2, 0), 4, radius * 2, Color3.fromRGB(212, 182, 128), Enum.Material.Sand)
 	local ring = disc(model, center + Vector3.new(0, 0.03, 0), 0.12, 30, Color3.fromRGB(255, 200, 80), Enum.Material.Neon)
@@ -4755,10 +5163,20 @@ function World.buildArena(center: Vector3, radius: number, name: string): Arena
 	return arena
 end
 
--- 스테이지 구간 색으로 투기장을 물들인다. 보스전은 붉은 불꽃
-function World.themeArena(arena: Arena, color: Color3, isBoss: boolean)
-	for _, p in ipairs(arena.trim) do
-		p.Color = color
+-- 스테이지 등급의 색과 속성으로 투기장을 물들인다. 보스전은 붉은 불꽃
+function World.themeArena(arena: Arena, grade: number, isBoss: boolean)
+	local style = GradeStyle.get(grade)
+	local color = style.glow
+	for i, p in ipairs(arena.trim) do
+		p.Color = (i % 2 == 0) and style.secondary or color
+	end
+	local ambient = arena.ambient
+	if ambient then
+		ambient.Texture = style.motif.tex
+		ambient.Color = GradeStyle.gradient(grade)
+		ambient.Acceleration = style.motif.drift * 0.4
+		ambient.Rate = 25 + grade * 0.6
+		ambient.LightEmission = (style.motif.id == "shadow" or style.motif.id == "void") and 0.2 or 1
 	end
 	for _, b in ipairs(arena.banners) do
 		b.Color = isBoss and CRIMSON or color:Lerp(Color3.new(0, 0, 0), 0.35)
@@ -4780,15 +5198,15 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="10">
+  <Item class="StarterPlayer" referent="11">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="11">
+    <Item class="StarterPlayerScripts" referent="12">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="12">
+      <Item class="LocalScript" referent="13">
         <Properties>
           <string name="Name">ArenaClient</string>
           <string name="Source"><![CDATA[-- ArenaClient (LocalScript, StarterPlayer > StarterPlayerScripts)
@@ -4804,6 +5222,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 local Effects = require(script:WaitForChild("Effects"))
 local remotes = ReplicatedStorage:WaitForChild("ArenaRemotes")
 local Request = remotes:WaitForChild("Request") :: RemoteEvent
@@ -4946,20 +5365,15 @@ local function setButtonColor(b: TextButton, base: Color3)
 	end
 end
 
-local RAINBOW = WeaponBuilder.RAINBOW
 
+-- 등급마다 고유한 두 색 띠 (94등급부터 무지개)
 local function setGradeColor(label: TextLabel, grade: number)
 	local old = label:FindFirstChildOfClass("UIGradient")
 	if old then
 		old:Destroy()
 	end
-	local section = Config.getSection(grade)
-	if section.rainbow then
-		label.TextColor3 = Color3.new(1, 1, 1)
-		new("UIGradient", { Color = RAINBOW, Parent = label })
-	else
-		label.TextColor3 = section.color
-	end
+	label.TextColor3 = Color3.new(1, 1, 1)
+	new("UIGradient", { Color = GradeStyle.gradient(grade), Parent = label })
 end
 
 local function weaponTitle(key: string): (string, any)
@@ -5005,13 +5419,9 @@ local function weaponViewport(parent: GuiObject, key: string, spin: boolean): Vi
 		Parent = world,
 	})
 	world.PrimaryPart = hand
-	local _, sectionIndex = Config.getSection(info.grade)
-	if info.typeId == 0 then
-		sectionIndex = 6
-	end
 	WeaponBuilder.build(world, hand, info.typeId, {
+		grade = info.typeId == 0 and 100 or info.grade,
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
-		section = sectionIndex,
 		rarity = info.rarity.rank,
 		scale = 1,
 	}, CFrame.new(0, -3, 0))
@@ -5314,7 +5724,7 @@ end
 
 for n = 1, Config.MAX_GRADE do
 	local isBoss = n % 10 == 0
-	local section = Config.getSection(n)
+	local section = { color = GradeStyle.get(n).glow }
 	local top = isBoss and Color3.fromRGB(105, 34, 30) or C.panel3
 	local bottom = isBoss and Color3.fromRGB(55, 16, 16) or C.panel2
 	local row = new("Frame", {
@@ -5350,7 +5760,7 @@ for n = 1, Config.MAX_GRADE do
 		TextColor3 = C.dim,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		TextWrapped = false,
-		Text = grade.ko .. (isBoss and "  ·  BOSS" or ""),
+		Text = grade.ko .. "  ·  " .. GradeStyle.get(n).motif.name .. (isBoss and "  ·  BOSS" or ""),
 		Parent = row,
 	})
 	local powerLabel2 = text({
@@ -5584,7 +5994,7 @@ refreshers.armory = function()
 			}, {
 				corner(10),
 				stroke(rc, isEquipped and 3 or 1.5),
-				shade(darken(rc, 0.55), C.panel, 90),
+				shade(darken(GradeStyle.get(w.typeId == 0 and 100 or w.grade).primary, 0.45), C.panel, 90),
 			})
 			local nameL = text({
 				Position = UDim2.new(0, 8, 0, 4),
@@ -6228,8 +6638,7 @@ end)
 
 -- 등급 상승: 화면 가득 축포
 local function celebrate(stage: number)
-	local section = Config.getSection(stage)
-	local color = section.color
+	local color = GradeStyle.get(stage).glow
 	showBigBanner("RANK UP!", string.format("[%d] %s", stage, Config.getGrade(stage).en), color, 1.8)
 	for i = 1, 70 do
 		local piece = new("Frame", {
@@ -6309,7 +6718,7 @@ local function showResult(data: any)
 				celebrate(data.stage)
 			end)
 			local g = Config.getGrade(data.stage)
-			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), Config.getSection(data.stage).color, 19)
+			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), GradeStyle.textColor(data.stage), 19)
 		end
 		for _, key in ipairs(data.drops or {}) do
 			local title, info = weaponTitle(key)
@@ -6429,7 +6838,7 @@ local function refreshTop()
 	if state.maxStage > 0 then
 		rankLabel.Text = string.format("🏅 %s", Config.getGrade(state.maxStage).en)
 		setGradeColor(rankLabel, state.maxStage)
-		rankStroke.Color = Config.getSection(state.maxStage).color
+		rankStroke.Color = GradeStyle.get(state.maxStage).glow
 	else
 		rankLabel.Text = "🏅 NO RANK"
 		rankLabel.TextColor3 = C.dim
@@ -6450,7 +6859,7 @@ local function refreshBattle()
 		return
 	end
 	local g = Config.getGrade(battle.stage)
-	local section = Config.getSection(battle.stage)
+	local section = { color = GradeStyle.get(battle.stage).glow }
 	hudTitle.Text = string.format("%sSTAGE %d  ·  %s", battle.boss and "👑 " or "", battle.stage, g.en)
 	setGradeColor(hudTitle, battle.stage)
 	hudStroke.Color = battle.boss and C.red or section.color
@@ -7040,10 +7449,80 @@ Push.OnClientEvent:Connect(function(kind: string)
 	end
 end)
 
+------------------------------------------------------------------------
+-- 떠다니는 장식: 무기 둘레의 구슬과 파편, 캐릭터 발밑 고리와 오라 구슬
+-- 서버는 자리만 만들어 두고, 각자 화면에서 매 프레임 돌린다 (다른 플레이어 것도)
+------------------------------------------------------------------------
+type Orbit = {
+	ref: ObjectValue,
+	radius: number,
+	height: number,
+	speed: number,
+	phase: number,
+	useRot: boolean,
+	flat: boolean,
+	tumble: number,
+}
+local orbits: { [BasePart]: Orbit } = {}
+local function trackOrbit(inst: Instance)
+	if not inst:IsA("BasePart") then
+		return
+	end
+	local part = inst :: BasePart
+	local ref = part:FindFirstChild("Center") or part:WaitForChild("Center", 2)
+	if not (ref and ref:IsA("ObjectValue")) then
+		return
+	end
+	orbits[part] = {
+		ref = ref,
+		radius = part:GetAttribute("Radius") or 0,
+		height = part:GetAttribute("Height") or 0,
+		speed = part:GetAttribute("Speed") or 1,
+		phase = part:GetAttribute("Phase") or 0,
+		useRot = part:GetAttribute("UseRotation") == true,
+		flat = part:GetAttribute("Flat") == true,
+		tumble = part:GetAttribute("Tumble") or 0,
+	}
+end
+for _, inst in ipairs(CollectionService:GetTagged("ArenaOrbit")) do
+	task.spawn(trackOrbit, inst)
+end
+CollectionService:GetInstanceAddedSignal("ArenaOrbit"):Connect(function(inst)
+	task.spawn(trackOrbit, inst)
+end)
+CollectionService:GetInstanceRemovedSignal("ArenaOrbit"):Connect(function(inst)
+	if inst:IsA("BasePart") then
+		orbits[inst :: BasePart] = nil
+	end
+end)
+local FLAT = CFrame.Angles(0, 0, math.rad(90))
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	for part, o in pairs(orbits) do
+		if not part.Parent then
+			orbits[part] = nil
+		else
+			local c = o.ref.Value
+			if c and c:IsA("BasePart") and c.Parent then
+				local center = c :: BasePart
+				local base = o.useRot and center.CFrame or CFrame.new(center.Position)
+				local cf = base * CFrame.new(0, o.height, 0) * CFrame.Angles(0, t * o.speed + o.phase, 0) * CFrame.new(o.radius, 0, 0)
+				if o.tumble ~= 0 then
+					cf = cf * CFrame.Angles(t * o.tumble, t * o.tumble * 0.7, 0)
+				end
+				if o.flat then
+					cf = cf * FLAT
+				end
+				part.CFrame = cf
+			end
+		end
+	end
+end)
+
 Request:FireServer("hello")
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="13">
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">Effects</string>
             <string name="Source"><![CDATA[-- Effects (ModuleScript, ArenaClient 아래)
@@ -7059,6 +7538,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local Effects = {}
 
@@ -7191,7 +7671,7 @@ local function arc(cf: CFrame, radius: number, fromDeg: number, toDeg: number, s
 	end
 end
 
-function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number?, size: number?)
+function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number?, size: number?, texture: string?)
 	local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), CFrame.new(pos), color, 1)
 	local pe = Instance.new("ParticleEmitter")
 	pe.Rate = 0
@@ -7205,6 +7685,11 @@ function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number
 	})
 	pe.LightEmission = 1
 	pe.Color = ColorSequence.new(color)
+	if texture then
+		pe.Texture = texture
+		pe.RotSpeed = NumberRange.new(-200, 200)
+		pe.Rotation = NumberRange.new(0, 360)
+	end
 	pe.Parent = anchor
 	pe:Emit(count)
 	Debris:AddItem(anchor, 1)
@@ -7295,70 +7780,206 @@ end
 ------------------------------------------------------------------------
 -- 무기별 베기 궤적
 ------------------------------------------------------------------------
+-- 속성별 덧붙임 연출. power(0~1)가 클수록 많고 크다
+local function lightningBolt(target: Vector3, color: Color3, height: number, width: number)
+	local top = target + Vector3.new((math.random() - 0.5) * 6, height, (math.random() - 0.5) * 6)
+	local prev = top
+	local segs = 7
+	for i = 1, segs do
+		local t = i / segs
+		local p = top:Lerp(target, t)
+		if i < segs then
+			p += Vector3.new((math.random() - 0.5) * 3, 0, (math.random() - 0.5) * 3)
+		end
+		local mid = (prev + p) / 2
+		local len = (p - prev).Magnitude
+		local seg = fxPart(Vector3.new(width, width, len), CFrame.lookAt(mid, p), (i % 2 == 0) and Color3.new(1, 1, 1) or color, 0)
+		fade(seg, 0.18)
+		prev = p
+	end
+	Effects.flash(target, color, 4, 0.15)
+end
+
+local function flyingBits(origin: Vector3, color: Color3, count: number, size: Vector3, material: Enum.Material, speed: number, life: number, gravity: boolean)
+	for _ = 1, count do
+		local dir = Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5).Unit
+		local bit = fxPart(size, CFrame.new(origin) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), color, 0.05)
+		bit.Material = material
+		local goal = origin + dir * speed * life + (gravity and Vector3.new(0, -6, 0) or Vector3.zero)
+		TweenService:Create(bit, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = goal,
+			Orientation = Vector3.new(math.random(-360, 360), math.random(-360, 360), 0),
+			Transparency = 1,
+			Size = size * 0.3,
+		}):Play()
+		Debris:AddItem(bit, life + 0.05)
+	end
+end
+
+local motifFx: { [string]: (any, Vector3, CFrame, number) -> () } = {}
+
+motifFx.flame = function(style, hit, _cf, p)
+	Effects.burst(hit, style.primary, 10 + math.floor(p * 30), 18, 1 + p * 1.5, style.motif.tex)
+	for i = 1, 1 + math.floor(p * 3) do
+		local pos = hit + Vector3.new((math.random() - 0.5) * 4, -2, (math.random() - 0.5) * 4)
+		local pillar = fxPart(Vector3.new(4 + p * 6, 1, 1), CFrame.new(pos + Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), (i % 2 == 0) and style.secondary or style.primary, 0.2, Enum.PartType.Cylinder)
+		fade(pillar, 0.35, { Size = Vector3.new(8 + p * 8, 0.1, 0.1), Position = pos + Vector3.new(0, 5, 0) })
+	end
+end
+
+motifFx.frost = function(style, hit, _cf, p)
+	flyingBits(hit, style.glow, 5 + math.floor(p * 14), Vector3.new(0.25, 0.9, 0.25) * (1 + p), Enum.Material.Glass, 14, 0.4, false)
+	ring(hit - Vector3.new(0, 2.4, 0), Color3.fromRGB(220, 245, 255), 1, 6 + p * 8, 0.35, 0.2)
+end
+
+motifFx.storm = function(style, hit, _cf, p)
+	for _ = 1, 1 + math.floor(p * 3) do
+		lightningBolt(hit + Vector3.new((math.random() - 0.5) * 4, -1, (math.random() - 0.5) * 4), style.primary, 18 + p * 20, 0.25 + p * 0.3)
+	end
+	if p > 0.3 then
+		Effects.shake(0.15 + p * 0.3, 0.1)
+	end
+end
+
+motifFx.nature = function(style, hit, _cf, p)
+	flyingBits(hit, style.primary, 6 + math.floor(p * 14), Vector3.new(0.5, 0.06, 0.35) * (1 + p), Enum.Material.Neon, 10, 0.7, true)
+	Effects.burst(hit, style.secondary, 8 + math.floor(p * 12), 8, 0.5 + p)
+end
+
+motifFx.shadow = function(style, hit, _cf, p)
+	Effects.burst(hit, style.primary, 12 + math.floor(p * 20), 8, 1.5 + p * 2, style.motif.tex)
+	Effects.flash(hit, style.secondary, 3 + p * 4, 0.2)
+end
+
+motifFx.holy = function(style, hit, _cf, p)
+	local pillar = fxPart(Vector3.new(30, 2 + p * 3, 2 + p * 3), CFrame.new(hit + Vector3.new(0, 13, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.new(1, 1, 1), 0.2, Enum.PartType.Cylinder)
+	fade(pillar, 0.35, { Size = Vector3.new(30, 0.1, 0.1) })
+	Effects.burst(hit, style.glow, 10 + math.floor(p * 20), 16, 0.6 + p)
+	ring(hit - Vector3.new(0, 2.4, 0), style.glow, 2, 8 + p * 10, 0.4, 0.2)
+end
+
+motifFx.blood = function(style, hit, _cf, p)
+	flyingBits(hit, style.primary, 6 + math.floor(p * 16), Vector3.new(0.3, 0.3, 0.3) * (1 + p), Enum.Material.Neon, 9, 0.5, true)
+	arc(CFrame.new(hit) * CFrame.Angles(0, math.random() * 6, math.rad(70)), 2.5 + p * 2, -70, 70, 7, 0.4 + p * 0.5, style.secondary, 0.2)
+end
+
+motifFx.void = function(style, hit, _cf, p)
+	local sphere = fxPart(Vector3.new(6, 6, 6) * (1 + p), CFrame.new(hit), Color3.fromRGB(10, 0, 20), 0.2, Enum.PartType.Ball)
+	sphere.Material = Enum.Material.ForceField
+	sphere.Color = style.secondary
+	fade(sphere, 0.3, { Size = Vector3.new(0.3, 0.3, 0.3) })
+	ring(hit, style.secondary, 10 + p * 10, 1, 0.3, 0.3)
+	Effects.burst(hit, style.primary, 10 + math.floor(p * 16), 6, 1.2 + p, style.motif.tex)
+end
+
+motifFx.star = function(style, hit, _cf, p)
+	flyingBits(hit, Color3.new(1, 1, 1), 5 + math.floor(p * 12), Vector3.new(0.35, 0.35, 0.35) * (1 + p), Enum.Material.Neon, 16, 0.35, false)
+	Effects.burst(hit, style.glow, 14 + math.floor(p * 20), 22, 0.4 + p * 0.5)
+end
+
+motifFx.crystal = function(style, hit, _cf, p)
+	local n = 6 + math.floor(p * 8)
+	for i = 1, n do
+		local a = (i / n) * math.pi * 2
+		local pos = hit + Vector3.new(math.cos(a), 0, math.sin(a)) * (2 + p * 2)
+		local shard = fxPart(Vector3.new(0.4, 1.6 + p * 1.5, 0.4), CFrame.new(pos) * CFrame.Angles(0, -a, math.rad(25)), (i % 2 == 0) and style.secondary or style.glow, 0.1)
+		shard.Material = Enum.Material.Glass
+		fade(shard, 0.4, { Position = pos + Vector3.new(math.cos(a), 0.6, math.sin(a)) * 2 })
+	end
+end
+
+-- 무기별 베기 궤적. 등급마다 색, 겹 수, 굵기, 속성 연출이 다르다
 function Effects.swing(data: any)
 	local root = getChar()
 	if not root then
 		return
 	end
-	local section = data.section or 1
-	local color: Color3 | { Color3 } = data.color or Color3.new(1, 1, 1)
-	if section >= 6 or data.typeId == 0 then
-		color = RAINBOW_COLORS
-	end
-	local plain: Color3 = typeof(color) == "table" and Color3.fromRGB(255, 240, 220) or color :: Color3
-	local w = 1 + (section - 1) * 0.18
+	local g = data.grade or 1
+	local style = GradeStyle.get(g)
+	local p = style.power
+	local colors: { Color3 } = style.rainbow and RAINBOW_COLORS or { style.glow, style.secondary, style.primary }
+	local plain: Color3 = style.glow
+	local w = 1 + p * 1.6
+	local layers = 1 + g // 25
+	local life = 0.18 + p * 0.12
 	local cf = root.CFrame * CFrame.new(0, 0.4, 0)
 	local look = root.CFrame.LookVector
 	local t = data.typeId
+	local hit = root.Position + look * math.min(data.range * 0.6, 6)
+
+	local function layered(baseCf: CFrame, radius: number, from: number, to: number, segs: number, width: number)
+		for L = 0, layers - 1 do
+			local extra = CFrame.Angles(0, math.rad(L * 9), math.rad(L * 7))
+			local c: Color3 | { Color3 } = colors
+			if L > 0 then
+				c = colors[(L % #colors) + 1]
+			end
+			arc(baseCf * extra, radius * (1 + L * 0.14), from, to, segs, width * (1 - L * 0.15), c, life + L * 0.05)
+		end
+	end
 
 	if t == 1 then
-		-- 대검: 위에서 내려찍는 세로 반달 + 땅 먼지
-		arc(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 12, 1.5 * w, color, 0.22)
-		local ground = root.Position + look * data.range * 0.6 - Vector3.new(0, 2.8, 0)
-		Effects.burst(ground, Color3.fromRGB(210, 185, 140), 14, 18, 0.9)
-		Effects.shake(0.25, 0.12)
+		layered(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 14, 1.5 * w)
+		Effects.burst(root.Position + look * data.range * 0.6 - Vector3.new(0, 2.8, 0), Color3.fromRGB(210, 185, 140), 14, 18, 0.9)
+		Effects.shake(0.25 + p * 0.3, 0.12)
 		Effects.sound("slash", 0.55, 0.8)
 	elseif t == 2 then
-		-- 쌍검: X자 두 줄기
-		arc(cf * CFrame.Angles(0, 0, math.rad(35)), 4.5, -70, 70, 9, 0.6 * w, color, 0.14)
-		arc(cf * CFrame.Angles(0, 0, math.rad(-35)), 4.5, 70, -70, 9, 0.6 * w, color, 0.14)
+		layered(cf * CFrame.Angles(0, 0, math.rad(35)), 4.5, -70, 70, 10, 0.6 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(-35)), 4.5, 70, -70, 10, 0.6 * w)
 		Effects.sound("slash", 0.35, 1.35)
 	elseif t == 3 then
-		-- 장검: 앞으로 길게 찌르는 빛줄기
-		local beam = fxPart(Vector3.new(0.35 * w, 0.35 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), plain, 0.1)
-		fade(beam, 0.18, { Size = Vector3.new(0.05, 0.05, data.range * 1.1) })
-		arc(cf, data.range * 0.85, -22, 22, 6, 0.5 * w, color, 0.16)
+		local beam = fxPart(Vector3.new(0.4 * w, 0.4 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), plain, 0.05)
+		fade(beam, 0.2, { Size = Vector3.new(0.05, 0.05, data.range * 1.15) })
+		if g >= 30 then
+			local outer = fxPart(Vector3.new(1.4 * w, 1.4 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), style.secondary, 0.55)
+			fade(outer, 0.18)
+		end
+		layered(cf, data.range * 0.85, -22, 22, 7, 0.5 * w)
 		Effects.flash(root.Position + look * data.range, plain, 2.5 * w, 0.15)
 		Effects.sound("lunge", 0.4, 1.1)
 	elseif t == 4 then
-		-- 단검: 짧고 빠른 두 번 긋기
-		arc(cf * CFrame.Angles(0, 0, math.rad(15)), 3.2, -80, 60, 7, 0.5 * w, color, 0.12)
-		arc(cf * CFrame.Angles(0, 0, math.rad(-20)), 3.6, 60, -80, 7, 0.4 * w, color, 0.12)
+		layered(cf * CFrame.Angles(0, 0, math.rad(15)), 3.2, -80, 60, 8, 0.5 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(-20)), 3.6, 60, -80, 8, 0.4 * w)
 		Effects.sound("slash", 0.3, 1.6)
 	elseif t == 5 then
-		-- 낫: 한 바퀴 원 + 영혼 조각
-		arc(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 18, 1.0 * w, color, 0.25)
-		for _ = 1, 4 do
-			local p = root.Position + Vector3.new((math.random() - 0.5) * 8, -1, (math.random() - 0.5) * 8)
-			local wisp = fxPart(Vector3.new(0.5, 0.5, 0.5), CFrame.new(p), Color3.fromRGB(150, 255, 200), 0.2, Enum.PartType.Ball)
-			fade(wisp, 0.6, { Position = p + Vector3.new(0, 4, 0) })
+		layered(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 20, 1.0 * w)
+		for _ = 1, 3 + math.floor(p * 6) do
+			local pos = root.Position + Vector3.new((math.random() - 0.5) * 8, -1, (math.random() - 0.5) * 8)
+			local wisp = fxPart(Vector3.new(0.5, 0.5, 0.5) * (1 + p), CFrame.new(pos), style.glow, 0.2, Enum.PartType.Ball)
+			fade(wisp, 0.6, { Position = pos + Vector3.new(0, 4 + p * 4, 0) })
 		end
+		hit = root.Position
 		Effects.sound("slash", 0.45, 0.65)
 	else
-		-- 올라운더: 한 바퀴 + 세로 반달, 무지개
-		arc(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 20, 1.2 * w, RAINBOW_COLORS, 0.28)
-		arc(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 12, 1.5 * w, RAINBOW_COLORS, 0.24)
-		Effects.shake(0.2, 0.1)
+		layered(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 22, 1.2 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 14, 1.5 * w)
+		Effects.shake(0.3, 0.1)
 		Effects.sound("lunge", 0.5, 0.9)
+		hit = root.Position
 	end
 
-	-- 높은 구간일수록 불꽃이 더 튄다
-	if section >= 4 then
-		Effects.burst(root.Position + look * 3, plain, 4 + section * 2, 16, 0.35)
+	-- 등급의 속성 연출
+	local fx = motifFx[style.motif.id]
+	if fx and g >= 2 then
+		fx(style, hit, cf, p)
+	end
+	-- 높은 등급일수록 더 얹는다
+	Effects.burst(hit, plain, 4 + math.floor(p * 20), 14 + p * 14, 0.3 + p * 0.5, style.motif.tex)
+	if g >= 40 then
+		ring(root.Position - Vector3.new(0, 2.7, 0), style.secondary, 2, 8 + p * 16, 0.3, 0.2)
+	end
+	if g >= 60 then
+		Effects.shake(0.1 + p * 0.15, 0.06)
+	end
+	if g >= 80 then
+		local beam = fxPart(Vector3.new(40, 1.5 + p, 1.5 + p), CFrame.new(hit + Vector3.new(0, 18, 0)) * CFrame.Angles(0, 0, math.rad(90)), style.glow, 0.3, Enum.PartType.Cylinder)
+		fade(beam, 0.3, { Size = Vector3.new(40, 0.1, 0.1) })
 	end
 	if data.crit then
+		Effects.flash(hit, Color3.new(1, 1, 1), 6 + p * 8, 0.18)
+		ring(hit, style.glow, 1, 10 + p * 12, 0.25, 0.3)
 		Effects.sound("lunge", 0.6, 1.3)
-		Effects.shake(0.35, 0.15)
+		Effects.shake(0.35 + p * 0.4, 0.15)
 	end
 end
 
@@ -7809,7 +8430,7 @@ skillFx.boomerang = function(data)
 	local holder = Instance.new("Model")
 	holder.Parent = folder
 	pcall(function()
-		WeaponBuilder.build(holder, anchor, 1, { accent = data.color, section = 4, rarity = 5, scale = 1.1 }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
+		WeaponBuilder.build(holder, anchor, 1, { grade = data.grade or 40, accent = data.color, rarity = 5, scale = 1, lite = true }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
 	end)
 	local spinRing = fxPart(Vector3.new(0.2, 9, 9), CFrame.new(origin), data.color, 0.6, Enum.PartType.Cylinder)
 	local far = origin + look * data.range
@@ -8078,7 +8699,7 @@ skillFx.rain = function(data)
 			local holder = Instance.new("Model")
 			holder.Parent = folder
 			pcall(function()
-				WeaponBuilder.build(holder, anchor, 1, { accent = Color3.fromRGB(255, 235, 160), section = 6, rarity = 5, scale = 1.2 }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
+				WeaponBuilder.build(holder, anchor, 1, { grade = 100, accent = Color3.fromRGB(255, 235, 160), rarity = 5, scale = 0.8, lite = true }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
 			end)
 			animate(0.35, function(t)
 				anchor.CFrame = CFrame.new(start:Lerp(ground + Vector3.new(0, 4, 0), t * t))
@@ -8140,13 +8761,13 @@ return Effects
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="14">
+  <Item class="Workspace" referent="15">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Part" referent="15">
+    <Item class="Part" referent="16">
       <Properties>
         <string name="Name">Baseplate</string>
         <bool name="Anchored">true</bool>
@@ -8176,7 +8797,7 @@ return Effects
         <token name="TopSurface">0</token>
       </Properties>
     </Item>
-    <Item class="SpawnLocation" referent="16">
+    <Item class="SpawnLocation" referent="17">
       <Properties>
         <string name="Name">LobbySpawn</string>
         <bool name="Anchored">true</bool>

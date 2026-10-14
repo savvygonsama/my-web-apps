@@ -66,7 +66,7 @@ end
 -- 대검 · 대검 투척 (갔다가 돌아온다)
 casters.boomerang = function(ctx, player, _st, s, sk, _root, origin, look)
 	local duration = 1.0
-	ctx.push(player, "skill", { id = "boomerang", origin = origin, look = look, range = sk.range, duration = duration, color = ctx.color(s), typeId = s.stats.weapon.typeId })
+	ctx.push(player, "skill", { id = "boomerang", origin = origin, look = look, range = sk.range, duration = duration, color = ctx.color(s), grade = s.stats.weapon.grade })
 	task.spawn(function()
 		local hitOut, hitBack = {}, {}
 		local steps = 20

@@ -1,39 +1,31 @@
 -- WeaponBuilder (ModuleScript, ReplicatedStorage)
 -- 서버는 캐릭터 손에, 클라이언트는 무기고 미리보기에 같은 모양을 만든다.
--- 무기 모양, 등급별 빛 효과, 플레이어 오라를 만든다.
+-- 무기 모양과 장식은 GradeStyle이 정한 등급별 디자인을 따른다. 등급이 하나만 달라도 모양이 다르다.
 --
--- 구간이 오를수록 화려해진다
---   1구간: 쇠 칼날
---   2구간: + 희귀도 색 보석, 휘두를 때 궤적
---   3구간: + 칼날 가운데 빛나는 홈, 은은한 빛
---   4구간: + 유리 칼날, 반짝이 파티클
---   5구간: + 우주 칼날(포스필드), 별 파티클
---   6구간: + 빛나는 칼날, 무지개 궤적과 파티클
--- 전설 희귀도는 어느 구간이든 금빛 반짝임이 더해진다
+-- 모든 등급: 등급 고유 색, 속성 입자, 휘두를 때 궤적
+-- 등급이 오를 때마다: 룬 문자 → 가시 → 보석 → 떠다니는 구슬(12~) → 빛 테두리(21~) → 빛 고리(30~)
+--                   → 날개(45~) → 구슬을 잇는 빛줄기(50~) → 두 겹 칼날(60~) → 회전 파편(70~) → 검 왕관(85~)
+-- 희귀도는 보석 색과 궤적 끝 색으로 보이고, 전설은 금빛 반짝임이 붙는다.
+
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local Builder = {}
+Builder.RAINBOW = GradeStyle.RAINBOW
 
-local RAINBOW = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
-	ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 200, 60)),
-	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(90, 230, 110)),
-	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(70, 200, 255)),
-	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(150, 100, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 90, 200)),
-})
-Builder.RAINBOW = RAINBOW
-
-local STEEL = Color3.fromRGB(205, 208, 214)
-local DARK_STEEL = Color3.fromRGB(70, 72, 80)
+local DARK_STEEL = Color3.fromRGB(60, 62, 70)
 local LEATHER = Color3.fromRGB(70, 45, 30)
 local GOLD = Color3.fromRGB(225, 180, 70)
 local WOOD = Color3.fromRGB(85, 58, 38)
 
 export type Look = {
-	accent: Color3, -- 희귀도 색
-	section: number, -- 1~6
+	grade: number, -- 1~100 (올라운더는 100)
 	rarity: number, -- 1~5
-	scale: number,
+	accent: Color3, -- 희귀도 색
+	scale: number?,
+	lite: boolean?, -- 적 무기: 떠다니는 장식은 뺀다
 }
 
 type Ctx = {
@@ -73,119 +65,302 @@ local function at(y: number, z: number?, rx: number?): CFrame
 	return CFrame.new(0, y, z or 0) * CFrame.Angles(math.rad(rx or 0), 0, 0)
 end
 
--- 구간에 따른 칼날 재질과 색
-local function bladeStyle(look: Look): (Color3, Enum.Material)
-	local s = look.section
-	if s >= 6 then
-		return Color3.fromRGB(255, 235, 245), Enum.Material.Neon
-	elseif s == 5 then
-		return look.accent, Enum.Material.ForceField
-	elseif s == 4 then
-		return STEEL:Lerp(look.accent, 0.55), Enum.Material.Glass
-	elseif s == 3 then
-		return STEEL:Lerp(look.accent, 0.3), Enum.Material.Metal
+-- 클라이언트가 매 프레임 중심 주위로 돌리는 장식 (고정 파트, 무게 없음)
+local function orbitPart(parent: Instance, center: BasePart, size: Vector3, color: Color3, material: Enum.Material, shape: Enum.PartType?, opts: { [string]: any }): Part
+	local p = Instance.new("Part")
+	p.Name = opts.name or "Orbit"
+	if shape then
+		p.Shape = shape
 	end
-	return STEEL:Lerp(look.accent, 0.15), Enum.Material.Metal
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Massless = true
+	p.Size = size
+	p.Color = color
+	p.Material = material
+	p.Transparency = opts.transparency or 0
+	p.CFrame = center.CFrame * CFrame.new(opts.radius or 0, opts.height or 0, 0)
+	local ref = Instance.new("ObjectValue")
+	ref.Name = "Center"
+	ref.Value = center
+	ref.Parent = p
+	p:SetAttribute("Radius", opts.radius or 0)
+	p:SetAttribute("Height", opts.height or 0)
+	p:SetAttribute("Speed", opts.speed or 1)
+	p:SetAttribute("Phase", opts.phase or 0)
+	p:SetAttribute("UseRotation", opts.useRotation == true)
+	p:SetAttribute("Flat", opts.flat == true)
+	p:SetAttribute("Tumble", opts.tumble or 0)
+	CollectionService:AddTag(p, "ArenaOrbit")
+	p.Parent = parent
+	return p
+end
+Builder.orbitPart = orbitPart
+
+local function emitter(parent: Instance, style: any, rate: number, size: number, opts: { [string]: any }?): ParticleEmitter
+	local o = opts or {}
+	local pe = Instance.new("ParticleEmitter")
+	pe.Name = o.name or "StyleParticles"
+	pe.Texture = style.motif.tex
+	pe.Rate = rate
+	pe.Lifetime = o.lifetime or NumberRange.new(0.5, 1.1)
+	pe.Speed = o.speed or NumberRange.new(0.4, 1.8)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Acceleration = o.accel or style.motif.drift
+	pe.RotSpeed = NumberRange.new(-120, 120)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, size),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	pe.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	local dark = style.motif.id == "shadow" or style.motif.id == "void"
+	pe.LightEmission = dark and 0.1 or 1
+	pe.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, style.secondary)
+	pe.Parent = parent
+	return pe
 end
 
--- 칼날 가운데 홈. 3구간부터 빛난다
-local function fuller(ctx: Ctx, look: Look, thickness: number, length: number, y: number)
-	if look.section >= 3 then
-		mk(ctx, "Fuller", Vector3.new(thickness + 0.04, length, 0.16), at(y), look.accent, Enum.Material.Neon)
-	else
-		mk(ctx, "Fuller", Vector3.new(thickness + 0.02, length, 0.12), at(y), DARK_STEEL, Enum.Material.Metal)
+------------------------------------------------------------------------
+-- 칼날 장식
+------------------------------------------------------------------------
+type BladeInfo = { thick: number, width: number, length: number, startY: number }
+
+local function decorateBlade(ctx: Ctx, style: any, look: Look, blade: BasePart, b: BladeInfo)
+	local midY = b.startY + b.length / 2
+	-- 가운데 홈과 빛 테두리
+	mk(ctx, "Fuller", Vector3.new(b.thick + 0.03, b.length * 0.75, math.max(0.08, b.width * 0.16)), at(midY - b.length * 0.05), style.grade >= 21 and style.glow or DARK_STEEL, style.grade >= 21 and Enum.Material.Neon or Enum.Material.Metal)
+	if style.edge then
+		for _, side in ipairs({ 1, -1 }) do
+			mk(ctx, "Edge", Vector3.new(b.thick + 0.02, b.length * 0.92, 0.07), at(midY, side * (b.width / 2 - 0.02)), style.secondary, Enum.Material.Neon)
+		end
+	end
+	-- 룬 문자: 칼날을 따라 빛나는 점
+	local runes = math.min(style.runes, math.floor(b.length / 0.55))
+	for i = 1, runes do
+		local y = b.startY + 0.35 + (b.length - 0.9) * (i - 0.5) / runes
+		mk(ctx, "Rune", Vector3.new(b.thick + 0.06, 0.2, 0.2), at(y, 0, 45), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon)
+	end
+	-- 가시: 칼날 한쪽을 따라 바깥으로
+	local spikes = style.spikes
+	for i = 1, spikes do
+		local y = b.startY + b.length * (0.12 + 0.6 * (i - 1) / math.max(spikes, 1))
+		local size = 0.18 + 0.03 * style.grade / 10
+		mk(ctx, "Spike", Vector3.new(b.thick * 0.9, size, size), at(y, -(b.width / 2 + size * 0.25), 45), style.primary, Enum.Material.Metal)
+	end
+	-- 두 겹 칼날: 칼날을 감싼 반투명 빛
+	if style.auraBlade and not look.lite then
+		local outer = mk(ctx, "AuraBlade", Vector3.new(b.thick * 2.2, b.length * 1.08, b.width * 1.45), at(midY + b.length * 0.03), style.secondary, Enum.Material.ForceField)
+		outer.Transparency = 0.25
+	end
+	-- 빛 고리: 칼날을 두른 고리들
+	for r = 1, style.halo do
+		local y = b.startY + b.length * (0.3 + 0.25 * (r - 1))
+		local radius = b.width * 0.75 + 0.35 + r * 0.1
+		for i = 0, 9 do
+			local a = (i / 10) * math.pi * 2
+			mk(ctx, "Halo", Vector3.new(0.14, 0.14, radius * 0.66), CFrame.new(math.cos(a) * radius, y, math.sin(a) * radius) * CFrame.Angles(0, -a, 0), (r % 2 == 1) and style.glow or style.secondary, Enum.Material.Neon)
+		end
+	end
+	-- 궤적
+	local a0 = Instance.new("Attachment")
+	a0.Name = "TrailBase"
+	a0.Position = Vector3.new(0, -blade.Size.Y / 2 + 0.1, 0)
+	a0.Parent = blade
+	local a1 = Instance.new("Attachment")
+	a1.Name = "TrailTip"
+	a1.Position = Vector3.new(0, blade.Size.Y / 2, 0)
+	a1.Parent = blade
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	trail.Lifetime = style.trailLife
+	trail.MinLength = 0.05
+	trail.LightEmission = 0.9
+	trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	trail.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, look.accent)
+	trail.Parent = blade
+
+	-- 빛과 입자
+	if style.grade >= 4 then
+		local light = Instance.new("PointLight")
+		light.Color = style.glow
+		light.Range = style.lightRange
+		light.Brightness = style.lightBrightness
+		light.Parent = blade
+	end
+	emitter(blade, style, look.lite and style.particleRate * 0.4 or style.particleRate, style.particleSize)
+	if style.fire and not look.lite then
+		local fire = Instance.new("Fire")
+		fire.Size = 2 + style.grade * 0.04
+		fire.Heat = 6
+		fire.Color = style.primary
+		fire.SecondaryColor = style.secondary
+		fire.Parent = blade
+	end
+	if style.smoke and not look.lite then
+		local smoke = Instance.new("Smoke")
+		smoke.Color = style.primary
+		smoke.Opacity = 0.12
+		smoke.RiseVelocity = 2
+		smoke.Size = 1.5
+		smoke.Parent = blade
+	end
+	if style.sparkles or look.rarity >= 5 then
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = look.rarity >= 5 and GOLD or style.glow
+		sp.Parent = blade
+	end
+
+	-- 떠다니는 구슬, 빛줄기, 파편 (클라이언트가 돌린다)
+	if look.lite then
+		return
+	end
+	local tip = Instance.new("Attachment")
+	tip.Name = "BeamTip"
+	tip.Position = Vector3.new(0, blade.Size.Y / 2, 0)
+	tip.Parent = blade
+	for i = 1, style.orbs do
+		local orb = orbitPart(ctx.parent, blade, Vector3.new(0.45, 0.45, 0.45) * ctx.scale * (1 + style.power * 0.6), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon, Enum.PartType.Ball, {
+			name = "Orb",
+			radius = (b.width * 0.8 + 0.7) * ctx.scale,
+			height = (-blade.Size.Y / 2) + blade.Size.Y * (i / (style.orbs + 1)),
+			speed = 2.2,
+			phase = i * (math.pi * 2 / style.orbs),
+			useRotation = true,
+		})
+		if style.beams then
+			local att = Instance.new("Attachment")
+			att.Parent = orb
+			local beam = Instance.new("Beam")
+			beam.Attachment0 = tip
+			beam.Attachment1 = att
+			beam.Width0 = 0.12
+			beam.Width1 = 0.05
+			beam.FaceCamera = true
+			beam.LightEmission = 1
+			beam.Segments = 8
+			beam.CurveSize0 = 0.8
+			beam.CurveSize1 = -0.8
+			beam.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(style.glow, style.secondary)
+			beam.Transparency = NumberSequence.new(0.15)
+			beam.Parent = orb
+		end
+	end
+	for i = 1, style.shards do
+		orbitPart(ctx.parent, blade, Vector3.new(0.12, 0.45, 0.22) * ctx.scale, (i % 3 == 0) and style.secondary or style.glow, Enum.Material.Glass, nil, {
+			name = "Shard",
+			radius = (b.width * 1.2 + 1.3) * ctx.scale,
+			height = (-blade.Size.Y / 2) + blade.Size.Y * ((i % 6) + 1) / 7,
+			speed = -3.2,
+			phase = i * 0.9,
+			useRotation = true,
+			tumble = 4,
+		})
 	end
 end
 
-local function gem(ctx: Ctx, look: Look, y: number, size: number)
-	if look.section >= 2 or look.rarity >= 4 then
-		mk(ctx, "Gem", Vector3.new(size, size, size), at(y, 0, 45), look.accent, Enum.Material.Neon)
+-- 가드: 보석, 날개, 검 왕관
+local function decorateGuard(ctx: Ctx, style: any, look: Look, guardY: number, guardW: number)
+	local n = style.gems
+	for i = 1, n do
+		local z = (n == 1) and 0 or (-guardW * 0.35 + guardW * 0.7 * (i - 1) / (n - 1))
+		mk(ctx, "Gem", Vector3.new(0.34, 0.34, 0.34), at(guardY, z, 45), (i == (n + 1) // 2) and look.accent or style.glow, Enum.Material.Neon)
+	end
+	if style.wings then
+		local w = style.wingSize
+		for _, side in ipairs({ 1, -1 }) do
+			for f = 0, 2 do
+				local len = (1.6 - f * 0.35) * w
+				mk(ctx, "Wing", Vector3.new(0.12, len, 0.38 * w), at(guardY + 0.25 + f * 0.18, side * (guardW / 2 + len * 0.3), side * (35 + f * 18)), (f == 0) and style.glow or style.secondary, style.grade >= 70 and Enum.Material.ForceField or Enum.Material.Neon)
+			end
+		end
+	end
+	if style.crown and not look.lite then
+		for i = 0, 7 do
+			local a = (i / 8) * math.pi * 2
+			mk(ctx, "CrownBlade", Vector3.new(0.1, 0.9, 0.22), CFrame.new(math.cos(a) * 0.5, guardY - 0.5, math.sin(a) * 0.5) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, math.rad(-55)), style.glow, Enum.Material.Neon)
+		end
 	end
 end
 
--- 칼끝: 45도 돌린 네모로 뾰족하게
-local function tip(ctx: Ctx, color: Color3, material: Enum.Material, thickness: number, width: number, y: number): Part
-	local d = width * 0.71
-	return mk(ctx, "Tip", Vector3.new(thickness, d, d), at(y, 0, 45), color, material)
-end
+------------------------------------------------------------------------
+-- 계열별 모양
+------------------------------------------------------------------------
+type Dims = { handle: number, guardW: number, bladeW: number, bladeL: number, bladeT: number, pommel: boolean }
 
--- 무기 모양들. 각각 궤적 시작점과 끝점이 될 파트를 돌려준다
-local shapes: { [number]: (Ctx, Look) -> (BasePart, Vector3, Vector3) } = {}
+local DIMS: { [number]: Dims } = {
+	[1] = { handle = 1.8, guardW = 2.8, bladeW = 1.25, bladeL = 5.6, bladeT = 0.26, pommel = true }, -- 대검
+	[2] = { handle = 1.0, guardW = 1.1, bladeW = 0.5, bladeL = 3.0, bladeT = 0.16, pommel = false }, -- 쌍검
+	[3] = { handle = 1.7, guardW = 1.8, bladeW = 0.52, bladeL = 7.0, bladeT = 0.18, pommel = true }, -- 장검
+	[4] = { handle = 0.9, guardW = 0.9, bladeW = 0.44, bladeL = 1.9, bladeT = 0.15, pommel = false }, -- 단검
+	[0] = { handle = 1.9, guardW = 3.0, bladeW = 1.4, bladeL = 6.6, bladeT = 0.3, pommel = true }, -- 올라운더
+}
 
--- 대검: 넓고 두꺼운 칼날, 커다란 십자 가드
-shapes[1] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.36, 1.8, 0.36), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.62, 0.62, 0.62), at(-1.05), guardColor, Enum.Material.Metal, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.5, 0.36, 2.8), at(1.05), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardL", Vector3.new(0.5, 0.7, 0.36), at(1.25, 1.3), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardR", Vector3.new(0.5, 0.7, 0.36), at(1.25, -1.3), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 1.05, 0.5)
-	local blade = mk(ctx, "Blade", Vector3.new(0.26, 5.6, 1.25), at(4.03), bc, bm)
-	fuller(ctx, look, 0.26, 4.4, 3.6)
-	tip(ctx, bc, bm, 0.26, 1.25, 6.83)
-	return blade, Vector3.new(0, -2.6, 0), Vector3.new(0, 3.1, 0)
-end
-
--- 쌍검: 짧고 날렵한 칼날 (손마다 하나)
-shapes[2] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.28, 1.0, 0.28), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Guard", Vector3.new(0.36, 0.2, 1.1), at(0.6, 0, -12), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.6, 0.3)
-	local blade = mk(ctx, "Blade", Vector3.new(0.16, 3.0, 0.5), at(2.2, 0.08, 4), bc, bm)
-	tip(ctx, bc, bm, 0.16, 0.5, 3.75)
-	if look.section >= 3 then
-		mk(ctx, "Edge", Vector3.new(0.18, 2.6, 0.08), at(2.1, 0.3, 4), look.accent, Enum.Material.Neon)
+local function straightSword(ctx: Ctx, style: any, look: Look, typeId: number): BasePart
+	local d = DIMS[typeId] or DIMS[1]
+	local bladeL = d.bladeL * style.lengthMul
+	local bladeW = d.bladeW * style.widthMul
+	local guardColor = look.rarity >= 5 and GOLD or style.primary:Lerp(DARK_STEEL, 0.55)
+	local handleColor = style.grade >= 50 and style.primary:Lerp(Color3.new(0, 0, 0), 0.6) or LEATHER
+	mk(ctx, "Grip", Vector3.new(0.34, d.handle, 0.34), at(0), handleColor, Enum.Material.Fabric)
+	for i = 1, 3 do
+		mk(ctx, "Wrap", Vector3.new(0.38, 0.08, 0.38), at(-d.handle / 2 + d.handle * i / 4), guardColor, Enum.Material.Metal)
 	end
-	return blade, Vector3.new(0, -1.4, 0), Vector3.new(0, 1.6, 0)
-end
-
--- 장검: 아주 길고 가는 칼날, 고리 모양 가드
-shapes[3] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.3, 1.7, 0.3), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.45, 0.45, 0.45), at(-0.95), guardColor, Enum.Material.Metal, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.4, 0.26, 1.8), at(0.95), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardL", Vector3.new(0.4, 0.55, 0.26), at(0.75, 0.9), guardColor, Enum.Material.Metal)
-	mk(ctx, "GuardR", Vector3.new(0.4, 0.55, 0.26), at(0.75, -0.9), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.95, 0.36)
-	local blade = mk(ctx, "Blade", Vector3.new(0.18, 7.0, 0.52), at(4.6), bc, bm)
-	fuller(ctx, look, 0.18, 5.8, 4.2)
-	tip(ctx, bc, bm, 0.18, 0.52, 8.1)
-	return blade, Vector3.new(0, -3.3, 0), Vector3.new(0, 3.6, 0)
-end
-
--- 단검: 짧은 칼날과 손가락 보호대
-shapes[4] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local guardColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Grip", Vector3.new(0.3, 0.9, 0.3), at(0), LEATHER, Enum.Material.Fabric)
-	mk(ctx, "Guard", Vector3.new(0.4, 0.2, 0.9), at(0.55), guardColor, Enum.Material.Metal)
-	mk(ctx, "Knuckle", Vector3.new(0.2, 1.1, 0.16), at(0, -0.45), guardColor, Enum.Material.Metal)
-	gem(ctx, look, 0.55, 0.28)
-	local blade = mk(ctx, "Blade", Vector3.new(0.15, 1.9, 0.44), at(1.6), bc, bm)
-	tip(ctx, bc, bm, 0.15, 0.44, 2.55)
-	if look.section >= 3 then
-		mk(ctx, "Edge", Vector3.new(0.17, 1.7, 0.08), at(1.5, 0.22), look.accent, Enum.Material.Neon)
+	if d.pommel then
+		local pommel = mk(ctx, "Pommel", Vector3.new(0.6, 0.6, 0.6), at(-d.handle / 2 - 0.2), guardColor, style.grade >= 30 and Enum.Material.Neon or Enum.Material.Metal, Enum.PartType.Ball)
+		if style.grade >= 30 then
+			pommel.Color = style.glow
+		end
 	end
-	return blade, Vector3.new(0, -0.9, 0), Vector3.new(0, 1.0, 0)
+	local guardY = d.handle / 2 + 0.12
+	mk(ctx, "Guard", Vector3.new(0.48, 0.32, d.guardW), at(guardY), guardColor, Enum.Material.Metal)
+	if typeId == 1 or typeId == 0 or typeId == 3 then
+		for _, side in ipairs({ 1, -1 }) do
+			mk(ctx, "GuardTip", Vector3.new(0.48, 0.6, 0.3), at(guardY + 0.18, side * d.guardW / 2), guardColor, Enum.Material.Metal)
+		end
+	end
+	if typeId == 4 then
+		mk(ctx, "Knuckle", Vector3.new(0.2, d.handle * 1.1, 0.14), at(0, -0.42), guardColor, Enum.Material.Metal)
+	end
+	decorateGuard(ctx, style, look, guardY, d.guardW)
+
+	local bladeColor = style.primary:Lerp(Color3.fromRGB(230, 232, 238), style.grade < 55 and 0.45 or 0.1)
+	local startY = guardY + 0.16
+	local blade = mk(ctx, "Blade", Vector3.new(d.bladeT, bladeL, bladeW), at(startY + bladeL / 2), bladeColor, style.bladeMaterial)
+	blade.Reflectance = style.reflect
+	-- 칼끝: 45도 돌린 네모로 뾰족하게
+	local tipSize = bladeW * 0.71
+	local tipPart = mk(ctx, "BladeTip", Vector3.new(d.bladeT, tipSize, tipSize), at(startY + bladeL, 0, 45), bladeColor, style.bladeMaterial)
+	tipPart.Reflectance = style.reflect
+	if typeId == 0 then
+		mk(ctx, "Core", Vector3.new(d.bladeT + 0.05, bladeL * 0.85, 0.3), at(startY + bladeL * 0.45), Color3.fromRGB(255, 150, 210), Enum.Material.Neon)
+	end
+	decorateBlade(ctx, style, look, blade, { thick = d.bladeT, width = bladeW, length = bladeL, startY = startY })
+	return blade
 end
 
--- 낫: 긴 자루 끝에서 아래로 휘어 내려오는 날
-shapes[5] = function(ctx, look)
-	local bc, bm = bladeStyle(look)
-	local ringColor = look.rarity >= 5 and GOLD or DARK_STEEL
-	mk(ctx, "Shaft", Vector3.new(0.3, 6.4, 0.3), at(2.6), WOOD, Enum.Material.Wood)
-	for i, y in ipairs({ 0.2, 2.8, 5.4 }) do
-		mk(ctx, "Band" .. i, Vector3.new(0.4, 0.22, 0.4), at(y), ringColor, Enum.Material.Metal)
+local function scythe(ctx: Ctx, style: any, look: Look): BasePart
+	local bc = style.primary:Lerp(Color3.fromRGB(230, 232, 238), style.grade < 55 and 0.45 or 0.1)
+	local ringColor = look.rarity >= 5 and GOLD or style.primary:Lerp(DARK_STEEL, 0.5)
+	local shaftLen = 6.4 * (1 + style.power * 0.2)
+	local shaft = mk(ctx, "Shaft", Vector3.new(0.3, shaftLen, 0.3), at(shaftLen / 2 - 0.6), style.grade >= 50 and style.primary:Lerp(Color3.new(0, 0, 0), 0.55) or WOOD, Enum.Material.Wood)
+	local bands = 3 + math.min(4, style.grade // 15)
+	for i = 1, bands do
+		mk(ctx, "Band", Vector3.new(0.4, 0.2, 0.4), at(-0.4 + (shaftLen - 0.4) * i / (bands + 1)), ringColor, Enum.Material.Metal)
 	end
-	gem(ctx, look, 5.85, 0.36)
-	-- 날: 자루 끝(O)에서 시작해 원을 따라 아래로, 뒤로 휜다
-	local oy, radius, segs, sweep = 5.8, 2.6, 5, 110
+	local oy = shaftLen - 0.8
+	decorateGuard(ctx, style, look, oy, 0.8)
+	-- 날: 자루 끝에서 원을 따라 아래로, 뒤로 휜다
+	local radius = 2.6 * style.lengthMul
+	local segs = 6
+	local sweep = 115
 	local last: Part? = nil
 	for i = 0, segs - 1 do
 		local a0 = math.rad(sweep * i / segs)
@@ -194,81 +369,23 @@ shapes[5] = function(ctx, look)
 		local y1, z1 = oy - radius + radius * math.cos(a1), -radius * math.sin(a1)
 		local dy, dz = y1 - y0, z1 - z0
 		local len = math.sqrt(dy * dy + dz * dz) + 0.08
-		local width = 0.7 - 0.45 * (i / (segs - 1))
+		local width = (0.75 - 0.5 * (i / (segs - 1))) * style.widthMul
 		local angle = math.deg(math.atan2(dz, dy))
-		-- 날은 바깥쪽(자루 쪽 반대)으로 폭을 준다
 		local cf = CFrame.new(0, (y0 + y1) / 2, (z0 + z1) / 2) * CFrame.Angles(math.rad(angle), 0, 0) * CFrame.new(0, 0, width / 2 - 0.1)
-		last = mk(ctx, "Blade" .. i, Vector3.new(0.14, len, width), cf, bc, bm)
-		if look.section >= 3 then
-			mk(ctx, "Edge" .. i, Vector3.new(0.16, len, 0.08), cf * CFrame.new(0, 0, width / 2), look.accent, Enum.Material.Neon)
+		local seg = mk(ctx, "Blade" .. i, Vector3.new(0.14, len, width), cf, bc, style.bladeMaterial)
+		seg.Reflectance = style.reflect
+		if style.edge then
+			mk(ctx, "Edge" .. i, Vector3.new(0.16, len, 0.08), cf * CFrame.new(0, 0, width / 2), style.secondary, Enum.Material.Neon)
 		end
+		if i % 2 == 0 and style.runes > i then
+			mk(ctx, "Rune" .. i, Vector3.new(0.2, 0.18, 0.18), cf * CFrame.Angles(math.rad(45), 0, 0), style.glow, Enum.Material.Neon)
+		end
+		last = seg
 	end
-	tip(ctx, bc, bm, 0.14, 0.5, oy + 0.35)
-	return (last :: Part), Vector3.new(0, 0, 0), Vector3.new(0, 0, 0)
-end
-
--- 올라운더: 거대한 백금 칼날, 날개 가드, 칼날을 감싼 빛 고리
-shapes[0] = function(ctx, look)
-	local bc = Color3.fromRGB(255, 248, 225)
-	mk(ctx, "Grip", Vector3.new(0.38, 1.9, 0.38), at(0), Color3.fromRGB(40, 30, 60), Enum.Material.Fabric)
-	mk(ctx, "Pommel", Vector3.new(0.7, 0.7, 0.7), at(-1.1), GOLD, Enum.Material.Neon, Enum.PartType.Ball)
-	mk(ctx, "Guard", Vector3.new(0.55, 0.4, 3.0), at(1.1), GOLD, Enum.Material.Metal)
-	mk(ctx, "WingL", Vector3.new(0.3, 2.2, 0.5), at(1.6, 1.6, 35), Color3.fromRGB(255, 240, 200), Enum.Material.Neon)
-	mk(ctx, "WingR", Vector3.new(0.3, 2.2, 0.5), at(1.6, -1.6, -35), Color3.fromRGB(255, 240, 200), Enum.Material.Neon)
-	mk(ctx, "Gem", Vector3.new(0.6, 0.6, 0.6), at(1.1, 0, 45), Color3.fromRGB(255, 120, 200), Enum.Material.Neon)
-	local blade = mk(ctx, "Blade", Vector3.new(0.3, 6.6, 1.4), at(4.6), bc, Enum.Material.Neon)
-	mk(ctx, "Core", Vector3.new(0.34, 5.6, 0.3), at(4.3), Color3.fromRGB(255, 150, 210), Enum.Material.Neon)
-	tip(ctx, bc, Enum.Material.Neon, 0.3, 1.4, 7.9)
-	for i = 0, 9 do
-		local a = (i / 10) * math.pi * 2
-		local cf = CFrame.new(math.cos(a) * 1.3, 5.2, math.sin(a) * 1.3) * CFrame.Angles(0, -a, 0)
-		mk(ctx, "Halo" .. i, Vector3.new(0.2, 0.2, 0.85), cf, GOLD, Enum.Material.Neon)
-	end
-	return blade, Vector3.new(0, -3.1, 0), Vector3.new(0, 3.6, 0)
-end
-
-local function addTrail(blade: BasePart, a0Pos: Vector3, a1Pos: Vector3, look: Look, rainbow: boolean)
-	if a0Pos == a1Pos then
-		a0Pos = Vector3.new(0, -blade.Size.Y / 2, 0)
-		a1Pos = Vector3.new(0, blade.Size.Y / 2, 0)
-	end
-	local a0 = Instance.new("Attachment")
-	a0.Name = "TrailBase"
-	a0.Position = a0Pos
-	a0.Parent = blade
-	local a1 = Instance.new("Attachment")
-	a1.Name = "TrailTip"
-	a1.Position = a1Pos
-	a1.Parent = blade
-	local trail = Instance.new("Trail")
-	trail.Attachment0 = a0
-	trail.Attachment1 = a1
-	trail.Lifetime = look.section >= 4 and 0.28 or 0.18
-	trail.MinLength = 0.05
-	trail.LightEmission = look.section >= 3 and 0.8 or 0.3
-	trail.FaceCamera = false
-	trail.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.25),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	trail.Color = rainbow and RAINBOW or ColorSequence.new(look.accent)
-	trail.Parent = blade
-end
-
-local function addSparkles(blade: BasePart, look: Look, rainbow: boolean)
-	local p = Instance.new("ParticleEmitter")
-	p.Name = "BladeSparkle"
-	p.Rate = look.section >= 5 and 14 or 8
-	p.Lifetime = NumberRange.new(0.5, 1.0)
-	p.Speed = NumberRange.new(0.3, 1.2)
-	p.SpreadAngle = Vector2.new(180, 180)
-	p.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, look.section >= 5 and 0.3 or 0.2),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	p.LightEmission = 1
-	p.Color = rainbow and RAINBOW or ColorSequence.new(look.accent)
-	p.Parent = blade
+	mk(ctx, "TopSpike", Vector3.new(0.14, 0.5, 0.5) * (1 + style.power), at(oy + 0.35, 0, 45), bc, style.bladeMaterial)
+	-- 장식은 자루 기준으로 붙인다 (구슬은 자루 위쪽을 돈다)
+	decorateBlade(ctx, style, look, shaft, { thick = 0.3, width = 0.5, length = shaftLen, startY = -0.6 })
+	return (last :: Part)
 end
 
 -- 무기 하나를 손에 붙인다. 손에 붙은 Model을 돌려준다
@@ -276,72 +393,117 @@ function Builder.build(parent: Instance, hand: BasePart, typeId: number, look: L
 	local model = Instance.new("Model")
 	model.Name = "Weapon"
 	model.Parent = parent
+	local grade = typeId == 0 and 100 or look.grade
+	local style = GradeStyle.get(grade)
 	local grip = gripOverride or (hand.CFrame * CFrame.new(0, -hand.Size.Y / 2, 0) * CFrame.Angles(math.rad(-90), 0, 0))
-	local ctx: Ctx = { parent = model, hand = hand, grip = grip, scale = look.scale }
-	local shape = shapes[typeId] or shapes[1]
-	local blade, a0, a1 = shape(ctx, look)
-	local rainbow = look.section >= 6 or typeId == 0
-
-	if look.section >= 2 or typeId == 0 then
-		addTrail(blade, a0 * look.scale, a1 * look.scale, look, rainbow)
-	end
-	if look.section >= 3 or typeId == 0 then
-		local light = Instance.new("PointLight")
-		light.Color = rainbow and Color3.fromRGB(255, 220, 240) or look.accent
-		light.Range = 6 + look.section * 1.5
-		light.Brightness = 0.8 + look.section * 0.3
-		light.Parent = blade
-	end
-	if look.section >= 4 or typeId == 0 then
-		addSparkles(blade, look, rainbow)
-	end
-	if look.rarity >= 5 and look.section >= 2 then
-		local glint = Instance.new("Sparkles")
-		glint.SparkleColor = GOLD
-		glint.Parent = blade
+	local ctx: Ctx = { parent = model, hand = hand, grip = grip, scale = (look.scale or 1) * style.scale }
+	if typeId == 5 then
+		scythe(ctx, style, look)
+	else
+		straightSword(ctx, style, look, typeId)
 	end
 	return model
 end
 
--- 장착 무기 구간에 따라 캐릭터 주위에 오라를 붙인다
-function Builder.applyAura(char: Model, section: number, color: Color3)
+------------------------------------------------------------------------
+-- 캐릭터 오라: 장착한 무기 등급마다 다르다
+------------------------------------------------------------------------
+function Builder.applyAura(char: Model, grade: number)
 	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then
+	if not (root and root:IsA("BasePart")) then
 		return
+	end
+	local old = char:FindFirstChild("ArenaAura")
+	if old then
+		old:Destroy()
 	end
 	for _, child in ipairs(root:GetChildren()) do
 		if child.Name == "RankAura" then
 			child:Destroy()
 		end
 	end
-	if section < 3 then
-		return
+	local style = GradeStyle.get(grade)
+	local holder = Instance.new("Model")
+	holder.Name = "ArenaAura"
+	holder.Parent = char
+
+	if style.aura then
+		local pe = emitter(root, style, style.auraRate, 0.5 + style.power * 0.9, {
+			name = "RankAura",
+			lifetime = NumberRange.new(0.8, 1.5),
+			speed = NumberRange.new(1, 3),
+		})
+		pe.SpreadAngle = Vector2.new(40, 40)
+		pe.EmissionDirection = Enum.NormalId.Top
 	end
-	local rainbow = section >= 6
-	local aura = Instance.new("ParticleEmitter")
-	aura.Name = "RankAura"
-	aura.Rate = 4 + (section - 3) * 4
-	aura.Lifetime = NumberRange.new(0.8, 1.4)
-	aura.Speed = NumberRange.new(1.5, 3)
-	aura.SpreadAngle = Vector2.new(25, 25)
-	aura.EmissionDirection = Enum.NormalId.Top
-	aura.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.6 + section * 0.1),
-		NumberSequenceKeypoint.new(1, 0),
-	})
-	aura.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.4),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	aura.LightEmission = 0.8
-	aura.Color = rainbow and RAINBOW or ColorSequence.new(color)
-	aura.Parent = root
-	if section >= 5 then
+	if style.groundRing then
+		orbitPart(holder, root, Vector3.new(0.12, 4.5 + style.grade * 0.05, 4.5 + style.grade * 0.05), style.glow, Enum.Material.Neon, Enum.PartType.Cylinder, {
+			name = "AuraRing",
+			height = -2.85,
+			speed = 0.8,
+			flat = true,
+			transparency = 0.55,
+		})
+	end
+	if style.secondRing then
+		orbitPart(holder, root, Vector3.new(0.1, 7 + style.grade * 0.04, 7 + style.grade * 0.04), style.secondary, Enum.Material.ForceField, Enum.PartType.Cylinder, {
+			name = "AuraRing2",
+			height = -2.8,
+			speed = -0.6,
+			flat = true,
+			transparency = 0.2,
+		})
+	end
+	for i = 1, style.bodyOrbs do
+		local orb = orbitPart(holder, root, Vector3.new(0.6, 0.6, 0.6) * (1 + style.power * 0.5), (i % 2 == 0) and style.secondary or style.glow, Enum.Material.Neon, Enum.PartType.Ball, {
+			name = "AuraOrb",
+			radius = 3.2,
+			height = 0.2 + (i % 3) * 0.6,
+			speed = 1.6,
+			phase = i * (math.pi * 2 / style.bodyOrbs),
+		})
+		local tr = Instance.new("Trail")
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, 0.25, 0)
+		a0.Parent = orb
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, -0.25, 0)
+		a1.Parent = orb
+		tr.Attachment0 = a0
+		tr.Attachment1 = a1
+		tr.Lifetime = 0.35
+		tr.LightEmission = 1
+		tr.Color = style.rainbow and GradeStyle.RAINBOW or ColorSequence.new(orb.Color)
+		tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+		tr.Parent = orb
+	end
+	local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+	if style.bodyWings and torso and torso:IsA("BasePart") then
+		local size = 1 + (style.grade - 65) / 25
+		local ctx: Ctx = { parent = holder, hand = torso, grip = torso.CFrame * CFrame.new(0, 0.4, torso.Size.Z / 2 + 0.25), scale = 1 }
+		for _, side in ipairs({ 1, -1 }) do
+			for f = 0, 3 do
+				local len = (2.8 - f * 0.45) * size
+				local cf = CFrame.new(side * (0.5 + len * 0.35), 0.4 - f * 0.35, f * 0.05) * CFrame.Angles(0, 0, math.rad(side * (-60 + f * 22)))
+				local feather = mk(ctx, "Wing", Vector3.new(0.12, len, 0.55 * size), CFrame.new(cf.Position) * cf.Rotation * CFrame.Angles(0, math.rad(90), 0), (f % 2 == 0) and style.glow or style.secondary, style.grade >= 85 and Enum.Material.ForceField or Enum.Material.Neon)
+				feather.Transparency = 0.1
+			end
+		end
+	end
+	local head = char:FindFirstChild("Head")
+	if style.bodyHalo and head and head:IsA("BasePart") then
+		local ctx: Ctx = { parent = holder, hand = head, grip = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.7, 0), scale = 1 }
+		for i = 0, 11 do
+			local a = (i / 12) * math.pi * 2
+			mk(ctx, "Halo", Vector3.new(0.12, 0.12, 0.5), CFrame.new(math.cos(a) * 0.95, 0, math.sin(a) * 0.95) * CFrame.Angles(0, -a, 0), style.glow, Enum.Material.Neon)
+		end
+	end
+	if style.bodyLight then
 		local light = Instance.new("PointLight")
 		light.Name = "RankAura"
-		light.Color = rainbow and Color3.fromRGB(255, 200, 235) or color
-		light.Range = 10
-		light.Brightness = 1.2
+		light.Color = style.glow
+		light.Range = 8 + style.power * 10
+		light.Brightness = 0.8 + style.power * 1.5
 		light.Parent = root
 	end
 end

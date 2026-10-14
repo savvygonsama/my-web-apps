@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 
 local Effects = {}
 
@@ -143,7 +144,7 @@ local function arc(cf: CFrame, radius: number, fromDeg: number, toDeg: number, s
 	end
 end
 
-function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number?, size: number?)
+function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number?, size: number?, texture: string?)
 	local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), CFrame.new(pos), color, 1)
 	local pe = Instance.new("ParticleEmitter")
 	pe.Rate = 0
@@ -157,6 +158,11 @@ function Effects.burst(pos: Vector3, color: Color3, count: number, speed: number
 	})
 	pe.LightEmission = 1
 	pe.Color = ColorSequence.new(color)
+	if texture then
+		pe.Texture = texture
+		pe.RotSpeed = NumberRange.new(-200, 200)
+		pe.Rotation = NumberRange.new(0, 360)
+	end
 	pe.Parent = anchor
 	pe:Emit(count)
 	Debris:AddItem(anchor, 1)
@@ -247,70 +253,206 @@ end
 ------------------------------------------------------------------------
 -- 무기별 베기 궤적
 ------------------------------------------------------------------------
+-- 속성별 덧붙임 연출. power(0~1)가 클수록 많고 크다
+local function lightningBolt(target: Vector3, color: Color3, height: number, width: number)
+	local top = target + Vector3.new((math.random() - 0.5) * 6, height, (math.random() - 0.5) * 6)
+	local prev = top
+	local segs = 7
+	for i = 1, segs do
+		local t = i / segs
+		local p = top:Lerp(target, t)
+		if i < segs then
+			p += Vector3.new((math.random() - 0.5) * 3, 0, (math.random() - 0.5) * 3)
+		end
+		local mid = (prev + p) / 2
+		local len = (p - prev).Magnitude
+		local seg = fxPart(Vector3.new(width, width, len), CFrame.lookAt(mid, p), (i % 2 == 0) and Color3.new(1, 1, 1) or color, 0)
+		fade(seg, 0.18)
+		prev = p
+	end
+	Effects.flash(target, color, 4, 0.15)
+end
+
+local function flyingBits(origin: Vector3, color: Color3, count: number, size: Vector3, material: Enum.Material, speed: number, life: number, gravity: boolean)
+	for _ = 1, count do
+		local dir = Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5).Unit
+		local bit = fxPart(size, CFrame.new(origin) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), color, 0.05)
+		bit.Material = material
+		local goal = origin + dir * speed * life + (gravity and Vector3.new(0, -6, 0) or Vector3.zero)
+		TweenService:Create(bit, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = goal,
+			Orientation = Vector3.new(math.random(-360, 360), math.random(-360, 360), 0),
+			Transparency = 1,
+			Size = size * 0.3,
+		}):Play()
+		Debris:AddItem(bit, life + 0.05)
+	end
+end
+
+local motifFx: { [string]: (any, Vector3, CFrame, number) -> () } = {}
+
+motifFx.flame = function(style, hit, _cf, p)
+	Effects.burst(hit, style.primary, 10 + math.floor(p * 30), 18, 1 + p * 1.5, style.motif.tex)
+	for i = 1, 1 + math.floor(p * 3) do
+		local pos = hit + Vector3.new((math.random() - 0.5) * 4, -2, (math.random() - 0.5) * 4)
+		local pillar = fxPart(Vector3.new(4 + p * 6, 1, 1), CFrame.new(pos + Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), (i % 2 == 0) and style.secondary or style.primary, 0.2, Enum.PartType.Cylinder)
+		fade(pillar, 0.35, { Size = Vector3.new(8 + p * 8, 0.1, 0.1), Position = pos + Vector3.new(0, 5, 0) })
+	end
+end
+
+motifFx.frost = function(style, hit, _cf, p)
+	flyingBits(hit, style.glow, 5 + math.floor(p * 14), Vector3.new(0.25, 0.9, 0.25) * (1 + p), Enum.Material.Glass, 14, 0.4, false)
+	ring(hit - Vector3.new(0, 2.4, 0), Color3.fromRGB(220, 245, 255), 1, 6 + p * 8, 0.35, 0.2)
+end
+
+motifFx.storm = function(style, hit, _cf, p)
+	for _ = 1, 1 + math.floor(p * 3) do
+		lightningBolt(hit + Vector3.new((math.random() - 0.5) * 4, -1, (math.random() - 0.5) * 4), style.primary, 18 + p * 20, 0.25 + p * 0.3)
+	end
+	if p > 0.3 then
+		Effects.shake(0.15 + p * 0.3, 0.1)
+	end
+end
+
+motifFx.nature = function(style, hit, _cf, p)
+	flyingBits(hit, style.primary, 6 + math.floor(p * 14), Vector3.new(0.5, 0.06, 0.35) * (1 + p), Enum.Material.Neon, 10, 0.7, true)
+	Effects.burst(hit, style.secondary, 8 + math.floor(p * 12), 8, 0.5 + p)
+end
+
+motifFx.shadow = function(style, hit, _cf, p)
+	Effects.burst(hit, style.primary, 12 + math.floor(p * 20), 8, 1.5 + p * 2, style.motif.tex)
+	Effects.flash(hit, style.secondary, 3 + p * 4, 0.2)
+end
+
+motifFx.holy = function(style, hit, _cf, p)
+	local pillar = fxPart(Vector3.new(30, 2 + p * 3, 2 + p * 3), CFrame.new(hit + Vector3.new(0, 13, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.new(1, 1, 1), 0.2, Enum.PartType.Cylinder)
+	fade(pillar, 0.35, { Size = Vector3.new(30, 0.1, 0.1) })
+	Effects.burst(hit, style.glow, 10 + math.floor(p * 20), 16, 0.6 + p)
+	ring(hit - Vector3.new(0, 2.4, 0), style.glow, 2, 8 + p * 10, 0.4, 0.2)
+end
+
+motifFx.blood = function(style, hit, _cf, p)
+	flyingBits(hit, style.primary, 6 + math.floor(p * 16), Vector3.new(0.3, 0.3, 0.3) * (1 + p), Enum.Material.Neon, 9, 0.5, true)
+	arc(CFrame.new(hit) * CFrame.Angles(0, math.random() * 6, math.rad(70)), 2.5 + p * 2, -70, 70, 7, 0.4 + p * 0.5, style.secondary, 0.2)
+end
+
+motifFx.void = function(style, hit, _cf, p)
+	local sphere = fxPart(Vector3.new(6, 6, 6) * (1 + p), CFrame.new(hit), Color3.fromRGB(10, 0, 20), 0.2, Enum.PartType.Ball)
+	sphere.Material = Enum.Material.ForceField
+	sphere.Color = style.secondary
+	fade(sphere, 0.3, { Size = Vector3.new(0.3, 0.3, 0.3) })
+	ring(hit, style.secondary, 10 + p * 10, 1, 0.3, 0.3)
+	Effects.burst(hit, style.primary, 10 + math.floor(p * 16), 6, 1.2 + p, style.motif.tex)
+end
+
+motifFx.star = function(style, hit, _cf, p)
+	flyingBits(hit, Color3.new(1, 1, 1), 5 + math.floor(p * 12), Vector3.new(0.35, 0.35, 0.35) * (1 + p), Enum.Material.Neon, 16, 0.35, false)
+	Effects.burst(hit, style.glow, 14 + math.floor(p * 20), 22, 0.4 + p * 0.5)
+end
+
+motifFx.crystal = function(style, hit, _cf, p)
+	local n = 6 + math.floor(p * 8)
+	for i = 1, n do
+		local a = (i / n) * math.pi * 2
+		local pos = hit + Vector3.new(math.cos(a), 0, math.sin(a)) * (2 + p * 2)
+		local shard = fxPart(Vector3.new(0.4, 1.6 + p * 1.5, 0.4), CFrame.new(pos) * CFrame.Angles(0, -a, math.rad(25)), (i % 2 == 0) and style.secondary or style.glow, 0.1)
+		shard.Material = Enum.Material.Glass
+		fade(shard, 0.4, { Position = pos + Vector3.new(math.cos(a), 0.6, math.sin(a)) * 2 })
+	end
+end
+
+-- 무기별 베기 궤적. 등급마다 색, 겹 수, 굵기, 속성 연출이 다르다
 function Effects.swing(data: any)
 	local root = getChar()
 	if not root then
 		return
 	end
-	local section = data.section or 1
-	local color: Color3 | { Color3 } = data.color or Color3.new(1, 1, 1)
-	if section >= 6 or data.typeId == 0 then
-		color = RAINBOW_COLORS
-	end
-	local plain: Color3 = typeof(color) == "table" and Color3.fromRGB(255, 240, 220) or color :: Color3
-	local w = 1 + (section - 1) * 0.18
+	local g = data.grade or 1
+	local style = GradeStyle.get(g)
+	local p = style.power
+	local colors: { Color3 } = style.rainbow and RAINBOW_COLORS or { style.glow, style.secondary, style.primary }
+	local plain: Color3 = style.glow
+	local w = 1 + p * 1.6
+	local layers = 1 + g // 25
+	local life = 0.18 + p * 0.12
 	local cf = root.CFrame * CFrame.new(0, 0.4, 0)
 	local look = root.CFrame.LookVector
 	local t = data.typeId
+	local hit = root.Position + look * math.min(data.range * 0.6, 6)
+
+	local function layered(baseCf: CFrame, radius: number, from: number, to: number, segs: number, width: number)
+		for L = 0, layers - 1 do
+			local extra = CFrame.Angles(0, math.rad(L * 9), math.rad(L * 7))
+			local c: Color3 | { Color3 } = colors
+			if L > 0 then
+				c = colors[(L % #colors) + 1]
+			end
+			arc(baseCf * extra, radius * (1 + L * 0.14), from, to, segs, width * (1 - L * 0.15), c, life + L * 0.05)
+		end
+	end
 
 	if t == 1 then
-		-- 대검: 위에서 내려찍는 세로 반달 + 땅 먼지
-		arc(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 12, 1.5 * w, color, 0.22)
-		local ground = root.Position + look * data.range * 0.6 - Vector3.new(0, 2.8, 0)
-		Effects.burst(ground, Color3.fromRGB(210, 185, 140), 14, 18, 0.9)
-		Effects.shake(0.25, 0.12)
+		layered(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 14, 1.5 * w)
+		Effects.burst(root.Position + look * data.range * 0.6 - Vector3.new(0, 2.8, 0), Color3.fromRGB(210, 185, 140), 14, 18, 0.9)
+		Effects.shake(0.25 + p * 0.3, 0.12)
 		Effects.sound("slash", 0.55, 0.8)
 	elseif t == 2 then
-		-- 쌍검: X자 두 줄기
-		arc(cf * CFrame.Angles(0, 0, math.rad(35)), 4.5, -70, 70, 9, 0.6 * w, color, 0.14)
-		arc(cf * CFrame.Angles(0, 0, math.rad(-35)), 4.5, 70, -70, 9, 0.6 * w, color, 0.14)
+		layered(cf * CFrame.Angles(0, 0, math.rad(35)), 4.5, -70, 70, 10, 0.6 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(-35)), 4.5, 70, -70, 10, 0.6 * w)
 		Effects.sound("slash", 0.35, 1.35)
 	elseif t == 3 then
-		-- 장검: 앞으로 길게 찌르는 빛줄기
-		local beam = fxPart(Vector3.new(0.35 * w, 0.35 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), plain, 0.1)
-		fade(beam, 0.18, { Size = Vector3.new(0.05, 0.05, data.range * 1.1) })
-		arc(cf, data.range * 0.85, -22, 22, 6, 0.5 * w, color, 0.16)
+		local beam = fxPart(Vector3.new(0.4 * w, 0.4 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), plain, 0.05)
+		fade(beam, 0.2, { Size = Vector3.new(0.05, 0.05, data.range * 1.15) })
+		if g >= 30 then
+			local outer = fxPart(Vector3.new(1.4 * w, 1.4 * w, data.range), cf * CFrame.new(0, 0, -data.range / 2), style.secondary, 0.55)
+			fade(outer, 0.18)
+		end
+		layered(cf, data.range * 0.85, -22, 22, 7, 0.5 * w)
 		Effects.flash(root.Position + look * data.range, plain, 2.5 * w, 0.15)
 		Effects.sound("lunge", 0.4, 1.1)
 	elseif t == 4 then
-		-- 단검: 짧고 빠른 두 번 긋기
-		arc(cf * CFrame.Angles(0, 0, math.rad(15)), 3.2, -80, 60, 7, 0.5 * w, color, 0.12)
-		arc(cf * CFrame.Angles(0, 0, math.rad(-20)), 3.6, 60, -80, 7, 0.4 * w, color, 0.12)
+		layered(cf * CFrame.Angles(0, 0, math.rad(15)), 3.2, -80, 60, 8, 0.5 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(-20)), 3.6, 60, -80, 8, 0.4 * w)
 		Effects.sound("slash", 0.3, 1.6)
 	elseif t == 5 then
-		-- 낫: 한 바퀴 원 + 영혼 조각
-		arc(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 18, 1.0 * w, color, 0.25)
-		for _ = 1, 4 do
-			local p = root.Position + Vector3.new((math.random() - 0.5) * 8, -1, (math.random() - 0.5) * 8)
-			local wisp = fxPart(Vector3.new(0.5, 0.5, 0.5), CFrame.new(p), Color3.fromRGB(150, 255, 200), 0.2, Enum.PartType.Ball)
-			fade(wisp, 0.6, { Position = p + Vector3.new(0, 4, 0) })
+		layered(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 20, 1.0 * w)
+		for _ = 1, 3 + math.floor(p * 6) do
+			local pos = root.Position + Vector3.new((math.random() - 0.5) * 8, -1, (math.random() - 0.5) * 8)
+			local wisp = fxPart(Vector3.new(0.5, 0.5, 0.5) * (1 + p), CFrame.new(pos), style.glow, 0.2, Enum.PartType.Ball)
+			fade(wisp, 0.6, { Position = pos + Vector3.new(0, 4 + p * 4, 0) })
 		end
+		hit = root.Position
 		Effects.sound("slash", 0.45, 0.65)
 	else
-		-- 올라운더: 한 바퀴 + 세로 반달, 무지개
-		arc(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 20, 1.2 * w, RAINBOW_COLORS, 0.28)
-		arc(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 12, 1.5 * w, RAINBOW_COLORS, 0.24)
-		Effects.shake(0.2, 0.1)
+		layered(cf * CFrame.new(0, -0.6, 0), data.range * 0.85, 0, 360, 22, 1.2 * w)
+		layered(cf * CFrame.Angles(0, 0, math.rad(90)), data.range * 0.6, -85, 85, 14, 1.5 * w)
+		Effects.shake(0.3, 0.1)
 		Effects.sound("lunge", 0.5, 0.9)
+		hit = root.Position
 	end
 
-	-- 높은 구간일수록 불꽃이 더 튄다
-	if section >= 4 then
-		Effects.burst(root.Position + look * 3, plain, 4 + section * 2, 16, 0.35)
+	-- 등급의 속성 연출
+	local fx = motifFx[style.motif.id]
+	if fx and g >= 2 then
+		fx(style, hit, cf, p)
+	end
+	-- 높은 등급일수록 더 얹는다
+	Effects.burst(hit, plain, 4 + math.floor(p * 20), 14 + p * 14, 0.3 + p * 0.5, style.motif.tex)
+	if g >= 40 then
+		ring(root.Position - Vector3.new(0, 2.7, 0), style.secondary, 2, 8 + p * 16, 0.3, 0.2)
+	end
+	if g >= 60 then
+		Effects.shake(0.1 + p * 0.15, 0.06)
+	end
+	if g >= 80 then
+		local beam = fxPart(Vector3.new(40, 1.5 + p, 1.5 + p), CFrame.new(hit + Vector3.new(0, 18, 0)) * CFrame.Angles(0, 0, math.rad(90)), style.glow, 0.3, Enum.PartType.Cylinder)
+		fade(beam, 0.3, { Size = Vector3.new(40, 0.1, 0.1) })
 	end
 	if data.crit then
+		Effects.flash(hit, Color3.new(1, 1, 1), 6 + p * 8, 0.18)
+		ring(hit, style.glow, 1, 10 + p * 12, 0.25, 0.3)
 		Effects.sound("lunge", 0.6, 1.3)
-		Effects.shake(0.35, 0.15)
+		Effects.shake(0.35 + p * 0.4, 0.15)
 	end
 end
 
@@ -761,7 +903,7 @@ skillFx.boomerang = function(data)
 	local holder = Instance.new("Model")
 	holder.Parent = folder
 	pcall(function()
-		WeaponBuilder.build(holder, anchor, 1, { accent = data.color, section = 4, rarity = 5, scale = 1.1 }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
+		WeaponBuilder.build(holder, anchor, 1, { grade = data.grade or 40, accent = data.color, rarity = 5, scale = 1, lite = true }, CFrame.new(origin) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.new(0, -3, 0))
 	end)
 	local spinRing = fxPart(Vector3.new(0.2, 9, 9), CFrame.new(origin), data.color, 0.6, Enum.PartType.Cylinder)
 	local far = origin + look * data.range
@@ -1030,7 +1172,7 @@ skillFx.rain = function(data)
 			local holder = Instance.new("Model")
 			holder.Parent = folder
 			pcall(function()
-				WeaponBuilder.build(holder, anchor, 1, { accent = Color3.fromRGB(255, 235, 160), section = 6, rarity = 5, scale = 1.2 }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
+				WeaponBuilder.build(holder, anchor, 1, { grade = 100, accent = Color3.fromRGB(255, 235, 160), rarity = 5, scale = 0.8, lite = true }, CFrame.new(start) * CFrame.Angles(math.rad(180), 0, 0) * CFrame.new(0, -4, 0))
 			end)
 			animate(0.35, function(t)
 				anchor.CFrame = CFrame.new(start:Lerp(ground + Vector3.new(0, 4, 0), t * t))

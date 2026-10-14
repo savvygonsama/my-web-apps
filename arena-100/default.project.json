@@ -106,6 +106,9 @@
       },
       "WeaponBuilder": {
         "$path": "src/shared/WeaponBuilder.lua"
+      },
+      "GradeStyle": {
+        "$path": "src/shared/GradeStyle.lua"
       }
     },
     "ServerScriptService": {

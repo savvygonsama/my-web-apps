@@ -14,6 +14,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 local World = require(script:WaitForChild("WorldBuilder"))
 local EnemyBuilder = require(script:WaitForChild("EnemyBuilder"))
 local EnemyAI = require(script:WaitForChild("EnemyAI"))
@@ -386,9 +387,11 @@ local function updateTitle(player: Player)
 	if not head then
 		return
 	end
-	local old = head:FindFirstChild("RankTitle")
-	if old then
-		old:Destroy()
+	for _, name in ipairs({ "RankTitle", "TitleSparkle" }) do
+		local old = head:FindFirstChild(name)
+		if old then
+			old:Destroy()
+		end
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "RankTitle"
@@ -418,16 +421,31 @@ local function updateTitle(player: Player)
 		main.TextColor3 = Color3.fromRGB(170, 170, 170)
 	else
 		local section, sectionIndex = Config.getSection(p.maxStage)
-		top.Text = string.format("%d구간 · %s", sectionIndex, section.name)
+		local style = GradeStyle.get(p.maxStage)
+		top.Text = string.format("%d구간 %s · %s의 기운", sectionIndex, section.name, style.motif.name)
+		top.TextColor3 = style.glow
 		main.Text = string.format("[%d] %s", p.maxStage, rankName)
-		main.TextStrokeColor3 = section.color:Lerp(Color3.new(0, 0, 0), 0.7)
-		if section.rainbow then
-			main.TextColor3 = Color3.new(1, 1, 1)
-			local g = Instance.new("UIGradient")
-			g.Color = WeaponBuilder.RAINBOW
-			g.Parent = main
-		else
-			main.TextColor3 = section.color
+		main.TextColor3 = Color3.new(1, 1, 1)
+		main.TextStrokeColor3 = style.primary:Lerp(Color3.new(0, 0, 0), 0.75)
+		local g = Instance.new("UIGradient")
+		g.Color = GradeStyle.gradient(p.maxStage)
+		g.Parent = main
+		-- 높은 등급은 칭호 주위에도 입자가 흩날린다
+		if p.maxStage >= 30 then
+			local glowPart = Instance.new("Attachment")
+			glowPart.Name = "TitleSparkle"
+			glowPart.Position = Vector3.new(0, 3.2, 0)
+			glowPart.Parent = head
+			local pe = Instance.new("ParticleEmitter")
+			pe.Texture = style.motif.tex
+			pe.Rate = 4 + p.maxStage * 0.1
+			pe.Lifetime = NumberRange.new(0.6, 1.2)
+			pe.Speed = NumberRange.new(0.5, 1.5)
+			pe.SpreadAngle = Vector2.new(180, 30)
+			pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 0) })
+			pe.LightEmission = 1
+			pe.Color = GradeStyle.gradient(p.maxStage)
+			pe.Parent = glowPart
 		end
 	end
 	gui.Parent = head
@@ -452,15 +470,12 @@ local function attachWeapon(player: Player)
 	if not (right and right:IsA("BasePart")) then
 		return
 	end
-	local section, sectionIndex = Config.getSection(info.grade)
-	if info.typeId == 0 then
-		sectionIndex = 6
-	end
+	local grade = info.typeId == 0 and 100 or info.grade
 	local look = {
+		grade = grade,
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
-		section = sectionIndex,
 		rarity = info.rarity.rank,
-		scale = 1 + (sectionIndex - 1) * 0.06,
+		scale = 1,
 	}
 	local holder = Instance.new("Model")
 	holder.Name = "ArenaWeapon"
@@ -469,7 +484,7 @@ local function attachWeapon(player: Player)
 	if info.typeId == 2 and left and left:IsA("BasePart") then
 		WeaponBuilder.build(holder, left, 2, look)
 	end
-	WeaponBuilder.applyAura(char, sectionIndex, section.color)
+	WeaponBuilder.applyAura(char, grade)
 end
 
 ------------------------------------------------------------------------
@@ -599,20 +614,21 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 		model:Destroy()
 		return
 	end
-	local section, sectionIndex = Config.getSection(grade)
+	local style = GradeStyle.get(grade)
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum.WalkSpeed = isBoss and 11 or cfg.speed
 	hum.BreakJointsOnDeath = false
 	hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
 
-	local scale = section.scale * cfg.scale * (isBoss and 1.8 or 1)
+	-- 등급이 오를수록 조금씩 커진다
+	local scale = (1 + (grade - 1) * 0.006) * cfg.scale * (isBoss and 1.8 or 1)
 	pcall(function()
 		model:ScaleTo(scale)
 	end)
 	model.Name = (isBoss and "BOSS " or "") .. Config.getGrade(grade).en
 	model:SetAttribute("Enemy", true)
 	model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 4 * scale, 0), s.arena.center + Vector3.new(0, 4 * scale, 0)))
-	EnemyBuilder.dress(model, kind, section.color, sectionIndex, isBoss == true, scale, WeaponBuilder.RAINBOW)
+	EnemyBuilder.dress(model, kind, grade, isBoss == true, scale)
 	model.Parent = s.folder
 	pcall(function()
 		(root :: BasePart):SetNetworkOwner(nil)
@@ -637,7 +653,7 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 	local dmg = isBoss and info.bossDmg or info.unitDmg * cfg.dmg
 	local title = string.format("%s[%d] %s", isBoss and "👑 " or "", grade, Config.getGrade(grade).en)
 	local sub = isBoss and ("BOSS · " .. cfg.name) or cfg.name
-	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or section.color, 3.4 * scale, isBoss == true)
+	local fill = makeHpBar(root, title, sub, isBoss and Color3.fromRGB(255, 110, 90) or GradeStyle.textColor(grade), 3.4 * scale, isBoss == true)
 	local now = os.clock()
 	table.insert(s.enemies, {
 		model = model,
@@ -645,7 +661,7 @@ local function spawnUnit(s: Session, kind: string, pos: Vector3, isBoss: boolean
 		root = root,
 		kind = kind,
 		cfg = cfg,
-		accent = section.color,
+		accent = style.glow,
 		hp = hp,
 		maxHp = hp,
 		dmg = dmg,
@@ -1020,6 +1036,7 @@ local function performAttack(player: Player, st: State, s: Session)
 		mode = wt.mode,
 		range = wt.range,
 		section = stats.weapon.typeId == 0 and 6 or sectionIndex,
+		grade = stats.weapon.typeId == 0 and 100 or stats.weapon.grade,
 		color = weaponColor(stats),
 		crit = anyCrit,
 		poison = now < s.poisonUntil,
@@ -1388,7 +1405,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	end
 	local arena = arenas[slot :: number]
 	local info = Config.stageInfo(n)
-	World.themeArena(arena, Config.getSection(n).color, info.isBoss)
+	World.themeArena(arena, n, info.isBoss)
 	local folder = Instance.new("Folder")
 	folder.Name = "P_" .. player.UserId
 	folder.Parent = battleRoot
@@ -1418,7 +1435,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	}
 	st.session = s
 	char:PivotTo(CFrame.new(arena.center + Vector3.new(0, 4, 0)))
-	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = Config.getSection(n).color, boss = info.isBoss })
+	Push:FireClient(player, "battleStart", { stage = n, pos = arena.center, color = GradeStyle.get(n).glow, boss = info.isBoss })
 	spawnWave(player, s, 1)
 	pushState(player)
 	task.spawn(battleLoop, player, st, s)

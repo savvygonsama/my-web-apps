@@ -11,6 +11,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
+local GradeStyle = require(ReplicatedStorage:WaitForChild("GradeStyle"))
 local Effects = require(script:WaitForChild("Effects"))
 local remotes = ReplicatedStorage:WaitForChild("ArenaRemotes")
 local Request = remotes:WaitForChild("Request") :: RemoteEvent
@@ -153,20 +154,15 @@ local function setButtonColor(b: TextButton, base: Color3)
 	end
 end
 
-local RAINBOW = WeaponBuilder.RAINBOW
 
+-- 등급마다 고유한 두 색 띠 (94등급부터 무지개)
 local function setGradeColor(label: TextLabel, grade: number)
 	local old = label:FindFirstChildOfClass("UIGradient")
 	if old then
 		old:Destroy()
 	end
-	local section = Config.getSection(grade)
-	if section.rainbow then
-		label.TextColor3 = Color3.new(1, 1, 1)
-		new("UIGradient", { Color = RAINBOW, Parent = label })
-	else
-		label.TextColor3 = section.color
-	end
+	label.TextColor3 = Color3.new(1, 1, 1)
+	new("UIGradient", { Color = GradeStyle.gradient(grade), Parent = label })
 end
 
 local function weaponTitle(key: string): (string, any)
@@ -212,13 +208,9 @@ local function weaponViewport(parent: GuiObject, key: string, spin: boolean): Vi
 		Parent = world,
 	})
 	world.PrimaryPart = hand
-	local _, sectionIndex = Config.getSection(info.grade)
-	if info.typeId == 0 then
-		sectionIndex = 6
-	end
 	WeaponBuilder.build(world, hand, info.typeId, {
+		grade = info.typeId == 0 and 100 or info.grade,
 		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
-		section = sectionIndex,
 		rarity = info.rarity.rank,
 		scale = 1,
 	}, CFrame.new(0, -3, 0))
@@ -521,7 +513,7 @@ end
 
 for n = 1, Config.MAX_GRADE do
 	local isBoss = n % 10 == 0
-	local section = Config.getSection(n)
+	local section = { color = GradeStyle.get(n).glow }
 	local top = isBoss and Color3.fromRGB(105, 34, 30) or C.panel3
 	local bottom = isBoss and Color3.fromRGB(55, 16, 16) or C.panel2
 	local row = new("Frame", {
@@ -557,7 +549,7 @@ for n = 1, Config.MAX_GRADE do
 		TextColor3 = C.dim,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		TextWrapped = false,
-		Text = grade.ko .. (isBoss and "  ·  BOSS" or ""),
+		Text = grade.ko .. "  ·  " .. GradeStyle.get(n).motif.name .. (isBoss and "  ·  BOSS" or ""),
 		Parent = row,
 	})
 	local powerLabel2 = text({
@@ -791,7 +783,7 @@ refreshers.armory = function()
 			}, {
 				corner(10),
 				stroke(rc, isEquipped and 3 or 1.5),
-				shade(darken(rc, 0.55), C.panel, 90),
+				shade(darken(GradeStyle.get(w.typeId == 0 and 100 or w.grade).primary, 0.45), C.panel, 90),
 			})
 			local nameL = text({
 				Position = UDim2.new(0, 8, 0, 4),
@@ -1435,8 +1427,7 @@ end)
 
 -- 등급 상승: 화면 가득 축포
 local function celebrate(stage: number)
-	local section = Config.getSection(stage)
-	local color = section.color
+	local color = GradeStyle.get(stage).glow
 	showBigBanner("RANK UP!", string.format("[%d] %s", stage, Config.getGrade(stage).en), color, 1.8)
 	for i = 1, 70 do
 		local piece = new("Frame", {
@@ -1516,7 +1507,7 @@ local function showResult(data: any)
 				celebrate(data.stage)
 			end)
 			local g = Config.getGrade(data.stage)
-			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), Config.getSection(data.stage).color, 19)
+			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), GradeStyle.textColor(data.stage), 19)
 		end
 		for _, key in ipairs(data.drops or {}) do
 			local title, info = weaponTitle(key)
@@ -1636,7 +1627,7 @@ local function refreshTop()
 	if state.maxStage > 0 then
 		rankLabel.Text = string.format("🏅 %s", Config.getGrade(state.maxStage).en)
 		setGradeColor(rankLabel, state.maxStage)
-		rankStroke.Color = Config.getSection(state.maxStage).color
+		rankStroke.Color = GradeStyle.get(state.maxStage).glow
 	else
 		rankLabel.Text = "🏅 NO RANK"
 		rankLabel.TextColor3 = C.dim
@@ -1657,7 +1648,7 @@ local function refreshBattle()
 		return
 	end
 	local g = Config.getGrade(battle.stage)
-	local section = Config.getSection(battle.stage)
+	local section = { color = GradeStyle.get(battle.stage).glow }
 	hudTitle.Text = string.format("%sSTAGE %d  ·  %s", battle.boss and "👑 " or "", battle.stage, g.en)
 	setGradeColor(hudTitle, battle.stage)
 	hudStroke.Color = battle.boss and C.red or section.color
@@ -2244,6 +2235,76 @@ end)
 Push.OnClientEvent:Connect(function(kind: string)
 	if kind == "forge" then
 		forgeBoostUntil = os.clock() + 1.5
+	end
+end)
+
+------------------------------------------------------------------------
+-- 떠다니는 장식: 무기 둘레의 구슬과 파편, 캐릭터 발밑 고리와 오라 구슬
+-- 서버는 자리만 만들어 두고, 각자 화면에서 매 프레임 돌린다 (다른 플레이어 것도)
+------------------------------------------------------------------------
+type Orbit = {
+	ref: ObjectValue,
+	radius: number,
+	height: number,
+	speed: number,
+	phase: number,
+	useRot: boolean,
+	flat: boolean,
+	tumble: number,
+}
+local orbits: { [BasePart]: Orbit } = {}
+local function trackOrbit(inst: Instance)
+	if not inst:IsA("BasePart") then
+		return
+	end
+	local part = inst :: BasePart
+	local ref = part:FindFirstChild("Center") or part:WaitForChild("Center", 2)
+	if not (ref and ref:IsA("ObjectValue")) then
+		return
+	end
+	orbits[part] = {
+		ref = ref,
+		radius = part:GetAttribute("Radius") or 0,
+		height = part:GetAttribute("Height") or 0,
+		speed = part:GetAttribute("Speed") or 1,
+		phase = part:GetAttribute("Phase") or 0,
+		useRot = part:GetAttribute("UseRotation") == true,
+		flat = part:GetAttribute("Flat") == true,
+		tumble = part:GetAttribute("Tumble") or 0,
+	}
+end
+for _, inst in ipairs(CollectionService:GetTagged("ArenaOrbit")) do
+	task.spawn(trackOrbit, inst)
+end
+CollectionService:GetInstanceAddedSignal("ArenaOrbit"):Connect(function(inst)
+	task.spawn(trackOrbit, inst)
+end)
+CollectionService:GetInstanceRemovedSignal("ArenaOrbit"):Connect(function(inst)
+	if inst:IsA("BasePart") then
+		orbits[inst :: BasePart] = nil
+	end
+end)
+local FLAT = CFrame.Angles(0, 0, math.rad(90))
+RunService.RenderStepped:Connect(function()
+	local t = os.clock()
+	for part, o in pairs(orbits) do
+		if not part.Parent then
+			orbits[part] = nil
+		else
+			local c = o.ref.Value
+			if c and c:IsA("BasePart") and c.Parent then
+				local center = c :: BasePart
+				local base = o.useRot and center.CFrame or CFrame.new(center.Position)
+				local cf = base * CFrame.new(0, o.height, 0) * CFrame.Angles(0, t * o.speed + o.phase, 0) * CFrame.new(o.radius, 0, 0)
+				if o.tumble ~= 0 then
+					cf = cf * CFrame.Angles(t * o.tumble, t * o.tumble * 0.7, 0)
+				end
+				if o.flat then
+					cf = cf * FLAT
+				end
+				part.CFrame = cf
+			end
+		end
 	end
 end)
 
