@@ -191,6 +191,19 @@ Config.STARTER_KEY = "1_5" -- 처음 받는 무기: 1등급 낫(일반)
 Config.DASH_COOLDOWN = 1.5
 Config.DASH_INVULN = 0.4
 
+-- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면
+-- 모든 스테이지가 열리고 코인이 무한이며, 원하는 무기를 바로 받을 수 있다. 기록은 저장하지 않는다.
+-- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
+Config.TEST_MODE = true
+
+-- 스킬 강화 단계: 무기 등급 20마다 한 단계 (Lv.1~5). 올라운더는 Lv.5
+function Config.skillTier(grade: number, typeId: number): number
+	if typeId == 0 then
+		return 5
+	end
+	return math.clamp(1 + (grade - 1) // 20, 1, 5)
+end
+
 ------------------------------------------------------------------------
 -- 무기 스킬: 계열마다 둘 (E, F). 필살기(R)와 따로 쓴다
 -- mult는 공격력 배율, cd는 재사용 대기 시간(초)

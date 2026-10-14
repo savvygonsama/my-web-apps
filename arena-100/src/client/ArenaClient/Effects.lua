@@ -109,7 +109,7 @@ local function fxPart(size: Vector3, cf: CFrame, color: Color3, transparency: nu
 	p.Color = color
 	p.Size = size
 	p.CFrame = cf
-	p.Transparency = transparency or 0.2
+	p.Transparency = transparency or 0.3
 	p.Parent = folder
 	return p
 end
@@ -139,7 +139,7 @@ local function arc(cf: CFrame, radius: number, fromDeg: number, toDeg: number, s
 			c = color :: Color3
 		end
 		local up = cf.UpVector
-		local seg = fxPart(Vector3.new(w, 0.12, len), CFrame.lookAt(mid, p1, up), c, 0.15)
+		local seg = fxPart(Vector3.new(w, 0.12, len), CFrame.lookAt(mid, p1, up), c, 0.25)
 		fade(seg, life + t * 0.05, { Size = Vector3.new(w * 0.2, 0.05, len) })
 	end
 end
@@ -872,6 +872,103 @@ function Effects.forge(data: any)
 end
 
 ------------------------------------------------------------------------
+-- 타격감: 맞은 자리에서 내 반대쪽으로 튀는 불꽃과 베인 자국
+------------------------------------------------------------------------
+function Effects.impact(h: any, heavy: number)
+	local pos: Vector3 = h.pos
+	local from: Vector3 = h.from or pos
+	local away = Vector3.new(pos.X - from.X, 0, pos.Z - from.Z)
+	away = away.Magnitude > 0.01 and away.Unit or Vector3.new(0, 0, -1)
+	local color: Color3 = h.color or Color3.fromRGB(255, 230, 180)
+	local crit = h.kind == "crit"
+	-- 방향 있는 불꽃 줄기
+	local n = crit and 9 or 5
+	for _ = 1, n do
+		local dir = (away + Vector3.new((math.random() - 0.5) * 1.4, math.random() * 0.9, (math.random() - 0.5) * 1.4)).Unit
+		local len = (crit and 2.2 or 1.3) * (0.6 + math.random() * 0.8)
+		local spark = fxPart(Vector3.new(0.12, 0.12, len), CFrame.lookAt(pos, pos + dir) * CFrame.new(0, 0, -len / 2), (math.random() < 0.5) and Color3.new(1, 1, 1) or color, 0.05)
+		local goal = pos + dir * (crit and 7 or 4.5) * heavy
+		TweenService:Create(spark, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			CFrame = CFrame.lookAt(goal, goal + dir),
+			Size = Vector3.new(0.04, 0.04, len * 0.3),
+			Transparency = 1,
+		}):Play()
+		Debris:AddItem(spark, 0.18)
+	end
+	-- 베인 자국: X자로 번쩍
+	local cam = workspace.CurrentCamera
+	local face = cam and (cam.CFrame.Position - pos).Unit or -away
+	local baseCf = CFrame.lookAt(pos, pos + face)
+	local size = (crit and 4.2 or 2.6) * heavy
+	for _, tilt in ipairs({ 40, -40 }) do
+		local slash = fxPart(Vector3.new(0.18, size, 0.05), baseCf * CFrame.Angles(0, 0, math.rad(tilt + math.random(-10, 10))), crit and Color3.new(1, 1, 1) or color:Lerp(Color3.new(1, 1, 1), 0.5), 0)
+		TweenService:Create(slash, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0.02, size * 1.3, 0.02), Transparency = 1 }):Play()
+		Debris:AddItem(slash, 0.14)
+	end
+	-- 작은 충격 고리
+	if crit or heavy > 1.2 then
+		ring(pos, color, 0.5, (crit and 6 or 4) * heavy, 0.18, 0.15)
+	end
+end
+
+-- 맞은 적이 하얗게 번쩍인다
+function Effects.hitFlash(target: Instance?, crit: boolean)
+	if not target or not target.Parent then
+		return
+	end
+	local model = target :: Instance
+	local h = Instance.new("Highlight")
+	h.FillColor = crit and Color3.fromRGB(255, 240, 160) or Color3.new(1, 1, 1)
+	h.FillTransparency = 0.15
+	h.OutlineColor = Color3.new(1, 1, 1)
+	h.OutlineTransparency = 0.3
+	h.DepthMode = Enum.HighlightDepthMode.Occluded
+	h.Parent = model
+	TweenService:Create(h, TweenInfo.new(crit and 0.14 or 0.09), { FillTransparency = 1, OutlineTransparency = 1 }):Play()
+	Debris:AddItem(h, crit and 0.15 or 0.1)
+end
+
+-- 처치: 적의 몸이 조각나서 사방으로 흩어진다
+function Effects.shatter(target: Instance?, color: Color3)
+	if not target or not target:IsA("Model") then
+		return
+	end
+	local model = target :: Model
+	local count = 0
+	for _, d in ipairs(model:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and count < 16 then
+			count += 1
+			local center = d.Position
+			d.LocalTransparencyModifier = 1
+			for k = 1, 2 do
+				local piece = fxPart(d.Size * (0.45 + math.random() * 0.2), d.CFrame * CFrame.new((k - 1.5) * d.Size.X * 0.3, 0, 0), d.Color, 0)
+				piece.Material = d.Material
+				local dir = Vector3.new(math.random() - 0.5, 0.6 + math.random() * 0.8, math.random() - 0.5).Unit
+				local goal = center + dir * (6 + math.random() * 8) + Vector3.new(0, -3, 0)
+				TweenService:Create(piece, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = goal,
+					Orientation = Vector3.new(math.random(-360, 360), math.random(-360, 360), math.random(-360, 360)),
+					Size = piece.Size * 0.3,
+					Transparency = 1,
+				}):Play()
+				Debris:AddItem(piece, 0.65)
+			end
+		end
+	end
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.LocalTransparencyModifier = 1
+		elseif d:IsA("BillboardGui") then
+			d.Enabled = false
+		end
+	end
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		Effects.burst(root.Position, color, 16, 20, 0.6)
+	end
+end
+
+------------------------------------------------------------------------
 -- 무기 스킬 연출
 ------------------------------------------------------------------------
 local skillFx: { [string]: (any) -> () } = {}
@@ -1218,6 +1315,54 @@ skillFx.timestop = function(data)
 	end
 	Effects.shake(0.6, 0.3)
 	Effects.sound("ping", 0.8, 0.5)
+end
+
+skillFx.chargeBoom = function(data)
+	local base = floorOf(data.pos)
+	ring(base + Vector3.new(0, 0.2, 0), data.color, 2, data.radius * 2.3, 0.35, 0.5)
+	Effects.burst(base + Vector3.new(0, 1, 0), Color3.fromRGB(210, 185, 140), 30, 30, 1.3)
+	Effects.flash(data.pos, data.color, data.radius, 0.2)
+	for i = 0, 7 do
+		local a = i * math.pi / 4
+		local p = base + Vector3.new(math.cos(a), 0, math.sin(a)) * data.radius * 0.6
+		local rock = fxPart(Vector3.new(1, 1.6, 1), CFrame.new(p) * CFrame.Angles(math.random(), math.random(), math.random()), Color3.fromRGB(120, 100, 85), 0)
+		rock.Material = Enum.Material.Slate
+		fade(rock, 0.5, { Position = p + Vector3.new(0, 3, 0) })
+	end
+	Effects.shake(1.0, 0.3)
+	Effects.sound("lunge", 0.9, 0.5)
+end
+
+skillFx.poisonCloud = function(data)
+	local base = Vector3.new(data.pos.X, data.pos.Y + 0.2, data.pos.Z)
+	local d = data.radius * 2
+	local cloud = fxPart(Vector3.new(d * 0.6, 4, d * 0.6), CFrame.new(base + Vector3.new(0, 2, 0)), Color3.fromRGB(110, 220, 80), 0.75, Enum.PartType.Ball)
+	cloud.Material = Enum.Material.ForceField
+	local gas = Instance.new("ParticleEmitter")
+	gas.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	gas.Rate = 30
+	gas.Lifetime = NumberRange.new(1, 2)
+	gas.Speed = NumberRange.new(1, 3)
+	gas.SpreadAngle = Vector2.new(180, 180)
+	gas.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 4) })
+	gas.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+	gas.Color = ColorSequence.new(Color3.fromRGB(120, 230, 80), Color3.fromRGB(60, 120, 40))
+	gas.Parent = cloud
+	animate(data.duration, function(t)
+		cloud.Size = Vector3.new(d * (0.6 + 0.4 * math.min(t * 4, 1)), 4, d * (0.6 + 0.4 * math.min(t * 4, 1)))
+	end, function()
+		gas.Enabled = false
+		fade(cloud, 0.5)
+	end)
+	Effects.sound("unsheath", 0.5, 0.5)
+end
+
+skillFx.hookSlam = function(data)
+	local base = floorOf(data.pos)
+	ring(base + Vector3.new(0, 0.2, 0), Color3.fromRGB(180, 180, 200), 2, 18, 0.35, 0.5)
+	Effects.burst(base + Vector3.new(0, 1, 0), Color3.fromRGB(200, 175, 140), 26, 26, 1.2)
+	Effects.shake(0.9, 0.25)
+	Effects.sound("lunge", 0.8, 0.6)
 end
 
 function Effects.skill(data: any)

@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local ServerStorage = game:GetService("ServerStorage")
 local Debris = game:GetService("Debris")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
 local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
@@ -156,6 +157,33 @@ local function sanitize(data: any): Profile
 	return p
 end
 
+-- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다
+local function isTester(player: Player): boolean
+	if not Config.TEST_MODE then
+		return false
+	end
+	if RunService:IsStudio() then
+		return true
+	end
+	return game.CreatorType == Enum.CreatorType.User and player.UserId == game.CreatorId
+end
+
+-- 만렙 계정: 모든 스테이지가 열려 있고, 계열마다 여러 등급 무기를 미리 넣어 둔다
+local function testerProfile(): Profile
+	local p = defaultProfile()
+	p.coins = 1e30
+	p.maxStage = Config.MAX_GRADE
+	p.inv = {}
+	for _, g in ipairs({ 1, 15, 30, 45, 60, 75, 90, 100 }) do
+		for t = 1, 5 do
+			p.inv[Config.itemKey(g, t)] = 3
+		end
+	end
+	p.inv[Config.ALLROUNDER_KEY] = 1
+	p.equipped = Config.itemKey(100, 1)
+	return p
+end
+
 local function loadProfile(player: Player): (Profile, boolean)
 	local ds = store
 	if not ds then
@@ -230,8 +258,10 @@ type Session = {
 	skillReadyAt: { number },
 	poisonUntil: number,
 	smokeCrit: number?,
+	smokeCharges: number,
 	parryUntil: number,
-	markTarget: Enemy?,
+	marks: { [Enemy]: boolean },
+	skillTier: number,
 	zones: { any },
 }
 
@@ -244,6 +274,9 @@ type State = {
 	reqCount: number,
 	reqWindow: number,
 	lastDash: number,
+	tester: boolean,
+	god: boolean,
+	noCooldown: boolean,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -301,6 +334,9 @@ local function pushState(player: Player)
 		power = currentStats(player).power,
 		auto = st.auto,
 		canSave = st.canSave,
+		tester = st.tester,
+		god = st.god,
+		noCooldown = st.noCooldown,
 	})
 end
 
@@ -344,6 +380,7 @@ local function pushBattle(player: Player)
 		auto = st.auto,
 		gauge = s.gauge,
 		typeId = s.stats.weapon.typeId,
+		skillTier = Config.skillTier(s.stats.weapon.grade, s.stats.weapon.typeId),
 	})
 end
 
@@ -768,11 +805,9 @@ local function killEnemy(player: Player, s: Session, e: Enemy, selfDestruct: boo
 	e.alive = false
 	e.model:SetAttribute("Dead", true)
 	e.hum.WalkSpeed = 0
-	if s.markTarget == e then
-		s.markTarget = nil
-	end
+	s.marks[e] = nil
 	if not selfDestruct then
-		Push:FireClient(player, "kill", { pos = e.root.Position, color = e.accent, boss = e.isBoss, scale = e.scale })
+		Push:FireClient(player, "kill", { pos = e.root.Position, color = e.accent, boss = e.isBoss, scale = e.scale, model = e.model })
 	end
 	for _, d in ipairs(e.model:GetDescendants()) do
 		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
@@ -804,9 +839,16 @@ local function hitEnemy(player: Player, s: Session, e: Enemy, dmg: number, crit:
 		text = Config.formatNumber(dmg),
 		kind = kind,
 		color = e.accent,
+		model = e.model,
+		from = fromPos,
 	})
-	if crit and not e.isBoss then
-		e.root.AssemblyLinearVelocity = flatUnit(e.root.Position - fromPos) * 38 + Vector3.new(0, 22, 0)
+	if not e.isBoss then
+		local away = flatUnit(e.root.Position - fromPos)
+		if crit then
+			e.root.AssemblyLinearVelocity = away * 38 + Vector3.new(0, 22, 0)
+		elseif kind ~= "block" then
+			e.root.AssemblyLinearVelocity = away * 12 + Vector3.new(0, 4, 0)
+		end
 	end
 	if e.hp <= 0 then
 		killEnemy(player, s, e)
@@ -826,7 +868,7 @@ end
 local ctx: any = nil
 
 local function damagePlayer(player: Player, st: State, s: Session, amount: number)
-	if not s.running or os.clock() < s.invulnUntil then
+	if not s.running or os.clock() < s.invulnUntil or st.god then
 		return
 	end
 	if Skills.tryParry(ctx, player, s) then
@@ -1013,10 +1055,13 @@ local function performAttack(player: Player, st: State, s: Session)
 	local anyCrit = false
 	for i, e in ipairs(targets) do
 		local dmg, crit = rollDamage(stats)
-		if i == 1 and s.smokeCrit then
+		if i == 1 and s.smokeCrit and s.smokeCharges > 0 then
 			dmg = stats.atk * (wt.critMult or 2) * s.smokeCrit
 			crit = true
-			s.smokeCrit = nil
+			s.smokeCharges -= 1
+			if s.smokeCharges <= 0 then
+				s.smokeCrit = nil
+			end
 		end
 		anyCrit = anyCrit or crit
 		hitEnemy(player, s, e, dmg, crit, root.Position, hits)
@@ -1429,8 +1474,10 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		skillReadyAt = { 0, 0 },
 		poisonUntil = 0,
 		smokeCrit = nil,
+		smokeCharges = 0,
 		parryUntil = 0,
-		markTarget = nil,
+		marks = {},
+		skillTier = Config.skillTier(stats.weapon.grade, stats.weapon.typeId),
 		zones = {},
 	}
 	st.session = s
@@ -1668,10 +1715,35 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 		makeAllRounder(player)
 	elseif action == "train" then
 		train(player, arg)
+	elseif action == "testGive" and st.tester then
+		-- 원하는 등급·계열 무기를 바로 받고 장착
+		local g = math.clamp(math.floor(tonumber(arg) or 1), 1, Config.MAX_GRADE)
+		local t = math.clamp(math.floor(tonumber(arg2) or 1), 0, 5)
+		local key = Config.itemKey(g, t)
+		p.inv[key] = (p.inv[key] or 0) + 1
+		equip(player, key)
+		forgeFlash(key)
+	elseif action == "testToggle" and st.tester then
+		if arg == "god" then
+			st.god = not st.god
+			toast(player, st.god and "🛡 무적 켬" or "🛡 무적 끔")
+		elseif arg == "cooldown" then
+			st.noCooldown = not st.noCooldown
+			toast(player, st.noCooldown and "⏱ 쿨타임 없음 켬" or "⏱ 쿨타임 없음 끔")
+		end
+		pushState(player)
+	elseif action == "testGauge" and st.tester then
+		local s = st.session
+		if s then
+			s.gauge = 100
+			pushBattle(player)
+		end
 	elseif action == "hello" then
 		pushState(player)
 		pushBattle(player)
-		if not st.canSave then
+		if st.tester then
+			toast(player, "🧪 테스트 계정이에요. 모든 스테이지가 열려 있고 기록은 저장하지 않아요")
+		elseif not st.canSave then
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
 	end
@@ -1719,6 +1791,9 @@ local function onPlayerAdded(player: Player)
 		reqCount = 0,
 		reqWindow = 0,
 		lastDash = 0,
+		tester = false,
+		god = false,
+		noCooldown = false,
 	}
 	states[player] = st
 
@@ -1733,7 +1808,14 @@ local function onPlayerAdded(player: Player)
 	stage.Parent = ls
 	ls.Parent = player
 
-	local profile, ok = loadProfile(player)
+	local profile, ok
+	if isTester(player) then
+		-- 테스트 계정은 저장하지 않는다 (실제 기록을 덮어쓰지 않게)
+		profile, ok = testerProfile(), false
+		st.tester = true
+	else
+		profile, ok = loadProfile(player)
+	end
 	if not player.Parent then
 		return
 	end

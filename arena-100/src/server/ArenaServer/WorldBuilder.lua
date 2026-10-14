@@ -127,9 +127,9 @@ function World.setupLighting()
 	atmosphere.Haze = 1.4
 
 	local bloom = ensure("BloomEffect", "ArenaBloom")
-	bloom.Intensity = 0.9
-	bloom.Size = 32
-	bloom.Threshold = 0.95
+	bloom.Intensity = 0.45
+	bloom.Size = 24
+	bloom.Threshold = 1.3
 
 	local cc = ensure("ColorCorrectionEffect", "ArenaColor")
 	cc.Saturation = 0.12

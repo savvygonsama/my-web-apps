@@ -5,7 +5,8 @@
 --        등급이 오를수록 채도와 밝기가 올라간다
 -- 2. 속성: 화염 → 서리 → 번개 → 생명 → 그림자 → 성광 → 선혈 → 공허 → 별빛 → 수정이 등급마다 돌아간다
 -- 3. 장식: 등급이 오를 때마다 룬, 가시, 보석, 구슬, 고리, 날개, 빛줄기, 파편, 검 왕관이 하나씩 늘어난다
--- 4. 재질: 녹슨 쇠 → 쇠 → 광택 금속 → 금박 → 유리 → 빛 → 우주 → 겹친 빛
+-- 4. 재질: 녹슨 쇠 → 쇠 → 광택 금속 → 금박 → 거울 강철 → 유리 → 수정 → 얼음 → 흑요석 → 우주 → 심연 수정 → 백금 → 근원
+-- 5. 모양: 톱날(15~), 금빛 문양(30~), 갈라진 칼끝(35~), 소용돌이 가드(40~), 사슬(55~), 떠 있는 칼날 조각(75~)
 
 local Style = {}
 
@@ -41,15 +42,15 @@ local MATERIALS = {
 	{ to = 8, blade = Enum.Material.Metal, reflect = 0, name = "쇠" },
 	{ to = 14, blade = Enum.Material.Metal, reflect = 0.25, name = "광택 금속" },
 	{ to = 20, blade = Enum.Material.Foil, reflect = 0.15, name = "금박" },
-	{ to = 27, blade = Enum.Material.Metal, reflect = 0.35, name = "빛 새긴 금속" },
+	{ to = 27, blade = Enum.Material.Metal, reflect = 0.45, name = "거울 강철" },
 	{ to = 35, blade = Enum.Material.Glass, reflect = 0.2, name = "유리" },
-	{ to = 44, blade = Enum.Material.Glass, reflect = 0.35, name = "빛 머금은 유리" },
+	{ to = 44, blade = Enum.Material.Glass, reflect = 0.4, name = "수정" },
 	{ to = 54, blade = Enum.Material.Ice, reflect = 0.3, name = "얼음 결정" },
-	{ to = 64, blade = Enum.Material.Neon, reflect = 0, name = "빛" },
+	{ to = 64, blade = Enum.Material.Metal, reflect = 0.5, name = "흑요석", dark = true },
 	{ to = 74, blade = Enum.Material.ForceField, reflect = 0, name = "우주" },
-	{ to = 84, blade = Enum.Material.ForceField, reflect = 0, name = "겹친 우주" },
-	{ to = 93, blade = Enum.Material.Neon, reflect = 0, name = "초월의 빛" },
-	{ to = 100, blade = Enum.Material.Neon, reflect = 0, name = "근원의 빛" },
+	{ to = 84, blade = Enum.Material.Glass, reflect = 0.5, name = "심연 수정", dark = true },
+	{ to = 93, blade = Enum.Material.Foil, reflect = 0.35, name = "백금" },
+	{ to = 100, blade = Enum.Material.ForceField, reflect = 0, name = "근원" },
 }
 
 local cache: { [number]: any } = {}
@@ -93,6 +94,7 @@ function Style.get(grade: number)
 		glow = glow,
 		rainbow = g >= 94,
 		bladeMaterial = mat.blade,
+		bladeDark = mat.dark == true,
 		reflect = mat.reflect,
 		materialName = mat.name,
 		-- 크기
@@ -112,18 +114,25 @@ function Style.get(grade: number)
 		orbs = g >= 12 and math.min(6, 1 + (g - 12) // 14) or 0,
 		shards = g >= 70 and math.min(12, 4 + (g - 70) // 3) or 0,
 		crown = g >= 85,
+		-- 모양 장식 (빛 대신 모양으로 멋있어진다)
+		serrate = g >= 15 and math.min(10, 4 + (g - 15) // 10) or 0, -- 톱날
+		engrave = g >= 30, -- 금빛 문양
+		prongs = g >= 35, -- 갈라진 칼끝
+		ornateGuard = g >= 40, -- 소용돌이 가드
+		chains = g >= 55 and math.min(4, 2 + (g - 55) // 15) or 0, -- 늘어진 사슬
+		floatBlade = g >= 75 and math.min(4, 2 + (g - 75) // 10) or 0, -- 칼끝 너머 떠 있는 칼날 조각
 		-- 빛과 입자
-		particleRate = 3 + g * 0.45,
-		particleSize = 0.18 + p * 0.45,
-		lightRange = 5 + g * 0.14,
-		lightBrightness = 0.7 + p * 2.3,
+		particleRate = 2 + g * 0.22,
+		particleSize = 0.15 + p * 0.3,
+		lightRange = 4 + g * 0.08,
+		lightBrightness = 0.4 + p * 0.9,
 		trailLife = 0.16 + p * 0.3,
 		fire = motif.id == "flame" and g >= 10,
 		smoke = (motif.id == "shadow" or motif.id == "void") and g >= 10,
 		sparkles = motif.id == "star" or g >= 40,
 		-- 캐릭터 오라
 		aura = g >= 3,
-		auraRate = 2 + g * 0.3,
+		auraRate = 1.5 + g * 0.15,
 		groundRing = g >= 10,
 		secondRing = g >= 40,
 		bodyOrbs = g >= 20 and math.min(6, 1 + (g - 20) // 12) or 0,

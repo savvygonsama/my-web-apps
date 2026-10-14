@@ -298,7 +298,7 @@ coinLabel.TextColor3 = C.gold
 local menu = new("Frame", {
 	AnchorPoint = Vector2.new(0, 0.5),
 	Position = UDim2.new(0, 12, 0.5, 0),
-	Size = UDim2.new(0, 136, 0, 4 * 56),
+	Size = UDim2.new(0, 136, 0, 5 * 56),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
@@ -381,6 +381,7 @@ local PAGE_TITLES = {
 	armory = "🗡  무기고",
 	train = "💪  훈련장",
 	help = "📜  도움말",
+	test = "🧪  테스트 (만렙 계정)",
 }
 
 local function openPage(name: string, force: boolean?)
@@ -404,11 +405,13 @@ local function openPage(name: string, force: boolean?)
 	end
 end
 
+local menuButtons: { [string]: TextButton } = {}
 for _, item in ipairs({
 	{ "stage", "⚔", "스테이지", C.red },
 	{ "armory", "🗡", "무기고", C.blue },
 	{ "train", "💪", "훈련", C.green },
 	{ "help", "📜", "도움말", C.panel3 },
+	{ "test", "🧪", "테스트", Color3.fromRGB(120, 60, 180) },
 }) do
 	local b = button({
 		Size = UDim2.new(1, 0, 0, 48),
@@ -435,7 +438,9 @@ for _, item in ipairs({
 		Text = item[3],
 		Parent = b,
 	})
+	menuButtons[item[1]] = b
 end
+menuButtons.test.Visible = false
 
 -- 알림
 local toastFrame = new("Frame", {
@@ -1012,6 +1017,127 @@ text({
 })
 
 ------------------------------------------------------------------------
+-- 테스트 창 (만렙 계정에서만 보인다)
+------------------------------------------------------------------------
+local testPage = makePage("test")
+local testGrade = 100
+local testType = 1
+local TYPE_NAMES = { [1] = "대검", [2] = "쌍검", [3] = "장검", [4] = "단검", [5] = "낫", [0] = "올라운더" }
+local testView = new("Frame", {
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(0, 170, 0, 170),
+	BackgroundColor3 = C.bg,
+	Parent = testPage,
+}, { corner(12), stroke(C.line, 1.5) })
+local testInfo = text({
+	Position = UDim2.new(0, 180, 0, 0),
+	Size = UDim2.new(1, -180, 0, 54),
+	TextSize = 20,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0.4,
+	Parent = testPage,
+})
+local testSub = text({
+	Position = UDim2.new(0, 180, 0, 54),
+	Size = UDim2.new(1, -180, 0, 40),
+	TextSize = 13,
+	TextColor3 = C.dim,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	Parent = testPage,
+})
+local stepRow = new("Frame", {
+	Position = UDim2.new(0, 180, 0, 98),
+	Size = UDim2.new(1, -180, 0, 34),
+	BackgroundTransparency = 1,
+	Parent = testPage,
+}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5) }) })
+local typeRow = new("Frame", {
+	Position = UDim2.new(0, 180, 0, 138),
+	Size = UDim2.new(1, -180, 0, 32),
+	BackgroundTransparency = 1,
+	Parent = testPage,
+}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }) })
+local actionRow = new("Frame", {
+	Position = UDim2.new(0, 0, 0, 182),
+	Size = UDim2.new(1, 0, 0, 44),
+	BackgroundTransparency = 1,
+	Parent = testPage,
+}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+local toggleRow = new("Frame", {
+	Position = UDim2.new(0, 0, 0, 234),
+	Size = UDim2.new(1, 0, 0, 44),
+	BackgroundTransparency = 1,
+	Parent = testPage,
+}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+text({
+	Position = UDim2.new(0, 0, 0, 286),
+	Size = UDim2.new(1, 0, 0, 60),
+	TextSize = 12,
+	TextColor3 = C.dim,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	Text = "스튜디오에서 플레이하거나 게임 주인으로 들어오면 테스트 계정이 돼요. 모든 스테이지가 열려 있고 코인이 무한이며, 기록은 저장하지 않아요.\n정식 공개 전에는 GameConfig의 TEST_MODE를 false로 바꾸세요.",
+	Parent = testPage,
+})
+
+local typeButtons: { [number]: TextButton } = {}
+local function refreshTest()
+	local key = Config.itemKey(testGrade, testType)
+	local info = Config.weaponInfo(key)
+	local style = GradeStyle.get(testType == 0 and 100 or testGrade)
+	if info then
+		testInfo.Text = testType == 0 and "올라운더" or string.format("[%d] %s %s", testGrade, info.gradeData.en, info.type.name)
+		setGradeColor(testInfo, testType == 0 and 100 or testGrade)
+		testSub.Text = string.format(
+			"%s · %s의 기운 · %s 재질 · 스킬 Lv.%d",
+			testType == 0 and "최종" or info.rarity.name,
+			style.motif.name,
+			style.materialName,
+			Config.skillTier(testGrade, testType)
+		)
+	end
+	for _, c in ipairs(testView:GetChildren()) do
+		if c:IsA("ViewportFrame") then
+			c:Destroy()
+		end
+	end
+	weaponViewport(testView, key, true)
+	for id, b in pairs(typeButtons) do
+		setButtonColor(b, id == testType and C.gold or C.panel3)
+	end
+end
+refreshers.test = function()
+	refreshTest()
+end
+
+for _, step in ipairs({ -10, -1, 1, 10 }) do
+	button({ Size = UDim2.new(0, 54, 1, 0), Text = (step > 0 and "+" or "") .. step, Parent = stepRow }, function()
+		testGrade = math.clamp(testGrade + step, 1, Config.MAX_GRADE)
+		refreshTest()
+	end)
+end
+for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+	typeButtons[id] = button({ Size = UDim2.new(0, 58, 1, 0), Text = TYPE_NAMES[id], TextSize = 12, Parent = typeRow }, function()
+		testType = id
+		refreshTest()
+	end)
+end
+button({ Size = UDim2.new(0.34, 0, 1, 0), Text = "🎁 이 무기 받고 장착", BackgroundColor3 = C.goldDeep, Parent = actionRow }, function()
+	Request:FireServer("testGive", testGrade, testType)
+end)
+button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⚔ 이 등급 스테이지 도전", BackgroundColor3 = C.red, Parent = actionRow }, function()
+	requestStart(testGrade, false)
+end)
+button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "💥 필살기 게이지 채우기", BackgroundColor3 = C.blue, Parent = actionRow }, function()
+	Request:FireServer("testGauge")
+end)
+local godBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "🛡 무적 OFF", Parent = toggleRow }, function()
+	Request:FireServer("testToggle", "god")
+end)
+local cdBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "⏱ 쿨타임 없음 OFF", Parent = toggleRow }, function()
+	Request:FireServer("testToggle", "cooldown")
+end)
+
+------------------------------------------------------------------------
 -- 전투 화면
 ------------------------------------------------------------------------
 local hud = new("Frame", {
@@ -1195,17 +1321,34 @@ for slot = 1, 2 do
 end
 
 local shownSkillType = -1
-local function setSkillIcons(typeId: number)
-	if typeId == shownSkillType then
+local function setSkillIcons(typeId: number, tier: number?)
+	local t = tier or 1
+	local key = typeId * 10 + t
+	if key == shownSkillType then
 		return
 	end
-	shownSkillType = typeId
+	shownSkillType = key
 	local list = Config.Skills[typeId] or Config.Skills[1]
 	for slot, sb in ipairs(skillButtons) do
 		local sk = list[slot]
 		sb.button.Text = sk.icon
-		sb.name.Text = sk.name
-		sb.readyAt = 0
+		sb.name.Text = string.format("%s Lv.%d", sk.name, t)
+		local stars = sb.button:FindFirstChild("Stars")
+		if not stars then
+			stars = text({
+				Name = "Stars",
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = UDim2.new(0.5, 0, 1, -3),
+				Size = UDim2.new(1, 0, 0, 14),
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextSize = 11,
+				TextColor3 = C.gold,
+				TextStrokeTransparency = 0.2,
+				ZIndex = 5,
+				Parent = sb.button,
+			})
+		end
+		(stars :: TextLabel).Text = string.rep("★", t)
 	end
 end
 
@@ -1674,7 +1817,7 @@ local function refreshBattle()
 	enemyText.Text = string.format("WAVE %d / %d   ·   남은 적  %d", battle.wave or 1, battle.waveTotal or 1, battle.left)
 	lowHp = ratio < 0.3
 	if battle.typeId ~= nil then
-		setSkillIcons(battle.typeId)
+		setSkillIcons(battle.typeId, battle.skillTier)
 	end
 	autoBtn.Text = battle.auto and "🔁 자동 ON" or "🔁 자동 OFF"
 	setButtonColor(autoBtn, battle.auto and C.green or C.panel3)
@@ -1682,6 +1825,13 @@ end
 
 local function refreshAll()
 	refreshTop()
+	if state then
+		menuButtons.test.Visible = state.tester == true
+		godBtn.Text = state.god and "🛡 무적 ON" or "🛡 무적 OFF"
+		setButtonColor(godBtn, state.god and C.green or C.panel3)
+		cdBtn.Text = state.noCooldown and "⏱ 쿨타임 없음 ON" or "⏱ 쿨타임 없음 OFF"
+		setButtonColor(cdBtn, state.noCooldown and C.green or C.panel3)
+	end
 	if window.Visible then
 		local r = refreshers[currentPage]
 		if r then
@@ -1736,6 +1886,95 @@ local function playSlash(hum: Humanoid)
 	if track then
 		track:Play(0.05)
 	end
+end
+
+-- 히트스톱: 맞는 순간 내 휘두르기 동작을 아주 잠깐 멈춘다
+local hitStopUntil = 0
+local function hitStop(duration: number)
+	local track = slashTrack
+	if not track or not track.IsPlaying then
+		return
+	end
+	local now = os.clock()
+	if now < hitStopUntil then
+		return
+	end
+	hitStopUntil = now + duration
+	track:AdjustSpeed(0.05)
+	task.delay(duration, function()
+		if track.IsPlaying then
+			track:AdjustSpeed(1)
+		end
+	end)
+end
+
+-- 줌 반동: 화면이 순간 앞으로 당겨졌다 돌아온다
+local baseFov = 70
+local fovTween: Tween? = nil
+local function fovPunch(amount: number)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	if fovTween then
+		fovTween:Cancel()
+	end
+	cam.FieldOfView = baseFov - amount
+	local tween = TweenService:Create(cam, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = baseFov })
+	fovTween = tween
+	tween:Play()
+end
+
+-- 무기별 타격 무게 (불꽃 크기, 흔들림)
+local HEAVY = { [1] = 1.5, [2] = 0.8, [3] = 1.1, [4] = 0.9, [5] = 1.2, [0] = 1.5 }
+local lastSwingType = 1
+
+-- 연속 처치: 1.2초 안에 잡으면 이어진다
+local killLabel = text({
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.new(0.5, 0, 0.22, 0),
+	Size = UDim2.new(0, 600, 0, 60),
+	TextXAlignment = Enum.TextXAlignment.Center,
+	TextSize = 44,
+	Font = Enum.Font.GothamBlack,
+	TextStrokeTransparency = 0,
+	Visible = false,
+	ZIndex = 13,
+	Parent = gui,
+})
+local killScale = new("UIScale", { Parent = killLabel })
+local KILL_NAMES = { [2] = "DOUBLE KILL", [3] = "TRIPLE KILL", [4] = "QUADRA KILL", [5] = "PENTA KILL" }
+local killStreak = 0
+local lastKillAt = 0
+local killToken = 0
+local function onKill()
+	local now = os.clock()
+	if now - lastKillAt > 1.2 then
+		killStreak = 0
+	end
+	killStreak += 1
+	lastKillAt = now
+	Effects.sound("ping", 0.45, 1.1 + math.min(killStreak, 8) * 0.12)
+	if killStreak < 2 then
+		return
+	end
+	killToken += 1
+	local my = killToken
+	killLabel.Text = KILL_NAMES[killStreak] or string.format("RAMPAGE x%d", killStreak)
+	local color = killStreak >= 5 and Color3.fromRGB(255, 80, 200) or (killStreak >= 3 and Color3.fromRGB(255, 120, 40) or C.gold)
+	killLabel.TextColor3 = color
+	killLabel.TextStrokeColor3 = darken(color, 0.8)
+	killLabel.TextTransparency = 0
+	killLabel.TextStrokeTransparency = 0
+	killLabel.Visible = true
+	killScale.Scale = uiScaleValue * 1.8
+	TweenService:Create(killScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+	Effects.shake(0.3 + killStreak * 0.08, 0.15)
+	task.delay(1.1, function()
+		if killToken == my then
+			TweenService:Create(killLabel, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		end
+	end)
 end
 
 local function nearestEnemy(root: BasePart): (BasePart?, number)
@@ -1900,17 +2139,28 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 	elseif kind == "hits" then
 		Effects.hits(data)
 		local landed = 0
+		local anyCrit = false
+		local heavy = HEAVY[lastSwingType] or 1
 		for _, h in ipairs(data) do
 			if h.kind == "hurt" then
 				hurtFlash = 0.55
+				fovPunch(-2)
 			elseif h.kind ~= "poison" then
 				landed += 1
+				anyCrit = anyCrit or h.kind == "crit"
+				Effects.impact(h, heavy)
+				Effects.hitFlash(h.model, h.kind == "crit")
 			end
 		end
 		if landed > 0 then
 			addCombo(landed)
+			hitStop(anyCrit and 0.1 or 0.045 * heavy)
+			fovPunch(anyCrit and 4 or 1.2 * heavy)
+			Effects.shake((anyCrit and 0.45 or 0.12) * heavy, anyCrit and 0.14 or 0.07)
+			Effects.sound("lunge", anyCrit and 0.45 or 0.2, (anyCrit and 1.0 or 1.5) + math.random() * 0.2)
 		end
 	elseif kind == "swing" then
+		lastSwingType = data.typeId or 1
 		local _, hum = getChar()
 		if hum then
 			playSlash(hum)
@@ -1973,7 +2223,9 @@ Push.OnClientEvent:Connect(function(kind: string, data: any)
 	elseif kind == "blink" then
 		Effects.blink(data)
 	elseif kind == "kill" then
+		Effects.shatter(data.model, data.color)
 		Effects.kill(data)
+		onKill()
 	elseif kind == "battleStart" then
 		Effects.battleStart(data)
 		showBigBanner(string.format("STAGE %d", data.stage), Config.getGrade(data.stage).en, data.color, 1.1)
