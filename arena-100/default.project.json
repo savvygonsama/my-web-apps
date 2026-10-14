@@ -103,24 +103,41 @@
     "ReplicatedStorage": {
       "GameConfig": {
         "$path": "src/shared/GameConfig.lua"
+      },
+      "WeaponBuilder": {
+        "$path": "src/shared/WeaponBuilder.lua"
       }
     },
     "ServerScriptService": {
       "ArenaServer": {
-        "$path": "src/server/ArenaServer.server.lua"
+        "$path": "src/server/ArenaServer"
       }
     },
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "ArenaClient": {
-          "$path": "src/client/ArenaClient.client.lua"
+          "$path": "src/client/ArenaClient"
         }
       }
     },
     "Lighting": {
       "$properties": {
-        "ClockTime": 15.5,
-        "Brightness": 2
+        "ClockTime": 17.4,
+        "Brightness": 2.2,
+        "Technology": "Future",
+        "GlobalShadows": true,
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.7,
+        "OutdoorAmbient": [
+          0.55,
+          0.47,
+          0.43
+        ],
+        "Ambient": [
+          0.24,
+          0.2,
+          0.2
+        ]
       }
     }
   }

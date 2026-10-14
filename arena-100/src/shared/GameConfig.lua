@@ -130,12 +130,13 @@ Config.Sections = {
 -- 무기 5계열. dmg는 기본 공격력 배율, cooldown은 공격 간격(초)
 -- mode: single = 가장 가까운 적 1명, line = 앞쪽 여러 명, around = 내 주위 전부
 ------------------------------------------------------------------------
+-- 모든 무기는 기본 치명타 5%(1.8배). 단검만 30%(2.5배)
 Config.WeaponTypes = {
-	{ id = 1, name = "대검", desc = "공격력 높음, 느림", dmg = 1.6, cooldown = 0.9, range = 8, mode = "single" },
-	{ id = 2, name = "쌍검", desc = "공격 속도 빠름", dmg = 0.55, cooldown = 0.3, range = 7, mode = "single" },
-	{ id = 3, name = "장검", desc = "앞쪽으로 길게, 최대 3명", dmg = 1.0, cooldown = 0.6, range = 13, mode = "line", maxTargets = 3 },
-	{ id = 4, name = "단검", desc = "치명타 잘 터짐", dmg = 0.55, cooldown = 0.4, range = 6, mode = "single", critChance = 0.25, critMult = 2.2 },
-	{ id = 5, name = "낫", desc = "주위 한 바퀴 + 흡혈", dmg = 0.75, cooldown = 0.7, range = 10, mode = "around", lifesteal = 0.1 },
+	{ id = 1, name = "대검", desc = "공격력 높음, 느림", dmg = 1.6, cooldown = 0.9, range = 8, mode = "single", critChance = 0.05, critMult = 1.8 },
+	{ id = 2, name = "쌍검", desc = "공격 속도 빠름", dmg = 0.55, cooldown = 0.3, range = 7, mode = "single", critChance = 0.05, critMult = 1.8 },
+	{ id = 3, name = "장검", desc = "앞쪽으로 길게, 최대 3명", dmg = 1.0, cooldown = 0.6, range = 13, mode = "line", maxTargets = 3, critChance = 0.05, critMult = 1.8 },
+	{ id = 4, name = "단검", desc = "치명타 30%, 2.5배", dmg = 0.5, cooldown = 0.4, range = 6, mode = "single", critChance = 0.3, critMult = 2.5 },
+	{ id = 5, name = "낫", desc = "주위 한 바퀴 + 흡혈", dmg = 0.75, cooldown = 0.7, range = 10, mode = "around", lifesteal = 0.1, critChance = 0.05, critMult = 1.8 },
 }
 
 -- 100등급 다섯 계열을 하나씩 모아 합치면 나오는 최종 무기
@@ -147,11 +148,25 @@ Config.AllRounder = {
 	cooldown = 0.35,
 	range = 13,
 	mode = "around",
-	critChance = 0.25,
-	critMult = 2.2,
+	critChance = 0.3,
+	critMult = 2.5,
 	lifesteal = 0.1,
 }
 Config.ALLROUNDER_KEY = "AR"
+
+------------------------------------------------------------------------
+-- 필살기: 무기 계열마다 하나. 때릴수록 게이지가 차고, 100이 되면 쓸 수 있다
+-- mult는 공격력 배율
+------------------------------------------------------------------------
+Config.ULT_GAIN = 11 -- 공격 1회당 게이지 = ULT_GAIN × 공격 간격(초). 어떤 무기든 약 9초면 찬다
+Config.Ultimates = {
+	[1] = { name = "대지 가르기", desc = "앞으로 땅을 갈라 일직선의 적을 모두 벤다", mult = 8, length = 32, width = 6 },
+	[2] = { name = "칼날 폭풍", desc = "2.5초 동안 주위를 쉴 새 없이 벤다", mult = 0.6, radius = 10, ticks = 25, interval = 0.1 },
+	[3] = { name = "일섬", desc = "앞으로 순간 돌진하며 지나간 자리의 적을 모두 벤다", mult = 7, length = 26, width = 5 },
+	[4] = { name = "그림자 처형", desc = "가장 강한 적 뒤로 순간이동해 치명타 5연타", mult = 1, hits = 5 },
+	[5] = { name = "영혼 수확", desc = "넓은 원 안의 적을 베고 체력을 크게 회복한다", mult = 5, radius = 18, heal = 0.3 },
+	[0] = { name = "천지개벽", desc = "투기장의 모든 적을 베고 체력을 회복한다", mult = 10, heal = 0.3 },
+}
 
 ------------------------------------------------------------------------
 -- 희귀도 5단계. 등급마다 한 칸씩 계열을 돌아가며 바뀐다

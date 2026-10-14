@@ -1,5 +1,5 @@
 -- ArenaServer (Script, ServerScriptService)
--- 전투, 합성, 훈련, 저장, 투기장 생성을 맡는다.
+-- 전투, 필살기, 합성, 훈련, 저장을 맡는다. 맵은 WorldBuilder, 무기 모양은 WeaponBuilder가 만든다.
 -- 중요한 계산은 전부 서버에서 하고, 클라이언트는 요청만 보낸다.
 
 local Players = game:GetService("Players")
@@ -9,6 +9,8 @@ local ServerStorage = game:GetService("ServerStorage")
 local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("GameConfig"))
+local World = require(script:WaitForChild("WorldBuilder"))
+local WeaponBuilder = require(ReplicatedStorage:WaitForChild("WeaponBuilder"))
 
 local ARENA_ORIGIN = Vector3.new(0, 300, 1600)
 local ARENA_SPACING = 320
@@ -36,166 +38,15 @@ battleRoot.Name = "ArenaBattles"
 battleRoot.Parent = workspace
 
 ------------------------------------------------------------------------
--- 맵 만들기
+-- 맵
 ------------------------------------------------------------------------
-local function makePart(props)
-	local p = Instance.new("Part")
-	p.Anchored = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	for k, v in pairs(props) do
-		(p :: any)[k] = v
-	end
-	return p
-end
+World.setupLighting()
+local lobbySpawn: CFrame = World.buildLobby(function(player: Player)
+	Push:FireClient(player, "openPage", "stage")
+end)
 
-local lobbySpawn: CFrame = CFrame.new(0, 4, 0)
-
-local function buildLobby()
-	local spawn = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
-	if not spawn then
-		if not workspace:FindFirstChild("Baseplate") then
-			makePart({
-				Name = "Baseplate",
-				Size = Vector3.new(400, 2, 400),
-				Position = Vector3.new(0, -1, 0),
-				Color = Color3.fromRGB(95, 140, 75),
-				Material = Enum.Material.Grass,
-				Parent = workspace,
-			})
-		end
-		local sp = Instance.new("SpawnLocation")
-		sp.Name = "LobbySpawn"
-		sp.Anchored = true
-		sp.Size = Vector3.new(14, 1, 14)
-		sp.Position = Vector3.new(0, 0.5, 0)
-		sp.Color = Color3.fromRGB(230, 180, 60)
-		sp.Material = Enum.Material.Marble
-		sp.Neutral = true
-		sp.Duration = 0
-		sp.Parent = workspace
-		spawn = sp
-	end
-	if spawn then
-		lobbySpawn = CFrame.new(spawn.Position + Vector3.new(0, 4, 0))
-	end
-
-	-- 로비 간판
-	local sign = makePart({
-		Name = "ArenaSign",
-		Size = Vector3.new(34, 12, 1),
-		CFrame = CFrame.new(lobbySpawn.Position + Vector3.new(0, 8, -30)),
-		Color = Color3.fromRGB(35, 25, 20),
-		Material = Enum.Material.Wood,
-		Parent = workspace,
-	})
-	local gui = Instance.new("SurfaceGui")
-	gui.Face = Enum.NormalId.Back
-	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 30
-	gui.Parent = sign
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, 0, 0.6, 0)
-	title.BackgroundTransparency = 1
-	title.Font = Enum.Font.GothamBlack
-	title.TextScaled = true
-	title.TextColor3 = Color3.fromRGB(255, 200, 70)
-	title.Text = Config.GAME_TITLE
-	title.Parent = gui
-	local sub = Instance.new("TextLabel")
-	sub.Size = UDim2.new(1, 0, 0.3, 0)
-	sub.Position = UDim2.new(0, 0, 0.62, 0)
-	sub.BackgroundTransparency = 1
-	sub.Font = Enum.Font.GothamBold
-	sub.TextScaled = true
-	sub.TextColor3 = Color3.fromRGB(240, 230, 210)
-	sub.Text = "왼쪽 [스테이지] 버튼을 눌러 투기장에 입장하세요"
-	sub.Parent = gui
-end
-
-type Arena = { center: Vector3, model: Model }
-local arenas: { [number]: Arena } = {}
+local arenas: { [number]: World.Arena } = {}
 local slotOwner: { [number]: Player } = {}
-
-local CROWD_COLORS = {
-	Color3.fromRGB(220, 80, 70),
-	Color3.fromRGB(70, 130, 220),
-	Color3.fromRGB(240, 200, 80),
-	Color3.fromRGB(90, 190, 110),
-	Color3.fromRGB(200, 120, 220),
-	Color3.fromRGB(245, 245, 245),
-}
-
-local function buildArena(index: number): Arena
-	local center = ARENA_ORIGIN + Vector3.new((index - 1) * ARENA_SPACING, 0, 0)
-	local model = Instance.new("Model")
-	model.Name = "Arena" .. index
-
-	-- 모래 바닥 (윗면이 center.Y)
-	makePart({
-		Name = "Floor",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(4, ARENA_RADIUS * 2, ARENA_RADIUS * 2),
-		CFrame = CFrame.new(center - Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromRGB(210, 180, 125),
-		Material = Enum.Material.Sand,
-		Parent = model,
-	})
-	makePart({
-		Name = "Emblem",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.2, 26, 26),
-		CFrame = CFrame.new(center + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = Color3.fromRGB(150, 60, 45),
-		Material = Enum.Material.Slate,
-		CanCollide = false,
-		Parent = model,
-	})
-
-	-- 벽과 관중석
-	local segments = 36
-	local segWidth = 2 * ARENA_RADIUS * math.sin(math.pi / segments) + 1
-	for i = 1, segments do
-		local a = (i / segments) * math.pi * 2
-		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
-		local wallPos = center + dir * ARENA_RADIUS + Vector3.new(0, 6, 0)
-		makePart({
-			Name = "Wall",
-			Size = Vector3.new(segWidth, 12, 2),
-			CFrame = CFrame.lookAt(wallPos, Vector3.new(center.X, wallPos.Y, center.Z)),
-			Color = Color3.fromRGB(120, 105, 90),
-			Material = Enum.Material.Cobblestone,
-			Parent = model,
-		})
-		for tier = 1, 3 do
-			local r = ARENA_RADIUS + 2 + tier * 5
-			local h = 12 + tier * 4
-			local stepPos = center + dir * r + Vector3.new(0, h / 2, 0)
-			makePart({
-				Name = "Stand",
-				Size = Vector3.new(2 * r * math.sin(math.pi / segments) + 1, h, 5),
-				CFrame = CFrame.lookAt(stepPos, Vector3.new(center.X, stepPos.Y, center.Z)),
-				Color = Color3.fromRGB(150, 135, 115),
-				Material = Enum.Material.Concrete,
-				Parent = model,
-			})
-			if (i + tier) % 2 == 0 then
-				local seatPos = center + dir * r + Vector3.new(0, h + 1.2, 0)
-				makePart({
-					Name = "Crowd",
-					Size = Vector3.new(1.6, 2.4, 1.2),
-					CFrame = CFrame.lookAt(seatPos, Vector3.new(center.X, seatPos.Y, center.Z)),
-					Color = CROWD_COLORS[(i * tier) % #CROWD_COLORS + 1],
-					CanCollide = false,
-					Parent = model,
-				})
-			end
-		end
-	end
-
-	model.Parent = workspace
-	return { center = center, model = model }
-end
 
 local function claimSlot(player: Player): number
 	local i = 1
@@ -204,7 +55,7 @@ local function claimSlot(player: Player): number
 	end
 	slotOwner[i] = player
 	if not arenas[i] then
-		arenas[i] = buildArena(i)
+		arenas[i] = World.buildArena(ARENA_ORIGIN + Vector3.new((i - 1) * ARENA_SPACING, 0, 0), ARENA_RADIUS, "Arena" .. i)
 	end
 	return i
 end
@@ -336,7 +187,7 @@ type Enemy = {
 type Session = {
 	stage: number,
 	info: any,
-	arena: Arena,
+	arena: World.Arena,
 	folder: Folder,
 	enemies: { Enemy },
 	stats: any,
@@ -344,6 +195,8 @@ type Session = {
 	maxHp: number,
 	invulnUntil: number,
 	lastAttack: number,
+	gauge: number,
+	ulting: boolean,
 	running: boolean,
 }
 
@@ -442,21 +295,27 @@ local function pushBattle(player: Player)
 		left = aliveCount(s),
 		total = #s.enemies,
 		auto = st.auto,
+		gauge = s.gauge,
 	})
 end
 
-------------------------------------------------------------------------
--- 칭호와 무기 모양
-------------------------------------------------------------------------
-local RAINBOW = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
-	ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 200, 60)),
-	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(90, 230, 110)),
-	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(70, 200, 255)),
-	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(150, 100, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 90, 200)),
-})
+-- 명예의 전당: 이 서버 최고 기록 5명
+local function refreshHall()
+	local list = {}
+	for player, p in pairs(profiles) do
+		if p.maxStage > 0 then
+			table.insert(list, { name = player.DisplayName, stage = p.maxStage })
+		end
+	end
+	table.sort(list, function(a, b)
+		return a.stage > b.stage
+	end)
+	World.setHallOfFame(list)
+end
 
+------------------------------------------------------------------------
+-- 칭호, 무기, 오라
+------------------------------------------------------------------------
 local function updateTitle(player: Player)
 	local p = profiles[player]
 	if not p then
@@ -480,102 +339,51 @@ local function updateTitle(player: Player)
 	if not head then
 		return
 	end
-	local bb = head:FindFirstChild("RankTitle")
-	if not bb then
-		local gui = Instance.new("BillboardGui")
-		gui.Name = "RankTitle"
-		gui.Size = UDim2.new(0, 280, 0, 34)
-		gui.StudsOffset = Vector3.new(0, 2.4, 0)
-		gui.MaxDistance = 150
-		local label = Instance.new("TextLabel")
-		label.Name = "Label"
-		label.Size = UDim2.fromScale(1, 1)
-		label.BackgroundTransparency = 1
-		label.Font = Enum.Font.GothamBlack
-		label.TextScaled = true
-		label.TextStrokeTransparency = 0.25
-		label.Parent = gui
-		gui.Parent = head
-		bb = gui
+	local old = head:FindFirstChild("RankTitle")
+	if old then
+		old:Destroy()
 	end
-	local label = (bb :: Instance):FindFirstChild("Label") :: TextLabel
-	local oldGradient = label:FindFirstChildOfClass("UIGradient")
-	if oldGradient then
-		oldGradient:Destroy()
-	end
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "RankTitle"
+	gui.Size = UDim2.new(0, 300, 0, 46)
+	gui.StudsOffset = Vector3.new(0, 2.6, 0)
+	gui.MaxDistance = 160
+	gui.LightInfluence = 0
+	local top = Instance.new("TextLabel")
+	top.Size = UDim2.new(1, 0, 0.35, 0)
+	top.BackgroundTransparency = 1
+	top.Font = Enum.Font.GothamBold
+	top.TextScaled = true
+	top.TextColor3 = Color3.fromRGB(230, 220, 200)
+	top.TextStrokeTransparency = 0.4
+	top.Parent = gui
+	local main = Instance.new("TextLabel")
+	main.Position = UDim2.new(0, 0, 0.35, 0)
+	main.Size = UDim2.new(1, 0, 0.65, 0)
+	main.BackgroundTransparency = 1
+	main.Font = Enum.Font.GothamBlack
+	main.TextScaled = true
+	main.TextStrokeTransparency = 0.15
+	main.Parent = gui
 	if p.maxStage <= 0 then
-		label.Text = "NO RANK"
-		label.TextColor3 = Color3.fromRGB(170, 170, 170)
-		return
-	end
-	local section = Config.getSection(p.maxStage)
-	label.Text = string.format("[%d] %s", p.maxStage, rankName)
-	if section.rainbow then
-		label.TextColor3 = Color3.new(1, 1, 1)
-		local g = Instance.new("UIGradient")
-		g.Color = RAINBOW
-		g.Parent = label
+		top.Text = "도전자"
+		main.Text = "NO RANK"
+		main.TextColor3 = Color3.fromRGB(170, 170, 170)
 	else
-		label.TextColor3 = section.color
+		local section, sectionIndex = Config.getSection(p.maxStage)
+		top.Text = string.format("%d구간 · %s", sectionIndex, section.name)
+		main.Text = string.format("[%d] %s", p.maxStage, rankName)
+		main.TextStrokeColor3 = section.color:Lerp(Color3.new(0, 0, 0), 0.7)
+		if section.rainbow then
+			main.TextColor3 = Color3.new(1, 1, 1)
+			local g = Instance.new("UIGradient")
+			g.Color = WeaponBuilder.RAINBOW
+			g.Parent = main
+		else
+			main.TextColor3 = section.color
+		end
 	end
-end
-
-local HANDLE_COLOR = Color3.fromRGB(70, 50, 35)
-local GUARD_COLOR = Color3.fromRGB(200, 170, 90)
-
-local function weaponPart(parent: Instance, hand: BasePart, grip: CFrame, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material): Part
-	local part = Instance.new("Part")
-	part.Size = size
-	part.Color = color
-	part.Material = material
-	part.CanCollide = false
-	part.CanQuery = false
-	part.CanTouch = false
-	part.Massless = true
-	part.CastShadow = false
-	part.CFrame = grip * offset
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = hand
-	weld.Part1 = part
-	weld.Parent = part
-	part.Parent = parent
-	return part
-end
-
--- 칼 한 자루를 손에 붙인다. 칼날은 손에서 앞쪽으로 뻗는다
-local function buildBlade(parent: Instance, hand: BasePart, typeId: number, bladeColor: Color3, neon: boolean, scale: number)
-	local grip = hand.CFrame * CFrame.new(0, -hand.Size.Y / 2, 0) * CFrame.Angles(math.rad(-90), 0, 0)
-	local mat = neon and Enum.Material.Neon or Enum.Material.Metal
-	local function add(size: Vector3, y: number, x: number?, color: Color3, material: Enum.Material)
-		return weaponPart(parent, hand, grip, size * scale, CFrame.new((x or 0) * scale, y * scale, 0), color, material)
-	end
-	if typeId == 5 then
-		-- 낫: 긴 자루 끝에 옆으로 뻗은 날
-		add(Vector3.new(0.3, 6, 0.3), 2.5, 0, HANDLE_COLOR, Enum.Material.Wood)
-		add(Vector3.new(3.2, 0.5, 0.15), 5.4, 1.5, bladeColor, mat)
-		add(Vector3.new(0.5, 1.2, 0.15), 4.9, 3.0, bladeColor, mat)
-		return
-	end
-	local handleLen, guardW, bladeW, bladeLen, bladeT
-	if typeId == 1 then
-		handleLen, guardW, bladeW, bladeLen, bladeT = 1.6, 2.0, 1.1, 5.5, 0.25
-	elseif typeId == 2 then
-		handleLen, guardW, bladeW, bladeLen, bladeT = 1.0, 1.0, 0.45, 3.0, 0.15
-	elseif typeId == 3 then
-		handleLen, guardW, bladeW, bladeLen, bladeT = 1.4, 1.4, 0.5, 6.5, 0.18
-	elseif typeId == 4 then
-		handleLen, guardW, bladeW, bladeLen, bladeT = 0.9, 0.8, 0.4, 1.8, 0.15
-	else -- 올라운더
-		handleLen, guardW, bladeW, bladeLen, bladeT = 1.6, 2.4, 1.2, 6.5, 0.3
-	end
-	add(Vector3.new(0.32, handleLen, 0.32), 0, 0, HANDLE_COLOR, Enum.Material.Wood)
-	add(Vector3.new(guardW, 0.25, 0.45), handleLen / 2, 0, GUARD_COLOR, Enum.Material.Metal)
-	local blade = add(Vector3.new(bladeW, bladeLen, bladeT), handleLen / 2 + 0.12 + bladeLen / 2, 0, bladeColor, mat)
-	if typeId == 0 then
-		local sparkle = Instance.new("Sparkles")
-		sparkle.SparkleColor = Color3.fromRGB(255, 240, 180)
-		sparkle.Parent = blade
-	end
+	gui.Parent = head
 end
 
 local function attachWeapon(player: Player)
@@ -597,23 +405,31 @@ local function attachWeapon(player: Player)
 	if not (right and right:IsA("BasePart")) then
 		return
 	end
-	local _, sectionIndex = Config.getSection(info.grade)
-	local neon = sectionIndex >= 3 or info.typeId == 0
-	local color = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color
-	local scale = 1 + (sectionIndex - 1) * 0.05
-	local folder = Instance.new("Model")
-	folder.Name = "ArenaWeapon"
-	folder.Parent = char
-	buildBlade(folder, right, info.typeId, color, neon, scale)
-	if info.typeId == 2 and left and left:IsA("BasePart") then
-		buildBlade(folder, left, 2, color, neon, scale)
+	local section, sectionIndex = Config.getSection(info.grade)
+	if info.typeId == 0 then
+		sectionIndex = 6
 	end
+	local look = {
+		accent = info.typeId == 0 and Color3.fromRGB(255, 235, 160) or info.rarity.color,
+		section = sectionIndex,
+		rarity = info.rarity.rank,
+		scale = 1 + (sectionIndex - 1) * 0.06,
+	}
+	local holder = Instance.new("Model")
+	holder.Name = "ArenaWeapon"
+	holder.Parent = char
+	WeaponBuilder.build(holder, right, info.typeId, look)
+	if info.typeId == 2 and left and left:IsA("BasePart") then
+		WeaponBuilder.build(holder, left, 2, look)
+	end
+	WeaponBuilder.applyAura(char, sectionIndex, section.color)
 end
 
 ------------------------------------------------------------------------
 -- 적
 ------------------------------------------------------------------------
 local rigTemplate: Model? = nil
+local rigLoading = false
 
 local function buildBlockRig(): Model
 	local model = Instance.new("Model")
@@ -639,9 +455,13 @@ local function buildBlockRig(): Model
 end
 
 local function getRigTemplate(): Model
+	while rigLoading and not rigTemplate do
+		task.wait(0.1)
+	end
 	if rigTemplate then
 		return rigTemplate
 	end
+	rigLoading = true
 	local ok, result = pcall(function()
 		local desc = Instance.new("HumanoidDescription")
 		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
@@ -661,37 +481,53 @@ local function getRigTemplate(): Model
 	end
 	model.Parent = ServerStorage
 	rigTemplate = model
+	rigLoading = false
 	return model
 end
 
-local function makeHpBar(root: BasePart, labelText: string, color: Color3, height: number): Frame
+local function makeHpBar(root: BasePart, labelText: string, color: Color3, height: number, isBoss: boolean): Frame
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "HpBar"
-	gui.Size = UDim2.new(0, 150, 0, 34)
+	gui.Size = isBoss and UDim2.new(0, 230, 0, 46) or UDim2.new(0, 150, 0, 34)
 	gui.StudsOffset = Vector3.new(0, height, 0)
 	gui.AlwaysOnTop = true
-	gui.MaxDistance = 120
+	gui.MaxDistance = 130
+	gui.LightInfluence = 0
 	local name = Instance.new("TextLabel")
 	name.Size = UDim2.new(1, 0, 0.55, 0)
 	name.BackgroundTransparency = 1
-	name.Font = Enum.Font.GothamBold
+	name.Font = Enum.Font.GothamBlack
 	name.TextScaled = true
 	name.TextColor3 = color
-	name.TextStrokeTransparency = 0.3
+	name.TextStrokeTransparency = 0.2
 	name.Text = labelText
 	name.Parent = gui
 	local back = Instance.new("Frame")
 	back.Size = UDim2.new(1, 0, 0.35, 0)
 	back.Position = UDim2.new(0, 0, 0.62, 0)
-	back.BackgroundColor3 = Color3.fromRGB(30, 20, 20)
+	back.BackgroundColor3 = Color3.fromRGB(25, 15, 15)
 	back.BorderSizePixel = 0
 	back.Parent = gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 4)
+	corner.Parent = back
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = isBoss and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(0, 0, 0)
+	stroke.Thickness = isBoss and 2 or 1
+	stroke.Parent = back
 	local fill = Instance.new("Frame")
 	fill.Name = "Fill"
 	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = Color3.fromRGB(230, 70, 60)
+	fill.BackgroundColor3 = Color3.fromRGB(235, 70, 60)
 	fill.BorderSizePixel = 0
 	fill.Parent = back
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(0, 4)
+	fillCorner.Parent = fill
+	local grad = Instance.new("UIGradient")
+	grad.Color = ColorSequence.new(Color3.fromRGB(255, 120, 90), Color3.fromRGB(190, 30, 40))
+	grad.Rotation = 90
+	grad.Parent = fill
 	gui.Parent = root
 	return fill
 end
@@ -705,14 +541,22 @@ local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vecto
 		return
 	end
 	local section, sectionIndex = Config.getSection(grade)
-	local bodyColor = section.color
+	local bodyColor = section.color:Lerp(Color3.fromRGB(40, 35, 35), 0.25)
 	if isBoss then
-		bodyColor = section.color:Lerp(Color3.fromRGB(120, 0, 0), 0.35)
+		bodyColor = section.color:Lerp(Color3.fromRGB(110, 0, 10), 0.5)
 	end
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
 			d.Color = bodyColor
-			d.Material = (isBoss or sectionIndex >= 4) and Enum.Material.Neon or Enum.Material.SmoothPlastic
+			if sectionIndex >= 5 then
+				d.Material = Enum.Material.ForceField
+			elseif isBoss or sectionIndex >= 4 then
+				d.Material = Enum.Material.Neon
+			elseif sectionIndex >= 2 then
+				d.Material = Enum.Material.Metal
+			else
+				d.Material = Enum.Material.SmoothPlastic
+			end
 		end
 	end
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -727,9 +571,10 @@ local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vecto
 	model.Name = (isBoss and "BOSS " or "") .. Config.getGrade(grade).en
 	model:SetAttribute("Enemy", true)
 	model:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 4 * scale, 0), s.arena.center + Vector3.new(0, 4 * scale, 0)))
+	WeaponBuilder.decorateEnemy(model, grade, sectionIndex, section.color, isBoss, scale)
 	model.Parent = s.folder
 	pcall(function()
-		root:SetNetworkOwner(nil)
+		(root :: BasePart):SetNetworkOwner(nil)
 	end)
 
 	-- 로블록스 기본 R15 걷기 동작. 블록 인형이면 조용히 건너뛴다
@@ -747,8 +592,8 @@ local function spawnEnemy(s: Session, grade: number, isBoss: boolean, pos: Vecto
 		walkTrack = track
 	end)
 
-	local label = string.format("%s[%d] %s", isBoss and "BOSS " or "", grade, Config.getGrade(grade).en)
-	local fill = makeHpBar(root, label, isBoss and Color3.fromRGB(255, 90, 80) or section.color, 3.2 * scale)
+	local label = string.format("%s[%d] %s", isBoss and "👑 BOSS " or "", grade, Config.getGrade(grade).en)
+	local fill = makeHpBar(root, label, isBoss and Color3.fromRGB(255, 110, 90) or section.color, 3.2 * scale, isBoss)
 	local now = os.clock()
 	table.insert(s.enemies, {
 		model = model,
@@ -828,6 +673,14 @@ local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
 end
 
+local function flatUnit(v: Vector3): Vector3
+	local f = flat(v)
+	if f.Magnitude < 0.001 then
+		return Vector3.new(0, 0, -1)
+	end
+	return f.Unit
+end
+
 local function damagePlayer(player: Player, st: State, s: Session, amount: number)
 	if not s.running or os.clock() < s.invulnUntil then
 		return
@@ -854,13 +707,52 @@ local function killEnemy(e: Enemy)
 	for _, d in ipairs(e.model:GetDescendants()) do
 		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
 			d.Transparency = 0.6
+		elseif d:IsA("ParticleEmitter") then
+			d.Enabled = false
 		end
 	end
 	Debris:AddItem(e.model, 0.45)
 end
 
+-- 적 하나에게 피해. 치명타면 날려 보낸다
+local function hitEnemy(s: Session, e: Enemy, dmg: number, crit: boolean, fromPos: Vector3, hits: { any })
+	if not e.alive then
+		return 0
+	end
+	e.hp -= dmg
+	table.insert(hits, {
+		pos = e.root.Position + Vector3.new(0, 2.5 * e.scale, 0),
+		text = Config.formatNumber(dmg),
+		kind = crit and "crit" or "hit",
+	})
+	if crit and not e.isBoss then
+		local away = flatUnit(e.root.Position - fromPos)
+		e.root.AssemblyLinearVelocity = away * 38 + Vector3.new(0, 22, 0)
+	end
+	if e.hp <= 0 then
+		killEnemy(e)
+	else
+		e.fill.Size = UDim2.fromScale(math.clamp(e.hp / e.maxHp, 0, 1), 1)
+	end
+	return dmg
+end
+
+local function rollDamage(stats: any): (number, boolean)
+	local wt = stats.weapon.type
+	local dmg = stats.atk * (0.9 + math.random() * 0.2)
+	local crit = wt.critChance ~= nil and math.random() < wt.critChance
+	if crit then
+		dmg *= wt.critMult
+	end
+	return dmg, crit
+end
+
+local function weaponColor(stats: any): Color3
+	return stats.weapon.typeId == 0 and Color3.fromRGB(255, 235, 160) or stats.weapon.rarity.color
+end
+
 local function performAttack(player: Player, st: State, s: Session)
-	if not s.running then
+	if not s.running or s.ulting then
 		return
 	end
 	local stats = s.stats
@@ -874,10 +766,7 @@ local function performAttack(player: Player, st: State, s: Session)
 	end
 	local wt = stats.weapon.type
 	local origin = flat(root.Position)
-	local look = flat(root.CFrame.LookVector)
-	if look.Magnitude > 0 then
-		look = look.Unit
-	end
+	local look = flatUnit(root.CFrame.LookVector)
 
 	-- 사거리 안의 적을 가까운 순으로
 	local inRange = {}
@@ -922,39 +811,224 @@ local function performAttack(player: Player, st: State, s: Session)
 	s.lastAttack = now
 	local hits = {}
 	local healed = 0
+	local anyCrit = false
 	for _, e in ipairs(targets) do
-		local dmg = stats.atk * (0.9 + math.random() * 0.2)
-		local crit = wt.critChance ~= nil and math.random() < wt.critChance
-		if crit then
-			dmg *= wt.critMult
-		end
-		e.hp -= dmg
+		local dmg, crit = rollDamage(stats)
+		anyCrit = anyCrit or crit
+		hitEnemy(s, e, dmg, crit, root.Position, hits)
 		if wt.lifesteal then
 			healed += dmg * wt.lifesteal
-		end
-		table.insert(hits, {
-			pos = e.root.Position + Vector3.new(0, 2.5 * e.scale, 0),
-			text = Config.formatNumber(dmg),
-			kind = crit and "crit" or "hit",
-		})
-		if e.hp <= 0 then
-			killEnemy(e)
-		else
-			e.fill.Size = UDim2.fromScale(math.clamp(e.hp / e.maxHp, 0, 1), 1)
 		end
 	end
 	if healed > 0 then
 		s.hp = math.min(s.maxHp, s.hp + healed)
 	end
+	s.gauge = math.min(100, s.gauge + Config.ULT_GAIN * stats.cooldown)
+
+	local _, sectionIndex = Config.getSection(stats.weapon.grade)
 	Push:FireClient(player, "swing", {
+		typeId = stats.weapon.typeId,
 		mode = wt.mode,
 		range = wt.range,
-		color = stats.weapon.typeId == 0 and Color3.fromRGB(255, 235, 160) or stats.weapon.rarity.color,
+		section = stats.weapon.typeId == 0 and 6 or sectionIndex,
+		color = weaponColor(stats),
+		crit = anyCrit,
 	})
 	Push:FireClient(player, "hits", hits)
 	pushBattle(player)
 end
 
+------------------------------------------------------------------------
+-- 필살기
+------------------------------------------------------------------------
+local function aliveEnemies(s: Session): { Enemy }
+	local list = {}
+	for _, e in ipairs(s.enemies) do
+		if e.alive and e.root.Parent then
+			table.insert(list, e)
+		end
+	end
+	return list
+end
+
+-- 선분(a→b) 근처에 있는 적
+local function enemiesNearSegment(s: Session, a: Vector3, b: Vector3, width: number): { Enemy }
+	local list = {}
+	local ab = flat(b - a)
+	local len = ab.Magnitude
+	local dir = len > 0 and ab.Unit or Vector3.new(0, 0, -1)
+	for _, e in ipairs(aliveEnemies(s)) do
+		local off = flat(e.root.Position - a)
+		local along = math.clamp(off:Dot(dir), 0, len)
+		local closest = dir * along
+		if (off - closest).Magnitude <= width + e.bodyRadius then
+			table.insert(list, e)
+		end
+	end
+	return list
+end
+
+local function runUltimate(player: Player, st: State, s: Session)
+	local root = getRoot(player)
+	local char = player.Character
+	if not root or not char then
+		return
+	end
+	local stats = s.stats
+	local typeId = stats.weapon.typeId
+	local ult = Config.Ultimates[typeId] or Config.Ultimates[1]
+	s.gauge = 0
+	s.ulting = true
+	s.invulnUntil = math.max(s.invulnUntil, os.clock() + 1.0)
+
+	local origin = root.Position
+	local look = flatUnit(root.CFrame.LookVector)
+	local hits = {}
+	local data: { [string]: any } = {
+		typeId = typeId,
+		name = ult.name,
+		origin = origin,
+		look = look,
+		color = weaponColor(stats),
+	}
+
+	local function finish(heal: number?)
+		if heal and heal > 0 then
+			s.hp = math.min(s.maxHp, s.hp + s.maxHp * heal)
+		end
+		if #hits > 0 then
+			Push:FireClient(player, "hits", hits)
+		end
+		pushBattle(player)
+	end
+
+	if typeId == 1 then
+		-- 대지 가르기: 앞으로 일직선
+		local target = origin + look * ult.length
+		data.length = ult.length
+		Push:FireClient(player, "ult", data)
+		task.wait(0.25)
+		for _, e in ipairs(enemiesNearSegment(s, origin, target, ult.width)) do
+			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		end
+		finish()
+	elseif typeId == 2 then
+		-- 칼날 폭풍: 2.5초 동안 주위를 계속 벤다
+		data.radius = ult.radius
+		data.duration = ult.ticks * ult.interval
+		Push:FireClient(player, "ult", data)
+		for _ = 1, ult.ticks do
+			if not s.running then
+				break
+			end
+			local r = getRoot(player)
+			if not r then
+				break
+			end
+			hits = {}
+			for _, e in ipairs(aliveEnemies(s)) do
+				if (flat(e.root.Position) - flat(r.Position)).Magnitude <= ult.radius + e.bodyRadius then
+					local dmg, crit = rollDamage(stats)
+					hitEnemy(s, e, dmg * ult.mult, crit, r.Position, hits)
+				end
+			end
+			if #hits > 0 then
+				Push:FireClient(player, "hits", hits)
+			end
+			pushBattle(player)
+			task.wait(ult.interval)
+		end
+		hits = {}
+		finish()
+	elseif typeId == 3 then
+		-- 일섬: 앞으로 순간 돌진. 투기장 밖으로는 못 나간다
+		local center = s.arena.center
+		local target = origin + look * ult.length
+		local fromCenter = flat(target - center)
+		local limit = ARENA_RADIUS - 6
+		if fromCenter.Magnitude > limit then
+			target = center + fromCenter.Unit * limit + Vector3.new(0, origin.Y - center.Y, 0)
+		end
+		data.target = target
+		Push:FireClient(player, "ult", data)
+		char:PivotTo(CFrame.lookAt(target, target + look))
+		for _, e in ipairs(enemiesNearSegment(s, origin, target, ult.width)) do
+			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		end
+		finish()
+	elseif typeId == 4 then
+		-- 그림자 처형: 체력이 가장 많은 적 뒤로 순간이동해 치명타 5연타
+		local best: Enemy? = nil
+		for _, e in ipairs(aliveEnemies(s)) do
+			if not best or e.hp > best.hp then
+				best = e
+			end
+		end
+		if best then
+			local victim = best
+			local behind = victim.root.Position - flatUnit(victim.root.CFrame.LookVector) * (3 + victim.bodyRadius)
+			data.target = victim.root.Position
+			Push:FireClient(player, "ult", data)
+			char:PivotTo(CFrame.lookAt(behind, Vector3.new(victim.root.Position.X, behind.Y, victim.root.Position.Z)))
+			local wt = stats.weapon.type
+			for _ = 1, ult.hits do
+				if not victim.alive then
+					break
+				end
+				hits = {}
+				hitEnemy(s, victim, stats.atk * (wt.critMult or 2) * ult.mult, true, behind, hits)
+				Push:FireClient(player, "hits", hits)
+				task.wait(0.12)
+			end
+			hits = {}
+		else
+			Push:FireClient(player, "ult", data)
+		end
+		finish()
+	elseif typeId == 5 then
+		-- 영혼 수확: 넓은 원 + 큰 회복
+		local inCircle = {}
+		local victims = {}
+		for _, e in ipairs(aliveEnemies(s)) do
+			if (flat(e.root.Position) - flat(origin)).Magnitude <= ult.radius + e.bodyRadius then
+				table.insert(inCircle, e)
+				table.insert(victims, e.root.Position)
+			end
+		end
+		data.radius = ult.radius
+		data.victims = victims
+		Push:FireClient(player, "ult", data)
+		task.wait(0.3)
+		for _, e in ipairs(inCircle) do
+			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		end
+		finish(ult.heal)
+	else
+		-- 천지개벽: 투기장 전체
+		data.radius = ARENA_RADIUS
+		Push:FireClient(player, "ult", data)
+		task.wait(0.4)
+		for _, e in ipairs(aliveEnemies(s)) do
+			hitEnemy(s, e, stats.atk * ult.mult, true, origin, hits)
+		end
+		finish(ult.heal)
+	end
+end
+
+local function useUltimate(player: Player, st: State, s: Session)
+	if not s.running or s.ulting or s.gauge < 100 then
+		return
+	end
+	local ok, err = pcall(runUltimate, player, st, s)
+	s.ulting = false
+	if not ok then
+		warn("[Arena] 필살기 오류:", err)
+	end
+end
+
+------------------------------------------------------------------------
+-- 적의 공격
+------------------------------------------------------------------------
 local function enemyStrike(player: Player, st: State, s: Session, e: Enemy)
 	local now = os.clock()
 	e.busy = true
@@ -981,7 +1055,7 @@ local function bossSlam(player: Player, st: State, s: Session, e: Enemy, targetP
 	flashEnemy(e, Color3.fromRGB(255, 140, 0), 1.3)
 	local radius = 12
 	local floorY = s.arena.center.Y
-	local disc = makePart({
+	local disc = World.part({
 		Name = "SlamWarning",
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(0.3, radius * 2, radius * 2),
@@ -1001,6 +1075,7 @@ local function bossSlam(player: Player, st: State, s: Session, e: Enemy, targetP
 		if not (s.running and st.session == s and e.alive) then
 			return
 		end
+		Push:FireClient(player, "slam", { pos = Vector3.new(targetPos.X, floorY, targetPos.Z), radius = radius })
 		local root = getRoot(player)
 		if root then
 			local d = (flat(root.Position) - Vector3.new(targetPos.X, 0, targetPos.Z)).Magnitude
@@ -1011,6 +1086,9 @@ local function bossSlam(player: Player, st: State, s: Session, e: Enemy, targetP
 	end)
 end
 
+------------------------------------------------------------------------
+-- 승패
+------------------------------------------------------------------------
 local function winBattle(player: Player, st: State, s: Session)
 	s.running = false
 	local p = profiles[player]
@@ -1028,6 +1106,7 @@ local function winBattle(player: Player, st: State, s: Session)
 	if firstClear then
 		p.maxStage = n
 		updateTitle(player)
+		refreshHall()
 	end
 	st.dirty = true
 
@@ -1107,12 +1186,16 @@ local function battleLoop(player: Player, st: State, s: Session)
 				end
 			end
 		end
-		if alive == 0 then
+		if alive == 0 and not s.ulting then
 			winBattle(player, st, s)
 			return
 		end
-		if st.auto then
-			performAttack(player, st, s)
+		if st.auto and not s.ulting then
+			if s.gauge >= 100 then
+				task.spawn(useUltimate, player, st, s)
+			else
+				performAttack(player, st, s)
+			end
 		end
 		task.wait(0.1)
 	end
@@ -1150,6 +1233,7 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 	end
 	local arena = arenas[slot :: number]
 	local info = Config.stageInfo(n)
+	World.themeArena(arena, Config.getSection(n).color, info.isBoss)
 	local folder = Instance.new("Folder")
 	folder.Name = "P_" .. player.UserId
 	folder.Parent = battleRoot
@@ -1165,6 +1249,8 @@ startStage = function(player: Player, stageArg: any, wantAuto: boolean)
 		maxHp = stats.maxHp,
 		invulnUntil = 0,
 		lastAttack = 0,
+		gauge = 0,
+		ulting = false,
 		running = true,
 	}
 	st.session = s
@@ -1212,6 +1298,7 @@ local function equip(player: Player, key: any)
 	end
 	p.equipped = key
 	refreshStats(player)
+	Push:FireClient(player, "equipped", key)
 end
 
 local function mergeOnce(p: Profile, key: string): string?
@@ -1255,11 +1342,17 @@ end
 local function mergeAll(player: Player)
 	local p = profiles[player]
 	local count = 0
+	local best: string? = nil
 	for g = 1, Config.MAX_GRADE - 1 do
 		for t = 1, 5 do
 			local key = Config.itemKey(g, t)
-			while mergeOnce(p, key) do
+			while true do
+				local made = mergeOnce(p, key)
+				if not made then
+					break
+				end
 				count += 1
+				best = made
 			end
 		end
 	end
@@ -1267,7 +1360,7 @@ local function mergeAll(player: Player)
 		toast(player, "지금 합성할 수 있는 칼이 없어요")
 		return
 	end
-	Push:FireClient(player, "merged", { count = count })
+	Push:FireClient(player, "merged", { count = count, to = best })
 	refreshStats(player)
 end
 
@@ -1353,11 +1446,16 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 		if s and s.running then
 			performAttack(player, st, s)
 		end
+	elseif action == "ultimate" then
+		local s = st.session
+		if s and s.running then
+			task.spawn(useUltimate, player, st, s)
+		end
 	elseif action == "dash" then
 		local s = st.session
 		if s and s.running and now - st.lastDash >= Config.DASH_COOLDOWN - 0.15 then
 			st.lastDash = now
-			s.invulnUntil = now + Config.DASH_INVULN
+			s.invulnUntil = math.max(s.invulnUntil, now + Config.DASH_INVULN)
 		end
 	elseif action == "start" then
 		startStage(player, arg, arg2 == true)
@@ -1461,6 +1559,7 @@ local function onPlayerAdded(player: Player)
 		onCharacterAdded(player, player.Character)
 	end
 	updateTitle(player)
+	refreshHall()
 	pushState(player)
 end
 
@@ -1477,10 +1576,12 @@ local function onPlayerRemoving(player: Player)
 	saveProfile(player)
 	states[player] = nil
 	profiles[player] = nil
+	refreshHall()
 end
 
-buildLobby()
-task.spawn(getRigTemplate)
+task.spawn(function()
+	World.buildStatue(getRigTemplate())
+end)
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)

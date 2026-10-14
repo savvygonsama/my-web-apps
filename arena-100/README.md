@@ -1,9 +1,9 @@
 # ⚔ ARENA 100 (베타)
 
 로블록스용 투기장 액션 클리커 게임입니다. 직접 싸워서 스테이지를 뚫고, 떨어진 칼을 합성해 100등급까지 올라갑니다.
-이긴 스테이지는 켜 두면 알아서 반복 사냥합니다.
+이긴 스테이지는 켜 두면 알아서 반복 사냥합니다. 무기마다 고유 필살기가 있고, 등급이 오를수록 무기와 캐릭터가 화려해집니다.
 
-> 베타 버전입니다. 타이쿤(투기장 시설), 스킬, 구간 돌파, 유료 상품은 아직 들어 있지 않습니다.
+> 베타 버전입니다. 타이쿤(투기장 시설), 구간 돌파, 유료 상품은 아직 들어 있지 않습니다.
 
 ## 바로 해 보기
 
@@ -16,16 +16,19 @@
 
 ### 방법 2. 스크립트 직접 붙여 넣기
 
-스튜디오에서 **Baseplate** 템플릿으로 새 게임을 만든 다음, 아래 세 곳에 스크립트를 만들고 내용을 그대로 붙여 넣습니다.
-이름이 정확히 같아야 합니다.
+스튜디오에서 **Baseplate** 템플릿으로 새 게임을 만든 다음, 아래 여섯 개를 만들고 내용을 그대로 붙여 넣습니다.
+이름과 위치가 정확히 같아야 합니다. "안에"라고 적힌 것은 그 스크립트를 오른쪽 클릭해서 그 아래에 만듭니다.
 
 | 넣을 곳 (탐색기 창) | 만들 것 | 이름 | 붙여 넣을 파일 |
 |---|---|---|---|
 | ReplicatedStorage | ModuleScript | `GameConfig` | [`src/shared/GameConfig.lua`](src/shared/GameConfig.lua) |
-| ServerScriptService | Script | `ArenaServer` | [`src/server/ArenaServer.server.lua`](src/server/ArenaServer.server.lua) |
-| StarterPlayer → StarterPlayerScripts | LocalScript | `ArenaClient` | [`src/client/ArenaClient.client.lua`](src/client/ArenaClient.client.lua) |
+| ReplicatedStorage | ModuleScript | `WeaponBuilder` | [`src/shared/WeaponBuilder.lua`](src/shared/WeaponBuilder.lua) |
+| ServerScriptService | Script | `ArenaServer` | [`src/server/ArenaServer/init.server.lua`](src/server/ArenaServer/init.server.lua) |
+| `ArenaServer` 안에 | ModuleScript | `WorldBuilder` | [`src/server/ArenaServer/WorldBuilder.lua`](src/server/ArenaServer/WorldBuilder.lua) |
+| StarterPlayer → StarterPlayerScripts | LocalScript | `ArenaClient` | [`src/client/ArenaClient/init.client.lua`](src/client/ArenaClient/init.client.lua) |
+| `ArenaClient` 안에 | ModuleScript | `Effects` | [`src/client/ArenaClient/Effects.lua`](src/client/ArenaClient/Effects.lua) |
 
-로비, 투기장, 화면 UI는 스크립트가 알아서 만듭니다. 따로 지을 것은 없습니다.
+로비, 투기장, 조명, 화면 UI는 스크립트가 알아서 만듭니다. 따로 지을 것은 없습니다.
 
 ### 저장 기능 켜기
 
@@ -46,8 +49,10 @@
 |---|---|---|
 | 공격 | 마우스 왼쪽 클릭 (누르고 있으면 연속 공격) | 오른쪽 아래 ⚔ 버튼 누르고 있기 |
 | 대시 (잠깐 무적) | Q 또는 Shift | 💨 버튼 |
+| 필살기 (게이지가 다 차면) | R | 💥 버튼 |
 
 공격하면 가장 가까운 적에게 알아서 다가갑니다. 보스가 바닥에 빨간 원을 그리면 대시로 피하세요.
+로비의 붉은 문 앞에 서면 **투기장 입장** 버튼이 떠서 바로 스테이지 창을 열 수 있습니다.
 
 ## 게임 구조
 
@@ -87,6 +92,38 @@ Trash에서 시작해 The Omnipotent Origin Beyond Existence까지 갑니다. �
 
 같은 계열끼리 합성하면 다음 등급이 되고, 다음 등급에서는 희귀도가 바뀝니다. 같은 계열이면 합성 결과가 항상 더 셉니다.
 
+### 필살기
+때릴 때마다 게이지가 차고, 어떤 무기든 약 9초 동안 싸우면 가득 찹니다.
+
+| 무기 | 필살기 | 하는 일 |
+|---|---|---|
+| 대검 | 대지 가르기 | 앞으로 땅을 갈라 일직선의 적을 모두 벱니다 (공격력 8배) |
+| 쌍검 | 칼날 폭풍 | 2.5초 동안 주위를 쉴 새 없이 벱니다 |
+| 장검 | 일섬 | 앞으로 순간 돌진하며 지나간 자리의 적을 모두 벱니다 (7배) |
+| 단검 | 그림자 처형 | 가장 강한 적 뒤로 순간이동해 치명타 5연타 |
+| 낫 | 영혼 수확 | 넓은 원 안의 적을 베고 체력 30% 회복 |
+| 올라운더 | 천지개벽 | 투기장의 모든 적을 베고 체력 30% 회복 (10배) |
+
+필살기를 쓰는 동안 잠깐 무적이고, 자동 반복 중에는 알아서 씁니다.
+
+### 치명타
+모든 무기가 5% 확률로 1.8배, 단검은 30% 확률로 2.5배입니다. 치명타가 터지면 숫자가 크게 튀어나오고,
+보스가 아닌 적은 멀리 날아갑니다.
+
+### 강할수록 화려하게
+무기와 내 캐릭터는 장착한 무기의 구간에 따라 단계적으로 바뀝니다.
+
+| 구간 | 무기 | 캐릭터 |
+|---|---|---|
+| 1 | 쇠 칼날 | |
+| 2 | + 희귀도 색 보석, 휘두를 때 궤적 | |
+| 3 | + 칼날 가운데 빛나는 홈, 은은한 빛 | 오라 |
+| 4 | + 유리 칼날, 반짝이 파티클 | 오라 진하게 |
+| 5 | + 우주 칼날, 별 파티클 | 오라 + 몸에서 빛 |
+| 6 | + 빛나는 칼날, 무지개 궤적 | 무지개 오라 |
+
+전설 희귀도는 금빛 반짝임이 더해집니다. 적도 구간이 오를수록 무기를 들고 오라를 두르며, 보스는 왕관을 씁니다.
+
 ### 올라운더
 100등급 대검·쌍검·장검·단검·낫을 하나씩 모아 합치면 최종 무기 **올라운더**가 됩니다.
 
@@ -102,16 +139,28 @@ Trash에서 시작해 The Omnipotent Origin Beyond Existence까지 갑니다. �
 밸런스는 전부 [`src/shared/GameConfig.lua`](src/shared/GameConfig.lua) 한 파일에 있습니다.
 등급 이름, 무기 계열 수치, 희귀도 배율, 합성 개수, 적 체력과 공격력, 보상 코인을 여기서 고칩니다.
 
+## 로비
+
+노을빛 대리석 광장에 횃불 기둥 12개가 둘러서 있고, 기둥 여섯 개에는 구간 깃발이 걸려 있습니다.
+붉은 융단 끝에는 투기장 입구 문, 왼쪽에는 황금 검투사 동상, 오른쪽에는 이 서버 최고 기록 5명을 보여 주는
+**명예의 전당** 게시판이 있습니다.
+
 ## 파일 구성
 
 ```
 arena-100/
-├── arena-100.rbxlx              스튜디오에서 바로 여는 게임 파일
-├── default.project.json         Rojo 프로젝트 설정
+├── arena-100.rbxlx                  스튜디오에서 바로 여는 게임 파일
+├── default.project.json             Rojo 프로젝트 설정
 └── src/
-    ├── shared/GameConfig.lua    수치와 데이터 (서버·클라이언트 공용)
-    ├── server/ArenaServer.server.lua   전투, 합성, 저장, 투기장 생성
-    └── client/ArenaClient.client.lua   화면 UI와 조작
+    ├── shared/
+    │   ├── GameConfig.lua           수치와 데이터 (서버·클라이언트 공용)
+    │   └── WeaponBuilder.lua        무기 모양, 등급별 효과, 오라 (공용)
+    ├── server/ArenaServer/
+    │   ├── init.server.lua          전투, 필살기, 합성, 저장
+    │   └── WorldBuilder.lua         조명, 로비, 투기장
+    └── client/ArenaClient/
+        ├── init.client.lua          화면 UI와 조작
+        └── Effects.lua              베기 궤적, 치명타, 필살기 연출, 효과음
 ```
 
 `src`를 고친 뒤 게임 파일을 다시 만들려면 [Rojo](https://rojo.space)로 `rojo build default.project.json -o arena-100.rbxlx`를 실행합니다.
@@ -119,7 +168,6 @@ arena-100/
 ## 다음에 넣을 것
 
 - 타이쿤: 관중석, 매점, 훈련장 같은 투기장 시설
-- 스킬
 - 구간 돌파
 - 게임을 꺼 둔 동안 쌓이는 보상
 - 유료 상품
