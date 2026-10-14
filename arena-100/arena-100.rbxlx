@@ -1786,11 +1786,10 @@ local function enhanceDecor(ctx: Ctx, style: any, look: Look, core: BasePart, se
 	end
 	-- +3 두 줄 룬 홈
 	if lv >= 3 then
-		for _, sg in ipairs(segs) do
+		for i, sg in ipairs(segs) do
+			local z = (i % 2 == 0) and 0.22 or -0.22
 			for _, face in ipairs({ 1, -1 }) do
-				for _, z in ipairs({ 0.22, -0.22 }) do
-					mk(ctx, "EnhGroove", Vector3.new(0.02, sg.len * 0.9, 0.05), sg.cf * CFrame.new(face * (sg.thick / 2 + 0.012), 0, z * sg.width), style.glow, Enum.Material.Neon)
-				end
+				mk(ctx, "EnhGroove", Vector3.new(0.02, sg.len * 0.9, 0.05), sg.cf * CFrame.new(face * (sg.thick / 2 + 0.012), 0, z * sg.width), style.glow, Enum.Material.Neon)
 			end
 		end
 	end
@@ -1962,7 +1961,7 @@ local function profileBlade(ctx: Ctx, style: any, startY: number, L: number, W: 
 	local prof = PROFILES[shape] or PROFILES.straight
 	local material = style.bladeMaterial
 	local reflect = style.reflect
-	local n = (shape == "flamberge" or shape == "crystal") and 14 or 8
+	local n = (shape == "flamberge" or shape == "crystal") and 12 or 8
 	local hollow = false
 	local segs: { Seg }
 	if shape == "hollow" then
