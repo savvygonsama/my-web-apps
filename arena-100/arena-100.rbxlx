@@ -6022,668 +6022,680 @@ end
 ------------------------------------------------------------------------
 -- 스테이지 페이지
 ------------------------------------------------------------------------
-local stagePage = makePage("stage")
-text({
-	Size = UDim2.new(1, 0, 0, 36),
-	TextSize = 13,
-	TextColor3 = C.dim,
-	Text = "🔒 잠김   ⚔ 도전 가능   ✅ 승리   🔁 자동 반복 가능 (이긴 스테이지 + 권장 전투력 1.5배)\n👑 10스테이지마다 보스가 나와요.",
-	Parent = stagePage,
-})
-local stageList = new("ScrollingFrame", {
-	Position = UDim2.new(0, 0, 0, 40),
-	Size = UDim2.new(1, 0, 1, -40),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	ScrollBarThickness = 8,
-	ScrollBarImageColor3 = C.gold,
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(),
-	Parent = stagePage,
-}, {
-	new("UIListLayout", { Padding = UDim.new(0, 5) }),
-})
-
-type StageRow = {
-	frame: Frame,
-	power: TextLabel,
-	status: TextLabel,
-	play: TextButton,
-	auto: TextButton,
-}
-local stageRows: { StageRow } = {}
-
-local function requestStart(n: number, auto: boolean)
-	if battle.active then
-		toast("전투 중에는 새 스테이지를 시작할 수 없어요")
-		return
-	end
-	window.Visible = false
-	Request:FireServer("start", n, auto)
-end
-
-for n = 1, Config.MAX_GRADE do
-	local isBoss = n % 10 == 0
-	local section = { color = GradeStyle.get(n).glow }
-	local top = isBoss and Color3.fromRGB(105, 34, 30) or C.panel3
-	local bottom = isBoss and Color3.fromRGB(55, 16, 16) or C.panel2
-	local row = new("Frame", {
-		LayoutOrder = n,
-		Size = UDim2.new(1, -12, 0, 52),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		Parent = stageList,
-	}, { corner(10), shade(top, bottom), stroke(isBoss and C.gold or darken(section.color, 0.5), isBoss and 2 or 1) })
-	new("Frame", {
-		Size = UDim2.new(0, 6, 1, -10),
-		Position = UDim2.new(0, 5, 0, 5),
-		BackgroundColor3 = section.color,
+local requestStart
+do
+	local stagePage = makePage("stage")
+	text({
+		Size = UDim2.new(1, 0, 0, 36),
+		TextSize = 13,
+		TextColor3 = C.dim,
+		Text = "🔒 잠김   ⚔ 도전 가능   ✅ 승리   🔁 자동 반복 가능 (이긴 스테이지 + 권장 전투력 1.5배)\n👑 10스테이지마다 보스가 나와요.",
+		Parent = stagePage,
+	})
+	local stageList = new("ScrollingFrame", {
+		Position = UDim2.new(0, 0, 0, 40),
+		Size = UDim2.new(1, 0, 1, -40),
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Parent = row,
-	}, { corner(3) })
-	local grade = Config.getGrade(n)
-	local nameLabel = text({
-		Position = UDim2.new(0, 20, 0, 4),
-		Size = UDim2.new(0.52, -20, 0, 26),
-		TextSize = 17,
+		ScrollBarThickness = 8,
+		ScrollBarImageColor3 = C.gold,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = stagePage,
+	}, {
+		new("UIListLayout", { Padding = UDim.new(0, 5) }),
+	})
+
+	type StageRow = {
+		frame: Frame,
+		power: TextLabel,
+		status: TextLabel,
+		play: TextButton,
+		auto: TextButton,
+	}
+	local stageRows: { StageRow } = {}
+
+	function requestStart(n: number, auto: boolean)
+		if battle.active then
+			toast("전투 중에는 새 스테이지를 시작할 수 없어요")
+			return
+		end
+		window.Visible = false
+		Request:FireServer("start", n, auto)
+	end
+
+	for n = 1, Config.MAX_GRADE do
+		local isBoss = n % 10 == 0
+		local section = { color = GradeStyle.get(n).glow }
+		local top = isBoss and Color3.fromRGB(105, 34, 30) or C.panel3
+		local bottom = isBoss and Color3.fromRGB(55, 16, 16) or C.panel2
+		local row = new("Frame", {
+			LayoutOrder = n,
+			Size = UDim2.new(1, -12, 0, 52),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			Parent = stageList,
+		}, { corner(10), shade(top, bottom), stroke(isBoss and C.gold or darken(section.color, 0.5), isBoss and 2 or 1) })
+		new("Frame", {
+			Size = UDim2.new(0, 6, 1, -10),
+			Position = UDim2.new(0, 5, 0, 5),
+			BackgroundColor3 = section.color,
+			BorderSizePixel = 0,
+			Parent = row,
+		}, { corner(3) })
+		local grade = Config.getGrade(n)
+		local nameLabel = text({
+			Position = UDim2.new(0, 20, 0, 4),
+			Size = UDim2.new(0.52, -20, 0, 26),
+			TextSize = 17,
+			Font = Enum.Font.GothamBlack,
+			TextStrokeTransparency = 0.5,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextWrapped = false,
+			Text = string.format("%s%d. %s", isBoss and "👑 " or "", n, grade.en),
+			Parent = row,
+		})
+		setGradeColor(nameLabel, n)
+		text({
+			Position = UDim2.new(0, 20, 0, 29),
+			Size = UDim2.new(0.52, -20, 0, 18),
+			TextSize = 12,
+			TextColor3 = C.dim,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextWrapped = false,
+			Text = grade.ko .. "  ·  " .. GradeStyle.get(n).motif.name .. (isBoss and "  ·  BOSS" or ""),
+			Parent = row,
+		})
+		local powerLabel2 = text({
+			Position = UDim2.new(0.52, 0, 0, 0),
+			Size = UDim2.new(0.2, 0, 1, 0),
+			TextSize = 13,
+			TextColor3 = C.dim,
+			Parent = row,
+		})
+		local status = text({
+			Position = UDim2.new(1, -158, 0, 0),
+			Size = UDim2.new(0, 32, 1, 0),
+			TextSize = 20,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Text = "🔒",
+			Parent = row,
+		})
+		local play = button({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -66, 0.5, 0),
+			Size = UDim2.new(0, 58, 0, 36),
+			Text = "도전",
+			BackgroundColor3 = isBoss and C.red or C.blue,
+			Parent = row,
+		}, function()
+			requestStart(n, false)
+		end)
+		local auto = button({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -4, 0.5, 0),
+			Size = UDim2.new(0, 58, 0, 36),
+			Text = "🔁자동",
+			TextSize = 13,
+			BackgroundColor3 = C.green,
+			Parent = row,
+		}, function()
+			requestStart(n, true)
+		end)
+		stageRows[n] = { frame = row, power = powerLabel2, status = status, play = play, auto = auto }
+	end
+
+	refreshers.stage = function()
+		if not state then
+			return
+		end
+		for n, row in ipairs(stageRows) do
+			local rec = Config.recommendedPower(n)
+			row.power.Text = "권장 ⚔" .. fmt(rec)
+			local unlocked = n <= state.maxStage + 1
+			local canAuto = Config.canAutoRepeat(n, state.maxStage, state.power)
+			row.play.Visible = unlocked
+			row.auto.Visible = canAuto
+			row.frame.BackgroundTransparency = unlocked and 0 or 0.35
+			if canAuto then
+				row.status.Text = "🔁"
+			elseif n <= state.maxStage then
+				row.status.Text = "✅"
+			elseif unlocked then
+				row.status.Text = "⚔"
+			else
+				row.status.Text = "🔒"
+			end
+		end
+		local target = math.clamp(state.maxStage - 2, 0, Config.MAX_GRADE)
+		stageList.CanvasPosition = Vector2.new(0, target * 57)
+	end
+
+	------------------------------------------------------------------------
+end
+-- 무기고 페이지
+------------------------------------------------------------------------
+do
+	local armoryPage = makePage("armory")
+	local equipCard = new("Frame", {
+		Size = UDim2.new(1, 0, 0, 104),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		Parent = armoryPage,
+	}, { corner(12), shade(C.panel3, C.panel) })
+	local equipStroke = stroke(C.gold, 2)
+	equipStroke.Parent = equipCard
+	local equipView = new("Frame", {
+		Position = UDim2.new(0, 6, 0, 6),
+		Size = UDim2.new(0, 92, 0, 92),
+		BackgroundColor3 = C.bg,
+		Parent = equipCard,
+	}, { corner(10) })
+	local equipTag = text({
+		Position = UDim2.new(0, 110, 0, 8),
+		Size = UDim2.new(1, -120, 0, 16),
+		TextSize = 12,
+		TextColor3 = C.dim,
+		Text = "장착 중",
+		Parent = equipCard,
+	})
+	local equipName = text({
+		Position = UDim2.new(0, 110, 0, 24),
+		Size = UDim2.new(1, -120, 0, 26),
+		TextSize = 20,
 		Font = Enum.Font.GothamBlack,
 		TextStrokeTransparency = 0.5,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		TextWrapped = false,
-		Text = string.format("%s%d. %s", isBoss and "👑 " or "", n, grade.en),
-		Parent = row,
+		Parent = equipCard,
 	})
-	setGradeColor(nameLabel, n)
-	text({
-		Position = UDim2.new(0, 20, 0, 29),
-		Size = UDim2.new(0.52, -20, 0, 18),
-		TextSize = 12,
-		TextColor3 = C.dim,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		TextWrapped = false,
-		Text = grade.ko .. "  ·  " .. GradeStyle.get(n).motif.name .. (isBoss and "  ·  BOSS" or ""),
-		Parent = row,
-	})
-	local powerLabel2 = text({
-		Position = UDim2.new(0.52, 0, 0, 0),
-		Size = UDim2.new(0.2, 0, 1, 0),
+	local equipInfo = text({
+		Position = UDim2.new(0, 110, 0, 52),
+		Size = UDim2.new(1, -120, 0, 46),
 		TextSize = 13,
 		TextColor3 = C.dim,
-		Parent = row,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = equipCard,
 	})
-	local status = text({
-		Position = UDim2.new(1, -158, 0, 0),
-		Size = UDim2.new(0, 32, 1, 0),
-		TextSize = 20,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Text = "🔒",
-		Parent = row,
-	})
-	local play = button({
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -66, 0.5, 0),
-		Size = UDim2.new(0, 58, 0, 36),
-		Text = "도전",
-		BackgroundColor3 = isBoss and C.red or C.blue,
-		Parent = row,
-	}, function()
-		requestStart(n, false)
-	end)
-	local auto = button({
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -4, 0.5, 0),
-		Size = UDim2.new(0, 58, 0, 36),
-		Text = "🔁자동",
-		TextSize = 13,
-		BackgroundColor3 = C.green,
-		Parent = row,
-	}, function()
-		requestStart(n, true)
-	end)
-	stageRows[n] = { frame = row, power = powerLabel2, status = status, play = play, auto = auto }
-end
+	local shownEquipKey = ""
 
-refreshers.stage = function()
-	if not state then
-		return
-	end
-	for n, row in ipairs(stageRows) do
-		local rec = Config.recommendedPower(n)
-		row.power.Text = "권장 ⚔" .. fmt(rec)
-		local unlocked = n <= state.maxStage + 1
-		local canAuto = Config.canAutoRepeat(n, state.maxStage, state.power)
-		row.play.Visible = unlocked
-		row.auto.Visible = canAuto
-		row.frame.BackgroundTransparency = unlocked and 0 or 0.35
-		if canAuto then
-			row.status.Text = "🔁"
-		elseif n <= state.maxStage then
-			row.status.Text = "✅"
-		elseif unlocked then
-			row.status.Text = "⚔"
-		else
-			row.status.Text = "🔒"
+	local armoryButtons = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 112),
+		Size = UDim2.new(1, 0, 0, 38),
+		BackgroundTransparency = 1,
+		Parent = armoryPage,
+	}, {
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
+	})
+	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⭐ 가장 센 무기 장착", TextSize = 13, Parent = armoryButtons }, function()
+		Request:FireServer("equipBest")
+	end)
+	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "🔨 모두 합성", TextSize = 13, BackgroundColor3 = C.blue, Parent = armoryButtons }, function()
+		Request:FireServer("mergeAll")
+	end)
+	local arButton = button({
+		Size = UDim2.new(0.32, 0, 1, 0),
+		Text = "🌈 올라운더 만들기",
+		TextSize = 13,
+		BackgroundColor3 = C.goldDeep,
+		Parent = armoryButtons,
+	}, function()
+		Request:FireServer("allrounder")
+	end)
+
+	local invList = new("ScrollingFrame", {
+		Position = UDim2.new(0, 0, 0, 158),
+		Size = UDim2.new(1, 0, 1, -158),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 8,
+		ScrollBarImageColor3 = C.gold,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = armoryPage,
+	}, {
+		new("UIGridLayout", {
+			CellSize = UDim2.new(0, 150, 0, 112),
+			CellPadding = UDim2.new(0, 7, 0, 7),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+
+	refreshers.armory = function()
+		if not state then
+			return
 		end
-	end
-	local target = math.clamp(state.maxStage - 2, 0, Config.MAX_GRADE)
-	stageList.CanvasPosition = Vector2.new(0, target * 57)
-end
-
-------------------------------------------------------------------------
--- 무기고 페이지
-------------------------------------------------------------------------
-local armoryPage = makePage("armory")
-local equipCard = new("Frame", {
-	Size = UDim2.new(1, 0, 0, 104),
-	BackgroundColor3 = Color3.new(1, 1, 1),
-	Parent = armoryPage,
-}, { corner(12), shade(C.panel3, C.panel) })
-local equipStroke = stroke(C.gold, 2)
-equipStroke.Parent = equipCard
-local equipView = new("Frame", {
-	Position = UDim2.new(0, 6, 0, 6),
-	Size = UDim2.new(0, 92, 0, 92),
-	BackgroundColor3 = C.bg,
-	Parent = equipCard,
-}, { corner(10) })
-local equipTag = text({
-	Position = UDim2.new(0, 110, 0, 8),
-	Size = UDim2.new(1, -120, 0, 16),
-	TextSize = 12,
-	TextColor3 = C.dim,
-	Text = "장착 중",
-	Parent = equipCard,
-})
-local equipName = text({
-	Position = UDim2.new(0, 110, 0, 24),
-	Size = UDim2.new(1, -120, 0, 26),
-	TextSize = 20,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0.5,
-	TextTruncate = Enum.TextTruncate.AtEnd,
-	TextWrapped = false,
-	Parent = equipCard,
-})
-local equipInfo = text({
-	Position = UDim2.new(0, 110, 0, 52),
-	Size = UDim2.new(1, -120, 0, 46),
-	TextSize = 13,
-	TextColor3 = C.dim,
-	TextYAlignment = Enum.TextYAlignment.Top,
-	Parent = equipCard,
-})
-local shownEquipKey = ""
-
-local armoryButtons = new("Frame", {
-	Position = UDim2.new(0, 0, 0, 112),
-	Size = UDim2.new(1, 0, 0, 38),
-	BackgroundTransparency = 1,
-	Parent = armoryPage,
-}, {
-	new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
-})
-button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⭐ 가장 센 무기 장착", TextSize = 13, Parent = armoryButtons }, function()
-	Request:FireServer("equipBest")
-end)
-button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "🔨 모두 합성", TextSize = 13, BackgroundColor3 = C.blue, Parent = armoryButtons }, function()
-	Request:FireServer("mergeAll")
-end)
-local arButton = button({
-	Size = UDim2.new(0.32, 0, 1, 0),
-	Text = "🌈 올라운더 만들기",
-	TextSize = 13,
-	BackgroundColor3 = C.goldDeep,
-	Parent = armoryButtons,
-}, function()
-	Request:FireServer("allrounder")
-end)
-
-local invList = new("ScrollingFrame", {
-	Position = UDim2.new(0, 0, 0, 158),
-	Size = UDim2.new(1, 0, 1, -158),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	ScrollBarThickness = 8,
-	ScrollBarImageColor3 = C.gold,
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(),
-	Parent = armoryPage,
-}, {
-	new("UIGridLayout", {
-		CellSize = UDim2.new(0, 150, 0, 112),
-		CellPadding = UDim2.new(0, 7, 0, 7),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-	}),
-})
-
-refreshers.armory = function()
-	if not state then
-		return
-	end
-	local title, info = weaponTitle(state.equipped)
-	equipName.Text = title
-	if info then
-		local wc = weaponColor(info)
-		setGradeColor(equipName, info.grade)
-		equipStroke.Color = wc
-		equipTag.Text = string.format("장착 중  ·  %s  ·  %s", info.typeId == 0 and "최종 무기" or info.rarity.name, info.type.desc)
-		equipTag.TextColor3 = wc
-		equipInfo.Text = string.format(
-			"공격력 %s   ·   공격 간격 %.2f초   ·   체력 %s\n치명타 %d%% (%.1f배)   ·   전투력 %s",
-			fmt(myStats.atk),
-			myStats.cooldown,
-			fmt(myStats.maxHp),
-			math.floor((info.type.critChance or 0) * 100 + 0.5),
-			info.type.critMult or 1,
-			fmt(state.power)
-		)
-		if shownEquipKey ~= state.equipped then
-			shownEquipKey = state.equipped
-			for _, c in ipairs(equipView:GetChildren()) do
-				if c:IsA("ViewportFrame") then
-					c:Destroy()
+		local title, info = weaponTitle(state.equipped)
+		equipName.Text = title
+		if info then
+			local wc = weaponColor(info)
+			setGradeColor(equipName, info.grade)
+			equipStroke.Color = wc
+			equipTag.Text = string.format("장착 중  ·  %s  ·  %s", info.typeId == 0 and "최종 무기" or info.rarity.name, info.type.desc)
+			equipTag.TextColor3 = wc
+			equipInfo.Text = string.format(
+				"공격력 %s   ·   공격 간격 %.2f초   ·   체력 %s\n치명타 %d%% (%.1f배)   ·   전투력 %s",
+				fmt(myStats.atk),
+				myStats.cooldown,
+				fmt(myStats.maxHp),
+				math.floor((info.type.critChance or 0) * 100 + 0.5),
+				info.type.critMult or 1,
+				fmt(state.power)
+			)
+			if shownEquipKey ~= state.equipped then
+				shownEquipKey = state.equipped
+				for _, c in ipairs(equipView:GetChildren()) do
+					if c:IsA("ViewportFrame") then
+						c:Destroy()
+					end
 				end
+				weaponViewport(equipView, state.equipped, true)
 			end
-			weaponViewport(equipView, state.equipped, true)
 		end
-	end
 
-	local hasAll = true
-	for t = 1, 5 do
-		if (state.inv[Config.itemKey(Config.MAX_GRADE, t)] or 0) < 1 then
-			hasAll = false
+		local hasAll = true
+		for t = 1, 5 do
+			if (state.inv[Config.itemKey(Config.MAX_GRADE, t)] or 0) < 1 then
+				hasAll = false
+			end
 		end
-	end
-	arButton.TextTransparency = hasAll and 0 or 0.45
+		arButton.TextTransparency = hasAll and 0 or 0.45
 
-	for _, child in ipairs(invList:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
+		for _, child in ipairs(invList:GetChildren()) do
+			if child:IsA("Frame") then
+				child:Destroy()
+			end
 		end
-	end
-	local keys = {}
-	for key in pairs(state.inv) do
-		if Config.parseKey(key) then
-			table.insert(keys, key)
+		local keys = {}
+		for key in pairs(state.inv) do
+			if Config.parseKey(key) then
+				table.insert(keys, key)
+			end
 		end
-	end
-	table.sort(keys, function(a, b)
-		local ga, ta = Config.parseKey(a)
-		local gb, tb = Config.parseKey(b)
-		if ta == 0 then
-			return tb ~= 0
-		elseif tb == 0 then
-			return false
-		end
-		if ga ~= gb then
-			return ga > gb
-		end
-		return Config.rarityRank(ga, ta) > Config.rarityRank(gb, tb)
-	end)
-	for i, key in ipairs(keys) do
-		local count = state.inv[key]
-		local wTitle, w = weaponTitle(key)
-		if w then
-			local isEquipped = key == state.equipped
-			local cost = w.typeId == 0 and 0 or Config.mergeCost(w.grade)
-			local canMerge = w.typeId ~= 0 and w.grade < Config.MAX_GRADE and count >= cost
-			local rc = weaponColor(w)
-			local cell = new("Frame", {
-				LayoutOrder = i,
-				BackgroundColor3 = Color3.new(1, 1, 1),
-				Parent = invList,
-			}, {
-				corner(10),
-				stroke(rc, isEquipped and 3 or 1.5),
-				shade(darken(GradeStyle.get(w.typeId == 0 and 100 or w.grade).primary, 0.45), C.panel, 90),
-			})
-			local nameL = text({
-				Position = UDim2.new(0, 8, 0, 4),
-				Size = UDim2.new(1, -16, 0, 34),
-				TextSize = 13,
-				Font = Enum.Font.GothamBlack,
-				TextStrokeTransparency = 0.5,
-				Text = wTitle,
-				Parent = cell,
-			})
-			setGradeColor(nameL, w.grade)
-			text({
-				Position = UDim2.new(0, 8, 0, 38),
-				Size = UDim2.new(1, -16, 0, 18),
-				TextSize = 12,
-				TextColor3 = lighten(rc, 0.2),
-				Text = string.format("%s  ·  보유 %d%s", w.typeId == 0 and "최종" or w.rarity.name, count, w.typeId == 0 and "" or ("/" .. cost)),
-				Parent = cell,
-			})
-			if isEquipped then
-				local badge = text({
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, -6, 0, -8),
-					Size = UDim2.new(0, 40, 0, 18),
-					BackgroundTransparency = 0,
-					BackgroundColor3 = C.gold,
-					TextColor3 = C.bg,
-					TextXAlignment = Enum.TextXAlignment.Center,
-					TextSize = 11,
+		table.sort(keys, function(a, b)
+			local ga, ta = Config.parseKey(a)
+			local gb, tb = Config.parseKey(b)
+			if ta == 0 then
+				return tb ~= 0
+			elseif tb == 0 then
+				return false
+			end
+			if ga ~= gb then
+				return ga > gb
+			end
+			return Config.rarityRank(ga, ta) > Config.rarityRank(gb, tb)
+		end)
+		for i, key in ipairs(keys) do
+			local count = state.inv[key]
+			local wTitle, w = weaponTitle(key)
+			if w then
+				local isEquipped = key == state.equipped
+				local cost = w.typeId == 0 and 0 or Config.mergeCost(w.grade)
+				local canMerge = w.typeId ~= 0 and w.grade < Config.MAX_GRADE and count >= cost
+				local rc = weaponColor(w)
+				local cell = new("Frame", {
+					LayoutOrder = i,
+					BackgroundColor3 = Color3.new(1, 1, 1),
+					Parent = invList,
+				}, {
+					corner(10),
+					stroke(rc, isEquipped and 3 or 1.5),
+					shade(darken(GradeStyle.get(w.typeId == 0 and 100 or w.grade).primary, 0.45), C.panel, 90),
+				})
+				local nameL = text({
+					Position = UDim2.new(0, 8, 0, 4),
+					Size = UDim2.new(1, -16, 0, 34),
+					TextSize = 13,
 					Font = Enum.Font.GothamBlack,
-					Text = "장착",
+					TextStrokeTransparency = 0.5,
+					Text = wTitle,
 					Parent = cell,
 				})
-				corner(6).Parent = badge
-			end
-			button({
-				Position = UDim2.new(0, 6, 1, -42),
-				Size = UDim2.new(0.5, -9, 0, 36),
-				Text = isEquipped and "장착중" or "장착",
-				TextSize = 13,
-				BackgroundColor3 = isEquipped and C.goldDeep or C.panel3,
-				Parent = cell,
-			}, function()
-				Request:FireServer("equip", key)
-			end)
-			local mergeBtn = button({
-				Position = UDim2.new(0.5, 3, 1, -42),
-				Size = UDim2.new(0.5, -9, 0, 36),
-				Text = "합성",
-				TextSize = 13,
-				BackgroundColor3 = canMerge and C.blue or C.panel2,
-				Parent = cell,
-			}, function()
-				Request:FireServer("merge", key)
-			end)
-			if not canMerge then
-				mergeBtn.TextTransparency = 0.55
+				setGradeColor(nameL, w.grade)
+				text({
+					Position = UDim2.new(0, 8, 0, 38),
+					Size = UDim2.new(1, -16, 0, 18),
+					TextSize = 12,
+					TextColor3 = lighten(rc, 0.2),
+					Text = string.format("%s  ·  보유 %d%s", w.typeId == 0 and "최종" or w.rarity.name, count, w.typeId == 0 and "" or ("/" .. cost)),
+					Parent = cell,
+				})
+				if isEquipped then
+					local badge = text({
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.new(1, -6, 0, -8),
+						Size = UDim2.new(0, 40, 0, 18),
+						BackgroundTransparency = 0,
+						BackgroundColor3 = C.gold,
+						TextColor3 = C.bg,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextSize = 11,
+						Font = Enum.Font.GothamBlack,
+						Text = "장착",
+						Parent = cell,
+					})
+					corner(6).Parent = badge
+				end
+				button({
+					Position = UDim2.new(0, 6, 1, -42),
+					Size = UDim2.new(0.5, -9, 0, 36),
+					Text = isEquipped and "장착중" or "장착",
+					TextSize = 13,
+					BackgroundColor3 = isEquipped and C.goldDeep or C.panel3,
+					Parent = cell,
+				}, function()
+					Request:FireServer("equip", key)
+				end)
+				local mergeBtn = button({
+					Position = UDim2.new(0.5, 3, 1, -42),
+					Size = UDim2.new(0.5, -9, 0, 36),
+					Text = "합성",
+					TextSize = 13,
+					BackgroundColor3 = canMerge and C.blue or C.panel2,
+					Parent = cell,
+				}, function()
+					Request:FireServer("merge", key)
+				end)
+				if not canMerge then
+					mergeBtn.TextTransparency = 0.55
+				end
 			end
 		end
 	end
-end
 
-------------------------------------------------------------------------
+	------------------------------------------------------------------------
+end
 -- 훈련 페이지
 ------------------------------------------------------------------------
-local trainPage = makePage("train")
-new("UIListLayout", { Padding = UDim.new(0, 10), Parent = trainPage })
-text({
-	Size = UDim2.new(1, 0, 0, 36),
-	TextSize = 13,
-	TextColor3 = C.dim,
-	Text = "코인으로 기본 능력을 올려요. 레벨당 +8%이고, 무기를 바꿔도 그대로 남아요.",
-	Parent = trainPage,
-})
-
-local function trainCard(kind: string, icon: string, titleText: string, accent: Color3): (TextLabel, TextButton)
-	local card = new("Frame", {
-		Size = UDim2.new(1, 0, 0, 84),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		Parent = trainPage,
-	}, { corner(12), stroke(accent, 1.5), shade(darken(accent, 0.6), C.panel) })
+do
+	local trainPage = makePage("train")
+	new("UIListLayout", { Padding = UDim.new(0, 10), Parent = trainPage })
 	text({
-		Position = UDim2.new(0, 12, 0, 0),
-		Size = UDim2.new(0, 50, 1, 0),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextSize = 34,
-		Text = icon,
-		Parent = card,
-	})
-	text({
-		Position = UDim2.new(0, 70, 0, 14),
-		Size = UDim2.new(1, -230, 0, 26),
-		TextSize = 20,
-		Font = Enum.Font.GothamBlack,
-		Text = titleText,
-		Parent = card,
-	})
-	local info = text({
-		Position = UDim2.new(0, 70, 0, 42),
-		Size = UDim2.new(1, -230, 0, 26),
-		TextSize = 14,
+		Size = UDim2.new(1, 0, 0, 36),
+		TextSize = 13,
 		TextColor3 = C.dim,
-		Parent = card,
+		Text = "코인으로 기본 능력을 올려요. 레벨당 +8%이고, 무기를 바꿔도 그대로 남아요.",
+		Parent = trainPage,
 	})
-	local b = button({
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.new(0, 150, 0, 50),
-		TextSize = 15,
-		BackgroundColor3 = C.goldDeep,
-		Parent = card,
-	}, function()
-		Request:FireServer("train", kind)
-	end)
-	return info, b
-end
-local atkInfo, atkBtn = trainCard("atk", "⚔", "공격 훈련", C.red)
-local hpInfo, hpBtn = trainCard("hp", "❤", "체력 훈련", C.green)
 
-refreshers.train = function()
-	if not state then
-		return
+	local function trainCard(kind: string, icon: string, titleText: string, accent: Color3): (TextLabel, TextButton)
+		local card = new("Frame", {
+			Size = UDim2.new(1, 0, 0, 84),
+			BackgroundColor3 = Color3.new(1, 1, 1),
+			Parent = trainPage,
+		}, { corner(12), stroke(accent, 1.5), shade(darken(accent, 0.6), C.panel) })
+		text({
+			Position = UDim2.new(0, 12, 0, 0),
+			Size = UDim2.new(0, 50, 1, 0),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextSize = 34,
+			Text = icon,
+			Parent = card,
+		})
+		text({
+			Position = UDim2.new(0, 70, 0, 14),
+			Size = UDim2.new(1, -230, 0, 26),
+			TextSize = 20,
+			Font = Enum.Font.GothamBlack,
+			Text = titleText,
+			Parent = card,
+		})
+		local info = text({
+			Position = UDim2.new(0, 70, 0, 42),
+			Size = UDim2.new(1, -230, 0, 26),
+			TextSize = 14,
+			TextColor3 = C.dim,
+			Parent = card,
+		})
+		local b = button({
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -12, 0.5, 0),
+			Size = UDim2.new(0, 150, 0, 50),
+			TextSize = 15,
+			BackgroundColor3 = C.goldDeep,
+			Parent = card,
+		}, function()
+			Request:FireServer("train", kind)
+		end)
+		return info, b
 	end
-	atkInfo.Text = string.format("Lv.%d  ·  공격력 +%d%%", state.atkLv, math.floor(state.atkLv * Config.TRAIN_BONUS * 100 + 0.5))
-	hpInfo.Text = string.format("Lv.%d  ·  체력 +%d%%", state.hpLv, math.floor(state.hpLv * Config.TRAIN_BONUS * 100 + 0.5))
-	atkBtn.Text = "올리기  💰" .. fmt(Config.trainCost(state.atkLv))
-	hpBtn.Text = "올리기  💰" .. fmt(Config.trainCost(state.hpLv))
-end
+	local atkInfo, atkBtn = trainCard("atk", "⚔", "공격 훈련", C.red)
+	local hpInfo, hpBtn = trainCard("hp", "❤", "체력 훈련", C.green)
 
-------------------------------------------------------------------------
+	refreshers.train = function()
+		if not state then
+			return
+		end
+		atkInfo.Text = string.format("Lv.%d  ·  공격력 +%d%%", state.atkLv, math.floor(state.atkLv * Config.TRAIN_BONUS * 100 + 0.5))
+		hpInfo.Text = string.format("Lv.%d  ·  체력 +%d%%", state.hpLv, math.floor(state.hpLv * Config.TRAIN_BONUS * 100 + 0.5))
+		atkBtn.Text = "올리기  💰" .. fmt(Config.trainCost(state.atkLv))
+		hpBtn.Text = "올리기  💰" .. fmt(Config.trainCost(state.hpLv))
+	end
+
+	------------------------------------------------------------------------
+end
 -- 도움말 페이지
 ------------------------------------------------------------------------
-local helpPage = makePage("help")
-local helpScroll = new("ScrollingFrame", {
-	Size = UDim2.fromScale(1, 1),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	ScrollBarThickness = 8,
-	ScrollBarImageColor3 = C.gold,
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	CanvasSize = UDim2.new(),
-	Parent = helpPage,
-})
-local skillLines = {}
-for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
-	local wt = Config.weaponType(id)
-	local list = Config.Skills[id]
-	table.insert(skillLines, string.format("· %s  [E] %s %s: %s", wt.name, list[1].icon, list[1].name, list[1].desc))
-	table.insert(skillLines, string.format("        [F] %s %s: %s", list[2].icon, list[2].name, list[2].desc))
-end
-local enemyLines = {}
-for _, id in ipairs(Config.ENEMY_ORDER) do
-	local e = Config.EnemyTypes[id]
-	local how = ({
-		grunt = "다가와서 벤다",
-		archer = "거리를 벌리고 빨간 선으로 조준한 뒤 화살을 쏜다. 선에서 비켜서세요",
-		shield = "앞에서 오는 공격을 70% 막는다. 뒤나 옆을 노리거나 기절시키세요",
-		brute = "빨간 길을 그린 뒤 그 길로 돌진한다. 옆으로 피하세요",
-		bomber = "달려와 붙으면 1초 뒤 터진다. 원 밖으로 대시!",
-		shaman = "멀리서 발밑에 불길 원을 띄운다. 원이 다 차기 전에 나가세요",
-		assassin = "주기적으로 내 등 뒤로 순간이동해 찌른다",
-	})[id] or ""
-	table.insert(enemyLines, string.format("· %s (%d스테이지부터): %s", e.name, e.unlock, how))
-end
-local ultLines = {}
-for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
-	local wt = Config.weaponType(id)
-	local u = Config.Ultimates[id]
-	table.insert(ultLines, string.format("· %s — %s: %s", wt.name, u.name, u.desc))
-end
-text({
-	Size = UDim2.new(1, -12, 0, 0),
-	AutomaticSize = Enum.AutomaticSize.Y,
-	TextSize = 15,
-	TextYAlignment = Enum.TextYAlignment.Top,
-	Text = table.concat({
-		"⚔ 싸우는 법",
-		"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, E·F로 무기 스킬, R로 필살기",
-		"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 스킬 버튼 둘, 💥 필살기",
-		"· 공격하면 가장 가까운 적에게 알아서 다가가요",
-		"· 대시하는 순간에는 잠깐 무적이에요. 보스의 빨간 원을 피하세요!",
-		"",
-		"🌀 무기 스킬 (E, F)",
-		table.concat(skillLines, "\n"),
-		"",
-		"💥 필살기 (때릴수록 게이지가 차요)",
-		table.concat(ultLines, "\n"),
-		"",
-		"👹 적",
-		table.concat(enemyLines, "\n"),
-		"· 바닥의 빨간 경고 안에서 밝은 원이 차오르면 곧 공격이 들어와요",
-		"· 웨이브를 깰 때마다 체력 30%를 회복해요",
-		"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환 중 몇 가지를 섞어 써요",
-		"",
-		"🎯 치명타",
-		"· 모든 무기 5% 확률로 1.8배, 단검은 30% 확률로 2.5배",
-		"· 치명타를 맞은 적은 멀리 날아가요 (보스 제외)",
-		"",
-		"🗡 무기",
-		"· 대검: 한 방이 강하고 느려요",
-		"· 쌍검: 아주 빠르게 베요",
-		"· 장검: 앞쪽 멀리, 최대 3명",
-		"· 단검: 치명타가 잘 터져요",
-		"· 낫: 내 주위를 한 바퀴 베고, 피해의 10%만큼 체력을 회복해요",
-		"· 등급 구간이 오를수록 무기와 내 캐릭터가 점점 화려하게 빛나요",
-		"",
-		"✨ 희귀도",
-		"· 같은 등급 안에서 일반 < 고급 < 희귀 < 영웅 < 전설",
-		"· 등급이 하나 오를 때마다 전설이 되는 계열이 한 칸씩 바뀌어요",
-		"",
-		"🔨 합성",
-		"· 같은 등급, 같은 계열 칼을 모아 합치면 다음 등급이 돼요",
-		"· 1~20등급은 2개, 21~40등급은 3개, 41~60등급은 4개, 61~80등급은 5개, 81등급부터는 6개",
-		"· 100등급 다섯 계열을 하나씩 모으면 최종 무기 '올라운더'를 만들 수 있어요",
-		"",
-		"🔁 자동 반복",
-		"· 이긴 적 있는 스테이지 + 전투력이 권장의 1.5배 이상이면 자동으로 계속 싸워요",
-		"· 자동 반복 중에는 스킬과 필살기도 알아서 써요",
-		"",
-		"🏛 로비",
-		"· 🔨 합성 용광로: 모루 앞에서 합성 창을 열어요. 누가 합성하면 용광로가 불을 뿜어요",
-		"· 💪 훈련장: 허수아비 앞에서 훈련 창을 열어요",
-		"· ⚔ 무기 전시대: 구간마다 무기가 얼마나 화려해지는지 보여 줘요",
-	}, "\n"),
-	Parent = helpScroll,
-})
+do
+	local helpPage = makePage("help")
+	local helpScroll = new("ScrollingFrame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 8,
+		ScrollBarImageColor3 = C.gold,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = helpPage,
+	})
+	local skillLines = {}
+	for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+		local wt = Config.weaponType(id)
+		local list = Config.Skills[id]
+		table.insert(skillLines, string.format("· %s  [E] %s %s: %s", wt.name, list[1].icon, list[1].name, list[1].desc))
+		table.insert(skillLines, string.format("        [F] %s %s: %s", list[2].icon, list[2].name, list[2].desc))
+	end
+	local enemyLines = {}
+	for _, id in ipairs(Config.ENEMY_ORDER) do
+		local e = Config.EnemyTypes[id]
+		local how = ({
+			grunt = "다가와서 벤다",
+			archer = "거리를 벌리고 빨간 선으로 조준한 뒤 화살을 쏜다. 선에서 비켜서세요",
+			shield = "앞에서 오는 공격을 70% 막는다. 뒤나 옆을 노리거나 기절시키세요",
+			brute = "빨간 길을 그린 뒤 그 길로 돌진한다. 옆으로 피하세요",
+			bomber = "달려와 붙으면 1초 뒤 터진다. 원 밖으로 대시!",
+			shaman = "멀리서 발밑에 불길 원을 띄운다. 원이 다 차기 전에 나가세요",
+			assassin = "주기적으로 내 등 뒤로 순간이동해 찌른다",
+		})[id] or ""
+		table.insert(enemyLines, string.format("· %s (%d스테이지부터): %s", e.name, e.unlock, how))
+	end
+	local ultLines = {}
+	for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+		local wt = Config.weaponType(id)
+		local u = Config.Ultimates[id]
+		table.insert(ultLines, string.format("· %s — %s: %s", wt.name, u.name, u.desc))
+	end
+	text({
+		Size = UDim2.new(1, -12, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		TextSize = 15,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = table.concat({
+			"⚔ 싸우는 법",
+			"· PC: 마우스 왼쪽 클릭(누르고 있으면 연속 공격), Q 또는 Shift로 대시, E·F로 무기 스킬, R로 필살기",
+			"· 휴대폰: 오른쪽 아래 ⚔ 버튼을 누르고 있기, 💨 대시, 스킬 버튼 둘, 💥 필살기",
+			"· 공격하면 가장 가까운 적에게 알아서 다가가요",
+			"· 대시하는 순간에는 잠깐 무적이에요. 보스의 빨간 원을 피하세요!",
+			"",
+			"🌀 무기 스킬 (E, F)",
+			table.concat(skillLines, "\n"),
+			"",
+			"💥 필살기 (때릴수록 게이지가 차요)",
+			table.concat(ultLines, "\n"),
+			"",
+			"👹 적",
+			table.concat(enemyLines, "\n"),
+			"· 바닥의 빨간 경고 안에서 밝은 원이 차오르면 곧 공격이 들어와요",
+			"· 웨이브를 깰 때마다 체력 30%를 회복해요",
+			"· 보스는 내려찍기, 돌진, 회전 베기, 운석, 부하 소환 중 몇 가지를 섞어 써요",
+			"",
+			"🎯 치명타",
+			"· 모든 무기 5% 확률로 1.8배, 단검은 30% 확률로 2.5배",
+			"· 치명타를 맞은 적은 멀리 날아가요 (보스 제외)",
+			"",
+			"🗡 무기",
+			"· 대검: 한 방이 강하고 느려요",
+			"· 쌍검: 아주 빠르게 베요",
+			"· 장검: 앞쪽 멀리, 최대 3명",
+			"· 단검: 치명타가 잘 터져요",
+			"· 낫: 내 주위를 한 바퀴 베고, 피해의 10%만큼 체력을 회복해요",
+			"· 등급 구간이 오를수록 무기와 내 캐릭터가 점점 화려하게 빛나요",
+			"",
+			"✨ 희귀도",
+			"· 같은 등급 안에서 일반 < 고급 < 희귀 < 영웅 < 전설",
+			"· 등급이 하나 오를 때마다 전설이 되는 계열이 한 칸씩 바뀌어요",
+			"",
+			"🔨 합성",
+			"· 같은 등급, 같은 계열 칼을 모아 합치면 다음 등급이 돼요",
+			"· 1~20등급은 2개, 21~40등급은 3개, 41~60등급은 4개, 61~80등급은 5개, 81등급부터는 6개",
+			"· 100등급 다섯 계열을 하나씩 모으면 최종 무기 '올라운더'를 만들 수 있어요",
+			"",
+			"🔁 자동 반복",
+			"· 이긴 적 있는 스테이지 + 전투력이 권장의 1.5배 이상이면 자동으로 계속 싸워요",
+			"· 자동 반복 중에는 스킬과 필살기도 알아서 써요",
+			"",
+			"🏛 로비",
+			"· 🔨 합성 용광로: 모루 앞에서 합성 창을 열어요. 누가 합성하면 용광로가 불을 뿜어요",
+			"· 💪 훈련장: 허수아비 앞에서 훈련 창을 열어요",
+			"· ⚔ 무기 전시대: 구간마다 무기가 얼마나 화려해지는지 보여 줘요",
+		}, "\n"),
+		Parent = helpScroll,
+	})
 
-------------------------------------------------------------------------
+	------------------------------------------------------------------------
+end
 -- 테스트 창 (만렙 계정에서만 보인다)
 ------------------------------------------------------------------------
-local testPage = makePage("test")
-local testGrade = 100
-local testType = 1
-local TYPE_NAMES = { [1] = "대검", [2] = "쌍검", [3] = "장검", [4] = "단검", [5] = "낫", [0] = "올라운더" }
-local testView = new("Frame", {
-	Position = UDim2.new(0, 0, 0, 0),
-	Size = UDim2.new(0, 170, 0, 170),
-	BackgroundColor3 = C.bg,
-	Parent = testPage,
-}, { corner(12), stroke(C.line, 1.5) })
-local testInfo = text({
-	Position = UDim2.new(0, 180, 0, 0),
-	Size = UDim2.new(1, -180, 0, 54),
-	TextSize = 20,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0.4,
-	Parent = testPage,
-})
-local testSub = text({
-	Position = UDim2.new(0, 180, 0, 54),
-	Size = UDim2.new(1, -180, 0, 40),
-	TextSize = 13,
-	TextColor3 = C.dim,
-	TextYAlignment = Enum.TextYAlignment.Top,
-	Parent = testPage,
-})
-local stepRow = new("Frame", {
-	Position = UDim2.new(0, 180, 0, 98),
-	Size = UDim2.new(1, -180, 0, 34),
-	BackgroundTransparency = 1,
-	Parent = testPage,
-}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5) }) })
-local typeRow = new("Frame", {
-	Position = UDim2.new(0, 180, 0, 138),
-	Size = UDim2.new(1, -180, 0, 32),
-	BackgroundTransparency = 1,
-	Parent = testPage,
-}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }) })
-local actionRow = new("Frame", {
-	Position = UDim2.new(0, 0, 0, 182),
-	Size = UDim2.new(1, 0, 0, 44),
-	BackgroundTransparency = 1,
-	Parent = testPage,
-}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
-local toggleRow = new("Frame", {
-	Position = UDim2.new(0, 0, 0, 234),
-	Size = UDim2.new(1, 0, 0, 44),
-	BackgroundTransparency = 1,
-	Parent = testPage,
-}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
-text({
-	Position = UDim2.new(0, 0, 0, 286),
-	Size = UDim2.new(1, 0, 0, 60),
-	TextSize = 12,
-	TextColor3 = C.dim,
-	TextYAlignment = Enum.TextYAlignment.Top,
-	Text = "스튜디오에서 플레이하거나 게임 주인으로 들어오면 테스트 계정이 돼요. 모든 스테이지가 열려 있고 코인이 무한이며, 기록은 저장하지 않아요.\n정식 공개 전에는 GameConfig의 TEST_MODE를 false로 바꾸세요.",
-	Parent = testPage,
-})
+local godBtn, cdBtn
+do
+	local testPage = makePage("test")
+	local testGrade = 100
+	local testType = 1
+	local TYPE_NAMES = { [1] = "대검", [2] = "쌍검", [3] = "장검", [4] = "단검", [5] = "낫", [0] = "올라운더" }
+	local testView = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(0, 170, 0, 170),
+		BackgroundColor3 = C.bg,
+		Parent = testPage,
+	}, { corner(12), stroke(C.line, 1.5) })
+	local testInfo = text({
+		Position = UDim2.new(0, 180, 0, 0),
+		Size = UDim2.new(1, -180, 0, 54),
+		TextSize = 20,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.4,
+		Parent = testPage,
+	})
+	local testSub = text({
+		Position = UDim2.new(0, 180, 0, 54),
+		Size = UDim2.new(1, -180, 0, 40),
+		TextSize = 13,
+		TextColor3 = C.dim,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = testPage,
+	})
+	local stepRow = new("Frame", {
+		Position = UDim2.new(0, 180, 0, 98),
+		Size = UDim2.new(1, -180, 0, 34),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 5) }) })
+	local typeRow = new("Frame", {
+		Position = UDim2.new(0, 180, 0, 138),
+		Size = UDim2.new(1, -180, 0, 32),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }) })
+	local actionRow = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 182),
+		Size = UDim2.new(1, 0, 0, 44),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+	local toggleRow = new("Frame", {
+		Position = UDim2.new(0, 0, 0, 234),
+		Size = UDim2.new(1, 0, 0, 44),
+		BackgroundTransparency = 1,
+		Parent = testPage,
+	}, { new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }) })
+	text({
+		Position = UDim2.new(0, 0, 0, 286),
+		Size = UDim2.new(1, 0, 0, 60),
+		TextSize = 12,
+		TextColor3 = C.dim,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Text = "스튜디오에서 플레이하거나 게임 주인으로 들어오면 테스트 계정이 돼요. 모든 스테이지가 열려 있고 코인이 무한이며, 기록은 저장하지 않아요.\n정식 공개 전에는 GameConfig의 TEST_MODE를 false로 바꾸세요.",
+		Parent = testPage,
+	})
 
-local typeButtons: { [number]: TextButton } = {}
-local function refreshTest()
-	local key = Config.itemKey(testGrade, testType)
-	local info = Config.weaponInfo(key)
-	local style = GradeStyle.get(testType == 0 and 100 or testGrade)
-	if info then
-		testInfo.Text = testType == 0 and "올라운더" or string.format("[%d] %s %s", testGrade, info.gradeData.en, info.type.name)
-		setGradeColor(testInfo, testType == 0 and 100 or testGrade)
-		testSub.Text = string.format(
-			"%s · %s의 기운 · %s 재질 · 스킬 Lv.%d",
-			testType == 0 and "최종" or info.rarity.name,
-			style.motif.name,
-			style.materialName,
-			Config.skillTier(testGrade, testType)
-		)
-	end
-	for _, c in ipairs(testView:GetChildren()) do
-		if c:IsA("ViewportFrame") then
-			c:Destroy()
+	local typeButtons: { [number]: TextButton } = {}
+	local function refreshTest()
+		local key = Config.itemKey(testGrade, testType)
+		local info = Config.weaponInfo(key)
+		local style = GradeStyle.get(testType == 0 and 100 or testGrade)
+		if info then
+			testInfo.Text = testType == 0 and "올라운더" or string.format("[%d] %s %s", testGrade, info.gradeData.en, info.type.name)
+			setGradeColor(testInfo, testType == 0 and 100 or testGrade)
+			testSub.Text = string.format(
+				"%s · %s의 기운 · %s 재질 · 스킬 Lv.%d",
+				testType == 0 and "최종" or info.rarity.name,
+				style.motif.name,
+				style.materialName,
+				Config.skillTier(testGrade, testType)
+			)
+		end
+		for _, c in ipairs(testView:GetChildren()) do
+			if c:IsA("ViewportFrame") then
+				c:Destroy()
+			end
+		end
+		weaponViewport(testView, key, true)
+		for id, b in pairs(typeButtons) do
+			setButtonColor(b, id == testType and C.gold or C.panel3)
 		end
 	end
-	weaponViewport(testView, key, true)
-	for id, b in pairs(typeButtons) do
-		setButtonColor(b, id == testType and C.gold or C.panel3)
+	refreshers.test = function()
+		refreshTest()
 	end
-end
-refreshers.test = function()
-	refreshTest()
-end
 
-for _, step in ipairs({ -10, -1, 1, 10 }) do
-	button({ Size = UDim2.new(0, 54, 1, 0), Text = (step > 0 and "+" or "") .. step, Parent = stepRow }, function()
-		testGrade = math.clamp(testGrade + step, 1, Config.MAX_GRADE)
-		refreshTest()
+	for _, step in ipairs({ -10, -1, 1, 10 }) do
+		button({ Size = UDim2.new(0, 54, 1, 0), Text = (step > 0 and "+" or "") .. step, Parent = stepRow }, function()
+			testGrade = math.clamp(testGrade + step, 1, Config.MAX_GRADE)
+			refreshTest()
+		end)
+	end
+	for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
+		typeButtons[id] = button({ Size = UDim2.new(0, 58, 1, 0), Text = TYPE_NAMES[id], TextSize = 12, Parent = typeRow }, function()
+			testType = id
+			refreshTest()
+		end)
+	end
+	button({ Size = UDim2.new(0.34, 0, 1, 0), Text = "🎁 이 무기 받고 장착", BackgroundColor3 = C.goldDeep, Parent = actionRow }, function()
+		Request:FireServer("testGive", testGrade, testType)
 	end)
-end
-for _, id in ipairs({ 1, 2, 3, 4, 5, 0 }) do
-	typeButtons[id] = button({ Size = UDim2.new(0, 58, 1, 0), Text = TYPE_NAMES[id], TextSize = 12, Parent = typeRow }, function()
-		testType = id
-		refreshTest()
+	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⚔ 이 등급 스테이지 도전", BackgroundColor3 = C.red, Parent = actionRow }, function()
+		requestStart(testGrade, false)
 	end)
-end
-button({ Size = UDim2.new(0.34, 0, 1, 0), Text = "🎁 이 무기 받고 장착", BackgroundColor3 = C.goldDeep, Parent = actionRow }, function()
-	Request:FireServer("testGive", testGrade, testType)
-end)
-button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "⚔ 이 등급 스테이지 도전", BackgroundColor3 = C.red, Parent = actionRow }, function()
-	requestStart(testGrade, false)
-end)
-button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "💥 필살기 게이지 채우기", BackgroundColor3 = C.blue, Parent = actionRow }, function()
-	Request:FireServer("testGauge")
-end)
-local godBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "🛡 무적 OFF", Parent = toggleRow }, function()
-	Request:FireServer("testToggle", "god")
-end)
-local cdBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "⏱ 쿨타임 없음 OFF", Parent = toggleRow }, function()
-	Request:FireServer("testToggle", "cooldown")
-end)
+	button({ Size = UDim2.new(0.32, 0, 1, 0), Text = "💥 필살기 게이지 채우기", BackgroundColor3 = C.blue, Parent = actionRow }, function()
+		Request:FireServer("testGauge")
+	end)
+	godBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "🛡 무적 OFF", Parent = toggleRow }, function()
+		Request:FireServer("testToggle", "god")
+	end)
+	cdBtn = button({ Size = UDim2.new(0.49, 0, 1, 0), Text = "⏱ 쿨타임 없음 OFF", Parent = toggleRow }, function()
+		Request:FireServer("testToggle", "cooldown")
+	end)
 
-------------------------------------------------------------------------
+	------------------------------------------------------------------------
+end
 -- 전투 화면
 ------------------------------------------------------------------------
 local hud = new("Frame", {
@@ -6926,193 +6938,205 @@ local controlHint = text({
 })
 
 -- 필살기 이름 배너
-local ultBanner = text({
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.3, 0),
-	Size = UDim2.new(0, 700, 0, 80),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 60,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0,
-	Visible = false,
-	ZIndex = 15,
-	Parent = gui,
-})
-local ultBannerScale = new("UIScale", { Parent = ultBanner })
-local ultBannerToken = 0
-local function showUltBanner(name: string, color: Color3)
-	ultBannerToken += 1
-	local my = ultBannerToken
-	ultBanner.Text = "💥 " .. name
-	ultBanner.TextColor3 = lighten(color, 0.3)
-	ultBanner.TextStrokeColor3 = darken(color, 0.7)
-	ultBanner.TextTransparency = 0
-	ultBanner.TextStrokeTransparency = 0
-	ultBanner.Visible = true
-	ultBannerScale.Scale = 1.8 * uiScaleValue
-	TweenService:Create(ultBannerScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
-	task.delay(1.0, function()
-		if ultBannerToken == my then
-			TweenService:Create(ultBanner, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
-		end
-	end)
+local showUltBanner
+do
+	local ultBanner = text({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.3, 0),
+		Size = UDim2.new(0, 700, 0, 80),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 60,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0,
+		Visible = false,
+		ZIndex = 15,
+		Parent = gui,
+	})
+	local ultBannerScale = new("UIScale", { Parent = ultBanner })
+	local ultBannerToken = 0
+	function showUltBanner(name: string, color: Color3)
+		ultBannerToken += 1
+		local my = ultBannerToken
+		ultBanner.Text = "💥 " .. name
+		ultBanner.TextColor3 = lighten(color, 0.3)
+		ultBanner.TextStrokeColor3 = darken(color, 0.7)
+		ultBanner.TextTransparency = 0
+		ultBanner.TextStrokeTransparency = 0
+		ultBanner.Visible = true
+		ultBannerScale.Scale = 1.8 * uiScaleValue
+		TweenService:Create(ultBannerScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+		task.delay(1.0, function()
+			if ultBannerToken == my then
+				TweenService:Create(ultBanner, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			end
+		end)
+	end
 end
 
 -- 큰 배너: 웨이브, 보스 등장, 전투 시작
-local bigBanner = text({
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.38, 0),
-	Size = UDim2.new(0, 800, 0, 90),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 64,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0,
-	Visible = false,
-	ZIndex = 14,
-	Parent = gui,
-})
-local bigSub = text({
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 1, 0),
-	Size = UDim2.new(1, 0, 0, 30),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 24,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0.2,
-	ZIndex = 14,
-	Parent = bigBanner,
-})
-local bigScale = new("UIScale", { Parent = bigBanner })
-local bigToken = 0
-local function showBigBanner(title: string, sub: string, color: Color3, hold: number?)
-	bigToken += 1
-	local my = bigToken
-	bigBanner.Text = title
-	bigBanner.TextColor3 = lighten(color, 0.25)
-	bigBanner.TextStrokeColor3 = darken(color, 0.75)
-	bigBanner.TextTransparency = 0
-	bigBanner.TextStrokeTransparency = 0
-	bigSub.Text = sub
-	bigSub.TextColor3 = C.text
-	bigSub.TextTransparency = 0
-	bigBanner.Visible = true
-	bigScale.Scale = uiScaleValue * 2.2
-	TweenService:Create(bigScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
-	task.delay(hold or 1.3, function()
-		if bigToken == my then
-			local info = TweenInfo.new(0.35)
-			TweenService:Create(bigBanner, info, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
-			TweenService:Create(bigSub, info, { TextTransparency = 1 }):Play()
-		end
-	end)
+local showBigBanner
+do
+	local bigBanner = text({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.38, 0),
+		Size = UDim2.new(0, 800, 0, 90),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 64,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0,
+		Visible = false,
+		ZIndex = 14,
+		Parent = gui,
+	})
+	local bigSub = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.new(1, 0, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 24,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.2,
+		ZIndex = 14,
+		Parent = bigBanner,
+	})
+	local bigScale = new("UIScale", { Parent = bigBanner })
+	local bigToken = 0
+	function showBigBanner(title: string, sub: string, color: Color3, hold: number?)
+		bigToken += 1
+		local my = bigToken
+		bigBanner.Text = title
+		bigBanner.TextColor3 = lighten(color, 0.25)
+		bigBanner.TextStrokeColor3 = darken(color, 0.75)
+		bigBanner.TextTransparency = 0
+		bigBanner.TextStrokeTransparency = 0
+		bigSub.Text = sub
+		bigSub.TextColor3 = C.text
+		bigSub.TextTransparency = 0
+		bigBanner.Visible = true
+		bigScale.Scale = uiScaleValue * 2.2
+		TweenService:Create(bigScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+		task.delay(hold or 1.3, function()
+			if bigToken == my then
+				local info = TweenInfo.new(0.35)
+				TweenService:Create(bigBanner, info, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+				TweenService:Create(bigSub, info, { TextTransparency = 1 }):Play()
+			end
+		end)
+	end
 end
 
 -- 화면 가장자리 붉은 테두리: 맞을 때 번쩍, 체력이 낮으면 숨 쉬듯
-local vignette = new("Frame", {
-	Size = UDim2.fromScale(1, 1),
-	BackgroundTransparency = 1,
-	ZIndex = 1,
-	Parent = gui,
-})
-local vignetteEdges: { Frame } = {}
-for i, spec in ipairs({
-	{ UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.18, 0), 90 },
-	{ UDim2.new(0, 0, 0.82, 0), UDim2.new(1, 0, 0.18, 0), -90 },
-	{ UDim2.new(0, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 0 },
-	{ UDim2.new(0.88, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 180 },
-}) do
-	local edge = new("Frame", {
-		Position = spec[1],
-		Size = spec[2],
-		BackgroundColor3 = Color3.fromRGB(200, 0, 0),
-		BorderSizePixel = 0,
+local hurtFlash, lowHp
+do
+	local vignette = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		Parent = vignette,
+		ZIndex = 1,
+		Parent = gui,
 	})
-	new("UIGradient", {
-		Rotation = spec[3],
-		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }),
-		Parent = edge,
-	})
-	vignetteEdges[i] = edge
-end
-local hurtFlash = 0
-local lowHp = false
-local function setVignette(alpha: number, color: Color3)
-	for _, e in ipairs(vignetteEdges) do
-		e.BackgroundTransparency = 1 - alpha
-		e.BackgroundColor3 = color
+	local vignetteEdges: { Frame } = {}
+	for i, spec in ipairs({
+		{ UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.18, 0), 90 },
+		{ UDim2.new(0, 0, 0.82, 0), UDim2.new(1, 0, 0.18, 0), -90 },
+		{ UDim2.new(0, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 0 },
+		{ UDim2.new(0.88, 0, 0, 0), UDim2.new(0.12, 0, 1, 0), 180 },
+	}) do
+		local edge = new("Frame", {
+			Position = spec[1],
+			Size = spec[2],
+			BackgroundColor3 = Color3.fromRGB(200, 0, 0),
+			BorderSizePixel = 0,
+			BackgroundTransparency = 1,
+			Parent = vignette,
+		})
+		new("UIGradient", {
+			Rotation = spec[3],
+			Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1) }),
+			Parent = edge,
+		})
+		vignetteEdges[i] = edge
 	end
-end
-RunService.RenderStepped:Connect(function(dt)
-	hurtFlash = math.max(0, hurtFlash - dt * 2.5)
-	local pulse = lowHp and (0.25 + 0.2 * math.sin(os.clock() * 6)) or 0
-	local a = math.max(hurtFlash, pulse)
-	setVignette(math.clamp(a, 0, 0.85), Color3.fromRGB(200, 0, 0))
-end)
-
--- 콤보: 1.6초 안에 계속 때리면 숫자가 커지고 색이 바뀐다
-local comboLabel = text({
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -30, 0.42, 0),
-	Size = UDim2.new(0, 300, 0, 70),
-	TextXAlignment = Enum.TextXAlignment.Right,
-	TextSize = 54,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0,
-	Visible = false,
-	ZIndex = 12,
-	Parent = gui,
-})
-local comboSub = text({
-	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, 0, 1, -8),
-	Size = UDim2.new(1, 0, 0, 24),
-	TextXAlignment = Enum.TextXAlignment.Right,
-	TextSize = 20,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0.2,
-	Text = "COMBO",
-	ZIndex = 12,
-	Parent = comboLabel,
-})
-local comboScale = new("UIScale", { Parent = comboLabel })
-local combo = 0
-local comboAt = 0
-local COMBO_COLORS = {
-	{ 0, Color3.fromRGB(255, 250, 235) },
-	{ 10, Color3.fromRGB(255, 220, 90) },
-	{ 25, Color3.fromRGB(255, 140, 40) },
-	{ 50, Color3.fromRGB(255, 60, 60) },
-	{ 100, Color3.fromRGB(200, 90, 255) },
-}
-local function addCombo(n: number)
-	local now = os.clock()
-	if now - comboAt > 1.6 then
-		combo = 0
-	end
-	combo += n
-	comboAt = now
-	local color = COMBO_COLORS[1][2]
-	for _, c in ipairs(COMBO_COLORS) do
-		if combo >= c[1] then
-			color = c[2]
+	hurtFlash = 0
+	lowHp = false
+	local function setVignette(alpha: number, color: Color3)
+		for _, e in ipairs(vignetteEdges) do
+			e.BackgroundTransparency = 1 - alpha
+			e.BackgroundColor3 = color
 		end
 	end
-	comboLabel.Text = tostring(combo)
-	comboLabel.TextColor3 = color
-	comboLabel.TextStrokeColor3 = darken(color, 0.8)
-	comboSub.TextColor3 = color
-	comboLabel.Visible = combo >= 3
-	comboScale.Scale = uiScaleValue * (1.35 + math.min(combo, 100) / 250)
-	TweenService:Create(comboScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+	RunService.RenderStepped:Connect(function(dt)
+		hurtFlash = math.max(0, hurtFlash - dt * 2.5)
+		local pulse = lowHp and (0.25 + 0.2 * math.sin(os.clock() * 6)) or 0
+		local a = math.max(hurtFlash, pulse)
+		setVignette(math.clamp(a, 0, 0.85), Color3.fromRGB(200, 0, 0))
+	end)
 end
-RunService.Heartbeat:Connect(function()
-	if comboLabel.Visible and os.clock() - comboAt > 1.6 then
-		comboLabel.Visible = false
-		combo = 0
+
+-- 콤보: 1.6초 안에 계속 때리면 숫자가 커지고 색이 바뀐다
+local addCombo, combo
+do
+	local comboLabel = text({
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -30, 0.42, 0),
+		Size = UDim2.new(0, 300, 0, 70),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextSize = 54,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0,
+		Visible = false,
+		ZIndex = 12,
+		Parent = gui,
+	})
+	local comboSub = text({
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 1, -8),
+		Size = UDim2.new(1, 0, 0, 24),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		TextSize = 20,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.2,
+		Text = "COMBO",
+		ZIndex = 12,
+		Parent = comboLabel,
+	})
+	local comboScale = new("UIScale", { Parent = comboLabel })
+	combo = 0
+	local comboAt = 0
+	local COMBO_COLORS = {
+		{ 0, Color3.fromRGB(255, 250, 235) },
+		{ 10, Color3.fromRGB(255, 220, 90) },
+		{ 25, Color3.fromRGB(255, 140, 40) },
+		{ 50, Color3.fromRGB(255, 60, 60) },
+		{ 100, Color3.fromRGB(200, 90, 255) },
+	}
+	function addCombo(n: number)
+		local now = os.clock()
+		if now - comboAt > 1.6 then
+			combo = 0
+		end
+		combo += n
+		comboAt = now
+		local color = COMBO_COLORS[1][2]
+		for _, c in ipairs(COMBO_COLORS) do
+			if combo >= c[1] then
+				color = c[2]
+			end
+		end
+		comboLabel.Text = tostring(combo)
+		comboLabel.TextColor3 = color
+		comboLabel.TextStrokeColor3 = darken(color, 0.8)
+		comboSub.TextColor3 = color
+		comboLabel.Visible = combo >= 3
+		comboScale.Scale = uiScaleValue * (1.35 + math.min(combo, 100) / 250)
+		TweenService:Create(comboScale, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
 	end
-end)
+	RunService.Heartbeat:Connect(function()
+		if comboLabel.Visible and os.clock() - comboAt > 1.6 then
+			comboLabel.Visible = false
+			combo = 0
+		end
+	end)
+end
 
 -- 등급 상승: 화면 가득 축포
 local function celebrate(stage: number)
@@ -7143,165 +7167,171 @@ local function celebrate(stage: number)
 end
 
 -- 결과 창
-local resultFrame = new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.42, 0),
-	Size = UDim2.new(0, 440, 0, 0),
-	AutomaticSize = Enum.AutomaticSize.Y,
-	BackgroundColor3 = Color3.new(1, 1, 1),
-	Visible = false,
-	ZIndex = 10,
-	Parent = gui,
-}, { corner(16), shade(C.panel2, C.bg), pad(16), new("UIListLayout", { Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center }) })
-local resultStroke = stroke(C.gold, 3)
-resultStroke.Parent = resultFrame
-local resultScale = addScale(resultFrame)
-local resultToken = 0
+local showResult
+do
+	local resultFrame = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.42, 0),
+		Size = UDim2.new(0, 440, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		Visible = false,
+		ZIndex = 10,
+		Parent = gui,
+	}, { corner(16), shade(C.panel2, C.bg), pad(16), new("UIListLayout", { Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center }) })
+	local resultStroke = stroke(C.gold, 3)
+	resultStroke.Parent = resultFrame
+	local resultScale = addScale(resultFrame)
+	local resultToken = 0
 
-local function showResult(data: any)
-	resultToken += 1
-	local my = resultToken
-	for _, child in ipairs(resultFrame:GetChildren()) do
-		if child:IsA("TextLabel") then
-			child:Destroy()
+	function showResult(data: any)
+		resultToken += 1
+		local my = resultToken
+		for _, child in ipairs(resultFrame:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child:Destroy()
+			end
 		end
+		local order = 0
+		local function line(str: string, color: Color3?, size: number?, gradient: ColorSequence?)
+			order += 1
+			local l = text({
+				LayoutOrder = order,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextSize = size or 16,
+				Font = Enum.Font.GothamBlack,
+				TextStrokeTransparency = 0.4,
+				TextColor3 = color or C.text,
+				Text = str,
+				ZIndex = 11,
+				Parent = resultFrame,
+			})
+			if gradient then
+				l.TextColor3 = Color3.new(1, 1, 1)
+				new("UIGradient", { Color = gradient, Rotation = 90, Parent = l })
+			end
+		end
+		if data.win then
+			resultStroke.Color = C.gold
+			line("VICTORY", nil, 46, ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(230, 140, 30)))
+			line("+ 💰 " .. fmt(data.coins), C.gold, 20)
+			if data.firstClear then
+				task.delay(0.4, function()
+					celebrate(data.stage)
+				end)
+				local g = Config.getGrade(data.stage)
+				line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), GradeStyle.textColor(data.stage), 19)
+			end
+			for _, key in ipairs(data.drops or {}) do
+				local title, info = weaponTitle(key)
+				line("획득  " .. title .. (info and ("  (" .. info.rarity.name .. ")") or ""), info and weaponColor(info) or C.text, 15)
+			end
+			if data.again then
+				line("🔁 곧 다음 판이 자동으로 시작돼요", C.green, 14)
+			end
+			Effects.sound("ping", 0.5, 1.2)
+		else
+			resultStroke.Color = C.red
+			line("DEFEAT", nil, 46, ColorSequence.new(Color3.fromRGB(255, 120, 110), Color3.fromRGB(140, 20, 20)))
+			line("무기를 합성하거나 훈련해서 다시 도전해 보세요", C.dim, 15)
+		end
+		resultFrame.Visible = true
+		resultScale.Scale = uiScaleValue * 0.7
+		TweenService:Create(resultScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+		task.delay(data.win and 2.4 or 2.8, function()
+			if resultToken == my then
+				resultFrame.Visible = false
+			end
+		end)
 	end
-	local order = 0
-	local function line(str: string, color: Color3?, size: number?, gradient: ColorSequence?)
-		order += 1
-		local l = text({
-			LayoutOrder = order,
-			Size = UDim2.new(1, 0, 0, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			TextSize = size or 16,
-			Font = Enum.Font.GothamBlack,
-			TextStrokeTransparency = 0.4,
-			TextColor3 = color or C.text,
-			Text = str,
-			ZIndex = 11,
-			Parent = resultFrame,
-		})
-		if gradient then
-			l.TextColor3 = Color3.new(1, 1, 1)
-			new("UIGradient", { Color = gradient, Rotation = 90, Parent = l })
-		end
-	end
-	if data.win then
-		resultStroke.Color = C.gold
-		line("VICTORY", nil, 46, ColorSequence.new(Color3.fromRGB(255, 240, 150), Color3.fromRGB(230, 140, 30)))
-		line("+ 💰 " .. fmt(data.coins), C.gold, 20)
-		if data.firstClear then
-			task.delay(0.4, function()
-				celebrate(data.stage)
-			end)
-			local g = Config.getGrade(data.stage)
-			line(string.format("🏅 새 등급 달성!  [%d] %s", data.stage, g.en), GradeStyle.textColor(data.stage), 19)
-		end
-		for _, key in ipairs(data.drops or {}) do
-			local title, info = weaponTitle(key)
-			line("획득  " .. title .. (info and ("  (" .. info.rarity.name .. ")") or ""), info and weaponColor(info) or C.text, 15)
-		end
-		if data.again then
-			line("🔁 곧 다음 판이 자동으로 시작돼요", C.green, 14)
-		end
-		Effects.sound("ping", 0.5, 1.2)
-	else
-		resultStroke.Color = C.red
-		line("DEFEAT", nil, 46, ColorSequence.new(Color3.fromRGB(255, 120, 110), Color3.fromRGB(140, 20, 20)))
-		line("무기를 합성하거나 훈련해서 다시 도전해 보세요", C.dim, 15)
-	end
-	resultFrame.Visible = true
-	resultScale.Scale = uiScaleValue * 0.7
-	TweenService:Create(resultScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
-	task.delay(data.win and 2.4 or 2.8, function()
-		if resultToken == my then
-			resultFrame.Visible = false
-		end
-	end)
 end
 
 -- 합성 성공 연출
-local mergePopup = new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.45, 0),
-	Size = UDim2.new(0, 300, 0, 300),
-	BackgroundColor3 = Color3.new(1, 1, 1),
-	Visible = false,
-	ZIndex = 30,
-	Parent = gui,
-}, { corner(20), shade(C.panel2, C.bg) })
-local mergeStroke = stroke(C.gold, 3)
-mergeStroke.Parent = mergePopup
-local mergeScale = addScale(mergePopup)
-local mergeTitle = text({
-	Position = UDim2.new(0, 0, 0, 10),
-	Size = UDim2.new(1, 0, 0, 34),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 26,
-	Font = Enum.Font.GothamBlack,
-	TextColor3 = C.gold,
-	TextStrokeTransparency = 0.3,
-	ZIndex = 31,
-	Parent = mergePopup,
-})
-local mergeView = new("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 50),
-	Size = UDim2.new(0, 180, 0, 180),
-	BackgroundTransparency = 1,
-	ZIndex = 31,
-	Parent = mergePopup,
-})
-local mergeName = text({
-	Position = UDim2.new(0, 10, 1, -66),
-	Size = UDim2.new(1, -20, 0, 30),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 20,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0.4,
-	ZIndex = 31,
-	Parent = mergePopup,
-})
-local mergeSub = text({
-	Position = UDim2.new(0, 10, 1, -36),
-	Size = UDim2.new(1, -20, 0, 22),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 14,
-	ZIndex = 31,
-	Parent = mergePopup,
-})
-local mergeToken = 0
-local function showMerge(key: string, count: number)
-	local title, info = weaponTitle(key)
-	if not info then
-		return
-	end
-	mergeToken += 1
-	local my = mergeToken
-	local wc = weaponColor(info)
-	mergeTitle.Text = info.typeId == 0 and "🌈 올라운더 탄생!" or (count > 1 and string.format("🔨 %d번 합성!", count) or "🔨 합성 성공!")
-	mergeName.Text = title
-	setGradeColor(mergeName, info.grade)
-	mergeSub.Text = info.typeId == 0 and "최종 무기" or (info.rarity.name .. "  ·  " .. info.type.desc)
-	mergeSub.TextColor3 = wc
-	mergeStroke.Color = wc
-	for _, c in ipairs(mergeView:GetChildren()) do
-		c:Destroy()
-	end
-	weaponViewport(mergeView, key, true)
-	mergePopup.Visible = true
-	mergeScale.Scale = uiScaleValue * 0.5
-	TweenService:Create(mergeScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
-	Effects.sound("ping", 0.6, info.rarity.rank >= 5 and 1.5 or 1.2)
-	task.delay(1.8, function()
-		if mergeToken == my then
-			mergePopup.Visible = false
-			for _, c in ipairs(mergeView:GetChildren()) do
-				c:Destroy()
-			end
+local showMerge
+do
+	local mergePopup = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.45, 0),
+		Size = UDim2.new(0, 300, 0, 300),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		Visible = false,
+		ZIndex = 30,
+		Parent = gui,
+	}, { corner(20), shade(C.panel2, C.bg) })
+	local mergeStroke = stroke(C.gold, 3)
+	mergeStroke.Parent = mergePopup
+	local mergeScale = addScale(mergePopup)
+	local mergeTitle = text({
+		Position = UDim2.new(0, 0, 0, 10),
+		Size = UDim2.new(1, 0, 0, 34),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 26,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = C.gold,
+		TextStrokeTransparency = 0.3,
+		ZIndex = 31,
+		Parent = mergePopup,
+	})
+	local mergeView = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 50),
+		Size = UDim2.new(0, 180, 0, 180),
+		BackgroundTransparency = 1,
+		ZIndex = 31,
+		Parent = mergePopup,
+	})
+	local mergeName = text({
+		Position = UDim2.new(0, 10, 1, -66),
+		Size = UDim2.new(1, -20, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 20,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0.4,
+		ZIndex = 31,
+		Parent = mergePopup,
+	})
+	local mergeSub = text({
+		Position = UDim2.new(0, 10, 1, -36),
+		Size = UDim2.new(1, -20, 0, 22),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 14,
+		ZIndex = 31,
+		Parent = mergePopup,
+	})
+	local mergeToken = 0
+	function showMerge(key: string, count: number)
+		local title, info = weaponTitle(key)
+		if not info then
+			return
 		end
-	end)
+		mergeToken += 1
+		local my = mergeToken
+		local wc = weaponColor(info)
+		mergeTitle.Text = info.typeId == 0 and "🌈 올라운더 탄생!" or (count > 1 and string.format("🔨 %d번 합성!", count) or "🔨 합성 성공!")
+		mergeName.Text = title
+		setGradeColor(mergeName, info.grade)
+		mergeSub.Text = info.typeId == 0 and "최종 무기" or (info.rarity.name .. "  ·  " .. info.type.desc)
+		mergeSub.TextColor3 = wc
+		mergeStroke.Color = wc
+		for _, c in ipairs(mergeView:GetChildren()) do
+			c:Destroy()
+		end
+		weaponViewport(mergeView, key, true)
+		mergePopup.Visible = true
+		mergeScale.Scale = uiScaleValue * 0.5
+		TweenService:Create(mergeScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+		Effects.sound("ping", 0.6, info.rarity.rank >= 5 and 1.5 or 1.2)
+		task.delay(1.8, function()
+			if mergeToken == my then
+				mergePopup.Visible = false
+				for _, c in ipairs(mergeView:GetChildren()) do
+					c:Destroy()
+				end
+			end
+		end)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -7476,51 +7506,54 @@ local HEAVY = { [1] = 1.5, [2] = 0.8, [3] = 1.1, [4] = 0.9, [5] = 1.2, [0] = 1.5
 local lastSwingType = 1
 
 -- 연속 처치: 1.2초 안에 잡으면 이어진다
-local killLabel = text({
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.22, 0),
-	Size = UDim2.new(0, 600, 0, 60),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 44,
-	Font = Enum.Font.GothamBlack,
-	TextStrokeTransparency = 0,
-	Visible = false,
-	ZIndex = 13,
-	Parent = gui,
-})
-local killScale = new("UIScale", { Parent = killLabel })
-local KILL_NAMES = { [2] = "DOUBLE KILL", [3] = "TRIPLE KILL", [4] = "QUADRA KILL", [5] = "PENTA KILL" }
-local killStreak = 0
-local lastKillAt = 0
-local killToken = 0
-local function onKill()
-	local now = os.clock()
-	if now - lastKillAt > 1.2 then
-		killStreak = 0
-	end
-	killStreak += 1
-	lastKillAt = now
-	Effects.sound("ping", 0.45, 1.1 + math.min(killStreak, 8) * 0.12)
-	if killStreak < 2 then
-		return
-	end
-	killToken += 1
-	local my = killToken
-	killLabel.Text = KILL_NAMES[killStreak] or string.format("RAMPAGE x%d", killStreak)
-	local color = killStreak >= 5 and Color3.fromRGB(255, 80, 200) or (killStreak >= 3 and Color3.fromRGB(255, 120, 40) or C.gold)
-	killLabel.TextColor3 = color
-	killLabel.TextStrokeColor3 = darken(color, 0.8)
-	killLabel.TextTransparency = 0
-	killLabel.TextStrokeTransparency = 0
-	killLabel.Visible = true
-	killScale.Scale = uiScaleValue * 1.8
-	TweenService:Create(killScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
-	Effects.shake(0.3 + killStreak * 0.08, 0.15)
-	task.delay(1.1, function()
-		if killToken == my then
-			TweenService:Create(killLabel, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+local onKill
+do
+	local killLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.22, 0),
+		Size = UDim2.new(0, 600, 0, 60),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 44,
+		Font = Enum.Font.GothamBlack,
+		TextStrokeTransparency = 0,
+		Visible = false,
+		ZIndex = 13,
+		Parent = gui,
+	})
+	local killScale = new("UIScale", { Parent = killLabel })
+	local KILL_NAMES = { [2] = "DOUBLE KILL", [3] = "TRIPLE KILL", [4] = "QUADRA KILL", [5] = "PENTA KILL" }
+	local killStreak = 0
+	local lastKillAt = 0
+	local killToken = 0
+	function onKill()
+		local now = os.clock()
+		if now - lastKillAt > 1.2 then
+			killStreak = 0
 		end
-	end)
+		killStreak += 1
+		lastKillAt = now
+		Effects.sound("ping", 0.45, 1.1 + math.min(killStreak, 8) * 0.12)
+		if killStreak < 2 then
+			return
+		end
+		killToken += 1
+		local my = killToken
+		killLabel.Text = KILL_NAMES[killStreak] or string.format("RAMPAGE x%d", killStreak)
+		local color = killStreak >= 5 and Color3.fromRGB(255, 80, 200) or (killStreak >= 3 and Color3.fromRGB(255, 120, 40) or C.gold)
+		killLabel.TextColor3 = color
+		killLabel.TextStrokeColor3 = darken(color, 0.8)
+		killLabel.TextTransparency = 0
+		killLabel.TextStrokeTransparency = 0
+		killLabel.Visible = true
+		killScale.Scale = uiScaleValue * 1.8
+		TweenService:Create(killScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleValue }):Play()
+		Effects.shake(0.3 + killStreak * 0.08, 0.15)
+		task.delay(1.1, function()
+			if killToken == my then
+				TweenService:Create(killLabel, TweenInfo.new(0.3), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+			end
+		end)
+	end
 end
 
 local function nearestEnemy(root: BasePart): (BasePart?, number)
@@ -7976,135 +8009,139 @@ end)
 ------------------------------------------------------------------------
 -- 로비 장식: 톱니와 전시 무기는 돌고, 등불은 둥실 떠다닌다
 ------------------------------------------------------------------------
-type Deco = { part: BasePart, base: CFrame, spin: boolean, bob: boolean }
-local decos: { [BasePart]: Deco } = {}
-local function track(inst: Instance, kind: string)
-	if not inst:IsA("BasePart") then
-		return
-	end
-	local part = inst :: BasePart
-	local d = decos[part]
-	if not d then
-		d = { part = part, base = part.CFrame, spin = false, bob = false }
-		decos[part] = d
-	end
-	if kind == "spin" then
-		d.spin = true
-	else
-		d.bob = true
-	end
-end
-for _, tag in ipairs({ "ArenaSpin", "ArenaBob" }) do
-	local kind = tag == "ArenaSpin" and "spin" or "bob"
-	for _, inst in ipairs(CollectionService:GetTagged(tag)) do
-		track(inst, kind)
-	end
-	CollectionService:GetInstanceAddedSignal(tag):Connect(function(inst)
-		track(inst, kind)
-	end)
-end
-local forgeBoostUntil = 0
-RunService.RenderStepped:Connect(function()
-	local t = os.clock()
-	local boost = t < forgeBoostUntil and 6 or 1
-	for part, d in pairs(decos) do
-		if not part.Parent then
-			decos[part] = nil
+do
+	type Deco = { part: BasePart, base: CFrame, spin: boolean, bob: boolean }
+	local decos: { [BasePart]: Deco } = {}
+	local function track(inst: Instance, kind: string)
+		if not inst:IsA("BasePart") then
+			return
+		end
+		local part = inst :: BasePart
+		local d = decos[part]
+		if not d then
+			d = { part = part, base = part.CFrame, spin = false, bob = false }
+			decos[part] = d
+		end
+		if kind == "spin" then
+			d.spin = true
 		else
-			local cf = d.base
-			if d.bob then
-				local amp = part:GetAttribute("Amp") or 0.5
-				local speed = part:GetAttribute("BobSpeed") or 1
-				local phase = part:GetAttribute("Phase") or 0
-				cf = cf + Vector3.new(0, math.sin(t * speed + phase) * amp, 0)
-			end
-			if d.spin then
-				local speed = (part:GetAttribute("Speed") or 1) * (part.Name:sub(1, 4) == "Gear" and boost or 1)
-				if part:GetAttribute("Axis") == "X" then
-					cf = cf * CFrame.Angles(t * speed, 0, 0)
-				else
-					cf = cf * CFrame.Angles(0, t * speed, 0)
-				end
-			end
-			part.CFrame = cf
+			d.bob = true
 		end
 	end
-end)
-Push.OnClientEvent:Connect(function(kind: string)
-	if kind == "forge" then
-		forgeBoostUntil = os.clock() + 1.5
+	for _, tag in ipairs({ "ArenaSpin", "ArenaBob" }) do
+		local kind = tag == "ArenaSpin" and "spin" or "bob"
+		for _, inst in ipairs(CollectionService:GetTagged(tag)) do
+			track(inst, kind)
+		end
+		CollectionService:GetInstanceAddedSignal(tag):Connect(function(inst)
+			track(inst, kind)
+		end)
 	end
-end)
+	local forgeBoostUntil = 0
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		local boost = t < forgeBoostUntil and 6 or 1
+		for part, d in pairs(decos) do
+			if not part.Parent then
+				decos[part] = nil
+			else
+				local cf = d.base
+				if d.bob then
+					local amp = part:GetAttribute("Amp") or 0.5
+					local speed = part:GetAttribute("BobSpeed") or 1
+					local phase = part:GetAttribute("Phase") or 0
+					cf = cf + Vector3.new(0, math.sin(t * speed + phase) * amp, 0)
+				end
+				if d.spin then
+					local speed = (part:GetAttribute("Speed") or 1) * (part.Name:sub(1, 4) == "Gear" and boost or 1)
+					if part:GetAttribute("Axis") == "X" then
+						cf = cf * CFrame.Angles(t * speed, 0, 0)
+					else
+						cf = cf * CFrame.Angles(0, t * speed, 0)
+					end
+				end
+				part.CFrame = cf
+			end
+		end
+	end)
+	Push.OnClientEvent:Connect(function(kind: string)
+		if kind == "forge" then
+			forgeBoostUntil = os.clock() + 1.5
+		end
+	end)
+end
 
 ------------------------------------------------------------------------
 -- 떠다니는 장식: 무기 둘레의 구슬과 파편, 캐릭터 발밑 고리와 오라 구슬
 -- 서버는 자리만 만들어 두고, 각자 화면에서 매 프레임 돌린다 (다른 플레이어 것도)
 ------------------------------------------------------------------------
-type Orbit = {
-	ref: ObjectValue,
-	radius: number,
-	height: number,
-	speed: number,
-	phase: number,
-	useRot: boolean,
-	flat: boolean,
-	tumble: number,
-}
-local orbits: { [BasePart]: Orbit } = {}
-local function trackOrbit(inst: Instance)
-	if not inst:IsA("BasePart") then
-		return
-	end
-	local part = inst :: BasePart
-	local ref = part:FindFirstChild("Center") or part:WaitForChild("Center", 2)
-	if not (ref and ref:IsA("ObjectValue")) then
-		return
-	end
-	orbits[part] = {
-		ref = ref,
-		radius = part:GetAttribute("Radius") or 0,
-		height = part:GetAttribute("Height") or 0,
-		speed = part:GetAttribute("Speed") or 1,
-		phase = part:GetAttribute("Phase") or 0,
-		useRot = part:GetAttribute("UseRotation") == true,
-		flat = part:GetAttribute("Flat") == true,
-		tumble = part:GetAttribute("Tumble") or 0,
+do
+	type Orbit = {
+		ref: ObjectValue,
+		radius: number,
+		height: number,
+		speed: number,
+		phase: number,
+		useRot: boolean,
+		flat: boolean,
+		tumble: number,
 	}
-end
-for _, inst in ipairs(CollectionService:GetTagged("ArenaOrbit")) do
-	task.spawn(trackOrbit, inst)
-end
-CollectionService:GetInstanceAddedSignal("ArenaOrbit"):Connect(function(inst)
-	task.spawn(trackOrbit, inst)
-end)
-CollectionService:GetInstanceRemovedSignal("ArenaOrbit"):Connect(function(inst)
-	if inst:IsA("BasePart") then
-		orbits[inst :: BasePart] = nil
+	local orbits: { [BasePart]: Orbit } = {}
+	local function trackOrbit(inst: Instance)
+		if not inst:IsA("BasePart") then
+			return
+		end
+		local part = inst :: BasePart
+		local ref = part:FindFirstChild("Center") or part:WaitForChild("Center", 2)
+		if not (ref and ref:IsA("ObjectValue")) then
+			return
+		end
+		orbits[part] = {
+			ref = ref,
+			radius = part:GetAttribute("Radius") or 0,
+			height = part:GetAttribute("Height") or 0,
+			speed = part:GetAttribute("Speed") or 1,
+			phase = part:GetAttribute("Phase") or 0,
+			useRot = part:GetAttribute("UseRotation") == true,
+			flat = part:GetAttribute("Flat") == true,
+			tumble = part:GetAttribute("Tumble") or 0,
+		}
 	end
-end)
-local FLAT = CFrame.Angles(0, 0, math.rad(90))
-RunService.RenderStepped:Connect(function()
-	local t = os.clock()
-	for part, o in pairs(orbits) do
-		if not part.Parent then
-			orbits[part] = nil
-		else
-			local c = o.ref.Value
-			if c and c:IsA("BasePart") and c.Parent then
-				local center = c :: BasePart
-				local base = o.useRot and center.CFrame or CFrame.new(center.Position)
-				local cf = base * CFrame.new(0, o.height, 0) * CFrame.Angles(0, t * o.speed + o.phase, 0) * CFrame.new(o.radius, 0, 0)
-				if o.tumble ~= 0 then
-					cf = cf * CFrame.Angles(t * o.tumble, t * o.tumble * 0.7, 0)
+	for _, inst in ipairs(CollectionService:GetTagged("ArenaOrbit")) do
+		task.spawn(trackOrbit, inst)
+	end
+	CollectionService:GetInstanceAddedSignal("ArenaOrbit"):Connect(function(inst)
+		task.spawn(trackOrbit, inst)
+	end)
+	CollectionService:GetInstanceRemovedSignal("ArenaOrbit"):Connect(function(inst)
+		if inst:IsA("BasePart") then
+			orbits[inst :: BasePart] = nil
+		end
+	end)
+	local FLAT = CFrame.Angles(0, 0, math.rad(90))
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		for part, o in pairs(orbits) do
+			if not part.Parent then
+				orbits[part] = nil
+			else
+				local c = o.ref.Value
+				if c and c:IsA("BasePart") and c.Parent then
+					local center = c :: BasePart
+					local base = o.useRot and center.CFrame or CFrame.new(center.Position)
+					local cf = base * CFrame.new(0, o.height, 0) * CFrame.Angles(0, t * o.speed + o.phase, 0) * CFrame.new(o.radius, 0, 0)
+					if o.tumble ~= 0 then
+						cf = cf * CFrame.Angles(t * o.tumble, t * o.tumble * 0.7, 0)
+					end
+					if o.flat then
+						cf = cf * FLAT
+					end
+					part.CFrame = cf
 				end
-				if o.flat then
-					cf = cf * FLAT
-				end
-				part.CFrame = cf
 			end
 		end
-	end
-end)
+	end)
+end
 
 Request:FireServer("hello")
 ]]></string>
