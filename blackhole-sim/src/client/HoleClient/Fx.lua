@@ -45,6 +45,28 @@ local function fxPart(size: Vector3, color: Color3, material: Enum.Material, sha
 	return p
 end
 
+-- 납작한 원판: 구 메시를 납작하게 늘려서, 파트 한계(2048)보다 큰 블랙홀도 그릴 수 있다
+local DISC_MAX = 2000
+
+local function setDisc(p: BasePart, d: number)
+	local s = math.clamp(d, 0.05, DISC_MAX)
+	p.Size = Vector3.new(s, p.Size.Y, s)
+	local mesh = p:FindFirstChild("DiscMesh")
+	if mesh and mesh:IsA("SpecialMesh") then
+		mesh.Scale = Vector3.new(math.max(d, 0.05) / s, 1, math.max(d, 0.05) / s)
+	end
+end
+
+local function disc(d: number, thick: number, color: Color3, material: Enum.Material, transparency: number?): Part
+	local p = fxPart(Vector3.new(1, thick, 1), color, material, nil, transparency)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.Name = "DiscMesh"
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	setDisc(p, d)
+	return p
+end
+
 ------------------------------------------------------------------------
 -- 효과음
 ------------------------------------------------------------------------
@@ -79,7 +101,10 @@ type Hole = {
 	target: number,
 	buildR: number, -- 파트를 만들 때의 반지름
 	lastK: number,
-	baseSizes: { Vector3 },
+	baseD: { number }, -- 원판 4장의 처음 지름
+	pulse: number, -- 삼킬 때 잠깐 부푸는 정도
+	skillOn: boolean,
+	aura: Part,
 	skin: number,
 	parts: { Part },
 	rim: Part,
@@ -155,10 +180,12 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		return p
 	end
 	local d = r * 2
-	local rim = add(fxPart(Vector3.new(0.12, d * 1.14, d * 1.14), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder, 0.15))
-	local disk = add(fxPart(Vector3.new(0.14, d * 1.05, d * 1.05), skin.a:Lerp(BLACK, 0.82), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-	local void = add(fxPart(Vector3.new(0.16, d * 0.9, d * 0.9), BLACK, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-	local core = add(fxPart(Vector3.new(0.18, d * 0.45, d * 0.45), BLACK, Enum.Material.Neon, Enum.PartType.Cylinder))
+	local rim = add(disc(d * 1.14, 0.12, skin.a, Enum.Material.Neon, 0.15))
+	local disk = add(disc(d * 1.05, 0.14, skin.a:Lerp(BLACK, 0.82), Enum.Material.SmoothPlastic))
+	local void = add(disc(d * 0.9, 0.16, BLACK, Enum.Material.SmoothPlastic))
+	local core = add(disc(d * 0.45, 0.18, BLACK, Enum.Material.Neon))
+	-- 스킬을 쓰는 동안 바깥에 퍼지는 빛
+	local aura = add(disc(d * 1.6, 0.1, skin.b, Enum.Material.Neon, 1))
 	local light = Instance.new("PointLight")
 	light.Color = skin.a
 	light.Range = math.min(60, 6 + r * 1.5)
@@ -234,7 +261,7 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, math.max(0.15, r * 0.05)), NumberSequenceKeypoint.new(1, 0) }),
 			Color = ColorSequence.new(Color3.new(1, 1, 1), skin.a),
 		})
-		local halo = add(fxPart(Vector3.new(0.1, d * 1.5, d * 1.5), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder, 0.75))
+		local halo = add(disc(d * 1.5, 0.1, skin.a, Enum.Material.Neon, 0.75))
 		table.insert(extras, { part = halo, kind = "halo", a = 0, k = 0 })
 		for i = 0, 11 do
 			local p = add(fxPart(Vector3.new(1, 1, 1) * small * 0.8, i % 3 == 0 and skin.b or Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Ball))
@@ -278,7 +305,10 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		target = r,
 		buildR = r,
 		lastK = 1,
-		baseSizes = { rim.Size, disk.Size, void.Size, core.Size },
+		baseD = { d * 1.14, d * 1.05, d * 0.9, d * 0.45, d * 1.6 },
+		pulse = 0,
+		skillOn = false,
+		aura = aura,
 		skin = skinIndex,
 		parts = parts,
 		rim = rim,
@@ -310,22 +340,28 @@ local function updateHole(h: Hole, t: number, dt: number)
 	if not center then
 		return
 	end
-	-- 먹어서 커질 때 부드럽게 커진다
+	-- 먹어서 커질 때 부드럽게 커지고, 삼킬 때마다 잠깐 꿀꺽 부푼다
 	h.radius += (h.target - h.radius) * math.min(1, dt * 6)
-	local scaleK = h.radius / h.buildR
+	h.pulse *= math.exp(-dt * 9)
+	local scaleK = h.radius / h.buildR * (1 + h.pulse)
 	if math.abs(scaleK - h.lastK) > 0.002 then
 		h.lastK = scaleK
-		for i, p in ipairs({ h.rim, h.disk, h.void, h.core }) do
-			local b = h.baseSizes[i]
-			p.Size = Vector3.new(b.X, b.Y * scaleK, b.Z * scaleK)
+		for i, p in ipairs({ h.rim, h.disk, h.void, h.core, h.aura }) do
+			setDisc(p, h.baseD[i] * scaleK)
 		end
 	end
 	local r = h.radius
 	local base = CFrame.new(center)
-	h.rim.CFrame = base * CFrame.new(0, 0.04, 0) * FLAT
-	h.disk.CFrame = base * CFrame.new(0, 0.06, 0) * FLAT
-	h.void.CFrame = base * CFrame.new(0, 0.08, 0) * FLAT
-	h.core.CFrame = base * CFrame.new(0, 0.1, 0) * FLAT
+	h.rim.CFrame = base * CFrame.new(0, 0.04, 0)
+	h.disk.CFrame = base * CFrame.new(0, 0.06, 0)
+	h.void.CFrame = base * CFrame.new(0, 0.08, 0)
+	h.core.CFrame = base * CFrame.new(0, 0.1, 0)
+	h.aura.CFrame = base * CFrame.new(0, 0.02, 0)
+	if h.skillOn then
+		h.aura.Transparency = 0.45 + math.sin(t * 10) * 0.15
+	elseif h.aura.Transparency < 1 then
+		h.aura.Transparency = 1
+	end
 	if h.effect == "rainbow" then
 		local c = Color3.fromHSV((t * 0.15) % 1, 0.8, 1)
 		h.rim.Color = c
@@ -347,7 +383,7 @@ local function updateHole(h: Hole, t: number, dt: number)
 			local ang = e.a + t * 0.4
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.15, r * 0.12, math.sin(ang) * r * 1.15)) * CFrame.Angles(0, -ang, 0) * CFrame.Angles(0, 0, 0.5)
 		elseif e.kind == "halo" then
-			p.CFrame = base * CFrame.new(0, r * 0.15, 0) * CFrame.Angles(math.sin(t * 0.7) * 0.25, t * 0.3, 0) * FLAT
+			p.CFrame = base * CFrame.new(0, r * 0.15, 0) * CFrame.Angles(math.sin(t * 0.7) * 0.25, t * 0.3, 0)
 		elseif e.kind == "orbitStar" then
 			local ang = e.a - t * 0.8
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.45, r * 0.15 + math.sin(ang * 2 + t) * r * 0.08, math.sin(ang) * r * 1.45))
@@ -408,10 +444,21 @@ local function updateHole(h: Hole, t: number, dt: number)
 	end
 end
 
+-- 로비에서는 블랙홀을 작게 보여 준다 (광장을 다 덮지 않게)
+local LOBBY_SHOW = 8
+local function shownRadius(char: Model, r: number): number
+	local c = Fx.holeCenter(char)
+	if c and Config.inLobby(c) then
+		return math.min(r, LOBBY_SHOW)
+	end
+	return r
+end
+
 local function syncHole(char: Model)
-	local r = char:GetAttribute("HoleR")
+	local rawR = char:GetAttribute("HoleR")
 	local skin = char:GetAttribute("HoleSkin")
 	local h = holes[char]
+	local r = type(rawR) == "number" and shownRadius(char, rawR) or nil
 	if type(r) ~= "number" or not char.Parent then
 		if h then
 			destroyHole(h)
@@ -434,13 +481,26 @@ local function syncHole(char: Model)
 		end
 	end
 	local shown = h and h.radius or r
+	-- 로비 ↔ 세계처럼 크기가 확 바뀌면 바로 그 크기로
+	if shown > r * 3 or shown < r / 3 then
+		shown = r
+	end
 	if h then
 		destroyHole(h)
 	end
 	local nh = buildHole(char, r, skinIndex)
 	nh.radius = shown
+	nh.skillOn = char:GetAttribute("SkillOn") == true
 	holes[char] = nh
 	buildSats(nh, satKey)
+end
+
+-- 삼킬 때 블랙홀이 꿀꺽 부푼다
+function Fx.pulse(char: Model, amount: number)
+	local h = holes[char]
+	if h then
+		h.pulse = math.max(h.pulse, amount)
+	end
 end
 
 local function watchCharacter(char: Model)
@@ -453,6 +513,12 @@ local function watchCharacter(char: Model)
 	end)
 	char:GetAttributeChangedSignal("Sats"):Connect(function()
 		syncHole(char)
+	end)
+	char:GetAttributeChangedSignal("SkillOn"):Connect(function()
+		local h = holes[char]
+		if h then
+			h.skillOn = char:GetAttribute("SkillOn") == true
+		end
 	end)
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
@@ -499,28 +565,30 @@ type GalleryItem = { hole: Hole, label: TextLabel, skin: any }
 local gallery: { GalleryItem } = {}
 
 local function buildGallery()
-	local zones = workspace:WaitForChild("Zones", 30)
-	if not zones then
+	local lobbyFolder = workspace:WaitForChild("Lobby", 60)
+	if not lobbyFolder then
 		return
 	end
-	for _, hall in ipairs(zones:GetChildren()) do
-		local w = hall:GetAttribute("World")
-		if hall.Name == "SkinHall" and type(w) == "number" and Config.Worlds[w] then
-			local wx = Config.Worlds[w].x
-			local f = Instance.new("Folder")
-			f.Name = "SkinGallery" .. w
-			f.Parent = folder
-			for k, skin in ipairs(Config.Skins) do
-				local center = Vector3.new(wx + (k - (#Config.Skins + 1) / 2) * 17, 2.3, -24)
-				local h = Fx.preview(k, 3.6, center, f)
-				h.active = false
+	local f = Instance.new("Folder")
+	f.Name = "SkinGallery"
+	f.Parent = folder
+	for _, ped in ipairs(lobbyFolder:GetChildren()) do
+		local k = ped:GetAttribute("SkinIndex")
+		local hr = ped:GetAttribute("HoleR")
+		local skin = type(k) == "number" and Config.Skins[k]
+		if ped:IsA("BasePart") and skin and type(hr) == "number" then
+			-- 받침(세운 원기둥) 윗면 위에 그린다
+			local center = ped.Position + Vector3.new(0, ped.Size.X / 2 + 0.05, 0)
+			local h = Fx.preview(k, hr, center, f)
+			h.active = false
+			if hr < 10 then
 				local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), skin.a, Enum.Material.Neon, nil, 1)
-				anchor.CFrame = CFrame.new(center + Vector3.new(0, 9, 0))
+				anchor.CFrame = CFrame.new(center + Vector3.new(0, 10, 0))
 				anchor.Parent = f
 				local bb = Instance.new("BillboardGui")
-				bb.Size = UDim2.new(0, 170, 0, 54)
+				bb.Size = UDim2.new(0, 190, 0, 64)
 				bb.LightInfluence = 0
-				bb.MaxDistance = 260
+				bb.MaxDistance = 220
 				bb.Parent = anchor
 				local l = Instance.new("TextLabel")
 				l.Size = UDim2.fromScale(1, 1)
@@ -532,6 +600,8 @@ local function buildGallery()
 				l.Text = skin.name
 				l.Parent = bb
 				table.insert(gallery, { hole = h, label = l, skin = skin })
+			else
+				table.insert(gallery, { hole = h, label = nil :: any, skin = skin })
 			end
 		end
 	end
@@ -540,6 +610,9 @@ end
 -- 전시관 이름표: 가진 스킨, 쓰는 스킨, 얻는 법
 function Fx.updateGallery(owned: { string }, selected: string)
 	for _, g in ipairs(gallery) do
+		if not g.label then
+			continue
+		end
 		local skin = g.skin
 		local status
 		if skin.id == selected then
@@ -555,7 +628,8 @@ function Fx.updateGallery(owned: { string }, selected: string)
 		else
 			status = "💎 " .. Config.PASS_BY_KEY[skin.value].name
 		end
-		g.label.Text = skin.name .. "\n" .. status
+		local ab = skin.ability
+		g.label.Text = skin.name .. "\n" .. status .. (ab and ("\n" .. (ab.kind == "active" and "⚡ " or "✦ ") .. ab.name) or "")
 	end
 end
 
@@ -563,6 +637,20 @@ end
 -- 빨려 들어가는 연출: 모든 화면에서, 누가 삼켰든 그 블랙홀로 소용돌이치며 들어간다
 ------------------------------------------------------------------------
 type Sucked = { part: BasePart, offset: Vector3, height: number, size: Vector3, tr: number }
+
+-- 한 번에 너무 많이 빨려 들면 (아주 큰 블랙홀) 작은 것들은 바로 사라지게 해서 화면이 버벅이지 않게 한다
+local MAX_SUCKING = 40
+local sucking = 0
+
+local function hideNow(model: Model)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.LocalTransparencyModifier = 1
+		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") or d:IsA("Sparkles") then
+			(d :: any).Enabled = false
+		end
+	end
+end
 
 local function suck(model: Model)
 	local id = model:GetAttribute("EatenBy")
@@ -573,8 +661,16 @@ local function suck(model: Model)
 	local char = eater and eater.Character
 	local center = char and Fx.holeCenter(char)
 	if not center then
+		hideNow(model)
 		return
 	end
+	local size = model:GetAttribute("Size")
+	local holeR = char and char:GetAttribute("HoleR")
+	if sucking >= MAX_SUCKING or (type(size) == "number" and type(holeR) == "number" and size < holeR * 0.04) then
+		hideNow(model)
+		return
+	end
+	sucking += 1
 	local list: { Sucked } = {}
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
@@ -603,6 +699,7 @@ local function suck(model: Model)
 		end
 		if t >= 1 then
 			conn:Disconnect()
+			sucking -= 1
 			for _, s in ipairs(list) do
 				s.part.LocalTransparencyModifier = 1
 			end
@@ -613,11 +710,21 @@ end
 -- 다시 생긴 물체: 작게 시작해서 통통 튀듯 원래 크기로
 local readyAt = math.huge
 
+local growing = 0
 local function growIn(model: Model)
+	-- 내 블랙홀에 비해 아주 작은 것, 한꺼번에 너무 많은 것은 연출 없이 바로 나타난다
+	local size0 = model:GetAttribute("Size")
+	local me = Players.LocalPlayer.Character
+	local myR = me and me:GetAttribute("HoleR")
+	if growing >= 20 or (type(size0) == "number" and type(myR) == "number" and size0 < myR * 0.03) then
+		return
+	end
+	growing += 1
 	local ok = pcall(function()
 		model:ScaleTo(0.05)
 	end)
 	if not ok then
+		growing -= 1
 		return
 	end
 	local pos = model:GetPivot().Position
@@ -630,6 +737,7 @@ local function growIn(model: Model)
 		local t = math.min(1, (os.clock() - start) / 0.45)
 		if not model.Parent or model:GetAttribute("EatenBy") then
 			conn:Disconnect()
+			growing -= 1
 			return
 		end
 		-- 살짝 넘쳤다가 돌아오는 곡선
@@ -640,6 +748,7 @@ local function growIn(model: Model)
 		end)
 		if t >= 1 then
 			conn:Disconnect()
+			growing -= 1
 			pcall(function()
 				model:ScaleTo(1)
 			end)
@@ -647,10 +756,41 @@ local function growIn(model: Model)
 	end)
 end
 
+-- 황금 물체: 금박을 입히고 반짝이게 (내 화면에서만 바꾼다)
+local GOLD = Color3.fromRGB(255, 205, 60)
+local function goldify(model: Model)
+	if model:GetAttribute("Goldified") or not model:GetAttribute("Golden") then
+		return
+	end
+	model:SetAttribute("Goldified", true)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Transparency < 0.9 and d.Material ~= Enum.Material.Neon then
+			d.Color = d.Color:Lerp(GOLD, 0.75)
+			d.Material = Enum.Material.Foil
+			d.Reflectance = 0.2
+		end
+	end
+	local pp = model.PrimaryPart
+	if pp then
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = GOLD
+		sp.Parent = pp
+		local light = Instance.new("PointLight")
+		light.Color = GOLD
+		light.Range = 16
+		light.Brightness = 2
+		light.Parent = pp
+	end
+end
+
 local function watchObject(model: Instance)
 	if not model:IsA("Model") then
 		return
 	end
+	goldify(model :: Model)
+	model:GetAttributeChangedSignal("Golden"):Connect(function()
+		goldify(model :: Model)
+	end)
 	if model:GetAttribute("EatenBy") then
 		suck(model :: Model)
 	elseif os.clock() > readyAt then
@@ -706,10 +846,43 @@ end
 
 -- 바닥에 퍼지는 빛 고리
 function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: number)
-	local p = fxPart(Vector3.new(0.2, fromD, fromD), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2)
-	p.CFrame = CFrame.new(pos + Vector3.new(0, 0.2, 0)) * FLAT
-	TweenService:Create(p, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0.2, toD, toD), Transparency = 1 }):Play()
-	Debris:AddItem(p, life + 0.05)
+	local p = disc(fromD, 0.2, color, Enum.Material.Neon, 0.2)
+	p.CFrame = CFrame.new(pos + Vector3.new(0, 0.25, 0))
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - start) / life)
+		local e = 1 - (1 - k) * (1 - k)
+		setDisc(p, fromD + (toD - fromD) * e)
+		p.Transparency = 0.2 + 0.8 * k
+		if k >= 1 then
+			conn:Disconnect()
+			p:Destroy()
+		end
+	end)
+end
+
+-- 삼킨 물체 자리에서 블랙홀 가운데로 빨려 드는 빛줄기
+function Fx.streak(from: Vector3, to: Vector3, color: Color3, size: number)
+	local p = fxPart(Vector3.new(1, 1, 1) * size, color, Enum.Material.Neon, Enum.PartType.Ball)
+	p.CFrame = CFrame.new(from)
+	local side = Vector3.new(-(to.Z - from.Z), 0, to.X - from.X)
+	if side.Magnitude > 0.01 then
+		side = side.Unit * math.min(side.Magnitude, 40) * 0.3
+	end
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - start) / 0.32)
+		local pos = from:Lerp(to, k * k) + side * math.sin(k * math.pi) + Vector3.new(0, math.sin(k * math.pi) * size, 0)
+		p.CFrame = CFrame.new(pos)
+		p.Size = Vector3.new(1, 1, 1) * size * (1 - k * 0.8)
+		p.Transparency = k * 0.6
+		if k >= 1 then
+			conn:Disconnect()
+			p:Destroy()
+		end
+	end)
 end
 
 -- 빛기둥
@@ -863,6 +1036,13 @@ function Fx.start()
 		-- 전시관은 카메라가 가까울 때만 움직인다
 		if t > galleryCheck then
 			galleryCheck = t + 0.5
+			-- 로비에 들어가고 나올 때 블랙홀 크기 바꾸기
+			for char, h in pairs(holes) do
+				local raw = char:GetAttribute("HoleR")
+				if type(raw) == "number" and math.abs(shownRadius(char, raw) - h.target) > 0.01 then
+					syncHole(char)
+				end
+			end
 			local cam = workspace.CurrentCamera
 			local cp = cam and cam.CFrame.Position or Vector3.zero
 			for _, g in ipairs(gallery) do

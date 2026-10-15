@@ -1,8 +1,9 @@
 -- HoleServer (Script, ServerScriptService)
--- 삼키기 판정, 먹어서 커지기, 질량, 업그레이드, 빅뱅과 빅뱅 상점, 위성(펫), 스킨, 로벅스 상점, 부스트, 별똥별, 저장.
+-- 삼키기 판정, 먹어서 커지기, 질량, 업그레이드 9종, 빅뱅과 빅뱅 상점, 위성(펫), 스킨과 스킨 능력,
+-- 황금 물체, 연속 흡수 보너스, 퀘스트, 매일 보상, 로비, 순위판, 로벅스 상점, 부스트, 별똥별, 저장.
 -- 캐릭터는 사람 모양이 아니라 보이지 않는 공 하나다 (걷는 모션 없음, 죽지 않음).
 -- 중요한 계산은 모두 서버가 한다.
---   World  조명, 세계 2개의 구역, 문, 물체 배치
+--   World  조명, 로비, 세계 2개의 구역, 문, 물체 배치
 --   Store  게임패스와 개발자 상품 결제
 
 local Players = game:GetService("Players")
@@ -21,6 +22,7 @@ Players.CharacterAutoLoads = false
 local DATASTORE_NAME = "BlackHole_v1"
 local SAVE_INTERVAL = 90
 local TICK = 0.1
+local LOBBY_SPEED = 40
 
 ------------------------------------------------------------------------
 -- 통신 채널
@@ -40,16 +42,24 @@ remoteFolder.Parent = ReplicatedStorage
 ------------------------------------------------------------------------
 World.setupLighting()
 local _, portals = World.buildZones()
+local lobby = World.buildLobby()
+for _, portal in ipairs(lobby.portals) do
+	table.insert(portals, portal)
+end
 local objects, objectFolder = World.placeObjects()
 local holding = Instance.new("Folder")
 holding.Name = "EatenObjects"
 holding.Parent = ServerStorage
 
--- 구역별로 나눠 둔다 (가까운 구역만 살펴보면 된다)
+-- 구역별로 나눠 둔다 (가까운 구역만 살펴보면 된다). 처음부터 몇 개는 황금 물체
 local byZone: { [number]: { World.ObjectRec } } = {}
 for _, rec in ipairs(objects) do
 	byZone[rec.zone] = byZone[rec.zone] or {}
 	table.insert(byZone[rec.zone], rec)
+	if math.random() < Config.GOLDEN_CHANCE then
+		rec.golden = true
+		rec.model:SetAttribute("Golden", true)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -66,15 +76,14 @@ do
 end
 
 type Sat = { uid: number, id: string, gold: boolean }
+type Quest = { kind: string, goal: number, progress: number }
 
 type Profile = {
 	mass: number,
 	total: number, -- 지금까지 삼킨 질량 (빅뱅해도 남는다)
 	eaten: number,
 	radius: number, -- 지금 반지름 (먹어서 커진다)
-	grow: number, -- 성장력 업그레이드 레벨
-	pull: number,
-	mult: number,
+	up: { [string]: number }, -- 업그레이드 9종 레벨
 	bigbang: number,
 	dm: number, -- 암흑 물질
 	bb: { [string]: number }, -- 빅뱅 상점 레벨
@@ -90,6 +99,10 @@ type Profile = {
 	receipts: { string },
 	auto: boolean,
 	hatched: number,
+	quests: { Quest },
+	questsDone: number,
+	dailyAt: number,
+	streak: number,
 }
 
 local function defaultProfile(): Profile
@@ -97,14 +110,16 @@ local function defaultProfile(): Profile
 	for _, b in ipairs(Config.BigbangShop) do
 		bb[b.id] = 0
 	end
+	local up = {}
+	for _, u in ipairs(Config.Upgrades) do
+		up[u.id] = 0
+	end
 	return {
 		mass = 0,
 		total = 0,
 		eaten = 0,
 		radius = Config.START_RADIUS,
-		grow = 0,
-		pull = 0,
-		mult = 0,
+		up = up,
 		bigbang = 0,
 		dm = 0,
 		bb = bb,
@@ -120,6 +135,10 @@ local function defaultProfile(): Profile
 		receipts = {},
 		auto = false,
 		hatched = 0,
+		quests = {},
+		questsDone = 0,
+		dailyAt = 0,
+		streak = 0,
 	}
 end
 
@@ -137,17 +156,19 @@ local function sanitize(data: any): Profile
 	p.mass = num(data.mass, math.huge)
 	p.total = num(data.total, math.huge)
 	p.eaten = math.floor(num(data.eaten, math.huge))
-	p.radius = math.clamp(num(data.radius, Config.MAX_RADIUS), Config.START_RADIUS, Config.MAX_RADIUS)
-	p.grow = math.floor(num(data.grow, Config.UPGRADE_BY_ID.grow.maxLevel))
-	p.pull = math.floor(num(data.pull, Config.UPGRADE_BY_ID.pull.maxLevel))
-	p.mult = math.floor(num(data.mult, Config.UPGRADE_BY_ID.mult.maxLevel))
 	p.bigbang = math.floor(num(data.bigbang, 1000))
+	local up = type(data.up) == "table" and data.up or data -- 예전 기록은 grow/pull/mult가 바깥에 있었다
+	for _, u in ipairs(Config.Upgrades) do
+		p.up[u.id] = math.floor(num(up[u.id], u.maxLevel))
+	end
 	p.dm = math.floor(num(data.dm, 1e9))
 	if type(data.bb) == "table" then
 		for _, b in ipairs(Config.BigbangShop) do
 			p.bb[b.id] = math.floor(num(data.bb[b.id], b.maxLevel))
 		end
 	end
+	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize)
+	p.radius = math.clamp(num(data.radius, maxR), Config.START_RADIUS, maxR)
 	local uids = {}
 	if type(data.sats) == "table" then
 		for _, s in ipairs(data.sats) do
@@ -200,6 +221,19 @@ local function sanitize(data: any): Profile
 	end
 	p.auto = data.auto == true
 	p.hatched = math.floor(num(data.hatched, math.huge))
+	if type(data.quests) == "table" then
+		for _, q in ipairs(data.quests) do
+			if type(q) == "table" and type(q.kind) == "string" and Config.QUEST_BY_KIND[q.kind] and type(q.goal) == "number" and q.goal > 0 then
+				table.insert(p.quests, { kind = q.kind, goal = math.floor(q.goal), progress = math.floor(num(q.progress, q.goal)) })
+			end
+			if #p.quests >= 3 then
+				break
+			end
+		end
+	end
+	p.questsDone = math.floor(num(data.questsDone, 1e9))
+	p.dailyAt = num(data.dailyAt, 1e11)
+	p.streak = math.floor(num(data.streak, 1e6))
 	return p
 end
 
@@ -220,6 +254,8 @@ type State = {
 	reqWindow: number,
 	reqCount: number,
 	zone: number,
+	world: number,
+	inLobby: boolean,
 	passes: { [string]: boolean }, -- 들어올 때 확인한 게임패스
 	starPos: Vector3?,
 	starExpire: number,
@@ -227,6 +263,12 @@ type State = {
 	starUntil: number,
 	portalAt: number,
 	lockToastAt: number,
+	combo: number,
+	lastEat: number,
+	activeUntil: number, -- 액티브 스킬이 끝나는 시각 (os.clock)
+	activeOn: boolean,
+	cdUntil: number,
+	burst: number,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -270,14 +312,15 @@ end
 -- 계산 도우미
 ------------------------------------------------------------------------
 local Calc = {}
+local NO_ABILITY = { kind = "passive", name = "", desc = "" }
 
 function Calc.hasPass(player: Player, key: string): boolean
 	local p, st = profiles[player], states[player]
 	return (p and p.passes[key] == true) or (st and st.passes[key] == true) or false
 end
 
-function Calc.radius(p: Profile): number
-	return p.radius
+function Calc.maxRadius(p: Profile): number
+	return Config.maxRadius(p.bigbang, p.up.maxsize)
 end
 
 function Calc.slots(player: Player, p: Profile): number
@@ -303,7 +346,13 @@ function Calc.findSat(p: Profile, uid: number): (Sat?, number)
 	return nil, 0
 end
 
--- 장착한 위성 배율 합: 1 + Σ(배율 - 1)
+-- 지금 스킨의 고유 능력
+function Calc.ability(p: Profile): any
+	local skin = Config.SKIN_BY_ID[p.skin]
+	return skin and skin.ability or NO_ABILITY
+end
+
+-- 장착한 위성 배율 합: 1 + Σ(배율 - 1), 신의 눈 스킨이면 +20%
 function Calc.satMult(p: Profile): number
 	local m = 1
 	for _, uid in ipairs(p.equipped) do
@@ -312,22 +361,81 @@ function Calc.satMult(p: Profile): number
 			m += Config.satMult(s.id, s.gold) - 1
 		end
 	end
+	return m * (1 + (Calc.ability(p).sats or 0))
+end
+
+-- 액티브 스킬이 켜져 있는지
+function Calc.active(st: State?): boolean
+	return st ~= nil and st.activeOn and os.clock() < st.activeUntil
+end
+
+-- 스킨 능력에 따른 흡입 범위 배수
+function Calc.pullExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	local m = 1
+	if ab.kind == "passive" and ab.pull then
+		m *= 1 + ab.pull
+	elseif ab.kind == "active" and ab.pull and Calc.active(st) then
+		m *= ab.pull
+	end
 	return m
+end
+
+function Calc.speedExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	if ab.kind == "active" and ab.speed and Calc.active(st) then
+		return ab.speed
+	end
+	return 1
+end
+
+-- 스킨 능력 질량·성장 보너스 (세계 2 전용 보너스 포함)
+function Calc.skinBonus(p: Profile, st: State?): (number, number)
+	local ab = Calc.ability(p)
+	local mass, grow = ab.mass or 0, ab.grow or 0
+	if ab.world2 and st and st.world == 2 and not st.inLobby then
+		mass += 1
+		grow += 0.3
+	end
+	return mass, grow
+end
+
+function Calc.comboBonus(p: Profile, st: State?): number
+	if not st then
+		return 0
+	end
+	local s = st :: State
+	if os.clock() - s.lastEat > Config.COMBO_WINDOW then
+		return 0
+	end
+	return Config.comboBonus(s.combo, p.up.combo)
 end
 
 function Calc.totalMult(player: Player, p: Profile): number
 	local st = states[player]
-	local now = os.time()
+	local skinMass = Calc.skinBonus(p, st)
 	return Config.totalMult({
-		mult = p.mult,
+		mult = p.up.mult,
 		bigbang = p.bigbang,
 		bbMass = p.bb.mass,
 		sats = Calc.satMult(p),
 		vip = Calc.hasPass(player, "vip"),
 		mass2 = Calc.hasPass(player, "mass2"),
-		boost = p.boostUntil > now,
+		boost = p.boostUntil > os.time(),
 		star = st ~= nil and st.starUntil > os.clock(),
+		skin = skinMass,
+		combo = Calc.comboBonus(p, st),
 	})
+end
+
+function Calc.growMult(player: Player, p: Profile): number
+	local st = states[player]
+	local _, skinGrow = Calc.skinBonus(p, st)
+	return Config.growMult({ grow = p.up.grow, bigbang = p.bigbang, star = st ~= nil and st.starUntil > os.clock(), skin = skinGrow })
+end
+
+function Calc.respawnFactor(player: Player, p: Profile): number
+	return Config.respawnFactor(p.bb.respawn, Calc.hasPass(player, "vip"), p.respawnUntil > os.time(), p.up.respawn, Calc.ability(p).respawn)
 end
 
 function Calc.skinUnlocked(player: Player, p: Profile, skin: any): boolean
@@ -355,7 +463,7 @@ local function pushState(player: Player)
 	if not p or not st then
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	local now = os.time()
 	local skins = {}
 	for _, skin in ipairs(Config.Skins) do
@@ -369,20 +477,20 @@ local function pushState(player: Player)
 			passes[pass.key] = true
 		end
 	end
+	local clock = os.clock()
 	Push:FireClient(player, "state", {
 		mass = p.mass,
 		total = p.total,
 		eaten = p.eaten,
-		grow = p.grow,
-		growMult = Config.growMult(p.grow, p.bigbang, st.starUntil > os.clock()),
-		pull = p.pull,
-		mult = p.mult,
+		radius = r,
+		maxRadius = Calc.maxRadius(p),
+		up = p.up,
 		bigbang = p.bigbang,
 		dm = p.dm,
 		bb = p.bb,
-		radius = r,
-		pullRange = Config.pullRange(r, p.pull, p.bb.pull),
+		pullRange = Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
 		totalMult = Calc.totalMult(player, p),
+		growMult = Calc.growMult(player, p),
 		satMult = Calc.satMult(p),
 		sats = p.sats,
 		equipped = p.equipped,
@@ -392,9 +500,17 @@ local function pushState(player: Player)
 		passes = passes,
 		boostLeft = math.max(0, p.boostUntil - now),
 		respawnLeft = math.max(0, p.respawnUntil - now),
-		starLeft = math.max(0, st.starUntil - os.clock()),
+		starLeft = math.max(0, st.starUntil - clock),
+		activeLeft = Calc.active(st) and math.max(0, st.activeUntil - clock) or 0,
+		cdLeft = math.max(0, st.cdUntil - clock),
 		auto = p.auto,
 		hatched = p.hatched,
+		quests = p.quests,
+		questsDone = p.questsDone,
+		dailyLeft = math.max(0, p.dailyAt + Config.DAILY_HOURS * 3600 - now),
+		streak = p.streak,
+		inLobby = st.inLobby,
+		world = st.world,
 		tester = st.tester,
 		canSave = st.canSave,
 	})
@@ -413,7 +529,7 @@ local function updateLeaderstats(player: Player)
 		massValue.Value = Config.formatNumber(p.total)
 	end
 	if sizeValue and sizeValue:IsA("StringValue") then
-		sizeValue.Value = Config.formatSize(Calc.radius(p))
+		sizeValue.Value = Config.formatSize(p.radius)
 	end
 	if bbValue and bbValue:IsA("IntValue") then
 		bbValue.Value = p.bigbang
@@ -422,12 +538,12 @@ end
 
 -- 블랙홀 모양은 모든 화면이 직접 그린다 (크기, 스킨, 위성만 속성으로 알려 준다)
 local function applyHole(player: Player)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local char = player.Character
-	if not p or not char then
+	if not p or not st or not char then
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	local skin = Config.SKIN_BY_ID[p.skin]
 	if not skin or not Calc.skinUnlocked(player, p, skin) then
 		skin = Config.Skins[1]
@@ -437,6 +553,7 @@ local function applyHole(player: Player)
 	player:SetAttribute("VIP", vip)
 	char:SetAttribute("HoleR", r)
 	char:SetAttribute("HoleSkin", skin.index)
+	char:SetAttribute("SkillOn", Calc.active(st))
 	local satList = {}
 	for _, uid in ipairs(p.equipped) do
 		local s = Calc.findSat(p, uid)
@@ -447,8 +564,11 @@ local function applyHole(player: Player)
 	char:SetAttribute("Sats", table.concat(satList, ","))
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then
-		hum.WalkSpeed = Config.walkSpeed(r, p.bb.speed, Calc.hasPass(player, "speed2"))
-		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		if st.inLobby then
+			hum.WalkSpeed = LOBBY_SPEED
+		else
+			hum.WalkSpeed = Config.walkSpeed(r, p.bb.speed, Calc.hasPass(player, "speed2"), p.up.speed, Calc.speedExtra(p, st))
+		end
 	end
 	local head = char:FindFirstChild("Head")
 	if head and head:IsA("BasePart") then
@@ -456,10 +576,10 @@ local function applyHole(player: Player)
 		if not tag then
 			local gui = Instance.new("BillboardGui")
 			gui.Name = "HoleTag"
-			gui.Size = UDim2.new(0, 240, 0, 46)
+			gui.Size = UDim2.new(0, 260, 0, 50)
 			gui.AlwaysOnTop = true
 			gui.LightInfluence = 0
-			gui.MaxDistance = 2500
+			gui.MaxDistance = 5000
 			local l = Instance.new("TextLabel")
 			l.Name = "Label"
 			l.Size = UDim2.fromScale(1, 1)
@@ -473,7 +593,8 @@ local function applyHole(player: Player)
 			tag = gui
 		end
 		local gui = tag :: BillboardGui
-		gui.StudsOffset = Vector3.new(0, 4 + r * 0.25, 0)
+		local shown = st.inLobby and math.min(r, 8) or r
+		gui.StudsOffset = Vector3.new(0, 4 + shown * 0.25, 0)
 		local label = gui:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
 			label.Text = string.format("%s%s · ⚫%s", vip and "👑 " or "", player.DisplayName, Config.formatSize(r))
@@ -500,10 +621,79 @@ local function spawnPos(world: number): Vector3
 end
 
 ------------------------------------------------------------------------
+-- 퀘스트: 늘 3개. 끝내면 바로 보상을 주고 새 퀘스트를 건다
+------------------------------------------------------------------------
+local Quests = {}
+
+function Quests.fill(p: Profile)
+	while #p.quests < 3 do
+		local active = {}
+		for _, q in ipairs(p.quests) do
+			active[q.kind] = true
+		end
+		local avail = {}
+		for _, def in ipairs(Config.Quests) do
+			if not active[def.kind] then
+				table.insert(avail, def)
+			end
+		end
+		if #avail == 0 then
+			break
+		end
+		local def = avail[math.random(1, #avail)]
+		local goal = math.max(1, math.floor(def.base * def.grow ^ math.min(p.questsDone, 40) + 0.5))
+		table.insert(p.quests, { kind = def.kind, goal = goal, progress = 0 })
+	end
+end
+
+-- 진행도 올리기. isMax면 지금 값과 비교해 더 큰 쪽 (연속 흡수처럼)
+function Quests.add(player: Player, p: Profile, kind: string, amount: number, isMax: boolean?)
+	if amount <= 0 then
+		return
+	end
+	local done = false
+	for i = #p.quests, 1, -1 do
+		local q = p.quests[i]
+		if q.kind == kind then
+			if isMax then
+				q.progress = math.max(q.progress, amount)
+			else
+				q.progress += amount
+			end
+			if q.progress >= q.goal then
+				local def = Config.QUEST_BY_KIND[q.kind]
+				local text = string.format(def.text, Config.formatNumber(q.goal))
+				local reward
+				if def.reward == "dm" then
+					local n = 1 + p.questsDone // 6
+					p.dm += n
+					reward = string.format("🌑 암흑 물질 +%d", n)
+				else
+					local st = states[player]
+					local amountMass = math.max(200, Config.biggestMass(st and st.world or 1, p.radius) * 25 * Calc.totalMult(player, p))
+					p.mass += amountMass
+					p.total += amountMass
+					reward = "💠 +" .. Config.formatNumber(amountMass)
+				end
+				table.remove(p.quests, i)
+				p.questsDone += 1
+				done = true
+				Push:FireClient(player, "quest", { text = text, reward = reward })
+			end
+		end
+	end
+	if done then
+		Quests.fill(p)
+		pushState(player)
+	end
+end
+
+------------------------------------------------------------------------
 -- 삼키기
 ------------------------------------------------------------------------
 local function respawn(rec: World.ObjectRec)
 	rec.model:SetAttribute("EatenBy", nil)
+	rec.model:SetAttribute("Golden", rec.golden and true or nil)
 	for part, can in pairs(rec.collide) do
 		part.CanCollide = can
 	end
@@ -511,7 +701,8 @@ local function respawn(rec: World.ObjectRec)
 	rec.alive = true
 end
 
-local function eat(player: Player, rec: World.ObjectRec, factor: number)
+-- factor = 재생 시간 배율, goldChance = 다시 생길 때 황금일 확률 (먹은 사람의 업그레이드·스킨 기준)
+local function eat(player: Player, rec: World.ObjectRec, factor: number, goldChance: number)
 	rec.alive = false
 	rec.model:SetAttribute("EatenBy", player.UserId)
 	for part in pairs(rec.collide) do
@@ -524,8 +715,9 @@ local function eat(player: Player, rec: World.ObjectRec, factor: number)
 		end
 	end)
 	local wait = Config.Zones[rec.zone].respawn * (0.8 + math.random() * 0.5) * factor
-	task.delay(wait, function()
+	task.delay(math.max(0.7, wait), function()
 		if not rec.alive then
+			rec.golden = math.random() < goldChance
 			respawn(rec)
 		end
 	end)
@@ -552,6 +744,32 @@ local function dropStar(player: Player, st: State, pos: Vector3, r: number)
 	Push:FireClient(player, "star", { pos = spot, life = Config.STAR_LIFETIME })
 end
 
+local Actions = {}
+
+function Actions.goLobby(player: Player)
+	local st = states[player]
+	moveTo(player, lobby.spawn)
+	if st then
+		st.portalAt = os.clock() + 3
+	end
+	Push:FireClient(player, "world", 0)
+end
+
+function Actions.goWorld(player: Player, w: number)
+	local p, st = profiles[player], states[player]
+	if not p or not st or not Config.Worlds[w] then
+		return
+	end
+	if not Calc.worldOpen(p, w) then
+		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
+		return
+	end
+	st.world = w
+	st.portalAt = os.clock() + 3
+	moveTo(player, spawnPos(w))
+	Push:FireClient(player, "world", w)
+end
+
 local function tickPlayer(player: Player, p: Profile, st: State)
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -559,28 +777,49 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		return
 	end
 	local pos = root.Position
-	local r = Calc.radius(p)
-	local reach = r + Config.pullRange(r, p.pull, p.bb.pull)
-	local zone = Config.zoneAt(pos)
-	local world = Config.Zones[zone].world
-	if zone ~= st.zone then
-		st.zone = zone
-		Push:FireClient(player, "zone", zone)
-	end
 	local now = os.clock()
 
-	-- 세계 문
+	-- 로비 들어가고 나오기
+	local inLobby = Config.inLobby(pos)
+	if inLobby ~= st.inLobby then
+		st.inLobby = inLobby
+		applyHole(player)
+		pushState(player)
+	end
+	-- 액티브 스킬이 끝났으면 속도·범위를 되돌린다
+	if st.activeOn and now >= st.activeUntil then
+		st.activeOn = false
+		applyHole(player)
+		pushState(player)
+	end
+
+	-- 문 (로비 ↔ 세계)
 	for _, portal in ipairs(portals) do
 		if flatDist(portal.pos, pos) < 12 and now > st.portalAt then
 			st.portalAt = now + 3
-			if Calc.worldOpen(p, portal.to) then
-				moveTo(player, spawnPos(portal.to))
-				Push:FireClient(player, "world", portal.to)
+			if portal.to == 0 then
+				Actions.goLobby(player)
+			elseif Calc.worldOpen(p, portal.to) then
+				Actions.goWorld(player, portal.to)
 			elseif now > st.lockToastAt then
 				st.lockToastAt = now + 4
 				toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", portal.to, Config.Worlds[portal.to].needBigbang))
 			end
 		end
+	end
+	if inLobby then
+		return
+	end
+
+	local r = p.radius
+	local ab = Calc.ability(p)
+	local reach = r + Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st))
+	local zone = Config.zoneAt(pos)
+	local world = Config.Zones[zone].world
+	st.world = world
+	if zone ~= st.zone then
+		st.zone = zone
+		Push:FireClient(player, "zone", zone)
 	end
 
 	-- 별똥별
@@ -588,39 +827,59 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		local spot = st.starPos :: Vector3
 		if flatDist(spot, pos) <= reach + 3 then
 			st.starPos = nil
-			st.starUntil = math.max(now, st.starUntil) + Config.STAR_BOOST
-			st.nextStar = now + Config.STAR_INTERVAL * (0.8 + math.random() * 0.5)
+			local boost = Config.STAR_BOOST * (ab.star and 1.5 or 1)
+			st.starUntil = math.max(now, st.starUntil) + boost
+			st.nextStar = now + Config.starInterval(p.up.star, ab.star) * (0.8 + math.random() * 0.5)
 			Push:FireClient(player, "starGot", { pos = spot, left = st.starUntil - now })
+			Quests.add(player, p, "star", 1)
 			pushState(player)
 		elseif now > st.starExpire then
 			st.starPos = nil
-			st.nextStar = now + Config.STAR_INTERVAL * 0.5
+			st.nextStar = now + Config.starInterval(p.up.star, ab.star) * 0.5
 		end
 	elseif now > st.nextStar then
 		dropStar(player, st, pos, r)
 	end
 
+	-- 한꺼번에 흡수 스킬
+	local burst = st.burst
+	if burst > 0 then
+		st.burst = 0
+		reach *= burst
+	end
+
 	local mult = Calc.totalMult(player, p)
-	local factor = Config.respawnFactor(p.bb.respawn, Calc.hasPass(player, "vip"), p.respawnUntil > os.time())
+	local gm = Calc.growMult(player, p)
+	local maxR = Calc.maxRadius(p)
+	local factor = Calc.respawnFactor(player, p)
+	local goldChance = Config.goldenChance(p.up.golden, ab.golden)
 	local reachable = Config.maxZone(world, r)
-	local gm = Config.growMult(p.grow, p.bigbang, st.starUntil > now)
+	local limit = burst > 0 and 250 or 40
 	local newR = r
 	local eatenList = {}
 	local gained = 0
+	local goldenCount, bigCount = 0, 0
 	local ateSun = false
 	for zi = math.max(1, zone - 1), math.min(#Config.Zones, zone + 1) do
 		if Config.Zones[zi].world == world then
 			for _, rec in ipairs(byZone[zi] or {}) do
 				if rec.alive and rec.zone <= reachable and rec.def.size <= r and flatDist(rec.pos, pos) <= reach + rec.def.size * 0.5 then
-					eat(player, rec, factor)
-					local m = rec.def.mass * mult
+					local golden = rec.golden
+					eat(player, rec, factor, goldChance)
+					local m = rec.def.mass * mult * (golden and Config.GOLDEN_MASS or 1)
 					gained += m
-					newR = Config.grow(newR, rec.def.size, gm)
-					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name })
+					newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR)
+					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
+					if golden then
+						goldenCount += 1
+					end
+					if rec.def.size >= r * 0.5 then
+						bigCount += 1
+					end
 					if rec.def.id == "candysun" then
 						ateSun = true
 					end
-					if #eatenList >= 40 then
+					if #eatenList >= limit then
 						break
 					end
 				end
@@ -628,6 +887,12 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		end
 	end
 	if #eatenList > 0 then
+		if now - st.lastEat <= Config.COMBO_WINDOW then
+			st.combo += #eatenList
+		else
+			st.combo = #eatenList
+		end
+		st.lastEat = now
 		p.mass += gained
 		p.total += gained
 		p.eaten += #eatenList
@@ -641,9 +906,16 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			gained = gained,
 			mass = p.mass,
 			radius = p.radius,
-			pullRange = Config.pullRange(p.radius, p.pull, p.bb.pull),
+			pullRange = Config.pullRange(p.radius, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+			combo = st.combo,
+			comboBonus = Config.comboBonus(st.combo, p.up.combo),
+			burst = burst > 0,
 		})
 		updateLeaderstats(player)
+		Quests.add(player, p, "eat", #eatenList)
+		Quests.add(player, p, "golden", goldenCount)
+		Quests.add(player, p, "big", bigCount)
+		Quests.add(player, p, "combo", st.combo, true)
 		if ateSun and not p.skins.sweet then
 			p.skins.sweet = true
 			Push:FireClient(player, "unlock", { kind = "skin", name = Config.SKIN_BY_ID.sweet.name })
@@ -668,21 +940,19 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------------------
--- 업그레이드, 자동 업그레이드, 빅뱅, 이동
+-- 업그레이드, 자동 업그레이드, 빅뱅, 이동, 스킬, 매일 보상
 ------------------------------------------------------------------------
-local Actions = {}
-
--- 업그레이드 하나를 살 수 있는 만큼 산다. quiet면 실패해도 알림을 띄우지 않는다
-function Actions.buyUpgrade(player: Player, id: any, many: any, quiet: boolean?): number
+-- 업그레이드 하나를 살 수 있는 만큼 산다
+function Actions.buyUpgrade(player: Player, id: any, many: any): number
 	local p = profiles[player]
 	local u = type(id) == "string" and Config.UPGRADE_BY_ID[id]
 	if not u then
 		return 0
 	end
 	local bought = 0
-	local limit = many == true and 200 or 1
+	local limit = many == true and 300 or 1
 	while bought < limit do
-		local level = (p :: any)[u.id] :: number
+		local level = p.up[u.id]
 		if level >= u.maxLevel then
 			break
 		end
@@ -690,37 +960,36 @@ function Actions.buyUpgrade(player: Player, id: any, many: any, quiet: boolean?)
 		if p.mass < cost then
 			break
 		end
-		p.mass -= cost;
-		(p :: any)[u.id] = level + 1
+		p.mass -= cost
+		p.up[u.id] = level + 1
 		bought += 1
 	end
 	if bought == 0 then
-		if not quiet then
-			local level = (p :: any)[u.id] :: number
-			if level >= u.maxLevel then
-				toast(player, u.name .. "은(는) 이미 최대예요")
-			else
-				toast(player, "질량이 부족해요 (필요 💠" .. Config.formatNumber(Config.upgradeCost(u.id, level)) .. ")")
-			end
+		local level = p.up[u.id]
+		if level >= u.maxLevel then
+			toast(player, u.name .. "은(는) 이미 최대예요")
+		else
+			toast(player, "질량이 부족해요 (필요 💠" .. Config.formatNumber(Config.upgradeCost(u.id, level)) .. ")")
 		end
 		return 0
 	end
 	states[player].dirty = true
 	applyHole(player)
-	Push:FireClient(player, "upgraded", { id = u.id, count = bought, level = (p :: any)[u.id], quiet = quiet })
+	Push:FireClient(player, "upgraded", { id = u.id, count = bought, level = p.up[u.id] })
 	pushState(player)
 	return bought
 end
 
--- 자동 업그레이드: 가장 싼 것부터 계속 산다 (성장력을 조금 더 우선)
+-- 자동 업그레이드: 가장 싼 것부터 계속 산다 (성장력·질량 배율을 조금 더 우선)
 function Actions.autoUpgrade(player: Player, p: Profile)
 	local boughtAny = false
-	for _ = 1, 60 do
+	for _ = 1, 80 do
 		local best, bestCost = nil, math.huge
 		for _, u in ipairs(Config.Upgrades) do
-			local level = (p :: any)[u.id] :: number
+			local level = p.up[u.id]
 			if level < u.maxLevel then
-				local cost = Config.upgradeCost(u.id, level) * (u.id == "grow" and 0.7 or 1)
+				local weight = (u.id == "grow" or u.id == "mult") and 0.7 or 1
+				local cost = Config.upgradeCost(u.id, level) * weight
 				if cost < bestCost then
 					best, bestCost = u, cost
 				end
@@ -729,13 +998,12 @@ function Actions.autoUpgrade(player: Player, p: Profile)
 		if not best then
 			break
 		end
-		local level = (p :: any)[best.id] :: number
-		local cost = Config.upgradeCost(best.id, level)
+		local cost = Config.upgradeCost(best.id, p.up[best.id])
 		if p.mass < cost then
 			break
 		end
-		p.mass -= cost;
-		(p :: any)[best.id] = level + 1
+		p.mass -= cost
+		p.up[best.id] += 1
 		boughtAny = true
 	end
 	if boughtAny then
@@ -757,24 +1025,24 @@ task.spawn(function()
 end)
 
 function Actions.bigbang(player: Player)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	if p.radius < Config.BIGBANG_RADIUS then
 		toast(player, string.format("크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
 		return
 	end
-	local reward = Config.darkMatterReward(p.radius, p.bigbang)
+	local reward = Config.darkMatterReward(p.radius, p.bigbang, p.bb.dm)
 	local before = {}
 	for _, skin in ipairs(Config.Skins) do
 		before[skin.id] = Calc.skinUnlocked(player, p, skin)
 	end
 	p.bigbang += 1
 	p.dm += reward
-	p.mass = 0
+	p.mass = p.mass * 0.05 * (p.bb.keep or 0)
 	p.radius = Config.startRadius(p.bb.start or 0)
-	p.grow = 0
-	p.pull = 0
-	p.mult = 0
-	states[player].dirty = true
+	for _, u in ipairs(Config.Upgrades) do
+		p.up[u.id] = 0
+	end
+	st.dirty = true
 	local newSkins = {}
 	for _, skin in ipairs(Config.Skins) do
 		if not before[skin.id] and Calc.skinUnlocked(player, p, skin) then
@@ -782,20 +1050,22 @@ function Actions.bigbang(player: Player)
 			p.skin = skin.id
 		end
 	end
-	local world = Config.Zones[states[player].zone].world
-	moveTo(player, spawnPos(world))
+	if not st.inLobby then
+		moveTo(player, spawnPos(st.world))
+	end
 	applyHole(player)
 	Push:FireClient(player, "bigbang", {
 		count = p.bigbang,
 		dm = reward,
 		skins = newSkins,
 		world2 = p.bigbang == Config.Worlds[2].needBigbang,
+		maxRadius = Calc.maxRadius(p),
 	})
 	pushState(player)
 end
 
 function Actions.teleport(player: Player, zoneArg: any)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local zi = math.floor(tonumber(zoneArg) or 0)
 	local zone = Config.Zones[zi]
 	if not zone then
@@ -805,14 +1075,68 @@ function Actions.teleport(player: Player, zoneArg: any)
 		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", zone.world, Config.Worlds[zone.world].needBigbang))
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	if zi > Config.maxZone(zone.world, r) then
 		toast(player, string.format("크기 %d 이상이어야 갈 수 있어요", zone.need))
 		return
 	end
 	local z0 = Config.zoneStart(zi)
 	local z = math.min(z0 + 20 + r, z0 + zone.length / 2)
-	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + r * 0.2, z))
+	st.world = zone.world
+	st.portalAt = os.clock() + 3
+	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + math.min(r, 50) * 0.2, z))
+end
+
+function Actions.skill(player: Player)
+	local p, st = profiles[player], states[player]
+	local ab = Calc.ability(p)
+	if ab.kind ~= "active" then
+		toast(player, string.format("%s: 늘 켜져 있는 능력이에요 (%s)", ab.name, ab.desc))
+		return
+	end
+	if st.inLobby then
+		toast(player, "로비에서는 스킬을 쓸 수 없어요")
+		return
+	end
+	local now = os.clock()
+	if now < st.cdUntil then
+		toast(player, string.format("%s: %d초 뒤에 다시 쓸 수 있어요", ab.name, math.ceil(st.cdUntil - now)))
+		return
+	end
+	st.cdUntil = now + ab.cd
+	if (ab.dur or 0) > 0 then
+		st.activeOn = true
+		st.activeUntil = now + ab.dur
+	end
+	if ab.burst then
+		st.burst = ab.burst
+	end
+	applyHole(player)
+	Push:FireClient(player, "skill", { name = ab.name, dur = ab.dur or 0, cd = ab.cd, burst = ab.burst ~= nil })
+	pushState(player)
+end
+
+function Actions.daily(player: Player)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local now = os.time()
+	local wait = p.dailyAt + Config.DAILY_HOURS * 3600 - now
+	if wait > 0 then
+		toast(player, "🎁 다음 보상까지 " .. Config.formatTime(wait))
+		return
+	end
+	p.streak = (now - p.dailyAt < 48 * 3600) and p.streak + 1 or 1
+	p.dailyAt = now
+	local dm = 2 + math.min(p.streak, 7)
+	local mass = math.max(1000, Config.biggestMass(1, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
+	p.dm += dm
+	p.mass += mass
+	p.total += mass
+	st.dirty = true
+	Push:FireClient(player, "daily", { streak = p.streak, dm = dm, mass = mass })
+	pushState(player)
 end
 
 ------------------------------------------------------------------------
@@ -843,7 +1167,7 @@ function Actions.bbShop(player: Player, id: any)
 end
 
 function Actions.skin(player: Player, id: any)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local skin = type(id) == "string" and Config.SKIN_BY_ID[id]
 	if not skin then
 		return
@@ -868,8 +1192,13 @@ function Actions.skin(player: Player, id: any)
 			return
 		end
 	end
+	if p.skin ~= skin.id then
+		-- 스킨을 바꾸면 켜져 있던 액티브 스킬은 끝난다
+		st.activeOn = false
+		st.burst = 0
+	end
 	p.skin = skin.id
-	states[player].dirty = true
+	st.dirty = true
 	applyHole(player)
 	pushState(player)
 end
@@ -936,6 +1265,10 @@ function Sats.hatch(player: Player, capId: any, wantTriple: any)
 	local p = profiles[player]
 	local cap = type(capId) == "string" and Config.CAPSULE_BY_ID[capId]
 	if not cap then
+		return
+	end
+	if not states[player].inLobby then
+		toast(player, "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요")
 		return
 	end
 	if not Calc.worldOpen(p, cap.world) then
@@ -1079,8 +1412,7 @@ local function grantProduct(player: Player, key: string, receiptId: string): boo
 		p.respawnUntil = math.max(now, p.respawnUntil) + 1800
 	elseif key == "massS" or key == "massL" then
 		local n = key == "massS" and 30 or 120
-		local world = Config.Zones[st.zone].world
-		local amount = Config.biggestMass(world, p.radius) * n * Calc.totalMult(player, p)
+		local amount = Config.biggestMass(st.world, p.radius) * n * Calc.totalMult(player, p)
 		p.mass += amount
 		p.total += amount
 	elseif key == "dm10" then
@@ -1119,28 +1451,33 @@ Store.init({
 -- 요청 처리
 ------------------------------------------------------------------------
 local function testAction(player: Player, p: Profile, action: string, arg: any)
+	local st = states[player]
 	if action == "testMass" then
 		local amount = math.clamp(tonumber(arg) or 0, 0, 1e30)
 		p.mass += amount
 		p.total += amount
 	elseif action == "testSize" then
-		p.radius = math.clamp(tonumber(arg) or 0, Config.START_RADIUS, Config.MAX_RADIUS)
+		p.radius = math.clamp(tonumber(arg) or 0, Config.START_RADIUS, Calc.maxRadius(p))
 	elseif action == "testMaxAll" then
-		p.grow = Config.UPGRADE_BY_ID.grow.maxLevel
-		p.pull = Config.UPGRADE_BY_ID.pull.maxLevel
-		p.mult = Config.UPGRADE_BY_ID.mult.maxLevel
+		for _, u in ipairs(Config.Upgrades) do
+			p.up[u.id] = u.maxLevel
+		end
 	elseif action == "testDM" then
 		p.dm += 50
 	elseif action == "testBigbang" then
 		p.bigbang += 1
 	elseif action == "testStar" then
-		local st = states[player]
 		st.nextStar = 0
 		st.starPos = nil
+	elseif action == "testSkill" then
+		st.cdUntil = 0
+	elseif action == "testDaily" then
+		p.dailyAt = 0
 	elseif action == "testReset" then
 		local fresh = defaultProfile()
+		Quests.fill(fresh)
 		profiles[player] = fresh
-		states[player].passes = {}
+		st.passes = {}
 	else
 		return
 	end
@@ -1174,16 +1511,14 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 	elseif action == "teleport" then
 		Actions.teleport(player, arg)
 	elseif action == "world" then
-		local w = math.floor(tonumber(arg) or 0)
-		if not Config.Worlds[w] then
-			return
+		local w = math.floor(tonumber(arg) or -1)
+		if w == 0 then
+			Actions.goLobby(player)
+		else
+			Actions.goWorld(player, w)
 		end
-		if not Calc.worldOpen(p, w) then
-			toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
-			return
-		end
-		moveTo(player, spawnPos(w))
-		Push:FireClient(player, "world", w)
+	elseif action == "skill" then
+		Actions.skill(player)
 	elseif action == "bbshop" then
 		Actions.bbShop(player, arg)
 	elseif action == "skin" then
@@ -1212,10 +1547,45 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 end)
 
 ------------------------------------------------------------------------
--- 입장과 퇴장
+-- 로비 기계 (가까이 가서 E)
+------------------------------------------------------------------------
+for capId, pp in pairs(lobby.machines) do
+	pp.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "capsule", capsule = capId })
+	end)
+end
+lobby.store.Triggered:Connect(function(player: Player)
+	Push:FireClient(player, "open", { page = "store" })
+end)
+lobby.skins.Triggered:Connect(function(player: Player)
+	Push:FireClient(player, "open", { page = "skins" })
+end)
+lobby.daily.Triggered:Connect(function(player: Player)
+	Actions.daily(player)
+end)
+
+-- 순위판: 이 서버에서 모은 질량 순서
+task.spawn(function()
+	while true do
+		local list = {}
+		for player, p in pairs(profiles) do
+			table.insert(list, { name = player.DisplayName, total = p.total, bigbang = p.bigbang })
+		end
+		table.sort(list, function(a, b)
+			return a.total > b.total
+		end)
+		for k, row in ipairs(lobby.board) do
+			local e = list[k]
+			row.Text = e and string.format("%d. %s  💠%s  🌌%d", k, e.name, Config.formatNumber(e.total), e.bigbang) or ""
+		end
+		task.wait(10)
+	end
+end)
+
 ------------------------------------------------------------------------
 -- 블랙홀 캐릭터: 보이지 않는 공 하나와 Humanoid뿐이다. 팔다리가 없어서 걷는 모션이 없고,
--- 죽지 않게 해 두었다. 혹시 사라지거나 죽으면 기다리지 않고 그 자리(또는 시작 지점)에서 바로 다시 생긴다.
+-- 죽지 않게 해 두었다. 혹시 사라지거나 죽으면 기다리지 않고 그 자리(또는 로비)에서 바로 다시 생긴다.
+------------------------------------------------------------------------
 local spawnHole: (Player, Vector3) -> ()
 spawnHole = function(player: Player, pos: Vector3)
 	if not player.Parent then
@@ -1276,9 +1646,7 @@ spawnHole = function(player: Player, pos: Vector3)
 	end)
 	model.AncestryChanged:Connect(function()
 		if not model.Parent and player.Character == model then
-			local st = states[player]
-			local world = st and Config.Zones[st.zone].world or 1
-			task.defer(spawnHole, player, spawnPos(world))
+			task.defer(spawnHole, player, lobby.spawn)
 		end
 	end)
 	applyHole(player)
@@ -1292,6 +1660,8 @@ local function onPlayerAdded(player: Player)
 		reqWindow = 0,
 		reqCount = 0,
 		zone = 1,
+		world = 1,
+		inLobby = true,
 		passes = {},
 		starPos = nil,
 		starExpire = 0,
@@ -1299,6 +1669,12 @@ local function onPlayerAdded(player: Player)
 		starUntil = 0,
 		portalAt = 0,
 		lockToastAt = 0,
+		combo = 0,
+		lastEat = 0,
+		activeUntil = 0,
+		activeOn = false,
+		cdUntil = 0,
+		burst = 0,
 	}
 	states[player] = st
 	local ls = Instance.new("Folder")
@@ -1327,13 +1703,14 @@ local function onPlayerAdded(player: Player)
 	if not player.Parent then
 		return
 	end
+	Quests.fill(profile)
 	profiles[player] = profile
 	st.canSave = ok
 	-- 들어오기 전에 산 우주 위성 패키지도 한 번은 챙겨 준다
 	if Calc.hasPass(player, "petpack") and not profile.packGiven then
 		grantPass(player, "petpack")
 	end
-	spawnHole(player, spawnPos(1))
+	spawnHole(player, lobby.spawn)
 	pushState(player)
 	updateLeaderstats(player)
 end

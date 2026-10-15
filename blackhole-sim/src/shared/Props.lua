@@ -1335,7 +1335,13 @@ function Props.build(kind: string, size: number, base: CFrame, seed: number): Mo
 	local function P(name: string, shape: Enum.PartType?, sz: Vector3, cf: CFrame, color: Color3, material: Enum.Material): Part
 		local p = Instance.new("Part")
 		p.Name = name
-		if shape and shape ~= BLOCK then
+		-- 로블록스 공(Ball)은 늘 완전한 구라서, 납작하거나 길쭉한 공은 구 모양 메시로 늘린다
+		local stretched = shape == BALL and (math.abs(sz.X - sz.Y) > 0.01 or math.abs(sz.Y - sz.Z) > 0.01)
+		if stretched then
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = p
+		elseif shape and shape ~= BLOCK then
 			p.Shape = shape
 		end
 		p.Anchored = true

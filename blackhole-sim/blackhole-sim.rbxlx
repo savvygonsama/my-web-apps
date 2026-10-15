@@ -25,11 +25,14 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-3"
+Config.VERSION = "beta-4"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
 Config.TEST_MODE = true
+
+-- 로블록스 파트 한 개의 최대 크기. 이보다 큰 바닥과 벽은 여러 조각으로 나눠 깐다
+Config.PART_LIMIT = 2000
 
 ------------------------------------------------------------------------
 -- 크기: 먹어서 커진다
@@ -37,17 +40,28 @@ Config.TEST_MODE = true
 -- 내 크기에 가까운 걸 삼킬수록 확 커진다.
 ------------------------------------------------------------------------
 Config.START_RADIUS = 1.5
-Config.MAX_RADIUS = 520
 Config.GROW_K = 0.3
+-- 클수록 덜 자란다: 실제 계수 = GROW_K / (1 + 반지름 / GROW_SOFT). 뒤로 갈수록 오래 놀아야 커진다
+Config.GROW_SOFT = 20
 
--- 성장 배율: 성장력 업그레이드, 빅뱅 횟수, 별똥별
-function Config.growMult(growLv: number, bigbang: number, star: boolean?): number
-	return (1 + 0.15 * growLv) * (1 + 0.1 * bigbang) * (star and 2 or 1)
+-- 최대 크기: 기본 1000, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
+function Config.maxRadius(bigbang: number, maxLv: number): number
+	return (1000 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
+end
+
+-- 성장 배율. info = { grow, bigbang, star, skin(스킨 능력 성장 보너스) }
+function Config.growMult(info: any): number
+	local m = (1 + 0.05 * (info.grow or 0)) * (1 + 0.1 * (info.bigbang or 0)) * (1 + (info.skin or 0))
+	if info.star then
+		m *= 2
+	end
+	return m
 end
 
 -- 크기 size인 물체를 삼킨 뒤 반지름
-function Config.grow(radius: number, size: number, mult: number): number
-	return math.min(Config.MAX_RADIUS, math.sqrt(radius * radius + Config.GROW_K * mult * size * size))
+function Config.grow(radius: number, size: number, mult: number, maxR: number): number
+	local k = Config.GROW_K / (1 + radius / Config.GROW_SOFT)
+	return math.max(radius, math.min(maxR, math.sqrt(radius * radius + k * mult * size * size)))
 end
 
 -- 빅뱅 상점 '시작 크기' 레벨에 따른 시작 반지름
@@ -56,12 +70,37 @@ function Config.startRadius(startLv: number): number
 end
 
 ------------------------------------------------------------------------
--- 업그레이드 3종 (질량으로 산다, 빅뱅하면 사라진다)
+-- 업그레이드 9종 (질량으로 산다, 빅뱅하면 사라진다)
+-- show(level)은 카드에 보여 줄 효과 글
 ------------------------------------------------------------------------
 Config.Upgrades = {
-	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도 +15%", maxLevel = 40, base = 25, growth = 1.6 },
-	{ id = "pull", name = "흡입력", icon = "🌀", desc = "더 멀리서 끌어당긴다", maxLevel = 15, base = 25, growth = 1.7 },
-	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량 +25%", maxLevel = 40, base = 40, growth = 1.5 },
+	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도", maxLevel = 60, base = 25, growth = 1.8, show = function(l: number): string
+		return string.format("성장 ×%.2f", 1 + 0.05 * l)
+	end },
+	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량", maxLevel = 60, base = 40, growth = 1.74, show = function(l: number): string
+		return string.format("질량 ×%.2f", 1 + 0.25 * l)
+	end },
+	{ id = "pull", name = "흡입력", icon = "🌀", desc = "반지름 바깥까지 끌어당김", maxLevel = 30, base = 30, growth = 1.86, show = function(l: number): string
+		return string.format("흡입 +%d%%", 15 + 7 * l)
+	end },
+	{ id = "speed", name = "이동 속도", icon = "👟", desc = "더 빨리 돌아다님", maxLevel = 20, base = 60, growth = 2.0, show = function(l: number): string
+		return string.format("속도 +%d%%", 5 * l)
+	end },
+	{ id = "maxsize", name = "크기 한계", icon = "📏", desc = "최대 크기가 늘어남", maxLevel = 20, base = 5000, growth = 2.2, show = function(l: number): string
+		return string.format("한계 +%d%%", 10 * l)
+	end },
+	{ id = "respawn", name = "빠른 재생", icon = "♻", desc = "먹은 물체가 더 빨리 다시 생김", maxLevel = 15, base = 100, growth = 2.0, show = function(l: number): string
+		return string.format("재생 -%d%%", 4 * l)
+	end },
+	{ id = "star", name = "별똥별 자석", icon = "☄", desc = "별똥별이 더 자주 떨어짐", maxLevel = 15, base = 200, growth = 2.0, show = function(l: number): string
+		return string.format("별똥별 +%d%%", 6 * l)
+	end },
+	{ id = "combo", name = "콤보 증폭", icon = "🔥", desc = "연속 흡수 보너스가 커짐", maxLevel = 10, base = 300, growth = 2.3, show = function(l: number): string
+		return string.format("콤보 보너스 ×%.2f", 1 + 0.25 * l)
+	end },
+	{ id = "golden", name = "황금 탐지", icon = "✨", desc = "황금 물체가 더 자주 나옴", maxLevel = 10, base = 500, growth = 2.3, show = function(l: number): string
+		return string.format("황금 확률 +%d%%", 25 * l)
+	end },
 }
 Config.UPGRADE_BY_ID = {}
 for _, u in ipairs(Config.Upgrades) do
@@ -74,13 +113,14 @@ function Config.upgradeCost(id: string, level: number): number
 end
 
 ------------------------------------------------------------------------
--- 빅뱅: 크기 150 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
+-- 빅뱅(환생): 크기 600 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
 ------------------------------------------------------------------------
-Config.BIGBANG_RADIUS = 150
+Config.BIGBANG_RADIUS = 600
 
--- 받는 암흑 물질: 크기 150에서 3개, 그 위로 크기 20마다 1개씩 더
-function Config.darkMatterReward(radius: number, bigbang: number): number
-	return 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 20)) + bigbang // 2
+-- 받는 암흑 물질: 크기 600에서 3개, 그 위로 크기 100마다 1개씩 더
+function Config.darkMatterReward(radius: number, bigbang: number, dmLv: number?): number
+	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 100)) + bigbang // 2
+	return math.floor(base * (1 + 0.2 * (dmLv or 0)))
 end
 
 -- 빅뱅 상점: 암흑 물질로 사는 영구 업그레이드 (빅뱅해도 남는다)
@@ -92,6 +132,8 @@ Config.BigbangShop = {
 	{ id = "pull", name = "사건의 지평선", icon = "🕳", desc = "흡입 범위 +15%", maxLevel = 5, base = 3, step = 3 },
 	{ id = "luck", name = "행운의 별", icon = "🍀", desc = "캡슐에서 전설 이상이 나올 확률 +15%", maxLevel = 5, base = 4, step = 3 },
 	{ id = "slots", name = "위성 궤도", icon = "🛰", desc = "위성 장착 칸 +1", maxLevel = 2, base = 10, step = 15 },
+	{ id = "keep", name = "질량 보존", icon = "🏦", desc = "빅뱅할 때 질량 5%를 남긴다", maxLevel = 5, base = 4, step = 4 },
+	{ id = "dm", name = "암흑 수확", icon = "🌘", desc = "빅뱅 때 암흑 물질 +20%", maxLevel = 5, base = 5, step = 5 },
 }
 Config.BB_BY_ID = {}
 for _, b in ipairs(Config.BigbangShop) do
@@ -104,131 +146,195 @@ function Config.bigbangShopCost(id: string, level: number): number
 end
 
 ------------------------------------------------------------------------
--- 세계 2개, 구역 11개
--- 세계는 x 위치로 떨어져 있고, 구역은 z = 0에서 +z 쪽으로 이어진다
+-- 로비: 세계와 따로 떨어진 광장. 들어오면 여기서 시작한다
+-- 캡슐 기계(위성 뽑기), 스킨 전시관, 상점, 매일 보상, 순위판, 세계로 가는 문이 있다
+------------------------------------------------------------------------
+Config.LOBBY = { x = -30000, z = 0, radius = 230 }
+
+function Config.inLobby(pos: Vector3): boolean
+	local dx, dz = pos.X - Config.LOBBY.x, pos.Z - Config.LOBBY.z
+	return dx * dx + dz * dz < (Config.LOBBY.radius + 60) ^ 2
+end
+
+-- 매일 보상: 마지막으로 받은 뒤 20시간이 지나면 다시 받는다
+Config.DAILY_HOURS = 20
+
+------------------------------------------------------------------------
+-- 세계 2개, 구역 15개
+-- 세계는 x 위치로 멀리 떨어져 있어서 서로 보이지 않고, 구역은 z = 0에서 +z 쪽으로 이어진다
 -- need = 그 구역에 들어가는 데 필요한 크기 (문이 이 크기에서 열린다)
+-- countMult = 물체 개수 배수 (넓은 구역일수록 물체를 많이 둔다)
 ------------------------------------------------------------------------
 Config.Worlds = {
 	{ id = 1, name = "지구와 우주", x = 0, needBigbang = 0, sky = Color3.fromRGB(150, 190, 255) },
-	{ id = 2, name = "과자 왕국", x = 9000, needBigbang = 1, sky = Color3.fromRGB(255, 190, 230) },
+	{ id = 2, name = "과자 왕국", x = 30000, needBigbang = 1, sky = Color3.fromRGB(255, 190, 230) },
 }
 
 Config.Zones = {
 	-- 세계 1
-	{ world = 1, name = "공원", need = 0, width = 260, length = 260, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3 },
-	{ world = 1, name = "마을", need = 6, width = 380, length = 340, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3 },
-	{ world = 1, name = "도시", need = 14, width = 600, length = 520, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4 },
-	{ world = 1, name = "대도시", need = 30, width = 960, length = 820, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4 },
-	{ world = 1, name = "바다와 산", need = 65, width = 1500, length = 1300, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5 },
-	{ world = 1, name = "우주", need = 140, width = 2600, length = 2200, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6 },
-	-- 세계 2
-	{ world = 2, name = "젤리 들판", need = 0, width = 260, length = 260, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3 },
-	{ world = 2, name = "과자 마을", need = 6, width = 400, length = 360, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3 },
-	{ world = 2, name = "케이크 도시", need = 14, width = 640, length = 560, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4 },
-	{ world = 2, name = "아이스크림 산맥", need = 30, width = 1100, length = 900, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5 },
-	{ world = 2, name = "사탕 우주", need = 65, width = 2400, length = 2100, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6 },
+	{ world = 1, name = "공원", need = 0, width = 420, length = 420, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
+	{ world = 1, name = "마을", need = 6, width = 640, length = 560, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
+	{ world = 1, name = "도시", need = 14, width = 1000, length = 860, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4, countMult = 2 },
+	{ world = 1, name = "대도시", need = 30, width = 1600, length = 1360, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4, countMult = 2 },
+	{ world = 1, name = "바다와 산", need = 65, width = 2600, length = 2200, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5, countMult = 2 },
+	{ world = 1, name = "우주", need = 140, width = 4200, length = 3600, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6, countMult = 1.5 },
+	{ world = 1, name = "은하수", need = 350, width = 7000, length = 6000, ground = Color3.fromRGB(12, 8, 30), material = Enum.Material.Slate, respawn = 8, countMult = 1 },
+	-- 세계 2 (훨씬 넓다)
+	{ world = 2, name = "젤리 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 2.5 },
+	{ world = 2, name = "과자 마을", need = 6, width = 820, length = 720, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3, countMult = 2.5 },
+	{ world = 2, name = "케이크 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4, countMult = 2.5 },
+	{ world = 2, name = "아이스크림 산맥", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5, countMult = 2 },
+	{ world = 2, name = "초콜릿 강", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(120, 70, 45), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 2 },
+	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.5 },
+	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1.2 },
+	{ world = 2, name = "설탕 블랙홀", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(30, 10, 40), material = Enum.Material.SmoothPlastic, respawn = 10, countMult = 1 },
 }
 
 ------------------------------------------------------------------------
--- 물체 85종. zone = 위 Zones 순서, size = 삼키는 데 필요한 반지름, mass = 얻는 질량, count = 놓이는 개수
+-- 물체 108종. zone = 위 Zones 순서, size = 삼키는 데 필요한 반지름, mass = 얻는 질량, count = 놓이는 개수
+-- model = 다른 물체의 모양을 크게 키워 쓸 때 (없으면 id 모양)
 -- 세계 2의 질량은 같은 크기 세계 1 물체의 약 5배
 ------------------------------------------------------------------------
 Config.Objects = {
 	-- 1 공원
 	{ id = "pebble", name = "돌멩이", zone = 1, size = 0.8, mass = 2, count = 18 },
 	{ id = "flower", name = "꽃", zone = 1, size = 0.9, mass = 2, count = 16 },
+	{ id = "duck", name = "오리", zone = 1, size = 1.1, mass = 3, count = 10 },
 	{ id = "ball", name = "축구공", zone = 1, size = 1.2, mass = 4, count = 10 },
+	{ id = "hydrant", name = "소화전", zone = 1, size = 1.5, mass = 6, count = 8 },
 	{ id = "trashcan", name = "쓰레기통", zone = 1, size = 1.8, mass = 8, count = 8 },
+	{ id = "picnic", name = "피크닉 테이블", zone = 1, size = 2.4, mass = 12, count = 6 },
 	{ id = "bench", name = "벤치", zone = 1, size = 2.6, mass = 14, count = 8 },
 	{ id = "bush", name = "덤불", zone = 1, size = 2.8, mass = 16, count = 8 },
 	{ id = "tree", name = "작은 나무", zone = 1, size = 3.0, mass = 20, count = 10 },
-	{ id = "duck", name = "오리", zone = 1, size = 1.1, mass = 3, count = 10 },
-	{ id = "hydrant", name = "소화전", zone = 1, size = 1.5, mass = 6, count = 8 },
-	{ id = "picnic", name = "피크닉 테이블", zone = 1, size = 2.4, mass = 12, count = 6 },
 	-- 2 마을
 	{ id = "mailbox", name = "우체통", zone = 2, size = 3.5, mass = 15, count = 10 },
+	{ id = "doghouse", name = "개집", zone = 2, size = 3.8, mass = 18, count = 8 },
 	{ id = "bicycle", name = "자전거", zone = 2, size = 4, mass = 20, count = 10 },
 	{ id = "lamp", name = "가로등", zone = 2, size = 4.6, mass = 28, count = 10 },
+	{ id = "vending", name = "자판기", zone = 2, size = 5, mass = 36, count = 8 },
 	{ id = "car", name = "자동차", zone = 2, size = 6, mass = 50, count = 12 },
 	{ id = "bigtree", name = "큰 나무", zone = 2, size = 7, mass = 70, count = 10 },
-	{ id = "hut", name = "오두막", zone = 2, size = 9, mass = 120, count = 8 },
-	{ id = "doghouse", name = "개집", zone = 2, size = 3.8, mass = 18, count = 8 },
-	{ id = "vending", name = "자판기", zone = 2, size = 5, mass = 36, count = 8 },
 	{ id = "tent", name = "텐트", zone = 2, size = 8, mass = 95, count = 6 },
+	{ id = "hut", name = "오두막", zone = 2, size = 9, mass = 120, count = 8 },
 	-- 3 도시
 	{ id = "truck", name = "트럭", zone = 3, size = 11, mass = 250, count = 10 },
+	{ id = "taxi", name = "택시", zone = 3, size = 12, mass = 320, count = 10 },
 	{ id = "bus", name = "버스", zone = 3, size = 13, mass = 380, count = 10 },
 	{ id = "house", name = "집", zone = 3, size = 15, mass = 550, count = 10 },
-	{ id = "shop", name = "가게", zone = 3, size = 18, mass = 800, count = 8 },
-	{ id = "fountain", name = "분수대", zone = 3, size = 20, mass = 1100, count = 6 },
-	{ id = "taxi", name = "택시", zone = 3, size = 12, mass = 320, count = 10 },
 	{ id = "firetruck", name = "소방차", zone = 3, size = 16, mass = 650, count = 8 },
+	{ id = "shop", name = "가게", zone = 3, size = 18, mass = 800, count = 8 },
 	{ id = "gasstation", name = "주유소", zone = 3, size = 19, mass = 950, count = 6 },
+	{ id = "fountain", name = "분수대", zone = 3, size = 20, mass = 1100, count = 6 },
 	-- 4 대도시
 	{ id = "building", name = "빌딩", zone = 4, size = 26, mass = 3000, count = 12 },
+	{ id = "helicopter", name = "헬리콥터", zone = 4, size = 28, mass = 4000, count = 8 },
 	{ id = "tower", name = "타워", zone = 4, size = 32, mass = 5500, count = 10 },
+	{ id = "crane", name = "타워 크레인", zone = 4, size = 35, mass = 7000, count = 6 },
 	{ id = "stadium", name = "경기장", zone = 4, size = 38, mass = 9000, count = 6 },
 	{ id = "ferris", name = "대관람차", zone = 4, size = 42, mass = 14000, count = 6 },
-	{ id = "helicopter", name = "헬리콥터", zone = 4, size = 28, mass = 4000, count = 8 },
-	{ id = "crane", name = "타워 크레인", zone = 4, size = 35, mass = 7000, count = 6 },
 	{ id = "airplane", name = "비행기", zone = 4, size = 45, mass = 17000, count = 5 },
 	-- 5 바다와 산
 	{ id = "ship", name = "배", zone = 5, size = 55, mass = 40000, count = 10 },
 	{ id = "lighthouse", name = "등대", zone = 5, size = 60, mass = 60000, count = 8 },
+	{ id = "whale", name = "고래", zone = 5, size = 68, mass = 90000, count = 6 },
 	{ id = "island", name = "섬", zone = 5, size = 75, mass = 120000, count = 6 },
 	{ id = "mountain", name = "산", zone = 5, size = 90, mass = 250000, count = 6 },
-	{ id = "whale", name = "고래", zone = 5, size = 68, mass = 90000, count = 6 },
 	{ id = "volcano", name = "화산", zone = 5, size = 105, mass = 400000, count = 4 },
 	-- 6 우주
 	{ id = "satellite", name = "인공위성", zone = 6, size = 115, mass = 800000, count = 8 },
+	{ id = "comet", name = "혜성", zone = 6, size = 130, mass = 1100000, count = 6 },
 	{ id = "asteroid", name = "소행성", zone = 6, size = 140, mass = 1500000, count = 8 },
+	{ id = "spacestation", name = "우주 정거장", zone = 6, size = 160, mass = 2500000, count = 5 },
 	{ id = "moon", name = "달", zone = 6, size = 180, mass = 4000000, count = 5 },
 	{ id = "planet", name = "행성", zone = 6, size = 240, mass = 12000000, count = 4 },
 	{ id = "sun", name = "태양", zone = 6, size = 320, mass = 50000000, count = 2 },
-	{ id = "comet", name = "혜성", zone = 6, size = 130, mass = 1100000, count = 6 },
-	{ id = "spacestation", name = "우주 정거장", zone = 6, size = 160, mass = 2500000, count = 5 },
-	{ id = "galaxy", name = "은하", zone = 6, size = 400, mass = 150000000, count = 1 },
-	-- 7 젤리 들판
-	{ id = "gummy", name = "젤리곰", zone = 7, size = 0.8, mass = 10, count = 18 },
-	{ id = "candy", name = "사탕", zone = 7, size = 0.9, mass = 10, count = 16 },
-	{ id = "lollipop", name = "막대사탕", zone = 7, size = 1.3, mass = 20, count = 12 },
-	{ id = "macaron", name = "마카롱", zone = 7, size = 1.8, mass = 40, count = 10 },
-	{ id = "cupcake", name = "컵케이크", zone = 7, size = 2.6, mass = 70, count = 10 },
-	{ id = "donut", name = "도넛", zone = 7, size = 3.0, mass = 100, count = 10 },
-	{ id = "chocobar", name = "초콜릿 바", zone = 7, size = 1.1, mass = 15, count = 10 },
-	{ id = "marshmallow", name = "마시멜로", zone = 7, size = 1.5, mass = 30, count = 8 },
-	-- 8 과자 마을
-	{ id = "cookie", name = "쿠키", zone = 8, size = 3.5, mass = 75, count = 12 },
-	{ id = "pudding", name = "푸딩", zone = 8, size = 4.5, mass = 120, count = 10 },
-	{ id = "icecream", name = "아이스크림콘", zone = 8, size = 6, mass = 250, count = 12 },
-	{ id = "cottontree", name = "솜사탕 나무", zone = 8, size = 7, mass = 350, count = 10 },
-	{ id = "gingerhouse", name = "과자 집", zone = 8, size = 9, mass = 600, count = 8 },
-	{ id = "milk", name = "우유 팩", zone = 8, size = 4, mass = 100, count = 10 },
-	{ id = "waffle", name = "와플", zone = 8, size = 5, mass = 180, count = 8 },
-	-- 9 케이크 도시
-	{ id = "candycar", name = "사탕 자동차", zone = 9, size = 12, mass = 1500, count = 10 },
-	{ id = "cake", name = "케이크", zone = 9, size = 15, mass = 2750, count = 10 },
-	{ id = "chocofountain", name = "초콜릿 분수", zone = 9, size = 18, mass = 4000, count = 8 },
-	{ id = "weddingcake", name = "웨딩 케이크 탑", zone = 9, size = 22, mass = 6000, count = 6 },
-	{ id = "jellybus", name = "젤리 버스", zone = 9, size = 13, mass = 2000, count = 8 },
-	{ id = "chocotower", name = "초콜릿 빌딩", zone = 9, size = 20, mass = 5000, count = 6 },
-	-- 10 아이스크림 산맥
-	{ id = "lollitower", name = "롤리팝 탑", zone = 10, size = 28, mass = 18000, count = 10 },
-	{ id = "jellycastle", name = "젤리 성", zone = 10, size = 34, mass = 30000, count = 8 },
-	{ id = "icemountain", name = "아이스크림 산", zone = 10, size = 45, mass = 60000, count = 6 },
-	{ id = "parfait", name = "파르페", zone = 10, size = 31, mass = 24000, count = 8 },
-	{ id = "cottoncloud", name = "솜사탕 구름", zone = 10, size = 40, mass = 45000, count = 6 },
-	-- 11 사탕 우주
-	{ id = "donutplanet", name = "도넛 행성", zone = 11, size = 80, mass = 1200000, count = 8 },
-	{ id = "candymoon", name = "사탕 달", zone = 11, size = 120, mass = 7500000, count = 6 },
-	{ id = "cakestar", name = "케이크 별", zone = 11, size = 200, mass = 50000000, count = 4 },
-	{ id = "candysun", name = "사탕 태양", zone = 11, size = 320, mass = 250000000, count = 2 },
-	{ id = "candyasteroid", name = "사탕 소행성", zone = 11, size = 100, mass = 3000000, count = 8 },
-	{ id = "chocoplanet", name = "초콜릿 행성", zone = 11, size = 160, mass = 15000000, count = 5 },
+	{ id = "galaxy", name = "은하", zone = 6, size = 400, mass = 120000000, count = 1 },
+	-- 7 은하수
+	{ id = "nebula", model = "galaxy", name = "성운", zone = 7, size = 380, mass = 90000000, count = 14 },
+	{ id = "giantplanet", model = "planet", name = "거대 가스 행성", zone = 7, size = 450, mass = 165000000, count = 10 },
+	{ id = "fortress", model = "spacestation", name = "우주 요새", zone = 7, size = 520, mass = 270000000, count = 8 },
+	{ id = "redgiant", model = "sun", name = "붉은 거성", zone = 7, size = 600, mass = 450000000, count = 6 },
+	{ id = "spiral", model = "galaxy", name = "나선 은하", zone = 7, size = 850, mass = 1500000000, count = 3 },
+	-- 8 젤리 들판
+	{ id = "gummy", name = "젤리곰", zone = 8, size = 0.8, mass = 10, count = 18 },
+	{ id = "candy", name = "사탕", zone = 8, size = 0.9, mass = 10, count = 16 },
+	{ id = "chocobar", name = "초콜릿 바", zone = 8, size = 1.1, mass = 15, count = 10 },
+	{ id = "lollipop", name = "막대사탕", zone = 8, size = 1.3, mass = 20, count = 12 },
+	{ id = "marshmallow", name = "마시멜로", zone = 8, size = 1.5, mass = 30, count = 8 },
+	{ id = "macaron", name = "마카롱", zone = 8, size = 1.8, mass = 40, count = 10 },
+	{ id = "cupcake", name = "컵케이크", zone = 8, size = 2.6, mass = 70, count = 10 },
+	{ id = "donut", name = "도넛", zone = 8, size = 3.0, mass = 100, count = 10 },
+	-- 9 과자 마을
+	{ id = "cookie", name = "쿠키", zone = 9, size = 3.5, mass = 75, count = 12 },
+	{ id = "milk", name = "우유 팩", zone = 9, size = 4, mass = 100, count = 10 },
+	{ id = "pudding", name = "푸딩", zone = 9, size = 4.5, mass = 120, count = 10 },
+	{ id = "waffle", name = "와플", zone = 9, size = 5, mass = 180, count = 8 },
+	{ id = "icecream", name = "아이스크림콘", zone = 9, size = 6, mass = 250, count = 12 },
+	{ id = "cottontree", name = "솜사탕 나무", zone = 9, size = 7, mass = 350, count = 10 },
+	{ id = "gingerhouse", name = "과자 집", zone = 9, size = 9, mass = 600, count = 8 },
+	-- 10 케이크 도시
+	{ id = "candycar", name = "사탕 자동차", zone = 10, size = 12, mass = 1500, count = 10 },
+	{ id = "jellybus", name = "젤리 버스", zone = 10, size = 13, mass = 2000, count = 8 },
+	{ id = "cake", name = "케이크", zone = 10, size = 15, mass = 2750, count = 10 },
+	{ id = "chocofountain", name = "초콜릿 분수", zone = 10, size = 18, mass = 4000, count = 8 },
+	{ id = "chocotower", name = "초콜릿 빌딩", zone = 10, size = 20, mass = 5000, count = 6 },
+	{ id = "weddingcake", name = "웨딩 케이크 탑", zone = 10, size = 22, mass = 6000, count = 6 },
+	-- 11 아이스크림 산맥
+	{ id = "lollitower", name = "롤리팝 탑", zone = 11, size = 28, mass = 18000, count = 10 },
+	{ id = "parfait", name = "파르페", zone = 11, size = 31, mass = 24000, count = 8 },
+	{ id = "jellycastle", name = "젤리 성", zone = 11, size = 34, mass = 30000, count = 8 },
+	{ id = "cottoncloud", name = "솜사탕 구름", zone = 11, size = 40, mass = 45000, count = 6 },
+	{ id = "icemountain", name = "아이스크림 산", zone = 11, size = 45, mass = 60000, count = 6 },
+	-- 12 초콜릿 강
+	{ id = "giantwaffle", model = "waffle", name = "거대 와플", zone = 12, size = 60, mass = 600000, count = 10 },
+	{ id = "donutplanet", name = "도넛 행성", zone = 12, size = 80, mass = 1200000, count = 8 },
+	{ id = "chocofalls", model = "chocofountain", name = "초콜릿 폭포", zone = 12, size = 90, mass = 1800000, count = 6 },
+	{ id = "candyasteroid", name = "사탕 소행성", zone = 12, size = 100, mass = 3000000, count = 8 },
+	{ id = "cakeisland", model = "cake", name = "케이크 섬", zone = 12, size = 115, mass = 3600000, count = 6 },
+	{ id = "jellyvolcano", model = "volcano", name = "젤리 화산", zone = 12, size = 130, mass = 5000000, count = 4 },
+	-- 13 사탕 우주
+	{ id = "candymoon", name = "사탕 달", zone = 13, size = 160, mass = 22000000, count = 8 },
+	{ id = "chocoplanet", name = "초콜릿 행성", zone = 13, size = 200, mass = 48000000, count = 6 },
+	{ id = "cakestar", name = "케이크 별", zone = 13, size = 260, mass = 120000000, count = 5 },
+	{ id = "candysun", name = "사탕 태양", zone = 13, size = 340, mass = 300000000, count = 3 },
+	-- 14 디저트 은하
+	{ id = "macaronplanet", model = "macaron", name = "마카롱 행성", zone = 14, size = 380, mass = 450000000, count = 12 },
+	{ id = "rollgalaxy", model = "galaxy", name = "롤케이크 은하", zone = 14, size = 450, mass = 800000000, count = 10 },
+	{ id = "puddingstar", model = "pudding", name = "푸딩 별", zone = 14, size = 520, mass = 1400000000, count = 8 },
+	{ id = "cupcakeplanet", model = "cupcake", name = "컵케이크 행성", zone = 14, size = 600, mass = 2250000000, count = 6 },
+	-- 15 설탕 블랙홀
+	{ id = "cakecastle", model = "jellycastle", name = "우주 젤리 성", zone = 15, size = 760, mass = 5200000000, count = 12 },
+	{ id = "chocoquasar", model = "candysun", name = "초코 퀘이사", zone = 15, size = 800, mass = 6000000000, count = 10 },
+	{ id = "candygalaxy", model = "galaxy", name = "사탕 은하", zone = 15, size = 850, mass = 7600000000, count = 8 },
+	{ id = "sugarstar", model = "cakestar", name = "설탕 별", zone = 15, size = 900, mass = 9300000000, count = 6 },
 }
 Config.OBJECT_BY_ID = {}
 for _, o in ipairs(Config.Objects) do
 	Config.OBJECT_BY_ID[o.id] = o
+end
+
+-- 황금 물체: 가끔 금빛으로 나타난다. 질량 10배, 성장 1.5배
+Config.GOLDEN_CHANCE = 0.02
+Config.GOLDEN_MASS = 10
+Config.GOLDEN_GROW = 1.5
+
+-- 연속 흡수(콤보): 1.5초 안에 계속 삼키면 한 번마다 질량 +1% (최대 +100%, 콤보 증폭으로 더 커짐)
+Config.COMBO_WINDOW = 1.5
+
+------------------------------------------------------------------------
+-- 퀘스트: 늘 3개가 걸려 있고, 끝내면 바로 보상을 받고 새 퀘스트가 나온다
+------------------------------------------------------------------------
+Config.Quests = {
+	{ kind = "eat", text = "물체 %s개 삼키기", base = 80, grow = 1.25, reward = "mass" },
+	{ kind = "golden", text = "황금 물체 %s개 삼키기", base = 3, grow = 1.2, reward = "dm" },
+	{ kind = "star", text = "별똥별 %s개 잡기", base = 2, grow = 1.2, reward = "dm" },
+	{ kind = "big", text = "내 크기 절반 넘는 것 %s개 삼키기", base = 15, grow = 1.25, reward = "mass" },
+	{ kind = "combo", text = "연속 흡수 %s 만들기", base = 20, grow = 1.2, reward = "mass" },
+}
+Config.QUEST_BY_KIND = {}
+for _, q in ipairs(Config.Quests) do
+	Config.QUEST_BY_KIND[q.kind] = q
 end
 
 ------------------------------------------------------------------------
@@ -336,19 +442,34 @@ end
 --   unlock: bigbang = 빅뱅 횟수, dm = 암흑 물질로 사기, pass = 게임패스, world2 = 세계 2의 사탕 태양 삼키기
 --   effect: 테두리와 소용돌이 꾸밈 (fire, ice, galaxy, candy, gold, eye, rainbow)
 ------------------------------------------------------------------------
+-- ability: 스킨마다 고유 능력
+--   passive = 늘 켜져 있음: pull(흡입 범위), grow(성장), mass(질량), golden(황금 확률 배수), star(별똥별), respawn(재생), sats(위성 배율), world2(세계 2 보너스)
+--   active  = 스킬 버튼(Q)으로 쓴다: speed(빨라짐), pull(흡입 범위 커짐), burst(주변 한꺼번에 흡수). cd = 다시 쓰기까지 초
 Config.Skins = {
-	{ id = "violet", name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0 },
-	{ id = "quasar", name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1 },
-	{ id = "giant", name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2 },
-	{ id = "nebula", name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3 },
-	{ id = "golden", name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold" },
-	{ id = "rainbow", name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow" },
-	{ id = "ice", name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice" },
-	{ id = "lava", name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire" },
-	{ id = "milkyway", name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy" },
-	{ id = "sweet", name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy" },
-	{ id = "vip", name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "gold" },
-	{ id = "godeye", name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye" },
+	{ id = "violet", name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0,
+		ability = { kind = "passive", name = "끌어당김", desc = "흡입 범위 +15%", pull = 0.15 } },
+	{ id = "quasar", name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1,
+		ability = { kind = "active", name = "퀘이사 제트", desc = "8초 동안 이동 속도 ×2", speed = 2, dur = 8, cd = 25 } },
+	{ id = "giant", name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2,
+		ability = { kind = "passive", name = "거성의 식욕", desc = "성장 +25%", grow = 0.25 } },
+	{ id = "nebula", name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3,
+		ability = { kind = "passive", name = "성운의 축복", desc = "질량 +40%, 성장 +10%", mass = 0.4, grow = 0.1 } },
+	{ id = "golden", name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold",
+		ability = { kind = "passive", name = "황금 손", desc = "황금 물체 3배 자주, 질량 +30%", golden = 3, mass = 0.3 } },
+	{ id = "rainbow", name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow",
+		ability = { kind = "active", name = "무지개 폭발", desc = "흡입 범위 3배 안을 한꺼번에 흡수", burst = 3, dur = 0, cd = 30 } },
+	{ id = "ice", name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice",
+		ability = { kind = "active", name = "얼음 질주", desc = "6초 동안 이동 속도 ×2.5", speed = 2.5, dur = 6, cd = 18 } },
+	{ id = "lava", name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire",
+		ability = { kind = "active", name = "용암 분출", desc = "8초 동안 흡입 범위 ×2.5", pull = 2.5, dur = 8, cd = 25 } },
+	{ id = "milkyway", name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy",
+		ability = { kind = "passive", name = "별을 부르는 자", desc = "별똥별 2배 자주, 효과 시간 +50%", star = 2 } },
+	{ id = "sweet", name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy",
+		ability = { kind = "passive", name = "단맛 중독", desc = "세계 2에서 질량 +100%, 성장 +30%", world2 = true } },
+	{ id = "vip", name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "gold",
+		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +50%, 재생 25% 빨라짐", mass = 0.5, respawn = 0.75 } },
+	{ id = "godeye", name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
+		ability = { kind = "active", name = "신의 시선", desc = "흡입 범위 5배 안을 한꺼번에 흡수 (늘 위성 배율 +20%)", burst = 5, dur = 0, cd = 35, sats = 0.2 } },
 }
 Config.SKIN_BY_ID = {}
 for i, s in ipairs(Config.Skins) do
@@ -397,20 +518,23 @@ Config.STAR_BOOST = 60
 ------------------------------------------------------------------------
 -- 계산
 ------------------------------------------------------------------------
--- 반지름 바깥으로 더 끌어당기는 거리
-function Config.pullRange(radius: number, pullLv: number, bbPull: number?): number
-	return (radius * (0.15 + 0.07 * pullLv) + 1.5) * (1 + 0.15 * (bbPull or 0))
+-- 반지름 바깥으로 더 끌어당기는 거리. extra = 스킨 능력 배수
+function Config.pullRange(radius: number, pullLv: number, bbPull: number?, extra: number?): number
+	return (radius * (0.15 + 0.07 * pullLv) + 1.5) * (1 + 0.15 * (bbPull or 0)) * (extra or 1)
 end
 
-function Config.walkSpeed(radius: number, bbSpeed: number?, pass2: boolean?): number
-	local base = math.min(150, 18 + radius * 0.4) * (1 + 0.15 * (bbSpeed or 0))
-	return base * (pass2 and 2 or 1)
+-- 이동 속도. 크기가 커질수록 빨라지고, 넓은 뒤쪽 구역도 금방 건너간다
+function Config.walkSpeed(radius: number, bbSpeed: number?, pass2: boolean?, upgLv: number?, extra: number?): number
+	local base = math.min(320, 18 + radius * 0.35) * (1 + 0.15 * (bbSpeed or 0)) * (1 + 0.05 * (upgLv or 0))
+	return base * (pass2 and 2 or 1) * (extra or 1)
 end
 
--- 질량 배율 전체. info = { mult, bigbang, bbMass, sats(위성 배율), vip, mass2, boost, star }
+-- 질량 배율 전체. info = { mult, bigbang, bbMass, sats(위성 배율), vip, mass2, boost, star, skin(스킨 질량 보너스), combo(콤보 보너스) }
 function Config.totalMult(info: any): number
 	local m = (1 + 0.25 * (info.mult or 0)) * (1 + (info.bigbang or 0)) * (1 + 0.5 * (info.bbMass or 0))
 	m *= info.sats or 1
+	m *= 1 + (info.skin or 0)
+	m *= 1 + (info.combo or 0)
 	if info.vip then
 		m *= 1.5
 	end
@@ -426,16 +550,31 @@ function Config.totalMult(info: any): number
 	return m
 end
 
--- 재생산 시간 배율 (작을수록 빠르다)
-function Config.respawnFactor(bbRespawn: number, vip: boolean?, boost: boolean?): number
-	local f = 1 - 0.12 * bbRespawn
+-- 재생 시간 배율 (작을수록 빠르다)
+function Config.respawnFactor(bbRespawn: number, vip: boolean?, boost: boolean?, upgLv: number?, skin: number?): number
+	local f = (1 - 0.12 * bbRespawn) * (1 - 0.04 * (upgLv or 0)) * (skin or 1)
 	if vip then
 		f *= 0.8
 	end
 	if boost then
 		f *= 0.5
 	end
-	return math.max(0.15, f)
+	return math.max(0.1, f)
+end
+
+-- 콤보 보너스 (질량 배수에 더해진다)
+function Config.comboBonus(combo: number, comboLv: number): number
+	return math.min(combo, 100) * 0.01 * (1 + 0.25 * comboLv)
+end
+
+-- 황금 물체 확률
+function Config.goldenChance(goldenLv: number, skinMult: number?): number
+	return Config.GOLDEN_CHANCE * (1 + 0.25 * goldenLv) * (skinMult or 1)
+end
+
+-- 별똥별 간격 (초)
+function Config.starInterval(starLv: number, skinMult: number?): number
+	return Config.STAR_INTERVAL / ((1 + 0.06 * starLv) * (skinMult or 1))
 end
 
 -- 세계에 있는 구역 번호들
@@ -1899,7 +2038,13 @@ function Props.build(kind: string, size: number, base: CFrame, seed: number): Mo
 	local function P(name: string, shape: Enum.PartType?, sz: Vector3, cf: CFrame, color: Color3, material: Enum.Material): Part
 		local p = Instance.new("Part")
 		p.Name = name
-		if shape and shape ~= BLOCK then
+		-- 로블록스 공(Ball)은 늘 완전한 구라서, 납작하거나 길쭉한 공은 구 모양 메시로 늘린다
+		local stretched = shape == BALL and (math.abs(sz.X - sz.Y) > 0.01 or math.abs(sz.Y - sz.Z) > 0.01)
+		if stretched then
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = p
+		elseif shape and shape ~= BLOCK then
 			p.Shape = shape
 		end
 		p.Anchored = true
@@ -2142,7 +2287,13 @@ function SatBuilder.build(shape: string, color: Color3, size: number, gold: bool
 	local function P(name: string, kind: Enum.PartType?, sz: Vector3, cf: CFrame, col: Color3, mat: Enum.Material): Part
 		local p = Instance.new("Part")
 		p.Name = name
-		if kind and kind ~= BLOCK then
+		-- 로블록스 공(Ball)은 늘 완전한 구라서, 납작하거나 길쭉한 공은 구 모양 메시로 늘린다
+		local stretched = kind == BALL and (math.abs(sz.X - sz.Y) > 0.01 or math.abs(sz.Y - sz.Z) > 0.01)
+		if stretched then
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = p
+		elseif kind and kind ~= BLOCK then
 			p.Shape = kind
 		end
 		p.Anchored = true
@@ -2199,10 +2350,11 @@ return SatBuilder
         <string name="Name">HoleServer</string>
         <token name="RunContext">0</token>
         <string name="Source"><![CDATA[-- HoleServer (Script, ServerScriptService)
--- 삼키기 판정, 먹어서 커지기, 질량, 업그레이드, 빅뱅과 빅뱅 상점, 위성(펫), 스킨, 로벅스 상점, 부스트, 별똥별, 저장.
+-- 삼키기 판정, 먹어서 커지기, 질량, 업그레이드 9종, 빅뱅과 빅뱅 상점, 위성(펫), 스킨과 스킨 능력,
+-- 황금 물체, 연속 흡수 보너스, 퀘스트, 매일 보상, 로비, 순위판, 로벅스 상점, 부스트, 별똥별, 저장.
 -- 캐릭터는 사람 모양이 아니라 보이지 않는 공 하나다 (걷는 모션 없음, 죽지 않음).
 -- 중요한 계산은 모두 서버가 한다.
---   World  조명, 세계 2개의 구역, 문, 물체 배치
+--   World  조명, 로비, 세계 2개의 구역, 문, 물체 배치
 --   Store  게임패스와 개발자 상품 결제
 
 local Players = game:GetService("Players")
@@ -2221,6 +2373,7 @@ Players.CharacterAutoLoads = false
 local DATASTORE_NAME = "BlackHole_v1"
 local SAVE_INTERVAL = 90
 local TICK = 0.1
+local LOBBY_SPEED = 40
 
 ------------------------------------------------------------------------
 -- 통신 채널
@@ -2240,16 +2393,24 @@ remoteFolder.Parent = ReplicatedStorage
 ------------------------------------------------------------------------
 World.setupLighting()
 local _, portals = World.buildZones()
+local lobby = World.buildLobby()
+for _, portal in ipairs(lobby.portals) do
+	table.insert(portals, portal)
+end
 local objects, objectFolder = World.placeObjects()
 local holding = Instance.new("Folder")
 holding.Name = "EatenObjects"
 holding.Parent = ServerStorage
 
--- 구역별로 나눠 둔다 (가까운 구역만 살펴보면 된다)
+-- 구역별로 나눠 둔다 (가까운 구역만 살펴보면 된다). 처음부터 몇 개는 황금 물체
 local byZone: { [number]: { World.ObjectRec } } = {}
 for _, rec in ipairs(objects) do
 	byZone[rec.zone] = byZone[rec.zone] or {}
 	table.insert(byZone[rec.zone], rec)
+	if math.random() < Config.GOLDEN_CHANCE then
+		rec.golden = true
+		rec.model:SetAttribute("Golden", true)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -2266,15 +2427,14 @@ do
 end
 
 type Sat = { uid: number, id: string, gold: boolean }
+type Quest = { kind: string, goal: number, progress: number }
 
 type Profile = {
 	mass: number,
 	total: number, -- 지금까지 삼킨 질량 (빅뱅해도 남는다)
 	eaten: number,
 	radius: number, -- 지금 반지름 (먹어서 커진다)
-	grow: number, -- 성장력 업그레이드 레벨
-	pull: number,
-	mult: number,
+	up: { [string]: number }, -- 업그레이드 9종 레벨
 	bigbang: number,
 	dm: number, -- 암흑 물질
 	bb: { [string]: number }, -- 빅뱅 상점 레벨
@@ -2290,6 +2450,10 @@ type Profile = {
 	receipts: { string },
 	auto: boolean,
 	hatched: number,
+	quests: { Quest },
+	questsDone: number,
+	dailyAt: number,
+	streak: number,
 }
 
 local function defaultProfile(): Profile
@@ -2297,14 +2461,16 @@ local function defaultProfile(): Profile
 	for _, b in ipairs(Config.BigbangShop) do
 		bb[b.id] = 0
 	end
+	local up = {}
+	for _, u in ipairs(Config.Upgrades) do
+		up[u.id] = 0
+	end
 	return {
 		mass = 0,
 		total = 0,
 		eaten = 0,
 		radius = Config.START_RADIUS,
-		grow = 0,
-		pull = 0,
-		mult = 0,
+		up = up,
 		bigbang = 0,
 		dm = 0,
 		bb = bb,
@@ -2320,6 +2486,10 @@ local function defaultProfile(): Profile
 		receipts = {},
 		auto = false,
 		hatched = 0,
+		quests = {},
+		questsDone = 0,
+		dailyAt = 0,
+		streak = 0,
 	}
 end
 
@@ -2337,17 +2507,19 @@ local function sanitize(data: any): Profile
 	p.mass = num(data.mass, math.huge)
 	p.total = num(data.total, math.huge)
 	p.eaten = math.floor(num(data.eaten, math.huge))
-	p.radius = math.clamp(num(data.radius, Config.MAX_RADIUS), Config.START_RADIUS, Config.MAX_RADIUS)
-	p.grow = math.floor(num(data.grow, Config.UPGRADE_BY_ID.grow.maxLevel))
-	p.pull = math.floor(num(data.pull, Config.UPGRADE_BY_ID.pull.maxLevel))
-	p.mult = math.floor(num(data.mult, Config.UPGRADE_BY_ID.mult.maxLevel))
 	p.bigbang = math.floor(num(data.bigbang, 1000))
+	local up = type(data.up) == "table" and data.up or data -- 예전 기록은 grow/pull/mult가 바깥에 있었다
+	for _, u in ipairs(Config.Upgrades) do
+		p.up[u.id] = math.floor(num(up[u.id], u.maxLevel))
+	end
 	p.dm = math.floor(num(data.dm, 1e9))
 	if type(data.bb) == "table" then
 		for _, b in ipairs(Config.BigbangShop) do
 			p.bb[b.id] = math.floor(num(data.bb[b.id], b.maxLevel))
 		end
 	end
+	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize)
+	p.radius = math.clamp(num(data.radius, maxR), Config.START_RADIUS, maxR)
 	local uids = {}
 	if type(data.sats) == "table" then
 		for _, s in ipairs(data.sats) do
@@ -2400,6 +2572,19 @@ local function sanitize(data: any): Profile
 	end
 	p.auto = data.auto == true
 	p.hatched = math.floor(num(data.hatched, math.huge))
+	if type(data.quests) == "table" then
+		for _, q in ipairs(data.quests) do
+			if type(q) == "table" and type(q.kind) == "string" and Config.QUEST_BY_KIND[q.kind] and type(q.goal) == "number" and q.goal > 0 then
+				table.insert(p.quests, { kind = q.kind, goal = math.floor(q.goal), progress = math.floor(num(q.progress, q.goal)) })
+			end
+			if #p.quests >= 3 then
+				break
+			end
+		end
+	end
+	p.questsDone = math.floor(num(data.questsDone, 1e9))
+	p.dailyAt = num(data.dailyAt, 1e11)
+	p.streak = math.floor(num(data.streak, 1e6))
 	return p
 end
 
@@ -2420,6 +2605,8 @@ type State = {
 	reqWindow: number,
 	reqCount: number,
 	zone: number,
+	world: number,
+	inLobby: boolean,
 	passes: { [string]: boolean }, -- 들어올 때 확인한 게임패스
 	starPos: Vector3?,
 	starExpire: number,
@@ -2427,6 +2614,12 @@ type State = {
 	starUntil: number,
 	portalAt: number,
 	lockToastAt: number,
+	combo: number,
+	lastEat: number,
+	activeUntil: number, -- 액티브 스킬이 끝나는 시각 (os.clock)
+	activeOn: boolean,
+	cdUntil: number,
+	burst: number,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -2470,14 +2663,15 @@ end
 -- 계산 도우미
 ------------------------------------------------------------------------
 local Calc = {}
+local NO_ABILITY = { kind = "passive", name = "", desc = "" }
 
 function Calc.hasPass(player: Player, key: string): boolean
 	local p, st = profiles[player], states[player]
 	return (p and p.passes[key] == true) or (st and st.passes[key] == true) or false
 end
 
-function Calc.radius(p: Profile): number
-	return p.radius
+function Calc.maxRadius(p: Profile): number
+	return Config.maxRadius(p.bigbang, p.up.maxsize)
 end
 
 function Calc.slots(player: Player, p: Profile): number
@@ -2503,7 +2697,13 @@ function Calc.findSat(p: Profile, uid: number): (Sat?, number)
 	return nil, 0
 end
 
--- 장착한 위성 배율 합: 1 + Σ(배율 - 1)
+-- 지금 스킨의 고유 능력
+function Calc.ability(p: Profile): any
+	local skin = Config.SKIN_BY_ID[p.skin]
+	return skin and skin.ability or NO_ABILITY
+end
+
+-- 장착한 위성 배율 합: 1 + Σ(배율 - 1), 신의 눈 스킨이면 +20%
 function Calc.satMult(p: Profile): number
 	local m = 1
 	for _, uid in ipairs(p.equipped) do
@@ -2512,22 +2712,81 @@ function Calc.satMult(p: Profile): number
 			m += Config.satMult(s.id, s.gold) - 1
 		end
 	end
+	return m * (1 + (Calc.ability(p).sats or 0))
+end
+
+-- 액티브 스킬이 켜져 있는지
+function Calc.active(st: State?): boolean
+	return st ~= nil and st.activeOn and os.clock() < st.activeUntil
+end
+
+-- 스킨 능력에 따른 흡입 범위 배수
+function Calc.pullExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	local m = 1
+	if ab.kind == "passive" and ab.pull then
+		m *= 1 + ab.pull
+	elseif ab.kind == "active" and ab.pull and Calc.active(st) then
+		m *= ab.pull
+	end
 	return m
+end
+
+function Calc.speedExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	if ab.kind == "active" and ab.speed and Calc.active(st) then
+		return ab.speed
+	end
+	return 1
+end
+
+-- 스킨 능력 질량·성장 보너스 (세계 2 전용 보너스 포함)
+function Calc.skinBonus(p: Profile, st: State?): (number, number)
+	local ab = Calc.ability(p)
+	local mass, grow = ab.mass or 0, ab.grow or 0
+	if ab.world2 and st and st.world == 2 and not st.inLobby then
+		mass += 1
+		grow += 0.3
+	end
+	return mass, grow
+end
+
+function Calc.comboBonus(p: Profile, st: State?): number
+	if not st then
+		return 0
+	end
+	local s = st :: State
+	if os.clock() - s.lastEat > Config.COMBO_WINDOW then
+		return 0
+	end
+	return Config.comboBonus(s.combo, p.up.combo)
 end
 
 function Calc.totalMult(player: Player, p: Profile): number
 	local st = states[player]
-	local now = os.time()
+	local skinMass = Calc.skinBonus(p, st)
 	return Config.totalMult({
-		mult = p.mult,
+		mult = p.up.mult,
 		bigbang = p.bigbang,
 		bbMass = p.bb.mass,
 		sats = Calc.satMult(p),
 		vip = Calc.hasPass(player, "vip"),
 		mass2 = Calc.hasPass(player, "mass2"),
-		boost = p.boostUntil > now,
+		boost = p.boostUntil > os.time(),
 		star = st ~= nil and st.starUntil > os.clock(),
+		skin = skinMass,
+		combo = Calc.comboBonus(p, st),
 	})
+end
+
+function Calc.growMult(player: Player, p: Profile): number
+	local st = states[player]
+	local _, skinGrow = Calc.skinBonus(p, st)
+	return Config.growMult({ grow = p.up.grow, bigbang = p.bigbang, star = st ~= nil and st.starUntil > os.clock(), skin = skinGrow })
+end
+
+function Calc.respawnFactor(player: Player, p: Profile): number
+	return Config.respawnFactor(p.bb.respawn, Calc.hasPass(player, "vip"), p.respawnUntil > os.time(), p.up.respawn, Calc.ability(p).respawn)
 end
 
 function Calc.skinUnlocked(player: Player, p: Profile, skin: any): boolean
@@ -2555,7 +2814,7 @@ local function pushState(player: Player)
 	if not p or not st then
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	local now = os.time()
 	local skins = {}
 	for _, skin in ipairs(Config.Skins) do
@@ -2569,20 +2828,20 @@ local function pushState(player: Player)
 			passes[pass.key] = true
 		end
 	end
+	local clock = os.clock()
 	Push:FireClient(player, "state", {
 		mass = p.mass,
 		total = p.total,
 		eaten = p.eaten,
-		grow = p.grow,
-		growMult = Config.growMult(p.grow, p.bigbang, st.starUntil > os.clock()),
-		pull = p.pull,
-		mult = p.mult,
+		radius = r,
+		maxRadius = Calc.maxRadius(p),
+		up = p.up,
 		bigbang = p.bigbang,
 		dm = p.dm,
 		bb = p.bb,
-		radius = r,
-		pullRange = Config.pullRange(r, p.pull, p.bb.pull),
+		pullRange = Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
 		totalMult = Calc.totalMult(player, p),
+		growMult = Calc.growMult(player, p),
 		satMult = Calc.satMult(p),
 		sats = p.sats,
 		equipped = p.equipped,
@@ -2592,9 +2851,17 @@ local function pushState(player: Player)
 		passes = passes,
 		boostLeft = math.max(0, p.boostUntil - now),
 		respawnLeft = math.max(0, p.respawnUntil - now),
-		starLeft = math.max(0, st.starUntil - os.clock()),
+		starLeft = math.max(0, st.starUntil - clock),
+		activeLeft = Calc.active(st) and math.max(0, st.activeUntil - clock) or 0,
+		cdLeft = math.max(0, st.cdUntil - clock),
 		auto = p.auto,
 		hatched = p.hatched,
+		quests = p.quests,
+		questsDone = p.questsDone,
+		dailyLeft = math.max(0, p.dailyAt + Config.DAILY_HOURS * 3600 - now),
+		streak = p.streak,
+		inLobby = st.inLobby,
+		world = st.world,
 		tester = st.tester,
 		canSave = st.canSave,
 	})
@@ -2613,7 +2880,7 @@ local function updateLeaderstats(player: Player)
 		massValue.Value = Config.formatNumber(p.total)
 	end
 	if sizeValue and sizeValue:IsA("StringValue") then
-		sizeValue.Value = Config.formatSize(Calc.radius(p))
+		sizeValue.Value = Config.formatSize(p.radius)
 	end
 	if bbValue and bbValue:IsA("IntValue") then
 		bbValue.Value = p.bigbang
@@ -2622,12 +2889,12 @@ end
 
 -- 블랙홀 모양은 모든 화면이 직접 그린다 (크기, 스킨, 위성만 속성으로 알려 준다)
 local function applyHole(player: Player)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local char = player.Character
-	if not p or not char then
+	if not p or not st or not char then
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	local skin = Config.SKIN_BY_ID[p.skin]
 	if not skin or not Calc.skinUnlocked(player, p, skin) then
 		skin = Config.Skins[1]
@@ -2637,6 +2904,7 @@ local function applyHole(player: Player)
 	player:SetAttribute("VIP", vip)
 	char:SetAttribute("HoleR", r)
 	char:SetAttribute("HoleSkin", skin.index)
+	char:SetAttribute("SkillOn", Calc.active(st))
 	local satList = {}
 	for _, uid in ipairs(p.equipped) do
 		local s = Calc.findSat(p, uid)
@@ -2647,8 +2915,11 @@ local function applyHole(player: Player)
 	char:SetAttribute("Sats", table.concat(satList, ","))
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if hum then
-		hum.WalkSpeed = Config.walkSpeed(r, p.bb.speed, Calc.hasPass(player, "speed2"))
-		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		if st.inLobby then
+			hum.WalkSpeed = LOBBY_SPEED
+		else
+			hum.WalkSpeed = Config.walkSpeed(r, p.bb.speed, Calc.hasPass(player, "speed2"), p.up.speed, Calc.speedExtra(p, st))
+		end
 	end
 	local head = char:FindFirstChild("Head")
 	if head and head:IsA("BasePart") then
@@ -2656,10 +2927,10 @@ local function applyHole(player: Player)
 		if not tag then
 			local gui = Instance.new("BillboardGui")
 			gui.Name = "HoleTag"
-			gui.Size = UDim2.new(0, 240, 0, 46)
+			gui.Size = UDim2.new(0, 260, 0, 50)
 			gui.AlwaysOnTop = true
 			gui.LightInfluence = 0
-			gui.MaxDistance = 2500
+			gui.MaxDistance = 5000
 			local l = Instance.new("TextLabel")
 			l.Name = "Label"
 			l.Size = UDim2.fromScale(1, 1)
@@ -2673,7 +2944,8 @@ local function applyHole(player: Player)
 			tag = gui
 		end
 		local gui = tag :: BillboardGui
-		gui.StudsOffset = Vector3.new(0, 4 + r * 0.25, 0)
+		local shown = st.inLobby and math.min(r, 8) or r
+		gui.StudsOffset = Vector3.new(0, 4 + shown * 0.25, 0)
 		local label = gui:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
 			label.Text = string.format("%s%s · ⚫%s", vip and "👑 " or "", player.DisplayName, Config.formatSize(r))
@@ -2700,10 +2972,79 @@ local function spawnPos(world: number): Vector3
 end
 
 ------------------------------------------------------------------------
+-- 퀘스트: 늘 3개. 끝내면 바로 보상을 주고 새 퀘스트를 건다
+------------------------------------------------------------------------
+local Quests = {}
+
+function Quests.fill(p: Profile)
+	while #p.quests < 3 do
+		local active = {}
+		for _, q in ipairs(p.quests) do
+			active[q.kind] = true
+		end
+		local avail = {}
+		for _, def in ipairs(Config.Quests) do
+			if not active[def.kind] then
+				table.insert(avail, def)
+			end
+		end
+		if #avail == 0 then
+			break
+		end
+		local def = avail[math.random(1, #avail)]
+		local goal = math.max(1, math.floor(def.base * def.grow ^ math.min(p.questsDone, 40) + 0.5))
+		table.insert(p.quests, { kind = def.kind, goal = goal, progress = 0 })
+	end
+end
+
+-- 진행도 올리기. isMax면 지금 값과 비교해 더 큰 쪽 (연속 흡수처럼)
+function Quests.add(player: Player, p: Profile, kind: string, amount: number, isMax: boolean?)
+	if amount <= 0 then
+		return
+	end
+	local done = false
+	for i = #p.quests, 1, -1 do
+		local q = p.quests[i]
+		if q.kind == kind then
+			if isMax then
+				q.progress = math.max(q.progress, amount)
+			else
+				q.progress += amount
+			end
+			if q.progress >= q.goal then
+				local def = Config.QUEST_BY_KIND[q.kind]
+				local text = string.format(def.text, Config.formatNumber(q.goal))
+				local reward
+				if def.reward == "dm" then
+					local n = 1 + p.questsDone // 6
+					p.dm += n
+					reward = string.format("🌑 암흑 물질 +%d", n)
+				else
+					local st = states[player]
+					local amountMass = math.max(200, Config.biggestMass(st and st.world or 1, p.radius) * 25 * Calc.totalMult(player, p))
+					p.mass += amountMass
+					p.total += amountMass
+					reward = "💠 +" .. Config.formatNumber(amountMass)
+				end
+				table.remove(p.quests, i)
+				p.questsDone += 1
+				done = true
+				Push:FireClient(player, "quest", { text = text, reward = reward })
+			end
+		end
+	end
+	if done then
+		Quests.fill(p)
+		pushState(player)
+	end
+end
+
+------------------------------------------------------------------------
 -- 삼키기
 ------------------------------------------------------------------------
 local function respawn(rec: World.ObjectRec)
 	rec.model:SetAttribute("EatenBy", nil)
+	rec.model:SetAttribute("Golden", rec.golden and true or nil)
 	for part, can in pairs(rec.collide) do
 		part.CanCollide = can
 	end
@@ -2711,7 +3052,8 @@ local function respawn(rec: World.ObjectRec)
 	rec.alive = true
 end
 
-local function eat(player: Player, rec: World.ObjectRec, factor: number)
+-- factor = 재생 시간 배율, goldChance = 다시 생길 때 황금일 확률 (먹은 사람의 업그레이드·스킨 기준)
+local function eat(player: Player, rec: World.ObjectRec, factor: number, goldChance: number)
 	rec.alive = false
 	rec.model:SetAttribute("EatenBy", player.UserId)
 	for part in pairs(rec.collide) do
@@ -2724,8 +3066,9 @@ local function eat(player: Player, rec: World.ObjectRec, factor: number)
 		end
 	end)
 	local wait = Config.Zones[rec.zone].respawn * (0.8 + math.random() * 0.5) * factor
-	task.delay(wait, function()
+	task.delay(math.max(0.7, wait), function()
 		if not rec.alive then
+			rec.golden = math.random() < goldChance
 			respawn(rec)
 		end
 	end)
@@ -2752,6 +3095,32 @@ local function dropStar(player: Player, st: State, pos: Vector3, r: number)
 	Push:FireClient(player, "star", { pos = spot, life = Config.STAR_LIFETIME })
 end
 
+local Actions = {}
+
+function Actions.goLobby(player: Player)
+	local st = states[player]
+	moveTo(player, lobby.spawn)
+	if st then
+		st.portalAt = os.clock() + 3
+	end
+	Push:FireClient(player, "world", 0)
+end
+
+function Actions.goWorld(player: Player, w: number)
+	local p, st = profiles[player], states[player]
+	if not p or not st or not Config.Worlds[w] then
+		return
+	end
+	if not Calc.worldOpen(p, w) then
+		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
+		return
+	end
+	st.world = w
+	st.portalAt = os.clock() + 3
+	moveTo(player, spawnPos(w))
+	Push:FireClient(player, "world", w)
+end
+
 local function tickPlayer(player: Player, p: Profile, st: State)
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -2759,28 +3128,49 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		return
 	end
 	local pos = root.Position
-	local r = Calc.radius(p)
-	local reach = r + Config.pullRange(r, p.pull, p.bb.pull)
-	local zone = Config.zoneAt(pos)
-	local world = Config.Zones[zone].world
-	if zone ~= st.zone then
-		st.zone = zone
-		Push:FireClient(player, "zone", zone)
-	end
 	local now = os.clock()
 
-	-- 세계 문
+	-- 로비 들어가고 나오기
+	local inLobby = Config.inLobby(pos)
+	if inLobby ~= st.inLobby then
+		st.inLobby = inLobby
+		applyHole(player)
+		pushState(player)
+	end
+	-- 액티브 스킬이 끝났으면 속도·범위를 되돌린다
+	if st.activeOn and now >= st.activeUntil then
+		st.activeOn = false
+		applyHole(player)
+		pushState(player)
+	end
+
+	-- 문 (로비 ↔ 세계)
 	for _, portal in ipairs(portals) do
 		if flatDist(portal.pos, pos) < 12 and now > st.portalAt then
 			st.portalAt = now + 3
-			if Calc.worldOpen(p, portal.to) then
-				moveTo(player, spawnPos(portal.to))
-				Push:FireClient(player, "world", portal.to)
+			if portal.to == 0 then
+				Actions.goLobby(player)
+			elseif Calc.worldOpen(p, portal.to) then
+				Actions.goWorld(player, portal.to)
 			elseif now > st.lockToastAt then
 				st.lockToastAt = now + 4
 				toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", portal.to, Config.Worlds[portal.to].needBigbang))
 			end
 		end
+	end
+	if inLobby then
+		return
+	end
+
+	local r = p.radius
+	local ab = Calc.ability(p)
+	local reach = r + Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st))
+	local zone = Config.zoneAt(pos)
+	local world = Config.Zones[zone].world
+	st.world = world
+	if zone ~= st.zone then
+		st.zone = zone
+		Push:FireClient(player, "zone", zone)
 	end
 
 	-- 별똥별
@@ -2788,39 +3178,59 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		local spot = st.starPos :: Vector3
 		if flatDist(spot, pos) <= reach + 3 then
 			st.starPos = nil
-			st.starUntil = math.max(now, st.starUntil) + Config.STAR_BOOST
-			st.nextStar = now + Config.STAR_INTERVAL * (0.8 + math.random() * 0.5)
+			local boost = Config.STAR_BOOST * (ab.star and 1.5 or 1)
+			st.starUntil = math.max(now, st.starUntil) + boost
+			st.nextStar = now + Config.starInterval(p.up.star, ab.star) * (0.8 + math.random() * 0.5)
 			Push:FireClient(player, "starGot", { pos = spot, left = st.starUntil - now })
+			Quests.add(player, p, "star", 1)
 			pushState(player)
 		elseif now > st.starExpire then
 			st.starPos = nil
-			st.nextStar = now + Config.STAR_INTERVAL * 0.5
+			st.nextStar = now + Config.starInterval(p.up.star, ab.star) * 0.5
 		end
 	elseif now > st.nextStar then
 		dropStar(player, st, pos, r)
 	end
 
+	-- 한꺼번에 흡수 스킬
+	local burst = st.burst
+	if burst > 0 then
+		st.burst = 0
+		reach *= burst
+	end
+
 	local mult = Calc.totalMult(player, p)
-	local factor = Config.respawnFactor(p.bb.respawn, Calc.hasPass(player, "vip"), p.respawnUntil > os.time())
+	local gm = Calc.growMult(player, p)
+	local maxR = Calc.maxRadius(p)
+	local factor = Calc.respawnFactor(player, p)
+	local goldChance = Config.goldenChance(p.up.golden, ab.golden)
 	local reachable = Config.maxZone(world, r)
-	local gm = Config.growMult(p.grow, p.bigbang, st.starUntil > now)
+	local limit = burst > 0 and 250 or 40
 	local newR = r
 	local eatenList = {}
 	local gained = 0
+	local goldenCount, bigCount = 0, 0
 	local ateSun = false
 	for zi = math.max(1, zone - 1), math.min(#Config.Zones, zone + 1) do
 		if Config.Zones[zi].world == world then
 			for _, rec in ipairs(byZone[zi] or {}) do
 				if rec.alive and rec.zone <= reachable and rec.def.size <= r and flatDist(rec.pos, pos) <= reach + rec.def.size * 0.5 then
-					eat(player, rec, factor)
-					local m = rec.def.mass * mult
+					local golden = rec.golden
+					eat(player, rec, factor, goldChance)
+					local m = rec.def.mass * mult * (golden and Config.GOLDEN_MASS or 1)
 					gained += m
-					newR = Config.grow(newR, rec.def.size, gm)
-					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name })
+					newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR)
+					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
+					if golden then
+						goldenCount += 1
+					end
+					if rec.def.size >= r * 0.5 then
+						bigCount += 1
+					end
 					if rec.def.id == "candysun" then
 						ateSun = true
 					end
-					if #eatenList >= 40 then
+					if #eatenList >= limit then
 						break
 					end
 				end
@@ -2828,6 +3238,12 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		end
 	end
 	if #eatenList > 0 then
+		if now - st.lastEat <= Config.COMBO_WINDOW then
+			st.combo += #eatenList
+		else
+			st.combo = #eatenList
+		end
+		st.lastEat = now
 		p.mass += gained
 		p.total += gained
 		p.eaten += #eatenList
@@ -2841,9 +3257,16 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			gained = gained,
 			mass = p.mass,
 			radius = p.radius,
-			pullRange = Config.pullRange(p.radius, p.pull, p.bb.pull),
+			pullRange = Config.pullRange(p.radius, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+			combo = st.combo,
+			comboBonus = Config.comboBonus(st.combo, p.up.combo),
+			burst = burst > 0,
 		})
 		updateLeaderstats(player)
+		Quests.add(player, p, "eat", #eatenList)
+		Quests.add(player, p, "golden", goldenCount)
+		Quests.add(player, p, "big", bigCount)
+		Quests.add(player, p, "combo", st.combo, true)
 		if ateSun and not p.skins.sweet then
 			p.skins.sweet = true
 			Push:FireClient(player, "unlock", { kind = "skin", name = Config.SKIN_BY_ID.sweet.name })
@@ -2868,21 +3291,19 @@ task.spawn(function()
 end)
 
 ------------------------------------------------------------------------
--- 업그레이드, 자동 업그레이드, 빅뱅, 이동
+-- 업그레이드, 자동 업그레이드, 빅뱅, 이동, 스킬, 매일 보상
 ------------------------------------------------------------------------
-local Actions = {}
-
--- 업그레이드 하나를 살 수 있는 만큼 산다. quiet면 실패해도 알림을 띄우지 않는다
-function Actions.buyUpgrade(player: Player, id: any, many: any, quiet: boolean?): number
+-- 업그레이드 하나를 살 수 있는 만큼 산다
+function Actions.buyUpgrade(player: Player, id: any, many: any): number
 	local p = profiles[player]
 	local u = type(id) == "string" and Config.UPGRADE_BY_ID[id]
 	if not u then
 		return 0
 	end
 	local bought = 0
-	local limit = many == true and 200 or 1
+	local limit = many == true and 300 or 1
 	while bought < limit do
-		local level = (p :: any)[u.id] :: number
+		local level = p.up[u.id]
 		if level >= u.maxLevel then
 			break
 		end
@@ -2890,37 +3311,36 @@ function Actions.buyUpgrade(player: Player, id: any, many: any, quiet: boolean?)
 		if p.mass < cost then
 			break
 		end
-		p.mass -= cost;
-		(p :: any)[u.id] = level + 1
+		p.mass -= cost
+		p.up[u.id] = level + 1
 		bought += 1
 	end
 	if bought == 0 then
-		if not quiet then
-			local level = (p :: any)[u.id] :: number
-			if level >= u.maxLevel then
-				toast(player, u.name .. "은(는) 이미 최대예요")
-			else
-				toast(player, "질량이 부족해요 (필요 💠" .. Config.formatNumber(Config.upgradeCost(u.id, level)) .. ")")
-			end
+		local level = p.up[u.id]
+		if level >= u.maxLevel then
+			toast(player, u.name .. "은(는) 이미 최대예요")
+		else
+			toast(player, "질량이 부족해요 (필요 💠" .. Config.formatNumber(Config.upgradeCost(u.id, level)) .. ")")
 		end
 		return 0
 	end
 	states[player].dirty = true
 	applyHole(player)
-	Push:FireClient(player, "upgraded", { id = u.id, count = bought, level = (p :: any)[u.id], quiet = quiet })
+	Push:FireClient(player, "upgraded", { id = u.id, count = bought, level = p.up[u.id] })
 	pushState(player)
 	return bought
 end
 
--- 자동 업그레이드: 가장 싼 것부터 계속 산다 (성장력을 조금 더 우선)
+-- 자동 업그레이드: 가장 싼 것부터 계속 산다 (성장력·질량 배율을 조금 더 우선)
 function Actions.autoUpgrade(player: Player, p: Profile)
 	local boughtAny = false
-	for _ = 1, 60 do
+	for _ = 1, 80 do
 		local best, bestCost = nil, math.huge
 		for _, u in ipairs(Config.Upgrades) do
-			local level = (p :: any)[u.id] :: number
+			local level = p.up[u.id]
 			if level < u.maxLevel then
-				local cost = Config.upgradeCost(u.id, level) * (u.id == "grow" and 0.7 or 1)
+				local weight = (u.id == "grow" or u.id == "mult") and 0.7 or 1
+				local cost = Config.upgradeCost(u.id, level) * weight
 				if cost < bestCost then
 					best, bestCost = u, cost
 				end
@@ -2929,13 +3349,12 @@ function Actions.autoUpgrade(player: Player, p: Profile)
 		if not best then
 			break
 		end
-		local level = (p :: any)[best.id] :: number
-		local cost = Config.upgradeCost(best.id, level)
+		local cost = Config.upgradeCost(best.id, p.up[best.id])
 		if p.mass < cost then
 			break
 		end
-		p.mass -= cost;
-		(p :: any)[best.id] = level + 1
+		p.mass -= cost
+		p.up[best.id] += 1
 		boughtAny = true
 	end
 	if boughtAny then
@@ -2957,24 +3376,24 @@ task.spawn(function()
 end)
 
 function Actions.bigbang(player: Player)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	if p.radius < Config.BIGBANG_RADIUS then
 		toast(player, string.format("크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
 		return
 	end
-	local reward = Config.darkMatterReward(p.radius, p.bigbang)
+	local reward = Config.darkMatterReward(p.radius, p.bigbang, p.bb.dm)
 	local before = {}
 	for _, skin in ipairs(Config.Skins) do
 		before[skin.id] = Calc.skinUnlocked(player, p, skin)
 	end
 	p.bigbang += 1
 	p.dm += reward
-	p.mass = 0
+	p.mass = p.mass * 0.05 * (p.bb.keep or 0)
 	p.radius = Config.startRadius(p.bb.start or 0)
-	p.grow = 0
-	p.pull = 0
-	p.mult = 0
-	states[player].dirty = true
+	for _, u in ipairs(Config.Upgrades) do
+		p.up[u.id] = 0
+	end
+	st.dirty = true
 	local newSkins = {}
 	for _, skin in ipairs(Config.Skins) do
 		if not before[skin.id] and Calc.skinUnlocked(player, p, skin) then
@@ -2982,20 +3401,22 @@ function Actions.bigbang(player: Player)
 			p.skin = skin.id
 		end
 	end
-	local world = Config.Zones[states[player].zone].world
-	moveTo(player, spawnPos(world))
+	if not st.inLobby then
+		moveTo(player, spawnPos(st.world))
+	end
 	applyHole(player)
 	Push:FireClient(player, "bigbang", {
 		count = p.bigbang,
 		dm = reward,
 		skins = newSkins,
 		world2 = p.bigbang == Config.Worlds[2].needBigbang,
+		maxRadius = Calc.maxRadius(p),
 	})
 	pushState(player)
 end
 
 function Actions.teleport(player: Player, zoneArg: any)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local zi = math.floor(tonumber(zoneArg) or 0)
 	local zone = Config.Zones[zi]
 	if not zone then
@@ -3005,14 +3426,68 @@ function Actions.teleport(player: Player, zoneArg: any)
 		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", zone.world, Config.Worlds[zone.world].needBigbang))
 		return
 	end
-	local r = Calc.radius(p)
+	local r = p.radius
 	if zi > Config.maxZone(zone.world, r) then
 		toast(player, string.format("크기 %d 이상이어야 갈 수 있어요", zone.need))
 		return
 	end
 	local z0 = Config.zoneStart(zi)
 	local z = math.min(z0 + 20 + r, z0 + zone.length / 2)
-	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + r * 0.2, z))
+	st.world = zone.world
+	st.portalAt = os.clock() + 3
+	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + math.min(r, 50) * 0.2, z))
+end
+
+function Actions.skill(player: Player)
+	local p, st = profiles[player], states[player]
+	local ab = Calc.ability(p)
+	if ab.kind ~= "active" then
+		toast(player, string.format("%s: 늘 켜져 있는 능력이에요 (%s)", ab.name, ab.desc))
+		return
+	end
+	if st.inLobby then
+		toast(player, "로비에서는 스킬을 쓸 수 없어요")
+		return
+	end
+	local now = os.clock()
+	if now < st.cdUntil then
+		toast(player, string.format("%s: %d초 뒤에 다시 쓸 수 있어요", ab.name, math.ceil(st.cdUntil - now)))
+		return
+	end
+	st.cdUntil = now + ab.cd
+	if (ab.dur or 0) > 0 then
+		st.activeOn = true
+		st.activeUntil = now + ab.dur
+	end
+	if ab.burst then
+		st.burst = ab.burst
+	end
+	applyHole(player)
+	Push:FireClient(player, "skill", { name = ab.name, dur = ab.dur or 0, cd = ab.cd, burst = ab.burst ~= nil })
+	pushState(player)
+end
+
+function Actions.daily(player: Player)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local now = os.time()
+	local wait = p.dailyAt + Config.DAILY_HOURS * 3600 - now
+	if wait > 0 then
+		toast(player, "🎁 다음 보상까지 " .. Config.formatTime(wait))
+		return
+	end
+	p.streak = (now - p.dailyAt < 48 * 3600) and p.streak + 1 or 1
+	p.dailyAt = now
+	local dm = 2 + math.min(p.streak, 7)
+	local mass = math.max(1000, Config.biggestMass(1, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
+	p.dm += dm
+	p.mass += mass
+	p.total += mass
+	st.dirty = true
+	Push:FireClient(player, "daily", { streak = p.streak, dm = dm, mass = mass })
+	pushState(player)
 end
 
 ------------------------------------------------------------------------
@@ -3043,7 +3518,7 @@ function Actions.bbShop(player: Player, id: any)
 end
 
 function Actions.skin(player: Player, id: any)
-	local p = profiles[player]
+	local p, st = profiles[player], states[player]
 	local skin = type(id) == "string" and Config.SKIN_BY_ID[id]
 	if not skin then
 		return
@@ -3068,8 +3543,13 @@ function Actions.skin(player: Player, id: any)
 			return
 		end
 	end
+	if p.skin ~= skin.id then
+		-- 스킨을 바꾸면 켜져 있던 액티브 스킬은 끝난다
+		st.activeOn = false
+		st.burst = 0
+	end
 	p.skin = skin.id
-	states[player].dirty = true
+	st.dirty = true
 	applyHole(player)
 	pushState(player)
 end
@@ -3136,6 +3616,10 @@ function Sats.hatch(player: Player, capId: any, wantTriple: any)
 	local p = profiles[player]
 	local cap = type(capId) == "string" and Config.CAPSULE_BY_ID[capId]
 	if not cap then
+		return
+	end
+	if not states[player].inLobby then
+		toast(player, "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요")
 		return
 	end
 	if not Calc.worldOpen(p, cap.world) then
@@ -3279,8 +3763,7 @@ local function grantProduct(player: Player, key: string, receiptId: string): boo
 		p.respawnUntil = math.max(now, p.respawnUntil) + 1800
 	elseif key == "massS" or key == "massL" then
 		local n = key == "massS" and 30 or 120
-		local world = Config.Zones[st.zone].world
-		local amount = Config.biggestMass(world, p.radius) * n * Calc.totalMult(player, p)
+		local amount = Config.biggestMass(st.world, p.radius) * n * Calc.totalMult(player, p)
 		p.mass += amount
 		p.total += amount
 	elseif key == "dm10" then
@@ -3319,28 +3802,33 @@ Store.init({
 -- 요청 처리
 ------------------------------------------------------------------------
 local function testAction(player: Player, p: Profile, action: string, arg: any)
+	local st = states[player]
 	if action == "testMass" then
 		local amount = math.clamp(tonumber(arg) or 0, 0, 1e30)
 		p.mass += amount
 		p.total += amount
 	elseif action == "testSize" then
-		p.radius = math.clamp(tonumber(arg) or 0, Config.START_RADIUS, Config.MAX_RADIUS)
+		p.radius = math.clamp(tonumber(arg) or 0, Config.START_RADIUS, Calc.maxRadius(p))
 	elseif action == "testMaxAll" then
-		p.grow = Config.UPGRADE_BY_ID.grow.maxLevel
-		p.pull = Config.UPGRADE_BY_ID.pull.maxLevel
-		p.mult = Config.UPGRADE_BY_ID.mult.maxLevel
+		for _, u in ipairs(Config.Upgrades) do
+			p.up[u.id] = u.maxLevel
+		end
 	elseif action == "testDM" then
 		p.dm += 50
 	elseif action == "testBigbang" then
 		p.bigbang += 1
 	elseif action == "testStar" then
-		local st = states[player]
 		st.nextStar = 0
 		st.starPos = nil
+	elseif action == "testSkill" then
+		st.cdUntil = 0
+	elseif action == "testDaily" then
+		p.dailyAt = 0
 	elseif action == "testReset" then
 		local fresh = defaultProfile()
+		Quests.fill(fresh)
 		profiles[player] = fresh
-		states[player].passes = {}
+		st.passes = {}
 	else
 		return
 	end
@@ -3374,16 +3862,14 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 	elseif action == "teleport" then
 		Actions.teleport(player, arg)
 	elseif action == "world" then
-		local w = math.floor(tonumber(arg) or 0)
-		if not Config.Worlds[w] then
-			return
+		local w = math.floor(tonumber(arg) or -1)
+		if w == 0 then
+			Actions.goLobby(player)
+		else
+			Actions.goWorld(player, w)
 		end
-		if not Calc.worldOpen(p, w) then
-			toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
-			return
-		end
-		moveTo(player, spawnPos(w))
-		Push:FireClient(player, "world", w)
+	elseif action == "skill" then
+		Actions.skill(player)
 	elseif action == "bbshop" then
 		Actions.bbShop(player, arg)
 	elseif action == "skin" then
@@ -3412,10 +3898,45 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 end)
 
 ------------------------------------------------------------------------
--- 입장과 퇴장
+-- 로비 기계 (가까이 가서 E)
+------------------------------------------------------------------------
+for capId, pp in pairs(lobby.machines) do
+	pp.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "capsule", capsule = capId })
+	end)
+end
+lobby.store.Triggered:Connect(function(player: Player)
+	Push:FireClient(player, "open", { page = "store" })
+end)
+lobby.skins.Triggered:Connect(function(player: Player)
+	Push:FireClient(player, "open", { page = "skins" })
+end)
+lobby.daily.Triggered:Connect(function(player: Player)
+	Actions.daily(player)
+end)
+
+-- 순위판: 이 서버에서 모은 질량 순서
+task.spawn(function()
+	while true do
+		local list = {}
+		for player, p in pairs(profiles) do
+			table.insert(list, { name = player.DisplayName, total = p.total, bigbang = p.bigbang })
+		end
+		table.sort(list, function(a, b)
+			return a.total > b.total
+		end)
+		for k, row in ipairs(lobby.board) do
+			local e = list[k]
+			row.Text = e and string.format("%d. %s  💠%s  🌌%d", k, e.name, Config.formatNumber(e.total), e.bigbang) or ""
+		end
+		task.wait(10)
+	end
+end)
+
 ------------------------------------------------------------------------
 -- 블랙홀 캐릭터: 보이지 않는 공 하나와 Humanoid뿐이다. 팔다리가 없어서 걷는 모션이 없고,
--- 죽지 않게 해 두었다. 혹시 사라지거나 죽으면 기다리지 않고 그 자리(또는 시작 지점)에서 바로 다시 생긴다.
+-- 죽지 않게 해 두었다. 혹시 사라지거나 죽으면 기다리지 않고 그 자리(또는 로비)에서 바로 다시 생긴다.
+------------------------------------------------------------------------
 local spawnHole: (Player, Vector3) -> ()
 spawnHole = function(player: Player, pos: Vector3)
 	if not player.Parent then
@@ -3476,9 +3997,7 @@ spawnHole = function(player: Player, pos: Vector3)
 	end)
 	model.AncestryChanged:Connect(function()
 		if not model.Parent and player.Character == model then
-			local st = states[player]
-			local world = st and Config.Zones[st.zone].world or 1
-			task.defer(spawnHole, player, spawnPos(world))
+			task.defer(spawnHole, player, lobby.spawn)
 		end
 	end)
 	applyHole(player)
@@ -3492,6 +4011,8 @@ local function onPlayerAdded(player: Player)
 		reqWindow = 0,
 		reqCount = 0,
 		zone = 1,
+		world = 1,
+		inLobby = true,
 		passes = {},
 		starPos = nil,
 		starExpire = 0,
@@ -3499,6 +4020,12 @@ local function onPlayerAdded(player: Player)
 		starUntil = 0,
 		portalAt = 0,
 		lockToastAt = 0,
+		combo = 0,
+		lastEat = 0,
+		activeUntil = 0,
+		activeOn = false,
+		cdUntil = 0,
+		burst = 0,
 	}
 	states[player] = st
 	local ls = Instance.new("Folder")
@@ -3527,13 +4054,14 @@ local function onPlayerAdded(player: Player)
 	if not player.Parent then
 		return
 	end
+	Quests.fill(profile)
 	profiles[player] = profile
 	st.canSave = ok
 	-- 들어오기 전에 산 우주 위성 패키지도 한 번은 챙겨 준다
 	if Calc.hasPass(player, "petpack") and not profile.packGiven then
 		grantPass(player, "petpack")
 	end
-	spawnHole(player, spawnPos(1))
+	spawnHole(player, lobby.spawn)
 	pushState(player)
 	updateLeaderstats(player)
 end
@@ -3712,9 +4240,12 @@ return Store
         <Properties>
           <string name="Name">World</string>
           <string name="Source"><![CDATA[-- World (ModuleScript, HoleServer 아래)
--- 조명, 세계 2개(구역 11개)의 바닥과 벽, 구역 사이 문, 세계를 오가는 문, 물체 배치.
--- 세계는 x 위치로 떨어져 있고, 구역은 각 세계의 시작 지점(z = 0)에서 +z 쪽으로 차례로 이어진다.
--- 문은 모두에게 막혀 있고, 크기가 충분한 사람의 화면에서만 통과된다 (캐릭터 물리는 각자 화면이 맡는다).
+-- 조명, 로비, 세계 2개(구역 15개)의 바닥과 벽, 구역 사이 문, 로비로 가는 문, 물체 배치.
+-- 세계와 로비는 x 위치로 3만 칸씩 떨어져 있어서 서로 보이지 않는다.
+-- 구역은 각 세계의 시작 지점(z = 0)에서 +z 쪽으로 차례로 이어진다.
+-- 로블록스 파트는 한 변이 2048을 넘지 못하므로, 넓은 바닥과 벽은 2000짜리 조각으로 나눠 깐다
+-- (예전에 넓은 구역 가장자리에서 떨어지던 구멍이 이것 때문이었다).
+-- 구역 문은 모두에게 막혀 있고, 크기가 충분한 사람의 화면에서만 통과된다 (캐릭터 물리는 각자 화면이 맡는다).
 
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -3723,6 +4254,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Props = require(ReplicatedStorage:WaitForChild("Props"))
 
 local World = {}
+
+local LIMIT = Config.PART_LIMIT
 
 local function part(props: { [string]: any }): Part
 	local p = Instance.new("Part")
@@ -3736,6 +4269,28 @@ local function part(props: { [string]: any }): Part
 	end
 	p.Parent = props.Parent
 	return p
+end
+
+-- 큰 직육면체를 2000짜리 조각으로 나눠 깐다 (Position + Size로 준 것만). 만든 조각을 모두 돌려준다
+local function tiled(props: { [string]: any }): { Part }
+	local size: Vector3 = props.Size
+	local center: Vector3 = props.Position
+	local nx = math.max(1, math.ceil(size.X / LIMIT))
+	local ny = math.max(1, math.ceil(size.Y / LIMIT))
+	local nz = math.max(1, math.ceil(size.Z / LIMIT))
+	local piece = Vector3.new(size.X / nx, size.Y / ny, size.Z / nz)
+	local list = {}
+	for ix = 1, nx do
+		for iy = 1, ny do
+			for iz = 1, nz do
+				local copy = table.clone(props)
+				copy.Size = piece
+				copy.Position = center + Vector3.new((ix - (nx + 1) / 2) * piece.X, (iy - (ny + 1) / 2) * piece.Y, (iz - (nz + 1) / 2) * piece.Z)
+				table.insert(list, part(copy))
+			end
+		end
+	end
+	return list
 end
 
 local function signText(target: BasePart, face: Enum.NormalId, lines: { { any } })
@@ -3761,6 +4316,19 @@ local function signText(target: BasePart, face: Enum.NormalId, lines: { { any } 
 	end
 end
 
+local function prompt(target: BasePart, action: string, object: string, name: string): ProximityPrompt
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = name
+	pp.ActionText = action
+	pp.ObjectText = object
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 22
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.E
+	pp.Parent = target
+	return pp
+end
+
 function World.setupLighting()
 	Lighting.ClockTime = 15.5
 	Lighting.Brightness = 2.2
@@ -3778,8 +4346,8 @@ function World.setupLighting()
 	cc.Contrast = 0.08
 	cc.Parent = Lighting
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-	atmo.Density = 0.25
-	atmo.Haze = 1
+	atmo.Density = 0.3
+	atmo.Haze = 1.5
 	atmo.Color = Color3.fromRGB(200, 210, 240)
 	atmo.Decay = Color3.fromRGB(120, 110, 160)
 	atmo.Parent = Lighting
@@ -3787,38 +4355,39 @@ end
 
 -- 별가루 파티클 (우주 구역 하늘)
 local function starDust(folder: Folder, center: Vector3, zone: any, color: Color3)
-	local sky = part({ Name = "Stars", Size = Vector3.new(zone.width, 10, zone.length), Position = center + Vector3.new(0, 260, 0), Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
+	local sky = part({ Name = "Stars", Size = Vector3.new(math.min(zone.width, LIMIT), 10, math.min(zone.length, LIMIT)), Position = center + Vector3.new(0, 300, 0), Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
 	local pe = Instance.new("ParticleEmitter")
-	pe.Rate = 120
+	pe.Rate = 160
 	pe.Lifetime = NumberRange.new(4, 8)
 	pe.Speed = NumberRange.new(0, 1)
-	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 2), NumberSequenceKeypoint.new(1, 0) })
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 3), NumberSequenceKeypoint.new(1, 0) })
 	pe.LightEmission = 1
 	pe.Color = ColorSequence.new(color, Color3.fromRGB(255, 255, 255))
 	pe.Parent = sky
 end
 
--- 구역별 바닥 꾸밈
+-- 구역별 바닥 꾸밈 (모두 밟히지 않는 장식)
 local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, wx: number)
 	local name = zone.name
 	if name == "도시" or name == "대도시" or name == "과자 마을" or name == "케이크 도시" then
-		-- 가운데 길과 줄무늬 (과자 세계는 초콜릿 길, 크림 선)
 		local candy = zone.world == 2
 		local roadCol = candy and Color3.fromRGB(110, 60, 40) or Color3.fromRGB(45, 45, 50)
 		local lineCol = candy and Color3.fromRGB(255, 240, 250) or Color3.fromRGB(240, 230, 120)
-		part({ Name = "Road", Size = Vector3.new(zone.width * 0.18, 0.15, zone.length), Position = center + Vector3.new(0, 0.08, 0), Color = roadCol, Material = candy and Enum.Material.SmoothPlastic or Enum.Material.Asphalt, CanCollide = false, Parent = folder })
+		tiled({ Name = "Road", Size = Vector3.new(zone.width * 0.18, 0.15, zone.length), Position = center + Vector3.new(0, 0.08, 0), Color = roadCol, Material = candy and Enum.Material.SmoothPlastic or Enum.Material.Asphalt, CanCollide = false, Parent = folder })
 		for k = 0, 9 do
-			part({ Name = "Line", Size = Vector3.new(1.2, 0.16, zone.length / 20), Position = Vector3.new(wx, 0.1, z0 + zone.length * (k + 0.5) / 10), Color = lineCol, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+			part({ Name = "Line", Size = Vector3.new(2, 0.16, zone.length / 20), Position = Vector3.new(wx, 0.1, z0 + zone.length * (k + 0.5) / 10), Color = lineCol, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
 		end
-	elseif name == "바다와 산" then
-		for k = 0, 5 do
+	elseif name == "바다와 산" or name == "초콜릿 강" then
+		local col = name == "초콜릿 강" and Color3.fromRGB(90, 45, 25) or Color3.fromRGB(50, 120, 200)
+		for k = 0, 7 do
 			local a = k * 1.3
+			local d = math.min(LIMIT, zone.width * 0.16)
 			part({
 				Name = "Water",
 				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(0.3, zone.width * 0.18, zone.width * 0.18),
+				Size = Vector3.new(0.3, d, d),
 				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.3, 0.12, math.sin(a) * zone.length * 0.3)) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = Color3.fromRGB(50, 120, 200),
+				Color = col,
 				Material = Enum.Material.Glass,
 				Transparency = 0.15,
 				CanCollide = false,
@@ -3826,15 +4395,14 @@ local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, 
 			})
 		end
 	elseif name == "젤리 들판" then
-		-- 알록달록 젤리 웅덩이
-		for k = 0, 7 do
+		for k = 0, 9 do
 			local a = k * 0.8
 			part({
 				Name = "JellyPool",
 				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(0.3, 26 + k * 3, 26 + k * 3),
+				Size = Vector3.new(0.3, 30 + k * 4, 30 + k * 4),
 				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.33, 0.12, math.sin(a) * zone.length * 0.33)) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = Color3.fromHSV(k / 8, 0.45, 1),
+				Color = Color3.fromHSV(k / 10, 0.45, 1),
 				Material = Enum.Material.Glass,
 				Transparency = 0.2,
 				CanCollide = false,
@@ -3842,24 +4410,62 @@ local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, 
 			})
 		end
 	elseif name == "아이스크림 산맥" then
-		-- 시럽 줄무늬
 		for k = -4, 4 do
-			part({ Name = "Syrup", Size = Vector3.new(zone.width / 20, 0.14, zone.length), Position = center + Vector3.new(k * zone.width / 9, 0.07, 0), Color = Color3.fromHSV((k + 4) / 9, 0.35, 1), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
+			tiled({ Name = "Syrup", Size = Vector3.new(zone.width / 20, 0.14, zone.length), Position = center + Vector3.new(k * zone.width / 9, 0.07, 0), Color = Color3.fromHSV((k + 4) / 9, 0.35, 1), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
 		end
-	elseif name == "우주" or name == "사탕 우주" then
+	elseif name == "우주" or name == "사탕 우주" or name == "은하수" or name == "디저트 은하" or name == "설탕 블랙홀" then
 		local col = zone.world == 2 and Color3.fromRGB(255, 120, 220) or Color3.fromRGB(110, 80, 255)
+		if name == "은하수" or name == "설탕 블랙홀" then
+			col = Color3.fromRGB(80, 200, 255)
+		end
 		for k = -6, 6 do
-			part({ Name = "Grid", Size = Vector3.new(1.5, 0.12, zone.length), Position = center + Vector3.new(k * zone.width / 13, 0.06, 0), Color = col, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = folder })
+			tiled({ Name = "Grid", Size = Vector3.new(3, 0.12, zone.length), Position = center + Vector3.new(k * zone.width / 13, 0.06, 0), Color = col, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = folder })
 		end
 		starDust(folder, center, zone, zone.world == 2 and Color3.fromRGB(255, 200, 240) or Color3.fromRGB(200, 210, 255))
 	end
 end
 
--- 세계를 오가는 문: 세계마다 하나씩, 시작 지점 왼쪽에 있다
-World.PORTAL_OFFSET = Vector3.new(-70, 0, 34)
+-- 포털 (소용돌이 고리). to = 0이면 로비, 1·2면 세계
 export type Portal = { pos: Vector3, to: number }
 
--- 구역 바닥, 옆 벽, 구역 사이 문, 세계 문
+local function buildPortal(folder: Folder, ppos: Vector3, to: number, facing: number)
+	local ringCol = to == 0 and Color3.fromRGB(120, 255, 200) or (to == 2 and Color3.fromRGB(255, 120, 210) or Color3.fromRGB(140, 110, 255))
+	local rot = CFrame.Angles(0, facing, 0)
+	part({ Name = "PortalBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 24, 24), CFrame = CFrame.new(ppos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = ringCol, Material = Enum.Material.Neon, Transparency = 0.35, CanCollide = false, Parent = folder })
+	for k = 0, 15 do
+		local a = k * math.pi / 8
+		part({
+			Name = "PortalRing",
+			Size = Vector3.new(2.2, 2.2, 3.2),
+			CFrame = CFrame.new(ppos) * rot * CFrame.new(math.cos(a) * 10, 11 + math.sin(a) * 10, 0) * CFrame.Angles(0, 0, a),
+			Color = k % 2 == 0 and ringCol or Color3.fromRGB(255, 255, 255),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			Parent = folder,
+		})
+	end
+	local swirl = part({ Name = "PortalSwirl", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 18, 18), CFrame = CFrame.new(ppos + Vector3.new(0, 11, 0)) * rot * CFrame.Angles(0, math.rad(90), 0), Color = ringCol, Material = Enum.Material.ForceField, Transparency = 0.1, CanCollide = false, Parent = folder })
+	swirl:SetAttribute("Spin", true)
+	local sign = part({ Name = "PortalSign", Size = Vector3.new(30, 9, 1), CFrame = CFrame.new(ppos + Vector3.new(0, 26, 0)) * rot, Color = Color3.fromRGB(25, 15, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	local title, lock
+	if to == 0 then
+		title, lock = "🏠 로비", "캡슐 뽑기 · 상점 · 매일 보상"
+	else
+		local target = Config.Worlds[to]
+		title = string.format("🌀 세계 %d · %s", to, target.name)
+		lock = target.needBigbang > 0 and string.format("빅뱅 %d번 하면 열림", target.needBigbang) or "언제든 갈 수 있음"
+	end
+	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
+		signText(sign, face, {
+			{ title, Color3.fromRGB(255, 230, 255), 0.55 },
+			{ lock, Color3.fromRGB(255, 220, 120), 0.45 },
+		})
+	end
+end
+
+World.PORTAL_OFFSET = Vector3.new(-70, 0, 34)
+
+-- 구역 바닥, 옆 벽, 구역 사이 문, 로비로 가는 문
 function World.buildZones(): ({ BasePart }, { Portal })
 	local folder = Instance.new("Folder")
 	folder.Name = "Zones"
@@ -3874,7 +4480,7 @@ function World.buildZones(): ({ BasePart }, { Portal })
 		local wx = Config.Worlds[zone.world].x
 		local z0 = Config.zoneStart(i)
 		local center = Vector3.new(wx, 0, z0 + zone.length / 2)
-		part({
+		tiled({
 			Name = "Ground" .. i,
 			Size = Vector3.new(zone.width, 4, zone.length),
 			Position = center - Vector3.new(0, 2, 0),
@@ -3883,19 +4489,20 @@ function World.buildZones(): ({ BasePart }, { Portal })
 			Parent = folder,
 		})
 		for _, x in ipairs({ -1, 1 }) do
-			part({
+			tiled({
 				Name = "Edge",
-				Size = Vector3.new(6, 0.2, zone.length),
-				Position = center + Vector3.new(x * (zone.width / 2 - 3), 0.1, 0),
+				Size = Vector3.new(8, 0.2, zone.length),
+				Position = center + Vector3.new(x * (zone.width / 2 - 4), 0.1, 0),
 				Color = zone.ground:Lerp(Color3.new(1, 1, 1), 0.35),
 				Material = Enum.Material.Concrete,
 				CanCollide = false,
 				Parent = folder,
 			})
-			part({
+			-- 보이지 않는 옆 벽
+			tiled({
 				Name = "SideWall",
-				Size = Vector3.new(4, 600, zone.length),
-				Position = center + Vector3.new(x * (zone.width / 2 + 2), 300, 0),
+				Size = Vector3.new(6, 1200, zone.length + 12),
+				Position = center + Vector3.new(x * (zone.width / 2 + 3), 600, 0),
 				Transparency = 1,
 				Parent = folder,
 			})
@@ -3906,24 +4513,32 @@ function World.buildZones(): ({ BasePart }, { Portal })
 		local nextZone = Config.Zones[i + 1]
 		local zEnd = z0 + zone.length
 		if nextZone and nextZone.world == zone.world then
-			local width = math.max(zone.width, nextZone.width)
-			local height = 60 + nextZone.need * 2.5
-			local gate = part({
+			local narrow = math.min(zone.width, nextZone.width)
+			local wide = math.max(zone.width, nextZone.width)
+			-- 넓은 쪽 구역의 남는 가장자리는 늘 막혀 있다 (여기로 나가면 바닥 없는 곳으로 떨어졌다)
+			for _, x in ipairs({ -1, 1 }) do
+				local w = (wide - narrow) / 2 + 6
+				tiled({ Name = "CapWall", Size = Vector3.new(w, 1200, 6), Position = Vector3.new(wx + x * (narrow / 2 + w / 2 - 3), 600, zEnd), Transparency = 1, Parent = folder })
+			end
+			local height = math.min(1800, 60 + nextZone.need * 2.5)
+			for _, g in ipairs(tiled({
 				Name = "Gate",
-				Size = Vector3.new(width, height, 3),
+				Size = Vector3.new(narrow, height, 3),
 				Position = Vector3.new(wx, height / 2, zEnd),
 				Color = zone.world == 2 and Color3.fromRGB(255, 110, 200) or Color3.fromRGB(150, 90, 255),
 				Material = Enum.Material.ForceField,
 				Transparency = 0.2,
 				Parent = folder,
-			})
-			gate:SetAttribute("Need", nextZone.need)
-			gate:SetAttribute("Zone", i + 1)
-			table.insert(gates, gate)
+			})) do
+				g:SetAttribute("Need", nextZone.need)
+				g:SetAttribute("Zone", i + 1)
+				table.insert(gates, g)
+			end
+			local signW = math.clamp(nextZone.need * 0.8, 60, 400)
 			local board = part({
 				Name = "GateSign",
-				Size = Vector3.new(60, 22, 1),
-				Position = Vector3.new(wx, 26, zEnd - 3),
+				Size = Vector3.new(signW, signW * 0.36, 1),
+				Position = Vector3.new(wx, 8 + signW * 0.25, zEnd - 3),
 				Color = Color3.fromRGB(30, 20, 50),
 				Material = Enum.Material.Slate,
 				CanCollide = false,
@@ -3935,92 +4550,172 @@ function World.buildZones(): ({ BasePart }, { Portal })
 				{ string.format("크기 %d 이상이면 통과", nextZone.need), Color3.fromRGB(255, 220, 120), 0.45 },
 			})
 		else
-			part({ Name = "EndWall", Size = Vector3.new(zone.width, 600, 4), Position = Vector3.new(wx, 300, zEnd + 2), Transparency = 1, Parent = folder })
+			tiled({ Name = "EndWall", Size = Vector3.new(zone.width + 12, 1200, 6), Position = Vector3.new(wx, 600, zEnd + 3), Transparency = 1, Parent = folder })
 		end
 	end
 
 	for wi, world in ipairs(Config.Worlds) do
 		local wx = world.x
 		local first = Config.zonesOf(wi)[1]
-		part({ Name = "StartWall", Size = Vector3.new(Config.Zones[first].width, 600, 4), Position = Vector3.new(wx, 300, -2), Transparency = 1, Parent = folder })
-
-		-- 시작 지점 (세계 1만 진짜 SpawnLocation, 세계 2는 표시만)
-		local pad: BasePart
-		if wi == 1 then
-			local spawn = Instance.new("SpawnLocation")
-			spawn.Name = "HoleSpawn"
-			spawn.Neutral = true
-			spawn.Duration = 0
-			pad = spawn
-		else
-			pad = Instance.new("Part")
-			pad.Name = "WorldSpawn" .. wi
-		end
-		pad.Anchored = true
-		pad.Size = Vector3.new(16, 1, 16)
-		pad.Position = Vector3.new(wx, 0.5, 22)
-		pad.Color = wi == 2 and Color3.fromRGB(255, 120, 200) or Color3.fromRGB(120, 70, 220)
-		pad.Material = Enum.Material.Neon
-		pad.Transparency = 0.3
-		pad.CanCollide = false
-		pad.Parent = folder
-		local decal = pad:FindFirstChildOfClass("Decal")
-		if decal then
-			decal:Destroy()
-		end
+		tiled({ Name = "StartWall", Size = Vector3.new(Config.Zones[first].width + 12, 1200, 6), Position = Vector3.new(wx, 600, -3), Transparency = 1, Parent = folder })
+		part({ Name = "WorldSpawn" .. wi, Size = Vector3.new(16, 1, 16), Position = Vector3.new(wx, 0.5, 22), Color = wi == 2 and Color3.fromRGB(255, 120, 200) or Color3.fromRGB(120, 70, 220), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
 		local title = part({ Name = "TitleSign", Size = Vector3.new(50, 14, 1), Position = Vector3.new(wx, 14, 6), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 		signText(title, Enum.NormalId.Back, {
-			{ wi == 1 and ("🕳 " .. Config.GAME_TITLE) or ("🍭 세계 2 · " .. world.name), wi == 1 and Color3.fromRGB(210, 170, 255) or Color3.fromRGB(255, 170, 220), 0.6 },
-			{ wi == 1 and "작은 것부터 삼키고 커져라!" or "모든 게 달콤하고, 질량은 5배!", Color3.fromRGB(255, 255, 255), 0.4 },
+			{ wi == 1 and ("🌍 세계 1 · " .. world.name) or ("🍭 세계 2 · " .. world.name), wi == 1 and Color3.fromRGB(210, 170, 255) or Color3.fromRGB(255, 170, 220), 0.6 },
+			{ wi == 1 and "작은 것부터 삼키고 커져라!" or "훨씬 넓고, 모든 게 달콤하고, 질량은 5배!", Color3.fromRGB(255, 255, 255), 0.4 },
 		})
-
-		-- 스킨 전시관: 시작 지점 뒤편 단 위에 스킨 12종이 돌고 있다 (블랙홀 모양은 화면이 그린다)
-		local hall = part({ Name = "SkinHall", Size = Vector3.new(220, 4, 34), Position = Vector3.new(wx, -1.2, -24), Color = Color3.fromRGB(40, 30, 70), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
-		hall:SetAttribute("World", wi)
-		for k = 1, #Config.Skins do
-			local x = wx + (k - (#Config.Skins + 1) / 2) * 17
-			part({ Name = "SkinPedestal", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 11, 11), CFrame = CFrame.new(x, 1.5, -24) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 55, 110), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
-			part({ Name = "SkinPedestalRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 11.6, 11.6), CFrame = CFrame.new(x, 2.1, -24) * CFrame.Angles(0, 0, math.rad(90)), Color = Config.Skins[k].a, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
-		end
-		local hallSign = part({ Name = "SkinHallSign", Size = Vector3.new(60, 10, 1), Position = Vector3.new(wx, 34, -24), Color = Color3.fromRGB(25, 15, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
-		signText(hallSign, Enum.NormalId.Back, {
-			{ "🎨 스킨 전시관", Color3.fromRGB(255, 200, 255), 0.6 },
-			{ "🎨 스킨 창에서 바꿀 수 있어요", Color3.fromRGB(255, 255, 255), 0.4 },
-		})
-
-		-- 다른 세계로 가는 문 (소용돌이 고리)
-		local to = wi == 1 and 2 or 1
-		local target = Config.Worlds[to]
 		local ppos = Vector3.new(wx, 0, 0) + World.PORTAL_OFFSET
-		local ringCol = to == 2 and Color3.fromRGB(255, 120, 210) or Color3.fromRGB(140, 110, 255)
-		part({ Name = "PortalBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 22, 22), CFrame = CFrame.new(ppos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = ringCol, Material = Enum.Material.Neon, Transparency = 0.35, CanCollide = false, Parent = folder })
-		for k = 0, 15 do
-			local a = k * math.pi / 8
-			part({
-				Name = "PortalRing",
-				Size = Vector3.new(2.2, 2.2, 3.2),
-				CFrame = CFrame.new(ppos + Vector3.new(math.cos(a) * 9, 10 + math.sin(a) * 9, 0)) * CFrame.Angles(0, 0, a),
-				Color = k % 2 == 0 and ringCol or Color3.fromRGB(255, 255, 255),
-				Material = Enum.Material.Neon,
-				CanCollide = false,
-				Parent = folder,
-			})
-		end
-		local swirl = part({ Name = "PortalSwirl", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 16, 16), CFrame = CFrame.new(ppos + Vector3.new(0, 10, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = ringCol, Material = Enum.Material.ForceField, Transparency = 0.1, CanCollide = false, Parent = folder })
-		swirl:SetAttribute("Spin", true)
-		local sign = part({ Name = "PortalSign", Size = Vector3.new(26, 8, 1), Position = ppos + Vector3.new(0, 23, 0), Color = Color3.fromRGB(25, 15, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
-		local lock = target.needBigbang > 0 and string.format("빅뱅 %d번 하면 열림", target.needBigbang) or "언제든 갈 수 있음"
-		signText(sign, Enum.NormalId.Back, {
-			{ string.format("🌀 세계 %d · %s", to, target.name), Color3.fromRGB(255, 230, 255), 0.55 },
-			{ lock, Color3.fromRGB(255, 220, 120), 0.45 },
-		})
-		signText(sign, Enum.NormalId.Front, {
-			{ string.format("🌀 세계 %d · %s", to, target.name), Color3.fromRGB(255, 230, 255), 0.55 },
-			{ lock, Color3.fromRGB(255, 220, 120), 0.45 },
-		})
-		table.insert(portals, { pos = ppos, to = to })
+		buildPortal(folder, ppos, 0, 0)
+		table.insert(portals, { pos = ppos, to = 0 })
 	end
 	return gates, portals
+end
+
+------------------------------------------------------------------------
+-- 로비: 둥근 광장. 가운데 큰 블랙홀 조각, 북쪽에 캡슐 기계 셋, 남쪽에 스킨 전시관,
+-- 서쪽·동쪽에 세계 1·2로 가는 문, 상점 가판대, 매일 보상 상자, 순위판
+------------------------------------------------------------------------
+export type Lobby = {
+	spawn: Vector3,
+	portals: { Portal },
+	machines: { [string]: ProximityPrompt },
+	store: ProximityPrompt,
+	skins: ProximityPrompt,
+	daily: ProximityPrompt,
+	board: { TextLabel },
+}
+
+function World.buildLobby(): Lobby
+	local folder = Instance.new("Folder")
+	folder.Name = "Lobby"
+	folder.Parent = workspace
+	local L = Vector3.new(Config.LOBBY.x, 0, Config.LOBBY.z)
+	local R = Config.LOBBY.radius
+	local function at(x: number, y: number, z: number): Vector3
+		return L + Vector3.new(x, y, z)
+	end
+	-- 바닥과 무늬
+	part({ Name = "LobbyFloor", Shape = Enum.PartType.Cylinder, Size = Vector3.new(6, R * 2 + 20, R * 2 + 20), CFrame = CFrame.new(at(0, -3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(36, 28, 60), Material = Enum.Material.Marble, Parent = folder })
+	for k, rr in ipairs({ 60, 120, R }) do
+		part({ Name = "FloorRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, rr * 2 + 4, rr * 2 + 4), CFrame = CFrame.new(at(0, 0.05 + k * 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHSV(0.75 + k * 0.05, 0.6, 1), Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = folder })
+		part({ Name = "FloorInner", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.32, rr * 2 - 2, rr * 2 - 2), CFrame = CFrame.new(at(0, 0.06 + k * 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(36, 28, 60), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+	end
+	-- 둘레 벽 (보이지 않음) + 빛나는 기둥
+	for k = 0, 35 do
+		local a = k / 36 * math.pi * 2
+		local pos = at(math.cos(a) * (R + 8), 100, math.sin(a) * (R + 8))
+		part({ Name = "LobbyWall", Size = Vector3.new(4, 200, 46), CFrame = CFrame.lookAt(pos, at(0, 100, 0)) * CFrame.Angles(0, math.rad(90), 0), Transparency = 1, Parent = folder })
+		if k % 3 == 0 then
+			part({ Name = "Pillar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(26, 3, 3), CFrame = CFrame.new(at(math.cos(a) * (R + 4), 13, math.sin(a) * (R + 4))) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHSV(k / 36, 0.5, 1), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+		end
+	end
+	-- 가운데 블랙홀 조각 받침 (모양은 화면이 그린다)
+	local core = part({ Name = "SkinPedestal", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 36, 36), CFrame = CFrame.new(at(0, 1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(60, 45, 100), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+	core:SetAttribute("SkinIndex", 6)
+	core:SetAttribute("HoleR", 14)
+	local title = part({ Name = "LobbyTitle", Size = Vector3.new(70, 16, 1), Position = at(0, 40, 0), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
+		signText(title, face, {
+			{ "🕳 " .. Config.GAME_TITLE .. " 로비", Color3.fromRGB(210, 170, 255), 0.6 },
+			{ "← 세계 1   ·   캡슐은 북쪽   ·   세계 2 →", Color3.fromRGB(255, 255, 255), 0.4 },
+		})
+	end
+
+	-- 캡슐 기계 셋 (북쪽)
+	local machines = {}
+	for k, cap in ipairs(Config.Capsules) do
+		local x = (k - 2) * 70
+		local z = 150 - math.abs(k - 2) * 20
+		local base = part({ Name = "CapsuleMachine", Size = Vector3.new(16, 8, 16), Position = at(x, 4, z), Color = Color3.fromRGB(60, 50, 90), Material = Enum.Material.Metal, Parent = folder })
+		part({ Name = "MachineGlass", Shape = Enum.PartType.Ball, Size = Vector3.new(16, 16, 16), Position = at(x, 15, z), Color = cap.color, Material = Enum.Material.Glass, Transparency = 0.5, CanCollide = false, Parent = folder })
+		for j = 0, 5 do
+			local a = j * 1.05
+			part({ Name = "Capsule", Shape = Enum.PartType.Ball, Size = Vector3.new(3.2, 3.2, 3.2), Position = at(x + math.cos(a) * 3.5, 11 + (j % 2) * 3, z + math.sin(a) * 3.5), Color = Color3.fromHSV((j / 6 + k * 0.3) % 1, 0.6, 1), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
+		end
+		part({ Name = "MachineTop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 10, 10), CFrame = CFrame.new(at(x, 23.5, z)) * CFrame.Angles(0, 0, math.rad(90)), Color = cap.color, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+		local sign = part({ Name = "MachineSign", Size = Vector3.new(24, 7, 1), CFrame = CFrame.lookAt(at(x, 31, z), at(0, 31, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+		signText(sign, Enum.NormalId.Front, {
+			{ "🥚 " .. cap.name, Color3.fromRGB(255, 255, 255), 0.55 },
+			{ "💠 " .. Config.formatNumber(cap.cost) .. (cap.world == 2 and " · 세계 2" or ""), Color3.fromRGB(255, 220, 120), 0.45 },
+		})
+		machines[cap.id] = prompt(base, "캡슐 깨기", cap.name, "Capsule")
+	end
+
+	-- 스킨 전시관 (남쪽 둥근 줄)
+	for k = 1, #Config.Skins do
+		local a = math.rad(215 + (k - 1) * 10)
+		local pos = at(math.cos(a) * 200, 1.5, math.sin(a) * 200)
+		local ped = part({ Name = "SkinPedestal", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 13, 13), CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 55, 110), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+		ped:SetAttribute("SkinIndex", k)
+		ped:SetAttribute("HoleR", 4)
+		part({ Name = "PedestalRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 13.6, 13.6), CFrame = CFrame.new(pos + Vector3.new(0, 1.05, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Config.Skins[k].a, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+	end
+	local skinSign = part({ Name = "SkinHallSign", Size = Vector3.new(40, 10, 1), CFrame = CFrame.lookAt(at(0, 22, -175), at(0, 22, 0)), Color = Color3.fromRGB(25, 15, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	signText(skinSign, Enum.NormalId.Front, {
+		{ "🎨 스킨 전시관", Color3.fromRGB(255, 200, 255), 0.6 },
+		{ "스킨마다 고유 능력이 있어요", Color3.fromRGB(255, 255, 255), 0.4 },
+	})
+	local skinStand = part({ Name = "SkinStand", Size = Vector3.new(8, 4, 8), Position = at(0, 2, -175), Color = Color3.fromRGB(200, 90, 200), Material = Enum.Material.Neon, Transparency = 0.3, Parent = folder })
+
+	-- 상점 가판대 (남서), 매일 보상 상자 (남동)
+	local kiosk = part({ Name = "StoreKiosk", Size = Vector3.new(14, 10, 8), Position = at(-110, 5, -60), Color = Color3.fromRGB(230, 160, 40), Material = Enum.Material.SmoothPlastic, Parent = folder })
+	part({ Name = "KioskRoof", Size = Vector3.new(18, 1, 12), Position = at(-110, 14, -60), Color = Color3.fromRGB(255, 220, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+	local kioskSign = part({ Name = "KioskSign", Size = Vector3.new(18, 5, 1), CFrame = CFrame.lookAt(at(-110, 19, -60), at(0, 19, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	signText(kioskSign, Enum.NormalId.Front, { { "💎 상점", Color3.fromRGB(255, 220, 120), 1 } })
+	local chest = part({ Name = "DailyChest", Size = Vector3.new(10, 7, 7), Position = at(110, 3.5, -60), Color = Color3.fromRGB(150, 90, 40), Material = Enum.Material.WoodPlanks, Parent = folder })
+	part({ Name = "ChestLid", Size = Vector3.new(10.4, 2, 7.4), Position = at(110, 8, -60), Color = Color3.fromRGB(255, 200, 60), Material = Enum.Material.Foil, CanCollide = false, Parent = folder })
+	part({ Name = "ChestGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(4, 4, 4), Position = at(110, 11, -60), Color = Color3.fromRGB(255, 230, 120), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
+	local chestSign = part({ Name = "ChestSign", Size = Vector3.new(18, 5, 1), CFrame = CFrame.lookAt(at(110, 17, -60), at(0, 17, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	signText(chestSign, Enum.NormalId.Front, { { "🎁 매일 보상", Color3.fromRGB(255, 220, 120), 1 } })
+
+	-- 순위판 (북쪽 끝)
+	local boardPart = part({ Name = "Leaderboard", Size = Vector3.new(60, 44, 2), CFrame = CFrame.lookAt(at(0, 40, 215), at(0, 40, 0)), Color = Color3.fromRGB(15, 10, 30), Material = Enum.Material.Slate, Parent = folder })
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 10
+	gui.LightInfluence = 0
+	gui.Parent = boardPart
+	local head = Instance.new("TextLabel")
+	head.BackgroundTransparency = 1
+	head.Size = UDim2.fromScale(1, 0.14)
+	head.Font = Enum.Font.GothamBlack
+	head.TextScaled = true
+	head.TextColor3 = Color3.fromRGB(255, 220, 120)
+	head.Text = "🏆 이 서버 순위 (모은 질량)"
+	head.Parent = gui
+	local rows = {}
+	for k = 1, 10 do
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Position = UDim2.fromScale(0.04, 0.14 + (k - 1) * 0.085)
+		l.Size = UDim2.fromScale(0.92, 0.08)
+		l.Font = Enum.Font.GothamBold
+		l.TextScaled = true
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		l.TextColor3 = k <= 3 and Color3.fromRGB(255, 230, 150) or Color3.fromRGB(230, 225, 255)
+		l.Text = ""
+		l.Parent = gui
+		rows[k] = l
+	end
+
+	-- 세계로 가는 문 (서쪽 1, 동쪽 2)
+	local portals = {}
+	for _, info in ipairs({ { -1, 1 }, { 1, 2 } }) do
+		local ppos = at(info[1] * 195, 0, 0)
+		buildPortal(folder, ppos, info[2], math.rad(90))
+		table.insert(portals, { pos = ppos, to = info[2] })
+	end
+
+	return {
+		spawn = at(0, 5, -130),
+		portals = portals,
+		machines = machines,
+		store = prompt(kiosk, "상점 열기", "💎 상점", "Store"),
+		skins = prompt(skinStand, "스킨 보기", "🎨 스킨", "Skins"),
+		daily = prompt(chest, "보상 받기", "🎁 매일 보상", "Daily"),
+		board = rows,
+	}
 end
 
 export type ObjectRec = {
@@ -4029,6 +4724,7 @@ export type ObjectRec = {
 	zone: number,
 	pos: Vector3,
 	alive: boolean,
+	golden: boolean,
 	collide: { [BasePart]: boolean },
 }
 
@@ -4055,26 +4751,29 @@ function World.placeObjects(): ({ ObjectRec }, Folder)
 			return a.size > b.size
 		end)
 		for _, def in ipairs(defs) do
-			for n = 1, def.count do
-				local margin = def.size * 1.3 + 6
+			local count = math.max(1, math.floor(def.count * (zone.countMult or 1) + 0.5))
+			for n = 1, count do
+				local margin = math.min(def.size * 1.3 + 6, zone.width * 0.3)
 				local pos: Vector3? = nil
 				for _ = 1, 40 do
 					local x = rng:NextNumber(-zone.width / 2 + margin, zone.width / 2 - margin)
 					local z = rng:NextNumber(z0 + margin, z0 + zone.length - margin)
 					local p = Vector3.new(wx + x, 0, z)
 					local ok = true
-					-- 시작 지점과 세계 문 근처는 비워 둔다
+					-- 시작 지점과 로비 문 근처는 비워 둔다
 					if first then
 						if (p - Vector3.new(wx, 0, 22)).Magnitude < 22 + def.size then
 							ok = false
-						elseif (p - (Vector3.new(wx, 0, 0) + World.PORTAL_OFFSET)).Magnitude < 16 + def.size then
+						elseif (p - (Vector3.new(wx, 0, 0) + World.PORTAL_OFFSET)).Magnitude < 18 + def.size then
 							ok = false
 						end
 					end
-					for _, other in ipairs(placed) do
-						if (other.pos - p).Magnitude < (other.r + def.size) * 1.05 then
-							ok = false
-							break
+					if ok then
+						for _, other in ipairs(placed) do
+							if (other.pos - p).Magnitude < (other.r + def.size) * 1.05 then
+								ok = false
+								break
+							end
 						end
 					end
 					if ok then
@@ -4084,7 +4783,7 @@ function World.placeObjects(): ({ ObjectRec }, Folder)
 				end
 				if pos then
 					local base = CFrame.new(pos) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
-					local model = Props.build(def.id, def.size, base, zi * 100000 + n * 131 + #list)
+					local model = Props.build(def.model or def.id, def.size, base, zi * 100000 + n * 131 + #list)
 					model.Name = def.id
 					model:SetAttribute("Size", def.size)
 					model:SetAttribute("Mass", def.mass)
@@ -4099,7 +4798,7 @@ function World.placeObjects(): ({ ObjectRec }, Folder)
 					end
 					model.Parent = folder
 					table.insert(placed, { pos = pos, r = def.size })
-					table.insert(list, { model = model, def = def, zone = zi, pos = pos, alive = true, collide = collide })
+					table.insert(list, { model = model, def = def, zone = zi, pos = pos, alive = true, golden = false, collide = collide })
 				end
 			end
 		end
@@ -4417,7 +5116,7 @@ do
 end
 
 ------------------------------------------------------------------------
--- 오른쪽: 자동 업그레이드 + 업그레이드 카드 셋
+-- 오른쪽: 자동 업그레이드 + 업그레이드 9종 (내려서 더 보기)
 ------------------------------------------------------------------------
 type Card = { level: TextLabel, effect: TextLabel, buy: TextButton, max: TextButton }
 local cards: { [string]: Card } = {}
@@ -4426,23 +5125,25 @@ do
 	local panel = new("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -10, 0.52, 0),
-		Size = UDim2.new(0, 262, 0, 3 * 122 + 50),
+		Size = UDim2.new(0, 290, 0, 480),
 		BackgroundTransparency = 1,
 		Parent = gui,
-	}, { new("UIListLayout", { Padding = UDim.new(0, 8) }) })
+	})
 	scaled(panel)
 	autoButton = button({ Size = UDim2.new(1, 0, 0, 42), Text = "🤖 자동 업그레이드: 끔", TextSize = 16, BackgroundColor3 = C.panel2, Parent = panel }, function()
 		Request:FireServer("auto", not (state and state.auto))
 	end)
-	for _, u in ipairs(Config.Upgrades) do
-		local card = new("Frame", { Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = Color3.new(1, 1, 1), Parent = panel }, { corner(14), stroke(C.line, 1.5), grad(C.panel2, C.bg) })
-		text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 22), TextSize = 18, Font = Enum.Font.GothamBlack, Text = u.icon .. " " .. u.name, Parent = card })
-		local level = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 22), TextSize = 15, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = C.gold, Parent = card })
-		local effect = text({ Position = UDim2.new(0, 10, 0, 30), Size = UDim2.new(1, -20, 0, 36), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
-		local buy = button({ Position = UDim2.new(0, 8, 1, -42), Size = UDim2.new(0.66, -10, 0, 34), TextSize = 15, Parent = card }, function()
+	local list = scroller(panel, UDim2.new(1, 0, 1, -48), UDim2.new(0, 0, 0, 48))
+	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
+	for i, u in ipairs(Config.Upgrades) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 98), LayoutOrder = i, BackgroundColor3 = Color3.new(1, 1, 1), Parent = list }, { corner(12), stroke(C.line, 1.5), grad(C.panel2, C.bg) })
+		text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 17, Font = Enum.Font.GothamBlack, Text = u.icon .. " " .. u.name, Parent = card })
+		local level = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = C.gold, Parent = card })
+		local effect = text({ Position = UDim2.new(0, 10, 0, 27), Size = UDim2.new(1, -20, 0, 32), TextSize = 13, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		local buy = button({ Position = UDim2.new(0, 8, 1, -36), Size = UDim2.new(0.66, -10, 0, 30), TextSize = 14, Parent = card }, function()
 			Request:FireServer("upgrade", u.id, false)
 		end)
-		local max = button({ Position = UDim2.new(0.66, 2, 1, -42), Size = UDim2.new(0.34, -10, 0, 34), Text = "최대", TextSize = 14, BackgroundColor3 = C.pink, Parent = card }, function()
+		local max = button({ Position = UDim2.new(0.66, 2, 1, -36), Size = UDim2.new(0.34, -10, 0, 30), Text = "최대", TextSize = 13, BackgroundColor3 = C.pink, Parent = card }, function()
 			Request:FireServer("upgrade", u.id, true)
 		end)
 		cards[u.id] = { level = level, effect = effect, buy = buy, max = max }
@@ -4507,12 +5208,13 @@ do
 	local menu = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.52, 0),
-		Size = UDim2.new(0, 140, 0, 9 * 50),
+		Size = UDim2.new(0, 140, 0, 10 * 48),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
 	scaled(menu)
 	for _, item in ipairs({
+		{ "lobby", "🏠 로비", Color3.fromRGB(40, 170, 140) },
 		{ "store", "💎 상점", Color3.fromRGB(230, 160, 40) },
 		{ "capsule", "🥚 캡슐", Color3.fromRGB(70, 160, 230) },
 		{ "sats", "🛰 위성", Color3.fromRGB(90, 110, 220) },
@@ -4523,8 +5225,13 @@ do
 		{ "help", "📜 도움말", C.panel2 },
 		{ "test", "🧪 테스트", Color3.fromRGB(120, 60, 180) },
 	}) do
-		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
-			openPage(item[1])
+		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 42), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
+			if item[1] == "lobby" then
+				Request:FireServer("world", 0)
+				window.Visible = false
+			else
+				openPage(item[1])
+			end
 		end)
 	end
 	menuButtons.test.Visible = false
@@ -4636,11 +5343,17 @@ do
 		end)
 		capUI[cap.id] = { one = one, three = three, lock = lock }
 	end
+	-- 캡슐은 로비에서만 깬다
+	local goLobby = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, -2), Size = UDim2.new(0, 190, 0, 30), Text = "🏠 로비로 가기", TextSize = 14, BackgroundColor3 = Color3.fromRGB(40, 170, 140), Visible = false, Parent = page }, function()
+		Request:FireServer("world", 0)
+		window.Visible = false
+	end)
 	refreshers.capsule = function()
 		if not state then
 			return
 		end
-		info.Text = string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
+		goLobby.Visible = not state.inLobby
+		info.Text = (state.inLobby and "" or "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요  ·  ") .. string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
 		for _, cap in ipairs(Config.Capsules) do
 			local ui = capUI[cap.id]
 			local open = state.bigbang >= Config.Worlds[cap.world].needBigbang
@@ -4815,7 +5528,8 @@ do
 	vf.CurrentCamera = cam
 	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = top })
 	local effectLabel = text({ Position = UDim2.new(0, 222, 0, 52), Size = UDim2.new(1, -236, 0, 28), TextSize = 19, TextColor3 = C.dim, Parent = top })
-	local howLabel = text({ Position = UDim2.new(0, 222, 0, 84), Size = UDim2.new(1, -236, 0, 50), TextSize = 18, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
+	local abilityLabel = text({ Position = UDim2.new(0, 222, 0, 80), Size = UDim2.new(1, -236, 0, 44), TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
+	local howLabel = text({ Position = UDim2.new(0, 222, 0, 124), Size = UDim2.new(1, -236, 0, 22), TextSize = 16, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
 	local shown = ""
 	local useBtn = button({ Position = UDim2.new(0, 222, 1, -64), Size = UDim2.new(0, 260, 0, 54), Text = "", TextSize = 22, Parent = top }, function()
 		if shown ~= "" then
@@ -4852,6 +5566,12 @@ do
 		nameLabel.Text = skin.name
 		nameLabel.TextColor3 = skin.a:Lerp(Color3.new(1, 1, 1), 0.3)
 		effectLabel.Text = skin.effect and EFFECT_TEXT[skin.effect] or "기본 소용돌이"
+		local ab = skin.ability
+		if ab then
+			abilityLabel.Text = string.format('<font color="#FFD25A"><b>%s %s</b></font> %s\n%s', ab.kind == "active" and "⚡" or "✦", ab.name, ab.kind == "active" and string.format("(Q, %d초마다)", ab.cd) or "(늘 켜짐)", ab.desc)
+		else
+			abilityLabel.Text = ""
+		end
 		local label, col, how = skinStatus(skin)
 		howLabel.Text = how
 		useBtn.Text = label
@@ -4860,7 +5580,7 @@ do
 
 	-- 아래: 스킨 카드 (누르면 위에 크게 보인다)
 	local scroll = scroller(page, UDim2.new(1, 0, 1, -218), UDim2.new(0, 0, 0, 218))
-	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 150), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 172), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
 	local skinButtons: { [string]: TextButton } = {}
 	for _, skin in ipairs(Config.Skins) do
 		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
@@ -4876,6 +5596,9 @@ do
 			text({ Size = UDim2.fromScale(1, 1), TextSize = 26, TextXAlignment = Enum.TextXAlignment.Center, Text = EFFECT_ICON[skin.effect] or "", Parent = swatch })
 		end
 		text({ Position = UDim2.new(0, 4, 0, 64), Size = UDim2.new(1, -8, 0, 36), TextSize = 16, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Text = skin.name, Parent = card })
+		if skin.ability then
+			text({ Position = UDim2.new(0, 4, 0, 100), Size = UDim2.new(1, -8, 0, 22), TextSize = 13, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Text = (skin.ability.kind == "active" and "⚡ " or "✦ ") .. skin.ability.name, Parent = card })
+		end
 		skinButtons[skin.id] = button({ Position = UDim2.new(0, 6, 1, -42), Size = UDim2.new(1, -12, 0, 36), TextSize = 14, Parent = card }, function()
 			show(skin)
 			Request:FireServer("skin", skin.id)
@@ -5049,31 +5772,41 @@ do
 			"<b>🕳 당신은 작은 블랙홀이에요.</b> 돌아다니면 내 크기보다 작은 건 전부 빨려 들어와요.",
 			"",
 			"<b>조작</b>",
-			"• 이동: WASD 또는 화면 조이스틱",
-			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨",
-			"• 🎨 시작 지점 뒤 스킨 전시관에서 모든 스킨을 볼 수 있어요",
+			"• 이동: WASD 또는 화면 조이스틱 · 스킬: Q 또는 오른쪽 아래 둥근 버튼",
+			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨 · E 로비 기계 쓰기",
+			"",
+			"<b>🏠 로비</b>",
+			"• 처음엔 로비에서 시작해요. 왼쪽 메뉴 🏠 로비 버튼이나 세계 시작 지점 왼쪽 문으로 돌아와요",
+			"• 북쪽 캡슐 기계에서 위성을 뽑고, 남쪽 스킨 전시관에서 스킨 12종과 능력을 구경해요",
+			"• 🎁 매일 보상 상자 (연속으로 받을수록 많이), 💎 상점 가판대, 🏆 서버 순위판",
+			"• 서쪽 문 → 세계 1, 동쪽 문 → 세계 2",
 			"",
 			"<b>커지기</b>",
 			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
-			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드와 캡슐을 사요",
-			"• ⚫ 성장력: 먹을 때 커지는 정도 +15%",
-			"• 🌀 흡입력: 반지름 바깥까지 끌어당겨요",
-			"• 💠 질량 배율: 삼킬 때 얻는 질량 +25%",
+			"• 클수록 덜 자라서, 뒤쪽 구역은 오래 놀아야 커져요. 최대 크기는 빅뱅할수록 늘어나요",
+			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드 9종을 사요 (내려서 더 보기)",
+			"• ⚫ 성장력 · 💠 질량 배율 · 🌀 흡입력 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
 			"• 🤖 자동 업그레이드를 켜면 알아서 사요",
-			"• 너무 큰 물체는 빨간 테두리가 쳐지고, 아래에 필요한 크기가 떠요",
-			"• 삼킨 물체는 몇 초 뒤 뿅 하고 다시 생겨요 (♻ 재생산)",
 			"",
-			"<b>⭐ 별똥별</b>",
-			string.format("• 가끔 근처에 별똥별이 떨어져요. 삼키면 %d초 동안 질량과 성장 2배!", Config.STAR_BOOST),
+			"<b>보너스</b>",
+			string.format("• 🔥 연속 흡수: %.1f초 안에 계속 삼키면 한 번마다 질량 +1%% (최대 +100%%)", Config.COMBO_WINDOW),
+			string.format("• ✨ 황금 물체: 가끔 금빛으로 나타나요. 질량 %d배, 성장 %.1f배", Config.GOLDEN_MASS, Config.GOLDEN_GROW),
+			string.format("• ☄ 별똥별: 삼키면 %d초 동안 질량과 성장 2배", Config.STAR_BOOST),
+			"• 📋 퀘스트: 늘 3개. 끝내면 바로 질량이나 🌑 암흑 물질을 받아요",
+			"",
+			"<b>🎨 스킨 능력</b>",
+			"• ✦ 패시브: 늘 켜져 있어요 (흡입·성장·질량·황금·별똥별 보너스)",
+			"• ⚡ 액티브: Q로 써요 (빠르게 달리기, 흡입 범위 키우기, 주변 한꺼번에 흡수)",
 			"",
 			"<b>🛰 위성</b>",
-			"• 🥚 캡슐을 깨면 위성이 나와요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
+			"• 로비 캡슐 기계에서 위성을 뽑아요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
-			"<b>🌌 빅뱅</b>",
+			"<b>🌌 빅뱅 (환생)</b>",
 			string.format("• 크기 ⚫%d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_RADIUS),
-			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸",
-			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요 (시작 지점 왼쪽의 소용돌이 문)",
+			"• 빅뱅할 때마다 최대 크기 +300, 성장 +10%",
+			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸, 질량 보존, 암흑 수확",
+			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요. 세계 1보다 훨씬 넓고 구역이 8개예요",
 			"",
 			"<b>🗺 구역</b> (색 벽은 크기가 되면 통과돼요)",
 			table.concat(objLines, "\n"),
@@ -5098,8 +5831,8 @@ do
 		end)
 	end
 	local row2 = hlist(page, 44)
-	for _, r in ipairs({ 1.5, 6, 14, 30, 65, 150, 320 }) do
-		button({ Size = UDim2.new(1 / 7, -5, 1, 0), Text = "⚫" .. tostring(r), TextSize = 14, BackgroundColor3 = C.blue, Parent = row2 }, function()
+	for _, r in ipairs({ 1.5, 6, 14, 30, 65, 140, 350, 600, 800, 1000 }) do
+		button({ Size = UDim2.new(0.1, -5, 1, 0), Text = "⚫" .. tostring(r), TextSize = 12, BackgroundColor3 = C.blue, Parent = row2 }, function()
 			Request:FireServer("testSize", r)
 		end)
 	end
@@ -5115,7 +5848,13 @@ do
 		end)
 	end
 	local row4 = hlist(page, 44)
-	button({ Size = UDim2.new(0.5, -3, 1, 0), Text = "↺ 처음으로", TextSize = 15, BackgroundColor3 = C.red, Parent = row4 }, function()
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "⚡ 스킬 대기 없애기", TextSize = 14, BackgroundColor3 = C.gold, TextColor3 = C.bg, Parent = row4 }, function()
+		Request:FireServer("testSkill")
+	end)
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "🎁 매일 보상 다시", TextSize = 14, BackgroundColor3 = Color3.fromRGB(40, 170, 140), Parent = row4 }, function()
+		Request:FireServer("testDaily")
+	end)
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "↺ 처음으로", TextSize = 15, BackgroundColor3 = C.red, Parent = row4 }, function()
 		Request:FireServer("testReset")
 	end)
 end
@@ -5228,8 +5967,9 @@ local function refreshAll()
 	end
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
-		"⚫ %s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
+		"⚫ %s/%s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
 		Config.formatSize(state.radius),
+		Config.formatSize(state.maxRadius),
 		string.format("%.2f", state.growMult or 1),
 		Config.formatSize(state.pullRange),
 		fmt(state.totalMult),
@@ -5240,19 +5980,10 @@ local function refreshAll()
 	autoButton.BackgroundColor3 = state.auto and C.green or C.panel2
 	for _, u in ipairs(Config.Upgrades) do
 		local card = cards[u.id]
-		local level = state[u.id] :: number
+		local level = state.up[u.id] or 0
 		local maxed = level >= u.maxLevel
 		card.level.Text = maxed and "MAX" or string.format("Lv.%d / %d", level, u.maxLevel)
-		local nowText, nextText
-		if u.id == "grow" then
-			nowText, nextText = string.format("성장 ×%.2f", 1 + 0.15 * level), string.format("×%.2f", 1 + 0.15 * (level + 1))
-		elseif u.id == "pull" then
-			local r = state.radius
-			nowText, nextText = Config.formatSize(Config.pullRange(r, level, state.bb.pull)), Config.formatSize(Config.pullRange(r, level + 1, state.bb.pull))
-		else
-			nowText, nextText = string.format("×%.2f", 1 + 0.25 * level), string.format("×%.2f", 1 + 0.25 * (level + 1))
-		end
-		card.effect.Text = maxed and (u.desc .. "\n지금 " .. nowText) or string.format("%s\n%s → %s", u.desc, nowText, nextText)
+		card.effect.Text = u.desc .. "\n" .. u.show(level) .. (maxed and "" or ("  →  " .. u.show(level + 1)))
 		local cost = Config.upgradeCost(u.id, level)
 		local can = not maxed and state.mass >= cost
 		card.buy.Text = maxed and "최대" or ("💠 " .. fmt(cost))
@@ -5271,13 +6002,17 @@ local function refreshAll()
 			prevNeed = zone.need
 		end
 	end
-	if nextZone then
+	if state.inLobby then
+		Bar.fill.Size = UDim2.fromScale(1, 1)
+		Bar.label.Text = "🏠 로비 · 캡슐은 북쪽, 세계 1은 서쪽, 세계 2는 동쪽 문"
+	elseif nextZone then
 		local ratio = math.clamp((r - prevNeed) / math.max(nextZone.need - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("다음 구역 '%s'까지  ⚫ %s / %d", nextZone.name, Config.formatSize(r), nextZone.need)
 	elseif state.radius >= Config.BIGBANG_RADIUS then
-		Bar.fill.Size = UDim2.fromScale(1, 1)
-		Bar.label.Text = "🌌 빅뱅할 수 있어요! (B)"
+		local ratio = math.clamp(state.radius / state.maxRadius, 0, 1)
+		Bar.fill.Size = UDim2.fromScale(ratio, 1)
+		Bar.label.Text = string.format("🌌 빅뱅할 수 있어요! (B)   최대 크기까지 ⚫ %s / %s", Config.formatSize(state.radius), Config.formatSize(state.maxRadius))
 	else
 		local ratio = math.clamp(state.radius / Config.BIGBANG_RADIUS, 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
@@ -5297,8 +6032,10 @@ end
 -- 카메라와 문: 크기에 맞춰 멀리서 보고, 크기가 되는 문은 통과한다
 ------------------------------------------------------------------------
 local function applyRadius(r: number)
-	player.CameraMaxZoomDistance = math.max(60, 40 + r * 6)
-	player.CameraMinZoomDistance = math.min(10 + r * 1.6, player.CameraMaxZoomDistance - 5)
+	-- 로비에서는 블랙홀을 작게 보여 주니 카메라도 가깝게
+	local cr = (state and state.inLobby) and math.min(r, 8) or r
+	player.CameraMaxZoomDistance = math.max(60, 40 + cr * 6)
+	player.CameraMinZoomDistance = math.min(10 + cr * 1.6, player.CameraMaxZoomDistance - 5)
 	local zones = workspace:FindFirstChild("Zones")
 	if not zones then
 		return
@@ -5394,28 +6131,138 @@ do
 		Parent = gui,
 	})
 	local sc = new("UIScale", { Parent = label })
-	local combo = 0
 	local last = 0
-	function addCombo(n: number)
-		local now = os.clock()
-		if now - last > 1.5 then
-			combo = 0
-		end
-		last = now
-		combo += n
+	-- combo = 서버가 센 연속 흡수 수, bonus = 질량 보너스 비율
+	function addCombo(combo: number, bonus: number)
+		last = os.clock()
 		if combo >= 5 then
 			label.Visible = true
-			label.Text = string.format("🌀 연속 흡수 x%d", combo)
-			sc.Scale = uiScale * 1.3
+			label.Text = string.format("🔥 연속 흡수 x%d  (질량 +%d%%)", combo, math.floor(bonus * 100 + 0.5))
+			label.TextColor3 = combo >= 50 and C.gold or (combo >= 20 and Color3.fromRGB(255, 150, 80) or C.pink)
+			sc.Scale = uiScale * (1.25 + math.min(combo, 100) * 0.004)
 			TweenService:Create(sc, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScale }):Play()
 		end
 	end
 	RunService.Heartbeat:Connect(function()
-		if label.Visible and os.clock() - last > 1.5 then
+		if label.Visible and os.clock() - last > Config.COMBO_WINDOW then
 			label.Visible = false
-			combo = 0
 		end
 	end)
+end
+
+-- 타격감: 화면 번쩍임과 카메라 흔들림
+local Feel = {} :: any
+do
+	local flash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 45, Active = false, Parent = gui })
+	function Feel.flash(color: Color3, strength: number)
+		flash.BackgroundColor3 = color
+		flash.BackgroundTransparency = 1 - math.clamp(strength, 0, 0.6)
+		TweenService:Create(flash, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+	end
+	local shakeAmp = 0
+	local shaking = false
+	function Feel.shake(amount: number)
+		shakeAmp = math.max(shakeAmp, amount)
+	end
+	-- 흔들 때만 카메라를 건드린다
+	RunService.RenderStepped:Connect(function(dt: number)
+		if shakeAmp <= 0.01 and not shaking then
+			return
+		end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not hum then
+			return
+		end
+		if shakeAmp > 0.01 then
+			shaking = true
+			hum.CameraOffset = Vector3.new((math.random() - 0.5) * 2, (math.random() - 0.5) * 2, (math.random() - 0.5) * 2) * shakeAmp
+			shakeAmp *= math.exp(-dt * 12)
+		else
+			shaking = false
+			shakeAmp = 0
+			hum.CameraOffset = Vector3.zero
+		end
+	end)
+end
+
+-- 스킬 버튼 (오른쪽 아래, Q): 액티브 능력이 있는 스킨이면 누르고, 패시브면 설명만
+local Skill = {} :: any
+do
+	local frame = new("Frame", {
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -310, 1, -60),
+		Size = UDim2.new(0, 120, 0, 120),
+		BackgroundTransparency = 1,
+		Parent = gui,
+	})
+	scaled(frame)
+	Skill.button = button({ Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, -50, 0, 0), Text = "Q", TextSize = 30, BackgroundColor3 = C.accent, Parent = frame }, function()
+		Request:FireServer("skill")
+	end)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = Skill.button })
+	Skill.stroke = new("UIStroke", { Color = C.gold, Thickness = 3, Parent = Skill.button })
+	Skill.cover = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, Parent = Skill.button }, { new("UICorner", { CornerRadius = UDim.new(0.5, 0) }) })
+	Skill.label = text({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 102), Size = UDim2.new(0, 220, 0, 20), TextSize = 14, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = frame })
+end
+
+-- 퀘스트 (왼쪽 위)
+local questLabels: { TextLabel } = {}
+do
+	local box = new("Frame", { Position = UDim2.new(0, 10, 0, 10), Size = UDim2.new(0, 300, 0, 112), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Parent = gui }, { corner(12), stroke(C.line, 1.5) })
+	scaled(box)
+	text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "📋 퀘스트", Parent = box })
+	for k = 1, 3 do
+		questLabels[k] = text({ Position = UDim2.new(0, 10, 0, 4 + k * 26), Size = UDim2.new(1, -20, 0, 24), TextSize = 13, RichText = true, Parent = box })
+	end
+end
+
+local function refreshQuests()
+	if not state then
+		return
+	end
+	for k = 1, 3 do
+		local q = state.quests[k]
+		local l = questLabels[k]
+		if q then
+			local def = Config.QUEST_BY_KIND[q.kind]
+			local t = string.format(def.text, fmt(q.goal))
+			local reward = def.reward == "dm" and "🌑" or "💠"
+			l.Text = string.format('%s %s  <font color="#FFD25A">%s/%s</font>', reward, t, fmt(math.min(q.progress, q.goal)), fmt(q.goal))
+		else
+			l.Text = ""
+		end
+	end
+end
+
+local function refreshSkill()
+	if not state then
+		return
+	end
+	local skin = Config.SKIN_BY_ID[state.skin]
+	local ab = skin and skin.ability
+	if not ab then
+		Skill.button.Visible = false
+		Skill.label.Text = ""
+		return
+	end
+	Skill.button.Visible = true
+	local passed = os.clock() - stateAt
+	if ab.kind == "active" then
+		local cdLeft = math.max(0, (state.cdLeft or 0) - passed)
+		local activeLeft = math.max(0, (state.activeLeft or 0) - passed)
+		Skill.button.Text = activeLeft > 0 and string.format("%.0f", activeLeft) or (cdLeft > 0 and string.format("%d", math.ceil(cdLeft)) or "Q")
+		Skill.button.BackgroundColor3 = activeLeft > 0 and C.green or (cdLeft > 0 and C.panel2 or skin.a)
+		Skill.cover.Size = UDim2.fromScale(1, math.clamp(cdLeft / ab.cd, 0, 1))
+		Skill.label.Text = "⚡ " .. ab.name
+		Skill.stroke.Color = cdLeft > 0 and C.line or C.gold
+	else
+		Skill.button.Text = "✦"
+		Skill.button.BackgroundColor3 = skin.a:Lerp(C.bg, 0.4)
+		Skill.cover.Size = UDim2.fromScale(1, 0)
+		Skill.label.Text = "✦ " .. ab.name .. " (늘 켜짐)"
+		Skill.stroke.Color = C.line
+	end
 end
 
 -- 큰 글자 배너
@@ -5452,11 +6299,18 @@ end
 local lastRadius = -1
 local handlers: { [string]: (any) -> () } = {}
 
+local lastInLobby = nil
 function handlers.state(data: any)
-	local grew = state ~= nil and data.radius > lastRadius * 1.05
+	local grew = state ~= nil and data.radius > lastRadius * 1.05 and not data.inLobby
 	state = data
 	stateAt = os.clock()
 	Fx.updateGallery(data.skins, data.skin)
+	refreshQuests()
+	refreshSkill()
+	if data.inLobby ~= lastInLobby then
+		lastInLobby = data.inLobby
+		lastRadius = -1
+	end
 	if data.radius ~= lastRadius then
 		lastRadius = data.radius
 		applyRadius(data.radius)
@@ -5492,22 +6346,50 @@ function handlers.eat(data: any)
 			end
 		end
 	end
-	local biggest = 0
-	for _, e in ipairs(data.list) do
-		biggest = math.max(biggest, e.size)
-		Fx.popup(e.pos + Vector3.new(0, e.size * 1.2 + 2, 0), "+" .. fmt(e.mass), Color3.fromRGB(210, 170, 255), 20 + math.min(14, e.size))
-	end
+	-- 타격감: 삼킨 자리에서 빛줄기가 빨려 들고, 블랙홀이 꿀꺽 부풀고, 큰 걸 먹으면 화면이 흔들린다
 	local r = state and state.radius or 3
-	local ratio = biggest / r
-	Fx.sound("pop", 0.25 + ratio * 0.3, 1.6 - ratio * 0.8 + math.random() * 0.1)
-	if ratio > 0.7 then
-		Fx.sound("whoosh", 0.4, 0.6)
-		local c = myCenter()
-		if c then
-			Fx.burst(c + Vector3.new(0, 1, 0), C.pink, 20, r * 2, math.max(0.4, r * 0.1))
+	local c = myCenter()
+	local biggest = 0
+	local anyGolden = false
+	for i, e in ipairs(data.list) do
+		biggest = math.max(biggest, e.size)
+		if e.golden then
+			anyGolden = true
+		end
+		if i <= 6 or (e.golden and i <= 12) then
+			local col = e.golden and C.gold or Color3.fromHSV((os.clock() * 0.3 + i * 0.07) % 1, 0.5, 1)
+			Fx.popup(e.pos + Vector3.new(0, e.size * 1.2 + 2, 0), (e.golden and "✨ +" or "+") .. fmt(e.mass), e.golden and C.gold or Color3.fromRGB(210, 170, 255), (e.golden and 28 or 20) + math.min(14, e.size))
+			if c then
+				Fx.streak(e.pos + Vector3.new(0, e.size * 0.6, 0), c + Vector3.new(0, 0.5, 0), col, math.clamp(e.size * 0.35, 0.3, r * 0.25))
+			end
 		end
 	end
-	addCombo(#data.list)
+	local ratio = biggest / r
+	local char = player.Character
+	if char then
+		Fx.pulse(char, math.clamp(0.04 + ratio * 0.18, 0.04, 0.25))
+	end
+	local combo = data.combo or 0
+	Fx.sound("pop", 0.25 + ratio * 0.3, 1.3 + math.min(combo, 60) * 0.012 - ratio * 0.6 + math.random() * 0.08)
+	if ratio > 0.5 or data.burst then
+		Fx.sound("whoosh", 0.5, 0.55)
+		Feel.shake(math.clamp(ratio * 0.6, 0.15, 0.9) * (data.burst and 2 or 1))
+		if c then
+			Fx.burst(c + Vector3.new(0, 1, 0), C.pink, 24, r * 2, math.max(0.4, r * 0.1))
+			Fx.ring(c, C.pink, r * 1.2, r * 2.6, 0.4)
+		end
+		if ratio > 0.75 or data.burst then
+			Feel.flash(Color3.fromRGB(255, 230, 255), data.burst and 0.45 or 0.22)
+		end
+	end
+	if anyGolden then
+		Fx.sound("slash", 0.6, 1.5)
+		Feel.flash(C.gold, 0.25)
+		if c then
+			Fx.burst(c + Vector3.new(0, 2, 0), C.gold, 40, 20 + r, math.max(0.6, r * 0.12))
+		end
+	end
+	addCombo(combo, data.comboBonus or 0)
 	refreshAll()
 end
 
@@ -5540,6 +6422,11 @@ function handlers.zone(data: any)
 end
 
 function handlers.world(data: any)
+	if data == 0 then
+		banner("🏠 로비", "캡슐 뽑기 · 스킨 전시관 · 상점 · 매일 보상", Color3.fromRGB(120, 255, 200))
+		Fx.sound("whoosh", 0.8, 0.5)
+		return
+	end
 	local w = Config.Worlds[data]
 	if w then
 		applyWorld(data)
@@ -5608,6 +6495,37 @@ end
 function handlers.starGot(data: any)
 	Fx.starGot(data.pos)
 	banner("⭐ 질량 2배!", string.format("%d초 동안", math.floor(data.left)), C.gold)
+end
+
+-- 로비 기계를 누르면 창이 열린다
+function handlers.open(data: any)
+	if data.page == "capsule" or data.page == "store" or data.page == "skins" then
+		if not (window.Visible and currentPage == data.page) then
+			openPage(data.page)
+		end
+	end
+end
+
+function handlers.skill(data: any)
+	local c = myCenter()
+	local r = state and state.radius or 3
+	Fx.sound("whoosh", 1, 1.3)
+	Feel.flash(Color3.fromRGB(200, 230, 255), 0.25)
+	if c then
+		Fx.ring(c, C.gold, r * 1.5, r * (data.burst and 8 or 4), 0.6)
+		Fx.pillar(c, C.gold, 120 + r, 6 + r * 0.2, 0.6)
+	end
+	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "한꺼번에 흡수!", C.gold)
+end
+
+function handlers.quest(data: any)
+	banner("📋 퀘스트 완료!", data.text .. "  →  " .. data.reward, Color3.fromRGB(120, 255, 180))
+	Fx.sound("slash", 0.6, 1.2)
+end
+
+function handlers.daily(data: any)
+	banner("🎁 매일 보상!", string.format("연속 %d일 · 🌑 +%d · 💠 +%s", data.streak, data.dm, fmt(data.mass)), C.gold)
+	Fx.sound("slash", 0.7, 1.1)
 end
 
 Push.OnClientEvent:Connect(function(kind: string, data: any)
@@ -5688,6 +6606,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		openPage("store")
 	elseif key == Enum.KeyCode.K then
 		openPage("skins")
+	elseif key == Enum.KeyCode.Q then
+		Request:FireServer("skill")
 	end
 end)
 
@@ -5704,11 +6624,16 @@ do
 	end)
 	local swirlBase: { [BasePart]: CFrame } = {}
 	local lastBoost = ""
+	local skillTick = 0
 	local refreshAsked = 0
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
 		if skinPreview then
 			skinPreview.active = window.Visible and currentPage == "skins"
+		end
+		if t > skillTick then
+			skillTick = t + 0.2
+			refreshSkill()
 		end
 		local bt, ended = boostText()
 		if bt ~= lastBoost then
@@ -5793,6 +6718,28 @@ local function fxPart(size: Vector3, color: Color3, material: Enum.Material, sha
 	return p
 end
 
+-- 납작한 원판: 구 메시를 납작하게 늘려서, 파트 한계(2048)보다 큰 블랙홀도 그릴 수 있다
+local DISC_MAX = 2000
+
+local function setDisc(p: BasePart, d: number)
+	local s = math.clamp(d, 0.05, DISC_MAX)
+	p.Size = Vector3.new(s, p.Size.Y, s)
+	local mesh = p:FindFirstChild("DiscMesh")
+	if mesh and mesh:IsA("SpecialMesh") then
+		mesh.Scale = Vector3.new(math.max(d, 0.05) / s, 1, math.max(d, 0.05) / s)
+	end
+end
+
+local function disc(d: number, thick: number, color: Color3, material: Enum.Material, transparency: number?): Part
+	local p = fxPart(Vector3.new(1, thick, 1), color, material, nil, transparency)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.Name = "DiscMesh"
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	setDisc(p, d)
+	return p
+end
+
 ------------------------------------------------------------------------
 -- 효과음
 ------------------------------------------------------------------------
@@ -5827,7 +6774,10 @@ type Hole = {
 	target: number,
 	buildR: number, -- 파트를 만들 때의 반지름
 	lastK: number,
-	baseSizes: { Vector3 },
+	baseD: { number }, -- 원판 4장의 처음 지름
+	pulse: number, -- 삼킬 때 잠깐 부푸는 정도
+	skillOn: boolean,
+	aura: Part,
 	skin: number,
 	parts: { Part },
 	rim: Part,
@@ -5903,10 +6853,12 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		return p
 	end
 	local d = r * 2
-	local rim = add(fxPart(Vector3.new(0.12, d * 1.14, d * 1.14), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder, 0.15))
-	local disk = add(fxPart(Vector3.new(0.14, d * 1.05, d * 1.05), skin.a:Lerp(BLACK, 0.82), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-	local void = add(fxPart(Vector3.new(0.16, d * 0.9, d * 0.9), BLACK, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-	local core = add(fxPart(Vector3.new(0.18, d * 0.45, d * 0.45), BLACK, Enum.Material.Neon, Enum.PartType.Cylinder))
+	local rim = add(disc(d * 1.14, 0.12, skin.a, Enum.Material.Neon, 0.15))
+	local disk = add(disc(d * 1.05, 0.14, skin.a:Lerp(BLACK, 0.82), Enum.Material.SmoothPlastic))
+	local void = add(disc(d * 0.9, 0.16, BLACK, Enum.Material.SmoothPlastic))
+	local core = add(disc(d * 0.45, 0.18, BLACK, Enum.Material.Neon))
+	-- 스킬을 쓰는 동안 바깥에 퍼지는 빛
+	local aura = add(disc(d * 1.6, 0.1, skin.b, Enum.Material.Neon, 1))
 	local light = Instance.new("PointLight")
 	light.Color = skin.a
 	light.Range = math.min(60, 6 + r * 1.5)
@@ -5982,7 +6934,7 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 			Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, math.max(0.15, r * 0.05)), NumberSequenceKeypoint.new(1, 0) }),
 			Color = ColorSequence.new(Color3.new(1, 1, 1), skin.a),
 		})
-		local halo = add(fxPart(Vector3.new(0.1, d * 1.5, d * 1.5), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder, 0.75))
+		local halo = add(disc(d * 1.5, 0.1, skin.a, Enum.Material.Neon, 0.75))
 		table.insert(extras, { part = halo, kind = "halo", a = 0, k = 0 })
 		for i = 0, 11 do
 			local p = add(fxPart(Vector3.new(1, 1, 1) * small * 0.8, i % 3 == 0 and skin.b or Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Ball))
@@ -6026,7 +6978,10 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		target = r,
 		buildR = r,
 		lastK = 1,
-		baseSizes = { rim.Size, disk.Size, void.Size, core.Size },
+		baseD = { d * 1.14, d * 1.05, d * 0.9, d * 0.45, d * 1.6 },
+		pulse = 0,
+		skillOn = false,
+		aura = aura,
 		skin = skinIndex,
 		parts = parts,
 		rim = rim,
@@ -6058,22 +7013,28 @@ local function updateHole(h: Hole, t: number, dt: number)
 	if not center then
 		return
 	end
-	-- 먹어서 커질 때 부드럽게 커진다
+	-- 먹어서 커질 때 부드럽게 커지고, 삼킬 때마다 잠깐 꿀꺽 부푼다
 	h.radius += (h.target - h.radius) * math.min(1, dt * 6)
-	local scaleK = h.radius / h.buildR
+	h.pulse *= math.exp(-dt * 9)
+	local scaleK = h.radius / h.buildR * (1 + h.pulse)
 	if math.abs(scaleK - h.lastK) > 0.002 then
 		h.lastK = scaleK
-		for i, p in ipairs({ h.rim, h.disk, h.void, h.core }) do
-			local b = h.baseSizes[i]
-			p.Size = Vector3.new(b.X, b.Y * scaleK, b.Z * scaleK)
+		for i, p in ipairs({ h.rim, h.disk, h.void, h.core, h.aura }) do
+			setDisc(p, h.baseD[i] * scaleK)
 		end
 	end
 	local r = h.radius
 	local base = CFrame.new(center)
-	h.rim.CFrame = base * CFrame.new(0, 0.04, 0) * FLAT
-	h.disk.CFrame = base * CFrame.new(0, 0.06, 0) * FLAT
-	h.void.CFrame = base * CFrame.new(0, 0.08, 0) * FLAT
-	h.core.CFrame = base * CFrame.new(0, 0.1, 0) * FLAT
+	h.rim.CFrame = base * CFrame.new(0, 0.04, 0)
+	h.disk.CFrame = base * CFrame.new(0, 0.06, 0)
+	h.void.CFrame = base * CFrame.new(0, 0.08, 0)
+	h.core.CFrame = base * CFrame.new(0, 0.1, 0)
+	h.aura.CFrame = base * CFrame.new(0, 0.02, 0)
+	if h.skillOn then
+		h.aura.Transparency = 0.45 + math.sin(t * 10) * 0.15
+	elseif h.aura.Transparency < 1 then
+		h.aura.Transparency = 1
+	end
 	if h.effect == "rainbow" then
 		local c = Color3.fromHSV((t * 0.15) % 1, 0.8, 1)
 		h.rim.Color = c
@@ -6095,7 +7056,7 @@ local function updateHole(h: Hole, t: number, dt: number)
 			local ang = e.a + t * 0.4
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.15, r * 0.12, math.sin(ang) * r * 1.15)) * CFrame.Angles(0, -ang, 0) * CFrame.Angles(0, 0, 0.5)
 		elseif e.kind == "halo" then
-			p.CFrame = base * CFrame.new(0, r * 0.15, 0) * CFrame.Angles(math.sin(t * 0.7) * 0.25, t * 0.3, 0) * FLAT
+			p.CFrame = base * CFrame.new(0, r * 0.15, 0) * CFrame.Angles(math.sin(t * 0.7) * 0.25, t * 0.3, 0)
 		elseif e.kind == "orbitStar" then
 			local ang = e.a - t * 0.8
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.45, r * 0.15 + math.sin(ang * 2 + t) * r * 0.08, math.sin(ang) * r * 1.45))
@@ -6156,10 +7117,21 @@ local function updateHole(h: Hole, t: number, dt: number)
 	end
 end
 
+-- 로비에서는 블랙홀을 작게 보여 준다 (광장을 다 덮지 않게)
+local LOBBY_SHOW = 8
+local function shownRadius(char: Model, r: number): number
+	local c = Fx.holeCenter(char)
+	if c and Config.inLobby(c) then
+		return math.min(r, LOBBY_SHOW)
+	end
+	return r
+end
+
 local function syncHole(char: Model)
-	local r = char:GetAttribute("HoleR")
+	local rawR = char:GetAttribute("HoleR")
 	local skin = char:GetAttribute("HoleSkin")
 	local h = holes[char]
+	local r = type(rawR) == "number" and shownRadius(char, rawR) or nil
 	if type(r) ~= "number" or not char.Parent then
 		if h then
 			destroyHole(h)
@@ -6182,13 +7154,26 @@ local function syncHole(char: Model)
 		end
 	end
 	local shown = h and h.radius or r
+	-- 로비 ↔ 세계처럼 크기가 확 바뀌면 바로 그 크기로
+	if shown > r * 3 or shown < r / 3 then
+		shown = r
+	end
 	if h then
 		destroyHole(h)
 	end
 	local nh = buildHole(char, r, skinIndex)
 	nh.radius = shown
+	nh.skillOn = char:GetAttribute("SkillOn") == true
 	holes[char] = nh
 	buildSats(nh, satKey)
+end
+
+-- 삼킬 때 블랙홀이 꿀꺽 부푼다
+function Fx.pulse(char: Model, amount: number)
+	local h = holes[char]
+	if h then
+		h.pulse = math.max(h.pulse, amount)
+	end
 end
 
 local function watchCharacter(char: Model)
@@ -6201,6 +7186,12 @@ local function watchCharacter(char: Model)
 	end)
 	char:GetAttributeChangedSignal("Sats"):Connect(function()
 		syncHole(char)
+	end)
+	char:GetAttributeChangedSignal("SkillOn"):Connect(function()
+		local h = holes[char]
+		if h then
+			h.skillOn = char:GetAttribute("SkillOn") == true
+		end
 	end)
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
@@ -6247,28 +7238,30 @@ type GalleryItem = { hole: Hole, label: TextLabel, skin: any }
 local gallery: { GalleryItem } = {}
 
 local function buildGallery()
-	local zones = workspace:WaitForChild("Zones", 30)
-	if not zones then
+	local lobbyFolder = workspace:WaitForChild("Lobby", 60)
+	if not lobbyFolder then
 		return
 	end
-	for _, hall in ipairs(zones:GetChildren()) do
-		local w = hall:GetAttribute("World")
-		if hall.Name == "SkinHall" and type(w) == "number" and Config.Worlds[w] then
-			local wx = Config.Worlds[w].x
-			local f = Instance.new("Folder")
-			f.Name = "SkinGallery" .. w
-			f.Parent = folder
-			for k, skin in ipairs(Config.Skins) do
-				local center = Vector3.new(wx + (k - (#Config.Skins + 1) / 2) * 17, 2.3, -24)
-				local h = Fx.preview(k, 3.6, center, f)
-				h.active = false
+	local f = Instance.new("Folder")
+	f.Name = "SkinGallery"
+	f.Parent = folder
+	for _, ped in ipairs(lobbyFolder:GetChildren()) do
+		local k = ped:GetAttribute("SkinIndex")
+		local hr = ped:GetAttribute("HoleR")
+		local skin = type(k) == "number" and Config.Skins[k]
+		if ped:IsA("BasePart") and skin and type(hr) == "number" then
+			-- 받침(세운 원기둥) 윗면 위에 그린다
+			local center = ped.Position + Vector3.new(0, ped.Size.X / 2 + 0.05, 0)
+			local h = Fx.preview(k, hr, center, f)
+			h.active = false
+			if hr < 10 then
 				local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), skin.a, Enum.Material.Neon, nil, 1)
-				anchor.CFrame = CFrame.new(center + Vector3.new(0, 9, 0))
+				anchor.CFrame = CFrame.new(center + Vector3.new(0, 10, 0))
 				anchor.Parent = f
 				local bb = Instance.new("BillboardGui")
-				bb.Size = UDim2.new(0, 170, 0, 54)
+				bb.Size = UDim2.new(0, 190, 0, 64)
 				bb.LightInfluence = 0
-				bb.MaxDistance = 260
+				bb.MaxDistance = 220
 				bb.Parent = anchor
 				local l = Instance.new("TextLabel")
 				l.Size = UDim2.fromScale(1, 1)
@@ -6280,6 +7273,8 @@ local function buildGallery()
 				l.Text = skin.name
 				l.Parent = bb
 				table.insert(gallery, { hole = h, label = l, skin = skin })
+			else
+				table.insert(gallery, { hole = h, label = nil :: any, skin = skin })
 			end
 		end
 	end
@@ -6288,6 +7283,9 @@ end
 -- 전시관 이름표: 가진 스킨, 쓰는 스킨, 얻는 법
 function Fx.updateGallery(owned: { string }, selected: string)
 	for _, g in ipairs(gallery) do
+		if not g.label then
+			continue
+		end
 		local skin = g.skin
 		local status
 		if skin.id == selected then
@@ -6303,7 +7301,8 @@ function Fx.updateGallery(owned: { string }, selected: string)
 		else
 			status = "💎 " .. Config.PASS_BY_KEY[skin.value].name
 		end
-		g.label.Text = skin.name .. "\n" .. status
+		local ab = skin.ability
+		g.label.Text = skin.name .. "\n" .. status .. (ab and ("\n" .. (ab.kind == "active" and "⚡ " or "✦ ") .. ab.name) or "")
 	end
 end
 
@@ -6311,6 +7310,20 @@ end
 -- 빨려 들어가는 연출: 모든 화면에서, 누가 삼켰든 그 블랙홀로 소용돌이치며 들어간다
 ------------------------------------------------------------------------
 type Sucked = { part: BasePart, offset: Vector3, height: number, size: Vector3, tr: number }
+
+-- 한 번에 너무 많이 빨려 들면 (아주 큰 블랙홀) 작은 것들은 바로 사라지게 해서 화면이 버벅이지 않게 한다
+local MAX_SUCKING = 40
+local sucking = 0
+
+local function hideNow(model: Model)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.LocalTransparencyModifier = 1
+		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") or d:IsA("Sparkles") then
+			(d :: any).Enabled = false
+		end
+	end
+end
 
 local function suck(model: Model)
 	local id = model:GetAttribute("EatenBy")
@@ -6321,8 +7334,16 @@ local function suck(model: Model)
 	local char = eater and eater.Character
 	local center = char and Fx.holeCenter(char)
 	if not center then
+		hideNow(model)
 		return
 	end
+	local size = model:GetAttribute("Size")
+	local holeR = char and char:GetAttribute("HoleR")
+	if sucking >= MAX_SUCKING or (type(size) == "number" and type(holeR) == "number" and size < holeR * 0.04) then
+		hideNow(model)
+		return
+	end
+	sucking += 1
 	local list: { Sucked } = {}
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("BasePart") then
@@ -6351,6 +7372,7 @@ local function suck(model: Model)
 		end
 		if t >= 1 then
 			conn:Disconnect()
+			sucking -= 1
 			for _, s in ipairs(list) do
 				s.part.LocalTransparencyModifier = 1
 			end
@@ -6361,11 +7383,21 @@ end
 -- 다시 생긴 물체: 작게 시작해서 통통 튀듯 원래 크기로
 local readyAt = math.huge
 
+local growing = 0
 local function growIn(model: Model)
+	-- 내 블랙홀에 비해 아주 작은 것, 한꺼번에 너무 많은 것은 연출 없이 바로 나타난다
+	local size0 = model:GetAttribute("Size")
+	local me = Players.LocalPlayer.Character
+	local myR = me and me:GetAttribute("HoleR")
+	if growing >= 20 or (type(size0) == "number" and type(myR) == "number" and size0 < myR * 0.03) then
+		return
+	end
+	growing += 1
 	local ok = pcall(function()
 		model:ScaleTo(0.05)
 	end)
 	if not ok then
+		growing -= 1
 		return
 	end
 	local pos = model:GetPivot().Position
@@ -6378,6 +7410,7 @@ local function growIn(model: Model)
 		local t = math.min(1, (os.clock() - start) / 0.45)
 		if not model.Parent or model:GetAttribute("EatenBy") then
 			conn:Disconnect()
+			growing -= 1
 			return
 		end
 		-- 살짝 넘쳤다가 돌아오는 곡선
@@ -6388,6 +7421,7 @@ local function growIn(model: Model)
 		end)
 		if t >= 1 then
 			conn:Disconnect()
+			growing -= 1
 			pcall(function()
 				model:ScaleTo(1)
 			end)
@@ -6395,10 +7429,41 @@ local function growIn(model: Model)
 	end)
 end
 
+-- 황금 물체: 금박을 입히고 반짝이게 (내 화면에서만 바꾼다)
+local GOLD = Color3.fromRGB(255, 205, 60)
+local function goldify(model: Model)
+	if model:GetAttribute("Goldified") or not model:GetAttribute("Golden") then
+		return
+	end
+	model:SetAttribute("Goldified", true)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Transparency < 0.9 and d.Material ~= Enum.Material.Neon then
+			d.Color = d.Color:Lerp(GOLD, 0.75)
+			d.Material = Enum.Material.Foil
+			d.Reflectance = 0.2
+		end
+	end
+	local pp = model.PrimaryPart
+	if pp then
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = GOLD
+		sp.Parent = pp
+		local light = Instance.new("PointLight")
+		light.Color = GOLD
+		light.Range = 16
+		light.Brightness = 2
+		light.Parent = pp
+	end
+end
+
 local function watchObject(model: Instance)
 	if not model:IsA("Model") then
 		return
 	end
+	goldify(model :: Model)
+	model:GetAttributeChangedSignal("Golden"):Connect(function()
+		goldify(model :: Model)
+	end)
 	if model:GetAttribute("EatenBy") then
 		suck(model :: Model)
 	elseif os.clock() > readyAt then
@@ -6454,10 +7519,43 @@ end
 
 -- 바닥에 퍼지는 빛 고리
 function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: number)
-	local p = fxPart(Vector3.new(0.2, fromD, fromD), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2)
-	p.CFrame = CFrame.new(pos + Vector3.new(0, 0.2, 0)) * FLAT
-	TweenService:Create(p, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0.2, toD, toD), Transparency = 1 }):Play()
-	Debris:AddItem(p, life + 0.05)
+	local p = disc(fromD, 0.2, color, Enum.Material.Neon, 0.2)
+	p.CFrame = CFrame.new(pos + Vector3.new(0, 0.25, 0))
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - start) / life)
+		local e = 1 - (1 - k) * (1 - k)
+		setDisc(p, fromD + (toD - fromD) * e)
+		p.Transparency = 0.2 + 0.8 * k
+		if k >= 1 then
+			conn:Disconnect()
+			p:Destroy()
+		end
+	end)
+end
+
+-- 삼킨 물체 자리에서 블랙홀 가운데로 빨려 드는 빛줄기
+function Fx.streak(from: Vector3, to: Vector3, color: Color3, size: number)
+	local p = fxPart(Vector3.new(1, 1, 1) * size, color, Enum.Material.Neon, Enum.PartType.Ball)
+	p.CFrame = CFrame.new(from)
+	local side = Vector3.new(-(to.Z - from.Z), 0, to.X - from.X)
+	if side.Magnitude > 0.01 then
+		side = side.Unit * math.min(side.Magnitude, 40) * 0.3
+	end
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local k = math.min(1, (os.clock() - start) / 0.32)
+		local pos = from:Lerp(to, k * k) + side * math.sin(k * math.pi) + Vector3.new(0, math.sin(k * math.pi) * size, 0)
+		p.CFrame = CFrame.new(pos)
+		p.Size = Vector3.new(1, 1, 1) * size * (1 - k * 0.8)
+		p.Transparency = k * 0.6
+		if k >= 1 then
+			conn:Disconnect()
+			p:Destroy()
+		end
+	end)
 end
 
 -- 빛기둥
@@ -6611,6 +7709,13 @@ function Fx.start()
 		-- 전시관은 카메라가 가까울 때만 움직인다
 		if t > galleryCheck then
 			galleryCheck = t + 0.5
+			-- 로비에 들어가고 나올 때 블랙홀 크기 바꾸기
+			for char, h in pairs(holes) do
+				local raw = char:GetAttribute("HoleR")
+				if type(raw) == "number" and math.abs(shownRadius(char, raw) - h.target) > 0.01 then
+					syncHole(char)
+				end
+			end
 			local cam = workspace.CurrentCamera
 			local cp = cam and cam.CFrame.Position or Vector3.zero
 			for _, g in ipairs(gallery) do

@@ -205,7 +205,13 @@ function SatBuilder.build(shape: string, color: Color3, size: number, gold: bool
 	local function P(name: string, kind: Enum.PartType?, sz: Vector3, cf: CFrame, col: Color3, mat: Enum.Material): Part
 		local p = Instance.new("Part")
 		p.Name = name
-		if kind and kind ~= BLOCK then
+		-- 로블록스 공(Ball)은 늘 완전한 구라서, 납작하거나 길쭉한 공은 구 모양 메시로 늘린다
+		local stretched = kind == BALL and (math.abs(sz.X - sz.Y) > 0.01 or math.abs(sz.Y - sz.Z) > 0.01)
+		if stretched then
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = p
+		elseif kind and kind ~= BLOCK then
 			p.Shape = kind
 		end
 		p.Anchored = true

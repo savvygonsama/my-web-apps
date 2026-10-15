@@ -291,7 +291,7 @@ do
 end
 
 ------------------------------------------------------------------------
--- 오른쪽: 자동 업그레이드 + 업그레이드 카드 셋
+-- 오른쪽: 자동 업그레이드 + 업그레이드 9종 (내려서 더 보기)
 ------------------------------------------------------------------------
 type Card = { level: TextLabel, effect: TextLabel, buy: TextButton, max: TextButton }
 local cards: { [string]: Card } = {}
@@ -300,23 +300,25 @@ do
 	local panel = new("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -10, 0.52, 0),
-		Size = UDim2.new(0, 262, 0, 3 * 122 + 50),
+		Size = UDim2.new(0, 290, 0, 480),
 		BackgroundTransparency = 1,
 		Parent = gui,
-	}, { new("UIListLayout", { Padding = UDim.new(0, 8) }) })
+	})
 	scaled(panel)
 	autoButton = button({ Size = UDim2.new(1, 0, 0, 42), Text = "🤖 자동 업그레이드: 끔", TextSize = 16, BackgroundColor3 = C.panel2, Parent = panel }, function()
 		Request:FireServer("auto", not (state and state.auto))
 	end)
-	for _, u in ipairs(Config.Upgrades) do
-		local card = new("Frame", { Size = UDim2.new(1, 0, 0, 114), BackgroundColor3 = Color3.new(1, 1, 1), Parent = panel }, { corner(14), stroke(C.line, 1.5), grad(C.panel2, C.bg) })
-		text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 22), TextSize = 18, Font = Enum.Font.GothamBlack, Text = u.icon .. " " .. u.name, Parent = card })
-		local level = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 22), TextSize = 15, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = C.gold, Parent = card })
-		local effect = text({ Position = UDim2.new(0, 10, 0, 30), Size = UDim2.new(1, -20, 0, 36), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
-		local buy = button({ Position = UDim2.new(0, 8, 1, -42), Size = UDim2.new(0.66, -10, 0, 34), TextSize = 15, Parent = card }, function()
+	local list = scroller(panel, UDim2.new(1, 0, 1, -48), UDim2.new(0, 0, 0, 48))
+	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
+	for i, u in ipairs(Config.Upgrades) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 98), LayoutOrder = i, BackgroundColor3 = Color3.new(1, 1, 1), Parent = list }, { corner(12), stroke(C.line, 1.5), grad(C.panel2, C.bg) })
+		text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 17, Font = Enum.Font.GothamBlack, Text = u.icon .. " " .. u.name, Parent = card })
+		local level = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = C.gold, Parent = card })
+		local effect = text({ Position = UDim2.new(0, 10, 0, 27), Size = UDim2.new(1, -20, 0, 32), TextSize = 13, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		local buy = button({ Position = UDim2.new(0, 8, 1, -36), Size = UDim2.new(0.66, -10, 0, 30), TextSize = 14, Parent = card }, function()
 			Request:FireServer("upgrade", u.id, false)
 		end)
-		local max = button({ Position = UDim2.new(0.66, 2, 1, -42), Size = UDim2.new(0.34, -10, 0, 34), Text = "최대", TextSize = 14, BackgroundColor3 = C.pink, Parent = card }, function()
+		local max = button({ Position = UDim2.new(0.66, 2, 1, -36), Size = UDim2.new(0.34, -10, 0, 30), Text = "최대", TextSize = 13, BackgroundColor3 = C.pink, Parent = card }, function()
 			Request:FireServer("upgrade", u.id, true)
 		end)
 		cards[u.id] = { level = level, effect = effect, buy = buy, max = max }
@@ -381,12 +383,13 @@ do
 	local menu = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.52, 0),
-		Size = UDim2.new(0, 140, 0, 9 * 50),
+		Size = UDim2.new(0, 140, 0, 10 * 48),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
 	scaled(menu)
 	for _, item in ipairs({
+		{ "lobby", "🏠 로비", Color3.fromRGB(40, 170, 140) },
 		{ "store", "💎 상점", Color3.fromRGB(230, 160, 40) },
 		{ "capsule", "🥚 캡슐", Color3.fromRGB(70, 160, 230) },
 		{ "sats", "🛰 위성", Color3.fromRGB(90, 110, 220) },
@@ -397,8 +400,13 @@ do
 		{ "help", "📜 도움말", C.panel2 },
 		{ "test", "🧪 테스트", Color3.fromRGB(120, 60, 180) },
 	}) do
-		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
-			openPage(item[1])
+		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 42), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
+			if item[1] == "lobby" then
+				Request:FireServer("world", 0)
+				window.Visible = false
+			else
+				openPage(item[1])
+			end
 		end)
 	end
 	menuButtons.test.Visible = false
@@ -510,11 +518,17 @@ do
 		end)
 		capUI[cap.id] = { one = one, three = three, lock = lock }
 	end
+	-- 캡슐은 로비에서만 깬다
+	local goLobby = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, -2), Size = UDim2.new(0, 190, 0, 30), Text = "🏠 로비로 가기", TextSize = 14, BackgroundColor3 = Color3.fromRGB(40, 170, 140), Visible = false, Parent = page }, function()
+		Request:FireServer("world", 0)
+		window.Visible = false
+	end)
 	refreshers.capsule = function()
 		if not state then
 			return
 		end
-		info.Text = string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
+		goLobby.Visible = not state.inLobby
+		info.Text = (state.inLobby and "" or "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요  ·  ") .. string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
 		for _, cap in ipairs(Config.Capsules) do
 			local ui = capUI[cap.id]
 			local open = state.bigbang >= Config.Worlds[cap.world].needBigbang
@@ -689,7 +703,8 @@ do
 	vf.CurrentCamera = cam
 	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = top })
 	local effectLabel = text({ Position = UDim2.new(0, 222, 0, 52), Size = UDim2.new(1, -236, 0, 28), TextSize = 19, TextColor3 = C.dim, Parent = top })
-	local howLabel = text({ Position = UDim2.new(0, 222, 0, 84), Size = UDim2.new(1, -236, 0, 50), TextSize = 18, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
+	local abilityLabel = text({ Position = UDim2.new(0, 222, 0, 80), Size = UDim2.new(1, -236, 0, 44), TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
+	local howLabel = text({ Position = UDim2.new(0, 222, 0, 124), Size = UDim2.new(1, -236, 0, 22), TextSize = 16, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
 	local shown = ""
 	local useBtn = button({ Position = UDim2.new(0, 222, 1, -64), Size = UDim2.new(0, 260, 0, 54), Text = "", TextSize = 22, Parent = top }, function()
 		if shown ~= "" then
@@ -726,6 +741,12 @@ do
 		nameLabel.Text = skin.name
 		nameLabel.TextColor3 = skin.a:Lerp(Color3.new(1, 1, 1), 0.3)
 		effectLabel.Text = skin.effect and EFFECT_TEXT[skin.effect] or "기본 소용돌이"
+		local ab = skin.ability
+		if ab then
+			abilityLabel.Text = string.format('<font color="#FFD25A"><b>%s %s</b></font> %s\n%s', ab.kind == "active" and "⚡" or "✦", ab.name, ab.kind == "active" and string.format("(Q, %d초마다)", ab.cd) or "(늘 켜짐)", ab.desc)
+		else
+			abilityLabel.Text = ""
+		end
 		local label, col, how = skinStatus(skin)
 		howLabel.Text = how
 		useBtn.Text = label
@@ -734,7 +755,7 @@ do
 
 	-- 아래: 스킨 카드 (누르면 위에 크게 보인다)
 	local scroll = scroller(page, UDim2.new(1, 0, 1, -218), UDim2.new(0, 0, 0, 218))
-	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 150), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 172), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
 	local skinButtons: { [string]: TextButton } = {}
 	for _, skin in ipairs(Config.Skins) do
 		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
@@ -750,6 +771,9 @@ do
 			text({ Size = UDim2.fromScale(1, 1), TextSize = 26, TextXAlignment = Enum.TextXAlignment.Center, Text = EFFECT_ICON[skin.effect] or "", Parent = swatch })
 		end
 		text({ Position = UDim2.new(0, 4, 0, 64), Size = UDim2.new(1, -8, 0, 36), TextSize = 16, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Text = skin.name, Parent = card })
+		if skin.ability then
+			text({ Position = UDim2.new(0, 4, 0, 100), Size = UDim2.new(1, -8, 0, 22), TextSize = 13, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Text = (skin.ability.kind == "active" and "⚡ " or "✦ ") .. skin.ability.name, Parent = card })
+		end
 		skinButtons[skin.id] = button({ Position = UDim2.new(0, 6, 1, -42), Size = UDim2.new(1, -12, 0, 36), TextSize = 14, Parent = card }, function()
 			show(skin)
 			Request:FireServer("skin", skin.id)
@@ -923,31 +947,41 @@ do
 			"<b>🕳 당신은 작은 블랙홀이에요.</b> 돌아다니면 내 크기보다 작은 건 전부 빨려 들어와요.",
 			"",
 			"<b>조작</b>",
-			"• 이동: WASD 또는 화면 조이스틱",
-			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨",
-			"• 🎨 시작 지점 뒤 스킨 전시관에서 모든 스킨을 볼 수 있어요",
+			"• 이동: WASD 또는 화면 조이스틱 · 스킬: Q 또는 오른쪽 아래 둥근 버튼",
+			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨 · E 로비 기계 쓰기",
+			"",
+			"<b>🏠 로비</b>",
+			"• 처음엔 로비에서 시작해요. 왼쪽 메뉴 🏠 로비 버튼이나 세계 시작 지점 왼쪽 문으로 돌아와요",
+			"• 북쪽 캡슐 기계에서 위성을 뽑고, 남쪽 스킨 전시관에서 스킨 12종과 능력을 구경해요",
+			"• 🎁 매일 보상 상자 (연속으로 받을수록 많이), 💎 상점 가판대, 🏆 서버 순위판",
+			"• 서쪽 문 → 세계 1, 동쪽 문 → 세계 2",
 			"",
 			"<b>커지기</b>",
 			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
-			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드와 캡슐을 사요",
-			"• ⚫ 성장력: 먹을 때 커지는 정도 +15%",
-			"• 🌀 흡입력: 반지름 바깥까지 끌어당겨요",
-			"• 💠 질량 배율: 삼킬 때 얻는 질량 +25%",
+			"• 클수록 덜 자라서, 뒤쪽 구역은 오래 놀아야 커져요. 최대 크기는 빅뱅할수록 늘어나요",
+			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드 9종을 사요 (내려서 더 보기)",
+			"• ⚫ 성장력 · 💠 질량 배율 · 🌀 흡입력 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
 			"• 🤖 자동 업그레이드를 켜면 알아서 사요",
-			"• 너무 큰 물체는 빨간 테두리가 쳐지고, 아래에 필요한 크기가 떠요",
-			"• 삼킨 물체는 몇 초 뒤 뿅 하고 다시 생겨요 (♻ 재생산)",
 			"",
-			"<b>⭐ 별똥별</b>",
-			string.format("• 가끔 근처에 별똥별이 떨어져요. 삼키면 %d초 동안 질량과 성장 2배!", Config.STAR_BOOST),
+			"<b>보너스</b>",
+			string.format("• 🔥 연속 흡수: %.1f초 안에 계속 삼키면 한 번마다 질량 +1%% (최대 +100%%)", Config.COMBO_WINDOW),
+			string.format("• ✨ 황금 물체: 가끔 금빛으로 나타나요. 질량 %d배, 성장 %.1f배", Config.GOLDEN_MASS, Config.GOLDEN_GROW),
+			string.format("• ☄ 별똥별: 삼키면 %d초 동안 질량과 성장 2배", Config.STAR_BOOST),
+			"• 📋 퀘스트: 늘 3개. 끝내면 바로 질량이나 🌑 암흑 물질을 받아요",
+			"",
+			"<b>🎨 스킨 능력</b>",
+			"• ✦ 패시브: 늘 켜져 있어요 (흡입·성장·질량·황금·별똥별 보너스)",
+			"• ⚡ 액티브: Q로 써요 (빠르게 달리기, 흡입 범위 키우기, 주변 한꺼번에 흡수)",
 			"",
 			"<b>🛰 위성</b>",
-			"• 🥚 캡슐을 깨면 위성이 나와요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
+			"• 로비 캡슐 기계에서 위성을 뽑아요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
-			"<b>🌌 빅뱅</b>",
+			"<b>🌌 빅뱅 (환생)</b>",
 			string.format("• 크기 ⚫%d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_RADIUS),
-			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸",
-			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요 (시작 지점 왼쪽의 소용돌이 문)",
+			"• 빅뱅할 때마다 최대 크기 +300, 성장 +10%",
+			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸, 질량 보존, 암흑 수확",
+			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요. 세계 1보다 훨씬 넓고 구역이 8개예요",
 			"",
 			"<b>🗺 구역</b> (색 벽은 크기가 되면 통과돼요)",
 			table.concat(objLines, "\n"),
@@ -972,8 +1006,8 @@ do
 		end)
 	end
 	local row2 = hlist(page, 44)
-	for _, r in ipairs({ 1.5, 6, 14, 30, 65, 150, 320 }) do
-		button({ Size = UDim2.new(1 / 7, -5, 1, 0), Text = "⚫" .. tostring(r), TextSize = 14, BackgroundColor3 = C.blue, Parent = row2 }, function()
+	for _, r in ipairs({ 1.5, 6, 14, 30, 65, 140, 350, 600, 800, 1000 }) do
+		button({ Size = UDim2.new(0.1, -5, 1, 0), Text = "⚫" .. tostring(r), TextSize = 12, BackgroundColor3 = C.blue, Parent = row2 }, function()
 			Request:FireServer("testSize", r)
 		end)
 	end
@@ -989,7 +1023,13 @@ do
 		end)
 	end
 	local row4 = hlist(page, 44)
-	button({ Size = UDim2.new(0.5, -3, 1, 0), Text = "↺ 처음으로", TextSize = 15, BackgroundColor3 = C.red, Parent = row4 }, function()
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "⚡ 스킬 대기 없애기", TextSize = 14, BackgroundColor3 = C.gold, TextColor3 = C.bg, Parent = row4 }, function()
+		Request:FireServer("testSkill")
+	end)
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "🎁 매일 보상 다시", TextSize = 14, BackgroundColor3 = Color3.fromRGB(40, 170, 140), Parent = row4 }, function()
+		Request:FireServer("testDaily")
+	end)
+	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "↺ 처음으로", TextSize = 15, BackgroundColor3 = C.red, Parent = row4 }, function()
 		Request:FireServer("testReset")
 	end)
 end
@@ -1102,8 +1142,9 @@ local function refreshAll()
 	end
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
-		"⚫ %s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
+		"⚫ %s/%s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
 		Config.formatSize(state.radius),
+		Config.formatSize(state.maxRadius),
 		string.format("%.2f", state.growMult or 1),
 		Config.formatSize(state.pullRange),
 		fmt(state.totalMult),
@@ -1114,19 +1155,10 @@ local function refreshAll()
 	autoButton.BackgroundColor3 = state.auto and C.green or C.panel2
 	for _, u in ipairs(Config.Upgrades) do
 		local card = cards[u.id]
-		local level = state[u.id] :: number
+		local level = state.up[u.id] or 0
 		local maxed = level >= u.maxLevel
 		card.level.Text = maxed and "MAX" or string.format("Lv.%d / %d", level, u.maxLevel)
-		local nowText, nextText
-		if u.id == "grow" then
-			nowText, nextText = string.format("성장 ×%.2f", 1 + 0.15 * level), string.format("×%.2f", 1 + 0.15 * (level + 1))
-		elseif u.id == "pull" then
-			local r = state.radius
-			nowText, nextText = Config.formatSize(Config.pullRange(r, level, state.bb.pull)), Config.formatSize(Config.pullRange(r, level + 1, state.bb.pull))
-		else
-			nowText, nextText = string.format("×%.2f", 1 + 0.25 * level), string.format("×%.2f", 1 + 0.25 * (level + 1))
-		end
-		card.effect.Text = maxed and (u.desc .. "\n지금 " .. nowText) or string.format("%s\n%s → %s", u.desc, nowText, nextText)
+		card.effect.Text = u.desc .. "\n" .. u.show(level) .. (maxed and "" or ("  →  " .. u.show(level + 1)))
 		local cost = Config.upgradeCost(u.id, level)
 		local can = not maxed and state.mass >= cost
 		card.buy.Text = maxed and "최대" or ("💠 " .. fmt(cost))
@@ -1145,13 +1177,17 @@ local function refreshAll()
 			prevNeed = zone.need
 		end
 	end
-	if nextZone then
+	if state.inLobby then
+		Bar.fill.Size = UDim2.fromScale(1, 1)
+		Bar.label.Text = "🏠 로비 · 캡슐은 북쪽, 세계 1은 서쪽, 세계 2는 동쪽 문"
+	elseif nextZone then
 		local ratio = math.clamp((r - prevNeed) / math.max(nextZone.need - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("다음 구역 '%s'까지  ⚫ %s / %d", nextZone.name, Config.formatSize(r), nextZone.need)
 	elseif state.radius >= Config.BIGBANG_RADIUS then
-		Bar.fill.Size = UDim2.fromScale(1, 1)
-		Bar.label.Text = "🌌 빅뱅할 수 있어요! (B)"
+		local ratio = math.clamp(state.radius / state.maxRadius, 0, 1)
+		Bar.fill.Size = UDim2.fromScale(ratio, 1)
+		Bar.label.Text = string.format("🌌 빅뱅할 수 있어요! (B)   최대 크기까지 ⚫ %s / %s", Config.formatSize(state.radius), Config.formatSize(state.maxRadius))
 	else
 		local ratio = math.clamp(state.radius / Config.BIGBANG_RADIUS, 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
@@ -1171,8 +1207,10 @@ end
 -- 카메라와 문: 크기에 맞춰 멀리서 보고, 크기가 되는 문은 통과한다
 ------------------------------------------------------------------------
 local function applyRadius(r: number)
-	player.CameraMaxZoomDistance = math.max(60, 40 + r * 6)
-	player.CameraMinZoomDistance = math.min(10 + r * 1.6, player.CameraMaxZoomDistance - 5)
+	-- 로비에서는 블랙홀을 작게 보여 주니 카메라도 가깝게
+	local cr = (state and state.inLobby) and math.min(r, 8) or r
+	player.CameraMaxZoomDistance = math.max(60, 40 + cr * 6)
+	player.CameraMinZoomDistance = math.min(10 + cr * 1.6, player.CameraMaxZoomDistance - 5)
 	local zones = workspace:FindFirstChild("Zones")
 	if not zones then
 		return
@@ -1268,28 +1306,138 @@ do
 		Parent = gui,
 	})
 	local sc = new("UIScale", { Parent = label })
-	local combo = 0
 	local last = 0
-	function addCombo(n: number)
-		local now = os.clock()
-		if now - last > 1.5 then
-			combo = 0
-		end
-		last = now
-		combo += n
+	-- combo = 서버가 센 연속 흡수 수, bonus = 질량 보너스 비율
+	function addCombo(combo: number, bonus: number)
+		last = os.clock()
 		if combo >= 5 then
 			label.Visible = true
-			label.Text = string.format("🌀 연속 흡수 x%d", combo)
-			sc.Scale = uiScale * 1.3
+			label.Text = string.format("🔥 연속 흡수 x%d  (질량 +%d%%)", combo, math.floor(bonus * 100 + 0.5))
+			label.TextColor3 = combo >= 50 and C.gold or (combo >= 20 and Color3.fromRGB(255, 150, 80) or C.pink)
+			sc.Scale = uiScale * (1.25 + math.min(combo, 100) * 0.004)
 			TweenService:Create(sc, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScale }):Play()
 		end
 	end
 	RunService.Heartbeat:Connect(function()
-		if label.Visible and os.clock() - last > 1.5 then
+		if label.Visible and os.clock() - last > Config.COMBO_WINDOW then
 			label.Visible = false
-			combo = 0
 		end
 	end)
+end
+
+-- 타격감: 화면 번쩍임과 카메라 흔들림
+local Feel = {} :: any
+do
+	local flash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 45, Active = false, Parent = gui })
+	function Feel.flash(color: Color3, strength: number)
+		flash.BackgroundColor3 = color
+		flash.BackgroundTransparency = 1 - math.clamp(strength, 0, 0.6)
+		TweenService:Create(flash, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+	end
+	local shakeAmp = 0
+	local shaking = false
+	function Feel.shake(amount: number)
+		shakeAmp = math.max(shakeAmp, amount)
+	end
+	-- 흔들 때만 카메라를 건드린다
+	RunService.RenderStepped:Connect(function(dt: number)
+		if shakeAmp <= 0.01 and not shaking then
+			return
+		end
+		local char = player.Character
+		local hum = char and char:FindFirstChildOfClass("Humanoid")
+		if not hum then
+			return
+		end
+		if shakeAmp > 0.01 then
+			shaking = true
+			hum.CameraOffset = Vector3.new((math.random() - 0.5) * 2, (math.random() - 0.5) * 2, (math.random() - 0.5) * 2) * shakeAmp
+			shakeAmp *= math.exp(-dt * 12)
+		else
+			shaking = false
+			shakeAmp = 0
+			hum.CameraOffset = Vector3.zero
+		end
+	end)
+end
+
+-- 스킬 버튼 (오른쪽 아래, Q): 액티브 능력이 있는 스킨이면 누르고, 패시브면 설명만
+local Skill = {} :: any
+do
+	local frame = new("Frame", {
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -310, 1, -60),
+		Size = UDim2.new(0, 120, 0, 120),
+		BackgroundTransparency = 1,
+		Parent = gui,
+	})
+	scaled(frame)
+	Skill.button = button({ Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, -50, 0, 0), Text = "Q", TextSize = 30, BackgroundColor3 = C.accent, Parent = frame }, function()
+		Request:FireServer("skill")
+	end)
+	new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = Skill.button })
+	Skill.stroke = new("UIStroke", { Color = C.gold, Thickness = 3, Parent = Skill.button })
+	Skill.cover = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, Parent = Skill.button }, { new("UICorner", { CornerRadius = UDim.new(0.5, 0) }) })
+	Skill.label = text({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 102), Size = UDim2.new(0, 220, 0, 20), TextSize = 14, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = frame })
+end
+
+-- 퀘스트 (왼쪽 위)
+local questLabels: { TextLabel } = {}
+do
+	local box = new("Frame", { Position = UDim2.new(0, 10, 0, 10), Size = UDim2.new(0, 300, 0, 112), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Parent = gui }, { corner(12), stroke(C.line, 1.5) })
+	scaled(box)
+	text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 22), TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "📋 퀘스트", Parent = box })
+	for k = 1, 3 do
+		questLabels[k] = text({ Position = UDim2.new(0, 10, 0, 4 + k * 26), Size = UDim2.new(1, -20, 0, 24), TextSize = 13, RichText = true, Parent = box })
+	end
+end
+
+local function refreshQuests()
+	if not state then
+		return
+	end
+	for k = 1, 3 do
+		local q = state.quests[k]
+		local l = questLabels[k]
+		if q then
+			local def = Config.QUEST_BY_KIND[q.kind]
+			local t = string.format(def.text, fmt(q.goal))
+			local reward = def.reward == "dm" and "🌑" or "💠"
+			l.Text = string.format('%s %s  <font color="#FFD25A">%s/%s</font>', reward, t, fmt(math.min(q.progress, q.goal)), fmt(q.goal))
+		else
+			l.Text = ""
+		end
+	end
+end
+
+local function refreshSkill()
+	if not state then
+		return
+	end
+	local skin = Config.SKIN_BY_ID[state.skin]
+	local ab = skin and skin.ability
+	if not ab then
+		Skill.button.Visible = false
+		Skill.label.Text = ""
+		return
+	end
+	Skill.button.Visible = true
+	local passed = os.clock() - stateAt
+	if ab.kind == "active" then
+		local cdLeft = math.max(0, (state.cdLeft or 0) - passed)
+		local activeLeft = math.max(0, (state.activeLeft or 0) - passed)
+		Skill.button.Text = activeLeft > 0 and string.format("%.0f", activeLeft) or (cdLeft > 0 and string.format("%d", math.ceil(cdLeft)) or "Q")
+		Skill.button.BackgroundColor3 = activeLeft > 0 and C.green or (cdLeft > 0 and C.panel2 or skin.a)
+		Skill.cover.Size = UDim2.fromScale(1, math.clamp(cdLeft / ab.cd, 0, 1))
+		Skill.label.Text = "⚡ " .. ab.name
+		Skill.stroke.Color = cdLeft > 0 and C.line or C.gold
+	else
+		Skill.button.Text = "✦"
+		Skill.button.BackgroundColor3 = skin.a:Lerp(C.bg, 0.4)
+		Skill.cover.Size = UDim2.fromScale(1, 0)
+		Skill.label.Text = "✦ " .. ab.name .. " (늘 켜짐)"
+		Skill.stroke.Color = C.line
+	end
 end
 
 -- 큰 글자 배너
@@ -1326,11 +1474,18 @@ end
 local lastRadius = -1
 local handlers: { [string]: (any) -> () } = {}
 
+local lastInLobby = nil
 function handlers.state(data: any)
-	local grew = state ~= nil and data.radius > lastRadius * 1.05
+	local grew = state ~= nil and data.radius > lastRadius * 1.05 and not data.inLobby
 	state = data
 	stateAt = os.clock()
 	Fx.updateGallery(data.skins, data.skin)
+	refreshQuests()
+	refreshSkill()
+	if data.inLobby ~= lastInLobby then
+		lastInLobby = data.inLobby
+		lastRadius = -1
+	end
 	if data.radius ~= lastRadius then
 		lastRadius = data.radius
 		applyRadius(data.radius)
@@ -1366,22 +1521,50 @@ function handlers.eat(data: any)
 			end
 		end
 	end
-	local biggest = 0
-	for _, e in ipairs(data.list) do
-		biggest = math.max(biggest, e.size)
-		Fx.popup(e.pos + Vector3.new(0, e.size * 1.2 + 2, 0), "+" .. fmt(e.mass), Color3.fromRGB(210, 170, 255), 20 + math.min(14, e.size))
-	end
+	-- 타격감: 삼킨 자리에서 빛줄기가 빨려 들고, 블랙홀이 꿀꺽 부풀고, 큰 걸 먹으면 화면이 흔들린다
 	local r = state and state.radius or 3
-	local ratio = biggest / r
-	Fx.sound("pop", 0.25 + ratio * 0.3, 1.6 - ratio * 0.8 + math.random() * 0.1)
-	if ratio > 0.7 then
-		Fx.sound("whoosh", 0.4, 0.6)
-		local c = myCenter()
-		if c then
-			Fx.burst(c + Vector3.new(0, 1, 0), C.pink, 20, r * 2, math.max(0.4, r * 0.1))
+	local c = myCenter()
+	local biggest = 0
+	local anyGolden = false
+	for i, e in ipairs(data.list) do
+		biggest = math.max(biggest, e.size)
+		if e.golden then
+			anyGolden = true
+		end
+		if i <= 6 or (e.golden and i <= 12) then
+			local col = e.golden and C.gold or Color3.fromHSV((os.clock() * 0.3 + i * 0.07) % 1, 0.5, 1)
+			Fx.popup(e.pos + Vector3.new(0, e.size * 1.2 + 2, 0), (e.golden and "✨ +" or "+") .. fmt(e.mass), e.golden and C.gold or Color3.fromRGB(210, 170, 255), (e.golden and 28 or 20) + math.min(14, e.size))
+			if c then
+				Fx.streak(e.pos + Vector3.new(0, e.size * 0.6, 0), c + Vector3.new(0, 0.5, 0), col, math.clamp(e.size * 0.35, 0.3, r * 0.25))
+			end
 		end
 	end
-	addCombo(#data.list)
+	local ratio = biggest / r
+	local char = player.Character
+	if char then
+		Fx.pulse(char, math.clamp(0.04 + ratio * 0.18, 0.04, 0.25))
+	end
+	local combo = data.combo or 0
+	Fx.sound("pop", 0.25 + ratio * 0.3, 1.3 + math.min(combo, 60) * 0.012 - ratio * 0.6 + math.random() * 0.08)
+	if ratio > 0.5 or data.burst then
+		Fx.sound("whoosh", 0.5, 0.55)
+		Feel.shake(math.clamp(ratio * 0.6, 0.15, 0.9) * (data.burst and 2 or 1))
+		if c then
+			Fx.burst(c + Vector3.new(0, 1, 0), C.pink, 24, r * 2, math.max(0.4, r * 0.1))
+			Fx.ring(c, C.pink, r * 1.2, r * 2.6, 0.4)
+		end
+		if ratio > 0.75 or data.burst then
+			Feel.flash(Color3.fromRGB(255, 230, 255), data.burst and 0.45 or 0.22)
+		end
+	end
+	if anyGolden then
+		Fx.sound("slash", 0.6, 1.5)
+		Feel.flash(C.gold, 0.25)
+		if c then
+			Fx.burst(c + Vector3.new(0, 2, 0), C.gold, 40, 20 + r, math.max(0.6, r * 0.12))
+		end
+	end
+	addCombo(combo, data.comboBonus or 0)
 	refreshAll()
 end
 
@@ -1414,6 +1597,11 @@ function handlers.zone(data: any)
 end
 
 function handlers.world(data: any)
+	if data == 0 then
+		banner("🏠 로비", "캡슐 뽑기 · 스킨 전시관 · 상점 · 매일 보상", Color3.fromRGB(120, 255, 200))
+		Fx.sound("whoosh", 0.8, 0.5)
+		return
+	end
 	local w = Config.Worlds[data]
 	if w then
 		applyWorld(data)
@@ -1482,6 +1670,37 @@ end
 function handlers.starGot(data: any)
 	Fx.starGot(data.pos)
 	banner("⭐ 질량 2배!", string.format("%d초 동안", math.floor(data.left)), C.gold)
+end
+
+-- 로비 기계를 누르면 창이 열린다
+function handlers.open(data: any)
+	if data.page == "capsule" or data.page == "store" or data.page == "skins" then
+		if not (window.Visible and currentPage == data.page) then
+			openPage(data.page)
+		end
+	end
+end
+
+function handlers.skill(data: any)
+	local c = myCenter()
+	local r = state and state.radius or 3
+	Fx.sound("whoosh", 1, 1.3)
+	Feel.flash(Color3.fromRGB(200, 230, 255), 0.25)
+	if c then
+		Fx.ring(c, C.gold, r * 1.5, r * (data.burst and 8 or 4), 0.6)
+		Fx.pillar(c, C.gold, 120 + r, 6 + r * 0.2, 0.6)
+	end
+	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "한꺼번에 흡수!", C.gold)
+end
+
+function handlers.quest(data: any)
+	banner("📋 퀘스트 완료!", data.text .. "  →  " .. data.reward, Color3.fromRGB(120, 255, 180))
+	Fx.sound("slash", 0.6, 1.2)
+end
+
+function handlers.daily(data: any)
+	banner("🎁 매일 보상!", string.format("연속 %d일 · 🌑 +%d · 💠 +%s", data.streak, data.dm, fmt(data.mass)), C.gold)
+	Fx.sound("slash", 0.7, 1.1)
 end
 
 Push.OnClientEvent:Connect(function(kind: string, data: any)
@@ -1562,6 +1781,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		openPage("store")
 	elseif key == Enum.KeyCode.K then
 		openPage("skins")
+	elseif key == Enum.KeyCode.Q then
+		Request:FireServer("skill")
 	end
 end)
 
@@ -1578,11 +1799,16 @@ do
 	end)
 	local swirlBase: { [BasePart]: CFrame } = {}
 	local lastBoost = ""
+	local skillTick = 0
 	local refreshAsked = 0
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
 		if skinPreview then
 			skinPreview.active = window.Visible and currentPage == "skins"
+		end
+		if t > skillTick then
+			skillTick = t + 0.2
+			refreshSkill()
 		end
 		local bt, ended = boostText()
 		if bt ~= lastBoost then
