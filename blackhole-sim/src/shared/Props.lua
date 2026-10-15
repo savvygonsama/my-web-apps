@@ -1,5 +1,5 @@
 -- Props (ModuleScript, ReplicatedStorage)
--- 블랙홀이 삼키는 물체 59종의 모양. 모두 파트를 이어 붙여 코드로 만든다.
+-- 블랙홀이 삼키는 물체 85종의 모양. 모두 파트를 이어 붙여 코드로 만든다.
 -- 각 모양은 반지름 s(= 삼키는 데 필요한 크기)에 맞춰 커진다. 바닥 가운데가 기준점이다.
 -- 자동차는 범퍼·사이드미러·휠캡, 집은 창틀·현관 계단·울타리, 빌딩은 층마다 창문 띠와 옥상 설비처럼
 -- 작은 부품까지 붙여서 가까이서 봐도 그럴듯하게 만든다.
@@ -923,6 +923,400 @@ builders.candysun = function(P, s, _r)
 	light.Brightness = 3
 	light.Color = C(255, 180, 230)
 	light.Parent = core
+end
+
+------------------------------------------------------------------------
+-- 베타 3에서 더한 물체 26종
+------------------------------------------------------------------------
+-- 1 공원
+builders.duck = function(P, s, r)
+	local col = r() < 0.7 and C(255, 220, 60) or WHITE
+	P("Body", BALL, V(1.2, 0.9, 1.6) * s, CF(0, 0.45 * s, 0), col, M.SmoothPlastic)
+	P("Head", BALL, V(0.7, 0.7, 0.7) * s, CF(0, 1.05 * s, -0.55 * s), col, M.SmoothPlastic)
+	P("Beak", BLOCK, V(0.35, 0.12, 0.35) * s, CF(0, 1.0 * s, -0.95 * s), C(255, 140, 30), M.SmoothPlastic)
+	P("Tail", BALL, V(0.4, 0.4, 0.5) * s, CF(0, 0.75 * s, 0.75 * s), col, M.SmoothPlastic)
+	for _, x in ipairs({ -0.17, 0.17 }) do
+		P("Eye", BALL, V(0.12, 0.14, 0.08) * s, CF(x * s, 1.15 * s, -0.86 * s), DARK, M.SmoothPlastic)
+		P("Wing", BALL, V(0.2, 0.5, 0.9) * s, CF(x * 3.4 * s, 0.55 * s, 0.05 * s), col:Lerp(C(200, 150, 40), 0.2), M.SmoothPlastic)
+	end
+end
+
+builders.hydrant = function(P, s, _r)
+	local red = C(220, 40, 40)
+	P("Base", CYL, V(0.15, 1.0, 1.0) * s, CF(0, 0.08 * s, 0) * UP, red:Lerp(DARK, 0.3), M.Metal)
+	P("Body", CYL, V(1.4, 0.75, 0.75) * s, CF(0, 0.85 * s, 0) * UP, red, M.Metal)
+	P("Cap", BALL, V(0.8, 0.6, 0.8) * s, CF(0, 1.6 * s, 0), red, M.Metal)
+	P("Nut", CYL, V(0.2, 0.25, 0.25) * s, CF(0, 1.9 * s, 0) * UP, C(230, 200, 60), M.Metal)
+	for _, x in ipairs({ -1, 1 }) do
+		P("Outlet", CYL, V(0.35, 0.35, 0.35) * s, CF(x * 0.5 * s, 1.0 * s, 0), red, M.Metal)
+		P("OutletCap", CYL, V(0.08, 0.38, 0.38) * s, CF(x * 0.7 * s, 1.0 * s, 0), C(230, 200, 60), M.Metal)
+	end
+	P("Front", CYL, V(0.3, 0.42, 0.42) * s, CF(0, 0.95 * s, -0.45 * s) * CFrame.Angles(0, math.rad(90), 0), red, M.Metal)
+end
+
+builders.picnic = function(P, s, r)
+	local wood = C(170, 120, 75):Lerp(C(140, 95, 60), r())
+	P("Top", BLOCK, V(1.6, 0.12, 0.9) * s, CF(0, 0.75 * s, 0), wood, M.WoodPlanks)
+	for _, z in ipairs({ -0.75, 0.75 }) do
+		P("Seat", BLOCK, V(1.6, 0.1, 0.3) * s, CF(0, 0.42 * s, z * s), wood, M.WoodPlanks)
+	end
+	for _, x in ipairs({ -0.6, 0.6 }) do
+		P("LegA", BLOCK, V(0.1, 0.9, 0.1) * s, CF(x * s, 0.4 * s, 0) * CFrame.Angles(math.rad(35), 0, 0), wood:Lerp(DARK, 0.2), M.Wood)
+		P("LegB", BLOCK, V(0.1, 0.9, 0.1) * s, CF(x * s, 0.4 * s, 0) * CFrame.Angles(math.rad(-35), 0, 0), wood:Lerp(DARK, 0.2), M.Wood)
+	end
+	P("Cloth", BLOCK, V(0.9, 0.02, 0.7) * s, CF(0, 0.82 * s, 0), C(220, 60, 60), M.Fabric)
+	P("Basket", BLOCK, V(0.35, 0.25, 0.25) * s, CF(0.3 * s, 0.95 * s, 0), C(190, 150, 90), M.Fabric)
+	P("Apple", BALL, V(0.12, 0.12, 0.12) * s, CF(-0.2 * s, 0.89 * s, 0.1 * s), C(200, 30, 40), M.SmoothPlastic)
+end
+
+-- 2 마을
+builders.doghouse = function(P, s, r)
+	local col = hsv(r(), 0.5, 0.8)
+	P("Box", BLOCK, V(1.3, 0.9, 1.4) * s, CF(0, 0.45 * s, 0), col, M.WoodPlanks)
+	P("RoofL", BLOCK, V(0.85, 0.08, 1.6) * s, CF(-0.35 * s, 1.1 * s, 0) * CFrame.Angles(0, 0, math.rad(40)), C(170, 50, 40), M.WoodPlanks)
+	P("RoofR", BLOCK, V(0.85, 0.08, 1.6) * s, CF(0.35 * s, 1.1 * s, 0) * CFrame.Angles(0, 0, math.rad(-40)), C(170, 50, 40), M.WoodPlanks)
+	P("Gable", BLOCK, V(0.9, 0.9, 1.38) * s, CF(0, 0.95 * s, 0) * CFrame.Angles(0, 0, math.rad(45)), col, M.WoodPlanks)
+	P("Door", CYL, V(0.04, 0.6, 0.6) * s, CF(0, 0.45 * s, -0.71 * s) * CFrame.Angles(0, math.rad(90), 0), DARK, M.SmoothPlastic)
+	P("Sign", BLOCK, V(0.5, 0.15, 0.04) * s, CF(0, 0.85 * s, -0.72 * s), WHITE, M.Wood)
+	P("Bowl", CYL, V(0.12, 0.35, 0.35) * s, CF(0.5 * s, 0.06 * s, -1 * s) * UP, C(60, 120, 220), M.SmoothPlastic)
+	P("Bone", BLOCK, V(0.35, 0.06, 0.08) * s, CF(-0.4 * s, 0.03 * s, -0.95 * s), WHITE, M.SmoothPlastic)
+end
+
+builders.vending = function(P, s, r)
+	local col = hsv(r(), 0.7, 0.85)
+	P("Body", BLOCK, V(1.1, 2.0, 0.8) * s, CF(0, 1.0 * s, 0), col, M.Metal)
+	P("Window", BLOCK, V(0.75, 1.1, 0.04) * s, CF(-0.1 * s, 1.3 * s, -0.41 * s), GLASS, M.Glass)
+	for row = 0, 3 do
+		for k = 0, 2 do
+			P("Can", CYL, V(0.2, 0.12, 0.12) * s, CF((-0.35 + k * 0.25) * s, (0.9 + row * 0.27) * s, -0.3 * s) * UP, hsv(row * 0.2 + k * 0.1, 0.8, 1), M.SmoothPlastic)
+		end
+	end
+	P("Panel", BLOCK, V(0.18, 0.6, 0.04) * s, CF(0.4 * s, 1.35 * s, -0.41 * s), DARK, M.SmoothPlastic)
+	P("Slot", BLOCK, V(0.6, 0.18, 0.05) * s, CF(-0.1 * s, 0.35 * s, -0.41 * s), DARK, M.Metal)
+	P("Light", BLOCK, V(1.0, 0.15, 0.05) * s, CF(0, 1.9 * s, -0.41 * s), WHITE, M.Neon)
+end
+
+builders.tent = function(P, s, r)
+	local col = hsv(r(), 0.6, 0.9)
+	P("SideL", BLOCK, V(0.06, 1.5, 2.2) * s, CF(-0.5 * s, 0.6 * s, 0) * CFrame.Angles(0, 0, math.rad(-35)), col, M.Fabric)
+	P("SideR", BLOCK, V(0.06, 1.5, 2.2) * s, CF(0.5 * s, 0.6 * s, 0) * CFrame.Angles(0, 0, math.rad(35)), col, M.Fabric)
+	P("Ridge", CYL, V(2.3, 0.08, 0.08) * s, CF(0, 1.22 * s, 0) * CFrame.Angles(0, math.rad(90), 0), C(120, 90, 60), M.Wood)
+	P("Door", BLOCK, V(0.6, 0.8, 0.04) * s, CF(0, 0.4 * s, -1.08 * s), col:Lerp(DARK, 0.5), M.Fabric)
+	P("Floor", BLOCK, V(1.8, 0.04, 2.3) * s, CF(0, 0.02 * s, 0), C(90, 90, 100), M.Fabric)
+	P("Fire", BALL, V(0.25, 0.35, 0.25) * s, CF(0, 0.15 * s, -1.9 * s), C(255, 140, 40), M.Neon)
+	for i = 0, 4 do
+		local a = i * math.pi * 2 / 5
+		P("Stone", BALL, V(0.15, 0.1, 0.15) * s, CF(math.cos(a) * 0.3 * s, 0.05 * s, -1.9 * s + math.sin(a) * 0.3 * s), C(120, 120, 120), M.Slate)
+	end
+	P("Log", CYL, V(0.9, 0.18, 0.18) * s, CF(0.9 * s, 0.09 * s, -1.6 * s), C(110, 75, 45), M.Wood)
+end
+
+-- 3 도시
+builders.taxi = function(P, s, r)
+	builders.car(P, s, r)
+	P("TaxiSign", BLOCK, V(0.6, 0.22, 0.25) * s, CF(0, 1.72 * s, 0.25 * s), C(255, 210, 30), M.Neon)
+	P("Stripe", BLOCK, V(1.72, 0.12, 2.4) * s, CF(0, 0.75 * s, 0), DARK, M.SmoothPlastic)
+	for _, x in ipairs({ -0.86, 0.86 }) do
+		for k = 0, 5 do
+			P("Check", BLOCK, V(0.02, 0.06, 0.18) * s, CF(x * s, 0.75 * s, (-0.9 + k * 0.36) * s), WHITE, M.SmoothPlastic)
+		end
+	end
+end
+
+builders.firetruck = function(P, s, _r)
+	local red = C(210, 30, 30)
+	P("Body", BLOCK, V(1.8, 1.1, 3.6) * s, CF(0, 0.95 * s, 0.3 * s), red, M.SmoothPlastic)
+	P("Cab", BLOCK, V(1.8, 1.3, 1.1) * s, CF(0, 1.05 * s, -1.85 * s), red, M.SmoothPlastic)
+	P("Windshield", BLOCK, V(1.6, 0.55, 0.05) * s, CF(0, 1.35 * s, -2.41 * s), GLASS, M.Glass)
+	P("Ladder", BLOCK, V(0.6, 0.12, 3.6) * s, CF(0, 1.62 * s, 0.4 * s), C(220, 220, 225), M.Metal)
+	for k = 0, 8 do
+		P("Rung", BLOCK, V(0.6, 0.14, 0.05) * s, CF(0, 1.64 * s, (-1.2 + k * 0.4) * s), C(180, 180, 190), M.Metal)
+	end
+	P("Siren", BLOCK, V(1.0, 0.15, 0.25) * s, CF(0, 1.77 * s, -1.85 * s), C(80, 140, 255), M.Neon)
+	P("Stripe", BLOCK, V(1.82, 0.12, 4.6) * s, CF(0, 0.8 * s, -0.2 * s), WHITE, M.Neon)
+	P("Hose", CYL, V(0.25, 0.6, 0.6) * s, CF(0.92 * s, 1.0 * s, 0.6 * s), C(230, 200, 60), M.Fabric)
+	for _, x in ipairs({ -0.85, 0.85 }) do
+		for _, z in ipairs({ -1.8, 0.2, 1.4 }) do
+			wheel(P, CF(x * s, 0.4 * s, z * s), 0.8 * s, 0.3 * s)
+		end
+	end
+end
+
+builders.gasstation = function(P, s, r)
+	local col = hsv(r(), 0.7, 0.9)
+	P("Slab", BLOCK, V(3.2, 0.1, 2.2) * s, CF(0, 0.05 * s, 0), C(150, 150, 155), M.Concrete)
+	P("Roof", BLOCK, V(3.2, 0.25, 2.2) * s, CF(0, 1.9 * s, 0), WHITE, M.SmoothPlastic)
+	P("RoofBand", BLOCK, V(3.25, 0.15, 2.25) * s, CF(0, 1.75 * s, 0), col, M.Neon)
+	for _, x in ipairs({ -1.2, 1.2 }) do
+		P("Pillar", BLOCK, V(0.2, 1.7, 0.2) * s, CF(x * s, 0.95 * s, 0), WHITE, M.Metal)
+	end
+	for _, x in ipairs({ -0.6, 0.6 }) do
+		P("Pump", BLOCK, V(0.35, 0.8, 0.25) * s, CF(x * s, 0.5 * s, 0), col, M.SmoothPlastic)
+		P("Screen", BLOCK, V(0.25, 0.15, 0.03) * s, CF(x * s, 0.7 * s, -0.14 * s), C(120, 255, 150), M.Neon)
+		P("Nozzle", BLOCK, V(0.06, 0.25, 0.06) * s, CF(x * s + 0.2 * s, 0.55 * s, 0), DARK, M.Rubber)
+	end
+	P("Shop", BLOCK, V(1.4, 1.2, 0.8) * s, CF(0.8 * s, 0.6 * s, 1.6 * s), C(230, 225, 210), M.Brick)
+	P("ShopGlass", BLOCK, V(0.9, 0.5, 0.04) * s, CF(0.8 * s, 0.6 * s, 1.19 * s), GLASS, M.Glass)
+	P("Sign", BLOCK, V(0.15, 1.6, 0.6) * s, CF(-1.5 * s, 2.6 * s, 1.0 * s), col, M.SmoothPlastic)
+	P("SignPole", CYL, V(1.8, 0.12, 0.12) * s, CF(-1.5 * s, 0.9 * s, 1.0 * s) * UP, C(120, 120, 125), M.Metal)
+end
+
+-- 4 대도시
+builders.helicopter = function(P, s, r)
+	local col = hsv(r(), 0.6, 0.85)
+	P("Body", BALL, V(1.4, 1.2, 2.0) * s, CF(0, 1.0 * s, 0), col, M.SmoothPlastic)
+	P("Glass", BALL, V(1.1, 0.8, 0.9) * s, CF(0, 1.15 * s, -0.6 * s), GLASS, M.Glass)
+	P("Tail", BLOCK, V(0.25, 0.25, 2.0) * s, CF(0, 1.15 * s, 1.8 * s), col, M.SmoothPlastic)
+	P("TailFin", BLOCK, V(0.06, 0.6, 0.4) * s, CF(0, 1.4 * s, 2.75 * s), col, M.SmoothPlastic)
+	P("TailRotor", BLOCK, V(0.04, 0.9, 0.1) * s, CF(0.15 * s, 1.3 * s, 2.75 * s), DARK, M.Metal)
+	P("Mast", CYL, V(0.3, 0.12, 0.12) * s, CF(0, 1.75 * s, 0) * UP, DARK, M.Metal)
+	P("Blade1", BLOCK, V(4.2, 0.05, 0.22) * s, CF(0, 1.9 * s, 0) * CFrame.Angles(0, math.rad(20), 0), DARK, M.Metal)
+	P("Blade2", BLOCK, V(4.2, 0.05, 0.22) * s, CF(0, 1.9 * s, 0) * CFrame.Angles(0, math.rad(110), 0), DARK, M.Metal)
+	for _, x in ipairs({ -0.55, 0.55 }) do
+		P("Skid", BLOCK, V(0.08, 0.08, 2.0) * s, CF(x * s, 0.1 * s, 0), C(120, 120, 125), M.Metal)
+		P("Strut", BLOCK, V(0.06, 0.4, 0.06) * s, CF(x * s, 0.3 * s, -0.4 * s), C(120, 120, 125), M.Metal)
+		P("Strut2", BLOCK, V(0.06, 0.4, 0.06) * s, CF(x * s, 0.3 * s, 0.4 * s), C(120, 120, 125), M.Metal)
+	end
+end
+
+builders.crane = function(P, s, _r)
+	local yel = C(250, 190, 30)
+	P("Base", BLOCK, V(1.2, 0.3, 1.2) * s, CF(0, 0.15 * s, 0), C(120, 120, 125), M.Concrete)
+	for k = 0, 7 do
+		P("Mast", BLOCK, V(0.4, 0.5, 0.4) * s, CF(0, (0.55 + k * 0.5) * s, 0), yel, M.Metal)
+		P("Brace", BLOCK, V(0.05, 0.6, 0.05) * s, CF(0, (0.55 + k * 0.5) * s, -0.21 * s) * CFrame.Angles(0, 0, math.rad(40)), yel:Lerp(DARK, 0.3), M.Metal)
+	end
+	P("Jib", BLOCK, V(0.3, 0.3, 4.2) * s, CF(0, 4.4 * s, -0.9 * s), yel, M.Metal)
+	P("Counter", BLOCK, V(0.6, 0.5, 0.6) * s, CF(0, 4.3 * s, 1.0 * s), C(140, 140, 145), M.Concrete)
+	P("Cabin", BLOCK, V(0.5, 0.45, 0.5) * s, CF(0.35 * s, 4.0 * s, 0), WHITE, M.SmoothPlastic)
+	P("Cable", BLOCK, V(0.03, 1.8, 0.03) * s, CF(0, 3.4 * s, -2.6 * s), DARK, M.Metal)
+	P("Hook", BLOCK, V(0.2, 0.2, 0.2) * s, CF(0, 2.45 * s, -2.6 * s), C(200, 60, 40), M.Metal)
+	P("Load", BLOCK, V(0.8, 0.3, 0.3) * s, CF(0, 2.2 * s, -2.6 * s), C(110, 80, 50), M.WoodPlanks)
+	P("Beacon", BALL, V(0.15, 0.15, 0.15) * s, CF(0, 4.65 * s, -0.9 * s), C(255, 50, 50), M.Neon)
+end
+
+builders.airplane = function(P, s, r)
+	local tail = hsv(r(), 0.7, 0.9)
+	P("Body", CYL, V(4.2, 0.7, 0.7) * s, CF(0, 0.8 * s, 0) * CFrame.Angles(0, math.rad(90), 0), WHITE, M.SmoothPlastic)
+	P("Nose", BALL, V(0.7, 0.7, 0.9) * s, CF(0, 0.8 * s, -2.1 * s), WHITE, M.SmoothPlastic)
+	P("Cockpit", BLOCK, V(0.5, 0.15, 0.3) * s, CF(0, 1.0 * s, -2.15 * s) * CFrame.Angles(math.rad(-25), 0, 0), GLASS, M.Glass)
+	P("Wing", BLOCK, V(4.0, 0.08, 0.8) * s, CF(0, 0.7 * s, 0), C(220, 222, 228), M.SmoothPlastic)
+	P("TailWing", BLOCK, V(1.4, 0.06, 0.4) * s, CF(0, 0.9 * s, 1.9 * s), C(220, 222, 228), M.SmoothPlastic)
+	P("Fin", BLOCK, V(0.06, 0.8, 0.6) * s, CF(0, 1.4 * s, 1.9 * s), tail, M.SmoothPlastic)
+	P("Stripe", BLOCK, V(0.72, 0.1, 3.6) * s, CF(0, 0.75 * s, 0), tail, M.SmoothPlastic)
+	for _, x in ipairs({ -1.0, 1.0 }) do
+		P("Engine", CYL, V(0.6, 0.3, 0.3) * s, CF(x * s, 0.5 * s, -0.1 * s) * CFrame.Angles(0, math.rad(90), 0), C(170, 170, 180), M.Metal)
+	end
+	for k = 0, 8 do
+		for _, x in ipairs({ -0.36, 0.36 }) do
+			P("Window", BLOCK, V(0.02, 0.1, 0.1) * s, CF(x * s, 0.95 * s, (-1.4 + k * 0.3) * s), C(60, 80, 110), M.Glass)
+		end
+	end
+	P("Gear", BLOCK, V(0.1, 0.4, 0.1) * s, CF(0, 0.25 * s, -1.6 * s), DARK, M.Metal)
+	wheel(P, CF(0, 0.1 * s, -1.6 * s), 0.2 * s, 0.1 * s)
+	for _, x in ipairs({ -0.4, 0.4 }) do
+		wheel(P, CF(x * s, 0.12 * s, 0.2 * s), 0.25 * s, 0.12 * s)
+	end
+end
+
+-- 5 바다와 산
+builders.whale = function(P, s, _r)
+	local col = C(60, 90, 140)
+	P("Water", CYL, V(0.1, 4.0, 4.0) * s, CF(0, 0.05 * s, 0) * UP, C(60, 140, 210), M.Glass).Transparency = 0.3
+	P("Body", BALL, V(1.6, 1.2, 3.4) * s, CF(0, 0.5 * s, 0), col, M.SmoothPlastic)
+	P("Belly", BALL, V(1.3, 0.8, 3.0) * s, CF(0, 0.3 * s, -0.1 * s), C(220, 225, 235), M.SmoothPlastic)
+	P("Tail", BLOCK, V(1.6, 0.08, 0.5) * s, CF(0, 0.6 * s, 2.0 * s) * CFrame.Angles(math.rad(-20), 0, 0), col, M.SmoothPlastic)
+	for _, x in ipairs({ -0.75, 0.75 }) do
+		P("Fin", BLOCK, V(0.6, 0.06, 0.3) * s, CF(x * s, 0.35 * s, -0.4 * s) * CFrame.Angles(0, 0, x * 0.5), col, M.SmoothPlastic)
+		P("Eye", BALL, V(0.1, 0.12, 0.12) * s, CF(x * 0.72 * s, 0.55 * s, -1.2 * s), DARK, M.SmoothPlastic)
+	end
+	for i = 0, 3 do
+		P("Spout", BALL, V(0.3, 0.4, 0.3) * s * (1 - i * 0.15), CF((i % 2 - 0.5) * 0.15 * s, (1.2 + i * 0.35) * s, -0.6 * s), C(220, 240, 255), M.Glass).Transparency = 0.2 + i * 0.15
+	end
+end
+
+builders.volcano = function(P, s, r)
+	local rock = C(90, 70, 60)
+	P("Base", CYL, V(0.6, 3.6, 3.6) * s, CF(0, 0.3 * s, 0) * UP, rock, M.Basalt)
+	P("Mid", CYL, V(0.7, 2.6, 2.6) * s, CF(0, 0.9 * s, 0) * UP, rock:Lerp(DARK, 0.1), M.Basalt)
+	P("Upper", CYL, V(0.6, 1.7, 1.7) * s, CF(0, 1.5 * s, 0) * UP, rock:Lerp(DARK, 0.2), M.Basalt)
+	P("Crater", CYL, V(0.1, 1.2, 1.2) * s, CF(0, 1.81 * s, 0) * UP, C(255, 110, 20), M.Neon)
+	P("Glow", BALL, V(0.9, 0.5, 0.9) * s, CF(0, 1.95 * s, 0), C(255, 80, 20), M.Neon).Transparency = 0.3
+	for i = 0, 4 do
+		local a = i * 1.3 + r()
+		P("Lava", BLOCK, V(0.15, 1.6, 0.25) * s, CF(math.cos(a) * 0.95 * s, 1.0 * s, math.sin(a) * 0.95 * s) * CFrame.Angles(0, -a, math.rad(35)), C(255, 90, 20), M.CrackedLava)
+	end
+	for i = 0, 3 do
+		P("Smoke", BALL, V(0.7, 0.6, 0.7) * s * (1 + i * 0.25), CF(i * 0.15 * s, (2.3 + i * 0.5) * s, 0), C(90, 90, 95), M.SmoothPlastic).Transparency = 0.3 + i * 0.15
+	end
+end
+
+-- 6 우주
+builders.comet = function(P, s, _r)
+	P("Head", BALL, V(1.4, 1.4, 1.4) * s, CF(0, 1.0 * s, 0), C(200, 230, 255), M.Ice)
+	P("Core", BALL, V(1.0, 1.0, 1.0) * s, CF(0, 1.0 * s, 0), WHITE, M.Neon)
+	for i = 1, 6 do
+		P("Tail", BALL, V(1.3 - i * 0.15, 1.3 - i * 0.15, 1.2) * s, CF(0, (1.0 + i * 0.12) * s, i * 0.75 * s), C(140, 200, 255), M.Neon).Transparency = 0.2 + i * 0.12
+	end
+end
+
+builders.spacestation = function(P, s, _r)
+	P("Hub", CYL, V(0.8, 0.8, 0.8) * s, CF(0, 1.2 * s, 0) * UP, C(220, 222, 228), M.Metal)
+	P("Ring", CYL, V(0.15, 3.0, 3.0) * s, CF(0, 1.2 * s, 0) * UP, C(200, 202, 210), M.Metal)
+	P("RingHole", CYL, V(0.17, 2.6, 2.6) * s, CF(0, 1.2 * s, 0) * UP, C(20, 20, 30), M.SmoothPlastic)
+	for i = 0, 3 do
+		local a = i * math.pi / 2
+		P("Spoke", BLOCK, V(0.12, 0.12, 1.3) * s, CF(0, 1.2 * s, 0) * CFrame.Angles(0, a, 0) * CF(0, 0, 0.75 * s), C(180, 180, 190), M.Metal)
+		P("Light", BALL, V(0.15, 0.15, 0.15) * s, CF(math.cos(a) * 1.5 * s, 1.2 * s, math.sin(a) * 1.5 * s), C(120, 220, 255), M.Neon)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		P("Panel", BLOCK, V(1.4, 0.04, 0.7) * s, CF(x * 2.3 * s, 1.2 * s, 0), C(40, 70, 160), M.Glass)
+		P("Arm", BLOCK, V(0.8, 0.08, 0.08) * s, CF(x * 1.55 * s, 1.2 * s, 0), C(180, 180, 190), M.Metal)
+	end
+	P("Dock", CYL, V(1.0, 0.3, 0.3) * s, CF(0, 2.0 * s, 0) * UP, C(220, 222, 228), M.Metal)
+	P("Leg", CYL, V(0.8, 0.2, 0.2) * s, CF(0, 0.4 * s, 0) * UP, C(120, 120, 130), M.Metal)
+end
+
+builders.galaxy = function(P, s, r)
+	local a0 = r() * 6
+	P("Core", BALL, V(0.7, 0.4, 0.7) * s, CF(0, 0.6 * s, 0), C(255, 240, 200), M.Neon)
+	P("Disk", CYL, V(0.04, 2.2, 2.2) * s, CF(0, 0.55 * s, 0) * UP, C(120, 90, 200), M.Neon).Transparency = 0.6
+	for arm = 0, 1 do
+		for k = 1, 9 do
+			local t = k / 9
+			local a = a0 + arm * math.pi + t * 3.2
+			local d = t * 1.1 * s
+			P("Star", BALL, V(0.22, 0.12, 0.22) * s * (1.2 - t * 0.6), CF(math.cos(a) * d, 0.6 * s, math.sin(a) * d), C(200, 210, 255):Lerp(C(255, 150, 230), t), M.Neon)
+		end
+	end
+end
+
+-- 7 젤리 들판
+builders.chocobar = function(P, s, _r)
+	P("Wrapper", BLOCK, V(1.0, 0.25, 1.8) * s, CF(0, 0.13 * s, 0.35 * s), C(200, 40, 60), M.Foil)
+	P("Label", BLOCK, V(0.8, 0.26, 0.5) * s, CF(0, 0.13 * s, 0.6 * s), C(255, 220, 90), M.SmoothPlastic)
+	for i = 0, 2 do
+		for j = 0, 1 do
+			P("Piece", BLOCK, V(0.45, 0.2, 0.4) * s, CF((j - 0.5) * 0.48 * s, 0.12 * s, (-0.9 + i * 0.42) * s), C(110, 60, 35), M.SmoothPlastic)
+		end
+	end
+end
+
+builders.marshmallow = function(P, s, r)
+	local col = r() < 0.5 and WHITE or C(255, 200, 220)
+	P("Body", CYL, V(1.2, 1.2, 1.2) * s, CF(0, 0.6 * s, 0) * UP, col, M.SmoothPlastic)
+	P("Top", CYL, V(0.05, 1.1, 1.1) * s, CF(0, 1.21 * s, 0) * UP, col:Lerp(C(240, 220, 200), 0.3), M.SmoothPlastic)
+	P("Stick", CYL, V(1.6, 0.08, 0.08) * s, CF(0, 1.6 * s, 0) * UP, C(190, 150, 100), M.Wood)
+	for _, x in ipairs({ -0.2, 0.2 }) do
+		P("Eye", BALL, V(0.1, 0.12, 0.05) * s, CF(x * s, 0.75 * s, -0.6 * s), DARK, M.SmoothPlastic)
+	end
+	P("Smile", BLOCK, V(0.2, 0.04, 0.04) * s, CF(0, 0.55 * s, -0.6 * s), DARK, M.SmoothPlastic)
+end
+
+-- 8 과자 마을
+builders.milk = function(P, s, r)
+	local col = hsv(r(), 0.45, 1)
+	P("Box", BLOCK, V(1.0, 1.6, 1.0) * s, CF(0, 0.8 * s, 0), WHITE, M.SmoothPlastic)
+	P("Label", BLOCK, V(1.02, 0.6, 1.02) * s, CF(0, 0.75 * s, 0), col, M.SmoothPlastic)
+	P("RoofA", BLOCK, V(0.72, 0.06, 1.0) * s, CF(-0.25 * s, 1.8 * s, 0) * CFrame.Angles(0, 0, math.rad(40)), WHITE, M.SmoothPlastic)
+	P("RoofB", BLOCK, V(0.72, 0.06, 1.0) * s, CF(0.25 * s, 1.8 * s, 0) * CFrame.Angles(0, 0, math.rad(-40)), WHITE, M.SmoothPlastic)
+	P("Cap", CYL, V(0.15, 0.25, 0.25) * s, CF(0.2 * s, 2.0 * s, -0.2 * s) * UP, col, M.SmoothPlastic)
+	P("Straw", CYL, V(1.0, 0.08, 0.08) * s, CF(-0.2 * s, 2.3 * s, 0.2 * s) * UP, C(255, 120, 160), M.SmoothPlastic)
+	for _, x in ipairs({ -0.2, 0.2 }) do
+		P("Eye", BALL, V(0.1, 0.12, 0.05) * s, CF(x * s, 1.25 * s, -0.51 * s), DARK, M.SmoothPlastic)
+	end
+end
+
+builders.waffle = function(P, s, _r)
+	local col = C(225, 170, 90)
+	P("Waffle", BLOCK, V(2.0, 0.3, 2.0) * s, CF(0, 0.15 * s, 0), col, M.Sand)
+	for i = -2, 2 do
+		P("GridX", BLOCK, V(2.0, 0.08, 0.08) * s, CF(0, 0.32 * s, i * 0.38 * s), col:Lerp(DARK, 0.15), M.Sand)
+		P("GridZ", BLOCK, V(0.08, 0.08, 2.0) * s, CF(i * 0.38 * s, 0.32 * s, 0), col:Lerp(DARK, 0.15), M.Sand)
+	end
+	P("Butter", BLOCK, V(0.45, 0.2, 0.45) * s, CF(0, 0.42 * s, 0), C(255, 240, 150), M.SmoothPlastic)
+	P("Syrup", CYL, V(0.04, 1.2, 1.2) * s, CF(0, 0.34 * s, 0) * UP, C(170, 90, 30), M.Glass).Transparency = 0.2
+	P("Berry", BALL, V(0.25, 0.25, 0.25) * s, CF(0.6 * s, 0.45 * s, 0.5 * s), C(220, 30, 60), M.SmoothPlastic)
+	P("Berry2", BALL, V(0.22, 0.22, 0.22) * s, CF(-0.5 * s, 0.44 * s, -0.6 * s), C(60, 60, 200), M.SmoothPlastic)
+end
+
+-- 9 케이크 도시
+builders.jellybus = function(P, s, r)
+	local col = pastel(r)
+	P("Body", BLOCK, V(1.8, 1.4, 4.4) * s, CF(0, 1.05 * s, 0), col, M.Glass).Transparency = 0.15
+	P("Inner", BLOCK, V(1.5, 1.1, 4.1) * s, CF(0, 1.05 * s, 0), col:Lerp(WHITE, 0.4), M.SmoothPlastic).Transparency = 0.3
+	P("Roof", BLOCK, V(1.85, 0.15, 4.45) * s, CF(0, 1.8 * s, 0), WHITE, M.SmoothPlastic)
+	for k = 0, 4 do
+		for _, x in ipairs({ -0.91, 0.91 }) do
+			P("Window", BLOCK, V(0.04, 0.45, 0.6) * s, CF(x * s, 1.3 * s, (-1.6 + k * 0.8) * s), C(255, 250, 230), M.Neon)
+		end
+	end
+	for _, x in ipairs({ -0.85, 0.85 }) do
+		for _, z in ipairs({ -1.5, 1.5 }) do
+			P("GumWheel", CYL, V(0.3 * s, 0.8 * s, 0.8 * s), CF(x * s, 0.4 * s, z * s), C(60, 40, 30), M.SmoothPlastic)
+		end
+	end
+	P("Sign", BLOCK, V(1.2, 0.3, 0.04) * s, CF(0, 1.6 * s, -2.22 * s), C(255, 230, 120), M.Neon)
+end
+
+builders.chocotower = function(P, s, _r)
+	local choco = C(100, 55, 30)
+	for k = 0, 4 do
+		P("Floor", BLOCK, V(1.6 - k * 0.15, 0.75, 1.6 - k * 0.15) * s, CF(0, (0.38 + k * 0.75) * s, 0), choco:Lerp(C(160, 100, 60), (k % 2) * 0.4), M.SmoothPlastic)
+		P("Cream", BLOCK, V(1.65 - k * 0.15, 0.08, 1.65 - k * 0.15) * s, CF(0, (0.76 + k * 0.75) * s, 0), WHITE, M.SmoothPlastic)
+		for _, x in ipairs({ -0.3, 0.3 }) do
+			P("Window", BLOCK, V(0.25, 0.3, 0.04) * s, CF(x * s, (0.4 + k * 0.75) * s, -(0.81 - k * 0.075) * s), C(255, 220, 140), M.Neon)
+		end
+	end
+	P("Cherry", BALL, V(0.5, 0.5, 0.5) * s, CF(0, 4.05 * s, 0), C(220, 30, 50), M.SmoothPlastic)
+	P("Stem", CYL, V(0.4, 0.05, 0.05) * s, CF(0, 4.4 * s, 0) * UP, C(80, 140, 50), M.SmoothPlastic)
+end
+
+-- 10 아이스크림 산맥
+builders.parfait = function(P, s, r)
+	P("Foot", CYL, V(0.1, 1.0, 1.0) * s, CF(0, 0.05 * s, 0) * UP, GLASS, M.Glass)
+	P("Stem", CYL, V(0.8, 0.2, 0.2) * s, CF(0, 0.5 * s, 0) * UP, GLASS, M.Glass)
+	for k = 0, 3 do
+		P("Layer", CYL, V(0.45, 1.3 + k * 0.12, 1.3 + k * 0.12) * s, CF(0, (1.1 + k * 0.45) * s, 0) * UP, hsv(r() * 0.2 + k * 0.25, 0.4, 1), M.SmoothPlastic)
+	end
+	P("Glass", CYL, V(1.9, 1.8, 1.8) * s, CF(0, 1.75 * s, 0) * UP, GLASS, M.Glass).Transparency = 0.6
+	P("Scoop", BALL, V(1.2, 1.0, 1.2) * s, CF(0, 2.9 * s, 0), C(255, 230, 240), M.SmoothPlastic)
+	P("Wafer", BLOCK, V(0.15, 0.9, 0.35) * s, CF(0.35 * s, 3.3 * s, 0) * CFrame.Angles(0, 0, math.rad(-20)), C(230, 190, 120), M.Sand)
+	P("Cherry", BALL, V(0.3, 0.3, 0.3) * s, CF(-0.1 * s, 3.45 * s, 0), C(220, 30, 50), M.SmoothPlastic)
+end
+
+builders.cottoncloud = function(P, s, r)
+	local col = pastel(r)
+	for i = 0, 6 do
+		local a = i * 0.9
+		P("Puff", BALL, V(1.2, 0.9, 1.2) * s * (0.8 + (i % 3) * 0.15), CF(math.cos(a) * 0.9 * s, (1.6 + math.sin(a * 2) * 0.2) * s, math.sin(a) * 0.6 * s), col:Lerp(WHITE, (i % 2) * 0.3), M.SmoothPlastic)
+	end
+	P("Center", BALL, V(1.6, 1.2, 1.4) * s, CF(0, 1.9 * s, 0), col:Lerp(WHITE, 0.2), M.SmoothPlastic)
+	for i = 0, 4 do
+		P("Drop", BALL, V(0.15, 0.25, 0.15) * s, CF((i - 2) * 0.4 * s, (0.6 + (i % 2) * 0.4) * s, 0), hsv(i / 5, 0.5, 1), M.Neon)
+	end
+end
+
+-- 11 사탕 우주
+builders.candyasteroid = function(P, s, r)
+	local col = pastel(r)
+	P("Rock", BALL, V(2.0, 1.6, 1.8) * s, CF(0, 0.9 * s, 0), col, M.SmoothPlastic)
+	for i = 0, 7 do
+		local a = i * 0.8
+		P("Sprinkle", BLOCK, V(0.35, 0.1, 0.1) * s, CF(math.cos(a) * 0.95 * s, (0.9 + math.sin(a * 1.7) * 0.6) * s, math.sin(a) * 0.85 * s) * CFrame.Angles(a, a * 2, 0), hsv(i / 8, 0.6, 1), M.SmoothPlastic)
+	end
+	P("Bite", BALL, V(0.8, 0.8, 0.8) * s, CF(0.8 * s, 1.3 * s, -0.4 * s), col:Lerp(WHITE, 0.5), M.SmoothPlastic)
+end
+
+builders.chocoplanet = function(P, s, _r)
+	P("Planet", BALL, V(2, 2, 2) * s, CF(0, 1.0 * s, 0), C(110, 60, 35), M.SmoothPlastic)
+	P("Drizzle", CYL, V(0.15 * s, 2.03 * s, 2.03 * s), CF(0, 1.3 * s, 0) * UP, C(250, 240, 230), M.SmoothPlastic)
+	P("Drizzle2", CYL, V(0.12 * s, 2.03 * s, 2.03 * s), CF(0, 0.75 * s, 0) * UP, C(255, 150, 190), M.SmoothPlastic)
+	P("Ring", CYL, V(0.06 * s, 3.4 * s, 3.4 * s), CF(0, 1.0 * s, 0) * CFrame.Angles(math.rad(-15), 0, math.rad(90)), C(240, 200, 120), M.SmoothPlastic)
+	for i = 0, 5 do
+		local a = i * math.pi / 3
+		P("Nut", BALL, V(0.25, 0.2, 0.25) * s, CF(math.cos(a) * 1.55 * s, (1.0 + math.sin(a) * 0.4) * s, math.sin(a) * 1.55 * s), C(200, 150, 80), M.SmoothPlastic)
+	end
 end
 
 ------------------------------------------------------------------------

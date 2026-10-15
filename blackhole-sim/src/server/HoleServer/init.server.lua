@@ -1,5 +1,6 @@
 -- HoleServer (Script, ServerScriptService)
--- 삼키기 판정, 질량, 업그레이드, 빅뱅과 빅뱅 상점, 위성(펫), 스킨, 로벅스 상점, 부스트, 별똥별, 저장.
+-- 삼키기 판정, 먹어서 커지기, 질량, 업그레이드, 빅뱅과 빅뱅 상점, 위성(펫), 스킨, 로벅스 상점, 부스트, 별똥별, 저장.
+-- 캐릭터는 사람 모양이 아니라 보이지 않는 공 하나다 (걷는 모션 없음, 죽지 않음).
 -- 중요한 계산은 모두 서버가 한다.
 --   World  조명, 세계 2개의 구역, 문, 물체 배치
 --   Store  게임패스와 개발자 상품 결제
@@ -13,6 +14,9 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local World = require(script:WaitForChild("World"))
 local Store = require(script:WaitForChild("Store"))
+
+-- 사람 캐릭터는 만들지 않는다. 블랙홀 캐릭터는 아래 spawnHole이 직접 만든다
+Players.CharacterAutoLoads = false
 
 local DATASTORE_NAME = "BlackHole_v1"
 local SAVE_INTERVAL = 90
@@ -67,7 +71,8 @@ type Profile = {
 	mass: number,
 	total: number, -- 지금까지 삼킨 질량 (빅뱅해도 남는다)
 	eaten: number,
-	size: number,
+	radius: number, -- 지금 반지름 (먹어서 커진다)
+	grow: number, -- 성장력 업그레이드 레벨
 	pull: number,
 	mult: number,
 	bigbang: number,
@@ -96,7 +101,8 @@ local function defaultProfile(): Profile
 		mass = 0,
 		total = 0,
 		eaten = 0,
-		size = 0,
+		radius = Config.START_RADIUS,
+		grow = 0,
 		pull = 0,
 		mult = 0,
 		bigbang = 0,
@@ -131,7 +137,8 @@ local function sanitize(data: any): Profile
 	p.mass = num(data.mass, math.huge)
 	p.total = num(data.total, math.huge)
 	p.eaten = math.floor(num(data.eaten, math.huge))
-	p.size = math.floor(num(data.size, Config.UPGRADE_BY_ID.size.maxLevel))
+	p.radius = math.clamp(num(data.radius, Config.MAX_RADIUS), Config.START_RADIUS, Config.MAX_RADIUS)
+	p.grow = math.floor(num(data.grow, Config.UPGRADE_BY_ID.grow.maxLevel))
 	p.pull = math.floor(num(data.pull, Config.UPGRADE_BY_ID.pull.maxLevel))
 	p.mult = math.floor(num(data.mult, Config.UPGRADE_BY_ID.mult.maxLevel))
 	p.bigbang = math.floor(num(data.bigbang, 1000))
@@ -270,7 +277,7 @@ function Calc.hasPass(player: Player, key: string): boolean
 end
 
 function Calc.radius(p: Profile): number
-	return Config.radius(p.size)
+	return p.radius
 end
 
 function Calc.slots(player: Player, p: Profile): number
@@ -366,7 +373,8 @@ local function pushState(player: Player)
 		mass = p.mass,
 		total = p.total,
 		eaten = p.eaten,
-		size = p.size,
+		grow = p.grow,
+		growMult = Config.growMult(p.grow, p.bigbang, st.starUntil > os.clock()),
 		pull = p.pull,
 		mult = p.mult,
 		bigbang = p.bigbang,
@@ -412,7 +420,7 @@ local function updateLeaderstats(player: Player)
 	end
 end
 
--- 캐릭터는 보이지 않게 하고, 블랙홀 모양은 모든 화면이 직접 그린다 (크기, 스킨, 위성만 속성으로 알려 준다)
+-- 블랙홀 모양은 모든 화면이 직접 그린다 (크기, 스킨, 위성만 속성으로 알려 준다)
 local function applyHole(player: Player)
 	local p = profiles[player]
 	local char = player.Character
@@ -473,17 +481,6 @@ local function applyHole(player: Player)
 		end
 	end
 	updateLeaderstats(player)
-end
-
-local function hideBody(char: Model)
-	for _, d in ipairs(char:GetDescendants()) do
-		if d:IsA("BasePart") then
-			d.Transparency = 1
-			d.CastShadow = false
-		elseif d:IsA("Decal") then
-			d.Transparency = 1
-		end
-	end
 end
 
 local function toast(player: Player, text: string)
@@ -606,6 +603,8 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 	local mult = Calc.totalMult(player, p)
 	local factor = Config.respawnFactor(p.bb.respawn, Calc.hasPass(player, "vip"), p.respawnUntil > os.time())
 	local reachable = Config.maxZone(world, r)
+	local gm = Config.growMult(p.grow, p.bigbang, st.starUntil > now)
+	local newR = r
 	local eatenList = {}
 	local gained = 0
 	local ateSun = false
@@ -616,6 +615,7 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 					eat(player, rec, factor)
 					local m = rec.def.mass * mult
 					gained += m
+					newR = Config.grow(newR, rec.def.size, gm)
 					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name })
 					if rec.def.id == "candysun" then
 						ateSun = true
@@ -632,7 +632,17 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		p.total += gained
 		p.eaten += #eatenList
 		st.dirty = true
-		Push:FireClient(player, "eat", { list = eatenList, gained = gained, mass = p.mass })
+		if newR > p.radius then
+			p.radius = newR
+			applyHole(player)
+		end
+		Push:FireClient(player, "eat", {
+			list = eatenList,
+			gained = gained,
+			mass = p.mass,
+			radius = p.radius,
+			pullRange = Config.pullRange(p.radius, p.pull, p.bb.pull),
+		})
 		updateLeaderstats(player)
 		if ateSun and not p.skins.sweet then
 			p.skins.sweet = true
@@ -702,16 +712,15 @@ function Actions.buyUpgrade(player: Player, id: any, many: any, quiet: boolean?)
 	return bought
 end
 
--- 자동 업그레이드: 가장 싼 것부터 계속 산다 (크기를 조금 더 우선)
+-- 자동 업그레이드: 가장 싼 것부터 계속 산다 (성장력을 조금 더 우선)
 function Actions.autoUpgrade(player: Player, p: Profile)
 	local boughtAny = false
-	local sizeBefore = p.size
 	for _ = 1, 60 do
 		local best, bestCost = nil, math.huge
 		for _, u in ipairs(Config.Upgrades) do
 			local level = (p :: any)[u.id] :: number
 			if level < u.maxLevel then
-				local cost = Config.upgradeCost(u.id, level) * (u.id == "size" and 0.7 or 1)
+				local cost = Config.upgradeCost(u.id, level) * (u.id == "grow" and 0.7 or 1)
 				if cost < bestCost then
 					best, bestCost = u, cost
 				end
@@ -732,9 +741,6 @@ function Actions.autoUpgrade(player: Player, p: Profile)
 	if boughtAny then
 		states[player].dirty = true
 		applyHole(player)
-		if p.size > sizeBefore then
-			Push:FireClient(player, "upgraded", { id = "size", count = p.size - sizeBefore, level = p.size, quiet = true })
-		end
 		pushState(player)
 	end
 end
@@ -752,11 +758,11 @@ end)
 
 function Actions.bigbang(player: Player)
 	local p = profiles[player]
-	if p.size < Config.BIGBANG_LEVEL then
-		toast(player, string.format("크기 레벨 %d(⚫%s) 이상이어야 빅뱅할 수 있어요", Config.BIGBANG_LEVEL, Config.formatSize(Config.radius(Config.BIGBANG_LEVEL))))
+	if p.radius < Config.BIGBANG_RADIUS then
+		toast(player, string.format("크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
 		return
 	end
-	local reward = Config.darkMatterReward(p.size, p.bigbang)
+	local reward = Config.darkMatterReward(p.radius, p.bigbang)
 	local before = {}
 	for _, skin in ipairs(Config.Skins) do
 		before[skin.id] = Calc.skinUnlocked(player, p, skin)
@@ -764,7 +770,8 @@ function Actions.bigbang(player: Player)
 	p.bigbang += 1
 	p.dm += reward
 	p.mass = 0
-	p.size = math.min(Config.UPGRADE_BY_ID.size.maxLevel, (p.bb.start or 0) * 2)
+	p.radius = Config.startRadius(p.bb.start or 0)
+	p.grow = 0
 	p.pull = 0
 	p.mult = 0
 	states[player].dirty = true
@@ -1071,12 +1078,9 @@ local function grantProduct(player: Player, key: string, receiptId: string): boo
 	elseif key == "respawn30" then
 		p.respawnUntil = math.max(now, p.respawnUntil) + 1800
 	elseif key == "massS" or key == "massL" then
-		local n = key == "massS" and 3 or 10
-		local u = Config.UPGRADE_BY_ID.size
-		local amount = 0
-		for i = 0, n - 1 do
-			amount += Config.upgradeCost("size", math.min(u.maxLevel - 1, p.size + i))
-		end
+		local n = key == "massS" and 30 or 120
+		local world = Config.Zones[st.zone].world
+		local amount = Config.biggestMass(world, p.radius) * n * Calc.totalMult(player, p)
 		p.mass += amount
 		p.total += amount
 	elseif key == "dm10" then
@@ -1120,9 +1124,9 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		p.mass += amount
 		p.total += amount
 	elseif action == "testSize" then
-		p.size = math.clamp(math.floor(tonumber(arg) or 0), 0, Config.UPGRADE_BY_ID.size.maxLevel)
+		p.radius = math.clamp(tonumber(arg) or 0, Config.START_RADIUS, Config.MAX_RADIUS)
 	elseif action == "testMaxAll" then
-		p.size = Config.UPGRADE_BY_ID.size.maxLevel
+		p.grow = Config.UPGRADE_BY_ID.grow.maxLevel
 		p.pull = Config.UPGRADE_BY_ID.pull.maxLevel
 		p.mult = Config.UPGRADE_BY_ID.mult.maxLevel
 	elseif action == "testDM" then
@@ -1210,24 +1214,74 @@ end)
 ------------------------------------------------------------------------
 -- 입장과 퇴장
 ------------------------------------------------------------------------
-local function onCharacterAdded(player: Player, char: Model)
-	task.spawn(function()
-		char:WaitForChild("HumanoidRootPart", 10)
-		task.wait(0.2)
-		if player.Character ~= char then
-			return
-		end
-		hideBody(char)
-		char.DescendantAdded:Connect(function(d)
-			-- 늦게 붙는 장신구도 숨긴다
-			if d:IsA("BasePart") then
-				d.Transparency = 1
-			elseif d:IsA("Decal") then
-				d.Transparency = 1
-			end
-		end)
-		applyHole(player)
+-- 블랙홀 캐릭터: 보이지 않는 공 하나와 Humanoid뿐이다. 팔다리가 없어서 걷는 모션이 없고,
+-- 죽지 않게 해 두었다. 혹시 사라지거나 죽으면 기다리지 않고 그 자리(또는 시작 지점)에서 바로 다시 생긴다.
+local spawnHole: (Player, Vector3) -> ()
+spawnHole = function(player: Player, pos: Vector3)
+	if not player.Parent then
+		return
+	end
+	local old = player.Character
+	local model = Instance.new("Model")
+	model.Name = player.Name
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 2)
+	root.Transparency = 1
+	root.CastShadow = false
+	root.TopSurface = Enum.SurfaceType.Smooth
+	root.BottomSurface = Enum.SurfaceType.Smooth
+	root.CFrame = CFrame.new(pos)
+	root.Parent = model
+	-- 이름표를 붙일 머리 (보이지 않음)
+	local head = Instance.new("Part")
+	head.Name = "Head"
+	head.Size = Vector3.new(1, 1, 1)
+	head.Transparency = 1
+	head.CanCollide = false
+	head.CanQuery = false
+	head.Massless = true
+	head.CastShadow = false
+	head.CFrame = root.CFrame
+	head.Parent = model
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = head
+	weld.Parent = root
+	local hum = Instance.new("Humanoid")
+	hum.RigType = Enum.HumanoidRigType.R15
+	hum.HipHeight = 1
+	hum.RequiresNeck = false
+	hum.BreakJointsOnDeath = false
+	hum.MaxHealth = 1e9
+	hum.Health = 1e9
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	hum.Parent = model
+	model.PrimaryPart = root
+	model.Parent = workspace
+	player.Character = model
+	pcall(function()
+		root:SetNetworkOwner(player)
 	end)
+	if old and old ~= model then
+		old:Destroy()
+	end
+	hum.Died:Connect(function()
+		task.wait(0.1)
+		if player.Character == model then
+			local at = root.Position
+			spawnHole(player, Vector3.new(at.X, 5, at.Z))
+		end
+	end)
+	model.AncestryChanged:Connect(function()
+		if not model.Parent and player.Character == model then
+			local st = states[player]
+			local world = st and Config.Zones[st.zone].world or 1
+			task.defer(spawnHole, player, spawnPos(world))
+		end
+	end)
+	applyHole(player)
 end
 
 local function onPlayerAdded(player: Player)
@@ -1255,7 +1309,7 @@ local function onPlayerAdded(player: Player)
 	massValue.Parent = ls
 	local sizeValue = Instance.new("StringValue")
 	sizeValue.Name = "크기"
-	sizeValue.Value = Config.formatSize(Config.radius(0))
+	sizeValue.Value = Config.formatSize(Config.START_RADIUS)
 	sizeValue.Parent = ls
 	local bbValue = Instance.new("IntValue")
 	bbValue.Name = "빅뱅"
@@ -1279,12 +1333,7 @@ local function onPlayerAdded(player: Player)
 	if Calc.hasPass(player, "petpack") and not profile.packGiven then
 		grantPass(player, "petpack")
 	end
-	player.CharacterAdded:Connect(function(char)
-		onCharacterAdded(player, char)
-	end)
-	if player.Character then
-		onCharacterAdded(player, player.Character)
-	end
+	spawnHole(player, spawnPos(1))
 	pushState(player)
 	updateLeaderstats(player)
 end

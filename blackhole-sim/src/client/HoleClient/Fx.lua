@@ -24,6 +24,9 @@ local folder = Instance.new("Folder")
 folder.Name = "HoleFX"
 folder.Parent = workspace
 
+-- 미리보기(스킨 창, 스킨 전시관)를 만들 때는 잠깐 다른 곳에 붙인다
+local buildParent: Instance? = nil
+
 local function fxPart(size: Vector3, color: Color3, material: Enum.Material, shape: Enum.PartType?, transparency: number?): Part
 	local p = Instance.new("Part")
 	if shape then
@@ -38,7 +41,7 @@ local function fxPart(size: Vector3, color: Color3, material: Enum.Material, sha
 	p.Color = color
 	p.Material = material
 	p.Transparency = transparency or 0
-	p.Parent = folder
+	p.Parent = buildParent or folder
 	return p
 end
 
@@ -69,8 +72,14 @@ end
 -- 블랙홀 모양
 ------------------------------------------------------------------------
 type Hole = {
-	char: Model,
-	radius: number,
+	char: Model?,
+	center: Vector3?, -- 미리보기는 정해진 자리에 있다
+	active: boolean,
+	radius: number, -- 지금 보이는 반지름 (target 쪽으로 부드럽게 따라간다)
+	target: number,
+	buildR: number, -- 파트를 만들 때의 반지름
+	lastK: number,
+	baseSizes: { Vector3 },
 	skin: number,
 	parts: { Part },
 	rim: Part,
@@ -125,7 +134,7 @@ local function buildSats(h: Hole, attr: string)
 	h.sats = {}
 	h.satKey = attr
 	local list = string.split(attr, ",")
-	local size = math.clamp(h.radius * 0.16, 0.45, 40)
+	local size = math.clamp(h.buildR * 0.16, 0.45, 40)
 	for i, entry in ipairs(list) do
 		local id, g = string.match(entry, "^([%w_]+):(%d)$")
 		local def = id and Config.SAT_BY_ID[id]
@@ -137,7 +146,7 @@ local function buildSats(h: Hole, attr: string)
 	end
 end
 
-local function buildHole(char: Model, r: number, skinIndex: number): Hole
+local function buildHole(char: Model?, r: number, skinIndex: number, lite: boolean?): Hole
 	local skin = Config.Skins[skinIndex] or Config.Skins[1]
 	local effect = skin.effect
 	local parts: { Part } = {}
@@ -158,7 +167,7 @@ local function buildHole(char: Model, r: number, skinIndex: number): Hole
 
 	-- 소용돌이 팔: 테두리에서 가운데로 휘어 들어간다
 	local arms = {}
-	local segs = 9
+	local segs = lite and 6 or 9
 	for arm = 0, 2 do
 		for i = 0, segs - 1 do
 			local t = i / (segs - 1)
@@ -170,7 +179,7 @@ local function buildHole(char: Model, r: number, skinIndex: number): Hole
 	end
 	-- 강착 원반: 테두리 위를 빠르게 도는 빛 덩어리
 	local ring = {}
-	local n = 18
+	local n = lite and 12 or 18
 	for i = 0, n - 1 do
 		local size = math.max(0.25, r * 0.08)
 		local col = (i % 2 == 0) and skin.a or skin.b
@@ -182,9 +191,10 @@ local function buildHole(char: Model, r: number, skinIndex: number): Hole
 	end
 	-- 빨려 드는 빛 알갱이
 	local motes = {}
-	for i = 0, 11 do
+	local moteCount = lite and 6 or 12
+	for i = 0, moteCount - 1 do
 		local p = add(fxPart(Vector3.new(1, 1, 1) * math.max(0.15, r * 0.05), skin.b, Enum.Material.Neon, Enum.PartType.Ball))
-		table.insert(motes, { part = p, phase = i / 12 })
+		table.insert(motes, { part = p, phase = i / moteCount })
 	end
 
 	-- 스킨 효과
@@ -262,7 +272,13 @@ local function buildHole(char: Model, r: number, skinIndex: number): Hole
 
 	return {
 		char = char,
+		center = nil,
+		active = true,
 		radius = r,
+		target = r,
+		buildR = r,
+		lastK = 1,
+		baseSizes = { rim.Size, disk.Size, void.Size, core.Size },
 		skin = skinIndex,
 		parts = parts,
 		rim = rim,
@@ -289,10 +305,20 @@ function Fx.holeCenter(char: Model): Vector3?
 	return Vector3.new(root.Position.X, 0, root.Position.Z)
 end
 
-local function updateHole(h: Hole, t: number)
-	local center = Fx.holeCenter(h.char)
+local function updateHole(h: Hole, t: number, dt: number)
+	local center = h.center or (h.char and Fx.holeCenter(h.char))
 	if not center then
 		return
+	end
+	-- 먹어서 커질 때 부드럽게 커진다
+	h.radius += (h.target - h.radius) * math.min(1, dt * 6)
+	local scaleK = h.radius / h.buildR
+	if math.abs(scaleK - h.lastK) > 0.002 then
+		h.lastK = scaleK
+		for i, p in ipairs({ h.rim, h.disk, h.void, h.core }) do
+			local b = h.baseSizes[i]
+			p.Size = Vector3.new(b.X, b.Y * scaleK, b.Z * scaleK)
+		end
 	end
 	local r = h.radius
 	local base = CFrame.new(center)
@@ -336,7 +362,7 @@ local function updateHole(h: Hole, t: number)
 			p.Transparency = (math.sin(t * 6 + e.k * 2) + 1) * 0.4
 		elseif e.kind == "iris" or e.kind == "pupil" or e.kind == "shine" then
 			-- 눈동자가 움직이는 쪽을 바라본다
-			local root = h.char:FindFirstChild("HumanoidRootPart")
+			local root = h.char and h.char:FindFirstChild("HumanoidRootPart")
 			local vel = (root and root:IsA("BasePart")) and root.AssemblyLinearVelocity or Vector3.zero
 			local look = Vector3.new(vel.X, 0, vel.Z)
 			local off = look.Magnitude > 1 and look.Unit * r * 0.18 or Vector3.new(math.sin(t * 0.7), 0, math.cos(t * 0.5)) * r * 0.08
@@ -396,16 +422,23 @@ local function syncHole(char: Model)
 	local skinIndex = type(skin) == "number" and skin or 1
 	local sats = char:GetAttribute("Sats")
 	local satKey = type(sats) == "string" and sats or ""
-	if h and h.radius == r and h.skin == skinIndex then
-		if h.satKey ~= satKey then
-			buildSats(h, satKey)
+	if h and h.skin == skinIndex then
+		-- 크기가 조금 바뀐 건 다시 만들지 않고 늘린다
+		h.target = r
+		local k = r / h.buildR
+		if k < 1.15 and k > 0.87 then
+			if h.satKey ~= satKey then
+				buildSats(h, satKey)
+			end
+			return
 		end
-		return
 	end
+	local shown = h and h.radius or r
 	if h then
 		destroyHole(h)
 	end
 	local nh = buildHole(char, r, skinIndex)
+	nh.radius = shown
 	holes[char] = nh
 	buildSats(nh, satKey)
 end
@@ -435,6 +468,95 @@ local function watchPlayer(player: Player)
 	player.CharacterAdded:Connect(function(c)
 		watchCharacter(c :: Model)
 	end)
+end
+
+------------------------------------------------------------------------
+-- 스킨 미리보기: 스킨 창(ViewportFrame)과 시작 지점 뒤 스킨 전시관
+------------------------------------------------------------------------
+local previews: { Hole } = {}
+
+function Fx.preview(skinIndex: number, r: number, center: Vector3, parent: Instance): Hole
+	buildParent = parent
+	local ok, h = pcall(buildHole, nil, r, skinIndex, true)
+	buildParent = nil
+	if not ok then
+		error(h)
+	end
+	h.center = center
+	table.insert(previews, h)
+	return h
+end
+
+function Fx.removePreview(h: Hole)
+	destroyHole(h)
+	local i = table.find(previews, h)
+	if i then
+		table.remove(previews, i)
+	end
+end
+
+type GalleryItem = { hole: Hole, label: TextLabel, skin: any }
+local gallery: { GalleryItem } = {}
+
+local function buildGallery()
+	local zones = workspace:WaitForChild("Zones", 30)
+	if not zones then
+		return
+	end
+	for _, hall in ipairs(zones:GetChildren()) do
+		local w = hall:GetAttribute("World")
+		if hall.Name == "SkinHall" and type(w) == "number" and Config.Worlds[w] then
+			local wx = Config.Worlds[w].x
+			local f = Instance.new("Folder")
+			f.Name = "SkinGallery" .. w
+			f.Parent = folder
+			for k, skin in ipairs(Config.Skins) do
+				local center = Vector3.new(wx + (k - (#Config.Skins + 1) / 2) * 17, 2.3, -24)
+				local h = Fx.preview(k, 3.6, center, f)
+				h.active = false
+				local anchor = fxPart(Vector3.new(0.2, 0.2, 0.2), skin.a, Enum.Material.Neon, nil, 1)
+				anchor.CFrame = CFrame.new(center + Vector3.new(0, 9, 0))
+				anchor.Parent = f
+				local bb = Instance.new("BillboardGui")
+				bb.Size = UDim2.new(0, 170, 0, 54)
+				bb.LightInfluence = 0
+				bb.MaxDistance = 260
+				bb.Parent = anchor
+				local l = Instance.new("TextLabel")
+				l.Size = UDim2.fromScale(1, 1)
+				l.BackgroundTransparency = 1
+				l.Font = Enum.Font.GothamBlack
+				l.TextScaled = true
+				l.TextColor3 = skin.b
+				l.TextStrokeTransparency = 0.2
+				l.Text = skin.name
+				l.Parent = bb
+				table.insert(gallery, { hole = h, label = l, skin = skin })
+			end
+		end
+	end
+end
+
+-- 전시관 이름표: 가진 스킨, 쓰는 스킨, 얻는 법
+function Fx.updateGallery(owned: { string }, selected: string)
+	for _, g in ipairs(gallery) do
+		local skin = g.skin
+		local status
+		if skin.id == selected then
+			status = "✔ 사용 중"
+		elseif table.find(owned, skin.id) then
+			status = "열림"
+		elseif skin.unlock == "bigbang" then
+			status = string.format("🔒 빅뱅 %d번", skin.value)
+		elseif skin.unlock == "dm" then
+			status = string.format("🌑 %d", skin.value)
+		elseif skin.unlock == "world2" then
+			status = "🔒 사탕 태양"
+		else
+			status = "💎 " .. Config.PASS_BY_KEY[skin.value].name
+		end
+		g.label.Text = skin.name .. "\n" .. status
+	end
 end
 
 ------------------------------------------------------------------------
@@ -726,14 +848,31 @@ function Fx.start()
 			readyAt = os.clock()
 		end)
 	end)
-	RunService.RenderStepped:Connect(function()
+	task.spawn(buildGallery)
+	local galleryCheck = 0
+	RunService.RenderStepped:Connect(function(dt: number)
 		local t = os.clock()
 		for char, h in pairs(holes) do
 			if not char.Parent then
 				destroyHole(h)
 				holes[char] = nil
 			else
-				updateHole(h, t)
+				updateHole(h, t, dt)
+			end
+		end
+		-- 전시관은 카메라가 가까울 때만 움직인다
+		if t > galleryCheck then
+			galleryCheck = t + 0.5
+			local cam = workspace.CurrentCamera
+			local cp = cam and cam.CFrame.Position or Vector3.zero
+			for _, g in ipairs(gallery) do
+				local c = g.hole.center or Vector3.zero
+				g.hole.active = (c - cp).Magnitude < 450
+			end
+		end
+		for _, h in ipairs(previews) do
+			if h.active then
+				updateHole(h, t, dt)
 			end
 		end
 	end)

@@ -5,17 +5,41 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-2"
+Config.VERSION = "beta-3"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
 Config.TEST_MODE = true
 
 ------------------------------------------------------------------------
+-- 크기: 먹어서 커진다
+-- 물체를 삼키면 블랙홀 넓이(반지름²)에 GROW_K × 물체 크기² × 성장 배율만큼 더해진다.
+-- 내 크기에 가까운 걸 삼킬수록 확 커진다.
+------------------------------------------------------------------------
+Config.START_RADIUS = 1.5
+Config.MAX_RADIUS = 520
+Config.GROW_K = 0.3
+
+-- 성장 배율: 성장력 업그레이드, 빅뱅 횟수, 별똥별
+function Config.growMult(growLv: number, bigbang: number, star: boolean?): number
+	return (1 + 0.15 * growLv) * (1 + 0.1 * bigbang) * (star and 2 or 1)
+end
+
+-- 크기 size인 물체를 삼킨 뒤 반지름
+function Config.grow(radius: number, size: number, mult: number): number
+	return math.min(Config.MAX_RADIUS, math.sqrt(radius * radius + Config.GROW_K * mult * size * size))
+end
+
+-- 빅뱅 상점 '시작 크기' 레벨에 따른 시작 반지름
+function Config.startRadius(startLv: number): number
+	return Config.START_RADIUS * 1.25 ^ startLv
+end
+
+------------------------------------------------------------------------
 -- 업그레이드 3종 (질량으로 산다, 빅뱅하면 사라진다)
 ------------------------------------------------------------------------
 Config.Upgrades = {
-	{ id = "size", name = "크기", icon = "⚫", desc = "더 큰 것을 삼킨다", maxLevel = 46, base = 4, growth = 1.4 },
+	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도 +15%", maxLevel = 40, base = 25, growth = 1.6 },
 	{ id = "pull", name = "흡입력", icon = "🌀", desc = "더 멀리서 끌어당긴다", maxLevel = 15, base = 25, growth = 1.7 },
 	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량 +25%", maxLevel = 40, base = 40, growth = 1.5 },
 }
@@ -29,24 +53,19 @@ function Config.upgradeCost(id: string, level: number): number
 	return math.floor(u.base * u.growth ^ level)
 end
 
--- 반지름 = 1.5 × 1.13^레벨 (레벨 하나에 13%씩 커진다)
-function Config.radius(sizeLv: number): number
-	return 1.5 * 1.13 ^ sizeLv
-end
-
 ------------------------------------------------------------------------
--- 빅뱅: 크기 레벨 38(반지름 약 157) 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
+-- 빅뱅: 크기 150 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
 ------------------------------------------------------------------------
-Config.BIGBANG_LEVEL = 38
+Config.BIGBANG_RADIUS = 150
 
--- 받는 암흑 물질: 레벨 38에서 3개, 그 위로 한 레벨마다 2개씩 더
-function Config.darkMatterReward(sizeLv: number, bigbang: number): number
-	return 3 + math.max(0, sizeLv - Config.BIGBANG_LEVEL) * 2 + bigbang // 2
+-- 받는 암흑 물질: 크기 150에서 3개, 그 위로 크기 20마다 1개씩 더
+function Config.darkMatterReward(radius: number, bigbang: number): number
+	return 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 20)) + bigbang // 2
 end
 
 -- 빅뱅 상점: 암흑 물질로 사는 영구 업그레이드 (빅뱅해도 남는다)
 Config.BigbangShop = {
-	{ id = "start", name = "시작 크기", icon = "🌱", desc = "빅뱅 뒤 크기 레벨 +2로 시작", maxLevel = 8, base = 2, step = 2 },
+	{ id = "start", name = "시작 크기", icon = "🌱", desc = "빅뱅 뒤 25% 더 크게 시작", maxLevel = 8, base = 2, step = 2 },
 	{ id = "respawn", name = "빠른 재생산", icon = "♻", desc = "삼킨 물체가 12% 더 빨리 다시 생긴다", maxLevel = 5, base = 3, step = 3 },
 	{ id = "mass", name = "암흑 증폭", icon = "🌑", desc = "질량 +50%", maxLevel = 20, base = 3, step = 2 },
 	{ id = "speed", name = "광속", icon = "⚡", desc = "이동 속도 +15%", maxLevel = 5, base = 2, step = 2 },
@@ -76,22 +95,22 @@ Config.Worlds = {
 
 Config.Zones = {
 	-- 세계 1
-	{ world = 1, name = "공원", need = 0, width = 260, length = 260, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 5 },
-	{ world = 1, name = "마을", need = 6, width = 380, length = 340, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 6 },
-	{ world = 1, name = "도시", need = 14, width = 600, length = 520, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 7 },
-	{ world = 1, name = "대도시", need = 30, width = 960, length = 820, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 8 },
-	{ world = 1, name = "바다와 산", need = 65, width = 1500, length = 1300, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 9 },
-	{ world = 1, name = "우주", need = 140, width = 2600, length = 2200, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 10 },
+	{ world = 1, name = "공원", need = 0, width = 260, length = 260, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3 },
+	{ world = 1, name = "마을", need = 6, width = 380, length = 340, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3 },
+	{ world = 1, name = "도시", need = 14, width = 600, length = 520, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4 },
+	{ world = 1, name = "대도시", need = 30, width = 960, length = 820, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4 },
+	{ world = 1, name = "바다와 산", need = 65, width = 1500, length = 1300, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5 },
+	{ world = 1, name = "우주", need = 140, width = 2600, length = 2200, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6 },
 	-- 세계 2
-	{ world = 2, name = "젤리 들판", need = 0, width = 260, length = 260, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 5 },
-	{ world = 2, name = "과자 마을", need = 6, width = 400, length = 360, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 6 },
-	{ world = 2, name = "케이크 도시", need = 14, width = 640, length = 560, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 7 },
-	{ world = 2, name = "아이스크림 산맥", need = 30, width = 1100, length = 900, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 8 },
-	{ world = 2, name = "사탕 우주", need = 65, width = 2400, length = 2100, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 10 },
+	{ world = 2, name = "젤리 들판", need = 0, width = 260, length = 260, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3 },
+	{ world = 2, name = "과자 마을", need = 6, width = 400, length = 360, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3 },
+	{ world = 2, name = "케이크 도시", need = 14, width = 640, length = 560, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4 },
+	{ world = 2, name = "아이스크림 산맥", need = 30, width = 1100, length = 900, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5 },
+	{ world = 2, name = "사탕 우주", need = 65, width = 2400, length = 2100, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6 },
 }
 
 ------------------------------------------------------------------------
--- 물체. zone = 위 Zones 순서, size = 삼키는 데 필요한 반지름, mass = 얻는 질량, count = 놓이는 개수
+-- 물체 85종. zone = 위 Zones 순서, size = 삼키는 데 필요한 반지름, mass = 얻는 질량, count = 놓이는 개수
 -- 세계 2의 질량은 같은 크기 세계 1 물체의 약 5배
 ------------------------------------------------------------------------
 Config.Objects = {
@@ -103,6 +122,9 @@ Config.Objects = {
 	{ id = "bench", name = "벤치", zone = 1, size = 2.6, mass = 14, count = 8 },
 	{ id = "bush", name = "덤불", zone = 1, size = 2.8, mass = 16, count = 8 },
 	{ id = "tree", name = "작은 나무", zone = 1, size = 3.0, mass = 20, count = 10 },
+	{ id = "duck", name = "오리", zone = 1, size = 1.1, mass = 3, count = 10 },
+	{ id = "hydrant", name = "소화전", zone = 1, size = 1.5, mass = 6, count = 8 },
+	{ id = "picnic", name = "피크닉 테이블", zone = 1, size = 2.4, mass = 12, count = 6 },
 	-- 2 마을
 	{ id = "mailbox", name = "우체통", zone = 2, size = 3.5, mass = 15, count = 10 },
 	{ id = "bicycle", name = "자전거", zone = 2, size = 4, mass = 20, count = 10 },
@@ -110,28 +132,42 @@ Config.Objects = {
 	{ id = "car", name = "자동차", zone = 2, size = 6, mass = 50, count = 12 },
 	{ id = "bigtree", name = "큰 나무", zone = 2, size = 7, mass = 70, count = 10 },
 	{ id = "hut", name = "오두막", zone = 2, size = 9, mass = 120, count = 8 },
+	{ id = "doghouse", name = "개집", zone = 2, size = 3.8, mass = 18, count = 8 },
+	{ id = "vending", name = "자판기", zone = 2, size = 5, mass = 36, count = 8 },
+	{ id = "tent", name = "텐트", zone = 2, size = 8, mass = 95, count = 6 },
 	-- 3 도시
 	{ id = "truck", name = "트럭", zone = 3, size = 11, mass = 250, count = 10 },
 	{ id = "bus", name = "버스", zone = 3, size = 13, mass = 380, count = 10 },
 	{ id = "house", name = "집", zone = 3, size = 15, mass = 550, count = 10 },
 	{ id = "shop", name = "가게", zone = 3, size = 18, mass = 800, count = 8 },
 	{ id = "fountain", name = "분수대", zone = 3, size = 20, mass = 1100, count = 6 },
+	{ id = "taxi", name = "택시", zone = 3, size = 12, mass = 320, count = 10 },
+	{ id = "firetruck", name = "소방차", zone = 3, size = 16, mass = 650, count = 8 },
+	{ id = "gasstation", name = "주유소", zone = 3, size = 19, mass = 950, count = 6 },
 	-- 4 대도시
 	{ id = "building", name = "빌딩", zone = 4, size = 26, mass = 3000, count = 12 },
 	{ id = "tower", name = "타워", zone = 4, size = 32, mass = 5500, count = 10 },
 	{ id = "stadium", name = "경기장", zone = 4, size = 38, mass = 9000, count = 6 },
 	{ id = "ferris", name = "대관람차", zone = 4, size = 42, mass = 14000, count = 6 },
+	{ id = "helicopter", name = "헬리콥터", zone = 4, size = 28, mass = 4000, count = 8 },
+	{ id = "crane", name = "타워 크레인", zone = 4, size = 35, mass = 7000, count = 6 },
+	{ id = "airplane", name = "비행기", zone = 4, size = 45, mass = 17000, count = 5 },
 	-- 5 바다와 산
 	{ id = "ship", name = "배", zone = 5, size = 55, mass = 40000, count = 10 },
 	{ id = "lighthouse", name = "등대", zone = 5, size = 60, mass = 60000, count = 8 },
 	{ id = "island", name = "섬", zone = 5, size = 75, mass = 120000, count = 6 },
 	{ id = "mountain", name = "산", zone = 5, size = 90, mass = 250000, count = 6 },
+	{ id = "whale", name = "고래", zone = 5, size = 68, mass = 90000, count = 6 },
+	{ id = "volcano", name = "화산", zone = 5, size = 105, mass = 400000, count = 4 },
 	-- 6 우주
 	{ id = "satellite", name = "인공위성", zone = 6, size = 115, mass = 800000, count = 8 },
 	{ id = "asteroid", name = "소행성", zone = 6, size = 140, mass = 1500000, count = 8 },
 	{ id = "moon", name = "달", zone = 6, size = 180, mass = 4000000, count = 5 },
 	{ id = "planet", name = "행성", zone = 6, size = 240, mass = 12000000, count = 4 },
 	{ id = "sun", name = "태양", zone = 6, size = 320, mass = 50000000, count = 2 },
+	{ id = "comet", name = "혜성", zone = 6, size = 130, mass = 1100000, count = 6 },
+	{ id = "spacestation", name = "우주 정거장", zone = 6, size = 160, mass = 2500000, count = 5 },
+	{ id = "galaxy", name = "은하", zone = 6, size = 400, mass = 150000000, count = 1 },
 	-- 7 젤리 들판
 	{ id = "gummy", name = "젤리곰", zone = 7, size = 0.8, mass = 10, count = 18 },
 	{ id = "candy", name = "사탕", zone = 7, size = 0.9, mass = 10, count = 16 },
@@ -139,26 +175,36 @@ Config.Objects = {
 	{ id = "macaron", name = "마카롱", zone = 7, size = 1.8, mass = 40, count = 10 },
 	{ id = "cupcake", name = "컵케이크", zone = 7, size = 2.6, mass = 70, count = 10 },
 	{ id = "donut", name = "도넛", zone = 7, size = 3.0, mass = 100, count = 10 },
+	{ id = "chocobar", name = "초콜릿 바", zone = 7, size = 1.1, mass = 15, count = 10 },
+	{ id = "marshmallow", name = "마시멜로", zone = 7, size = 1.5, mass = 30, count = 8 },
 	-- 8 과자 마을
 	{ id = "cookie", name = "쿠키", zone = 8, size = 3.5, mass = 75, count = 12 },
 	{ id = "pudding", name = "푸딩", zone = 8, size = 4.5, mass = 120, count = 10 },
 	{ id = "icecream", name = "아이스크림콘", zone = 8, size = 6, mass = 250, count = 12 },
 	{ id = "cottontree", name = "솜사탕 나무", zone = 8, size = 7, mass = 350, count = 10 },
 	{ id = "gingerhouse", name = "과자 집", zone = 8, size = 9, mass = 600, count = 8 },
+	{ id = "milk", name = "우유 팩", zone = 8, size = 4, mass = 100, count = 10 },
+	{ id = "waffle", name = "와플", zone = 8, size = 5, mass = 180, count = 8 },
 	-- 9 케이크 도시
 	{ id = "candycar", name = "사탕 자동차", zone = 9, size = 12, mass = 1500, count = 10 },
 	{ id = "cake", name = "케이크", zone = 9, size = 15, mass = 2750, count = 10 },
 	{ id = "chocofountain", name = "초콜릿 분수", zone = 9, size = 18, mass = 4000, count = 8 },
 	{ id = "weddingcake", name = "웨딩 케이크 탑", zone = 9, size = 22, mass = 6000, count = 6 },
+	{ id = "jellybus", name = "젤리 버스", zone = 9, size = 13, mass = 2000, count = 8 },
+	{ id = "chocotower", name = "초콜릿 빌딩", zone = 9, size = 20, mass = 5000, count = 6 },
 	-- 10 아이스크림 산맥
 	{ id = "lollitower", name = "롤리팝 탑", zone = 10, size = 28, mass = 18000, count = 10 },
 	{ id = "jellycastle", name = "젤리 성", zone = 10, size = 34, mass = 30000, count = 8 },
 	{ id = "icemountain", name = "아이스크림 산", zone = 10, size = 45, mass = 60000, count = 6 },
+	{ id = "parfait", name = "파르페", zone = 10, size = 31, mass = 24000, count = 8 },
+	{ id = "cottoncloud", name = "솜사탕 구름", zone = 10, size = 40, mass = 45000, count = 6 },
 	-- 11 사탕 우주
 	{ id = "donutplanet", name = "도넛 행성", zone = 11, size = 80, mass = 1200000, count = 8 },
 	{ id = "candymoon", name = "사탕 달", zone = 11, size = 120, mass = 7500000, count = 6 },
 	{ id = "cakestar", name = "케이크 별", zone = 11, size = 200, mass = 50000000, count = 4 },
 	{ id = "candysun", name = "사탕 태양", zone = 11, size = 320, mass = 250000000, count = 2 },
+	{ id = "candyasteroid", name = "사탕 소행성", zone = 11, size = 100, mass = 3000000, count = 8 },
+	{ id = "chocoplanet", name = "초콜릿 행성", zone = 11, size = 160, mass = 15000000, count = 5 },
 }
 Config.OBJECT_BY_ID = {}
 for _, o in ipairs(Config.Objects) do
@@ -308,8 +354,8 @@ Config.GamePasses = {
 Config.Products = {
 	{ key = "boost30", id = 0, price = 49, icon = "🔥", name = "질량 2배 30분", desc = "30분 동안 질량 2배 (겹쳐 사면 시간이 늘어남)" },
 	{ key = "respawn30", id = 0, price = 39, icon = "♻", name = "빠른 재생산 30분", desc = "30분 동안 물체가 2배 빨리 다시 생김" },
-	{ key = "massS", id = 0, price = 25, icon = "💠", name = "질량 꾸러미 (소)", desc = "다음 크기 업그레이드 3번 값만큼 질량" },
-	{ key = "massL", id = 0, price = 99, icon = "💎", name = "질량 꾸러미 (대)", desc = "다음 크기 업그레이드 10번 값만큼 질량" },
+	{ key = "massS", id = 0, price = 25, icon = "💠", name = "질량 꾸러미 (소)", desc = "지금 갈 수 있는 가장 큰 물체 30개 값만큼 질량" },
+	{ key = "massL", id = 0, price = 99, icon = "💎", name = "질량 꾸러미 (대)", desc = "지금 갈 수 있는 가장 큰 물체 120개 값만큼 질량" },
 	{ key = "dm10", id = 0, price = 149, icon = "🌑", name = "암흑 물질 10개", desc = "빅뱅 상점에서 쓰는 암흑 물질" },
 }
 Config.PASS_BY_KEY = {}
@@ -322,9 +368,9 @@ for _, p in ipairs(Config.Products) do
 end
 
 ------------------------------------------------------------------------
--- 별똥별: 가끔 내 근처에 떨어진다. 삼키면 60초 동안 질량 2배
+-- 별똥별: 가끔 내 근처에 떨어진다. 삼키면 60초 동안 질량과 성장 2배
 ------------------------------------------------------------------------
-Config.STAR_INTERVAL = 40
+Config.STAR_INTERVAL = 35
 Config.STAR_LIFETIME = 25
 Config.STAR_BOOST = 60
 
@@ -423,6 +469,18 @@ function Config.zoneAt(pos: Vector3): number
 		end
 	end
 	return list[#list]
+end
+
+-- 지금 갈 수 있는 구역에서 가장 질량이 큰 물체 (질량 꾸러미 계산용)
+function Config.biggestMass(world: number, radius: number): number
+	local reach = Config.maxZone(world, radius)
+	local best = 0
+	for _, o in ipairs(Config.Objects) do
+		if Config.Zones[o.zone].world == world and o.zone <= reach and o.size <= math.max(radius, Config.Zones[o.zone].need) then
+			best = math.max(best, o.mass)
+		end
+	end
+	return best
 end
 
 -- 지금 크기로 그 세계에서 갈 수 있는 가장 먼 구역

@@ -75,6 +75,9 @@ local function grad(a: Color3, b: Color3, rot: number?): UIGradient
 	return new("UIGradient", { Color = ColorSequence.new(a, b), Rotation = rot or 90 })
 end
 
+-- 모든 글씨를 조금 크게 (휴대폰에서도 잘 보이게)
+local TEXT_BOOST = 1.15
+
 local function text(props: { [string]: any }): TextLabel
 	local defaults = {
 		BackgroundTransparency = 1,
@@ -87,6 +90,7 @@ local function text(props: { [string]: any }): TextLabel
 	for k, v in pairs(props) do
 		defaults[k] = v
 	end
+	defaults.TextSize = math.floor(defaults.TextSize * TEXT_BOOST + 0.5)
 	return new("TextLabel", defaults)
 end
 
@@ -103,6 +107,7 @@ local function button(props: { [string]: any }, onClick: () -> ()): TextButton
 	for k, v in pairs(props) do
 		defaults[k] = v
 	end
+	defaults.TextSize = math.floor(defaults.TextSize * TEXT_BOOST + 0.5)
 	local b = new("TextButton", defaults, { corner(10) })
 	b.Activated:Connect(onClick)
 	return b
@@ -178,7 +183,7 @@ do
 	local cam = workspace.CurrentCamera
 	if cam then
 		local vp = cam.ViewportSize
-		uiScale = math.clamp(math.min(vp.X / 1150, vp.Y / 640), 0.55, 1)
+		uiScale = math.clamp(math.min(vp.X / 1080, vp.Y / 640), 0.6, 1.15)
 	end
 end
 local function scaled(frame: GuiObject)
@@ -324,7 +329,7 @@ end
 local window = new("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.new(0.5, 0, 0.53, 0),
-	Size = UDim2.new(0, 720, 0, 520),
+	Size = UDim2.new(0, 780, 0, 540),
 	BackgroundColor3 = Color3.new(1, 1, 1),
 	Visible = false,
 	ZIndex = 10,
@@ -467,16 +472,11 @@ do
 			b.BackgroundColor3 = owned and C.panel2 or C.green
 			b.AutoButtonColor = not owned
 		end
-		local u = Config.UPGRADE_BY_ID.size
 		local function packAmount(n: number): number
-			local sum = 0
-			for i = 0, n - 1 do
-				sum += Config.upgradeCost("size", math.min(u.maxLevel - 1, state.size + i))
-			end
-			return sum
+			return Config.biggestMass(currentWorld, state.radius) * n * state.totalMult
 		end
-		productDesc.massS.Text = Config.PRODUCT_BY_KEY.massS.desc .. "\n지금 사면 💠" .. fmt(packAmount(3))
-		productDesc.massL.Text = Config.PRODUCT_BY_KEY.massL.desc .. "\n지금 사면 💠" .. fmt(packAmount(10))
+		productDesc.massS.Text = Config.PRODUCT_BY_KEY.massS.desc .. "\n지금 사면 💠" .. fmt(packAmount(30))
+		productDesc.massL.Text = Config.PRODUCT_BY_KEY.massL.desc .. "\n지금 사면 💠" .. fmt(packAmount(120))
 	end
 end
 
@@ -662,23 +662,96 @@ end
 -- 🎨 스킨
 ------------------------------------------------------------------------
 local EFFECT_ICON = { fire = "🔥", ice = "❄", galaxy = "🌌", candy = "🍬", gold = "✨", eye = "👁", rainbow = "🌈" }
+local EFFECT_TEXT = {
+	fire = "🔥 불꽃이 솟아올라요",
+	ice = "❄ 얼음 조각과 눈송이가 돌아요",
+	galaxy = "🌌 별빛 고리가 기울어 돌아요",
+	candy = "🍬 사탕 가루가 날려요",
+	gold = "✨ 금빛이 반짝여요",
+	eye = "👁 눈동자가 움직이는 쪽을 봐요",
+	rainbow = "🌈 테두리가 무지개로 바뀌어요",
+}
+local skinPreview: any = nil -- 스킨 창 미리보기 (Fx가 만든 블랙홀)
 do
 	local page = makePage("skins")
-	local scroll = scroller(page, UDim2.fromScale(1, 1))
-	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 176), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
+	-- 위: 고른 스킨을 실제 블랙홀 모양으로 크게 보여 준다
+	local top = new("Frame", { Size = UDim2.new(1, 0, 0, 210), BackgroundColor3 = C.bg, Parent = page }, { corner(14), stroke(C.line, 1.5) })
+	local vf = new("ViewportFrame", {
+		Position = UDim2.new(0, 6, 0, 6),
+		Size = UDim2.new(0, 198, 0, 198),
+		BackgroundColor3 = Color3.fromRGB(8, 6, 16),
+		Ambient = Color3.fromRGB(200, 200, 210),
+		LightColor = Color3.new(1, 1, 1),
+		Parent = top,
+	}, { corner(12) })
+	local cam = new("Camera", { FieldOfView = 50, Parent = vf })
+	cam.CFrame = CFrame.lookAt(Vector3.new(0, 7.5, -8.5), Vector3.new(0, 0.3, 0))
+	vf.CurrentCamera = cam
+	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = top })
+	local effectLabel = text({ Position = UDim2.new(0, 222, 0, 52), Size = UDim2.new(1, -236, 0, 28), TextSize = 19, TextColor3 = C.dim, Parent = top })
+	local howLabel = text({ Position = UDim2.new(0, 222, 0, 84), Size = UDim2.new(1, -236, 0, 50), TextSize = 18, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
+	local shown = ""
+	local useBtn = button({ Position = UDim2.new(0, 222, 1, -64), Size = UDim2.new(0, 260, 0, 54), Text = "", TextSize = 22, Parent = top }, function()
+		if shown ~= "" then
+			Request:FireServer("skin", shown)
+		end
+	end)
+
+	local function skinStatus(skin: any): (string, Color3, string)
+		local owned = state and table.find(state.skins, skin.id) ~= nil
+		if state and state.skin == skin.id then
+			return "사용 중 ✔", C.green, "지금 쓰고 있어요"
+		elseif owned then
+			return "사용하기", C.accent, "가지고 있어요"
+		elseif skin.unlock == "bigbang" then
+			return string.format("🔒 빅뱅 %d번", skin.value), C.panel2, string.format("빅뱅을 %d번 하면 열려요", skin.value)
+		elseif skin.unlock == "dm" then
+			local can = state and state.dm >= skin.value
+			return string.format("🌑 %d 로 사기", skin.value), can and Color3.fromRGB(110, 60, 180) or C.panel2, string.format("암흑 물질 %d개로 살 수 있어요", skin.value)
+		elseif skin.unlock == "world2" then
+			return "🔒 사탕 태양 삼키기", C.panel2, "세계 2의 사탕 태양을 삼키면 열려요"
+		end
+		local pass = Config.PASS_BY_KEY[skin.value]
+		return "💎 " .. pass.name, Color3.fromRGB(200, 140, 40), "💎 상점의 " .. pass.name .. "에 들어 있어요"
+	end
+
+	local function show(skin: any)
+		if shown ~= skin.id then
+			shown = skin.id
+			if skinPreview then
+				Fx.removePreview(skinPreview)
+			end
+			skinPreview = Fx.preview(skin.index, 3, Vector3.new(0, 0, 0), vf)
+		end
+		nameLabel.Text = skin.name
+		nameLabel.TextColor3 = skin.a:Lerp(Color3.new(1, 1, 1), 0.3)
+		effectLabel.Text = skin.effect and EFFECT_TEXT[skin.effect] or "기본 소용돌이"
+		local label, col, how = skinStatus(skin)
+		howLabel.Text = how
+		useBtn.Text = label
+		useBtn.BackgroundColor3 = col
+	end
+
+	-- 아래: 스킨 카드 (누르면 위에 크게 보인다)
+	local scroll = scroller(page, UDim2.new(1, 0, 1, -218), UDim2.new(0, 0, 0, 218))
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 150), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
 	local skinButtons: { [string]: TextButton } = {}
 	for _, skin in ipairs(Config.Skins) do
-		local card = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
-		local swatch = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 72, 0, 72), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card }, {
-			corner(36),
+		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
+		card.Activated:Connect(function()
+			show(skin)
+		end)
+		local swatch = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 6), Size = UDim2.new(0, 56, 0, 56), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card }, {
+			corner(28),
 			new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, skin.a), ColorSequenceKeypoint.new(0.5, Color3.new(0, 0, 0)), ColorSequenceKeypoint.new(1, skin.b) }), Rotation = 45 }),
 			new("UIStroke", { Color = skin.a, Thickness = 3 }),
 		})
 		if skin.effect then
-			text({ Size = UDim2.fromScale(1, 1), TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Text = EFFECT_ICON[skin.effect] or "", Parent = swatch })
+			text({ Size = UDim2.fromScale(1, 1), TextSize = 26, TextXAlignment = Enum.TextXAlignment.Center, Text = EFFECT_ICON[skin.effect] or "", Parent = swatch })
 		end
-		text({ Position = UDim2.new(0, 4, 0, 84), Size = UDim2.new(1, -8, 0, 40), TextSize = 16, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Text = skin.name, Parent = card })
-		skinButtons[skin.id] = button({ Position = UDim2.new(0, 6, 1, -44), Size = UDim2.new(1, -12, 0, 38), TextSize = 14, Parent = card }, function()
+		text({ Position = UDim2.new(0, 4, 0, 64), Size = UDim2.new(1, -8, 0, 36), TextSize = 16, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Text = skin.name, Parent = card })
+		skinButtons[skin.id] = button({ Position = UDim2.new(0, 6, 1, -42), Size = UDim2.new(1, -12, 0, 36), TextSize = 14, Parent = card }, function()
+			show(skin)
 			Request:FireServer("skin", skin.id)
 		end)
 	end
@@ -686,28 +759,11 @@ do
 		if not state then
 			return
 		end
+		show(Config.SKIN_BY_ID[shown] or Config.SKIN_BY_ID[state.skin] or Config.Skins[1])
 		for _, skin in ipairs(Config.Skins) do
-			local b = skinButtons[skin.id]
-			local owned = table.find(state.skins, skin.id) ~= nil
-			if state.skin == skin.id then
-				b.Text = "사용 중 ✔"
-				b.BackgroundColor3 = C.green
-			elseif owned then
-				b.Text = "사용하기"
-				b.BackgroundColor3 = C.accent
-			elseif skin.unlock == "bigbang" then
-				b.Text = string.format("🔒 빅뱅 %d번", skin.value)
-				b.BackgroundColor3 = C.panel2
-			elseif skin.unlock == "dm" then
-				b.Text = string.format("🌑 %d 로 사기", skin.value)
-				b.BackgroundColor3 = state.dm >= skin.value and Color3.fromRGB(110, 60, 180) or C.panel2
-			elseif skin.unlock == "world2" then
-				b.Text = "🔒 사탕 태양 삼키기"
-				b.BackgroundColor3 = C.panel2
-			else
-				b.Text = "💎 " .. Config.PASS_BY_KEY[skin.value].name
-				b.BackgroundColor3 = Color3.fromRGB(200, 140, 40)
-			end
+			local label, col = skinStatus(skin)
+			skinButtons[skin.id].Text = label
+			skinButtons[skin.id].BackgroundColor3 = col
 		end
 	end
 end
@@ -726,8 +782,8 @@ do
 		if not state then
 			return
 		end
-		local ready = state.size >= Config.BIGBANG_LEVEL
-		local reward = Config.darkMatterReward(math.max(state.size, Config.BIGBANG_LEVEL), state.bigbang)
+		local ready = state.radius >= Config.BIGBANG_RADIUS
+		local reward = Config.darkMatterReward(math.max(state.radius, Config.BIGBANG_RADIUS), state.bigbang)
 		local nextSkin = nil
 		for _, skin in ipairs(Config.Skins) do
 			if skin.unlock == "bigbang" and skin.value > state.bigbang then
@@ -739,13 +795,13 @@ do
 			"우주를 처음부터 다시 시작해요. 질량과 업그레이드는 사라지지만:",
 			"",
 			string.format("• 영구 질량 배율  <b>×%d → ×%d</b>", state.bigbang + 1, state.bigbang + 2),
-			string.format('• <font color="#C8A0FF">🌑 암흑 물질 +%d개</font> (크기 레벨이 높을수록 더 많이)', reward),
+			string.format('• <font color="#C8A0FF">🌑 암흑 물질 +%d개</font> (더 크게 커져서 할수록 더 많이)', reward),
 			"• 🌑 빅뱅 상점에서 영원히 남는 업그레이드를 살 수 있어요",
 			state.bigbang == 0 and '• <font color="#FF9AD5">🍭 세계 2 「과자 왕국」이 열려요!</font>' or "",
 			nextSkin and string.format("• 다음 스킨: %s (빅뱅 %d번)", nextSkin.name, nextSkin.value) or "",
 			"",
 			string.format("지금 빅뱅 %d회  ·  🌑 %d개", state.bigbang, state.dm),
-			string.format('조건: 크기 레벨 %d (⚫%s) 이상  ·  지금 레벨 <font color="#%s">%d</font>', Config.BIGBANG_LEVEL, Config.formatSize(Config.radius(Config.BIGBANG_LEVEL)), ready and "6CFF9A" or "FF7A8A", state.size),
+			string.format('조건: 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius)),
 		}, "\n")
 		go.TextTransparency = ready and 0 or 0.5
 		go.BackgroundColor3 = ready and Color3.fromRGB(200, 70, 160) or C.panel2
@@ -868,11 +924,13 @@ do
 			"",
 			"<b>조작</b>",
 			"• 이동: WASD 또는 화면 조이스틱",
-			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점",
+			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨",
+			"• 🎨 시작 지점 뒤 스킨 전시관에서 모든 스킨을 볼 수 있어요",
 			"",
 			"<b>커지기</b>",
-			"• 삼키면 💠질량이 쌓이고, 질량으로 오른쪽 업그레이드를 사요",
-			"• ⚫ 크기: 레벨마다 13%씩 커져요 (괄호 안 숫자가 필요한 크기)",
+			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
+			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드와 캡슐을 사요",
+			"• ⚫ 성장력: 먹을 때 커지는 정도 +15%",
 			"• 🌀 흡입력: 반지름 바깥까지 끌어당겨요",
 			"• 💠 질량 배율: 삼킬 때 얻는 질량 +25%",
 			"• 🤖 자동 업그레이드를 켜면 알아서 사요",
@@ -880,14 +938,14 @@ do
 			"• 삼킨 물체는 몇 초 뒤 뿅 하고 다시 생겨요 (♻ 재생산)",
 			"",
 			"<b>⭐ 별똥별</b>",
-			string.format("• 가끔 근처에 별똥별이 떨어져요. 삼키면 %d초 동안 질량 2배!", Config.STAR_BOOST),
+			string.format("• 가끔 근처에 별똥별이 떨어져요. 삼키면 %d초 동안 질량과 성장 2배!", Config.STAR_BOOST),
 			"",
 			"<b>🛰 위성</b>",
 			"• 🥚 캡슐을 깨면 위성이 나와요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
 			"<b>🌌 빅뱅</b>",
-			string.format("• 크기 레벨 %d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_LEVEL),
+			string.format("• 크기 ⚫%d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_RADIUS),
 			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸",
 			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요 (시작 지점 왼쪽의 소용돌이 문)",
 			"",
@@ -914,9 +972,9 @@ do
 		end)
 	end
 	local row2 = hlist(page, 44)
-	for _, lv in ipairs({ 0, 10, 20, 30, 38, 46 }) do
-		button({ Size = UDim2.new(1 / 6, -5, 1, 0), Text = "크기 Lv" .. lv, TextSize = 14, BackgroundColor3 = C.blue, Parent = row2 }, function()
-			Request:FireServer("testSize", lv)
+	for _, r in ipairs({ 1.5, 6, 14, 30, 65, 150, 320 }) do
+		button({ Size = UDim2.new(1 / 7, -5, 1, 0), Text = "⚫" .. tostring(r), TextSize = 14, BackgroundColor3 = C.blue, Parent = row2 }, function()
+			Request:FireServer("testSize", r)
 		end)
 	end
 	local row3 = hlist(page, 44)
@@ -1044,8 +1102,9 @@ local function refreshAll()
 	end
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
-		"⚫ %s   🌀 +%s   ✖ %s%s%s",
+		"⚫ %s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
 		Config.formatSize(state.radius),
+		string.format("%.2f", state.growMult or 1),
 		Config.formatSize(state.pullRange),
 		fmt(state.totalMult),
 		state.bigbang > 0 and string.format("   🌌 %d", state.bigbang) or "",
@@ -1059,8 +1118,8 @@ local function refreshAll()
 		local maxed = level >= u.maxLevel
 		card.level.Text = maxed and "MAX" or string.format("Lv.%d / %d", level, u.maxLevel)
 		local nowText, nextText
-		if u.id == "size" then
-			nowText, nextText = Config.formatSize(Config.radius(level)), Config.formatSize(Config.radius(level + 1))
+		if u.id == "grow" then
+			nowText, nextText = string.format("성장 ×%.2f", 1 + 0.15 * level), string.format("×%.2f", 1 + 0.15 * (level + 1))
 		elseif u.id == "pull" then
 			local r = state.radius
 			nowText, nextText = Config.formatSize(Config.pullRange(r, level, state.bb.pull)), Config.formatSize(Config.pullRange(r, level + 1, state.bb.pull))
@@ -1090,13 +1149,13 @@ local function refreshAll()
 		local ratio = math.clamp((r - prevNeed) / math.max(nextZone.need - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("다음 구역 '%s'까지  ⚫ %s / %d", nextZone.name, Config.formatSize(r), nextZone.need)
-	elseif state.size >= Config.BIGBANG_LEVEL then
+	elseif state.radius >= Config.BIGBANG_RADIUS then
 		Bar.fill.Size = UDim2.fromScale(1, 1)
 		Bar.label.Text = "🌌 빅뱅할 수 있어요! (B)"
 	else
-		local ratio = math.clamp(state.size / Config.BIGBANG_LEVEL, 0, 1)
+		local ratio = math.clamp(state.radius / Config.BIGBANG_RADIUS, 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
-		Bar.label.Text = string.format("모든 구역이 열렸어요! 빅뱅까지 크기 Lv %d / %d", state.size, Config.BIGBANG_LEVEL)
+		Bar.label.Text = string.format("모든 구역이 열렸어요! 빅뱅까지 ⚫ %s / %d", Config.formatSize(state.radius), Config.BIGBANG_RADIUS)
 	end
 	menuButtons.test.Visible = state.tester == true
 	menuButtons.bbshop.Visible = state.bigbang > 0 or state.dm > 0
@@ -1268,9 +1327,10 @@ local lastRadius = -1
 local handlers: { [string]: (any) -> () } = {}
 
 function handlers.state(data: any)
-	local grew = state ~= nil and data.radius > lastRadius + 0.001
+	local grew = state ~= nil and data.radius > lastRadius * 1.05
 	state = data
 	stateAt = os.clock()
+	Fx.updateGallery(data.skins, data.skin)
 	if data.radius ~= lastRadius then
 		lastRadius = data.radius
 		applyRadius(data.radius)
@@ -1284,9 +1344,27 @@ function handlers.state(data: any)
 	refreshAll()
 end
 
+local lastRing = 0
 function handlers.eat(data: any)
 	if state then
 		state.mass = data.mass
+		if data.radius and data.radius ~= state.radius then
+			state.radius = data.radius
+			state.pullRange = data.pullRange
+			-- 카메라와 문은 조금씩 커질 때마다 맞춘다
+			if math.abs(data.radius - lastRadius) > lastRadius * 0.02 then
+				lastRadius = data.radius
+				applyRadius(data.radius)
+			end
+			-- 10% 커질 때마다 빛 고리
+			if data.radius > lastRing * 1.1 then
+				lastRing = data.radius
+				local c = myCenter()
+				if c then
+					Fx.ring(c, C.accent, data.radius * 1.5, data.radius * 3, 0.5)
+				end
+			end
+		end
 	end
 	local biggest = 0
 	for _, e in ipairs(data.list) do
@@ -1432,11 +1510,42 @@ end)
 -- 시작
 ------------------------------------------------------------------------
 Fx.start()
-player.CharacterAdded:Connect(function()
-	task.wait(0.5)
+-- 내 블랙홀 캐릭터: 죽지 않게, 발소리 없이, 카메라가 따라가게
+local function setupCharacter(char: Model)
+	local hum = char:WaitForChild("Humanoid", 10)
+	if hum and hum:IsA("Humanoid") then
+		for _, st in ipairs({ Enum.HumanoidStateType.Dead, Enum.HumanoidStateType.FallingDown, Enum.HumanoidStateType.Ragdoll, Enum.HumanoidStateType.Climbing, Enum.HumanoidStateType.Seated, Enum.HumanoidStateType.PlatformStanding }) do
+			pcall(function()
+				hum:SetStateEnabled(st, false)
+			end)
+		end
+		local cam = workspace.CurrentCamera
+		if cam then
+			cam.CameraSubject = hum
+		end
+	end
+	local root = char:WaitForChild("HumanoidRootPart", 10)
+	if root then
+		local function mute(d: Instance)
+			if d:IsA("Sound") then
+				d.Volume = 0
+			end
+		end
+		for _, d in ipairs(root:GetDescendants()) do
+			mute(d)
+		end
+		root.DescendantAdded:Connect(mute)
+	end
+	task.wait(0.3)
 	if state then
 		applyRadius(state.radius)
 	end
+end
+if player.Character then
+	task.spawn(setupCharacter, player.Character)
+end
+player.CharacterAdded:Connect(function(c)
+	setupCharacter(c :: Model)
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
@@ -1451,6 +1560,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		openPage("sats")
 	elseif key == Enum.KeyCode.G then
 		openPage("store")
+	elseif key == Enum.KeyCode.K then
+		openPage("skins")
 	end
 end)
 
@@ -1470,6 +1581,9 @@ do
 	local refreshAsked = 0
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
+		if skinPreview then
+			skinPreview.active = window.Visible and currentPage == "skins"
+		end
 		local bt, ended = boostText()
 		if bt ~= lastBoost then
 			lastBoost = bt

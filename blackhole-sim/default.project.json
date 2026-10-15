@@ -35,6 +35,11 @@
           "$path": "src/client/HoleClient"
         }
       }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
     }
   }
 }

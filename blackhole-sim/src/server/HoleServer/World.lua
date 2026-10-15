@@ -261,6 +261,20 @@ function World.buildZones(): ({ BasePart }, { Portal })
 			{ wi == 1 and "작은 것부터 삼키고 커져라!" or "모든 게 달콤하고, 질량은 5배!", Color3.fromRGB(255, 255, 255), 0.4 },
 		})
 
+		-- 스킨 전시관: 시작 지점 뒤편 단 위에 스킨 12종이 돌고 있다 (블랙홀 모양은 화면이 그린다)
+		local hall = part({ Name = "SkinHall", Size = Vector3.new(220, 4, 34), Position = Vector3.new(wx, -1.2, -24), Color = Color3.fromRGB(40, 30, 70), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+		hall:SetAttribute("World", wi)
+		for k = 1, #Config.Skins do
+			local x = wx + (k - (#Config.Skins + 1) / 2) * 17
+			part({ Name = "SkinPedestal", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 11, 11), CFrame = CFrame.new(x, 1.5, -24) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(70, 55, 110), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+			part({ Name = "SkinPedestalRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 11.6, 11.6), CFrame = CFrame.new(x, 2.1, -24) * CFrame.Angles(0, 0, math.rad(90)), Color = Config.Skins[k].a, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+		end
+		local hallSign = part({ Name = "SkinHallSign", Size = Vector3.new(60, 10, 1), Position = Vector3.new(wx, 34, -24), Color = Color3.fromRGB(25, 15, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+		signText(hallSign, Enum.NormalId.Back, {
+			{ "🎨 스킨 전시관", Color3.fromRGB(255, 200, 255), 0.6 },
+			{ "🎨 스킨 창에서 바꿀 수 있어요", Color3.fromRGB(255, 255, 255), 0.4 },
+		})
+
 		-- 다른 세계로 가는 문 (소용돌이 고리)
 		local to = wi == 1 and 2 or 1
 		local target = Config.Worlds[to]
