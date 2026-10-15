@@ -269,6 +269,7 @@ type State = {
 	activeOn: boolean,
 	cdUntil: number,
 	burst: number,
+	unstuckAt: number?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -746,6 +747,60 @@ end
 
 local Actions = {}
 
+-- 안전한 자리 찾기. 지금 자리가 괜찮으면 nil
+function Actions.safeSpot(pos: Vector3): Vector3?
+	if Config.inLobby(pos) then
+		if pos.Y < -30 then
+			return lobby.spawn
+		end
+		return nil
+	end
+	local zi = Config.zoneAt(pos)
+	local zone = Config.Zones[zi]
+	local wx = Config.Worlds[zone.world].x
+	local z0 = Config.zoneStart(zi)
+	local outX = math.abs(pos.X - wx) > zone.width / 2 + 5
+	local list = Config.zonesOf(zone.world)
+	local worldEnd = Config.zoneStart(list[#list]) + Config.Zones[list[#list]].length
+	local outZ = pos.Z < -5 or pos.Z > worldEnd + 5
+	-- 세계와도 로비와도 먼 곳 (아주 멀리 날아감)
+	if math.abs(pos.X - wx) > 20000 then
+		return lobby.spawn
+	end
+	if pos.Y < -30 or outX or outZ then
+		local x = math.clamp(pos.X, wx - zone.width / 2 + 30, wx + zone.width / 2 - 30)
+		local z = math.clamp(pos.Z, z0 + 30, z0 + zone.length - 30)
+		return Vector3.new(x, 6, z)
+	end
+	return nil
+end
+
+-- 🆘 끼었을 때: 지금 구역 가운데 길로 옮긴다 (로비면 로비 시작 자리)
+function Actions.unstuck(player: Player)
+	local st = states[player]
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not st or not root or not root:IsA("BasePart") then
+		return
+	end
+	local now = os.clock()
+	if now < (st.unstuckAt or 0) then
+		return
+	end
+	st.unstuckAt = now + 2
+	local pos = root.Position
+	root.AssemblyLinearVelocity = Vector3.zero
+	if Config.inLobby(pos) or math.abs(pos.X - Config.LOBBY.x) < 5000 then
+		moveTo(player, lobby.spawn)
+	else
+		local zi = Config.zoneAt(pos)
+		local zone = Config.Zones[zi]
+		local z0 = Config.zoneStart(zi)
+		moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 6, math.clamp(pos.Z, z0 + 30, z0 + zone.length - 30)))
+	end
+	toast(player, "🆘 빠져나왔어요!")
+end
+
 function Actions.goLobby(player: Player)
 	local st = states[player]
 	moveTo(player, lobby.spawn)
@@ -778,6 +833,14 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 	end
 	local pos = root.Position
 	local now = os.clock()
+
+	-- 안전망: 떨어졌거나 맵 밖으로 나갔으면 가까운 안전한 곳으로 돌려보낸다
+	local safe = Actions.safeSpot(pos)
+	if safe then
+		root.AssemblyLinearVelocity = Vector3.zero
+		moveTo(player, safe)
+		return
+	end
 
 	-- 로비 들어가고 나오기
 	local inLobby = Config.inLobby(pos)
@@ -1519,6 +1582,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 		end
 	elseif action == "skill" then
 		Actions.skill(player)
+	elseif action == "unstuck" then
+		Actions.unstuck(player)
 	elseif action == "bbshop" then
 		Actions.bbShop(player, arg)
 	elseif action == "skin" then
@@ -1653,6 +1718,8 @@ spawnHole = function(player: Player, pos: Vector3)
 end
 
 local function onPlayerAdded(player: Player)
+	-- 큰 물체가 카메라를 가리면 확 다가오지 않고 그 물체를 투명하게 한다
+	player.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam
 	local st: State = {
 		canSave = false,
 		dirty = false,

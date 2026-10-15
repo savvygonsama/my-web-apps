@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
 local TextChatService = game:GetService("TextChatService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -383,7 +384,7 @@ do
 	local menu = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.52, 0),
-		Size = UDim2.new(0, 140, 0, 10 * 48),
+		Size = UDim2.new(0, 140, 0, 11 * 48),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
@@ -399,11 +400,14 @@ do
 		{ "zones", "🗺 세계", Color3.fromRGB(60, 150, 120) },
 		{ "help", "📜 도움말", C.panel2 },
 		{ "test", "🧪 테스트", Color3.fromRGB(120, 60, 180) },
+		{ "unstuck", "🆘 끼었어요", C.red },
 	}) do
 		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 42), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
 			if item[1] == "lobby" then
 				Request:FireServer("world", 0)
 				window.Visible = false
+			elseif item[1] == "unstuck" then
+				Request:FireServer("unstuck")
 			else
 				openPage(item[1])
 			end
@@ -949,6 +953,7 @@ do
 			"<b>조작</b>",
 			"• 이동: WASD 또는 화면 조이스틱 · 스킬: Q 또는 오른쪽 아래 둥근 버튼",
 			"• 단축키: B 빅뱅 · M 세계 · P 위성 · G 상점 · K 스킨 · E 로비 기계 쓰기",
+			"• 어딘가에 끼면 왼쪽 🆘 끼었어요 버튼 (또는 로블록스 메뉴의 다시 시작)",
 			"",
 			"<b>🏠 로비</b>",
 			"• 처음엔 로비에서 시작해요. 왼쪽 메뉴 🏠 로비 버튼이나 세계 시작 지점 왼쪽 문으로 돌아와요",
@@ -1506,8 +1511,14 @@ function handlers.eat(data: any)
 		if data.radius and data.radius ~= state.radius then
 			state.radius = data.radius
 			state.pullRange = data.pullRange
-			-- 카메라와 문은 조금씩 커질 때마다 맞춘다
-			if math.abs(data.radius - lastRadius) > lastRadius * 0.02 then
+			-- 카메라와 문은 조금씩 커질 때마다 맞춘다. 문이 열리는 크기를 넘었으면 바로
+			local crossed = false
+			for _, zone in ipairs(Config.Zones) do
+				if zone.need > lastRadius and zone.need <= data.radius then
+					crossed = true
+				end
+			end
+			if crossed or math.abs(data.radius - lastRadius) > lastRadius * 0.02 then
 				lastRadius = data.radius
 				applyRadius(data.radius)
 			end
@@ -1839,5 +1850,22 @@ do
 		end
 	end)
 end
+
+-- 로블록스 메뉴의 "다시 시작(Reset)"을 누르면 죽는 대신 끼인 곳에서 빠져나온다
+task.spawn(function()
+	local resetEvent = Instance.new("BindableEvent")
+	resetEvent.Event:Connect(function()
+		Request:FireServer("unstuck")
+	end)
+	for _ = 1, 20 do
+		local ok = pcall(function()
+			StarterGui:SetCore("ResetButtonCallback", resetEvent)
+		end)
+		if ok then
+			break
+		end
+		task.wait(1)
+	end
+end)
 
 Request:FireServer("hello")

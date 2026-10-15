@@ -506,7 +506,8 @@ end
 -- 이동 속도. 크기가 커질수록 빨라지고, 넓은 뒤쪽 구역도 금방 건너간다
 function Config.walkSpeed(radius: number, bbSpeed: number?, pass2: boolean?, upgLv: number?, extra: number?): number
 	local base = math.min(320, 18 + radius * 0.35) * (1 + 0.15 * (bbSpeed or 0)) * (1 + 0.05 * (upgLv or 0))
-	return base * (pass2 and 2 or 1) * (extra or 1)
+	-- 너무 빠르면 벽을 뚫고 나갈 수 있어서 최대 450으로 묶는다
+	return math.min(450, base * (pass2 and 2 or 1) * (extra or 1))
 end
 
 -- 질량 배율 전체. info = { mult, bigbang, bbMass, sats(위성 배율), vip, mass2, boost, star, skin(스킨 질량 보너스), combo(콤보 보너스) }

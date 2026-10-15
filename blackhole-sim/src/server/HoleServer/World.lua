@@ -15,6 +15,7 @@ local Props = require(ReplicatedStorage:WaitForChild("Props"))
 local World = {}
 
 local LIMIT = Config.PART_LIMIT
+local WALL = 40 -- 벽 두께
 
 local function part(props: { [string]: any }): Part
 	local p = Instance.new("Part")
@@ -25,6 +26,10 @@ local function part(props: { [string]: any }): Part
 		if k ~= "Parent" then
 			(p :: any)[k] = v
 		end
+	end
+	-- 밟거나 부딪히지 않는 장식은 카메라도 무시하게 (카메라가 갑자기 확 다가오지 않게)
+	if props.CanCollide == false and props.CanQuery == nil then
+		p.CanQuery = false
 	end
 	p.Parent = props.Parent
 	return p
@@ -257,11 +262,11 @@ function World.buildZones(): ({ BasePart }, { Portal })
 				CanCollide = false,
 				Parent = folder,
 			})
-			-- 보이지 않는 옆 벽
+			-- 보이지 않는 옆 벽 (아주 빨라도 뚫고 나가지 않게 두껍게)
 			tiled({
 				Name = "SideWall",
-				Size = Vector3.new(6, 1200, zone.length + 12),
-				Position = center + Vector3.new(x * (zone.width / 2 + 3), 600, 0),
+				Size = Vector3.new(WALL, 1200, zone.length),
+				Position = center + Vector3.new(x * (zone.width / 2 + WALL / 2), 600, 0),
 				Transparency = 1,
 				Parent = folder,
 			})
@@ -276,13 +281,13 @@ function World.buildZones(): ({ BasePart }, { Portal })
 			local wide = math.max(zone.width, nextZone.width)
 			-- 넓은 쪽 구역의 남는 가장자리는 늘 막혀 있다 (여기로 나가면 바닥 없는 곳으로 떨어졌다)
 			for _, x in ipairs({ -1, 1 }) do
-				local w = (wide - narrow) / 2 + 6
-				tiled({ Name = "CapWall", Size = Vector3.new(w, 1200, 6), Position = Vector3.new(wx + x * (narrow / 2 + w / 2 - 3), 600, zEnd), Transparency = 1, Parent = folder })
+				local w = (wide - narrow) / 2 + WALL
+				tiled({ Name = "CapWall", Size = Vector3.new(w, 1200, WALL), Position = Vector3.new(wx + x * (narrow / 2 + w / 2), 600, zEnd), Transparency = 1, Parent = folder })
 			end
 			local height = math.min(1800, 60 + nextZone.need * 2.5)
 			for _, g in ipairs(tiled({
 				Name = "Gate",
-				Size = Vector3.new(narrow, height, 3),
+				Size = Vector3.new(narrow, height, 12),
 				Position = Vector3.new(wx, height / 2, zEnd),
 				Color = zone.world == 2 and Color3.fromRGB(255, 110, 200) or Color3.fromRGB(150, 90, 255),
 				Material = Enum.Material.ForceField,
@@ -309,14 +314,14 @@ function World.buildZones(): ({ BasePart }, { Portal })
 				{ string.format("크기 %d 이상이면 통과", nextZone.need), Color3.fromRGB(255, 220, 120), 0.45 },
 			})
 		else
-			tiled({ Name = "EndWall", Size = Vector3.new(zone.width + 12, 1200, 6), Position = Vector3.new(wx, 600, zEnd + 3), Transparency = 1, Parent = folder })
+			tiled({ Name = "EndWall", Size = Vector3.new(zone.width + WALL * 2, 1200, WALL), Position = Vector3.new(wx, 600, zEnd + WALL / 2), Transparency = 1, Parent = folder })
 		end
 	end
 
 	for wi, world in ipairs(Config.Worlds) do
 		local wx = world.x
 		local first = Config.zonesOf(wi)[1]
-		tiled({ Name = "StartWall", Size = Vector3.new(Config.Zones[first].width + 12, 1200, 6), Position = Vector3.new(wx, 600, -3), Transparency = 1, Parent = folder })
+		tiled({ Name = "StartWall", Size = Vector3.new(Config.Zones[first].width + WALL * 2, 1200, WALL), Position = Vector3.new(wx, 600, -WALL / 2), Transparency = 1, Parent = folder })
 		part({ Name = "WorldSpawn" .. wi, Size = Vector3.new(16, 1, 16), Position = Vector3.new(wx, 0.5, 22), Color = wi == 2 and Color3.fromRGB(255, 120, 200) or Color3.fromRGB(120, 70, 220), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
 		local title = part({ Name = "TitleSign", Size = Vector3.new(50, 14, 1), Position = Vector3.new(wx, 14, 6), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 		signText(title, Enum.NormalId.Back, {
@@ -362,8 +367,9 @@ function World.buildLobby(): Lobby
 	-- 둘레 벽 (보이지 않음) + 빛나는 기둥
 	for k = 0, 35 do
 		local a = k / 36 * math.pi * 2
-		local pos = at(math.cos(a) * (R + 8), 100, math.sin(a) * (R + 8))
-		part({ Name = "LobbyWall", Size = Vector3.new(4, 200, 46), CFrame = CFrame.lookAt(pos, at(0, 100, 0)) * CFrame.Angles(0, math.rad(90), 0), Transparency = 1, Parent = folder })
+		local pos = at(math.cos(a) * (R + 26), 100, math.sin(a) * (R + 26))
+		-- X = 둘레 방향 폭 70, Z = 가운데를 향한 두께 40 (조각끼리 겹쳐서 틈이 없다)
+		part({ Name = "LobbyWall", Size = Vector3.new(70, 200, 40), CFrame = CFrame.fromMatrix(pos, Vector3.new(-math.sin(a), 0, math.cos(a)), Vector3.new(0, 1, 0)), Transparency = 1, Parent = folder })
 		if k % 3 == 0 then
 			part({ Name = "Pillar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(26, 3, 3), CFrame = CFrame.new(at(math.cos(a) * (R + 4), 13, math.sin(a) * (R + 4))) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHSV(k / 36, 0.5, 1), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
 		end
@@ -385,7 +391,7 @@ function World.buildLobby(): Lobby
 	for k, cap in ipairs(Config.Capsules) do
 		local x = (k - 2) * 70
 		local z = 150 - math.abs(k - 2) * 20
-		local base = part({ Name = "CapsuleMachine", Size = Vector3.new(16, 8, 16), Position = at(x, 4, z), Color = Color3.fromRGB(60, 50, 90), Material = Enum.Material.Metal, Parent = folder })
+		local base = part({ Name = "CapsuleMachine", Size = Vector3.new(16, 8, 16), Position = at(x, 4, z), Color = Color3.fromRGB(60, 50, 90), Material = Enum.Material.Metal, CanCollide = false, Parent = folder })
 		part({ Name = "MachineGlass", Shape = Enum.PartType.Ball, Size = Vector3.new(16, 16, 16), Position = at(x, 15, z), Color = cap.color, Material = Enum.Material.Glass, Transparency = 0.5, CanCollide = false, Parent = folder })
 		for j = 0, 5 do
 			local a = j * 1.05
@@ -414,21 +420,21 @@ function World.buildLobby(): Lobby
 		{ "🎨 스킨 전시관", Color3.fromRGB(255, 200, 255), 0.6 },
 		{ "스킨마다 고유 능력이 있어요", Color3.fromRGB(255, 255, 255), 0.4 },
 	})
-	local skinStand = part({ Name = "SkinStand", Size = Vector3.new(8, 4, 8), Position = at(0, 2, -175), Color = Color3.fromRGB(200, 90, 200), Material = Enum.Material.Neon, Transparency = 0.3, Parent = folder })
+	local skinStand = part({ Name = "SkinStand", Size = Vector3.new(8, 4, 8), Position = at(0, 2, -175), Color = Color3.fromRGB(200, 90, 200), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
 
 	-- 상점 가판대 (남서), 매일 보상 상자 (남동)
-	local kiosk = part({ Name = "StoreKiosk", Size = Vector3.new(14, 10, 8), Position = at(-110, 5, -60), Color = Color3.fromRGB(230, 160, 40), Material = Enum.Material.SmoothPlastic, Parent = folder })
+	local kiosk = part({ Name = "StoreKiosk", Size = Vector3.new(14, 10, 8), Position = at(-110, 5, -60), Color = Color3.fromRGB(230, 160, 40), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
 	part({ Name = "KioskRoof", Size = Vector3.new(18, 1, 12), Position = at(-110, 14, -60), Color = Color3.fromRGB(255, 220, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
 	local kioskSign = part({ Name = "KioskSign", Size = Vector3.new(18, 5, 1), CFrame = CFrame.lookAt(at(-110, 19, -60), at(0, 19, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 	signText(kioskSign, Enum.NormalId.Front, { { "💎 상점", Color3.fromRGB(255, 220, 120), 1 } })
-	local chest = part({ Name = "DailyChest", Size = Vector3.new(10, 7, 7), Position = at(110, 3.5, -60), Color = Color3.fromRGB(150, 90, 40), Material = Enum.Material.WoodPlanks, Parent = folder })
+	local chest = part({ Name = "DailyChest", Size = Vector3.new(10, 7, 7), Position = at(110, 3.5, -60), Color = Color3.fromRGB(150, 90, 40), Material = Enum.Material.WoodPlanks, CanCollide = false, Parent = folder })
 	part({ Name = "ChestLid", Size = Vector3.new(10.4, 2, 7.4), Position = at(110, 8, -60), Color = Color3.fromRGB(255, 200, 60), Material = Enum.Material.Foil, CanCollide = false, Parent = folder })
 	part({ Name = "ChestGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(4, 4, 4), Position = at(110, 11, -60), Color = Color3.fromRGB(255, 230, 120), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
 	local chestSign = part({ Name = "ChestSign", Size = Vector3.new(18, 5, 1), CFrame = CFrame.lookAt(at(110, 17, -60), at(0, 17, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 	signText(chestSign, Enum.NormalId.Front, { { "🎁 매일 보상", Color3.fromRGB(255, 220, 120), 1 } })
 
 	-- 순위판 (북쪽 끝)
-	local boardPart = part({ Name = "Leaderboard", Size = Vector3.new(60, 44, 2), CFrame = CFrame.lookAt(at(0, 40, 215), at(0, 40, 0)), Color = Color3.fromRGB(15, 10, 30), Material = Enum.Material.Slate, Parent = folder })
+	local boardPart = part({ Name = "Leaderboard", Size = Vector3.new(60, 44, 2), CFrame = CFrame.lookAt(at(0, 40, 215), at(0, 40, 0)), Color = Color3.fromRGB(15, 10, 30), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
@@ -547,12 +553,15 @@ function World.placeObjects(): ({ ObjectRec }, Folder)
 					model:SetAttribute("Size", def.size)
 					model:SetAttribute("Mass", def.mass)
 					model:SetAttribute("Label", def.name)
+					-- 물체는 모두 부딪히지 않는다. 블랙홀은 땅에 난 구멍이라 물체 밑을 지나간다
+					-- (예전엔 큰 물체에 걸리거나, 다시 생긴 물체가 내 자리에 나타나 몸이 끼었다)
 					local collide = {}
 					for _, d in ipairs(model:GetDescendants()) do
 						if d:IsA("BasePart") then
-							-- 작은 건 걸리적거리지 않게
-							d.CanCollide = def.size >= 2.5
-							collide[d] = d.CanCollide
+							d.CanCollide = false
+							d.CanTouch = false
+							d.CanQuery = false
+							collide[d] = false
 						end
 					end
 					model.Parent = folder
