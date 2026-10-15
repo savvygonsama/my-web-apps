@@ -1,0 +1,32 @@
+{
+  "name": "ことば日和 初級",
+  "short_name": "ことば初級",
+  "description": "일본어 어휘 확장 (초급)",
+  "id": "./beginner.html",
+  "start_url": "./beginner.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F1F0EC",
+  "theme_color": "#B4531F",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/beginner-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/beginner-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/beginner-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

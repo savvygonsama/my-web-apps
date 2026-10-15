@@ -2355,7 +2355,14 @@ paint();
   const markInstalled = () => { try { localStorage.setItem(DONE, "1"); } catch (e) {} };
   let already = false;
   try { already = localStorage.getItem(DONE) === "1"; } catch (e) {}
-  if (already) return;
+  if (already) {
+    /* 앱을 지운 뒤 다시 설치하려는 경우: 브라우저가 "설치 가능" 신호를 주면 잠금을 풀어
+       다음에 열 때 설치 버튼이 다시 보이게 한다 */
+    window.addEventListener("beforeinstallprompt", () => {
+      try { localStorage.removeItem(DONE); } catch (e) {}
+    }, { once: true });
+    return;
+  }
 
   const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const isAndroid = /android/i.test(ua);

@@ -36,9 +36,29 @@
 
 ### 휴대폰에 앱으로 두기
 
-스틸링고 Lite·Pro, ハングリンゴ Lite, ROUNDTABLE, 茶馆 CHÁGUǍN, 스틸 워크 스타일 여섯 개는 **홈 화면에 설치**해서 쓸 수 있습니다.
-웹 주소로 앱을 열면 우측 상단에 **📲 설치** 버튼이 뜹니다. 안드로이드는 그 버튼으로 바로 설치되고,
-아이폰은 Safari의 공유 → **「홈 화면에 추가」**를 쓰면 됩니다.
+**위 목록의 앱은 전부 홈 화면에 설치**해서 쓸 수 있습니다. 아래 웹 주소로 열면 📲 설치 버튼이 보입니다
+(앱마다 위치가 조금 다릅니다 — 상단 바, 표지 화면 아래, 또는 화면 오른쪽 아래).
+안드로이드·PC 크롬은 안내 창의 **「지금 설치」**로 바로 설치되고,
+아이폰은 Safari의 공유(□↑) → **「홈 화면에 추가」**를 쓰면 됩니다. 대부분의 앱은 휴대폰으로 처음 열면 안내가 한 번 저절로 뜹니다.
+
+| 앱 | 웹 주소 |
+|---|---|
+| 스틸링고 Lite | https://savvygonsama.github.io/my-web-apps/steel-lingo/lite/ |
+| 스틸링고 Pro | https://savvygonsama.github.io/my-web-apps/steel-lingo/pro/ |
+| 스틸링고 出張編 | https://savvygonsama.github.io/my-web-apps/steel-lingo/shucchou/ |
+| 스틸링고 大阪編 | https://savvygonsama.github.io/my-web-apps/steel-lingo/osaka/ |
+| 스틸링고 大阪物語 | https://savvygonsama.github.io/my-web-apps/steel-lingo/osaka-monogatari/ |
+| ハングリンゴ Lite | https://savvygonsama.github.io/my-web-apps/hangul-lingo/lite/ |
+| ことば日和 (N3) | https://savvygonsama.github.io/my-web-apps/kotoba-biyori/ |
+| ことば日和 初級 | https://savvygonsama.github.io/my-web-apps/kotoba-biyori/beginner.html |
+| ROUNDTABLE | https://savvygonsama.github.io/my-web-apps/roundtable/ |
+| 茶馆 CHÁGUǍN | https://savvygonsama.github.io/my-web-apps/chaguan/ |
+| 스틸 워크 스타일 | https://savvygonsama.github.io/my-web-apps/workstyle/ |
+| 코일센터 경영 시뮬레이터 | https://savvygonsama.github.io/my-web-apps/coil-center/ |
+| 이번 주 식탁 | https://savvygonsama.github.io/my-web-apps/meal-planner/ |
+| 자정 열차 | https://savvygonsama.github.io/my-web-apps/midnight-train/ |
+| 제자리 | https://savvygonsama.github.io/my-web-apps/jejari/ |
+
 설치하면 주소창 없이 앱처럼 열리고 인터넷이 끊겨도 그대로 돌아갑니다.
 
 > 카카오톡·팀즈로 받은 링크를 그 앱 안에서 열면 설치도 소리도 되지 않습니다.
