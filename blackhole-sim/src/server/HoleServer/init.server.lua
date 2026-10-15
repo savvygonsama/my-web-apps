@@ -107,6 +107,8 @@ type Profile = {
 	questsDone: number,
 	dailyAt: number,
 	streak: number,
+	dex: { [string]: boolean }, -- 📖 도감: 한 번이라도 삼킨 물체
+	gdex: { [string]: boolean }, -- 황금으로 삼킨 물체
 }
 
 local function defaultProfile(): Profile
@@ -145,6 +147,8 @@ local function defaultProfile(): Profile
 		questsDone = 0,
 		dailyAt = 0,
 		streak = 0,
+		dex = {},
+		gdex = {},
 	}
 end
 
@@ -242,6 +246,16 @@ local function sanitize(data: any): Profile
 	p.questsDone = math.floor(num(data.questsDone, 1e9))
 	p.dailyAt = num(data.dailyAt, 1e11)
 	p.streak = math.floor(num(data.streak, 1e6))
+	for _, key in ipairs({ "dex", "gdex" }) do
+		local book = data[key]
+		if type(book) == "table" then
+			for id, v in pairs(book) do
+				if type(id) == "string" and Config.OBJECT_BY_ID[id] and v == true then
+					(p :: any)[key][id] = true
+				end
+			end
+		end
+	end
 	return p
 end
 
@@ -439,10 +453,16 @@ function Calc.comboBonus(p: Profile, st: State?): number
 	return Config.comboBonus(s.combo, p.up.combo)
 end
 
+-- 도감 영구 질량 배율
+function Calc.dexMult(p: Profile): number
+	return (Config.dexMult(p.dex, p.gdex))
+end
+
 function Calc.totalMult(player: Player, p: Profile): number
 	local st = states[player]
 	local skinMass = Calc.skinBonus(p, st)
 	return Config.totalMult({
+		dex = Calc.dexMult(p),
 		mult = p.up.mult,
 		bigbang = p.bigbang,
 		bbMass = p.bb.mass,
@@ -535,6 +555,9 @@ local function pushState(player: Player)
 		questsDone = p.questsDone,
 		dailyLeft = math.max(0, p.dailyAt + Config.DAILY_HOURS * 3600 - now),
 		streak = p.streak,
+		dex = p.dex,
+		gdex = p.gdex,
+		dexMult = Calc.dexMult(p),
 		inLobby = st.inLobby,
 		world = st.world,
 		tester = st.tester,
@@ -1027,12 +1050,35 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 	local goldenCount, bigCount = 0, 0
 	local ateSun = false
 	local chainFrom: { Vector3 } = {}
+	local found: { any } = {} -- 📖 이번 틱에 도감에 새로 오른 것
 
 	local function consume(rec: World.ObjectRec)
 		local golden = rec.golden
 		eat(player, rec, factor, goldChance)
 		local m = rec.def.mass * worldMass * mult * (golden and goldMass or 1)
 		gained += m
+		local id = rec.def.id
+		local newObj = not p.dex[id]
+		local newGold = golden and not p.gdex[id]
+		if newObj or newGold then
+			p.dex[id] = true
+			if golden then
+				p.gdex[id] = true
+			end
+			local bonus = rec.def.mass * worldMass * mult * (newGold and Config.DEX.goldMass or Config.DEX.firstMass)
+			gained += bonus
+			local f: any = { id = id, name = rec.def.name, zone = rec.zone, golden = newGold, bonus = bonus, pos = rec.pos }
+			-- 방금 오른 것이 그 구역의 마지막 칸이었으면 구역 완성
+			if newObj and Config.dexZoneDone(p.dex, rec.zone) then
+				p.dm += Config.DEX.zoneDM
+				f.zoneDone = Config.Zones[rec.zone].name
+			end
+			if newGold and Config.dexZoneDone(p.gdex, rec.zone) then
+				p.dm += Config.DEX.goldZoneDM
+				f.goldZoneDone = Config.Zones[rec.zone].name
+			end
+			table.insert(found, f)
+		end
 		newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR, world)
 		table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
 		if golden then
@@ -1086,6 +1132,11 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			st.sugarLevel = level
 			applyHole(player)
 		end
+	end
+
+	if #found > 0 then
+		Push:FireClient(player, "dex", { list = found, dexMult = Calc.dexMult(p) })
+		pushState(player)
 	end
 
 	if #eatenList > 0 then
@@ -1916,6 +1967,14 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		st.starPos = nil
 	elseif action == "testSkill" then
 		st.cdUntil = 0
+	elseif action == "testDex" then
+		-- 지금 구역 도감을 하나만 남기고 채운다 (마지막 하나를 먹으면 완성 보상)
+		local ids = Config.DexZones[st.zone] or {}
+		for i, id in ipairs(ids) do
+			if i < #ids then
+				p.dex[id] = true
+			end
+		end
 	elseif action == "testDaily" then
 		p.dailyAt = 0
 	elseif action == "testEvent" then

@@ -5,7 +5,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-5"
+Config.VERSION = "beta-6"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
@@ -29,11 +29,12 @@ Config.WORLD1_MAX = 700 -- 세계 1에서 커질 수 있는 최대 크기
 -- 크기: 먹어서 커진다
 -- 물체를 삼키면 블랙홀 넓이(반지름²)에 K × 물체 크기² × 성장 배율만큼 더해진다.
 -- 실제 K = GROW_K / (1 + 반지름 / GROW_SOFT): 작을 땐 쑥쑥, 클수록 덜 자란다.
--- 세계 1은 처음이라 쉽게, 세계 2는 위성(펫)이 있으니 훨씬 어렵게.
+-- 세계 1 초반은 너무 빨리 크지 않게 (soft가 커서 크기에 따른 감속이 완만),
+-- 세계 2 후반은 너무 늘어지지 않게 (k를 올렸다).
 ------------------------------------------------------------------------
 Config.Growth = {
-	[1] = { k = 0.4, soft = 25 },
-	[2] = { k = 0.22, soft = 10 },
+	[1] = { k = 0.22, soft = 50 },
+	[2] = { k = 0.32, soft = 16 },
 }
 
 -- 세계 2 최대 크기: 기본 800, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
@@ -67,7 +68,7 @@ end
 
 ------------------------------------------------------------------------
 -- 업그레이드 8종 (질량으로 산다, 빅뱅하면 사라진다)
--- 값 = base × growth^레벨 × 1.025^(레벨²÷2): 높은 레벨일수록 가파르게 비싸져서
+-- 값 = base × growth^레벨 × 1.02^(레벨²÷2): 높은 레벨일수록 가파르게 비싸져서
 -- 위성 배율이 커져도 금방 다 사지 못한다. show(level)은 카드에 보여 줄 효과 글
 ------------------------------------------------------------------------
 Config.Upgrades = {
@@ -103,7 +104,7 @@ end
 
 function Config.upgradeCost(id: string, level: number): number
 	local u = Config.UPGRADE_BY_ID[id]
-	return math.floor(u.base * u.growth ^ level * 1.025 ^ (level * level / 2))
+	return math.floor(u.base * u.growth ^ level * 1.02 ^ (level * level / 2))
 end
 
 ------------------------------------------------------------------------
@@ -545,6 +546,7 @@ function Config.totalMult(info: any): number
 	if info.star then
 		m *= 2
 	end
+	m *= info.dex or 1
 	return m
 end
 
@@ -722,6 +724,58 @@ function Config.formatTime(sec: number): string
 		return string.format("%d:%02d:%02d", s // 3600, (s % 3600) // 60, s % 60)
 	end
 	return string.format("%d:%02d", s // 60, s % 60)
+end
+
+------------------------------------------------------------------------
+-- 📖 도감: 처음 삼킨 물체를 기록한다 (빅뱅해도 남는다)
+-- 처음 삼키면 그 물체 질량 × 25배 보너스, 황금으로 처음 삼키면 × 75배.
+-- 한 구역을 다 채우면 영구 질량 +5% · 암흑 물질 2개,
+-- 그 구역 황금까지 다 채우면 영구 질량 +3% 더 · 암흑 물질 3개.
+------------------------------------------------------------------------
+Config.DEX = {
+	firstMass = 25,
+	goldMass = 75,
+	zoneBonus = 0.05,
+	goldZoneBonus = 0.03,
+	zoneDM = 2,
+	goldZoneDM = 3,
+}
+
+-- 구역마다 도감에 오르는 물체 id 목록 (Objects 순서)
+Config.DexZones = {} :: { [number]: { string } }
+for zi = 1, #Config.Zones do
+	Config.DexZones[zi] = {}
+end
+for _, o in ipairs(Config.Objects) do
+	table.insert(Config.DexZones[o.zone], o.id)
+end
+
+-- 구역 하나를 다 채웠는지. book = { [id] = true }
+function Config.dexZoneDone(book: { [string]: boolean }, zi: number): boolean
+	local ids = Config.DexZones[zi]
+	if not ids or #ids == 0 then
+		return false
+	end
+	for _, id in ipairs(ids) do
+		if not book[id] then
+			return false
+		end
+	end
+	return true
+end
+
+-- 도감 질량 배율과 다 채운 구역 수
+function Config.dexMult(dex: { [string]: boolean }, gdex: { [string]: boolean }): (number, number, number)
+	local zones, goldZones = 0, 0
+	for zi = 1, #Config.Zones do
+		if Config.dexZoneDone(dex, zi) then
+			zones += 1
+		end
+		if Config.dexZoneDone(gdex, zi) then
+			goldZones += 1
+		end
+	end
+	return 1 + Config.DEX.zoneBonus * zones + Config.DEX.goldZoneBonus * goldZones, zones, goldZones
 end
 
 return Config

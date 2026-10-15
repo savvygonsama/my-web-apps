@@ -396,6 +396,7 @@ local TITLES = {
 	bigbang = "🌌 빅뱅",
 	bbshop = "🌑 빅뱅 상점",
 	zones = "🗺 세계와 구역",
+	dex = "📖 도감",
 	help = "📜 도움말",
 	test = "🧪 테스트",
 }
@@ -421,7 +422,7 @@ do
 	local menu = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.52, 0),
-		Size = UDim2.new(0, 140, 0, 11 * 48),
+		Size = UDim2.new(0, 140, 0, 12 * 48),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
@@ -435,6 +436,7 @@ do
 		{ "bigbang", "🌌 빅뱅", Color3.fromRGB(200, 70, 150) },
 		{ "bbshop", "🌑 빅뱅 상점", Color3.fromRGB(70, 40, 120) },
 		{ "zones", "🗺 세계", Color3.fromRGB(60, 150, 120) },
+		{ "dex", "📖 도감", Color3.fromRGB(170, 120, 60) },
 		{ "help", "📜 도움말", C.panel2 },
 		{ "test", "🧪 테스트", Color3.fromRGB(120, 60, 180) },
 		{ "unstuck", "🆘 끼었어요", C.red },
@@ -963,6 +965,87 @@ do
 end
 
 ------------------------------------------------------------------------
+-- 📖 도감: 삼켜 본 물체. 구역을 다 채우면 영구 질량 보너스
+------------------------------------------------------------------------
+do
+	local page = makePage("dex")
+	local summary = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = page })
+	local hint = text({ Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 22), TextSize = 14, TextColor3 = C.dim, Parent = page })
+	hint.Text = string.format("처음 삼키면 보너스 질량 · 구역 완성 영구 질량 +%d%% 🌑+%d · 황금까지 완성 +%d%% 🌑+%d", Config.DEX.zoneBonus * 100, Config.DEX.zoneDM, Config.DEX.goldZoneBonus * 100, Config.DEX.goldZoneDM)
+	local scroll = scroller(page, UDim2.new(1, 0, 1, -58), UDim2.new(0, 0, 0, 58))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scroll })
+	type Cell = { frame: Frame, name: TextLabel, size: TextLabel, star: TextLabel, def: any }
+	type ZoneSec = { label: TextLabel, cells: { Cell } }
+	local secs: { [number]: ZoneSec } = {}
+	local order = 0
+	for wi, world in ipairs(Config.Worlds) do
+		order += 1
+		local wh = text({ Size = UDim2.new(1, -12, 0, 34), LayoutOrder = order, TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = world.sky:Lerp(Color3.new(1, 1, 1), 0.5), Parent = scroll })
+		wh.Text = string.format("%s 세계 %d · %s", wi == 1 and "🌍" or "🍭", wi, world.name)
+		for _, zi in ipairs(Config.zonesOf(wi)) do
+			local zone = Config.Zones[zi]
+			order += 1
+			local box = new("Frame", { Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = order, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), grad(zone.ground:Lerp(C.bg, 0.55), C.bg, 0) })
+			new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 10), Parent = box })
+			new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = box })
+			local label = text({ Size = UDim2.new(1, 0, 0, 26), LayoutOrder = 1, TextSize = 17, Font = Enum.Font.GothamBlack, Parent = box })
+			local grid = new("Frame", { Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = 2, BackgroundTransparency = 1, Parent = box })
+			new("UIGridLayout", { CellSize = UDim2.new(0, 130, 0, 52), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
+			local cells: { Cell } = {}
+			for n, id in ipairs(Config.DexZones[zi]) do
+				local def = Config.OBJECT_BY_ID[id]
+				local cell = new("Frame", { LayoutOrder = n, BackgroundColor3 = C.panel2, Parent = grid }, { corner(8) })
+				local nm = text({ Position = UDim2.new(0, 6, 0, 3), Size = UDim2.new(1, -12, 0, 24), TextSize = 15, Font = Enum.Font.GothamBold, Parent = cell })
+				local sz = text({ Position = UDim2.new(0, 6, 1, -24), Size = UDim2.new(1, -12, 0, 20), TextSize = 12, TextColor3 = C.dim, Parent = cell })
+				local star = text({ Position = UDim2.new(0, 6, 1, -24), Size = UDim2.new(1, -12, 0, 20), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = C.gold, Parent = cell })
+				sz.Text = "⚫ " .. Config.formatSize(def.size)
+				table.insert(cells, { frame = cell, name = nm, size = sz, star = star, def = def })
+			end
+			secs[zi] = { label = label, cells = cells }
+		end
+	end
+	refreshers.dex = function()
+		if not state then
+			return
+		end
+		local dex = state.dex or {}
+		local gdex = state.gdex or {}
+		local found, gold = 0, 0
+		for _, o in ipairs(Config.Objects) do
+			if dex[o.id] then
+				found += 1
+			end
+			if gdex[o.id] then
+				gold += 1
+			end
+		end
+		summary.Text = string.format("📖 발견 %d / %d   ✨ 황금 %d / %d   💠 영구 질량 ×%.2f", found, #Config.Objects, gold, #Config.Objects, state.dexMult or 1)
+		for zi, sec in pairs(secs) do
+			local n, g = 0, 0
+			for _, cell in ipairs(sec.cells) do
+				local id = cell.def.id
+				local has, hasGold = dex[id] == true, gdex[id] == true
+				if has then
+					n += 1
+				end
+				if hasGold then
+					g += 1
+				end
+				cell.name.Text = has and cell.def.name or "???"
+				cell.name.TextColor3 = has and C.text or C.dim
+				cell.frame.BackgroundColor3 = hasGold and Color3.fromRGB(110, 85, 30) or (has and C.blue or C.panel)
+				cell.star.Text = hasGold and "✨ 황금" or ""
+			end
+			local total = #sec.cells
+			local zone = Config.Zones[zi]
+			local mark = (n == total) and (g == total and "  👑 황금 완성" or "  ✅ 완성") or ""
+			sec.label.Text = string.format("%s   %d/%d   ✨%d/%d%s", zone.name, n, total, g, total, mark)
+			sec.label.TextColor3 = (n == total) and C.gold or C.text
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 📜 도움말 (큰 글씨)
 ------------------------------------------------------------------------
 do
@@ -1016,6 +1099,8 @@ do
 			string.format("• ☄ 별똥별: 삼키면 %d초 동안 질량과 성장 2배", Config.STAR_BOOST),
 			"• 📋 퀘스트: 늘 3개. 끝내면 바로 질량이나 🌑 암흑 물질을 받아요",
 			"• 🌍 떠도는 거대 행성: 5분마다 사람이 많은 구역에 나타나요. 닿아 있으면 깎이고, 깎은 몫만큼 보상 (질량·크기·암흑 물질)",
+			"• 📖 도감: 처음 삼킨 물체는 도감에 올라요 (보너스 질량 ×25). 황금으로 삼키면 따로 기록 (×75)",
+			"• 📖 한 구역을 다 채우면 영구 질량 +5% · 🌑+2, 황금까지 다 채우면 +3% · 🌑+3 더. 빅뱅해도 남아요",
 			"",
 			"<b>🎨 스킨 능력</b>",
 			"• ✦ 패시브: 늘 켜져 있어요 (흡입·성장·질량·황금·별똥별 보너스)",
@@ -1070,8 +1155,9 @@ do
 		{ "🍭 세계 2 준비", "testAdvance", Color3.fromRGB(230, 90, 170) },
 		{ "🌍 거대 행성", "testEvent", Color3.fromRGB(230, 150, 60) },
 		{ "☄ 별똥별 지금", "testStar", Color3.fromRGB(220, 160, 40) },
+		{ "📖 도감 채우기", "testDex", Color3.fromRGB(170, 120, 60) },
 	}) do
-		button({ Size = UDim2.new(1 / 6, -5, 1, 0), Text = item[1], TextSize = 12, BackgroundColor3 = item[3], Parent = row3 }, function()
+		button({ Size = UDim2.new(1 / 7, -5, 1, 0), Text = item[1], TextSize = 11, BackgroundColor3 = item[3], Parent = row3 }, function()
 			Request:FireServer(item[2])
 		end)
 	end
@@ -1640,6 +1726,37 @@ function handlers.eat(data: any)
 	end
 	addCombo(combo, data.comboBonus or 0)
 	refreshAll()
+end
+
+-- 📖 도감에 새로 오른 것
+function handlers.dex(data: any)
+	local list = data.list or {}
+	if state then
+		state.dexMult = data.dexMult
+	end
+	for i, f in ipairs(list) do
+		if i <= 6 and f.pos then
+			Fx.popup(f.pos + Vector3.new(0, 6, 0), (f.golden and "✨ 황금 발견! " or "📖 NEW ") .. f.name, f.golden and C.gold or Color3.fromRGB(255, 240, 170), 24)
+		end
+		if f.zoneDone then
+			banner("📖 " .. f.zoneDone .. " 완성!", string.format("영구 질량 +%d%%  ·  🌑 +%d", Config.DEX.zoneBonus * 100, Config.DEX.zoneDM), C.gold)
+			Fx.sound("whoosh", 0.9, 0.8)
+		end
+		if f.goldZoneDone then
+			banner("👑 " .. f.goldZoneDone .. " 황금 완성!", string.format("영구 질량 +%d%%  ·  🌑 +%d", Config.DEX.goldZoneBonus * 100, Config.DEX.goldZoneDM), C.gold)
+			Fx.sound("whoosh", 0.9, 0.6)
+		end
+	end
+	if #list == 1 then
+		toast(string.format("📖 도감에 올랐어요: %s%s (+💠%s)", list[1].golden and "✨" or "", list[1].name, fmt(list[1].bonus)))
+	elseif #list > 1 then
+		local bonus = 0
+		for _, f in ipairs(list) do
+			bonus += f.bonus
+		end
+		toast(string.format("📖 도감에 %d개 새로 올랐어요 (+💠%s)", #list, fmt(bonus)))
+	end
+	Fx.sound("pop", 0.6, 1.4)
 end
 
 function handlers.toast(data: any)
