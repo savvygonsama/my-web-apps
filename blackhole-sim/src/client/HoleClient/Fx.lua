@@ -95,6 +95,8 @@ end
 -- 블랙홀 모양
 ------------------------------------------------------------------------
 type Hole = {
+	lift: number?, -- 바닥 장식 위로 띄우는 높이 (구역마다 다르다)
+	liftAt: number?,
 	char: Model?,
 	center: Vector3?, -- 미리보기는 정해진 자리에 있다
 	active: boolean,
@@ -302,6 +304,20 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 			local p = add(fxPart(Vector3.new(small * 1.4, small * 1.4, small * 1.4), Color3.fromRGB(255, 220, 90), Enum.Material.Neon))
 			table.insert(extras, { part = p, kind = "glint", a = i / 8 * math.pi * 2, k = i })
 		end
+	elseif effect == "horizon" then
+		-- 사건의 지평선: 새하얀 광자 고리, 위로 휘어 넘어가는 빛 (중력 렌즈), 빠르게 도는 주황 강착 원반
+		local photon = add(disc(d * 1.22, 0.06, Color3.fromRGB(255, 255, 255), Enum.Material.Neon, 0.05))
+		table.insert(extras, { part = photon, kind = "photon", a = d * 1.22, k = 0 })
+		local disk2 = add(disc(d * 1.9, 0.05, Color3.fromRGB(255, 150, 50), Enum.Material.Neon, 0.55))
+		table.insert(extras, { part = disk2, kind = "accretion", a = d * 1.9, k = 0 })
+		for i = 0, 23 do
+			local p = add(fxPart(Vector3.new(small * 1.1, small * 1.1, r * 0.3), i % 3 == 0 and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 190, 90), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "lens", a = i / 23 * math.pi, k = i })
+		end
+		for i = 0, 11 do
+			local p = add(fxPart(Vector3.new(small * 0.6, small * 0.4, r * 0.5), Color3.fromRGB(255, 220, 160), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "hstreak", a = i / 12 * math.pi * 2, k = i })
+		end
 	elseif effect == "eye" then
 		-- 신의 눈: 구멍 자리에 커다란 눈. 흰자, 홍채, 동공이 움직이는 쪽을 보고, 가끔 깜빡인다
 		local sclera = add(disc(d * 0.86, 0.17, Color3.fromRGB(255, 250, 240), Enum.Material.SmoothPlastic))
@@ -444,11 +460,19 @@ local function updateHole(h: Hole, t: number, dt: number)
 	end
 	local r = h.radius * swell
 	local base = CFrame.new(center)
-	h.rim.CFrame = base * CFrame.new(0, 0.04, 0)
-	h.disk.CFrame = base * CFrame.new(0, 0.06, 0)
-	h.void.CFrame = base * CFrame.new(0, 0.08, 0)
-	h.core.CFrame = base * CFrame.new(0, 0.1, 0)
-	h.aura.CFrame = base * CFrame.new(0, 0.02, 0)
+	-- 원반 층 사이 간격: 클수록 카메라가 멀어서 간격도 벌려야 깜빡이지 않는다.
+	-- 바닥 장식보다 위에 그린다
+	if not h.liftAt or t > h.liftAt then
+		h.liftAt = t + 0.5
+		h.lift = h.center and 0.02 or Config.holeLift(center)
+	end
+	local lift = h.lift or 0.02
+	local u = math.max(0.02, r * 0.003)
+	h.rim.CFrame = base * CFrame.new(0, lift + u * 2, 0)
+	h.disk.CFrame = base * CFrame.new(0, lift + u * 3, 0)
+	h.void.CFrame = base * CFrame.new(0, lift + u * 4, 0)
+	h.core.CFrame = base * CFrame.new(0, lift + u * 5, 0)
+	h.aura.CFrame = base * CFrame.new(0, lift + u, 0)
 	if h.skillOn then
 		h.aura.Transparency = 0.45 + math.sin(t * 10) * 0.15
 	elseif h.aura.Transparency < 1 then
@@ -529,6 +553,24 @@ local function updateHole(h: Hole, t: number, dt: number)
 			local h0 = r * 0.75 + math.sin(t * 2) * r * 0.05
 			local y = e.kind == "crownSpike" and h0 + r * 0.14 or h0 + r * 0.28
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 0.3, y, math.sin(ang) * r * 0.3))
+		elseif e.kind == "photon" then
+			p.CFrame = base * CFrame.new(0, (h.lift or 0.02) + math.max(0.02, r * 0.003) * 6, 0)
+			p.Transparency = 0.05 + math.abs(math.sin(t * 2.5)) * 0.25
+		elseif e.kind == "accretion" then
+			p.CFrame = base * CFrame.new(0, (h.lift or 0.02) + math.max(0.02, r * 0.003) * 0.5, 0) * CFrame.Angles(0, t * 1.5, 0)
+		elseif e.kind == "lens" then
+			-- 원반 뒤쪽 빛이 블랙홀 위로 휘어 넘어오는 활 모양 (카메라를 따라 돌지 않고 천천히 돈다)
+			local ang = e.a
+			local turn = t * 0.2
+			local rr = r * 1.15
+			local pos = Vector3.new(math.cos(ang) * rr * math.cos(turn), math.sin(ang) * rr * 0.75, math.cos(ang) * rr * math.sin(turn))
+			local tangent = Vector3.new(-math.sin(ang) * math.cos(turn), math.cos(ang) * 0.75, -math.sin(ang) * math.sin(turn))
+			p.CFrame = CFrame.lookAt(center + pos, center + pos + tangent)
+			p.Transparency = 0.15 + (math.sin(t * 4 + e.k * 0.5) + 1) * 0.15
+		elseif e.kind == "hstreak" then
+			local ang = e.a + t * 3.2
+			local pos = center + Vector3.new(math.cos(ang) * r * 1.5, r * 0.04, math.sin(ang) * r * 1.5)
+			p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(ang), 0, math.cos(ang)))
 		elseif e.kind == "gem" then
 			local ang = e.a - t * 0.5
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.55, r * 0.05 + math.sin(t * 3 + e.k) * r * 0.04, math.sin(ang) * r * 1.55)) * CFrame.Angles(t, t * 2, 0)
@@ -889,6 +931,8 @@ function Fx.updateGallery(owned: { string }, selected: string)
 			status = string.format("🌑 %d", skin.value)
 		elseif skin.unlock == "world2" then
 			status = "🔒 사탕 태양"
+		elseif skin.unlock == "secret" then
+			status = "❓ 비밀"
 		else
 			status = "💎 " .. Config.PASS_BY_KEY[skin.value].name
 		end
@@ -991,38 +1035,35 @@ local function growIn(model: Model)
 		return
 	end
 	growing += 1
-	local ok = pcall(function()
-		model:ScaleTo(0.05)
-	end)
-	if not ok then
-		growing -= 1
-		return
+	-- 다시 생긴 물체는 처음부터 제 크기다 (예전엔 작게 시작해서 쉽게 먹히는 것처럼 보였다).
+	-- 대신 빛이 터지면서 투명했다가 또렷해진다
+	local parts = {}
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.LocalTransparencyModifier = 1
+			table.insert(parts, d)
+		end
 	end
 	local pos = model:GetPivot().Position
 	local size = model:GetAttribute("Size")
 	local s = type(size) == "number" and size or 2
 	Fx.burst(pos + Vector3.new(0, s * 0.5, 0), Color3.fromRGB(255, 255, 220), 10, 4 + s, math.clamp(s * 0.2, 0.3, 6))
+	Fx.ring(pos + Vector3.new(0, 0.3, 0), Color3.fromRGB(255, 255, 220), s * 2.6, s * 1.2, 0.35)
 	local start = os.clock()
 	local conn: RBXScriptConnection
 	conn = RunService.RenderStepped:Connect(function()
-		local t = math.min(1, (os.clock() - start) / 0.45)
+		local t = math.min(1, (os.clock() - start) / 0.35)
 		if not model.Parent or model:GetAttribute("EatenBy") then
 			conn:Disconnect()
 			growing -= 1
 			return
 		end
-		-- 살짝 넘쳤다가 돌아오는 곡선
-		local c = 1.7
-		local k = 1 + (c + 1) * (t - 1) ^ 3 + c * (t - 1) ^ 2
-		pcall(function()
-			model:ScaleTo(math.max(0.05, k))
-		end)
+		for _, d in ipairs(parts) do
+			d.LocalTransparencyModifier = 1 - t
+		end
 		if t >= 1 then
 			conn:Disconnect()
 			growing -= 1
-			pcall(function()
-				model:ScaleTo(1)
-			end)
 		end
 	end)
 end
@@ -1441,6 +1482,78 @@ function Fx.start()
 		watchPlayer(player)
 	end
 	Players.PlayerAdded:Connect(watchPlayer)
+	-- ⚔ 시련의 포식 블랙홀도 같은 모양으로 그린다. 머리 위 이름표: 나보다 크면 빨강, 작으면 초록
+	local function bossTag(m: Model)
+		local root = m:FindFirstChild("HumanoidRootPart")
+		if not root or not root:IsA("BasePart") then
+			return
+		end
+		local gui = Instance.new("BillboardGui")
+		gui.Size = UDim2.new(0, 220, 0, 44)
+		gui.AlwaysOnTop = true
+		gui.LightInfluence = 0
+		gui.MaxDistance = 3000
+		local l = Instance.new("TextLabel")
+		l.Size = UDim2.fromScale(1, 1)
+		l.BackgroundTransparency = 1
+		l.Font = Enum.Font.GothamBlack
+		l.TextScaled = true
+		l.TextStrokeTransparency = 0.2
+		l.Parent = gui
+		gui.Parent = root
+		local function refresh()
+			local r = m:GetAttribute("HoleR")
+			local me = Players.LocalPlayer.Character
+			local myR = me and me:GetAttribute("HoleR")
+			if type(r) ~= "number" then
+				return
+			end
+			gui.StudsOffset = Vector3.new(0, 4 + r * 0.35, 0)
+			local label = m:GetAttribute("Label")
+			l.Text = string.format("👹 %s · ⚫%s", type(label) == "string" and label or "포식자", Config.formatSize(r))
+			if type(myR) == "number" then
+				l.TextColor3 = myR >= r * Config.TRIAL_EAT and Color3.fromRGB(120, 255, 150) or (r >= myR * Config.TRIAL_EAT and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(255, 230, 140))
+			end
+		end
+		refresh()
+		m:GetAttributeChangedSignal("HoleR"):Connect(refresh)
+		task.spawn(function()
+			while m.Parent do
+				refresh()
+				task.wait(0.3)
+			end
+		end)
+	end
+	task.spawn(function()
+		local trialObjs = workspace:WaitForChild("TrialObjects", 30)
+		if not trialObjs then
+			return
+		end
+		trialObjs.DescendantAdded:Connect(function(d)
+			if d:IsA("Model") and d.Parent and d.Parent.Parent == trialObjs then
+				watchObject(d)
+			end
+		end)
+	end)
+	task.spawn(function()
+		local bosses = workspace:WaitForChild("TrialBosses", 30)
+		if not bosses then
+			return
+		end
+		for _, m in ipairs(bosses:GetChildren()) do
+			if m:IsA("Model") then
+				watchCharacter(m)
+				bossTag(m)
+			end
+		end
+		bosses.ChildAdded:Connect(function(m)
+			if m:IsA("Model") then
+				task.wait()
+				watchCharacter(m :: Model)
+				bossTag(m :: Model)
+			end
+		end)
+	end)
 	task.spawn(function()
 		local objects = workspace:WaitForChild("Objects")
 		for _, m in ipairs(objects:GetChildren()) do

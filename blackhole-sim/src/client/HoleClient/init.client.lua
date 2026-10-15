@@ -363,6 +363,38 @@ do
 	})
 end
 
+-- ⚔ 시련 중 안내와 나가기 버튼
+local trialLabel: TextLabel
+local trialLeave: TextButton
+do
+	trialLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 128),
+		Size = UDim2.new(0, 640, 0, 40),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 24,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.fromRGB(255, 150, 130),
+		TextStrokeTransparency = 0.1,
+		Visible = false,
+		Parent = gui,
+	})
+	scaled(trialLabel)
+	trialLeave = button({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 174),
+		Size = UDim2.new(0, 180, 0, 40),
+		Text = "🏳 시련 그만두기",
+		TextSize = 16,
+		BackgroundColor3 = C.red,
+		Visible = false,
+		Parent = gui,
+	}, function()
+		Request:FireServer("trialLeave")
+	end)
+	scaled(trialLeave)
+end
+
 ------------------------------------------------------------------------
 -- 창
 ------------------------------------------------------------------------
@@ -397,6 +429,8 @@ local TITLES = {
 	bbshop = "🌑 빅뱅 상점",
 	zones = "🗺 세계와 구역",
 	dex = "📖 도감",
+	trials = "⚔ 시련",
+	sing = "🌀 특이점",
 	help = "📜 도움말",
 	test = "🧪 테스트",
 }
@@ -422,10 +456,10 @@ do
 	local menu = new("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 10, 0.52, 0),
-		Size = UDim2.new(0, 140, 0, 12 * 48),
+		Size = UDim2.new(0, 140, 0, 14 * 43),
 		BackgroundTransparency = 1,
 		Parent = gui,
-	}, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
+	}, { new("UIListLayout", { Padding = UDim.new(0, 5) }) })
 	scaled(menu)
 	for _, item in ipairs({
 		{ "lobby", "🏠 로비", Color3.fromRGB(40, 170, 140) },
@@ -435,13 +469,15 @@ do
 		{ "skins", "🎨 스킨", Color3.fromRGB(200, 90, 200) },
 		{ "bigbang", "🌌 빅뱅", Color3.fromRGB(200, 70, 150) },
 		{ "bbshop", "🌑 빅뱅 상점", Color3.fromRGB(70, 40, 120) },
+		{ "trials", "⚔ 시련", Color3.fromRGB(170, 50, 60) },
+		{ "sing", "🌀 특이점", Color3.fromRGB(40, 40, 70) },
 		{ "zones", "🗺 세계", Color3.fromRGB(60, 150, 120) },
 		{ "dex", "📖 도감", Color3.fromRGB(170, 120, 60) },
 		{ "help", "📜 도움말", C.panel2 },
 		{ "test", "🧪 테스트", Color3.fromRGB(120, 60, 180) },
 		{ "unstuck", "🆘 끼었어요", C.red },
 	}) do
-		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 42), Text = item[2], TextSize = 17, BackgroundColor3 = item[3], Parent = menu }, function()
+		menuButtons[item[1]] = button({ Size = UDim2.new(1, 0, 0, 38), Text = item[2], TextSize = 16, BackgroundColor3 = item[3], Parent = menu }, function()
 			if item[1] == "lobby" then
 				Request:FireServer("world", 0)
 				window.Visible = false
@@ -768,6 +804,8 @@ do
 			return string.format("🌑 %d 로 사기", skin.value), can and Color3.fromRGB(110, 60, 180) or C.panel2, string.format("암흑 물질 %d개로 살 수 있어요", skin.value)
 		elseif skin.unlock == "world2" then
 			return "🔒 사탕 태양 삼키기", C.panel2, "세계 2의 사탕 태양을 삼키면 열려요"
+		elseif skin.unlock == "secret" then
+			return "❓ 비밀", C.panel2, "어딘가에 숨겨진 수수께끼를 모두 풀면 열려요 (📖 도감 맨 아래)"
 		end
 		local pass = Config.PASS_BY_KEY[skin.value]
 		return "💎 " .. pass.name, Color3.fromRGB(200, 140, 40), "💎 상점의 " .. pass.name .. "에 들어 있어요"
@@ -844,16 +882,24 @@ end
 do
 	local page = makePage("bigbang")
 	local info = text({ Size = UDim2.new(1, 0, 1, -80), TextSize = 19, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
-	local go = button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -6), Size = UDim2.new(0, 300, 0, 60), Text = "🌌 빅뱅!", TextSize = 24, BackgroundColor3 = Color3.fromRGB(200, 70, 160), Parent = page }, function()
+	local go = button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, -165, 1, -6), Size = UDim2.new(0, 310, 0, 60), Text = "🌌 빅뱅!", TextSize = 24, BackgroundColor3 = Color3.fromRGB(200, 70, 160), Parent = page }, function()
 		Request:FireServer("bigbang")
 		window.Visible = false
+	end)
+	-- 암흑 물질로 빅뱅 횟수만 올리기 (판은 이어진다)
+	local buy = button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 165, 1, -6), Size = UDim2.new(0, 310, 0, 60), Text = "", TextSize = 17, BackgroundColor3 = Color3.fromRGB(110, 60, 180), Parent = page }, function()
+		Request:FireServer("buyBigbang")
 	end)
 	refreshers.bigbang = function()
 		if not state then
 			return
 		end
-		local ready = state.tier == 2 and state.radius >= Config.BIGBANG_RADIUS
-		local reward = Config.darkMatterReward(state.tier == 2 and math.max(state.radius, Config.BIGBANG_RADIUS) or Config.BIGBANG_RADIUS, state.bigbang)
+		local ready = state.tier >= 2 and state.radius >= Config.BIGBANG_RADIUS
+		local _, _, permDM = Config.permMult({ sing = state.sing, gravity = state.ss and state.ss.gravity, time = state.ss and state.ss.time, harvest = state.ss and state.ss.harvest, trials = state.trials })
+		local reward = Config.darkMatterReward(state.tier >= 2 and math.max(state.radius, Config.BIGBANG_RADIUS) or Config.BIGBANG_RADIUS, state.bigbang, state.bb.dm, math.max(2, state.tier), permDM)
+		local cost = state.bigbangCost or Config.bigbangBuyCost(state.bigbang)
+		buy.Text = string.format("🌑 %d → 빅뱅 횟수 +1\n(판은 그대로 이어져요)", cost)
+		buy.BackgroundColor3 = state.dm >= cost and Color3.fromRGB(110, 60, 180) or C.panel2
 		local nextSkin = nil
 		for _, skin in ipairs(Config.Skins) do
 			if skin.unlock == "bigbang" and skin.value > state.bigbang then
@@ -867,12 +913,13 @@ do
 			string.format("• 영구 질량 배율  <b>×%d → ×%d</b>", state.bigbang + 1, state.bigbang + 2),
 			string.format('• <font color="#C8A0FF">🌑 암흑 물질 +%d개</font> (더 크게 커져서 할수록 더 많이)', reward),
 			"• 🌑 빅뱅 상점에서 영원히 남는 업그레이드를 살 수 있어요",
-			"• 세계 2 최대 크기 +300, 성장 +10%",
+			"• 세계 2·3·4 최대 크기 +300, 성장 +10%",
+			"• 세계 3에서 빅뱅하면 암흑 물질 ×2.5, 세계 4는 ×4",
 			nextSkin and string.format("• 다음 스킨: %s (빅뱅 %d번)", nextSkin.name, nextSkin.value) or "",
 			"",
 			string.format("지금 빅뱅 %d회  ·  🌑 %d개", state.bigbang, state.dm),
-			state.tier == 2 and string.format('조건: 세계 2에서 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius))
-				or string.format('조건: 세계 1에서 크기 %d을 넘겨 세계 2로 간 뒤, 세계 2에서 크기 %d  ·  지금 세계 1 ⚫%s', Config.WORLD2_RADIUS, Config.BIGBANG_RADIUS, Config.formatSize(state.radius)),
+			state.tier >= 2 and string.format('조건: 세계 2 이상에서 크기 ⚫%d 이상  ·  지금 세계 %d <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, state.tier, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius))
+				or string.format('조건: 세계 1에서 크기 %d을 넘겨 세계 2로 간 뒤, 크기 %d  ·  지금 세계 1 ⚫%s', Config.WORLD2_RADIUS, Config.BIGBANG_RADIUS, Config.formatSize(state.radius)),
 		}, "\n")
 		go.TextTransparency = ready and 0 or 0.5
 		go.BackgroundColor3 = ready and Color3.fromRGB(200, 70, 160) or C.panel2
@@ -950,7 +997,17 @@ do
 		end
 		for wi, world in ipairs(Config.Worlds) do
 			local open = state.tier == wi
-			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", wi == 1 and "🌍" or "🍭", wi, world.name, open and "← 이번 판" or (wi == 2 and string.format("🔒 세계 1에서 크기 %d", Config.WORLD2_RADIUS) or "빅뱅하면 여기부터"))
+			local lockText
+			if open then
+				lockText = "← 이번 판"
+			elseif not Config.worldOpen(wi, state.sing or 0) then
+				lockText = string.format("🔒 🌀 특이점 %d번", Config.worldNeedSing(wi))
+			elseif wi > state.tier then
+				lockText = string.format("🔒 세계 %d에서 크기 %d", wi - 1, Config.WORLD2_RADIUS)
+			else
+				lockText = "빅뱅하면 여기부터"
+			end
+			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", world.icon, wi, world.name, lockText)
 			worldRows[wi].btn.Text = (currentWorld == wi and not state.inLobby) and "여기 있어요" or (open and "세계로 이동" or "잠김")
 			worldRows[wi].btn.BackgroundColor3 = (open and currentWorld ~= wi) and C.green or C.panel2
 			for n, zi in ipairs(Config.zonesOf(wi)) do
@@ -981,7 +1038,7 @@ do
 	for wi, world in ipairs(Config.Worlds) do
 		order += 1
 		local wh = text({ Size = UDim2.new(1, -12, 0, 34), LayoutOrder = order, TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = world.sky:Lerp(Color3.new(1, 1, 1), 0.5), Parent = scroll })
-		wh.Text = string.format("%s 세계 %d · %s", wi == 1 and "🌍" or "🍭", wi, world.name)
+		wh.Text = string.format("%s 세계 %d · %s", world.icon, wi, world.name)
 		for _, zi in ipairs(Config.zonesOf(wi)) do
 			local zone = Config.Zones[zi]
 			order += 1
@@ -1004,6 +1061,11 @@ do
 			secs[zi] = { label = label, cells = cells }
 		end
 	end
+	-- ❓ 비밀: 지금 단계의 수수께끼만 보인다
+	order += 1
+	local secretBox = new("Frame", { Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, LayoutOrder = order, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(Color3.fromRGB(220, 220, 255), 1.5), grad(Color3.fromRGB(20, 18, 30), C.bg, 0) })
+	new("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingTop = UDim.new(0, 8), PaddingBottom = UDim.new(0, 10), Parent = secretBox })
+	local secretLabel = text({ Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 16, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = secretBox })
 	refreshers.dex = function()
 		if not state then
 			return
@@ -1020,6 +1082,22 @@ do
 			end
 		end
 		summary.Text = string.format("📖 발견 %d / %d   ✨ 황금 %d / %d   💠 영구 질량 ×%.2f", found, #Config.Objects, gold, #Config.Objects, state.dexMult or 1)
+		local secret = state.secret or { step = 1, n = 0 }
+		local lines = { "<b>❓ 비밀</b>" }
+		for i, step in ipairs(Config.Secret) do
+			if i < secret.step then
+				table.insert(lines, string.format('<font color="#6CFF9A">✔ %s</font>', step.done))
+			elseif i == secret.step then
+				local prog = step.goal > 1 and string.format("  (%d/%d)", secret.n, step.goal) or ""
+				table.insert(lines, string.format('<font color="#E6E6FF">“%s”</font>%s', step.hint, prog))
+			else
+				table.insert(lines, '<font color="#77778A">???</font>')
+			end
+		end
+		if secret.step > #Config.Secret then
+			table.insert(lines, '<font color="#FFFFFF"><b>🕳 사건의 지평선 스킨을 얻었어요</b></font>')
+		end
+		secretLabel.Text = table.concat(lines, "\n")
 		for zi, sec in pairs(secs) do
 			local n, g = 0, 0
 			for _, cell in ipairs(sec.cells) do
@@ -1046,6 +1124,101 @@ do
 end
 
 ------------------------------------------------------------------------
+-- ⚔ 시련
+------------------------------------------------------------------------
+do
+	local page = makePage("trials")
+	local head = text({ Size = UDim2.new(1, 0, 0, 46), TextSize = 15, TextColor3 = C.dim, Text = "업그레이드·위성·스킨이 통하지 않는 도전이에요. 모두 크기 5에서 시작해요. 작은 물체를 먹고 커져서 포식 블랙홀을 모두 삼키세요. 이름표가 초록이면 먹을 수 있고, 빨강이면 도망치세요!", Parent = page })
+	local _ = head
+	local scroll = scroller(page, UDim2.new(1, 0, 1, -50), UDim2.new(0, 0, 0, 50))
+	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = scroll })
+	type TRow = { label: TextLabel, btn: TextButton }
+	local rows: { [number]: TRow } = {}
+	for _, t in ipairs(Config.Trials) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 78), BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(Color3.fromRGB(200, 70, 70), 1.5), grad(Color3.fromRGB(70, 25, 35), C.bg, 0) })
+		local label = text({ Position = UDim2.new(0, 14, 0, 4), Size = UDim2.new(1, -190, 1, -8), TextSize = 15, RichText = true, TextYAlignment = Enum.TextYAlignment.Center, Parent = row })
+		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 160, 0, 48), Text = "도전", TextSize = 18, Parent = row }, function()
+			Request:FireServer("trialStart", t.id)
+			window.Visible = false
+		end)
+		rows[t.id] = { label = label, btn = btn }
+	end
+	refreshers.trials = function()
+		if not state then
+			return
+		end
+		for _, t in ipairs(Config.Trials) do
+			local row = rows[t.id]
+			local open = Config.trialOpen(t, state.bigbang, state.sing or 0)
+			local cleared = state.trials and state.trials[tostring(t.id)] == true
+			local need = t.needSing > 0 and string.format("🌀 특이점 %d번 + 빅뱅 %d번", t.needSing, t.needBB) or string.format("빅뱅 %d번", t.needBB)
+			row.label.Text = string.format("<b>%s</b>%s\n포식자 %d마리 · %d초 · 열림: %s\n보상: 영구 질량 ×%.1f · 성장 +%d%% · 🌑 %d", t.name, cleared and '  <font color="#6CFF9A">✔ 이김</font>' or "", #t.bosses, t.time, need, t.mass, math.floor(t.grow * 100 + 0.5), t.dm)
+			row.btn.Text = open and (cleared and "다시 하기" or "도전") or "🔒 잠김"
+			row.btn.BackgroundColor3 = open and Color3.fromRGB(200, 60, 70) or C.panel2
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 🌀 특이점과 💎 특이점 상점
+------------------------------------------------------------------------
+do
+	local page = makePage("sing")
+	local info = text({ Size = UDim2.new(1, 0, 0, 170), TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	local go = button({ Position = UDim2.new(0, 0, 0, 172), Size = UDim2.new(1, 0, 0, 52), Text = "🌀 특이점에 닿기", TextSize = 22, BackgroundColor3 = Color3.fromRGB(60, 60, 110), Parent = page }, function()
+		Request:FireServer("singularity")
+		window.Visible = false
+	end)
+	local scroll = scroller(page, UDim2.new(1, 0, 1, -236), UDim2.new(0, 0, 0, 234))
+	new("UIGridLayout", { CellSize = UDim2.new(0.5, -8, 0, 92), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
+	type SRow = { label: TextLabel, btn: TextButton }
+	local items: { [string]: SRow } = {}
+	for _, b in ipairs(Config.SingShop) do
+		local card = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(Color3.fromRGB(200, 200, 255), 1.5), grad(Color3.fromRGB(30, 30, 60), C.bg) })
+		local label = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 48), TextSize = 15, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		local btn = button({ Position = UDim2.new(0, 8, 1, -38), Size = UDim2.new(1, -16, 0, 32), TextSize = 15, Parent = card }, function()
+			Request:FireServer("singShop", b.id)
+		end)
+		items[b.id] = { label = label, btn = btn }
+	end
+	refreshers.sing = function()
+		if not state then
+			return
+		end
+		local sing = state.sing or 0
+		local need = Config.singularityNeed(sing)
+		local ready = state.bigbang >= need
+		local shards = Config.shardReward(math.max(state.bigbang, need), sing)
+		local mass, grow, dm = Config.permMult({ sing = sing, gravity = state.ss and state.ss.gravity, time = state.ss and state.ss.time, harvest = state.ss and state.ss.harvest, trials = state.trials })
+		local nextWorld = nil
+		for w = 3, Config.MAX_WORLD do
+			if Config.worldNeedSing(w) == sing + 1 then
+				nextWorld = w
+			end
+		end
+		info.Text = table.concat({
+			string.format("<b>지금 특이점 %d번</b>  ·  💎 조각 %d개  ·  영구 질량 ×%s · 성장 ×%.2f · 암흑 물질 ×%.1f", sing, state.shards or 0, fmt(mass), grow, dm),
+			"",
+			"빅뱅 횟수·암흑 물질·빅뱅 상점·업그레이드를 모두 바치고 처음부터 다시 시작해요.",
+			string.format('대신 <b>영구 질량 ×3 · 성장 +25%% · 암흑 물질 +50%%</b> 와 <font color="#C8DCFF">💎 조각 %d개</font>', shards),
+			nextWorld and string.format('<font color="#8CF0FF">%s 세계 %d · %s가 열려요!</font>', Config.Worlds[nextWorld].icon, nextWorld, Config.Worlds[nextWorld].name) or "",
+			string.format('조건: 빅뱅 %d번  ·  지금 <font color="#%s">%d번</font>  (🌌 빅뱅 창에서 🌑로 빅뱅 횟수를 살 수도 있어요)', need, ready and "6CFF9A" or "FF7A8A", state.bigbang),
+		}, "\n")
+		go.BackgroundColor3 = ready and Color3.fromRGB(90, 90, 170) or C.panel2
+		go.TextTransparency = ready and 0 or 0.5
+		for _, b in ipairs(Config.SingShop) do
+			local item = items[b.id]
+			local level = state.ss and state.ss[b.id] or 0
+			local maxed = level >= b.maxLevel
+			local cost = Config.singShopCost(b.id, level)
+			item.label.Text = string.format("<b>%s %s</b>  Lv.%d/%d\n%s", b.icon, b.name, level, b.maxLevel, b.desc)
+			item.btn.Text = maxed and "최대" or string.format("💎 %d", cost)
+			item.btn.BackgroundColor3 = (not maxed and (state.shards or 0) >= cost) and Color3.fromRGB(90, 90, 170) or C.panel2
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 📜 도움말 (큰 글씨)
 ------------------------------------------------------------------------
 do
@@ -1053,7 +1226,11 @@ do
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
 	local objLines = {}
 	for wi, world in ipairs(Config.Worlds) do
-		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", wi == 1 and "🌍" or "🍭", wi, world.name, wi == 2 and string.format(" (세계 1에서 크기 %d을 넘기면, 크기 ÷%d)", Config.WORLD2_RADIUS, Config.WORLD2_SCALE) or ""))
+		local how = ""
+		if wi >= 2 then
+			how = string.format(" (세계 %d에서 크기 %d을 넘기면, 크기 ÷%d%s)", wi - 1, Config.WORLD2_RADIUS, Config.WORLD2_SCALE, Config.worldNeedSing(wi) > 0 and string.format(" · 🌀 특이점 %d번 뒤", Config.worldNeedSing(wi)) or "")
+		end
+		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", world.icon, wi, world.name, how))
 		for n, zi in ipairs(Config.zonesOf(wi)) do
 			local names = {}
 			for _, o in ipairs(Config.Objects) do
@@ -1083,7 +1260,8 @@ do
 			"• 처음엔 로비에서 시작해요. 왼쪽 메뉴 🏠 로비 버튼이나 세계 시작 지점 왼쪽 문으로 돌아와요",
 			"• 북쪽 캡슐 기계에서 위성을 뽑고, 남쪽 스킨 전시관에서 스킨 12종과 능력을 구경해요",
 			"• 🎁 매일 보상 상자 (연속으로 받을수록 많이), 💎 상점 가판대, 🏆 서버 순위판",
-			"• 서쪽 문 → 세계 1, 동쪽 문 → 세계 2",
+			"• 서쪽 문 → 세계 1, 동쪽 문 → 세계 2, 북서·북동 문 → 세계 3·4",
+			"• 남서 ⚔ 시련의 문, 남동 🌀 특이점 제단",
 			"",
 			"<b>커지기</b>",
 			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
@@ -1113,11 +1291,24 @@ do
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
 			"<b>🌌 빅뱅 (환생)</b>",
-			string.format("• 한 판: 세계 1에서 크기 %d → 세계 2로 넘어가며 크기 ÷%d → 세계 2에서 크기 %d이면 빅뱅", Config.WORLD2_RADIUS, Config.WORLD2_SCALE, Config.BIGBANG_RADIUS),
+			string.format("• 한 판: 세계 1에서 크기 %d → 다음 세계로 넘어가며 크기 ÷%d → 세계 2 이상에서 크기 %d이면 빅뱅", Config.WORLD2_RADIUS, Config.WORLD2_SCALE, Config.BIGBANG_RADIUS),
+			"• 세계 3·4가 열려 있으면 세계 2·3에서도 크기 400을 넘겨 계속 넘어갈 수 있어요. 깊은 세계에서 빅뱅할수록 암흑 물질이 많아요",
+			"• 🌑 암흑 물질로 빅뱅 횟수만 따로 살 수도 있어요 (🌌 빅뱅 창 오른쪽 버튼, 판은 그대로)",
 			"• 빅뱅하면 세계 1부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요",
 			"• 빅뱅할 때마다 최대 크기 +300, 성장 +10%",
 			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸, 질량 보존, 암흑 수확",
-			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요. 세계 1보다 훨씬 넓고 구역이 8개예요",
+			"",
+			"<b>🌀 특이점 (두 번째 환생)</b>",
+			string.format("• 빅뱅 %d번부터 (특이점마다 +5번). 빅뱅 횟수·암흑 물질·빅뱅 상점·업그레이드를 모두 바쳐요", Config.singularityNeed(0)),
+			"• 대신 영구로 질량 ×3, 성장 +25%, 암흑 물질 +50% (특이점마다 곱해져요) + 💎 특이점 조각",
+			"• 특이점 1번 → 🤖 세계 3 네온 사이버, 2번 → 🌌 세계 4 심연이 열려요",
+			"• 💎 특이점 상점: 중력 붕괴(질량 ×2) · 시간 압축(성장) · 암흑 흡수(암흑 물질) · 빅뱅 출발",
+			"• 스킨·위성·도감·시련은 남아요",
+			"",
+			"<b>⚔ 시련</b>",
+			"• 정해진 빅뱅·특이점 횟수에 열려요. 업그레이드·위성·스킨이 통하지 않아요 (모두 크기 5에서 시작)",
+			"• 작은 물체를 먹고 커져서 돌아다니는 포식 블랙홀을 모두 삼키면 이겨요. 나보다 10% 큰 포식자에 닿으면 져요",
+			"• 이름표가 초록이면 먹을 수 있고, 빨강이면 도망쳐요. 이기면 영구 질량·성장 보너스와 암흑 물질",
 			"",
 			"<b>🗺 구역</b> (색 벽은 크기가 되면 통과돼요)",
 			table.concat(objLines, "\n"),
@@ -1171,6 +1362,23 @@ do
 	button({ Size = UDim2.new(0.33, -4, 1, 0), Text = "↺ 처음으로", TextSize = 15, BackgroundColor3 = C.red, Parent = row4 }, function()
 		Request:FireServer("testReset")
 	end)
+	local row5 = hlist(page, 44)
+	for _, item in ipairs({
+		{ "🌀 특이점 준비", "testSing", Color3.fromRGB(60, 60, 110) },
+		{ "💎 조각 +10", "testShards", Color3.fromRGB(80, 80, 140) },
+		{ "❓ 비밀 다음", "testSecret", Color3.fromRGB(90, 90, 90) },
+		{ "⚔ 시련 1", "trialStart", Color3.fromRGB(170, 50, 60) },
+		{ "⚔ 시련 승리", "testTrialWin", Color3.fromRGB(200, 80, 80) },
+	}) do
+		button({ Size = UDim2.new(0.2, -5, 1, 0), Text = item[1], TextSize = 13, BackgroundColor3 = item[3], Parent = row5 }, function()
+			if item[2] == "trialStart" then
+				Request:FireServer("trialStart", 1)
+				window.Visible = false
+			else
+				Request:FireServer(item[2])
+			end
+		end)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -1282,7 +1490,7 @@ local function refreshAll()
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
 		"%s ⚫ %s/%s   🌱 ×%s   ✖ %s%s%s",
-		state.tier == 2 and "🍭" or "🌍",
+		(Config.Worlds[state.tier] or Config.Worlds[1]).icon,
 		Config.formatSize(state.radius),
 		Config.formatSize(state.maxRadius),
 		string.format("%.2f", state.growMult or 1),
@@ -1318,10 +1526,13 @@ local function refreshAll()
 	end
 	if state.inLobby then
 		Bar.fill.Size = UDim2.fromScale(1, 1)
-		Bar.label.Text = "🏠 로비 · 캡슐은 북쪽, 세계 1은 서쪽, 세계 2는 동쪽 문"
+		Bar.label.Text = "🏠 로비 · 캡슐 북쪽 · 세계 1 서쪽 · 2 동쪽 · 3·4 북쪽 · ⚔ 시련 · 🌀 특이점 남쪽"
+	elseif state.inTrial then
+		Bar.fill.Size = UDim2.fromScale(1, 1)
+		Bar.label.Text = string.format("⚔ 시련 중 · 내 크기 ⚫ %s", Config.formatSize(state.trialR or 5))
 	elseif state.canAdvance then
 		Bar.fill.Size = UDim2.fromScale(1, 1)
-		Bar.label.Text = string.format("🍭 세계 2로 넘어갈 수 있어요! (크기 ÷%d, 위 버튼)", Config.WORLD2_SCALE)
+		Bar.label.Text = string.format("%s 세계 %d로 넘어갈 수 있어요! (크기 ÷%d, 위 버튼)", Config.Worlds[state.tier + 1].icon, state.tier + 1, Config.WORLD2_SCALE)
 	elseif state.tier == 1 and not nextZone then
 		local ratio = math.clamp((r - prevNeed) / math.max(Config.WORLD2_RADIUS - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
@@ -1339,7 +1550,14 @@ local function refreshAll()
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("모든 구역이 열렸어요! 빅뱅까지 ⚫ %s / %d", Config.formatSize(state.radius), Config.BIGBANG_RADIUS)
 	end
-	advanceButton.Visible = state.canAdvance == true and not state.inLobby
+	advanceButton.Visible = state.canAdvance == true and not state.inLobby and not state.inTrial
+	if state.canAdvance and Config.Worlds[state.tier + 1] then
+		advanceButton.Text = string.format("%s 세계 %d로 넘어가기", Config.Worlds[state.tier + 1].icon, state.tier + 1)
+	end
+	trialLabel.Visible = state.inTrial == true
+	trialLeave.Visible = state.inTrial == true
+	menuButtons.sing.Visible = state.bigbang >= 5 or (state.sing or 0) > 0
+	menuButtons.trials.Visible = state.bigbang >= 1 or (state.sing or 0) > 0
 	menuButtons.test.Visible = state.tester == true
 	menuButtons.bbshop.Visible = state.bigbang > 0 or state.dm > 0
 	if window.Visible then
@@ -1356,8 +1574,15 @@ end
 local function applyRadius(r: number)
 	-- 로비에서는 블랙홀을 작게 보여 주니 카메라도 가깝게
 	local cr = (state and state.inLobby) and math.min(r, 8) or r
-	player.CameraMaxZoomDistance = math.max(60, 40 + cr * 6)
-	player.CameraMinZoomDistance = math.min(10 + cr * 1.6, player.CameraMaxZoomDistance - 5)
+	-- 아주 멀리서 보면 그래픽 설정에 따라 땅이 안 그려지고 안개에 묻혀서, 카메라 거리를 줄이고 안개도 옅게
+	player.CameraMaxZoomDistance = math.clamp(40 + cr * 4, 60, 2600)
+	player.CameraMinZoomDistance = math.min(10 + cr * 1.4, player.CameraMaxZoomDistance - 5)
+	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atmo then
+		local k = math.clamp(cr / 600, 0, 1)
+		atmo.Density = 0.3 - 0.27 * k
+		atmo.Haze = 1.5 - 1.3 * k
+	end
 	local zones = workspace:FindFirstChild("Zones")
 	if not zones then
 		return
@@ -1380,8 +1605,9 @@ local function applyWorld(w: number)
 	currentWorld = w
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere")
 	if atmo then
-		local col = w == 2 and Color3.fromRGB(255, 200, 235) or Color3.fromRGB(200, 210, 240)
-		local decay = w == 2 and Color3.fromRGB(200, 120, 190) or Color3.fromRGB(120, 110, 160)
+		local world = Config.Worlds[w] or Config.Worlds[1]
+		local col = world.sky:Lerp(Color3.new(1, 1, 1), 0.45)
+		local decay = world.decay
 		TweenService:Create(atmo, TweenInfo.new(1.2), { Color = col, Decay = decay }):Play()
 	end
 end
@@ -1640,9 +1866,11 @@ function handlers.state(data: any)
 		lastInLobby = data.inLobby
 		lastRadius = -1
 	end
-	if data.radius ~= lastRadius then
-		lastRadius = data.radius
-		applyRadius(data.radius)
+	-- 시련 중에는 시련 크기로 카메라를 맞춘다
+	local shownR = data.inTrial and data.trialR or data.radius
+	if shownR ~= lastRadius then
+		lastRadius = shownR
+		applyRadius(shownR)
 	end
 	if grew then
 		local c = myCenter()
@@ -1781,7 +2009,7 @@ function handlers.zone(data: any)
 			applyWorld(zone.world)
 		end
 		local n = table.find(Config.zonesOf(zone.world), data) or data
-		banner(string.format("%d · %s", n, zone.name), zone.world == 2 and "달콤한 것들이 기다려요" or "더 큰 것들이 기다려요", zone.ground:Lerp(Color3.new(1, 1, 1), 0.4))
+		banner(string.format("%d · %s", n, zone.name), (Config.Worlds[zone.world] or Config.Worlds[1]).tagline, zone.ground:Lerp(Color3.new(1, 1, 1), 0.4))
 		Fx.sound("whoosh", 0.5, 0.8)
 		refreshAll()
 	end
@@ -1796,7 +2024,7 @@ function handlers.world(data: any)
 	local w = Config.Worlds[data]
 	if w then
 		applyWorld(data)
-		banner(string.format("%s 세계 %d", data == 2 and "🍭" or "🌍", data), w.name, w.sky)
+		banner(string.format("%s 세계 %d", w.icon, data), w.name, w.sky)
 		Fx.sound("whoosh", 0.8, 0.5)
 		refreshAll()
 	end
@@ -1880,15 +2108,95 @@ function handlers.skillFx(data: any)
 end
 
 -- 세계 2로 넘어갈 수 있다 / 넘어갔다
-function handlers.advanceReady(_data: any)
-	banner("🍭 세계 2로 갈 수 있어요!", string.format("화면 위 버튼을 누르면 크기가 ÷%d 되고, 훨씬 큰 질량의 세계에서 다시 자라요", Config.WORLD2_SCALE), Color3.fromRGB(255, 160, 220))
+function handlers.advanceReady(data: any)
+	local w = data and data.world or 2
+	local world = Config.Worlds[w] or Config.Worlds[2]
+	banner(string.format("%s 세계 %d로 갈 수 있어요!", world.icon, w), string.format("화면 위 버튼을 누르면 크기가 ÷%d 되고, 훨씬 큰 질량의 세계에서 다시 자라요", Config.WORLD2_SCALE), world.sky)
 	Fx.sound("slash", 0.7, 1.1)
 end
 
 function handlers.advanced(data: any)
-	applyWorld(2)
-	banner("🍭 세계 2 · 과자 왕국", string.format("⚫ %s → ⚫ %s  ·  다시 작아졌지만 질량은 훨씬 커요", Config.formatSize(data.from), Config.formatSize(data.to)), Color3.fromRGB(255, 160, 220))
+	local w = data.world or 2
+	local world = Config.Worlds[w] or Config.Worlds[2]
+	applyWorld(w)
+	banner(string.format("%s 세계 %d · %s", world.icon, w, world.name), string.format("⚫ %s → ⚫ %s  ·  다시 작아졌지만 질량은 훨씬 커요", Config.formatSize(data.from), Config.formatSize(data.to)), world.sky)
 	Fx.sound("whoosh", 1, 0.5)
+end
+
+-- 🌌 암흑 물질로 빅뱅 횟수를 샀다
+function handlers.bigbangBought(data: any)
+	local sub = string.format("빅뱅 %d회 · 🌑 -%d", data.count, data.cost)
+	if #data.skins > 0 then
+		sub ..= " · 🎨 " .. table.concat(data.skins, ", ")
+	end
+	banner("🌌 빅뱅 횟수 +1", sub, C.pink)
+	Fx.sound("whoosh", 0.8, 0.6)
+end
+
+-- 🌀 특이점
+function handlers.singularity(data: any)
+	local c = myCenter()
+	if c then
+		Fx.pillar(c, Color3.new(1, 1, 1), 800, 60, 2)
+		for i = 0, 7 do
+			task.delay(i * 0.1, function()
+				Fx.ring(c, i % 2 == 0 and Color3.new(1, 1, 1) or Color3.fromRGB(20, 10, 40), 10, 300 + i * 80, 1.2)
+			end)
+		end
+	end
+	Feel.flash(Color3.new(1, 1, 1), 0.6)
+	Feel.shake(3)
+	Fx.sound("whoosh", 1, 0.2)
+	local sub = string.format("특이점 %d번 · 💎 조각 +%d · 영구 질량 ×3", data.count, data.shards)
+	if data.opened then
+		local world = Config.Worlds[data.opened]
+		sub ..= string.format(" · %s 세계 %d 열림!", world.icon, data.opened)
+	end
+	banner("🌀 SINGULARITY", sub, Color3.fromRGB(235, 235, 255))
+	applyWorld(1)
+end
+
+-- ⚔ 시련
+function handlers.trial(data: any)
+	if data.kind == "start" then
+		banner("⚔ " .. data.name, string.format("포식자 %d마리를 모두 삼켜라! (%d초)", data.bosses, data.time), Color3.fromRGB(255, 120, 110))
+		Fx.sound("slash", 1, 0.6)
+		trialLabel.Text = string.format("⚔ 포식자 %d · %d초", data.bosses, data.time)
+	elseif data.kind == "tick" then
+		if math.abs(data.r - lastRadius) > lastRadius * 0.03 then
+			lastRadius = data.r
+			applyRadius(data.r)
+		end
+		trialLabel.Text = string.format("⚔ 남은 포식자 %d · %d초 · 내 크기 ⚫%s", data.bosses, math.ceil(data.left), Config.formatSize(data.r))
+		trialLabel.TextColor3 = data.left < 20 and C.red or Color3.fromRGB(255, 150, 130)
+	elseif data.kind == "bossEaten" then
+		Fx.ring(data.pos, Color3.fromRGB(255, 90, 90), data.r * 2, data.r * 6, 0.6)
+		Fx.pillar(data.pos, Color3.fromRGB(255, 120, 100), 200, data.r, 0.8)
+		Feel.shake(1.2)
+		Fx.sound("slash", 1, 0.5)
+		toast("👹 포식자를 삼켰어요!")
+	elseif data.kind == "end" then
+		if data.win then
+			local sub = data.first and string.format("영구 질량 ×%.1f · 성장 +%d%% · 🌑 +%d", data.mass, math.floor(data.grow * 100 + 0.5), data.dm) or "이미 이긴 시련이에요 (보상은 처음 한 번)"
+			banner("🏆 " .. data.name .. " 승리!", sub, C.gold)
+			Feel.flash(C.gold, 0.4)
+		else
+			banner("💀 시련 실패", data.reason or "", C.red)
+		end
+		trialLabel.Visible = false
+		trialLeave.Visible = false
+	end
+end
+
+-- ❓ 비밀 퀘스트 한 단계
+function handlers.secret(data: any)
+	if data.finished then
+		banner("🕳 사건의 지평선", "모든 수수께끼를 풀었어요. 비밀 스킨을 얻었어요!", Color3.fromRGB(235, 235, 255))
+		Feel.flash(Color3.new(1, 1, 1), 0.5)
+	else
+		banner("❓ " .. data.done, "다음 수수께끼: " .. (data.hint or "???"), Color3.fromRGB(200, 200, 230))
+	end
+	Fx.sound("whoosh", 0.8, 0.4)
 end
 
 -- 떠도는 거대 행성

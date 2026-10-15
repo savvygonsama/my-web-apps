@@ -5,7 +5,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-6"
+Config.VERSION = "beta-7"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
@@ -21,8 +21,21 @@ Config.PART_LIMIT = 2000
 -- 세계 2에서 크기 350을 넘기면 빅뱅할 수 있고, 빅뱅하면 다시 세계 1에서 시작한다.
 ------------------------------------------------------------------------
 Config.START_RADIUS = 1.5
-Config.WORLD2_RADIUS = 400 -- 세계 1에서 이 크기를 넘기면 세계 2로 넘어갈 수 있다
-Config.WORLD2_SCALE = 40 -- 세계 2로 넘어갈 때 크기를 나누는 수
+Config.WORLD2_RADIUS = 400 -- 지금 세계에서 이 크기를 넘기면 다음 세계로 넘어갈 수 있다
+Config.WORLD2_SCALE = 40 -- 다음 세계로 넘어갈 때 크기를 나누는 수
+Config.MAX_WORLD = 4
+
+-- 세계가 열려 있는지: 1·2는 늘, 3은 특이점 1번, 4는 특이점 2번 뒤
+function Config.worldNeedSing(world: number): number
+	if world <= 2 then
+		return 0
+	end
+	return world - 2
+end
+
+function Config.worldOpen(world: number, sing: number): boolean
+	return world >= 1 and world <= Config.MAX_WORLD and sing >= Config.worldNeedSing(world)
+end
 Config.WORLD1_MAX = 700 -- 세계 1에서 커질 수 있는 최대 크기
 
 ------------------------------------------------------------------------
@@ -35,6 +48,8 @@ Config.WORLD1_MAX = 700 -- 세계 1에서 커질 수 있는 최대 크기
 Config.Growth = {
 	[1] = { k = 0.22, soft = 50 },
 	[2] = { k = 0.32, soft = 16 },
+	[3] = { k = 0.32, soft = 16 },
+	[4] = { k = 0.32, soft = 16 },
 }
 
 -- 세계 2 최대 크기: 기본 800, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
@@ -45,9 +60,9 @@ function Config.maxRadius(bigbang: number, maxLv: number, world: number?): numbe
 	return (800 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
 end
 
--- 성장 배율. info = { grow, bigbang, star, skin(스킨 능력 성장 보너스) }
+-- 성장 배율. info = { grow, bigbang, star, skin(스킨 능력 성장 보너스), extra(특이점·시련) }
 function Config.growMult(info: any): number
-	local m = (1 + 0.05 * (info.grow or 0)) * (1 + 0.1 * (info.bigbang or 0)) * (1 + (info.skin or 0))
+	local m = (1 + 0.05 * (info.grow or 0)) * (1 + 0.1 * (info.bigbang or 0)) * (1 + (info.skin or 0)) * (info.extra or 1)
 	if info.star then
 		m *= 2
 	end
@@ -113,10 +128,122 @@ end
 Config.BIGBANG_RADIUS = 350
 
 -- 받는 암흑 물질: 세계 2 크기 350에서 3개, 그 위로 크기 50마다 1개씩 더
-function Config.darkMatterReward(radius: number, bigbang: number, dmLv: number?): number
+-- 세계 3·4에서 빅뱅하면 더 많이 (세계 3 ×2.5, 세계 4 ×4), 특이점 보너스는 extra로 곱한다
+function Config.darkMatterReward(radius: number, bigbang: number, dmLv: number?, tier: number?, extra: number?): number
 	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 50)) + bigbang // 2
-	return math.floor(base * (1 + 0.2 * (dmLv or 0)))
+	local worldK = 1 + 1.5 * math.max(0, (tier or 2) - 2)
+	return math.floor(base * (1 + 0.2 * (dmLv or 0)) * worldK * (extra or 1))
 end
+
+-- 🌌 암흑 물질로 빅뱅 횟수 사기: 빅뱅 횟수가 많을수록 비싸다
+function Config.bigbangBuyCost(bigbang: number): number
+	return math.floor(8 * 1.3 ^ bigbang)
+end
+
+------------------------------------------------------------------------
+-- 🌀 특이점 (두 번째 환생)
+-- 빅뱅 횟수가 충분하면 모든 것(빅뱅 횟수·암흑 물질·빅뱅 상점·업그레이드)을 바치고 특이점에 도달한다.
+-- 남는 것: 스킨, 위성, 도감, 시련, 특이점 조각과 특이점 상점.
+-- 특이점마다 영구로 질량 ×3, 성장 +25%, 암흑 물질 +50%. 세계 3은 특이점 1번, 세계 4는 2번에 열린다.
+------------------------------------------------------------------------
+function Config.singularityNeed(sing: number): number
+	return 10 + 5 * sing
+end
+
+-- 받는 특이점 조각: 1개 + 필요한 빅뱅 횟수를 넘긴 5번마다 1개
+function Config.shardReward(bigbang: number, sing: number): number
+	return 1 + math.max(0, math.floor((bigbang - Config.singularityNeed(sing)) / 5))
+end
+
+Config.SingShop = {
+	{ id = "gravity", name = "중력 붕괴", icon = "🌀", desc = "질량 ×2", maxLevel = 10, base = 1, step = 1 },
+	{ id = "time", name = "시간 압축", icon = "⏩", desc = "성장 +15%", maxLevel = 10, base = 1, step = 1 },
+	{ id = "harvest", name = "암흑 흡수", icon = "🌑", desc = "암흑 물질 +50%", maxLevel = 5, base = 2, step = 1 },
+	{ id = "head", name = "빅뱅 출발", icon = "🚀", desc = "특이점 뒤 빅뱅 횟수 +2로 시작", maxLevel = 5, base = 2, step = 2 },
+}
+Config.SING_BY_ID = {}
+for _, b in ipairs(Config.SingShop) do
+	Config.SING_BY_ID[b.id] = b
+end
+
+function Config.singShopCost(id: string, level: number): number
+	local b = Config.SING_BY_ID[id]
+	return b.base + b.step * level
+end
+
+-- 특이점과 시련이 주는 영구 배율. info = { sing, gravity, time, harvest, trials = { [id]=true } }
+function Config.permMult(info: any): (number, number, number)
+	local sing = info.sing or 0
+	local mass = 3 ^ sing * 2 ^ (info.gravity or 0)
+	local grow = (1 + 0.25 * sing) * (1 + 0.15 * (info.time or 0))
+	local dm = (1 + 0.5 * sing) * (1 + 0.5 * (info.harvest or 0))
+	for _, t in ipairs(Config.Trials) do
+		if info.trials and info.trials[tostring(t.id)] then
+			mass *= t.mass
+			grow *= 1 + t.grow
+		end
+	end
+	return mass, grow, dm
+end
+
+------------------------------------------------------------------------
+-- ⚔ 시련: 정해진 빅뱅·특이점 횟수에 열리는 도전.
+-- 시련 안에서는 업그레이드·위성·스킨이 통하지 않는다 (모두 같은 크기, 같은 속도로 시작).
+-- 시련장의 작은 물체를 먹고 커져서, 돌아다니는 포식 블랙홀들을 모두 삼키면 이긴다.
+-- 나보다 10% 이상 큰 포식자에게 닿으면 진다. 이기면 영구 보너스.
+------------------------------------------------------------------------
+Config.TRIAL_START = 5 -- 시련에서 시작하는 크기
+Config.TRIAL_EAT = 1.1 -- 이만큼 커야 상대를 삼킨다
+Config.TRIAL_GROW = { k = 0.35, soft = 20 }
+Config.TRIAL_ARENA = { x = -60000, z = 0, size = 900, gap = 1400 }
+Config.Trials = {
+	{ id = 1, name = "시련 I · 쌍둥이 포식자", needBB = 3, needSing = 0, bosses = { 9, 13 }, time = 150, mass = 1.5, grow = 0.1, dm = 10 },
+	{ id = 2, name = "시련 II · 세 개의 소용돌이", needBB = 6, needSing = 0, bosses = { 9, 13, 19 }, time = 165, mass = 1.5, grow = 0.1, dm = 20 },
+	{ id = 3, name = "시련 III · 포식자 무리", needBB = 10, needSing = 0, bosses = { 8, 11, 15, 21 }, time = 180, mass = 1.5, grow = 0.1, dm = 30 },
+	{ id = 4, name = "시련 IV · 사건의 문턱", needBB = 5, needSing = 1, bosses = { 9, 12, 16, 22, 30 }, time = 200, mass = 2, grow = 0.15, dm = 50 },
+	{ id = 5, name = "시련 V · 블랙홀의 왕", needBB = 10, needSing = 2, bosses = { 10, 14, 18, 24, 32, 45 }, time = 240, mass = 2, grow = 0.2, dm = 80 },
+}
+Config.TRIAL_BY_ID = {}
+for _, t in ipairs(Config.Trials) do
+	Config.TRIAL_BY_ID[t.id] = t
+end
+
+function Config.trialOpen(t: any, bigbang: number, sing: number): boolean
+	return sing > t.needSing or (sing == t.needSing and bigbang >= t.needBB)
+end
+
+-- 시련장 물체 (작은 것 위주)
+Config.TRIAL_OBJECTS = {
+	{ id = "pebble", n = 40 },
+	{ id = "flower", n = 30 },
+	{ id = "duck", n = 22 },
+	{ id = "ball", n = 20 },
+	{ id = "hydrant", n = 14 },
+	{ id = "trashcan", n = 12 },
+	{ id = "bench", n = 10 },
+	{ id = "tree", n = 10 },
+	{ id = "mailbox", n = 8 },
+	{ id = "bicycle", n = 8 },
+	{ id = "car", n = 8 },
+	{ id = "bigtree", n = 6 },
+	{ id = "hut", n = 5 },
+	{ id = "truck", n = 4 },
+	{ id = "house", n = 3 },
+}
+
+------------------------------------------------------------------------
+-- ❓ 비밀 퀘스트: 아무 데도 적혀 있지 않다. 도감의 '비밀' 칸에 한 단계씩 수수께끼만 보인다.
+-- 다 풀면 비밀 스킨 '사건의 지평선'.
+------------------------------------------------------------------------
+Config.SECRET_CENTER_SECONDS = 15
+Config.Secret = {
+	{ kind = "star", goal = 10, hint = "하늘에서 떨어지는 것을 열 번 품어라", done = "☄ 별똥별 10개" },
+	{ kind = "golden", goal = 100, hint = "빛나는 것만 백 번 삼키는 자가 되어라", done = "✨ 황금 물체 100개" },
+	{ kind = "eventTop", goal = 1, hint = "떠도는 거인을 누구보다 많이 베어 물어라", done = "🌍 거대 행성 1등" },
+	{ kind = "trial", goal = 1, hint = "포식자들을 그들의 방식대로 이겨라", done = "⚔ 시련 이기기" },
+	{ kind = "goldZone", goal = 1, hint = "한 땅의 모든 빛을 모아라", done = "📖 구역 하나 황금 완성" },
+	{ kind = "still", goal = 1, hint = "모든 것이 시작된 자리 한가운데에서, 아무것도 하지 말고 기다려라", done = "🕳 로비 한가운데에서 15초" },
+}
 
 -- 빅뱅 상점: 암흑 물질로 사는 영구 업그레이드 (빅뱅해도 남는다)
 Config.BigbangShop = {
@@ -160,9 +287,12 @@ Config.DAILY_HOURS = 20
 -- need = 그 구역에 들어가는 데 필요한 크기 (문이 이 크기에서 열린다)
 -- countMult = 물체 개수 배수 (넓은 구역일수록 물체를 많이 둔다)
 ------------------------------------------------------------------------
+-- icon/tagline = 표지판과 화면, gate = 구역 문 색, decay = 하늘 빛깔
 Config.Worlds = {
-	{ id = 1, name = "지구와 우주", x = 0, massMult = 1, sky = Color3.fromRGB(150, 190, 255) },
-	{ id = 2, name = "과자 왕국", x = 30000, massMult = 40000, sky = Color3.fromRGB(255, 190, 230) },
+	{ id = 1, name = "지구와 우주", icon = "🌍", tagline = "작은 것부터 삼키고 커져라!", x = 0, massMult = 1, sky = Color3.fromRGB(150, 190, 255), gate = Color3.fromRGB(150, 90, 255), decay = Color3.fromRGB(120, 110, 160) },
+	{ id = 2, name = "과자 왕국", icon = "🍭", tagline = "훨씬 넓고, 모든 게 달콤하고, 질량은 4만 배!", x = 30000, massMult = 40000, sky = Color3.fromRGB(255, 190, 230), gate = Color3.fromRGB(255, 110, 200), decay = Color3.fromRGB(200, 120, 190) },
+	{ id = 3, name = "네온 사이버", icon = "🤖", tagline = "빛나는 기계 도시. 질량은 또 4만 배!", x = 60000, massMult = 40000 ^ 2, sky = Color3.fromRGB(90, 230, 255), gate = Color3.fromRGB(0, 230, 255), decay = Color3.fromRGB(60, 40, 140) },
+	{ id = 4, name = "심연", icon = "🌌", tagline = "빛이 사라지는 곳. 질량은 또 4만 배!", x = 90000, massMult = 40000 ^ 3, sky = Color3.fromRGB(170, 120, 255), gate = Color3.fromRGB(150, 60, 255), decay = Color3.fromRGB(40, 20, 70) },
 }
 
 Config.Zones = {
@@ -183,6 +313,24 @@ Config.Zones = {
 	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.2 },
 	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1 },
 	{ world = 2, name = "설탕 블랙홀", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(30, 10, 40), material = Enum.Material.SmoothPlastic, respawn = 10, countMult = 1 },
+	-- 세계 3 (특이점 1번 뒤): 세계 2와 같은 크기 구성, 물체는 조금 적게
+	{ world = 3, name = "네온 골목", need = 0, width = 520, length = 520, ground = Color3.fromRGB(22, 20, 40), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 1.5, neon = true },
+	{ world = 3, name = "홀로그램 시장", need = 6, width = 820, length = 720, ground = Color3.fromRGB(28, 24, 52), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 1.5, neon = true },
+	{ world = 3, name = "사이버 도심", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(18, 22, 38), material = Enum.Material.Metal, respawn = 4, countMult = 1.5, neon = true },
+	{ world = 3, name = "로봇 공장", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(40, 40, 52), material = Enum.Material.DiamondPlate, respawn = 5, countMult = 1.2, neon = true },
+	{ world = 3, name = "데이터 바다", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(10, 30, 60), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 1.2, neon = true },
+	{ world = 3, name = "궤도 정거장", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(14, 14, 30), material = Enum.Material.Metal, respawn = 6, countMult = 1, neon = true },
+	{ world = 3, name = "네온 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(10, 6, 28), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 0.8, neon = true },
+	{ world = 3, name = "특이 코어", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(6, 4, 20), material = Enum.Material.SmoothPlastic, respawn = 10, countMult = 0.8, neon = true },
+	-- 세계 4 (특이점 2번 뒤)
+	{ world = 4, name = "그림자 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(34, 26, 46), material = Enum.Material.Slate, respawn = 3, countMult = 1.5, void = true },
+	{ world = 4, name = "수정 동굴", need = 6, width = 820, length = 720, ground = Color3.fromRGB(40, 30, 70), material = Enum.Material.Glacier, respawn = 3, countMult = 1.5, void = true },
+	{ world = 4, name = "잊힌 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(44, 40, 50), material = Enum.Material.Cobblestone, respawn = 4, countMult = 1.5, void = true },
+	{ world = 4, name = "망령의 숲", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(24, 34, 30), material = Enum.Material.Grass, respawn = 5, countMult = 1.2, void = true },
+	{ world = 4, name = "공허의 바다", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(14, 10, 30), material = Enum.Material.Glass, respawn = 5, countMult = 1.2, void = true },
+	{ world = 4, name = "별의 무덤", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(16, 8, 24), material = Enum.Material.Slate, respawn = 6, countMult = 1, void = true },
+	{ world = 4, name = "사건의 지평선", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(6, 2, 12), material = Enum.Material.Slate, respawn = 8, countMult = 0.8, void = true },
+	{ world = 4, name = "심연의 핵", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(2, 0, 6), material = Enum.Material.Slate, respawn = 10, countMult = 0.8, void = true },
 }
 
 ------------------------------------------------------------------------
@@ -304,6 +452,51 @@ Config.Objects = {
 	{ id = "candygalaxy", model = "galaxy", name = "사탕 은하", zone = 15, size = 850, mass = 7600000000, count = 8 },
 	{ id = "sugarstar", model = "cakestar", name = "설탕 별", zone = 15, size = 900, mass = 9300000000, count = 6 },
 }
+
+-- 세계 3·4 물체: 세계 2 물체 44종과 같은 크기·질량·개수 (질량은 세계 배율로 4만 배씩 더 커진다).
+-- 이름·모양·빛깔만 다르다. tint = 이 색으로 물들인다, glow = 작은 조각을 네온으로
+do
+	local cyber = { Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 40, 200), Color3.fromRGB(90, 255, 120), Color3.fromRGB(150, 90, 255), Color3.fromRGB(255, 150, 30) }
+	local void = { Color3.fromRGB(110, 50, 190), Color3.fromRGB(40, 200, 190), Color3.fromRGB(200, 190, 170), Color3.fromRGB(170, 200, 255), Color3.fromRGB(190, 30, 70) }
+	local W3 = {
+		{ "n_chip", "메모리 칩", "pebble" }, { "n_bolt", "나사", "candy" }, { "n_battery", "배터리", "chocobar" }, { "n_antenna", "안테나", "lollipop" },
+		{ "n_cube", "데이터 큐브", "marshmallow" }, { "n_drone", "미니 드론", "macaron" }, { "n_charger", "충전기", "hydrant" }, { "n_ring", "네온 고리", "donut" },
+		{ "n_robot", "청소 로봇", "trashcan" }, { "n_can", "에너지 캔", "milk" }, { "n_lamp", "네온 가로등", "lamp" }, { "n_kiosk", "홀로 키오스크", "vending" },
+		{ "n_board", "호버 보드", "bicycle" }, { "n_fiber", "광섬유 나무", "cottontree" }, { "n_booth", "해킹 부스", "gingerhouse" },
+		{ "n_car", "호버카", "car" }, { "n_tram", "자기 부상 열차", "bus" }, { "n_rack", "서버 랙", "shop" }, { "n_holo", "홀로그램 분수", "fountain" },
+		{ "n_tower", "네온 빌딩", "building" }, { "n_spire", "통신탑", "tower" },
+		{ "n_mech", "거대 로봇", "crane" }, { "n_factory", "로봇 공장", "stadium" }, { "n_citadel", "데이터 성채", "jellycastle" }, { "n_blimp", "광고 비행선", "airplane" }, { "n_reactor", "핵융합로", "icemountain" },
+		{ "n_carrier", "데이터 항모", "ship" }, { "n_circuit", "회로 행성", "donutplanet" }, { "n_falls", "데이터 폭포", "chocofountain" }, { "n_metal", "금속 소행성", "asteroid" }, { "n_float", "부유 섬", "island" }, { "n_plasma", "플라즈마 화산", "volcano" },
+		{ "n_moon", "인공 달", "moon" }, { "n_mecha", "기계 행성", "planet" }, { "n_neonstar", "네온 별", "cakestar" }, { "n_sun", "인공 태양", "sun" },
+		{ "n_dyson", "다이슨 구", "macaron" }, { "n_galaxy", "네온 은하", "galaxy" }, { "n_core", "양자 핵", "pudding" }, { "n_hive", "로봇 행성", "cupcake" },
+		{ "n_armada", "우주 함대", "spacestation" }, { "n_quasar", "전자 퀘이사", "candysun" }, { "n_web", "데이터 은하", "galaxy" }, { "n_mind", "초지능 별", "cakestar" },
+	}
+	local W4 = {
+		{ "v_shard", "그림자 조각", "pebble" }, { "v_crystal", "수정 조각", "candy" }, { "v_fossil", "화석", "chocobar" }, { "v_wisp", "도깨비불", "lollipop" },
+		{ "v_egg", "공허의 알", "marshmallow" }, { "v_moth", "어둠 나방", "macaron" }, { "v_shroom", "독버섯", "flower" }, { "v_ring", "망각의 고리", "donut" },
+		{ "v_skull", "해골", "ball" }, { "v_potion", "물약", "milk" }, { "v_lantern", "유령 등불", "lamp" }, { "v_totem", "토템", "mailbox" },
+		{ "v_crow", "까마귀", "duck" }, { "v_tree", "고목", "bigtree" }, { "v_shrine", "사당", "hut" },
+		{ "v_coach", "유령 마차", "taxi" }, { "v_train", "유령 열차", "jellybus" }, { "v_ruin", "폐허", "house" }, { "v_well", "어둠 우물", "fountain" },
+		{ "v_spire", "첨탑", "chocotower" }, { "v_bell", "종탑", "lighthouse" },
+		{ "v_golem", "수정 골렘", "lollitower" }, { "v_cathedral", "대성당", "stadium" }, { "v_castle", "어둠의 성", "jellycastle" }, { "v_dragon", "뼈 용", "helicopter" }, { "v_glacier", "검은 빙산", "mountain" },
+		{ "v_ghostship", "유령선", "ship" }, { "v_moonlet", "그림자 위성", "moon" }, { "v_falls", "공허 폭포", "chocofountain" }, { "v_meteor", "운석", "asteroid" }, { "v_isle", "떠도는 섬", "island" }, { "v_volcano", "흑염 화산", "volcano" },
+		{ "v_blackmoon", "검은 달", "candymoon" }, { "v_deadworld", "죽은 행성", "planet" }, { "v_dwarf", "백색 왜성", "cakestar" }, { "v_giant", "붉은 초거성", "sun" },
+		{ "v_nebula", "암흑 성운", "galaxy" }, { "v_pulsar", "펄서", "pudding" }, { "v_magnetar", "마그네타", "macaron" }, { "v_neutron", "중성자별", "cupcake" },
+		{ "v_hole", "작은 블랙홀", "candysun" }, { "v_wormhole", "웜홀", "galaxy" }, { "v_quasar", "암흑 퀘이사", "sun" }, { "v_core", "심연의 핵", "cakestar" },
+	}
+	local w2: { any } = {}
+	for _, o in ipairs(Config.Objects) do
+		if o.zone >= 8 and o.zone <= 15 then
+			table.insert(w2, o)
+		end
+	end
+	assert(#w2 == #W3 and #w2 == #W4, "세계 3·4 물체 수가 세계 2와 다르다")
+	for i, o in ipairs(w2) do
+		local a, b = W3[i], W4[i]
+		table.insert(Config.Objects, { id = a[1], name = a[2], model = a[3], zone = o.zone + 8, size = o.size, mass = o.mass, count = o.count, tint = cyber[(i - 1) % #cyber + 1], glow = true })
+		table.insert(Config.Objects, { id = b[1], name = b[2], model = b[3], zone = o.zone + 16, size = o.size, mass = o.mass, count = o.count, tint = void[(i - 1) % #void + 1] })
+	end
+end
 Config.OBJECT_BY_ID = {}
 for _, o in ipairs(Config.Objects) do
 	Config.OBJECT_BY_ID[o.id] = o
@@ -343,6 +536,7 @@ Config.Rarities = {
 	{ name = "전설", color = Color3.fromRGB(255, 190, 50) },
 	{ name = "신화", color = Color3.fromRGB(255, 90, 180) },
 	{ name = "비밀", color = Color3.fromRGB(255, 60, 60) },
+	{ name = "특이", color = Color3.fromRGB(235, 235, 255) },
 }
 
 -- shape는 SatBuilder 모양 이름, chance는 퍼센트
@@ -468,6 +662,8 @@ Config.Skins = {
 		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +60%, 성장 +15%, 재생 30% 빨라짐", mass = 0.6, grow = 0.15, respawn = 0.7 } },
 	{ id = "godeye", tier = 6, name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
 		ability = { kind = "active", id = "eye", name = "신의 시선", desc = "거대한 눈이 열려 반지름 7배 안을 모두 흡수하고, 내 크기 1.5배까지 삼킨다 (늘: 위성 배율 +25%, 성장 +15%)", cd = 30, eye = 7, eyeLimit = 1.5, sats = 0.25, grow = 0.15 } },
+	{ id = "horizon", tier = 7, name = "사건의 지평선", a = Color3.fromRGB(255, 255, 255), b = Color3.fromRGB(255, 190, 90), unlock = "secret", value = 0, effect = "horizon",
+		ability = { kind = "active", id = "collapse", name = "중력 붕괴", desc = "빛조차 빠져나오지 못한다: 반지름 9배 안의 내 크기 1.3배까지 한꺼번에 삼키고, 8초 동안 흡수 범위 2배 (늘: 질량 +80%, 성장 +20%, 위성 배율 +30%)", cd = 40, dur = 8, eye = 9, eyeLimit = 1.3, vortex = 2, mass = 0.8, grow = 0.2, sats = 0.3 } },
 }
 Config.SKIN_BY_ID = {}
 for i, s in ipairs(Config.Skins) do
@@ -547,6 +743,7 @@ function Config.totalMult(info: any): number
 		m *= 2
 	end
 	m *= info.dex or 1
+	m *= info.perm or 1
 	return m
 end
 
@@ -578,6 +775,17 @@ function Config.starInterval(starLv: number, skinMult: number?): number
 end
 
 -- 세계에 있는 구역 번호들
+-- 바닥 장식을 띄우는 배수 (넓은 구역일수록 카메라가 멀어서 더 띄운다)
+function Config.decorScale(zone: any): number
+	return math.max(1, zone.width / 1500)
+end
+
+-- 블랙홀 원반을 바닥 장식 위로 올리는 높이
+function Config.holeLift(pos: Vector3): number
+	local zone = Config.Zones[Config.zoneAt(pos)]
+	return zone and 0.16 * Config.decorScale(zone) + 0.02 or 0.02
+end
+
 function Config.zonesOf(world: number): { number }
 	local list = {}
 	for i, z in ipairs(Config.Zones) do

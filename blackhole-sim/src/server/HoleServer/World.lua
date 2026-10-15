@@ -133,13 +133,15 @@ end
 -- 구역별 바닥 꾸밈 (모두 밟히지 않는 장식)
 local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, wx: number)
 	local name = zone.name
+	-- 넓은 구역은 카메라가 멀어서, 바닥 장식을 조금 더 띄워야 바닥과 겹쳐 깜빡이지 않는다
+	local m = Config.decorScale(zone)
 	if name == "도시" or name == "대도시" or name == "과자 마을" or name == "케이크 도시" then
 		local candy = zone.world == 2
 		local roadCol = candy and Color3.fromRGB(110, 60, 40) or Color3.fromRGB(45, 45, 50)
 		local lineCol = candy and Color3.fromRGB(255, 240, 250) or Color3.fromRGB(240, 230, 120)
-		tiled({ Name = "Road", Size = Vector3.new(zone.width * 0.18, 0.15, zone.length), Position = center + Vector3.new(0, 0.08, 0), Color = roadCol, Material = candy and Enum.Material.SmoothPlastic or Enum.Material.Asphalt, CanCollide = false, Parent = folder })
+		tiled({ Name = "Road", Size = Vector3.new(zone.width * 0.18, 0.15, zone.length), Position = center + Vector3.new(0, 0.08 * m, 0), Color = roadCol, Material = candy and Enum.Material.SmoothPlastic or Enum.Material.Asphalt, CanCollide = false, Parent = folder })
 		for k = 0, 9 do
-			part({ Name = "Line", Size = Vector3.new(2, 0.16, zone.length / 20), Position = Vector3.new(wx, 0.1, z0 + zone.length * (k + 0.5) / 10), Color = lineCol, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+			part({ Name = "Line", Size = Vector3.new(2, 0.16, zone.length / 20), Position = Vector3.new(wx, 0.1 * m, z0 + zone.length * (k + 0.5) / 10), Color = lineCol, Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
 		end
 	elseif name == "바다와 산" or name == "초콜릿 강" then
 		local col = name == "초콜릿 강" and Color3.fromRGB(90, 45, 25) or Color3.fromRGB(50, 120, 200)
@@ -150,7 +152,7 @@ local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, 
 				Name = "Water",
 				Shape = Enum.PartType.Cylinder,
 				Size = Vector3.new(0.3, d, d),
-				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.3, 0.12, math.sin(a) * zone.length * 0.3)) * CFrame.Angles(0, 0, math.rad(90)),
+				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.3, 0.12 * m, math.sin(a) * zone.length * 0.3)) * CFrame.Angles(0, 0, math.rad(90)),
 				Color = col,
 				Material = Enum.Material.Glass,
 				Transparency = 0.15,
@@ -165,7 +167,7 @@ local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, 
 				Name = "JellyPool",
 				Shape = Enum.PartType.Cylinder,
 				Size = Vector3.new(0.3, 30 + k * 4, 30 + k * 4),
-				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.33, 0.12, math.sin(a) * zone.length * 0.33)) * CFrame.Angles(0, 0, math.rad(90)),
+				CFrame = CFrame.new(center + Vector3.new(math.cos(a) * zone.width * 0.33, 0.12 * m, math.sin(a) * zone.length * 0.33)) * CFrame.Angles(0, 0, math.rad(90)),
 				Color = Color3.fromHSV(k / 10, 0.45, 1),
 				Material = Enum.Material.Glass,
 				Transparency = 0.2,
@@ -175,15 +177,44 @@ local function decorate(folder: Folder, zone: any, center: Vector3, z0: number, 
 		end
 	elseif name == "아이스크림 산맥" then
 		for k = -4, 4 do
-			tiled({ Name = "Syrup", Size = Vector3.new(zone.width / 20, 0.14, zone.length), Position = center + Vector3.new(k * zone.width / 9, 0.07, 0), Color = Color3.fromHSV((k + 4) / 9, 0.35, 1), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
+			tiled({ Name = "Syrup", Size = Vector3.new(zone.width / 20, 0.14, zone.length), Position = center + Vector3.new(k * zone.width / 9, 0.07 * m, 0), Color = Color3.fromHSV((k + 4) / 9, 0.35, 1), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
 		end
+	elseif zone.neon then
+		-- 네온 사이버: 바닥에 빛나는 회로 격자
+		local cols = { Color3.fromRGB(0, 230, 255), Color3.fromRGB(255, 40, 200), Color3.fromRGB(90, 255, 120) }
+		for k = -5, 5 do
+			tiled({ Name = "Circuit", Size = Vector3.new(2.5 * m, 0.12, zone.length), Position = center + Vector3.new(k * zone.width / 11, 0.06 * m, 0), Color = cols[(k + 6) % 3 + 1], Material = Enum.Material.Neon, Transparency = 0.35, CanCollide = false, Parent = folder })
+		end
+		for k = 1, 9 do
+			part({ Name = "CircuitX", Size = Vector3.new(math.min(zone.width, LIMIT), 0.12, 2.5 * m), Position = Vector3.new(wx, 0.07 * m, z0 + zone.length * k / 10), Color = cols[k % 3 + 1], Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = folder })
+		end
+		if zone.need >= 140 then
+			starDust(folder, center, zone, Color3.fromRGB(120, 240, 255))
+		end
+	elseif zone.void then
+		-- 심연: 바닥의 갈라진 빛과 떠다니는 어둠 가루
+		for k = 0, 11 do
+			local a = k * 0.55
+			local len = math.min(LIMIT, zone.length * 0.35)
+			part({
+				Name = "Rift",
+				Size = Vector3.new(3 * m, 0.12, len),
+				CFrame = CFrame.new(center + Vector3.new(math.cos(a * 1.7) * zone.width * 0.3, 0.06 * m, math.sin(a * 2.3) * zone.length * 0.3)) * CFrame.Angles(0, a, 0),
+				Color = k % 2 == 0 and Color3.fromRGB(150, 60, 255) or Color3.fromRGB(40, 220, 200),
+				Material = Enum.Material.Neon,
+				Transparency = 0.3,
+				CanCollide = false,
+				Parent = folder,
+			})
+		end
+		starDust(folder, center, zone, Color3.fromRGB(150, 90, 255))
 	elseif name == "우주" or name == "사탕 우주" or name == "은하수" or name == "디저트 은하" or name == "설탕 블랙홀" then
 		local col = zone.world == 2 and Color3.fromRGB(255, 120, 220) or Color3.fromRGB(110, 80, 255)
 		if name == "은하수" or name == "설탕 블랙홀" then
 			col = Color3.fromRGB(80, 200, 255)
 		end
 		for k = -6, 6 do
-			tiled({ Name = "Grid", Size = Vector3.new(3, 0.12, zone.length), Position = center + Vector3.new(k * zone.width / 13, 0.06, 0), Color = col, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = folder })
+			tiled({ Name = "Grid", Size = Vector3.new(3, 0.12, zone.length), Position = center + Vector3.new(k * zone.width / 13, 0.06 * m, 0), Color = col, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = folder })
 		end
 		starDust(folder, center, zone, zone.world == 2 and Color3.fromRGB(255, 200, 240) or Color3.fromRGB(200, 210, 255))
 	end
@@ -193,7 +224,7 @@ end
 export type Portal = { pos: Vector3, to: number }
 
 local function buildPortal(folder: Folder, ppos: Vector3, to: number, facing: number)
-	local ringCol = to == 0 and Color3.fromRGB(120, 255, 200) or (to == 2 and Color3.fromRGB(255, 120, 210) or Color3.fromRGB(140, 110, 255))
+	local ringCol = to == 0 and Color3.fromRGB(120, 255, 200) or Config.Worlds[to].gate
 	local rot = CFrame.Angles(0, facing, 0)
 	part({ Name = "PortalBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 24, 24), CFrame = CFrame.new(ppos + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = ringCol, Material = Enum.Material.Neon, Transparency = 0.35, CanCollide = false, Parent = folder })
 	for k = 0, 15 do
@@ -217,7 +248,13 @@ local function buildPortal(folder: Folder, ppos: Vector3, to: number, facing: nu
 	else
 		local target = Config.Worlds[to]
 		title = string.format("🌀 세계 %d · %s", to, target.name)
-		lock = to == 1 and "한 판의 시작" or string.format("세계 1에서 크기 %d 넘기면", Config.WORLD2_RADIUS)
+		if to == 1 then
+			lock = "한 판의 시작"
+		elseif Config.worldNeedSing(to) > 0 then
+			lock = string.format("🌀 특이점 %d번 · 세계 %d에서 크기 %d", Config.worldNeedSing(to), to - 1, Config.WORLD2_RADIUS)
+		else
+			lock = string.format("세계 %d에서 크기 %d 넘기면", to - 1, Config.WORLD2_RADIUS)
+		end
 	end
 	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
 		signText(sign, face, {
@@ -256,7 +293,7 @@ function World.buildZones(): ({ BasePart }, { Portal })
 			tiled({
 				Name = "Edge",
 				Size = Vector3.new(8, 0.2, zone.length),
-				Position = center + Vector3.new(x * (zone.width / 2 - 4), 0.1, 0),
+				Position = center + Vector3.new(x * (zone.width / 2 - 4), 0.1 * Config.decorScale(zone), 0),
 				Color = zone.ground:Lerp(Color3.new(1, 1, 1), 0.35),
 				Material = Enum.Material.Concrete,
 				CanCollide = false,
@@ -289,7 +326,7 @@ function World.buildZones(): ({ BasePart }, { Portal })
 				Name = "Gate",
 				Size = Vector3.new(narrow, height, 12),
 				Position = Vector3.new(wx, height / 2, zEnd),
-				Color = zone.world == 2 and Color3.fromRGB(255, 110, 200) or Color3.fromRGB(150, 90, 255),
+				Color = Config.Worlds[zone.world].gate,
 				Material = Enum.Material.ForceField,
 				Transparency = 0.2,
 				Parent = folder,
@@ -322,11 +359,11 @@ function World.buildZones(): ({ BasePart }, { Portal })
 		local wx = world.x
 		local first = Config.zonesOf(wi)[1]
 		tiled({ Name = "StartWall", Size = Vector3.new(Config.Zones[first].width + WALL * 2, 1200, WALL), Position = Vector3.new(wx, 600, -WALL / 2), Transparency = 1, Parent = folder })
-		part({ Name = "WorldSpawn" .. wi, Size = Vector3.new(16, 1, 16), Position = Vector3.new(wx, 0.5, 22), Color = wi == 2 and Color3.fromRGB(255, 120, 200) or Color3.fromRGB(120, 70, 220), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
+		part({ Name = "WorldSpawn" .. wi, Size = Vector3.new(16, 1, 16), Position = Vector3.new(wx, 0.5, 22), Color = world.gate, Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = folder })
 		local title = part({ Name = "TitleSign", Size = Vector3.new(50, 14, 1), Position = Vector3.new(wx, 14, 6), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
 		signText(title, Enum.NormalId.Back, {
-			{ wi == 1 and ("🌍 세계 1 · " .. world.name) or ("🍭 세계 2 · " .. world.name), wi == 1 and Color3.fromRGB(210, 170, 255) or Color3.fromRGB(255, 170, 220), 0.6 },
-			{ wi == 1 and "작은 것부터 삼키고 커져라!" or "훨씬 넓고, 모든 게 달콤하고, 질량은 5배!", Color3.fromRGB(255, 255, 255), 0.4 },
+			{ string.format("%s 세계 %d · %s", world.icon, wi, world.name), world.sky:Lerp(Color3.new(1, 1, 1), 0.3), 0.6 },
+			{ world.tagline, Color3.fromRGB(255, 255, 255), 0.4 },
 		})
 		local ppos = Vector3.new(wx, 0, 0) + World.PORTAL_OFFSET
 		buildPortal(folder, ppos, 0, 0)
@@ -346,6 +383,8 @@ export type Lobby = {
 	store: ProximityPrompt,
 	skins: ProximityPrompt,
 	daily: ProximityPrompt,
+	trial: ProximityPrompt,
+	sing: ProximityPrompt,
 	board: { TextLabel },
 }
 
@@ -464,13 +503,27 @@ function World.buildLobby(): Lobby
 		rows[k] = l
 	end
 
-	-- 세계로 가는 문 (서쪽 1, 동쪽 2)
+	-- 세계로 가는 문 (서쪽 1, 동쪽 2, 북서 3, 북동 4)
 	local portals = {}
-	for _, info in ipairs({ { -1, 1 }, { 1, 2 } }) do
-		local ppos = at(info[1] * 195, 0, 0)
-		buildPortal(folder, ppos, info[2], math.rad(90))
-		table.insert(portals, { pos = ppos, to = info[2] })
+	for _, info in ipairs({ { -195, 0, 1, 90 }, { 195, 0, 2, 90 }, { -165, 95, 3, 60 }, { 165, 95, 4, 120 } }) do
+		local ppos = at(info[1], 0, info[2])
+		buildPortal(folder, ppos, info[3], math.rad(info[4]))
+		table.insert(portals, { pos = ppos, to = info[3] })
 	end
+
+	-- ⚔ 시련의 문 (남서)과 🌀 특이점 제단 (남동)
+	local trialStand = part({ Name = "TrialGate", Size = Vector3.new(14, 6, 14), Position = at(-70, 3, -110), Color = Color3.fromRGB(150, 30, 40), Material = Enum.Material.Basalt, CanCollide = false, Parent = folder })
+	for k = 0, 1 do
+		part({ Name = "TrialPillar", Size = Vector3.new(3, 26, 3), Position = at(-78 + k * 16, 13, -110), Color = Color3.fromRGB(80, 20, 30), Material = Enum.Material.Basalt, CanCollide = false, Parent = folder })
+	end
+	part({ Name = "TrialFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(6, 6, 6), Position = at(-70, 26, -110), Color = Color3.fromRGB(255, 70, 50), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+	local trialSign = part({ Name = "TrialSign", Size = Vector3.new(22, 6, 1), CFrame = CFrame.lookAt(at(-70, 33, -110), at(0, 33, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	signText(trialSign, Enum.NormalId.Front, { { "⚔ 시련의 문", Color3.fromRGB(255, 140, 120), 0.6 }, { "포식자를 삼켜라", Color3.fromRGB(255, 255, 255), 0.4 } })
+	local altar = part({ Name = "SingAltar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 16, 16), CFrame = CFrame.new(at(70, 2, -110)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(30, 20, 60), Material = Enum.Material.Marble, CanCollide = false, Parent = folder })
+	local orb = part({ Name = "SingOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(8, 8, 8), Position = at(70, 14, -110), Color = Color3.fromRGB(10, 5, 20), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = folder })
+	part({ Name = "SingRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 14, 14), CFrame = CFrame.new(orb.Position) * CFrame.Angles(0, 0, math.rad(80)), Color = Color3.fromRGB(235, 235, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = folder })
+	local singSign = part({ Name = "SingSign", Size = Vector3.new(22, 6, 1), CFrame = CFrame.lookAt(at(70, 26, -110), at(0, 26, 0)), Color = Color3.fromRGB(20, 12, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = folder })
+	signText(singSign, Enum.NormalId.Front, { { "🌀 특이점 제단", Color3.fromRGB(235, 235, 255), 0.6 }, { "빅뱅을 바쳐 더 큰 힘을", Color3.fromRGB(255, 255, 255), 0.4 } })
 
 	return {
 		spawn = at(0, 5, -130),
@@ -479,8 +532,33 @@ function World.buildLobby(): Lobby
 		store = prompt(kiosk, "상점 열기", "💎 상점", "Store"),
 		skins = prompt(skinStand, "스킨 보기", "🎨 스킨", "Skins"),
 		daily = prompt(chest, "보상 받기", "🎁 매일 보상", "Daily"),
+		trial = prompt(trialStand, "시련 보기", "⚔ 시련", "Trial"),
+		sing = prompt(altar, "특이점 보기", "🌀 특이점", "Sing"),
 		board = rows,
 	}
+end
+
+------------------------------------------------------------------------
+-- ⚔ 시련장: 사방이 막힌 네모난 경기장 여러 개 (한 사람씩)
+------------------------------------------------------------------------
+function World.buildTrialArenas(count: number)
+	local folder = Instance.new("Folder")
+	folder.Name = "TrialArenas"
+	folder.Parent = workspace
+	local A = Config.TRIAL_ARENA
+	for slot = 1, count do
+		local c = Vector3.new(A.x + (slot - 1) * A.gap, 0, A.z)
+		tiled({ Name = "TrialFloor", Size = Vector3.new(A.size, 4, A.size), Position = c - Vector3.new(0, 2, 0), Color = Color3.fromRGB(40, 22, 30), Material = Enum.Material.Basalt, Parent = folder })
+		for k = -4, 4 do
+			part({ Name = "TrialLine", Size = Vector3.new(2, 0.12, A.size), Position = c + Vector3.new(k * A.size / 9, 0.08, 0), Color = Color3.fromRGB(255, 70, 60), Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = folder })
+		end
+		for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+			local size = d[1] ~= 0 and Vector3.new(WALL, 400, A.size + WALL * 2) or Vector3.new(A.size + WALL * 2, 400, WALL)
+			part({ Name = "TrialWall", Size = size, Position = c + Vector3.new(d[1] * (A.size / 2 + WALL / 2), 200, d[2] * (A.size / 2 + WALL / 2)), Transparency = 1, Parent = folder })
+			local glow = d[1] ~= 0 and Vector3.new(1, 8, A.size) or Vector3.new(A.size, 8, 1)
+			part({ Name = "TrialEdge", Size = glow, Position = c + Vector3.new(d[1] * A.size / 2, 4, d[2] * A.size / 2), Color = Color3.fromRGB(255, 60, 60), Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = folder })
+		end
+	end
 end
 
 export type ObjectRec = {
@@ -550,6 +628,17 @@ function World.placeObjects(): ({ ObjectRec }, Folder)
 					local base = CFrame.new(pos) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
 					local model = Props.build(def.model or def.id, def.size, base, zi * 100000 + n * 131 + #list)
 					model.Name = def.id
+					-- 세계 3·4 물체: 같은 모양을 그 세계 빛깔로 물들인다
+					if def.tint then
+						for _, d in ipairs(model:GetDescendants()) do
+							if d:IsA("BasePart") then
+								d.Color = d.Color:Lerp(def.tint, 0.6)
+								if def.glow and d.Size.Magnitude < def.size * 0.7 then
+									d.Material = Enum.Material.Neon
+								end
+							end
+						end
+					end
 					model:SetAttribute("Size", def.size)
 					model:SetAttribute("Mass", def.mass)
 					model:SetAttribute("Label", def.name)
