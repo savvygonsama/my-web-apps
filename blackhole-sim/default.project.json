@@ -1,0 +1,36 @@
+{
+  "name": "BlackHoleSim",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$properties": {
+        "Gravity": 196.2
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    },
+    "ReplicatedStorage": {
+      "Config": {
+        "$path": "src/shared/Config.lua"
+      },
+      "Props": {
+        "$path": "src/shared/Props.lua"
+      }
+    },
+    "ServerScriptService": {
+      "HoleServer": {
+        "$path": "src/server/HoleServer"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "HoleClient": {
+          "$path": "src/client/HoleClient"
+        }
+      }
+    }
+  }
+}
