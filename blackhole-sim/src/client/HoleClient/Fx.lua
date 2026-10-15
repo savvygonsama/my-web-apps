@@ -13,6 +13,7 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Props = require(ReplicatedStorage:WaitForChild("Props"))
 local SatBuilder = require(ReplicatedStorage:WaitForChild("SatBuilder"))
 
 local Fx = {}
@@ -119,16 +120,33 @@ type Hole = {
 	extras: { { part: Part, kind: string, a: number, k: number } },
 	sats: { { model: Model, a: number, size: number } },
 	satKey: string,
+	tier: number,
+	clones: { Hole }?, -- 프리즘 분신
+	vortex: { Part }?, -- 은하 소용돌이
+	puffAt: number, -- 성운 꼬리 다음 시각
 }
 
 local holes: { [Model]: Hole } = {}
 
-local function destroyHole(h: Hole)
+local destroyHole: (Hole) -> ()
+function destroyHole(h: Hole)
 	for _, p in ipairs(h.parts) do
 		p:Destroy()
 	end
 	for _, sat in ipairs(h.sats) do
 		sat.model:Destroy()
+	end
+	if h.clones then
+		for _, c in ipairs(h.clones) do
+			destroyHole(c)
+		end
+		h.clones = nil
+	end
+	if h.vortex then
+		for _, p in ipairs(h.vortex) do
+			p:Destroy()
+		end
+		h.vortex = nil
 	end
 end
 
@@ -285,15 +303,77 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 			table.insert(extras, { part = p, kind = "glint", a = i / 8 * math.pi * 2, k = i })
 		end
 	elseif effect == "eye" then
-		local iris = add(fxPart(Vector3.new(0.1, d * 0.5, d * 0.5), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder))
-		local pupil = add(fxPart(Vector3.new(0.12, d * 0.22, d * 0.22), BLACK, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-		local shine = add(fxPart(Vector3.new(0.13, d * 0.07, d * 0.07), Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Cylinder))
+		-- 신의 눈: 구멍 자리에 커다란 눈. 흰자, 홍채, 동공이 움직이는 쪽을 보고, 가끔 깜빡인다
+		local sclera = add(disc(d * 0.86, 0.17, Color3.fromRGB(255, 250, 240), Enum.Material.SmoothPlastic))
+		local iris = add(disc(d * 0.44, 0.18, skin.a, Enum.Material.Neon))
+		local irisRing = add(disc(d * 0.5, 0.175, skin.b, Enum.Material.Neon))
+		local pupil = add(disc(d * 0.2, 0.19, BLACK, Enum.Material.SmoothPlastic))
+		local shine = add(disc(d * 0.07, 0.2, Color3.new(1, 1, 1), Enum.Material.Neon))
+		local lid = add(disc(d * 0.9, 0.21, Color3.fromRGB(60, 25, 20), Enum.Material.SmoothPlastic, 1))
+		table.insert(extras, { part = sclera, kind = "sclera", a = 0, k = 0 })
+		table.insert(extras, { part = irisRing, kind = "iris", a = 0, k = 0 })
 		table.insert(extras, { part = iris, kind = "iris", a = 0, k = 0 })
 		table.insert(extras, { part = pupil, kind = "pupil", a = 0, k = 0 })
 		table.insert(extras, { part = shine, kind = "shine", a = 0, k = 0 })
-		for i = 0, 9 do
-			local p = add(fxPart(Vector3.new(small * 0.8, 0.1, r * 0.35), skin.b, Enum.Material.Neon, nil, 0.2))
-			table.insert(extras, { part = p, kind = "ray", a = i / 10 * math.pi * 2, k = i })
+		table.insert(extras, { part = lid, kind = "lid", a = 0, k = 0 })
+		for i = 0, 15 do
+			local p = add(fxPart(Vector3.new(small * 0.9, 0.1, r * 0.5), i % 2 == 0 and skin.a or skin.b, Enum.Material.Neon, nil, 0.15))
+			table.insert(extras, { part = p, kind = "ray", a = i / 16 * math.pi * 2, k = i })
+		end
+		-- 둘레를 도는 황금 세모 셋
+		for i = 0, 2 do
+			local p = add(fxPart(Vector3.new(small * 3, small * 0.6, small * 3), Color3.fromRGB(255, 215, 90), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "glint", a = i / 3 * math.pi * 2, k = i })
+		end
+	elseif effect == "quasar" then
+		-- 푸른 퀘이사: 위아래로 뿜는 빛 기둥 두 개와 기울어진 원반
+		for _, sgn in ipairs({ 1, -1 }) do
+			local jet = add(fxPart(Vector3.new(math.min(2000, r * 4), small * 1.6, small * 1.6), skin.b, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2))
+			table.insert(extras, { part = jet, kind = "jet", a = sgn, k = 0 })
+		end
+		local halo = add(disc(d * 1.4, 0.1, skin.a, Enum.Material.Neon, 0.6))
+		table.insert(extras, { part = halo, kind = "halo", a = 0, k = 0 })
+	elseif effect == "giant" then
+		-- 붉은 거성: 숨 쉬듯 부푸는 붉은 코로나와 불티
+		local corona = add(disc(d * 1.4, 0.08, skin.a, Enum.Material.Neon, 0.6))
+		table.insert(extras, { part = corona, kind = "corona", a = d * 1.4, k = 0 })
+		emitter(add, r, {
+			Rate = 18,
+			Lifetime = NumberRange.new(0.8, 1.6),
+			Speed = NumberRange.new(1, 3 + r * 0.4),
+			Size = seq(math.max(0.25, r * 0.07), 0),
+			Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(255, 70, 40)),
+		})
+	elseif effect == "nebula" then
+		-- 초록 성운: 둘레를 천천히 도는 커다란 가스 구름
+		for i = 0, 6 do
+			local col = skin.a:Lerp(skin.b, i / 6)
+			local p = add(fxPart(Vector3.new(1, 1, 1) * math.min(2000, r * (0.7 + (i % 3) * 0.15)), col, Enum.Material.Neon, Enum.PartType.Ball, 0.78))
+			table.insert(extras, { part = p, kind = "gas", a = i / 7 * math.pi * 2, k = i })
+		end
+	elseif effect == "vip" then
+		-- 황금 VIP: 금빛 반짝이와 떠 있는 왕관
+		for i = 0, 7 do
+			local p = add(fxPart(Vector3.new(small * 1.4, small * 1.4, small * 1.4), Color3.fromRGB(255, 220, 90), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "glint", a = i / 8 * math.pi * 2, k = i })
+		end
+		local band = add(fxPart(Vector3.new(small * 1.2, r * 0.6, r * 0.6), Color3.fromRGB(255, 200, 60), Enum.Material.Foil, Enum.PartType.Cylinder))
+		table.insert(extras, { part = band, kind = "crownBand", a = 0, k = 0 })
+		for i = 0, 4 do
+			local p = add(fxPart(Vector3.new(small * 1.2, r * 0.25, small * 1.2), Color3.fromRGB(255, 215, 80), Enum.Material.Foil))
+			table.insert(extras, { part = p, kind = "crownSpike", a = i / 5 * math.pi * 2, k = i })
+			local gem = add(fxPart(Vector3.new(1, 1, 1) * small * 1.2, Color3.fromHSV(i / 5, 0.7, 1), Enum.Material.Neon, Enum.PartType.Ball))
+			table.insert(extras, { part = gem, kind = "crownGem", a = i / 5 * math.pi * 2, k = i })
+		end
+	end
+
+	-- 높은 등급일수록 둘레에 등급 색 보석 고리가 더 촘촘하다 (전설 이상)
+	local tier = skin.tier or 1
+	if tier >= 4 and not lite then
+		local rc = Config.Rarities[tier] and Config.Rarities[tier].color or skin.a
+		for i = 0, (tier - 3) * 8 - 1 do
+			local p = add(fxPart(Vector3.new(1, 1, 1) * small * 0.9, rc, Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "gem", a = i / ((tier - 3) * 8) * math.pi * 2, k = i })
 		end
 	end
 
@@ -323,6 +403,10 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		extras = extras,
 		sats = {},
 		satKey = "",
+		tier = tier,
+		clones = nil,
+		vortex = nil,
+		puffAt = 0,
 	}
 end
 
@@ -343,14 +427,22 @@ local function updateHole(h: Hole, t: number, dt: number)
 	-- 먹어서 커질 때 부드럽게 커지고, 삼킬 때마다 잠깐 꿀꺽 부푼다
 	h.radius += (h.target - h.radius) * math.min(1, dt * 6)
 	h.pulse *= math.exp(-dt * 9)
-	local scaleK = h.radius / h.buildR * (1 + h.pulse)
+	-- 적색 팽창 중이면 크게
+	local swell = 1
+	if h.char then
+		local sw = h.char:GetAttribute("Swell")
+		if type(sw) == "number" then
+			swell = sw
+		end
+	end
+	local scaleK = h.radius / h.buildR * (1 + h.pulse) * swell
 	if math.abs(scaleK - h.lastK) > 0.002 then
 		h.lastK = scaleK
 		for i, p in ipairs({ h.rim, h.disk, h.void, h.core, h.aura }) do
 			setDisc(p, h.baseD[i] * scaleK)
 		end
 	end
-	local r = h.radius
+	local r = h.radius * swell
 	local base = CFrame.new(center)
 	h.rim.CFrame = base * CFrame.new(0, 0.04, 0)
 	h.disk.CFrame = base * CFrame.new(0, 0.06, 0)
@@ -396,15 +488,50 @@ local function updateHole(h: Hole, t: number, dt: number)
 			local ang = e.a + t * 0.9
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.3, r * 0.25 + math.sin(t * 2 + e.k) * r * 0.1, math.sin(ang) * r * 1.3)) * CFrame.Angles(t * 2, t * 3, math.rad(45))
 			p.Transparency = (math.sin(t * 6 + e.k * 2) + 1) * 0.4
+		elseif e.kind == "sclera" then
+			p.CFrame = base * CFrame.new(0, 0.12, 0)
+			setDisc(p, r * 2 * 0.86)
 		elseif e.kind == "iris" or e.kind == "pupil" or e.kind == "shine" then
 			-- 눈동자가 움직이는 쪽을 바라본다
 			local root = h.char and h.char:FindFirstChild("HumanoidRootPart")
 			local vel = (root and root:IsA("BasePart")) and root.AssemblyLinearVelocity or Vector3.zero
 			local look = Vector3.new(vel.X, 0, vel.Z)
-			local off = look.Magnitude > 1 and look.Unit * r * 0.18 or Vector3.new(math.sin(t * 0.7), 0, math.cos(t * 0.5)) * r * 0.08
-			local y = e.kind == "iris" and 0.13 or (e.kind == "pupil" and 0.15 or 0.17)
-			local extra = e.kind == "iris" and off * 0.5 or (e.kind == "pupil" and off or off + Vector3.new(r * 0.06, 0, -r * 0.06))
-			p.CFrame = CFrame.new(center + extra + Vector3.new(0, y, 0)) * FLAT
+			local off = look.Magnitude > 1 and look.Unit * r * 0.2 or Vector3.new(math.sin(t * 0.7), 0, math.cos(t * 0.5)) * r * 0.1
+			local y = e.kind == "iris" and 0.135 or (e.kind == "pupil" and 0.15 or 0.165)
+			local extra = e.kind == "iris" and off * 0.6 or (e.kind == "pupil" and off * 0.75 or off * 0.75 + Vector3.new(r * 0.07, 0, -r * 0.07))
+			p.CFrame = CFrame.new(center + extra + Vector3.new(0, y, 0))
+			-- 동공은 스킬을 쓰면 크게 열린다
+			if e.kind == "pupil" then
+				setDisc(p, r * 2 * (h.skillOn and 0.32 or 0.2))
+			end
+		elseif e.kind == "lid" then
+			-- 4초마다 한 번 깜빡
+			local blink = (t + e.k) % 4 < 0.14
+			p.CFrame = base * CFrame.new(0, 0.18, 0)
+			p.Transparency = blink and 0 or 1
+		elseif e.kind == "jet" then
+			local len = math.min(2000, r * (3.5 + math.sin(t * 8) * 0.4))
+			p.Size = Vector3.new(len, p.Size.Y, p.Size.Z)
+			p.CFrame = CFrame.new(center + Vector3.new(0, e.a * len / 2 + 0.3, 0)) * FLAT
+			p.Transparency = 0.15 + math.abs(math.sin(t * 12)) * 0.25
+		elseif e.kind == "corona" then
+			setDisc(p, r * 2 * (1.35 + math.sin(t * 2.2) * 0.1))
+			p.CFrame = base * CFrame.new(0, 0.03, 0)
+			p.Transparency = 0.55 + math.sin(t * 3) * 0.1
+		elseif e.kind == "gas" then
+			local ang = e.a + t * 0.25
+			local rad = r * (1.1 + math.sin(t * 0.6 + e.k) * 0.12)
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, r * 0.1, math.sin(ang) * rad))
+		elseif e.kind == "crownBand" then
+			p.CFrame = CFrame.new(center + Vector3.new(0, r * 0.75 + math.sin(t * 2) * r * 0.05, 0)) * CFrame.Angles(0, t * 0.8, 0) * FLAT
+		elseif e.kind == "crownSpike" or e.kind == "crownGem" then
+			local ang = e.a + t * 0.8
+			local h0 = r * 0.75 + math.sin(t * 2) * r * 0.05
+			local y = e.kind == "crownSpike" and h0 + r * 0.14 or h0 + r * 0.28
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 0.3, y, math.sin(ang) * r * 0.3))
+		elseif e.kind == "gem" then
+			local ang = e.a - t * 0.5
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.55, r * 0.05 + math.sin(t * 3 + e.k) * r * 0.04, math.sin(ang) * r * 1.55)) * CFrame.Angles(t, t * 2, 0)
 		elseif e.kind == "ray" then
 			local ang = e.a + t * 0.25
 			local len = 1 + math.sin(t * 3 + e.k) * 0.2
@@ -441,6 +568,143 @@ local function updateHole(h: Hole, t: number, dt: number)
 		local rad = r * 1.2 * (1 - k)
 		m.part.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, 0.3 + (1 - k) * r * 0.2, math.sin(ang) * rad))
 		m.part.Transparency = k * 0.8
+	end
+	if h.char then
+		Fx.skillVisuals(h, center, r, t, dt)
+	end
+end
+
+------------------------------------------------------------------------
+-- 스킬과 능력 모습 (모든 화면에서 보인다: 캐릭터 속성 SkillId를 보고 그린다)
+------------------------------------------------------------------------
+local function puff(pos: Vector3, size: number, color: Color3, life: number)
+	local p = fxPart(Vector3.new(1, 1, 1) * math.min(2000, size), color, Enum.Material.Neon, Enum.PartType.Ball, 0.6)
+	p.CFrame = CFrame.new(pos)
+	TweenService:Create(p, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Transparency = 1, Size = p.Size * 1.6 }):Play()
+	Debris:AddItem(p, life + 0.05)
+end
+
+function Fx.skillVisuals(h: Hole, center: Vector3, r: number, t: number, dt: number)
+	local char = h.char :: Model
+	local id = char:GetAttribute("SkillId")
+	-- 프리즘 분신: 무지개 분신 둘 (서버와 같은 궤도)
+	if id == "prism" then
+		if not h.clones then
+			h.clones = {}
+			for _ = 1, 2 do
+				local c = buildHole(nil, h.radius * 0.7, h.skin, true)
+				table.insert(h.clones or {}, c)
+			end
+		end
+		local clones = h.clones or {}
+		for k, c in ipairs(clones) do
+			local a = t * 2.2 + (k - 1) * math.pi
+			c.center = center + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 2.5
+			c.target = r * 0.7
+			updateHole(c, t, dt)
+			c.rim.Color = Color3.fromHSV((t * 0.5 + k * 0.5) % 1, 0.8, 1)
+		end
+	elseif h.clones then
+		for _, c in ipairs(h.clones) do
+			Fx.burst((c.center or center) + Vector3.new(0, 1, 0), Color3.fromHSV(math.random(), 0.7, 1), 20, 10 + r, math.max(0.4, r * 0.08))
+			destroyHole(c)
+		end
+		h.clones = nil
+	end
+	-- 은하 소용돌이: 반지름 4배 둘레에서 빛 알갱이가 소용돌이치며 빨려 든다
+	if id == "vortex" then
+		if not h.vortex then
+			h.vortex = {}
+			for i = 0, 23 do
+				local p = fxPart(Vector3.new(1, 1, 1) * math.max(0.3, r * 0.12), i % 2 == 0 and Color3.fromRGB(200, 210, 255) or Color3.fromRGB(255, 220, 255), Enum.Material.Neon, Enum.PartType.Ball)
+				table.insert(h.vortex or {}, p)
+			end
+		end
+		local vparts = h.vortex or {}
+		for i, p in ipairs(vparts) do
+			local k = (t * 0.5 + i / 24) % 1
+			local ang = i / 24 * math.pi * 2 + k * 5
+			local rad = r * 4 * (1 - k) + r
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, 0.5 + (1 - k) * r * 0.3, math.sin(ang) * rad))
+			p.Transparency = k * 0.7
+		end
+	elseif h.vortex then
+		for _, p in ipairs(h.vortex) do
+			p:Destroy()
+		end
+		h.vortex = nil
+	end
+	-- 성운 꼬리: 지나간 자리에 초록 구름
+	if h.effect == "nebula" and t > h.puffAt then
+		h.puffAt = t + 0.15
+		local cam = workspace.CurrentCamera
+		if cam and (cam.CFrame.Position - center).Magnitude < 800 + r * 10 then
+			local skin = Config.Skins[h.skin]
+			puff(center + Vector3.new(0, r * 0.1, 0), r * 1.2, skin.a:Lerp(skin.b, math.random()), 2)
+		end
+	end
+end
+
+-- 한 번 쓰는 스킬 모습: 빛줄기, 순간이동, 신의 시선
+function Fx.skillFx(data: any)
+	local r = data.r or 3
+	local from: Vector3 = data.from
+	if data.id == "beam" and data.to then
+		local to: Vector3 = data.to
+		local len = (to - from).Magnitude
+		local mid = (from + to) / 2 + Vector3.new(0, r * 0.3, 0)
+		local beam = fxPart(Vector3.new(math.min(2000, len), r * 0.9, r * 0.9), Color3.fromRGB(150, 230, 255), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+		beam.CFrame = CFrame.lookAt(mid, mid + (to - from)) * CFrame.Angles(0, math.rad(90), 0)
+		TweenService:Create(beam, TweenInfo.new(0.6), { Transparency = 1, Size = Vector3.new(beam.Size.X, r * 0.1, r * 0.1) }):Play()
+		Debris:AddItem(beam, 0.65)
+		for k = 0, 6 do
+			Fx.burst(from:Lerp(to, k / 6) + Vector3.new(0, 1, 0), Color3.fromRGB(150, 230, 255), 10, 10 + r, math.max(0.4, r * 0.1))
+		end
+		Fx.sound("slash", 0.8, 0.7)
+	elseif data.id == "blink" and data.to then
+		local to: Vector3 = data.to
+		for k = 0, 8 do
+			local pos = from:Lerp(to, k / 8)
+			task.delay(k * 0.02, function()
+				puff(pos + Vector3.new(0, r * 0.2, 0), r * 1.1, Color3.fromRGB(190, 240, 255), 0.8)
+			end)
+		end
+		Fx.ring(to, Color3.fromRGB(200, 245, 255), r * 1.5, r * 4, 0.5)
+		Fx.sound("whoosh", 0.9, 1.6)
+	elseif data.id == "eye" then
+		-- 땅에 거대한 눈이 열렸다가 감긴다
+		local d = r * 14
+		local sclera = disc(d, 0.3, Color3.fromRGB(255, 250, 235), Enum.Material.Neon, 0.3)
+		local iris = disc(d * 0.45, 0.32, Color3.fromRGB(255, 200, 80), Enum.Material.Neon, 0.1)
+		local pupil = disc(d * 0.2, 0.34, BLACK, Enum.Material.SmoothPlastic, 0)
+		for i, p in ipairs({ sclera, iris, pupil }) do
+			p.CFrame = CFrame.new(from + Vector3.new(0, 0.3 + i * 0.02, 0))
+		end
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.RenderStepped:Connect(function()
+			local k = math.min(1, (os.clock() - start) / 1.4)
+			local open = k < 0.3 and k / 0.3 or (k > 0.75 and (1 - k) / 0.25 or 1)
+			setDisc(sclera, d * math.max(0.02, open))
+			setDisc(iris, d * 0.45 * math.max(0.02, open))
+			setDisc(pupil, d * (0.12 + 0.12 * open))
+			sclera.Transparency = 1 - open * 0.7
+			if k >= 1 then
+				conn:Disconnect()
+				sclera:Destroy()
+				iris:Destroy()
+				pupil:Destroy()
+			end
+		end)
+		for i = 0, 11 do
+			local a = i / 12 * math.pi * 2
+			Fx.streak(from + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 7, from + Vector3.new(0, 1, 0), Color3.fromRGB(255, 215, 90), math.max(0.5, r * 0.25))
+		end
+		Fx.pillar(from, Color3.fromRGB(255, 220, 120), 200 + r * 4, r * 0.8, 1)
+		Fx.sound("whoosh", 1, 0.4)
+	elseif data.id == "swell" or data.id == "vortex" or data.id == "prism" then
+		Fx.ring(from, Color3.fromRGB(255, 255, 255), r * 2, r * 6, 0.6)
+		Fx.sound("whoosh", 0.8, 0.8)
 	end
 end
 
@@ -664,6 +928,10 @@ local function suck(model: Model)
 		hideNow(model)
 		return
 	end
+	if not model:IsDescendantOf(workspace) then
+		hideNow(model)
+		return
+	end
 	local size = model:GetAttribute("Size")
 	local holeR = char and char:GetAttribute("HoleR")
 	if sucking >= MAX_SUCKING or (type(size) == "number" and type(holeR) == "number" and size < holeR * 0.04) then
@@ -717,6 +985,9 @@ local function growIn(model: Model)
 	local me = Players.LocalPlayer.Character
 	local myR = me and me:GetAttribute("HoleR")
 	if growing >= 20 or (type(size0) == "number" and type(myR) == "number" and size0 < myR * 0.03) then
+		return
+	end
+	if Fx.isFar(model:GetPivot().Position) then
 		return
 	end
 	growing += 1
@@ -785,6 +1056,10 @@ end
 
 local function watchObject(model: Instance)
 	if not model:IsA("Model") then
+		return
+	end
+	-- 숨겨 뒀다가 다시 꺼낸 물체는 이미 지켜보고 있다
+	if model:GetAttribute("Unculling") then
 		return
 	end
 	goldify(model :: Model)
@@ -1003,6 +1278,162 @@ function Fx.starGot(pos: Vector3)
 end
 
 ------------------------------------------------------------------------
+-- 떠도는 거대 행성 (서버 이벤트). 서버의 보이지 않는 부품을 따라 행성을 그린다
+------------------------------------------------------------------------
+local Planet = { model = nil :: Model?, label = nil :: TextLabel?, built = 0, lastScale = 1, chunkAt = 0 }
+
+local function planetTick(t: number)
+	local folder0 = workspace:FindFirstChild("Event")
+	local anchor = folder0 and folder0:FindFirstChild("GiantPlanet")
+	if not anchor or not anchor:IsA("BasePart") then
+		return
+	end
+	local active = anchor:GetAttribute("Active") == true
+	local R = anchor:GetAttribute("Radius")
+	if not active or type(R) ~= "number" then
+		if Planet.model then
+			local pp = Planet.model.PrimaryPart
+			if pp then
+				Fx.burst(pp.Position, Color3.fromRGB(255, 200, 120), 60, 60 + Planet.built, math.max(1, Planet.built * 0.1))
+			end
+			Planet.model:Destroy()
+			Planet.model = nil
+		end
+		return
+	end
+	if not Planet.model or Planet.built ~= R then
+		if Planet.model then
+			Planet.model:Destroy()
+		end
+		local m = Props.build("planet", R, CFrame.new(), 7)
+		for _, d in ipairs(m:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+				d.CastShadow = false
+			end
+		end
+		local pp = m.PrimaryPart
+		if pp then
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.new(0, 320, 0, 60)
+			bb.StudsOffset = Vector3.new(0, R * 1.3, 0)
+			bb.AlwaysOnTop = true
+			bb.LightInfluence = 0
+			bb.MaxDistance = 20000
+			bb.Parent = pp
+			local l = Instance.new("TextLabel")
+			l.Size = UDim2.fromScale(1, 1)
+			l.BackgroundTransparency = 1
+			l.Font = Enum.Font.GothamBlack
+			l.TextScaled = true
+			l.TextColor3 = Color3.fromRGB(255, 220, 140)
+			l.TextStrokeTransparency = 0.2
+			l.Parent = bb
+			Planet.label = l
+		end
+		m.Parent = folder
+		Planet.model = m
+		Planet.built = R
+		Planet.lastScale = 1
+	end
+	local model = Planet.model :: Model
+	local hp = anchor:GetAttribute("HP")
+	local maxHp = anchor:GetAttribute("MaxHP")
+	local frac = (type(hp) == "number" and type(maxHp) == "number" and maxHp > 0) and math.clamp(hp / maxHp, 0, 1) or 1
+	local scale = 0.4 + 0.6 * math.sqrt(frac)
+	if math.abs(scale - Planet.lastScale) > 0.02 then
+		Planet.lastScale = scale
+		pcall(function()
+			model:ScaleTo(scale)
+		end)
+	end
+	local pos = anchor.Position
+	model:PivotTo(CFrame.new(pos.X, R * scale, pos.Z) * CFrame.Angles(0.3, t * 0.15, 0) * CFrame.new(0, -R * scale, 0))
+	if Planet.label then
+		Planet.label.Text = string.format("🌍 떠도는 거대 행성  %d%%", math.floor(frac * 100 + 0.5))
+	end
+	-- 내 블랙홀이 닿아 있으면 조각이 빨려 든다
+	local me = Players.LocalPlayer.Character
+	local c = me and Fx.holeCenter(me)
+	local myR = me and me:GetAttribute("HoleR")
+	if c and type(myR) == "number" and t > Planet.chunkAt then
+		local shownR = R * scale
+		local d = Vector3.new(c.X - pos.X, 0, c.Z - pos.Z)
+		if d.Magnitude < shownR + myR then
+			Planet.chunkAt = t + 0.12
+			local dir = d.Magnitude > 0.1 and d.Unit or Vector3.new(1, 0, 0)
+			Fx.streak(Vector3.new(pos.X, shownR, pos.Z) + dir * shownR, c + Vector3.new(0, 0.5, 0), Color3.fromHSV(0.05 + math.random() * 0.1, 0.6, 1), math.clamp(shownR * 0.06, 0.4, 30))
+		end
+	end
+end
+
+-- 플레이어 화면이 아는 행성 위치 (화살표용)
+function Fx.planetInfo(): (boolean, Vector3, number)
+	local folder0 = workspace:FindFirstChild("Event")
+	local anchor = folder0 and folder0:FindFirstChild("GiantPlanet")
+	if anchor and anchor:IsA("BasePart") and anchor:GetAttribute("Active") == true then
+		local hp = anchor:GetAttribute("HP")
+		local maxHp = anchor:GetAttribute("MaxHP")
+		local frac = (type(hp) == "number" and type(maxHp) == "number" and maxHp > 0) and hp / maxHp or 1
+		return true, anchor.Position, frac
+	end
+	return false, Vector3.zero, 0
+end
+
+------------------------------------------------------------------------
+-- 먼 물체 숨기기: 내 블랙홀 근처 물체만 그려서 화면이 버벅이지 않게 한다
+-- (먼 물체는 내 화면에서만 잠시 치워 둔다. 가까워지면 다시 꺼낸다)
+------------------------------------------------------------------------
+local Cull = { folder = nil :: Folder?, pivots = setmetatable({}, { __mode = "k" }) :: any, focus = Vector3.zero, dist = math.huge }
+
+function Fx.isFar(pos: Vector3): boolean
+	local dx, dz = pos.X - Cull.focus.X, pos.Z - Cull.focus.Z
+	return dx * dx + dz * dz > Cull.dist * Cull.dist
+end
+
+local function cullTick(objects: Instance)
+	local me = Players.LocalPlayer.Character
+	local c = me and Fx.holeCenter(me)
+	if not c then
+		return
+	end
+	local rawR = me and me:GetAttribute("HoleR")
+	local r = type(rawR) == "number" and shownRadius(me :: Model, rawR) or 5
+	Cull.focus = c
+	Cull.dist = math.clamp(350 + r * 12, 350, 6000)
+	if not Cull.folder then
+		local f = Instance.new("Folder")
+		f.Name = "CulledObjects"
+		f.Parent = ReplicatedStorage
+		Cull.folder = f
+	end
+	local culled = Cull.folder :: Folder
+	local function pivotOf(m: Model): Vector3
+		local p = Cull.pivots[m]
+		if not p then
+			p = m:GetPivot().Position
+			Cull.pivots[m] = p
+		end
+		return p
+	end
+	for _, m in ipairs(objects:GetChildren()) do
+		if m:IsA("Model") and not m:GetAttribute("EatenBy") and Fx.isFar(pivotOf(m)) then
+			m:SetAttribute("Culled", true)
+			m.Parent = culled
+		end
+	end
+	for _, m in ipairs(culled:GetChildren()) do
+		if m:IsA("Model") and not Fx.isFar(pivotOf(m)) then
+			m:SetAttribute("Unculling", true)
+			m.Parent = objects
+			m:SetAttribute("Unculling", nil)
+			m:SetAttribute("Culled", nil)
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 시작
 ------------------------------------------------------------------------
 function Fx.start()
@@ -1022,6 +1453,17 @@ function Fx.start()
 		end)
 	end)
 	task.spawn(buildGallery)
+	task.spawn(function()
+		local objects = workspace:WaitForChild("Objects")
+		task.wait(3)
+		while true do
+			local ok, err = pcall(cullTick, objects)
+			if not ok then
+				warn("[BlackHole] 물체 숨기기 오류:", err)
+			end
+			task.wait(0.4)
+		end
+	end)
 	local galleryCheck = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		local t = os.clock()
@@ -1055,6 +1497,7 @@ function Fx.start()
 				updateHole(h, t, dt)
 			end
 		end
+		planetTick(t)
 	end)
 end
 

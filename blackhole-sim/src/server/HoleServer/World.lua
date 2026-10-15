@@ -121,7 +121,7 @@ end
 local function starDust(folder: Folder, center: Vector3, zone: any, color: Color3)
 	local sky = part({ Name = "Stars", Size = Vector3.new(math.min(zone.width, LIMIT), 10, math.min(zone.length, LIMIT)), Position = center + Vector3.new(0, 300, 0), Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
 	local pe = Instance.new("ParticleEmitter")
-	pe.Rate = 160
+	pe.Rate = 60
 	pe.Lifetime = NumberRange.new(4, 8)
 	pe.Speed = NumberRange.new(0, 1)
 	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 3), NumberSequenceKeypoint.new(1, 0) })
@@ -217,7 +217,7 @@ local function buildPortal(folder: Folder, ppos: Vector3, to: number, facing: nu
 	else
 		local target = Config.Worlds[to]
 		title = string.format("🌀 세계 %d · %s", to, target.name)
-		lock = target.needBigbang > 0 and string.format("빅뱅 %d번 하면 열림", target.needBigbang) or "언제든 갈 수 있음"
+		lock = to == 1 and "한 판의 시작" or string.format("세계 1에서 크기 %d 넘기면", Config.WORLD2_RADIUS)
 	end
 	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
 		signText(sign, face, {

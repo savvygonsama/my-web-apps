@@ -25,7 +25,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-4"
+Config.VERSION = "beta-5"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
@@ -35,18 +35,33 @@ Config.TEST_MODE = true
 Config.PART_LIMIT = 2000
 
 ------------------------------------------------------------------------
--- 크기: 먹어서 커진다
--- 물체를 삼키면 블랙홀 넓이(반지름²)에 GROW_K × 물체 크기² × 성장 배율만큼 더해진다.
--- 내 크기에 가까운 걸 삼킬수록 확 커진다.
+-- 한 판의 흐름: 세계 1에서 작게 시작 → 크기 400을 넘기면 세계 2로 넘어간다.
+-- 세계 2로 넘어가면 크기가 40분의 1로 줄어든다 (400 → 10). 숫자가 작아지는 대신
+-- 세계 2의 물체는 질량이 훨씬 커서, 다시 작은 것부터 크게 자라는 맛이 생긴다.
+-- 세계 2에서 크기 350을 넘기면 빅뱅할 수 있고, 빅뱅하면 다시 세계 1에서 시작한다.
 ------------------------------------------------------------------------
 Config.START_RADIUS = 1.5
-Config.GROW_K = 0.3
--- 클수록 덜 자란다: 실제 계수 = GROW_K / (1 + 반지름 / GROW_SOFT). 뒤로 갈수록 오래 놀아야 커진다
-Config.GROW_SOFT = 20
+Config.WORLD2_RADIUS = 400 -- 세계 1에서 이 크기를 넘기면 세계 2로 넘어갈 수 있다
+Config.WORLD2_SCALE = 40 -- 세계 2로 넘어갈 때 크기를 나누는 수
+Config.WORLD1_MAX = 700 -- 세계 1에서 커질 수 있는 최대 크기
 
--- 최대 크기: 기본 1000, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
-function Config.maxRadius(bigbang: number, maxLv: number): number
-	return (1000 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
+------------------------------------------------------------------------
+-- 크기: 먹어서 커진다
+-- 물체를 삼키면 블랙홀 넓이(반지름²)에 K × 물체 크기² × 성장 배율만큼 더해진다.
+-- 실제 K = GROW_K / (1 + 반지름 / GROW_SOFT): 작을 땐 쑥쑥, 클수록 덜 자란다.
+-- 세계 1은 처음이라 쉽게, 세계 2는 위성(펫)이 있으니 훨씬 어렵게.
+------------------------------------------------------------------------
+Config.Growth = {
+	[1] = { k = 0.4, soft = 25 },
+	[2] = { k = 0.22, soft = 10 },
+}
+
+-- 세계 2 최대 크기: 기본 800, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
+function Config.maxRadius(bigbang: number, maxLv: number, world: number?): number
+	if world == 1 then
+		return Config.WORLD1_MAX
+	end
+	return (800 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
 end
 
 -- 성장 배율. info = { grow, bigbang, star, skin(스킨 능력 성장 보너스) }
@@ -59,8 +74,9 @@ function Config.growMult(info: any): number
 end
 
 -- 크기 size인 물체를 삼킨 뒤 반지름
-function Config.grow(radius: number, size: number, mult: number, maxR: number): number
-	local k = Config.GROW_K / (1 + radius / Config.GROW_SOFT)
+function Config.grow(radius: number, size: number, mult: number, maxR: number, world: number?): number
+	local g = Config.Growth[world or 1] or Config.Growth[1]
+	local k = g.k / (1 + radius / g.soft)
 	return math.max(radius, math.min(maxR, math.sqrt(radius * radius + k * mult * size * size)))
 end
 
@@ -70,35 +86,33 @@ function Config.startRadius(startLv: number): number
 end
 
 ------------------------------------------------------------------------
--- 업그레이드 9종 (질량으로 산다, 빅뱅하면 사라진다)
--- show(level)은 카드에 보여 줄 효과 글
+-- 업그레이드 8종 (질량으로 산다, 빅뱅하면 사라진다)
+-- 값 = base × growth^레벨 × 1.025^(레벨²÷2): 높은 레벨일수록 가파르게 비싸져서
+-- 위성 배율이 커져도 금방 다 사지 못한다. show(level)은 카드에 보여 줄 효과 글
 ------------------------------------------------------------------------
 Config.Upgrades = {
-	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도", maxLevel = 60, base = 25, growth = 1.8, show = function(l: number): string
+	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도", maxLevel = 60, base = 25, growth = 1.6, show = function(l: number): string
 		return string.format("성장 ×%.2f", 1 + 0.05 * l)
 	end },
-	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량", maxLevel = 60, base = 40, growth = 1.74, show = function(l: number): string
+	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량", maxLevel = 60, base = 40, growth = 1.6, show = function(l: number): string
 		return string.format("질량 ×%.2f", 1 + 0.25 * l)
 	end },
-	{ id = "pull", name = "흡입력", icon = "🌀", desc = "반지름 바깥까지 끌어당김", maxLevel = 30, base = 30, growth = 1.86, show = function(l: number): string
-		return string.format("흡입 +%d%%", 15 + 7 * l)
-	end },
-	{ id = "speed", name = "이동 속도", icon = "👟", desc = "더 빨리 돌아다님", maxLevel = 20, base = 60, growth = 2.0, show = function(l: number): string
+	{ id = "speed", name = "이동 속도", icon = "👟", desc = "더 빨리 돌아다님", maxLevel = 20, base = 60, growth = 1.8, show = function(l: number): string
 		return string.format("속도 +%d%%", 5 * l)
 	end },
-	{ id = "maxsize", name = "크기 한계", icon = "📏", desc = "최대 크기가 늘어남", maxLevel = 20, base = 5000, growth = 2.2, show = function(l: number): string
+	{ id = "maxsize", name = "크기 한계", icon = "📏", desc = "세계 2 최대 크기가 늘어남", maxLevel = 20, base = 50000, growth = 2.0, show = function(l: number): string
 		return string.format("한계 +%d%%", 10 * l)
 	end },
-	{ id = "respawn", name = "빠른 재생", icon = "♻", desc = "먹은 물체가 더 빨리 다시 생김", maxLevel = 15, base = 100, growth = 2.0, show = function(l: number): string
+	{ id = "respawn", name = "빠른 재생", icon = "♻", desc = "먹은 물체가 더 빨리 다시 생김", maxLevel = 15, base = 100, growth = 1.8, show = function(l: number): string
 		return string.format("재생 -%d%%", 4 * l)
 	end },
-	{ id = "star", name = "별똥별 자석", icon = "☄", desc = "별똥별이 더 자주 떨어짐", maxLevel = 15, base = 200, growth = 2.0, show = function(l: number): string
+	{ id = "star", name = "별똥별 자석", icon = "☄", desc = "별똥별이 더 자주 떨어짐", maxLevel = 15, base = 200, growth = 1.8, show = function(l: number): string
 		return string.format("별똥별 +%d%%", 6 * l)
 	end },
-	{ id = "combo", name = "콤보 증폭", icon = "🔥", desc = "연속 흡수 보너스가 커짐", maxLevel = 10, base = 300, growth = 2.3, show = function(l: number): string
+	{ id = "combo", name = "콤보 증폭", icon = "🔥", desc = "연속 흡수 보너스가 커짐", maxLevel = 10, base = 300, growth = 2.0, show = function(l: number): string
 		return string.format("콤보 보너스 ×%.2f", 1 + 0.25 * l)
 	end },
-	{ id = "golden", name = "황금 탐지", icon = "✨", desc = "황금 물체가 더 자주 나옴", maxLevel = 10, base = 500, growth = 2.3, show = function(l: number): string
+	{ id = "golden", name = "황금 탐지", icon = "✨", desc = "황금 물체가 더 자주 나옴", maxLevel = 10, base = 500, growth = 2.0, show = function(l: number): string
 		return string.format("황금 확률 +%d%%", 25 * l)
 	end },
 }
@@ -109,17 +123,17 @@ end
 
 function Config.upgradeCost(id: string, level: number): number
 	local u = Config.UPGRADE_BY_ID[id]
-	return math.floor(u.base * u.growth ^ level)
+	return math.floor(u.base * u.growth ^ level * 1.025 ^ (level * level / 2))
 end
 
 ------------------------------------------------------------------------
--- 빅뱅(환생): 크기 600 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
+-- 빅뱅(환생): 세계 2에서 크기 350 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
 ------------------------------------------------------------------------
-Config.BIGBANG_RADIUS = 600
+Config.BIGBANG_RADIUS = 350
 
--- 받는 암흑 물질: 크기 600에서 3개, 그 위로 크기 100마다 1개씩 더
+-- 받는 암흑 물질: 세계 2 크기 350에서 3개, 그 위로 크기 50마다 1개씩 더
 function Config.darkMatterReward(radius: number, bigbang: number, dmLv: number?): number
-	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 100)) + bigbang // 2
+	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 50)) + bigbang // 2
 	return math.floor(base * (1 + 0.2 * (dmLv or 0)))
 end
 
@@ -129,7 +143,7 @@ Config.BigbangShop = {
 	{ id = "respawn", name = "빠른 재생산", icon = "♻", desc = "삼킨 물체가 12% 더 빨리 다시 생긴다", maxLevel = 5, base = 3, step = 3 },
 	{ id = "mass", name = "암흑 증폭", icon = "🌑", desc = "질량 +50%", maxLevel = 20, base = 3, step = 2 },
 	{ id = "speed", name = "광속", icon = "⚡", desc = "이동 속도 +15%", maxLevel = 5, base = 2, step = 2 },
-	{ id = "pull", name = "사건의 지평선", icon = "🕳", desc = "흡입 범위 +15%", maxLevel = 5, base = 3, step = 3 },
+	{ id = "seed", name = "출발 자금", icon = "💰", desc = "빅뱅 뒤 질량 1K × 10^레벨을 가지고 시작", maxLevel = 6, base = 3, step = 3 },
 	{ id = "luck", name = "행운의 별", icon = "🍀", desc = "캡슐에서 전설 이상이 나올 확률 +15%", maxLevel = 5, base = 4, step = 3 },
 	{ id = "slots", name = "위성 궤도", icon = "🛰", desc = "위성 장착 칸 +1", maxLevel = 2, base = 10, step = 15 },
 	{ id = "keep", name = "질량 보존", icon = "🏦", desc = "빅뱅할 때 질량 5%를 남긴다", maxLevel = 5, base = 4, step = 4 },
@@ -166,27 +180,27 @@ Config.DAILY_HOURS = 20
 -- countMult = 물체 개수 배수 (넓은 구역일수록 물체를 많이 둔다)
 ------------------------------------------------------------------------
 Config.Worlds = {
-	{ id = 1, name = "지구와 우주", x = 0, needBigbang = 0, sky = Color3.fromRGB(150, 190, 255) },
-	{ id = 2, name = "과자 왕국", x = 30000, needBigbang = 1, sky = Color3.fromRGB(255, 190, 230) },
+	{ id = 1, name = "지구와 우주", x = 0, massMult = 1, sky = Color3.fromRGB(150, 190, 255) },
+	{ id = 2, name = "과자 왕국", x = 30000, massMult = 40000, sky = Color3.fromRGB(255, 190, 230) },
 }
 
 Config.Zones = {
 	-- 세계 1
-	{ world = 1, name = "공원", need = 0, width = 420, length = 420, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
-	{ world = 1, name = "마을", need = 6, width = 640, length = 560, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
-	{ world = 1, name = "도시", need = 14, width = 1000, length = 860, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4, countMult = 2 },
-	{ world = 1, name = "대도시", need = 30, width = 1600, length = 1360, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4, countMult = 2 },
-	{ world = 1, name = "바다와 산", need = 65, width = 2600, length = 2200, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5, countMult = 2 },
-	{ world = 1, name = "우주", need = 140, width = 4200, length = 3600, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6, countMult = 1.5 },
+	{ world = 1, name = "공원", need = 0, width = 420, length = 420, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3, countMult = 1.5 },
+	{ world = 1, name = "마을", need = 6, width = 640, length = 560, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3, countMult = 1.5 },
+	{ world = 1, name = "도시", need = 14, width = 1000, length = 860, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4, countMult = 1.5 },
+	{ world = 1, name = "대도시", need = 30, width = 1600, length = 1360, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4, countMult = 1.5 },
+	{ world = 1, name = "바다와 산", need = 65, width = 2600, length = 2200, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5, countMult = 1.5 },
+	{ world = 1, name = "우주", need = 140, width = 4200, length = 3600, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6, countMult = 1.2 },
 	{ world = 1, name = "은하수", need = 350, width = 7000, length = 6000, ground = Color3.fromRGB(12, 8, 30), material = Enum.Material.Slate, respawn = 8, countMult = 1 },
 	-- 세계 2 (훨씬 넓다)
-	{ world = 2, name = "젤리 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 2.5 },
-	{ world = 2, name = "과자 마을", need = 6, width = 820, length = 720, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3, countMult = 2.5 },
-	{ world = 2, name = "케이크 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4, countMult = 2.5 },
-	{ world = 2, name = "아이스크림 산맥", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5, countMult = 2 },
-	{ world = 2, name = "초콜릿 강", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(120, 70, 45), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 2 },
-	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.5 },
-	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1.2 },
+	{ world = 2, name = "젤리 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 2 },
+	{ world = 2, name = "과자 마을", need = 6, width = 820, length = 720, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3, countMult = 2 },
+	{ world = 2, name = "케이크 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4, countMult = 2 },
+	{ world = 2, name = "아이스크림 산맥", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5, countMult = 1.5 },
+	{ world = 2, name = "초콜릿 강", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(120, 70, 45), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 1.5 },
+	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.2 },
+	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1 },
 	{ world = 2, name = "설탕 블랙홀", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(30, 10, 40), material = Enum.Material.SmoothPlastic, respawn = 10, countMult = 1 },
 }
 
@@ -442,34 +456,37 @@ end
 --   unlock: bigbang = 빅뱅 횟수, dm = 암흑 물질로 사기, pass = 게임패스, world2 = 세계 2의 사탕 태양 삼키기
 --   effect: 테두리와 소용돌이 꾸밈 (fire, ice, galaxy, candy, gold, eye, rainbow)
 ------------------------------------------------------------------------
+-- tier = 등급 (Config.Rarities: 1 일반 … 6 비밀). 높은 등급일수록 능력이 세고 모양이 화려하다
 -- ability: 스킨마다 고유 능력
---   passive = 늘 켜져 있음: pull(흡입 범위), grow(성장), mass(질량), golden(황금 확률 배수), star(별똥별), respawn(재생), sats(위성 배율), world2(세계 2 보너스)
---   active  = 스킬 버튼(Q)으로 쓴다: speed(빨라짐), pull(흡입 범위 커짐), burst(주변 한꺼번에 흡수). cd = 다시 쓰기까지 초
+--   늘 켜져 있는 값: mass(질량), grow(성장), growSmall(크기 50 미만일 때 성장), golden(황금 확률 배수),
+--     goldenMass(황금 질량 배수), star(별똥별 자주), respawn(재생 시간 배수), sats(위성 배율),
+--     world2(세계 2 질량), trail(지나간 자리 흡수), chain(연쇄 폭발), sugar(연속 흡수 속도)
+--   active = 스킬 버튼(Q)으로 쓴다. id: beam(빛줄기), swell(팽창), blink(순간이동), vortex(소용돌이), prism(분신), eye(신의 시선)
 Config.Skins = {
-	{ id = "violet", name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0,
-		ability = { kind = "passive", name = "끌어당김", desc = "흡입 범위 +15%", pull = 0.15 } },
-	{ id = "quasar", name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1,
-		ability = { kind = "active", name = "퀘이사 제트", desc = "8초 동안 이동 속도 ×2", speed = 2, dur = 8, cd = 25 } },
-	{ id = "giant", name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2,
-		ability = { kind = "passive", name = "거성의 식욕", desc = "성장 +25%", grow = 0.25 } },
-	{ id = "nebula", name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3,
-		ability = { kind = "passive", name = "성운의 축복", desc = "질량 +40%, 성장 +10%", mass = 0.4, grow = 0.1 } },
-	{ id = "golden", name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold",
-		ability = { kind = "passive", name = "황금 손", desc = "황금 물체 3배 자주, 질량 +30%", golden = 3, mass = 0.3 } },
-	{ id = "rainbow", name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow",
-		ability = { kind = "active", name = "무지개 폭발", desc = "흡입 범위 3배 안을 한꺼번에 흡수", burst = 3, dur = 0, cd = 30 } },
-	{ id = "ice", name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice",
-		ability = { kind = "active", name = "얼음 질주", desc = "6초 동안 이동 속도 ×2.5", speed = 2.5, dur = 6, cd = 18 } },
-	{ id = "lava", name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire",
-		ability = { kind = "active", name = "용암 분출", desc = "8초 동안 흡입 범위 ×2.5", pull = 2.5, dur = 8, cd = 25 } },
-	{ id = "milkyway", name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy",
-		ability = { kind = "passive", name = "별을 부르는 자", desc = "별똥별 2배 자주, 효과 시간 +50%", star = 2 } },
-	{ id = "sweet", name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy",
-		ability = { kind = "passive", name = "단맛 중독", desc = "세계 2에서 질량 +100%, 성장 +30%", world2 = true } },
-	{ id = "vip", name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "gold",
-		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +50%, 재생 25% 빨라짐", mass = 0.5, respawn = 0.75 } },
-	{ id = "godeye", name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
-		ability = { kind = "active", name = "신의 시선", desc = "흡입 범위 5배 안을 한꺼번에 흡수 (늘 위성 배율 +20%)", burst = 5, dur = 0, cd = 35, sats = 0.2 } },
+	{ id = "violet", tier = 1, name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0,
+		ability = { kind = "passive", name = "새싹 블랙홀", desc = "크기 50 미만일 때 성장 +30%", growSmall = 0.3 } },
+	{ id = "quasar", tier = 2, name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1, effect = "quasar",
+		ability = { kind = "active", id = "beam", name = "퀘이사 빔", desc = "바라보는 쪽으로 빛줄기를 쏴서, 반지름 10배 길이의 길 위를 한꺼번에 흡수", cd = 20, len = 10 } },
+	{ id = "giant", tier = 2, name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2, effect = "giant",
+		ability = { kind = "active", id = "swell", name = "적색 팽창", desc = "6초 동안 25% 부풀어서 나보다 조금 큰 것도 삼킨다", cd = 30, dur = 6, swell = 1.25 } },
+	{ id = "nebula", tier = 3, name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3, effect = "nebula",
+		ability = { kind = "passive", name = "성운 꼬리", desc = "지나간 자리에 2초 동안 성운이 남아 그 위 물체도 흡수, 질량 +20%", trail = 0.7, mass = 0.2 } },
+	{ id = "ice", tier = 3, name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice",
+		ability = { kind = "active", id = "blink", name = "빙결 순간이동", desc = "바라보는 쪽으로 반지름 8배만큼 순간이동하며 지나간 길을 흡수", cd = 14, len = 8 } },
+	{ id = "lava", tier = 4, name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire",
+		ability = { kind = "passive", name = "연쇄 폭발", desc = "삼킨 물체 주변(반지름 60%)의 물체도 함께 터져 흡수, 질량 +20%", chain = 0.6, mass = 0.2 } },
+	{ id = "golden", tier = 4, name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold",
+		ability = { kind = "passive", name = "미다스의 손", desc = "황금 물체 3배 자주, 황금 질량 2배, 질량 +30%", golden = 3, goldenMass = 2, mass = 0.3 } },
+	{ id = "sweet", tier = 5, name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy",
+		ability = { kind = "passive", name = "슈가 러시", desc = "연속 흡수할수록 빨라짐 (최대 +60%), 세계 2 질량 +50%, 성장 +10%", sugar = 0.6, world2 = 0.5, grow = 0.1 } },
+	{ id = "milkyway", tier = 5, name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy",
+		ability = { kind = "active", id = "vortex", name = "은하 소용돌이", desc = "8초 동안 반지름 4배 안의 먹을 수 있는 것을 모두 끌어와 흡수 (늘: 별똥별 2배 자주)", cd = 40, dur = 8, vortex = 4, star = 2 } },
+	{ id = "rainbow", tier = 5, name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow",
+		ability = { kind = "active", id = "prism", name = "프리즘 분신", desc = "10초 동안 무지개 분신 둘이 둘레를 돌며 함께 흡수 (늘: 성장 +10%)", cd = 32, dur = 10, grow = 0.1 } },
+	{ id = "vip", tier = 5, name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "vip",
+		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +60%, 성장 +15%, 재생 30% 빨라짐", mass = 0.6, grow = 0.15, respawn = 0.7 } },
+	{ id = "godeye", tier = 6, name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
+		ability = { kind = "active", id = "eye", name = "신의 시선", desc = "거대한 눈이 열려 반지름 7배 안을 모두 흡수하고, 내 크기 1.5배까지 삼킨다 (늘: 위성 배율 +25%, 성장 +15%)", cd = 30, eye = 7, eyeLimit = 1.5, sats = 0.25, grow = 0.15 } },
 }
 Config.SKIN_BY_ID = {}
 for i, s in ipairs(Config.Skins) do
@@ -518,9 +535,9 @@ Config.STAR_BOOST = 60
 ------------------------------------------------------------------------
 -- 계산
 ------------------------------------------------------------------------
--- 반지름 바깥으로 더 끌어당기는 거리. extra = 스킨 능력 배수
-function Config.pullRange(radius: number, pullLv: number, bbPull: number?, extra: number?): number
-	return (radius * (0.15 + 0.07 * pullLv) + 1.5) * (1 + 0.15 * (bbPull or 0)) * (extra or 1)
+-- 반지름 바깥으로 살짝 더 닿는 거리 (흡입력 업그레이드는 없앴다: 물체 위를 정확히 지나가야 먹는다)
+function Config.pullRange(radius: number): number
+	return radius * 0.08 + 1
 end
 
 -- 이동 속도. 크기가 커질수록 빨라지고, 넓은 뒤쪽 구역도 금방 건너간다
@@ -631,13 +648,45 @@ function Config.zoneAt(pos: Vector3): number
 	return list[#list]
 end
 
+------------------------------------------------------------------------
+-- 서버 이벤트: 떠도는 거대 행성
+-- 몇 분마다 플레이어가 많은 구역에 거대한 행성이 나타나 떠돈다. 다 같이 깎아 먹는다.
+-- 피해와 보상은 로그로 계산해서, 아무리 크거나 위성 배율이 높아도 밸런스가 깨지지 않는다.
+------------------------------------------------------------------------
+Config.EVENT = {
+	firstDelay = 90, -- 서버가 열리고 첫 행성까지 (초)
+	interval = 300, -- 행성 사이 간격 (초)
+	life = 150, -- 이 시간 안에 못 먹으면 날아가 버린다
+	soloSeconds = 40, -- 혼자 붙어 있으면 다 먹는 데 걸리는 시간
+}
+
+-- 한 번(0.1초)에 깎는 양: 크기에 로그
+function Config.eventDamage(radius: number): number
+	return 1 + math.log(1 + radius, 2)
+end
+
+-- 보상. share = 내가 깎은 몫 (0~1), escaped = 놓쳤으면 true
+--   질량: 지금 갈 수 있는 가장 큰 물체 × (10 + 40 × 몫) × (1 + log10(질량 배율))
+--   성장: 반지름 +3% + 7% × 몫
+--   암흑 물질: 몫 15% 이상이면 1개, 1등이면 1개 더
+function Config.eventReward(share: number, biggest: number, totalMult: number, top: boolean, escaped: boolean?): (number, number, number)
+	local f = escaped and 0.5 or 1
+	local mass = biggest * (10 + 40 * share) * (1 + math.log10(math.max(1, totalMult))) * f
+	local grow = (0.03 + 0.07 * share) * f
+	local dm = 0
+	if not escaped then
+		dm = (share >= 0.15 and 1 or 0) + (top and 1 or 0)
+	end
+	return mass, grow, dm
+end
+
 -- 지금 갈 수 있는 구역에서 가장 질량이 큰 물체 (질량 꾸러미 계산용)
 function Config.biggestMass(world: number, radius: number): number
 	local reach = Config.maxZone(world, radius)
 	local best = 0
 	for _, o in ipairs(Config.Objects) do
 		if Config.Zones[o.zone].world == world and o.zone <= reach and o.size <= math.max(radius, Config.Zones[o.zone].need) then
-			best = math.max(best, o.mass)
+			best = math.max(best, o.mass * (Config.Worlds[world].massMult or 1))
 		end
 	end
 	return best
@@ -2428,14 +2477,18 @@ do
 end
 
 type Sat = { uid: number, id: string, gold: boolean }
+-- 흡수 지점: pos에서 reach 안의, 크기 limit 이하 물체를 삼킨다
+type Mouth = { pos: Vector3, reach: number, limit: number }
 type Quest = { kind: string, goal: number, progress: number }
 
 type Profile = {
 	mass: number,
 	total: number, -- 지금까지 삼킨 질량 (빅뱅해도 남는다)
 	eaten: number,
-	radius: number, -- 지금 반지름 (먹어서 커진다)
-	up: { [string]: number }, -- 업그레이드 9종 레벨
+	radius: number, -- 지금 반지름 (먹어서 커진다). 세계 2에서는 세계 2 단위
+	tier: number, -- 이번 판에 있는 세계 (1 → 크기 400 넘기면 2, 빅뱅하면 다시 1)
+	reached2: boolean, -- 세계 2에 한 번이라도 가 봤는지 (과자 캡슐)
+	up: { [string]: number }, -- 업그레이드 레벨
 	bigbang: number,
 	dm: number, -- 암흑 물질
 	bb: { [string]: number }, -- 빅뱅 상점 레벨
@@ -2471,6 +2524,8 @@ local function defaultProfile(): Profile
 		total = 0,
 		eaten = 0,
 		radius = Config.START_RADIUS,
+		tier = 1,
+		reached2 = false,
 		up = up,
 		bigbang = 0,
 		dm = 0,
@@ -2519,7 +2574,9 @@ local function sanitize(data: any): Profile
 			p.bb[b.id] = math.floor(num(data.bb[b.id], b.maxLevel))
 		end
 	end
-	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize)
+	p.tier = data.tier == 2 and 2 or 1
+	p.reached2 = data.reached2 == true or p.tier == 2
+	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize, p.tier)
 	p.radius = math.clamp(num(data.radius, maxR), Config.START_RADIUS, maxR)
 	local uids = {}
 	if type(data.sats) == "table" then
@@ -2619,8 +2676,12 @@ type State = {
 	lastEat: number,
 	activeUntil: number, -- 액티브 스킬이 끝나는 시각 (os.clock)
 	activeOn: boolean,
+	activeId: string,
 	cdUntil: number,
-	burst: number,
+	shots: { Mouth }, -- 다음 틱에 한 번만 쓰는 흡수 지점 (빛줄기, 순간이동, 신의 시선)
+	trail: { { pos: Vector3, t: number } }, -- 성운 꼬리
+	sugarLevel: number,
+	advanceNotified: boolean,
 	unstuckAt: number?,
 }
 
@@ -2673,7 +2734,7 @@ function Calc.hasPass(player: Player, key: string): boolean
 end
 
 function Calc.maxRadius(p: Profile): number
-	return Config.maxRadius(p.bigbang, p.up.maxsize)
+	return Config.maxRadius(p.bigbang, p.up.maxsize, p.tier)
 end
 
 function Calc.slots(player: Player, p: Profile): number
@@ -2722,33 +2783,48 @@ function Calc.active(st: State?): boolean
 	return st ~= nil and st.activeOn and os.clock() < st.activeUntil
 end
 
--- 스킨 능력에 따른 흡입 범위 배수
-function Calc.pullExtra(p: Profile, st: State?): number
-	local ab = Calc.ability(p)
-	local m = 1
-	if ab.kind == "passive" and ab.pull then
-		m *= 1 + ab.pull
-	elseif ab.kind == "active" and ab.pull and Calc.active(st) then
-		m *= ab.pull
+-- 켜져 있는 액티브 스킬 id ("" = 없음)
+function Calc.activeId(st: State?): string
+	if st and Calc.active(st) then
+		return st.activeId
 	end
-	return m
+	return ""
 end
 
-function Calc.speedExtra(p: Profile, st: State?): number
-	local ab = Calc.ability(p)
-	if ab.kind == "active" and ab.speed and Calc.active(st) then
-		return ab.speed
+-- 적색 팽창: 먹을 수 있는 크기와 범위 배수
+function Calc.swell(p: Profile, st: State?): number
+	if Calc.activeId(st) == "swell" then
+		return Calc.ability(p).swell or 1
 	end
 	return 1
 end
 
--- 스킨 능력 질량·성장 보너스 (세계 2 전용 보너스 포함)
+-- 은하 소용돌이: 흡수 범위 배수
+function Calc.vortex(p: Profile, st: State?): number
+	if Calc.activeId(st) == "vortex" then
+		return Calc.ability(p).vortex or 1
+	end
+	return 1
+end
+
+-- 슈가 러시: 연속 흡수할수록 빨라진다
+function Calc.speedExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	if ab.sugar and st and os.clock() - st.lastEat <= Config.COMBO_WINDOW then
+		return 1 + math.min(ab.sugar, st.combo * 0.01)
+	end
+	return 1
+end
+
+-- 스킨 능력 질량·성장 보너스
 function Calc.skinBonus(p: Profile, st: State?): (number, number)
 	local ab = Calc.ability(p)
 	local mass, grow = ab.mass or 0, ab.grow or 0
-	if ab.world2 and st and st.world == 2 and not st.inLobby then
-		mass += 1
-		grow += 0.3
+	if ab.growSmall and p.radius < 50 then
+		grow += ab.growSmall
+	end
+	if ab.world2 and p.tier == 2 and st and not st.inLobby then
+		mass += ab.world2
 	end
 	return mass, grow
 end
@@ -2802,12 +2878,6 @@ function Calc.skinUnlocked(player: Player, p: Profile, skin: any): boolean
 	return false
 end
 
--- 세계 번호가 열렸는지
-function Calc.worldOpen(p: Profile, world: number): boolean
-	local w = Config.Worlds[world]
-	return w ~= nil and p.bigbang >= w.needBigbang
-end
-
 ------------------------------------------------------------------------
 -- 상태 보내기와 캐릭터 꾸미기
 ------------------------------------------------------------------------
@@ -2841,7 +2911,11 @@ local function pushState(player: Player)
 		bigbang = p.bigbang,
 		dm = p.dm,
 		bb = p.bb,
-		pullRange = Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+		pullRange = Config.pullRange(r * Calc.swell(p, st)) * Calc.vortex(p, st),
+		tier = p.tier,
+		reached2 = p.reached2,
+		canAdvance = p.tier == 1 and r >= Config.WORLD2_RADIUS,
+		activeId = Calc.activeId(st),
 		totalMult = Calc.totalMult(player, p),
 		growMult = Calc.growMult(player, p),
 		satMult = Calc.satMult(p),
@@ -2907,6 +2981,8 @@ local function applyHole(player: Player)
 	char:SetAttribute("HoleR", r)
 	char:SetAttribute("HoleSkin", skin.index)
 	char:SetAttribute("SkillOn", Calc.active(st))
+	char:SetAttribute("SkillId", Calc.activeId(st))
+	char:SetAttribute("Swell", Calc.swell(p, st))
 	local satList = {}
 	for _, uid in ipairs(p.equipped) do
 		local s = Calc.findSat(p, uid)
@@ -3022,8 +3098,7 @@ function Quests.add(player: Player, p: Profile, kind: string, amount: number, is
 					p.dm += n
 					reward = string.format("🌑 암흑 물질 +%d", n)
 				else
-					local st = states[player]
-					local amountMass = math.max(200, Config.biggestMass(st and st.world or 1, p.radius) * 25 * Calc.totalMult(player, p))
+					local amountMass = math.max(200, Config.biggestMass(p.tier, p.radius) * 25 * Calc.totalMult(player, p))
 					p.mass += amountMass
 					p.total += amountMass
 					reward = "💠 +" .. Config.formatNumber(amountMass)
@@ -3162,19 +3237,59 @@ function Actions.goLobby(player: Player)
 	Push:FireClient(player, "world", 0)
 end
 
-function Actions.goWorld(player: Player, w: number)
+-- 세계로 가기: 이번 판에 있는 세계로만 갈 수 있다 (세계 1 → 크기 400 넘기면 세계 2)
+function Actions.goWorld(player: Player, w: number, quiet: boolean?)
 	local p, st = profiles[player], states[player]
 	if not p or not st or not Config.Worlds[w] then
 		return
 	end
-	if not Calc.worldOpen(p, w) then
-		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
+	if w ~= p.tier then
+		local now = os.clock()
+		if quiet and now < st.lockToastAt then
+			return
+		end
+		st.lockToastAt = now + 4
+		if w == 2 then
+			toast(player, string.format("🔒 세계 2는 세계 1에서 크기 %d을 넘기면 넘어갈 수 있어요", Config.WORLD2_RADIUS))
+		else
+			toast(player, "이번 판은 세계 2에서 계속해요 (빅뱅하면 세계 1부터 다시)")
+		end
 		return
 	end
 	st.world = w
 	st.portalAt = os.clock() + 3
 	moveTo(player, spawnPos(w))
 	Push:FireClient(player, "world", w)
+end
+
+-- 세계 1에서 크기 400을 넘기면 세계 2로 넘어간다. 크기는 40분의 1이 된다
+function Actions.advance(player: Player)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	if p.tier ~= 1 then
+		toast(player, "이미 세계 2에 있어요")
+		return
+	end
+	if p.radius < Config.WORLD2_RADIUS then
+		toast(player, string.format("세계 1에서 크기 %d을 넘겨야 세계 2로 넘어갈 수 있어요 (지금 ⚫%s)", Config.WORLD2_RADIUS, Config.formatSize(p.radius)))
+		return
+	end
+	local from = p.radius
+	p.tier = 2
+	p.reached2 = true
+	p.radius = math.max(Config.START_RADIUS, from / Config.WORLD2_SCALE)
+	st.world = 2
+	st.activeOn = false
+	st.shots = {}
+	st.trail = {}
+	st.dirty = true
+	st.portalAt = os.clock() + 3
+	moveTo(player, spawnPos(2))
+	applyHole(player)
+	Push:FireClient(player, "advanced", { from = from, to = p.radius })
+	pushState(player)
 end
 
 local function tickPlayer(player: Player, p: Profile, st: State)
@@ -3201,9 +3316,10 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		applyHole(player)
 		pushState(player)
 	end
-	-- 액티브 스킬이 끝났으면 속도·범위를 되돌린다
+	-- 액티브 스킬이 끝났으면 되돌린다
 	if st.activeOn and now >= st.activeUntil then
 		st.activeOn = false
+		st.activeId = ""
 		applyHole(player)
 		pushState(player)
 	end
@@ -3214,11 +3330,8 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			st.portalAt = now + 3
 			if portal.to == 0 then
 				Actions.goLobby(player)
-			elseif Calc.worldOpen(p, portal.to) then
-				Actions.goWorld(player, portal.to)
-			elseif now > st.lockToastAt then
-				st.lockToastAt = now + 4
-				toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", portal.to, Config.Worlds[portal.to].needBigbang))
+			else
+				Actions.goWorld(player, portal.to, true)
 			end
 		end
 	end
@@ -3226,15 +3339,29 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		return
 	end
 
-	local r = p.radius
-	local ab = Calc.ability(p)
-	local reach = r + Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st))
 	local zone = Config.zoneAt(pos)
 	local world = Config.Zones[zone].world
+	-- 이번 판의 세계가 아닌 곳에 있으면 (예: 빅뱅 직후) 제 세계로 보낸다
+	if world ~= p.tier then
+		moveTo(player, spawnPos(p.tier))
+		return
+	end
 	st.world = world
 	if zone ~= st.zone then
 		st.zone = zone
 		Push:FireClient(player, "zone", zone)
+	end
+
+	local r = p.radius
+	local ab = Calc.ability(p)
+	local size = r * Calc.swell(p, st) -- 이만큼 큰 것까지 삼킨다
+	local reach = size + Config.pullRange(size)
+
+	-- 세계 2로 넘어갈 수 있게 되면 한 번 알려 준다
+	if p.tier == 1 and r >= Config.WORLD2_RADIUS and not st.advanceNotified then
+		st.advanceNotified = true
+		Push:FireClient(player, "advanceReady", {})
+		pushState(player)
 	end
 
 	-- 별똥별
@@ -3256,51 +3383,112 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		dropStar(player, st, pos, r)
 	end
 
-	-- 한꺼번에 흡수 스킬
-	local burst = st.burst
-	if burst > 0 then
-		st.burst = 0
-		reach *= burst
+	-- 흡수 지점들: 내 블랙홀 + 스킨 능력
+	local mouths: { Mouth } = { { pos = pos, reach = reach * Calc.vortex(p, st), limit = size } }
+	if ab.trail then
+		-- 성운 꼬리: 지나간 자리 2초
+		table.insert(st.trail, { pos = pos, t = now })
+		while #st.trail > 0 and now - st.trail[1].t > 2 do
+			table.remove(st.trail, 1)
+		end
+		for i = 1, #st.trail, 3 do
+			local tp = st.trail[i]
+			if now - tp.t > 0.25 then
+				table.insert(mouths, { pos = tp.pos, reach = r * ab.trail + 1, limit = r })
+			end
+		end
+	end
+	if Calc.activeId(st) == "prism" then
+		-- 프리즘 분신 둘이 둘레를 돈다 (화면도 같은 식으로 그린다)
+		for k = 0, 1 do
+			local a = now * 2.2 + k * math.pi
+			table.insert(mouths, { pos = pos + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 2.5, reach = r * 0.7 + Config.pullRange(r), limit = r })
+		end
+	end
+	local limitCount = 40
+	if #st.shots > 0 then
+		for _, m in ipairs(st.shots) do
+			table.insert(mouths, m)
+		end
+		st.shots = {}
+		limitCount = 300
 	end
 
 	local mult = Calc.totalMult(player, p)
+	local worldMass = Config.Worlds[world].massMult or 1
 	local gm = Calc.growMult(player, p)
 	local maxR = Calc.maxRadius(p)
 	local factor = Calc.respawnFactor(player, p)
 	local goldChance = Config.goldenChance(p.up.golden, ab.golden)
-	local reachable = Config.maxZone(world, r)
-	local limit = burst > 0 and 250 or 40
+	local goldMass = Config.GOLDEN_MASS * (ab.goldenMass or 1)
+	local reachable = Config.maxZone(world, size)
 	local newR = r
 	local eatenList = {}
 	local gained = 0
 	local goldenCount, bigCount = 0, 0
 	local ateSun = false
-	for zi = math.max(1, zone - 1), math.min(#Config.Zones, zone + 1) do
-		if Config.Zones[zi].world == world then
-			for _, rec in ipairs(byZone[zi] or {}) do
-				if rec.alive and rec.zone <= reachable and rec.def.size <= r and flatDist(rec.pos, pos) <= reach + rec.def.size * 0.5 then
-					local golden = rec.golden
-					eat(player, rec, factor, goldChance)
-					local m = rec.def.mass * mult * (golden and Config.GOLDEN_MASS or 1)
-					gained += m
-					newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR)
-					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
-					if golden then
-						goldenCount += 1
+	local chainFrom: { Vector3 } = {}
+
+	local function consume(rec: World.ObjectRec)
+		local golden = rec.golden
+		eat(player, rec, factor, goldChance)
+		local m = rec.def.mass * worldMass * mult * (golden and goldMass or 1)
+		gained += m
+		newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR, world)
+		table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
+		if golden then
+			goldenCount += 1
+		end
+		if rec.def.size >= r * 0.5 then
+			bigCount += 1
+		end
+		if rec.def.id == "candysun" then
+			ateSun = true
+		end
+		if ab.chain and #chainFrom < 15 then
+			table.insert(chainFrom, rec.pos)
+		end
+	end
+
+	local function scan(list: { Mouth })
+		for zi = math.max(1, zone - 2), math.min(#Config.Zones, zone + 2) do
+			if Config.Zones[zi].world == world then
+				for _, rec in ipairs(byZone[zi] or {}) do
+					if #eatenList >= limitCount then
+						return
 					end
-					if rec.def.size >= r * 0.5 then
-						bigCount += 1
-					end
-					if rec.def.id == "candysun" then
-						ateSun = true
-					end
-					if #eatenList >= limit then
-						break
+					if rec.alive and rec.zone <= reachable then
+						for _, m in ipairs(list) do
+							if rec.def.size <= m.limit and flatDist(rec.pos, m.pos) <= m.reach + rec.def.size * 0.5 then
+								consume(rec)
+								break
+							end
+						end
 					end
 				end
 			end
 		end
 	end
+	scan(mouths)
+	-- 용암 연쇄 폭발: 삼킨 자리 주변도 한 번 더
+	if #chainFrom > 0 then
+		local chain: { Mouth } = {}
+		for _, cp in ipairs(chainFrom) do
+			table.insert(chain, { pos = cp, reach = r * ab.chain, limit = size })
+		end
+		limitCount += 20
+		scan(chain)
+	end
+
+	-- 슈가 러시 속도는 연속 흡수가 바뀔 때만 다시 맞춘다
+	if ab.sugar then
+		local level = math.floor((Calc.speedExtra(p, st) - 1) * 10)
+		if level ~= st.sugarLevel then
+			st.sugarLevel = level
+			applyHole(player)
+		end
+	end
+
 	if #eatenList > 0 then
 		if now - st.lastEat <= Config.COMBO_WINDOW then
 			st.combo += #eatenList
@@ -3321,10 +3509,10 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			gained = gained,
 			mass = p.mass,
 			radius = p.radius,
-			pullRange = Config.pullRange(p.radius, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+			pullRange = Config.pullRange(p.radius * Calc.swell(p, st)) * Calc.vortex(p, st),
 			combo = st.combo,
 			comboBonus = Config.comboBonus(st.combo, p.up.combo),
-			burst = burst > 0,
+			burst = limitCount > 40,
 		})
 		updateLeaderstats(player)
 		Quests.add(player, p, "eat", #eatenList)
@@ -3349,6 +3537,192 @@ task.spawn(function()
 				if not ok then
 					warn("[BlackHole] 삼키기 오류:", err)
 				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------------------
+-- 서버 이벤트: 떠도는 거대 행성
+-- 플레이어가 가장 많은 구역에 행성이 나타나 천천히 떠돈다. 블랙홀이 행성에 닿아 있으면
+-- 0.1초마다 (1 + log2(1 + 크기))만큼 깎는다. 다 깎으면 깎은 몫만큼 보상 (Config.eventReward, 로그 공식).
+-- 서버는 보이지 않는 부품 하나(GiantPlanet)만 움직이고, 행성 모양은 각 화면이 그린다.
+------------------------------------------------------------------------
+local Event = {
+	active = false,
+	zone = 0,
+	world = 1,
+	radius = 0,
+	hp = 0,
+	maxHp = 1,
+	ends = 0,
+	pos = Vector3.zero,
+	target = Vector3.zero,
+	speed = 20,
+	contrib = {} :: { [number]: number },
+	nextAt = os.clock() + Config.EVENT.firstDelay,
+}
+local eventFolder = Instance.new("Folder")
+eventFolder.Name = "Event"
+eventFolder.Parent = workspace
+local planetAnchor = Instance.new("Part")
+planetAnchor.Name = "GiantPlanet"
+planetAnchor.Anchored = true
+planetAnchor.CanCollide = false
+planetAnchor.CanQuery = false
+planetAnchor.CanTouch = false
+planetAnchor.Transparency = 1
+planetAnchor.Size = Vector3.new(1, 1, 1)
+planetAnchor.CFrame = CFrame.new(0, -500, 0)
+planetAnchor:SetAttribute("Active", false)
+planetAnchor.Parent = eventFolder
+
+-- 행성이 떠도는 범위 안의 아무 곳
+function Event.randomSpot(): Vector3
+	local zone = Config.Zones[Event.zone]
+	local wx = Config.Worlds[zone.world].x
+	local z0 = Config.zoneStart(Event.zone)
+	local mx = math.max(0, zone.width / 2 - Event.radius - 20)
+	local mz = math.max(0, zone.length / 2 - Event.radius - 20)
+	return Vector3.new(wx + (math.random() * 2 - 1) * mx, 0, z0 + zone.length / 2 + (math.random() * 2 - 1) * mz)
+end
+
+-- 지금 보이는 크기 (깎일수록 작아진다)
+function Event.shown(): number
+	return Event.radius * (0.4 + 0.6 * math.sqrt(math.max(0, Event.hp / Event.maxHp)))
+end
+
+function Event.start(): boolean
+	-- 사람이 가장 많은 구역
+	local counts: { [number]: number } = {}
+	for player, st in pairs(states) do
+		if profiles[player] and not st.inLobby then
+			counts[st.zone] = (counts[st.zone] or 0) + 1
+		end
+	end
+	local bestZone, bestN = 0, 0
+	for z, n in pairs(counts) do
+		if n > bestN then
+			bestZone, bestN = z, n
+		end
+	end
+	if bestZone == 0 then
+		return false
+	end
+	local zone = Config.Zones[bestZone]
+	local sum, n = 0, 0
+	for player, st in pairs(states) do
+		local p = profiles[player]
+		if p and not st.inLobby and st.world == zone.world then
+			sum += p.radius
+			n += 1
+		end
+	end
+	local avgR = n > 0 and sum / n or 5
+	Event.active = true
+	Event.zone = bestZone
+	Event.world = zone.world
+	Event.radius = math.clamp(avgR * 2.5, 12, math.min(1500, zone.width * 0.3))
+	Event.maxHp = Config.eventDamage(avgR) * 10 * Config.EVENT.soloSeconds * math.max(1, n) ^ 0.8
+	Event.hp = Event.maxHp
+	Event.ends = os.clock() + Config.EVENT.life
+	Event.contrib = {}
+	Event.pos = Event.randomSpot()
+	Event.target = Event.randomSpot()
+	Event.speed = math.max(12, Event.radius * 0.2)
+	planetAnchor:SetAttribute("Radius", Event.radius)
+	planetAnchor:SetAttribute("HP", Event.hp)
+	planetAnchor:SetAttribute("MaxHP", Event.maxHp)
+	planetAnchor:SetAttribute("Ends", workspace:GetServerTimeNow() + Config.EVENT.life)
+	planetAnchor:SetAttribute("Zone", bestZone)
+	planetAnchor.CFrame = CFrame.new(Event.pos)
+	planetAnchor:SetAttribute("Active", true)
+	Push:FireAllClients("event", { kind = "start", zone = bestZone, world = zone.world, radius = Event.radius })
+	return true
+end
+
+function Event.finish(escaped: boolean)
+	Event.active = false
+	planetAnchor:SetAttribute("Active", false)
+	local total = 0
+	local topId, topC = 0, -1
+	for id, c in pairs(Event.contrib) do
+		total += c
+		if c > topC then
+			topId, topC = id, c
+		end
+	end
+	local ranked = {}
+	for id, c in pairs(Event.contrib) do
+		table.insert(ranked, { id = id, c = c })
+	end
+	table.sort(ranked, function(a, b)
+		return a.c > b.c
+	end)
+	for rank, e in ipairs(ranked) do
+		local player = Players:GetPlayerByUserId(e.id)
+		local p = player and profiles[player]
+		local st = player and states[player]
+		if player and p and st and total > 0 then
+			local share = e.c / total
+			-- 놓쳤으면 깎은 만큼만 (깎은 비율 × 반)
+			local done = escaped and (1 - Event.hp / Event.maxHp) or 1
+			local mass, grow, dm = Config.eventReward(share, Config.biggestMass(p.tier, p.radius), Calc.totalMult(player, p), e.id == topId, escaped)
+			mass *= done
+			grow *= done
+			p.mass += mass
+			p.total += mass
+			p.radius = math.min(Calc.maxRadius(p), p.radius * (1 + grow))
+			p.dm += dm
+			st.dirty = true
+			applyHole(player)
+			Push:FireClient(player, "eventReward", { rank = rank, players = #ranked, share = share, mass = mass, grow = grow, dm = dm, escaped = escaped })
+			pushState(player)
+		end
+	end
+	Push:FireAllClients("event", { kind = escaped and "escape" or "done" })
+	Event.nextAt = os.clock() + Config.EVENT.interval
+end
+
+task.spawn(function()
+	local dt = 0.1
+	while true do
+		task.wait(dt)
+		local now = os.clock()
+		if not Event.active then
+			if now >= Event.nextAt then
+				if not Event.start() then
+					Event.nextAt = now + 20
+				end
+			end
+		else
+			-- 천천히 떠돈다
+			local to = Event.target - Event.pos
+			if to.Magnitude < Event.speed * dt * 2 then
+				Event.target = Event.randomSpot()
+			else
+				Event.pos += to.Unit * Event.speed * dt
+			end
+			planetAnchor.CFrame = CFrame.new(Event.pos)
+			-- 닿아 있는 블랙홀이 깎는다
+			local shown = Event.shown()
+			for player, p in pairs(profiles) do
+				local st = states[player]
+				local char = player.Character
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				if st and root and root:IsA("BasePart") and not st.inLobby and st.world == Event.world then
+					if flatDist(root.Position, Event.pos) < shown + p.radius then
+						local dmg = Config.eventDamage(p.radius)
+						Event.hp -= dmg
+						Event.contrib[player.UserId] = (Event.contrib[player.UserId] or 0) + dmg
+					end
+				end
+			end
+			planetAnchor:SetAttribute("HP", math.max(0, Event.hp))
+			if Event.hp <= 0 then
+				Event.finish(false)
+			elseif now > Event.ends then
+				Event.finish(true)
 			end
 		end
 	end
@@ -3441,8 +3815,12 @@ end)
 
 function Actions.bigbang(player: Player)
 	local p, st = profiles[player], states[player]
+	if p.tier ~= 2 then
+		toast(player, string.format("빅뱅은 세계 2에서 해요. 먼저 세계 1에서 크기 %d을 넘기고 세계 2로 넘어가세요", Config.WORLD2_RADIUS))
+		return
+	end
 	if p.radius < Config.BIGBANG_RADIUS then
-		toast(player, string.format("크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
+		toast(player, string.format("세계 2에서 크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
 		return
 	end
 	local reward = Config.darkMatterReward(p.radius, p.bigbang, p.bb.dm)
@@ -3453,7 +3831,15 @@ function Actions.bigbang(player: Player)
 	p.bigbang += 1
 	p.dm += reward
 	p.mass = p.mass * 0.05 * (p.bb.keep or 0)
+	if (p.bb.seed or 0) > 0 then
+		p.mass += 1000 * 10 ^ p.bb.seed
+	end
+	p.tier = 1
 	p.radius = Config.startRadius(p.bb.start or 0)
+	st.activeOn = false
+	st.shots = {}
+	st.trail = {}
+	st.advanceNotified = false
 	for _, u in ipairs(Config.Upgrades) do
 		p.up[u.id] = 0
 	end
@@ -3465,16 +3851,16 @@ function Actions.bigbang(player: Player)
 			p.skin = skin.id
 		end
 	end
+	st.world = 1
 	if not st.inLobby then
-		moveTo(player, spawnPos(st.world))
+		moveTo(player, spawnPos(1))
 	end
 	applyHole(player)
 	Push:FireClient(player, "bigbang", {
 		count = p.bigbang,
 		dm = reward,
 		skins = newSkins,
-		world2 = p.bigbang == Config.Worlds[2].needBigbang,
-		maxRadius = Calc.maxRadius(p),
+		maxRadius = Config.maxRadius(p.bigbang, p.up.maxsize, 2),
 	})
 	pushState(player)
 end
@@ -3486,8 +3872,8 @@ function Actions.teleport(player: Player, zoneArg: any)
 	if not zone then
 		return
 	end
-	if not Calc.worldOpen(p, zone.world) then
-		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", zone.world, Config.Worlds[zone.world].needBigbang))
+	if zone.world ~= p.tier then
+		Actions.goWorld(player, zone.world)
 		return
 	end
 	local r = p.radius
@@ -3502,7 +3888,8 @@ function Actions.teleport(player: Player, zoneArg: any)
 	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + math.min(r, 50) * 0.2, z))
 end
 
-function Actions.skill(player: Player)
+-- 스킬 (Q). dx, dz = 화면이 바라보는 쪽 (빛줄기·순간이동 방향)
+function Actions.skill(player: Player, dx: any, dz: any)
 	local p, st = profiles[player], states[player]
 	local ab = Calc.ability(p)
 	if ab.kind ~= "active" then
@@ -3513,21 +3900,64 @@ function Actions.skill(player: Player)
 		toast(player, "로비에서는 스킬을 쓸 수 없어요")
 		return
 	end
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
 	local now = os.clock()
 	if now < st.cdUntil then
 		toast(player, string.format("%s: %d초 뒤에 다시 쓸 수 있어요", ab.name, math.ceil(st.cdUntil - now)))
 		return
 	end
 	st.cdUntil = now + ab.cd
-	if (ab.dur or 0) > 0 then
-		st.activeOn = true
-		st.activeUntil = now + ab.dur
+	local pos = Vector3.new(root.Position.X, 0, root.Position.Z)
+	local dir = Vector3.new(tonumber(dx) or 0, 0, tonumber(dz) or 0)
+	if dir ~= dir or dir.Magnitude < 0.1 then
+		local look = root.CFrame.LookVector
+		dir = Vector3.new(look.X, 0, look.Z)
 	end
-	if ab.burst then
-		st.burst = ab.burst
+	if dir.Magnitude < 0.01 then
+		dir = Vector3.new(0, 0, 1)
+	end
+	dir = dir.Unit
+	local r = p.radius
+	local pull = Config.pullRange(r)
+	local fx: { [string]: any } = { id = ab.id, from = pos, dir = dir, r = r }
+	if ab.id == "beam" then
+		-- 퀘이사 빔: 바라보는 쪽 길 위를 한꺼번에
+		for k = 1, 12 do
+			table.insert(st.shots, { pos = pos + dir * (r * ab.len * k / 12), reach = r * 1.1 + 2, limit = r })
+		end
+		fx.to = pos + dir * r * ab.len
+	elseif ab.id == "blink" then
+		-- 빙결 순간이동: 지금 구역 안에서만 (닫힌 문은 못 넘는다)
+		local zi = Config.zoneAt(pos)
+		local zone = Config.Zones[zi]
+		local wx = Config.Worlds[zone.world].x
+		local z0 = Config.zoneStart(zi)
+		local target = pos + dir * r * ab.len
+		local margin = math.min(30, zone.width / 4)
+		target = Vector3.new(math.clamp(target.X, wx - zone.width / 2 + margin, wx + zone.width / 2 - margin), 0, math.clamp(target.Z, z0 + margin, z0 + zone.length - margin))
+		for k = 0, 10 do
+			table.insert(st.shots, { pos = pos:Lerp(target, k / 10), reach = r + pull, limit = r })
+		end
+		moveTo(player, target + Vector3.new(0, 5, 0))
+		fx.to = target
+	elseif ab.id == "eye" then
+		-- 신의 시선: 넓게, 나보다 큰 것까지
+		table.insert(st.shots, { pos = pos, reach = r * ab.eye, limit = r * ab.eyeLimit })
+	elseif (ab.dur or 0) > 0 then
+		st.activeOn = true
+		st.activeId = ab.id
+		st.activeUntil = now + ab.dur
+		fx.dur = ab.dur
 	end
 	applyHole(player)
-	Push:FireClient(player, "skill", { name = ab.name, dur = ab.dur or 0, cd = ab.cd, burst = ab.burst ~= nil })
+	-- 스킬 모습은 모든 화면에 보인다
+	fx.userId = player.UserId
+	Push:FireAllClients("skillFx", fx)
+	Push:FireClient(player, "skill", { id = ab.id, name = ab.name, dur = ab.dur or 0, cd = ab.cd })
 	pushState(player)
 end
 
@@ -3545,7 +3975,7 @@ function Actions.daily(player: Player)
 	p.streak = (now - p.dailyAt < 48 * 3600) and p.streak + 1 or 1
 	p.dailyAt = now
 	local dm = 2 + math.min(p.streak, 7)
-	local mass = math.max(1000, Config.biggestMass(1, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
+	local mass = math.max(1000, Config.biggestMass(p.tier, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
 	p.dm += dm
 	p.mass += mass
 	p.total += mass
@@ -3610,7 +4040,8 @@ function Actions.skin(player: Player, id: any)
 	if p.skin ~= skin.id then
 		-- 스킨을 바꾸면 켜져 있던 액티브 스킬은 끝난다
 		st.activeOn = false
-		st.burst = 0
+		st.activeId = ""
+		st.shots = {}
 	end
 	p.skin = skin.id
 	st.dirty = true
@@ -3686,8 +4117,8 @@ function Sats.hatch(player: Player, capId: any, wantTriple: any)
 		toast(player, "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요")
 		return
 	end
-	if not Calc.worldOpen(p, cap.world) then
-		toast(player, "🔒 " .. cap.name .. "은(는) 세계 2가 열리면 깰 수 있어요")
+	if cap.world == 2 and not p.reached2 then
+		toast(player, "🔒 " .. cap.name .. "은(는) 세계 2에 한 번 가 보면 깰 수 있어요")
 		return
 	end
 	local count = 1
@@ -3827,7 +4258,7 @@ local function grantProduct(player: Player, key: string, receiptId: string): boo
 		p.respawnUntil = math.max(now, p.respawnUntil) + 1800
 	elseif key == "massS" or key == "massL" then
 		local n = key == "massS" and 30 or 120
-		local amount = Config.biggestMass(st.world, p.radius) * n * Calc.totalMult(player, p)
+		local amount = Config.biggestMass(p.tier, p.radius) * n * Calc.totalMult(player, p)
 		p.mass += amount
 		p.total += amount
 	elseif key == "dm10" then
@@ -3888,6 +4319,17 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		st.cdUntil = 0
 	elseif action == "testDaily" then
 		p.dailyAt = 0
+	elseif action == "testEvent" then
+		if Event.active then
+			Event.finish(true)
+		end
+		if not Event.start() then
+			toast(player, "세계 안에 있어야 행성을 부를 수 있어요")
+		end
+	elseif action == "testAdvance" then
+		if p.tier == 1 then
+			p.radius = math.max(p.radius, Config.WORLD2_RADIUS)
+		end
 	elseif action == "testReset" then
 		local fresh = defaultProfile()
 		Quests.fill(fresh)
@@ -3933,7 +4375,9 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 			Actions.goWorld(player, w)
 		end
 	elseif action == "skill" then
-		Actions.skill(player)
+		Actions.skill(player, arg, arg2)
+	elseif action == "advance" then
+		Actions.advance(player)
 	elseif action == "unstuck" then
 		Actions.unstuck(player)
 	elseif action == "bbshop" then
@@ -4092,8 +4536,12 @@ local function onPlayerAdded(player: Player)
 		lastEat = 0,
 		activeUntil = 0,
 		activeOn = false,
+		activeId = "",
 		cdUntil = 0,
-		burst = 0,
+		shots = {},
+		trail = {},
+		sugarLevel = 0,
+		advanceNotified = false,
 	}
 	states[player] = st
 	local ls = Instance.new("Folder")
@@ -4430,7 +4878,7 @@ end
 local function starDust(folder: Folder, center: Vector3, zone: any, color: Color3)
 	local sky = part({ Name = "Stars", Size = Vector3.new(math.min(zone.width, LIMIT), 10, math.min(zone.length, LIMIT)), Position = center + Vector3.new(0, 300, 0), Transparency = 1, CanCollide = false, CanQuery = false, Parent = folder })
 	local pe = Instance.new("ParticleEmitter")
-	pe.Rate = 160
+	pe.Rate = 60
 	pe.Lifetime = NumberRange.new(4, 8)
 	pe.Speed = NumberRange.new(0, 1)
 	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.5, 3), NumberSequenceKeypoint.new(1, 0) })
@@ -4526,7 +4974,7 @@ local function buildPortal(folder: Folder, ppos: Vector3, to: number, facing: nu
 	else
 		local target = Config.Worlds[to]
 		title = string.format("🌀 세계 %d · %s", to, target.name)
-		lock = target.needBigbang > 0 and string.format("빅뱅 %d번 하면 열림", target.needBigbang) or "언제든 갈 수 있음"
+		lock = to == 1 and "한 판의 시작" or string.format("세계 1에서 크기 %d 넘기면", Config.WORLD2_RADIUS)
 	end
 	for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back }) do
 		signText(sign, face, {
@@ -5228,6 +5676,43 @@ do
 	end
 end
 
+-- 세계 2로 넘어가기 버튼 (크기 400을 넘기면 화면 위에 뜬다)
+local advanceButton: TextButton
+do
+	advanceButton = button({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 128),
+		Size = UDim2.new(0, 360, 0, 54),
+		Text = "🍭 세계 2로 넘어가기",
+		TextSize = 22,
+		BackgroundColor3 = Color3.fromRGB(230, 90, 170),
+		Visible = false,
+		ZIndex = 5,
+		Parent = gui,
+	}, function()
+		Request:FireServer("advance")
+	end)
+	new("UIStroke", { Color = Color3.fromRGB(255, 240, 255), Thickness = 3, Parent = advanceButton })
+	scaled(advanceButton)
+end
+
+-- 거대 행성 안내 (거리와 방향)
+local eventLabel: TextLabel
+do
+	eventLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 190),
+		Size = UDim2.new(0, 520, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 19,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.fromRGB(255, 210, 130),
+		TextStrokeTransparency = 0.2,
+		Visible = false,
+		Parent = gui,
+	})
+end
+
 ------------------------------------------------------------------------
 -- 창
 ------------------------------------------------------------------------
@@ -5437,8 +5922,8 @@ do
 		info.Text = (state.inLobby and "" or "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요  ·  ") .. string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
 		for _, cap in ipairs(Config.Capsules) do
 			local ui = capUI[cap.id]
-			local open = state.bigbang >= Config.Worlds[cap.world].needBigbang
-			ui.lock.Text = open and "" or "🔒 세계 2가 열리면 (빅뱅 1번)"
+			local open = cap.world ~= 2 or state.reached2
+			ui.lock.Text = open and "" or "🔒 세계 2에 한 번 가 보면"
 			ui.one.Text = "1개 · 💠 " .. fmt(cap.cost)
 			ui.one.BackgroundColor3 = (open and state.mass >= cap.cost) and C.accent or C.panel2
 			ui.three.Text = state.passes.triple and ("3개 · 💠 " .. fmt(cap.cost * 3)) or "🔒 3개 부화 (상점)"
@@ -5607,7 +6092,7 @@ do
 	local cam = new("Camera", { FieldOfView = 50, Parent = vf })
 	cam.CFrame = CFrame.lookAt(Vector3.new(0, 7.5, -8.5), Vector3.new(0, 0.3, 0))
 	vf.CurrentCamera = cam
-	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = top })
+	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, RichText = true, Parent = top })
 	local effectLabel = text({ Position = UDim2.new(0, 222, 0, 52), Size = UDim2.new(1, -236, 0, 28), TextSize = 19, TextColor3 = C.dim, Parent = top })
 	local abilityLabel = text({ Position = UDim2.new(0, 222, 0, 80), Size = UDim2.new(1, -236, 0, 44), TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
 	local howLabel = text({ Position = UDim2.new(0, 222, 0, 124), Size = UDim2.new(1, -236, 0, 22), TextSize = 16, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
@@ -5644,7 +6129,8 @@ do
 			end
 			skinPreview = Fx.preview(skin.index, 3, Vector3.new(0, 0, 0), vf)
 		end
-		nameLabel.Text = skin.name
+		local rar = Config.Rarities[skin.tier or 1]
+		nameLabel.Text = string.format('%s  <font color="#%s" size="20">[%s]</font>', skin.name, rar.color:ToHex(), rar.name)
 		nameLabel.TextColor3 = skin.a:Lerp(Color3.new(1, 1, 1), 0.3)
 		effectLabel.Text = skin.effect and EFFECT_TEXT[skin.effect] or "기본 소용돌이"
 		local ab = skin.ability
@@ -5664,10 +6150,12 @@ do
 	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 172), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
 	local skinButtons: { [string]: TextButton } = {}
 	for _, skin in ipairs(Config.Skins) do
-		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
+		local rar = Config.Rarities[skin.tier or 1]
+		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(rar.color, 2.5), grad(rar.color:Lerp(C.bg, 0.65), C.bg) })
 		card.Activated:Connect(function()
 			show(skin)
 		end)
+		text({ Position = UDim2.new(0, 6, 0, 4), Size = UDim2.new(0, 60, 0, 18), TextSize = 12, Font = Enum.Font.GothamBlack, TextColor3 = rar.color, Text = rar.name, Parent = card })
 		local swatch = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 6), Size = UDim2.new(0, 56, 0, 56), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card }, {
 			corner(28),
 			new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, skin.a), ColorSequenceKeypoint.new(0.5, Color3.new(0, 0, 0)), ColorSequenceKeypoint.new(1, skin.b) }), Rotation = 45 }),
@@ -5712,8 +6200,8 @@ do
 		if not state then
 			return
 		end
-		local ready = state.radius >= Config.BIGBANG_RADIUS
-		local reward = Config.darkMatterReward(math.max(state.radius, Config.BIGBANG_RADIUS), state.bigbang)
+		local ready = state.tier == 2 and state.radius >= Config.BIGBANG_RADIUS
+		local reward = Config.darkMatterReward(state.tier == 2 and math.max(state.radius, Config.BIGBANG_RADIUS) or Config.BIGBANG_RADIUS, state.bigbang)
 		local nextSkin = nil
 		for _, skin in ipairs(Config.Skins) do
 			if skin.unlock == "bigbang" and skin.value > state.bigbang then
@@ -5722,16 +6210,17 @@ do
 			end
 		end
 		info.Text = table.concat({
-			"우주를 처음부터 다시 시작해요. 질량과 업그레이드는 사라지지만:",
+			"세계 1부터 처음부터 다시 시작해요. 크기·질량·업그레이드는 사라지지만:",
 			"",
 			string.format("• 영구 질량 배율  <b>×%d → ×%d</b>", state.bigbang + 1, state.bigbang + 2),
 			string.format('• <font color="#C8A0FF">🌑 암흑 물질 +%d개</font> (더 크게 커져서 할수록 더 많이)', reward),
 			"• 🌑 빅뱅 상점에서 영원히 남는 업그레이드를 살 수 있어요",
-			state.bigbang == 0 and '• <font color="#FF9AD5">🍭 세계 2 「과자 왕국」이 열려요!</font>' or "",
+			"• 세계 2 최대 크기 +300, 성장 +10%",
 			nextSkin and string.format("• 다음 스킨: %s (빅뱅 %d번)", nextSkin.name, nextSkin.value) or "",
 			"",
 			string.format("지금 빅뱅 %d회  ·  🌑 %d개", state.bigbang, state.dm),
-			string.format('조건: 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius)),
+			state.tier == 2 and string.format('조건: 세계 2에서 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius))
+				or string.format('조건: 세계 1에서 크기 %d을 넘겨 세계 2로 간 뒤, 세계 2에서 크기 %d  ·  지금 세계 1 ⚫%s', Config.WORLD2_RADIUS, Config.BIGBANG_RADIUS, Config.formatSize(state.radius)),
 		}, "\n")
 		go.TextTransparency = ready and 0 or 0.5
 		go.BackgroundColor3 = ready and Color3.fromRGB(200, 70, 160) or C.panel2
@@ -5808,9 +6297,9 @@ do
 			return
 		end
 		for wi, world in ipairs(Config.Worlds) do
-			local open = state.bigbang >= world.needBigbang
-			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", wi == 1 and "🌍" or "🍭", wi, world.name, open and "" or string.format("🔒 빅뱅 %d번", world.needBigbang))
-			worldRows[wi].btn.Text = currentWorld == wi and "여기 있어요" or (open and "세계로 이동" or "잠김")
+			local open = state.tier == wi
+			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", wi == 1 and "🌍" or "🍭", wi, world.name, open and "← 이번 판" or (wi == 2 and string.format("🔒 세계 1에서 크기 %d", Config.WORLD2_RADIUS) or "빅뱅하면 여기부터"))
+			worldRows[wi].btn.Text = (currentWorld == wi and not state.inLobby) and "여기 있어요" or (open and "세계로 이동" or "잠김")
 			worldRows[wi].btn.BackgroundColor3 = (open and currentWorld ~= wi) and C.green or C.panel2
 			for n, zi in ipairs(Config.zonesOf(wi)) do
 				local zone = Config.Zones[zi]
@@ -5831,7 +6320,7 @@ do
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
 	local objLines = {}
 	for wi, world in ipairs(Config.Worlds) do
-		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", wi == 1 and "🌍" or "🍭", wi, world.name, world.needBigbang > 0 and string.format(" (빅뱅 %d번 하면 열림, 질량 약 5배)", world.needBigbang) or ""))
+		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", wi == 1 and "🌍" or "🍭", wi, world.name, wi == 2 and string.format(" (세계 1에서 크기 %d을 넘기면, 크기 ÷%d)", Config.WORLD2_RADIUS, Config.WORLD2_SCALE) or ""))
 		for n, zi in ipairs(Config.zonesOf(wi)) do
 			local names = {}
 			for _, o in ipairs(Config.Objects) do
@@ -5867,7 +6356,8 @@ do
 			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
 			"• 클수록 덜 자라서, 뒤쪽 구역은 오래 놀아야 커져요. 최대 크기는 빅뱅할수록 늘어나요",
 			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드 9종을 사요 (내려서 더 보기)",
-			"• ⚫ 성장력 · 💠 질량 배율 · 🌀 흡입력 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
+			"• ⚫ 성장력 · 💠 질량 배율 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
+			"• 흡입력은 없어요. 물체 위를 정확히 지나가야 삼켜요. 높은 레벨일수록 업그레이드가 가파르게 비싸져요",
 			"• 🤖 자동 업그레이드를 켜면 알아서 사요",
 			"",
 			"<b>보너스</b>",
@@ -5875,17 +6365,21 @@ do
 			string.format("• ✨ 황금 물체: 가끔 금빛으로 나타나요. 질량 %d배, 성장 %.1f배", Config.GOLDEN_MASS, Config.GOLDEN_GROW),
 			string.format("• ☄ 별똥별: 삼키면 %d초 동안 질량과 성장 2배", Config.STAR_BOOST),
 			"• 📋 퀘스트: 늘 3개. 끝내면 바로 질량이나 🌑 암흑 물질을 받아요",
+			"• 🌍 떠도는 거대 행성: 5분마다 사람이 많은 구역에 나타나요. 닿아 있으면 깎이고, 깎은 몫만큼 보상 (질량·크기·암흑 물질)",
 			"",
 			"<b>🎨 스킨 능력</b>",
 			"• ✦ 패시브: 늘 켜져 있어요 (흡입·성장·질량·황금·별똥별 보너스)",
-			"• ⚡ 액티브: Q로 써요 (빠르게 달리기, 흡입 범위 키우기, 주변 한꺼번에 흡수)",
+			"• ⚡ 액티브: Q로 써요. 카메라가 보는 쪽으로 나가요",
+			"  퀘이사 빔(빛줄기) · 적색 팽창(더 큰 것도) · 빙결 순간이동 · 은하 소용돌이 · 프리즘 분신 · 신의 시선",
+			"• 등급(일반→희귀→영웅→전설→신화→비밀)이 높을수록 능력이 세고 모양이 화려해요",
 			"",
 			"<b>🛰 위성</b>",
 			"• 로비 캡슐 기계에서 위성을 뽑아요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
 			"<b>🌌 빅뱅 (환생)</b>",
-			string.format("• 크기 ⚫%d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_RADIUS),
+			string.format("• 한 판: 세계 1에서 크기 %d → 세계 2로 넘어가며 크기 ÷%d → 세계 2에서 크기 %d이면 빅뱅", Config.WORLD2_RADIUS, Config.WORLD2_SCALE, Config.BIGBANG_RADIUS),
+			"• 빅뱅하면 세계 1부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요",
 			"• 빅뱅할 때마다 최대 크기 +300, 성장 +10%",
 			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸, 질량 보존, 암흑 수확",
 			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요. 세계 1보다 훨씬 넓고 구역이 8개예요",
@@ -5923,9 +6417,11 @@ do
 		{ "⭐ 업그레이드 최대", "testMaxAll", C.pink },
 		{ "🌑 암흑 물질 +50", "testDM", Color3.fromRGB(110, 60, 180) },
 		{ "🌌 빅뱅 +1", "testBigbang", Color3.fromRGB(200, 70, 150) },
+		{ "🍭 세계 2 준비", "testAdvance", Color3.fromRGB(230, 90, 170) },
+		{ "🌍 거대 행성", "testEvent", Color3.fromRGB(230, 150, 60) },
 		{ "☄ 별똥별 지금", "testStar", Color3.fromRGB(220, 160, 40) },
 	}) do
-		button({ Size = UDim2.new(0.25, -5, 1, 0), Text = item[1], TextSize = 14, BackgroundColor3 = item[3], Parent = row3 }, function()
+		button({ Size = UDim2.new(1 / 6, -5, 1, 0), Text = item[1], TextSize = 12, BackgroundColor3 = item[3], Parent = row3 }, function()
 			Request:FireServer(item[2])
 		end)
 	end
@@ -6049,11 +6545,11 @@ local function refreshAll()
 	end
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
-		"⚫ %s/%s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
+		"%s ⚫ %s/%s   🌱 ×%s   ✖ %s%s%s",
+		state.tier == 2 and "🍭" or "🌍",
 		Config.formatSize(state.radius),
 		Config.formatSize(state.maxRadius),
 		string.format("%.2f", state.growMult or 1),
-		Config.formatSize(state.pullRange),
 		fmt(state.totalMult),
 		state.bigbang > 0 and string.format("   🌌 %d", state.bigbang) or "",
 		state.dm > 0 and string.format("   🌑 %d", state.dm) or ""
@@ -6087,6 +6583,13 @@ local function refreshAll()
 	if state.inLobby then
 		Bar.fill.Size = UDim2.fromScale(1, 1)
 		Bar.label.Text = "🏠 로비 · 캡슐은 북쪽, 세계 1은 서쪽, 세계 2는 동쪽 문"
+	elseif state.canAdvance then
+		Bar.fill.Size = UDim2.fromScale(1, 1)
+		Bar.label.Text = string.format("🍭 세계 2로 넘어갈 수 있어요! (크기 ÷%d, 위 버튼)", Config.WORLD2_SCALE)
+	elseif state.tier == 1 and not nextZone then
+		local ratio = math.clamp((r - prevNeed) / math.max(Config.WORLD2_RADIUS - prevNeed, 0.01), 0, 1)
+		Bar.fill.Size = UDim2.fromScale(ratio, 1)
+		Bar.label.Text = string.format("세계 2까지  ⚫ %s / %d", Config.formatSize(r), Config.WORLD2_RADIUS)
 	elseif nextZone then
 		local ratio = math.clamp((r - prevNeed) / math.max(nextZone.need - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
@@ -6100,6 +6603,7 @@ local function refreshAll()
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("모든 구역이 열렸어요! 빅뱅까지 ⚫ %s / %d", Config.formatSize(state.radius), Config.BIGBANG_RADIUS)
 	end
+	advanceButton.Visible = state.canAdvance == true and not state.inLobby
 	menuButtons.test.Visible = state.tester == true
 	menuButtons.bbshop.Visible = state.bigbang > 0 or state.dm > 0
 	if window.Visible then
@@ -6268,6 +6772,13 @@ do
 	end)
 end
 
+-- 스킬: 카메라가 바라보는 쪽으로
+local function fireSkill()
+	local cam = workspace.CurrentCamera
+	local look = cam and cam.CFrame.LookVector or Vector3.new(0, 0, 1)
+	Request:FireServer("skill", look.X, look.Z)
+end
+
 -- 스킬 버튼 (오른쪽 아래, Q): 액티브 능력이 있는 스킨이면 누르고, 패시브면 설명만
 local Skill = {} :: any
 do
@@ -6280,7 +6791,7 @@ do
 	})
 	scaled(frame)
 	Skill.button = button({ Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, -50, 0, 0), Text = "Q", TextSize = 30, BackgroundColor3 = C.accent, Parent = frame }, function()
-		Request:FireServer("skill")
+		fireSkill()
 	end)
 	new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = Skill.button })
 	Skill.stroke = new("UIStroke", { Color = C.gold, Thickness = 3, Parent = Skill.button })
@@ -6540,11 +7051,7 @@ function handlers.bigbang(data: any)
 		sub ..= " · 🎨 " .. table.concat(data.skins, ", ")
 	end
 	banner("🌌 BIG BANG", sub, C.pink)
-	if data.world2 then
-		task.delay(2.6, function()
-			banner("🍭 세계 2 열림!", "과자 왕국 · 🗺 세계 창이나 소용돌이 문으로 가요", Color3.fromRGB(255, 160, 220))
-		end)
-	end
+	applyWorld(1)
 end
 
 function handlers.bbBought(data: any)
@@ -6595,15 +7102,43 @@ function handlers.open(data: any)
 end
 
 function handlers.skill(data: any)
-	local c = myCenter()
-	local r = state and state.radius or 3
-	Fx.sound("whoosh", 1, 1.3)
-	Feel.flash(Color3.fromRGB(200, 230, 255), 0.25)
-	if c then
-		Fx.ring(c, C.gold, r * 1.5, r * (data.burst and 8 or 4), 0.6)
-		Fx.pillar(c, C.gold, 120 + r, 6 + r * 0.2, 0.6)
+	Feel.flash(Color3.fromRGB(200, 230, 255), 0.2)
+	Feel.shake(0.4)
+	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "발동!", C.gold)
+end
+
+-- 모든 사람의 스킬 모습 (빛줄기, 순간이동, 신의 시선)
+function handlers.skillFx(data: any)
+	Fx.skillFx(data)
+end
+
+-- 세계 2로 넘어갈 수 있다 / 넘어갔다
+function handlers.advanceReady(_data: any)
+	banner("🍭 세계 2로 갈 수 있어요!", string.format("화면 위 버튼을 누르면 크기가 ÷%d 되고, 훨씬 큰 질량의 세계에서 다시 자라요", Config.WORLD2_SCALE), Color3.fromRGB(255, 160, 220))
+	Fx.sound("slash", 0.7, 1.1)
+end
+
+function handlers.advanced(data: any)
+	applyWorld(2)
+	banner("🍭 세계 2 · 과자 왕국", string.format("⚫ %s → ⚫ %s  ·  다시 작아졌지만 질량은 훨씬 커요", Config.formatSize(data.from), Config.formatSize(data.to)), Color3.fromRGB(255, 160, 220))
+	Fx.sound("whoosh", 1, 0.5)
+end
+
+-- 떠도는 거대 행성
+function handlers.event(data: any)
+	if data.kind == "start" then
+		local zone = Config.Zones[data.zone]
+		banner("🌍 떠도는 거대 행성!", string.format("세계 %d · %s에 나타났어요. 다 같이 먹어요!", data.world, zone and zone.name or "?"), Color3.fromRGB(255, 200, 120))
+		Fx.sound("whoosh", 1, 0.35)
+	elseif data.kind == "escape" then
+		toast("🌍 거대 행성이 멀리 날아가 버렸어요")
 	end
-	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "한꺼번에 흡수!", C.gold)
+end
+
+function handlers.eventReward(data: any)
+	banner(data.escaped and "🌍 행성을 놓쳤어요" or string.format("🌍 행성 격파! %d등", data.rank), string.format("깎은 몫 %d%%  ·  💠 +%s  ·  크기 +%.1f%%%s", math.floor(data.share * 100 + 0.5), fmt(data.mass), data.grow * 100, data.dm > 0 and string.format("  ·  🌑 +%d", data.dm) or ""), C.gold)
+	Fx.sound("slash", 0.8, 1)
+	Feel.flash(C.gold, 0.3)
 end
 
 function handlers.quest(data: any)
@@ -6695,7 +7230,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	elseif key == Enum.KeyCode.K then
 		openPage("skins")
 	elseif key == Enum.KeyCode.Q then
-		Request:FireServer("skill")
+		fireSkill()
 	end
 end)
 
@@ -6722,6 +7257,25 @@ do
 		if t > skillTick then
 			skillTick = t + 0.2
 			refreshSkill()
+			-- 거대 행성: 거리와 방향 (화면 기준 화살표)
+			local active, ppos, frac = Fx.planetInfo()
+			local c = myCenter()
+			local cam = workspace.CurrentCamera
+			if active and c and cam and state and not state.inLobby and math.abs(ppos.X - c.X) < 15000 then
+				local d = Vector3.new(ppos.X - c.X, 0, ppos.Z - c.Z)
+				local look = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z)
+				local arrow = "●"
+				if d.Magnitude > 1 and look.Magnitude > 0.01 then
+					local ang = math.deg(math.atan2(d.Unit:Cross(look.Unit).Y, d.Unit:Dot(look.Unit)))
+					local arrows = { "⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖" }
+					local idx = math.floor(((-ang) % 360 + 22.5) / 45) % 8 + 1
+					arrow = arrows[idx]
+				end
+				eventLabel.Text = string.format("🌍 떠도는 거대 행성 %d%%  %s %s", math.floor(frac * 100 + 0.5), arrow, fmt(d.Magnitude))
+				eventLabel.Visible = true
+			else
+				eventLabel.Visible = false
+			end
 		end
 		local bt, ended = boostText()
 		if bt ~= lastBoost then
@@ -6791,6 +7345,7 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Props = require(ReplicatedStorage:WaitForChild("Props"))
 local SatBuilder = require(ReplicatedStorage:WaitForChild("SatBuilder"))
 
 local Fx = {}
@@ -6897,16 +7452,33 @@ type Hole = {
 	extras: { { part: Part, kind: string, a: number, k: number } },
 	sats: { { model: Model, a: number, size: number } },
 	satKey: string,
+	tier: number,
+	clones: { Hole }?, -- 프리즘 분신
+	vortex: { Part }?, -- 은하 소용돌이
+	puffAt: number, -- 성운 꼬리 다음 시각
 }
 
 local holes: { [Model]: Hole } = {}
 
-local function destroyHole(h: Hole)
+local destroyHole: (Hole) -> ()
+function destroyHole(h: Hole)
 	for _, p in ipairs(h.parts) do
 		p:Destroy()
 	end
 	for _, sat in ipairs(h.sats) do
 		sat.model:Destroy()
+	end
+	if h.clones then
+		for _, c in ipairs(h.clones) do
+			destroyHole(c)
+		end
+		h.clones = nil
+	end
+	if h.vortex then
+		for _, p in ipairs(h.vortex) do
+			p:Destroy()
+		end
+		h.vortex = nil
 	end
 end
 
@@ -7063,15 +7635,77 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 			table.insert(extras, { part = p, kind = "glint", a = i / 8 * math.pi * 2, k = i })
 		end
 	elseif effect == "eye" then
-		local iris = add(fxPart(Vector3.new(0.1, d * 0.5, d * 0.5), skin.a, Enum.Material.Neon, Enum.PartType.Cylinder))
-		local pupil = add(fxPart(Vector3.new(0.12, d * 0.22, d * 0.22), BLACK, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder))
-		local shine = add(fxPart(Vector3.new(0.13, d * 0.07, d * 0.07), Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Cylinder))
+		-- 신의 눈: 구멍 자리에 커다란 눈. 흰자, 홍채, 동공이 움직이는 쪽을 보고, 가끔 깜빡인다
+		local sclera = add(disc(d * 0.86, 0.17, Color3.fromRGB(255, 250, 240), Enum.Material.SmoothPlastic))
+		local iris = add(disc(d * 0.44, 0.18, skin.a, Enum.Material.Neon))
+		local irisRing = add(disc(d * 0.5, 0.175, skin.b, Enum.Material.Neon))
+		local pupil = add(disc(d * 0.2, 0.19, BLACK, Enum.Material.SmoothPlastic))
+		local shine = add(disc(d * 0.07, 0.2, Color3.new(1, 1, 1), Enum.Material.Neon))
+		local lid = add(disc(d * 0.9, 0.21, Color3.fromRGB(60, 25, 20), Enum.Material.SmoothPlastic, 1))
+		table.insert(extras, { part = sclera, kind = "sclera", a = 0, k = 0 })
+		table.insert(extras, { part = irisRing, kind = "iris", a = 0, k = 0 })
 		table.insert(extras, { part = iris, kind = "iris", a = 0, k = 0 })
 		table.insert(extras, { part = pupil, kind = "pupil", a = 0, k = 0 })
 		table.insert(extras, { part = shine, kind = "shine", a = 0, k = 0 })
-		for i = 0, 9 do
-			local p = add(fxPart(Vector3.new(small * 0.8, 0.1, r * 0.35), skin.b, Enum.Material.Neon, nil, 0.2))
-			table.insert(extras, { part = p, kind = "ray", a = i / 10 * math.pi * 2, k = i })
+		table.insert(extras, { part = lid, kind = "lid", a = 0, k = 0 })
+		for i = 0, 15 do
+			local p = add(fxPart(Vector3.new(small * 0.9, 0.1, r * 0.5), i % 2 == 0 and skin.a or skin.b, Enum.Material.Neon, nil, 0.15))
+			table.insert(extras, { part = p, kind = "ray", a = i / 16 * math.pi * 2, k = i })
+		end
+		-- 둘레를 도는 황금 세모 셋
+		for i = 0, 2 do
+			local p = add(fxPart(Vector3.new(small * 3, small * 0.6, small * 3), Color3.fromRGB(255, 215, 90), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "glint", a = i / 3 * math.pi * 2, k = i })
+		end
+	elseif effect == "quasar" then
+		-- 푸른 퀘이사: 위아래로 뿜는 빛 기둥 두 개와 기울어진 원반
+		for _, sgn in ipairs({ 1, -1 }) do
+			local jet = add(fxPart(Vector3.new(math.min(2000, r * 4), small * 1.6, small * 1.6), skin.b, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2))
+			table.insert(extras, { part = jet, kind = "jet", a = sgn, k = 0 })
+		end
+		local halo = add(disc(d * 1.4, 0.1, skin.a, Enum.Material.Neon, 0.6))
+		table.insert(extras, { part = halo, kind = "halo", a = 0, k = 0 })
+	elseif effect == "giant" then
+		-- 붉은 거성: 숨 쉬듯 부푸는 붉은 코로나와 불티
+		local corona = add(disc(d * 1.4, 0.08, skin.a, Enum.Material.Neon, 0.6))
+		table.insert(extras, { part = corona, kind = "corona", a = d * 1.4, k = 0 })
+		emitter(add, r, {
+			Rate = 18,
+			Lifetime = NumberRange.new(0.8, 1.6),
+			Speed = NumberRange.new(1, 3 + r * 0.4),
+			Size = seq(math.max(0.25, r * 0.07), 0),
+			Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(255, 70, 40)),
+		})
+	elseif effect == "nebula" then
+		-- 초록 성운: 둘레를 천천히 도는 커다란 가스 구름
+		for i = 0, 6 do
+			local col = skin.a:Lerp(skin.b, i / 6)
+			local p = add(fxPart(Vector3.new(1, 1, 1) * math.min(2000, r * (0.7 + (i % 3) * 0.15)), col, Enum.Material.Neon, Enum.PartType.Ball, 0.78))
+			table.insert(extras, { part = p, kind = "gas", a = i / 7 * math.pi * 2, k = i })
+		end
+	elseif effect == "vip" then
+		-- 황금 VIP: 금빛 반짝이와 떠 있는 왕관
+		for i = 0, 7 do
+			local p = add(fxPart(Vector3.new(small * 1.4, small * 1.4, small * 1.4), Color3.fromRGB(255, 220, 90), Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "glint", a = i / 8 * math.pi * 2, k = i })
+		end
+		local band = add(fxPart(Vector3.new(small * 1.2, r * 0.6, r * 0.6), Color3.fromRGB(255, 200, 60), Enum.Material.Foil, Enum.PartType.Cylinder))
+		table.insert(extras, { part = band, kind = "crownBand", a = 0, k = 0 })
+		for i = 0, 4 do
+			local p = add(fxPart(Vector3.new(small * 1.2, r * 0.25, small * 1.2), Color3.fromRGB(255, 215, 80), Enum.Material.Foil))
+			table.insert(extras, { part = p, kind = "crownSpike", a = i / 5 * math.pi * 2, k = i })
+			local gem = add(fxPart(Vector3.new(1, 1, 1) * small * 1.2, Color3.fromHSV(i / 5, 0.7, 1), Enum.Material.Neon, Enum.PartType.Ball))
+			table.insert(extras, { part = gem, kind = "crownGem", a = i / 5 * math.pi * 2, k = i })
+		end
+	end
+
+	-- 높은 등급일수록 둘레에 등급 색 보석 고리가 더 촘촘하다 (전설 이상)
+	local tier = skin.tier or 1
+	if tier >= 4 and not lite then
+		local rc = Config.Rarities[tier] and Config.Rarities[tier].color or skin.a
+		for i = 0, (tier - 3) * 8 - 1 do
+			local p = add(fxPart(Vector3.new(1, 1, 1) * small * 0.9, rc, Enum.Material.Neon))
+			table.insert(extras, { part = p, kind = "gem", a = i / ((tier - 3) * 8) * math.pi * 2, k = i })
 		end
 	end
 
@@ -7101,6 +7735,10 @@ local function buildHole(char: Model?, r: number, skinIndex: number, lite: boole
 		extras = extras,
 		sats = {},
 		satKey = "",
+		tier = tier,
+		clones = nil,
+		vortex = nil,
+		puffAt = 0,
 	}
 end
 
@@ -7121,14 +7759,22 @@ local function updateHole(h: Hole, t: number, dt: number)
 	-- 먹어서 커질 때 부드럽게 커지고, 삼킬 때마다 잠깐 꿀꺽 부푼다
 	h.radius += (h.target - h.radius) * math.min(1, dt * 6)
 	h.pulse *= math.exp(-dt * 9)
-	local scaleK = h.radius / h.buildR * (1 + h.pulse)
+	-- 적색 팽창 중이면 크게
+	local swell = 1
+	if h.char then
+		local sw = h.char:GetAttribute("Swell")
+		if type(sw) == "number" then
+			swell = sw
+		end
+	end
+	local scaleK = h.radius / h.buildR * (1 + h.pulse) * swell
 	if math.abs(scaleK - h.lastK) > 0.002 then
 		h.lastK = scaleK
 		for i, p in ipairs({ h.rim, h.disk, h.void, h.core, h.aura }) do
 			setDisc(p, h.baseD[i] * scaleK)
 		end
 	end
-	local r = h.radius
+	local r = h.radius * swell
 	local base = CFrame.new(center)
 	h.rim.CFrame = base * CFrame.new(0, 0.04, 0)
 	h.disk.CFrame = base * CFrame.new(0, 0.06, 0)
@@ -7174,15 +7820,50 @@ local function updateHole(h: Hole, t: number, dt: number)
 			local ang = e.a + t * 0.9
 			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.3, r * 0.25 + math.sin(t * 2 + e.k) * r * 0.1, math.sin(ang) * r * 1.3)) * CFrame.Angles(t * 2, t * 3, math.rad(45))
 			p.Transparency = (math.sin(t * 6 + e.k * 2) + 1) * 0.4
+		elseif e.kind == "sclera" then
+			p.CFrame = base * CFrame.new(0, 0.12, 0)
+			setDisc(p, r * 2 * 0.86)
 		elseif e.kind == "iris" or e.kind == "pupil" or e.kind == "shine" then
 			-- 눈동자가 움직이는 쪽을 바라본다
 			local root = h.char and h.char:FindFirstChild("HumanoidRootPart")
 			local vel = (root and root:IsA("BasePart")) and root.AssemblyLinearVelocity or Vector3.zero
 			local look = Vector3.new(vel.X, 0, vel.Z)
-			local off = look.Magnitude > 1 and look.Unit * r * 0.18 or Vector3.new(math.sin(t * 0.7), 0, math.cos(t * 0.5)) * r * 0.08
-			local y = e.kind == "iris" and 0.13 or (e.kind == "pupil" and 0.15 or 0.17)
-			local extra = e.kind == "iris" and off * 0.5 or (e.kind == "pupil" and off or off + Vector3.new(r * 0.06, 0, -r * 0.06))
-			p.CFrame = CFrame.new(center + extra + Vector3.new(0, y, 0)) * FLAT
+			local off = look.Magnitude > 1 and look.Unit * r * 0.2 or Vector3.new(math.sin(t * 0.7), 0, math.cos(t * 0.5)) * r * 0.1
+			local y = e.kind == "iris" and 0.135 or (e.kind == "pupil" and 0.15 or 0.165)
+			local extra = e.kind == "iris" and off * 0.6 or (e.kind == "pupil" and off * 0.75 or off * 0.75 + Vector3.new(r * 0.07, 0, -r * 0.07))
+			p.CFrame = CFrame.new(center + extra + Vector3.new(0, y, 0))
+			-- 동공은 스킬을 쓰면 크게 열린다
+			if e.kind == "pupil" then
+				setDisc(p, r * 2 * (h.skillOn and 0.32 or 0.2))
+			end
+		elseif e.kind == "lid" then
+			-- 4초마다 한 번 깜빡
+			local blink = (t + e.k) % 4 < 0.14
+			p.CFrame = base * CFrame.new(0, 0.18, 0)
+			p.Transparency = blink and 0 or 1
+		elseif e.kind == "jet" then
+			local len = math.min(2000, r * (3.5 + math.sin(t * 8) * 0.4))
+			p.Size = Vector3.new(len, p.Size.Y, p.Size.Z)
+			p.CFrame = CFrame.new(center + Vector3.new(0, e.a * len / 2 + 0.3, 0)) * FLAT
+			p.Transparency = 0.15 + math.abs(math.sin(t * 12)) * 0.25
+		elseif e.kind == "corona" then
+			setDisc(p, r * 2 * (1.35 + math.sin(t * 2.2) * 0.1))
+			p.CFrame = base * CFrame.new(0, 0.03, 0)
+			p.Transparency = 0.55 + math.sin(t * 3) * 0.1
+		elseif e.kind == "gas" then
+			local ang = e.a + t * 0.25
+			local rad = r * (1.1 + math.sin(t * 0.6 + e.k) * 0.12)
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, r * 0.1, math.sin(ang) * rad))
+		elseif e.kind == "crownBand" then
+			p.CFrame = CFrame.new(center + Vector3.new(0, r * 0.75 + math.sin(t * 2) * r * 0.05, 0)) * CFrame.Angles(0, t * 0.8, 0) * FLAT
+		elseif e.kind == "crownSpike" or e.kind == "crownGem" then
+			local ang = e.a + t * 0.8
+			local h0 = r * 0.75 + math.sin(t * 2) * r * 0.05
+			local y = e.kind == "crownSpike" and h0 + r * 0.14 or h0 + r * 0.28
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 0.3, y, math.sin(ang) * r * 0.3))
+		elseif e.kind == "gem" then
+			local ang = e.a - t * 0.5
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * r * 1.55, r * 0.05 + math.sin(t * 3 + e.k) * r * 0.04, math.sin(ang) * r * 1.55)) * CFrame.Angles(t, t * 2, 0)
 		elseif e.kind == "ray" then
 			local ang = e.a + t * 0.25
 			local len = 1 + math.sin(t * 3 + e.k) * 0.2
@@ -7219,6 +7900,143 @@ local function updateHole(h: Hole, t: number, dt: number)
 		local rad = r * 1.2 * (1 - k)
 		m.part.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, 0.3 + (1 - k) * r * 0.2, math.sin(ang) * rad))
 		m.part.Transparency = k * 0.8
+	end
+	if h.char then
+		Fx.skillVisuals(h, center, r, t, dt)
+	end
+end
+
+------------------------------------------------------------------------
+-- 스킬과 능력 모습 (모든 화면에서 보인다: 캐릭터 속성 SkillId를 보고 그린다)
+------------------------------------------------------------------------
+local function puff(pos: Vector3, size: number, color: Color3, life: number)
+	local p = fxPart(Vector3.new(1, 1, 1) * math.min(2000, size), color, Enum.Material.Neon, Enum.PartType.Ball, 0.6)
+	p.CFrame = CFrame.new(pos)
+	TweenService:Create(p, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Transparency = 1, Size = p.Size * 1.6 }):Play()
+	Debris:AddItem(p, life + 0.05)
+end
+
+function Fx.skillVisuals(h: Hole, center: Vector3, r: number, t: number, dt: number)
+	local char = h.char :: Model
+	local id = char:GetAttribute("SkillId")
+	-- 프리즘 분신: 무지개 분신 둘 (서버와 같은 궤도)
+	if id == "prism" then
+		if not h.clones then
+			h.clones = {}
+			for _ = 1, 2 do
+				local c = buildHole(nil, h.radius * 0.7, h.skin, true)
+				table.insert(h.clones or {}, c)
+			end
+		end
+		local clones = h.clones or {}
+		for k, c in ipairs(clones) do
+			local a = t * 2.2 + (k - 1) * math.pi
+			c.center = center + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 2.5
+			c.target = r * 0.7
+			updateHole(c, t, dt)
+			c.rim.Color = Color3.fromHSV((t * 0.5 + k * 0.5) % 1, 0.8, 1)
+		end
+	elseif h.clones then
+		for _, c in ipairs(h.clones) do
+			Fx.burst((c.center or center) + Vector3.new(0, 1, 0), Color3.fromHSV(math.random(), 0.7, 1), 20, 10 + r, math.max(0.4, r * 0.08))
+			destroyHole(c)
+		end
+		h.clones = nil
+	end
+	-- 은하 소용돌이: 반지름 4배 둘레에서 빛 알갱이가 소용돌이치며 빨려 든다
+	if id == "vortex" then
+		if not h.vortex then
+			h.vortex = {}
+			for i = 0, 23 do
+				local p = fxPart(Vector3.new(1, 1, 1) * math.max(0.3, r * 0.12), i % 2 == 0 and Color3.fromRGB(200, 210, 255) or Color3.fromRGB(255, 220, 255), Enum.Material.Neon, Enum.PartType.Ball)
+				table.insert(h.vortex or {}, p)
+			end
+		end
+		local vparts = h.vortex or {}
+		for i, p in ipairs(vparts) do
+			local k = (t * 0.5 + i / 24) % 1
+			local ang = i / 24 * math.pi * 2 + k * 5
+			local rad = r * 4 * (1 - k) + r
+			p.CFrame = CFrame.new(center + Vector3.new(math.cos(ang) * rad, 0.5 + (1 - k) * r * 0.3, math.sin(ang) * rad))
+			p.Transparency = k * 0.7
+		end
+	elseif h.vortex then
+		for _, p in ipairs(h.vortex) do
+			p:Destroy()
+		end
+		h.vortex = nil
+	end
+	-- 성운 꼬리: 지나간 자리에 초록 구름
+	if h.effect == "nebula" and t > h.puffAt then
+		h.puffAt = t + 0.15
+		local cam = workspace.CurrentCamera
+		if cam and (cam.CFrame.Position - center).Magnitude < 800 + r * 10 then
+			local skin = Config.Skins[h.skin]
+			puff(center + Vector3.new(0, r * 0.1, 0), r * 1.2, skin.a:Lerp(skin.b, math.random()), 2)
+		end
+	end
+end
+
+-- 한 번 쓰는 스킬 모습: 빛줄기, 순간이동, 신의 시선
+function Fx.skillFx(data: any)
+	local r = data.r or 3
+	local from: Vector3 = data.from
+	if data.id == "beam" and data.to then
+		local to: Vector3 = data.to
+		local len = (to - from).Magnitude
+		local mid = (from + to) / 2 + Vector3.new(0, r * 0.3, 0)
+		local beam = fxPart(Vector3.new(math.min(2000, len), r * 0.9, r * 0.9), Color3.fromRGB(150, 230, 255), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+		beam.CFrame = CFrame.lookAt(mid, mid + (to - from)) * CFrame.Angles(0, math.rad(90), 0)
+		TweenService:Create(beam, TweenInfo.new(0.6), { Transparency = 1, Size = Vector3.new(beam.Size.X, r * 0.1, r * 0.1) }):Play()
+		Debris:AddItem(beam, 0.65)
+		for k = 0, 6 do
+			Fx.burst(from:Lerp(to, k / 6) + Vector3.new(0, 1, 0), Color3.fromRGB(150, 230, 255), 10, 10 + r, math.max(0.4, r * 0.1))
+		end
+		Fx.sound("slash", 0.8, 0.7)
+	elseif data.id == "blink" and data.to then
+		local to: Vector3 = data.to
+		for k = 0, 8 do
+			local pos = from:Lerp(to, k / 8)
+			task.delay(k * 0.02, function()
+				puff(pos + Vector3.new(0, r * 0.2, 0), r * 1.1, Color3.fromRGB(190, 240, 255), 0.8)
+			end)
+		end
+		Fx.ring(to, Color3.fromRGB(200, 245, 255), r * 1.5, r * 4, 0.5)
+		Fx.sound("whoosh", 0.9, 1.6)
+	elseif data.id == "eye" then
+		-- 땅에 거대한 눈이 열렸다가 감긴다
+		local d = r * 14
+		local sclera = disc(d, 0.3, Color3.fromRGB(255, 250, 235), Enum.Material.Neon, 0.3)
+		local iris = disc(d * 0.45, 0.32, Color3.fromRGB(255, 200, 80), Enum.Material.Neon, 0.1)
+		local pupil = disc(d * 0.2, 0.34, BLACK, Enum.Material.SmoothPlastic, 0)
+		for i, p in ipairs({ sclera, iris, pupil }) do
+			p.CFrame = CFrame.new(from + Vector3.new(0, 0.3 + i * 0.02, 0))
+		end
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.RenderStepped:Connect(function()
+			local k = math.min(1, (os.clock() - start) / 1.4)
+			local open = k < 0.3 and k / 0.3 or (k > 0.75 and (1 - k) / 0.25 or 1)
+			setDisc(sclera, d * math.max(0.02, open))
+			setDisc(iris, d * 0.45 * math.max(0.02, open))
+			setDisc(pupil, d * (0.12 + 0.12 * open))
+			sclera.Transparency = 1 - open * 0.7
+			if k >= 1 then
+				conn:Disconnect()
+				sclera:Destroy()
+				iris:Destroy()
+				pupil:Destroy()
+			end
+		end)
+		for i = 0, 11 do
+			local a = i / 12 * math.pi * 2
+			Fx.streak(from + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 7, from + Vector3.new(0, 1, 0), Color3.fromRGB(255, 215, 90), math.max(0.5, r * 0.25))
+		end
+		Fx.pillar(from, Color3.fromRGB(255, 220, 120), 200 + r * 4, r * 0.8, 1)
+		Fx.sound("whoosh", 1, 0.4)
+	elseif data.id == "swell" or data.id == "vortex" or data.id == "prism" then
+		Fx.ring(from, Color3.fromRGB(255, 255, 255), r * 2, r * 6, 0.6)
+		Fx.sound("whoosh", 0.8, 0.8)
 	end
 end
 
@@ -7442,6 +8260,10 @@ local function suck(model: Model)
 		hideNow(model)
 		return
 	end
+	if not model:IsDescendantOf(workspace) then
+		hideNow(model)
+		return
+	end
 	local size = model:GetAttribute("Size")
 	local holeR = char and char:GetAttribute("HoleR")
 	if sucking >= MAX_SUCKING or (type(size) == "number" and type(holeR) == "number" and size < holeR * 0.04) then
@@ -7495,6 +8317,9 @@ local function growIn(model: Model)
 	local me = Players.LocalPlayer.Character
 	local myR = me and me:GetAttribute("HoleR")
 	if growing >= 20 or (type(size0) == "number" and type(myR) == "number" and size0 < myR * 0.03) then
+		return
+	end
+	if Fx.isFar(model:GetPivot().Position) then
 		return
 	end
 	growing += 1
@@ -7563,6 +8388,10 @@ end
 
 local function watchObject(model: Instance)
 	if not model:IsA("Model") then
+		return
+	end
+	-- 숨겨 뒀다가 다시 꺼낸 물체는 이미 지켜보고 있다
+	if model:GetAttribute("Unculling") then
 		return
 	end
 	goldify(model :: Model)
@@ -7781,6 +8610,162 @@ function Fx.starGot(pos: Vector3)
 end
 
 ------------------------------------------------------------------------
+-- 떠도는 거대 행성 (서버 이벤트). 서버의 보이지 않는 부품을 따라 행성을 그린다
+------------------------------------------------------------------------
+local Planet = { model = nil :: Model?, label = nil :: TextLabel?, built = 0, lastScale = 1, chunkAt = 0 }
+
+local function planetTick(t: number)
+	local folder0 = workspace:FindFirstChild("Event")
+	local anchor = folder0 and folder0:FindFirstChild("GiantPlanet")
+	if not anchor or not anchor:IsA("BasePart") then
+		return
+	end
+	local active = anchor:GetAttribute("Active") == true
+	local R = anchor:GetAttribute("Radius")
+	if not active or type(R) ~= "number" then
+		if Planet.model then
+			local pp = Planet.model.PrimaryPart
+			if pp then
+				Fx.burst(pp.Position, Color3.fromRGB(255, 200, 120), 60, 60 + Planet.built, math.max(1, Planet.built * 0.1))
+			end
+			Planet.model:Destroy()
+			Planet.model = nil
+		end
+		return
+	end
+	if not Planet.model or Planet.built ~= R then
+		if Planet.model then
+			Planet.model:Destroy()
+		end
+		local m = Props.build("planet", R, CFrame.new(), 7)
+		for _, d in ipairs(m:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+				d.CastShadow = false
+			end
+		end
+		local pp = m.PrimaryPart
+		if pp then
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.new(0, 320, 0, 60)
+			bb.StudsOffset = Vector3.new(0, R * 1.3, 0)
+			bb.AlwaysOnTop = true
+			bb.LightInfluence = 0
+			bb.MaxDistance = 20000
+			bb.Parent = pp
+			local l = Instance.new("TextLabel")
+			l.Size = UDim2.fromScale(1, 1)
+			l.BackgroundTransparency = 1
+			l.Font = Enum.Font.GothamBlack
+			l.TextScaled = true
+			l.TextColor3 = Color3.fromRGB(255, 220, 140)
+			l.TextStrokeTransparency = 0.2
+			l.Parent = bb
+			Planet.label = l
+		end
+		m.Parent = folder
+		Planet.model = m
+		Planet.built = R
+		Planet.lastScale = 1
+	end
+	local model = Planet.model :: Model
+	local hp = anchor:GetAttribute("HP")
+	local maxHp = anchor:GetAttribute("MaxHP")
+	local frac = (type(hp) == "number" and type(maxHp) == "number" and maxHp > 0) and math.clamp(hp / maxHp, 0, 1) or 1
+	local scale = 0.4 + 0.6 * math.sqrt(frac)
+	if math.abs(scale - Planet.lastScale) > 0.02 then
+		Planet.lastScale = scale
+		pcall(function()
+			model:ScaleTo(scale)
+		end)
+	end
+	local pos = anchor.Position
+	model:PivotTo(CFrame.new(pos.X, R * scale, pos.Z) * CFrame.Angles(0.3, t * 0.15, 0) * CFrame.new(0, -R * scale, 0))
+	if Planet.label then
+		Planet.label.Text = string.format("🌍 떠도는 거대 행성  %d%%", math.floor(frac * 100 + 0.5))
+	end
+	-- 내 블랙홀이 닿아 있으면 조각이 빨려 든다
+	local me = Players.LocalPlayer.Character
+	local c = me and Fx.holeCenter(me)
+	local myR = me and me:GetAttribute("HoleR")
+	if c and type(myR) == "number" and t > Planet.chunkAt then
+		local shownR = R * scale
+		local d = Vector3.new(c.X - pos.X, 0, c.Z - pos.Z)
+		if d.Magnitude < shownR + myR then
+			Planet.chunkAt = t + 0.12
+			local dir = d.Magnitude > 0.1 and d.Unit or Vector3.new(1, 0, 0)
+			Fx.streak(Vector3.new(pos.X, shownR, pos.Z) + dir * shownR, c + Vector3.new(0, 0.5, 0), Color3.fromHSV(0.05 + math.random() * 0.1, 0.6, 1), math.clamp(shownR * 0.06, 0.4, 30))
+		end
+	end
+end
+
+-- 플레이어 화면이 아는 행성 위치 (화살표용)
+function Fx.planetInfo(): (boolean, Vector3, number)
+	local folder0 = workspace:FindFirstChild("Event")
+	local anchor = folder0 and folder0:FindFirstChild("GiantPlanet")
+	if anchor and anchor:IsA("BasePart") and anchor:GetAttribute("Active") == true then
+		local hp = anchor:GetAttribute("HP")
+		local maxHp = anchor:GetAttribute("MaxHP")
+		local frac = (type(hp) == "number" and type(maxHp) == "number" and maxHp > 0) and hp / maxHp or 1
+		return true, anchor.Position, frac
+	end
+	return false, Vector3.zero, 0
+end
+
+------------------------------------------------------------------------
+-- 먼 물체 숨기기: 내 블랙홀 근처 물체만 그려서 화면이 버벅이지 않게 한다
+-- (먼 물체는 내 화면에서만 잠시 치워 둔다. 가까워지면 다시 꺼낸다)
+------------------------------------------------------------------------
+local Cull = { folder = nil :: Folder?, pivots = setmetatable({}, { __mode = "k" }) :: any, focus = Vector3.zero, dist = math.huge }
+
+function Fx.isFar(pos: Vector3): boolean
+	local dx, dz = pos.X - Cull.focus.X, pos.Z - Cull.focus.Z
+	return dx * dx + dz * dz > Cull.dist * Cull.dist
+end
+
+local function cullTick(objects: Instance)
+	local me = Players.LocalPlayer.Character
+	local c = me and Fx.holeCenter(me)
+	if not c then
+		return
+	end
+	local rawR = me and me:GetAttribute("HoleR")
+	local r = type(rawR) == "number" and shownRadius(me :: Model, rawR) or 5
+	Cull.focus = c
+	Cull.dist = math.clamp(350 + r * 12, 350, 6000)
+	if not Cull.folder then
+		local f = Instance.new("Folder")
+		f.Name = "CulledObjects"
+		f.Parent = ReplicatedStorage
+		Cull.folder = f
+	end
+	local culled = Cull.folder :: Folder
+	local function pivotOf(m: Model): Vector3
+		local p = Cull.pivots[m]
+		if not p then
+			p = m:GetPivot().Position
+			Cull.pivots[m] = p
+		end
+		return p
+	end
+	for _, m in ipairs(objects:GetChildren()) do
+		if m:IsA("Model") and not m:GetAttribute("EatenBy") and Fx.isFar(pivotOf(m)) then
+			m:SetAttribute("Culled", true)
+			m.Parent = culled
+		end
+	end
+	for _, m in ipairs(culled:GetChildren()) do
+		if m:IsA("Model") and not Fx.isFar(pivotOf(m)) then
+			m:SetAttribute("Unculling", true)
+			m.Parent = objects
+			m:SetAttribute("Unculling", nil)
+			m:SetAttribute("Culled", nil)
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 시작
 ------------------------------------------------------------------------
 function Fx.start()
@@ -7800,6 +8785,17 @@ function Fx.start()
 		end)
 	end)
 	task.spawn(buildGallery)
+	task.spawn(function()
+		local objects = workspace:WaitForChild("Objects")
+		task.wait(3)
+		while true do
+			local ok, err = pcall(cullTick, objects)
+			if not ok then
+				warn("[BlackHole] 물체 숨기기 오류:", err)
+			end
+			task.wait(0.4)
+		end
+	end)
 	local galleryCheck = 0
 	RunService.RenderStepped:Connect(function(dt: number)
 		local t = os.clock()
@@ -7833,6 +8829,7 @@ function Fx.start()
 				updateHole(h, t, dt)
 			end
 		end
+		planetTick(t)
 	end)
 end
 

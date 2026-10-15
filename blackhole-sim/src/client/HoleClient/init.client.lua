@@ -326,6 +326,43 @@ do
 	end
 end
 
+-- 세계 2로 넘어가기 버튼 (크기 400을 넘기면 화면 위에 뜬다)
+local advanceButton: TextButton
+do
+	advanceButton = button({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 128),
+		Size = UDim2.new(0, 360, 0, 54),
+		Text = "🍭 세계 2로 넘어가기",
+		TextSize = 22,
+		BackgroundColor3 = Color3.fromRGB(230, 90, 170),
+		Visible = false,
+		ZIndex = 5,
+		Parent = gui,
+	}, function()
+		Request:FireServer("advance")
+	end)
+	new("UIStroke", { Color = Color3.fromRGB(255, 240, 255), Thickness = 3, Parent = advanceButton })
+	scaled(advanceButton)
+end
+
+-- 거대 행성 안내 (거리와 방향)
+local eventLabel: TextLabel
+do
+	eventLabel = text({
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 190),
+		Size = UDim2.new(0, 520, 0, 30),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextSize = 19,
+		Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.fromRGB(255, 210, 130),
+		TextStrokeTransparency = 0.2,
+		Visible = false,
+		Parent = gui,
+	})
+end
+
 ------------------------------------------------------------------------
 -- 창
 ------------------------------------------------------------------------
@@ -535,8 +572,8 @@ do
 		info.Text = (state.inLobby and "" or "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요  ·  ") .. string.format("위성 가방 %d / %d  ·  🍀 행운 ×%.2f", #state.sats, Config.SAT_INVENTORY, (1 + 0.15 * (state.bb.luck or 0)) * (state.passes.luck and 2 or 1))
 		for _, cap in ipairs(Config.Capsules) do
 			local ui = capUI[cap.id]
-			local open = state.bigbang >= Config.Worlds[cap.world].needBigbang
-			ui.lock.Text = open and "" or "🔒 세계 2가 열리면 (빅뱅 1번)"
+			local open = cap.world ~= 2 or state.reached2
+			ui.lock.Text = open and "" or "🔒 세계 2에 한 번 가 보면"
 			ui.one.Text = "1개 · 💠 " .. fmt(cap.cost)
 			ui.one.BackgroundColor3 = (open and state.mass >= cap.cost) and C.accent or C.panel2
 			ui.three.Text = state.passes.triple and ("3개 · 💠 " .. fmt(cap.cost * 3)) or "🔒 3개 부화 (상점)"
@@ -705,7 +742,7 @@ do
 	local cam = new("Camera", { FieldOfView = 50, Parent = vf })
 	cam.CFrame = CFrame.lookAt(Vector3.new(0, 7.5, -8.5), Vector3.new(0, 0.3, 0))
 	vf.CurrentCamera = cam
-	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = top })
+	local nameLabel = text({ Position = UDim2.new(0, 222, 0, 12), Size = UDim2.new(1, -236, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, RichText = true, Parent = top })
 	local effectLabel = text({ Position = UDim2.new(0, 222, 0, 52), Size = UDim2.new(1, -236, 0, 28), TextSize = 19, TextColor3 = C.dim, Parent = top })
 	local abilityLabel = text({ Position = UDim2.new(0, 222, 0, 80), Size = UDim2.new(1, -236, 0, 44), TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
 	local howLabel = text({ Position = UDim2.new(0, 222, 0, 124), Size = UDim2.new(1, -236, 0, 22), TextSize = 16, TextColor3 = C.gold, TextYAlignment = Enum.TextYAlignment.Top, Parent = top })
@@ -742,7 +779,8 @@ do
 			end
 			skinPreview = Fx.preview(skin.index, 3, Vector3.new(0, 0, 0), vf)
 		end
-		nameLabel.Text = skin.name
+		local rar = Config.Rarities[skin.tier or 1]
+		nameLabel.Text = string.format('%s  <font color="#%s" size="20">[%s]</font>', skin.name, rar.color:ToHex(), rar.name)
 		nameLabel.TextColor3 = skin.a:Lerp(Color3.new(1, 1, 1), 0.3)
 		effectLabel.Text = skin.effect and EFFECT_TEXT[skin.effect] or "기본 소용돌이"
 		local ab = skin.ability
@@ -762,10 +800,12 @@ do
 	new("UIGridLayout", { CellSize = UDim2.new(0.25, -8, 0, 172), CellPadding = UDim2.new(0, 8, 0, 8), Parent = scroll })
 	local skinButtons: { [string]: TextButton } = {}
 	for _, skin in ipairs(Config.Skins) do
-		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(skin.a, 1.5), grad(C.panel2, C.bg) })
+		local rar = Config.Rarities[skin.tier or 1]
+		local card = new("TextButton", { Text = "", AutoButtonColor = true, BackgroundColor3 = Color3.new(1, 1, 1), Parent = scroll }, { corner(12), stroke(rar.color, 2.5), grad(rar.color:Lerp(C.bg, 0.65), C.bg) })
 		card.Activated:Connect(function()
 			show(skin)
 		end)
+		text({ Position = UDim2.new(0, 6, 0, 4), Size = UDim2.new(0, 60, 0, 18), TextSize = 12, Font = Enum.Font.GothamBlack, TextColor3 = rar.color, Text = rar.name, Parent = card })
 		local swatch = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 6), Size = UDim2.new(0, 56, 0, 56), BackgroundColor3 = Color3.new(1, 1, 1), Parent = card }, {
 			corner(28),
 			new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, skin.a), ColorSequenceKeypoint.new(0.5, Color3.new(0, 0, 0)), ColorSequenceKeypoint.new(1, skin.b) }), Rotation = 45 }),
@@ -810,8 +850,8 @@ do
 		if not state then
 			return
 		end
-		local ready = state.radius >= Config.BIGBANG_RADIUS
-		local reward = Config.darkMatterReward(math.max(state.radius, Config.BIGBANG_RADIUS), state.bigbang)
+		local ready = state.tier == 2 and state.radius >= Config.BIGBANG_RADIUS
+		local reward = Config.darkMatterReward(state.tier == 2 and math.max(state.radius, Config.BIGBANG_RADIUS) or Config.BIGBANG_RADIUS, state.bigbang)
 		local nextSkin = nil
 		for _, skin in ipairs(Config.Skins) do
 			if skin.unlock == "bigbang" and skin.value > state.bigbang then
@@ -820,16 +860,17 @@ do
 			end
 		end
 		info.Text = table.concat({
-			"우주를 처음부터 다시 시작해요. 질량과 업그레이드는 사라지지만:",
+			"세계 1부터 처음부터 다시 시작해요. 크기·질량·업그레이드는 사라지지만:",
 			"",
 			string.format("• 영구 질량 배율  <b>×%d → ×%d</b>", state.bigbang + 1, state.bigbang + 2),
 			string.format('• <font color="#C8A0FF">🌑 암흑 물질 +%d개</font> (더 크게 커져서 할수록 더 많이)', reward),
 			"• 🌑 빅뱅 상점에서 영원히 남는 업그레이드를 살 수 있어요",
-			state.bigbang == 0 and '• <font color="#FF9AD5">🍭 세계 2 「과자 왕국」이 열려요!</font>' or "",
+			"• 세계 2 최대 크기 +300, 성장 +10%",
 			nextSkin and string.format("• 다음 스킨: %s (빅뱅 %d번)", nextSkin.name, nextSkin.value) or "",
 			"",
 			string.format("지금 빅뱅 %d회  ·  🌑 %d개", state.bigbang, state.dm),
-			string.format('조건: 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius)),
+			state.tier == 2 and string.format('조건: 세계 2에서 크기 ⚫%d 이상  ·  지금 <font color="#%s">⚫%s</font>', Config.BIGBANG_RADIUS, ready and "6CFF9A" or "FF7A8A", Config.formatSize(state.radius))
+				or string.format('조건: 세계 1에서 크기 %d을 넘겨 세계 2로 간 뒤, 세계 2에서 크기 %d  ·  지금 세계 1 ⚫%s', Config.WORLD2_RADIUS, Config.BIGBANG_RADIUS, Config.formatSize(state.radius)),
 		}, "\n")
 		go.TextTransparency = ready and 0 or 0.5
 		go.BackgroundColor3 = ready and Color3.fromRGB(200, 70, 160) or C.panel2
@@ -906,9 +947,9 @@ do
 			return
 		end
 		for wi, world in ipairs(Config.Worlds) do
-			local open = state.bigbang >= world.needBigbang
-			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", wi == 1 and "🌍" or "🍭", wi, world.name, open and "" or string.format("🔒 빅뱅 %d번", world.needBigbang))
-			worldRows[wi].btn.Text = currentWorld == wi and "여기 있어요" or (open and "세계로 이동" or "잠김")
+			local open = state.tier == wi
+			worldRows[wi].label.Text = string.format("%s 세계 %d · %s  %s", wi == 1 and "🌍" or "🍭", wi, world.name, open and "← 이번 판" or (wi == 2 and string.format("🔒 세계 1에서 크기 %d", Config.WORLD2_RADIUS) or "빅뱅하면 여기부터"))
+			worldRows[wi].btn.Text = (currentWorld == wi and not state.inLobby) and "여기 있어요" or (open and "세계로 이동" or "잠김")
 			worldRows[wi].btn.BackgroundColor3 = (open and currentWorld ~= wi) and C.green or C.panel2
 			for n, zi in ipairs(Config.zonesOf(wi)) do
 				local zone = Config.Zones[zi]
@@ -929,7 +970,7 @@ do
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
 	local objLines = {}
 	for wi, world in ipairs(Config.Worlds) do
-		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", wi == 1 and "🌍" or "🍭", wi, world.name, world.needBigbang > 0 and string.format(" (빅뱅 %d번 하면 열림, 질량 약 5배)", world.needBigbang) or ""))
+		table.insert(objLines, string.format("<b>%s 세계 %d · %s</b>%s", wi == 1 and "🌍" or "🍭", wi, world.name, wi == 2 and string.format(" (세계 1에서 크기 %d을 넘기면, 크기 ÷%d)", Config.WORLD2_RADIUS, Config.WORLD2_SCALE) or ""))
 		for n, zi in ipairs(Config.zonesOf(wi)) do
 			local names = {}
 			for _, o in ipairs(Config.Objects) do
@@ -965,7 +1006,8 @@ do
 			"• <b>먹을수록 커져요!</b> 내 크기에 가까운 큰 걸 삼킬수록 확 커져요 (괄호 안 숫자가 필요한 크기)",
 			"• 클수록 덜 자라서, 뒤쪽 구역은 오래 놀아야 커져요. 최대 크기는 빅뱅할수록 늘어나요",
 			"• 삼키면 💠질량도 쌓여요. 질량으로 오른쪽 업그레이드 9종을 사요 (내려서 더 보기)",
-			"• ⚫ 성장력 · 💠 질량 배율 · 🌀 흡입력 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
+			"• ⚫ 성장력 · 💠 질량 배율 · 👟 이동 속도 · 📏 크기 한계 · ♻ 빠른 재생 · ☄ 별똥별 자석 · 🔥 콤보 증폭 · ✨ 황금 탐지",
+			"• 흡입력은 없어요. 물체 위를 정확히 지나가야 삼켜요. 높은 레벨일수록 업그레이드가 가파르게 비싸져요",
 			"• 🤖 자동 업그레이드를 켜면 알아서 사요",
 			"",
 			"<b>보너스</b>",
@@ -973,17 +1015,21 @@ do
 			string.format("• ✨ 황금 물체: 가끔 금빛으로 나타나요. 질량 %d배, 성장 %.1f배", Config.GOLDEN_MASS, Config.GOLDEN_GROW),
 			string.format("• ☄ 별똥별: 삼키면 %d초 동안 질량과 성장 2배", Config.STAR_BOOST),
 			"• 📋 퀘스트: 늘 3개. 끝내면 바로 질량이나 🌑 암흑 물질을 받아요",
+			"• 🌍 떠도는 거대 행성: 5분마다 사람이 많은 구역에 나타나요. 닿아 있으면 깎이고, 깎은 몫만큼 보상 (질량·크기·암흑 물질)",
 			"",
 			"<b>🎨 스킨 능력</b>",
 			"• ✦ 패시브: 늘 켜져 있어요 (흡입·성장·질량·황금·별똥별 보너스)",
-			"• ⚡ 액티브: Q로 써요 (빠르게 달리기, 흡입 범위 키우기, 주변 한꺼번에 흡수)",
+			"• ⚡ 액티브: Q로 써요. 카메라가 보는 쪽으로 나가요",
+			"  퀘이사 빔(빛줄기) · 적색 팽창(더 큰 것도) · 빙결 순간이동 · 은하 소용돌이 · 프리즘 분신 · 신의 시선",
+			"• 등급(일반→희귀→영웅→전설→신화→비밀)이 높을수록 능력이 세고 모양이 화려해요",
 			"",
 			"<b>🛰 위성</b>",
 			"• 로비 캡슐 기계에서 위성을 뽑아요. 블랙홀 둘레를 돌며 질량 배율을 올려 줘요",
 			string.format("• 같은 위성 %d개를 합치면 ✨황금 위성 (효과 %.1f배)", Config.GOLD_COUNT, Config.GOLD_POWER),
 			"",
 			"<b>🌌 빅뱅 (환생)</b>",
-			string.format("• 크기 ⚫%d이 되면 처음부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요", Config.BIGBANG_RADIUS),
+			string.format("• 한 판: 세계 1에서 크기 %d → 세계 2로 넘어가며 크기 ÷%d → 세계 2에서 크기 %d이면 빅뱅", Config.WORLD2_RADIUS, Config.WORLD2_SCALE, Config.BIGBANG_RADIUS),
+			"• 빅뱅하면 세계 1부터 다시 시작하는 대신 영구 배율이 오르고 🌑암흑 물질을 받아요",
 			"• 빅뱅할 때마다 최대 크기 +300, 성장 +10%",
 			"• 🌑 빅뱅 상점: 시작 크기, 빠른 재생산, 질량, 속도, 흡입, 행운, 위성 칸, 질량 보존, 암흑 수확",
 			"• 첫 빅뱅을 하면 🍭 세계 2가 열려요. 세계 1보다 훨씬 넓고 구역이 8개예요",
@@ -1021,9 +1067,11 @@ do
 		{ "⭐ 업그레이드 최대", "testMaxAll", C.pink },
 		{ "🌑 암흑 물질 +50", "testDM", Color3.fromRGB(110, 60, 180) },
 		{ "🌌 빅뱅 +1", "testBigbang", Color3.fromRGB(200, 70, 150) },
+		{ "🍭 세계 2 준비", "testAdvance", Color3.fromRGB(230, 90, 170) },
+		{ "🌍 거대 행성", "testEvent", Color3.fromRGB(230, 150, 60) },
 		{ "☄ 별똥별 지금", "testStar", Color3.fromRGB(220, 160, 40) },
 	}) do
-		button({ Size = UDim2.new(0.25, -5, 1, 0), Text = item[1], TextSize = 14, BackgroundColor3 = item[3], Parent = row3 }, function()
+		button({ Size = UDim2.new(1 / 6, -5, 1, 0), Text = item[1], TextSize = 12, BackgroundColor3 = item[3], Parent = row3 }, function()
 			Request:FireServer(item[2])
 		end)
 	end
@@ -1147,11 +1195,11 @@ local function refreshAll()
 	end
 	HUD.mass.Text = "💠 " .. fmt(state.mass)
 	HUD.stat.Text = string.format(
-		"⚫ %s/%s   🌱 ×%s   🌀 +%s   ✖ %s%s%s",
+		"%s ⚫ %s/%s   🌱 ×%s   ✖ %s%s%s",
+		state.tier == 2 and "🍭" or "🌍",
 		Config.formatSize(state.radius),
 		Config.formatSize(state.maxRadius),
 		string.format("%.2f", state.growMult or 1),
-		Config.formatSize(state.pullRange),
 		fmt(state.totalMult),
 		state.bigbang > 0 and string.format("   🌌 %d", state.bigbang) or "",
 		state.dm > 0 and string.format("   🌑 %d", state.dm) or ""
@@ -1185,6 +1233,13 @@ local function refreshAll()
 	if state.inLobby then
 		Bar.fill.Size = UDim2.fromScale(1, 1)
 		Bar.label.Text = "🏠 로비 · 캡슐은 북쪽, 세계 1은 서쪽, 세계 2는 동쪽 문"
+	elseif state.canAdvance then
+		Bar.fill.Size = UDim2.fromScale(1, 1)
+		Bar.label.Text = string.format("🍭 세계 2로 넘어갈 수 있어요! (크기 ÷%d, 위 버튼)", Config.WORLD2_SCALE)
+	elseif state.tier == 1 and not nextZone then
+		local ratio = math.clamp((r - prevNeed) / math.max(Config.WORLD2_RADIUS - prevNeed, 0.01), 0, 1)
+		Bar.fill.Size = UDim2.fromScale(ratio, 1)
+		Bar.label.Text = string.format("세계 2까지  ⚫ %s / %d", Config.formatSize(r), Config.WORLD2_RADIUS)
 	elseif nextZone then
 		local ratio = math.clamp((r - prevNeed) / math.max(nextZone.need - prevNeed, 0.01), 0, 1)
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
@@ -1198,6 +1253,7 @@ local function refreshAll()
 		Bar.fill.Size = UDim2.fromScale(ratio, 1)
 		Bar.label.Text = string.format("모든 구역이 열렸어요! 빅뱅까지 ⚫ %s / %d", Config.formatSize(state.radius), Config.BIGBANG_RADIUS)
 	end
+	advanceButton.Visible = state.canAdvance == true and not state.inLobby
 	menuButtons.test.Visible = state.tester == true
 	menuButtons.bbshop.Visible = state.bigbang > 0 or state.dm > 0
 	if window.Visible then
@@ -1366,6 +1422,13 @@ do
 	end)
 end
 
+-- 스킬: 카메라가 바라보는 쪽으로
+local function fireSkill()
+	local cam = workspace.CurrentCamera
+	local look = cam and cam.CFrame.LookVector or Vector3.new(0, 0, 1)
+	Request:FireServer("skill", look.X, look.Z)
+end
+
 -- 스킬 버튼 (오른쪽 아래, Q): 액티브 능력이 있는 스킨이면 누르고, 패시브면 설명만
 local Skill = {} :: any
 do
@@ -1378,7 +1441,7 @@ do
 	})
 	scaled(frame)
 	Skill.button = button({ Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0.5, -50, 0, 0), Text = "Q", TextSize = 30, BackgroundColor3 = C.accent, Parent = frame }, function()
-		Request:FireServer("skill")
+		fireSkill()
 	end)
 	new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = Skill.button })
 	Skill.stroke = new("UIStroke", { Color = C.gold, Thickness = 3, Parent = Skill.button })
@@ -1638,11 +1701,7 @@ function handlers.bigbang(data: any)
 		sub ..= " · 🎨 " .. table.concat(data.skins, ", ")
 	end
 	banner("🌌 BIG BANG", sub, C.pink)
-	if data.world2 then
-		task.delay(2.6, function()
-			banner("🍭 세계 2 열림!", "과자 왕국 · 🗺 세계 창이나 소용돌이 문으로 가요", Color3.fromRGB(255, 160, 220))
-		end)
-	end
+	applyWorld(1)
 end
 
 function handlers.bbBought(data: any)
@@ -1693,15 +1752,43 @@ function handlers.open(data: any)
 end
 
 function handlers.skill(data: any)
-	local c = myCenter()
-	local r = state and state.radius or 3
-	Fx.sound("whoosh", 1, 1.3)
-	Feel.flash(Color3.fromRGB(200, 230, 255), 0.25)
-	if c then
-		Fx.ring(c, C.gold, r * 1.5, r * (data.burst and 8 or 4), 0.6)
-		Fx.pillar(c, C.gold, 120 + r, 6 + r * 0.2, 0.6)
+	Feel.flash(Color3.fromRGB(200, 230, 255), 0.2)
+	Feel.shake(0.4)
+	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "발동!", C.gold)
+end
+
+-- 모든 사람의 스킬 모습 (빛줄기, 순간이동, 신의 시선)
+function handlers.skillFx(data: any)
+	Fx.skillFx(data)
+end
+
+-- 세계 2로 넘어갈 수 있다 / 넘어갔다
+function handlers.advanceReady(_data: any)
+	banner("🍭 세계 2로 갈 수 있어요!", string.format("화면 위 버튼을 누르면 크기가 ÷%d 되고, 훨씬 큰 질량의 세계에서 다시 자라요", Config.WORLD2_SCALE), Color3.fromRGB(255, 160, 220))
+	Fx.sound("slash", 0.7, 1.1)
+end
+
+function handlers.advanced(data: any)
+	applyWorld(2)
+	banner("🍭 세계 2 · 과자 왕국", string.format("⚫ %s → ⚫ %s  ·  다시 작아졌지만 질량은 훨씬 커요", Config.formatSize(data.from), Config.formatSize(data.to)), Color3.fromRGB(255, 160, 220))
+	Fx.sound("whoosh", 1, 0.5)
+end
+
+-- 떠도는 거대 행성
+function handlers.event(data: any)
+	if data.kind == "start" then
+		local zone = Config.Zones[data.zone]
+		banner("🌍 떠도는 거대 행성!", string.format("세계 %d · %s에 나타났어요. 다 같이 먹어요!", data.world, zone and zone.name or "?"), Color3.fromRGB(255, 200, 120))
+		Fx.sound("whoosh", 1, 0.35)
+	elseif data.kind == "escape" then
+		toast("🌍 거대 행성이 멀리 날아가 버렸어요")
 	end
-	banner("⚡ " .. data.name, data.dur > 0 and string.format("%d초 동안!", data.dur) or "한꺼번에 흡수!", C.gold)
+end
+
+function handlers.eventReward(data: any)
+	banner(data.escaped and "🌍 행성을 놓쳤어요" or string.format("🌍 행성 격파! %d등", data.rank), string.format("깎은 몫 %d%%  ·  💠 +%s  ·  크기 +%.1f%%%s", math.floor(data.share * 100 + 0.5), fmt(data.mass), data.grow * 100, data.dm > 0 and string.format("  ·  🌑 +%d", data.dm) or ""), C.gold)
+	Fx.sound("slash", 0.8, 1)
+	Feel.flash(C.gold, 0.3)
 end
 
 function handlers.quest(data: any)
@@ -1793,7 +1880,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	elseif key == Enum.KeyCode.K then
 		openPage("skins")
 	elseif key == Enum.KeyCode.Q then
-		Request:FireServer("skill")
+		fireSkill()
 	end
 end)
 
@@ -1820,6 +1907,25 @@ do
 		if t > skillTick then
 			skillTick = t + 0.2
 			refreshSkill()
+			-- 거대 행성: 거리와 방향 (화면 기준 화살표)
+			local active, ppos, frac = Fx.planetInfo()
+			local c = myCenter()
+			local cam = workspace.CurrentCamera
+			if active and c and cam and state and not state.inLobby and math.abs(ppos.X - c.X) < 15000 then
+				local d = Vector3.new(ppos.X - c.X, 0, ppos.Z - c.Z)
+				local look = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z)
+				local arrow = "●"
+				if d.Magnitude > 1 and look.Magnitude > 0.01 then
+					local ang = math.deg(math.atan2(d.Unit:Cross(look.Unit).Y, d.Unit:Dot(look.Unit)))
+					local arrows = { "⬆", "↗", "➡", "↘", "⬇", "↙", "⬅", "↖" }
+					local idx = math.floor(((-ang) % 360 + 22.5) / 45) % 8 + 1
+					arrow = arrows[idx]
+				end
+				eventLabel.Text = string.format("🌍 떠도는 거대 행성 %d%%  %s %s", math.floor(frac * 100 + 0.5), arrow, fmt(d.Magnitude))
+				eventLabel.Visible = true
+			else
+				eventLabel.Visible = false
+			end
 		end
 		local bt, ended = boostText()
 		if bt ~= lastBoost then

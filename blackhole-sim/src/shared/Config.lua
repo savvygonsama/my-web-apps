@@ -5,7 +5,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "BLACK HOLE"
-Config.VERSION = "beta-4"
+Config.VERSION = "beta-5"
 
 -- 테스트 계정: 스튜디오에서 플레이하거나 게임 주인이 들어오면 켜진다. 기록은 저장하지 않는다
 -- 정식 공개 전에 false로 바꾸면 주인도 일반 계정으로 들어간다
@@ -15,18 +15,33 @@ Config.TEST_MODE = true
 Config.PART_LIMIT = 2000
 
 ------------------------------------------------------------------------
--- 크기: 먹어서 커진다
--- 물체를 삼키면 블랙홀 넓이(반지름²)에 GROW_K × 물체 크기² × 성장 배율만큼 더해진다.
--- 내 크기에 가까운 걸 삼킬수록 확 커진다.
+-- 한 판의 흐름: 세계 1에서 작게 시작 → 크기 400을 넘기면 세계 2로 넘어간다.
+-- 세계 2로 넘어가면 크기가 40분의 1로 줄어든다 (400 → 10). 숫자가 작아지는 대신
+-- 세계 2의 물체는 질량이 훨씬 커서, 다시 작은 것부터 크게 자라는 맛이 생긴다.
+-- 세계 2에서 크기 350을 넘기면 빅뱅할 수 있고, 빅뱅하면 다시 세계 1에서 시작한다.
 ------------------------------------------------------------------------
 Config.START_RADIUS = 1.5
-Config.GROW_K = 0.3
--- 클수록 덜 자란다: 실제 계수 = GROW_K / (1 + 반지름 / GROW_SOFT). 뒤로 갈수록 오래 놀아야 커진다
-Config.GROW_SOFT = 20
+Config.WORLD2_RADIUS = 400 -- 세계 1에서 이 크기를 넘기면 세계 2로 넘어갈 수 있다
+Config.WORLD2_SCALE = 40 -- 세계 2로 넘어갈 때 크기를 나누는 수
+Config.WORLD1_MAX = 700 -- 세계 1에서 커질 수 있는 최대 크기
 
--- 최대 크기: 기본 1000, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
-function Config.maxRadius(bigbang: number, maxLv: number): number
-	return (1000 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
+------------------------------------------------------------------------
+-- 크기: 먹어서 커진다
+-- 물체를 삼키면 블랙홀 넓이(반지름²)에 K × 물체 크기² × 성장 배율만큼 더해진다.
+-- 실제 K = GROW_K / (1 + 반지름 / GROW_SOFT): 작을 땐 쑥쑥, 클수록 덜 자란다.
+-- 세계 1은 처음이라 쉽게, 세계 2는 위성(펫)이 있으니 훨씬 어렵게.
+------------------------------------------------------------------------
+Config.Growth = {
+	[1] = { k = 0.4, soft = 25 },
+	[2] = { k = 0.22, soft = 10 },
+}
+
+-- 세계 2 최대 크기: 기본 800, 빅뱅마다 +300 (10번까지), '크기 한계' 업그레이드 레벨마다 +10%
+function Config.maxRadius(bigbang: number, maxLv: number, world: number?): number
+	if world == 1 then
+		return Config.WORLD1_MAX
+	end
+	return (800 + 300 * math.min(bigbang, 10)) * (1 + 0.1 * maxLv)
 end
 
 -- 성장 배율. info = { grow, bigbang, star, skin(스킨 능력 성장 보너스) }
@@ -39,8 +54,9 @@ function Config.growMult(info: any): number
 end
 
 -- 크기 size인 물체를 삼킨 뒤 반지름
-function Config.grow(radius: number, size: number, mult: number, maxR: number): number
-	local k = Config.GROW_K / (1 + radius / Config.GROW_SOFT)
+function Config.grow(radius: number, size: number, mult: number, maxR: number, world: number?): number
+	local g = Config.Growth[world or 1] or Config.Growth[1]
+	local k = g.k / (1 + radius / g.soft)
 	return math.max(radius, math.min(maxR, math.sqrt(radius * radius + k * mult * size * size)))
 end
 
@@ -50,35 +66,33 @@ function Config.startRadius(startLv: number): number
 end
 
 ------------------------------------------------------------------------
--- 업그레이드 9종 (질량으로 산다, 빅뱅하면 사라진다)
--- show(level)은 카드에 보여 줄 효과 글
+-- 업그레이드 8종 (질량으로 산다, 빅뱅하면 사라진다)
+-- 값 = base × growth^레벨 × 1.025^(레벨²÷2): 높은 레벨일수록 가파르게 비싸져서
+-- 위성 배율이 커져도 금방 다 사지 못한다. show(level)은 카드에 보여 줄 효과 글
 ------------------------------------------------------------------------
 Config.Upgrades = {
-	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도", maxLevel = 60, base = 25, growth = 1.8, show = function(l: number): string
+	{ id = "grow", name = "성장력", icon = "⚫", desc = "먹을 때 커지는 정도", maxLevel = 60, base = 25, growth = 1.6, show = function(l: number): string
 		return string.format("성장 ×%.2f", 1 + 0.05 * l)
 	end },
-	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량", maxLevel = 60, base = 40, growth = 1.74, show = function(l: number): string
+	{ id = "mult", name = "질량 배율", icon = "💠", desc = "삼킬 때 얻는 질량", maxLevel = 60, base = 40, growth = 1.6, show = function(l: number): string
 		return string.format("질량 ×%.2f", 1 + 0.25 * l)
 	end },
-	{ id = "pull", name = "흡입력", icon = "🌀", desc = "반지름 바깥까지 끌어당김", maxLevel = 30, base = 30, growth = 1.86, show = function(l: number): string
-		return string.format("흡입 +%d%%", 15 + 7 * l)
-	end },
-	{ id = "speed", name = "이동 속도", icon = "👟", desc = "더 빨리 돌아다님", maxLevel = 20, base = 60, growth = 2.0, show = function(l: number): string
+	{ id = "speed", name = "이동 속도", icon = "👟", desc = "더 빨리 돌아다님", maxLevel = 20, base = 60, growth = 1.8, show = function(l: number): string
 		return string.format("속도 +%d%%", 5 * l)
 	end },
-	{ id = "maxsize", name = "크기 한계", icon = "📏", desc = "최대 크기가 늘어남", maxLevel = 20, base = 5000, growth = 2.2, show = function(l: number): string
+	{ id = "maxsize", name = "크기 한계", icon = "📏", desc = "세계 2 최대 크기가 늘어남", maxLevel = 20, base = 50000, growth = 2.0, show = function(l: number): string
 		return string.format("한계 +%d%%", 10 * l)
 	end },
-	{ id = "respawn", name = "빠른 재생", icon = "♻", desc = "먹은 물체가 더 빨리 다시 생김", maxLevel = 15, base = 100, growth = 2.0, show = function(l: number): string
+	{ id = "respawn", name = "빠른 재생", icon = "♻", desc = "먹은 물체가 더 빨리 다시 생김", maxLevel = 15, base = 100, growth = 1.8, show = function(l: number): string
 		return string.format("재생 -%d%%", 4 * l)
 	end },
-	{ id = "star", name = "별똥별 자석", icon = "☄", desc = "별똥별이 더 자주 떨어짐", maxLevel = 15, base = 200, growth = 2.0, show = function(l: number): string
+	{ id = "star", name = "별똥별 자석", icon = "☄", desc = "별똥별이 더 자주 떨어짐", maxLevel = 15, base = 200, growth = 1.8, show = function(l: number): string
 		return string.format("별똥별 +%d%%", 6 * l)
 	end },
-	{ id = "combo", name = "콤보 증폭", icon = "🔥", desc = "연속 흡수 보너스가 커짐", maxLevel = 10, base = 300, growth = 2.3, show = function(l: number): string
+	{ id = "combo", name = "콤보 증폭", icon = "🔥", desc = "연속 흡수 보너스가 커짐", maxLevel = 10, base = 300, growth = 2.0, show = function(l: number): string
 		return string.format("콤보 보너스 ×%.2f", 1 + 0.25 * l)
 	end },
-	{ id = "golden", name = "황금 탐지", icon = "✨", desc = "황금 물체가 더 자주 나옴", maxLevel = 10, base = 500, growth = 2.3, show = function(l: number): string
+	{ id = "golden", name = "황금 탐지", icon = "✨", desc = "황금 물체가 더 자주 나옴", maxLevel = 10, base = 500, growth = 2.0, show = function(l: number): string
 		return string.format("황금 확률 +%d%%", 25 * l)
 	end },
 }
@@ -89,17 +103,17 @@ end
 
 function Config.upgradeCost(id: string, level: number): number
 	local u = Config.UPGRADE_BY_ID[id]
-	return math.floor(u.base * u.growth ^ level)
+	return math.floor(u.base * u.growth ^ level * 1.025 ^ (level * level / 2))
 end
 
 ------------------------------------------------------------------------
--- 빅뱅(환생): 크기 600 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
+-- 빅뱅(환생): 세계 2에서 크기 350 이상이면 처음부터 다시 시작하고 암흑 물질을 받는다
 ------------------------------------------------------------------------
-Config.BIGBANG_RADIUS = 600
+Config.BIGBANG_RADIUS = 350
 
--- 받는 암흑 물질: 크기 600에서 3개, 그 위로 크기 100마다 1개씩 더
+-- 받는 암흑 물질: 세계 2 크기 350에서 3개, 그 위로 크기 50마다 1개씩 더
 function Config.darkMatterReward(radius: number, bigbang: number, dmLv: number?): number
-	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 100)) + bigbang // 2
+	local base = 3 + math.max(0, math.floor((radius - Config.BIGBANG_RADIUS) / 50)) + bigbang // 2
 	return math.floor(base * (1 + 0.2 * (dmLv or 0)))
 end
 
@@ -109,7 +123,7 @@ Config.BigbangShop = {
 	{ id = "respawn", name = "빠른 재생산", icon = "♻", desc = "삼킨 물체가 12% 더 빨리 다시 생긴다", maxLevel = 5, base = 3, step = 3 },
 	{ id = "mass", name = "암흑 증폭", icon = "🌑", desc = "질량 +50%", maxLevel = 20, base = 3, step = 2 },
 	{ id = "speed", name = "광속", icon = "⚡", desc = "이동 속도 +15%", maxLevel = 5, base = 2, step = 2 },
-	{ id = "pull", name = "사건의 지평선", icon = "🕳", desc = "흡입 범위 +15%", maxLevel = 5, base = 3, step = 3 },
+	{ id = "seed", name = "출발 자금", icon = "💰", desc = "빅뱅 뒤 질량 1K × 10^레벨을 가지고 시작", maxLevel = 6, base = 3, step = 3 },
 	{ id = "luck", name = "행운의 별", icon = "🍀", desc = "캡슐에서 전설 이상이 나올 확률 +15%", maxLevel = 5, base = 4, step = 3 },
 	{ id = "slots", name = "위성 궤도", icon = "🛰", desc = "위성 장착 칸 +1", maxLevel = 2, base = 10, step = 15 },
 	{ id = "keep", name = "질량 보존", icon = "🏦", desc = "빅뱅할 때 질량 5%를 남긴다", maxLevel = 5, base = 4, step = 4 },
@@ -146,27 +160,27 @@ Config.DAILY_HOURS = 20
 -- countMult = 물체 개수 배수 (넓은 구역일수록 물체를 많이 둔다)
 ------------------------------------------------------------------------
 Config.Worlds = {
-	{ id = 1, name = "지구와 우주", x = 0, needBigbang = 0, sky = Color3.fromRGB(150, 190, 255) },
-	{ id = 2, name = "과자 왕국", x = 30000, needBigbang = 1, sky = Color3.fromRGB(255, 190, 230) },
+	{ id = 1, name = "지구와 우주", x = 0, massMult = 1, sky = Color3.fromRGB(150, 190, 255) },
+	{ id = 2, name = "과자 왕국", x = 30000, massMult = 40000, sky = Color3.fromRGB(255, 190, 230) },
 }
 
 Config.Zones = {
 	-- 세계 1
-	{ world = 1, name = "공원", need = 0, width = 420, length = 420, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
-	{ world = 1, name = "마을", need = 6, width = 640, length = 560, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3, countMult = 2 },
-	{ world = 1, name = "도시", need = 14, width = 1000, length = 860, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4, countMult = 2 },
-	{ world = 1, name = "대도시", need = 30, width = 1600, length = 1360, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4, countMult = 2 },
-	{ world = 1, name = "바다와 산", need = 65, width = 2600, length = 2200, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5, countMult = 2 },
-	{ world = 1, name = "우주", need = 140, width = 4200, length = 3600, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6, countMult = 1.5 },
+	{ world = 1, name = "공원", need = 0, width = 420, length = 420, ground = Color3.fromRGB(110, 170, 80), material = Enum.Material.Grass, respawn = 3, countMult = 1.5 },
+	{ world = 1, name = "마을", need = 6, width = 640, length = 560, ground = Color3.fromRGB(140, 150, 110), material = Enum.Material.Grass, respawn = 3, countMult = 1.5 },
+	{ world = 1, name = "도시", need = 14, width = 1000, length = 860, ground = Color3.fromRGB(95, 95, 105), material = Enum.Material.Asphalt, respawn = 4, countMult = 1.5 },
+	{ world = 1, name = "대도시", need = 30, width = 1600, length = 1360, ground = Color3.fromRGB(70, 72, 82), material = Enum.Material.Concrete, respawn = 4, countMult = 1.5 },
+	{ world = 1, name = "바다와 산", need = 65, width = 2600, length = 2200, ground = Color3.fromRGB(60, 130, 190), material = Enum.Material.Sand, respawn = 5, countMult = 1.5 },
+	{ world = 1, name = "우주", need = 140, width = 4200, length = 3600, ground = Color3.fromRGB(20, 18, 40), material = Enum.Material.Slate, respawn = 6, countMult = 1.2 },
 	{ world = 1, name = "은하수", need = 350, width = 7000, length = 6000, ground = Color3.fromRGB(12, 8, 30), material = Enum.Material.Slate, respawn = 8, countMult = 1 },
 	-- 세계 2 (훨씬 넓다)
-	{ world = 2, name = "젤리 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 2.5 },
-	{ world = 2, name = "과자 마을", need = 6, width = 820, length = 720, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3, countMult = 2.5 },
-	{ world = 2, name = "케이크 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4, countMult = 2.5 },
-	{ world = 2, name = "아이스크림 산맥", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5, countMult = 2 },
-	{ world = 2, name = "초콜릿 강", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(120, 70, 45), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 2 },
-	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.5 },
-	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1.2 },
+	{ world = 2, name = "젤리 들판", need = 0, width = 520, length = 520, ground = Color3.fromRGB(255, 190, 220), material = Enum.Material.SmoothPlastic, respawn = 3, countMult = 2 },
+	{ world = 2, name = "과자 마을", need = 6, width = 820, length = 720, ground = Color3.fromRGB(240, 210, 160), material = Enum.Material.Sand, respawn = 3, countMult = 2 },
+	{ world = 2, name = "케이크 도시", need = 14, width = 1300, length = 1100, ground = Color3.fromRGB(255, 240, 230), material = Enum.Material.SmoothPlastic, respawn = 4, countMult = 2 },
+	{ world = 2, name = "아이스크림 산맥", need = 30, width = 2200, length = 1800, ground = Color3.fromRGB(200, 240, 255), material = Enum.Material.Snow, respawn = 5, countMult = 1.5 },
+	{ world = 2, name = "초콜릿 강", need = 65, width = 3200, length = 2800, ground = Color3.fromRGB(120, 70, 45), material = Enum.Material.SmoothPlastic, respawn = 5, countMult = 1.5 },
+	{ world = 2, name = "사탕 우주", need = 140, width = 5000, length = 4400, ground = Color3.fromRGB(70, 30, 90), material = Enum.Material.SmoothPlastic, respawn = 6, countMult = 1.2 },
+	{ world = 2, name = "디저트 은하", need = 350, width = 7600, length = 6600, ground = Color3.fromRGB(50, 20, 70), material = Enum.Material.SmoothPlastic, respawn = 8, countMult = 1 },
 	{ world = 2, name = "설탕 블랙홀", need = 800, width = 10000, length = 9000, ground = Color3.fromRGB(30, 10, 40), material = Enum.Material.SmoothPlastic, respawn = 10, countMult = 1 },
 }
 
@@ -422,34 +436,37 @@ end
 --   unlock: bigbang = 빅뱅 횟수, dm = 암흑 물질로 사기, pass = 게임패스, world2 = 세계 2의 사탕 태양 삼키기
 --   effect: 테두리와 소용돌이 꾸밈 (fire, ice, galaxy, candy, gold, eye, rainbow)
 ------------------------------------------------------------------------
+-- tier = 등급 (Config.Rarities: 1 일반 … 6 비밀). 높은 등급일수록 능력이 세고 모양이 화려하다
 -- ability: 스킨마다 고유 능력
---   passive = 늘 켜져 있음: pull(흡입 범위), grow(성장), mass(질량), golden(황금 확률 배수), star(별똥별), respawn(재생), sats(위성 배율), world2(세계 2 보너스)
---   active  = 스킬 버튼(Q)으로 쓴다: speed(빨라짐), pull(흡입 범위 커짐), burst(주변 한꺼번에 흡수). cd = 다시 쓰기까지 초
+--   늘 켜져 있는 값: mass(질량), grow(성장), growSmall(크기 50 미만일 때 성장), golden(황금 확률 배수),
+--     goldenMass(황금 질량 배수), star(별똥별 자주), respawn(재생 시간 배수), sats(위성 배율),
+--     world2(세계 2 질량), trail(지나간 자리 흡수), chain(연쇄 폭발), sugar(연속 흡수 속도)
+--   active = 스킬 버튼(Q)으로 쓴다. id: beam(빛줄기), swell(팽창), blink(순간이동), vortex(소용돌이), prism(분신), eye(신의 시선)
 Config.Skins = {
-	{ id = "violet", name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0,
-		ability = { kind = "passive", name = "끌어당김", desc = "흡입 범위 +15%", pull = 0.15 } },
-	{ id = "quasar", name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1,
-		ability = { kind = "active", name = "퀘이사 제트", desc = "8초 동안 이동 속도 ×2", speed = 2, dur = 8, cd = 25 } },
-	{ id = "giant", name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2,
-		ability = { kind = "passive", name = "거성의 식욕", desc = "성장 +25%", grow = 0.25 } },
-	{ id = "nebula", name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3,
-		ability = { kind = "passive", name = "성운의 축복", desc = "질량 +40%, 성장 +10%", mass = 0.4, grow = 0.1 } },
-	{ id = "golden", name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold",
-		ability = { kind = "passive", name = "황금 손", desc = "황금 물체 3배 자주, 질량 +30%", golden = 3, mass = 0.3 } },
-	{ id = "rainbow", name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow",
-		ability = { kind = "active", name = "무지개 폭발", desc = "흡입 범위 3배 안을 한꺼번에 흡수", burst = 3, dur = 0, cd = 30 } },
-	{ id = "ice", name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice",
-		ability = { kind = "active", name = "얼음 질주", desc = "6초 동안 이동 속도 ×2.5", speed = 2.5, dur = 6, cd = 18 } },
-	{ id = "lava", name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire",
-		ability = { kind = "active", name = "용암 분출", desc = "8초 동안 흡입 범위 ×2.5", pull = 2.5, dur = 8, cd = 25 } },
-	{ id = "milkyway", name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy",
-		ability = { kind = "passive", name = "별을 부르는 자", desc = "별똥별 2배 자주, 효과 시간 +50%", star = 2 } },
-	{ id = "sweet", name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy",
-		ability = { kind = "passive", name = "단맛 중독", desc = "세계 2에서 질량 +100%, 성장 +30%", world2 = true } },
-	{ id = "vip", name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "gold",
-		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +50%, 재생 25% 빨라짐", mass = 0.5, respawn = 0.75 } },
-	{ id = "godeye", name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
-		ability = { kind = "active", name = "신의 시선", desc = "흡입 범위 5배 안을 한꺼번에 흡수 (늘 위성 배율 +20%)", burst = 5, dur = 0, cd = 35, sats = 0.2 } },
+	{ id = "violet", tier = 1, name = "보랏빛 블랙홀", a = Color3.fromRGB(170, 90, 255), b = Color3.fromRGB(255, 120, 200), unlock = "bigbang", value = 0,
+		ability = { kind = "passive", name = "새싹 블랙홀", desc = "크기 50 미만일 때 성장 +30%", growSmall = 0.3 } },
+	{ id = "quasar", tier = 2, name = "푸른 퀘이사", a = Color3.fromRGB(70, 170, 255), b = Color3.fromRGB(150, 255, 255), unlock = "bigbang", value = 1, effect = "quasar",
+		ability = { kind = "active", id = "beam", name = "퀘이사 빔", desc = "바라보는 쪽으로 빛줄기를 쏴서, 반지름 10배 길이의 길 위를 한꺼번에 흡수", cd = 20, len = 10 } },
+	{ id = "giant", tier = 2, name = "붉은 거성", a = Color3.fromRGB(255, 80, 60), b = Color3.fromRGB(255, 200, 90), unlock = "bigbang", value = 2, effect = "giant",
+		ability = { kind = "active", id = "swell", name = "적색 팽창", desc = "6초 동안 25% 부풀어서 나보다 조금 큰 것도 삼킨다", cd = 30, dur = 6, swell = 1.25 } },
+	{ id = "nebula", tier = 3, name = "초록 성운", a = Color3.fromRGB(80, 255, 140), b = Color3.fromRGB(200, 255, 120), unlock = "bigbang", value = 3, effect = "nebula",
+		ability = { kind = "passive", name = "성운 꼬리", desc = "지나간 자리에 2초 동안 성운이 남아 그 위 물체도 흡수, 질량 +20%", trail = 0.7, mass = 0.2 } },
+	{ id = "ice", tier = 3, name = "얼음 소용돌이", a = Color3.fromRGB(150, 230, 255), b = Color3.fromRGB(255, 255, 255), unlock = "dm", value = 6, effect = "ice",
+		ability = { kind = "active", id = "blink", name = "빙결 순간이동", desc = "바라보는 쪽으로 반지름 8배만큼 순간이동하며 지나간 길을 흡수", cd = 14, len = 8 } },
+	{ id = "lava", tier = 4, name = "용암 소용돌이", a = Color3.fromRGB(255, 110, 30), b = Color3.fromRGB(255, 230, 80), unlock = "dm", value = 12, effect = "fire",
+		ability = { kind = "passive", name = "연쇄 폭발", desc = "삼킨 물체 주변(반지름 60%)의 물체도 함께 터져 흡수, 질량 +20%", chain = 0.6, mass = 0.2 } },
+	{ id = "golden", tier = 4, name = "황금 특이점", a = Color3.fromRGB(255, 200, 60), b = Color3.fromRGB(255, 255, 200), unlock = "bigbang", value = 5, effect = "gold",
+		ability = { kind = "passive", name = "미다스의 손", desc = "황금 물체 3배 자주, 황금 질량 2배, 질량 +30%", golden = 3, goldenMass = 2, mass = 0.3 } },
+	{ id = "sweet", tier = 5, name = "사탕 소용돌이", a = Color3.fromRGB(255, 120, 190), b = Color3.fromRGB(140, 230, 255), unlock = "world2", value = 0, effect = "candy",
+		ability = { kind = "passive", name = "슈가 러시", desc = "연속 흡수할수록 빨라짐 (최대 +60%), 세계 2 질량 +50%, 성장 +10%", sugar = 0.6, world2 = 0.5, grow = 0.1 } },
+	{ id = "milkyway", tier = 5, name = "은하수", a = Color3.fromRGB(120, 140, 255), b = Color3.fromRGB(255, 240, 255), unlock = "dm", value = 25, effect = "galaxy",
+		ability = { kind = "active", id = "vortex", name = "은하 소용돌이", desc = "8초 동안 반지름 4배 안의 먹을 수 있는 것을 모두 끌어와 흡수 (늘: 별똥별 2배 자주)", cd = 40, dur = 8, vortex = 4, star = 2 } },
+	{ id = "rainbow", tier = 5, name = "무지개 우주", a = Color3.fromRGB(255, 90, 90), b = Color3.fromRGB(90, 160, 255), unlock = "bigbang", value = 8, effect = "rainbow",
+		ability = { kind = "active", id = "prism", name = "프리즘 분신", desc = "10초 동안 무지개 분신 둘이 둘레를 돌며 함께 흡수 (늘: 성장 +10%)", cd = 32, dur = 10, grow = 0.1 } },
+	{ id = "vip", tier = 5, name = "황금 VIP", a = Color3.fromRGB(255, 215, 80), b = Color3.fromRGB(255, 150, 40), unlock = "pass", value = "vip", effect = "vip",
+		ability = { kind = "passive", name = "VIP 특권", desc = "질량 +60%, 성장 +15%, 재생 30% 빨라짐", mass = 0.6, grow = 0.15, respawn = 0.7 } },
+	{ id = "godeye", tier = 6, name = "신의 눈", a = Color3.fromRGB(255, 230, 140), b = Color3.fromRGB(255, 90, 60), unlock = "pass", value = "petpack", effect = "eye",
+		ability = { kind = "active", id = "eye", name = "신의 시선", desc = "거대한 눈이 열려 반지름 7배 안을 모두 흡수하고, 내 크기 1.5배까지 삼킨다 (늘: 위성 배율 +25%, 성장 +15%)", cd = 30, eye = 7, eyeLimit = 1.5, sats = 0.25, grow = 0.15 } },
 }
 Config.SKIN_BY_ID = {}
 for i, s in ipairs(Config.Skins) do
@@ -498,9 +515,9 @@ Config.STAR_BOOST = 60
 ------------------------------------------------------------------------
 -- 계산
 ------------------------------------------------------------------------
--- 반지름 바깥으로 더 끌어당기는 거리. extra = 스킨 능력 배수
-function Config.pullRange(radius: number, pullLv: number, bbPull: number?, extra: number?): number
-	return (radius * (0.15 + 0.07 * pullLv) + 1.5) * (1 + 0.15 * (bbPull or 0)) * (extra or 1)
+-- 반지름 바깥으로 살짝 더 닿는 거리 (흡입력 업그레이드는 없앴다: 물체 위를 정확히 지나가야 먹는다)
+function Config.pullRange(radius: number): number
+	return radius * 0.08 + 1
 end
 
 -- 이동 속도. 크기가 커질수록 빨라지고, 넓은 뒤쪽 구역도 금방 건너간다
@@ -611,13 +628,45 @@ function Config.zoneAt(pos: Vector3): number
 	return list[#list]
 end
 
+------------------------------------------------------------------------
+-- 서버 이벤트: 떠도는 거대 행성
+-- 몇 분마다 플레이어가 많은 구역에 거대한 행성이 나타나 떠돈다. 다 같이 깎아 먹는다.
+-- 피해와 보상은 로그로 계산해서, 아무리 크거나 위성 배율이 높아도 밸런스가 깨지지 않는다.
+------------------------------------------------------------------------
+Config.EVENT = {
+	firstDelay = 90, -- 서버가 열리고 첫 행성까지 (초)
+	interval = 300, -- 행성 사이 간격 (초)
+	life = 150, -- 이 시간 안에 못 먹으면 날아가 버린다
+	soloSeconds = 40, -- 혼자 붙어 있으면 다 먹는 데 걸리는 시간
+}
+
+-- 한 번(0.1초)에 깎는 양: 크기에 로그
+function Config.eventDamage(radius: number): number
+	return 1 + math.log(1 + radius, 2)
+end
+
+-- 보상. share = 내가 깎은 몫 (0~1), escaped = 놓쳤으면 true
+--   질량: 지금 갈 수 있는 가장 큰 물체 × (10 + 40 × 몫) × (1 + log10(질량 배율))
+--   성장: 반지름 +3% + 7% × 몫
+--   암흑 물질: 몫 15% 이상이면 1개, 1등이면 1개 더
+function Config.eventReward(share: number, biggest: number, totalMult: number, top: boolean, escaped: boolean?): (number, number, number)
+	local f = escaped and 0.5 or 1
+	local mass = biggest * (10 + 40 * share) * (1 + math.log10(math.max(1, totalMult))) * f
+	local grow = (0.03 + 0.07 * share) * f
+	local dm = 0
+	if not escaped then
+		dm = (share >= 0.15 and 1 or 0) + (top and 1 or 0)
+	end
+	return mass, grow, dm
+end
+
 -- 지금 갈 수 있는 구역에서 가장 질량이 큰 물체 (질량 꾸러미 계산용)
 function Config.biggestMass(world: number, radius: number): number
 	local reach = Config.maxZone(world, radius)
 	local best = 0
 	for _, o in ipairs(Config.Objects) do
 		if Config.Zones[o.zone].world == world and o.zone <= reach and o.size <= math.max(radius, Config.Zones[o.zone].need) then
-			best = math.max(best, o.mass)
+			best = math.max(best, o.mass * (Config.Worlds[world].massMult or 1))
 		end
 	end
 	return best

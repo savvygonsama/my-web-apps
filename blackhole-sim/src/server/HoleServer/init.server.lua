@@ -76,14 +76,18 @@ do
 end
 
 type Sat = { uid: number, id: string, gold: boolean }
+-- 흡수 지점: pos에서 reach 안의, 크기 limit 이하 물체를 삼킨다
+type Mouth = { pos: Vector3, reach: number, limit: number }
 type Quest = { kind: string, goal: number, progress: number }
 
 type Profile = {
 	mass: number,
 	total: number, -- 지금까지 삼킨 질량 (빅뱅해도 남는다)
 	eaten: number,
-	radius: number, -- 지금 반지름 (먹어서 커진다)
-	up: { [string]: number }, -- 업그레이드 9종 레벨
+	radius: number, -- 지금 반지름 (먹어서 커진다). 세계 2에서는 세계 2 단위
+	tier: number, -- 이번 판에 있는 세계 (1 → 크기 400 넘기면 2, 빅뱅하면 다시 1)
+	reached2: boolean, -- 세계 2에 한 번이라도 가 봤는지 (과자 캡슐)
+	up: { [string]: number }, -- 업그레이드 레벨
 	bigbang: number,
 	dm: number, -- 암흑 물질
 	bb: { [string]: number }, -- 빅뱅 상점 레벨
@@ -119,6 +123,8 @@ local function defaultProfile(): Profile
 		total = 0,
 		eaten = 0,
 		radius = Config.START_RADIUS,
+		tier = 1,
+		reached2 = false,
 		up = up,
 		bigbang = 0,
 		dm = 0,
@@ -167,7 +173,9 @@ local function sanitize(data: any): Profile
 			p.bb[b.id] = math.floor(num(data.bb[b.id], b.maxLevel))
 		end
 	end
-	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize)
+	p.tier = data.tier == 2 and 2 or 1
+	p.reached2 = data.reached2 == true or p.tier == 2
+	local maxR = Config.maxRadius(p.bigbang, p.up.maxsize, p.tier)
 	p.radius = math.clamp(num(data.radius, maxR), Config.START_RADIUS, maxR)
 	local uids = {}
 	if type(data.sats) == "table" then
@@ -267,8 +275,12 @@ type State = {
 	lastEat: number,
 	activeUntil: number, -- 액티브 스킬이 끝나는 시각 (os.clock)
 	activeOn: boolean,
+	activeId: string,
 	cdUntil: number,
-	burst: number,
+	shots: { Mouth }, -- 다음 틱에 한 번만 쓰는 흡수 지점 (빛줄기, 순간이동, 신의 시선)
+	trail: { { pos: Vector3, t: number } }, -- 성운 꼬리
+	sugarLevel: number,
+	advanceNotified: boolean,
 	unstuckAt: number?,
 }
 
@@ -321,7 +333,7 @@ function Calc.hasPass(player: Player, key: string): boolean
 end
 
 function Calc.maxRadius(p: Profile): number
-	return Config.maxRadius(p.bigbang, p.up.maxsize)
+	return Config.maxRadius(p.bigbang, p.up.maxsize, p.tier)
 end
 
 function Calc.slots(player: Player, p: Profile): number
@@ -370,33 +382,48 @@ function Calc.active(st: State?): boolean
 	return st ~= nil and st.activeOn and os.clock() < st.activeUntil
 end
 
--- 스킨 능력에 따른 흡입 범위 배수
-function Calc.pullExtra(p: Profile, st: State?): number
-	local ab = Calc.ability(p)
-	local m = 1
-	if ab.kind == "passive" and ab.pull then
-		m *= 1 + ab.pull
-	elseif ab.kind == "active" and ab.pull and Calc.active(st) then
-		m *= ab.pull
+-- 켜져 있는 액티브 스킬 id ("" = 없음)
+function Calc.activeId(st: State?): string
+	if st and Calc.active(st) then
+		return st.activeId
 	end
-	return m
+	return ""
 end
 
-function Calc.speedExtra(p: Profile, st: State?): number
-	local ab = Calc.ability(p)
-	if ab.kind == "active" and ab.speed and Calc.active(st) then
-		return ab.speed
+-- 적색 팽창: 먹을 수 있는 크기와 범위 배수
+function Calc.swell(p: Profile, st: State?): number
+	if Calc.activeId(st) == "swell" then
+		return Calc.ability(p).swell or 1
 	end
 	return 1
 end
 
--- 스킨 능력 질량·성장 보너스 (세계 2 전용 보너스 포함)
+-- 은하 소용돌이: 흡수 범위 배수
+function Calc.vortex(p: Profile, st: State?): number
+	if Calc.activeId(st) == "vortex" then
+		return Calc.ability(p).vortex or 1
+	end
+	return 1
+end
+
+-- 슈가 러시: 연속 흡수할수록 빨라진다
+function Calc.speedExtra(p: Profile, st: State?): number
+	local ab = Calc.ability(p)
+	if ab.sugar and st and os.clock() - st.lastEat <= Config.COMBO_WINDOW then
+		return 1 + math.min(ab.sugar, st.combo * 0.01)
+	end
+	return 1
+end
+
+-- 스킨 능력 질량·성장 보너스
 function Calc.skinBonus(p: Profile, st: State?): (number, number)
 	local ab = Calc.ability(p)
 	local mass, grow = ab.mass or 0, ab.grow or 0
-	if ab.world2 and st and st.world == 2 and not st.inLobby then
-		mass += 1
-		grow += 0.3
+	if ab.growSmall and p.radius < 50 then
+		grow += ab.growSmall
+	end
+	if ab.world2 and p.tier == 2 and st and not st.inLobby then
+		mass += ab.world2
 	end
 	return mass, grow
 end
@@ -450,12 +477,6 @@ function Calc.skinUnlocked(player: Player, p: Profile, skin: any): boolean
 	return false
 end
 
--- 세계 번호가 열렸는지
-function Calc.worldOpen(p: Profile, world: number): boolean
-	local w = Config.Worlds[world]
-	return w ~= nil and p.bigbang >= w.needBigbang
-end
-
 ------------------------------------------------------------------------
 -- 상태 보내기와 캐릭터 꾸미기
 ------------------------------------------------------------------------
@@ -489,7 +510,11 @@ local function pushState(player: Player)
 		bigbang = p.bigbang,
 		dm = p.dm,
 		bb = p.bb,
-		pullRange = Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+		pullRange = Config.pullRange(r * Calc.swell(p, st)) * Calc.vortex(p, st),
+		tier = p.tier,
+		reached2 = p.reached2,
+		canAdvance = p.tier == 1 and r >= Config.WORLD2_RADIUS,
+		activeId = Calc.activeId(st),
 		totalMult = Calc.totalMult(player, p),
 		growMult = Calc.growMult(player, p),
 		satMult = Calc.satMult(p),
@@ -555,6 +580,8 @@ local function applyHole(player: Player)
 	char:SetAttribute("HoleR", r)
 	char:SetAttribute("HoleSkin", skin.index)
 	char:SetAttribute("SkillOn", Calc.active(st))
+	char:SetAttribute("SkillId", Calc.activeId(st))
+	char:SetAttribute("Swell", Calc.swell(p, st))
 	local satList = {}
 	for _, uid in ipairs(p.equipped) do
 		local s = Calc.findSat(p, uid)
@@ -670,8 +697,7 @@ function Quests.add(player: Player, p: Profile, kind: string, amount: number, is
 					p.dm += n
 					reward = string.format("🌑 암흑 물질 +%d", n)
 				else
-					local st = states[player]
-					local amountMass = math.max(200, Config.biggestMass(st and st.world or 1, p.radius) * 25 * Calc.totalMult(player, p))
+					local amountMass = math.max(200, Config.biggestMass(p.tier, p.radius) * 25 * Calc.totalMult(player, p))
 					p.mass += amountMass
 					p.total += amountMass
 					reward = "💠 +" .. Config.formatNumber(amountMass)
@@ -810,19 +836,59 @@ function Actions.goLobby(player: Player)
 	Push:FireClient(player, "world", 0)
 end
 
-function Actions.goWorld(player: Player, w: number)
+-- 세계로 가기: 이번 판에 있는 세계로만 갈 수 있다 (세계 1 → 크기 400 넘기면 세계 2)
+function Actions.goWorld(player: Player, w: number, quiet: boolean?)
 	local p, st = profiles[player], states[player]
 	if not p or not st or not Config.Worlds[w] then
 		return
 	end
-	if not Calc.worldOpen(p, w) then
-		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", w, Config.Worlds[w].needBigbang))
+	if w ~= p.tier then
+		local now = os.clock()
+		if quiet and now < st.lockToastAt then
+			return
+		end
+		st.lockToastAt = now + 4
+		if w == 2 then
+			toast(player, string.format("🔒 세계 2는 세계 1에서 크기 %d을 넘기면 넘어갈 수 있어요", Config.WORLD2_RADIUS))
+		else
+			toast(player, "이번 판은 세계 2에서 계속해요 (빅뱅하면 세계 1부터 다시)")
+		end
 		return
 	end
 	st.world = w
 	st.portalAt = os.clock() + 3
 	moveTo(player, spawnPos(w))
 	Push:FireClient(player, "world", w)
+end
+
+-- 세계 1에서 크기 400을 넘기면 세계 2로 넘어간다. 크기는 40분의 1이 된다
+function Actions.advance(player: Player)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	if p.tier ~= 1 then
+		toast(player, "이미 세계 2에 있어요")
+		return
+	end
+	if p.radius < Config.WORLD2_RADIUS then
+		toast(player, string.format("세계 1에서 크기 %d을 넘겨야 세계 2로 넘어갈 수 있어요 (지금 ⚫%s)", Config.WORLD2_RADIUS, Config.formatSize(p.radius)))
+		return
+	end
+	local from = p.radius
+	p.tier = 2
+	p.reached2 = true
+	p.radius = math.max(Config.START_RADIUS, from / Config.WORLD2_SCALE)
+	st.world = 2
+	st.activeOn = false
+	st.shots = {}
+	st.trail = {}
+	st.dirty = true
+	st.portalAt = os.clock() + 3
+	moveTo(player, spawnPos(2))
+	applyHole(player)
+	Push:FireClient(player, "advanced", { from = from, to = p.radius })
+	pushState(player)
 end
 
 local function tickPlayer(player: Player, p: Profile, st: State)
@@ -849,9 +915,10 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		applyHole(player)
 		pushState(player)
 	end
-	-- 액티브 스킬이 끝났으면 속도·범위를 되돌린다
+	-- 액티브 스킬이 끝났으면 되돌린다
 	if st.activeOn and now >= st.activeUntil then
 		st.activeOn = false
+		st.activeId = ""
 		applyHole(player)
 		pushState(player)
 	end
@@ -862,11 +929,8 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			st.portalAt = now + 3
 			if portal.to == 0 then
 				Actions.goLobby(player)
-			elseif Calc.worldOpen(p, portal.to) then
-				Actions.goWorld(player, portal.to)
-			elseif now > st.lockToastAt then
-				st.lockToastAt = now + 4
-				toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", portal.to, Config.Worlds[portal.to].needBigbang))
+			else
+				Actions.goWorld(player, portal.to, true)
 			end
 		end
 	end
@@ -874,15 +938,29 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		return
 	end
 
-	local r = p.radius
-	local ab = Calc.ability(p)
-	local reach = r + Config.pullRange(r, p.up.pull, p.bb.pull, Calc.pullExtra(p, st))
 	local zone = Config.zoneAt(pos)
 	local world = Config.Zones[zone].world
+	-- 이번 판의 세계가 아닌 곳에 있으면 (예: 빅뱅 직후) 제 세계로 보낸다
+	if world ~= p.tier then
+		moveTo(player, spawnPos(p.tier))
+		return
+	end
 	st.world = world
 	if zone ~= st.zone then
 		st.zone = zone
 		Push:FireClient(player, "zone", zone)
+	end
+
+	local r = p.radius
+	local ab = Calc.ability(p)
+	local size = r * Calc.swell(p, st) -- 이만큼 큰 것까지 삼킨다
+	local reach = size + Config.pullRange(size)
+
+	-- 세계 2로 넘어갈 수 있게 되면 한 번 알려 준다
+	if p.tier == 1 and r >= Config.WORLD2_RADIUS and not st.advanceNotified then
+		st.advanceNotified = true
+		Push:FireClient(player, "advanceReady", {})
+		pushState(player)
 	end
 
 	-- 별똥별
@@ -904,51 +982,112 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 		dropStar(player, st, pos, r)
 	end
 
-	-- 한꺼번에 흡수 스킬
-	local burst = st.burst
-	if burst > 0 then
-		st.burst = 0
-		reach *= burst
+	-- 흡수 지점들: 내 블랙홀 + 스킨 능력
+	local mouths: { Mouth } = { { pos = pos, reach = reach * Calc.vortex(p, st), limit = size } }
+	if ab.trail then
+		-- 성운 꼬리: 지나간 자리 2초
+		table.insert(st.trail, { pos = pos, t = now })
+		while #st.trail > 0 and now - st.trail[1].t > 2 do
+			table.remove(st.trail, 1)
+		end
+		for i = 1, #st.trail, 3 do
+			local tp = st.trail[i]
+			if now - tp.t > 0.25 then
+				table.insert(mouths, { pos = tp.pos, reach = r * ab.trail + 1, limit = r })
+			end
+		end
+	end
+	if Calc.activeId(st) == "prism" then
+		-- 프리즘 분신 둘이 둘레를 돈다 (화면도 같은 식으로 그린다)
+		for k = 0, 1 do
+			local a = now * 2.2 + k * math.pi
+			table.insert(mouths, { pos = pos + Vector3.new(math.cos(a), 0, math.sin(a)) * r * 2.5, reach = r * 0.7 + Config.pullRange(r), limit = r })
+		end
+	end
+	local limitCount = 40
+	if #st.shots > 0 then
+		for _, m in ipairs(st.shots) do
+			table.insert(mouths, m)
+		end
+		st.shots = {}
+		limitCount = 300
 	end
 
 	local mult = Calc.totalMult(player, p)
+	local worldMass = Config.Worlds[world].massMult or 1
 	local gm = Calc.growMult(player, p)
 	local maxR = Calc.maxRadius(p)
 	local factor = Calc.respawnFactor(player, p)
 	local goldChance = Config.goldenChance(p.up.golden, ab.golden)
-	local reachable = Config.maxZone(world, r)
-	local limit = burst > 0 and 250 or 40
+	local goldMass = Config.GOLDEN_MASS * (ab.goldenMass or 1)
+	local reachable = Config.maxZone(world, size)
 	local newR = r
 	local eatenList = {}
 	local gained = 0
 	local goldenCount, bigCount = 0, 0
 	local ateSun = false
-	for zi = math.max(1, zone - 1), math.min(#Config.Zones, zone + 1) do
-		if Config.Zones[zi].world == world then
-			for _, rec in ipairs(byZone[zi] or {}) do
-				if rec.alive and rec.zone <= reachable and rec.def.size <= r and flatDist(rec.pos, pos) <= reach + rec.def.size * 0.5 then
-					local golden = rec.golden
-					eat(player, rec, factor, goldChance)
-					local m = rec.def.mass * mult * (golden and Config.GOLDEN_MASS or 1)
-					gained += m
-					newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR)
-					table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
-					if golden then
-						goldenCount += 1
+	local chainFrom: { Vector3 } = {}
+
+	local function consume(rec: World.ObjectRec)
+		local golden = rec.golden
+		eat(player, rec, factor, goldChance)
+		local m = rec.def.mass * worldMass * mult * (golden and goldMass or 1)
+		gained += m
+		newR = Config.grow(newR, rec.def.size, gm * (golden and Config.GOLDEN_GROW or 1), maxR, world)
+		table.insert(eatenList, { pos = rec.pos, mass = m, size = rec.def.size, name = rec.def.name, golden = golden })
+		if golden then
+			goldenCount += 1
+		end
+		if rec.def.size >= r * 0.5 then
+			bigCount += 1
+		end
+		if rec.def.id == "candysun" then
+			ateSun = true
+		end
+		if ab.chain and #chainFrom < 15 then
+			table.insert(chainFrom, rec.pos)
+		end
+	end
+
+	local function scan(list: { Mouth })
+		for zi = math.max(1, zone - 2), math.min(#Config.Zones, zone + 2) do
+			if Config.Zones[zi].world == world then
+				for _, rec in ipairs(byZone[zi] or {}) do
+					if #eatenList >= limitCount then
+						return
 					end
-					if rec.def.size >= r * 0.5 then
-						bigCount += 1
-					end
-					if rec.def.id == "candysun" then
-						ateSun = true
-					end
-					if #eatenList >= limit then
-						break
+					if rec.alive and rec.zone <= reachable then
+						for _, m in ipairs(list) do
+							if rec.def.size <= m.limit and flatDist(rec.pos, m.pos) <= m.reach + rec.def.size * 0.5 then
+								consume(rec)
+								break
+							end
+						end
 					end
 				end
 			end
 		end
 	end
+	scan(mouths)
+	-- 용암 연쇄 폭발: 삼킨 자리 주변도 한 번 더
+	if #chainFrom > 0 then
+		local chain: { Mouth } = {}
+		for _, cp in ipairs(chainFrom) do
+			table.insert(chain, { pos = cp, reach = r * ab.chain, limit = size })
+		end
+		limitCount += 20
+		scan(chain)
+	end
+
+	-- 슈가 러시 속도는 연속 흡수가 바뀔 때만 다시 맞춘다
+	if ab.sugar then
+		local level = math.floor((Calc.speedExtra(p, st) - 1) * 10)
+		if level ~= st.sugarLevel then
+			st.sugarLevel = level
+			applyHole(player)
+		end
+	end
+
 	if #eatenList > 0 then
 		if now - st.lastEat <= Config.COMBO_WINDOW then
 			st.combo += #eatenList
@@ -969,10 +1108,10 @@ local function tickPlayer(player: Player, p: Profile, st: State)
 			gained = gained,
 			mass = p.mass,
 			radius = p.radius,
-			pullRange = Config.pullRange(p.radius, p.up.pull, p.bb.pull, Calc.pullExtra(p, st)),
+			pullRange = Config.pullRange(p.radius * Calc.swell(p, st)) * Calc.vortex(p, st),
 			combo = st.combo,
 			comboBonus = Config.comboBonus(st.combo, p.up.combo),
-			burst = burst > 0,
+			burst = limitCount > 40,
 		})
 		updateLeaderstats(player)
 		Quests.add(player, p, "eat", #eatenList)
@@ -997,6 +1136,192 @@ task.spawn(function()
 				if not ok then
 					warn("[BlackHole] 삼키기 오류:", err)
 				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------------------
+-- 서버 이벤트: 떠도는 거대 행성
+-- 플레이어가 가장 많은 구역에 행성이 나타나 천천히 떠돈다. 블랙홀이 행성에 닿아 있으면
+-- 0.1초마다 (1 + log2(1 + 크기))만큼 깎는다. 다 깎으면 깎은 몫만큼 보상 (Config.eventReward, 로그 공식).
+-- 서버는 보이지 않는 부품 하나(GiantPlanet)만 움직이고, 행성 모양은 각 화면이 그린다.
+------------------------------------------------------------------------
+local Event = {
+	active = false,
+	zone = 0,
+	world = 1,
+	radius = 0,
+	hp = 0,
+	maxHp = 1,
+	ends = 0,
+	pos = Vector3.zero,
+	target = Vector3.zero,
+	speed = 20,
+	contrib = {} :: { [number]: number },
+	nextAt = os.clock() + Config.EVENT.firstDelay,
+}
+local eventFolder = Instance.new("Folder")
+eventFolder.Name = "Event"
+eventFolder.Parent = workspace
+local planetAnchor = Instance.new("Part")
+planetAnchor.Name = "GiantPlanet"
+planetAnchor.Anchored = true
+planetAnchor.CanCollide = false
+planetAnchor.CanQuery = false
+planetAnchor.CanTouch = false
+planetAnchor.Transparency = 1
+planetAnchor.Size = Vector3.new(1, 1, 1)
+planetAnchor.CFrame = CFrame.new(0, -500, 0)
+planetAnchor:SetAttribute("Active", false)
+planetAnchor.Parent = eventFolder
+
+-- 행성이 떠도는 범위 안의 아무 곳
+function Event.randomSpot(): Vector3
+	local zone = Config.Zones[Event.zone]
+	local wx = Config.Worlds[zone.world].x
+	local z0 = Config.zoneStart(Event.zone)
+	local mx = math.max(0, zone.width / 2 - Event.radius - 20)
+	local mz = math.max(0, zone.length / 2 - Event.radius - 20)
+	return Vector3.new(wx + (math.random() * 2 - 1) * mx, 0, z0 + zone.length / 2 + (math.random() * 2 - 1) * mz)
+end
+
+-- 지금 보이는 크기 (깎일수록 작아진다)
+function Event.shown(): number
+	return Event.radius * (0.4 + 0.6 * math.sqrt(math.max(0, Event.hp / Event.maxHp)))
+end
+
+function Event.start(): boolean
+	-- 사람이 가장 많은 구역
+	local counts: { [number]: number } = {}
+	for player, st in pairs(states) do
+		if profiles[player] and not st.inLobby then
+			counts[st.zone] = (counts[st.zone] or 0) + 1
+		end
+	end
+	local bestZone, bestN = 0, 0
+	for z, n in pairs(counts) do
+		if n > bestN then
+			bestZone, bestN = z, n
+		end
+	end
+	if bestZone == 0 then
+		return false
+	end
+	local zone = Config.Zones[bestZone]
+	local sum, n = 0, 0
+	for player, st in pairs(states) do
+		local p = profiles[player]
+		if p and not st.inLobby and st.world == zone.world then
+			sum += p.radius
+			n += 1
+		end
+	end
+	local avgR = n > 0 and sum / n or 5
+	Event.active = true
+	Event.zone = bestZone
+	Event.world = zone.world
+	Event.radius = math.clamp(avgR * 2.5, 12, math.min(1500, zone.width * 0.3))
+	Event.maxHp = Config.eventDamage(avgR) * 10 * Config.EVENT.soloSeconds * math.max(1, n) ^ 0.8
+	Event.hp = Event.maxHp
+	Event.ends = os.clock() + Config.EVENT.life
+	Event.contrib = {}
+	Event.pos = Event.randomSpot()
+	Event.target = Event.randomSpot()
+	Event.speed = math.max(12, Event.radius * 0.2)
+	planetAnchor:SetAttribute("Radius", Event.radius)
+	planetAnchor:SetAttribute("HP", Event.hp)
+	planetAnchor:SetAttribute("MaxHP", Event.maxHp)
+	planetAnchor:SetAttribute("Ends", workspace:GetServerTimeNow() + Config.EVENT.life)
+	planetAnchor:SetAttribute("Zone", bestZone)
+	planetAnchor.CFrame = CFrame.new(Event.pos)
+	planetAnchor:SetAttribute("Active", true)
+	Push:FireAllClients("event", { kind = "start", zone = bestZone, world = zone.world, radius = Event.radius })
+	return true
+end
+
+function Event.finish(escaped: boolean)
+	Event.active = false
+	planetAnchor:SetAttribute("Active", false)
+	local total = 0
+	local topId, topC = 0, -1
+	for id, c in pairs(Event.contrib) do
+		total += c
+		if c > topC then
+			topId, topC = id, c
+		end
+	end
+	local ranked = {}
+	for id, c in pairs(Event.contrib) do
+		table.insert(ranked, { id = id, c = c })
+	end
+	table.sort(ranked, function(a, b)
+		return a.c > b.c
+	end)
+	for rank, e in ipairs(ranked) do
+		local player = Players:GetPlayerByUserId(e.id)
+		local p = player and profiles[player]
+		local st = player and states[player]
+		if player and p and st and total > 0 then
+			local share = e.c / total
+			-- 놓쳤으면 깎은 만큼만 (깎은 비율 × 반)
+			local done = escaped and (1 - Event.hp / Event.maxHp) or 1
+			local mass, grow, dm = Config.eventReward(share, Config.biggestMass(p.tier, p.radius), Calc.totalMult(player, p), e.id == topId, escaped)
+			mass *= done
+			grow *= done
+			p.mass += mass
+			p.total += mass
+			p.radius = math.min(Calc.maxRadius(p), p.radius * (1 + grow))
+			p.dm += dm
+			st.dirty = true
+			applyHole(player)
+			Push:FireClient(player, "eventReward", { rank = rank, players = #ranked, share = share, mass = mass, grow = grow, dm = dm, escaped = escaped })
+			pushState(player)
+		end
+	end
+	Push:FireAllClients("event", { kind = escaped and "escape" or "done" })
+	Event.nextAt = os.clock() + Config.EVENT.interval
+end
+
+task.spawn(function()
+	local dt = 0.1
+	while true do
+		task.wait(dt)
+		local now = os.clock()
+		if not Event.active then
+			if now >= Event.nextAt then
+				if not Event.start() then
+					Event.nextAt = now + 20
+				end
+			end
+		else
+			-- 천천히 떠돈다
+			local to = Event.target - Event.pos
+			if to.Magnitude < Event.speed * dt * 2 then
+				Event.target = Event.randomSpot()
+			else
+				Event.pos += to.Unit * Event.speed * dt
+			end
+			planetAnchor.CFrame = CFrame.new(Event.pos)
+			-- 닿아 있는 블랙홀이 깎는다
+			local shown = Event.shown()
+			for player, p in pairs(profiles) do
+				local st = states[player]
+				local char = player.Character
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				if st and root and root:IsA("BasePart") and not st.inLobby and st.world == Event.world then
+					if flatDist(root.Position, Event.pos) < shown + p.radius then
+						local dmg = Config.eventDamage(p.radius)
+						Event.hp -= dmg
+						Event.contrib[player.UserId] = (Event.contrib[player.UserId] or 0) + dmg
+					end
+				end
+			end
+			planetAnchor:SetAttribute("HP", math.max(0, Event.hp))
+			if Event.hp <= 0 then
+				Event.finish(false)
+			elseif now > Event.ends then
+				Event.finish(true)
 			end
 		end
 	end
@@ -1089,8 +1414,12 @@ end)
 
 function Actions.bigbang(player: Player)
 	local p, st = profiles[player], states[player]
+	if p.tier ~= 2 then
+		toast(player, string.format("빅뱅은 세계 2에서 해요. 먼저 세계 1에서 크기 %d을 넘기고 세계 2로 넘어가세요", Config.WORLD2_RADIUS))
+		return
+	end
 	if p.radius < Config.BIGBANG_RADIUS then
-		toast(player, string.format("크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
+		toast(player, string.format("세계 2에서 크기 ⚫%d 이상이어야 빅뱅할 수 있어요 (지금 ⚫%s)", Config.BIGBANG_RADIUS, Config.formatSize(p.radius)))
 		return
 	end
 	local reward = Config.darkMatterReward(p.radius, p.bigbang, p.bb.dm)
@@ -1101,7 +1430,15 @@ function Actions.bigbang(player: Player)
 	p.bigbang += 1
 	p.dm += reward
 	p.mass = p.mass * 0.05 * (p.bb.keep or 0)
+	if (p.bb.seed or 0) > 0 then
+		p.mass += 1000 * 10 ^ p.bb.seed
+	end
+	p.tier = 1
 	p.radius = Config.startRadius(p.bb.start or 0)
+	st.activeOn = false
+	st.shots = {}
+	st.trail = {}
+	st.advanceNotified = false
 	for _, u in ipairs(Config.Upgrades) do
 		p.up[u.id] = 0
 	end
@@ -1113,16 +1450,16 @@ function Actions.bigbang(player: Player)
 			p.skin = skin.id
 		end
 	end
+	st.world = 1
 	if not st.inLobby then
-		moveTo(player, spawnPos(st.world))
+		moveTo(player, spawnPos(1))
 	end
 	applyHole(player)
 	Push:FireClient(player, "bigbang", {
 		count = p.bigbang,
 		dm = reward,
 		skins = newSkins,
-		world2 = p.bigbang == Config.Worlds[2].needBigbang,
-		maxRadius = Calc.maxRadius(p),
+		maxRadius = Config.maxRadius(p.bigbang, p.up.maxsize, 2),
 	})
 	pushState(player)
 end
@@ -1134,8 +1471,8 @@ function Actions.teleport(player: Player, zoneArg: any)
 	if not zone then
 		return
 	end
-	if not Calc.worldOpen(p, zone.world) then
-		toast(player, string.format("🔒 세계 %d은(는) 빅뱅 %d번 하면 열려요", zone.world, Config.Worlds[zone.world].needBigbang))
+	if zone.world ~= p.tier then
+		Actions.goWorld(player, zone.world)
 		return
 	end
 	local r = p.radius
@@ -1150,7 +1487,8 @@ function Actions.teleport(player: Player, zoneArg: any)
 	moveTo(player, Vector3.new(Config.Worlds[zone.world].x, 5 + math.min(r, 50) * 0.2, z))
 end
 
-function Actions.skill(player: Player)
+-- 스킬 (Q). dx, dz = 화면이 바라보는 쪽 (빛줄기·순간이동 방향)
+function Actions.skill(player: Player, dx: any, dz: any)
 	local p, st = profiles[player], states[player]
 	local ab = Calc.ability(p)
 	if ab.kind ~= "active" then
@@ -1161,21 +1499,64 @@ function Actions.skill(player: Player)
 		toast(player, "로비에서는 스킬을 쓸 수 없어요")
 		return
 	end
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
 	local now = os.clock()
 	if now < st.cdUntil then
 		toast(player, string.format("%s: %d초 뒤에 다시 쓸 수 있어요", ab.name, math.ceil(st.cdUntil - now)))
 		return
 	end
 	st.cdUntil = now + ab.cd
-	if (ab.dur or 0) > 0 then
-		st.activeOn = true
-		st.activeUntil = now + ab.dur
+	local pos = Vector3.new(root.Position.X, 0, root.Position.Z)
+	local dir = Vector3.new(tonumber(dx) or 0, 0, tonumber(dz) or 0)
+	if dir ~= dir or dir.Magnitude < 0.1 then
+		local look = root.CFrame.LookVector
+		dir = Vector3.new(look.X, 0, look.Z)
 	end
-	if ab.burst then
-		st.burst = ab.burst
+	if dir.Magnitude < 0.01 then
+		dir = Vector3.new(0, 0, 1)
+	end
+	dir = dir.Unit
+	local r = p.radius
+	local pull = Config.pullRange(r)
+	local fx: { [string]: any } = { id = ab.id, from = pos, dir = dir, r = r }
+	if ab.id == "beam" then
+		-- 퀘이사 빔: 바라보는 쪽 길 위를 한꺼번에
+		for k = 1, 12 do
+			table.insert(st.shots, { pos = pos + dir * (r * ab.len * k / 12), reach = r * 1.1 + 2, limit = r })
+		end
+		fx.to = pos + dir * r * ab.len
+	elseif ab.id == "blink" then
+		-- 빙결 순간이동: 지금 구역 안에서만 (닫힌 문은 못 넘는다)
+		local zi = Config.zoneAt(pos)
+		local zone = Config.Zones[zi]
+		local wx = Config.Worlds[zone.world].x
+		local z0 = Config.zoneStart(zi)
+		local target = pos + dir * r * ab.len
+		local margin = math.min(30, zone.width / 4)
+		target = Vector3.new(math.clamp(target.X, wx - zone.width / 2 + margin, wx + zone.width / 2 - margin), 0, math.clamp(target.Z, z0 + margin, z0 + zone.length - margin))
+		for k = 0, 10 do
+			table.insert(st.shots, { pos = pos:Lerp(target, k / 10), reach = r + pull, limit = r })
+		end
+		moveTo(player, target + Vector3.new(0, 5, 0))
+		fx.to = target
+	elseif ab.id == "eye" then
+		-- 신의 시선: 넓게, 나보다 큰 것까지
+		table.insert(st.shots, { pos = pos, reach = r * ab.eye, limit = r * ab.eyeLimit })
+	elseif (ab.dur or 0) > 0 then
+		st.activeOn = true
+		st.activeId = ab.id
+		st.activeUntil = now + ab.dur
+		fx.dur = ab.dur
 	end
 	applyHole(player)
-	Push:FireClient(player, "skill", { name = ab.name, dur = ab.dur or 0, cd = ab.cd, burst = ab.burst ~= nil })
+	-- 스킬 모습은 모든 화면에 보인다
+	fx.userId = player.UserId
+	Push:FireAllClients("skillFx", fx)
+	Push:FireClient(player, "skill", { id = ab.id, name = ab.name, dur = ab.dur or 0, cd = ab.cd })
 	pushState(player)
 end
 
@@ -1193,7 +1574,7 @@ function Actions.daily(player: Player)
 	p.streak = (now - p.dailyAt < 48 * 3600) and p.streak + 1 or 1
 	p.dailyAt = now
 	local dm = 2 + math.min(p.streak, 7)
-	local mass = math.max(1000, Config.biggestMass(1, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
+	local mass = math.max(1000, Config.biggestMass(p.tier, math.max(p.radius, 6)) * 80 * Calc.totalMult(player, p))
 	p.dm += dm
 	p.mass += mass
 	p.total += mass
@@ -1258,7 +1639,8 @@ function Actions.skin(player: Player, id: any)
 	if p.skin ~= skin.id then
 		-- 스킨을 바꾸면 켜져 있던 액티브 스킬은 끝난다
 		st.activeOn = false
-		st.burst = 0
+		st.activeId = ""
+		st.shots = {}
 	end
 	p.skin = skin.id
 	st.dirty = true
@@ -1334,8 +1716,8 @@ function Sats.hatch(player: Player, capId: any, wantTriple: any)
 		toast(player, "🏠 캡슐은 로비의 캡슐 기계에서 깰 수 있어요")
 		return
 	end
-	if not Calc.worldOpen(p, cap.world) then
-		toast(player, "🔒 " .. cap.name .. "은(는) 세계 2가 열리면 깰 수 있어요")
+	if cap.world == 2 and not p.reached2 then
+		toast(player, "🔒 " .. cap.name .. "은(는) 세계 2에 한 번 가 보면 깰 수 있어요")
 		return
 	end
 	local count = 1
@@ -1475,7 +1857,7 @@ local function grantProduct(player: Player, key: string, receiptId: string): boo
 		p.respawnUntil = math.max(now, p.respawnUntil) + 1800
 	elseif key == "massS" or key == "massL" then
 		local n = key == "massS" and 30 or 120
-		local amount = Config.biggestMass(st.world, p.radius) * n * Calc.totalMult(player, p)
+		local amount = Config.biggestMass(p.tier, p.radius) * n * Calc.totalMult(player, p)
 		p.mass += amount
 		p.total += amount
 	elseif key == "dm10" then
@@ -1536,6 +1918,17 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		st.cdUntil = 0
 	elseif action == "testDaily" then
 		p.dailyAt = 0
+	elseif action == "testEvent" then
+		if Event.active then
+			Event.finish(true)
+		end
+		if not Event.start() then
+			toast(player, "세계 안에 있어야 행성을 부를 수 있어요")
+		end
+	elseif action == "testAdvance" then
+		if p.tier == 1 then
+			p.radius = math.max(p.radius, Config.WORLD2_RADIUS)
+		end
 	elseif action == "testReset" then
 		local fresh = defaultProfile()
 		Quests.fill(fresh)
@@ -1581,7 +1974,9 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, arg: any, ar
 			Actions.goWorld(player, w)
 		end
 	elseif action == "skill" then
-		Actions.skill(player)
+		Actions.skill(player, arg, arg2)
+	elseif action == "advance" then
+		Actions.advance(player)
 	elseif action == "unstuck" then
 		Actions.unstuck(player)
 	elseif action == "bbshop" then
@@ -1740,8 +2135,12 @@ local function onPlayerAdded(player: Player)
 		lastEat = 0,
 		activeUntil = 0,
 		activeOn = false,
+		activeId = "",
 		cdUntil = 0,
-		burst = 0,
+		shots = {},
+		trail = {},
+		sugarLevel = 0,
+		advanceNotified = false,
 	}
 	states[player] = st
 	local ls = Instance.new("Folder")
