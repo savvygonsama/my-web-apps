@@ -1,4 +1,16 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>자정 열차</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B0E14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="자정 열차">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
@@ -1183,4 +1195,120 @@ addEventListener('keydown', ev=>{
 })();
 
 title();
+</script>
+
+<!-- ═══════════ 홈 화면 설치 (PWA) ═══════════
+     📲 버튼 → 기기에 맞는 설치 안내. 안드로이드·PC 크롬은 「지금 설치」로 바로 설치되고,
+     아이폰은 Safari 공유 → 「홈 화면에 추가」를 안내한다.
+     카카오톡·팀즈 안에서 열리면 설치가 안 되므로 그것부터 알려 준다. -->
+<style>
+#pwaBtn{position:fixed;z-index:15;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);
+  height:34px;padding:0 12px;border-radius:17px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);color:#1a1c21;
+  font:600 13px/34px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer;transition:opacity .25s,transform .25s;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#pwaBtn[hidden]{display:none}
+#pwaBtn.away{opacity:0;transform:translateY(8px);pointer-events:none}
+#pwaSheet{position:fixed;inset:0;z-index:2147483001;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.45)}
+#pwaSheet[hidden]{display:none}
+#pwaSheet .p{width:min(480px,100%);max-height:88vh;overflow:auto;background:#fff;color:#1a1c21;border-radius:18px 18px 0 0;
+  padding:22px 20px calc(env(safe-area-inset-bottom,0px) + 18px);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;text-align:left}
+#pwaSheet h3{margin:0 0 10px;font-size:18px;font-weight:700}
+#pwaSheet p{margin:8px 0}
+#pwaSheet ol{margin:8px 0 8px 1.2em;padding:0}
+#pwaSheet li{margin:4px 0}
+#pwaSheet .fine{color:#666;font-size:13px}
+#pwaSheet .row{display:flex;gap:8px;margin-top:14px}
+#pwaSheet button{flex:1;height:46px;border-radius:12px;border:1px solid #ccc;background:#f4f4f4;color:#1a1c21;font:600 15px system-ui,sans-serif;cursor:pointer}
+#pwaSheet button.pri{background:#8A6B3E;border-color:#8A6B3E;color:#fff}
+@media (prefers-color-scheme:dark){#pwaBtn{background:rgba(40,44,52,.92);color:#f2f2f2;border-color:rgba(255,255,255,.15)}
+  #pwaSheet .p{background:#1e2128;color:#eee}#pwaSheet .fine{color:#aaa}#pwaSheet button{background:#2a2e36;color:#eee;border-color:#444}}
+@media print{#pwaBtn,#pwaSheet{display:none!important}}
+</style>
+<button id="pwaBtn" type="button" hidden aria-label="홈 화면에 설치">📲 설치</button>
+<div id="pwaSheet" hidden role="dialog" aria-modal="true" aria-labelledby="pwaTitle"><div class="p">
+  <h3 id="pwaTitle">📲 홈 화면에 설치</h3><div id="pwaBody"></div>
+  <p class="fine">설치하면 아이콘을 눌러 주소창 없이 앱처럼 열리고, 한 번 열어 둔 뒤에는 인터넷이 끊겨도 쓸 수 있습니다.</p>
+  <div class="row"><button type="button" id="pwaClose">닫기</button><button type="button" class="pri" id="pwaNow" hidden>지금 설치</button></div>
+</div></div>
+<script>
+(function () {
+  var KEY = "midnight-train-pwa";
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("./sw.js").catch(function () {}); });
+  }
+  var btn = document.getElementById("pwaBtn"), sheet = document.getElementById("pwaSheet"),
+      body = document.getElementById("pwaBody"), title = document.getElementById("pwaTitle"),
+      nowBtn = document.getElementById("pwaNow");
+  function standalone() { return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; }
+  if (standalone()) return;
+  /* 파일을 내려받아 더블클릭으로 연 경우(file://)에는 설치가 되지 않으니 버튼을 숨긴다 */
+  if (location.protocol !== "https:" && location.hostname !== "localhost") return;
+
+  var ua = navigator.userAgent;
+  var isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isAndroid = /android/i.test(ua);
+  var inApp = /KAKAOTALK|Teams|MSTeams|NAVER|Line\/|band|DaumApps|Instagram|FB_IAB|FBAN|FBAV|everytime/i.test(ua);
+  var iosNotSafari = isIOS && /CriOS|FxiOS|EdgiOS|Whale/i.test(ua);
+  var deferred = null;
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(KEY + k); localStorage.setItem(KEY + k, v); } catch (e) { return null; } }
+
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault(); deferred = e; btn.hidden = false;
+    if (!sheet.hidden) open();
+  });
+  window.addEventListener("appinstalled", function () { deferred = null; btn.hidden = true; close(); });
+
+  function build() {
+    if (inApp) {
+      title.textContent = "📲 먼저 브라우저로 열어 주세요";
+      return "<p><b>지금 카카오톡·팀즈 같은 앱 안에서 열려 있습니다.</b> 여기서는 설치가 되지 않습니다.</p><ol>" +
+        "<li>화면 <b>오른쪽 위(또는 아래) 메뉴</b>(⋯ 또는 ⋮)를 누릅니다</li>" +
+        "<li><b>「다른 브라우저로 열기」</b>를 고릅니다" + (isIOS ? " — 아이폰은 <b>Safari</b>" : isAndroid ? " — 안드로이드는 <b>Chrome</b>" : "") + "</li>" +
+        "<li>열린 화면에서 📲 설치 버튼을 다시 누르면 됩니다</li></ol>";
+    }
+    if (isIOS) {
+      title.textContent = "📲 홈 화면에 추가하기";
+      return "<p><b>아이폰 · 아이패드" + (iosNotSafari ? " (Safari 권장)" : " (Safari)") + "</b></p><ol>" +
+        "<li><b>공유 버튼</b>(□ 위에 ↑ 화살표)을 누릅니다 — 아이폰은 화면 아래, 아이패드는 위쪽에 있습니다</li>" +
+        "<li>목록을 아래로 내려 <b>「홈 화면에 추가」</b>를 고릅니다</li>" +
+        "<li>오른쪽 위 <b>「추가」</b>를 누르면 끝입니다</li></ol>" +
+        (iosNotSafari ? "<p class='fine'>크롬 등 다른 앱에서 메뉴가 안 보이면 이 주소를 Safari로 열어 주세요.</p>" : "");
+    }
+    if (isAndroid) {
+      title.textContent = "📲 앱으로 설치하기";
+      return "<p><b>안드로이드 (Chrome · 삼성 인터넷)</b></p><ol>" +
+        (deferred ? "<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li><li>뜨는 창에서 <b>「설치」</b>를 누르면 끝입니다</li>"
+                  : "<li>화면 <b>오른쪽 위 메뉴(⋮)</b>를 누릅니다 — 삼성 인터넷은 아래쪽 메뉴(≡)</li><li><b>「앱 설치」</b> 또는 <b>「홈 화면에 추가」</b>를 고릅니다</li>") + "</ol>";
+    }
+    title.textContent = "📲 앱으로 설치하기";
+    return "<p><b>컴퓨터 (Chrome · Edge)</b></p><ol>" +
+      (deferred ? "<li>아래 <b>「지금 설치」</b> 버튼을 누릅니다</li>"
+                : "<li>주소창 오른쪽 끝의 <b>설치 아이콘</b>을 누릅니다</li><li>없으면 메뉴(⋮) → <b>「앱 설치」</b> 또는 「전송, 저장, 공유 → 페이지를 앱으로 설치」</li>") + "</ol>";
+  }
+  function open() { body.innerHTML = build(); nowBtn.hidden = !deferred; sheet.hidden = false; store("-seen", "1"); }
+  function close() { sheet.hidden = true; }
+
+  /* 브라우저가 설치 안내를 스스로 띄우지 않는 경우가 많아, 버튼은 늘 보이게 둔다 */
+  btn.hidden = false;
+  btn.addEventListener("click", open);
+  document.getElementById("pwaClose").addEventListener("click", close);
+  sheet.addEventListener("click", function (e) { if (e.target === sheet) close(); });
+  nowBtn.addEventListener("click", function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function (r) { deferred = null; nowBtn.hidden = true; if (r.outcome === "accepted") { btn.hidden = true; close(); } });
+  });
+  /* 내려가며 읽을 때는 버튼이 화면을 가리지 않게 잠깐 숨긴다 */
+  var last = 0;
+  window.addEventListener("scroll", function () {
+    var y = window.scrollY || 0;
+    btn.classList.toggle("away", y > 80 && y > last);
+    last = y;
+  }, { passive: true });
+
+  /* 휴대폰으로 처음 연 사람에게는 한 번 저절로 띄운다. 닫으면 다시 띄우지 않는다. */
+  if ((isIOS || isAndroid || inApp) && store("-seen") !== "1") {
+    setTimeout(function () { if (sheet.hidden) open(); }, 1500);
+  }
+})();
 </script>
