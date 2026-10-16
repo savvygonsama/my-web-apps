@@ -79,6 +79,14 @@ local function piece(size: Vector3, color: Color3, material: Enum.Material?, sha
 	return p
 end
 
+-- 두 점이 같으면 방향을 정할 수 없어서 (NaN) 그냥 그 자리에 둔다
+local function lookAt(from: Vector3, to: Vector3): CFrame
+	if (to - from).Magnitude < 1e-3 then
+		return CFrame.new(from)
+	end
+	return CFrame.lookAt(from, to)
+end
+
 local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
 	local tw = TweenService:Create(inst, TweenInfo.new(time, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
 	tw:Play()
@@ -110,7 +118,7 @@ end
 function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: number, faceDir: Vector3?)
 	local p = piece(Vector3.new(0.2, fromD, fromD), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.15)
 	if faceDir then
-		p.CFrame = CFrame.lookAt(pos, pos + faceDir) * CFrame.Angles(0, math.rad(90), 0)
+		p.CFrame = lookAt(pos, pos + faceDir) * CFrame.Angles(0, math.rad(90), 0)
 	else
 		p.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90))
 	end
@@ -172,10 +180,12 @@ function Fx.lightning(from: Vector3, to: Vector3, color: Color3?, width: number?
 			p += Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * (to - from).Magnitude * 0.12
 		end
 		local len = (p - prev).Magnitude
-		local seg = piece(Vector3.new(w, w, len), col, Enum.Material.Neon)
-		seg.CFrame = CFrame.lookAt((prev + p) / 2, p)
-		tween(seg, 0.25, { Transparency = 1, Size = Vector3.new(w * 0.2, w * 0.2, len) })
-		Debris:AddItem(seg, 0.3)
+		if len > 0.05 then
+			local seg = piece(Vector3.new(w, w, len), col, Enum.Material.Neon)
+			seg.CFrame = lookAt((prev + p) / 2, p)
+			tween(seg, 0.25, { Transparency = 1, Size = Vector3.new(w * 0.2, w * 0.2, len) })
+			Debris:AddItem(seg, 0.3)
+		end
 		prev = p
 	end
 end
@@ -491,8 +501,8 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 				local a = k / 6 * math.pi * 2
 				local p = base + Vector3.new(math.cos(a) * 8, 3, math.sin(a) * 8)
 				local ghost = piece(Vector3.new(2, 5, 1), Color3.fromRGB(40, 20, 70), Enum.Material.Neon, nil, 0.3)
-				ghost.CFrame = CFrame.lookAt(p, base + Vector3.new(0, 3, 0))
-				tween(ghost, 0.2, { CFrame = CFrame.lookAt(base + Vector3.new(0, 3, 0), p) })
+				ghost.CFrame = lookAt(p, base + Vector3.new(0, 3, 0))
+				tween(ghost, 0.2, { CFrame = lookAt(base + Vector3.new(0, 3, 0), p) })
 				task.delay(0.2, function()
 					tween(ghost, 0.2, { Transparency = 1 })
 				end)
