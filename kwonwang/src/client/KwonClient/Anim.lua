@@ -1,0 +1,426 @@
+-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
+-- 로블록스 기본 걷기 동작 위에 권법 자세를 얹고, 기술을 쓰면 온몸을 그 동작으로 덮는다
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Poses = require(ReplicatedStorage:WaitForChild("Poses"))
+
+local Anim = {}
+
+type Track = {
+	pose: string,
+	keys: { any },
+	start: number,
+	dur: number,
+	align: number?,
+	alignFrac: number,
+	paused: number, -- 멈춘 시간의 합 (히트스톱)
+	freezeUntil: number,
+	loop: boolean,
+	fadeOut: number,
+	weight: number,
+}
+
+type Rec = {
+	model: Model,
+	motors: { [string]: Motor6D },
+	track: Track?,
+	loop: Track?,
+	walk: number,
+	npc: boolean,
+	guardW: number,
+	stanceW: number,
+	lastT: number,
+	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
+}
+
+local recs: { [Model]: Rec } = {}
+local RAD = math.pi / 180
+local ZERO3 = { 0, 0, 0 }
+local ZERO6 = { 0, 0, 0, 0, 0, 0 }
+
+------------------------------------------------------------------------
+-- 키프레임 다듬기: 빠진 관절은 그 무인의 기본 자세로 채운다
+------------------------------------------------------------------------
+local filledCache: { [string]: { any } } = {}
+
+local function basePose(stance: string?): { [string]: { number } }
+	local base: { [string]: { number } } = {}
+	for name in pairs(Poses.MOTORS) do
+		base[name] = name == "R" and ZERO6 or ZERO3
+	end
+	if stance then
+		local st = Poses.stances[stance]
+		if st then
+			for k, v in pairs(st) do
+				base[k] = v
+			end
+		end
+		local legs = Poses.stanceLegs[stance] or Poses.stanceLegs.default
+		for k, v in pairs(legs) do
+			base[k] = v
+		end
+	end
+	return base
+end
+
+local function filled(pose: string, stance: string?): { any }?
+	local key = pose .. "|" .. (stance or "")
+	local cached = filledCache[key]
+	if cached then
+		return cached
+	end
+	local raw = Poses.anims[pose]
+	if not raw then
+		return nil
+	end
+	local base = basePose(stance)
+	local out = {}
+	for _, k in ipairs(raw) do
+		local j = {}
+		for name in pairs(Poses.MOTORS) do
+			local v = k.j[name] or base[name]
+			if name == "R" then
+				j[name] = { v[1] or 0, v[2] or 0, v[3] or 0, v[4] or 0, v[5] or 0, v[6] or 0 }
+			else
+				j[name] = { v[1] or 0, v[2] or 0, v[3] or 0 }
+			end
+		end
+		table.insert(out, { t = k.t, e = k.e, j = j })
+	end
+	filledCache[key] = out
+	return out
+end
+
+local function firstSnap(keys: { any }): number
+	for _, k in ipairs(keys) do
+		if k.e == "snap" and k.t > 0 then
+			return k.t
+		end
+	end
+	return 0.4
+end
+
+local function ease(u: number, kind: string?): number
+	if kind == "snap" then
+		return 1 - (1 - u) ^ 3
+	end
+	return u * u * (3 - 2 * u)
+end
+
+-- 비율 p(0~1)에서의 관절 값
+local function sample(keys: { any }, p: number): { [string]: { number } }
+	if p <= keys[1].t or #keys == 1 then
+		return keys[1].j
+	end
+	for i = 2, #keys do
+		local b = keys[i]
+		if p <= b.t then
+			local a = keys[i - 1]
+			local u = ease((p - a.t) / math.max(1e-4, b.t - a.t), b.e)
+			local out = {}
+			for name, va in pairs(a.j) do
+				local vb = b.j[name]
+				local v = {}
+				for n = 1, #va do
+					v[n] = va[n] + (vb[n] - va[n]) * u
+				end
+				out[name] = v
+			end
+			return out
+		end
+	end
+	return keys[#keys].j
+end
+
+local function toCF(name: string, v: { number }): CFrame
+	local rot = CFrame.fromEulerAnglesYXZ(v[1] * RAD, v[2] * RAD, v[3] * RAD)
+	if name == "R" then
+		return CFrame.new(v[4], v[5], v[6]) * rot
+	end
+	return rot
+end
+
+------------------------------------------------------------------------
+-- 무인 등록
+------------------------------------------------------------------------
+local function motorsOf(model: Model): { [string]: Motor6D }
+	local m = {}
+	for name, info in pairs(Poses.MOTORS) do
+		local p = model:FindFirstChild(info[1])
+		local motor = p and p:FindFirstChild(info[2])
+		if motor and motor:IsA("Motor6D") then
+			m[name] = motor
+		end
+	end
+	return m
+end
+
+function Anim.watch(model: Model)
+	if recs[model] then
+		return
+	end
+	local motors = motorsOf(model)
+	if not motors.R or not motors.W then
+		-- 아직 몸이 다 안 들어왔다
+		task.delay(0.5, function()
+			if model.Parent and not recs[model] then
+				Anim.watch(model)
+			end
+		end)
+		return
+	end
+	recs[model] = {
+		model = model,
+		motors = motors,
+		track = nil,
+		loop = nil,
+		walk = 0,
+		npc = model:GetAttribute("NPC") == true,
+		guardW = 0,
+		stanceW = 0,
+		lastT = os.clock(),
+		written = {},
+	}
+end
+
+local function stanceOf(model: Model): string?
+	local weapon = model:GetAttribute("Weapon")
+	if type(weapon) == "string" then
+		return weapon == "spear" and "stance_spear" or "stance_weapon"
+	end
+	local styleId = model:GetAttribute("Style")
+	local style = type(styleId) == "string" and Config.STYLE_BY_ID[styleId]
+	return style and style.stance or nil
+end
+
+-- 기술 동작 재생. align = 첫 '꽂히는' 순간을 이 초에 맞춘다
+function Anim.play(model: Model, pose: string, dur: number, opt: any?)
+	Anim.watch(model)
+	local rec = recs[model]
+	if not rec then
+		return
+	end
+	local keys = filled(pose, stanceOf(model))
+	if not keys then
+		return
+	end
+	local o = opt or {}
+	rec.track = {
+		pose = pose,
+		keys = keys,
+		start = os.clock(),
+		dur = math.max(0.05, dur),
+		align = o.align,
+		alignFrac = firstSnap(keys),
+		paused = 0,
+		freezeUntil = 0,
+		loop = false,
+		fadeOut = o.fadeOut or 0.12,
+		weight = 0,
+	}
+end
+
+function Anim.stop(model: Model)
+	local rec = recs[model]
+	if rec then
+		rec.track = nil
+	end
+end
+
+-- 계속 되풀이하는 동작 (명상, 바위 들기). nil이면 끈다
+function Anim.setLoop(model: Model, pose: string?, dur: number?)
+	Anim.watch(model)
+	local rec = recs[model]
+	if not rec then
+		return
+	end
+	if not pose then
+		rec.loop = nil
+		return
+	end
+	local keys = filled(pose :: string, stanceOf(model))
+	if not keys then
+		return
+	end
+	rec.loop = { pose = pose, keys = keys, start = os.clock(), dur = dur or 1.2, align = nil, alignFrac = 0.4, paused = 0, freezeUntil = 0, loop = true, fadeOut = 0, weight = 1 }
+end
+
+-- 히트스톱: 잠깐 동작이 멈춘다
+function Anim.freeze(model: Model, secs: number)
+	local rec = recs[model]
+	local tr = rec and rec.track
+	if tr then
+		tr.freezeUntil = math.max(tr.freezeUntil, os.clock() + secs)
+	end
+end
+
+function Anim.playing(model: Model): string?
+	local rec = recs[model]
+	local tr = rec and rec.track
+	if tr and os.clock() - tr.start - tr.paused < tr.dur then
+		return tr.pose
+	end
+	return nil
+end
+
+------------------------------------------------------------------------
+-- 매 순간 (물리 계산 직전: 기본 걷기 동작이 들어간 뒤)
+------------------------------------------------------------------------
+local function trackPose(tr: Track, t: number, dt: number): ({ [string]: { number } }?, number)
+	if t < tr.freezeUntil then
+		tr.paused += dt
+	end
+	local elapsed = t - tr.start - tr.paused
+	if tr.loop then
+		local p = (elapsed / tr.dur) % 1
+		return sample(tr.keys, p), 1
+	end
+	if elapsed >= tr.dur then
+		return nil, 0
+	end
+	local p
+	local a = tr.align
+	if a and a > 0 and a < tr.dur then
+		if elapsed < a then
+			p = elapsed / a * tr.alignFrac
+		else
+			p = tr.alignFrac + (elapsed - a) / (tr.dur - a) * (1 - tr.alignFrac)
+		end
+	else
+		p = elapsed / tr.dur
+	end
+	-- 처음엔 재빨리 들어오고, 끝에서 자세로 녹아 돌아간다
+	local w = math.min(1, elapsed / 0.05)
+	local left = tr.dur - elapsed
+	if left < tr.fadeOut then
+		w = math.min(w, left / tr.fadeOut)
+	end
+	return sample(tr.keys, math.clamp(p, 0, 1)), w
+end
+
+local function step(dt: number)
+	local t = os.clock()
+	for model, rec in pairs(recs) do
+		if not model.Parent then
+			recs[model] = nil
+			continue
+		end
+		local root = model:FindFirstChild("HumanoidRootPart")
+		if not root or not root:IsA("BasePart") then
+			continue
+		end
+		local motors = rec.motors
+		local stance = stanceOf(model)
+		local vel = root.AssemblyLinearVelocity
+		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+		local moving = flatSpeed > 2
+		local airborne = math.abs(vel.Y) > 6
+		local dead = model:GetAttribute("Dead") == true
+		local guarding = model:GetAttribute("Guard") == true
+
+		-- 1) 기술 동작
+		local actPose, actW = nil, 0
+		local tr = rec.track
+		if tr then
+			actPose, actW = trackPose(tr, t, dt)
+			if not actPose then
+				rec.track = nil
+			end
+		end
+		if dead and not actPose then
+			-- 쓰러져 있다
+			local keys = filled("knockdown", stance)
+			if keys then
+				actPose, actW = sample(keys, 0.5), 1
+			end
+		end
+		-- 2) 되풀이 동작 (수련)
+		local loopPose = nil
+		if rec.loop and not actPose then
+			loopPose = trackPose(rec.loop, t, dt)
+		end
+
+		-- 3) 막기 자세와 권법 자세는 부드럽게 들어오고 나간다
+		local guardTarget = (guarding and not actPose) and 1 or 0
+		rec.guardW += (guardTarget - rec.guardW) * math.min(1, dt * 18)
+		local stanceTarget = (stance and not dead) and 0.85 or 0
+		rec.stanceW += (stanceTarget - rec.stanceW) * math.min(1, dt * 8)
+		local stanceJ = stance and Poses.stances[stance]
+		local legsJ = stance and (Poses.stanceLegs[stance] or Poses.stanceLegs.default)
+		local blockJ = filled("block", stance)
+		local blockPose = blockJ and blockJ[1].j
+
+		-- 4) 적은 기본 걷기 동작이 없어서 직접 걷는다
+		if rec.npc then
+			if moving then
+				rec.walk += dt * (6 + flatSpeed * 0.35)
+			else
+				rec.walk *= 0.9
+			end
+		end
+		local swing = math.sin(rec.walk)
+		local walkAmt = rec.npc and math.clamp(flatSpeed / 14, 0, 1) or 0
+
+		for name, motor in pairs(motors) do
+			local base: CFrame = motor.Transform
+			-- 기본 걷기 동작이 이 관절을 안 건드렸으면 (내가 쓴 그대로면) 처음 자세에서 시작한다
+			if rec.written[name] and base == rec.written[name] then
+				base = CFrame.identity
+			end
+			if rec.npc then
+				base = CFrame.identity
+				if walkAmt > 0.01 then
+					local v: { number }? = nil
+					if name == "RH" then
+						v = { swing * 38 * walkAmt, 0, 0 }
+					elseif name == "LH" then
+						v = { -swing * 38 * walkAmt, 0, 0 }
+					elseif name == "RK" then
+						v = { -math.max(0, -swing) * 50 * walkAmt - 5, 0, 0 }
+					elseif name == "LK" then
+						v = { -math.max(0, swing) * 50 * walkAmt - 5, 0, 0 }
+					elseif name == "R" then
+						v = { -6 * walkAmt, 0, 0, 0, math.abs(swing) * 0.25 * walkAmt, 0 }
+					end
+					if v then
+						base = toCF(name, v)
+					end
+				end
+			end
+			local out = base
+			-- 권법 자세 (윗몸은 늘, 다리는 가만히 서 있을 때만)
+			if rec.stanceW > 0.01 and stanceJ then
+				local sv = stanceJ[name]
+				if Poses.UPPER[name] and sv then
+					out = out:Lerp(toCF(name, sv), rec.stanceW)
+				elseif legsJ and legsJ[name] and not moving and not airborne then
+					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9)
+				end
+			end
+			if rec.guardW > 0.01 and blockPose and (Poses.UPPER[name] or (name == "R" and not moving)) then
+				out = out:Lerp(toCF(name, blockPose[name]), rec.guardW)
+			end
+			if loopPose then
+				out = toCF(name, loopPose[name])
+			end
+			if actPose and actW > 0 then
+				out = out:Lerp(toCF(name, actPose[name]), actW)
+			end
+			motor.Transform = out
+			rec.written[name] = out
+		end
+	end
+end
+
+function Anim.start()
+	RunService.Stepped:Connect(function(_time: number, dt: number)
+		local ok, err = pcall(step, dt)
+		if not ok then
+			warn("[권왕] 몸동작 오류:", err)
+		end
+	end)
+end
+
+return Anim
