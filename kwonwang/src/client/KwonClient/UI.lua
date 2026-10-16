@@ -73,6 +73,40 @@ local gui: ScreenGui
 local uiScale = 1
 local windowScale = 1
 
+-- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
+-- (그때 재면 창이 안 보일 만큼 작아진다) 크기가 바뀔 때마다 다시 재고, 너무 작으면 무시한다
+local scales: { { s: UIScale, kind: string } } = {}
+local function scaleFor(kind: string): number
+	if kind == "window" then
+		return windowScale
+	elseif kind == "map" then
+		return math.min(uiScale * 0.9, windowScale)
+	end
+	return uiScale
+end
+local function scaled(parent: Instance, kind: string?): UIScale
+	local k = kind or "ui"
+	local sc = Instance.new("UIScale")
+	sc.Scale = scaleFor(k)
+	sc.Parent = parent
+	table.insert(scales, { s = sc, kind = k })
+	return sc
+end
+local function measure()
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	if vp.X < 320 or vp.Y < 240 then
+		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
+	end
+	uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
+	windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
+	for _, e in ipairs(scales) do
+		if e.s.Parent then
+			e.s.Scale = scaleFor(e.kind)
+		end
+	end
+end
+
 ------------------------------------------------------------------------
 -- 알림과 큰 글자
 ------------------------------------------------------------------------
@@ -149,7 +183,7 @@ end
 
 local function buildHud()
 	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = hud })
+	scaled(hud)
 	HUD.style = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	HUD.stacks = text({ Position = UDim2.new(0, 0, 0, 27), Size = UDim2.new(1, 0, 0, 22), TextSize = 18, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	-- 균형: 가운데에서 양옆으로 차오른다 (꽉 차면 파훼)
@@ -788,7 +822,7 @@ end
 
 local function buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
-	new("UIScale", { Scale = math.min(uiScale * 0.9, windowScale), Parent = mapFrame })
+	scaled(mapFrame, "map")
 	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(95, 125, 75), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
 	local H = Config.WORLD_HALF
 	local function rect(center: Vector3, size: Vector3, color: Color3, z: number): Frame
@@ -933,7 +967,7 @@ function UI.mobile(actions: { [string]: any })
 		return
 	end
 	local pad = new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -190), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = pad })
+	scaled(pad)
 	local function round(label: string, pos: UDim2, size: number, color: Color3, down: () -> (), up: (() -> ())?)
 		local b = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = pos, Size = UDim2.new(0, size, 0, size), BackgroundColor3 = color, BackgroundTransparency = 0.25, Text = label, TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.text, Parent = pad }, { corner(999), stroke(Color3.new(1, 1, 1), 2) })
 		b.MouseButton1Down:Connect(down)
@@ -959,23 +993,39 @@ end
 function UI.init(req: RemoteEvent)
 	Request = req
 	gui = new("ScreenGui", { Name = "KwonUI", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = player:WaitForChild("PlayerGui") })
-	-- 화면이 클수록 크게 (1080p에서 1.5배). 창은 화면을 넘지 않게
-	local cam = workspace.CurrentCamera
-	if cam then
-		local vp = cam.ViewportSize
-		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
-		windowScale = math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900)
+	-- 화면이 클수록 크게 (1080p에서 1.5배). 창은 화면을 넘지 않게. 화면 크기가 바뀌면 다시 잰다
+	measure()
+	local camConn: RBXScriptConnection? = nil
+	local function watchCam()
+		if camConn then
+			camConn:Disconnect()
+			camConn = nil
+		end
+		local cam = workspace.CurrentCamera
+		if cam then
+			camConn = cam:GetPropertyChangedSignal("ViewportSize"):Connect(measure)
+		end
+		measure()
 	end
+	watchCam()
+	workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCam)
+	-- 혹시 신호를 놓쳐도 처음 몇 초는 몇 번 더 잰다
+	task.spawn(function()
+		for _ = 1, 10 do
+			task.wait(0.5)
+			measure()
+		end
+	end)
 	flash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 40, Active = false, Parent = gui })
 	for _, top in ipairs({ true, false }) do
 		table.insert(bars, new("Frame", { AnchorPoint = Vector2.new(0, top and 0 or 1), Position = UDim2.fromScale(0, top and 0 or 1), Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30, Parent = gui }))
 	end
 	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
-	new("UIScale", { Scale = uiScale, Parent = toastBox })
+	scaled(toastBox)
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = topLeft })
+	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
 	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
@@ -994,7 +1044,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 보스 막대
 	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 40), Size = UDim2.new(0, 620, 0, 52), BackgroundTransparency = 1, Visible = false, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = bossFrame })
+	scaled(bossFrame)
 	bossName = text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bossFrame })
 	local bb = new("Frame", { Position = UDim2.new(0, 0, 0, 24), Size = UDim2.new(1, 0, 0, 14), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bossFrame }, { corner(6), stroke(C.line, 1) })
 	bossFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = bb }, { corner(6) })
@@ -1016,8 +1066,8 @@ function UI.init(req: RemoteEvent)
 		end
 	end)
 	-- 창
-	window = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
-	new("UIScale", { Scale = windowScale, Parent = window })
+	window = new("Frame", { Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
+	scaled(window, "window")
 	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
@@ -1036,7 +1086,7 @@ function UI.init(req: RemoteEvent)
 	end)
 	-- 수련 놀이 칸
 	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 380, 0, 330), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
-	new("UIScale", { Scale = uiScale, Parent = trainFrame })
+	scaled(trainFrame)
 	trainTitle = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainHint = text({ Position = UDim2.new(0, 12, 0, 40), Size = UDim2.new(1, -24, 0, 40), TextSize = 14, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -130), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })

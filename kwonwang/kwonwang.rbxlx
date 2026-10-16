@@ -3650,46 +3650,229 @@ function World.setupLighting()
 end
 
 ------------------------------------------------------------------------
--- 작은 것들 (집, 나무, 바위, 대나무)
+-- 건축 (특정 나라 양식이 아닌 판타지풍: 흰 돌, 금빛 테, 빛나는 수정, 깃발)
 ------------------------------------------------------------------------
-local ROOF = Color3.fromRGB(60, 60, 70)
-local WOOD = Color3.fromRGB(120, 80, 50)
-local WALL = Color3.fromRGB(230, 220, 200)
+local ROOF = Color3.fromRGB(60, 72, 100) -- 짙은 청석 지붕
+local WOOD = Color3.fromRGB(95, 65, 45)
+local STONE = Color3.fromRGB(205, 198, 182) -- 밝은 돌
+local STONE_DARK = Color3.fromRGB(95, 92, 98)
+local GOLD = Color3.fromRGB(235, 190, 80)
+local WARM = Color3.fromRGB(255, 200, 120) -- 창과 등의 따뜻한 빛
+local IRON = Color3.fromRGB(45, 45, 50)
 
-local function house(at: Vector3, w: number, d: number, rotY: number, parent: Instance)
-	local cf = CFrame.new(at) * CFrame.Angles(0, rotY, 0)
-	local h = 11
-	part({ Name = "HouseWall", Size = Vector3.new(w, h, d), CFrame = cf * CFrame.new(0, h / 2, 0), Color = WALL, Material = Enum.Material.Plaster, Parent = parent })
-	for _, x in ipairs({ -1, 1 }) do
-		for _, z in ipairs({ -1, 1 }) do
-			part({ Name = "Pillar", Size = Vector3.new(1.2, h, 1.2), CFrame = cf * CFrame.new(x * (w / 2), h / 2, z * (d / 2)), Color = WOOD, Material = Enum.Material.Wood, Parent = parent })
-		end
-	end
-	-- 기와 지붕 (양쪽 비탈 + 휘어 오른 처마)
-	for _, side in ipairs({ -1, 1 }) do
-		part({
-			Name = "Roof",
-			Size = Vector3.new(w + 5, 1, d / 2 + 3.5),
-			CFrame = cf * CFrame.new(0, h + 2.4, side * (d / 4 + 0.6)) * CFrame.Angles(side * math.rad(28), 0, 0),
-			Color = ROOF,
-			Material = Enum.Material.Slate,
-			Parent = parent,
-		})
-	end
-	part({ Name = "Ridge", Size = Vector3.new(w + 6, 1.2, 1.4), CFrame = cf * CFrame.new(0, h + 4.6, 0), Color = Color3.fromRGB(40, 40, 48), Material = Enum.Material.Slate, Parent = parent })
-	part({ Name = "Door", Size = Vector3.new(4, 7, 0.4), CFrame = cf * CFrame.new(0, 3.5, -d / 2 - 0.1), Color = Color3.fromRGB(90, 55, 35), Material = Enum.Material.Wood, Parent = parent })
-	-- 붉은 등
-	local lamp = part({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), CFrame = cf * CFrame.new(2.8, 8, -d / 2 - 1), Color = Color3.fromRGB(230, 60, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 140, 90)
-	light.Range = 14
-	light.Brightness = 1.2
-	light.Parent = lamp
+local function light(target: BasePart, color: Color3, range: number, brightness: number?)
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Range = range
+	l.Brightness = brightness or 1.5
+	l.Parent = target
 end
 
+local function wedge(props: { [string]: any }): WedgePart
+	local w = Instance.new("WedgePart")
+	w.Anchored = true
+	for k, v in pairs(props) do
+		if k ~= "Parent" then
+			(w :: any)[k] = v
+		end
+	end
+	w.Parent = props.Parent or folder
+	return w
+end
+
+local function disc(name: string, at: Vector3, radius: number, height: number, color: Color3, material: Enum.Material, parent: Instance, collide: boolean?): Part
+	return part({ Name = name, Shape = Enum.PartType.Cylinder, Size = Vector3.new(height, radius * 2, radius * 2), CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90)), Color = color, Material = material, CanCollide = collide ~= false, Parent = parent })
+end
+
+-- 떠 있는 수정 (마름모꼴로 세워 빛낸다)
+local function crystal(at: Vector3, size: number, color: Color3, parent: Instance): Part
+	local c = part({ Name = "Crystal", Size = Vector3.new(size, size * 1.6, size), CFrame = CFrame.new(at) * CFrame.Angles(0, math.rad(45), 0) * CFrame.Angles(math.rad(45), 0, math.rad(45)), Color = color, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	light(c, color, size * 8, 2)
+	return c
+end
+
+-- 깃발 (장대 + 천)
+local function banner(at: Vector3, h: number, color: Color3, parent: Instance)
+	part({ Name = "BannerPole", Size = Vector3.new(0.6, h, 0.6), Position = at + Vector3.new(0, h / 2, 0), Color = IRON, Material = Enum.Material.Metal, Parent = parent })
+	part({ Name = "BannerCloth", Size = Vector3.new(3.4, h * 0.45, 0.15), Position = at + Vector3.new(1.9, h * 0.72, 0), Color = color, Material = Enum.Material.Fabric, CanCollide = false, Parent = parent })
+	part({ Name = "BannerTip", Shape = Enum.PartType.Ball, Size = Vector3.new(1, 1, 1), Position = at + Vector3.new(0, h + 0.4, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+end
+
+-- 화로 (돌 받침 + 불)
+local function brazier(at: Vector3, s: number, parent: Instance)
+	part({ Name = "BrazierStand", Size = Vector3.new(1.4, 4, 1.4) * s, Position = at + Vector3.new(0, 2 * s, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	local bowl = disc("BrazierBowl", at + Vector3.new(0, 4.4 * s, 0), 1.6 * s, 0.9 * s, GOLD, Enum.Material.Metal, parent)
+	local fire = Instance.new("Fire")
+	fire.Size = 5 * s
+	fire.Heat = 7
+	fire.Parent = bowl
+	light(bowl, Color3.fromRGB(255, 160, 80), 18 * s, 1.6)
+end
+
+-- 맞배지붕: cf = 처마 높이의 가운데, w×d 위를 덮는다
+local function roof(cf: CFrame, w: number, d: number, color: Color3, wallColor: Color3, parent: Instance): number
+	local over = 1.8
+	local hd = d / 2 + over
+	local a = math.rad(32)
+	local H = hd * math.tan(a)
+	local L = hd / math.cos(a)
+	local W = w + over * 2
+	for _, side in ipairs({ -1, 1 }) do
+		part({ Name = "Roof", Size = Vector3.new(W, 0.8, L), CFrame = cf * CFrame.new(0, H / 2, side * hd / 2) * CFrame.Angles(side * a, 0, 0), Color = color, Material = Enum.Material.Slate, Parent = parent })
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		local x = sx * (w / 2 - 0.2)
+		wedge({ Name = "Gable", Size = Vector3.new(0.6, H, hd - over), CFrame = cf * CFrame.new(x, H / 2 - 0.3, -(hd - over) / 2), Color = wallColor, Material = Enum.Material.Plaster, Parent = parent })
+		wedge({ Name = "Gable", Size = Vector3.new(0.6, H, hd - over), CFrame = cf * CFrame.new(x, H / 2 - 0.3, (hd - over) / 2) * CFrame.Angles(0, math.pi, 0), Color = wallColor, Material = Enum.Material.Plaster, Parent = parent })
+	end
+	part({ Name = "Ridge", Size = Vector3.new(W + 0.4, 0.9, 1.2), CFrame = cf * CFrame.new(0, H + 0.25, 0), Color = color:Lerp(Color3.new(0, 0, 0), 0.3), Material = Enum.Material.Slate, Parent = parent })
+	return H
+end
+
+-- 집 한 채: 돌 기단, 벽, 나무 뼈대, 빛나는 창, 지붕. 앞은 -Z (tiers = 2면 이층)
+local WALLS = { Color3.fromRGB(225, 212, 188), Color3.fromRGB(210, 196, 170), Color3.fromRGB(190, 180, 168), Color3.fromRGB(220, 205, 175) }
+local ROOFS = { ROOF, Color3.fromRGB(150, 75, 55), Color3.fromRGB(80, 100, 72), Color3.fromRGB(70, 66, 78) }
+local function building(at: Vector3, w: number, d: number, rotY: number, parent: Instance, opt: any?)
+	local o = opt or {}
+	local cf = CFrame.new(at) * CFrame.Angles(0, rotY, 0)
+	local h = o.h or 10
+	local t = o.terrace or 1
+	local wall = o.wall or WALLS[rng:NextInteger(1, #WALLS)]
+	local roofColor = o.roof or ROOFS[rng:NextInteger(1, #ROOFS)]
+	part({ Name = "Plinth", Size = Vector3.new(w + 2, t, d + 2), CFrame = cf * CFrame.new(0, t / 2, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = parent })
+	local base = cf * CFrame.new(0, t, 0)
+	local function storey(b: CFrame, sw: number, sd: number, sh: number, withDoor: boolean)
+		part({ Name = "Wall", Size = Vector3.new(sw, sh, sd), CFrame = b * CFrame.new(0, sh / 2, 0), Color = wall, Material = Enum.Material.Plaster, Parent = parent })
+		-- 나무 뼈대 (모서리 기둥, 위아래 띠)
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "Post", Size = Vector3.new(1, sh, 1), CFrame = b * CFrame.new(sx * sw / 2, sh / 2, sz * sd / 2), Color = WOOD, Material = Enum.Material.Wood, Parent = parent })
+			end
+		end
+		part({ Name = "Beam", Size = Vector3.new(sw + 0.6, 0.8, sd + 0.6), CFrame = b * CFrame.new(0, sh - 0.4, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = parent })
+		-- 창 (앞뒤로, 따뜻하게 빛난다)
+		local nWin = math.max(1, math.floor(sw / 7))
+		for i = 1, nWin do
+			local x = -sw / 2 + i * sw / (nWin + 1)
+			if not (withDoor and math.abs(x) < 3) then
+				for _, sz in ipairs({ -1, 1 }) do
+					part({ Name = "Window", Size = Vector3.new(2, 2.6, 0.2), CFrame = b * CFrame.new(x, sh * 0.58, sz * (sd / 2 + 0.05)), Color = WARM, Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = parent })
+					part({ Name = "Sill", Size = Vector3.new(2.6, 0.3, 0.5), CFrame = b * CFrame.new(x, sh * 0.58 - 1.45, sz * (sd / 2 + 0.2)), Color = WOOD, Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+				end
+			end
+		end
+		if withDoor then
+			part({ Name = "Door", Size = Vector3.new(3.6, 6.4, 0.3), CFrame = b * CFrame.new(0, 3.2, -sd / 2 - 0.1), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = parent })
+			part({ Name = "DoorArch", Size = Vector3.new(5, 0.9, 0.6), CFrame = b * CFrame.new(0, 6.8, -sd / 2 - 0.2), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+		end
+	end
+	storey(base, w, d, h, true)
+	local top = base * CFrame.new(0, h, 0)
+	local rw, rd = w, d
+	if o.tiers == 2 then
+		-- 이층은 살짝 내밀어 짓는다
+		local w2, d2, h2 = w + 1.2, d + 1.2, h * 0.75
+		storey(top, w2, d2, h2, false)
+		top = top * CFrame.new(0, h2, 0)
+		rw, rd = w2, d2
+	end
+	roof(top, rw, rd, roofColor, wall, parent)
+	-- 차양과 벽등
+	if o.awning ~= false then
+		local aw = part({ Name = "Awning", Size = Vector3.new(math.min(w * 0.5, 10), 0.3, 3), CFrame = base * CFrame.new(0, 7.6, -d / 2 - 1.5) * CFrame.Angles(math.rad(-18), 0, 0), Color = o.awningColor or Color3.fromRGB(150, 50, 45):Lerp(Color3.fromRGB(50, 80, 140), rng:NextNumber()), Material = Enum.Material.Fabric, CanCollide = false, Parent = parent })
+		local _ = aw
+	end
+	local lamp = part({ Name = "WallLamp", Size = Vector3.new(0.9, 1.3, 0.9), CFrame = base * CFrame.new(w / 2 - 1.6, 6, -d / 2 - 0.8), Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	light(lamp, WARM, 14, 1.2)
+	if o.sign then
+		local board = part({ Name = "Signboard", Size = Vector3.new(math.min(w * 0.6, 14), 2.6, 0.4), CFrame = base * CFrame.new(0, h - 1.4, -d / 2 - 0.5), Color = Color3.fromRGB(40, 30, 25), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+		sign(board, Enum.NormalId.Front, { { o.sign, GOLD, 1 } })
+	end
+end
+local function house(at: Vector3, w: number, d: number, rotY: number, parent: Instance)
+	building(at, w, d, rotY, parent, { tiers = rng:NextNumber() < 0.4 and 2 or 1 })
+end
+
+-- 첨탑: 가늘어지는 돌 원통을 쌓고 금빛 테를 두른 뒤 꼭대기에 수정
+local function spire(at: Vector3, levels: number, r0: number, glow: Color3, parent: Instance)
+	disc("SpireBase", at + Vector3.new(0, 1.2, 0), r0 + 4, 2.4, STONE_DARK, Enum.Material.Granite, parent)
+	local y = 2.4
+	local r = r0
+	for i = 1, levels do
+		local h = i == 1 and 14 or 9
+		disc("SpireBody", at + Vector3.new(0, y + h / 2, 0), r, h, STONE, Enum.Material.Marble, parent)
+		disc("SpireRing", at + Vector3.new(0, y + h, 0), r + 0.9, 1.1, GOLD, Enum.Material.Metal, parent)
+		-- 층마다 빛나는 좁은 창
+		for k = 0, 3 do
+			local a = k / 4 * math.pi * 2 + i * 0.4
+			part({ Name = "SpireWindow", Size = Vector3.new(1.1, h * 0.45, 0.3), CFrame = CFrame.lookAt(at + Vector3.new(math.cos(a) * r, y + h * 0.55, math.sin(a) * r), at + Vector3.new(0, y + h * 0.55, 0)), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+		end
+		y += h + 1.1
+		r *= 0.8
+	end
+	for k = 1, 4 do
+		disc("SpireCap", at + Vector3.new(0, y + k * 1.2, 0), r * (1 - k * 0.2), 1.2, STONE, Enum.Material.Marble, parent)
+	end
+	crystal(at + Vector3.new(0, y + 10, 0), 3.2, glow, parent)
+end
+
+-- 큰 돌문: 두 기둥 + 위를 가로지르는 들보, 문장(빛나는 고리), 양쪽 깃발
+local function monumentGate(center: Vector3, yaw: number, parent: Instance, title: string, accent: Color3)
+	local cf = CFrame.new(center) * CFrame.Angles(0, yaw, 0)
+	for _, sx in ipairs({ -1, 1 }) do
+		local x = sx * 13
+		part({ Name = "GateFoot", Size = Vector3.new(7, 3, 7), CFrame = cf * CFrame.new(x, 1.5, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+		part({ Name = "GatePylon", Size = Vector3.new(5, 26, 5), CFrame = cf * CFrame.new(x, 16, 0), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+		part({ Name = "GateBand", Size = Vector3.new(5.6, 0.8, 5.6), CFrame = cf * CFrame.new(x, 9, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = parent })
+		part({ Name = "GateCap", Size = Vector3.new(6.4, 1.6, 6.4), CFrame = cf * CFrame.new(x, 29.8, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = parent })
+		crystal((cf * CFrame.new(x, 34, 0)).Position, 2.4, accent, parent)
+		-- 기둥 앞뒤로 늘어진 깃발
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "GateBanner", Size = Vector3.new(3.6, 12, 0.15), CFrame = cf * CFrame.new(x, 19, sz * 2.6), Color = accent, Material = Enum.Material.Fabric, CanCollide = false, Parent = parent })
+			part({ Name = "GateBannerTrim", Size = Vector3.new(3.8, 0.5, 0.2), CFrame = cf * CFrame.new(x, 13, sz * 2.62), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+		end
+	end
+	-- 문 바깥 양쪽 화로
+	for _, sx in ipairs({ -1, 1 }) do
+		brazier((cf * CFrame.new(sx * 20, 0, -5)).Position, 1, parent)
+	end
+	part({ Name = "GateLintel", Size = Vector3.new(34, 4, 5.4), CFrame = cf * CFrame.new(0, 27, 0), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	part({ Name = "GateLintelGold", Size = Vector3.new(34.4, 0.6, 5.8), CFrame = cf * CFrame.new(0, 25.1, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+	-- 가운데 문장: 금빛 고리 안의 빛
+	local ring = part({ Name = "GateEmblem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 7, 7), CFrame = cf * CFrame.new(0, 31.5, 0) * CFrame.Angles(0, math.rad(90), 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+	local _ = ring
+	local core = part({ Name = "GateEmblemCore", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 4.6, 4.6), CFrame = cf * CFrame.new(0, 31.5, 0) * CFrame.Angles(0, math.rad(90), 0), Color = accent, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	light(core, accent, 24, 2)
+	for _, sz in ipairs({ -1, 1 }) do
+		local board = part({ Name = "GateTitle", Size = Vector3.new(20, 3, 0.3), CFrame = cf * CFrame.new(0, 27, sz * 2.86) * CFrame.Angles(0, sz > 0 and math.pi or 0, 0), Color = STONE, Material = Enum.Material.Marble, CanCollide = false, Transparency = 1, Parent = parent })
+		sign(board, Enum.NormalId.Front, { { title, GOLD, 1 } })
+	end
+end
+
+-- 원형 정자: 돌기둥, 둥근 띠, 층층이 줄어드는 둥근 지붕, 꼭대기 수정
+local function pavilion(center: Vector3, r: number, n: number, h: number, roofColor: Color3, parent: Instance, glow: Color3?)
+	for k = 0, n - 1 do
+		local a = (k + 0.5) / n * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		part({ Name = "PavilionColumn", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, 1.5, 1.5), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+		part({ Name = "ColumnCap", Size = Vector3.new(2, 0.6, 2), Position = p + Vector3.new(0, h - 0.3, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = parent })
+	end
+	disc("PavilionRing", center + Vector3.new(0, h + 0.7, 0), r + 1.2, 1.4, STONE, Enum.Material.Marble, parent)
+	disc("PavilionGold", center + Vector3.new(0, h + 0.05, 0), r + 1.4, 0.3, GOLD, Enum.Material.Metal, parent, false)
+	for k = 1, 5 do
+		local rr = (r + 1.5) * math.cos(math.rad(k * 16))
+		disc("PavilionDome", center + Vector3.new(0, h + 1.4 + k * 1.1, 0), rr, 1.2, roofColor, Enum.Material.Slate, parent)
+	end
+	crystal(center + Vector3.new(0, h + 1.4 + 5 * 1.1 + 4.5, 0), 2.2, glow or GOLD, parent)
+end
+
+------------------------------------------------------------------------
+-- 작은 것들 (집, 나무, 바위, 대나무)
+------------------------------------------------------------------------
 local function tree(at: Vector3, s: number, parent: Instance, blossom: boolean?)
 	part({ Name = "Trunk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(10 * s, 1.6 * s, 1.6 * s), CFrame = CFrame.new(at + Vector3.new(0, 5 * s, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.Wood, Parent = parent })
-	local leaf = blossom and Color3.fromRGB(255, 180, 210) or Color3.fromRGB(70, 120, 60)
+	-- 매화는 짙은 홍매와 흰 백매를 섞는다
+	local leaf = blossom and (rng:NextNumber() < 0.6 and Color3.fromRGB(215, 55, 85) or Color3.fromRGB(250, 236, 240)) or Color3.fromRGB(70, 120, 60)
 	for i = 1, 3 do
 		part({
 			Name = "Leaves",
@@ -3791,7 +3974,17 @@ local function ground()
 	for i = 0, 31 do
 		local a = i / 32 * math.pi * 2
 		local dist = Config.WORLD_HALF + 260 + rng:NextNumber(-60, 60)
-		local h = rng:NextNumber(160, 320)
+		local h = rng:NextNumber(260, 520)
+		local cap = rng:NextNumber(0.18, 0.28)
+		part({
+			Name = "SnowCap",
+			Size = Vector3.new(160, h * cap, 130),
+			CFrame = CFrame.new(math.cos(a) * dist, h - 20 - h * cap / 2 + 2, math.sin(a) * dist) * CFrame.Angles(0, -a, 0),
+			Color = Color3.fromRGB(240, 244, 250),
+			Material = Enum.Material.Snow,
+			CanCollide = false,
+			Parent = folder,
+		})
 		part({
 			Name = "FarMountain",
 			Size = Vector3.new(rng:NextNumber(260, 420), h, rng:NextNumber(200, 300)),
@@ -3811,25 +4004,86 @@ local function village(out: any)
 	local f = Instance.new("Folder")
 	f.Name = "Village"
 	f.Parent = folder
-	-- 마을 담 (낮은 돌담, 네 방향 입구)
+	-- 마을 성벽 (높은 흰 돌담, 돌 갓, 성가퀴) 네 방향 입구
 	local R = 175
 	for _, side in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
 		for _, seg in ipairs({ -1, 1 }) do
 			local len = R - 14
 			local along = seg * (14 + len / 2)
-			local pos = side[1] ~= 0 and Vector3.new(side[1] * R, 2, along) or Vector3.new(along, 2, side[2] * R)
-			local size = side[1] ~= 0 and Vector3.new(3, 4, len) or Vector3.new(len, 4, 3)
-			part({ Name = "VillageWall", Size = size, Position = pos, Color = Color3.fromRGB(160, 150, 135), Material = Enum.Material.Cobblestone, Parent = f })
+			local alongX = side[1] == 0
+			local function at(y: number, out: number): Vector3
+				return alongX and Vector3.new(along, y, side[2] * (R + out)) or Vector3.new(side[1] * (R + out), y, along)
+			end
+			local function sz(l: number, h: number, t: number): Vector3
+				return alongX and Vector3.new(l, h, t) or Vector3.new(t, h, l)
+			end
+			part({ Name = "VillageWall", Size = sz(len, 12, 4), Position = at(6, 0), Color = STONE, Material = Enum.Material.Cobblestone, Parent = f })
+			part({ Name = "WallTrim", Size = sz(len + 0.2, 0.6, 4.6), Position = at(2, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+			part({ Name = "WallCap", Size = sz(len + 0.2, 0.9, 5.4), Position = at(12.45, 0), Color = Color3.fromRGB(225, 220, 205), Material = Enum.Material.Marble, Parent = f })
+			local count = math.floor(len / 7)
+			for k = 0, count - 1 do
+				local off = -len / 2 + (k + 0.5) * (len / count)
+				local pos = alongX and Vector3.new(along + off, 14, side[2] * (R + 2.2)) or Vector3.new(side[1] * (R + 2.2), 14, along + off)
+				part({ Name = "Merlon", Size = sz(3, 2.4, 1.2), Position = pos, Color = STONE, Material = Enum.Material.Cobblestone, Parent = f })
+			end
+			-- 성벽 바깥에 드리운 깃발
+			for _, off in ipairs({ -len * 0.25, len * 0.25 }) do
+				local pos = alongX and Vector3.new(along + off, 7.5, side[2] * (R + 2.15)) or Vector3.new(side[1] * (R + 2.15), 7.5, along + off)
+				part({ Name = "WallBanner", Size = sz(4, 9, 0.15), Position = pos, Color = Color3.fromRGB(40, 70, 140), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+				part({ Name = "WallBannerTrim", Size = sz(4.2, 0.5, 0.2), Position = pos + Vector3.new(0, 4.5, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
 		end
 	end
-	-- 마을 문 (네 방향)
-	for _, g in ipairs({ { Vector3.new(0, 0, -R), 0 }, { Vector3.new(0, 0, R), 0 }, { Vector3.new(-R, 0, 0), math.rad(90) }, { Vector3.new(R, 0, 0), math.rad(90) } }) do
-		local cf = CFrame.new(g[1]) * CFrame.Angles(0, g[2], 0)
-		for _, x in ipairs({ -1, 1 }) do
-			part({ Name = "GatePost", Size = Vector3.new(2.5, 18, 2.5), CFrame = cf * CFrame.new(x * 12, 9, 0), Color = Color3.fromRGB(170, 40, 35), Material = Enum.Material.Wood, Parent = f })
+	-- 네 모서리 둥근 망루 (꼭대기에 수정)
+	for _, cx in ipairs({ -1, 1 }) do
+		for _, cz in ipairs({ -1, 1 }) do
+			local c = Vector3.new(cx * R, 0, cz * R)
+			disc("CornerTower", c + Vector3.new(0, 11, 0), 9, 22, STONE, Enum.Material.Cobblestone, f)
+			disc("CornerTowerRing", c + Vector3.new(0, 22.4, 0), 10, 1, GOLD, Enum.Material.Metal, f)
+			disc("CornerTowerTop", c + Vector3.new(0, 23.6, 0), 10.5, 1.4, Color3.fromRGB(225, 220, 205), Enum.Material.Marble, f)
+			for k = 0, 9 do
+				local a = k / 10 * math.pi * 2
+				part({ Name = "TowerMerlon", Size = Vector3.new(2.4, 2.4, 1.2), CFrame = CFrame.lookAt(c + Vector3.new(math.cos(a) * 9.8, 25.5, math.sin(a) * 9.8), c + Vector3.new(0, 25.5, 0)), Color = STONE, Material = Enum.Material.Cobblestone, Parent = f })
+			end
+			crystal(c + Vector3.new(0, 31, 0), 3, Color3.fromRGB(120, 200, 255), f)
 		end
-		part({ Name = "GateBeam", Size = Vector3.new(32, 2, 3), CFrame = cf * CFrame.new(0, 17, 0), Color = Color3.fromRGB(50, 45, 50), Material = Enum.Material.Slate, Parent = f })
-		part({ Name = "GateBeam2", Size = Vector3.new(27, 1.4, 2.4), CFrame = cf * CFrame.new(0, 14, 0), Color = Color3.fromRGB(170, 40, 35), Material = Enum.Material.Wood, Parent = f })
+	end
+	-- 큰 돌문 네 개 (성벽 바깥에 선다)
+	for _, g in ipairs({ { Vector3.new(0, 0, -R - 9), 0 }, { Vector3.new(0, 0, R + 9), 0 }, { Vector3.new(-R - 9, 0, 0), math.rad(90) }, { Vector3.new(R + 9, 0, 0), math.rad(90) } }) do
+		monumentGate(g[1], g[2], f, "청운 마을", Color3.fromRGB(110, 190, 255))
+	end
+	-- 북쪽 길 양옆의 높은 첨탑 둘
+	for _, sx in ipairs({ -1, 1 }) do
+		spire(Vector3.new(sx * 110, 0, -95), 5, 9, Color3.fromRGB(120, 200, 255), f)
+	end
+	-- 마을 한가운데 분수: 둥근 못과 떠오른 큰 수정
+	local fc = Vector3.new(0, 0, -62)
+	disc("FountainRim", fc + Vector3.new(0, 1, 0), 11, 2, STONE, Enum.Material.Marble, f)
+	disc("FountainWater", fc + Vector3.new(0, 1.9, 0), 10, 0.4, Color3.fromRGB(90, 170, 220), Enum.Material.Glass, f, false).Transparency = 0.3
+	disc("FountainPillar", fc + Vector3.new(0, 4.5, 0), 1.6, 9, STONE, Enum.Material.Marble, f)
+	disc("FountainGold", fc + Vector3.new(0, 9.2, 0), 2.4, 0.6, GOLD, Enum.Material.Metal, f)
+	crystal(fc + Vector3.new(0, 14, 0), 4, Color3.fromRGB(120, 200, 255), f)
+	local spray = part({ Name = "FountainSpray", Size = Vector3.new(2, 1, 2), Position = fc + Vector3.new(0, 9, 0), Transparency = 1, CanCollide = false, Parent = f })
+	local e = Instance.new("ParticleEmitter")
+	e.Rate = 40
+	e.Color = ColorSequence.new(Color3.fromRGB(200, 235, 255))
+	e.Size = NumberSequence.new(0.4, 0.1)
+	e.Transparency = NumberSequence.new(0.3, 1)
+	e.Speed = NumberRange.new(8, 12)
+	e.SpreadAngle = Vector2.new(30, 30)
+	e.Acceleration = Vector3.new(0, -25, 0)
+	e.Lifetime = NumberRange.new(0.8, 1.2)
+	e.Parent = spray
+	-- 큰길의 쇠 등기둥 (따뜻한 빛)
+	for _, z in ipairs({ -160, -135, -85, -40, 20, 140, 160 }) do
+		for _, sx in ipairs({ -1, 1 }) do
+			local p = Vector3.new(sx * 13, 0, z)
+			part({ Name = "LampPost", Size = Vector3.new(0.6, 10, 0.6), Position = p + Vector3.new(0, 5, 0), Color = IRON, Material = Enum.Material.Metal, Parent = f })
+			part({ Name = "LampFoot", Size = Vector3.new(1.6, 0.8, 1.6), Position = p + Vector3.new(0, 0.4, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+			local lamp = part({ Name = "StreetLamp", Size = Vector3.new(1.4, 1.8, 1.4), Position = p + Vector3.new(0, 10.6, 0), Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			part({ Name = "LampCap", Size = Vector3.new(2, 0.5, 2), Position = p + Vector3.new(0, 11.7, 0), Color = IRON, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			light(lamp, WARM, 18, 1.3)
+		end
 	end
 	-- 집들 (둘레)
 	local spots = {
@@ -3844,7 +4098,7 @@ local function village(out: any)
 	end
 	-- 매화나무
 	for _, s in ipairs({ { -40, -60 }, { 40, -60 }, { -110, 70 }, { 110, 70 }, { -60, 40 }, { 60, 40 } }) do
-		tree(Vector3.new(s[1], 0, s[2]), 1, f, true)
+		tree(Vector3.new(s[1], 0, s[2]), 1.1, f)
 	end
 
 	-- 비무대: 돌 단, 네 기둥, 붉은 줄, 계단
@@ -3872,8 +4126,12 @@ local function village(out: any)
 	sign(board, Enum.NormalId.Front, { { "⚔ 비무대", Color3.fromRGB(255, 220, 140), 0.6 }, { "올라선 사람끼리 겨룬다", Color3.fromRGB(255, 255, 255), 0.4 } })
 	sign(board, Enum.NormalId.Back, { { "⚔ 비무대", Color3.fromRGB(255, 220, 140), 0.6 }, { "올라선 사람끼리 겨룬다", Color3.fromRGB(255, 255, 255), 0.4 } })
 
-	-- 강호 안내판: 일곱 사부가 어디 있는지
+	-- 강호 안내판: 일곱 사부가 어디 있는지 (양옆에 일곱 권법의 깃발)
 	local boardAt = Vector3.new(0, 0, -110)
+	for i, style in ipairs(Config.Styles) do
+		local sx = i % 2 == 0 and 1 or -1
+		banner(boardAt + Vector3.new(sx * (22 + math.floor((i - 1) / 2) * 5), 0, 0), 14, style.color, f)
+	end
 	for _, x in ipairs({ -1, 1 }) do
 		part({ Name = "BoardPost", Size = Vector3.new(1.4, 16, 1.4), Position = boardAt + Vector3.new(x * 17, 8, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 	end
@@ -4083,13 +4341,6 @@ end
 ------------------------------------------------------------------------
 -- 일곱 사부의 자리
 ------------------------------------------------------------------------
-local function light(target: BasePart, color: Color3, range: number, brightness: number?)
-	local l = Instance.new("PointLight")
-	l.Color = color
-	l.Range = range
-	l.Brightness = brightness or 1.5
-	l.Parent = target
-end
 
 local function cyl(name: string, at: Vector3, radius: number, height: number, color: Color3, material: Enum.Material, parent: Instance, collide: boolean?): Part
 	return part({ Name = name, Shape = Enum.PartType.Cylinder, Size = Vector3.new(height, radius * 2, radius * 2), CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90)), Color = color, Material = material, CanCollide = collide ~= false, Parent = parent })
@@ -4115,12 +4366,7 @@ function SITES.taeheo(r: any, at: Vector3, color: Color3, f: Instance)
 	local c = r.center
 	cyl("Lake", c + Vector3.new(0, 0.3, 0), 75, 0.6, Color3.fromRGB(80, 150, 200), Enum.Material.Glass, f, false).Transparency = 0.3
 	cyl("Island", c + Vector3.new(0, at.Y / 2, 0), 15, at.Y, Color3.fromRGB(150, 140, 120), Enum.Material.Cobblestone, f)
-	for k = 0, 5 do
-		local a = k / 6 * math.pi * 2
-		part({ Name = "PavilionPillar", Size = Vector3.new(1.2, 11, 1.2), Position = c + Vector3.new(math.cos(a) * 10, at.Y + 5.5, math.sin(a) * 10), Color = Color3.fromRGB(170, 45, 40), Material = Enum.Material.Wood, Parent = f })
-	end
-	cyl("PavilionRoof", c + Vector3.new(0, at.Y + 11.5, 0), 14, 1, ROOF, Enum.Material.Slate, f)
-	cyl("PavilionTop", c + Vector3.new(0, at.Y + 12.8, 0), 8, 1.6, ROOF, Enum.Material.Slate, f)
+	pavilion(c + Vector3.new(0, at.Y, 0), 10, 8, 11, Color3.fromRGB(70, 110, 150), f, color)
 	-- 다리 (길이 오는 쪽으로)
 	local dir = Vector3.new(1, 0, -1).Unit
 	local from = c + dir * 13
@@ -4129,7 +4375,7 @@ function SITES.taeheo(r: any, at: Vector3, color: Color3, f: Instance)
 	part({ Name = "Bridge", Size = Vector3.new(6, 0.8, (to - from).Magnitude), CFrame = CFrame.lookAt(mid, mid + dir), Color = Color3.fromRGB(130, 90, 55), Material = Enum.Material.WoodPlanks, Parent = f })
 	for _, side in ipairs({ -1, 1 }) do
 		local off = Vector3.new(-dir.Z, 0, dir.X) * side * 2.8
-		part({ Name = "BridgeRail", Size = Vector3.new(0.4, 0.4, (to - from).Magnitude), CFrame = CFrame.lookAt(mid + off + Vector3.new(0, 2.2, 0), mid + off + Vector3.new(0, 2.2, 0) + dir), Color = Color3.fromRGB(170, 45, 40), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		part({ Name = "BridgeRail", Size = Vector3.new(0.4, 0.4, (to - from).Magnitude), CFrame = CFrame.lookAt(mid + off + Vector3.new(0, 2.2, 0), mid + off + Vector3.new(0, 2.2, 0) + dir), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
 	end
 	for _ = 1, 18 do
 		local a, d = rng:NextNumber(0, math.pi * 2), rng:NextNumber(22, 70)
@@ -4152,7 +4398,8 @@ function SITES.geumgang(r: any, at: Vector3, color: Color3, f: Instance)
 		local h = at.Y * i / 5
 		part({ Name = "TempleStep", Size = Vector3.new(26, h, 3), Position = base + Vector3.new(0, h / 2, 28 + (5 - i) * 3 + 1.5), Color = Color3.fromRGB(150, 140, 125), Material = Enum.Material.Granite, Parent = f })
 	end
-	house(base + Vector3.new(0, at.Y, -12), 44, 22, math.pi, f)
+	building(base + Vector3.new(0, at.Y, -12), 44, 22, math.pi, f, { tiers = 2, h = 13, wall = STONE, roof = Color3.fromRGB(190, 150, 60), sign = "금강사", awning = false })
+	spire(Vector3.new(at.X + 60, 0, at.Z - 14), 4, 7, color, f)
 	local bellFrame = base + Vector3.new(-28, at.Y, 12)
 	for _, x in ipairs({ -1, 1 }) do
 		part({ Name = "BellPost", Size = Vector3.new(1, 12, 1), Position = bellFrame + Vector3.new(x * 4, 6, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
@@ -4195,8 +4442,10 @@ function SITES.maehwa(r: any, at: Vector3, color: Color3, f: Instance)
 		if 10 + math.sin(a) * 10 < 3 then
 			continue
 		end
-		part({ Name = "MoonGate", Size = Vector3.new(2.6, 2.6, 2), Position = gate + Vector3.new(math.cos(a) * 10, 10 + math.sin(a) * 10, 0), Color = Color3.fromRGB(235, 225, 215), Material = Enum.Material.Plaster, Parent = f })
+		part({ Name = "MoonGate", Size = Vector3.new(2.6, 2.6, 2), Position = gate + Vector3.new(math.cos(a) * 10, 10 + math.sin(a) * 10, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
 	end
+	crystal(gate + Vector3.new(0, 23, 0), 2.6, color, f)
+	pavilion(Vector3.new(at.X - 28, 0, at.Z + 4), 6, 6, 8, Color3.fromRGB(150, 80, 100), f, color)
 	-- 꽃잎 바람
 	local sky = part({ Name = "PetalSky", Size = Vector3.new(120, 1, 120), Position = Vector3.new(at.X, 34, at.Z), Transparency = 1, CanCollide = false, Parent = f })
 	local e = Instance.new("ParticleEmitter")
@@ -4225,7 +4474,8 @@ function SITES.cheonryong(r: any, at: Vector3, color: Color3, f: Instance)
 	ramp.Color = Color3.fromRGB(125, 118, 110)
 	ramp.Material = Enum.Material.Slate
 	ramp.Parent = f
-	local pillar = part({ Name = "DragonPillar", Size = Vector3.new(4, 34, 4), Position = Vector3.new(at.X + 18, top + 17, at.Z), Color = Color3.fromRGB(170, 40, 35), Material = Enum.Material.Wood, Parent = f })
+	local pillar = part({ Name = "DragonPillar", Size = Vector3.new(4, 34, 4), Position = Vector3.new(at.X + 18, top + 17, at.Z), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	pavilion(Vector3.new(at.X, top, at.Z), 10, 8, 11, ROOF, f, GOLD)
 	local _ = pillar
 	for k = 0, 40 do
 		local u = k / 40
@@ -4290,7 +4540,7 @@ end
 
 -- 취선 주막: 술독과 탁자, '酒' 깃발
 function SITES.chwi(r: any, at: Vector3, color: Color3, f: Instance)
-	house(Vector3.new(at.X, 0, at.Z + 36), 34, 18, 0, f)
+	building(Vector3.new(at.X, 0, at.Z + 36), 34, 18, 0, f, { tiers = 2, sign = "취선 주막", awningColor = Color3.fromRGB(170, 60, 40) })
 	for _, x in ipairs({ -16, 16 }) do
 		part({ Name = "Table", Size = Vector3.new(7, 0.6, 4), Position = Vector3.new(at.X + x, 3, at.Z + 4), Color = Color3.fromRGB(120, 80, 50), Material = Enum.Material.Wood, Parent = f })
 		part({ Name = "TableLeg", Size = Vector3.new(5, 2.7, 2), Position = Vector3.new(at.X + x, 1.35, at.Z + 4), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.Wood, Parent = f })
@@ -4305,8 +4555,8 @@ function SITES.chwi(r: any, at: Vector3, color: Color3, f: Instance)
 	local pole = part({ Name = "FlagPole", Size = Vector3.new(0.8, 20, 0.8), Position = Vector3.new(at.X - 26, 10, at.Z + 22), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 	local _ = pole
 	local flag = part({ Name = "WineFlag", Size = Vector3.new(6, 9, 0.2), Position = Vector3.new(at.X - 22.6, 14, at.Z + 22), Color = Color3.fromRGB(200, 50, 40), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
-	sign(flag, Enum.NormalId.Front, { { "酒", Color3.fromRGB(255, 240, 220), 1 } })
-	sign(flag, Enum.NormalId.Back, { { "酒", Color3.fromRGB(255, 240, 220), 1 } })
+	sign(flag, Enum.NormalId.Front, { { "주막", Color3.fromRGB(255, 240, 220), 1 } })
+	sign(flag, Enum.NormalId.Back, { { "주막", Color3.fromRGB(255, 240, 220), 1 } })
 end
 
 local function masterSites()
@@ -4323,6 +4573,27 @@ local function masterSites()
 				if not ok then
 					warn("[권왕] 사부 자리 만들기 오류:", r.id, err)
 				end
+			end
+			-- 길이 들어오는 자리에 큰 돌문
+			local ok2, err2 = pcall(function()
+				for _, road in ipairs(Config.Roads) do
+					local a, b = road[#road - 1], road[#road]
+					local inside = math.abs(b.X - r.center.X) < r.size.X / 2 and math.abs(b.Z - r.center.Z) < r.size.Z / 2
+					if inside then
+						local dir = (b - a).Unit
+						local p = a
+						for k = 0, 400 do
+							p = a + dir * (k * 2)
+							if math.abs(p.X - r.center.X) < r.size.X / 2 - 8 and math.abs(p.Z - r.center.Z) < r.size.Z / 2 - 8 then
+								break
+							end
+						end
+						monumentGate(Vector3.new(p.X, 0, p.Z), math.atan2(-dir.X, -dir.Z), f, string.split(r.name, " (")[1], style.color)
+					end
+				end
+			end)
+			if not ok2 then
+				warn("[권왕] 사부 자리 문 오류:", r.id, err2)
 			end
 			-- 멀리서도 보이는 빛기둥 (사부 머리 위 하늘로)
 			local at = r.masterAt
@@ -6528,6 +6799,40 @@ local gui: ScreenGui
 local uiScale = 1
 local windowScale = 1
 
+-- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
+-- (그때 재면 창이 안 보일 만큼 작아진다) 크기가 바뀔 때마다 다시 재고, 너무 작으면 무시한다
+local scales: { { s: UIScale, kind: string } } = {}
+local function scaleFor(kind: string): number
+	if kind == "window" then
+		return windowScale
+	elseif kind == "map" then
+		return math.min(uiScale * 0.9, windowScale)
+	end
+	return uiScale
+end
+local function scaled(parent: Instance, kind: string?): UIScale
+	local k = kind or "ui"
+	local sc = Instance.new("UIScale")
+	sc.Scale = scaleFor(k)
+	sc.Parent = parent
+	table.insert(scales, { s = sc, kind = k })
+	return sc
+end
+local function measure()
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	if vp.X < 320 or vp.Y < 240 then
+		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
+	end
+	uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
+	windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
+	for _, e in ipairs(scales) do
+		if e.s.Parent then
+			e.s.Scale = scaleFor(e.kind)
+		end
+	end
+end
+
 ------------------------------------------------------------------------
 -- 알림과 큰 글자
 ------------------------------------------------------------------------
@@ -6604,7 +6909,7 @@ end
 
 local function buildHud()
 	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = hud })
+	scaled(hud)
 	HUD.style = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	HUD.stacks = text({ Position = UDim2.new(0, 0, 0, 27), Size = UDim2.new(1, 0, 0, 22), TextSize = 18, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	-- 균형: 가운데에서 양옆으로 차오른다 (꽉 차면 파훼)
@@ -7243,7 +7548,7 @@ end
 
 local function buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
-	new("UIScale", { Scale = math.min(uiScale * 0.9, windowScale), Parent = mapFrame })
+	scaled(mapFrame, "map")
 	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(95, 125, 75), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
 	local H = Config.WORLD_HALF
 	local function rect(center: Vector3, size: Vector3, color: Color3, z: number): Frame
@@ -7388,7 +7693,7 @@ function UI.mobile(actions: { [string]: any })
 		return
 	end
 	local pad = new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -190), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = pad })
+	scaled(pad)
 	local function round(label: string, pos: UDim2, size: number, color: Color3, down: () -> (), up: (() -> ())?)
 		local b = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = pos, Size = UDim2.new(0, size, 0, size), BackgroundColor3 = color, BackgroundTransparency = 0.25, Text = label, TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.text, Parent = pad }, { corner(999), stroke(Color3.new(1, 1, 1), 2) })
 		b.MouseButton1Down:Connect(down)
@@ -7414,23 +7719,39 @@ end
 function UI.init(req: RemoteEvent)
 	Request = req
 	gui = new("ScreenGui", { Name = "KwonUI", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = player:WaitForChild("PlayerGui") })
-	-- 화면이 클수록 크게 (1080p에서 1.5배). 창은 화면을 넘지 않게
-	local cam = workspace.CurrentCamera
-	if cam then
-		local vp = cam.ViewportSize
-		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
-		windowScale = math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900)
+	-- 화면이 클수록 크게 (1080p에서 1.5배). 창은 화면을 넘지 않게. 화면 크기가 바뀌면 다시 잰다
+	measure()
+	local camConn: RBXScriptConnection? = nil
+	local function watchCam()
+		if camConn then
+			camConn:Disconnect()
+			camConn = nil
+		end
+		local cam = workspace.CurrentCamera
+		if cam then
+			camConn = cam:GetPropertyChangedSignal("ViewportSize"):Connect(measure)
+		end
+		measure()
 	end
+	watchCam()
+	workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCam)
+	-- 혹시 신호를 놓쳐도 처음 몇 초는 몇 번 더 잰다
+	task.spawn(function()
+		for _ = 1, 10 do
+			task.wait(0.5)
+			measure()
+		end
+	end)
 	flash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 40, Active = false, Parent = gui })
 	for _, top in ipairs({ true, false }) do
 		table.insert(bars, new("Frame", { AnchorPoint = Vector2.new(0, top and 0 or 1), Position = UDim2.fromScale(0, top and 0 or 1), Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30, Parent = gui }))
 	end
 	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
-	new("UIScale", { Scale = uiScale, Parent = toastBox })
+	scaled(toastBox)
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = topLeft })
+	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
 	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
@@ -7449,7 +7770,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 보스 막대
 	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 40), Size = UDim2.new(0, 620, 0, 52), BackgroundTransparency = 1, Visible = false, Parent = gui })
-	new("UIScale", { Scale = uiScale, Parent = bossFrame })
+	scaled(bossFrame)
 	bossName = text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bossFrame })
 	local bb = new("Frame", { Position = UDim2.new(0, 0, 0, 24), Size = UDim2.new(1, 0, 0, 14), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bossFrame }, { corner(6), stroke(C.line, 1) })
 	bossFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = bb }, { corner(6) })
@@ -7471,8 +7792,8 @@ function UI.init(req: RemoteEvent)
 		end
 	end)
 	-- 창
-	window = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
-	new("UIScale", { Scale = windowScale, Parent = window })
+	window = new("Frame", { Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
+	scaled(window, "window")
 	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
@@ -7491,7 +7812,7 @@ function UI.init(req: RemoteEvent)
 	end)
 	-- 수련 놀이 칸
 	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 380, 0, 330), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
-	new("UIScale", { Scale = uiScale, Parent = trainFrame })
+	scaled(trainFrame)
 	trainTitle = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainHint = text({ Position = UDim2.new(0, 12, 0, 40), Size = UDim2.new(1, -24, 0, 40), TextSize = 14, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -130), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })
