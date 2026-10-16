@@ -56,6 +56,40 @@ task.spawn(function()
 	enemies.ChildAdded:Connect(add)
 end)
 
+-- 사부: 권법 자세로 서 있다가, 가까이 오면 가끔 시범을 보인다
+task.spawn(function()
+	local masters = workspace:WaitForChild("Masters")
+	local function add(m: Instance)
+		if m:IsA("Model") then
+			watchChar(m)
+		end
+	end
+	for _, m in ipairs(masters:GetChildren()) do
+		add(m)
+	end
+	masters.ChildAdded:Connect(add)
+	local nextShow: { [Instance]: number } = {}
+	while true do
+		task.wait(0.5)
+		local char = player.Character
+		local me = char and char:FindFirstChild("HumanoidRootPart")
+		for _, m in ipairs(masters:GetChildren()) do
+			local root = m:FindFirstChild("HumanoidRootPart")
+			local style = Config.STYLE_BY_ID[m:GetAttribute("Style") :: any]
+			if me and me:IsA("BasePart") and root and root:IsA("BasePart") and style and (root.Position - me.Position).Magnitude < 70 then
+				local t = os.clock()
+				if t >= (nextShow[m] or 0) and not Anim.playing(m :: Model) then
+					local pick = math.random(1, #style.combo + 1)
+					local mv = pick > #style.combo and style.heavy or style.combo[pick]
+					Anim.play(m :: Model, mv.pose, mv.dur)
+					Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
+					nextShow[m] = t + math.random(25, 45) / 10
+				end
+			end
+		end
+	end
+end)
+
 ------------------------------------------------------------------------
 -- 내 몸
 ------------------------------------------------------------------------
@@ -533,6 +567,8 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		end
 	elseif k == Enum.KeyCode.Tab then
 		UI.openPage("stats")
+	elseif k == Enum.KeyCode.M then
+		UI.toggleMap()
 	end
 end)
 UserInputService.InputEnded:Connect(function(input: InputObject)
@@ -595,6 +631,11 @@ end
 
 function handlers.open(data: any)
 	UI.openPage(data.page, data)
+end
+
+-- 사부에게 가는 길잡이
+function handlers.guide(data: any)
+	UI.setGuide(data.style)
 end
 
 -- 누군가 기술을 쓴다
@@ -901,8 +942,9 @@ end
 function handlers.learned(data: any)
 	local s = Config.STYLE_BY_ID[data.style]
 	if s then
-		UI.banner(s.icon .. " " .. s.name .. " 입문!", data.first and "클릭으로 연타, F로 막고 흘려라" or s.hanja, s.color)
+		UI.banner(s.icon .. " " .. s.name .. " 입문!", data.first and "클릭으로 연타, F로 막고 흘려라 · 남쪽 들판에서 겨뤄 보자" or s.hanja, s.color)
 		UI.closeWindow()
+		UI.setGuide(nil)
 	end
 end
 
@@ -964,7 +1006,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	local style = myStyle()
 	if not style then
-		UI.styleLine("권법 전당에서 권법을 고르세요 (🥋 권법)", Color3.fromRGB(230, 220, 200), "")
+		UI.styleLine("🥋 권법 창에서 첫 권법을 고르세요 (공짜)", Color3.fromRGB(230, 220, 200), "")
 		return
 	end
 	local now = os.clock()

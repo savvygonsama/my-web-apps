@@ -116,6 +116,7 @@ type State = {
 	ringIdx: number,
 	potionAt: number,
 	charConn: RBXScriptConnection?,
+	tpIdx: number?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -261,7 +262,7 @@ local function updateTag(player: Player)
 	if not gui then
 		local g = Instance.new("BillboardGui")
 		g.Name = "KwonTag"
-		g.Size = UDim2.new(0, 240, 0, 46)
+		g.Size = UDim2.new(0, 300, 0, 60)
 		g.StudsOffset = Vector3.new(0, 2.6, 0)
 		g.AlwaysOnTop = true
 		g.LightInfluence = 0
@@ -443,11 +444,14 @@ Combat.init(Push, {
 ------------------------------------------------------------------------
 -- 맵과 적
 ------------------------------------------------------------------------
-World.setupLighting()
-local W = World.build()
+-- 맵을 먼저 짓고, 요청·사부·적은 아래에서 차례로 (적 만들기가 늦거나 틀려도 나머지는 돈다)
+pcall(World.setupLighting)
+local okWorld, builtWorld = pcall(World.build)
+if not okWorld then
+	warn("[권왕] 맵 만들기 오류:", builtWorld)
+end
+local W: any = okWorld and builtWorld or { train = {}, rings = {} }
 Npc.init(Push)
-Npc.populate()
-Npc.start()
 
 task.spawn(function()
 	local dt = 0.05
@@ -727,6 +731,18 @@ function Actions.learn(player: Player, id: any)
 		for _ in pairs(p.styles) do
 			count += 1
 		end
+		-- 첫 권법은 어디서든 공짜. 그다음부터는 그 사부를 찾아가야 배운다
+		local master = Config.MASTERS[style.id]
+		if count > 0 and master then
+			local f0 = Combat.fighterOfPlayer(player)
+			local pos = f0 and f0.root.Position
+			local d = pos and Vector3.new(pos.X - master.at.X, 0, pos.Z - master.at.Z).Magnitude or math.huge
+			if d > Config.MASTER_RANGE then
+				toast(player, string.format("📍 %s을(를) 배우려면 %s의 %s에게 가야 해요", style.name, master.region, master.name))
+				Push:FireClient(player, "guide", { style = style.id })
+				return
+			end
+		end
 		local cost = Config.LEARN_COST[math.min(count + 1, #Config.LEARN_COST)]
 		if p.coins < cost then
 			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
@@ -943,6 +959,17 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f then
 			Combat.kill(f, nil)
 		end
+	elseif action == "testTp" then
+		-- 다음 사부에게 순간이동
+		if f then
+			local st = states[player]
+			st.tpIdx = ((st.tpIdx or 0) :: number) % #Config.Styles + 1
+			local m = Config.MASTERS[Config.Styles[st.tpIdx].id]
+			if m then
+				f.root.CFrame = CFrame.new(m.at + Vector3.new(0, 4, 12))
+				toast(player, "🌀 " .. m.region .. " · " .. m.name)
+			end
+		end
 	elseif action == "testReset" then
 		profiles[player] = defaultProfile()
 	else
@@ -1014,16 +1041,13 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	end
 end)
 
--- 월드의 E 누르기
-for _, h in ipairs(W.hall) do
-	h.prompt.Triggered:Connect(function(player: Player)
-		Push:FireClient(player, "open", { page = "styles", style = h.style })
+-- 월드의 T 누르기
+if W.shop then
+	W.shop.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "shop" })
 	end)
 end
-W.shop.Triggered:Connect(function(player: Player)
-	Push:FireClient(player, "open", { page = "shop" })
-end)
-for _, info in ipairs(W.train) do
+for _, info in ipairs(W.train or {}) do
 	info.prompt.Triggered:Connect(function(player: Player)
 		Train.start(player, info)
 	end)
@@ -1094,6 +1118,10 @@ local function onPlayerAdded(player: Player)
 		task.spawn(setupCharacter, player, player.Character)
 	end
 	pushState(player)
+	-- 기록을 늦게 받아 '안녕'을 놓쳤어도 첫 권법 창은 뜬다
+	if profile.style == "" then
+		Push:FireClient(player, "open", { page = "styles", first = true })
+	end
 end
 
 local function onPlayerRemoving(player: Player)
@@ -1124,4 +1152,21 @@ game:BindToClose(function()
 		task.spawn(saveProfile, player)
 	end
 	task.wait(2)
+end)
+
+------------------------------------------------------------------------
+-- 사부와 적 (몸 만들기는 시간이 걸릴 수 있어 맨 나중에, 따로)
+------------------------------------------------------------------------
+task.spawn(function()
+	local ok, err = pcall(Npc.spawnMasters, function(player: Player, styleId: string)
+		Push:FireClient(player, "open", { page = "styles", style = styleId, master = true })
+	end)
+	if not ok then
+		warn("[권왕] 사부 만들기 오류:", err)
+	end
+	ok, err = pcall(Npc.populate)
+	if not ok then
+		warn("[권왕] 적 만들기 오류:", err)
+	end
+	Npc.start()
 end)

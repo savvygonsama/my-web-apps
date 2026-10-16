@@ -71,6 +71,7 @@ UI.new, UI.corner, UI.stroke, UI.text, UI.button = new, corner, stroke, text, bu
 
 local gui: ScreenGui
 local uiScale = 1
+local windowScale = 1
 
 ------------------------------------------------------------------------
 -- 알림과 큰 글자
@@ -80,7 +81,7 @@ function UI.toast(msg: string)
 	if not toastBox then
 		return
 	end
-	local l = text({ Size = UDim2.new(1, 0, 0, 30), Text = msg, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = toastBox })
+	local l = text({ Size = UDim2.new(1, 0, 0, 34), Text = msg, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = toastBox })
 	task.delay(3, function()
 		TweenService:Create(l, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		task.delay(0.45, function()
@@ -142,29 +143,29 @@ local HUD: any = {}
 local function meter(parent: Instance, pos: UDim2, size: UDim2, color: Color3, label: string): (Frame, TextLabel)
 	local back = new("Frame", { Position = pos, Size = size, BackgroundColor3 = Color3.fromRGB(20, 14, 12), BackgroundTransparency = 0.15, Parent = parent }, { corner(6), stroke(Color3.fromRGB(90, 70, 50), 1.2) })
 	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = color, Parent = back }, { corner(6) })
-	local l = text({ Size = UDim2.fromScale(1, 1), Text = label, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.4, ZIndex = 3, Parent = back })
+	local l = text({ Size = UDim2.fromScale(1, 1), Text = label, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.4, ZIndex = 3, Parent = back })
 	return fill, l
 end
 
 local function buildHud()
-	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 560, 0, 150), BackgroundTransparency = 1, Parent = gui })
+	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
 	new("UIScale", { Scale = uiScale, Parent = hud })
-	HUD.style = text({ Size = UDim2.new(1, 0, 0, 24), TextSize = 18, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
-	HUD.stacks = text({ Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
+	HUD.style = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
+	HUD.stacks = text({ Position = UDim2.new(0, 0, 0, 27), Size = UDim2.new(1, 0, 0, 22), TextSize = 18, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	-- 균형: 가운데에서 양옆으로 차오른다 (꽉 차면 파훼)
-	local pBack = new("Frame", { Position = UDim2.new(0.15, 0, 0, 46), Size = UDim2.new(0.7, 0, 0, 10), BackgroundColor3 = Color3.fromRGB(20, 14, 12), BackgroundTransparency = 0.3, Parent = hud }, { corner(5) })
+	local pBack = new("Frame", { Position = UDim2.new(0.15, 0, 0, 54), Size = UDim2.new(0.7, 0, 0, 12), BackgroundColor3 = Color3.fromRGB(20, 14, 12), BackgroundTransparency = 0.3, Parent = hud }, { corner(5) })
 	HUD.posture = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pBack }, { corner(5) })
-	HUD.hp, HUD.hpText = meter(hud, UDim2.new(0, 0, 0, 62), UDim2.new(1, 0, 0, 22), C.hp, "")
-	HUD.chi, HUD.chiText = meter(hud, UDim2.new(0.15, 0, 0, 88), UDim2.new(0.7, 0, 0, 14), C.chi, "")
+	HUD.hp, HUD.hpText = meter(hud, UDim2.new(0, 0, 0, 72), UDim2.new(1, 0, 0, 26), C.hp, "")
+	HUD.chi, HUD.chiText = meter(hud, UDim2.new(0.15, 0, 0, 102), UDim2.new(0.7, 0, 0, 16), C.chi, "")
 	-- 기술 칸
-	local row = new("Frame", { Position = UDim2.new(0, 0, 0, 108), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = hud }, {
+	local row = new("Frame", { Position = UDim2.new(0, 0, 0, 124), Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Parent = hud }, {
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
 	HUD.slots = {}
 	for _, s in ipairs({ { "M1", "클릭" }, { "H", "우클릭" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
-		local cell = new("Frame", { Size = UDim2.new(0, 64, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Parent = row }, { corner(8), stroke(C.line, 1) })
-		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 0), TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
-		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 10, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
+		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Parent = row }, { corner(8), stroke(C.line, 1) })
+		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 0), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
+		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
 		local cd = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.4, ZIndex = 4, Parent = cell }, { corner(8) })
 		local _ = key
 		HUD.slots[s[1]] = { cell = cell, name = name, cd = cd }
@@ -234,13 +235,14 @@ function UI.enemyTag(model: Model)
 		return
 	end
 	local isBoss = model:GetAttribute("Boss") == true
-	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, 170, 0, 40), StudsOffset = Vector3.new(0, 2.6, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 160 or 90, Parent = head })
+	local w = isBoss and 300 or 230
+	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 58), StudsOffset = Vector3.new(0, 2.8, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	local label = model:GetAttribute("Label")
-	local name = text({ Size = UDim2.new(1, 0, 0, 18), Text = (isBoss and "👹 " or "") .. (type(label) == "string" and label or "적"), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = isBoss and C.gold or Color3.fromRGB(255, 200, 190), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
+	local name = text({ Size = UDim2.new(1, 0, 0, 26), Text = (isBoss and "👹 " or "⚔ ") .. (type(label) == "string" and label or "적"), TextSize = isBoss and 23 or 20, Font = Enum.Font.GothamBlack, TextColor3 = isBoss and C.gold or Color3.fromRGB(255, 200, 190), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.1, Parent = bb })
 	local _ = name
-	local back = new("Frame", { Position = UDim2.new(0, 0, 0, 20), Size = UDim2.new(1, 0, 0, 8), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bb }, { corner(4) })
+	local back = new("Frame", { Position = UDim2.new(0, 0, 0, 29), Size = UDim2.new(1, 0, 0, 12), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bb }, { corner(4), stroke(Color3.fromRGB(0, 0, 0), 1) })
 	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = back }, { corner(4) })
-	local pback = new("Frame", { Position = UDim2.new(0.15, 0, 0, 30), Size = UDim2.new(0.7, 0, 0, 5), BackgroundColor3 = Color3.fromRGB(20, 10, 10), BackgroundTransparency = 0.3, Parent = bb }, { corner(3) })
+	local pback = new("Frame", { Position = UDim2.new(0.15, 0, 0, 45), Size = UDim2.new(0.7, 0, 0, 7), BackgroundColor3 = Color3.fromRGB(20, 10, 10), BackgroundTransparency = 0.3, Parent = bb }, { corner(3) })
 	local pfill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pback }, { corner(3) })
 	local function refresh()
 		local hp = model:GetAttribute("Hp")
@@ -269,7 +271,7 @@ end
 local window: Frame
 local windowTitle: TextLabel
 local pages: { [string]: Frame } = {}
-local refreshers: { [string]: () -> () } = {}
+local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
 local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트" }
@@ -299,7 +301,7 @@ function UI.openPage(name: string, opt: any?)
 	window.Visible = true
 	local r = refreshers[name]
 	if r then
-		r()
+		r(true)
 	end
 end
 
@@ -311,17 +313,54 @@ function UI.windowOpen(): boolean
 	return window.Visible
 end
 
+-- 내 몸이 지금 어디 있나
+local function myPos(): Vector3?
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	return (root and root:IsA("BasePart")) and root.Position or nil
+end
+
+-- 여기서 그곳까지 방향 (북 = -Z)과 거리
+local DIRS = { "북", "북동", "동", "남동", "남", "남서", "서", "북서" }
+local function bearing(from: Vector3, to: Vector3): (string, number)
+	local d = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
+	local ang = math.deg(math.atan2(d.X, -d.Z)) % 360
+	return DIRS[math.floor((ang + 22.5) / 45) % 8 + 1], d.Magnitude
+end
+UI.bearing = bearing
+
+local function nearMaster(id: string): boolean
+	local m = Config.MASTERS[id]
+	local pos = myPos()
+	if not m or not pos then
+		return false
+	end
+	return Vector3.new(pos.X - m.at.X, 0, pos.Z - m.at.Z).Magnitude <= Config.MASTER_RANGE
+end
+
 local function buildStyles()
 	local page = makePage("styles")
-	local list = scroller(page, UDim2.new(0.42, -8, 1, 0))
+	local list = scroller(page, UDim2.new(0.4, -8, 1, 0))
 	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
-	local detail = new("Frame", { Position = UDim2.new(0.42, 4, 0, 0), Size = UDim2.new(0.58, -4, 1, 0), BackgroundColor3 = C.panel, Parent = page }, { corner(12), stroke(C.line, 1.5) })
-	local dTitle = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -28, 0, 34), TextSize = 26, Font = Enum.Font.GothamBlack, Parent = detail })
-	local dHanja = text({ Position = UDim2.new(0, 14, 0, 40), Size = UDim2.new(1, -28, 0, 20), TextSize = 15, TextColor3 = C.dim, Parent = detail })
-	local dBody = text({ Position = UDim2.new(0, 14, 0, 64), Size = UDim2.new(1, -28, 1, -130), TextSize = 15, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = detail })
+	local detail = new("Frame", { Position = UDim2.new(0.4, 4, 0, 0), Size = UDim2.new(0.6, -4, 1, 0), BackgroundColor3 = C.panel, Parent = page }, { corner(12), stroke(C.line, 1.5) })
+	local dTitle = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -28, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = detail })
+	local dHanja = text({ Position = UDim2.new(0, 14, 0, 44), Size = UDim2.new(1, -28, 0, 22), TextSize = 17, TextColor3 = C.dim, Parent = detail })
+	local dMaster = text({ Position = UDim2.new(0, 14, 0, 68), Size = UDim2.new(1, -28, 0, 24), TextSize = 17, TextColor3 = C.gold, RichText = true, Parent = detail })
+	local bodyScroll = scroller(detail, UDim2.new(1, -20, 1, -170), UDim2.new(0, 14, 0, 96))
+	local dBody = text({ Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = bodyScroll })
 	local selected = Config.Styles[1].id
-	local dBtn = button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Size = UDim2.new(1, -28, 0, 48), TextSize = 20, BackgroundColor3 = C.red, Parent = detail }, function()
-		Request:FireServer("learn", selected)
+	local action = "learn"
+	local dBtn = button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -12), Size = UDim2.new(0.62, -20, 0, 56), TextSize = 21, BackgroundColor3 = C.red, Parent = detail }, function()
+		if action == "learn" then
+			Request:FireServer("learn", selected)
+		elseif action == "guide" then
+			UI.setGuide(selected)
+			window.Visible = false
+		end
+	end)
+	button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -12), Size = UDim2.new(0.38, -14, 0, 56), Text = "📍 길 안내", TextSize = 20, BackgroundColor3 = C.panel2, Parent = detail }, function()
+		UI.setGuide(selected)
+		window.Visible = false
 	end)
 	local cards: { [string]: TextButton } = {}
 	local function show(id: string)
@@ -330,6 +369,18 @@ local function buildStyles()
 		dTitle.Text = s.icon .. " " .. s.name
 		dTitle.TextColor3 = s.color
 		dHanja.Text = s.hanja
+		local master = Config.MASTERS[id]
+		local pos = myPos()
+		if master then
+			local where = ""
+			if pos then
+				local dir, dist = bearing(pos, master.at)
+				where = dist <= Config.MASTER_RANGE and "  ·  <b>바로 곁</b>" or string.format("  ·  %s쪽 %d칸", dir, math.floor(dist))
+			end
+			dMaster.Text = string.format("📍 사부 %s · %s%s", master.name, master.region, where)
+		else
+			dMaster.Text = ""
+		end
 		local lines = { s.desc, "", "<b>고유 장치</b>  " .. s.gimmick, "", "<b>연타 (클릭)</b>" }
 		local names = {}
 		for _, m in ipairs(s.combo) do
@@ -351,16 +402,28 @@ local function buildStyles()
 		end
 		dBody.Text = table.concat(lines, "\n")
 		local owned = state and table.find(state.styles, id) ~= nil
+		local first = not state or #state.styles == 0
 		if state and state.style == id then
 			dBtn.Text = "✔ 쓰는 중"
 			dBtn.BackgroundColor3 = C.green
+			action = "none"
 		elseif owned then
 			dBtn.Text = "이 권법으로 바꾸기"
 			dBtn.BackgroundColor3 = C.panel2
-		else
-			local cost = state and state.learnCost or 0
-			dBtn.Text = cost == 0 and "이 권법을 배운다 (공짜)" or string.format("배우기  💰 %s", Config.formatNumber(cost))
+			action = "learn"
+		elseif first then
+			dBtn.Text = "이 권법을 배운다 (공짜)"
 			dBtn.BackgroundColor3 = C.red
+			action = "learn"
+		elseif nearMaster(id) then
+			local cost = state and state.learnCost or 0
+			dBtn.Text = string.format("배우기  💰 %s", Config.formatNumber(cost))
+			dBtn.BackgroundColor3 = (state and state.coins >= cost) and C.red or C.panel
+			action = "learn"
+		else
+			dBtn.Text = string.format("사부에게 가기 (💰 %s)", Config.formatNumber(state and state.learnCost or 0))
+			dBtn.BackgroundColor3 = Color3.fromRGB(150, 110, 50)
+			action = "guide"
 		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
@@ -370,16 +433,16 @@ local function buildStyles()
 		end
 	end
 	for _, s in ipairs(Config.Styles) do
-		local card = button({ Size = UDim2.new(1, -10, 0, 58), BackgroundColor3 = C.panel2, Text = "", Parent = list }, function()
+		local card = button({ Size = UDim2.new(1, -10, 0, 64), BackgroundColor3 = C.panel2, Text = "", Parent = list }, function()
 			show(s.id)
 		end)
 		new("UIStroke", { Color = s.color, Thickness = 1, Parent = card })
-		text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 26), Text = s.icon .. " " .. s.name, TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = s.color, Parent = card })
-		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 30), Size = UDim2.new(1, -20, 0, 22), TextSize = 13, TextColor3 = C.dim, Parent = card })
+		text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.icon .. " " .. s.name, TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.color, Parent = card })
+		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
 		sub.Text = s.hanja
 		cards[s.id] = card
 	end
-	refreshers.styles = function()
+	refreshers.styles = function(reset: boolean?)
 		for id, card in pairs(cards) do
 			local sub = card:FindFirstChild("Sub") :: TextLabel?
 			if sub and state then
@@ -388,8 +451,10 @@ local function buildStyles()
 				sub.Text = s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. (state.style == id and "  ✔" or "")
 			end
 		end
-		local want = pageOpt and pageOpt.style or (state and state.style ~= "" and state.style) or selected
-		show(want)
+		if reset then
+			selected = pageOpt and pageOpt.style or (state and state.style ~= "" and state.style) or selected
+		end
+		show(selected)
 	end
 end
 
@@ -468,7 +533,7 @@ local function buildHelp()
 			"• 클릭: 연타 (네 번까지 이어진다) · 우클릭: 강한 한 방 (천룡장은 누르고 있다 놓기)",
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
-			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치",
+			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도",
 			"",
 			"<b>합을 겨루는 법</b>",
 			"• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b> — 무릎이 꺾여 큰 피해를 받는다",
@@ -483,8 +548,14 @@ local function buildHelp()
 			"• 숙련도: 그 권법으로 맞힐수록 오른다. 숙련 3에 R, 5에 오의가 열린다",
 			"• 경지: 능력치 합으로 삼류 → 이류 → 일류 → 절정 → 초절정 → 화경 → 현경 → 생사경",
 			"",
+			"<b>일곱 사부</b>",
+			"• 첫 권법은 어디서든 공짜. 그다음 권법은 <b>그 사부를 찾아가</b> T를 누르고 배운다",
+			"• 권법 창의 📍 길 안내를 누르면 화면과 지도에 길잡이가 뜬다. 하늘로 솟은 빛기둥이 사부의 자리",
+			"• 태허호(남서) · 금강사(북동) · 매화원(북서) · 천룡봉(먼 동쪽) · 무영곡(먼 서쪽) · 뇌운 고원(남동) · 취선 주막(남쪽)",
+			"",
 			"<b>강호</b>",
-			"• 청운 마을 (안전): 권법 전당, 만물상, 비무대",
+			"• 청운 마을 (안전): 사부 안내판, 만물상, 비무대, 수련터",
+			"• 남쪽 청운 들판: 무뢰배 (처음 싸워 보기 좋다)",
 			"• 서쪽 대나무 숲: 산적 도객, 창병 · 북쪽 흑호채: 곤봉 산적, 두목 흑호 · 동쪽 비류 폭포 계곡: 쌍도 자객, 우두머리 혈랑",
 			"• ⚔ 비무대: 올라선 사람끼리 1대1로 겨룬다",
 		}, "\n"),
@@ -498,9 +569,10 @@ local function buildTest()
 		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "🥋 숙련 최대", "testMastery" },
 		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
 		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
-		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "↺ 처음으로", "testReset" },
+		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" },
+		{ "🌀 다음 사부에게", "testTp" }, { "↺ 처음으로", "testReset" },
 	}) do
-		button({ Text = item[1], TextSize = 15 }, function()
+		button({ Text = item[1], TextSize = 17 }, function()
 			Request:FireServer(item[2], item[3])
 		end).Parent = page
 	end
@@ -654,12 +726,202 @@ function UI.setState(s: any)
 	local realm = Config.Realms[s.realm]
 	topInfo.Text = string.format("[%s] 💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
-	local testBtn = gui:FindFirstChild("Menu") and (gui :: any).Menu:FindFirstChild("TestButton")
+	local menu = gui:FindFirstChild("Menu", true)
+	local testBtn = menu and menu:FindFirstChild("TestButton")
 	if testBtn then
 		testBtn.Visible = s.tester == true
 	end
 	if window.Visible and refreshers[current] then
 		refreshers[current]()
+	end
+end
+
+------------------------------------------------------------------------
+-- 지도 (오른쪽 위, M으로 크게)와 길잡이
+------------------------------------------------------------------------
+local mapFrame: Frame
+local mapInner: Frame
+local mapMe: TextLabel
+local mapGuide: Frame
+local mapDots: { Frame } = {}
+local mapBig = false
+local guideStyle: string? = nil
+local guidePart: Part? = nil
+local guideLabel: TextLabel? = nil
+
+local function mapUV(p: Vector3): UDim2
+	local H = Config.WORLD_HALF
+	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
+end
+
+local MAP_SMALL = 250
+local MAP_BIG = 600
+local function placeMap()
+	if mapBig then
+		mapFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+		mapFrame.Position = UDim2.fromScale(0.5, 0.5)
+		mapFrame.Size = UDim2.new(0, MAP_BIG, 0, MAP_BIG)
+	else
+		mapFrame.AnchorPoint = Vector2.new(1, 0)
+		mapFrame.Position = UDim2.new(1, -16, 0, 160)
+		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
+	end
+	-- 휴대폰은 버튼과 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다
+	mapFrame.Visible = mapBig or not UserInputService.TouchEnabled
+	for _, l in ipairs(mapInner:GetDescendants()) do
+		if l:IsA("TextLabel") then
+			local base = l:GetAttribute("MapText")
+			if type(base) == "number" then
+				l.TextSize = base * (mapBig and 1.6 or 1)
+			end
+			if l:GetAttribute("BigOnly") then
+				l.Visible = mapBig
+			end
+		end
+	end
+end
+
+function UI.toggleMap()
+	mapBig = not mapBig
+	placeMap()
+end
+
+local function buildMap()
+	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
+	new("UIScale", { Scale = math.min(uiScale * 0.9, windowScale), Parent = mapFrame })
+	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(95, 125, 75), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
+	local H = Config.WORLD_HALF
+	local function rect(center: Vector3, size: Vector3, color: Color3, z: number): Frame
+		return new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(center), Size = UDim2.fromScale(size.X / (2 * H), size.Z / (2 * H)), BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = z, Parent = mapInner })
+	end
+	local function label(at: Vector3, t: string, size: number, color: Color3, z: number, bigOnly: boolean?): TextLabel
+		local l = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(at), Size = UDim2.new(0, 160, 0, 24), Text = t, TextSize = size, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, TextWrapped = false, ZIndex = z, Parent = mapInner })
+		l:SetAttribute("MapText", size)
+		if bigOnly then
+			l:SetAttribute("BigOnly", true)
+		end
+		return l
+	end
+	-- 길
+	for _, road in ipairs(Config.Roads) do
+		for i = 1, #road - 1 do
+			local a, b = road[i], road[i + 1]
+			local d = b - a
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV((a + b) / 2), Size = UDim2.new(d.Magnitude / (2 * H), 0, 0, 3), Rotation = math.deg(math.atan2(d.Z, d.X)), BackgroundColor3 = Color3.fromRGB(190, 165, 120), BorderSizePixel = 0, ZIndex = 6, Parent = mapInner })
+		end
+	end
+	-- 지역과 사부
+	for _, r in ipairs(Config.Regions) do
+		if not r.noGround then
+			local f = rect(r.center, r.size, r.ground, 6)
+			f.BackgroundTransparency = 0.15
+			local style = r.master and Config.STYLE_BY_ID[r.master]
+			if style then
+				new("UIStroke", { Color = style.color, Thickness = 2, Parent = f })
+				label(r.masterAt, style.icon, 18, style.color, 9)
+				label(r.masterAt + Vector3.new(0, 0, 80), r.name, 12, Color3.new(1, 1, 1), 9, true)
+			elseif r.boss then
+				label(r.boss.at, "👹", 15, C.red, 9)
+				label(r.center + Vector3.new(0, 0, r.size.Z / 2 - 30), r.name, 12, Color3.new(1, 1, 1), 9, true)
+			else
+				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
+			end
+		end
+	end
+	-- 적 점 (가까운 것만)
+	for i = 1, 50 do
+		mapDots[i] = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 5, 0, 5), BackgroundColor3 = Color3.fromRGB(255, 60, 50), BorderSizePixel = 0, Visible = false, ZIndex = 10, Parent = mapInner }, { corner(99) })
+	end
+	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = mapInner }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
+	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = mapInner })
+	mapMe:SetAttribute("MapText", 18)
+	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 140, 0, 18), Text = "M: 지도 크게", TextSize = 14, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	placeMap()
+end
+
+-- 길잡이: 화면에 사부 자리를 띄운다 (가까이 가면 꺼진다)
+function UI.setGuide(styleId: string?)
+	if guidePart then
+		guidePart:Destroy()
+	end
+	guidePart = nil
+	guideLabel = nil
+	guideStyle = nil
+	if mapGuide then
+		mapGuide.Visible = false
+	end
+	local m = styleId and Config.MASTERS[styleId]
+	local style = styleId and Config.STYLE_BY_ID[styleId]
+	if not m or not style then
+		return
+	end
+	guideStyle = styleId
+	local p = Instance.new("Part")
+	p.Name = "KwonGuide"
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Transparency = 1
+	p.Size = Vector3.new(1, 1, 1)
+	p.Position = m.at + Vector3.new(0, 12, 0)
+	p.Parent = workspace
+	local bb = new("BillboardGui", { Size = UDim2.new(0, 300, 0, 76), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = 100000, Parent = p })
+	guideLabel = text({ Size = UDim2.fromScale(1, 1), TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = style.color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = bb })
+	guidePart = p
+	if mapGuide then
+		mapGuide.Position = mapUV(m.at)
+		mapGuide.Visible = true
+	end
+	UI.toast(string.format("📍 %s · %s에게 가세요 (하늘로 솟은 빛기둥)", m.region, m.name))
+end
+
+local mapAcc = 0
+local function updateMap(dt: number)
+	local pos = myPos()
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if pos and root and root:IsA("BasePart") then
+		mapMe.Position = mapUV(pos)
+		local look = root.CFrame.LookVector
+		mapMe.Rotation = math.deg(math.atan2(look.X, -look.Z))
+	end
+	-- 길잡이 글자와 도착
+	if guideStyle and guideLabel and pos then
+		local m = Config.MASTERS[guideStyle]
+		local dir, dist = bearing(pos, m.at)
+		guideLabel.Text = string.format("📍 %s\n%s쪽 · %d칸", m.name, dir, math.floor(dist))
+		if dist < Config.MASTER_RANGE - 4 then
+			UI.toast("🥋 " .. m.name .. " 곁에 왔어요. T를 눌러 권법을 배우세요")
+			UI.setGuide(nil)
+		end
+	end
+	mapAcc += dt
+	if mapAcc < 0.25 then
+		return
+	end
+	mapAcc = 0
+	local n = 0
+	local enemies = workspace:FindFirstChild("Enemies")
+	if enemies and pos then
+		local range = mapBig and 600 or 350
+		for _, e in ipairs(enemies:GetChildren()) do
+			local r = e:FindFirstChild("HumanoidRootPart")
+			if n < #mapDots and r and r:IsA("BasePart") and e:GetAttribute("Dead") ~= true and (r.Position - pos).Magnitude < range then
+				n += 1
+				local d = mapDots[n]
+				d.Position = mapUV(r.Position)
+				d.Size = e:GetAttribute("Boss") == true and UDim2.new(0, 10, 0, 10) or UDim2.new(0, 6, 0, 6)
+				d.Visible = true
+			end
+		end
+	end
+	for i = n + 1, #mapDots do
+		mapDots[i].Visible = false
+	end
+	-- 권법 창이 열려 있으면 사부까지 거리도 새로
+	if window.Visible and current == "styles" and refreshers.styles then
+		refreshers.styles(false)
 	end
 end
 
@@ -670,7 +932,8 @@ function UI.mobile(actions: { [string]: any })
 	if not UserInputService.TouchEnabled then
 		return
 	end
-	local pad = new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -170), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
+	local pad = new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -190), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
+	new("UIScale", { Scale = uiScale, Parent = pad })
 	local function round(label: string, pos: UDim2, size: number, color: Color3, down: () -> (), up: (() -> ())?)
 		local b = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = pos, Size = UDim2.new(0, size, 0, size), BackgroundColor3 = color, BackgroundTransparency = 0.25, Text = label, TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.text, Parent = pad }, { corner(999), stroke(Color3.new(1, 1, 1), 2) })
 		b.MouseButton1Down:Connect(down)
@@ -696,24 +959,32 @@ end
 function UI.init(req: RemoteEvent)
 	Request = req
 	gui = new("ScreenGui", { Name = "KwonUI", ResetOnSpawn = false, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, Parent = player:WaitForChild("PlayerGui") })
+	-- 화면이 클수록 크게 (1080p에서 1.5배). 창은 화면을 넘지 않게
 	local cam = workspace.CurrentCamera
 	if cam then
-		uiScale = math.clamp(cam.ViewportSize.Y / 900, 0.6, 1.2)
+		local vp = cam.ViewportSize
+		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
+		windowScale = math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900)
 	end
 	flash = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 40, Active = false, Parent = gui })
 	for _, top in ipairs({ true, false }) do
 		table.insert(bars, new("Frame", { AnchorPoint = Vector2.new(0, top and 0 or 1), Position = UDim2.fromScale(0, top and 0 or 1), Size = UDim2.new(1, 0, 0, 0), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30, Parent = gui }))
 	end
-	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 90), Size = UDim2.new(0, 700, 0, 200), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
+	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
 	new("UIScale", { Scale = uiScale, Parent = toastBox })
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
-	topInfo = text({ Position = UDim2.new(0, 16, 0, 46), Size = UDim2.new(0, 560, 0, 26), TextSize = 18, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = gui })
-	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 16, 0, 78), Size = UDim2.new(0, 130, 0, 260), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
-	new("UIScale", { Scale = uiScale, Parent = menu })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
-		local b = button({ Size = UDim2.new(1, 0, 0, 40), Text = item[2], TextSize = 16, Parent = menu }, function()
-			UI.openPage(item[1])
+	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui })
+	new("UIScale", { Scale = uiScale, Parent = topLeft })
+	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
+	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
+		local b = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 18, Parent = menu }, function()
+			if item[1] == "map" then
+				UI.toggleMap()
+			else
+				UI.openPage(item[1])
+			end
 		end)
 		new("UIStroke", { Color = C.line, Thickness = 1, Parent = b })
 		if item[1] == "test" then
@@ -745,10 +1016,10 @@ function UI.init(req: RemoteEvent)
 		end
 	end)
 	-- 창
-	window = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 860, 0, 560), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
-	new("UIScale", { Scale = uiScale, Parent = window })
-	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 40, 0, 36), Text = "✕", TextSize = 20, BackgroundColor3 = C.red, Parent = window }, function()
+	window = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
+	new("UIScale", { Scale = windowScale, Parent = window })
+	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
 	end)
 	buildStyles()
@@ -756,6 +1027,13 @@ function UI.init(req: RemoteEvent)
 	buildShop()
 	buildHelp()
 	buildTest()
+	buildMap()
+	RunService.RenderStepped:Connect(function(dt: number)
+		local ok, err = pcall(updateMap, dt)
+		if not ok then
+			warn("[권왕] 지도 오류:", err)
+		end
+	end)
 	-- 수련 놀이 칸
 	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 380, 0, 330), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
 	new("UIScale", { Scale = uiScale, Parent = trainFrame })

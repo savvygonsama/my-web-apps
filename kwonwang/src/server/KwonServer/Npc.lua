@@ -73,6 +73,8 @@ local function attachWeapon(model: Model, kind: string)
 			blade = weaponPart("Blade", Vector3.new(0.25, 0.6, 1.4), w.color, Enum.Material.Metal, wf)
 		elseif kind == "club" then
 			blade = weaponPart("Blade", Vector3.new(0.75, 0.75, L), w.color, Enum.Material.Wood, wf)
+		elseif kind == "staff" then
+			blade = weaponPart("Blade", Vector3.new(0.4, 0.4, L), w.color, Enum.Material.Wood, wf)
 		else
 			blade = weaponPart("Blade", Vector3.new(0.12, kind == "greatsword" and 0.9 or 0.45, L), w.color, Enum.Material.Metal, wf)
 		end
@@ -100,20 +102,119 @@ local function attachWeapon(model: Model, kind: string)
 	end
 end
 
+-- 몸을 직접 짠다 (R15 관절 이름 그대로). 로블록스 기본 몸 만들기가 안 될 때 쓴다
+-- 관절 자리 J를 기준으로 C0·C1을 맞춘다. 발바닥이 HumanoidRootPart 중심에서 3칸 아래
+local RIG: { { any } } = {
+	-- 이름, 크기, 중심, 부모, 관절 이름, 관절 자리
+	{ "LowerTorso", Vector3.new(2, 0.4, 1), Vector3.new(0, -0.8, 0), "HumanoidRootPart", "Root", Vector3.new(0, -0.8, 0) },
+	{ "UpperTorso", Vector3.new(2, 1.6, 1), Vector3.new(0, 0.2, 0), "LowerTorso", "Waist", Vector3.new(0, -0.6, 0) },
+	{ "Head", Vector3.new(1.2, 1.2, 1.2), Vector3.new(0, 1.6, 0), "UpperTorso", "Neck", Vector3.new(0, 1.0, 0) },
+	{ "RightUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(1.5, 0.4, 0), "UpperTorso", "RightShoulder", Vector3.new(1.5, 0.8, 0) },
+	{ "RightLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(1.5, -0.675, 0), "RightUpperArm", "RightElbow", Vector3.new(1.5, -0.2, 0) },
+	{ "RightHand", Vector3.new(1, 0.3, 1), Vector3.new(1.5, -1.3, 0), "RightLowerArm", "RightWrist", Vector3.new(1.5, -1.15, 0) },
+	{ "LeftUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(-1.5, 0.4, 0), "UpperTorso", "LeftShoulder", Vector3.new(-1.5, 0.8, 0) },
+	{ "LeftLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(-1.5, -0.675, 0), "LeftUpperArm", "LeftElbow", Vector3.new(-1.5, -0.2, 0) },
+	{ "LeftHand", Vector3.new(1, 0.3, 1), Vector3.new(-1.5, -1.3, 0), "LeftLowerArm", "LeftWrist", Vector3.new(-1.5, -1.15, 0) },
+	{ "RightUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(0.5, -1.55, 0), "LowerTorso", "RightHip", Vector3.new(0.5, -1.0, 0) },
+	{ "RightLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(0.5, -2.45, 0), "RightUpperLeg", "RightKnee", Vector3.new(0.5, -2.1, 0) },
+	{ "RightFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(0.5, -2.9, -0.05), "RightLowerLeg", "RightAnkle", Vector3.new(0.5, -2.8, 0) },
+	{ "LeftUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(-0.5, -1.55, 0), "LowerTorso", "LeftHip", Vector3.new(-0.5, -1.0, 0) },
+	{ "LeftLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(-0.5, -2.45, 0), "LeftUpperLeg", "LeftKnee", Vector3.new(-0.5, -2.1, 0) },
+	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
+}
+
+local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number): Model
+	local model = Instance.new("Model")
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1) * s
+	root.Transparency = 1
+	root.CanCollide = false
+	root.Parent = model
+	model.PrimaryPart = root
+	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
+	for _, r in ipairs(RIG) do
+		local name, size, center, parentName, jointName, joint = r[1], r[2], r[3], r[4], r[5], r[6]
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size * s
+		p.CFrame = CFrame.new(center * s)
+		p.TopSurface = Enum.SurfaceType.Smooth
+		p.BottomSurface = Enum.SurfaceType.Smooth
+		p.CanCollide = name == "UpperTorso" or name == "LowerTorso" or name == "Head"
+		p.Material = Enum.Material.SmoothPlastic
+		if name == "Head" then
+			p.Color = colors.head
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Head
+			mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
+			mesh.Parent = p
+			local face = Instance.new("Decal")
+			face.Name = "face"
+			face.Texture = "rbxasset://textures/face.png"
+			face.Face = Enum.NormalId.Front
+			face.Parent = p
+		elseif string.find(name, "Torso") then
+			p.Color = colors.torso
+		elseif string.find(name, "Arm") or string.find(name, "Hand") then
+			p.Color = colors.arms
+		else
+			p.Color = colors.legs
+		end
+		p.Parent = model
+		parts[name] = p
+		local parent = parts[parentName]
+		local m = Instance.new("Motor6D")
+		m.Name = jointName
+		m.Part0 = parent
+		m.Part1 = p
+		local j = joint * s
+		m.C0 = CFrame.new(j - parent.Position)
+		m.C1 = CFrame.new(j - center * s)
+		m.Parent = p
+	end
+	local hum = Instance.new("Humanoid")
+	hum.RigType = Enum.HumanoidRigType.R15
+	hum.HipHeight = 2 * s
+	hum.AutomaticScalingEnabled = false
+	hum.Parent = model
+	return model
+end
+
+-- 사람 몸 하나 (로블록스 기본 몸, 안 되면 직접 짠 몸)
+local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number): Model
+	local ok, model = pcall(function()
+		local desc = Instance.new("HumanoidDescription")
+		desc.HeadColor = colors.head
+		desc.LeftArmColor = colors.arms
+		desc.RightArmColor = colors.arms
+		desc.TorsoColor = colors.torso
+		desc.LeftLegColor = colors.legs
+		desc.RightLegColor = colors.legs
+		desc.HeightScale = s
+		desc.WidthScale = s
+		desc.DepthScale = s
+		desc.HeadScale = s
+		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	end)
+	if ok and typeof(model) == "Instance" and model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and model:FindFirstChild("LowerTorso") then
+		-- 기본 걷기 스크립트는 쓰지 않는다 (몸동작은 화면이 그린다)
+		local animate = model:FindFirstChild("Animate")
+		if animate then
+			animate:Destroy()
+		end
+		return model
+	end
+	if not ok then
+		warn("[권왕] 기본 몸 만들기 실패, 직접 짠 몸을 씁니다:", model)
+	end
+	return manualRig(colors, s)
+end
+Npc.body = body
+
 local function buildRig(def: any, label: string, isBoss: boolean): Model
-	local desc = Instance.new("HumanoidDescription")
-	desc.HeadColor = SKIN
-	desc.LeftArmColor = SKIN
-	desc.RightArmColor = SKIN
-	desc.TorsoColor = def.shirt
-	desc.LeftLegColor = def.pants
-	desc.RightLegColor = def.pants
 	local s = def.scale or 1
-	desc.HeightScale = s
-	desc.WidthScale = s
-	desc.DepthScale = s
-	desc.HeadScale = s
-	local model = Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	local model = body({ head = SKIN, torso = def.shirt, arms = SKIN, legs = def.pants }, s)
 	model.Name = label
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -192,11 +293,115 @@ function Npc.populate()
 	for _, region in ipairs(Config.Regions) do
 		for _, camp in ipairs(region.camps or {}) do
 			for _ = 1, camp.count do
-				Npc.spawn(camp.enemy, false, camp.at, region.id)
+				local ok, err = pcall(Npc.spawn, camp.enemy, false, camp.at, region.id)
+				if not ok then
+					warn("[권왕] 적 만들기 오류:", camp.enemy, err)
+				end
 			end
 		end
 		if region.boss then
-			Npc.spawn(region.boss.id, true, region.boss.at, region.id)
+			local ok, err = pcall(Npc.spawn, region.boss.id, true, region.boss.at, region.id)
+			if not ok then
+				warn("[권왕] 보스 만들기 오류:", region.boss.id, err)
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 일곱 사부 (싸우지 않는다. 가까이 가서 T를 누르면 권법을 배운다)
+------------------------------------------------------------------------
+local function masterTag(head: BasePart, name: string, style: any)
+	local g = Instance.new("BillboardGui")
+	g.Name = "MasterTag"
+	g.Size = UDim2.new(0, 320, 0, 74)
+	g.StudsOffset = Vector3.new(0, 3.2, 0)
+	g.AlwaysOnTop = true
+	g.LightInfluence = 0
+	g.MaxDistance = 160
+	for i, line in ipairs({ { "사부 · " .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. "  (T)", style.color, 0.48 } }) do
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Position = UDim2.fromScale(0, i == 1 and 0 or 0.52)
+		l.Size = UDim2.fromScale(1, line[3])
+		l.Font = Enum.Font.GothamBlack
+		l.TextScaled = true
+		l.TextColor3 = line[2]
+		l.TextStrokeTransparency = 0.2
+		l.Text = line[1]
+		l.Parent = g
+	end
+	g.Parent = head
+end
+
+function Npc.spawnMasters(onTrigger: (Player, string) -> ())
+	local mf = Instance.new("Folder")
+	mf.Name = "Masters"
+	mf.Parent = workspace
+	for _, style in ipairs(Config.Styles) do
+		local info = Config.MASTERS[style.id]
+		if info then
+			local ok, err = pcall(function()
+				local s = 1.05
+				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = SKIN, legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
+				model.Name = "Master_" .. style.id
+				local hum = model:FindFirstChildOfClass("Humanoid")
+				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+				if hum then
+					hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+					hum.WalkSpeed = 0
+					hum.JumpPower = 0
+				end
+				-- 허리띠 (권법의 둘째 빛깔)
+				local lower = model:FindFirstChild("LowerTorso")
+				if lower and lower:IsA("BasePart") then
+					local sash = Instance.new("Part")
+					sash.Name = "Sash"
+					sash.Size = Vector3.new(lower.Size.X * 1.08, 0.35, lower.Size.Z * 1.15)
+					sash.Color = style.color2
+					sash.Material = Enum.Material.Fabric
+					sash.CanCollide = false
+					sash.CanQuery = false
+					sash.Massless = true
+					sash.CFrame = lower.CFrame * CFrame.new(0, 0.1, 0)
+					sash.Parent = model
+					local weld = Instance.new("WeldConstraint")
+					weld.Part0 = lower
+					weld.Part1 = sash
+					weld.Parent = sash
+				end
+				local up = (hum and hum.HipHeight or 2 * s) + root.Size.Y / 2
+				local at = info.at
+				local face = Vector3.new(0, at.Y, 0) - at
+				face = Vector3.new(face.X, 0, face.Z)
+				local pos = at + Vector3.new(0, up, 0)
+				model:PivotTo(CFrame.lookAt(pos, pos + (face.Magnitude > 1 and face.Unit or Vector3.new(0, 0, 1))))
+				root.Anchored = true
+				model:SetAttribute("NPC", true)
+				model:SetAttribute("Master", true)
+				model:SetAttribute("Style", style.id)
+				model:SetAttribute("Label", info.name)
+				local head = model:FindFirstChild("Head")
+				if head and head:IsA("BasePart") then
+					masterTag(head, info.name, style)
+				end
+				local pp = Instance.new("ProximityPrompt")
+				pp.Name = "Master"
+				pp.ActionText = "권법 배우기"
+				pp.ObjectText = info.name
+				pp.HoldDuration = 0
+				pp.MaxActivationDistance = 16
+				pp.RequiresLineOfSight = false
+				pp.KeyboardKeyCode = Enum.KeyCode.T
+				pp.Parent = root
+				pp.Triggered:Connect(function(player: Player)
+					onTrigger(player, style.id)
+				end)
+				model.Parent = mf
+			end)
+			if not ok then
+				warn("[권왕] 사부 만들기 오류:", style.id, err)
+			end
 		end
 	end
 end
@@ -224,7 +429,10 @@ function Npc.onDeath(f: any)
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
 			task.delay(wait, function()
-				Npc.spawn(e.typeId, e.kind == "boss", e.home, e.region)
+				local ok, err = pcall(Npc.spawn, e.typeId, e.kind == "boss", e.home, e.region)
+				if not ok then
+					warn("[권왕] 적 다시 만들기 오류:", e.typeId, err)
+				end
 			end)
 			return
 		end

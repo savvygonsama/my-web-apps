@@ -359,9 +359,18 @@ Config.Weapons = {
 	club = { name = "곤봉", length = 5.5, color = Color3.fromRGB(120, 80, 45), handle = Color3.fromRGB(80, 50, 30) },
 	dual = { name = "쌍도", length = 3, color = Color3.fromRGB(170, 175, 190), handle = Color3.fromRGB(40, 30, 30) },
 	greatsword = { name = "대도", length = 7, color = Color3.fromRGB(150, 150, 160), handle = Color3.fromRGB(60, 30, 20) },
+	staff = { name = "몽둥이", length = 4.5, color = Color3.fromRGB(140, 100, 60), handle = Color3.fromRGB(100, 70, 40) },
 }
 
 Config.Enemies = {
+	thug = {
+		name = "무뢰배", weapon = "staff", hp = 55, posture = 50, speed = 13, aggro = 38, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
+		coins = 6, xp = 5,
+		moves = {
+			{ id = "t1", name = "몽둥이질", pose = "w_slash", windup = 0.6, dur = 0.9, range = 6, hits = { hit(0.6, 6, 4, 6, 9, 0.35, 10) } },
+			{ id = "t2", name = "내려치기", pose = "w_overhead", windup = 0.85, dur = 1.25, range = 6, unblockable = true, hits = { hit(0.85, 6, 4.5, 11, 18, 0.6, 20) } },
+		},
+	},
 	bandit = {
 		name = "산적 도객", weapon = "saber", hp = 90, posture = 70, speed = 15, aggro = 45, keep = 5, shirt = Color3.fromRGB(120, 90, 60), pants = Color3.fromRGB(60, 50, 40),
 		coins = 12, xp = 8,
@@ -436,7 +445,54 @@ Config.Regions = {
 	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(440, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
 		camps = { { enemy = "assassin", count = 3, at = Vector3.new(400, 0, 130) }, { enemy = "brute", count = 1, at = Vector3.new(380, 0, -120) }, { enemy = "assassin", count = 2, at = Vector3.new(520, 0, -60) } },
 		boss = { id = "hyeolrang", at = Vector3.new(590, 0, 120) } },
+	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
+	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 330), size = Vector3.new(340, 0, 260), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
+		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 300) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 340) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 420) } } },
+	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
+	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
+		camps = {
+			{ enemy = "bandit", count = 3, at = Vector3.new(-430, 0, 470) }, { enemy = "spearman", count = 2, at = Vector3.new(-440, 0, -470) },
+			{ enemy = "bandit", count = 3, at = Vector3.new(430, 0, -470) }, { enemy = "brute", count = 2, at = Vector3.new(450, 0, 470) },
+			{ enemy = "spearman", count = 2, at = Vector3.new(760, 0, -170) }, { enemy = "assassin", count = 2, at = Vector3.new(-760, 0, 130) },
+		} },
+	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
+	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
+		master = "taeheo", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
+	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
+		master = "geumgang", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
+	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
+		master = "maehwa", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
+	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
+		master = "cheonryong", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
+	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
+		master = "muyeong", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
+	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
+		master = "byeokryeok", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
+	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
+		master = "chwi", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
 }
+-- 권법 id → 사부 { name, at, region }
+Config.MASTERS = {}
+for _, r in ipairs(Config.Regions) do
+	if r.master then
+		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id }
+	end
+end
+Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
+Config.WORLD_HALF = 1300 -- 세상 끝 (가운데에서)
+-- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
+Config.Roads = {
+	{ Vector3.new(-178, 0, 0), Vector3.new(-1000, 0, 0) },
+	{ Vector3.new(178, 0, 0), Vector3.new(560, 0, 0) },
+	{ Vector3.new(0, 0, -178), Vector3.new(0, 0, -270) },
+	{ Vector3.new(0, 0, 178), Vector3.new(0, 0, 640) },
+	{ Vector3.new(-178, 0, 0), Vector3.new(-260, 0, -60), Vector3.new(-650, 0, -560) },
+	{ Vector3.new(178, 0, 0), Vector3.new(260, 0, -60), Vector3.new(650, 0, -560) },
+	{ Vector3.new(0, 0, 178), Vector3.new(-90, 0, 230), Vector3.new(-600, 0, 600) },
+	{ Vector3.new(0, 0, 178), Vector3.new(90, 0, 230), Vector3.new(600, 0, 600) },
+	{ Vector3.new(178, 0, 0), Vector3.new(380, 0, -280), Vector3.new(890, 0, -280) },
+}
+
 Config.ENEMY_ACTIVE_RANGE = 170 -- 이 안에 사람이 있어야 적이 움직인다
 Config.ENEMY_RESPAWN = 25
 
@@ -454,7 +510,6 @@ Config.TrainingSpots = {
 	{ kind = "bamboo", at = Vector3.new(-380, 0, -10) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
-Config.HALL = Vector3.new(0, 0, -120) -- 권법 전당 (일곱 사부)
 
 ------------------------------------------------------------------------
 -- 상점 (마을)
