@@ -335,7 +335,25 @@ function Config.masteryNeed(level: number): number
 end
 Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5 }
 
--- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G"
+-- 모든 권법이 함께 쓰는 몸놀림 기술
+-- D = 대시 직후 클릭 (돌진 일격), A = 공중에서 클릭 (낙하격), C = 흘리기 직후 클릭 (반격)
+Config.ACTION_MOVES = {
+	D = { id = "actD", name = "돌진 일격", pose = "dash_punch", dur = 0.42, lunge = 12, hits = { hit(0.16, 6, 4.5, 11, 14, 0.45, 26) } },
+	A = { id = "actA", name = "낙하격", pose = "dive_slam", dur = 0.6, dive = 85, hits = { hit(0.32, 0, 9, 13, 20, 0.6, 22, 14, true) } },
+	C = { id = "actC", name = "반격", pose = "punch_r_heavy", dur = 0.42, lunge = 5, hits = { hit(0.14, 6, 4.5, 18, 40, 0.8, 34) } },
+}
+Config.ACTION_WINDOW = { D = 0.6, C = 0.8 } -- 대시·흘리기 뒤 이만큼 안에 눌러야 나간다
+-- 권법마다 몸놀림 자세만 다르게
+local ACTION_POSE = {
+	maehwa = { D = "dash_strike", C = "spin_backfist" },
+	muyeong = { D = "flying_kick", A = "dive_kick", C = "back_spin_kick" },
+	chwi = { D = "headbutt", C = "drunk_swing_r" },
+	taeheo = { D = "push_palm", C = "double_palm" },
+	cheonryong = { D = "push_palm", C = "double_palm" },
+}
+local actionCache: { [string]: any } = {}
+
+-- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G", "D", "A", "C"
 function Config.move(styleId: string, slot: any): any
 	local s = Config.STYLE_BY_ID[styleId]
 	if not s then
@@ -345,6 +363,17 @@ function Config.move(styleId: string, slot: any): any
 		return s.combo[slot]
 	elseif slot == "H" then
 		return s.heavy
+	elseif Config.ACTION_MOVES[slot] then
+		local key = styleId .. slot
+		if not actionCache[key] then
+			local m = table.clone(Config.ACTION_MOVES[slot])
+			local over = ACTION_POSE[styleId]
+			if over and over[slot] then
+				m.pose = over[slot]
+			end
+			actionCache[key] = m
+		end
+		return actionCache[key]
 	end
 	return s.skills[slot]
 end
@@ -363,6 +392,25 @@ Config.Weapons = {
 }
 
 Config.Enemies = {
+	-- 아주 먼 곳에만 있는 강한 적
+	ironguard = {
+		name = "철갑 무사", weapon = "greatsword", hp = 240, posture = 200, speed = 13, aggro = 50, keep = 6, shirt = Color3.fromRGB(70, 72, 82), pants = Color3.fromRGB(40, 40, 48), scale = 1.3,
+		coins = 45, xp = 30,
+		moves = {
+			{ id = "ig1", name = "대검 베기", pose = "w_slash", windup = 0.55, dur = 1.0, range = 8, hits = { hit(0.55, 8, 5.5, 16, 24, 0.5, 18) } },
+			{ id = "ig2", name = "회전 베기", pose = "w_sweep", windup = 0.7, dur = 1.2, range = 9, hits = { hit(0.7, 0, 10, 18, 28, 0.6, 28, nil, true) } },
+			{ id = "ig3", name = "분쇄", pose = "w_overhead", windup = 0.9, dur = 1.4, range = 8, unblockable = true, hits = { hit(0.9, 7, 6, 30, 45, 1.0, 35, 15, true) } },
+		},
+	},
+	shadowblade = {
+		name = "흑영 자객", weapon = "dual", hp = 150, posture = 110, speed = 22, aggro = 60, keep = 4, shirt = Color3.fromRGB(25, 20, 35), pants = Color3.fromRGB(15, 12, 22),
+		coins = 40, xp = 26,
+		moves = {
+			{ id = "sb1", name = "그림자 연격", pose = "w_dual", windup = 0.25, dur = 1.0, range = 6, lunge = 6, hits = { hit(0.25, 6, 4, 8, 10, 0.3, 4), hit(0.42, 6, 4, 8, 10, 0.3, 4), hit(0.6, 6, 4.5, 12, 16, 0.4, 14) } },
+			{ id = "sb2", name = "그림자 습격", pose = "w_thrust", windup = 0.35, dur = 0.85, range = 28, teleport = true, hits = { hit(0.35, 6, 4, 16, 20, 0.5, 15) } },
+			{ id = "sb3", name = "암살", pose = "w_overhead", windup = 0.55, dur = 1.0, range = 6, unblockable = true, hits = { hit(0.55, 6, 4.5, 26, 30, 0.8, 25) } },
+		},
+	},
 	thug = {
 		name = "무뢰배", weapon = "staff", hp = 55, posture = 50, speed = 13, aggro = 38, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
 		coins = 6, xp = 5,
@@ -438,23 +486,31 @@ Config.Bosses = {
 Config.Regions = {
 	{ id = "village", name = "청운 마을", center = Vector3.new(0, 0, 0), size = Vector3.new(360, 0, 360), ground = Color3.fromRGB(150, 135, 105), material = Enum.Material.Ground, safe = true },
 	{ id = "bamboo", name = "대나무 숲", center = Vector3.new(-420, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(95, 130, 70), material = Enum.Material.Grass,
-		camps = { { enemy = "bandit", count = 3, at = Vector3.new(-420, 0, 120) }, { enemy = "spearman", count = 3, at = Vector3.new(-500, 0, -110) } } },
-	{ id = "fort", name = "흑호채 (산적 소굴)", center = Vector3.new(0, 0, -440), size = Vector3.new(440, 0, 480), ground = Color3.fromRGB(110, 90, 70), material = Enum.Material.Mud,
-		camps = { { enemy = "bandit", count = 4, at = Vector3.new(-90, 0, -400) }, { enemy = "brute", count = 2, at = Vector3.new(90, 0, -420) }, { enemy = "spearman", count = 2, at = Vector3.new(0, 0, -330) } },
-		boss = { id = "heukho", at = Vector3.new(0, 0, -560) } },
+		camps = { { enemy = "bandit", count = 3, at = Vector3.new(-300, 0, 120) }, { enemy = "bandit", count = 2, at = Vector3.new(-330, 0, -110) }, { enemy = "spearman", count = 3, at = Vector3.new(-570, 0, -110) } } },
+	-- 먼 북쪽의 산적 소굴 (강한 적과 두목)
+	{ id = "fort", name = "흑호채 (산적 소굴)", center = Vector3.new(0, 0, -900), size = Vector3.new(440, 0, 480), ground = Color3.fromRGB(110, 90, 70), material = Enum.Material.Mud,
+		camps = { { enemy = "spearman", count = 3, at = Vector3.new(0, 0, -790) }, { enemy = "brute", count = 3, at = Vector3.new(90, 0, -880) }, { enemy = "ironguard", count = 2, at = Vector3.new(-90, 0, -880) } },
+		boss = { id = "heukho", at = Vector3.new(0, 0, -1020) } },
 	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(440, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
-		camps = { { enemy = "assassin", count = 3, at = Vector3.new(400, 0, 130) }, { enemy = "brute", count = 1, at = Vector3.new(380, 0, -120) }, { enemy = "assassin", count = 2, at = Vector3.new(520, 0, -60) } },
-		boss = { id = "hyeolrang", at = Vector3.new(590, 0, 120) } },
+		camps = { { enemy = "bandit", count = 3, at = Vector3.new(320, 0, 130) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, 120) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, -90) } } },
 	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
 	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 330), size = Vector3.new(340, 0, 260), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
 		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 300) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 340) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 420) } } },
 	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
-			{ enemy = "bandit", count = 3, at = Vector3.new(-430, 0, 470) }, { enemy = "spearman", count = 2, at = Vector3.new(-440, 0, -470) },
-			{ enemy = "bandit", count = 3, at = Vector3.new(430, 0, -470) }, { enemy = "brute", count = 2, at = Vector3.new(450, 0, 470) },
-			{ enemy = "spearman", count = 2, at = Vector3.new(760, 0, -170) }, { enemy = "assassin", count = 2, at = Vector3.new(-760, 0, 130) },
+			-- 가운데쯤 (사부 가는 길목)
+			{ enemy = "spearman", count = 2, at = Vector3.new(-430, 0, 470) }, { enemy = "brute", count = 2, at = Vector3.new(-380, 0, -430) },
+			{ enemy = "spearman", count = 2, at = Vector3.new(430, 0, -470) }, { enemy = "brute", count = 2, at = Vector3.new(450, 0, 470) },
+			{ enemy = "assassin", count = 2, at = Vector3.new(760, 0, -170) }, { enemy = "assassin", count = 2, at = Vector3.new(-760, 0, 130) },
+			-- 아주 먼 곳 (강한 적)
+			{ enemy = "shadowblade", count = 2, at = Vector3.new(-1050, 0, -550) }, { enemy = "ironguard", count = 2, at = Vector3.new(380, 0, -1000) },
+			{ enemy = "ironguard", count = 1, at = Vector3.new(-1000, 0, 700) }, { enemy = "shadowblade", count = 2, at = Vector3.new(1050, 0, 300) },
 		} },
+	-- 먼 남동쪽 끝: 혈랑의 소굴
+	{ id = "lair", name = "혈월곡", center = Vector3.new(1000, 0, 1000), size = Vector3.new(380, 0, 380), ground = Color3.fromRGB(85, 45, 45), material = Enum.Material.Slate,
+		camps = { { enemy = "shadowblade", count = 3, at = Vector3.new(930, 0, 930) }, { enemy = "ironguard", count = 2, at = Vector3.new(1060, 0, 920) } },
+		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
 		master = "taeheo", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
@@ -478,19 +534,34 @@ for _, r in ipairs(Config.Regions) do
 		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id }
 	end
 end
+-- 큰 볼거리 (지도에도 나온다)
+Config.Landmarks = {
+	{ id = "colossus", name = "거신상", icon = "🗿", at = Vector3.new(-300, 0, 520) },
+	{ id = "skyring", name = "하늘 고리", icon = "⭕", at = Vector3.new(380, 0, 300) },
+	{ id = "colosseum", name = "옛 투기장", icon = "🏟", at = Vector3.new(-380, 0, -430) },
+	{ id = "crystals", name = "수정 들판", icon = "💎", at = Vector3.new(-1050, 0, -550) },
+	{ id = "worldtree", name = "천년 고목", icon = "🌳", at = Vector3.new(380, 0, -1000) },
+	{ id = "moon", name = "핏빛 달", icon = "🌕", at = Vector3.new(1000, 0, 1000) },
+}
+-- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
+function Config.enemyLevel(home: Vector3): number
+	local d = Vector3.new(home.X, 0, home.Z).Magnitude
+	return 1 + math.floor(math.max(0, d - 250) / 100)
+end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 Config.WORLD_HALF = 1300 -- 세상 끝 (가운데에서)
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
 	{ Vector3.new(-178, 0, 0), Vector3.new(-1000, 0, 0) },
 	{ Vector3.new(178, 0, 0), Vector3.new(560, 0, 0) },
-	{ Vector3.new(0, 0, -178), Vector3.new(0, 0, -270) },
+	{ Vector3.new(0, 0, -178), Vector3.new(0, 0, -740) },
 	{ Vector3.new(0, 0, 178), Vector3.new(0, 0, 640) },
 	{ Vector3.new(-178, 0, 0), Vector3.new(-260, 0, -60), Vector3.new(-650, 0, -560) },
 	{ Vector3.new(178, 0, 0), Vector3.new(260, 0, -60), Vector3.new(650, 0, -560) },
 	{ Vector3.new(0, 0, 178), Vector3.new(-90, 0, 230), Vector3.new(-600, 0, 600) },
 	{ Vector3.new(0, 0, 178), Vector3.new(90, 0, 230), Vector3.new(600, 0, 600) },
 	{ Vector3.new(178, 0, 0), Vector3.new(380, 0, -280), Vector3.new(890, 0, -280) },
+	{ Vector3.new(600, 0, 600), Vector3.new(840, 0, 560), Vector3.new(960, 0, 900) },
 }
 
 Config.ENEMY_ACTIVE_RANGE = 170 -- 이 안에 사람이 있어야 적이 움직인다

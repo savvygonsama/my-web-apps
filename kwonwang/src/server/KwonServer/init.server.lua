@@ -391,7 +391,9 @@ Combat.init(Push, {
 			local p = killer and profiles[killer]
 			if killer and p then
 				local isBoss = f.model:GetAttribute("Boss") == true
-				p.coins += f.npc.coins
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
+				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
+				p.coins += coins
 				p.kills += 1
 				if isBoss then
 					for id, def in pairs(Config.Bosses) do
@@ -400,9 +402,9 @@ Combat.init(Push, {
 						end
 					end
 				end
-				addMastery(killer, p, f.npc.xp)
+				addMastery(killer, p, xp)
 				states[killer].dirty = true
-				Push:FireClient(killer, "reward", { coins = f.npc.coins, xp = f.npc.xp, name = f.name, boss = isBoss })
+				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss })
 				updateTag(killer)
 				pushState(killer)
 			end
@@ -495,7 +497,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 		if slot < 1 or slot > #style.combo then
 			return
 		end
-	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" then
+	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and not Config.ACTION_MOVES[slot] then
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
@@ -507,12 +509,27 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 	if f.dead or Combat.stunned(f) then
 		return
 	end
+	-- 몸놀림 기술은 그 순간에만: 대시 직후, 공중, 흘리기 직후
+	local fa = f :: any
+	if slot == "D" and t - (f.dashAt or 0) > Config.ACTION_WINDOW.D + 0.15 then
+		return
+	elseif slot == "A" then
+		if not f.hum or f.hum.FloorMaterial ~= Enum.Material.Air or t - (fa.airAtkAt or 0) < 0.8 then
+			return
+		end
+		fa.airAtkAt = t
+	elseif slot == "C" then
+		if t - (fa.deflectAt or 0) > Config.ACTION_WINDOW.C + 0.15 then
+			return
+		end
+		fa.deflectAt = 0
+	end
 	-- 앞 기술이 거의 끝났을 때만 다음 기술 (연타는 70%부터 이어진다)
 	local act = f.act
-	if act and t < act.start + act.dur * (type(slot) == "number" and 0.7 or 0.85) then
+	if act and t < act.start + act.dur * (type(slot) == "number" and 0.7 or 0.85) and slot ~= "C" then
 		return
 	end
-	if type(slot) == "string" and slot ~= "H" then
+	if slot == "E" or slot == "R" or slot == "G" then
 		if not Calc.unlocked(p, slot) then
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -673,7 +690,7 @@ function Actions.guard(player: Player, on: any)
 	f.model:SetAttribute("Guard", want)
 end
 
-function Actions.dash(player: Player)
+function Actions.dash(player: Player, kindArg: any)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not f or f.dead or Combat.stunned(f) then
@@ -694,7 +711,8 @@ function Actions.dash(player: Player)
 	f.iframeUntil = math.max(f.iframeUntil, t + Config.DASH_IFRAMES)
 	f.guarding = false
 	f.act = nil
-	Push:FireAllClients("dash", f.model)
+	local kind = (kindArg == "back" or kindArg == "left" or kindArg == "right") and kindArg or "front"
+	Push:FireAllClients("dash", f.model, kind)
 end
 
 function Actions.potion(player: Player)
@@ -1010,7 +1028,13 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	elseif action == "guard" then
 		Actions.guard(player, a1)
 	elseif action == "dash" then
-		Actions.dash(player)
+		Actions.dash(player, a1)
+	elseif action == "sprint" then
+		local f = Combat.fighterOfPlayer(player)
+		if f then
+			(f :: any).sprint = a1 == true
+			f.model:SetAttribute("Sprint", a1 == true or nil)
+		end
 	elseif action == "djump" then
 		local f = Combat.fighterOfPlayer(player)
 		if f then

@@ -342,6 +342,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		interrupt(att)
 		tgt.stacks.flow = math.min(3, tgt.stacks.flow + 1)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true })
+		;(tgt :: any).deflectAt = now()
 		local style = Combat.styleOf(tgt)
 		local ch = style and style.skills.E.counterHit
 		if ch then
@@ -375,6 +376,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			Combat.sync(tgt)
 			Combat.sync(att)
 			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos })
+			;(tgt :: any).deflectAt = now()
 			if hooks.onDeflect then
 				hooks.onDeflect(tgt, att)
 			end
@@ -640,6 +642,8 @@ function Combat.tick(dt: number)
 				speed = f.walk * 0.4
 			elseif f.act and not f.npc then
 				speed = f.walk * 0.35
+			elseif (f :: any).sprint then
+				speed = f.walk * 1.45
 			end
 			if f.hum and math.abs(f.hum.WalkSpeed - speed) > 0.1 then
 				f.hum.WalkSpeed = speed

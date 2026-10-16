@@ -127,6 +127,9 @@ local dead = false
 local dashAt = 0
 local dashUsed = 0
 local airJumped = false
+local deflectAt = 0 -- 마지막으로 흘린 때 (곧바로 클릭하면 반격)
+local airAttacked = false
+local sprinting = false
 local cds: { [string]: number } = {}
 local cdLen: { [string]: number } = {}
 local predictedAt: { [Model]: number } = {}
@@ -305,7 +308,7 @@ startMove = function(slot: any, charge: number?)
 			return
 		end
 	end
-	if type(slot) == "string" and slot ~= "H" then
+	if slot == "E" or slot == "R" or slot == "G" then
 		if not unlocked(slot) then
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -333,7 +336,42 @@ startMove = function(slot: any, charge: number?)
 	local first = move.hits and move.hits[1]
 	Anim.play(char, move.pose, dur, { align = first and first.t / speed or nil })
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
+	Fx.cast(style.id, slot, char, dur)
 	Request:FireServer("act", slot, mySeq, charge)
+	if slot == "C" then
+		Fx.text(root.Position + Vector3.new(0, 5, 0), "反 반격!", Color3.fromRGB(255, 220, 120), 38)
+		UI.flash(Color3.fromRGB(255, 230, 160), 0.2)
+	elseif slot == "D" then
+		Fx.afterimage(char, style.color, 0.35)
+	end
+	if move.dive then
+		-- 잠깐 떠올랐다가 땅으로 내리꽂는다
+		local diveStart = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local t = os.clock() - diveStart
+			if not root.Parent or t > dur then
+				conn:Disconnect()
+				return
+			end
+			local v = root.AssemblyLinearVelocity
+			if t < 0.12 then
+				root.AssemblyLinearVelocity = Vector3.new(v.X * 0.5, 10, v.Z * 0.5)
+			else
+				root.AssemblyLinearVelocity = Vector3.new(v.X * 0.3, -move.dive, v.Z * 0.3)
+			end
+		end)
+		task.delay((first and first.t or 0.3) / speed, function()
+			if actSeq == mySeq then
+				local feet = root.Position - Vector3.new(0, 2.6, 0)
+				Fx.ring(feet + Vector3.new(0, 0.3, 0), style.color, 3, 24, 0.45)
+				Fx.ring(feet + Vector3.new(0, 0.4, 0), Color3.new(1, 1, 1), 2, 14, 0.3)
+				Fx.dust(feet, 4)
+				Fx.sound("heavy", 0.9, 0.55)
+				shake(1)
+			end
+		end)
+	end
 	local look = flat(root.CFrame.LookVector)
 	if move.lunge and move.lunge > 0 and not move.teleport then
 		push(look * (move.lunge / 0.16), 0.16)
@@ -354,6 +392,7 @@ startMove = function(slot: any, charge: number?)
 				return
 			end
 			Fx.sound("swing", 0.35, 1.05 + math.random() * 0.25)
+			Fx.swing(style.id, char, (h.kb or 0) >= 20)
 			local targets = query(h)
 			Request:FireServer("hit", mySeq, i, targets)
 			-- 바로 반응 (서버가 정하기 전에): 멈칫과 불꽃
@@ -410,6 +449,23 @@ local function attack()
 		return
 	end
 	local now = os.clock()
+	-- 몸놀림 기술: 흘리기 직후 = 반격, 공중 = 낙하격, 대시 직후 = 돌진 일격
+	local hum = myHum()
+	if now - deflectAt < Config.ACTION_WINDOW.C then
+		deflectAt = 0
+		startMove("C")
+		return
+	end
+	if hum and hum.FloorMaterial == Enum.Material.Air and not airAttacked and not busy() then
+		airAttacked = true
+		startMove("A")
+		return
+	end
+	if now - dashAt < Config.ACTION_WINDOW.D and not busy() then
+		dashAt = 0
+		startMove("D")
+		return
+	end
 	local nextIdx = 1
 	if now - comboAt <= Config.COMBO_WINDOW + actDur and combo < #style.combo then
 		nextIdx = combo + 1
@@ -507,12 +563,29 @@ local function dash()
 	actSeq = -1
 	actDur = 0
 	local dir = hum.MoveDirection.Magnitude > 0.1 and flat(hum.MoveDirection) or flat(root.CFrame.LookVector)
-	root.CFrame = CFrame.lookAt(root.Position, root.Position + dir)
-	push(dir * Config.DASH_SPEED, Config.DASH_TIME)
-	Anim.play(char, "dash", 0.28)
+	-- 카메라 기준으로 앞/뒤/옆을 가려 동작을 바꾼다 (뒤 = 공중제비, 옆 = 구르기)
+	local cam = workspace.CurrentCamera
+	local camLook = cam and flat(cam.CFrame.LookVector) or flat(root.CFrame.LookVector)
+	local along = dir:Dot(camLook)
+	local kind = "front"
+	if hum.MoveDirection.Magnitude > 0.1 and along < -0.5 then
+		kind = "back"
+	elseif hum.MoveDirection.Magnitude > 0.1 and math.abs(along) <= 0.5 then
+		kind = camLook:Cross(dir).Y < 0 and "right" or "left"
+	end
+	if kind == "front" then
+		root.CFrame = CFrame.lookAt(root.Position, root.Position + dir)
+	else
+		root.CFrame = CFrame.lookAt(root.Position, root.Position + camLook)
+	end
+	push(dir * Config.DASH_SPEED + (kind == "back" and Vector3.new(0, 18, 0) or Vector3.zero), Config.DASH_TIME)
+	local pose = kind == "back" and "backflip" or (kind == "right" and "side_roll_r" or (kind == "left" and "side_roll_l" or "dash"))
+	Anim.play(char, pose, kind == "front" and 0.28 or 0.4)
 	Fx.afterimage(char, style and style.color or Color3.new(1, 1, 1), 0.3)
+	Fx.limbTrails(char, pose, 0.35, style and style.color or Color3.new(1, 1, 1), style and style.color2 or Color3.new(1, 1, 1))
+	Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style and style.color or Color3.new(1, 1, 1), 2, 8, 0.3)
 	Fx.sound("swing", 0.4, 1.6)
-	Request:FireServer("dash")
+	Request:FireServer("dash", kind)
 end
 
 local function doubleJump()
@@ -532,6 +605,19 @@ local function doubleJump()
 	Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style and style.color or Color3.new(1, 1, 1), 2, 9, 0.35)
 	Fx.sound("jump", 0.5, 1.3)
 	Request:FireServer("djump")
+end
+
+-- Shift를 누르고 있으면 달린다
+local function setSprint(on: boolean)
+	if sprinting == on then
+		return
+	end
+	sprinting = on
+	local char = myChar()
+	if char then
+		char:SetAttribute("Sprint", on or nil)
+	end
+	Request:FireServer("sprint", on)
 end
 
 ------------------------------------------------------------------------
@@ -569,6 +655,8 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		UI.openPage("stats")
 	elseif k == Enum.KeyCode.M then
 		UI.toggleMap()
+	elseif k == Enum.KeyCode.LeftShift or k == Enum.KeyCode.RightShift then
+		setSprint(true)
 	end
 end)
 UserInputService.InputEnded:Connect(function(input: InputObject)
@@ -576,6 +664,8 @@ UserInputService.InputEnded:Connect(function(input: InputObject)
 		heavyUp()
 	elseif input.KeyCode == Enum.KeyCode.F then
 		guardUp()
+	elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+		setSprint(false)
 	end
 end)
 UI.mobile({
@@ -602,13 +692,31 @@ UI.mobile({
 	end,
 })
 
--- 땅에 닿으면 두 번 뛰기를 되살린다
+-- 땅에 닿으면 두 번 뛰기·낙하격을 되살린다. 세게 떨어지면 내려앉는 자세
+local fallSpeed = 0
 RunService.Heartbeat:Connect(function()
 	local hum = myHum()
-	if hum and hum.FloorMaterial ~= Enum.Material.Air then
+	local root = myRoot()
+	if not hum or not root then
+		return
+	end
+	if hum.FloorMaterial ~= Enum.Material.Air then
 		airJumped = false
+		airAttacked = false
+		if fallSpeed > 55 and not busy() and not dead then
+			local char = myChar()
+			if char then
+				Anim.play(char, "land", 0.35)
+				Fx.dust(root.Position - Vector3.new(0, 2.6, 0), 2.5)
+				shake(0.3)
+			end
+		end
+		fallSpeed = 0
+	else
+		fallSpeed = math.max(fallSpeed, -root.AssemblyLinearVelocity.Y)
 	end
 end)
+
 
 ------------------------------------------------------------------------
 -- 서버 소식
@@ -649,6 +757,17 @@ function handlers.act(data: any)
 	end
 	Anim.play(m, data.pose, data.dur, { align = data.align })
 	local style = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
+	if style and data.slot ~= nil then
+		Fx.cast(style.id, data.slot, m, data.dur)
+		local mv = Config.move(style.id, data.slot)
+		for _, h in ipairs(mv and mv.hits or {}) do
+			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
+				if m.Parent then
+					Fx.swing(style.id, m, (h.kb or 0) >= 20)
+				end
+			end)
+		end
+	end
 	local color = style and style.color or (data.unblockable and Color3.fromRGB(255, 60, 40) or Color3.fromRGB(235, 235, 245))
 	Fx.limbTrails(m, data.pose, data.dur, color, style and style.color2 or Color3.new(1, 1, 1))
 	local pos = modelPos(m)
@@ -765,6 +884,10 @@ function handlers.hit(data: any)
 		Fx.ring(pos, Color3.fromRGB(200, 240, 255), 1, 10, 0.3, dir)
 		Fx.sound("deflect", 0.8, 1.2 + math.random() * 0.2)
 		Fx.text(pos + Vector3.new(0, 4, 0), data.counter and "流 되받아치기!" or "流 흘리기!", Color3.fromRGB(170, 230, 255), 36)
+		if t and t == myChar() then
+			deflectAt = os.clock()
+			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
+		end
 		if t then
 			Anim.play(t, "deflect", 0.35)
 		end
@@ -848,11 +971,12 @@ function handlers.proj(data: any)
 	Fx.projectile(data)
 end
 
-function handlers.dash(m: Model)
+function handlers.dash(m: Model, kind: any)
 	if m == myChar() then
 		return
 	end
-	Anim.play(m, "dash", 0.28)
+	local pose = kind == "back" and "backflip" or (kind == "right" and "side_roll_r" or (kind == "left" and "side_roll_l" or "dash"))
+	Anim.play(m, pose, kind == "front" and 0.28 or 0.4)
 	local s = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 	Fx.afterimage(m, s and s.color or Color3.new(1, 1, 1), 0.3)
 end

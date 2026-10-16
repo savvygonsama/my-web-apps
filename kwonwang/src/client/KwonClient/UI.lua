@@ -272,7 +272,9 @@ function UI.enemyTag(model: Model)
 	local w = isBoss and 300 or 230
 	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 58), StudsOffset = Vector3.new(0, 2.8, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	local label = model:GetAttribute("Label")
-	local name = text({ Size = UDim2.new(1, 0, 0, 26), Text = (isBoss and "👹 " or "⚔ ") .. (type(label) == "string" and label or "적"), TextSize = isBoss and 23 or 20, Font = Enum.Font.GothamBlack, TextColor3 = isBoss and C.gold or Color3.fromRGB(255, 200, 190), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.1, Parent = bb })
+	local lv = model:GetAttribute("Level")
+	local lvText = type(lv) == "number" and string.format("Lv.%d ", lv) or ""
+	local name = text({ Size = UDim2.new(1, 0, 0, 26), Text = (isBoss and "👹 " or "⚔ ") .. lvText .. (type(label) == "string" and label or "적"), TextSize = isBoss and 23 or 20, Font = Enum.Font.GothamBlack, TextColor3 = isBoss and C.gold or (type(lv) == "number" and lv >= 7 and Color3.fromRGB(255, 110, 90) or Color3.fromRGB(255, 200, 190)), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.1, Parent = bb })
 	local _ = name
 	local back = new("Frame", { Position = UDim2.new(0, 0, 0, 29), Size = UDim2.new(1, 0, 0, 12), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bb }, { corner(4), stroke(Color3.fromRGB(0, 0, 0), 1) })
 	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = back }, { corner(4) })
@@ -567,7 +569,12 @@ local function buildHelp()
 			"• 클릭: 연타 (네 번까지 이어진다) · 우클릭: 강한 한 방 (천룡장은 누르고 있다 놓기)",
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
-			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도",
+			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
+			"",
+			"<b>몸놀림</b>",
+			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
+			"• 흘리기 바로 뒤 클릭: <b>반격</b> (크게 아프고 균형을 많이 깎는다)",
+			"• 뒤로 대시하면 공중제비, 옆으로 대시하면 구르기",
 			"",
 			"<b>합을 겨루는 법</b>",
 			"• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b> — 무릎이 꺾여 큰 피해를 받는다",
@@ -590,7 +597,10 @@ local function buildHelp()
 			"<b>강호</b>",
 			"• 청운 마을 (안전): 사부 안내판, 만물상, 비무대, 수련터",
 			"• 남쪽 청운 들판: 무뢰배 (처음 싸워 보기 좋다)",
-			"• 서쪽 대나무 숲: 산적 도객, 창병 · 북쪽 흑호채: 곤봉 산적, 두목 흑호 · 동쪽 비류 폭포 계곡: 쌍도 자객, 우두머리 혈랑",
+			"• 적은 마을에서 멀수록 세다 (Lv). 아주 먼 곳엔 철갑 무사·흑영 자객과 두목이 있다",
+			"• 먼 북쪽 흑호채: 두목 흑호 · 먼 남동쪽 혈월곡 (핏빛 달 아래): 우두머리 혈랑",
+			"• 서쪽 대나무 숲: 산적 도객, 창병 · 동쪽 비류 폭포 계곡: 산적, 쌍도 자객",
+			"• 볼거리: 거신상 · 하늘 고리 · 옛 투기장 · 수정 들판 · 천년 고목",
 			"• ⚔ 비무대: 올라선 사람끼리 1대1로 겨룬다",
 		}, "\n"),
 	})
@@ -603,7 +613,7 @@ local function buildTest()
 		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "🥋 숙련 최대", "testMastery" },
 		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
 		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
-		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" },
+		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
 		{ "🌀 다음 사부에게", "testTp" }, { "↺ 처음으로", "testReset" },
 	}) do
 		button({ Text = item[1], TextSize = 17 }, function()
@@ -861,6 +871,11 @@ local function buildMap()
 				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
 			end
 		end
+	end
+	-- 큰 볼거리
+	for _, lm in ipairs(Config.Landmarks) do
+		label(lm.at, lm.icon, 16, Color3.new(1, 1, 1), 8)
+		label(lm.at + Vector3.new(0, 0, 70), lm.name, 12, Color3.fromRGB(230, 225, 210), 8, true)
 	end
 	-- 적 점 (가까운 것만)
 	for i = 1, 50 do

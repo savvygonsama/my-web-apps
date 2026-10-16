@@ -31,6 +31,7 @@ type Rec = {
 	npc: boolean,
 	guardW: number,
 	stanceW: number,
+	sprintW: number,
 	lastT: number,
 	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
 }
@@ -180,6 +181,7 @@ function Anim.watch(model: Model)
 		npc = model:GetAttribute("NPC") == true,
 		guardW = 0,
 		stanceW = 0,
+		sprintW = 0,
 		lastT = os.clock(),
 		written = {},
 	}
@@ -351,6 +353,10 @@ local function step(dt: number)
 		local legsJ = stance and (Poses.stanceLegs[stance] or Poses.stanceLegs.default)
 		local blockJ = filled("block", stance)
 		local blockPose = blockJ and blockJ[1].j
+		-- 달리기: 윗몸을 숙이고 팔을 뒤로 (기술·막기 중엔 빠진다)
+		local sprintTarget = (model:GetAttribute("Sprint") == true and moving and not actPose and not guarding and not dead) and 1 or 0
+		rec.sprintW += (sprintTarget - rec.sprintW) * math.min(1, dt * 10)
+		local sprintJ = Poses.anims.sprint_upper and Poses.anims.sprint_upper[1].j
 
 		-- 4) 적은 기본 걷기 동작이 없어서 직접 걷는다
 		if rec.npc then
@@ -398,6 +404,9 @@ local function step(dt: number)
 				elseif legsJ and legsJ[name] and not moving and not airborne then
 					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9)
 				end
+			end
+			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
+				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))
 			end
 			if rec.guardW > 0.01 and blockPose and (Poses.UPPER[name] or (name == "R" and not moving)) then
 				out = out:Lerp(toCF(name, blockPose[name]), rec.guardW)

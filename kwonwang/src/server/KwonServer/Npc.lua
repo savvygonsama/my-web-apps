@@ -268,7 +268,19 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 			root:SetNetworkOwner(nil)
 		end)
 	end
-	local f = Combat.register(model, { npc = def, name = def.name, hp = def.hp, postureMax = def.posture, walk = def.speed, style = "" })
+	-- 마을에서 멀수록 단계가 높다: 체력·균형·피해·보상이 함께 오른다
+	local lv = Config.enemyLevel(at)
+	model:SetAttribute("Level", lv)
+	local f = Combat.register(model, {
+		npc = def,
+		name = def.name,
+		hp = math.floor(def.hp * (1 + 0.18 * (lv - 1))),
+		postureMax = math.floor(def.posture * (1 + 0.08 * (lv - 1))),
+		walk = def.speed,
+		style = "",
+		dmgMult = 1 + 0.1 * (lv - 1),
+	})
+	;(f :: any).rewardMult = 1 + 0.25 * (lv - 1)
 	local e: Enemy = {
 		f = f,
 		def = def,
