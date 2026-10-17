@@ -1056,6 +1056,20 @@ function handlers.simma(m: Model)
 	UI.banner("👁 심마 대련", "마음속의 마귀를 꺾어라", Color3.fromRGB(200, 90, 255))
 	shake(0.8)
 end
+-- 사부의 시험: 사부의 분신이 나타난다
+function handlers.trial(data: any)
+	local m = data.m
+	local s = Config.STYLE_BY_ID[data.style]
+	local color = s and s.color or Color3.fromRGB(255, 220, 120)
+	local r = m and rootOf(m)
+	if r then
+		Fx.text(r.Position + Vector3.new(0, 6, 0), "⚔ 분신", color, 40, 1.5)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 3, 30, 0.8)
+		Fx.afterimage(m, color, 0.8)
+	end
+	UI.banner("⚔ " .. data.name .. "의 시험", "분신을 꺾어라 · 흘리고(F) 반격하라", color)
+	shake(0.8)
+end
 function handlers.simmaWin(data: any)
 	UI.banner("👁 심마를 꺾었다!", string.format("모든 능력치 +%d", data.gain or 0), Color3.fromRGB(255, 220, 120))
 	Fx.sound("ping", 0.9, 0.9)
@@ -1161,6 +1175,13 @@ function handlers.hit(data: any)
 			end
 		elseif data.heavy and t and t:GetAttribute("Poise") ~= true then
 			Anim.play(t, data.broken and "knockdown" or "hit_heavy", data.broken and 0.7 or 0.5)
+		end
+		if data.counter then
+			Fx.text(pos + Vector3.new(0, 5.5, 0), "카운터!", Color3.fromRGB(255, 140, 60), 38, 1)
+			if mine then
+				fovPunch(-5, 0.3)
+				UI.flash(Color3.fromRGB(255, 200, 140), 0.18)
+			end
 		end
 		if data.strike then
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
@@ -1406,10 +1427,64 @@ end
 function handlers.learned(data: any)
 	local s = Config.STYLE_BY_ID[data.style]
 	if s then
-		UI.banner(s.icon .. " " .. s.name .. " 입문!", data.first and "클릭으로 연타, F로 막고 흘려라 · 남쪽 들판에서 겨뤄 보자" or s.hanja, s.color)
+		if data.hidden then
+			-- 숨은 권법: 하늘이 갈라진다
+			UI.cinematic("🔓 " .. s.name, s.color, 2.6)
+			UI.banner("🔓 숨겨진 권법 " .. s.icon .. " " .. s.name, string.format("[%s] %s", s.grade, s.hanja), s.color)
+			local char = myChar()
+			if char then
+				Fx.ult(s.id, char, 1.8)
+			end
+			shake(1.4)
+			Fx.sound("ping", 1, 0.6)
+		else
+			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)
+		end
 		UI.closeWindow()
 		UI.setGuide(nil)
 	end
+end
+
+-- 이야기
+function handlers.dialog(data: any)
+	UI.dialog(data)
+	Fx.sound("ping", 0.4, 1.2)
+end
+
+function handlers.storyDone(data: any)
+	local parts = {}
+	if data.coins and data.coins > 0 then
+		table.insert(parts, "💰 +" .. Config.formatNumber(data.coins))
+	end
+	if data.stats and data.stats > 0 then
+		table.insert(parts, string.format("모든 능력치 +%d", data.stats))
+	end
+	UI.banner("📜 " .. data.title .. " 완료", table.concat(parts, "  ") .. (data.next and ("  ·  다음: " .. data.next) or ""), Color3.fromRGB(255, 200, 110))
+	Fx.sound("ping", 0.8, 1)
+end
+
+function handlers.storyProg(data: any)
+	if state then
+		state.prog = data.prog
+		UI.refreshWorld(state)
+	end
+end
+
+function handlers.found(data: any)
+	local s = Config.STYLE_BY_ID[data.style]
+	UI.banner("🏯 사부를 찾았다: " .. data.master, (s and (s.icon .. " " .. s.name .. "의 주인 · ") or "") .. data.region .. " · 하늘로 빛기둥이 솟았다", s and s.color or nil)
+	Fx.sound("ping", 0.7, 0.9)
+end
+
+function handlers.fragment(data: any)
+	UI.banner(string.format("📖 비급 조각 %d / %d", data.n, data.total), data.n >= data.total and "조각이 하나로 모였다..." or "옛 고수의 글씨가 희미하게 빛난다", Color3.fromRGB(255, 230, 160))
+	Fx.sound("ping", 0.8, 1.1)
+end
+
+function handlers.trialWin(data: any)
+	local s = Config.STYLE_BY_ID[data.style]
+	UI.cinematic("⚔ 시험 통과", s and s.color or Color3.fromRGB(255, 220, 120), 1.6)
+	UI.banner("⚔ " .. data.master .. "의 시험 통과!", "사부 곁에서 T를 눌러 " .. (s and s.name or "") .. "을(를) 배워라", s and s.color or nil)
 end
 
 function handlers.mastery(data: any)
@@ -1512,7 +1587,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	local style = myStyle()
 	if not style then
-		UI.styleLine("🥋 권법 창에서 첫 권법을 고르세요 (공짜)", Color3.fromRGB(230, 220, 200), "")
+		UI.styleLine("🥋 권법이 없다", Color3.fromRGB(230, 220, 200), "")
 		return
 	end
 	local now = os.clock()
@@ -1556,6 +1631,18 @@ RunService.RenderStepped:Connect(function()
 		stacks ..= "  (흐트러짐)"
 	end
 	UI.styleLine((tierNow > 0 and (Config.AWAKEN[tierNow].mark .. " ") or "") .. style.icon .. " " .. style.name, style.color, stacks)
+end)
+
+-- 몸동작 점검: 내 몸의 관절을 몇 개 붙잡았는지 (못 붙잡으면 동작이 안 보인다)
+task.delay(6, function()
+	local char = player.Character
+	if char then
+		local n = Anim.jointCount(char)
+		print(string.format("[권왕] 몸동작 관절 %d / 11개 연결", n))
+		if n < 8 then
+			UI.toast(string.format("⚠ 몸동작 관절을 %d개만 찾았어요. 동작이 제대로 안 보일 수 있어요", n))
+		end
+	end
 end)
 
 Request:FireServer("hello")

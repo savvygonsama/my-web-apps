@@ -87,6 +87,21 @@ function World.setupLighting()
 	cc.Contrast = 0.1
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
+	-- 낮과 밤: 한 바퀴 16분. 밤에도 길이 보이게 바깥 빛을 조금 남긴다
+	task.spawn(function()
+		local DAY = 16 * 60
+		local t0 = os.clock() - (16.2 - 6) / 24 * DAY
+		while true do
+			local h = (6 + (os.clock() - t0) / DAY * 24) % 24
+			Lighting.ClockTime = h
+			local night = (h < 6.5 or h > 18.5) and 1 or 0
+			local dusk = math.clamp(1 - math.abs(h - 18.5) / 1.5, 0, 1) + math.clamp(1 - math.abs(h - 6.5) / 1.5, 0, 1)
+			local k = math.max(night, dusk * 0.6)
+			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(95, 105, 150), k)
+			Lighting.Brightness = 2.3 - k * 0.9
+			task.wait(1)
+		end
+	end)
 end
 
 ------------------------------------------------------------------------
@@ -401,11 +416,13 @@ local function ground()
 	end
 	roads()
 	-- 세상 끝 (보이지 않는 벽)
-	-- (한 조각이 2048을 넘지 않게 두 토막)
+	-- (한 조각이 2048을 넘지 않게 여러 토막)
+	local pieces = math.ceil(W * 2 / 1600)
+	local seg = W * 2 / pieces
 	for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-		for _, half in ipairs({ -1, 1 }) do
-			local along = half * W / 2
-			local size = d[1] ~= 0 and Vector3.new(40, 400, W) or Vector3.new(W, 400, 40)
+		for k = 0, pieces - 1 do
+			local along = -W + seg * (k + 0.5)
+			local size = d[1] ~= 0 and Vector3.new(40, 400, seg) or Vector3.new(seg, 400, 40)
 			local pos = d[1] ~= 0 and Vector3.new(d[1] * (W - 20), 200, along) or Vector3.new(along, 200, d[2] * (W - 20))
 			part({ Name = "WorldWall", Size = size, Position = pos, Transparency = 1, Parent = folder })
 		end
@@ -577,14 +594,15 @@ local function village(out: any)
 	end
 	part({ Name = "BoardRoof", Size = Vector3.new(40, 1, 5), Position = boardAt + Vector3.new(0, 16.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
 	local mboard = part({ Name = "MasterBoard", Size = Vector3.new(32, 13, 0.6), Position = boardAt + Vector3.new(0, 9, 0), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	local lines: { { any } } = { { "일곱 사부를 찾아가라", Color3.fromRGB(255, 215, 120), 0.16 } }
+	-- 사부의 자리는 알려 주지 않는다. 떠도는 소문만
+	local lines: { { any } } = { { "강호에 떠도는 소문", Color3.fromRGB(255, 215, 120), 0.16 } }
 	for _, style in ipairs(Config.Styles) do
 		local m = Config.MASTERS[style.id]
 		if m then
-			table.insert(lines, { string.format("%s %s — %s · %s", style.icon, style.name, m.name, m.region), style.color, 0.11 })
+			table.insert(lines, { "· " .. m.rumor, Color3.fromRGB(235, 225, 205), 0.11 })
 		end
 	end
-	table.insert(lines, { "지도: M  ·  권법 창에서 '길 안내'", Color3.fromRGB(230, 220, 200), 0.1 })
+	table.insert(lines, { "찾아낸 사부만 지도에 나온다", Color3.fromRGB(200, 190, 170), 0.1 })
 	sign(mboard, Enum.NormalId.Front, lines)
 	sign(mboard, Enum.NormalId.Back, lines)
 
@@ -597,6 +615,10 @@ local function village(out: any)
 	local shopSign = part({ Name = "ShopSign", Size = Vector3.new(12, 3, 0.4), Position = Vector3.new(-75, 7, 21.2), Color = Color3.fromRGB(30, 20, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
+	-- 객잔: 쉬면 수련 기력이 가득 찬다
+	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
+	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
+	out.inn = prompt(innDesk, string.format("쉬기 (💰 %d)", Config.STAMINA.innCost), "객잔 · 기력 채우기", "Inn")
 end
 
 ------------------------------------------------------------------------
@@ -1086,10 +1108,7 @@ local function masterSites()
 			if not ok2 then
 				warn("[권왕] 사부 자리 문 오류:", r.id, err2)
 			end
-			-- 멀리서도 보이는 빛기둥 (사부 머리 위 하늘로)
-			local at = r.masterAt
-			local beam = part({ Name = "MasterBeacon", Size = Vector3.new(2.4, 260, 2.4), Position = at + Vector3.new(0, 24 + 130, 0), Color = style.color, Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, CastShadow = false, Parent = f })
-			local _ = beam
+			-- (빛기둥은 사부를 찾은 사람의 화면에만 그린다)
 		end
 	end
 end
@@ -1321,6 +1340,330 @@ local function landmarks()
 end
 
 ------------------------------------------------------------------------
+-- 바깥 다섯 땅 (설산, 늪, 황야, 해안, 혈교 본산)
+------------------------------------------------------------------------
+local function regionById(id: string): any
+	for _, r in ipairs(Config.Regions) do
+		if r.id == id then
+			return r
+		end
+	end
+	return nil
+end
+
+local function randIn(r: any, margin: number): Vector3
+	return r.center + Vector3.new(rng:NextNumber(-r.size.X / 2 + margin, r.size.X / 2 - margin), 0, rng:NextNumber(-r.size.Z / 2 + margin, r.size.Z / 2 - margin))
+end
+
+local function clearOf(p: Vector3, r: any): boolean
+	if nearRoad(p, 18) then
+		return false
+	end
+	for _, camp in ipairs(r.camps or {}) do
+		if (p - camp.at).Magnitude < 35 then
+			return false
+		end
+	end
+	if r.boss and (p - r.boss.at).Magnitude < 60 then
+		return false
+	end
+	return true
+end
+
+-- 눈 덮인 침엽수 (층층이 줄어드는 가지)
+local function pine(at: Vector3, s: number, parent: Instance, snowy: boolean)
+	part({ Name = "PineTrunk", Size = Vector3.new(1.4, 8, 1.4) * s, Position = at + Vector3.new(0, 4 * s, 0), Color = Color3.fromRGB(80, 55, 40), Material = Enum.Material.Wood, Parent = parent })
+	for i = 0, 3 do
+		local w = (9 - i * 2) * s
+		part({ Name = "PineLayer", Size = Vector3.new(w, 2.6 * s, w), CFrame = CFrame.new(at + Vector3.new(0, (5 + i * 2.6) * s, 0)) * CFrame.Angles(0, math.rad(i * 25), 0), Color = Color3.fromRGB(40, 85, 55), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
+		if snowy then
+			part({ Name = "PineSnow", Size = Vector3.new(w * 0.9, 0.5 * s, w * 0.9), CFrame = CFrame.new(at + Vector3.new(0, (6.4 + i * 2.6) * s, 0)) * CFrame.Angles(0, math.rad(i * 25), 0), Color = Color3.fromRGB(245, 248, 252), Material = Enum.Material.Snow, CanCollide = false, Parent = parent })
+		end
+	end
+end
+
+local function deadTree(at: Vector3, s: number, parent: Instance)
+	part({ Name = "DeadTrunk", Size = Vector3.new(1.2, 12, 1.2) * s, CFrame = CFrame.new(at + Vector3.new(0, 6 * s, 0)) * CFrame.Angles(rng:NextNumber(-0.15, 0.15), 0, rng:NextNumber(-0.15, 0.15)), Color = Color3.fromRGB(60, 55, 45), Material = Enum.Material.Wood, Parent = parent })
+	for k = 1, 3 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local from = at + Vector3.new(0, (6 + k * 2) * s, 0)
+		local to = from + Vector3.new(math.cos(a) * 5 * s, 2.5 * s, math.sin(a) * 5 * s)
+		part({ Name = "DeadBranch", Size = Vector3.new(0.5 * s, 0.5 * s, (to - from).Magnitude), CFrame = CFrame.lookAt((from + to) / 2, to), Color = Color3.fromRGB(60, 55, 45), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	end
+end
+
+local OUTER: { [string]: (r: any, f: Instance) -> () } = {}
+
+function OUTER.snow(r: any, f: Instance)
+	for _ = 1, 70 do
+		local p = randIn(r, 20)
+		if clearOf(p, r) then
+			pine(p, rng:NextNumber(1.2, 2.2), f, true)
+		end
+	end
+	for _ = 1, 22 do
+		local p = randIn(r, 20)
+		if clearOf(p, r) then
+			local h = rng:NextNumber(6, 18)
+			part({ Name = "IceSpike", Size = Vector3.new(h * 0.3, h, h * 0.3), CFrame = CFrame.new(p + Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.25, 0.25), rng:NextNumber(0, 6), rng:NextNumber(-0.25, 0.25)), Color = Color3.fromRGB(170, 220, 245), Material = Enum.Material.Glass, Transparency = 0.25, Parent = f })
+		end
+	end
+	disc("FrozenLake", Vector3.new(r.center.X + 300, 0.3, r.center.Z + 120), 70, 0.4, Color3.fromRGB(190, 225, 245), Enum.Material.Ice, f)
+	-- 빙마의 얼음 옥좌
+	local b = r.boss.at
+	disc("IceThrone", b + Vector3.new(0, 0.6, 0), 34, 1.2, Color3.fromRGB(200, 230, 250), Enum.Material.Ice, f)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local p = b + Vector3.new(math.cos(a) * 30, 0, math.sin(a) * 30)
+		part({ Name = "IcePillar", Size = Vector3.new(3, 18, 3), CFrame = CFrame.new(p + Vector3.new(0, 9, 0)) * CFrame.Angles(0, a, 0.1), Color = Color3.fromRGB(170, 215, 245), Material = Enum.Material.Glass, Transparency = 0.2, Parent = f })
+	end
+	crystal(b + Vector3.new(0, 26, 0), 5, Color3.fromRGB(160, 220, 255), f)
+end
+
+function OUTER.swamp(r: any, f: Instance)
+	for _ = 1, 26 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) then
+			disc("BogPool", p + Vector3.new(0, 0.35, 0), rng:NextNumber(10, 26), 0.3, Color3.fromRGB(45, 70, 50), Enum.Material.Glass, f, false).Transparency = 0.2
+		end
+	end
+	for _ = 1, 55 do
+		local p = randIn(r, 20)
+		if clearOf(p, r) then
+			deadTree(p, rng:NextNumber(1, 1.8), f)
+		end
+	end
+	-- 자욱한 독안개
+	for _ = 1, 8 do
+		local fog = part({ Name = "SwampFog", Size = Vector3.new(120, 4, 120), Position = randIn(r, 60) + Vector3.new(0, 3, 0), Transparency = 1, CanCollide = false, Parent = f })
+		local e = Instance.new("ParticleEmitter")
+		e.Rate = 6
+		e.Color = ColorSequence.new(Color3.fromRGB(140, 180, 110))
+		e.Size = NumberSequence.new(14, 22)
+		e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.8), NumberSequenceKeypoint.new(1, 1) })
+		e.Lifetime = NumberRange.new(8, 12)
+		e.Speed = NumberRange.new(0.5, 1.5)
+		e.Parent = fog
+	end
+	-- 무너진 사당 (비급 조각이 있다)
+	local ruin = Vector3.new(320, 0, 1700)
+	part({ Name = "RuinBase", Size = Vector3.new(26, 1.2, 26), Position = ruin + Vector3.new(0, 0.6, 0), Color = Color3.fromRGB(90, 95, 80), Material = Enum.Material.Cobblestone, Parent = f })
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + 0.6
+		local h = rng:NextNumber(5, 12)
+		part({ Name = "RuinPillar", Size = Vector3.new(2, h, 2), Position = ruin + Vector3.new(math.cos(a) * 10, h / 2, math.sin(a) * 10), Color = Color3.fromRGB(100, 105, 90), Material = Enum.Material.Cobblestone, Parent = f })
+	end
+end
+
+function OUTER.badlands(r: any, f: Instance)
+	for _ = 1, 18 do
+		local p = randIn(r, 50)
+		if clearOf(p, r) then
+			local h = rng:NextNumber(25, 70)
+			local w = rng:NextNumber(30, 60)
+			part({ Name = "Mesa", Size = Vector3.new(w, h, w * rng:NextNumber(0.7, 1.3)), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, rng:NextNumber(0, 3), 0), Color = Color3.fromRGB(175, 95, 60):Lerp(Color3.fromRGB(210, 140, 90), rng:NextNumber()), Material = Enum.Material.Sand, Parent = f })
+			part({ Name = "MesaTop", Size = Vector3.new(w * 1.05, 3, w * 1.05), Position = p + Vector3.new(0, h + 1.5, 0), Color = Color3.fromRGB(150, 80, 50), Material = Enum.Material.Slate, Parent = f })
+		end
+	end
+	for _ = 1, 40 do
+		local p = randIn(r, 20)
+		if clearOf(p, r) then
+			local h = rng:NextNumber(4, 12)
+			part({ Name = "RockPillar", Size = Vector3.new(h * 0.35, h, h * 0.35), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, rng:NextNumber(0, 3), rng:NextNumber(-0.15, 0.15)), Color = Color3.fromRGB(160, 90, 55), Material = Enum.Material.Rock, Parent = f })
+		end
+	end
+end
+
+function OUTER.coast(r: any, f: Instance)
+	-- 서쪽은 바다
+	local W = Config.WORLD_HALF
+	local seaX = r.center.X - r.size.X / 2 - 160
+	for k = -2, 2 do
+		part({ Name = "Sea", Size = Vector3.new(320, 1, 960), Position = Vector3.new(seaX, -0.4, k * 960), Color = Color3.fromRGB(40, 100, 150), Material = Enum.Material.Glass, Transparency = 0.15, CanCollide = false, Parent = f })
+	end
+	local _ = W
+	-- 바다 쪽 벼랑
+	for k = -12, 12 do
+		local h = rng:NextNumber(18, 40)
+		part({ Name = "SeaCliff", Size = Vector3.new(30, h, 52), CFrame = CFrame.new(r.center.X - r.size.X / 2 + 10, h / 2 - 8, k * 48) * CFrame.Angles(0, rng:NextNumber(-0.1, 0.1), 0), Color = Color3.fromRGB(120, 115, 105), Material = Enum.Material.Rock, Parent = f })
+	end
+	-- 난파선
+	local wreck = Vector3.new(-1880, 0, -60)
+	part({ Name = "WreckHull", Size = Vector3.new(14, 8, 50), CFrame = CFrame.new(wreck + Vector3.new(0, 3, 0)) * CFrame.Angles(0, 0.4, math.rad(18)), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.WoodPlanks, Parent = f })
+	part({ Name = "WreckMast", Size = Vector3.new(1.6, 30, 1.6), CFrame = CFrame.new(wreck + Vector3.new(2, 14, 4)) * CFrame.Angles(0.2, 0, 0.5), Color = Color3.fromRGB(80, 55, 35), Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "WreckSail", Size = Vector3.new(0.2, 14, 16), CFrame = CFrame.new(wreck + Vector3.new(6, 18, 4)) * CFrame.Angles(0.2, 0, 0.5), Color = Color3.fromRGB(200, 190, 160), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+	for _ = 1, 30 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) and p.X > r.center.X - r.size.X / 2 + 50 then
+			rock(p, rng:NextNumber(3, 9), f, Color3.fromRGB(140, 135, 120))
+		end
+	end
+end
+
+function OUTER.cult(r: any, f: Instance)
+	local c = r.center
+	local half = 260
+	-- 붉은 성벽과 정문
+	for _, side in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+		for _, seg in ipairs({ -1, 1 }) do
+			local len = half - 16
+			local along = seg * (16 + len / 2)
+			local pos = side[1] ~= 0 and Vector3.new(c.X + side[1] * half, 9, c.Z + along) or Vector3.new(c.X + along, 9, c.Z + side[2] * half)
+			local size = side[1] ~= 0 and Vector3.new(6, 18, len) or Vector3.new(len, 18, 6)
+			part({ Name = "CultWall", Size = size, Position = pos, Color = Color3.fromRGB(70, 25, 28), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "CultWallTrim", Size = size + Vector3.new(0.4, -16, 0.4), Position = pos + Vector3.new(0, 9.5, 0), Color = Color3.fromRGB(160, 30, 40), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = f })
+		end
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			spire(Vector3.new(c.X + sx * half, 0, c.Z + sz * half), 3, 7, Color3.fromRGB(255, 50, 60), f)
+		end
+	end
+	monumentGate(Vector3.new(c.X, 0, c.Z + half + 10), 0, f, "혈교 본산", Color3.fromRGB(230, 40, 50))
+	-- 혈마의 제단
+	local b = r.boss.at
+	disc("BloodAltar", b + Vector3.new(0, 1, 0), 38, 2, Color3.fromRGB(50, 20, 22), Enum.Material.Slate, f)
+	disc("BloodRune", b + Vector3.new(0, 2.05, 0), 28, 0.1, Color3.fromRGB(220, 30, 40), Enum.Material.Neon, f, false).Transparency = 0.4
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local p = b + Vector3.new(math.cos(a) * 34, 0, math.sin(a) * 34)
+		brazier(p, 1.6, f)
+		banner(p + Vector3.new(3, 0, 0), 16, Color3.fromRGB(140, 15, 25), f)
+	end
+	for _ = 1, 20 do
+		local p = randIn(r, 40)
+		if clearOf(p, r) then
+			local h = rng:NextNumber(5, 14)
+			part({ Name = "BloodCrystal", Size = Vector3.new(h * 0.3, h, h * 0.3), CFrame = CFrame.new(p + Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 6), rng:NextNumber(-0.3, 0.3)), Color = Color3.fromRGB(220, 40, 50), Material = Enum.Material.Neon, Transparency = 0.15, Parent = f })
+		end
+	end
+end
+
+local function outerLands()
+	for id, builder in pairs(OUTER) do
+		local r = regionById(id)
+		if r then
+			local f = Instance.new("Folder")
+			f.Name = "Land_" .. id
+			f.Parent = folder
+			local ok, err = pcall(builder, r, f)
+			if not ok then
+				warn("[권왕] 바깥 땅 오류:", id, err)
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 적의 진: 모닥불, 천막, 상자 (적이 뜬금없이 서 있지 않게)
+------------------------------------------------------------------------
+local function camps()
+	local f = Instance.new("Folder")
+	f.Name = "Camps"
+	f.Parent = folder
+	for _, r in ipairs(Config.Regions) do
+		for _, camp in ipairs(r.camps or {}) do
+			local c = camp.at
+			local fire = part({ Name = "Campfire", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = c + Vector3.new(0, 0.8, 0), Color = Color3.fromRGB(255, 140, 50), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			local flame = Instance.new("Fire")
+			flame.Size = 5
+			flame.Heat = 6
+			flame.Parent = fire
+			light(fire, Color3.fromRGB(255, 150, 70), 20, 1.5)
+			for k = 0, 5 do
+				local a = k / 6 * math.pi * 2
+				part({ Name = "FireStone", Size = Vector3.new(1.2, 0.8, 1.2), Position = c + Vector3.new(math.cos(a) * 2, 0.4, math.sin(a) * 2), Color = Color3.fromRGB(110, 105, 100), Material = Enum.Material.Slate, Parent = f })
+			end
+			for k = 0, 1 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local p = c + Vector3.new(math.cos(a), 0, math.sin(a)) * 14
+				if not nearRoad(p, 12) then
+					part({ Name = "CampTent", Size = Vector3.new(9, 6.5, 8), CFrame = CFrame.new(p + Vector3.new(0, 2.4, 0)) * CFrame.Angles(0, a, math.rad(45)), Color = Color3.fromRGB(130, 110, 85):Lerp(Color3.fromRGB(90, 60, 50), k * 0.5), Material = Enum.Material.Fabric, Parent = f })
+				end
+				local q = c + Vector3.new(math.cos(a + 1.5), 0, math.sin(a + 1.5)) * 8
+				part({ Name = "Crate", Size = Vector3.new(2.6, 2.6, 2.6), CFrame = CFrame.new(q + Vector3.new(0, 1.3, 0)) * CFrame.Angles(0, rng:NextNumber(0, 1.5), 0), Color = Color3.fromRGB(120, 85, 50), Material = Enum.Material.WoodPlanks, Parent = f })
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 비급 조각 (외진 곳에 숨은 빛나는 두루마리)
+------------------------------------------------------------------------
+local function fragments(out: any)
+	local f = Instance.new("Folder")
+	f.Name = "Fragments"
+	f.Parent = folder
+	out.fragments = {}
+	for i, frag in ipairs(Config.Fragments) do
+		local at = frag.at
+		local stand = part({ Name = "FragmentStand", Size = Vector3.new(2.4, 2, 2.4), Position = at + Vector3.new(0, 1, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+		local scroll = disc("FragmentScroll", at + Vector3.new(0, 2.6, 0), 0.5, 2.2, Color3.fromRGB(255, 225, 140), Enum.Material.Neon, f, false)
+		light(scroll, Color3.fromRGB(255, 220, 140), 14, 1.5)
+		local e = Instance.new("ParticleEmitter")
+		e.Rate = 6
+		e.Color = ColorSequence.new(Color3.fromRGB(255, 230, 150))
+		e.LightEmission = 1
+		e.Size = NumberSequence.new(0.3, 0)
+		e.Speed = NumberRange.new(1, 3)
+		e.Lifetime = NumberRange.new(1, 2)
+		e.Parent = scroll
+		table.insert(out.fragments, prompt(stand, "줍기", "비급 조각 " .. i, "Fragment"))
+	end
+end
+
+------------------------------------------------------------------------
+-- 땅의 높낮이 (로블록스 지형): 세상 끝을 두른 산맥과 들판의 언덕
+------------------------------------------------------------------------
+local function terrainHills()
+	local terrain = workspace:FindFirstChildOfClass("Terrain")
+	if not terrain then
+		return
+	end
+	local W = Config.WORLD_HALF
+	local function inRegion(p: Vector3, pad: number): boolean
+		for _, r in ipairs(Config.Regions) do
+			if not r.noGround and math.abs(p.X - r.center.X) < r.size.X / 2 + pad and math.abs(p.Z - r.center.Z) < r.size.Z / 2 + pad then
+				return true
+			end
+		end
+		for _, lm in ipairs(Config.Landmarks) do
+			if (p - lm.at).Magnitude < 120 then
+				return true
+			end
+		end
+		return false
+	end
+	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
+	for k = 0, 59 do
+		local a = k / 60 * math.pi * 2
+		local p = Vector3.new(math.cos(a) * (W - 60), 0, math.sin(a) * (W - 60))
+		if p.X > -W + 400 then
+			local rad = rng:NextNumber(140, 260)
+			local mat = p.Z < -W * 0.5 and Enum.Material.Snow or (p.X > W * 0.5 and Enum.Material.Sandstone or Enum.Material.Rock)
+			pcall(function()
+				terrain:FillBall(p - Vector3.new(0, rad * 0.35, 0), rad, mat)
+			end)
+		end
+	end
+	-- 들판의 완만한 언덕
+	local made = 0
+	for _ = 1, 160 do
+		if made >= 45 then
+			break
+		end
+		local p = Vector3.new(rng:NextNumber(-W + 300, W - 300), 0, rng:NextNumber(-W + 300, W - 300))
+		local rad = rng:NextNumber(40, 90)
+		if not inRegion(p, rad + 20) and not nearRoad(p, rad + 25) then
+			made += 1
+			pcall(function()
+				terrain:FillBall(p - Vector3.new(0, rad * 0.7, 0), rad, Enum.Material.Grass)
+			end)
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 지역 이름 표지
 ------------------------------------------------------------------------
 local function regionSigns()
@@ -1359,6 +1702,12 @@ function World.build(): any
 		{ "지역", regions },
 		{ "사부의 자리", masterSites },
 		{ "랜드마크", landmarks },
+		{ "바깥 땅", outerLands },
+		{ "적의 진", camps },
+		{ "비급 조각", function()
+			fragments(out)
+		end },
+		{ "지형", terrainHills },
 		{ "표지", regionSigns },
 	}) do
 		local ok, err = pcall(step[2] :: any)

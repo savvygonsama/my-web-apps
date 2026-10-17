@@ -85,8 +85,9 @@ Config.Realms = {
 	{ name = "천인합일", need = 100000, color = Color3.fromRGB(160, 220, 255) },
 	{ name = "무극", need = 150000, color = Color3.fromRGB(255, 150, 255) },
 }
+-- 경지 배율은 겹으로 쌓인다: 경지마다 ×1.22 (일류 ×1.5, 절정 ×2.2, 현경 ×4, 생사경 ×6, 무극 ×10.9)
 function Config.realmPower(idx: number): number
-	return 1 + 0.15 * (idx - 1)
+	return 1.22 ^ (idx - 1)
 end
 
 function Config.realmOf(total: number): (number, any)
@@ -340,6 +341,109 @@ Config.Styles = {
 		},
 	},
 }
+
+-- 처음 받는 기본 권법과, 숨겨진 권법 둘 (사부에게 배우지 않는다)
+table.insert(Config.Styles, 1, {
+	id = "samjae",
+	name = "삼재권",
+	hanja = "三才拳",
+	icon = "👊",
+	color = Color3.fromRGB(215, 200, 170),
+	color2 = Color3.fromRGB(255, 250, 235),
+	fx = "basic",
+	grade = "하급",
+	starter = true,
+	desc = "강호에 나서는 누구나 처음 배우는 기본 권법. 하늘·땅·사람 세 갈래의 바른 주먹. 화려하지 않지만 흐트러지지 않는다.",
+	gimmick = "기본: 별다른 장치는 없지만 막기와 흘리기가 안정적이다. 청운 장로에게 받는다",
+	deflect = 0.22,
+	stance = "stance_base",
+	combo = {
+		{ id = "sj1", name = "천권", pose = "jab_l", dur = 0.34, lunge = 2, hits = { hit(0.13, 5, 3.5, 5, 6, 0.3, 5) } },
+		{ id = "sj2", name = "지권", pose = "punch_r", dur = 0.36, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 7, 0.32, 6) } },
+		{ id = "sj3", name = "인권", pose = "hook_r", dur = 0.42, lunge = 1, hits = { hit(0.2, 5, 4, 7, 8, 0.35, 8) } },
+		{ id = "sj4", name = "삼재각", pose = "front_kick", dur = 0.5, lunge = 2, hits = { hit(0.22, 6, 4, 10, 14, 0.5, 26) } },
+	},
+	heavy = { id = "sjH", name = "정권 지르기", pose = "punch_r_heavy", dur = 0.6, lunge = 2, hits = { hit(0.28, 6, 4.5, 13, 22, 0.6, 35) } },
+	skills = {
+		E = { id = "sjE", name = "삼재보", desc = "한 걸음에 파고들며 주먹을 꽂는다", pose = "dash_punch", dur = 0.5, cd = 8, chi = 15, lunge = 12, hits = { hit(0.2, 6, 4, 11, 14, 0.45, 22) } },
+		R = { id = "sjR", name = "연환삼격", desc = "세 번 이어 치는 연환권", pose = "flurry", dur = 0.8, cd = 10, chi = 20, lunge = 2,
+			hits = { hit(0.2, 5, 4, 6, 6, 0.3, 3), hit(0.4, 5, 4, 6, 6, 0.3, 3), hit(0.65, 5, 4.5, 10, 14, 0.5, 24) } },
+		G = { id = "sjG", name = "삼재합일", desc = "하늘·땅·사람의 기운을 한 주먹에 모아 땅을 친다", pose = "ult_slam", dur = 1.4, cd = 30, chi = 100, armor = true,
+			hits = { hit(0.7, 0, 10, 26, 40, 0.9, 40, 14, true) } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "mugeuk",
+	name = "무극신권",
+	hanja = "無極神拳",
+	icon = "🌌",
+	color = Color3.fromRGB(190, 170, 255),
+	color2 = Color3.fromRGB(255, 255, 255),
+	fx = "void",
+	grade = "전설",
+	hidden = true,
+	unlockHint = "강호 곳곳에 흩어진 비급 조각 다섯을 모두 모은 자만이 익힌다",
+	desc = "끝도 시작도 없는 권. 모든 권법이 하나로 돌아가는 자리. 손이 닿기도 전에 상대의 균형이 무너진다.",
+	gimmick = "무극: 모든 타격이 상대 균형을 두 배로 깎고, 흘리기 판정이 넓다",
+	deflect = 0.32,
+	postureMult = 2,
+	stance = "stance_taeheo",
+	combo = {
+		{ id = "mg1", name = "허공수", pose = "palm_r", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
+		{ id = "mg2", name = "역류수", pose = "palm_l", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
+		{ id = "mg3", name = "환원장", pose = "circle_palm", dur = 0.4, lunge = 2, hits = { hit(0.18, 6, 5, 13, 16, 0.4, 12) } },
+		{ id = "mg4", name = "귀일장", pose = "double_palm", dur = 0.5, lunge = 3, hits = { hit(0.22, 7, 5, 20, 28, 0.6, 36) } },
+	},
+	heavy = { id = "mgH", name = "무극장", pose = "push_palm", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 5.5, 28, 50, 0.8, 50) } },
+	skills = {
+		E = { id = "mgE", name = "허공격", desc = "빈 허공을 쳐서 멀리 있는 적까지 꿰뚫는다", pose = "double_palm", dur = 0.55, cd = 6, chi = 15,
+			proj = { speed = 120, life = 0.5, radius = 5, dmg = 22, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
+		R = { id = "mgR", name = "무극회선", desc = "주변의 모든 것을 끌어당겨 한 점에서 터뜨린다", pose = "whirl", dur = 0.9, cd = 9, chi = 25, pull = 14,
+			hits = { hit(0.3, 0, 12, 10, 20, 0.5, -10, nil, true), hit(0.7, 0, 12, 24, 40, 0.8, 40, 20, true) } },
+		G = { id = "mgG", name = "무극귀일", desc = "하늘과 땅이 한 점으로 돌아간다. 둘레의 모든 적을 지운다", pose = "ult_raise", dur = 1.8, cd = 28, chi = 100, armor = true,
+			hits = { hit(0.6, 0, 18, 30, 60, 1.0, 20, 20, true), hit(1.3, 0, 20, 60, 90, 1.2, 60, 30, true) } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "hyeolma",
+	name = "혈마신수",
+	hanja = "血魔神手",
+	icon = "🩸",
+	color = Color3.fromRGB(210, 30, 45),
+	color2 = Color3.fromRGB(255, 130, 130),
+	fx = "blood",
+	grade = "절세",
+	hidden = true,
+	unlockHint = "혈교의 주인 혈마를 쓰러뜨린 자에게 그 손이 넘어간다",
+	desc = "혈교의 주인이 쓰던 마공. 손톱 끝에 피의 기운이 맺힌다. 베어 낸 만큼 내 몸이 살아난다.",
+	gimmick = "흡혈: 준 피해의 8%만큼 체력을 되찾는다",
+	deflect = 0.2,
+	lifesteal = 0.08,
+	stance = "stance_cheonryong",
+	combo = {
+		{ id = "hm1", name = "혈조", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 4, 10, 9, 0.3, 6) } },
+		{ id = "hm2", name = "역조", pose = "spin_backfist", dur = 0.34, lunge = 3, hits = { hit(0.15, 5, 4, 10, 9, 0.3, 6) } },
+		{ id = "hm3", name = "혈영수", pose = "hook_r", dur = 0.4, lunge = 2, hits = { hit(0.18, 5, 4.5, 12, 12, 0.35, 10) } },
+		{ id = "hm4", name = "혈마조", pose = "dash_strike", dur = 0.5, lunge = 6, hits = { hit(0.2, 6, 4.5, 20, 22, 0.55, 30) } },
+	},
+	heavy = { id = "hmH", name = "혈수천강", pose = "hammer_down", dur = 0.65, lunge = 3, hits = { hit(0.3, 6, 6, 28, 34, 0.8, 40, 10, true) } },
+	skills = {
+		E = { id = "hmE", name = "혈영보", desc = "피의 그림자가 되어 적을 꿰뚫고 지나간다 (무적)", pose = "dash_strike", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
+			hits = { hit(0.15, 6, 4, 18, 18, 0.5, 10) } },
+		R = { id = "hmR", name = "혈해", desc = "둘레에 피의 바다를 일으킨다", pose = "roar", dur = 0.9, cd = 10, chi = 25,
+			hits = { hit(0.3, 0, 13, 20, 30, 0.7, 30, nil, true) } },
+		G = { id = "hmG", name = "혈마강림", desc = "혈마가 강림해 모든 것을 베어 낸다", pose = "ult_spin", dur = 1.8, cd = 30, chi = 100, armor = true,
+			hits = { hit(0.4, 0, 12, 18, 20, 0.4, 6, nil, true), hit(0.8, 0, 12, 18, 20, 0.4, 6, nil, true), hit(1.2, 0, 12, 18, 20, 0.4, 6, nil, true), hit(1.6, 0, 14, 50, 60, 1.0, 50, nil, true) } },
+	},
+})
+-- 권법 등급: 높을수록 같은 숙련에서 더 세다
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["절세"] = 1.35, ["전설"] = 1.6 }
+Config.GRADE_COLOR = { ["하급"] = Color3.fromRGB(190, 190, 190), ["중급"] = Color3.fromRGB(140, 220, 140), ["상급"] = Color3.fromRGB(120, 190, 255), ["절세"] = Color3.fromRGB(220, 130, 255), ["전설"] = Color3.fromRGB(255, 200, 80) }
+for _, st in ipairs(Config.Styles) do
+	if not st.grade then
+		st.grade = ({ taeheo = "상급", geumgang = "상급", cheonryong = "상급", maehwa = "중급", muyeong = "중급", byeokryeok = "중급", chwi = "중급" })[st.id] or "중급"
+	end
+end
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -371,6 +475,9 @@ local FINISHERS = {
 	muyeong = { name = "귀영회선각", pose = "back_spin_kick" },
 	byeokryeok = { name = "벽력천추", pose = "uppercut" },
 	chwi = { name = "취선번천", pose = "drunk_flop" },
+	samjae = { name = "삼재연환각", pose = "front_kick" },
+	mugeuk = { name = "무극승천장", pose = "uppercut" },
+	hyeolma = { name = "혈마승천조", pose = "uppercut" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -548,6 +655,31 @@ Config.Bosses = {
 	},
 }
 
+-- 먼 땅의 적: 기존 적을 바탕으로 이름·빛깔·세기만 바꾼다
+local function variant(base: any, over: { [string]: any }): any
+	local v = table.clone(base)
+	for k, x in pairs(over) do
+		v[k] = x
+	end
+	return v
+end
+local E = Config.Enemies
+E.ironguard.elite = true
+E.shadowblade.elite = true
+E.simma.elite = true
+E.iceguard = variant(E.ironguard, { name = "빙궁 무사", shirt = Color3.fromRGB(170, 210, 235), pants = Color3.fromRGB(90, 120, 150), hp = 260 })
+E.snowblade = variant(E.assassin, { name = "설원 자객", shirt = Color3.fromRGB(230, 235, 245), pants = Color3.fromRGB(150, 160, 175), hp = 95 })
+E.swampfang = variant(E.shadowblade, { name = "독수 자객", shirt = Color3.fromRGB(60, 90, 50), pants = Color3.fromRGB(35, 50, 30) })
+E.bogbrute = variant(E.brute, { name = "늪 거한", shirt = Color3.fromRGB(80, 95, 60), pants = Color3.fromRGB(50, 55, 40), hp = 200, scale = 1.4 })
+E.marauder = variant(E.bandit, { name = "마적", shirt = Color3.fromRGB(150, 90, 50), pants = Color3.fromRGB(90, 60, 40), hp = 130, speed = 17, elite = true })
+E.lancer = variant(E.spearman, { name = "황야 창수", shirt = Color3.fromRGB(170, 120, 70), pants = Color3.fromRGB(100, 70, 45), hp = 140 })
+E.pirate = variant(E.bandit, { name = "해적 도객", shirt = Color3.fromRGB(50, 70, 110), pants = Color3.fromRGB(40, 40, 50), hp = 120 })
+E.cultist = variant(E.bandit, { name = "혈교도", shirt = Color3.fromRGB(110, 15, 25), pants = Color3.fromRGB(30, 10, 12), hp = 150, speed = 17 })
+E.cultelder = variant(E.shadowblade, { name = "혈교 장로", shirt = Color3.fromRGB(60, 10, 15), pants = Color3.fromRGB(20, 5, 8), hp = 260, scale = 1.15 })
+local B = Config.Bosses
+B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
+B.hyeolma = variant(B.hyeolrang, { name = "혈마 · 혈교의 주인", shirt = Color3.fromRGB(150, 0, 20), pants = Color3.fromRGB(20, 0, 5), hp = 2400, posture = 420, scale = 1.5, speed = 23, coins = 3000, xp = 800, respawn = 300 })
+
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
 -- 적은 근처에 사람이 있을 때만 움직인다
@@ -580,29 +712,76 @@ Config.Regions = {
 	{ id = "lair", name = "혈월곡", center = Vector3.new(1000, 0, 1000), size = Vector3.new(380, 0, 380), ground = Color3.fromRGB(85, 45, 45), material = Enum.Material.Slate,
 		camps = { { enemy = "shadowblade", count = 3, at = Vector3.new(930, 0, 930) }, { enemy = "ironguard", count = 2, at = Vector3.new(1060, 0, 920) } },
 		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
+	-- 넓어진 강호: 먼 바깥의 다섯 땅 (멀수록 세다)
+	{ id = "snow", name = "북방 설산", center = Vector3.new(0, 0, -1720), size = Vector3.new(1100, 0, 700), ground = Color3.fromRGB(235, 240, 248), material = Enum.Material.Snow, ambient = "snow",
+		camps = { { enemy = "snowblade", count = 3, at = Vector3.new(-250, 0, -1500) }, { enemy = "iceguard", count = 2, at = Vector3.new(250, 0, -1600) }, { enemy = "snowblade", count = 2, at = Vector3.new(-100, 0, -1800) }, { enemy = "iceguard", count = 2, at = Vector3.new(150, 0, -1880) } },
+		boss = { id = "bingma", at = Vector3.new(0, 0, -1980) } },
+	{ id = "swamp", name = "독안개 늪", center = Vector3.new(0, 0, 1520), size = Vector3.new(1000, 0, 640), ground = Color3.fromRGB(70, 85, 55), material = Enum.Material.Mud, ambient = "swamp",
+		camps = { { enemy = "swampfang", count = 3, at = Vector3.new(-250, 0, 1400) }, { enemy = "bogbrute", count = 2, at = Vector3.new(250, 0, 1500) }, { enemy = "swampfang", count = 2, at = Vector3.new(0, 0, 1700) } } },
+	{ id = "badlands", name = "붉은 황야", center = Vector3.new(1720, 0, 120), size = Vector3.new(700, 0, 1100), ground = Color3.fromRGB(190, 120, 75), material = Enum.Material.Sand, ambient = "badlands",
+		camps = { { enemy = "marauder", count = 3, at = Vector3.new(1600, 0, -150) }, { enemy = "lancer", count = 3, at = Vector3.new(1800, 0, 250) }, { enemy = "marauder", count = 2, at = Vector3.new(1650, 0, 500) } } },
+	{ id = "coast", name = "서해 절벽", center = Vector3.new(-1720, 0, 0), size = Vector3.new(700, 0, 1200), ground = Color3.fromRGB(160, 155, 120), material = Enum.Material.Sand, ambient = "coast",
+		camps = { { enemy = "pirate", count = 4, at = Vector3.new(-1800, 0, -250) }, { enemy = "pirate", count = 3, at = Vector3.new(-1650, 0, 300) }, { enemy = "lancer", count = 2, at = Vector3.new(-1850, 0, 450) } } },
+	{ id = "cult", name = "혈교 본산", center = Vector3.new(1750, 0, -1750), size = Vector3.new(700, 0, 700), ground = Color3.fromRGB(60, 30, 32), material = Enum.Material.Slate, ambient = "cult",
+		camps = { { enemy = "cultist", count = 4, at = Vector3.new(1600, 0, -1550) }, { enemy = "cultist", count = 3, at = Vector3.new(1850, 0, -1600) }, { enemy = "cultelder", count = 2, at = Vector3.new(1700, 0, -1800) }, { enemy = "cultelder", count = 2, at = Vector3.new(1850, 0, -1850) } },
+		boss = { id = "hyeolma", at = Vector3.new(1800, 0, -1950) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", rumor = "남서쪽 호수 한가운데 정자에 물처럼 앉은 노인이 있다더라", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", rumor = "북동쪽 돌 기단 위 절에서 종소리가 끊이지 않는다더라", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", rumor = "북서쪽 매화 숲 깊은 곳에 꽃잎과 함께 춤추는 여인이 있다더라", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", rumor = "동쪽 끝 바위 봉우리, 금빛 용 기둥 아래에 노인이 산다더라", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", rumor = "서쪽 끝 검은 골짜기에 발소리 없는 그림자가 산다더라", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", rumor = "남동쪽 쇠기둥 고원에 번개가 떨어지지 않는 날이 없다더라", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", rumor = "남쪽 주막에 늘 취해 있는 노인이 있는데, 넘어지는 걸 본 사람이 없다더라", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
 for _, r in ipairs(Config.Regions) do
 	if r.master then
-		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id, quote = r.quote }
+		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id, quote = r.quote, rumor = r.rumor }
 	end
 end
+-- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
+Config.Fragments = {
+	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
+	{ at = Vector3.new(-1050, 1, -550), hint = "수정 들판 한가운데" },
+	{ at = Vector3.new(630, 1, 32), hint = "비류 폭포 뒤" },
+	{ at = Vector3.new(-380, 1, -1950), hint = "북방 설산의 얼음 벼랑" },
+	{ at = Vector3.new(320, 1, 1700), hint = "독안개 늪의 무너진 사당" },
+}
+
+-- 수련 기력: 수련할 때마다 줄고, 시간이 지나거나 객잔에서 쉬면 찬다
+Config.STAMINA = { max = 100, cost = 2, hardCost = 4, regenEvery = 15, innCost = 60 }
+Config.INN_AT = Vector3.new(82, 0, 40)
+Config.ELDER_AT = Vector3.new(-24, 0, -104)
+
+-- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
+Config.Story = {
+	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
+	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
+	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
+	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
+	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 일곱 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
+	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
+	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
+	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
+	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
+	{ title = "흩어진 비급", text = "옛 고수가 남긴 비급이 다섯 조각으로 흩어졌다는 소문이 있다. 두 조각을 찾아라. 지도에서 볼 수 없으니 발로 찾아야 한다.", goal = { kind = "fragment", n = 2 }, reward = { coins = 500, stats = 40 } },
+	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
+	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
+	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
+	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
+	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 6000, stats = 300 } },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 무극의 경지, 일곱 권법의 완전 각성. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+}
+
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {
 	{ id = "colossus", name = "거신상", icon = "🗿", at = Vector3.new(-300, 0, 520) },
@@ -618,7 +797,7 @@ function Config.enemyLevel(home: Vector3): number
 	return 1 + math.floor(math.max(0, d - 250) / 100)
 end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
-Config.WORLD_HALF = 1300 -- 세상 끝 (가운데에서)
+Config.WORLD_HALF = 2400 -- 세상 끝 (가운데에서). 바깥 다섯 땅까지
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
 	{ Vector3.new(-178, 0, 0), Vector3.new(-1000, 0, 0) },
@@ -631,8 +810,15 @@ Config.Roads = {
 	{ Vector3.new(0, 0, 178), Vector3.new(90, 0, 230), Vector3.new(600, 0, 600) },
 	{ Vector3.new(178, 0, 0), Vector3.new(380, 0, -280), Vector3.new(890, 0, -280) },
 	{ Vector3.new(600, 0, 600), Vector3.new(840, 0, 560), Vector3.new(960, 0, 900) },
+	-- 바깥 다섯 땅으로
+	{ Vector3.new(0, 0, -740), Vector3.new(260, 0, -720), Vector3.new(260, 0, -1250), Vector3.new(0, 0, -1380) },
+	{ Vector3.new(0, 0, 810), Vector3.new(0, 0, 1210) },
+	{ Vector3.new(1000, 0, -130), Vector3.new(1180, 0, 0), Vector3.new(1380, 0, 0) },
+	{ Vector3.new(-1000, 0, 0), Vector3.new(-1380, 0, 0) },
+	{ Vector3.new(1700, 0, -430), Vector3.new(1700, 0, -1400) },
 }
 
+Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 Config.ENEMY_ACTIVE_RANGE = 170 -- 이 안에 사람이 있어야 적이 움직인다
 Config.ENEMY_RESPAWN = 25
 

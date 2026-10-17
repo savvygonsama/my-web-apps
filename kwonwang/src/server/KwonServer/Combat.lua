@@ -390,6 +390,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 
 	local postureDmg = (hit.posture or 0)
+	local aStyle0 = Combat.styleOf(att)
+	if aStyle0 and aStyle0.postureMult then
+		postureDmg *= aStyle0.postureMult
+	end
 	-- 막기·흘리기 (앞에서 온 것만, 막을 수 없는 공격은 안 된다)
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain then
 		local window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) + 0.06 -- 0.06 = 통신 늦음 여유
@@ -440,6 +444,14 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if opt.teleport then
 		crit = true
 	end
+	-- 카운터: 적이 휘두르려고 멈칫한 사이에 먼저 꽂으면 1.5배, 그 공격이 끊긴다
+	local counterHit = false
+	if tgt.npc and tgt.act and tgt.act.move and t < tgt.act.start + (tgt.act.move.windup or 0) then
+		d *= 1.5
+		crit = true
+		counterHit = true
+		interrupt(tgt)
+	end
 	local wasBroken = t < tgt.brokenUntil
 	if wasBroken then
 		d *= Config.BROKEN_MULT
@@ -448,6 +460,11 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = true
 	end
 	tgt.hp -= d
+	-- 흡혈 (혈마신수)
+	if aStyle and aStyle.lifesteal and att.player and not att.dead then
+		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal)
+		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
+	end
 	addPosture(tgt, postureDmg * 0.4)
 	local heavy = (hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken
 	if not armored(tgt) then
@@ -520,6 +537,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		style = att.style,
 		strike = move.strike == true,
 		broken = wasBroken,
+		counter = counterHit,
 	})
 	if hooks.onHit then
 		hooks.onHit(att, tgt, d, opt)

@@ -274,13 +274,14 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local f = Combat.register(model, {
 		npc = def,
 		name = def.name,
-		hp = math.floor(def.hp * (1 + 0.18 * (lv - 1))),
-		postureMax = math.floor(def.posture * (1 + 0.08 * (lv - 1))),
+		hp = math.floor(def.hp * (1 + 0.28 * (lv - 1))),
+		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1))),
 		walk = def.speed,
-		style = "",
-		dmgMult = 1 + 0.1 * (lv - 1),
+		style = def.style or "",
+		dmgMult = Config.ENEMY_DMG * (1 + 0.18 * (lv - 1)),
 	})
 	;(f :: any).rewardMult = 1 + 0.25 * (lv - 1)
+	;(f :: any).typeId = typeId
 	local e: Enemy = {
 		f = f,
 		def = def,
@@ -331,7 +332,7 @@ local function masterTag(head: BasePart, name: string, style: any)
 	g.AlwaysOnTop = true
 	g.LightInfluence = 0
 	g.MaxDistance = 160
-	for i, line in ipairs({ { "사부 · " .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. "  (T)", style.color, 0.48 } }) do
+	for i, line in ipairs({ { (style.elder and "" or "사부 · ") .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. (style.elder and "" or "  (T)"), style.color, 0.48 } }) do
 		local l = Instance.new("TextLabel")
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.fromScale(0, i == 1 and 0 or 0.52)
@@ -470,6 +471,51 @@ local function dressMaster(model: Model, style: any)
 	end
 end
 
+-- 청운 장로: 이야기를 들려주는 노인 (마을)
+function Npc.spawnElder(onTalk: (Player) -> ())
+	local mf = workspace:FindFirstChild("Masters") or Instance.new("Folder")
+	mf.Name = "Masters"
+	mf.Parent = workspace
+	local robe = Color3.fromRGB(120, 95, 70)
+	local model = body({ head = SKIN, torso = robe, arms = Color3.fromRGB(150, 125, 95), legs = Color3.fromRGB(80, 65, 50) }, 1.05)
+	model.Name = "Elder"
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.WalkSpeed = 0
+	end
+	local head = model:FindFirstChild("Head") :: BasePart?
+	local hs = head and head.Size or Vector3.new(1.2, 1.2, 1.2)
+	wear(model, "Head", "Beard", Vector3.new(hs.X * 0.55, hs.Y * 1.2, 0.35), CFrame.new(0, -hs.Y * 0.65, -hs.Z * 0.42), Color3.fromRGB(240, 240, 235))
+	wear(model, "Head", "Topknot", Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, hs.Y * 0.62, 0.05), Color3.fromRGB(235, 235, 230), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+	for _, z in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "RobePanel", Vector3.new(2.1, 2.4, 0.18), CFrame.new(0, -1.35, z * 0.55), robe)
+	end
+	wear(model, "RightHand", "Staff", Vector3.new(0.3, 6.5, 0.3), CFrame.new(0, 1.2, 0), Color3.fromRGB(100, 70, 45), Enum.Material.Wood)
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+	local up = (hum and hum.HipHeight or 2) + root.Size.Y / 2
+	local at = Config.ELDER_AT
+	model:PivotTo(CFrame.lookAt(at + Vector3.new(0, up, 0), at + Vector3.new(0, up, 10)))
+	root.Anchored = true
+	model:SetAttribute("NPC", true)
+	model:SetAttribute("Master", true)
+	model:SetAttribute("Label", "청운 장로")
+	if head then
+		masterTag(head, "청운 장로", { icon = "📜", name = "이야기 (T)", color = Color3.fromRGB(255, 225, 150), elder = true })
+	end
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = "Elder"
+	pp.ActionText = "이야기"
+	pp.ObjectText = "청운 장로"
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 14
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.T
+	pp.Parent = root
+	pp.Triggered:Connect(onTalk)
+	model.Parent = mf
+end
+
 function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	local mf = Instance.new("Folder")
 	mf.Name = "Masters"
@@ -560,6 +606,18 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	end
 end
 
+-- 싸움 없이 치운다 (시험이 끝났을 때)
+function Npc.despawn(f: any)
+	for i, e in ipairs(Npc.list) do
+		if e.f == f then
+			table.remove(Npc.list, i)
+			break
+		end
+	end
+	Combat.unregister(f.model)
+	f.model:Destroy()
+end
+
 function Npc.find(model: Model): Enemy?
 	for _, e in ipairs(Npc.list) do
 		if e.f.model == model then
@@ -582,7 +640,7 @@ function Npc.onDeath(f: any)
 				f.model:Destroy()
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
-			if e.region == "simma" then
+			if e.region == "simma" or e.region == "trial" then
 				return -- 심마는 다시 나타나지 않는다
 			end
 			task.delay(wait, function()
@@ -736,11 +794,24 @@ local function think(e: Enemy, t: number)
 	end
 	-- 상대 고르기
 	local tgt = e.target
-	if tgt and (tgt.dead or not tgt.root.Parent or inSafe(tgt.root.Position) or flatDist(tgt.root.Position, pos) > e.def.aggro * 1.6) then
+	-- 사부의 분신은 시험을 청한 사람하고만 겨룬다 (사부의 자리 안에서도)
+	local owner = (f :: any).trialOwner
+	if owner then
+		tgt = Combat.fighterOfPlayer(owner)
+	end
+	if tgt and (tgt.dead or not tgt.root.Parent or (inSafe(tgt.root.Position) and not e.def.duel) or flatDist(tgt.root.Position, pos) > e.def.aggro * 1.6) then
 		tgt = nil
 	end
-	if not tgt then
+	if not tgt and not owner then
 		tgt = nearestPlayer(e, e.def.aggro)
+	end
+	-- 처음 상대를 잡으면 둘레의 동료도 함께 덤빈다
+	if tgt and not e.target then
+		for _, o in ipairs(Npc.list) do
+			if o ~= e and not o.target and not o.f.dead and flatDist(o.f.root.Position, pos) < 45 then
+				o.target = tgt
+			end
+		end
 	end
 	e.target = tgt
 	if not tgt then
@@ -773,6 +844,17 @@ local function think(e: Enemy, t: number)
 	end
 	if f.guarding then
 		faceTo(e, tgt.root.Position)
+		return
+	end
+	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고, 막 잡은 막기엔 흘려진다
+	-- (상대가 칠 때를 기다려 흘리고 파고들거나, 균형을 깨거나, 뒤를 잡아야 한다)
+	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or 0.12)) then
+		f.guarding = true
+		f.guardStart = t
+		e.guardUntil = t + 0.6 + math.random() * 0.7
+		f.model:SetAttribute("Guard", true)
+		faceTo(e, tgt.root.Position)
+		f.hum:MoveTo(pos)
 		return
 	end
 	-- 칠 수 있으면 친다

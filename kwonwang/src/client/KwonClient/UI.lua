@@ -333,7 +333,7 @@ function UI.openPage(name: string, opt: any?)
 	for n, f in pairs(pages) do
 		f.Visible = n == name
 	end
-	windowTitle.Text = (opt and opt.first) and "🥋 권법을 하나 고르세요 (처음 하나는 공짜)" or (TITLES[name] or name)
+	windowTitle.Text = TITLES[name] or name
 	window.Visible = true
 	local r = refreshers[name]
 	if r then
@@ -394,28 +394,56 @@ local function buildStyles()
 			window.Visible = false
 		end
 	end)
-	button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -12), Size = UDim2.new(0.38, -14, 0, 56), Text = "📍 길 안내", TextSize = 20, BackgroundColor3 = C.panel2, Parent = detail }, function()
-		UI.setGuide(selected)
-		window.Visible = false
+	local guideBtn = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -14, 1, -12), Size = UDim2.new(0.38, -14, 0, 56), Text = "📍 길 안내", TextSize = 20, BackgroundColor3 = C.panel2, Parent = detail }, function()
+		if state and state.found and state.found[selected] then
+			UI.setGuide(selected)
+			window.Visible = false
+		end
 	end)
 	local cards: { [string]: TextButton } = {}
 	local function show(id: string)
 		selected = id
 		local s = Config.STYLE_BY_ID[id]
+		local owned = state and table.find(state.styles, id) ~= nil
+		local found = state and state.found and state.found[id]
+		local passed = state and state.trials and state.trials[id]
+		local gradeColor = Config.GRADE_COLOR[s.grade] or C.dim
+		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), s.grade or "")
+		for sid, card in pairs(cards) do
+			local st = card:FindFirstChildOfClass("UIStroke")
+			if st then
+				st.Thickness = sid == id and 3 or 1
+			end
+		end
+		guideBtn.Visible = found == true and not owned
+		-- 숨은 권법은 얻기 전엔 이름도 모른다
+		if s.hidden and not owned then
+			dTitle.Text = "❓ 숨겨진 권법"
+			dTitle.TextColor3 = C.dim
+			dHanja.Text = "???"
+			dMaster.Text = gradeTag .. "  전해지는 이야기만 남아 있다"
+			dBody.Text = "🔒 " .. (s.unlockHint or "") .. "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라."
+			dBtn.Text = "🔒 조건을 채워야 익힌다"
+			dBtn.BackgroundColor3 = C.panel
+			action = "none"
+			return
+		end
 		dTitle.Text = s.icon .. " " .. s.name
 		dTitle.TextColor3 = s.color
 		dHanja.Text = s.hanja
 		local master = Config.MASTERS[id]
 		local pos = myPos()
-		if master then
+		if master and not found and not owned then
+			dMaster.Text = gradeTag .. '  <font color="#C8B8A0">❓ 사부의 행방을 모른다 · 소문: ' .. (master.rumor or "") .. "</font>"
+		elseif master then
 			local where = ""
 			if pos then
 				local dir, dist = bearing(pos, master.at)
 				where = dist <= Config.MASTER_RANGE and "  ·  <b>바로 곁</b>" or string.format("  ·  %s쪽 %d칸", dir, math.floor(dist))
 			end
-			dMaster.Text = string.format("📍 사부 %s · %s%s", master.name, master.region, where)
+			dMaster.Text = string.format("%s  📍 사부 %s · %s%s", gradeTag, master.name, master.region, where)
 		else
-			dMaster.Text = ""
+			dMaster.Text = gradeTag .. (s.starter and "  청운 장로에게 받은 기본 권법" or "")
 		end
 		local lines = { s.desc, "", "<b>고유 장치</b>  " .. s.gimmick, "", "<b>연타 (클릭)</b>" }
 		local names = {}
@@ -444,9 +472,12 @@ local function buildStyles()
 			table.insert(lines, "")
 			table.insert(lines, string.format("숙련도 %d / %d  (%d / %d)", m.lv, Config.MASTERY_MAX, math.floor(m.xp), m.need))
 		end
+		if master and not passed and not owned then
+			table.insert(lines, "")
+			table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부의 분신과 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
+		end
 		dBody.Text = table.concat(lines, "\n")
-		local owned = state and table.find(state.styles, id) ~= nil
-		local first = not state or #state.styles == 0
+		local cost = state and state.learnCost or 0
 		if state and state.style == id then
 			dBtn.Text = "✔ 쓰는 중"
 			dBtn.BackgroundColor3 = C.green
@@ -455,25 +486,27 @@ local function buildStyles()
 			dBtn.Text = "이 권법으로 바꾸기"
 			dBtn.BackgroundColor3 = C.panel2
 			action = "learn"
-		elseif first then
-			dBtn.Text = "이 권법을 배운다 (공짜)"
-			dBtn.BackgroundColor3 = C.red
-			action = "learn"
+		elseif not master then
+			dBtn.Text = "청운 장로에게 받는다"
+			dBtn.BackgroundColor3 = C.panel
+			action = "none"
+		elseif not found then
+			dBtn.Text = "❓ 먼저 사부를 찾아라"
+			dBtn.BackgroundColor3 = C.panel
+			action = "none"
+		elseif not passed then
+			local near = nearMaster(id)
+			dBtn.Text = near and "⚔ 시험 받기" or "사부에게 가서 시험 받기"
+			dBtn.BackgroundColor3 = near and C.red or Color3.fromRGB(150, 110, 50)
+			action = near and "learn" or "guide"
 		elseif nearMaster(id) then
-			local cost = state and state.learnCost or 0
 			dBtn.Text = string.format("배우기  💰 %s", Config.formatNumber(cost))
 			dBtn.BackgroundColor3 = (state and state.coins >= cost) and C.red or C.panel
 			action = "learn"
 		else
-			dBtn.Text = string.format("사부에게 가기 (💰 %s)", Config.formatNumber(state and state.learnCost or 0))
+			dBtn.Text = string.format("사부에게 가기 (💰 %s)", Config.formatNumber(cost))
 			dBtn.BackgroundColor3 = Color3.fromRGB(150, 110, 50)
 			action = "guide"
-		end
-		for sid, card in pairs(cards) do
-			local st = card:FindFirstChildOfClass("UIStroke")
-			if st then
-				st.Thickness = sid == id and 3 or 1
-			end
 		end
 	end
 	for _, s in ipairs(Config.Styles) do
@@ -481,9 +514,9 @@ local function buildStyles()
 			show(s.id)
 		end)
 		new("UIStroke", { Color = s.color, Thickness = 1, Parent = card })
-		text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.icon .. " " .. s.name, TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.color, Parent = card })
+		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
-		sub.Text = s.hanja
+		sub.Text = s.hidden and "???" or s.hanja
 		cards[s.id] = card
 	end
 	refreshers.styles = function(reset: boolean?)
@@ -492,7 +525,23 @@ local function buildStyles()
 			if sub and state then
 				local m = state.mastery and state.mastery[id]
 				local s = Config.STYLE_BY_ID[id]
-				sub.Text = s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. (state.style == id and "  ✔" or "")
+				local owned = table.find(state.styles, id) ~= nil
+				local title = card:FindFirstChild("Title") :: TextLabel?
+				if s.hidden and not owned then
+					sub.Text = "[" .. s.grade .. "]  ???"
+					if title then
+						title.Text = "❓ 숨겨진 권법"
+						title.TextColor3 = C.dim
+					end
+				else
+					local mark = owned and "" or ((state.trials and state.trials[id]) and "  · 시험 통과" or ((state.found and state.found[id]) and "  · 사부 찾음" or (Config.MASTERS[id] and "  · ❓" or "")))
+					sub.Text = "[" .. s.grade .. "] " .. s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
+					if title then
+						title.Text = s.icon .. " " .. s.name
+						title.TextColor3 = s.color
+					end
+				end
+				sub.TextColor3 = Config.GRADE_COLOR[s.grade] or C.dim
 			end
 		end
 		if reset then
@@ -514,7 +563,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (경지마다 피해·체력 +15%%, 수련 효과 +25%%) · 경지는 열세 단계", Config.realmPower(idx)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (경지마다 피해·체력 ×1.22씩 겹으로, 수련 효과 +25%%) · 경지는 열세 단계", Config.realmPower(idx)))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -629,7 +678,7 @@ local function buildTest()
 		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
 		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
 		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
-		{ "🌀 다음 사부에게", "testTp" }, { "↺ 처음으로", "testReset" },
+		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" }, { "↺ 처음으로", "testReset" },
 	}) do
 		button({ Text = item[1], TextSize = 17 }, function()
 			Request:FireServer(item[2], item[3])
@@ -810,7 +859,7 @@ local topInfo: TextLabel
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] 💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	topInfo.Text = string.format("[%s] 💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")
@@ -819,6 +868,9 @@ function UI.setState(s: any)
 	end
 	if window.Visible and refreshers[current] then
 		refreshers[current]()
+	end
+	if UI.refreshWorld then
+		UI.refreshWorld(s)
 	end
 end
 
@@ -834,6 +886,9 @@ local mapBig = false
 local guideStyle: string? = nil
 local guidePart: Part? = nil
 local guideLabel: TextLabel? = nil
+local masterMarks: { [string]: { stroke: UIStroke, icon: TextLabel, color: Color3, glyph: string } } = {}
+local beacons: { [string]: Part } = {}
+local storyMark: Frame? = nil
 
 local function mapUV(p: Vector3): UDim2
 	local H = Config.WORLD_HALF
@@ -903,8 +958,10 @@ local function buildMap()
 			f.BackgroundTransparency = 0.15
 			local style = r.master and Config.STYLE_BY_ID[r.master]
 			if style then
-				new("UIStroke", { Color = style.color, Thickness = 2, Parent = f })
-				label(r.masterAt, style.icon, 18, style.color, 9)
+				-- 사부 자리는 찾기 전엔 물음표만
+				local st = new("UIStroke", { Color = style.color, Thickness = 2, Enabled = false, Parent = f })
+				local icon = label(r.masterAt, "❓", 16, Color3.fromRGB(220, 210, 190), 9)
+				masterMarks[r.master] = { stroke = st, icon = icon, color = style.color, glyph = style.icon }
 				label(r.masterAt + Vector3.new(0, 0, 80), r.name, 12, Color3.new(1, 1, 1), 9, true)
 			elseif r.boss then
 				label(r.boss.at, "👹", 15, C.red, 9)
@@ -924,6 +981,7 @@ local function buildMap()
 		mapDots[i] = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 5, 0, 5), BackgroundColor3 = Color3.fromRGB(255, 60, 50), BorderSizePixel = 0, Visible = false, ZIndex = 10, Parent = mapInner }, { corner(99) })
 	end
 	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = mapInner }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
+	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = mapInner }, { stroke(Color3.new(0, 0, 0), 1.5) })
 	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = mapInner })
 	mapMe:SetAttribute("MapText", 18)
 	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 140, 0, 18), Text = "M: 지도 크게", TextSize = 14, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
@@ -967,6 +1025,285 @@ function UI.setGuide(styleId: string?)
 	UI.toast(string.format("📍 %s · %s에게 가세요 (하늘로 솟은 빛기둥)", m.region, m.name))
 end
 
+------------------------------------------------------------------------
+-- 이야기: 지금 할 일 (왼쪽), 대화 창 (아래), 목표 표시, 사부 빛기둥, 땅마다 공기
+------------------------------------------------------------------------
+local storyBox: Frame
+local storyTitle: TextLabel
+local storyGoal: TextLabel
+local storyPart: Part? = nil
+local storyLabel: TextLabel? = nil
+local storyAt: Vector3? = nil
+
+local function countKeys(t: any): number
+	local n = 0
+	if type(t) == "table" then
+		for _ in pairs(t) do
+			n += 1
+		end
+	end
+	return n
+end
+
+local function nameOf(id: string?): string
+	if not id then
+		return ""
+	end
+	local e = Config.Enemies[id] or Config.Bosses[id]
+	return e and e.name or id
+end
+
+-- 목표 자리: 정해진 곳이 없으면 (시험·배우기) 가장 가까운 알맞은 사부
+local function goalTarget(s: any, g: any): Vector3?
+	if g.kind == "talk" then
+		return Config.ELDER_AT
+	end
+	if g.at then
+		return g.at
+	end
+	if g.kind == "trial" or g.kind == "learn" then
+		local pos = myPos() or Vector3.zero
+		local best, bestD = nil, math.huge
+		for id, m in pairs(Config.MASTERS) do
+			local ok = s.found and s.found[id] and not table.find(s.styles, id)
+			if g.kind == "trial" then
+				ok = ok and not (s.trials and s.trials[id])
+			else
+				ok = ok and s.trials and s.trials[id]
+			end
+			local d = (m.at - pos).Magnitude
+			if ok and d < bestD then
+				best, bestD = m.at, d
+			end
+		end
+		return best
+	end
+	return nil
+end
+
+local function goalText(s: any, g: any): string
+	local k = g.kind
+	local prog = s.prog or 0
+	if k == "talk" then
+		return "청운 장로에게 말 걸기 (T)"
+	elseif k == "kill" then
+		return string.format("%s 쓰러뜨리기  %d / %d", nameOf(g.id), prog, g.n or 1)
+	elseif k == "train" then
+		return string.format("수련터에서 수련하기  %d / %d", prog, g.n or 1)
+	elseif k == "found" then
+		return string.format("소문을 따라 사부 찾기  %d / %d", countKeys(s.found), g.n or 1)
+	elseif k == "trial" then
+		return "사부 곁에서 T · 사부의 시험 통과하기"
+	elseif k == "learn" then
+		return string.format("사부에게 권법 배우기  %d / %d", #s.styles, g.n or 1)
+	elseif k == "realm" then
+		local r = Config.Realms[g.n]
+		return string.format("%s의 경지에 오르기 (지금 %s)", r and r.name or "", Config.Realms[s.realm].name)
+	elseif k == "boss" then
+		return nameOf(g.id) .. " 쓰러뜨리기"
+	elseif k == "fragment" then
+		return string.format("비급 조각 찾기  %d / %d (지도에 없다)", countKeys(s.fragments), g.n or 1)
+	end
+	return "강호를 마음껏 누비기"
+end
+
+local function clearStoryPart()
+	if storyPart then
+		storyPart:Destroy()
+	end
+	storyPart = nil
+	storyLabel = nil
+end
+
+local function refreshStory(s: any)
+	local ch = Config.Story[s.story or 1]
+	if not storyBox or not ch then
+		return
+	end
+	storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
+	storyGoal.Text = "▸ " .. goalText(s, ch.goal)
+	local at = goalTarget(s, ch.goal)
+	if at ~= storyAt then
+		storyAt = at
+		clearStoryPart()
+		if at then
+			local p = Instance.new("Part")
+			p.Name = "KwonStoryMark"
+			p.Anchored = true
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Transparency = 1
+			p.Size = Vector3.new(1, 1, 1)
+			p.Position = at + Vector3.new(0, 14, 0)
+			p.Parent = workspace
+			local bb = new("BillboardGui", { Size = UDim2.new(0, 260, 0, 64), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = 100000, Parent = p })
+			storyLabel = text({ Size = UDim2.fromScale(1, 1), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 190, 90), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = bb })
+			storyPart = p
+		end
+	end
+	if storyMark then
+		storyMark.Visible = at ~= nil
+		if at then
+			storyMark.Position = mapUV(at)
+		end
+	end
+end
+
+local function storyTick(pos: Vector3)
+	if storyAt and storyLabel and storyPart then
+		local dir, dist = bearing(pos, storyAt)
+		storyLabel.Text = string.format("📜 목표\n%s쪽 · %d칸", dir, math.floor(dist))
+		storyLabel.Visible = dist > 18
+	end
+end
+
+-- 찾은 사부만 지도에 나오고, 하늘로 빛기둥이 솟는다
+local function refreshFound(s: any)
+	for id, mk in pairs(masterMarks) do
+		local found = (s.found and s.found[id]) or table.find(s.styles, id) ~= nil
+		mk.stroke.Enabled = found
+		mk.icon.Text = found and mk.glyph or "❓"
+		mk.icon.TextColor3 = found and mk.color or Color3.fromRGB(220, 210, 190)
+		local m = Config.MASTERS[id]
+		if found and m and not beacons[id] then
+			local b = Instance.new("Part")
+			b.Name = "KwonBeacon"
+			b.Anchored = true
+			b.CanCollide = false
+			b.CanQuery = false
+			b.CanTouch = false
+			b.CastShadow = false
+			b.Shape = Enum.PartType.Cylinder
+			b.Material = Enum.Material.Neon
+			b.Color = mk.color
+			b.Transparency = 0.55
+			b.Size = Vector3.new(400, 5, 5)
+			b.CFrame = CFrame.new(m.at + Vector3.new(0, 210, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			b.Parent = workspace
+			beacons[id] = b
+		end
+	end
+end
+
+function UI.refreshWorld(s: any)
+	refreshFound(s)
+	refreshStory(s)
+end
+
+-- 대화 창: 글자가 한 자씩 흘러나온다
+local dialogFrame: Frame
+local dialogWho: TextLabel
+local dialogTitle: TextLabel
+local dialogText: TextLabel
+local dialogAct: TextButton
+local dialogTrial: string? = nil
+local dialogSeq = 0
+function UI.dialog(data: any)
+	if not dialogFrame then
+		return
+	end
+	dialogSeq += 1
+	local seq = dialogSeq
+	dialogWho.Text = data.who or ""
+	dialogTitle.Text = data.title or ""
+	dialogText.Text = data.text or ""
+	dialogTrial = data.trial
+	dialogAct.Visible = dialogTrial ~= nil
+	dialogFrame.Visible = true
+	local n = utf8.len(dialogText.Text) or 0
+	pcall(function()
+		dialogText.MaxVisibleGraphemes = 0
+	end)
+	task.spawn(function()
+		for i = 1, n, 2 do
+			if seq ~= dialogSeq then
+				return
+			end
+			pcall(function()
+				dialogText.MaxVisibleGraphemes = i
+			end)
+			task.wait(0.02)
+		end
+		pcall(function()
+			dialogText.MaxVisibleGraphemes = -1
+		end)
+	end)
+	task.delay(40, function()
+		if seq == dialogSeq then
+			dialogFrame.Visible = false
+		end
+	end)
+end
+
+function UI.dialogOpen(): boolean
+	return dialogFrame ~= nil and dialogFrame.Visible
+end
+
+local function buildStory(topLeft: Frame)
+	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 336), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
+	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
+	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
+	-- 대화 창
+	dialogFrame = new("Frame", { Name = "Dialog", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -150), Size = UDim2.new(0, 820, 0, 200), BackgroundColor3 = C.bg, BackgroundTransparency = 0.08, Visible = false, ZIndex = 20, Parent = gui }, { corner(14), stroke(C.line, 2.5) })
+	scaled(dialogFrame)
+	dialogWho = text({ Position = UDim2.new(0, 20, 0, 10), Size = UDim2.new(0.5, 0, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, ZIndex = 21, Parent = dialogFrame })
+	dialogTitle = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -20, 0, 12), Size = UDim2.new(0.5, -20, 0, 24), TextSize = 17, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 21, Parent = dialogFrame })
+	dialogText = text({ Position = UDim2.new(0, 20, 0, 46), Size = UDim2.new(1, -40, 0, 92), TextSize = 19, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 21, Parent = dialogFrame })
+	button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -12), Size = UDim2.new(0, 140, 0, 42), Text = "알겠다", TextSize = 18, BackgroundColor3 = C.panel2, ZIndex = 21, Parent = dialogFrame }, function()
+		dialogSeq += 1
+		dialogFrame.Visible = false
+	end)
+	dialogAct = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -168, 1, -12), Size = UDim2.new(0, 180, 0, 42), Text = "⚔ 시험 받기", TextSize = 18, BackgroundColor3 = C.red, ZIndex = 21, Visible = false, Parent = dialogFrame }, function()
+		if dialogTrial then
+			Request:FireServer("learn", dialogTrial)
+		end
+		dialogSeq += 1
+		dialogFrame.Visible = false
+	end)
+end
+
+-- 땅마다 공기가 다르다 (안개 색과 짙기). 들어서면 이름과 적 수준을 알린다
+local AMBIENT = {
+	default = { d = 0.24, h = 1.1, c = Color3.fromRGB(240, 215, 190) },
+	snow = { d = 0.4, h = 2, c = Color3.fromRGB(225, 235, 255) },
+	swamp = { d = 0.5, h = 2.6, c = Color3.fromRGB(140, 170, 110) },
+	badlands = { d = 0.32, h = 1.9, c = Color3.fromRGB(255, 185, 130) },
+	coast = { d = 0.3, h = 1.6, c = Color3.fromRGB(200, 225, 245) },
+	cult = { d = 0.45, h = 2.3, c = Color3.fromRGB(160, 45, 55) },
+}
+local regionNow = ""
+local function regionAt(pos: Vector3): any
+	local best = nil
+	for _, r in ipairs(Config.Regions) do
+		if not r.noGround and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
+			-- 작은 땅 (사부 자리 등) 을 먼저
+			if not best or r.size.X * r.size.Z < best.size.X * best.size.Z then
+				best = r
+			end
+		end
+	end
+	return best
+end
+local function ambientTick(pos: Vector3)
+	local r = regionAt(pos)
+	local id = r and r.id or "wild"
+	if id ~= regionNow then
+		regionNow = id
+		if r then
+			local lv = Config.enemyLevel(pos)
+			UI.toast(string.format("📍 %s%s", r.name, r.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", lv)))
+		end
+	end
+	local a = AMBIENT[r and r.ambient or "default"] or AMBIENT.default
+	local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+	if atmo then
+		atmo.Density += (a.d - atmo.Density) * 0.08
+		atmo.Haze += (a.h - atmo.Haze) * 0.08
+		atmo.Color = atmo.Color:Lerp(a.c, 0.08)
+	end
+end
+
 local mapAcc = 0
 local function updateMap(dt: number)
 	local pos = myPos()
@@ -987,11 +1324,17 @@ local function updateMap(dt: number)
 			UI.setGuide(nil)
 		end
 	end
+	if pos then
+		storyTick(pos)
+	end
 	mapAcc += dt
 	if mapAcc < 0.25 then
 		return
 	end
 	mapAcc = 0
+	if pos then
+		ambientTick(pos)
+	end
 	local n = 0
 	local enemies = workspace:FindFirstChild("Enemies")
 	if enemies and pos then
@@ -1110,7 +1453,7 @@ function UI.init(req: RemoteEvent)
 	scaled(toastBox)
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
-	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui })
+	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
@@ -1128,6 +1471,7 @@ function UI.init(req: RemoteEvent)
 			b.Visible = false
 		end
 	end
+	buildStory(topLeft)
 	-- 보스 막대
 	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 40), Size = UDim2.new(0, 620, 0, 52), BackgroundTransparency = 1, Visible = false, Parent = gui })
 	scaled(bossFrame)

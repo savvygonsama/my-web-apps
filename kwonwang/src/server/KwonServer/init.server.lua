@@ -40,6 +40,13 @@ type Profile = {
 	kills: number,
 	bosses: { [string]: number },
 	pvpWins: number,
+	found: { [string]: boolean }, -- 찾아낸 사부
+	trials: { [string]: boolean }, -- 넘은 사부의 시험
+	story: number, -- 이야기 몇째 장
+	prog: number, -- 그 장의 진행
+	fragments: { [string]: boolean }, -- 주운 비급 조각
+	stamina: number,
+	staminaAt: number,
 }
 
 local function defaultProfile(): Profile
@@ -54,6 +61,13 @@ local function defaultProfile(): Profile
 		kills = 0,
 		bosses = {},
 		pvpWins = 0,
+		found = {},
+		trials = {},
+		story = 1,
+		prog = 0,
+		fragments = {},
+		stamina = Config.STAMINA.max,
+		staminaAt = os.time(),
 	}
 end
 
@@ -102,6 +116,31 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.pvpWins = math.floor(num(data.pvpWins, 1e9))
+	local function flags(src: any, valid: (string) -> boolean): { [string]: boolean }
+		local out = {}
+		if type(src) == "table" then
+			for k, v in pairs(src) do
+				if type(k) == "string" and v == true and valid(k) then
+					out[k] = true
+				end
+			end
+		end
+		return out
+	end
+	p.found = flags(data.found, function(k)
+		return Config.MASTERS[k] ~= nil
+	end)
+	p.trials = flags(data.trials, function(k)
+		return Config.MASTERS[k] ~= nil
+	end)
+	p.fragments = flags(data.fragments, function(k)
+		local i = tonumber(k)
+		return i ~= nil and Config.Fragments[i] ~= nil
+	end)
+	p.story = math.clamp(math.floor(num(data.story, #Config.Story)), 1, #Config.Story)
+	p.prog = math.floor(num(data.prog, 1e6))
+	p.stamina = type(data.stamina) == "number" and num(data.stamina, Config.STAMINA.max) or Config.STAMINA.max
+	p.staminaAt = type(data.staminaAt) == "number" and num(data.staminaAt, 1e11) or os.time()
 	return p
 end
 
@@ -247,6 +286,12 @@ local function pushState(player: Player)
 		training = st.training and st.training.kind or nil,
 		tester = st.tester,
 		canSave = st.canSave,
+		found = p.found,
+		trials = p.trials,
+		story = p.story,
+		prog = p.prog,
+		fragments = p.fragments,
+		stamina = math.floor(p.stamina),
 	})
 end
 
@@ -321,7 +366,9 @@ local function refreshFighter(player: Player)
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local power = Config.realmPower(idx)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power
+	local styleDef = Config.STYLE_BY_ID[p.style]
+	local grade = styleDef and Config.GRADES[styleDef.grade] or 1
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local oldMax = f.maxHp
 	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power)
@@ -393,6 +440,198 @@ local function addMastery(player: Player, p: Profile, amount: number)
 	states[player].dirty = true
 end
 
+------------------------------------------------------------------------
+-- 강호 이야기 (차례로 이어지는 장)
+------------------------------------------------------------------------
+local Story = {}
+
+local function countKeys(t: { [any]: any }): number
+	local n = 0
+	for _ in pairs(t) do
+		n += 1
+	end
+	return n
+end
+
+-- 권법을 준다 (이야기·숨은 권법)
+local function grantStyle(player: Player, id: string, banner: boolean?)
+	local p = profiles[player]
+	if not p or p.styles[id] then
+		return
+	end
+	p.styles[id] = true
+	Calc.mastery(p, id)
+	if banner then
+		Push:FireClient(player, "learned", { style = id, hidden = Config.STYLE_BY_ID[id].hidden == true })
+	end
+	local st = states[player]
+	if st then
+		st.dirty = true
+	end
+end
+
+function Story.done(p: Profile, g: any): boolean
+	local k = g.kind
+	if k == "kill" or k == "train" or k == "trial" or k == "boss" then
+		return p.prog >= (g.n or 1)
+	elseif k == "found" then
+		return countKeys(p.found) >= g.n
+	elseif k == "learn" then
+		return countKeys(p.styles) >= g.n
+	elseif k == "realm" then
+		return Config.realmOf(Calc.total(p)) >= g.n
+	elseif k == "fragment" then
+		return countKeys(p.fragments) >= g.n
+	end
+	return false
+end
+
+function Story.advance(player: Player)
+	local p = profiles[player]
+	for _ = 1, 3 do
+		local ch = p and Config.Story[p.story]
+		if not ch or ch.goal.kind == "done" then
+			break
+		end
+		local r = ch.reward or {}
+		p.coins += r.coins or 0
+		for _, stat in ipairs(Config.Stats) do
+			p.stats[stat.id] += r.stats or 0
+		end
+		p.story = math.min(#Config.Story, p.story + 1)
+		p.prog = 0
+		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = Config.Story[p.story].title })
+		-- 다음 장이 이미 이뤄졌다면 (경지 등) 이어서 넘긴다
+		local nxt = Config.Story[p.story]
+		if not (nxt.goal.kind ~= "talk" and nxt.goal.kind ~= "kill" and nxt.goal.kind ~= "train" and nxt.goal.kind ~= "trial" and nxt.goal.kind ~= "boss" and Story.done(p, nxt.goal)) then
+			break
+		end
+	end
+	states[player].dirty = true
+	refreshFighter(player)
+	pushState(player)
+end
+
+-- 무슨 일이 일어났다 (적을 쓰러뜨림, 수련, 시험 통과 ...)
+function Story.event(player: Player, kind: string, id: string?, amount: number?)
+	local p = profiles[player]
+	local ch = p and Config.Story[p.story]
+	if not ch then
+		return
+	end
+	local g = ch.goal
+	if g.kind == kind and (g.id == nil or g.id == id) then
+		p.prog += amount or 1
+		Push:FireClient(player, "storyProg", { prog = p.prog })
+	end
+	if Story.done(p, g) then
+		Story.advance(player)
+	end
+end
+
+-- 경지·권법 수처럼 저절로 이뤄지는 목표를 다시 본다
+function Story.check(player: Player)
+	Story.event(player, "check")
+end
+
+-- 청운 장로와 이야기
+function Story.talk(player: Player)
+	local p = profiles[player]
+	local ch = p and Config.Story[p.story]
+	if not ch then
+		return
+	end
+	Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+	if ch.goal.kind == "talk" then
+		Story.advance(player)
+	end
+end
+
+------------------------------------------------------------------------
+-- 사부의 시험: 사부가 기운으로 빚은 분신과 겨룬다
+------------------------------------------------------------------------
+local Trial = {}
+local activeTrial: { [Player]: any } = {}
+
+local function trialDef(style: any, master: any): any
+	local moves = {}
+	local list = table.clone(style.combo)
+	table.insert(list, style.heavy)
+	for _, m in ipairs(list) do
+		if m.hits and #m.hits > 0 then
+			local shift = 0.35
+			local hits = {}
+			for _, h in ipairs(m.hits) do
+				local c = table.clone(h)
+				c.t = h.t + shift
+				c.dmg = h.dmg * 1.4
+				table.insert(hits, c)
+			end
+			table.insert(moves, { id = m.id .. "T", name = m.name, pose = m.pose, windup = m.hits[1].t + shift, dur = m.dur + shift, range = (m.hits[1].range or 5) + 1, lunge = m.lunge, hits = hits })
+		end
+	end
+	return {
+		name = master.name .. "의 분신", hp = 420, posture = 220, speed = 19, aggro = 90, keep = 4, scale = 1.15, elite = true, duel = true,
+		shirt = style.color, pants = style.color:Lerp(Color3.new(0, 0, 0), 0.5), style = style.id, coins = 0, xp = 80, moves = moves,
+	}
+end
+
+function Trial.start(player: Player, styleId: string)
+	local style = Config.STYLE_BY_ID[styleId]
+	local master = Config.MASTERS[styleId]
+	local f = Combat.fighterOfPlayer(player)
+	if not style or not master or not f or f.dead then
+		return
+	end
+	if activeTrial[player] then
+		toast(player, "이미 시험 중이에요")
+		return
+	end
+	local key = "trial_" .. styleId
+	Config.Enemies[key] = trialDef(style, master)
+	local e = Npc.spawn(key, false, master.at + (f.root.Position - master.at).Unit * 6, "trial")
+	if not e then
+		return
+	end
+	local ef = e.f :: any
+	ef.trialOwner = player
+	ef.trialStyle = styleId
+	e.target = f
+	ef.model:SetAttribute("Style", styleId)
+	activeTrial[player] = ef
+	Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId })
+	-- 너무 오래 끌면 사부가 거둔다
+	task.delay(150, function()
+		if activeTrial[player] == ef and not ef.dead then
+			activeTrial[player] = nil
+			Npc.despawn(ef)
+			toast(player, "⌛ 시험 시간이 다 됐어요. 다시 청하세요")
+		end
+	end)
+end
+
+function Trial.ended(player: Player, won: boolean)
+	local ef = activeTrial[player]
+	if not ef then
+		return
+	end
+	activeTrial[player] = nil
+	local p = profiles[player]
+	if won and p then
+		local id = ef.trialStyle
+		p.trials[id] = true
+		local style = Config.STYLE_BY_ID[id]
+		Push:FireClient(player, "trialWin", { style = id, master = Config.MASTERS[id].name })
+		toast(player, string.format("🥋 시험 통과! 이제 %s을(를) 배울 수 있어요 (사부 곁에서 T)", style.name))
+		states[player].dirty = true
+		Story.event(player, "trial")
+		pushState(player)
+	elseif not ef.dead then
+		Npc.despawn(ef)
+	end
+end
+
 Combat.init(Push, {
 	onKill = function(f: any, by: any)
 		if f.npc then
@@ -401,6 +640,24 @@ Combat.init(Push, {
 			local p = killer and profiles[killer]
 			if killer and p then
 				local isBoss = f.model:GetAttribute("Boss") == true
+				-- 이야기·시험
+				if f.trialOwner == killer then
+					Trial.ended(killer, true)
+				end
+				local isBossKill = f.model:GetAttribute("Boss") == true
+				if isBossKill then
+					for id, def in pairs(Config.Bosses) do
+						if def == f.npc then
+							Story.event(killer, "boss", id)
+							-- 혈마를 꺾으면 그 손이 넘어온다
+							if id == "hyeolma" then
+								grantStyle(killer, "hyeolma", true)
+							end
+						end
+					end
+				elseif f.typeId then
+					Story.event(killer, "kill", f.typeId)
+				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					local ridx = Config.realmOf(Calc.total(p))
@@ -410,6 +667,7 @@ Combat.init(Push, {
 					end
 					Push:FireClient(killer, "simmaWin", { gain = gain })
 					refreshFighter(killer)
+					Story.check(killer)
 				end
 				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
@@ -430,6 +688,7 @@ Combat.init(Push, {
 			end
 		elseif f.player then
 			local player = f.player
+			Trial.ended(player, false)
 			-- 비무대에서 이기면 기록
 			local winner = by and by.player
 			if winner and profiles[winner] then
@@ -848,17 +1107,33 @@ function Actions.learn(player: Player, id: any)
 		for _ in pairs(p.styles) do
 			count += 1
 		end
-		-- 첫 권법은 어디서든 공짜. 그다음부터는 그 사부를 찾아가야 배운다
+		-- 기본 권법은 장로에게, 숨은 권법은 조건을 채워야, 사부의 권법은 사부를 찾아 시험을 넘어야
+		if style.starter then
+			toast(player, "삼재권은 청운 장로에게 받아요")
+			return
+		elseif style.hidden then
+			toast(player, "🔒 " .. (style.unlockHint or "숨겨진 권법"))
+			return
+		end
 		local master = Config.MASTERS[style.id]
-		if count > 0 and master then
-			local f0 = Combat.fighterOfPlayer(player)
-			local pos = f0 and f0.root.Position
-			local d = pos and Vector3.new(pos.X - master.at.X, 0, pos.Z - master.at.Z).Magnitude or math.huge
-			if d > Config.MASTER_RANGE then
-				toast(player, string.format("📍 %s을(를) 배우려면 %s의 %s에게 가야 해요", style.name, master.region, master.name))
-				Push:FireClient(player, "guide", { style = style.id })
-				return
-			end
+		if not master then
+			return
+		end
+		if not p.found[style.id] then
+			toast(player, "❓ 아직 이 권법의 사부를 찾지 못했어요. 소문: " .. (master.rumor or ""))
+			return
+		end
+		local f0 = Combat.fighterOfPlayer(player)
+		local pos = f0 and f0.root.Position
+		local d = pos and Vector3.new(pos.X - master.at.X, 0, pos.Z - master.at.Z).Magnitude or math.huge
+		if d > Config.MASTER_RANGE then
+			toast(player, string.format("📍 %s을(를) 배우려면 %s의 %s에게 가야 해요", style.name, master.region, master.name))
+			Push:FireClient(player, "guide", { style = style.id })
+			return
+		end
+		if not p.trials[style.id] then
+			Trial.start(player, style.id)
+			return
 		end
 		local cost = Config.LEARN_COST[math.min(count + 1, #Config.LEARN_COST)]
 		if p.coins < cost then
@@ -869,6 +1144,7 @@ function Actions.learn(player: Player, id: any)
 		p.styles[style.id] = true
 		Calc.mastery(p, style.id)
 		Push:FireClient(player, "learned", { style = style.id, first = count == 0 })
+		Story.check(player)
 	end
 	local f = Combat.fighterOfPlayer(player)
 	if f and f.combatUntil > os.clock() and p.style ~= "" and p.style ~= style.id and not st.tester then
@@ -920,6 +1196,21 @@ end
 -- 수련
 ------------------------------------------------------------------------
 local Train = {}
+
+-- 수련 기력: 시간이 지나면 찬다
+local function regenStamina(p: Profile)
+	local S = Config.STAMINA
+	local now = os.time()
+	if p.stamina >= S.max then
+		p.staminaAt = now
+		return
+	end
+	local ticks = math.floor((now - p.staminaAt) / S.regenEvery)
+	if ticks > 0 then
+		p.stamina = math.min(S.max, p.stamina + ticks)
+		p.staminaAt += ticks * S.regenEvery
+	end
+end
 
 function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
@@ -1020,6 +1311,17 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 		end
 	end
 	st.trainAt = t
+	-- 기력이 있어야 몸이 받아들인다
+	regenStamina(p)
+	local cost = st.training.hard and Config.STAMINA.hardCost or Config.STAMINA.cost
+	if gain > 0 and p.stamina < cost then
+		toast(player, "😮‍💨 기력이 다했어요. 객잔에서 쉬거나 조금 기다리세요")
+		Train.stop(player)
+		return
+	end
+	if gain > 0 then
+		p.stamina -= cost
+	end
 	if gain <= 0 then
 		Push:FireClient(player, "trained", { stat = info.stat, gain = 0, grade = grade })
 		return
@@ -1044,6 +1346,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	if afterIdx > beforeIdx then
 		Push:FireAllClients("realm", { name = player.DisplayName, realm = realm.name })
 	end
+	Story.event(player, "train")
 	refreshFighter(player)
 	if st.training and kind ~= "bamboo" then
 		local f = Combat.fighterOfPlayer(player)
@@ -1111,6 +1414,18 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f then
 			Combat.kill(f, nil)
 		end
+	elseif action == "testStory" then
+		Story.advance(player)
+	elseif action == "testTrial" then
+		local ef = activeTrial[player]
+		if ef then
+			Trial.ended(player, true)
+			Npc.despawn(ef)
+		end
+		for id in pairs(Config.MASTERS) do
+			p.found[id] = true
+			p.trials[id] = true
+		end
 	elseif action == "testTp" then
 		-- 다음 사부에게 순간이동
 		if f then
@@ -1133,6 +1448,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	end
 	updateTag(player)
 	pushState(player)
+	Story.check(player)
 end
 
 ------------------------------------------------------------------------
@@ -1196,9 +1512,12 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif not st.canSave then
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
-		if p.style == "" then
-			Push:FireClient(player, "open", { page = "styles", first = true })
+		-- 이야기 첫 장이면 장로를 찾아가라고
+		if p.story == 1 then
+			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
+	elseif action == "talkElder" then
+		Story.talk(player)
 	elseif string.sub(action, 1, 4) == "test" and st.tester then
 		testAction(player, p, action, a1)
 	end
@@ -1208,6 +1527,48 @@ end)
 if W.shop then
 	W.shop.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "shop" })
+	end)
+end
+-- 객잔: 은자를 내고 쉬면 수련 기력이 가득 찬다
+if W.inn then
+	W.inn.Triggered:Connect(function(player: Player)
+		local p = profiles[player]
+		if not p then
+			return
+		end
+		regenStamina(p)
+		if p.stamina >= Config.STAMINA.max then
+			toast(player, "기력이 이미 가득해요")
+			return
+		end
+		if p.coins < Config.STAMINA.innCost then
+			toast(player, string.format("은자가 부족해요 (💰 %d)", Config.STAMINA.innCost))
+			return
+		end
+		p.coins -= Config.STAMINA.innCost
+		p.stamina = Config.STAMINA.max
+		p.staminaAt = os.time()
+		states[player].dirty = true
+		toast(player, "🛏 푹 쉬었다. 기력이 가득 찼다")
+		pushState(player)
+	end)
+end
+-- 비급 조각 줍기 (다섯을 모으면 무극신권)
+for i, frag in ipairs(W.fragments or {}) do
+	frag.Triggered:Connect(function(player: Player)
+		local p = profiles[player]
+		if not p or p.fragments[tostring(i)] then
+			return
+		end
+		p.fragments[tostring(i)] = true
+		local n = countKeys(p.fragments)
+		Push:FireClient(player, "fragment", { n = n, total = #Config.Fragments })
+		if n >= #Config.Fragments then
+			grantStyle(player, "mugeuk", true)
+		end
+		states[player].dirty = true
+		Story.event(player, "fragment")
+		pushState(player)
 	end)
 end
 for _, info in ipairs(W.train or {}) do
@@ -1277,6 +1638,13 @@ local function onPlayerAdded(player: Player)
 	if not player.Parent then
 		return
 	end
+	-- 누구나 삼재권 하나는 몸에 지니고 시작한다
+	if not profile.styles.samjae then
+		profile.styles.samjae = true
+	end
+	if profile.style == "" then
+		profile.style = "samjae"
+	end
 	profiles[player] = profile
 	st.canSave = ok
 	player.CharacterAdded:Connect(function(char)
@@ -1286,10 +1654,7 @@ local function onPlayerAdded(player: Player)
 		task.spawn(setupCharacter, player, player.Character)
 	end
 	pushState(player)
-	-- 기록을 늦게 받아 '안녕'을 놓쳤어도 첫 권법 창은 뜬다
-	if profile.style == "" then
-		Push:FireClient(player, "open", { page = "styles", first = true })
-	end
+
 end
 
 local function onPlayerRemoving(player: Player)
@@ -1327,14 +1692,62 @@ end)
 ------------------------------------------------------------------------
 task.spawn(function()
 	local ok, err = pcall(Npc.spawnMasters, function(player: Player, styleId: string)
+		local p = profiles[player]
+		if not p then
+			return
+		end
+		if not p.found[styleId] then
+			p.found[styleId] = true
+			Story.event(player, "found")
+		end
+		local m = Config.MASTERS[styleId]
+		if not p.styles[styleId] and not p.trials[styleId] then
+			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "제자가 되고 싶다면 먼저 내 분신을 꺾어라. 준비가 되면 다시 말을 걸어라. (다시 T를 누르면 시험이 시작된다)", trial = styleId })
+			local st = states[player]
+			if st and (st :: any).trialAsk == styleId then
+				(st :: any).trialAsk = nil
+				Trial.start(player, styleId)
+			elseif st then
+				(st :: any).trialAsk = styleId
+			end
+			return
+		end
 		Push:FireClient(player, "open", { page = "styles", style = styleId, master = true })
 	end)
 	if not ok then
 		warn("[권왕] 사부 만들기 오류:", err)
+	end
+	ok, err = pcall(Npc.spawnElder, function(player: Player)
+		Story.talk(player)
+	end)
+	if not ok then
+		warn("[권왕] 장로 만들기 오류:", err)
 	end
 	ok, err = pcall(Npc.populate)
 	if not ok then
 		warn("[권왕] 적 만들기 오류:", err)
 	end
 	Npc.start()
+end)
+
+-- 사부를 찾았는가 (가까이 가면 찾은 것) / 기력 갱신
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for player, p in pairs(profiles) do
+			local f = Combat.fighterOfPlayer(player)
+			if f and not f.dead then
+				for id, m in pairs(Config.MASTERS) do
+					if not p.found[id] and (f.root.Position - m.at).Magnitude < 50 then
+						p.found[id] = true
+						states[player].dirty = true
+						Push:FireClient(player, "found", { style = id, master = m.name, region = m.region })
+						Story.event(player, "found")
+						pushState(player)
+					end
+				end
+			end
+		end
+	end
 end)

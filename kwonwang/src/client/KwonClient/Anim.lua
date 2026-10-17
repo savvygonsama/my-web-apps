@@ -25,7 +25,7 @@ type Track = {
 
 type Rec = {
 	model: Model,
-	motors: { [string]: Motor6D },
+	motors: { [string]: any }, -- Motor6D 또는 AnimationConstraint (둘 다 Transform이 있다)
 	track: Track?,
 	loop: Track?,
 	walk: number,
@@ -153,16 +153,40 @@ end
 ------------------------------------------------------------------------
 -- 무인 등록
 ------------------------------------------------------------------------
-local function motorsOf(model: Model): { [string]: Motor6D }
+-- 관절 찾기: 예전 몸은 Motor6D, 새 로블록스 몸(아바타 관절 업그레이드)은 AnimationConstraint.
+-- 둘 다 Transform으로 움직이므로 이름만 맞으면 어느 쪽이든 쓴다
+local function isJoint(x: Instance?): boolean
+	return x ~= nil and (x:IsA("Motor6D") or x:IsA("AnimationConstraint"))
+end
+local function motorsOf(model: Model): { [string]: any }
 	local m = {}
 	for name, info in pairs(Poses.MOTORS) do
 		local p = model:FindFirstChild(info[1])
 		local motor = p and p:FindFirstChild(info[2])
-		if motor and motor:IsA("Motor6D") then
+		if not isJoint(motor) then
+			-- 다른 곳에 붙어 있을 수도 있다 (몸 전체에서 같은 이름의 관절)
+			motor = nil
+			for _, d in ipairs(model:GetDescendants()) do
+				if d.Name == info[2] and isJoint(d) then
+					motor = d
+					break
+				end
+			end
+		end
+		if motor then
 			m[name] = motor
 		end
 	end
 	return m
+end
+
+-- 몸동작이 붙은 관절 수 (화면 점검용)
+function Anim.jointCount(model: Model): number
+	local n = 0
+	for _ in pairs(motorsOf(model)) do
+		n += 1
+	end
+	return n
 end
 
 function Anim.watch(model: Model)
