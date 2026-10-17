@@ -819,6 +819,28 @@ Config.Roads = {
 }
 
 Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
+-- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
+function Config.playerPower(dmgMult: number, maxHp: number): number
+	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))
+end
+function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
+	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / 120) * (boss and 1.5 or 1))
+end
+-- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
+Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
+function Config.powerGap(ratio: number): (number, boolean, boolean)
+	local G = Config.POWER_GAP
+	if ratio >= G.immune then
+		return 0, true, true
+	elseif ratio >= G.steady then
+		return 0.2, true, false
+	elseif ratio >= G.soft then
+		return 0.5, false, false
+	end
+	return 1, false, false
+end
+Config.MAX_ATTACKERS = 2 -- 한 사람을 한꺼번에 치는 적은 둘까지 (나머지는 둘레를 돌며 틈을 본다)
+Config.NO_RED_LEVEL = 3 -- 이 단계 이하의 약한 적은 붉은 공격(막을 수 없는 공격)을 쓰지 않는다
 Config.ENEMY_ACTIVE_RANGE = 170 -- 이 안에 사람이 있어야 적이 움직인다
 Config.ENEMY_RESPAWN = 25
 

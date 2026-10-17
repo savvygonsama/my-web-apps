@@ -839,6 +839,28 @@ Config.Roads = {
 }
 
 Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
+-- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
+function Config.playerPower(dmgMult: number, maxHp: number): number
+	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))
+end
+function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
+	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / 120) * (boss and 1.5 or 1))
+end
+-- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
+Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
+function Config.powerGap(ratio: number): (number, boolean, boolean)
+	local G = Config.POWER_GAP
+	if ratio >= G.immune then
+		return 0, true, true
+	elseif ratio >= G.steady then
+		return 0.2, true, false
+	elseif ratio >= G.soft then
+		return 0.5, false, false
+	end
+	return 1, false, false
+end
+Config.MAX_ATTACKERS = 2 -- 한 사람을 한꺼번에 치는 적은 둘까지 (나머지는 둘레를 돌며 틈을 본다)
+Config.NO_RED_LEVEL = 3 -- 이 단계 이하의 약한 적은 붉은 공격(막을 수 없는 공격)을 쓰지 않는다
 Config.ENEMY_ACTIVE_RANGE = 170 -- 이 안에 사람이 있어야 적이 움직인다
 Config.ENEMY_RESPAWN = 25
 
@@ -1833,6 +1855,10 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		stamina = math.floor(p.stamina),
+		power = (function()
+			local f = Combat.fighterOfPlayer(player)
+			return f and (f :: any).power or 0
+		end)(),
 	})
 end
 
@@ -1917,6 +1943,9 @@ local function refreshFighter(player: Player)
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi)
+	local cp = Config.playerPower(f.dmgMult, f.maxHp)
+	;(f :: any).power = cp
+	f.model:SetAttribute("Power", cp)
 	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
 	updateTag(player)
@@ -2944,7 +2973,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testBoss" then
 		if f then
-			Npc.spawn(arg == "hyeolrang" and "hyeolrang" or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
+			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
 		end
 	elseif action == "testEnemy" then
 		if f then
@@ -2976,6 +3005,60 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			if m then
 				f.root.CFrame = CFrame.new(m.at + Vector3.new(0, 4, 12))
 				toast(player, "🌀 " .. m.region .. " · " .. m.name)
+			end
+		end
+	elseif action == "testStyle" then
+		-- 권법 테스트: 어떤 권법이든 (숨은 것도) 바로 익혀 숙련 최대로 쓴다
+		local sd = type(arg) == "string" and Config.STYLE_BY_ID[arg]
+		if sd then
+			p.styles[sd.id] = true
+			p.style = sd.id
+			local m = Calc.mastery(p, sd.id)
+			m.lv = Config.MASTERY_MAX
+			m.xp = 0
+			if f then
+				f.chi = Config.CHI_MAX
+			end
+			Push:FireClient(player, "learned", { style = sd.id, hidden = sd.hidden == true })
+		end
+	elseif action == "testSecret" then
+		-- 시크릿 테스트: 숨은 권법을 진짜 길로 얻어 본다
+		if arg == "fragment" then
+			for i = 1, #Config.Fragments do
+				if not p.fragments[tostring(i)] then
+					p.fragments[tostring(i)] = true
+					local n = countKeys(p.fragments)
+					Push:FireClient(player, "fragment", { n = n, total = #Config.Fragments })
+					if n >= #Config.Fragments then
+						grantStyle(player, "mugeuk", true)
+					end
+					Story.event(player, "fragment")
+					break
+				end
+			end
+		elseif arg == "fragmentTp" then
+			for i, fr in ipairs(Config.Fragments) do
+				if not p.fragments[tostring(i)] and f then
+					f.root.CFrame = CFrame.new(fr.at + Vector3.new(0, 4, 8))
+					toast(player, "📖 비급 조각: " .. (fr.hint or ""))
+					break
+				end
+			end
+		elseif arg == "mugeuk" then
+			for i = 1, #Config.Fragments do
+				p.fragments[tostring(i)] = true
+			end
+			Push:FireClient(player, "fragment", { n = #Config.Fragments, total = #Config.Fragments })
+			grantStyle(player, "mugeuk", true)
+		elseif arg == "hyeolma" then
+			grantStyle(player, "hyeolma", true)
+		elseif arg == "lock" then
+			-- 숨은 권법을 다시 잠근다 (처음부터 다시 얻어 보기)
+			p.styles.mugeuk = nil :: any
+			p.styles.hyeolma = nil :: any
+			p.fragments = {}
+			if p.style == "mugeuk" or p.style == "hyeolma" then
+				p.style = "samjae"
 			end
 		end
 	elseif action == "testReset" then
@@ -3628,6 +3711,21 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	tgt.combatUntil = t + Config.COMBAT_TAG
 	tgt.lastAttacker = att
 
+	-- 전투력 차이: 훨씬 약한 적의 공격은 덜 아프거나, 끄떡없거나, 호신강기에 튕겨 나간다 (붉은 공격도)
+	local gapMul, steady = 1, false
+	if att.npc and tgt.player then
+		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
+		local immune
+		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa))
+		if immune then
+			att.stunUntil = math.max(att.stunUntil, t + 0.45)
+			interrupt(att)
+			knock(att, toAtt * 22 + Vector3.new(0, 8, 0), 0.45)
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "aura", pos = pos })
+			return "immune"
+		end
+	end
+
 	-- 격돌: 상대도 같은 순간 나를 향해 휘둘렀다
 	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe then
 		-- 둘 다 서로 반대쪽으로 튕겨 난다
@@ -3719,10 +3817,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return "deflect"
 		end
 		-- 그냥 막기
-		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt)
+		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
 		tgt.hp -= d
-		local broke = addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
-		knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
+		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
+		if not steady then
+			knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
+		end
 		addChi(tgt, d * Config.CHI_ON_HURT)
 		Combat.sync(tgt)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = broke and "guardbreak" or "block", pos = pos, dmg = d })
@@ -3733,7 +3833,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 
 	-- 맞았다
-	local d = damageOf(att, hit, move, opt.isSkill, opt.act) * defense(tgt)
+	local d = damageOf(att, hit, move, opt.isSkill, opt.act) * defense(tgt) * gapMul
 	local crit = false
 	local aStyle = Combat.styleOf(att)
 	if aStyle and aStyle.backstab and facing < -0.3 then
@@ -3764,9 +3864,11 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
-	addPosture(tgt, postureDmg * 0.4)
-	local heavy = (hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken
-	if not armored(tgt) then
+	if not steady then
+		addPosture(tgt, postureDmg * 0.4)
+	end
+	local heavy = not steady and ((hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken)
+	if not armored(tgt) and not steady then
 		local stun = hit.stun or 0.3
 		local fa = tgt :: any
 		if tgt.npc then
@@ -3837,6 +3939,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		strike = move.strike == true,
 		broken = wasBroken,
 		counter = counterHit,
+		steady = steady,
 	})
 	if hooks.onHit then
 		hooks.onHit(att, tgt, d, opt)
@@ -4084,6 +4187,8 @@ type Enemy = {
 	seq: number,
 	region: string,
 	engaged: { [Player]: boolean },
+	level: number,
+	attackingUntil: number,
 }
 
 Npc.list = {} :: { Enemy }
@@ -4345,6 +4450,9 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	})
 	;(f :: any).rewardMult = 1 + 0.25 * (lv - 1)
 	;(f :: any).typeId = typeId
+	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
+	;(f :: any).power = cp
+	model:SetAttribute("Power", cp)
 	local e: Enemy = {
 		f = f,
 		def = def,
@@ -4359,6 +4467,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		seq = 0,
 		region = region,
 		engaged = {},
+		level = lv,
+		attackingUntil = 0,
 	}
 	table.insert(Npc.list, e)
 	return e
@@ -4805,6 +4915,7 @@ local function attack(e: Enemy, move: any)
 		recover *= 0.7
 	end
 	e.nextAttack = os.clock() + act.dur + recover
+	e.attackingUntil = os.clock() + act.dur + 0.25
 end
 
 local function think(e: Enemy, t: number)
@@ -4920,11 +5031,27 @@ local function think(e: Enemy, t: number)
 		f.hum:MoveTo(pos)
 		return
 	end
+	-- 한 사람을 한꺼번에 치는 적은 둘까지: 나머지는 둘레를 돌며 차례를 기다린다 (보스와 분신은 예외)
+	local waiting = false
+	if e.kind ~= "boss" and not e.def.duel then
+		local busy = 0
+		for _, o in ipairs(Npc.list) do
+			if o ~= e and o.target == tgt and not o.f.dead and (o.attackingUntil > t or o.kind == "boss") then
+				busy += 1
+			end
+		end
+		waiting = busy >= Config.MAX_ATTACKERS
+	end
+	if waiting and t >= e.nextAttack then
+		e.nextAttack = t + 0.3 + math.random() * 0.5
+	end
 	-- 칠 수 있으면 친다
 	if t >= e.nextAttack then
+		local weak = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= Config.NO_RED_LEVEL
 		local moves = {}
 		for _, m in ipairs(e.def.moves) do
-			if d <= m.range + 1 then
+			-- 약한 적은 붉은 공격(막을 수 없는 공격)을 쓰지 않는다
+			if d <= m.range + 1 and not (weak and m.unblockable) then
 				table.insert(moves, m)
 			end
 		end
@@ -4937,20 +5064,31 @@ local function think(e: Enemy, t: number)
 		end
 	end
 	-- 거리 맞추기: 멀면 다가가고, 가까우면 옆으로 돈다
-	local keep = e.def.keep or 5
+	local keep = (e.def.keep or 5) + (waiting and 5 or 0)
 	local to = tgt.root.Position - pos
 	local flatTo = Vector3.new(to.X, 0, to.Z)
 	local dir = flatTo.Magnitude > 0.1 and flatTo.Unit or Vector3.new(0, 0, 1)
+	-- 동료끼리 겹치지 않게 서로 밀어낸다 (한 덩어리로 뭉치지 않고 둘레로 퍼진다)
+	local apart = Vector3.zero
+	for _, o in ipairs(Npc.list) do
+		if o ~= e and not o.f.dead and o.f.root.Parent then
+			local off = pos - o.f.root.Position
+			local od = Vector3.new(off.X, 0, off.Z).Magnitude
+			if od < 6 and od > 0.05 then
+				apart += Vector3.new(off.X, 0, off.Z).Unit * (6 - od)
+			end
+		end
+	end
 	if d > keep + 2 then
-		f.hum:MoveTo(tgt.root.Position - dir * keep)
+		f.hum:MoveTo(tgt.root.Position - dir * keep + apart)
 	elseif d < keep - 2 then
-		f.hum:MoveTo(pos - dir * 4)
+		f.hum:MoveTo(pos - dir * 4 + apart)
 	else
 		if math.random() < 0.05 then
 			e.strafe = -e.strafe
 		end
 		local side = Vector3.new(-dir.Z, 0, dir.X) * e.strafe
-		f.hum:MoveTo(pos + side * 5)
+		f.hum:MoveTo(pos + side * 5 + apart)
 		faceTo(e, tgt.root.Position)
 	end
 end
@@ -6793,6 +6931,7 @@ task.spawn(function()
 end)
 
 -- 각성의 기운 (사람과 사부): 0.5초마다 단계에 맞춰 붙이고 뗀다
+local handKey: { [Model]: string } = setmetatable({}, { __mode = "k" }) :: any
 task.spawn(function()
 	while true do
 		task.wait(0.5)
@@ -6812,6 +6951,20 @@ task.spawn(function()
 			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 			local tier = tonumber(m:GetAttribute("Awaken")) or 0
 			pcall(Fx.awakenAura, m, style and tier or 0, style and style.color or Color3.new(1, 1, 1))
+		end
+		-- 권법마다 손에 맺힌 기운 (사부의 분신도)
+		local ef = workspace:FindFirstChild("Enemies")
+		for _, m in ipairs(ef and ef:GetChildren() or {}) do
+			if m:IsA("Model") and m:GetAttribute("Style") then
+				table.insert(list, m)
+			end
+		end
+		for _, m in ipairs(list) do
+			local key = tostring(m:GetAttribute("Style") or "") .. ":" .. tostring(tonumber(m:GetAttribute("Awaken")) or 0)
+			if handKey[m] ~= key then
+				handKey[m] = key
+				pcall(Fx.styleHands, m, m:GetAttribute("Style"), tonumber(m:GetAttribute("Awaken")) or 0)
+			end
 		end
 	end
 end)
@@ -7895,7 +8048,7 @@ function handlers.hit(data: any)
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
-			if t and t:GetAttribute("Poise") ~= true then
+			if t and t:GetAttribute("Poise") ~= true and not data.steady then
 				local side = (aRoot and tRoot) and (tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 and "flinch_r" or "flinch_l") or "flinch_l"
 				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or side)
 				Anim.play(t, pose, data.broken and 0.7 or (data.heavy and 0.5 or 0.3))
@@ -7923,11 +8076,30 @@ function handlers.hit(data: any)
 				UI.flash(Color3.fromRGB(255, 220, 140), 0.35)
 			end
 		end
-		if hurt then
+		if hurt and data.steady then
+			-- 전투력 차이: 맞아도 끄떡없다
+			Fx.text(pos + Vector3.new(0, 4, 0), "끄떡없다", Color3.fromRGB(200, 220, 255), 24, 0.8)
+			shake(0.2)
+		elseif hurt then
 			shake(data.heavy and 1.4 or 0.6)
 			UI.flash(Color3.fromRGB(255, 40, 30), data.heavy and 0.3 or 0.12)
 		elseif mine and data.heavy and not predicted then
 			shake(0.9)
+		end
+	elseif kind == "aura" then
+		-- 호신강기: 전투력 차이가 너무 커서 약한 적의 공격이 몸에 닿기도 전에 튕겨 나간다
+		local ts = t and Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
+		local c = ts and ts.color or Color3.fromRGB(255, 230, 160)
+		Fx.hitstop({ a }, 0.08)
+		if tRoot then
+			Fx.ring(tRoot.Position, c, 3, 11, 0.35, dir)
+			Fx.ring(tRoot.Position - Vector3.new(0, 2.5, 0), Color3.new(1, 1, 1), 2, 9, 0.3)
+		end
+		Fx.spark(pos, c, 1.4, 8)
+		Fx.sound("deflect", 0.5, 1.5)
+		Fx.text(pos + Vector3.new(0, 4, 0), "호신강기", c, 30, 0.9)
+		if a then
+			Anim.play(a, "parried", 0.45)
 		end
 	elseif kind == "block" or kind == "guardbreak" then
 		Fx.hitstop({ a, t }, 0.05)
@@ -9251,6 +9423,27 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			local off = Vector3.new(math.random() * 8 - 4, math.random() * 6, math.random() * 8 - 4) * s
 			Fx.lightning(pos, pos + off, c, 0.3)
 		end
+	elseif style.fx == "basic" then
+		Fx.ring(pos, c2, 1, 7 * s, 0.25, dir)
+	elseif style.fx == "void" then
+		-- 무극: 맞은 자리가 한 점으로 꺼졌다 터진다
+		local hole = piece(Vector3.new(3, 3, 3) * s, Color3.new(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.1)
+		hole.Position = pos
+		tween(hole, 0.15, { Size = Vector3.new(0.2, 0.2, 0.2) })
+		Debris:AddItem(hole, 0.16)
+		task.delay(0.15, function()
+			Fx.ring(pos, c2, 0.5, 14 * s, 0.35, dir)
+			Fx.ring(pos, c, 0.5, 9 * s, 0.3)
+		end)
+	elseif style.fx == "blood" then
+		-- 혈마: 핏빛 방울이 튀고 붉은 고리
+		Fx.ring(pos, c, 1, 9 * s, 0.3, dir)
+		for _ = 1, heavy and 10 or 6 do
+			local drop = piece(Vector3.new(0.4, 0.4, 0.4), c, Enum.Material.Neon, Enum.PartType.Ball, 0.1)
+			drop.Position = pos
+			tween(drop, 0.45, { Position = pos + Vector3.new(math.random() * 6 - 3, math.random() * 3 - 2, math.random() * 6 - 3) * s, Transparency = 1 })
+			Debris:AddItem(drop, 0.5)
+		end
 	elseif style.fx == "drunk" then
 		Fx.ring(pos, c, 1, 8 * s, 0.4, dir)
 		if heavy then
@@ -9521,6 +9714,160 @@ local function streak(from: Vector3, to: Vector3, color: Color3, width: number, 
 	Debris:AddItem(p, life + 0.05)
 end
 
+-- 권법마다 다른 휘두름 무늬 (주먹이 나갈 때마다 그 권법만의 빛이 앞으로 뻗는다)
+local function flourish(style: any, r: BasePart, heavy: boolean)
+	local c, c2 = style.color, style.color2
+	local cf = r.CFrame
+	local look, right, up = cf.LookVector, cf.RightVector, Vector3.new(0, 1, 0)
+	local base = r.Position + Vector3.new(0, 0.6, 0)
+	local s = heavy and 1.6 or 1
+	local kind = style.fx
+	if kind == "water" then
+		-- 물의 초승달: 물방울이 둥글게 휘어 앞으로 흐른다
+		for i = -4, 4 do
+			local a = i / 4 * 1.1
+			local p = base + (look * math.cos(a) + right * math.sin(a)) * 4.2 * s
+			local d = piece(Vector3.new(0.55, 0.55, 0.55) * s, i % 2 == 0 and c2 or c, Enum.Material.Glass, Enum.PartType.Ball, 0.15)
+			d.Position = base + look * 1.5
+			tween(d, 0.16, { Position = p })
+			task.delay(0.16, function()
+				tween(d, 0.3, { Position = p + look * 3 + Vector3.new(0, -1, 0), Transparency = 1, Size = Vector3.new(0.2, 0.2, 0.2) })
+			end)
+			Debris:AddItem(d, 0.5)
+		end
+	elseif kind == "gold" then
+		-- 금강의 그림자 주먹: 금빛 큰 주먹이 겹쳐 뻗는다
+		local fist = piece(Vector3.new(2.2, 2.2, 2.2) * s, c, Enum.Material.Neon, Enum.PartType.Ball, 0.35)
+		fist.Position = base + look * 1.5
+		tween(fist, 0.18, { Position = base + look * 6 * s, Size = Vector3.new(3.4, 3.4, 3.4) * s, Transparency = 1 })
+		Debris:AddItem(fist, 0.2)
+		local hex = piece(Vector3.new(0.2, 4, 4) * s, c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.4)
+		hex.CFrame = lookAt(base + look * 5, base + look * 6) * CFrame.Angles(0, math.rad(90), 0)
+		tween(hex, 0.25, { Size = Vector3.new(0.05, 8, 8) * s, Transparency = 1 })
+		Debris:AddItem(hex, 0.3)
+	elseif kind == "petal" then
+		-- 매화 부채: 꽃잎이 부채꼴로 흩뿌려진다
+		for _ = 1, heavy and 12 or 7 do
+			local a = (math.random() - 0.5) * 1.6
+			local dir = look * math.cos(a) + right * math.sin(a)
+			local pt = piece(Vector3.new(0.6, 0.06, 0.45), math.random() < 0.5 and c or c2, Enum.Material.SmoothPlastic)
+			pt.CFrame = CFrame.new(base + look * 1.5) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+			tween(pt, 0.45, { CFrame = CFrame.new(base + dir * (5 + math.random() * 3) * s + up * (math.random() * 2 - 0.5)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), Transparency = 1 })
+			Debris:AddItem(pt, 0.5)
+		end
+	elseif kind == "dragon" then
+		-- 용의 몸: 굽이치는 빛 구슬이 앞으로 헤엄친다
+		for i = 1, 7 do
+			local seg = piece(Vector3.new(1, 1, 1) * (1.6 - i * 0.15) * s, c:Lerp(c2, i / 7), Enum.Material.Neon, Enum.PartType.Ball, 0.15)
+			seg.Position = base + look * 1.5
+			local p = base + look * (1.5 + i * 1.1 * s) + right * math.sin(i * 0.9) * 1.2 + up * math.cos(i * 0.9) * 0.6
+			task.delay(i * 0.015, function()
+				tween(seg, 0.14, { Position = p })
+				task.delay(0.14, function()
+					tween(seg, 0.25, { Transparency = 1, Size = seg.Size * 0.3 })
+				end)
+			end)
+			Debris:AddItem(seg, 0.5)
+		end
+	elseif kind == "shadow" then
+		-- 그림자 십자: 보랏빛 두 줄이 엇갈린다
+		for _, sgn in ipairs({ 1, -1 }) do
+			local bar = piece(Vector3.new(0.25, 0.25, 5 * s), c, Enum.Material.Neon, nil, 0.1)
+			bar.CFrame = lookAt(base + look * 3.5, base + look * 4.5) * CFrame.Angles(0, 0, sgn * math.rad(45)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.22, { Size = Vector3.new(0.05, 0.05, 7 * s), Transparency = 1 })
+			Debris:AddItem(bar, 0.25)
+		end
+		local smoke = piece(Vector3.new(1.5, 1.5, 1.5), Color3.fromRGB(30, 15, 45), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.4)
+		smoke.Position = base - look * 0.5
+		tween(smoke, 0.4, { Size = Vector3.new(4, 4, 4), Transparency = 1 })
+		Debris:AddItem(smoke, 0.45)
+	elseif kind == "lightning" then
+		-- 벼락 주먹: 주먹 끝에서 갈라지는 번개
+		local tip = base + look * 2
+		for _ = 1, heavy and 3 or 2 do
+			Fx.lightning(tip, tip + look * (5 + math.random() * 3) * s + right * (math.random() * 4 - 2) + up * (math.random() * 2 - 1), c, 0.22)
+		end
+	elseif kind == "drunk" then
+		-- 취기: 술 방울과 불씨가 휘청이며 퍼진다
+		for _ = 1, 5 do
+			local f = piece(Vector3.new(0.7, 0.7, 0.7) * s, math.random() < 0.5 and Color3.fromRGB(255, 140, 50) or c, Enum.Material.Neon, Enum.PartType.Ball, 0.2)
+			f.Position = base + look * 1.5
+			tween(f, 0.35, { Position = base + look * (3 + math.random() * 3) + right * (math.random() * 4 - 2) + up * math.random() * 2, Size = Vector3.new(0.1, 0.1, 0.1), Transparency = 1 })
+			Debris:AddItem(f, 0.4)
+		end
+	elseif kind == "basic" then
+		-- 삼재: 바른 주먹이 공기를 꿰뚫는 세 겹 고리
+		for i = 1, 3 do
+			task.delay(i * 0.03, function()
+				Fx.ring(base + look * (1.5 + i * 1.2), i == 2 and c2 or c, 0.5, (2 + i) * s, 0.18, look)
+			end)
+		end
+	elseif kind == "void" then
+		-- 무극: 앞이 한 점으로 빨려 들었다가 터진다
+		local p0 = base + look * 4
+		local hole = piece(Vector3.new(4, 4, 4) * s, Color3.new(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.2)
+		hole.Position = p0
+		tween(hole, 0.12, { Size = Vector3.new(0.3, 0.3, 0.3) })
+		task.delay(0.12, function()
+			hole:Destroy()
+			Fx.ring(p0, c2, 0.5, 10 * s, 0.3, look)
+			Fx.ring(p0, c, 0.5, 6 * s, 0.25)
+		end)
+		Debris:AddItem(hole, 0.2)
+	elseif kind == "blood" then
+		-- 혈마: 핏빛 세 갈래 손톱 자국
+		for i = -1, 1 do
+			local bar = piece(Vector3.new(0.18, 0.18, 4.5 * s), i == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+			bar.CFrame = lookAt(base + look * 3.2 + right * i * 0.7, base + look * 4.2 + right * i * 0.7) * CFrame.Angles(0, 0, math.rad(60)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.28, { Size = Vector3.new(0.04, 0.04, 6 * s), Transparency = 1 })
+			Debris:AddItem(bar, 0.3)
+		end
+	end
+end
+
+-- 권법마다 손에 맺힌 기운 (쓰는 권법이 바뀌면 바뀐다, 각성하면 짙어진다)
+local HAND_FX = {
+	water = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.5, life = 0.6, size = 0.35 },
+	gold = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2, life = 0.5, size = 0.4 },
+	petal = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.5, life = 0.9, size = 0.3 },
+	dragon = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2, life = 0.45, size = 0.5 },
+	shadow = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1, life = 0.7, size = 0.6 },
+	lightning = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 6, life = 0.15, size = 0.3 },
+	drunk = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 1.5, life = 0.5, size = 0.4 },
+	basic = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1, life = 0.4, size = 0.2 },
+	void = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 0.6, life = 1, size = 0.7 },
+	blood = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.6, size = 0.5 },
+}
+function Fx.styleHands(model: Model, styleId: any, tier: number)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d.Name == "KwonStyleHand" then
+			d:Destroy()
+		end
+	end
+	local style = styleOf(styleId)
+	local h = style and HAND_FX[style.fx]
+	if not style or not h then
+		return
+	end
+	for _, side in ipairs({ "RightHand", "LeftHand", "Right Arm", "Left Arm" }) do
+		local hand = model:FindFirstChild(side)
+		if hand and hand:IsA("BasePart") then
+			local e = Instance.new("ParticleEmitter")
+			e.Name = "KwonStyleHand"
+			e.Texture = h.tex
+			e.Color = ColorSequence.new(style.color, style.color2)
+			e.LightEmission = style.fx == "shadow" and 0 or 1
+			e.Transparency = NumberSequence.new(0.3, 1)
+			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4), 0)
+			e.Lifetime = NumberRange.new(h.life * 0.7, h.life)
+			e.Speed = NumberRange.new(h.speed * 0.5, h.speed)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Rate = 6 + tier * 10
+			e.Parent = hand
+		end
+	end
+end
+
 -- 휘두를 때마다 앞에 터지는 바람 (빗나가도 보인다)
 function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	local r = rootPart(model)
@@ -9536,6 +9883,9 @@ function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	arc.CFrame = lookAt(pos, pos + look) * CFrame.Angles(0, 0, math.random() * math.pi)
 	tween(arc, 0.18, { Size = Vector3.new(heavy and 9 or 6, 0.05, 0.3), Transparency = 1 })
 	Debris:AddItem(arc, 0.2)
+	if style then
+		flourish(style, r, heavy)
+	end
 end
 
 function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
@@ -10237,7 +10587,7 @@ function UI.enemyTag(model: Model)
 	end
 	local isBoss = model:GetAttribute("Boss") == true
 	local w = isBoss and 300 or 230
-	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 58), StudsOffset = Vector3.new(0, 2.8, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
+	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 76), StudsOffset = Vector3.new(0, 3.2, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	local label = model:GetAttribute("Label")
 	local lv = model:GetAttribute("Level")
 	local lvText = type(lv) == "number" and string.format("Lv.%d ", lv) or ""
@@ -10247,6 +10597,45 @@ function UI.enemyTag(model: Model)
 	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = back }, { corner(4) })
 	local pback = new("Frame", { Position = UDim2.new(0.15, 0, 0, 45), Size = UDim2.new(0.7, 0, 0, 7), BackgroundColor3 = Color3.fromRGB(20, 10, 10), BackgroundTransparency = 0.3, Parent = bb }, { corner(3) })
 	local pfill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pback }, { corner(3) })
+	-- 전투력 견주기: 차이가 크면 그 적의 공격은 나에게 통하지 않는다
+	local powerLabel = text({ Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
+	local function refreshPower()
+		local ep = model:GetAttribute("Power")
+		local char = player.Character
+		local mp = char and char:GetAttribute("Power")
+		if type(ep) ~= "number" then
+			powerLabel.Text = ""
+			return
+		end
+		local tagText, col = "", Color3.fromRGB(230, 220, 200)
+		if type(mp) == "number" then
+			local r = mp / math.max(1, ep)
+			local G = Config.POWER_GAP
+			if r >= G.immune then
+				tagText, col = " · 호신강기 (통하지 않음)", Color3.fromRGB(150, 150, 150)
+			elseif r >= G.steady then
+				tagText, col = " · 한참 약함", Color3.fromRGB(170, 200, 170)
+			elseif r >= G.soft then
+				tagText, col = " · 약함", Color3.fromRGB(180, 230, 180)
+			elseif r >= 0.8 then
+				tagText, col = " · 비슷", Color3.fromRGB(255, 230, 160)
+			elseif r >= 0.5 then
+				tagText, col = " · 강함", Color3.fromRGB(255, 150, 100)
+			else
+				tagText, col = " · 아주 강함", Color3.fromRGB(255, 80, 70)
+			end
+		end
+		powerLabel.Text = "⚔ 전투력 " .. Config.formatNumber(ep) .. tagText
+		powerLabel.TextColor3 = col
+	end
+	refreshPower()
+	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
+	task.spawn(function()
+		while model.Parent do
+			task.wait(2)
+			refreshPower()
+		end
+	end)
 	local function refresh()
 		local hp = model:GetAttribute("Hp")
 		local mx = model:GetAttribute("MaxHp")
@@ -10639,18 +11028,45 @@ end
 
 local function buildTest()
 	local page = makePage("test")
-	new("UIGridLayout", { CellSize = UDim2.new(0.33, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = page })
-	for _, item in ipairs({
-		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 }, { "🥋 숙련 최대", "testMastery" },
-		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
-		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
-		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
-		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" }, { "↺ 처음으로", "testReset" },
-	}) do
-		button({ Text = item[1], TextSize = 17 }, function()
-			Request:FireServer(item[2], item[3])
-		end).Parent = page
+	local list = scroller(page, UDim2.fromScale(1, 1))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local order = 0
+	local function section(title: string, items: { any })
+		order += 1
+		text({ Size = UDim2.new(1, -12, 0, 26), Text = title, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = order, Parent = list })
+		order += 1
+		local rows = math.ceil(#items / 3)
+		local grid = new("Frame", { Size = UDim2.new(1, -12, 0, rows * 52), BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
+		new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
+		for _, item in ipairs(items) do
+			local b = button({ Text = item[1], TextSize = 16, BackgroundColor3 = item.color or C.panel2 }, function()
+				Request:FireServer(item[2], item[3])
+			end)
+			b.Parent = grid
+		end
 	end
+	section("기본", {
+		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 },
+		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" },
+		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
+		{ "↺ 처음으로", "testReset", color = C.red },
+	})
+	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
+	local styleItems = {}
+	for _, st in ipairs(Config.Styles) do
+		table.insert(styleItems, { st.icon .. " " .. st.name .. " [" .. st.grade .. "]", "testStyle", st.id, color = st.color:Lerp(Color3.new(0, 0, 0), 0.55) })
+	end
+	section("🥋 권법 테스트 (바로 익혀 숙련 최대로)", styleItems)
+	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
+		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
+		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
+	})
+	section("적과 보스", {
+		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
+		{ "🪵 무뢰배", "testEnemy", "thug" }, { "🗡 산적", "testEnemy", "bandit" }, { "🔱 창병", "testEnemy", "spearman" },
+		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🛡 철갑 무사", "testEnemy", "ironguard" },
+		{ "🌑 흑영 자객", "testEnemy", "shadowblade" }, { "🩸 혈교도", "testEnemy", "cultist" }, { "🩸 혈교 장로", "testEnemy", "cultelder" },
+	})
 end
 
 ------------------------------------------------------------------------
@@ -10826,7 +11242,7 @@ local topInfo: TextLabel
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] 💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")
@@ -11420,7 +11836,7 @@ function UI.init(req: RemoteEvent)
 	scaled(toastBox)
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
-	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
+	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })

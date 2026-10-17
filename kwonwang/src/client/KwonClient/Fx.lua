@@ -310,6 +310,27 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			local off = Vector3.new(math.random() * 8 - 4, math.random() * 6, math.random() * 8 - 4) * s
 			Fx.lightning(pos, pos + off, c, 0.3)
 		end
+	elseif style.fx == "basic" then
+		Fx.ring(pos, c2, 1, 7 * s, 0.25, dir)
+	elseif style.fx == "void" then
+		-- 무극: 맞은 자리가 한 점으로 꺼졌다 터진다
+		local hole = piece(Vector3.new(3, 3, 3) * s, Color3.new(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.1)
+		hole.Position = pos
+		tween(hole, 0.15, { Size = Vector3.new(0.2, 0.2, 0.2) })
+		Debris:AddItem(hole, 0.16)
+		task.delay(0.15, function()
+			Fx.ring(pos, c2, 0.5, 14 * s, 0.35, dir)
+			Fx.ring(pos, c, 0.5, 9 * s, 0.3)
+		end)
+	elseif style.fx == "blood" then
+		-- 혈마: 핏빛 방울이 튀고 붉은 고리
+		Fx.ring(pos, c, 1, 9 * s, 0.3, dir)
+		for _ = 1, heavy and 10 or 6 do
+			local drop = piece(Vector3.new(0.4, 0.4, 0.4), c, Enum.Material.Neon, Enum.PartType.Ball, 0.1)
+			drop.Position = pos
+			tween(drop, 0.45, { Position = pos + Vector3.new(math.random() * 6 - 3, math.random() * 3 - 2, math.random() * 6 - 3) * s, Transparency = 1 })
+			Debris:AddItem(drop, 0.5)
+		end
 	elseif style.fx == "drunk" then
 		Fx.ring(pos, c, 1, 8 * s, 0.4, dir)
 		if heavy then
@@ -580,6 +601,160 @@ local function streak(from: Vector3, to: Vector3, color: Color3, width: number, 
 	Debris:AddItem(p, life + 0.05)
 end
 
+-- 권법마다 다른 휘두름 무늬 (주먹이 나갈 때마다 그 권법만의 빛이 앞으로 뻗는다)
+local function flourish(style: any, r: BasePart, heavy: boolean)
+	local c, c2 = style.color, style.color2
+	local cf = r.CFrame
+	local look, right, up = cf.LookVector, cf.RightVector, Vector3.new(0, 1, 0)
+	local base = r.Position + Vector3.new(0, 0.6, 0)
+	local s = heavy and 1.6 or 1
+	local kind = style.fx
+	if kind == "water" then
+		-- 물의 초승달: 물방울이 둥글게 휘어 앞으로 흐른다
+		for i = -4, 4 do
+			local a = i / 4 * 1.1
+			local p = base + (look * math.cos(a) + right * math.sin(a)) * 4.2 * s
+			local d = piece(Vector3.new(0.55, 0.55, 0.55) * s, i % 2 == 0 and c2 or c, Enum.Material.Glass, Enum.PartType.Ball, 0.15)
+			d.Position = base + look * 1.5
+			tween(d, 0.16, { Position = p })
+			task.delay(0.16, function()
+				tween(d, 0.3, { Position = p + look * 3 + Vector3.new(0, -1, 0), Transparency = 1, Size = Vector3.new(0.2, 0.2, 0.2) })
+			end)
+			Debris:AddItem(d, 0.5)
+		end
+	elseif kind == "gold" then
+		-- 금강의 그림자 주먹: 금빛 큰 주먹이 겹쳐 뻗는다
+		local fist = piece(Vector3.new(2.2, 2.2, 2.2) * s, c, Enum.Material.Neon, Enum.PartType.Ball, 0.35)
+		fist.Position = base + look * 1.5
+		tween(fist, 0.18, { Position = base + look * 6 * s, Size = Vector3.new(3.4, 3.4, 3.4) * s, Transparency = 1 })
+		Debris:AddItem(fist, 0.2)
+		local hex = piece(Vector3.new(0.2, 4, 4) * s, c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.4)
+		hex.CFrame = lookAt(base + look * 5, base + look * 6) * CFrame.Angles(0, math.rad(90), 0)
+		tween(hex, 0.25, { Size = Vector3.new(0.05, 8, 8) * s, Transparency = 1 })
+		Debris:AddItem(hex, 0.3)
+	elseif kind == "petal" then
+		-- 매화 부채: 꽃잎이 부채꼴로 흩뿌려진다
+		for _ = 1, heavy and 12 or 7 do
+			local a = (math.random() - 0.5) * 1.6
+			local dir = look * math.cos(a) + right * math.sin(a)
+			local pt = piece(Vector3.new(0.6, 0.06, 0.45), math.random() < 0.5 and c or c2, Enum.Material.SmoothPlastic)
+			pt.CFrame = CFrame.new(base + look * 1.5) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+			tween(pt, 0.45, { CFrame = CFrame.new(base + dir * (5 + math.random() * 3) * s + up * (math.random() * 2 - 0.5)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), Transparency = 1 })
+			Debris:AddItem(pt, 0.5)
+		end
+	elseif kind == "dragon" then
+		-- 용의 몸: 굽이치는 빛 구슬이 앞으로 헤엄친다
+		for i = 1, 7 do
+			local seg = piece(Vector3.new(1, 1, 1) * (1.6 - i * 0.15) * s, c:Lerp(c2, i / 7), Enum.Material.Neon, Enum.PartType.Ball, 0.15)
+			seg.Position = base + look * 1.5
+			local p = base + look * (1.5 + i * 1.1 * s) + right * math.sin(i * 0.9) * 1.2 + up * math.cos(i * 0.9) * 0.6
+			task.delay(i * 0.015, function()
+				tween(seg, 0.14, { Position = p })
+				task.delay(0.14, function()
+					tween(seg, 0.25, { Transparency = 1, Size = seg.Size * 0.3 })
+				end)
+			end)
+			Debris:AddItem(seg, 0.5)
+		end
+	elseif kind == "shadow" then
+		-- 그림자 십자: 보랏빛 두 줄이 엇갈린다
+		for _, sgn in ipairs({ 1, -1 }) do
+			local bar = piece(Vector3.new(0.25, 0.25, 5 * s), c, Enum.Material.Neon, nil, 0.1)
+			bar.CFrame = lookAt(base + look * 3.5, base + look * 4.5) * CFrame.Angles(0, 0, sgn * math.rad(45)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.22, { Size = Vector3.new(0.05, 0.05, 7 * s), Transparency = 1 })
+			Debris:AddItem(bar, 0.25)
+		end
+		local smoke = piece(Vector3.new(1.5, 1.5, 1.5), Color3.fromRGB(30, 15, 45), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.4)
+		smoke.Position = base - look * 0.5
+		tween(smoke, 0.4, { Size = Vector3.new(4, 4, 4), Transparency = 1 })
+		Debris:AddItem(smoke, 0.45)
+	elseif kind == "lightning" then
+		-- 벼락 주먹: 주먹 끝에서 갈라지는 번개
+		local tip = base + look * 2
+		for _ = 1, heavy and 3 or 2 do
+			Fx.lightning(tip, tip + look * (5 + math.random() * 3) * s + right * (math.random() * 4 - 2) + up * (math.random() * 2 - 1), c, 0.22)
+		end
+	elseif kind == "drunk" then
+		-- 취기: 술 방울과 불씨가 휘청이며 퍼진다
+		for _ = 1, 5 do
+			local f = piece(Vector3.new(0.7, 0.7, 0.7) * s, math.random() < 0.5 and Color3.fromRGB(255, 140, 50) or c, Enum.Material.Neon, Enum.PartType.Ball, 0.2)
+			f.Position = base + look * 1.5
+			tween(f, 0.35, { Position = base + look * (3 + math.random() * 3) + right * (math.random() * 4 - 2) + up * math.random() * 2, Size = Vector3.new(0.1, 0.1, 0.1), Transparency = 1 })
+			Debris:AddItem(f, 0.4)
+		end
+	elseif kind == "basic" then
+		-- 삼재: 바른 주먹이 공기를 꿰뚫는 세 겹 고리
+		for i = 1, 3 do
+			task.delay(i * 0.03, function()
+				Fx.ring(base + look * (1.5 + i * 1.2), i == 2 and c2 or c, 0.5, (2 + i) * s, 0.18, look)
+			end)
+		end
+	elseif kind == "void" then
+		-- 무극: 앞이 한 점으로 빨려 들었다가 터진다
+		local p0 = base + look * 4
+		local hole = piece(Vector3.new(4, 4, 4) * s, Color3.new(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.2)
+		hole.Position = p0
+		tween(hole, 0.12, { Size = Vector3.new(0.3, 0.3, 0.3) })
+		task.delay(0.12, function()
+			hole:Destroy()
+			Fx.ring(p0, c2, 0.5, 10 * s, 0.3, look)
+			Fx.ring(p0, c, 0.5, 6 * s, 0.25)
+		end)
+		Debris:AddItem(hole, 0.2)
+	elseif kind == "blood" then
+		-- 혈마: 핏빛 세 갈래 손톱 자국
+		for i = -1, 1 do
+			local bar = piece(Vector3.new(0.18, 0.18, 4.5 * s), i == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+			bar.CFrame = lookAt(base + look * 3.2 + right * i * 0.7, base + look * 4.2 + right * i * 0.7) * CFrame.Angles(0, 0, math.rad(60)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.28, { Size = Vector3.new(0.04, 0.04, 6 * s), Transparency = 1 })
+			Debris:AddItem(bar, 0.3)
+		end
+	end
+end
+
+-- 권법마다 손에 맺힌 기운 (쓰는 권법이 바뀌면 바뀐다, 각성하면 짙어진다)
+local HAND_FX = {
+	water = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.5, life = 0.6, size = 0.35 },
+	gold = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2, life = 0.5, size = 0.4 },
+	petal = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.5, life = 0.9, size = 0.3 },
+	dragon = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2, life = 0.45, size = 0.5 },
+	shadow = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1, life = 0.7, size = 0.6 },
+	lightning = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 6, life = 0.15, size = 0.3 },
+	drunk = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 1.5, life = 0.5, size = 0.4 },
+	basic = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1, life = 0.4, size = 0.2 },
+	void = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 0.6, life = 1, size = 0.7 },
+	blood = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.6, size = 0.5 },
+}
+function Fx.styleHands(model: Model, styleId: any, tier: number)
+	for _, d in ipairs(model:GetDescendants()) do
+		if d.Name == "KwonStyleHand" then
+			d:Destroy()
+		end
+	end
+	local style = styleOf(styleId)
+	local h = style and HAND_FX[style.fx]
+	if not style or not h then
+		return
+	end
+	for _, side in ipairs({ "RightHand", "LeftHand", "Right Arm", "Left Arm" }) do
+		local hand = model:FindFirstChild(side)
+		if hand and hand:IsA("BasePart") then
+			local e = Instance.new("ParticleEmitter")
+			e.Name = "KwonStyleHand"
+			e.Texture = h.tex
+			e.Color = ColorSequence.new(style.color, style.color2)
+			e.LightEmission = style.fx == "shadow" and 0 or 1
+			e.Transparency = NumberSequence.new(0.3, 1)
+			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4), 0)
+			e.Lifetime = NumberRange.new(h.life * 0.7, h.life)
+			e.Speed = NumberRange.new(h.speed * 0.5, h.speed)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Rate = 6 + tier * 10
+			e.Parent = hand
+		end
+	end
+end
+
 -- 휘두를 때마다 앞에 터지는 바람 (빗나가도 보인다)
 function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	local r = rootPart(model)
@@ -595,6 +770,9 @@ function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	arc.CFrame = lookAt(pos, pos + look) * CFrame.Angles(0, 0, math.random() * math.pi)
 	tween(arc, 0.18, { Size = Vector3.new(heavy and 9 or 6, 0.05, 0.3), Transparency = 1 })
 	Debris:AddItem(arc, 0.2)
+	if style then
+		flourish(style, r, heavy)
+	end
 end
 
 function Fx.cast(styleId: any, slot: any, model: Model, dur: number)

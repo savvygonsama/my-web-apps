@@ -66,6 +66,7 @@ task.spawn(function()
 end)
 
 -- 각성의 기운 (사람과 사부): 0.5초마다 단계에 맞춰 붙이고 뗀다
+local handKey: { [Model]: string } = setmetatable({}, { __mode = "k" }) :: any
 task.spawn(function()
 	while true do
 		task.wait(0.5)
@@ -85,6 +86,20 @@ task.spawn(function()
 			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 			local tier = tonumber(m:GetAttribute("Awaken")) or 0
 			pcall(Fx.awakenAura, m, style and tier or 0, style and style.color or Color3.new(1, 1, 1))
+		end
+		-- 권법마다 손에 맺힌 기운 (사부의 분신도)
+		local ef = workspace:FindFirstChild("Enemies")
+		for _, m in ipairs(ef and ef:GetChildren() or {}) do
+			if m:IsA("Model") and m:GetAttribute("Style") then
+				table.insert(list, m)
+			end
+		end
+		for _, m in ipairs(list) do
+			local key = tostring(m:GetAttribute("Style") or "") .. ":" .. tostring(tonumber(m:GetAttribute("Awaken")) or 0)
+			if handKey[m] ~= key then
+				handKey[m] = key
+				pcall(Fx.styleHands, m, m:GetAttribute("Style"), tonumber(m:GetAttribute("Awaken")) or 0)
+			end
 		end
 	end
 end)
@@ -1168,7 +1183,7 @@ function handlers.hit(data: any)
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
-			if t and t:GetAttribute("Poise") ~= true then
+			if t and t:GetAttribute("Poise") ~= true and not data.steady then
 				local side = (aRoot and tRoot) and (tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 and "flinch_r" or "flinch_l") or "flinch_l"
 				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or side)
 				Anim.play(t, pose, data.broken and 0.7 or (data.heavy and 0.5 or 0.3))
@@ -1196,11 +1211,30 @@ function handlers.hit(data: any)
 				UI.flash(Color3.fromRGB(255, 220, 140), 0.35)
 			end
 		end
-		if hurt then
+		if hurt and data.steady then
+			-- 전투력 차이: 맞아도 끄떡없다
+			Fx.text(pos + Vector3.new(0, 4, 0), "끄떡없다", Color3.fromRGB(200, 220, 255), 24, 0.8)
+			shake(0.2)
+		elseif hurt then
 			shake(data.heavy and 1.4 or 0.6)
 			UI.flash(Color3.fromRGB(255, 40, 30), data.heavy and 0.3 or 0.12)
 		elseif mine and data.heavy and not predicted then
 			shake(0.9)
+		end
+	elseif kind == "aura" then
+		-- 호신강기: 전투력 차이가 너무 커서 약한 적의 공격이 몸에 닿기도 전에 튕겨 나간다
+		local ts = t and Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
+		local c = ts and ts.color or Color3.fromRGB(255, 230, 160)
+		Fx.hitstop({ a }, 0.08)
+		if tRoot then
+			Fx.ring(tRoot.Position, c, 3, 11, 0.35, dir)
+			Fx.ring(tRoot.Position - Vector3.new(0, 2.5, 0), Color3.new(1, 1, 1), 2, 9, 0.3)
+		end
+		Fx.spark(pos, c, 1.4, 8)
+		Fx.sound("deflect", 0.5, 1.5)
+		Fx.text(pos + Vector3.new(0, 4, 0), "호신강기", c, 30, 0.9)
+		if a then
+			Anim.play(a, "parried", 0.45)
 		end
 	elseif kind == "block" or kind == "guardbreak" then
 		Fx.hitstop({ a, t }, 0.05)

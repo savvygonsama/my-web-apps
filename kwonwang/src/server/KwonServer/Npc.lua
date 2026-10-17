@@ -21,6 +21,8 @@ type Enemy = {
 	seq: number,
 	region: string,
 	engaged: { [Player]: boolean },
+	level: number,
+	attackingUntil: number,
 }
 
 Npc.list = {} :: { Enemy }
@@ -282,6 +284,9 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	})
 	;(f :: any).rewardMult = 1 + 0.25 * (lv - 1)
 	;(f :: any).typeId = typeId
+	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
+	;(f :: any).power = cp
+	model:SetAttribute("Power", cp)
 	local e: Enemy = {
 		f = f,
 		def = def,
@@ -296,6 +301,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		seq = 0,
 		region = region,
 		engaged = {},
+		level = lv,
+		attackingUntil = 0,
 	}
 	table.insert(Npc.list, e)
 	return e
@@ -742,6 +749,7 @@ local function attack(e: Enemy, move: any)
 		recover *= 0.7
 	end
 	e.nextAttack = os.clock() + act.dur + recover
+	e.attackingUntil = os.clock() + act.dur + 0.25
 end
 
 local function think(e: Enemy, t: number)
@@ -857,11 +865,27 @@ local function think(e: Enemy, t: number)
 		f.hum:MoveTo(pos)
 		return
 	end
+	-- 한 사람을 한꺼번에 치는 적은 둘까지: 나머지는 둘레를 돌며 차례를 기다린다 (보스와 분신은 예외)
+	local waiting = false
+	if e.kind ~= "boss" and not e.def.duel then
+		local busy = 0
+		for _, o in ipairs(Npc.list) do
+			if o ~= e and o.target == tgt and not o.f.dead and (o.attackingUntil > t or o.kind == "boss") then
+				busy += 1
+			end
+		end
+		waiting = busy >= Config.MAX_ATTACKERS
+	end
+	if waiting and t >= e.nextAttack then
+		e.nextAttack = t + 0.3 + math.random() * 0.5
+	end
 	-- 칠 수 있으면 친다
 	if t >= e.nextAttack then
+		local weak = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= Config.NO_RED_LEVEL
 		local moves = {}
 		for _, m in ipairs(e.def.moves) do
-			if d <= m.range + 1 then
+			-- 약한 적은 붉은 공격(막을 수 없는 공격)을 쓰지 않는다
+			if d <= m.range + 1 and not (weak and m.unblockable) then
 				table.insert(moves, m)
 			end
 		end
@@ -874,20 +898,31 @@ local function think(e: Enemy, t: number)
 		end
 	end
 	-- 거리 맞추기: 멀면 다가가고, 가까우면 옆으로 돈다
-	local keep = e.def.keep or 5
+	local keep = (e.def.keep or 5) + (waiting and 5 or 0)
 	local to = tgt.root.Position - pos
 	local flatTo = Vector3.new(to.X, 0, to.Z)
 	local dir = flatTo.Magnitude > 0.1 and flatTo.Unit or Vector3.new(0, 0, 1)
+	-- 동료끼리 겹치지 않게 서로 밀어낸다 (한 덩어리로 뭉치지 않고 둘레로 퍼진다)
+	local apart = Vector3.zero
+	for _, o in ipairs(Npc.list) do
+		if o ~= e and not o.f.dead and o.f.root.Parent then
+			local off = pos - o.f.root.Position
+			local od = Vector3.new(off.X, 0, off.Z).Magnitude
+			if od < 6 and od > 0.05 then
+				apart += Vector3.new(off.X, 0, off.Z).Unit * (6 - od)
+			end
+		end
+	end
 	if d > keep + 2 then
-		f.hum:MoveTo(tgt.root.Position - dir * keep)
+		f.hum:MoveTo(tgt.root.Position - dir * keep + apart)
 	elseif d < keep - 2 then
-		f.hum:MoveTo(pos - dir * 4)
+		f.hum:MoveTo(pos - dir * 4 + apart)
 	else
 		if math.random() < 0.05 then
 			e.strafe = -e.strafe
 		end
 		local side = Vector3.new(-dir.Z, 0, dir.X) * e.strafe
-		f.hum:MoveTo(pos + side * 5)
+		f.hum:MoveTo(pos + side * 5 + apart)
 		faceTo(e, tgt.root.Position)
 	end
 end

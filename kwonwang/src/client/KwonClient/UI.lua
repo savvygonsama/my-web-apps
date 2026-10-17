@@ -270,7 +270,7 @@ function UI.enemyTag(model: Model)
 	end
 	local isBoss = model:GetAttribute("Boss") == true
 	local w = isBoss and 300 or 230
-	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 58), StudsOffset = Vector3.new(0, 2.8, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
+	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 76), StudsOffset = Vector3.new(0, 3.2, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	local label = model:GetAttribute("Label")
 	local lv = model:GetAttribute("Level")
 	local lvText = type(lv) == "number" and string.format("Lv.%d ", lv) or ""
@@ -280,6 +280,45 @@ function UI.enemyTag(model: Model)
 	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = back }, { corner(4) })
 	local pback = new("Frame", { Position = UDim2.new(0.15, 0, 0, 45), Size = UDim2.new(0.7, 0, 0, 7), BackgroundColor3 = Color3.fromRGB(20, 10, 10), BackgroundTransparency = 0.3, Parent = bb }, { corner(3) })
 	local pfill = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pback }, { corner(3) })
+	-- 전투력 견주기: 차이가 크면 그 적의 공격은 나에게 통하지 않는다
+	local powerLabel = text({ Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
+	local function refreshPower()
+		local ep = model:GetAttribute("Power")
+		local char = player.Character
+		local mp = char and char:GetAttribute("Power")
+		if type(ep) ~= "number" then
+			powerLabel.Text = ""
+			return
+		end
+		local tagText, col = "", Color3.fromRGB(230, 220, 200)
+		if type(mp) == "number" then
+			local r = mp / math.max(1, ep)
+			local G = Config.POWER_GAP
+			if r >= G.immune then
+				tagText, col = " · 호신강기 (통하지 않음)", Color3.fromRGB(150, 150, 150)
+			elseif r >= G.steady then
+				tagText, col = " · 한참 약함", Color3.fromRGB(170, 200, 170)
+			elseif r >= G.soft then
+				tagText, col = " · 약함", Color3.fromRGB(180, 230, 180)
+			elseif r >= 0.8 then
+				tagText, col = " · 비슷", Color3.fromRGB(255, 230, 160)
+			elseif r >= 0.5 then
+				tagText, col = " · 강함", Color3.fromRGB(255, 150, 100)
+			else
+				tagText, col = " · 아주 강함", Color3.fromRGB(255, 80, 70)
+			end
+		end
+		powerLabel.Text = "⚔ 전투력 " .. Config.formatNumber(ep) .. tagText
+		powerLabel.TextColor3 = col
+	end
+	refreshPower()
+	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
+	task.spawn(function()
+		while model.Parent do
+			task.wait(2)
+			refreshPower()
+		end
+	end)
 	local function refresh()
 		local hp = model:GetAttribute("Hp")
 		local mx = model:GetAttribute("MaxHp")
@@ -672,18 +711,45 @@ end
 
 local function buildTest()
 	local page = makePage("test")
-	new("UIGridLayout", { CellSize = UDim2.new(0.33, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = page })
-	for _, item in ipairs({
-		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 }, { "🥋 숙련 최대", "testMastery" },
-		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
-		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
-		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
-		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" }, { "↺ 처음으로", "testReset" },
-	}) do
-		button({ Text = item[1], TextSize = 17 }, function()
-			Request:FireServer(item[2], item[3])
-		end).Parent = page
+	local list = scroller(page, UDim2.fromScale(1, 1))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local order = 0
+	local function section(title: string, items: { any })
+		order += 1
+		text({ Size = UDim2.new(1, -12, 0, 26), Text = title, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = order, Parent = list })
+		order += 1
+		local rows = math.ceil(#items / 3)
+		local grid = new("Frame", { Size = UDim2.new(1, -12, 0, rows * 52), BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
+		new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
+		for _, item in ipairs(items) do
+			local b = button({ Text = item[1], TextSize = 16, BackgroundColor3 = item.color or C.panel2 }, function()
+				Request:FireServer(item[2], item[3])
+			end)
+			b.Parent = grid
+		end
 	end
+	section("기본", {
+		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 },
+		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" },
+		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
+		{ "↺ 처음으로", "testReset", color = C.red },
+	})
+	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
+	local styleItems = {}
+	for _, st in ipairs(Config.Styles) do
+		table.insert(styleItems, { st.icon .. " " .. st.name .. " [" .. st.grade .. "]", "testStyle", st.id, color = st.color:Lerp(Color3.new(0, 0, 0), 0.55) })
+	end
+	section("🥋 권법 테스트 (바로 익혀 숙련 최대로)", styleItems)
+	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
+		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
+		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
+	})
+	section("적과 보스", {
+		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
+		{ "🪵 무뢰배", "testEnemy", "thug" }, { "🗡 산적", "testEnemy", "bandit" }, { "🔱 창병", "testEnemy", "spearman" },
+		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🛡 철갑 무사", "testEnemy", "ironguard" },
+		{ "🌑 흑영 자객", "testEnemy", "shadowblade" }, { "🩸 혈교도", "testEnemy", "cultist" }, { "🩸 혈교 장로", "testEnemy", "cultelder" },
+	})
 end
 
 ------------------------------------------------------------------------
@@ -859,7 +925,7 @@ local topInfo: TextLabel
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] 💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")
@@ -1453,7 +1519,7 @@ function UI.init(req: RemoteEvent)
 	scaled(toastBox)
 	buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
-	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
+	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })

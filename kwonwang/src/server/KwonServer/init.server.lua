@@ -292,6 +292,10 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		stamina = math.floor(p.stamina),
+		power = (function()
+			local f = Combat.fighterOfPlayer(player)
+			return f and (f :: any).power or 0
+		end)(),
 	})
 end
 
@@ -376,6 +380,9 @@ local function refreshFighter(player: Player)
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi)
+	local cp = Config.playerPower(f.dmgMult, f.maxHp)
+	;(f :: any).power = cp
+	f.model:SetAttribute("Power", cp)
 	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
 	updateTag(player)
@@ -1403,7 +1410,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testBoss" then
 		if f then
-			Npc.spawn(arg == "hyeolrang" and "hyeolrang" or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
+			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
 		end
 	elseif action == "testEnemy" then
 		if f then
@@ -1435,6 +1442,60 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			if m then
 				f.root.CFrame = CFrame.new(m.at + Vector3.new(0, 4, 12))
 				toast(player, "🌀 " .. m.region .. " · " .. m.name)
+			end
+		end
+	elseif action == "testStyle" then
+		-- 권법 테스트: 어떤 권법이든 (숨은 것도) 바로 익혀 숙련 최대로 쓴다
+		local sd = type(arg) == "string" and Config.STYLE_BY_ID[arg]
+		if sd then
+			p.styles[sd.id] = true
+			p.style = sd.id
+			local m = Calc.mastery(p, sd.id)
+			m.lv = Config.MASTERY_MAX
+			m.xp = 0
+			if f then
+				f.chi = Config.CHI_MAX
+			end
+			Push:FireClient(player, "learned", { style = sd.id, hidden = sd.hidden == true })
+		end
+	elseif action == "testSecret" then
+		-- 시크릿 테스트: 숨은 권법을 진짜 길로 얻어 본다
+		if arg == "fragment" then
+			for i = 1, #Config.Fragments do
+				if not p.fragments[tostring(i)] then
+					p.fragments[tostring(i)] = true
+					local n = countKeys(p.fragments)
+					Push:FireClient(player, "fragment", { n = n, total = #Config.Fragments })
+					if n >= #Config.Fragments then
+						grantStyle(player, "mugeuk", true)
+					end
+					Story.event(player, "fragment")
+					break
+				end
+			end
+		elseif arg == "fragmentTp" then
+			for i, fr in ipairs(Config.Fragments) do
+				if not p.fragments[tostring(i)] and f then
+					f.root.CFrame = CFrame.new(fr.at + Vector3.new(0, 4, 8))
+					toast(player, "📖 비급 조각: " .. (fr.hint or ""))
+					break
+				end
+			end
+		elseif arg == "mugeuk" then
+			for i = 1, #Config.Fragments do
+				p.fragments[tostring(i)] = true
+			end
+			Push:FireClient(player, "fragment", { n = #Config.Fragments, total = #Config.Fragments })
+			grantStyle(player, "mugeuk", true)
+		elseif arg == "hyeolma" then
+			grantStyle(player, "hyeolma", true)
+		elseif arg == "lock" then
+			-- 숨은 권법을 다시 잠근다 (처음부터 다시 얻어 보기)
+			p.styles.mugeuk = nil :: any
+			p.styles.hyeolma = nil :: any
+			p.fragments = {}
+			if p.style == "mugeuk" or p.style == "hyeolma" then
+				p.style = "samjae"
 			end
 		end
 	elseif action == "testReset" then

@@ -329,6 +329,21 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	tgt.combatUntil = t + Config.COMBAT_TAG
 	tgt.lastAttacker = att
 
+	-- 전투력 차이: 훨씬 약한 적의 공격은 덜 아프거나, 끄떡없거나, 호신강기에 튕겨 나간다 (붉은 공격도)
+	local gapMul, steady = 1, false
+	if att.npc and tgt.player then
+		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
+		local immune
+		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa))
+		if immune then
+			att.stunUntil = math.max(att.stunUntil, t + 0.45)
+			interrupt(att)
+			knock(att, toAtt * 22 + Vector3.new(0, 8, 0), 0.45)
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "aura", pos = pos })
+			return "immune"
+		end
+	end
+
 	-- 격돌: 상대도 같은 순간 나를 향해 휘둘렀다
 	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe then
 		-- 둘 다 서로 반대쪽으로 튕겨 난다
@@ -420,10 +435,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return "deflect"
 		end
 		-- 그냥 막기
-		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt)
+		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
 		tgt.hp -= d
-		local broke = addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
-		knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
+		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
+		if not steady then
+			knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
+		end
 		addChi(tgt, d * Config.CHI_ON_HURT)
 		Combat.sync(tgt)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = broke and "guardbreak" or "block", pos = pos, dmg = d })
@@ -434,7 +451,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 
 	-- 맞았다
-	local d = damageOf(att, hit, move, opt.isSkill, opt.act) * defense(tgt)
+	local d = damageOf(att, hit, move, opt.isSkill, opt.act) * defense(tgt) * gapMul
 	local crit = false
 	local aStyle = Combat.styleOf(att)
 	if aStyle and aStyle.backstab and facing < -0.3 then
@@ -465,9 +482,11 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
-	addPosture(tgt, postureDmg * 0.4)
-	local heavy = (hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken
-	if not armored(tgt) then
+	if not steady then
+		addPosture(tgt, postureDmg * 0.4)
+	end
+	local heavy = not steady and ((hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken)
+	if not armored(tgt) and not steady then
 		local stun = hit.stun or 0.3
 		local fa = tgt :: any
 		if tgt.npc then
@@ -538,6 +557,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		strike = move.strike == true,
 		broken = wasBroken,
 		counter = counterHit,
+		steady = steady,
 	})
 	if hooks.onHit then
 		hooks.onHit(att, tgt, d, opt)
