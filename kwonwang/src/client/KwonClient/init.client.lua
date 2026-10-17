@@ -1479,6 +1479,27 @@ function handlers.learned(data: any)
 	end
 end
 
+-- 권법 승급 (깨달음)
+function handlers.breakthrough(data: any)
+	local s = Config.STYLE_BY_ID[data.style]
+	if not s then
+		return
+	end
+	UI.cinematic("⬆ " .. s.name .. " · " .. data.step, s.color, 2.2)
+	UI.banner("⬆ " .. data.step .. "!", string.format("%s 등급이 [%s]로 올랐다", s.name, data.grade), Config.GRADE_COLOR[data.grade] or s.color)
+	local char = myChar()
+	if char then
+		Fx.ult(s.id, char, 1.6)
+	end
+	shake(1.2)
+	Fx.sound("ping", 1, 0.7)
+end
+
+-- 개천신권: 별이 떨어진다
+function handlers.star(data: any)
+	Fx.starfall(data.at, data.style)
+end
+
 -- 이야기
 function handlers.dialog(data: any)
 	UI.dialog(data)

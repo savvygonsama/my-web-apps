@@ -434,6 +434,8 @@ local function buildStyles()
 	local dBtn = button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -12), Size = UDim2.new(0.62, -20, 0, 56), TextSize = 21, BackgroundColor3 = C.red, Parent = detail }, function()
 		if action == "learn" then
 			Request:FireServer("learn", selected)
+		elseif action == "break" then
+			Request:FireServer("breakthrough", selected)
 		elseif action == "guide" then
 			UI.setGuide(selected)
 			window.Visible = false
@@ -452,8 +454,10 @@ local function buildStyles()
 		local owned = state and table.find(state.styles, id) ~= nil
 		local found = state and state.found and state.found[id]
 		local passed = state and state.trials and state.trials[id]
-		local gradeColor = Config.GRADE_COLOR[s.grade] or C.dim
-		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), s.grade or "")
+		local ups = (state and state.gradeUp and state.gradeUp[id]) or 0
+		local gradeNow = Config.styleGrade(s, ups)
+		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
+		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
 			if st then
@@ -462,12 +466,12 @@ local function buildStyles()
 		end
 		guideBtn.Visible = found == true and not owned
 		-- 숨은 권법은 얻기 전엔 이름도 모른다
-		if s.hidden and not owned then
+		if s.hidden and not owned and not (s.secret and found) then
 			dTitle.Text = "❓ 숨겨진 권법"
 			dTitle.TextColor3 = C.dim
 			dHanja.Text = "???"
 			dMaster.Text = gradeTag .. "  전해지는 이야기만 남아 있다"
-			dBody.Text = "🔒 " .. (s.unlockHint or "") .. "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라."
+			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (s.secret and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
 			dBtn.Text = "🔒 조건을 채워야 익힌다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
@@ -521,9 +525,29 @@ local function buildStyles()
 			table.insert(lines, "")
 			table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부의 분신과 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
 		end
+		if s.realmReq then
+			table.insert(lines, "")
+			table.insert(lines, string.format('<font color="#FFE8A0"><b>경지 제한</b>  %s에 올라야 사부가 시험을 허락한다</font>', Config.Realms[s.realmReq].name))
+		end
+		-- 승급 (깨달음)
+		if owned then
+			local step = Config.BREAKTHROUGH[ups + 1]
+			table.insert(lines, "")
+			if step then
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_MAX, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
+			else
+				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
+			end
+		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
-		if state and state.style == id then
+		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_MAX
+		if canBreak then
+			local step = Config.BREAKTHROUGH[ups + 1]
+			dBtn.Text = string.format("⬆ 승급  💰 %s", Config.formatNumber(step.coins))
+			dBtn.BackgroundColor3 = (state and state.coins >= step.coins and state.realm >= step.realm) and Color3.fromRGB(200, 150, 40) or C.panel
+			action = "break"
+		elseif state and state.style == id then
 			dBtn.Text = "✔ 쓰는 중"
 			dBtn.BackgroundColor3 = C.green
 			action = "none"
@@ -572,7 +596,9 @@ local function buildStyles()
 				local s = Config.STYLE_BY_ID[id]
 				local owned = table.find(state.styles, id) ~= nil
 				local title = card:FindFirstChild("Title") :: TextLabel?
-				if s.hidden and not owned then
+				local found = state.found and state.found[id]
+				local ups = (state.gradeUp and state.gradeUp[id]) or 0
+				if s.hidden and not owned and not (s.secret and found) then
 					sub.Text = "[" .. s.grade .. "]  ???"
 					if title then
 						title.Text = "❓ 숨겨진 권법"
@@ -580,13 +606,13 @@ local function buildStyles()
 					end
 				else
 					local mark = owned and "" or ((state.trials and state.trials[id]) and "  · 시험 통과" or ((state.found and state.found[id]) and "  · 사부 찾음" or (Config.MASTERS[id] and "  · ❓" or "")))
-					sub.Text = "[" .. s.grade .. "] " .. s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
+					sub.Text = "[" .. Config.styleGrade(s, ups) .. string.rep("⬆", ups) .. "] " .. s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
 					if title then
 						title.Text = s.icon .. " " .. s.name
 						title.TextColor3 = s.color
 					end
 				end
-				sub.TextColor3 = Config.GRADE_COLOR[s.grade] or C.dim
+				sub.TextColor3 = Config.GRADE_COLOR[Config.styleGrade(s, ups)] or C.dim
 			end
 		end
 		if reset then
@@ -608,7 +634,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (경지마다 피해·체력 ×1.22씩 겹으로, 수련 효과 +25%%) · 경지는 열세 단계", Config.realmPower(idx)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 겹으로, 수련 효과 +25%%) · 경지는 열여섯 단계", Config.realmPower(idx)))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -729,6 +755,12 @@ local function buildTest()
 		new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
 		for _, item in ipairs(items) do
 			local b = button({ Text = item[1], TextSize = 16, BackgroundColor3 = item.color or C.panel2 }, function()
+				-- 길잡이는 화면에서만 (숨은 사부 자리를 따라간다)
+				if string.sub(item[2], 1, 6) == "guide:" then
+					UI.setGuide(string.sub(item[2], 7))
+					window.Visible = false
+					return
+				end
 				Request:FireServer(item[2], item[3])
 			end)
 			b.Parent = grid
@@ -749,12 +781,16 @@ local function buildTest()
 	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
 		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
+		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
+		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "🌠 개천신권 바로 쓰기", "testStyle", "gaecheon" },
 	})
 	section("적과 보스", {
 		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
 		{ "🪵 무뢰배", "testEnemy", "thug" }, { "🗡 산적", "testEnemy", "bandit" }, { "🔱 창병", "testEnemy", "spearman" },
 		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🛡 철갑 무사", "testEnemy", "ironguard" },
 		{ "🌑 흑영 자객", "testEnemy", "shadowblade" }, { "🩸 혈교도", "testEnemy", "cultist" }, { "🩸 혈교 장로", "testEnemy", "cultelder" },
+		{ "🌀 균열 마물", "testEnemy", "riftling" }, { "🌌 허공 마인", "testEnemy", "voidwalker" }, { "🗿 석상 수호자", "testEnemy", "stonegolem" },
+		{ "👁 천마 사도", "testEnemy", "apostle" },
 	})
 end
 
@@ -1167,6 +1203,10 @@ local function goalText(s: any, g: any): string
 	elseif k == "trial" then
 		return "사부 곁에서 T · 사부의 시험 통과하기"
 	elseif k == "learn" then
+		local want = g.id and Config.STYLE_BY_ID[g.id]
+		if want then
+			return want.icon .. " " .. want.name .. " 익히기 (숨은 사부)"
+		end
 		return string.format("사부에게 권법 배우기  %d / %d", #s.styles, g.n or 1)
 	elseif k == "realm" then
 		local r = Config.Realms[g.n]
@@ -1343,6 +1383,7 @@ local AMBIENT = {
 	badlands = { d = 0.32, h = 1.9, c = Color3.fromRGB(255, 185, 130) },
 	coast = { d = 0.3, h = 1.6, c = Color3.fromRGB(200, 225, 245) },
 	cult = { d = 0.45, h = 2.3, c = Color3.fromRGB(160, 45, 55) },
+	rift = { d = 0.5, h = 2.4, c = Color3.fromRGB(110, 70, 190) },
 }
 local regionNow = ""
 local function regionAt(pos: Vector3): any

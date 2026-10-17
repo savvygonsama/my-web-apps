@@ -528,7 +528,17 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 
 	-- 공격한 쪽 권법 장치: 꽃잎, 전하
 	local chain = false
+	local star = false
 	if aStyle and not opt.chain then
+		if aStyle.starEvery then
+			-- 개천: 다섯 번 맞힐 때마다 별이 떨어진다
+			local fa = att :: any
+			fa.starN = (fa.starN or 0) + 1
+			if fa.starN >= aStyle.starEvery then
+				fa.starN = 0
+				star = true
+			end
+		end
 		if aStyle.id == "maehwa" then
 			if t - att.stacks.petalAt > 1.2 then
 				att.stacks.petal = 0
@@ -586,6 +596,20 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		if not tgt.dead then
 			Combat.stun(tgt, 1.0)
 		end
+	end
+	if star then
+		local at = tgt.root.Position
+		Push:FireAllClients("star", { at = at, style = att.style })
+		task.delay(0.35, function()
+			if att.dead then
+				return
+			end
+			for _, other in pairs(Combat.fighters) do
+				if Combat.hostile(att, other) and not other.dead and (other.root.Position - at).Magnitude <= 14 then
+					Combat.applyHit(att, other, { dmg = 22, posture = 25, stun = 0.6, kb = 18, up = 8 }, { chain = true, isSkill = true, move = { name = "낙성" } })
+				end
+			end
+		end)
 	end
 	return "hit"
 end

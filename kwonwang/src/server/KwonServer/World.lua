@@ -1539,6 +1539,85 @@ function OUTER.cult(r: any, f: Instance)
 	end
 end
 
+-- 허공 균열: 갈라진 땅, 떠 있는 바위, 보랏빛 균열, 천마의 제단
+function OUTER.rift(r: any, f: Instance)
+	local c = r.center
+	local VOID = Color3.fromRGB(150, 90, 255)
+	-- 땅을 가르는 빛나는 균열
+	for _ = 1, 14 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) then
+			local len = rng:NextNumber(30, 90)
+			part({ Name = "RiftCrack", Size = Vector3.new(rng:NextNumber(1.5, 4), 0.3, len), CFrame = CFrame.new(p + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Color = VOID, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+	end
+	-- 하늘에 뜬 부서진 바위
+	for _ = 1, 26 do
+		local p = randIn(r, 20)
+		local s = rng:NextNumber(6, 22)
+		part({ Name = "FloatingRock", Size = Vector3.new(s, s * 0.7, s * 0.9), CFrame = CFrame.new(p + Vector3.new(0, rng:NextNumber(40, 120), 0)) * CFrame.Angles(rng:NextNumber(0, 6), rng:NextNumber(0, 6), rng:NextNumber(0, 6)), Color = Color3.fromRGB(60, 50, 75), Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 보랏빛 수정 기둥
+	for _ = 1, 18 do
+		local p = randIn(r, 40)
+		if clearOf(p, r) then
+			local h = rng:NextNumber(8, 26)
+			part({ Name = "VoidCrystal", Size = Vector3.new(h * 0.25, h, h * 0.25), CFrame = CFrame.new(p + Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), rng:NextNumber(-0.4, 0.4)), Color = VOID, Material = Enum.Material.Neon, Transparency = 0.2, Parent = f })
+		end
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			spire(Vector3.new(c.X + sx * 270, 0, c.Z + sz * 270), 4, 7, VOID, f)
+		end
+	end
+	monumentGate(Vector3.new(c.X + 360, 0, c.Z), math.rad(90), f, "허공 균열", VOID)
+	-- 천마의 제단: 하늘로 열린 검은 고리
+	local b = r.boss.at
+	disc("RiftAltar", b + Vector3.new(0, 1, 0), 40, 2, Color3.fromRGB(30, 20, 45), Enum.Material.Slate, f)
+	disc("RiftRune", b + Vector3.new(0, 2.05, 0), 30, 0.1, VOID, Enum.Material.Neon, f, false).Transparency = 0.35
+	local ringC = b + Vector3.new(0, 70, 0)
+	for k = 0, 23 do
+		local a = k / 24 * math.pi * 2
+		part({ Name = "SkyRiftRing", Size = Vector3.new(4, 4, 9), CFrame = CFrame.lookAt(ringC + Vector3.new(math.cos(a) * 34, 0, math.sin(a) * 34), ringC) , Color = k % 2 == 0 and VOID or Color3.fromRGB(20, 10, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local hole = part({ Name = "SkyRiftCore", Shape = Enum.PartType.Ball, Size = Vector3.new(40, 40, 40), Position = ringC, Color = Color3.new(0, 0, 0), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	light(hole, VOID, 80, 3)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		brazier(b + Vector3.new(math.cos(a) * 36, 0, math.sin(a) * 36), 1.6, f)
+	end
+end
+
+-- 숨은 사부의 자리: 세상 끝 구석, 구름이 땅에 닿는 작은 절벽 (표지도, 지도도 없다)
+local function secretSite()
+	local sm = Config.SECRET_MASTER
+	if not sm then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "SecretSite"
+	f.Parent = folder
+	local at = Vector3.new(sm.at.X, 0, sm.at.Z)
+	local STAR = Color3.fromRGB(180, 215, 255)
+	disc("CloudFloor", at + Vector3.new(0, 0.6, 0), 34, 1.2, Color3.fromRGB(235, 240, 250), Enum.Material.SmoothPlastic, f)
+	disc("StarCircle", at + Vector3.new(0, 1.25, 0), 12, 0.1, STAR, Enum.Material.Neon, f, false).Transparency = 0.4
+	-- 구름 (흰 공을 겹쳐 둥실)
+	for _ = 1, 40 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local d = rng:NextNumber(18, 60)
+		local s = rng:NextNumber(8, 18)
+		part({ Name = "Cloud", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s * 0.6, s), Position = at + Vector3.new(math.cos(a) * d, rng:NextNumber(0, 6), math.sin(a) * d), Color = Color3.fromRGB(245, 248, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, Parent = f })
+	end
+	-- 별을 매단 고목 하나
+	part({ Name = "OldTree", Size = Vector3.new(3, 22, 3), Position = at + Vector3.new(14, 11, 6), Color = Color3.fromRGB(90, 70, 55), Material = Enum.Material.Wood, Parent = f })
+	for k = 1, 9 do
+		crystal(at + Vector3.new(14 + rng:NextNumber(-8, 8), 18 + rng:NextNumber(0, 10), 6 + rng:NextNumber(-8, 8)), 0.8, STAR, f)
+		local _ = k
+	end
+	-- 노인이 앉는 바위
+	part({ Name = "SitRock", Size = Vector3.new(6, 1.6, 6), Position = at + Vector3.new(0, 1.2, 0), Color = Color3.fromRGB(120, 120, 130), Material = Enum.Material.Slate, Parent = f })
+end
+
 local function outerLands()
 	for id, builder in pairs(OUTER) do
 		local r = regionById(id)
@@ -1632,13 +1711,24 @@ local function terrainHills()
 				return true
 			end
 		end
+		local sm = Config.SECRET_MASTER
+		if sm and Vector3.new(p.X - sm.at.X, 0, p.Z - sm.at.Z).Magnitude < 160 + pad then
+			return true
+		end
 		return false
 	end
 	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
 	for k = 0, 59 do
 		local a = k / 60 * math.pi * 2
 		local p = Vector3.new(math.cos(a) * (W - 60), 0, math.sin(a) * (W - 60))
-		if p.X > -W + 400 then
+		-- 구석의 땅 (혈교 본산, 허공 균열, 숨은 사부)으로 가는 길은 산을 비운다
+		local open = false
+		for _, corner in ipairs({ Vector3.new(1750, 0, -1750), Vector3.new(-1750, 0, -1750), Config.SECRET_MASTER and Config.SECRET_MASTER.at or Vector3.zero }) do
+			if Vector3.new(p.X - corner.X, 0, p.Z - corner.Z).Magnitude < 700 then
+				open = true
+			end
+		end
+		if p.X > -W + 400 and not open then
 			local rad = rng:NextNumber(140, 260)
 			local mat = p.Z < -W * 0.5 and Enum.Material.Snow or (p.X > W * 0.5 and Enum.Material.Sandstone or Enum.Material.Rock)
 			pcall(function()
@@ -1707,6 +1797,7 @@ function World.build(): any
 		{ "비급 조각", function()
 			fragments(out)
 		end },
+		{ "숨은 자리", secretSite },
 		{ "지형", terrainHills },
 		{ "표지", regionSigns },
 	}) do

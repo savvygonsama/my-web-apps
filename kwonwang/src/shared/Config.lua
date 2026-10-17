@@ -84,10 +84,15 @@ Config.Realms = {
 	{ name = "신화경", need = 65000, color = Color3.fromRGB(255, 220, 120) },
 	{ name = "천인합일", need = 100000, color = Color3.fromRGB(160, 220, 255) },
 	{ name = "무극", need = 150000, color = Color3.fromRGB(255, 150, 255) },
+	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
+	{ name = "반선", need = 230000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 340000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 500000, color = Color3.fromRGB(255, 255, 160) },
 }
--- 경지 배율은 겹으로 쌓인다: 경지마다 ×1.22 (일류 ×1.5, 절정 ×2.2, 현경 ×4, 생사경 ×6, 무극 ×10.9)
+-- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 (후반일수록 크게 뛴다)
+-- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×14.9, 천외천 ×34)
 function Config.realmPower(idx: number): number
-	return 1.22 ^ (idx - 1)
+	return 1.22 ^ (math.min(idx, 9) - 1) * 1.32 ^ math.max(0, idx - 9)
 end
 
 function Config.realmOf(total: number): (number, any)
@@ -152,13 +157,13 @@ Config.Styles = {
 			{ id = "th3", name = "운수", pose = "circle_palm", dur = 0.42, lunge = 1, hits = { hit(0.2, 5, 4.5, 8, 10, 0.4, 8) } },
 			{ id = "th4", name = "쌍장추", pose = "double_palm", dur = 0.55, lunge = 3, hits = { hit(0.24, 6, 4, 11, 16, 0.5, 30) } },
 		},
-		heavy = { id = "thH", name = "반탄장", pose = "push_palm", dur = 0.6, lunge = 2, hits = { hit(0.28, 6, 4.5, 14, 26, 0.6, 45) }, stackDmg = 0.6 },
+		heavy = { id = "thH", name = "반탄장", pose = "tide_push", dur = 0.6, lunge = 2, hits = { hit(0.28, 6, 4.5, 14, 26, 0.6, 45) }, stackDmg = 0.6 },
 		skills = {
 			E = { id = "thE", name = "유수회선", desc = "0.8초 동안 받아넘기기 자세. 맞으면 저절로 흘리고 되받아친다", pose = "flow_stance", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
 				counterHit = { pose = "push_palm", hit = hit(0, 7, 5, 18, 30, 0.8, 40) } },
-			R = { id = "thR", name = "선풍기류", desc = "주변을 끌어당기는 물의 소용돌이 (균형을 크게 깎는다)", pose = "whirl", dur = 0.9, cd = 11, chi = 25,
+			R = { id = "thR", name = "선풍기류", desc = "주변을 끌어당기는 물의 소용돌이 (균형을 크게 깎는다)", pose = "water_spiral", dur = 0.9, cd = 11, chi = 25,
 				hits = { hit(0.25, 0, 11, 5, 12, 0.4, -12, nil, true), hit(0.5, 0, 11, 5, 12, 0.4, -12, nil, true), hit(0.75, 0, 11, 8, 18, 0.6, 20, nil, true) } },
-			G = { id = "thG", name = "만류귀종", desc = "모든 흐름이 하나로 돌아온다. 거대한 물의 용이 휘감는다", pose = "ult_raise", dur = 1.6, cd = 30, chi = 100, armor = true,
+			G = { id = "thG", name = "만류귀종", desc = "모든 흐름이 하나로 돌아온다. 거대한 물의 용이 휘감는다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
 				hits = { hit(0.6, 0, 16, 12, 30, 0.8, -10, nil, true), hit(1.0, 0, 16, 12, 30, 0.8, -10, nil, true), hit(1.35, 0, 18, 30, 60, 1.4, 60, 25, true) } },
 		},
 	},
@@ -177,17 +182,17 @@ Config.Styles = {
 		dashCd = 0.85,
 		stance = "stance_geumgang",
 		combo = {
-			{ id = "gg1", name = "금강권", pose = "punch_r_heavy", dur = 0.5, lunge = 2, hits = { hit(0.22, 5, 3.5, 11, 12, 0.45, 10) } },
-			{ id = "gg2", name = "나한권", pose = "punch_l_heavy", dur = 0.5, lunge = 2, hits = { hit(0.22, 5, 3.5, 11, 12, 0.45, 10) } },
-			{ id = "gg3", name = "복호권", pose = "hook_r", dur = 0.55, lunge = 1, hits = { hit(0.26, 5, 4.5, 13, 16, 0.5, 14) } },
+			{ id = "gg1", name = "금강권", pose = "vajra_r", dur = 0.5, lunge = 2, hits = { hit(0.22, 5, 3.5, 11, 12, 0.45, 10) } },
+			{ id = "gg2", name = "나한권", pose = "vajra_l", dur = 0.5, lunge = 2, hits = { hit(0.22, 5, 3.5, 11, 12, 0.45, 10) } },
+			{ id = "gg3", name = "복호권", pose = "elbow_r", dur = 0.55, lunge = 1, hits = { hit(0.26, 5, 4.5, 13, 16, 0.5, 14) } },
 			{ id = "gg4", name = "금강추", pose = "hammer_down", dur = 0.7, lunge = 2, hits = { hit(0.34, 5, 5, 18, 28, 0.7, 20, 10) } },
 		},
-		heavy = { id = "ggH", name = "대력금강장", pose = "push_palm", dur = 0.8, lunge = 2, hits = { hit(0.4, 6, 5, 20, 45, 0.8, 50) } },
+		heavy = { id = "ggH", name = "대력금강장", pose = "buddha_palm", dur = 0.8, lunge = 2, hits = { hit(0.4, 6, 5, 20, 45, 0.8, 50) } },
 		skills = {
 			E = { id = "ggE", name = "철포삼", desc = "6초 동안 무엇에도 밀리지 않고 받는 피해 절반", pose = "brace", dur = 0.5, cd = 14, chi = 20, buff = { kind = "ironshirt", dur = 6 } },
 			R = { id = "ggR", name = "사자후", desc = "사자의 포효. 주변의 적을 모두 기절시킨다", pose = "roar", dur = 0.8, cd = 12, chi = 30,
 				hits = { hit(0.3, 0, 14, 6, 25, 1.4, 25, nil, true) } },
-			G = { id = "ggG", name = "여래신장", desc = "하늘에서 거대한 금빛 손바닥이 내려찍는다", pose = "ult_slam", dur = 1.5, cd = 30, chi = 100, armor = true,
+			G = { id = "ggG", name = "여래신장", desc = "하늘에서 거대한 금빛 손바닥이 내려찍는다", pose = "ult_buddha", dur = 1.5, cd = 30, chi = 100, armor = true,
 				hits = { hit(1.0, 6, 14, 55, 90, 1.6, 30, nil, true) } },
 		},
 	},
@@ -205,19 +210,19 @@ Config.Styles = {
 		speed = 1.15,
 		stance = "stance_maehwa",
 		combo = {
-			{ id = "mh1", name = "매화일지", pose = "jab_l", dur = 0.26, lunge = 2, hits = { hit(0.1, 5, 3.2, 5, 5, 0.3, 4) } },
-			{ id = "mh2", name = "매화이지", pose = "jab_r", dur = 0.26, lunge = 2, hits = { hit(0.1, 5, 3.2, 5, 5, 0.3, 4) } },
-			{ id = "mh3", name = "낙화권", pose = "spin_backfist", dur = 0.34, lunge = 2, hits = { hit(0.16, 5, 4, 6, 6, 0.35, 6) } },
-			{ id = "mh4", name = "매화선퇴", pose = "roundhouse", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 8, 10, 0.45, 22) } },
+			{ id = "mh1", name = "매화일지", pose = "plum_finger_l", dur = 0.26, lunge = 2, hits = { hit(0.1, 5, 3.2, 5, 5, 0.3, 4) } },
+			{ id = "mh2", name = "매화이지", pose = "plum_finger_r", dur = 0.26, lunge = 2, hits = { hit(0.1, 5, 3.2, 5, 5, 0.3, 4) } },
+			{ id = "mh3", name = "낙화권", pose = "petal_spin", dur = 0.34, lunge = 2, hits = { hit(0.16, 5, 4, 6, 6, 0.35, 6) } },
+			{ id = "mh4", name = "매화선퇴", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 8, 10, 0.45, 22) } },
 		},
-		heavy = { id = "mhH", name = "매화일섬", pose = "dash_strike", dur = 0.5, lunge = 14, iframes = 0.2, hits = { hit(0.2, 7, 4, 12, 14, 0.5, 16) }, bloom = { radius = 12, dmg = 30, posture = 40 } },
+		heavy = { id = "mhH", name = "매화일섬", pose = "plum_flash", dur = 0.5, lunge = 14, iframes = 0.2, hits = { hit(0.2, 7, 4, 12, 14, 0.5, 16) }, bloom = { radius = 12, dmg = 30, posture = 40 } },
 		skills = {
-			E = { id = "mhE", name = "낙화연격", desc = "눈에 보이지 않는 여덟 번의 연타", pose = "flurry", dur = 1.0, cd = 8, chi = 20, lunge = 2,
+			E = { id = "mhE", name = "낙화연격", desc = "눈에 보이지 않는 여덟 번의 연타", pose = "petal_flurry", dur = 1.0, cd = 8, chi = 20, lunge = 2,
 				hits = { hit(0.12, 5, 4, 3, 4, 0.3, 1), hit(0.22, 5, 4, 3, 4, 0.3, 1), hit(0.32, 5, 4, 3, 4, 0.3, 1), hit(0.42, 5, 4, 3, 4, 0.3, 1),
 					hit(0.52, 5, 4, 3, 4, 0.3, 1), hit(0.62, 5, 4, 3, 4, 0.3, 1), hit(0.72, 5, 4, 3, 4, 0.3, 1), hit(0.85, 5, 4.5, 8, 12, 0.5, 25) } },
-			R = { id = "mhR", name = "암향표", desc = "향기만 남기고 사라지는 걸음. 지나간 길의 적을 벤다 (무적)", pose = "dash_strike", dur = 0.45, cd = 9, chi = 20, lunge = 22, iframes = 0.4,
+			R = { id = "mhR", name = "암향표", desc = "향기만 남기고 사라지는 걸음. 지나간 길의 적을 벤다 (무적)", pose = "fragrance_step", dur = 0.45, cd = 9, chi = 20, lunge = 22, iframes = 0.4,
 				hits = { hit(0.15, 4, 5, 9, 10, 0.4, 8) } },
-			G = { id = "mhG", name = "매화만개", desc = "천 송이 매화가 한꺼번에 피어나는 꽃잎 폭풍", pose = "ult_spin", dur = 1.8, cd = 30, chi = 100, armor = true,
+			G = { id = "mhG", name = "매화만개", desc = "천 송이 매화가 한꺼번에 피어나는 꽃잎 폭풍", pose = "ult_bloom", dur = 1.8, cd = 30, chi = 100, armor = true,
 				hits = { hit(0.3, 0, 14, 7, 10, 0.4, -4, nil, true), hit(0.6, 0, 14, 7, 10, 0.4, -4, nil, true), hit(0.9, 0, 14, 7, 10, 0.4, -4, nil, true),
 					hit(1.2, 0, 14, 7, 10, 0.4, -4, nil, true), hit(1.55, 0, 16, 25, 40, 1.0, 50, 15, true) } },
 		},
@@ -236,18 +241,18 @@ Config.Styles = {
 		charge = 1.5,
 		stance = "stance_cheonryong",
 		combo = {
-			{ id = "cr1", name = "용조장", pose = "palm_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
-			{ id = "cr2", name = "용미장", pose = "palm_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
+			{ id = "cr1", name = "용조장", pose = "dragon_claw_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
+			{ id = "cr2", name = "용미장", pose = "dragon_claw_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
 			{ id = "cr3", name = "잠룡장", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4, 7, 8, 0.35, 8) } },
-			{ id = "cr4", name = "현룡파", pose = "double_palm", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 10, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
+			{ id = "cr4", name = "현룡파", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 10, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
 		},
-		heavy = { id = "crH", name = "항룡장", pose = "double_palm", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 12, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
+		heavy = { id = "crH", name = "항룡장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 12, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
 		skills = {
-			E = { id = "crE", name = "항룡유회", desc = "꿰뚫고 나아가는 용의 기운 (맞은 적 모두)", pose = "double_palm", dur = 0.6, cd = 7, chi = 20,
+			E = { id = "crE", name = "항룡유회", desc = "꿰뚫고 나아가는 용의 기운 (맞은 적 모두)", pose = "dragon_coil", dur = 0.6, cd = 7, chi = 20,
 				proj = { speed = 80, life = 0.7, radius = 6, dmg = 16, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
-			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "uppercut", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
+			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "dragon_rise", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
 				hits = { hit(0.2, 5, 5, 14, 18, 0.9, 6, 55) } },
-			G = { id = "crG", name = "구룡승천", desc = "아홉 마리 용이 땅을 뚫고 하늘로 솟는다", pose = "ult_raise", dur = 1.7, cd = 30, chi = 100, armor = true,
+			G = { id = "crG", name = "구룡승천", desc = "아홉 마리 용이 땅을 뚫고 하늘로 솟는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
 				hits = { hit(0.7, 0, 18, 14, 20, 0.6, 5, 30, true), hit(1.0, 0, 18, 14, 20, 0.6, 5, 30, true), hit(1.3, 0, 20, 30, 50, 1.3, 40, 50, true) } },
 		},
 	},
@@ -266,19 +271,19 @@ Config.Styles = {
 		dashCharges = 2,
 		stance = "stance_muyeong",
 		combo = {
-			{ id = "my1", name = "귀각", pose = "front_kick", dur = 0.34, lunge = 2, hits = { hit(0.14, 6, 3.5, 6, 6, 0.3, 6) } },
+			{ id = "my1", name = "귀각", pose = "side_kick", dur = 0.34, lunge = 2, hits = { hit(0.14, 6, 3.5, 6, 6, 0.3, 6) } },
 			{ id = "my2", name = "선풍각", pose = "roundhouse", dur = 0.38, lunge = 2, hits = { hit(0.17, 6, 4.5, 7, 7, 0.35, 8) } },
 			{ id = "my3", name = "후려차기", pose = "back_spin_kick", dur = 0.44, lunge = 2, hits = { hit(0.24, 6, 4.5, 8, 9, 0.4, 10) } },
 			{ id = "my4", name = "낙영각", pose = "axe_kick", dur = 0.5, lunge = 2, hits = { hit(0.28, 6, 4, 11, 16, 0.5, 6, 20) } },
 		},
 		heavy = { id = "myH", name = "귀영낙각", pose = "flying_kick", dur = 0.55, lunge = 12, hits = { hit(0.25, 6, 4.5, 14, 18, 0.6, 30) } },
 		skills = {
-			E = { id = "myE", name = "그림자 걸음", desc = "가장 가까운 적의 등 뒤로 순간이동해 찬다 (치명타)", pose = "back_spin_kick", dur = 0.5, cd = 7, chi = 15, teleport = 26,
+			E = { id = "myE", name = "그림자 걸음", desc = "가장 가까운 적의 등 뒤로 순간이동해 찬다 (치명타)", pose = "shadow_heel", dur = 0.5, cd = 7, chi = 15, teleport = 26,
 				hits = { hit(0.2, 6, 4.5, 12, 14, 0.6, 20) } },
-			R = { id = "myR", name = "귀영난각", desc = "공중으로 솟아 회오리처럼 여섯 번 찬다", pose = "air_spin", dur = 0.9, cd = 10, chi = 25, jump = 38,
+			R = { id = "myR", name = "귀영난각", desc = "공중으로 솟아 회오리처럼 여섯 번 찬다", pose = "tornado_kick", dur = 0.9, cd = 10, chi = 25, jump = 38,
 				hits = { hit(0.2, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.32, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.44, 4, 7, 5, 6, 0.4, 2, 10, true),
 					hit(0.56, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.68, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.8, 4, 7.5, 10, 14, 0.6, 30, nil, true) } },
-			G = { id = "myG", name = "무영천각", desc = "모습을 감추고 여섯 그림자가 사방에서 찬다", pose = "ult_spin", dur = 1.8, cd = 30, chi = 100, iframes = 1.6,
+			G = { id = "myG", name = "무영천각", desc = "모습을 감추고 여섯 그림자가 사방에서 찬다", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, iframes = 1.6,
 				hits = { hit(0.3, 0, 15, 9, 12, 0.5, 4, nil, true), hit(0.55, 0, 15, 9, 12, 0.5, 4, nil, true), hit(0.8, 0, 15, 9, 12, 0.5, 4, nil, true),
 					hit(1.05, 0, 15, 9, 12, 0.5, 4, nil, true), hit(1.3, 0, 15, 9, 12, 0.5, 4, nil, true), hit(1.6, 0, 16, 28, 40, 1.2, 45, 20, true) } },
 		},
@@ -296,18 +301,18 @@ Config.Styles = {
 		deflect = 0.2,
 		stance = "stance_byeokryeok",
 		combo = {
-			{ id = "bk1", name = "섬전권", pose = "jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 3.5, 7, 7, 0.35, 6) } },
-			{ id = "bk2", name = "뇌정권", pose = "punch_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 5, 3.5, 7, 7, 0.35, 6) } },
-			{ id = "bk3", name = "뇌명각", pose = "front_kick", dur = 0.38, lunge = 2, hits = { hit(0.17, 6, 4, 8, 8, 0.4, 10) } },
-			{ id = "bk4", name = "벽력추", pose = "punch_r_heavy", dur = 0.5, lunge = 4, hits = { hit(0.22, 6, 4, 12, 15, 0.55, 30) } },
+			{ id = "bk1", name = "섬전권", pose = "thunder_jab", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 3.5, 7, 7, 0.35, 6) } },
+			{ id = "bk2", name = "뇌정권", pose = "thunder_cross", dur = 0.32, lunge = 3, hits = { hit(0.13, 5, 3.5, 7, 7, 0.35, 6) } },
+			{ id = "bk3", name = "뇌명각", pose = "knee_strike", dur = 0.38, lunge = 2, hits = { hit(0.17, 6, 4, 8, 8, 0.4, 10) } },
+			{ id = "bk4", name = "벽력추", pose = "thunder_hammer", dur = 0.5, lunge = 4, hits = { hit(0.22, 6, 4, 12, 15, 0.55, 30) } },
 		},
-		heavy = { id = "bkH", name = "벽력일권", pose = "dash_punch", dur = 0.55, lunge = 18, hits = { hit(0.22, 6, 4.5, 15, 20, 0.6, 35) } },
+		heavy = { id = "bkH", name = "벽력일권", pose = "lightning_dash", dur = 0.55, lunge = 18, hits = { hit(0.22, 6, 4.5, 15, 20, 0.6, 35) } },
 		skills = {
-			E = { id = "bkE", name = "뇌전보", desc = "번개처럼 지그재그로 꺾어 달린다 (무적, 지나간 적 마비)", pose = "dash_strike", dur = 0.5, cd = 7, chi = 15, lunge = 20, iframes = 0.45,
+			E = { id = "bkE", name = "뇌전보", desc = "번개처럼 지그재그로 꺾어 달린다 (무적, 지나간 적 마비)", pose = "zigzag", dur = 0.5, cd = 7, chi = 15, lunge = 20, iframes = 0.45,
 				hits = { hit(0.15, 4, 5, 6, 8, 0.8, 4) } },
 			R = { id = "bkR", name = "뇌격", desc = "하늘에서 주변 적에게 벼락을 내리꽂는다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
 				hits = { hit(0.45, 0, 18, 16, 20, 1.0, 10, nil, true) }, strike = true },
-			G = { id = "bkG", name = "천뢰멸", desc = "하늘이 갈라지며 벼락 폭풍이 쏟아진다", pose = "ult_raise", dur = 1.8, cd = 30, chi = 100, armor = true, strike = true,
+			G = { id = "bkG", name = "천뢰멸", desc = "하늘이 갈라지며 벼락 폭풍이 쏟아진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true, strike = true,
 				hits = { hit(0.6, 0, 20, 12, 15, 0.8, 5, nil, true), hit(0.9, 0, 20, 12, 15, 0.8, 5, nil, true), hit(1.2, 0, 20, 12, 15, 0.8, 5, nil, true), hit(1.5, 0, 22, 30, 45, 1.5, 40, 15, true) } },
 		},
 	},
@@ -334,7 +339,7 @@ Config.Styles = {
 		heavy = { id = "cwH", name = "취선도", pose = "headbutt", dur = 0.6, lunge = 9, hits = { hit(0.3, 5, 4.5, 15, 22, 0.7, 35) } },
 		skills = {
 			E = { id = "cwE", name = "취보", desc = "3초 동안 크게 비틀거려 공격을 60% 피하고, 피할 때마다 되받아친다", pose = "drunk_sway", dur = 0.5, cd = 12, chi = 20, buff = { kind = "sway", dur = 3 } },
-			R = { id = "cwR", name = "팔선과해", desc = "여덟 신선이 바다를 건너듯 빙글빙글 돌며 친다", pose = "ult_spin", dur = 1.0, cd = 10, chi = 25,
+			R = { id = "cwR", name = "팔선과해", desc = "여덟 신선이 바다를 건너듯 빙글빙글 돌며 친다", pose = "drunk_roll", dur = 1.0, cd = 10, chi = 25,
 				hits = { hit(0.2, 0, 8, 5, 6, 0.35, 3, nil, true), hit(0.4, 0, 8, 5, 6, 0.35, 3, nil, true), hit(0.6, 0, 8, 5, 6, 0.35, 3, nil, true), hit(0.85, 0, 9, 10, 14, 0.6, 30, nil, true) } },
 			G = { id = "cwG", name = "취화난무", desc = "취기가 불길이 되어 뿜어져 나온다", pose = "fire_breath", dur = 1.8, cd = 30, chi = 100, armor = true,
 				hits = { hit(0.4, 12, 7, 8, 10, 0.4, 6), hit(0.7, 12, 7, 8, 10, 0.4, 6), hit(1.0, 12, 7, 8, 10, 0.4, 6), hit(1.3, 12, 7, 8, 10, 0.4, 6), hit(1.6, 13, 8, 22, 35, 1.0, 45) } },
@@ -387,20 +392,20 @@ table.insert(Config.Styles, {
 	gimmick = "무극: 모든 타격이 상대 균형을 두 배로 깎고, 흘리기 판정이 넓다",
 	deflect = 0.32,
 	postureMult = 2,
-	stance = "stance_taeheo",
+	stance = "stance_mugeuk",
 	combo = {
-		{ id = "mg1", name = "허공수", pose = "palm_r", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
-		{ id = "mg2", name = "역류수", pose = "palm_l", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
-		{ id = "mg3", name = "환원장", pose = "circle_palm", dur = 0.4, lunge = 2, hits = { hit(0.18, 6, 5, 13, 16, 0.4, 12) } },
-		{ id = "mg4", name = "귀일장", pose = "double_palm", dur = 0.5, lunge = 3, hits = { hit(0.22, 7, 5, 20, 28, 0.6, 36) } },
+		{ id = "mg1", name = "허공수", pose = "void_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
+		{ id = "mg2", name = "역류수", pose = "void_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.12, 6, 4, 11, 12, 0.35, 8) } },
+		{ id = "mg3", name = "환원장", pose = "void_circle", dur = 0.4, lunge = 2, hits = { hit(0.18, 6, 5, 13, 16, 0.4, 12) } },
+		{ id = "mg4", name = "귀일장", pose = "void_push", dur = 0.5, lunge = 3, hits = { hit(0.22, 7, 5, 20, 28, 0.6, 36) } },
 	},
-	heavy = { id = "mgH", name = "무극장", pose = "push_palm", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 5.5, 28, 50, 0.8, 50) } },
+	heavy = { id = "mgH", name = "무극장", pose = "void_sink", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 5.5, 28, 50, 0.8, 50) } },
 	skills = {
-		E = { id = "mgE", name = "허공격", desc = "빈 허공을 쳐서 멀리 있는 적까지 꿰뚫는다", pose = "double_palm", dur = 0.55, cd = 6, chi = 15,
+		E = { id = "mgE", name = "허공격", desc = "빈 허공을 쳐서 멀리 있는 적까지 꿰뚫는다", pose = "void_point", dur = 0.55, cd = 6, chi = 15,
 			proj = { speed = 120, life = 0.5, radius = 5, dmg = 22, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
-		R = { id = "mgR", name = "무극회선", desc = "주변의 모든 것을 끌어당겨 한 점에서 터뜨린다", pose = "whirl", dur = 0.9, cd = 9, chi = 25, pull = 14,
+		R = { id = "mgR", name = "무극회선", desc = "주변의 모든 것을 끌어당겨 한 점에서 터뜨린다", pose = "void_gather", dur = 0.9, cd = 9, chi = 25, pull = 14,
 			hits = { hit(0.3, 0, 12, 10, 20, 0.5, -10, nil, true), hit(0.7, 0, 12, 24, 40, 0.8, 40, 20, true) } },
-		G = { id = "mgG", name = "무극귀일", desc = "하늘과 땅이 한 점으로 돌아간다. 둘레의 모든 적을 지운다", pose = "ult_raise", dur = 1.8, cd = 28, chi = 100, armor = true,
+		G = { id = "mgG", name = "무극귀일", desc = "하늘과 땅이 한 점으로 돌아간다. 둘레의 모든 적을 지운다", pose = "ult_void", dur = 1.8, cd = 28, chi = 100, armor = true,
 			hits = { hit(0.6, 0, 18, 30, 60, 1.0, 20, 20, true), hit(1.3, 0, 20, 60, 90, 1.2, 60, 30, true) } },
 	},
 })
@@ -419,30 +424,88 @@ table.insert(Config.Styles, {
 	gimmick = "흡혈: 준 피해의 8%만큼 체력을 되찾는다",
 	deflect = 0.2,
 	lifesteal = 0.08,
-	stance = "stance_cheonryong",
+	stance = "stance_hyeolma",
 	combo = {
-		{ id = "hm1", name = "혈조", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 4, 10, 9, 0.3, 6) } },
-		{ id = "hm2", name = "역조", pose = "spin_backfist", dur = 0.34, lunge = 3, hits = { hit(0.15, 5, 4, 10, 9, 0.3, 6) } },
-		{ id = "hm3", name = "혈영수", pose = "hook_r", dur = 0.4, lunge = 2, hits = { hit(0.18, 5, 4.5, 12, 12, 0.35, 10) } },
-		{ id = "hm4", name = "혈마조", pose = "dash_strike", dur = 0.5, lunge = 6, hits = { hit(0.2, 6, 4.5, 20, 22, 0.55, 30) } },
+		{ id = "hm1", name = "혈조", pose = "blood_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 4, 10, 9, 0.3, 6) } },
+		{ id = "hm2", name = "역조", pose = "blood_claw_l", dur = 0.34, lunge = 3, hits = { hit(0.15, 5, 4, 10, 9, 0.3, 6) } },
+		{ id = "hm3", name = "혈영수", pose = "blood_rake", dur = 0.4, lunge = 2, hits = { hit(0.18, 5, 4.5, 12, 12, 0.35, 10) } },
+		{ id = "hm4", name = "혈마조", pose = "blood_lunge", dur = 0.5, lunge = 6, hits = { hit(0.2, 6, 4.5, 20, 22, 0.55, 30) } },
 	},
-	heavy = { id = "hmH", name = "혈수천강", pose = "hammer_down", dur = 0.65, lunge = 3, hits = { hit(0.3, 6, 6, 28, 34, 0.8, 40, 10, true) } },
+	heavy = { id = "hmH", name = "혈수천강", pose = "blood_crush", dur = 0.65, lunge = 3, hits = { hit(0.3, 6, 6, 28, 34, 0.8, 40, 10, true) } },
 	skills = {
-		E = { id = "hmE", name = "혈영보", desc = "피의 그림자가 되어 적을 꿰뚫고 지나간다 (무적)", pose = "dash_strike", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
+		E = { id = "hmE", name = "혈영보", desc = "피의 그림자가 되어 적을 꿰뚫고 지나간다 (무적)", pose = "blood_phantom", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
 			hits = { hit(0.15, 6, 4, 18, 18, 0.5, 10) } },
-		R = { id = "hmR", name = "혈해", desc = "둘레에 피의 바다를 일으킨다", pose = "roar", dur = 0.9, cd = 10, chi = 25,
+		R = { id = "hmR", name = "혈해", desc = "둘레에 피의 바다를 일으킨다", pose = "blood_spread", dur = 0.9, cd = 10, chi = 25,
 			hits = { hit(0.3, 0, 13, 20, 30, 0.7, 30, nil, true) } },
-		G = { id = "hmG", name = "혈마강림", desc = "혈마가 강림해 모든 것을 베어 낸다", pose = "ult_spin", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "hmG", name = "혈마강림", desc = "혈마가 강림해 모든 것을 베어 낸다", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true,
 			hits = { hit(0.4, 0, 12, 18, 20, 0.4, 6, nil, true), hit(0.8, 0, 12, 18, 20, 0.4, 6, nil, true), hit(1.2, 0, 12, 18, 20, 0.4, 6, nil, true), hit(1.6, 0, 14, 50, 60, 1.0, 50, nil, true) } },
 	},
 })
--- 권법 등급: 높을수록 같은 숙련에서 더 세다
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["절세"] = 1.35, ["전설"] = 1.6 }
-Config.GRADE_COLOR = { ["하급"] = Color3.fromRGB(190, 190, 190), ["중급"] = Color3.fromRGB(140, 220, 140), ["상급"] = Color3.fromRGB(120, 190, 255), ["절세"] = Color3.fromRGB(220, 130, 255), ["전설"] = Color3.fromRGB(255, 200, 80) }
+-- 시크릿 권법: 무극의 경지에 오른 자만 숨은 사부를 찾아 익힌다 (지도에 나오지 않는다)
+table.insert(Config.Styles, {
+	id = "gaecheon",
+	name = "개천신권",
+	hanja = "開天神拳",
+	icon = "🌠",
+	color = Color3.fromRGB(150, 200, 255),
+	color2 = Color3.fromRGB(255, 245, 190),
+	fx = "cosmic",
+	grade = "천외",
+	hidden = true,
+	secret = true,
+	realmReq = 13,
+	unlockHint = "무극의 경지에 오른 자만이 이름 없는 노인을 만난다. 강호의 끝, 아무도 가지 않는 구석에서",
+	desc = "하늘을 여는 주먹. 별을 꿰어 나선으로 지르고, 손날 하나로 하늘을 가른다. 이 손에 닿은 것은 별빛이 되어 흩어진다.",
+	gimmick = "개천: 다섯 번 맞힐 때마다 별이 떨어져 둘레를 친다. 흘리기 판정이 넓고 균형을 1.5배로 깎는다",
+	deflect = 0.3,
+	postureMult = 1.5,
+	starEvery = 5,
+	stance = "stance_gaecheon",
+	combo = {
+		{ id = "gc1", name = "성환권", pose = "star_punch_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
+		{ id = "gc2", name = "역성권", pose = "star_punch_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
+		{ id = "gc3", name = "천월각", pose = "heaven_kick", dur = 0.42, lunge = 2, hits = { hit(0.24, 6, 5.5, 16, 16, 0.4, 14) } },
+		{ id = "gc4", name = "은하장", pose = "galaxy_palm", dur = 0.5, lunge = 3, hits = { hit(0.28, 8, 6, 24, 30, 0.6, 40) } },
+	},
+	heavy = { id = "gcH", name = "개천일도", pose = "heaven_split", dur = 0.7, lunge = 6, hits = { hit(0.36, 9, 7, 38, 60, 0.9, 50, 10, true) } },
+	skills = {
+		E = { id = "gcE", name = "유성추", desc = "높이 솟았다가 유성처럼 내리꽂는다 (떨어진 자리 둘레를 친다)", pose = "meteor_drop", dur = 0.9, cd = 7, chi = 20, jump = 55, lunge = 10,
+			hits = { hit(0.68, 0, 13, 34, 40, 0.8, 30, 14, true) } },
+		R = { id = "gcR", name = "낙성우", desc = "하늘에서 별비가 쏟아진다 (둘레를 세 번 친다)", pose = "starfall", dur = 1.1, cd = 10, chi = 30,
+			hits = { hit(0.5, 0, 16, 16, 20, 0.5, 10, nil, true), hit(0.75, 0, 16, 16, 20, 0.5, 10, nil, true), hit(0.95, 0, 18, 26, 30, 0.8, 30, nil, true) } },
+		G = { id = "gcG", name = "개천벽지", desc = "하늘을 열어 젖힌다. 별이 무너져 내려 모든 것을 지운다", pose = "ult_heaven", dur = 2.0, cd = 28, chi = 100, armor = true,
+			hits = { hit(0.55, 0, 16, 25, 30, 0.5, 10, 20, true), hit(1.0, 0, 18, 25, 30, 0.5, 10, nil, true), hit(1.45, 0, 18, 25, 30, 0.5, 10, nil, true), hit(1.76, 0, 24, 90, 120, 1.4, 70, 30, true) } },
+	},
+})
+-- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25 }
+Config.GRADE_COLOR = {
+	["하급"] = Color3.fromRGB(190, 190, 190),
+	["중급"] = Color3.fromRGB(140, 220, 140),
+	["상급"] = Color3.fromRGB(120, 190, 255),
+	["최상급"] = Color3.fromRGB(90, 230, 230),
+	["절세"] = Color3.fromRGB(220, 130, 255),
+	["전설"] = Color3.fromRGB(255, 200, 80),
+	["신화"] = Color3.fromRGB(255, 120, 90),
+	["천외"] = Color3.fromRGB(255, 255, 210),
+}
 for _, st in ipairs(Config.Styles) do
-	if not st.grade then
-		st.grade = ({ taeheo = "상급", geumgang = "상급", cheonryong = "상급", maehwa = "중급", muyeong = "중급", byeokryeok = "중급", chwi = "중급" })[st.id] or "중급"
-	end
+	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화" })[st.id]
+	st.grade = g or st.grade or "중급"
+end
+function Config.gradeIndex(name: string): number
+	return table.find(Config.GRADE_ORDER, name) or 2
+end
+-- 권법 승급 (깨달음): 숙련 10인 권법을 한 단계씩 끌어올린다 (두 번까지). 경지와 은자가 든다
+Config.BREAKTHROUGH = {
+	{ realm = 5, coins = 3000, name = "1차 깨달음" },
+	{ realm = 10, coins = 20000, name = "2차 깨달음" },
+}
+-- 그 권법의 지금 등급 (승급까지 더해서)
+function Config.styleGrade(style: any, up: number?): string
+	local i = math.min(#Config.GRADE_ORDER, Config.gradeIndex(style.grade) + (up or 0))
+	return Config.GRADE_ORDER[i]
 end
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
@@ -469,15 +532,16 @@ end
 -- 각성 마무리 (연타 다섯 번째): 상대를 하늘로 띄운다 → 공중 연격으로 이어진다
 local FINISHERS = {
 	taeheo = { name = "만류회류장", pose = "double_palm" },
-	geumgang = { name = "금강파산추", pose = "hammer_down" },
-	maehwa = { name = "매화낙영각", pose = "roundhouse" },
-	cheonryong = { name = "승룡장", pose = "uppercut" },
+	geumgang = { name = "금강파산추", pose = "elbow_r" },
+	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
+	cheonryong = { name = "승룡장", pose = "dragon_rise" },
 	muyeong = { name = "귀영회선각", pose = "back_spin_kick" },
-	byeokryeok = { name = "벽력천추", pose = "uppercut" },
+	byeokryeok = { name = "벽력천추", pose = "knee_strike" },
 	chwi = { name = "취선번천", pose = "drunk_flop" },
 	samjae = { name = "삼재연환각", pose = "front_kick" },
-	mugeuk = { name = "무극승천장", pose = "uppercut" },
-	hyeolma = { name = "혈마승천조", pose = "uppercut" },
+	mugeuk = { name = "무극승천장", pose = "void_push" },
+	hyeolma = { name = "혈마승천조", pose = "blood_rake" },
+	gaecheon = { name = "개천승룡각", pose = "heaven_kick" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -488,7 +552,7 @@ end
 Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 12000, 20000, 50000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -676,9 +740,15 @@ E.lancer = variant(E.spearman, { name = "황야 창수", shirt = Color3.fromRGB(
 E.pirate = variant(E.bandit, { name = "해적 도객", shirt = Color3.fromRGB(50, 70, 110), pants = Color3.fromRGB(40, 40, 50), hp = 120 })
 E.cultist = variant(E.bandit, { name = "혈교도", shirt = Color3.fromRGB(110, 15, 25), pants = Color3.fromRGB(30, 10, 12), hp = 150, speed = 17 })
 E.cultelder = variant(E.shadowblade, { name = "혈교 장로", shirt = Color3.fromRGB(60, 10, 15), pants = Color3.fromRGB(20, 5, 8), hp = 260, scale = 1.15 })
+-- 허공 균열 (북서쪽 끝): 사경 이후의 적. mult = 체력·피해를 겹으로 더 세게
+E.riftling = variant(E.assassin, { name = "균열 마물", shirt = Color3.fromRGB(80, 50, 120), pants = Color3.fromRGB(40, 25, 60), hp = 90, mult = 4 })
+E.voidwalker = variant(E.shadowblade, { name = "허공 마인", shirt = Color3.fromRGB(30, 20, 60), pants = Color3.fromRGB(15, 10, 30), hp = 150, mult = 6 })
+E.stonegolem = variant(E.ironguard, { name = "석상 수호자", shirt = Color3.fromRGB(130, 125, 140), pants = Color3.fromRGB(90, 85, 100), hp = 240, scale = 1.8, speed = 11, mult = 8 })
+E.apostle = variant(E.cultelder, { name = "천마 사도", shirt = Color3.fromRGB(20, 10, 40), pants = Color3.fromRGB(10, 5, 20), hp = 260, mult = 10, elite = true })
 local B = Config.Bosses
 B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
 B.hyeolma = variant(B.hyeolrang, { name = "혈마 · 혈교의 주인", shirt = Color3.fromRGB(150, 0, 20), pants = Color3.fromRGB(20, 0, 5), hp = 2400, posture = 420, scale = 1.5, speed = 23, coins = 3000, xp = 800, respawn = 300 })
+B.cheonma = variant(B.hyeolrang, { name = "천마 · 하늘을 삼킨 마귀", shirt = Color3.fromRGB(25, 10, 50), pants = Color3.fromRGB(10, 0, 20), hp = 2400, posture = 520, scale = 1.75, speed = 24, coins = 12000, xp = 2000, respawn = 300, mult = 6 })
 
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
@@ -725,6 +795,10 @@ Config.Regions = {
 	{ id = "cult", name = "혈교 본산", center = Vector3.new(1750, 0, -1750), size = Vector3.new(700, 0, 700), ground = Color3.fromRGB(60, 30, 32), material = Enum.Material.Slate, ambient = "cult",
 		camps = { { enemy = "cultist", count = 4, at = Vector3.new(1600, 0, -1550) }, { enemy = "cultist", count = 3, at = Vector3.new(1850, 0, -1600) }, { enemy = "cultelder", count = 2, at = Vector3.new(1700, 0, -1800) }, { enemy = "cultelder", count = 2, at = Vector3.new(1850, 0, -1850) } },
 		boss = { id = "hyeolma", at = Vector3.new(1800, 0, -1950) } },
+	{ id = "rift", name = "허공 균열", center = Vector3.new(-1750, 0, -1750), size = Vector3.new(700, 0, 700), ground = Color3.fromRGB(35, 25, 55), material = Enum.Material.Slate, ambient = "rift",
+		camps = { { enemy = "riftling", count = 4, at = Vector3.new(-1500, 0, -1500) }, { enemy = "riftling", count = 3, at = Vector3.new(-1650, 0, -1450) }, { enemy = "voidwalker", count = 3, at = Vector3.new(-1550, 0, -1700) },
+			{ enemy = "stonegolem", count = 2, at = Vector3.new(-1800, 0, -1600) }, { enemy = "apostle", count = 2, at = Vector3.new(-1850, 0, -1850) }, { enemy = "apostle", count = 2, at = Vector3.new(-1700, 0, -1900) } },
+		boss = { id = "cheonma", at = Vector3.new(-1950, 0, -1950) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
 		master = "taeheo", rumor = "남서쪽 호수 한가운데 정자에 물처럼 앉은 노인이 있다더라", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
@@ -748,6 +822,11 @@ for _, r in ipairs(Config.Regions) do
 		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id, quote = r.quote, rumor = r.rumor }
 	end
 end
+-- 숨은 사부 (지도에도, 지역 목록에도 없다): 무극에 오른 자에게만 시험을 허락한다
+Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector3.new(-2100, 1.6, 2100), region = "운해 끝자락", quote = "하늘은 닫힌 적이 없다. 네가 열지 않았을 뿐.",
+	rumor = "남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 앉아 있다더라", secret = true }
+Config.MASTERS.gaecheon = { name = Config.SECRET_MASTER.name, at = Config.SECRET_MASTER.at, region = Config.SECRET_MASTER.region, regionId = "secret",
+	quote = Config.SECRET_MASTER.quote, rumor = Config.SECRET_MASTER.rumor, secret = true }
 -- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
 Config.Fragments = {
 	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
@@ -779,7 +858,11 @@ Config.Story = {
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 6000, stats = 300 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 무극의 경지, 일곱 권법의 완전 각성. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그러나 북서쪽 끝 허공 균열에서 더 깊은 어둠이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
+	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
+	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
+	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 강호의 마지막 적이다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 천외천의 경지, 열한 권법의 완전 각성과 승급. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
@@ -816,6 +899,7 @@ Config.Roads = {
 	{ Vector3.new(1000, 0, -130), Vector3.new(1180, 0, 0), Vector3.new(1380, 0, 0) },
 	{ Vector3.new(-1000, 0, 0), Vector3.new(-1380, 0, 0) },
 	{ Vector3.new(1700, 0, -430), Vector3.new(1700, 0, -1400) },
+	{ Vector3.new(-1380, 0, 0), Vector3.new(-1450, 0, -700), Vector3.new(-1500, 0, -1400) },
 }
 
 Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)

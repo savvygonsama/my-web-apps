@@ -47,6 +47,7 @@ type Profile = {
 	fragments: { [string]: boolean }, -- 주운 비급 조각
 	stamina: number,
 	staminaAt: number,
+	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
 local function defaultProfile(): Profile
@@ -68,6 +69,7 @@ local function defaultProfile(): Profile
 		fragments = {},
 		stamina = Config.STAMINA.max,
 		staminaAt = os.time(),
+		gradeUp = {},
 	}
 end
 
@@ -137,6 +139,13 @@ local function sanitize(data: any): Profile
 		local i = tonumber(k)
 		return i ~= nil and Config.Fragments[i] ~= nil
 	end)
+	if type(data.gradeUp) == "table" then
+		for id, v in pairs(data.gradeUp) do
+			if type(id) == "string" and Config.STYLE_BY_ID[id] and type(v) == "number" then
+				p.gradeUp[id] = math.clamp(math.floor(v), 0, #Config.BREAKTHROUGH)
+			end
+		end
+	end
 	p.story = math.clamp(math.floor(num(data.story, #Config.Story)), 1, #Config.Story)
 	p.prog = math.floor(num(data.prog, 1e6))
 	p.stamina = type(data.stamina) == "number" and num(data.stamina, Config.STAMINA.max) or Config.STAMINA.max
@@ -292,6 +301,7 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		stamina = math.floor(p.stamina),
+		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
 			return f and (f :: any).power or 0
@@ -371,7 +381,7 @@ local function refreshFighter(player: Player)
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local power = Config.realmPower(idx)
 	local styleDef = Config.STYLE_BY_ID[p.style]
-	local grade = styleDef and Config.GRADES[styleDef.grade] or 1
+	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local oldMax = f.maxHp
@@ -484,6 +494,9 @@ function Story.done(p: Profile, g: any): boolean
 	elseif k == "found" then
 		return countKeys(p.found) >= g.n
 	elseif k == "learn" then
+		if g.id then
+			return p.styles[g.id] == true
+		end
 		return countKeys(p.styles) >= g.n
 	elseif k == "realm" then
 		return Config.realmOf(Calc.total(p)) >= g.n
@@ -603,6 +616,17 @@ function Trial.start(player: Player, styleId: string)
 	local ef = e.f :: any
 	ef.trialOwner = player
 	ef.trialStyle = styleId
+	-- 분신은 시험을 청한 사람과 비슷한 힘으로 (센 사람에게도 시험이 시험이도록)
+	local want = ((f :: any).power or 100) * (style.secret and 1.15 or 0.85)
+	local k = want / math.max(1, ef.power or 100)
+	if k > 1 then
+		ef.maxHp = math.floor(ef.maxHp * k)
+		ef.hp = ef.maxHp
+		ef.dmgMult *= k
+		ef.power = math.floor(want)
+		ef.model:SetAttribute("Power", ef.power)
+		Combat.sync(ef)
+	end
 	e.target = f
 	ef.model:SetAttribute("Style", styleId)
 	activeTrial[player] = ef
@@ -1118,12 +1142,16 @@ function Actions.learn(player: Player, id: any)
 		if style.starter then
 			toast(player, "삼재권은 청운 장로에게 받아요")
 			return
-		elseif style.hidden then
+		elseif style.hidden and not Config.MASTERS[style.id] then
 			toast(player, "🔒 " .. (style.unlockHint or "숨겨진 권법"))
 			return
 		end
 		local master = Config.MASTERS[style.id]
 		if not master then
+			return
+		end
+		if style.realmReq and Config.realmOf(Calc.total(p)) < style.realmReq then
+			toast(player, string.format("🔒 %s은(는) %s의 경지에 올라야 익힐 수 있어요", style.name, Config.Realms[style.realmReq].name))
 			return
 		end
 		if not p.found[style.id] then
@@ -1458,6 +1486,17 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 			Push:FireClient(player, "learned", { style = sd.id, hidden = sd.hidden == true })
 		end
+	elseif action == "testSecretMaster" then
+		-- 숨은 사부 곁으로
+		if f then
+			local sm = Config.SECRET_MASTER
+			f.root.CFrame = CFrame.new(sm.at + Vector3.new(0, 4, 10))
+			toast(player, "🧭 " .. sm.name .. " (" .. sm.region .. ")")
+		end
+	elseif action == "testBreak" then
+		if p.style ~= "" then
+			p.gradeUp[p.style] = #Config.BREAKTHROUGH
+		end
 	elseif action == "testSecret" then
 		-- 시크릿 테스트: 숨은 권법을 진짜 길로 얻어 본다
 		if arg == "fragment" then
@@ -1493,8 +1532,10 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			-- 숨은 권법을 다시 잠근다 (처음부터 다시 얻어 보기)
 			p.styles.mugeuk = nil :: any
 			p.styles.hyeolma = nil :: any
+			p.styles.gaecheon = nil :: any
+			p.trials.gaecheon = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" then
 				p.style = "samjae"
 			end
 		end
@@ -1579,6 +1620,33 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 	elseif action == "talkElder" then
 		Story.talk(player)
+	elseif action == "breakthrough" then
+		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
+		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
+		if not sd or not p.styles[sd.id] then
+			return
+		end
+		local ups = p.gradeUp[sd.id] or 0
+		local step = Config.BREAKTHROUGH[ups + 1]
+		if not step then
+			toast(player, "더 오를 깨달음이 없어요")
+			return
+		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_MAX then
+			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_MAX))
+			return
+		elseif Config.realmOf(Calc.total(p)) < step.realm then
+			toast(player, string.format("%s은(는) %s의 경지부터예요", step.name, Config.Realms[step.realm].name))
+			return
+		elseif p.coins < step.coins then
+			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(step.coins)))
+			return
+		end
+		p.coins -= step.coins
+		p.gradeUp[sd.id] = ups + 1
+		st.dirty = true
+		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), step = step.name })
+		refreshFighter(player)
+		pushState(player)
 	elseif string.sub(action, 1, 4) == "test" and st.tester then
 		testAction(player, p, action, a1)
 	end
@@ -1762,6 +1830,11 @@ task.spawn(function()
 			Story.event(player, "found")
 		end
 		local m = Config.MASTERS[styleId]
+		local sdef = Config.STYLE_BY_ID[styleId]
+		if sdef and sdef.realmReq and not p.styles[styleId] and Config.realmOf(Calc.total(p)) < sdef.realmReq then
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. 네 안의 하늘이 열리지 않았다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
+			return
+		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "제자가 되고 싶다면 먼저 내 분신을 꺾어라. 준비가 되면 다시 말을 걸어라. (다시 T를 누르면 시험이 시작된다)", trial = styleId })

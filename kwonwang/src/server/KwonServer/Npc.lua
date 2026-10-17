@@ -273,16 +273,18 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	-- 마을에서 멀수록 단계가 높다: 체력·균형·피해·보상이 함께 오른다
 	local lv = Config.enemyLevel(at)
 	model:SetAttribute("Level", lv)
+	-- mult: 허공 균열 같은 후반 땅의 적은 체력·피해가 겹으로 세다
+	local mult = def.mult or 1
 	local f = Combat.register(model, {
 		npc = def,
 		name = def.name,
-		hp = math.floor(def.hp * (1 + 0.28 * (lv - 1))),
-		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1))),
+		hp = math.floor(def.hp * (1 + 0.28 * (lv - 1)) * mult),
+		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1)) * math.sqrt(mult)),
 		walk = def.speed,
 		style = def.style or "",
-		dmgMult = Config.ENEMY_DMG * (1 + 0.18 * (lv - 1)),
+		dmgMult = Config.ENEMY_DMG * (1 + 0.18 * (lv - 1)) * mult,
 	})
-	;(f :: any).rewardMult = 1 + 0.25 * (lv - 1)
+	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
 	;(f :: any).typeId = typeId
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
@@ -464,6 +466,27 @@ local function dressMaster(model: Model, style: any)
 				e.SpreadAngle = Vector2.new(180, 180)
 				e.Parent = hand
 			end
+		end
+	elseif id == "gaecheon" then
+		-- 무명 노인: 땅에 끌리는 흰 수염, 별을 박은 관, 둘레를 도는 별빛
+		beard(WHITE_HAIR)
+		wear(model, "Head", "LongBeard", Vector3.new(hs.X * 0.5, hs.Y * 2.4, 0.3), CFrame.new(0, -hs.Y * 1.5, -hs.Z * 0.45), WHITE_HAIR)
+		wear(model, "Head", "StarCrown", Vector3.new(hs.X * 1.05, 0.25, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.55, 0), Color3.fromRGB(230, 235, 255), Enum.Material.Neon)
+		for k = 0, 4 do
+			local a = k / 5 * math.pi * 2
+			wear(model, "Head", "CrownStar", Vector3.new(0.3, 0.3, 0.3), CFrame.new(math.cos(a) * hs.X * 0.5, hs.Y * 0.75, math.sin(a) * hs.Z * 0.5), style.color2, Enum.Material.Neon, Enum.PartType.Ball)
+		end
+		local headPart = model:FindFirstChild("Head")
+		if headPart and headPart:IsA("BasePart") then
+			local e = Instance.new("ParticleEmitter")
+			e.Rate = 10
+			e.Color = ColorSequence.new(style.color, style.color2)
+			e.LightEmission = 1
+			e.Size = NumberSequence.new(0.35, 0)
+			e.Lifetime = NumberRange.new(1, 2)
+			e.Speed = NumberRange.new(1, 3)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Parent = headPart
 		end
 	elseif id == "chwi" then
 		-- 취선옹: 넓은 삿갓, 허리의 술 호리병, 붉은 뺨
