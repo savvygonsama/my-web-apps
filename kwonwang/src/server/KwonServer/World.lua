@@ -577,7 +577,7 @@ local function village(out: any)
 	end
 	part({ Name = "BoardRoof", Size = Vector3.new(40, 1, 5), Position = boardAt + Vector3.new(0, 16.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
 	local mboard = part({ Name = "MasterBoard", Size = Vector3.new(32, 13, 0.6), Position = boardAt + Vector3.new(0, 9, 0), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	local lines: { { any } } = { { "武 일곱 사부를 찾아가라", Color3.fromRGB(255, 215, 120), 0.16 } }
+	local lines: { { any } } = { { "일곱 사부를 찾아가라", Color3.fromRGB(255, 215, 120), 0.16 } }
 	for _, style in ipairs(Config.Styles) do
 		local m = Config.MASTERS[style.id]
 		if m then
@@ -619,6 +619,43 @@ local function trainingSpots(out: any)
 				part({ Name = "MookArm", Size = Vector3.new(0.5, 0.5, 3), CFrame = CFrame.new(at + Vector3.new((k - 2) * 0.6, h, -1.6)) * CFrame.Angles(math.rad(k == 3 and -20 or 10), math.rad((k - 2) * 25), 0), Color = Color3.fromRGB(120, 80, 45), Material = Enum.Material.Wood, Parent = f })
 			end
 			part({ Name = "MookBase", Size = Vector3.new(5, 1, 5), Position = at + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.Wood, Parent = f })
+		elseif spot.kind == "mabo" then
+			-- 마보 참장: 세 개의 말뚝 위에서 버틴다
+			part({ Name = "MaboBase", Size = Vector3.new(8, 0.8, 8), Position = at + Vector3.new(0, 0.4, 0), Color = Color3.fromRGB(110, 85, 60), Material = Enum.Material.WoodPlanks, Parent = f })
+			for k = -1, 1 do
+				part({ Name = "MaboPost", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 1.2, 1.2), CFrame = CFrame.new(at + Vector3.new(k * 2.4, 2.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(130, 95, 60), Material = Enum.Material.Wood, Parent = f })
+			end
+			target = part({ Name = "MaboStake", Size = Vector3.new(1.2, 3.4, 1.2), Position = at + Vector3.new(0, 1.7, 2.6), Color = Color3.fromRGB(150, 110, 70), Material = Enum.Material.Wood, Parent = f })
+		elseif spot.kind == "ironpalm" then
+			-- 철사장: 화로 위의 달군 쇠모래 솥
+			part({ Name = "CauldronStand", Size = Vector3.new(4.5, 2.4, 4.5), Position = at + Vector3.new(0, 1.2, 0), Color = Color3.fromRGB(70, 65, 65), Material = Enum.Material.Slate, Parent = f })
+			target = part({ Name = "IronCauldron", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.2, 5, 5), CFrame = CFrame.new(at + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(55, 50, 50), Material = Enum.Material.Metal, Parent = f })
+			local sand = part({ Name = "HotSand", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 4.2, 4.2), CFrame = CFrame.new(at + Vector3.new(0, 4.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 120, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(sand, Color3.fromRGB(255, 130, 60), 14, 1.6)
+			local smoke = Instance.new("Smoke")
+			smoke.Color = Color3.fromRGB(120, 110, 100)
+			smoke.Opacity = 0.08
+			smoke.RiseVelocity = 3
+			smoke.Size = 1.5
+			smoke.Parent = sand
+		elseif spot.kind == "breathing" then
+			-- 운기조식: 하늘 고리 아래의 방석, 둘레에 작은 수정
+			target = part({ Name = "MeditationCushion", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 60, 140), Material = Enum.Material.Fabric, Parent = f })
+			for k = 0, 2 do
+				local a = k / 3 * math.pi * 2
+				crystal(at + Vector3.new(math.cos(a) * 3.5, 2.2, math.sin(a) * 3.5), 0.9, Color3.fromRGB(150, 230, 255), f)
+			end
+		elseif spot.kind == "simma" then
+			-- 심마 대련: 옛 투기장 한가운데의 검은 제단
+			target = part({ Name = "SimmaAltar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 9, 9), CFrame = CFrame.new(at + Vector3.new(0, 0.7, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(30, 20, 35), Material = Enum.Material.Slate, Parent = f })
+			for k = 0, 3 do
+				local a = k / 4 * math.pi * 2 + math.rad(45)
+				local p = at + Vector3.new(math.cos(a) * 5.5, 0, math.sin(a) * 5.5)
+				part({ Name = "SimmaPillar", Size = Vector3.new(1, 7, 1), Position = p + Vector3.new(0, 3.5, 0), Color = Color3.fromRGB(40, 30, 45), Material = Enum.Material.Slate, Parent = f })
+				crystal(p + Vector3.new(0, 8.5, 0), 1.2, Color3.fromRGB(190, 70, 255), f)
+			end
+			local eye = part({ Name = "SimmaEye", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), Position = at + Vector3.new(0, 6, 0), Color = Color3.fromRGB(200, 60, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(eye, Color3.fromRGB(200, 60, 255), 24, 2)
 		elseif spot.kind == "waterfall" then
 			target = part({ Name = "MeditationStone", Size = Vector3.new(8, 1.2, 8), Position = at + Vector3.new(0, 0.6, 0), Color = Color3.fromRGB(110, 120, 120), Material = Enum.Material.Slate, Parent = f })
 		else
@@ -627,11 +664,16 @@ local function trainingSpots(out: any)
 			sign(s, Enum.NormalId.Front, { { "🎋 경공 수련", Color3.fromRGB(200, 255, 160), 1 } })
 		end
 		local info = Config.Training[spot.kind]
-		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배
-		local hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
-		hard.KeyboardKeyCode = Enum.KeyCode.Y
-		hard.UIOffset = Vector2.new(0, 70)
-		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
+		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배 (싸우는 수련엔 없다)
+		local hard: ProximityPrompt? = nil
+		if not info.fight then
+			hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+			;(hard :: ProximityPrompt).KeyboardKeyCode = Enum.KeyCode.Y
+			;(hard :: ProximityPrompt).UIOffset = Vector2.new(0, 70)
+		end
+		local action = info.fight and "심마 불러내기" or "수련하기"
+		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
+		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- 대나무 경공 고리 (숲 속에 한 바퀴)
 	out.rings = {}
@@ -720,8 +762,8 @@ local function regions()
 		flame.Parent = fire
 	end
 	local banner = part({ Name = "FortBanner", Size = Vector3.new(16, 22, 0.4), Position = bossAt + Vector3.new(0, 18, -38), Color = Color3.fromRGB(30, 25, 25), Material = Enum.Material.Fabric, CanCollide = false, Parent = ff })
-	sign(banner, Enum.NormalId.Front, { { "黑虎", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
-	sign(banner, Enum.NormalId.Back, { { "黑虎", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
+	sign(banner, Enum.NormalId.Front, { { "흑호", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
+	sign(banner, Enum.NormalId.Back, { { "흑호", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
 
 	-- 비류 폭포 계곡: 동쪽 절벽, 폭포, 연못, 나무와 바위
 	local vf = Instance.new("Folder")

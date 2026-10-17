@@ -1,5 +1,6 @@
 -- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
 -- 로블록스 기본 걷기 동작 위에 권법 자세를 얹고, 기술을 쓰면 온몸을 그 동작으로 덮는다
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -35,6 +36,9 @@ type Rec = {
 	moveW: number,
 	airW: number,
 	breath: number,
+	idleT: number,
+	idleNext: number,
+	lastActAt: number,
 	lastT: number,
 	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
 }
@@ -188,6 +192,9 @@ function Anim.watch(model: Model)
 		moveW = 0,
 		airW = 0,
 		breath = math.random() * 6,
+		idleT = 0,
+		idleNext = 3 + math.random() * 4,
+		lastActAt = 0,
 		lastT = os.clock(),
 		written = {},
 	}
@@ -219,6 +226,9 @@ function Anim.play(model: Model, pose: string, dur: number, opt: any?)
 		return
 	end
 	local o = opt or {}
+	if not o.idle then
+		rec.lastActAt = os.clock()
+	end
 	rec.track = {
 		pose = pose,
 		keys = keys,
@@ -358,6 +368,9 @@ local AIR_DOWN: { [string]: { number } } = {
 	RH = { 22, 0, 8 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -18, 0, 0 },
 }
 
+local IDLE_HAND = { { "idle_shadow", 1.0 }, { "idle_stretch", 1.6 }, { "idle_crack", 1.4 }, { "idle_shift", 0.9 }, { "idle_look", 1.6 } }
+local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
+
 local function step(dt: number)
 	local t = os.clock()
 	for model, rec in pairs(recs) do
@@ -432,6 +445,29 @@ local function step(dt: number)
 		rec.sprintW += (sprintTarget - rec.sprintW) * math.min(1, dt * 10)
 		local sprintJ = Poses.anims.sprint_upper and Poses.anims.sprint_upper[1].j
 		local airJ = vel.Y > 0 and AIR_UP or AIR_DOWN
+
+		-- 가만히 서 있으면 가끔 몸짓 (그림자 주먹, 기지개, 손 풀기, 자세 바꾸기, 둘러보기)
+		if still > 0.9 and not actPose and not loopPose and not guarding and not dead and t - rec.lastActAt > 4 and model:GetAttribute("Master") ~= true then
+			rec.idleT += dt
+			if rec.idleT > rec.idleNext then
+				rec.idleT = 0
+				rec.idleNext = 4 + math.random() * 5
+				local ok = true
+				if rec.npc then
+					-- 적은 곁에 사람이 없을 때만 (싸우다 딴청 부리지 않게)
+					local me = Players.LocalPlayer.Character
+					local mr = me and me:FindFirstChild("HumanoidRootPart")
+					ok = not (mr and mr:IsA("BasePart") and (mr.Position - root.Position).Magnitude < 30)
+				end
+				if ok then
+					local list = model:GetAttribute("Weapon") and IDLE_WEAPON or IDLE_HAND
+					local pick = list[math.random(1, #list)]
+					Anim.play(model, pick[1], pick[2], { idle = true, fadeOut = 0.25 })
+				end
+			end
+		else
+			rec.idleT = 0
+		end
 
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중

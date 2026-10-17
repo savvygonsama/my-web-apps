@@ -582,6 +582,9 @@ function Npc.onDeath(f: any)
 				f.model:Destroy()
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
+			if e.region == "simma" then
+				return -- 심마는 다시 나타나지 않는다
+			end
 			task.delay(wait, function()
 				local ok, err = pcall(Npc.spawn, e.typeId, e.kind == "boss", e.home, e.region)
 				if not ok then

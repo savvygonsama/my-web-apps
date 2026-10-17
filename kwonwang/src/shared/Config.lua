@@ -1,7 +1,7 @@
 -- 권왕(拳王): 맨손의 강호. 서버와 화면이 함께 쓰는 설정
 local Config = {}
 
-Config.GAME_TITLE = "권왕(拳王)"
+Config.GAME_TITLE = "권왕"
 Config.VERSION = "beta-1"
 Config.TEST_MODE = true -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함)
 
@@ -46,7 +46,8 @@ Config.REGEN_SAFE_RATE = 0.08
 
 ------------------------------------------------------------------------
 -- 수련 능력치 4종. 효과는 로그로 완만하게 오른다 (수련 반, 실력 반)
--- 배율 = 1 + 0.25 × ln(1 + 능력치 ÷ 20)  →  100이면 ×1.45, 1000이면 ×1.98, 10000이면 ×2.55
+-- 배율 = 1 + 0.3 × ln(1 + 능력치 ÷ 15)  →  100이면 ×1.61, 1000이면 ×2.26, 10000이면 ×2.95
+-- 여기에 경지 배율(경지마다 +15%)이 곱해진다
 ------------------------------------------------------------------------
 Config.Stats = {
 	{ id = "str", name = "근골", icon = "💪", desc = "주는 피해" },
@@ -56,7 +57,7 @@ Config.Stats = {
 }
 
 function Config.statMult(x: number): number
-	return 1 + 0.25 * math.log(1 + math.max(0, x) / 20)
+	return 1 + 0.3 * math.log(1 + math.max(0, x) / 15)
 end
 
 function Config.maxHp(vit: number): number
@@ -67,17 +68,26 @@ function Config.walkSpeed(agi: number): number
 	return Config.WALK_SPEED * (0.85 + 0.15 * Config.statMult(agi))
 end
 
--- 경지: 능력치 합으로 정해진다. 머리 위 칭호와 작은 체력 보너스
+-- 경지: 능력치 합으로 정해진다. 경지가 오를 때마다 피해·체력 +15% (경지 배율), 수련 효과 +25%
+-- 삼류·일류·특급·사경에 이르면 그 경지의 새 수련이 열린다
 Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
 	{ name = "이류", need = 100, color = Color3.fromRGB(150, 220, 150) },
 	{ name = "일류", need = 400, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "절정", need = 1200, color = Color3.fromRGB(190, 130, 255) },
-	{ name = "초절정", need = 3000, color = Color3.fromRGB(255, 190, 70) },
-	{ name = "화경", need = 7000, color = Color3.fromRGB(255, 110, 80) },
+	{ name = "특급", need = 1000, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "절정", need = 2200, color = Color3.fromRGB(190, 130, 255) },
+	{ name = "초절정", need = 4500, color = Color3.fromRGB(255, 190, 70) },
+	{ name = "화경", need = 8500, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 15000, color = Color3.fromRGB(120, 255, 230) },
-	{ name = "생사경", need = 30000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "사경", need = 26000, color = Color3.fromRGB(255, 80, 120) },
+	{ name = "생사경", need = 42000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 65000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 100000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 150000, color = Color3.fromRGB(255, 150, 255) },
 }
+function Config.realmPower(idx: number): number
+	return 1 + 0.15 * (idx - 1)
+end
 
 function Config.realmOf(total: number): (number, any)
 	local idx = 1
@@ -97,6 +107,11 @@ Config.Training = {
 	waterfall = { name = "폭포 명상", stat = "chi", icon = "💧", desc = "숨이 가장 커질 때 누르세요", base = 1 },
 	bamboo = { name = "대나무 경공", stat = "agi", icon = "🎋", desc = "빛나는 대나무 고리를 지나가세요", base = 1 },
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
+	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
+	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
+	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.0 },
+	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
+	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
@@ -336,8 +351,8 @@ end
 --       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
 ------------------------------------------------------------------------
 Config.AWAKEN = {
-	{ lv = 6, name = "각성", mark = "覺", dmg = 1.25, cd = 0.85 },
-	{ lv = 10, name = "완전 각성", mark = "眞覺", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+	{ lv = 6, name = "각성", mark = "✦", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "✦✦", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
 }
 function Config.awakenTier(lv: number): number
 	if lv >= Config.AWAKEN[2].lv then
@@ -455,6 +470,16 @@ Config.Enemies = {
 			{ id = "sb3", name = "암살", pose = "w_overhead", windup = 0.55, dur = 1.0, range = 6, unblockable = true, hits = { hit(0.55, 6, 4.5, 26, 30, 0.8, 25) } },
 		},
 	},
+	-- 심마 대련에서만 나타난다 (마음속의 마귀)
+	simma = {
+		name = "심마", weapon = "dual", hp = 700, posture = 300, speed = 22, aggro = 90, keep = 4, shirt = Color3.fromRGB(35, 10, 45), pants = Color3.fromRGB(20, 5, 25), scale = 1.15,
+		coins = 300, xp = 120,
+		moves = {
+			{ id = "sm1", name = "마영 연격", pose = "w_dual", windup = 0.25, dur = 1.1, range = 6, lunge = 6, hits = { hit(0.25, 6, 4.5, 14, 16, 0.3, 4), hit(0.45, 6, 4.5, 14, 16, 0.3, 4), hit(0.7, 6, 5, 22, 26, 0.5, 18) } },
+			{ id = "sm2", name = "마영 습격", pose = "w_thrust", windup = 0.3, dur = 0.85, range = 30, teleport = true, hits = { hit(0.3, 6, 4, 24, 26, 0.5, 15) } },
+			{ id = "sm3", name = "심마 참", pose = "w_sweep", windup = 0.6, dur = 1.2, range = 10, unblockable = true, hits = { hit(0.6, 0, 11, 40, 50, 0.9, 35, nil, true) } },
+		},
+	},
 	thug = {
 		name = "무뢰배", weapon = "staff", hp = 55, posture = 50, speed = 13, aggro = 38, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
 		coins = 6, xp = 5,
@@ -544,7 +569,7 @@ Config.Regions = {
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
 			-- 가운데쯤 (사부 가는 길목)
-			{ enemy = "spearman", count = 2, at = Vector3.new(-430, 0, 470) }, { enemy = "brute", count = 2, at = Vector3.new(-380, 0, -430) },
+			{ enemy = "spearman", count = 2, at = Vector3.new(-430, 0, 470) }, { enemy = "brute", count = 2, at = Vector3.new(-300, 0, -560) },
 			{ enemy = "spearman", count = 2, at = Vector3.new(430, 0, -470) }, { enemy = "brute", count = 2, at = Vector3.new(450, 0, 470) },
 			{ enemy = "assassin", count = 2, at = Vector3.new(760, 0, -170) }, { enemy = "assassin", count = 2, at = Vector3.new(-760, 0, 130) },
 			-- 아주 먼 곳 (강한 적)
@@ -557,19 +582,19 @@ Config.Regions = {
 		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
@@ -623,6 +648,13 @@ Config.TrainingSpots = {
 	{ kind = "waterfall", at = Vector3.new(560, 0, -10) },
 	{ kind = "waterfall", at = Vector3.new(580, 0, 15) },
 	{ kind = "bamboo", at = Vector3.new(-380, 0, -10) },
+	{ kind = "mabo", at = Vector3.new(-105, 0, -15) },
+	{ kind = "mabo", at = Vector3.new(-105, 0, 5) },
+	{ kind = "ironpalm", at = Vector3.new(105, 0, -15) },
+	{ kind = "ironpalm", at = Vector3.new(105, 0, 5) },
+	{ kind = "breathing", at = Vector3.new(372, 0, 306) },
+	{ kind = "breathing", at = Vector3.new(388, 0, 294) },
+	{ kind = "simma", at = Vector3.new(-380, 0, -430) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
 

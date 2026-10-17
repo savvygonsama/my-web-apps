@@ -509,7 +509,7 @@ startMove = function(slot: any, charge: number?)
 		if perfect then
 			perfectChain += 1
 			local big = perfectChain >= Config.RHYTHM.chain
-			Fx.text(root.Position + Vector3.new(0, 4.5, 0), big and string.format("連擊 ×%d", perfectChain) or "連", big and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 235, 170), big and 30 or 22, 0.8)
+			Fx.text(root.Position + Vector3.new(0, 4.5, 0), big and string.format("연속 정타 ×%d", perfectChain) or "정타!", big and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 235, 170), big and 30 or 22, 0.8)
 			Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style.color, 2, big and 12 or 7, 0.3)
 			Fx.sound("ping", 0.35, big and 1.6 or 1.3)
 		elseif slot ~= 1 then
@@ -520,14 +520,14 @@ startMove = function(slot: any, charge: number?)
 		-- 각성 마무리: 크게 휘둘러 하늘로 띄운다
 		UI.flash(style.color, 0.25)
 		fovPunch(-6, 0.4)
-		Fx.text(root.Position + Vector3.new(0, 6, 0), "覺 " .. move.name, style.color, 34, 1.2)
+		Fx.text(root.Position + Vector3.new(0, 6, 0), "✦ " .. move.name, style.color, 34, 1.2)
 	end
 	if move.hover then
 		-- 공중 연격: 나도 공중에 머문다
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X * 0.3, move.hover, root.AssemblyLinearVelocity.Z * 0.3)
 	end
 	if slot == "C" then
-		Fx.text(root.Position + Vector3.new(0, 5, 0), "反 반격!", Color3.fromRGB(255, 220, 120), 38)
+		Fx.text(root.Position + Vector3.new(0, 5, 0), "반격!", Color3.fromRGB(255, 220, 120), 38)
 		UI.flash(Color3.fromRGB(255, 230, 160), 0.2)
 	elseif slot == "D" then
 		Fx.afterimage(char, style.color, 0.35)
@@ -879,6 +879,8 @@ local function setSprint(on: boolean)
 	Request:FireServer("sprint", on)
 end
 
+local doEmote: (string) -> () = function(_id: string) end
+
 ------------------------------------------------------------------------
 -- 입력
 ------------------------------------------------------------------------
@@ -914,6 +916,14 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		UI.openPage("stats")
 	elseif k == Enum.KeyCode.M then
 		UI.toggleMap()
+	elseif k == Enum.KeyCode.One or k == Enum.KeyCode.Two or k == Enum.KeyCode.Three or k == Enum.KeyCode.Four then
+		-- 몸짓: 서서 할 수 있는 동작
+		if not busy() and not dead and not guarding and not training then
+			local id = ({ [Enum.KeyCode.One] = "salute", [Enum.KeyCode.Two] = "taunt", [Enum.KeyCode.Three] = "kata", [Enum.KeyCode.Four] = "meditate" })[k]
+			if id then
+				doEmote(id)
+			end
+		end
 	elseif k == Enum.KeyCode.LeftShift or k == Enum.KeyCode.RightShift then
 		setSprint(true)
 	end
@@ -1001,6 +1011,56 @@ function handlers.open(data: any)
 	UI.openPage(data.page, data)
 end
 
+-- 몸짓 (1 포권, 2 도발, 3 권법 시연, 4 명상)
+local EMOTES = { salute = { "salute", 1.2 }, taunt = { "taunt", 1.4 }, kata = { "kata", 2.0 }, meditate = { "meditate", 3.0 } }
+function handlers.emote(m: Model, id: any, isLocal: boolean?)
+	local e = EMOTES[tostring(id)]
+	if not e or not m or not m.Parent or (m == myChar() and not isLocal) then
+		return
+	end
+	Anim.play(m, e[1], e[2], { fadeOut = 0.3 })
+	local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
+	local r = rootOf(m)
+	if style and r then
+		if id == "kata" then
+			Fx.limbTrails(m, "kata", e[2], style.color, style.color2)
+			for k = 0, 3 do
+				task.delay(0.15 + k * 0.4, function()
+					Fx.swing(style.id, m, k == 3)
+				end)
+			end
+		elseif id == "meditate" then
+			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color, 2, 12, 1.2)
+		elseif id == "salute" then
+			Fx.ring(r.Position + r.CFrame.LookVector * 1.5, style.color2, 1, 5, 0.4, r.CFrame.LookVector)
+		end
+	end
+end
+
+doEmote = function(id: string)
+	local char = myChar()
+	if char then
+		handlers.emote(char, id, true)
+		Request:FireServer("emote", id)
+	end
+end
+
+-- 심마 대련
+function handlers.simma(m: Model)
+	local r = m and rootOf(m)
+	if r then
+		Fx.text(r.Position + Vector3.new(0, 6, 0), "👁 심마", Color3.fromRGB(200, 80, 255), 40, 1.5)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(190, 60, 255), 3, 30, 0.8)
+		Fx.afterimage(m, Color3.fromRGB(120, 40, 180), 0.8)
+	end
+	UI.banner("👁 심마 대련", "마음속의 마귀를 꺾어라", Color3.fromRGB(200, 90, 255))
+	shake(0.8)
+end
+function handlers.simmaWin(data: any)
+	UI.banner("👁 심마를 꺾었다!", string.format("모든 능력치 +%d", data.gain or 0), Color3.fromRGB(255, 220, 120))
+	Fx.sound("ping", 0.9, 0.9)
+end
+
 -- 사부에게 가는 길잡이
 function handlers.guide(data: any)
 	UI.setGuide(data.style)
@@ -1036,7 +1096,7 @@ function handlers.act(data: any)
 	-- 적이 휘두르기 직전: 무기가 반짝인다 (흘릴 때!), 붉으면 막을 수 없다
 	if data.windup and pos then
 		if data.unblockable then
-			Fx.text(pos + Vector3.new(0, 5, 0), "⚠ 危", Color3.fromRGB(255, 70, 50), 34, 1.5)
+			Fx.text(pos + Vector3.new(0, 5, 0), "⚠ 위험", Color3.fromRGB(255, 70, 50), 34, 1.5)
 			Fx.ring(pos - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 50, 40), 3, 14, data.windup)
 		end
 		task.delay(math.max(0, data.windup - 0.14), function()
@@ -1106,9 +1166,9 @@ function handlers.hit(data: any)
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
 		end
 		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or Color3.new(1, 1, 1))
-		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "會 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
 		if data.broken then
-			Fx.text(pos + Vector3.new(0, 5, 0), "破 파훼!", Color3.fromRGB(255, 200, 80), 40)
+			Fx.text(pos + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 18, 0.45)
 			if mine or hurt then
 				shake(1.6)
@@ -1129,7 +1189,7 @@ function handlers.hit(data: any)
 			Anim.play(t, "block_hit", 0.3)
 		end
 		if kind == "guardbreak" then
-			Fx.text(pos + Vector3.new(0, 4, 0), "破 막기가 깨졌다!", Color3.fromRGB(255, 200, 80), 32)
+			Fx.text(pos + Vector3.new(0, 4, 0), "막기가 깨졌다!", Color3.fromRGB(255, 200, 80), 32)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 16, 0.4)
 			shake(1.2)
 		else
@@ -1144,7 +1204,7 @@ function handlers.hit(data: any)
 		Fx.spark(pos, Color3.fromRGB(180, 230, 255), 1.6, 12)
 		Fx.ring(pos, Color3.fromRGB(200, 240, 255), 1, 10, 0.3, dir)
 		Fx.sound("deflect", 0.8, 1.2 + math.random() * 0.2)
-		Fx.text(pos + Vector3.new(0, 4, 0), data.counter and "流 되받아치기!" or "流 흘리기!", Color3.fromRGB(170, 230, 255), 36)
+		Fx.text(pos + Vector3.new(0, 4, 0), data.counter and "되받아치기!" or "흘리기!", Color3.fromRGB(170, 230, 255), 36)
 		if t and t == myChar() then
 			deflectAt = os.clock()
 			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
@@ -1173,7 +1233,7 @@ function handlers.hit(data: any)
 		Fx.ring(pos, Color3.new(1, 1, 1), 2, 16, 0.4, dir)
 		Fx.ring(pos - Vector3.new(0, 2, 0), Color3.fromRGB(255, 220, 160), 2, 22, 0.5)
 		Fx.sound("heavy", 1, 0.45)
-		Fx.text(pos + Vector3.new(0, 5, 0), "激 격돌!", Color3.fromRGB(255, 240, 200), 40)
+		Fx.text(pos + Vector3.new(0, 5, 0), "격돌!", Color3.fromRGB(255, 240, 200), 40)
 		if mine or hurt then
 			shake(1.5)
 			UI.flash(Color3.new(1, 1, 1), 0.35)
@@ -1183,7 +1243,7 @@ function handlers.hit(data: any)
 			local tt = Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
 			Fx.afterimage(t, tt and tt.color or Color3.fromRGB(200, 200, 255), 0.35)
 		end
-		Fx.text(pos + Vector3.new(0, 3, 0), data.drunk and "醉 취보!" or "회피", Color3.fromRGB(220, 220, 255), 26)
+		Fx.text(pos + Vector3.new(0, 3, 0), data.drunk and "취보!" or "회피", Color3.fromRGB(220, 220, 255), 26)
 	end
 end
 
@@ -1191,7 +1251,7 @@ function handlers.broken(m: Model, secs: number)
 	Anim.play(m, "broken", secs)
 	local p = modelPos(m)
 	if p then
-		Fx.text(p + Vector3.new(0, 5, 0), "破 파훼!", Color3.fromRGB(255, 200, 80), 40)
+		Fx.text(p + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 	end
 	if m == myChar() then
 		stunUntil = os.clock() + secs
@@ -1242,7 +1302,7 @@ end
 function handlers.poise(m: Model)
 	local r = m and m:FindFirstChild("HumanoidRootPart")
 	if r and r:IsA("BasePart") then
-		Fx.text(r.Position + Vector3.new(0, 5, 0), "不動 버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 150, 70), 2, 12, 0.4)
 	end
 end
@@ -1306,8 +1366,12 @@ function handlers.heal(m: Model)
 end
 
 function handlers.trainPose(m: Model, kind: string?)
-	if kind == "waterfall" then
+	if kind == "waterfall" or kind == "breathing" then
 		Anim.setLoop(m, "meditate", 2)
+	elseif kind == "mabo" then
+		Anim.setLoop(m, "horse_stance", 2.4)
+	elseif kind == "ironpalm" then
+		Anim.setLoop(m, "palm_strike", 1.0)
 	elseif kind == "rock" then
 		Anim.setLoop(m, "lift", 1.4)
 	else
@@ -1380,7 +1444,7 @@ function handlers.pdodge(data: any)
 	local m, a = data.m, data.a
 	local r = m and rootOf(m)
 	if r then
-		Fx.text(r.Position + Vector3.new(0, 5, 0), "見切り!", Color3.fromRGB(180, 230, 255), 38, 1.2)
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "간파!", Color3.fromRGB(180, 230, 255), 38, 1.2)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(180, 230, 255), 2, 18, 0.5)
 		Fx.afterimage(m, Color3.fromRGB(180, 230, 255), 0.5)
 	end
@@ -1486,7 +1550,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	local tierNow = tonumber(char:GetAttribute("Awaken")) or 0
 	if perfectChain >= 2 then
-		stacks ..= string.format("  連 ×%d", perfectChain)
+		stacks ..= string.format("  정타 ×%d", perfectChain)
 	end
 	if comboBroken then
 		stacks ..= "  (흐트러짐)"

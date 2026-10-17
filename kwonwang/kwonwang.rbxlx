@@ -21,7 +21,7 @@
         <string name="Source"><![CDATA[-- 권왕(拳王): 맨손의 강호. 서버와 화면이 함께 쓰는 설정
 local Config = {}
 
-Config.GAME_TITLE = "권왕(拳王)"
+Config.GAME_TITLE = "권왕"
 Config.VERSION = "beta-1"
 Config.TEST_MODE = true -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함)
 
@@ -66,7 +66,8 @@ Config.REGEN_SAFE_RATE = 0.08
 
 ------------------------------------------------------------------------
 -- 수련 능력치 4종. 효과는 로그로 완만하게 오른다 (수련 반, 실력 반)
--- 배율 = 1 + 0.25 × ln(1 + 능력치 ÷ 20)  →  100이면 ×1.45, 1000이면 ×1.98, 10000이면 ×2.55
+-- 배율 = 1 + 0.3 × ln(1 + 능력치 ÷ 15)  →  100이면 ×1.61, 1000이면 ×2.26, 10000이면 ×2.95
+-- 여기에 경지 배율(경지마다 +15%)이 곱해진다
 ------------------------------------------------------------------------
 Config.Stats = {
 	{ id = "str", name = "근골", icon = "💪", desc = "주는 피해" },
@@ -76,7 +77,7 @@ Config.Stats = {
 }
 
 function Config.statMult(x: number): number
-	return 1 + 0.25 * math.log(1 + math.max(0, x) / 20)
+	return 1 + 0.3 * math.log(1 + math.max(0, x) / 15)
 end
 
 function Config.maxHp(vit: number): number
@@ -87,17 +88,26 @@ function Config.walkSpeed(agi: number): number
 	return Config.WALK_SPEED * (0.85 + 0.15 * Config.statMult(agi))
 end
 
--- 경지: 능력치 합으로 정해진다. 머리 위 칭호와 작은 체력 보너스
+-- 경지: 능력치 합으로 정해진다. 경지가 오를 때마다 피해·체력 +15% (경지 배율), 수련 효과 +25%
+-- 삼류·일류·특급·사경에 이르면 그 경지의 새 수련이 열린다
 Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
 	{ name = "이류", need = 100, color = Color3.fromRGB(150, 220, 150) },
 	{ name = "일류", need = 400, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "절정", need = 1200, color = Color3.fromRGB(190, 130, 255) },
-	{ name = "초절정", need = 3000, color = Color3.fromRGB(255, 190, 70) },
-	{ name = "화경", need = 7000, color = Color3.fromRGB(255, 110, 80) },
+	{ name = "특급", need = 1000, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "절정", need = 2200, color = Color3.fromRGB(190, 130, 255) },
+	{ name = "초절정", need = 4500, color = Color3.fromRGB(255, 190, 70) },
+	{ name = "화경", need = 8500, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 15000, color = Color3.fromRGB(120, 255, 230) },
-	{ name = "생사경", need = 30000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "사경", need = 26000, color = Color3.fromRGB(255, 80, 120) },
+	{ name = "생사경", need = 42000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 65000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 100000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 150000, color = Color3.fromRGB(255, 150, 255) },
 }
+function Config.realmPower(idx: number): number
+	return 1 + 0.15 * (idx - 1)
+end
 
 function Config.realmOf(total: number): (number, any)
 	local idx = 1
@@ -117,6 +127,11 @@ Config.Training = {
 	waterfall = { name = "폭포 명상", stat = "chi", icon = "💧", desc = "숨이 가장 커질 때 누르세요", base = 1 },
 	bamboo = { name = "대나무 경공", stat = "agi", icon = "🎋", desc = "빛나는 대나무 고리를 지나가세요", base = 1 },
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
+	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
+	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
+	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.0 },
+	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
+	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
@@ -356,8 +371,8 @@ end
 --       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
 ------------------------------------------------------------------------
 Config.AWAKEN = {
-	{ lv = 6, name = "각성", mark = "覺", dmg = 1.25, cd = 0.85 },
-	{ lv = 10, name = "완전 각성", mark = "眞覺", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+	{ lv = 6, name = "각성", mark = "✦", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "✦✦", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
 }
 function Config.awakenTier(lv: number): number
 	if lv >= Config.AWAKEN[2].lv then
@@ -475,6 +490,16 @@ Config.Enemies = {
 			{ id = "sb3", name = "암살", pose = "w_overhead", windup = 0.55, dur = 1.0, range = 6, unblockable = true, hits = { hit(0.55, 6, 4.5, 26, 30, 0.8, 25) } },
 		},
 	},
+	-- 심마 대련에서만 나타난다 (마음속의 마귀)
+	simma = {
+		name = "심마", weapon = "dual", hp = 700, posture = 300, speed = 22, aggro = 90, keep = 4, shirt = Color3.fromRGB(35, 10, 45), pants = Color3.fromRGB(20, 5, 25), scale = 1.15,
+		coins = 300, xp = 120,
+		moves = {
+			{ id = "sm1", name = "마영 연격", pose = "w_dual", windup = 0.25, dur = 1.1, range = 6, lunge = 6, hits = { hit(0.25, 6, 4.5, 14, 16, 0.3, 4), hit(0.45, 6, 4.5, 14, 16, 0.3, 4), hit(0.7, 6, 5, 22, 26, 0.5, 18) } },
+			{ id = "sm2", name = "마영 습격", pose = "w_thrust", windup = 0.3, dur = 0.85, range = 30, teleport = true, hits = { hit(0.3, 6, 4, 24, 26, 0.5, 15) } },
+			{ id = "sm3", name = "심마 참", pose = "w_sweep", windup = 0.6, dur = 1.2, range = 10, unblockable = true, hits = { hit(0.6, 0, 11, 40, 50, 0.9, 35, nil, true) } },
+		},
+	},
 	thug = {
 		name = "무뢰배", weapon = "staff", hp = 55, posture = 50, speed = 13, aggro = 38, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
 		coins = 6, xp = 5,
@@ -564,7 +589,7 @@ Config.Regions = {
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
 			-- 가운데쯤 (사부 가는 길목)
-			{ enemy = "spearman", count = 2, at = Vector3.new(-430, 0, 470) }, { enemy = "brute", count = 2, at = Vector3.new(-380, 0, -430) },
+			{ enemy = "spearman", count = 2, at = Vector3.new(-430, 0, 470) }, { enemy = "brute", count = 2, at = Vector3.new(-300, 0, -560) },
 			{ enemy = "spearman", count = 2, at = Vector3.new(430, 0, -470) }, { enemy = "brute", count = 2, at = Vector3.new(450, 0, 470) },
 			{ enemy = "assassin", count = 2, at = Vector3.new(760, 0, -170) }, { enemy = "assassin", count = 2, at = Vector3.new(-760, 0, 130) },
 			-- 아주 먼 곳 (강한 적)
@@ -577,19 +602,19 @@ Config.Regions = {
 		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
@@ -643,6 +668,13 @@ Config.TrainingSpots = {
 	{ kind = "waterfall", at = Vector3.new(560, 0, -10) },
 	{ kind = "waterfall", at = Vector3.new(580, 0, 15) },
 	{ kind = "bamboo", at = Vector3.new(-380, 0, -10) },
+	{ kind = "mabo", at = Vector3.new(-105, 0, -15) },
+	{ kind = "mabo", at = Vector3.new(-105, 0, 5) },
+	{ kind = "ironpalm", at = Vector3.new(105, 0, -15) },
+	{ kind = "ironpalm", at = Vector3.new(105, 0, 5) },
+	{ kind = "breathing", at = Vector3.new(372, 0, 306) },
+	{ kind = "breathing", at = Vector3.new(388, 0, 294) },
+	{ kind = "simma", at = Vector3.new(-380, 0, -430) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
 
@@ -1177,6 +1209,83 @@ A.dive_kick = {
 A.sprint_upper = {
 	{ t = 0, j = { W = { 25, 0, 0 }, N = { -15, 0, 0 }, RS = { -60, 0, 15 }, RE = { 15, 0, 0 }, LS = { -60, 0, -15 }, LE = { 15, 0, 0 }, R = { -18, 0, 0, 0, 0, 0 } } },
 }
+-- 마보 참장: 깊게 앉은 말 탄 자세, 두 주먹을 허리에
+A.horse_stance = {
+	{ t = 0, j = { W = { 5, 0, 0 }, N = { -5, 0, 0 }, RS = { -10, 0, 25 }, RE = { 110, 0, 0 }, LS = { -10, 0, -25 }, LE = { 110, 0, 0 }, RH = { 55, 0, 35 }, RK = { -80, 0, 0 }, LH = { 55, 0, -35 }, LK = { -80, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.5, j = { W = { 6, 0, 0 }, N = { -5, 0, 0 }, RS = { -10, 0, 25 }, RE = { 110, 0, 0 }, LS = { -10, 0, -25 }, LE = { 110, 0, 0 }, RH = { 58, 0, 36 }, RK = { -85, 0, 0 }, LH = { 58, 0, -36 }, LK = { -85, 0, 0 }, R = { 0, 0, 0, 0, -1.4, 0 } } },
+	{ t = 1, j = { W = { 5, 0, 0 }, N = { -5, 0, 0 }, RS = { -10, 0, 25 }, RE = { 110, 0, 0 }, LS = { -10, 0, -25 }, LE = { 110, 0, 0 }, RH = { 55, 0, 35 }, RK = { -80, 0, 0 }, LH = { 55, 0, -35 }, LK = { -80, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+}
+-- 철사장: 솥의 쇠모래를 손바닥으로 내리친다 (되풀이)
+A.palm_strike = {
+	{ t = 0, j = { W = { 15, 0, 0 }, RS = { 150, 0, 15 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 90, 0, 0 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.45, e = "snap", j = { W = { 35, 0, 0 }, N = { 15, 0, 0 }, RS = { 60, 0, 5 }, RE = { 5, 0, 0 }, LS = { 30, 0, -15 }, LE = { 90, 0, 0 }, RK = { -40, 0, 0 }, LK = { -40, 0, 0 }, R = { -10, 0, 0, 0, -0.9, 0 } } },
+	{ t = 1, j = { W = { 15, 0, 0 }, RS = { 150, 0, 15 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 90, 0, 0 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+}
+-- 몸짓 (1~4): 포권, 손짓 도발, 권법 시연, 명상
+A.salute = {
+	{ t = 0, j = { RS = { 20, 0, 15 }, LS = { 20, 0, -15 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.25, e = "snap", j = { RS = { 75, 0, -35 }, RE = { 100, 0, 0 }, LS = { 75, 0, 35 }, LE = { 100, 0, 0 }, W = { 0, 0, 0 }, N = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.6, j = { RS = { 75, 0, -35 }, RE = { 100, 0, 0 }, LS = { 75, 0, 35 }, LE = { 100, 0, 0 }, W = { 25, 0, 0 }, N = { 15, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
+	{ t = 1, j = { RS = { 20, 0, 15 }, LS = { 20, 0, -15 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+}
+A.taunt = {
+	{ t = 0, j = { RS = { 80, 0, 20 }, RE = { 40, 0, 0 }, LS = { 20, 0, -25 }, LE = { 60, 0, 0 }, N = { -10, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
+	{ t = 0.2, e = "snap", j = { RS = { 85, 0, 15 }, RE = { 110, 0, 0 }, N = { -10, 0, 0 } } },
+	{ t = 0.4, j = { RS = { 80, 0, 20 }, RE = { 30, 0, 0 } } },
+	{ t = 0.6, e = "snap", j = { RS = { 85, 0, 15 }, RE = { 110, 0, 0 } } },
+	{ t = 0.8, j = { RS = { 80, 0, 20 }, RE = { 30, 0, 0 }, W = { -5, 0, 0 }, N = { -15, 15, 0 } } },
+	{ t = 1, j = { R = { 0, 0, 0, 0, -0.3, 0 } } },
+}
+A.kata = {
+	{ t = 0, j = { R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.12, e = "snap", j = { W = { 0, 40, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 60, 0, -20 }, LE = { 110, 0, 0 }, R = { -5, -30, 0, 0, -0.6, -0.3 } } },
+	{ t = 0.26, e = "snap", j = { W = { 0, -40, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RS = { 60, 0, 20 }, RE = { 110, 0, 0 }, R = { -5, 30, 0, 0, -0.6, -0.3 } } },
+	{ t = 0.45, e = "snap", j = { W = { -10, 0, 0 }, RH = { 120, 0, 0 }, RK = { 0, 0, 0 }, LK = { -20, 0, 0 }, RS = { 30, 0, 50 }, LS = { 30, 0, -50 }, R = { 10, 0, 0, 0, -0.2, 0 } } },
+	{ t = 0.62, j = { RH = { 10, 0, 0 }, RK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.78, e = "snap", j = { W = { 0, -60, 0 }, RS = { 80, 0, 80 }, RE = { 10, 0, 0 }, LS = { 80, 0, -10 }, LE = { 80, 0, 0 }, R = { 0, 120, 0, 0, -0.7, 0 } } },
+	{ t = 1, j = { R = { 0, 360, 0, 0, -0.4, 0 } } },
+}
+-- 서 있을 때 저절로 나오는 몸짓 (사람·사부)
+A.idle_shadow = {
+	{ t = 0, j = {} },
+	{ t = 0.2, e = "snap", j = { W = { 0, 25, 0 }, RS = { 90, 0, 0 }, RE = { 5, 0, 0 }, R = { -4, -15, 0, 0, -0.5, -0.2 } } },
+	{ t = 0.4, j = { W = { 0, 0, 0 } } },
+	{ t = 0.55, e = "snap", j = { W = { 0, -25, 0 }, LS = { 90, 0, 0 }, LE = { 5, 0, 0 }, R = { -4, 15, 0, 0, -0.5, -0.2 } } },
+	{ t = 1, j = {} },
+}
+A.idle_stretch = {
+	{ t = 0, j = {} },
+	{ t = 0.35, j = { RS = { 175, 0, 10 }, RE = { 10, 0, 0 }, LS = { 175, 0, -10 }, LE = { 10, 0, 0 }, W = { -12, 0, 0 }, N = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0.1, 0 } } },
+	{ t = 0.6, j = { RS = { 175, 0, 30 }, LS = { 175, 0, -30 }, W = { -8, 0, 15 }, N = { -10, 0, 15 } } },
+	{ t = 1, j = {} },
+}
+A.idle_crack = {
+	{ t = 0, j = {} },
+	{ t = 0.3, j = { RS = { 70, 0, -30 }, RE = { 100, 0, 0 }, LS = { 70, 0, 30 }, LE = { 100, 0, 0 }, N = { 15, 0, 0 } } },
+	{ t = 0.45, e = "snap", j = { RS = { 72, 0, -34 }, RE = { 105, 0, 0 }, LS = { 70, 0, 34 }, LE = { 105, 0, 0 }, N = { 12, 0, 0 } } },
+	{ t = 0.7, j = { N = { 0, 30, 15 } } },
+	{ t = 0.85, j = { N = { 0, -30, -15 } } },
+	{ t = 1, j = {} },
+}
+A.idle_shift = {
+	{ t = 0, j = {} },
+	{ t = 0.3, e = "snap", j = { R = { 0, 0, 0, 0, 0.2, 0 }, RH = { 30, 0, 0 }, RK = { -60, 0, 0 }, LH = { 30, 0, 0 }, LK = { -60, 0, 0 } } },
+	{ t = 0.55, j = { R = { 0, 180, 0, 0, -0.5, 0 } } },
+	{ t = 1, j = { R = { 0, 360, 0, 0, -0.4, 0 } } },
+}
+A.idle_look = {
+	{ t = 0, j = {} },
+	{ t = 0.3, j = { N = { 0, 55, 0 }, W = { 0, 15, 0 } } },
+	{ t = 0.65, j = { N = { 0, -55, 0 }, W = { 0, -15, 0 } } },
+	{ t = 1, j = {} },
+}
+-- 무기를 든 적: 무기를 살펴보고 어깨에 걸쳤다 내린다
+A.idle_weapon = {
+	{ t = 0, j = {} },
+	{ t = 0.3, j = { RS = { 100, 0, 30 }, RE = { 60, 0, 0 }, N = { 20, 20, 0 } } },
+	{ t = 0.6, j = { RS = { 150, 0, 60 }, RE = { 110, 0, 0 }, N = { 0, 0, 0 }, W = { -5, 0, 0 } } },
+	{ t = 1, j = {} },
+}
 -- 명상 (가부좌)
 A.meditate = {
 	{ t = 0, j = { W = { 0, 0, 0 }, N = { 8, 0, 0 }, RS = { 25, 0, 20 }, RE = { 60, 0, 0 }, LS = { 25, 0, -20 }, LE = { 60, 0, 0 }, RH = { 90, 0, 45 }, RK = { -150, 0, 0 }, LH = { 90, 0, -45 }, LK = { -150, 0, 0 }, R = { 0, 0, 0, 0, -2.4, 0 } } },
@@ -1209,7 +1318,8 @@ Poses.limbs = {
 	drunk_low = { "RightHand" }, drunk_flop = { "RightFoot", "LeftFoot" }, headbutt = {}, fire_breath = {},
 	w_slash = { "RightHand" }, w_slash2 = { "RightHand" }, w_overhead = { "RightHand" }, w_thrust = { "RightHand" }, w_sweep = { "RightHand" }, w_dual = { "RightHand", "LeftHand" },
 	deflect = { "RightHand" },
-	hit_heavy = {}, launched = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
+	hit_heavy = {}, launched = {}, kata = { "RightHand", "LeftHand", "RightFoot" }, salute = {}, taunt = {}, palm_strike = { "RightHand" },
+	idle_shadow = { "RightHand", "LeftHand" }, idle_stretch = {}, idle_crack = {}, idle_shift = {}, idle_look = {}, idle_weapon = {}, horse_stance = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
 	dive_slam = { "RightHand", "LeftHand" }, dive_kick = { "RightFoot" }, backflip = { "RightFoot", "LeftFoot" },
 	side_roll_r = { "RightHand", "LeftFoot" }, side_roll_l = { "LeftHand", "RightFoot" },
 }
@@ -1362,6 +1472,7 @@ type State = {
 	potionAt: number,
 	charConn: RBXScriptConnection?,
 	tpIdx: number?,
+	simmaAt: number?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -1563,10 +1674,12 @@ local function refreshFighter(player: Player)
 	local idx = Config.realmOf(Calc.total(p))
 	local m = p.style ~= "" and Calc.mastery(p, p.style).lv or 1
 	f.style = p.style
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1))
+	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
+	local power = Config.realmPower(idx)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * (1 + 0.02 * (idx - 1)))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power)
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
@@ -1643,6 +1756,16 @@ Combat.init(Push, {
 			local p = killer and profiles[killer]
 			if killer and p then
 				local isBoss = f.model:GetAttribute("Boss") == true
+				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
+				if f.simmaOwner == killer then
+					local ridx = Config.realmOf(Calc.total(p))
+					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)))
+					for _, st in ipairs(Config.Stats) do
+						p.stats[st.id] += gain
+					end
+					Push:FireClient(killer, "simmaWin", { gain = gain })
+					refreshFighter(killer)
+				end
 				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
@@ -2163,7 +2286,30 @@ function Train.start(player: Player, info: any, hard: boolean?)
 		toast(player, "싸우는 중에는 수련할 수 없어요")
 		return
 	end
-	if hard and Config.realmOf(Calc.total(p)) < Config.HARD_TRAIN.realm then
+	local kindInfo = Config.Training[info.kind]
+	local realmIdx = Config.realmOf(Calc.total(p))
+	if kindInfo and kindInfo.realm and realmIdx < kindInfo.realm then
+		toast(player, string.format("%s %s은(는) 경지 %s부터 할 수 있어요", kindInfo.icon, kindInfo.name, Config.Realms[kindInfo.realm].name))
+		return
+	end
+	-- 심마 대련: 마음속의 마귀를 불러내 싸운다 (이기면 모든 능력치)
+	if kindInfo and kindInfo.fight then
+		local t = os.clock()
+		if t - (st.simmaAt or 0) < 60 then
+			toast(player, string.format("👁 심마가 아직 가라앉지 않았어요 (%d초)", math.ceil(60 - (t - st.simmaAt))))
+			return
+		end
+		st.simmaAt = t
+		local e = Npc.spawn("simma", false, info.pos + Vector3.new(0, 0, -14), "simma")
+		if e then
+			(e.f :: any).simmaOwner = player
+			e.target = f
+			Push:FireAllClients("simma", e.f.model)
+			toast(player, "👁 심마가 형체를 얻었다! 이기면 모든 능력치가 크게 오른다")
+		end
+		return
+	end
+	if hard and realmIdx < Config.HARD_TRAIN.realm then
 		toast(player, string.format("🔥 강화 수련은 경지 %s부터 할 수 있어요", Config.Realms[Config.HARD_TRAIN.realm].name))
 		return
 	end
@@ -2238,7 +2384,15 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
-	p.stats[info.stat] += amount
+	if info.gains then
+		-- 여러 능력치가 함께 오르는 수련
+		for stat, k in pairs(info.gains) do
+			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
+		end
+		amount = math.max(1, math.floor(gain * (info.gains[info.stat] or 1) * mult + 0.5))
+	else
+		p.stats[info.stat] += amount
+	end
 	st.dirty = true
 	local afterIdx, realm = Config.realmOf(Calc.total(p))
 	Push:FireClient(player, "trained", { stat = info.stat, gain = amount, grade = grade, total = p.stats[info.stat], ring = st.ringIdx })
@@ -2364,6 +2518,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Actions.guard(player, a1)
 	elseif action == "dash" then
 		Actions.dash(player, a1)
+	elseif action == "emote" then
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead and not Combat.busy(f) and type(a1) == "string" and #a1 < 20 then
+			Push:FireAllClients("emote", f.model, a1)
+		end
 	elseif action == "sprint" then
 		local f = Combat.fighterOfPlayer(player)
 		if f then
@@ -3869,6 +4028,9 @@ function Npc.onDeath(f: any)
 				f.model:Destroy()
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
+			if e.region == "simma" then
+				return -- 심마는 다시 나타나지 않는다
+			end
 			task.delay(wait, function()
 				local ok, err = pcall(Npc.spawn, e.typeId, e.kind == "boss", e.home, e.region)
 				if not ok then
@@ -4695,7 +4857,7 @@ local function village(out: any)
 	end
 	part({ Name = "BoardRoof", Size = Vector3.new(40, 1, 5), Position = boardAt + Vector3.new(0, 16.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
 	local mboard = part({ Name = "MasterBoard", Size = Vector3.new(32, 13, 0.6), Position = boardAt + Vector3.new(0, 9, 0), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	local lines: { { any } } = { { "武 일곱 사부를 찾아가라", Color3.fromRGB(255, 215, 120), 0.16 } }
+	local lines: { { any } } = { { "일곱 사부를 찾아가라", Color3.fromRGB(255, 215, 120), 0.16 } }
 	for _, style in ipairs(Config.Styles) do
 		local m = Config.MASTERS[style.id]
 		if m then
@@ -4737,6 +4899,43 @@ local function trainingSpots(out: any)
 				part({ Name = "MookArm", Size = Vector3.new(0.5, 0.5, 3), CFrame = CFrame.new(at + Vector3.new((k - 2) * 0.6, h, -1.6)) * CFrame.Angles(math.rad(k == 3 and -20 or 10), math.rad((k - 2) * 25), 0), Color = Color3.fromRGB(120, 80, 45), Material = Enum.Material.Wood, Parent = f })
 			end
 			part({ Name = "MookBase", Size = Vector3.new(5, 1, 5), Position = at + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.Wood, Parent = f })
+		elseif spot.kind == "mabo" then
+			-- 마보 참장: 세 개의 말뚝 위에서 버틴다
+			part({ Name = "MaboBase", Size = Vector3.new(8, 0.8, 8), Position = at + Vector3.new(0, 0.4, 0), Color = Color3.fromRGB(110, 85, 60), Material = Enum.Material.WoodPlanks, Parent = f })
+			for k = -1, 1 do
+				part({ Name = "MaboPost", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 1.2, 1.2), CFrame = CFrame.new(at + Vector3.new(k * 2.4, 2.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(130, 95, 60), Material = Enum.Material.Wood, Parent = f })
+			end
+			target = part({ Name = "MaboStake", Size = Vector3.new(1.2, 3.4, 1.2), Position = at + Vector3.new(0, 1.7, 2.6), Color = Color3.fromRGB(150, 110, 70), Material = Enum.Material.Wood, Parent = f })
+		elseif spot.kind == "ironpalm" then
+			-- 철사장: 화로 위의 달군 쇠모래 솥
+			part({ Name = "CauldronStand", Size = Vector3.new(4.5, 2.4, 4.5), Position = at + Vector3.new(0, 1.2, 0), Color = Color3.fromRGB(70, 65, 65), Material = Enum.Material.Slate, Parent = f })
+			target = part({ Name = "IronCauldron", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.2, 5, 5), CFrame = CFrame.new(at + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(55, 50, 50), Material = Enum.Material.Metal, Parent = f })
+			local sand = part({ Name = "HotSand", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 4.2, 4.2), CFrame = CFrame.new(at + Vector3.new(0, 4.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 120, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(sand, Color3.fromRGB(255, 130, 60), 14, 1.6)
+			local smoke = Instance.new("Smoke")
+			smoke.Color = Color3.fromRGB(120, 110, 100)
+			smoke.Opacity = 0.08
+			smoke.RiseVelocity = 3
+			smoke.Size = 1.5
+			smoke.Parent = sand
+		elseif spot.kind == "breathing" then
+			-- 운기조식: 하늘 고리 아래의 방석, 둘레에 작은 수정
+			target = part({ Name = "MeditationCushion", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 60, 140), Material = Enum.Material.Fabric, Parent = f })
+			for k = 0, 2 do
+				local a = k / 3 * math.pi * 2
+				crystal(at + Vector3.new(math.cos(a) * 3.5, 2.2, math.sin(a) * 3.5), 0.9, Color3.fromRGB(150, 230, 255), f)
+			end
+		elseif spot.kind == "simma" then
+			-- 심마 대련: 옛 투기장 한가운데의 검은 제단
+			target = part({ Name = "SimmaAltar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 9, 9), CFrame = CFrame.new(at + Vector3.new(0, 0.7, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(30, 20, 35), Material = Enum.Material.Slate, Parent = f })
+			for k = 0, 3 do
+				local a = k / 4 * math.pi * 2 + math.rad(45)
+				local p = at + Vector3.new(math.cos(a) * 5.5, 0, math.sin(a) * 5.5)
+				part({ Name = "SimmaPillar", Size = Vector3.new(1, 7, 1), Position = p + Vector3.new(0, 3.5, 0), Color = Color3.fromRGB(40, 30, 45), Material = Enum.Material.Slate, Parent = f })
+				crystal(p + Vector3.new(0, 8.5, 0), 1.2, Color3.fromRGB(190, 70, 255), f)
+			end
+			local eye = part({ Name = "SimmaEye", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), Position = at + Vector3.new(0, 6, 0), Color = Color3.fromRGB(200, 60, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(eye, Color3.fromRGB(200, 60, 255), 24, 2)
 		elseif spot.kind == "waterfall" then
 			target = part({ Name = "MeditationStone", Size = Vector3.new(8, 1.2, 8), Position = at + Vector3.new(0, 0.6, 0), Color = Color3.fromRGB(110, 120, 120), Material = Enum.Material.Slate, Parent = f })
 		else
@@ -4745,11 +4944,16 @@ local function trainingSpots(out: any)
 			sign(s, Enum.NormalId.Front, { { "🎋 경공 수련", Color3.fromRGB(200, 255, 160), 1 } })
 		end
 		local info = Config.Training[spot.kind]
-		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배
-		local hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
-		hard.KeyboardKeyCode = Enum.KeyCode.Y
-		hard.UIOffset = Vector2.new(0, 70)
-		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
+		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배 (싸우는 수련엔 없다)
+		local hard: ProximityPrompt? = nil
+		if not info.fight then
+			hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+			;(hard :: ProximityPrompt).KeyboardKeyCode = Enum.KeyCode.Y
+			;(hard :: ProximityPrompt).UIOffset = Vector2.new(0, 70)
+		end
+		local action = info.fight and "심마 불러내기" or "수련하기"
+		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
+		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- 대나무 경공 고리 (숲 속에 한 바퀴)
 	out.rings = {}
@@ -4838,8 +5042,8 @@ local function regions()
 		flame.Parent = fire
 	end
 	local banner = part({ Name = "FortBanner", Size = Vector3.new(16, 22, 0.4), Position = bossAt + Vector3.new(0, 18, -38), Color = Color3.fromRGB(30, 25, 25), Material = Enum.Material.Fabric, CanCollide = false, Parent = ff })
-	sign(banner, Enum.NormalId.Front, { { "黑虎", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
-	sign(banner, Enum.NormalId.Back, { { "黑虎", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
+	sign(banner, Enum.NormalId.Front, { { "흑호", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
+	sign(banner, Enum.NormalId.Back, { { "흑호", Color3.fromRGB(230, 60, 40), 0.7 }, { "흑호채", Color3.fromRGB(255, 220, 160), 0.3 } })
 
 	-- 비류 폭포 계곡: 동쪽 절벽, 폭포, 연못, 나무와 바위
 	local vf = Instance.new("Folder")
@@ -5984,7 +6188,7 @@ startMove = function(slot: any, charge: number?)
 		if perfect then
 			perfectChain += 1
 			local big = perfectChain >= Config.RHYTHM.chain
-			Fx.text(root.Position + Vector3.new(0, 4.5, 0), big and string.format("連擊 ×%d", perfectChain) or "連", big and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 235, 170), big and 30 or 22, 0.8)
+			Fx.text(root.Position + Vector3.new(0, 4.5, 0), big and string.format("연속 정타 ×%d", perfectChain) or "정타!", big and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 235, 170), big and 30 or 22, 0.8)
 			Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style.color, 2, big and 12 or 7, 0.3)
 			Fx.sound("ping", 0.35, big and 1.6 or 1.3)
 		elseif slot ~= 1 then
@@ -5995,14 +6199,14 @@ startMove = function(slot: any, charge: number?)
 		-- 각성 마무리: 크게 휘둘러 하늘로 띄운다
 		UI.flash(style.color, 0.25)
 		fovPunch(-6, 0.4)
-		Fx.text(root.Position + Vector3.new(0, 6, 0), "覺 " .. move.name, style.color, 34, 1.2)
+		Fx.text(root.Position + Vector3.new(0, 6, 0), "✦ " .. move.name, style.color, 34, 1.2)
 	end
 	if move.hover then
 		-- 공중 연격: 나도 공중에 머문다
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X * 0.3, move.hover, root.AssemblyLinearVelocity.Z * 0.3)
 	end
 	if slot == "C" then
-		Fx.text(root.Position + Vector3.new(0, 5, 0), "反 반격!", Color3.fromRGB(255, 220, 120), 38)
+		Fx.text(root.Position + Vector3.new(0, 5, 0), "반격!", Color3.fromRGB(255, 220, 120), 38)
 		UI.flash(Color3.fromRGB(255, 230, 160), 0.2)
 	elseif slot == "D" then
 		Fx.afterimage(char, style.color, 0.35)
@@ -6354,6 +6558,8 @@ local function setSprint(on: boolean)
 	Request:FireServer("sprint", on)
 end
 
+local doEmote: (string) -> () = function(_id: string) end
+
 ------------------------------------------------------------------------
 -- 입력
 ------------------------------------------------------------------------
@@ -6389,6 +6595,14 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		UI.openPage("stats")
 	elseif k == Enum.KeyCode.M then
 		UI.toggleMap()
+	elseif k == Enum.KeyCode.One or k == Enum.KeyCode.Two or k == Enum.KeyCode.Three or k == Enum.KeyCode.Four then
+		-- 몸짓: 서서 할 수 있는 동작
+		if not busy() and not dead and not guarding and not training then
+			local id = ({ [Enum.KeyCode.One] = "salute", [Enum.KeyCode.Two] = "taunt", [Enum.KeyCode.Three] = "kata", [Enum.KeyCode.Four] = "meditate" })[k]
+			if id then
+				doEmote(id)
+			end
+		end
 	elseif k == Enum.KeyCode.LeftShift or k == Enum.KeyCode.RightShift then
 		setSprint(true)
 	end
@@ -6476,6 +6690,56 @@ function handlers.open(data: any)
 	UI.openPage(data.page, data)
 end
 
+-- 몸짓 (1 포권, 2 도발, 3 권법 시연, 4 명상)
+local EMOTES = { salute = { "salute", 1.2 }, taunt = { "taunt", 1.4 }, kata = { "kata", 2.0 }, meditate = { "meditate", 3.0 } }
+function handlers.emote(m: Model, id: any, isLocal: boolean?)
+	local e = EMOTES[tostring(id)]
+	if not e or not m or not m.Parent or (m == myChar() and not isLocal) then
+		return
+	end
+	Anim.play(m, e[1], e[2], { fadeOut = 0.3 })
+	local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
+	local r = rootOf(m)
+	if style and r then
+		if id == "kata" then
+			Fx.limbTrails(m, "kata", e[2], style.color, style.color2)
+			for k = 0, 3 do
+				task.delay(0.15 + k * 0.4, function()
+					Fx.swing(style.id, m, k == 3)
+				end)
+			end
+		elseif id == "meditate" then
+			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color, 2, 12, 1.2)
+		elseif id == "salute" then
+			Fx.ring(r.Position + r.CFrame.LookVector * 1.5, style.color2, 1, 5, 0.4, r.CFrame.LookVector)
+		end
+	end
+end
+
+doEmote = function(id: string)
+	local char = myChar()
+	if char then
+		handlers.emote(char, id, true)
+		Request:FireServer("emote", id)
+	end
+end
+
+-- 심마 대련
+function handlers.simma(m: Model)
+	local r = m and rootOf(m)
+	if r then
+		Fx.text(r.Position + Vector3.new(0, 6, 0), "👁 심마", Color3.fromRGB(200, 80, 255), 40, 1.5)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(190, 60, 255), 3, 30, 0.8)
+		Fx.afterimage(m, Color3.fromRGB(120, 40, 180), 0.8)
+	end
+	UI.banner("👁 심마 대련", "마음속의 마귀를 꺾어라", Color3.fromRGB(200, 90, 255))
+	shake(0.8)
+end
+function handlers.simmaWin(data: any)
+	UI.banner("👁 심마를 꺾었다!", string.format("모든 능력치 +%d", data.gain or 0), Color3.fromRGB(255, 220, 120))
+	Fx.sound("ping", 0.9, 0.9)
+end
+
 -- 사부에게 가는 길잡이
 function handlers.guide(data: any)
 	UI.setGuide(data.style)
@@ -6511,7 +6775,7 @@ function handlers.act(data: any)
 	-- 적이 휘두르기 직전: 무기가 반짝인다 (흘릴 때!), 붉으면 막을 수 없다
 	if data.windup and pos then
 		if data.unblockable then
-			Fx.text(pos + Vector3.new(0, 5, 0), "⚠ 危", Color3.fromRGB(255, 70, 50), 34, 1.5)
+			Fx.text(pos + Vector3.new(0, 5, 0), "⚠ 위험", Color3.fromRGB(255, 70, 50), 34, 1.5)
 			Fx.ring(pos - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 50, 40), 3, 14, data.windup)
 		end
 		task.delay(math.max(0, data.windup - 0.14), function()
@@ -6581,9 +6845,9 @@ function handlers.hit(data: any)
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
 		end
 		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or Color3.new(1, 1, 1))
-		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "會 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
+		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
 		if data.broken then
-			Fx.text(pos + Vector3.new(0, 5, 0), "破 파훼!", Color3.fromRGB(255, 200, 80), 40)
+			Fx.text(pos + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 18, 0.45)
 			if mine or hurt then
 				shake(1.6)
@@ -6604,7 +6868,7 @@ function handlers.hit(data: any)
 			Anim.play(t, "block_hit", 0.3)
 		end
 		if kind == "guardbreak" then
-			Fx.text(pos + Vector3.new(0, 4, 0), "破 막기가 깨졌다!", Color3.fromRGB(255, 200, 80), 32)
+			Fx.text(pos + Vector3.new(0, 4, 0), "막기가 깨졌다!", Color3.fromRGB(255, 200, 80), 32)
 			Fx.ring(pos, Color3.fromRGB(255, 200, 80), 2, 16, 0.4)
 			shake(1.2)
 		else
@@ -6619,7 +6883,7 @@ function handlers.hit(data: any)
 		Fx.spark(pos, Color3.fromRGB(180, 230, 255), 1.6, 12)
 		Fx.ring(pos, Color3.fromRGB(200, 240, 255), 1, 10, 0.3, dir)
 		Fx.sound("deflect", 0.8, 1.2 + math.random() * 0.2)
-		Fx.text(pos + Vector3.new(0, 4, 0), data.counter and "流 되받아치기!" or "流 흘리기!", Color3.fromRGB(170, 230, 255), 36)
+		Fx.text(pos + Vector3.new(0, 4, 0), data.counter and "되받아치기!" or "흘리기!", Color3.fromRGB(170, 230, 255), 36)
 		if t and t == myChar() then
 			deflectAt = os.clock()
 			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
@@ -6648,7 +6912,7 @@ function handlers.hit(data: any)
 		Fx.ring(pos, Color3.new(1, 1, 1), 2, 16, 0.4, dir)
 		Fx.ring(pos - Vector3.new(0, 2, 0), Color3.fromRGB(255, 220, 160), 2, 22, 0.5)
 		Fx.sound("heavy", 1, 0.45)
-		Fx.text(pos + Vector3.new(0, 5, 0), "激 격돌!", Color3.fromRGB(255, 240, 200), 40)
+		Fx.text(pos + Vector3.new(0, 5, 0), "격돌!", Color3.fromRGB(255, 240, 200), 40)
 		if mine or hurt then
 			shake(1.5)
 			UI.flash(Color3.new(1, 1, 1), 0.35)
@@ -6658,7 +6922,7 @@ function handlers.hit(data: any)
 			local tt = Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
 			Fx.afterimage(t, tt and tt.color or Color3.fromRGB(200, 200, 255), 0.35)
 		end
-		Fx.text(pos + Vector3.new(0, 3, 0), data.drunk and "醉 취보!" or "회피", Color3.fromRGB(220, 220, 255), 26)
+		Fx.text(pos + Vector3.new(0, 3, 0), data.drunk and "취보!" or "회피", Color3.fromRGB(220, 220, 255), 26)
 	end
 end
 
@@ -6666,7 +6930,7 @@ function handlers.broken(m: Model, secs: number)
 	Anim.play(m, "broken", secs)
 	local p = modelPos(m)
 	if p then
-		Fx.text(p + Vector3.new(0, 5, 0), "破 파훼!", Color3.fromRGB(255, 200, 80), 40)
+		Fx.text(p + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
 	end
 	if m == myChar() then
 		stunUntil = os.clock() + secs
@@ -6717,7 +6981,7 @@ end
 function handlers.poise(m: Model)
 	local r = m and m:FindFirstChild("HumanoidRootPart")
 	if r and r:IsA("BasePart") then
-		Fx.text(r.Position + Vector3.new(0, 5, 0), "不動 버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 150, 70), 2, 12, 0.4)
 	end
 end
@@ -6781,8 +7045,12 @@ function handlers.heal(m: Model)
 end
 
 function handlers.trainPose(m: Model, kind: string?)
-	if kind == "waterfall" then
+	if kind == "waterfall" or kind == "breathing" then
 		Anim.setLoop(m, "meditate", 2)
+	elseif kind == "mabo" then
+		Anim.setLoop(m, "horse_stance", 2.4)
+	elseif kind == "ironpalm" then
+		Anim.setLoop(m, "palm_strike", 1.0)
 	elseif kind == "rock" then
 		Anim.setLoop(m, "lift", 1.4)
 	else
@@ -6855,7 +7123,7 @@ function handlers.pdodge(data: any)
 	local m, a = data.m, data.a
 	local r = m and rootOf(m)
 	if r then
-		Fx.text(r.Position + Vector3.new(0, 5, 0), "見切り!", Color3.fromRGB(180, 230, 255), 38, 1.2)
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "간파!", Color3.fromRGB(180, 230, 255), 38, 1.2)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(180, 230, 255), 2, 18, 0.5)
 		Fx.afterimage(m, Color3.fromRGB(180, 230, 255), 0.5)
 	end
@@ -6961,7 +7229,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	local tierNow = tonumber(char:GetAttribute("Awaken")) or 0
 	if perfectChain >= 2 then
-		stacks ..= string.format("  連 ×%d", perfectChain)
+		stacks ..= string.format("  정타 ×%d", perfectChain)
 	end
 	if comboBroken then
 		stacks ..= "  (흐트러짐)"
@@ -6977,6 +7245,7 @@ Request:FireServer("hello")
             <string name="Name">Anim</string>
             <string name="Source"><![CDATA[-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
 -- 로블록스 기본 걷기 동작 위에 권법 자세를 얹고, 기술을 쓰면 온몸을 그 동작으로 덮는다
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -7012,6 +7281,9 @@ type Rec = {
 	moveW: number,
 	airW: number,
 	breath: number,
+	idleT: number,
+	idleNext: number,
+	lastActAt: number,
 	lastT: number,
 	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
 }
@@ -7165,6 +7437,9 @@ function Anim.watch(model: Model)
 		moveW = 0,
 		airW = 0,
 		breath = math.random() * 6,
+		idleT = 0,
+		idleNext = 3 + math.random() * 4,
+		lastActAt = 0,
 		lastT = os.clock(),
 		written = {},
 	}
@@ -7196,6 +7471,9 @@ function Anim.play(model: Model, pose: string, dur: number, opt: any?)
 		return
 	end
 	local o = opt or {}
+	if not o.idle then
+		rec.lastActAt = os.clock()
+	end
 	rec.track = {
 		pose = pose,
 		keys = keys,
@@ -7335,6 +7613,9 @@ local AIR_DOWN: { [string]: { number } } = {
 	RH = { 22, 0, 8 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -18, 0, 0 },
 }
 
+local IDLE_HAND = { { "idle_shadow", 1.0 }, { "idle_stretch", 1.6 }, { "idle_crack", 1.4 }, { "idle_shift", 0.9 }, { "idle_look", 1.6 } }
+local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
+
 local function step(dt: number)
 	local t = os.clock()
 	for model, rec in pairs(recs) do
@@ -7409,6 +7690,29 @@ local function step(dt: number)
 		rec.sprintW += (sprintTarget - rec.sprintW) * math.min(1, dt * 10)
 		local sprintJ = Poses.anims.sprint_upper and Poses.anims.sprint_upper[1].j
 		local airJ = vel.Y > 0 and AIR_UP or AIR_DOWN
+
+		-- 가만히 서 있으면 가끔 몸짓 (그림자 주먹, 기지개, 손 풀기, 자세 바꾸기, 둘러보기)
+		if still > 0.9 and not actPose and not loopPose and not guarding and not dead and t - rec.lastActAt > 4 and model:GetAttribute("Master") ~= true then
+			rec.idleT += dt
+			if rec.idleT > rec.idleNext then
+				rec.idleT = 0
+				rec.idleNext = 4 + math.random() * 5
+				local ok = true
+				if rec.npc then
+					-- 적은 곁에 사람이 없을 때만 (싸우다 딴청 부리지 않게)
+					local me = Players.LocalPlayer.Character
+					local mr = me and me:FindFirstChild("HumanoidRootPart")
+					ok = not (mr and mr:IsA("BasePart") and (mr.Position - root.Position).Magnitude < 30)
+				end
+				if ok then
+					local list = model:GetAttribute("Weapon") and IDLE_WEAPON or IDLE_HAND
+					local pick = list[math.random(1, #list)]
+					Anim.play(model, pick[1], pick[2], { idle = true, fadeOut = 0.25 })
+				end
+			end
+		else
+			rec.idleT = 0
+		end
 
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
@@ -8096,7 +8400,7 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 		local glow = tier >= 2 and Color3.fromRGB(255, 250, 235) or Color3.fromRGB(255, 210, 90)
 		Fx.ring(feet + Vector3.new(0, 0.3, 0), glow, 3, slot == "H" and 18 or 24, 0.55)
 		flare(pos + Vector3.new(0, 1, 0), c2, 2.5)
-		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "眞覺" or "覺", glow, 22, 0.6)
+		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "✦✦" or "✦", glow, 22, 0.6)
 	end
 	-- 각성 마무리: 땅에서 솟는 기둥과 하늘로 치솟는 고리
 	if slot == "F" then
@@ -8381,7 +8685,7 @@ end
 function Fx.echo(model: Model, styleId: any, slot: any, dur: number)
 	local style = styleOf(styleId)
 	local c2 = style and style.color2 or Color3.new(1, 1, 1)
-	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "影", c2, 26, 0.8)
+	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "메아리", c2, 26, 0.8)
 	for k = 0, 5 do
 		task.delay(k * dur / 6, function()
 			if model.Parent then
@@ -8665,7 +8969,7 @@ function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()
 	end
-	UI.banner("奧義 · " .. name, nil, color)
+	UI.banner("오의 · " .. name, nil, color)
 	task.delay(dur, function()
 		for _, b in ipairs(bars) do
 			TweenService:Create(b, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 0) }):Play()
@@ -9018,7 +9322,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, "경지가 오를수록 수련 효과 +25%, 체력 +2%")
+		table.insert(lines, string.format("경지 배율 ×%.2f (경지마다 피해·체력 +15%%, 수련 효과 +25%%) · 경지는 열세 단계", Config.realmPower(idx)))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -9033,7 +9337,8 @@ local function buildStats()
 					stat = s
 				end
 			end
-			table.insert(lines, string.format("%s %s → %s %s  (%s)", t.icon, t.name, stat and stat.icon or "", stat and stat.name or "", t.desc))
+			local need = t.realm and t.realm > 1 and string.format(' <font color="#FFD25A">[%s부터]</font>', Config.Realms[t.realm].name) or ""
+			table.insert(lines, string.format("%s %s%s → %s  (%s)", t.icon, t.name, need, t.fight and "모든 능력치" or ((stat and stat.icon or "") .. " " .. (stat and stat.name or "")), t.desc))
 		end
 		table.insert(lines, "")
 		table.insert(lines, string.format("💰 은자 %s   ⚔ 쓰러뜨린 적 %d   🏆 비무대 승리 %d   🧪 금창약 %d", Config.formatNumber(state.coins), state.kills, state.pvpWins, state.potions))
@@ -9084,10 +9389,10 @@ local function buildHelp()
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
 			"",
 			"<b>연타는 박자</b>",
-			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>連</b> (피해 +15%, 세 번 이으면 連擊 +30%)",
+			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)",
 			"• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다",
 			"• 숙련 6 각성: 연타 다섯 번째 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격 (세 번)",
-			"• 맞기 직전에 대시로 피하면 <b>見切り</b>: 상대가 굳고, 곧바로 클릭하면 반격",
+			"• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고, 곧바로 클릭하면 반격",
 			"",
 			"<b>몸놀림</b>",
 			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
@@ -9128,7 +9433,7 @@ local function buildTest()
 	local page = makePage("test")
 	new("UIGridLayout", { CellSize = UDim2.new(0.33, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = page })
 	for _, item in ipairs({
-		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "🥋 숙련 최대", "testMastery" },
+		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 }, { "🥋 숙련 최대", "testMastery" },
 		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
 		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
 		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
@@ -9169,13 +9474,13 @@ function UI.trainStop()
 end
 
 -- 박자 놀이: getPhase()가 0~1, 1이 '지금!' 순간
-local function rhythm(onGrade: (string) -> (), hard: boolean?)
+local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: number?)
 	local circle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = C.gold, BackgroundTransparency = 0.2, Parent = trainArea }, { corner(999) })
 	local target = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 70, 0, 70), BackgroundTransparency = 1, Parent = trainArea }, { corner(999), stroke(Color3.new(1, 1, 1), 3) })
 	local _ = target
 	local start = os.clock()
 	local H = Config.HARD_TRAIN
-	local period = hard and H.period or 1.4
+	local period = (basePeriod or 1.4) * (hard and H.period / 1.4 or 1)
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -9216,23 +9521,48 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 		end)
 		return
 	end
+	if kind == "mabo" then
+		-- 마보 참장: 기울어지는 몸을 가운데(초록)에 붙잡아 둔다. 누르면 오른쪽, 가만두면 바람에 밀려 왼쪽
+		local bar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 300, 0, 26), BackgroundColor3 = Color3.fromRGB(60, 40, 35), Parent = trainArea }, { corner(8) })
+		local zoneW = hard and 0.2 or 0.3
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(zoneW, 1), BackgroundColor3 = C.green, BackgroundTransparency = 0.25, Parent = bar }, { corner(8) })
+		local needle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 8, 1, 14), BackgroundColor3 = Color3.new(1, 1, 1), Parent = bar }, { corner(4) })
+		local x, v, acc = 0.5, 0, 0
+		trainPress = function()
+			v += 0.55
+		end
+		trainConn = RunService.RenderStepped:Connect(function(dt: number)
+			local t = os.clock()
+			local gust = math.sin(t * 1.3) * 0.25 + math.sin(t * 2.9) * 0.18 * (hard and 1.6 or 1)
+			v = v * (1 - dt * 2.2) + (-0.45 + gust) * dt * 2
+			x = math.clamp(x + v * dt, 0, 1)
+			needle.Position = UDim2.fromScale(x, 0.5)
+			acc += dt
+			if acc >= 1.2 then
+				acc = 0
+				local d = math.abs(x - 0.5)
+				send(d < zoneW * 0.2 and "perfect" or (d < zoneW / 2 and "good" or "miss"))
+			end
+		end)
+		return
+	end
 	local circle, phase, press = rhythm(function(grade)
 		send(grade)
-	end, hard)
+	end, hard, info.period)
 	trainPress = press
 	trainConn = RunService.RenderStepped:Connect(function()
 		local p = phase()
-		if kind == "waterfall" then
+		if kind == "waterfall" or kind == "breathing" then
 			-- 숨: 커졌다 작아졌다, 가장 클 때가 '지금'
 			local s = 20 + 50 * (0.5 - 0.5 * math.cos(p * math.pi * 2 + math.pi))
 			circle.Size = UDim2.new(0, s, 0, s)
 			circle.BackgroundColor3 = C.chi
-		elseif kind == "dummy" then
+		elseif kind == "dummy" or kind == "ironpalm" then
 			-- 나무팔이 들어온다: 끝에서 번쩍
 			local s = 70
 			circle.Size = UDim2.new(0, s, 0, s)
 			circle.BackgroundTransparency = 1 - p ^ 4
-			circle.BackgroundColor3 = Color3.fromRGB(230, 160, 90)
+			circle.BackgroundColor3 = kind == "ironpalm" and Color3.fromRGB(255, 110, 40) or Color3.fromRGB(230, 160, 90)
 		else
 			-- 바위: 큰 고리가 줄어든다
 			local s = 70 + 160 * (1 - p)

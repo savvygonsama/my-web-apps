@@ -161,7 +161,7 @@ function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()
 	end
-	UI.banner("奧義 · " .. name, nil, color)
+	UI.banner("오의 · " .. name, nil, color)
 	task.delay(dur, function()
 		for _, b in ipairs(bars) do
 			TweenService:Create(b, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 0) }):Play()
@@ -514,7 +514,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, "경지가 오를수록 수련 효과 +25%, 체력 +2%")
+		table.insert(lines, string.format("경지 배율 ×%.2f (경지마다 피해·체력 +15%%, 수련 효과 +25%%) · 경지는 열세 단계", Config.realmPower(idx)))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -529,7 +529,8 @@ local function buildStats()
 					stat = s
 				end
 			end
-			table.insert(lines, string.format("%s %s → %s %s  (%s)", t.icon, t.name, stat and stat.icon or "", stat and stat.name or "", t.desc))
+			local need = t.realm and t.realm > 1 and string.format(' <font color="#FFD25A">[%s부터]</font>', Config.Realms[t.realm].name) or ""
+			table.insert(lines, string.format("%s %s%s → %s  (%s)", t.icon, t.name, need, t.fight and "모든 능력치" or ((stat and stat.icon or "") .. " " .. (stat and stat.name or "")), t.desc))
 		end
 		table.insert(lines, "")
 		table.insert(lines, string.format("💰 은자 %s   ⚔ 쓰러뜨린 적 %d   🏆 비무대 승리 %d   🧪 금창약 %d", Config.formatNumber(state.coins), state.kills, state.pvpWins, state.potions))
@@ -580,10 +581,10 @@ local function buildHelp()
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
 			"",
 			"<b>연타는 박자</b>",
-			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>連</b> (피해 +15%, 세 번 이으면 連擊 +30%)",
+			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)",
 			"• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다",
 			"• 숙련 6 각성: 연타 다섯 번째 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격 (세 번)",
-			"• 맞기 직전에 대시로 피하면 <b>見切り</b>: 상대가 굳고, 곧바로 클릭하면 반격",
+			"• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고, 곧바로 클릭하면 반격",
 			"",
 			"<b>몸놀림</b>",
 			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
@@ -624,7 +625,7 @@ local function buildTest()
 	local page = makePage("test")
 	new("UIGridLayout", { CellSize = UDim2.new(0.33, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = page })
 	for _, item in ipairs({
-		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "🥋 숙련 최대", "testMastery" },
+		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 }, { "🥋 숙련 최대", "testMastery" },
 		{ "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" }, { "👹 흑호 부르기", "testBoss", "heukho" },
 		{ "👹 혈랑 부르기", "testBoss", "hyeolrang" }, { "🗡 산적 부르기", "testEnemy", "bandit" }, { "🔱 창병 부르기", "testEnemy", "spearman" },
 		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🪵 무뢰배", "testEnemy", "thug" }, { "🛡 철갑 무사", "testEnemy", "ironguard" }, { "🌑 흑영 자객", "testEnemy", "shadowblade" },
@@ -665,13 +666,13 @@ function UI.trainStop()
 end
 
 -- 박자 놀이: getPhase()가 0~1, 1이 '지금!' 순간
-local function rhythm(onGrade: (string) -> (), hard: boolean?)
+local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: number?)
 	local circle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = C.gold, BackgroundTransparency = 0.2, Parent = trainArea }, { corner(999) })
 	local target = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 70, 0, 70), BackgroundTransparency = 1, Parent = trainArea }, { corner(999), stroke(Color3.new(1, 1, 1), 3) })
 	local _ = target
 	local start = os.clock()
 	local H = Config.HARD_TRAIN
-	local period = hard and H.period or 1.4
+	local period = (basePeriod or 1.4) * (hard and H.period / 1.4 or 1)
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -712,23 +713,48 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 		end)
 		return
 	end
+	if kind == "mabo" then
+		-- 마보 참장: 기울어지는 몸을 가운데(초록)에 붙잡아 둔다. 누르면 오른쪽, 가만두면 바람에 밀려 왼쪽
+		local bar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 300, 0, 26), BackgroundColor3 = Color3.fromRGB(60, 40, 35), Parent = trainArea }, { corner(8) })
+		local zoneW = hard and 0.2 or 0.3
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(zoneW, 1), BackgroundColor3 = C.green, BackgroundTransparency = 0.25, Parent = bar }, { corner(8) })
+		local needle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 8, 1, 14), BackgroundColor3 = Color3.new(1, 1, 1), Parent = bar }, { corner(4) })
+		local x, v, acc = 0.5, 0, 0
+		trainPress = function()
+			v += 0.55
+		end
+		trainConn = RunService.RenderStepped:Connect(function(dt: number)
+			local t = os.clock()
+			local gust = math.sin(t * 1.3) * 0.25 + math.sin(t * 2.9) * 0.18 * (hard and 1.6 or 1)
+			v = v * (1 - dt * 2.2) + (-0.45 + gust) * dt * 2
+			x = math.clamp(x + v * dt, 0, 1)
+			needle.Position = UDim2.fromScale(x, 0.5)
+			acc += dt
+			if acc >= 1.2 then
+				acc = 0
+				local d = math.abs(x - 0.5)
+				send(d < zoneW * 0.2 and "perfect" or (d < zoneW / 2 and "good" or "miss"))
+			end
+		end)
+		return
+	end
 	local circle, phase, press = rhythm(function(grade)
 		send(grade)
-	end, hard)
+	end, hard, info.period)
 	trainPress = press
 	trainConn = RunService.RenderStepped:Connect(function()
 		local p = phase()
-		if kind == "waterfall" then
+		if kind == "waterfall" or kind == "breathing" then
 			-- 숨: 커졌다 작아졌다, 가장 클 때가 '지금'
 			local s = 20 + 50 * (0.5 - 0.5 * math.cos(p * math.pi * 2 + math.pi))
 			circle.Size = UDim2.new(0, s, 0, s)
 			circle.BackgroundColor3 = C.chi
-		elseif kind == "dummy" then
+		elseif kind == "dummy" or kind == "ironpalm" then
 			-- 나무팔이 들어온다: 끝에서 번쩍
 			local s = 70
 			circle.Size = UDim2.new(0, s, 0, s)
 			circle.BackgroundTransparency = 1 - p ^ 4
-			circle.BackgroundColor3 = Color3.fromRGB(230, 160, 90)
+			circle.BackgroundColor3 = kind == "ironpalm" and Color3.fromRGB(255, 110, 40) or Color3.fromRGB(230, 160, 90)
 		else
 			-- 바위: 큰 고리가 줄어든다
 			local s = 70 + 160 * (1 - p)

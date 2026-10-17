@@ -618,7 +618,7 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 		local glow = tier >= 2 and Color3.fromRGB(255, 250, 235) or Color3.fromRGB(255, 210, 90)
 		Fx.ring(feet + Vector3.new(0, 0.3, 0), glow, 3, slot == "H" and 18 or 24, 0.55)
 		flare(pos + Vector3.new(0, 1, 0), c2, 2.5)
-		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "眞覺" or "覺", glow, 22, 0.6)
+		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "✦✦" or "✦", glow, 22, 0.6)
 	end
 	-- 각성 마무리: 땅에서 솟는 기둥과 하늘로 치솟는 고리
 	if slot == "F" then
@@ -903,7 +903,7 @@ end
 function Fx.echo(model: Model, styleId: any, slot: any, dur: number)
 	local style = styleOf(styleId)
 	local c2 = style and style.color2 or Color3.new(1, 1, 1)
-	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "影", c2, 26, 0.8)
+	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "메아리", c2, 26, 0.8)
 	for k = 0, 5 do
 		task.delay(k * dur / 6, function()
 			if model.Parent then

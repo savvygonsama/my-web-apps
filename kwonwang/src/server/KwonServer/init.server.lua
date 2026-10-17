@@ -117,6 +117,7 @@ type State = {
 	potionAt: number,
 	charConn: RBXScriptConnection?,
 	tpIdx: number?,
+	simmaAt: number?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -318,10 +319,12 @@ local function refreshFighter(player: Player)
 	local idx = Config.realmOf(Calc.total(p))
 	local m = p.style ~= "" and Calc.mastery(p, p.style).lv or 1
 	f.style = p.style
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1))
+	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
+	local power = Config.realmPower(idx)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * (1 + 0.02 * (idx - 1)))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power)
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
@@ -398,6 +401,16 @@ Combat.init(Push, {
 			local p = killer and profiles[killer]
 			if killer and p then
 				local isBoss = f.model:GetAttribute("Boss") == true
+				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
+				if f.simmaOwner == killer then
+					local ridx = Config.realmOf(Calc.total(p))
+					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)))
+					for _, st in ipairs(Config.Stats) do
+						p.stats[st.id] += gain
+					end
+					Push:FireClient(killer, "simmaWin", { gain = gain })
+					refreshFighter(killer)
+				end
 				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
@@ -918,7 +931,30 @@ function Train.start(player: Player, info: any, hard: boolean?)
 		toast(player, "싸우는 중에는 수련할 수 없어요")
 		return
 	end
-	if hard and Config.realmOf(Calc.total(p)) < Config.HARD_TRAIN.realm then
+	local kindInfo = Config.Training[info.kind]
+	local realmIdx = Config.realmOf(Calc.total(p))
+	if kindInfo and kindInfo.realm and realmIdx < kindInfo.realm then
+		toast(player, string.format("%s %s은(는) 경지 %s부터 할 수 있어요", kindInfo.icon, kindInfo.name, Config.Realms[kindInfo.realm].name))
+		return
+	end
+	-- 심마 대련: 마음속의 마귀를 불러내 싸운다 (이기면 모든 능력치)
+	if kindInfo and kindInfo.fight then
+		local t = os.clock()
+		if t - (st.simmaAt or 0) < 60 then
+			toast(player, string.format("👁 심마가 아직 가라앉지 않았어요 (%d초)", math.ceil(60 - (t - st.simmaAt))))
+			return
+		end
+		st.simmaAt = t
+		local e = Npc.spawn("simma", false, info.pos + Vector3.new(0, 0, -14), "simma")
+		if e then
+			(e.f :: any).simmaOwner = player
+			e.target = f
+			Push:FireAllClients("simma", e.f.model)
+			toast(player, "👁 심마가 형체를 얻었다! 이기면 모든 능력치가 크게 오른다")
+		end
+		return
+	end
+	if hard and realmIdx < Config.HARD_TRAIN.realm then
 		toast(player, string.format("🔥 강화 수련은 경지 %s부터 할 수 있어요", Config.Realms[Config.HARD_TRAIN.realm].name))
 		return
 	end
@@ -993,7 +1029,15 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
-	p.stats[info.stat] += amount
+	if info.gains then
+		-- 여러 능력치가 함께 오르는 수련
+		for stat, k in pairs(info.gains) do
+			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
+		end
+		amount = math.max(1, math.floor(gain * (info.gains[info.stat] or 1) * mult + 0.5))
+	else
+		p.stats[info.stat] += amount
+	end
 	st.dirty = true
 	local afterIdx, realm = Config.realmOf(Calc.total(p))
 	Push:FireClient(player, "trained", { stat = info.stat, gain = amount, grade = grade, total = p.stats[info.stat], ring = st.ringIdx })
@@ -1119,6 +1163,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Actions.guard(player, a1)
 	elseif action == "dash" then
 		Actions.dash(player, a1)
+	elseif action == "emote" then
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead and not Combat.busy(f) and type(a1) == "string" and #a1 < 20 then
+			Push:FireAllClients("emote", f.model, a1)
+		end
 	elseif action == "sprint" then
 		local f = Combat.fighterOfPlayer(player)
 		if f then
