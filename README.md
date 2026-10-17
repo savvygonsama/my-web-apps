@@ -66,5 +66,6 @@
 | 철강 일본어 매일 훈련 (팀원용, 앱과 별개) | 팀원용 훈련 자료 | [`skills/steel-japanese-drill/`](skills/steel-japanese-drill/) |
 | 쉐도잉 회차 (茶馆·ROUNDTABLE 공용) | `chaguan/`, `roundtable/` | [`skills/shadowing-decks/`](skills/shadowing-decks/) |
 | 스틸 워크 스타일 | `workstyle/` | [`skills/workstyle/`](skills/workstyle/) |
+| 스틸 그레이드 가챠 4컷 웹툰 (캐릭터·콘티·ChatGPT 작화 프롬프트) | 별도 저장소 `steel-grade-gacha` | [`skills/steel-gacha-webtoon/`](skills/steel-gacha-webtoon/) |
 
 `meal-planner/`, `midnight-train/`, `coil-center/`는 한 번 만들고 끝나는 앱이라 별도 스킬이 없습니다.
