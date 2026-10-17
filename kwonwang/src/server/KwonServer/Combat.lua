@@ -308,7 +308,17 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	local t = now()
 	if t < tgt.iframeUntil then
-		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "dodge", pos = tgt.root.Position })
+		-- 見切り: 맞기 직전에 대시로 피했다 → 상대가 잠깐 굳고, 곧바로 클릭하면 반격
+		local fa = tgt :: any
+		if tgt.player and t - tgt.dashAt < 0.4 and t - (fa.pdodgeAt or 0) > 0.6 then
+			fa.pdodgeAt = t
+			fa.deflectAt = t
+			att.stunUntil = math.max(att.stunUntil, t + 0.45)
+			interrupt(att)
+			Push:FireAllClients("pdodge", { m = tgt.model, a = att.model })
+		else
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "dodge", pos = tgt.root.Position })
+		end
 		return "dodge"
 	end
 	local move = opt.move or {}
@@ -468,6 +478,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 		end
 		if stun > 0 then
+			if (hit.up or 0) >= 25 then
+				tgt.model:SetAttribute("LaunchedAt", t)
+			end
 			Combat.stun(tgt, stun)
 			local dir = flat(tgt.root.Position - att.root.Position)
 			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)

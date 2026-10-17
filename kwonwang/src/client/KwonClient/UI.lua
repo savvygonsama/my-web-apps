@@ -432,6 +432,14 @@ local function buildStyles()
 			local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
 			table.insert(lines, string.format("<b>%s %s</b>%s  %s", slot == "G" and "오의 G" or slot, sk.name, lockTxt, sk.desc))
 		end
+		-- 각성
+		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
+		local function tag(need: number): string
+			return lv >= need and ' <font color="#FFD25A">(열림)</font>' or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
+		end
+		table.insert(lines, "")
+		table.insert(lines, string.format("<b>%s %s</b>%s  기술(Z·E·R·G) 피해 ×%.2f, 대기 -%d%%, 연타 다섯 번째 <b>%s</b> (상대를 하늘로 띄운다)", A1.mark, A1.name, tag(A1.lv), A1.dmg, math.floor((1 - A1.cd) * 100 + 0.5), s.finisher and s.finisher.name or ""))
+		table.insert(lines, string.format("<b>%s %s</b>%s  모든 기술 ×%.2f, 대기 -%d%%, 그림자 메아리가 기술을 한 번 더 (절반 위력), 몸에 각성의 기운", A2.mark, A2.name, tag(A2.lv), A2.dmg, math.floor((1 - A2.cd) * 100 + 0.5)))
 		if m then
 			table.insert(lines, "")
 			table.insert(lines, string.format("숙련도 %d / %d  (%d / %d)", m.lv, Config.MASTERY_MAX, math.floor(m.xp), m.need))
@@ -570,6 +578,12 @@ local function buildHelp()
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
+			"",
+			"<b>연타는 박자</b>",
+			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>連</b> (피해 +15%, 세 번 이으면 連擊 +30%)",
+			"• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다",
+			"• 숙련 6 각성: 연타 다섯 번째 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격 (세 번)",
+			"• 맞기 직전에 대시로 피하면 <b>見切り</b>: 상대가 굳고, 곧바로 클릭하면 반격",
 			"",
 			"<b>몸놀림</b>",
 			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
@@ -977,6 +991,35 @@ local function updateMap(dt: number)
 end
 
 ------------------------------------------------------------------------
+-- 바람 줄 (빠르게 달리거나 대시할 때 화면 가장자리로 흐르는 선)
+------------------------------------------------------------------------
+local speedLines: { { f: Frame, a: number, d: number } } = {}
+local speedAmt = 0
+function UI.setSpeed(amount: number)
+	speedAmt += (amount - speedAmt) * 0.25
+	if #speedLines == 0 or not gui then
+		return
+	end
+	local t = os.clock()
+	for i, l in ipairs(speedLines) do
+		local k = ((t * 2.2 + l.d) % 1)
+		local r = 0.42 + k * 0.25
+		l.f.Position = UDim2.fromScale(0.5 + math.cos(l.a) * r, 0.5 + math.sin(l.a) * r * 1.1)
+		l.f.Rotation = math.deg(l.a)
+		l.f.BackgroundTransparency = 1 - speedAmt * 0.55 * (1 - k)
+		l.f.Visible = speedAmt > 0.02
+		local _ = i
+	end
+end
+local function buildSpeedLines()
+	for i = 1, 22 do
+		local a = (i / 22) * math.pi * 2 + math.random() * 0.2
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 160, 0, 2), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, BackgroundTransparency = 1, Visible = false, ZIndex = 2, Parent = gui })
+		table.insert(speedLines, { f = f, a = a, d = math.random() })
+	end
+end
+
+------------------------------------------------------------------------
 -- 휴대폰 버튼
 ------------------------------------------------------------------------
 function UI.mobile(actions: { [string]: any })
@@ -1095,6 +1138,7 @@ function UI.init(req: RemoteEvent)
 	buildHelp()
 	buildTest()
 	buildMap()
+	buildSpeedLines()
 	RunService.RenderStepped:Connect(function(dt: number)
 		local ok, err = pcall(updateMap, dt)
 		if not ok then

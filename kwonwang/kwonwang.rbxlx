@@ -351,6 +351,40 @@ for i, s in ipairs(Config.Styles) do
 	Config.STYLE_BY_ID[s.id] = s
 end
 
+------------------------------------------------------------------------
+-- 각성: 숙련 6이면 각성 (기술이 세지고, 연타 다섯 번째 '각성 마무리'가 열린다)
+--       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
+------------------------------------------------------------------------
+Config.AWAKEN = {
+	{ lv = 6, name = "각성", mark = "覺", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "眞覺", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+}
+function Config.awakenTier(lv: number): number
+	if lv >= Config.AWAKEN[2].lv then
+		return 2
+	elseif lv >= Config.AWAKEN[1].lv then
+		return 1
+	end
+	return 0
+end
+-- 각성 마무리 (연타 다섯 번째): 상대를 하늘로 띄운다 → 공중 연격으로 이어진다
+local FINISHERS = {
+	taeheo = { name = "만류회류장", pose = "double_palm" },
+	geumgang = { name = "금강파산추", pose = "hammer_down" },
+	maehwa = { name = "매화낙영각", pose = "roundhouse" },
+	cheonryong = { name = "승룡장", pose = "uppercut" },
+	muyeong = { name = "귀영회선각", pose = "back_spin_kick" },
+	byeokryeok = { name = "벽력천추", pose = "uppercut" },
+	chwi = { name = "취선번천", pose = "drunk_flop" },
+}
+for id, fin in pairs(FINISHERS) do
+	local s = Config.STYLE_BY_ID[id]
+	s.finisher = { id = id .. "F", name = fin.name, pose = fin.pose, dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 16, 24, 0.7, 6, 62) } }
+end
+
+-- 연타 박자: 앞 동작이 이만큼 지났을 때 누르면 '딱 맞음(連)', 너무 일찍 두 번 누르면 흐트러진다
+Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
+
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500 }
 
@@ -367,12 +401,14 @@ Config.ACTION_MOVES = {
 	D = { id = "actD", name = "돌진 일격", pose = "dash_punch", dur = 0.42, lunge = 12, hits = { hit(0.16, 6, 4.5, 11, 14, 0.45, 26) } },
 	A = { id = "actA", name = "낙하격", pose = "dive_slam", dur = 0.6, dive = 85, hits = { hit(0.32, 0, 9, 13, 20, 0.6, 22, 14, true) } },
 	C = { id = "actC", name = "반격", pose = "punch_r_heavy", dur = 0.42, lunge = 5, hits = { hit(0.14, 6, 4.5, 18, 40, 0.8, 34) } },
+	-- J = 띄운 상대를 공중에서 잇는 연격 (나도 상대도 공중에 머문다, 세 번까지)
+	J = { id = "actJ", name = "공중 연격", pose = "air_spin", dur = 0.34, hover = 30, hits = { hit(0.12, 7, 5, 8, 8, 0.6, 4, 32) } },
 }
 Config.ACTION_WINDOW = { D = 0.6, C = 0.8 } -- 대시·흘리기 뒤 이만큼 안에 눌러야 나간다
 -- 권법마다 몸놀림 자세만 다르게
 local ACTION_POSE = {
 	maehwa = { D = "dash_strike", C = "spin_backfist" },
-	muyeong = { D = "flying_kick", A = "dive_kick", C = "back_spin_kick" },
+	muyeong = { D = "flying_kick", A = "dive_kick", C = "back_spin_kick", J = "roundhouse" },
 	chwi = { D = "headbutt", C = "drunk_swing_r" },
 	taeheo = { D = "push_palm", C = "double_palm" },
 	cheonryong = { D = "push_palm", C = "double_palm" },
@@ -389,6 +425,8 @@ function Config.move(styleId: string, slot: any): any
 		return s.combo[slot]
 	elseif slot == "H" then
 		return s.heavy
+	elseif slot == "F" then
+		return s.finisher
 	elseif Config.ACTION_MOVES[slot] then
 		local key = styleId .. slot
 		if not actionCache[key] then
@@ -539,25 +577,25 @@ Config.Regions = {
 		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
 for _, r in ipairs(Config.Regions) do
 	if r.master then
-		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id }
+		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id, quote = r.quote }
 	end
 end
 -- 큰 볼거리 (지도에도 나온다)
@@ -1070,6 +1108,12 @@ A.hit_heavy = {
 	{ t = 0.5, j = { W = { 10, 0, 0 }, N = { 10, 0, 0 }, RS = { 20, 0, 25 }, LS = { 20, 0, -25 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { -4, 0, 0, 0, -0.6, 0.4 } } },
 	{ t = 1, j = { R = { 0, 0, 0, 0, -0.3, 0 } } },
 }
+-- 하늘로 띄워졌다: 팔다리를 허우적대며 뒤로 한 바퀴 돈다
+A.launched = {
+	{ t = 0, e = "snap", j = { W = { -25, 0, 0 }, N = { -25, 0, 0 }, RS = { 150, 0, 40 }, RE = { 20, 0, 0 }, LS = { 150, 0, -40 }, LE = { 20, 0, 0 }, RH = { 35, 0, 0 }, RK = { -45, 0, 0 }, LH = { -10, 0, 0 }, LK = { -25, 0, 0 }, R = { 25, 0, 0, 0, 0.4, 0 } } },
+	{ t = 0.5, j = { W = { -10, 0, 10 }, N = { -10, 0, 0 }, RS = { 90, 0, 70 }, RE = { 40, 0, 0 }, LS = { 120, 0, -70 }, LE = { 30, 0, 0 }, RH = { 60, 0, 0 }, RK = { -80, 0, 0 }, LH = { 20, 0, 0 }, LK = { -60, 0, 0 }, R = { 200, 0, 15, 0, 0.6, 0 } } },
+	{ t = 1, j = { W = { 10, 0, 0 }, RS = { 40, 0, 50 }, LS = { 40, 0, -50 }, RH = { 30, 0, 0 }, RK = { -50, 0, 0 }, LH = { 10, 0, 0 }, LK = { -30, 0, 0 }, R = { 360, 0, 0, 0, 0, 0 } } },
+}
 -- 흘려진 쪽: 헛손질로 크게 휘청
 A.stagger = {
 	{ t = 0, e = "snap", j = { W = { -15, 30, -10 }, N = { 15, -20, 0 }, RS = { 120, 0, -20 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, R = { -15, 25, -10, -0.5, -0.5, -0.8 } } },
@@ -1165,7 +1209,7 @@ Poses.limbs = {
 	drunk_low = { "RightHand" }, drunk_flop = { "RightFoot", "LeftFoot" }, headbutt = {}, fire_breath = {},
 	w_slash = { "RightHand" }, w_slash2 = { "RightHand" }, w_overhead = { "RightHand" }, w_thrust = { "RightHand" }, w_sweep = { "RightHand" }, w_dual = { "RightHand", "LeftHand" },
 	deflect = { "RightHand" },
-	hit_heavy = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
+	hit_heavy = {}, launched = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
 	dive_slam = { "RightHand", "LeftHand" }, dive_kick = { "RightFoot" }, backflip = { "RightFoot", "LeftFoot" },
 	side_roll_r = { "RightHand", "LeftFoot" }, side_roll_l = { "LeftHand", "RightFoot" },
 }
@@ -1527,6 +1571,7 @@ local function refreshFighter(player: Player)
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi)
+	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
 	updateTag(player)
 end
@@ -1577,7 +1622,13 @@ local function addMastery(player: Player, p: Profile, amount: number)
 				unlocked = style.skills[slot].name .. " (" .. slot .. ")"
 			end
 		end
-		Push:FireClient(player, "mastery", { style = p.style, lv = m.lv, unlocked = unlocked })
+		local awaken = nil
+		for tier, a in ipairs(Config.AWAKEN) do
+			if a.lv == m.lv then
+				awaken = tier
+			end
+		end
+		Push:FireClient(player, "mastery", { style = p.style, lv = m.lv, unlocked = unlocked, awaken = awaken })
 		refreshFighter(player)
 		pushState(player)
 	end
@@ -1685,7 +1736,38 @@ local function nearestHostile(f: any, range: number): any?
 	return best
 end
 
-function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
+-- 완전 각성: 그림자 메아리가 같은 기술을 한 번 더 (절반 위력)
+local function echoAct(f: any, move: any, slot: any, speed: number, dmgScale: number)
+	local A = Config.AWAKEN[2]
+	task.delay(A.echoDelay, function()
+		if f.dead or not f.model.Parent then
+			return
+		end
+		Push:FireAllClients("echo", { m = f.model, style = f.style, slot = slot, pose = move.pose, dur = move.dur / speed })
+		for _, h in ipairs(move.hits or {}) do
+			task.delay(h.t / speed, function()
+				if f.dead then
+					return
+				end
+				local eh = table.clone(h)
+				eh.dmg *= A.echo * dmgScale
+				eh.posture *= A.echo
+				for _, victim in ipairs(Combat.query(f, eh)) do
+					Combat.applyHit(f, victim, eh, { move = move, isSkill = true, chain = true })
+				end
+			end)
+		end
+		if move.proj then
+			task.delay(move.dur / speed * 0.42, function()
+				if not f.dead then
+					Combat.fire(f, move.proj, 0.6, { move = move, isSkill = true })
+				end
+			end)
+		end
+	end)
+end
+
+function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, perfectArg: any)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not f or p.style == "" then
@@ -1698,7 +1780,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 		if slot < 1 or slot > #style.combo then
 			return
 		end
-	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and not Config.ACTION_MOVES[slot] then
+	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
@@ -1724,6 +1806,24 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 			return
 		end
 		fa.deflectAt = 0
+	elseif slot == "J" then
+		-- 공중 연격: 공중에서, 1.5초 안에 세 번까지
+		if not f.hum or f.hum.FloorMaterial ~= Enum.Material.Air then
+			return
+		end
+		if t - (fa.airJAt or 0) > 1.5 then
+			fa.airJCount = 0
+		end
+		if (fa.airJCount or 0) >= 3 then
+			return
+		end
+		fa.airJCount = (fa.airJCount or 0) + 1
+		fa.airJAt = t
+	end
+	-- 각성 단계 (숙련 6 / 10)
+	local tier = Config.awakenTier(Calc.mastery(p, p.style).lv)
+	if slot == "F" and (tier < 1 or fa.lastSlot ~= #style.combo or t - (fa.lastSlotAt or 0) > 1.6) then
+		return
 	end
 	-- 앞 기술이 거의 끝났을 때만 다음 기술 (연타는 70%부터 이어진다)
 	local act = f.act
@@ -1744,7 +1844,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 			return
 		end
 		f.chi -= cost
-		f.cds[slot] = t + (move.cd or 0)
+		f.cds[slot] = t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1)
 	end
 	local speed = style.speed or 1
 	local charge = 0
@@ -1780,9 +1880,39 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 		teleported = true
 		Push:FireAllClients("blink", f.model, behind)
 	end
+	-- 박자: 앞 연타가 끝나 갈 즈음 정확히 이었는가 (화면이 알려 준 것을 서버가 넉넉히 다시 본다)
+	local perfect = false
+	local prev = fa.lastAct
+	if perfectArg == true and (type(slot) == "number" and slot > 1 or slot == "F") and prev then
+		local frac = (t - prev.start) / math.max(0.05, prev.dur)
+		perfect = frac >= 0.45 and frac <= 1.0 + 0.45 / math.max(0.05, prev.dur)
+	end
+	if type(slot) == "number" or slot == "F" then
+		if perfect then
+			fa.perfectChain = (fa.perfectChain or 0) + 1
+			fa.sloppy = math.max(0, (fa.sloppy or 0) - 2)
+			dmgScale *= Config.RHYTHM.bonus * (fa.perfectChain >= Config.RHYTHM.chain and Config.RHYTHM.chainBonus or 1)
+		else
+			if slot ~= 1 then
+				fa.perfectChain = 0
+			end
+			fa.sloppy = math.min(6, (fa.sloppy or 0) + 1)
+		end
+	end
+	-- 각성: 기술이 세진다 (완전 각성이면 연타까지 모두)
+	if tier >= 2 or (tier == 1 and type(slot) == "string") then
+		dmgScale *= Config.AWAKEN[tier].dmg
+	end
 	local first = move.hits and move.hits[1]
 	local newAct = Combat.begin(f, move, slot, seq, { speed = speed, charge = charge, bloom = bloom, align = first and first.t / speed or nil })
 	;(newAct :: any).dmgScale = dmgScale
+	;(newAct :: any).perfect = perfect
+	fa.lastSlot = slot
+	fa.lastSlotAt = t
+	fa.lastAct = newAct
+	if tier >= 2 and (slot == "E" or slot == "R" or slot == "H" or slot == "F" or slot == "G") then
+		echoAct(f, move, slot, speed, dmgScale)
+	end
 	;(newAct :: any).teleport = teleported
 	if move.buff then
 		f.buffs[move.buff.kind] = t + move.buff.dur
@@ -2719,7 +2849,17 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	local t = now()
 	if t < tgt.iframeUntil then
-		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "dodge", pos = tgt.root.Position })
+		-- 見切り: 맞기 직전에 대시로 피했다 → 상대가 잠깐 굳고, 곧바로 클릭하면 반격
+		local fa = tgt :: any
+		if tgt.player and t - tgt.dashAt < 0.4 and t - (fa.pdodgeAt or 0) > 0.6 then
+			fa.pdodgeAt = t
+			fa.deflectAt = t
+			att.stunUntil = math.max(att.stunUntil, t + 0.45)
+			interrupt(att)
+			Push:FireAllClients("pdodge", { m = tgt.model, a = att.model })
+		else
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "dodge", pos = tgt.root.Position })
+		end
 		return "dodge"
 	end
 	local move = opt.move or {}
@@ -2879,6 +3019,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 		end
 		if stun > 0 then
+			if (hit.up or 0) >= 25 then
+				tgt.model:SetAttribute("LaunchedAt", t)
+			end
 			Combat.stun(tgt, stun)
 			local dir = flat(tgt.root.Position - att.root.Position)
 			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
@@ -3490,6 +3633,130 @@ local function masterTag(head: BasePart, name: string, style: any)
 	g.Parent = head
 end
 
+-- 사부 차림: 몸 부위에 붙는 장식 (기본 몸이든 직접 짠 몸이든 부위 이름은 같다)
+local function wear(model: Model, partName: string, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?, shape: Enum.PartType?): Part?
+	local base = model:FindFirstChild(partName)
+	if not base or not base:IsA("BasePart") then
+		return nil
+	end
+	local p = Instance.new("Part")
+	p.Name = name
+	if shape then
+		p.Shape = shape
+	end
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.Fabric
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.CFrame = base.CFrame * offset
+	p.Parent = model
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = base
+	w.Part1 = p
+	w.Parent = p
+	return p
+end
+
+local GOLD = Color3.fromRGB(235, 190, 80)
+local WHITE_HAIR = Color3.fromRGB(240, 240, 235)
+
+local function dressMaster(model: Model, style: any)
+	local robe = style.color:Lerp(Color3.new(0, 0, 0), 0.35)
+	local trim = style.color2
+	local head = model:FindFirstChild("Head") :: BasePart?
+	local hs = head and head.Size or Vector3.new(1.2, 1.2, 1.2)
+	-- 공통: 앞뒤로 갈라진 긴 도포, 금빛 어깨받이, 허리띠 끈, 등 망토
+	for _, z in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "RobePanel", Vector3.new(2.1, 2.4, 0.18), CFrame.new(0, -1.35, z * 0.55), robe)
+		wear(model, "LowerTorso", "RobeTrim", Vector3.new(2.15, 0.25, 0.22), CFrame.new(0, -2.5, z * 0.55), trim, Enum.Material.SmoothPlastic)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "Pauldron", Vector3.new(1.25, 0.45, 1.35), CFrame.new(x * 1.15, 0.72, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), GOLD, Enum.Material.Metal)
+		wear(model, "LowerTorso", "SashTail", Vector3.new(0.3, 1.6, 0.1), CFrame.new(x * 0.35, -0.9, 0.62) * CFrame.Angles(math.rad(8), 0, x * math.rad(6)), trim)
+	end
+	wear(model, "UpperTorso", "Cape", Vector3.new(2.1, 3.6, 0.14), CFrame.new(0, -0.9, 0.62) * CFrame.Angles(math.rad(10), 0, 0), style.color)
+	wear(model, "UpperTorso", "Collar", Vector3.new(1.4, 0.35, 1.15), CFrame.new(0, 0.85, -0.05), trim, Enum.Material.SmoothPlastic)
+
+	local id = style.id
+	local function beard(color: Color3)
+		wear(model, "Head", "Beard", Vector3.new(hs.X * 0.55, hs.Y * 1.1, 0.35), CFrame.new(0, -hs.Y * 0.62, -hs.Z * 0.42), color)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "Mustache", Vector3.new(hs.X * 0.35, 0.12, 0.12), CFrame.new(x * hs.X * 0.2, -hs.Y * 0.12, -hs.Z * 0.52) * CFrame.Angles(0, 0, x * math.rad(-25)), color)
+		end
+	end
+	if id == "taeheo" then
+		-- 물빛 도인: 흰 수염과 상투
+		beard(WHITE_HAIR)
+		wear(model, "Head", "Topknot", Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, hs.Y * 0.62, 0.05), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "Head", "Hairband", Vector3.new(hs.X * 1.03, 0.18, hs.Z * 1.03), CFrame.new(0, hs.Y * 0.28, 0), trim, Enum.Material.Neon)
+	elseif id == "geumgang" then
+		-- 금강 대사: 염주와 비스듬한 가사
+		for k = 0, 13 do
+			local a = k / 14 * math.pi * 2
+			wear(model, "UpperTorso", "Bead", Vector3.new(0.32, 0.32, 0.32), CFrame.new(math.cos(a) * 0.62, 0.62 - math.abs(math.sin(a)) * 0.15, math.sin(a) * 0.55), Color3.fromRGB(110, 60, 30), Enum.Material.Wood, Enum.PartType.Ball)
+		end
+		wear(model, "UpperTorso", "Kasaya", Vector3.new(0.55, 2.6, 1.12), CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(35)), Color3.fromRGB(190, 50, 35))
+		wear(model, "Head", "Urna", Vector3.new(0.15, 0.15, 0.1), CFrame.new(0, hs.Y * 0.22, -hs.Z * 0.5), GOLD, Enum.Material.Neon)
+	elseif id == "maehwa" then
+		-- 매화 선자: 긴 머리, 꽃 비녀, 넓은 소매
+		wear(model, "Head", "LongHair", Vector3.new(hs.X * 1.05, hs.Y * 2.2, 0.35), CFrame.new(0, -hs.Y * 0.55, hs.Z * 0.5), Color3.fromRGB(25, 20, 25))
+		wear(model, "Head", "HairTop", Vector3.new(hs.X * 1.08, hs.Y * 0.4, hs.Z * 1.08), CFrame.new(0, hs.Y * 0.4, 0.05), Color3.fromRGB(25, 20, 25))
+		wear(model, "Head", "Hairpin", Vector3.new(0.5, 0.5, 0.5), CFrame.new(hs.X * 0.45, hs.Y * 0.5, 0.2), style.color, Enum.Material.Neon, Enum.PartType.Ball)
+		for _, side in ipairs({ "Right", "Left" }) do
+			wear(model, side .. "LowerArm", "Sleeve", Vector3.new(1.45, 1.1, 1.45), CFrame.new(0, -0.2, 0), trim)
+		end
+	elseif id == "cheonryong" then
+		-- 용천 노조: 용뿔 관과 흰 수염
+		beard(WHITE_HAIR)
+		wear(model, "Head", "Crown", Vector3.new(hs.X * 0.9, 0.3, hs.Z * 0.6), CFrame.new(0, hs.Y * 0.55, 0), GOLD, Enum.Material.Metal)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "DragonHorn", Vector3.new(0.22, 1.3, 0.22), CFrame.new(x * hs.X * 0.35, hs.Y * 0.95, 0.15) * CFrame.Angles(math.rad(-25), 0, -x * math.rad(25)), GOLD, Enum.Material.Metal)
+		end
+		wear(model, "Head", "CrownGem", Vector3.new(0.3, 0.3, 0.3), CFrame.new(0, hs.Y * 0.6, -hs.Z * 0.32), style.color, Enum.Material.Neon, Enum.PartType.Ball)
+	elseif id == "muyeong" then
+		-- 무영객: 두건, 복면, 보랏빛 눈
+		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.12, hs.Y * 1.12, hs.Z * 1.0), CFrame.new(0, hs.Y * 0.06, hs.Z * 0.1), Color3.fromRGB(20, 18, 26))
+		wear(model, "Head", "Mask", Vector3.new(hs.X * 0.9, hs.Y * 0.42, 0.12), CFrame.new(0, -hs.Y * 0.22, -hs.Z * 0.5), Color3.fromRGB(15, 12, 20))
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "ShadowEye", Vector3.new(0.22, 0.09, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.52), Color3.fromRGB(190, 120, 255), Enum.Material.Neon)
+		end
+	elseif id == "byeokryeok" then
+		-- 뇌정진군: 곤두선 머리, 번개 팔찌
+		for k = -2, 2 do
+			wear(model, "Head", "SpikeHair", Vector3.new(0.25, 0.8, 0.25), CFrame.new(k * hs.X * 0.18, hs.Y * 0.65, 0.1) * CFrame.Angles(math.rad(-15), 0, k * math.rad(-12)), Color3.fromRGB(255, 245, 200), Enum.Material.Neon)
+		end
+		wear(model, "Head", "Headband", Vector3.new(hs.X * 1.04, 0.2, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color, Enum.Material.Neon)
+		for _, side in ipairs({ "Right", "Left" }) do
+			wear(model, side .. "LowerArm", "Bracer", Vector3.new(1.12, 0.5, 1.12), CFrame.new(0, -0.2, 0), style.color, Enum.Material.Neon)
+			local hand = model:FindFirstChild(side .. "Hand")
+			if hand and hand:IsA("BasePart") then
+				local e = Instance.new("ParticleEmitter")
+				e.Rate = 8
+				e.Color = ColorSequence.new(Color3.fromRGB(255, 250, 180))
+				e.LightEmission = 1
+				e.Size = NumberSequence.new(0.25, 0)
+				e.Lifetime = NumberRange.new(0.15, 0.3)
+				e.Speed = NumberRange.new(4, 8)
+				e.SpreadAngle = Vector2.new(180, 180)
+				e.Parent = hand
+			end
+		end
+	elseif id == "chwi" then
+		-- 취선옹: 넓은 삿갓, 허리의 술 호리병, 붉은 뺨
+		beard(Color3.fromRGB(170, 170, 165))
+		wear(model, "Head", "StrawHat", Vector3.new(0.25, 3.4, 3.4), CFrame.new(0, hs.Y * 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(205, 175, 110), Enum.Material.Fabric, Enum.PartType.Cylinder)
+		wear(model, "Head", "HatTop", Vector3.new(1.2, 0.8, 1.2), CFrame.new(0, hs.Y * 0.85, 0), Color3.fromRGB(190, 160, 95), Enum.Material.Fabric, Enum.PartType.Ball)
+		wear(model, "LowerTorso", "GourdLow", Vector3.new(0.9, 0.9, 0.9), CFrame.new(1.25, -0.4, 0.2), Color3.fromRGB(200, 120, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "LowerTorso", "GourdTop", Vector3.new(0.6, 0.6, 0.6), CFrame.new(1.25, 0.25, 0.2), Color3.fromRGB(200, 120, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "Cheek", Vector3.new(0.25, 0.14, 0.05), CFrame.new(x * hs.X * 0.28, -hs.Y * 0.05, -hs.Z * 0.51), Color3.fromRGB(240, 110, 110), Enum.Material.SmoothPlastic)
+		end
+	end
+end
+
 function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	local mf = Instance.new("Folder")
 	mf.Name = "Masters"
@@ -3498,8 +3765,8 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 		local info = Config.MASTERS[style.id]
 		if info then
 			local ok, err = pcall(function()
-				local s = 1.05
-				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = SKIN, legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
+				local s = 1.2
+				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
 				model.Name = "Master_" .. style.id
 				local hum = model:FindFirstChildOfClass("Humanoid")
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
@@ -3526,6 +3793,7 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					weld.Part1 = sash
 					weld.Parent = sash
 				end
+				pcall(dressMaster, model, style)
 				local up = (hum and hum.HipHeight or 2 * s) + root.Size.Y / 2
 				local at = info.at
 				local face = Vector3.new(0, at.Y, 0) - at
@@ -3535,6 +3803,23 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 				root.Anchored = true
 				model:SetAttribute("NPC", true)
 				model:SetAttribute("Master", true)
+				model:SetAttribute("Awaken", 2)
+				model:SetAttribute("Quote", info.quote)
+				-- 발밑의 빛나는 진
+				for i, r in ipairs({ 5, 3.2 }) do
+					local sig = Instance.new("Part")
+					sig.Name = "MasterSigil"
+					sig.Anchored = true
+					sig.CanCollide = false
+					sig.CanQuery = false
+					sig.Shape = Enum.PartType.Cylinder
+					sig.Size = Vector3.new(0.1, r * 2, r * 2)
+					sig.CFrame = CFrame.new(at + Vector3.new(0, 0.08 + i * 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90))
+					sig.Color = i == 1 and style.color or style.color2
+					sig.Material = Enum.Material.Neon
+					sig.Transparency = i == 1 and 0.55 or 0.7
+					sig.Parent = mf
+				end
 				model:SetAttribute("Style", style.id)
 				model:SetAttribute("Label", info.name)
 				local head = model:FindFirstChild("Head")
@@ -3756,8 +4041,10 @@ local function think(e: Enemy, t: number)
 	local d = flatDist(tgt.root.Position, pos)
 	-- 상대가 막 치기 시작하면 가끔 막는다 (보스는 더 자주)
 	local tact = tgt.act
-	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding then
-		local chance = e.kind == "boss" and 0.4 or 0.22
+	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding and not (tact :: any).perfect then
+		-- 마구 누르는 연타는 읽혀서 막히고 흘려진다. 박자를 맞춘 일격(連)은 읽지 못한다
+		local sloppy = (tgt :: any).sloppy or 0
+		local chance = (e.kind == "boss" and 0.4 or 0.22) + math.min(0.5, sloppy * 0.09)
 		if math.random() < chance then
 			f.guarding = true
 			f.guardStart = t
@@ -5209,6 +5496,12 @@ Fx.bindAnim(Anim)
 Anim.start()
 
 local state: any = nil
+local launchedAt: { [Instance]: number } = {} -- 하늘로 띄운 적 (공중 연격 판단)
+local function rootOfChar(): BasePart?
+	local c = player.Character
+	local r = c and c:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
 
 ------------------------------------------------------------------------
 -- 무인 지켜보기 (사람과 적 모두 몸동작을 그린다)
@@ -5236,12 +5529,48 @@ task.spawn(function()
 		if m:IsA("Model") then
 			watchChar(m)
 			task.spawn(UI.enemyTag, m)
+			m:GetAttributeChangedSignal("LaunchedAt"):Connect(function()
+				launchedAt[m] = os.clock()
+			end)
 		end
 	end
 	for _, m in ipairs(enemies:GetChildren()) do
 		add(m)
 	end
 	enemies.ChildAdded:Connect(add)
+end)
+
+-- 각성의 기운 (사람과 사부): 0.5초마다 단계에 맞춰 붙이고 뗀다
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		local list: { Model } = {}
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p.Character then
+				table.insert(list, p.Character)
+			end
+		end
+		local mf = workspace:FindFirstChild("Masters")
+		for _, m in ipairs(mf and mf:GetChildren() or {}) do
+			if m:IsA("Model") then
+				table.insert(list, m)
+			end
+		end
+		for _, m in ipairs(list) do
+			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
+			local tier = tonumber(m:GetAttribute("Awaken")) or 0
+			pcall(Fx.awakenAura, m, style and tier or 0, style and style.color or Color3.new(1, 1, 1))
+		end
+	end
+end)
+
+-- 빠르게 움직이면 화면 가장자리에 바람 줄
+RunService.RenderStepped:Connect(function()
+	local root = rootOfChar()
+	if root then
+		local v = root.AssemblyLinearVelocity
+		UI.setSpeed(math.clamp((Vector3.new(v.X, 0, v.Z).Magnitude - 27) / 35, 0, 1))
+	end
 end)
 
 -- 사부: 권법 자세로 서 있다가, 가까이 오면 가끔 시범을 보인다
@@ -5257,6 +5586,92 @@ task.spawn(function()
 	end
 	masters.ChildAdded:Connect(add)
 	local nextShow: { [Instance]: number } = {}
+	local nextSpeak: { [Instance]: number } = {}
+	-- 말풍선
+	local function speak(m: Model, text: string, color: Color3)
+		local head = m:FindFirstChild("Head")
+		if text == "" or not head or not head:IsA("BasePart") then
+			return
+		end
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.new(0, 360, 0, 70)
+		bb.StudsOffset = Vector3.new(0, 6.2, 0)
+		bb.AlwaysOnTop = true
+		bb.LightInfluence = 0
+		bb.MaxDistance = 80
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.fromScale(1, 1)
+		frame.BackgroundColor3 = Color3.fromRGB(20, 16, 14)
+		frame.BackgroundTransparency = 0.2
+		frame.Parent = bb
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 12)
+		corner.Parent = frame
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = color
+		stroke.Thickness = 2
+		stroke.Parent = frame
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.new(1, -16, 1, -8)
+		label.Position = UDim2.new(0, 8, 0, 4)
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		label.TextWrapped = true
+		label.TextColor3 = Color3.fromRGB(255, 245, 225)
+		label.Text = "「" .. text .. "」"
+		label.Parent = frame
+		bb.Parent = head
+		task.delay(5, function()
+			bb:Destroy()
+		end)
+	end
+	-- 사부 둘레를 도는 기운의 구슬
+	local orbs: { [Instance]: { Part } } = {}
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		local me = rootOfChar()
+		for _, m in ipairs(masters:GetChildren()) do
+			local root = m:FindFirstChild("HumanoidRootPart")
+			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
+			if root and root:IsA("BasePart") and style and me and (root.Position - me.Position).Magnitude < 140 then
+				local list = orbs[m]
+				if not list then
+					list = {}
+					for i = 1, 3 do
+						local o = Instance.new("Part")
+						o.Name = "MasterOrb"
+						o.Shape = Enum.PartType.Ball
+						o.Size = Vector3.new(0.7, 0.7, 0.7)
+						o.Anchored = true
+						o.CanCollide = false
+						o.CanQuery = false
+						o.CanTouch = false
+						o.CastShadow = false
+						o.Material = Enum.Material.Neon
+						o.Color = i == 2 and style.color2 or style.color
+						o.Parent = workspace
+						local l = Instance.new("PointLight")
+						l.Color = style.color
+						l.Range = 8
+						l.Brightness = 1.2
+						l.Parent = o
+						table.insert(list, o)
+					end
+					orbs[m] = list
+				end
+				for i, o in ipairs(list) do
+					local a = t * 1.6 + i / 3 * math.pi * 2
+					o.Position = root.Position + Vector3.new(math.cos(a) * 4, 0.5 + math.sin(t * 2 + i) * 1.2, math.sin(a) * 4)
+				end
+			elseif orbs[m] then
+				for _, o in ipairs(orbs[m]) do
+					o:Destroy()
+				end
+				orbs[m] = nil
+			end
+		end
+	end)
 	while true do
 		task.wait(0.5)
 		local char = player.Character
@@ -5266,12 +5681,28 @@ task.spawn(function()
 			local style = Config.STYLE_BY_ID[m:GetAttribute("Style") :: any]
 			if me and me:IsA("BasePart") and root and root:IsA("BasePart") and style and (root.Position - me.Position).Magnitude < 70 then
 				local t = os.clock()
+				local dist = (root.Position - me.Position).Magnitude
+				-- 가까이 오면 한마디
+				if dist < 32 and t >= (nextSpeak[m] or 0) then
+					nextSpeak[m] = t + 30
+					speak(m :: Model, tostring(m:GetAttribute("Quote") or ""), style.color)
+				end
 				if t >= (nextShow[m] or 0) and not Anim.playing(m :: Model) then
-					local pick = math.random(1, #style.combo + 1)
-					local mv = pick > #style.combo and style.heavy or style.combo[pick]
-					Anim.play(m :: Model, mv.pose, mv.dur)
-					Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
-					nextShow[m] = t + math.random(25, 45) / 10
+					-- 시범: 연타, 강타, 기술을 섞어 제대로 보여 준다
+					local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "F" }
+					local slot = picks[math.random(1, #picks)]
+					local mv = Config.move(style.id, slot)
+					if mv then
+						Anim.play(m :: Model, mv.pose, mv.dur)
+						Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
+						Fx.cast(style.id, slot, m :: Model, mv.dur)
+						for _, h in ipairs(mv.hits or {}) do
+							task.delay(h.t, function()
+								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
+							end)
+						end
+					end
+					nextShow[m] = t + math.random(30, 50) / 10
 				end
 			end
 		end
@@ -5305,8 +5736,6 @@ local seq = 0
 local actSeq = -1
 local actStart = 0
 local actDur = 0
-local combo = 0
-local comboAt = 0
 local buffered: any = nil
 local guarding = false
 local chargeStart: number? = nil
@@ -5316,6 +5745,13 @@ local dashAt = 0
 local dashUsed = 0
 local airJumped = false
 local deflectAt = 0 -- 마지막으로 흘린 때 (곧바로 클릭하면 반격)
+-- 연타 박자
+local earlyPresses = 0 -- 지금 동작 중에 너무 일찍 누른 횟수
+local comboBroken = false -- 흐트러졌다 (마구 눌렀다)
+local nextPerfect = false -- 다음 동작이 박자를 맞췄는가
+local perfectChain = 0
+local lastComboSlot: any = nil
+local airJ = 0
 local airAttacked = false
 local sprinting = false
 local cds: { [string]: number } = {}
@@ -5425,11 +5861,11 @@ local function query(hit: any): { Model }
 end
 
 -- 가까운 적 쪽으로 몸을 돌린다 (카메라 방향 75도 안, 14칸 안)
-local function aim()
+local function aim(): number?
 	local root = myRoot()
 	local cam = workspace.CurrentCamera
 	if not root or not cam then
-		return
+		return nil
 	end
 	local camDir = flat(cam.CFrame.LookVector)
 	local best, bestScore = nil, math.huge
@@ -5447,6 +5883,7 @@ local function aim()
 	end
 	local dir = best and flat(best.Position - root.Position) or camDir
 	root.CFrame = CFrame.lookAt(root.Position, root.Position + dir)
+	return best and bestScore or nil
 end
 
 -- 잠깐 앞으로 미끄러지기 (내 몸은 내가 움직인다)
@@ -5527,7 +5964,7 @@ startMove = function(slot: any, charge: number?)
 	end
 	local speed = style.speed or 1
 	local dur = move.dur / speed
-	aim()
+	local gap = aim()
 	seq += 1
 	local mySeq = seq
 	actSeq = mySeq
@@ -5538,7 +5975,32 @@ startMove = function(slot: any, charge: number?)
 	Anim.play(char, move.pose, dur, { align = first and first.t / speed or nil })
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
 	Fx.cast(style.id, slot, char, dur)
-	Request:FireServer("act", slot, mySeq, charge)
+	local perfect = nextPerfect
+	nextPerfect = false
+	Request:FireServer("act", slot, mySeq, charge, perfect)
+	if type(slot) == "number" or slot == "F" then
+		earlyPresses = 0
+		lastComboSlot = slot
+		if perfect then
+			perfectChain += 1
+			local big = perfectChain >= Config.RHYTHM.chain
+			Fx.text(root.Position + Vector3.new(0, 4.5, 0), big and string.format("連擊 ×%d", perfectChain) or "連", big and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(255, 235, 170), big and 30 or 22, 0.8)
+			Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style.color, 2, big and 12 or 7, 0.3)
+			Fx.sound("ping", 0.35, big and 1.6 or 1.3)
+		elseif slot ~= 1 then
+			perfectChain = 0
+		end
+	end
+	if slot == "F" then
+		-- 각성 마무리: 크게 휘둘러 하늘로 띄운다
+		UI.flash(style.color, 0.25)
+		fovPunch(-6, 0.4)
+		Fx.text(root.Position + Vector3.new(0, 6, 0), "覺 " .. move.name, style.color, 34, 1.2)
+	end
+	if move.hover then
+		-- 공중 연격: 나도 공중에 머문다
+		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X * 0.3, move.hover, root.AssemblyLinearVelocity.Z * 0.3)
+	end
 	if slot == "C" then
 		Fx.text(root.Position + Vector3.new(0, 5, 0), "反 반격!", Color3.fromRGB(255, 220, 120), 38)
 		UI.flash(Color3.fromRGB(255, 230, 160), 0.2)
@@ -5574,8 +6036,17 @@ startMove = function(slot: any, charge: number?)
 		end)
 	end
 	local look = flat(root.CFrame.LookVector)
-	if move.lunge and move.lunge > 0 and not move.teleport then
-		push(look * (move.lunge / 0.16), 0.16)
+	-- 상대가 조금 떨어져 있으면 한 걸음에 파고든다 (거리를 좁히며 친다)
+	local close = 0
+	if gap and gap > 4.5 and not move.teleport and not move.proj then
+		close = math.min(gap - 3.5, 7)
+	end
+	local lunge = (move.lunge or 0) + close
+	if lunge > 0 and not move.teleport then
+		push(look * (lunge / 0.16), 0.16)
+		if close > 2 then
+			Fx.afterimage(char, style.color, 0.25)
+		end
 	end
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
@@ -5602,7 +6073,12 @@ startMove = function(slot: any, charge: number?)
 				if r and m:GetAttribute("Guard") ~= true then
 					predictedAt[m] = os.clock()
 					local heavy = (h.kb or 0) >= 20 or (h.stun or 0) >= 0.6
-					Fx.hitstop({ char, m }, heavy and 0.09 or 0.05)
+					Fx.hitstop({ char, m }, heavy and 0.1 or 0.05)
+					if heavy then
+						-- 큰 한 방: 순간 번쩍이는 임팩트 프레임과 카메라 당김
+						UI.flash(Color3.new(1, 1, 1), 0.18)
+						fovPunch(-4, 0.25)
+					end
 					Fx.styleHit(style.id, r.Position:Lerp(root.Position, 0.35) + Vector3.new(0, 1, 0), heavy, look)
 					Fx.sound(heavy and "heavy" or "hit", heavy and 0.9 or 0.6, heavy and 0.6 or 0.85 + math.random() * 0.2)
 					shake(heavy and 0.9 or 0.35)
@@ -5629,11 +6105,13 @@ RunService.Heartbeat:Connect(function()
 		local b = buffered
 		buffered = nil
 		if os.clock() - b.at < 0.5 then
+			nextPerfect = b.perfect == true
 			startMove(b.slot, b.charge)
 		end
 	elseif buffered and os.clock() >= actStart + actDur * 0.7 and canAct() and type(buffered.slot) == "number" then
 		local b = buffered
 		buffered = nil
+		nextPerfect = b.perfect == true
 		startMove(b.slot, b.charge)
 	end
 end)
@@ -5659,28 +6137,81 @@ local function attack()
 		startMove("C")
 		return
 	end
-	if hum and hum.FloorMaterial == Enum.Material.Air and not airAttacked and not busy() then
-		airAttacked = true
-		startMove("A")
-		return
+	if hum and hum.FloorMaterial == Enum.Material.Air and not busy() then
+		-- 띄운 적이 가까이 있으면 공중 연격 (세 번까지), 아니면 내리꽂는 낙하격
+		local root = myRoot()
+		local near = false
+		if root then
+			for m, at in pairs(launchedAt) do
+				local r = m.Parent and rootOf(m :: Model)
+				if r and now - at < 1.6 and (r.Position - root.Position).Magnitude < 12 then
+					near = true
+				end
+			end
+		end
+		if near and airJ < 3 then
+			airJ += 1
+			aim()
+			startMove("J")
+			return
+		elseif not airAttacked then
+			airAttacked = true
+			startMove("A")
+			return
+		end
 	end
 	if now - dashAt < Config.ACTION_WINDOW.D and not busy() then
 		dashAt = 0
 		startMove("D")
 		return
 	end
-	local nextIdx = 1
-	if now - comboAt <= Config.COMBO_WINDOW + actDur and combo < #style.combo then
-		nextIdx = combo + 1
+	-- 연타는 박자다: 앞 동작이 끝나 갈 즈음 눌러야 이어지고(딱 맞으면 連), 너무 일찍 마구 누르면 흐트러진다
+	local R = Config.RHYTHM
+	local meChar = myChar()
+	local tier = meChar and tonumber(meChar:GetAttribute("Awaken")) or 0
+	local function nextSlot(): any
+		if lastComboSlot == #style.combo and tier >= 1 then
+			return "F"
+		elseif type(lastComboSlot) == "number" and lastComboSlot < #style.combo then
+			return lastComboSlot + 1
+		end
+		return 1
 	end
-	if busy() and now < actStart + actDur * 0.7 then
-		-- 아직 이르다: 다음 연타를 줄 세운다
-		buffered = { slot = (combo % #style.combo) + 1, at = now }
+	local root = myRoot()
+	if busy() then
+		local frac = (now - actStart) / math.max(0.05, actDur)
+		if frac < R.early then
+			earlyPresses += 1
+			if earlyPresses >= 2 and not comboBroken then
+				comboBroken = true
+				if root then
+					Fx.text(root.Position + Vector3.new(0, 4, 0), "흐트러짐", Color3.fromRGB(200, 190, 180), 22, 0.6)
+				end
+			end
+			return
+		end
+		if comboBroken or type(lastComboSlot) ~= "number" and lastComboSlot ~= "F" then
+			return
+		end
+		buffered = { slot = nextSlot(), at = now, perfect = frac >= R.perfectFrom }
 		return
 	end
-	combo = nextIdx
-	comboAt = now
-	startMove(nextIdx)
+	local ended = actStart + actDur
+	if comboBroken then
+		-- 흐트러지면 잠깐 숨을 고른 뒤 처음부터
+		if now < ended + R.breakLock then
+			return
+		end
+		comboBroken = false
+		lastComboSlot = nil
+		perfectChain = 0
+	end
+	local slot: any = 1
+	if (type(lastComboSlot) == "number" or lastComboSlot == "F") and now - ended <= Config.COMBO_WINDOW and lastComboSlot ~= "F" then
+		slot = nextSlot()
+		nextPerfect = now - ended <= R.late
+	end
+	startMove(slot)
 end
 
 local function heavyDown()
@@ -5906,6 +6437,7 @@ RunService.Heartbeat:Connect(function()
 	if hum.FloorMaterial ~= Enum.Material.Air then
 		airJumped = false
 		airAttacked = false
+		airJ = 0
 		if fallSpeed > 55 and not busy() and not dead then
 			local char = myChar()
 			if char then
@@ -6293,8 +6825,50 @@ end
 
 function handlers.mastery(data: any)
 	local s = Config.STYLE_BY_ID[data.style]
+	if data.awaken and s then
+		-- 각성! 하늘로 빛이 솟고 화면이 갈라진다
+		local a = Config.AWAKEN[data.awaken]
+		UI.cinematic(a.mark .. " " .. s.name .. " " .. a.name, s.color, 2.2)
+		UI.banner(a.mark .. " " .. a.name .. "!", data.awaken == 1 and "기술이 세지고, 연타 다섯 번째 '" .. s.finisher.name .. "'가 열렸다" or "모든 기술이 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다", s.color)
+		local char = myChar()
+		if char then
+			Fx.ult(s.id, char, 1.6)
+		end
+		shake(1.2)
+		Fx.sound("ping", 0.9, 0.8)
+		return
+	end
 	UI.banner(string.format("%s 숙련 %d", s and s.name or "", data.lv), data.unlocked and ("새 기술: " .. data.unlocked) or nil, s and s.color or nil)
 	Fx.sound("ping", 0.6, 1.5)
+end
+
+-- 완전 각성: 그림자 메아리가 같은 기술을 되풀이한다
+function handlers.echo(data: any)
+	local m = data.m
+	if m and m.Parent then
+		Fx.echo(m, data.style, data.slot, data.dur)
+	end
+end
+
+-- 見切り: 맞기 직전에 피했다 (시간이 멈춘 듯)
+function handlers.pdodge(data: any)
+	local m, a = data.m, data.a
+	local r = m and rootOf(m)
+	if r then
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "見切り!", Color3.fromRGB(180, 230, 255), 38, 1.2)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(180, 230, 255), 2, 18, 0.5)
+		Fx.afterimage(m, Color3.fromRGB(180, 230, 255), 0.5)
+	end
+	if a then
+		Fx.hitstop({ a }, 0.35)
+	end
+	if m == myChar() then
+		deflectAt = os.clock()
+		fovPunch(-10, 0.5)
+		tint(Color3.fromRGB(160, 200, 255), 0.4, 0.45)
+		UI.flash(Color3.fromRGB(200, 230, 255), 0.2)
+		Fx.sound("deflect", 0.8, 0.7)
+	end
 end
 
 function handlers.reward(data: any)
@@ -6385,7 +6959,14 @@ RunService.RenderStepped:Connect(function()
 	elseif buff == "sway" then
 		stacks ..= "  🍶 취보"
 	end
-	UI.styleLine(style.icon .. " " .. style.name, style.color, stacks)
+	local tierNow = tonumber(char:GetAttribute("Awaken")) or 0
+	if perfectChain >= 2 then
+		stacks ..= string.format("  連 ×%d", perfectChain)
+	end
+	if comboBroken then
+		stacks ..= "  (흐트러짐)"
+	end
+	UI.styleLine((tierNow > 0 and (Config.AWAKEN[tierNow].mark .. " ") or "") .. style.icon .. " " .. style.name, style.color, stacks)
 end)
 
 Request:FireServer("hello")
@@ -6587,6 +7168,10 @@ function Anim.watch(model: Model)
 		lastT = os.clock(),
 		written = {},
 	}
+	-- 하늘로 띄워지면 허우적대며 한 바퀴
+	model:GetAttributeChangedSignal("LaunchedAt"):Connect(function()
+		Anim.play(model, "launched", 0.9)
+	end)
 end
 
 local function stanceOf(model: Model): string?
@@ -7505,6 +8090,34 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 12 or 16, 0.45)
 	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
+	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
+	local tier = tonumber(model:GetAttribute("Awaken")) or 0
+	if tier >= 1 then
+		local glow = tier >= 2 and Color3.fromRGB(255, 250, 235) or Color3.fromRGB(255, 210, 90)
+		Fx.ring(feet + Vector3.new(0, 0.3, 0), glow, 3, slot == "H" and 18 or 24, 0.55)
+		flare(pos + Vector3.new(0, 1, 0), c2, 2.5)
+		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "眞覺" or "覺", glow, 22, 0.6)
+	end
+	-- 각성 마무리: 땅에서 솟는 기둥과 하늘로 치솟는 고리
+	if slot == "F" then
+		task.delay(0.24, function()
+			local column = piece(Vector3.new(4, 1, 4), c, Enum.Material.Neon, nil, 0.25)
+			local at = pos + look * 4 - Vector3.new(0, 2.5, 0)
+			column.Position = at
+			tween(column, 0.3, { Size = Vector3.new(1.2, 34, 1.2), Position = at + Vector3.new(0, 17, 0), Transparency = 1 })
+			Debris:AddItem(column, 0.35)
+			for k = 0, 2 do
+				task.delay(k * 0.06, function()
+					Fx.ring(at + Vector3.new(0, 2 + k * 4, 0), k == 1 and c2 or c, 2, 10 - k * 2, 0.35)
+				end)
+			end
+			Fx.dust(at, 3)
+		end)
+		return
+	elseif slot == "J" then
+		Fx.ring(pos, c, 1, 8, 0.25, look)
+		return
+	end
 	local fx = style.fx
 	local key = fx .. ":" .. tostring(slot)
 
@@ -7762,6 +8375,76 @@ function Fx.parryArc(model: Model, side: number, color: Color3)
 	local out = (cf * CFrame.new(side * 3, 0, -1)).Position
 	Fx.ring(out, color, 1, 9, 0.4, r.CFrame.RightVector * side)
 	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 2, 10, 0.4)
+end
+
+-- 그림자 메아리 (완전 각성): 흰 그림자가 같은 기술을 한 번 더 그려 낸다
+function Fx.echo(model: Model, styleId: any, slot: any, dur: number)
+	local style = styleOf(styleId)
+	local c2 = style and style.color2 or Color3.new(1, 1, 1)
+	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "影", c2, 26, 0.8)
+	for k = 0, 5 do
+		task.delay(k * dur / 6, function()
+			if model.Parent then
+				Fx.afterimage(model, k % 2 == 0 and c2 or (style and style.color or c2), 0.4)
+			end
+		end)
+	end
+	Fx.cast(styleId, slot, model, dur)
+end
+
+-- 각성의 기운: 몸에서 빛 조각이 피어오른다 (완전 각성은 둘레에 빛 고리도)
+local auras: { [Model]: { tier: number, parts: { Instance } } } = {}
+function Fx.awakenAura(model: Model, tier: number, color: Color3)
+	local cur = auras[model]
+	if cur and cur.tier == tier then
+		return
+	end
+	if cur then
+		for _, p in ipairs(cur.parts) do
+			p:Destroy()
+		end
+		auras[model] = nil
+	end
+	local r = rootPart(model)
+	if tier <= 0 or not r then
+		return
+	end
+	local parts: { Instance } = {}
+	local att = Instance.new("Attachment")
+	att.Name = "AwakenAura"
+	att.Position = Vector3.new(0, -1, 0)
+	att.Parent = r
+	table.insert(parts, att)
+	local e = Instance.new("ParticleEmitter")
+	e.Rate = tier >= 2 and 22 or 10
+	e.Color = ColorSequence.new(color, tier >= 2 and Color3.new(1, 1, 1) or color)
+	e.LightEmission = 1
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, tier >= 2 and 0.5 or 0.35), NumberSequenceKeypoint.new(1, 0) })
+	e.Transparency = NumberSequence.new(0.1, 1)
+	e.Lifetime = NumberRange.new(0.8, 1.4)
+	e.Speed = NumberRange.new(2, 5)
+	e.SpreadAngle = Vector2.new(40, 40)
+	e.EmissionDirection = Enum.NormalId.Top
+	e.Shape = Enum.ParticleEmitterShape.Cylinder
+	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+	e.Parent = att
+	table.insert(parts, e)
+	if tier >= 2 then
+		local ring = piece(Vector3.new(0.15, 7, 7), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.55)
+		table.insert(parts, ring)
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.RenderStepped:Connect(function()
+			local rr = rootPart(model)
+			if not ring.Parent or not rr then
+				conn:Disconnect()
+				return
+			end
+			local t = os.clock() - start
+			ring.CFrame = CFrame.new(rr.Position - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, t * 2, math.rad(90))
+		end)
+	end
+	auras[model] = { tier = tier, parts = parts }
 end
 
 -- 몸을 감싸는 은은한 기운 (철포삼, 취보처럼 오래 가는 기술)
@@ -8253,6 +8936,14 @@ local function buildStyles()
 			local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
 			table.insert(lines, string.format("<b>%s %s</b>%s  %s", slot == "G" and "오의 G" or slot, sk.name, lockTxt, sk.desc))
 		end
+		-- 각성
+		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
+		local function tag(need: number): string
+			return lv >= need and ' <font color="#FFD25A">(열림)</font>' or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
+		end
+		table.insert(lines, "")
+		table.insert(lines, string.format("<b>%s %s</b>%s  기술(Z·E·R·G) 피해 ×%.2f, 대기 -%d%%, 연타 다섯 번째 <b>%s</b> (상대를 하늘로 띄운다)", A1.mark, A1.name, tag(A1.lv), A1.dmg, math.floor((1 - A1.cd) * 100 + 0.5), s.finisher and s.finisher.name or ""))
+		table.insert(lines, string.format("<b>%s %s</b>%s  모든 기술 ×%.2f, 대기 -%d%%, 그림자 메아리가 기술을 한 번 더 (절반 위력), 몸에 각성의 기운", A2.mark, A2.name, tag(A2.lv), A2.dmg, math.floor((1 - A2.cd) * 100 + 0.5)))
 		if m then
 			table.insert(lines, "")
 			table.insert(lines, string.format("숙련도 %d / %d  (%d / %d)", m.lv, Config.MASTERY_MAX, math.floor(m.xp), m.need))
@@ -8391,6 +9082,12 @@ local function buildHelp()
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
+			"",
+			"<b>연타는 박자</b>",
+			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>連</b> (피해 +15%, 세 번 이으면 連擊 +30%)",
+			"• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다",
+			"• 숙련 6 각성: 연타 다섯 번째 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격 (세 번)",
+			"• 맞기 직전에 대시로 피하면 <b>見切り</b>: 상대가 굳고, 곧바로 클릭하면 반격",
 			"",
 			"<b>몸놀림</b>",
 			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
@@ -8798,6 +9495,35 @@ local function updateMap(dt: number)
 end
 
 ------------------------------------------------------------------------
+-- 바람 줄 (빠르게 달리거나 대시할 때 화면 가장자리로 흐르는 선)
+------------------------------------------------------------------------
+local speedLines: { { f: Frame, a: number, d: number } } = {}
+local speedAmt = 0
+function UI.setSpeed(amount: number)
+	speedAmt += (amount - speedAmt) * 0.25
+	if #speedLines == 0 or not gui then
+		return
+	end
+	local t = os.clock()
+	for i, l in ipairs(speedLines) do
+		local k = ((t * 2.2 + l.d) % 1)
+		local r = 0.42 + k * 0.25
+		l.f.Position = UDim2.fromScale(0.5 + math.cos(l.a) * r, 0.5 + math.sin(l.a) * r * 1.1)
+		l.f.Rotation = math.deg(l.a)
+		l.f.BackgroundTransparency = 1 - speedAmt * 0.55 * (1 - k)
+		l.f.Visible = speedAmt > 0.02
+		local _ = i
+	end
+end
+local function buildSpeedLines()
+	for i = 1, 22 do
+		local a = (i / 22) * math.pi * 2 + math.random() * 0.2
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 160, 0, 2), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, BackgroundTransparency = 1, Visible = false, ZIndex = 2, Parent = gui })
+		table.insert(speedLines, { f = f, a = a, d = math.random() })
+	end
+end
+
+------------------------------------------------------------------------
 -- 휴대폰 버튼
 ------------------------------------------------------------------------
 function UI.mobile(actions: { [string]: any })
@@ -8916,6 +9642,7 @@ function UI.init(req: RemoteEvent)
 	buildHelp()
 	buildTest()
 	buildMap()
+	buildSpeedLines()
 	RunService.RenderStepped:Connect(function(dt: number)
 		local ok, err = pcall(updateMap, dt)
 		if not ok then

@@ -191,6 +191,10 @@ function Anim.watch(model: Model)
 		lastT = os.clock(),
 		written = {},
 	}
+	-- 하늘로 띄워지면 허우적대며 한 바퀴
+	model:GetAttributeChangedSignal("LaunchedAt"):Connect(function()
+		Anim.play(model, "launched", 0.9)
+	end)
 end
 
 local function stanceOf(model: Model): string?

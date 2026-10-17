@@ -346,6 +346,130 @@ local function masterTag(head: BasePart, name: string, style: any)
 	g.Parent = head
 end
 
+-- 사부 차림: 몸 부위에 붙는 장식 (기본 몸이든 직접 짠 몸이든 부위 이름은 같다)
+local function wear(model: Model, partName: string, name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material?, shape: Enum.PartType?): Part?
+	local base = model:FindFirstChild(partName)
+	if not base or not base:IsA("BasePart") then
+		return nil
+	end
+	local p = Instance.new("Part")
+	p.Name = name
+	if shape then
+		p.Shape = shape
+	end
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.Fabric
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.CFrame = base.CFrame * offset
+	p.Parent = model
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = base
+	w.Part1 = p
+	w.Parent = p
+	return p
+end
+
+local GOLD = Color3.fromRGB(235, 190, 80)
+local WHITE_HAIR = Color3.fromRGB(240, 240, 235)
+
+local function dressMaster(model: Model, style: any)
+	local robe = style.color:Lerp(Color3.new(0, 0, 0), 0.35)
+	local trim = style.color2
+	local head = model:FindFirstChild("Head") :: BasePart?
+	local hs = head and head.Size or Vector3.new(1.2, 1.2, 1.2)
+	-- 공통: 앞뒤로 갈라진 긴 도포, 금빛 어깨받이, 허리띠 끈, 등 망토
+	for _, z in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "RobePanel", Vector3.new(2.1, 2.4, 0.18), CFrame.new(0, -1.35, z * 0.55), robe)
+		wear(model, "LowerTorso", "RobeTrim", Vector3.new(2.15, 0.25, 0.22), CFrame.new(0, -2.5, z * 0.55), trim, Enum.Material.SmoothPlastic)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "Pauldron", Vector3.new(1.25, 0.45, 1.35), CFrame.new(x * 1.15, 0.72, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), GOLD, Enum.Material.Metal)
+		wear(model, "LowerTorso", "SashTail", Vector3.new(0.3, 1.6, 0.1), CFrame.new(x * 0.35, -0.9, 0.62) * CFrame.Angles(math.rad(8), 0, x * math.rad(6)), trim)
+	end
+	wear(model, "UpperTorso", "Cape", Vector3.new(2.1, 3.6, 0.14), CFrame.new(0, -0.9, 0.62) * CFrame.Angles(math.rad(10), 0, 0), style.color)
+	wear(model, "UpperTorso", "Collar", Vector3.new(1.4, 0.35, 1.15), CFrame.new(0, 0.85, -0.05), trim, Enum.Material.SmoothPlastic)
+
+	local id = style.id
+	local function beard(color: Color3)
+		wear(model, "Head", "Beard", Vector3.new(hs.X * 0.55, hs.Y * 1.1, 0.35), CFrame.new(0, -hs.Y * 0.62, -hs.Z * 0.42), color)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "Mustache", Vector3.new(hs.X * 0.35, 0.12, 0.12), CFrame.new(x * hs.X * 0.2, -hs.Y * 0.12, -hs.Z * 0.52) * CFrame.Angles(0, 0, x * math.rad(-25)), color)
+		end
+	end
+	if id == "taeheo" then
+		-- 물빛 도인: 흰 수염과 상투
+		beard(WHITE_HAIR)
+		wear(model, "Head", "Topknot", Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, hs.Y * 0.62, 0.05), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "Head", "Hairband", Vector3.new(hs.X * 1.03, 0.18, hs.Z * 1.03), CFrame.new(0, hs.Y * 0.28, 0), trim, Enum.Material.Neon)
+	elseif id == "geumgang" then
+		-- 금강 대사: 염주와 비스듬한 가사
+		for k = 0, 13 do
+			local a = k / 14 * math.pi * 2
+			wear(model, "UpperTorso", "Bead", Vector3.new(0.32, 0.32, 0.32), CFrame.new(math.cos(a) * 0.62, 0.62 - math.abs(math.sin(a)) * 0.15, math.sin(a) * 0.55), Color3.fromRGB(110, 60, 30), Enum.Material.Wood, Enum.PartType.Ball)
+		end
+		wear(model, "UpperTorso", "Kasaya", Vector3.new(0.55, 2.6, 1.12), CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(35)), Color3.fromRGB(190, 50, 35))
+		wear(model, "Head", "Urna", Vector3.new(0.15, 0.15, 0.1), CFrame.new(0, hs.Y * 0.22, -hs.Z * 0.5), GOLD, Enum.Material.Neon)
+	elseif id == "maehwa" then
+		-- 매화 선자: 긴 머리, 꽃 비녀, 넓은 소매
+		wear(model, "Head", "LongHair", Vector3.new(hs.X * 1.05, hs.Y * 2.2, 0.35), CFrame.new(0, -hs.Y * 0.55, hs.Z * 0.5), Color3.fromRGB(25, 20, 25))
+		wear(model, "Head", "HairTop", Vector3.new(hs.X * 1.08, hs.Y * 0.4, hs.Z * 1.08), CFrame.new(0, hs.Y * 0.4, 0.05), Color3.fromRGB(25, 20, 25))
+		wear(model, "Head", "Hairpin", Vector3.new(0.5, 0.5, 0.5), CFrame.new(hs.X * 0.45, hs.Y * 0.5, 0.2), style.color, Enum.Material.Neon, Enum.PartType.Ball)
+		for _, side in ipairs({ "Right", "Left" }) do
+			wear(model, side .. "LowerArm", "Sleeve", Vector3.new(1.45, 1.1, 1.45), CFrame.new(0, -0.2, 0), trim)
+		end
+	elseif id == "cheonryong" then
+		-- 용천 노조: 용뿔 관과 흰 수염
+		beard(WHITE_HAIR)
+		wear(model, "Head", "Crown", Vector3.new(hs.X * 0.9, 0.3, hs.Z * 0.6), CFrame.new(0, hs.Y * 0.55, 0), GOLD, Enum.Material.Metal)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "DragonHorn", Vector3.new(0.22, 1.3, 0.22), CFrame.new(x * hs.X * 0.35, hs.Y * 0.95, 0.15) * CFrame.Angles(math.rad(-25), 0, -x * math.rad(25)), GOLD, Enum.Material.Metal)
+		end
+		wear(model, "Head", "CrownGem", Vector3.new(0.3, 0.3, 0.3), CFrame.new(0, hs.Y * 0.6, -hs.Z * 0.32), style.color, Enum.Material.Neon, Enum.PartType.Ball)
+	elseif id == "muyeong" then
+		-- 무영객: 두건, 복면, 보랏빛 눈
+		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.12, hs.Y * 1.12, hs.Z * 1.0), CFrame.new(0, hs.Y * 0.06, hs.Z * 0.1), Color3.fromRGB(20, 18, 26))
+		wear(model, "Head", "Mask", Vector3.new(hs.X * 0.9, hs.Y * 0.42, 0.12), CFrame.new(0, -hs.Y * 0.22, -hs.Z * 0.5), Color3.fromRGB(15, 12, 20))
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "ShadowEye", Vector3.new(0.22, 0.09, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.52), Color3.fromRGB(190, 120, 255), Enum.Material.Neon)
+		end
+	elseif id == "byeokryeok" then
+		-- 뇌정진군: 곤두선 머리, 번개 팔찌
+		for k = -2, 2 do
+			wear(model, "Head", "SpikeHair", Vector3.new(0.25, 0.8, 0.25), CFrame.new(k * hs.X * 0.18, hs.Y * 0.65, 0.1) * CFrame.Angles(math.rad(-15), 0, k * math.rad(-12)), Color3.fromRGB(255, 245, 200), Enum.Material.Neon)
+		end
+		wear(model, "Head", "Headband", Vector3.new(hs.X * 1.04, 0.2, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color, Enum.Material.Neon)
+		for _, side in ipairs({ "Right", "Left" }) do
+			wear(model, side .. "LowerArm", "Bracer", Vector3.new(1.12, 0.5, 1.12), CFrame.new(0, -0.2, 0), style.color, Enum.Material.Neon)
+			local hand = model:FindFirstChild(side .. "Hand")
+			if hand and hand:IsA("BasePart") then
+				local e = Instance.new("ParticleEmitter")
+				e.Rate = 8
+				e.Color = ColorSequence.new(Color3.fromRGB(255, 250, 180))
+				e.LightEmission = 1
+				e.Size = NumberSequence.new(0.25, 0)
+				e.Lifetime = NumberRange.new(0.15, 0.3)
+				e.Speed = NumberRange.new(4, 8)
+				e.SpreadAngle = Vector2.new(180, 180)
+				e.Parent = hand
+			end
+		end
+	elseif id == "chwi" then
+		-- 취선옹: 넓은 삿갓, 허리의 술 호리병, 붉은 뺨
+		beard(Color3.fromRGB(170, 170, 165))
+		wear(model, "Head", "StrawHat", Vector3.new(0.25, 3.4, 3.4), CFrame.new(0, hs.Y * 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(205, 175, 110), Enum.Material.Fabric, Enum.PartType.Cylinder)
+		wear(model, "Head", "HatTop", Vector3.new(1.2, 0.8, 1.2), CFrame.new(0, hs.Y * 0.85, 0), Color3.fromRGB(190, 160, 95), Enum.Material.Fabric, Enum.PartType.Ball)
+		wear(model, "LowerTorso", "GourdLow", Vector3.new(0.9, 0.9, 0.9), CFrame.new(1.25, -0.4, 0.2), Color3.fromRGB(200, 120, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "LowerTorso", "GourdTop", Vector3.new(0.6, 0.6, 0.6), CFrame.new(1.25, 0.25, 0.2), Color3.fromRGB(200, 120, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "Cheek", Vector3.new(0.25, 0.14, 0.05), CFrame.new(x * hs.X * 0.28, -hs.Y * 0.05, -hs.Z * 0.51), Color3.fromRGB(240, 110, 110), Enum.Material.SmoothPlastic)
+		end
+	end
+end
+
 function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	local mf = Instance.new("Folder")
 	mf.Name = "Masters"
@@ -354,8 +478,8 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 		local info = Config.MASTERS[style.id]
 		if info then
 			local ok, err = pcall(function()
-				local s = 1.05
-				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = SKIN, legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
+				local s = 1.2
+				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
 				model.Name = "Master_" .. style.id
 				local hum = model:FindFirstChildOfClass("Humanoid")
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
@@ -382,6 +506,7 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					weld.Part1 = sash
 					weld.Parent = sash
 				end
+				pcall(dressMaster, model, style)
 				local up = (hum and hum.HipHeight or 2 * s) + root.Size.Y / 2
 				local at = info.at
 				local face = Vector3.new(0, at.Y, 0) - at
@@ -391,6 +516,23 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 				root.Anchored = true
 				model:SetAttribute("NPC", true)
 				model:SetAttribute("Master", true)
+				model:SetAttribute("Awaken", 2)
+				model:SetAttribute("Quote", info.quote)
+				-- 발밑의 빛나는 진
+				for i, r in ipairs({ 5, 3.2 }) do
+					local sig = Instance.new("Part")
+					sig.Name = "MasterSigil"
+					sig.Anchored = true
+					sig.CanCollide = false
+					sig.CanQuery = false
+					sig.Shape = Enum.PartType.Cylinder
+					sig.Size = Vector3.new(0.1, r * 2, r * 2)
+					sig.CFrame = CFrame.new(at + Vector3.new(0, 0.08 + i * 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90))
+					sig.Color = i == 1 and style.color or style.color2
+					sig.Material = Enum.Material.Neon
+					sig.Transparency = i == 1 and 0.55 or 0.7
+					sig.Parent = mf
+				end
 				model:SetAttribute("Style", style.id)
 				model:SetAttribute("Label", info.name)
 				local head = model:FindFirstChild("Head")
@@ -612,8 +754,10 @@ local function think(e: Enemy, t: number)
 	local d = flatDist(tgt.root.Position, pos)
 	-- 상대가 막 치기 시작하면 가끔 막는다 (보스는 더 자주)
 	local tact = tgt.act
-	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding then
-		local chance = e.kind == "boss" and 0.4 or 0.22
+	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding and not (tact :: any).perfect then
+		-- 마구 누르는 연타는 읽혀서 막히고 흘려진다. 박자를 맞춘 일격(連)은 읽지 못한다
+		local sloppy = (tgt :: any).sloppy or 0
+		local chance = (e.kind == "boss" and 0.4 or 0.22) + math.min(0.5, sloppy * 0.09)
 		if math.random() < chance then
 			f.guarding = true
 			f.guardStart = t

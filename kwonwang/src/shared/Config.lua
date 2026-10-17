@@ -331,6 +331,40 @@ for i, s in ipairs(Config.Styles) do
 	Config.STYLE_BY_ID[s.id] = s
 end
 
+------------------------------------------------------------------------
+-- 각성: 숙련 6이면 각성 (기술이 세지고, 연타 다섯 번째 '각성 마무리'가 열린다)
+--       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
+------------------------------------------------------------------------
+Config.AWAKEN = {
+	{ lv = 6, name = "각성", mark = "覺", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "眞覺", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+}
+function Config.awakenTier(lv: number): number
+	if lv >= Config.AWAKEN[2].lv then
+		return 2
+	elseif lv >= Config.AWAKEN[1].lv then
+		return 1
+	end
+	return 0
+end
+-- 각성 마무리 (연타 다섯 번째): 상대를 하늘로 띄운다 → 공중 연격으로 이어진다
+local FINISHERS = {
+	taeheo = { name = "만류회류장", pose = "double_palm" },
+	geumgang = { name = "금강파산추", pose = "hammer_down" },
+	maehwa = { name = "매화낙영각", pose = "roundhouse" },
+	cheonryong = { name = "승룡장", pose = "uppercut" },
+	muyeong = { name = "귀영회선각", pose = "back_spin_kick" },
+	byeokryeok = { name = "벽력천추", pose = "uppercut" },
+	chwi = { name = "취선번천", pose = "drunk_flop" },
+}
+for id, fin in pairs(FINISHERS) do
+	local s = Config.STYLE_BY_ID[id]
+	s.finisher = { id = id .. "F", name = fin.name, pose = fin.pose, dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 16, 24, 0.7, 6, 62) } }
+end
+
+-- 연타 박자: 앞 동작이 이만큼 지났을 때 누르면 '딱 맞음(連)', 너무 일찍 두 번 누르면 흐트러진다
+Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
+
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500 }
 
@@ -347,12 +381,14 @@ Config.ACTION_MOVES = {
 	D = { id = "actD", name = "돌진 일격", pose = "dash_punch", dur = 0.42, lunge = 12, hits = { hit(0.16, 6, 4.5, 11, 14, 0.45, 26) } },
 	A = { id = "actA", name = "낙하격", pose = "dive_slam", dur = 0.6, dive = 85, hits = { hit(0.32, 0, 9, 13, 20, 0.6, 22, 14, true) } },
 	C = { id = "actC", name = "반격", pose = "punch_r_heavy", dur = 0.42, lunge = 5, hits = { hit(0.14, 6, 4.5, 18, 40, 0.8, 34) } },
+	-- J = 띄운 상대를 공중에서 잇는 연격 (나도 상대도 공중에 머문다, 세 번까지)
+	J = { id = "actJ", name = "공중 연격", pose = "air_spin", dur = 0.34, hover = 30, hits = { hit(0.12, 7, 5, 8, 8, 0.6, 4, 32) } },
 }
 Config.ACTION_WINDOW = { D = 0.6, C = 0.8 } -- 대시·흘리기 뒤 이만큼 안에 눌러야 나간다
 -- 권법마다 몸놀림 자세만 다르게
 local ACTION_POSE = {
 	maehwa = { D = "dash_strike", C = "spin_backfist" },
-	muyeong = { D = "flying_kick", A = "dive_kick", C = "back_spin_kick" },
+	muyeong = { D = "flying_kick", A = "dive_kick", C = "back_spin_kick", J = "roundhouse" },
 	chwi = { D = "headbutt", C = "drunk_swing_r" },
 	taeheo = { D = "push_palm", C = "double_palm" },
 	cheonryong = { D = "push_palm", C = "double_palm" },
@@ -369,6 +405,8 @@ function Config.move(styleId: string, slot: any): any
 		return s.combo[slot]
 	elseif slot == "H" then
 		return s.heavy
+	elseif slot == "F" then
+		return s.finisher
 	elseif Config.ACTION_MOVES[slot] then
 		local key = styleId .. slot
 		if not actionCache[key] then
@@ -519,25 +557,25 @@ Config.Regions = {
 		boss = { id = "hyeolrang", at = Vector3.new(1080, 0, 1080) } },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인 (水月眞人)", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", quote = "부서지지 않는 몸이 곧 부서지지 않는 마음이다.", masterName = "혜공대사 (慧空大師)", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", quote = "꽃은 한 번에 핀다. 망설이는 순간 진다.", masterName = "매향선자 (梅香仙子)", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", quote = "용은 엎드려 기다리다 하늘을 가른다.", masterName = "용천노조 (龍天老祖)", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객 (無影客)", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군 (雷霆眞君)", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹 (醉仙翁)", masterAt = Vector3.new(0, 0, 690) },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
 for _, r in ipairs(Config.Regions) do
 	if r.master then
-		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id }
+		Config.MASTERS[r.master] = { name = r.masterName, at = r.masterAt, region = r.name, regionId = r.id, quote = r.quote }
 	end
 end
 -- 큰 볼거리 (지도에도 나온다)

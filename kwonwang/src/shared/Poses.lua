@@ -420,6 +420,12 @@ A.hit_heavy = {
 	{ t = 0.5, j = { W = { 10, 0, 0 }, N = { 10, 0, 0 }, RS = { 20, 0, 25 }, LS = { 20, 0, -25 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { -4, 0, 0, 0, -0.6, 0.4 } } },
 	{ t = 1, j = { R = { 0, 0, 0, 0, -0.3, 0 } } },
 }
+-- 하늘로 띄워졌다: 팔다리를 허우적대며 뒤로 한 바퀴 돈다
+A.launched = {
+	{ t = 0, e = "snap", j = { W = { -25, 0, 0 }, N = { -25, 0, 0 }, RS = { 150, 0, 40 }, RE = { 20, 0, 0 }, LS = { 150, 0, -40 }, LE = { 20, 0, 0 }, RH = { 35, 0, 0 }, RK = { -45, 0, 0 }, LH = { -10, 0, 0 }, LK = { -25, 0, 0 }, R = { 25, 0, 0, 0, 0.4, 0 } } },
+	{ t = 0.5, j = { W = { -10, 0, 10 }, N = { -10, 0, 0 }, RS = { 90, 0, 70 }, RE = { 40, 0, 0 }, LS = { 120, 0, -70 }, LE = { 30, 0, 0 }, RH = { 60, 0, 0 }, RK = { -80, 0, 0 }, LH = { 20, 0, 0 }, LK = { -60, 0, 0 }, R = { 200, 0, 15, 0, 0.6, 0 } } },
+	{ t = 1, j = { W = { 10, 0, 0 }, RS = { 40, 0, 50 }, LS = { 40, 0, -50 }, RH = { 30, 0, 0 }, RK = { -50, 0, 0 }, LH = { 10, 0, 0 }, LK = { -30, 0, 0 }, R = { 360, 0, 0, 0, 0, 0 } } },
+}
 -- 흘려진 쪽: 헛손질로 크게 휘청
 A.stagger = {
 	{ t = 0, e = "snap", j = { W = { -15, 30, -10 }, N = { 15, -20, 0 }, RS = { 120, 0, -20 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, R = { -15, 25, -10, -0.5, -0.5, -0.8 } } },
@@ -515,7 +521,7 @@ Poses.limbs = {
 	drunk_low = { "RightHand" }, drunk_flop = { "RightFoot", "LeftFoot" }, headbutt = {}, fire_breath = {},
 	w_slash = { "RightHand" }, w_slash2 = { "RightHand" }, w_overhead = { "RightHand" }, w_thrust = { "RightHand" }, w_sweep = { "RightHand" }, w_dual = { "RightHand", "LeftHand" },
 	deflect = { "RightHand" },
-	hit_heavy = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
+	hit_heavy = {}, launched = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
 	dive_slam = { "RightHand", "LeftHand" }, dive_kick = { "RightFoot" }, backflip = { "RightFoot", "LeftFoot" },
 	side_roll_r = { "RightHand", "LeftFoot" }, side_roll_l = { "LeftHand", "RightFoot" },
 }

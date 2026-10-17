@@ -326,6 +326,7 @@ local function refreshFighter(player: Player)
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi)
+	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
 	updateTag(player)
 end
@@ -376,7 +377,13 @@ local function addMastery(player: Player, p: Profile, amount: number)
 				unlocked = style.skills[slot].name .. " (" .. slot .. ")"
 			end
 		end
-		Push:FireClient(player, "mastery", { style = p.style, lv = m.lv, unlocked = unlocked })
+		local awaken = nil
+		for tier, a in ipairs(Config.AWAKEN) do
+			if a.lv == m.lv then
+				awaken = tier
+			end
+		end
+		Push:FireClient(player, "mastery", { style = p.style, lv = m.lv, unlocked = unlocked, awaken = awaken })
 		refreshFighter(player)
 		pushState(player)
 	end
@@ -484,7 +491,38 @@ local function nearestHostile(f: any, range: number): any?
 	return best
 end
 
-function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
+-- 완전 각성: 그림자 메아리가 같은 기술을 한 번 더 (절반 위력)
+local function echoAct(f: any, move: any, slot: any, speed: number, dmgScale: number)
+	local A = Config.AWAKEN[2]
+	task.delay(A.echoDelay, function()
+		if f.dead or not f.model.Parent then
+			return
+		end
+		Push:FireAllClients("echo", { m = f.model, style = f.style, slot = slot, pose = move.pose, dur = move.dur / speed })
+		for _, h in ipairs(move.hits or {}) do
+			task.delay(h.t / speed, function()
+				if f.dead then
+					return
+				end
+				local eh = table.clone(h)
+				eh.dmg *= A.echo * dmgScale
+				eh.posture *= A.echo
+				for _, victim in ipairs(Combat.query(f, eh)) do
+					Combat.applyHit(f, victim, eh, { move = move, isSkill = true, chain = true })
+				end
+			end)
+		end
+		if move.proj then
+			task.delay(move.dur / speed * 0.42, function()
+				if not f.dead then
+					Combat.fire(f, move.proj, 0.6, { move = move, isSkill = true })
+				end
+			end)
+		end
+	end)
+end
+
+function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, perfectArg: any)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not f or p.style == "" then
@@ -497,7 +535,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 		if slot < 1 or slot > #style.combo then
 			return
 		end
-	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and not Config.ACTION_MOVES[slot] then
+	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
@@ -523,6 +561,24 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 			return
 		end
 		fa.deflectAt = 0
+	elseif slot == "J" then
+		-- 공중 연격: 공중에서, 1.5초 안에 세 번까지
+		if not f.hum or f.hum.FloorMaterial ~= Enum.Material.Air then
+			return
+		end
+		if t - (fa.airJAt or 0) > 1.5 then
+			fa.airJCount = 0
+		end
+		if (fa.airJCount or 0) >= 3 then
+			return
+		end
+		fa.airJCount = (fa.airJCount or 0) + 1
+		fa.airJAt = t
+	end
+	-- 각성 단계 (숙련 6 / 10)
+	local tier = Config.awakenTier(Calc.mastery(p, p.style).lv)
+	if slot == "F" and (tier < 1 or fa.lastSlot ~= #style.combo or t - (fa.lastSlotAt or 0) > 1.6) then
+		return
 	end
 	-- 앞 기술이 거의 끝났을 때만 다음 기술 (연타는 70%부터 이어진다)
 	local act = f.act
@@ -543,7 +599,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 			return
 		end
 		f.chi -= cost
-		f.cds[slot] = t + (move.cd or 0)
+		f.cds[slot] = t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1)
 	end
 	local speed = style.speed or 1
 	local charge = 0
@@ -579,9 +635,39 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any)
 		teleported = true
 		Push:FireAllClients("blink", f.model, behind)
 	end
+	-- 박자: 앞 연타가 끝나 갈 즈음 정확히 이었는가 (화면이 알려 준 것을 서버가 넉넉히 다시 본다)
+	local perfect = false
+	local prev = fa.lastAct
+	if perfectArg == true and (type(slot) == "number" and slot > 1 or slot == "F") and prev then
+		local frac = (t - prev.start) / math.max(0.05, prev.dur)
+		perfect = frac >= 0.45 and frac <= 1.0 + 0.45 / math.max(0.05, prev.dur)
+	end
+	if type(slot) == "number" or slot == "F" then
+		if perfect then
+			fa.perfectChain = (fa.perfectChain or 0) + 1
+			fa.sloppy = math.max(0, (fa.sloppy or 0) - 2)
+			dmgScale *= Config.RHYTHM.bonus * (fa.perfectChain >= Config.RHYTHM.chain and Config.RHYTHM.chainBonus or 1)
+		else
+			if slot ~= 1 then
+				fa.perfectChain = 0
+			end
+			fa.sloppy = math.min(6, (fa.sloppy or 0) + 1)
+		end
+	end
+	-- 각성: 기술이 세진다 (완전 각성이면 연타까지 모두)
+	if tier >= 2 or (tier == 1 and type(slot) == "string") then
+		dmgScale *= Config.AWAKEN[tier].dmg
+	end
 	local first = move.hits and move.hits[1]
 	local newAct = Combat.begin(f, move, slot, seq, { speed = speed, charge = charge, bloom = bloom, align = first and first.t / speed or nil })
 	;(newAct :: any).dmgScale = dmgScale
+	;(newAct :: any).perfect = perfect
+	fa.lastSlot = slot
+	fa.lastSlotAt = t
+	fa.lastAct = newAct
+	if tier >= 2 and (slot == "E" or slot == "R" or slot == "H" or slot == "F" or slot == "G") then
+		echoAct(f, move, slot, speed, dmgScale)
+	end
 	;(newAct :: any).teleport = teleported
 	if move.buff then
 		f.buffs[move.buff.kind] = t + move.buff.dur

@@ -612,6 +612,34 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 12 or 16, 0.45)
 	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
+	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
+	local tier = tonumber(model:GetAttribute("Awaken")) or 0
+	if tier >= 1 then
+		local glow = tier >= 2 and Color3.fromRGB(255, 250, 235) or Color3.fromRGB(255, 210, 90)
+		Fx.ring(feet + Vector3.new(0, 0.3, 0), glow, 3, slot == "H" and 18 or 24, 0.55)
+		flare(pos + Vector3.new(0, 1, 0), c2, 2.5)
+		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "眞覺" or "覺", glow, 22, 0.6)
+	end
+	-- 각성 마무리: 땅에서 솟는 기둥과 하늘로 치솟는 고리
+	if slot == "F" then
+		task.delay(0.24, function()
+			local column = piece(Vector3.new(4, 1, 4), c, Enum.Material.Neon, nil, 0.25)
+			local at = pos + look * 4 - Vector3.new(0, 2.5, 0)
+			column.Position = at
+			tween(column, 0.3, { Size = Vector3.new(1.2, 34, 1.2), Position = at + Vector3.new(0, 17, 0), Transparency = 1 })
+			Debris:AddItem(column, 0.35)
+			for k = 0, 2 do
+				task.delay(k * 0.06, function()
+					Fx.ring(at + Vector3.new(0, 2 + k * 4, 0), k == 1 and c2 or c, 2, 10 - k * 2, 0.35)
+				end)
+			end
+			Fx.dust(at, 3)
+		end)
+		return
+	elseif slot == "J" then
+		Fx.ring(pos, c, 1, 8, 0.25, look)
+		return
+	end
 	local fx = style.fx
 	local key = fx .. ":" .. tostring(slot)
 
@@ -869,6 +897,76 @@ function Fx.parryArc(model: Model, side: number, color: Color3)
 	local out = (cf * CFrame.new(side * 3, 0, -1)).Position
 	Fx.ring(out, color, 1, 9, 0.4, r.CFrame.RightVector * side)
 	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 2, 10, 0.4)
+end
+
+-- 그림자 메아리 (완전 각성): 흰 그림자가 같은 기술을 한 번 더 그려 낸다
+function Fx.echo(model: Model, styleId: any, slot: any, dur: number)
+	local style = styleOf(styleId)
+	local c2 = style and style.color2 or Color3.new(1, 1, 1)
+	Fx.text((rootPart(model) or { Position = Vector3.zero } :: any).Position + Vector3.new(0, 5.5, 0), "影", c2, 26, 0.8)
+	for k = 0, 5 do
+		task.delay(k * dur / 6, function()
+			if model.Parent then
+				Fx.afterimage(model, k % 2 == 0 and c2 or (style and style.color or c2), 0.4)
+			end
+		end)
+	end
+	Fx.cast(styleId, slot, model, dur)
+end
+
+-- 각성의 기운: 몸에서 빛 조각이 피어오른다 (완전 각성은 둘레에 빛 고리도)
+local auras: { [Model]: { tier: number, parts: { Instance } } } = {}
+function Fx.awakenAura(model: Model, tier: number, color: Color3)
+	local cur = auras[model]
+	if cur and cur.tier == tier then
+		return
+	end
+	if cur then
+		for _, p in ipairs(cur.parts) do
+			p:Destroy()
+		end
+		auras[model] = nil
+	end
+	local r = rootPart(model)
+	if tier <= 0 or not r then
+		return
+	end
+	local parts: { Instance } = {}
+	local att = Instance.new("Attachment")
+	att.Name = "AwakenAura"
+	att.Position = Vector3.new(0, -1, 0)
+	att.Parent = r
+	table.insert(parts, att)
+	local e = Instance.new("ParticleEmitter")
+	e.Rate = tier >= 2 and 22 or 10
+	e.Color = ColorSequence.new(color, tier >= 2 and Color3.new(1, 1, 1) or color)
+	e.LightEmission = 1
+	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, tier >= 2 and 0.5 or 0.35), NumberSequenceKeypoint.new(1, 0) })
+	e.Transparency = NumberSequence.new(0.1, 1)
+	e.Lifetime = NumberRange.new(0.8, 1.4)
+	e.Speed = NumberRange.new(2, 5)
+	e.SpreadAngle = Vector2.new(40, 40)
+	e.EmissionDirection = Enum.NormalId.Top
+	e.Shape = Enum.ParticleEmitterShape.Cylinder
+	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+	e.Parent = att
+	table.insert(parts, e)
+	if tier >= 2 then
+		local ring = piece(Vector3.new(0.15, 7, 7), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.55)
+		table.insert(parts, ring)
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.RenderStepped:Connect(function()
+			local rr = rootPart(model)
+			if not ring.Parent or not rr then
+				conn:Disconnect()
+				return
+			end
+			local t = os.clock() - start
+			ring.CFrame = CFrame.new(rr.Position - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, t * 2, math.rad(90))
+		end)
+	end
+	auras[model] = { tier = tier, parts = parts }
 end
 
 -- 몸을 감싸는 은은한 기운 (철포삼, 취보처럼 오래 가는 기술)
