@@ -870,7 +870,7 @@ local function think(e: Enemy, t: number)
 	if e.kind ~= "boss" and not e.def.duel then
 		local busy = 0
 		for _, o in ipairs(Npc.list) do
-			if o ~= e and o.target == tgt and not o.f.dead and (o.attackingUntil > t or o.kind == "boss") then
+			if o ~= e and o.target == tgt and not o.f.dead and (o.attackingUntil > t or o.kind == "boss") and flatDist(o.f.root.Position, tgt.root.Position) < 20 then
 				busy += 1
 			end
 		end
