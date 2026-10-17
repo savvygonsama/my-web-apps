@@ -138,6 +138,19 @@ local training: string? = nil
 ------------------------------------------------------------------------
 -- 카메라 흔들림
 ------------------------------------------------------------------------
+-- 카메라가 순간 다가섰다 돌아온다 (흘리기·반격의 손맛)
+local fovBase: number? = nil
+local function fovPunch(delta: number, time: number)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	fovBase = fovBase or cam.FieldOfView
+	local base = fovBase :: number
+	cam.FieldOfView = base + delta
+	game:GetService("TweenService"):Create(cam, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = base }):Play()
+end
+
 local shakeAmp = 0
 local function shake(amount: number)
 	shakeAmp = math.max(shakeAmp, amount)
@@ -405,7 +418,9 @@ startMove = function(slot: any, charge: number?)
 					Fx.styleHit(style.id, r.Position:Lerp(root.Position, 0.35) + Vector3.new(0, 1, 0), heavy, look)
 					Fx.sound(heavy and "heavy" or "hit", heavy and 0.9 or 0.6, heavy and 0.6 or 0.85 + math.random() * 0.2)
 					shake(heavy and 0.9 or 0.35)
-					Anim.play(m, (math.random() < 0.5) and "flinch_l" or "flinch_r", 0.3)
+					if m:GetAttribute("Poise") ~= true then
+						Anim.play(m, (math.random() < 0.5) and "flinch_l" or "flinch_r", 0.3)
+					end
 				end
 			end
 		end)
@@ -631,7 +646,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	local k = input.KeyCode
 	if t == Enum.UserInputType.MouseButton1 then
 		attack()
-	elseif t == Enum.UserInputType.MouseButton2 then
+	elseif k == Enum.KeyCode.Z then
 		heavyDown()
 	elseif k == Enum.KeyCode.E then
 		skill("E")
@@ -660,7 +675,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	end
 end)
 UserInputService.InputEnded:Connect(function(input: InputObject)
-	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+	if input.KeyCode == Enum.KeyCode.Z then
 		heavyUp()
 	elseif input.KeyCode == Enum.KeyCode.F then
 		guardUp()
@@ -834,12 +849,13 @@ function handlers.hit(data: any)
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
-			if t then
+			if t and t:GetAttribute("Poise") ~= true then
 				local side = (aRoot and tRoot) and (tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 and "flinch_r" or "flinch_l") or "flinch_l"
-				Anim.play(t, data.heavy and "knockdown" or side, data.heavy and 0.6 or 0.3)
+				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or side)
+				Anim.play(t, pose, data.broken and 0.7 or (data.heavy and 0.5 or 0.3))
 			end
-		elseif data.heavy and t then
-			Anim.play(t, "knockdown", 0.6)
+		elseif data.heavy and t and t:GetAttribute("Poise") ~= true then
+			Anim.play(t, data.broken and "knockdown" or "hit_heavy", data.broken and 0.7 or 0.5)
 		end
 		if data.strike then
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
@@ -888,16 +904,22 @@ function handlers.hit(data: any)
 			deflectAt = os.clock()
 			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
 		end
+		-- 흘린 쪽은 몸을 돌려 바깥으로 쓸어 내고, 친 쪽은 헛힘에 지나쳐 휘청인다
+		local side = (type(data.side) == "number" and data.side < 0) and -1 or 1
 		if t then
-			Anim.play(t, "deflect", 0.35)
+			Anim.play(t, side > 0 and "parry_r" or "parry_l", 0.6, { fadeOut = 0.2 })
+			local ts = Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
+			Fx.parryArc(t, side, ts and ts.color or Color3.fromRGB(190, 235, 255))
+			Fx.limbTrails(t, side > 0 and "parry_r" or "parry_l", 0.5, ts and ts.color or Color3.fromRGB(190, 235, 255), Color3.new(1, 1, 1))
 		end
 		if a then
-			Anim.play(a, "stagger", Config.DEFLECT_STAGGER)
+			Anim.play(a, "parried", Config.DEFLECT_STAGGER + 0.3, { fadeOut = 0.2 })
 		end
 		if mine or hurt then
 			shake(0.7)
 			UI.flash(Color3.fromRGB(170, 220, 255), 0.25)
 			tint(Color3.fromRGB(170, 210, 255), 0.35, 0.18)
+			fovPunch(-8, 0.35)
 		end
 	elseif kind == "clash" then
 		-- 격돌: 주먹과 주먹이 부딪힌다
@@ -969,6 +991,15 @@ end
 
 function handlers.proj(data: any)
 	Fx.projectile(data)
+end
+
+-- 적이 경직을 버텨 낸다 (곧 되받아친다)
+function handlers.poise(m: Model)
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	if r and r:IsA("BasePart") then
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "不動 버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 150, 70), 2, 12, 0.4)
+	end
 end
 
 function handlers.dash(m: Model, kind: any)
@@ -1044,7 +1075,7 @@ function handlers.train(data: any)
 		training = data.kind
 		UI.trainStart(data.kind, data.rings, function(grade: string, idx: number?)
 			Request:FireServer("trainHit", grade, idx)
-		end)
+		end, data.hard == true)
 	else
 		training = nil
 		UI.trainStop()
@@ -1153,7 +1184,7 @@ RunService.RenderStepped:Connect(function()
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
 	elseif style.id == "maehwa" then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
-		stacks = n >= 20 and "🌸 만개 준비! (우클릭)" or string.format("꽃잎 %d / 20", n)
+		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
 	elseif style.id == "byeokryeok" then
 		local n = tonumber(char:GetAttribute("Charge")) or 0
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)

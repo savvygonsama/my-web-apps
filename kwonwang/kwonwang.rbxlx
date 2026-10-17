@@ -51,14 +51,18 @@ Config.CHI_ON_HURT = 0.3 -- 받은 피해 1당
 Config.CHI_ON_DEFLECT = 12
 
 -- 이동과 경공
-Config.WALK_SPEED = 18
-Config.DASH_SPEED = 75
+Config.WALK_SPEED = 22
+Config.DASH_SPEED = 85
 Config.DASH_TIME = 0.18
 Config.DASH_IFRAMES = 0.22
 Config.DASH_CD = 0.55
 Config.DOUBLE_JUMP = 58 -- 공중에서 한 번 더 뛰는 힘
 Config.RESPAWN_TIME = 4
 Config.COMBAT_TAG = 6 -- 싸운 뒤 이 시간 동안은 '전투 중'
+-- 자연 회복: 마지막으로 맞고 이만큼 지나면 1초에 최대 체력의 몇 %씩 (마을·사부 자리 같은 안전 지대에선 더 빨리)
+Config.REGEN_DELAY = 4
+Config.REGEN_RATE = 0.025
+Config.REGEN_SAFE_RATE = 0.08
 
 ------------------------------------------------------------------------
 -- 수련 능력치 4종. 효과는 로그로 완만하게 오른다 (수련 반, 실력 반)
@@ -80,7 +84,7 @@ function Config.maxHp(vit: number): number
 end
 
 function Config.walkSpeed(agi: number): number
-	return Config.WALK_SPEED * (0.9 + 0.1 * Config.statMult(agi))
+	return Config.WALK_SPEED * (0.85 + 0.15 * Config.statMult(agi))
 end
 
 -- 경지: 능력치 합으로 정해진다. 머리 위 칭호와 작은 체력 보너스
@@ -115,6 +119,8 @@ Config.Training = {
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
+-- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
+Config.HARD_TRAIN = { mult = 3, realm = 2, period = 0.9, perfect = 0.045, good = 0.1 }
 
 ------------------------------------------------------------------------
 -- 권법 7종
@@ -122,7 +128,7 @@ Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 --   hit = { t, range(앞으로 거리), radius, dmg, posture, stun, kb(밀어냄), up(띄움), aoe(나를 둘러싼 원) }
 --   lunge = 시작할 때 앞으로 미끄러지는 거리, armor = 맞아도 안 밀림, iframes = 무적 시간
 --   proj = 날아가는 장풍 { speed, life, radius, dmg, posture, stun, kb }
--- combo 4개는 클릭, heavy는 우클릭, skills.E·R·G (G = 오의, 내공 100)
+-- combo 4개는 클릭, heavy는 Z, skills.E·R·G (G = 오의, 내공 100)
 -- 숙련도: E는 처음부터, R은 숙련 3, G는 숙련 5
 ------------------------------------------------------------------------
 type Hit = { t: number, range: number, radius: number, dmg: number, posture: number, stun: number, kb: number, up: number?, aoe: boolean? }
@@ -141,7 +147,7 @@ Config.Styles = {
 		color2 = Color3.fromRGB(220, 245, 255),
 		fx = "water",
 		desc = "물처럼 받아 흘리고 되돌려 친다. 흘리기 판정이 넓고, 흘릴 때마다 기류가 쌓여 반탄장이 강해진다.",
-		gimmick = "기류: 흘릴 때마다 1 (최대 3). 우클릭 반탄장이 기류만큼 강해진다",
+		gimmick = "기류: 흘릴 때마다 1 (최대 3). Z 반탄장이 기류만큼 강해진다",
 		deflect = 0.32,
 		stance = "stance_taeheo",
 		combo = {
@@ -198,7 +204,7 @@ Config.Styles = {
 		color2 = Color3.fromRGB(255, 220, 235),
 		fx = "petal",
 		desc = "꽃잎이 어지럽게 흩날리는 빠른 연격. 연타를 끊기지 않게 이으면 꽃잎이 쌓이고, 다 차면 만개해 터진다.",
-		gimmick = "꽃잎: 1.2초 안에 계속 맞히면 1씩 (최대 20). 20이면 다음 우클릭이 만개 폭발",
+		gimmick = "꽃잎: 1.2초 안에 계속 맞히면 1씩 (최대 20). 20이면 다음 Z 강타가 만개 폭발",
 		deflect = 0.2,
 		speed = 1.15,
 		stance = "stance_maehwa",
@@ -228,8 +234,8 @@ Config.Styles = {
 		color = Color3.fromRGB(70, 230, 200),
 		color2 = Color3.fromRGB(210, 255, 245),
 		fx = "dragon",
-		desc = "하늘의 용이 하늘을 깨뜨리는 장풍. 우클릭을 누르고 있다 놓으면 모은 만큼 큰 장풍이 날아간다. 멀리서 견제하는 거리 싸움.",
-		gimmick = "용기 모으기: 우클릭을 길게 누를수록 장풍이 커진다 (최대 1.5초)",
+		desc = "하늘의 용이 하늘을 깨뜨리는 장풍. Z를 누르고 있다 놓으면 모은 만큼 큰 장풍이 날아간다. 멀리서 견제하는 거리 싸움.",
+		gimmick = "용기 모으기: Z를 길게 누를수록 장풍이 커진다 (최대 1.5초)",
 		deflect = 0.2,
 		charge = 1.5,
 		stance = "stance_cheonryong",
@@ -346,7 +352,7 @@ for i, s in ipairs(Config.Styles) do
 end
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 200, 500, 1000, 2000, 3500, 5000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1021,6 +1027,49 @@ A.deflect = {
 	{ t = 0.4, e = "snap", j = { W = { 0, -40, 0 }, N = { 0, 20, 0 }, RS = { 70, 0, 70 }, RE = { 30, 0, 0 }, LS = { 50, 0, -20 }, LE = { 100, 0, 0 }, R = { 0, -20, 0, 0, -0.6, 0.2 } } },
 	{ t = 1, j = { W = { 0, -10, 0 }, RS = { 55, 0, 25 }, RE = { 70, 0, 0 }, LS = { 55, 0, -10 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
 }
+-- 흘리기 (고급): 맞이하고 → 몸을 돌려 바깥으로 쓸어 흘리고 → 뒷손을 겨눈 채 흘러 돌아온다
+A.parry_r = {
+	{ t = 0, j = { W = { 5, 0, 0 }, N = { 8, 0, 0 }, RS = { 85, 0, 25 }, RE = { 120, 0, 0 }, LS = { 85, 0, -25 }, LE = { 120, 0, 0 }, RK = { -25, 0, 0 }, LK = { -25, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.16, e = "snap", j = {
+		W = { 2, 15, 0 }, N = { 4, -10, 0 }, RS = { 98, 0, -12 }, RE = { 65, 0, 0 }, LS = { 62, 0, -30 }, LE = { 110, 0, 0 },
+		RH = { -6, 0, 8 }, LH = { 16, 0, -6 }, RK = { -28, 0, 0 }, LK = { -30, 0, 0 }, R = { -3, 10, 0, -0.15, -0.6, 0.1 },
+	} },
+	{ t = 0.45, j = {
+		W = { 4, -42, 8 }, N = { 0, 26, 0 }, RS = { 70, 0, 78 }, RE = { 22, 0, 0 }, LS = { 82, 0, -6 }, LE = { 92, 0, 0 },
+		RH = { 10, 0, 20 }, LH = { -14, 0, -10 }, RK = { -36, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, -26, 0, 0.55, -0.78, 0 },
+	} },
+	{ t = 0.72, j = {
+		W = { 3, -26, 4 }, N = { 0, 16, 0 }, RS = { 56, 0, 56 }, RE = { 40, 0, 0 }, LS = { 76, 0, -10 }, LE = { 100, 0, 0 },
+		RH = { 6, 0, 14 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -22, 0, 0 }, R = { 0, -15, 0, 0.3, -0.66, 0 },
+	} },
+	{ t = 1, j = { W = { 3, -5, 0 }, N = { 4, 0, 0 }, RS = { 62, 0, 26 }, RE = { 90, 0, 0 }, LS = { 62, 0, -16 }, LE = { 100, 0, 0 }, RK = { -22, 0, 0 }, LK = { -22, 0, 0 }, R = { 0, 0, 0, 0, -0.45, 0 } } },
+}
+A.parry_l = mirror(A.parry_r)
+-- 흘려진 쪽 (고급): 헛힘이 실려 앞으로 고꾸라질 듯 지나쳐 가며 팔을 허우적댄다
+A.parried = {
+	{ t = 0, e = "snap", j = {
+		W = { 32, 28, 0 }, N = { -12, -20, 0 }, RS = { 112, 0, -30 }, RE = { 5, 0, 0 }, LS = { -30, 0, -50 }, LE = { 30, 0, 0 },
+		RH = { 48, 0, 0 }, RK = { -30, 0, 0 }, LH = { -30, 0, 0 }, LK = { -50, 0, 0 }, R = { -24, 24, -10, -0.5, -0.6, -1.2 },
+	} },
+	{ t = 0.35, j = {
+		W = { 44, 14, 0 }, N = { -20, -10, 0 }, RS = { 60, 0, 45 }, RE = { 30, 0, 0 }, LS = { 40, 0, -72 }, LE = { 20, 0, 0 },
+		RH = { 70, 0, 0 }, RK = { -72, 0, 0 }, LH = { -40, 0, 0 }, LK = { -28, 0, 0 }, R = { -30, 14, -5, -0.4, -0.95, -1.7 },
+	} },
+	{ t = 0.7, j = {
+		W = { 18, 0, 0 }, N = { -5, 0, 0 }, RS = { 30, 0, 30 }, RE = { 40, 0, 0 }, LS = { 30, 0, -30 }, LE = { 40, 0, 0 },
+		RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, LH = { -10, 0, 0 }, LK = { -20, 0, 0 }, R = { -10, 0, 0, 0, -0.6, -0.6 },
+	} },
+	{ t = 1, j = { R = { 0, 0, 0, 0, -0.3, 0 } } },
+}
+-- 큰 한 방을 맞았다: 윗몸이 뒤로 젖혀지며 한 발 물러선다 (넘어지지는 않는다)
+A.hit_heavy = {
+	{ t = 0, e = "snap", j = {
+		W = { -22, 0, 0 }, N = { -25, 0, 0 }, RS = { 30, 0, 40 }, RE = { 20, 0, 0 }, LS = { 30, 0, -40 }, LE = { 20, 0, 0 },
+		RH = { -20, 0, 0 }, RK = { -20, 0, 0 }, LH = { 25, 0, 0 }, LK = { -35, 0, 0 }, R = { 14, 0, 0, 0, -0.4, 0.9 },
+	} },
+	{ t = 0.5, j = { W = { 10, 0, 0 }, N = { 10, 0, 0 }, RS = { 20, 0, 25 }, LS = { 20, 0, -25 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { -4, 0, 0, 0, -0.6, 0.4 } } },
+	{ t = 1, j = { R = { 0, 0, 0, 0, -0.3, 0 } } },
+}
 -- 흘려진 쪽: 헛손질로 크게 휘청
 A.stagger = {
 	{ t = 0, e = "snap", j = { W = { -15, 30, -10 }, N = { 15, -20, 0 }, RS = { 120, 0, -20 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, R = { -15, 25, -10, -0.5, -0.5, -0.8 } } },
@@ -1116,6 +1165,7 @@ Poses.limbs = {
 	drunk_low = { "RightHand" }, drunk_flop = { "RightFoot", "LeftFoot" }, headbutt = {}, fire_breath = {},
 	w_slash = { "RightHand" }, w_slash2 = { "RightHand" }, w_overhead = { "RightHand" }, w_thrust = { "RightHand" }, w_sweep = { "RightHand" }, w_dual = { "RightHand", "LeftHand" },
 	deflect = { "RightHand" },
+	hit_heavy = {}, parry_r = { "RightHand", "LeftHand" }, parry_l = { "LeftHand", "RightHand" }, parried = { "RightHand" },
 	dive_slam = { "RightHand", "LeftHand" }, dive_kick = { "RightFoot" }, backflip = { "RightFoot", "LeftFoot" },
 	side_roll_r = { "RightHand", "LeftFoot" }, side_roll_l = { "LeftHand", "RightFoot" },
 }
@@ -1973,7 +2023,7 @@ end
 ------------------------------------------------------------------------
 local Train = {}
 
-function Train.start(player: Player, info: any)
+function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
@@ -1983,7 +2033,11 @@ function Train.start(player: Player, info: any)
 		toast(player, "싸우는 중에는 수련할 수 없어요")
 		return
 	end
-	st.training = { kind = info.kind, index = info.index, pos = info.pos }
+	if hard and Config.realmOf(Calc.total(p)) < Config.HARD_TRAIN.realm then
+		toast(player, string.format("🔥 강화 수련은 경지 %s부터 할 수 있어요", Config.Realms[Config.HARD_TRAIN.realm].name))
+		return
+	end
+	st.training = { kind = info.kind, index = info.index, pos = info.pos, hard = hard == true }
 	st.ringIdx = 1
 	if info.kind ~= "bamboo" then
 		local char = player.Character
@@ -1993,7 +2047,7 @@ function Train.start(player: Player, info: any)
 		end
 		f.walk = 0
 	end
-	Push:FireClient(player, "train", { kind = info.kind, rings = info.kind == "bamboo" and W.rings or nil })
+	Push:FireClient(player, "train", { kind = info.kind, rings = info.kind == "bamboo" and W.rings or nil, hard = hard == true })
 	Push:FireAllClients("trainPose", f.model, info.kind)
 	pushState(player)
 end
@@ -2051,7 +2105,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Config.realmOf(Calc.total(p))
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1)
+	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	p.stats[info.stat] += amount
@@ -2226,6 +2280,11 @@ for _, info in ipairs(W.train or {}) do
 	info.prompt.Triggered:Connect(function(player: Player)
 		Train.start(player, info)
 	end)
+	if info.hard then
+		info.hard.Triggered:Connect(function(player: Player)
+			Train.start(player, info, true)
+		end)
+	end
 end
 
 ------------------------------------------------------------------------
@@ -2566,12 +2625,33 @@ local function interrupt(f: Fighter)
 	end
 end
 
+-- 안전 지대 (마을, 사부의 자리)
+local function inSafe(pos: Vector3): boolean
+	for _, r in ipairs(Config.Regions) do
+		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
+			return true
+		end
+	end
+	return false
+end
+
 local function knock(f: Fighter, vel: Vector3, stun: number)
 	if f.player then
 		Push:FireClient(f.player, "knock", vel, stun)
 	elseif f.root and f.root.Parent and not f.root.Anchored then
 		f.root.AssemblyLinearVelocity = vel
 	end
+end
+
+-- 흘리기: 친 쪽은 헛힘에 앞으로 지나쳐 옆으로 흘러가고, 흘린 쪽은 반대로 살짝 비켜선다
+local function redirect(tgt: Fighter, att: Fighter): number
+	local right = tgt.root.CFrame.RightVector
+	local rel = att.root.Position - tgt.root.Position
+	local side = right:Dot(rel) >= 0 and 1 or -1
+	local attLook = att.root.CFrame.LookVector
+	knock(att, Vector3.new(attLook.X, 0, attLook.Z) * 18 + Vector3.new(right.X, 0, right.Z) * side * 16, 0)
+	knock(tgt, -Vector3.new(right.X, 0, right.Z) * side * 7, 0)
+	return side
 end
 
 function Combat.stun(f: Fighter, dur: number)
@@ -2693,7 +2773,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		att.stunUntil = math.max(att.stunUntil, t + Config.DEFLECT_STAGGER)
 		interrupt(att)
 		tgt.stacks.flow = math.min(3, tgt.stacks.flow + 1)
-		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true })
+		local side = redirect(tgt, att)
+		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true, side = side })
 		;(tgt :: any).deflectAt = now()
 		local style = Combat.styleOf(tgt)
 		local ch = style and style.skills.E.counterHit
@@ -2727,7 +2808,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			Combat.sync(tgt)
 			Combat.sync(att)
-			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos })
+			local side = redirect(tgt, att)
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, side = side })
 			;(tgt :: any).deflectAt = now()
 			if hooks.onDeflect then
 				hooks.onDeflect(tgt, att)
@@ -2770,10 +2852,38 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	addPosture(tgt, postureDmg * 0.4)
 	local heavy = (hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken
 	if not armored(tgt) then
-		Combat.stun(tgt, hit.stun or 0.3)
-		local dir = flat(tgt.root.Position - att.root.Position)
-		local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
-		knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), hit.stun or 0.3)
+		local stun = hit.stun or 0.3
+		local fa = tgt :: any
+		if tgt.npc then
+			-- 적은 경직이 짧고, 2.5초 안에 너무 오래 묶이면 잠깐 버티며 곧바로 되받아친다 (무한 경직 방지)
+			stun *= 0.6
+			if t - (fa.poiseAt or 0) > 2.5 then
+				fa.poiseAt = t
+				fa.poiseSum = 0
+			end
+			fa.poiseSum = (fa.poiseSum or 0) + stun
+			if fa.poiseSum > 1.2 and t >= (fa.poiseUntil or 0) then
+				fa.poiseSum = 0
+				fa.poiseUntil = t + 1.5
+				fa.retaliate = true
+				tgt.model:SetAttribute("Poise", true)
+				Push:FireAllClients("poise", tgt.model)
+				task.delay(1.5, function()
+					if tgt.model.Parent then
+						tgt.model:SetAttribute("Poise", nil)
+					end
+				end)
+			end
+			if t < (fa.poiseUntil or 0) and not heavy and not wasBroken then
+				stun = 0
+			end
+		end
+		if stun > 0 then
+			Combat.stun(tgt, stun)
+			local dir = flat(tgt.root.Position - att.root.Position)
+			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
+			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
+		end
 	end
 	addChi(att, d * Config.CHI_ON_HIT)
 	addChi(tgt, d * Config.CHI_ON_HURT)
@@ -2979,6 +3089,15 @@ function Combat.tick(dt: number)
 			if f.posture > 0 and t - f.lastHurtAt > Config.POSTURE_REGEN_DELAY and t > f.brokenUntil then
 				f.posture = math.max(0, f.posture - Config.POSTURE_REGEN * dt)
 				changed = true
+			end
+			-- 자연 회복 (맞은 지 오래면 체력이 조금씩 찬다. 적은 싸움을 멈추고 8초 뒤부터)
+			if not f.dead and f.hp < f.maxHp then
+				local delay = f.npc and 8 or Config.REGEN_DELAY
+				if t - f.lastHurtAt > delay and t > f.stunUntil then
+					local rate = f.npc and 0.04 or (inSafe(f.root.Position) and Config.REGEN_SAFE_RATE or Config.REGEN_RATE)
+					f.hp = math.min(f.maxHp, f.hp + f.maxHp * rate * dt)
+					f.model:SetAttribute("Hp", math.floor(f.hp + 0.5))
+				end
 			end
 			if f.player and f.chi < Config.CHI_MAX then
 				f.chi = math.min(Config.CHI_MAX, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1))
@@ -3572,6 +3691,11 @@ local function think(e: Enemy, t: number)
 		return
 	end
 	local pos = f.root.Position
+	-- 버티기에 들어가면 곧바로 되받아친다
+	if (f :: any).retaliate then
+		(f :: any).retaliate = nil
+		e.nextAttack = math.min(e.nextAttack, t)
+	end
 	-- 근처에 사람이 없으면 쉰다
 	local anyone = false
 	for _, player in ipairs(Players:GetPlayers()) do
@@ -4334,7 +4458,11 @@ local function trainingSpots(out: any)
 			sign(s, Enum.NormalId.Front, { { "🎋 경공 수련", Color3.fromRGB(200, 255, 160), 1 } })
 		end
 		local info = Config.Training[spot.kind]
-		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), kind = spot.kind, index = i, pos = at })
+		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배
+		local hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+		hard.KeyboardKeyCode = Enum.KeyCode.Y
+		hard.UIOffset = Vector2.new(0, 70)
+		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- 대나무 경공 고리 (숲 속에 한 바퀴)
 	out.rings = {}
@@ -5198,6 +5326,19 @@ local training: string? = nil
 ------------------------------------------------------------------------
 -- 카메라 흔들림
 ------------------------------------------------------------------------
+-- 카메라가 순간 다가섰다 돌아온다 (흘리기·반격의 손맛)
+local fovBase: number? = nil
+local function fovPunch(delta: number, time: number)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	fovBase = fovBase or cam.FieldOfView
+	local base = fovBase :: number
+	cam.FieldOfView = base + delta
+	game:GetService("TweenService"):Create(cam, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = base }):Play()
+end
+
 local shakeAmp = 0
 local function shake(amount: number)
 	shakeAmp = math.max(shakeAmp, amount)
@@ -5465,7 +5606,9 @@ startMove = function(slot: any, charge: number?)
 					Fx.styleHit(style.id, r.Position:Lerp(root.Position, 0.35) + Vector3.new(0, 1, 0), heavy, look)
 					Fx.sound(heavy and "heavy" or "hit", heavy and 0.9 or 0.6, heavy and 0.6 or 0.85 + math.random() * 0.2)
 					shake(heavy and 0.9 or 0.35)
-					Anim.play(m, (math.random() < 0.5) and "flinch_l" or "flinch_r", 0.3)
+					if m:GetAttribute("Poise") ~= true then
+						Anim.play(m, (math.random() < 0.5) and "flinch_l" or "flinch_r", 0.3)
+					end
 				end
 			end
 		end)
@@ -5691,7 +5834,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	local k = input.KeyCode
 	if t == Enum.UserInputType.MouseButton1 then
 		attack()
-	elseif t == Enum.UserInputType.MouseButton2 then
+	elseif k == Enum.KeyCode.Z then
 		heavyDown()
 	elseif k == Enum.KeyCode.E then
 		skill("E")
@@ -5720,7 +5863,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	end
 end)
 UserInputService.InputEnded:Connect(function(input: InputObject)
-	if input.UserInputType == Enum.UserInputType.MouseButton2 then
+	if input.KeyCode == Enum.KeyCode.Z then
 		heavyUp()
 	elseif input.KeyCode == Enum.KeyCode.F then
 		guardUp()
@@ -5894,12 +6037,13 @@ function handlers.hit(data: any)
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
-			if t then
+			if t and t:GetAttribute("Poise") ~= true then
 				local side = (aRoot and tRoot) and (tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 and "flinch_r" or "flinch_l") or "flinch_l"
-				Anim.play(t, data.heavy and "knockdown" or side, data.heavy and 0.6 or 0.3)
+				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or side)
+				Anim.play(t, pose, data.broken and 0.7 or (data.heavy and 0.5 or 0.3))
 			end
-		elseif data.heavy and t then
-			Anim.play(t, "knockdown", 0.6)
+		elseif data.heavy and t and t:GetAttribute("Poise") ~= true then
+			Anim.play(t, data.broken and "knockdown" or "hit_heavy", data.broken and 0.7 or 0.5)
 		end
 		if data.strike then
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
@@ -5948,16 +6092,22 @@ function handlers.hit(data: any)
 			deflectAt = os.clock()
 			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
 		end
+		-- 흘린 쪽은 몸을 돌려 바깥으로 쓸어 내고, 친 쪽은 헛힘에 지나쳐 휘청인다
+		local side = (type(data.side) == "number" and data.side < 0) and -1 or 1
 		if t then
-			Anim.play(t, "deflect", 0.35)
+			Anim.play(t, side > 0 and "parry_r" or "parry_l", 0.6, { fadeOut = 0.2 })
+			local ts = Config.STYLE_BY_ID[tostring(t:GetAttribute("Style") or "")]
+			Fx.parryArc(t, side, ts and ts.color or Color3.fromRGB(190, 235, 255))
+			Fx.limbTrails(t, side > 0 and "parry_r" or "parry_l", 0.5, ts and ts.color or Color3.fromRGB(190, 235, 255), Color3.new(1, 1, 1))
 		end
 		if a then
-			Anim.play(a, "stagger", Config.DEFLECT_STAGGER)
+			Anim.play(a, "parried", Config.DEFLECT_STAGGER + 0.3, { fadeOut = 0.2 })
 		end
 		if mine or hurt then
 			shake(0.7)
 			UI.flash(Color3.fromRGB(170, 220, 255), 0.25)
 			tint(Color3.fromRGB(170, 210, 255), 0.35, 0.18)
+			fovPunch(-8, 0.35)
 		end
 	elseif kind == "clash" then
 		-- 격돌: 주먹과 주먹이 부딪힌다
@@ -6029,6 +6179,15 @@ end
 
 function handlers.proj(data: any)
 	Fx.projectile(data)
+end
+
+-- 적이 경직을 버텨 낸다 (곧 되받아친다)
+function handlers.poise(m: Model)
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	if r and r:IsA("BasePart") then
+		Fx.text(r.Position + Vector3.new(0, 5, 0), "不動 버팀!", Color3.fromRGB(255, 160, 80), 30, 1.2)
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 150, 70), 2, 12, 0.4)
+	end
 end
 
 function handlers.dash(m: Model, kind: any)
@@ -6104,7 +6263,7 @@ function handlers.train(data: any)
 		training = data.kind
 		UI.trainStart(data.kind, data.rings, function(grade: string, idx: number?)
 			Request:FireServer("trainHit", grade, idx)
-		end)
+		end, data.hard == true)
 	else
 		training = nil
 		UI.trainStop()
@@ -6213,7 +6372,7 @@ RunService.RenderStepped:Connect(function()
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
 	elseif style.id == "maehwa" then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
-		stacks = n >= 20 and "🌸 만개 준비! (우클릭)" or string.format("꽃잎 %d / 20", n)
+		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
 	elseif style.id == "byeokryeok" then
 		local n = tonumber(char:GetAttribute("Charge")) or 0
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)
@@ -6269,6 +6428,9 @@ type Rec = {
 	guardW: number,
 	stanceW: number,
 	sprintW: number,
+	moveW: number,
+	airW: number,
+	breath: number,
 	lastT: number,
 	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
 }
@@ -6419,6 +6581,9 @@ function Anim.watch(model: Model)
 		guardW = 0,
 		stanceW = 0,
 		sprintW = 0,
+		moveW = 0,
+		airW = 0,
+		breath = math.random() * 6,
 		lastT = os.clock(),
 		written = {},
 	}
@@ -6539,6 +6704,52 @@ local function trackPose(tr: Track, t: number, dt: number): ({ [string]: { numbe
 	return sample(tr.keys, math.clamp(p, 0, 1)), w
 end
 
+-- 기본 몸놀림 (사람·적 모두): 가만히 = 가볍게 들썩이는 무인의 호흡, 움직이면 = 걷기·달리기·옆걸음·뒷걸음,
+-- 공중 = 오를 땐 무릎을 당기고 내려올 땐 다리를 편다. 관절마다 { X, Y, Z (도), 위치 } 값을 돌려준다
+local IDLE: { [string]: { number } } = {
+	R = { -2, 0, 0, 0, -0.05, 0 }, W = { 3, 0, 0 }, N = { -3, 0, 0 },
+	RS = { 4, 0, 7 }, LS = { 4, 0, -7 }, RE = { 14, 0, 0 }, LE = { 14, 0, 0 },
+	RH = { 3, 0, 2 }, LH = { 3, 0, -2 }, RK = { -6, 0, 0 }, LK = { -6, 0, 0 },
+}
+local function moveJ(name: string, s: number, c: number, f: number, sd: number, amt: number): { number }
+	local stride = 40 * amt
+	if name == "R" then
+		local lean = -(4 + 8 * amt) * math.max(f, 0) + 6 * math.max(-f, 0)
+		return { lean, s * 6 * amt * f, s * 2.5 * amt - sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
+	elseif name == "W" then
+		return { 3 * amt, -s * 10 * amt * f, 0 }
+	elseif name == "N" then
+		return { -3 * amt, s * 6 * amt * f, sd * 4 }
+	elseif name == "RS" then
+		return { -s * 44 * amt * f, 0, 9 + math.abs(sd) * 8 }
+	elseif name == "LS" then
+		return { s * 44 * amt * f, 0, -9 - math.abs(sd) * 8 }
+	elseif name == "RE" then
+		return { 25 + 40 * amt, 0, 0 }
+	elseif name == "LE" then
+		return { 25 + 40 * amt, 0, 0 }
+	elseif name == "RH" then
+		return { s * stride * f, 0, -s * 18 * sd * amt + 3 }
+	elseif name == "LH" then
+		return { -s * stride * f, 0, s * 18 * sd * amt - 3 }
+	elseif name == "RK" then
+		return { -(8 + 62 * math.max(0, c)) * amt, 0, 0 }
+	elseif name == "LK" then
+		return { -(8 + 62 * math.max(0, -c)) * amt, 0, 0 }
+	end
+	return ZERO3
+end
+local AIR_UP: { [string]: { number } } = {
+	R = { 6, 0, 0, 0, 0.2, 0 }, W = { -4, 0, 0 }, N = { 4, 0, 0 },
+	RS = { 40, 0, 35 }, LS = { 40, 0, -35 }, RE = { 50, 0, 0 }, LE = { 50, 0, 0 },
+	RH = { 60, 0, 6 }, LH = { 22, 0, -6 }, RK = { -85, 0, 0 }, LK = { -40, 0, 0 },
+}
+local AIR_DOWN: { [string]: { number } } = {
+	R = { -6, 0, 0, 0, 0, 0 }, W = { 6, 0, 0 }, N = { -6, 0, 0 },
+	RS = { 20, 0, 50 }, LS = { 20, 0, -50 }, RE = { 30, 0, 0 }, LE = { 30, 0, 0 },
+	RH = { 22, 0, 8 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -18, 0, 0 },
+}
+
 local function step(dt: number)
 	local t = os.clock()
 	for model, rec in pairs(recs) do
@@ -6553,9 +6764,12 @@ local function step(dt: number)
 		local motors = rec.motors
 		local stance = stanceOf(model)
 		local vel = root.AssemblyLinearVelocity
-		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+		local flatVel = Vector3.new(vel.X, 0, vel.Z)
+		local flatSpeed = flatVel.Magnitude
 		local moving = flatSpeed > 2
-		local airborne = math.abs(vel.Y) > 6
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		local inAir = (hum and hum.FloorMaterial == Enum.Material.Air) or math.abs(vel.Y) > 8
+		local airborne = inAir and math.abs(vel.Y) > 3
 		local dead = model:GetAttribute("Dead") == true
 		local guarding = model:GetAttribute("Guard") == true
 
@@ -6581,7 +6795,23 @@ local function step(dt: number)
 			loopPose = trackPose(rec.loop, t, dt)
 		end
 
-		-- 3) 막기 자세와 권법 자세는 부드럽게 들어오고 나간다
+		-- 3) 기본 몸놀림의 무게 (부드럽게 넘어간다)
+		local k = math.min(1, dt * 10)
+		rec.moveW += (((moving and not airborne) and 1 or 0) - rec.moveW) * k
+		rec.airW += ((airborne and 1 or 0) - rec.airW) * math.min(1, dt * 8)
+		local amt = math.clamp(flatSpeed / 16, 0, 1.5)
+		if moving then
+			rec.walk += dt * (5 + flatSpeed * 0.45)
+		end
+		rec.breath += dt * (guarding and 3.2 or 2.3)
+		local s, c = math.sin(rec.walk), math.cos(rec.walk)
+		local local3 = root.CFrame:VectorToObjectSpace(flatVel)
+		local f = moving and math.clamp(-local3.Z / flatSpeed, -1, 1) or 1
+		local sd = moving and math.clamp(local3.X / flatSpeed, -1, 1) or 0
+		local b = math.sin(rec.breath)
+		local still = (1 - rec.moveW) * (1 - rec.airW)
+
+		-- 4) 권법 자세, 막기, 달리기
 		local guardTarget = (guarding and not actPose) and 1 or 0
 		rec.guardW += (guardTarget - rec.guardW) * math.min(1, dt * 18)
 		local stanceTarget = (stance and not dead) and 0.85 or 0
@@ -6590,56 +6820,41 @@ local function step(dt: number)
 		local legsJ = stance and (Poses.stanceLegs[stance] or Poses.stanceLegs.default)
 		local blockJ = filled("block", stance)
 		local blockPose = blockJ and blockJ[1].j
-		-- 달리기: 윗몸을 숙이고 팔을 뒤로 (기술·막기 중엔 빠진다)
 		local sprintTarget = (model:GetAttribute("Sprint") == true and moving and not actPose and not guarding and not dead) and 1 or 0
 		rec.sprintW += (sprintTarget - rec.sprintW) * math.min(1, dt * 10)
 		local sprintJ = Poses.anims.sprint_upper and Poses.anims.sprint_upper[1].j
-
-		-- 4) 적은 기본 걷기 동작이 없어서 직접 걷는다
-		if rec.npc then
-			if moving then
-				rec.walk += dt * (6 + flatSpeed * 0.35)
-			else
-				rec.walk *= 0.9
-			end
-		end
-		local swing = math.sin(rec.walk)
-		local walkAmt = rec.npc and math.clamp(flatSpeed / 14, 0, 1) or 0
+		local airJ = vel.Y > 0 and AIR_UP or AIR_DOWN
 
 		for name, motor in pairs(motors) do
-			local base: CFrame = motor.Transform
-			-- 기본 걷기 동작이 이 관절을 안 건드렸으면 (내가 쓴 그대로면) 처음 자세에서 시작한다
-			if rec.written[name] and base == rec.written[name] then
-				base = CFrame.identity
+			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
+			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
+			if rec.moveW > 0.01 then
+				out = out:Lerp(toCF(name, moveJ(name, s, c, f, sd, amt)), rec.moveW)
 			end
-			if rec.npc then
-				base = CFrame.identity
-				if walkAmt > 0.01 then
-					local v: { number }? = nil
-					if name == "RH" then
-						v = { swing * 38 * walkAmt, 0, 0 }
-					elseif name == "LH" then
-						v = { -swing * 38 * walkAmt, 0, 0 }
-					elseif name == "RK" then
-						v = { -math.max(0, -swing) * 50 * walkAmt - 5, 0, 0 }
-					elseif name == "LK" then
-						v = { -math.max(0, swing) * 50 * walkAmt - 5, 0, 0 }
-					elseif name == "R" then
-						v = { -6 * walkAmt, 0, 0, 0, math.abs(swing) * 0.25 * walkAmt, 0 }
-					end
-					if v then
-						base = toCF(name, v)
-					end
-				end
+			if rec.airW > 0.01 then
+				out = out:Lerp(toCF(name, airJ[name] or (name == "R" and ZERO6 or ZERO3)), rec.airW)
 			end
-			local out = base
-			-- 권법 자세 (윗몸은 늘, 다리는 가만히 서 있을 때만)
+			-- 권법 자세 (윗몸은 늘, 움직일 땐 팔이 조금 풀린다 / 다리는 서 있을 때만)
 			if rec.stanceW > 0.01 and stanceJ then
 				local sv = stanceJ[name]
 				if Poses.UPPER[name] and sv then
-					out = out:Lerp(toCF(name, sv), rec.stanceW)
-				elseif legsJ and legsJ[name] and not moving and not airborne then
-					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9)
+					out = out:Lerp(toCF(name, sv), rec.stanceW * (1 - 0.4 * rec.moveW) * (1 - 0.5 * rec.airW))
+				elseif legsJ and legsJ[name] and still > 0.01 then
+					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9 * still)
+				end
+			end
+			-- 숨: 서 있을 땐 가볍게 들썩인다 (무릎과 어깨가 함께)
+			if still > 0.01 and not actPose then
+				if name == "R" then
+					out = CFrame.new(0, b * 0.07 * still, 0) * out
+				elseif name == "RK" or name == "LK" then
+					out = out * CFrame.Angles(-b * 4 * RAD * still, 0, 0)
+				elseif name == "W" then
+					out = out * CFrame.Angles(b * 1.6 * RAD * still, 0, 0)
+				elseif name == "N" then
+					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
+				elseif name == "RS" or name == "LS" then
+					out = out * CFrame.Angles(b * 2.5 * RAD * still, 0, (name == "RS" and 1 or -1) * b * 1.5 * RAD * still)
 				end
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
@@ -7200,7 +7415,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 end
 
 ------------------------------------------------------------------------
--- 기술 쓰는 순간의 연출 (우클릭·E·R). 오의(G)는 Fx.ult
+-- 기술 쓰는 순간의 연출 (Z 강타·E·R). 오의(G)는 Fx.ult
 ------------------------------------------------------------------------
 local function rootPart(model: Model): BasePart?
 	local r = model:FindFirstChild("HumanoidRootPart")
@@ -7523,6 +7738,32 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	end
 end
 
+-- 흘리기의 빛: 흘린 손이 지나간 반원을 따라 빛이 흐르고, 물결처럼 퍼진다
+function Fx.parryArc(model: Model, side: number, color: Color3)
+	local r = rootPart(model)
+	if not r then
+		return
+	end
+	local cf = r.CFrame * CFrame.new(0, 0.6, 0)
+	local n = 9
+	for i = 0, n - 1 do
+		task.delay(i * 0.018, function()
+			local a0 = math.rad(-35 + i * 15) * side
+			local a1 = math.rad(-35 + (i + 1) * 15) * side
+			local p0 = (cf * CFrame.new(math.sin(a0) * 3.4, i * 0.06, -math.cos(a0) * 3.4)).Position
+			local p1 = (cf * CFrame.new(math.sin(a1) * 3.4, (i + 1) * 0.06, -math.cos(a1) * 3.4)).Position
+			local seg = piece(Vector3.new(0.5, 0.18, (p1 - p0).Magnitude + 0.3), i % 3 == 0 and Color3.new(1, 1, 1) or color, Enum.Material.Neon, nil, 0.05)
+			seg.CFrame = lookAt((p0 + p1) / 2, p1)
+			tween(seg, 0.35, { Size = Vector3.new(0.05, 0.05, seg.Size.Z * 1.3), Transparency = 1 })
+			Debris:AddItem(seg, 0.4)
+		end)
+	end
+	-- 흘려 보낸 쪽으로 퍼지는 물결 고리
+	local out = (cf * CFrame.new(side * 3, 0, -1)).Position
+	Fx.ring(out, color, 1, 9, 0.4, r.CFrame.RightVector * side)
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 2, 10, 0.4)
+end
+
 -- 몸을 감싸는 은은한 기운 (철포삼, 취보처럼 오래 가는 기술)
 function Fx.aura(model: Model, color: Color3, dur: number)
 	local shell = piece(Vector3.new(7, 7, 7), color, Enum.Material.ForceField, Enum.PartType.Ball, 0)
@@ -7776,7 +8017,7 @@ local function buildHud()
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
 	HUD.slots = {}
-	for _, s in ipairs({ { "M1", "클릭" }, { "H", "우클릭" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
+	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
 		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Parent = row }, { corner(8), stroke(C.line, 1) })
 		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 0), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
 		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
@@ -8003,7 +8244,7 @@ local function buildStyles()
 			table.insert(names, m.name)
 		end
 		table.insert(lines, table.concat(names, " → "))
-		table.insert(lines, "<b>우클릭</b>  " .. s.heavy.name)
+		table.insert(lines, "<b>Z 강타</b>  " .. s.heavy.name)
 		local m = state and state.mastery and state.mastery[id]
 		local lv = m and m.lv or 0
 		for _, slot in ipairs({ "E", "R", "G" }) do
@@ -8146,7 +8387,7 @@ local function buildHelp()
 			"<b>🥋 맨손 하나로 강호를 꺾어라</b>",
 			"",
 			"<b>조작</b>",
-			"• 클릭: 연타 (네 번까지 이어진다) · 우클릭: 강한 한 방 (천룡장은 누르고 있다 놓기)",
+			"• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방) (천룡장은 누르고 있다 놓기)",
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
@@ -8231,12 +8472,13 @@ function UI.trainStop()
 end
 
 -- 박자 놀이: getPhase()가 0~1, 1이 '지금!' 순간
-local function rhythm(onGrade: (string) -> ())
+local function rhythm(onGrade: (string) -> (), hard: boolean?)
 	local circle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = C.gold, BackgroundTransparency = 0.2, Parent = trainArea }, { corner(999) })
 	local target = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 70, 0, 70), BackgroundTransparency = 1, Parent = trainArea }, { corner(999), stroke(Color3.new(1, 1, 1), 3) })
 	local _ = target
 	local start = os.clock()
-	local period = 1.4
+	local H = Config.HARD_TRAIN
+	local period = hard and H.period or 1.4
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -8244,16 +8486,17 @@ local function rhythm(onGrade: (string) -> ())
 		local p = ((os.clock() - start) % period) / period
 		-- 고리가 하얀 원에 겹칠 때 (p ≈ 1 또는 0)
 		local off = math.min(p, 1 - p)
-		local grade = off < 0.06 and "perfect" or (off < 0.14 and "good" or "miss")
+		local grade = off < (hard and H.perfect or 0.06) and "perfect" or (off < (hard and H.good or 0.14) and "good" or "miss")
 		onGrade(grade)
 	end
 end
 
-function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?) -> ())
+function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?) -> (), hard: boolean?)
 	UI.trainStop()
 	local info = Config.Training[kind]
 	trainFrame.Visible = true
-	trainTitle.Text = info.icon .. " " .. info.name
+	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
+	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
 	if kind == "bamboo" then
 		-- 다음 고리를 화살표로
@@ -8278,7 +8521,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	end
 	local circle, phase, press = rhythm(function(grade)
 		send(grade)
-	end)
+	end, hard)
 	trainPress = press
 	trainConn = RunService.RenderStepped:Connect(function()
 		local p = phase()

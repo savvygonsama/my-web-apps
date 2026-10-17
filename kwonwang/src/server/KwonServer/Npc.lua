@@ -547,6 +547,11 @@ local function think(e: Enemy, t: number)
 		return
 	end
 	local pos = f.root.Position
+	-- 버티기에 들어가면 곧바로 되받아친다
+	if (f :: any).retaliate then
+		(f :: any).retaliate = nil
+		e.nextAttack = math.min(e.nextAttack, t)
+	end
 	-- 근처에 사람이 없으면 쉰다
 	local anyone = false
 	for _, player in ipairs(Players:GetPlayers()) do

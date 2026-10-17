@@ -627,7 +627,11 @@ local function trainingSpots(out: any)
 			sign(s, Enum.NormalId.Front, { { "🎋 경공 수련", Color3.fromRGB(200, 255, 160), 1 } })
 		end
 		local info = Config.Training[spot.kind]
-		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), kind = spot.kind, index = i, pos = at })
+		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배
+		local hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+		hard.KeyboardKeyCode = Enum.KeyCode.Y
+		hard.UIOffset = Vector2.new(0, 70)
+		table.insert(out.train, { prompt = prompt(target, "수련하기", info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- 대나무 경공 고리 (숲 속에 한 바퀴)
 	out.rings = {}

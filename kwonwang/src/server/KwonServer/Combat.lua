@@ -214,12 +214,33 @@ local function interrupt(f: Fighter)
 	end
 end
 
+-- 안전 지대 (마을, 사부의 자리)
+local function inSafe(pos: Vector3): boolean
+	for _, r in ipairs(Config.Regions) do
+		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
+			return true
+		end
+	end
+	return false
+end
+
 local function knock(f: Fighter, vel: Vector3, stun: number)
 	if f.player then
 		Push:FireClient(f.player, "knock", vel, stun)
 	elseif f.root and f.root.Parent and not f.root.Anchored then
 		f.root.AssemblyLinearVelocity = vel
 	end
+end
+
+-- 흘리기: 친 쪽은 헛힘에 앞으로 지나쳐 옆으로 흘러가고, 흘린 쪽은 반대로 살짝 비켜선다
+local function redirect(tgt: Fighter, att: Fighter): number
+	local right = tgt.root.CFrame.RightVector
+	local rel = att.root.Position - tgt.root.Position
+	local side = right:Dot(rel) >= 0 and 1 or -1
+	local attLook = att.root.CFrame.LookVector
+	knock(att, Vector3.new(attLook.X, 0, attLook.Z) * 18 + Vector3.new(right.X, 0, right.Z) * side * 16, 0)
+	knock(tgt, -Vector3.new(right.X, 0, right.Z) * side * 7, 0)
+	return side
 end
 
 function Combat.stun(f: Fighter, dur: number)
@@ -341,7 +362,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		att.stunUntil = math.max(att.stunUntil, t + Config.DEFLECT_STAGGER)
 		interrupt(att)
 		tgt.stacks.flow = math.min(3, tgt.stacks.flow + 1)
-		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true })
+		local side = redirect(tgt, att)
+		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true, side = side })
 		;(tgt :: any).deflectAt = now()
 		local style = Combat.styleOf(tgt)
 		local ch = style and style.skills.E.counterHit
@@ -375,7 +397,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			Combat.sync(tgt)
 			Combat.sync(att)
-			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos })
+			local side = redirect(tgt, att)
+			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, side = side })
 			;(tgt :: any).deflectAt = now()
 			if hooks.onDeflect then
 				hooks.onDeflect(tgt, att)
@@ -418,10 +441,38 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	addPosture(tgt, postureDmg * 0.4)
 	local heavy = (hit.kb or 0) >= 20 or (hit.stun or 0) >= 0.6 or wasBroken
 	if not armored(tgt) then
-		Combat.stun(tgt, hit.stun or 0.3)
-		local dir = flat(tgt.root.Position - att.root.Position)
-		local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
-		knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), hit.stun or 0.3)
+		local stun = hit.stun or 0.3
+		local fa = tgt :: any
+		if tgt.npc then
+			-- 적은 경직이 짧고, 2.5초 안에 너무 오래 묶이면 잠깐 버티며 곧바로 되받아친다 (무한 경직 방지)
+			stun *= 0.6
+			if t - (fa.poiseAt or 0) > 2.5 then
+				fa.poiseAt = t
+				fa.poiseSum = 0
+			end
+			fa.poiseSum = (fa.poiseSum or 0) + stun
+			if fa.poiseSum > 1.2 and t >= (fa.poiseUntil or 0) then
+				fa.poiseSum = 0
+				fa.poiseUntil = t + 1.5
+				fa.retaliate = true
+				tgt.model:SetAttribute("Poise", true)
+				Push:FireAllClients("poise", tgt.model)
+				task.delay(1.5, function()
+					if tgt.model.Parent then
+						tgt.model:SetAttribute("Poise", nil)
+					end
+				end)
+			end
+			if t < (fa.poiseUntil or 0) and not heavy and not wasBroken then
+				stun = 0
+			end
+		end
+		if stun > 0 then
+			Combat.stun(tgt, stun)
+			local dir = flat(tgt.root.Position - att.root.Position)
+			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
+			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
+		end
 	end
 	addChi(att, d * Config.CHI_ON_HIT)
 	addChi(tgt, d * Config.CHI_ON_HURT)
@@ -627,6 +678,15 @@ function Combat.tick(dt: number)
 			if f.posture > 0 and t - f.lastHurtAt > Config.POSTURE_REGEN_DELAY and t > f.brokenUntil then
 				f.posture = math.max(0, f.posture - Config.POSTURE_REGEN * dt)
 				changed = true
+			end
+			-- 자연 회복 (맞은 지 오래면 체력이 조금씩 찬다. 적은 싸움을 멈추고 8초 뒤부터)
+			if not f.dead and f.hp < f.maxHp then
+				local delay = f.npc and 8 or Config.REGEN_DELAY
+				if t - f.lastHurtAt > delay and t > f.stunUntil then
+					local rate = f.npc and 0.04 or (inSafe(f.root.Position) and Config.REGEN_SAFE_RATE or Config.REGEN_RATE)
+					f.hp = math.min(f.maxHp, f.hp + f.maxHp * rate * dt)
+					f.model:SetAttribute("Hp", math.floor(f.hp + 0.5))
+				end
 			end
 			if f.player and f.chi < Config.CHI_MAX then
 				f.chi = math.min(Config.CHI_MAX, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1))

@@ -31,14 +31,18 @@ Config.CHI_ON_HURT = 0.3 -- 받은 피해 1당
 Config.CHI_ON_DEFLECT = 12
 
 -- 이동과 경공
-Config.WALK_SPEED = 18
-Config.DASH_SPEED = 75
+Config.WALK_SPEED = 22
+Config.DASH_SPEED = 85
 Config.DASH_TIME = 0.18
 Config.DASH_IFRAMES = 0.22
 Config.DASH_CD = 0.55
 Config.DOUBLE_JUMP = 58 -- 공중에서 한 번 더 뛰는 힘
 Config.RESPAWN_TIME = 4
 Config.COMBAT_TAG = 6 -- 싸운 뒤 이 시간 동안은 '전투 중'
+-- 자연 회복: 마지막으로 맞고 이만큼 지나면 1초에 최대 체력의 몇 %씩 (마을·사부 자리 같은 안전 지대에선 더 빨리)
+Config.REGEN_DELAY = 4
+Config.REGEN_RATE = 0.025
+Config.REGEN_SAFE_RATE = 0.08
 
 ------------------------------------------------------------------------
 -- 수련 능력치 4종. 효과는 로그로 완만하게 오른다 (수련 반, 실력 반)
@@ -60,7 +64,7 @@ function Config.maxHp(vit: number): number
 end
 
 function Config.walkSpeed(agi: number): number
-	return Config.WALK_SPEED * (0.9 + 0.1 * Config.statMult(agi))
+	return Config.WALK_SPEED * (0.85 + 0.15 * Config.statMult(agi))
 end
 
 -- 경지: 능력치 합으로 정해진다. 머리 위 칭호와 작은 체력 보너스
@@ -95,6 +99,8 @@ Config.Training = {
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
+-- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
+Config.HARD_TRAIN = { mult = 3, realm = 2, period = 0.9, perfect = 0.045, good = 0.1 }
 
 ------------------------------------------------------------------------
 -- 권법 7종
@@ -102,7 +108,7 @@ Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 --   hit = { t, range(앞으로 거리), radius, dmg, posture, stun, kb(밀어냄), up(띄움), aoe(나를 둘러싼 원) }
 --   lunge = 시작할 때 앞으로 미끄러지는 거리, armor = 맞아도 안 밀림, iframes = 무적 시간
 --   proj = 날아가는 장풍 { speed, life, radius, dmg, posture, stun, kb }
--- combo 4개는 클릭, heavy는 우클릭, skills.E·R·G (G = 오의, 내공 100)
+-- combo 4개는 클릭, heavy는 Z, skills.E·R·G (G = 오의, 내공 100)
 -- 숙련도: E는 처음부터, R은 숙련 3, G는 숙련 5
 ------------------------------------------------------------------------
 type Hit = { t: number, range: number, radius: number, dmg: number, posture: number, stun: number, kb: number, up: number?, aoe: boolean? }
@@ -121,7 +127,7 @@ Config.Styles = {
 		color2 = Color3.fromRGB(220, 245, 255),
 		fx = "water",
 		desc = "물처럼 받아 흘리고 되돌려 친다. 흘리기 판정이 넓고, 흘릴 때마다 기류가 쌓여 반탄장이 강해진다.",
-		gimmick = "기류: 흘릴 때마다 1 (최대 3). 우클릭 반탄장이 기류만큼 강해진다",
+		gimmick = "기류: 흘릴 때마다 1 (최대 3). Z 반탄장이 기류만큼 강해진다",
 		deflect = 0.32,
 		stance = "stance_taeheo",
 		combo = {
@@ -178,7 +184,7 @@ Config.Styles = {
 		color2 = Color3.fromRGB(255, 220, 235),
 		fx = "petal",
 		desc = "꽃잎이 어지럽게 흩날리는 빠른 연격. 연타를 끊기지 않게 이으면 꽃잎이 쌓이고, 다 차면 만개해 터진다.",
-		gimmick = "꽃잎: 1.2초 안에 계속 맞히면 1씩 (최대 20). 20이면 다음 우클릭이 만개 폭발",
+		gimmick = "꽃잎: 1.2초 안에 계속 맞히면 1씩 (최대 20). 20이면 다음 Z 강타가 만개 폭발",
 		deflect = 0.2,
 		speed = 1.15,
 		stance = "stance_maehwa",
@@ -208,8 +214,8 @@ Config.Styles = {
 		color = Color3.fromRGB(70, 230, 200),
 		color2 = Color3.fromRGB(210, 255, 245),
 		fx = "dragon",
-		desc = "하늘의 용이 하늘을 깨뜨리는 장풍. 우클릭을 누르고 있다 놓으면 모은 만큼 큰 장풍이 날아간다. 멀리서 견제하는 거리 싸움.",
-		gimmick = "용기 모으기: 우클릭을 길게 누를수록 장풍이 커진다 (최대 1.5초)",
+		desc = "하늘의 용이 하늘을 깨뜨리는 장풍. Z를 누르고 있다 놓으면 모은 만큼 큰 장풍이 날아간다. 멀리서 견제하는 거리 싸움.",
+		gimmick = "용기 모으기: Z를 길게 누를수록 장풍이 커진다 (최대 1.5초)",
 		deflect = 0.2,
 		charge = 1.5,
 		stance = "stance_cheonryong",
@@ -326,7 +332,7 @@ for i, s in ipairs(Config.Styles) do
 end
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 200, 500, 1000, 2000, 3500, 5000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10

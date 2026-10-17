@@ -196,7 +196,7 @@ local function buildHud()
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
 	HUD.slots = {}
-	for _, s in ipairs({ { "M1", "클릭" }, { "H", "우클릭" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
+	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
 		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Parent = row }, { corner(8), stroke(C.line, 1) })
 		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 0), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
 		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
@@ -423,7 +423,7 @@ local function buildStyles()
 			table.insert(names, m.name)
 		end
 		table.insert(lines, table.concat(names, " → "))
-		table.insert(lines, "<b>우클릭</b>  " .. s.heavy.name)
+		table.insert(lines, "<b>Z 강타</b>  " .. s.heavy.name)
 		local m = state and state.mastery and state.mastery[id]
 		local lv = m and m.lv or 0
 		for _, slot in ipairs({ "E", "R", "G" }) do
@@ -566,7 +566,7 @@ local function buildHelp()
 			"<b>🥋 맨손 하나로 강호를 꺾어라</b>",
 			"",
 			"<b>조작</b>",
-			"• 클릭: 연타 (네 번까지 이어진다) · 우클릭: 강한 한 방 (천룡장은 누르고 있다 놓기)",
+			"• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방) (천룡장은 누르고 있다 놓기)",
 			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
 			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
 			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
@@ -651,12 +651,13 @@ function UI.trainStop()
 end
 
 -- 박자 놀이: getPhase()가 0~1, 1이 '지금!' 순간
-local function rhythm(onGrade: (string) -> ())
+local function rhythm(onGrade: (string) -> (), hard: boolean?)
 	local circle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = C.gold, BackgroundTransparency = 0.2, Parent = trainArea }, { corner(999) })
 	local target = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 70, 0, 70), BackgroundTransparency = 1, Parent = trainArea }, { corner(999), stroke(Color3.new(1, 1, 1), 3) })
 	local _ = target
 	local start = os.clock()
-	local period = 1.4
+	local H = Config.HARD_TRAIN
+	local period = hard and H.period or 1.4
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -664,16 +665,17 @@ local function rhythm(onGrade: (string) -> ())
 		local p = ((os.clock() - start) % period) / period
 		-- 고리가 하얀 원에 겹칠 때 (p ≈ 1 또는 0)
 		local off = math.min(p, 1 - p)
-		local grade = off < 0.06 and "perfect" or (off < 0.14 and "good" or "miss")
+		local grade = off < (hard and H.perfect or 0.06) and "perfect" or (off < (hard and H.good or 0.14) and "good" or "miss")
 		onGrade(grade)
 	end
 end
 
-function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?) -> ())
+function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?) -> (), hard: boolean?)
 	UI.trainStop()
 	local info = Config.Training[kind]
 	trainFrame.Visible = true
-	trainTitle.Text = info.icon .. " " .. info.name
+	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
+	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
 	if kind == "bamboo" then
 		-- 다음 고리를 화살표로
@@ -698,7 +700,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	end
 	local circle, phase, press = rhythm(function(grade)
 		send(grade)
-	end)
+	end, hard)
 	trainPress = press
 	trainConn = RunService.RenderStepped:Connect(function()
 		local p = phase()

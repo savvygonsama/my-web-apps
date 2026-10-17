@@ -32,6 +32,9 @@ type Rec = {
 	guardW: number,
 	stanceW: number,
 	sprintW: number,
+	moveW: number,
+	airW: number,
+	breath: number,
 	lastT: number,
 	written: { [string]: CFrame }, -- 지난번에 내가 쓴 값 (기본 동작이 안 건드린 관절을 알아보려고)
 }
@@ -182,6 +185,9 @@ function Anim.watch(model: Model)
 		guardW = 0,
 		stanceW = 0,
 		sprintW = 0,
+		moveW = 0,
+		airW = 0,
+		breath = math.random() * 6,
 		lastT = os.clock(),
 		written = {},
 	}
@@ -302,6 +308,52 @@ local function trackPose(tr: Track, t: number, dt: number): ({ [string]: { numbe
 	return sample(tr.keys, math.clamp(p, 0, 1)), w
 end
 
+-- 기본 몸놀림 (사람·적 모두): 가만히 = 가볍게 들썩이는 무인의 호흡, 움직이면 = 걷기·달리기·옆걸음·뒷걸음,
+-- 공중 = 오를 땐 무릎을 당기고 내려올 땐 다리를 편다. 관절마다 { X, Y, Z (도), 위치 } 값을 돌려준다
+local IDLE: { [string]: { number } } = {
+	R = { -2, 0, 0, 0, -0.05, 0 }, W = { 3, 0, 0 }, N = { -3, 0, 0 },
+	RS = { 4, 0, 7 }, LS = { 4, 0, -7 }, RE = { 14, 0, 0 }, LE = { 14, 0, 0 },
+	RH = { 3, 0, 2 }, LH = { 3, 0, -2 }, RK = { -6, 0, 0 }, LK = { -6, 0, 0 },
+}
+local function moveJ(name: string, s: number, c: number, f: number, sd: number, amt: number): { number }
+	local stride = 40 * amt
+	if name == "R" then
+		local lean = -(4 + 8 * amt) * math.max(f, 0) + 6 * math.max(-f, 0)
+		return { lean, s * 6 * amt * f, s * 2.5 * amt - sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
+	elseif name == "W" then
+		return { 3 * amt, -s * 10 * amt * f, 0 }
+	elseif name == "N" then
+		return { -3 * amt, s * 6 * amt * f, sd * 4 }
+	elseif name == "RS" then
+		return { -s * 44 * amt * f, 0, 9 + math.abs(sd) * 8 }
+	elseif name == "LS" then
+		return { s * 44 * amt * f, 0, -9 - math.abs(sd) * 8 }
+	elseif name == "RE" then
+		return { 25 + 40 * amt, 0, 0 }
+	elseif name == "LE" then
+		return { 25 + 40 * amt, 0, 0 }
+	elseif name == "RH" then
+		return { s * stride * f, 0, -s * 18 * sd * amt + 3 }
+	elseif name == "LH" then
+		return { -s * stride * f, 0, s * 18 * sd * amt - 3 }
+	elseif name == "RK" then
+		return { -(8 + 62 * math.max(0, c)) * amt, 0, 0 }
+	elseif name == "LK" then
+		return { -(8 + 62 * math.max(0, -c)) * amt, 0, 0 }
+	end
+	return ZERO3
+end
+local AIR_UP: { [string]: { number } } = {
+	R = { 6, 0, 0, 0, 0.2, 0 }, W = { -4, 0, 0 }, N = { 4, 0, 0 },
+	RS = { 40, 0, 35 }, LS = { 40, 0, -35 }, RE = { 50, 0, 0 }, LE = { 50, 0, 0 },
+	RH = { 60, 0, 6 }, LH = { 22, 0, -6 }, RK = { -85, 0, 0 }, LK = { -40, 0, 0 },
+}
+local AIR_DOWN: { [string]: { number } } = {
+	R = { -6, 0, 0, 0, 0, 0 }, W = { 6, 0, 0 }, N = { -6, 0, 0 },
+	RS = { 20, 0, 50 }, LS = { 20, 0, -50 }, RE = { 30, 0, 0 }, LE = { 30, 0, 0 },
+	RH = { 22, 0, 8 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -18, 0, 0 },
+}
+
 local function step(dt: number)
 	local t = os.clock()
 	for model, rec in pairs(recs) do
@@ -316,9 +368,12 @@ local function step(dt: number)
 		local motors = rec.motors
 		local stance = stanceOf(model)
 		local vel = root.AssemblyLinearVelocity
-		local flatSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+		local flatVel = Vector3.new(vel.X, 0, vel.Z)
+		local flatSpeed = flatVel.Magnitude
 		local moving = flatSpeed > 2
-		local airborne = math.abs(vel.Y) > 6
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		local inAir = (hum and hum.FloorMaterial == Enum.Material.Air) or math.abs(vel.Y) > 8
+		local airborne = inAir and math.abs(vel.Y) > 3
 		local dead = model:GetAttribute("Dead") == true
 		local guarding = model:GetAttribute("Guard") == true
 
@@ -344,7 +399,23 @@ local function step(dt: number)
 			loopPose = trackPose(rec.loop, t, dt)
 		end
 
-		-- 3) 막기 자세와 권법 자세는 부드럽게 들어오고 나간다
+		-- 3) 기본 몸놀림의 무게 (부드럽게 넘어간다)
+		local k = math.min(1, dt * 10)
+		rec.moveW += (((moving and not airborne) and 1 or 0) - rec.moveW) * k
+		rec.airW += ((airborne and 1 or 0) - rec.airW) * math.min(1, dt * 8)
+		local amt = math.clamp(flatSpeed / 16, 0, 1.5)
+		if moving then
+			rec.walk += dt * (5 + flatSpeed * 0.45)
+		end
+		rec.breath += dt * (guarding and 3.2 or 2.3)
+		local s, c = math.sin(rec.walk), math.cos(rec.walk)
+		local local3 = root.CFrame:VectorToObjectSpace(flatVel)
+		local f = moving and math.clamp(-local3.Z / flatSpeed, -1, 1) or 1
+		local sd = moving and math.clamp(local3.X / flatSpeed, -1, 1) or 0
+		local b = math.sin(rec.breath)
+		local still = (1 - rec.moveW) * (1 - rec.airW)
+
+		-- 4) 권법 자세, 막기, 달리기
 		local guardTarget = (guarding and not actPose) and 1 or 0
 		rec.guardW += (guardTarget - rec.guardW) * math.min(1, dt * 18)
 		local stanceTarget = (stance and not dead) and 0.85 or 0
@@ -353,56 +424,41 @@ local function step(dt: number)
 		local legsJ = stance and (Poses.stanceLegs[stance] or Poses.stanceLegs.default)
 		local blockJ = filled("block", stance)
 		local blockPose = blockJ and blockJ[1].j
-		-- 달리기: 윗몸을 숙이고 팔을 뒤로 (기술·막기 중엔 빠진다)
 		local sprintTarget = (model:GetAttribute("Sprint") == true and moving and not actPose and not guarding and not dead) and 1 or 0
 		rec.sprintW += (sprintTarget - rec.sprintW) * math.min(1, dt * 10)
 		local sprintJ = Poses.anims.sprint_upper and Poses.anims.sprint_upper[1].j
-
-		-- 4) 적은 기본 걷기 동작이 없어서 직접 걷는다
-		if rec.npc then
-			if moving then
-				rec.walk += dt * (6 + flatSpeed * 0.35)
-			else
-				rec.walk *= 0.9
-			end
-		end
-		local swing = math.sin(rec.walk)
-		local walkAmt = rec.npc and math.clamp(flatSpeed / 14, 0, 1) or 0
+		local airJ = vel.Y > 0 and AIR_UP or AIR_DOWN
 
 		for name, motor in pairs(motors) do
-			local base: CFrame = motor.Transform
-			-- 기본 걷기 동작이 이 관절을 안 건드렸으면 (내가 쓴 그대로면) 처음 자세에서 시작한다
-			if rec.written[name] and base == rec.written[name] then
-				base = CFrame.identity
+			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
+			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
+			if rec.moveW > 0.01 then
+				out = out:Lerp(toCF(name, moveJ(name, s, c, f, sd, amt)), rec.moveW)
 			end
-			if rec.npc then
-				base = CFrame.identity
-				if walkAmt > 0.01 then
-					local v: { number }? = nil
-					if name == "RH" then
-						v = { swing * 38 * walkAmt, 0, 0 }
-					elseif name == "LH" then
-						v = { -swing * 38 * walkAmt, 0, 0 }
-					elseif name == "RK" then
-						v = { -math.max(0, -swing) * 50 * walkAmt - 5, 0, 0 }
-					elseif name == "LK" then
-						v = { -math.max(0, swing) * 50 * walkAmt - 5, 0, 0 }
-					elseif name == "R" then
-						v = { -6 * walkAmt, 0, 0, 0, math.abs(swing) * 0.25 * walkAmt, 0 }
-					end
-					if v then
-						base = toCF(name, v)
-					end
-				end
+			if rec.airW > 0.01 then
+				out = out:Lerp(toCF(name, airJ[name] or (name == "R" and ZERO6 or ZERO3)), rec.airW)
 			end
-			local out = base
-			-- 권법 자세 (윗몸은 늘, 다리는 가만히 서 있을 때만)
+			-- 권법 자세 (윗몸은 늘, 움직일 땐 팔이 조금 풀린다 / 다리는 서 있을 때만)
 			if rec.stanceW > 0.01 and stanceJ then
 				local sv = stanceJ[name]
 				if Poses.UPPER[name] and sv then
-					out = out:Lerp(toCF(name, sv), rec.stanceW)
-				elseif legsJ and legsJ[name] and not moving and not airborne then
-					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9)
+					out = out:Lerp(toCF(name, sv), rec.stanceW * (1 - 0.4 * rec.moveW) * (1 - 0.5 * rec.airW))
+				elseif legsJ and legsJ[name] and still > 0.01 then
+					out = out:Lerp(toCF(name, legsJ[name]), rec.stanceW * 0.9 * still)
+				end
+			end
+			-- 숨: 서 있을 땐 가볍게 들썩인다 (무릎과 어깨가 함께)
+			if still > 0.01 and not actPose then
+				if name == "R" then
+					out = CFrame.new(0, b * 0.07 * still, 0) * out
+				elseif name == "RK" or name == "LK" then
+					out = out * CFrame.Angles(-b * 4 * RAD * still, 0, 0)
+				elseif name == "W" then
+					out = out * CFrame.Angles(b * 1.6 * RAD * still, 0, 0)
+				elseif name == "N" then
+					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
+				elseif name == "RS" or name == "LS" then
+					out = out * CFrame.Angles(b * 2.5 * RAD * still, 0, (name == "RS" and 1 or -1) * b * 1.5 * RAD * still)
 				end
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then

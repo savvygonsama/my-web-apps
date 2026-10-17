@@ -822,7 +822,7 @@ end
 ------------------------------------------------------------------------
 local Train = {}
 
-function Train.start(player: Player, info: any)
+function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
@@ -832,7 +832,11 @@ function Train.start(player: Player, info: any)
 		toast(player, "싸우는 중에는 수련할 수 없어요")
 		return
 	end
-	st.training = { kind = info.kind, index = info.index, pos = info.pos }
+	if hard and Config.realmOf(Calc.total(p)) < Config.HARD_TRAIN.realm then
+		toast(player, string.format("🔥 강화 수련은 경지 %s부터 할 수 있어요", Config.Realms[Config.HARD_TRAIN.realm].name))
+		return
+	end
+	st.training = { kind = info.kind, index = info.index, pos = info.pos, hard = hard == true }
 	st.ringIdx = 1
 	if info.kind ~= "bamboo" then
 		local char = player.Character
@@ -842,7 +846,7 @@ function Train.start(player: Player, info: any)
 		end
 		f.walk = 0
 	end
-	Push:FireClient(player, "train", { kind = info.kind, rings = info.kind == "bamboo" and W.rings or nil })
+	Push:FireClient(player, "train", { kind = info.kind, rings = info.kind == "bamboo" and W.rings or nil, hard = hard == true })
 	Push:FireAllClients("trainPose", f.model, info.kind)
 	pushState(player)
 end
@@ -900,7 +904,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Config.realmOf(Calc.total(p))
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1)
+	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	p.stats[info.stat] += amount
@@ -1075,6 +1079,11 @@ for _, info in ipairs(W.train or {}) do
 	info.prompt.Triggered:Connect(function(player: Player)
 		Train.start(player, info)
 	end)
+	if info.hard then
+		info.hard.Triggered:Connect(function(player: Player)
+			Train.start(player, info, true)
+		end)
+	end
 end
 
 ------------------------------------------------------------------------

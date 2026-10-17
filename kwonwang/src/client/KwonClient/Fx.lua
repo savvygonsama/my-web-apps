@@ -522,7 +522,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 end
 
 ------------------------------------------------------------------------
--- 기술 쓰는 순간의 연출 (우클릭·E·R). 오의(G)는 Fx.ult
+-- 기술 쓰는 순간의 연출 (Z 강타·E·R). 오의(G)는 Fx.ult
 ------------------------------------------------------------------------
 local function rootPart(model: Model): BasePart?
 	local r = model:FindFirstChild("HumanoidRootPart")
@@ -843,6 +843,32 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 			end)
 		end
 	end
+end
+
+-- 흘리기의 빛: 흘린 손이 지나간 반원을 따라 빛이 흐르고, 물결처럼 퍼진다
+function Fx.parryArc(model: Model, side: number, color: Color3)
+	local r = rootPart(model)
+	if not r then
+		return
+	end
+	local cf = r.CFrame * CFrame.new(0, 0.6, 0)
+	local n = 9
+	for i = 0, n - 1 do
+		task.delay(i * 0.018, function()
+			local a0 = math.rad(-35 + i * 15) * side
+			local a1 = math.rad(-35 + (i + 1) * 15) * side
+			local p0 = (cf * CFrame.new(math.sin(a0) * 3.4, i * 0.06, -math.cos(a0) * 3.4)).Position
+			local p1 = (cf * CFrame.new(math.sin(a1) * 3.4, (i + 1) * 0.06, -math.cos(a1) * 3.4)).Position
+			local seg = piece(Vector3.new(0.5, 0.18, (p1 - p0).Magnitude + 0.3), i % 3 == 0 and Color3.new(1, 1, 1) or color, Enum.Material.Neon, nil, 0.05)
+			seg.CFrame = lookAt((p0 + p1) / 2, p1)
+			tween(seg, 0.35, { Size = Vector3.new(0.05, 0.05, seg.Size.Z * 1.3), Transparency = 1 })
+			Debris:AddItem(seg, 0.4)
+		end)
+	end
+	-- 흘려 보낸 쪽으로 퍼지는 물결 고리
+	local out = (cf * CFrame.new(side * 3, 0, -1)).Position
+	Fx.ring(out, color, 1, 9, 0.4, r.CFrame.RightVector * side)
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 2, 10, 0.4)
 end
 
 -- 몸을 감싸는 은은한 기운 (철포삼, 취보처럼 오래 가는 기술)
