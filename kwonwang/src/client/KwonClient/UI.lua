@@ -313,10 +313,16 @@ function UI.enemyTag(model: Model)
 	end
 	refreshPower()
 	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
+	-- 내 전투력이 바뀌면 다시 견준다 (적이 사라지면 그만)
 	task.spawn(function()
-		while model.Parent do
+		while true do
 			task.wait(2)
-			refreshPower()
+			if not model.Parent or not bb.Parent then
+				break
+			end
+			if not pcall(refreshPower) then
+				break
+			end
 		end
 	end)
 	local function refresh()
