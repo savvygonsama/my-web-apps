@@ -23,6 +23,7 @@ type Enemy = {
 	engaged: { [Player]: boolean },
 	level: number,
 	attackingUntil: number,
+	nextPattern: number?,
 }
 
 Npc.list = {} :: { Enemy }
@@ -248,6 +249,7 @@ local function buildRig(def: any, label: string, isBoss: boolean): Model
 	model:SetAttribute("NPC", true)
 	model:SetAttribute("Boss", isBoss)
 	model:SetAttribute("Label", label)
+	model:SetAttribute("Scale", def.scale or 1)
 	model:SetAttribute("Weapon", def.weapon)
 	return model
 end
@@ -670,7 +672,7 @@ function Npc.onDeath(f: any)
 				f.model:Destroy()
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
-			if e.region == "simma" or e.region == "trial" then
+			if e.region == "simma" or e.region == "trial" or e.region == "summon" then
 				return -- 심마는 다시 나타나지 않는다
 			end
 			task.delay(wait, function()
@@ -762,8 +764,15 @@ local function attack(e: Enemy, move: any)
 				return
 			end
 			f.lastSwingAt = os.clock()
-			for _, victim in ipairs(Combat.query(f, h)) do
-				Combat.applyHit(f, victim, h, { move = move, act = act, unblockable = move.unblockable, slotKey = i })
+			-- 큰 보스는 팔이 길다
+			local hh = h
+			if e.def.reach then
+				hh = table.clone(h)
+				hh.range *= e.def.reach
+				hh.radius *= e.def.reach
+			end
+			for _, victim in ipairs(Combat.query(f, hh)) do
+				Combat.applyHit(f, victim, hh, { move = move, act = act, unblockable = move.unblockable, slotKey = i })
 			end
 		end)
 	end
@@ -773,6 +782,173 @@ local function attack(e: Enemy, move: any)
 	end
 	e.nextAttack = os.clock() + act.dur + recover
 	e.attackingUntil = os.clock() + act.dur + 0.25
+end
+
+------------------------------------------------------------------------
+-- 보스 패턴: 바닥에 붉은 표시가 먼저 뜨고, 잠시 뒤 터진다 (대시로 피하거나 표시 밖으로)
+--   quake  보스 둘레가 울린다            leap   표적 자리로 뛰어올라 내려찍는다
+--   charge 표적 쪽으로 한 줄 돌진         rain   표적 둘레 여러 곳에 벼락·얼음·피
+--   donut  보스에서 떨어진 고리가 터진다 (보스 품으로 파고들면 안전)
+--   summon 부하를 부른다
+------------------------------------------------------------------------
+local BOSS_RED = Color3.fromRGB(255, 60, 40)
+local function playersNear(f: any, center: Vector3, r0: number, r1: number): { any }
+	local out = {}
+	for _, o in pairs(Combat.fighters) do
+		if Combat.hostile(f, o) and not o.dead then
+			local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
+			if d >= r0 and d <= r1 then
+				table.insert(out, o)
+			end
+		end
+	end
+	return out
+end
+
+local function bossHit(e: Enemy, victims: { any }, h: any, name: string)
+	for _, o in ipairs(victims) do
+		Combat.applyHit(e.f, o, h, { move = { name = name }, unblockable = true })
+	end
+end
+
+local function telegraph(at: Vector3, radius: number, time: number, color: Color3?)
+	Push:FireAllClients("skillfx", { kind = "telegraph", at = at, radius = radius, time = time, color = color or BOSS_RED })
+end
+
+local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
+	local f = e.f
+	local sp = 1 + 0.15 * (phase - 1) -- 단계가 오를수록 빨라진다
+	local warn = (pat.warn or 1.0) / sp
+	local h = pat.hit
+	local kind = pat.kind
+	-- 몸짓 (멈칫하며 기를 모은다)
+	local act = Combat.begin(f, { id = "bp_" .. kind, name = pat.name, pose = pat.pose or "w_overhead", dur = warn + 0.5, hits = {} }, "pat", e.seq + 1, { enemy = true })
+	e.seq += 1
+	f.hum:MoveTo(f.root.Position)
+	faceTo(e, tgt.root.Position)
+	Push:FireAllClients("bossCall", { m = f.model, name = pat.name })
+	local function later(sec: number, fn: () -> ())
+		task.delay(sec, function()
+			if not f.dead and f.root.Parent then
+				fn()
+			end
+		end)
+	end
+	if kind == "quake" then
+		local at = f.root.Position
+		telegraph(at, pat.radius, warn)
+		later(warn, function()
+			Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = pat.radius, color = BOSS_RED })
+			bossHit(e, playersNear(f, at, 0, pat.radius), h, pat.name)
+		end)
+	elseif kind == "leap" then
+		local at = tgt.root.Position
+		telegraph(at, pat.radius, warn)
+		later(warn * 0.55, function()
+			-- 뛰어오른다 (보이게 높이)
+			f.root.AssemblyLinearVelocity = Vector3.new(0, 70, 0)
+		end)
+		later(warn, function()
+			f.root.CFrame = CFrame.new(at + Vector3.new(0, 4 * (e.def.scale or 1), 0)) * (f.root.CFrame - f.root.Position)
+			Push:FireAllClients("skillfx", { kind = "drop", at = at, radius = pat.radius, color = BOSS_RED })
+			bossHit(e, playersNear(f, at, 0, pat.radius), h, pat.name)
+		end)
+	elseif kind == "charge" then
+		local from = f.root.Position
+		local dir = Vector3.new(tgt.root.Position.X - from.X, 0, tgt.root.Position.Z - from.Z)
+		dir = dir.Magnitude > 0.1 and dir.Unit or Vector3.new(0, 0, -1)
+		local len = pat.length or 40
+		local times = pat.times or 1
+		for k = 0, times - 1 do
+			later(k * (warn + 0.35), function()
+				local start = f.root.Position
+				if k > 0 and e.target then
+					local d2 = Vector3.new(e.target.root.Position.X - start.X, 0, e.target.root.Position.Z - start.Z)
+					dir = d2.Magnitude > 0.1 and d2.Unit or dir
+				end
+				Push:FireAllClients("skillfx", { kind = "lineTele", from = start, to = start + dir * len, width = pat.width or 8, time = warn, color = BOSS_RED })
+				later(warn, function()
+					local p0 = f.root.Position
+					f.root.CFrame = CFrame.lookAt(p0, p0 + dir)
+					f.root.AssemblyLinearVelocity = dir * (len / 0.35)
+					Push:FireAllClients("afterimage", f.model)
+					local hitSet = {}
+					for s = 1, 5 do
+						later(s * 0.07, function()
+							for _, o in ipairs(playersNear(f, f.root.Position, 0, (pat.width or 8) * 0.6 + 2)) do
+								if not hitSet[o] then
+									hitSet[o] = true
+									bossHit(e, { o }, h, pat.name)
+								end
+							end
+						end)
+					end
+				end)
+			end)
+		end
+	elseif kind == "rain" then
+		local n = (pat.count or 5) + (phase - 1) * 2
+		for i = 1, n do
+			local base = tgt.root.Position
+			local a = math.random() * math.pi * 2
+			local at = i == 1 and base or base + Vector3.new(math.cos(a), 0, math.sin(a)) * math.random(4, pat.spread or 18)
+			later((i - 1) * 0.12, function()
+				telegraph(at, pat.radius, warn, pat.color)
+				later(warn, function()
+					Push:FireAllClients("skillfx", { kind = "strike", at = at, radius = pat.radius, fx = pat.fx or "lightning", color = pat.color or BOSS_RED })
+					bossHit(e, playersNear(f, at, 0, pat.radius), h, pat.name)
+				end)
+			end)
+		end
+	elseif kind == "donut" then
+		local at = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "donut", at = at, inner = pat.inner, outer = pat.outer, time = warn, color = BOSS_RED })
+		later(warn, function()
+			Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = pat.outer, color = BOSS_RED })
+			bossHit(e, playersNear(f, at, pat.inner, pat.outer), h, pat.name)
+		end)
+	elseif kind == "summon" then
+		local alive = 0
+		for _, o in ipairs(Npc.list) do
+			if (o :: any).summoner == e and not o.f.dead then
+				alive += 1
+			end
+		end
+		for i = 1, math.max(0, math.min(pat.count or 3, (pat.max or 6) - alive)) do
+			local a = i / 3 * math.pi * 2
+			local at = f.root.Position + Vector3.new(math.cos(a) * 10, 0, math.sin(a) * 10)
+			Push:FireAllClients("skillfx", { kind = "mark", at = at, radius = 4, time = warn, color = BOSS_RED })
+			later(warn, function()
+				local m = Npc.spawn(pat.enemy, false, at, "summon")
+				if m then
+					(m :: any).summoner = e
+					m.target = tgt
+				end
+			end)
+		end
+	end
+	local cd = (pat.cd or 7) / sp
+	e.nextPattern = os.clock() + warn + cd
+	e.nextAttack = os.clock() + warn + 0.8
+	e.attackingUntil = os.clock() + warn + 0.5
+	local _ = act
+end
+
+-- 보스 단계: 체력 2/3, 1/3에서 다음 단계로 (빨라지고 패턴이 늘어난다)
+local function bossPhase(e: Enemy): number
+	local f = e.f
+	local r = f.hp / math.max(1, f.maxHp)
+	local ph = r > 0.66 and 1 or (r > 0.33 and 2 or 3)
+	local old = (e :: any).phase or 1
+	if ph > old then
+		(e :: any).phase = ph
+		f.model:SetAttribute("BossPhase", ph)
+		f.walk = e.def.speed * (1 + 0.12 * (ph - 1))
+		Push:FireAllClients("bossPhase", f.model, e.def.name, ph)
+		-- 단계가 바뀌면 곧바로 큰 패턴
+		e.nextPattern = os.clock() + 0.6
+	end
+	return ph
 end
 
 local function think(e: Enemy, t: number)
@@ -811,11 +987,11 @@ local function think(e: Enemy, t: number)
 		f.guarding = false
 		f.model:SetAttribute("Guard", false)
 	end
-	-- 보스 2단계
-	if e.kind == "boss" and not e.phase2 and f.hp < f.maxHp * 0.5 then
-		e.phase2 = true
-		f.walk = e.def.speed * (e.def.phase2 and e.def.phase2.speed or 1)
-		Push:FireAllClients("bossPhase", f.model, e.def.name)
+	-- 보스 단계 (세 단계)
+	local phase = 1
+	if e.kind == "boss" then
+		phase = bossPhase(e)
+		e.phase2 = phase >= 2
 	end
 	if Combat.busy(f) then
 		if e.target and not (f.act and f.act.move.lunge) then
@@ -857,6 +1033,25 @@ local function think(e: Enemy, t: number)
 		Push:FireClient(tgt.player, "boss", f.model)
 	end
 	local d = flatDist(tgt.root.Position, pos)
+	-- 보스 패턴 (단계마다 쓸 수 있는 것이 늘어난다)
+	if e.kind == "boss" and e.def.patterns then
+		local ea = e :: any
+		if not ea.nextPattern then
+			ea.nextPattern = t + 3
+		end
+		if t >= ea.nextPattern and d < 50 then
+			local pool = {}
+			for _, pat in ipairs(e.def.patterns) do
+				if (pat.phase or 1) <= phase then
+					table.insert(pool, pat)
+				end
+			end
+			if #pool > 0 then
+				runPattern(e, tgt, pool[math.random(1, #pool)], phase)
+				return
+			end
+		end
+	end
 	-- 상대가 막 치기 시작하면 가끔 막는다 (보스는 더 자주)
 	local tact = tgt.act
 	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding and not (tact :: any).perfect then
@@ -908,7 +1103,7 @@ local function think(e: Enemy, t: number)
 		local moves = {}
 		for _, m in ipairs(e.def.moves) do
 			-- 약한 적은 붉은 공격(막을 수 없는 공격)을 쓰지 않는다
-			if d <= m.range + 1 and not (weak and m.unblockable) then
+			if d <= m.range * (e.def.reach or 1) + 1 and not (weak and m.unblockable) then
 				table.insert(moves, m)
 			end
 		end

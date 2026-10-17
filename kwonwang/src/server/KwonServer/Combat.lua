@@ -251,7 +251,7 @@ end
 
 local function addChi(f: Fighter, amount: number)
 	if f.player then
-		f.chi = math.clamp(f.chi + amount, 0, Config.CHI_MAX)
+		f.chi = math.clamp(f.chi + amount, 0, (f :: any).chiMax or Config.CHI_MAX)
 	end
 end
 
@@ -267,6 +267,15 @@ local function addPosture(f: Fighter, amount: number): boolean
 		return true
 	end
 	return false
+end
+
+-- 막기를 깨부순다 (사자후): 균형을 가득 채워 파훼
+function Combat.breakGuard(f: Fighter)
+	if f.dead then
+		return
+	end
+	f.guarding = false
+	addPosture(f, f.postureMax)
 end
 
 function Combat.kill(f: Fighter, by: Fighter?)
@@ -357,6 +366,24 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.stunUntil = math.max(tgt.stunUntil, t + 0.3)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "clash", pos = pos })
 		return "clash"
+	end
+
+	-- 만류귀종: 잠깐 모든 공격을 저절로 흘려 되받아친다 (막을 수 없는 공격도)
+	local ta = tgt :: any
+	if t < (ta.reflectUntil or 0) and not opt.chain then
+		att.stunUntil = math.max(att.stunUntil, t + 0.6)
+		interrupt(att)
+		local side = redirect(tgt, att)
+		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true, side = side })
+		local rh = ta.reflectHit
+		if rh then
+			task.defer(function()
+				if not tgt.dead and not att.dead then
+					Combat.applyHit(tgt, att, rh, { move = { name = "되흘림" }, isSkill = true, chain = true })
+				end
+			end)
+		end
+		return "counter"
 	end
 
 	local tStyle = Combat.styleOf(tgt)
@@ -479,7 +506,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	tgt.hp -= d
 	-- 흡혈 (혈마신수)
 	if aStyle and aStyle.lifesteal and att.player and not att.dead then
-		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal)
+		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and 3 or 1))
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
 	if not steady then
@@ -763,8 +790,9 @@ function Combat.tick(dt: number)
 					f.model:SetAttribute("Hp", math.floor(f.hp + 0.5))
 				end
 			end
-			if f.player and f.chi < Config.CHI_MAX then
-				f.chi = math.min(Config.CHI_MAX, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1))
+			local cmax = (f :: any).chiMax or Config.CHI_MAX
+			if f.player and f.chi < cmax then
+				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX))
 				changed = true
 			end
 			if f.act and t > f.act.start + f.act.dur then

@@ -502,7 +502,7 @@ startMove = function(slot: any, charge: number?)
 		cds[slot] = now + (move.cd or 0)
 		cdLen[slot] = move.cd or 1
 	end
-	local speed = style.speed or 1
+	local speed = Config.actSpeed(style, state and state.gradeUp and state.gradeUp[style.id] or 0, char:GetAttribute("Buff") == "frenzy")
 	local dur = move.dur / speed
 	local gap = aim()
 	seq += 1
@@ -578,7 +578,7 @@ startMove = function(slot: any, charge: number?)
 	local look = flat(root.CFrame.LookVector)
 	-- 상대가 조금 떨어져 있으면 한 걸음에 파고든다 (거리를 좁히며 친다)
 	local close = 0
-	if gap and gap > 4.5 and not move.teleport and not move.proj then
+	if gap and gap > 4.5 and not move.teleport and not move.proj and move.hits and #move.hits > 0 then
 		close = math.min(gap - 3.5, 7)
 	end
 	local lunge = (move.lunge or 0) + close
@@ -1495,6 +1495,17 @@ function handlers.breakthrough(data: any)
 	Fx.sound("ping", 1, 0.7)
 end
 
+-- 권법마다 다른 기술 장치의 연출
+function handlers.skillfx(data: any)
+	Fx.mech(data)
+	if data.kind == "drop" or data.kind == "beam" or data.kind == "freeze" then
+		local r = myRoot()
+		if r and data.at and (r.Position - data.at).Magnitude < 60 then
+			shake(data.kind == "freeze" and 0.6 or 1.3)
+		end
+	end
+end
+
 -- 개천신권: 별이 떨어진다
 function handlers.star(data: any)
 	Fx.starfall(data.at, data.style)
@@ -1601,9 +1612,32 @@ function handlers.boss(m: Model?)
 	UI.setBoss(m)
 end
 
-function handlers.bossPhase(_m: Model, name: string)
-	UI.banner("👹 " .. name, "분노했다! 더 빨라진다", Color3.fromRGB(255, 80, 60))
-	shake(1)
+function handlers.bossPhase(m: Model, name: string, phase: number?)
+	local ph = phase or 2
+	UI.cinematic("👹 " .. name .. " · " .. ph .. "단계", Color3.fromRGB(255, 60, 40), 1.6)
+	UI.banner("👹 " .. name .. " · " .. ph .. "단계", ph >= 3 and "마지막 발악! 모든 패턴을 쓴다" or "분노했다! 빨라지고 새 패턴이 열린다", Color3.fromRGB(255, 80, 60))
+	local r = m and rootOf(m)
+	if r then
+		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), Color3.fromRGB(255, 60, 40), 4, 60, 0.7)
+		Fx.afterimage(m, Color3.fromRGB(255, 40, 30), 0.8)
+	end
+	shake(1.4)
+	UI.bossPhase(ph)
+end
+
+-- 보스가 패턴 이름을 외친다
+function handlers.bossCall(data: any)
+	local r = data.m and rootOf(data.m)
+	if r then
+		local scale = tonumber(data.m:GetAttribute("Scale")) or 2
+		Fx.text(r.Position + Vector3.new(0, 6 + scale * 2, 0), "⚠ " .. data.name, Color3.fromRGB(255, 120, 90), 36, 1.2)
+	end
+end
+
+function handlers.afterimage(m: Model)
+	if m and m.Parent then
+		Fx.afterimage(m, Color3.fromRGB(255, 50, 40), 0.5)
+	end
 end
 
 function handlers.duel(data: any)
@@ -1638,7 +1672,8 @@ RunService.RenderStepped:Connect(function()
 	local pm = char:GetAttribute("PostureMax")
 	local chi = char:GetAttribute("Chi")
 	if type(hp) == "number" and type(mx) == "number" then
-		UI.bars(hp, mx, type(po) == "number" and po or 0, type(pm) == "number" and pm or 100, type(chi) == "number" and chi or 0)
+		local cmax = char:GetAttribute("ChiMax")
+		UI.bars(hp, mx, type(po) == "number" and po or 0, type(pm) == "number" and pm or 100, type(chi) == "number" and chi or 0, type(cmax) == "number" and cmax or Config.CHI_MAX)
 	end
 	local style = myStyle()
 	if not style then

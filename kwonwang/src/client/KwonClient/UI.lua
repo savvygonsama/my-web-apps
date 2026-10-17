@@ -174,16 +174,38 @@ end
 ------------------------------------------------------------------------
 local HUD: any = {}
 
+-- 위가 밝고 아래가 어두운 빛 (막대·칸에 입힌다)
+local function sheen(parent: Instance, top: number?, bottom: number?)
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.new(1, 1, 1):Lerp(Color3.new(1, 1, 1), 0), Color3.fromRGB(150, 150, 150)), Transparency = NumberSequence.new(top or 0, bottom or 0), Parent = parent })
+end
+UI.sheen = sheen
+local meterTrails: { [Frame]: Frame } = {}
 local function meter(parent: Instance, pos: UDim2, size: UDim2, color: Color3, label: string): (Frame, TextLabel)
-	local back = new("Frame", { Position = pos, Size = size, BackgroundColor3 = Color3.fromRGB(20, 14, 12), BackgroundTransparency = 0.15, Parent = parent }, { corner(6), stroke(Color3.fromRGB(90, 70, 50), 1.2) })
-	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = color, Parent = back }, { corner(6) })
-	local l = text({ Size = UDim2.fromScale(1, 1), Text = label, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.4, ZIndex = 3, Parent = back })
+	local back = new("Frame", { Position = pos, Size = size, BackgroundColor3 = Color3.fromRGB(16, 11, 10), BackgroundTransparency = 0.1, Parent = parent }, { corner(6), stroke(Color3.fromRGB(150, 115, 70), 1.4) })
+	-- 깎인 만큼 잠깐 남는 흰 띠 (맞은 양이 보인다)
+	local trail = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(255, 240, 220), BackgroundTransparency = 0.25, Parent = back }, { corner(6) })
+	local fill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = color, ZIndex = 2, Parent = back }, { corner(6) })
+	sheen(fill)
+	meterTrails[fill] = trail
+	local l = text({ Size = UDim2.fromScale(1, 1), Text = label, TextSize = 16, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, ZIndex = 3, Parent = back })
 	return fill, l
+end
+-- 흰 띠가 천천히 따라 내려온다
+local function trailTo(fill: Frame, r: number)
+	fill.Size = UDim2.fromScale(r, 1)
+	local trail = meterTrails[fill]
+	if trail then
+		local cur = trail.Size.X.Scale
+		trail.Size = UDim2.fromScale(r > cur and r or cur + (r - cur) * 0.06, 1)
+	end
 end
 
 local function buildHud()
 	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
 	scaled(hud)
+	-- 막대 뒤의 어두운 판과 금빛 테
+	local plate = new("Frame", { Position = UDim2.new(0, -14, 0, 48), Size = UDim2.new(1, 28, 0, 76), BackgroundColor3 = Color3.fromRGB(14, 10, 9), BackgroundTransparency = 0.35, ZIndex = 0, Parent = hud }, { corner(12), stroke(Color3.fromRGB(150, 115, 70), 1) })
+	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(0.2, 0.6), Parent = plate })
 	HUD.style = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	HUD.stacks = text({ Position = UDim2.new(0, 0, 0, 27), Size = UDim2.new(1, 0, 0, 22), TextSize = 18, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = hud })
 	-- 균형: 가운데에서 양옆으로 차오른다 (꽉 차면 파훼)
@@ -197,27 +219,33 @@ local function buildHud()
 	})
 	HUD.slots = {}
 	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
-		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.15, Parent = row }, { corner(8), stroke(C.line, 1) })
-		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 0), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
-		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = cell })
-		local cd = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.4, ZIndex = 4, Parent = cell }, { corner(8) })
+		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.1, Parent = row }, { corner(8) })
+		local st = stroke(C.line, 1.2)
+		st.Parent = cell
+		sheen(cell, 0, 0)
+		-- 위의 빛깔 띠 (쓰는 권법의 빛)
+		local stripe = new("Frame", { Size = UDim2.new(1, -8, 0, 3), Position = UDim2.new(0, 4, 0, 2), BackgroundColor3 = C.gold, BorderSizePixel = 0, ZIndex = 3, Parent = cell }, { corner(2) })
+		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 2), TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Parent = cell })
+		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Parent = cell })
+		local cd = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, ZIndex = 4, Parent = cell }, { corner(8) })
 		local _ = key
-		HUD.slots[s[1]] = { cell = cell, name = name, cd = cd }
+		HUD.slots[s[1]] = { cell = cell, name = name, cd = cd, stripe = stripe, stroke = st }
 	end
 end
 
 -- 매 순간 내 막대
-function UI.bars(hp: number, maxHp: number, posture: number, postureMax: number, chi: number)
+function UI.bars(hp: number, maxHp: number, posture: number, postureMax: number, chi: number, chiMax: number?)
 	if not HUD.hp then
 		return
 	end
-	HUD.hp.Size = UDim2.fromScale(math.clamp(hp / math.max(1, maxHp), 0, 1), 1)
+	trailTo(HUD.hp, math.clamp(hp / math.max(1, maxHp), 0, 1))
 	HUD.hpText.Text = string.format("❤ %d / %d", math.floor(hp), maxHp)
 	local pr = math.clamp(posture / math.max(1, postureMax), 0, 1)
 	HUD.posture.Size = UDim2.fromScale(pr, 1)
 	HUD.posture.BackgroundColor3 = pr > 0.75 and C.red or C.posture
-	HUD.chi.Size = UDim2.fromScale(math.clamp(chi / Config.CHI_MAX, 0, 1), 1)
-	HUD.chiText.Text = string.format("🌀 내공 %d", math.floor(chi))
+	local cm = chiMax or Config.CHI_MAX
+	HUD.chi.Size = UDim2.fromScale(math.clamp(chi / cm, 0, 1), 1)
+	HUD.chiText.Text = string.format("🌀 내공 %d / %d", math.floor(chi), cm)
 end
 
 -- 기술 칸 (이름, 잠김, 대기 시간 비율)
@@ -230,7 +258,14 @@ function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number
 		if i then
 			s.name.Text = (i.locked and "🔒 " or "") .. i.name
 			s.name.TextColor3 = i.locked and C.dim or C.text
-			s.cd.Size = UDim2.fromScale(1, math.clamp(i.cd or 0, 0, 1))
+			local cdr = math.clamp(i.cd or 0, 0, 1)
+			s.cd.Size = UDim2.fromScale(1, cdr)
+			-- 쓸 수 있는 기술은 테가 권법 빛으로 빛난다
+			if s.stripe and HUD.styleColor then
+				s.stripe.BackgroundColor3 = HUD.styleColor
+				s.stroke.Color = (cdr <= 0 and not i.locked and (key == "E" or key == "R" or key == "G")) and HUD.styleColor or C.line
+				s.stroke.Thickness = (cdr <= 0 and not i.locked and key == "G") and 2.5 or 1.2
+			end
 		end
 	end
 end
@@ -239,6 +274,7 @@ function UI.styleLine(t: string, color: Color3, stacks: string)
 	if HUD.style then
 		HUD.style.Text = t
 		HUD.style.TextColor3 = color
+		HUD.styleColor = color
 		HUD.stacks.Text = stacks
 	end
 end
@@ -250,6 +286,8 @@ local bossFrame: Frame
 local bossFill: Frame
 local bossPosture: Frame
 local bossName: TextLabel
+local bossSub: TextLabel
+local bossHpText: TextLabel
 local bossModel: Model? = nil
 function UI.setBoss(model: Model?)
 	bossModel = model
@@ -257,6 +295,15 @@ function UI.setBoss(model: Model?)
 	if model then
 		local label = model:GetAttribute("Label")
 		bossName.Text = "👹 " .. (type(label) == "string" and label or "보스")
+		UI.bossPhase(tonumber(model:GetAttribute("BossPhase")) or 1)
+	end
+end
+function UI.bossPhase(ph: number)
+	if bossSub and bossModel then
+		local lv = bossModel:GetAttribute("Level")
+		local power = bossModel:GetAttribute("Power")
+		bossSub.Text = string.format("Lv.%s  ·  %d단계 / 3  ·  ⚔ 전투력 %s", tostring(lv or "?"), ph, Config.formatNumber(tonumber(power) or 0))
+		bossSub.TextColor3 = ph >= 3 and Color3.fromRGB(255, 90, 70) or (ph == 2 and Color3.fromRGB(255, 170, 90) or C.dim)
 	end
 end
 
@@ -1586,12 +1633,23 @@ function UI.init(req: RemoteEvent)
 	end
 	buildStory(topLeft)
 	-- 보스 막대
-	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 40), Size = UDim2.new(0, 620, 0, 52), BackgroundTransparency = 1, Visible = false, Parent = gui })
+	-- 보스 막대: 어두운 판, 금빛 테, 이름·단계·전투력, 체력 (흰 띠가 따라온다), 단계 눈금, 균형
+	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 34), Size = UDim2.new(0, 760, 0, 92), BackgroundColor3 = Color3.fromRGB(14, 8, 8), BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(12), stroke(Color3.fromRGB(190, 60, 40), 2) })
+	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(0.1, 0.5), Parent = bossFrame })
 	scaled(bossFrame)
-	bossName = text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bossFrame })
-	local bb = new("Frame", { Position = UDim2.new(0, 0, 0, 24), Size = UDim2.new(1, 0, 0, 14), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bossFrame }, { corner(6), stroke(C.line, 1) })
-	bossFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = C.hp, Parent = bb }, { corner(6) })
-	local pb = new("Frame", { Position = UDim2.new(0.2, 0, 0, 42), Size = UDim2.new(0.6, 0, 0, 7), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bossFrame }, { corner(4) })
+	bossName = text({ Position = UDim2.new(0, 0, 0, 4), Size = UDim2.new(1, 0, 0, 28), TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 120), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.1, Parent = bossFrame })
+	bossSub = text({ Position = UDim2.new(0, 0, 0, 32), Size = UDim2.new(1, 0, 0, 18), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = bossFrame })
+	local bb = new("Frame", { Position = UDim2.new(0, 16, 0, 52), Size = UDim2.new(1, -32, 0, 20), BackgroundColor3 = Color3.fromRGB(25, 10, 10), Parent = bossFrame }, { corner(6), stroke(Color3.fromRGB(150, 115, 70), 1.5) })
+	local bossTrail = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(255, 235, 200), BackgroundTransparency = 0.2, Parent = bb }, { corner(6) })
+	bossFill = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(200, 30, 30), ZIndex = 2, Parent = bb }, { corner(6) })
+	sheen(bossFill)
+	meterTrails[bossFill] = bossTrail
+	-- 단계 눈금 (2/3, 1/3)
+	for _, x in ipairs({ 0.66, 0.33 }) do
+		new("Frame", { Position = UDim2.new(x, -1, 0, -3), Size = UDim2.new(0, 3, 1, 6), BackgroundColor3 = Color3.fromRGB(255, 220, 140), BorderSizePixel = 0, ZIndex = 4, Parent = bb })
+	end
+	bossHpText = text({ Size = UDim2.fromScale(1, 1), TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, ZIndex = 5, Parent = bb })
+	local pb = new("Frame", { Position = UDim2.new(0.25, 0, 0, 77), Size = UDim2.new(0.5, 0, 0, 8), BackgroundColor3 = Color3.fromRGB(20, 10, 10), Parent = bossFrame }, { corner(4) })
 	bossPosture = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pb }, { corner(4) })
 	RunService.RenderStepped:Connect(function()
 		local m = bossModel
@@ -1599,7 +1657,8 @@ function UI.init(req: RemoteEvent)
 			local hp, mx = m:GetAttribute("Hp"), m:GetAttribute("MaxHp")
 			local po, pm = m:GetAttribute("Posture"), m:GetAttribute("PostureMax")
 			if type(hp) == "number" and type(mx) == "number" then
-				bossFill.Size = UDim2.fromScale(math.clamp(hp / math.max(1, mx), 0, 1), 1)
+				trailTo(bossFill, math.clamp(hp / math.max(1, mx), 0, 1))
+				bossHpText.Text = string.format("%s / %s", Config.formatNumber(math.max(0, math.floor(hp))), Config.formatNumber(mx))
 			end
 			if type(po) == "number" and type(pm) == "number" then
 				bossPosture.Size = UDim2.fromScale(math.clamp(po / math.max(1, pm), 0, 1), 1)
@@ -1611,7 +1670,9 @@ function UI.init(req: RemoteEvent)
 	-- 창
 	window = new("Frame", { Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 900, 0, 600), BackgroundColor3 = C.bg, BackgroundTransparency = 0.04, Visible = false, ZIndex = 10, Parent = gui }, { corner(16), stroke(C.line, 2.5) })
 	scaled(window, "window")
+	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 160, 150)), Parent = window })
 	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
+	new("Frame", { Position = UDim2.new(0, 18, 0, 48), Size = UDim2.new(1, -36, 0, 2), BackgroundColor3 = C.line, BorderSizePixel = 0, Parent = window }, { new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.7, 0.4), NumberSequenceKeypoint.new(1, 1) }) }) })
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
 	end)

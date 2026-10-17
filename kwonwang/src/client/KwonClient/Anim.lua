@@ -459,7 +459,7 @@ local function step(dt: number)
 		-- 4) 권법 자세, 막기, 달리기
 		local guardTarget = (guarding and not actPose) and 1 or 0
 		rec.guardW += (guardTarget - rec.guardW) * math.min(1, dt * 18)
-		local stanceTarget = (stance and not dead) and 0.85 or 0
+		local stanceTarget = (stance and not dead) and 1 or 0
 		rec.stanceW += (stanceTarget - rec.stanceW) * math.min(1, dt * 8)
 		local stanceJ = stance and Poses.stances[stance]
 		local legsJ = stance and (Poses.stanceLegs[stance] or Poses.stanceLegs.default)

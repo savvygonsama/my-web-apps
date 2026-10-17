@@ -9,6 +9,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local World = require(script:WaitForChild("World"))
 local Combat = require(script:WaitForChild("Combat"))
 local Npc = require(script:WaitForChild("Npc"))
+local Skills = require(script:WaitForChild("Skills"))
 
 local DATASTORE_NAME = "Kwonwang_v1"
 local SAVE_INTERVAL = 90
@@ -389,7 +390,10 @@ local function refreshFighter(player: Player)
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
-	f.walk = Config.walkSpeed(p.stats.agi)
+	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1)
+	local cm = Config.chiMax(p.stats.chi, idx)
+	;(f :: any).chiMax = cm
+	f.model:SetAttribute("ChiMax", cm)
 	local cp = Config.playerPower(f.dmgMult, f.maxHp)
 	;(f :: any).power = cp
 	f.model:SetAttribute("Power", cp)
@@ -663,6 +667,7 @@ function Trial.ended(player: Player, won: boolean)
 	end
 end
 
+Skills.init(Push)
 Combat.init(Push, {
 	onKill = function(f: any, by: any)
 		if f.npc then
@@ -904,7 +909,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		f.chi -= cost
 		f.cds[slot] = t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1)
 	end
-	local speed = style.speed or 1
+	local speed = Config.actSpeed(style, p.gradeUp[p.style], (f.buffs.frenzy or 0) > t)
 	local charge = 0
 	if slot == "H" and style.charge then
 		charge = math.clamp(tonumber(chargeArg) or 0, 0, style.charge)
@@ -972,6 +977,10 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		echoAct(f, move, slot, speed, dmgScale)
 	end
 	;(newAct :: any).teleport = teleported
+	-- 권법마다 다른 기술 장치
+	if move.mech then
+		Skills.run(f, move, { scale = dmgScale, speed = speed })
+	end
 	if move.buff then
 		f.buffs[move.buff.kind] = t + move.buff.dur
 		f.model:SetAttribute("Buff", move.buff.kind)
@@ -1428,7 +1437,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testChi" then
 		if f then
-			f.chi = Config.CHI_MAX
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
 			f.cds = {}
 		end
 	elseif action == "testHeal" then
@@ -1482,7 +1491,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			m.lv = Config.MASTERY_MAX
 			m.xp = 0
 			if f then
-				f.chi = Config.CHI_MAX
+				f.chi = (f :: any).chiMax or Config.CHI_MAX
 			end
 			Push:FireClient(player, "learned", { style = sd.id, hidden = sd.hidden == true })
 		end
