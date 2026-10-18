@@ -1,4 +1,4 @@
-/* 스틸링고 大阪物語 — 出張編·大阪編과 같은 색·글꼴 체계. 점수·등급 표시는 없다 */
+/* 스틸링고 東京物語 — 出張編·大阪編·大阪物語와 같은 색·글꼴 체계. 점수·등급 표시는 없다 */
 @font-face { font-family: "NotoSansJP"; src: url("../fonts/notojp-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "NotoSansJP"; src: url("../fonts/notojp-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "Pretendard"; src: url("../fonts/pretendard-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -429,3 +429,15 @@ table.parts td.w .why { display: block; font-size: 12.5px; line-height: 1.75; ma
 .title-scroll { justify-content: flex-start; }
 .title-scroll > :first-child { margin-top: auto; }
 .title-scroll > :last-child { margin-bottom: auto; }
+
+/* ── 東京物語: 판(한국어편·초급편·상급편) ─── */
+.ed-seg { margin-top: 18px; background: var(--surface); }
+.ed-seg button { flex: 1; min-height: 48px; font-size: 15px; }
+.ed-note { margin: 4px 2px 0; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); font-size: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.logo-title .ko-logo { display: block; font-family: var(--sans); font-size: 40px; letter-spacing: -.01em; }
+.bubble .kt { margin: 0; font-size: 17px; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
+.choice .kt { display: block; font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+.ed-pill { background: var(--accent-soft); color: var(--accent); }
+.no-furi .furi-on rt { display: ruby-text; }
+.no-furi .furi-on .ja { line-height: 2.05; }

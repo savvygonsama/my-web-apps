@@ -7,7 +7,7 @@ function Draw($size, $file, $maskable, $round) {
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'; $g.PixelOffsetMode = 'HighQuality'
   $g.Clear([System.Drawing.Color]::Transparent)
-  $bg = New-Object System.Drawing.SolidBrush (C '#7a3b78')
+  $bg = New-Object System.Drawing.SolidBrush (C '#23356b')
   if ($round) {
     $r = $size * 0.22; $p = New-Object System.Drawing.Drawing2D.GraphicsPath
     $p.AddArc(0,0,2*$r,2*$r,180,90); $p.AddArc($size-2*$r,0,2*$r,2*$r,270,90)
@@ -26,9 +26,9 @@ function Draw($size, $file, $maskable, $round) {
   $g.DrawLine($ink, (X 20), (Y 10), (X 56), (Y 10)); $g.DrawLine($ink, (X 20), (Y 48), (X 56), (Y 48))
   $g.FillEllipse($white, (X 10), (Y 10), 20*$s, 38*$s); $g.DrawEllipse($ink, (X 10), (Y 10), 20*$s, 38*$s)
   $g.DrawEllipse($ink, (X 15), (Y 20), 10*$s, 18*$s)
-  $eye = New-Object System.Drawing.SolidBrush (C '#7a3b78')
+  $eye = New-Object System.Drawing.SolidBrush (C '#23356b')
   $g.FillEllipse($eye, (X 33.3), (Y 21.3), 5.4*$s, 5.4*$s); $g.FillEllipse($eye, (X 44.3), (Y 21.3), 5.4*$s, 5.4*$s)
-  $sm = New-Object System.Drawing.Pen (C '#7a3b78'), (2.4*$s); $sm.StartCap='Round'; $sm.EndCap='Round'
+  $sm = New-Object System.Drawing.Pen (C '#23356b'), (2.4*$s); $sm.StartCap='Round'; $sm.EndCap='Round'
   $g.DrawArc($sm, (X 37.5), (Y 27.5), 8*$s, 6*$s, 20, 140)
   $tie = New-Object System.Drawing.SolidBrush (C '#1d566f')
   $pts = @((New-Object System.Drawing.PointF (X 40), (Y 41)), (New-Object System.Drawing.PointF (X 43), (Y 41)), (New-Object System.Drawing.PointF (X 45), (Y 52)), (New-Object System.Drawing.PointF (X 41.5), (Y 57)), (New-Object System.Drawing.PointF (X 38), (Y 52)))

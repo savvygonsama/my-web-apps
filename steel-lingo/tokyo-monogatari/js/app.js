@@ -1,10 +1,11 @@
-/* 스틸링고 大阪物語 — 화면과 진행.
-   화면: 표지(title) → 일정표(map) → 플레이(play) → 챕터 결과(result) / 旅ノート(note) / 엔딩(ending) / 엔딩 앨범(album)
+/* 스틸링고 東京物語 — 화면과 진행.
+   화면: 표지(title) → 일정표(map) → 플레이(play) → 챕터 결과(result) / 夜ノート(note) / 엔딩(ending) / 엔딩 앨범(album)
 
-   大阪編과 같은 엔진에서 갈라져 나왔지만 규칙이 다르다.
-   - 점수·등급(◎△✕)·정답 예문이 없다. 고른 말은 '그 말을 했더니 이야기가 이렇게 됐다'로만 이어진다
-   - 선택은 플래그로 남아 뒤 장면, 뒤 장, 엔딩을 바꾼다
-   - 엔딩은 여러 개. 본 엔딩은 앨범에 모이고, 새 여행을 떠나도 앨범과 旅ノート는 남는다 */
+   大阪物語와 같은 분기형 엔진. 점수·정답이 없고, 선택은 플래그로 남아 뒤 장면·뒤 장·엔딩을 바꾼다.
+   여기에 판(edition)이 셋 있다. 판마다 기록이 따로 저장된다.
+   - ko   한국어편: 대사·선택지가 모두 한국어. 일본어·발음·노트가 없다
+   - easy 초급편: 쉬운 일본어 + 후리가나 + 해석 + 🔍 뜯어보기
+   - hard 상급편: 원어민 말투(jx). 후리가나와 해석은 눌러야 보인다. 뉘앙스 메모(hx) */
 (function () {
   "use strict";
   const { ruby, esc, plain } = SH;
@@ -16,7 +17,7 @@
   /* ═══════════ 상태 ═══════════ */
   const fresh = () => ({
     v: 1,
-    settings: { easy: true, rate: 1 },
+    settings: { furi: false, rate: 1 },
     chapters: {}, // id → { done, plays, flags, picks:[문장], got }
     run: null, // { ch, at, hist:[{id, a, pick?}], flags, picks, got }
     notes: {}, // "c3:osusume" → { t, ok, ng }
@@ -25,9 +26,25 @@
     lastEnding: null,
     trips: 0
   });
-  let S = Object.assign(fresh(), SH.store.load() || {});
-  S.settings = Object.assign(fresh().settings, S.settings);
+  /* 판: 주소의 ?ed= → 지난번에 고른 판 → 초급편 */
+  const EDS = {
+    ko: { name: "한국어편", desc: "일본어 없이, 이야기만 즐겨요. 대사와 선택지가 모두 한국어예요." },
+    easy: { name: "초급편", desc: "쉬운 일본어로 읽어요. 후리가나와 해석이 처음부터 보이고, 🔍 뜯어보기로 문장을 쪼개 볼 수 있어요." },
+    hard: { name: "상급편", desc: "원어민이 실제로 쓰는 말투로 읽어요. 후리가나와 해석은 눌러야 보이고, 뉘앙스 메모가 붙어요." }
+  };
+  const urlEd = (() => { try { return new URLSearchParams(location.search).get("ed"); } catch (e) { return null; } })();
+  let ED = EDS[urlEd] ? urlEd : EDS[SH.store.lastEd()] ? SH.store.lastEd() : "easy";
+  let S;
+  function useEdition(ed) {
+    ED = ed;
+    SH.store.lastEd(ed);
+    SH.store.use(ed);
+    S = Object.assign(fresh(), SH.store.load() || {});
+    S.settings = Object.assign(fresh().settings, S.settings);
+  }
+  useEdition(ED);
   const save = () => { S.savedAt = Date.now(); return SH.store.save(S); };
+  const isKo = () => ED === "ko", isEasy = () => ED === "easy", isHard = () => ED === "hard";
 
   /* 여행은 순서대로 — 앞 장을 모두 마쳐야 다음 장이 열린다(앞 장의 선택이 뒤로 이어지므로) */
   const unlocked = (c) => SH.chapters.filter((x) => x.no < c.no).every((x) => S.chapters[x.id] && S.chapters[x.id].done);
@@ -40,13 +57,36 @@
   }
   const addFlags = (list) => SH.flagList(list).forEach((x) => { if (!S.run.flags.includes(x)) S.run.flags.push(x); });
 
-  /* 설정은 난이도 하나뿐이다.
-     쉬움 = 대사 해석이 처음부터 보이고, 선택지 밑에도 한국어 뜻이 붙는다.
-     어려움 = 해석은 '뜻' 버튼을 눌러야 보이고, 선택지는 일본어만 보고 고른다. 후리가나는 둘 다 켜 둔다. */
-  const easy = () => !!S.settings.easy;
+  /* 판에 따라 화면 규칙이 바뀐다. 상급편만 '후리가나 늘 보이기' 설정이 있다 */
   function applySettings() {
-    html.classList.toggle("easy", easy());
+    html.classList.toggle("easy", isEasy());
+    html.classList.toggle("ed-ko", isKo());
+    html.classList.toggle("no-furi", isHard() && !S.settings.furi);
   }
+
+  /* 판별 글 고르기. 데이터의 한 줄(장면·선택지)이 세 판의 말을 함께 들고 있다 */
+  const T = {
+    /** 화면에 보일 대사(HTML) */
+    line: (x) => (isKo() ? esc(x.ko) : ruby(isHard() ? x.jx || x.ja : x.ja)),
+    /** 대사 원문(발음·기록용) */
+    raw: (x) => (isKo() ? x.ko : isHard() ? x.jx || x.ja : x.ja),
+    /** 기록해 둔 원문을 다시 그리기 */
+    show: (t) => (isKo() ? esc(t) : ruby(t)),
+    narr: (s) => ruby(!isKo() && s.narj ? s.narj : s.narr),
+    who: (w) => {
+      if (w === "me") return "나 · 김링고";
+      const c = SH.seasonDef && SH.seasonDef.cast && SH.seasonDef.cast[w];
+      return c ? (isKo() ? esc(c.ko) : ruby(c.ja)) : "";
+    },
+    hint: (x) => (isKo() ? "" : isHard() ? x.hx : x.hint),
+    learn: (x) => (isKo() ? [] : (isHard() ? x.learnx : x.learn) || []),
+    title: (ch) => (isKo() ? esc(ch.ko) : ruby(ch.title)),
+    chHead: (ch) => (isKo() ? `${ch.no}장 · ${esc(ch.ko)}` : `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`),
+    stamp: (o) => esc(isKo() ? o.sko || o.stamp : o.stamp || "夜"),
+    eTitle: (e) => (isKo() ? esc(e.ko) : ruby(e.ja)),
+    eText: (e) => ruby(!isKo() && e.textj ? e.textj : e.text)
+  };
+  const dict = (ch) => SH.dict(ch, ED);
 
   /* ═══════════ 음성 ═══════════ */
   const TTS = {
@@ -73,7 +113,8 @@
     }
   };
   const ttsBtn = (text) => `<button class="chip tts" data-say="${esc(text)}" aria-label="일본어 발음 듣기">🔊 듣기</button>`;
-  const koBtn = () => `<button class="chip" data-ko aria-pressed="${easy()}">뜻</button>`;
+  const koBtn = () => `<button class="chip" data-ko aria-pressed="${isEasy()}">뜻</button>`;
+  const furiBtn = () => `<button class="chip" data-furi aria-pressed="false" aria-label="후리가나 보기">あ 읽기</button>`;
 
   /* ═══════════ 공용 조각 ═══════════ */
   const ICON = {
@@ -157,9 +198,6 @@
   });
 
   /* ═══════════ 표지 ═══════════ */
-  const levelDesc = () => easy()
-    ? "대사 해석이 처음부터 보이고, 선택지 밑에 한국어 뜻이 붙어요."
-    : "일본어만 보고 골라요. 해석은 '뜻' 버튼을 눌러야 보여요.";
   const fmtTime = (t) => {
     const d = new Date(t);
     return `${d.getMonth() + 1}월 ${d.getDate()}일 ${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -168,39 +206,40 @@
     const run = S.run && SH.getChapter(S.run.ch);
     const any = run || Object.keys(S.chapters).length;
     const nNotes = Object.keys(S.notes).length;
+    const eds = Object.entries(EDS).map(([k, v]) =>
+      `<button role="radio" data-ed="${k}" aria-checked="${ED === k}" aria-pressed="${ED === k}">${v.name}</button>`).join("");
     app.innerHTML = `<div class="screen">
       <div class="scroll title-scroll">
         <p class="byline">STEEL LINGO SERIES</p>
         <div class="ticket">
           <div class="ticket-top">${MASCOT}
-            <div><h1 class="logo-title"><span class="series">스틸링고</span><span class="ja">${CFG.titleHTML}</span></h1>
+            <div><h1 class="logo-title"><span class="series">스틸링고</span>${isKo()
+              ? `<span class="ko-logo">${esc(CFG.titleKo)}</span>`
+              : `<span class="ja">${CFG.titleHTML}</span>`}</h1>
             <p class="tagline">${CFG.tagline}</p></div>
           </div>
           <div class="perf"></div>
           <div class="ticket-grid">
             <div class="route"><div class="tf"><b>FROM</b><span class="big">${CFG.from}</span></div><span class="plane" aria-hidden="true">✈</span><div class="tf" style="text-align:right"><b>TO</b><span class="big">${CFG.to}</span></div></div>
-            <div class="tf"><b>PASSENGER</b><span class="ja">${CFG.passenger}</span></div>
+            <div class="tf"><b>PASSENGER</b><span class="${isKo() ? "" : "ja"}">${isKo() ? CFG.passengerKo : CFG.passenger}</span></div>
             <div class="tf"><b>ENDINGS</b><span>${nFound()} / ${nEndings()}</span></div>
           </div>
           <div class="barcode" aria-hidden="true"></div>
         </div>
         <p class="rule">정답은 없어요. 내가 한 말에 상대가 반응하고, 그 반응이 다음 이야기를 바꿉니다.</p>
-        <div class="level">
-          <span class="level-l">난이도</span>
-          <div class="seg level-seg" role="radiogroup" aria-label="난이도">
-            <button role="radio" data-level="easy" aria-checked="${easy()}" aria-pressed="${easy()}">쉬움</button>
-            <button role="radio" data-level="hard" aria-checked="${!easy()}" aria-pressed="${!easy()}">어려움</button>
-          </div>
-        </div>
-        <p class="level-desc" id="levelDesc">${levelDesc()}</p>
+        <div class="seg ed-seg" role="radiogroup" aria-label="판 고르기">${eds}</div>
+        <p class="level-desc">${EDS[ED].desc}${isHard() ? ` <button class="linkish" data-act="furiall" aria-pressed="${!!S.settings.furi}">${S.settings.furi ? "후리가나 늘 보이기: 켬" : "후리가나 늘 보이기: 끔"}</button>` : ""}</p>
+        <p class="fine ed-note">판마다 진행 기록과 엔딩 앨범이 따로 저장돼요.</p>
         <div class="title-actions btn-col">
           ${run
-            ? `<button class="btn primary resume" data-act="resume"><span>이어하기 · <span class="ja">第${run.no}章 ${esc(plain(run.title))}</span></span>
+            ? `<button class="btn primary resume" data-act="resume"><span>이어하기 · ${T.chHead(run)}</span>
                  ${S.savedAt ? `<small>마지막 저장 ${fmtTime(S.savedAt)}</small>` : ""}</button>
                <button class="btn" data-act="map">${CFG.trip} 일정표</button>`
             : `<button class="btn primary" data-act="map">${any ? CFG.trip + " 일정표" : CFG.trip + " 떠나기"}</button>`}
-          <div class="btn-row"><button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span><small>${nNotes}</small></button>
-            <button class="btn" data-act="album">엔딩 앨범<small>${nFound()}/${nEndings()}</small></button></div>
+          ${isKo()
+            ? `<button class="btn" data-act="album">엔딩 앨범<small>${nFound()}/${nEndings()}</small></button>`
+            : `<div class="btn-row"><button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span><small>${nNotes}</small></button>
+            <button class="btn" data-act="album">엔딩 앨범<small>${nFound()}/${nEndings()}</small></button></div>`}
           ${any ? '<button class="btn ghost" data-act="reset">새 여행 떠나기</button>' : ""}
         </div>
         <p class="install-hint" id="installHint" hidden>앱처럼 쓰려면 <button data-act="install">📲 홈 화면에 설치</button></p>
@@ -225,14 +264,14 @@
       return `<li class="stop ${cls}">
         <span class="dot" aria-hidden="true">${st && st.done ? "✓" : c.no}</span>
         <button class="card" data-ch="${c.id}">
-          <div class="cd"><span>${esc(c.day)} · ${ruby(c.place)}</span>${pill}</div>
-          <p class="ct ja">${ruby(c.title)}<small>${esc(c.ko)}</small></p>
-          <p class="cs">${ruby(c.summary)}</p>
+          <div class="cd"><span>${esc(c.day)} · ${esc(c.place)}</span>${pill}</div>
+          <p class="ct ${isKo() ? "" : "ja"}">${T.title(c)}${isKo() ? "" : `<small>${esc(c.ko)}</small>`}</p>
+          <p class="cs">${esc(c.summary)}</p>
         </button></li>`;
     }).join("");
     const mem = memories();
     app.innerHTML = `<div class="screen">
-      ${bar({ title: `<span class="ja">${CFG.mapTitle}</span>`, sub: CFG.trip + " 일정표", back: "title", right: albumBtn() + `<button class="icon-btn" data-act="note" aria-label="${CFG.noteName}">${ICON.book}</button>` })}
+      ${bar({ title: isKo() ? CFG.mapKo : `<span class="ja">${CFG.mapTitle}</span>`, sub: EDS[ED].name + " · " + CFG.trip + " 일정표", back: "title", right: albumBtn() + (isKo() ? "" : `<button class="icon-btn" data-act="note" aria-label="${CFG.noteName}">${ICON.book}</button>`) })}
       <div class="scroll">${tripCard()}
         ${mem.length ? `<details class="panel diary"><summary>이번 여행의 기억 · ${mem.length}</summary><ul class="memo">${mem.map((m) => `<li>${ruby(m)}</li>`).join("")}</ul></details>` : ""}
         <p class="sec-h">${CFG.itin}</p><ol class="itin">${items}</ol>
@@ -265,26 +304,32 @@
     go("play");
   }
 
+  /** 말풍선: 한국어편은 한국어 한 줄, 초급편은 일본어+해석+뜯어보기, 상급편은 일본어(해석·읽기는 눌러서) */
+  function bubble(x) {
+    if (isKo()) return `<div class="bubble"><p class="kt">${T.line(x)}</p></div>`;
+    return `<div class="bubble"><p class="ja">${T.line(x)}</p>
+        <p class="ko" ${isEasy() ? "" : "hidden"}>${esc(x.ko)}</p>
+        <div class="tools">${ttsBtn(T.raw(x))}${koBtn()}${isHard() ? furiBtn() : glossBtn(x.parts)}</div>${isEasy() ? glossHTML(x.parts) : ""}</div>`;
+  }
   function lineHTML(s, isNew) {
-    if (s.narr && !s.ja) return `<p class="narr ${isNew ? "new" : ""}">${ruby(s.narr)}</p>`;
-    if (!s.ja) return "";
-    const me = s.speaker === "自分";
+    if (s.narr && !s.ko) return `<p class="narr ${isNew ? "new" : ""}">${T.narr(s)}</p>`;
+    if (!s.ko) return "";
+    const me = s.who === "me";
+    const h = T.hint(s);
     return `<div class="msg ${me ? "me" : "them"} ${isNew ? "new" : ""}">
-      <span class="who">${me ? "나 · 김링고" : ruby(s.speaker || "")}</span>
-      ${s.act ? `<span class="act">${ruby(s.act)}</span>` : ""}
-      <div class="bubble"><p class="ja">${ruby(s.ja)}</p>
-        <p class="ko" ${easy() ? "" : "hidden"}>${esc(s.ko)}</p>
-        <div class="tools">${ttsBtn(s.ja)}${koBtn()}${glossBtn(s.parts)}</div>${glossHTML(s.parts)}</div>
-      ${s.hint ? `<div class="hint"><b>💡</b> ${ruby(s.hint)}</div>` : ""}
+      <span class="who">${T.who(s.who)}</span>
+      ${s.act ? `<span class="act">${esc(s.act)}</span>` : ""}
+      ${bubble(s)}
+      ${h ? `<div class="hint"><b>${isHard() ? "📝" : "💡"}</b> ${ruby(h)}</div>` : ""}
     </div>`;
   }
   function pickHTML(c, isNew) {
+    const h = isHard() ? c.hx : "";
     return `<div class="msg me ${isNew ? "new" : ""}">
       <span class="who">나 · 김링고</span>
-      <div class="bubble"><p class="ja">${ruby(c.ja)}</p>
-        <p class="ko" ${easy() ? "" : "hidden"}>${esc(c.ko)}</p>
-        <div class="tools">${ttsBtn(c.ja)}${koBtn()}${glossBtn(c.parts)}</div>${glossHTML(c.parts)}</div></div>
-      ${c.then ? `<p class="narr then ${isNew ? "new" : ""}">${ruby(c.then)}</p>` : ""}`;
+      ${bubble(c)}
+      ${h ? `<div class="hint"><b>📝</b> ${ruby(h)}</div>` : ""}</div>
+      ${c.then ? `<p class="narr then ${isNew ? "new" : ""}">${esc(c.then)}</p>` : ""}`;
   }
 
   /* 🔍 뜯어보기 — 조각 · 읽기 · 뜻과 역할 표. 초보자용이라 기본은 접어 둔다 */
@@ -298,10 +343,11 @@
     </table></div>`;
   }
 
-  function collect(chId, keys, list) {
+  function collect(ch, keys, list) {
     const added = [];
     (keys || []).forEach((k) => {
-      const id = chId + ":" + k;
+      if (!dict(ch)[k]) return;
+      const id = ch.id + ":" + k;
       if (!S.notes[id]) { S.notes[id] = { t: Date.now(), ok: 0, ng: 0 }; added.push(k); }
       if (list && !list.includes(k)) list.push(k);
     });
@@ -318,7 +364,7 @@
       return lineHTML(r.s, false) + (h.pick != null && r.s.choices && r.s.choices[h.pick] ? pickHTML(r.s.choices[h.pick], false) : "");
     });
     app.innerHTML = `<div class="screen" id="play">
-      ${bar({ title: `<span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>`, sub: esc(ch.ko + " · " + ch.day), back: "map", right: saveBtn() })}
+      ${bar({ title: T.chHead(ch), sub: esc(isKo() ? ch.day : ch.ko + " · " + ch.day), back: "map", right: saveBtn() })}
       <div class="scroll" id="logScroll"><div class="log" id="log">${logParts.join("")}</div></div>
       <div class="dock" id="dock"></div></div>`;
     showCurrent(false);
@@ -340,7 +386,7 @@
     run.a = r.a;
     log.insertAdjacentHTML("beforeend", lineHTML(s, animate));
     if (s.flag) addFlags(s.flag);
-    const got = collect(ch.id, s.learn, run.got);
+    const got = collect(ch, T.learn(s), run.got);
     if (got.length && animate) noteToast(ch, got);
     save();
 
@@ -349,11 +395,11 @@
       const vis = s.choices.map((c, i) => [c, i]).filter(([c]) => SH.test(c, f));
       const seen = S.seen[s.id] || [];
       dock.innerHTML = `<div class="choices-wrap">
-        <div class="ask"><span>${ruby(s.ask || "뭐라고 할까?")}</span><span class="pill easy-pill">쉬움 모드</span></div>
+        <div class="ask"><span>${esc(s.ask || "뭐라고 할까?")}</span><span class="pill ed-pill">${EDS[ED].name}</span></div>
         <div class="choices">${vis.map(([c, i], n) =>
           `<button class="choice${c.tag ? " memory" : ""}" data-pick="${i}"><span class="n">${n + 1}</span><span class="cb">
             ${c.tag ? `<span class="ctag">✨ ${esc(c.tag)}</span>` : ""}
-            <span class="ja">${ruby(c.ja)}</span><span class="ck">${esc(c.ko)}</span></span>
+            <span class="${isKo() ? "kt" : "ja"}">${T.line(c)}</span>${isEasy() ? `<span class="ck">${esc(c.ko)}</span>` : ""}</span>
             ${seen.includes(i) ? '<span class="been" title="전에 골라 본 말">✓</span>' : ""}</button>`).join("")}</div></div>`;
     } else if (s.end) {
       dock.innerHTML = `<button class="btn primary" data-act="finish">${ch.last ? "여행의 끝으로" : "이 장 마치기"}</button>`;
@@ -385,10 +431,10 @@
     const s = r.s, c = s.choices[i];
     run.hist.push({ id: s.id, a: r.a, pick: i });
     if (c.flag) addFlags(c.flag);
-    run.picks.push(c.ja);
+    run.picks.push(T.raw(c));
     const seen = (S.seen[s.id] = S.seen[s.id] || []);
     if (!seen.includes(i)) seen.push(i);
-    const got = collect(ch.id, c.learn, run.got);
+    const got = collect(ch, T.learn(c), run.got);
     run.at = c.next;
     save();
 
@@ -399,7 +445,7 @@
   }
 
   function noteToast(ch, keys) {
-    toast(`📒 <span class="ja">ノート</span> +${keys.length} · <span class="ja">${esc(plain(ch.expressions[keys[0]].ja))}</span>`);
+    toast(`📒 <span class="ja">ノート</span> +${keys.length} · <span class="ja">${esc(plain(dict(ch)[keys[0]].ja))}</span>`);
   }
 
   function finishChapter() {
@@ -428,7 +474,7 @@
   function renderResult({ ch: id }) {
     const ch = SH.getChapter(id), r = S.chapters[id];
     if (!ch || !r) return go("map", {}, false);
-    const x = (k) => ch.expressions[k];
+    const x = (k) => dict(ch)[k];
     const li = (k) => `<li><span class="ja">${ruby(x(k).ja)}</span><span class="k">${esc(x(k).ko)}</span></li>`;
     const mem = Object.entries(ch.memo).filter(([k]) => (r.flags || []).includes(k)).map(([, t]) => t);
     const b = branchCount(ch);
@@ -437,18 +483,19 @@
       ${bar({ title: "이번 장의 이야기", back: "map" })}
       <div class="scroll">
         <div class="result-head"><div class="cn">CHAPTER ${ch.no}</div>
-          <div class="stamp" aria-hidden="true">${esc(ch.stamp || "旅")}<small>DONE</small></div>
-          <h2 class="ja">${ruby(ch.title)}</h2></div>
+          <div class="stamp" aria-hidden="true">${T.stamp(ch)}<small>DONE</small></div>
+          <h2 class="${isKo() ? "" : "ja"}">${T.title(ch)}</h2></div>
         ${mem.length ? `<div class="panel"><h3>이번 장에서 생긴 일</h3><ul class="memo">${mem.map((m) => `<li>${ruby(m)}</li>`).join("")}</ul></div>` : ""}
-        ${r.picks && r.picks.length ? `<div class="panel"><h3>내가 한 말 · ${r.picks.length}</h3><ul class="xlist said">${r.picks.map((p) => `<li><span class="ja">${ruby(p)}</span></li>`).join("")}</ul></div>` : ""}
+        ${r.picks && r.picks.length ? `<div class="panel"><h3>내가 한 말 · ${r.picks.length}</h3><ul class="xlist said">${r.picks.map((p) => `<li><span class="${isKo() ? "" : "ja"}">${T.show(p)}</span></li>`).join("")}</ul></div>` : ""}
         <div class="panel branches"><h3>이 장에서 걸어 본 갈래</h3>
           <div class="meter"><i style="width:${b.total ? Math.round((b.seen / b.total) * 100) : 0}%"></i></div>
           <p class="fine" style="margin-top:8px">${b.seen} / ${b.total}. 다른 말을 고르면 다른 사람이 다른 반응을 하고, 뒤 이야기도 바뀝니다.</p></div>
-        ${r.got.length ? `<div class="panel"><h3>이번 장에서 모은 표현 · ${r.got.length}</h3><ul class="xlist">${r.got.map(li).join("")}</ul></div>` : ""}
+        ${r.got.length && !isKo() ? `<div class="panel"><h3>이번 장에서 모은 표현 · ${r.got.length}</h3><ul class="xlist">${r.got.filter(x).map(li).join("")}</ul></div>` : ""}
       </div>
       <div class="dock btn-col">
-        ${next && next.status === "open" ? `<button class="btn primary" data-ch="${next.id}">다음 장 · <span class="ja">${ruby(next.title)}</span></button>` : ""}
-        <div class="btn-row"><button class="btn" data-replay="${ch.id}">이 장 다시 걷기</button><button class="btn" data-act="quiz">복습 퀴즈</button></div>
+        ${next && next.status === "open" ? `<button class="btn primary" data-ch="${next.id}">다음 장 · <span class="${isKo() ? "" : "ja"}">${T.title(next)}</span></button>` : ""}
+        ${isKo() ? `<button class="btn" data-replay="${ch.id}">이 장 다시 걷기</button>`
+          : `<div class="btn-row"><button class="btn" data-replay="${ch.id}">이 장 다시 걷기</button><button class="btn" data-act="quiz">복습 퀴즈</button></div>`}
         <button class="btn ghost" data-act="map">일정표로</button>
       </div></div>`;
   }
@@ -461,22 +508,23 @@
     const mem = memories();
     app.innerHTML = `<div class="screen">${bar({ title: "ENDING", sub: `${nFound()} / ${nEndings()} 엔딩`, back: "title" })}
       <div class="scroll"><div class="result-head"><div class="cn">${isNew ? "NEW ENDING" : "ENDING"}</div>
-        <div class="stamp" aria-hidden="true">${esc(e.stamp || "旅")}</div>
-        <h2 class="ja">${ruby(e.ja)}</h2><p class="eko">${esc(e.ko)}</p></div>
-        <div class="panel"><p class="note story">${ruby(e.text)}</p></div>
+        <div class="stamp" aria-hidden="true">${T.stamp(e)}</div>
+        <h2 class="${isKo() ? "" : "ja"}">${T.eTitle(e)}</h2>${isKo() ? "" : `<p class="eko">${esc(e.ko)}</p>`}</div>
+        <div class="panel"><p class="note story">${T.eText(e)}</p></div>
         ${mem.length ? `<div class="panel"><h3>이번 여행의 기억</h3><ul class="memo">${mem.map((m) => `<li>${ruby(m)}</li>`).join("")}</ul></div>` : ""}
         ${albumGrid()}
-        <p class="fine" style="text-align:center">다른 사람에게 다른 말을 건네면, 같은 사흘이 전혀 다른 여행이 됩니다.</p>
-        <p class="credit">스틸링고 <span class="ja">${CFG.titleText}</span> · 기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
+        <p class="fine" style="text-align:center">다른 사람에게 다른 말을 건네면, 같은 사흘 밤이 전혀 다른 이야기가 됩니다.</p>
+        <p class="credit">스틸링고 ${isKo() ? esc(CFG.titleKo) : `<span class="ja">${CFG.titleText}</span>`} · ${EDS[ED].name} · 기획과 구성 by 곤사마<br>Special Thanks to 앤셜리</p>
       </div><div class="dock btn-col"><button class="btn primary" data-act="newtrip">새 여행 떠나기</button>
-        <div class="btn-row"><button class="btn" data-act="map">장 골라 다시 걷기</button><button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span></button></div></div></div>`;
+        ${isKo() ? `<button class="btn" data-act="map">장 골라 다시 걷기</button>`
+          : `<div class="btn-row"><button class="btn" data-act="map">장 골라 다시 걷기</button><button class="btn" data-act="note"><span class="ja">${CFG.noteName}</span></button></div>`}</div></div>`;
   }
 
   function albumGrid() {
     const def = SH.seasonDef;
     return `<div class="panel"><h3>엔딩 앨범 · ${nFound()} / ${nEndings()}</h3><div class="album">${def.endings.map((e) => S.endings[e.id]
-      ? `<button class="aitem got" data-ending="${e.id}"><span class="astamp">${esc(e.stamp || "旅")}</span><span class="ja">${ruby(e.ja)}</span><small>${esc(e.ko)}</small></button>`
-      : `<div class="aitem"><span class="astamp">？</span><span>？？？</span><small>${esc(e.hint || "")}</small></div>`).join("")}</div></div>`;
+      ? `<button class="aitem got" data-ending="${e.id}"><span class="astamp">${T.stamp(e)}</span><span class="${isKo() ? "" : "ja"}">${T.eTitle(e)}</span>${isKo() ? "" : `<small>${esc(e.ko)}</small>`}</button>`
+      : `<div class="aitem"><span class="astamp">?</span><span>???</span><small>${esc(e.hint || "")}</small></div>`).join("")}</div></div>`;
   }
   function renderAlbum() {
     app.innerHTML = `<div class="screen">${bar({ title: "엔딩 앨범", sub: `${nFound()} / ${nEndings()} 발견`, back: "back" })}
@@ -487,9 +535,9 @@
   function endingSheet(id) {
     const e = SH.seasonDef.endings.find((x) => x.id === id);
     if (!e) return;
-    openSheet(`<div class="result-head" style="padding-top:4px"><div class="stamp" aria-hidden="true">${esc(e.stamp || "旅")}</div>
-      <h2 class="ja">${ruby(e.ja)}</h2><p class="eko">${esc(e.ko)}</p></div>
-      <p class="note story">${ruby(e.text)}</p><button class="btn primary" data-act="close">닫기</button>`, { label: e.ko });
+    openSheet(`<div class="result-head" style="padding-top:4px"><div class="stamp" aria-hidden="true">${T.stamp(e)}</div>
+      <h2 class="${isKo() ? "" : "ja"}">${T.eTitle(e)}</h2>${isKo() ? "" : `<p class="eko">${esc(e.ko)}</p>`}</div>
+      <p class="note story">${T.eText(e)}</p><button class="btn primary" data-act="close">닫기</button>`, { label: e.ko });
   }
 
   /* ═══════════ 旅ノート ═══════════ */
@@ -498,7 +546,7 @@
       .map(([id, m]) => {
         const [chId, k] = id.split(":");
         const ch = SH.getChapter(chId);
-        const x = ch && ch.expressions[k];
+        const x = ch && dict(ch)[k];
         return x ? { id, ch, k, x, m } : null;
       })
       .filter(Boolean)
@@ -537,7 +585,7 @@
       dock = quizDock();
     }
     app.innerHTML = `<div class="screen">
-      ${bar({ title: `<span class="ja">${CFG.noteName}</span>`, sub: `모은 표현 ${list.length}개`, back: "back" })}
+      ${bar({ title: `<span class="ja">${CFG.noteName}</span>`, sub: `${EDS[ED].name} · 모은 표현 ${list.length}개`, back: "back" })}
       <div class="tabs" role="tablist">${tabs}</div>
       <div class="scroll">${body}</div>${dock ? `<div class="dock">${dock}</div>` : ""}</div>`;
   }
@@ -545,7 +593,7 @@
   /* 3지선다: 일본어 → 뜻 / 뜻 → 일본어를 번갈아 낸다. 오답 보기는 다른 챕터 표현까지 끌어온다. */
   function makeQuiz(list) {
     const pool = [];
-    SH.chapters.forEach((c) => Object.entries(c.expressions).forEach(([k, x]) => pool.push({ ch: c, k, x })));
+    SH.chapters.forEach((c) => Object.entries(dict(c)).forEach(([k, x]) => pool.push({ ch: c, k, x })));
     const qs = shuffle(list.slice()).slice(0, Math.min(5, list.length)).map((e, n) => {
       const others = shuffle(pool.filter((p) => p.x.ko !== e.x.ko)).slice(0, 2);
       const opts = shuffle([e, ...others]);
@@ -615,27 +663,27 @@
     const run = S.run && SH.getChapter(S.run.ch);
     openSheet(`<h2 class="set-h">${ok ? "💾 저장했어요" : "저장하지 못했어요"}</h2>
       <p class="note">${ok
-        ? `<span class="ja">第${run.no}章 ${ruby(run.title)}</span>, 지금 장면까지 이 기기에 저장됐어요. 다음에 앱을 켜면 표지에서 <b>이어하기</b>를 누르면 됩니다.`
+        ? `${EDS[ED].name} ${T.chHead(run)}, 지금 장면까지 이 기기에 저장됐어요. 다음에 앱을 켜면 표지에서 <b>이어하기</b>를 누르면 됩니다.`
         : "이 브라우저는 저장을 막고 있어요(시크릿 창 등). 일반 창이나 설치한 앱에서 열어 주세요."}</p>
       <div class="btn-row"><button class="btn" data-act="title">저장하고 나가기</button><button class="btn primary" data-act="close">계속하기</button></div>`, { label: "저장" });
   }
   function resetSheet() {
     openSheet(`<h2 class="set-h">새 여행을 떠날까요?</h2>
-      <p class="note">이번 여행의 장 기록과 기억이 지워지고 第1章부터 다시 시작해요. <b>엔딩 앨범</b>과 <span class="ja">${CFG.noteName}</span>, 걸어 본 갈래 표시는 그대로 남아요.</p>
+      <p class="note">${EDS[ED].name}의 장 기록과 기억이 지워지고 1장부터 다시 시작해요. <b>엔딩 앨범</b>${isKo() ? "" : `과 <span class="ja">${CFG.noteName}</span>`}, 걸어 본 갈래 표시는 그대로 남아요.</p>
       <div class="btn-col"><button class="btn primary" data-act="donewtrip">새 여행 떠나기</button>
         <button class="btn" data-act="close">취소</button>
         <button class="btn ghost danger" data-act="wipe">앨범과 노트까지 모두 지우기</button></div>`, { label: "새 여행 확인" });
   }
   function wipeSheet() {
     openSheet(`<h2 class="set-h">정말 모두 지울까요?</h2>
-      <p class="note">엔딩 앨범, <span class="ja">${CFG.noteName}</span>, 걸어 본 갈래 표시까지 전부 지워집니다. 되돌릴 수 없어요.</p>
+      <p class="note">${EDS[ED].name}의 엔딩 앨범${isKo() ? "" : `, <span class="ja">${CFG.noteName}</span>`}, 걸어 본 갈래 표시까지 전부 지워집니다. 다른 판의 기록은 남아요. 되돌릴 수 없어요.</p>
       <div class="btn-row"><button class="btn" data-act="close">취소</button><button class="btn primary" data-act="dowipe">모두 지우기</button></div>`, { label: "전체 삭제 확인" });
   }
   function rewindSheet(id) {
     const ch = SH.getChapter(id);
     const later = SH.chapters.filter((c) => c.no > ch.no && S.chapters[c.id]);
-    openSheet(`<h2 class="set-h"><span class="ja">第${ch.no}章 ${ruby(ch.title)}</span>부터 다시 걸을까요?</h2>
-      <p class="note">${later.length ? `이 장에서 다른 말을 하면 뒤 이야기가 달라지므로, <b>第${ch.no + 1}章 이후의 기록</b>은 지워져요. ` : ""}엔딩 앨범과 <span class="ja">${CFG.noteName}</span>는 그대로예요.</p>
+    openSheet(`<h2 class="set-h">${T.chHead(ch)}부터 다시 걸을까요?</h2>
+      <p class="note">${later.length ? `이 장에서 다른 말을 하면 뒤 이야기가 달라지므로, <b>${ch.no + 1}장 이후의 기록</b>은 지워져요. ` : ""}엔딩 앨범${isKo() ? "" : `과 <span class="ja">${CFG.noteName}</span>`}는 그대로예요.</p>
       <div class="btn-row"><button class="btn" data-act="close">취소</button><button class="btn primary" data-replay="${id}" data-confirm="1">다시 걷기</button></div>`, { label: "다시 걷기 확인" });
   }
 
@@ -695,6 +743,23 @@
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.say != null) return TTS.speak(d.say);
+    if (d.furi != null) {
+      const b = t.closest(".bubble");
+      const on = b.classList.toggle("furi-on");
+      t.setAttribute("aria-pressed", String(on));
+      return;
+    }
+    if (d.ed != null) {
+      if (d.ed === ED) return;
+      useEdition(d.ed);
+      applySettings();
+      noteState = { tab: "list", card: 0, flipped: false, quiz: null };
+      try { history.replaceState({ v: "title" }, "", location.pathname); } catch (e) {}
+      renderTitle();
+      const el = document.querySelector(`[data-ed="${d.ed}"]`);
+      if (el) el.focus({ preventScroll: true });
+      return;
+    }
     if (d.ko != null) {
       const ko = t.closest(".bubble").querySelector(".ko");
       ko.hidden = !ko.hidden;
@@ -734,24 +799,14 @@
       return renderNote();
     }
     if (d.q != null) return answerQuiz(+d.q);
-    if (d.level != null) {
-      S.settings.easy = d.level === "easy";
-      save();
-      applySettings();
-      t.parentElement.querySelectorAll("button").forEach((b) => {
-        b.setAttribute("aria-pressed", String(b === t));
-        b.setAttribute("aria-checked", String(b === t));
-      });
-      $("#levelDesc").textContent = levelDesc();
-      return;
-    }
     switch (d.act) {
       case "title": return go("title");
+      case "furiall": S.settings.furi = !S.settings.furi; save(); applySettings(); return renderTitle();
       case "map": return go("map");
       case "album": return go("album");
       case "back": return history.length > 1 && (view.v === "note" || view.v === "album") ? history.back() : go("title");
       case "resume": return go("play");
-      case "note": noteState.tab = "list"; return go("note");
+      case "note": if (isKo()) return; noteState.tab = "list"; return go("note");
       case "quiz": noteState.tab = "quiz"; noteState.quiz = null; return go("note", { tab: "quiz" });
       case "save": return saveSheet();
       case "install": return Install.sheet();
@@ -795,7 +850,7 @@
 
   /* ═══════════ 시작 ═══════════ */
   applySettings();
-  app.innerHTML = `<div class="loading">${CFG.trip} 준비 중…</div>`;
+  app.innerHTML = `<div class="loading">밤의 골목으로…</div>`;
   SH.loadData("data/").then((res) => {
     const bad = res.filter((r) => !r.ok);
     if (bad.length) console.warn("불러오지 못한 데이터:", bad.map((r) => r.f).join(", "));

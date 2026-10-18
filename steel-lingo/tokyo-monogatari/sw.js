@@ -1,4 +1,4 @@
-/* 스틸링고 大阪物語 — 서비스워커 (엔진은 出張編·大阪編과 같다)
+/* 스틸링고 東京物語 — 서비스워커 (엔진은 出張編·大阪編·大阪物語와 같다)
 
    같은 주소(savvygonsama.github.io)에 스틸링고 Lite·Pro 등 다른 앱이 함께 산다.
    캐시 저장소는 주소 단위로 공유되므로, 지울 때는 내 접두사(SH_APP.cachePrefix)로 시작하는 것만 지운다.
@@ -9,7 +9,7 @@
    - 나머지(HTML·JS·CSS·데이터): 네트워크 먼저, 2.5초 안에 안 오면 저장본 → 인터넷이 없어도 열린다 */
 importScripts("data/index.js");
 
-const PREFIX = (self.SH_APP && self.SH_APP.cachePrefix) || "osakamono-";
+const PREFIX = (self.SH_APP && self.SH_APP.cachePrefix) || "tokyomono-";
 const CACHE = PREFIX + "v1";
 const TIMEOUT = 2500;
 const SHELL = [

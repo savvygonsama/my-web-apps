@@ -14,6 +14,7 @@
 | ✈️ **스틸링고 出張編** | 일본 출장 서바이벌 분기형 스토리. 고객사 방문·회식·상담에서 경어 수위를 골라 익힘. 문장마다 🔍 뜯어보기 | [`steel-lingo/shucchou/`](steel-lingo/shucchou/) |
 | 🐙 **스틸링고 大阪編** | 여행편 ①. 오사카 2박 3일 먹방 여행으로 익히는 일상 일본어(초급). 간사이 사투리와 현지 매너, 문장마다 🔍 뜯어보기 | [`steel-lingo/osaka/`](steel-lingo/osaka/) |
 | 🏮 **스틸링고 大阪物語** | 大阪編을 **정답 없는 분기 이야기**로 다시 쓴 판. 점수도 정답 예문도 없이, 내가 한 말에 상대가 반응하고 뒤 이야기가 갈라진다. 엔딩 18개와 엔딩 앨범, 장 골라 다시 걷기 | [`steel-lingo/osaka-monogatari/`](steel-lingo/osaka-monogatari/) |
+| 🌙 **스틸링고 東京物語** | 자정에만 불이 켜지는 도쿄 골목 식당. 흉터 있는 마스터와 사연 있는 손님들 사이에서 말 한마디로 갈라지는 **신비한 분기 이야기**, 엔딩 18개. **한국어편·초급편·상급편** 세 판(판마다 기록 따로) | [`steel-lingo/tokyo-monogatari/`](steel-lingo/tokyo-monogatari/) |
 | 🇰🇷 **ハングリンゴ Lite** | 스틸링고 Lite를 뒤집은 앱. **일본인이 한국어를 배웁니다** — 화면 글은 일본어, 한글 위에는 가타카나 | [`hangul-lingo/lite/`](hangul-lingo/lite/) |
 | 📖 **ことば日和** | 일본어 어휘 확장. `index.html`은 중급(N3), `beginner.html`은 초급판 | [`kotoba-biyori/`](kotoba-biyori/) |
 | 🗣️ **ROUNDTABLE** | 토론형 영어 회화 쉐도잉. 하루 20분 | [`roundtable/`](roundtable/) |
