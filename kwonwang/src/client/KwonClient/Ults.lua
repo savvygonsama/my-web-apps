@@ -75,6 +75,14 @@ local function near(at: Vector3, r: number): boolean
 	local root = rootOf(me)
 	return root ~= nil and (root.Position - at).Magnitude < r
 end
+-- 크게 흔들리는 순간: 불티·빛·흙먼지·돌 조각을 흔들림 세기만큼 (모든 오의가 함께 쓴다)
+local function boom(at: Vector3, power: number)
+	if power >= 1.1 then
+		Fx.impact(at, Color3.fromRGB(255, 236, 205), math.clamp(power - 0.3, 0.8, 2.6))
+	else
+		Fx.burst("spark", at, Color3.fromRGB(255, 236, 205), 8, 1)
+	end
+end
 -- 화면 빛깔을 잠깐 바꾼다 (흑백, 뒤집힘, 어둠)
 local grade = Instance.new("ColorCorrectionEffect")
 grade.Name = "KwonUltGrade"
@@ -292,6 +300,7 @@ local function demonSummon(caster: Model, dur: number, styleId: string)
 	vanish(d, dur + 0.3, 0.5)
 	if hooks.shake and near(base, 80) then
 		hooks.shake(1.4)
+		boom(base, 1.4)
 	end
 end
 local function demonStrike(caster: Model, data: any)
@@ -330,6 +339,7 @@ local function demonStrike(caster: Model, data: any)
 	end
 	if hooks.shake and spots[1] and near(spots[1], 70) then
 		hooks.shake(data.last and 1.6 or 0.9)
+		boom(spots[1], data.last and 1.6 or 0.9)
 	end
 end
 
@@ -476,6 +486,7 @@ local function dragonStrike(caster: Model, data: any)
 	end
 	if hooks.shake and near(at, 70) then
 		hooks.shake(1.1)
+		boom(at, 1.1)
 	end
 end
 
@@ -604,6 +615,7 @@ function H.stomp(data: any)
 	Fx.text(data.at + Vector3.new(0, 10, 0), "금강 법신", gold, 44, 1.2)
 	if hooks.shake and near(data.at, 80) then
 		hooks.shake(1.8)
+		boom(data.at, 1.8)
 	end
 end
 function H.aftershock(data: any)
@@ -669,6 +681,7 @@ function H.geyser(data: any)
 	Fx.ring(g + Vector3.new(0, 0.4, 0), c, 4, r * 4, 0.6)
 	if hooks.shake and near(at, 80) then
 		hooks.shake(1.6)
+		boom(at, 1.6)
 	end
 end
 
@@ -725,6 +738,7 @@ function H.flashBurst(data: any)
 	end
 	if p and hooks.shake and near(p, 90) then
 		hooks.shake(1.3)
+		boom(p, 1.3)
 	end
 	local _ = c
 end
@@ -752,6 +766,7 @@ function H.boltJump(data: any)
 	Fx.sound("heavy", 0.6, 1.4, data.at)
 	if hooks.shake and near(data.at, 60) then
 		hooks.shake(0.7)
+		boom(data.at, 0.7)
 	end
 end
 
@@ -809,6 +824,7 @@ function H.burst(data: any)
 	Fx.sound("heavy", big and 1 or 0.6, 0.8, at)
 	if hooks.shake and near(at, 60) then
 		hooks.shake(big and 1.4 or 0.6)
+		boom(at, big and 1.4 or 0.6)
 	end
 end
 
@@ -848,6 +864,7 @@ function H.freeze(data: any)
 			Fx.ring(at - Vector3.new(0, 2, 0), Color3.new(1, 1, 1), 4, 70, 0.6)
 			if hooks.shake and near(at, 100) then
 				hooks.shake(2)
+				boom(at, 2)
 			end
 		end)
 	end)
@@ -1014,6 +1031,7 @@ function H.sword(data: any)
 				end
 				if hooks.shake and near(at, 100) then
 					hooks.shake(2)
+					boom(at, 2)
 				end
 			end)
 		end
@@ -1117,6 +1135,7 @@ function H.blackhole(data: any)
 	Fx.sound("heavy", 1, 0.3, sky)
 	if hooks.shake and near(at, 90) then
 		hooks.shake(1.2)
+		boom(at, 1.2)
 	end
 end
 function H.blackholeBurst(data: any)
@@ -1147,6 +1166,7 @@ function H.blackholeBurst(data: any)
 	end
 	if hooks.shake and near(at, 110) then
 		hooks.shake(2.6)
+		boom(at, 2.6)
 	end
 	Fx.sound("heavy", 1, 0.25, at)
 end
@@ -1243,17 +1263,29 @@ function H.genesis(data: any)
 		Fx.sound("hit", 1, 0.5, at)
 		if hooks.shake and near(at, 90) then
 			hooks.shake(0.6)
+			boom(at, 0.6)
 		end
 	end)
 	-- 3) 깨진다: 조각이 사방으로 흩어지고, 흰 빛이 세상을 덮는다
 	task.delay(breakAt, function()
-		for _, p in ipairs(parts) do
-			if p.Parent then
-				local dir = p.Position - at
-				dir = dir.Magnitude > 0.1 and dir.Unit or Vector3.new(0, 1, 0)
-				tween(p, 0.5, { Position = p.Position + dir * 25, Transparency = 1 })
-				Debris:AddItem(p, 0.55)
-			end
+		-- 별바다와 금은 그 자리에서 빛을 잃는다 (날아가는 것은 아래의 유리 조각)
+		-- 수백 개를 하나씩 트윈하지 않고, 몇 걸음에 걸쳐 한꺼번에 흐려 지운다
+		local from: { number } = {}
+		for i, p in ipairs(parts) do
+			from[i] = p.Transparency
+		end
+		for step = 1, 4 do
+			task.delay(step * 0.08, function()
+				for i, p in ipairs(parts) do
+					if p.Parent then
+						if step == 4 then
+							p:Destroy()
+						else
+							p.Transparency = from[i] + (1 - from[i]) * step / 4
+						end
+					end
+				end
+			end)
 		end
 		for _ = 1, 50 do
 			local a = math.random() * math.pi * 2
@@ -1279,6 +1311,7 @@ function H.genesis(data: any)
 		end
 		if hooks.shake and near(at, 120) then
 			hooks.shake(3)
+			boom(at, 3)
 		end
 		Fx.sound("heavy", 1, 0.2, at)
 	end)
@@ -1311,6 +1344,7 @@ function H.pulse(data: any)
 			fade(crater, 0.6, 0.4)
 			if hooks.shake and near(at, 50) then
 				hooks.shake(0.7)
+				boom(at, 0.7)
 			end
 		end)
 		Fx.text(at + Vector3.new(0, 5, 0), "중압", c2, 30, 0.8)
@@ -1397,6 +1431,7 @@ function Ults.variant(data: any): boolean
 		Fx.sound("heavy", 1, 0.45, at)
 		if hooks.shake and near(at, 70) then
 			hooks.shake(1.6)
+			boom(at, 1.6)
 		end
 		return true
 	elseif data.fx == "prism" and data.kind == "strike" then
@@ -1471,6 +1506,7 @@ function H.tornado(data: any)
 	Fx.text(from + Vector3.new(0, 8, 0), "풍신강림", c, 44, 1.2)
 	if hooks.shake and near(from, 80) then
 		hooks.shake(0.8)
+		boom(from, 0.8)
 	end
 end
 
@@ -1512,6 +1548,14 @@ function Ults.intro(styleId: any, model: Model)
 	Debris:AddItem(col, 0.55)
 	Fx.ring(r.Position - Vector3.new(0, 2.4, 0), c, 14, 2, 0.4)
 	Fx.afterimage(model, c, 0.4)
+	-- 오의를 여는 순간: 빛 가루가 회오리치듯 솟고, 둘레가 크게 밝아지며 불씨가 흩날린다
+	Fx.burst("glitter", r.Position, c2, 40, 1.4)
+	Fx.burst("ember", r.Position, c, 18, 1.2)
+	Fx.flash(r.Position, c, 40, 5, 0.8)
+	local aura = piece(Vector3.new(5, 7, 5), c, Enum.Material.ForceField, Enum.PartType.Ball, 0)
+	aura.CFrame = r.CFrame
+	tween(aura, 0.6, { Size = Vector3.new(12, 15, 12), Transparency = 1 })
+	Debris:AddItem(aura, 0.65)
 end
 
 return Ults

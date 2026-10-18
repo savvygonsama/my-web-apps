@@ -95,6 +95,9 @@ end
 
 -- 터지는 빛 조각
 function Fx.spark(pos: Vector3, color: Color3, size: number, count: number)
+	-- 불티 입자와 맞은 자리의 빛
+	Fx.burst("spark", pos, color, count * 1.4, math.clamp(size / 1.3, 0.6, 2))
+	Fx.flash(pos, color, 8 + size * 4, 1.6 + size * 0.6, 0.18)
 	local flash = piece(Vector3.new(1, 1, 1) * size, Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Ball, 0)
 	flash.Position = pos
 	tween(flash, 0.12, { Size = Vector3.new(1, 1, 1) * size * 2.4, Transparency = 1 })
@@ -118,6 +121,14 @@ end
 -- 속이 빈 빛의 테 (조각을 둥글게 이어 붙인다) + 안쪽의 옅은 빛
 function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: number, faceDir: Vector3?)
 	local cf = faceDir and lookAt(pos, pos + faceDir) or CFrame.lookAt(pos, pos + Vector3.new(0, 1, 0), Vector3.new(0, 0, -1))
+	-- 바닥의 큰 충격파: 흙먼지가 고리를 따라 퍼지고, 아주 크면 돌 조각이 튄다
+	if not faceDir and toD >= 24 and toD > fromD then
+		Fx.burst("dust", pos + Vector3.new(0, 0.5, 0), Color3.fromRGB(175, 160, 140), math.min(30, toD / 2.5), math.clamp(toD / 28, 0.8, 2.2))
+		Fx.flash(pos + Vector3.new(0, 2, 0), color, toD * 0.6, 2.5, life)
+		if toD >= 40 then
+			Fx.debris(pos, math.min(10, math.floor(toD / 8)), math.min(26, toD * 0.35))
+		end
+	end
 	local glow = piece(Vector3.new(0.1, fromD, fromD), color, Enum.Material.Neon, Enum.PartType.Cylinder, 0.7)
 	glow.CFrame = cf * CFrame.Angles(0, math.rad(90), 0)
 	tween(glow, life, { Size = Vector3.new(0.05, toD, toD), Transparency = 1 })
@@ -160,24 +171,34 @@ function Fx.text(pos: Vector3, text: string, color: Color3, size: number, rise: 
 	l.Font = Enum.Font.GothamBlack
 	l.TextSize = size
 	l.TextColor3 = color
-	l.TextStrokeTransparency = 0
-	l.TextStrokeColor3 = Color3.fromRGB(20, 10, 10)
+	l.TextStrokeTransparency = 1
 	l.Text = text
 	l.Parent = bb
+	-- 글자: 위는 밝고 아래로 진해지는 빛깔, 굵은 검은 테
+	local grad = Instance.new("UIGradient")
+	grad.Rotation = 90
+	grad.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.55), color)
+	grad.Parent = l
+	local st = Instance.new("UIStroke")
+	st.Color = Color3.fromRGB(18, 8, 8)
+	st.Thickness = math.clamp(size / 12, 1.5, 4)
+	st.Parent = l
 	local sc = Instance.new("UIScale")
 	sc.Scale = 1.8
 	sc.Parent = l
 	tween(sc, 0.14, { Scale = 1 }, Enum.EasingStyle.Back)
 	tween(anchor, 0.8, { Position = pos + Vector3.new(math.random() * 2 - 1, rise or 3.5, 0) })
 	task.delay(0.45, function()
-		tween(l, 0.35, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		tween(l, 0.35, { TextTransparency = 1 })
+		tween(st, 0.35, { Transparency = 1 })
 	end)
 	Debris:AddItem(anchor, 0.85)
 end
 
 -- 흙먼지
 function Fx.dust(pos: Vector3, size: number)
-	for _ = 1, 5 do
+	Fx.burst("dust", pos, Color3.fromRGB(185, 168, 140), 6 + size * 2, math.clamp(size / 2, 0.6, 2))
+	for _ = 1, 3 do
 		local p = piece(Vector3.new(1, 1, 1) * size * (0.6 + math.random() * 0.6), Color3.fromRGB(190, 170, 140), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.4)
 		p.Position = pos + Vector3.new(math.random() * 2 - 1, 0, math.random() * 2 - 1) * size
 		tween(p, 0.6, { Size = p.Size * 2.2, Position = p.Position + Vector3.new(0, size, 0), Transparency = 1 })
@@ -203,9 +224,17 @@ function Fx.lightning(from: Vector3, to: Vector3, color: Color3?, width: number?
 			seg.CFrame = lookAt((prev + p) / 2, p)
 			tween(seg, 0.25, { Transparency = 1, Size = Vector3.new(w * 0.2, w * 0.2, len) })
 			Debris:AddItem(seg, 0.3)
+			-- 번개 둘레의 흐린 빛무리
+			local halo = piece(Vector3.new(w * 4, w * 4, len), col, Enum.Material.Neon, nil, 0.8)
+			halo.CFrame = seg.CFrame
+			tween(halo, 0.2, { Transparency = 1 })
+			Debris:AddItem(halo, 0.22)
 		end
 		prev = p
 	end
+	-- 떨어진 자리: 불티와 번쩍임
+	Fx.burst("spark", to, col, 8, 1)
+	Fx.flash(to, col, 18, 4, 0.2)
 end
 
 -- 잔상: 몸을 반투명한 그림자로 남긴다
@@ -287,6 +316,10 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	local s = heavy and 1.6 or 1
 	local c, c2 = style.color, style.color2
 	Fx.spark(pos, c, 1.3 * s, heavy and 12 or 7)
+	-- 강타는 땅까지 울린다 (흙먼지·돌 조각)
+	if heavy then
+		Fx.impact(pos, c, 1)
+	end
 	if style.fx == "water" then
 		-- 물방울과 물결
 		Fx.ring(pos, c2, 1, 9 * s, 0.35, dir)
@@ -1169,6 +1202,9 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	local c, c2 = style.color, style.color2
 	local pos = r.Position
 	local look = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z)
+	-- 기를 끌어올리는 순간: 몸 둘레로 빛 가루가 솟고 잠깐 밝아진다
+	Fx.burst("glitter", pos, c2, 16, 1)
+	Fx.flash(pos, c, 18, 2.5, 0.45)
 	look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
 	local feet = pos - Vector3.new(0, 2.6, 0)
 	-- 공통: 발밑 고리와 몸의 기운
@@ -1761,6 +1797,14 @@ function Fx.mech(data: any)
 	local c = data.color or (style and style.color) or Color3.fromRGB(255, 230, 180)
 	local c2 = data.color and data.color:Lerp(Color3.new(1, 1, 1), 0.5) or (style and style.color2) or Color3.new(1, 1, 1)
 	local kind = data.kind
+	-- 기술이 땅에 닿는 곳: 빛과 불티 (장치마다 공통)
+	if data.at and (kind == "zone" or kind == "drop" or kind == "strike" or kind == "pillar" or kind == "wave" or kind == "beam" or kind == "launch") then
+		Fx.flash(data.at, c, (data.radius or 8) * 2.2, 3, 0.35)
+		Fx.burst("spark", data.at, c, 10, math.clamp((data.radius or 8) / 8, 0.8, 1.8))
+		if kind == "drop" or kind == "wave" or kind == "launch" then
+			Fx.burst("dust", data.at - Vector3.new(0, 2, 0), Color3.fromRGB(175, 160, 140), 14, math.clamp((data.radius or 8) / 10, 0.8, 2))
+		end
+	end
 	if kind == "zone" then
 		local at, r, dur = data.at, data.radius, data.dur
 		local disc = groundDisc(at, 1, c, 0.55)
@@ -2038,6 +2082,157 @@ function Fx.mech(data: any)
 				Fx.ring(p - Vector3.new(0, 2.2, 0), c, 1, (data.radius or 6) * 2, 0.35)
 			end)
 		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 고급 연출: 모든 기술이 함께 쓰는 바탕 (불티·연기·흙먼지 입자, 터지는 빛, 튀는 돌 조각)
+-- 기술 자체는 그대로, 맞는 순간·터지는 순간의 질감만 올린다
+------------------------------------------------------------------------
+local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
+local BURST_KINDS: { [string]: any } = {
+	-- 날카로운 불티: 빠르게 튀었다가 금방 진다
+	spark = { tex = TEX_SPARK, life = { 0.18, 0.42 }, speed = { 22, 48 }, size = { 0.55, 0 }, drag = 7, light = 1, trans = { 0, 1 }, spread = 180 },
+	-- 떠오르는 불씨
+	ember = { tex = TEX_FIRE, life = { 0.5, 1.1 }, speed = { 4, 12 }, size = { 0.7, 0 }, drag = 2, light = 1, trans = { 0.1, 1 }, spread = 180, accel = Vector3.new(0, 10, 0) },
+	-- 피어오르는 연기 (부드럽게 커지며 사라진다)
+	smoke = { tex = TEX_SMOKE, life = { 0.9, 1.7 }, speed = { 3, 9 }, size = { 2, 7 }, drag = 3, light = 0, trans = { 0.45, 1 }, spread = 180, rot = 60 },
+	-- 땅을 따라 퍼지는 흙먼지
+	dust = { tex = TEX_SMOKE, life = { 0.7, 1.3 }, speed = { 14, 30 }, size = { 1.6, 5.5 }, drag = 5, light = 0, trans = { 0.35, 1 }, spread = 90, rot = 40 },
+	-- 빛 가루 (오의의 여운)
+	glitter = { tex = TEX_SPARK, life = { 0.6, 1.4 }, speed = { 6, 18 }, size = { 0.45, 0 }, drag = 3, light = 1, trans = { 0, 1 }, spread = 180, accel = Vector3.new(0, 3, 0) },
+}
+local burstFolder = Instance.new("Folder")
+burstFolder.Name = "KwonBursts"
+burstFolder.Parent = workspace
+local burstPool: { [string]: { list: { ParticleEmitter }, i: number } } = {}
+local function emitterFor(kind: string): ParticleEmitter?
+	local def = BURST_KINDS[kind]
+	if not def then
+		return nil
+	end
+	local pool = burstPool[kind]
+	if not pool then
+		pool = { list = {}, i = 0 }
+		for _ = 1, 6 do
+			local holder = Instance.new("Part")
+			holder.Anchored = true
+			holder.CanCollide = false
+			holder.CanQuery = false
+			holder.CanTouch = false
+			holder.Transparency = 1
+			holder.Size = Vector3.new(0.2, 0.2, 0.2)
+			holder.Parent = burstFolder
+			local e = Instance.new("ParticleEmitter")
+			e.Texture = def.tex
+			e.Rate = 0
+			e.Lifetime = NumberRange.new(def.life[1], def.life[2])
+			e.Speed = NumberRange.new(def.speed[1], def.speed[2])
+			e.Size = NumberSequence.new(def.size[1], def.size[2])
+			e.Transparency = NumberSequence.new(def.trans[1], def.trans[2])
+			e.Drag = def.drag
+			e.LightEmission = def.light
+			e.SpreadAngle = Vector2.new(def.spread, def.spread)
+			e.Acceleration = def.accel or Vector3.zero
+			e.Rotation = NumberRange.new(0, 360)
+			e.RotSpeed = NumberRange.new(-(def.rot or 0), def.rot or 0)
+			e.EmissionDirection = Enum.NormalId.Top
+			e.Parent = holder
+			table.insert(pool.list, e)
+		end
+		burstPool[kind] = pool
+	end
+	pool.i = pool.i % #pool.list + 1
+	return pool.list[pool.i]
+end
+function Fx.burst(kind: string, pos: Vector3, color: Color3, n: number, scale: number?)
+	local e = emitterFor(kind)
+	if not e then
+		return
+	end
+	local def = BURST_KINDS[kind]
+	local k = scale or 1
+	local holder = e.Parent :: BasePart
+	holder.CFrame = CFrame.new(pos)
+	e.Color = ColorSequence.new(color, color:Lerp(Color3.new(1, 1, 1), def.light > 0 and 0.5 or 0.15))
+	e.Size = NumberSequence.new(def.size[1] * k, def.size[2] * k)
+	e.Speed = NumberRange.new(def.speed[1] * math.sqrt(k), def.speed[2] * math.sqrt(k))
+	pcall(function()
+		e:Emit(math.max(1, math.floor(n)))
+	end)
+end
+
+-- 터지는 빛: 맞은 자리 둘레를 잠깐 실제로 밝힌다 (미래 조명이라 그림자까지 진다)
+local flashPool: { PointLight } = {}
+local flashIdx = 0
+function Fx.flash(pos: Vector3, color: Color3, range: number, brightness: number, life: number)
+	if #flashPool < 8 then
+		local holder = Instance.new("Part")
+		holder.Anchored = true
+		holder.CanCollide = false
+		holder.CanQuery = false
+		holder.CanTouch = false
+		holder.Transparency = 1
+		holder.Size = Vector3.new(0.2, 0.2, 0.2)
+		holder.Parent = burstFolder
+		local l = Instance.new("PointLight")
+		l.Brightness = 0
+		l.Shadows = false
+		l.Parent = holder
+		table.insert(flashPool, l)
+	end
+	flashIdx = flashIdx % #flashPool + 1
+	local l = flashPool[flashIdx]
+	local holder = l.Parent :: BasePart
+	holder.CFrame = CFrame.new(pos)
+	l.Color = color
+	l.Range = math.min(60, range)
+	l.Brightness = brightness
+	TweenService:Create(l, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Brightness = 0 }):Play()
+end
+
+-- 튀는 돌 조각: 포물선을 그리며 날아갔다가 떨어져 사라진다
+function Fx.debris(pos: Vector3, n: number, power: number, color: Color3?)
+	local ground = color or Color3.fromRGB(120, 110, 100)
+	for _ = 1, n do
+		local s = 0.4 + math.random() * 0.9
+		local chunk = piece(Vector3.new(s, s * 0.7, s * 0.9), ground:Lerp(Color3.new(0, 0, 0), math.random() * 0.3), Enum.Material.Slate, nil, 0)
+		chunk.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+		local a = math.random() * math.pi * 2
+		local out = Vector3.new(math.cos(a), 0, math.sin(a)) * power * (0.5 + math.random() * 0.6)
+		local peak = pos + out * 0.5 + Vector3.new(0, power * (0.4 + math.random() * 0.4), 0)
+		local land = pos + out + Vector3.new(0, -0.5, 0)
+		local spin = CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+		TweenService:Create(chunk, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = CFrame.new(peak) * spin }):Play()
+		task.delay(0.22, function()
+			if chunk.Parent then
+				TweenService:Create(chunk, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = CFrame.new(land) * spin * spin }):Play()
+			end
+		end)
+		task.delay(0.7, function()
+			if chunk.Parent then
+				TweenService:Create(chunk, TweenInfo.new(0.4), { Transparency = 1, Size = chunk.Size * 0.5 }):Play()
+			end
+		end)
+		Debris:AddItem(chunk, 1.15)
+	end
+end
+
+-- 큰 충격: 불티 + 빛 + (크면) 흙먼지 고리 · 돌 조각 · 연기
+function Fx.impact(pos: Vector3, color: Color3, scale: number?)
+	local k = scale or 1
+	Fx.burst("spark", pos, color, 10 * k, math.min(2, 0.8 + k * 0.4))
+	Fx.flash(pos, color, 14 + 10 * k, 3 + k, 0.25 + 0.1 * k)
+	if k >= 1 then
+		local g = pos - Vector3.new(0, 2.2, 0)
+		Fx.burst("dust", g, Color3.fromRGB(170, 155, 135), 10 * k, k)
+		Fx.debris(g, math.floor(4 + 3 * k), 10 + 6 * k)
+	end
+	if k >= 2 then
+		Fx.burst("smoke", pos, Color3.fromRGB(90, 85, 85), 6 * k, k * 0.8)
+		Fx.burst("ember", pos, color, 8 * k, 1)
 	end
 end
 

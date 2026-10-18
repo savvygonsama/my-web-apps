@@ -108,10 +108,15 @@ function World.setupLighting()
 	atmo.Decay = Color3.fromRGB(150, 110, 90)
 	atmo.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.6
-	bloom.Size = 28
-	bloom.Threshold = 1.3
+	bloom.Intensity = 0.8
+	bloom.Size = 32
+	bloom.Threshold = 1.12
 	bloom.Parent = Lighting
+	-- 햇살 줄기 (빛이 구름·나무 사이로 새어 든다)
+	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
+	rays.Intensity = 0.07
+	rays.Spread = 0.75
+	rays.Parent = Lighting
 	local cc = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
 	cc.Name = "Mood"
 	cc.Saturation = 0.1
