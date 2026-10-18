@@ -346,7 +346,9 @@ local function masterTag(head: BasePart, name: string, style: any)
 	g.AlwaysOnTop = true
 	g.LightInfluence = 0
 	g.MaxDistance = 160
-	for i, line in ipairs({ { (style.elder and "" or "사부 · ") .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. (style.elder and "" or "  (T)"), style.color, 0.48 } }) do
+	-- 장로는 이름 한 줄만 (말 걸기는 가까이 가면 뜨는 T 안내로)
+	local lines = style.elder and { { name, Color3.fromRGB(255, 225, 150), 0.52 } } or { { "사부 · " .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. "  (T)", style.color, 0.48 } }
+	for i, line in ipairs(lines) do
 		local l = Instance.new("TextLabel")
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.fromScale(0, i == 1 and 0 or 0.52)

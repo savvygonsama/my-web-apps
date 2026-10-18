@@ -46,8 +46,7 @@ type Profile = {
 	story: number, -- 이야기 몇째 장
 	prog: number, -- 그 장의 진행
 	fragments: { [string]: boolean }, -- 주운 비급 조각
-	stamina: number,
-	staminaAt: number,
+	accepted: number,
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
@@ -68,8 +67,7 @@ local function defaultProfile(): Profile
 		story = 1,
 		prog = 0,
 		fragments = {},
-		stamina = Config.STAMINA.max,
-		staminaAt = os.time(),
+		accepted = 1,
 		gradeUp = {},
 	}
 end
@@ -149,8 +147,8 @@ local function sanitize(data: any): Profile
 	end
 	p.story = math.clamp(math.floor(num(data.story, #Config.Story)), 1, #Config.Story)
 	p.prog = math.floor(num(data.prog, 1e6))
-	p.stamina = type(data.stamina) == "number" and num(data.stamina, Config.STAMINA.max) or Config.STAMINA.max
-	p.staminaAt = type(data.staminaAt) == "number" and num(data.staminaAt, 1e11) or os.time()
+	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
+	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
 	return p
 end
 
@@ -304,7 +302,7 @@ local function pushState(player: Player)
 		story = p.story,
 		prog = p.prog,
 		fragments = p.fragments,
-		stamina = math.floor(p.stamina),
+		accepted = p.accepted == p.story,
 		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
@@ -528,11 +526,12 @@ function Story.advance(player: Player)
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
 		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = Config.Story[p.story].title })
-		-- 다음 장이 이미 이뤄졌다면 (경지 등) 이어서 넘긴다
+		-- 다음 장은 받아야 시작된다 (받기 전에는 목표 표시도 없다)
 		local nxt = Config.Story[p.story]
-		if not (nxt.goal.kind ~= "talk" and nxt.goal.kind ~= "kill" and nxt.goal.kind ~= "train" and nxt.goal.kind ~= "trial" and nxt.goal.kind ~= "boss" and Story.done(p, nxt.goal)) then
-			break
+		if nxt.goal.kind ~= "done" then
+			Push:FireClient(player, "storyOffer", { chapter = p.story, title = nxt.title, text = nxt.text })
 		end
+		break
 	end
 	states[player].dirty = true
 	refreshFighter(player)
@@ -544,6 +543,10 @@ function Story.event(player: Player, kind: string, id: string?, amount: number?)
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
+		return
+	end
+	-- 아직 받지 않은 이야기는 세지 않는다
+	if p.accepted ~= p.story then
 		return
 	end
 	local g = ch.goal
@@ -569,9 +572,27 @@ function Story.talk(player: Player)
 		return
 	end
 	Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+	-- 장로에게 들으면 그 이야기를 받은 것
+	if p.accepted ~= p.story then
+		Story.accept(player)
+	end
 	if ch.goal.kind == "talk" then
 		Story.advance(player)
+		-- 장로가 다음 할 일까지 일러 줬으니 다음 장도 받은 것
+		Story.accept(player)
 	end
+end
+
+-- 이야기 받기: 이때부터 목표가 보이고 세어진다
+function Story.accept(player: Player)
+	local p = profiles[player]
+	if not p or p.accepted == p.story then
+		return
+	end
+	p.accepted = p.story
+	states[player].dirty = true
+	pushState(player)
+	Story.check(player)
 end
 
 ------------------------------------------------------------------------
@@ -898,6 +919,13 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local act = f.act
 	if act and t < act.start + act.dur * (type(slot) == "number" and 0.7 or 0.85) and slot ~= "C" then
 		return
+	end
+	-- 강타(Z)는 연달아 못 쓴다 (정권 지르기 무한 연타 막기)
+	if slot == "H" then
+		if t < (f.cds.H or 0) - 0.1 and TEST_INF[player] ~= true then
+			return
+		end
+		f.cds.H = t + Config.HEAVY_CD
 	end
 	if slot == "E" or slot == "R" or slot == "G" then
 		if not Calc.unlocked(p, slot) then
@@ -1249,21 +1277,6 @@ end
 ------------------------------------------------------------------------
 local Train = {}
 
--- 수련 기력: 시간이 지나면 찬다
-local function regenStamina(p: Profile)
-	local S = Config.STAMINA
-	local now = os.time()
-	if p.stamina >= S.max then
-		p.staminaAt = now
-		return
-	end
-	local ticks = math.floor((now - p.staminaAt) / S.regenEvery)
-	if ticks > 0 then
-		p.stamina = math.min(S.max, p.stamina + ticks)
-		p.staminaAt += ticks * S.regenEvery
-	end
-end
-
 function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
@@ -1363,17 +1376,6 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 		end
 	end
 	st.trainAt = t
-	-- 기력이 있어야 몸이 받아들인다
-	regenStamina(p)
-	local cost = st.training.hard and Config.STAMINA.hardCost or Config.STAMINA.cost
-	if gain > 0 and p.stamina < cost then
-		toast(player, "😮‍💨 기력이 다했어요. 객잔에서 쉬거나 조금 기다리세요")
-		Train.stop(player)
-		return
-	end
-	if gain > 0 then
-		p.stamina -= cost
-	end
 	if gain <= 0 then
 		Push:FireClient(player, "trained", { stat = info.stat, gain = 0, grade = grade })
 		return
@@ -1498,6 +1500,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testStory" then
 		Story.advance(player)
+		Story.accept(player)
 	elseif action == "testTrial" then
 		local ef = activeTrial[player]
 		if ef then
@@ -1672,6 +1675,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 	elseif action == "talkElder" then
 		Story.talk(player)
+	elseif action == "storyAccept" then
+		Story.accept(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -1710,28 +1715,21 @@ if W.shop then
 		Push:FireClient(player, "open", { page = "shop" })
 	end)
 end
--- 객잔: 은자를 내고 쉬면 수련 기력이 가득 찬다
+-- 객잔: 쉬면 체력과 내공이 가득 찬다 (공짜)
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
 		if not p then
 			return
 		end
-		regenStamina(p)
-		if p.stamina >= Config.STAMINA.max then
-			toast(player, "기력이 이미 가득해요")
-			return
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead then
+			f.hp = f.maxHp
+			f.posture = 0
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f)
 		end
-		if p.coins < Config.STAMINA.innCost then
-			toast(player, string.format("은자가 부족해요 (💰 %d)", Config.STAMINA.innCost))
-			return
-		end
-		p.coins -= Config.STAMINA.innCost
-		p.stamina = Config.STAMINA.max
-		p.staminaAt = os.time()
-		states[player].dirty = true
-		toast(player, "🛏 푹 쉬었다. 기력이 가득 찼다")
-		pushState(player)
+		toast(player, "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
 	end)
 end
 -- 비급 조각 줍기 (다섯을 모으면 무극신권)
@@ -1921,7 +1919,7 @@ task.spawn(function()
 	Npc.start()
 end)
 
--- 사부를 찾았는가 (가까이 가면 찾은 것) / 기력 갱신
+-- 사부를 찾았는가 (가까이 가면 찾은 것)
 task.spawn(function()
 	while true do
 		task.wait(1)

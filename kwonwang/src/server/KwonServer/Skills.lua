@@ -14,7 +14,9 @@
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
 --   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
 --   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local Skills = {}
 local Push: RemoteEvent
@@ -87,7 +89,9 @@ function Skills.run(f: any, move: any, ctx: any)
 		return
 	end
 	local sp = ctx.speed or 1
-	local sc = ctx.scale or 1
+	-- 오의(G)는 모두 한층 더 세다
+	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean

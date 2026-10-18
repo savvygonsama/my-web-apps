@@ -644,10 +644,10 @@ local function village(out: any)
 	local shopSign = part({ Name = "ShopSign", Size = Vector3.new(12, 3, 0.4), Position = Vector3.new(-75, 7, 21.2), Color = Color3.fromRGB(30, 20, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
-	-- 객잔: 쉬면 수련 기력이 가득 찬다
+	-- 객잔: 쉬면 체력과 내공이 가득 찬다
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
-	out.inn = prompt(innDesk, string.format("쉬기 (💰 %d)", Config.STAMINA.innCost), "객잔 · 기력 채우기", "Inn")
+	out.inn = prompt(innDesk, "쉬기", "객잔 · 체력·내공 채우기", "Inn")
 end
 
 ------------------------------------------------------------------------

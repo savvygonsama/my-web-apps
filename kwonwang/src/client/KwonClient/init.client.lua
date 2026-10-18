@@ -494,6 +494,14 @@ startMove = function(slot: any, charge: number?)
 			return
 		end
 	end
+	-- 강타는 연달아 못 쓴다
+	if slot == "H" and now < (cds.H or 0) and char:GetAttribute("TestInf") ~= true then
+		return
+	end
+	if slot == "H" then
+		cds.H = now + Config.HEAVY_CD
+		cdLen.H = Config.HEAVY_CD
+	end
 	if slot == "E" or slot == "R" or slot == "G" then
 		if not unlocked(slot) then
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
@@ -735,7 +743,7 @@ local function attack()
 		local frac = (now - actStart) / math.max(0.05, actDur)
 		if frac < R.early then
 			earlyPresses += 1
-			if earlyPresses >= 2 and not comboBroken then
+			if earlyPresses >= (R.earlyLimit or 2) and not comboBroken then
 				comboBroken = true
 				if root then
 					Fx.text(root.Position + Vector3.new(0, 4, 0), "흐트러짐", Color3.fromRGB(200, 190, 180), 22, 0.6)
@@ -865,7 +873,9 @@ local function dash()
 	else
 		root.CFrame = CFrame.lookAt(root.Position, root.Position + camLook)
 	end
-	push(dir * Config.DASH_SPEED + (kind == "back" and Vector3.new(0, 18, 0) or Vector3.zero), Config.DASH_TIME)
+	-- 빠를수록 멀리 (걸음 빠르기에 맞춰, 너무 멀지는 않게)
+	local fast = math.clamp(hum.WalkSpeed / Config.WALK_SPEED, 1, Config.DASH_SPEED_MAX)
+	push(dir * Config.DASH_SPEED * fast + (kind == "back" and Vector3.new(0, 18, 0) or Vector3.zero), Config.DASH_TIME)
 	local pose = kind == "back" and "backflip" or (kind == "right" and "side_roll_r" or (kind == "left" and "side_roll_l" or "dash"))
 	Anim.play(char, pose, kind == "front" and 0.28 or 0.4)
 	Fx.afterimage(char, style and style.color or Color3.new(1, 1, 1), 0.3)
@@ -1590,6 +1600,13 @@ function handlers.storyDone(data: any)
 	Fx.sound("ping", 0.8, 1)
 end
 
+-- 다음 이야기가 왔다: 받으면 목표가 보인다
+function handlers.storyOffer(data: any)
+	task.delay(1.2, function()
+		UI.dialog({ who = "📜 새 이야기 · " .. tostring(data.chapter) .. "장", title = data.title, text = data.text, accept = true })
+	end)
+end
+
 function handlers.storyProg(data: any)
 	if state then
 		state.prog = data.prog
@@ -1744,7 +1761,7 @@ RunService.RenderStepped:Connect(function()
 	local now = os.clock()
 	local info: { [string]: any } = {
 		M1 = { name = style.combo[1].name },
-		H = { name = style.heavy.name },
+		H = { name = style.heavy.name, cd = math.max(0, ((cds.H or 0) - now) / Config.HEAVY_CD) },
 		Q = { name = "대시", cd = math.max(0, (dashAt + (style.dashCd or Config.DASH_CD) - now) / (style.dashCd or Config.DASH_CD)) },
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },

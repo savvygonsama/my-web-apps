@@ -37,8 +37,8 @@ Config.BLOCK_POSTURE = 1.0 -- 막을 때 내 균형에 쌓이는 비율
 Config.DEFLECT_POSTURE = 1.3 -- 흘려질 때 공격한 쪽 균형에 쌓이는 비율
 Config.DEFLECT_STAGGER = 0.45 -- 흘려진 쪽이 휘청이는 시간
 Config.POSTURE_MAX = 100
-Config.POSTURE_REGEN = 14 -- 1초에 회복 (마지막으로 맞고 1.5초 뒤부터)
-Config.POSTURE_REGEN_DELAY = 1.5
+Config.POSTURE_REGEN = 20 -- 1초에 회복 (마지막으로 맞고 1.2초 뒤부터)
+Config.POSTURE_REGEN_DELAY = 1.2
 Config.BREAK_STUN = 1.6 -- 파훼되면 움직이지 못하는 시간
 Config.BROKEN_MULT = 1.6 -- 파훼된 상대에게 들어가는 피해 배율
 Config.CLASH_WINDOW = 0.12 -- 서로 이 시간 안에 치면 격돌
@@ -53,6 +53,14 @@ Config.CHI_ON_DEFLECT = 12
 -- 이동과 경공
 Config.WALK_SPEED = 22
 Config.DASH_SPEED = 85
+-- 빠를수록 대시가 멀리 간다 (걸음 빠르기 비율만큼, 최대 1.7배)
+Config.DASH_SPEED_MAX = 1.7
+-- 강타(Z)는 쉬지 않고 연달아 쓸 수 없다
+Config.HEAVY_CD = 1.4
+-- 오의(G)는 모두 이만큼 더 세다
+Config.ULT_MULT = 1.4
+-- 사람이 받는 균형 피해 비율 (쉽게 무너지지 않게)
+Config.PLAYER_POSTURE_TAKEN = 0.6
 Config.DASH_TIME = 0.18
 Config.DASH_IFRAMES = 0.22
 Config.DASH_CD = 0.55
@@ -140,13 +148,15 @@ Config.Training = {
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
 	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
 	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
-	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.0 },
+	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
 	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
-Config.HARD_TRAIN = { mult = 3, realm = 2, period = 0.9, perfect = 0.045, good = 0.1 }
+Config.HARD_TRAIN = { mult = 3, realm = 2, period = 1.05, perfect = 0.065, good = 0.14 }
+-- 보통 수련 판정 (넓을수록 쉽다)
+Config.TRAIN_JUDGE = { period = 1.6, perfect = 0.09, good = 0.2, mabo = 0.38, maboHard = 0.26, ring = 9 }
 
 ------------------------------------------------------------------------
 -- 권법 7종
@@ -707,7 +717,7 @@ for id, fin in pairs(FINISHERS) do
 end
 
 -- 연타 박자: 앞 동작이 이만큼 지났을 때 누르면 '딱 맞음(連)', 너무 일찍 두 번 누르면 흐트러진다
-Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
+Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000 }
@@ -936,34 +946,34 @@ local P = function(kind: string, name: string, phase: number, opt: { [string]: a
 	end
 	return t
 end
-boss("heukho", { hp = 2400, scale = 2.4, reach = 1.5, patterns = {
+boss("heukho", { hp = 2900, scale = 2.4, reach = 1.5, patterns = {
 	P("quake", "흑호 지진", 1, { radius = 16, warn = 1.1, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 30, 40, 0.9, 40, 18) }),
 	P("leap", "호랑이 도약", 1, { radius = 13, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 36, 50, 1.0, 35, 15) }),
 	P("charge", "흑호 돌진", 2, { length = 46, width = 9, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 30, 40, 0.8, 50) }),
 	P("summon", "부하들아!", 2, { enemy = "bandit", count = 3, max = 5, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("donut", "대도 회오리", 3, { inner = 7, outer = 24, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 45) }),
 } })
-boss("hyeolrang", { hp = 2000, scale = 2.0, reach = 1.4, patterns = {
+boss("hyeolrang", { hp = 2400, scale = 2.0, reach = 1.4, patterns = {
 	P("charge", "혈랑 질주", 1, { length = 40, width = 7, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 22, 28, 0.6, 30) }),
 	P("rain", "핏빛 비", 1, { count = 4, radius = 7, spread = 16, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 26, 30, 0.7, 20) }),
 	P("summon", "그림자 무리", 2, { enemy = "assassin", count = 3, max = 6, warn = 0.8, cd = 13, pose = "w_dual" }),
 	P("quake", "혈류 폭발", 3, { radius = 15, warn = 0.9, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 30, 36, 0.8, 40) }),
 } })
-boss("bingma", { hp = 3800, scale = 2.8, reach = 1.6, patterns = {
+boss("bingma", { hp = 4600, scale = 2.8, reach = 1.6, patterns = {
 	P("rain", "얼음 창비", 1, { count = 6, radius = 7, spread = 20, warn = 1.1, cd = 8, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 32, 40, 1.2, 20) }),
 	P("quake", "빙결 진동", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 34, 50, 1.4, 30) }),
 	P("donut", "설풍 고리", 2, { inner = 8, outer = 28, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.2, 40) }),
 	P("leap", "빙산 낙하", 2, { radius = 15, warn = 1.2, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 44, 60, 1.2, 40, 20) }),
 	P("summon", "설원의 자객들", 3, { enemy = "snowblade", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 } })
-boss("hyeolma", { hp = 5200, scale = 2.6, reach = 1.6, patterns = {
+boss("hyeolma", { hp = 6200, scale = 2.6, reach = 1.6, patterns = {
 	P("donut", "혈해 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 40) }),
 	P("rain", "혈우", 1, { count = 6, radius = 7, spread = 20, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 30, 36, 0.8, 20) }),
 	P("charge", "혈마 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 50) }),
 	P("summon", "혈교도들아!", 2, { enemy = "cultist", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("quake", "혈마 강림", 3, { radius = 22, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 55, 80, 1.4, 60, 20) }),
 } })
-boss("cheonma", { hp = 3800, scale = 3.2, reach = 1.8, patterns = {
+boss("cheonma", { hp = 4600, scale = 3.2, reach = 1.8, patterns = {
 	P("rain", "천마 낙성", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 110, 255), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
 	P("donut", "허공 고리", 1, { inner = 9, outer = 30, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 60, 1.0, 45) }),
 	P("leap", "하늘 짓밟기", 1, { radius = 16, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 50, 70, 1.2, 45, 20) }),
@@ -972,21 +982,21 @@ boss("cheonma", { hp = 3800, scale = 3.2, reach = 1.8, patterns = {
 	P("quake", "천마멸세", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.5, 70, 25) }),
 } })
 
-boss("yeomje", { hp = 4600, scale = 3.0, reach = 1.7, patterns = {
+boss("yeomje", { hp = 5500, scale = 3.0, reach = 1.7, patterns = {
 	P("rain", "화산탄", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 120, 30), hit = hit(0, 0, 0, 36, 40, 0.8, 25) }),
 	P("donut", "불꽃 고리", 1, { inner = 9, outer = 28, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
 	P("charge", "용암 돌진", 2, { length = 52, width = 10, warn = 0.8, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
 	P("summon", "불의 귀졸들", 2, { enemy = "flameimp", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("quake", "화산 폭발", 3, { radius = 24, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 90, 1.4, 60, 22) }),
 } })
-boss("sawang", { hp = 4800, scale = 2.8, reach = 1.6, patterns = {
+boss("sawang", { hp = 5800, scale = 2.8, reach = 1.6, patterns = {
 	P("charge", "모래 질주", 1, { length = 46, width = 8, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 40) }),
 	P("rain", "모래 창", 1, { count = 6, radius = 7, spread = 22, warn = 1.0, cd = 8, pose = "w_dual", fx = "sand", color = Color3.fromRGB(230, 195, 120), hit = hit(0, 0, 0, 34, 40, 0.8, 20, 14) }),
 	P("donut", "모래 회오리", 2, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
 	P("summon", "무덤의 망령들", 2, { enemy = "sandwraith", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("leap", "왕의 낙하", 3, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.3, 50, 20) }),
 } })
-boss("cheonmun", { hp = 5600, scale = 3.4, reach = 1.9, patterns = {
+boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("rain", "천벌", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 40, 46, 0.8, 25) }),
 	P("leap", "하늘 문 내려닫기", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.2, 50, 20) }),
 	P("donut", "천문 고리", 2, { inner = 10, outer = 32, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 50, 66, 1.0, 50) }),
@@ -1097,8 +1107,6 @@ Config.Fragments = {
 	{ at = Vector3.new(320, 1, 1700), hint = "독안개 늪의 무너진 사당" },
 }
 
--- 수련 기력: 수련할 때마다 줄고, 시간이 지나거나 객잔에서 쉬면 찬다
-Config.STAMINA = { max = 100, cost = 2, hardCost = 4, regenEvery = 15, innCost = 60 }
 Config.INN_AT = Vector3.new(82, 0, 40)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
@@ -1179,7 +1187,7 @@ Config.Roads = {
 	{ Vector3.new(0, 0, -1380), Vector3.new(-120, 0, -2000), Vector3.new(-40, 0, -2460), Vector3.new(0, 0, -2650) },
 }
 
-Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
+Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
 function Config.playerPower(dmgMult: number, maxHp: number): number
 	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))
@@ -1305,8 +1313,8 @@ end
 -- 자세 (가만히 있거나 걸을 때 윗몸에 얹힌다)
 ------------------------------------------------------------------------
 Poses.stances = {
-	-- 삼재: 바른 권투 자세 (두 주먹을 턱 앞에)
-	stance_base = { W = { 0, -25, 0 }, N = { 0, 25, 0 }, RS = { 50, 0, 10 }, RE = { 125, 0, 0 }, LS = { 75, 0, -5 }, LE = { 100, 0, 0 } },
+	-- 삼재: 힘을 뺀 바른 자세 (두 주먹을 가슴 높이에 가볍게)
+	stance_base = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 25, 0, 14 }, RE = { 80, 0, 0 }, LS = { 42, 0, -8 }, LE = { 75, 0, 0 } },
 	-- 태허: 낮게 깔린 물의 자세. 한 손은 가슴 앞을 흐르듯 가로지르고, 한 손은 낮게 물결을 누른다
 	stance_taeheo = { W = { 0, -30, 0 }, N = { 0, 30, 0 }, RS = { 65, 0, -5 }, RE = { 75, 0, 0 }, LS = { 40, 0, -25 }, LE = { 25, 0, 0 } },
 	-- 금강: 깊은 마보, 두 주먹을 허리에 붙이고 가슴을 편다
@@ -2566,8 +2574,7 @@ type Profile = {
 	story: number, -- 이야기 몇째 장
 	prog: number, -- 그 장의 진행
 	fragments: { [string]: boolean }, -- 주운 비급 조각
-	stamina: number,
-	staminaAt: number,
+	accepted: number,
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
@@ -2588,8 +2595,7 @@ local function defaultProfile(): Profile
 		story = 1,
 		prog = 0,
 		fragments = {},
-		stamina = Config.STAMINA.max,
-		staminaAt = os.time(),
+		accepted = 1,
 		gradeUp = {},
 	}
 end
@@ -2669,8 +2675,8 @@ local function sanitize(data: any): Profile
 	end
 	p.story = math.clamp(math.floor(num(data.story, #Config.Story)), 1, #Config.Story)
 	p.prog = math.floor(num(data.prog, 1e6))
-	p.stamina = type(data.stamina) == "number" and num(data.stamina, Config.STAMINA.max) or Config.STAMINA.max
-	p.staminaAt = type(data.staminaAt) == "number" and num(data.staminaAt, 1e11) or os.time()
+	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
+	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
 	return p
 end
 
@@ -2824,7 +2830,7 @@ local function pushState(player: Player)
 		story = p.story,
 		prog = p.prog,
 		fragments = p.fragments,
-		stamina = math.floor(p.stamina),
+		accepted = p.accepted == p.story,
 		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
@@ -3048,11 +3054,12 @@ function Story.advance(player: Player)
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
 		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = Config.Story[p.story].title })
-		-- 다음 장이 이미 이뤄졌다면 (경지 등) 이어서 넘긴다
+		-- 다음 장은 받아야 시작된다 (받기 전에는 목표 표시도 없다)
 		local nxt = Config.Story[p.story]
-		if not (nxt.goal.kind ~= "talk" and nxt.goal.kind ~= "kill" and nxt.goal.kind ~= "train" and nxt.goal.kind ~= "trial" and nxt.goal.kind ~= "boss" and Story.done(p, nxt.goal)) then
-			break
+		if nxt.goal.kind ~= "done" then
+			Push:FireClient(player, "storyOffer", { chapter = p.story, title = nxt.title, text = nxt.text })
 		end
+		break
 	end
 	states[player].dirty = true
 	refreshFighter(player)
@@ -3064,6 +3071,10 @@ function Story.event(player: Player, kind: string, id: string?, amount: number?)
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
+		return
+	end
+	-- 아직 받지 않은 이야기는 세지 않는다
+	if p.accepted ~= p.story then
 		return
 	end
 	local g = ch.goal
@@ -3089,9 +3100,27 @@ function Story.talk(player: Player)
 		return
 	end
 	Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+	-- 장로에게 들으면 그 이야기를 받은 것
+	if p.accepted ~= p.story then
+		Story.accept(player)
+	end
 	if ch.goal.kind == "talk" then
 		Story.advance(player)
+		-- 장로가 다음 할 일까지 일러 줬으니 다음 장도 받은 것
+		Story.accept(player)
 	end
+end
+
+-- 이야기 받기: 이때부터 목표가 보이고 세어진다
+function Story.accept(player: Player)
+	local p = profiles[player]
+	if not p or p.accepted == p.story then
+		return
+	end
+	p.accepted = p.story
+	states[player].dirty = true
+	pushState(player)
+	Story.check(player)
 end
 
 ------------------------------------------------------------------------
@@ -3418,6 +3447,13 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local act = f.act
 	if act and t < act.start + act.dur * (type(slot) == "number" and 0.7 or 0.85) and slot ~= "C" then
 		return
+	end
+	-- 강타(Z)는 연달아 못 쓴다 (정권 지르기 무한 연타 막기)
+	if slot == "H" then
+		if t < (f.cds.H or 0) - 0.1 and TEST_INF[player] ~= true then
+			return
+		end
+		f.cds.H = t + Config.HEAVY_CD
 	end
 	if slot == "E" or slot == "R" or slot == "G" then
 		if not Calc.unlocked(p, slot) then
@@ -3769,21 +3805,6 @@ end
 ------------------------------------------------------------------------
 local Train = {}
 
--- 수련 기력: 시간이 지나면 찬다
-local function regenStamina(p: Profile)
-	local S = Config.STAMINA
-	local now = os.time()
-	if p.stamina >= S.max then
-		p.staminaAt = now
-		return
-	end
-	local ticks = math.floor((now - p.staminaAt) / S.regenEvery)
-	if ticks > 0 then
-		p.stamina = math.min(S.max, p.stamina + ticks)
-		p.staminaAt += ticks * S.regenEvery
-	end
-end
-
 function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
@@ -3883,17 +3904,6 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 		end
 	end
 	st.trainAt = t
-	-- 기력이 있어야 몸이 받아들인다
-	regenStamina(p)
-	local cost = st.training.hard and Config.STAMINA.hardCost or Config.STAMINA.cost
-	if gain > 0 and p.stamina < cost then
-		toast(player, "😮‍💨 기력이 다했어요. 객잔에서 쉬거나 조금 기다리세요")
-		Train.stop(player)
-		return
-	end
-	if gain > 0 then
-		p.stamina -= cost
-	end
 	if gain <= 0 then
 		Push:FireClient(player, "trained", { stat = info.stat, gain = 0, grade = grade })
 		return
@@ -4018,6 +4028,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testStory" then
 		Story.advance(player)
+		Story.accept(player)
 	elseif action == "testTrial" then
 		local ef = activeTrial[player]
 		if ef then
@@ -4192,6 +4203,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 	elseif action == "talkElder" then
 		Story.talk(player)
+	elseif action == "storyAccept" then
+		Story.accept(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -4230,28 +4243,21 @@ if W.shop then
 		Push:FireClient(player, "open", { page = "shop" })
 	end)
 end
--- 객잔: 은자를 내고 쉬면 수련 기력이 가득 찬다
+-- 객잔: 쉬면 체력과 내공이 가득 찬다 (공짜)
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
 		if not p then
 			return
 		end
-		regenStamina(p)
-		if p.stamina >= Config.STAMINA.max then
-			toast(player, "기력이 이미 가득해요")
-			return
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead then
+			f.hp = f.maxHp
+			f.posture = 0
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f)
 		end
-		if p.coins < Config.STAMINA.innCost then
-			toast(player, string.format("은자가 부족해요 (💰 %d)", Config.STAMINA.innCost))
-			return
-		end
-		p.coins -= Config.STAMINA.innCost
-		p.stamina = Config.STAMINA.max
-		p.staminaAt = os.time()
-		states[player].dirty = true
-		toast(player, "🛏 푹 쉬었다. 기력이 가득 찼다")
-		pushState(player)
+		toast(player, "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
 	end)
 end
 -- 비급 조각 줍기 (다섯을 모으면 무극신권)
@@ -4441,7 +4447,7 @@ task.spawn(function()
 	Npc.start()
 end)
 
--- 사부를 찾았는가 (가까이 가면 찾은 것) / 기력 갱신
+-- 사부를 찾았는가 (가까이 가면 찾은 것)
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -4727,6 +4733,10 @@ local function addChi(f: Fighter, amount: number)
 end
 
 local function addPosture(f: Fighter, amount: number): boolean
+	-- 사람은 균형이 쉽게 무너지지 않는다 (사자후 같은 막기 깨기는 그대로)
+	if f.player and amount < f.postureMax then
+		amount *= Config.PLAYER_POSTURE_TAKEN
+	end
 	f.posture += amount
 	f.lastHurtAt = now()
 	if f.posture >= f.postureMax then
@@ -5706,7 +5716,9 @@ local function masterTag(head: BasePart, name: string, style: any)
 	g.AlwaysOnTop = true
 	g.LightInfluence = 0
 	g.MaxDistance = 160
-	for i, line in ipairs({ { (style.elder and "" or "사부 · ") .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. (style.elder and "" or "  (T)"), style.color, 0.48 } }) do
+	-- 장로는 이름 한 줄만 (말 걸기는 가까이 가면 뜨는 T 안내로)
+	local lines = style.elder and { { name, Color3.fromRGB(255, 225, 150), 0.52 } } or { { "사부 · " .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. "  (T)", style.color, 0.48 } }
+	for i, line in ipairs(lines) do
 		local l = Instance.new("TextLabel")
 		l.BackgroundTransparency = 1
 		l.Position = UDim2.fromScale(0, i == 1 and 0 or 0.52)
@@ -6613,7 +6625,9 @@ return Npc
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
 --   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
 --   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local Skills = {}
 local Push: RemoteEvent
@@ -6686,7 +6700,9 @@ function Skills.run(f: any, move: any, ctx: any)
 		return
 	end
 	local sp = ctx.speed or 1
-	local sc = ctx.scale or 1
+	-- 오의(G)는 모두 한층 더 세다
+	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean
@@ -7896,10 +7912,10 @@ local function village(out: any)
 	local shopSign = part({ Name = "ShopSign", Size = Vector3.new(12, 3, 0.4), Position = Vector3.new(-75, 7, 21.2), Color = Color3.fromRGB(30, 20, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
-	-- 객잔: 쉬면 수련 기력이 가득 찬다
+	-- 객잔: 쉬면 체력과 내공이 가득 찬다
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
-	out.inn = prompt(innDesk, string.format("쉬기 (💰 %d)", Config.STAMINA.innCost), "객잔 · 기력 채우기", "Inn")
+	out.inn = prompt(innDesk, "쉬기", "객잔 · 체력·내공 채우기", "Inn")
 end
 
 ------------------------------------------------------------------------
@@ -9990,6 +10006,14 @@ startMove = function(slot: any, charge: number?)
 			return
 		end
 	end
+	-- 강타는 연달아 못 쓴다
+	if slot == "H" and now < (cds.H or 0) and char:GetAttribute("TestInf") ~= true then
+		return
+	end
+	if slot == "H" then
+		cds.H = now + Config.HEAVY_CD
+		cdLen.H = Config.HEAVY_CD
+	end
 	if slot == "E" or slot == "R" or slot == "G" then
 		if not unlocked(slot) then
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
@@ -10231,7 +10255,7 @@ local function attack()
 		local frac = (now - actStart) / math.max(0.05, actDur)
 		if frac < R.early then
 			earlyPresses += 1
-			if earlyPresses >= 2 and not comboBroken then
+			if earlyPresses >= (R.earlyLimit or 2) and not comboBroken then
 				comboBroken = true
 				if root then
 					Fx.text(root.Position + Vector3.new(0, 4, 0), "흐트러짐", Color3.fromRGB(200, 190, 180), 22, 0.6)
@@ -10361,7 +10385,9 @@ local function dash()
 	else
 		root.CFrame = CFrame.lookAt(root.Position, root.Position + camLook)
 	end
-	push(dir * Config.DASH_SPEED + (kind == "back" and Vector3.new(0, 18, 0) or Vector3.zero), Config.DASH_TIME)
+	-- 빠를수록 멀리 (걸음 빠르기에 맞춰, 너무 멀지는 않게)
+	local fast = math.clamp(hum.WalkSpeed / Config.WALK_SPEED, 1, Config.DASH_SPEED_MAX)
+	push(dir * Config.DASH_SPEED * fast + (kind == "back" and Vector3.new(0, 18, 0) or Vector3.zero), Config.DASH_TIME)
 	local pose = kind == "back" and "backflip" or (kind == "right" and "side_roll_r" or (kind == "left" and "side_roll_l" or "dash"))
 	Anim.play(char, pose, kind == "front" and 0.28 or 0.4)
 	Fx.afterimage(char, style and style.color or Color3.new(1, 1, 1), 0.3)
@@ -11086,6 +11112,13 @@ function handlers.storyDone(data: any)
 	Fx.sound("ping", 0.8, 1)
 end
 
+-- 다음 이야기가 왔다: 받으면 목표가 보인다
+function handlers.storyOffer(data: any)
+	task.delay(1.2, function()
+		UI.dialog({ who = "📜 새 이야기 · " .. tostring(data.chapter) .. "장", title = data.title, text = data.text, accept = true })
+	end)
+end
+
 function handlers.storyProg(data: any)
 	if state then
 		state.prog = data.prog
@@ -11240,7 +11273,7 @@ RunService.RenderStepped:Connect(function()
 	local now = os.clock()
 	local info: { [string]: any } = {
 		M1 = { name = style.combo[1].name },
-		H = { name = style.heavy.name },
+		H = { name = style.heavy.name, cd = math.max(0, ((cds.H or 0) - now) / Config.HEAVY_CD) },
 		Q = { name = "대시", cd = math.max(0, (dashAt + (style.dashCd or Config.DASH_CD) - now) / (style.dashCd or Config.DASH_CD)) },
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },
@@ -11987,13 +12020,13 @@ function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: 
 	glow.CFrame = cf * CFrame.Angles(0, math.rad(90), 0)
 	tween(glow, life, { Size = Vector3.new(0.05, toD, toD), Transparency = 1 })
 	Debris:AddItem(glow, life + 0.05)
-	-- 작은 고리는 빛 원반 하나로 충분하다
-	if toD < 7 then
-		glow.Transparency = 0.25
+	-- 작은 고리 (평타 맞힘 등)는 매끈한 빛 원반 하나 (조각을 이으면 네모가 보인다)
+	if toD < 24 then
+		glow.Transparency = 0.2
 		return
 	end
-	local n = math.clamp(math.floor(toD / 2.5), 10, 22)
-	local thick = math.clamp(toD * 0.025, 0.25, 1.2)
+	local n = math.clamp(math.floor(toD / 1.6), 16, 40)
+	local thick = math.clamp(toD * 0.02, 0.4, 1.2)
 	for i = 0, n - 1 do
 		local a = i / n * math.pi * 2
 		local dir = cf.RightVector * math.cos(a) + cf.UpVector * math.sin(a)
@@ -14711,6 +14744,57 @@ local function buildHelp()
 	})
 end
 
+-- 수련마다 하는 법 (수련 창 아래와 수련 안내 창에 나온다)
+local TRAIN_GUIDE: { [string]: string } = {
+	rock = "① 금빛 고리가 줄어든다  ② 고리가 가운데 흰 원에 겹칠 때 Space  ③ 딱 맞으면 완벽 (두 배)",
+	waterfall = "① 파란 원이 커졌다 작아졌다 한다  ② 가장 커졌을 때 Space  ③ 숨 쉬듯 천천히",
+	bamboo = "① 화살표를 따라 빛나는 고리로 달린다  ② 고리를 지나면 저절로 오른다  ③ Shift로 달리면 빠르다",
+	dummy = "① 나무팔이 들어오며 원이 밝아진다  ② 가장 밝게 번쩍일 때 Space  ③ 실전의 흘리기 박자와 같다",
+	mabo = "① 흰 바늘을 초록 칸 안에 붙잡는다  ② 누르면 오른쪽, 놓으면 왼쪽  ③ 짧게 톡톡 누르는 게 요령",
+	ironpalm = "① 쇠모래가 번쩍일 때 Space  ② 바위 들기보다 조금 빠르다  ③ 근골이 크게 오른다",
+	breathing = "① 기가 몸을 돌며 커진다  ② 가장 커졌을 때 Space  ③ 내공과 체력이 함께 오른다",
+	simma = "마음속 마귀와 싸운다. 마구 치지 말고 F로 흘린 뒤 받아치자",
+}
+
+-- 수련 안내: 무엇을, 어디서, 어떻게
+local function buildTrainGuide()
+	local page = makePage("train")
+	local scroll = scroller(page, UDim2.fromScale(1, 1))
+	local statName = {}
+	for _, s in ipairs(Config.Stats) do
+		statName[s.id] = s.icon .. " " .. s.name
+	end
+	local lines = {
+		"<b>🧘 수련 안내</b>",
+		"",
+		"• 수련터에 가서 T를 누르면 시작한다. 움직이면 끝난다",
+		"• 박자가 맞으면 <b>좋음</b>, 딱 맞으면 <b>완벽</b> (두 배). 놓쳐도 잃는 것은 없다",
+		"• 기력 같은 것은 없다. 얼마든지 수련할 수 있다",
+		string.format("• 이류부터 <b>🔥 강화 수련</b> (바위에서): 박자가 빠르지만 오르는 능력치가 %d배", Config.HARD_TRAIN.mult),
+		"• 경지가 오를수록 한 번에 오르는 능력치가 커진다",
+		"",
+	}
+	local order = { "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }
+	for _, id in ipairs(order) do
+		local t = Config.Training[id]
+		if t then
+			local gains = {}
+			if t.gains then
+				for sid, n in pairs(t.gains) do
+					table.insert(gains, string.format("%s +%d", statName[sid] or sid, n))
+				end
+			else
+				table.insert(gains, statName[t.stat] or t.stat)
+			end
+			local realm = t.realm and Config.Realms[t.realm]
+			table.insert(lines, string.format("<b>%s %s</b>  ·  %s%s", t.icon, t.name, table.concat(gains, ", "), realm and string.format("  ·  %s부터", realm.name) or ""))
+			table.insert(lines, "   " .. (TRAIN_GUIDE[id] or t.desc))
+			table.insert(lines, "")
+		end
+	end
+	text({ Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = scroll, Text = table.concat(lines, "\n") })
+end
+
 local function buildTest()
 	local page = makePage("test")
 	local list = scroller(page, UDim2.fromScale(1, 1))
@@ -14777,6 +14861,7 @@ end
 local trainFrame: Frame
 local trainTitle: TextLabel
 local trainHint: TextLabel
+local trainGuide: TextLabel
 local trainArea: Frame
 local trainConn: RBXScriptConnection? = nil
 local trainPress: (() -> ())? = nil
@@ -14806,7 +14891,8 @@ local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: numbe
 	local _ = target
 	local start = os.clock()
 	local H = Config.HARD_TRAIN
-	local period = (basePeriod or 1.4) * (hard and H.period / 1.4 or 1)
+	local J = Config.TRAIN_JUDGE
+	local period = (basePeriod or J.period) * (hard and H.period / J.period or 1)
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -14814,7 +14900,7 @@ local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: numbe
 		local p = ((os.clock() - start) % period) / period
 		-- 고리가 하얀 원에 겹칠 때 (p ≈ 1 또는 0)
 		local off = math.min(p, 1 - p)
-		local grade = off < (hard and H.perfect or 0.06) and "perfect" or (off < (hard and H.good or 0.14) and "good" or "miss")
+		local grade = off < (hard and H.perfect or J.perfect) and "perfect" or (off < (hard and H.good or J.good) and "good" or "miss")
 		onGrade(grade)
 	end
 end
@@ -14826,6 +14912,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
+	trainGuide.Text = "📘 " .. (TRAIN_GUIDE[kind] or info.desc)
 	if kind == "bamboo" then
 		-- 다음 고리를 화살표로
 		local arrow = text({ Size = UDim2.fromScale(1, 1), TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Color3.fromRGB(190, 255, 150), Parent = trainArea })
@@ -14840,7 +14927,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 			end
 			local d = (root.Position - pos).Magnitude
 			arrow.Text = string.format("🎋 고리 %d / %d  ·  %d칸", idx, #list, math.floor(d))
-			if d < 7 then
+			if d < Config.TRAIN_JUDGE.ring then
 				send("ring", idx)
 				idx = idx % #list + 1
 			end
@@ -14850,7 +14937,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	if kind == "mabo" then
 		-- 마보 참장: 기울어지는 몸을 가운데(초록)에 붙잡아 둔다. 누르면 오른쪽, 가만두면 바람에 밀려 왼쪽
 		local bar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 300, 0, 26), BackgroundColor3 = Color3.fromRGB(60, 40, 35), Parent = trainArea }, { corner(8) })
-		local zoneW = hard and 0.2 or 0.3
+		local zoneW = hard and Config.TRAIN_JUDGE.maboHard or Config.TRAIN_JUDGE.mabo
 		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(zoneW, 1), BackgroundColor3 = C.green, BackgroundTransparency = 0.25, Parent = bar }, { corner(8) })
 		local needle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 8, 1, 14), BackgroundColor3 = Color3.new(1, 1, 1), Parent = bar }, { corner(4) })
 		local x, v, acc = 0.5, 0, 0
@@ -14859,7 +14946,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 		end
 		trainConn = RunService.RenderStepped:Connect(function(dt: number)
 			local t = os.clock()
-			local gust = math.sin(t * 1.3) * 0.25 + math.sin(t * 2.9) * 0.18 * (hard and 1.6 or 1)
+			local gust = math.sin(t * 1.3) * 0.2 + math.sin(t * 2.9) * 0.12 * (hard and 1.6 or 1)
 			v = v * (1 - dt * 2.2) + (-0.45 + gust) * dt * 2
 			x = math.clamp(x + v * dt, 0, 1)
 			needle.Position = UDim2.fromScale(x, 0.5)
@@ -14944,7 +15031,7 @@ local topInfo: TextLabel
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")
@@ -15119,6 +15206,10 @@ local storyGoal: TextLabel
 local storyPart: Part? = nil
 local storyLabel: TextLabel? = nil
 local storyAt: Vector3? = nil
+local storyAcceptBtn: TextButton? = nil
+local storyChip: TextButton? = nil
+local storyHidden = false
+local lastStoryState: any = nil
 
 local function countKeys(t: any): number
 	local n = 0
@@ -15209,9 +15300,25 @@ local function refreshStory(s: any)
 	if not storyBox or not ch then
 		return
 	end
-	storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
-	storyGoal.Text = "▸ " .. goalText(s, ch.goal)
-	local at = goalTarget(s, ch.goal)
+	lastStoryState = s
+	storyBox.Visible = not storyHidden
+	if storyChip then
+		storyChip.Visible = storyHidden
+	end
+	-- 받지 않은 이야기는 제목만 (목표 표시도, 길잡이도 없다)
+	local accepted = s.accepted ~= false or ch.goal.kind == "talk"
+	if storyAcceptBtn then
+		storyAcceptBtn.Visible = not accepted
+	end
+	if accepted then
+		storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
+		storyGoal.Text = "▸ " .. goalText(s, ch.goal)
+	else
+		storyTitle.Text = string.format("📜 새 이야기 · %s", ch.title)
+		storyGoal.Text = "▸ 받으면 목표가 표시돼요"
+	end
+	-- 장로에게 말 걸기는 장로 이름표가 있으니 따로 띄우지 않는다
+	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and goalTarget(s, ch.goal) or nil
 	if at ~= storyAt then
 		storyAt = at
 		clearStoryPart()
@@ -15275,6 +15382,13 @@ local function refreshFound(s: any)
 	end
 end
 
+function UI.setStoryHidden(on: boolean)
+	storyHidden = on
+	if lastStoryState then
+		refreshStory(lastStoryState)
+	end
+end
+
 function UI.refreshWorld(s: any)
 	refreshFound(s)
 	refreshStory(s)
@@ -15287,6 +15401,7 @@ local dialogTitle: TextLabel
 local dialogText: TextLabel
 local dialogAct: TextButton
 local dialogTrial: string? = nil
+local dialogAccept = false
 local dialogSeq = 0
 function UI.dialog(data: any)
 	if not dialogFrame then
@@ -15298,7 +15413,10 @@ function UI.dialog(data: any)
 	dialogTitle.Text = data.title or ""
 	dialogText.Text = data.text or ""
 	dialogTrial = data.trial
-	dialogAct.Visible = dialogTrial ~= nil
+	dialogAccept = data.accept == true
+	dialogAct.Visible = dialogTrial ~= nil or dialogAccept
+	dialogAct.Text = dialogAccept and "📜 받기" or "⚔ 시험 받기"
+	dialogAct.BackgroundColor3 = dialogAccept and Color3.fromRGB(190, 130, 50) or C.red
 	dialogFrame.Visible = true
 	local n = utf8.len(dialogText.Text) or 0
 	pcall(function()
@@ -15330,9 +15448,20 @@ function UI.dialogOpen(): boolean
 end
 
 local function buildStory(topLeft: Frame)
-	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 336), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
+	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
+	-- 아직 받지 않은 이야기: 눌러서 받는다
+	storyAcceptBtn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -40, 0, 50), Size = UDim2.new(0, 90, 0, 30), Text = "📜 받기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(190, 130, 50), Visible = false, Parent = storyBox }, function()
+		Request:FireServer("storyAccept")
+	end)
+	-- 이야기 칸 숨기기 / 다시 보기
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.new(0, 26, 0, 26), Text = "✕", TextSize = 15, BackgroundColor3 = C.panel2, Parent = storyBox }, function()
+		UI.setStoryHidden(true)
+	end)
+	storyChip = button({ Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 120, 0, 34), Text = "📜 이야기 보기", TextSize = 15, BackgroundColor3 = C.bg, Visible = false, Parent = topLeft }, function()
+		UI.setStoryHidden(false)
+	end)
 	-- 대화 창
 	dialogFrame = new("Frame", { Name = "Dialog", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -150), Size = UDim2.new(0, 820, 0, 200), BackgroundColor3 = C.bg, BackgroundTransparency = 0.08, Visible = false, ZIndex = 20, Parent = gui }, { corner(14), stroke(C.line, 2.5) })
 	scaled(dialogFrame)
@@ -15344,7 +15473,9 @@ local function buildStory(topLeft: Frame)
 		dialogFrame.Visible = false
 	end)
 	dialogAct = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -168, 1, -12), Size = UDim2.new(0, 180, 0, 42), Text = "⚔ 시험 받기", TextSize = 18, BackgroundColor3 = C.red, ZIndex = 21, Visible = false, Parent = dialogFrame }, function()
-		if dialogTrial then
+		if dialogAccept then
+			Request:FireServer("storyAccept")
+		elseif dialogTrial then
 			Request:FireServer("learn", dialogTrial)
 		end
 		dialogSeq += 1
@@ -15549,8 +15680,8 @@ function UI.init(req: RemoteEvent)
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
-	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
+	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 430), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 18, Parent = menu }, function()
 			if item[1] == "map" then
 				UI.toggleMap()
@@ -15613,6 +15744,7 @@ function UI.init(req: RemoteEvent)
 	buildStats()
 	buildShop()
 	buildHelp()
+	buildTrainGuide()
 	buildTest()
 	buildMap()
 	buildSpeedLines()
@@ -15623,11 +15755,13 @@ function UI.init(req: RemoteEvent)
 		end
 	end)
 	-- 수련 놀이 칸
-	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 380, 0, 330), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
+	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 400, 0, 400), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
 	scaled(trainFrame)
 	trainTitle = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainHint = text({ Position = UDim2.new(0, 12, 0, 40), Size = UDim2.new(1, -24, 0, 40), TextSize = 14, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
-	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -130), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })
+	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -200), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })
+	-- 하는 법 (세 걸음)
+	trainGuide = text({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -52), Size = UDim2.new(1, -24, 0, 62), TextSize = 15, TextWrapped = true, TextColor3 = Color3.fromRGB(255, 230, 170), TextXAlignment = Enum.TextXAlignment.Center, BackgroundColor3 = C.panel2, BackgroundTransparency = 0.4, Parent = trainFrame })
 	button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(0, 160, 0, 36), Text = "그만하기", TextSize = 16, BackgroundColor3 = C.panel2, Parent = trainFrame }, function()
 		Request:FireServer("trainStop")
 	end)

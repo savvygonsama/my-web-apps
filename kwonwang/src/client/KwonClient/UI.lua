@@ -796,6 +796,57 @@ local function buildHelp()
 	})
 end
 
+-- 수련마다 하는 법 (수련 창 아래와 수련 안내 창에 나온다)
+local TRAIN_GUIDE: { [string]: string } = {
+	rock = "① 금빛 고리가 줄어든다  ② 고리가 가운데 흰 원에 겹칠 때 Space  ③ 딱 맞으면 완벽 (두 배)",
+	waterfall = "① 파란 원이 커졌다 작아졌다 한다  ② 가장 커졌을 때 Space  ③ 숨 쉬듯 천천히",
+	bamboo = "① 화살표를 따라 빛나는 고리로 달린다  ② 고리를 지나면 저절로 오른다  ③ Shift로 달리면 빠르다",
+	dummy = "① 나무팔이 들어오며 원이 밝아진다  ② 가장 밝게 번쩍일 때 Space  ③ 실전의 흘리기 박자와 같다",
+	mabo = "① 흰 바늘을 초록 칸 안에 붙잡는다  ② 누르면 오른쪽, 놓으면 왼쪽  ③ 짧게 톡톡 누르는 게 요령",
+	ironpalm = "① 쇠모래가 번쩍일 때 Space  ② 바위 들기보다 조금 빠르다  ③ 근골이 크게 오른다",
+	breathing = "① 기가 몸을 돌며 커진다  ② 가장 커졌을 때 Space  ③ 내공과 체력이 함께 오른다",
+	simma = "마음속 마귀와 싸운다. 마구 치지 말고 F로 흘린 뒤 받아치자",
+}
+
+-- 수련 안내: 무엇을, 어디서, 어떻게
+local function buildTrainGuide()
+	local page = makePage("train")
+	local scroll = scroller(page, UDim2.fromScale(1, 1))
+	local statName = {}
+	for _, s in ipairs(Config.Stats) do
+		statName[s.id] = s.icon .. " " .. s.name
+	end
+	local lines = {
+		"<b>🧘 수련 안내</b>",
+		"",
+		"• 수련터에 가서 T를 누르면 시작한다. 움직이면 끝난다",
+		"• 박자가 맞으면 <b>좋음</b>, 딱 맞으면 <b>완벽</b> (두 배). 놓쳐도 잃는 것은 없다",
+		"• 기력 같은 것은 없다. 얼마든지 수련할 수 있다",
+		string.format("• 이류부터 <b>🔥 강화 수련</b> (바위에서): 박자가 빠르지만 오르는 능력치가 %d배", Config.HARD_TRAIN.mult),
+		"• 경지가 오를수록 한 번에 오르는 능력치가 커진다",
+		"",
+	}
+	local order = { "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }
+	for _, id in ipairs(order) do
+		local t = Config.Training[id]
+		if t then
+			local gains = {}
+			if t.gains then
+				for sid, n in pairs(t.gains) do
+					table.insert(gains, string.format("%s +%d", statName[sid] or sid, n))
+				end
+			else
+				table.insert(gains, statName[t.stat] or t.stat)
+			end
+			local realm = t.realm and Config.Realms[t.realm]
+			table.insert(lines, string.format("<b>%s %s</b>  ·  %s%s", t.icon, t.name, table.concat(gains, ", "), realm and string.format("  ·  %s부터", realm.name) or ""))
+			table.insert(lines, "   " .. (TRAIN_GUIDE[id] or t.desc))
+			table.insert(lines, "")
+		end
+	end
+	text({ Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = scroll, Text = table.concat(lines, "\n") })
+end
+
 local function buildTest()
 	local page = makePage("test")
 	local list = scroller(page, UDim2.fromScale(1, 1))
@@ -862,6 +913,7 @@ end
 local trainFrame: Frame
 local trainTitle: TextLabel
 local trainHint: TextLabel
+local trainGuide: TextLabel
 local trainArea: Frame
 local trainConn: RBXScriptConnection? = nil
 local trainPress: (() -> ())? = nil
@@ -891,7 +943,8 @@ local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: numbe
 	local _ = target
 	local start = os.clock()
 	local H = Config.HARD_TRAIN
-	local period = (basePeriod or 1.4) * (hard and H.period / 1.4 or 1)
+	local J = Config.TRAIN_JUDGE
+	local period = (basePeriod or J.period) * (hard and H.period / J.period or 1)
 	return circle, function(): number
 		local p = ((os.clock() - start) % period) / period
 		return p
@@ -899,7 +952,7 @@ local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: numbe
 		local p = ((os.clock() - start) % period) / period
 		-- 고리가 하얀 원에 겹칠 때 (p ≈ 1 또는 0)
 		local off = math.min(p, 1 - p)
-		local grade = off < (hard and H.perfect or 0.06) and "perfect" or (off < (hard and H.good or 0.14) and "good" or "miss")
+		local grade = off < (hard and H.perfect or J.perfect) and "perfect" or (off < (hard and H.good or J.good) and "good" or "miss")
 		onGrade(grade)
 	end
 end
@@ -911,6 +964,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
+	trainGuide.Text = "📘 " .. (TRAIN_GUIDE[kind] or info.desc)
 	if kind == "bamboo" then
 		-- 다음 고리를 화살표로
 		local arrow = text({ Size = UDim2.fromScale(1, 1), TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Color3.fromRGB(190, 255, 150), Parent = trainArea })
@@ -925,7 +979,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 			end
 			local d = (root.Position - pos).Magnitude
 			arrow.Text = string.format("🎋 고리 %d / %d  ·  %d칸", idx, #list, math.floor(d))
-			if d < 7 then
+			if d < Config.TRAIN_JUDGE.ring then
 				send("ring", idx)
 				idx = idx % #list + 1
 			end
@@ -935,7 +989,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	if kind == "mabo" then
 		-- 마보 참장: 기울어지는 몸을 가운데(초록)에 붙잡아 둔다. 누르면 오른쪽, 가만두면 바람에 밀려 왼쪽
 		local bar = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 300, 0, 26), BackgroundColor3 = Color3.fromRGB(60, 40, 35), Parent = trainArea }, { corner(8) })
-		local zoneW = hard and 0.2 or 0.3
+		local zoneW = hard and Config.TRAIN_JUDGE.maboHard or Config.TRAIN_JUDGE.mabo
 		new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(zoneW, 1), BackgroundColor3 = C.green, BackgroundTransparency = 0.25, Parent = bar }, { corner(8) })
 		local needle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 8, 1, 14), BackgroundColor3 = Color3.new(1, 1, 1), Parent = bar }, { corner(4) })
 		local x, v, acc = 0.5, 0, 0
@@ -944,7 +998,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 		end
 		trainConn = RunService.RenderStepped:Connect(function(dt: number)
 			local t = os.clock()
-			local gust = math.sin(t * 1.3) * 0.25 + math.sin(t * 2.9) * 0.18 * (hard and 1.6 or 1)
+			local gust = math.sin(t * 1.3) * 0.2 + math.sin(t * 2.9) * 0.12 * (hard and 1.6 or 1)
 			v = v * (1 - dt * 2.2) + (-0.45 + gust) * dt * 2
 			x = math.clamp(x + v * dt, 0, 1)
 			needle.Position = UDim2.fromScale(x, 0.5)
@@ -1029,7 +1083,7 @@ local topInfo: TextLabel
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   ⚡ 기력 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, s.stamina or 0, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")
@@ -1204,6 +1258,10 @@ local storyGoal: TextLabel
 local storyPart: Part? = nil
 local storyLabel: TextLabel? = nil
 local storyAt: Vector3? = nil
+local storyAcceptBtn: TextButton? = nil
+local storyChip: TextButton? = nil
+local storyHidden = false
+local lastStoryState: any = nil
 
 local function countKeys(t: any): number
 	local n = 0
@@ -1294,9 +1352,25 @@ local function refreshStory(s: any)
 	if not storyBox or not ch then
 		return
 	end
-	storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
-	storyGoal.Text = "▸ " .. goalText(s, ch.goal)
-	local at = goalTarget(s, ch.goal)
+	lastStoryState = s
+	storyBox.Visible = not storyHidden
+	if storyChip then
+		storyChip.Visible = storyHidden
+	end
+	-- 받지 않은 이야기는 제목만 (목표 표시도, 길잡이도 없다)
+	local accepted = s.accepted ~= false or ch.goal.kind == "talk"
+	if storyAcceptBtn then
+		storyAcceptBtn.Visible = not accepted
+	end
+	if accepted then
+		storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
+		storyGoal.Text = "▸ " .. goalText(s, ch.goal)
+	else
+		storyTitle.Text = string.format("📜 새 이야기 · %s", ch.title)
+		storyGoal.Text = "▸ 받으면 목표가 표시돼요"
+	end
+	-- 장로에게 말 걸기는 장로 이름표가 있으니 따로 띄우지 않는다
+	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and goalTarget(s, ch.goal) or nil
 	if at ~= storyAt then
 		storyAt = at
 		clearStoryPart()
@@ -1360,6 +1434,13 @@ local function refreshFound(s: any)
 	end
 end
 
+function UI.setStoryHidden(on: boolean)
+	storyHidden = on
+	if lastStoryState then
+		refreshStory(lastStoryState)
+	end
+end
+
 function UI.refreshWorld(s: any)
 	refreshFound(s)
 	refreshStory(s)
@@ -1372,6 +1453,7 @@ local dialogTitle: TextLabel
 local dialogText: TextLabel
 local dialogAct: TextButton
 local dialogTrial: string? = nil
+local dialogAccept = false
 local dialogSeq = 0
 function UI.dialog(data: any)
 	if not dialogFrame then
@@ -1383,7 +1465,10 @@ function UI.dialog(data: any)
 	dialogTitle.Text = data.title or ""
 	dialogText.Text = data.text or ""
 	dialogTrial = data.trial
-	dialogAct.Visible = dialogTrial ~= nil
+	dialogAccept = data.accept == true
+	dialogAct.Visible = dialogTrial ~= nil or dialogAccept
+	dialogAct.Text = dialogAccept and "📜 받기" or "⚔ 시험 받기"
+	dialogAct.BackgroundColor3 = dialogAccept and Color3.fromRGB(190, 130, 50) or C.red
 	dialogFrame.Visible = true
 	local n = utf8.len(dialogText.Text) or 0
 	pcall(function()
@@ -1415,9 +1500,20 @@ function UI.dialogOpen(): boolean
 end
 
 local function buildStory(topLeft: Frame)
-	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 336), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
+	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
+	-- 아직 받지 않은 이야기: 눌러서 받는다
+	storyAcceptBtn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -40, 0, 50), Size = UDim2.new(0, 90, 0, 30), Text = "📜 받기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(190, 130, 50), Visible = false, Parent = storyBox }, function()
+		Request:FireServer("storyAccept")
+	end)
+	-- 이야기 칸 숨기기 / 다시 보기
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.new(0, 26, 0, 26), Text = "✕", TextSize = 15, BackgroundColor3 = C.panel2, Parent = storyBox }, function()
+		UI.setStoryHidden(true)
+	end)
+	storyChip = button({ Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 120, 0, 34), Text = "📜 이야기 보기", TextSize = 15, BackgroundColor3 = C.bg, Visible = false, Parent = topLeft }, function()
+		UI.setStoryHidden(false)
+	end)
 	-- 대화 창
 	dialogFrame = new("Frame", { Name = "Dialog", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -150), Size = UDim2.new(0, 820, 0, 200), BackgroundColor3 = C.bg, BackgroundTransparency = 0.08, Visible = false, ZIndex = 20, Parent = gui }, { corner(14), stroke(C.line, 2.5) })
 	scaled(dialogFrame)
@@ -1429,7 +1525,9 @@ local function buildStory(topLeft: Frame)
 		dialogFrame.Visible = false
 	end)
 	dialogAct = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -168, 1, -12), Size = UDim2.new(0, 180, 0, 42), Text = "⚔ 시험 받기", TextSize = 18, BackgroundColor3 = C.red, ZIndex = 21, Visible = false, Parent = dialogFrame }, function()
-		if dialogTrial then
+		if dialogAccept then
+			Request:FireServer("storyAccept")
+		elseif dialogTrial then
 			Request:FireServer("learn", dialogTrial)
 		end
 		dialogSeq += 1
@@ -1634,8 +1732,8 @@ function UI.init(req: RemoteEvent)
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 420), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
-	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
+	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 430), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 18, Parent = menu }, function()
 			if item[1] == "map" then
 				UI.toggleMap()
@@ -1698,6 +1796,7 @@ function UI.init(req: RemoteEvent)
 	buildStats()
 	buildShop()
 	buildHelp()
+	buildTrainGuide()
 	buildTest()
 	buildMap()
 	buildSpeedLines()
@@ -1708,11 +1807,13 @@ function UI.init(req: RemoteEvent)
 		end
 	end)
 	-- 수련 놀이 칸
-	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 380, 0, 330), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
+	trainFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.45, 0), Size = UDim2.new(0, 400, 0, 400), BackgroundColor3 = C.bg, BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(16), stroke(C.line, 2) })
 	scaled(trainFrame)
 	trainTitle = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
 	trainHint = text({ Position = UDim2.new(0, 12, 0, 40), Size = UDim2.new(1, -24, 0, 40), TextSize = 14, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Parent = trainFrame })
-	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -130), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })
+	trainArea = new("Frame", { Position = UDim2.new(0, 0, 0, 84), Size = UDim2.new(1, 0, 1, -200), BackgroundTransparency = 1, ClipsDescendants = true, Parent = trainFrame })
+	-- 하는 법 (세 걸음)
+	trainGuide = text({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -52), Size = UDim2.new(1, -24, 0, 62), TextSize = 15, TextWrapped = true, TextColor3 = Color3.fromRGB(255, 230, 170), TextXAlignment = Enum.TextXAlignment.Center, BackgroundColor3 = C.panel2, BackgroundTransparency = 0.4, Parent = trainFrame })
 	button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(0, 160, 0, 36), Text = "그만하기", TextSize = 16, BackgroundColor3 = C.panel2, Parent = trainFrame }, function()
 		Request:FireServer("trainStop")
 	end)

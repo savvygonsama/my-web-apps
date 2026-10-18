@@ -259,6 +259,10 @@ local function addChi(f: Fighter, amount: number)
 end
 
 local function addPosture(f: Fighter, amount: number): boolean
+	-- 사람은 균형이 쉽게 무너지지 않는다 (사자후 같은 막기 깨기는 그대로)
+	if f.player and amount < f.postureMax then
+		amount *= Config.PLAYER_POSTURE_TAKEN
+	end
 	f.posture += amount
 	f.lastHurtAt = now()
 	if f.posture >= f.postureMax then

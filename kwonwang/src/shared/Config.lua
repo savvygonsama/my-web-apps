@@ -17,8 +17,8 @@ Config.BLOCK_POSTURE = 1.0 -- 막을 때 내 균형에 쌓이는 비율
 Config.DEFLECT_POSTURE = 1.3 -- 흘려질 때 공격한 쪽 균형에 쌓이는 비율
 Config.DEFLECT_STAGGER = 0.45 -- 흘려진 쪽이 휘청이는 시간
 Config.POSTURE_MAX = 100
-Config.POSTURE_REGEN = 14 -- 1초에 회복 (마지막으로 맞고 1.5초 뒤부터)
-Config.POSTURE_REGEN_DELAY = 1.5
+Config.POSTURE_REGEN = 20 -- 1초에 회복 (마지막으로 맞고 1.2초 뒤부터)
+Config.POSTURE_REGEN_DELAY = 1.2
 Config.BREAK_STUN = 1.6 -- 파훼되면 움직이지 못하는 시간
 Config.BROKEN_MULT = 1.6 -- 파훼된 상대에게 들어가는 피해 배율
 Config.CLASH_WINDOW = 0.12 -- 서로 이 시간 안에 치면 격돌
@@ -33,6 +33,14 @@ Config.CHI_ON_DEFLECT = 12
 -- 이동과 경공
 Config.WALK_SPEED = 22
 Config.DASH_SPEED = 85
+-- 빠를수록 대시가 멀리 간다 (걸음 빠르기 비율만큼, 최대 1.7배)
+Config.DASH_SPEED_MAX = 1.7
+-- 강타(Z)는 쉬지 않고 연달아 쓸 수 없다
+Config.HEAVY_CD = 1.4
+-- 오의(G)는 모두 이만큼 더 세다
+Config.ULT_MULT = 1.4
+-- 사람이 받는 균형 피해 비율 (쉽게 무너지지 않게)
+Config.PLAYER_POSTURE_TAKEN = 0.6
 Config.DASH_TIME = 0.18
 Config.DASH_IFRAMES = 0.22
 Config.DASH_CD = 0.55
@@ -120,13 +128,15 @@ Config.Training = {
 	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
 	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
 	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
-	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.0 },
+	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
 	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
-Config.HARD_TRAIN = { mult = 3, realm = 2, period = 0.9, perfect = 0.045, good = 0.1 }
+Config.HARD_TRAIN = { mult = 3, realm = 2, period = 1.05, perfect = 0.065, good = 0.14 }
+-- 보통 수련 판정 (넓을수록 쉽다)
+Config.TRAIN_JUDGE = { period = 1.6, perfect = 0.09, good = 0.2, mabo = 0.38, maboHard = 0.26, ring = 9 }
 
 ------------------------------------------------------------------------
 -- 권법 7종
@@ -687,7 +697,7 @@ for id, fin in pairs(FINISHERS) do
 end
 
 -- 연타 박자: 앞 동작이 이만큼 지났을 때 누르면 '딱 맞음(連)', 너무 일찍 두 번 누르면 흐트러진다
-Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
+Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000 }
@@ -916,34 +926,34 @@ local P = function(kind: string, name: string, phase: number, opt: { [string]: a
 	end
 	return t
 end
-boss("heukho", { hp = 2400, scale = 2.4, reach = 1.5, patterns = {
+boss("heukho", { hp = 2900, scale = 2.4, reach = 1.5, patterns = {
 	P("quake", "흑호 지진", 1, { radius = 16, warn = 1.1, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 30, 40, 0.9, 40, 18) }),
 	P("leap", "호랑이 도약", 1, { radius = 13, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 36, 50, 1.0, 35, 15) }),
 	P("charge", "흑호 돌진", 2, { length = 46, width = 9, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 30, 40, 0.8, 50) }),
 	P("summon", "부하들아!", 2, { enemy = "bandit", count = 3, max = 5, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("donut", "대도 회오리", 3, { inner = 7, outer = 24, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 45) }),
 } })
-boss("hyeolrang", { hp = 2000, scale = 2.0, reach = 1.4, patterns = {
+boss("hyeolrang", { hp = 2400, scale = 2.0, reach = 1.4, patterns = {
 	P("charge", "혈랑 질주", 1, { length = 40, width = 7, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 22, 28, 0.6, 30) }),
 	P("rain", "핏빛 비", 1, { count = 4, radius = 7, spread = 16, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 26, 30, 0.7, 20) }),
 	P("summon", "그림자 무리", 2, { enemy = "assassin", count = 3, max = 6, warn = 0.8, cd = 13, pose = "w_dual" }),
 	P("quake", "혈류 폭발", 3, { radius = 15, warn = 0.9, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 30, 36, 0.8, 40) }),
 } })
-boss("bingma", { hp = 3800, scale = 2.8, reach = 1.6, patterns = {
+boss("bingma", { hp = 4600, scale = 2.8, reach = 1.6, patterns = {
 	P("rain", "얼음 창비", 1, { count = 6, radius = 7, spread = 20, warn = 1.1, cd = 8, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 32, 40, 1.2, 20) }),
 	P("quake", "빙결 진동", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 34, 50, 1.4, 30) }),
 	P("donut", "설풍 고리", 2, { inner = 8, outer = 28, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.2, 40) }),
 	P("leap", "빙산 낙하", 2, { radius = 15, warn = 1.2, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 44, 60, 1.2, 40, 20) }),
 	P("summon", "설원의 자객들", 3, { enemy = "snowblade", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 } })
-boss("hyeolma", { hp = 5200, scale = 2.6, reach = 1.6, patterns = {
+boss("hyeolma", { hp = 6200, scale = 2.6, reach = 1.6, patterns = {
 	P("donut", "혈해 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 40) }),
 	P("rain", "혈우", 1, { count = 6, radius = 7, spread = 20, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 30, 36, 0.8, 20) }),
 	P("charge", "혈마 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 50) }),
 	P("summon", "혈교도들아!", 2, { enemy = "cultist", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("quake", "혈마 강림", 3, { radius = 22, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 55, 80, 1.4, 60, 20) }),
 } })
-boss("cheonma", { hp = 3800, scale = 3.2, reach = 1.8, patterns = {
+boss("cheonma", { hp = 4600, scale = 3.2, reach = 1.8, patterns = {
 	P("rain", "천마 낙성", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 110, 255), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
 	P("donut", "허공 고리", 1, { inner = 9, outer = 30, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 60, 1.0, 45) }),
 	P("leap", "하늘 짓밟기", 1, { radius = 16, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 50, 70, 1.2, 45, 20) }),
@@ -952,21 +962,21 @@ boss("cheonma", { hp = 3800, scale = 3.2, reach = 1.8, patterns = {
 	P("quake", "천마멸세", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.5, 70, 25) }),
 } })
 
-boss("yeomje", { hp = 4600, scale = 3.0, reach = 1.7, patterns = {
+boss("yeomje", { hp = 5500, scale = 3.0, reach = 1.7, patterns = {
 	P("rain", "화산탄", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 120, 30), hit = hit(0, 0, 0, 36, 40, 0.8, 25) }),
 	P("donut", "불꽃 고리", 1, { inner = 9, outer = 28, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
 	P("charge", "용암 돌진", 2, { length = 52, width = 10, warn = 0.8, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
 	P("summon", "불의 귀졸들", 2, { enemy = "flameimp", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("quake", "화산 폭발", 3, { radius = 24, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 90, 1.4, 60, 22) }),
 } })
-boss("sawang", { hp = 4800, scale = 2.8, reach = 1.6, patterns = {
+boss("sawang", { hp = 5800, scale = 2.8, reach = 1.6, patterns = {
 	P("charge", "모래 질주", 1, { length = 46, width = 8, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 40) }),
 	P("rain", "모래 창", 1, { count = 6, radius = 7, spread = 22, warn = 1.0, cd = 8, pose = "w_dual", fx = "sand", color = Color3.fromRGB(230, 195, 120), hit = hit(0, 0, 0, 34, 40, 0.8, 20, 14) }),
 	P("donut", "모래 회오리", 2, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
 	P("summon", "무덤의 망령들", 2, { enemy = "sandwraith", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 	P("leap", "왕의 낙하", 3, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.3, 50, 20) }),
 } })
-boss("cheonmun", { hp = 5600, scale = 3.4, reach = 1.9, patterns = {
+boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("rain", "천벌", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 40, 46, 0.8, 25) }),
 	P("leap", "하늘 문 내려닫기", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.2, 50, 20) }),
 	P("donut", "천문 고리", 2, { inner = 10, outer = 32, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 50, 66, 1.0, 50) }),
@@ -1077,8 +1087,6 @@ Config.Fragments = {
 	{ at = Vector3.new(320, 1, 1700), hint = "독안개 늪의 무너진 사당" },
 }
 
--- 수련 기력: 수련할 때마다 줄고, 시간이 지나거나 객잔에서 쉬면 찬다
-Config.STAMINA = { max = 100, cost = 2, hardCost = 4, regenEvery = 15, innCost = 60 }
 Config.INN_AT = Vector3.new(82, 0, 40)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
@@ -1159,7 +1167,7 @@ Config.Roads = {
 	{ Vector3.new(0, 0, -1380), Vector3.new(-120, 0, -2000), Vector3.new(-40, 0, -2460), Vector3.new(0, 0, -2650) },
 }
 
-Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
+Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
 function Config.playerPower(dmgMult: number, maxHp: number): number
 	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))

@@ -122,13 +122,13 @@ function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: 
 	glow.CFrame = cf * CFrame.Angles(0, math.rad(90), 0)
 	tween(glow, life, { Size = Vector3.new(0.05, toD, toD), Transparency = 1 })
 	Debris:AddItem(glow, life + 0.05)
-	-- 작은 고리는 빛 원반 하나로 충분하다
-	if toD < 7 then
-		glow.Transparency = 0.25
+	-- 작은 고리 (평타 맞힘 등)는 매끈한 빛 원반 하나 (조각을 이으면 네모가 보인다)
+	if toD < 24 then
+		glow.Transparency = 0.2
 		return
 	end
-	local n = math.clamp(math.floor(toD / 2.5), 10, 22)
-	local thick = math.clamp(toD * 0.025, 0.25, 1.2)
+	local n = math.clamp(math.floor(toD / 1.6), 16, 40)
+	local thick = math.clamp(toD * 0.02, 0.4, 1.2)
 	for i = 0, n - 1 do
 		local a = i / n * math.pi * 2
 		local dir = cf.RightVector * math.cos(a) + cf.UpVector * math.sin(a)
