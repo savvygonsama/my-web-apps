@@ -251,6 +251,9 @@ local function buildRig(def: any, label: string, isBoss: boolean): Model
 	model:SetAttribute("Label", label)
 	model:SetAttribute("Scale", def.scale or 1)
 	model:SetAttribute("Weapon", def.weapon)
+	if def.dummy then
+		model:SetAttribute("Dummy", true)
+	end
 	return model
 end
 
@@ -469,6 +472,29 @@ local function dressMaster(model: Model, style: any)
 				e.Parent = hand
 			end
 		end
+	elseif id == "taecho" then
+		-- 시원자: 얼굴 없는 흰 가면, 등 뒤의 빛의 고리 (해무리), 손목의 빛 띠
+		wear(model, "Head", "BlankMask", Vector3.new(hs.X * 0.9, hs.Y * 0.8, 0.15), CFrame.new(0, 0, -hs.Z * 0.52), Color3.fromRGB(250, 250, 245), Enum.Material.SmoothPlastic)
+		wear(model, "Head", "MaskLine", Vector3.new(hs.X * 0.5, 0.06, 0.05), CFrame.new(0, hs.Y * 0.05, -hs.Z * 0.6), style.color2, Enum.Material.Neon)
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			wear(model, "Head", "HaloRay", Vector3.new(0.15, 0.15, 0.9), CFrame.new(math.cos(a) * hs.X * 1.1, math.sin(a) * hs.Y * 1.1, hs.Z * 0.9) * CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(0, 0, a), k % 3 == 0 and style.color2 or style.color, Enum.Material.Neon)
+		end
+		for _, side in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
+			wear(model, side, "LightBand", Vector3.new(1.05, 0.2, 1.05), CFrame.new(0, -0.3, 0), style.color2, Enum.Material.Neon)
+		end
+		local torso = model:FindFirstChild("UpperTorso")
+		if torso and torso:IsA("BasePart") then
+			local e = Instance.new("ParticleEmitter")
+			e.Rate = 14
+			e.Color = ColorSequence.new(style.color, style.color2)
+			e.LightEmission = 1
+			e.Size = NumberSequence.new(0.3, 0)
+			e.Lifetime = NumberRange.new(1.5, 2.5)
+			e.Speed = NumberRange.new(0.5, 1.5)
+			e.SpreadAngle = Vector2.new(180, 180)
+			e.Parent = torso
+		end
 	elseif id == "gaecheon" then
 		-- 무명 노인: 땅에 끌리는 흰 수염, 별을 박은 관, 둘레를 도는 별빛
 		beard(WHITE_HAIR)
@@ -650,6 +676,9 @@ function Npc.despawn(f: any)
 	for i, e in ipairs(Npc.list) do
 		if e.f == f then
 			table.remove(Npc.list, i)
+			for player in pairs(e.engaged) do
+				Push:FireClient(player, "boss", nil)
+			end
 			break
 		end
 	end
@@ -679,7 +708,7 @@ function Npc.onDeath(f: any)
 				f.model:Destroy()
 			end)
 			local wait = e.kind == "boss" and (e.def.respawn or 120) or Config.ENEMY_RESPAWN
-			if e.region == "simma" or e.region == "trial" or e.region == "summon" then
+			if e.region == "simma" or e.region == "trial" or e.region == "summon" or e.region == "test" then
 				return -- 심마는 다시 나타나지 않는다
 			end
 			task.delay(wait, function()
@@ -964,6 +993,40 @@ local function think(e: Enemy, t: number)
 		return
 	end
 	local pos = f.root.Position
+	-- 수련 목인: 맞은 피해만 센다. 3초 동안 안 맞으면 다시 가득
+	if (e.def :: any).dummy then
+		local ea = e :: any
+		ea.hits = ea.hits or {}
+		local lost = (ea.lastHp or f.maxHp) - f.hp
+		if lost > 0 then
+			table.insert(ea.hits, { t = t, d = lost })
+			ea.best = math.max(ea.best or 0, lost)
+			ea.lastHitAt = t
+		end
+		while ea.hits[1] and t - ea.hits[1].t > 5 do
+			table.remove(ea.hits, 1)
+		end
+		local sum = 0
+		for _, h in ipairs(ea.hits) do
+			sum += h.d
+		end
+		local span = #ea.hits > 0 and math.max(1, t - ea.hits[1].t) or 1
+		f.model:SetAttribute("Dps", math.floor(sum / span + 0.5))
+		f.model:SetAttribute("Best", math.floor((ea.best or 0) + 0.5))
+		if t - (ea.lastHitAt or 0) > 3 and f.hp < f.maxHp then
+			f.hp = f.maxHp
+			ea.best = 0
+			Combat.sync(f)
+		end
+		ea.lastHp = f.hp
+		-- 밀려나도 1초 뒤 제자리로
+		ea.spot = ea.spot or pos
+		if flatDist(pos, ea.spot) > 4 and t - (ea.lastHitAt or 0) > 1 then
+			f.model:PivotTo(CFrame.new(ea.spot) * f.root.CFrame.Rotation)
+		end
+		f.hum:MoveTo(f.root.Position)
+		return
+	end
 	-- 버티기에 들어가면 곧바로 되받아친다
 	if (f :: any).retaliate then
 		(f :: any).retaliate = nil

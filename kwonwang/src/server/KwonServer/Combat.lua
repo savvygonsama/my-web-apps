@@ -285,6 +285,12 @@ function Combat.kill(f: Fighter, by: Fighter?)
 	if f.dead then
 		return
 	end
+	-- 수련 목인은 쓰러지지 않는다 (다시 가득 찬다)
+	if f.npc and (f.npc :: any).dummy then
+		f.hp = f.maxHp
+		Combat.sync(f)
+		return
+	end
 	f.dead = true
 	f.hp = 0
 	f.act = nil
@@ -563,6 +569,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 공격한 쪽 권법 장치: 꽃잎, 전하
 	local chain = false
 	local star = false
+	local pulse: any = nil
 	if aStyle and not opt.chain then
 		if aStyle.starEvery then
 			-- 개천: 다섯 번 맞힐 때마다 별이 떨어진다
@@ -573,11 +580,15 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				star = true
 			end
 		end
-		if aStyle.id == "gwonwang" then
-			-- 권왕 패기: 맞힐 때마다 쌓인다 (가득 차면 다음 강타가 패왕권)
+		if aStyle.pulse then
+			-- 파천 중압·태초 창세: 정해진 수만큼 맞히면 상대 자리에서 터진다
 			local fa = att :: any
-			fa.kingN = math.min(10, (fa.kingN or 0) + 1)
-			att.model:SetAttribute("King", fa.kingN)
+			fa.pulseN = (fa.pulseN or 0) + 1
+			if fa.pulseN >= aStyle.pulse.every then
+				fa.pulseN = 0
+				pulse = aStyle.pulse
+			end
+			att.model:SetAttribute("Pulse", fa.pulseN)
 		end
 		if aStyle.id == "maehwa" then
 			if t - att.stacks.petalAt > 1.2 then
@@ -605,6 +616,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = crit,
 		style = att.style,
 		strike = move.strike == true,
+		pose = move.pose,
 		broken = wasBroken,
 		counter = counterHit,
 		steady = steady,
@@ -646,6 +658,24 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				Combat.applyHit(att, other, { dmg = (hit.dmg or 0) * 0.5, posture = (hit.posture or 0) * 0.5, stun = 0.4, kb = 20 }, { chain = true, isSkill = true, move = { name = "여진" } })
 			end
 		end
+	end
+	if pulse then
+		local at = tgt.root.Position
+		Push:FireAllClients("skillfx", { kind = "pulse", fx = pulse.kind, at = at, radius = pulse.radius, delay = pulse.delay, style = att.style })
+		task.delay(pulse.delay, function()
+			if att.dead then
+				return
+			end
+			for _, other in pairs(Combat.fighters) do
+				if Combat.hostile(att, other) and not other.dead and (other.root.Position - at).Magnitude <= pulse.radius then
+					if pulse.pull and not other.player and not other.root.Anchored then
+						local d = at - other.root.Position
+						other.root.AssemblyLinearVelocity = Vector3.new(d.X, 0, d.Z) * (pulse.pull / math.max(4, d.Magnitude)) + Vector3.new(0, -20, 0)
+					end
+					Combat.applyHit(att, other, { dmg = pulse.dmg, posture = pulse.posture, stun = pulse.stun, kb = pulse.kb, up = pulse.up }, { chain = true, isSkill = true, move = { name = pulse.name } })
+				end
+			end
+		end)
 	end
 	if star then
 		local at = tgt.root.Position
@@ -814,7 +844,10 @@ function Combat.tick(dt: number)
 				end
 			end
 			local cmax = (f :: any).chiMax or Config.CHI_MAX
-			if f.player and f.chi < cmax then
+			if f.player and f.chi < cmax and f.model:GetAttribute("TestInf") == true then
+				f.chi = cmax
+				changed = true
+			elseif f.player and f.chi < cmax then
 				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX))
 				changed = true
 			end

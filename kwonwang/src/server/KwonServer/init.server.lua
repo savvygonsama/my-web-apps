@@ -259,6 +259,9 @@ end
 ------------------------------------------------------------------------
 -- 상태 보내기와 이름표
 ------------------------------------------------------------------------
+-- 테스트 스위치: 내공 무한·쿨 없음 (사람마다, 저장하지 않는다)
+local TEST_INF: { [Player]: boolean? } = {}
+
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
 end
@@ -689,8 +692,8 @@ Combat.init(Push, {
 							if id == "hyeolma" then
 								grantStyle(killer, "hyeolma", true)
 							elseif id == "cheonma" then
-								-- 천마를 꺾은 자가 권왕의 이름을 잇는다
-								grantStyle(killer, "gwonwang", true)
+								-- 천마를 꺾은 자가 하늘을 삼킨 힘을 거꾸로 쥔다
+								grantStyle(killer, "pacheon", true)
 							end
 						end
 					end
@@ -901,16 +904,18 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
 		end
-		if t < (f.cds[slot] or 0) then
+		-- 테스트: 내공 무한·쿨 없음이 켜져 있으면 둘 다 건너뛴다
+		local inf = TEST_INF[player] == true
+		if t < (f.cds[slot] or 0) and not inf then
 			return
 		end
-		local cost = move.chi or 0
+		local cost = inf and 0 or (move.chi or 0)
 		if f.chi < cost then
 			toast(player, string.format("내공이 부족해요 (🌀 %d 필요)", cost))
 			return
 		end
 		f.chi -= cost
-		f.cds[slot] = t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1)
+		f.cds[slot] = inf and 0 or t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1) * (style.cdMult or 1)
 	end
 	local speed = Config.actSpeed(style, p.gradeUp[p.style], (f.buffs.frenzy or 0) > t)
 	local charge = 0
@@ -923,12 +928,6 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		if style.id == "maehwa" and f.stacks.petal >= 20 then
 			bloom = true
 			f.stacks.petal = 0
-		elseif style.id == "gwonwang" and (fa.kingN or 0) >= 10 then
-			-- 패왕권: 패기를 모두 쏟아 세 배
-			dmgScale = 3
-			fa.kingN = 0
-			f.model:SetAttribute("King", 0)
-			Push:FireAllClients("skillfx", { kind = "kingRelease", m = f.model, style = style.id })
 		elseif style.id == "taeheo" and f.stacks.flow > 0 then
 			dmgScale = 1 + (move.stackDmg or 0.5) * f.stacks.flow
 			f.stacks.flow = 0
@@ -1445,10 +1444,20 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			m.xp = 0
 		end
 	elseif action == "testChi" then
+		-- 켜고 끄는 스위치: 켜 두면 내공이 늘 가득, 기술 쿨이 없다
+		if arg == "on" then
+			TEST_INF[player] = true
+		elseif arg == "off" then
+			TEST_INF[player] = nil
+		else
+			TEST_INF[player] = not TEST_INF[player] or nil
+		end
 		if f then
 			f.chi = (f :: any).chiMax or Config.CHI_MAX
 			f.cds = {}
+			f.model:SetAttribute("TestInf", TEST_INF[player] == true)
 		end
+		toast(player, TEST_INF[player] and "🌀 내공 무한·쿨 없음: 켜짐" or "🌀 내공 무한·쿨 없음: 꺼짐")
 	elseif action == "testHeal" then
 		if f then
 			f.hp = f.maxHp
@@ -1457,6 +1466,26 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testBoss" then
 		if f then
 			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
+		end
+	elseif action == "testDummy" then
+		if f then
+			Npc.spawn("dummy", false, f.root.Position + Combat.look(f) * 12, "test")
+		end
+	elseif action == "testClear" then
+		-- 테스트로 부른 적·목인을 모두 치운다
+		for i = #Npc.list, 1, -1 do
+			local e = Npc.list[i]
+			if e.region == "test" then
+				Npc.despawn(e.f)
+			end
+		end
+	elseif action == "testTime" then
+		if arg == "freeze" then
+			toast(player, World.toggleClockFreeze() and "⏸ 시간이 멈췄어요" or "▶ 시간이 다시 흘러요")
+		elseif arg == "+3" then
+			World.setClock(World.clockHour() + 3)
+		else
+			World.setClock(tonumber(arg) or 12)
 		end
 	elseif action == "testEnemy" then
 		if f then
@@ -1507,9 +1536,9 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testSecretMaster" then
 		-- 숨은 사부 곁으로
 		if f then
-			local sm = Config.SECRET_MASTER
-			f.root.CFrame = CFrame.new(sm.at + Vector3.new(0, 4, 10))
-			toast(player, "🧭 " .. sm.name .. " (" .. sm.region .. ")")
+			local m = Config.MASTERS[type(arg) == "string" and arg or "gaecheon"] or Config.MASTERS.gaecheon
+			f.root.CFrame = CFrame.new(m.at + Vector3.new(0, 4, 10))
+			toast(player, "🧭 " .. m.name .. " (" .. m.region .. ")")
 		end
 	elseif action == "testBreak" then
 		if p.style ~= "" then
@@ -1546,17 +1575,19 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			grantStyle(player, "mugeuk", true)
 		elseif arg == "hyeolma" then
 			grantStyle(player, "hyeolma", true)
-		elseif arg == "gwonwang" then
-			grantStyle(player, "gwonwang", true)
+		elseif arg == "pacheon" then
+			grantStyle(player, "pacheon", true)
 		elseif arg == "lock" then
 			-- 숨은 권법을 다시 잠근다 (처음부터 다시 얻어 보기)
 			p.styles.mugeuk = nil :: any
 			p.styles.hyeolma = nil :: any
 			p.styles.gaecheon = nil :: any
-			p.styles.gwonwang = nil :: any
+			p.styles.pacheon = nil :: any
+			p.styles.taecho = nil :: any
+			p.trials.taecho = nil :: any
 			p.trials.gaecheon = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "gwonwang" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" then
 				p.style = "samjae"
 			end
 		end
@@ -1751,6 +1782,9 @@ local function setupCharacter(player: Player, char: Model)
 		return
 	end
 	local f = Combat.register(char, { player = player, name = player.DisplayName, hp = Config.maxHp(p.stats.vit), style = p.style })
+	if TEST_INF[player] then
+		char:SetAttribute("TestInf", true)
+	end
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
 	char.AncestryChanged:Connect(function()
@@ -1811,6 +1845,7 @@ local function onPlayerRemoving(player: Player)
 	saveProfile(player)
 	profiles[player] = nil
 	states[player] = nil
+	TEST_INF[player] = nil
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)

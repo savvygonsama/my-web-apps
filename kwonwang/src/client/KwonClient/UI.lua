@@ -330,6 +330,13 @@ function UI.enemyTag(model: Model)
 	-- 전투력 견주기: 차이가 크면 그 적의 공격은 나에게 통하지 않는다
 	local powerLabel = text({ Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
 	local function refreshPower()
+		if model:GetAttribute("Dummy") == true then
+			local dps = tonumber(model:GetAttribute("Dps")) or 0
+			local best = tonumber(model:GetAttribute("Best")) or 0
+			powerLabel.Text = "🎯 초당 피해 " .. Config.formatNumber(dps) .. " · 가장 센 한 방 " .. Config.formatNumber(best)
+			powerLabel.TextColor3 = Color3.fromRGB(255, 225, 150)
+			return
+		end
 		local ep = model:GetAttribute("Power")
 		local char = player.Character
 		local mp = char and char:GetAttribute("Power")
@@ -360,6 +367,7 @@ function UI.enemyTag(model: Model)
 	end
 	refreshPower()
 	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
+	model:GetAttributeChangedSignal("Dps"):Connect(refreshPower)
 	-- 내 전투력이 바뀌면 다시 견준다 (적이 사라지면 그만)
 	task.spawn(function()
 		while true do
@@ -815,9 +823,14 @@ local function buildTest()
 	end
 	section("기본", {
 		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 },
-		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 가득·쿨 없음", "testChi" }, { "❤ 회복", "testHeal" },
+		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 무한·쿨 없음 (켜기·끄기)", "testChi" }, { "❤ 회복", "testHeal" },
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "↺ 처음으로", "testReset", color = C.red },
+	})
+	section("🎯 수련 목인·시간", {
+		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
+		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
+		{ "🌙 한밤 (0시)", "testTime", 0 }, { "⏩ 3시간 뒤로", "testTime", "+3" },
 	})
 	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
 	local styleItems = {}
@@ -830,7 +843,8 @@ local function buildTest()
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "👊 권왕신권 얻기 (천마 처치 보상)", "testSecret", "gwonwang" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 200000 },
+		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 	})
 	section("적과 보스", {
 		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
@@ -1432,6 +1446,9 @@ local AMBIENT = {
 	coast = { d = 0.3, h = 1.6, c = Color3.fromRGB(200, 225, 245) },
 	cult = { d = 0.45, h = 2.3, c = Color3.fromRGB(160, 45, 55) },
 	rift = { d = 0.5, h = 2.4, c = Color3.fromRGB(110, 70, 190) },
+	volcano = { d = 0.48, h = 2.6, c = Color3.fromRGB(200, 90, 50) },
+	desert = { d = 0.34, h = 2.2, c = Color3.fromRGB(240, 200, 140) },
+	sky = { d = 0.3, h = 1.2, c = Color3.fromRGB(235, 242, 255) },
 }
 local regionNow = ""
 local function regionAt(pos: Vector3): any

@@ -499,16 +499,17 @@ startMove = function(slot: any, charge: number?)
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
 		end
-		if now < (cds[slot] or 0) then
+		local inf = char:GetAttribute("TestInf") == true
+		if now < (cds[slot] or 0) and not inf then
 			return
 		end
 		local chi = char:GetAttribute("Chi")
-		if type(chi) == "number" and chi < (move.chi or 0) then
+		if type(chi) == "number" and chi < (move.chi or 0) and not inf then
 			UI.toast(string.format("내공이 부족해요 (🌀 %d 필요)", move.chi or 0))
 			return
 		end
-		cds[slot] = now + (move.cd or 0)
-		cdLen[slot] = move.cd or 1
+		cds[slot] = inf and 0 or now + (move.cd or 0) * (style.cdMult or 1)
+		cdLen[slot] = (move.cd or 1) * (style.cdMult or 1)
 	end
 	local speed = Config.actSpeed(style, state and state.gradeUp and state.gradeUp[style.id] or 0, char:GetAttribute("Buff") == "frenzy")
 	local dur = move.dur / speed
@@ -1183,6 +1184,26 @@ function handlers.interrupt(m: Model)
 	Anim.stop(m)
 end
 
+-- 정타 반응: 맞힌 기술의 동작 이름으로 맞은 곳을 가늠한다 (차기는 머리·옆, 장·팔꿈치·무릎은 명치, 쓸기는 다리)
+local reactTurn = 0
+local function reactPose(pose: any, fromRight: boolean): string
+	local name = type(pose) == "string" and pose or ""
+	reactTurn += 1
+	local side = fromRight and "_r" or "_l"
+	if string.find(name, "low") or string.find(name, "sweep") or string.find(name, "flop") then
+		return "hit_low"
+	elseif string.find(name, "roundhouse") or string.find(name, "hook") or string.find(name, "spin") or string.find(name, "crescent") or string.find(name, "swing") then
+		return "hit_spin" .. side
+	elseif string.find(name, "kick") or string.find(name, "upper") or string.find(name, "snap") or string.find(name, "heel") then
+		return "hit_head"
+	elseif string.find(name, "palm") or string.find(name, "elbow") or string.find(name, "knee") or string.find(name, "push") or string.find(name, "fist") then
+		return reactTurn % 3 == 0 and ("flinch" .. side) or "hit_gut"
+	end
+	-- 그 밖의 주먹: 머리·옆·몸을 돌아가며
+	local k = reactTurn % 3
+	return k == 0 and "hit_head" or (k == 1 and ("flinch" .. side) or "hit_gut")
+end
+
 -- 맞힘 결과
 function handlers.hit(data: any)
 	local a: Model, t: Model = data.a, data.t
@@ -1201,8 +1222,8 @@ function handlers.hit(data: any)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
 			if t and t:GetAttribute("Poise") ~= true and not data.steady then
-				local side = (aRoot and tRoot) and (tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 and "flinch_r" or "flinch_l") or "flinch_l"
-				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or side)
+				local fromRight = (aRoot and tRoot) and tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 or false
+				local pose = data.broken and "knockdown" or (data.heavy and "hit_heavy" or reactPose(data.pose, fromRight))
 				Anim.play(t, pose, data.broken and 0.7 or (data.heavy and 0.5 or 0.3))
 			end
 		elseif data.heavy and t and t:GetAttribute("Poise") ~= true then
@@ -1519,7 +1540,9 @@ function handlers.skillfx(data: any)
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
 	end
-	if data.kind == "strike" and data.fx == "sword" then
+	if (data.fx == "gravity" or data.fx == "prism") and Ults.variant(data) then
+		return
+	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
 		return
 	elseif data.kind == "pillar" and data.fx == "spear" then
@@ -1742,9 +1765,10 @@ RunService.RenderStepped:Connect(function()
 	elseif style.id == "byeokryeok" then
 		local n = tonumber(char:GetAttribute("Charge")) or 0
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)
-	elseif style.id == "gwonwang" then
-		local n = tonumber(char:GetAttribute("King")) or 0
-		stacks = n >= 10 and "👊 패왕권 준비! (Z)" or ("패기 " .. string.rep("●", n) .. string.rep("○", 10 - n))
+	elseif style.pulse then
+		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
+		local mark = style.pulse.kind == "gravity" and "◆" or "✦"
+		stacks = (style.pulse.kind == "gravity" and "중압 " or "창세 ") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.id == "cheonryong" and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end

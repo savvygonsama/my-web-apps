@@ -12,6 +12,8 @@
 --   launch   둘레의 적을 모두 하늘로 띄웠다가 빛으로 내리친다
 --   moving   내 몸을 따라다니며 계속 베는 꽃잎 폭풍
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
+--   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
+--   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
 local Combat = require(script.Parent:WaitForChild("Combat"))
 
 local Skills = {}
@@ -331,6 +333,53 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end
+	elseif kind == "blackhole" then
+		-- 흑일강림: 앞 하늘에 검은 해. 둘레의 적이 끌려 올라가 매달린 채 짓이겨진다
+		local center = f.root.Position + look * (m.dist or 12)
+		local sky = center + Vector3.new(0, m.height or 16, 0)
+		Push:FireAllClients("skillfx", { kind = "blackhole", at = center, height = m.height or 16, radius = m.radius, dur = m.dur / sp, delay = (m.delay or 0) / sp, style = style })
+		local n = math.max(1, math.floor(m.dur / m.every))
+		for i = 0, n - 1 do
+			after((m.delay or 0) + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					if not o.player and not o.root.Anchored then
+						local d = sky - o.root.Position
+						o.root.AssemblyLinearVelocity = d.Magnitude > 1 and d.Unit * math.min(70, d.Magnitude * 5) or Vector3.zero
+					elseif o.player then
+						pullTo(o, center, 30)
+					end
+					Combat.stun(o, m.every + 0.25)
+					if hit then
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after((m.delay or 0) + m.dur, function()
+			Push:FireAllClients("skillfx", { kind = "blackholeBurst", at = sky, radius = m.radius, style = style })
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 6)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "genesis" then
+		-- 천지개벽: 둘레의 시간이 멈추고(모두 묶인다), 세상에 금이 가고, 깨진다
+		local center = f.root.Position
+		local list = hostilesNear(f, center, m.radius)
+		local models = {}
+		for _, o in ipairs(list) do
+			Combat.stun(o, m.freeze / sp)
+			if not o.player and not o.root.Anchored then
+				o.root.AssemblyLinearVelocity = Vector3.zero
+			end
+			table.insert(models, o.model)
+		end
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.breakAt / sp + 0.3)
+		Push:FireAllClients("skillfx", { kind = "genesis", m = f.model, at = center, radius = m.radius, targets = models, dur = m.freeze / sp, crackAt = m.crackAt / sp, breakAt = m.breakAt / sp, style = style })
+		after(m.breakAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "clones" then
 		-- 그림자 분신: 둘레의 적마다 분신이 하나씩 나타나 동시에 찬다 (나는 그 자리에)
 		local list = nearestList(f, m.range, m.n)
@@ -536,39 +585,6 @@ function Skills.run(f: any, move: any, ctx: any)
 					end
 				end)
 			end)
-		end)
-	elseif kind == "barrage" then
-		-- 권왕 억만권: 눈에 보이지 않는 주먹이 앞을 메우고, 마지막 한 주먹에 땅이 갈라진다
-		Push:FireAllClients("skillfx", { kind = "barrage", m = f.model, dur = m.dur / sp, range = m.range, style = style })
-		local n = math.floor(m.dur / m.every)
-		for i = 0, n - 1 do
-			after(0.15 + i * m.every, function()
-				local fwd = flat(Combat.look(f))
-				local cosA = math.cos(math.rad(m.angle / 2))
-				for _, o in ipairs(hostilesNear(f, f.root.Position, m.range)) do
-					if fwd:Dot(flat(o.root.Position - f.root.Position)) >= cosA then
-						strike(f, o, hit, move)
-					end
-				end
-			end)
-		end
-		after(0.15 + m.dur + 0.15, function()
-			local fwd = flat(Combat.look(f))
-			local from = f.root.Position + fwd * 3
-			Push:FireAllClients("skillfx", { kind = "fissure", from = from, to = from + fwd * m.fissure, style = style })
-			local steps = math.floor(m.fissure / 5)
-			local done = {}
-			for k = 0, steps do
-				task.delay(k * 0.025 / sp, function()
-					local p = from + fwd * (k * 5)
-					for _, o in ipairs(hostilesNear(f, p, 7)) do
-						if not done[o] then
-							done[o] = true
-							strike(f, o, scaled(m.final, sc), move)
-						end
-					end
-				end)
-			end
 		end)
 	elseif kind == "tornado" then
 		-- 풍신: 거대한 회오리가 앞으로 나아가며 모두 빨아올렸다가 사방으로 내던진다
