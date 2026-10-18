@@ -115,7 +115,7 @@ Follow the attached photo's silhouette, clip, fuel cap and color split, but redr
 
 SHEET LAYOUT:
 Top row, full body: front view, side view showing ONLY the teal side, side view showing ONLY the grey side, back view.
-Bottom row, 4 expressions: (1) polite smile, (2) calm smile, eyes closed as arcs, (3) bright work-mode smile in 3/4 view with the teal side forward and a small sparkle, (4) off-duty face: grey side forward, relaxed sleepy eyes.
+Bottom row, 4 expressions: (1) polite smile, (2) calm smile, eyes closed as arcs, (3) bright work-mode smile in 3/4 view with the teal side forward and a small sparkle, (4) off-duty face: grey side forward, calm soft eyes, a gentle comfortable smile, NOT sleepy.
 Small label "EG" at the top. Keep the split, clip and fuel cap consistent.
 ```
 
@@ -151,12 +151,12 @@ CHARACTER KKOTKKOT:
 - Head: a faceted, angular helmet cut like a gem, with an octagonal light face plate (#EEF0F2). The gem-cut helmet is KKOTKKOT's main identifier.
 - Body: dark slate grey (#5B6675) made of flat angular plates.
 - Face: small dark oval eyes, two short THICK STRAIGHT EYEBROWS (the main expression tool), a tiny dash mouth. Serious but kind.
-- Outfit: the same sleeveless blue vest (#2A6DA8) and roller emblem as SSIAL, plus a small rectangular badge near the collar reading "1470M".
+- Outfit: the same sleeveless blue vest (#2A6DA8) and roller emblem as SSIAL, plus a small rectangular badge on the CHEST reading "1470M".
 Follow the attached photo's helmet and body shapes, redraw as flat 2D, and add the vest and badge.
 
 SHEET LAYOUT:
 Top row, full body: front view, side view (perfectly straight line from head to heels), back view, one small front view WITHOUT the vest.
-Bottom row, 4 expressions: (1) neutral serious, (2) surprised: ONLY the eyes become round, (3) straining: red blush on the face plate, trembling lines, three sweat drops, (4) THE EYEBROW FLICK: one eyebrow raised a tiny amount, the rest of the face unchanged.
+Bottom row, 4 expressions: (1) neutral serious, (2) BIG SURPRISE in 3/4 view: both eyes large round circles AND both eyebrows shot up high together, innocent, (3) straining: red blush on the face plate, trembling lines, three sweat drops, (4) THE EYEBROW FLICK: one eyebrow raised a tiny amount, the rest of the face unchanged.
 Small label "KKOTKKOT" at the top. Keep every view consistent.
 ```
 
@@ -239,3 +239,6 @@ These are the fixed character sheets and background. Use them exactly.
 3. 에피소드 프롬프트를 보낸다. 새 창이면 저장한 시트·배경을 직접 첨부한다.
 4. 얼굴이 흔들리면 '한 컷만 다시' 문장. 부분 선택 편집이 있으면 그 컷만 선택해서.
 5. 대사는 이미지에 넣는 쪽을 먼저 시도하고, 깨지면 빈 말풍선으로 받아 둥근 고딕 하나로 직접 넣는다.
+
+## 2026-10 확정판 메모
+2~5화에 실제로 쓴 시트·배경·에피소드 프롬프트(출하동은 뒷벽 쪽문 + 방청지 포장 코일 + 결속 밴드 + V자 받침, 견본실 벽시계 변형, 이지 시트 표정 (4) 편안한 퇴근 얼굴, 도금이 BOW POSE, 타래 CROUCHING POSE)는 `references/prompts/ep2-5.md`가 정본이다. 배경 프롬프트에는 변형(밤·비) 줄을 함께 넣지 않는다. 함께 넣으면 여러 장이나 변형판이 뽑힌다.
