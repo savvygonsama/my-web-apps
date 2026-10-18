@@ -1051,6 +1051,33 @@ function SITES.byeokryeok(r: any, at: Vector3, color: Color3, f: Instance)
 	end
 end
 
+-- 풍신대: 둥근 언덕 위 돌 단, 바람을 받는 높은 깃대와 도는 바람 고리
+function SITES.pungsin(r: any, at: Vector3, color: Color3, f: Instance)
+	cyl("WindMound", Vector3.new(at.X, at.Y / 2, at.Z), 34, at.Y, Color3.fromRGB(110, 150, 100), Enum.Material.Grass, f)
+	cyl("WindDais", Vector3.new(at.X, at.Y + 0.4, at.Z), 14, 0.8, Color3.fromRGB(205, 210, 200), Enum.Material.Marble, f)
+	cyl("WindMark", Vector3.new(at.X, at.Y + 0.85, at.Z), 9, 0.1, color, Enum.Material.Neon, f, false).Transparency = 0.5
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local p = Vector3.new(at.X + math.cos(a) * 30, at.Y, at.Z + math.sin(a) * 30)
+		part({ Name = "WindPole", Size = Vector3.new(1, 32, 1), Position = p + Vector3.new(0, 16, 0), Color = Color3.fromRGB(220, 220, 215), Material = Enum.Material.Marble, Parent = f })
+		for j = 0, 2 do
+			part({ Name = "WindRibbon", Size = Vector3.new(0.15, 1.2, 9 - j * 2), CFrame = CFrame.new(p + Vector3.new(0, 30 - j * 3, 0)) * CFrame.Angles(0, a + j * 0.4, 0) * CFrame.new(0, 0, (9 - j * 2) / 2), Color = j % 2 == 0 and color or Color3.fromRGB(245, 255, 250), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+		end
+	end
+	-- 하늘에 떠서 도는 바람 고리 셋
+	for j = 0, 2 do
+		local c = Vector3.new(at.X, at.Y + 26 + j * 9, at.Z)
+		local ring = part({ Name = "WindRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 30 - j * 7, 30 - j * 7), CFrame = CFrame.new(c) * CFrame.Angles(math.rad(10 + j * 25), j, math.rad(90)), Color = color, Material = Enum.Material.Neon, Transparency = 0.55, CanCollide = false, Parent = f })
+		local _ = ring
+	end
+	for _ = 1, 18 do
+		local p = r.center + Vector3.new(rng:NextNumber(-120, 120), 0, rng:NextNumber(-120, 120))
+		if (p - Vector3.new(at.X, 0, at.Z)).Magnitude > 44 and not nearRoad(p, 14) then
+			rock(p, rng:NextNumber(3, 8), f, Color3.fromRGB(150, 160, 150))
+		end
+	end
+end
+
 -- 취선 주막: 술독과 탁자, '酒' 깃발
 function SITES.chwi(r: any, at: Vector3, color: Color3, f: Instance)
 	building(Vector3.new(at.X, 0, at.Z + 36), 34, 18, 0, f, { tiers = 2, sign = "취선 주막", awningColor = Color3.fromRGB(170, 60, 40) })

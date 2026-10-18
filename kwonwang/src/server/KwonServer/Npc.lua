@@ -490,6 +490,13 @@ local function dressMaster(model: Model, style: any)
 			e.SpreadAngle = Vector2.new(180, 180)
 			e.Parent = headPart
 		end
+	elseif id == "pungsin" then
+		-- 풍백: 바람에 날리는 긴 띠 두 줄과 깃털 머리 장식
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "UpperTorso", "WindScarf", Vector3.new(0.4, 0.15, 5), CFrame.new(x * 0.6, 0.7, 2.6) * CFrame.Angles(math.rad(-15), x * math.rad(12), 0), style.color2)
+			wear(model, "Head", "Feather", Vector3.new(0.15, 1.6, 0.5), CFrame.new(x * hs.X * 0.4, hs.Y * 0.8, 0.2) * CFrame.Angles(0, 0, x * math.rad(-20)), style.color, Enum.Material.Neon)
+		end
+		wear(model, "Head", "WindBand", Vector3.new(hs.X * 1.04, 0.2, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.28, 0), style.color, Enum.Material.Neon)
 	elseif id == "chwi" then
 		-- 취선옹: 넓은 삿갓, 허리의 술 호리병, 붉은 뺨
 		beard(Color3.fromRGB(170, 170, 165))

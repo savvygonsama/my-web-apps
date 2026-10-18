@@ -829,7 +829,8 @@ local function buildTest()
 		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
-		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "🌠 개천신권 바로 쓰기", "testStyle", "gaecheon" },
+		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
+		{ "👊 권왕신권 얻기 (천마 처치 보상)", "testSecret", "gwonwang" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" },
 	})
 	section("적과 보스", {
 		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },

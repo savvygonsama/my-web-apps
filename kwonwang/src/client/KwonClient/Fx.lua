@@ -331,6 +331,33 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			tween(drop, 0.45, { Position = pos + Vector3.new(math.random() * 6 - 3, math.random() * 3 - 2, math.random() * 6 - 3) * s, Transparency = 1 })
 			Debris:AddItem(drop, 0.5)
 		end
+	elseif style.fx == "celestial" then
+		-- 천제: 금빛 십자가 번쩍
+		for _, rot in ipairs({ 0, 90 }) do
+			local bar = piece(Vector3.new(0.4, 6 * s, 0.4), Color3.fromRGB(255, 250, 225), Enum.Material.Neon, nil, 0)
+			bar.CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(rot + 45))
+			tween(bar, 0.25, { Size = Vector3.new(0.05, 9 * s, 0.05), Transparency = 1 })
+			Debris:AddItem(bar, 0.3)
+		end
+		Fx.ring(pos, c, 1, 9 * s, 0.3, dir)
+	elseif style.fx == "king" then
+		-- 권왕: 맞은 자리에서 공기가 터진다
+		local blast = piece(Vector3.new(2, 2, 2) * s, Color3.fromRGB(255, 240, 220), Enum.Material.Neon, Enum.PartType.Ball, 0.3)
+		blast.Position = pos
+		tween(blast, 0.18, { Size = Vector3.new(9, 9, 9) * s, Transparency = 1 })
+		Debris:AddItem(blast, 0.2)
+		Fx.ring(pos, c, 2, 12 * s, 0.3, dir)
+		Fx.ring(pos, c2, 1, 7 * s, 0.22, dir)
+	elseif style.fx == "wind" then
+		-- 풍신: 바람 고리 두 겹과 날리는 잎
+		Fx.ring(pos, c2, 1, 8 * s, 0.3, dir)
+		Fx.ring(pos, c, 1, 12 * s, 0.4, dir)
+		for _ = 1, heavy and 8 or 4 do
+			local leaf = piece(Vector3.new(0.6, 0.08, 0.4), Color3.fromRGB(150, 210, 120), Enum.Material.SmoothPlastic)
+			leaf.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+			tween(leaf, 0.7, { CFrame = CFrame.new(pos + Vector3.new(math.random() * 10 - 5, math.random() * 6, math.random() * 10 - 5)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0), Transparency = 1 })
+			Debris:AddItem(leaf, 0.75)
+		end
 	elseif style.fx == "cosmic" then
 		-- 개천: 별빛이 사방으로 튀고 금빛 고리
 		Fx.ring(pos, c2, 1, 10 * s, 0.3, dir)
@@ -970,6 +997,32 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 			Fx.ring(p0, c, 0.5, 6 * s, 0.25)
 		end)
 		Debris:AddItem(hole, 0.2)
+	elseif kind == "celestial" then
+		-- 천제: 주먹 끝으로 금빛 초승달 칼날이 그어진다
+		local arc = piece(Vector3.new(5 * s, 0.12, 1.4), c, Enum.Material.Neon, nil, 0.1)
+		arc.CFrame = lookAt(base + look * 3, base + look * 4) * CFrame.Angles(0, 0, math.random() * math.pi)
+		tween(arc, 0.2, { Size = Vector3.new(8 * s, 0.04, 0.3), Transparency = 1 })
+		Debris:AddItem(arc, 0.22)
+		local glint = piece(Vector3.new(0.5, 0.5, 0.5), Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Ball, 0)
+		glint.Position = base + look * 4.5
+		tween(glint, 0.2, { Size = Vector3.new(2, 2, 2), Transparency = 1 })
+		Debris:AddItem(glint, 0.22)
+	elseif kind == "king" then
+		-- 권왕: 주먹 앞의 공기가 원뿔로 찢긴다
+		for i = 1, heavy and 4 or 2 do
+			task.delay(i * 0.02, function()
+				Fx.ring(base + look * (2 + i * 1.6), i % 2 == 0 and c2 or Color3.new(1, 1, 1), 0.6, (2 + i) * s, 0.16, look)
+			end)
+		end
+		streak(base + look * 1.5, base + look * (6 * s), c, 0.5, 0.15)
+	elseif kind == "wind" then
+		-- 풍신: 발끝을 따라 휘어진 바람 줄기
+		for i = -1, 1, 2 do
+			local w = piece(Vector3.new(0.15, 0.15, 5 * s), c2, Enum.Material.Neon, nil, 0.3)
+			w.CFrame = lookAt(base + look * 2 + right * i, base + look * 6 + right * i * 2.5) * CFrame.Angles(0, 0, math.rad(30 * i))
+			tween(w, 0.25, { Size = Vector3.new(0.04, 0.04, 8 * s), Transparency = 1, CFrame = w.CFrame * CFrame.new(0, 0, -2) })
+			Debris:AddItem(w, 0.28)
+		end
 	elseif kind == "cosmic" then
 		-- 개천: 주먹을 따라 나선으로 감기는 별빛
 		for i = 1, 8 do
@@ -1012,6 +1065,9 @@ local HAND_FX = {
 	void = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 0.6, life = 1, size = 0.7 },
 	blood = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.6, size = 0.5 },
 	cosmic = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2, life = 1, size = 0.35 },
+	celestial = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.5, life = 0.9, size = 0.4 },
+	king = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.4, size = 0.55 },
+	wind = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 4, life = 0.5, size = 0.5 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do
@@ -1427,6 +1483,50 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 				tween(d, 0.5, { Position = d.Position + Vector3.new(0, math.random() * 6 + 2, 0), Transparency = 1 })
 				Debris:AddItem(d, 0.55)
 			end
+		end)
+	elseif key == "celestial:H" then
+		-- 천검일섬: 하늘까지 닿는 금빛 세로 칼금
+		task.delay(0.36, function()
+			local at = feet + look * 6
+			local slash = piece(Vector3.new(0.6, 46, 3.4), Color3.fromRGB(255, 248, 220), Enum.Material.Neon, nil, 0.05)
+			slash.CFrame = CFrame.lookAt(at + Vector3.new(0, 23, 0), at + Vector3.new(0, 23, 0) + look)
+			tween(slash, 0.45, { Size = Vector3.new(0.1, 64, 0.4), Transparency = 1 })
+			Debris:AddItem(slash, 0.5)
+			Fx.ring(at + Vector3.new(0, 0.3, 0), c, 2, 24, 0.45)
+		end)
+	elseif key == "king:H" then
+		-- 패왕권: 앞으로 겹겹이 터지는 공기
+		task.delay(0.4, function()
+			for k = 1, 6 do
+				task.delay(k * 0.03, function()
+					Fx.ring(pos + look * (2 + k * 2.5), k % 2 == 0 and c2 or Color3.new(1, 1, 1), 1, 6 + k * 2.2, 0.35, look)
+				end)
+			end
+			Fx.dust(feet + look * 4, 5)
+		end)
+	elseif key == "king:E" then
+		task.delay(0.15, function()
+			streak(pos - look * 4, pos + look * 24, c, 3, 0.4)
+			Fx.afterimage(model, c, 0.45)
+		end)
+	elseif key == "king:R" then
+		for k = 0, 8 do
+			task.delay(0.1 + k * 0.1, function()
+				local p = pos + look * 3 + Vector3.new(math.random() * 2 - 1, math.random() * 2 - 0.5, 0)
+				Fx.ring(p, Color3.new(1, 1, 1), 0.5, 5, 0.15, look)
+			end)
+		end
+	elseif key == "wind:H" then
+		-- 풍인각: 초승달 바람 칼날
+		task.delay(0.3, function()
+			local blade = piece(Vector3.new(9, 0.2, 2.5), c2, Enum.Material.Neon, nil, 0.2)
+			blade.CFrame = lookAt(pos + look * 3, pos + look * 4)
+			tween(blade, 0.4, { CFrame = lookAt(pos + look * 40, pos + look * 41), Size = Vector3.new(12, 0.1, 1), Transparency = 1 })
+			Debris:AddItem(blade, 0.45)
+		end)
+	elseif key == "wind:E" then
+		task.delay(0.1, function()
+			streak(pos, pos + look * 24, c2, 1.6, 0.4)
 		end)
 	elseif key == "cosmic:H" then
 		-- 개천일도: 손날이 지나간 자리에 하늘까지 닿는 금

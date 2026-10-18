@@ -688,6 +688,9 @@ Combat.init(Push, {
 							-- 혈마를 꺾으면 그 손이 넘어온다
 							if id == "hyeolma" then
 								grantStyle(killer, "hyeolma", true)
+							elseif id == "cheonma" then
+								-- 천마를 꺾은 자가 권왕의 이름을 잇는다
+								grantStyle(killer, "gwonwang", true)
 							end
 						end
 					end
@@ -920,6 +923,12 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		if style.id == "maehwa" and f.stacks.petal >= 20 then
 			bloom = true
 			f.stacks.petal = 0
+		elseif style.id == "gwonwang" and (fa.kingN or 0) >= 10 then
+			-- 패왕권: 패기를 모두 쏟아 세 배
+			dmgScale = 3
+			fa.kingN = 0
+			f.model:SetAttribute("King", 0)
+			Push:FireAllClients("skillfx", { kind = "kingRelease", m = f.model, style = style.id })
 		elseif style.id == "taeheo" and f.stacks.flow > 0 then
 			dmgScale = 1 + (move.stackDmg or 0.5) * f.stacks.flow
 			f.stacks.flow = 0
@@ -1537,14 +1546,17 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			grantStyle(player, "mugeuk", true)
 		elseif arg == "hyeolma" then
 			grantStyle(player, "hyeolma", true)
+		elseif arg == "gwonwang" then
+			grantStyle(player, "gwonwang", true)
 		elseif arg == "lock" then
 			-- 숨은 권법을 다시 잠근다 (처음부터 다시 얻어 보기)
 			p.styles.mugeuk = nil :: any
 			p.styles.hyeolma = nil :: any
 			p.styles.gaecheon = nil :: any
+			p.styles.gwonwang = nil :: any
 			p.trials.gaecheon = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "gwonwang" then
 				p.style = "samjae"
 			end
 		end

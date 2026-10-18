@@ -10,6 +10,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Anim = require(script:WaitForChild("Anim"))
 local Fx = require(script:WaitForChild("Fx"))
 local UI = require(script:WaitForChild("UI"))
+local Ults = require(script:WaitForChild("Ults"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -36,6 +37,13 @@ local function watchChar(char: Model)
 		char:WaitForChild("HumanoidRootPart", 10)
 		char:WaitForChild("Humanoid", 10)
 		Anim.watch(char)
+	end)
+	-- 금강 법신 (금빛 거인), 번개·일순 베기 동안 사라짐
+	char:GetAttributeChangedSignal("Giant"):Connect(function()
+		Ults.watchGiant(char)
+	end)
+	char:GetAttributeChangedSignal("Vanish"):Connect(function()
+		Ults.watchVanish(char)
 	end)
 end
 local function watchPlayer(p: Player)
@@ -593,7 +601,11 @@ startMove = function(slot: any, charge: number?)
 	end
 	if slot == "G" then
 		UI.cinematic(move.name, style.color, dur)
-		Fx.ult(style.id, char, dur)
+		if move.mech then
+			Ults.intro(style.id, char)
+		else
+			Fx.ult(style.id, char, dur)
+		end
 		shake(1.2)
 		tint(style.color, 0.25, dur)
 	end
@@ -1150,7 +1162,12 @@ function handlers.act(data: any)
 		end)
 	end
 	if type(data.id) == "string" and string.sub(data.id, -1) == "G" and style then
-		Fx.ult(style.id, m, data.dur)
+		local gm = style.skills and style.skills.G
+		if gm and gm.mech then
+			Ults.intro(style.id, m)
+		else
+			Fx.ult(style.id, m, data.dur)
+		end
 		if near then
 			shake(0.8)
 		end
@@ -1496,7 +1513,22 @@ function handlers.breakthrough(data: any)
 end
 
 -- 권법마다 다른 기술 장치의 연출
+local ultsReady = false
 function handlers.skillfx(data: any)
+	if not ultsReady then
+		ultsReady = true
+		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
+	end
+	if data.kind == "strike" and data.fx == "sword" then
+		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
+		return
+	elseif data.kind == "pillar" and data.fx == "spear" then
+		Ults.spear(data.at, data.dir or Vector3.new(0, 0, -1), data.style)
+		return
+	elseif Ults.handles(data.kind) then
+		Ults.run(data)
+		return
+	end
 	Fx.mech(data)
 	if data.kind == "drop" or data.kind == "beam" or data.kind == "freeze" then
 		local r = myRoot()
@@ -1508,7 +1540,13 @@ end
 
 -- 개천신권: 별이 떨어진다
 function handlers.star(data: any)
-	Fx.starfall(data.at, data.style)
+	local s = Config.STYLE_BY_ID[tostring(data.style)]
+	if s and s.fx == "celestial" then
+		-- 천제신권 천위: 하늘에서 빛의 검
+		Ults.run({ kind = "sword", at = data.at, radius = 7, style = data.style })
+	else
+		Fx.starfall(data.at, data.style)
+	end
 end
 
 -- 이야기
@@ -1704,6 +1742,9 @@ RunService.RenderStepped:Connect(function()
 	elseif style.id == "byeokryeok" then
 		local n = tonumber(char:GetAttribute("Charge")) or 0
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)
+	elseif style.id == "gwonwang" then
+		local n = tonumber(char:GetAttribute("King")) or 0
+		stacks = n >= 10 and "👊 패왕권 준비! (Z)" or ("패기 " .. string.rep("●", n) .. string.rep("○", 10 - n))
 	elseif style.id == "cheonryong" and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end

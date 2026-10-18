@@ -168,8 +168,8 @@ Config.Styles = {
 				counterHit = { pose = "push_palm", hit = hit(0, 7, 5, 18, 30, 0.8, 40) } },
 			R = { id = "thR", name = "선풍기류", desc = "앞에 물의 소용돌이를 3초 남긴다. 둘레의 적을 계속 끌어당기며 균형을 깎는다", pose = "water_spiral", dur = 0.8, cd = 11, chi = 25,
 				mech = { kind = "zone", dist = 9, radius = 12, dur = 3, every = 0.4, delay = 0.3, pull = 26, hit = hit(0, 0, 0, 4, 14, 0.3, 0), fx = "water" } },
-			G = { id = "thG", name = "만류귀종", desc = "2.5초 동안 물의 장막: 모든 공격(붉은 공격도)을 저절로 흘려 되받아친다. 끝에 큰 해일이 둘레를 쓸어 낸다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
-				mech = { kind = "reflect", dur = 2.5, radius = 22, hit = hit(0, 0, 0, 22, 40, 0.6, 30), wave = hit(0, 0, 0, 55, 90, 1.4, 70, 25) } },
+			G = { id = "thG", name = "만류귀해", desc = "발밑이 호수가 된다. 3초 동안 소용돌이가 둘레의 적을 모두 가운데로 삼키고, 마지막에 물기둥이 솟아 하늘로 쳐올린다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
+				mech = { kind = "lake", radius = 26, dur = 3, every = 0.3, pull = 36, hit = hit(0, 0, 0, 5, 12, 0.25, 0), geyserRadius = 13, geyser = hit(0, 0, 0, 75, 110, 1.4, 0, 0) } },
 		},
 	},
 	{
@@ -197,8 +197,8 @@ Config.Styles = {
 			E = { id = "ggE", name = "철포삼", desc = "6초 동안 무엇에도 밀리지 않고 받는 피해 절반", pose = "brace", dur = 0.5, cd = 14, chi = 20, buff = { kind = "ironshirt", dur = 6 } },
 			R = { id = "ggR", name = "사자후", desc = "앞쪽 부채꼴로 포효한다. 맞은 적은 막기가 깨지고(파훼) 오래 기절한다", pose = "roar", dur = 0.8, cd = 12, chi = 30,
 				mech = { kind = "cone", range = 20, angle = 80, delay = 0.32, hit = hit(0, 0, 0, 14, 20, 1.6, 30), guardBreak = true, fx = "gold" } },
-			G = { id = "ggG", name = "여래신장", desc = "가장 가까운 적 위에 금빛 원이 뜨고, 1초 뒤 하늘에서 거대한 손바닥이 내리찍는다 (막을 수 없다)", pose = "ult_buddha", dur = 1.5, cd = 30, chi = 100, armor = true,
-				mech = { kind = "drop", range = 30, radius = 15, delay = 1.05, hit = hit(0, 0, 0, 85, 200, 1.4, 20, 0), fx = "gold" } },
+			G = { id = "ggG", name = "금강법신", desc = "6초 동안 내 몸이 금빛 거인이 된다: 무엇에도 안 밀리고 받는 피해 절반, 주먹 1.6배에 맞은 자리 둘레까지 울린다. 커지며 땅을 구른다", pose = "ult_buddha", dur = 1.2, cd = 30, chi = 100, armor = true,
+				mech = { kind = "giant", dur = 6, scale = 2.4, delay = 0.7, radius = 16, hit = hit(0, 0, 0, 40, 60, 1.0, 45, 12) } },
 		},
 	},
 	{
@@ -228,8 +228,8 @@ Config.Styles = {
 			R = { id = "mhR", name = "암향표", desc = "향기만 남기고 꿰뚫고 지나간다 (무적). 0.7초 뒤 지나온 길이 꽃잎으로 터진다", pose = "fragrance_step", dur = 0.45, cd = 9, chi = 20, lunge = 22, iframes = 0.45,
 				hits = { hit(0.15, 6, 4, 10, 8, 0.4, 6) },
 				mech = { kind = "trail", delay = 0.7, count = 5, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.5, 14, 10) } },
-			G = { id = "mhG", name = "매화만개", desc = "3초 동안 꽃잎 폭풍이 몸을 따라다니며 둘레를 쉬지 않고 벤다 (움직이며 쓸 수 있다)", pose = "ult_bloom", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "moving", radius = 11, dur = 3, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 8, 6, 0.25, 4) } },
+			G = { id = "mhG", name = "일순천참", desc = "세상이 멈춘 듯 보이지 않게 둘레의 적 여덟을 꿰뚫고 지나간다. 한 박자 뒤, 모두가 한꺼번에 베인다 (그동안 무적)", pose = "ult_bloom", dur = 1.4, cd = 30, chi = 100, armor = true,
+				mech = { kind = "flash", n = 8, range = 30, delay = 0.35, every = 0.07, hit = hit(0, 0, 0, 62, 60, 1.0, 30, 10) } },
 		},
 	},
 	{
@@ -257,8 +257,13 @@ Config.Styles = {
 				proj = { speed = 80, life = 0.7, radius = 6, dmg = 16, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
 			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "dragon_rise", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
 				hits = { hit(0.2, 5, 5, 14, 18, 0.9, 6, 55) } },
-			G = { id = "crG", name = "구룡승천", desc = "앞으로 한 줄, 아홉 마리 용이 차례로 땅을 뚫고 솟는다 (맞은 적을 하늘로 띄운다)", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
-				mech = { kind = "line", count = 9, start = 4, spacing = 4.5, step = 0.09, delay = 1.25, radius = 6, hit = hit(0, 0, 0, 26, 30, 0.7, 6, 45) } },
+			G = { id = "crG", name = "진룡강림", desc = "땅을 뚫고 진짜 용이 솟아올라 적에게 세 번 내리꽂히고, 마지막에 앞으로 용의 숨을 뿜는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
+				mech = { kind = "avatar", look = "dragon", dur = 2.6, strikes = {
+					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
+					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
+					{ t = 1.7, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
+					{ t = 2.2, at = "front", dist = 14, radius = 16, hit = hit(0, 0, 0, 60, 80, 1.2, 60) },
+				} } },
 		},
 	},
 	{
@@ -288,8 +293,8 @@ Config.Styles = {
 			R = { id = "myR", name = "귀영난각", desc = "공중으로 솟아 회오리처럼 여섯 번 찬다", pose = "tornado_kick", dur = 0.9, cd = 10, chi = 25, jump = 38,
 				hits = { hit(0.2, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.32, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.44, 4, 7, 5, 6, 0.4, 2, 10, true),
 					hit(0.56, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.68, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.8, 4, 7.5, 10, 14, 0.6, 30, nil, true) } },
-			G = { id = "myG", name = "무영천각", desc = "모습을 감추고 둘레의 적들 사이를 순간이동하며 여섯 번 찬다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "chainTp", n = 6, range = 32, delay = 0.3, every = 0.22, hit = hit(0, 0, 0, 26, 22, 0.5, 18, 8) } },
+			G = { id = "myG", name = "무영분신", desc = "그림자 분신이 둘레의 적마다 하나씩 나타나 동시에 세 번씩 걷어찬다 (나는 그 자리에서 지휘한다)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
+				mech = { kind = "clones", n = 6, range = 32, delay = 0.45, every = 0.08, hitsEach = 3, hit = hit(0, 0, 0, 17, 16, 0.5, 12, 6) } },
 		},
 	},
 	{
@@ -316,8 +321,8 @@ Config.Styles = {
 				hits = { hit(0.15, 4, 5, 6, 8, 0.8, 4) } },
 			R = { id = "bkR", name = "뇌격", desc = "둘레의 적 다섯을 골라 그 머리 위로 벼락을 내리꽂는다 (마비)", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
 				mech = { kind = "targets", n = 5, range = 34, delay = 0.4, stagger = 0.06, radius = 5, hit = hit(0, 0, 0, 20, 18, 1.1, 4), fx = "lightning" } },
-			G = { id = "bkG", name = "천뢰멸", desc = "2.5초 동안 둘레에 벼락이 쏟아지고, 마지막에 하늘이 갈라지는 한 줄기", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "storm", dur = 2.4, every = 0.14, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 11, 8, 0.4, 4), finalRadius = 18, final = hit(0, 0, 0, 50, 70, 1.2, 40, 15) } },
+			G = { id = "bkG", name = "뇌신화", desc = "몸이 번개가 되어 적에서 적으로 일곱 번 튄다. 닿는 순간마다 벼락이 떨어지고, 마지막에 하늘이 갈라진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
+				mech = { kind = "bolt", n = 7, range = 34, delay = 0.4, every = 0.14, radius = 6, hit = hit(0, 0, 0, 26, 24, 0.8, 10), finalRadius = 18, final = hit(0, 0, 0, 50, 70, 1.2, 40, 15) } },
 		},
 	},
 	{
@@ -345,8 +350,8 @@ Config.Styles = {
 			E = { id = "cwE", name = "취보", desc = "3초 동안 크게 비틀거려 공격을 60% 피하고, 피할 때마다 되받아친다", pose = "drunk_sway", dur = 0.5, cd = 12, chi = 20, buff = { kind = "sway", dur = 3 } },
 			R = { id = "cwR", name = "팔선과해", desc = "앞으로 데굴데굴 구르며 지나가는 적을 모두 차 올린다", pose = "drunk_roll", dur = 0.9, cd = 10, chi = 25, lunge = 16, iframes = 0.35,
 				hits = { hit(0.25, 3, 5, 9, 10, 0.4, 8), hit(0.5, 3, 5, 9, 10, 0.4, 8), hit(0.75, 4, 6, 14, 16, 0.6, 10, 30) } },
-			G = { id = "cwG", name = "취화난무", desc = "술기운을 불길로 뿜는다. 1.5초 동안 앞쪽 부채꼴을 계속 태운다", pose = "fire_breath", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "cone", range = 20, angle = 55, delay = 0.3, dur = 1.5, every = 0.12, hit = hit(0, 0, 0, 7, 6, 0.25, 6), fx = "fire" } },
+			G = { id = "cwG", name = "취선굴렁쇠", desc = "불붙은 술독처럼 몸을 말아 적에서 적으로 여섯 번 튕겨 다니며 터진다. 마지막에 술불이 크게 터진다 (그동안 무적)", pose = "drunk_roll", dur = 2.2, cd = 30, chi = 100, armor = true,
+				mech = { kind = "pinball", n = 6, range = 30, delay = 0.25, every = 0.3, radius = 7, hit = hit(0, 0, 0, 22, 20, 0.6, 30, 10), finalRadius = 16, final = hit(0, 0, 0, 50, 60, 1.2, 50, 15) } },
 		},
 	},
 }
@@ -377,8 +382,8 @@ table.insert(Config.Styles, 1, {
 		E = { id = "sjE", name = "삼재보", desc = "한 걸음에 파고들며 주먹을 꽂는다", pose = "dash_punch", dur = 0.5, cd = 8, chi = 15, lunge = 12, hits = { hit(0.2, 6, 4, 11, 14, 0.45, 22) } },
 		R = { id = "sjR", name = "연환삼격", desc = "세 번 이어 치는 연환권", pose = "flurry", dur = 0.8, cd = 10, chi = 20, lunge = 2,
 			hits = { hit(0.2, 5, 4, 6, 6, 0.3, 3), hit(0.4, 5, 4, 6, 6, 0.3, 3), hit(0.65, 5, 4.5, 10, 14, 0.5, 24) } },
-		G = { id = "sjG", name = "삼재합일", desc = "하늘·땅·사람의 기운을 한 주먹에 모아 땅을 친다", pose = "ult_slam", dur = 1.4, cd = 30, chi = 100, armor = true,
-			hits = { hit(0.7, 0, 10, 26, 40, 0.9, 40, 14, true) } },
+		G = { id = "sjG", name = "천지인 일권", desc = "하늘·땅·사람의 기를 1초 동안 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 날아간다", pose = "one_punch", dur = 1.6, cd = 30, chi = 100, armor = true,
+		mech = { kind = "onepunch", delay = 1.0, range = 46, angle = 36, hit = hit(0, 0, 0, 120, 220, 1.4, 130, 12) } },
 	},
 })
 table.insert(Config.Styles, {
@@ -409,7 +414,7 @@ table.insert(Config.Styles, {
 			proj = { speed = 120, life = 0.5, radius = 5, dmg = 22, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
 		R = { id = "mgR", name = "무극회선", desc = "둘레의 모든 것을 한 점으로 끌어당긴 뒤 그 자리에서 터뜨린다", pose = "void_gather", dur = 0.9, cd = 9, chi = 25,
 				mech = { kind = "zone", at = "self", radius = 16, dur = 0.9, every = 0.3, delay = 0.1, pull = 40, hit = hit(0, 0, 0, 10, 24, 0.5, 0), fx = "void" } },
-		G = { id = "mgG", name = "무극귀일", desc = "둘레 30칸의 시간이 멈춘다. 멈춘 적은 1.5초 뒤 한꺼번에 지워진다", pose = "ult_void", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "mgG", name = "무극귀일", desc = "세상의 빛깔이 뒤집히고 하늘에 눈이 열린다. 둘레 30칸의 시간이 멈추고, 멈춘 적을 하늘의 손이 한꺼번에 지운다", pose = "ult_void", dur = 1.8, cd = 30, chi = 100, armor = true,
 				mech = { kind = "freeze", delay = 0.5, radius = 30, dur = 2.2, hitAt = 1.3, hit = hit(0, 0, 0, 80, 300, 1.0, 50, 20) } },
 	},
 })
@@ -441,44 +446,116 @@ table.insert(Config.Styles, {
 			hits = { hit(0.15, 6, 4, 18, 18, 0.5, 10) } },
 		R = { id = "hmR", name = "혈해", desc = "발밑에 피의 바다를 4초 펼친다. 안의 적을 계속 베고, 벨 때마다 내 체력이 돌아온다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
 				mech = { kind = "zone", at = "self", radius = 14, dur = 4, every = 0.5, delay = 0.3, heal = 0.012, hit = hit(0, 0, 0, 7, 6, 0.2, 0), fx = "blood" } },
-		G = { id = "hmG", name = "혈마강림", desc = "혈마가 몸에 내린다: 6초 동안 모든 동작이 빨라지고 흡혈이 세 배. 내리며 둘레를 X자로 벤다", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 6 },
-				hits = { hit(1.6, 0, 14, 50, 60, 1.0, 50, nil, true) } },
+		G = { id = "hmG", name = "혈마강림", desc = "등 뒤로 거대한 혈마의 허상이 솟아 손톱으로 적들을 두 번 찢고 포효한다. 그 뒤 6초 광란 (동작 ×1.2, 흡혈 세 배)", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 6 },
+				mech = { kind = "avatar", look = "demon", dur = 2.6, strikes = {
+					{ t = 0.9, at = "targets", n = 3, radius = 8, hit = hit(0, 0, 0, 34, 30, 0.7, 30) },
+					{ t = 1.4, at = "targets", n = 3, radius = 8, hit = hit(0, 0, 0, 34, 30, 0.7, 30) },
+					{ t = 2.0, at = "around", radius = 20, hit = hit(0, 0, 0, 60, 80, 1.2, 60, 12) },
+				} } },
 	},
 })
 -- 시크릿 권법: 무극의 경지에 오른 자만 숨은 사부를 찾아 익힌다 (지도에 나오지 않는다)
 table.insert(Config.Styles, {
 	id = "gaecheon",
-	name = "개천신권",
-	hanja = "開天神拳",
-	icon = "🌠",
-	color = Color3.fromRGB(150, 200, 255),
-	color2 = Color3.fromRGB(255, 245, 190),
-	fx = "cosmic",
+	name = "천제신권",
+	hanja = "天帝神拳",
+	icon = "👑",
+	color = Color3.fromRGB(255, 210, 110),
+	color2 = Color3.fromRGB(190, 225, 255),
+	fx = "celestial",
 	grade = "천외",
 	hidden = true,
 	secret = true,
 	realmReq = 13,
 	unlockHint = "무극의 경지에 오른 자만이 이름 없는 노인을 만난다. 강호의 끝, 아무도 가지 않는 구석에서",
-	desc = "하늘을 여는 주먹. 별을 꿰어 나선으로 지르고, 손날 하나로 하늘을 가른다. 이 손에 닿은 것은 별빛이 되어 흩어진다.",
-	gimmick = "개천: 다섯 번 맞힐 때마다 별이 떨어져 둘레를 친다. 흘리기 판정이 넓고 균형을 1.5배로 깎는다",
+	desc = "하늘의 임금이 땅에 남긴 주먹. 손이 닿는 곳마다 하늘의 검이 따라 내린다. 이 권을 쓰는 자의 머리 위로는 늘 하늘의 문이 열려 있다.",
+	gimmick = "천위: 다섯 번 맞힐 때마다 하늘에서 빛의 검이 떨어져 둘레를 친다. 흘리기 판정이 넓고 균형을 1.5배로 깎는다",
 	deflect = 0.3,
 	postureMult = 1.5,
 	starEvery = 5,
 	stance = "stance_gaecheon",
 	combo = {
-		{ id = "gc1", name = "성환권", pose = "star_punch_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
-		{ id = "gc2", name = "역성권", pose = "star_punch_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
+		{ id = "gc1", name = "천제권", pose = "star_punch_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
+		{ id = "gc2", name = "역천권", pose = "star_punch_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 13, 12, 0.35, 8) } },
 		{ id = "gc3", name = "천월각", pose = "heaven_kick", dur = 0.42, lunge = 2, hits = { hit(0.24, 6, 5.5, 16, 16, 0.4, 14) } },
-		{ id = "gc4", name = "은하장", pose = "galaxy_palm", dur = 0.5, lunge = 3, hits = { hit(0.28, 8, 6, 24, 30, 0.6, 40) } },
+		{ id = "gc4", name = "천광장", pose = "galaxy_palm", dur = 0.5, lunge = 3, hits = { hit(0.28, 8, 6, 24, 30, 0.6, 40) } },
 	},
-	heavy = { id = "gcH", name = "개천일도", pose = "heaven_split", dur = 0.7, lunge = 6, hits = { hit(0.36, 9, 7, 38, 60, 0.9, 50, 10, true) } },
+	heavy = { id = "gcH", name = "천검일섬", pose = "heaven_split", dur = 0.7, lunge = 6, hits = { hit(0.36, 9, 7, 38, 60, 0.9, 50, 10, true) } },
 	skills = {
-		E = { id = "gcE", name = "유성추", desc = "높이 솟았다가 유성처럼 내리꽂는다 (떨어진 자리 둘레를 친다)", pose = "meteor_drop", dur = 0.9, cd = 7, chi = 20, jump = 55, lunge = 10,
-			hits = { hit(0.68, 0, 13, 34, 40, 0.8, 30, 14, true) } },
-		R = { id = "gcR", name = "낙성우", desc = "둘레의 적 여섯을 골라 별을 떨어뜨린다 (떨어진 자리 둘레를 친다)", pose = "starfall", dur = 1.1, cd = 10, chi = 30,
-				mech = { kind = "targets", n = 6, range = 32, delay = 0.55, stagger = 0.09, radius = 7, hit = hit(0, 0, 0, 24, 24, 0.6, 16, 10), fx = "star" } },
-		G = { id = "gcG", name = "개천벽지", desc = "하늘을 연다: 둘레의 적을 모두 하늘로 끌어올린 뒤, 열린 하늘에서 빛이 내리꽂힌다", pose = "ult_heaven", dur = 2.0, cd = 28, chi = 100, armor = true,
-				mech = { kind = "launch", delay = 0.5, radius = 26, up = 70, stun = 1.8, hitAt = 1.2, hit = hit(0, 0, 0, 95, 120, 1.0, 40, 0) } },
+		E = { id = "gcE", name = "천검강림", desc = "둘레의 적 셋 위로 하늘에서 빛의 검을 꽂는다", pose = "meteor_drop", dur = 0.9, cd = 7, chi = 20, jump = 40,
+			mech = { kind = "targets", n = 3, range = 30, delay = 0.45, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 30, 30, 0.7, 20, 8), fx = "sword" } },
+		R = { id = "gcR", name = "천제의 창", desc = "등 뒤에 하늘의 문이 열리고, 빛의 창이 앞으로 한 줄 쏟아져 꿰뚫는다", pose = "starfall", dur = 1.1, cd = 10, chi = 30,
+			mech = { kind = "line", count = 9, start = 4, spacing = 4.2, step = 0.05, delay = 0.5, radius = 5.5, hit = hit(0, 0, 0, 22, 24, 0.5, 20), fx = "spear" } },
+		G = { id = "gcG", name = "만검천벌", desc = "하늘이 열려 천 자루의 빛의 검이 내려다본다. 적마다 검이 꽂히고, 마지막에 거대한 하늘의 검이 내리꽂혀 터진다", pose = "ult_heaven", dur = 2.0, cd = 28, chi = 100, armor = true,
+			mech = { kind = "swords", dur = 2.6, n = 10, range = 30, delay = 0.6, stagger = 0.08, radius = 6, hit = hit(0, 0, 0, 24, 24, 0.5, 10), bigAt = 1.5, bigRadius = 16, big = hit(0, 0, 0, 110, 150, 1.4, 60, 20) } },
+	},
+})
+-- 극강: 권왕신권 (천마를 꺾은 자에게)
+table.insert(Config.Styles, {
+	id = "gwonwang",
+	name = "권왕신권",
+	hanja = "拳王神拳",
+	icon = "👊",
+	color = Color3.fromRGB(255, 70, 40),
+	color2 = Color3.fromRGB(255, 215, 90),
+	fx = "king",
+	grade = "천외",
+	hidden = true,
+	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨린 자만이 권왕의 이름을 잇는다",
+	desc = "강호의 모든 주먹 위에 선 왕의 주먹. 꾸밈도 장치도 없이, 그저 누구보다 세고 누구보다 빠르다. 주먹이 지나간 자리에 공기가 터진다.",
+	gimmick = "패기: 맞힐 때마다 패기가 쌓인다 (최대 10). 가득 차면 다음 강타(Z)가 땅을 가르는 패왕권이 된다 (세 배)",
+	deflect = 0.25,
+	postureMult = 1.4,
+	speed = 1.1,
+	stance = "stance_king",
+	combo = {
+		{ id = "kw1", name = "왕의 잽", pose = "king_jab", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4, 14, 12, 0.3, 8) } },
+		{ id = "kw2", name = "왕의 직권", pose = "king_cross", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 16, 14, 0.35, 12) } },
+		{ id = "kw3", name = "왕의 훅", pose = "king_hook", dur = 0.36, lunge = 2, hits = { hit(0.16, 6, 5, 18, 18, 0.4, 16) } },
+		{ id = "kw4", name = "승천권", pose = "king_upper", dur = 0.46, lunge = 3, hits = { hit(0.2, 6, 5, 26, 30, 0.6, 10, 26) } },
+	},
+	heavy = { id = "kwH", name = "패왕권", pose = "king_fist", dur = 0.8, lunge = 4, hits = { hit(0.4, 10, 7, 46, 70, 1.0, 80) } },
+	skills = {
+		E = { id = "kwE", name = "패왕진격", desc = "땅을 박차고 몸째 부딪쳐 들어간다 (무적). 지나간 길의 적을 모두 날린다", pose = "king_charge", dur = 0.6, cd = 7, chi = 20, lunge = 26, iframes = 0.35,
+			hits = { hit(0.22, 6, 6, 34, 40, 0.8, 60) } },
+		R = { id = "kwR", name = "천하제일권", desc = "여덟 번의 주먹을 눈 깜짝할 새 꽂고, 마지막 한 방으로 날려 버린다", pose = "king_barrage", dur = 1.1, cd = 10, chi = 30, lunge = 2,
+			hits = { hit(0.1, 6, 5, 9, 8, 0.25, 3), hit(0.2, 6, 5, 9, 8, 0.25, 3), hit(0.3, 6, 5, 9, 8, 0.25, 3), hit(0.4, 6, 5, 9, 8, 0.25, 3), hit(0.5, 6, 5, 9, 8, 0.25, 3), hit(0.6, 6, 5, 9, 8, 0.25, 3), hit(0.7, 6, 5, 9, 8, 0.25, 3), hit(0.8, 6, 5, 9, 8, 0.25, 3), hit(0.95, 7, 6, 32, 40, 0.8, 70) } },
+		G = { id = "kwG", name = "억만권", desc = "시간이 느려지고, 눈에 보이지 않는 억만 개의 주먹이 앞을 메운다. 마지막 한 주먹에 앞의 땅이 끝까지 갈라진다", pose = "ult_king", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "barrage", dur = 1.4, every = 0.06, range = 13, angle = 80, hit = hit(0, 0, 0, 6, 6, 0.15, 2), fissure = 56, final = hit(0, 0, 0, 95, 130, 1.3, 70, 25) } },
+	},
+})
+-- 중간: 풍신각 (풍신대의 풍백에게)
+table.insert(Config.Styles, {
+	id = "pungsin",
+	name = "풍신각",
+	hanja = "風神脚",
+	icon = "🌪",
+	color = Color3.fromRGB(140, 235, 200),
+	color2 = Color3.fromRGB(240, 255, 250),
+	fx = "wind",
+	grade = "최상급",
+	desc = "바람을 차는 다리. 잡을 수도 막을 수도 없는 바람처럼 들어갔다 빠진다. 발끝이 지나간 자리에 바람의 칼이 남는다.",
+	gimmick = "질풍: 대시 대기가 짧고(0.6초), 발차기가 바람을 일으켜 더 멀리 날린다 (밀어냄 1.3배)",
+	deflect = 0.2,
+	dashCd = 0.6,
+	speed = 1.08,
+	kbMult = 1.3,
+	stance = "stance_gale",
+	combo = {
+		{ id = "ps1", name = "질풍각", pose = "gale_snap", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4, 7, 7, 0.3, 10) } },
+		{ id = "ps2", name = "선풍후각", pose = "gale_hook", dur = 0.36, lunge = 2, hits = { hit(0.17, 6, 4.5, 8, 8, 0.35, 12) } },
+		{ id = "ps3", name = "쌍비각", pose = "gale_double", dur = 0.44, lunge = 3, hits = { hit(0.14, 6, 4, 6, 6, 0.3, 6, 8), hit(0.28, 6, 4.5, 8, 8, 0.35, 10, 12) } },
+		{ id = "ps4", name = "회선풍", pose = "gale_cyclone", dur = 0.5, lunge = 2, hits = { hit(0.24, 0, 8, 12, 14, 0.5, 30, nil, true) } },
+	},
+	heavy = { id = "psH", name = "풍인각", pose = "gale_blast", dur = 0.6, lunge = 0, proj = { speed = 100, life = 0.5, radius = 5, dmg = 20, posture = 22, stun = 0.6, kb = 40 } },
+	skills = {
+		E = { id = "psE", name = "질풍보", desc = "바람처럼 꿰뚫고 지나간다 (무적). 지나간 길에 바람의 칼이 남았다 베어 낸다", pose = "gale_dash", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
+			hits = { hit(0.15, 6, 4, 12, 10, 0.4, 20) },
+			mech = { kind = "trail", delay = 0.4, count = 4, radius = 6, hit = hit(0, 0, 0, 14, 12, 0.4, 16, 8) } },
+		R = { id = "psR", name = "회오리", desc = "앞에 회오리를 2.5초 세운다. 둘레의 적을 빨아들이며 계속 벤다", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25,
+			mech = { kind = "zone", dist = 9, radius = 11, dur = 2.5, every = 0.3, delay = 0.3, pull = 24, hit = hit(0, 0, 0, 5, 8, 0.3, 0), fx = "wind" } },
+		G = { id = "psG", name = "풍신강림", desc = "거대한 회오리가 일어 앞으로 나아가며 모든 적을 빨아올리고, 끝에서 사방으로 내던진다", pose = "ult_gale", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "tornado", dist = 8, speed = 10, dur = 3.2, every = 0.2, radius = 13, hit = hit(0, 0, 0, 6, 6, 0.3, 0), final = hit(0, 0, 0, 45, 60, 1.0, 0, 0) } },
 	},
 })
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
@@ -495,7 +572,7 @@ Config.GRADE_COLOR = {
 	["천외"] = Color3.fromRGB(255, 255, 210),
 }
 for _, st in ipairs(Config.Styles) do
-	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화" })[st.id]
+	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
 	st.grade = g or st.grade or "중급"
 end
 function Config.gradeIndex(name: string): number
@@ -556,7 +633,9 @@ local FINISHERS = {
 	samjae = { name = "삼재연환각", pose = "front_kick" },
 	mugeuk = { name = "무극승천장", pose = "void_push" },
 	hyeolma = { name = "혈마승천조", pose = "blood_rake" },
-	gaecheon = { name = "개천승룡각", pose = "heaven_kick" },
+	gaecheon = { name = "천제승천각", pose = "heaven_kick" },
+	gwonwang = { name = "왕권승천", pose = "king_upper" },
+	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -567,7 +646,7 @@ end
 Config.RHYTHM = { early = 0.45, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 12000, 20000, 50000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -863,6 +942,9 @@ Config.Regions = {
 		camps = { { enemy = "riftling", count = 4, at = Vector3.new(-1500, 0, -1500) }, { enemy = "riftling", count = 3, at = Vector3.new(-1650, 0, -1450) }, { enemy = "voidwalker", count = 3, at = Vector3.new(-1550, 0, -1700) },
 			{ enemy = "stonegolem", count = 2, at = Vector3.new(-1800, 0, -1600) }, { enemy = "apostle", count = 2, at = Vector3.new(-1850, 0, -1850) }, { enemy = "apostle", count = 2, at = Vector3.new(-1700, 0, -1900) } },
 		boss = { id = "cheonma", at = Vector3.new(-1950, 0, -1950) } },
+	-- 풍신대: 바람이 그치지 않는 언덕 (여덟째 사부)
+	{ id = "windhill", name = "풍신대 (바람의 언덕)", center = Vector3.new(-1100, 0, 1100), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(120, 165, 115), material = Enum.Material.Grass, safe = true,
+		master = "pungsin", rumor = "남서쪽 먼 언덕, 바람이 그치지 않는 곳에 바람을 차는 사람이 산다더라", quote = "바람은 잡을 수 없다. 그래서 막을 수도 없다.", masterName = "풍백", masterAt = Vector3.new(-1100, 6, 1100) },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
 		master = "taeheo", rumor = "남서쪽 호수 한가운데 정자에 물처럼 앉은 노인이 있다더라", quote = "물은 다투지 않는다. 그래서 이긴다.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
@@ -911,7 +993,7 @@ Config.Story = {
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
-	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 일곱 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
+	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 여덟 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
@@ -926,7 +1008,7 @@ Config.Story = {
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
 	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
 	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 강호의 마지막 적이다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 천외천의 경지, 열한 권법의 완전 각성과 승급. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 천외천의 경지, 열세 권법의 완전 각성과 승급, 그리고 권왕의 이름. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
@@ -964,6 +1046,7 @@ Config.Roads = {
 	{ Vector3.new(-1000, 0, 0), Vector3.new(-1380, 0, 0) },
 	{ Vector3.new(1700, 0, -430), Vector3.new(1700, 0, -1400) },
 	{ Vector3.new(-1380, 0, 0), Vector3.new(-1450, 0, -700), Vector3.new(-1500, 0, -1400) },
+	{ Vector3.new(-600, 0, 600), Vector3.new(-850, 0, 850), Vector3.new(-1100, 0, 1060) },
 }
 
 Config.ENEMY_DMG = 1.5 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)

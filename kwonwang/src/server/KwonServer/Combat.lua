@@ -176,7 +176,7 @@ end
 -- 지금 무엇에도 밀리지 않는지 (기술의 armor, 철포삼, 금강체)
 local function armored(f: Fighter): boolean
 	local t = now()
-	if (f.buffs.ironshirt or 0) > t then
+	if (f.buffs.ironshirt or 0) > t or (f.buffs.giant or 0) > t then
 		return true
 	end
 	local act = f.act
@@ -197,6 +197,9 @@ local function defense(f: Fighter): number
 	local t = now()
 	local m = 1
 	if (f.buffs.ironshirt or 0) > t then
+		m *= 0.5
+	end
+	if (f.buffs.giant or 0) > t then
 		m *= 0.5
 	end
 	local style = Combat.styleOf(f)
@@ -296,6 +299,10 @@ end
 -- 피해 숫자 (공격자 쪽 배율)
 local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act: Act?): number
 	local d = hit.dmg * att.dmgMult
+	-- 금강 법신: 거인이 된 동안 모든 주먹이 1.6배
+	if (att.buffs.giant or 0) > now() then
+		d *= 1.6
+	end
 	if isSkill then
 		d *= att.skillMult
 	end
@@ -546,7 +553,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			Combat.stun(tgt, stun)
 			local dir = flat(tgt.root.Position - att.root.Position)
-			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1)
+			local kb = (hit.kb or 0) * (wasBroken and 1.5 or 1) * (aStyle and aStyle.kbMult or 1)
 			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
 		end
 	end
@@ -565,6 +572,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				fa.starN = 0
 				star = true
 			end
+		end
+		if aStyle.id == "gwonwang" then
+			-- 권왕 패기: 맞힐 때마다 쌓인다 (가득 차면 다음 강타가 패왕권)
+			local fa = att :: any
+			fa.kingN = math.min(10, (fa.kingN or 0) + 1)
+			att.model:SetAttribute("King", fa.kingN)
 		end
 		if aStyle.id == "maehwa" then
 			if t - att.stacks.petalAt > 1.2 then
@@ -622,6 +635,16 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		end
 		if not tgt.dead then
 			Combat.stun(tgt, 1.0)
+		end
+	end
+	-- 금강 법신: 거인의 주먹은 맞은 자리 둘레까지 울린다
+	if (att.buffs.giant or 0) > t and not opt.chain then
+		local at = tgt.root.Position
+		Push:FireAllClients("skillfx", { kind = "aftershock", at = at, style = att.style })
+		for _, other in pairs(Combat.fighters) do
+			if other ~= tgt and Combat.hostile(att, other) and not other.dead and (other.root.Position - at).Magnitude <= 9 then
+				Combat.applyHit(att, other, { dmg = (hit.dmg or 0) * 0.5, posture = (hit.posture or 0) * 0.5, stun = 0.4, kb = 20 }, { chain = true, isSkill = true, move = { name = "여진" } })
+			end
 		end
 	end
 	if star then
