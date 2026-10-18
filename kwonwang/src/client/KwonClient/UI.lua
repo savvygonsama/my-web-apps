@@ -718,10 +718,35 @@ end
 
 local function buildShop()
 	local page = makePage("shop")
-	local list = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = page }, { new("UIListLayout", { Padding = UDim.new(0, 8) }) })
+	local list = scroller(page, UDim2.fromScale(1, 1))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	-- 💎 로벅스 상품: 금빛 카드 (큰 그림, 이름표, 좋은 점 세 줄, 값)
+	local premiumBtns: { [string]: TextButton } = {}
+	local cosmeticBtn: TextButton? = nil
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💎 로벅스 상품", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 0, Parent = list })
+	for i, it in ipairs(Config.Premium) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.cosmetic and Color3.fromRGB(60, 42, 14) or Color3.fromRGB(70, 24, 14), LayoutOrder = i, Parent = list }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
+		new("UIGradient", { Rotation = 20, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 90)), Parent = card })
+		local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
+		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
+		text({ Size = UDim2.fromScale(1, 1), Text = it.icon, TextSize = 64, TextXAlignment = Enum.TextXAlignment.Center, Parent = badge })
+		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
+		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.cosmetic and Color3.fromRGB(120, 80, 200) or Color3.fromRGB(200, 70, 40), Parent = card }, { corner(11) })
+		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
+		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "✦ " .. table.concat(it.lines, "\n✦ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
+			Request:FireServer("premiumBuy", it.id)
+		end)
+		if it.cosmetic then
+			cosmeticBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 82), Size = UDim2.new(0, 170, 0, 40), Text = "입기", TextSize = 17, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
+				Request:FireServer("cosmeticToggle")
+			end)
+		end
+	end
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
 	local labels = {}
-	for _, item in ipairs(Config.Shop) do
-		local row = new("Frame", { Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = C.panel2, Parent = list }, { corner(10), stroke(C.line, 1) })
+	for k, item in ipairs(Config.Shop) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = 10 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
 		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = item.icon .. " " .. item.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
 		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = item.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
 		labels[item.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💰 " .. Config.formatNumber(item.cost), TextSize = 18, BackgroundColor3 = C.red, Parent = row }, function()
@@ -732,6 +757,17 @@ local function buildShop()
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
+		end
+		local owned = state and state.premium or {}
+		for id, b in pairs(premiumBtns) do
+			local has = owned[id] == true
+			b.Text = has and "✅ 가지고 있음" or ("R$ " .. tostring(Config.PREMIUM_BY_ID[id].price) .. "  구매")
+			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or Color3.fromRGB(40, 170, 80)
+			b.AutoButtonColor = not has
+		end
+		if cosmeticBtn then
+			cosmeticBtn.Visible = owned.goldDragon == true
+			cosmeticBtn.Text = (state and state.cosmeticOff) and "🐉 입기" or "🐉 벗기"
 		end
 	end
 end
@@ -882,6 +918,7 @@ local function buildTest()
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
 		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
 		{ "🌙 한밤 (0시)", "testTime", 0 }, { "⏩ 3시간 뒤로", "testTime", "+3" },
+		{ "💎 두 배 수련 (테스트로 켜기)", "testPremium", "train2x" }, { "🐉 금룡 기운 (테스트로 켜기)", "testPremium", "goldDragon" },
 	})
 	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
 	local styleItems = {}

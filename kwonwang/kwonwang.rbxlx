@@ -1250,6 +1250,20 @@ end
 Config.POTION_HEAL = 0.4
 
 ------------------------------------------------------------------------
+-- 로벅스 상품 (게임패스). gamepass = 로블록스 홈페이지에 만든 게임패스 번호 (0이면 아직 없음)
+------------------------------------------------------------------------
+Config.Premium = {
+	{ id = "train2x", gamepass = 0, price = 199, icon = "🔥", name = "두 배 수련", tag = "영구",
+		lines = { "모든 수련의 능력치가 영원히 두 배", "소환단·강화 수련과 겹친다 (최대 열두 배)", "심마 대련 보상도 두 배" } },
+	{ id = "goldDragon", gamepass = 0, price = 249, icon = "🐉", name = "금룡 기운", tag = "꾸미기", cosmetic = true,
+		lines = { "금빛 용 한 마리가 늘 내 몸을 휘감고 돈다", "달리면 뒤를 따라 날고, 대시하면 금빛 꼬리를 남긴다", "오의를 쓰면 하늘로 솟아 포효한다 · 모두에게 보인다" } },
+}
+Config.PREMIUM_BY_ID = {}
+for _, it in ipairs(Config.Premium) do
+	Config.PREMIUM_BY_ID[it.id] = it
+end
+
+------------------------------------------------------------------------
 -- 숫자
 ------------------------------------------------------------------------
 local SUFFIXES = { "", "K", "M", "B", "T" }
@@ -2575,6 +2589,7 @@ type Profile = {
 	prog: number, -- 그 장의 진행
 	fragments: { [string]: boolean }, -- 주운 비급 조각
 	accepted: number,
+	cosmeticOff: boolean?,
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
@@ -2693,6 +2708,7 @@ type State = {
 	charConn: RBXScriptConnection?,
 	tpIdx: number?,
 	simmaAt: number?,
+	owned: { [string]: boolean }?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -2787,6 +2803,8 @@ end
 ------------------------------------------------------------------------
 -- 테스트 스위치: 내공 무한·쿨 없음 (사람마다, 저장하지 않는다)
 local TEST_INF: { [Player]: boolean? } = {}
+-- 로벅스 상품 (아래에서 채운다)
+local Premium: any
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
@@ -2831,6 +2849,8 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		accepted = p.accepted == p.story,
+		premium = st.owned or {},
+		cosmeticOff = p.cosmeticOff,
 		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
@@ -3252,7 +3272,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					local ridx = Config.realmOf(Calc.total(p))
-					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)))
+					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -3910,7 +3930,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Config.realmOf(Calc.total(p))
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
+	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -3996,6 +4016,12 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testBoss" then
 		if f then
 			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
+		end
+	elseif action == "testPremium" then
+		-- 테스트: 로벅스 상품을 써 보기 (진짜 구매 아님)
+		if type(arg) == "string" and Config.PREMIUM_BY_ID[arg] then
+			Premium.grant(player, arg)
+			toast(player, "💎 테스트로 켰어요: " .. Config.PREMIUM_BY_ID[arg].name)
 		end
 	elseif action == "testDummy" then
 		if f then
@@ -4205,6 +4231,13 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Story.talk(player)
 	elseif action == "storyAccept" then
 		Story.accept(player)
+	elseif action == "premiumBuy" then
+		Premium.prompt(player, tostring(a1))
+	elseif action == "cosmeticToggle" then
+		p.cosmeticOff = not p.cosmeticOff or nil
+		st.dirty = true
+		Premium.applyCosmetic(player)
+		pushState(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -4292,6 +4325,94 @@ end
 ------------------------------------------------------------------------
 -- 들어오고 나가기
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
+-- 로벅스 상품 (게임패스)
+------------------------------------------------------------------------
+Premium = {}
+local Marketplace: any = nil
+pcall(function()
+	Marketplace = game:GetService("MarketplaceService")
+end)
+
+function Premium.owns(player: Player, id: string): boolean
+	local st = states[player]
+	return st ~= nil and st.owned ~= nil and st.owned[id] == true
+end
+
+-- 꾸미기를 몸에 입힌다 (가졌고, 끄지 않았으면)
+function Premium.applyCosmetic(player: Player)
+	local char = player.Character
+	local p = profiles[player]
+	if not char or not p then
+		return
+	end
+	local on = Premium.owns(player, "goldDragon") and not p.cosmeticOff
+	char:SetAttribute("Cosmetic", on and "goldDragon" or nil)
+end
+
+function Premium.grant(player: Player, id: string)
+	local st = states[player]
+	if not st then
+		return
+	end
+	st.owned = st.owned or {}
+	st.owned[id] = true
+	Premium.applyCosmetic(player)
+	pushState(player)
+end
+
+-- 들어올 때 가진 게임패스를 확인한다
+function Premium.load(player: Player)
+	if not Marketplace then
+		return
+	end
+	for _, it in ipairs(Config.Premium) do
+		if it.gamepass > 0 then
+			local ok, has = pcall(function()
+				return Marketplace:UserOwnsGamePassAsync(player.UserId, it.gamepass)
+			end)
+			if ok and has then
+				Premium.grant(player, it.id)
+			end
+		end
+	end
+end
+
+function Premium.prompt(player: Player, id: string)
+	local it = Config.PREMIUM_BY_ID[id]
+	if not it then
+		return
+	end
+	if Premium.owns(player, id) then
+		toast(player, "이미 가지고 있어요")
+		return
+	end
+	if it.gamepass <= 0 or not Marketplace then
+		toast(player, "아직 판매 준비 중이에요 (게임패스 번호를 넣어야 해요)")
+		return
+	end
+	pcall(function()
+		Marketplace:PromptGamePassPurchase(player, it.gamepass)
+	end)
+end
+
+if Marketplace then
+	pcall(function()
+		Marketplace.PromptGamePassPurchaseFinished:Connect(function(player: Player, passId: number, bought: boolean)
+			if not bought then
+				return
+			end
+			for _, it in ipairs(Config.Premium) do
+				if it.gamepass == passId then
+					Premium.grant(player, it.id)
+					toast(player, "💎 " .. it.name .. "을(를) 얻었어요! 고마워요")
+					Push:FireClient(player, "premium", { id = it.id })
+				end
+			end
+		end)
+	end)
+end
+
 local function setupCharacter(player: Player, char: Model)
 	local hum = char:WaitForChild("Humanoid", 10)
 	local root = char:WaitForChild("HumanoidRootPart", 10)
@@ -4313,6 +4434,7 @@ local function setupCharacter(player: Player, char: Model)
 	end
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
+	Premium.applyCosmetic(player)
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
 			Combat.unregister(char)
@@ -4364,7 +4486,7 @@ local function onPlayerAdded(player: Player)
 		task.spawn(setupCharacter, player, player.Character)
 	end
 	pushState(player)
-
+	task.spawn(Premium.load, player)
 end
 
 local function onPlayerRemoving(player: Player)
@@ -9523,6 +9645,7 @@ local Anim = require(script:WaitForChild("Anim"))
 local Fx = require(script:WaitForChild("Fx"))
 local UI = require(script:WaitForChild("UI"))
 local Ults = require(script:WaitForChild("Ults"))
+local Cosmetics = require(script:WaitForChild("Cosmetics"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -9559,10 +9682,18 @@ local function watchChar(char: Model)
 	end)
 end
 local function watchPlayer(p: Player)
-	if p.Character then
-		watchChar(p.Character)
+	-- 사람만: 로벅스 꾸미기 (금룡 기운)
+	local function add(char: Model)
+		watchChar(char)
+		task.spawn(function()
+			char:WaitForChild("HumanoidRootPart", 10)
+			Cosmetics.watch(char)
+		end)
 	end
-	p.CharacterAdded:Connect(watchChar)
+	if p.Character then
+		add(p.Character)
+	end
+	p.CharacterAdded:Connect(add)
 end
 for _, p in ipairs(Players:GetPlayers()) do
 	watchPlayer(p)
@@ -10127,6 +10258,7 @@ startMove = function(slot: any, charge: number?)
 		else
 			Fx.ult(style.id, char, dur)
 		end
+		Cosmetics.onUlt(char)
 		shake(1.2)
 		tint(style.color, 0.25, dur)
 	end
@@ -10394,6 +10526,7 @@ local function dash()
 	Fx.limbTrails(char, pose, 0.35, style and style.color or Color3.new(1, 1, 1), style and style.color2 or Color3.new(1, 1, 1))
 	Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style and style.color or Color3.new(1, 1, 1), 2, 8, 0.3)
 	Fx.sound("swing", 0.4, 1.6)
+	Cosmetics.onDash(char)
 	Request:FireServer("dash", kind)
 end
 
@@ -10691,6 +10824,7 @@ function handlers.act(data: any)
 		else
 			Fx.ult(style.id, m, data.dur)
 		end
+		Cosmetics.onUlt(m)
 		if near then
 			shake(0.8)
 		end
@@ -10930,6 +11064,7 @@ function handlers.dash(m: Model, kind: any)
 	Anim.play(m, pose, kind == "front" and 0.28 or 0.4)
 	local s = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 	Fx.afterimage(m, s and s.color or Color3.new(1, 1, 1), 0.3)
+	Cosmetics.onDash(m)
 end
 
 function handlers.djump(m: Model)
@@ -11117,6 +11252,15 @@ function handlers.storyOffer(data: any)
 	task.delay(1.2, function()
 		UI.dialog({ who = "📜 새 이야기 · " .. tostring(data.chapter) .. "장", title = data.title, text = data.text, accept = true })
 	end)
+end
+
+-- 로벅스 상품을 샀다
+function handlers.premium(data: any)
+	local it = Config.PREMIUM_BY_ID[data.id]
+	if it then
+		UI.banner("💎 " .. it.name, "고마워요! 지금부터 바로 적용돼요", Color3.fromRGB(255, 210, 90))
+		Fx.sound("ping", 0.9, 1.1)
+	end
 end
 
 function handlers.storyProg(data: any)
@@ -11894,6 +12038,385 @@ return Anim
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="15">
+          <Properties>
+            <string name="Name">Cosmetics</string>
+            <string name="Source"><![CDATA[-- 권왕: 로벅스 꾸미기 (금룡 기운)
+-- 금빛 용 한 마리가 몸을 휘감고 돈다. 가만있으면 몸을 감아 오르내리고, 달리면 뒤를 따라 날며,
+-- 대시하면 금빛 꼬리를 길게 남기고, 오의를 쓰면 하늘로 솟구쳐 포효한다. 모두의 화면에 보인다
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local Cosmetics = {}
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonCosmetics"
+folder.Parent = workspace
+
+local GOLD = Color3.fromRGB(255, 196, 64)
+local GOLD_DEEP = Color3.fromRGB(196, 128, 24)
+local GOLD_LIGHT = Color3.fromRGB(255, 244, 190)
+local EYE = Color3.fromRGB(255, 90, 40)
+
+local N = 22 -- 몸 마디 수
+local SPACING = 0.72 -- 마디 사이
+local SHOW_DIST = 170 -- 이보다 멀면 그리지 않는다
+
+local function piece(size: Vector3, color: Color3, material: Enum.Material, shape: Enum.PartType?, trans: number?): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Size = size
+	p.Color = color
+	p.Material = material
+	if shape then
+		p.Shape = shape
+	end
+	p.Transparency = trans or 0
+	p.Parent = folder
+	return p
+end
+
+type Dragon = {
+	model: Model,
+	parts: { BasePart },
+	cores: { BasePart },
+	shells: { BasePart },
+	fins: { [number]: BasePart },
+	sizes: { number },
+	pos: { Vector3 },
+	head: { { p: BasePart, off: CFrame } },
+	jaw: BasePart,
+	jawOff: CFrame,
+	whiskers: { BasePart },
+	headAnchor: BasePart,
+	sparkle: ParticleEmitter,
+	trail: Trail,
+	t: number,
+	headPos: Vector3,
+	burstUntil: number,
+	burstStart: number,
+	dashUntil: number,
+	visible: boolean,
+}
+
+local active: { [Model]: Dragon } = {}
+
+local function rootOf(m: Model): BasePart?
+	local r = m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+
+local function build(model: Model): Dragon?
+	local root = rootOf(model)
+	if not root then
+		return nil
+	end
+	local d: Dragon = {
+		model = model,
+		parts = {},
+		cores = {},
+		shells = {},
+		fins = {},
+		sizes = {},
+		pos = {},
+		head = {},
+		jaw = nil :: any,
+		jawOff = CFrame.identity,
+		whiskers = {},
+		headAnchor = nil :: any,
+		sparkle = nil :: any,
+		trail = nil :: any,
+		t = math.random() * 10,
+		headPos = root.Position + Vector3.new(0, 2, 3),
+		burstUntil = 0,
+		burstStart = 0,
+		dashUntil = 0,
+		visible = true,
+	}
+	-- 몸: 빛나는 속살 + 금박 비늘 껍질, 두 마디마다 등지느러미
+	for i = 1, N do
+		local k = (i - 1) / (N - 1)
+		local s = 0.95 - k * 0.62
+		d.sizes[i] = s
+		local core = piece(Vector3.new(s, s, s), GOLD, Enum.Material.Neon, Enum.PartType.Ball, 0.05)
+		local shell = piece(Vector3.new(s * 1.18, s * 1.05, SPACING * 1.35), i % 2 == 0 and GOLD_DEEP or GOLD, Enum.Material.Foil, nil, 0.25)
+		table.insert(d.cores, core)
+		table.insert(d.shells, shell)
+		table.insert(d.parts, core)
+		table.insert(d.parts, shell)
+		if i % 2 == 0 and i < N - 1 then
+			local fin = piece(Vector3.new(0.08, s * 0.9, s * 0.6), GOLD_LIGHT, Enum.Material.Neon, nil, 0.1)
+			d.fins[i] = fin
+			table.insert(d.parts, fin)
+		end
+		d.pos[i] = d.headPos + Vector3.new(0, 0, i * SPACING)
+	end
+	-- 꼬리 끝 깃
+	local tailFin = piece(Vector3.new(0.06, 0.9, 0.7), GOLD_LIGHT, Enum.Material.Neon, nil, 0.05)
+	d.fins[N] = tailFin
+	table.insert(d.parts, tailFin)
+	-- 머리: 금박 머리뼈, 주둥이, 벌어지는 턱, 뿔 둘, 갈기, 붉은 눈, 길게 휘날리는 수염 둘
+	local function headPart(size: Vector3, color: Color3, mat: Enum.Material, off: CFrame, shape: Enum.PartType?, trans: number?): BasePart
+		local p = piece(size, color, mat, shape, trans)
+		table.insert(d.head, { p = p, off = off })
+		table.insert(d.parts, p)
+		return p
+	end
+	d.headAnchor = headPart(Vector3.new(1.05, 0.8, 1.1), GOLD, Enum.Material.Foil, CFrame.identity)
+	headPart(Vector3.new(0.78, 0.5, 0.95), GOLD, Enum.Material.Foil, CFrame.new(0, -0.08, -0.85))
+	headPart(Vector3.new(0.5, 0.18, 0.3), GOLD_LIGHT, Enum.Material.Neon, CFrame.new(0, 0.1, -1.28))
+	d.jawOff = CFrame.new(0, -0.38, -0.7)
+	d.jaw = headPart(Vector3.new(0.66, 0.16, 0.9), GOLD_DEEP, Enum.Material.Foil, d.jawOff)
+	for _, x in ipairs({ -1, 1 }) do
+		headPart(Vector3.new(0.12, 0.12, 1.3), GOLD_LIGHT, Enum.Material.Neon, CFrame.new(x * 0.32, 0.42, 0.55) * CFrame.Angles(math.rad(28), x * math.rad(18), 0))
+		headPart(Vector3.new(0.16, 0.1, 0.06), EYE, Enum.Material.Neon, CFrame.new(x * 0.3, 0.18, -0.52))
+		headPart(Vector3.new(0.06, 0.5, 0.35), GOLD_LIGHT, Enum.Material.Neon, CFrame.new(x * 0.18, 0.35, 0.35) * CFrame.Angles(math.rad(-30), 0, x * math.rad(25)))
+		local w = piece(Vector3.new(0.05, 0.05, 1.6), GOLD_LIGHT, Enum.Material.Neon, nil, 0.1)
+		table.insert(d.whiskers, w)
+		table.insert(d.parts, w)
+	end
+	-- 머리의 금빛 불티와 빛, 지나간 자리의 금빛 꼬리
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, 0.35, 0)
+	a0.Parent = d.headAnchor
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, -0.35, 0)
+	a1.Parent = d.headAnchor
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Lifetime = 0.35
+	tr.LightEmission = 1
+	tr.FaceCamera = true
+	tr.Color = ColorSequence.new(GOLD_LIGHT, GOLD)
+	tr.Transparency = NumberSequence.new(0.35, 1)
+	tr.WidthScale = NumberSequence.new(1, 0.1)
+	tr.Parent = d.headAnchor
+	d.trail = tr
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	e.Color = ColorSequence.new(GOLD_LIGHT, GOLD)
+	e.LightEmission = 1
+	e.Size = NumberSequence.new(0.25, 0)
+	e.Lifetime = NumberRange.new(0.5, 1)
+	e.Speed = NumberRange.new(0.5, 1.5)
+	e.Rate = 10
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Parent = a0
+	d.sparkle = e
+	local l = Instance.new("PointLight")
+	l.Color = GOLD
+	l.Range = 9
+	l.Brightness = 1.3
+	l.Parent = d.headAnchor
+	return d
+end
+
+local function destroy(d: Dragon)
+	for _, p in ipairs(d.parts) do
+		p:Destroy()
+	end
+end
+
+local function setVisible(d: Dragon, on: boolean)
+	if d.visible == on then
+		return
+	end
+	d.visible = on
+	for _, p in ipairs(d.parts) do
+		p.LocalTransparencyModifier = on and 0 or 1
+	end
+	d.sparkle.Enabled = on
+	d.trail.Enabled = on
+end
+
+-- 한 장면: 머리가 갈 곳을 정하고, 마디가 줄줄이 따라온다
+local function step(d: Dragon, dt: number, camPos: Vector3?)
+	local root = rootOf(d.model)
+	if not root then
+		return
+	end
+	if camPos then
+		setVisible(d, (camPos - root.Position).Magnitude < SHOW_DIST)
+	end
+	if not d.visible then
+		return
+	end
+	d.t += dt
+	local t = d.t
+	local now = os.clock()
+	local p0 = root.Position
+	local vel = root.AssemblyLinearVelocity
+	local moving = Vector3.new(vel.X, 0, vel.Z).Magnitude > 6
+	local look = flat(root.CFrame.LookVector)
+	local side = Vector3.new(-look.Z, 0, look.X)
+	local target: Vector3
+	local follow = 7
+	if now < d.burstUntil then
+		-- 오의: 나선을 그리며 하늘로 솟구친다
+		local k = math.clamp((now - d.burstStart) / (d.burstUntil - d.burstStart), 0, 1)
+		local a = t * 5
+		local r = 4.5 + k * 3
+		target = p0 + Vector3.new(math.cos(a) * r, 2 + k * 14, math.sin(a) * r)
+		follow = 10
+	elseif moving then
+		-- 달릴 때: 뒤 위쪽에서 물결치듯 따라 난다
+		target = p0 - look * 3.2 + side * math.sin(t * 2.2) * 1.4 + Vector3.new(0, 2.3 + math.sin(t * 3.1) * 0.6, 0)
+		follow = 9
+	else
+		-- 가만있을 때: 몸을 감고 천천히 오르내린다
+		local a = t * 1.5
+		target = p0 + Vector3.new(math.cos(a) * 2.7, 0.3 + math.sin(t * 0.7) * 1.5, math.sin(a) * 2.7)
+	end
+	d.headPos = d.headPos:Lerp(target, 1 - math.exp(-dt * follow))
+	-- 줄 잇기: 마디마다 앞 마디와 같은 거리를 지킨다
+	d.pos[1] = d.headPos
+	for i = 2, N do
+		local dir = d.pos[i] - d.pos[i - 1]
+		local m = dir.Magnitude
+		if m > SPACING then
+			d.pos[i] = d.pos[i - 1] + dir / m * SPACING
+		elseif m < 1e-3 then
+			d.pos[i] = d.pos[i - 1] + Vector3.new(0, 0, SPACING)
+		end
+	end
+	local parts: { BasePart } = {}
+	local cfs: { CFrame } = {}
+	local function put(p: BasePart, cf: CFrame)
+		table.insert(parts, p)
+		table.insert(cfs, cf)
+	end
+	for i = 1, N do
+		local here = d.pos[i]
+		local ahead = i == 1 and (d.pos[1] + (d.pos[1] - d.pos[2])) or d.pos[i - 1]
+		local cf = (ahead - here).Magnitude > 1e-3 and CFrame.lookAt(here, ahead) or CFrame.new(here)
+		-- 몸이 살짝 꿈틀거린다
+		cf = cf * CFrame.Angles(0, 0, math.sin(t * 4 - i * 0.5) * 0.25)
+		put(d.cores[i], cf)
+		put(d.shells[i], cf)
+		local fin = d.fins[i]
+		if fin then
+			put(fin, cf * CFrame.new(0, d.sizes[i] * 0.62, 0) * CFrame.Angles(math.rad(-20), 0, 0))
+		end
+	end
+	-- 머리 (첫 마디보다 조금 앞에)
+	local fwd = d.pos[1] - d.pos[2]
+	fwd = fwd.Magnitude > 1e-3 and fwd.Unit or look
+	local hcf = CFrame.lookAt(d.headPos + fwd * 0.55, d.headPos + fwd * 2)
+	local roaring = now < d.burstUntil and now > d.burstUntil - 0.6
+	for _, h in ipairs(d.head) do
+		if h.p == d.jaw then
+			local open = roaring and 0.6 or (0.12 + math.sin(t * 2) * 0.08)
+			put(h.p, hcf * d.jawOff * CFrame.Angles(open, 0, 0))
+		else
+			put(h.p, hcf * h.off)
+		end
+	end
+	-- 수염: 입가에서 뒤로 휘날린다
+	for i, w in ipairs(d.whiskers) do
+		local x = i == 1 and -1 or 1
+		local from = (hcf * CFrame.new(x * 0.34, -0.12, -1.05)).Position
+		local back = -fwd * 1.2 + (hcf.RightVector * x * 0.6) + Vector3.new(0, math.sin(t * 5 + i) * 0.35, 0)
+		put(w, CFrame.lookAt(from + back * 0.5, from + back))
+	end
+	d.sparkle.Rate = now < d.dashUntil and 60 or (now < d.burstUntil and 80 or 10)
+	d.trail.Lifetime = now < d.dashUntil and 0.9 or (now < d.burstUntil and 1.2 or 0.35)
+	local ok = pcall(function()
+		workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged)
+	end)
+	if not ok then
+		for i, p in ipairs(parts) do
+			p.CFrame = cfs[i]
+		end
+	end
+end
+
+-- 오의를 쓸 때: 하늘로 솟구쳐 포효
+function Cosmetics.onUlt(model: Model)
+	local d = active[model]
+	if not d then
+		return
+	end
+	local now = os.clock()
+	d.burstStart = now
+	d.burstUntil = now + 2
+	task.delay(1.4, function()
+		if active[model] ~= d then
+			return
+		end
+		-- 포효: 머리에서 금빛 고리가 퍼진다
+		local ring = piece(Vector3.new(0.2, 1, 1), GOLD_LIGHT, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2)
+		ring.CFrame = CFrame.new(d.headPos) * CFrame.Angles(0, 0, math.rad(90))
+		TweenService:Create(ring, TweenInfo.new(0.6), { Size = Vector3.new(0.05, 26, 26), Transparency = 1 }):Play()
+		Debris:AddItem(ring, 0.65)
+		d.sparkle:Emit(40)
+	end)
+end
+
+-- 대시할 때: 금빛 꼬리를 길게
+function Cosmetics.onDash(model: Model)
+	local d = active[model]
+	if d then
+		d.dashUntil = os.clock() + 0.6
+		d.sparkle:Emit(15)
+	end
+end
+
+-- 캐릭터에 꾸미기가 켜지고 꺼지는 것을 지켜본다
+function Cosmetics.watch(model: Model)
+	local function refresh()
+		local want = model:GetAttribute("Cosmetic") == "goldDragon" and model.Parent ~= nil
+		local d = active[model]
+		if want and not d then
+			local nd = build(model)
+			if nd then
+				active[model] = nd
+			end
+		elseif not want and d then
+			destroy(d)
+			active[model] = nil
+		end
+	end
+	model:GetAttributeChangedSignal("Cosmetic"):Connect(refresh)
+	model.AncestryChanged:Connect(function()
+		if not model.Parent then
+			local d = active[model]
+			if d then
+				destroy(d)
+				active[model] = nil
+			end
+		end
+	end)
+	refresh()
+end
+
+RunService.RenderStepped:Connect(function(dt: number)
+	local cam = workspace.CurrentCamera
+	local camPos = cam and cam.CFrame.Position or nil
+	for _, d in pairs(active) do
+		local ok = pcall(step, d, math.min(dt, 0.1), camPos)
+		if not ok then
+			continue
+		end
+	end
+end)
+
+local _ = Players
+return Cosmetics
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="16">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -13943,7 +14466,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="17">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -14666,10 +15189,35 @@ end
 
 local function buildShop()
 	local page = makePage("shop")
-	local list = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = page }, { new("UIListLayout", { Padding = UDim.new(0, 8) }) })
+	local list = scroller(page, UDim2.fromScale(1, 1))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	-- 💎 로벅스 상품: 금빛 카드 (큰 그림, 이름표, 좋은 점 세 줄, 값)
+	local premiumBtns: { [string]: TextButton } = {}
+	local cosmeticBtn: TextButton? = nil
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💎 로벅스 상품", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 0, Parent = list })
+	for i, it in ipairs(Config.Premium) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.cosmetic and Color3.fromRGB(60, 42, 14) or Color3.fromRGB(70, 24, 14), LayoutOrder = i, Parent = list }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
+		new("UIGradient", { Rotation = 20, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 90)), Parent = card })
+		local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
+		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
+		text({ Size = UDim2.fromScale(1, 1), Text = it.icon, TextSize = 64, TextXAlignment = Enum.TextXAlignment.Center, Parent = badge })
+		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
+		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.cosmetic and Color3.fromRGB(120, 80, 200) or Color3.fromRGB(200, 70, 40), Parent = card }, { corner(11) })
+		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
+		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "✦ " .. table.concat(it.lines, "\n✦ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
+			Request:FireServer("premiumBuy", it.id)
+		end)
+		if it.cosmetic then
+			cosmeticBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 82), Size = UDim2.new(0, 170, 0, 40), Text = "입기", TextSize = 17, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
+				Request:FireServer("cosmeticToggle")
+			end)
+		end
+	end
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
 	local labels = {}
-	for _, item in ipairs(Config.Shop) do
-		local row = new("Frame", { Size = UDim2.new(1, 0, 0, 70), BackgroundColor3 = C.panel2, Parent = list }, { corner(10), stroke(C.line, 1) })
+	for k, item in ipairs(Config.Shop) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = 10 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
 		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = item.icon .. " " .. item.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
 		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = item.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
 		labels[item.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💰 " .. Config.formatNumber(item.cost), TextSize = 18, BackgroundColor3 = C.red, Parent = row }, function()
@@ -14680,6 +15228,17 @@ local function buildShop()
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
+		end
+		local owned = state and state.premium or {}
+		for id, b in pairs(premiumBtns) do
+			local has = owned[id] == true
+			b.Text = has and "✅ 가지고 있음" or ("R$ " .. tostring(Config.PREMIUM_BY_ID[id].price) .. "  구매")
+			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or Color3.fromRGB(40, 170, 80)
+			b.AutoButtonColor = not has
+		end
+		if cosmeticBtn then
+			cosmeticBtn.Visible = owned.goldDragon == true
+			cosmeticBtn.Text = (state and state.cosmeticOff) and "🐉 입기" or "🐉 벗기"
 		end
 	end
 end
@@ -14830,6 +15389,7 @@ local function buildTest()
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
 		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
 		{ "🌙 한밤 (0시)", "testTime", 0 }, { "⏩ 3시간 뒤로", "testTime", "+3" },
+		{ "💎 두 배 수련 (테스트로 켜기)", "testPremium", "train2x" }, { "🐉 금룡 기운 (테스트로 켜기)", "testPremium", "goldDragon" },
 	})
 	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
 	local styleItems = {}
@@ -15778,7 +16338,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -17304,7 +17864,7 @@ return Ults
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="18">
+  <Item class="Workspace" referent="19">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

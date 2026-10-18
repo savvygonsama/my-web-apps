@@ -47,6 +47,7 @@ type Profile = {
 	prog: number, -- 그 장의 진행
 	fragments: { [string]: boolean }, -- 주운 비급 조각
 	accepted: number,
+	cosmeticOff: boolean?,
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
@@ -165,6 +166,7 @@ type State = {
 	charConn: RBXScriptConnection?,
 	tpIdx: number?,
 	simmaAt: number?,
+	owned: { [string]: boolean }?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -259,6 +261,8 @@ end
 ------------------------------------------------------------------------
 -- 테스트 스위치: 내공 무한·쿨 없음 (사람마다, 저장하지 않는다)
 local TEST_INF: { [Player]: boolean? } = {}
+-- 로벅스 상품 (아래에서 채운다)
+local Premium: any
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
@@ -303,6 +307,8 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		accepted = p.accepted == p.story,
+		premium = st.owned or {},
+		cosmeticOff = p.cosmeticOff,
 		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
@@ -724,7 +730,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					local ridx = Config.realmOf(Calc.total(p))
-					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)))
+					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -1382,7 +1388,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Config.realmOf(Calc.total(p))
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1)
+	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -1468,6 +1474,12 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testBoss" then
 		if f then
 			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
+		end
+	elseif action == "testPremium" then
+		-- 테스트: 로벅스 상품을 써 보기 (진짜 구매 아님)
+		if type(arg) == "string" and Config.PREMIUM_BY_ID[arg] then
+			Premium.grant(player, arg)
+			toast(player, "💎 테스트로 켰어요: " .. Config.PREMIUM_BY_ID[arg].name)
 		end
 	elseif action == "testDummy" then
 		if f then
@@ -1677,6 +1689,13 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Story.talk(player)
 	elseif action == "storyAccept" then
 		Story.accept(player)
+	elseif action == "premiumBuy" then
+		Premium.prompt(player, tostring(a1))
+	elseif action == "cosmeticToggle" then
+		p.cosmeticOff = not p.cosmeticOff or nil
+		st.dirty = true
+		Premium.applyCosmetic(player)
+		pushState(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -1764,6 +1783,94 @@ end
 ------------------------------------------------------------------------
 -- 들어오고 나가기
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
+-- 로벅스 상품 (게임패스)
+------------------------------------------------------------------------
+Premium = {}
+local Marketplace: any = nil
+pcall(function()
+	Marketplace = game:GetService("MarketplaceService")
+end)
+
+function Premium.owns(player: Player, id: string): boolean
+	local st = states[player]
+	return st ~= nil and st.owned ~= nil and st.owned[id] == true
+end
+
+-- 꾸미기를 몸에 입힌다 (가졌고, 끄지 않았으면)
+function Premium.applyCosmetic(player: Player)
+	local char = player.Character
+	local p = profiles[player]
+	if not char or not p then
+		return
+	end
+	local on = Premium.owns(player, "goldDragon") and not p.cosmeticOff
+	char:SetAttribute("Cosmetic", on and "goldDragon" or nil)
+end
+
+function Premium.grant(player: Player, id: string)
+	local st = states[player]
+	if not st then
+		return
+	end
+	st.owned = st.owned or {}
+	st.owned[id] = true
+	Premium.applyCosmetic(player)
+	pushState(player)
+end
+
+-- 들어올 때 가진 게임패스를 확인한다
+function Premium.load(player: Player)
+	if not Marketplace then
+		return
+	end
+	for _, it in ipairs(Config.Premium) do
+		if it.gamepass > 0 then
+			local ok, has = pcall(function()
+				return Marketplace:UserOwnsGamePassAsync(player.UserId, it.gamepass)
+			end)
+			if ok and has then
+				Premium.grant(player, it.id)
+			end
+		end
+	end
+end
+
+function Premium.prompt(player: Player, id: string)
+	local it = Config.PREMIUM_BY_ID[id]
+	if not it then
+		return
+	end
+	if Premium.owns(player, id) then
+		toast(player, "이미 가지고 있어요")
+		return
+	end
+	if it.gamepass <= 0 or not Marketplace then
+		toast(player, "아직 판매 준비 중이에요 (게임패스 번호를 넣어야 해요)")
+		return
+	end
+	pcall(function()
+		Marketplace:PromptGamePassPurchase(player, it.gamepass)
+	end)
+end
+
+if Marketplace then
+	pcall(function()
+		Marketplace.PromptGamePassPurchaseFinished:Connect(function(player: Player, passId: number, bought: boolean)
+			if not bought then
+				return
+			end
+			for _, it in ipairs(Config.Premium) do
+				if it.gamepass == passId then
+					Premium.grant(player, it.id)
+					toast(player, "💎 " .. it.name .. "을(를) 얻었어요! 고마워요")
+					Push:FireClient(player, "premium", { id = it.id })
+				end
+			end
+		end)
+	end)
+end
+
 local function setupCharacter(player: Player, char: Model)
 	local hum = char:WaitForChild("Humanoid", 10)
 	local root = char:WaitForChild("HumanoidRootPart", 10)
@@ -1785,6 +1892,7 @@ local function setupCharacter(player: Player, char: Model)
 	end
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
+	Premium.applyCosmetic(player)
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
 			Combat.unregister(char)
@@ -1836,7 +1944,7 @@ local function onPlayerAdded(player: Player)
 		task.spawn(setupCharacter, player, player.Character)
 	end
 	pushState(player)
-
+	task.spawn(Premium.load, player)
 end
 
 local function onPlayerRemoving(player: Player)
