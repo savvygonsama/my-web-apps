@@ -17,6 +17,7 @@ SH.season({
     furuhon: { ja: "古本屋{ふるほんや}さん", ko: "헌책방 주인" },
     front: { ja: "フロント", ko: "호텔 프런트" },
     men: { ja: "男{おとこ}", ko: "남자" },
+    ojii: { ja: "屋台{やたい}のおじいさん", ko: "노점 할아버지" },
     kuro: { ja: "クロ", ko: "쿠로" }
   },
   endings: [
