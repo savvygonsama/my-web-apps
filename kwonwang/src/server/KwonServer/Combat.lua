@@ -108,7 +108,15 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		return false
 	end
 	if a.player and b.player then
-		return Combat.onRing(a.root.Position) and Combat.onRing(b.root.Position)
+		local pa, pb = a.root.Position, b.root.Position
+		if Combat.onRing(pa) and Combat.onRing(pb) then
+			return true
+		end
+		-- 들판 PvP: 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고)
+		if Config.inSafe(pa) or Config.inSafe(pb) then
+			return false
+		end
+		return a.model:GetAttribute("PvpOff") ~= true and b.model:GetAttribute("PvpOff") ~= true
 	end
 	if not a.player and not b.player then
 		return false

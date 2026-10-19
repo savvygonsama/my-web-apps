@@ -1649,9 +1649,11 @@ Config.MANUAL_RARITY = {
 	{ name = "희귀", rate = 0.28, mult = 2, color = Color3.fromRGB(110, 190, 255) },
 	{ name = "영웅", rate = 0.12, mult = 3.5, color = Color3.fromRGB(200, 120, 255) },
 	{ name = "전설", rate = 0.045, mult = 5.5, color = Color3.fromRGB(255, 200, 80) },
-	{ name = "신화", rate = 0.005, mult = 8, color = Color3.fromRGB(255, 110, 90) },
+	{ name = "신화", rate = 0.004, mult = 8, color = Color3.fromRGB(255, 110, 90) },
+	{ name = "천상", rate = 0.001, mult = 12, color = Color3.fromRGB(150, 245, 255), heavenly = true },
 }
 -- 뽑기: 두루마리 하나 또는 은자. 60번 안에 전설 이상이 한 번은 나온다 (천장)
+-- 천장에서는 전설 88% · 신화 10% · 천상 2%
 Config.MANUAL_DRAW = { coins = 30000, pity = 60, slots = 3, refund = 4000 }
 function Config.manualValue(id: string, rarity: number): number
 	local m = Config.MANUAL_BY_ID[id]
@@ -1669,10 +1671,11 @@ Config.TOWER = {
 	slots = 10,
 	radius = 46,
 	bossEvery = 10,
-	-- 층의 세기: 도전자 전투력 × (base + per × 층), 체력은 더 넉넉히
-	powerBase = 0.55,
-	powerPer = 0.012,
-	hpPer = 0.015,
+	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.06
+	-- (10층 약 100 · 50층 약 1,000 · 80층 약 6,000 · 100층 약 19,000 · 120층 약 62,000)
+	powerStart = 60,
+	powerGrowth = 1.06,
+	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
 	bands = {
@@ -1692,6 +1695,17 @@ Config.TOWER = {
 -- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
 ------------------------------------------------------------------------
 Config.PVP_STYLE = { wins = 100, style = "musang" }
+-- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 한 번 쓰러진 뒤부터는 스스로 끌 수 있다
+Config.PVP = { offAfterDeath = true, toggleCooldown = 30 }
+-- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고, 적이 덤비지 않는다
+function Config.inSafe(pos: Vector3): boolean
+	for _, r in ipairs(Config.Regions) do
+		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
+			return true
+		end
+	end
+	return false
+end
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)

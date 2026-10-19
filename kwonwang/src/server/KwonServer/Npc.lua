@@ -30,6 +30,8 @@ Npc.list = {} :: { Enemy }
 local folder: Folder
 local Push: RemoteEvent
 local SKIN = Color3.fromRGB(234, 184, 146)
+-- 적의 살빛 (여러 가지)
+local SKIN_TONES = { Color3.fromRGB(226, 172, 132), Color3.fromRGB(205, 150, 110), Color3.fromRGB(184, 128, 92), Color3.fromRGB(160, 110, 78), Color3.fromRGB(236, 190, 155) }
 
 function Npc.init(push: RemoteEvent)
 	Push = push
@@ -185,7 +187,9 @@ local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, le
 end
 
 -- 사람 몸 하나 (로블록스 기본 몸, 안 되면 직접 짠 몸)
-local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number): Model
+-- build = { h = 키, w = 품, head = 머리 } 배율 (적마다 체격이 다르다. 머리를 조금 작게 해 어른 몸으로)
+local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number, build: any?): Model
+	local bd = build or {}
 	local ok, model = pcall(function()
 		local desc = Instance.new("HumanoidDescription")
 		desc.HeadColor = colors.head
@@ -194,10 +198,10 @@ local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: C
 		desc.TorsoColor = colors.torso
 		desc.LeftLegColor = colors.legs
 		desc.RightLegColor = colors.legs
-		desc.HeightScale = s
-		desc.WidthScale = s
-		desc.DepthScale = s
-		desc.HeadScale = s
+		desc.HeightScale = s * (bd.h or 1)
+		desc.WidthScale = s * (bd.w or 1)
+		desc.DepthScale = s * (bd.w or 1)
+		desc.HeadScale = s * (bd.head or 1)
 		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
 	end)
 	if ok and typeof(model) == "Instance" and model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and model:FindFirstChild("LowerTorso") then
@@ -215,9 +219,14 @@ local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: C
 end
 Npc.body = body
 
-local function buildRig(def: any, label: string, isBoss: boolean): Model
+local dressEnemy: (Model, string, any, boolean) -> ()
+local lookOf: (string, boolean) -> any
+
+local function buildRig(def: any, label: string, isBoss: boolean, typeId: string?): Model
 	local s = def.scale or 1
-	local model = body({ head = SKIN, torso = def.shirt, arms = SKIN, legs = def.pants }, s)
+	local look = lookOf(typeId or "", isBoss)
+	local skin = look.skin or SKIN_TONES[math.random(#SKIN_TONES)]
+	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 })
 	model.Name = label
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -227,23 +236,12 @@ local function buildRig(def: any, label: string, isBoss: boolean): Model
 		hum.Health = 1e9
 		hum.WalkSpeed = def.speed
 	end
-	-- 이마 띠 (적은 붉은, 보스는 검은 금빛)
-	local head = model:FindFirstChild("Head")
-	if head and head:IsA("BasePart") then
-		local band = Instance.new("Part")
-		band.Name = "Headband"
-		band.Size = Vector3.new(head.Size.X * 1.05, head.Size.Y * 0.18, head.Size.Z * 1.05)
-		band.Color = isBoss and Color3.fromRGB(30, 25, 20) or Color3.fromRGB(170, 30, 30)
-		band.Material = isBoss and Enum.Material.Foil or Enum.Material.Fabric
-		band.CanCollide = false
-		band.CanQuery = false
-		band.Massless = true
-		band.CFrame = head.CFrame * CFrame.new(0, head.Size.Y * 0.18, 0)
-		band.Parent = model
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = head
-		weld.Part1 = band
-		weld.Parent = band
+	-- 적마다 다른 차림 (머리쓰개, 얼굴, 옷). 실패해도 몸은 그대로 쓴다
+	if not def.dummy then
+		local ok, err = pcall(dressEnemy, model, typeId or "", def, isBoss)
+		if not ok then
+			warn("[권왕] 적 차림 오류:", typeId, err)
+		end
 	end
 	attachWeapon(model, def.weapon)
 	model:SetAttribute("NPC", true)
@@ -265,7 +263,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	if not def then
 		return nil
 	end
-	local model = buildRig(def, def.name, isBoss)
+	local model = buildRig(def, def.name, isBoss, typeId)
 	local pos = at + Vector3.new(math.random(-8, 8), 4 * (def.scale or 1), math.random(-8, 8))
 	model:PivotTo(CFrame.new(pos))
 	model.Parent = folder
@@ -398,6 +396,222 @@ end
 
 local GOLD = Color3.fromRGB(235, 190, 80)
 local WHITE_HAIR = Color3.fromRGB(240, 240, 235)
+
+------------------------------------------------------------------------
+-- 적의 차림: 머리쓰개 (삿갓·두건·투구·복면·뿔·관), 매서운 얼굴, 체격, 옷
+-- 머리에 붙이는 것은 모두 머리 크기에 맞춘 둥근 모양 (머리를 뚫고 나오지 않게)
+------------------------------------------------------------------------
+local DARK_HAIR = Color3.fromRGB(30, 24, 20)
+local STRAW = Color3.fromRGB(200, 170, 110)
+local IRON = Color3.fromRGB(110, 112, 120)
+local C3 = Color3.fromRGB
+local LOOKS: { [string]: any } = {
+	thug = { head = "bald", beard = "stubble", build = { w = 1.1, head = 0.9 } },
+	bandit = { head = "bandana", cloth = C3(140, 40, 35), beard = "full", build = { head = 0.9 } },
+	spearman = { head = "straw", build = { h = 1.04, head = 0.88 }, belt = true },
+	brute = { head = "bald", beard = "full", build = { w = 1.38, h = 1.08, head = 0.85 }, scar = true },
+	assassin = { head = "hood", cloth = C3(40, 40, 50), mask = C3(30, 30, 36), build = { w = 0.88, h = 1.05, head = 0.86 } },
+	shadowblade = { head = "hood", cloth = C3(35, 25, 50), mask = C3(25, 20, 35), eyes = C3(190, 120, 255), build = { w = 0.9, h = 1.06, head = 0.86 } },
+	ironguard = { head = "helmet", metal = IRON, armor = true, build = { w = 1.18, h = 1.05, head = 0.88 } },
+	simma = { head = "horns", skin = C3(70, 40, 90), eyes = C3(220, 90, 255), robe = C3(35, 10, 45), build = { h = 1.08, head = 0.88 } },
+	gatekeeper = { head = "helmet", metal = GOLD, armor = true, eyes = C3(255, 220, 120), robe = C3(60, 40, 20), build = { w = 1.2, h = 1.1, head = 0.86 } },
+	iceguard = { head = "helmet", metal = C3(170, 210, 235), armor = true, build = { w = 1.18, h = 1.05, head = 0.88 } },
+	snowblade = { head = "hood", cloth = C3(225, 232, 240), mask = C3(200, 210, 222), build = { w = 0.88, h = 1.05, head = 0.86 } },
+	swampfang = { head = "hood", cloth = C3(50, 75, 45), mask = C3(40, 60, 35), eyes = C3(160, 255, 110), build = { w = 0.9, h = 1.05, head = 0.86 } },
+	bogbrute = { head = "bald", beard = "full", skin = C3(150, 160, 110), build = { w = 1.4, h = 1.08, head = 0.85 }, scar = true },
+	marauder = { head = "bandana", cloth = C3(120, 90, 50), beard = "full", armor = true, metal = C3(120, 95, 70), build = { w = 1.1, head = 0.9 } },
+	lancer = { head = "straw", cloth = C3(150, 120, 80), mask = C3(150, 120, 90), build = { h = 1.05, head = 0.88 } },
+	pirate = { head = "bandana", cloth = C3(170, 30, 30), beard = "full", eyepatch = true, build = { w = 1.05, head = 0.9 } },
+	cultist = { head = "hood", cloth = C3(120, 15, 25), mask = C3(150, 20, 30), robe = C3(90, 10, 20), build = { head = 0.88 } },
+	cultelder = { head = "hood", cloth = C3(70, 5, 15), beard = "white", eyes = C3(255, 70, 70), robe = C3(60, 5, 12), build = { h = 1.04, head = 0.88 } },
+	riftling = { head = "horns", skin = C3(110, 90, 140), eyes = C3(200, 140, 255), build = { w = 0.85, h = 0.95, head = 0.9 } },
+	voidwalker = { head = "hood", cloth = C3(20, 15, 35), skin = C3(40, 30, 55), eyes = C3(120, 230, 255), robe = C3(15, 10, 30), build = { h = 1.1, w = 0.9, head = 0.86 } },
+	stonegolem = { head = "golem", skin = C3(125, 120, 112), eyes = C3(255, 200, 120), stone = true, bareArms = true, build = { w = 1.45, h = 1.15, head = 0.8 } },
+	apostle = { head = "hood", cloth = C3(15, 8, 30), eyes = C3(200, 100, 255), robe = C3(10, 5, 20), crown = C3(140, 90, 220), build = { h = 1.08, head = 0.86 } },
+	flameimp = { head = "horns", skin = C3(190, 70, 50), eyes = C3(255, 230, 90), build = { w = 0.85, h = 0.95, head = 0.92 } },
+	magmabrute = { head = "bald", skin = C3(80, 40, 35), eyes = C3(255, 140, 40), stone = true, build = { w = 1.42, h = 1.1, head = 0.84 } },
+	sandwraith = { head = "wrap", cloth = C3(215, 190, 140), eyes = C3(255, 230, 150), build = { w = 0.88, h = 1.06, head = 0.86 } },
+	tombguard = { head = "helmet", metal = C3(200, 165, 80), armor = true, wrap = true, build = { w = 1.15, h = 1.05, head = 0.88 } },
+	skyguard = { head = "helmet", metal = C3(235, 238, 250), armor = true, plume = C3(120, 160, 230), build = { w = 1.15, h = 1.08, head = 0.88 } },
+	starblade = { head = "hood", cloth = C3(30, 40, 80), mask = C3(25, 30, 60), eyes = C3(230, 240, 255), build = { w = 0.9, h = 1.06, head = 0.86 } },
+	-- 보스
+	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(50, 45, 45), build = { w = 1.2, head = 0.86 } },
+	hyeolrang = { head = "hood", cloth = C3(110, 10, 20), mask = C3(70, 5, 10), eyes = C3(255, 60, 60), build = { w = 0.92, h = 1.05, head = 0.85 } },
+	bingma = { head = "helmet", metal = C3(190, 225, 250), beard = "white", eyes = C3(150, 220, 255), robe = C3(80, 110, 150), build = { w = 1.15, head = 0.85 } },
+	hyeolma = { head = "topknot", hair = C3(140, 10, 20), eyes = C3(255, 50, 50), robe = C3(110, 0, 15), build = { h = 1.05, head = 0.85 } },
+	cheonma = { head = "horns", hair = C3(20, 10, 30), eyes = C3(200, 90, 255), robe = C3(25, 10, 50), crown = C3(120, 60, 200), build = { h = 1.08, head = 0.84 } },
+	yeomje = { head = "topknot", hair = C3(200, 60, 20), beard = "full", eyes = C3(255, 170, 50), crown = GOLD, armor = true, metal = C3(160, 70, 30), build = { w = 1.2, head = 0.85 } },
+	sawang = { head = "wrap", cloth = C3(215, 175, 70), eyes = C3(255, 220, 120), crown = GOLD, robe = C3(150, 110, 40), build = { h = 1.06, head = 0.85 } },
+	cheonmun = { head = "helmet", metal = C3(240, 242, 255), plume = GOLD, armor = true, eyes = C3(255, 240, 190), build = { w = 1.2, h = 1.08, head = 0.84 } },
+}
+local DEFAULT_LOOK = { head = "topknot", hair = DARK_HAIR, build = { head = 0.9 } }
+lookOf = function(typeId: string, _isBoss: boolean): any
+	if LOOKS[typeId] then
+		return LOOKS[typeId]
+	end
+	-- 사부의 분신·권존 등 (trial_권법): 상투에 도포
+	if string.sub(typeId, 1, 6) == "trial_" then
+		return { head = "topknot", hair = DARK_HAIR, robe = C3(70, 60, 50), build = { head = 0.88 } }
+	end
+	return DEFAULT_LOOK
+end
+
+-- 매서운 얼굴: 기본 웃는 얼굴을 지우고, 머리 앞에 얇은 판을 붙여 짙은 눈썹·눈·입을 그린다
+local function face(model: Model, head: BasePart, look: any)
+	local d = head:FindFirstChild("face")
+	if d and d:IsA("Decal") then
+		d:Destroy()
+	end
+	if look.head == "golem" and not look.eyes then
+		return
+	end
+	local hs = head.Size
+	local plate = wear(model, "Head", "FacePlate", Vector3.new(hs.X * 0.8, hs.Y * 0.62, 0.05), CFrame.new(0, -hs.Y * 0.02, -hs.Z * 0.5 - 0.02), Color3.new(0, 0, 0))
+	if not plate then
+		return
+	end
+	plate.Transparency = 1
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(200, 155)
+	gui.LightInfluence = look.eyes and 0 or 1
+	gui.Parent = plate
+	local ink = look.skin and look.skin:Lerp(Color3.new(0, 0, 0), 0.75) or Color3.fromRGB(40, 25, 20)
+	local function bar(x: number, y: number, w: number, h: number, rot: number, color: Color3)
+		local f = Instance.new("Frame")
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.Position = UDim2.fromScale(x, y)
+		f.Size = UDim2.fromScale(w, h)
+		f.Rotation = rot
+		f.BackgroundColor3 = color
+		f.BorderSizePixel = 0
+		f.Parent = gui
+	end
+	-- 눈썹: 안쪽이 내려간 성난 눈썹 (두건·복면이면 눈만)
+	if look.head ~= "wrap" then
+		bar(0.3, 0.3, 0.3, 0.075, 14, ink)
+		bar(0.7, 0.3, 0.3, 0.075, -14, ink)
+	end
+	local eye = look.eyes or Color3.fromRGB(25, 18, 15)
+	bar(0.32, 0.43, look.eyes and 0.16 or 0.12, 0.07, 6, eye)
+	bar(0.68, 0.43, look.eyes and 0.16 or 0.12, 0.07, -6, eye)
+	if look.eyepatch then
+		bar(0.32, 0.43, 0.22, 0.16, 0, Color3.fromRGB(15, 12, 10))
+		bar(0.5, 0.3, 1.0, 0.04, -20, Color3.fromRGB(15, 12, 10))
+	end
+	if not look.mask and look.head ~= "wrap" and look.head ~= "golem" then
+		bar(0.5, 0.74, 0.26, 0.04, 0, ink)
+	end
+	if look.scar then
+		bar(0.7, 0.45, 0.04, 0.42, 20, Color3.fromRGB(150, 70, 60))
+	end
+end
+
+dressEnemy = function(model: Model, typeId: string, _def: any, isBoss: boolean)
+	local look = lookOf(typeId, isBoss)
+	local head = model:FindFirstChild("Head")
+	if not head or not head:IsA("BasePart") then
+		return
+	end
+	local hs = head.Size
+	local cloth = look.cloth or Color3.fromRGB(60, 50, 40)
+	local Ball, Cyl = Enum.PartType.Ball, Enum.PartType.Cylinder
+	-- 둥근 머리 위에 납작한 원통을 얹는다 (모자의 몸통)
+	local function cap(name: string, radius: number, height: number, y: number, color: Color3, material: Enum.Material?)
+		wear(model, "Head", name, Vector3.new(height, hs.X * radius * 2, hs.Z * radius * 2), CFrame.new(0, y, 0) * CFrame.Angles(0, 0, math.rad(90)), color, material, Cyl)
+	end
+	local kind = look.head
+	if kind == "straw" then
+		-- 삿갓: 넓은 챙과 뾰족한 꼭대기
+		cap("HatBrim", 1.45, 0.12, hs.Y * 0.42, look.cloth or STRAW, Enum.Material.Fabric)
+		cap("HatCrown", 0.62, hs.Y * 0.3, hs.Y * 0.58, look.cloth or STRAW, Enum.Material.Fabric)
+		cap("HatTop", 0.32, hs.Y * 0.2, hs.Y * 0.8, (look.cloth or STRAW):Lerp(Color3.new(0, 0, 0), 0.15), Enum.Material.Fabric)
+	elseif kind == "bandana" then
+		-- 두건: 머리 위를 감싸고 뒤로 매듭
+		cap("Bandana", 0.54, hs.Y * 0.32, hs.Y * 0.3, cloth)
+		wear(model, "Head", "BandanaKnot", Vector3.new(hs.X * 0.18, hs.Y * 0.18, hs.Z * 0.16), CFrame.new(0, hs.Y * 0.22, hs.Z * 0.55), cloth)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "BandanaTail", Vector3.new(hs.X * 0.1, hs.Y * 0.45, hs.Z * 0.05), CFrame.new(x * hs.X * 0.08, -hs.Y * 0.05, hs.Z * 0.6) * CFrame.Angles(math.rad(15), 0, x * math.rad(12)), cloth)
+		end
+	elseif kind == "hood" then
+		-- 두건 겉옷: 뒤로 물린 둥근 두건 (얼굴은 드러난다)
+		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.16, hs.Y * 1.14, hs.Z * 1.12), CFrame.new(0, hs.Y * 0.08, hs.Z * 0.14), cloth, Enum.Material.Fabric, Ball)
+		wear(model, "UpperTorso", "HoodDrape", Vector3.new(2.0, 0.5, 1.2), CFrame.new(0, 0.85, 0.1), cloth)
+	elseif kind == "helmet" then
+		-- 투구: 머리 윗부분을 덮는 쇠 모자, 테, 코 가리개
+		local metal = look.metal or IRON
+		cap("Helmet", 0.56, hs.Y * 0.42, hs.Y * 0.28, metal, Enum.Material.Metal)
+		cap("HelmetTop", 0.4, hs.Y * 0.18, hs.Y * 0.56, metal:Lerp(Color3.new(1, 1, 1), 0.15), Enum.Material.Metal)
+		cap("HelmetRim", 0.6, hs.Y * 0.08, hs.Y * 0.1, metal:Lerp(Color3.new(0, 0, 0), 0.3), Enum.Material.Metal)
+		wear(model, "Head", "NoseGuard", Vector3.new(hs.X * 0.08, hs.Y * 0.3, hs.Z * 0.06), CFrame.new(0, 0, -hs.Z * 0.56), metal, Enum.Material.Metal)
+		if look.plume then
+			wear(model, "Head", "Plume", Vector3.new(hs.X * 0.12, hs.Y * 0.5, hs.Z * 0.6), CFrame.new(0, hs.Y * 0.85, hs.Z * 0.05), look.plume)
+		end
+	elseif kind == "topknot" then
+		-- 상투: 머리를 덮는 머리칼과 정수리의 상투
+		local hair = look.hair or DARK_HAIR
+		cap("Hair", 0.53, hs.Y * 0.3, hs.Y * 0.3, hair, Enum.Material.SmoothPlastic)
+		wear(model, "Head", "HairBack", Vector3.new(hs.X * 0.95, hs.Y * 0.55, hs.Z * 0.2), CFrame.new(0, hs.Y * 0.1, hs.Z * 0.44), hair, Enum.Material.SmoothPlastic)
+		wear(model, "Head", "Topknot", Vector3.new(hs.X * 0.3, hs.X * 0.3, hs.X * 0.3), CFrame.new(0, hs.Y * 0.58, hs.Z * 0.05), hair, Enum.Material.SmoothPlastic, Ball)
+	elseif kind == "horns" then
+		-- 뿔 둘 (마귀)
+		local hornColor = look.hair or Color3.fromRGB(30, 25, 25)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "Horn", Vector3.new(hs.X * 0.12, hs.Y * 0.5, hs.X * 0.12), CFrame.new(x * hs.X * 0.3, hs.Y * 0.62, -hs.Z * 0.05) * CFrame.Angles(0, 0, -x * math.rad(25)), hornColor, Enum.Material.SmoothPlastic)
+		end
+	elseif kind == "wrap" then
+		-- 천으로 머리 전체를 감았다 (눈만 드러난다)
+		wear(model, "Head", "Wrap", Vector3.new(hs.X * 1.06, hs.Y * 1.04, hs.Z * 1.06), CFrame.new(0, hs.Y * 0.02, 0), cloth, Enum.Material.Fabric, Ball)
+		for k = -1, 1 do
+			cap("WrapBand", 0.54, hs.Y * 0.06, k * hs.Y * 0.22, cloth:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Fabric)
+		end
+	elseif kind == "golem" then
+		cap("StoneCrown", 0.5, hs.Y * 0.2, hs.Y * 0.4, Color3.fromRGB(100, 96, 90), Enum.Material.Slate)
+	end
+	if look.crown then
+		-- 관: 머리 위 금빛 테와 세 개의 뾰족한 장식
+		cap("Crown", 0.5, hs.Y * 0.14, hs.Y * 0.62, look.crown, Enum.Material.Metal)
+		for k = -1, 1 do
+			wear(model, "Head", "CrownSpike", Vector3.new(hs.X * 0.08, hs.Y * 0.28, hs.X * 0.08), CFrame.new(k * hs.X * 0.22, hs.Y * 0.8, -hs.Z * 0.35), look.crown, Enum.Material.Metal)
+		end
+	end
+	-- 복면 (코 아래를 가린다)
+	if look.mask then
+		wear(model, "Head", "Mask", Vector3.new(hs.X * 0.92, hs.Y * 0.38, hs.Z * 0.5), CFrame.new(0, -hs.Y * 0.24, -hs.Z * 0.3), look.mask)
+	end
+	-- 수염
+	if look.beard then
+		local bc = look.beard == "white" and WHITE_HAIR or (look.hair or DARK_HAIR)
+		local long = look.beard ~= "stubble"
+		wear(model, "Head", "Beard", Vector3.new(hs.X * 0.62, hs.Y * (long and 0.42 or 0.16), hs.Z * 0.22), CFrame.new(0, -hs.Y * (long and 0.5 or 0.38), -hs.Z * 0.42), bc, Enum.Material.SmoothPlastic)
+	end
+	face(model, head, look)
+	-- 옷: 허리띠는 모두, 갑옷·도포는 정해진 적만
+	wear(model, "LowerTorso", "Belt", Vector3.new(2.06, 0.32, 1.08), CFrame.new(0, 0.05, 0), Color3.fromRGB(55, 40, 28), Enum.Material.Fabric)
+	if look.armor then
+		local metal = look.metal or IRON
+		wear(model, "UpperTorso", "ChestPlate", Vector3.new(1.9, 1.2, 0.18), CFrame.new(0, 0.15, -0.55), metal, Enum.Material.Metal)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "UpperTorso", "Pauldron", Vector3.new(1.2, 0.42, 1.25), CFrame.new(x * 1.12, 0.7, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), metal, Enum.Material.Metal)
+		end
+	end
+	if look.robe then
+		for _, z in ipairs({ -1, 1 }) do
+			wear(model, "LowerTorso", "RobePanel", Vector3.new(2.05, 2.2, 0.16), CFrame.new(0, -1.25, z * 0.55), look.robe)
+		end
+	end
+	if look.wrap then
+		wear(model, "UpperTorso", "WrapSash", Vector3.new(0.4, 2.2, 1.1), CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(35)), Color3.fromRGB(215, 195, 150))
+	end
+	-- 돌·용암 몸: 살갗을 돌결로
+	if look.stone then
+		for _, d in ipairs(model:GetChildren()) do
+			if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and (d.Color == look.skin) then
+				d.Material = Enum.Material.Slate
+			end
+		end
+	end
+end
 
 local function dressMaster(model: Model, style: any)
 	local robe = style.color:Lerp(Color3.new(0, 0, 0), 0.35)

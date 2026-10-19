@@ -14,6 +14,7 @@ local UI = require(script:WaitForChild("UI"))
 local Ults = require(script:WaitForChild("Ults"))
 local Cutscene = require(script:WaitForChild("Cutscene"))
 local Music = require(script:WaitForChild("Music"))
+local Gacha = require(script:WaitForChild("Gacha"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -378,13 +379,22 @@ local function foes(): { Model }
 			end
 		end
 	end
+	-- 사람: 비무대 위끼리, 또는 둘 다 안전한 곳 밖이고 PvP를 켠 사이
 	local me = myRoot()
-	if me and onRing(me.Position) then
-		for _, p in ipairs(Players:GetPlayers()) do
-			local c = p.Character
-			local r = c and c:FindFirstChild("HumanoidRootPart")
-			if p ~= player and c and r and r:IsA("BasePart") and onRing(r.Position) and c:GetAttribute("Dead") ~= true then
-				table.insert(list, c)
+	local myChar0 = player.Character
+	if me and myChar0 then
+		local meRing = onRing(me.Position)
+		local meField = not Config.inSafe(me.Position) and myChar0:GetAttribute("PvpOff") ~= true
+		if meRing or meField then
+			for _, p in ipairs(Players:GetPlayers()) do
+				local c = p.Character
+				local r = c and c:FindFirstChild("HumanoidRootPart")
+				if p ~= player and c and r and r:IsA("BasePart") and c:GetAttribute("Dead") ~= true then
+					local ok = (meRing and onRing(r.Position)) or (meField and not Config.inSafe(r.Position) and c:GetAttribute("PvpOff") ~= true)
+					if ok then
+						table.insert(list, c)
+					end
+				end
 			end
 		end
 	end
@@ -949,7 +959,7 @@ local doEmote: (string) -> () = function(_id: string) end
 -- 입력
 ------------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-	if processed or Cutscene.active then
+	if processed or Cutscene.active or Gacha.active then
 		return
 	end
 	local t = input.UserInputType
@@ -1842,7 +1852,7 @@ function handlers.afterimage(m: Model)
 end
 
 function handlers.duel(data: any)
-	UI.toast(string.format("⚔ 비무대: %s 승, %s 패", data.winner, data.loser))
+	UI.toast(string.format("⚔ %s: %s 승, %s 패", data.ring == false and "들판 PvP" or "비무대", data.winner, data.loser))
 end
 
 function handlers.realm(data: any)

@@ -57,6 +57,8 @@ type Profile = {
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
 	seen: { [string]: boolean }, -- 본 장면 (컷씬)
+	pvpUnlocked: boolean?, -- 한 번 쓰러진 뒤: PvP를 끌 수 있다
+	pvpOff: boolean?, -- 들판 PvP 끔
 }
 
 local function defaultProfile(): Profile
@@ -170,6 +172,8 @@ local function sanitize(data: any): Profile
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
+	p.pvpUnlocked = data.pvpUnlocked == true or nil
+	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
 		return i ~= nil and Config.Realms[i] ~= nil
@@ -419,6 +423,8 @@ local function pushState(player: Player)
 		towerBest = p.towerBest,
 		manualCd = Calc.manualBonus(p).cd,
 		seen = p.seen,
+		pvpUnlocked = p.pvpUnlocked == true,
+		pvpOff = p.pvpOff == true,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -952,6 +958,15 @@ Combat.init(Push, {
 			Trial.ended(player, false)
 			Gate.ended(player, false)
 			Tower.ended(player, "dead")
+			-- 처음 쓰러지면: 이제부터 들판 PvP를 스스로 끌 수 있다
+			local dp = profiles[player]
+			if dp and not dp.pvpUnlocked and Config.PVP.offAfterDeath then
+				dp.pvpUnlocked = true
+				states[player].dirty = true
+				Push:FireClient(player, "dialog", { who = "⚔ 들판 PvP", title = "PvP를 끌 수 있게 됐다",
+					text = "마을과 사당 같은 안전한 곳 밖에서는 사람끼리도 싸운다. 한 번 쓰러졌으니 이제 원하면 PvP를 끌 수 있다. (화면 위의 ⚔ PvP 버튼)" })
+				pushState(player)
+			end
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
 			-- 비무대에서 이기면 기록
@@ -960,7 +975,7 @@ Combat.init(Push, {
 				local wp = profiles[winner]
 				wp.pvpWins += 1
 				states[winner].dirty = true
-				Push:FireAllClients("duel", { winner = winner.DisplayName, loser = player.DisplayName })
+				Push:FireAllClients("duel", { winner = winner.DisplayName, loser = player.DisplayName, ring = Combat.onRing(f.root.Position) })
 				-- 비무 백 승: 무쌍신권
 				local PS = Config.PVP_STYLE
 				if wp.pvpWins >= PS.wins and not wp.styles[PS.style] then
@@ -1710,8 +1725,8 @@ function Tower.next(player: Player, run: any)
 				table.insert(list, { pool[math.random(#pool)], false })
 			end
 		end
-		-- 층의 세기는 도전자의 전투력에 맞춘다 (위로 갈수록 점점 넘어선다)
-		local want = ((f :: any).power or 100) * (T.powerBase + T.powerPer * floor)
+		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
+		local want = T.powerStart * T.powerGrowth ^ (floor - 1)
 		for i, item in ipairs(list) do
 			local a = i / #list * math.pi * 2
 			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
@@ -1720,9 +1735,9 @@ function Tower.next(player: Player, run: any)
 				local ef = e.f :: any
 				ef.towerOwner = player
 				ef.trialOwner = player
-				local w = want * (item[2] and 1.15 or 1)
+				local w = want * (item[2] and T.bossPower or 1)
 				local k = w / math.max(1, ef.power or 100)
-				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (1 + T.hpPer * floor) * (item[2] and 2.5 or 1)))
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1)))
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
@@ -1816,7 +1831,8 @@ local Manual = {}
 local function rollRarity(p: Profile): number
 	local D = Config.MANUAL_DRAW
 	if p.pity + 1 >= D.pity then
-		return math.random() < 0.1 and 5 or 4
+		local r = math.random()
+		return r < 0.02 and 6 or (r < 0.12 and 5 or 4)
 	end
 	local r, acc = math.random(), 0
 	for i, R in ipairs(Config.MANUAL_RARITY) do
@@ -2142,6 +2158,9 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		else
 			toast(player, "천층탑 안에서 쓰세요")
 		end
+	elseif action == "testPvpUnlock" then
+		p.pvpUnlocked = true
+		toast(player, "⚔ PvP 끄기를 열었어요")
 	elseif action == "testSeen" then
 		p.seen = {}
 		toast(player, "🎬 컷씬 기록을 지웠어요")
@@ -2382,6 +2401,29 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "gate" then
 		Gate.start(player)
+	elseif action == "pvpToggle" then
+		-- 들판 PvP 켜기·끄기 (한 번 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
+		local f = Combat.fighterOfPlayer(player)
+		if not p.pvpUnlocked then
+			toast(player, "⚔ 한 번 쓰러진 뒤부터 PvP를 끌 수 있어요")
+			return
+		end
+		if f and f.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 PvP를 바꿀 수 없어요")
+			return
+		end
+		if t - ((st :: any).pvpAt or -999) < Config.PVP.toggleCooldown then
+			toast(player, string.format("⚔ %d초 뒤에 다시 바꿀 수 있어요", math.ceil(Config.PVP.toggleCooldown - (t - (st :: any).pvpAt))))
+			return
+		end
+		;(st :: any).pvpAt = t
+		p.pvpOff = not p.pvpOff or nil
+		st.dirty = true
+		if f then
+			f.model:SetAttribute("PvpOff", p.pvpOff == true)
+		end
+		toast(player, p.pvpOff and "🕊 들판 PvP를 껐어요 (비무대는 그대로)" or "⚔ 들판 PvP를 켰어요")
+		pushState(player)
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
 	elseif action == "manualDraw" then
@@ -2759,6 +2801,7 @@ local function setupCharacter(player: Player, char: Model)
 	if TEST_INF[player] then
 		char:SetAttribute("TestInf", true)
 	end
+	char:SetAttribute("PvpOff", p.pvpOff == true)
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
 	char.AncestryChanged:Connect(function()
