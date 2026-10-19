@@ -1,14 +1,14 @@
 {
   "name": "스틸링고 東京物語",
   "short_name": "東京物語",
-  "description": "기획과 구성 by 곤사마 · 자정에만 불이 켜지는 도쿄 골목 식당. 말 한마디로 갈라지는 분기형 이야기, 엔딩 18개. 한국어편·초급편·상급편",
+  "description": "기획과 구성 by 곤사마 · 열 살 안내인 하루토와 걷는 도쿄 사흘. 아사쿠사·스카이트리·긴자·메이지신궁·오모테산도·시부야·다이칸야마·롯폰기·도쿄타워. 말 한마디로 갈라지는 분기형 이야기, 엔딩 18개. 한국어편·초급편·상급편",
   "id": "/steel-lingo/tokyo-monogatari/",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#eef0f4",
-  "theme_color": "#23356b",
+  "background_color": "#f6f1ec",
+  "theme_color": "#c2410c",
   "lang": "ko",
   "categories": [
     "education",

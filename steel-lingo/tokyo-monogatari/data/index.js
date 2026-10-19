@@ -8,7 +8,7 @@ self.SH_APP = {
   titleText: "東京物語",
   titleHTML: "<ruby>東京<rt>とうきょう</rt></ruby><ruby>物語<rt>ものがたり</rt></ruby>",
   titleKo: "도쿄 이야기",
-  tagline: "여행편 ② 열 살 안내인과 걷는 도쿄 2박 3일",
+  tagline: "여행편 ② 열 살 안내인과 걷는 도쿄 사흘",
   from: "SEL",
   to: "TYO",
   passenger: "金リンゴ / 休暇中",
@@ -18,7 +18,7 @@ self.SH_APP = {
   noteKo: "여행 노트",
   mapTitle: "旅のしおり",
   mapKo: "여행 일정표",
-  itin: "ITINERARY · 2박 3일",
+  itin: "ITINERARY · 3박 4일 중 사흘",
   mascotLabel: "여행 가는 코일 마스코트"
 };
 
