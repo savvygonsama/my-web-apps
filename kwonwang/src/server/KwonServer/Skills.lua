@@ -97,7 +97,7 @@ function Skills.run(f: any, move: any, ctx: any)
 	local sp = ctx.speed or 1
 	-- 오의(G)는 모두 한층 더 세다
 	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
-	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT or 1)
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean
@@ -778,6 +778,27 @@ function Skills.run(f: any, move: any, ctx: any)
 					end
 					strike(f, o, scaled(m.final, sc), move)
 				end
+			end
+		end)
+	elseif kind == "arena" then
+		-- 천하무쌍: 빛의 울타리 안에 가두고 한가운데로 끌어당겨 여러 번 몰아친 뒤, 마지막 한 주먹
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "arena", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, strikes = m.strikeCount, every = m.every / sp, finalAt = m.finalAt / sp, style = style })
+		after(m.delay * 0.5, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				pullTo(o, center + look * 4, 110)
+			end
+		end)
+		for i = 0, m.strikeCount - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.strikeRadius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.strikeRadius + 4)) do
+				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "trail" then

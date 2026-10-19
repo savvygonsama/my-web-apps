@@ -410,7 +410,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -826,6 +826,153 @@ local function buildShop()
 	end
 end
 
+------------------------------------------------------------------------
+-- 심법 (내공 수련서): 뽑기, 세 칸에 끼우기
+------------------------------------------------------------------------
+local function hex(c: Color3): string
+	return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+end
+local function manualLine(id: string, r: number): string
+	local m = Config.MANUAL_BY_ID[id]
+	local R = Config.MANUAL_RARITY[r]
+	if not m or not R then
+		return ""
+	end
+	return string.format('%s <font color="%s"><b>[%s] %s</b></font>  %s %.1f%%', m.icon, hex(R.color), R.name, m.name, m.desc, Config.manualValue(id, r) * 100)
+end
+local lastDraw: { any }? = nil
+local function buildManuals()
+	local page = makePage("manuals")
+	local D = Config.MANUAL_DRAW
+	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -168, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 1번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(150, 100, 40) }, function()
+		Request:FireServer("manualDraw", 1)
+	end).Parent = page
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 10번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(190, 120, 30) }, function()
+		Request:FireServer("manualDraw", 10)
+	end).Parent = page
+	-- 끼운 세 칸
+	local slotRow = new("Frame", { Position = UDim2.new(0, 0, 0, 58), Size = UDim2.new(1, 0, 0, 74), BackgroundTransparency = 1, Parent = page })
+	new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 1, 0), CellPadding = UDim2.new(0, 8, 0, 0), Parent = slotRow })
+	local slots = {}
+	for i = 1, D.slots do
+		local card = new("Frame", { BackgroundColor3 = C.panel2, Parent = slotRow }, { corner(10), stroke(C.line, 1.5) })
+		local l = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 1, -8), TextSize = 15, RichText = true, Text = "", Parent = card })
+		local b = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -6, 1, -6), Size = UDim2.new(0, 60, 0, 26), Text = "빼기", TextSize = 13, BackgroundColor3 = C.panel, Parent = card }, function()
+			local id = state and state.equip and state.equip[i]
+			if id then
+				Request:FireServer("manualUnequip", id)
+			end
+		end)
+		slots[i] = { card = card, label = l, btn = b }
+	end
+	local result = text({ Position = UDim2.new(0, 0, 0, 138), Size = UDim2.new(1, 0, 0, 60), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Text = "", Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -228), UDim2.new(0, 0, 0, 202))
+	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
+	local rows = {}
+	for _, m in ipairs(Config.MANUALS) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 44), BackgroundColor3 = C.panel, Parent = list }, { corner(8), stroke(C.line, 1) })
+		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -130, 1, 0), TextSize = 15, RichText = true, Parent = row })
+		local b = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 100, 0, 32), Text = "끼우기", TextSize = 14, Parent = row }, function()
+			if not state or not state.manuals or not state.manuals[m.id] then
+				return
+			end
+			Request:FireServer(table.find(state.equip or {}, m.id) and "manualUnequip" or "manualEquip", m.id)
+		end)
+		rows[m.id] = { label = l, btn = b }
+	end
+	local rates = {}
+	for _, R in ipairs(Config.MANUAL_RARITY) do
+		table.insert(rates, string.format('<font color="%s">%s %s%%</font>', hex(R.color), R.name, tostring(R.rate * 100)))
+	end
+	text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 22), TextSize = 13, RichText = true, TextColor3 = C.dim, Text = "확률: " .. table.concat(rates, " · ") .. string.format("  ·  %d번 안에 전설 이상이 한 번은 나온다", D.pity), Parent = page })
+	refreshers.manuals = function()
+		if not state then
+			return
+		end
+		head.Text = string.format("📜 두루마리 <b>%d</b>개  ·  천장 %d / %d\n<font color=\"#C8B9A5\">뽑기 한 번 = 두루마리 하나 (없으면 💰 %s). 보스·천층탑에서 두루마리를 얻는다</font>", state.scrolls or 0, state.pity or 0, D.pity, Config.formatNumber(D.coins))
+		local equip = state.equip or {}
+		for i, sl in ipairs(slots) do
+			local id = equip[i]
+			local r = id and state.manuals and state.manuals[id]
+			sl.label.Text = (id and r) and (string.format("<b>%d칸</b>\n", i) .. manualLine(id, r)) or string.format('<b>%d칸</b>\n<font color="#9A8C7A">비어 있음 (아래에서 끼우기)</font>', i)
+			sl.btn.Visible = id ~= nil
+		end
+		for _, m in ipairs(Config.MANUALS) do
+			local row = rows[m.id]
+			local r = state.manuals and state.manuals[m.id]
+			if r then
+				row.label.Text = manualLine(m.id, r)
+				local on = table.find(equip, m.id) ~= nil
+				row.btn.Visible = true
+				row.btn.Text = on and "✅ 빼기" or "끼우기"
+				row.btn.BackgroundColor3 = on and Color3.fromRGB(60, 120, 70) or C.panel2
+			else
+				row.label.Text = string.format('<font color="#8A7C6A">%s %s · %s (아직 없음)</font>', m.icon, m.name, m.desc)
+				row.btn.Visible = false
+			end
+		end
+		if lastDraw then
+			local parts = {}
+			for _, res in ipairs(lastDraw) do
+				local m = Config.MANUAL_BY_ID[res.id]
+				local R = Config.MANUAL_RARITY[res.r]
+				if m and R then
+					table.insert(parts, string.format('<font color="%s">[%s] %s</font>%s', hex(R.color), R.name, m.name, res.refund and string.format(" (💰+%s)", Config.formatNumber(res.refund)) or (res.up and " ⬆" or " ✨새로")))
+				end
+			end
+			result.Text = "<b>뽑은 것:</b> " .. table.concat(parts, "  ·  ")
+		end
+	end
+end
+
+function UI.manualReveal(results: { any })
+	lastDraw = results
+	local best = 1
+	for _, res in ipairs(results) do
+		best = math.max(best, res.r or 1)
+	end
+	if not window.Visible or current ~= "manuals" then
+		UI.openPage("manuals")
+	elseif refreshers.manuals then
+		refreshers.manuals()
+	end
+	if best >= 4 then
+		local R = Config.MANUAL_RARITY[best]
+		for _, res in ipairs(results) do
+			if res.r == best then
+				local m = Config.MANUAL_BY_ID[res.id]
+				UI.banner(string.format("✨ [%s] %s", R.name, m and m.name or ""), m and m.desc or nil, R.color)
+				break
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 지금 층과 나가기
+------------------------------------------------------------------------
+local towerFrame: Frame? = nil
+local towerLabel: TextLabel? = nil
+UI.towerActive = false
+function UI.setTower(data: any?)
+	UI.towerActive = data ~= nil
+	if not towerFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.new(0, 420, 0, 46), BackgroundColor3 = Color3.fromRGB(20, 14, 10), BackgroundTransparency = 0.2, Visible = false, Parent = gui }, { corner(10), stroke(C.gold, 1.5) })
+		scaled(f)
+		towerLabel = text({ Position = UDim2.new(0, 14, 0, 0), Size = UDim2.new(1, -120, 1, 0), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = f })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 96, 0, 32), Text = "🚪 나가기", TextSize = 15, BackgroundColor3 = C.red, Parent = f }, function()
+			Request:FireServer("towerLeave")
+		end)
+		towerFrame = f
+	end
+	local f = towerFrame :: Frame
+	f.Visible = data ~= nil
+	if data and towerLabel then
+		towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+	end
+end
+
 local function buildHelp()
 	local page = makePage("help")
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
@@ -968,6 +1115,11 @@ local function buildTest()
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
+	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
+		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
+		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
+		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
+	})
 	section("🎯 수련 목인·시간", {
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
 		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
@@ -1007,6 +1159,7 @@ local function buildTest()
 		mugeuk = "강호 곳곳의 비급 조각 다섯을 모두 줍는다 (지도에 안 나온다). 자리: ",
 		hyeolma = "북동쪽 끝 혈교 본산의 보스 '혈마'를 쓰러뜨리면 바로 얻는다",
 		pacheon = "북서쪽 끝 허공 균열의 보스 '천마'를 쓰러뜨리면 바로 얻는다",
+		musang = "마을 비무대에서 다른 사람을 백 번 이기면 바로 얻는다 (비무 승리는 능력치 창과 순위표에 나온다)",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]
@@ -1716,7 +1869,12 @@ local function regionAt(pos: Vector3): any
 	end
 	return best
 end
+UI.regionAt = regionAt
 local function ambientTick(pos: Vector3)
+	-- 하늘의 천층탑 시련장에서는 땅의 이름을 알리지 않는다
+	if pos.Y > 1000 then
+		return
+	end
 	local r = regionAt(pos)
 	local id = r and r.id or "wild"
 	if id ~= regionNow then
@@ -1888,7 +2046,7 @@ function UI.init(req: RemoteEvent)
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 430), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 18, Parent = menu }, function()
 			if item[1] == "map" then
 				UI.toggleMap()
@@ -1960,6 +2118,7 @@ function UI.init(req: RemoteEvent)
 	buildStyles()
 	buildStats()
 	buildShop()
+	buildManuals()
 	buildHelp()
 	buildTrainGuide()
 	buildTest()

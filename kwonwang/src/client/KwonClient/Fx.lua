@@ -444,6 +444,26 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(shard, 0.55)
 		end
 		Fx.ring(pos, c, 1, 11 * s, 0.35, dir)
+	elseif style.fx == "duel" then
+		-- 무쌍: 맞은 자리에 붉은 십자 베기와 하얀 섬광 (군더더기 없이 날카롭게)
+		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
+		for _, sgn in ipairs({ 1, -1 }) do
+			local bar = piece(Vector3.new(0.35, 0.35, 0.35), sgn > 0 and c or c2, Enum.Material.Neon, nil, 0)
+			bar.CFrame = face * CFrame.Angles(0, 0, sgn * math.rad(45)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.16, { Size = Vector3.new(0.12, 0.12, (heavy and 11 or 7) * s) })
+			task.delay(0.16, function()
+				if bar.Parent then
+					tween(bar, 0.14, { Transparency = 1 })
+				end
+			end)
+			Debris:AddItem(bar, 0.32)
+		end
+		Fx.ring(pos, c2, 1, (heavy and 12 or 8) * s, 0.22, dir)
+		if heavy then
+			Fx.ring(pos, c, 2, 16 * s, 0.32, dir)
+			Fx.burst("spark", pos, c2, 14, 1.2)
+		end
+		Fx.flash(pos, c, 14 * s, 3, 0.2)
 	elseif style.fx == "fire" then
 		-- 열화: 불덩이가 터지고 불씨가 솟는다
 		local ball = piece(Vector3.new(2, 2, 2) * s, Color3.fromRGB(255, 200, 90), Enum.Material.Neon, Enum.PartType.Ball, 0.1)
@@ -1222,6 +1242,13 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c, 1, 12, 0.3, look)
 		end
+	elseif kind == "duel" then
+		-- 무쌍: 곧은 하얀 일직선 끝에 붉은 날
+		streak(base + look * 1.5, base + look * (7 * s), c2, 0.22, 0.12)
+		streak(base + look * 1.5 + up * 0.2, base + look * (6 * s), c, 0.12, 0.16)
+		if heavy then
+			Fx.ring(base + look * 5, c, 1, 11, 0.22, look)
+		end
 	elseif kind == "fire" then
 		-- 열화: 주먹을 따라 휘어지는 불길 세 가닥
 		for i = -1, 1 do
@@ -1316,6 +1343,7 @@ local HAND_FX = {
 	ocean = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.2, life = 0.7, size = 0.45 },
 	time = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.6, life = 1.4, size = 0.35 },
 	fire = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.5, size = 0.6 },
+	duel = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 3, life = 0.35, size = 0.4 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do

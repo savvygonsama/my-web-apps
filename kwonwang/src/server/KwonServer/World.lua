@@ -515,7 +515,7 @@ local function village(out: any)
 	f.Name = "Village"
 	f.Parent = folder
 	-- 마을 성벽 (높은 흰 돌담, 돌 갓, 성가퀴) 네 방향 입구
-	local R = 175
+	local R = 235
 	for _, side in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
 		for _, seg in ipairs({ -1, 1 }) do
 			local len = R - 14
@@ -585,7 +585,7 @@ local function village(out: any)
 	e.Lifetime = NumberRange.new(0.8, 1.2)
 	e.Parent = spray
 	-- 큰길의 쇠 등기둥 (따뜻한 빛)
-	for _, z in ipairs({ -160, -135, -85, -40, 20, 140, 160 }) do
+	for _, z in ipairs({ -215, -185, -160, -135, -85, -40, 20, 140, 160, 190, 215 }) do
 		for _, sx in ipairs({ -1, 1 }) do
 			local p = Vector3.new(sx * 13, 0, z)
 			part({ Name = "LampPost", Size = Vector3.new(0.6, 10, 0.6), Position = p + Vector3.new(0, 5, 0), Color = IRON, Material = Enum.Material.Metal, Parent = f })
@@ -600,6 +600,9 @@ local function village(out: any)
 		{ -130, -140 }, { -90, -150 }, { 90, -150 }, { 130, -140 },
 		{ -145, -60 }, { -145, 40 }, { -145, 120 }, { 145, -60 }, { 145, 40 }, { 145, 120 },
 		{ -100, 150 }, { -50, 155 }, { 50, 155 }, { 100, 150 },
+		-- 넓힌 마을의 바깥 둘레
+		{ -205, -40 }, { -205, 50 }, { -205, 140 }, { 205, -40 }, { 205, 50 }, { 205, 140 },
+		{ -120, 205 }, { -60, 210 }, { 60, 210 }, { 120, 205 },
 	}
 	for _, s in ipairs(spots) do
 		local x, z = s[1], s[2]
@@ -672,6 +675,83 @@ local function village(out: any)
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
 	out.inn = prompt(innDesk, "쉬기", "객잔 · 체력·내공 채우기", "Inn")
+
+	-- 천층탑 입구 (북서쪽 모퉁이): 층마다 좁아지는 칠층 탑, 문은 마을 가운데를 본다
+	local tAt = Config.TOWER.enter
+	local tcf = CFrame.lookAt(tAt, Vector3.new(0, 0, 0))
+	part({ Name = "TowerPlinth", Size = Vector3.new(30, 2, 30), CFrame = tcf * CFrame.new(0, 1, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = f })
+	local y, w = 2, 22
+	for i = 1, 7 do
+		local h = i == 1 and 12 or 8
+		part({ Name = "TowerStorey", Size = Vector3.new(w, h, w), CFrame = tcf * CFrame.new(0, y + h / 2, 0), Color = Color3.fromRGB(225, 215, 195), Material = Enum.Material.Plaster, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "TowerPost", Size = Vector3.new(1.2, h, 1.2), CFrame = tcf * CFrame.new(sx * w / 2, y + h / 2, sz * w / 2), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		-- 층마다 빛나는 창과 내민 처마
+		for k = 0, 3 do
+			part({ Name = "TowerWindow", Size = Vector3.new(2.4, h * 0.45, 0.3), CFrame = tcf * CFrame.Angles(0, k * math.pi / 2, 0) * CFrame.new(0, y + h * 0.55, -w / 2 - 0.1), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		part({ Name = "TowerEave", Size = Vector3.new(w + 6, 1, w + 6), CFrame = tcf * CFrame.new(0, y + h + 0.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "TowerEaveTrim", Size = Vector3.new(w + 6.4, 0.4, w + 6.4), CFrame = tcf * CFrame.new(0, y + h, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+		y += h + 1
+		w -= 2.4
+	end
+	disc("TowerFinial", tAt + Vector3.new(0, y + 4, 0), 0.6, 8, GOLD, Enum.Material.Metal, f)
+	crystal(tAt + Vector3.new(0, y + 10, 0), 3, Color3.fromRGB(255, 190, 90), f)
+	local tDoor = part({ Name = "TowerDoor", Size = Vector3.new(6, 9, 0.6), CFrame = tcf * CFrame.new(0, 6.5, -11.2), Color = Color3.fromRGB(60, 35, 25), Material = Enum.Material.WoodPlanks, Parent = f })
+	local tBoard = part({ Name = "TowerSign", Size = Vector3.new(12, 3, 0.4), CFrame = tcf * CFrame.new(0, 12.5, -11.5), Color = Color3.fromRGB(40, 25, 20), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(tBoard, Enum.NormalId.Front, { { "🗼 천층탑", GOLD, 1 } })
+	for _, sx in ipairs({ -1, 1 }) do
+		brazier((tcf * CFrame.new(sx * 6, 2, -15)).Position, 1, f)
+	end
+	out.tower = prompt(tDoor, "탑에 오르기", "천층탑", "TowerEnter")
+
+	-- 강호 순위표 (북동쪽 모퉁이): 세 개의 큰 판
+	local bAt = Vector3.new(185, 0, -185)
+	local toC = Vector3.new(-bAt.X, 0, -bAt.Z).Unit
+	local side = Vector3.new(-toC.Z, 0, toC.X)
+	part({ Name = "BoardPlinth", Size = Vector3.new(50, 1.2, 12), CFrame = CFrame.lookAt(bAt, bAt + toC) * CFrame.new(0, 0.6, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = f })
+	out.boards = {}
+	for i, b in ipairs({ { "realm", "🏯 강호 고수", "총 능력치" }, { "pvp", "⚔ 비무 승리", "비무대에서 이긴 수" }, { "tower", "🗼 천층탑", "오른 가장 높은 층" } }) do
+		local at = bAt + side * ((i - 2) * 16) + Vector3.new(0, 11, 0)
+		local cf = CFrame.lookAt(at, at + toC)
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "BoardPost", Size = Vector3.new(1.2, 21, 1.2), CFrame = cf * CFrame.new(sx * 7.2, -0.5, 0.4), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		end
+		part({ Name = "BoardRoof", Size = Vector3.new(17, 0.8, 3.4), CFrame = cf * CFrame.new(0, 10.3, 0.4), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		local lboard = part({ Name = "Leaderboard", Size = Vector3.new(14, 18, 0.6), CFrame = cf, Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, Parent = f })
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 30
+		gui.LightInfluence = 0.2
+		gui.Parent = lboard
+		local list = Instance.new("UIListLayout")
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = gui
+		local function row(name: string, text: string, h: number, color: Color3, order: number)
+			local l = Instance.new("TextLabel")
+			l.Name = name
+			l.LayoutOrder = order
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, h)
+			l.Font = Enum.Font.GothamBold
+			l.TextScaled = true
+			l.TextColor3 = color
+			l.TextStrokeTransparency = 0.5
+			l.Text = text
+			l.Parent = gui
+		end
+		row("Title", b[2], 0.1, GOLD, 0)
+		row("Sub", b[3], 0.05, Color3.fromRGB(200, 190, 170), 1)
+		for r = 1, 10 do
+			row("Row" .. r, "", 0.085, r == 1 and Color3.fromRGB(255, 215, 90) or r <= 3 and Color3.fromRGB(230, 230, 240) or Color3.fromRGB(210, 200, 185), 1 + r)
+		end
+		out.boards[b[1]] = gui
+	end
 end
 
 ------------------------------------------------------------------------
@@ -2516,7 +2596,7 @@ end
 ------------------------------------------------------------------------
 -- 정갈한 강호: 길가의 석등과 가로수, 지역마다 낮은 돌테두리와 길이 드는 곳의 문루
 ------------------------------------------------------------------------
-local VILLAGE_PAD = 200 -- 마을 성벽 둘레는 마을 것으로 둔다
+local VILLAGE_PAD = 260 -- 마을 성벽 둘레는 마을 것으로 둔다
 local function inAnyRegion(p: Vector3, pad: number): boolean
 	if math.abs(p.X) < VILLAGE_PAD + pad and math.abs(p.Z) < VILLAGE_PAD + pad then
 		return true
@@ -2723,6 +2803,43 @@ local function regionSigns()
 			local _ = post
 		end
 	end
+end
+
+------------------------------------------------------------------------
+-- 천층탑 시련장: 하늘에 뜬 둥근 단 (사람마다 한 자리, 처음 쓸 때 짓는다). 단의 윗면 가운데를 돌려준다
+------------------------------------------------------------------------
+local arenas: { [number]: Vector3 } = {}
+function World.towerArena(slot: number): Vector3
+	local T = Config.TOWER
+	local center = T.arena + Vector3.new((slot - 1) * T.slotGap, 0, 0)
+	if arenas[slot] then
+		return center
+	end
+	local f = Instance.new("Folder")
+	f.Name = "TowerArena" .. slot
+	f.Parent = folder
+	local R = T.radius
+	disc("ArenaFloor", center - Vector3.new(0, 2, 0), R, 4, Color3.fromRGB(165, 155, 140), Enum.Material.Slate, f)
+	disc("ArenaUnder", center - Vector3.new(0, 7, 0), R * 0.8, 6, STONE_DARK, Enum.Material.Granite, f)
+	disc("ArenaUnder2", center - Vector3.new(0, 13, 0), R * 0.5, 6, STONE_DARK, Enum.Material.Granite, f)
+	disc("ArenaRing", center + Vector3.new(0, 0.05, 0), R * 0.55, 0.2, Color3.fromRGB(200, 60, 50), Enum.Material.Fabric, f, false)
+	disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
+	disc("ArenaTrim", center - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, GOLD, Enum.Material.Metal, f)
+	-- 둘레의 낮은 난간과 여덟 기둥 (꼭대기에 불)
+	local n = 24
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * (R - 1), 1.5, math.sin(a) * (R - 1))
+		part({ Name = "ArenaRail", Size = Vector3.new(2 * math.pi * R / n + 0.4, 3, 1.2), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
+		part({ Name = "ArenaPillar", Size = Vector3.new(3, 16, 3), Position = p + Vector3.new(0, 8, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		brazier(p + Vector3.new(0, 16, 0), 1, f)
+	end
+	arenas[slot] = center
+	return center
 end
 
 function World.build(): any

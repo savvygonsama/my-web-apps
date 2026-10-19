@@ -296,6 +296,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		(f :: any).deflectMul = 0.45
 	end
 	;(f :: any).typeId = typeId
+	model:SetAttribute("TypeId", typeId)
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)

@@ -749,6 +749,40 @@ table.insert(Config.Styles, {
 			mech = { kind = "eruption", radius = 32, delay = 0.6, stagger = 0.08, pillar = hit(0, 0, 0, 48, 40, 0.8, 20, 30), finalAt = 1.7, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 60, 25) } },
 	},
 })
+-- 비무: 무쌍신권 (비무대에서 백 번 이긴 자에게). 사람을 이기기 위해 다듬어진 주먹
+table.insert(Config.Styles, {
+	id = "musang",
+	name = "무쌍신권",
+	hanja = "無雙神拳",
+	icon = "⚔",
+	color = Color3.fromRGB(230, 50, 60),
+	color2 = Color3.fromRGB(240, 240, 255),
+	fx = "duel",
+	grade = "신화",
+	hidden = true,
+	unlockHint = "비무대에서 백 번 이긴 자만이 강호 제일의 비무 권법을 얻는다",
+	desc = "비무대에서 백 번을 이긴 자의 주먹. 화려함 없이 오직 상대를 꺾는 데만 다듬어졌다. 적을 쓰러뜨릴 때마다 숨이 돌아온다.",
+	gimmick = "무쌍: 사람을 상대로 주는 피해 +20%. 적을 쓰러뜨릴 때마다 체력 10%와 내공 20을 되찾는다. 흘리기 판정이 넓다",
+	deflect = 0.3,
+	pvpDmg = 1.2,
+	killHeal = 0.1,
+	stance = "stance_duel",
+	combo = {
+		{ id = "ms1", name = "선수", pose = "jab_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4, 12, 12, 0.35, 6) } },
+		{ id = "ms2", name = "결수", pose = "punch_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4, 13, 13, 0.35, 8) } },
+		{ id = "ms3", name = "회선퇴", pose = "roundhouse", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5, 16, 18, 0.45, 20) } },
+		{ id = "ms4", name = "단수", pose = "uppercut", dur = 0.45, lunge = 3, hits = { hit(0.22, 6, 4.5, 22, 28, 0.6, 10, 30) } },
+	},
+	heavy = { id = "msH", name = "필살권", pose = "punch_r_heavy", dur = 0.6, lunge = 4, hits = { hit(0.28, 7, 5, 34, 50, 0.8, 50) } },
+	skills = {
+		E = { id = "msE", name = "일기당천", desc = "번개처럼 파고들며 앞의 적을 모두 베고 지나간다 (무적)", pose = "dash_strike", dur = 0.45, cd = 6, chi = 15, lunge = 24, iframes = 0.4,
+			hits = { hit(0.15, 6, 5, 24, 24, 0.5, 20) } },
+		R = { id = "msR", name = "무쌍난무", desc = "제자리에서 사방으로 주먹과 발을 퍼붓는다 (1.2초)", pose = "whirl", dur = 1.2, cd = 9, chi = 25,
+			mech = { kind = "zone", at = "self", radius = 10, dur = 1.2, every = 0.15, delay = 0.1, hit = hit(0, 0, 0, 7, 9, 0.3, 4), fx = "duel" } },
+		G = { id = "msG", name = "천하무쌍", desc = "빛의 울타리가 둘레를 가두고 모든 적을 한가운데로 끌어당긴다. 여덟 번 몰아친 뒤 마지막 한 주먹으로 하늘 높이 쳐올린다", pose = "ult_spin", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "arena", radius = 26, delay = 0.5, strikeCount = 8, every = 0.15, strikeRadius = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0), finalAt = 1.9, final = hit(0, 0, 0, 120, 150, 1.3, 20, 45) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -1024,6 +1058,7 @@ local FINISHERS = {
 	changhae = { name = "창해승천장", pose = "tidal_punch" },
 	yeonggeop = { name = "영겁승천각", pose = "rewind_kick" },
 	yeolhwa = { name = "열화승천권", pose = "blaze_punch" },
+	musang = { name = "무쌍승천권", pose = "uppercut" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -1035,7 +1070,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1341,18 +1376,18 @@ end
 -- 적은 근처에 사람이 있을 때만 움직인다
 ------------------------------------------------------------------------
 Config.Regions = {
-	{ id = "village", name = "청운 마을", center = Vector3.new(0, 0, 0), size = Vector3.new(360, 0, 360), ground = Color3.fromRGB(150, 135, 105), material = Enum.Material.Ground, safe = true },
-	{ id = "bamboo", name = "대나무 숲", center = Vector3.new(-420, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(95, 130, 70), material = Enum.Material.Grass,
+	{ id = "village", name = "청운 마을", center = Vector3.new(0, 0, 0), size = Vector3.new(480, 0, 480), ground = Color3.fromRGB(150, 135, 105), material = Enum.Material.Ground, safe = true },
+	{ id = "bamboo", name = "대나무 숲", center = Vector3.new(-480, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(95, 130, 70), material = Enum.Material.Grass,
 		camps = { { enemy = "bandit", count = 3, at = Vector3.new(-300, 0, 120) }, { enemy = "bandit", count = 2, at = Vector3.new(-330, 0, -110) }, { enemy = "spearman", count = 3, at = Vector3.new(-570, 0, -110) } } },
 	-- 먼 북쪽의 산적 소굴 (강한 적과 두목)
 	{ id = "fort", name = "흑호채 (산적 소굴)", center = Vector3.new(0, 0, -900), size = Vector3.new(440, 0, 480), ground = Color3.fromRGB(110, 90, 70), material = Enum.Material.Mud,
 		camps = { { enemy = "spearman", count = 3, at = Vector3.new(0, 0, -790) }, { enemy = "brute", count = 3, at = Vector3.new(90, 0, -880) }, { enemy = "ironguard", count = 2, at = Vector3.new(-90, 0, -880) } },
 		boss = { id = "heukho", at = Vector3.new(0, 0, -1020) } },
-	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(440, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
+	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(480, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
 		camps = { { enemy = "bandit", count = 3, at = Vector3.new(320, 0, 130) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, 120) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, -90) } } },
 	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
-	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 330), size = Vector3.new(340, 0, 260), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
-		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 300) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 340) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 420) } } },
+	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 400), size = Vector3.new(340, 0, 220), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
+		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 360) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 400) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 460) } } },
 	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
@@ -1458,7 +1493,7 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 Config.Story = {
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
-	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
+	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
@@ -1515,15 +1550,15 @@ Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 Config.WORLD_HALF = 3400 -- 세상 끝 (가운데에서). 바깥 여덟 땅까지
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
-	{ Vector3.new(-178, 0, 0), Vector3.new(-1000, 0, 0) },
-	{ Vector3.new(178, 0, 0), Vector3.new(560, 0, 0) },
-	{ Vector3.new(0, 0, -178), Vector3.new(0, 0, -740) },
-	{ Vector3.new(0, 0, 178), Vector3.new(0, 0, 640) },
-	{ Vector3.new(-178, 0, 0), Vector3.new(-260, 0, -60), Vector3.new(-650, 0, -560) },
-	{ Vector3.new(178, 0, 0), Vector3.new(260, 0, -60), Vector3.new(650, 0, -560) },
-	{ Vector3.new(0, 0, 178), Vector3.new(-90, 0, 230), Vector3.new(-600, 0, 600) },
-	{ Vector3.new(0, 0, 178), Vector3.new(90, 0, 230), Vector3.new(600, 0, 600) },
-	{ Vector3.new(178, 0, 0), Vector3.new(380, 0, -280), Vector3.new(890, 0, -280) },
+	{ Vector3.new(-238, 0, 0), Vector3.new(-1000, 0, 0) },
+	{ Vector3.new(238, 0, 0), Vector3.new(560, 0, 0) },
+	{ Vector3.new(0, 0, -238), Vector3.new(0, 0, -740) },
+	{ Vector3.new(0, 0, 238), Vector3.new(0, 0, 640) },
+	{ Vector3.new(-238, 0, 0), Vector3.new(-300, 0, -70), Vector3.new(-650, 0, -560) },
+	{ Vector3.new(238, 0, 0), Vector3.new(300, 0, -70), Vector3.new(650, 0, -560) },
+	{ Vector3.new(0, 0, 238), Vector3.new(-90, 0, 290), Vector3.new(-600, 0, 600) },
+	{ Vector3.new(0, 0, 238), Vector3.new(90, 0, 290), Vector3.new(600, 0, 600) },
+	{ Vector3.new(238, 0, 0), Vector3.new(400, 0, -280), Vector3.new(890, 0, -280) },
 	{ Vector3.new(600, 0, 600), Vector3.new(840, 0, 560), Vector3.new(960, 0, 900) },
 	-- 바깥 다섯 땅으로
 	{ Vector3.new(0, 0, -740), Vector3.new(260, 0, -720), Vector3.new(260, 0, -1250), Vector3.new(0, 0, -1380) },
@@ -1609,6 +1644,111 @@ for _, it in ipairs(Config.Shop) do
 	Config.SHOP_BY_ID[it.id] = it
 end
 Config.POTION_HEAL = 0.4
+
+------------------------------------------------------------------------
+-- 심법 (내공 수련서): 두루마리나 은자로 뽑는다. 세 칸에 끼우면 늘 효과가 있다
+-- 등급이 높을수록 효과가 크다. 같은 심법을 더 높은 등급으로 뽑으면 바뀌고, 낮거나 같으면 은자로 돌려받는다
+------------------------------------------------------------------------
+Config.MANUALS = {
+	{ id = "cheolgol", name = "철골공", icon = "🦴", stat = "hp", base = 0.04, desc = "최대 체력" },
+	{ id = "pagoe", name = "파괴심법", icon = "💥", stat = "dmg", base = 0.03, desc = "주는 피해" },
+	{ id = "hoche", name = "금강호체공", icon = "🛡", stat = "def", base = 0.025, desc = "받는 피해 감소" },
+	{ id = "hyeolgi", name = "혈기공", icon = "🩸", stat = "steal", base = 0.008, desc = "준 피해만큼 체력 회복" },
+	{ id = "jilpung", name = "질풍심법", icon = "🍃", stat = "speed", base = 0.025, desc = "이동 속도" },
+	{ id = "ungi", name = "운기심법", icon = "🌀", stat = "chi", base = 0.06, desc = "내공 회복" },
+	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.025, desc = "기술 대기 감소" },
+	{ id = "ohui", name = "오의심법", icon = "✴", stat = "ult", base = 0.05, desc = "오의 피해" },
+}
+Config.MANUAL_BY_ID = {}
+for _, m in ipairs(Config.MANUALS) do
+	Config.MANUAL_BY_ID[m.id] = m
+end
+-- 등급: rate = 뽑힐 확률, mult = 효과 배율
+Config.MANUAL_RARITY = {
+	{ name = "일반", rate = 0.55, mult = 1, color = Color3.fromRGB(200, 200, 200) },
+	{ name = "희귀", rate = 0.28, mult = 2, color = Color3.fromRGB(110, 190, 255) },
+	{ name = "영웅", rate = 0.12, mult = 3.5, color = Color3.fromRGB(200, 120, 255) },
+	{ name = "전설", rate = 0.045, mult = 5.5, color = Color3.fromRGB(255, 200, 80) },
+	{ name = "신화", rate = 0.005, mult = 8, color = Color3.fromRGB(255, 110, 90) },
+}
+-- 뽑기: 두루마리 하나 또는 은자. 60번 안에 전설 이상이 한 번은 나온다 (천장)
+Config.MANUAL_DRAW = { coins = 30000, pity = 60, slots = 3, refund = 4000 }
+function Config.manualValue(id: string, rarity: number): number
+	local m = Config.MANUAL_BY_ID[id]
+	local r = Config.MANUAL_RARITY[rarity]
+	return (m and r) and m.base * r.mult or 0
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 마을 북서쪽의 탑. 하늘의 시련장에서 한 층씩 오른다 (층마다 적이 세진다, 열 층마다 보스)
+------------------------------------------------------------------------
+Config.TOWER = {
+	enter = Vector3.new(-185, 0, -185), -- 마을 안 탑 입구
+	arena = Vector3.new(-1700, 1800, 1700), -- 첫 시련장 (사람마다 옆으로 비켜 놓는다)
+	slotGap = 360,
+	slots = 10,
+	radius = 46,
+	bossEvery = 10,
+	-- 층의 세기: 도전자 전투력 × (base + per × 층), 체력은 더 넉넉히
+	powerBase = 0.55,
+	powerPer = 0.012,
+	hpPer = 0.015,
+	coins = 60, -- 층마다 은자 (× 층)
+	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
+	bands = {
+		{ 1, { "thug", "bandit" } },
+		{ 6, { "bandit", "spearman", "brute" } },
+		{ 11, { "assassin", "brute", "ironguard" } },
+		{ 21, { "ironguard", "shadowblade", "cultist" } },
+		{ 31, { "cultelder", "marauder", "lancer" } },
+		{ 41, { "riftling", "voidwalker", "stonegolem" } },
+		{ 51, { "flameimp", "sandwraith", "magmabrute" } },
+		{ 61, { "apostle", "tombguard", "starblade", "skyguard" } },
+	},
+	bosses = { "heukho", "hyeolrang", "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun" },
+}
+
+------------------------------------------------------------------------
+-- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
+------------------------------------------------------------------------
+Config.PVP_STYLE = { wins = 100, style = "musang" }
+
+------------------------------------------------------------------------
+-- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
+-- boss_<보스>: 그 보스와 처음 맞붙을 때. 사부를 처음 찾았을 때는 사부의 한마디 (MASTERS.quote)
+------------------------------------------------------------------------
+Config.CUTSCENES = {
+	intro = { who = "청운 장로", lines = { "강호에 온 것을 환영하네. 맨손 하나로 이름을 떨치겠다는 젊은이가 또 왔구먼.", "먼저 내게 와서 말을 걸게. 노란 길잡이를 따라오면 되네." } },
+	gate_first = { who = "관문 수호자", lines = { "몸이 경지에 닿았다고 경지에 오르는 것은 아니다.", "나를 넘어라. 그래야 다음 경지다." } },
+	tower_first = { who = "천층탑", lines = { "천층탑. 한 층 오를 때마다 적이 강해진다.", "쓰러지거나 떨어지면 처음부터다. 열 층마다 주인이 기다린다." } },
+	pvp100 = { who = "강호", lines = { "비무대에서 백 번을 이겼다. 이제 강호에 너를 모르는 자가 없다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
+	boss_heukho = { who = "흑호", lines = { "내 산채에 발을 들인 놈은 살아서 나간 적이 없다." } },
+	boss_hyeolrang = { who = "혈랑", lines = { "피 냄새가 나는군. 네 피다." } },
+	boss_bingma = { who = "빙마", lines = { "이 설산에서 숨 쉬는 건 나 하나로 족하다." } },
+	boss_hyeolma = { who = "혈마", lines = { "혈교의 주인 앞이다. 무릎을 꿇어라." } },
+	boss_cheonma = { who = "천마", lines = { "하늘을 삼킨 내 앞에서, 고작 맨손이냐." } },
+	boss_yeomje = { who = "염제", lines = { "불의 산은 들어온 자를 돌려보내지 않는다." } },
+	boss_sawang = { who = "사왕", lines = { "왕의 잠을 깨운 죄, 목숨으로 갚아라." } },
+	boss_cheonmun = { who = "천문장", lines = { "하늘의 문은 아무에게나 열리지 않는다." } },
+}
+
+------------------------------------------------------------------------
+-- 배경 음악: 지역마다 (로블록스 음악 번호. 0이면 조용하다)
+-- 로블록스 크리에이터 스토어에서 '모든 경험에서 쓸 수 있는' 음악 번호를 넣으세요
+------------------------------------------------------------------------
+Config.MUSIC = {
+	volume = 0.35,
+	default = 0, -- 들판 (지정이 없는 곳)
+	village = 0, -- 청운 마을
+	boss = 0, -- 보스와 싸울 때
+	tower = 0, -- 천층탑
+	snow = 0,
+	cult = 0,
+	rift = 0,
+	volcano = 0,
+	tomb = 0,
+	skysea = 0,
+}
 
 ------------------------------------------------------------------------
 -- 로벅스 상품 (게임패스). gamepass = 로블록스 홈페이지에 만든 게임패스 번호 (0이면 아직 없음)
@@ -1734,6 +1874,8 @@ Poses.stances = {
 	stance_fire = { W = { 10, -30, 0 }, N = { -5, 30, 0 }, RS = { 40, 0, 35 }, RE = { 120, 0, 0 }, LS = { 75, 0, -10 }, LE = { 100, 0, 0 } },
 	-- 풍신: 앞발을 가볍게 띄운 발차기꾼. 두 손은 느슨하게 얼굴 앞에
 	stance_gale = { W = { 0, -30, 0 }, N = { 0, 30, 0 }, RS = { 55, 0, 15 }, RE = { 105, 0, 0 }, LS = { 80, 0, -5 }, LE = { 85, 0, 0 } },
+	-- 무쌍: 앞손은 턱 높이에서 상대를 재고, 뒷주먹은 가슴 앞에 바짝 (군더더기 없는 겨루기 자세)
+	stance_duel = { W = { 0, -25, 0 }, N = { 0, 25, 0 }, RS = { 70, 0, 25 }, RE = { 115, 0, 0 }, LS = { 95, 0, -5 }, LE = { 60, 0, 0 } },
 	-- 적: 무기를 쥐고
 	stance_weapon = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 35, 0, 15 }, RE = { 60, 0, 0 }, LS = { 25, 0, -15 }, LE = { 50, 0, 0 } },
 	stance_spear = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 30, 0, 20 }, RE = { 70, 0, 0 }, LS = { 65, 0, -10 }, LE = { 30, 0, 0 } },
@@ -1758,6 +1900,7 @@ Poses.stanceLegs = {
 	stance_fire = { RH = { -20, 0, 12 }, LH = { 30, 0, -8 }, RK = { -50, 0, 0 }, LK = { -45, 0, 0 }, R = { -6, 0, 0, 0, -1.0, 0 } },
 	stance_ocean = { RH = { -20, 0, 18 }, LH = { 32, 0, -10 }, RK = { -45, 0, 0 }, LK = { -40, 0, 0 }, R = { -4, 0, 0, 0, -1.0, 0 } },
 	stance_sunmoon = { RH = { -10, 0, 14 }, LH = { 22, 0, -12 }, RK = { -30, 0, 0 }, LK = { -35, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } },
+	stance_duel = { RH = { -15, 0, 10 }, LH = { 25, 0, -6 }, RK = { -32, 0, 0 }, LK = { -28, 0, 0 }, R = { -5, 0, 0, 0, -0.55, 0 } },
 	default = { RH = { -10, 0, 6 }, LH = { 14, 0, -4 }, RK = { -16, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0 } },
 }
 
@@ -3209,6 +3352,12 @@ type Profile = {
 	autoStat: string?, -- 자동 수련으로 올릴 능력치 ("all" = 골고루)
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 	gates: { [string]: boolean }, -- 넘은 경지의 관문 (경지 번호)
+	manuals: { [string]: number }, -- 가진 심법 (등급 번호)
+	equip: { string }, -- 끼운 심법 (세 칸)
+	scrolls: number, -- 심법 두루마리
+	pity: number, -- 전설 이상이 안 나온 뽑기 수
+	towerBest: number, -- 천층탑 최고 층
+	seen: { [string]: boolean }, -- 본 장면 (컷씬)
 }
 
 local function defaultProfile(): Profile
@@ -3231,6 +3380,12 @@ local function defaultProfile(): Profile
 		accepted = 1,
 		gradeUp = {},
 		gates = {},
+		manuals = {},
+		equip = {},
+		scrolls = 0,
+		pity = 0,
+		towerBest = 0,
+		seen = {},
 	}
 end
 
@@ -3295,6 +3450,26 @@ local function sanitize(data: any): Profile
 	end)
 	p.trials = flags(data.trials, function(k)
 		return Config.MASTERS[k] ~= nil
+	end)
+	if type(data.manuals) == "table" then
+		for id, r in pairs(data.manuals) do
+			if type(id) == "string" and Config.MANUAL_BY_ID[id] and type(r) == "number" then
+				p.manuals[id] = math.clamp(math.floor(r), 1, #Config.MANUAL_RARITY)
+			end
+		end
+	end
+	if type(data.equip) == "table" then
+		for _, id in ipairs(data.equip) do
+			if type(id) == "string" and p.manuals[id] and not table.find(p.equip, id) and #p.equip < Config.MANUAL_DRAW.slots then
+				table.insert(p.equip, id)
+			end
+		end
+	end
+	p.scrolls = math.floor(num(data.scrolls, 1e6))
+	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
+	p.towerBest = math.floor(num(data.towerBest, 100000))
+	p.seen = flags(data.seen, function(k)
+		return #k < 40
 	end)
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
@@ -3368,18 +3543,28 @@ local function loadProfile(player: Player): (Profile, boolean)
 	return defaultProfile(), false
 end
 
+-- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도)
+local saving = 0
 local function saveProfile(player: Player)
 	local p, st = profiles[player], states[player]
 	local ds = store
 	if not p or not st or not st.canSave or not ds then
 		return
 	end
-	local ok = pcall(function()
-		ds:SetAsync("p_" .. player.UserId, p)
-	end)
-	if ok then
-		st.dirty = false
+	saving += 1
+	for attempt = 1, 3 do
+		local ok = pcall(function()
+			ds:UpdateAsync("p_" .. player.UserId, function()
+				return p
+			end)
+		end)
+		if ok then
+			st.dirty = false
+			break
+		end
+		task.wait(attempt)
 	end
+	saving -= 1
 end
 
 local function isTester(player: Player): boolean
@@ -3426,6 +3611,21 @@ function Calc.gateNext(p: Profile): number?
 	return nil
 end
 
+-- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
+function Calc.manualBonus(p: Profile): { [string]: number }
+	local b = { hp = 0, dmg = 0, def = 0, steal = 0, speed = 0, chi = 0, cd = 0, ult = 0 }
+	for _, id in ipairs(p.equip or {}) do
+		local m = Config.MANUAL_BY_ID[id]
+		local r = p.manuals and p.manuals[id]
+		if m and r then
+			b[m.stat] += Config.manualValue(id, r)
+		end
+	end
+	b.def = math.min(b.def, 0.5)
+	b.cd = math.min(b.cd, 0.4)
+	return b
+end
+
 function Calc.mastery(p: Profile, styleId: string): { lv: number, xp: number }
 	local m = p.mastery[styleId]
 	if not m then
@@ -3456,6 +3656,20 @@ local Premium: any
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
+end
+
+-- 컷씬: 그 장면을 처음 맞을 때만 (보았다고 적어 둔다). data = { at = 비출 자리, m = 비출 모델 }
+local function cutscene(player: Player, id: string, data: any?): boolean
+	local p, st = profiles[player], states[player]
+	if not p or not st or p.seen[id] or not Config.CUTSCENES[id] then
+		return false
+	end
+	p.seen[id] = true
+	st.dirty = true
+	local d = data or {}
+	d.id = id
+	Push:FireClient(player, "cutscene", d)
+	return true
 end
 
 local function pushState(player: Player)
@@ -3499,6 +3713,13 @@ local function pushState(player: Player)
 		accepted = p.accepted == p.story,
 		premium = st.owned or {},
 		gateNext = Calc.gateNext(p),
+		manuals = p.manuals,
+		equip = p.equip,
+		scrolls = p.scrolls,
+		pity = p.pity,
+		towerBest = p.towerBest,
+		manualCd = Calc.manualBonus(p).cd,
+		seen = p.seen,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -3582,14 +3803,17 @@ local function refreshFighter(player: Player)
 	local power = Config.realmPower(idx)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade
+	local mb = Calc.manualBonus(p)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
+	local fm = f :: any
+	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power)
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power * (1 + mb.hp))
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
-	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1)
+	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed)
 	local cm = Config.chiMax(p.stats.chi, idx)
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
@@ -3799,6 +4023,7 @@ end
 -- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
 local Gate: any
 local Train: any
+local Tower: any
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -3838,6 +4063,10 @@ function Trial.start(player: Player, styleId: string)
 	end
 	if activeTrial[player] then
 		toast(player, "이미 시험 중이에요")
+		return
+	end
+	if Tower.active(player) then
+		toast(player, "천층탑 안에서는 시험을 청할 수 없어요")
 		return
 	end
 	local key = "trial_" .. styleId
@@ -3954,6 +4183,9 @@ Combat.init(Push, {
 	onKill = function(f: any, by: any)
 		if f.npc then
 			Npc.onDeath(f)
+			if f.towerOwner then
+				Tower.killed(f.towerOwner, f)
+			end
 			local killer = by and by.player
 			local p = killer and profiles[killer]
 			if killer and p then
@@ -3965,7 +4197,8 @@ Combat.init(Push, {
 				if f.gateOwner == killer then
 					Gate.ended(killer, true)
 				end
-				local isBossKill = f.model:GetAttribute("Boss") == true
+				-- 천층탑의 보스는 이야기·권법·보스 기록에 들지 않는다
+				local isBossKill = f.model:GetAttribute("Boss") == true and not f.towerOwner
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
@@ -3997,11 +4230,16 @@ Combat.init(Push, {
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				p.kills += 1
-				if isBoss then
+				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
 							p.bosses[id] = (p.bosses[id] or 0) + 1
 						end
+					end
+					-- 보스는 가끔 심법 두루마리를 떨어뜨린다
+					if math.random() < 0.15 then
+						p.scrolls += 1
+						toast(killer, "📜 심법 두루마리를 얻었어요!")
 					end
 				end
 				addMastery(killer, p, xp)
@@ -4014,14 +4252,25 @@ Combat.init(Push, {
 			local player = f.player
 			Trial.ended(player, false)
 			Gate.ended(player, false)
+			Tower.ended(player, "dead")
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
 			-- 비무대에서 이기면 기록
 			local winner = by and by.player
 			if winner and profiles[winner] then
-				profiles[winner].pvpWins += 1
+				local wp = profiles[winner]
+				wp.pvpWins += 1
 				states[winner].dirty = true
 				Push:FireAllClients("duel", { winner = winner.DisplayName, loser = player.DisplayName })
+				-- 비무 백 승: 무쌍신권
+				local PS = Config.PVP_STYLE
+				if wp.pvpWins >= PS.wins and not wp.styles[PS.style] then
+					grantStyle(winner, PS.style, false)
+					local wf = Combat.fighterOfPlayer(winner)
+					cutscene(winner, "pvp100", { m = wf and wf.model })
+					toast(winner, "⚔ 비무 " .. PS.wins .. "승! " .. Config.STYLE_BY_ID[PS.style].name .. "을(를) 얻었어요")
+					Push:FireAllClients("realm", { name = winner.DisplayName, realm = Config.STYLE_BY_ID[PS.style].name })
+				end
 				pushState(winner)
 			end
 			task.delay(Config.RESPAWN_TIME, function()
@@ -4207,7 +4456,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 			return
 		end
 		f.chi -= cost
-		f.cds[slot] = inf and 0 or t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1) * (style.cdMult or 1)
+		f.cds[slot] = inf and 0 or t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1) * (style.cdMult or 1) * (1 - ((f :: any).mCd or 0))
 	end
 	local speed = Config.actSpeed(style, p.gradeUp[p.style], (f.buffs.frenzy or 0) > t)
 	local charge = 0
@@ -4576,6 +4825,10 @@ function Gate.start(player: Player)
 		toast(player, "이미 관문 시련 중이에요")
 		return
 	end
+	if Tower.active(player) then
+		toast(player, "천층탑 안에서는 관문에 도전할 수 없어요")
+		return
+	end
 	if f.combatUntil > os.clock() then
 		toast(player, "싸우는 중에는 관문에 도전할 수 없어요")
 		return
@@ -4612,7 +4865,9 @@ function Gate.start(player: Player)
 	Combat.sync(ef)
 	e.target = f
 	activeGate[player] = ef
-	Push:FireClient(player, "dialog", { who = "⛩ " .. ef.name, title = Config.Realms[nxt].name .. "의 관문", text = "이 경지에 오를 자격이 있는지 보이라." })
+	if not cutscene(player, "gate_first", { m = ef.model }) then
+		Push:FireClient(player, "dialog", { who = "⛩ " .. ef.name, title = Config.Realms[nxt].name .. "의 관문", text = "이 경지에 오를 자격이 있는지 보이라." })
+	end
 	Push:FireClient(player, "boss", ef.model)
 	task.delay(Config.GATE.time, function()
 		if activeGate[player] == ef and not ef.dead then
@@ -4649,6 +4904,284 @@ function Gate.ended(player: Player, won: boolean)
 	elseif not ef.dead then
 		Npc.despawn(ef)
 	end
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 하늘의 시련장에서 한 층씩. 층의 적을 모두 꺾으면 다음 층 (열 층마다 보스)
+-- 쓰러지거나 떨어지거나 나가면 끝. 최고 기록을 넘을 때 다섯 층마다 두루마리
+------------------------------------------------------------------------
+Tower = {}
+local towerSlots: { [number]: Player } = {}
+local activeTower: { [Player]: any } = {}
+
+function Tower.start(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st or not f or f.dead then
+		return
+	end
+	if activeTower[player] then
+		return
+	end
+	if activeTrial[player] or activeGate[player] then
+		toast(player, "다른 시련 중에는 탑에 오를 수 없어요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 탑에 오를 수 없어요")
+		return
+	end
+	local slot
+	for i = 1, Config.TOWER.slots do
+		if not towerSlots[i] then
+			slot = i
+			break
+		end
+	end
+	if not slot then
+		toast(player, "🗼 탑이 붐벼요. 잠시 뒤에 다시 오세요")
+		return
+	end
+	local ok, center = pcall(World.towerArena, slot)
+	if not ok then
+		warn("[권왕] 천층탑 시련장 오류:", center)
+		return
+	end
+	towerSlots[slot] = player
+	Train.stop(player)
+	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0 }
+	activeTower[player] = run
+	local char = player.Character
+	if char then
+		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.6)
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(center.X, at.Y, center.Z)))
+	end
+	f.hp = f.maxHp
+	f.chi = (f :: any).chiMax or Config.CHI_MAX
+	Combat.sync(f)
+	cutscene(player, "tower_first", { at = center })
+	Tower.next(player, run)
+	-- 단에서 떨어지면 끝
+	task.spawn(function()
+		while activeTower[player] == run do
+			task.wait(0.4)
+			local ff = Combat.fighterOfPlayer(player)
+			if activeTower[player] == run and ff and not ff.dead and ff.root.Position.Y < center.Y - 30 then
+				Tower.ended(player, "fall")
+			end
+		end
+	end)
+end
+
+-- 다음 층: 잠깐 숨을 고른 뒤 적이 나타난다
+function Tower.next(player: Player, run: any)
+	local p = profiles[player]
+	if not p then
+		return
+	end
+	local T = Config.TOWER
+	run.floor += 1
+	run.token += 1
+	local floor, token = run.floor, run.token
+	local isBoss = floor % T.bossEvery == 0
+	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss })
+	task.delay(floor == 1 and 4 or 2.5, function()
+		local f = Combat.fighterOfPlayer(player)
+		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
+			return
+		end
+		local list = {}
+		if isBoss then
+			local id = T.bosses[(math.floor(floor / T.bossEvery) - 1) % #T.bosses + 1]
+			table.insert(list, { id, true })
+		else
+			local pool = T.bands[1][2]
+			for _, b in ipairs(T.bands) do
+				if floor >= b[1] then
+					pool = b[2]
+				end
+			end
+			for _ = 1, math.min(5, 2 + math.floor(floor / 8)) do
+				table.insert(list, { pool[math.random(#pool)], false })
+			end
+		end
+		-- 층의 세기는 도전자의 전투력에 맞춘다 (위로 갈수록 점점 넘어선다)
+		local want = ((f :: any).power or 100) * (T.powerBase + T.powerPer * floor)
+		for i, item in ipairs(list) do
+			local a = i / #list * math.pi * 2
+			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
+			local e = Npc.spawn(item[1], item[2], at, "trial")
+			if e then
+				local ef = e.f :: any
+				ef.towerOwner = player
+				ef.trialOwner = player
+				local w = want * (item[2] and 1.15 or 1)
+				local k = w / math.max(1, ef.power or 100)
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (1 + T.hpPer * floor) * (item[2] and 2.5 or 1)))
+				ef.hp = ef.maxHp
+				ef.dmgMult *= k
+				ef.power = math.floor(w)
+				ef.rewardMult = 0.3
+				ef.model:SetAttribute("Power", ef.power)
+				ef.model:SetAttribute("Label", string.format("%d층 · %s", floor, ef.name))
+				Combat.sync(ef)
+				e.target = f
+				run.alive[ef] = true
+			end
+		end
+	end)
+end
+
+function Tower.killed(player: Player, ef: any)
+	local run = activeTower[player]
+	if not run or not run.alive[ef] then
+		return
+	end
+	run.alive[ef] = nil
+	if next(run.alive) then
+		return
+	end
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local T = Config.TOWER
+	local floor = run.floor
+	local coins = T.coins * floor
+	p.coins += coins
+	local scrolls = 0
+	if floor > p.towerBest then
+		p.towerBest = floor
+		if floor % T.scrollEvery == 0 then
+			scrolls += 1
+		end
+		if floor % T.bossEvery == 0 then
+			scrolls += 2
+		end
+		p.scrolls += scrolls
+	end
+	st.dirty = true
+	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest })
+	pushState(player)
+	Tower.next(player, run)
+end
+
+-- reason: "dead" / "fall" / "leave" / "left"
+function Tower.ended(player: Player, reason: string)
+	local run = activeTower[player]
+	if not run then
+		return
+	end
+	activeTower[player] = nil
+	run.token += 1
+	towerSlots[run.slot] = nil
+	for ef in pairs(run.alive) do
+		if not ef.dead then
+			Npc.despawn(ef)
+		end
+	end
+	run.alive = {}
+	if reason == "left" then
+		return
+	end
+	Push:FireClient(player, "tower", nil)
+	Push:FireClient(player, "boss", nil)
+	local p = profiles[player]
+	if p then
+		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
+	end
+	if reason ~= "dead" then
+		local char = player.Character
+		if char then
+			local at = Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22
+			char:PivotTo(CFrame.new(at))
+		end
+	end
+end
+
+function Tower.active(player: Player): any
+	return activeTower[player]
+end
+
+------------------------------------------------------------------------
+-- 심법 뽑기: 두루마리를 먼저 쓰고, 없으면 은자. 같은 심법이 더 높은 등급으로 나오면 바뀐다
+------------------------------------------------------------------------
+local Manual = {}
+
+local function rollRarity(p: Profile): number
+	local D = Config.MANUAL_DRAW
+	if p.pity + 1 >= D.pity then
+		return math.random() < 0.1 and 5 or 4
+	end
+	local r, acc = math.random(), 0
+	for i, R in ipairs(Config.MANUAL_RARITY) do
+		acc += R.rate
+		if r < acc then
+			return i
+		end
+	end
+	return 1
+end
+
+function Manual.draw(player: Player, nArg: any)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local D = Config.MANUAL_DRAW
+	local n = tonumber(nArg) == 10 and 10 or 1
+	local useScroll = math.min(p.scrolls, n)
+	local coinCost = (n - useScroll) * D.coins
+	if p.coins < coinCost then
+		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(D.coins)))
+		return
+	end
+	p.scrolls -= useScroll
+	p.coins -= coinCost
+	local results = {}
+	for _ = 1, n do
+		local r = rollRarity(p)
+		p.pity = r >= 4 and 0 or p.pity + 1
+		local m = Config.MANUALS[math.random(#Config.MANUALS)]
+		local had = p.manuals[m.id]
+		local res: any = { id = m.id, r = r }
+		if had and had >= r then
+			res.refund = D.refund * r
+			p.coins += res.refund
+		else
+			res.up = had ~= nil
+			p.manuals[m.id] = r
+			-- 빈 칸이 있으면 바로 끼운다
+			if not table.find(p.equip, m.id) and #p.equip < D.slots then
+				table.insert(p.equip, m.id)
+			end
+		end
+		table.insert(results, res)
+	end
+	st.dirty = true
+	refreshFighter(player)
+	Push:FireClient(player, "manualDraw", results)
+	pushState(player)
+end
+
+function Manual.equip(player: Player, id: any, on: boolean)
+	local p, st = profiles[player], states[player]
+	if not p or not st or type(id) ~= "string" or not p.manuals[id] then
+		return
+	end
+	local i = table.find(p.equip, id)
+	if on and not i then
+		if #p.equip >= Config.MANUAL_DRAW.slots then
+			toast(player, "심법 칸이 가득 찼어요. 하나를 빼고 끼우세요")
+			return
+		end
+		table.insert(p.equip, id)
+	elseif not on and i then
+		table.remove(p.equip, i)
+	end
+	st.dirty = true
+	refreshFighter(player)
+	pushState(player)
 end
 
 Train = {}
@@ -4874,6 +5407,39 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		-- 진행 중인 시험·각성 시련도 거둔다
 		Trial.ended(player, false)
 		Gate.ended(player, false)
+		Tower.ended(player, "leave")
+	elseif action == "testScrolls" then
+		p.scrolls += 10
+		toast(player, "📜 두루마리 +10")
+	elseif action == "testPvp" then
+		-- 비무 승리를 백 승 바로 앞까지 (한 번 더 이기면 무쌍신권)
+		p.pvpWins = math.max(p.pvpWins, Config.PVP_STYLE.wins - 1)
+		toast(player, string.format("⚔ 비무 %d승 (한 번 더 이기면 무쌍신권)", p.pvpWins))
+	elseif action == "testTower" then
+		-- 천층탑: 지금 층의 적을 걷고 다음 보스 층 바로 앞으로
+		local run = Tower.active(player)
+		if run and arg == "clear" then
+			-- 지금 층의 적을 모두 쓰러뜨린다 (층 돌파 확인)
+			for ef in pairs(run.alive) do
+				if not ef.dead then
+					Combat.kill(ef, f)
+				end
+			end
+		elseif run then
+			for ef in pairs(run.alive) do
+				if not ef.dead then
+					Npc.despawn(ef)
+				end
+			end
+			run.alive = {}
+			run.floor = math.max(run.floor, (math.floor(run.floor / Config.TOWER.bossEvery) + 1) * Config.TOWER.bossEvery - 1)
+			Tower.next(player, run)
+		else
+			toast(player, "천층탑 안에서 쓰세요")
+		end
+	elseif action == "testSeen" then
+		p.seen = {}
+		toast(player, "🎬 컷씬 기록을 지웠어요")
 	elseif action == "testTime" then
 		if arg == "freeze" then
 			toast(player, World.toggleClockFreeze() and "⏸ 시간이 멈췄어요" or "▶ 시간이 다시 흘러요")
@@ -4995,6 +5561,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.ilwol = nil :: any
 			p.styles.yeonggeop = nil :: any
 			p.trials.yeonggeop = nil :: any
+			p.styles.musang = nil :: any
 			p.styles.hyeolma2 = nil :: any
 			p.styles.cheonryong2 = nil :: any
 			p.styles.byeokryeok2 = nil :: any
@@ -5082,7 +5649,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
 		-- 이야기 첫 장이면 장로를 찾아가라고
-		if p.story == 1 then
+		if p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
 	elseif action == "talkElder" then
@@ -5110,6 +5677,25 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "gate" then
 		Gate.start(player)
+	elseif action == "towerLeave" then
+		Tower.ended(player, "leave")
+	elseif action == "manualDraw" then
+		Manual.draw(player, a1)
+	elseif action == "manualEquip" then
+		Manual.equip(player, a1, true)
+	elseif action == "manualUnequip" then
+		Manual.equip(player, a1, false)
+	elseif action == "seen" then
+		-- 화면에서 본 것 (조작 안내, 보스와 처음 맞붙는 컷씬)
+		if type(a1) == "string" and not p.seen[a1] and (a1 == "controls" or (string.sub(a1, 1, 5) == "boss_" and Config.CUTSCENES[a1] ~= nil)) then
+			p.seen[a1] = true
+			st.dirty = true
+			-- 컷씬을 보는 동안은 맞지 않는다
+			local f = Combat.fighterOfPlayer(player)
+			if f and a1 ~= "controls" then
+				f.iframeUntil = math.max(f.iframeUntil, os.clock() + 5)
+			end
+		end
 	elseif action == "awaken" then
 		-- 각성 (진 권법): 원래 권법 숙련 최대 + 깨달음 모두 + 경지 + 은자 → 각성 시련
 		local base = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -5176,6 +5762,123 @@ if W.shop then
 	end)
 end
 -- 객잔: 쉬면 체력과 내공이 가득 찬다 (공짜)
+if W.tower then
+	W.tower.Triggered:Connect(function(player: Player)
+		Tower.start(player)
+	end)
+end
+
+-- 강호 순위표: 1분마다. 저장소(정렬 저장소)가 되면 모든 서버의 기록, 안 되면 이 서버 사람만
+local Board = {}
+local boardStores: { [string]: any } = {}
+local nameCache: { [number]: string } = {}
+local boardSent: { [string]: number } = {} -- 같은 값은 다시 보내지 않는다
+local BOARD_VALUE = {
+	realm = function(p: Profile): number
+		return math.floor(Calc.total(p))
+	end,
+	pvp = function(p: Profile): number
+		return p.pvpWins
+	end,
+	tower = function(p: Profile): number
+		return p.towerBest
+	end,
+}
+
+function Board.store(key: string): any
+	if boardStores[key] == nil then
+		local ok, ds = pcall(function()
+			return DataStoreService:GetOrderedDataStore("Kwonwang_lb_" .. key)
+		end)
+		boardStores[key] = ok and ds or false
+	end
+	return boardStores[key] or nil
+end
+
+function Board.name(userId: number): string
+	if nameCache[userId] then
+		return nameCache[userId]
+	end
+	local pl = Players:GetPlayerByUserId(userId)
+	if pl then
+		nameCache[userId] = pl.DisplayName
+		return pl.DisplayName
+	end
+	local ok, name = pcall(function()
+		return Players:GetNameFromUserIdAsync(userId)
+	end)
+	nameCache[userId] = ok and name or ("#" .. userId)
+	return nameCache[userId]
+end
+
+function Board.update()
+	local boards = W.boards
+	if not boards then
+		return
+	end
+	for key, valueOf in pairs(BOARD_VALUE) do
+		local gui = boards[key]
+		if gui then
+			local rows: { { string } } = {}
+			local ds = Board.store(key)
+			local okStore = false
+			if ds then
+				for player, p in pairs(profiles) do
+					local st = states[player]
+					local v = valueOf(p)
+					local sentKey = key .. player.UserId
+					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v then
+						local ok = pcall(function()
+							ds:SetAsync(tostring(player.UserId), v)
+						end)
+						if ok then
+							boardSent[sentKey] = v
+						end
+					end
+				end
+				local ok, page = pcall(function()
+					return ds:GetSortedAsync(false, 10):GetCurrentPage()
+				end)
+				if ok and type(page) == "table" and #page > 0 then
+					okStore = true
+					for _, entry in ipairs(page) do
+						table.insert(rows, { Board.name(tonumber(entry.key) or 0), Config.formatNumber(entry.value) })
+					end
+				end
+			end
+			if not okStore then
+				local list = {}
+				for player, p in pairs(profiles) do
+					table.insert(list, { player.DisplayName, valueOf(p) })
+				end
+				table.sort(list, function(a, b)
+					return a[2] > b[2]
+				end)
+				for i = 1, math.min(10, #list) do
+					table.insert(rows, { list[i][1], Config.formatNumber(list[i][2]) })
+				end
+			end
+			for r = 1, 10 do
+				local label = gui:FindFirstChild("Row" .. r)
+				if label and label:IsA("TextLabel") then
+					local row = rows[r]
+					label.Text = row and string.format("%d. %s  ·  %s", r, row[1], row[2]) or ""
+				end
+			end
+		end
+	end
+end
+
+task.spawn(function()
+	task.wait(8)
+	while true do
+		local ok, err = pcall(Board.update)
+		if not ok then
+			warn("[권왕] 순위표 오류:", err)
+		end
+		task.wait(60)
+	end
+end)
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
@@ -5408,6 +6111,7 @@ local function onPlayerAdded(player: Player)
 end
 
 local function onPlayerRemoving(player: Player)
+	Tower.ended(player, "left")
 	saveProfile(player)
 	profiles[player] = nil
 	states[player] = nil
@@ -5431,11 +6135,16 @@ task.spawn(function()
 	end
 end)
 
+-- 서버가 닫힐 때: 모두 저장하고, 저장이 끝날 때까지 (최대 25초) 기다린다
 game:BindToClose(function()
 	for player in pairs(profiles) do
 		task.spawn(saveProfile, player)
 	end
-	task.wait(2)
+	local t0 = os.clock()
+	task.wait(0.5)
+	while saving > 0 and os.clock() - t0 < 25 do
+		task.wait(0.25)
+	end
 end)
 
 ------------------------------------------------------------------------
@@ -5735,6 +6444,8 @@ local function defense(f: Fighter): number
 	if style and style.armorWhileAttacking and act and t < act.start + act.dur then
 		m *= style.armorWhileAttacking
 	end
+	-- 심법: 금강호체공
+	m *= 1 - ((f :: any).mDef or 0)
 	return m
 end
 
@@ -5829,6 +6540,13 @@ function Combat.kill(f: Fighter, by: Fighter?)
 	f.guarding = false
 	Combat.sync(f)
 	Push:FireAllClients("ko", f.model, by and by.model or nil)
+	-- 무쌍신권: 쓰러뜨릴 때마다 숨이 돌아온다
+	local bStyle = by and Combat.styleOf(by)
+	if by and bStyle and bStyle.killHeal and by.player and not by.dead then
+		by.hp = math.min(by.maxHp, by.hp + by.maxHp * bStyle.killHeal)
+		by.chi = math.min((by :: any).chiMax or Config.CHI_MAX, by.chi + 20)
+		Combat.sync(by)
+	end
 	if hooks.onKill then
 		hooks.onKill(f, by)
 	end
@@ -6037,6 +6755,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if tStyle and tStyle.sunMoon and not isDay() then
 		d *= tStyle.sunMoon.night
 	end
+	-- 무쌍신권: 사람을 상대로 더 세다
+	if aStyle and aStyle.pvpDmg and tgt.player and att.player then
+		d *= aStyle.pvpDmg
+	end
 	if opt.teleport then
 		crit = true
 	end
@@ -6059,6 +6781,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 흡혈 (혈마신수)
 	if aStyle and aStyle.lifesteal and att.player and not att.dead then
 		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and 3 or 1))
+		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
+	end
+	-- 심법: 혈기공 (모든 권법에서 조금씩)
+	local mSteal = (att :: any).mSteal or 0
+	if mSteal > 0 and att.player and not att.dead then
+		att.hp = math.min(att.maxHp, att.hp + d * mSteal)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
 	if not steady then
@@ -6412,7 +7140,7 @@ function Combat.tick(dt: number)
 				f.chi = cmax
 				changed = true
 			elseif f.player and f.chi < cmax then
-				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX))
+				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)))
 				changed = true
 			end
 			if f.act and t > f.act.start + f.act.dur then
@@ -6775,6 +7503,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		(f :: any).deflectMul = 0.45
 	end
 	;(f :: any).typeId = typeId
+	model:SetAttribute("TypeId", typeId)
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)
@@ -7907,7 +8636,7 @@ function Skills.run(f: any, move: any, ctx: any)
 	local sp = ctx.speed or 1
 	-- 오의(G)는 모두 한층 더 세다
 	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
-	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT or 1)
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean
@@ -8590,6 +9319,27 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+	elseif kind == "arena" then
+		-- 천하무쌍: 빛의 울타리 안에 가두고 한가운데로 끌어당겨 여러 번 몰아친 뒤, 마지막 한 주먹
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "arena", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, strikes = m.strikeCount, every = m.every / sp, finalAt = m.finalAt / sp, style = style })
+		after(m.delay * 0.5, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				pullTo(o, center + look * 4, 110)
+			end
+		end)
+		for i = 0, m.strikeCount - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.strikeRadius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.strikeRadius + 4)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "trail" then
 		local from = f.root.Position
 		after(m.delay, function()
@@ -9136,7 +9886,7 @@ local function village(out: any)
 	f.Name = "Village"
 	f.Parent = folder
 	-- 마을 성벽 (높은 흰 돌담, 돌 갓, 성가퀴) 네 방향 입구
-	local R = 175
+	local R = 235
 	for _, side in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
 		for _, seg in ipairs({ -1, 1 }) do
 			local len = R - 14
@@ -9206,7 +9956,7 @@ local function village(out: any)
 	e.Lifetime = NumberRange.new(0.8, 1.2)
 	e.Parent = spray
 	-- 큰길의 쇠 등기둥 (따뜻한 빛)
-	for _, z in ipairs({ -160, -135, -85, -40, 20, 140, 160 }) do
+	for _, z in ipairs({ -215, -185, -160, -135, -85, -40, 20, 140, 160, 190, 215 }) do
 		for _, sx in ipairs({ -1, 1 }) do
 			local p = Vector3.new(sx * 13, 0, z)
 			part({ Name = "LampPost", Size = Vector3.new(0.6, 10, 0.6), Position = p + Vector3.new(0, 5, 0), Color = IRON, Material = Enum.Material.Metal, Parent = f })
@@ -9221,6 +9971,9 @@ local function village(out: any)
 		{ -130, -140 }, { -90, -150 }, { 90, -150 }, { 130, -140 },
 		{ -145, -60 }, { -145, 40 }, { -145, 120 }, { 145, -60 }, { 145, 40 }, { 145, 120 },
 		{ -100, 150 }, { -50, 155 }, { 50, 155 }, { 100, 150 },
+		-- 넓힌 마을의 바깥 둘레
+		{ -205, -40 }, { -205, 50 }, { -205, 140 }, { 205, -40 }, { 205, 50 }, { 205, 140 },
+		{ -120, 205 }, { -60, 210 }, { 60, 210 }, { 120, 205 },
 	}
 	for _, s in ipairs(spots) do
 		local x, z = s[1], s[2]
@@ -9293,6 +10046,83 @@ local function village(out: any)
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
 	out.inn = prompt(innDesk, "쉬기", "객잔 · 체력·내공 채우기", "Inn")
+
+	-- 천층탑 입구 (북서쪽 모퉁이): 층마다 좁아지는 칠층 탑, 문은 마을 가운데를 본다
+	local tAt = Config.TOWER.enter
+	local tcf = CFrame.lookAt(tAt, Vector3.new(0, 0, 0))
+	part({ Name = "TowerPlinth", Size = Vector3.new(30, 2, 30), CFrame = tcf * CFrame.new(0, 1, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = f })
+	local y, w = 2, 22
+	for i = 1, 7 do
+		local h = i == 1 and 12 or 8
+		part({ Name = "TowerStorey", Size = Vector3.new(w, h, w), CFrame = tcf * CFrame.new(0, y + h / 2, 0), Color = Color3.fromRGB(225, 215, 195), Material = Enum.Material.Plaster, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "TowerPost", Size = Vector3.new(1.2, h, 1.2), CFrame = tcf * CFrame.new(sx * w / 2, y + h / 2, sz * w / 2), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		-- 층마다 빛나는 창과 내민 처마
+		for k = 0, 3 do
+			part({ Name = "TowerWindow", Size = Vector3.new(2.4, h * 0.45, 0.3), CFrame = tcf * CFrame.Angles(0, k * math.pi / 2, 0) * CFrame.new(0, y + h * 0.55, -w / 2 - 0.1), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		part({ Name = "TowerEave", Size = Vector3.new(w + 6, 1, w + 6), CFrame = tcf * CFrame.new(0, y + h + 0.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "TowerEaveTrim", Size = Vector3.new(w + 6.4, 0.4, w + 6.4), CFrame = tcf * CFrame.new(0, y + h, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+		y += h + 1
+		w -= 2.4
+	end
+	disc("TowerFinial", tAt + Vector3.new(0, y + 4, 0), 0.6, 8, GOLD, Enum.Material.Metal, f)
+	crystal(tAt + Vector3.new(0, y + 10, 0), 3, Color3.fromRGB(255, 190, 90), f)
+	local tDoor = part({ Name = "TowerDoor", Size = Vector3.new(6, 9, 0.6), CFrame = tcf * CFrame.new(0, 6.5, -11.2), Color = Color3.fromRGB(60, 35, 25), Material = Enum.Material.WoodPlanks, Parent = f })
+	local tBoard = part({ Name = "TowerSign", Size = Vector3.new(12, 3, 0.4), CFrame = tcf * CFrame.new(0, 12.5, -11.5), Color = Color3.fromRGB(40, 25, 20), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(tBoard, Enum.NormalId.Front, { { "🗼 천층탑", GOLD, 1 } })
+	for _, sx in ipairs({ -1, 1 }) do
+		brazier((tcf * CFrame.new(sx * 6, 2, -15)).Position, 1, f)
+	end
+	out.tower = prompt(tDoor, "탑에 오르기", "천층탑", "TowerEnter")
+
+	-- 강호 순위표 (북동쪽 모퉁이): 세 개의 큰 판
+	local bAt = Vector3.new(185, 0, -185)
+	local toC = Vector3.new(-bAt.X, 0, -bAt.Z).Unit
+	local side = Vector3.new(-toC.Z, 0, toC.X)
+	part({ Name = "BoardPlinth", Size = Vector3.new(50, 1.2, 12), CFrame = CFrame.lookAt(bAt, bAt + toC) * CFrame.new(0, 0.6, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = f })
+	out.boards = {}
+	for i, b in ipairs({ { "realm", "🏯 강호 고수", "총 능력치" }, { "pvp", "⚔ 비무 승리", "비무대에서 이긴 수" }, { "tower", "🗼 천층탑", "오른 가장 높은 층" } }) do
+		local at = bAt + side * ((i - 2) * 16) + Vector3.new(0, 11, 0)
+		local cf = CFrame.lookAt(at, at + toC)
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "BoardPost", Size = Vector3.new(1.2, 21, 1.2), CFrame = cf * CFrame.new(sx * 7.2, -0.5, 0.4), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		end
+		part({ Name = "BoardRoof", Size = Vector3.new(17, 0.8, 3.4), CFrame = cf * CFrame.new(0, 10.3, 0.4), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		local lboard = part({ Name = "Leaderboard", Size = Vector3.new(14, 18, 0.6), CFrame = cf, Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, Parent = f })
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 30
+		gui.LightInfluence = 0.2
+		gui.Parent = lboard
+		local list = Instance.new("UIListLayout")
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		list.Parent = gui
+		local function row(name: string, text: string, h: number, color: Color3, order: number)
+			local l = Instance.new("TextLabel")
+			l.Name = name
+			l.LayoutOrder = order
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, h)
+			l.Font = Enum.Font.GothamBold
+			l.TextScaled = true
+			l.TextColor3 = color
+			l.TextStrokeTransparency = 0.5
+			l.Text = text
+			l.Parent = gui
+		end
+		row("Title", b[2], 0.1, GOLD, 0)
+		row("Sub", b[3], 0.05, Color3.fromRGB(200, 190, 170), 1)
+		for r = 1, 10 do
+			row("Row" .. r, "", 0.085, r == 1 and Color3.fromRGB(255, 215, 90) or r <= 3 and Color3.fromRGB(230, 230, 240) or Color3.fromRGB(210, 200, 185), 1 + r)
+		end
+		out.boards[b[1]] = gui
+	end
 end
 
 ------------------------------------------------------------------------
@@ -11137,7 +11967,7 @@ end
 ------------------------------------------------------------------------
 -- 정갈한 강호: 길가의 석등과 가로수, 지역마다 낮은 돌테두리와 길이 드는 곳의 문루
 ------------------------------------------------------------------------
-local VILLAGE_PAD = 200 -- 마을 성벽 둘레는 마을 것으로 둔다
+local VILLAGE_PAD = 260 -- 마을 성벽 둘레는 마을 것으로 둔다
 local function inAnyRegion(p: Vector3, pad: number): boolean
 	if math.abs(p.X) < VILLAGE_PAD + pad and math.abs(p.Z) < VILLAGE_PAD + pad then
 		return true
@@ -11346,6 +12176,43 @@ local function regionSigns()
 	end
 end
 
+------------------------------------------------------------------------
+-- 천층탑 시련장: 하늘에 뜬 둥근 단 (사람마다 한 자리, 처음 쓸 때 짓는다). 단의 윗면 가운데를 돌려준다
+------------------------------------------------------------------------
+local arenas: { [number]: Vector3 } = {}
+function World.towerArena(slot: number): Vector3
+	local T = Config.TOWER
+	local center = T.arena + Vector3.new((slot - 1) * T.slotGap, 0, 0)
+	if arenas[slot] then
+		return center
+	end
+	local f = Instance.new("Folder")
+	f.Name = "TowerArena" .. slot
+	f.Parent = folder
+	local R = T.radius
+	disc("ArenaFloor", center - Vector3.new(0, 2, 0), R, 4, Color3.fromRGB(165, 155, 140), Enum.Material.Slate, f)
+	disc("ArenaUnder", center - Vector3.new(0, 7, 0), R * 0.8, 6, STONE_DARK, Enum.Material.Granite, f)
+	disc("ArenaUnder2", center - Vector3.new(0, 13, 0), R * 0.5, 6, STONE_DARK, Enum.Material.Granite, f)
+	disc("ArenaRing", center + Vector3.new(0, 0.05, 0), R * 0.55, 0.2, Color3.fromRGB(200, 60, 50), Enum.Material.Fabric, f, false)
+	disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
+	disc("ArenaTrim", center - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, GOLD, Enum.Material.Metal, f)
+	-- 둘레의 낮은 난간과 여덟 기둥 (꼭대기에 불)
+	local n = 24
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * (R - 1), 1.5, math.sin(a) * (R - 1))
+		part({ Name = "ArenaRail", Size = Vector3.new(2 * math.pi * R / n + 0.4, 3, 1.2), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
+		part({ Name = "ArenaPillar", Size = Vector3.new(3, 16, 3), Position = p + Vector3.new(0, 8, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		brazier(p + Vector3.new(0, 16, 0), 1, f)
+	end
+	arenas[slot] = center
+	return center
+end
+
 function World.build(): any
 	folder = Instance.new("Folder")
 	folder.Name = "Gangho"
@@ -11428,6 +12295,8 @@ local Anim = require(script:WaitForChild("Anim"))
 local Fx = require(script:WaitForChild("Fx"))
 local UI = require(script:WaitForChild("UI"))
 local Ults = require(script:WaitForChild("Ults"))
+local Cutscene = require(script:WaitForChild("Cutscene"))
+local Music = require(script:WaitForChild("Music"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -11940,8 +12809,8 @@ startMove = function(slot: any, charge: number?)
 			UI.toast(string.format("내공이 부족해요 (🌀 %d 필요)", move.chi or 0))
 			return
 		end
-		cds[slot] = inf and 0 or now + (move.cd or 0) * (style.cdMult or 1)
-		cdLen[slot] = (move.cd or 1) * (style.cdMult or 1)
+		cds[slot] = inf and 0 or now + (move.cd or 0) * (style.cdMult or 1) * (1 - (state and state.manualCd or 0))
+		cdLen[slot] = (move.cd or 1) * (style.cdMult or 1) * (1 - (state and state.manualCd or 0))
 	end
 	local speed = Config.actSpeed(style, state and state.gradeUp and state.gradeUp[style.id] or 0, char:GetAttribute("Buff") == "frenzy")
 	local dur = move.dur / speed
@@ -12363,7 +13232,7 @@ local doEmote: (string) -> () = function(_id: string) end
 -- 입력
 ------------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-	if processed then
+	if processed or Cutscene.active then
 		return
 	end
 	local t = input.UserInputType
@@ -12476,9 +13345,61 @@ local function modelPos(m: Model?): Vector3?
 	return r and r.Position or nil
 end
 
+-- 처음 들어온 사람: 조작 안내 한 번 (첫 컷씬이 끝난 뒤)
+local controlsShown = false
+local function maybeControls()
+	if controlsShown or not state or (state.seen and state.seen.controls) then
+		return
+	end
+	controlsShown = true
+	Cutscene.controls(function()
+		Request:FireServer("seen", "controls")
+	end)
+end
+local firstState = true
 function handlers.state(data: any)
 	state = data
 	UI.setState(data)
+	if firstState then
+		firstState = false
+		task.delay(2.5, function()
+			if not Cutscene.active then
+				maybeControls()
+			end
+		end)
+	end
+end
+
+-- 중요한 장면: 서버가 고른 컷씬 (처음 한 번만)
+function handlers.cutscene(data: any)
+	local scene = Config.CUTSCENES[data.id]
+	if not scene then
+		return
+	end
+	if state and state.seen then
+		state.seen[data.id] = true
+	end
+	Cutscene.play(scene, { m = data.m, at = data.at }, data.id == "intro" and maybeControls or nil)
+end
+
+-- 천층탑
+function handlers.tower(data: any?)
+	UI.setTower(data)
+	if data then
+		local boss = data.boss == true
+		UI.banner(string.format("🗼 %d층", data.floor), boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라", boss and Color3.fromRGB(255, 90, 70) or Color3.fromRGB(255, 210, 120))
+	end
+end
+function handlers.towerClear(data: any)
+	local extra = (data.scrolls or 0) > 0 and string.format("  📜 +%d", data.scrolls) or ""
+	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	Fx.sound("ping", 0.8, 1.2)
+end
+
+-- 심법 뽑기 결과
+function handlers.manualDraw(results: any)
+	UI.manualReveal(results)
+	Fx.sound("ping", 0.9, 1.3)
 end
 
 function handlers.toast(msg: string)
@@ -13066,6 +13987,11 @@ end
 
 function handlers.found(data: any)
 	local s = Config.STYLE_BY_ID[data.style]
+	-- 사부를 처음 만나는 장면: 사부의 한마디
+	local m = Config.MASTERS[data.style]
+	if m and m.quote then
+		Cutscene.play({ who = m.name, lines = { m.quote } }, { at = m.at })
+	end
 	UI.banner("🏯 사부를 찾았다: " .. data.master, (s and (s.icon .. " " .. s.name .. "의 주인 · ") or "") .. data.region .. " · 하늘로 빛기둥이 솟았다", s and s.color or nil)
 	Fx.sound("ping", 0.7, 0.9)
 end
@@ -13136,9 +14062,39 @@ function handlers.reward(data: any)
 	end
 end
 
+local bossNow: Model? = nil
 function handlers.boss(m: Model?)
 	UI.setBoss(m)
+	bossNow = m
+	-- 그 보스와 처음 맞붙을 때: 짧은 컷씬 (보는 동안은 맞지 않는다)
+	local id = m and m:GetAttribute("TypeId")
+	local key = type(id) == "string" and ("boss_" .. id) or nil
+	if m and key and Config.CUTSCENES[key] and state and state.seen and not state.seen[key] then
+		state.seen[key] = true
+		Request:FireServer("seen", key)
+		Cutscene.play(Config.CUTSCENES[key], { m = m })
+	end
 end
+
+-- 배경 음악: 탑 / 보스 / 있는 곳
+task.spawn(function()
+	while true do
+		task.wait(1)
+		pcall(function()
+			local r = rootOfChar()
+			local key = "default"
+			if UI.towerActive then
+				key = bossNow and bossNow.Parent and "boss" or "tower"
+			elseif bossNow and bossNow.Parent and bossNow:GetAttribute("Dead") ~= true then
+				key = "boss"
+			elseif r then
+				local reg = UI.regionAt(r.Position)
+				key = reg and reg.id or "default"
+			end
+			Music.set(key)
+		end)
+	end
+end)
 
 function handlers.bossPhase(m: Model, name: string, phase: number?)
 	local ph = phase or 2
@@ -13833,6 +14789,316 @@ return Anim
         </Item>
         <Item class="ModuleScript" referent="15">
           <Properties>
+            <string name="Name">Cutscene</string>
+            <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local Cutscene = {}
+Cutscene.active = false
+
+local player = Players.LocalPlayer
+local queue: { any } = {}
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "KwonCutscene"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 50
+gui.Enabled = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local function tween(inst: Instance, time: number, goal: { [string]: any })
+	local tw = TweenService:Create(inst, TweenInfo.new(time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+
+local function frame(props: { [string]: any }): Frame
+	local f = Instance.new("Frame")
+	f.BorderSizePixel = 0
+	for k, v in pairs(props) do
+		(f :: any)[k] = v
+	end
+	return f
+end
+
+local function label(props: { [string]: any }): TextLabel
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Font = Enum.Font.GothamBold
+	l.TextColor3 = Color3.new(1, 1, 1)
+	l.TextStrokeTransparency = 0.6
+	for k, v in pairs(props) do
+		(l :: any)[k] = v
+	end
+	return l
+end
+
+-- 위아래 띠
+local top = frame({ Name = "Top", BackgroundColor3 = Color3.new(0, 0, 0), Size = UDim2.fromScale(1, 0), Parent = gui })
+local bottom = frame({ Name = "Bottom", BackgroundColor3 = Color3.new(0, 0, 0), AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), Parent = gui })
+local who = label({ Name = "Who", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -118), Size = UDim2.new(0.8, 0, 0, 30), TextScaled = true, TextColor3 = Color3.fromRGB(255, 215, 130), Text = "", Parent = gui })
+local line = label({ Name = "Line", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -26), Size = UDim2.new(0.8, 0, 0, 86), TextScaled = true, TextWrapped = true, Font = Enum.Font.Gotham, Text = "", Parent = gui })
+local sizeLimit = Instance.new("UITextSizeConstraint")
+sizeLimit.MaxTextSize = 30
+sizeLimit.Parent = line
+label({ Name = "Next", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -8), Size = UDim2.new(0, 220, 0, 20), TextScaled = true, Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(190, 190, 190), Text = "누르면 다음 ▶", TextXAlignment = Enum.TextXAlignment.Right, Parent = gui })
+-- 화면 아무 곳이나 누르면 다음 대사
+local tap = Instance.new("TextButton")
+tap.Name = "Tap"
+tap.BackgroundTransparency = 1
+tap.Text = ""
+tap.Size = UDim2.fromScale(1, 1)
+tap.Parent = gui
+local skip = Instance.new("TextButton")
+skip.Name = "Skip"
+skip.AnchorPoint = Vector2.new(1, 0)
+skip.Position = UDim2.new(1, -20, 0, 20)
+skip.Size = UDim2.new(0, 130, 0, 36)
+skip.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+skip.BackgroundTransparency = 0.3
+skip.TextColor3 = Color3.new(1, 1, 1)
+skip.Font = Enum.Font.GothamBold
+skip.TextScaled = true
+skip.Text = "건너뛰기 ▶▶"
+skip.ZIndex = 3
+skip.Parent = gui
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = skip
+
+local advance = false
+local skipped = false
+tap.Activated:Connect(function()
+	advance = true
+end)
+skip.Activated:Connect(function()
+	skipped = true
+	advance = true
+end)
+
+-- 움직임 막기 (컷씬 동안 캐릭터가 걷지 않게)
+local function controls(on: boolean)
+	pcall(function()
+		local ps = player:FindFirstChild("PlayerScripts")
+		local pm = ps and ps:FindFirstChild("PlayerModule")
+		if pm and pm:IsA("ModuleScript") then
+			local c = (require :: any)(pm):GetControls()
+			if on then
+				c:Enable()
+			else
+				c:Disable()
+			end
+		end
+	end)
+end
+
+local function rootOf(m: Model?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+
+-- 비출 곳: 모델이면 그 몸, 자리면 그 자리, 없으면 나
+local function subjectOf(subject: any): (() -> Vector3, number)
+	local m = subject and subject.m
+	if typeof(m) == "Instance" and m:IsA("Model") then
+		local scale = tonumber(m:GetAttribute("Scale")) or 1
+		return function()
+			local r = rootOf(m)
+			return r and r.Position + Vector3.new(0, 1.5 * scale, 0) or Vector3.zero
+		end, 10 + 4 * scale
+	end
+	local at = subject and subject.at
+	if typeof(at) == "Vector3" then
+		return function()
+			return at + Vector3.new(0, 4, 0)
+		end, subject.far and 60 or 16
+	end
+	return function()
+		local r = rootOf(player.Character)
+		return r and r.Position + Vector3.new(0, 1.5, 0) or Vector3.zero
+	end, 12
+end
+
+local function runOne(item: any)
+	Cutscene.active = true
+	advance, skipped = false, false
+	controls(false)
+	local cam = workspace.CurrentCamera
+	local oldType = cam.CameraType
+	local focus, dist = subjectOf(item.subject)
+	-- 처음 각도: 내 쪽에서 비스듬히 (대상이 나를 보고 말하는 듯)
+	local me = rootOf(player.Character)
+	local p0 = focus()
+	local from = me and Vector3.new(me.Position.X - p0.X, 0, me.Position.Z - p0.Z) or Vector3.new(0, 0, 1)
+	local a0 = (from.Magnitude > 0.1 and math.atan2(from.Z, from.X) or 0) + 0.5
+	local t0 = os.clock()
+	cam.CameraType = Enum.CameraType.Scriptable
+	local conn = RunService.RenderStepped:Connect(function()
+		local p = focus()
+		local a = a0 + (os.clock() - t0) * 0.06
+		local eye = p + Vector3.new(math.cos(a) * dist, dist * 0.28, math.sin(a) * dist)
+		cam.CFrame = cam.CFrame:Lerp(CFrame.lookAt(eye, p), 0.12)
+	end)
+	cam.CFrame = CFrame.lookAt(p0 + Vector3.new(math.cos(a0) * dist * 1.4, dist * 0.4, math.sin(a0) * dist * 1.4), p0)
+	gui.Enabled = true
+	who.Text = item.scene.who or ""
+	line.Text = ""
+	tween(top, 0.35, { Size = UDim2.fromScale(1, 0.11) })
+	tween(bottom, 0.35, { Size = UDim2.new(1, 0, 0, 150) })
+	task.wait(0.35)
+	for _, text in ipairs(item.scene.lines or {}) do
+		if skipped then
+			break
+		end
+		advance = false
+		local n = utf8.len(text) or #text
+		local dur = math.clamp(1.6 + n * 0.07, 2.4, 6)
+		-- 한 글자씩
+		local shown = 0
+		local typeStart = os.clock()
+		while shown < n and not advance do
+			shown = math.min(n, math.floor((os.clock() - typeStart) / 0.035) + 1)
+			local cut = utf8.offset(text, shown + 1)
+			line.Text = cut and string.sub(text, 1, cut - 1) or text
+			RunService.RenderStepped:Wait()
+		end
+		line.Text = text
+		advance = false
+		local t = os.clock()
+		while os.clock() - t < dur and not advance do
+			RunService.RenderStepped:Wait()
+		end
+	end
+	tween(top, 0.3, { Size = UDim2.fromScale(1, 0) })
+	tween(bottom, 0.3, { Size = UDim2.fromScale(1, 0) })
+	who.Text = ""
+	line.Text = ""
+	task.wait(0.3)
+	conn:Disconnect()
+	gui.Enabled = false
+	cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
+	controls(true)
+	Cutscene.active = false
+	if item.onDone then
+		task.spawn(item.onDone)
+	end
+end
+
+local running = false
+local function pump()
+	if running then
+		return
+	end
+	running = true
+	task.spawn(function()
+		while #queue > 0 do
+			local item = table.remove(queue, 1)
+			local ok, err = pcall(runOne, item)
+			if not ok then
+				warn("[권왕] 컷씬 오류:", err)
+				pcall(function()
+					gui.Enabled = false
+					workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+				end)
+				controls(true)
+				Cutscene.active = false
+			end
+		end
+		running = false
+	end)
+end
+
+-- scene = { who, lines }, subject = { m = 모델 } 또는 { at = 자리 }
+function Cutscene.play(scene: any, subject: any?, onDone: (() -> ())?)
+	if type(scene) ~= "table" then
+		return
+	end
+	table.insert(queue, { scene = scene, subject = subject, onDone = onDone })
+	pump()
+end
+
+------------------------------------------------------------------------
+-- 처음 들어온 사람에게 한 번: 조작 안내
+------------------------------------------------------------------------
+function Cutscene.controls(onDone: (() -> ())?)
+	local card = Instance.new("ScreenGui")
+	card.Name = "KwonControls"
+	card.ResetOnSpawn = false
+	card.DisplayOrder = 45
+	card.Parent = player:WaitForChild("PlayerGui")
+	local dim = frame({ BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, Size = UDim2.fromScale(1, 1), Parent = card })
+	local panel = frame({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0.92, 0, 0.8, 0), BackgroundColor3 = Color3.fromRGB(28, 24, 22), Parent = dim })
+	local sizeC = Instance.new("UISizeConstraint")
+	sizeC.MaxSize = Vector2.new(520, 430)
+	sizeC.Parent = panel
+	local pc = Instance.new("UICorner")
+	pc.CornerRadius = UDim.new(0, 14)
+	pc.Parent = panel
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(235, 190, 80)
+	stroke.Thickness = 2
+	stroke.Parent = panel
+	label({ Position = UDim2.new(0, 0, 0, 12), Size = UDim2.new(1, 0, 0, 34), TextScaled = true, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 215, 130), Text = "🥋 조작법", Parent = panel })
+	local touch = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	local rows = touch and {
+		{ "왼쪽 화면", "움직이기" },
+		{ "👊 버튼", "연타 (네 번 이으면 마무리 일격)" },
+		{ "강타 버튼", "꾹 눌렀다 떼면 모아치기" },
+		{ "E · R · G 버튼", "기술 · 오의" },
+		{ "🛡 버튼", "막기. 맞기 직전에 누르면 흘리기" },
+		{ "회피 버튼", "구르며 피하기 (잠깐 무적)" },
+		{ "말 걸기", "사람·수련터·상점 가까이에서 뜨는 버튼" },
+	} or {
+		{ "마우스 왼쪽", "연타 (네 번 이으면 마무리 일격)" },
+		{ "Z (누르고 떼기)", "강타 · 모아치기" },
+		{ "E · R / G", "기술 / 오의" },
+		{ "F", "막기. 맞기 직전에 누르면 흘리기" },
+		{ "Q / Shift", "회피 / 달리기" },
+		{ "Space 두 번", "이단 뛰기" },
+		{ "T", "말 걸기 · 수련 · 상점" },
+		{ "Tab / M / H", "능력치 / 지도 / 회복약" },
+		{ "마우스 오른쪽 끌기", "시점 돌리기" },
+	}
+	local list = frame({ BackgroundTransparency = 1, Position = UDim2.new(0, 24, 0, 56), Size = UDim2.new(1, -48, 1, -120), Parent = panel })
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 4)
+	layout.Parent = list
+	for _, r in ipairs(rows) do
+		local row = frame({ BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1 / #rows, -4), Parent = list })
+		label({ Size = UDim2.fromScale(0.4, 1), TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = Color3.fromRGB(255, 225, 160), Text = r[1], Parent = row })
+		label({ Position = UDim2.fromScale(0.42, 0), Size = UDim2.fromScale(0.58, 1), TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.Gotham, Text = r[2], Parent = row })
+	end
+	local ok = Instance.new("TextButton")
+	ok.AnchorPoint = Vector2.new(0.5, 1)
+	ok.Position = UDim2.new(0.5, 0, 1, -14)
+	ok.Size = UDim2.new(0, 200, 0, 44)
+	ok.BackgroundColor3 = Color3.fromRGB(235, 190, 80)
+	ok.TextColor3 = Color3.fromRGB(30, 20, 10)
+	ok.Font = Enum.Font.GothamBlack
+	ok.TextScaled = true
+	ok.Text = "알겠어요"
+	ok.Parent = panel
+	local oc = Instance.new("UICorner")
+	oc.CornerRadius = UDim.new(0, 10)
+	oc.Parent = ok
+	ok.Activated:Connect(function()
+		card:Destroy()
+		if onDone then
+			onDone()
+		end
+	end)
+end
+
+return Cutscene
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="16">
+          <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
 local Debris = game:GetService("Debris")
@@ -14280,6 +15546,26 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(shard, 0.55)
 		end
 		Fx.ring(pos, c, 1, 11 * s, 0.35, dir)
+	elseif style.fx == "duel" then
+		-- 무쌍: 맞은 자리에 붉은 십자 베기와 하얀 섬광 (군더더기 없이 날카롭게)
+		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
+		for _, sgn in ipairs({ 1, -1 }) do
+			local bar = piece(Vector3.new(0.35, 0.35, 0.35), sgn > 0 and c or c2, Enum.Material.Neon, nil, 0)
+			bar.CFrame = face * CFrame.Angles(0, 0, sgn * math.rad(45)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.16, { Size = Vector3.new(0.12, 0.12, (heavy and 11 or 7) * s) })
+			task.delay(0.16, function()
+				if bar.Parent then
+					tween(bar, 0.14, { Transparency = 1 })
+				end
+			end)
+			Debris:AddItem(bar, 0.32)
+		end
+		Fx.ring(pos, c2, 1, (heavy and 12 or 8) * s, 0.22, dir)
+		if heavy then
+			Fx.ring(pos, c, 2, 16 * s, 0.32, dir)
+			Fx.burst("spark", pos, c2, 14, 1.2)
+		end
+		Fx.flash(pos, c, 14 * s, 3, 0.2)
 	elseif style.fx == "fire" then
 		-- 열화: 불덩이가 터지고 불씨가 솟는다
 		local ball = piece(Vector3.new(2, 2, 2) * s, Color3.fromRGB(255, 200, 90), Enum.Material.Neon, Enum.PartType.Ball, 0.1)
@@ -15058,6 +16344,13 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c, 1, 12, 0.3, look)
 		end
+	elseif kind == "duel" then
+		-- 무쌍: 곧은 하얀 일직선 끝에 붉은 날
+		streak(base + look * 1.5, base + look * (7 * s), c2, 0.22, 0.12)
+		streak(base + look * 1.5 + up * 0.2, base + look * (6 * s), c, 0.12, 0.16)
+		if heavy then
+			Fx.ring(base + look * 5, c, 1, 11, 0.22, look)
+		end
 	elseif kind == "fire" then
 		-- 열화: 주먹을 따라 휘어지는 불길 세 가닥
 		for i = -1, 1 do
@@ -15152,6 +16445,7 @@ local HAND_FX = {
 	ocean = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.2, life = 0.7, size = 0.45 },
 	time = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.6, life = 1.4, size = 0.35 },
 	fire = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.5, size = 0.6 },
+	duel = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 3, life = 0.35, size = 0.4 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do
@@ -16456,7 +17750,73 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="17">
+          <Properties>
+            <string name="Name">Music</string>
+            <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
+
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+
+local Music = {}
+local current: Sound? = nil
+local currentKey = ""
+local muted = false
+
+local function idOf(key: string): number
+	local id = tonumber(Config.MUSIC[key]) or 0
+	if id == 0 and key ~= "default" then
+		return tonumber(Config.MUSIC.default) or 0
+	end
+	return id
+end
+
+-- key: village / default / boss / tower / 지역 id (snow, cult ...)
+function Music.set(key: string)
+	local id = idOf(key)
+	local resolved = id == 0 and "" or tostring(id)
+	if resolved == currentKey then
+		return
+	end
+	currentKey = resolved
+	local old = current
+	current = nil
+	if old then
+		local o = old
+		TweenService:Create(o, TweenInfo.new(1.5), { Volume = 0 }):Play()
+		task.delay(1.6, function()
+			o:Destroy()
+		end)
+	end
+	if id == 0 then
+		return
+	end
+	local s = Instance.new("Sound")
+	s.Name = "KwonMusic"
+	s.SoundId = "rbxassetid://" .. id
+	s.Looped = true
+	s.Volume = 0
+	s.Parent = SoundService
+	s:Play()
+	current = s
+	TweenService:Create(s, TweenInfo.new(2), { Volume = muted and 0 or Config.MUSIC.volume }):Play()
+end
+
+function Music.toggleMute(): boolean
+	muted = not muted
+	if current then
+		current.Volume = muted and 0 or Config.MUSIC.volume
+	end
+	return muted
+end
+
+return Music
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -16871,7 +18231,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -17287,6 +18647,153 @@ local function buildShop()
 	end
 end
 
+------------------------------------------------------------------------
+-- 심법 (내공 수련서): 뽑기, 세 칸에 끼우기
+------------------------------------------------------------------------
+local function hex(c: Color3): string
+	return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+end
+local function manualLine(id: string, r: number): string
+	local m = Config.MANUAL_BY_ID[id]
+	local R = Config.MANUAL_RARITY[r]
+	if not m or not R then
+		return ""
+	end
+	return string.format('%s <font color="%s"><b>[%s] %s</b></font>  %s %.1f%%', m.icon, hex(R.color), R.name, m.name, m.desc, Config.manualValue(id, r) * 100)
+end
+local lastDraw: { any }? = nil
+local function buildManuals()
+	local page = makePage("manuals")
+	local D = Config.MANUAL_DRAW
+	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -168, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 1번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(150, 100, 40) }, function()
+		Request:FireServer("manualDraw", 1)
+	end).Parent = page
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 10번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(190, 120, 30) }, function()
+		Request:FireServer("manualDraw", 10)
+	end).Parent = page
+	-- 끼운 세 칸
+	local slotRow = new("Frame", { Position = UDim2.new(0, 0, 0, 58), Size = UDim2.new(1, 0, 0, 74), BackgroundTransparency = 1, Parent = page })
+	new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 1, 0), CellPadding = UDim2.new(0, 8, 0, 0), Parent = slotRow })
+	local slots = {}
+	for i = 1, D.slots do
+		local card = new("Frame", { BackgroundColor3 = C.panel2, Parent = slotRow }, { corner(10), stroke(C.line, 1.5) })
+		local l = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 1, -8), TextSize = 15, RichText = true, Text = "", Parent = card })
+		local b = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -6, 1, -6), Size = UDim2.new(0, 60, 0, 26), Text = "빼기", TextSize = 13, BackgroundColor3 = C.panel, Parent = card }, function()
+			local id = state and state.equip and state.equip[i]
+			if id then
+				Request:FireServer("manualUnequip", id)
+			end
+		end)
+		slots[i] = { card = card, label = l, btn = b }
+	end
+	local result = text({ Position = UDim2.new(0, 0, 0, 138), Size = UDim2.new(1, 0, 0, 60), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Text = "", Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -228), UDim2.new(0, 0, 0, 202))
+	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
+	local rows = {}
+	for _, m in ipairs(Config.MANUALS) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 44), BackgroundColor3 = C.panel, Parent = list }, { corner(8), stroke(C.line, 1) })
+		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -130, 1, 0), TextSize = 15, RichText = true, Parent = row })
+		local b = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 100, 0, 32), Text = "끼우기", TextSize = 14, Parent = row }, function()
+			if not state or not state.manuals or not state.manuals[m.id] then
+				return
+			end
+			Request:FireServer(table.find(state.equip or {}, m.id) and "manualUnequip" or "manualEquip", m.id)
+		end)
+		rows[m.id] = { label = l, btn = b }
+	end
+	local rates = {}
+	for _, R in ipairs(Config.MANUAL_RARITY) do
+		table.insert(rates, string.format('<font color="%s">%s %s%%</font>', hex(R.color), R.name, tostring(R.rate * 100)))
+	end
+	text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 22), TextSize = 13, RichText = true, TextColor3 = C.dim, Text = "확률: " .. table.concat(rates, " · ") .. string.format("  ·  %d번 안에 전설 이상이 한 번은 나온다", D.pity), Parent = page })
+	refreshers.manuals = function()
+		if not state then
+			return
+		end
+		head.Text = string.format("📜 두루마리 <b>%d</b>개  ·  천장 %d / %d\n<font color=\"#C8B9A5\">뽑기 한 번 = 두루마리 하나 (없으면 💰 %s). 보스·천층탑에서 두루마리를 얻는다</font>", state.scrolls or 0, state.pity or 0, D.pity, Config.formatNumber(D.coins))
+		local equip = state.equip or {}
+		for i, sl in ipairs(slots) do
+			local id = equip[i]
+			local r = id and state.manuals and state.manuals[id]
+			sl.label.Text = (id and r) and (string.format("<b>%d칸</b>\n", i) .. manualLine(id, r)) or string.format('<b>%d칸</b>\n<font color="#9A8C7A">비어 있음 (아래에서 끼우기)</font>', i)
+			sl.btn.Visible = id ~= nil
+		end
+		for _, m in ipairs(Config.MANUALS) do
+			local row = rows[m.id]
+			local r = state.manuals and state.manuals[m.id]
+			if r then
+				row.label.Text = manualLine(m.id, r)
+				local on = table.find(equip, m.id) ~= nil
+				row.btn.Visible = true
+				row.btn.Text = on and "✅ 빼기" or "끼우기"
+				row.btn.BackgroundColor3 = on and Color3.fromRGB(60, 120, 70) or C.panel2
+			else
+				row.label.Text = string.format('<font color="#8A7C6A">%s %s · %s (아직 없음)</font>', m.icon, m.name, m.desc)
+				row.btn.Visible = false
+			end
+		end
+		if lastDraw then
+			local parts = {}
+			for _, res in ipairs(lastDraw) do
+				local m = Config.MANUAL_BY_ID[res.id]
+				local R = Config.MANUAL_RARITY[res.r]
+				if m and R then
+					table.insert(parts, string.format('<font color="%s">[%s] %s</font>%s', hex(R.color), R.name, m.name, res.refund and string.format(" (💰+%s)", Config.formatNumber(res.refund)) or (res.up and " ⬆" or " ✨새로")))
+				end
+			end
+			result.Text = "<b>뽑은 것:</b> " .. table.concat(parts, "  ·  ")
+		end
+	end
+end
+
+function UI.manualReveal(results: { any })
+	lastDraw = results
+	local best = 1
+	for _, res in ipairs(results) do
+		best = math.max(best, res.r or 1)
+	end
+	if not window.Visible or current ~= "manuals" then
+		UI.openPage("manuals")
+	elseif refreshers.manuals then
+		refreshers.manuals()
+	end
+	if best >= 4 then
+		local R = Config.MANUAL_RARITY[best]
+		for _, res in ipairs(results) do
+			if res.r == best then
+				local m = Config.MANUAL_BY_ID[res.id]
+				UI.banner(string.format("✨ [%s] %s", R.name, m and m.name or ""), m and m.desc or nil, R.color)
+				break
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 지금 층과 나가기
+------------------------------------------------------------------------
+local towerFrame: Frame? = nil
+local towerLabel: TextLabel? = nil
+UI.towerActive = false
+function UI.setTower(data: any?)
+	UI.towerActive = data ~= nil
+	if not towerFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.new(0, 420, 0, 46), BackgroundColor3 = Color3.fromRGB(20, 14, 10), BackgroundTransparency = 0.2, Visible = false, Parent = gui }, { corner(10), stroke(C.gold, 1.5) })
+		scaled(f)
+		towerLabel = text({ Position = UDim2.new(0, 14, 0, 0), Size = UDim2.new(1, -120, 1, 0), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = f })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 96, 0, 32), Text = "🚪 나가기", TextSize = 15, BackgroundColor3 = C.red, Parent = f }, function()
+			Request:FireServer("towerLeave")
+		end)
+		towerFrame = f
+	end
+	local f = towerFrame :: Frame
+	f.Visible = data ~= nil
+	if data and towerLabel then
+		towerLabel.Text = string.format("🗼 천층탑 %d층%s  ·  최고 %d층", data.floor or 1, data.boss and " 👹" or "", data.best or 0)
+	end
+end
+
 local function buildHelp()
 	local page = makePage("help")
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
@@ -17429,6 +18936,11 @@ local function buildTest()
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
+	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
+		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
+		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
+		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
+	})
 	section("🎯 수련 목인·시간", {
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
 		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
@@ -17468,6 +18980,7 @@ local function buildTest()
 		mugeuk = "강호 곳곳의 비급 조각 다섯을 모두 줍는다 (지도에 안 나온다). 자리: ",
 		hyeolma = "북동쪽 끝 혈교 본산의 보스 '혈마'를 쓰러뜨리면 바로 얻는다",
 		pacheon = "북서쪽 끝 허공 균열의 보스 '천마'를 쓰러뜨리면 바로 얻는다",
+		musang = "마을 비무대에서 다른 사람을 백 번 이기면 바로 얻는다 (비무 승리는 능력치 창과 순위표에 나온다)",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]
@@ -18177,7 +19690,12 @@ local function regionAt(pos: Vector3): any
 	end
 	return best
 end
+UI.regionAt = regionAt
 local function ambientTick(pos: Vector3)
+	-- 하늘의 천층탑 시련장에서는 땅의 이름을 알리지 않는다
+	if pos.Y > 1000 then
+		return
+	end
 	local r = regionAt(pos)
 	local id = r and r.id or "wild"
 	if id ~= regionNow then
@@ -18349,7 +19867,7 @@ function UI.init(req: RemoteEvent)
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 430), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 6) }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "test", "🧪 테스트" } }) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 44), Text = item[2], TextSize = 18, Parent = menu }, function()
 			if item[1] == "map" then
 				UI.toggleMap()
@@ -18421,6 +19939,7 @@ function UI.init(req: RemoteEvent)
 	buildStyles()
 	buildStats()
 	buildShop()
+	buildManuals()
 	buildHelp()
 	buildTrainGuide()
 	buildTest()
@@ -18456,7 +19975,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -20349,6 +21868,88 @@ function H.eruption(data: any)
 	end)
 end
 
+-- 무쌍 천하무쌍: 빛의 울타리가 솟아 둘레를 가두고, 한가운데에서 여덟 번 몰아친 뒤 하늘로 쳐올린다
+function H.arena(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local ground = at - Vector3.new(0, 2.3, 0)
+	local r = data.radius or 26
+	local delay, every, strikes, finalAt = data.delay or 0.5, data.every or 0.15, data.strikes or 8, data.finalAt or 1.9
+	local close = near(at, 140)
+	if close then
+		colorGrade(-0.4, 0.3, -0.05, Color3.fromRGB(255, 225, 225), finalAt + 0.2)
+	end
+	-- 울타리: 둘레에 솟는 빛의 판과 바닥의 붉은 테
+	local fence: { BasePart } = {}
+	local n = 28
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = ground + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		local panel = piece(Vector3.new(2 * math.pi * r / n, 0.2, 0.3), k % 2 == 0 and c or c2, Enum.Material.Neon, nil, 0.45)
+		panel.CFrame = CFrame.lookAt(p, Vector3.new(ground.X, p.Y, ground.Z)) * CFrame.Angles(0, math.rad(90), 0)
+		task.delay(k * 0.008, function()
+			if panel.Parent then
+				tween(panel, 0.25, { Size = Vector3.new(2 * math.pi * r / n, 14, 0.3), CFrame = panel.CFrame * CFrame.new(0, 7, 0) })
+			end
+		end)
+		table.insert(fence, panel)
+	end
+	local rim = piece(Vector3.new(0.3, r * 2, r * 2), c, Enum.Material.Neon, Enum.PartType.Cylinder, 0.5)
+	rim.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	table.insert(fence, rim)
+	Fx.text(at + Vector3.new(0, 10, 0), "천하무쌍", c2, 50, 1.4)
+	-- 몰아치기: 한가운데에서 엇갈리는 베기
+	for i = 0, strikes - 1 do
+		task.delay(delay + i * every, function()
+			local a = math.random() * math.pi * 2
+			local d = Vector3.new(math.cos(a), 0, math.sin(a))
+			local mid = ground + Vector3.new(0, 3 + math.random() * 3, 0)
+			local slash = piece(Vector3.new(0.4, 0.4, 0.4), i % 2 == 0 and c2 or c, Enum.Material.Neon, nil, 0)
+			slash.CFrame = CFrame.lookAt(mid - d * 12, mid + d * 12) * CFrame.Angles(0, 0, math.random() * math.pi)
+			slash.Position = mid
+			tween(slash, 0.1, { Size = Vector3.new(0.5, 0.15, 28) })
+			fade(slash, 0.1, 0.15)
+			Fx.ring(mid, c, 2, 14, 0.2, d)
+			Fx.burst("spark", mid, c2, 8, 1.2)
+			if hooks.shake and close and i % 2 == 0 then
+				hooks.shake(0.8)
+			end
+			Fx.sound("hit", 0.6, 1.1 + math.random() * 0.2, mid)
+		end)
+	end
+	-- 마지막 한 주먹: 하늘로 솟는 붉은 기둥, 울타리가 산산이 흩어진다
+	task.delay(finalAt, function()
+		local col = piece(Vector3.new(90, 10, 10), c, Enum.Material.Neon, Enum.PartType.Cylinder, 0.05)
+		col.CFrame = CFrame.new(ground + Vector3.new(0, 45, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(col, 0.5, { Size = Vector3.new(100, 0.5, 0.5), Transparency = 1 })
+		Debris:AddItem(col, 0.55)
+		local core = piece(Vector3.new(90, 4, 4), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+		core.CFrame = col.CFrame
+		tween(core, 0.35, { Size = Vector3.new(100, 0.2, 0.2), Transparency = 1 })
+		Debris:AddItem(core, 0.4)
+		for k = 0, 2 do
+			task.delay(k * 0.06, function()
+				Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c or c2, 4, r * (2 + k * 0.4), 0.5)
+			end)
+		end
+		for _, panel in ipairs(fence) do
+			tween(panel, 0.35, { Transparency = 1, CFrame = panel.CFrame * CFrame.new(0, 6, 0) })
+			Debris:AddItem(panel, 0.4)
+		end
+		Fx.burst("spark", at, c2, 40, 2)
+		Fx.flash(at, c, 60, 8, 0.6)
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(255, 235, 235), 0.35)
+		end
+		if hooks.shake and close then
+			hooks.shake(2.6)
+			boom(at, 2.6)
+		end
+		Fx.sound("heavy", 1, 0.5, at)
+	end)
+	Debris:AddItem(rim, finalAt + 0.5)
+end
+
 -- 파천 중압 / 태초 창세 / 일월: 정해진 수만큼 맞히면 상대 자리에서 터진다
 local pulseFlip = false
 function H.pulse(data: any)
@@ -20808,7 +22409,7 @@ return Ults
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="18">
+  <Item class="Workspace" referent="20">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

@@ -51,6 +51,12 @@ type Profile = {
 	autoStat: string?, -- 자동 수련으로 올릴 능력치 ("all" = 골고루)
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 	gates: { [string]: boolean }, -- 넘은 경지의 관문 (경지 번호)
+	manuals: { [string]: number }, -- 가진 심법 (등급 번호)
+	equip: { string }, -- 끼운 심법 (세 칸)
+	scrolls: number, -- 심법 두루마리
+	pity: number, -- 전설 이상이 안 나온 뽑기 수
+	towerBest: number, -- 천층탑 최고 층
+	seen: { [string]: boolean }, -- 본 장면 (컷씬)
 }
 
 local function defaultProfile(): Profile
@@ -73,6 +79,12 @@ local function defaultProfile(): Profile
 		accepted = 1,
 		gradeUp = {},
 		gates = {},
+		manuals = {},
+		equip = {},
+		scrolls = 0,
+		pity = 0,
+		towerBest = 0,
+		seen = {},
 	}
 end
 
@@ -137,6 +149,26 @@ local function sanitize(data: any): Profile
 	end)
 	p.trials = flags(data.trials, function(k)
 		return Config.MASTERS[k] ~= nil
+	end)
+	if type(data.manuals) == "table" then
+		for id, r in pairs(data.manuals) do
+			if type(id) == "string" and Config.MANUAL_BY_ID[id] and type(r) == "number" then
+				p.manuals[id] = math.clamp(math.floor(r), 1, #Config.MANUAL_RARITY)
+			end
+		end
+	end
+	if type(data.equip) == "table" then
+		for _, id in ipairs(data.equip) do
+			if type(id) == "string" and p.manuals[id] and not table.find(p.equip, id) and #p.equip < Config.MANUAL_DRAW.slots then
+				table.insert(p.equip, id)
+			end
+		end
+	end
+	p.scrolls = math.floor(num(data.scrolls, 1e6))
+	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
+	p.towerBest = math.floor(num(data.towerBest, 100000))
+	p.seen = flags(data.seen, function(k)
+		return #k < 40
 	end)
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
@@ -210,18 +242,28 @@ local function loadProfile(player: Player): (Profile, boolean)
 	return defaultProfile(), false
 end
 
+-- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도)
+local saving = 0
 local function saveProfile(player: Player)
 	local p, st = profiles[player], states[player]
 	local ds = store
 	if not p or not st or not st.canSave or not ds then
 		return
 	end
-	local ok = pcall(function()
-		ds:SetAsync("p_" .. player.UserId, p)
-	end)
-	if ok then
-		st.dirty = false
+	saving += 1
+	for attempt = 1, 3 do
+		local ok = pcall(function()
+			ds:UpdateAsync("p_" .. player.UserId, function()
+				return p
+			end)
+		end)
+		if ok then
+			st.dirty = false
+			break
+		end
+		task.wait(attempt)
 	end
+	saving -= 1
 end
 
 local function isTester(player: Player): boolean
@@ -268,6 +310,21 @@ function Calc.gateNext(p: Profile): number?
 	return nil
 end
 
+-- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
+function Calc.manualBonus(p: Profile): { [string]: number }
+	local b = { hp = 0, dmg = 0, def = 0, steal = 0, speed = 0, chi = 0, cd = 0, ult = 0 }
+	for _, id in ipairs(p.equip or {}) do
+		local m = Config.MANUAL_BY_ID[id]
+		local r = p.manuals and p.manuals[id]
+		if m and r then
+			b[m.stat] += Config.manualValue(id, r)
+		end
+	end
+	b.def = math.min(b.def, 0.5)
+	b.cd = math.min(b.cd, 0.4)
+	return b
+end
+
 function Calc.mastery(p: Profile, styleId: string): { lv: number, xp: number }
 	local m = p.mastery[styleId]
 	if not m then
@@ -298,6 +355,20 @@ local Premium: any
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
+end
+
+-- 컷씬: 그 장면을 처음 맞을 때만 (보았다고 적어 둔다). data = { at = 비출 자리, m = 비출 모델 }
+local function cutscene(player: Player, id: string, data: any?): boolean
+	local p, st = profiles[player], states[player]
+	if not p or not st or p.seen[id] or not Config.CUTSCENES[id] then
+		return false
+	end
+	p.seen[id] = true
+	st.dirty = true
+	local d = data or {}
+	d.id = id
+	Push:FireClient(player, "cutscene", d)
+	return true
 end
 
 local function pushState(player: Player)
@@ -341,6 +412,13 @@ local function pushState(player: Player)
 		accepted = p.accepted == p.story,
 		premium = st.owned or {},
 		gateNext = Calc.gateNext(p),
+		manuals = p.manuals,
+		equip = p.equip,
+		scrolls = p.scrolls,
+		pity = p.pity,
+		towerBest = p.towerBest,
+		manualCd = Calc.manualBonus(p).cd,
+		seen = p.seen,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -424,14 +502,17 @@ local function refreshFighter(player: Player)
 	local power = Config.realmPower(idx)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade
+	local mb = Calc.manualBonus(p)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
+	local fm = f :: any
+	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power)
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power * (1 + mb.hp))
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
-	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1)
+	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed)
 	local cm = Config.chiMax(p.stats.chi, idx)
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
@@ -641,6 +722,7 @@ end
 -- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
 local Gate: any
 local Train: any
+local Tower: any
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -680,6 +762,10 @@ function Trial.start(player: Player, styleId: string)
 	end
 	if activeTrial[player] then
 		toast(player, "이미 시험 중이에요")
+		return
+	end
+	if Tower.active(player) then
+		toast(player, "천층탑 안에서는 시험을 청할 수 없어요")
 		return
 	end
 	local key = "trial_" .. styleId
@@ -796,6 +882,9 @@ Combat.init(Push, {
 	onKill = function(f: any, by: any)
 		if f.npc then
 			Npc.onDeath(f)
+			if f.towerOwner then
+				Tower.killed(f.towerOwner, f)
+			end
 			local killer = by and by.player
 			local p = killer and profiles[killer]
 			if killer and p then
@@ -807,7 +896,8 @@ Combat.init(Push, {
 				if f.gateOwner == killer then
 					Gate.ended(killer, true)
 				end
-				local isBossKill = f.model:GetAttribute("Boss") == true
+				-- 천층탑의 보스는 이야기·권법·보스 기록에 들지 않는다
+				local isBossKill = f.model:GetAttribute("Boss") == true and not f.towerOwner
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
@@ -839,11 +929,16 @@ Combat.init(Push, {
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				p.kills += 1
-				if isBoss then
+				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
 							p.bosses[id] = (p.bosses[id] or 0) + 1
 						end
+					end
+					-- 보스는 가끔 심법 두루마리를 떨어뜨린다
+					if math.random() < 0.15 then
+						p.scrolls += 1
+						toast(killer, "📜 심법 두루마리를 얻었어요!")
 					end
 				end
 				addMastery(killer, p, xp)
@@ -856,14 +951,25 @@ Combat.init(Push, {
 			local player = f.player
 			Trial.ended(player, false)
 			Gate.ended(player, false)
+			Tower.ended(player, "dead")
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
 			-- 비무대에서 이기면 기록
 			local winner = by and by.player
 			if winner and profiles[winner] then
-				profiles[winner].pvpWins += 1
+				local wp = profiles[winner]
+				wp.pvpWins += 1
 				states[winner].dirty = true
 				Push:FireAllClients("duel", { winner = winner.DisplayName, loser = player.DisplayName })
+				-- 비무 백 승: 무쌍신권
+				local PS = Config.PVP_STYLE
+				if wp.pvpWins >= PS.wins and not wp.styles[PS.style] then
+					grantStyle(winner, PS.style, false)
+					local wf = Combat.fighterOfPlayer(winner)
+					cutscene(winner, "pvp100", { m = wf and wf.model })
+					toast(winner, "⚔ 비무 " .. PS.wins .. "승! " .. Config.STYLE_BY_ID[PS.style].name .. "을(를) 얻었어요")
+					Push:FireAllClients("realm", { name = winner.DisplayName, realm = Config.STYLE_BY_ID[PS.style].name })
+				end
 				pushState(winner)
 			end
 			task.delay(Config.RESPAWN_TIME, function()
@@ -1049,7 +1155,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 			return
 		end
 		f.chi -= cost
-		f.cds[slot] = inf and 0 or t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1) * (style.cdMult or 1)
+		f.cds[slot] = inf and 0 or t + (move.cd or 0) * (tier > 0 and Config.AWAKEN[tier].cd or 1) * (style.cdMult or 1) * (1 - ((f :: any).mCd or 0))
 	end
 	local speed = Config.actSpeed(style, p.gradeUp[p.style], (f.buffs.frenzy or 0) > t)
 	local charge = 0
@@ -1418,6 +1524,10 @@ function Gate.start(player: Player)
 		toast(player, "이미 관문 시련 중이에요")
 		return
 	end
+	if Tower.active(player) then
+		toast(player, "천층탑 안에서는 관문에 도전할 수 없어요")
+		return
+	end
 	if f.combatUntil > os.clock() then
 		toast(player, "싸우는 중에는 관문에 도전할 수 없어요")
 		return
@@ -1454,7 +1564,9 @@ function Gate.start(player: Player)
 	Combat.sync(ef)
 	e.target = f
 	activeGate[player] = ef
-	Push:FireClient(player, "dialog", { who = "⛩ " .. ef.name, title = Config.Realms[nxt].name .. "의 관문", text = "이 경지에 오를 자격이 있는지 보이라." })
+	if not cutscene(player, "gate_first", { m = ef.model }) then
+		Push:FireClient(player, "dialog", { who = "⛩ " .. ef.name, title = Config.Realms[nxt].name .. "의 관문", text = "이 경지에 오를 자격이 있는지 보이라." })
+	end
 	Push:FireClient(player, "boss", ef.model)
 	task.delay(Config.GATE.time, function()
 		if activeGate[player] == ef and not ef.dead then
@@ -1491,6 +1603,290 @@ function Gate.ended(player: Player, won: boolean)
 	elseif not ef.dead then
 		Npc.despawn(ef)
 	end
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 하늘의 시련장에서 한 층씩. 층의 적을 모두 꺾으면 다음 층 (열 층마다 보스)
+-- 쓰러지거나 떨어지거나 나가면 끝. 최고 기록을 넘을 때 다섯 층마다 두루마리
+------------------------------------------------------------------------
+Tower = {}
+local towerSlots: { [number]: Player } = {}
+local activeTower: { [Player]: any } = {}
+
+function Tower.start(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st or not f or f.dead then
+		return
+	end
+	if activeTower[player] then
+		return
+	end
+	if activeTrial[player] or activeGate[player] then
+		toast(player, "다른 시련 중에는 탑에 오를 수 없어요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 탑에 오를 수 없어요")
+		return
+	end
+	local slot
+	for i = 1, Config.TOWER.slots do
+		if not towerSlots[i] then
+			slot = i
+			break
+		end
+	end
+	if not slot then
+		toast(player, "🗼 탑이 붐벼요. 잠시 뒤에 다시 오세요")
+		return
+	end
+	local ok, center = pcall(World.towerArena, slot)
+	if not ok then
+		warn("[권왕] 천층탑 시련장 오류:", center)
+		return
+	end
+	towerSlots[slot] = player
+	Train.stop(player)
+	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0 }
+	activeTower[player] = run
+	local char = player.Character
+	if char then
+		local at = center + Vector3.new(0, 4, Config.TOWER.radius * 0.6)
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(center.X, at.Y, center.Z)))
+	end
+	f.hp = f.maxHp
+	f.chi = (f :: any).chiMax or Config.CHI_MAX
+	Combat.sync(f)
+	cutscene(player, "tower_first", { at = center })
+	Tower.next(player, run)
+	-- 단에서 떨어지면 끝. 적이 떨어지면 쓰러뜨린 것으로 친다 (층이 끝나지 않는 일이 없게)
+	task.spawn(function()
+		while activeTower[player] == run do
+			task.wait(0.4)
+			local ff = Combat.fighterOfPlayer(player)
+			if activeTower[player] == run and ff and not ff.dead and ff.root.Position.Y < center.Y - 30 then
+				Tower.ended(player, "fall")
+			elseif activeTower[player] == run then
+				for ef in pairs(run.alive) do
+					if not ef.dead and (not ef.root.Parent or ef.root.Position.Y < center.Y - 30) then
+						Combat.kill(ef, ff)
+					end
+				end
+			end
+		end
+	end)
+end
+
+-- 다음 층: 잠깐 숨을 고른 뒤 적이 나타난다
+function Tower.next(player: Player, run: any)
+	local p = profiles[player]
+	if not p then
+		return
+	end
+	local T = Config.TOWER
+	run.floor += 1
+	run.token += 1
+	local floor, token = run.floor, run.token
+	local isBoss = floor % T.bossEvery == 0
+	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss })
+	task.delay(floor == 1 and 4 or 2.5, function()
+		local f = Combat.fighterOfPlayer(player)
+		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
+			return
+		end
+		local list = {}
+		if isBoss then
+			local id = T.bosses[(math.floor(floor / T.bossEvery) - 1) % #T.bosses + 1]
+			table.insert(list, { id, true })
+		else
+			local pool = T.bands[1][2]
+			for _, b in ipairs(T.bands) do
+				if floor >= b[1] then
+					pool = b[2]
+				end
+			end
+			for _ = 1, math.min(5, 2 + math.floor(floor / 8)) do
+				table.insert(list, { pool[math.random(#pool)], false })
+			end
+		end
+		-- 층의 세기는 도전자의 전투력에 맞춘다 (위로 갈수록 점점 넘어선다)
+		local want = ((f :: any).power or 100) * (T.powerBase + T.powerPer * floor)
+		for i, item in ipairs(list) do
+			local a = i / #list * math.pi * 2
+			local at = run.center + Vector3.new(math.cos(a), 0, math.sin(a)) * (T.radius * (item[2] and 0.2 or 0.45))
+			local e = Npc.spawn(item[1], item[2], at, "trial")
+			if e then
+				local ef = e.f :: any
+				ef.towerOwner = player
+				ef.trialOwner = player
+				local w = want * (item[2] and 1.15 or 1)
+				local k = w / math.max(1, ef.power or 100)
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (1 + T.hpPer * floor) * (item[2] and 2.5 or 1)))
+				ef.hp = ef.maxHp
+				ef.dmgMult *= k
+				ef.power = math.floor(w)
+				ef.rewardMult = 0.3
+				ef.model:SetAttribute("Power", ef.power)
+				ef.model:SetAttribute("Label", string.format("%d층 · %s", floor, ef.name))
+				Combat.sync(ef)
+				e.target = f
+				run.alive[ef] = true
+			end
+		end
+	end)
+end
+
+function Tower.killed(player: Player, ef: any)
+	local run = activeTower[player]
+	if not run or not run.alive[ef] then
+		return
+	end
+	run.alive[ef] = nil
+	if next(run.alive) then
+		return
+	end
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local T = Config.TOWER
+	local floor = run.floor
+	local coins = T.coins * floor
+	p.coins += coins
+	local scrolls = 0
+	if floor > p.towerBest then
+		p.towerBest = floor
+		if floor % T.scrollEvery == 0 then
+			scrolls += 1
+		end
+		if floor % T.bossEvery == 0 then
+			scrolls += 2
+		end
+		p.scrolls += scrolls
+	end
+	st.dirty = true
+	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest })
+	pushState(player)
+	Tower.next(player, run)
+end
+
+-- reason: "dead" / "fall" / "leave" / "left"
+function Tower.ended(player: Player, reason: string)
+	local run = activeTower[player]
+	if not run then
+		return
+	end
+	activeTower[player] = nil
+	run.token += 1
+	towerSlots[run.slot] = nil
+	for ef in pairs(run.alive) do
+		if not ef.dead then
+			Npc.despawn(ef)
+		end
+	end
+	run.alive = {}
+	if reason == "left" then
+		return
+	end
+	Push:FireClient(player, "tower", nil)
+	Push:FireClient(player, "boss", nil)
+	local p = profiles[player]
+	if p then
+		toast(player, string.format("🗼 천층탑 %d층까지 올랐어요 (최고 %d층)", math.max(0, run.floor - 1), p.towerBest))
+	end
+	if reason ~= "dead" then
+		local char = player.Character
+		if char then
+			local at = Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22
+			char:PivotTo(CFrame.new(at))
+		end
+	end
+end
+
+function Tower.active(player: Player): any
+	return activeTower[player]
+end
+
+------------------------------------------------------------------------
+-- 심법 뽑기: 두루마리를 먼저 쓰고, 없으면 은자. 같은 심법이 더 높은 등급으로 나오면 바뀐다
+------------------------------------------------------------------------
+local Manual = {}
+
+local function rollRarity(p: Profile): number
+	local D = Config.MANUAL_DRAW
+	if p.pity + 1 >= D.pity then
+		return math.random() < 0.1 and 5 or 4
+	end
+	local r, acc = math.random(), 0
+	for i, R in ipairs(Config.MANUAL_RARITY) do
+		acc += R.rate
+		if r < acc then
+			return i
+		end
+	end
+	return 1
+end
+
+function Manual.draw(player: Player, nArg: any)
+	local p, st = profiles[player], states[player]
+	if not p or not st then
+		return
+	end
+	local D = Config.MANUAL_DRAW
+	local n = tonumber(nArg) == 10 and 10 or 1
+	local useScroll = math.min(p.scrolls, n)
+	local coinCost = (n - useScroll) * D.coins
+	if p.coins < coinCost then
+		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(D.coins)))
+		return
+	end
+	p.scrolls -= useScroll
+	p.coins -= coinCost
+	local results = {}
+	for _ = 1, n do
+		local r = rollRarity(p)
+		p.pity = r >= 4 and 0 or p.pity + 1
+		local m = Config.MANUALS[math.random(#Config.MANUALS)]
+		local had = p.manuals[m.id]
+		local res: any = { id = m.id, r = r }
+		if had and had >= r then
+			res.refund = D.refund * r
+			p.coins += res.refund
+		else
+			res.up = had ~= nil
+			p.manuals[m.id] = r
+			-- 빈 칸이 있으면 바로 끼운다
+			if not table.find(p.equip, m.id) and #p.equip < D.slots then
+				table.insert(p.equip, m.id)
+			end
+		end
+		table.insert(results, res)
+	end
+	st.dirty = true
+	refreshFighter(player)
+	Push:FireClient(player, "manualDraw", results)
+	pushState(player)
+end
+
+function Manual.equip(player: Player, id: any, on: boolean)
+	local p, st = profiles[player], states[player]
+	if not p or not st or type(id) ~= "string" or not p.manuals[id] then
+		return
+	end
+	local i = table.find(p.equip, id)
+	if on and not i then
+		if #p.equip >= Config.MANUAL_DRAW.slots then
+			toast(player, "심법 칸이 가득 찼어요. 하나를 빼고 끼우세요")
+			return
+		end
+		table.insert(p.equip, id)
+	elseif not on and i then
+		table.remove(p.equip, i)
+	end
+	st.dirty = true
+	refreshFighter(player)
+	pushState(player)
 end
 
 Train = {}
@@ -1716,6 +2112,39 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		-- 진행 중인 시험·각성 시련도 거둔다
 		Trial.ended(player, false)
 		Gate.ended(player, false)
+		Tower.ended(player, "leave")
+	elseif action == "testScrolls" then
+		p.scrolls += 10
+		toast(player, "📜 두루마리 +10")
+	elseif action == "testPvp" then
+		-- 비무 승리를 백 승 바로 앞까지 (한 번 더 이기면 무쌍신권)
+		p.pvpWins = math.max(p.pvpWins, Config.PVP_STYLE.wins - 1)
+		toast(player, string.format("⚔ 비무 %d승 (한 번 더 이기면 무쌍신권)", p.pvpWins))
+	elseif action == "testTower" then
+		-- 천층탑: 지금 층의 적을 걷고 다음 보스 층 바로 앞으로
+		local run = Tower.active(player)
+		if run and arg == "clear" then
+			-- 지금 층의 적을 모두 쓰러뜨린다 (층 돌파 확인)
+			for ef in pairs(run.alive) do
+				if not ef.dead then
+					Combat.kill(ef, f)
+				end
+			end
+		elseif run then
+			for ef in pairs(run.alive) do
+				if not ef.dead then
+					Npc.despawn(ef)
+				end
+			end
+			run.alive = {}
+			run.floor = math.max(run.floor, (math.floor(run.floor / Config.TOWER.bossEvery) + 1) * Config.TOWER.bossEvery - 1)
+			Tower.next(player, run)
+		else
+			toast(player, "천층탑 안에서 쓰세요")
+		end
+	elseif action == "testSeen" then
+		p.seen = {}
+		toast(player, "🎬 컷씬 기록을 지웠어요")
 	elseif action == "testTime" then
 		if arg == "freeze" then
 			toast(player, World.toggleClockFreeze() and "⏸ 시간이 멈췄어요" or "▶ 시간이 다시 흘러요")
@@ -1837,6 +2266,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.ilwol = nil :: any
 			p.styles.yeonggeop = nil :: any
 			p.trials.yeonggeop = nil :: any
+			p.styles.musang = nil :: any
 			p.styles.hyeolma2 = nil :: any
 			p.styles.cheonryong2 = nil :: any
 			p.styles.byeokryeok2 = nil :: any
@@ -1924,7 +2354,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
 		-- 이야기 첫 장이면 장로를 찾아가라고
-		if p.story == 1 then
+		if p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
 	elseif action == "talkElder" then
@@ -1952,6 +2382,25 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "gate" then
 		Gate.start(player)
+	elseif action == "towerLeave" then
+		Tower.ended(player, "leave")
+	elseif action == "manualDraw" then
+		Manual.draw(player, a1)
+	elseif action == "manualEquip" then
+		Manual.equip(player, a1, true)
+	elseif action == "manualUnequip" then
+		Manual.equip(player, a1, false)
+	elseif action == "seen" then
+		-- 화면에서 본 것 (조작 안내, 보스와 처음 맞붙는 컷씬)
+		if type(a1) == "string" and not p.seen[a1] and (a1 == "controls" or (string.sub(a1, 1, 5) == "boss_" and Config.CUTSCENES[a1] ~= nil)) then
+			p.seen[a1] = true
+			st.dirty = true
+			-- 컷씬을 보는 동안은 맞지 않는다
+			local f = Combat.fighterOfPlayer(player)
+			if f and a1 ~= "controls" then
+				f.iframeUntil = math.max(f.iframeUntil, os.clock() + 5)
+			end
+		end
 	elseif action == "awaken" then
 		-- 각성 (진 권법): 원래 권법 숙련 최대 + 깨달음 모두 + 경지 + 은자 → 각성 시련
 		local base = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -2018,6 +2467,123 @@ if W.shop then
 	end)
 end
 -- 객잔: 쉬면 체력과 내공이 가득 찬다 (공짜)
+if W.tower then
+	W.tower.Triggered:Connect(function(player: Player)
+		Tower.start(player)
+	end)
+end
+
+-- 강호 순위표: 1분마다. 저장소(정렬 저장소)가 되면 모든 서버의 기록, 안 되면 이 서버 사람만
+local Board = {}
+local boardStores: { [string]: any } = {}
+local nameCache: { [number]: string } = {}
+local boardSent: { [string]: number } = {} -- 같은 값은 다시 보내지 않는다
+local BOARD_VALUE = {
+	realm = function(p: Profile): number
+		return math.floor(Calc.total(p))
+	end,
+	pvp = function(p: Profile): number
+		return p.pvpWins
+	end,
+	tower = function(p: Profile): number
+		return p.towerBest
+	end,
+}
+
+function Board.store(key: string): any
+	if boardStores[key] == nil then
+		local ok, ds = pcall(function()
+			return DataStoreService:GetOrderedDataStore("Kwonwang_lb_" .. key)
+		end)
+		boardStores[key] = ok and ds or false
+	end
+	return boardStores[key] or nil
+end
+
+function Board.name(userId: number): string
+	if nameCache[userId] then
+		return nameCache[userId]
+	end
+	local pl = Players:GetPlayerByUserId(userId)
+	if pl then
+		nameCache[userId] = pl.DisplayName
+		return pl.DisplayName
+	end
+	local ok, name = pcall(function()
+		return Players:GetNameFromUserIdAsync(userId)
+	end)
+	nameCache[userId] = ok and name or ("#" .. userId)
+	return nameCache[userId]
+end
+
+function Board.update()
+	local boards = W.boards
+	if not boards then
+		return
+	end
+	for key, valueOf in pairs(BOARD_VALUE) do
+		local gui = boards[key]
+		if gui then
+			local rows: { { string } } = {}
+			local ds = Board.store(key)
+			local okStore = false
+			if ds then
+				for player, p in pairs(profiles) do
+					local st = states[player]
+					local v = valueOf(p)
+					local sentKey = key .. player.UserId
+					if st and st.canSave and not st.tester and boardSent[sentKey] ~= v then
+						local ok = pcall(function()
+							ds:SetAsync(tostring(player.UserId), v)
+						end)
+						if ok then
+							boardSent[sentKey] = v
+						end
+					end
+				end
+				local ok, page = pcall(function()
+					return ds:GetSortedAsync(false, 10):GetCurrentPage()
+				end)
+				if ok and type(page) == "table" and #page > 0 then
+					okStore = true
+					for _, entry in ipairs(page) do
+						table.insert(rows, { Board.name(tonumber(entry.key) or 0), Config.formatNumber(entry.value) })
+					end
+				end
+			end
+			if not okStore then
+				local list = {}
+				for player, p in pairs(profiles) do
+					table.insert(list, { player.DisplayName, valueOf(p) })
+				end
+				table.sort(list, function(a, b)
+					return a[2] > b[2]
+				end)
+				for i = 1, math.min(10, #list) do
+					table.insert(rows, { list[i][1], Config.formatNumber(list[i][2]) })
+				end
+			end
+			for r = 1, 10 do
+				local label = gui:FindFirstChild("Row" .. r)
+				if label and label:IsA("TextLabel") then
+					local row = rows[r]
+					label.Text = row and string.format("%d. %s  ·  %s", r, row[1], row[2]) or ""
+				end
+			end
+		end
+	end
+end
+
+task.spawn(function()
+	task.wait(8)
+	while true do
+		local ok, err = pcall(Board.update)
+		if not ok then
+			warn("[권왕] 순위표 오류:", err)
+		end
+		task.wait(60)
+	end
+end)
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
@@ -2250,6 +2816,7 @@ local function onPlayerAdded(player: Player)
 end
 
 local function onPlayerRemoving(player: Player)
+	Tower.ended(player, "left")
 	saveProfile(player)
 	profiles[player] = nil
 	states[player] = nil
@@ -2273,11 +2840,16 @@ task.spawn(function()
 	end
 end)
 
+-- 서버가 닫힐 때: 모두 저장하고, 저장이 끝날 때까지 (최대 25초) 기다린다
 game:BindToClose(function()
 	for player in pairs(profiles) do
 		task.spawn(saveProfile, player)
 	end
-	task.wait(2)
+	local t0 = os.clock()
+	task.wait(0.5)
+	while saving > 0 and os.clock() - t0 < 25 do
+		task.wait(0.25)
+	end
 end)
 
 ------------------------------------------------------------------------

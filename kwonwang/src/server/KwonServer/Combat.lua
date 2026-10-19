@@ -216,6 +216,8 @@ local function defense(f: Fighter): number
 	if style and style.armorWhileAttacking and act and t < act.start + act.dur then
 		m *= style.armorWhileAttacking
 	end
+	-- 심법: 금강호체공
+	m *= 1 - ((f :: any).mDef or 0)
 	return m
 end
 
@@ -310,6 +312,13 @@ function Combat.kill(f: Fighter, by: Fighter?)
 	f.guarding = false
 	Combat.sync(f)
 	Push:FireAllClients("ko", f.model, by and by.model or nil)
+	-- 무쌍신권: 쓰러뜨릴 때마다 숨이 돌아온다
+	local bStyle = by and Combat.styleOf(by)
+	if by and bStyle and bStyle.killHeal and by.player and not by.dead then
+		by.hp = math.min(by.maxHp, by.hp + by.maxHp * bStyle.killHeal)
+		by.chi = math.min((by :: any).chiMax or Config.CHI_MAX, by.chi + 20)
+		Combat.sync(by)
+	end
 	if hooks.onKill then
 		hooks.onKill(f, by)
 	end
@@ -518,6 +527,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if tStyle and tStyle.sunMoon and not isDay() then
 		d *= tStyle.sunMoon.night
 	end
+	-- 무쌍신권: 사람을 상대로 더 세다
+	if aStyle and aStyle.pvpDmg and tgt.player and att.player then
+		d *= aStyle.pvpDmg
+	end
 	if opt.teleport then
 		crit = true
 	end
@@ -540,6 +553,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 흡혈 (혈마신수)
 	if aStyle and aStyle.lifesteal and att.player and not att.dead then
 		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and 3 or 1))
+		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
+	end
+	-- 심법: 혈기공 (모든 권법에서 조금씩)
+	local mSteal = (att :: any).mSteal or 0
+	if mSteal > 0 and att.player and not att.dead then
+		att.hp = math.min(att.maxHp, att.hp + d * mSteal)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
 	if not steady then
@@ -893,7 +912,7 @@ function Combat.tick(dt: number)
 				f.chi = cmax
 				changed = true
 			elseif f.player and f.chi < cmax then
-				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX))
+				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)))
 				changed = true
 			end
 			if f.act and t > f.act.start + f.act.dur then

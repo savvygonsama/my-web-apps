@@ -729,6 +729,40 @@ table.insert(Config.Styles, {
 			mech = { kind = "eruption", radius = 32, delay = 0.6, stagger = 0.08, pillar = hit(0, 0, 0, 48, 40, 0.8, 20, 30), finalAt = 1.7, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 60, 25) } },
 	},
 })
+-- 비무: 무쌍신권 (비무대에서 백 번 이긴 자에게). 사람을 이기기 위해 다듬어진 주먹
+table.insert(Config.Styles, {
+	id = "musang",
+	name = "무쌍신권",
+	hanja = "無雙神拳",
+	icon = "⚔",
+	color = Color3.fromRGB(230, 50, 60),
+	color2 = Color3.fromRGB(240, 240, 255),
+	fx = "duel",
+	grade = "신화",
+	hidden = true,
+	unlockHint = "비무대에서 백 번 이긴 자만이 강호 제일의 비무 권법을 얻는다",
+	desc = "비무대에서 백 번을 이긴 자의 주먹. 화려함 없이 오직 상대를 꺾는 데만 다듬어졌다. 적을 쓰러뜨릴 때마다 숨이 돌아온다.",
+	gimmick = "무쌍: 사람을 상대로 주는 피해 +20%. 적을 쓰러뜨릴 때마다 체력 10%와 내공 20을 되찾는다. 흘리기 판정이 넓다",
+	deflect = 0.3,
+	pvpDmg = 1.2,
+	killHeal = 0.1,
+	stance = "stance_duel",
+	combo = {
+		{ id = "ms1", name = "선수", pose = "jab_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4, 12, 12, 0.35, 6) } },
+		{ id = "ms2", name = "결수", pose = "punch_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4, 13, 13, 0.35, 8) } },
+		{ id = "ms3", name = "회선퇴", pose = "roundhouse", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5, 16, 18, 0.45, 20) } },
+		{ id = "ms4", name = "단수", pose = "uppercut", dur = 0.45, lunge = 3, hits = { hit(0.22, 6, 4.5, 22, 28, 0.6, 10, 30) } },
+	},
+	heavy = { id = "msH", name = "필살권", pose = "punch_r_heavy", dur = 0.6, lunge = 4, hits = { hit(0.28, 7, 5, 34, 50, 0.8, 50) } },
+	skills = {
+		E = { id = "msE", name = "일기당천", desc = "번개처럼 파고들며 앞의 적을 모두 베고 지나간다 (무적)", pose = "dash_strike", dur = 0.45, cd = 6, chi = 15, lunge = 24, iframes = 0.4,
+			hits = { hit(0.15, 6, 5, 24, 24, 0.5, 20) } },
+		R = { id = "msR", name = "무쌍난무", desc = "제자리에서 사방으로 주먹과 발을 퍼붓는다 (1.2초)", pose = "whirl", dur = 1.2, cd = 9, chi = 25,
+			mech = { kind = "zone", at = "self", radius = 10, dur = 1.2, every = 0.15, delay = 0.1, hit = hit(0, 0, 0, 7, 9, 0.3, 4), fx = "duel" } },
+		G = { id = "msG", name = "천하무쌍", desc = "빛의 울타리가 둘레를 가두고 모든 적을 한가운데로 끌어당긴다. 여덟 번 몰아친 뒤 마지막 한 주먹으로 하늘 높이 쳐올린다", pose = "ult_spin", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "arena", radius = 26, delay = 0.5, strikeCount = 8, every = 0.15, strikeRadius = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0), finalAt = 1.9, final = hit(0, 0, 0, 120, 150, 1.3, 20, 45) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -1004,6 +1038,7 @@ local FINISHERS = {
 	changhae = { name = "창해승천장", pose = "tidal_punch" },
 	yeonggeop = { name = "영겁승천각", pose = "rewind_kick" },
 	yeolhwa = { name = "열화승천권", pose = "blaze_punch" },
+	musang = { name = "무쌍승천권", pose = "uppercut" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -1015,7 +1050,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1321,18 +1356,18 @@ end
 -- 적은 근처에 사람이 있을 때만 움직인다
 ------------------------------------------------------------------------
 Config.Regions = {
-	{ id = "village", name = "청운 마을", center = Vector3.new(0, 0, 0), size = Vector3.new(360, 0, 360), ground = Color3.fromRGB(150, 135, 105), material = Enum.Material.Ground, safe = true },
-	{ id = "bamboo", name = "대나무 숲", center = Vector3.new(-420, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(95, 130, 70), material = Enum.Material.Grass,
+	{ id = "village", name = "청운 마을", center = Vector3.new(0, 0, 0), size = Vector3.new(480, 0, 480), ground = Color3.fromRGB(150, 135, 105), material = Enum.Material.Ground, safe = true },
+	{ id = "bamboo", name = "대나무 숲", center = Vector3.new(-480, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(95, 130, 70), material = Enum.Material.Grass,
 		camps = { { enemy = "bandit", count = 3, at = Vector3.new(-300, 0, 120) }, { enemy = "bandit", count = 2, at = Vector3.new(-330, 0, -110) }, { enemy = "spearman", count = 3, at = Vector3.new(-570, 0, -110) } } },
 	-- 먼 북쪽의 산적 소굴 (강한 적과 두목)
 	{ id = "fort", name = "흑호채 (산적 소굴)", center = Vector3.new(0, 0, -900), size = Vector3.new(440, 0, 480), ground = Color3.fromRGB(110, 90, 70), material = Enum.Material.Mud,
 		camps = { { enemy = "spearman", count = 3, at = Vector3.new(0, 0, -790) }, { enemy = "brute", count = 3, at = Vector3.new(90, 0, -880) }, { enemy = "ironguard", count = 2, at = Vector3.new(-90, 0, -880) } },
 		boss = { id = "heukho", at = Vector3.new(0, 0, -1020) } },
-	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(440, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
+	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(480, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
 		camps = { { enemy = "bandit", count = 3, at = Vector3.new(320, 0, 130) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, 120) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, -90) } } },
 	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
-	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 330), size = Vector3.new(340, 0, 260), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
-		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 300) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 340) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 420) } } },
+	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 400), size = Vector3.new(340, 0, 220), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
+		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 360) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 400) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 460) } } },
 	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
@@ -1438,7 +1473,7 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 Config.Story = {
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
-	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
+	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
@@ -1495,15 +1530,15 @@ Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 Config.WORLD_HALF = 3400 -- 세상 끝 (가운데에서). 바깥 여덟 땅까지
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
-	{ Vector3.new(-178, 0, 0), Vector3.new(-1000, 0, 0) },
-	{ Vector3.new(178, 0, 0), Vector3.new(560, 0, 0) },
-	{ Vector3.new(0, 0, -178), Vector3.new(0, 0, -740) },
-	{ Vector3.new(0, 0, 178), Vector3.new(0, 0, 640) },
-	{ Vector3.new(-178, 0, 0), Vector3.new(-260, 0, -60), Vector3.new(-650, 0, -560) },
-	{ Vector3.new(178, 0, 0), Vector3.new(260, 0, -60), Vector3.new(650, 0, -560) },
-	{ Vector3.new(0, 0, 178), Vector3.new(-90, 0, 230), Vector3.new(-600, 0, 600) },
-	{ Vector3.new(0, 0, 178), Vector3.new(90, 0, 230), Vector3.new(600, 0, 600) },
-	{ Vector3.new(178, 0, 0), Vector3.new(380, 0, -280), Vector3.new(890, 0, -280) },
+	{ Vector3.new(-238, 0, 0), Vector3.new(-1000, 0, 0) },
+	{ Vector3.new(238, 0, 0), Vector3.new(560, 0, 0) },
+	{ Vector3.new(0, 0, -238), Vector3.new(0, 0, -740) },
+	{ Vector3.new(0, 0, 238), Vector3.new(0, 0, 640) },
+	{ Vector3.new(-238, 0, 0), Vector3.new(-300, 0, -70), Vector3.new(-650, 0, -560) },
+	{ Vector3.new(238, 0, 0), Vector3.new(300, 0, -70), Vector3.new(650, 0, -560) },
+	{ Vector3.new(0, 0, 238), Vector3.new(-90, 0, 290), Vector3.new(-600, 0, 600) },
+	{ Vector3.new(0, 0, 238), Vector3.new(90, 0, 290), Vector3.new(600, 0, 600) },
+	{ Vector3.new(238, 0, 0), Vector3.new(400, 0, -280), Vector3.new(890, 0, -280) },
 	{ Vector3.new(600, 0, 600), Vector3.new(840, 0, 560), Vector3.new(960, 0, 900) },
 	-- 바깥 다섯 땅으로
 	{ Vector3.new(0, 0, -740), Vector3.new(260, 0, -720), Vector3.new(260, 0, -1250), Vector3.new(0, 0, -1380) },
@@ -1589,6 +1624,111 @@ for _, it in ipairs(Config.Shop) do
 	Config.SHOP_BY_ID[it.id] = it
 end
 Config.POTION_HEAL = 0.4
+
+------------------------------------------------------------------------
+-- 심법 (내공 수련서): 두루마리나 은자로 뽑는다. 세 칸에 끼우면 늘 효과가 있다
+-- 등급이 높을수록 효과가 크다. 같은 심법을 더 높은 등급으로 뽑으면 바뀌고, 낮거나 같으면 은자로 돌려받는다
+------------------------------------------------------------------------
+Config.MANUALS = {
+	{ id = "cheolgol", name = "철골공", icon = "🦴", stat = "hp", base = 0.04, desc = "최대 체력" },
+	{ id = "pagoe", name = "파괴심법", icon = "💥", stat = "dmg", base = 0.03, desc = "주는 피해" },
+	{ id = "hoche", name = "금강호체공", icon = "🛡", stat = "def", base = 0.025, desc = "받는 피해 감소" },
+	{ id = "hyeolgi", name = "혈기공", icon = "🩸", stat = "steal", base = 0.008, desc = "준 피해만큼 체력 회복" },
+	{ id = "jilpung", name = "질풍심법", icon = "🍃", stat = "speed", base = 0.025, desc = "이동 속도" },
+	{ id = "ungi", name = "운기심법", icon = "🌀", stat = "chi", base = 0.06, desc = "내공 회복" },
+	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.025, desc = "기술 대기 감소" },
+	{ id = "ohui", name = "오의심법", icon = "✴", stat = "ult", base = 0.05, desc = "오의 피해" },
+}
+Config.MANUAL_BY_ID = {}
+for _, m in ipairs(Config.MANUALS) do
+	Config.MANUAL_BY_ID[m.id] = m
+end
+-- 등급: rate = 뽑힐 확률, mult = 효과 배율
+Config.MANUAL_RARITY = {
+	{ name = "일반", rate = 0.55, mult = 1, color = Color3.fromRGB(200, 200, 200) },
+	{ name = "희귀", rate = 0.28, mult = 2, color = Color3.fromRGB(110, 190, 255) },
+	{ name = "영웅", rate = 0.12, mult = 3.5, color = Color3.fromRGB(200, 120, 255) },
+	{ name = "전설", rate = 0.045, mult = 5.5, color = Color3.fromRGB(255, 200, 80) },
+	{ name = "신화", rate = 0.005, mult = 8, color = Color3.fromRGB(255, 110, 90) },
+}
+-- 뽑기: 두루마리 하나 또는 은자. 60번 안에 전설 이상이 한 번은 나온다 (천장)
+Config.MANUAL_DRAW = { coins = 30000, pity = 60, slots = 3, refund = 4000 }
+function Config.manualValue(id: string, rarity: number): number
+	local m = Config.MANUAL_BY_ID[id]
+	local r = Config.MANUAL_RARITY[rarity]
+	return (m and r) and m.base * r.mult or 0
+end
+
+------------------------------------------------------------------------
+-- 천층탑: 마을 북서쪽의 탑. 하늘의 시련장에서 한 층씩 오른다 (층마다 적이 세진다, 열 층마다 보스)
+------------------------------------------------------------------------
+Config.TOWER = {
+	enter = Vector3.new(-185, 0, -185), -- 마을 안 탑 입구
+	arena = Vector3.new(-1700, 1800, 1700), -- 첫 시련장 (사람마다 옆으로 비켜 놓는다)
+	slotGap = 360,
+	slots = 10,
+	radius = 46,
+	bossEvery = 10,
+	-- 층의 세기: 도전자 전투력 × (base + per × 층), 체력은 더 넉넉히
+	powerBase = 0.55,
+	powerPer = 0.012,
+	hpPer = 0.015,
+	coins = 60, -- 층마다 은자 (× 층)
+	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
+	bands = {
+		{ 1, { "thug", "bandit" } },
+		{ 6, { "bandit", "spearman", "brute" } },
+		{ 11, { "assassin", "brute", "ironguard" } },
+		{ 21, { "ironguard", "shadowblade", "cultist" } },
+		{ 31, { "cultelder", "marauder", "lancer" } },
+		{ 41, { "riftling", "voidwalker", "stonegolem" } },
+		{ 51, { "flameimp", "sandwraith", "magmabrute" } },
+		{ 61, { "apostle", "tombguard", "starblade", "skyguard" } },
+	},
+	bosses = { "heukho", "hyeolrang", "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun" },
+}
+
+------------------------------------------------------------------------
+-- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
+------------------------------------------------------------------------
+Config.PVP_STYLE = { wins = 100, style = "musang" }
+
+------------------------------------------------------------------------
+-- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
+-- boss_<보스>: 그 보스와 처음 맞붙을 때. 사부를 처음 찾았을 때는 사부의 한마디 (MASTERS.quote)
+------------------------------------------------------------------------
+Config.CUTSCENES = {
+	intro = { who = "청운 장로", lines = { "강호에 온 것을 환영하네. 맨손 하나로 이름을 떨치겠다는 젊은이가 또 왔구먼.", "먼저 내게 와서 말을 걸게. 노란 길잡이를 따라오면 되네." } },
+	gate_first = { who = "관문 수호자", lines = { "몸이 경지에 닿았다고 경지에 오르는 것은 아니다.", "나를 넘어라. 그래야 다음 경지다." } },
+	tower_first = { who = "천층탑", lines = { "천층탑. 한 층 오를 때마다 적이 강해진다.", "쓰러지거나 떨어지면 처음부터다. 열 층마다 주인이 기다린다." } },
+	pvp100 = { who = "강호", lines = { "비무대에서 백 번을 이겼다. 이제 강호에 너를 모르는 자가 없다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
+	boss_heukho = { who = "흑호", lines = { "내 산채에 발을 들인 놈은 살아서 나간 적이 없다." } },
+	boss_hyeolrang = { who = "혈랑", lines = { "피 냄새가 나는군. 네 피다." } },
+	boss_bingma = { who = "빙마", lines = { "이 설산에서 숨 쉬는 건 나 하나로 족하다." } },
+	boss_hyeolma = { who = "혈마", lines = { "혈교의 주인 앞이다. 무릎을 꿇어라." } },
+	boss_cheonma = { who = "천마", lines = { "하늘을 삼킨 내 앞에서, 고작 맨손이냐." } },
+	boss_yeomje = { who = "염제", lines = { "불의 산은 들어온 자를 돌려보내지 않는다." } },
+	boss_sawang = { who = "사왕", lines = { "왕의 잠을 깨운 죄, 목숨으로 갚아라." } },
+	boss_cheonmun = { who = "천문장", lines = { "하늘의 문은 아무에게나 열리지 않는다." } },
+}
+
+------------------------------------------------------------------------
+-- 배경 음악: 지역마다 (로블록스 음악 번호. 0이면 조용하다)
+-- 로블록스 크리에이터 스토어에서 '모든 경험에서 쓸 수 있는' 음악 번호를 넣으세요
+------------------------------------------------------------------------
+Config.MUSIC = {
+	volume = 0.35,
+	default = 0, -- 들판 (지정이 없는 곳)
+	village = 0, -- 청운 마을
+	boss = 0, -- 보스와 싸울 때
+	tower = 0, -- 천층탑
+	snow = 0,
+	cult = 0,
+	rift = 0,
+	volcano = 0,
+	tomb = 0,
+	skysea = 0,
+}
 
 ------------------------------------------------------------------------
 -- 로벅스 상품 (게임패스). gamepass = 로블록스 홈페이지에 만든 게임패스 번호 (0이면 아직 없음)

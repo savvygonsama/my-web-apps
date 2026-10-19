@@ -1888,6 +1888,88 @@ function H.eruption(data: any)
 	end)
 end
 
+-- 무쌍 천하무쌍: 빛의 울타리가 솟아 둘레를 가두고, 한가운데에서 여덟 번 몰아친 뒤 하늘로 쳐올린다
+function H.arena(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local ground = at - Vector3.new(0, 2.3, 0)
+	local r = data.radius or 26
+	local delay, every, strikes, finalAt = data.delay or 0.5, data.every or 0.15, data.strikes or 8, data.finalAt or 1.9
+	local close = near(at, 140)
+	if close then
+		colorGrade(-0.4, 0.3, -0.05, Color3.fromRGB(255, 225, 225), finalAt + 0.2)
+	end
+	-- 울타리: 둘레에 솟는 빛의 판과 바닥의 붉은 테
+	local fence: { BasePart } = {}
+	local n = 28
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = ground + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		local panel = piece(Vector3.new(2 * math.pi * r / n, 0.2, 0.3), k % 2 == 0 and c or c2, Enum.Material.Neon, nil, 0.45)
+		panel.CFrame = CFrame.lookAt(p, Vector3.new(ground.X, p.Y, ground.Z)) * CFrame.Angles(0, math.rad(90), 0)
+		task.delay(k * 0.008, function()
+			if panel.Parent then
+				tween(panel, 0.25, { Size = Vector3.new(2 * math.pi * r / n, 14, 0.3), CFrame = panel.CFrame * CFrame.new(0, 7, 0) })
+			end
+		end)
+		table.insert(fence, panel)
+	end
+	local rim = piece(Vector3.new(0.3, r * 2, r * 2), c, Enum.Material.Neon, Enum.PartType.Cylinder, 0.5)
+	rim.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	table.insert(fence, rim)
+	Fx.text(at + Vector3.new(0, 10, 0), "천하무쌍", c2, 50, 1.4)
+	-- 몰아치기: 한가운데에서 엇갈리는 베기
+	for i = 0, strikes - 1 do
+		task.delay(delay + i * every, function()
+			local a = math.random() * math.pi * 2
+			local d = Vector3.new(math.cos(a), 0, math.sin(a))
+			local mid = ground + Vector3.new(0, 3 + math.random() * 3, 0)
+			local slash = piece(Vector3.new(0.4, 0.4, 0.4), i % 2 == 0 and c2 or c, Enum.Material.Neon, nil, 0)
+			slash.CFrame = CFrame.lookAt(mid - d * 12, mid + d * 12) * CFrame.Angles(0, 0, math.random() * math.pi)
+			slash.Position = mid
+			tween(slash, 0.1, { Size = Vector3.new(0.5, 0.15, 28) })
+			fade(slash, 0.1, 0.15)
+			Fx.ring(mid, c, 2, 14, 0.2, d)
+			Fx.burst("spark", mid, c2, 8, 1.2)
+			if hooks.shake and close and i % 2 == 0 then
+				hooks.shake(0.8)
+			end
+			Fx.sound("hit", 0.6, 1.1 + math.random() * 0.2, mid)
+		end)
+	end
+	-- 마지막 한 주먹: 하늘로 솟는 붉은 기둥, 울타리가 산산이 흩어진다
+	task.delay(finalAt, function()
+		local col = piece(Vector3.new(90, 10, 10), c, Enum.Material.Neon, Enum.PartType.Cylinder, 0.05)
+		col.CFrame = CFrame.new(ground + Vector3.new(0, 45, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(col, 0.5, { Size = Vector3.new(100, 0.5, 0.5), Transparency = 1 })
+		Debris:AddItem(col, 0.55)
+		local core = piece(Vector3.new(90, 4, 4), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+		core.CFrame = col.CFrame
+		tween(core, 0.35, { Size = Vector3.new(100, 0.2, 0.2), Transparency = 1 })
+		Debris:AddItem(core, 0.4)
+		for k = 0, 2 do
+			task.delay(k * 0.06, function()
+				Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c or c2, 4, r * (2 + k * 0.4), 0.5)
+			end)
+		end
+		for _, panel in ipairs(fence) do
+			tween(panel, 0.35, { Transparency = 1, CFrame = panel.CFrame * CFrame.new(0, 6, 0) })
+			Debris:AddItem(panel, 0.4)
+		end
+		Fx.burst("spark", at, c2, 40, 2)
+		Fx.flash(at, c, 60, 8, 0.6)
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(255, 235, 235), 0.35)
+		end
+		if hooks.shake and close then
+			hooks.shake(2.6)
+			boom(at, 2.6)
+		end
+		Fx.sound("heavy", 1, 0.5, at)
+	end)
+	Debris:AddItem(rim, finalAt + 0.5)
+end
+
 -- 파천 중압 / 태초 창세 / 일월: 정해진 수만큼 맞히면 상대 자리에서 터진다
 local pulseFlip = false
 function H.pulse(data: any)

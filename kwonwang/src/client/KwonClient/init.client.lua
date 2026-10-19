@@ -12,6 +12,8 @@ local Anim = require(script:WaitForChild("Anim"))
 local Fx = require(script:WaitForChild("Fx"))
 local UI = require(script:WaitForChild("UI"))
 local Ults = require(script:WaitForChild("Ults"))
+local Cutscene = require(script:WaitForChild("Cutscene"))
+local Music = require(script:WaitForChild("Music"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -524,8 +526,8 @@ startMove = function(slot: any, charge: number?)
 			UI.toast(string.format("내공이 부족해요 (🌀 %d 필요)", move.chi or 0))
 			return
 		end
-		cds[slot] = inf and 0 or now + (move.cd or 0) * (style.cdMult or 1)
-		cdLen[slot] = (move.cd or 1) * (style.cdMult or 1)
+		cds[slot] = inf and 0 or now + (move.cd or 0) * (style.cdMult or 1) * (1 - (state and state.manualCd or 0))
+		cdLen[slot] = (move.cd or 1) * (style.cdMult or 1) * (1 - (state and state.manualCd or 0))
 	end
 	local speed = Config.actSpeed(style, state and state.gradeUp and state.gradeUp[style.id] or 0, char:GetAttribute("Buff") == "frenzy")
 	local dur = move.dur / speed
@@ -947,7 +949,7 @@ local doEmote: (string) -> () = function(_id: string) end
 -- 입력
 ------------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
-	if processed then
+	if processed or Cutscene.active then
 		return
 	end
 	local t = input.UserInputType
@@ -1060,9 +1062,61 @@ local function modelPos(m: Model?): Vector3?
 	return r and r.Position or nil
 end
 
+-- 처음 들어온 사람: 조작 안내 한 번 (첫 컷씬이 끝난 뒤)
+local controlsShown = false
+local function maybeControls()
+	if controlsShown or not state or (state.seen and state.seen.controls) then
+		return
+	end
+	controlsShown = true
+	Cutscene.controls(function()
+		Request:FireServer("seen", "controls")
+	end)
+end
+local firstState = true
 function handlers.state(data: any)
 	state = data
 	UI.setState(data)
+	if firstState then
+		firstState = false
+		task.delay(2.5, function()
+			if not Cutscene.active then
+				maybeControls()
+			end
+		end)
+	end
+end
+
+-- 중요한 장면: 서버가 고른 컷씬 (처음 한 번만)
+function handlers.cutscene(data: any)
+	local scene = Config.CUTSCENES[data.id]
+	if not scene then
+		return
+	end
+	if state and state.seen then
+		state.seen[data.id] = true
+	end
+	Cutscene.play(scene, { m = data.m, at = data.at }, data.id == "intro" and maybeControls or nil)
+end
+
+-- 천층탑
+function handlers.tower(data: any?)
+	UI.setTower(data)
+	if data then
+		local boss = data.boss == true
+		UI.banner(string.format("🗼 %d층", data.floor), boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라", boss and Color3.fromRGB(255, 90, 70) or Color3.fromRGB(255, 210, 120))
+	end
+end
+function handlers.towerClear(data: any)
+	local extra = (data.scrolls or 0) > 0 and string.format("  📜 +%d", data.scrolls) or ""
+	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
+	Fx.sound("ping", 0.8, 1.2)
+end
+
+-- 심법 뽑기 결과
+function handlers.manualDraw(results: any)
+	UI.manualReveal(results)
+	Fx.sound("ping", 0.9, 1.3)
 end
 
 function handlers.toast(msg: string)
@@ -1650,6 +1704,11 @@ end
 
 function handlers.found(data: any)
 	local s = Config.STYLE_BY_ID[data.style]
+	-- 사부를 처음 만나는 장면: 사부의 한마디
+	local m = Config.MASTERS[data.style]
+	if m and m.quote then
+		Cutscene.play({ who = m.name, lines = { m.quote } }, { at = m.at })
+	end
 	UI.banner("🏯 사부를 찾았다: " .. data.master, (s and (s.icon .. " " .. s.name .. "의 주인 · ") or "") .. data.region .. " · 하늘로 빛기둥이 솟았다", s and s.color or nil)
 	Fx.sound("ping", 0.7, 0.9)
 end
@@ -1720,9 +1779,39 @@ function handlers.reward(data: any)
 	end
 end
 
+local bossNow: Model? = nil
 function handlers.boss(m: Model?)
 	UI.setBoss(m)
+	bossNow = m
+	-- 그 보스와 처음 맞붙을 때: 짧은 컷씬 (보는 동안은 맞지 않는다)
+	local id = m and m:GetAttribute("TypeId")
+	local key = type(id) == "string" and ("boss_" .. id) or nil
+	if m and key and Config.CUTSCENES[key] and state and state.seen and not state.seen[key] then
+		state.seen[key] = true
+		Request:FireServer("seen", key)
+		Cutscene.play(Config.CUTSCENES[key], { m = m })
+	end
 end
+
+-- 배경 음악: 탑 / 보스 / 있는 곳
+task.spawn(function()
+	while true do
+		task.wait(1)
+		pcall(function()
+			local r = rootOfChar()
+			local key = "default"
+			if UI.towerActive then
+				key = bossNow and bossNow.Parent and "boss" or "tower"
+			elseif bossNow and bossNow.Parent and bossNow:GetAttribute("Dead") ~= true then
+				key = "boss"
+			elseif r then
+				local reg = UI.regionAt(r.Position)
+				key = reg and reg.id or "default"
+			end
+			Music.set(key)
+		end)
+	end
+end)
 
 function handlers.bossPhase(m: Model, name: string, phase: number?)
 	local ph = phase or 2
