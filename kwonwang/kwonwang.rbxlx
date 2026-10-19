@@ -4961,13 +4961,19 @@ function Tower.start(player: Player)
 	Combat.sync(f)
 	cutscene(player, "tower_first", { at = center })
 	Tower.next(player, run)
-	-- 단에서 떨어지면 끝
+	-- 단에서 떨어지면 끝. 적이 떨어지면 쓰러뜨린 것으로 친다 (층이 끝나지 않는 일이 없게)
 	task.spawn(function()
 		while activeTower[player] == run do
 			task.wait(0.4)
 			local ff = Combat.fighterOfPlayer(player)
 			if activeTower[player] == run and ff and not ff.dead and ff.root.Position.Y < center.Y - 30 then
 				Tower.ended(player, "fall")
+			elseif activeTower[player] == run then
+				for ef in pairs(run.alive) do
+					if not ef.dead and (not ef.root.Parent or ef.root.Position.Y < center.Y - 30) then
+						Combat.kill(ef, ff)
+					end
+				end
 			end
 		end
 	end)
