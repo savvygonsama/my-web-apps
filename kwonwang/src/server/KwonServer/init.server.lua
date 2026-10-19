@@ -1563,6 +1563,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				Npc.despawn(e.f)
 			end
 		end
+		-- 진행 중인 시험·각성 시련도 거둔다
+		Trial.ended(player, false)
 	elseif action == "testTime" then
 		if arg == "freeze" then
 			toast(player, World.toggleClockFreeze() and "⏸ 시간이 멈췄어요" or "▶ 시간이 다시 흘러요")
