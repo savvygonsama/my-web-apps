@@ -618,6 +618,39 @@ table.insert(Config.Styles, {
 				bindAt = 1.9, eclipseAt = 2.0, beamAt = 2.55, beam = hit(0, 0, 0, 70, 60, 0.9, 0, 10), finalAt = 3.2, final = hit(0, 0, 0, 220, 280, 1.8, 70, 30) } },
 	},
 })
+-- 바다: 창해신권 (서해 바닷가 창해각의 창해옹에게). 받아 흘리는 태허와 달리, 밀려와 모든 것을 삼키는 파도
+table.insert(Config.Styles, {
+	id = "changhae",
+	name = "창해신권",
+	hanja = "滄海神拳",
+	icon = "🌊",
+	color = Color3.fromRGB(40, 130, 230),
+	color2 = Color3.fromRGB(205, 245, 255),
+	fx = "ocean",
+	grade = "전설",
+	desc = "끝없는 바다를 두 손에 담은 권법. 태허유수권이 받아 흘리는 물이라면, 창해신권은 밀려와 모든 것을 삼키는 파도다. 한 번 밀리기 시작하면 끝까지 쓸려 간다.",
+	gimmick = "파도: 네 번 맞힐 때마다 상대 자리에서 물기둥이 솟아 둘레를 쓸어 낸다. 모든 공격의 밀어냄 1.3배",
+	deflect = 0.24,
+	kbMult = 1.3,
+	pulse = { every = 4, kind = "tide", radius = 11, delay = 0.25, name = "파도", dmg = 24, posture = 26, stun = 0.5, kb = 34, up = 14 },
+	stance = "stance_ocean",
+	combo = {
+		{ id = "ch1", name = "파랑장", pose = "wave_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 4.5, 9, 9, 0.35, 10) } },
+		{ id = "ch2", name = "역랑장", pose = "wave_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 4.5, 9, 9, 0.35, 10) } },
+		{ id = "ch3", name = "소용돌이각", pose = "whirl_kick", dur = 0.42, lunge = 2, hits = { hit(0.22, 0, 7, 11, 12, 0.4, 16, nil, true) } },
+		{ id = "ch4", name = "해일권", pose = "tidal_punch", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5, 17, 22, 0.55, 40) } },
+	},
+	heavy = { id = "chH", name = "노도격", pose = "billow_strike", dur = 0.7, lunge = 3, hits = { hit(0.36, 10, 6.5, 26, 40, 0.8, 70, 8) } },
+	skills = {
+		E = { id = "chE", name = "파도타기", desc = "파도를 타고 앞으로 미끄러지며 꿰뚫는다 (무적). 지나간 길에 물보라가 솟아 터진다", pose = "surf_dash", dur = 0.5, cd = 7, chi = 15, lunge = 26, iframes = 0.42,
+			hits = { hit(0.15, 6, 4.5, 14, 14, 0.45, 24) },
+			mech = { kind = "trail", delay = 0.5, count = 5, radius = 6, hit = hit(0, 0, 0, 16, 16, 0.5, 20, 12), fx = "tide" } },
+		R = { id = "chR", name = "해일벽", desc = "앞으로 물의 벽이 차례로 솟아 한 줄을 휩쓸고, 맞은 적을 멀리 밀어낸다", pose = "wall_raise", dur = 1.0, cd = 10, chi = 25,
+			mech = { kind = "line", count = 8, start = 4, spacing = 4.4, step = 0.05, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 20, 22, 0.6, 40, 16), fx = "tide" } },
+		G = { id = "chG", name = "창해일소", desc = "등 뒤의 바다가 일어선다. 하늘을 가리는 해일이 앞으로 밀려가며 모든 적을 휩쓸어 끌고 가고, 마지막에 부서지며 거대한 소용돌이가 된다", pose = "ult_tsunami", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "tsunami", delay = 0.5, start = -6, width = 46, depth = 10, speed = 34, dur = 1.8, every = 0.2, hit = hit(0, 0, 0, 10, 10, 0.4, 0), finalRadius = 22, final = hit(0, 0, 0, 90, 120, 1.3, 60, 22) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -763,6 +796,44 @@ do
 	G.mech.finalRadius = 26
 end
 
+-- 모든 기술을 한 치수 크게 (장치의 반경·범위, 기술 타격의 반경), 맨 타격뿐인 E·R에는 마지막 충격파를 더한다
+Config.SKILL_SCALE = 1.25
+local RADIUS_KEYS = { radius = true, finalRadius = true, bigRadius = true, geyserRadius = true, outer = true, width = true }
+local function widen(t: any, k: number)
+	for key, v in pairs(t) do
+		if type(v) == "number" and RADIUS_KEYS[key] then
+			t[key] = v * k
+		elseif key == "range" and type(v) == "number" then
+			t[key] = v * (1 + (k - 1) * 0.6)
+		end
+	end
+	for _, st in ipairs(t.strikes or {}) do
+		widen(st, k)
+	end
+end
+for _, st in ipairs(Config.Styles) do
+	for slot, sk in pairs(st.skills) do
+		if sk.mech then
+			widen(sk.mech, Config.SKILL_SCALE)
+		end
+		for _, h in ipairs(sk.hits or {}) do
+			h.radius *= 1.15
+			h.range *= 1.1
+		end
+		if sk.proj then
+			sk.proj.radius *= 1.2
+			sk.proj.size = (sk.proj.size or 3) * 1.3
+		end
+		-- 허술한 기술 보완: 장치도 장풍도 없는 E·R은 마지막 타격 뒤에 앞쪽으로 충격파가 터진다
+		if slot ~= "G" and not sk.mech and not sk.proj and not sk.buff and not sk.counter and sk.hits and #sk.hits > 0 then
+			local last = sk.hits[#sk.hits]
+			local far = (sk.lunge and sk.lunge >= 12) or sk.teleport ~= nil
+			sk.mech = { kind = "shock", delay = last.t + 0.06, dist = 4, radius = far and 11 or 9, hit = hit(0, 0, 0, last.dmg * 0.7 + 6, last.posture * 0.6 + 6, 0.5, 18, 6) }
+			sk.desc ..= ". 마지막에 충격파가 둘레를 친다"
+		end
+	end
+end
+
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
 Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
 Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
@@ -852,6 +923,7 @@ local FINISHERS = {
 	hyeolma2 = { name = "진 혈마승천조", pose = "blood_rake" },
 	cheonryong2 = { name = "진 승룡장", pose = "dragon_rise" },
 	byeokryeok2 = { name = "진 벽력천추", pose = "knee_strike" },
+	changhae = { name = "창해승천장", pose = "tidal_punch" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -863,7 +935,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1221,6 +1293,9 @@ Config.Regions = {
 	{ id = "skysea", name = "천외봉 운해", center = Vector3.new(0, 0, -2900), size = Vector3.new(1400, 0, 900), ground = Color3.fromRGB(232, 238, 250), material = Enum.Material.SmoothPlastic, ambient = "sky",
 		camps = { { enemy = "starblade", count = 3, at = Vector3.new(-400, 0, -2650) }, { enemy = "skyguard", count = 2, at = Vector3.new(400, 0, -2700) }, { enemy = "starblade", count = 2, at = Vector3.new(-350, 0, -3050) }, { enemy = "skyguard", count = 2, at = Vector3.new(380, 0, -3000) } },
 		boss = { id = "cheonmun", at = Vector3.new(0, 0, -2760) } },
+	-- 창해각: 서해 남쪽 바닷가의 사당 (창해신권의 사부)
+	{ id = "seashrine", name = "창해각 (바다 사당)", center = Vector3.new(-1700, 0, 950), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(190, 185, 150), material = Enum.Material.Sand, safe = true,
+		master = "changhae", rumor = "서해 절벽 남쪽 바닷가 사당에 파도와 함께 숨 쉬는 노인이 있다더라", quote = "바다는 막지 않는다. 덮을 뿐이다.", masterName = "창해옹", masterAt = Vector3.new(-1700, 2.2, 950) },
 	-- 일월대: 해와 달의 단 (정점의 사부, 권존이 홀로 선다)
 	{ id = "sunmoon", name = "일월대", center = Vector3.new(2500, 0, 2500), size = Vector3.new(420, 0, 420), ground = Color3.fromRGB(70, 62, 78), material = Enum.Material.Slate, safe = true },
 	-- 풍신대: 바람이 그치지 않는 언덕 (여덟째 사부)
@@ -1278,7 +1353,7 @@ Config.Story = {
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
-	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 여덟 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
+	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 아홉 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
@@ -1299,7 +1374,7 @@ Config.Story = {
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 열다섯 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 열아홉 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
@@ -1354,6 +1429,8 @@ Config.Roads = {
 	{ Vector3.new(2070, 0, -100), Vector3.new(2420, 0, -420), Vector3.new(2650, 0, -800) },
 	{ Vector3.new(0, 0, 1210), Vector3.new(-250, 0, 1950), Vector3.new(-650, 0, 2420), Vector3.new(-860, 0, 2700) },
 	{ Vector3.new(0, 0, -1380), Vector3.new(-120, 0, -2000), Vector3.new(-40, 0, -2460), Vector3.new(0, 0, -2650) },
+	-- 서해 남쪽 바닷가 창해각으로
+	{ Vector3.new(-1380, 0, 0), Vector3.new(-1500, 0, 560), Vector3.new(-1700, 0, 860) },
 }
 
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)

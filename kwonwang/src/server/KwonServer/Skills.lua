@@ -14,6 +14,8 @@
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
 --   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
 --   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+--   shock    기술의 마지막 타격 뒤 앞쪽에 충격파가 터진다 (맨 타격뿐인 기술을 보완)
+--   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고, 끝에서 부서진다
 --   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
@@ -385,6 +387,46 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "shock" then
+		after(m.delay or 0.2, function()
+			local at = f.root.Position + flat(Combat.look(f)) * (m.dist or 4)
+			Push:FireAllClients("skillfx", { kind = "shock", at = at, radius = m.radius, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+				strike(f, o, hit, move)
+			end
+		end)
+	elseif kind == "tsunami" then
+		-- 창해일소: 너비 width의 물의 벽이 앞으로 speed로 밀려간다. 벽 안의 적은 함께 끌려가며 계속 맞는다
+		local origin = f.root.Position
+		local right = Vector3.new(-look.Z, 0, look.X)
+		local from = origin + look * m.start
+		Push:FireAllClients("skillfx", { kind = "tsunami", from = from, dir = look, width = m.width, speed = m.speed * sp, dur = m.dur / sp, delay = m.delay / sp, style = style })
+		local n = math.max(1, math.floor(m.dur / m.every))
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				local front = from + look * (m.speed * i * m.every)
+				for _, o in ipairs(hostilesNear(f, front, m.width / 2 + m.depth)) do
+					local rel = o.root.Position - front
+					local along, side = rel:Dot(look), rel:Dot(right)
+					if math.abs(side) <= m.width / 2 and along >= -m.depth and along <= m.depth then
+						if o.player then
+							Push:FireClient(o.player, "knock", look * m.speed + Vector3.new(0, 6, 0), 0.3)
+						elseif not o.root.Anchored then
+							o.root.AssemblyLinearVelocity = look * (m.speed * 1.15) + Vector3.new(0, 8, 0)
+						end
+						Combat.stun(o, m.every + 0.2)
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			local at = from + look * (m.speed * m.dur)
+			Push:FireAllClients("skillfx", { kind = "tsunamiCrash", at = at, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "eclipse" then
 		-- 일월동천: 달빛 베기 → 일식 (모두 묶인다) → 검은 해의 빛살 → 새벽의 폭발
 		local center = f.root.Position
@@ -674,7 +716,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			for k = 0, m.count - 1 do
 				table.insert(pts, from:Lerp(to, (k + 0.5) / m.count))
 			end
-			Push:FireAllClients("skillfx", { kind = "trail", points = pts, radius = m.radius, style = style })
+			Push:FireAllClients("skillfx", { kind = "trail", points = pts, radius = m.radius, style = style, fx = m.fx })
 			local done = {}
 			for _, p in ipairs(pts) do
 				for _, o in ipairs(hostilesNear(f, p, m.radius)) do

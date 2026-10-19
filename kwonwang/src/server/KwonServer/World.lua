@@ -918,6 +918,53 @@ function SITES.taeheo(r: any, at: Vector3, color: Color3, f: Instance)
 end
 
 -- 금강사: 돌 기단 위의 절, 큰 종과 향로
+-- 창해각: 바닷가 사당. 둥근 조수 웅덩이, 파도 무늬 기둥 여덟, 푸른 석등, 산호 바위와 조개
+function SITES.changhae(r: any, at: Vector3, color: Color3, f: Instance)
+	local c = r.center
+	local SEA = Color3.fromRGB(50, 130, 200)
+	local pool = c + Vector3.new(-70, 0, 0)
+	cyl("TidePool", pool + Vector3.new(0, 0.35, 0), 42, 0.5, SEA, Enum.Material.Glass, f, false).Transparency = 0.25
+	cyl("TidePoolBed", pool + Vector3.new(0, 0.1, 0), 42, 0.3, Color3.fromRGB(30, 60, 90), Enum.Material.Slate, f, false)
+	for k = 0, 23 do
+		local a = k / 24 * math.pi * 2
+		local p = pool + Vector3.new(math.cos(a) * 44, 0.8, math.sin(a) * 44)
+		part({ Name = "PoolRim", Size = Vector3.new(4, 1.6, 12), CFrame = CFrame.lookAt(p, pool + Vector3.new(0, 0.8, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(175, 170, 150), Material = Enum.Material.Sandstone, Parent = f })
+	end
+	-- 사부의 단: 둥근 돌단과 파도 무늬 기둥
+	local d = Vector3.new(at.X, 0, at.Z)
+	cyl("ShrineDais", d + Vector3.new(0, at.Y / 2, 0), 16, at.Y, Color3.fromRGB(200, 195, 175), Enum.Material.Marble, f)
+	cyl("ShrineWave", d + Vector3.new(0, at.Y + 0.06, 0), 13, 0.1, Color3.fromRGB(120, 200, 255), Enum.Material.Neon, f, false).Transparency = 0.35
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		local p = d + Vector3.new(math.cos(a) * 15, 0, math.sin(a) * 15)
+		part({ Name = "WavePillar", Size = Vector3.new(2.4, 14, 2.4), Position = p + Vector3.new(0, at.Y + 7, 0), Color = Color3.fromRGB(225, 225, 215), Material = Enum.Material.Marble, Parent = f })
+		for j = 0, 2 do
+			part({ Name = "WaveBand", Size = Vector3.new(2.7, 0.4, 2.7), CFrame = CFrame.new(p + Vector3.new(0, at.Y + 3 + j * 4, 0)) * CFrame.Angles(0, 0, math.rad(12 * (j % 2 == 0 and 1 or -1))), Color = SEA, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		crystal(p + Vector3.new(0, at.Y + 16.5, 0), 1.2, Color3.fromRGB(120, 210, 255), f)
+	end
+	-- 지붕 없는 둥근 띠 (기둥을 잇는다)
+	for k = 0, 15 do
+		local a = k / 16 * math.pi * 2
+		local p = d + Vector3.new(math.cos(a) * 15, at.Y + 14.4, math.sin(a) * 15)
+		part({ Name = "ShrineRing", Size = Vector3.new(1.2, 1, 6.2), CFrame = CFrame.lookAt(p, d + Vector3.new(0, at.Y + 14.4, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(225, 225, 215), Material = Enum.Material.Marble, Parent = f })
+	end
+	-- 산호 바위와 조개
+	for k = 0, 13 do
+		local a = k * 2.4
+		local p = c + Vector3.new(math.cos(a) * (50 + k * 4), 0, math.sin(a) * (50 + k * 4))
+		if (p - pool).Magnitude > 50 then
+			local h = 3 + (k % 4) * 1.5
+			part({ Name = "Coral", Size = Vector3.new(1.4, h, 1.4), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0.2 * (k % 3 - 1), k, 0.2), Color = k % 2 == 0 and Color3.fromRGB(255, 120, 110) or Color3.fromRGB(255, 180, 130), Material = Enum.Material.SmoothPlastic, Parent = f })
+			part({ Name = "Shell", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 0.7, 1.4), Position = p + Vector3.new(2, 0.3, 1), Color = Color3.fromRGB(250, 235, 225), Material = Enum.Material.SmoothPlastic, Parent = f })
+		end
+	end
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		stoneLantern(d + Vector3.new(math.cos(a) * 26, 0, math.sin(a) * 26), f, k % 2 == 0)
+	end
+end
+
 function SITES.geumgang(r: any, at: Vector3, color: Color3, f: Instance)
 	local base = Vector3.new(at.X, 0, at.Z - 10)
 	part({ Name = "TempleBase", Size = Vector3.new(80, at.Y, 56), Position = base + Vector3.new(0, at.Y / 2, 0), Color = Color3.fromRGB(165, 155, 140), Material = Enum.Material.Granite, Parent = f })

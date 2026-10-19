@@ -498,6 +498,14 @@ local function dressMaster(model: Model, style: any)
 			e.SpreadAngle = Vector2.new(180, 180)
 			e.Parent = torso
 		end
+	elseif id == "changhae" then
+		-- 창해옹: 파도빛 머리띠, 어깨에 걸친 조개 장식, 손목의 물빛 띠
+		wear(model, "Head", "WaveBand", Vector3.new(hs.X * 1.04, 0.3, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color2, Enum.Material.Neon)
+		wear(model, "UpperTorso", "ShellPad", Vector3.new(1.4, 0.5, 1.2), CFrame.new(1.1, 0.95, 0) * CFrame.Angles(0, 0, math.rad(-20)), Color3.fromRGB(250, 235, 225), Enum.Material.SmoothPlastic)
+		wear(model, "UpperTorso", "ShellPad2", Vector3.new(1.4, 0.5, 1.2), CFrame.new(-1.1, 0.95, 0) * CFrame.Angles(0, 0, math.rad(20)), Color3.fromRGB(250, 235, 225), Enum.Material.SmoothPlastic)
+		for _, side in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
+			wear(model, side, "TideBand", Vector3.new(1.05, 0.25, 1.05), CFrame.new(0, -0.3, 0), style.color, Enum.Material.Neon)
+		end
 	elseif id == "ilwol" then
 		-- 권존: 등 뒤에 금빛 해 바퀴, 왼 어깨 위에 은빛 초승달, 금과 은으로 반씩 물든 띠
 		local sun = wear(model, "UpperTorso", "SunDisc", Vector3.new(0.2, 4.2, 4.2), CFrame.new(0, 1.4, 1.1) * CFrame.Angles(0, math.rad(90), 0), style.color, Enum.Material.Neon, Enum.PartType.Cylinder)

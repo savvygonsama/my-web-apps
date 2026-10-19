@@ -1554,7 +1554,7 @@ function handlers.skillfx(data: any)
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
 	end
-	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun") and Ults.variant(data) then
+	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide") and Ults.variant(data) then
 		return
 	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
@@ -1797,8 +1797,8 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀" })[style.pulse.kind] or "✦"
-		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end

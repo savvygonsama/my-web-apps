@@ -307,7 +307,7 @@ local function styleOf(id: any): any
 	return type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 end
 
-local HIT_SCALE = 1.25
+local HIT_SCALE = 1.45
 function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	local style = styleOf(styleId)
 	if not style then
@@ -318,6 +318,11 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	local s = (heavy and 1.6 or 1) * HIT_SCALE
 	local c, c2 = style.color, style.color2
 	Fx.spark(pos, c, 1.3 * s, heavy and 12 or 7)
+	-- 각성 권법 (진): 맞을 때마다 둘째 빛깔의 큰 고리와 빛 가루가 한 겹 더
+	if style.awakenOf then
+		Fx.ring(pos, c2, 1, 15 * s, 0.4, dir)
+		Fx.burst("glitter", pos, c2, heavy and 14 or 8, 1.2)
+	end
 	-- 강타는 땅까지 울린다 (흙먼지·돌 조각)
 	if heavy then
 		Fx.impact(pos, c, 1)
@@ -414,6 +419,26 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(bar, 0.25)
 		end
 		Fx.ring(pos, c2, 1, 9 * s, 0.28, dir)
+	elseif style.fx == "ocean" then
+		-- 창해: 맞은 자리에서 물보라가 크게 튀고, 물결 고리 두 겹이 퍼진다
+		local splash = piece(Vector3.new(2, 2, 2) * s, c2, Enum.Material.Glass, Enum.PartType.Ball, 0.3)
+		splash.Position = pos
+		tween(splash, 0.25, { Size = Vector3.new(6, 6, 6) * s, Transparency = 1 })
+		Debris:AddItem(splash, 0.3)
+		for _ = 1, heavy and 12 or 7 do
+			local drop = piece(Vector3.new(0.6, 0.6, 0.6) * s, math.random() < 0.5 and c or c2, Enum.Material.Glass, Enum.PartType.Ball, 0.15)
+			drop.Position = pos
+			local to = pos + Vector3.new(math.random() * 8 - 4, math.random() * 5 + 1, math.random() * 8 - 4) * s
+			tween(drop, 0.35, { Position = to }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			task.delay(0.35, function()
+				if drop.Parent then
+					tween(drop, 0.25, { Position = to - Vector3.new(0, 4 * s, 0), Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				end
+			end)
+			Debris:AddItem(drop, 0.65)
+		end
+		Fx.ring(pos, c2, 1, 10 * s, 0.3, dir)
+		Fx.ring(pos, c, 1, 14 * s, 0.45, dir)
 	elseif style.fx == "eclipse" then
 		-- 일월: 금빛 해가 터지며 빛살이 뻗고, 은빛 초승달이 그 위를 가로질러 벤다
 		local sun = piece(Vector3.new(1.4, 1.4, 1.4) * s, c, Enum.Material.Neon, Enum.PartType.Ball, 0)
@@ -1032,7 +1057,7 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 	local cf = r.CFrame
 	local look, right, up = cf.LookVector, cf.RightVector, Vector3.new(0, 1, 0)
 	local base = r.Position + Vector3.new(0, 0.6, 0)
-	local s = heavy and 1.6 or 1
+	local s = (heavy and 1.6 or 1) * 1.35 -- 기술 연출은 한 치수 크게
 	local kind = style.fx
 	if kind == "water" then
 		-- 물의 초승달: 물방울이 둥글게 휘어 앞으로 흐른다
@@ -1153,6 +1178,18 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c2, 1, 10, 0.25, look)
 		end
+	elseif kind == "ocean" then
+		-- 창해: 손끝을 따라 휘어지는 물줄기 두 가닥과 물방울
+		for i = -1, 1, 2 do
+			local w = piece(Vector3.new(0.35, 0.35, 5 * s), i < 0 and c or c2, Enum.Material.Glass, nil, 0.15)
+			w.CFrame = lookAt(base + look * 2 + up * i * 0.6, base + look * 6 + right * i * 1.5) * CFrame.Angles(0, 0, math.rad(25 * i))
+			tween(w, 0.25, { Size = Vector3.new(0.08, 0.08, 8 * s), Transparency = 1, CFrame = w.CFrame * CFrame.new(0, 0, -2.5) })
+			Debris:AddItem(w, 0.28)
+		end
+		if heavy then
+			Fx.ring(base + look * 5, c2, 1, 12, 0.3, look)
+			Fx.ring(base + look * 6, c, 1, 16, 0.4, look)
+		end
 	elseif kind == "eclipse" then
 		-- 일월: 금빛 빛줄기 한 줄과, 그 둘레를 감는 은빛 반달
 		streak(base + look * 1.5, base + look * (7 * s), c, 0.32, 0.16)
@@ -1223,6 +1260,7 @@ local HAND_FX = {
 	origin = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.2, life = 1.1, size = 0.4 },
 	wind = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 4, life = 0.5, size = 0.5 },
 	eclipse = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 1.4, life = 0.8, size = 0.45 },
+	ocean = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.2, life = 0.7, size = 0.45 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do
@@ -1248,8 +1286,42 @@ function Fx.styleHands(model: Model, styleId: any, tier: number)
 			e.Lifetime = NumberRange.new(h.life * 0.7, h.life)
 			e.Speed = NumberRange.new(h.speed * 0.5, h.speed)
 			e.SpreadAngle = Vector2.new(180, 180)
-			e.Rate = 6 + tier * 10
+			e.Rate = (6 + tier * 10) * (style.awakenOf and 2 or 1)
+			if style.awakenOf then
+				e.Size = NumberSequence.new(h.size * (1.8 + tier * 0.4), 0)
+			end
 			e.Parent = hand
+		end
+	end
+	-- 각성 권법 (진): 온몸에서 두 빛깔의 기운이 타오르고 금빛 불티가 튄다
+	if style.awakenOf then
+		local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+		if torso and torso:IsA("BasePart") then
+			local flame = Instance.new("ParticleEmitter")
+			flame.Name = "KwonStyleHand"
+			flame.Texture = "rbxasset://textures/particles/fire_main.dds"
+			flame.Color = ColorSequence.new(style.color, style.color2)
+			flame.LightEmission = 1
+			flame.Transparency = NumberSequence.new(0.45, 1)
+			flame.Size = NumberSequence.new(2.2, 0.4)
+			flame.Lifetime = NumberRange.new(0.5, 0.9)
+			flame.Speed = NumberRange.new(2, 5)
+			flame.Acceleration = Vector3.new(0, 8, 0)
+			flame.SpreadAngle = Vector2.new(30, 30)
+			flame.EmissionDirection = Enum.NormalId.Top
+			flame.Rate = 22
+			flame.Parent = torso
+			local sparks = Instance.new("ParticleEmitter")
+			sparks.Name = "KwonStyleHand"
+			sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+			sparks.Color = ColorSequence.new(Color3.fromRGB(255, 225, 140), style.color2)
+			sparks.LightEmission = 1
+			sparks.Size = NumberSequence.new(0.35, 0)
+			sparks.Lifetime = NumberRange.new(0.6, 1.2)
+			sparks.Speed = NumberRange.new(3, 7)
+			sparks.SpreadAngle = Vector2.new(180, 180)
+			sparks.Rate = 14
+			sparks.Parent = torso
 		end
 	end
 end
@@ -1339,6 +1411,31 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
 	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
 	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
+	-- E·R: 기술이 나가는 순간 앞으로 뻗는 두 겹 기운의 초승달 (기술마다 같은 틀, 권법 빛깔로)
+	if slot == "E" or slot == "R" then
+		task.delay(math.min(0.22, dur * 0.3), function()
+			local rr = rootPart(model)
+			if not rr then
+				return
+			end
+			local lk = Vector3.new(rr.CFrame.LookVector.X, 0, rr.CFrame.LookVector.Z)
+			lk = lk.Magnitude > 0.01 and lk.Unit or Vector3.new(0, 0, -1)
+			local cf = CFrame.lookAt(rr.Position, rr.Position + lk)
+			for layer = 0, 1 do
+				local rad = 5 + layer * 2
+				for k = 0, 8 do
+					local a = math.rad(-70 + k * 17.5)
+					local w = 1 - math.abs(k - 4) / 4
+					local lp = CFrame.new(math.sin(a) * rad, 0.2 * layer, -math.cos(a) * rad) * CFrame.Angles(0, -a, 0)
+					local seg = piece(Vector3.new(rad * 0.22, 0.3, 0.3 + w * 0.9), layer == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+					seg.CFrame = cf * lp
+					tween(seg, 0.3, { CFrame = cf * CFrame.new(0, 0, -9 - layer * 3) * lp, Transparency = 1 })
+					Debris:AddItem(seg, 0.35)
+				end
+			end
+			Fx.flash(rr.Position + lk * 6, c, 26, 3, 0.3)
+		end)
+	end
 	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
 	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
@@ -2040,6 +2137,25 @@ function Fx.mech(data: any)
 				Fx.dust(root.Position - Vector3.new(0, 2.5, 0), 4)
 			end
 		end)
+	elseif kind == "shock" then
+		-- 기술 마무리 충격파: 권법 빛깔의 둥근 충격, 바깥 고리 셋, 위로 솟는 빛, 불티와 흙먼지
+		local at, r = data.at, data.radius or 9
+		local g = at - Vector3.new(0, 2.3, 0)
+		local dome = piece(Vector3.new(3, 3, 3), c, Enum.Material.ForceField, Enum.PartType.Ball, 0)
+		dome.Position = at
+		tween(dome, 0.3, { Size = Vector3.new(r * 2.2, r * 1.4, r * 2.2), Transparency = 1 })
+		Debris:AddItem(dome, 0.35)
+		for k = 0, 2 do
+			task.delay(k * 0.05, function()
+				Fx.ring(g + Vector3.new(0, 0.3 + k * 0.6, 0), k == 1 and c2 or c, 2, r * (2.2 + k * 0.5), 0.4)
+			end)
+		end
+		local col = piece(Vector3.new(26, r * 0.7, r * 0.7), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.3)
+		col.CFrame = CFrame.new(g + Vector3.new(0, 13, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(col, 0.3, { Size = Vector3.new(30, 0.2, 0.2), Transparency = 1 })
+		Debris:AddItem(col, 0.35)
+		Fx.impact(at, c, 1.2)
+		Fx.sound("hit", 0.7, 0.8, at)
 	elseif kind == "telegraph" or kind == "mark" then
 		-- 바닥의 원이 가운데부터 차오른다: 다 차면 떨어진다
 		local at, r, time = data.at, data.radius, data.time or 1
@@ -2217,10 +2333,31 @@ function Fx.mech(data: any)
 			return out
 		end, 0.3)
 	elseif kind == "trail" then
+		-- 지나간 길이 터진다: 매화는 꽃잎, 바람은 칼바람, 바다는 물기둥, 그 밖엔 기운의 폭발
+		local fxk = data.fx or (style and style.fx)
 		for i, p in ipairs(data.points or {}) do
 			task.delay(i * 0.05, function()
-				Fx.bloom(p - Vector3.new(0, 1.5, 0), data.radius or 6)
-				Fx.ring(p - Vector3.new(0, 2.2, 0), c, 1, (data.radius or 6) * 2, 0.35)
+				local rad = data.radius or 6
+				local g = p - Vector3.new(0, 2.2, 0)
+				if fxk == "petal" then
+					Fx.bloom(p - Vector3.new(0, 1.5, 0), rad)
+				elseif fxk == "tide" or fxk == "ocean" then
+					local col = piece(Vector3.new(14, rad * 1.1, rad * 1.1), c2, Enum.Material.Glass, Enum.PartType.Cylinder, 0.25)
+					col.CFrame = CFrame.new(g + Vector3.new(0, 7, 0)) * CFrame.Angles(0, 0, math.rad(90))
+					tween(col, 0.35, { Size = Vector3.new(18, 0.4, 0.4), Transparency = 1 })
+					Debris:AddItem(col, 0.4)
+					Fx.burst("glitter", p, c2, 10, 1.2)
+				elseif fxk == "wind" then
+					for k = 0, 2 do
+						local blade = piece(Vector3.new(rad * 1.8, 0.15, 0.6), c2, Enum.Material.Neon, nil, 0.1)
+						blade.CFrame = CFrame.new(p) * CFrame.Angles(0, k * 1.05 + i, math.rad(20))
+						tween(blade, 0.25, { Size = Vector3.new(rad * 2.6, 0.05, 0.1), Transparency = 1 })
+						Debris:AddItem(blade, 0.3)
+					end
+				else
+					Fx.impact(p, c, 0.8)
+				end
+				Fx.ring(g, c, 1, rad * 2.2, 0.35)
 			end)
 		end
 	end
