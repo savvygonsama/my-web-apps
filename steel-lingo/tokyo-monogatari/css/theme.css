@@ -1,18 +1,18 @@
-/* 東京物語 테마 — 大阪物語(자줏빛)와 구분되게, 비 오는 밤 골목의 남색 노렌과 등불 빛을 주색으로 */
+/* 東京物語 테마 — 도쿄타워의 '인터내셔널 오렌지'를 주색으로, 여름 낮의 따뜻한 바탕 */
 :root {
-  --ground: #eef0f4; --surface-2: #e2e6ee;
-  --accent: #23356b; --accent-soft: #e1e6f3;
-  --ember: #b5702a; --ember-soft: #f6ebdc;
+  --ground: #f6f1ec; --surface-2: #efe5dc;
+  --accent: #c2410c; --accent-soft: #fbe6da;
+  --ember: #1f6f8b; --ember-soft: #dcecf2;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #0c0f17; --surface: #141927; --surface-2: #1d2335;
-    --accent: #9fb2e8; --accent-ink: #0c0f17; --accent-soft: #1f2a4a;
-    --ember: #e8b071; --ember-soft: #3a2a17;
+    --ground: #15100d; --surface: #1f1814; --surface-2: #2b211b;
+    --accent: #f59e6b; --accent-ink: #15100d; --accent-soft: #3d2416;
+    --ember: #7cc3dc; --ember-soft: #15303a;
   }
 }
 :root[data-theme="dark"] {
-  --ground: #0c0f17; --surface: #141927; --surface-2: #1d2335;
-  --accent: #9fb2e8; --accent-ink: #0c0f17; --accent-soft: #1f2a4a;
-  --ember: #e8b071; --ember-soft: #3a2a17;
+  --ground: #15100d; --surface: #1f1814; --surface-2: #2b211b;
+  --accent: #f59e6b; --accent-ink: #15100d; --accent-soft: #3d2416;
+  --ember: #7cc3dc; --ember-soft: #15303a;
 }

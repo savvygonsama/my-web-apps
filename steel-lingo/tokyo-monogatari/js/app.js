@@ -850,7 +850,7 @@
 
   /* ═══════════ 시작 ═══════════ */
   applySettings();
-  app.innerHTML = `<div class="loading">밤의 골목으로…</div>`;
+  app.innerHTML = `<div class="loading">도쿄로 가는 중…</div>`;
   SH.loadData("data/").then((res) => {
     const bad = res.filter((r) => !r.ok);
     if (bad.length) console.warn("불러오지 못한 데이터:", bad.map((r) => r.f).join(", "));
