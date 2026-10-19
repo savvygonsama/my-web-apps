@@ -291,6 +291,10 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW,
 	})
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
+	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
+	if not isBoss and not def.elite and not def.duel and lv <= 4 then
+		(f :: any).deflectMul = 0.45
+	end
 	;(f :: any).typeId = typeId
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
@@ -498,6 +502,30 @@ local function dressMaster(model: Model, style: any)
 			e.SpreadAngle = Vector2.new(180, 180)
 			e.Parent = torso
 		end
+	elseif id == "yeolhwa" then
+		-- 염백: 불꽃 갈기 같은 붉은 머리띠, 어깨에서 타오르는 불, 팔목의 용암 띠
+		wear(model, "Head", "FlameBand", Vector3.new(hs.X * 1.05, 0.35, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.25, 0), style.color, Enum.Material.Neon)
+		for _, side in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
+			wear(model, side, "LavaBand", Vector3.new(1.05, 0.3, 1.05), CFrame.new(0, -0.3, 0), style.color2, Enum.Material.Neon)
+		end
+		for _, x in ipairs({ -1, 1 }) do
+			local pad = wear(model, "UpperTorso", "FlamePad", Vector3.new(1, 0.4, 1), CFrame.new(x * 1.1, 1, 0), Color3.fromRGB(60, 40, 35), Enum.Material.Basalt)
+			if pad then
+				local fire = Instance.new("Fire")
+				fire.Size = 2.5
+				fire.Heat = 6
+				fire.Parent = pad
+			end
+		end
+	elseif id == "yeonggeop" then
+		-- 영겁노인: 등 뒤의 해시계 고리 (열두 눈금), 목에 건 모래시계, 은빛 수염
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			wear(model, "UpperTorso", "DialMark", Vector3.new(0.2, k % 3 == 0 and 0.9 or 0.5, 0.2), CFrame.new(math.cos(a) * 2.6, 1.3 + math.sin(a) * 2.6, 1.1) * CFrame.Angles(0, 0, a - math.pi / 2), k % 3 == 0 and style.color2 or style.color, Enum.Material.Neon)
+		end
+		wear(model, "UpperTorso", "DialHand", Vector3.new(0.2, 2.2, 0.2), CFrame.new(0, 2.2, 1.15), style.color2, Enum.Material.Neon)
+		wear(model, "UpperTorso", "Hourglass", Vector3.new(0.6, 0.9, 0.6), CFrame.new(0, 0.2, -0.65), style.color2, Enum.Material.Glass)
+		wear(model, "Head", "SilverBeard", Vector3.new(hs.X * 0.5, hs.Y * 1.4, 0.3), CFrame.new(0, -hs.Y * 0.9, -hs.Z * 0.45), Color3.fromRGB(225, 230, 240))
 	elseif id == "changhae" then
 		-- 창해옹: 파도빛 머리띠, 어깨에 걸친 조개 장식, 손목의 물빛 띠
 		wear(model, "Head", "WaveBand", Vector3.new(hs.X * 1.04, 0.3, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color2, Enum.Material.Neon)
@@ -1149,7 +1177,16 @@ local function think(e: Enemy, t: number)
 		end
 		return
 	end
-	-- 보스: 싸우는 사람 화면에 체력 막대
+	-- 보스: 싸우는 사람 화면에 체력 막대. 멀어지거나 쓰러진 사람의 막대는 걷는다 (다시 맞붙으면 다시 뜬다)
+	if e.kind == "boss" then
+		for p in pairs(e.engaged) do
+			local pf = Combat.fighterOfPlayer(p)
+			if not pf or pf.dead or flatDist(pf.root.Position, pos) > 170 then
+				e.engaged[p] = nil
+				Push:FireClient(p, "boss", nil)
+			end
+		end
+	end
 	if e.kind == "boss" and tgt.player and not e.engaged[tgt.player] then
 		e.engaged[tgt.player] = true
 		Push:FireClient(tgt.player, "boss", f.model)
@@ -1179,7 +1216,9 @@ local function think(e: Enemy, t: number)
 	if tact and t - tact.start < 0.18 and d < 11 and not f.guarding and not (tact :: any).perfect then
 		-- 마구 누르는 연타는 읽혀서 막히고 흘려진다. 박자를 맞춘 일격(連)은 읽지 못한다
 		local sloppy = (tgt :: any).sloppy or 0
-		local chance = (e.kind == "boss" and 0.4 or 0.22) + math.min(0.5, sloppy * 0.09)
+		-- 초반 적 (단계 4 이하, 정예 아님)은 덜 막는다
+		local early = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
+		local chance = (e.kind == "boss" and 0.4 or (early and 0.1 or 0.22)) + math.min(early and 0.2 or 0.5, sloppy * (early and 0.05 or 0.09))
 		if math.random() < chance then
 			f.guarding = true
 			f.guardStart = t
@@ -1196,7 +1235,8 @@ local function think(e: Enemy, t: number)
 	end
 	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고, 막 잡은 막기엔 흘려진다
 	-- (상대가 칠 때를 기다려 흘리고 파고들거나, 균형을 깨거나, 뒤를 잡아야 한다)
-	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or 0.12)) then
+	local earlyIdle = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
+	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or (earlyIdle and 0.05 or 0.12))) then
 		f.guarding = true
 		f.guardStart = t
 		e.guardUntil = t + 0.6 + math.random() * 0.7

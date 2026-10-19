@@ -651,6 +651,79 @@ table.insert(Config.Styles, {
 			mech = { kind = "tsunami", delay = 0.5, start = -6, width = 46, depth = 10, speed = 34, dur = 1.8, every = 0.2, hit = hit(0, 0, 0, 10, 10, 0.4, 0), finalRadius = 22, final = hit(0, 0, 0, 90, 120, 1.3, 60, 22) } },
 	},
 })
+-- 정점 둘째: 영겁신권 (태초신권을 익힌 천외천의 고수만, 천 개의 계단 위 영겁노인에게). 시간을 쥔 주먹
+table.insert(Config.Styles, {
+	id = "yeonggeop",
+	name = "영겁신권",
+	hanja = "永劫神拳",
+	icon = "⏳",
+	color = Color3.fromRGB(110, 200, 255),
+	color2 = Color3.fromRGB(255, 215, 130),
+	fx = "time",
+	grade = "지존",
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "taecho",
+	trialHp = 12,
+	unlockHint = "태초신권을 익힌 천외천의 고수만이 북서쪽 끝 천 개의 계단 위, 떠 있는 문 앞에서 영겁노인을 만난다",
+	desc = "시간을 쥔 주먹. 맞은 자의 시간이 멎고, 지나간 주먹이 메아리처럼 되돌아와 다시 친다. 마지막 한 수에 하늘에 거대한 해시계가 열리고 열두 번의 종이 울린다.",
+	gimmick = "정지: 다섯 번 맞힐 때마다 상대 둘레의 시간이 1.4초 멎고 메아리가 친다. 모든 기술 대기 30% 짧음, 동작 +10%",
+	deflect = 0.3,
+	postureMult = 1.6,
+	speed = 1.1,
+	cdMult = 0.7,
+	pulse = { every = 5, kind = "time", radius = 12, delay = 0.35, name = "시간 정지", dmg = 44, posture = 44, stun = 1.4, kb = 0, up = 0 },
+	stance = "stance_time",
+	combo = {
+		{ id = "yg1", name = "찰나장", pose = "time_palm_r", dur = 0.27, lunge = 3, hits = { hit(0.11, 6, 4.5, 19, 15, 0.35, 8) } },
+		{ id = "yg2", name = "순간장", pose = "time_palm_l", dur = 0.27, lunge = 3, hits = { hit(0.11, 6, 4.5, 19, 15, 0.35, 8) } },
+		{ id = "yg3", name = "회귀각", pose = "rewind_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 6, 23, 22, 0.45, 16) } },
+		{ id = "yg4", name = "정시권", pose = "hour_punch", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 5.5, 31, 34, 0.6, 32) } },
+	},
+	heavy = { id = "ygH", name = "영겁일격", pose = "hour_strike", dur = 0.75, lunge = 4, hits = { hit(0.4, 14, 7, 62, 92, 1.1, 60, 8, true) } },
+	skills = {
+		E = { id = "ygE", name = "역행보", desc = "앞으로 꿰뚫고 지나간 뒤 (무적), 0.6초 뒤 시간이 거꾸로 돌아 제자리로 되돌아오며 지나온 길의 적을 다시 벤다", pose = "rewind_step", dur = 0.5, cd = 6, chi = 20, lunge = 24, iframes = 0.45,
+			hits = { hit(0.15, 6, 4.5, 26, 24, 0.5, 10) },
+			mech = { kind = "rewind", delay = 0.6, radius = 6, hit = hit(0, 0, 0, 34, 30, 0.6, 8) } },
+		R = { id = "ygR", name = "정지된 시간", desc = "앞에 시간이 멎은 구역을 2초 연다. 안의 적은 꼼짝 못 하고 째깍일 때마다 베인다", pose = "stop_palm", dur = 0.9, cd = 9, chi = 30,
+			mech = { kind = "zone", dist = 10, radius = 13, dur = 2, every = 0.25, delay = 0.25, hit = hit(0, 0, 0, 8, 10, 0.45, 0), fx = "time" } },
+		G = { id = "ygG", name = "만겁귀환", desc = "하늘에 거대한 해시계가 열리고 시곗바늘이 거꾸로 돈다. 둘레의 모든 적의 시간이 멎고, 열두 번의 종이 울릴 때마다 베이며, 자정에 시간이 깨진다", pose = "ult_clock", dur = 3.2, cd = 32, chi = 100, armor = true,
+			mech = { kind = "clock", radius = 55, delay = 0.6, bells = 12, every = 0.17, hit = hit(0, 0, 0, 20, 18, 0.3, 0), final = hit(0, 0, 0, 200, 260, 1.6, 60, 24) } },
+	},
+})
+-- 불: 열화신권 (붉은 황야 동쪽 불 제단의 염백에게). 맞은 자에게 불이 붙는다
+table.insert(Config.Styles, {
+	id = "yeolhwa",
+	name = "열화신권",
+	hanja = "烈火神拳",
+	icon = "🔥",
+	color = Color3.fromRGB(255, 105, 30),
+	color2 = Color3.fromRGB(255, 225, 120),
+	fx = "fire",
+	grade = "전설",
+	desc = "타오르는 불꽃을 주먹에 담았다. 맞은 자는 불이 붙어 계속 타고, 불붙은 적에게 꽂는 강타는 터진다.",
+	gimmick = "연소: 맞힌 적이 3초 동안 불탄다 (0.5초마다 피해). 불타는 적에게 강타(Z)를 꽂으면 폭발해 둘레까지 태운다",
+	deflect = 0.2,
+	burn = { dur = 3, every = 0.5, dmg = 5 },
+	stance = "stance_fire",
+	combo = {
+		{ id = "yh1", name = "화염장", pose = "fire_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 10, 9, 0.35, 8) } },
+		{ id = "yh2", name = "염조권", pose = "fire_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 10, 9, 0.35, 8) } },
+		{ id = "yh3", name = "화륜각", pose = "flame_wheel", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5.5, 13, 14, 0.4, 14, 8) } },
+		{ id = "yh4", name = "열화권", pose = "blaze_punch", dur = 0.48, lunge = 4, hits = { hit(0.24, 8, 5, 19, 24, 0.55, 34) } },
+	},
+	heavy = { id = "yhH", name = "폭염추", pose = "blaze_hammer", dur = 0.7, lunge = 3, hits = { hit(0.36, 8, 6.5, 28, 40, 0.8, 50, 6, true) }, ignite = { radius = 11, dmg = 30, posture = 30 } },
+	skills = {
+		E = { id = "yhE", name = "화룡보", desc = "불길이 되어 앞으로 꿰뚫고 지나간다 (무적). 지나간 길에 불기둥이 솟는다", pose = "flame_dash", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
+			hits = { hit(0.15, 6, 4.5, 14, 12, 0.4, 16) },
+			mech = { kind = "trail", delay = 0.45, count = 5, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.5, 10, 10), fx = "fire" } },
+		R = { id = "yhR", name = "염화폭풍", desc = "앞쪽 부채꼴로 불길을 1.2초 동안 내뿜는다 (맞은 적은 불탄다)", pose = "fire_breath_palm", dur = 1.2, cd = 10, chi = 25,
+			mech = { kind = "cone", range = 20, angle = 70, delay = 0.2, dur = 1.2, every = 0.2, hit = hit(0, 0, 0, 7, 8, 0.3, 6), fx = "fire" } },
+		G = { id = "yhG", name = "열화천멸", desc = "땅이 갈라져 용암이 둘레의 모든 적 발밑으로 흐르고, 적마다 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다", pose = "ult_volcano", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "eruption", radius = 32, delay = 0.6, stagger = 0.08, pillar = hit(0, 0, 0, 48, 40, 0.8, 20, 30), finalAt = 1.7, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 60, 25) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -924,6 +997,8 @@ local FINISHERS = {
 	cheonryong2 = { name = "진 승룡장", pose = "dragon_rise" },
 	byeokryeok2 = { name = "진 벽력천추", pose = "knee_strike" },
 	changhae = { name = "창해승천장", pose = "tidal_punch" },
+	yeonggeop = { name = "영겁승천각", pose = "rewind_kick" },
+	yeolhwa = { name = "열화승천권", pose = "blaze_punch" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -935,7 +1010,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1161,7 +1236,7 @@ local P = function(kind: string, name: string, phase: number, opt: { [string]: a
 	end
 	return t
 end
-boss("heukho", { hp = 2900, scale = 2.4, reach = 1.5, patterns = {
+boss("heukho", { hp = 2200, scale = 2.4, reach = 1.5, patterns = {
 	P("quake", "흑호 지진", 1, { radius = 16, warn = 1.1, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 30, 40, 0.9, 40, 18) }),
 	P("leap", "호랑이 도약", 1, { radius = 13, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 36, 50, 1.0, 35, 15) }),
 	P("charge", "흑호 돌진", 2, { length = 46, width = 9, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 30, 40, 0.8, 50) }),
@@ -1296,6 +1371,9 @@ Config.Regions = {
 	-- 창해각: 서해 남쪽 바닷가의 사당 (창해신권의 사부)
 	{ id = "seashrine", name = "창해각 (바다 사당)", center = Vector3.new(-1700, 0, 950), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(190, 185, 150), material = Enum.Material.Sand, safe = true,
 		master = "changhae", rumor = "서해 절벽 남쪽 바닷가 사당에 파도와 함께 숨 쉬는 노인이 있다더라", quote = "바다는 막지 않는다. 덮을 뿐이다.", masterName = "창해옹", masterAt = Vector3.new(-1700, 2.2, 950) },
+	-- 불 제단: 붉은 황야 동쪽, 꺼지지 않는 불 (열화신권의 사부)
+	{ id = "fireshrine", name = "염화단 (불 제단)", center = Vector3.new(2300, 0, 250), size = Vector3.new(240, 0, 240), ground = Color3.fromRGB(95, 60, 50), material = Enum.Material.Basalt, safe = true,
+		master = "yeolhwa", rumor = "동쪽 붉은 황야 너머, 꺼지지 않는 불 제단에 불을 다루는 노장이 산다더라", quote = "불은 묻지 않는다. 다 태울 뿐이다.", masterName = "염백", masterAt = Vector3.new(2300, 3, 250) },
 	-- 일월대: 해와 달의 단 (정점의 사부, 권존이 홀로 선다)
 	{ id = "sunmoon", name = "일월대", center = Vector3.new(2500, 0, 2500), size = Vector3.new(420, 0, 420), ground = Color3.fromRGB(70, 62, 78), material = Enum.Material.Slate, safe = true },
 	-- 풍신대: 바람이 그치지 않는 언덕 (여덟째 사부)
@@ -1335,6 +1413,9 @@ Config.MASTERS.taecho = { name = "시원자", at = Vector3.new(0, 3.2, -3080), r
 -- 정점의 사부: 동남쪽 끝 일월대의 권존. 태초신권을 익힌 천외천의 고수에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.ilwol = { name = "권존", at = Vector3.new(2500, 6.2, 2500), region = "일월대", regionId = "sunmoon", secret = true,
 	quote = "해는 지고 달은 뜬다. 나는 늘 그 사이에 서 있었다.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
+-- 정점 둘째의 사부: 천 개의 계단 꼭대기, 떠 있는 문 앞의 영겁노인 (지도에 나오지 않는다)
+Config.MASTERS.yeonggeop = { name = "영겁노인", at = Vector3.new(-2804, 62.6, -2804), region = "천 개의 계단", regionId = "steps", secret = true,
+	quote = "흘러간 것은 돌아오지 않는다. 내가 돌려놓기 전까지는.", rumor = "북서쪽 끝, 구름까지 닿은 천 개의 계단 위에 시간을 멈춘 노인이 서 있다더라" }
 -- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
 Config.Fragments = {
 	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
@@ -1353,7 +1434,7 @@ Config.Story = {
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 330) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
-	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 아홉 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
+	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
@@ -1374,7 +1455,7 @@ Config.Story = {
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 열아홉 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 스물한 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
@@ -1431,6 +1512,8 @@ Config.Roads = {
 	{ Vector3.new(0, 0, -1380), Vector3.new(-120, 0, -2000), Vector3.new(-40, 0, -2460), Vector3.new(0, 0, -2650) },
 	-- 서해 남쪽 바닷가 창해각으로
 	{ Vector3.new(-1380, 0, 0), Vector3.new(-1500, 0, 560), Vector3.new(-1700, 0, 860) },
+	-- 붉은 황야 동쪽 염화단으로
+	{ Vector3.new(2070, 0, -100), Vector3.new(2300, 0, 140) },
 }
 
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)

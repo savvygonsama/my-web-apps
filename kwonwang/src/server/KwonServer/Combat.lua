@@ -61,6 +61,8 @@ Combat.fighters = {} :: { [Model]: Fighter }
 Combat.projectiles = {} :: { any }
 local Push: RemoteEvent
 local hooks: { [string]: any } = {}
+-- 불타는 상대 (열화신권 연소)
+local burning: { [any]: boolean } = {}
 
 function Combat.init(push: RemoteEvent, h: { [string]: any })
 	Push = push
@@ -462,7 +464,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	-- 막기·흘리기 (앞에서 온 것만, 막을 수 없는 공격은 안 된다)
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain then
-		local window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) + 0.06 -- 0.06 = 통신 늦음 여유
+		local window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) * ((tgt :: any).deflectMul or 1) + 0.06 -- 0.06 = 통신 늦음 여유
 		if t - tgt.guardStart <= window then
 			-- 흘리기 성공
 			local broke = addPosture(att, postureDmg * Config.DEFLECT_POSTURE + 6)
@@ -641,6 +643,31 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	})
 	if hooks.onHit then
 		hooks.onHit(att, tgt, d, opt)
+	end
+	-- 열화 연소: 맞은 적에게 불이 붙는다 (계속 타며 피해)
+	if aStyle and aStyle.burn and not opt.chain and tgt.hp > 0 then
+		local b = aStyle.burn
+		local fb = tgt :: any
+		fb.burnUntil = t + b.dur
+		fb.burnBy = att
+		fb.burnDmg = b.dmg
+		fb.burnEvery = b.every
+		fb.burnNext = fb.burnNext and math.min(fb.burnNext, t + b.every) or t + b.every
+		if not burning[tgt] then
+			burning[tgt] = true
+			tgt.model:SetAttribute("Burning", true)
+		end
+	end
+	-- 폭염: 불타는 적에게 강타를 꽂으면 터져 둘레까지 태운다
+	if move.ignite and not opt.chain and ((tgt :: any).burnUntil or 0) > t then
+		local at = tgt.root.Position
+		local ig = move.ignite
+		Push:FireAllClients("skillfx", { kind = "ignite", at = at, radius = ig.radius, style = att.style })
+		for _, other in pairs(Combat.fighters) do
+			if Combat.hostile(att, other) and not other.dead and (other.root.Position - at).Magnitude <= ig.radius then
+				Combat.applyHit(att, other, { dmg = ig.dmg, posture = ig.posture or 20, stun = 0.6, kb = 30, up = 10 }, { chain = true, isSkill = true, move = { name = "폭염" } })
+			end
+		end
 	end
 	if tgt.hp <= 0 then
 		Combat.kill(tgt, att)
@@ -901,4 +928,27 @@ function Combat.fighterOfPlayer(player: Player): Fighter?
 end
 
 local _ = Players
+-- 연소: 불타는 상대는 정해진 간격마다 피해를 입는다
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		local t = now()
+		for f in pairs(burning) do
+			local fb = f :: any
+			if f.dead or not f.model.Parent or t > (fb.burnUntil or 0) then
+				burning[f] = nil
+				if f.model.Parent then
+					f.model:SetAttribute("Burning", nil)
+				end
+			elseif t >= (fb.burnNext or 0) then
+				fb.burnNext = t + (fb.burnEvery or 0.5)
+				local by = fb.burnBy
+				if by and not by.dead then
+					Combat.applyHit(by, f, { dmg = fb.burnDmg or 5, posture = 2, stun = 0, kb = 0 }, { chain = true, isSkill = true, unblockable = true, move = { name = "연소" } })
+				end
+			end
+		end
+	end
+end)
+
 return Combat

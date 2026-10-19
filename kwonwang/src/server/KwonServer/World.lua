@@ -918,6 +918,53 @@ function SITES.taeheo(r: any, at: Vector3, color: Color3, f: Instance)
 end
 
 -- 금강사: 돌 기단 위의 절, 큰 종과 향로
+-- 염화단: 검은 현무암 단 위의 꺼지지 않는 불. 용암 고랑이 둘레를 돌고, 흑요석 기둥마다 불꽃
+function SITES.yeolhwa(r: any, at: Vector3, color: Color3, f: Instance)
+	local d = Vector3.new(at.X, 0, at.Z)
+	local LAVA = Color3.fromRGB(255, 110, 30)
+	cyl("FireDais", d + Vector3.new(0, at.Y / 2, 0), 18, at.Y, Color3.fromRGB(50, 40, 40), Enum.Material.Basalt, f)
+	cyl("FireDaisRim", d + Vector3.new(0, at.Y + 0.05, 0), 16, 0.1, LAVA, Enum.Material.Neon, f, false).Transparency = 0.4
+	-- 둘레의 용암 고랑 (둥근 띠)
+	for k = 0, 31 do
+		local a = k / 32 * math.pi * 2
+		local p = d + Vector3.new(math.cos(a) * 30, 0.25, math.sin(a) * 30)
+		part({ Name = "LavaMoat", Size = Vector3.new(3.4, 0.4, 6.4), CFrame = CFrame.lookAt(p, d + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = LAVA, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	-- 흑요석 기둥 여섯과 꼭대기 불꽃
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local p = d + Vector3.new(math.cos(a) * 22, 0, math.sin(a) * 22)
+		part({ Name = "ObsidianPillar", Size = Vector3.new(3, 16, 3), CFrame = CFrame.new(p + Vector3.new(0, 8, 0)) * CFrame.Angles(0, a, 0), Color = Color3.fromRGB(25, 20, 28), Material = Enum.Material.Glass, Parent = f })
+		local bowl = cyl("PillarFire", p + Vector3.new(0, 16.6, 0), 1.8, 1, Color3.fromRGB(60, 50, 50), Enum.Material.Basalt, f)
+		local fire = Instance.new("Fire")
+		fire.Size = 7
+		fire.Heat = 10
+		fire.Color = LAVA
+		fire.SecondaryColor = Color3.fromRGB(255, 220, 120)
+		fire.Parent = bowl
+		light(bowl, LAVA, 22, 2)
+	end
+	-- 가운데 뒤편의 큰 불 (꺼지지 않는 불)
+	local core = part({ Name = "EternalFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 5, 5), Position = d + Vector3.new(0, at.Y + 9, -10), Color = LAVA, Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+	local big = Instance.new("Fire")
+	big.Size = 14
+	big.Heat = 14
+	big.Color = LAVA
+	big.SecondaryColor = Color3.fromRGB(255, 230, 140)
+	big.Parent = core
+	light(core, LAVA, 50, 3)
+	emitter(core, Color3.fromRGB(255, 160, 70), 16, 1.2, 6, 2)
+	-- 검은 바위와 붉은 수정
+	for k = 0, 11 do
+		local a = k * 2.3
+		local p = d + Vector3.new(math.cos(a) * (40 + (k % 4) * 12), 0, math.sin(a) * (40 + (k % 4) * 12))
+		rock(p, 4 + (k % 3) * 2, f, Color3.fromRGB(45, 38, 38))
+		if k % 3 == 0 then
+			crystal(p + Vector3.new(0, 4, 0), 1.4, LAVA, f)
+		end
+	end
+end
+
 -- 창해각: 바닷가 사당. 둥근 조수 웅덩이, 파도 무늬 기둥 여덟, 푸른 석등, 산호 바위와 조개
 function SITES.changhae(r: any, at: Vector3, color: Color3, f: Instance)
 	local c = r.center

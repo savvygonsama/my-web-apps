@@ -14,6 +14,9 @@
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
 --   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
 --   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+--   rewind   지나간 뒤 시간이 거꾸로 돌아 제자리로 돌아오며 지나온 길을 다시 벤다
+--   clock    하늘에 해시계, 둘레의 시간이 멎고 열두 번의 종마다 베이며 자정에 깨진다
+--   eruption 적마다 발밑에서 불기둥이 솟고, 마지막에 내 자리에서 화산이 터진다
 --   shock    기술의 마지막 타격 뒤 앞쪽에 충격파가 터진다 (맨 타격뿐인 기술을 보완)
 --   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고, 끝에서 부서진다
 --   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
@@ -384,6 +387,75 @@ function Skills.run(f: any, move: any, ctx: any)
 		Push:FireAllClients("skillfx", { kind = "genesis", m = f.model, at = center, radius = m.radius, targets = models, dur = m.freeze / sp, crackAt = m.crackAt / sp, breakAt = m.breakAt / sp, style = style })
 		after(m.breakAt, function()
 			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "rewind" then
+		local start = f.root.Position
+		after(m.delay, function()
+			local now = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "rewind", m = f.model, from = now, to = start, radius = m.radius, style = style })
+			local rot = f.root.CFrame - f.root.CFrame.Position
+			if f.player and f.player.Character then
+				f.player.Character:PivotTo(CFrame.new(start) * rot)
+			else
+				f.root.CFrame = CFrame.new(start) * rot
+			end
+			f.iframeUntil = math.max(f.iframeUntil, os.clock() + 0.3)
+			-- 지나온 길 (선분) 가까이의 적을 다시 벤다
+			local seg = now - start
+			local len = seg.Magnitude
+			for _, o in ipairs(hostilesNear(f, (start + now) / 2, len / 2 + m.radius)) do
+				local p = o.root.Position - start
+				local k = len > 0.1 and math.clamp(p:Dot(seg) / (len * len), 0, 1) or 0
+				if (p - seg * k).Magnitude <= m.radius + 1 then
+					strike(f, o, hit, move)
+				end
+			end
+		end)
+	elseif kind == "clock" then
+		-- 만겁귀환: 둘레의 시간이 멎고 (모두 묶인다) 열두 번의 종, 자정에 깨진다
+		local center = f.root.Position
+		local total = m.delay + m.bells * m.every + 0.25
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+			Combat.stun(o, total / sp + 0.4)
+			if not o.player and not o.root.Anchored then
+				o.root.AssemblyLinearVelocity = Vector3.zero
+			end
+		end
+		Push:FireAllClients("skillfx", { kind = "clock", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, bells = m.bells, every = m.every / sp, style = style })
+		for i = 1, m.bells do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "eruption" then
+		-- 열화천멸: 적마다 발밑에서 불기둥, 마지막에 내 자리에서 화산
+		local center = f.root.Position
+		local list = hostilesNear(f, center, m.radius)
+		local spots = {}
+		for _, o in ipairs(list) do
+			table.insert(spots, o.root.Position)
+		end
+		Push:FireAllClients("skillfx", { kind = "eruption", m = f.model, at = center, spots = spots, delay = m.delay / sp, stagger = m.stagger / sp, finalAt = m.finalAt / sp, finalRadius = m.finalRadius, style = style })
+		local pillar = scaled(m.pillar, sc)
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.stagger, function()
+				if not o.dead then
+					strike(f, o, pillar, move)
+				end
+			end)
+		end
+		after(m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)

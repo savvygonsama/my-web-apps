@@ -986,6 +986,7 @@ local function buildTest()
 		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 200000 },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
+		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
 	})
 	-- 모든 권법 얻는 법 (테스트 창에만 적는다)
 	order += 1
@@ -1909,6 +1910,16 @@ function UI.init(req: RemoteEvent)
 	bossPosture = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.posture, Parent = pb }, { corner(4) })
 	RunService.RenderStepped:Connect(function()
 		local m = bossModel
+		-- 보스가 쓰러졌거나, 내가 쓰러졌거나, 멀리 떨어지면 막대를 걷는다
+		if m and m.Parent then
+			local me = Players.LocalPlayer.Character
+			local mr = me and me:FindFirstChild("HumanoidRootPart")
+			local br = m:FindFirstChild("HumanoidRootPart")
+			if m:GetAttribute("Dead") == true or (me and me:GetAttribute("Dead") == true) or (mr and br and mr:IsA("BasePart") and br:IsA("BasePart") and (mr.Position - br.Position).Magnitude > 170) then
+				UI.setBoss(nil)
+				return
+			end
+		end
 		if m and m.Parent then
 			local hp, mx = m:GetAttribute("Hp"), m:GetAttribute("MaxHp")
 			local po, pm = m:GetAttribute("Posture"), m:GetAttribute("PostureMax")

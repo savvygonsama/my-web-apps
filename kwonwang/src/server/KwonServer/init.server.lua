@@ -1684,6 +1684,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.pacheon = nil :: any
 			p.styles.taecho = nil :: any
 			p.styles.ilwol = nil :: any
+			p.styles.yeonggeop = nil :: any
+			p.trials.yeonggeop = nil :: any
 			p.styles.hyeolma2 = nil :: any
 			p.styles.cheonryong2 = nil :: any
 			p.styles.byeokryeok2 = nil :: any
@@ -1691,7 +1693,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.trials.gaecheon = nil :: any
 			p.trials.ilwol = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" or (Config.STYLE_BY_ID[p.style] and Config.STYLE_BY_ID[p.style].awakenOf) then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" or p.style == "yeonggeop" or (Config.STYLE_BY_ID[p.style] and Config.STYLE_BY_ID[p.style].awakenOf) then
 				p.style = "samjae"
 			end
 		end

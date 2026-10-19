@@ -1689,6 +1689,205 @@ function H.tsunamiCrash(data: any)
 	end
 end
 
+-- 역행보: 지나온 길을 따라 시간이 거꾸로 감긴다 (푸른 빛줄기와 되감기는 잔상 셋)
+function H.rewind(data: any)
+	local c, c2 = styleColors(data.style)
+	local from: Vector3, to: Vector3 = data.from, data.to
+	local d = (to - from).Magnitude
+	if d < 0.5 then
+		return
+	end
+	local line = piece(Vector3.new(1.2, 1.2, d), c, Enum.Material.Neon, nil, 0.2)
+	line.CFrame = CFrame.lookAt((from + to) / 2, to)
+	tween(line, 0.35, { Size = Vector3.new(0.1, 0.1, d), Transparency = 1 })
+	Debris:AddItem(line, 0.4)
+	for k = 1, 3 do
+		local p = from:Lerp(to, k / 4)
+		local ghost = piece(Vector3.new(2, 5, 1), k % 2 == 0 and c2 or c, Enum.Material.ForceField, nil, 0.2)
+		ghost.CFrame = CFrame.lookAt(p, p + (to - from))
+		tween(ghost, 0.4, { Transparency = 1, Size = Vector3.new(0.5, 5, 0.5) })
+		Debris:AddItem(ghost, 0.45)
+	end
+	for _, at in ipairs({ from, to }) do
+		Fx.ring(at - Vector3.new(0, 2.3, 0), c2, 1, 10, 0.35)
+	end
+	Fx.burst("glitter", to, c2, 14, 1.2)
+	Fx.sound("swing", 0.6, 0.6, to)
+end
+
+-- 만겁귀환: 하늘에 거대한 시계가 열린다. 열두 눈금, 거꾸로 도는 두 바늘, 종이 울릴 때마다 눈금이 하나씩 켜지고, 자정에 깨진다
+function H.clock(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local delay, bells, every = data.delay or 0.6, data.bells or 12, data.every or 0.17
+	local caster = rootOf(data.m)
+	local look = caster and flat(caster.CFrame.LookVector) or Vector3.new(0, 0, -1)
+	local center = at + Vector3.new(0, 34, 0) - look * 6
+	local face = CFrame.lookAt(center, center - look) -- 시전자 쪽을 바라보는 시계판
+	local R = 22
+	local close = near(at, 160)
+	local parts: { BasePart } = {}
+	local function keep(p: BasePart): BasePart
+		table.insert(parts, p)
+		return p
+	end
+	if close then
+		colorGrade(-0.55, 0.3, -0.05, Color3.fromRGB(190, 215, 255), delay + bells * every + 0.3)
+	end
+	-- 시계판: 둥근 테 (마흔여덟 조각), 안쪽의 옅은 판
+	local disc = keep(piece(Vector3.new(0.6, 1, 1), Color3.fromRGB(20, 30, 50), Enum.Material.Glass, Enum.PartType.Cylinder, 0.35))
+	disc.CFrame = face * CFrame.Angles(0, math.rad(90), 0)
+	tween(disc, 0.4, { Size = Vector3.new(0.6, R * 2, R * 2) }, Enum.EasingStyle.Back)
+	for k = 0, 47 do
+		local a = k / 48 * math.pi * 2
+		local seg = keep(piece(Vector3.new(0.8, R * 2 * math.pi / 48 * 1.05, 0.8), c, Enum.Material.Neon, nil, 1))
+		seg.CFrame = face * CFrame.new(math.cos(a) * R, math.sin(a) * R, 0) * CFrame.Angles(0, 0, a)
+		task.delay(k * 0.006, function()
+			if seg.Parent then
+				tween(seg, 0.2, { Transparency = 0.05 })
+			end
+		end)
+	end
+	-- 열두 눈금 (종이 울릴 때마다 하나씩 금빛으로 켜진다)
+	local marks: { BasePart } = {}
+	for k = 0, 11 do
+		local a = math.pi / 2 - k / 12 * math.pi * 2
+		local m = keep(piece(Vector3.new(1.2, k % 3 == 0 and 4.5 or 3, 0.8), c, Enum.Material.Neon, nil, 0.2))
+		m.CFrame = face * CFrame.new(math.cos(a) * (R - 3), math.sin(a) * (R - 3), 0) * CFrame.Angles(0, 0, a - math.pi / 2)
+		table.insert(marks, m)
+	end
+	-- 두 바늘: 거꾸로 빠르게 돈다
+	local hourH = keep(piece(Vector3.new(1.6, R * 0.55, 0.8), c2, Enum.Material.Neon, nil, 0))
+	local minH = keep(piece(Vector3.new(1, R * 0.85, 0.8), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, nil, 0))
+	local hub = keep(piece(Vector3.new(3, 3, 3), c2, Enum.Material.Neon, Enum.PartType.Ball, 0))
+	hub.CFrame = face
+	local start = os.clock()
+	local total = delay + bells * every + 0.25
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - start
+		if t > total or not hourH.Parent then
+			conn:Disconnect()
+			return
+		end
+		local spin = t < delay and -t * 8 or -(delay * 8) - (t - delay) * 2.2
+		hourH.CFrame = face * CFrame.Angles(0, 0, spin * 0.25) * CFrame.new(0, R * 0.27, -0.6)
+		minH.CFrame = face * CFrame.Angles(0, 0, spin) * CFrame.new(0, R * 0.42, -0.8)
+	end)
+	Fx.text(at + Vector3.new(0, 12, 0), "만겁귀환", c2, 54, 1.6)
+	-- 종: 눈금이 하나씩 켜지고, 시계판에서 땅으로 빛이 울린다
+	for i = 1, bells do
+		task.delay(delay + (i - 1) * every, function()
+			local m = marks[((i - 1) % 12) + 1]
+			if m and m.Parent then
+				m.Color = c2
+				m.Size = m.Size * 1.3
+			end
+			Fx.ring(at - Vector3.new(0, 2.2, 0), i % 2 == 0 and c or c2, 4, (data.radius or 55) * 1.6, 0.3)
+			Fx.sound("ping", 0.5, 0.8 + i * 0.03, at)
+			if hooks.shake and close then
+				hooks.shake(0.25)
+			end
+		end)
+	end
+	-- 자정: 시계가 깨지며 둘레에 빛이 쏟아진다
+	task.delay(total, function()
+		fadeAll(parts, 4, 0.06)
+		local nova = piece(Vector3.new(6, 6, 6), Color3.fromRGB(235, 245, 255), Enum.Material.Neon, Enum.PartType.Ball, 0)
+		nova.Position = center
+		tween(nova, 0.45, { Size = Vector3.new(R * 4, R * 4, R * 4), Transparency = 1 })
+		Debris:AddItem(nova, 0.5)
+		for k = 0, 2 do
+			task.delay(k * 0.07, function()
+				Fx.ring(at - Vector3.new(0, 2.2 - k, 0), k % 2 == 0 and c or c2, 6, (data.radius or 55) * 2.4, 0.7)
+			end)
+		end
+		Fx.burst("glitter", at, c2, 40, 2.2)
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(230, 240, 255), 0.6)
+		end
+		if hooks.shake and close then
+			hooks.shake(3)
+			boom(at, 3)
+		end
+		Fx.sound("heavy", 1, 0.3, at)
+	end)
+end
+
+-- 열화천멸: 시전자에게서 적마다 용암 고랑이 땅을 가르며 뻗고, 적 발밑에서 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다
+function H.eruption(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local ground = at - Vector3.new(0, 2.3, 0)
+	local delay, stagger, finalAt = data.delay or 0.6, data.stagger or 0.08, data.finalAt or 1.7
+	local LAVA = Color3.fromRGB(255, 110, 30)
+	local close = near(at, 140)
+	if close then
+		colorGrade(0.1, 0.25, -0.05, Color3.fromRGB(255, 200, 170), finalAt + 0.3)
+	end
+	local cracks: { BasePart } = {}
+	for i, spot in ipairs(data.spots or {}) do
+		local g = Vector3.new(spot.X, ground.Y, spot.Z)
+		local d = (g - ground).Magnitude
+		if d > 1 then
+			local crack = piece(Vector3.new(0.8, 0.25, 0.1), LAVA, Enum.Material.Neon, nil, 0)
+			crack.CFrame = CFrame.lookAt(ground + Vector3.new(0, 0.15, 0), g + Vector3.new(0, 0.15, 0))
+			tween(crack, delay * 0.8, { Size = Vector3.new(0.8, 0.25, d), CFrame = CFrame.lookAt((ground + g) / 2 + Vector3.new(0, 0.15, 0), g + Vector3.new(0, 0.15, 0)) })
+			table.insert(cracks, crack)
+		end
+		task.delay(delay + (i - 1) * stagger, function()
+			local col = piece(Vector3.new(30, 7, 7), LAVA, Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+			col.CFrame = CFrame.new(g + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			tween(col, 0.45, { Size = Vector3.new(34, 0.6, 0.6), Transparency = 1 })
+			Debris:AddItem(col, 0.5)
+			local core = piece(Vector3.new(30, 3, 3), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+			core.CFrame = col.CFrame
+			tween(core, 0.3, { Size = Vector3.new(34, 0.2, 0.2), Transparency = 1 })
+			Debris:AddItem(core, 0.35)
+			Fx.ring(g + Vector3.new(0, 0.3, 0), c, 2, 16, 0.4)
+			Fx.burst("ember", g + Vector3.new(0, 2, 0), c, 16, 1.4)
+			Fx.debris(g, 5, 12, Color3.fromRGB(60, 45, 40))
+		end)
+	end
+	-- 화산: 발밑이 붉게 끓다가 크게 터진다
+	local pool = piece(Vector3.new(0.3, 2, 2), LAVA, Enum.Material.Neon, Enum.PartType.Cylinder, 0.2)
+	pool.CFrame = CFrame.new(ground + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(pool, finalAt, { Size = Vector3.new(0.3, (data.finalRadius or 18) * 2, (data.finalRadius or 18) * 2) })
+	Fx.text(at + Vector3.new(0, 10, 0), "열화천멸", Color3.fromRGB(255, 200, 120), 50, 1.4)
+	task.delay(finalAt, function()
+		local r = data.finalRadius or 18
+		local blast = piece(Vector3.new(60, r * 0.8, r * 0.8), LAVA, Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+		blast.CFrame = CFrame.new(ground + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(blast, 0.6, { Size = Vector3.new(70, r * 2.2, r * 2.2), Transparency = 1 })
+		Debris:AddItem(blast, 0.65)
+		local dome = piece(Vector3.new(4, 4, 4), c2, Enum.Material.Neon, Enum.PartType.Ball, 0)
+		dome.Position = ground
+		tween(dome, 0.4, { Size = Vector3.new(r * 2.6, r * 1.6, r * 2.6), Transparency = 1, Color = LAVA })
+		Debris:AddItem(dome, 0.45)
+		for k = 0, 2 do
+			task.delay(k * 0.07, function()
+				Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c or c2, 4, r * (2.6 + k * 0.5), 0.6)
+			end)
+		end
+		Fx.burst("ember", at, c, 50, 2.4)
+		Fx.burst("smoke", at, Color3.fromRGB(70, 55, 50), 16, 2.2)
+		Fx.debris(ground, 12, 26, Color3.fromRGB(60, 45, 40))
+		Fx.flash(at, LAVA, 60, 8, 0.8)
+		fade(pool, 0.2, 0.5)
+		for _, cr in ipairs(cracks) do
+			fade(cr, 0, 0.5)
+		end
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(255, 200, 140), 0.5)
+		end
+		if hooks.shake and close then
+			hooks.shake(3)
+			boom(at, 3)
+		end
+		Fx.sound("heavy", 1, 0.35, at)
+	end)
+end
+
 -- 파천 중압 / 태초 창세 / 일월: 정해진 수만큼 맞히면 상대 자리에서 터진다
 local pulseFlip = false
 function H.pulse(data: any)
@@ -1696,7 +1895,26 @@ function H.pulse(data: any)
 	local at: Vector3 = data.at
 	local r = data.radius or 12
 	local delay = data.delay or 0.3
-	if data.fx == "tide" then
+	if data.fx == "time" then
+		-- 영겁 정지: 상대 둘레가 푸른 유리 구슬에 갇혀 시간이 멎었다가 깨진다
+		local bubble = piece(Vector3.new(1, 1, 1), c, Enum.Material.Glass, Enum.PartType.Ball, 0.55)
+		bubble.Position = at
+		tween(bubble, delay, { Size = Vector3.new(r * 1.6, r * 1.6, r * 1.6) }, Enum.EasingStyle.Back)
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local tick = piece(Vector3.new(0.3, 1.4, 0.3), k % 3 == 0 and c2 or c, Enum.Material.Neon, nil, 0.1)
+			tick.CFrame = CFrame.new(at - Vector3.new(0, 2.2, 0) + Vector3.new(math.cos(a) * r * 0.75, 0.7, math.sin(a) * r * 0.75))
+			fade(tick, 1.3, 0.3)
+		end
+		task.delay(1.4, function()
+			if bubble.Parent then
+				tween(bubble, 0.2, { Size = bubble.Size * 1.3, Transparency = 1 })
+				Debris:AddItem(bubble, 0.25)
+			end
+			Fx.burst("glitter", at, c2, 14, 1.4)
+		end)
+		Fx.text(at + Vector3.new(0, 5, 0), "◷", c2, 34, 0.8)
+	elseif data.fx == "tide" then
 		-- 창해 파도: 상대 자리에서 물기둥이 솟아 부서지며 둘레를 쓸어 낸다
 		local g = at - Vector3.new(0, 2.4, 0)
 		local col = piece(Vector3.new(2, r * 0.9, r * 0.9), c, Enum.Material.Glass, Enum.PartType.Cylinder, 0.2)
@@ -1855,6 +2073,43 @@ function Ults.variant(data: any): boolean
 			hooks.shake(1.6)
 			boom(at, 1.6)
 		end
+		return true
+	elseif data.fx == "time" and data.kind == "zone" then
+		-- 정지된 시간: 바닥에 시계판, 도는 바늘, 째깍일 때마다 눈금이 번쩍
+		local at: Vector3 = data.at
+		local r = data.radius or 13
+		local dur = data.dur or 2
+		local g = at - Vector3.new(0, 2.3, 0)
+		local plate = piece(Vector3.new(0.2, r * 2, r * 2), Color3.fromRGB(20, 30, 50), Enum.Material.Glass, Enum.PartType.Cylinder, 0.3)
+		plate.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fade(plate, dur, 0.3)
+		local ticks: { BasePart } = {}
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local tk = piece(Vector3.new(0.5, 0.3, k % 3 == 0 and 3 or 1.8), k % 3 == 0 and c2 or c, Enum.Material.Neon, nil, 0.1)
+			local p = g + Vector3.new(math.cos(a) * r * 0.85, 0.3, math.sin(a) * r * 0.85)
+			tk.CFrame = CFrame.lookAt(p, g + Vector3.new(0, 0.3, 0))
+			fade(tk, dur, 0.3)
+			table.insert(ticks, tk)
+		end
+		local handP = piece(Vector3.new(0.6, 0.3, r * 0.8), c2, Enum.Material.Neon, nil, 0)
+		local dome = piece(Vector3.new(r * 2, r * 1.2, r * 2), c, Enum.Material.ForceField, Enum.PartType.Ball, 0.4)
+		dome.Position = g
+		fade(dome, dur, 0.3)
+		local start = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local t = os.clock() - start
+			if t > dur then
+				conn:Disconnect()
+				tween(handP, 0.2, { Transparency = 1 })
+				Debris:AddItem(handP, 0.25)
+				return
+			end
+			local a = t * 3
+			local tip = Vector3.new(math.cos(a), 0, math.sin(a))
+			handP.CFrame = CFrame.lookAt(g + Vector3.new(0, 0.5, 0) + tip * r * 0.4, g + Vector3.new(0, 0.5, 0) + tip * r)
+		end)
 		return true
 	elseif data.fx == "tide" and data.kind == "pillar" then
 		-- 해일벽: 물의 벽이 솟았다가 앞으로 무너진다

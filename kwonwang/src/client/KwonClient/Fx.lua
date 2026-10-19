@@ -419,6 +419,43 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(bar, 0.25)
 		end
 		Fx.ring(pos, c2, 1, 9 * s, 0.28, dir)
+	elseif style.fx == "time" then
+		-- 영겁: 맞은 자리에 시계판이 번쩍 (열두 눈금과 바늘), 푸른 빛 조각이 멈춘 듯 떠 있다가 흩어진다
+		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local tick = piece(Vector3.new(0.18, k % 3 == 0 and 1.1 or 0.6, 0.18) * s, k % 3 == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+			tick.CFrame = face * CFrame.new(math.cos(a) * 3 * s, math.sin(a) * 3 * s, 0) * CFrame.Angles(0, 0, a - math.pi / 2)
+			tween(tick, 0.35, { Transparency = 1 })
+			Debris:AddItem(tick, 0.4)
+		end
+		local hand = piece(Vector3.new(0.25, 2.6 * s, 0.25), c2, Enum.Material.Neon, nil, 0)
+		hand.CFrame = face * CFrame.new(0, 1.3 * s, 0)
+		tween(hand, 0.3, { CFrame = face * CFrame.Angles(0, 0, math.rad(-300)) * CFrame.new(0, 1.3 * s, 0), Transparency = 1 })
+		Debris:AddItem(hand, 0.35)
+		for _ = 1, heavy and 8 or 5 do
+			local shard = piece(Vector3.new(0.4, 0.4, 0.4) * s, c, Enum.Material.Glass, nil, 0.2)
+			shard.CFrame = CFrame.new(pos + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 3 * s) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+			task.delay(0.25, function()
+				if shard.Parent then
+					tween(shard, 0.25, { Position = shard.Position + Vector3.new(math.random() - 0.5, math.random(), math.random() - 0.5) * 5 * s, Transparency = 1 })
+				end
+			end)
+			Debris:AddItem(shard, 0.55)
+		end
+		Fx.ring(pos, c, 1, 11 * s, 0.35, dir)
+	elseif style.fx == "fire" then
+		-- 열화: 불덩이가 터지고 불씨가 솟는다
+		local ball = piece(Vector3.new(2, 2, 2) * s, Color3.fromRGB(255, 200, 90), Enum.Material.Neon, Enum.PartType.Ball, 0.1)
+		ball.Position = pos
+		tween(ball, 0.25, { Size = Vector3.new(6, 6, 6) * s, Transparency = 1, Color = c })
+		Debris:AddItem(ball, 0.3)
+		Fx.burst("ember", pos, c, heavy and 18 or 10, 1.2 * s)
+		if heavy then
+			Fx.burst("smoke", pos, Color3.fromRGB(80, 60, 55), 5, 1)
+		end
+		Fx.ring(pos, c, 1, 11 * s, 0.32, dir)
+		Fx.flash(pos, c, 18 * s, 3, 0.3)
 	elseif style.fx == "ocean" then
 		-- 창해: 맞은 자리에서 물보라가 크게 튀고, 물결 고리 두 겹이 퍼진다
 		local splash = piece(Vector3.new(2, 2, 2) * s, c2, Enum.Material.Glass, Enum.PartType.Ball, 0.3)
@@ -1178,6 +1215,22 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c2, 1, 10, 0.25, look)
 		end
+	elseif kind == "time" then
+		-- 영겁: 곧은 빛줄기 끝에 작은 시계판 고리
+		streak(base + look * 1.5, base + look * (7 * s), c, 0.28, 0.16)
+		Fx.ring(base + look * (6 * s), c2, 1, 4 * s, 0.25, look)
+		if heavy then
+			Fx.ring(base + look * 5, c, 1, 12, 0.3, look)
+		end
+	elseif kind == "fire" then
+		-- 열화: 주먹을 따라 휘어지는 불길 세 가닥
+		for i = -1, 1 do
+			local fl = piece(Vector3.new(0.5, 0.5, 4.5 * s), i == 0 and Color3.fromRGB(255, 220, 120) or c, Enum.Material.Neon, nil, 0.1)
+			fl.CFrame = lookAt(base + look * 2 + right * i * 0.8, base + look * 6 + right * i * 1.6 + up * math.abs(i) * 0.6)
+			tween(fl, 0.22, { Size = Vector3.new(0.1, 0.1, 7 * s), Transparency = 1, CFrame = fl.CFrame * CFrame.new(0, 0.6, -2) })
+			Debris:AddItem(fl, 0.25)
+		end
+		Fx.burst("ember", base + look * 4, c, heavy and 10 or 4, 1)
 	elseif kind == "ocean" then
 		-- 창해: 손끝을 따라 휘어지는 물줄기 두 가닥과 물방울
 		for i = -1, 1, 2 do
@@ -1261,6 +1314,8 @@ local HAND_FX = {
 	wind = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 4, life = 0.5, size = 0.5 },
 	eclipse = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 1.4, life = 0.8, size = 0.45 },
 	ocean = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 2.2, life = 0.7, size = 0.45 },
+	time = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.6, life = 1.4, size = 0.35 },
+	fire = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.5, size = 0.6 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do
@@ -2137,6 +2192,19 @@ function Fx.mech(data: any)
 				Fx.dust(root.Position - Vector3.new(0, 2.5, 0), 4)
 			end
 		end)
+	elseif kind == "ignite" then
+		-- 폭염: 불타던 적이 크게 터진다
+		local at, r = data.at, data.radius or 11
+		local ball = piece(Vector3.new(3, 3, 3), Color3.fromRGB(255, 220, 120), Enum.Material.Neon, Enum.PartType.Ball, 0)
+		ball.Position = at
+		tween(ball, 0.35, { Size = Vector3.new(r * 2, r * 2, r * 2), Transparency = 1, Color = Color3.fromRGB(255, 90, 20) })
+		Debris:AddItem(ball, 0.4)
+		Fx.ring(at - Vector3.new(0, 2.3, 0), c, 2, r * 2.6, 0.45)
+		Fx.burst("ember", at, c, 30, 1.8)
+		Fx.burst("smoke", at, Color3.fromRGB(70, 55, 50), 10, 1.6)
+		Fx.text(at + Vector3.new(0, 5, 0), "폭염!", Color3.fromRGB(255, 160, 60), 34, 0.8)
+		Fx.flash(at, c, 40, 6, 0.45)
+		Fx.sound("heavy", 0.8, 0.8, at)
 	elseif kind == "shock" then
 		-- 기술 마무리 충격파: 권법 빛깔의 둥근 충격, 바깥 고리 셋, 위로 솟는 빛, 불티와 흙먼지
 		local at, r = data.at, data.radius or 9
@@ -2347,6 +2415,12 @@ function Fx.mech(data: any)
 					tween(col, 0.35, { Size = Vector3.new(18, 0.4, 0.4), Transparency = 1 })
 					Debris:AddItem(col, 0.4)
 					Fx.burst("glitter", p, c2, 10, 1.2)
+				elseif fxk == "fire" then
+					local col = piece(Vector3.new(16, rad * 1.1, rad * 1.1), Color3.fromRGB(255, 140, 40), Enum.Material.Neon, Enum.PartType.Cylinder, 0.2)
+					col.CFrame = CFrame.new(g + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(90))
+					tween(col, 0.4, { Size = Vector3.new(20, 0.4, 0.4), Transparency = 1 })
+					Debris:AddItem(col, 0.45)
+					Fx.burst("ember", p, c, 14, 1.3)
 				elseif fxk == "wind" then
 					for k = 0, 2 do
 						local blade = piece(Vector3.new(rad * 1.8, 0.15, 0.6), c2, Enum.Material.Neon, nil, 0.1)
@@ -2512,6 +2586,34 @@ function Fx.impact(pos: Vector3, color: Color3, scale: number?)
 		Fx.burst("smoke", pos, Color3.fromRGB(90, 85, 85), 6 * k, k * 0.8)
 		Fx.burst("ember", pos, color, 8 * k, 1)
 	end
+end
+
+-- 연소: 불붙은 몸에서 불꽃이 피어오른다 (꺼지면 걷는다)
+function Fx.burning(model: Model, on: boolean)
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso") or model:FindFirstChild("HumanoidRootPart")
+	if not torso or not torso:IsA("BasePart") then
+		return
+	end
+	local old = torso:FindFirstChild("KwonBurn")
+	if old then
+		old:Destroy()
+	end
+	if not on then
+		return
+	end
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "KwonBurn"
+	e.Texture = "rbxasset://textures/particles/fire_main.dds"
+	e.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 80, 20))
+	e.LightEmission = 1
+	e.Size = NumberSequence.new(1.8, 0.3)
+	e.Transparency = NumberSequence.new(0.2, 1)
+	e.Lifetime = NumberRange.new(0.4, 0.7)
+	e.Speed = NumberRange.new(2, 5)
+	e.Acceleration = Vector3.new(0, 10, 0)
+	e.SpreadAngle = Vector2.new(40, 40)
+	e.Rate = 30
+	e.Parent = torso
 end
 
 return Fx

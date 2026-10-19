@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Anim = require(script:WaitForChild("Anim"))
@@ -41,6 +42,10 @@ local function watchChar(char: Model)
 	-- 금강 법신 (금빛 거인), 번개·일순 베기 동안 사라짐
 	char:GetAttributeChangedSignal("Giant"):Connect(function()
 		Ults.watchGiant(char)
+	end)
+	-- 열화신권 연소: 불붙은 몸에 불꽃
+	char:GetAttributeChangedSignal("Burning"):Connect(function()
+		Fx.burning(char, char:GetAttribute("Burning") == true)
 	end)
 	char:GetAttributeChangedSignal("Vanish"):Connect(function()
 		Ults.watchVanish(char)
@@ -620,6 +625,22 @@ startMove = function(slot: any, charge: number?)
 		end
 		shake(1.2)
 		tint(style.color, 0.25, dur)
+		-- 오의: 화면이 확 좁아졌다가 (집중) 넓게 풀린다
+		local cam = workspace.CurrentCamera
+		if cam then
+			local base = cam.FieldOfView
+			pcall(function()
+				local tw = TweenService:Create(cam, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = base - 12 })
+				tw:Play()
+				task.delay(0.22, function()
+					TweenService:Create(cam, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { FieldOfView = base }):Play()
+				end)
+			end)
+		end
+	end
+	-- E·R·강타: 기술 이름이 크게 떠오른다
+	if slot == "E" or slot == "R" or slot == "H" then
+		Fx.text(root.Position + Vector3.new(0, 6, 0), move.name, style.color2, slot == "H" and 30 or 38, 1.1)
 	end
 	-- 휘두르는 소리와 맞힘 알리기
 	for i, h in ipairs(move.hits or {}) do
@@ -1554,7 +1575,7 @@ function handlers.skillfx(data: any)
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
 	end
-	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide") and Ults.variant(data) then
+	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
 	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
@@ -1797,8 +1818,8 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈" })[style.pulse.kind] or "✦"
-		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end
