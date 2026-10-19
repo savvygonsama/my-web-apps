@@ -4264,7 +4264,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f and type(arg) == "string" then
 			for _, spot in ipairs(Config.TrainingSpots) do
 				if spot.kind == arg then
-					f.root.CFrame = CFrame.new(spot.at + Vector3.new(0, 5, 7), spot.at + Vector3.new(0, 5, 0))
+					f.root.CFrame = CFrame.lookAt(spot.at + Vector3.new(0, 5, 7), spot.at + Vector3.new(0, 5, 0))
 					local t = Config.Training[arg]
 					toast(player, "🌀 " .. (t and (t.icon .. " " .. t.name) or arg))
 					break
