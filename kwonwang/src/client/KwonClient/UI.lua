@@ -712,16 +712,27 @@ end
 local function buildStats()
 	local page = makePage("stats")
 	local info = text({ Size = UDim2.new(1, 0, 1, 0), TextSize = 18, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	-- 경지의 관문: 능력치가 닿으면 열린다 (수호자를 꺾어야 경지가 오른다)
+	local gateBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 4), Size = UDim2.new(0, 300, 0, 58), Text = "⛩ 관문 도전", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 120, 40), Visible = false, ZIndex = 3, Parent = page }, function()
+		Request:FireServer("gate")
+		window.Visible = false
+	end)
 	refreshers.stats = function()
 		if not state then
 			return
+		end
+		gateBtn.Visible = state.gateNext ~= nil
+		if state.gateNext then
+			local r = Config.Realms[state.gateNext]
+			gateBtn.Text = "⛩ " .. (r and r.name or "") .. "의 관문 도전"
 		end
 		local lines = {}
 		local idx = state.realm
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 겹으로, 수련 효과 +25%%) · 경지는 열여섯 단계", Config.realmPower(idx)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -807,7 +818,7 @@ local function buildShop()
 			local has = owned[id] == true
 			local on = state and state.autoOn == true
 			ab.toggle.Visible = has
-			ab.stat.Visible = has
+			ab.stat.Visible = false -- 자동 수련은 지금 하는 수련을 대신 누른다 (능력치 고르기 없음)
 			ab.toggle.Text = on and "🟢 켜짐" or "⚪ 꺼짐"
 			ab.toggle.BackgroundColor3 = on and Color3.fromRGB(40, 140, 70) or C.panel2
 			ab.stat.Text = statLabel[state and state.autoStat or "all"] or "골고루"
@@ -955,7 +966,7 @@ local function buildTest()
 		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 },
 		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 무한·쿨 없음 (켜기·끄기)", "testChi" }, { "❤ 회복", "testHeal" },
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
-		{ "↺ 처음으로", "testReset", color = C.red },
+		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🎯 수련 목인·시간", {
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
@@ -1222,6 +1233,9 @@ function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
 	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	if s.gateNext then
+		topInfo.Text ..= "   ⛩ 관문 열림"
+	end
 	if s.autoOn and s.premium and (s.premium.autoTrain or s.premium.autoTrain2) then
 		topInfo.Text ..= s.premium.autoTrain2 and "   ⚙ 고급 자동 수련" or "   🤖 자동 수련"
 	end

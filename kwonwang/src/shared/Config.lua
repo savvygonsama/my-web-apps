@@ -87,20 +87,20 @@ Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
 	{ name = "이류", need = 150, color = Color3.fromRGB(150, 220, 150) },
 	{ name = "일류", need = 600, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "특급", need = 1500, color = Color3.fromRGB(90, 230, 200) },
-	{ name = "절정", need = 3300, color = Color3.fromRGB(190, 130, 255) },
-	{ name = "초절정", need = 6800, color = Color3.fromRGB(255, 190, 70) },
-	{ name = "화경", need = 13000, color = Color3.fromRGB(255, 110, 80) },
-	{ name = "현경", need = 23000, color = Color3.fromRGB(120, 255, 230) },
-	{ name = "사경", need = 40000, color = Color3.fromRGB(255, 80, 120) },
-	{ name = "생사경", need = 64000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 100000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 150000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 230000, color = Color3.fromRGB(255, 150, 255) },
+	{ name = "특급", need = 2000, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "절정", need = 5000, color = Color3.fromRGB(190, 130, 255) },
+	{ name = "초절정", need = 10000, color = Color3.fromRGB(255, 190, 70) },
+	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
+	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
+	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
+	{ name = "생사경", need = 95000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 150000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 230000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 350000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 350000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 520000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 750000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 520000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 760000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 1100000, color = Color3.fromRGB(255, 255, 160) },
 }
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×14.9, 천외천 ×34)
@@ -133,8 +133,13 @@ Config.Training = {
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
+-- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
+Config.TRAIN_GAIN = 0.6
+Config.TRAIN_REALM_BONUS = 0.12
+-- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
+Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
-Config.HARD_TRAIN = { mult = 3, realm = 2, period = 1.05, perfect = 0.065, good = 0.14 }
+Config.HARD_TRAIN = { mult = 2, realm = 2, period = 1.05, perfect = 0.065, good = 0.14 }
 -- 보통 수련 판정 (넓을수록 쉽다)
 Config.TRAIN_JUDGE = { period = 1.6, perfect = 0.09, good = 0.2, mabo = 0.38, maboHard = 0.26, ring = 9 }
 
@@ -1194,6 +1199,8 @@ local E = Config.Enemies
 E.ironguard.elite = true
 E.shadowblade.elite = true
 E.simma.elite = true
+-- 관문 수호자: 경지의 관문을 지키는 그림자 무인 (심마를 바탕으로)
+E.gatekeeper = variant(E.simma, { name = "관문 수호자", shirt = Color3.fromRGB(60, 50, 30), pants = Color3.fromRGB(30, 25, 15), scale = 1.3, coins = 500, xp = 200, duel = true })
 E.iceguard = variant(E.ironguard, { name = "빙궁 무사", shirt = Color3.fromRGB(170, 210, 235), pants = Color3.fromRGB(90, 120, 150), hp = 260 })
 E.snowblade = variant(E.assassin, { name = "설원 자객", shirt = Color3.fromRGB(230, 235, 245), pants = Color3.fromRGB(150, 160, 175), hp = 95 })
 E.swampfang = variant(E.shadowblade, { name = "독수 자객", shirt = Color3.fromRGB(60, 90, 50), pants = Color3.fromRGB(35, 50, 30) })
@@ -1441,7 +1448,7 @@ Config.Story = {
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
 	{ title = "흩어진 비급", text = "옛 고수가 남긴 비급이 다섯 조각으로 흩어졌다는 소문이 있다. 두 조각을 찾아라. 지도에서 볼 수 없으니 발로 찾아야 한다.", goal = { kind = "fragment", n = 2 }, reward = { coins = 500, stats = 40 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
-	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
+	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라. 특급부터는 몸만으로 오르지 않는다. 능력치가 닿으면 경지의 관문이 열리니, 관문 수호자를 꺾어라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 6000, stats = 300 } },
@@ -1590,9 +1597,9 @@ Config.Premium = {
 	{ id = "train2x", gamepass = 0, price = 199, icon = "🔥", name = "두 배 수련", tag = "영구",
 		lines = { "모든 수련의 능력치가 영원히 두 배", "소환단·강화 수련·자동 수련과 겹친다", "심마 대련 보상도 두 배" } },
 	{ id = "autoTrain", gamepass = 0, price = 149, icon = "🤖", name = "자동 수련", tag = "영구", toggle = true,
-		lines = { "켜 두면 3초마다 저절로 수련 한 번", "올릴 능력치를 고르거나 골고루 (근골·체력·경공·내공)", "싸우지 않을 땐 어디서나: 걷고, 쉬고, 구경해도 오른다" } },
+		lines = { "수련 화면에서 박자마다 대신 눌러 준다 ('좋음')", "수련 자리를 떠나면 멈춘다 (어디서나 오르지 않는다)", "손은 편해지지만 사람보다 빠르지 않다" } },
 	{ id = "autoTrain2", gamepass = 0, price = 399, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
-		lines = { "1초마다 '완벽' 판정으로 자동 수련 (보통의 여섯 배 넘게)", "경지가 열어 준 좋은 수련으로 (철사장·마보·운기조식)", "싸우는 중에도 멈추지 않는다" } },
+		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {

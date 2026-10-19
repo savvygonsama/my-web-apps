@@ -50,6 +50,7 @@ type Profile = {
 	autoOn: boolean?, -- 자동 수련 켜짐 (게임패스)
 	autoStat: string?, -- 자동 수련으로 올릴 능력치 ("all" = 골고루)
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
+	gates: { [string]: boolean }, -- 넘은 경지의 관문 (경지 번호)
 }
 
 local function defaultProfile(): Profile
@@ -71,6 +72,7 @@ local function defaultProfile(): Profile
 		fragments = {},
 		accepted = 1,
 		gradeUp = {},
+		gates = {},
 	}
 end
 
@@ -135,6 +137,10 @@ local function sanitize(data: any): Profile
 	end)
 	p.trials = flags(data.trials, function(k)
 		return Config.MASTERS[k] ~= nil
+	end)
+	p.gates = flags(data.gates, function(k)
+		local i = tonumber(k)
+		return i ~= nil and Config.Realms[i] ~= nil
 	end)
 	p.fragments = flags(data.fragments, function(k)
 		local i = tonumber(k)
@@ -241,6 +247,27 @@ function Calc.total(p: Profile): number
 	return t
 end
 
+-- 지금 경지: 능력치로 닿은 경지라도, 특급부터는 그 경지의 관문을 넘어야 오른다
+function Calc.realm(p: Profile): (number, any)
+	local idx = Config.realmOf(Calc.total(p))
+	for i = Config.GATE.from, idx do
+		if not (p.gates and p.gates[tostring(i)]) then
+			idx = i - 1
+			break
+		end
+	end
+	return idx, Config.Realms[idx]
+end
+-- 능력치는 닿았는데 관문을 아직 못 넘은 경지 (없으면 nil)
+function Calc.gateNext(p: Profile): number?
+	local reach = Config.realmOf(Calc.total(p))
+	local now = Calc.realm(p)
+	if reach > now then
+		return now + 1
+	end
+	return nil
+end
+
 function Calc.mastery(p: Profile, styleId: string): { lv: number, xp: number }
 	local m = p.mastery[styleId]
 	if not m then
@@ -278,7 +305,7 @@ local function pushState(player: Player)
 	if not p or not st then
 		return
 	end
-	local idx, realm = Config.realmOf(Calc.total(p))
+	local idx, realm = Calc.realm(p)
 	local mastery = {}
 	for id in pairs(p.styles) do
 		local m = Calc.mastery(p, id)
@@ -313,6 +340,7 @@ local function pushState(player: Player)
 		fragments = p.fragments,
 		accepted = p.accepted == p.story,
 		premium = st.owned or {},
+		gateNext = Calc.gateNext(p),
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -330,7 +358,7 @@ local function updateTag(player: Player)
 	if not p or not head then
 		return
 	end
-	local _, realm = Config.realmOf(Calc.total(p))
+	local _, realm = Calc.realm(p)
 	local style = Config.STYLE_BY_ID[p.style]
 	local gui = head:FindFirstChild("KwonTag") :: BillboardGui?
 	if not gui then
@@ -389,7 +417,7 @@ local function refreshFighter(player: Player)
 	if not p or not f then
 		return
 	end
-	local idx = Config.realmOf(Calc.total(p))
+	local idx = Calc.realm(p)
 	local m = p.style ~= "" and Calc.mastery(p, p.style).lv or 1
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
@@ -516,7 +544,7 @@ function Story.done(p: Profile, g: any): boolean
 		end
 		return countKeys(p.styles) >= g.n
 	elseif k == "realm" then
-		return Config.realmOf(Calc.total(p)) >= g.n
+		return Calc.realm(p) >= g.n
 	elseif k == "fragment" then
 		return countKeys(p.fragments) >= g.n
 	end
@@ -610,6 +638,9 @@ end
 ------------------------------------------------------------------------
 -- 사부의 시험: 사부가 기운으로 빚은 분신과 겨룬다
 ------------------------------------------------------------------------
+-- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
+local Gate: any
+local Train: any
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -773,6 +804,9 @@ Combat.init(Push, {
 				if f.trialOwner == killer then
 					Trial.ended(killer, true)
 				end
+				if f.gateOwner == killer then
+					Gate.ended(killer, true)
+				end
 				local isBossKill = f.model:GetAttribute("Boss") == true
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
@@ -792,7 +826,7 @@ Combat.init(Push, {
 				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
-					local ridx = Config.realmOf(Calc.total(p))
+					local ridx = Calc.realm(p)
 					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
@@ -821,6 +855,7 @@ Combat.init(Push, {
 		elseif f.player then
 			local player = f.player
 			Trial.ended(player, false)
+			Gate.ended(player, false)
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
 			-- 비무대에서 이기면 기록
@@ -1266,7 +1301,7 @@ function Actions.learn(player: Player, id: any)
 		if not master then
 			return
 		end
-		if style.realmReq and Config.realmOf(Calc.total(p)) < style.realmReq then
+		if style.realmReq and Calc.realm(p) < style.realmReq then
 			toast(player, string.format("🔒 %s은(는) %s의 경지에 올라야 익힐 수 있어요", style.name, Config.Realms[style.realmReq].name))
 			return
 		end
@@ -1351,7 +1386,114 @@ end
 ------------------------------------------------------------------------
 -- 수련
 ------------------------------------------------------------------------
-local Train = {}
+------------------------------------------------------------------------
+-- 경지의 관문: 특급부터는 능력치가 닿아도 관문 수호자를 꺾어야 그 경지에 오른다
+------------------------------------------------------------------------
+Gate = {}
+local activeGate: { [Player]: any } = {}
+
+-- 관문이 막 열렸으면 한 번 알려 준다
+function Gate.notify(player: Player, p: Profile, st: State)
+	local nxt = Calc.gateNext(p)
+	if nxt and (st :: any).gateNotified ~= nxt then
+		(st :: any).gateNotified = nxt
+		Push:FireClient(player, "dialog", { who = "⛩ 경지의 관문", title = Config.Realms[nxt].name .. "의 관문이 열렸다",
+			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. (능력치 창의 '⛩ 관문 도전')" })
+		pushState(player)
+	end
+end
+
+function Gate.start(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st or not f or f.dead then
+		return
+	end
+	local nxt = Calc.gateNext(p)
+	if not nxt then
+		toast(player, "아직 열린 관문이 없어요 (능력치가 다음 경지에 닿아야 해요)")
+		return
+	end
+	if activeGate[player] then
+		toast(player, "이미 관문 시련 중이에요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 관문에 도전할 수 없어요")
+		return
+	end
+	local t = os.clock()
+	if t - ((st :: any).gateAt or -999) < Config.GATE.cooldown then
+		toast(player, string.format("⛩ 숨을 고르세요 (%d초)", math.ceil(Config.GATE.cooldown - (t - (st :: any).gateAt))))
+		return
+	end
+	;(st :: any).gateAt = t
+	Train.stop(player)
+	local at = f.root.Position + Combat.look(f) * 14
+	local e = Npc.spawn("gatekeeper", false, at, "trial")
+	if not e then
+		return
+	end
+	local ef = e.f :: any
+	ef.gateOwner = player
+	ef.gateIdx = nxt
+	ef.trialOwner = player
+	ef.name = Config.Realms[nxt].name .. "의 관문 수호자"
+	ef.model:SetAttribute("Label", ef.name)
+	-- 수호자는 도전자와 비슷한 힘, 체력은 넉넉히 (경지가 높을수록 더)
+	local want = ((f :: any).power or 100) * Config.GATE.power
+	local k = want / math.max(1, ef.power or 100)
+	if k > 1 then
+		ef.maxHp = math.floor(ef.maxHp * k)
+		ef.dmgMult *= k
+		ef.power = math.floor(want)
+		ef.model:SetAttribute("Power", ef.power)
+	end
+	ef.maxHp = math.floor(ef.maxHp * (Config.GATE.hp + Config.GATE.hpPerRealm * (nxt - Config.GATE.from)))
+	ef.hp = ef.maxHp
+	Combat.sync(ef)
+	e.target = f
+	activeGate[player] = ef
+	Push:FireClient(player, "dialog", { who = "⛩ " .. ef.name, title = Config.Realms[nxt].name .. "의 관문", text = "이 경지에 오를 자격이 있는지 보이라." })
+	Push:FireClient(player, "boss", ef.model)
+	task.delay(Config.GATE.time, function()
+		if activeGate[player] == ef and not ef.dead then
+			activeGate[player] = nil
+			Npc.despawn(ef)
+			toast(player, "⌛ 관문이 닫혔어요. 다시 도전하세요")
+		end
+	end)
+end
+
+-- 이겼으면 관문을 넘고 경지가 오른다. 졌거나 그만두면 수호자가 물러난다
+function Gate.ended(player: Player, won: boolean)
+	local ef = activeGate[player]
+	if not ef then
+		return
+	end
+	activeGate[player] = nil
+	local p = profiles[player]
+	Push:FireClient(player, "boss", nil)
+	if won and p then
+		p.gates[tostring(ef.gateIdx)] = true
+		local _, realm = Calc.realm(p)
+		Push:FireAllClients("realm", { name = player.DisplayName, realm = realm.name })
+		toast(player, "⛩ 관문을 넘었다! 경지 " .. realm.name)
+		states[player].dirty = true
+		refreshFighter(player)
+		Story.check(player)
+		local st = states[player]
+		if st then
+			(st :: any).gateNotified = nil
+			Gate.notify(player, p, st)
+		end
+		pushState(player)
+	elseif not ef.dead then
+		Npc.despawn(ef)
+	end
+end
+
+Train = {}
 
 function Train.start(player: Player, info: any, hard: boolean?)
 	local p, st = profiles[player], states[player]
@@ -1364,7 +1506,7 @@ function Train.start(player: Player, info: any, hard: boolean?)
 		return
 	end
 	local kindInfo = Config.Training[info.kind]
-	local realmIdx = Config.realmOf(Calc.total(p))
+	local realmIdx = Calc.realm(p)
 	if kindInfo and kindInfo.realm and realmIdx < kindInfo.realm then
 		toast(player, string.format("%s %s은(는) 경지 %s부터 할 수 있어요", kindInfo.icon, kindInfo.name, Config.Realms[kindInfo.realm].name))
 		return
@@ -1457,8 +1599,8 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 		return
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
-	local idx = Config.realmOf(Calc.total(p))
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1)
+	local idx = Calc.realm(p)
+	local mult = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -1471,11 +1613,12 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 		p.stats[info.stat] += amount
 	end
 	st.dirty = true
-	local afterIdx, realm = Config.realmOf(Calc.total(p))
+	local afterIdx, realm = Calc.realm(p)
 	Push:FireClient(player, "trained", { stat = info.stat, gain = amount, grade = grade, total = p.stats[info.stat], ring = st.ringIdx })
 	if afterIdx > beforeIdx then
 		Push:FireAllClients("realm", { name = player.DisplayName, realm = realm.name })
 	end
+	Gate.notify(player, p, st)
 	Story.event(player, "train")
 	refreshFighter(player)
 	if st.training and kind ~= "bamboo" then
@@ -1515,6 +1658,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		for _, s in ipairs(Config.Stats) do
 			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 1e7)
 		end
+		-- 테스트: 닿은 경지까지 관문도 모두 넘긴다
+		for i = Config.GATE.from, Config.realmOf(Calc.total(p)) do
+			p.gates[tostring(i)] = true
+		end
+	elseif action == "testGateReset" then
+		p.gates = {}
+		toast(player, "⛩ 관문 기록을 지웠어요")
 	elseif action == "testMastery" then
 		if p.style ~= "" then
 			local m = Calc.mastery(p, p.style)
@@ -1565,6 +1715,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 		-- 진행 중인 시험·각성 시련도 거둔다
 		Trial.ended(player, false)
+		Gate.ended(player, false)
 	elseif action == "testTime" then
 		if arg == "freeze" then
 			toast(player, World.toggleClockFreeze() and "⏸ 시간이 멈췄어요" or "▶ 시간이 다시 흘러요")
@@ -1799,6 +1950,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		p.autoStat = order[i % #order + 1]
 		st.dirty = true
 		pushState(player)
+	elseif action == "gate" then
+		Gate.start(player)
 	elseif action == "awaken" then
 		-- 각성 (진 권법): 원래 권법 숙련 최대 + 깨달음 모두 + 경지 + 은자 → 각성 시련
 		local base = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -1817,7 +1970,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
 		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
 			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
-		elseif Config.realmOf(Calc.total(p)) < A.realm then
+		elseif Calc.realm(p) < A.realm then
 			toast(player, string.format("각성은 %s의 경지부터예요", Config.Realms[A.realm].name))
 		elseif p.coins < A.coins then
 			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(A.coins)))
@@ -1840,7 +1993,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_MAX then
 			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_MAX))
 			return
-		elseif Config.realmOf(Calc.total(p)) < step.realm then
+		elseif Calc.realm(p) < step.realm then
 			toast(player, string.format("%s은(는) %s의 경지부터예요", step.name, Config.Realms[step.realm].name))
 			return
 		elseif p.coins < step.coins then
@@ -1994,60 +2147,26 @@ if Marketplace then
 	end)
 end
 
--- 자동 수련: 켜 두면 정해진 간격마다 저절로 수련 한 번 (고급은 더 빠르고, 완벽 판정, 경지의 좋은 수련으로)
-local function autoTrainOnce(player: Player, p: Profile, st: State, adv: boolean)
-	local A = Config.AUTO_TRAIN
-	local statId = p.autoStat or "all"
-	if statId == "all" then
-		local order = { "str", "vit", "agi", "chi" }
-		st.autoIdx = ((st.autoIdx or 0) :: number) % #order + 1
-		statId = order[st.autoIdx :: number]
-	end
-	local idx = Config.realmOf(Calc.total(p))
-	-- 고급: 경지가 열어 준 더 좋은 수련 (여러 능력치가 함께 오른다)
-	local kind = A.kinds[statId] or "rock"
-	if adv then
-		local better = A.advKinds[statId]
-		local bi = better and Config.Training[better]
-		if bi and idx >= (bi.realm or 1) then
-			kind = better
-		end
-	end
-	local info = Config.Training[kind]
-	local gain = info.base * (adv and 2 or 1)
-	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (Premium.owns(player, "train2x") and 2 or 1) * (adv and A.advMult or 1)
-	if info.gains then
-		for stat, k in pairs(info.gains) do
-			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
-		end
-	else
-		p.stats[info.stat] += math.max(1, math.floor(gain * mult + 0.5))
-	end
-	st.dirty = true
-	local afterIdx, realm = Config.realmOf(Calc.total(p))
-	if afterIdx > idx then
-		Push:FireAllClients("realm", { name = player.DisplayName, realm = realm.name })
-	end
-	refreshFighter(player)
-	pushState(player)
-end
-
+-- 자동 수련: 수련 화면 안에서만. 박자가 돌아올 때마다 대신 눌러 준다 (보통 '좋음', 고급 '완벽').
+-- 사람이 박자를 맞춰 누르는 것보다 빠르지 않다 (손이 편해질 뿐, 더 세지지 않는다)
 task.spawn(function()
-	local A = Config.AUTO_TRAIN
 	while true do
-		task.wait(0.25)
+		task.wait(0.2)
 		local now = os.clock()
 		for player, st in pairs(states) do
 			local p = profiles[player]
-			if p and p.autoOn then
+			local tr = st.training
+			if p and p.autoOn and tr and tr.kind ~= "simma" then
 				local adv = Premium.owns(player, "autoTrain2")
 				if adv or Premium.owns(player, "autoTrain") then
-					local f = Combat.fighterOfPlayer(player)
-					-- 보통 자동 수련은 싸우는 중·직접 수련하는 중엔 쉰다 (고급은 싸우는 중에도)
-					local ok = f ~= nil and not f.dead and not st.training and (adv or f.combatUntil <= now)
-					if ok and now >= ((st.autoAt or 0) :: number) then
-						st.autoAt = now + (adv and A.advEvery or A.every)
-						autoTrainOnce(player, p, st, adv)
+					local info = Config.Training[tr.kind]
+					local period = (info and info.period) or Config.TRAIN_JUDGE.period
+					if tr.hard then
+						period = Config.HARD_TRAIN.period
+					end
+					if now >= ((st.autoAt or 0) :: number) then
+						st.autoAt = now + period
+						Train.hit(player, adv and "perfect" or "good", nil)
 					end
 				end
 			end
@@ -2176,7 +2295,7 @@ task.spawn(function()
 		end
 		local m = Config.MASTERS[styleId]
 		local sdef = Config.STYLE_BY_ID[styleId]
-		if sdef and sdef.realmReq and not p.styles[styleId] and Config.realmOf(Calc.total(p)) < sdef.realmReq then
+		if sdef and sdef.realmReq and not p.styles[styleId] and Calc.realm(p) < sdef.realmReq then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. 네 안의 하늘이 열리지 않았다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
 			return
 		end
