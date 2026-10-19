@@ -81,26 +81,26 @@ function Config.walkSpeed(agi: number): number
 	return Config.WALK_SPEED * (0.85 + 0.15 * Config.statMult(agi))
 end
 
--- 경지: 능력치 합으로 정해진다. 경지가 오를 때마다 피해·체력 +15% (경지 배율), 수련 효과 +25%
+-- 경지: 능력치 합으로 정해진다 (베타 8: 오르는 데 수련이 1.5배 든다). 경지가 오를 때마다 피해·체력 +15% (경지 배율), 수련 효과 +25%
 -- 삼류·일류·특급·사경에 이르면 그 경지의 새 수련이 열린다
 Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
-	{ name = "이류", need = 100, color = Color3.fromRGB(150, 220, 150) },
-	{ name = "일류", need = 400, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "특급", need = 1000, color = Color3.fromRGB(90, 230, 200) },
-	{ name = "절정", need = 2200, color = Color3.fromRGB(190, 130, 255) },
-	{ name = "초절정", need = 4500, color = Color3.fromRGB(255, 190, 70) },
-	{ name = "화경", need = 8500, color = Color3.fromRGB(255, 110, 80) },
-	{ name = "현경", need = 15000, color = Color3.fromRGB(120, 255, 230) },
-	{ name = "사경", need = 26000, color = Color3.fromRGB(255, 80, 120) },
-	{ name = "생사경", need = 42000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 65000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 100000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 150000, color = Color3.fromRGB(255, 150, 255) },
+	{ name = "이류", need = 150, color = Color3.fromRGB(150, 220, 150) },
+	{ name = "일류", need = 600, color = Color3.fromRGB(110, 190, 255) },
+	{ name = "특급", need = 1500, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "절정", need = 3300, color = Color3.fromRGB(190, 130, 255) },
+	{ name = "초절정", need = 6800, color = Color3.fromRGB(255, 190, 70) },
+	{ name = "화경", need = 13000, color = Color3.fromRGB(255, 110, 80) },
+	{ name = "현경", need = 23000, color = Color3.fromRGB(120, 255, 230) },
+	{ name = "사경", need = 40000, color = Color3.fromRGB(255, 80, 120) },
+	{ name = "생사경", need = 64000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 100000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 150000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 230000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 230000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 340000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 500000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 350000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 520000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 750000, color = Color3.fromRGB(255, 255, 160) },
 }
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×14.9, 천외천 ×34)
@@ -549,6 +549,7 @@ table.insert(Config.Styles, {
 	hidden = true,
 	secret = true,
 	realmReq = 16,
+	trialHp = 10, -- 시험의 분신 체력 열 배
 	unlockHint = "천외천의 경지에 오른 자만이 하늘 끝 봉우리, 천외봉의 시원자를 만난다",
 	desc = "하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며, 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다.",
 	gimmick = "창세: 네 번 맞힐 때마다 상대 자리에 빛의 결정이 피어나 터진다. 모든 기술 대기 20% 짧음, 몸이 땅에서 떠 있다",
@@ -572,6 +573,48 @@ table.insert(Config.Styles, {
 			mech = { kind = "targets", n = 5, range = 34, delay = 0.4, stagger = 0.08, radius = 7, hit = hit(0, 0, 0, 30, 30, 0.7, 10, 22), fx = "prism" } },
 		G = { id = "tcG", name = "천지개벽", desc = "세상이 멈추고 하늘과 땅이 별바다로 바뀐다. 주먹을 쥐면 세상에 금이 가고, 내지르면 세상이 유리처럼 깨지며 모든 적이 함께 부서진다", pose = "ult_origin", dur = 3.0, cd = 34, chi = 100, armor = true,
 			mech = { kind = "genesis", radius = 60, freeze = 2.6, crackAt = 1.6, breakAt = 2.5, final = hit(0, 0, 0, 180, 240, 1.6, 50, 26) } },
+	},
+})
+-- 정점: 일월신권 (태초신권을 익힌 천외천의 고수만, 일월대의 권존에게). 해와 달을 두 손에 쥔 주먹
+table.insert(Config.Styles, {
+	id = "ilwol",
+	name = "일월신권",
+	hanja = "日月神拳",
+	icon = "☀",
+	color = Color3.fromRGB(255, 185, 60),
+	color2 = Color3.fromRGB(205, 220, 255),
+	fx = "eclipse",
+	grade = "지존",
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "taecho",
+	trialHp = 16, -- 시험의 분신 체력 열여섯 배
+	unlockHint = "태초신권을 익힌 천외천의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
+	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
+	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고, 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
+	deflect = 0.32,
+	postureMult = 1.7,
+	speed = 1.1,
+	cdMult = 0.75,
+	sunMoon = { day = 1.15, night = 0.85 },
+	pulse = { every = 3, kind = "eclipse", radius = 12, delay = 0.3, name = "일월", dmg = 40, posture = 40, stun = 0.6, kb = 20, up = 8 },
+	stance = "stance_sunmoon",
+	combo = {
+		{ id = "iw1", name = "일출장", pose = "sun_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 19, 15, 0.35, 8) } },
+		{ id = "iw2", name = "월하장", pose = "moon_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 19, 15, 0.35, 8) } },
+		{ id = "iw3", name = "일륜각", pose = "sun_wheel", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 6, 23, 22, 0.45, 18, 6) } },
+		{ id = "iw4", name = "월인권", pose = "moon_seal", dur = 0.48, lunge = 3, hits = { hit(0.24, 9, 5.5, 30, 34, 0.6, 34) } },
+	},
+	heavy = { id = "iwH", name = "일월합벽", pose = "eclipse_push", dur = 0.75, lunge = 4, hits = { hit(0.42, 14, 7, 60, 90, 1.0, 60, 10, true) } },
+	skills = {
+		E = { id = "iwE", name = "만월참", desc = "보름달만 한 빛의 초승달을 던진다. 앞의 모든 적을 꿰뚫고 벤다", pose = "moon_throw", dur = 0.6, cd = 6, chi = 20,
+			proj = { speed = 110, life = 0.55, radius = 7, dmg = 40, posture = 40, stun = 0.5, kb = 26, size = 6, pierce = true }, hits = {} },
+		R = { id = "iwR", name = "대일강림", desc = "둘레의 적 여섯 머리 위로 작은 해가 떨어져 불기둥이 되어 터진다", pose = "sun_call", dur = 1.0, cd = 9, chi = 30,
+			mech = { kind = "targets", n = 6, range = 36, delay = 0.45, stagger = 0.07, radius = 8, hit = hit(0, 0, 0, 36, 34, 0.7, 14, 12), fx = "sun" } },
+		G = { id = "iwG", name = "일월동천", desc = "하늘이 밤이 되고 해와 달이 함께 떠오른다. 달빛이 둘레를 베고, 해와 달이 겹쳐 일식이 되면 검은 해의 빛살이 모든 적을 꿰뚫은 뒤, 새벽처럼 터진다", pose = "ult_eclipse", dur = 3.4, cd = 34, chi = 100, armor = true,
+			mech = { kind = "eclipse", radius = 60, slashes = 5, slashFrom = 0.6, slashEvery = 0.24, slash = hit(0, 0, 0, 16, 16, 0.4, 0),
+				bindAt = 1.9, eclipseAt = 2.0, beamAt = 2.55, beam = hit(0, 0, 0, 70, 60, 0.9, 0, 10), finalAt = 3.2, final = hit(0, 0, 0, 220, 280, 1.8, 70, 30) } },
 	},
 })
 -- 중간: 풍신각 (풍신대의 풍백에게)
@@ -609,8 +652,8 @@ table.insert(Config.Styles, {
 	},
 })
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6 }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -621,6 +664,7 @@ Config.GRADE_COLOR = {
 	["신화"] = Color3.fromRGB(255, 120, 90),
 	["천외"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
+	["지존"] = Color3.fromRGB(255, 200, 90),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -636,8 +680,11 @@ Config.BREAKTHROUGH = {
 }
 -- 그 권법의 지금 등급 (승급까지 더해서)
 function Config.styleGrade(style: any, up: number?): string
-	-- 태초 등급은 태초신권만 (다른 권법은 승급해도 천외까지)
-	local cap = style.grade == "태초" and #Config.GRADE_ORDER or #Config.GRADE_ORDER - 1
+	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외까지)
+	local cap = Config.gradeIndex("천외")
+	if style.grade == "태초" or style.grade == "지존" then
+		cap = Config.gradeIndex(style.grade)
+	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
 	return Config.GRADE_ORDER[i]
 end
@@ -689,6 +736,7 @@ local FINISHERS = {
 	gaecheon = { name = "천제승천각", pose = "heaven_kick" },
 	pacheon = { name = "파천승천권", pose = "grav_hammer" },
 	taecho = { name = "태초승천각", pose = "origin_kick" },
+	ilwol = { name = "일월승천각", pose = "sun_wheel" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -700,7 +748,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1044,6 +1092,8 @@ Config.Regions = {
 	{ id = "skysea", name = "천외봉 운해", center = Vector3.new(0, 0, -2900), size = Vector3.new(1400, 0, 900), ground = Color3.fromRGB(232, 238, 250), material = Enum.Material.SmoothPlastic, ambient = "sky",
 		camps = { { enemy = "starblade", count = 3, at = Vector3.new(-400, 0, -2650) }, { enemy = "skyguard", count = 2, at = Vector3.new(400, 0, -2700) }, { enemy = "starblade", count = 2, at = Vector3.new(-350, 0, -3050) }, { enemy = "skyguard", count = 2, at = Vector3.new(380, 0, -3000) } },
 		boss = { id = "cheonmun", at = Vector3.new(0, 0, -2760) } },
+	-- 일월대: 해와 달의 단 (정점의 사부, 권존이 홀로 선다)
+	{ id = "sunmoon", name = "일월대", center = Vector3.new(2500, 0, 2500), size = Vector3.new(420, 0, 420), ground = Color3.fromRGB(70, 62, 78), material = Enum.Material.Slate, safe = true },
 	-- 풍신대: 바람이 그치지 않는 언덕 (여덟째 사부)
 	{ id = "windhill", name = "풍신대 (바람의 언덕)", center = Vector3.new(-1100, 0, 1100), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(120, 165, 115), material = Enum.Material.Grass, safe = true,
 		master = "pungsin", rumor = "남서쪽 먼 언덕, 바람이 그치지 않는 곳에 바람을 차는 사람이 산다더라", quote = "바람은 잡을 수 없다. 그래서 막을 수도 없다.", masterName = "풍백", masterAt = Vector3.new(-1100, 6, 1100) },
@@ -1078,6 +1128,9 @@ Config.MASTERS.gaecheon = { name = Config.SECRET_MASTER.name, at = Config.SECRET
 -- 궁극의 사부: 천외봉 아래의 시원자. 천외천에 오른 자에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.taecho = { name = "시원자", at = Vector3.new(0, 3.2, -3080), region = "천외봉", regionId = "skysea", secret = true,
 	quote = "처음에는 아무것도 없었다. 그래서 무엇이든 될 수 있었다.", rumor = "북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라" }
+-- 정점의 사부: 동남쪽 끝 일월대의 권존. 태초신권을 익힌 천외천의 고수에게만 시험을 허락한다 (지도에 나오지 않는다)
+Config.MASTERS.ilwol = { name = "권존", at = Vector3.new(2500, 6.2, 2500), region = "일월대", regionId = "sunmoon", secret = true,
+	quote = "해는 지고 달은 뜬다. 나는 늘 그 사이에 서 있었다.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
 -- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
 Config.Fragments = {
 	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
@@ -1116,7 +1169,8 @@ Config.Story = {
 	{ title = "하늘 문지기", text = "북쪽 끝 구름바다 위, 천외봉으로 가는 길을 천문장이 막고 있다.", goal = { kind = "boss", id = "cheonmun", at = Vector3.new(0, 0, -2760) }, reward = { coins = 90000, stats = 5000 } },
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 열네 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 열다섯 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
@@ -1133,6 +1187,7 @@ Config.Landmarks = {
 	{ id = "volcano", name = "불의 산", icon = "🌋", at = Vector3.new(3080, 0, -700) },
 	{ id = "pyramid", name = "사왕의 무덤", icon = "🔺", at = Vector3.new(-900, 0, 3140) },
 	{ id = "skyspire", name = "천외봉", icon = "✴", at = Vector3.new(0, 0, -3180) },
+	{ id = "sunmoon", name = "일월대", icon = "☀", at = Vector3.new(2500, 0, 2640) },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -1168,12 +1223,18 @@ Config.Roads = {
 }
 
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
+-- 베타 8: 적은 훨씬 질기고 (체력 ×2.2, 멀수록 더), 후반 적의 피해는 크게 줄였다 (오래 겨루는 싸움)
+Config.ENEMY_HP = 2.2
+Config.ENEMY_BOSS_HP = 1.6
+Config.ENEMY_HP_LEVEL = 0.35 -- 단계마다 체력 +35%
+Config.ENEMY_DMG_LEVEL = 0.12 -- 단계마다 피해 +12%
+Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 이만큼의 거듭제곱으로만 (×14 → ×4.9)
 -- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
 function Config.playerPower(dmgMult: number, maxHp: number): number
 	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))
 end
 function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
-	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / 120) * (boss and 1.5 or 1))
+	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / (120 * Config.ENEMY_HP)) * (boss and 1.5 or 1))
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
 Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
@@ -1234,9 +1295,19 @@ Config.POTION_HEAL = 0.4
 ------------------------------------------------------------------------
 Config.Premium = {
 	{ id = "train2x", gamepass = 0, price = 199, icon = "🔥", name = "두 배 수련", tag = "영구",
-		lines = { "모든 수련의 능력치가 영원히 두 배", "소환단·강화 수련과 겹친다 (최대 열두 배)", "심마 대련 보상도 두 배" } },
-	{ id = "goldDragon", gamepass = 0, price = 249, icon = "🐉", name = "금룡 기운", tag = "꾸미기", cosmetic = true,
-		lines = { "금빛 용 한 마리가 늘 내 몸을 휘감고 돈다", "달리면 뒤를 따라 날고, 대시하면 금빛 꼬리를 남긴다", "오의를 쓰면 하늘로 솟아 포효한다 · 모두에게 보인다" } },
+		lines = { "모든 수련의 능력치가 영원히 두 배", "소환단·강화 수련·자동 수련과 겹친다", "심마 대련 보상도 두 배" } },
+	{ id = "autoTrain", gamepass = 0, price = 149, icon = "🤖", name = "자동 수련", tag = "영구", toggle = true,
+		lines = { "켜 두면 3초마다 저절로 수련 한 번", "올릴 능력치를 고르거나 골고루 (근골·체력·경공·내공)", "싸우지 않을 땐 어디서나: 걷고, 쉬고, 구경해도 오른다" } },
+	{ id = "autoTrain2", gamepass = 0, price = 399, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
+		lines = { "1초마다 '완벽' 판정으로 자동 수련 (보통의 여섯 배 넘게)", "경지가 열어 준 좋은 수련으로 (철사장·마보·운기조식)", "싸우는 중에도 멈추지 않는다" } },
+}
+-- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
+Config.AUTO_TRAIN = {
+	every = 3,
+	advEvery = 1,
+	advMult = 1,
+	kinds = { str = "rock", vit = "dummy", agi = "bamboo", chi = "waterfall" },
+	advKinds = { str = "ironpalm", vit = "mabo", agi = "bamboo", chi = "breathing" },
 }
 Config.PREMIUM_BY_ID = {}
 for _, it in ipairs(Config.Premium) do

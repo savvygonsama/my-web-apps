@@ -584,6 +584,10 @@ local function buildStyles()
 			table.insert(lines, "")
 			table.insert(lines, string.format('<font color="#FFE8A0"><b>경지 제한</b>  %s에 올라야 사부가 시험을 허락한다</font>', Config.Realms[s.realmReq].name))
 		end
+		local req = s.styleReq and Config.STYLE_BY_ID[s.styleReq]
+		if req then
+			table.insert(lines, string.format('<font color="#FFE8A0"><b>먼저 익힐 권법</b>  %s</font>', req.name))
+		end
 		-- 승급 (깨달음)
 		if owned then
 			local step = Config.BREAKTHROUGH[ups + 1]
@@ -722,25 +726,30 @@ local function buildShop()
 	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	-- 💎 로벅스 상품: 금빛 카드 (큰 그림, 이름표, 좋은 점 세 줄, 값)
 	local premiumBtns: { [string]: TextButton } = {}
-	local cosmeticBtn: TextButton? = nil
+	-- 자동 수련 카드: 켜기·끄기 + 올릴 능력치 고르기 (가진 카드에만 보인다)
+	local autoBtns: { [string]: { toggle: TextButton, stat: TextButton } } = {}
 	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💎 로벅스 상품", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 0, Parent = list })
 	for i, it in ipairs(Config.Premium) do
-		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.cosmetic and Color3.fromRGB(60, 42, 14) or Color3.fromRGB(70, 24, 14), LayoutOrder = i, Parent = list }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.best and Color3.fromRGB(50, 26, 80) or (it.toggle and Color3.fromRGB(20, 50, 70) or Color3.fromRGB(70, 24, 14)), LayoutOrder = i, Parent = list }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
 		new("UIGradient", { Rotation = 20, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 90)), Parent = card })
 		local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
 		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
 		text({ Size = UDim2.fromScale(1, 1), Text = it.icon, TextSize = 64, TextXAlignment = Enum.TextXAlignment.Center, Parent = badge })
 		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
-		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.cosmetic and Color3.fromRGB(120, 80, 200) or Color3.fromRGB(200, 70, 40), Parent = card }, { corner(11) })
+		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.best and Color3.fromRGB(150, 90, 230) or (it.toggle and Color3.fromRGB(40, 140, 200) or Color3.fromRGB(200, 70, 40)), Parent = card }, { corner(11) })
 		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
 		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "✦ " .. table.concat(it.lines, "\n✦ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
 		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
 			Request:FireServer("premiumBuy", it.id)
 		end)
-		if it.cosmetic then
-			cosmeticBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 82), Size = UDim2.new(0, 170, 0, 40), Text = "입기", TextSize = 17, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
-				Request:FireServer("cosmeticToggle")
+		if it.toggle then
+			local tg = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 80), Size = UDim2.new(0, 82, 0, 40), Text = "켜기", TextSize = 16, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
+				Request:FireServer("autoToggle")
 			end)
+			local sb = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -102, 0, 80), Size = UDim2.new(0, 82, 0, 40), Text = "골고루", TextSize = 15, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
+				Request:FireServer("autoStat")
+			end)
+			autoBtns[it.id] = { toggle = tg, stat = sb }
 		end
 	end
 	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
@@ -765,9 +774,15 @@ local function buildShop()
 			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or Color3.fromRGB(40, 170, 80)
 			b.AutoButtonColor = not has
 		end
-		if cosmeticBtn then
-			cosmeticBtn.Visible = owned.goldDragon == true
-			cosmeticBtn.Text = (state and state.cosmeticOff) and "🐉 입기" or "🐉 벗기"
+		local statLabel = { all = "골고루", str = "💪 근골", vit = "❤ 체력", agi = "🍃 경공", chi = "🌀 내공" }
+		for id, ab in pairs(autoBtns) do
+			local has = owned[id] == true
+			local on = state and state.autoOn == true
+			ab.toggle.Visible = has
+			ab.stat.Visible = has
+			ab.toggle.Text = on and "🟢 켜짐" or "⚪ 꺼짐"
+			ab.toggle.BackgroundColor3 = on and Color3.fromRGB(40, 140, 70) or C.panel2
+			ab.stat.Text = statLabel[state and state.autoStat or "all"] or "골고루"
 		end
 	end
 end
@@ -918,8 +933,17 @@ local function buildTest()
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
 		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
 		{ "🌙 한밤 (0시)", "testTime", 0 }, { "⏩ 3시간 뒤로", "testTime", "+3" },
-		{ "💎 두 배 수련 (테스트로 켜기)", "testPremium", "train2x" }, { "🐉 금룡 기운 (테스트로 켜기)", "testPremium", "goldDragon" },
+		{ "💎 두 배 수련 (테스트로 켜기)", "testPremium", "train2x" }, { "🤖 자동 수련 (테스트로 켜기)", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련 (테스트로 켜기)", "testPremium", "autoTrain2" },
 	})
+	-- 수련 자리로 바로 (종류마다 첫 자리)
+	local trainItems = {}
+	for _, id in ipairs({ "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }) do
+		local t = Config.Training[id]
+		if t then
+			table.insert(trainItems, { "🌀 " .. t.icon .. " " .. t.name, "testTrainTp", id })
+		end
+	end
+	section("🏋 수련 텔레포트", trainItems)
 	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
 	local styleItems = {}
 	for _, st in ipairs(Config.Styles) do
@@ -933,7 +957,50 @@ local function buildTest()
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
 		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 200000 },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
+		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 	})
+	-- 모든 권법 얻는 법 (테스트 창에만 적는다)
+	order += 1
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "📖 모든 권법 얻는 법", TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = order, Parent = list })
+	local how = {}
+	local HIDDEN_HOW: { [string]: string } = {
+		mugeuk = "강호 곳곳의 비급 조각 다섯을 모두 줍는다 (지도에 안 나온다). 자리: ",
+		hyeolma = "북동쪽 끝 혈교 본산의 보스 '혈마'를 쓰러뜨리면 바로 얻는다",
+		pacheon = "북서쪽 끝 허공 균열의 보스 '천마'를 쓰러뜨리면 바로 얻는다",
+	}
+	for _, st in ipairs(Config.Styles) do
+		local m = Config.MASTERS[st.id]
+		local line: string
+		if st.starter then
+			line = "처음부터 가지고 시작한다 (청운 장로에게 받는다)"
+		elseif HIDDEN_HOW[st.id] then
+			line = HIDDEN_HOW[st.id]
+			if st.id == "mugeuk" then
+				local spots = {}
+				for _, fr in ipairs(Config.Fragments) do
+					table.insert(spots, fr.hint)
+				end
+				line ..= table.concat(spots, " · ")
+			end
+		elseif m then
+			local need = {}
+			if st.realmReq then
+				table.insert(need, Config.Realms[st.realmReq].name .. " 경지")
+			end
+			if st.styleReq then
+				local rq = Config.STYLE_BY_ID[st.styleReq]
+				table.insert(need, (rq and rq.name or st.styleReq) .. "을(를) 익힌 뒤")
+			end
+			line = string.format("%s%s의 %s에게 가서 T → 분신 시험을 넘고 → 은자를 바쳐 배운다%s%s",
+				#need > 0 and ("[" .. table.concat(need, ", ") .. "] ") or "", m.region, m.name,
+				m.secret and " (숨은 사부: 지도에 안 나온다)" or "", st.trialHp and string.format(" · 분신 체력 %d배", st.trialHp) or "")
+		else
+			line = st.unlockHint or "?"
+		end
+		table.insert(how, string.format("<b>%s %s</b> [%s]\n   %s", st.icon, st.name, st.grade, line))
+	end
+	order += 1
+	text({ Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 16, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, LayoutOrder = order, Parent = list, Text = table.concat(how, "\n") })
 	section("적과 보스", {
 		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
 		{ "🪵 무뢰배", "testEnemy", "thug" }, { "🗡 산적", "testEnemy", "bandit" }, { "🔱 창병", "testEnemy", "spearman" },
@@ -1121,6 +1188,9 @@ function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
 	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	if s.autoOn and s.premium and (s.premium.autoTrain or s.premium.autoTrain2) then
+		topInfo.Text ..= s.premium.autoTrain2 and "   ⚙ 고급 자동 수련" or "   🤖 자동 수련"
+	end
 	topInfo.TextColor3 = realm.color
 	local menu = gui:FindFirstChild("Menu", true)
 	local testBtn = menu and menu:FindFirstChild("TestButton")

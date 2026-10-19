@@ -14,6 +14,7 @@
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
 --   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
 --   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+--   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -381,6 +382,45 @@ function Skills.run(f: any, move: any, ctx: any)
 		Push:FireAllClients("skillfx", { kind = "genesis", m = f.model, at = center, radius = m.radius, targets = models, dur = m.freeze / sp, crackAt = m.crackAt / sp, breakAt = m.breakAt / sp, style = style })
 		after(m.breakAt, function()
 			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "eclipse" then
+		-- 일월동천: 달빛 베기 → 일식 (모두 묶인다) → 검은 해의 빛살 → 새벽의 폭발
+		local center = f.root.Position
+		local R = m.radius
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.finalAt / sp + 0.3)
+		Push:FireAllClients("skillfx", { kind = "eclipse", m = f.model, at = center, radius = R, style = style,
+			slashes = m.slashes, slashFrom = m.slashFrom / sp, slashEvery = m.slashEvery / sp,
+			eclipseAt = m.eclipseAt / sp, beamAt = m.beamAt / sp, finalAt = m.finalAt / sp })
+		for i = 0, m.slashes - 1 do
+			after(m.slashFrom + i * m.slashEvery, function()
+				for _, o in ipairs(hostilesNear(f, center, R)) do
+					strike(f, o, scaled(m.slash, sc), move)
+				end
+			end)
+		end
+		after(m.bindAt, function()
+			for _, o in ipairs(hostilesNear(f, center, R)) do
+				Combat.stun(o, (m.finalAt - m.bindAt) / sp + 0.4)
+				if not o.player and not o.root.Anchored then
+					o.root.AssemblyLinearVelocity = Vector3.zero
+				end
+			end
+		end)
+		after(m.beamAt, function()
+			local spots = {}
+			local list = hostilesNear(f, center, R)
+			for _, o in ipairs(list) do
+				table.insert(spots, o.root.Position)
+			end
+			Push:FireAllClients("skillfx", { kind = "eclipseBeams", at = center, spots = spots, style = style })
+			for _, o in ipairs(list) do
+				strike(f, o, scaled(m.beam, sc), move)
+			end
+		end)
+		after(m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, R + 6)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)

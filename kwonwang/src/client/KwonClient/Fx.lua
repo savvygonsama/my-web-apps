@@ -412,6 +412,34 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(bar, 0.25)
 		end
 		Fx.ring(pos, c2, 1, 9 * s, 0.28, dir)
+	elseif style.fx == "eclipse" then
+		-- 일월: 금빛 해가 터지며 빛살이 뻗고, 은빛 초승달이 그 위를 가로질러 벤다
+		local sun = piece(Vector3.new(1.4, 1.4, 1.4) * s, c, Enum.Material.Neon, Enum.PartType.Ball, 0)
+		sun.Position = pos
+		tween(sun, 0.22, { Size = Vector3.new(4, 4, 4) * s, Transparency = 1 })
+		Debris:AddItem(sun, 0.25)
+		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			local ray = piece(Vector3.new(0.2, 0.2, 0.2), Color3.fromRGB(255, 230, 160), Enum.Material.Neon, nil, 0)
+			ray.CFrame = lookAt(pos, pos + face:VectorToWorldSpace(Vector3.new(math.cos(a), math.sin(a), 0)))
+			tween(ray, 0.2, { Size = Vector3.new(0.06, 0.06, (k % 2 == 0 and 5 or 3) * s), Transparency = 1, CFrame = ray.CFrame * CFrame.new(0, 0, -2.2 * s) })
+			Debris:AddItem(ray, 0.22)
+		end
+		local tilt = math.random() * math.pi
+		for k = 0, 6 do
+			local a = math.rad(-60 + k * 20)
+			local off = face:VectorToWorldSpace(Vector3.new(math.cos(a + tilt), math.sin(a + tilt), 0)) * 2.4 * s
+			local seg = piece(Vector3.new(0.28, 0.28, 1.4 * s), c2, Enum.Material.Neon, nil, 0.05)
+			seg.CFrame = lookAt(pos + off, pos + off + face:VectorToWorldSpace(Vector3.new(-math.sin(a + tilt), math.cos(a + tilt), 0)))
+			tween(seg, 0.28, { Transparency = 1, Size = Vector3.new(0.05, 0.05, 1.8 * s) })
+			Debris:AddItem(seg, 0.3)
+		end
+		Fx.ring(pos, c, 1, 10 * s, 0.28, dir)
+		if heavy then
+			Fx.burst("ember", pos, c, 10, 1)
+			Fx.burst("glitter", pos, c2, 10, 1)
+		end
 	elseif style.fx == "wind" then
 		-- 풍신: 바람 고리 두 겹과 날리는 잎
 		Fx.ring(pos, c2, 1, 8 * s, 0.3, dir)
@@ -477,6 +505,18 @@ function Fx.projectile(data: any)
 			table.insert(tail, seg)
 		end
 	end
+	-- 일월 만월참: 빛의 공 대신 커다란 은빛 초승달이 눕혀서 날아간다 (가운데가 두껍고 끝이 가늘다)
+	local moon = {}
+	if style and style.fx == "eclipse" then
+		ball.Transparency = 1
+		core.Transparency = 1
+		for k = 0, 12 do
+			local w = 1 - math.abs(k - 6) / 6
+			local seg = piece(Vector3.new(size * 0.32, 0.3, 0.4 + w * size * 0.35), k % 4 == 0 and c or c2, Enum.Material.Neon, nil, 0.05)
+			seg.Position = data.pos
+			table.insert(moon, seg)
+		end
+	end
 	local start = os.clock()
 	local dir: Vector3 = data.dir
 	local conn: RBXScriptConnection
@@ -485,6 +525,14 @@ function Fx.projectile(data: any)
 		local pos = data.pos + dir * data.speed * t
 		ball.Position = pos
 		core.Position = pos
+		if #moon > 0 then
+			local cf = CFrame.lookAt(pos, pos + dir)
+			for k, seg in ipairs(moon) do
+				local a = math.rad(-80 + (k - 1) * (160 / 12))
+				local lp = Vector3.new(math.sin(a) * size, 0, -math.cos(a) * size + size * 0.6)
+				seg.CFrame = cf * CFrame.new(lp) * CFrame.Angles(0, -a, 0)
+			end
+		end
 		local side = Vector3.new(-dir.Z, 0, dir.X)
 		for i, seg in ipairs(tail) do
 			local back = math.max(0, t - i * 0.025)
@@ -496,6 +544,10 @@ function Fx.projectile(data: any)
 			for _, p in ipairs({ ball, core, table.unpack(tail) }) do
 				tween(p, 0.15, { Transparency = 1 })
 				Debris:AddItem(p, 0.2)
+			end
+			for _, p in ipairs(moon) do
+				tween(p, 0.2, { Transparency = 1 })
+				Debris:AddItem(p, 0.25)
 			end
 		end
 	end)
@@ -1088,6 +1140,21 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c2, 1, 10, 0.25, look)
 		end
+	elseif kind == "eclipse" then
+		-- 일월: 금빛 빛줄기 한 줄과, 그 둘레를 감는 은빛 반달
+		streak(base + look * 1.5, base + look * (7 * s), c, 0.32, 0.16)
+		for k = 0, 5 do
+			local a = math.rad(-70 + k * 28)
+			local p = base + look * (4 * s) + right * math.cos(a) * 1.8 + up * math.sin(a) * 1.8
+			local seg = piece(Vector3.new(0.18, 0.18, 1.1), c2, Enum.Material.Neon, nil, 0.1)
+			seg.CFrame = lookAt(p, p + right * -math.sin(a) + up * math.cos(a))
+			tween(seg, 0.2, { Transparency = 1, Size = Vector3.new(0.05, 0.05, 1.4) })
+			Debris:AddItem(seg, 0.22)
+		end
+		if heavy then
+			Fx.ring(base + look * 5, c, 1, 11, 0.25, look)
+			Fx.ring(base + look * 5, c2, 1, 7, 0.3, look)
+		end
 	elseif kind == "wind" then
 		-- 풍신: 발끝을 따라 휘어진 바람 줄기
 		for i = -1, 1, 2 do
@@ -1142,6 +1209,7 @@ local HAND_FX = {
 	gravity = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 0.4, life = 0.6, size = 0.6 },
 	origin = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.2, life = 1.1, size = 0.4 },
 	wind = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 4, life = 0.5, size = 0.5 },
+	eclipse = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 1.4, life = 0.8, size = 0.45 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do

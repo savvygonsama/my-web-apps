@@ -47,7 +47,8 @@ type Profile = {
 	prog: number, -- 그 장의 진행
 	fragments: { [string]: boolean }, -- 주운 비급 조각
 	accepted: number,
-	cosmeticOff: boolean?,
+	autoOn: boolean?, -- 자동 수련 켜짐 (게임패스)
+	autoStat: string?, -- 자동 수련으로 올릴 능력치 ("all" = 골고루)
 	gradeUp: { [string]: number }, -- 권법 승급 (깨달음) 횟수
 }
 
@@ -150,6 +151,8 @@ local function sanitize(data: any): Profile
 	p.prog = math.floor(num(data.prog, 1e6))
 	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
+	p.autoOn = data.autoOn == true or nil
+	p.autoStat = (data.autoStat == "all" or (type(data.autoStat) == "string" and Config.AUTO_TRAIN.kinds[data.autoStat] ~= nil)) and data.autoStat or nil
 	return p
 end
 
@@ -167,6 +170,8 @@ type State = {
 	tpIdx: number?,
 	simmaAt: number?,
 	owned: { [string]: boolean }?,
+	autoAt: number?,
+	autoIdx: number?,
 }
 
 local profiles: { [Player]: Profile } = {}
@@ -308,7 +313,8 @@ local function pushState(player: Player)
 		fragments = p.fragments,
 		accepted = p.accepted == p.story,
 		premium = st.owned or {},
-		cosmeticOff = p.cosmeticOff,
+		autoOn = p.autoOn == true,
+		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
@@ -661,13 +667,19 @@ function Trial.start(player: Player, styleId: string)
 		ef.model:SetAttribute("Power", ef.power)
 		Combat.sync(ef)
 	end
+	-- 궁극의 권법 시험은 분신이 훨씬 질기다 (한두 번의 오의로 끝나지 않게)
+	if style.trialHp then
+		ef.maxHp = math.floor(ef.maxHp * style.trialHp)
+		ef.hp = ef.maxHp
+		Combat.sync(ef)
+	end
 	e.target = f
 	ef.model:SetAttribute("Style", styleId)
 	activeTrial[player] = ef
 	Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
 	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId })
 	-- 너무 오래 끌면 사부가 거둔다
-	task.delay(150, function()
+	task.delay(style.trialHp and 300 or 150, function()
 		if activeTrial[player] == ef and not ef.dead then
 			activeTrial[player] = nil
 			Npc.despawn(ef)
@@ -758,6 +770,8 @@ Combat.init(Push, {
 		elseif f.player then
 			local player = f.player
 			Trial.ended(player, false)
+			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
+			Npc.forget(player)
 			-- 비무대에서 이기면 기록
 			local winner = by and by.player
 			if winner and profiles[winner] then
@@ -1205,6 +1219,11 @@ function Actions.learn(player: Player, id: any)
 			toast(player, string.format("🔒 %s은(는) %s의 경지에 올라야 익힐 수 있어요", style.name, Config.Realms[style.realmReq].name))
 			return
 		end
+		local req = style.styleReq and Config.STYLE_BY_ID[style.styleReq]
+		if req and not p.styles[req.id] then
+			toast(player, string.format("🔒 %s은(는) %s을(를) 먼저 익혀야 배울 수 있어요", style.name, req.name))
+			return
+		end
 		if not p.found[style.id] then
 			toast(player, "❓ 아직 이 권법의 사부를 찾지 못했어요. 소문: " .. (master.rumor or ""))
 			return
@@ -1548,6 +1567,18 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 			Push:FireClient(player, "learned", { style = sd.id, hidden = sd.hidden == true })
 		end
+	elseif action == "testTrainTp" then
+		-- 수련 자리로 순간이동
+		if f and type(arg) == "string" then
+			for _, spot in ipairs(Config.TrainingSpots) do
+				if spot.kind == arg then
+					f.root.CFrame = CFrame.new(spot.at + Vector3.new(0, 5, 7), spot.at + Vector3.new(0, 5, 0))
+					local t = Config.Training[arg]
+					toast(player, "🌀 " .. (t and (t.icon .. " " .. t.name) or arg))
+					break
+				end
+			end
+		end
 	elseif action == "testSecretMaster" then
 		-- 숨은 사부 곁으로
 		if f then
@@ -1599,10 +1630,12 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.gaecheon = nil :: any
 			p.styles.pacheon = nil :: any
 			p.styles.taecho = nil :: any
+			p.styles.ilwol = nil :: any
 			p.trials.taecho = nil :: any
 			p.trials.gaecheon = nil :: any
+			p.trials.ilwol = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" then
 				p.style = "samjae"
 			end
 		end
@@ -1691,10 +1724,22 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Story.accept(player)
 	elseif action == "premiumBuy" then
 		Premium.prompt(player, tostring(a1))
-	elseif action == "cosmeticToggle" then
-		p.cosmeticOff = not p.cosmeticOff or nil
+	elseif action == "autoToggle" then
+		-- 자동 수련 켜기·끄기 (게임패스가 있어야)
+		if not (Premium.owns(player, "autoTrain") or Premium.owns(player, "autoTrain2")) then
+			toast(player, "🤖 자동 수련 게임패스가 있어야 해요 (만물상)")
+			return
+		end
+		p.autoOn = not p.autoOn or nil
 		st.dirty = true
-		Premium.applyCosmetic(player)
+		toast(player, p.autoOn and "🤖 자동 수련을 켰어요" or "🤖 자동 수련을 껐어요")
+		pushState(player)
+	elseif action == "autoStat" then
+		-- 자동 수련으로 올릴 능력치 차례로 바꾸기: 골고루 → 근골 → 체력 → 경공 → 내공
+		local order = { "all", "str", "vit", "agi", "chi" }
+		local i = table.find(order, p.autoStat or "all") or 1
+		p.autoStat = order[i % #order + 1]
+		st.dirty = true
 		pushState(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
@@ -1797,17 +1842,6 @@ function Premium.owns(player: Player, id: string): boolean
 	return st ~= nil and st.owned ~= nil and st.owned[id] == true
 end
 
--- 꾸미기를 몸에 입힌다 (가졌고, 끄지 않았으면)
-function Premium.applyCosmetic(player: Player)
-	local char = player.Character
-	local p = profiles[player]
-	if not char or not p then
-		return
-	end
-	local on = Premium.owns(player, "goldDragon") and not p.cosmeticOff
-	char:SetAttribute("Cosmetic", on and "goldDragon" or nil)
-end
-
 function Premium.grant(player: Player, id: string)
 	local st = states[player]
 	if not st then
@@ -1815,7 +1849,11 @@ function Premium.grant(player: Player, id: string)
 	end
 	st.owned = st.owned or {}
 	st.owned[id] = true
-	Premium.applyCosmetic(player)
+	-- 자동 수련을 처음 얻으면 바로 켠다
+	local p = profiles[player]
+	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
+		p.autoOn = true
+	end
 	pushState(player)
 end
 
@@ -1871,6 +1909,67 @@ if Marketplace then
 	end)
 end
 
+-- 자동 수련: 켜 두면 정해진 간격마다 저절로 수련 한 번 (고급은 더 빠르고, 완벽 판정, 경지의 좋은 수련으로)
+local function autoTrainOnce(player: Player, p: Profile, st: State, adv: boolean)
+	local A = Config.AUTO_TRAIN
+	local statId = p.autoStat or "all"
+	if statId == "all" then
+		local order = { "str", "vit", "agi", "chi" }
+		st.autoIdx = ((st.autoIdx or 0) :: number) % #order + 1
+		statId = order[st.autoIdx :: number]
+	end
+	local idx = Config.realmOf(Calc.total(p))
+	-- 고급: 경지가 열어 준 더 좋은 수련 (여러 능력치가 함께 오른다)
+	local kind = A.kinds[statId] or "rock"
+	if adv then
+		local better = A.advKinds[statId]
+		local bi = better and Config.Training[better]
+		if bi and idx >= (bi.realm or 1) then
+			kind = better
+		end
+	end
+	local info = Config.Training[kind]
+	local gain = info.base * (adv and 2 or 1)
+	local mult = (1 + 0.25 * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (Premium.owns(player, "train2x") and 2 or 1) * (adv and A.advMult or 1)
+	if info.gains then
+		for stat, k in pairs(info.gains) do
+			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
+		end
+	else
+		p.stats[info.stat] += math.max(1, math.floor(gain * mult + 0.5))
+	end
+	st.dirty = true
+	local afterIdx, realm = Config.realmOf(Calc.total(p))
+	if afterIdx > idx then
+		Push:FireAllClients("realm", { name = player.DisplayName, realm = realm.name })
+	end
+	refreshFighter(player)
+	pushState(player)
+end
+
+task.spawn(function()
+	local A = Config.AUTO_TRAIN
+	while true do
+		task.wait(0.25)
+		local now = os.clock()
+		for player, st in pairs(states) do
+			local p = profiles[player]
+			if p and p.autoOn then
+				local adv = Premium.owns(player, "autoTrain2")
+				if adv or Premium.owns(player, "autoTrain") then
+					local f = Combat.fighterOfPlayer(player)
+					-- 보통 자동 수련은 싸우는 중·직접 수련하는 중엔 쉰다 (고급은 싸우는 중에도)
+					local ok = f ~= nil and not f.dead and not st.training and (adv or f.combatUntil <= now)
+					if ok and now >= ((st.autoAt or 0) :: number) then
+						st.autoAt = now + (adv and A.advEvery or A.every)
+						autoTrainOnce(player, p, st, adv)
+					end
+				end
+			end
+		end
+	end
+end)
+
 local function setupCharacter(player: Player, char: Model)
 	local hum = char:WaitForChild("Humanoid", 10)
 	local root = char:WaitForChild("HumanoidRootPart", 10)
@@ -1892,7 +1991,6 @@ local function setupCharacter(player: Player, char: Model)
 	end
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
-	Premium.applyCosmetic(player)
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
 			Combat.unregister(char)
@@ -1995,6 +2093,11 @@ task.spawn(function()
 		local sdef = Config.STYLE_BY_ID[styleId]
 		if sdef and sdef.realmReq and not p.styles[styleId] and Config.realmOf(Calc.total(p)) < sdef.realmReq then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. 네 안의 하늘이 열리지 않았다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
+			return
+		end
+		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
+		if req and not p.styles[styleId] and not p.styles[req.id] then
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then

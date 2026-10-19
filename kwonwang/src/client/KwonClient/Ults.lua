@@ -6,6 +6,7 @@
 --   무극: 빛깔이 뒤집히고 하늘에 눈이 열린다     삼재: 모았다가 단 한 번의 주먹
 --   천제: 하늘의 문과 빛의 검 비                파천: 하늘에 뜬 검은 해가 모두를 빨아올린다
 --   풍신: 앞으로 나아가는 거대한 회오리          태초: 세상이 멈춰 별바다가 되고, 유리처럼 깨진다
+--   일월: 하늘이 밤이 되고 해와 달이 떠서 겹친다 (일식), 검은 해의 빛살이 꿰뚫고 새벽처럼 터진다
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -1318,13 +1319,304 @@ function H.genesis(data: any)
 	local _ = dur
 end
 
--- 파천 중압 / 태초 창세: 정해진 수만큼 맞히면 상대 자리에서 터진다
+-- 일월동천: 밤이 내리고 → 해와 달이 뜨고 → 달빛이 벤다 → 해와 달이 겹쳐 일식 → 검은 해의 빛살 → 새벽의 폭발
+local nightCount = 0
+local exposureBase = 0
+local function eclipseTop(at: Vector3): Vector3
+	return at + Vector3.new(0, 48, 0)
+end
+-- 여러 조각을 몇 걸음에 걸쳐 한꺼번에 흐려 지운다 (조각마다 트윈을 걸지 않는다)
+local function fadeAll(list: { BasePart }, steps: number, every: number)
+	local from: { number } = {}
+	for i, p in ipairs(list) do
+		from[i] = p.Transparency
+	end
+	for step = 1, steps do
+		task.delay(step * every, function()
+			for i, p in ipairs(list) do
+				if p.Parent then
+					if step == steps then
+						p:Destroy()
+					else
+						p.Transparency = from[i] + (1 - from[i]) * step / steps
+					end
+				end
+			end
+		end)
+	end
+end
+function H.eclipse(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local R = math.min(data.radius or 60, 70)
+	local slashFrom, slashEvery, slashes = data.slashFrom or 0.6, data.slashEvery or 0.24, data.slashes or 5
+	local eclipseAt, finalAt = data.eclipseAt or 2.0, data.finalAt or 3.2
+	local ground = at - Vector3.new(0, 2.4, 0)
+	local top = eclipseTop(at)
+	local caster = rootOf(data.m)
+	local look = caster and flat(caster.CFrame.LookVector) or Vector3.new(0, 0, -1)
+	local right = Vector3.new(-look.Z, 0, look.X)
+	local parts: { BasePart } = {}
+	local function keep(p: BasePart): BasePart
+		table.insert(parts, p)
+		return p
+	end
+	local close = near(at, 170)
+	-- 1) 밤이 내린다: 빛이 꺼지고 푸른 밤빛, 하늘에 별
+	if close then
+		colorGrade(-0.3, 0.25, -0.1, Color3.fromRGB(155, 170, 255), finalAt)
+		if nightCount == 0 then
+			pcall(function()
+				exposureBase = Lighting.ExposureCompensation
+			end)
+		end
+		nightCount += 1
+		pcall(tween, Lighting, 0.6, { ExposureCompensation = exposureBase - 1.3 })
+	end
+	for i = 1, 36 do
+		local a = math.random() * math.pi * 2
+		local e = 0.35 + math.random() * 1.0
+		local d = R * (0.8 + math.random() * 0.3)
+		local star = keep(piece(Vector3.new(0.5, 0.5, 0.5) * (i % 6 == 0 and 2 or 1), i % 5 == 0 and c2 or Color3.fromRGB(255, 252, 240), Enum.Material.Neon, Enum.PartType.Ball, 1))
+		star.Position = at + Vector3.new(math.cos(a) * math.cos(e) * d, 20 + math.sin(e) * d * 0.6, math.sin(a) * math.cos(e) * d)
+		tween(star, 0.4 + math.random() * 0.5, { Transparency = 0.1 })
+	end
+	Fx.text(at + Vector3.new(0, 12, 0), "일월동천", Color3.fromRGB(255, 235, 190), 54, 1.6)
+	Fx.sound("heavy", 0.7, 0.3, at)
+	-- 2) 해와 달이 떠오른다 (해는 오른쪽, 달은 왼쪽)
+	local sunAt = top + right * R * 0.42 - Vector3.new(0, 4, 0)
+	local moonAt = top - right * R * 0.42 - Vector3.new(0, 4, 0)
+	local sun = keep(piece(Vector3.new(15, 15, 15), c, Enum.Material.Neon, Enum.PartType.Ball, 0))
+	sun.Position = ground + right * R * 0.8 + Vector3.new(0, 2, 0)
+	local sunGlow = keep(piece(Vector3.new(22, 22, 22), Color3.fromRGB(255, 215, 130), Enum.Material.ForceField, Enum.PartType.Ball, 0.25))
+	sunGlow.Position = sun.Position
+	local light = Instance.new("PointLight")
+	light.Color = c
+	light.Range = 60
+	light.Brightness = 6
+	light.Shadows = false
+	light.Parent = sun
+	local moon = keep(piece(Vector3.new(13, 13, 13), c2, Enum.Material.Neon, Enum.PartType.Ball, 0))
+	moon.Position = ground - right * R * 0.8 + Vector3.new(0, 2, 0)
+	local moonShade = keep(piece(Vector3.new(12.4, 12.4, 12.4), Color3.fromRGB(14, 16, 34), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0))
+	moonShade.Position = moon.Position
+	tween(sun, 1.0, { Position = sunAt }, Enum.EasingStyle.Sine)
+	tween(sunGlow, 1.0, { Position = sunAt }, Enum.EasingStyle.Sine)
+	tween(moon, 1.0, { Position = moonAt }, Enum.EasingStyle.Sine)
+	tween(moonShade, 1.0, { Position = moonAt - right * 3.6 + look * 1.5 }, Enum.EasingStyle.Sine)
+	-- 해의 빛살: 해 둘레를 천천히 돈다 (일식 때는 검은 해 둘레로)
+	local rays: { BasePart } = {}
+	local rayDirs: { Vector3 } = {}
+	for k = 1, 22 do
+		local a = math.random() * math.pi * 2
+		local e = (math.random() - 0.5) * 2.4
+		local d = Vector3.new(math.cos(a) * math.cos(e), math.sin(e), math.sin(a) * math.cos(e)).Unit
+		local ray = keep(piece(Vector3.new(0.5, 0.5, k % 3 == 0 and 22 or 13), k % 4 == 0 and Color3.fromRGB(255, 250, 225) or c, Enum.Material.Neon, nil, 0.25))
+		table.insert(rays, ray)
+		table.insert(rayDirs, d)
+	end
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - start
+		if t > finalAt or not sun.Parent then
+			conn:Disconnect()
+			return
+		end
+		local spin = CFrame.Angles(0, t * 0.7, 0)
+		local eclipsed = t >= eclipseAt
+		local reach = eclipsed and 1.6 or 1
+		for i, ray in ipairs(rays) do
+			local d = spin:VectorToWorldSpace(rayDirs[i])
+			local len = ray.Size.Z * reach
+			local p = sun.Position + d * (9 + len / 2)
+			ray.CFrame = CFrame.lookAt(p, p + d)
+		end
+	end)
+	-- 3) 달빛이 둘레를 벤다: 은빛 초승달이 하늘의 달에서 내려와 땅을 가로지른다
+	for i = 0, slashes - 1 do
+		task.delay(slashFrom + i * slashEvery, function()
+			local a = math.random() * math.pi * 2
+			local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+			local cf = CFrame.lookAt(ground + Vector3.new(0, 3, 0) - dir * R * 0.7, ground + Vector3.new(0, 3, 0))
+			local to = CFrame.lookAt(ground + Vector3.new(0, 3, 0) + dir * R * 0.7, ground + Vector3.new(0, 3, 0) + dir * R * 1.4)
+			local rr = R * 0.32
+			for k = 0, 8 do
+				local b = math.rad(-80 + k * 20)
+				local w = 1 - math.abs(k - 4) / 4
+				local lp = CFrame.new(math.sin(b) * rr, 0, -math.cos(b) * rr) * CFrame.Angles(0, -b, 0)
+				local seg = piece(Vector3.new(rr * 0.24, 0.35, 0.4 + w * 1.6), k % 4 == 0 and Color3.fromRGB(255, 255, 255) or c2, Enum.Material.Neon, nil, 0.05)
+				seg.CFrame = cf * lp
+				tween(seg, slashEvery * 1.6, { CFrame = to * lp }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				task.delay(slashEvery * 1.2, function()
+					if seg.Parent then
+						tween(seg, 0.2, { Transparency = 1 })
+					end
+				end)
+				Debris:AddItem(seg, slashEvery * 1.2 + 0.25)
+			end
+			-- 달에서 땅으로 내리긋는 은빛 줄기
+			local from = moon.Position
+			local land = ground + Vector3.new(0, 3, 0) - dir * R * 0.7
+			local beam = piece(Vector3.new(0.6, 0.6, (land - from).Magnitude), c2, Enum.Material.Neon, nil, 0.2)
+			beam.CFrame = CFrame.lookAt((from + land) / 2, land)
+			tween(beam, 0.25, { Size = Vector3.new(0.05, 0.05, beam.Size.Z), Transparency = 1 })
+			Debris:AddItem(beam, 0.3)
+			Fx.sound("swing", 0.6, 1.4, at)
+			Fx.burst("glitter", ground + Vector3.new(0, 2, 0), c2, 10, 1.2)
+			if hooks.shake and close then
+				hooks.shake(0.25)
+			end
+		end)
+	end
+	-- 4) 일식: 해와 달이 머리 위에서 겹친다. 달이 검게 물들고, 해는 그 뒤에서 불꽃 테가 된다
+	task.delay(eclipseAt - 0.45, function()
+		tween(sun, 0.45, { Position = top, Size = Vector3.new(19, 19, 19) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(sunGlow, 0.45, { Position = top, Size = Vector3.new(30, 30, 30) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		local front = top - look * 7 -- 시전자 쪽에서 보아 해 앞에 달
+		tween(moon, 0.45, { Position = front, Size = Vector3.new(17.5, 17.5, 17.5) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(moonShade, 0.45, { Position = front - look * 0.6, Size = Vector3.new(17.2, 17.2, 17.2) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end)
+	task.delay(eclipseAt, function()
+		if not sun.Parent then
+			return
+		end
+		moon.Color = Color3.fromRGB(8, 6, 12)
+		moon.Material = Enum.Material.SmoothPlastic
+		light.Brightness = 10
+		light.Range = 90
+		local corona = keep(piece(Vector3.new(1.2, 24, 24), Color3.fromRGB(255, 240, 200), Enum.Material.Neon, Enum.PartType.Cylinder, 0.15))
+		corona.CFrame = CFrame.lookAt(top - look * 7.5, top - look * 20) * CFrame.Angles(0, math.rad(90), 0)
+		tween(corona, 0.3, { Size = Vector3.new(1.2, 30, 30) }, Enum.EasingStyle.Back)
+		local bead = keep(piece(Vector3.new(3, 3, 3), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, Enum.PartType.Ball, 0))
+		bead.Position = top - look * 7.8 + right * 8.6 + Vector3.new(0, 1.5, 0)
+		tween(bead, 0.5, { Size = Vector3.new(5, 5, 5) })
+		if close then
+			colorGrade(-0.6, 0.45, -0.18, Color3.fromRGB(255, 215, 170), finalAt - eclipseAt)
+		end
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(255, 220, 150), 0.25)
+		end
+		Fx.ring(ground + Vector3.new(0, 0.5, 0), c, 4, R * 2.2, 0.6)
+		Fx.sound("heavy", 1, 0.4, at)
+		if hooks.shake and close then
+			hooks.shake(1.2)
+		end
+	end)
+	-- 5) 새벽: 일식이 터지고 빛이 돌아온다
+	task.delay(finalAt, function()
+		local nova = piece(Vector3.new(10, 10, 10), Color3.fromRGB(255, 245, 215), Enum.Material.Neon, Enum.PartType.Ball, 0)
+		nova.Position = top
+		tween(nova, 0.5, { Size = Vector3.new(R * 2.2, R * 2.2, R * 2.2), Transparency = 1 })
+		Debris:AddItem(nova, 0.55)
+		local dome = piece(Vector3.new(6, 6, 6), c, Enum.Material.ForceField, Enum.PartType.Ball, 0)
+		dome.Position = ground
+		tween(dome, 0.6, { Size = Vector3.new(R * 2.4, R * 1.2, R * 2.4), Transparency = 1 })
+		Debris:AddItem(dome, 0.65)
+		for k = 0, 4 do
+			task.delay(k * 0.08, function()
+				Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c or c2, 6, R * 2.8, 0.8)
+			end)
+		end
+		Fx.burst("ember", top, c, 40, 2.2)
+		Fx.burst("glitter", ground + Vector3.new(0, 3, 0), c2, 40, 2.2)
+		Fx.flash(ground + Vector3.new(0, 6, 0), Color3.fromRGB(255, 230, 180), 60, 8, 0.9)
+		fadeAll(parts, 4, 0.08)
+		if close then
+			-- 동이 트는 빛: 잠깐 따뜻하게 밝았다가 원래대로
+			pcall(tween, Lighting, 0.25, { ExposureCompensation = exposureBase + 0.6 })
+			colorGrade(0.15, 0.1, 0.12, Color3.fromRGB(255, 225, 190), 0.5)
+			task.delay(0.35, function()
+				nightCount = math.max(0, nightCount - 1)
+				if nightCount == 0 then
+					pcall(tween, Lighting, 1.2, { ExposureCompensation = exposureBase })
+				end
+			end)
+		end
+		if hooks.flash and near(at, 130) then
+			hooks.flash(Color3.fromRGB(255, 250, 235), 0.7)
+		end
+		if hooks.shake and near(at, 130) then
+			hooks.shake(3)
+			boom(at, 3)
+		end
+		Fx.sound("heavy", 1, 0.2, at)
+	end)
+end
+
+-- 일월동천의 빛살: 검은 해에서 적마다 금빛 빛기둥이 내리꽂힌다
+function H.eclipseBeams(data: any)
+	local c, c2 = styleColors(data.style)
+	local top = eclipseTop(data.at)
+	for i, spot in ipairs(data.spots or {}) do
+		task.delay((i - 1) * 0.03, function()
+			local d = (spot - top).Magnitude
+			local beam = piece(Vector3.new(2.6, 2.6, d), Color3.fromRGB(255, 225, 150), Enum.Material.Neon, nil, 0.05)
+			beam.CFrame = CFrame.lookAt((top + spot) / 2, spot)
+			tween(beam, 0.35, { Size = Vector3.new(0.2, 0.2, d), Transparency = 1 })
+			Debris:AddItem(beam, 0.4)
+			local core = piece(Vector3.new(0.9, 0.9, d), Color3.fromRGB(255, 255, 255), Enum.Material.Neon, nil, 0)
+			core.CFrame = beam.CFrame
+			tween(core, 0.25, { Size = Vector3.new(0.1, 0.1, d), Transparency = 1 })
+			Debris:AddItem(core, 0.3)
+			Fx.ring(spot - Vector3.new(0, 2.3, 0), i % 2 == 0 and c2 or c, 1, 12, 0.35)
+			Fx.burst("spark", spot, c, 10, 1.2)
+		end)
+	end
+	Fx.flash(top, c, 60, 6, 0.4)
+	Fx.sound("hit", 1, 0.7, data.at)
+	if hooks.shake and near(data.at, 100) then
+		hooks.shake(1.4)
+		boom(data.at, 1.4)
+	end
+end
+
+-- 파천 중압 / 태초 창세 / 일월: 정해진 수만큼 맞히면 상대 자리에서 터진다
+local pulseFlip = false
 function H.pulse(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
 	local r = data.radius or 12
 	local delay = data.delay or 0.3
-	if data.fx == "gravity" then
+	if data.fx == "eclipse" then
+		-- 일월: 해와 달이 번갈아 (해는 떨어져 터지고, 달은 가로질러 벤다)
+		pulseFlip = not pulseFlip
+		if pulseFlip then
+			local sun = piece(Vector3.new(3, 3, 3), c, Enum.Material.Neon, Enum.PartType.Ball, 0)
+			sun.Position = at + Vector3.new(0, 26, 0)
+			tween(sun, delay, { Position = at }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			Debris:AddItem(sun, delay + 0.05)
+			task.delay(delay, function()
+				local nova = piece(Vector3.new(2, 2, 2), Color3.fromRGB(255, 235, 170), Enum.Material.Neon, Enum.PartType.Ball, 0)
+				nova.Position = at
+				tween(nova, 0.3, { Size = Vector3.new(r * 1.6, r * 1.6, r * 1.6), Transparency = 1 })
+				Debris:AddItem(nova, 0.35)
+				Fx.ring(at - Vector3.new(0, 2.3, 0), c, 2, r * 2.2, 0.4)
+				Fx.burst("ember", at, c, 14, 1.2)
+				Fx.flash(at, c, 26, 4, 0.35)
+			end)
+			Fx.text(at + Vector3.new(0, 5, 0), "☀", c, 34, 0.8)
+		else
+			local dir = Vector3.new(math.cos(math.random() * 6.28), 0, math.sin(math.random() * 6.28))
+			local cf = CFrame.lookAt(at, at + dir)
+			for k = 0, 8 do
+				local a = math.rad(-75 + k * 18.75)
+				local w = 1 - math.abs(k - 4) / 4
+				local seg = piece(Vector3.new(r * 0.24, 0.25, 0.3 + w * 1.1), c2, Enum.Material.Neon, nil, 0.05)
+				local lp = Vector3.new(math.sin(a) * r * 0.8, 0, -math.cos(a) * r * 0.8)
+				seg.CFrame = cf * CFrame.new(0, 0, r * 0.9) * CFrame.new(lp) * CFrame.Angles(0, -a, 0)
+				task.delay(delay * 0.5, function()
+					tween(seg, delay * 0.6, { CFrame = cf * CFrame.new(0, 0, -r * 0.9) * CFrame.new(lp) * CFrame.Angles(0, -a, 0), Transparency = 1 })
+				end)
+				Debris:AddItem(seg, delay * 1.2 + 0.05)
+			end
+			task.delay(delay, function()
+				Fx.ring(at - Vector3.new(0, 2.3, 0), c2, 2, r * 2, 0.35)
+				Fx.burst("glitter", at, c2, 14, 1.2)
+			end)
+			Fx.text(at + Vector3.new(0, 5, 0), "☾", c2, 34, 0.8)
+		end
+	elseif data.fx == "gravity" then
 		-- 중력 우물: 검은 구가 맺히며 둘레의 고리가 안으로 조여든다
 		local well = piece(Vector3.new(0.5, 0.5, 0.5), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0)
 		well.Position = at
@@ -1433,6 +1725,42 @@ function Ults.variant(data: any): boolean
 			hooks.shake(1.6)
 			boom(at, 1.6)
 		end
+		return true
+	elseif data.fx == "sun" and data.kind == "strike" then
+		-- 대일강림: 작은 해가 하늘에서 떨어져 불기둥이 되어 터진다
+		local at: Vector3 = data.at
+		local r = data.radius or 8
+		local ground = at - Vector3.new(0, 2.4, 0)
+		local sun = piece(Vector3.new(5, 5, 5), c, Enum.Material.Neon, Enum.PartType.Ball, 0)
+		sun.Position = ground + Vector3.new(0, 60, 0)
+		local halo = piece(Vector3.new(8, 8, 8), Color3.fromRGB(255, 220, 140), Enum.Material.ForceField, Enum.PartType.Ball, 0.2)
+		halo.Position = sun.Position
+		tween(sun, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(halo, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(sun, 0.2)
+		Debris:AddItem(halo, 0.2)
+		task.delay(0.18, function()
+			local pillar = piece(Vector3.new(40, r * 1.3, r * 1.3), Color3.fromRGB(255, 160, 50), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+			pillar.CFrame = CFrame.new(ground + Vector3.new(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			tween(pillar, 0.5, { Size = Vector3.new(46, 0.5, 0.5), Transparency = 1 })
+			Debris:AddItem(pillar, 0.55)
+			local core = piece(Vector3.new(40, r * 0.5, r * 0.5), Color3.fromRGB(255, 245, 210), Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+			core.CFrame = pillar.CFrame
+			tween(core, 0.35, { Size = Vector3.new(46, 0.2, 0.2), Transparency = 1 })
+			Debris:AddItem(core, 0.4)
+			local scorch = piece(Vector3.new(0.2, r * 2, r * 2), Color3.fromRGB(60, 25, 10), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.2)
+			scorch.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			fade(scorch, 0.9, 0.5)
+			Fx.ring(ground + Vector3.new(0, 0.5, 0), c, 2, r * 2.6, 0.45)
+			Fx.burst("ember", at, c, 20, 1.4)
+			Fx.burst("smoke", at, Color3.fromRGB(110, 80, 60), 6, 1.2)
+			Fx.flash(at, c, 34, 5, 0.4)
+			Fx.sound("heavy", 0.7, 0.9, at)
+			if hooks.shake and near(at, 60) then
+				hooks.shake(0.7)
+				boom(at, 0.7)
+			end
+		end)
 		return true
 	elseif data.fx == "prism" and data.kind == "strike" then
 		-- 창세주: 빛의 결정 기둥이 솟는다

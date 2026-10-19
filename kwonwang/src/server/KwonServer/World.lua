@@ -1528,6 +1528,79 @@ function LANDMARK.pyramid(at: Vector3, f: Instance)
 end
 
 -- 천외봉: 구름바다 위로 하늘에 닿는 흰 봉우리. 둘레에 떠도는 고리와 섬, 꼭대기에서 하늘로 빛기둥. 발치에 시원자의 단
+-- 일월대: 해와 달의 단. 동쪽엔 금빛 해의 탑, 서쪽엔 은빛 달의 탑, 가운데 반은 금빛·반은 은빛인 단 위에 권존이 선다
+function LANDMARK.sunmoon(at: Vector3, f: Instance)
+	local m = Config.MASTERS.ilwol
+	local center = m and Vector3.new(m.at.X, 0, m.at.Z) or at
+	local top = m and m.at.Y or 6
+	local DARK = Color3.fromRGB(58, 52, 66)
+	local SUN = Color3.fromRGB(255, 190, 70)
+	local MOON = Color3.fromRGB(205, 220, 255)
+	cyl("SunMoonDais", center + Vector3.new(0, top / 2, 0), 32, top, DARK, Enum.Material.Slate, f)
+	cyl("SunMoonDais2", center + Vector3.new(0, top + 0.05, 0), 24, 0.1, Color3.fromRGB(30, 26, 36), Enum.Material.Marble, f, false)
+	-- 둘레 띠: 동쪽 반은 해, 서쪽 반은 달
+	for k = 0, 35 do
+		local a = k / 36 * math.pi * 2
+		local p = center + Vector3.new(math.cos(a) * 28, top + 0.12, math.sin(a) * 28)
+		part({ Name = "SunMoonRim", Size = Vector3.new(1.2, 0.2, 5.2), CFrame = CFrame.lookAt(p, center + Vector3.new(0, top + 0.12, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = math.cos(a) >= 0 and SUN or MOON, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	-- 바닥 무늬: 해 쪽 빛살, 달 쪽 초승달
+	for k = 0, 7 do
+		local a = math.rad(-70 + k * 20)
+		local p = center + Vector3.new(math.cos(a) * 12, top + 0.15, math.sin(a) * 12)
+		part({ Name = "SunInlay", Size = Vector3.new(0.6, 0.1, 7), CFrame = CFrame.lookAt(p, center + Vector3.new(0, top + 0.15, 0)), Color = SUN, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		local b = math.rad(110 + k * 20)
+		local q = center + Vector3.new(math.cos(b) * 12, top + 0.15, math.sin(b) * 12)
+		part({ Name = "MoonInlay", Size = Vector3.new(4, 0.1, 0.8), CFrame = CFrame.lookAt(q, center + Vector3.new(0, top + 0.15, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = MOON, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	-- 오르는 계단 (남쪽)
+	for i = 0, 3 do
+		part({ Name = "SunMoonStep", Size = Vector3.new(18, (i + 1) * top / 4, 4), Position = center + Vector3.new(0, (i + 1) * top / 8, 44 - i * 4), Color = DARK, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 해의 탑 (동쪽)
+	local sunAt = center + Vector3.new(70, 0, 0)
+	part({ Name = "SunTower", Size = Vector3.new(9, 64, 9), Position = sunAt + Vector3.new(0, 32, 0), Color = DARK, Material = Enum.Material.Slate, Parent = f })
+	cyl("SunTowerBand", sunAt + Vector3.new(0, 62, 0), 7, 2, SUN, Enum.Material.Neon, f, false)
+	local sunBall = part({ Name = "SunOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(22, 22, 22), Position = sunAt + Vector3.new(0, 80, 0), Color = SUN, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(sunBall, SUN, 90, 4)
+	emitter(sunBall, Color3.fromRGB(255, 220, 140), 18, 2.2, 10, 1.4)
+	for k = 0, 15 do
+		local a = k / 16 * math.pi * 2
+		local p = sunAt + Vector3.new(0, 80, 0) + Vector3.new(0, math.sin(a), math.cos(a)) * 17
+		part({ Name = "SunRay", Size = Vector3.new(1, 1, k % 2 == 0 and 9 or 5), CFrame = CFrame.lookAt(p, sunAt + Vector3.new(0, 80, 0)), Color = Color3.fromRGB(255, 225, 150), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	-- 달의 탑 (서쪽): 은빛 초승달
+	local moonAt = center + Vector3.new(-70, 0, 0)
+	part({ Name = "MoonTower", Size = Vector3.new(9, 64, 9), Position = moonAt + Vector3.new(0, 32, 0), Color = DARK, Material = Enum.Material.Slate, Parent = f })
+	cyl("MoonTowerBand", moonAt + Vector3.new(0, 62, 0), 7, 2, MOON, Enum.Material.Neon, f, false)
+	local mc = moonAt + Vector3.new(0, 80, 0)
+	for k = 0, 17 do
+		local a = math.rad(-120 + k * 13.5)
+		local p = mc + Vector3.new(0, math.sin(a), math.cos(a)) * 12
+		local thick = 1.2 + 3.2 * (1 - math.abs(k - 8.5) / 8.5) -- 가운데가 가장 두껍다
+		part({ Name = "MoonArc", Size = Vector3.new(2.5, math.max(1.2, thick), 4.6), CFrame = CFrame.lookAt(p, mc) * CFrame.Angles(math.rad(90), 0, 0), Color = MOON, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local moonGlow = part({ Name = "MoonGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = mc, Color = MOON, Material = Enum.Material.Neon, Transparency = 1, CanCollide = false, Parent = f })
+	light(moonGlow, MOON, 90, 3)
+	-- 두 탑을 잇는 빛줄기 (단 위 하늘에서 만난다)
+	for _, from in ipairs({ sunAt, moonAt }) do
+		local a0 = from + Vector3.new(0, 80, 0)
+		local b0 = center + Vector3.new(0, 70, 0)
+		part({ Name = "SunMoonLink", Size = Vector3.new(0.6, 0.6, (b0 - a0).Magnitude), CFrame = CFrame.lookAt((a0 + b0) / 2, b0), Color = from == sunAt and SUN or MOON, Material = Enum.Material.Neon, Transparency = 0.4, CanCollide = false, Parent = f })
+	end
+	local meet = part({ Name = "EclipseOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(10, 10, 10), Position = center + Vector3.new(0, 70, 0), Color = Color3.fromRGB(12, 8, 16), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	local corona = cyl("EclipseCorona", center + Vector3.new(0, 70, 0), 7.5, 0.4, Color3.fromRGB(255, 235, 180), Enum.Material.Neon, f, false)
+	corona.CFrame = CFrame.new(center + Vector3.new(0, 70, 0)) * CFrame.Angles(0, math.rad(90), 0)
+	local _ = meet
+	-- 단 둘레의 화로 여덟 (반은 금불, 반은 푸른 불)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		local p = center + Vector3.new(math.cos(a) * 40, 0, math.sin(a) * 40)
+		part({ Name = "SunMoonPost", Size = Vector3.new(2.5, 9, 2.5), Position = p + Vector3.new(0, 4.5, 0), Color = DARK, Material = Enum.Material.Slate, Parent = f })
+		crystal(p + Vector3.new(0, 11, 0), 1.4, math.cos(a) >= 0 and SUN or MOON, f)
+	end
+end
+
 function LANDMARK.skyspire(at: Vector3, f: Instance)
 	local MARBLE = Color3.fromRGB(240, 242, 250)
 	local STAR = Color3.fromRGB(150, 205, 255)

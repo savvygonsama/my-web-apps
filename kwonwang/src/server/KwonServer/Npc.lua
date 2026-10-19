@@ -283,11 +283,12 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local f = Combat.register(model, {
 		npc = def,
 		name = def.name,
-		hp = math.floor(def.hp * (1 + 0.28 * (lv - 1)) * mult),
+		-- 체력은 넉넉하게 (보스는 조금 덜 곱한다: 이미 크다), 피해는 후반일수록 덜 오른다
+		hp = def.dummy and def.hp or math.floor(def.hp * (isBoss and Config.ENEMY_BOSS_HP or Config.ENEMY_HP) * (1 + Config.ENEMY_HP_LEVEL * (lv - 1)) * mult),
 		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1)) * math.sqrt(mult)),
 		walk = def.speed,
 		style = def.style or "",
-		dmgMult = Config.ENEMY_DMG * (1 + 0.18 * (lv - 1)) * mult,
+		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW,
 	})
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
 	;(f :: any).typeId = typeId
@@ -497,6 +498,36 @@ local function dressMaster(model: Model, style: any)
 			e.SpreadAngle = Vector2.new(180, 180)
 			e.Parent = torso
 		end
+	elseif id == "ilwol" then
+		-- 권존: 등 뒤에 금빛 해 바퀴, 왼 어깨 위에 은빛 초승달, 금과 은으로 반씩 물든 띠
+		local sun = wear(model, "UpperTorso", "SunDisc", Vector3.new(0.2, 4.2, 4.2), CFrame.new(0, 1.4, 1.1) * CFrame.Angles(0, math.rad(90), 0), style.color, Enum.Material.Neon, Enum.PartType.Cylinder)
+		if sun then
+			sun.Transparency = 0.15
+		end
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			wear(model, "UpperTorso", "SunRay", Vector3.new(0.18, 0.18, 1.3), CFrame.new(math.cos(a) * 2.75, 1.4 + math.sin(a) * 2.75, 1.15) * CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(0, 0, a) * CFrame.Angles(0, math.rad(90), 0), style.color, Enum.Material.Neon)
+		end
+		for k = 0, 6 do
+			local a = math.rad(-70 + k * 23)
+			wear(model, "LeftUpperArm", "MoonArc", Vector3.new(0.25, 0.25, 0.7), CFrame.new(math.cos(a) * 1.1, 1.6 + math.sin(a) * 1.1, 0) * CFrame.Angles(0, 0, a), style.color2, Enum.Material.Neon)
+		end
+		wear(model, "LowerTorso", "SunSash", Vector3.new(1.05, 0.3, 1.05), CFrame.new(0.5, 0.1, 0), style.color, Enum.Material.Neon)
+		wear(model, "LowerTorso", "MoonSash", Vector3.new(1.05, 0.3, 1.05), CFrame.new(-0.5, 0.1, 0), style.color2, Enum.Material.Neon)
+		for _, side in ipairs({ "RightHand", "LeftHand" }) do
+			local hand = model:FindFirstChild(side)
+			if hand and hand:IsA("BasePart") then
+				local e = Instance.new("ParticleEmitter")
+				e.Rate = 12
+				e.Color = ColorSequence.new(side == "RightHand" and style.color or style.color2)
+				e.LightEmission = 1
+				e.Size = NumberSequence.new(0.35, 0)
+				e.Lifetime = NumberRange.new(0.4, 0.8)
+				e.Speed = NumberRange.new(1, 3)
+				e.SpreadAngle = Vector2.new(180, 180)
+				e.Parent = hand
+			end
+		end
 	elseif id == "gaecheon" then
 		-- 무명 노인: 땅에 끌리는 흰 수염, 별을 박은 관, 둘레를 도는 별빛
 		beard(WHITE_HAIR)
@@ -686,6 +717,17 @@ function Npc.despawn(f: any)
 	end
 	Combat.unregister(f.model)
 	f.model:Destroy()
+end
+
+-- 쓰러진 사람: 보스와 맞붙은 기록을 지우고 체력 막대를 걷는다
+function Npc.forget(player: Player)
+	for _, e in ipairs(Npc.list) do
+		e.engaged[player] = nil
+		if e.target and e.target.player == player then
+			e.target = nil
+		end
+	end
+	Push:FireClient(player, "boss", nil)
 end
 
 function Npc.find(model: Model): Enemy?

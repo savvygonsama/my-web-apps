@@ -71,6 +71,13 @@ local function now(): number
 	return os.clock()
 end
 
+-- 강호의 낮 (6시~18시): 일월신권이 해의 힘을 쓴다
+local Lighting = game:GetService("Lighting")
+local function isDay(): boolean
+	local h = Lighting.ClockTime
+	return h >= 6 and h < 18
+end
+
 local function flat(v: Vector3): Vector3
 	local f = Vector3.new(v.X, 0, v.Z)
 	if f.Magnitude < 1e-4 then
@@ -501,6 +508,13 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if aStyle and aStyle.backstab and facing < -0.3 then
 		d *= aStyle.backstab
 		crit = true
+	end
+	-- 일월: 낮에는 해의 주먹 (주는 피해 증가), 밤에는 달의 몸 (받는 피해 감소)
+	if aStyle and aStyle.sunMoon and isDay() then
+		d *= aStyle.sunMoon.day
+	end
+	if tStyle and tStyle.sunMoon and not isDay() then
+		d *= tStyle.sunMoon.night
 	end
 	if opt.teleport then
 		crit = true

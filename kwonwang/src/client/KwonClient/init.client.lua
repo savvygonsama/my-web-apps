@@ -11,7 +11,6 @@ local Anim = require(script:WaitForChild("Anim"))
 local Fx = require(script:WaitForChild("Fx"))
 local UI = require(script:WaitForChild("UI"))
 local Ults = require(script:WaitForChild("Ults"))
-local Cosmetics = require(script:WaitForChild("Cosmetics"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -48,13 +47,8 @@ local function watchChar(char: Model)
 	end)
 end
 local function watchPlayer(p: Player)
-	-- 사람만: 로벅스 꾸미기 (금룡 기운)
 	local function add(char: Model)
 		watchChar(char)
-		task.spawn(function()
-			char:WaitForChild("HumanoidRootPart", 10)
-			Cosmetics.watch(char)
-		end)
 	end
 	if p.Character then
 		add(p.Character)
@@ -624,7 +618,6 @@ startMove = function(slot: any, charge: number?)
 		else
 			Fx.ult(style.id, char, dur)
 		end
-		Cosmetics.onUlt(char)
 		shake(1.2)
 		tint(style.color, 0.25, dur)
 	end
@@ -892,7 +885,6 @@ local function dash()
 	Fx.limbTrails(char, pose, 0.35, style and style.color or Color3.new(1, 1, 1), style and style.color2 or Color3.new(1, 1, 1))
 	Fx.ring(root.Position - Vector3.new(0, 2.5, 0), style and style.color or Color3.new(1, 1, 1), 2, 8, 0.3)
 	Fx.sound("swing", 0.4, 1.6)
-	Cosmetics.onDash(char)
 	Request:FireServer("dash", kind)
 end
 
@@ -1190,7 +1182,6 @@ function handlers.act(data: any)
 		else
 			Fx.ult(style.id, m, data.dur)
 		end
-		Cosmetics.onUlt(m)
 		if near then
 			shake(0.8)
 		end
@@ -1386,6 +1377,7 @@ function handlers.ko(m: Model, _by: Model?)
 		dead = true
 		actSeq = -1
 		guarding = false
+		UI.setBoss(nil)
 		UI.ko(true, Config.RESPAWN_TIME)
 	end
 end
@@ -1430,7 +1422,6 @@ function handlers.dash(m: Model, kind: any)
 	Anim.play(m, pose, kind == "front" and 0.28 or 0.4)
 	local s = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 	Fx.afterimage(m, s and s.color or Color3.new(1, 1, 1), 0.3)
-	Cosmetics.onDash(m)
 end
 
 function handlers.djump(m: Model)
@@ -1563,7 +1554,7 @@ function handlers.skillfx(data: any)
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
 	end
-	if (data.fx == "gravity" or data.fx == "prism") and Ults.variant(data) then
+	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun") and Ults.variant(data) then
 		return
 	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
