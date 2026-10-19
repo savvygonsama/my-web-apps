@@ -228,17 +228,17 @@ end
 -- 혈마의 허상: 뿔, 날개, 빛나는 눈, 손톱. 등 뒤에서 솟아 적을 찢는다
 ------------------------------------------------------------------------
 local demons: { [Model]: Model } = {}
-local function demonSummon(caster: Model, dur: number, styleId: string)
+local function demonSummon(caster: Model, dur: number, styleId: string, scale: number?)
 	local r = rootOf(caster)
 	if not r then
 		return
 	end
 	local look = flat(r.CFrame.LookVector)
-	local s = 4.4
+	local s = 4.4 * (scale or 1)
 	local base = r.Position - look * 8
 	local to = CFrame.lookAt(base + Vector3.new(0, 2.6 * s - 2.5, 0), base + Vector3.new(0, 2.6 * s - 2.5, 0) + look)
 	local from = to - Vector3.new(0, 3 * s, 0)
-	local d = spirit(s, Color3.fromRGB(110, 5, 15), Enum.Material.Neon, 0.35, styleId, from)
+	local d = spirit(s, (styleColors(styleId)):Lerp(Color3.new(0, 0, 0), 0.5), Enum.Material.Neon, 0.35, styleId, from)
 	local red, gold = Color3.fromRGB(255, 40, 40), Color3.fromRGB(255, 220, 90)
 	for _, x in ipairs({ -1, 1 }) do
 		-- 휘어진 뿔 두 마디
@@ -348,7 +348,7 @@ end
 -- 진룡: 마디마디 이어진 용이 땅에서 솟아 날아다닌다
 ------------------------------------------------------------------------
 local dragons: { [Model]: any } = {}
-local function dragonSummon(caster: Model, dur: number, styleId: string)
+local function dragonSummon(caster: Model, dur: number, styleId: string, scale: number?)
 	local r = rootOf(caster)
 	if not r then
 		return
@@ -360,7 +360,7 @@ local function dragonSummon(caster: Model, dur: number, styleId: string)
 	local segs = {}
 	local N = 26
 	for i = 1, N do
-		local sz = 5.5 * (1 - i / N * 0.75)
+		local sz = 5.5 * (scale or 1) * (1 - i / N * 0.75)
 		local seg = piece(Vector3.new(sz, sz, sz), c:Lerp(c2, (i % 4) / 4), Enum.Material.Neon, Enum.PartType.Ball, 0.1)
 		seg.Position = base - Vector3.new(0, 20, 0)
 		table.insert(segs, seg)
@@ -586,9 +586,9 @@ local H: { [string]: (any) -> () } = {}
 
 function H.avatar(data: any)
 	if data.look == "demon" then
-		demonSummon(data.m, data.dur, data.style)
+		demonSummon(data.m, data.dur, data.style, data.scale)
 	elseif data.look == "dragon" then
-		dragonSummon(data.m, data.dur, data.style)
+		dragonSummon(data.m, data.dur, data.style, data.scale)
 	end
 end
 function H.avatarStrike(data: any)
@@ -1875,6 +1875,8 @@ function Ults.intro(styleId: any, model: Model)
 	tween(col, 0.5, { Size = Vector3.new(60, 0.3, 0.3), Transparency = 1 })
 	Debris:AddItem(col, 0.55)
 	Fx.ring(r.Position - Vector3.new(0, 2.4, 0), c, 14, 2, 0.4)
+	-- 오의의 진: 발밑에 크게 펼쳐져 돈다
+	Fx.sigil(r.Position - Vector3.new(0, 2.6, 0), 15, c, c2, 1.2)
 	Fx.afterimage(model, c, 0.4)
 	-- 오의를 여는 순간: 빛 가루가 회오리치듯 솟고, 둘레가 크게 밝아지며 불씨가 흩날린다
 	Fx.burst("glitter", r.Position, c2, 40, 1.4)

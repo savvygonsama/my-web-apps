@@ -1792,14 +1792,14 @@ RunService.RenderStepped:Connect(function()
 	elseif style.id == "maehwa" then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
 		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
-	elseif style.id == "byeokryeok" then
-		local n = tonumber(char:GetAttribute("Charge")) or 0
-		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)
+	elseif style.chargeEvery then
+		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
+		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = style.pulse.kind == "gravity" and "◆" or "✦"
-		stacks = (style.pulse.kind == "gravity" and "중압 " or "창세 ") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
-	elseif style.id == "cheonryong" and chargeStart then
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end
 	local buff = char:GetAttribute("Buff")

@@ -491,6 +491,9 @@ local function buildStyles()
 			Request:FireServer("learn", selected)
 		elseif action == "break" then
 			Request:FireServer("breakthrough", selected)
+		elseif action == "awaken" then
+			Request:FireServer("awaken", selected)
+			window.Visible = false
 		elseif action == "guide" then
 			UI.setGuide(selected)
 			window.Visible = false
@@ -598,10 +601,35 @@ local function buildStyles()
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
 		end
+		-- 각성 권법이 있는 권법: 각성 조건
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf == id and owned then
+				local A = Config.AWAKEN_STYLE
+				table.insert(lines, "")
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상 · 💰 %s → 각성 시련 (어디서나)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins)))
+			end
+		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
 		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_MAX
-		if canBreak then
+		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
+		local v2 = nil
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf == id then
+				v2 = sd
+			end
+		end
+		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_MAX
+		if canAwaken and v2 then
+			local A = Config.AWAKEN_STYLE
+			dBtn.Text = string.format("🔥 각성 시련 → %s  💰 %s", v2.name, Config.formatNumber(A.coins))
+			dBtn.BackgroundColor3 = (state and state.coins >= A.coins and state.realm >= A.realm) and Color3.fromRGB(200, 40, 60) or C.panel
+			action = "awaken"
+		elseif s.awakenOf and not owned then
+			dBtn.Text = "🔥 원래 권법에서 각성한다"
+			dBtn.BackgroundColor3 = C.panel
+			action = "none"
+		elseif canBreak then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			dBtn.Text = string.format("⬆ 승급  💰 %s", Config.formatNumber(step.coins))
 			dBtn.BackgroundColor3 = (state and state.coins >= step.coins and state.realm >= step.realm) and Color3.fromRGB(200, 150, 40) or C.panel
@@ -825,7 +853,7 @@ local function buildHelp()
 			"• <b>붉게 빛나는 공격</b>은 막을 수 없다. 대시로 피해라",
 			"",
 			"<b>강해지기</b>",
-			"• 수련: 바위 들기(근골) · 목인장(체력) · 폭포 명상(내공) · 대나무 경공(경공). 박자를 맞추면 2배",
+			"• 수련: 바위 들기(근골) · 목인장(체력·경공) · 폭포 명상(내공). 박자를 맞추면 2배",
 			"• 능력치는 천천히 오른다 (로그). 오래 수련한 쪽이 조금 유리할 뿐, 흘리기를 잘하면 이긴다",
 			"• 숙련도: 그 권법으로 맞힐수록 오른다. 숙련 3에 R, 5에 오의가 열린다",
 			"• 경지: 능력치 합으로 삼류 → 이류 → 일류 → 절정 → 초절정 → 화경 → 현경 → 생사경",
@@ -877,7 +905,7 @@ local function buildTrainGuide()
 		"• 경지가 오를수록 한 번에 오르는 능력치가 커진다",
 		"",
 	}
-	local order = { "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }
+	local order = { "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma" }
 	for _, id in ipairs(order) do
 		local t = Config.Training[id]
 		if t then
@@ -937,7 +965,7 @@ local function buildTest()
 	})
 	-- 수련 자리로 바로 (종류마다 첫 자리)
 	local trainItems = {}
-	for _, id in ipairs({ "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }) do
+	for _, id in ipairs({ "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma" }) do
 		local t = Config.Training[id]
 		if t then
 			table.insert(trainItems, { "🌀 " .. t.icon .. " " .. t.name, "testTrainTp", id })
@@ -973,6 +1001,11 @@ local function buildTest()
 		local line: string
 		if st.starter then
 			line = "처음부터 가지고 시작한다 (청운 장로에게 받는다)"
+		elseif st.awakenOf then
+			local base = Config.STYLE_BY_ID[st.awakenOf]
+			local A = Config.AWAKEN_STYLE
+			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지 + 💰 %s → 권법 창의 '🔥 각성 시련' (어디서나) → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
+				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
 			if st.id == "mugeuk" then

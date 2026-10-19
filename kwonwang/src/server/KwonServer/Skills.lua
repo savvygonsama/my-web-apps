@@ -310,7 +310,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end
 	elseif kind == "avatar" then
 		-- 허상 소환 (혈마의 악마, 천룡의 용): 허상이 정해진 순간마다 내리친다
-		Push:FireAllClients("skillfx", { kind = "avatar", look = m.look, m = f.model, dur = m.dur / sp, style = style })
+		Push:FireAllClients("skillfx", { kind = "avatar", look = m.look, m = f.model, dur = m.dur / sp, style = style, scale = m.scale })
 		for idx, st in ipairs(m.strikes) do
 			after(st.t, function()
 				local spots = {}

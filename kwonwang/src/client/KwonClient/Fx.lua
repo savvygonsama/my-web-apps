@@ -307,13 +307,15 @@ local function styleOf(id: any): any
 	return type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 end
 
+local HIT_SCALE = 1.25
 function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	local style = styleOf(styleId)
 	if not style then
 		Fx.spark(pos, Color3.fromRGB(255, 230, 200), heavy and 2 or 1.2, heavy and 10 or 6)
 		return
 	end
-	local s = heavy and 1.6 or 1
+	-- 맞는 순간의 연출은 모두 한 치수 크게 (HIT_SCALE)
+	local s = (heavy and 1.6 or 1) * HIT_SCALE
 	local c, c2 = style.color, style.color2
 	Fx.spark(pos, c, 1.3 * s, heavy and 12 or 7)
 	-- 강타는 땅까지 울린다 (흙먼지·돌 조각)
@@ -496,6 +498,17 @@ function Fx.projectile(data: any)
 	tr.Color = ColorSequence.new(c2, c)
 	tr.Transparency = NumberSequence.new(0, 1)
 	tr.Parent = ball
+	-- 날아가는 기운 뒤로 빛 가루가 흩날린다
+	local dustE = Instance.new("ParticleEmitter")
+	dustE.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	dustE.Rate = 40
+	dustE.Lifetime = NumberRange.new(0.25, 0.5)
+	dustE.Speed = NumberRange.new(1, 4)
+	dustE.SpreadAngle = Vector2.new(180, 180)
+	dustE.Size = NumberSequence.new(size * 0.18, 0)
+	dustE.LightEmission = 1
+	dustE.Color = ColorSequence.new(c2, c)
+	dustE.Parent = core
 	-- 용 모양: 몸통이 따라오며 꿈틀댄다
 	local tail = {}
 	if style and style.fx == "dragon" then
@@ -1261,6 +1274,54 @@ function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	end
 end
 
+-- 기술 진(陣): 발밑에 도는 빛의 고리 두 겹과 여섯 개의 표식. 펼쳐졌다가 돌며 사라진다 (모든 기술이 같은 틀, 빛깔만 권법마다)
+function Fx.sigil(at: Vector3, radius: number, c: Color3, c2: Color3, life: number)
+	local parts: { BasePart } = {}
+	local spec: { { number } } = {} -- { 반지름 비율, 각도, 도는 방향, 굵기 }
+	local nOuter, nInner = 20, 12
+	for k = 0, nOuter - 1 do
+		local p = piece(Vector3.new(0.35, 0.15, radius * 2 * math.pi / nOuter * 0.82), c, Enum.Material.Neon, nil, 0.1)
+		table.insert(parts, p)
+		table.insert(spec, { 1, k / nOuter * math.pi * 2, 1 })
+	end
+	for k = 0, nInner - 1 do
+		local p = piece(Vector3.new(0.25, 0.15, radius * 0.62 * 2 * math.pi / nInner * 0.7), c2, Enum.Material.Neon, nil, 0.15)
+		table.insert(parts, p)
+		table.insert(spec, { 0.62, k / nInner * math.pi * 2, -1 })
+	end
+	for k = 0, 5 do
+		local p = piece(Vector3.new(radius * 0.16, 0.15, radius * 0.16), k % 2 == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+		table.insert(parts, p)
+		table.insert(spec, { 0.81, k / 6 * math.pi * 2, 1, 1 })
+	end
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - start
+		if t > life then
+			conn:Disconnect()
+			for _, p in ipairs(parts) do
+				p:Destroy()
+			end
+			return
+		end
+		local open = math.min(1, t / 0.15) -- 펼쳐진다
+		local fade = math.max(0, (t - life * 0.55) / (life * 0.45)) -- 끝 무렵 흐려진다
+		for i, p in ipairs(parts) do
+			local sp = spec[i]
+			local a = sp[2] + t * 1.6 * sp[3]
+			local rr = radius * sp[1] * (0.4 + 0.6 * open)
+			local pos = at + Vector3.new(math.cos(a) * rr, 0.25, math.sin(a) * rr)
+			if sp[4] then
+				p.CFrame = CFrame.new(pos) * CFrame.Angles(0, -a + math.rad(45), 0)
+			else
+				p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a)))
+			end
+			p.Transparency = 0.1 + 0.9 * fade
+		end
+	end)
+end
+
 function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	local style = styleOf(styleId)
 	local r = rootPart(model)
@@ -1275,8 +1336,9 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	Fx.flash(pos, c, 18, 2.5, 0.45)
 	look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
 	local feet = pos - Vector3.new(0, 2.6, 0)
-	-- 공통: 발밑 고리와 몸의 기운
-	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 12 or 16, 0.45)
+	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
+	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
+	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
 	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
 	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
@@ -1867,8 +1929,19 @@ function Fx.mech(data: any)
 	local kind = data.kind
 	-- 기술이 땅에 닿는 곳: 빛과 불티 (장치마다 공통)
 	if data.at and (kind == "zone" or kind == "drop" or kind == "strike" or kind == "pillar" or kind == "wave" or kind == "beam" or kind == "launch") then
-		Fx.flash(data.at, c, (data.radius or 8) * 2.2, 3, 0.35)
-		Fx.burst("spark", data.at, c, 10, math.clamp((data.radius or 8) / 8, 0.8, 1.8))
+		local rad = data.radius or 8
+		Fx.flash(data.at, c, rad * 2.8, 3.5, 0.4)
+		Fx.burst("spark", data.at, c, 14, math.clamp(rad / 7, 0.9, 2.2))
+		Fx.burst("glitter", data.at, c2, 8, math.clamp(rad / 9, 0.8, 1.8))
+		-- 땅에 닿는 자리마다 두 겹 충격 고리 (안쪽은 밝게, 바깥은 넓게)
+		Fx.ring(data.at - Vector3.new(0, 2.2, 0), c2, 1, rad * 1.6, 0.3)
+		if kind == "strike" or kind == "pillar" or kind == "drop" then
+			local col = piece(Vector3.new(rad * 0.5, 40, rad * 0.5), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.35)
+			col.CFrame = CFrame.new(data.at + Vector3.new(0, 18, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			col.Size = Vector3.new(40, rad * 0.5, rad * 0.5)
+			tween(col, 0.35, { Size = Vector3.new(44, 0.2, 0.2), Transparency = 1 })
+			Debris:AddItem(col, 0.4)
+		end
 		if kind == "drop" or kind == "wave" or kind == "launch" then
 			Fx.burst("dust", data.at - Vector3.new(0, 2, 0), Color3.fromRGB(175, 160, 140), 14, math.clamp((data.radius or 8) / 10, 0.8, 2))
 		end

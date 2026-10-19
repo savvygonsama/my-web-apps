@@ -614,9 +614,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			att.stacks.petal = math.min(20, att.stacks.petal + 1)
 			att.stacks.petalAt = t
-		elseif aStyle.id == "byeokryeok" then
+		elseif aStyle.chargeEvery then
 			att.stacks.charge += 1
-			if att.stacks.charge >= 5 then
+			if att.stacks.charge >= aStyle.chargeEvery then
 				att.stacks.charge = 0
 				chain = true
 			end
@@ -649,7 +649,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if chain then
 		local victims = {}
 		for _, other in pairs(Combat.fighters) do
-			if other ~= tgt and Combat.hostile(att, other) and (other.root.Position - tgt.root.Position).Magnitude <= 16 then
+			if other ~= tgt and Combat.hostile(att, other) and (other.root.Position - tgt.root.Position).Magnitude <= (aStyle and aStyle.chainRange or 16) then
 				table.insert(victims, other)
 			end
 		end
@@ -661,7 +661,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return list
 		end)() })
 		for _, v in ipairs(victims) do
-			Combat.applyHit(att, v, { dmg = 9, posture = 12, stun = 1.0, kb = 4 }, { chain = true, move = { strike = true } })
+			Combat.applyHit(att, v, { dmg = aStyle and aStyle.chainDmg or 9, posture = 12, stun = 1.0, kb = 4 }, { chain = true, move = { strike = true } })
 		end
 		if not tgt.dead then
 			Combat.stun(tgt, 1.0)

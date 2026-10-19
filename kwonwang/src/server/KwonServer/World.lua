@@ -180,6 +180,23 @@ local function crystal(at: Vector3, size: number, color: Color3, parent: Instanc
 	return c
 end
 
+-- 석등: 돌 받침, 기둥, 빛나는 등 칸, 두 겹 돌 갓
+local STONE_LAMP = Color3.fromRGB(170, 165, 155)
+local function stoneLantern(at: Vector3, parent: Instance, lit: boolean)
+	part({ Name = "LampBase", Size = Vector3.new(2.6, 0.8, 2.6), Position = at + Vector3.new(0, 0.4, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampPillar", Size = Vector3.new(1, 4, 1), Position = at + Vector3.new(0, 2.8, 0), Color = STONE_LAMP, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampShelf", Size = Vector3.new(2.4, 0.4, 2.4), Position = at + Vector3.new(0, 4.9, 0), Color = STONE_LAMP, Material = Enum.Material.Granite, Parent = parent })
+	local box = part({ Name = "LampLight", Size = Vector3.new(1.6, 1.5, 1.6), Position = at + Vector3.new(0, 5.85, 0), Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	part({ Name = "LampCap", Size = Vector3.new(3, 0.5, 3), Position = at + Vector3.new(0, 6.85, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampCap2", Size = Vector3.new(1.6, 0.5, 1.6), Position = at + Vector3.new(0, 7.35, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	if lit then
+		light(box, WARM, 20, 1.3)
+	end
+end
+
+-- 붉은 칠 나무 (문루·종루 기둥)
+local GATE_RED = Color3.fromRGB(140, 45, 38)
+
 -- 깃발 (장대 + 천)
 local function banner(at: Vector3, h: number, color: Color3, parent: Instance)
 	part({ Name = "BannerPole", Size = Vector3.new(0.6, h, 0.6), Position = at + Vector3.new(0, h / 2, 0), Color = IRON, Material = Enum.Material.Metal, Parent = parent })
@@ -420,10 +437,12 @@ local function roads()
 			local a, b = road[i], road[i + 1]
 			local len = (b - a).Magnitude
 			if len > 0.5 then
-				-- 길마다 살짝 다른 높이 (겹치는 곳이 깜빡이지 않게)
-				local y = -0.08 + k * 0.012
+				-- 길마다 살짝 다른 높이 (겹치는 곳이 깜빡이지 않게). 자갈 가장자리 위에 돌을 깐 가운데 길
+				local y = -0.08 + k * 0.02
 				local mid = (a + b) / 2 + Vector3.new(0, y, 0)
-				part({ Name = "Road", Size = Vector3.new(18, 1, len + 18), CFrame = CFrame.lookAt(mid, mid + (b - a)), Color = Color3.fromRGB(170, 145, 105), Material = Enum.Material.Ground, Parent = folder })
+				local cf = CFrame.lookAt(mid, mid + (b - a))
+				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len + 22), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+				part({ Name = "Road", Size = Vector3.new(14, 1, len + 14), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
 			end
 		end
 	end
@@ -731,21 +750,8 @@ local function trainingSpots(out: any)
 		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
 		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
-	-- 대나무 경공 고리 (숲 속에 한 바퀴)
+	-- (경공 수련 고리는 없앴다)
 	out.rings = {}
-	local base = Vector3.new(-380, 0, -10)
-	for k = 0, 9 do
-		local a = k / 10 * math.pi * 2
-		local pos = base + Vector3.new(math.cos(a) * 70, 6 + (k % 3) * 7, math.sin(a) * 70)
-		local ringModel = Instance.new("Model")
-		ringModel.Name = "BambooRing" .. (k + 1)
-		ringModel.Parent = f
-		for s = 0, 11 do
-			local b = s / 12 * math.pi * 2
-			part({ Name = "RingPiece", Size = Vector3.new(1, 1.6, 1), CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a))) * CFrame.new(math.cos(b) * 5, math.sin(b) * 5, 0), Color = Color3.fromRGB(170, 255, 120), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = ringModel })
-		end
-		table.insert(out.rings, pos)
-	end
 end
 
 ------------------------------------------------------------------------
@@ -760,9 +766,8 @@ local function regions()
 	for _ = 1, 140 do
 		local x = B.center.X + rng:NextNumber(-B.size.X / 2 + 10, B.size.X / 2 - 10)
 		local z = B.center.Z + rng:NextNumber(-B.size.Z / 2 + 10, B.size.Z / 2 - 10)
-		-- 길과 경공 고리 자리는 비워 둔다
-		local d = (Vector3.new(x, 0, z) - Vector3.new(-380, 0, -10)).Magnitude
-		if math.abs(z) > 14 and (d < 55 or d > 85) and not nearRoad(Vector3.new(x, 0, z), 14) then
+		-- 길은 비워 둔다
+		if math.abs(z) > 14 and not nearRoad(Vector3.new(x, 0, z), 14) then
 			bamboo(Vector3.new(x, 0, z), bf)
 		end
 	end
@@ -857,32 +862,7 @@ local function regions()
 			rock(at, rng:NextNumber(3, 9), vf)
 		end
 	end
-	-- 바깥 들판의 나무
-	local edge = Config.WORLD_HALF - 60
-	for _ = 1, 140 do
-		local x, z = rng:NextNumber(-edge, edge), rng:NextNumber(-edge, edge)
-		local inside = nearRoad(Vector3.new(x, 0, z), 18)
-		for _, r in ipairs(Config.Regions) do
-			if not r.noGround and math.abs(x - r.center.X) < r.size.X / 2 + 10 and math.abs(z - r.center.Z) < r.size.Z / 2 + 10 then
-				inside = true
-			end
-		end
-		for _, r in ipairs(Config.Regions) do
-			for _, camp in ipairs(r.camps or {}) do
-				if (Vector3.new(x, 0, z) - camp.at).Magnitude < 30 then
-					inside = true
-				end
-			end
-		end
-		for _, lm in ipairs(Config.Landmarks) do
-			if (Vector3.new(x, 0, z) - lm.at).Magnitude < 80 then
-				inside = true
-			end
-		end
-		if not inside then
-			tree(Vector3.new(x, 0, z), rng:NextNumber(1.2, 2), folder)
-		end
-	end
+	-- (들판의 나무는 흩뿌리지 않는다: 길가의 가로수와 몇 군데의 작은 숲으로 - roadside)
 end
 
 ------------------------------------------------------------------------
@@ -1528,6 +1508,206 @@ function LANDMARK.pyramid(at: Vector3, f: Instance)
 end
 
 -- 천외봉: 구름바다 위로 하늘에 닿는 흰 봉우리. 둘레에 떠도는 고리와 섬, 꼭대기에서 하늘로 빛기둥. 발치에 시원자의 단
+-- 천년 종루: 세 층 누각 꼭대기에 커다란 청동 종. 층마다 빛나는 창과 처마
+function LANDMARK.belltower(at: Vector3, f: Instance)
+	local BRONZE = Color3.fromRGB(160, 110, 60)
+	part({ Name = "BellBase", Size = Vector3.new(40, 4, 40), Position = at + Vector3.new(0, 2, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+	part({ Name = "BellBase2", Size = Vector3.new(34, 3, 34), Position = at + Vector3.new(0, 5.5, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	for i = 0, 3 do
+		part({ Name = "BellStep", Size = Vector3.new(14, (i + 1) * 1.75, 3), Position = at + Vector3.new(0, (i + 1) * 0.875, -21.5 - (3 - i) * 3), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	end
+	local y = 7
+	local w = 26
+	for tier = 1, 3 do
+		local h = 14 - tier * 2
+		part({ Name = "BellWall", Size = Vector3.new(w, h, w), Position = at + Vector3.new(0, y + h / 2, 0), Color = WALLS[1], Material = Enum.Material.Plaster, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "BellPillar", Size = Vector3.new(2, h, 2), Position = at + Vector3.new(sx * w / 2, y + h / 2, sz * w / 2), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		for k = 0, 3 do
+			local yaw = k * math.pi / 2
+			local cf = CFrame.new(at + Vector3.new(0, y + h * 0.55, 0)) * CFrame.Angles(0, yaw, 0) * CFrame.new(0, 0, -w / 2 - 0.05)
+			part({ Name = "BellWindow", Size = Vector3.new(w * 0.4, h * 0.4, 0.2), CFrame = cf, Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		-- 처마: 사방으로 뻗은 기와 판
+		local ey = y + h
+		part({ Name = "BellEave", Size = Vector3.new(w + 10, 1, w + 10), Position = at + Vector3.new(0, ey + 0.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "BellEave2", Size = Vector3.new(w + 6, 1, w + 6), Position = at + Vector3.new(0, ey + 1.5, 0), Color = ROOF:Lerp(Color3.new(0, 0, 0), 0.2), Material = Enum.Material.Slate, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "EaveTip", Size = Vector3.new(1, 1.4, 1), CFrame = CFrame.new(at + Vector3.new(sx * (w / 2 + 5), ey + 1.3, sz * (w / 2 + 5))) * CFrame.Angles(0, 0, sx * math.rad(-30)), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+		end
+		y = ey + 2
+		w -= 6
+	end
+	-- 꼭대기 종각: 기둥 넷 위 지붕, 그 아래 매달린 큰 종
+	local top = at + Vector3.new(0, y, 0)
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "BellFrame", Size = Vector3.new(1.6, 16, 1.6), Position = top + Vector3.new(sx * 6, 8, sz * 6), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	part({ Name = "BellRoof", Size = Vector3.new(18, 1.2, 18), Position = top + Vector3.new(0, 16.6, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "BellRoof2", Size = Vector3.new(11, 2, 11), Position = top + Vector3.new(0, 18.2, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	crystal(top + Vector3.new(0, 22, 0), 2.4, GOLD, f)
+	disc("BellBody", top + Vector3.new(0, 8, 0), 4.4, 8, BRONZE, Enum.Material.Metal, f, false)
+	part({ Name = "BellCrown", Shape = Enum.PartType.Ball, Size = Vector3.new(7.6, 7.6, 7.6), Position = top + Vector3.new(0, 12, 0), Color = BRONZE, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+	disc("BellLip", top + Vector3.new(0, 4.2, 0), 4.9, 0.8, BRONZE:Lerp(GOLD, 0.4), Enum.Material.Metal, f, false)
+	disc("BellBand", top + Vector3.new(0, 9.5, 0), 4.6, 0.5, GOLD, Enum.Material.Metal, f, false)
+	part({ Name = "BellStriker", Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, 1.2, 1.2), Position = top + Vector3.new(0, 8, -7.5), Color = WOOD, Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	local glow = part({ Name = "BellGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), Position = top + Vector3.new(0, 6, 0), Color = WARM, Material = Enum.Material.Neon, Transparency = 0.4, CanCollide = false, Parent = f })
+	light(glow, WARM, 40, 2)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		brazier(at + Vector3.new(math.cos(a) * 26, 0, math.sin(a) * 26), 1.2, f)
+	end
+end
+
+-- 거울 호수: 하늘을 비추는 둥근 호수. 디딤돌이 가운데 섬의 정자로 이어지고, 연잎이 떠 있다
+function LANDMARK.mirrorlake(at: Vector3, f: Instance)
+	local R = 72
+	for k = 0, 47 do
+		local a = k / 48 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * (R + 2), 0.6, math.sin(a) * (R + 2))
+		part({ Name = "LakeRim", Size = Vector3.new(3.4, 1.4, R * 0.14), CFrame = CFrame.lookAt(p, at + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Granite, Parent = f })
+	end
+	local water = disc("MirrorWater", at + Vector3.new(0, 0.55, 0), R, 0.3, Color3.fromRGB(120, 165, 205), Enum.Material.Glass, f, false)
+	water.Transparency = 0.05
+	water.Reflectance = 0.55
+	disc("LakeBed", at + Vector3.new(0, 0.2, 0), R, 0.3, Color3.fromRGB(40, 60, 80), Enum.Material.Slate, f, false)
+	-- 가운데 섬과 정자
+	disc("Isle", at + Vector3.new(0, 1, 0), 14, 1.4, Color3.fromRGB(110, 150, 95), Enum.Material.Grass, f)
+	pavilion(at + Vector3.new(0, 1.7, 0), 8, 8, 11, Color3.fromRGB(60, 72, 100), f, Color3.fromRGB(170, 220, 255))
+	-- 남쪽 기슭에서 섬까지 디딤돌
+	for i = 0, 11 do
+		local d = R + 4 - i * 5.2
+		if d > 14 then
+			local wob = math.sin(i * 1.3) * 3
+			disc("SteppingStone", at + Vector3.new(wob, 0.9, d), 2.2, 0.8, Color3.fromRGB(160, 155, 145), Enum.Material.Slate, f)
+		end
+	end
+	-- 연잎과 연꽃
+	for k = 0, 21 do
+		local a = k * 2.399
+		local d = 22 + (k * 13 % 45)
+		local p = at + Vector3.new(math.cos(a) * d, 0.75, math.sin(a) * d)
+		if math.abs(p.X - at.X) > 6 or p.Z < at.Z then
+			disc("LotusPad", p, 1.6 + (k % 3) * 0.4, 0.15, Color3.fromRGB(70, 140, 70), Enum.Material.Grass, f, false)
+			if k % 3 == 0 then
+				part({ Name = "Lotus", Shape = Enum.PartType.Ball, Size = Vector3.new(1.1, 0.9, 1.1), Position = p + Vector3.new(0.4, 0.5, 0), Color = Color3.fromRGB(255, 160, 200), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		local p = at + Vector3.new(math.cos(a) * (R + 10), 0, math.sin(a) * (R + 10))
+		stoneLantern(p, f, k % 2 == 0)
+		tree(at + Vector3.new(math.cos(a + 0.2) * (R + 22), 0, math.sin(a + 0.2) * (R + 22)), 1.6, f, k % 3 == 0)
+	end
+end
+
+-- 거신의 손: 땅에서 솟은 거대한 돌손이 빛나는 구슬을 받쳐 든다. 둘레는 갈라진 바위
+function LANDMARK.gianthand(at: Vector3, f: Instance)
+	local ROCKC = Color3.fromRGB(150, 145, 140)
+	local cf = CFrame.new(at) * CFrame.Angles(0, math.rad(30), 0)
+	local function blk(name: string, size: Vector3, c: CFrame)
+		part({ Name = name, Size = size, CFrame = cf * c, Color = ROCKC, Material = Enum.Material.Granite, Parent = f })
+	end
+	blk("HandWrist", Vector3.new(16, 30, 12), CFrame.new(0, 12, 0) * CFrame.Angles(math.rad(-8), 0, 0))
+	blk("HandPalm", Vector3.new(20, 18, 10), CFrame.new(0, 34, -3) * CFrame.Angles(math.rad(-25), 0, 0))
+	for i, x in ipairs({ -7.2, -2.4, 2.4, 7.2 }) do
+		local len = (i == 2 or i == 3) and 12 or 10
+		local base = CFrame.new(x, 44, -7) * CFrame.Angles(math.rad(-40), 0, 0)
+		blk("Finger", Vector3.new(4.2, len, 4.2), base * CFrame.new(0, len / 2, 0))
+		blk("FingerTip", Vector3.new(3.8, len * 0.8, 3.8), base * CFrame.new(0, len, 0) * CFrame.Angles(math.rad(-35), 0, 0) * CFrame.new(0, len * 0.4, 0))
+	end
+	blk("Thumb", Vector3.new(5, 12, 5), CFrame.new(-11, 32, -6) * CFrame.Angles(math.rad(-30), 0, math.rad(50)))
+	local orb = part({ Name = "HandOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(11, 11, 11), Position = (cf * CFrame.new(0, 47, -14)).Position, Color = Color3.fromRGB(140, 220, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(orb, Color3.fromRGB(140, 220, 255), 70, 3)
+	emitter(orb, Color3.fromRGB(190, 240, 255), 16, 1.6, 6, 2)
+	-- 갈라진 땅: 둘레로 기울어 솟은 바위판
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * 26, 0, math.sin(a) * 26)
+		part({ Name = "CrackSlab", Size = Vector3.new(10, 2, 7), CFrame = CFrame.lookAt(p, at) * CFrame.Angles(math.rad(-22), 0, 0) + Vector3.new(0, 1, 0), Color = Color3.fromRGB(110, 105, 100), Material = Enum.Material.Slate, Parent = f })
+	end
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.3
+		crystal(at + Vector3.new(math.cos(a) * 38, 4, math.sin(a) * 38), 2, Color3.fromRGB(140, 220, 255), f)
+	end
+end
+
+-- 별똥 분화구: 솟은 바위 테 안의 검게 탄 바닥, 한가운데 금이 간 운석이 아직 빛난다
+function LANDMARK.crater(at: Vector3, f: Instance)
+	local R = 60
+	disc("CraterFloor", at + Vector3.new(0, 0.3, 0), R, 0.4, Color3.fromRGB(45, 38, 40), Enum.Material.Basalt, f)
+	for k = 0, 35 do
+		local a = k / 36 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * R, 0, math.sin(a) * R)
+		local h = 6 + (k * 7 % 5)
+		part({ Name = "CraterRim", Size = Vector3.new(12, h, 9), CFrame = CFrame.lookAt(p + Vector3.new(0, h / 2 - 1, 0), at + Vector3.new(0, h / 2 - 1, 0)) * CFrame.Angles(math.rad(25), 0, 0), Color = Color3.fromRGB(95, 85, 82), Material = Enum.Material.Rock, Parent = f })
+	end
+	local meteor = part({ Name = "Meteor", Shape = Enum.PartType.Ball, Size = Vector3.new(22, 22, 22), Position = at + Vector3.new(0, 7, 0), Color = Color3.fromRGB(40, 32, 36), Material = Enum.Material.Basalt, Parent = f })
+	local _ = meteor
+	for k = 0, 9 do
+		local a = k * 0.63
+		local d = Vector3.new(math.cos(a), math.sin(k * 1.7) * 0.6, math.sin(a)).Unit
+		part({ Name = "MeteorCrack", Size = Vector3.new(0.6, 0.6, 9), CFrame = CFrame.lookAt(at + Vector3.new(0, 7, 0) + d * 10.6, at + Vector3.new(0, 7, 0) + d * 10.6 + Vector3.new(-d.Z, 0.3, d.X)), Color = Color3.fromRGB(255, 120, 60), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local core = part({ Name = "MeteorGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(4, 4, 4), Position = at + Vector3.new(0, 19, 0), Color = Color3.fromRGB(255, 140, 70), Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = f })
+	light(core, Color3.fromRGB(255, 130, 60), 60, 3)
+	emitter(core, Color3.fromRGB(255, 160, 80), 10, 1.2, 5, 2.5)
+	for k = 0, 15 do
+		local a = k * 2.2
+		local d = 18 + (k * 11 % 34)
+		crystal(at + Vector3.new(math.cos(a) * d, 1.6, math.sin(a) * d), 1 + (k % 3) * 0.4, k % 2 == 0 and Color3.fromRGB(255, 150, 80) or Color3.fromRGB(190, 140, 255), f)
+	end
+end
+
+-- 천 개의 계단: 구름 위 떠 있는 문까지 곧게 오르는 긴 돌계단, 계단참마다 석등
+function LANDMARK.thousandsteps(at: Vector3, f: Instance)
+	local face = Vector3.new(-at.X, 0, -at.Z).Unit -- 마을 쪽에서 오른다
+	local cf = CFrame.lookAt(at, at - face)
+	local steps = 44
+	for i = 0, steps - 1 do
+		local y = i * 1.4
+		part({ Name = "Step", Size = Vector3.new(16, 1.4, 3.2), CFrame = cf * CFrame.new(0, y + 0.7, -i * 3.2), Color = i % 11 == 10 and STONE_DARK or STONE, Material = Enum.Material.Marble, Parent = f })
+		if i % 11 == 10 then
+			for _, sx in ipairs({ -1, 1 }) do
+				stoneLantern((cf * CFrame.new(sx * 9.5, y + 1.4, -i * 3.2)).Position, f, sx == 1)
+			end
+		end
+	end
+	-- 계단 양옆의 난간
+	local L = steps * 3.2
+	local H = steps * 1.4
+	for _, sx in ipairs({ -1, 1 }) do
+		local p0 = cf * CFrame.new(sx * 8.6, 1.5, 0)
+		local p1 = cf * CFrame.new(sx * 8.6, H + 1.5, -L)
+		local mid = (p0.Position + p1.Position) / 2
+		part({ Name = "StepRail", Size = Vector3.new(1.2, 1.4, (p1.Position - p0.Position).Magnitude), CFrame = CFrame.lookAt(mid, p1.Position), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+	end
+	-- 꼭대기 단과 떠 있는 문
+	local topCf = cf * CFrame.new(0, H, -L - 12)
+	part({ Name = "StepTop", Size = Vector3.new(30, 2, 24), CFrame = topCf * CFrame.new(0, 0, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "SkyGatePost", Size = Vector3.new(2.4, 22, 2.4), CFrame = topCf * CFrame.new(sx * 9, 13, 0), Color = Color3.fromRGB(235, 235, 245), Material = Enum.Material.Marble, Parent = f })
+		crystal((topCf * CFrame.new(sx * 9, 26, 0)).Position, 1.8, Color3.fromRGB(190, 220, 255), f)
+	end
+	part({ Name = "SkyGateBeam", Size = Vector3.new(26, 2, 3), CFrame = topCf * CFrame.new(0, 23, 0), Color = Color3.fromRGB(235, 235, 245), Material = Enum.Material.Marble, Parent = f })
+	local veil = part({ Name = "SkyGateVeil", Size = Vector3.new(15.6, 20, 0.3), CFrame = topCf * CFrame.new(0, 12, 0), Color = Color3.fromRGB(190, 220, 255), Material = Enum.Material.ForceField, Transparency = 0.2, CanCollide = false, Parent = f })
+	light(veil, Color3.fromRGB(190, 220, 255), 50, 2.5)
+	-- 꼭대기 둘레의 구름
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local p = (topCf * CFrame.new(math.cos(a) * 26, -4 + (k % 3) * 2, math.sin(a) * 20)).Position
+		part({ Name = "StepCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(14, 7, 14), Position = p, Color = Color3.fromRGB(245, 247, 252), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, Parent = f })
+	end
+end
+
 -- 일월대: 해와 달의 단. 동쪽엔 금빛 해의 탑, 서쪽엔 은빛 달의 탑, 가운데 반은 금빛·반은 은빛인 단 위에 권존이 선다
 function LANDMARK.sunmoon(at: Vector3, f: Instance)
 	local m = Config.MASTERS.ilwol
@@ -2239,9 +2419,206 @@ end
 ------------------------------------------------------------------------
 -- 지역 이름 표지
 ------------------------------------------------------------------------
-local function regionSigns()
+------------------------------------------------------------------------
+-- 정갈한 강호: 길가의 석등과 가로수, 지역마다 낮은 돌테두리와 길이 드는 곳의 문루
+------------------------------------------------------------------------
+local VILLAGE_PAD = 200 -- 마을 성벽 둘레는 마을 것으로 둔다
+local function inAnyRegion(p: Vector3, pad: number): boolean
+	if math.abs(p.X) < VILLAGE_PAD + pad and math.abs(p.Z) < VILLAGE_PAD + pad then
+		return true
+	end
+	for _, r in ipairs(Config.Regions) do
+		if not r.noGround and math.abs(p.X - r.center.X) < r.size.X / 2 + pad and math.abs(p.Z - r.center.Z) < r.size.Z / 2 + pad then
+			return true
+		end
+	end
+	return false
+end
+local function nearFeature(p: Vector3, d: number): boolean
+	for _, lm in ipairs(Config.Landmarks) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(lm.at.X, 0, lm.at.Z)).Magnitude < 90 + d then
+			return true
+		end
+	end
+	for _, r in ipairs(Config.Regions) do
+		for _, camp in ipairs(r.camps or {}) do
+			if (Vector3.new(p.X, 0, p.Z) - camp.at).Magnitude < 34 + d then
+				return true
+			end
+		end
+	end
+	for _, m in pairs(Config.MASTERS) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(m.at.X, 0, m.at.Z)).Magnitude < 50 + d then
+			return true
+		end
+	end
+	for _, fr in ipairs(Config.Fragments) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(fr.at.X, 0, fr.at.Z)).Magnitude < 16 + d then
+			return true
+		end
+	end
+	return false
+end
+
+-- 길가: 70칸마다 석등 (양쪽 번갈아), 길 양쪽으로 가로수
+local function roadside()
+	local f = Instance.new("Folder")
+	f.Name = "Roadside"
+	f.Parent = folder
+	local lit = 0
+	for _, road in ipairs(Config.Roads) do
+		for i = 1, #road - 1 do
+			local a, b = road[i], road[i + 1]
+			local len = (b - a).Magnitude
+			if len > 40 then
+				local dir = (b - a).Unit
+				local perp = Vector3.new(-dir.Z, 0, dir.X)
+				local n = math.max(1, math.floor(len / 70))
+				for j = 1, n - 1 do
+					local p = a + (b - a) * (j / n)
+					local side = j % 2 == 0 and 1 or -1
+					local lp = p + perp * 14 * side
+					if not inAnyRegion(lp, 6) and not nearFeature(lp, 0) and not nearRoad(lp, 12) then
+						lit += 1
+						stoneLantern(lp, f, lit % 2 == 0 and lit <= 240)
+					end
+					-- 가로수: 석등과 엇갈려 길 양쪽에
+					for _, sd in ipairs({ -1, 1 }) do
+						local tp = p + dir * 35 + perp * 27 * sd
+						if (tp - a):Dot(dir) < len - 20 and not inAnyRegion(tp, 10) and not nearFeature(tp, 10) and not nearRoad(tp, 22) then
+							tree(tp, 1.45, f)
+						end
+					end
+				end
+			end
+		end
+	end
+	-- 들판의 작은 숲 (흩뿌리지 않고, 몇 군데에 모아 심는다)
+	local groves = {
+		Vector3.new(-760, 0, 760), Vector3.new(760, 0, -760), Vector3.new(-1300, 0, 450), Vector3.new(1250, 0, -420),
+		Vector3.new(700, 0, 1200), Vector3.new(-700, 0, -1200), Vector3.new(1100, 0, 1950), Vector3.new(-1900, 0, 1300),
+		Vector3.new(2300, 0, 1500), Vector3.new(-2300, 0, -900), Vector3.new(950, 0, -1500), Vector3.new(-1000, 0, 1700),
+		Vector3.new(2900, 0, 400), Vector3.new(-2800, 0, 600), Vector3.new(1500, 0, 2600), Vector3.new(-2500, 0, -1800),
+	}
+	for gi, c in ipairs(groves) do
+		if not inAnyRegion(c, 40) and not nearFeature(c, 30) and not nearRoad(c, 40) then
+			local n = 6 + gi % 3
+			for k = 0, n - 1 do
+				local a = k / n * math.pi * 2 + gi
+				local p = c + Vector3.new(math.cos(a), 0, math.sin(a)) * (12 + (k % 2) * 8)
+				tree(p, 1.3 + (k % 3) * 0.2, f, gi % 4 == 0)
+			end
+			tree(c, 2.1, f)
+			rock(c + Vector3.new(9, 0, -6), 5, f)
+		end
+	end
+end
+
+-- 문루: 길이 지역으로 드는 곳. 붉은 칠 나무 기둥 둘, 두 겹 들보, 기와 지붕, 이름 현판, 석등 한 쌍
+local function regionGate(at: Vector3, dir: Vector3, title: string, accent: Color3, parent: Instance)
+	local cf = CFrame.lookAt(at, at + dir)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "GateStone", Size = Vector3.new(3.4, 1.4, 3.4), CFrame = cf * CFrame.new(sx * 12.5, 0.7, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+		part({ Name = "GatePost", Size = Vector3.new(2, 15, 2), CFrame = cf * CFrame.new(sx * 12.5, 8.4, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+		part({ Name = "GatePostBand", Size = Vector3.new(2.3, 0.5, 2.3), CFrame = cf * CFrame.new(sx * 12.5, 3, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+		stoneLantern((cf * CFrame.new(sx * 17, 0, -5)).Position, parent, true)
+	end
+	part({ Name = "GateBeam", Size = Vector3.new(30, 1.8, 2.4), CFrame = cf * CFrame.new(0, 15.6, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+	part({ Name = "GateBeam2", Size = Vector3.new(26, 1, 1.6), CFrame = cf * CFrame.new(0, 12.6, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+	part({ Name = "GateBeamTrim", Size = Vector3.new(30.2, 0.3, 2.6), CFrame = cf * CFrame.new(0, 14.6, 0), Color = accent, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	for _, sz in ipairs({ -1, 1 }) do
+		part({ Name = "GateRoof", Size = Vector3.new(34, 0.7, 3.4), CFrame = cf * CFrame.new(0, 17.3, sz * 1.25) * CFrame.Angles(sz * math.rad(24), 0, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = parent })
+	end
+	part({ Name = "GateRidge", Size = Vector3.new(35, 0.8, 0.9), CFrame = cf * CFrame.new(0, 18.1, 0), Color = ROOF:Lerp(Color3.new(0, 0, 0), 0.3), Material = Enum.Material.Slate, Parent = parent })
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "GateRidgeEnd", Size = Vector3.new(1, 1.6, 1), CFrame = cf * CFrame.new(sx * 17.3, 18.6, 0) * CFrame.Angles(0, 0, sx * math.rad(-25)), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+	end
+	local plate = part({ Name = "GatePlate", Size = Vector3.new(12, 2.6, 0.4), CFrame = cf * CFrame.new(0, 10.6, 0), Color = Color3.fromRGB(30, 22, 16), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	sign(plate, Enum.NormalId.Front, { { title, Color3.fromRGB(255, 220, 140), 1 } })
+	sign(plate, Enum.NormalId.Back, { { title, Color3.fromRGB(255, 220, 140), 1 } })
+end
+
+-- 지역 테두리: 둘레에 낮은 돌 턱 (길이 지나는 곳은 비우고 문루), 네 모서리에 석등
+local gatedRegions: { [string]: boolean } = {}
+local function regionFrames()
+	local f = Instance.new("Folder")
+	f.Name = "RegionFrames"
+	f.Parent = folder
+	local gates: { Vector3 } = {}
 	for _, r in ipairs(Config.Regions) do
 		if r.id ~= "village" and not r.noGround then
+			local x0, x1 = r.center.X - r.size.X / 2, r.center.X + r.size.X / 2
+			local z0, z1 = r.center.Z - r.size.Z / 2, r.center.Z + r.size.Z / 2
+			-- 네 변: { 고정축, 값, 범위 시작, 범위 끝 }
+			local edges = { { "x", x0, z0, z1 }, { "x", x1, z0, z1 }, { "z", z0, x0, x1 }, { "z", z1, x0, x1 } }
+			local accent = r.ground:Lerp(Color3.new(1, 1, 1), 0.45)
+			for _, e in ipairs(edges) do
+				local fixed, v, lo, hi = e[1], e[2], e[3], e[4]
+				local cuts: { number } = {}
+				for _, road in ipairs(Config.Roads) do
+					for i = 1, #road - 1 do
+						local a, b = road[i], road[i + 1]
+						local av = fixed == "x" and a.X or a.Z
+						local bv = fixed == "x" and b.X or b.Z
+						if (av - v) * (bv - v) < 0 then
+							local t = (v - av) / (bv - av)
+							local along = fixed == "x" and (a.Z + (b.Z - a.Z) * t) or (a.X + (b.X - a.X) * t)
+							if along > lo + 4 and along < hi - 4 then
+								table.insert(cuts, along)
+								local pos = fixed == "x" and Vector3.new(v, 0, along) or Vector3.new(along, 0, v)
+								local dupe = false
+								for _, g in ipairs(gates) do
+									if (g - pos).Magnitude < 60 then
+										dupe = true
+									end
+								end
+								local nearVillage = math.abs(pos.X) < VILLAGE_PAD + 40 and math.abs(pos.Z) < VILLAGE_PAD + 40
+								if not dupe and not nearVillage then
+									table.insert(gates, pos)
+									gatedRegions[r.id] = true
+									local inward = Vector3.new(r.center.X - pos.X, 0, r.center.Z - pos.Z)
+									local rd = (b - a).Unit
+									if rd:Dot(inward) < 0 then
+										rd = -rd
+									end
+									pcall(regionGate, pos, rd, r.name, accent, f)
+								end
+							end
+						end
+					end
+				end
+				table.sort(cuts)
+				-- 길이 지나는 자리(폭 30)를 비우고 돌 턱을 놓는다
+				local from = lo
+				local spans: { { number } } = {}
+				for _, c in ipairs(cuts) do
+					table.insert(spans, { from, c - 15 })
+					from = c + 15
+				end
+				table.insert(spans, { from, hi })
+				for _, sp in ipairs(spans) do
+					local l = sp[2] - sp[1]
+					if l > 2 then
+						local mid = (sp[1] + sp[2]) / 2
+						local pos = fixed == "x" and Vector3.new(v, 0.55, mid) or Vector3.new(mid, 0.55, v)
+						local size = fixed == "x" and Vector3.new(1.8, 0.9, l) or Vector3.new(l, 0.9, 1.8)
+						part({ Name = "RegionCurb", Size = size, Position = pos, Color = Color3.fromRGB(150, 144, 132), Material = Enum.Material.Cobblestone, Parent = f })
+					end
+				end
+			end
+			for _, cx in ipairs({ x0, x1 }) do
+				for _, cz in ipairs({ z0, z1 }) do
+					stoneLantern(Vector3.new(cx, 0, cz), f, false)
+				end
+			end
+		end
+	end
+end
+
+local function regionSigns()
+	for _, r in ipairs(Config.Regions) do
+		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
+		if r.id ~= "village" and not r.noGround and not gatedRegions[r.id] then
 			local dir = Vector3.new(r.center.X, 0, r.center.Z).Unit
 			local pos = r.center - dir * (math.max(r.size.X, r.size.Z) / 2 - 12)
 			-- 길 옆 (길과 직각으로 비켜서)
@@ -2282,6 +2659,8 @@ function World.build(): any
 		end },
 		{ "숨은 자리", secretSite },
 		{ "지형", terrainHills },
+		{ "지역 테두리", regionFrames },
+		{ "길가", roadside },
 		{ "표지", regionSigns },
 	}) do
 		local ok, err = pcall(step[2] :: any)

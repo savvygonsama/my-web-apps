@@ -124,10 +124,10 @@ end
 Config.Training = {
 	rock = { name = "바위 들기", stat = "str", icon = "🪨", desc = "고리가 줄어들 때 맞춰 누르세요", base = 1 },
 	waterfall = { name = "폭포 명상", stat = "chi", icon = "💧", desc = "숨이 가장 커질 때 누르세요", base = 1 },
-	bamboo = { name = "대나무 경공", stat = "agi", icon = "🎋", desc = "빛나는 대나무 고리를 지나가세요", base = 1 },
-	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
+	-- 목인장: 나무팔을 흘리며 몸과 발놀림을 함께 단련한다 (경공 수련은 없앴다)
+	dummy = { name = "목인장", stat = "vit", gains = { vit = 1, agi = 1 }, icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F). 체력과 경공이 함께 오른다", base = 1 },
 	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
-	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
+	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1, agi = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
 	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
 	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
@@ -318,6 +318,7 @@ Config.Styles = {
 		desc = "벼락처럼 빠르고 곧은 주먹. 맞힐 때마다 전하가 차오르고, 다 차면 다음 공격에서 번개가 주변으로 튀어 모두 마비시킨다.",
 		gimmick = "전하: 맞힐 때마다 1 (최대 5). 5가 되면 다음 공격이 연쇄 번개 (주변 적 마비)",
 		deflect = 0.2,
+		chargeEvery = 5,
 		stance = "stance_byeokryeok",
 		combo = {
 			{ id = "bk1", name = "섬전권", pose = "thunder_jab", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 3.5, 7, 7, 0.35, 6) } },
@@ -589,7 +590,7 @@ table.insert(Config.Styles, {
 	secret = true,
 	realmReq = 16,
 	styleReq = "taecho",
-	trialHp = 16, -- 시험의 분신 체력 열여섯 배
+	trialHp = 10, -- 시험 (권존이 직접 보스로) 체력 열 배
 	unlockHint = "태초신권을 익힌 천외천의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
 	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
 	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고, 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
@@ -651,6 +652,117 @@ table.insert(Config.Styles, {
 			mech = { kind = "tornado", dist = 8, speed = 10, dur = 3.2, every = 0.2, radius = 13, hit = hit(0, 0, 0, 6, 6, 0.3, 0), final = hit(0, 0, 0, 45, 60, 1.0, 0, 0) } },
 	},
 })
+-- 각성 권법 (진): 원래 권법을 완전 각성하고 두 번 깨달은 자가, 각성 시련에서 '각성한 자기 그림자'를 넘으면 얻는다
+-- 기술은 원래 권법 그대로 (버전 2): 모든 기술이 더 세고, 빛깔이 바뀌고, 고유 장치와 오의가 한층 커진다
+local function deepCopy(t: any): any
+	if type(t) ~= "table" then
+		return t
+	end
+	local out = {}
+	for k, v in pairs(t) do
+		out[k] = deepCopy(v)
+	end
+	return out
+end
+-- 표 안의 모든 타격(dmg가 있는 표)을 k배로 (기술 이름 id 앞에는 v를 붙여 원래 것과 구별)
+local function boostHits(t: any, k: number)
+	if type(t) ~= "table" then
+		return
+	end
+	if type(t.dmg) == "number" then
+		t.dmg *= k
+		if type(t.posture) == "number" then
+			t.posture *= 1 + (k - 1) * 0.5
+		end
+	end
+	if type(t.id) == "string" then
+		t.id = "v" .. t.id
+	end
+	for _, v in pairs(t) do
+		if type(v) == "table" then
+			boostHits(v, k)
+		end
+	end
+end
+local function awakened(baseId: string, k: number, over: { [string]: any }): any
+	local base
+	for _, st in ipairs(Config.Styles) do
+		if st.id == baseId then
+			base = st
+		end
+	end
+	local v = deepCopy(base)
+	v.combo = deepCopy(base.combo)
+	boostHits(v.combo, k)
+	boostHits(v.heavy, k)
+	boostHits(v.skills, k)
+	for key, x in pairs(over) do
+		v[key] = x
+	end
+	v.awakenOf = baseId
+	v.hidden = true
+	table.insert(Config.Styles, v)
+	return v
+end
+-- 각성 조건 (세 권법 모두): 원래 권법 숙련 최대 + 깨달음 두 번 + 무극 경지 + 은자
+Config.AWAKEN_STYLE = { realm = 13, coins = 200000, trialHp = 6 }
+do
+	local v = awakened("hyeolma", 1.5, {
+		id = "hyeolma2", name = "진 혈마신수", hanja = "眞血魔神手", icon = "🩸", grade = "신화",
+		color = Color3.fromRGB(240, 20, 50), color2 = Color3.fromRGB(255, 205, 110),
+		lifesteal = 0.12,
+		unlockHint = "혈마신수를 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 피에 물든 자기 그림자를 넘어라",
+		desc = "혈마의 손이 주인을 알아보고 깨어났다. 손톱 끝의 피가 금빛으로 끓는다. 혈마신수의 모든 기술이 그대로, 그러나 한층 더 깊고 붉다.",
+		gimmick = "진 흡혈: 준 피해의 12%를 되찾는다 (광란 중엔 세 배). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초",
+	})
+	local G = v.skills.G
+	G.buff = { kind = "frenzy", dur = 10 }
+	G.desc = "등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 세 배)"
+	local strike = G.mech.strikes[1].hit
+	G.mech.dur = 5
+	G.mech.scale = 1.35
+	G.mech.strikes = {}
+	for i = 0, 5 do
+		table.insert(G.mech.strikes, { t = 0.9 + i * 0.5, at = "targets", n = 4, radius = 10, hit = strike })
+	end
+	table.insert(G.mech.strikes, { t = 4.2, at = "around", radius = 28, hit = hit(0, 0, 0, 110, 140, 1.4, 70, 14) })
+end
+do
+	local v = awakened("cheonryong", 1.5, {
+		id = "cheonryong2", name = "진 천룡파천장", hanja = "眞天龍破天掌", icon = "🐲", grade = "신화",
+		color = Color3.fromRGB(255, 195, 60), color2 = Color3.fromRGB(255, 248, 215),
+		charge = 1.0,
+		unlockHint = "천룡파천장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 용을 두른 자기 그림자를 넘어라",
+		desc = "푸른 용이 허물을 벗고 금빛 진룡이 되었다. 장풍은 더 빨리 모이고, 땅을 뚫고 나오는 용은 하늘을 다 덮는다.",
+		gimmick = "진 용기: 1초면 장풍이 가득 모인다. 모든 기술 1.5배. 진 진룡강림: 거대한 금룡이 다섯 번 내리꽂히고 더 큰 숨을 뿜는다",
+	})
+	local G = v.skills.G
+	G.desc = "땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고, 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"
+	local strike = G.mech.strikes[1].hit
+	local breath = G.mech.strikes[#G.mech.strikes].hit
+	G.mech.dur = 3.6
+	G.mech.scale = 1.4
+	G.mech.strikes = {}
+	for i = 0, 4 do
+		table.insert(G.mech.strikes, { t = 0.9 + i * 0.4, at = "targets", n = 1, radius = 11, hit = strike })
+	end
+	table.insert(G.mech.strikes, { t = 3.1, at = "front", dist = 18, radius = 22, hit = breath })
+end
+do
+	local v = awakened("byeokryeok", 1.5, {
+		id = "byeokryeok2", name = "진 벽력신권", hanja = "眞霹靂神拳", icon = "🌩", grade = "신화",
+		color = Color3.fromRGB(175, 110, 255), color2 = Color3.fromRGB(235, 228, 255),
+		chargeEvery = 4, chainDmg = 22, chainRange = 22,
+		unlockHint = "벽력신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 보랏빛 벼락이 된 자기 그림자를 넘어라",
+		desc = "노란 벼락이 보랏빛 천뢰가 되었다. 주먹이 닿기 전에 소리가 먼저 터지고, 연쇄 번개가 더 멀리 더 세게 튄다.",
+		gimmick = "진 전하: 네 번 맞히면 연쇄 천뢰 (더 넓고 더 세다). 모든 기술 1.5배. 진 뇌신화: 열한 번 튀고 하늘이 크게 갈라진다",
+	})
+	local G = v.skills.G
+	G.desc = "몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고, 마지막에 하늘이 크게 갈라진다"
+	G.mech.n = 11
+	G.mech.finalRadius = 26
+end
+
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
 Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
 Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
@@ -737,6 +849,9 @@ local FINISHERS = {
 	pacheon = { name = "파천승천권", pose = "grav_hammer" },
 	taecho = { name = "태초승천각", pose = "origin_kick" },
 	ilwol = { name = "일월승천각", pose = "sun_wheel" },
+	hyeolma2 = { name = "진 혈마승천조", pose = "blood_rake" },
+	cheonryong2 = { name = "진 승룡장", pose = "dragon_rise" },
+	byeokryeok2 = { name = "진 벽력천추", pose = "knee_strike" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -748,7 +863,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1033,6 +1148,20 @@ boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 70, 25) }),
 } })
 
+-- 일월의 시련: 권존이 분신 없이 직접, 보스처럼 세 단계로 싸운다 (한낮 → 밤 → 새벽)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "ilwol" then
+		st.trialBoss = { hp = 3200, posture = 720, scale = 1.9, reach = 1.5, speed = 21, patterns = {
+			P("rain", "대일낙하", 1, { count = 6, radius = 8, spread = 22, warn = 1.0, cd = 7, pose = "sun_call", fx = "fire", color = Color3.fromRGB(255, 185, 60), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
+			P("donut", "만월 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "moon_throw", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "월광 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "moon_seal", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "월하 낙성", 2, { count = 8, radius = 7, spread = 24, warn = 0.9, cd = 7, pose = "sun_call", fx = "star", color = Color3.fromRGB(205, 220, 255), hit = hit(0, 0, 0, 30, 36, 0.7, 20) }),
+			P("leap", "일륜 낙하", 3, { radius = 17, warn = 1.0, cd = 7, pose = "sun_wheel", hit = hit(0, 0, 0, 50, 70, 1.1, 45, 20) }),
+			P("quake", "일식", 3, { radius = 26, warn = 1.4, cd = 9, pose = "ult_eclipse", hit = hit(0, 0, 0, 70, 100, 1.4, 60, 24) }),
+		} }
+	end
+end
+
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
 -- 적은 근처에 사람이 있을 때만 움직인다
@@ -1188,6 +1317,11 @@ Config.Landmarks = {
 	{ id = "pyramid", name = "사왕의 무덤", icon = "🔺", at = Vector3.new(-900, 0, 3140) },
 	{ id = "skyspire", name = "천외봉", icon = "✴", at = Vector3.new(0, 0, -3180) },
 	{ id = "sunmoon", name = "일월대", icon = "☀", at = Vector3.new(2500, 0, 2640) },
+	{ id = "belltower", name = "천년 종루", icon = "🔔", at = Vector3.new(2700, 0, 900) },
+	{ id = "mirrorlake", name = "거울 호수", icon = "🪞", at = Vector3.new(1100, 0, 2500) },
+	{ id = "gianthand", name = "거신의 손", icon = "✋", at = Vector3.new(-2500, 0, 1900) },
+	{ id = "crater", name = "별똥 분화구", icon = "☄", at = Vector3.new(1100, 0, -2700) },
+	{ id = "thousandsteps", name = "천 개의 계단", icon = "🪜", at = Vector3.new(-2700, 0, -2700) },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -1265,7 +1399,6 @@ Config.TrainingSpots = {
 	{ kind = "dummy", at = Vector3.new(80, 0, -40) },
 	{ kind = "waterfall", at = Vector3.new(560, 0, -10) },
 	{ kind = "waterfall", at = Vector3.new(580, 0, 15) },
-	{ kind = "bamboo", at = Vector3.new(-380, 0, -10) },
 	{ kind = "mabo", at = Vector3.new(-105, 0, -15) },
 	{ kind = "mabo", at = Vector3.new(-105, 0, 5) },
 	{ kind = "ironpalm", at = Vector3.new(105, 0, -15) },
@@ -1306,8 +1439,8 @@ Config.AUTO_TRAIN = {
 	every = 3,
 	advEvery = 1,
 	advMult = 1,
-	kinds = { str = "rock", vit = "dummy", agi = "bamboo", chi = "waterfall" },
-	advKinds = { str = "ironpalm", vit = "mabo", agi = "bamboo", chi = "breathing" },
+	kinds = { str = "rock", vit = "dummy", agi = "dummy", chi = "waterfall" },
+	advKinds = { str = "ironpalm", vit = "mabo", agi = "mabo", chi = "breathing" },
 }
 Config.PREMIUM_BY_ID = {}
 for _, it in ipairs(Config.Premium) do

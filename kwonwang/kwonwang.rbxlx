@@ -144,10 +144,10 @@ end
 Config.Training = {
 	rock = { name = "바위 들기", stat = "str", icon = "🪨", desc = "고리가 줄어들 때 맞춰 누르세요", base = 1 },
 	waterfall = { name = "폭포 명상", stat = "chi", icon = "💧", desc = "숨이 가장 커질 때 누르세요", base = 1 },
-	bamboo = { name = "대나무 경공", stat = "agi", icon = "🎋", desc = "빛나는 대나무 고리를 지나가세요", base = 1 },
-	dummy = { name = "목인장", stat = "vit", icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F)", base = 1 },
+	-- 목인장: 나무팔을 흘리며 몸과 발놀림을 함께 단련한다 (경공 수련은 없앴다)
+	dummy = { name = "목인장", stat = "vit", gains = { vit = 1, agi = 1 }, icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F). 체력과 경공이 함께 오른다", base = 1 },
 	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
-	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
+	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1, agi = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
 	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
 	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
@@ -338,6 +338,7 @@ Config.Styles = {
 		desc = "벼락처럼 빠르고 곧은 주먹. 맞힐 때마다 전하가 차오르고, 다 차면 다음 공격에서 번개가 주변으로 튀어 모두 마비시킨다.",
 		gimmick = "전하: 맞힐 때마다 1 (최대 5). 5가 되면 다음 공격이 연쇄 번개 (주변 적 마비)",
 		deflect = 0.2,
+		chargeEvery = 5,
 		stance = "stance_byeokryeok",
 		combo = {
 			{ id = "bk1", name = "섬전권", pose = "thunder_jab", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 3.5, 7, 7, 0.35, 6) } },
@@ -609,7 +610,7 @@ table.insert(Config.Styles, {
 	secret = true,
 	realmReq = 16,
 	styleReq = "taecho",
-	trialHp = 16, -- 시험의 분신 체력 열여섯 배
+	trialHp = 10, -- 시험 (권존이 직접 보스로) 체력 열 배
 	unlockHint = "태초신권을 익힌 천외천의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
 	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
 	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고, 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
@@ -671,6 +672,117 @@ table.insert(Config.Styles, {
 			mech = { kind = "tornado", dist = 8, speed = 10, dur = 3.2, every = 0.2, radius = 13, hit = hit(0, 0, 0, 6, 6, 0.3, 0), final = hit(0, 0, 0, 45, 60, 1.0, 0, 0) } },
 	},
 })
+-- 각성 권법 (진): 원래 권법을 완전 각성하고 두 번 깨달은 자가, 각성 시련에서 '각성한 자기 그림자'를 넘으면 얻는다
+-- 기술은 원래 권법 그대로 (버전 2): 모든 기술이 더 세고, 빛깔이 바뀌고, 고유 장치와 오의가 한층 커진다
+local function deepCopy(t: any): any
+	if type(t) ~= "table" then
+		return t
+	end
+	local out = {}
+	for k, v in pairs(t) do
+		out[k] = deepCopy(v)
+	end
+	return out
+end
+-- 표 안의 모든 타격(dmg가 있는 표)을 k배로 (기술 이름 id 앞에는 v를 붙여 원래 것과 구별)
+local function boostHits(t: any, k: number)
+	if type(t) ~= "table" then
+		return
+	end
+	if type(t.dmg) == "number" then
+		t.dmg *= k
+		if type(t.posture) == "number" then
+			t.posture *= 1 + (k - 1) * 0.5
+		end
+	end
+	if type(t.id) == "string" then
+		t.id = "v" .. t.id
+	end
+	for _, v in pairs(t) do
+		if type(v) == "table" then
+			boostHits(v, k)
+		end
+	end
+end
+local function awakened(baseId: string, k: number, over: { [string]: any }): any
+	local base
+	for _, st in ipairs(Config.Styles) do
+		if st.id == baseId then
+			base = st
+		end
+	end
+	local v = deepCopy(base)
+	v.combo = deepCopy(base.combo)
+	boostHits(v.combo, k)
+	boostHits(v.heavy, k)
+	boostHits(v.skills, k)
+	for key, x in pairs(over) do
+		v[key] = x
+	end
+	v.awakenOf = baseId
+	v.hidden = true
+	table.insert(Config.Styles, v)
+	return v
+end
+-- 각성 조건 (세 권법 모두): 원래 권법 숙련 최대 + 깨달음 두 번 + 무극 경지 + 은자
+Config.AWAKEN_STYLE = { realm = 13, coins = 200000, trialHp = 6 }
+do
+	local v = awakened("hyeolma", 1.5, {
+		id = "hyeolma2", name = "진 혈마신수", hanja = "眞血魔神手", icon = "🩸", grade = "신화",
+		color = Color3.fromRGB(240, 20, 50), color2 = Color3.fromRGB(255, 205, 110),
+		lifesteal = 0.12,
+		unlockHint = "혈마신수를 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 피에 물든 자기 그림자를 넘어라",
+		desc = "혈마의 손이 주인을 알아보고 깨어났다. 손톱 끝의 피가 금빛으로 끓는다. 혈마신수의 모든 기술이 그대로, 그러나 한층 더 깊고 붉다.",
+		gimmick = "진 흡혈: 준 피해의 12%를 되찾는다 (광란 중엔 세 배). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초",
+	})
+	local G = v.skills.G
+	G.buff = { kind = "frenzy", dur = 10 }
+	G.desc = "등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 세 배)"
+	local strike = G.mech.strikes[1].hit
+	G.mech.dur = 5
+	G.mech.scale = 1.35
+	G.mech.strikes = {}
+	for i = 0, 5 do
+		table.insert(G.mech.strikes, { t = 0.9 + i * 0.5, at = "targets", n = 4, radius = 10, hit = strike })
+	end
+	table.insert(G.mech.strikes, { t = 4.2, at = "around", radius = 28, hit = hit(0, 0, 0, 110, 140, 1.4, 70, 14) })
+end
+do
+	local v = awakened("cheonryong", 1.5, {
+		id = "cheonryong2", name = "진 천룡파천장", hanja = "眞天龍破天掌", icon = "🐲", grade = "신화",
+		color = Color3.fromRGB(255, 195, 60), color2 = Color3.fromRGB(255, 248, 215),
+		charge = 1.0,
+		unlockHint = "천룡파천장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 용을 두른 자기 그림자를 넘어라",
+		desc = "푸른 용이 허물을 벗고 금빛 진룡이 되었다. 장풍은 더 빨리 모이고, 땅을 뚫고 나오는 용은 하늘을 다 덮는다.",
+		gimmick = "진 용기: 1초면 장풍이 가득 모인다. 모든 기술 1.5배. 진 진룡강림: 거대한 금룡이 다섯 번 내리꽂히고 더 큰 숨을 뿜는다",
+	})
+	local G = v.skills.G
+	G.desc = "땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고, 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"
+	local strike = G.mech.strikes[1].hit
+	local breath = G.mech.strikes[#G.mech.strikes].hit
+	G.mech.dur = 3.6
+	G.mech.scale = 1.4
+	G.mech.strikes = {}
+	for i = 0, 4 do
+		table.insert(G.mech.strikes, { t = 0.9 + i * 0.4, at = "targets", n = 1, radius = 11, hit = strike })
+	end
+	table.insert(G.mech.strikes, { t = 3.1, at = "front", dist = 18, radius = 22, hit = breath })
+end
+do
+	local v = awakened("byeokryeok", 1.5, {
+		id = "byeokryeok2", name = "진 벽력신권", hanja = "眞霹靂神拳", icon = "🌩", grade = "신화",
+		color = Color3.fromRGB(175, 110, 255), color2 = Color3.fromRGB(235, 228, 255),
+		chargeEvery = 4, chainDmg = 22, chainRange = 22,
+		unlockHint = "벽력신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 보랏빛 벼락이 된 자기 그림자를 넘어라",
+		desc = "노란 벼락이 보랏빛 천뢰가 되었다. 주먹이 닿기 전에 소리가 먼저 터지고, 연쇄 번개가 더 멀리 더 세게 튄다.",
+		gimmick = "진 전하: 네 번 맞히면 연쇄 천뢰 (더 넓고 더 세다). 모든 기술 1.5배. 진 뇌신화: 열한 번 튀고 하늘이 크게 갈라진다",
+	})
+	local G = v.skills.G
+	G.desc = "몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고, 마지막에 하늘이 크게 갈라진다"
+	G.mech.n = 11
+	G.mech.finalRadius = 26
+end
+
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
 Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
 Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
@@ -757,6 +869,9 @@ local FINISHERS = {
 	pacheon = { name = "파천승천권", pose = "grav_hammer" },
 	taecho = { name = "태초승천각", pose = "origin_kick" },
 	ilwol = { name = "일월승천각", pose = "sun_wheel" },
+	hyeolma2 = { name = "진 혈마승천조", pose = "blood_rake" },
+	cheonryong2 = { name = "진 승룡장", pose = "dragon_rise" },
+	byeokryeok2 = { name = "진 벽력천추", pose = "knee_strike" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -768,7 +883,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1053,6 +1168,20 @@ boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 70, 25) }),
 } })
 
+-- 일월의 시련: 권존이 분신 없이 직접, 보스처럼 세 단계로 싸운다 (한낮 → 밤 → 새벽)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "ilwol" then
+		st.trialBoss = { hp = 3200, posture = 720, scale = 1.9, reach = 1.5, speed = 21, patterns = {
+			P("rain", "대일낙하", 1, { count = 6, radius = 8, spread = 22, warn = 1.0, cd = 7, pose = "sun_call", fx = "fire", color = Color3.fromRGB(255, 185, 60), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
+			P("donut", "만월 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "moon_throw", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "월광 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "moon_seal", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "월하 낙성", 2, { count = 8, radius = 7, spread = 24, warn = 0.9, cd = 7, pose = "sun_call", fx = "star", color = Color3.fromRGB(205, 220, 255), hit = hit(0, 0, 0, 30, 36, 0.7, 20) }),
+			P("leap", "일륜 낙하", 3, { radius = 17, warn = 1.0, cd = 7, pose = "sun_wheel", hit = hit(0, 0, 0, 50, 70, 1.1, 45, 20) }),
+			P("quake", "일식", 3, { radius = 26, warn = 1.4, cd = 9, pose = "ult_eclipse", hit = hit(0, 0, 0, 70, 100, 1.4, 60, 24) }),
+		} }
+	end
+end
+
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
 -- 적은 근처에 사람이 있을 때만 움직인다
@@ -1208,6 +1337,11 @@ Config.Landmarks = {
 	{ id = "pyramid", name = "사왕의 무덤", icon = "🔺", at = Vector3.new(-900, 0, 3140) },
 	{ id = "skyspire", name = "천외봉", icon = "✴", at = Vector3.new(0, 0, -3180) },
 	{ id = "sunmoon", name = "일월대", icon = "☀", at = Vector3.new(2500, 0, 2640) },
+	{ id = "belltower", name = "천년 종루", icon = "🔔", at = Vector3.new(2700, 0, 900) },
+	{ id = "mirrorlake", name = "거울 호수", icon = "🪞", at = Vector3.new(1100, 0, 2500) },
+	{ id = "gianthand", name = "거신의 손", icon = "✋", at = Vector3.new(-2500, 0, 1900) },
+	{ id = "crater", name = "별똥 분화구", icon = "☄", at = Vector3.new(1100, 0, -2700) },
+	{ id = "thousandsteps", name = "천 개의 계단", icon = "🪜", at = Vector3.new(-2700, 0, -2700) },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -1285,7 +1419,6 @@ Config.TrainingSpots = {
 	{ kind = "dummy", at = Vector3.new(80, 0, -40) },
 	{ kind = "waterfall", at = Vector3.new(560, 0, -10) },
 	{ kind = "waterfall", at = Vector3.new(580, 0, 15) },
-	{ kind = "bamboo", at = Vector3.new(-380, 0, -10) },
 	{ kind = "mabo", at = Vector3.new(-105, 0, -15) },
 	{ kind = "mabo", at = Vector3.new(-105, 0, 5) },
 	{ kind = "ironpalm", at = Vector3.new(105, 0, -15) },
@@ -1326,8 +1459,8 @@ Config.AUTO_TRAIN = {
 	every = 3,
 	advEvery = 1,
 	advMult = 1,
-	kinds = { str = "rock", vit = "dummy", agi = "bamboo", chi = "waterfall" },
-	advKinds = { str = "ironpalm", vit = "mabo", agi = "bamboo", chi = "breathing" },
+	kinds = { str = "rock", vit = "dummy", agi = "dummy", chi = "waterfall" },
+	advKinds = { str = "ironpalm", vit = "mabo", agi = "mabo", chi = "breathing" },
 }
 Config.PREMIUM_BY_ID = {}
 for _, it in ipairs(Config.Premium) do
@@ -3330,8 +3463,12 @@ end
 
 function Trial.start(player: Player, styleId: string)
 	local style = Config.STYLE_BY_ID[styleId]
-	local master = Config.MASTERS[styleId]
 	local f = Combat.fighterOfPlayer(player)
+	-- 각성 시련은 사부 없이 어디서나: 각성한 내 그림자가 앞에 나타난다
+	local master = Config.MASTERS[styleId]
+	if not master and style and style.awakenOf and f then
+		master = { name = "각성한 그림자", at = f.root.Position + Combat.look(f) * 12 }
+	end
 	if not style or not master or not f or f.dead then
 		return
 	end
@@ -3340,8 +3477,22 @@ function Trial.start(player: Player, styleId: string)
 		return
 	end
 	local key = "trial_" .. styleId
-	Config.Enemies[key] = trialDef(style, master)
-	local e = Npc.spawn(key, false, master.at + (f.root.Position - master.at).Unit * 6, "trial")
+	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
+	local e
+	if style.trialBoss then
+		-- 보스 시험 (권존): 사부 본인이 보스처럼 패턴을 쓰며 세 단계로 싸운다
+		local def = trialDef(style, master)
+		for k2, v in pairs(style.trialBoss) do
+			def[k2] = v
+		end
+		def.name = master.name
+		def.respawn = 99999
+		Config.Bosses[key] = def
+		e = Npc.spawn(key, true, spawnAt, "trial")
+	else
+		Config.Enemies[key] = trialDef(style, master)
+		e = Npc.spawn(key, false, spawnAt, "trial")
+	end
 	if not e then
 		return
 	end
@@ -3360,18 +3511,39 @@ function Trial.start(player: Player, styleId: string)
 		Combat.sync(ef)
 	end
 	-- 궁극의 권법 시험은 분신이 훨씬 질기다 (한두 번의 오의로 끝나지 않게)
-	if style.trialHp then
-		ef.maxHp = math.floor(ef.maxHp * style.trialHp)
+	local hpMul = style.trialHp or (style.awakenOf and Config.AWAKEN_STYLE.trialHp)
+	if hpMul then
+		ef.maxHp = math.floor(ef.maxHp * hpMul)
 		ef.hp = ef.maxHp
 		Combat.sync(ef)
 	end
 	e.target = f
 	ef.model:SetAttribute("Style", styleId)
 	activeTrial[player] = ef
-	Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+	if style.trialBoss then
+		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
+		World.setClock(12)
+		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
+		task.spawn(function()
+			local seen = 1
+			while activeTrial[player] == ef and not ef.dead do
+				local ph = tonumber(ef.model:GetAttribute("BossPhase")) or 1
+				if ph ~= seen then
+					seen = ph
+					World.setClock(ph == 2 and 0 or 5.6)
+					toast(player, ph == 2 and "🌙 해가 졌다. 달의 시간이다" or "🌅 동이 튼다. 마지막 시간이다")
+				end
+				task.wait(0.3)
+			end
+		end)
+	elseif style.awakenOf then
+		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
+	else
+		Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+	end
 	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId })
 	-- 너무 오래 끌면 사부가 거둔다
-	task.delay(style.trialHp and 300 or 150, function()
+	task.delay(hpMul and 300 or 150, function()
 		if activeTrial[player] == ef and not ef.dead then
 			activeTrial[player] = nil
 			Npc.despawn(ef)
@@ -3389,9 +3561,21 @@ function Trial.ended(player: Player, won: boolean)
 	local p = profiles[player]
 	if won and p then
 		local id = ef.trialStyle
-		p.trials[id] = true
 		local style = Config.STYLE_BY_ID[id]
-		Push:FireClient(player, "trialWin", { style = id, master = Config.MASTERS[id].name })
+		if style.awakenOf then
+			-- 각성 시련을 넘었다: 은자를 내고 진 권법을 바로 얻는다
+			p.coins = math.max(0, p.coins - Config.AWAKEN_STYLE.coins)
+			grantStyle(player, id, true)
+			p.style = id
+			refreshFighter(player)
+			toast(player, string.format("🔥 각성! %s을(를) 얻었어요", style.name))
+			states[player].dirty = true
+			pushState(player)
+			return
+		end
+		p.trials[id] = true
+		local m = Config.MASTERS[id]
+		Push:FireClient(player, "trialWin", { style = id, master = m and m.name or "" })
 		toast(player, string.format("🥋 시험 통과! 이제 %s을(를) 배울 수 있어요 (사부 곁에서 T)", style.name))
 		states[player].dirty = true
 		Story.event(player, "trial")
@@ -4323,11 +4507,14 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.pacheon = nil :: any
 			p.styles.taecho = nil :: any
 			p.styles.ilwol = nil :: any
+			p.styles.hyeolma2 = nil :: any
+			p.styles.cheonryong2 = nil :: any
+			p.styles.byeokryeok2 = nil :: any
 			p.trials.taecho = nil :: any
 			p.trials.gaecheon = nil :: any
 			p.trials.ilwol = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" or (Config.STYLE_BY_ID[p.style] and Config.STYLE_BY_ID[p.style].awakenOf) then
 				p.style = "samjae"
 			end
 		end
@@ -4433,6 +4620,33 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		p.autoStat = order[i % #order + 1]
 		st.dirty = true
 		pushState(player)
+	elseif action == "awaken" then
+		-- 각성 (진 권법): 원래 권법 숙련 최대 + 깨달음 모두 + 경지 + 은자 → 각성 시련
+		local base = type(a1) == "string" and Config.STYLE_BY_ID[a1]
+		local v2 = nil
+		for _, sd in ipairs(Config.Styles) do
+			if base and sd.awakenOf == base.id then
+				v2 = sd
+			end
+		end
+		if not base or not v2 or not p.styles[base.id] or p.styles[v2.id] then
+			return
+		end
+		local A = Config.AWAKEN_STYLE
+		local f0 = Combat.fighterOfPlayer(player)
+		if Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
+			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
+		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
+			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
+		elseif Config.realmOf(Calc.total(p)) < A.realm then
+			toast(player, string.format("각성은 %s의 경지부터예요", Config.Realms[A.realm].name))
+		elseif p.coins < A.coins then
+			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(A.coins)))
+		elseif f0 and f0.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 각성할 수 없어요")
+		else
+			Trial.start(player, v2.id)
+		end
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
@@ -5463,9 +5677,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			att.stacks.petal = math.min(20, att.stacks.petal + 1)
 			att.stacks.petalAt = t
-		elseif aStyle.id == "byeokryeok" then
+		elseif aStyle.chargeEvery then
 			att.stacks.charge += 1
-			if att.stacks.charge >= 5 then
+			if att.stacks.charge >= aStyle.chargeEvery then
 				att.stacks.charge = 0
 				chain = true
 			end
@@ -5498,7 +5712,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if chain then
 		local victims = {}
 		for _, other in pairs(Combat.fighters) do
-			if other ~= tgt and Combat.hostile(att, other) and (other.root.Position - tgt.root.Position).Magnitude <= 16 then
+			if other ~= tgt and Combat.hostile(att, other) and (other.root.Position - tgt.root.Position).Magnitude <= (aStyle and aStyle.chainRange or 16) then
 				table.insert(victims, other)
 			end
 		end
@@ -5510,7 +5724,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return list
 		end)() })
 		for _, v in ipairs(victims) do
-			Combat.applyHit(att, v, { dmg = 9, posture = 12, stun = 1.0, kb = 4 }, { chain = true, move = { strike = true } })
+			Combat.applyHit(att, v, { dmg = aStyle and aStyle.chainDmg or 9, posture = 12, stun = 1.0, kb = 4 }, { chain = true, move = { strike = true } })
 		end
 		if not tgt.dead then
 			Combat.stun(tgt, 1.0)
@@ -7352,7 +7566,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end
 	elseif kind == "avatar" then
 		-- 허상 소환 (혈마의 악마, 천룡의 용): 허상이 정해진 순간마다 내리친다
-		Push:FireAllClients("skillfx", { kind = "avatar", look = m.look, m = f.model, dur = m.dur / sp, style = style })
+		Push:FireAllClients("skillfx", { kind = "avatar", look = m.look, m = f.model, dur = m.dur / sp, style = style, scale = m.scale })
 		for idx, st in ipairs(m.strikes) do
 			after(st.t, function()
 				local spots = {}
@@ -7919,6 +8133,23 @@ local function crystal(at: Vector3, size: number, color: Color3, parent: Instanc
 	return c
 end
 
+-- 석등: 돌 받침, 기둥, 빛나는 등 칸, 두 겹 돌 갓
+local STONE_LAMP = Color3.fromRGB(170, 165, 155)
+local function stoneLantern(at: Vector3, parent: Instance, lit: boolean)
+	part({ Name = "LampBase", Size = Vector3.new(2.6, 0.8, 2.6), Position = at + Vector3.new(0, 0.4, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampPillar", Size = Vector3.new(1, 4, 1), Position = at + Vector3.new(0, 2.8, 0), Color = STONE_LAMP, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampShelf", Size = Vector3.new(2.4, 0.4, 2.4), Position = at + Vector3.new(0, 4.9, 0), Color = STONE_LAMP, Material = Enum.Material.Granite, Parent = parent })
+	local box = part({ Name = "LampLight", Size = Vector3.new(1.6, 1.5, 1.6), Position = at + Vector3.new(0, 5.85, 0), Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	part({ Name = "LampCap", Size = Vector3.new(3, 0.5, 3), Position = at + Vector3.new(0, 6.85, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	part({ Name = "LampCap2", Size = Vector3.new(1.6, 0.5, 1.6), Position = at + Vector3.new(0, 7.35, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+	if lit then
+		light(box, WARM, 20, 1.3)
+	end
+end
+
+-- 붉은 칠 나무 (문루·종루 기둥)
+local GATE_RED = Color3.fromRGB(140, 45, 38)
+
 -- 깃발 (장대 + 천)
 local function banner(at: Vector3, h: number, color: Color3, parent: Instance)
 	part({ Name = "BannerPole", Size = Vector3.new(0.6, h, 0.6), Position = at + Vector3.new(0, h / 2, 0), Color = IRON, Material = Enum.Material.Metal, Parent = parent })
@@ -8159,10 +8390,12 @@ local function roads()
 			local a, b = road[i], road[i + 1]
 			local len = (b - a).Magnitude
 			if len > 0.5 then
-				-- 길마다 살짝 다른 높이 (겹치는 곳이 깜빡이지 않게)
-				local y = -0.08 + k * 0.012
+				-- 길마다 살짝 다른 높이 (겹치는 곳이 깜빡이지 않게). 자갈 가장자리 위에 돌을 깐 가운데 길
+				local y = -0.08 + k * 0.02
 				local mid = (a + b) / 2 + Vector3.new(0, y, 0)
-				part({ Name = "Road", Size = Vector3.new(18, 1, len + 18), CFrame = CFrame.lookAt(mid, mid + (b - a)), Color = Color3.fromRGB(170, 145, 105), Material = Enum.Material.Ground, Parent = folder })
+				local cf = CFrame.lookAt(mid, mid + (b - a))
+				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len + 22), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+				part({ Name = "Road", Size = Vector3.new(14, 1, len + 14), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
 			end
 		end
 	end
@@ -8470,21 +8703,8 @@ local function trainingSpots(out: any)
 		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
 		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
 	end
-	-- 대나무 경공 고리 (숲 속에 한 바퀴)
+	-- (경공 수련 고리는 없앴다)
 	out.rings = {}
-	local base = Vector3.new(-380, 0, -10)
-	for k = 0, 9 do
-		local a = k / 10 * math.pi * 2
-		local pos = base + Vector3.new(math.cos(a) * 70, 6 + (k % 3) * 7, math.sin(a) * 70)
-		local ringModel = Instance.new("Model")
-		ringModel.Name = "BambooRing" .. (k + 1)
-		ringModel.Parent = f
-		for s = 0, 11 do
-			local b = s / 12 * math.pi * 2
-			part({ Name = "RingPiece", Size = Vector3.new(1, 1.6, 1), CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a))) * CFrame.new(math.cos(b) * 5, math.sin(b) * 5, 0), Color = Color3.fromRGB(170, 255, 120), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = ringModel })
-		end
-		table.insert(out.rings, pos)
-	end
 end
 
 ------------------------------------------------------------------------
@@ -8499,9 +8719,8 @@ local function regions()
 	for _ = 1, 140 do
 		local x = B.center.X + rng:NextNumber(-B.size.X / 2 + 10, B.size.X / 2 - 10)
 		local z = B.center.Z + rng:NextNumber(-B.size.Z / 2 + 10, B.size.Z / 2 - 10)
-		-- 길과 경공 고리 자리는 비워 둔다
-		local d = (Vector3.new(x, 0, z) - Vector3.new(-380, 0, -10)).Magnitude
-		if math.abs(z) > 14 and (d < 55 or d > 85) and not nearRoad(Vector3.new(x, 0, z), 14) then
+		-- 길은 비워 둔다
+		if math.abs(z) > 14 and not nearRoad(Vector3.new(x, 0, z), 14) then
 			bamboo(Vector3.new(x, 0, z), bf)
 		end
 	end
@@ -8596,32 +8815,7 @@ local function regions()
 			rock(at, rng:NextNumber(3, 9), vf)
 		end
 	end
-	-- 바깥 들판의 나무
-	local edge = Config.WORLD_HALF - 60
-	for _ = 1, 140 do
-		local x, z = rng:NextNumber(-edge, edge), rng:NextNumber(-edge, edge)
-		local inside = nearRoad(Vector3.new(x, 0, z), 18)
-		for _, r in ipairs(Config.Regions) do
-			if not r.noGround and math.abs(x - r.center.X) < r.size.X / 2 + 10 and math.abs(z - r.center.Z) < r.size.Z / 2 + 10 then
-				inside = true
-			end
-		end
-		for _, r in ipairs(Config.Regions) do
-			for _, camp in ipairs(r.camps or {}) do
-				if (Vector3.new(x, 0, z) - camp.at).Magnitude < 30 then
-					inside = true
-				end
-			end
-		end
-		for _, lm in ipairs(Config.Landmarks) do
-			if (Vector3.new(x, 0, z) - lm.at).Magnitude < 80 then
-				inside = true
-			end
-		end
-		if not inside then
-			tree(Vector3.new(x, 0, z), rng:NextNumber(1.2, 2), folder)
-		end
-	end
+	-- (들판의 나무는 흩뿌리지 않는다: 길가의 가로수와 몇 군데의 작은 숲으로 - roadside)
 end
 
 ------------------------------------------------------------------------
@@ -9267,6 +9461,206 @@ function LANDMARK.pyramid(at: Vector3, f: Instance)
 end
 
 -- 천외봉: 구름바다 위로 하늘에 닿는 흰 봉우리. 둘레에 떠도는 고리와 섬, 꼭대기에서 하늘로 빛기둥. 발치에 시원자의 단
+-- 천년 종루: 세 층 누각 꼭대기에 커다란 청동 종. 층마다 빛나는 창과 처마
+function LANDMARK.belltower(at: Vector3, f: Instance)
+	local BRONZE = Color3.fromRGB(160, 110, 60)
+	part({ Name = "BellBase", Size = Vector3.new(40, 4, 40), Position = at + Vector3.new(0, 2, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+	part({ Name = "BellBase2", Size = Vector3.new(34, 3, 34), Position = at + Vector3.new(0, 5.5, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	for i = 0, 3 do
+		part({ Name = "BellStep", Size = Vector3.new(14, (i + 1) * 1.75, 3), Position = at + Vector3.new(0, (i + 1) * 0.875, -21.5 - (3 - i) * 3), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	end
+	local y = 7
+	local w = 26
+	for tier = 1, 3 do
+		local h = 14 - tier * 2
+		part({ Name = "BellWall", Size = Vector3.new(w, h, w), Position = at + Vector3.new(0, y + h / 2, 0), Color = WALLS[1], Material = Enum.Material.Plaster, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "BellPillar", Size = Vector3.new(2, h, 2), Position = at + Vector3.new(sx * w / 2, y + h / 2, sz * w / 2), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		for k = 0, 3 do
+			local yaw = k * math.pi / 2
+			local cf = CFrame.new(at + Vector3.new(0, y + h * 0.55, 0)) * CFrame.Angles(0, yaw, 0) * CFrame.new(0, 0, -w / 2 - 0.05)
+			part({ Name = "BellWindow", Size = Vector3.new(w * 0.4, h * 0.4, 0.2), CFrame = cf, Color = WARM, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		-- 처마: 사방으로 뻗은 기와 판
+		local ey = y + h
+		part({ Name = "BellEave", Size = Vector3.new(w + 10, 1, w + 10), Position = at + Vector3.new(0, ey + 0.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "BellEave2", Size = Vector3.new(w + 6, 1, w + 6), Position = at + Vector3.new(0, ey + 1.5, 0), Color = ROOF:Lerp(Color3.new(0, 0, 0), 0.2), Material = Enum.Material.Slate, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				part({ Name = "EaveTip", Size = Vector3.new(1, 1.4, 1), CFrame = CFrame.new(at + Vector3.new(sx * (w / 2 + 5), ey + 1.3, sz * (w / 2 + 5))) * CFrame.Angles(0, 0, sx * math.rad(-30)), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+		end
+		y = ey + 2
+		w -= 6
+	end
+	-- 꼭대기 종각: 기둥 넷 위 지붕, 그 아래 매달린 큰 종
+	local top = at + Vector3.new(0, y, 0)
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "BellFrame", Size = Vector3.new(1.6, 16, 1.6), Position = top + Vector3.new(sx * 6, 8, sz * 6), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	part({ Name = "BellRoof", Size = Vector3.new(18, 1.2, 18), Position = top + Vector3.new(0, 16.6, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "BellRoof2", Size = Vector3.new(11, 2, 11), Position = top + Vector3.new(0, 18.2, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	crystal(top + Vector3.new(0, 22, 0), 2.4, GOLD, f)
+	disc("BellBody", top + Vector3.new(0, 8, 0), 4.4, 8, BRONZE, Enum.Material.Metal, f, false)
+	part({ Name = "BellCrown", Shape = Enum.PartType.Ball, Size = Vector3.new(7.6, 7.6, 7.6), Position = top + Vector3.new(0, 12, 0), Color = BRONZE, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+	disc("BellLip", top + Vector3.new(0, 4.2, 0), 4.9, 0.8, BRONZE:Lerp(GOLD, 0.4), Enum.Material.Metal, f, false)
+	disc("BellBand", top + Vector3.new(0, 9.5, 0), 4.6, 0.5, GOLD, Enum.Material.Metal, f, false)
+	part({ Name = "BellStriker", Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, 1.2, 1.2), Position = top + Vector3.new(0, 8, -7.5), Color = WOOD, Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	local glow = part({ Name = "BellGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), Position = top + Vector3.new(0, 6, 0), Color = WARM, Material = Enum.Material.Neon, Transparency = 0.4, CanCollide = false, Parent = f })
+	light(glow, WARM, 40, 2)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		brazier(at + Vector3.new(math.cos(a) * 26, 0, math.sin(a) * 26), 1.2, f)
+	end
+end
+
+-- 거울 호수: 하늘을 비추는 둥근 호수. 디딤돌이 가운데 섬의 정자로 이어지고, 연잎이 떠 있다
+function LANDMARK.mirrorlake(at: Vector3, f: Instance)
+	local R = 72
+	for k = 0, 47 do
+		local a = k / 48 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * (R + 2), 0.6, math.sin(a) * (R + 2))
+		part({ Name = "LakeRim", Size = Vector3.new(3.4, 1.4, R * 0.14), CFrame = CFrame.lookAt(p, at + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Granite, Parent = f })
+	end
+	local water = disc("MirrorWater", at + Vector3.new(0, 0.55, 0), R, 0.3, Color3.fromRGB(120, 165, 205), Enum.Material.Glass, f, false)
+	water.Transparency = 0.05
+	water.Reflectance = 0.55
+	disc("LakeBed", at + Vector3.new(0, 0.2, 0), R, 0.3, Color3.fromRGB(40, 60, 80), Enum.Material.Slate, f, false)
+	-- 가운데 섬과 정자
+	disc("Isle", at + Vector3.new(0, 1, 0), 14, 1.4, Color3.fromRGB(110, 150, 95), Enum.Material.Grass, f)
+	pavilion(at + Vector3.new(0, 1.7, 0), 8, 8, 11, Color3.fromRGB(60, 72, 100), f, Color3.fromRGB(170, 220, 255))
+	-- 남쪽 기슭에서 섬까지 디딤돌
+	for i = 0, 11 do
+		local d = R + 4 - i * 5.2
+		if d > 14 then
+			local wob = math.sin(i * 1.3) * 3
+			disc("SteppingStone", at + Vector3.new(wob, 0.9, d), 2.2, 0.8, Color3.fromRGB(160, 155, 145), Enum.Material.Slate, f)
+		end
+	end
+	-- 연잎과 연꽃
+	for k = 0, 21 do
+		local a = k * 2.399
+		local d = 22 + (k * 13 % 45)
+		local p = at + Vector3.new(math.cos(a) * d, 0.75, math.sin(a) * d)
+		if math.abs(p.X - at.X) > 6 or p.Z < at.Z then
+			disc("LotusPad", p, 1.6 + (k % 3) * 0.4, 0.15, Color3.fromRGB(70, 140, 70), Enum.Material.Grass, f, false)
+			if k % 3 == 0 then
+				part({ Name = "Lotus", Shape = Enum.PartType.Ball, Size = Vector3.new(1.1, 0.9, 1.1), Position = p + Vector3.new(0.4, 0.5, 0), Color = Color3.fromRGB(255, 160, 200), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		local p = at + Vector3.new(math.cos(a) * (R + 10), 0, math.sin(a) * (R + 10))
+		stoneLantern(p, f, k % 2 == 0)
+		tree(at + Vector3.new(math.cos(a + 0.2) * (R + 22), 0, math.sin(a + 0.2) * (R + 22)), 1.6, f, k % 3 == 0)
+	end
+end
+
+-- 거신의 손: 땅에서 솟은 거대한 돌손이 빛나는 구슬을 받쳐 든다. 둘레는 갈라진 바위
+function LANDMARK.gianthand(at: Vector3, f: Instance)
+	local ROCKC = Color3.fromRGB(150, 145, 140)
+	local cf = CFrame.new(at) * CFrame.Angles(0, math.rad(30), 0)
+	local function blk(name: string, size: Vector3, c: CFrame)
+		part({ Name = name, Size = size, CFrame = cf * c, Color = ROCKC, Material = Enum.Material.Granite, Parent = f })
+	end
+	blk("HandWrist", Vector3.new(16, 30, 12), CFrame.new(0, 12, 0) * CFrame.Angles(math.rad(-8), 0, 0))
+	blk("HandPalm", Vector3.new(20, 18, 10), CFrame.new(0, 34, -3) * CFrame.Angles(math.rad(-25), 0, 0))
+	for i, x in ipairs({ -7.2, -2.4, 2.4, 7.2 }) do
+		local len = (i == 2 or i == 3) and 12 or 10
+		local base = CFrame.new(x, 44, -7) * CFrame.Angles(math.rad(-40), 0, 0)
+		blk("Finger", Vector3.new(4.2, len, 4.2), base * CFrame.new(0, len / 2, 0))
+		blk("FingerTip", Vector3.new(3.8, len * 0.8, 3.8), base * CFrame.new(0, len, 0) * CFrame.Angles(math.rad(-35), 0, 0) * CFrame.new(0, len * 0.4, 0))
+	end
+	blk("Thumb", Vector3.new(5, 12, 5), CFrame.new(-11, 32, -6) * CFrame.Angles(math.rad(-30), 0, math.rad(50)))
+	local orb = part({ Name = "HandOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(11, 11, 11), Position = (cf * CFrame.new(0, 47, -14)).Position, Color = Color3.fromRGB(140, 220, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(orb, Color3.fromRGB(140, 220, 255), 70, 3)
+	emitter(orb, Color3.fromRGB(190, 240, 255), 16, 1.6, 6, 2)
+	-- 갈라진 땅: 둘레로 기울어 솟은 바위판
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * 26, 0, math.sin(a) * 26)
+		part({ Name = "CrackSlab", Size = Vector3.new(10, 2, 7), CFrame = CFrame.lookAt(p, at) * CFrame.Angles(math.rad(-22), 0, 0) + Vector3.new(0, 1, 0), Color = Color3.fromRGB(110, 105, 100), Material = Enum.Material.Slate, Parent = f })
+	end
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.3
+		crystal(at + Vector3.new(math.cos(a) * 38, 4, math.sin(a) * 38), 2, Color3.fromRGB(140, 220, 255), f)
+	end
+end
+
+-- 별똥 분화구: 솟은 바위 테 안의 검게 탄 바닥, 한가운데 금이 간 운석이 아직 빛난다
+function LANDMARK.crater(at: Vector3, f: Instance)
+	local R = 60
+	disc("CraterFloor", at + Vector3.new(0, 0.3, 0), R, 0.4, Color3.fromRGB(45, 38, 40), Enum.Material.Basalt, f)
+	for k = 0, 35 do
+		local a = k / 36 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * R, 0, math.sin(a) * R)
+		local h = 6 + (k * 7 % 5)
+		part({ Name = "CraterRim", Size = Vector3.new(12, h, 9), CFrame = CFrame.lookAt(p + Vector3.new(0, h / 2 - 1, 0), at + Vector3.new(0, h / 2 - 1, 0)) * CFrame.Angles(math.rad(25), 0, 0), Color = Color3.fromRGB(95, 85, 82), Material = Enum.Material.Rock, Parent = f })
+	end
+	local meteor = part({ Name = "Meteor", Shape = Enum.PartType.Ball, Size = Vector3.new(22, 22, 22), Position = at + Vector3.new(0, 7, 0), Color = Color3.fromRGB(40, 32, 36), Material = Enum.Material.Basalt, Parent = f })
+	local _ = meteor
+	for k = 0, 9 do
+		local a = k * 0.63
+		local d = Vector3.new(math.cos(a), math.sin(k * 1.7) * 0.6, math.sin(a)).Unit
+		part({ Name = "MeteorCrack", Size = Vector3.new(0.6, 0.6, 9), CFrame = CFrame.lookAt(at + Vector3.new(0, 7, 0) + d * 10.6, at + Vector3.new(0, 7, 0) + d * 10.6 + Vector3.new(-d.Z, 0.3, d.X)), Color = Color3.fromRGB(255, 120, 60), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local core = part({ Name = "MeteorGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(4, 4, 4), Position = at + Vector3.new(0, 19, 0), Color = Color3.fromRGB(255, 140, 70), Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = f })
+	light(core, Color3.fromRGB(255, 130, 60), 60, 3)
+	emitter(core, Color3.fromRGB(255, 160, 80), 10, 1.2, 5, 2.5)
+	for k = 0, 15 do
+		local a = k * 2.2
+		local d = 18 + (k * 11 % 34)
+		crystal(at + Vector3.new(math.cos(a) * d, 1.6, math.sin(a) * d), 1 + (k % 3) * 0.4, k % 2 == 0 and Color3.fromRGB(255, 150, 80) or Color3.fromRGB(190, 140, 255), f)
+	end
+end
+
+-- 천 개의 계단: 구름 위 떠 있는 문까지 곧게 오르는 긴 돌계단, 계단참마다 석등
+function LANDMARK.thousandsteps(at: Vector3, f: Instance)
+	local face = Vector3.new(-at.X, 0, -at.Z).Unit -- 마을 쪽에서 오른다
+	local cf = CFrame.lookAt(at, at - face)
+	local steps = 44
+	for i = 0, steps - 1 do
+		local y = i * 1.4
+		part({ Name = "Step", Size = Vector3.new(16, 1.4, 3.2), CFrame = cf * CFrame.new(0, y + 0.7, -i * 3.2), Color = i % 11 == 10 and STONE_DARK or STONE, Material = Enum.Material.Marble, Parent = f })
+		if i % 11 == 10 then
+			for _, sx in ipairs({ -1, 1 }) do
+				stoneLantern((cf * CFrame.new(sx * 9.5, y + 1.4, -i * 3.2)).Position, f, sx == 1)
+			end
+		end
+	end
+	-- 계단 양옆의 난간
+	local L = steps * 3.2
+	local H = steps * 1.4
+	for _, sx in ipairs({ -1, 1 }) do
+		local p0 = cf * CFrame.new(sx * 8.6, 1.5, 0)
+		local p1 = cf * CFrame.new(sx * 8.6, H + 1.5, -L)
+		local mid = (p0.Position + p1.Position) / 2
+		part({ Name = "StepRail", Size = Vector3.new(1.2, 1.4, (p1.Position - p0.Position).Magnitude), CFrame = CFrame.lookAt(mid, p1.Position), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+	end
+	-- 꼭대기 단과 떠 있는 문
+	local topCf = cf * CFrame.new(0, H, -L - 12)
+	part({ Name = "StepTop", Size = Vector3.new(30, 2, 24), CFrame = topCf * CFrame.new(0, 0, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "SkyGatePost", Size = Vector3.new(2.4, 22, 2.4), CFrame = topCf * CFrame.new(sx * 9, 13, 0), Color = Color3.fromRGB(235, 235, 245), Material = Enum.Material.Marble, Parent = f })
+		crystal((topCf * CFrame.new(sx * 9, 26, 0)).Position, 1.8, Color3.fromRGB(190, 220, 255), f)
+	end
+	part({ Name = "SkyGateBeam", Size = Vector3.new(26, 2, 3), CFrame = topCf * CFrame.new(0, 23, 0), Color = Color3.fromRGB(235, 235, 245), Material = Enum.Material.Marble, Parent = f })
+	local veil = part({ Name = "SkyGateVeil", Size = Vector3.new(15.6, 20, 0.3), CFrame = topCf * CFrame.new(0, 12, 0), Color = Color3.fromRGB(190, 220, 255), Material = Enum.Material.ForceField, Transparency = 0.2, CanCollide = false, Parent = f })
+	light(veil, Color3.fromRGB(190, 220, 255), 50, 2.5)
+	-- 꼭대기 둘레의 구름
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local p = (topCf * CFrame.new(math.cos(a) * 26, -4 + (k % 3) * 2, math.sin(a) * 20)).Position
+		part({ Name = "StepCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(14, 7, 14), Position = p, Color = Color3.fromRGB(245, 247, 252), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, Parent = f })
+	end
+end
+
 -- 일월대: 해와 달의 단. 동쪽엔 금빛 해의 탑, 서쪽엔 은빛 달의 탑, 가운데 반은 금빛·반은 은빛인 단 위에 권존이 선다
 function LANDMARK.sunmoon(at: Vector3, f: Instance)
 	local m = Config.MASTERS.ilwol
@@ -9978,9 +10372,206 @@ end
 ------------------------------------------------------------------------
 -- 지역 이름 표지
 ------------------------------------------------------------------------
-local function regionSigns()
+------------------------------------------------------------------------
+-- 정갈한 강호: 길가의 석등과 가로수, 지역마다 낮은 돌테두리와 길이 드는 곳의 문루
+------------------------------------------------------------------------
+local VILLAGE_PAD = 200 -- 마을 성벽 둘레는 마을 것으로 둔다
+local function inAnyRegion(p: Vector3, pad: number): boolean
+	if math.abs(p.X) < VILLAGE_PAD + pad and math.abs(p.Z) < VILLAGE_PAD + pad then
+		return true
+	end
+	for _, r in ipairs(Config.Regions) do
+		if not r.noGround and math.abs(p.X - r.center.X) < r.size.X / 2 + pad and math.abs(p.Z - r.center.Z) < r.size.Z / 2 + pad then
+			return true
+		end
+	end
+	return false
+end
+local function nearFeature(p: Vector3, d: number): boolean
+	for _, lm in ipairs(Config.Landmarks) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(lm.at.X, 0, lm.at.Z)).Magnitude < 90 + d then
+			return true
+		end
+	end
+	for _, r in ipairs(Config.Regions) do
+		for _, camp in ipairs(r.camps or {}) do
+			if (Vector3.new(p.X, 0, p.Z) - camp.at).Magnitude < 34 + d then
+				return true
+			end
+		end
+	end
+	for _, m in pairs(Config.MASTERS) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(m.at.X, 0, m.at.Z)).Magnitude < 50 + d then
+			return true
+		end
+	end
+	for _, fr in ipairs(Config.Fragments) do
+		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(fr.at.X, 0, fr.at.Z)).Magnitude < 16 + d then
+			return true
+		end
+	end
+	return false
+end
+
+-- 길가: 70칸마다 석등 (양쪽 번갈아), 길 양쪽으로 가로수
+local function roadside()
+	local f = Instance.new("Folder")
+	f.Name = "Roadside"
+	f.Parent = folder
+	local lit = 0
+	for _, road in ipairs(Config.Roads) do
+		for i = 1, #road - 1 do
+			local a, b = road[i], road[i + 1]
+			local len = (b - a).Magnitude
+			if len > 40 then
+				local dir = (b - a).Unit
+				local perp = Vector3.new(-dir.Z, 0, dir.X)
+				local n = math.max(1, math.floor(len / 70))
+				for j = 1, n - 1 do
+					local p = a + (b - a) * (j / n)
+					local side = j % 2 == 0 and 1 or -1
+					local lp = p + perp * 14 * side
+					if not inAnyRegion(lp, 6) and not nearFeature(lp, 0) and not nearRoad(lp, 12) then
+						lit += 1
+						stoneLantern(lp, f, lit % 2 == 0 and lit <= 240)
+					end
+					-- 가로수: 석등과 엇갈려 길 양쪽에
+					for _, sd in ipairs({ -1, 1 }) do
+						local tp = p + dir * 35 + perp * 27 * sd
+						if (tp - a):Dot(dir) < len - 20 and not inAnyRegion(tp, 10) and not nearFeature(tp, 10) and not nearRoad(tp, 22) then
+							tree(tp, 1.45, f)
+						end
+					end
+				end
+			end
+		end
+	end
+	-- 들판의 작은 숲 (흩뿌리지 않고, 몇 군데에 모아 심는다)
+	local groves = {
+		Vector3.new(-760, 0, 760), Vector3.new(760, 0, -760), Vector3.new(-1300, 0, 450), Vector3.new(1250, 0, -420),
+		Vector3.new(700, 0, 1200), Vector3.new(-700, 0, -1200), Vector3.new(1100, 0, 1950), Vector3.new(-1900, 0, 1300),
+		Vector3.new(2300, 0, 1500), Vector3.new(-2300, 0, -900), Vector3.new(950, 0, -1500), Vector3.new(-1000, 0, 1700),
+		Vector3.new(2900, 0, 400), Vector3.new(-2800, 0, 600), Vector3.new(1500, 0, 2600), Vector3.new(-2500, 0, -1800),
+	}
+	for gi, c in ipairs(groves) do
+		if not inAnyRegion(c, 40) and not nearFeature(c, 30) and not nearRoad(c, 40) then
+			local n = 6 + gi % 3
+			for k = 0, n - 1 do
+				local a = k / n * math.pi * 2 + gi
+				local p = c + Vector3.new(math.cos(a), 0, math.sin(a)) * (12 + (k % 2) * 8)
+				tree(p, 1.3 + (k % 3) * 0.2, f, gi % 4 == 0)
+			end
+			tree(c, 2.1, f)
+			rock(c + Vector3.new(9, 0, -6), 5, f)
+		end
+	end
+end
+
+-- 문루: 길이 지역으로 드는 곳. 붉은 칠 나무 기둥 둘, 두 겹 들보, 기와 지붕, 이름 현판, 석등 한 쌍
+local function regionGate(at: Vector3, dir: Vector3, title: string, accent: Color3, parent: Instance)
+	local cf = CFrame.lookAt(at, at + dir)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "GateStone", Size = Vector3.new(3.4, 1.4, 3.4), CFrame = cf * CFrame.new(sx * 12.5, 0.7, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = parent })
+		part({ Name = "GatePost", Size = Vector3.new(2, 15, 2), CFrame = cf * CFrame.new(sx * 12.5, 8.4, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+		part({ Name = "GatePostBand", Size = Vector3.new(2.3, 0.5, 2.3), CFrame = cf * CFrame.new(sx * 12.5, 3, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+		stoneLantern((cf * CFrame.new(sx * 17, 0, -5)).Position, parent, true)
+	end
+	part({ Name = "GateBeam", Size = Vector3.new(30, 1.8, 2.4), CFrame = cf * CFrame.new(0, 15.6, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+	part({ Name = "GateBeam2", Size = Vector3.new(26, 1, 1.6), CFrame = cf * CFrame.new(0, 12.6, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = parent })
+	part({ Name = "GateBeamTrim", Size = Vector3.new(30.2, 0.3, 2.6), CFrame = cf * CFrame.new(0, 14.6, 0), Color = accent, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	for _, sz in ipairs({ -1, 1 }) do
+		part({ Name = "GateRoof", Size = Vector3.new(34, 0.7, 3.4), CFrame = cf * CFrame.new(0, 17.3, sz * 1.25) * CFrame.Angles(sz * math.rad(24), 0, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = parent })
+	end
+	part({ Name = "GateRidge", Size = Vector3.new(35, 0.8, 0.9), CFrame = cf * CFrame.new(0, 18.1, 0), Color = ROOF:Lerp(Color3.new(0, 0, 0), 0.3), Material = Enum.Material.Slate, Parent = parent })
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "GateRidgeEnd", Size = Vector3.new(1, 1.6, 1), CFrame = cf * CFrame.new(sx * 17.3, 18.6, 0) * CFrame.Angles(0, 0, sx * math.rad(-25)), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+	end
+	local plate = part({ Name = "GatePlate", Size = Vector3.new(12, 2.6, 0.4), CFrame = cf * CFrame.new(0, 10.6, 0), Color = Color3.fromRGB(30, 22, 16), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	sign(plate, Enum.NormalId.Front, { { title, Color3.fromRGB(255, 220, 140), 1 } })
+	sign(plate, Enum.NormalId.Back, { { title, Color3.fromRGB(255, 220, 140), 1 } })
+end
+
+-- 지역 테두리: 둘레에 낮은 돌 턱 (길이 지나는 곳은 비우고 문루), 네 모서리에 석등
+local gatedRegions: { [string]: boolean } = {}
+local function regionFrames()
+	local f = Instance.new("Folder")
+	f.Name = "RegionFrames"
+	f.Parent = folder
+	local gates: { Vector3 } = {}
 	for _, r in ipairs(Config.Regions) do
 		if r.id ~= "village" and not r.noGround then
+			local x0, x1 = r.center.X - r.size.X / 2, r.center.X + r.size.X / 2
+			local z0, z1 = r.center.Z - r.size.Z / 2, r.center.Z + r.size.Z / 2
+			-- 네 변: { 고정축, 값, 범위 시작, 범위 끝 }
+			local edges = { { "x", x0, z0, z1 }, { "x", x1, z0, z1 }, { "z", z0, x0, x1 }, { "z", z1, x0, x1 } }
+			local accent = r.ground:Lerp(Color3.new(1, 1, 1), 0.45)
+			for _, e in ipairs(edges) do
+				local fixed, v, lo, hi = e[1], e[2], e[3], e[4]
+				local cuts: { number } = {}
+				for _, road in ipairs(Config.Roads) do
+					for i = 1, #road - 1 do
+						local a, b = road[i], road[i + 1]
+						local av = fixed == "x" and a.X or a.Z
+						local bv = fixed == "x" and b.X or b.Z
+						if (av - v) * (bv - v) < 0 then
+							local t = (v - av) / (bv - av)
+							local along = fixed == "x" and (a.Z + (b.Z - a.Z) * t) or (a.X + (b.X - a.X) * t)
+							if along > lo + 4 and along < hi - 4 then
+								table.insert(cuts, along)
+								local pos = fixed == "x" and Vector3.new(v, 0, along) or Vector3.new(along, 0, v)
+								local dupe = false
+								for _, g in ipairs(gates) do
+									if (g - pos).Magnitude < 60 then
+										dupe = true
+									end
+								end
+								local nearVillage = math.abs(pos.X) < VILLAGE_PAD + 40 and math.abs(pos.Z) < VILLAGE_PAD + 40
+								if not dupe and not nearVillage then
+									table.insert(gates, pos)
+									gatedRegions[r.id] = true
+									local inward = Vector3.new(r.center.X - pos.X, 0, r.center.Z - pos.Z)
+									local rd = (b - a).Unit
+									if rd:Dot(inward) < 0 then
+										rd = -rd
+									end
+									pcall(regionGate, pos, rd, r.name, accent, f)
+								end
+							end
+						end
+					end
+				end
+				table.sort(cuts)
+				-- 길이 지나는 자리(폭 30)를 비우고 돌 턱을 놓는다
+				local from = lo
+				local spans: { { number } } = {}
+				for _, c in ipairs(cuts) do
+					table.insert(spans, { from, c - 15 })
+					from = c + 15
+				end
+				table.insert(spans, { from, hi })
+				for _, sp in ipairs(spans) do
+					local l = sp[2] - sp[1]
+					if l > 2 then
+						local mid = (sp[1] + sp[2]) / 2
+						local pos = fixed == "x" and Vector3.new(v, 0.55, mid) or Vector3.new(mid, 0.55, v)
+						local size = fixed == "x" and Vector3.new(1.8, 0.9, l) or Vector3.new(l, 0.9, 1.8)
+						part({ Name = "RegionCurb", Size = size, Position = pos, Color = Color3.fromRGB(150, 144, 132), Material = Enum.Material.Cobblestone, Parent = f })
+					end
+				end
+			end
+			for _, cx in ipairs({ x0, x1 }) do
+				for _, cz in ipairs({ z0, z1 }) do
+					stoneLantern(Vector3.new(cx, 0, cz), f, false)
+				end
+			end
+		end
+	end
+end
+
+local function regionSigns()
+	for _, r in ipairs(Config.Regions) do
+		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
+		if r.id ~= "village" and not r.noGround and not gatedRegions[r.id] then
 			local dir = Vector3.new(r.center.X, 0, r.center.Z).Unit
 			local pos = r.center - dir * (math.max(r.size.X, r.size.Z) / 2 - 12)
 			-- 길 옆 (길과 직각으로 비켜서)
@@ -10021,6 +10612,8 @@ function World.build(): any
 		end },
 		{ "숨은 자리", secretSite },
 		{ "지형", terrainHills },
+		{ "지역 테두리", regionFrames },
+		{ "길가", roadside },
 		{ "표지", regionSigns },
 	}) do
 		local ok, err = pcall(step[2] :: any)
@@ -11853,14 +12446,14 @@ RunService.RenderStepped:Connect(function()
 	elseif style.id == "maehwa" then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
 		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
-	elseif style.id == "byeokryeok" then
-		local n = tonumber(char:GetAttribute("Charge")) or 0
-		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", 5 - n)
+	elseif style.chargeEvery then
+		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
+		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = style.pulse.kind == "gravity" and "◆" or "✦"
-		stacks = (style.pulse.kind == "gravity" and "중압 " or "창세 ") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
-	elseif style.id == "cheonryong" and chargeStart then
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end
 	local buff = char:GetAttribute("Buff")
@@ -12767,13 +13360,15 @@ local function styleOf(id: any): any
 	return type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 end
 
+local HIT_SCALE = 1.25
 function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	local style = styleOf(styleId)
 	if not style then
 		Fx.spark(pos, Color3.fromRGB(255, 230, 200), heavy and 2 or 1.2, heavy and 10 or 6)
 		return
 	end
-	local s = heavy and 1.6 or 1
+	-- 맞는 순간의 연출은 모두 한 치수 크게 (HIT_SCALE)
+	local s = (heavy and 1.6 or 1) * HIT_SCALE
 	local c, c2 = style.color, style.color2
 	Fx.spark(pos, c, 1.3 * s, heavy and 12 or 7)
 	-- 강타는 땅까지 울린다 (흙먼지·돌 조각)
@@ -12956,6 +13551,17 @@ function Fx.projectile(data: any)
 	tr.Color = ColorSequence.new(c2, c)
 	tr.Transparency = NumberSequence.new(0, 1)
 	tr.Parent = ball
+	-- 날아가는 기운 뒤로 빛 가루가 흩날린다
+	local dustE = Instance.new("ParticleEmitter")
+	dustE.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	dustE.Rate = 40
+	dustE.Lifetime = NumberRange.new(0.25, 0.5)
+	dustE.Speed = NumberRange.new(1, 4)
+	dustE.SpreadAngle = Vector2.new(180, 180)
+	dustE.Size = NumberSequence.new(size * 0.18, 0)
+	dustE.LightEmission = 1
+	dustE.Color = ColorSequence.new(c2, c)
+	dustE.Parent = core
 	-- 용 모양: 몸통이 따라오며 꿈틀댄다
 	local tail = {}
 	if style and style.fx == "dragon" then
@@ -13721,6 +14327,54 @@ function Fx.swing(styleId: any, model: Model, heavy: boolean)
 	end
 end
 
+-- 기술 진(陣): 발밑에 도는 빛의 고리 두 겹과 여섯 개의 표식. 펼쳐졌다가 돌며 사라진다 (모든 기술이 같은 틀, 빛깔만 권법마다)
+function Fx.sigil(at: Vector3, radius: number, c: Color3, c2: Color3, life: number)
+	local parts: { BasePart } = {}
+	local spec: { { number } } = {} -- { 반지름 비율, 각도, 도는 방향, 굵기 }
+	local nOuter, nInner = 20, 12
+	for k = 0, nOuter - 1 do
+		local p = piece(Vector3.new(0.35, 0.15, radius * 2 * math.pi / nOuter * 0.82), c, Enum.Material.Neon, nil, 0.1)
+		table.insert(parts, p)
+		table.insert(spec, { 1, k / nOuter * math.pi * 2, 1 })
+	end
+	for k = 0, nInner - 1 do
+		local p = piece(Vector3.new(0.25, 0.15, radius * 0.62 * 2 * math.pi / nInner * 0.7), c2, Enum.Material.Neon, nil, 0.15)
+		table.insert(parts, p)
+		table.insert(spec, { 0.62, k / nInner * math.pi * 2, -1 })
+	end
+	for k = 0, 5 do
+		local p = piece(Vector3.new(radius * 0.16, 0.15, radius * 0.16), k % 2 == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
+		table.insert(parts, p)
+		table.insert(spec, { 0.81, k / 6 * math.pi * 2, 1, 1 })
+	end
+	local start = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - start
+		if t > life then
+			conn:Disconnect()
+			for _, p in ipairs(parts) do
+				p:Destroy()
+			end
+			return
+		end
+		local open = math.min(1, t / 0.15) -- 펼쳐진다
+		local fade = math.max(0, (t - life * 0.55) / (life * 0.45)) -- 끝 무렵 흐려진다
+		for i, p in ipairs(parts) do
+			local sp = spec[i]
+			local a = sp[2] + t * 1.6 * sp[3]
+			local rr = radius * sp[1] * (0.4 + 0.6 * open)
+			local pos = at + Vector3.new(math.cos(a) * rr, 0.25, math.sin(a) * rr)
+			if sp[4] then
+				p.CFrame = CFrame.new(pos) * CFrame.Angles(0, -a + math.rad(45), 0)
+			else
+				p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a)))
+			end
+			p.Transparency = 0.1 + 0.9 * fade
+		end
+	end)
+end
+
 function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	local style = styleOf(styleId)
 	local r = rootPart(model)
@@ -13735,8 +14389,9 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	Fx.flash(pos, c, 18, 2.5, 0.45)
 	look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
 	local feet = pos - Vector3.new(0, 2.6, 0)
-	-- 공통: 발밑 고리와 몸의 기운
-	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 12 or 16, 0.45)
+	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
+	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
+	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
 	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
 	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
@@ -14327,8 +14982,19 @@ function Fx.mech(data: any)
 	local kind = data.kind
 	-- 기술이 땅에 닿는 곳: 빛과 불티 (장치마다 공통)
 	if data.at and (kind == "zone" or kind == "drop" or kind == "strike" or kind == "pillar" or kind == "wave" or kind == "beam" or kind == "launch") then
-		Fx.flash(data.at, c, (data.radius or 8) * 2.2, 3, 0.35)
-		Fx.burst("spark", data.at, c, 10, math.clamp((data.radius or 8) / 8, 0.8, 1.8))
+		local rad = data.radius or 8
+		Fx.flash(data.at, c, rad * 2.8, 3.5, 0.4)
+		Fx.burst("spark", data.at, c, 14, math.clamp(rad / 7, 0.9, 2.2))
+		Fx.burst("glitter", data.at, c2, 8, math.clamp(rad / 9, 0.8, 1.8))
+		-- 땅에 닿는 자리마다 두 겹 충격 고리 (안쪽은 밝게, 바깥은 넓게)
+		Fx.ring(data.at - Vector3.new(0, 2.2, 0), c2, 1, rad * 1.6, 0.3)
+		if kind == "strike" or kind == "pillar" or kind == "drop" then
+			local col = piece(Vector3.new(rad * 0.5, 40, rad * 0.5), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.35)
+			col.CFrame = CFrame.new(data.at + Vector3.new(0, 18, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			col.Size = Vector3.new(40, rad * 0.5, rad * 0.5)
+			tween(col, 0.35, { Size = Vector3.new(44, 0.2, 0.2), Transparency = 1 })
+			Debris:AddItem(col, 0.4)
+		end
 		if kind == "drop" or kind == "wave" or kind == "launch" then
 			Fx.burst("dust", data.at - Vector3.new(0, 2, 0), Color3.fromRGB(175, 160, 140), 14, math.clamp((data.radius or 8) / 10, 0.8, 2))
 		end
@@ -15264,6 +15930,9 @@ local function buildStyles()
 			Request:FireServer("learn", selected)
 		elseif action == "break" then
 			Request:FireServer("breakthrough", selected)
+		elseif action == "awaken" then
+			Request:FireServer("awaken", selected)
+			window.Visible = false
 		elseif action == "guide" then
 			UI.setGuide(selected)
 			window.Visible = false
@@ -15371,10 +16040,35 @@ local function buildStyles()
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
 		end
+		-- 각성 권법이 있는 권법: 각성 조건
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf == id and owned then
+				local A = Config.AWAKEN_STYLE
+				table.insert(lines, "")
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상 · 💰 %s → 각성 시련 (어디서나)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins)))
+			end
+		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
 		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_MAX
-		if canBreak then
+		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
+		local v2 = nil
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf == id then
+				v2 = sd
+			end
+		end
+		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_MAX
+		if canAwaken and v2 then
+			local A = Config.AWAKEN_STYLE
+			dBtn.Text = string.format("🔥 각성 시련 → %s  💰 %s", v2.name, Config.formatNumber(A.coins))
+			dBtn.BackgroundColor3 = (state and state.coins >= A.coins and state.realm >= A.realm) and Color3.fromRGB(200, 40, 60) or C.panel
+			action = "awaken"
+		elseif s.awakenOf and not owned then
+			dBtn.Text = "🔥 원래 권법에서 각성한다"
+			dBtn.BackgroundColor3 = C.panel
+			action = "none"
+		elseif canBreak then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			dBtn.Text = string.format("⬆ 승급  💰 %s", Config.formatNumber(step.coins))
 			dBtn.BackgroundColor3 = (state and state.coins >= step.coins and state.realm >= step.realm) and Color3.fromRGB(200, 150, 40) or C.panel
@@ -15598,7 +16292,7 @@ local function buildHelp()
 			"• <b>붉게 빛나는 공격</b>은 막을 수 없다. 대시로 피해라",
 			"",
 			"<b>강해지기</b>",
-			"• 수련: 바위 들기(근골) · 목인장(체력) · 폭포 명상(내공) · 대나무 경공(경공). 박자를 맞추면 2배",
+			"• 수련: 바위 들기(근골) · 목인장(체력·경공) · 폭포 명상(내공). 박자를 맞추면 2배",
 			"• 능력치는 천천히 오른다 (로그). 오래 수련한 쪽이 조금 유리할 뿐, 흘리기를 잘하면 이긴다",
 			"• 숙련도: 그 권법으로 맞힐수록 오른다. 숙련 3에 R, 5에 오의가 열린다",
 			"• 경지: 능력치 합으로 삼류 → 이류 → 일류 → 절정 → 초절정 → 화경 → 현경 → 생사경",
@@ -15650,7 +16344,7 @@ local function buildTrainGuide()
 		"• 경지가 오를수록 한 번에 오르는 능력치가 커진다",
 		"",
 	}
-	local order = { "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }
+	local order = { "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma" }
 	for _, id in ipairs(order) do
 		local t = Config.Training[id]
 		if t then
@@ -15710,7 +16404,7 @@ local function buildTest()
 	})
 	-- 수련 자리로 바로 (종류마다 첫 자리)
 	local trainItems = {}
-	for _, id in ipairs({ "rock", "dummy", "waterfall", "bamboo", "mabo", "ironpalm", "breathing", "simma" }) do
+	for _, id in ipairs({ "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma" }) do
 		local t = Config.Training[id]
 		if t then
 			table.insert(trainItems, { "🌀 " .. t.icon .. " " .. t.name, "testTrainTp", id })
@@ -15746,6 +16440,11 @@ local function buildTest()
 		local line: string
 		if st.starter then
 			line = "처음부터 가지고 시작한다 (청운 장로에게 받는다)"
+		elseif st.awakenOf then
+			local base = Config.STYLE_BY_ID[st.awakenOf]
+			local A = Config.AWAKEN_STYLE
+			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지 + 💰 %s → 권법 창의 '🔥 각성 시련' (어디서나) → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
+				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
 			if st.id == "mugeuk" then
@@ -16943,17 +17642,17 @@ end
 -- 혈마의 허상: 뿔, 날개, 빛나는 눈, 손톱. 등 뒤에서 솟아 적을 찢는다
 ------------------------------------------------------------------------
 local demons: { [Model]: Model } = {}
-local function demonSummon(caster: Model, dur: number, styleId: string)
+local function demonSummon(caster: Model, dur: number, styleId: string, scale: number?)
 	local r = rootOf(caster)
 	if not r then
 		return
 	end
 	local look = flat(r.CFrame.LookVector)
-	local s = 4.4
+	local s = 4.4 * (scale or 1)
 	local base = r.Position - look * 8
 	local to = CFrame.lookAt(base + Vector3.new(0, 2.6 * s - 2.5, 0), base + Vector3.new(0, 2.6 * s - 2.5, 0) + look)
 	local from = to - Vector3.new(0, 3 * s, 0)
-	local d = spirit(s, Color3.fromRGB(110, 5, 15), Enum.Material.Neon, 0.35, styleId, from)
+	local d = spirit(s, (styleColors(styleId)):Lerp(Color3.new(0, 0, 0), 0.5), Enum.Material.Neon, 0.35, styleId, from)
 	local red, gold = Color3.fromRGB(255, 40, 40), Color3.fromRGB(255, 220, 90)
 	for _, x in ipairs({ -1, 1 }) do
 		-- 휘어진 뿔 두 마디
@@ -17063,7 +17762,7 @@ end
 -- 진룡: 마디마디 이어진 용이 땅에서 솟아 날아다닌다
 ------------------------------------------------------------------------
 local dragons: { [Model]: any } = {}
-local function dragonSummon(caster: Model, dur: number, styleId: string)
+local function dragonSummon(caster: Model, dur: number, styleId: string, scale: number?)
 	local r = rootOf(caster)
 	if not r then
 		return
@@ -17075,7 +17774,7 @@ local function dragonSummon(caster: Model, dur: number, styleId: string)
 	local segs = {}
 	local N = 26
 	for i = 1, N do
-		local sz = 5.5 * (1 - i / N * 0.75)
+		local sz = 5.5 * (scale or 1) * (1 - i / N * 0.75)
 		local seg = piece(Vector3.new(sz, sz, sz), c:Lerp(c2, (i % 4) / 4), Enum.Material.Neon, Enum.PartType.Ball, 0.1)
 		seg.Position = base - Vector3.new(0, 20, 0)
 		table.insert(segs, seg)
@@ -17301,9 +18000,9 @@ local H: { [string]: (any) -> () } = {}
 
 function H.avatar(data: any)
 	if data.look == "demon" then
-		demonSummon(data.m, data.dur, data.style)
+		demonSummon(data.m, data.dur, data.style, data.scale)
 	elseif data.look == "dragon" then
-		dragonSummon(data.m, data.dur, data.style)
+		dragonSummon(data.m, data.dur, data.style, data.scale)
 	end
 end
 function H.avatarStrike(data: any)
@@ -18590,6 +19289,8 @@ function Ults.intro(styleId: any, model: Model)
 	tween(col, 0.5, { Size = Vector3.new(60, 0.3, 0.3), Transparency = 1 })
 	Debris:AddItem(col, 0.55)
 	Fx.ring(r.Position - Vector3.new(0, 2.4, 0), c, 14, 2, 0.4)
+	-- 오의의 진: 발밑에 크게 펼쳐져 돈다
+	Fx.sigil(r.Position - Vector3.new(0, 2.6, 0), 15, c, c2, 1.2)
 	Fx.afterimage(model, c, 0.4)
 	-- 오의를 여는 순간: 빛 가루가 회오리치듯 솟고, 둘레가 크게 밝아지며 불씨가 흩날린다
 	Fx.burst("glitter", r.Position, c2, 40, 1.4)

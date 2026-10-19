@@ -638,8 +638,12 @@ end
 
 function Trial.start(player: Player, styleId: string)
 	local style = Config.STYLE_BY_ID[styleId]
-	local master = Config.MASTERS[styleId]
 	local f = Combat.fighterOfPlayer(player)
+	-- 각성 시련은 사부 없이 어디서나: 각성한 내 그림자가 앞에 나타난다
+	local master = Config.MASTERS[styleId]
+	if not master and style and style.awakenOf and f then
+		master = { name = "각성한 그림자", at = f.root.Position + Combat.look(f) * 12 }
+	end
 	if not style or not master or not f or f.dead then
 		return
 	end
@@ -648,8 +652,22 @@ function Trial.start(player: Player, styleId: string)
 		return
 	end
 	local key = "trial_" .. styleId
-	Config.Enemies[key] = trialDef(style, master)
-	local e = Npc.spawn(key, false, master.at + (f.root.Position - master.at).Unit * 6, "trial")
+	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
+	local e
+	if style.trialBoss then
+		-- 보스 시험 (권존): 사부 본인이 보스처럼 패턴을 쓰며 세 단계로 싸운다
+		local def = trialDef(style, master)
+		for k2, v in pairs(style.trialBoss) do
+			def[k2] = v
+		end
+		def.name = master.name
+		def.respawn = 99999
+		Config.Bosses[key] = def
+		e = Npc.spawn(key, true, spawnAt, "trial")
+	else
+		Config.Enemies[key] = trialDef(style, master)
+		e = Npc.spawn(key, false, spawnAt, "trial")
+	end
 	if not e then
 		return
 	end
@@ -668,18 +686,39 @@ function Trial.start(player: Player, styleId: string)
 		Combat.sync(ef)
 	end
 	-- 궁극의 권법 시험은 분신이 훨씬 질기다 (한두 번의 오의로 끝나지 않게)
-	if style.trialHp then
-		ef.maxHp = math.floor(ef.maxHp * style.trialHp)
+	local hpMul = style.trialHp or (style.awakenOf and Config.AWAKEN_STYLE.trialHp)
+	if hpMul then
+		ef.maxHp = math.floor(ef.maxHp * hpMul)
 		ef.hp = ef.maxHp
 		Combat.sync(ef)
 	end
 	e.target = f
 	ef.model:SetAttribute("Style", styleId)
 	activeTrial[player] = ef
-	Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+	if style.trialBoss then
+		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
+		World.setClock(12)
+		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
+		task.spawn(function()
+			local seen = 1
+			while activeTrial[player] == ef and not ef.dead do
+				local ph = tonumber(ef.model:GetAttribute("BossPhase")) or 1
+				if ph ~= seen then
+					seen = ph
+					World.setClock(ph == 2 and 0 or 5.6)
+					toast(player, ph == 2 and "🌙 해가 졌다. 달의 시간이다" or "🌅 동이 튼다. 마지막 시간이다")
+				end
+				task.wait(0.3)
+			end
+		end)
+	elseif style.awakenOf then
+		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
+	else
+		Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+	end
 	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId })
 	-- 너무 오래 끌면 사부가 거둔다
-	task.delay(style.trialHp and 300 or 150, function()
+	task.delay(hpMul and 300 or 150, function()
 		if activeTrial[player] == ef and not ef.dead then
 			activeTrial[player] = nil
 			Npc.despawn(ef)
@@ -697,9 +736,21 @@ function Trial.ended(player: Player, won: boolean)
 	local p = profiles[player]
 	if won and p then
 		local id = ef.trialStyle
-		p.trials[id] = true
 		local style = Config.STYLE_BY_ID[id]
-		Push:FireClient(player, "trialWin", { style = id, master = Config.MASTERS[id].name })
+		if style.awakenOf then
+			-- 각성 시련을 넘었다: 은자를 내고 진 권법을 바로 얻는다
+			p.coins = math.max(0, p.coins - Config.AWAKEN_STYLE.coins)
+			grantStyle(player, id, true)
+			p.style = id
+			refreshFighter(player)
+			toast(player, string.format("🔥 각성! %s을(를) 얻었어요", style.name))
+			states[player].dirty = true
+			pushState(player)
+			return
+		end
+		p.trials[id] = true
+		local m = Config.MASTERS[id]
+		Push:FireClient(player, "trialWin", { style = id, master = m and m.name or "" })
 		toast(player, string.format("🥋 시험 통과! 이제 %s을(를) 배울 수 있어요 (사부 곁에서 T)", style.name))
 		states[player].dirty = true
 		Story.event(player, "trial")
@@ -1631,11 +1682,14 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.pacheon = nil :: any
 			p.styles.taecho = nil :: any
 			p.styles.ilwol = nil :: any
+			p.styles.hyeolma2 = nil :: any
+			p.styles.cheonryong2 = nil :: any
+			p.styles.byeokryeok2 = nil :: any
 			p.trials.taecho = nil :: any
 			p.trials.gaecheon = nil :: any
 			p.trials.ilwol = nil :: any
 			p.fragments = {}
-			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" then
+			if p.style == "mugeuk" or p.style == "hyeolma" or p.style == "gaecheon" or p.style == "pacheon" or p.style == "taecho" or p.style == "ilwol" or (Config.STYLE_BY_ID[p.style] and Config.STYLE_BY_ID[p.style].awakenOf) then
 				p.style = "samjae"
 			end
 		end
@@ -1741,6 +1795,33 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		p.autoStat = order[i % #order + 1]
 		st.dirty = true
 		pushState(player)
+	elseif action == "awaken" then
+		-- 각성 (진 권법): 원래 권법 숙련 최대 + 깨달음 모두 + 경지 + 은자 → 각성 시련
+		local base = type(a1) == "string" and Config.STYLE_BY_ID[a1]
+		local v2 = nil
+		for _, sd in ipairs(Config.Styles) do
+			if base and sd.awakenOf == base.id then
+				v2 = sd
+			end
+		end
+		if not base or not v2 or not p.styles[base.id] or p.styles[v2.id] then
+			return
+		end
+		local A = Config.AWAKEN_STYLE
+		local f0 = Combat.fighterOfPlayer(player)
+		if Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
+			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
+		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
+			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
+		elseif Config.realmOf(Calc.total(p)) < A.realm then
+			toast(player, string.format("각성은 %s의 경지부터예요", Config.Realms[A.realm].name))
+		elseif p.coins < A.coins then
+			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(A.coins)))
+		elseif f0 and f0.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 각성할 수 없어요")
+		else
+			Trial.start(player, v2.id)
+		end
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
