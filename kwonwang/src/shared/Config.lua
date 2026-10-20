@@ -1614,7 +1614,7 @@ Config.Story = {
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
-	{ title = "흩어진 비급", text = "옛 고수가 남긴 비급이 다섯 조각으로 흩어졌다는 소문이 있다. 두 조각을 찾아라. 지도에서 볼 수 없으니 발로 찾아야 한다.", goal = { kind = "fragment", n = 2 }, reward = { coins = 500, stats = 40 } },
+	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 500, stats = 40 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
 	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라. 특급부터는 몸만으로 오르지 않는다. 능력치가 닿으면 경지의 관문이 열리니, 관문 수호자를 꺾어라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
@@ -1630,7 +1630,7 @@ Config.Story = {
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 비급 조각, 스물한 권법의 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 큰 볼거리 (지도에도 나온다)
