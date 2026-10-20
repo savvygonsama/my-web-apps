@@ -222,6 +222,31 @@ function Anim.watch(model: Model)
 		lastT = os.clock(),
 		written = {},
 	}
+	-- 로블록스 기본 동작(Animate)이 관절을 함께 건드리면 손발이 떨린다: 사람 몸에서도 기본 동작을 끈다
+	pcall(function()
+		local animate = model:FindFirstChild("Animate")
+		if animate and model == Players.LocalPlayer.Character and animate:IsA("LocalScript") then
+			animate.Enabled = false
+		end
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		local function hook(animator: Instance)
+			if animator:IsA("Animator") then
+				for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+				animator.AnimationPlayed:Connect(function(track: AnimationTrack)
+					track:Stop(0)
+				end)
+			end
+		end
+		if hum then
+			local animator = hum:FindFirstChildOfClass("Animator")
+			if animator then
+				hook(animator)
+			end
+			hum.ChildAdded:Connect(hook)
+		end
+	end)
 	-- 하늘로 띄워지면 허우적대며 한 바퀴
 	model:GetAttributeChangedSignal("LaunchedAt"):Connect(function()
 		Anim.play(model, "launched", 0.9)
@@ -555,9 +580,8 @@ local function step(dt: number)
 					out = out * CFrame.Angles(b * 1.6 * RAD * still, 0, 0)
 				elseif name == "N" then
 					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
-				elseif name == "RS" or name == "LS" then
-					out = out * CFrame.Angles(b * 2.5 * RAD * still, 0, (name == "RS" and 1 or -1) * b * 1.5 * RAD * still)
 				end
+				-- (어깨는 숨에 맞춰 흔들지 않는다: 손끝이 떨려 보인다)
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))

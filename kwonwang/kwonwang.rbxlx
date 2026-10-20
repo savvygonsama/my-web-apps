@@ -16043,6 +16043,31 @@ function Anim.watch(model: Model)
 		lastT = os.clock(),
 		written = {},
 	}
+	-- 로블록스 기본 동작(Animate)이 관절을 함께 건드리면 손발이 떨린다: 사람 몸에서도 기본 동작을 끈다
+	pcall(function()
+		local animate = model:FindFirstChild("Animate")
+		if animate and model == Players.LocalPlayer.Character and animate:IsA("LocalScript") then
+			animate.Enabled = false
+		end
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		local function hook(animator: Instance)
+			if animator:IsA("Animator") then
+				for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+					track:Stop(0)
+				end
+				animator.AnimationPlayed:Connect(function(track: AnimationTrack)
+					track:Stop(0)
+				end)
+			end
+		end
+		if hum then
+			local animator = hum:FindFirstChildOfClass("Animator")
+			if animator then
+				hook(animator)
+			end
+			hum.ChildAdded:Connect(hook)
+		end
+	end)
 	-- 하늘로 띄워지면 허우적대며 한 바퀴
 	model:GetAttributeChangedSignal("LaunchedAt"):Connect(function()
 		Anim.play(model, "launched", 0.9)
@@ -16376,9 +16401,8 @@ local function step(dt: number)
 					out = out * CFrame.Angles(b * 1.6 * RAD * still, 0, 0)
 				elseif name == "N" then
 					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
-				elseif name == "RS" or name == "LS" then
-					out = out * CFrame.Angles(b * 2.5 * RAD * still, 0, (name == "RS" and 1 or -1) * b * 1.5 * RAD * still)
 				end
+				-- (어깨는 숨에 맞춰 흔들지 않는다: 손끝이 떨려 보인다)
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))
@@ -19825,6 +19849,7 @@ type Rig = {
 	irons: { BasePart },
 	skip: number,
 	lastU: { [string]: number },
+	roarT: number?,
 }
 
 local rigs: { [Model]: Rig } = {}
@@ -20359,96 +20384,208 @@ local function buildCloud(rig: Rig)
 end
 
 ------------------------------------------------------------------------
--- 청룡: 열여덟 마디. 머리가 지나간 길을 몸이 그대로 따라 흐른다
+-- 청룡 (로벅스 상품): 스물두 마디의 비늘 몸이 머리가 지나간 길을 그대로 따라 흐른다.
+-- 빛나는 등줄기, 금빛 등지느러미, 몸을 감도는 영기의 불꽃, 꼬리 끝에서 흐르는 금빛 띠,
+-- 크게 벌린 입과 송곳니, 가지 뿔, 흐르는 수염, 빛을 끌며 도는 눈, 여의주. 가끔 고개를 들고 포효한다
 ------------------------------------------------------------------------
-local DRAGON = { B = 4.8, N = 22, gap = 1.05, legs = { 5, 14 } } -- B가 작을수록 크게 (몸 굵기·길이·머리 모두)
+local DRAGON = { B = 4.8, N = 22, gap = 1.05, legs = { 5, 14 }, H = 1.25 } -- B가 작을수록 크게, H = 머리 크기
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
 local function segW(i: number): number
 	if i < 3 then
-		return 1.7 + 0.15 * i
+		return 1.8 + 0.17 * i
 	end
-	return 2.0 - 1.45 * ((i - 3) / (DRAGON.N - 4))
+	return 2.3 - 1.75 * ((i - 3) / (DRAGON.N - 4))
+end
+local function trailOn(part: BasePart, a: Vector3, b: Vector3, c0: Color3, c1: Color3, life: number)
+	local a0 = Instance.new("Attachment")
+	a0.Position = a
+	a0.Parent = part
+	local a1 = Instance.new("Attachment")
+	a1.Position = b
+	a1.Parent = part
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = a0
+	tr.Attachment1 = a1
+	tr.Color = ColorSequence.new(c0, c1)
+	tr.Transparency = NumberSequence.new(0.15, 1)
+	tr.LightEmission = 1
+	tr.Lifetime = life
+	tr.MinLength = 0.05
+	tr.FaceCamera = true
+	tr.Parent = part
 end
 local function buildDragon(rig: Rig)
 	local m = rig.m
+	local k = rig.k
 	local c, gold = m.color, m.mane
-	local belly = Color3.fromRGB(240, 225, 170)
-	local darkC = c:Lerp(DARK, 0.35)
-	for i = 0, DRAGON.N - 1 do
+	local deep = Color3.fromRGB(18, 66, 104)
+	local belly = Color3.fromRGB(242, 226, 168)
+	local glowGold = Color3.fromRGB(255, 232, 150)
+	local spirit = Color3.fromRGB(120, 255, 220)
+	local N = DRAGON.N
+	for i = 0, N - 1 do
 		local w = segW(i)
 		local b = "s" .. i
-		add(rig, b, "ell", V(w, w * 0.92, 1.8), CF(), c)
-		add(rig, b, "ell", V(w * 0.72, w * 0.42, 1.55), CF(0, -w * 0.32, 0), belly)
-		-- 등지느러미 (금빛)와 옆구리의 짙은 비늘 줄
-		wave(add(rig, b, "ell", V(0.12, w * 0.62, 0.8), CF(0, w * 0.5, 0.15) * ANG(-0.45, 0, 0), gold, Enum.Material.Metal), 3, 0.06, 4, i * 0.6, 0.1)
+		-- 머리 쪽 비취빛에서 꼬리 쪽 짙은 바닷빛으로
+		local col = c:Lerp(deep, i / (N - 1) * 0.55)
+		local sheen = col:Lerp(Color3.fromRGB(130, 230, 210), 0.3)
+		local body = add(rig, b, "ell", V(w, w * 0.92, 1.85), CF(), col)
+		body.p.Reflectance = 0.12
+		add(rig, b, "ell", V(w * 0.74, w * 0.42, 1.6), CF(0, -w * 0.32, 0), belly)
+		add(rig, b, "ell", V(w * 0.6, 0.12, 0.35), CF(0, -w * 0.48, -0.6), belly:Lerp(gold, 0.45))
+		-- 등의 비늘 두 줄 (겹쳐 얹은 비늘판)
+		for _, sd in ipairs({ -1, 1 }) do
+			local sc = add(rig, b, "ell", V(w * 0.55, w * 0.22, 0.95), CF(sd * w * 0.2, w * 0.36, -0.15) * ANG(0.2, 0, sd * 0.35), sheen)
+			sc.p.Reflectance = 0.25
+		end
+		-- 빛나는 등줄기와 금빛 등지느러미 (끝은 빛난다)
+		add(rig, b, "ell", V(0.13, 0.13, 1.5), CF(0, w * 0.47, 0), glowGold, Enum.Material.Neon, 0.1)
+		wave(add(rig, b, "ell", V(0.12, w * 0.7, 0.95), CF(0, w * 0.56, 0.15) * ANG(-0.5, 0, 0), gold, Enum.Material.Metal), 1, 0.05, 4, i * 0.6, 0.12)
+		wave(add(rig, b, "ell", V(0.07, w * 0.36, 0.5), CF(0, w * 0.86, 0.42) * ANG(-0.6, 0, 0), glowGold, Enum.Material.Neon, 0.2), 1, 0.05, 4, i * 0.6, 0.12)
 		if i % 2 == 0 then
-			for _, s in ipairs({ -1, 1 }) do
-				add(rig, b, "ell", V(0.1, w * 0.3, 1.2), CF(s * w * 0.46, w * 0.05, 0), darkC)
+			for _, sd in ipairs({ -1, 1 }) do
+				add(rig, b, "ell", V(0.1, w * 0.3, 1.25), CF(sd * w * 0.46, w * 0.05, 0), col:Lerp(DARK, 0.35))
+			end
+		end
+		-- 옆구리의 금빛 불꽃 털 (세 마디마다, 뒤로 흩날린다)
+		if i % 3 == 1 and i > 3 then
+			for _, sd in ipairs({ -1, 1 }) do
+				wave(add(rig, b, "ell", V(0.12, w * 0.65, 0.95), CF(sd * w * 0.5, w * 0.1, 0.3) * ANG(-0.9, 0, sd * 1.0), gold), 3, 0.12, 5, i + sd, 0.25)
 			end
 		end
 	end
-	-- 꼬리 끝 금빛 지느러미 (부채꼴)
-	for j = -1, 1 do
-		wave(add(rig, "s" .. (DRAGON.N - 1), "ell", V(0.1, 1.5, 0.9), CF(0, 0, 0.9) * ANG(0.5 + j * 0.5, 0, 0), gold, Enum.Material.Metal), 3, 0.15, 3, j, 0.15)
+	-- 몸을 감도는 영기의 불꽃과 금빛 가루, 몸 아래로 흩어지는 구름
+	for _, si in ipairs({ 3, 8, 13, 18 }) do
+		local holder = add(rig, "s" .. si, "ball", V(0.1, 0.1, 0.1), CF(0, segW(si) * 0.3, 0), WHITE, nil, 1).p
+		local fl = emitter(holder, TEX_FIRE, spirit, 1.8 * k, 14, 0.7, 1.2, 40)
+		fl.Color = ColorSequence.new(spirit, gold)
+		fl.LightEmission = 1
+		fl.Acceleration = V(0, 4, 0)
+		emitter(holder, TEX_SPARK, glowGold, 0.45 * k, 10, 1.2, 1.5, 180)
 	end
-	-- 다리 넷
-	for _, si in ipairs(DRAGON.legs) do
-		local ls = segW(si) / 2
-		for _, side in ipairs({ "L", "R" }) do
-			local u = "d" .. si .. side .. "u"
-			local l = "d" .. si .. side .. "l"
-			add(rig, u, "ell", V(0.5, 1.25, 0.5) * ls, CF(0, -0.55 * ls, 0), c)
-			add(rig, l, "ell", V(0.38, 0.95, 0.38) * ls, CF(0, -0.42 * ls, 0), c)
-			for _, x in ipairs({ -0.14, 0, 0.14 }) do
-				add(rig, l, "ell", V(0.12, 0.12, 0.42) * ls, CF(x * ls, -0.9 * ls, -0.12 * ls) * ANG(-0.5, 0, 0), gold, Enum.Material.Metal)
-			end
-		end
-	end
-	-- 머리 (-Z가 앞)
-	add(rig, "head", "ell", V(1.55, 1.2, 1.7), CF(0, 0.1, 0), c)
-	add(rig, "head", "ell", V(1.1, 0.78, 2.0), CF(0, -0.05, -1.45), c)
-	add(rig, "head", "ell", V(0.9, 0.55, 0.6), CF(0, 0.12, -2.35), c)
-	for _, s in ipairs({ -1, 1 }) do
-		add(rig, "head", "ell", V(0.45, 0.3, 0.9), CF(s * 0.42, 0.55, -0.25), darkC)
-		add(rig, "head", "ball", V(0.18, 0.18, 0.18), CF(s * 0.28, 0.3, -2.55), DARK)
-		add(rig, "head", "ell", V(0.32, 0.2, 0.18), CF(s * 0.55, 0.35, -0.55), Color3.fromRGB(255, 235, 110), Enum.Material.Neon)
-		add(rig, "head", "ell", V(0.06, 0.18, 0.1), CF(s * 0.64, 0.35, -0.58), DARK)
-		add(rig, "head", "ell", V(0.12, 0.3, 0.12), CF(s * 0.36, -0.42, -2.0), WHITE)
-		-- 뿔: 뒤로 휘어 오르는 금빛 가지 뿔
-		add(rig, "head", "ell", V(0.24, 0.24, 1.5), CF(s * 0.42, 0.7, 0.6) * ANG(0.5, s * 0.25, 0), gold, Enum.Material.Metal)
-		add(rig, "head", "ell", V(0.16, 0.16, 1.0), CF(s * 0.55, 1.15, 1.35) * ANG(0.9, s * 0.35, 0), gold, Enum.Material.Metal)
-		add(rig, "head", "ell", V(0.12, 0.12, 0.6), CF(s * 0.62, 1.0, 0.9) * ANG(-0.2, s * 0.6, 0), gold, Enum.Material.Metal)
-		-- 수염 (네 마디씩, 뒤로 흐른다)
-		for j = 1, 4 do
-			add(rig, "w" .. (s < 0 and "L" or "R") .. j, "ell", V(0.09, 0.09, 0.78), CF(0, 0, 0.35), gold, Enum.Material.Neon)
-		end
-	end
-	for j = 0, 3 do
-		wave(add(rig, "head", "ell", V(0.14, 0.85, 0.55), CF((j % 2 == 0 and 0.3 or -0.3), 0.55, 0.5 + j * 0.35) * ANG(-0.6, 0, (j % 2 == 0 and 0.3 or -0.3)), gold), 3, 0.08, 4, j, 0.2)
-	end
-	-- 아래턱 (숨 쉬듯 조금 벌어진다), 이빨, 금빛 턱수염
-	add(rig, "jaw", "ell", V(1.0, 0.34, 1.85), CF(0, -0.05, -1.0), belly)
-	for _, s in ipairs({ -1, 1 }) do
-		add(rig, "jaw", "ell", V(0.11, 0.22, 0.11), CF(s * 0.32, 0.16, -1.55), WHITE)
-		add(rig, "jaw", "ell", V(0.11, 0.2, 0.11), CF(s * 0.34, 0.15, -1.05), WHITE)
-		wave(add(rig, "jaw", "ell", V(0.3, 0.75, 0.25), CF(s * 0.15, -0.4, -0.55) * ANG(0.3, 0, 0), gold), 3, 0.08, 3, s, 0.15)
-	end
-	-- 머리 앞에서 떠도는 여의주
-	local pearl = add(rig, "pearl", "ball", V(0.9, 0.9, 0.9), CF(), Color3.fromRGB(255, 245, 210), Enum.Material.Neon).p
-	local pl = Instance.new("PointLight")
-	pl.Color = gold
-	pl.Range = 14
-	pl.Brightness = 1.8
-	pl.Parent = pearl
-	emitter(pearl, TEX_SPARK, gold, 0.35, 16, 0.9, 1.5, 180)
-	local glowHolder = add(rig, "head", "ball", V(0.1, 0.1, 0.1), CF(0, 0.2, -0.4), gold, Enum.Material.Neon, 1).p
-	emitter(glowHolder, TEX_SPARK, gold, 0.4, 22, 1.3, 1.2, 180)
-	-- 몸 아래로 흩어지는 구름 (하늘을 나는 용)
 	for _, si in ipairs({ 6, 12, 18 }) do
 		local holder = add(rig, "s" .. si, "ball", V(0.1, 0.1, 0.1), CF(0, -segW(si) * 0.4, 0), WHITE, nil, 1).p
-		local mist = emitter(holder, TEX_SMOKE, Color3.fromRGB(240, 245, 255), 3.2, 7, 1.8, 0.6, 50)
+		local mist = emitter(holder, TEX_SMOKE, Color3.fromRGB(240, 245, 255), 3.4 * k, 7, 1.8, 0.6, 50)
 		mist.Transparency = NumberSequence.new(0.55, 1)
 		mist.LightEmission = 0.15
 	end
+	local bodyLight = Instance.new("PointLight")
+	bodyLight.Color = spirit
+	bodyLight.Range = 18
+	bodyLight.Brightness = 1.1
+	bodyLight.Parent = rig.parts[#rig.parts].p
+	-- 꼬리 끝: 다섯 갈래 금빛 부채 지느러미 (가장자리는 빛난다)와 흐르는 금빛 띠
+	local tailB = "s" .. (N - 1)
+	for j = -2, 2 do
+		local th = math.rad(90 + j * 24)
+		local off = CF(0, math.cos(th) * 1.0, math.sin(th) * 1.0) * ANG(th, 0, 0)
+		wave(add(rig, tailB, "ell", V(0.1, 2.0, 1.1), off, gold, Enum.Material.Metal), 3, 0.12, 3, j, 0.15)
+		wave(add(rig, tailB, "ell", V(0.06, 2.1, 0.45), off * CF(0, 0.15, 0.35), glowGold, Enum.Material.Neon, 0.25), 3, 0.12, 3, j, 0.15)
+	end
+	local tailPart = add(rig, tailB, "ball", V(0.1, 0.1, 0.1), CF(0, 0, 1.6), WHITE, nil, 1).p
+	trailOn(tailPart, V(0, 0.7 * k, 0), V(0, -0.7 * k, 0), glowGold, spirit, 0.8)
+	-- 다리 넷: 비늘 다리, 팔꿈치의 불꽃 털, 금빛 발톱 넷
+	for _, si in ipairs(DRAGON.legs) do
+		local ls = segW(si) / 2
+		for _, side in ipairs({ "L", "R" }) do
+			local nm = "d" .. si .. side
+			local col = c:Lerp(deep, si / (N - 1) * 0.55)
+			add(rig, nm .. "u", "ell", V(0.6, 1.35, 0.6) * ls, CF(0, -0.6 * ls, 0), col)
+			add(rig, nm .. "l", "ell", V(0.45, 1.05, 0.45) * ls, CF(0, -0.45 * ls, 0), col)
+			wave(add(rig, nm .. "l", "ell", V(0.12, 0.9, 0.5) * ls, CF(0, 0.1 * ls, 0.3 * ls) * ANG(-1.2, 0, 0), gold), 1, 0.15, 5, si, 0.2)
+			add(rig, nm .. "f", "ell", V(0.55, 0.3, 0.6) * ls, CF(0, -0.1 * ls, -0.1 * ls), col)
+			for _, x in ipairs({ -0.2, -0.07, 0.07, 0.2 }) do
+				add(rig, nm .. "f", "ell", V(0.12, 0.12, 0.55) * ls, CF(x * ls, -0.2 * ls, -0.45 * ls) * ANG(-0.5, x * 0.6, 0), gold, Enum.Material.Metal)
+			end
+		end
+	end
+	-- 머리 (-Z가 앞, H배 크게)
+	local H = DRAGON.H
+	local function hd(bone: string, shape: string, size: Vector3, pos: Vector3, rot: CFrame?, color: Color3, mat: Enum.Material?, alpha: number?): Piece
+		return add(rig, bone, shape, size * H, CF(pos * H) * (rot or CFrame.identity), color, mat, alpha)
+	end
+	local darkC = c:Lerp(DARK, 0.35)
+	local mouth = Color3.fromRGB(90, 20, 26)
+	hd("head", "ell", V(1.6, 1.25, 1.8), V(0, 0.1, 0), nil, c)
+	hd("head", "ell", V(1.2, 0.7, 1.2), V(0, 0.55, 0.1), nil, c)
+	hd("head", "ell", V(1.15, 0.75, 2.1), V(0, -0.02, -1.5), nil, c)
+	hd("head", "ell", V(1.0, 0.6, 0.7), V(0, 0.15, -2.45), nil, c)
+	hd("head", "ell", V(0.85, 0.25, 1.7), V(0, -0.33, -1.25), nil, mouth)
+	for _, s in ipairs({ -1, 1 }) do
+		-- 젖혀진 윗입술, 말린 콧구멍
+		hd("head", "ell", V(0.35, 0.35, 1.5), V(s * 0.5, -0.25, -1.6), ANG(0, -s * 0.12, 0), belly)
+		hd("head", "ell", V(0.28, 0.28, 0.2), V(s * 0.3, 0.32, -2.72), nil, darkC)
+		hd("head", "ball", V(0.14, 0.14, 0.14), V(s * 0.3, 0.32, -2.8), nil, DARK)
+		-- 매서운 눈썹 뼈와 빛나는 금빛 눈 (세로 동공), 눈에서 끌리는 빛
+		hd("head", "ell", V(0.5, 0.32, 1.0), V(s * 0.45, 0.58, -0.35), ANG(0, -s * 0.15, s * 0.25), darkC)
+		local eyeRot = ANG(0, s * 0.5, s * 0.25)
+		hd("head", "ell", V(0.42, 0.3, 0.2), V(s * 0.58, 0.36, -0.6), eyeRot, DARK)
+		local iris = hd("head", "ell", V(0.34, 0.24, 0.14), V(s * 0.62, 0.36, -0.62), eyeRot, Color3.fromRGB(255, 225, 90), Enum.Material.Neon).p
+		hd("head", "ell", V(0.06, 0.22, 0.08), V(s * 0.68, 0.36, -0.64), eyeRot, DARK)
+		trailOn(iris, V(0, 0.06 * k, 0), V(0, -0.06 * k, 0), Color3.fromRGB(255, 230, 120), spirit, 0.35)
+		-- 윗니와 송곳니
+		for _, z in ipairs({ -0.9, -1.3, -1.7, -2.1 }) do
+			hd("head", "ell", V(0.1, 0.2, 0.1), V(s * 0.42, -0.38, z), nil, WHITE)
+		end
+		hd("head", "ell", V(0.13, 0.42, 0.13), V(s * 0.36, -0.5, -2.2), nil, WHITE)
+		-- 가지 뿔: 굵은 밑동 → 휘어 오르는 줄기 → 빛나는 끝, 옆으로 뻗는 곁가지
+		hd("head", "ell", V(0.3, 0.3, 1.7), V(s * 0.45, 0.75, 0.65), ANG(0.55, s * 0.28, 0), gold, Enum.Material.Metal)
+		hd("head", "ell", V(0.22, 0.22, 1.3), V(s * 0.6, 1.3, 1.5), ANG(0.95, s * 0.35, 0), gold, Enum.Material.Metal)
+		hd("head", "ell", V(0.14, 0.14, 0.8), V(s * 0.68, 1.75, 2.1), ANG(1.25, s * 0.4, 0), glowGold, Enum.Material.Neon)
+		hd("head", "ell", V(0.15, 0.15, 0.8), V(s * 0.7, 1.05, 1.0), ANG(-0.1, s * 0.7, 0), gold, Enum.Material.Metal)
+		hd("head", "ell", V(0.1, 0.1, 0.45), V(s * 0.95, 1.1, 1.25), ANG(-0.1, s * 0.75, 0), glowGold, Enum.Material.Neon)
+		-- 볼 뒤의 부채 가시 셋
+		for j = 0, 2 do
+			wave(hd("head", "ell", V(0.08, 1.0, 0.55), V(s * 0.78, -0.25 + j * 0.25, 0.35), ANG(0.9 - j * 0.25, 0, s * (0.7 + j * 0.2)), gold, Enum.Material.Metal), 3, 0.06, 3, j + s, 0.1)
+		end
+		-- 수염 (여섯 마디), 눈썹 수염 (네 마디)
+		local tag = s < 0 and "L" or "R"
+		for j = 1, 6 do
+			add(rig, "w" .. tag .. j, "ell", V(0.12 - j * 0.012, 0.12 - j * 0.012, 0.85), CF(0, 0, 0.4), glowGold, Enum.Material.Neon)
+		end
+		for j = 1, 4 do
+			add(rig, "b" .. tag .. j, "ell", V(0.08, 0.08, 0.7), CF(0, 0, 0.33), gold, Enum.Material.Neon, 0.1)
+		end
+	end
+	-- 뒤통수의 금빛 갈기 (달리면 흩날린다)
+	for j = 0, 5 do
+		local sd = j % 2 == 0 and 1 or -1
+		wave(hd("head", "ell", V(0.16, 1.1, 0.6), V(sd * 0.25, 0.65, 0.5 + j * 0.3), ANG(-0.75, 0, sd * 0.35), gold), 3, 0.1, 4, j, 0.25)
+	end
+	-- 아래턱: 이빨과 송곳니, 붉은 혀, 금빛 턱수염
+	hd("jaw", "ell", V(1.05, 0.36, 2.0), V(0, -0.05, -1.05), nil, belly)
+	hd("jaw", "ell", V(0.45, 0.12, 1.4), V(0, 0.1, -1.1), nil, Color3.fromRGB(200, 50, 62))
+	for _, s in ipairs({ -1, 1 }) do
+		for _, z in ipairs({ -1.0, -1.4, -1.8 }) do
+			hd("jaw", "ell", V(0.1, 0.18, 0.1), V(s * 0.4, 0.17, z), nil, WHITE)
+		end
+		hd("jaw", "ell", V(0.12, 0.34, 0.12), V(s * 0.34, 0.25, -1.95), nil, WHITE)
+	end
+	for _, x in ipairs({ -0.2, 0, 0.2 }) do
+		wave(hd("jaw", "ell", V(0.3, 0.9, 0.28), V(x, -0.45, -0.7 + math.abs(x)), ANG(0.35, 0, x), gold), 3, 0.08, 3, x * 5, 0.2)
+	end
+	-- 여의주: 빛나는 구슬, 둘레를 도는 빛 여섯, 푸른 금빛 불꽃
+	local pearl = add(rig, "pearl", "ball", V(1.3, 1.3, 1.3), CF(), Color3.fromRGB(255, 248, 220), Enum.Material.Neon).p
+	local pl = Instance.new("PointLight")
+	pl.Color = gold
+	pl.Range = 22
+	pl.Brightness = 2.2
+	pl.Parent = pearl
+	emitter(pearl, TEX_SPARK, gold, 0.4 * k, 18, 0.9, 1.5, 180)
+	local pf = emitter(pearl, TEX_FIRE, spirit, 1.6 * k, 16, 0.5, 0.8, 180)
+	pf.Color = ColorSequence.new(spirit, gold)
+	pf.LightEmission = 1
+	for j = 0, 5 do
+		local a = j / 6 * TAU
+		add(rig, "pearlSpin", "ball", V(0.22, 0.22, 0.22), CF(math.cos(a) * 1.25, 0, math.sin(a) * 1.25), j % 2 == 0 and glowGold or spirit, Enum.Material.Neon)
+	end
+	local glowHolder = add(rig, "head", "ball", V(0.1, 0.1, 0.1), CF(0, 0.2, -0.4), gold, Enum.Material.Neon, 1).p
+	emitter(glowHolder, TEX_SPARK, gold, 0.45 * k, 22, 1.3, 1.2, 180)
+	local headLight = Instance.new("PointLight")
+	headLight.Color = glowGold
+	headLight.Range = 18
+	headLight.Brightness = 1.5
+	headLight.Parent = glowHolder
 end
 
 -- 지나온 길 (머리 쪽이 1번). 너무 멀리 뛰면 (순간이동) 새로 시작한다
@@ -20503,7 +20640,7 @@ end
 ------------------------------------------------------------------------
 -- 만들기·지우기
 ------------------------------------------------------------------------
-local function poof(model: Model, color: Color3)
+local function poof(model: Model, color: Color3, big: boolean?)
 	local root = model:FindFirstChild("HumanoidRootPart")
 	if root and root:IsA("BasePart") then
 		local cam = workspace.CurrentCamera
@@ -20512,6 +20649,13 @@ local function poof(model: Model, color: Color3)
 		end
 		Fx.burst("smoke", root.Position - V(0, 2, 0), Color3.fromRGB(235, 230, 220), 10, 1.4)
 		Fx.burst("glitter", root.Position, color, 10, 1)
+		if big then
+			-- 청룡이 나타날 때: 금빛 기운이 크게 터지고 고리가 퍼진다
+			Fx.burst("glitter", root.Position, color, 40, 2.2)
+			Fx.burst("spark", root.Position, Color3.fromRGB(120, 255, 220), 24, 1.8)
+			Fx.ring(root.Position - V(0, 5, 0), color, 4, 44, 0.8)
+			Fx.flash(root.Position, color, 50, 4, 0.5)
+		end
 	end
 end
 
@@ -20562,7 +20706,7 @@ local function build(model: Model, id: string)
 		buildHorse(rig)
 	end
 	rigs[model] = rig
-	poof(model, m.mane)
+	poof(model, m.mane, m.kind == "dragon")
 end
 
 local function clear(model: Model, fx: boolean?)
@@ -20683,7 +20827,7 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 			end
 			bones["s" .. i] = CFrame.lookAt(here, ahead)
 		end
-		-- 다리: 헤엄치듯 천천히 젓는다
+		-- 다리: 헤엄치듯 천천히 젓는다 (발목이 따라 접힌다)
 		for _, si in ipairs(DRAGON.legs) do
 			local seg = bones["s" .. si]
 			local w = segW(si)
@@ -20693,21 +20837,44 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 				local u = seg * CF(side * 0.5 * w * k, -0.35 * w * k, 0) * ANG(paddle, 0, side * 0.7)
 				local name = "d" .. si .. (side < 0 and "L" or "R")
 				bones[name .. "u"] = u
-				bones[name .. "l"] = u * CF(0, -1.1 * ls * k, 0) * ANG(-0.9 - paddle * 0.4, 0, 0)
+				local l = u * CF(0, -1.1 * ls * k, 0) * ANG(-0.9 - paddle * 0.4, 0, 0)
+				bones[name .. "l"] = l
+				bones[name .. "f"] = l * CF(0, -0.95 * ls * k, 0) * ANG(0.5 + paddle * 0.4, 0, 0)
 			end
 		end
-		local nod = math.sin(t * 1.3) * 0.08
+		-- 포효: 아홉 초마다 고개를 들고 입을 크게 벌린다 (금빛 기운이 터진다)
+		local H = DRAGON.H
+		local rt = t % 9
+		local roar = rt < 1.4 and math.sin(math.pi * rt / 1.4) or 0
+		local nod = math.sin(t * 1.3) * 0.08 + roar * 0.28
 		local look2 = math.clamp(rig.yawRate * 0.12, -0.4, 0.4)
-		local head = CF(pts[1] + flat * 1.0 * k + V(0, 0.35 * k, 0)) * turn * ANG(nod, look2, 0)
+		local head = CF(pts[1] + flat * 1.0 * k * H + V(0, 0.35 * k, 0)) * turn * ANG(nod, look2, 0)
 		bones.head = head
-		bones.jaw = head * CF(0, -0.38 * k, -0.3 * k) * ANG(-(0.08 + 0.06 * math.sin(t * 1.3)), 0, 0)
-		bones.pearl = head * CF(math.sin(t * 1.1) * 0.4 * k, 0.3 * k + math.sin(t * 2) * 0.25 * k, -4.0 * k)
+		bones.jaw = head * CF(0, -0.38 * k * H, -0.3 * k * H) * ANG(-(0.12 + 0.05 * math.sin(t * 1.3) + roar * 0.55), 0, 0)
+		local pearl = head * CF(math.sin(t * 1.1) * 0.5 * k, 0.4 * k + math.sin(t * 2) * 0.3 * k, -4.2 * k * H)
+		bones.pearl = pearl
+		bones.pearlSpin = pearl * ANG(0.5, t * 2.2, 0)
+		if rt < (rig.roarT or 0) then
+			local cam = workspace.CurrentCamera
+			if cam and (cam.CFrame.Position - head.Position).Magnitude < 160 then
+				local mouthAt = (head * CF(0, -0.2 * k * H, -2.6 * k * H)).Position
+				Fx.burst("glitter", mouthAt, rig.m.mane, 22, 1.6)
+				Fx.burst("spark", mouthAt, Color3.fromRGB(120, 255, 220), 14, 1.3)
+				Fx.flash(mouthAt, rig.m.mane, 30, 3, 0.4)
+			end
+		end
+		rig.roarT = rt
 		for _, s in ipairs({ -1, 1 }) do
-			local cf = head * CF(s * 0.5 * k, -0.05 * k, -2.2 * k) * ANG(0, s * 0.9, 0)
 			local tag = s < 0 and "L" or "R"
-			for j = 1, 4 do
+			local cf = head * CF(s * 0.5 * k * H, -0.05 * k * H, -2.2 * k * H) * ANG(0, s * 0.9, 0)
+			for j = 1, 6 do
 				bones["w" .. tag .. j] = cf
-				cf = cf * CF(0, 0, 0.7 * k) * ANG(math.sin(t * 3 - j) * 0.25, s * 0.12, 0)
+				cf = cf * CF(0, 0, 0.8 * k) * ANG(math.sin(t * 3 - j * 0.8) * (0.22 + 0.1 * rig.run), s * 0.1, 0)
+			end
+			local bc = head * CF(s * 0.55 * k * H, 0.8 * k * H, -0.3 * k * H) * ANG(0.5, s * 0.5, 0)
+			for j = 1, 4 do
+				bones["b" .. tag .. j] = bc
+				bc = bc * CF(0, 0, 0.66 * k) * ANG(math.sin(t * 2.5 - j) * 0.2 - 0.05, s * 0.08, 0)
 			end
 		end
 	end
