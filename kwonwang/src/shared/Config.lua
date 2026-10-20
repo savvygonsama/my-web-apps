@@ -2065,6 +2065,13 @@ Config.Bosses.cheonjon = variant(Config.Bosses.cheonmun, { name = "천존 · 천
 -- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
 ------------------------------------------------------------------------
 Config.BOSS_DMG = 0.6 -- 모든 보스의 공격력 배율
+Config.LATE_BOSS_DMG = 0.45 -- 후반 보스 (빙마부터 천상계까지)는 더 낮게: 한두 대에 쓰러지지 않게
+for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon" }) do
+	local b = Config.Bosses[id]
+	if b then
+		b.late = true
+	end
+end
 Config.BOSS_SPEED = 0.85 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
 Config.BOSS_PHASE_SPEED = 0.05 -- 단계마다 걸음이 빨라지는 양
 for id, k in pairs({ bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 6, cheonmun = 7 }) do

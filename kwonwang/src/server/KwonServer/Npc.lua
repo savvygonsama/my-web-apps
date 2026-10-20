@@ -286,7 +286,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1)) * math.sqrt(mult)),
 		walk = def.speed * (isBoss and Config.BOSS_SPEED or 1),
 		style = def.style or "",
-		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and Config.BOSS_DMG or 1),
+		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and (def.late and Config.LATE_BOSS_DMG or Config.BOSS_DMG) or 1),
 	})
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
 	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
