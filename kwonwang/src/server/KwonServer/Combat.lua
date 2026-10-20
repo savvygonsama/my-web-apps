@@ -584,14 +584,26 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		Combat.dismount(tgt)
 	end
 	-- 흡혈 (혈마신수)
+	-- 한 대에도, 1초에도 되찾는 양에 한도가 있다
+	local function steal(amount: number, secCap: number)
+		local a = att :: any
+		if t - (a.stealAt or 0) >= 1 then
+			a.stealAt = t
+			a.stealSum = 0
+		end
+		local room = math.max(0, att.maxHp * secCap - (a.stealSum or 0))
+		local heal = math.min(amount, att.maxHp * Config.LIFESTEAL_HIT_CAP, room)
+		a.stealSum = (a.stealSum or 0) + heal
+		att.hp = math.min(att.maxHp, att.hp + heal)
+	end
 	if aStyle and aStyle.lifesteal and att.player and not att.dead then
-		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and 3 or 1))
+		steal(d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and Config.LIFESTEAL_FRENZY or 1), aStyle.id == "hyeolma2" and 0.05 or Config.LIFESTEAL_SEC_CAP)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
 	-- 심법: 혈기공 (모든 권법에서 조금씩)
 	local mSteal = (att :: any).mSteal or 0
 	if mSteal > 0 and att.player and not att.dead then
-		att.hp = math.min(att.maxHp, att.hp + d * mSteal)
+		steal(d * mSteal, Config.LIFESTEAL_SEC_CAP)
 		att.model:SetAttribute("Hp", math.floor(att.hp + 0.5))
 	end
 	if not steady then

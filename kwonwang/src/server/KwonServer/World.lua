@@ -2637,7 +2637,7 @@ local function terrainHills()
 	-- 들판의 완만한 언덕
 	local made = 0
 	for _ = 1, 160 do
-		if made >= 45 then
+		if made >= 75 then
 			break
 		end
 		local p = Vector3.new(rng:NextNumber(-W + 300, W - 300), 0, rng:NextNumber(-W + 300, W - 300))
@@ -2773,7 +2773,254 @@ local function regionGate(at: Vector3, dir: Vector3, title: string, accent: Colo
 	sign(plate, Enum.NormalId.Back, { { title, Color3.fromRGB(255, 220, 140), 1 } })
 end
 
--- 지역 테두리: 둘레에 낮은 돌 턱 (길이 지나는 곳은 비우고 문루), 네 모서리에 석등
+
+------------------------------------------------------------------------
+-- 1.0판: 지역의 경계를 자연스럽게. 낮은 돌 턱 대신 그 땅의 생김새를 따른다
+-- (풀밭은 낮은 언덕과 나무숲, 대숲은 대나무, 산적 소굴은 목책, 설산은 눈 둔덕과 전나무, 황야는 붉은 바위기둥 ...).
+-- 길이 드는 곳과 군데군데 자연스러운 틈은 비워 두고, 이웃한 지역끼리는 덤불 정도로만 가른다
+------------------------------------------------------------------------
+local BORDER_THEME: { [string]: string } = {
+	bamboo = "bamboo", fort = "fort", valley = "grass", field = "grass", windhill = "grass", lake = "grass", plum = "blossom", tavern = "fence",
+	dojo = "garden", temple = "garden", lair = "crag", peak = "crag", ravine = "crag", sunmoon = "crag", cult = "cult", rift = "rift",
+	snow = "snow", swamp = "swamp", badlands = "sand", tomb = "sand", coast = "coast", seashrine = "coast", volcano = "volcano",
+	fireshrine = "volcano", skysea = "cloud", plateau = "rocky",
+}
+local RIDGE_MAT: { [string]: Enum.Material } = {
+	grass = Enum.Material.Grass, bamboo = Enum.Material.Grass, blossom = Enum.Material.Grass, fence = Enum.Material.Grass, fort = Enum.Material.Mud,
+	crag = Enum.Material.Slate, cult = Enum.Material.Slate, rift = Enum.Material.Slate, snow = Enum.Material.Snow, swamp = Enum.Material.Mud,
+	sand = Enum.Material.Sandstone, coast = Enum.Material.Rock, volcano = Enum.Material.Basalt, rocky = Enum.Material.Rock,
+}
+local LEAF = Color3.fromRGB(70, 120, 60)
+
+-- 이웃한 다른 지역 (또는 마을) 안인가
+local function insideOther(p: Vector3, r: any, pad: number): boolean
+	if math.abs(p.X) < VILLAGE_PAD + pad and math.abs(p.Z) < VILLAGE_PAD + pad then
+		return true
+	end
+	for _, o in ipairs(Config.Regions) do
+		if o ~= r and not o.noGround and math.abs(p.X - o.center.X) < o.size.X / 2 + pad and math.abs(p.Z - o.center.Z) < o.size.Z / 2 + pad then
+			return true
+		end
+	end
+	return false
+end
+
+local function bush(at: Vector3, s: number, color: Color3, f: Instance)
+	for i = 1, 2 do
+		local sz = (3.2 + i * 0.8 + rng:NextNumber(0, 1.2)) * s
+		part({ Name = "Bush", Shape = Enum.PartType.Ball, Size = Vector3.one * sz, Position = at + Vector3.new(rng:NextNumber(-1.5, 1.5) * s, sz * 0.32, rng:NextNumber(-1.5, 1.5) * s),
+			Color = color:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.12)), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+end
+-- 뾰족한 바위 (기울어진 큰 돌 + 끝돌)
+local function crag(at: Vector3, s: number, color: Color3, f: Instance)
+	local h = rng:NextNumber(7, 14) * s
+	part({ Name = "Crag", Size = Vector3.new(rng:NextNumber(3, 5) * s, h, rng:NextNumber(3, 5) * s), CFrame = CFrame.new(at + Vector3.new(0, h * 0.42, 0)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 6), rng:NextNumber(-0.2, 0.2)),
+		Color = color, Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "CragTip", Size = Vector3.new(2, h * 0.45, 2) * Vector3.new(s, 1, s), CFrame = CFrame.new(at + Vector3.new(rng:NextNumber(-1, 1) * s, h * 0.95, rng:NextNumber(-1, 1) * s)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 6), rng:NextNumber(-0.3, 0.3)),
+		Color = color:Lerp(Color3.new(0, 0, 0), 0.15), Material = Enum.Material.Slate, Parent = f })
+end
+-- 붉은 모래 바위기둥 (세 덩이를 어긋나게 쌓는다)
+local function hoodoo(at: Vector3, s: number, f: Instance)
+	local y = 0
+	for i = 1, 3 do
+		local w = (5.5 - i * 1.2) * s
+		local h = rng:NextNumber(3, 5) * s
+		part({ Name = "Hoodoo", Size = Vector3.new(w * rng:NextNumber(0.9, 1.2), h, w), CFrame = CFrame.new(at + Vector3.new(rng:NextNumber(-0.5, 0.5) * s, y + h / 2, rng:NextNumber(-0.5, 0.5) * s)) * CFrame.Angles(0, rng:NextNumber(0, 6), rng:NextNumber(-0.06, 0.06)),
+			Color = Color3.fromRGB(196, 140, 90):Lerp(Color3.fromRGB(225, 180, 125), rng:NextNumber()), Material = Enum.Material.Sandstone, Parent = f })
+		y += h * 0.92
+	end
+end
+local function reeds(at: Vector3, f: Instance)
+	for _ = 1, 4 do
+		local h = rng:NextNumber(4, 7)
+		part({ Name = "Reed", Size = Vector3.new(0.25, h, 0.25), CFrame = CFrame.new(at + Vector3.new(rng:NextNumber(-1.5, 1.5), h / 2, rng:NextNumber(-1.5, 1.5))) * CFrame.Angles(rng:NextNumber(-0.15, 0.15), 0, rng:NextNumber(-0.15, 0.15)),
+			Color = Color3.fromRGB(120, 130, 70), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+end
+local function cloudBank(at: Vector3, s: number, f: Instance)
+	for _ = 1, 3 do
+		local sz = rng:NextNumber(6, 10) * s
+		part({ Name = "CloudBank", Shape = Enum.PartType.Ball, Size = Vector3.one * sz, Position = at + Vector3.new(rng:NextNumber(-4, 4) * s, sz * 0.25, rng:NextNumber(-4, 4) * s),
+			Color = Color3.fromRGB(245, 247, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = f })
+	end
+end
+-- 목책: 뾰족한 통나무를 촘촘히 박고 가로대 하나
+local function palisade(p: Vector3, dir: Vector3, len: number, f: Instance)
+	local n = math.max(2, math.floor(len / 2.2))
+	for i = 0, n - 1 do
+		local q = p + dir * (i * len / (n - 1))
+		local h = rng:NextNumber(7, 9)
+		part({ Name = "Stake", Size = Vector3.new(1.2, h, 1.2), CFrame = CFrame.new(q + Vector3.new(0, h / 2 - 0.3, 0)) * CFrame.Angles(rng:NextNumber(-0.06, 0.06), rng:NextNumber(0, 6), rng:NextNumber(-0.06, 0.06)),
+			Color = Color3.fromRGB(98, 72, 50):Lerp(Color3.fromRGB(70, 52, 38), rng:NextNumber()), Material = Enum.Material.Wood, Parent = f })
+	end
+	local mid = p + dir * len / 2 + Vector3.new(0, 3, 0)
+	part({ Name = "StakeRail", Size = Vector3.new(0.6, 0.6, len), CFrame = CFrame.lookAt(mid, mid + dir) * CFrame.new(0.7, 0, 0), Color = Color3.fromRGB(80, 60, 42), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+end
+-- 나무 울타리 (기둥 + 가로대 둘)
+local function railFence(p: Vector3, dir: Vector3, len: number, f: Instance)
+	local n = math.max(2, math.floor(len / 6) + 1)
+	for i = 0, n - 1 do
+		local q = p + dir * (i * len / (n - 1))
+		part({ Name = "FencePost", Size = Vector3.new(0.8, 4.2, 0.8), Position = q + Vector3.new(0, 2.1, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+	end
+	for _, y in ipairs({ 1.6, 3.2 }) do
+		local mid = p + dir * len / 2 + Vector3.new(0, y, 0)
+		part({ Name = "FenceRail", Size = Vector3.new(0.35, 0.45, len), CFrame = CFrame.lookAt(mid, mid + dir), Color = WOOD:Lerp(Color3.new(1, 1, 1), 0.1), Material = Enum.Material.Wood, Parent = f })
+	end
+end
+-- 다듬은 생울타리 (정원·절)
+local function hedge(p: Vector3, dir: Vector3, len: number, f: Instance)
+	local mid = p + dir * len / 2
+	part({ Name = "Hedge", Size = Vector3.new(2.8, 3.4, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 1.7, 0), mid + Vector3.new(0, 1.7, 0) + dir), Color = Color3.fromRGB(55, 100, 50), Material = Enum.Material.Grass, Parent = f })
+	part({ Name = "HedgeTop", Size = Vector3.new(2.4, 0.8, math.max(1, len - 0.4)), CFrame = CFrame.lookAt(mid + Vector3.new(0, 3.6, 0), mid + Vector3.new(0, 3.6, 0) + dir), Color = Color3.fromRGB(80, 130, 65), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+end
+
+-- 한 변의 한 토막: 덩어리(숲·바위·둔덕)와 트인 틈이 번갈아 온다
+local function borderSpan(r: any, theme: string, fixed: string, v: number, lo: number, hi: number, outward: Vector3, f: Instance, terrain: Terrain?)
+	local small = math.max(r.size.X, r.size.Z) <= 300
+	local along = fixed == "x" and Vector3.new(0, 0, 1) or Vector3.new(1, 0, 0)
+	local step = small and 24 or 21
+	local x = lo + rng:NextNumber(0, 8)
+	local clump = rng:NextNumber() < 0.75
+	local left = clump and rng:NextNumber(40, 120) or rng:NextNumber(15, 35)
+	local count = 0
+	while x < hi - 3 do
+		if not clump then
+			-- 트인 틈 (지나다닐 수 있게)
+			x += left
+			clump = true
+			left = rng:NextNumber(small and 50 or 60, small and 110 or 170)
+			continue
+		end
+		local p = fixed == "x" and Vector3.new(v, 0, x) or Vector3.new(x, 0, v)
+		local len = math.min(step, hi - x)
+		x += step
+		left -= step
+		if left <= 0 then
+			clump = false
+			left = rng:NextNumber(18, 45)
+		end
+		if nearRoad(p, 20) or nearFeature(p, 4) or insideOther(p, r, -2) then
+			continue
+		end
+		count += 1
+		-- 이웃 지역과 맞닿은 변: 덤불·작은 돌만 듬성듬성
+		local shared = insideOther(p + outward * 26, r, 0)
+		if shared then
+			if count % 2 == 0 then
+				if theme == "sand" or theme == "crag" or theme == "volcano" or theme == "rocky" or theme == "cult" or theme == "rift" or theme == "coast" then
+					rock(p + along * rng:NextNumber(-4, 4), rng:NextNumber(3, 5), f)
+				elseif theme == "snow" then
+					rock(p, rng:NextNumber(3, 5), f, Color3.fromRGB(225, 232, 242))
+				elseif theme ~= "cloud" then
+					bush(p + along * rng:NextNumber(-4, 4), 0.9, theme == "blossom" and Color3.fromRGB(200, 120, 140) or LEAF, f)
+				end
+			end
+			continue
+		end
+		-- 바깥쪽으로 낮은 둔덕 (지형). 안쪽 비탈 위에 소품을 얹는다
+		local lift = 0
+		local mat = RIDGE_MAT[theme]
+		local q = p + outward * rng:NextNumber(3, 9) + along * rng:NextNumber(-4, 4)
+		if terrain and mat and not small then
+			local rad = rng:NextNumber(15, 24)
+			local c = p + outward * rad * 0.5 + along * rng:NextNumber(-3, 3)
+			if not nearRoad(c, rad + 8) and not nearFeature(c, rad * 0.6) then
+				local ok = pcall(function()
+					(terrain :: Terrain):FillBall(c - Vector3.new(0, rad * 0.5, 0), rad, mat)
+				end)
+				if ok then
+					local d = Vector3.new(q.X - c.X, 0, q.Z - c.Z).Magnitude
+					lift = math.max(0, math.sqrt(math.max(0, rad * rad - d * d)) - rad * 0.5 - 0.6)
+				end
+			end
+		end
+		local at = q + Vector3.new(0, lift, 0)
+		local roll = rng:NextNumber()
+		if theme == "grass" or theme == "blossom" then
+			if roll < 0.55 then
+				tree(at, rng:NextNumber(1.3, 1.8), f, theme == "blossom" and roll < 0.4)
+			elseif roll < 0.85 then
+				bush(at, rng:NextNumber(0.9, 1.3), theme == "blossom" and Color3.fromRGB(200, 120, 140) or LEAF, f)
+			else
+				rock(at, rng:NextNumber(4, 7), f)
+			end
+		elseif theme == "bamboo" then
+			for _ = 1, 3 + (count % 3) do
+				bamboo(at + Vector3.new(rng:NextNumber(-4, 4), 0, rng:NextNumber(-4, 4)), f)
+			end
+		elseif theme == "fence" then
+			railFence(p, along, len - 2, f)
+			if roll < 0.3 then
+				tree(at + outward * 4, rng:NextNumber(1.2, 1.6), f)
+			end
+		elseif theme == "fort" then
+			palisade(p, along, len - 1, f)
+			if roll < 0.25 then
+				rock(at + outward * 3, rng:NextNumber(4, 6), f, Color3.fromRGB(110, 100, 90))
+			end
+		elseif theme == "garden" then
+			hedge(p, along, len - 3, f)
+			if count % 3 == 0 then
+				pine(p + outward * 5, 1.2, f, false)
+			end
+		elseif theme == "crag" or theme == "rocky" then
+			local col = theme == "rocky" and Color3.fromRGB(140, 140, 135) or Color3.fromRGB(70, 66, 72)
+			if roll < 0.6 then
+				crag(at, rng:NextNumber(0.9, 1.5), col, f)
+			else
+				rock(at, rng:NextNumber(4, 7), f, col)
+			end
+		elseif theme == "cult" then
+			crag(at, rng:NextNumber(0.9, 1.4), Color3.fromRGB(60, 30, 34), f)
+			if count % 5 == 0 then
+				banner(p - outward * 2, 12, Color3.fromRGB(150, 20, 30), f)
+			end
+		elseif theme == "rift" then
+			crag(at, rng:NextNumber(0.9, 1.5), Color3.fromRGB(45, 32, 70), f)
+			if count % 4 == 0 then
+				crystal(at + Vector3.new(0, 14, 0), 2.4, Color3.fromRGB(170, 90, 255), f)
+			end
+		elseif theme == "snow" then
+			if roll < 0.65 then
+				pine(at, rng:NextNumber(1.3, 1.8), f, true)
+			else
+				rock(at, rng:NextNumber(4, 7), f, Color3.fromRGB(215, 225, 238))
+			end
+		elseif theme == "swamp" then
+			if roll < 0.45 then
+				deadTree(at, rng:NextNumber(1.0, 1.4), f)
+			end
+			reeds(at + along * 3, f)
+		elseif theme == "sand" then
+			if roll < 0.5 then
+				hoodoo(at, rng:NextNumber(0.9, 1.4), f)
+			elseif roll < 0.8 then
+				rock(at, rng:NextNumber(4, 7), f, Color3.fromRGB(200, 150, 100))
+			else
+				deadTree(at, 0.8, f)
+			end
+		elseif theme == "coast" then
+			if roll < 0.6 then
+				rock(at, rng:NextNumber(6, 10), f, Color3.fromRGB(130, 128, 120))
+			else
+				pine(at, rng:NextNumber(1.2, 1.6), f, false)
+			end
+		elseif theme == "volcano" then
+			crag(at, rng:NextNumber(0.9, 1.5), Color3.fromRGB(40, 34, 32), f)
+			if count % 3 == 0 then
+				local cp = p - outward * 3
+				part({ Name = "LavaCrack", Size = Vector3.new(0.6, 0.2, len * 0.8), CFrame = CFrame.lookAt(cp + Vector3.new(0, 0.12, 0), cp + Vector3.new(0, 0.12, 0) + along) * CFrame.Angles(0, rng:NextNumber(-0.4, 0.4), 0),
+					Color = Color3.fromRGB(255, 120, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		elseif theme == "cloud" then
+			cloudBank(at, rng:NextNumber(1.0, 1.5), f)
+		end
+	end
+end
+
+-- 지역 테두리: 둘레를 그 땅에 맞는 자연스러운 경계로 (길이 지나는 곳은 비우고 문루)
 local gatedRegions: { [string]: boolean } = {}
 local function regionFrames()
 	local f = Instance.new("Folder")
@@ -2785,7 +3032,9 @@ local function regionFrames()
 			local x0, x1 = r.center.X - r.size.X / 2, r.center.X + r.size.X / 2
 			local z0, z1 = r.center.Z - r.size.Z / 2, r.center.Z + r.size.Z / 2
 			-- 네 변: { 고정축, 값, 범위 시작, 범위 끝 }
-			local edges = { { "x", x0, z0, z1 }, { "x", x1, z0, z1 }, { "z", z0, x0, x1 }, { "z", z1, x0, x1 } }
+			local edges = { { "x", x0, z0, z1, Vector3.new(-1, 0, 0) }, { "x", x1, z0, z1, Vector3.new(1, 0, 0) }, { "z", z0, x0, x1, Vector3.new(0, 0, -1) }, { "z", z1, x0, x1, Vector3.new(0, 0, 1) } }
+			local theme = BORDER_THEME[r.id] or "grass"
+			local terrain = workspace:FindFirstChildOfClass("Terrain")
 			local accent = r.ground:Lerp(Color3.new(1, 1, 1), 0.45)
 			for _, e in ipairs(edges) do
 				local fixed, v, lo, hi = e[1], e[2], e[3], e[4]
@@ -2823,27 +3072,18 @@ local function regionFrames()
 					end
 				end
 				table.sort(cuts)
-				-- 길이 지나는 자리(폭 30)를 비우고 돌 턱을 놓는다
+				-- 길이 지나는 자리(문루 둘레 폭 48)를 비우고 자연스러운 경계를 놓는다
 				local from = lo
 				local spans: { { number } } = {}
 				for _, c in ipairs(cuts) do
-					table.insert(spans, { from, c - 15 })
-					from = c + 15
+					table.insert(spans, { from, c - 24 })
+					from = c + 24
 				end
 				table.insert(spans, { from, hi })
 				for _, sp in ipairs(spans) do
-					local l = sp[2] - sp[1]
-					if l > 2 then
-						local mid = (sp[1] + sp[2]) / 2
-						local pos = fixed == "x" and Vector3.new(v, 0.55, mid) or Vector3.new(mid, 0.55, v)
-						local size = fixed == "x" and Vector3.new(1.8, 0.9, l) or Vector3.new(l, 0.9, 1.8)
-						part({ Name = "RegionCurb", Size = size, Position = pos, Color = Color3.fromRGB(150, 144, 132), Material = Enum.Material.Cobblestone, Parent = f })
+					if sp[2] - sp[1] > 6 then
+						borderSpan(r, theme, fixed, v, sp[1], sp[2], e[5], f, terrain)
 					end
-				end
-			end
-			for _, cx in ipairs({ x0, x1 }) do
-				for _, cz in ipairs({ z0, z1 }) do
-					stoneLantern(Vector3.new(cx, 0, cz), f, false)
 				end
 			end
 		end

@@ -393,6 +393,24 @@ local AIR_DOWN: { [string]: { number } } = {
 	RH = { 22, 0, 8 }, LH = { -8, 0, -8 }, RK = { -30, 0, 0 }, LK = { -18, 0, 0 },
 }
 
+-- 탈것 위: 몸을 굳게 고정한다 (걷기·숨·몸짓·권법 자세 모두 끈다). 말·범·용은 걸터앉아 고삐를, 구름은 뒷짐 지고 선다
+local RIDE_SIT: { [string]: { number } } = {
+	R = { 0, 0, 0, 0, -0.15, 0 }, W = { 10, 0, 0 }, N = { -8, 0, 0 },
+	RS = { 40, 0, 10 }, RE = { 62, 0, 0 }, LS = { 40, 0, -10 }, LE = { 62, 0, 0 },
+	RH = { 72, 0, 32 }, RK = { -78, 0, 0 }, LH = { 72, 0, -32 }, LK = { -78, 0, 0 },
+}
+local RIDE_STAND: { [string]: { number } } = {
+	R = { 0, 0, 0, 0, 0, 0 }, W = { 4, 0, 0 }, N = { 4, 0, 0 },
+	RS = { -30, 0, -10 }, RE = { 90, 0, 0 }, LS = { -30, 0, 10 }, LE = { 90, 0, 0 },
+	RH = { 0, 0, 7 }, RK = { -6, 0, 0 }, LH = { 0, 0, -7 }, LK = { -6, 0, 0 },
+}
+function Anim.ridePose(kind: string?): { [string]: { number } }?
+	if kind == nil then
+		return nil
+	end
+	return kind == "cloud" and RIDE_STAND or RIDE_SIT
+end
+
 local IDLE_HAND = { { "idle_shadow", 1.0 }, { "idle_stretch", 1.6 }, { "idle_crack", 1.4 }, { "idle_shift", 0.9 }, { "idle_look", 1.6 } }
 local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
 
@@ -418,6 +436,9 @@ local function step(dt: number)
 		local airborne = inAir and math.abs(vel.Y) > 3
 		local dead = model:GetAttribute("Dead") == true
 		local guarding = model:GetAttribute("Guard") == true
+		local mountId = model:GetAttribute("Mount")
+		local mdef = type(mountId) == "string" and Config.MOUNT_BY_ID[mountId] or nil
+		local ride = mdef and Anim.ridePose(mdef.kind) or nil
 
 		-- 1) 기술 동작
 		local actPose, actW = nil, 0
@@ -472,7 +493,7 @@ local function step(dt: number)
 		local airJ = vel.Y > 0 and AIR_UP or AIR_DOWN
 
 		-- 가만히 서 있으면 가끔 몸짓 (그림자 주먹, 기지개, 손 풀기, 자세 바꾸기, 둘러보기)
-		if still > 0.9 and not actPose and not loopPose and not guarding and not dead and t - rec.lastActAt > 4 and model:GetAttribute("Master") ~= true then
+		if still > 0.9 and not ride and not actPose and not loopPose and not guarding and not dead and t - rec.lastActAt > 4 and model:GetAttribute("Master") ~= true then
 			rec.idleT += dt
 			if rec.idleT > rec.idleNext then
 				rec.idleT = 0
@@ -494,6 +515,18 @@ local function step(dt: number)
 			rec.idleT = 0
 		end
 
+		-- 탈것 위: 굳은 자세 하나만 (기술을 쓰면 서버가 내려 주므로 그때는 기술 동작으로)
+		if ride and not dead then
+			for name, motor in pairs(motors) do
+				local out = toCF(name, ride[name] or (name == "R" and ZERO6 or ZERO3))
+				if actPose and actW > 0 then
+					out = out:Lerp(toCF(name, actPose[name]), actW)
+				end
+				motor.Transform = out
+				rec.written[name] = out
+			end
+			continue
+		end
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
 			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))

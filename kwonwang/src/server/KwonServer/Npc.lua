@@ -1355,7 +1355,7 @@ local function think(e: Enemy, t: number)
 	local anyone = false
 	for _, player in ipairs(Players:GetPlayers()) do
 		local pf = Combat.fighterOfPlayer(player)
-		if pf and flatDist(pf.root.Position, pos) < Config.ENEMY_ACTIVE_RANGE then
+		if pf and flatDist(pf.root.Position, pos) < (e.kind == "boss" and Config.BOSS_CHASE + 30 or Config.ENEMY_ACTIVE_RANGE) then
 			anyone = true
 			break
 		end
@@ -1364,8 +1364,8 @@ local function think(e: Enemy, t: number)
 		e.target = nil
 		return
 	end
-	-- 너무 멀리 끌려 나오면 집으로
-	if flatDist(pos, e.home) > 150 then
+	-- 너무 멀리 끌려 나오면 집으로 (보스는 훨씬 멀리까지 쫓아온다)
+	if flatDist(pos, e.home) > (e.kind == "boss" and Config.BOSS_LEASH or 150) then
 		e.target = nil
 	end
 	if Combat.stunned(f) then
@@ -1395,7 +1395,7 @@ local function think(e: Enemy, t: number)
 	if owner then
 		tgt = Combat.fighterOfPlayer(owner)
 	end
-	if tgt and (tgt.dead or not tgt.root.Parent or (inSafe(tgt.root.Position) and not e.def.duel) or flatDist(tgt.root.Position, pos) > e.def.aggro * 1.6) then
+	if tgt and (tgt.dead or not tgt.root.Parent or (inSafe(tgt.root.Position) and not e.def.duel) or flatDist(tgt.root.Position, pos) > (e.kind == "boss" and math.max(e.def.aggro * 1.6, Config.BOSS_CHASE) or e.def.aggro * 1.6)) then
 		tgt = nil
 	end
 	if not tgt and not owner then

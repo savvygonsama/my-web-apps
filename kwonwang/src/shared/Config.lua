@@ -147,7 +147,7 @@ Config.Training = {
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
-Config.TRAIN_GAIN = 0.6
+Config.TRAIN_GAIN = 0.9 -- 1.0판: 0.6 → 0.9 (한 번에 오르는 양 1.5배)
 Config.TRAIN_REALM_BONUS = 0.12
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
 Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
@@ -459,9 +459,9 @@ table.insert(Config.Styles, {
 	hidden = true,
 	unlockHint = "혈교의 주인 혈마를 쓰러뜨린 자에게 그 손이 넘어간다",
 	desc = "혈교의 주인이 쓰던 마공. 손톱 끝에 피의 기운이 맺힌다. 베어 낸 만큼 내 몸이 살아난다.",
-	gimmick = "흡혈: 준 피해의 8%만큼 체력을 되찾는다",
+	gimmick = "흡혈: 준 피해의 2%만큼 체력을 되찾는다 (한 번에 최대 체력의 1.5%, 1초에 4%까지)",
 	deflect = 0.2,
-	lifesteal = 0.08,
+	lifesteal = 0.02,
 	stance = "stance_hyeolma",
 	combo = {
 		{ id = "hm1", name = "혈조", pose = "blood_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 5, 4, 10, 9, 0.3, 6) } },
@@ -475,7 +475,7 @@ table.insert(Config.Styles, {
 			hits = { hit(0.15, 6, 4, 18, 18, 0.5, 10) } },
 		R = { id = "hmR", name = "혈해", desc = "발밑에 피의 바다를 4초 펼친다. 안의 적을 계속 베고, 벨 때마다 내 체력이 돌아온다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
 				mech = { kind = "zone", at = "self", radius = 14, dur = 4, every = 0.5, delay = 0.3, heal = 0.012, hit = hit(0, 0, 0, 7, 6, 0.2, 0), fx = "blood" } },
-		G = { id = "hmG", name = "혈마강림", desc = "등 뒤로 거대한 혈마의 허상이 솟아 손톱으로 적들을 네 번 찢고 포효한다. 그 뒤 8초 광란 (동작 ×1.2, 흡혈 세 배)", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 8 },
+		G = { id = "hmG", name = "혈마강림", desc = "등 뒤로 거대한 혈마의 허상이 솟아 손톱으로 적들을 네 번 찢고 포효한다. 그 뒤 8초 광란 (동작 ×1.2, 흡혈 1.5배)", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 8 },
 				mech = { kind = "avatar", look = "demon", dur = 4.2, strikes = {
 					{ t = 0.9, at = "targets", n = 3, radius = 8, hit = hit(0, 0, 0, 30, 28, 0.7, 30) },
 					{ t = 1.5, at = "targets", n = 3, radius = 8, hit = hit(0, 0, 0, 30, 28, 0.7, 30) },
@@ -974,14 +974,14 @@ do
 	local v = awakened("hyeolma", 1.5, {
 		id = "hyeolma2", name = "진 혈마신수", hanja = "眞血魔神手", icon = "🩸", grade = "신화",
 		color = Color3.fromRGB(240, 20, 50), color2 = Color3.fromRGB(255, 205, 110),
-		lifesteal = 0.12,
+		lifesteal = 0.03,
 		unlockHint = "혈마신수를 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 피에 물든 자기 그림자를 넘어라",
 		desc = "혈마의 손이 주인을 알아보고 깨어났다. 손톱 끝의 피가 금빛으로 끓는다. 혈마신수의 모든 기술이 그대로, 그러나 한층 더 깊고 붉다.",
-		gimmick = "진 흡혈: 준 피해의 12%를 되찾는다 (광란 중엔 세 배). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초",
+		gimmick = "진 흡혈: 준 피해의 3%를 되찾는다 (광란 중엔 1.5배, 1초에 최대 체력의 5%까지). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초",
 	})
 	local G = v.skills.G
 	G.buff = { kind = "frenzy", dur = 10 }
-	G.desc = "등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 세 배)"
+	G.desc = "등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 1.5배)"
 	local strike = G.mech.strikes[1].hit
 	G.mech.dur = 5
 	G.mech.scale = 1.35
@@ -1699,7 +1699,7 @@ Config.Roads = {
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 베타 8: 적은 훨씬 질기고 (체력 ×2.2, 멀수록 더), 후반 적의 피해는 크게 줄였다 (오래 겨루는 싸움)
 Config.ENEMY_HP = 2.2
-Config.ENEMY_BOSS_HP = 1.6
+Config.ENEMY_BOSS_HP = 1.35 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤)
 Config.ENEMY_HP_LEVEL = 0.35 -- 단계마다 체력 +35%
 Config.ENEMY_DMG_LEVEL = 0.12 -- 단계마다 피해 +12%
 Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 이만큼의 거듭제곱으로만 (×14 → ×4.9)
@@ -1878,7 +1878,7 @@ for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
 -- (탈것 모습은 사람보다 1.5~1.6배 크게 그린다. 발이 땅에 닿도록 맞춘 값)
-Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 2.6, dragon = 3.4 }
+Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 4.2, dragon = 3.4 } -- 구름은 땅에서 떠 있도록 높게
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -2064,8 +2064,14 @@ Config.Bosses.cheonjon = variant(Config.Bosses.cheonmun, { name = "천존 · 천
 ------------------------------------------------------------------------
 -- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
 ------------------------------------------------------------------------
-Config.BOSS_DMG = 0.6 -- 모든 보스의 공격력 배율
-Config.LATE_BOSS_DMG = 0.45 -- 후반 보스 (빙마부터 천상계까지)는 더 낮게: 한두 대에 쓰러지지 않게
+Config.BOSS_DMG = 0.7 -- 모든 보스의 공격력 배율 (1.0판: 0.6 → 0.7)
+Config.LATE_BOSS_DMG = 0.52 -- 후반 보스 (빙마부터 천상계까지)는 더 낮게: 한두 대에 쓰러지지 않게 (1.0판: 0.45 → 0.52)
+Config.BOSS_LEASH = 340 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
+Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 그만둔다
+-- 흡혈 한도: 거대한 체력의 보스를 치면 한 대에 다 차던 것을 막는다
+Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
+Config.LIFESTEAL_SEC_CAP = 0.04 -- 1초 동안 최대 체력의 이만큼까지 (진 혈마신수는 0.05)
+Config.LIFESTEAL_FRENZY = 1.5 -- 광란 중 흡혈 배율
 for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon" }) do
 	local b = Config.Bosses[id]
 	if b then
