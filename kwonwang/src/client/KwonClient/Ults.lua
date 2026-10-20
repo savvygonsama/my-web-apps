@@ -1925,6 +1925,11 @@ function H.galaxy(data: any)
 	local conn: RBXScriptConnection
 	conn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
+		-- 심장이 터지는 순간 멈춘다 (그 뒤로는 조각이 사라진다)
+		if t >= finalAt or not halo.Parent then
+			conn:Disconnect()
+			return
+		end
 		local open = math.clamp(t / delay, 0, 1)
 		for i, p in ipairs(arms) do
 			local info = armInfo[i]
@@ -1933,9 +1938,6 @@ function H.galaxy(data: any)
 			p.Position = sky + Vector3.new(math.cos(a) * r, math.sin(a * 2 + t) * 1.2, math.sin(a) * r)
 		end
 		halo.CFrame = CFrame.new(sky) * CFrame.Angles(0, t * 0.6, math.rad(90))
-		if t > finalAt + 0.4 then
-			conn:Disconnect()
-		end
 	end)
 	-- 별이 하나씩 떨어진다
 	for i, p in ipairs(data.points or {}) do
