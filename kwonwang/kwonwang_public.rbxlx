@@ -14184,6 +14184,10 @@ startMove = function(slot: any, charge: number?)
 	end
 	if slot == "G" then
 		UI.cinematic(move.name, style.color, dur)
+		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
+		UI.ultFrame(style.color, style.color2)
+		fovPunch(-10, 0.55)
+		Fx.skillAura(char, style.color, style.color2, math.max(1.2, dur), true)
 		if move.mech then
 			Ults.intro(style.id, char)
 		else
@@ -14916,7 +14920,7 @@ function handlers.hit(data: any)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			if data.skill then
 				local st = Config.STYLE_BY_ID[data.style or ""]
-				Fx.impact(pos, st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1.05)
+				Fx.blast(pos, st and st.color or Color3.new(1, 1, 1), st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1)
 				if mine then
 					shake(data.heavy and 0.9 or 0.45)
 					fovPunch(-2, 0.12)
@@ -16502,6 +16506,8 @@ end
 ------------------------------------------------------------------------
 -- 기본 조각
 ------------------------------------------------------------------------
+local TEX_FIRE_AURA = "rbxasset://textures/particles/fire_main.dds"
+local TEX_SPARK_AURA = "rbxasset://textures/particles/sparkles_main.dds"
 local function piece(size: Vector3, color: Color3, material: Enum.Material?, shape: Enum.PartType?, transparency: number?): Part
 	local p = Instance.new("Part")
 	p.Anchored = true
@@ -16707,12 +16713,26 @@ local function trailOn(part: BasePart, color: Color3, color2: Color3, life: numb
 	tr.LightEmission = 1
 	tr.FaceCamera = true
 	tr.Color = ColorSequence.new(color2, color)
-	tr.Transparency = NumberSequence.new(0, 1)
-	tr.WidthScale = NumberSequence.new(1.2, 0.2)
+	tr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.6, 0.35), NumberSequenceKeypoint.new(1, 1) })
+	tr.WidthScale = NumberSequence.new(1.6, 0.1)
+	tr.Lifetime = 0.34
 	tr.Parent = part
+	-- 안쪽의 흰 심 (얇고 짧다): 꼬리가 빛을 품은 듯 보인다
+	local core = Instance.new("Trail")
+	core.Attachment0 = a0
+	core.Attachment1 = a1
+	core.Lifetime = 0.16
+	core.LightEmission = 1
+	core.FaceCamera = true
+	core.Color = ColorSequence.new(Color3.new(1, 1, 1), color2)
+	core.Transparency = NumberSequence.new(0, 1)
+	core.WidthScale = NumberSequence.new(0.45, 0)
+	core.Parent = part
 	task.delay(life, function()
 		tr.Enabled = false
-		Debris:AddItem(tr, 0.3)
+		core.Enabled = false
+		Debris:AddItem(core, 0.3)
+		Debris:AddItem(tr, 0.4)
 		Debris:AddItem(a0, 0.3)
 		Debris:AddItem(a1, 0.3)
 	end)
@@ -18005,6 +18025,10 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
 	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
 	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
+	-- 기술을 쓰는 동안 몸에서 기운이 타오른다
+	if slot == "E" or slot == "R" then
+		Fx.skillAura(model, c, c2, math.max(0.5, dur), false)
+	end
 	-- E·R: 두 손에 기가 모인다 (빛 구슬이 부풀었다 터지고, 둘레에서 빛줄기가 손으로 빨려 든다)
 	if slot == "E" or slot == "R" then
 		for _, hn in ipairs({ "RightHand", "LeftHand" }) do
@@ -18643,6 +18667,7 @@ function Fx.mech(data: any)
 	-- 기술이 땅에 닿는 곳: 빛과 불티 (장치마다 공통)
 	if data.at and (kind == "zone" or kind == "drop" or kind == "strike" or kind == "pillar" or kind == "wave" or kind == "beam" or kind == "launch") then
 		local rad = data.radius or 8
+		Fx.blast(data.at, c, c2, math.clamp(rad / 9, 0.8, 2.6))
 		Fx.flash(data.at, c, rad * 2.8, 3.5, 0.4)
 		Fx.burst("spark", data.at, c, 14, math.clamp(rad / 7, 0.9, 2.2))
 		Fx.burst("glitter", data.at, c2, 8, math.clamp(rad / 9, 0.8, 1.8))
@@ -19150,6 +19175,96 @@ function Fx.debris(pos: Vector3, n: number, power: number, color: Color3?)
 		end)
 		Debris:AddItem(chunk, 1.15)
 	end
+end
+
+-- 겹겹의 폭발 (기술이 맞거나 땅에 닿는 자리): 흰 심이 번쩍 → 권법 빛깔 구가 부풀고 →
+-- 사방으로 뾰족한 충격선이 튀고 → 불티·빛 가루·불씨·연기가 차례로 흩어진다
+function Fx.blast(pos: Vector3, color: Color3, color2: Color3, scale: number?)
+	local k = math.clamp(scale or 1, 0.6, 3)
+	local core = piece(Vector3.new(1, 1, 1) * k, Color3.new(1, 1, 1), Enum.Material.Neon, Enum.PartType.Ball, 0)
+	core.Position = pos
+	tween(core, 0.09, { Size = Vector3.new(4, 4, 4) * k })
+	task.delay(0.09, function()
+		if core.Parent then
+			tween(core, 0.16, { Size = Vector3.new(5.5, 5.5, 5.5) * k, Transparency = 1, Color = color2 })
+		end
+	end)
+	Debris:AddItem(core, 0.3)
+	local shell = piece(Vector3.new(2, 2, 2) * k, color, Enum.Material.Glass, Enum.PartType.Ball, 0.35)
+	shell.Position = pos
+	tween(shell, 0.3, { Size = Vector3.new(9, 9, 9) * k, Transparency = 1 })
+	Debris:AddItem(shell, 0.32)
+	-- 충격선: 가운데에서 바깥으로 뻗었다가 끝이 가늘어지며 사라진다
+	for i = 1, math.floor(8 + 4 * k) do
+		local d = Vector3.new(math.random() - 0.5, (math.random() - 0.3) * 0.8, math.random() - 0.5)
+		if d.Magnitude < 0.05 then
+			d = Vector3.new(1, 0, 0)
+		end
+		d = d.Unit
+		local len = (3 + math.random() * 4) * k
+		local spike = piece(Vector3.new(0.35, 0.35, 0.4) * k, i % 3 == 0 and Color3.new(1, 1, 1) or (i % 2 == 0 and color2 or color), Enum.Material.Neon, nil, 0)
+		spike.CFrame = CFrame.lookAt(pos, pos + d)
+		tween(spike, 0.1, { Size = Vector3.new(0.3 * k, 0.3 * k, len), CFrame = CFrame.lookAt(pos + d * len / 2, pos + d * len) })
+		task.delay(0.1, function()
+			if spike.Parent then
+				tween(spike, 0.14, { Size = Vector3.new(0.02, 0.02, len * 1.3), Transparency = 1, CFrame = CFrame.lookAt(pos + d * len, pos + d * len * 2) })
+			end
+		end)
+		Debris:AddItem(spike, 0.28)
+	end
+	Fx.burst("spark", pos, color2, 16 * k, 1 + k * 0.4)
+	Fx.burst("glitter", pos, color, 10 * k, 0.8 + k * 0.3)
+	Fx.burst("ember", pos, color, 6 * k, 0.8 + k * 0.2)
+	if k >= 1.3 then
+		Fx.burst("smoke", pos, color:Lerp(Color3.fromRGB(60, 55, 55), 0.6), 4 * k, k * 0.7)
+	end
+	Fx.flash(pos, color, 20 + 14 * k, 4 + k, 0.3)
+end
+
+-- 기술을 쓰는 동안 몸에서 타오르는 기운 (권법 빛깔의 불꽃 + 발밑에서 솟는 빛 가루 + 빛)
+function Fx.skillAura(model: Model, color: Color3, color2: Color3, dur: number, strong: boolean?)
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart")
+	if not torso or not torso:IsA("BasePart") then
+		return
+	end
+	local att = Instance.new("Attachment")
+	att.Parent = torso
+	local flame = Instance.new("ParticleEmitter")
+	flame.Texture = TEX_FIRE_AURA
+	flame.LightEmission = 1
+	flame.Color = ColorSequence.new(color2, color)
+	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, strong and 2.4 or 1.6), NumberSequenceKeypoint.new(1, 0) })
+	flame.Transparency = NumberSequence.new(0.2, 1)
+	flame.Lifetime = NumberRange.new(0.35, 0.7)
+	flame.Speed = NumberRange.new(2, 5)
+	flame.SpreadAngle = Vector2.new(40, 40)
+	flame.Acceleration = Vector3.new(0, 14, 0)
+	flame.Rate = strong and 90 or 55
+	flame.Rotation = NumberRange.new(0, 360)
+	flame.RotSpeed = NumberRange.new(-90, 90)
+	flame.Parent = att
+	local dust = Instance.new("ParticleEmitter")
+	dust.Texture = TEX_SPARK_AURA
+	dust.LightEmission = 1
+	dust.Color = ColorSequence.new(color2)
+	dust.Size = NumberSequence.new(0.5, 0)
+	dust.Lifetime = NumberRange.new(0.6, 1)
+	dust.Speed = NumberRange.new(3, 7)
+	dust.SpreadAngle = Vector2.new(180, 180)
+	dust.Rate = strong and 40 or 20
+	dust.Parent = att
+	local glow = Instance.new("PointLight")
+	glow.Color = color
+	glow.Range = strong and 18 or 12
+	glow.Brightness = strong and 2.5 or 1.6
+	glow.Parent = torso
+	task.delay(dur, function()
+		flame.Enabled = false
+		dust.Enabled = false
+		tween(glow, 0.3, { Brightness = 0 })
+		Debris:AddItem(att, 1)
+		Debris:AddItem(glow, 0.35)
+	end)
 end
 
 -- 큰 충격: 불티 + 빛 + (크면) 흙먼지 고리 · 돌 조각 · 연기
@@ -19996,6 +20111,43 @@ end
 
 -- 오의: 위아래 검은 띠와 기술 이름
 local bars: { Frame } = {}
+-- 오의 화면 연출: 검은 섬광 한 번, 가운데로 몰려드는 집중선, 권법 빛깔의 테두리
+function UI.ultFrame(color: Color3, color2: Color3)
+	local layer = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 35, Active = false, Parent = gui })
+	local inv = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.15, ZIndex = 35, Parent = layer })
+	task.delay(0.05, function()
+		inv.BackgroundColor3 = color2
+		TweenService:Create(inv, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+	end)
+	-- 줄마다 가운데를 향하게 놓는다 (프레임은 제 가운데를 축으로 돌므로 자리는 각도로 따로 잡는다)
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	local reach = vp.Magnitude * 0.5
+	for i = 1, 30 do
+		local a = i / 30 * 360 + math.random() * 8
+		local dir = Vector2.new(math.cos(math.rad(a)), math.sin(math.rad(a)))
+		local len = reach * (0.45 + math.random() * 0.2)
+		local function at(r: number): UDim2
+			return UDim2.new(0.5, dir.X * r, 0.5, dir.Y * r)
+		end
+		local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = at(reach * 0.95), Size = UDim2.fromOffset(len, math.random(2, 6)), Rotation = a,
+			BackgroundColor3 = i % 3 == 0 and color or Color3.new(1, 1, 1), BackgroundTransparency = 0.2, BorderSizePixel = 0, ZIndex = 36, Parent = layer })
+		-- 가운데 쪽 끝은 흐리게
+		new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.6), NumberSequenceKeypoint.new(1, 0) }), Parent = line })
+		-- 바깥에서 가운데로 몰려든다
+		TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = at(reach * 0.55), Size = UDim2.fromOffset(len * 0.6, 1), BackgroundTransparency = 1 }):Play()
+	end
+	-- 테두리는 프레임 바깥으로 그려지므로 안쪽으로 당겨 둔다
+	local rim = new("Frame", { Position = UDim2.fromOffset(24, 24), Size = UDim2.new(1, -48, 1, -48), BackgroundTransparency = 1, ZIndex = 36, Parent = layer }, { new("UIStroke", { Color = color, Thickness = 40, Transparency = 0.2 }) })
+	local st = rim:FindFirstChildOfClass("UIStroke")
+	if st then
+		TweenService:Create(st, TweenInfo.new(0.7), { Transparency = 1, Thickness = 8 }):Play()
+	end
+	task.delay(0.75, function()
+		layer:Destroy()
+	end)
+end
+
 function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()

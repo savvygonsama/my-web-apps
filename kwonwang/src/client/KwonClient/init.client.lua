@@ -636,6 +636,10 @@ startMove = function(slot: any, charge: number?)
 	end
 	if slot == "G" then
 		UI.cinematic(move.name, style.color, dur)
+		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
+		UI.ultFrame(style.color, style.color2)
+		fovPunch(-10, 0.55)
+		Fx.skillAura(char, style.color, style.color2, math.max(1.2, dur), true)
 		if move.mech then
 			Ults.intro(style.id, char)
 		else
@@ -1368,7 +1372,7 @@ function handlers.hit(data: any)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
 			if data.skill then
 				local st = Config.STYLE_BY_ID[data.style or ""]
-				Fx.impact(pos, st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1.05)
+				Fx.blast(pos, st and st.color or Color3.new(1, 1, 1), st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1)
 				if mine then
 					shake(data.heavy and 0.9 or 0.45)
 					fovPunch(-2, 0.12)

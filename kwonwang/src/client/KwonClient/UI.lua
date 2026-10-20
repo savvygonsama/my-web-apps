@@ -157,6 +157,43 @@ end
 
 -- 오의: 위아래 검은 띠와 기술 이름
 local bars: { Frame } = {}
+-- 오의 화면 연출: 검은 섬광 한 번, 가운데로 몰려드는 집중선, 권법 빛깔의 테두리
+function UI.ultFrame(color: Color3, color2: Color3)
+	local layer = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 35, Active = false, Parent = gui })
+	local inv = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.15, ZIndex = 35, Parent = layer })
+	task.delay(0.05, function()
+		inv.BackgroundColor3 = color2
+		TweenService:Create(inv, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+	end)
+	-- 줄마다 가운데를 향하게 놓는다 (프레임은 제 가운데를 축으로 돌므로 자리는 각도로 따로 잡는다)
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	local reach = vp.Magnitude * 0.5
+	for i = 1, 30 do
+		local a = i / 30 * 360 + math.random() * 8
+		local dir = Vector2.new(math.cos(math.rad(a)), math.sin(math.rad(a)))
+		local len = reach * (0.45 + math.random() * 0.2)
+		local function at(r: number): UDim2
+			return UDim2.new(0.5, dir.X * r, 0.5, dir.Y * r)
+		end
+		local line = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = at(reach * 0.95), Size = UDim2.fromOffset(len, math.random(2, 6)), Rotation = a,
+			BackgroundColor3 = i % 3 == 0 and color or Color3.new(1, 1, 1), BackgroundTransparency = 0.2, BorderSizePixel = 0, ZIndex = 36, Parent = layer })
+		-- 가운데 쪽 끝은 흐리게
+		new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.6), NumberSequenceKeypoint.new(1, 0) }), Parent = line })
+		-- 바깥에서 가운데로 몰려든다
+		TweenService:Create(line, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = at(reach * 0.55), Size = UDim2.fromOffset(len * 0.6, 1), BackgroundTransparency = 1 }):Play()
+	end
+	-- 테두리는 프레임 바깥으로 그려지므로 안쪽으로 당겨 둔다
+	local rim = new("Frame", { Position = UDim2.fromOffset(24, 24), Size = UDim2.new(1, -48, 1, -48), BackgroundTransparency = 1, ZIndex = 36, Parent = layer }, { new("UIStroke", { Color = color, Thickness = 40, Transparency = 0.2 }) })
+	local st = rim:FindFirstChildOfClass("UIStroke")
+	if st then
+		TweenService:Create(st, TweenInfo.new(0.7), { Transparency = 1, Thickness = 8 }):Play()
+	end
+	task.delay(0.75, function()
+		layer:Destroy()
+	end)
+end
+
 function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()
