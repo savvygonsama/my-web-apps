@@ -1877,7 +1877,8 @@ Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
-Config.MOUNT_HIP = { horse = 2.0, tiger = 1.5, cloud = 1.3, dragon = 2.4 }
+-- (탈것 모습은 사람보다 1.5~1.6배 크게 그린다. 발이 땅에 닿도록 맞춘 값)
+Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 2.6, dragon = 3.4 }
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -19300,7 +19301,9 @@ folder.Parent = workspace
 
 -- seg: nil (몸에 붙음) / "thigh" / "shin" / "hoof" (다리 마디), leg = 다리 번호, len = 마디 길이
 type Piece = { p: BasePart, off: CFrame, leg: number?, seg: string?, len: number?, di: number? }
-type Rig = { parts: { Piece }, kind: string, phase: number, model: Model, thigh: number, shin: number, bodyY: number }
+type Rig = { parts: { Piece }, kind: string, phase: number, model: Model, thigh: number, shin: number, bodyY: number, s: number }
+-- 탈것 크기 (사람보다 넉넉히 크게). 서버의 Config.MOUNT_HIP(탄 사람을 들어 올리는 높이)과 맞춰 둔다
+local SCALE = { horse = 1.6, tiger = 1.6, cloud = 1.5, dragon = 1.6 }
 local rigs: { [Model]: Rig } = {}
 
 local Ball, Cyl = Enum.PartType.Ball, Enum.PartType.Cylinder
@@ -19312,14 +19315,16 @@ local function piece(rig: Rig, size: Vector3, off: CFrame, color: Color3, materi
 	p.CanCollide = false
 	p.CanQuery = false
 	p.CanTouch = false
-	p.Size = size
+	local k = rig.s
+	p.Size = size * k
 	p.Color = color
 	p.Material = material or Enum.Material.SmoothPlastic
 	if shape then
 		p.Shape = shape
 	end
 	p.Parent = folder
-	local e: Piece = { p = p, off = off }
+	-- 크기만큼 자리도 벌린다 (돌림은 그대로)
+	local e: Piece = { p = p, off = CFrame.new(off.Position * k) * off.Rotation }
 	table.insert(rig.parts, e)
 	return e
 end
@@ -19534,14 +19539,14 @@ local function dragon(rig: Rig, m: any)
 end
 
 -- 청룡 마디의 자리 (탈것 기준 공간): 앞에서 뒤로, 옆과 위아래로 물결친다
-local function dragonPath(t: number, run: number): { Vector3 }
+local function dragonPath(t: number, run: number, k: number): { Vector3 }
 	local pts = {}
 	for i = 0, DRAGON_N - 1 do
 		local w = i / (DRAGON_N - 1)
 		local amp = 0.25 + w * (0.9 + 0.5 * run)
 		local x = math.sin(t * 3.2 - i * 0.55) * amp
 		local y = math.sin(t * 2.1 - i * 0.45) * (0.25 + w * 0.6) + w * 0.6
-		pts[i + 1] = Vector3.new(x, y, -1.6 + i * 1.05)
+		pts[i + 1] = Vector3.new(x, y, -1.6 + i * 1.05) * k
 	end
 	return pts
 end
@@ -19551,7 +19556,7 @@ local function build(model: Model, id: string)
 	if not m then
 		return
 	end
-	local rig: Rig = { parts = {}, kind = m.kind, phase = 0, model = model, thigh = 1, shin = 1, bodyY = 1.6 }
+	local rig: Rig = { parts = {}, kind = m.kind, phase = 0, model = model, thigh = 1, shin = 1, bodyY = 1.6, s = SCALE[m.kind] or 1.5 }
 	if m.kind == "cloud" then
 		cloud(rig, m)
 	elseif m.kind == "dragon" then
@@ -19561,6 +19566,9 @@ local function build(model: Model, id: string)
 	else
 		horse(rig, m)
 	end
+	rig.thigh *= rig.s
+	rig.shin *= rig.s
+	rig.bodyY *= rig.s
 	rigs[model] = rig
 end
 
@@ -19614,10 +19622,10 @@ RunService.RenderStepped:Connect(function(dt: number)
 		local base: CFrame
 		local path: { Vector3 }? = nil
 		if rig.kind == "dragon" then
-			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.0 + math.sin(os.clock() * 1.8) * 0.2, 0)
-			path = dragonPath(os.clock(), run)
+			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, (-1.0 + math.sin(os.clock() * 1.8) * 0.2) * rig.s, 0)
+			path = dragonPath(os.clock(), run, rig.s)
 		elseif rig.kind == "cloud" then
-			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.1 + math.sin(os.clock() * 2.2) * 0.15, 0) * CFrame.Angles(0, 0, math.sin(os.clock() * 1.3) * 0.04)
+			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, (-1.1 + math.sin(os.clock() * 2.2) * 0.15) * rig.s, 0) * CFrame.Angles(0, 0, math.sin(os.clock() * 1.3) * 0.04)
 		else
 			local bob = math.abs(math.sin(rig.phase)) * 0.2 * run
 			local pitch = math.sin(rig.phase * 2) * math.rad(2.5) * run
@@ -19630,7 +19638,8 @@ RunService.RenderStepped:Connect(function(dt: number)
 				if e.di < 0 then
 					local p0, p1 = pts[1], pts[2]
 					local dir = (p0 - p1).Unit
-					e.p.CFrame = base * CFrame.lookAt(p0 + dir * 0.6 + Vector3.new(0, 0.4, 0), p0 + dir * 3 + Vector3.new(0, 0.4, 0)) * e.off
+					local lift = Vector3.new(0, 0.4 * rig.s, 0)
+					e.p.CFrame = base * CFrame.lookAt(p0 + dir * 0.6 * rig.s + lift, p0 + dir * 3 * rig.s + lift) * e.off
 				else
 					local here = pts[e.di + 1]
 					local ahead = pts[e.di] or (here + (here - pts[e.di + 2]))

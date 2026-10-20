@@ -1857,7 +1857,8 @@ Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
-Config.MOUNT_HIP = { horse = 2.0, tiger = 1.5, cloud = 1.3, dragon = 2.4 }
+-- (탈것 모습은 사람보다 1.5~1.6배 크게 그린다. 발이 땅에 닿도록 맞춘 값)
+Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 2.6, dragon = 3.4 }
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
