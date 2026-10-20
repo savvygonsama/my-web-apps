@@ -514,7 +514,7 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(255, 210, 110),
 	color2 = Color3.fromRGB(190, 225, 255),
 	fx = "celestial",
-	grade = "천외",
+	grade = "천외천",
 	hidden = true,
 	secret = true,
 	realmReq = 10,
@@ -550,7 +550,7 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(150, 90, 255),
 	color2 = Color3.fromRGB(255, 205, 110),
 	fx = "gravity",
-	grade = "천외",
+	grade = "천외천",
 	hidden = true,
 	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨린 자만이 하늘을 삼킨 그 힘을 거꾸로 쥔다",
 	desc = "천마가 하늘을 삼킨 힘을 꺾어 거꾸로 쥔 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
@@ -1086,8 +1086,8 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1096,7 +1096,7 @@ Config.GRADE_COLOR = {
 	["절세"] = Color3.fromRGB(220, 130, 255),
 	["전설"] = Color3.fromRGB(255, 200, 80),
 	["신화"] = Color3.fromRGB(255, 120, 90),
-	["천외"] = Color3.fromRGB(255, 255, 210),
+	["천외천"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
 }
@@ -1114,8 +1114,8 @@ Config.BREAKTHROUGH = {
 }
 -- 그 권법의 지금 등급 (승급까지 더해서)
 function Config.styleGrade(style: any, up: number?): string
-	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외까지)
-	local cap = Config.gradeIndex("천외")
+	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
+	local cap = Config.gradeIndex("천외천")
 	if style.grade == "태초" or style.grade == "지존" then
 		cap = Config.gradeIndex(style.grade)
 	end
@@ -1630,7 +1630,7 @@ Config.Story = {
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
-	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
+	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·일격·버티기·제자 연무·목인진)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
@@ -1684,6 +1684,37 @@ function Config.enemyLevel(home: Vector3): number
 	return 1 + math.floor(math.max(0, d - 250) / 100)
 end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
+-- 1.4판: 사부의 시험 (분신과 겨루는 대신 사부마다 다른 시험). 각성 시련과 권존의 일월 시련은 그대로
+--   deflect = 사부의 공격을 흘려 내기 (F), hits = 쓰러지지 않는 사부를 맞히기, survive = 사부와 제자들 사이에서 버티기,
+--   disciples = 제자들이 세 번 몰려온다 (마지막은 수제자), dummies = 맞받아치는 목인을 시간 안에 모두 부수기
+Config.TRIAL_KIND = {
+	taeheo = "deflect", geumgang = "survive", maehwa = "hits", cheonryong = "disciples", muyeong = "hits", byeokryeok = "dummies",
+	chwi = "deflect", changhae = "disciples", yeolhwa = "dummies", pungsin = "hits", gaecheon = "deflect", taecho = "survive",
+	yeonggeop = "hits", agong = "dummies", unryu = "deflect", seongha = "disciples",
+}
+-- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
+Config.TRIAL_KINDS = {
+	deflect = { icon = "🌊", title = "흘리기 시험", need = 6, time = 120,
+		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹을 %d번 흘려 내면(F) 제자로 받아 주마.", goal = "사부의 공격을 흘려라 (F)" },
+	hits = { icon = "🎯", title = "일격 시험", need = 14, time = 100,
+		ask = "내 몸에 %d번 손을 대 보아라. 나는 쓰러지지 않는다. 다만 빠를 뿐이다.", goal = "쓰러지지 않는 사부를 맞혀라" },
+	survive = { icon = "⏳", title = "버티기 시험", need = 45, time = 45,
+		ask = "%d초를 버텨라. 나와 내 제자들이 한꺼번에 덤빈다. 쓰러지지만 않으면 된다.", goal = "쓰러지지 말고 버텨라" },
+	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
+		ask = "내 제자들을 넘어 보아라. %d번 몰려온다. 마지막은 수제자다.", goal = "몰려오는 제자들을 꺾어라" },
+	dummies = { icon = "🪵", title = "목인진", need = 8, time = 60,
+		ask = "움직이는 목인 %d개를 시간 안에 모두 부숴라. 목인도 맞받아친다.", goal = "맞받아치는 목인을 모두 부숴라" },
+}
+function Config.trialNeed(styleId: string): (string, number)
+	local kind = Config.TRIAL_KIND[styleId] or "duel"
+	local K = Config.TRIAL_KINDS[kind]
+	if not K then
+		return "duel", 1
+	end
+	local st = Config.STYLE_BY_ID[styleId]
+	local mul = (st and st.trialHp) and 1.5 or 1
+	return kind, math.floor(K.need * mul + 0.5)
+end
 Config.WORLD_HALF = 3400 -- 세상 끝 (가운데에서). 바깥 여덟 땅까지
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
@@ -4414,6 +4445,88 @@ local function trialDef(style: any, master: any): any
 	}
 end
 
+-- 시험에 나오는 상대 하나: 시험을 청한 사람과 비슷한 힘으로 맞춘다 (센 사람에게도 시험이 시험이도록)
+local function trialFoe(player: Player, f: any, style: any, master: any, variant: string, at: Vector3, powerK: number, hpMul: number?, edit: ((any) -> ())?): any
+	local key = "trial_" .. style.id .. "_" .. variant
+	local def = trialDef(style, master)
+	if edit then
+		edit(def)
+	end
+	Config.Enemies[key] = def
+	local e = Npc.spawn(key, false, at, "trial")
+	if not e then
+		return nil
+	end
+	local ef = e.f :: any
+	ef.trialOwner = player
+	ef.trialStyle = style.id
+	local want = ((f :: any).power or 100) * powerK
+	local k = want / math.max(1, ef.power or 100)
+	if k > 1 then
+		ef.maxHp = math.floor(ef.maxHp * k)
+		ef.hp = ef.maxHp
+		ef.dmgMult *= k
+		ef.power = math.floor(want)
+		ef.model:SetAttribute("Power", ef.power)
+	end
+	if hpMul then
+		ef.maxHp = math.max(1, math.floor(ef.maxHp * hpMul))
+		ef.hp = ef.maxHp
+	end
+	Combat.sync(ef)
+	e.target = f
+	ef.model:SetAttribute("Style", style.id)
+	return ef
+end
+
+local function trialProgress(player: Player)
+	local T = activeTrial[player]
+	if not T or T.kind == "duel" then
+		return
+	end
+	local K = Config.TRIAL_KINDS[T.kind]
+	Push:FireClient(player, "trialProg", { title = K.icon .. " " .. K.title, goal = K.goal, done = T.count, need = T.need, left = math.max(0, T.deadline - os.clock()), kind = T.kind })
+end
+
+local function trialWin(player: Player)
+	local T = activeTrial[player]
+	if T then
+		Trial.ended(player, true)
+	end
+end
+
+-- 제자 연무: 둘 → 셋 → 수제자 하나
+local function trialWave(player: Player, T: any)
+	local f = Combat.fighterOfPlayer(player)
+	if activeTrial[player] ~= T or not f or f.dead then
+		return
+	end
+	T.wave += 1
+	T.count = T.wave - 1
+	local style, master = Config.STYLE_BY_ID[T.style], T.master
+	local waves = { { n = 2, k = 0.6, hp = 0.7 }, { n = 3, k = 0.65, hp = 0.7 }, { n = 1, k = 0.95, hp = 2.2, chief = true } }
+	local W = waves[T.wave]
+	if not W then
+		T.count = T.need
+		trialWin(player)
+		return
+	end
+	for i = 1, W.n do
+		local a = (i / W.n) * math.pi * 2 + T.wave
+		local at = T.at + Vector3.new(math.cos(a) * 10, 0, math.sin(a) * 10)
+		local ef = trialFoe(player, f, style, master, W.chief and "chief" or "disciple", at, W.k, W.hp, function(def)
+			def.name = W.chief and (master.name .. "의 수제자") or (master.name .. "의 제자")
+			def.scale = W.chief and 1.2 or 1.0
+			def.pants = Color3.fromRGB(40, 36, 34)
+		end)
+		if ef then
+			table.insert(T.foes, ef)
+		end
+	end
+	toast(player, W.chief and "👤 수제자가 나선다!" or string.format("👥 제자들이 몰려온다 (%d / %d)", T.wave, #waves))
+	trialProgress(player)
+end
+
 function Trial.start(player: Player, styleId: string)
 	local style = Config.STYLE_BY_ID[styleId]
 	local f = Combat.fighterOfPlayer(player)
@@ -4433,8 +4546,94 @@ function Trial.start(player: Player, styleId: string)
 		toast(player, "천층탑 안에서는 시험을 청할 수 없어요")
 		return
 	end
-	local key = "trial_" .. styleId
 	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
+	local kind, need = Config.trialNeed(styleId)
+	if style.trialBoss or style.awakenOf then
+		kind = "duel"
+	end
+	if kind ~= "duel" then
+		-- 사부마다 다른 시험
+		local K = Config.TRIAL_KINDS[kind]
+		local T = { kind = kind, style = styleId, foes = {}, count = 0, need = need, wave = 0, master = master, at = spawnAt, deadline = os.clock() + (kind == "survive" and need or K.time * (style.trialHp and 1.5 or 1)) }
+		activeTrial[player] = T
+		local function immortalMaster(speed: number, dmgK: number): any
+			local ef = trialFoe(player, f, style, master, "master", spawnAt, style.secret and 1.0 or 0.85, nil, function(def)
+				def.name = master.name
+				def.speed = speed
+				def.aggro = 140
+			end)
+			if ef then
+				ef.trialImmortal = true
+				ef.dmgMult *= dmgK
+				table.insert(T.foes, ef)
+			end
+			return ef
+		end
+		if kind == "deflect" then
+			immortalMaster(17, 0.55)
+		elseif kind == "hits" then
+			immortalMaster(24, 0.45)
+		elseif kind == "survive" then
+			immortalMaster(19, 0.8)
+			for i = 1, 2 do
+				local at = spawnAt + Vector3.new(i == 1 and -8 or 8, 0, 0)
+				local ef = trialFoe(player, f, style, master, "disciple", at, 0.6, 0.6, function(def)
+					def.name = master.name .. "의 제자"
+					def.pants = Color3.fromRGB(40, 36, 34)
+				end)
+				if ef then
+					table.insert(T.foes, ef)
+				end
+			end
+		elseif kind == "disciples" then
+			trialWave(player, T)
+		elseif kind == "dummies" then
+			for i = 1, need do
+				local a = i / need * math.pi * 2
+				local at = spawnAt + Vector3.new(math.cos(a) * 16, 0, math.sin(a) * 16)
+				local ef = trialFoe(player, f, style, master, "dummy", at, 0.5, 0.25, function(def)
+					def.name = "목인"
+					def.speed = 2
+					def.aggro = 30
+					def.scale = 1.1
+					def.shirt = Color3.fromRGB(120, 82, 50)
+					def.pants = Color3.fromRGB(95, 64, 40)
+				end)
+				if ef then
+					ef.dmgMult *= 0.5
+					table.insert(T.foes, ef)
+				end
+			end
+		end
+		Push:FireClient(player, "dialog", { who = master.name, title = K.icon .. " " .. K.title, text = string.format(K.ask, need) })
+		Push:FireClient(player, "trial", { m = T.foes[1] and T.foes[1].model, name = master.name, style = styleId, kind = kind, title = K.title })
+		trialProgress(player)
+		-- 시간이 다 되면: 버티기는 통과, 나머지는 실패
+		task.delay(T.deadline - os.clock(), function()
+			if activeTrial[player] == T then
+				local pf = Combat.fighterOfPlayer(player)
+				if kind == "survive" and pf and not pf.dead then
+					T.count = T.need
+					trialWin(player)
+				else
+					Trial.ended(player, false)
+					toast(player, "⌛ 시험 시간이 다 됐어요. 다시 청하세요")
+				end
+			end
+		end)
+		if kind == "survive" then
+			task.spawn(function()
+				while activeTrial[player] == T do
+					T.count = math.min(T.need, math.floor(T.need - (T.deadline - os.clock())))
+					trialProgress(player)
+					task.wait(1)
+				end
+			end)
+		end
+		return
+	end
+	-- 분신·그림자·권존과의 겨루기 (각성 시련, 일월 시련)
+	local key = "trial_" .. styleId
 	local e
 	if style.trialBoss then
 		-- 보스 시험 (권존): 사부 본인이 보스처럼 패턴을 쓰며 세 단계로 싸운다
@@ -4476,14 +4675,15 @@ function Trial.start(player: Player, styleId: string)
 	end
 	e.target = f
 	ef.model:SetAttribute("Style", styleId)
-	activeTrial[player] = ef
+	local T = { kind = "duel", style = styleId, foes = { ef }, count = 0, need = 1, wave = 0, master = master, at = spawnAt, deadline = os.clock() + (hpMul and 300 or 150) }
+	activeTrial[player] = T
 	if style.trialBoss then
 		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
 		World.setClock(12)
 		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
 		task.spawn(function()
 			local seen = 1
-			while activeTrial[player] == ef and not ef.dead do
+			while activeTrial[player] == T and not ef.dead do
 				local ph = tonumber(ef.model:GetAttribute("BossPhase")) or 1
 				if ph ~= seen then
 					seen = ph
@@ -4493,31 +4693,85 @@ function Trial.start(player: Player, styleId: string)
 				task.wait(0.3)
 			end
 		end)
-	elseif style.awakenOf then
-		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
 	else
-		Push:FireClient(player, "dialog", { who = master.name, title = "사부의 시험", text = "내 권법을 원하는가. 그럼 내 분신을 꺾어 보아라. 마구 휘두르는 주먹은 통하지 않는다." })
+		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
 	end
-	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId })
+	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId, kind = "duel" })
 	-- 너무 오래 끌면 사부가 거둔다
 	task.delay(hpMul and 300 or 150, function()
-		if activeTrial[player] == ef and not ef.dead then
-			activeTrial[player] = nil
-			Npc.despawn(ef)
+		if activeTrial[player] == T then
+			Trial.ended(player, false)
 			toast(player, "⌛ 시험 시간이 다 됐어요. 다시 청하세요")
 		end
 	end)
 end
 
+-- 시험의 상대가 쓰러졌다
+function Trial.killed(player: Player, foe: any)
+	local T = activeTrial[player]
+	if not T then
+		return
+	end
+	if T.kind == "duel" then
+		Trial.ended(player, true)
+	elseif T.kind == "dummies" then
+		T.count += 1
+		trialProgress(player)
+		if T.count >= T.need then
+			trialWin(player)
+		end
+	elseif T.kind == "disciples" then
+		for _, ef in ipairs(T.foes) do
+			if not ef.dead then
+				return
+			end
+		end
+		task.delay(1.2, function()
+			trialWave(player, T)
+		end)
+	end
+end
+
+-- 맞히기 · 흘리기 시험의 셈
+function Trial.onHit(att: any, tgt: any)
+	local player = att.player
+	local T = player and activeTrial[player]
+	if T and T.kind == "hits" and tgt.trialOwner == player then
+		T.count += 1
+		trialProgress(player)
+		if T.count >= T.need then
+			trialWin(player)
+		end
+	end
+end
+function Trial.onDeflect(tgt: any, att: any)
+	local player = tgt.player
+	local T = player and activeTrial[player]
+	if T and T.kind == "deflect" and att.trialOwner == player then
+		T.count += 1
+		trialProgress(player)
+		if T.count >= T.need then
+			trialWin(player)
+		end
+	end
+end
+
 function Trial.ended(player: Player, won: boolean)
-	local ef = activeTrial[player]
-	if not ef then
+	local T = activeTrial[player]
+	if not T then
 		return
 	end
 	activeTrial[player] = nil
+	-- 남은 상대를 거둔다
+	for _, ef in ipairs(T.foes) do
+		if not ef.dead then
+			Npc.despawn(ef)
+		end
+	end
+	Push:FireClient(player, "trialProg", nil)
 	local p = profiles[player]
 	if won and p then
-		local id = ef.trialStyle
+		local id = T.style
 		local style = Config.STYLE_BY_ID[id]
 		if style.awakenOf then
 			-- 각성 시련을 넘었다: 은자를 내고 진 권법을 바로 얻는다
@@ -4537,8 +4791,6 @@ function Trial.ended(player: Player, won: boolean)
 		states[player].dirty = true
 		Story.event(player, "trial")
 		pushState(player)
-	elseif not ef.dead then
-		Npc.despawn(ef)
 	end
 end
 
@@ -4556,7 +4808,7 @@ Combat.init(Push, {
 				local isBoss = f.model:GetAttribute("Boss") == true
 				-- 이야기·시험
 				if f.trialOwner == killer then
-					Trial.ended(killer, true)
+					Trial.killed(killer, f)
 				end
 				if f.gateOwner == killer then
 					Gate.ended(killer, true)
@@ -4663,7 +4915,8 @@ Combat.init(Push, {
 			end)
 		end
 	end,
-	onHit = function(att: any, _tgt: any, dmg: number, opt: any)
+	onHit = function(att: any, tgt: any, dmg: number, opt: any)
+		Trial.onHit(att, tgt)
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
@@ -4671,7 +4924,8 @@ Combat.init(Push, {
 			end
 		end
 	end,
-	onDeflect = function(tgt: any, _att: any)
+	onDeflect = function(tgt: any, att: any)
+		Trial.onDeflect(tgt, att)
 		if tgt.player then
 			local p = profiles[tgt.player]
 			if p then
@@ -5873,10 +6127,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		Story.advance(player)
 		Story.accept(player)
 	elseif action == "testTrial" then
-		local ef = activeTrial[player]
-		if ef then
+		if activeTrial[player] then
 			Trial.ended(player, true)
-			Npc.despawn(ef)
 		end
 		for id in pairs(Config.MASTERS) do
 			p.found[id] = true
@@ -6786,6 +7038,8 @@ end
 
 local function onPlayerRemoving(player: Player)
 	Tower.ended(player, "left")
+	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
+	pcall(Trial.ended, player, false)
 	saveProfile(player)
 	profiles[player] = nil
 	states[player] = nil
@@ -6847,7 +7101,12 @@ task.spawn(function()
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "제자가 되고 싶다면 먼저 내 분신을 꺾어라. 준비가 되면 다시 말을 걸어라. (다시 T를 누르면 시험이 시작된다)", trial = styleId })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (function()
+				local kind, need = Config.trialNeed(styleId)
+				local K = Config.TRIAL_KINDS[kind]
+				local what = K and (K.icon .. " " .. K.title .. ": " .. string.format(K.ask, need)) or "먼저 내 분신을 꺾어라."
+				return "제자가 되고 싶다면 시험을 넘어라. " .. what .. " 준비가 되면 다시 말을 걸어라. (다시 T를 누르면 시험이 시작된다)"
+			end)(), trial = styleId })
 			local st = states[player]
 			if st and (st :: any).trialAsk == styleId then
 				(st :: any).trialAsk = nil
@@ -7232,7 +7491,8 @@ function Combat.kill(f: Fighter, by: Fighter?)
 		return
 	end
 	-- 수련 목인은 쓰러지지 않는다 (다시 가득 찬다)
-	if f.npc and (f.npc :: any).dummy then
+	-- 시험의 사부 (흘리기·맞히기·버티기)도 쓰러지지 않는다
+	if f.npc and ((f.npc :: any).dummy or (f :: any).trialImmortal) then
 		f.hp = f.maxHp
 		Combat.sync(f)
 		return
@@ -15035,12 +15295,16 @@ function handlers.trial(data: any)
 	local color = s and s.color or Color3.fromRGB(255, 220, 120)
 	local r = m and rootOf(m)
 	if r then
-		Fx.text(r.Position + Vector3.new(0, 6, 0), "⚔ 분신", color, 40, 1.5)
+		Fx.text(r.Position + Vector3.new(0, 6, 0), data.kind == "duel" and "⚔ 분신" or ("⚔ " .. (data.title or "시험")), color, 40, 1.5)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 3, 30, 0.8)
 		Fx.afterimage(m, color, 0.8)
 	end
-	UI.banner("⚔ " .. data.name .. "의 시험", "분신을 꺾어라 · 흘리고(F) 반격하라", color)
+	local K = data.kind and Config.TRIAL_KINDS[data.kind]
+	UI.banner("⚔ " .. data.name .. "의 " .. (K and K.title or "시험"), K and K.goal or "꺾어라 · 흘리고(F) 반격하라", color)
 	shake(0.8)
+end
+function handlers.trialProg(data: any?)
+	UI.setTrial(data)
 end
 function handlers.simmaWin(data: any)
 	UI.banner("👁 심마를 꺾었다!", string.format("모든 능력치 +%d", data.gain or 0), Color3.fromRGB(255, 220, 120))
@@ -21665,7 +21929,13 @@ local function buildStyles()
 		end
 		if master and not passed and not owned then
 			table.insert(lines, "")
-			table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부의 분신과 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
+			local kind, need = Config.trialNeed(s.id)
+			local K = Config.TRIAL_KINDS[kind]
+			if K then
+				table.insert(lines, string.format('<font color="#FFB070"><b>사부의 시험 · %s %s</b>  %s</font>', K.icon, K.title, string.format(K.ask, need)))
+			else
+				table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부와 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
+			end
 		end
 		if s.realmReq then
 			table.insert(lines, "")
@@ -22077,6 +22347,40 @@ function UI.setTower(data: any?)
 	end
 end
 
+-- 사부의 시험 진행 (흘리기 3/6 · 남은 시간)
+local trialFrame: Frame? = nil
+local trialLabel: TextLabel? = nil
+local trialBar: Frame? = nil
+local trialData: any = nil
+local trialEnd = 0
+function UI.setTrial(data: any?)
+	trialData = data
+	if not trialFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.new(0, 460, 0, 54), BackgroundColor3 = Color3.fromRGB(20, 14, 10), BackgroundTransparency = 0.2, Visible = false, Parent = gui }, { corner(10), stroke(C.gold, 1.5) })
+		scaled(f)
+		trialLabel = text({ Position = UDim2.new(0, 14, 0, 2), Size = UDim2.new(1, -28, 0, 32), TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = f })
+		local track = new("Frame", { Position = UDim2.new(0, 14, 1, -16), Size = UDim2.new(1, -28, 0, 8), BackgroundColor3 = Color3.fromRGB(60, 50, 40), Parent = f }, { corner(4) })
+		trialBar = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.gold, Parent = track }, { corner(4) })
+		trialFrame = f
+		RunService.Heartbeat:Connect(function()
+			local d = trialData
+			if d and trialLabel then
+				local left = math.max(0, trialEnd - os.clock())
+				local prog = d.kind == "survive" and string.format("%d / %d초", d.done or 0, d.need or 0) or string.format("%d / %d", d.done or 0, d.need or 0)
+				trialLabel.Text = string.format("%s  ·  %s  ·  %s  ·  ⏱ %d초", d.title or "", d.goal or "", prog, math.ceil(left))
+			end
+		end)
+	end
+	local f = trialFrame :: Frame
+	f.Visible = data ~= nil
+	if data then
+		trialEnd = os.clock() + (data.left or 0)
+		if trialBar then
+			TweenService:Create(trialBar, TweenInfo.new(0.2), { Size = UDim2.fromScale(math.clamp((data.done or 0) / math.max(1, data.need or 1), 0, 1), 1) }):Play()
+		end
+	end
+end
+
 local function buildHelp()
 	local page = makePage("help")
 	-- 처음 조작법 안내를 다시 본다
@@ -22306,9 +22610,10 @@ local function buildTest()
 				local rq = Config.STYLE_BY_ID[st.styleReq]
 				table.insert(need, (rq and rq.name or st.styleReq) .. "을(를) 익힌 뒤")
 			end
-			line = string.format("%s%s의 %s에게 가서 T → 분신 시험을 넘고 → 은자를 바쳐 배운다%s%s",
-				#need > 0 and ("[" .. table.concat(need, ", ") .. "] ") or "", m.region, m.name,
-				m.secret and " (숨은 사부: 지도에 안 나온다)" or "", st.trialHp and string.format(" · 분신 체력 %d배", st.trialHp) or "")
+			local tk = Config.TRIAL_KINDS[(Config.trialNeed(st.id))]
+			line = string.format("%s%s의 %s에게 가서 T → %s을 넘고 → 은자를 바쳐 배운다%s%s",
+				#need > 0 and ("[" .. table.concat(need, ", ") .. "] ") or "", m.region, m.name, tk and (tk.icon .. " " .. tk.title) or "시험",
+				m.secret and " (숨은 사부: 지도에 안 나온다)" or "", st.trialHp and " · 궁극의 시험 (1.5배)" or "")
 		else
 			line = st.unlockHint or "?"
 		end

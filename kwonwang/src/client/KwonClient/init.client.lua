@@ -1237,12 +1237,16 @@ function handlers.trial(data: any)
 	local color = s and s.color or Color3.fromRGB(255, 220, 120)
 	local r = m and rootOf(m)
 	if r then
-		Fx.text(r.Position + Vector3.new(0, 6, 0), "⚔ 분신", color, 40, 1.5)
+		Fx.text(r.Position + Vector3.new(0, 6, 0), data.kind == "duel" and "⚔ 분신" or ("⚔ " .. (data.title or "시험")), color, 40, 1.5)
 		Fx.ring(r.Position - Vector3.new(0, 2.5, 0), color, 3, 30, 0.8)
 		Fx.afterimage(m, color, 0.8)
 	end
-	UI.banner("⚔ " .. data.name .. "의 시험", "분신을 꺾어라 · 흘리고(F) 반격하라", color)
+	local K = data.kind and Config.TRIAL_KINDS[data.kind]
+	UI.banner("⚔ " .. data.name .. "의 " .. (K and K.title or "시험"), K and K.goal or "꺾어라 · 흘리고(F) 반격하라", color)
 	shake(0.8)
+end
+function handlers.trialProg(data: any?)
+	UI.setTrial(data)
 end
 function handlers.simmaWin(data: any)
 	UI.banner("👁 심마를 꺾었다!", string.format("모든 능력치 +%d", data.gain or 0), Color3.fromRGB(255, 220, 120))

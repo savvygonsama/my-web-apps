@@ -618,7 +618,13 @@ local function buildStyles()
 		end
 		if master and not passed and not owned then
 			table.insert(lines, "")
-			table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부의 분신과 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
+			local kind, need = Config.trialNeed(s.id)
+			local K = Config.TRIAL_KINDS[kind]
+			if K then
+				table.insert(lines, string.format('<font color="#FFB070"><b>사부의 시험 · %s %s</b>  %s</font>', K.icon, K.title, string.format(K.ask, need)))
+			else
+				table.insert(lines, '<font color="#FFB070"><b>사부의 시험</b>  사부와 겨뤄 이겨야 제자로 받아 준다. 마구 휘두르면 막히고 되받아친다.</font>')
+			end
 		end
 		if s.realmReq then
 			table.insert(lines, "")
@@ -1030,6 +1036,40 @@ function UI.setTower(data: any?)
 	end
 end
 
+-- 사부의 시험 진행 (흘리기 3/6 · 남은 시간)
+local trialFrame: Frame? = nil
+local trialLabel: TextLabel? = nil
+local trialBar: Frame? = nil
+local trialData: any = nil
+local trialEnd = 0
+function UI.setTrial(data: any?)
+	trialData = data
+	if not trialFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.new(0, 460, 0, 54), BackgroundColor3 = Color3.fromRGB(20, 14, 10), BackgroundTransparency = 0.2, Visible = false, Parent = gui }, { corner(10), stroke(C.gold, 1.5) })
+		scaled(f)
+		trialLabel = text({ Position = UDim2.new(0, 14, 0, 2), Size = UDim2.new(1, -28, 0, 32), TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = f })
+		local track = new("Frame", { Position = UDim2.new(0, 14, 1, -16), Size = UDim2.new(1, -28, 0, 8), BackgroundColor3 = Color3.fromRGB(60, 50, 40), Parent = f }, { corner(4) })
+		trialBar = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.gold, Parent = track }, { corner(4) })
+		trialFrame = f
+		RunService.Heartbeat:Connect(function()
+			local d = trialData
+			if d and trialLabel then
+				local left = math.max(0, trialEnd - os.clock())
+				local prog = d.kind == "survive" and string.format("%d / %d초", d.done or 0, d.need or 0) or string.format("%d / %d", d.done or 0, d.need or 0)
+				trialLabel.Text = string.format("%s  ·  %s  ·  %s  ·  ⏱ %d초", d.title or "", d.goal or "", prog, math.ceil(left))
+			end
+		end)
+	end
+	local f = trialFrame :: Frame
+	f.Visible = data ~= nil
+	if data then
+		trialEnd = os.clock() + (data.left or 0)
+		if trialBar then
+			TweenService:Create(trialBar, TweenInfo.new(0.2), { Size = UDim2.fromScale(math.clamp((data.done or 0) / math.max(1, data.need or 1), 0, 1), 1) }):Play()
+		end
+	end
+end
+
 local function buildHelp()
 	local page = makePage("help")
 	-- 처음 조작법 안내를 다시 본다
@@ -1259,9 +1299,10 @@ local function buildTest()
 				local rq = Config.STYLE_BY_ID[st.styleReq]
 				table.insert(need, (rq and rq.name or st.styleReq) .. "을(를) 익힌 뒤")
 			end
-			line = string.format("%s%s의 %s에게 가서 T → 분신 시험을 넘고 → 은자를 바쳐 배운다%s%s",
-				#need > 0 and ("[" .. table.concat(need, ", ") .. "] ") or "", m.region, m.name,
-				m.secret and " (숨은 사부: 지도에 안 나온다)" or "", st.trialHp and string.format(" · 분신 체력 %d배", st.trialHp) or "")
+			local tk = Config.TRIAL_KINDS[(Config.trialNeed(st.id))]
+			line = string.format("%s%s의 %s에게 가서 T → %s을 넘고 → 은자를 바쳐 배운다%s%s",
+				#need > 0 and ("[" .. table.concat(need, ", ") .. "] ") or "", m.region, m.name, tk and (tk.icon .. " " .. tk.title) or "시험",
+				m.secret and " (숨은 사부: 지도에 안 나온다)" or "", st.trialHp and " · 궁극의 시험 (1.5배)" or "")
 		else
 			line = st.unlockHint or "?"
 		end

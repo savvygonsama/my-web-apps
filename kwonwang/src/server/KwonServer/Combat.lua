@@ -330,7 +330,8 @@ function Combat.kill(f: Fighter, by: Fighter?)
 		return
 	end
 	-- 수련 목인은 쓰러지지 않는다 (다시 가득 찬다)
-	if f.npc and (f.npc :: any).dummy then
+	-- 시험의 사부 (흘리기·맞히기·버티기)도 쓰러지지 않는다
+	if f.npc and ((f.npc :: any).dummy or (f :: any).trialImmortal) then
 		f.hp = f.maxHp
 		Combat.sync(f)
 		return

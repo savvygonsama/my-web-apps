@@ -494,7 +494,7 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(255, 210, 110),
 	color2 = Color3.fromRGB(190, 225, 255),
 	fx = "celestial",
-	grade = "천외",
+	grade = "천외천",
 	hidden = true,
 	secret = true,
 	realmReq = 10,
@@ -530,7 +530,7 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(150, 90, 255),
 	color2 = Color3.fromRGB(255, 205, 110),
 	fx = "gravity",
-	grade = "천외",
+	grade = "천외천",
 	hidden = true,
 	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨린 자만이 하늘을 삼킨 그 힘을 거꾸로 쥔다",
 	desc = "천마가 하늘을 삼킨 힘을 꺾어 거꾸로 쥔 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
@@ -1066,8 +1066,8 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외", "태초", "지존" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1076,7 +1076,7 @@ Config.GRADE_COLOR = {
 	["절세"] = Color3.fromRGB(220, 130, 255),
 	["전설"] = Color3.fromRGB(255, 200, 80),
 	["신화"] = Color3.fromRGB(255, 120, 90),
-	["천외"] = Color3.fromRGB(255, 255, 210),
+	["천외천"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
 }
@@ -1094,8 +1094,8 @@ Config.BREAKTHROUGH = {
 }
 -- 그 권법의 지금 등급 (승급까지 더해서)
 function Config.styleGrade(style: any, up: number?): string
-	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외까지)
-	local cap = Config.gradeIndex("천외")
+	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
+	local cap = Config.gradeIndex("천외천")
 	if style.grade == "태초" or style.grade == "지존" then
 		cap = Config.gradeIndex(style.grade)
 	end
@@ -1610,7 +1610,7 @@ Config.Story = {
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
-	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부의 분신을 꺾어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
+	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·일격·버티기·제자 연무·목인진)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
@@ -1664,6 +1664,37 @@ function Config.enemyLevel(home: Vector3): number
 	return 1 + math.floor(math.max(0, d - 250) / 100)
 end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
+-- 1.4판: 사부의 시험 (분신과 겨루는 대신 사부마다 다른 시험). 각성 시련과 권존의 일월 시련은 그대로
+--   deflect = 사부의 공격을 흘려 내기 (F), hits = 쓰러지지 않는 사부를 맞히기, survive = 사부와 제자들 사이에서 버티기,
+--   disciples = 제자들이 세 번 몰려온다 (마지막은 수제자), dummies = 맞받아치는 목인을 시간 안에 모두 부수기
+Config.TRIAL_KIND = {
+	taeheo = "deflect", geumgang = "survive", maehwa = "hits", cheonryong = "disciples", muyeong = "hits", byeokryeok = "dummies",
+	chwi = "deflect", changhae = "disciples", yeolhwa = "dummies", pungsin = "hits", gaecheon = "deflect", taecho = "survive",
+	yeonggeop = "hits", agong = "dummies", unryu = "deflect", seongha = "disciples",
+}
+-- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
+Config.TRIAL_KINDS = {
+	deflect = { icon = "🌊", title = "흘리기 시험", need = 6, time = 120,
+		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹을 %d번 흘려 내면(F) 제자로 받아 주마.", goal = "사부의 공격을 흘려라 (F)" },
+	hits = { icon = "🎯", title = "일격 시험", need = 14, time = 100,
+		ask = "내 몸에 %d번 손을 대 보아라. 나는 쓰러지지 않는다. 다만 빠를 뿐이다.", goal = "쓰러지지 않는 사부를 맞혀라" },
+	survive = { icon = "⏳", title = "버티기 시험", need = 45, time = 45,
+		ask = "%d초를 버텨라. 나와 내 제자들이 한꺼번에 덤빈다. 쓰러지지만 않으면 된다.", goal = "쓰러지지 말고 버텨라" },
+	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
+		ask = "내 제자들을 넘어 보아라. %d번 몰려온다. 마지막은 수제자다.", goal = "몰려오는 제자들을 꺾어라" },
+	dummies = { icon = "🪵", title = "목인진", need = 8, time = 60,
+		ask = "움직이는 목인 %d개를 시간 안에 모두 부숴라. 목인도 맞받아친다.", goal = "맞받아치는 목인을 모두 부숴라" },
+}
+function Config.trialNeed(styleId: string): (string, number)
+	local kind = Config.TRIAL_KIND[styleId] or "duel"
+	local K = Config.TRIAL_KINDS[kind]
+	if not K then
+		return "duel", 1
+	end
+	local st = Config.STYLE_BY_ID[styleId]
+	local mul = (st and st.trialHp) and 1.5 or 1
+	return kind, math.floor(K.need * mul + 0.5)
+end
 Config.WORLD_HALF = 3400 -- 세상 끝 (가운데에서). 바깥 여덟 땅까지
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
