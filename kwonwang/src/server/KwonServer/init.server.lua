@@ -59,6 +59,8 @@ type Profile = {
 	seen: { [string]: boolean }, -- 본 장면 (컷씬)
 	pvpUnlocked: boolean?, -- 한 번 쓰러진 뒤: PvP를 끌 수 있다
 	pvpOff: boolean?, -- 들판 PvP 끔
+	mounts: { [string]: boolean }, -- 가진 탈것
+	mountSel: string, -- 고른 탈것
 }
 
 local function defaultProfile(): Profile
@@ -87,6 +89,8 @@ local function defaultProfile(): Profile
 		pity = 0,
 		towerBest = 0,
 		seen = {},
+		mounts = { horse = true },
+		mountSel = "horse",
 	}
 end
 
@@ -173,6 +177,11 @@ local function sanitize(data: any): Profile
 		return #k < 40
 	end)
 	p.pvpUnlocked = data.pvpUnlocked == true or nil
+	p.mounts = flags(data.mounts, function(k)
+		return Config.MOUNT_BY_ID[k] ~= nil
+	end)
+	p.mounts.horse = true
+	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
@@ -425,6 +434,8 @@ local function pushState(player: Player)
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
 		pvpOff = p.pvpOff == true,
+		mounts = p.mounts,
+		mountSel = p.mountSel,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -547,8 +558,17 @@ local function respawnPlayer(player: Player)
 	f.iframeUntil = os.clock() + 2
 	Combat.sync(f)
 	local char = player.Character
+	local st = states[player]
 	if char then
-		char:PivotTo(CFrame.new(Config.SPAWN))
+		-- 천상계에서 쓰러졌으면 천궁에서 일어난다
+		if st and (st :: any).diedInSky then
+			char:PivotTo(CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30)))
+		else
+			char:PivotTo(CFrame.new(Config.SPAWN))
+		end
+	end
+	if st then
+		(st :: any).diedInSky = nil
 	end
 	Push:FireClient(player, "respawn")
 end
@@ -958,6 +978,9 @@ Combat.init(Push, {
 			Trial.ended(player, false)
 			Gate.ended(player, false)
 			Tower.ended(player, "dead")
+			if states[player] then
+				(states[player] :: any).diedInSky = f.root.Position.Y > Config.SKY.y - 300
+			end
 			-- 처음 쓰러지면: 이제부터 들판 PvP를 스스로 끌 수 있다
 			local dp = profiles[player]
 			if dp and not dp.pvpUnlocked and Config.PVP.offAfterDeath then
@@ -1090,6 +1113,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	if not p or not f or p.style == "" then
 		return
 	end
+	Combat.dismount(f)
 	local style = Config.STYLE_BY_ID[p.style]
 	local slot: any = slotArg
 	if type(slot) == "number" then
@@ -1341,6 +1365,9 @@ function Actions.guard(player: Player, on: any)
 		return
 	end
 	local want = on == true
+	if want then
+		Combat.dismount(f)
+	end
 	if want and (Combat.stunned(f) or Combat.busy(f)) then
 		return
 	end
@@ -1357,6 +1384,7 @@ function Actions.dash(player: Player, kindArg: any)
 	if not p or not f or f.dead or Combat.stunned(f) then
 		return
 	end
+	Combat.dismount(f)
 	local style = Config.STYLE_BY_ID[p.style]
 	local cd = style and style.dashCd or Config.DASH_CD
 	local charges = style and style.dashCharges or 1
@@ -1663,6 +1691,7 @@ function Tower.start(player: Player)
 	end
 	towerSlots[slot] = player
 	Train.stop(player)
+	Combat.dismount(f)
 	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0 }
 	activeTower[player] = run
 	local char = player.Character
@@ -1913,6 +1942,7 @@ function Train.start(player: Player, info: any, hard: boolean?)
 	if not p or not st or not f or f.dead then
 		return
 	end
+	Combat.dismount(f)
 	if f.combatUntil > os.clock() then
 		toast(player, "싸우는 중에는 수련할 수 없어요")
 		return
@@ -2161,6 +2191,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testPvpUnlock" then
 		p.pvpUnlocked = true
 		toast(player, "⚔ PvP 끄기를 열었어요")
+	elseif action == "testSky" then
+		-- 천상계로 바로 (경지와 상관없이)
+		if f then
+			Combat.dismount(f)
+			f.root.CFrame = CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30))
+			toast(player, "☁ 천상계 · 천궁")
+		end
 	elseif action == "testSeen" then
 		p.seen = {}
 		toast(player, "🎬 컷씬 기록을 지웠어요")
@@ -2286,6 +2323,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.styles.yeonggeop = nil :: any
 			p.trials.yeonggeop = nil :: any
 			p.styles.musang = nil :: any
+			p.styles.agong = nil :: any
+			p.trials.agong = nil :: any
 			p.styles.hyeolma2 = nil :: any
 			p.styles.cheonryong2 = nil :: any
 			p.styles.byeokryeok2 = nil :: any
@@ -2401,6 +2440,49 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "gate" then
 		Gate.start(player)
+	elseif action == "mount" then
+		-- 탈것 타기·내리기
+		local f = Combat.fighterOfPlayer(player)
+		if not f or f.dead then
+			return
+		end
+		if f.model:GetAttribute("Mount") then
+			Combat.dismount(f)
+			return
+		end
+		if f.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 탈 수 없어요")
+			return
+		end
+		if st.training or Tower.active(player) then
+			toast(player, "지금은 탈 수 없어요")
+			return
+		end
+		Combat.mount(f, p.mountSel)
+	elseif action == "mountBuy" or action == "mountSelect" then
+		local m = type(a1) == "string" and Config.MOUNT_BY_ID[a1]
+		if not m then
+			return
+		end
+		if not p.mounts[m.id] then
+			if action ~= "mountBuy" then
+				return
+			end
+			if p.coins < m.cost then
+				toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(m.cost)))
+				return
+			end
+			p.coins -= m.cost
+			p.mounts[m.id] = true
+			toast(player, m.icon .. " " .. m.name .. "을(를) 얻었어요! (V로 타기)")
+		end
+		p.mountSel = m.id
+		st.dirty = true
+		local f = Combat.fighterOfPlayer(player)
+		if f and f.model:GetAttribute("Mount") then
+			Combat.mount(f, m.id)
+		end
+		pushState(player)
 	elseif action == "pvpToggle" then
 		-- 들판 PvP 켜기·끄기 (한 번 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
 		local f = Combat.fighterOfPlayer(player)
@@ -2514,6 +2596,76 @@ if W.tower then
 		Tower.start(player)
 	end)
 end
+
+-- 천상계 오르내리기
+local function toSky(player: Player)
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not f or f.dead then
+		return
+	end
+	if Calc.realm(p) < Config.SKY.realm then
+		toast(player, string.format("☁ 천상계는 %s의 경지부터 오를 수 있어요", Config.Realms[Config.SKY.realm].name))
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 오를 수 없어요")
+		return
+	end
+	Train.stop(player)
+	Combat.dismount(f)
+	local char = player.Character
+	if char then
+		local at = Config.SKY.islands[1].at + Vector3.new(0, 5, 30)
+		char:PivotTo(CFrame.lookAt(at, at + Vector3.new(0, 0, -1)))
+	end
+	if not cutscene(player, "sky_first", { at = Config.SKY.islands[1].at }) then
+		toast(player, "☁ 천상계 · 천궁")
+	end
+end
+if W.skyUp then
+	W.skyUp.Triggered:Connect(toSky)
+end
+if W.skyDown then
+	W.skyDown.Triggered:Connect(function(player: Player)
+		local char = player.Character
+		local f = Combat.fighterOfPlayer(player)
+		if char and f and not f.dead then
+			Combat.dismount(f)
+			char:PivotTo(CFrame.new(Config.SKY.portal + Vector3.new(10, 5, 10)))
+			toast(player, "⬇ 강호로 내려왔어요")
+		end
+	end)
+end
+
+-- 천상계에서 떨어지면: 사람은 천궁으로 되돌리고, 적은 쓰러뜨린 것으로 친다 (땅으로 떨어지지 않게)
+task.spawn(function()
+	local Y = Config.SKY.y
+	while true do
+		task.wait(0.5)
+		for player in pairs(profiles) do
+			local f = Combat.fighterOfPlayer(player)
+			if f and not f.dead then
+				local y = f.root.Position.Y
+				if y < Y - 60 and y > Y - 1600 then
+					f.root.AssemblyLinearVelocity = Vector3.zero
+					f.root.CFrame = CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30))
+					toast(player, "☁ 구름 아래로 떨어져 천궁으로 돌아왔어요")
+				end
+			end
+		end
+		local fallen = {}
+		for _, e in ipairs(Npc.list) do
+			local ef = e.f
+			if e.region == "sky" and not ef.dead and ef.root.Parent and ef.root.Position.Y < Y - 60 then
+				table.insert(fallen, ef)
+			end
+		end
+		for _, ef in ipairs(fallen) do
+			Combat.kill(ef, nil)
+		end
+	end
+end)
 
 -- 강호 순위표: 1분마다. 저장소(정렬 저장소)가 되면 모든 서버의 기록, 안 되면 이 서버 사람만
 local Board = {}

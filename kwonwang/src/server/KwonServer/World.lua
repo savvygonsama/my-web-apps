@@ -2808,6 +2808,140 @@ end
 ------------------------------------------------------------------------
 -- 천층탑 시련장: 하늘에 뜬 둥근 단 (사람마다 한 자리, 처음 쓸 때 짓는다). 단의 윗면 가운데를 돌려준다
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
+-- 천상계 (세계 2): 높은 하늘의 섬들과 구름 다리. 땅과 섞이지 않는다
+------------------------------------------------------------------------
+-- 문: 빛나는 고리와 소용돌이 (prompt를 달 받침을 돌려준다)
+local function portalGate(at: Vector3, yaw: number, color: Color3, parent: Instance, label: string): BasePart
+	local cf = CFrame.new(at) * CFrame.Angles(0, yaw, 0)
+	local n = 20
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = cf * CFrame.new(math.cos(a) * 7, 8 + math.sin(a) * 7, 0)
+		part({ Name = "PortalRing", Size = Vector3.new(1, 2.4, 1), CFrame = CFrame.lookAt(p.Position, (cf * CFrame.new(0, 8, 0)).Position) * CFrame.Angles(0, 0, a), Color = color, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	end
+	local swirl = part({ Name = "PortalSwirl", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 13, 13), CFrame = cf * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(90), 0), Color = color:Lerp(Color3.new(1, 1, 1), 0.5), Material = Enum.Material.Glass, Transparency = 0.35, CanCollide = false, Parent = parent })
+	light(swirl, color, 30, 2)
+	part({ Name = "PortalBase", Size = Vector3.new(18, 1, 6), CFrame = cf * CFrame.new(0, 0.5, 0), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	local pedestal = part({ Name = "PortalPedestal", Size = Vector3.new(3, 3.2, 3), CFrame = cf * CFrame.new(0, 1.6, -5), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	local board = part({ Name = "PortalSign", Size = Vector3.new(12, 2.6, 0.4), CFrame = cf * CFrame.new(0, 17.5, 0), Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	sign(board, Enum.NormalId.Front, { { label, GOLD, 1 } })
+	sign(board, Enum.NormalId.Back, { { label, GOLD, 1 } })
+	return pedestal
+end
+
+local function skyWorld(out: any)
+	local SKY = Config.SKY
+	local f = Instance.new("Folder")
+	f.Name = "SkyWorld"
+	f.Parent = folder
+	-- 땅 마을의 천상 문
+	local vf = folder:FindFirstChild("Village") or f
+	out.skyUp = prompt(portalGate(SKY.portal, math.rad(45), Color3.fromRGB(150, 220, 255), vf, "☁ 천상 문"), "천상계로 오르기", "천상 문", "SkyUp")
+	local CLOUD = Color3.fromRGB(250, 250, 255)
+	-- 섬
+	for _, isl in ipairs(SKY.islands) do
+		local c, R = isl.at, isl.radius
+		disc("SkyIsland", c - Vector3.new(0, 3, 0), R, 6, isl.ground, isl.material, f)
+		disc("SkyIslandEdge", c - Vector3.new(0, 0.2, 0), R + 1.2, 0.6, GOLD, Enum.Material.Metal, f)
+		disc("SkyIslandUnder", c - Vector3.new(0, 10, 0), R * 0.75, 8, Color3.fromRGB(150, 140, 130), Enum.Material.Rock, f)
+		disc("SkyIslandUnder2", c - Vector3.new(0, 20, 0), R * 0.45, 12, Color3.fromRGB(130, 120, 110), Enum.Material.Rock, f)
+		-- 둘레의 구름 뭉치 (아래쪽)
+		local n = math.max(8, math.floor(R / 14))
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2 + rng:NextNumber() * 0.3
+			local size = rng:NextNumber(18, 34)
+			part({ Name = "SkyCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = c + Vector3.new(math.cos(a) * (R * 0.9), -9 - rng:NextNumber() * 6, math.sin(a) * (R * 0.9)), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = f })
+		end
+		-- 보이지 않는 난간 (떨어지지 않게)
+		local m = math.max(24, math.floor(R / 6))
+		for k = 0, m - 1 do
+			local a = k / m * math.pi * 2
+			local p = c + Vector3.new(math.cos(a) * (R + 0.5), 7, math.sin(a) * (R + 0.5))
+			part({ Name = "SkyWall", Size = Vector3.new(2 * math.pi * R / m + 1, 14, 1), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Transparency = 1, CanCollide = true, Parent = f })
+		end
+	end
+	-- 다리 (구름 빛 돌길, 양옆에 보이지 않는 난간). 숨은 다리는 거의 투명하다
+	for _, b in ipairs(SKY.bridges) do
+		local A, B = SKY.islands[b[1]], SKY.islands[b[2]]
+		local dir = Vector3.new(B.at.X - A.at.X, 0, B.at.Z - A.at.Z)
+		local from = A.at + dir.Unit * (A.radius - 4)
+		local to = B.at - dir.Unit * (B.radius - 4)
+		local len = (to - from).Magnitude
+		local mid = (from + to) / 2
+		local cf = CFrame.lookAt(mid, mid + dir)
+		local w = b.hidden and 8 or 16
+		local deck = part({ Name = b.hidden and "HiddenBridge" or "SkyBridge", Size = Vector3.new(w, 1, len), CFrame = cf * CFrame.new(0, -0.5, 0), Color = b.hidden and Color3.fromRGB(200, 230, 255) or Color3.fromRGB(240, 238, 230), Material = b.hidden and Enum.Material.Glass or Enum.Material.Marble, Transparency = b.hidden and 0.88 or 0, Parent = f })
+		local _ = deck
+		for _, x in ipairs({ -1, 1 }) do
+			part({ Name = "BridgeWall", Size = Vector3.new(1, 10, len), CFrame = cf * CFrame.new(x * (w / 2 + 0.5), 5, 0), Transparency = 1, CanCollide = true, Parent = f })
+			if not b.hidden then
+				part({ Name = "BridgeCurb", Size = Vector3.new(0.8, 1, len), CFrame = cf * CFrame.new(x * (w / 2 - 0.4), 0.5, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+				for k = 1, math.floor(len / 50) do
+					stoneLantern((cf * CFrame.new(x * (w / 2 + 1.5), 0, -len / 2 + k * 50)).Position, f, true)
+				end
+			end
+		end
+	end
+	-- 섬마다 꾸밈
+	local I = Config.SKY_BY_ID
+	-- 천궁: 가운데 이층 전각, 네 첨탑, 내려가는 문
+	local town = I.skytown.at
+	building(town + Vector3.new(0, 0, -40), 34, 22, 0, f, { tiers = 2, sign = "천궁", h = 12, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(70, 110, 170), awningColor = Color3.fromRGB(70, 110, 170) })
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			spire(town + Vector3.new(sx * 70, 0, sz * 70), 4, 7, Color3.fromRGB(150, 220, 255), f)
+		end
+	end
+	crystal(town + Vector3.new(0, 30, 20), 6, Color3.fromRGB(150, 220, 255), f)
+	out.skyDown = prompt(portalGate(town + Vector3.new(0, 0, 50), 0, Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	-- 운해 평원: 구름 덤불과 정자
+	local cp = I.cloudplain.at
+	for _ = 1, 26 do
+		local a, r = rng:NextNumber() * math.pi * 2, rng:NextNumber(30, 190)
+		local size = rng:NextNumber(5, 11)
+		part({ Name = "CloudBush", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = cp + Vector3.new(math.cos(a) * r, size * 0.3, math.sin(a) * r), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.1, CanCollide = false, Parent = f })
+	end
+	for _, o in ipairs({ Vector3.new(-120, 0, 40), Vector3.new(120, 0, -20) }) do
+		building(cp + o, 16, 16, rng:NextNumber() * 3, f, { wall = Color3.fromRGB(240, 235, 225), roof = Color3.fromRGB(80, 130, 180) })
+	end
+	-- 뇌정봉: 검은 봉우리와 푸른 번개 끝
+	local th = I.thunder.at
+	for k = 0, 6 do
+		local a = k / 7 * math.pi * 2
+		spire(th + Vector3.new(math.cos(a) * 120, 0, math.sin(a) * 120), 5, 6, Color3.fromRGB(120, 170, 255), f)
+	end
+	disc("ThunderArena", th + Vector3.new(100, 0.15, 0), 40, 0.3, Color3.fromRGB(110, 150, 255), Enum.Material.Neon, f, false).Transparency = 0.6
+	-- 성운원: 보랏빛 수정 무리와 떠 있는 빛 구슬
+	local nb = I.nebula.at
+	for _ = 1, 18 do
+		local a, r = rng:NextNumber() * math.pi * 2, rng:NextNumber(20, 170)
+		crystal(nb + Vector3.new(math.cos(a) * r, rng:NextNumber(3, 14), math.sin(a) * r), rng:NextNumber(2, 5), Color3.fromRGB(200, 140, 255):Lerp(Color3.fromRGB(120, 220, 255), rng:NextNumber()), f)
+	end
+	-- 옥좌대: 금빛 계단과 옥좌, 기둥 둘레
+	local tr = I.throne.at
+	for k = 1, 5 do
+		part({ Name = "ThroneStep", Size = Vector3.new(60 - k * 6, k * 1.2, 14), Position = tr + Vector3.new(0, k * 0.6, -110 + k * 3), Color = Color3.fromRGB(245, 230, 190), Material = Enum.Material.Marble, Parent = f })
+	end
+	part({ Name = "Throne", Size = Vector3.new(10, 14, 6), Position = tr + Vector3.new(0, 13, -112), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local p = tr + Vector3.new(math.cos(a) * 130, 0, math.sin(a) * 130)
+		part({ Name = "ThronePillar", Size = Vector3.new(5, 34, 5), Position = p + Vector3.new(0, 17, 0), Color = Color3.fromRGB(250, 245, 235), Material = Enum.Material.Marble, Parent = f })
+		brazier(p + Vector3.new(0, 34, 0), 1.2, f)
+	end
+	-- 금 간 허공: 검은 유리 섬, 빛나는 금, 떠 있는 정육면체
+	local sb = I.subspace.at
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		part({ Name = "SpaceCrack", Size = Vector3.new(0.4, 0.2, rng:NextNumber(20, 40)), CFrame = CFrame.new(sb + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -18), Color = Color3.fromRGB(140, 255, 230), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	for _ = 1, 10 do
+		local size = rng:NextNumber(1.5, 4)
+		part({ Name = "SpaceCube", Size = Vector3.new(size, size, size), CFrame = CFrame.new(sb + Vector3.new(rng:NextNumber(-40, 40), rng:NextNumber(6, 22), rng:NextNumber(-40, 40))) * CFrame.Angles(rng:NextNumber() * 6, rng:NextNumber() * 6, 0), Color = Color3.fromRGB(70, 30, 140), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
+	end
+end
+
 local arenas: { [number]: Vector3 } = {}
 function World.towerArena(slot: number): Vector3
 	local T = Config.TOWER
@@ -2873,6 +3007,9 @@ function World.build(): any
 		{ "지역 테두리", regionFrames },
 		{ "길가", roadside },
 		{ "표지", regionSigns },
+		{ "천상계", function()
+			skyWorld(out)
+		end },
 	}) do
 		local ok, err = pcall(step[2] :: any)
 		if not ok then

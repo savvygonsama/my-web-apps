@@ -15,6 +15,7 @@ local Ults = require(script:WaitForChild("Ults"))
 local Cutscene = require(script:WaitForChild("Cutscene"))
 local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
+local Mount = require(script:WaitForChild("Mount"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -52,6 +53,11 @@ local function watchChar(char: Model)
 	end)
 	char:GetAttributeChangedSignal("Vanish"):Connect(function()
 		Ults.watchVanish(char)
+	end)
+	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
+	Mount.watch(char)
+	char:GetAttributeChangedSignal("Mount"):Connect(function()
+		Anim.setLoop(char, char:GetAttribute("Mount") and "ride" or nil, 0.8)
 	end)
 end
 local function watchPlayer(p: Player)
@@ -990,6 +996,8 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		UI.openPage("stats")
 	elseif k == Enum.KeyCode.M then
 		UI.toggleMap()
+	elseif k == Enum.KeyCode.V then
+		Request:FireServer("mount")
 	elseif k == Enum.KeyCode.One or k == Enum.KeyCode.Two or k == Enum.KeyCode.Three or k == Enum.KeyCode.Four then
 		-- 몸짓: 서서 할 수 있는 동작
 		if not busy() and not dead and not guarding and not training then
@@ -1032,6 +1040,9 @@ UI.mobile({
 	end,
 	train = function()
 		UI.trainPress()
+	end,
+	mount = function()
+		Request:FireServer("mount")
 	end,
 })
 
@@ -1814,6 +1825,8 @@ task.spawn(function()
 				key = bossNow and bossNow.Parent and "boss" or "tower"
 			elseif bossNow and bossNow.Parent and bossNow:GetAttribute("Dead") ~= true then
 				key = "boss"
+			elseif r and r.Position.Y > Config.SKY.y - 300 then
+				key = "skyworld"
 			elseif r then
 				local reg = UI.regionAt(r.Position)
 				key = reg and reg.id or "default"

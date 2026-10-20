@@ -48,7 +48,7 @@ Config.DOUBLE_JUMP = 58 -- 공중에서 한 번 더 뛰는 힘
 Config.RESPAWN_TIME = 4
 Config.COMBAT_TAG = 6 -- 싸운 뒤 이 시간 동안은 '전투 중'
 -- 자연 회복: 마지막으로 맞고 이만큼 지나면 1초에 최대 체력의 몇 %씩 (마을·사부 자리 같은 안전 지대에선 더 빨리)
-Config.REGEN_DELAY = 4
+Config.REGEN_DELAY = 6 -- 마지막으로 맞은 뒤 이만큼 지나야 체력이 차오른다
 Config.REGEN_RATE = 0.025
 Config.REGEN_SAFE_RATE = 0.08
 
@@ -484,8 +484,8 @@ table.insert(Config.Styles, {
 	grade = "천외",
 	hidden = true,
 	secret = true,
-	realmReq = 13,
-	unlockHint = "무극의 경지에 오른 자만이 이름 없는 노인을 만난다. 강호의 끝, 아무도 가지 않는 구석에서",
+	realmReq = 10,
+	unlockHint = "생사경에 오른 자만이 이름 없는 노인을 만난다. 강호의 끝, 아무도 가지 않는 구석에서",
 	desc = "하늘의 임금이 땅에 남긴 주먹. 손이 닿는 곳마다 하늘의 검이 따라 내린다. 이 권을 쓰는 자의 머리 위로는 늘 하늘의 문이 열려 있다.",
 	gimmick = "천위: 다섯 번 맞힐 때마다 하늘에서 빛의 검이 떨어져 둘레를 친다. 흘리기 판정이 넓고 균형을 1.5배로 깎는다",
 	deflect = 0.3,
@@ -542,7 +542,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "blackhole", dist = 12, radius = 30, height = 16, delay = 0.7, dur = 2.6, every = 0.2, hit = hit(0, 0, 0, 7, 8, 0.3, 0), final = hit(0, 0, 0, 120, 160, 1.4, 70, 18) } },
 	},
 })
--- 궁극: 태초신권 (천외천의 경지에 오른 자만, 천외봉의 시원자에게). 세상이 처음 열리던 때의 주먹
+-- 궁극: 태초신권 (무극의 경지에 오른 자만, 천외봉의 시원자에게). 세상이 처음 열리던 때의 주먹
 table.insert(Config.Styles, {
 	id = "taecho",
 	name = "태초신권",
@@ -554,9 +554,9 @@ table.insert(Config.Styles, {
 	grade = "태초",
 	hidden = true,
 	secret = true,
-	realmReq = 16,
+	realmReq = 13,
 	trialHp = 10, -- 시험의 분신 체력 열 배
-	unlockHint = "천외천의 경지에 오른 자만이 하늘 끝 봉우리, 천외봉의 시원자를 만난다",
+	unlockHint = "무극의 경지에 오른 자만이 하늘 끝 봉우리, 천외봉의 시원자를 만난다",
 	desc = "하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며, 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다.",
 	gimmick = "창세: 네 번 맞힐 때마다 상대 자리에 빛의 결정이 피어나 터진다. 모든 기술 대기 20% 짧음, 몸이 땅에서 떠 있다",
 	deflect = 0.3,
@@ -581,7 +581,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "genesis", radius = 60, freeze = 2.6, crackAt = 1.6, breakAt = 2.5, final = hit(0, 0, 0, 180, 240, 1.6, 50, 26) } },
 	},
 })
--- 정점: 일월신권 (태초신권을 익힌 천외천의 고수만, 일월대의 권존에게). 해와 달을 두 손에 쥔 주먹
+-- 정점: 일월신권 (태초신권을 익힌 무극의 고수만, 일월대의 권존에게). 해와 달을 두 손에 쥔 주먹
 table.insert(Config.Styles, {
 	id = "ilwol",
 	name = "일월신권",
@@ -593,10 +593,10 @@ table.insert(Config.Styles, {
 	grade = "지존",
 	hidden = true,
 	secret = true,
-	realmReq = 16,
+	realmReq = 13,
 	styleReq = "taecho",
 	trialHp = 10, -- 시험 (권존이 직접 보스로) 체력 열 배
-	unlockHint = "태초신권을 익힌 천외천의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
+	unlockHint = "태초신권을 익힌 무극의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
 	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
 	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고, 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
 	deflect = 0.32,
@@ -656,7 +656,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "tsunami", delay = 0.5, start = -6, width = 46, depth = 10, speed = 34, dur = 1.8, every = 0.2, hit = hit(0, 0, 0, 10, 10, 0.4, 0), finalRadius = 22, final = hit(0, 0, 0, 90, 120, 1.3, 60, 22) } },
 	},
 })
--- 정점 둘째: 영겁신권 (태초신권을 익힌 천외천의 고수만, 천 개의 계단 위 영겁노인에게). 시간을 쥔 주먹
+-- 정점 둘째: 영겁신권 (태초신권을 익힌 무극의 고수만, 천 개의 계단 위 영겁노인에게). 시간을 쥔 주먹
 table.insert(Config.Styles, {
 	id = "yeonggeop",
 	name = "영겁신권",
@@ -668,10 +668,10 @@ table.insert(Config.Styles, {
 	grade = "지존",
 	hidden = true,
 	secret = true,
-	realmReq = 16,
+	realmReq = 13,
 	styleReq = "taecho",
 	trialHp = 12,
-	unlockHint = "태초신권을 익힌 천외천의 고수만이 북서쪽 끝 천 개의 계단 위, 떠 있는 문 앞에서 영겁노인을 만난다",
+	unlockHint = "태초신권을 익힌 무극의 고수만이 북서쪽 끝 천 개의 계단 위, 떠 있는 문 앞에서 영겁노인을 만난다",
 	desc = "시간을 쥔 주먹. 맞은 자의 시간이 멎고, 지나간 주먹이 메아리처럼 되돌아와 다시 친다. 마지막 한 수에 하늘에 거대한 해시계가 열리고 열두 번의 종이 울린다.",
 	gimmick = "정지: 다섯 번 맞힐 때마다 상대 둘레의 시간이 1.4초 멎고 메아리가 친다. 모든 기술 대기 30% 짧음, 동작 +10%",
 	deflect = 0.3,
@@ -763,6 +763,43 @@ table.insert(Config.Styles, {
 			mech = { kind = "arena", radius = 26, delay = 0.5, strikeCount = 8, every = 0.15, strikeRadius = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0), finalAt = 1.9, final = hit(0, 0, 0, 120, 150, 1.3, 20, 45) } },
 	},
 })
+-- 천상계의 숨은 권법: 아공신권 (금 간 허공의 아공선인에게). 공간을 접고 찢는 주먹
+table.insert(Config.Styles, {
+	id = "agong",
+	name = "아공신권",
+	hanja = "亞空神拳",
+	icon = "🌌",
+	color = Color3.fromRGB(70, 30, 140),
+	color2 = Color3.fromRGB(140, 255, 230),
+	fx = "subspace",
+	grade = "지존",
+	hidden = true,
+	secret = true,
+	realmReq = 14,
+	unlockHint = "천상계 어딘가, 허공에 금이 간 작은 섬. 보이지 않는 다리를 건넌 반선의 고수만이 아공선인을 만난다",
+	desc = "공간의 틈에 사는 노인의 주먹. 주먹이 닿는 곳마다 공간이 접히고, 오의를 펼치면 그 자리에 바깥과 끊긴 공간이 열린다.",
+	gimmick = "틈새: 뒤에서 치면 1.4배. 기술 대기 15% 짧고, 회피를 두 번 이어 쓴다",
+	deflect = 0.3,
+	backstab = 1.4,
+	cdMult = 0.85,
+	dashCharges = 2,
+	stance = "stance_subspace",
+	combo = {
+		{ id = "ag1", name = "접은 손", pose = "void_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4, 13, 12, 0.35, 6) } },
+		{ id = "ag2", name = "틈새 손", pose = "void_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4, 14, 13, 0.35, 8) } },
+		{ id = "ag3", name = "공간 돌려차기", pose = "back_spin_kick", dur = 0.42, lunge = 2, hits = { hit(0.22, 6.5, 5, 18, 20, 0.45, 22) } },
+		{ id = "ag4", name = "허공 원장", pose = "void_circle", dur = 0.45, lunge = 3, hits = { hit(0.24, 6, 5, 24, 28, 0.6, 12, 26) } },
+	},
+	heavy = { id = "agH", name = "공간 밀치기", pose = "void_push", dur = 0.6, lunge = 4, hits = { hit(0.28, 8, 5.5, 36, 50, 0.8, 55) } },
+	skills = {
+		E = { id = "agE", name = "공간 접기", desc = "공간을 접어 가장 가까운 적의 등 뒤로 나타나 친다 (치명타)", pose = "shadow_heel", dur = 0.5, cd = 6, chi = 15, teleport = 30,
+			hits = { hit(0.2, 6, 4.5, 26, 24, 0.6, 20) } },
+		R = { id = "agR", name = "공간 균열", desc = "앞의 공간을 찢어 1.5초 동안 둘레의 적을 빨아들이며 벤다", pose = "void_gather", dur = 0.7, cd = 9, chi = 25,
+			mech = { kind = "zone", radius = 11, dist = 10, dur = 1.5, every = 0.15, delay = 0.15, pull = 40, hit = hit(0, 0, 0, 8, 9, 0.3, 0), fx = "subspace" } },
+		G = { id = "agG", name = "아공간", desc = "그 자리에 바깥과 끊긴 공간을 연다. 10초 동안 안의 적은 빠져나가지 못하고, 사방에서 공간이 베어 든다. 마지막에 공간이 닫히며 터진다", pose = "ult_void", dur = 1.6, cd = 32, chi = 100, armor = true,
+			mech = { kind = "subspace", radius = 26, dur = 10, every = 0.4, delay = 0.6, hit = hit(0, 0, 0, 13, 12, 0.3, 0), final = hit(0, 0, 0, 150, 170, 1.4, 30, 45) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -850,7 +887,7 @@ local function awakened(baseId: string, k: number, over: { [string]: any }): any
 	return v
 end
 -- 각성 조건 (세 권법 모두): 원래 권법 숙련 최대 + 깨달음 두 번 + 무극 경지 + 은자
-Config.AWAKEN_STYLE = { realm = 13, coins = 200000, trialHp = 6 }
+Config.AWAKEN_STYLE = { realm = 10, coins = 200000, trialHp = 6 }
 do
 	local v = awakened("hyeolma", 1.5, {
 		id = "hyeolma2", name = "진 혈마신수", hanja = "眞血魔神手", icon = "🩸", grade = "신화",
@@ -970,8 +1007,8 @@ function Config.gradeIndex(name: string): number
 end
 -- 권법 승급 (깨달음): 숙련 10인 권법을 한 단계씩 끌어올린다 (두 번까지). 경지와 은자가 든다
 Config.BREAKTHROUGH = {
-	{ realm = 5, coins = 3000, name = "1차 깨달음" },
-	{ realm = 10, coins = 20000, name = "2차 깨달음" },
+	{ realm = 3, coins = 3000, name = "1차 깨달음" },
+	{ realm = 7, coins = 20000, name = "2차 깨달음" },
 }
 -- 그 권법의 지금 등급 (승급까지 더해서)
 function Config.styleGrade(style: any, up: number?): string
@@ -1040,6 +1077,7 @@ local FINISHERS = {
 	yeolhwa = { name = "열화승천권", pose = "blaze_punch" },
 	musang = { name = "무쌍승천권", pose = "uppercut" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
+	agong = { name = "아공승천장", pose = "void_push" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1050,7 +1088,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1257,6 +1295,15 @@ E.sandwraith = variant(E.shadowblade, { name = "모래 망령", shirt = Color3.f
 E.tombguard = variant(E.ironguard, { name = "왕릉 수호병", shirt = Color3.fromRGB(195, 155, 60), pants = Color3.fromRGB(110, 80, 40), hp = 270, scale = 1.3, mult = 10 })
 E.skyguard = variant(E.ironguard, { name = "천병", shirt = Color3.fromRGB(235, 240, 255), pants = Color3.fromRGB(170, 190, 230), hp = 300, mult = 14, elite = true })
 E.starblade = variant(E.shadowblade, { name = "성검객", shirt = Color3.fromRGB(200, 215, 255), pants = Color3.fromRGB(90, 110, 170), hp = 210, mult = 13, elite = true })
+-- 천상계 (세계 2)의 적: 땅의 적보다 한참 세다
+E.cloudguard = variant(E.spearman, { name = "운병", shirt = Color3.fromRGB(235, 240, 250), pants = Color3.fromRGB(160, 180, 220), hp = 320, mult = 18, elite = true })
+E.cranesword = variant(E.assassin, { name = "학익 검객", shirt = Color3.fromRGB(245, 245, 245), pants = Color3.fromRGB(40, 40, 50), hp = 240, mult = 18, elite = true })
+E.thunderguard = variant(E.ironguard, { name = "뇌신병", shirt = Color3.fromRGB(70, 80, 140), pants = Color3.fromRGB(40, 45, 80), hp = 340, mult = 22, elite = true })
+E.thunderimp = variant(E.assassin, { name = "뇌령", shirt = Color3.fromRGB(150, 170, 255), pants = Color3.fromRGB(60, 70, 140), hp = 230, mult = 22 })
+E.starspirit = variant(E.shadowblade, { name = "성령", shirt = Color3.fromRGB(120, 90, 200), pants = Color3.fromRGB(40, 30, 80), hp = 260, mult = 24, elite = true })
+E.starsage = variant(E.cultelder, { name = "성운 도사", shirt = Color3.fromRGB(70, 50, 140), pants = Color3.fromRGB(30, 20, 60), hp = 280, mult = 24, elite = true })
+E.throneguard = variant(E.ironguard, { name = "천위병", shirt = Color3.fromRGB(250, 235, 190), pants = Color3.fromRGB(180, 150, 80), hp = 380, mult = 28, elite = true, scale = 1.3 })
+E.throneblade = variant(E.shadowblade, { name = "천위 검객", shirt = Color3.fromRGB(255, 245, 220), pants = Color3.fromRGB(150, 120, 60), hp = 300, mult = 28, elite = true })
 local B = Config.Bosses
 B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
 B.hyeolma = variant(B.hyeolrang, { name = "혈마 · 혈교의 주인", shirt = Color3.fromRGB(150, 0, 20), pants = Color3.fromRGB(20, 0, 5), hp = 2400, posture = 420, scale = 1.5, speed = 23, coins = 3000, xp = 800, respawn = 300 })
@@ -1449,10 +1496,10 @@ Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector
 	rumor = "남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 앉아 있다더라", secret = true }
 Config.MASTERS.gaecheon = { name = Config.SECRET_MASTER.name, at = Config.SECRET_MASTER.at, region = Config.SECRET_MASTER.region, regionId = "secret",
 	quote = Config.SECRET_MASTER.quote, rumor = Config.SECRET_MASTER.rumor, secret = true }
--- 궁극의 사부: 천외봉 아래의 시원자. 천외천에 오른 자에게만 시험을 허락한다 (지도에 나오지 않는다)
+-- 궁극의 사부: 천외봉 아래의 시원자. 무극에 오른 자에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.taecho = { name = "시원자", at = Vector3.new(0, 3.2, -3080), region = "천외봉", regionId = "skysea", secret = true,
 	quote = "처음에는 아무것도 없었다. 그래서 무엇이든 될 수 있었다.", rumor = "북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라" }
--- 정점의 사부: 동남쪽 끝 일월대의 권존. 태초신권을 익힌 천외천의 고수에게만 시험을 허락한다 (지도에 나오지 않는다)
+-- 정점의 사부: 동남쪽 끝 일월대의 권존. 태초신권을 익힌 무극의 고수에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.ilwol = { name = "권존", at = Vector3.new(2500, 6.2, 2500), region = "일월대", regionId = "sunmoon", secret = true,
 	quote = "해는 지고 달은 뜬다. 나는 늘 그 사이에 서 있었다.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
 -- 정점 둘째의 사부: 천 개의 계단 꼭대기, 떠 있는 문 앞의 영겁노인 (지도에 나오지 않는다)
@@ -1524,6 +1571,10 @@ Config.Landmarks = {
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
 	local d = Vector3.new(home.X, 0, home.Z).Magnitude
+	-- 천상계: 가운데 천궁에서 멀수록, 땅의 끝보다도 높다
+	if Config.SKY and home.Y > Config.SKY.y - 300 then
+		return 26 + math.floor(d / 60)
+	end
 	return 1 + math.floor(math.max(0, d - 250) / 100)
 end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
@@ -1699,6 +1750,11 @@ Config.PVP_STYLE = { wins = 100, style = "musang" }
 Config.PVP = { offAfterDeath = true, toggleCooldown = 30 }
 -- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고, 적이 덤비지 않는다
 function Config.inSafe(pos: Vector3): boolean
+	-- 천상계에서는 천궁만 안전하다
+	if Config.SKY and pos.Y > Config.SKY.y - 300 then
+		local town = Config.SKY.islands[1]
+		return Vector3.new(pos.X - town.at.X, 0, pos.Z - town.at.Z).Magnitude <= town.radius
+	end
 	for _, r in ipairs(Config.Regions) do
 		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
 			return true
@@ -1706,6 +1762,22 @@ function Config.inSafe(pos: Vector3): boolean
 	end
 	return false
 end
+
+------------------------------------------------------------------------
+-- 탈것: V(휴대폰은 🐎)로 타고 내린다. 공격·막기·피하기를 하거나 맞으면 내린다. 싸우는 중에는 탈 수 없다
+-- kind: horse / tiger / cloud (모양), hip = 탄 사람을 이만큼 들어 올린다
+------------------------------------------------------------------------
+Config.MOUNTS = {
+	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 1.55, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
+	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 1.75, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
+	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 1.9, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
+	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.1, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 가장 빠르다" },
+}
+Config.MOUNT_BY_ID = {}
+for _, m in ipairs(Config.MOUNTS) do
+	Config.MOUNT_BY_ID[m.id] = m
+end
+Config.MOUNT_HIP = { horse = 2.0, tiger = 1.5, cloud = 1.3 }
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -1724,6 +1796,10 @@ Config.CUTSCENES = {
 	boss_yeomje = { who = "염제", lines = { "불의 산은 들어온 자를 돌려보내지 않는다." } },
 	boss_sawang = { who = "사왕", lines = { "왕의 잠을 깨운 죄, 목숨으로 갚아라." } },
 	boss_cheonmun = { who = "천문장", lines = { "하늘의 문은 아무에게나 열리지 않는다." } },
+	sky_first = { who = "천궁 수문장", lines = { "여기는 천상계. 땅에서 쌓은 이름은 이곳에 닿지 않는다.", "옥좌의 주인을 꺾는 날, 하늘도 너를 기억할 것이다." } },
+	boss_noeje = { who = "뇌제", lines = { "하늘의 벼락은 두 번 묻지 않는다." } },
+	boss_seonggun = { who = "성군", lines = { "별이 지는 자리에 네 이름도 묻어 주마." } },
+	boss_cheonjon = { who = "천존", lines = { "땅에서 올라온 주먹이 어디까지 닿는지 보자." } },
 }
 
 ------------------------------------------------------------------------
@@ -1742,6 +1818,7 @@ Config.MUSIC = {
 	volcano = 0,
 	tomb = 0,
 	skysea = 0,
+	skyworld = 0, -- 천상계
 }
 
 ------------------------------------------------------------------------
@@ -1785,6 +1862,93 @@ function Config.formatNumber(n: number): string
 		i += 1
 	end
 	return string.format(n >= 100 and "%.0f%s" or "%.1f%s", n, SUFFIXES[i])
+end
+
+------------------------------------------------------------------------
+-- 천상계 (세계 2): 땅 위 높은 하늘의 섬들. 땅과 섞이지 않는다 (마을의 천상 문으로 오르내린다)
+-- at = 섬 가운데 (가로·세로만, 높이는 y), radius = 섬 반지름
+------------------------------------------------------------------------
+local SY = 4000
+Config.SKY = {
+	y = SY,
+	realm = 12, -- 천인합일부터 오를 수 있다
+	portal = Vector3.new(-90, 0, -205), -- 마을 안 천상 문
+	islands = {
+		{ id = "skytown", name = "천궁", at = Vector3.new(0, SY, 0), radius = 110, safe = true, ground = Color3.fromRGB(235, 232, 220), material = Enum.Material.Marble },
+		{ id = "cloudplain", name = "운해 평원", at = Vector3.new(0, SY, 560), radius = 210, ground = Color3.fromRGB(220, 235, 225), material = Enum.Material.Grass,
+			camps = { { enemy = "cloudguard", count = 3, at = Vector3.new(-90, SY, 520) }, { enemy = "cranesword", count = 3, at = Vector3.new(90, SY, 600) }, { enemy = "cloudguard", count = 2, at = Vector3.new(0, SY, 700) } } },
+		{ id = "thunder", name = "뇌정봉", at = Vector3.new(620, SY, -160), radius = 190, ground = Color3.fromRGB(70, 78, 100), material = Enum.Material.Slate,
+			camps = { { enemy = "thunderguard", count = 3, at = Vector3.new(560, SY, -100) }, { enemy = "thunderimp", count = 3, at = Vector3.new(640, SY, -260) } },
+			boss = { id = "noeje", at = Vector3.new(720, SY, -160) } },
+		{ id = "nebula", name = "성운원", at = Vector3.new(-620, SY, -160), radius = 190, ground = Color3.fromRGB(90, 70, 130), material = Enum.Material.Glass,
+			camps = { { enemy = "starspirit", count = 3, at = Vector3.new(-560, SY, -100) }, { enemy = "starsage", count = 3, at = Vector3.new(-640, SY, -260) } },
+			boss = { id = "seonggun", at = Vector3.new(-720, SY, -160) } },
+		{ id = "throne", name = "옥좌대", at = Vector3.new(0, SY, -640), radius = 170, ground = Color3.fromRGB(245, 230, 190), material = Enum.Material.Marble,
+			camps = { { enemy = "throneguard", count = 3, at = Vector3.new(-80, SY, -580) }, { enemy = "throneblade", count = 3, at = Vector3.new(80, SY, -580) } },
+			boss = { id = "cheonjon", at = Vector3.new(0, SY, -720) } },
+		-- 숨은 섬: 운해 평원 서쪽 끝에서 거의 보이지 않는 다리로만 건너간다
+		{ id = "subspace", name = "금 간 허공", at = Vector3.new(-760, SY, 640), radius = 60, hidden = true, ground = Color3.fromRGB(30, 20, 50), material = Enum.Material.Glass },
+	},
+	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true } },
+}
+Config.SKY_BY_ID = {}
+for _, isl in ipairs(Config.SKY.islands) do
+	Config.SKY_BY_ID[isl.id] = isl
+end
+function Config.skyIslandAt(pos: Vector3): any
+	if pos.Y < SY - 300 then
+		return nil
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		if Vector3.new(pos.X - isl.at.X, 0, pos.Z - isl.at.Z).Magnitude <= isl.radius + 4 then
+			return isl
+		end
+	end
+	return nil
+end
+-- 숨은 사부: 금 간 허공의 아공선인 (지도에 나오지 않는다)
+Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6, 640), region = "금 간 허공 (천상계)", regionId = "subspace", secret = true,
+	quote = "공간은 비어 있지 않다. 접혀 있을 뿐.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
+-- 천상계의 보스 셋
+Config.Bosses.noeje = variant(Config.Bosses.cheonmun, { name = "뇌제 · 뇌정봉의 주인", shirt = Color3.fromRGB(60, 70, 150), pants = Color3.fromRGB(25, 30, 70), hp = 60000, posture = 1200, scale = 3.0, speed = 15, coins = 120000, xp = 15000, respawn = 300, mult = 24,
+	patterns = {
+		P("rain", "천뢰", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 190, 255), hit = hit(0, 0, 0, 40, 50, 0.9, 25) }),
+		P("charge", "뇌광 돌진", 1, { length = 56, width = 10, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 44, 55, 0.9, 55) }),
+		P("donut", "뇌운 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 50, 60, 1.0, 45) }),
+		P("summon", "뇌령들아!", 2, { enemy = "thunderimp", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+		P("quake", "만뢰 강림", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.4, 70, 25) }),
+	} })
+Config.Bosses.seonggun = variant(Config.Bosses.hyeolrang, { name = "성군 · 성운원의 주인", shirt = Color3.fromRGB(110, 70, 200), pants = Color3.fromRGB(35, 20, 70), hp = 64000, posture = 1200, scale = 2.8, speed = 17, coins = 130000, xp = 16000, respawn = 300, mult = 26,
+	patterns = {
+		P("rain", "유성우", 1, { count = 9, radius = 8, spread = 28, warn = 1.0, cd = 7, pose = "w_dual", fx = "star", color = Color3.fromRGB(200, 140, 255), hit = hit(0, 0, 0, 40, 50, 0.9, 25) }),
+		P("leap", "성운 낙하", 1, { radius = 16, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 55, 70, 1.2, 45, 20) }),
+		P("summon", "별의 영들", 2, { enemy = "starspirit", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_dual" }),
+		P("donut", "은하 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 50, 60, 1.0, 45) }),
+		P("quake", "성운 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.4, 70, 25) }),
+	} })
+Config.Bosses.cheonjon = variant(Config.Bosses.cheonmun, { name = "천존 · 천궁 옥좌의 주인", shirt = Color3.fromRGB(255, 245, 215), pants = Color3.fromRGB(200, 160, 70), hp = 90000, posture = 1600, scale = 3.4, speed = 15, coins = 250000, xp = 30000, respawn = 300, mult = 30,
+	patterns = {
+		P("rain", "천벌", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 230, 150), hit = hit(0, 0, 0, 44, 55, 0.9, 25) }),
+		P("donut", "옥좌의 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 54, 65, 1.0, 45) }),
+		P("leap", "하늘 내려찍기", 2, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.3, 50, 20) }),
+		P("charge", "천존 돌격", 2, { length = 60, width = 11, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 50, 60, 1.0, 60) }),
+		P("summon", "천위대!", 2, { enemy = "throneguard", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("quake", "천지개벽", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 120, 1.5, 80, 30) }),
+	} })
+
+------------------------------------------------------------------------
+-- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
+------------------------------------------------------------------------
+Config.BOSS_DMG = 0.6 -- 모든 보스의 공격력 배율
+Config.BOSS_SPEED = 0.85 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
+Config.BOSS_PHASE_SPEED = 0.05 -- 단계마다 걸음이 빨라지는 양
+for id, k in pairs({ bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 6, cheonmun = 7 }) do
+	local b = Config.Bosses[id]
+	if b then
+		b.hp = math.floor(b.hp * k)
+		b.speed = math.floor(b.speed * 0.85)
+	end
 end
 
 return Config

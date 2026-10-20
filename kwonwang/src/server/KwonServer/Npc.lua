@@ -284,9 +284,9 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		-- 체력은 넉넉하게 (보스는 조금 덜 곱한다: 이미 크다), 피해는 후반일수록 덜 오른다
 		hp = def.dummy and def.hp or math.floor(def.hp * (isBoss and Config.ENEMY_BOSS_HP or Config.ENEMY_HP) * (1 + Config.ENEMY_HP_LEVEL * (lv - 1)) * mult),
 		postureMax = math.floor(def.posture * (1 + 0.1 * (lv - 1)) * math.sqrt(mult)),
-		walk = def.speed,
+		walk = def.speed * (isBoss and Config.BOSS_SPEED or 1),
 		style = def.style or "",
-		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW,
+		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and Config.BOSS_DMG or 1),
 	})
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
 	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
@@ -334,6 +334,23 @@ function Npc.populate()
 			local ok, err = pcall(Npc.spawn, region.boss.id, true, region.boss.at, region.id)
 			if not ok then
 				warn("[권왕] 보스 만들기 오류:", region.boss.id, err)
+			end
+		end
+	end
+	-- 천상계의 섬들
+	for _, isl in ipairs(Config.SKY.islands) do
+		for _, camp in ipairs(isl.camps or {}) do
+			for _ = 1, camp.count do
+				local ok, err = pcall(Npc.spawn, camp.enemy, false, camp.at, "sky")
+				if not ok then
+					warn("[권왕] 천상계 적 만들기 오류:", camp.enemy, err)
+				end
+			end
+		end
+		if isl.boss then
+			local ok, err = pcall(Npc.spawn, isl.boss.id, true, isl.boss.at, "sky")
+			if not ok then
+				warn("[권왕] 천상계 보스 만들기 오류:", isl.boss.id, err)
 			end
 		end
 	end
@@ -434,6 +451,18 @@ local LOOKS: { [string]: any } = {
 	tombguard = { head = "helmet", metal = C3(200, 165, 80), armor = true, wrap = true, build = { w = 1.15, h = 1.05, head = 0.88 } },
 	skyguard = { head = "helmet", metal = C3(235, 238, 250), armor = true, plume = C3(120, 160, 230), build = { w = 1.15, h = 1.08, head = 0.88 } },
 	starblade = { head = "hood", cloth = C3(30, 40, 80), mask = C3(25, 30, 60), eyes = C3(230, 240, 255), build = { w = 0.9, h = 1.06, head = 0.86 } },
+	-- 천상계
+	cloudguard = { head = "helmet", metal = C3(235, 240, 250), plume = C3(150, 190, 240), build = { h = 1.06, head = 0.88 } },
+	cranesword = { head = "topknot", hair = C3(240, 240, 240), mask = C3(230, 230, 235), build = { w = 0.88, h = 1.06, head = 0.86 } },
+	thunderguard = { head = "helmet", metal = C3(80, 90, 150), plume = C3(150, 190, 255), armor = true, eyes = C3(150, 200, 255), build = { w = 1.18, h = 1.06, head = 0.86 } },
+	thunderimp = { head = "horns", skin = C3(130, 150, 220), eyes = C3(220, 240, 255), build = { w = 0.85, h = 0.95, head = 0.9 } },
+	starspirit = { head = "hood", cloth = C3(90, 60, 170), mask = C3(60, 40, 120), eyes = C3(220, 180, 255), build = { w = 0.9, h = 1.06, head = 0.86 } },
+	starsage = { head = "hood", cloth = C3(60, 40, 120), beard = "white", eyes = C3(200, 160, 255), robe = C3(50, 30, 100), build = { h = 1.05, head = 0.86 } },
+	throneguard = { head = "helmet", metal = C3(240, 210, 130), plume = C3(220, 60, 50), armor = true, build = { w = 1.2, h = 1.08, head = 0.86 } },
+	throneblade = { head = "topknot", hair = C3(30, 25, 20), crown = C3(240, 210, 130), mask = C3(250, 240, 220), build = { w = 0.9, h = 1.06, head = 0.86 } },
+	noeje = { head = "helmet", metal = C3(70, 80, 160), plume = C3(150, 200, 255), armor = true, beard = "full", eyes = C3(150, 210, 255), build = { w = 1.2, head = 0.84 } },
+	seonggun = { head = "hood", cloth = C3(100, 60, 190), crown = C3(220, 190, 255), eyes = C3(230, 190, 255), robe = C3(60, 30, 120), build = { h = 1.06, head = 0.84 } },
+	cheonjon = { head = "topknot", hair = WHITE_HAIR, beard = "white", crown = GOLD, armor = true, metal = C3(240, 215, 140), eyes = C3(255, 240, 190), robe = C3(220, 200, 150), build = { w = 1.15, h = 1.06, head = 0.84 } },
 	-- 보스
 	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(50, 45, 45), build = { w = 1.2, head = 0.86 } },
 	hyeolrang = { head = "hood", cloth = C3(110, 10, 20), mask = C3(70, 5, 10), eyes = C3(255, 60, 60), build = { w = 0.92, h = 1.05, head = 0.85 } },
@@ -1025,12 +1054,7 @@ local function flatDist(a: Vector3, b: Vector3): number
 end
 
 local function inSafe(pos: Vector3): boolean
-	for _, r in ipairs(Config.Regions) do
-		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
-			return true
-		end
-	end
-	return false
+	return Config.inSafe(pos)
 end
 
 local function faceTo(e: Enemy, pos: Vector3)
@@ -1274,7 +1298,7 @@ local function bossPhase(e: Enemy): number
 	if ph > old then
 		(e :: any).phase = ph
 		f.model:SetAttribute("BossPhase", ph)
-		f.walk = e.def.speed * (1 + 0.12 * (ph - 1))
+		f.walk = e.def.speed * Config.BOSS_SPEED * (1 + Config.BOSS_PHASE_SPEED * (ph - 1))
 		Push:FireAllClients("bossPhase", f.model, e.def.name, ph)
 		-- 단계가 바뀌면 곧바로 큰 패턴
 		e.nextPattern = os.clock() + 0.6

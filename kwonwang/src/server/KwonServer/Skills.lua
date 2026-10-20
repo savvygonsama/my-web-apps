@@ -801,6 +801,29 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "subspace" then
+		-- 아공간: 그 자리에 바깥과 끊긴 공간을 연다. 안의 적은 빠져나가지 못하고 (가장자리에서 끌려 들어온다), 사방에서 베인다
+		local center = f.root.Position
+		local R = m.radius
+		local delay = m.delay or 0
+		Push:FireAllClients("skillfx", { kind = "subspace", m = f.model, at = center, radius = R, dur = m.dur / sp, delay = delay / sp, every = m.every / sp, style = style })
+		local n = math.floor((m.dur - delay) / m.every)
+		for i = 0, n - 1 do
+			after(delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, R * 1.15)) do
+					local off = o.root.Position - center
+					if Vector3.new(off.X, 0, off.Z).Magnitude > R * 0.75 then
+						pullTo(o, center, 70)
+					end
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, R * 1.2)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "trail" then
 		local from = f.root.Position
 		after(m.delay, function()

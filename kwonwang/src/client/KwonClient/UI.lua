@@ -791,6 +791,18 @@ local function buildShop()
 			autoBtns[it.id] = { toggle = tg, stat = sb }
 		end
 	end
+	-- 🐎 탈것: V로 타고 내린다
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "🐎 탈것 (V로 타기·내리기)", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 5, Parent = list })
+	local mountBtns: { [string]: TextButton } = {}
+	for k, m in ipairs(Config.MOUNTS) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel2, LayoutOrder = 5 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
+		text({ Position = UDim2.new(0, 14, 0, 4), Size = UDim2.new(1, -200, 0, 28), Text = string.format("%s %s  ·  빠르기 ×%.2f", m.icon, m.name, m.speed), TextSize = 19, Font = Enum.Font.GothamBlack, Parent = row })
+		text({ Position = UDim2.new(0, 14, 0, 34), Size = UDim2.new(1, -200, 0, 24), Text = m.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
+		mountBtns[m.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 44), Text = "", TextSize = 17, Parent = row }, function()
+			local owned = state and state.mounts and state.mounts[m.id]
+			Request:FireServer(owned and "mountSelect" or "mountBuy", m.id)
+		end)
+	end
 	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
 	local labels = {}
 	for k, item in ipairs(Config.Shop) do
@@ -802,6 +814,13 @@ local function buildShop()
 		end)
 	end
 	refreshers.shop = function()
+		for _, m in ipairs(Config.MOUNTS) do
+			local b = mountBtns[m.id]
+			local owned = state and state.mounts and state.mounts[m.id]
+			local sel = state and state.mountSel == m.id
+			b.Text = sel and "✅ 고름" or (owned and "고르기" or ("💰 " .. Config.formatNumber(m.cost)))
+			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost) and C.red or C.panel))
+		end
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
@@ -1092,7 +1111,12 @@ local function buildTest()
 	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
 		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
 		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
-		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" }, { "⚔ PvP 끄기 열기 (쓰러진 셈)", "testPvpUnlock" },
+		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
+	})
+	section("☁ 베타 14: 천상계·아공신권·탈것", {
+		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 600000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
+		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
+		{ "👹 뇌제 부르기", "testBoss", "noeje" }, { "👹 성군 부르기", "testBoss", "seonggun" }, { "👹 천존 부르기", "testBoss", "cheonjon" }, { "⚔ PvP 끄기 열기 (쓰러진 셈)", "testPvpUnlock" },
 	})
 	section("🎯 수련 목인·시간", {
 		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
@@ -1850,7 +1874,55 @@ local function regionAt(pos: Vector3): any
 	return best
 end
 UI.regionAt = regionAt
+-- 천상계: 섬 이름, 맑고 밝은 하늘빛, 발아래 구름 바다 (이 화면에서만 만든다. 땅에서는 보이지 않는다)
+local skySea: Folder? = nil
+local SKY_AMBIENT = { d = 0.16, h = 0.35, c = Color3.fromRGB(225, 238, 255) }
+local function skyTick(pos: Vector3)
+	local isl = Config.skyIslandAt(pos)
+	local id = isl and ("sky_" .. isl.id) or "sky"
+	if id ~= regionNow then
+		regionNow = id
+		if isl then
+			UI.toast(string.format("📍 천상계 · %s%s", isl.name, isl.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(Vector3.new(pos.X, Config.SKY.y, pos.Z)))))
+		end
+	end
+	local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
+	if atmo then
+		atmo.Density += (SKY_AMBIENT.d - atmo.Density) * 0.08
+		atmo.Haze += (SKY_AMBIENT.h - atmo.Haze) * 0.08
+		atmo.Color = atmo.Color:Lerp(SKY_AMBIENT.c, 0.08)
+	end
+	if not skySea then
+		local f = Instance.new("Folder")
+		f.Name = "KwonSkySea"
+		for x = -1, 1 do
+			for z = -1, 1 do
+				local p = Instance.new("Part")
+				p.Anchored = true
+				p.CanCollide = false
+				p.CanQuery = false
+				p.CanTouch = false
+				p.Size = Vector3.new(2000, 4, 2000)
+				p.Position = Vector3.new(x * 2000, Config.SKY.y - 75, z * 2000)
+				p.Color = Color3.fromRGB(250, 250, 255)
+				p.Material = Enum.Material.SmoothPlastic
+				p.Transparency = 0.12
+				p.Parent = f
+			end
+		end
+		f.Parent = workspace
+		skySea = f
+	end
+end
 local function ambientTick(pos: Vector3)
+	if pos.Y > Config.SKY.y - 300 then
+		skyTick(pos)
+		return
+	end
+	if skySea then
+		skySea:Destroy()
+		skySea = nil
+	end
 	-- 하늘의 천층탑 시련장에서는 땅의 이름을 알리지 않는다
 	if pos.Y > 1000 then
 		return
@@ -1983,6 +2055,7 @@ function UI.mobile(actions: { [string]: any })
 	round("G", UDim2.fromScale(0.22, 0.3), 50, C.gold, actions.G)
 	round("🧪", UDim2.fromScale(0.95, 0.05), 44, C.green, actions.potion)
 	round("●", UDim2.fromScale(0.05, 0.95), 44, C.chi, actions.train)
+	round("🐎", UDim2.fromScale(0.05, 0.62), 44, C.panel2, actions.mount)
 end
 
 ------------------------------------------------------------------------

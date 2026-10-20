@@ -444,6 +444,28 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(shard, 0.55)
 		end
 		Fx.ring(pos, c, 1, 11 * s, 0.35, dir)
+	elseif style.fx == "subspace" then
+		-- 아공: 맞은 자리의 공간이 접힌다 (유리 조각 넷이 안으로 모였다 튀고, 민트빛 십자)
+		for k = 0, 3 do
+			local a = k / 4 * math.pi * 2 + math.random()
+			local cube = piece(Vector3.new(0.9, 0.9, 0.9) * s, k % 2 == 0 and c or c2, Enum.Material.Glass, nil, 0.2)
+			cube.CFrame = CFrame.new(pos + Vector3.new(math.cos(a), math.sin(a), 0) * 3 * s) * CFrame.Angles(a, a, 0)
+			tween(cube, 0.1, { CFrame = CFrame.new(pos) })
+			task.delay(0.1, function()
+				if cube.Parent then
+					tween(cube, 0.2, { CFrame = CFrame.new(pos + Vector3.new(math.cos(a), math.sin(a), 0) * 5 * s) * CFrame.Angles(a * 2, 0, a), Transparency = 1 })
+				end
+			end)
+			Debris:AddItem(cube, 0.35)
+		end
+		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
+		for _, sgn in ipairs({ 1, -1 }) do
+			local bar = piece(Vector3.new(0.2, 0.2, (heavy and 9 or 6) * s), c2, Enum.Material.Neon, nil, 0)
+			bar.CFrame = face * CFrame.Angles(0, 0, sgn * math.rad(45)) * CFrame.Angles(math.rad(90), 0, 0)
+			tween(bar, 0.2, { Transparency = 1 })
+			Debris:AddItem(bar, 0.22)
+		end
+		Fx.ring(pos, c, 1, (heavy and 12 or 8) * s, 0.25, dir)
 	elseif style.fx == "duel" then
 		-- 무쌍: 맞은 자리에 붉은 십자 베기와 하얀 섬광 (군더더기 없이 날카롭게)
 		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
@@ -1242,6 +1264,16 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c, 1, 12, 0.3, look)
 		end
+	elseif kind == "subspace" then
+		-- 아공: 손끝 앞의 공간이 접히며 민트빛 금이 간다
+		streak(base + look * 1.5, base + look * (6.5 * s), c2, 0.2, 0.14)
+		local sq = piece(Vector3.new(1.4, 1.4, 0.1) * s, c, Enum.Material.Glass, nil, 0.3)
+		sq.CFrame = lookAt(base + look * 4, base + look * 6) * CFrame.Angles(0, 0, math.rad(45))
+		tween(sq, 0.2, { Size = Vector3.new(0.2, 0.2, 0.1), Transparency = 1 })
+		Debris:AddItem(sq, 0.22)
+		if heavy then
+			Fx.ring(base + look * 5, c2, 1, 11, 0.25, look)
+		end
 	elseif kind == "duel" then
 		-- 무쌍: 곧은 하얀 일직선 끝에 붉은 날
 		streak(base + look * 1.5, base + look * (7 * s), c2, 0.22, 0.12)
@@ -1344,6 +1376,7 @@ local HAND_FX = {
 	time = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.6, life = 1.4, size = 0.35 },
 	fire = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.5, size = 0.6 },
 	duel = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 3, life = 0.35, size = 0.4 },
+	subspace = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.8, life = 1.2, size = 0.35 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do

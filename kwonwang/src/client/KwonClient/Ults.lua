@@ -1888,6 +1888,139 @@ function H.eruption(data: any)
 	end)
 end
 
+-- 아공 아공간: 그 자리에 바깥과 끊긴 공간이 열린다 (10초). 검보랏빛 막, 바닥의 빛 격자, 도는 세 고리,
+-- 떠다니는 유리 조각. 째깍일 때마다 공간이 베이고, 끝에 막이 오그라들며 터진다
+function H.subspace(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local ground = at - Vector3.new(0, 2.4, 0)
+	local R = data.radius or 30
+	local dur, every, delay = data.dur or 10, data.every or 0.4, data.delay or 0.6
+	local close = near(at, R + 40)
+	local parts: { BasePart } = {}
+	local function keep(p: BasePart): BasePart
+		table.insert(parts, p)
+		return p
+	end
+	-- 막: 바깥 유리 + 안쪽 일렁이는 막
+	local shell = keep(piece(Vector3.new(2, 2, 2), Color3.fromRGB(25, 10, 50), Enum.Material.Glass, Enum.PartType.Ball, 0.5))
+	shell.Position = ground
+	tween(shell, delay, { Size = Vector3.new(R * 2, R * 2, R * 2) }, Enum.EasingStyle.Back)
+	local film = keep(piece(Vector3.new(2, 2, 2), c2, Enum.Material.ForceField, Enum.PartType.Ball, 0))
+	film.Position = ground
+	tween(film, delay, { Size = Vector3.new(R * 1.96, R * 1.96, R * 1.96) }, Enum.EasingStyle.Back)
+	-- 바닥: 어두운 원판, 빛 격자 (방사선 여덟과 동심원 셋)
+	local floor = keep(piece(Vector3.new(0.3, R * 2, R * 2), Color3.fromRGB(15, 5, 30), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.15))
+	floor.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	for k = 0, 7 do
+		local line = keep(piece(Vector3.new(0.25, 0.1, R * 2), c2, Enum.Material.Neon, nil, 0.2))
+		line.CFrame = CFrame.new(ground + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, k * math.pi / 8, 0)
+	end
+	for k = 1, 3 do
+		local ring = keep(piece(Vector3.new(0.2, R * 2 * k / 3.2, R * 2 * k / 3.2), c, Enum.Material.Neon, Enum.PartType.Cylinder, 0.55))
+		ring.CFrame = CFrame.new(ground + Vector3.new(0, 0.2 + k * 0.02, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	end
+	-- 도는 세 고리 (서로 다른 축)
+	local rings: { { BasePart } } = {}
+	for r = 1, 3 do
+		local list = {}
+		for k = 1, 18 do
+			table.insert(list, keep(piece(Vector3.new(0.6, 0.6, 2.4), r == 2 and c2 or c, Enum.Material.Neon, nil, 0.1)))
+		end
+		table.insert(rings, list)
+	end
+	-- 떠다니는 유리 조각
+	local cubes: { { p: BasePart, a: number, r: number, h: number, s: number } } = {}
+	for k = 1, 16 do
+		local size = 0.8 + math.random() * 2.2
+		local p = keep(piece(Vector3.new(size, size, size), k % 2 == 0 and c or c2, Enum.Material.Glass, nil, 0.25))
+		table.insert(cubes, { p = p, a = math.random() * math.pi * 2, r = R * (0.3 + math.random() * 0.6), h = 2 + math.random() * R * 0.6, s = (math.random() < 0.5 and -1 or 1) * (0.3 + math.random() * 0.5) })
+	end
+	if close then
+		colorGrade(-0.55, 0.25, -0.05, Color3.fromRGB(205, 195, 255), dur)
+		if hooks.flash then
+			hooks.flash(c2, 0.3)
+		end
+	end
+	Fx.text(at + Vector3.new(0, 12, 0), "아공간", c2, 56, 1.6)
+	Fx.sound("heavy", 1, 0.4, at)
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local center = ground + Vector3.new(0, R * 0.45, 0)
+		for r, list in ipairs(rings) do
+			local axis = r == 1 and CFrame.Angles(t * 0.8, 0, 0) or (r == 2 and CFrame.Angles(0, 0, t * 0.6 + 1) or CFrame.Angles(t * 0.5, t * 0.7, 0))
+			local rr = R * (0.55 + r * 0.12)
+			for k, p in ipairs(list) do
+				local a = k / #list * math.pi * 2 + t * (r % 2 == 0 and -0.9 or 0.9)
+				local pos = (CFrame.new(center) * axis * CFrame.new(math.cos(a) * rr, 0, math.sin(a) * rr))
+				p.CFrame = CFrame.lookAt(pos.Position, (CFrame.new(center) * axis * CFrame.new(math.cos(a + 0.1) * rr, 0, math.sin(a + 0.1) * rr)).Position)
+			end
+		end
+		for _, cb in ipairs(cubes) do
+			local a = cb.a + t * cb.s
+			cb.p.CFrame = CFrame.new(ground + Vector3.new(math.cos(a) * cb.r, cb.h + math.sin(t * 1.3 + cb.a) * 1.5, math.sin(a) * cb.r)) * CFrame.Angles(t * cb.s, t, 0)
+		end
+		if t > dur then
+			conn:Disconnect()
+		end
+	end)
+	-- 째깍일 때마다: 공간을 가르는 빛줄기 (가끔 거울 조각이 깨진다)
+	local n = math.floor((dur - delay) / every)
+	for i = 0, n - 1 do
+		task.delay(delay + i * every, function()
+			local a = math.random() * math.pi * 2
+			local d = Vector3.new(math.cos(a), (math.random() - 0.5) * 0.6, math.sin(a)).Unit
+			local mid = ground + Vector3.new((math.random() - 0.5) * R * 0.8, 2 + math.random() * R * 0.4, (math.random() - 0.5) * R * 0.8)
+			local slash = piece(Vector3.new(0.35, 0.35, 0.35), i % 3 == 0 and c or c2, Enum.Material.Neon, nil, 0)
+			slash.CFrame = CFrame.lookAt(mid, mid + d)
+			tween(slash, 0.08, { Size = Vector3.new(0.5, 0.12, R * 1.6) })
+			fade(slash, 0.08, 0.18)
+			Fx.burst("spark", mid, c2, 6, 1)
+			if i % 4 == 0 then
+				for _ = 1, 5 do
+					local sh = piece(Vector3.new(0.6, 1.4, 0.1), c2, Enum.Material.Glass, nil, 0.2)
+					sh.CFrame = CFrame.new(mid) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+					tween(sh, 0.35, { CFrame = sh.CFrame * CFrame.new(0, 0, -4 - math.random() * 4), Transparency = 1 })
+					Debris:AddItem(sh, 0.4)
+				end
+				if hooks.shake and close then
+					hooks.shake(0.6)
+				end
+			end
+		end)
+	end
+	-- 닫힘: 막이 한 점으로 오그라들었다가 터진다
+	task.delay(dur, function()
+		tween(shell, 0.3, { Size = Vector3.new(1, 1, 1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(film, 0.3, { Size = Vector3.new(1, 1, 1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(0.3, function()
+			for _, p in ipairs(parts) do
+				if p.Parent then
+					tween(p, 0.2, { Transparency = 1 })
+					Debris:AddItem(p, 0.25)
+				end
+			end
+			for k = 0, 2 do
+				task.delay(k * 0.07, function()
+					Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c or c2, 4, R * (2.2 + k * 0.4), 0.55)
+				end)
+			end
+			Fx.burst("spark", at, c2, 50, 2.2)
+			Fx.flash(at, c2, 70, 8, 0.7)
+			if hooks.flash and close then
+				hooks.flash(Color3.fromRGB(230, 255, 250), 0.4)
+			end
+			if hooks.shake and close then
+				hooks.shake(3)
+				boom(at, 3)
+			end
+			Fx.sound("heavy", 1, 0.3, at)
+		end)
+	end)
+end
+
 -- 무쌍 천하무쌍: 빛의 울타리가 솟아 둘레를 가두고, 한가운데에서 여덟 번 몰아친 뒤 하늘로 쳐올린다
 function H.arena(data: any)
 	local c, c2 = styleColors(data.style)

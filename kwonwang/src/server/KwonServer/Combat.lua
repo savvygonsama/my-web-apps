@@ -102,6 +102,32 @@ function Combat.onRing(pos: Vector3): boolean
 	return math.abs(pos.X - R.center.X) <= R.size / 2 and math.abs(pos.Z - R.center.Z) <= R.size / 2 and pos.Y > R.height - 1
 end
 
+-- 탈것: 타기 (탄 사람을 들어 올리고 빨라진다) / 내리기
+function Combat.mount(f: Fighter, id: string)
+	local m = Config.MOUNT_BY_ID[id]
+	if not m or not f.hum then
+		return
+	end
+	local fa = f :: any
+	if not fa.mountMult then
+		fa.baseHip = f.hum.HipHeight
+	end
+	fa.mountMult = m.speed
+	f.hum.HipHeight = (fa.baseHip or f.hum.HipHeight) + (Config.MOUNT_HIP[m.kind] or 2)
+	f.model:SetAttribute("Mount", id)
+end
+function Combat.dismount(f: Fighter)
+	local fa = f :: any
+	if not fa.mountMult then
+		return
+	end
+	fa.mountMult = nil
+	if f.hum and fa.baseHip then
+		f.hum.HipHeight = fa.baseHip
+	end
+	f.model:SetAttribute("Mount", nil)
+end
+
 -- 서로 때릴 수 있는 사이인지
 function Combat.hostile(a: Fighter, b: Fighter): boolean
 	if a == b or a.dead or b.dead then
@@ -238,12 +264,7 @@ end
 
 -- 안전 지대 (마을, 사부의 자리)
 local function inSafe(pos: Vector3): boolean
-	for _, r in ipairs(Config.Regions) do
-		if r.safe and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 then
-			return true
-		end
-	end
-	return false
+	return Config.inSafe(pos)
 end
 
 local function knock(f: Fighter, vel: Vector3, stun: number)
@@ -314,6 +335,7 @@ function Combat.kill(f: Fighter, by: Fighter?)
 		Combat.sync(f)
 		return
 	end
+	Combat.dismount(f)
 	f.dead = true
 	f.hp = 0
 	f.act = nil
@@ -558,6 +580,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = true
 	end
 	tgt.hp -= d
+	if tgt.player then
+		Combat.dismount(tgt)
+	end
 	-- 흡혈 (혈마신수)
 	if aStyle and aStyle.lifesteal and att.player and not att.dead then
 		att.hp = math.min(att.maxHp, att.hp + d * aStyle.lifesteal * ((att.buffs.frenzy or 0) > t and 3 or 1))
@@ -933,6 +958,8 @@ function Combat.tick(dt: number)
 				speed = f.walk * 0.4
 			elseif f.act and not f.npc then
 				speed = f.walk * 0.35
+			elseif (f :: any).mountMult then
+				speed = f.walk * (f :: any).mountMult
 			elseif (f :: any).sprint then
 				speed = f.walk * 1.45
 			end
