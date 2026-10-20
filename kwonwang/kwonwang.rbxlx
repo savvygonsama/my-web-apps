@@ -23,7 +23,14 @@ local Config = {}
 
 Config.GAME_TITLE = "권왕"
 Config.VERSION = "beta-1"
-Config.TEST_MODE = true -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함)
+-- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
+-- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
+local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
+local okBuild, build = pcall(function()
+	return buildMod and require(buildMod :: any) or nil
+end)
+Config.PUBLIC = okBuild and type(build) == "table" and build.public == true
+Config.TEST_MODE = not Config.PUBLIC
 
 ------------------------------------------------------------------------
 -- 싸움의 기본 규칙
@@ -1863,13 +1870,14 @@ Config.MOUNTS = {
 	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 1.55, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
 	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 1.75, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 1.9, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
+	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 2.4, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
 	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.1, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 가장 빠르다" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
-Config.MOUNT_HIP = { horse = 2.0, tiger = 1.5, cloud = 1.3 }
+Config.MOUNT_HIP = { horse = 2.0, tiger = 1.5, cloud = 1.3, dragon = 2.4 }
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -1923,6 +1931,8 @@ Config.Premium = {
 		lines = { "수련 화면에서 박자마다 대신 눌러 준다 ('좋음')", "수련 자리를 떠나면 멈춘다 (어디서나 오르지 않는다)", "손은 편해지지만 사람보다 빠르지 않다" } },
 	{ id = "autoTrain2", gamepass = 0, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
 		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
+	{ id = "dragon", gamepass = 0, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
+		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×2.4)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {
@@ -6067,13 +6077,24 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "지금은 탈 수 없어요")
 			return
 		end
+		-- 게임패스가 없어진 로벅스 탈것은 갈색 말로
+		local sel = Config.MOUNT_BY_ID[p.mountSel]
+		if sel and sel.premium and not Premium.owns(player, sel.premium) then
+			p.mountSel = "horse"
+		end
 		Combat.mount(f, p.mountSel)
 	elseif action == "mountBuy" or action == "mountSelect" then
 		local m = type(a1) == "string" and Config.MOUNT_BY_ID[a1]
 		if not m then
 			return
 		end
-		if not p.mounts[m.id] then
+		-- 로벅스 탈것: 게임패스가 있어야 고를 수 있다
+		if m.premium then
+			if not Premium.owns(player, m.premium) then
+				Premium.prompt(player, m.premium)
+				return
+			end
+		elseif not p.mounts[m.id] then
 			if action ~= "mountBuy" then
 				return
 			end
@@ -6565,6 +6586,11 @@ function Premium.grant(player: Player, id: string)
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
+	end
+	-- 청룡을 사면 바로 고른다
+	if p and id == "dragon" then
+		p.mountSel = "dragon"
+		toast(player, "🐉 청룡을 얻었어요! V로 타기")
 	end
 	pushState(player)
 end
@@ -15799,11 +15825,12 @@ local function moveJ(name: string, s: number, c: number, f: number, sd: number, 
 	local stride = 40 * amt
 	if name == "R" then
 		local lean = -(4 + 8 * amt) * math.max(f, 0) + 6 * math.max(-f, 0)
-		return { lean, s * 6 * amt * f, s * 2.5 * amt - sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
+		-- 달릴 때 몸이 좌우로 흔들리지 않게: 걸음마다 옆으로 기울이거나 비틀지 않는다 (옆걸음일 때만 살짝 기운다)
+		return { lean, 0, -sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
 	elseif name == "W" then
-		return { 3 * amt, -s * 10 * amt * f, 0 }
+		return { 3 * amt, -s * 2 * amt * f, 0 }
 	elseif name == "N" then
-		return { -3 * amt, s * 6 * amt * f, sd * 4 }
+		return { -3 * amt, 0, sd * 4 }
 	elseif name == "RS" then
 		return { -s * 44 * amt * f, 0, 9 + math.abs(sd) * 8 }
 	elseif name == "LS" then
@@ -19272,7 +19299,7 @@ folder.Name = "KwonMounts"
 folder.Parent = workspace
 
 -- seg: nil (몸에 붙음) / "thigh" / "shin" / "hoof" (다리 마디), leg = 다리 번호, len = 마디 길이
-type Piece = { p: BasePart, off: CFrame, leg: number?, seg: string?, len: number? }
+type Piece = { p: BasePart, off: CFrame, leg: number?, seg: string?, len: number?, di: number? }
 type Rig = { parts: { Piece }, kind: string, phase: number, model: Model, thigh: number, shin: number, bodyY: number }
 local rigs: { [Model]: Rig } = {}
 
@@ -19437,6 +19464,88 @@ local function cloud(rig: Rig, m: any)
 	end
 end
 
+-- 청룡: 열여섯 마디의 몸통이 탄 사람 아래에서 뒤로 물결치며 흐른다. di = 마디 번호 (0이 머리 쪽)
+local DRAGON_N = 16
+local function dragon(rig: Rig, m: any)
+	rig.thigh, rig.shin, rig.bodyY = 0, 0, 1.6
+	local c, gold = m.color, m.mane
+	local belly = Color3.fromRGB(240, 225, 170)
+	for i = 0, DRAGON_N - 1 do
+		local t = i / (DRAGON_N - 1)
+		local size = 2.0 - t * 1.35
+		local seg = piece(rig, Vector3.new(size, size * 0.9, 1.5), CFrame.new(), c, Enum.Material.SmoothPlastic, Ball)
+		seg.di = i
+		local bel = piece(rig, Vector3.new(size * 0.7, size * 0.35, 1.3), CFrame.new(0, -size * 0.32, 0), belly)
+		bel.di = i
+		-- 등지느러미 (금빛, 마디마다)
+		local fin = piece(rig, Vector3.new(0.1, size * 0.55, 0.7), CFrame.new(0, size * 0.5, 0.1) * CFrame.Angles(math.rad(-25), 0, 0), gold, Enum.Material.Metal)
+		fin.di = i
+		-- 발톱 달린 짧은 다리 넷 (마디 3과 10)
+		if i == 3 or i == 10 then
+			for _, x in ipairs({ -1, 1 }) do
+				local lg = piece(rig, Vector3.new(0.3, 0.9, 0.3), CFrame.new(x * size * 0.45, -size * 0.45, 0) * CFrame.Angles(math.rad(30), 0, x * math.rad(25)), c)
+				lg.di = i
+				local claw = piece(rig, Vector3.new(0.45, 0.2, 0.5), CFrame.new(x * size * 0.6, -size * 0.85, -0.2), gold, Enum.Material.Metal)
+				claw.di = i
+			end
+		end
+	end
+	-- 꼬리 끝의 금빛 지느러미
+	local tailFin = piece(rig, Vector3.new(0.12, 1.4, 1.2), CFrame.new(0, 0, 0.8) * CFrame.Angles(math.rad(20), 0, 0), gold, Enum.Material.Metal)
+	tailFin.di = DRAGON_N - 1
+	-- 머리: 주둥이, 아래턱, 금빛 뿔 둘, 늘어진 수염, 빛나는 눈, 갈기
+	local H = -1
+	local head = piece(rig, Vector3.new(1.5, 1.2, 1.7), CFrame.new(0, 0.35, -0.9), c)
+	head.di = H
+	local snout = piece(rig, Vector3.new(1.0, 0.7, 1.1), CFrame.new(0, 0.2, -2.0), c)
+	snout.di = H
+	local jaw = piece(rig, Vector3.new(0.95, 0.3, 1.4), CFrame.new(0, -0.3, -1.7) * CFrame.Angles(math.rad(8), 0, 0), belly)
+	jaw.di = H
+	for _, x in ipairs({ -1, 1 }) do
+		local horn = piece(rig, Vector3.new(0.18, 0.18, 1.6), CFrame.new(x * 0.45, 1.15, -0.2) * CFrame.Angles(math.rad(35), x * math.rad(15), 0), gold, Enum.Material.Metal)
+		horn.di = H
+		local eye = piece(rig, Vector3.new(0.25, 0.18, 0.1), CFrame.new(x * 0.5, 0.6, -1.65), Color3.fromRGB(255, 240, 120), Enum.Material.Neon)
+		eye.di = H
+		local wh = piece(rig, Vector3.new(0.06, 0.06, 2.4), CFrame.new(x * 0.5, 0.0, -2.0) * CFrame.Angles(math.rad(-20), x * math.rad(35), 0) * CFrame.new(0, 0, 1.0), gold, Enum.Material.Neon)
+		wh.di = H
+		local nostril = piece(rig, Vector3.new(0.12, 0.12, 0.12), CFrame.new(x * 0.28, 0.45, -2.5), Color3.fromRGB(20, 40, 35), nil, Ball)
+		nostril.di = H
+	end
+	for k = 0, 4 do
+		local mane = piece(rig, Vector3.new(0.12, 0.7, 0.5), CFrame.new(0, 0.95 - k * 0.08, -0.3 + k * 0.45) * CFrame.Angles(math.rad(-35), 0, (k % 2 == 0 and 1 or -1) * math.rad(12)), gold)
+		mane.di = H
+	end
+	-- 금빛 가루와 빛
+	local glow = head.p
+	local light = Instance.new("PointLight")
+	light.Color = gold
+	light.Range = 16
+	light.Brightness = 1.4
+	light.Parent = glow
+	local dust = Instance.new("ParticleEmitter")
+	dust.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	dust.Color = ColorSequence.new(gold)
+	dust.Size = NumberSequence.new(0.4, 0)
+	dust.Lifetime = NumberRange.new(0.8, 1.4)
+	dust.Rate = 24
+	dust.Speed = NumberRange.new(0.5, 1.5)
+	dust.SpreadAngle = Vector2.new(180, 180)
+	dust.Parent = glow
+end
+
+-- 청룡 마디의 자리 (탈것 기준 공간): 앞에서 뒤로, 옆과 위아래로 물결친다
+local function dragonPath(t: number, run: number): { Vector3 }
+	local pts = {}
+	for i = 0, DRAGON_N - 1 do
+		local w = i / (DRAGON_N - 1)
+		local amp = 0.25 + w * (0.9 + 0.5 * run)
+		local x = math.sin(t * 3.2 - i * 0.55) * amp
+		local y = math.sin(t * 2.1 - i * 0.45) * (0.25 + w * 0.6) + w * 0.6
+		pts[i + 1] = Vector3.new(x, y, -1.6 + i * 1.05)
+	end
+	return pts
+end
+
 local function build(model: Model, id: string)
 	local m = Config.MOUNT_BY_ID[id]
 	if not m then
@@ -19445,6 +19554,8 @@ local function build(model: Model, id: string)
 	local rig: Rig = { parts = {}, kind = m.kind, phase = 0, model = model, thigh = 1, shin = 1, bodyY = 1.6 }
 	if m.kind == "cloud" then
 		cloud(rig, m)
+	elseif m.kind == "dragon" then
+		dragon(rig, m)
 	elseif m.kind == "tiger" then
 		tiger(rig, m)
 	else
@@ -19501,7 +19612,11 @@ RunService.RenderStepped:Connect(function(dt: number)
 		-- 등(몸통 꼭대기)이 탄 사람 엉덩이 바로 아래에 오도록
 		local seat = root.Position - Vector3.new(0, root.Size.Y / 2 + 0.15, 0)
 		local base: CFrame
-		if rig.kind == "cloud" then
+		local path: { Vector3 }? = nil
+		if rig.kind == "dragon" then
+			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.0 + math.sin(os.clock() * 1.8) * 0.2, 0)
+			path = dragonPath(os.clock(), run)
+		elseif rig.kind == "cloud" then
 			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.1 + math.sin(os.clock() * 2.2) * 0.15, 0) * CFrame.Angles(0, 0, math.sin(os.clock() * 1.3) * 0.04)
 		else
 			local bob = math.abs(math.sin(rig.phase)) * 0.2 * run
@@ -19509,7 +19624,19 @@ RunService.RenderStepped:Connect(function(dt: number)
 			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -rig.bodyY / 2 - 0.25 + bob, 0) * CFrame.Angles(pitch, 0, 0)
 		end
 		for _, e in ipairs(rig.parts) do
-			if e.leg then
+			if path and e.di then
+				-- 청룡: 마디는 앞 마디를 바라보며 물결 위에 놓인다. 머리(-1)는 첫 마디 앞에서 앞을 본다
+				local pts = path
+				if e.di < 0 then
+					local p0, p1 = pts[1], pts[2]
+					local dir = (p0 - p1).Unit
+					e.p.CFrame = base * CFrame.lookAt(p0 + dir * 0.6 + Vector3.new(0, 0.4, 0), p0 + dir * 3 + Vector3.new(0, 0.4, 0)) * e.off
+				else
+					local here = pts[e.di + 1]
+					local ahead = pts[e.di] or (here + (here - pts[e.di + 2]))
+					e.p.CFrame = base * CFrame.lookAt(here, ahead) * e.off
+				end
+			elseif e.leg then
 				-- 대각선 다리끼리 같이 (1·4, 2·3). 허벅지가 앞뒤로 흔들리고, 정강이는 들 때 굽는다
 				local ph = rig.phase + ((e.leg == 1 or e.leg == 4) and 0 or math.pi)
 				local swing = math.sin(ph) * math.rad(34) * run
@@ -20397,21 +20524,21 @@ local function buildShop()
 		end
 	end
 	-- 🐎 탈것: V로 타고 내린다
-	text({ Size = UDim2.new(1, -12, 0, 26), Text = "🐎 탈것 (V로 타기·내리기)", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 5, Parent = list })
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "🐎 탈것 (V로 타기·내리기)", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
 	local mountBtns: { [string]: TextButton } = {}
 	for k, m in ipairs(Config.MOUNTS) do
-		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel2, LayoutOrder = 5 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel2, LayoutOrder = 10 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
 		text({ Position = UDim2.new(0, 14, 0, 4), Size = UDim2.new(1, -200, 0, 28), Text = string.format("%s %s  ·  빠르기 ×%.2f", m.icon, m.name, m.speed), TextSize = 19, Font = Enum.Font.GothamBlack, Parent = row })
 		text({ Position = UDim2.new(0, 14, 0, 34), Size = UDim2.new(1, -200, 0, 24), Text = m.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
 		mountBtns[m.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 44), Text = "", TextSize = 17, Parent = row }, function()
-			local owned = state and state.mounts and state.mounts[m.id]
+			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
 			Request:FireServer(owned and "mountSelect" or "mountBuy", m.id)
 		end)
 	end
-	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
+	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 20, Parent = list })
 	local labels = {}
 	for k, item in ipairs(Config.Shop) do
-		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = 10 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = 20 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
 		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = item.icon .. " " .. item.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
 		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = item.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
 		labels[item.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💰 " .. Config.formatNumber(item.cost), TextSize = 18, BackgroundColor3 = C.red, Parent = row }, function()
@@ -20421,9 +20548,10 @@ local function buildShop()
 	refreshers.shop = function()
 		for _, m in ipairs(Config.MOUNTS) do
 			local b = mountBtns[m.id]
-			local owned = state and state.mounts and state.mounts[m.id]
+			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
 			local sel = state and state.mountSel == m.id
-			b.Text = sel and "✅ 고름" or (owned and "고르기" or ("💰 " .. Config.formatNumber(m.cost)))
+			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or ("💰 " .. Config.formatNumber(m.cost))
+			b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
 			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost) and C.red or C.panel))
 		end
 		for _, item in ipairs(Config.Shop) do
@@ -20747,7 +20875,7 @@ local function buildTest()
 	section("☁ 베타 14: 천상계·아공신권·탈것", {
 		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 600000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
 		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
-		{ "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
+		{ "🐉 청룡 탈것 (테스트로 켜기)", "testPremium", "dragon" }, { "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
 		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
 		{ "👹 뇌제 부르기", "testBoss", "noeje" }, { "👹 성군 부르기", "testBoss", "seonggun" }, { "👹 천존 부르기", "testBoss", "cheonjon" }, { "⚔ PvP 끄기 열기 (쓰러진 셈)", "testPvpUnlock" },
 	})

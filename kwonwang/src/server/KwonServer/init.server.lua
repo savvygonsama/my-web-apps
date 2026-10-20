@@ -2480,13 +2480,24 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "지금은 탈 수 없어요")
 			return
 		end
+		-- 게임패스가 없어진 로벅스 탈것은 갈색 말로
+		local sel = Config.MOUNT_BY_ID[p.mountSel]
+		if sel and sel.premium and not Premium.owns(player, sel.premium) then
+			p.mountSel = "horse"
+		end
 		Combat.mount(f, p.mountSel)
 	elseif action == "mountBuy" or action == "mountSelect" then
 		local m = type(a1) == "string" and Config.MOUNT_BY_ID[a1]
 		if not m then
 			return
 		end
-		if not p.mounts[m.id] then
+		-- 로벅스 탈것: 게임패스가 있어야 고를 수 있다
+		if m.premium then
+			if not Premium.owns(player, m.premium) then
+				Premium.prompt(player, m.premium)
+				return
+			end
+		elseif not p.mounts[m.id] then
 			if action ~= "mountBuy" then
 				return
 			end
@@ -2978,6 +2989,11 @@ function Premium.grant(player: Player, id: string)
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
+	end
+	-- 청룡을 사면 바로 고른다
+	if p and id == "dragon" then
+		p.mountSel = "dragon"
+		toast(player, "🐉 청룡을 얻었어요! V로 타기")
 	end
 	pushState(player)
 end

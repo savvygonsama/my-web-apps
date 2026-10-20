@@ -1,0 +1,48 @@
+{
+  "name": "KwonwangPublic",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$properties": {
+        "Gravity": 196.2,
+        "StreamingEnabled": false
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    },
+    "ReplicatedStorage": {
+      "Config": {
+        "$path": "src/shared/Config.lua"
+      },
+      "Poses": {
+        "$path": "src/shared/Poses.lua"
+      },
+      "KwonBuild": {
+        "$path": "src/build/public.lua"
+      }
+    },
+    "ServerScriptService": {
+      "KwonServer": {
+        "$path": "src/server/KwonServer"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMaxZoomDistance": 45
+      },
+      "StarterPlayerScripts": {
+        "KwonClient": {
+          "$path": "src/client/KwonClient"
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": true
+      }
+    }
+  }
+}

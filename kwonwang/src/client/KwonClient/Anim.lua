@@ -357,11 +357,12 @@ local function moveJ(name: string, s: number, c: number, f: number, sd: number, 
 	local stride = 40 * amt
 	if name == "R" then
 		local lean = -(4 + 8 * amt) * math.max(f, 0) + 6 * math.max(-f, 0)
-		return { lean, s * 6 * amt * f, s * 2.5 * amt - sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
+		-- 달릴 때 몸이 좌우로 흔들리지 않게: 걸음마다 옆으로 기울이거나 비틀지 않는다 (옆걸음일 때만 살짝 기운다)
+		return { lean, 0, -sd * 6 * amt, 0, -0.12 + math.abs(c) * 0.24 * amt, 0 }
 	elseif name == "W" then
-		return { 3 * amt, -s * 10 * amt * f, 0 }
+		return { 3 * amt, -s * 2 * amt * f, 0 }
 	elseif name == "N" then
-		return { -3 * amt, s * 6 * amt * f, sd * 4 }
+		return { -3 * amt, 0, sd * 4 }
 	elseif name == "RS" then
 		return { -s * 44 * amt * f, 0, 9 + math.abs(sd) * 8 }
 	elseif name == "LS" then

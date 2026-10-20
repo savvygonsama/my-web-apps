@@ -12,7 +12,7 @@ folder.Name = "KwonMounts"
 folder.Parent = workspace
 
 -- seg: nil (몸에 붙음) / "thigh" / "shin" / "hoof" (다리 마디), leg = 다리 번호, len = 마디 길이
-type Piece = { p: BasePart, off: CFrame, leg: number?, seg: string?, len: number? }
+type Piece = { p: BasePart, off: CFrame, leg: number?, seg: string?, len: number?, di: number? }
 type Rig = { parts: { Piece }, kind: string, phase: number, model: Model, thigh: number, shin: number, bodyY: number }
 local rigs: { [Model]: Rig } = {}
 
@@ -177,6 +177,88 @@ local function cloud(rig: Rig, m: any)
 	end
 end
 
+-- 청룡: 열여섯 마디의 몸통이 탄 사람 아래에서 뒤로 물결치며 흐른다. di = 마디 번호 (0이 머리 쪽)
+local DRAGON_N = 16
+local function dragon(rig: Rig, m: any)
+	rig.thigh, rig.shin, rig.bodyY = 0, 0, 1.6
+	local c, gold = m.color, m.mane
+	local belly = Color3.fromRGB(240, 225, 170)
+	for i = 0, DRAGON_N - 1 do
+		local t = i / (DRAGON_N - 1)
+		local size = 2.0 - t * 1.35
+		local seg = piece(rig, Vector3.new(size, size * 0.9, 1.5), CFrame.new(), c, Enum.Material.SmoothPlastic, Ball)
+		seg.di = i
+		local bel = piece(rig, Vector3.new(size * 0.7, size * 0.35, 1.3), CFrame.new(0, -size * 0.32, 0), belly)
+		bel.di = i
+		-- 등지느러미 (금빛, 마디마다)
+		local fin = piece(rig, Vector3.new(0.1, size * 0.55, 0.7), CFrame.new(0, size * 0.5, 0.1) * CFrame.Angles(math.rad(-25), 0, 0), gold, Enum.Material.Metal)
+		fin.di = i
+		-- 발톱 달린 짧은 다리 넷 (마디 3과 10)
+		if i == 3 or i == 10 then
+			for _, x in ipairs({ -1, 1 }) do
+				local lg = piece(rig, Vector3.new(0.3, 0.9, 0.3), CFrame.new(x * size * 0.45, -size * 0.45, 0) * CFrame.Angles(math.rad(30), 0, x * math.rad(25)), c)
+				lg.di = i
+				local claw = piece(rig, Vector3.new(0.45, 0.2, 0.5), CFrame.new(x * size * 0.6, -size * 0.85, -0.2), gold, Enum.Material.Metal)
+				claw.di = i
+			end
+		end
+	end
+	-- 꼬리 끝의 금빛 지느러미
+	local tailFin = piece(rig, Vector3.new(0.12, 1.4, 1.2), CFrame.new(0, 0, 0.8) * CFrame.Angles(math.rad(20), 0, 0), gold, Enum.Material.Metal)
+	tailFin.di = DRAGON_N - 1
+	-- 머리: 주둥이, 아래턱, 금빛 뿔 둘, 늘어진 수염, 빛나는 눈, 갈기
+	local H = -1
+	local head = piece(rig, Vector3.new(1.5, 1.2, 1.7), CFrame.new(0, 0.35, -0.9), c)
+	head.di = H
+	local snout = piece(rig, Vector3.new(1.0, 0.7, 1.1), CFrame.new(0, 0.2, -2.0), c)
+	snout.di = H
+	local jaw = piece(rig, Vector3.new(0.95, 0.3, 1.4), CFrame.new(0, -0.3, -1.7) * CFrame.Angles(math.rad(8), 0, 0), belly)
+	jaw.di = H
+	for _, x in ipairs({ -1, 1 }) do
+		local horn = piece(rig, Vector3.new(0.18, 0.18, 1.6), CFrame.new(x * 0.45, 1.15, -0.2) * CFrame.Angles(math.rad(35), x * math.rad(15), 0), gold, Enum.Material.Metal)
+		horn.di = H
+		local eye = piece(rig, Vector3.new(0.25, 0.18, 0.1), CFrame.new(x * 0.5, 0.6, -1.65), Color3.fromRGB(255, 240, 120), Enum.Material.Neon)
+		eye.di = H
+		local wh = piece(rig, Vector3.new(0.06, 0.06, 2.4), CFrame.new(x * 0.5, 0.0, -2.0) * CFrame.Angles(math.rad(-20), x * math.rad(35), 0) * CFrame.new(0, 0, 1.0), gold, Enum.Material.Neon)
+		wh.di = H
+		local nostril = piece(rig, Vector3.new(0.12, 0.12, 0.12), CFrame.new(x * 0.28, 0.45, -2.5), Color3.fromRGB(20, 40, 35), nil, Ball)
+		nostril.di = H
+	end
+	for k = 0, 4 do
+		local mane = piece(rig, Vector3.new(0.12, 0.7, 0.5), CFrame.new(0, 0.95 - k * 0.08, -0.3 + k * 0.45) * CFrame.Angles(math.rad(-35), 0, (k % 2 == 0 and 1 or -1) * math.rad(12)), gold)
+		mane.di = H
+	end
+	-- 금빛 가루와 빛
+	local glow = head.p
+	local light = Instance.new("PointLight")
+	light.Color = gold
+	light.Range = 16
+	light.Brightness = 1.4
+	light.Parent = glow
+	local dust = Instance.new("ParticleEmitter")
+	dust.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	dust.Color = ColorSequence.new(gold)
+	dust.Size = NumberSequence.new(0.4, 0)
+	dust.Lifetime = NumberRange.new(0.8, 1.4)
+	dust.Rate = 24
+	dust.Speed = NumberRange.new(0.5, 1.5)
+	dust.SpreadAngle = Vector2.new(180, 180)
+	dust.Parent = glow
+end
+
+-- 청룡 마디의 자리 (탈것 기준 공간): 앞에서 뒤로, 옆과 위아래로 물결친다
+local function dragonPath(t: number, run: number): { Vector3 }
+	local pts = {}
+	for i = 0, DRAGON_N - 1 do
+		local w = i / (DRAGON_N - 1)
+		local amp = 0.25 + w * (0.9 + 0.5 * run)
+		local x = math.sin(t * 3.2 - i * 0.55) * amp
+		local y = math.sin(t * 2.1 - i * 0.45) * (0.25 + w * 0.6) + w * 0.6
+		pts[i + 1] = Vector3.new(x, y, -1.6 + i * 1.05)
+	end
+	return pts
+end
+
 local function build(model: Model, id: string)
 	local m = Config.MOUNT_BY_ID[id]
 	if not m then
@@ -185,6 +267,8 @@ local function build(model: Model, id: string)
 	local rig: Rig = { parts = {}, kind = m.kind, phase = 0, model = model, thigh = 1, shin = 1, bodyY = 1.6 }
 	if m.kind == "cloud" then
 		cloud(rig, m)
+	elseif m.kind == "dragon" then
+		dragon(rig, m)
 	elseif m.kind == "tiger" then
 		tiger(rig, m)
 	else
@@ -241,7 +325,11 @@ RunService.RenderStepped:Connect(function(dt: number)
 		-- 등(몸통 꼭대기)이 탄 사람 엉덩이 바로 아래에 오도록
 		local seat = root.Position - Vector3.new(0, root.Size.Y / 2 + 0.15, 0)
 		local base: CFrame
-		if rig.kind == "cloud" then
+		local path: { Vector3 }? = nil
+		if rig.kind == "dragon" then
+			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.0 + math.sin(os.clock() * 1.8) * 0.2, 0)
+			path = dragonPath(os.clock(), run)
+		elseif rig.kind == "cloud" then
 			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -1.1 + math.sin(os.clock() * 2.2) * 0.15, 0) * CFrame.Angles(0, 0, math.sin(os.clock() * 1.3) * 0.04)
 		else
 			local bob = math.abs(math.sin(rig.phase)) * 0.2 * run
@@ -249,7 +337,19 @@ RunService.RenderStepped:Connect(function(dt: number)
 			base = CFrame.lookAt(seat, seat + flatLook) * CFrame.new(0, -rig.bodyY / 2 - 0.25 + bob, 0) * CFrame.Angles(pitch, 0, 0)
 		end
 		for _, e in ipairs(rig.parts) do
-			if e.leg then
+			if path and e.di then
+				-- 청룡: 마디는 앞 마디를 바라보며 물결 위에 놓인다. 머리(-1)는 첫 마디 앞에서 앞을 본다
+				local pts = path
+				if e.di < 0 then
+					local p0, p1 = pts[1], pts[2]
+					local dir = (p0 - p1).Unit
+					e.p.CFrame = base * CFrame.lookAt(p0 + dir * 0.6 + Vector3.new(0, 0.4, 0), p0 + dir * 3 + Vector3.new(0, 0.4, 0)) * e.off
+				else
+					local here = pts[e.di + 1]
+					local ahead = pts[e.di] or (here + (here - pts[e.di + 2]))
+					e.p.CFrame = base * CFrame.lookAt(here, ahead) * e.off
+				end
+			elseif e.leg then
 				-- 대각선 다리끼리 같이 (1·4, 2·3). 허벅지가 앞뒤로 흔들리고, 정강이는 들 때 굽는다
 				local ph = rig.phase + ((e.leg == 1 or e.leg == 4) and 0 or math.pi)
 				local swing = math.sin(ph) * math.rad(34) * run
