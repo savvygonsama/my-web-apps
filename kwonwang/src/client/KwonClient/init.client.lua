@@ -1134,6 +1134,39 @@ function handlers.towerClear(data: any)
 	Fx.sound("ping", 0.8, 1.2)
 end
 
+-- 운석 낙하: 하늘에서 불덩이가 떨어지고, 자리에 표시
+function handlers.meteor(data: any)
+	UI.banner("☄ 운석이 떨어진다!", data.island .. "에 운석 수호수가 나타난다", Color3.fromRGB(200, 150, 255))
+	local at: Vector3 = data.at
+	local warn = data.warn or 6
+	Fx.ring(at - Vector3.new(0, 2.3, 0), Color3.fromRGB(200, 120, 255), 30, 2, warn)
+	local ball = Instance.new("Part")
+	ball.Anchored = true
+	ball.CanCollide = false
+	ball.CanQuery = false
+	ball.Shape = Enum.PartType.Ball
+	ball.Size = Vector3.new(14, 14, 14)
+	ball.Material = Enum.Material.Neon
+	ball.Color = Color3.fromRGB(255, 160, 90)
+	ball.Position = at + Vector3.new(160, 500, -120)
+	ball.Parent = workspace
+	local fire = Instance.new("Fire")
+	fire.Size = 25
+	fire.Heat = 20
+	fire.Parent = ball
+	TweenService:Create(ball, TweenInfo.new(warn, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Position = at }):Play()
+	task.delay(warn, function()
+		ball:Destroy()
+		Fx.impact(at, Color3.fromRGB(255, 180, 120), 2.6)
+		Fx.ring(at - Vector3.new(0, 2, 0), Color3.fromRGB(255, 160, 90), 4, 70, 0.7)
+		Fx.debris(at, 16, 30, Color3.fromRGB(80, 60, 70))
+		local r = rootOfChar()
+		if r and (r.Position - at).Magnitude < 160 then
+			shake(2.5)
+		end
+	end)
+end
+
 -- 심법 뽑기 결과
 function handlers.manualDraw(results: any)
 	UI.manualReveal(results)
@@ -1327,8 +1360,20 @@ function handlers.hit(data: any)
 		local predicted = mine and predictedAt[t] and os.clock() - predictedAt[t] < 0.6
 		if not predicted then
 			local hs = data.broken and 0.16 or (data.heavy and 0.1 or 0.055)
+			-- 기술로 맞히면 한층 묵직하게: 더 긴 멈칫, 권법 빛깔의 타격 섬광, 내 화면이 울린다
+			if data.skill then
+				hs = math.max(hs, 0.075)
+			end
 			Fx.hitstop({ a, t }, hs)
 			Fx.styleHit(data.style, pos, data.heavy, dir)
+			if data.skill then
+				local st = Config.STYLE_BY_ID[data.style or ""]
+				Fx.impact(pos, st and st.color2 or Color3.new(1, 1, 1), data.heavy and 1.5 or 1.05)
+				if mine then
+					shake(data.heavy and 0.9 or 0.45)
+					fovPunch(-2, 0.12)
+				end
+			end
 			Fx.sound(data.heavy and "heavy" or "hit", data.heavy and 0.9 or 0.6, data.heavy and 0.6 or 0.9, if mine or hurt then nil else pos)
 			if t and t:GetAttribute("Poise") ~= true and not data.steady then
 				local fromRight = (aRoot and tRoot) and tRoot.CFrame.RightVector:Dot(aRoot.Position - tRoot.Position) > 0 or false
@@ -1348,7 +1393,8 @@ function handlers.hit(data: any)
 		if data.strike then
 			Fx.lightning(pos + Vector3.new(math.random(-4, 4), 60, math.random(-4, 4)), pos, Color3.fromRGB(255, 245, 140), 0.7)
 		end
-		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or Color3.new(1, 1, 1))
+		local skillStyle = data.skill and Config.STYLE_BY_ID[data.style or ""]
+		local col = data.crit and Color3.fromRGB(255, 220, 80) or (hurt and Color3.fromRGB(255, 90, 80) or (skillStyle and skillStyle.color2:Lerp(Color3.new(1, 1, 1), 0.3) or Color3.new(1, 1, 1)))
 		Fx.text(pos + Vector3.new(0, 2, 0), (data.crit and "치명 " or "") .. tostring(math.floor((data.dmg or 0) + 0.5)), col, data.crit and 34 or 26)
 		if data.broken then
 			Fx.text(pos + Vector3.new(0, 5, 0), "파훼!", Color3.fromRGB(255, 200, 80), 40)
@@ -1794,7 +1840,7 @@ function handlers.pdodge(data: any)
 end
 
 function handlers.reward(data: any)
-	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d", data.name, data.coins, data.xp))
+	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d%s", data.name, data.coins, data.xp, (data.gems or 0) > 0 and string.format("  💠 +%d", data.gems) or ""))
 	if data.boss then
 		UI.banner("🏆 " .. data.name .. " 격파!", string.format("💰 +%d", data.coins), Color3.fromRGB(255, 210, 120))
 	end

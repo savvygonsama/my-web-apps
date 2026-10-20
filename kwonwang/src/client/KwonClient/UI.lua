@@ -410,7 +410,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -943,6 +943,32 @@ function UI.manualReveal(results: { any })
 end
 
 ------------------------------------------------------------------------
+-- 천상 상점: 천궁에서만 열린다 (천정으로 산다)
+------------------------------------------------------------------------
+local function buildSkyShop()
+	local page = makePage("skyshop")
+	local head = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
+	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = list })
+	local btns: { [string]: TextButton } = {}
+	for _, it in ipairs(Config.SKY_SHOP) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = Color3.fromRGB(30, 36, 60), Parent = list }, { corner(10), stroke(Color3.fromRGB(150, 230, 255), 1) })
+		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = it.icon .. " " .. it.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
+		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = it.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
+		btns[it.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💠 " .. it.cost, TextSize = 18, BackgroundColor3 = Color3.fromRGB(60, 120, 200), Parent = row }, function()
+			Request:FireServer("skyBuy", it.id)
+		end)
+	end
+	refreshers.skyshop = function()
+		local g = state and state.skyGems or 0
+		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "")
+		for _, it in ipairs(Config.SKY_SHOP) do
+			btns[it.id].BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 천층탑: 지금 층과 나가기
 ------------------------------------------------------------------------
 local towerFrame: Frame? = nil
@@ -1116,6 +1142,8 @@ local function buildTest()
 	section("☁ 베타 14: 천상계·아공신권·탈것", {
 		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 600000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
 		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
+		{ "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
+		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
 		{ "👹 뇌제 부르기", "testBoss", "noeje" }, { "👹 성군 부르기", "testBoss", "seonggun" }, { "👹 천존 부르기", "testBoss", "cheonjon" }, { "⚔ PvP 끄기 열기 (쓰러진 셈)", "testPvpUnlock" },
 	})
 	section("🎯 수련 목인·시간", {
@@ -2176,6 +2204,7 @@ function UI.init(req: RemoteEvent)
 	buildStats()
 	buildShop()
 	buildManuals()
+	buildSkyShop()
 	buildHelp()
 	buildTrainGuide()
 	buildTest()

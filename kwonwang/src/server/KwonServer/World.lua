@@ -2853,12 +2853,32 @@ local function skyWorld(out: any)
 			local size = rng:NextNumber(18, 34)
 			part({ Name = "SkyCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = c + Vector3.new(math.cos(a) * (R * 0.9), -9 - rng:NextNumber() * 6, math.sin(a) * (R * 0.9)), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = f })
 		end
-		-- 보이지 않는 난간 (떨어지지 않게)
-		local m = math.max(24, math.floor(R / 6))
+		-- 보이지 않는 난간 (떨어지지 않게). 다리가 이어지는 자리는 비워 둔다
+		local gaps: { { number } } = {}
+		for bi, b in ipairs(SKY.bridges) do
+			local me = SKY.islands[b[1]] == isl and 1 or (SKY.islands[b[2]] == isl and 2 or nil)
+			if me then
+				local other = SKY.islands[b[me == 1 and 2 or 1]]
+				local d = Vector3.new(other.at.X - c.X, 0, other.at.Z - c.Z)
+				local w = b.hidden and 8 or 16
+				table.insert(gaps, { math.atan2(d.Z, d.X), math.asin(math.clamp((w / 2 + 3) / R, 0, 1)) })
+			end
+			local _ = bi
+		end
+		local m = math.max(32, math.floor(R / 4))
 		for k = 0, m - 1 do
 			local a = k / m * math.pi * 2
-			local p = c + Vector3.new(math.cos(a) * (R + 0.5), 7, math.sin(a) * (R + 0.5))
-			part({ Name = "SkyWall", Size = Vector3.new(2 * math.pi * R / m + 1, 14, 1), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Transparency = 1, CanCollide = true, Parent = f })
+			local open = false
+			for _, g in ipairs(gaps) do
+				local diff = math.abs((a - g[1] + math.pi) % (2 * math.pi) - math.pi)
+				if diff < g[2] + math.pi / m then
+					open = true
+				end
+			end
+			if not open then
+				local p = c + Vector3.new(math.cos(a) * (R + 0.5), 7, math.sin(a) * (R + 0.5))
+				part({ Name = "SkyWall", Size = Vector3.new(2 * math.pi * R / m + 1, 14, 1), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Transparency = 1, CanCollide = true, Parent = f })
+			end
 		end
 	end
 	-- 다리 (구름 빛 돌길, 양옆에 보이지 않는 난간). 숨은 다리는 거의 투명하다
@@ -2885,16 +2905,64 @@ local function skyWorld(out: any)
 	end
 	-- 섬마다 꾸밈
 	local I = Config.SKY_BY_ID
-	-- 천궁: 가운데 이층 전각, 네 첨탑, 내려가는 문
+	-- 천궁 (천상계 마을): 네 갈래 큰길, 가운데 광장과 천주탑, 객잔·상점·정자·내려가는 문, 둘레의 집들
 	local town = I.skytown.at
-	building(town + Vector3.new(0, 0, -40), 34, 22, 0, f, { tiers = 2, sign = "천궁", h = 12, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(70, 110, 170), awningColor = Color3.fromRGB(70, 110, 170) })
-	for _, sx in ipairs({ -1, 1 }) do
-		for _, sz in ipairs({ -1, 1 }) do
-			spire(town + Vector3.new(sx * 70, 0, sz * 70), 4, 7, Color3.fromRGB(150, 220, 255), f)
+	local TR = I.skytown.radius
+	local ROAD = Color3.fromRGB(250, 246, 235)
+	for k = 0, 3 do
+		local a = k * math.pi / 2
+		local d = Vector3.new(math.cos(a), 0, math.sin(a))
+		local mid = town + d * (TR / 2 + 10)
+		part({ Name = "SkyRoad", Size = Vector3.new(14, 0.3, TR - 20), CFrame = CFrame.lookAt(mid, mid + d) * CFrame.new(0, 0.1, 0), Color = ROAD, Material = Enum.Material.Marble, Parent = f })
+		for j = 1, 4 do
+			for _, side in ipairs({ -1, 1 }) do
+				local p = town + d * (30 + j * 38) + Vector3.new(-d.Z, 0, d.X) * side * 10
+				stoneLantern(p, f, true)
+			end
 		end
 	end
-	crystal(town + Vector3.new(0, 30, 20), 6, Color3.fromRGB(150, 220, 255), f)
-	out.skyDown = prompt(portalGate(town + Vector3.new(0, 0, 50), 0, Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	disc("SkyPlaza", town + Vector3.new(0, 0.15, 0), 30, 0.3, Color3.fromRGB(245, 230, 190), Enum.Material.Marble, f)
+	disc("SkyPlazaRing", town + Vector3.new(0, 0.2, 0), 31, 0.3, GOLD, Enum.Material.Metal, f)
+	spire(town, 6, 8, Color3.fromRGB(150, 220, 255), f)
+	crystal(town + Vector3.new(0, 70, 0), 7, Color3.fromRGB(150, 220, 255), f)
+	-- 북동: 천상 객잔 (쉬면 체력·내공이 찬다)
+	local innAt = town + Vector3.new(100, 0, -100)
+	building(innAt, 30, 20, math.rad(135), f, { tiers = 2, sign = "천상 객잔", h = 11, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(70, 110, 170), awningColor = Color3.fromRGB(70, 110, 170) })
+	local innDesk = part({ Name = "SkyInnDesk", Size = Vector3.new(6, 3.2, 3), CFrame = CFrame.lookAt(innAt, town) * CFrame.new(0, 1.6, -15), Color = Color3.fromRGB(150, 120, 90), Material = Enum.Material.Wood, Parent = f })
+	out.skyInn = prompt(innDesk, "쉬기", "천상 객잔 · 체력·내공 채우기", "SkyInn")
+	-- 남동: 천상 상점 (천정으로 산다)
+	local shopAt = town + Vector3.new(100, 0, 100)
+	building(shopAt, 26, 18, math.rad(45), f, { sign = "천상 상점", h = 11, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(150, 90, 200), awningColor = Color3.fromRGB(150, 90, 200) })
+	local stall = part({ Name = "SkyShopStall", Size = Vector3.new(10, 3.4, 4), CFrame = CFrame.lookAt(shopAt, town) * CFrame.new(0, 1.7, -14), Color = Color3.fromRGB(120, 80, 160), Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "SkyShopGem", Size = Vector3.new(1.4, 2.2, 1.4), CFrame = CFrame.lookAt(shopAt, town) * CFrame.new(0, 4.6, -14) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(150, 230, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	out.skyShop = prompt(stall, "물건 보기", "천상 상점 (천정)", "SkyShop")
+	-- 북서: 운류자의 정자 (기둥 넷과 지붕)
+	local pav = Config.MASTERS.unryu.at - Vector3.new(0, Config.MASTERS.unryu.at.Y - town.Y, 0)
+	part({ Name = "PavilionBase", Size = Vector3.new(22, 1.2, 22), Position = pav + Vector3.new(0, 0.6, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "PavilionPost", Size = Vector3.new(1.4, 12, 1.4), Position = pav + Vector3.new(sx * 9, 7, sz * 9), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	part({ Name = "PavilionRoof", Size = Vector3.new(26, 1.2, 26), Position = pav + Vector3.new(0, 13.6, 0), Color = Color3.fromRGB(70, 110, 170), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "PavilionRoof2", Size = Vector3.new(16, 1.2, 16), Position = pav + Vector3.new(0, 15, 0), Color = Color3.fromRGB(80, 125, 190), Material = Enum.Material.Slate, Parent = f })
+	-- 남서: 땅으로 내려가는 문
+	out.skyDown = prompt(portalGate(town + Vector3.new(-100, 0, 100), math.rad(45), Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	-- 둘레의 집들 (큰길 양옆)
+	for k = 0, 3 do
+		local base = k * math.pi / 2
+		for _, off in ipairs({ -0.38, 0.38 }) do
+			local a = base + off
+			local p = town + Vector3.new(math.cos(a) * 165, 0, math.sin(a) * 165)
+			local yaw = math.atan2(-(town.X - p.X), -(town.Z - p.Z))
+			building(p, rng:NextNumber(18, 24), rng:NextNumber(14, 18), yaw, f, { tiers = rng:NextNumber() < 0.5 and 2 or 1, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(70, 110, 170):Lerp(Color3.fromRGB(150, 90, 200), rng:NextNumber()) })
+		end
+	end
+	-- 바깥 네 모퉁이의 첨탑
+	for k = 0, 3 do
+		local a = math.pi / 4 + k * math.pi / 2
+		spire(town + Vector3.new(math.cos(a) * 178, 0, math.sin(a) * 178), 4, 6, Color3.fromRGB(150, 220, 255), f)
+	end
 	-- 운해 평원: 구름 덤불과 정자
 	local cp = I.cloudplain.at
 	for _ = 1, 26 do

@@ -801,6 +801,32 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "galaxy" then
+		-- 성하강림: 머리 위에 은하가 열리고, 별이 안에서 밖으로 나선을 그리며 떨어진 뒤, 한가운데에서 별이 터진다
+		local center = f.root.Position
+		local pts = {}
+		for i = 1, m.count do
+			local a = i * 0.95
+			local r = m.radius * (0.15 + 0.85 * i / m.count)
+			table.insert(pts, center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r))
+		end
+		Push:FireAllClients("skillfx", { kind = "galaxy", m = f.model, at = center, radius = m.radius, points = pts, delay = m.delay / sp, stagger = m.stagger / sp, finalAt = m.finalAt / sp, finalRadius = m.finalRadius, style = style })
+		-- 처음에 둘레의 적을 가운데로 끌어당긴다
+		for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+			pullTo(o, center, 60)
+		end
+		for i, p in ipairs(pts) do
+			after(m.delay + (i - 1) * m.stagger, function()
+				for _, o in ipairs(hostilesNear(f, p, m.strikeRadius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "subspace" then
 		-- 아공간: 그 자리에 바깥과 끊긴 공간을 연다. 안의 적은 빠져나가지 못하고 (가장자리에서 끌려 들어온다), 사방에서 베인다
 		local center = f.root.Position

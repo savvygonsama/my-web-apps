@@ -61,6 +61,8 @@ type Profile = {
 	pvpOff: boolean?, -- 들판 PvP 끔
 	mounts: { [string]: boolean }, -- 가진 탈것
 	mountSel: string, -- 고른 탈것
+	skyGems: number, -- 천정 (천상계 화폐)
+	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
 }
 
 local function defaultProfile(): Profile
@@ -91,6 +93,8 @@ local function defaultProfile(): Profile
 		seen = {},
 		mounts = { horse = true },
 		mountSel = "horse",
+		skyGems = 0,
+		skyBuffUntil = 0,
 	}
 end
 
@@ -181,6 +185,8 @@ local function sanitize(data: any): Profile
 		return Config.MOUNT_BY_ID[k] ~= nil
 	end)
 	p.mounts.horse = true
+	p.skyGems = math.floor(num(data.skyGems, 1e9))
+	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
@@ -436,6 +442,8 @@ local function pushState(player: Player)
 		pvpOff = p.pvpOff == true,
 		mounts = p.mounts,
 		mountSel = p.mountSel,
+		skyGems = p.skyGems,
+		skyBuffLeft = math.max(0, p.skyBuffUntil - os.time()),
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -520,7 +528,7 @@ local function refreshFighter(player: Player)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
@@ -954,6 +962,13 @@ Combat.init(Push, {
 				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
+				-- 천상계의 적은 천정을 떨어뜨린다
+				local gems = 0
+				if f.root.Position.Y > Config.SKY.y - 300 then
+					local G = Config.SKY_GEMS
+					gems = f.meteor and G.meteor or (isBoss and G.boss or (f.npc.elite and G.elite or G.enemy))
+					p.skyGems += gems
+				end
 				p.kills += 1
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
@@ -969,7 +984,7 @@ Combat.init(Push, {
 				end
 				addMastery(killer, p, xp)
 				states[killer].dirty = true
-				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss })
+				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss, gems = gems })
 				updateTag(killer)
 				pushState(killer)
 			end
@@ -2191,6 +2206,11 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testPvpUnlock" then
 		p.pvpUnlocked = true
 		toast(player, "⚔ PvP 끄기를 열었어요")
+	elseif action == "testGems" then
+		p.skyGems += 1000
+		toast(player, "💠 천정 +1000")
+	elseif action == "testMeteor" then
+		_G.KwonMeteorNow = true
 	elseif action == "testSky" then
 		-- 천상계로 바로 (경지와 상관없이)
 		if f then
@@ -2324,6 +2344,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.trials.yeonggeop = nil :: any
 			p.styles.musang = nil :: any
 			p.styles.agong = nil :: any
+			p.styles.seongha = nil :: any
+			p.trials.seongha = nil :: any
 			p.trials.agong = nil :: any
 			p.styles.hyeolma2 = nil :: any
 			p.styles.cheonryong2 = nil :: any
@@ -2482,6 +2504,47 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if f and f.model:GetAttribute("Mount") then
 			Combat.mount(f, m.id)
 		end
+		pushState(player)
+	elseif action == "skyBuy" then
+		-- 천상 상점 (천정으로)
+		local it = type(a1) == "string" and Config.SKY_SHOP_BY_ID[a1]
+		if not it then
+			return
+		end
+		if it.id == "cloudmount" and p.mounts.cloud then
+			toast(player, "☁ 이미 날개구름이 있어요")
+			return
+		end
+		if p.skyGems < it.cost then
+			toast(player, string.format("💠 천정이 부족해요 (%d 필요)", it.cost))
+			return
+		end
+		p.skyGems -= it.cost
+		if it.id == "skyscroll" then
+			p.scrolls += 1
+		elseif it.id == "skyscroll10" then
+			p.scrolls += 10
+		elseif it.id == "skyelixir" then
+			p.skyBuffUntil = math.max(os.time(), p.skyBuffUntil) + 600
+			task.delay(601, function()
+				if player.Parent then
+					refreshFighter(player)
+					pushState(player)
+				end
+			end)
+		elseif it.id == "skypill" then
+			for _, sd in ipairs(Config.Stats) do
+				p.stats[sd.id] += 800
+			end
+			Story.check(player)
+		elseif it.id == "cloudmount" then
+			p.mounts.cloud = true
+			p.mountSel = "cloud"
+		end
+		st.dirty = true
+		refreshFighter(player)
+		updateTag(player)
+		toast(player, it.icon .. " " .. it.name .. "을(를) 샀어요")
 		pushState(player)
 	elseif action == "pvpToggle" then
 		-- 들판 PvP 켜기·끄기 (한 번 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
@@ -2778,6 +2841,70 @@ task.spawn(function()
 		task.wait(60)
 	end
 end)
+-- 천상 상점·객잔
+if W.skyShop then
+	W.skyShop.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "skyshop" })
+	end)
+end
+if W.skyInn then
+	W.skyInn.Triggered:Connect(function(player: Player)
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead then
+			f.hp = f.maxHp
+			f.posture = 0
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f)
+		end
+		toast(player, "🛏 구름 이불에서 쉬었다. 체력과 내공이 가득 찼다")
+	end)
+end
+
+-- 운석 낙하: 천상계에 사람이 있으면 몇 분마다, 천궁이 아닌 섬 어딘가에 운석이 떨어지고 운석 수호수가 나타난다
+task.spawn(function()
+	local M = Config.METEOR
+	local nextAt = os.clock() + M.first
+	while true do
+		task.wait(1)
+		local skyPlayers = {}
+		for player in pairs(profiles) do
+			local f = Combat.fighterOfPlayer(player)
+			if f and f.root.Position.Y > Config.SKY.y - 300 then
+				table.insert(skyPlayers, player)
+			end
+		end
+		if (os.clock() >= nextAt or _G.KwonMeteorNow) and #skyPlayers > 0 then
+			_G.KwonMeteorNow = nil
+			nextAt = os.clock() + M.every
+			local choices = {}
+			for _, isl in ipairs(Config.SKY.islands) do
+				if not isl.safe and not isl.hidden then
+					table.insert(choices, isl)
+				end
+			end
+			local isl = choices[math.random(#choices)]
+			local a, r = math.random() * math.pi * 2, isl.radius * 0.5 * math.random()
+			local at = isl.at + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+			for _, player in ipairs(skyPlayers) do
+				Push:FireClient(player, "meteor", { at = at, warn = M.warn, island = isl.name })
+			end
+			task.delay(M.warn, function()
+				local ok, e = pcall(Npc.spawn, "meteorguard", false, at, "summon")
+				if ok and e then
+					local ef = e.f :: any
+					ef.meteor = true
+					ef.model:SetAttribute("Label", "☄ 운석 수호수")
+					task.delay(M.life, function()
+						if not ef.dead and ef.model.Parent then
+							Npc.despawn(ef)
+						end
+					end)
+				end
+			end)
+		end
+	end
+end)
+
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]

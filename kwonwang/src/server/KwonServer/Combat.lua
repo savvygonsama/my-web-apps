@@ -687,6 +687,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		heavy = heavy,
 		crit = crit,
 		style = att.style,
+		skill = opt.isSkill == true,
 		strike = move.strike == true,
 		pose = move.pose,
 		broken = wasBroken,

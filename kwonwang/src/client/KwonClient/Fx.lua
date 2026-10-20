@@ -444,6 +444,30 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(shard, 0.55)
 		end
 		Fx.ring(pos, c, 1, 11 * s, 0.35, dir)
+	elseif style.fx == "cloud" then
+		-- 운류: 맞은 자리에서 흰 구름이 뭉게뭉게 피었다 흩어진다
+		for _ = 1, heavy and 7 or 4 do
+			local size = (1.2 + math.random() * 1.4) * s
+			local puff = piece(Vector3.new(size, size, size), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.15)
+			puff.Position = pos + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2 * s
+			tween(puff, 0.45, { Size = puff.Size * 2, Position = puff.Position + Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5) * 4 * s, Transparency = 1 })
+			Debris:AddItem(puff, 0.5)
+		end
+		Fx.ring(pos, c, 1, (heavy and 11 or 7) * s, 0.3, dir)
+	elseif style.fx == "galaxy" then
+		-- 성하: 별빛이 흩어지고 금빛 별 하나가 반짝인다
+		local star = piece(Vector3.new(0.3, 0.3, 0.3), c2, Enum.Material.Neon, nil, 0)
+		star.CFrame = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1))) * CFrame.Angles(0, 0, math.rad(45))
+		tween(star, 0.12, { Size = Vector3.new(0.4, 0.4, 0.4) * 8 * s })
+		task.delay(0.12, function()
+			if star.Parent then
+				tween(star, 0.2, { Transparency = 1, Size = Vector3.new(0.1, 0.1, 0.1) })
+			end
+		end)
+		Debris:AddItem(star, 0.35)
+		Fx.burst("glitter", pos, c2, heavy and 18 or 10, 1.2 * s)
+		Fx.ring(pos, c, 1, (heavy and 13 or 9) * s, 0.3, dir)
+		Fx.flash(pos, c2, 16 * s, 3, 0.25)
 	elseif style.fx == "subspace" then
 		-- 아공: 맞은 자리의 공간이 접힌다 (유리 조각 넷이 안으로 모였다 튀고, 민트빛 십자)
 		for k = 0, 3 do
@@ -1264,6 +1288,17 @@ local function flourish(style: any, r: BasePart, heavy: boolean)
 		if heavy then
 			Fx.ring(base + look * 5, c, 1, 12, 0.3, look)
 		end
+	elseif kind == "cloud" then
+		-- 운류: 손바닥 앞으로 구름 한 덩이가 밀려 나간다
+		local puff = piece(Vector3.new(1.6, 1.6, 1.6) * s, Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.2)
+		puff.Position = base + look * 2
+		tween(puff, 0.3, { Position = base + look * (6 * s), Size = puff.Size * 1.8, Transparency = 1 })
+		Debris:AddItem(puff, 0.32)
+	elseif kind == "galaxy" then
+		-- 성하: 주먹 끝에서 별 꼬리가 뻗는다
+		streak(base + look * 1.5, base + look * (7 * s), c2, 0.25, 0.16)
+		streak(base + look * 1.5 + up * 0.25, base + look * (5.5 * s), c, 0.12, 0.2)
+		Fx.burst("glitter", base + look * 4, c2, heavy and 8 or 3, 0.8)
 	elseif kind == "subspace" then
 		-- 아공: 손끝 앞의 공간이 접히며 민트빛 금이 간다
 		streak(base + look * 1.5, base + look * (6.5 * s), c2, 0.2, 0.14)
@@ -1377,6 +1412,8 @@ local HAND_FX = {
 	fire = { tex = "rbxasset://textures/particles/fire_main.dds", speed = 2.5, life = 0.5, size = 0.6 },
 	duel = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 3, life = 0.35, size = 0.4 },
 	subspace = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 0.8, life = 1.2, size = 0.35 },
+	cloud = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.8, size = 0.5 },
+	galaxy = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.6, life = 1.0, size = 0.4 },
 }
 function Fx.styleHands(model: Model, styleId: any, tier: number)
 	for _, d in ipairs(model:GetDescendants()) do
@@ -1527,6 +1564,28 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
 	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
 	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
+	-- E·R: 두 손에 기가 모인다 (빛 구슬이 부풀었다 터지고, 둘레에서 빛줄기가 손으로 빨려 든다)
+	if slot == "E" or slot == "R" then
+		for _, hn in ipairs({ "RightHand", "LeftHand" }) do
+			local hand = model:FindFirstChild(hn)
+			if hand and hand:IsA("BasePart") then
+				local orb = piece(Vector3.new(0.4, 0.4, 0.4), c2, Enum.Material.Neon, Enum.PartType.Ball, 0)
+				orb.Position = hand.Position
+				tween(orb, 0.16, { Size = Vector3.new(1.8, 1.8, 1.8) })
+				task.delay(0.16, function()
+					if orb.Parent then
+						tween(orb, 0.14, { Size = Vector3.new(3.2, 3.2, 3.2), Transparency = 1 })
+					end
+				end)
+				Debris:AddItem(orb, 0.32)
+				for k = 0, 3 do
+					local a = k / 4 * math.pi * 2 + math.random()
+					local from = hand.Position + Vector3.new(math.cos(a) * 3.5, math.random() * 2 - 0.5, math.sin(a) * 3.5)
+					streak(from, hand.Position, k % 2 == 0 and c or c2, 0.15, 0.14)
+				end
+			end
+		end
+	end
 	-- E·R: 기술이 나가는 순간 앞으로 뻗는 두 겹 기운의 초승달 (기술마다 같은 틀, 권법 빛깔로)
 	if slot == "E" or slot == "R" then
 		task.delay(math.min(0.22, dur * 0.3), function()
@@ -2158,6 +2217,25 @@ function Fx.mech(data: any)
 		if kind == "drop" or kind == "wave" or kind == "launch" then
 			Fx.burst("dust", data.at - Vector3.new(0, 2, 0), Color3.fromRGB(175, 160, 140), 14, math.clamp((data.radius or 8) / 10, 0.8, 2))
 		end
+		-- 땅이 갈라진다: 닿은 자리에서 사방으로 뻗는 금과 튀어 오르는 돌 조각
+		local g = data.at - Vector3.new(0, 2.35, 0)
+		for k = 0, 6 do
+			local a = k / 7 * math.pi * 2 + math.random() * 0.4
+			local len = rad * (0.6 + math.random() * 0.5)
+			local crack = piece(Vector3.new(0.35, 0.12, len), Color3.fromRGB(35, 28, 25), Enum.Material.SmoothPlastic, nil, 0.1)
+			crack.CFrame = CFrame.new(g) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -len / 2)
+			local glowLine = piece(Vector3.new(0.12, 0.14, len * 0.9), c, Enum.Material.Neon, nil, 0.2)
+			glowLine.CFrame = crack.CFrame * CFrame.new(0, 0.02, 0)
+			task.delay(0.6, function()
+				if crack.Parent then
+					tween(crack, 0.5, { Transparency = 1 })
+					tween(glowLine, 0.3, { Transparency = 1 })
+				end
+			end)
+			Debris:AddItem(crack, 1.2)
+			Debris:AddItem(glowLine, 1)
+		end
+		Fx.debris(g + Vector3.new(0, 0.5, 0), math.clamp(math.floor(rad / 2), 4, 10), 16, Color3.fromRGB(110, 100, 90))
 	end
 	if kind == "zone" then
 		local at, r, dur = data.at, data.radius, data.dur

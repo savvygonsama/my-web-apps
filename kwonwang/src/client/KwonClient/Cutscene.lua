@@ -259,6 +259,7 @@ function Cutscene.controls(onDone: (() -> ())?)
 		{ "E · R · G 버튼", "기술 · 오의" },
 		{ "🛡 버튼", "막기. 맞기 직전에 누르면 흘리기" },
 		{ "회피 버튼", "구르며 피하기 (잠깐 무적)" },
+		{ "🐎 버튼", "탈것 타기·내리기" },
 		{ "말 걸기", "사람·수련터·상점 가까이에서 뜨는 버튼" },
 	} or {
 		{ "마우스 왼쪽", "연타 (네 번 이으면 마무리 일격)" },
@@ -269,6 +270,7 @@ function Cutscene.controls(onDone: (() -> ())?)
 		{ "Space 두 번", "이단 뛰기" },
 		{ "T", "말 걸기 · 수련 · 상점" },
 		{ "Tab / M / H", "능력치 / 지도 / 회복약" },
+		{ "V", "탈것 타기·내리기" },
 		{ "마우스 오른쪽 끌기", "시점 돌리기" },
 	}
 	local list = frame({ BackgroundTransparency = 1, Position = UDim2.new(0, 24, 0, 56), Size = UDim2.new(1, -48, 1, -120), Parent = panel })

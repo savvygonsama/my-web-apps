@@ -1888,6 +1888,112 @@ function H.eruption(data: any)
 	end)
 end
 
+-- 성하 성하강림: 하늘이 짙푸르게 어두워지고, 머리 위에 세 팔 은하가 돌며 열린다.
+-- 별이 나선 순서대로 하나씩 떨어져 땅에 꽂히고, 마지막에 은하의 심장이 내려와 터진다
+function H.galaxy(data: any)
+	local c, c2 = styleColors(data.style)
+	local at: Vector3 = data.at
+	local ground = at - Vector3.new(0, 2.4, 0)
+	local R = data.radius or 32
+	local delay, stagger, finalAt = data.delay or 0.8, data.stagger or 0.09, data.finalAt or 3.3
+	local close = near(at, 160)
+	if close then
+		colorGrade(0.2, 0.3, -0.18, Color3.fromRGB(150, 165, 255), finalAt + 0.2)
+	end
+	local sky = at + Vector3.new(0, 42, 0)
+	local arms: { BasePart } = {}
+	local armInfo: { { a: number, r: number } } = {}
+	for arm = 0, 2 do
+		for k = 1, 16 do
+			local t = k / 16
+			local size = 2.6 - t * 1.6
+			local p = piece(Vector3.new(size, size, size), c:Lerp(c2, t), Enum.Material.Neon, Enum.PartType.Ball, 0.1 + t * 0.4)
+			p.Position = sky
+			table.insert(arms, p)
+			table.insert(armInfo, { a = arm * math.pi * 2 / 3 + t * 2.6, r = 3 + t * R * 0.9 })
+		end
+	end
+	local core = piece(Vector3.new(2, 2, 2), Color3.fromRGB(255, 250, 230), Enum.Material.Neon, Enum.PartType.Ball, 0)
+	core.Position = sky
+	tween(core, delay, { Size = Vector3.new(9, 9, 9) })
+	local halo = piece(Vector3.new(0.3, 2, 2), c2, Enum.Material.Neon, Enum.PartType.Cylinder, 0.5)
+	halo.CFrame = CFrame.new(sky) * CFrame.Angles(0, 0, math.rad(90))
+	tween(halo, delay, { Size = Vector3.new(0.3, R * 2.2, R * 2.2) })
+	Fx.text(at + Vector3.new(0, 12, 0), "성하강림", c2, 56, 1.6)
+	Fx.sound("heavy", 1, 0.45, at)
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local open = math.clamp(t / delay, 0, 1)
+		for i, p in ipairs(arms) do
+			local info = armInfo[i]
+			local a = info.a + t * 0.9
+			local r = info.r * open
+			p.Position = sky + Vector3.new(math.cos(a) * r, math.sin(a * 2 + t) * 1.2, math.sin(a) * r)
+		end
+		halo.CFrame = CFrame.new(sky) * CFrame.Angles(0, t * 0.6, math.rad(90))
+		if t > finalAt + 0.4 then
+			conn:Disconnect()
+		end
+	end)
+	-- 별이 하나씩 떨어진다
+	for i, p in ipairs(data.points or {}) do
+		task.delay(delay + (i - 1) * stagger, function()
+			local g = Vector3.new(p.X, ground.Y, p.Z)
+			local from = sky + Vector3.new((math.random() - 0.5) * 16, 0, (math.random() - 0.5) * 16)
+			local star = piece(Vector3.new(1.6, 1.6, 1.6), c2, Enum.Material.Neon, Enum.PartType.Ball, 0)
+			star.Position = from
+			tween(star, 0.18, { Position = g + Vector3.new(0, 1, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.18, function()
+				star:Destroy()
+				Fx.ring(g + Vector3.new(0, 0.3, 0), i % 2 == 0 and c or c2, 1, 14, 0.35)
+				Fx.burst("glitter", g + Vector3.new(0, 1, 0), c2, 8, 1)
+				if i % 3 == 0 and hooks.shake and close then
+					hooks.shake(0.5)
+				end
+			end)
+			local trail = piece(Vector3.new(0.4, 0.4, 0.4), c, Enum.Material.Neon, nil, 0.2)
+			local mid = (from + g) / 2
+			trail.CFrame = CFrame.lookAt(mid, g)
+			tween(trail, 0.18, { Size = Vector3.new(0.6, 0.6, (from - g).Magnitude) })
+			fade(trail, 0.18, 0.2)
+		end)
+	end
+	-- 은하의 심장이 내려와 터진다
+	task.delay(finalAt - 0.35, function()
+		tween(core, 0.35, { Position = ground + Vector3.new(0, 2, 0), Size = Vector3.new(5, 5, 5) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end)
+	task.delay(finalAt, function()
+		core:Destroy()
+		for _, p in ipairs(arms) do
+			tween(p, 0.3, { Transparency = 1, Position = p.Position + Vector3.new(0, 10, 0) })
+			Debris:AddItem(p, 0.35)
+		end
+		fade(halo, 0, 0.3)
+		local fr = data.finalRadius or 20
+		local nova = piece(Vector3.new(4, 4, 4), Color3.fromRGB(255, 250, 230), Enum.Material.Neon, Enum.PartType.Ball, 0)
+		nova.Position = ground
+		tween(nova, 0.45, { Size = Vector3.new(fr * 2.6, fr * 2.6, fr * 2.6), Transparency = 1, Color = c2 })
+		Debris:AddItem(nova, 0.5)
+		for k = 0, 2 do
+			task.delay(k * 0.07, function()
+				Fx.ring(ground + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and c2 or c, 4, fr * (2.4 + k * 0.5), 0.6)
+			end)
+		end
+		Fx.burst("glitter", at, c2, 60, 2.4)
+		Fx.flash(at, c2, 80, 9, 0.8)
+		if hooks.flash and close then
+			hooks.flash(Color3.fromRGB(255, 250, 230), 0.45)
+		end
+		if hooks.shake and close then
+			hooks.shake(3.2)
+			boom(at, 3.2)
+		end
+		Fx.sound("heavy", 1, 0.3, at)
+	end)
+end
+
 -- 아공 아공간: 그 자리에 바깥과 끊긴 공간이 열린다 (10초). 검보랏빛 막, 바닥의 빛 격자, 도는 세 고리,
 -- 떠다니는 유리 조각. 째깍일 때마다 공간이 베이고, 끝에 막이 오그라들며 터진다
 function H.subspace(data: any)

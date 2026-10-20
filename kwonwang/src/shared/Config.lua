@@ -800,6 +800,75 @@ table.insert(Config.Styles, {
 			mech = { kind = "subspace", radius = 26, dur = 10, every = 0.4, delay = 0.6, hit = hit(0, 0, 0, 13, 12, 0.3, 0), final = hit(0, 0, 0, 150, 170, 1.4, 30, 45) } },
 	},
 })
+-- 천상계의 권법 (약): 운류장 (천궁 정자의 운류자에게). 구름처럼 밀어내는 손바닥
+table.insert(Config.Styles, {
+	id = "unryu",
+	name = "운류장",
+	hanja = "雲流掌",
+	icon = "☁",
+	color = Color3.fromRGB(190, 220, 255),
+	color2 = Color3.fromRGB(255, 255, 255),
+	fx = "cloud",
+	grade = "상급",
+	desc = "구름이 흐르듯 손바닥을 밀어 적을 흩어 놓는다. 세지는 않지만 몸이 가볍고 빠져나가기 좋다.",
+	gimmick = "구름 걸음: 회피를 두 번 이어 쓰고, 흘리기 판정이 넓다. 손바닥은 적을 멀리 밀어낸다",
+	deflect = 0.34,
+	dashCharges = 2,
+	kbMult = 1.4,
+	stance = "stance_cloud",
+	combo = {
+		{ id = "ur1", name = "운수장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 10, 0.35, 10) } },
+		{ id = "ur2", name = "류수장", pose = "palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 10, 0.35, 10) } },
+		{ id = "ur3", name = "회운장", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5.5, 12, 14, 0.45, 18) } },
+		{ id = "ur4", name = "추운장", pose = "push_palm", dur = 0.46, lunge = 3, hits = { hit(0.24, 7, 5, 16, 20, 0.55, 32) } },
+	},
+	heavy = { id = "urH", name = "쌍운장", pose = "double_palm", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 5.5, 24, 34, 0.7, 50) } },
+	skills = {
+		E = { id = "urE", name = "운보", desc = "구름을 밟듯 앞으로 미끄러지며 지나가는 적을 친다 (무적)", pose = "dash_strike", dur = 0.45, cd = 6, chi = 15, lunge = 18, iframes = 0.35,
+			hits = { hit(0.14, 6, 5, 14, 14, 0.45, 26) } },
+		R = { id = "urR", name = "운해장", desc = "앞에 구름 소용돌이를 펼쳐 1초 동안 둘레의 적을 친다", pose = "push_palm", dur = 0.6, cd = 9, chi = 25,
+			mech = { kind = "zone", radius = 10, dist = 9, dur = 1.0, every = 0.2, delay = 0.15, hit = hit(0, 0, 0, 7, 9, 0.3, 12), fx = "cloud" } },
+		G = { id = "urG", name = "만리운해", desc = "발밑에서 구름 바다가 넓게 퍼져 2초 동안 둘레의 모든 적을 친다", pose = "ult_raise", dur = 1.4, cd = 28, chi = 100, armor = true,
+			mech = { kind = "zone", at = "self", radius = 18, dur = 2.0, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 12, 12, 0.35, 16), fx = "cloud" } },
+	},
+})
+-- 천상계의 권법 (강): 성하신권 (성운원 깊은 곳의 성하노군에게). 은하를 끌어내리는 주먹
+table.insert(Config.Styles, {
+	id = "seongha",
+	name = "성하신권",
+	hanja = "星河神拳",
+	icon = "🌠",
+	color = Color3.fromRGB(60, 80, 200),
+	color2 = Color3.fromRGB(255, 235, 170),
+	fx = "galaxy",
+	grade = "태초",
+	hidden = true,
+	secret = true,
+	realmReq = 15,
+	trialHp = 10,
+	unlockHint = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에서 별을 헤아리는 노인. 등선에 오른 자에게만 별의 길을 보여 준다",
+	desc = "별의 강을 주먹에 담았다. 주먹이 닿는 곳마다 별빛이 흩어지고, 오의를 펼치면 머리 위에 은하가 열려 별이 쏟아진다.",
+	gimmick = "성하: 균형을 1.5배로 깎고, 기술 대기 20% 짧다",
+	deflect = 0.28,
+	postureMult = 1.5,
+	cdMult = 0.8,
+	stance = "stance_galaxy",
+	combo = {
+		{ id = "sh1", name = "성권", pose = "star_punch_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4.5, 15, 14, 0.35, 8) } },
+		{ id = "sh2", name = "월권", pose = "star_punch_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 15, 14, 0.35, 8) } },
+		{ id = "sh3", name = "은하장", pose = "galaxy_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6.5, 5.5, 20, 24, 0.5, 20) } },
+		{ id = "sh4", name = "천성각", pose = "heaven_kick", dur = 0.46, lunge = 3, hits = { hit(0.24, 6.5, 5, 26, 30, 0.6, 12, 30) } },
+	},
+	heavy = { id = "shH", name = "유성추", pose = "meteor_drop", dur = 0.65, lunge = 4, hits = { hit(0.3, 8, 6, 40, 56, 0.85, 50) } },
+	skills = {
+		E = { id = "shE", name = "유성 돌진", desc = "유성처럼 꼬리를 끌며 돌진해 앞의 적을 꿰뚫는다 (무적)", pose = "lightning_dash", dur = 0.45, cd = 6, chi = 15, lunge = 26, iframes = 0.4,
+			hits = { hit(0.15, 6, 5.5, 28, 28, 0.5, 24) } },
+		R = { id = "shR", name = "은하 소용돌이", desc = "둘레에 별의 소용돌이를 일으켜 1.4초 동안 적을 빨아들이며 친다", pose = "void_circle", dur = 0.7, cd = 9, chi = 25,
+			mech = { kind = "zone", at = "self", radius = 13, dur = 1.4, every = 0.14, delay = 0.1, pull = 50, hit = hit(0, 0, 0, 9, 10, 0.3, 0), fx = "galaxy" } },
+		G = { id = "shG", name = "성하강림", desc = "머리 위에 은하가 열리고, 별이 나선을 그리며 스물네 번 쏟아진 뒤 한가운데에서 별이 터진다", pose = "ult_heaven", dur = 3.0, cd = 34, chi = 100, armor = true,
+			mech = { kind = "galaxy", radius = 32, delay = 0.8, count = 24, stagger = 0.09, strikeRadius = 7, hit = hit(0, 0, 0, 30, 30, 0.5, 10, 10), finalAt = 3.3, finalRadius = 20, final = hit(0, 0, 0, 160, 180, 1.5, 40, 50) } },
+	},
+})
 -- 중간: 풍신각 (풍신대의 풍백에게)
 table.insert(Config.Styles, {
 	id = "pungsin",
@@ -1078,6 +1147,8 @@ local FINISHERS = {
 	musang = { name = "무쌍승천권", pose = "uppercut" },
 	pungsin = { name = "풍신승천각", pose = "gale_double" },
 	agong = { name = "아공승천장", pose = "void_push" },
+	unryu = { name = "운류승천장", pose = "double_palm" },
+	seongha = { name = "성하승천권", pose = "star_punch_r" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1088,7 +1159,7 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000 }
+Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000, 500000, 500000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 Config.MASTERY_MAX = 10
@@ -1303,6 +1374,7 @@ E.thunderimp = variant(E.assassin, { name = "뇌령", shirt = Color3.fromRGB(150
 E.starspirit = variant(E.shadowblade, { name = "성령", shirt = Color3.fromRGB(120, 90, 200), pants = Color3.fromRGB(40, 30, 80), hp = 260, mult = 18, elite = true })
 E.starsage = variant(E.cultelder, { name = "성운 도사", shirt = Color3.fromRGB(70, 50, 140), pants = Color3.fromRGB(30, 20, 60), hp = 280, mult = 18, elite = true })
 E.throneguard = variant(E.ironguard, { name = "천위병", shirt = Color3.fromRGB(250, 235, 190), pants = Color3.fromRGB(180, 150, 80), hp = 380, mult = 20, elite = true, scale = 1.3 })
+E.meteorguard = variant(E.stonegolem, { name = "운석 수호수", shirt = Color3.fromRGB(90, 60, 120), pants = Color3.fromRGB(50, 30, 70), hp = 900, mult = 16, elite = true, scale = 1.8 })
 E.throneblade = variant(E.shadowblade, { name = "천위 검객", shirt = Color3.fromRGB(255, 245, 220), pants = Color3.fromRGB(150, 120, 60), hp = 300, mult = 20, elite = true })
 local B = Config.Bosses
 B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
@@ -1874,7 +1946,7 @@ Config.SKY = {
 	realm = 12, -- 천인합일부터 오를 수 있다
 	portal = Vector3.new(-90, 0, -205), -- 마을 안 천상 문
 	islands = {
-		{ id = "skytown", name = "천궁", at = Vector3.new(0, SY, 0), radius = 110, safe = true, ground = Color3.fromRGB(235, 232, 220), material = Enum.Material.Marble },
+		{ id = "skytown", name = "천궁", at = Vector3.new(0, SY, 0), radius = 200, safe = true, ground = Color3.fromRGB(235, 232, 220), material = Enum.Material.Marble },
 		{ id = "cloudplain", name = "운해 평원", at = Vector3.new(0, SY, 560), radius = 210, ground = Color3.fromRGB(220, 235, 225), material = Enum.Material.Grass,
 			camps = { { enemy = "cloudguard", count = 3, at = Vector3.new(-90, SY, 520) }, { enemy = "cranesword", count = 3, at = Vector3.new(90, SY, 600) }, { enemy = "cloudguard", count = 2, at = Vector3.new(0, SY, 700) } } },
 		{ id = "thunder", name = "뇌정봉", at = Vector3.new(620, SY, -160), radius = 190, ground = Color3.fromRGB(70, 78, 100), material = Enum.Material.Slate,
@@ -1910,6 +1982,27 @@ end
 -- 숨은 사부: 금 간 허공의 아공선인 (지도에 나오지 않는다)
 Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6, 640), region = "금 간 허공 (천상계)", regionId = "subspace", secret = true,
 	quote = "공간은 비어 있지 않다. 접혀 있을 뿐.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
+-- 천궁 정자의 운류자 (누구나 찾을 수 있다), 성운원 깊은 곳의 성하노군 (숨은 사부)
+Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
+	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
+Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
+	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
+
+-- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
+Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
+Config.SKY_SHOP = {
+	{ id = "skyscroll", name = "천상 두루마리", icon = "📜", cost = 40, desc = "심법 두루마리 하나" },
+	{ id = "skyscroll10", name = "천상 두루마리 묶음", icon = "📚", cost = 360, desc = "심법 두루마리 열 (한 번에 사면 싸다)" },
+	{ id = "skyelixir", name = "천상 영약", icon = "✨", cost = 30, desc = "10분 동안 주는 피해 +15%" },
+	{ id = "skypill", name = "천정단", icon = "💎", cost = 150, desc = "모든 능력치 +800" },
+	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것 (은자 대신 천정으로)" },
+}
+Config.SKY_SHOP_BY_ID = {}
+for _, it in ipairs(Config.SKY_SHOP) do
+	Config.SKY_SHOP_BY_ID[it.id] = it
+end
+-- 운석 낙하: 천상계에 사람이 있으면 몇 분마다 섬 어딘가에 운석이 떨어지고, 운석 수호수가 나타난다
+Config.METEOR = { every = 300, first = 90, warn = 6, life = 150 }
 -- 천상계의 보스 셋: 체력은 아주 많고 공격은 덜 아프다 (전투력은 땅의 마지막 보스보다 조금 위)
 Config.Bosses.noeje = variant(Config.Bosses.cheonmun, { name = "뇌제 · 뇌정봉의 주인", shirt = Color3.fromRGB(60, 70, 150), pants = Color3.fromRGB(25, 30, 70), hp = 450000, posture = 1200, scale = 3.0, speed = 15, coins = 120000, xp = 15000, respawn = 300, mult = 2.5,
 	patterns = {
