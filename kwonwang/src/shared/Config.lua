@@ -1867,18 +1867,18 @@ end
 -- kind: horse / tiger / cloud (모양), hip = 탄 사람을 이만큼 들어 올린다
 ------------------------------------------------------------------------
 Config.MOUNTS = {
-	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 1.55, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
-	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 1.75, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
-	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 1.9, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
-	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 2.4, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
-	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.1, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 가장 빠르다" },
+	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 2.0, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
+	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 2.25, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
+	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
+	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
+	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
 -- (탈것 모습은 사람보다 1.5~1.6배 크게 그린다. 발이 땅에 닿도록 맞춘 값)
-Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 4.2, dragon = 3.4 } -- 구름은 땅에서 떠 있도록 높게
+Config.MOUNT_HIP = { horse = 6.0, tiger = 5.0, cloud = 5.2, dragon = 5.6 } -- 1.2판: 모두 더 크게 (구름·용은 땅에서 떠 있도록 높게)
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -1933,7 +1933,7 @@ Config.Premium = {
 	{ id = "autoTrain2", gamepass = 0, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
 		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
 	{ id = "dragon", gamepass = 0, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
-		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×2.4)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
+		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {

@@ -1887,18 +1887,18 @@ end
 -- kind: horse / tiger / cloud (모양), hip = 탄 사람을 이만큼 들어 올린다
 ------------------------------------------------------------------------
 Config.MOUNTS = {
-	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 1.55, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
-	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 1.75, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
-	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 1.9, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
-	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 2.4, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
-	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.1, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 가장 빠르다" },
+	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 2.0, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
+	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 2.25, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
+	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
+	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
+	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
 	Config.MOUNT_BY_ID[m.id] = m
 end
 -- (탈것 모습은 사람보다 1.5~1.6배 크게 그린다. 발이 땅에 닿도록 맞춘 값)
-Config.MOUNT_HIP = { horse = 4.3, tiger = 3.5, cloud = 4.2, dragon = 3.4 } -- 구름은 땅에서 떠 있도록 높게
+Config.MOUNT_HIP = { horse = 6.0, tiger = 5.0, cloud = 5.2, dragon = 5.6 } -- 1.2판: 모두 더 크게 (구름·용은 땅에서 떠 있도록 높게)
 
 ------------------------------------------------------------------------
 -- 컷씬: 중요한 장면에서 한 번만 (who = 말하는 이, lines = 대사)
@@ -1953,7 +1953,7 @@ Config.Premium = {
 	{ id = "autoTrain2", gamepass = 0, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
 		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
 	{ id = "dragon", gamepass = 0, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
-		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×2.4)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
+		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {
@@ -19824,6 +19824,7 @@ type Rig = {
 	straps: { BasePart },
 	irons: { BasePart },
 	skip: number,
+	lastU: { [string]: number },
 }
 
 local rigs: { [Model]: Rig } = {}
@@ -20016,16 +20017,19 @@ local function buildHorse(rig: Rig)
 	for _, L in ipairs(HORSE.legs) do
 		buildLeg(rig, L, c, hoof, false)
 	end
-	-- 목 (세 마디): 굵게 시작해 머리 쪽으로 가늘어진다. 갈기는 오른쪽으로 흘러내린다
+	-- 목 (세 마디): 굵게 시작해 머리 쪽으로 가늘어진다
+	-- 갈기: 목덜미를 따라 이어지는 볏 한 줄과, 오른쪽 목에 붙어 흘러내리는 매끈한 털 한 장씩 (마디마다 하나, 같은 물결로 함께 흔들린다)
 	local neckSize = { V(1.15, 2.1, 1.6), V(1.0, 1.75, 1.5), V(0.9, 1.4, 1.4) }
 	local neckY = { -0.45, -0.35, -0.25 }
 	for i = 1, 3 do
-		add(rig, "n" .. i, "ell", neckSize[i], CF(0, neckY[i], -0.47), c)
-		add(rig, "n" .. i, "ell", V(0.2, 0.38, 0.5), CF(0, neckY[i] + neckSize[i].Y / 2 - 0.05, -0.45), mane)
-		for j = 0, 2 do
-			local e = add(rig, "n" .. i, "ell", V(0.15, 0.95, 0.42), CF(0.33, neckY[i] + neckSize[i].Y / 2 - 0.45, -0.12 - j * 0.32) * ANG(0.15, 0, 0.55), mane)
-			wave(e, 3, 0.05, 7 + j, i + j * 1.7, 0.16)
-		end
+		local ns = neckSize[i]
+		add(rig, "n" .. i, "ell", ns, CF(0, neckY[i], -0.47), c)
+		local top = neckY[i] + ns.Y / 2
+		add(rig, "n" .. i, "ell", V(0.26, 0.34, 1.12), CF(0, top - 0.04, -0.47), mane)
+		local dy = 0.55
+		local hw = ns.X / 2 * math.sqrt(math.max(0.05, 1 - (dy / (ns.Y / 2)) ^ 2))
+		local drape = add(rig, "n" .. i, "ell", V(0.12, 1.2 - i * 0.08, 1.12), CF(hw - 0.03, top - dy - 0.1, -0.47) * ANG(0, 0, 0.32), mane)
+		wave(drape, 3, 0.025, 6, -i * 0.8, 0.09)
 	end
 	-- 머리 (뼈는 정수리, -Z가 코끝)
 	add(rig, "head", "ell", V(0.95, 1.05, 1.3), CF(0, -0.15, -0.35), c)
@@ -20155,28 +20159,40 @@ local function buildTiger(rig: Rig)
 			end
 		end
 	end
-	-- 머리 (-Z가 앞)
+	-- 머리 (-Z가 앞): 콧등이 곧게 내려와 넓적한 주둥이로, 눈꼬리가 올라간 매서운 눈과 찌푸린 눈썹, 드러난 송곳니
 	add(rig, "head", "ell", V(1.75, 1.5, 1.55), CF(0, 0, 0), c)
-	for _, x in ipairs({ -0.25, 0, 0.25 }) do
-		add(rig, "head", "ell", V(0.12, 0.06, 0.6), CF(x, 0.72, -0.15), stripe)
-	end
-	add(rig, "head", "ell", V(1.1, 0.72, 0.9), CF(0, -0.38, -0.7), white)
-	add(rig, "head", "ell", V(0.42, 0.26, 0.28), CF(0, -0.14, -1.12), Color3.fromRGB(200, 120, 125))
-	add(rig, "head", "ell", V(0.65, 0.35, 0.6), CF(0, -0.75, -0.5), white)
-	add(rig, "head", "block", V(0.6, 0.05, 0.25), CF(0, -0.58, -1.0), DARK)
+	add(rig, "head", "ell", V(0.55, 0.42, 1.0), CF(0, 0.08, -0.62), c)
+	add(rig, "head", "ell", V(0.1, 0.08, 0.75), CF(0, 0.73, -0.1), stripe)
 	for _, s in ipairs({ -1, 1 }) do
-		add(rig, "head", "ell", V(0.75, 0.95, 0.95), CF(s * 0.72, -0.3, -0.15), white)
-		add(rig, "head", "ell", V(0.08, 0.35, 0.5), CF(s * 1.06, -0.18, -0.15) * ANG(0, 0, s * 0.3), stripe)
-		add(rig, "head", "ell", V(0.08, 0.3, 0.45), CF(s * 1.04, -0.5, -0.12) * ANG(0, 0, s * 0.2), stripe)
-		add(rig, "head", "ell", V(0.3, 0.17, 0.1), CF(s * 0.42, 0.15, -0.72) * ANG(0, 0, s * 0.2), Color3.fromRGB(90, 200, 255), Enum.Material.Neon)
-		add(rig, "head", "ell", V(0.42, 0.07, 0.1), CF(s * 0.42, 0.32, -0.7) * ANG(0, 0, -s * 0.3), stripe)
+		add(rig, "head", "ell", V(0.09, 0.07, 0.55), CF(s * 0.3, 0.67, -0.18) * ANG(0, -s * 0.35, 0), stripe)
+		add(rig, "head", "ell", V(0.08, 0.06, 0.4), CF(s * 0.52, 0.58, -0.05) * ANG(0, -s * 0.5, s * 0.3), stripe)
+	end
+	add(rig, "head", "ell", V(0.4, 0.22, 0.26), CF(0, -0.06, -1.12), Color3.fromRGB(130, 70, 78))
+	add(rig, "head", "ell", V(0.62, 0.34, 0.55), CF(0, -0.66, -0.62), white)
+	add(rig, "head", "ell", V(0.62, 0.14, 0.45), CF(0, -0.55, -0.88), DARK)
+	for _, s in ipairs({ -1, 1 }) do
+		-- 주둥이의 두 볼록한 수염 자리, 송곳니, 수염
+		add(rig, "head", "ell", V(0.6, 0.52, 0.62), CF(s * 0.25, -0.32, -0.85), white)
+		add(rig, "head", "ell", V(0.09, 0.28, 0.09), CF(s * 0.2, -0.6, -1.02), WHITE)
 		for j = 0, 2 do
-			add(rig, "head", "block", V(0.03, 0.03, 0.9), CF(s * 0.98, -0.4 + j * 0.08, -0.82) * ANG(j * 0.08, s * 1.25, 0), WHITE)
+			add(rig, "head", "block", V(0.03, 0.03, 0.95), CF(s * 0.88, -0.36 + j * 0.07, -0.85) * ANG(j * 0.1 - 0.1, s * 1.3, 0), WHITE)
 		end
+		-- 볼의 흰 털과 줄무늬 (뒤로 뻗는다)
+		add(rig, "head", "ell", V(0.55, 0.85, 0.8), CF(s * 0.78, -0.32, 0.05) * ANG(0, 0, s * 0.25), white)
+		add(rig, "head", "ell", V(0.07, 0.32, 0.45), CF(s * 1.04, -0.25, 0.05) * ANG(0, 0, s * 0.3), stripe)
+		add(rig, "head", "ell", V(0.07, 0.26, 0.4), CF(s * 1.0, -0.55, 0.08) * ANG(0, 0, s * 0.15), stripe)
+		-- 눈: 짙은 눈두덩 위에 빛나는 얼음빛 눈동자, 세로로 가는 동공. 눈꼬리는 바깥으로 올라가고 눈썹은 안쪽으로 내려온다
+		local eye = CF(s * 0.42, 0.2, -0.68) * ANG(0, s * 0.35, s * 0.3)
+		add(rig, "head", "ell", V(0.46, 0.22, 0.12), eye, stripe)
+		add(rig, "head", "ell", V(0.3, 0.15, 0.08), eye * CF(0, 0, -0.05), Color3.fromRGB(140, 220, 255), Enum.Material.Neon)
+		add(rig, "head", "ell", V(0.05, 0.14, 0.05), eye * CF(0, 0, -0.09), DARK)
+		add(rig, "head", "ell", V(0.48, 0.09, 0.12), CF(s * 0.42, 0.36, -0.66) * ANG(0, s * 0.35, s * 0.45), stripe)
 	end
 	for _, ear in ipairs({ "earL", "earR" }) do
 		add(rig, ear, "ell", V(0.5, 0.5, 0.2), CF(0, 0.2, 0), c)
-		add(rig, ear, "ell", V(0.28, 0.3, 0.08), CF(0, 0.2, -0.08), stripe)
+		add(rig, ear, "ell", V(0.28, 0.3, 0.08), CF(0, 0.2, -0.08), WHITE)
+		add(rig, ear, "ell", V(0.44, 0.44, 0.06), CF(0, 0.2, 0.09), stripe)
+		add(rig, ear, "ell", V(0.16, 0.16, 0.04), CF(0, 0.22, 0.12), WHITE)
 	end
 	-- 꼬리 (아홉 마디): 뒤로 뻗었다가 끝이 위로 말린다. 마디마다 검은 고리
 	for i = 1, 9 do
@@ -20219,6 +20235,8 @@ local function updateQuad(rig: Rig, yawCF: CFrame, groundLocal: number, t: numbe
 	bones.front = yawCF * frontLocal
 	bones.rear = yawCF * rearLocal
 	-- 다리: 땅에 닿아 있는 동안 발은 제자리 (몸이 지나간다), 떨어진 동안 앞으로 들어 옮긴다
+	local cam = workspace.CurrentCamera
+	local dustNear = cam ~= nil and (cam.CFrame.Position - yawCF.Position).Magnitude < 120
 	local duty = lerp(Q.dutyWalk, Q.dutyRun, run)
 	local travel = math.min(speed * duty / freq, Q.maxTravel * k)
 	local lift = lerp(Q.liftWalk, Q.liftRun, run) * k
@@ -20228,6 +20246,12 @@ local function updateQuad(rig: Rig, yawCF: CFrame, groundLocal: number, t: numbe
 		local rest = L.hz * k
 		local off = lerp(Q.walkOff[L.n], Q.runOff[L.n], run)
 		local u = (rig.phase + off) % 1
+		-- 달릴 때 발이 땅을 박차는 순간 흙먼지
+		local prevU = rig.lastU[L.n]
+		rig.lastU[L.n] = u
+		if prevU and u < prevU and run > 0.35 and dustNear then
+			Fx.burst("smoke", yawCF * V(hip.X, groundLocal + 0.3, rest + travel * 0.5), Color3.fromRGB(205, 190, 165), 2, 0.55 * k)
+		end
 		local z, y, curl
 		if u < duty then
 			z = rest + travel * (u / duty - 0.5)
@@ -20337,7 +20361,7 @@ end
 ------------------------------------------------------------------------
 -- 청룡: 열여덟 마디. 머리가 지나간 길을 몸이 그대로 따라 흐른다
 ------------------------------------------------------------------------
-local DRAGON = { B = 5.25, N = 18, gap = 1.05 }
+local DRAGON = { B = 4.8, N = 22, gap = 1.05, legs = { 5, 14 } } -- B가 작을수록 크게 (몸 굵기·길이·머리 모두)
 local function segW(i: number): number
 	if i < 3 then
 		return 1.7 + 0.15 * i
@@ -20366,8 +20390,8 @@ local function buildDragon(rig: Rig)
 	for j = -1, 1 do
 		wave(add(rig, "s" .. (DRAGON.N - 1), "ell", V(0.1, 1.5, 0.9), CF(0, 0, 0.9) * ANG(0.5 + j * 0.5, 0, 0), gold, Enum.Material.Metal), 3, 0.15, 3, j, 0.15)
 	end
-	-- 다리 넷 (마디 4와 12)
-	for _, si in ipairs({ 4, 12 }) do
+	-- 다리 넷
+	for _, si in ipairs(DRAGON.legs) do
 		local ls = segW(si) / 2
 		for _, side in ipairs({ "L", "R" }) do
 			local u = "d" .. si .. side .. "u"
@@ -20418,6 +20442,13 @@ local function buildDragon(rig: Rig)
 	emitter(pearl, TEX_SPARK, gold, 0.35, 16, 0.9, 1.5, 180)
 	local glowHolder = add(rig, "head", "ball", V(0.1, 0.1, 0.1), CF(0, 0.2, -0.4), gold, Enum.Material.Neon, 1).p
 	emitter(glowHolder, TEX_SPARK, gold, 0.4, 22, 1.3, 1.2, 180)
+	-- 몸 아래로 흩어지는 구름 (하늘을 나는 용)
+	for _, si in ipairs({ 6, 12, 18 }) do
+		local holder = add(rig, "s" .. si, "ball", V(0.1, 0.1, 0.1), CF(0, -segW(si) * 0.4, 0), WHITE, nil, 1).p
+		local mist = emitter(holder, TEX_SMOKE, Color3.fromRGB(240, 245, 255), 3.2, 7, 1.8, 0.6, 50)
+		mist.Transparency = NumberSequence.new(0.55, 1)
+		mist.LightEmission = 0.15
+	end
 end
 
 -- 지나온 길 (머리 쪽이 1번). 너무 멀리 뛰면 (순간이동) 새로 시작한다
@@ -20501,7 +20532,7 @@ local function build(model: Model, id: string)
 		kind = m.kind,
 		m = m,
 		model = model,
-		k = math.clamp(back / Q.B, 0.75, 1.4),
+		k = math.clamp(back / Q.B, 0.75, 1.8),
 		Q = Q,
 		parts = {},
 		bones = {},
@@ -20519,6 +20550,7 @@ local function build(model: Model, id: string)
 		straps = {},
 		irons = {},
 		skip = 0,
+		lastU = {},
 	}
 	if m.kind == "cloud" then
 		buildCloud(rig)
@@ -20591,7 +20623,7 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 	rig.move += ((speed > 1.2 and 1 or 0) - rig.move) * math.min(1, dt * 5)
 	rig.run += (math.clamp((speed - 9) / 12, 0, 1) - rig.run) * math.min(1, dt * 3)
 	rig.bank += (math.clamp(rig.yawRate * 0.07, -0.3, 0.3) * (0.25 + 0.75 * rig.move) - rig.bank) * math.min(1, dt * 6)
-	local freq = 0.75 + speed * 0.062
+	local freq = (0.75 + speed * 0.062) / math.sqrt(k) -- 큰 짐승일수록 보폭이 길고 걸음이 느긋하다
 	rig.phase = (rig.phase + dt * freq) % 1
 	local pos = root.Position
 	local rootBottom = pos.Y - root.Size.Y / 2
@@ -20633,6 +20665,12 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 				right = V(1, 0, 0)
 			end
 			local calm = i <= 2 and 0 or 1
+			-- 탄 사람 아래의 앞 마디는 곧게 (돌 때 몸이 사람에게서 비껴 나지 않게)
+			local rigid = math.clamp((4 - i) / 2, 0, 1)
+			if rigid > 0 then
+				local line = V(anchor.X, here.Y, anchor.Z) - flat * i * gap
+				here = here:Lerp(line, rigid)
+			end
 			local lat = math.sin(t * 2.4 - i * 0.5) * k * math.max(0, i - 2) / (N - 3) * (0.6 + 0.6 * rig.move) * 1.1
 			local vert = math.sin(t * 1.7 - i * 0.42) * k * (0.15 + 0.55 * w) * (1 - 0.4 * rig.move) * calm
 			pts[i + 1] = here + right.Unit * lat * calm + up * vert
@@ -20646,7 +20684,7 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 			bones["s" .. i] = CFrame.lookAt(here, ahead)
 		end
 		-- 다리: 헤엄치듯 천천히 젓는다
-		for _, si in ipairs({ 4, 12 }) do
+		for _, si in ipairs(DRAGON.legs) do
 			local seg = bones["s" .. si]
 			local w = segW(si)
 			local ls = w / 2
