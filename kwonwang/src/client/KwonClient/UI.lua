@@ -995,6 +995,12 @@ end
 
 local function buildHelp()
 	local page = makePage("help")
+	-- 처음 조작법 안내를 다시 본다
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 200, 0, 40), Text = "🎮 조작법 다시 보기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(170, 120, 40), ZIndex = 3, Parent = page }, function()
+		window.Visible = false
+		local Cutscene = require(script.Parent:WaitForChild("Cutscene")) :: any
+		Cutscene.controls(nil)
+	end)
 	local scroll = scroller(page, UDim2.fromScale(1, 1))
 	text({
 		Size = UDim2.new(1, -14, 0, 0),
@@ -1155,7 +1161,7 @@ local function buildTest()
 	})
 	-- 수련 자리로 바로 (종류마다 첫 자리)
 	local trainItems = {}
-	for _, id in ipairs({ "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma" }) do
+	for _, id in ipairs({ "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma", "geumjong", "cheongeun", "jucheon", "heogong", "cheonsang" }) do
 		local t = Config.Training[id]
 		if t then
 			table.insert(trainItems, { "🌀 " .. t.icon .. " " .. t.name, "testTrainTp", id })
@@ -1294,6 +1300,8 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
 	trainGuide.Text = "📘 " .. (TRAIN_GUIDE[kind] or info.desc)
+	-- 상급 수련은 앞의 수련과 같은 판정 화면을 쓴다
+	kind = info.ui or kind
 	if kind == "bamboo" then
 		-- 다음 고리를 화살표로
 		local arrow = text({ Size = UDim2.fromScale(1, 1), TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Color3.fromRGB(190, 255, 150), Parent = trainArea })

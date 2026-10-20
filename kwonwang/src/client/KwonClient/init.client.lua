@@ -1614,7 +1614,9 @@ function handlers.heal(m: Model)
 	end
 end
 
-function handlers.trainPose(m: Model, kind: string?)
+function handlers.trainPose(m: Model, kind0: string?)
+	local ti = kind0 and Config.Training[kind0]
+	local kind = ti and ti.ui or kind0
 	if kind == "waterfall" or kind == "breathing" then
 		Anim.setLoop(m, "meditate", 2)
 	elseif kind == "mabo" then

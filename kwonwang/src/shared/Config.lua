@@ -138,6 +138,12 @@ Config.Training = {
 	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
 	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
+	-- 상급 수련 (상급 수련장, 천궁): 판정은 앞의 수련과 같고 (ui = 같은 화면), 한 번에 오르는 양이 크다. 조금 더 빠르다
+	geumjong = { name = "금종조 수련", stat = "vit", gains = { vit = 7, str = 2, agi = 2 }, icon = "🔔", desc = "큰 종 아래에서 버티세요 (마보 참장처럼 가운데에 붙잡기)", base = 1, realm = 6, ui = "mabo", advanced = true },
+	cheongeun = { name = "천근추 수련", stat = "str", gains = { str = 8, vit = 2 }, icon = "🏋", desc = "천 근 쇳덩이를 고리가 가장 작을 때 들어 올리세요", base = 1, realm = 7, ui = "rock", period = 1.3, advanced = true },
+	jucheon = { name = "주천 운기", stat = "chi", gains = { chi = 9, vit = 3, agi = 1 }, icon = "☯", desc = "기가 온몸을 크게 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 8, ui = "breathing", period = 1.35, advanced = true },
+	heogong = { name = "허공답보", stat = "agi", gains = { agi = 8, str = 2, vit = 1 }, icon = "🦶", desc = "떠 있는 디딤돌이 번쩍이는 순간 밟으세요 (빠르다)", base = 1, realm = 9, ui = "ironpalm", period = 1.15, advanced = true },
+	cheonsang = { name = "천상 수련", stat = "str", gains = { str = 6, vit = 6, agi = 6, chi = 6 }, icon = "🌤", desc = "천궁의 구름 연꽃 위에서 숨을 고르세요 (모든 능력치)", base = 1, realm = 12, ui = "breathing", period = 1.3, advanced = true },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
@@ -1492,6 +1498,7 @@ Config.Regions = {
 	{ id = "valley", name = "비류 폭포 계곡", center = Vector3.new(480, 0, 0), size = Vector3.new(480, 0, 440), ground = Color3.fromRGB(85, 120, 95), material = Enum.Material.Grass,
 		camps = { { enemy = "bandit", count = 3, at = Vector3.new(320, 0, 130) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, 120) }, { enemy = "assassin", count = 2, at = Vector3.new(540, 0, -90) } } },
 	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
+	{ id = "dojo", name = "상급 수련장", center = Vector3.new(330, 0, -330), size = Vector3.new(170, 0, 170), ground = Color3.fromRGB(165, 150, 125), material = Enum.Material.Cobblestone, safe = true },
 	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 400), size = Vector3.new(340, 0, 220), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
 		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 360) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 400) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 460) } } },
 	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
@@ -1666,6 +1673,7 @@ Config.Roads = {
 	{ Vector3.new(0, 0, 238), Vector3.new(0, 0, 640) },
 	{ Vector3.new(-238, 0, 0), Vector3.new(-300, 0, -70), Vector3.new(-650, 0, -560) },
 	{ Vector3.new(238, 0, 0), Vector3.new(300, 0, -70), Vector3.new(650, 0, -560) },
+	{ Vector3.new(300, 0, -70), Vector3.new(272, 0, -262) }, -- 상급 수련장으로
 	{ Vector3.new(0, 0, 238), Vector3.new(-90, 0, 290), Vector3.new(-600, 0, 600) },
 	{ Vector3.new(0, 0, 238), Vector3.new(90, 0, 290), Vector3.new(600, 0, 600) },
 	{ Vector3.new(238, 0, 0), Vector3.new(400, 0, -280), Vector3.new(890, 0, -280) },
@@ -1738,6 +1746,18 @@ Config.TrainingSpots = {
 	{ kind = "breathing", at = Vector3.new(372, 0, 306) },
 	{ kind = "breathing", at = Vector3.new(388, 0, 294) },
 	{ kind = "simma", at = Vector3.new(-380, 0, -430) },
+	-- 상급 수련장 (마을 북동쪽 밖)
+	{ kind = "geumjong", at = Vector3.new(300, 0, -300) },
+	{ kind = "geumjong", at = Vector3.new(300, 0, -360) },
+	{ kind = "cheongeun", at = Vector3.new(360, 0, -300) },
+	{ kind = "cheongeun", at = Vector3.new(360, 0, -360) },
+	{ kind = "jucheon", at = Vector3.new(330, 0, -270) },
+	{ kind = "jucheon", at = Vector3.new(330, 0, -390) },
+	{ kind = "heogong", at = Vector3.new(270, 0, -330) },
+	{ kind = "heogong", at = Vector3.new(390, 0, -330) },
+	-- 천궁의 천상 수련 (천상계 높이)
+	{ kind = "cheonsang", at = Vector3.new(55, 4000, 55) },
+	{ kind = "cheonsang", at = Vector3.new(-55, 4000, -55) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
 

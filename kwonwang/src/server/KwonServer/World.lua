@@ -811,6 +811,49 @@ local function trainingSpots(out: any)
 			end
 			local eye = part({ Name = "SimmaEye", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2, 2), Position = at + Vector3.new(0, 6, 0), Color = Color3.fromRGB(200, 60, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 			light(eye, Color3.fromRGB(200, 60, 255), 24, 2)
+		elseif spot.kind == "geumjong" then
+			-- 금종조: 나무 틀에 매단 큰 청동 종
+			for _, x in ipairs({ -1, 1 }) do
+				part({ Name = "BellFramePost", Size = Vector3.new(1, 11, 1), Position = at + Vector3.new(x * 4.2, 5.5, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			end
+			part({ Name = "BellFrameBeam", Size = Vector3.new(10, 1, 1.2), Position = at + Vector3.new(0, 11.2, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+			target = part({ Name = "BronzeBell", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4.5, 4.6, 4.6), CFrame = CFrame.new(at + Vector3.new(0, 8.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(160, 120, 60), Material = Enum.Material.Metal, Parent = f })
+			disc("BellLip", at + Vector3.new(0, 5.9, 0), 2.7, 0.4, Color3.fromRGB(190, 150, 80), Enum.Material.Metal, f)
+			part({ Name = "BellTop", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.4, 3.4), Position = at + Vector3.new(0, 10.2, 0), Color = Color3.fromRGB(150, 110, 55), Material = Enum.Material.Metal, Parent = f })
+			disc("BellMat", at + Vector3.new(0, 0.2, 0), 3.5, 0.4, Color3.fromRGB(120, 60, 50), Enum.Material.Fabric, f)
+		elseif spot.kind == "cheongeun" then
+			-- 천근추: 돌 받침 위의 거대한 쇳덩이와 손잡이
+			part({ Name = "WeightBase", Size = Vector3.new(7, 0.8, 7), Position = at + Vector3.new(0, 0.4, 0), Color = STONE_DARK, Material = Enum.Material.Granite, Parent = f })
+			target = part({ Name = "IronWeight", Shape = Enum.PartType.Cylinder, Size = Vector3.new(3.4, 5, 5), CFrame = CFrame.new(at + Vector3.new(0, 2.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, Parent = f })
+			part({ Name = "WeightHandle", Size = Vector3.new(3.6, 0.6, 0.6), Position = at + Vector3.new(0, 5.2, 0), Color = Color3.fromRGB(80, 80, 90), Material = Enum.Material.Metal, Parent = f })
+			for _, x in ipairs({ -1, 1 }) do
+				part({ Name = "WeightHandlePost", Size = Vector3.new(0.6, 1.2, 0.6), Position = at + Vector3.new(x * 1.5, 4.6, 0), Color = Color3.fromRGB(80, 80, 90), Material = Enum.Material.Metal, Parent = f })
+			end
+			sign(part({ Name = "WeightMark", Size = Vector3.new(2.4, 1.2, 0.1), Position = at + Vector3.new(0, 2.5, -2.55), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f }), Enum.NormalId.Front, { { "千斤", GOLD, 1 } })
+		elseif spot.kind == "jucheon" then
+			-- 주천 운기: 태극 진 위의 방석, 머리 위에 도는 금빛 고리
+			disc("TaegeukDisc", at + Vector3.new(0, 0.15, 0), 5, 0.3, Color3.fromRGB(240, 235, 225), Enum.Material.Marble, f)
+			disc("TaegeukInner", at + Vector3.new(0, 0.2, 0), 4.2, 0.3, Color3.fromRGB(40, 35, 40), Enum.Material.Marble, f)
+			target = part({ Name = "MeditationCushion", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.7, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(200, 160, 60), Material = Enum.Material.Fabric, Parent = f })
+			local ring = disc("ChiRing", at + Vector3.new(0, 8, 0), 3.4, 0.25, GOLD, Enum.Material.Neon, f, false)
+			ring.Transparency = 0.3
+			light(ring, GOLD, 16, 1.2)
+		elseif spot.kind == "heogong" then
+			-- 허공답보: 바닥에 둥근 받침, 그 위로 차례로 떠오르는 디딤돌 셋
+			target = part({ Name = "StepBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 6, 6), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+			for k = 1, 3 do
+				local st = disc("FloatingStep", at + Vector3.new(math.cos(k * 2.1) * 3, 2 + k * 2.2, math.sin(k * 2.1) * 3), 1.4, 0.5, Color3.fromRGB(190, 200, 210), Enum.Material.Marble, f, false)
+				local glow = disc("FloatingStepGlow", st.Position - Vector3.new(0, 0.3, 0), 1.5, 0.1, Color3.fromRGB(150, 220, 255), Enum.Material.Neon, f, false)
+				glow.Transparency = 0.4
+			end
+		elseif spot.kind == "cheonsang" then
+			-- 천상 수련: 구름 연꽃 받침과 떠 있는 수정
+			for k = 0, 7 do
+				local a = k / 8 * math.pi * 2
+				part({ Name = "LotusPetal", Size = Vector3.new(2.2, 0.4, 3.4), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 3, 0.5, math.sin(a) * 3)) * CFrame.Angles(0, -a + math.pi / 2, math.rad(-20)), Color = Color3.fromRGB(255, 235, 245), Material = Enum.Material.SmoothPlastic, Parent = f })
+			end
+			target = part({ Name = "LotusSeat", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.7, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Parent = f })
+			crystal(at + Vector3.new(0, 9, 0), 1.8, Color3.fromRGB(150, 220, 255), f)
 		elseif spot.kind == "waterfall" then
 			target = part({ Name = "MeditationStone", Size = Vector3.new(8, 1.2, 8), Position = at + Vector3.new(0, 0.6, 0), Color = Color3.fromRGB(110, 120, 120), Material = Enum.Material.Slate, Parent = f })
 		else
@@ -832,6 +875,24 @@ local function trainingSpots(out: any)
 	end
 	-- (경공 수련 고리는 없앴다)
 	out.rings = {}
+	-- 상급 수련장: 둘레의 깃발과 석등, 들어오는 문의 현판
+	local dojo = Vector3.new(330, 0, -330)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		banner(dojo + Vector3.new(math.cos(a) * 80, 0, math.sin(a) * 80), 14, k % 2 == 0 and Color3.fromRGB(170, 40, 35) or Color3.fromRGB(40, 70, 140), f)
+		stoneLantern(dojo + Vector3.new(math.cos(a + 0.2) * 72, 0, math.sin(a + 0.2) * 72), f, true)
+	end
+	local toVillage = Vector3.new(-dojo.X, 0, -dojo.Z).Unit
+	local gateAt = dojo + toVillage * 82
+	local gcf = CFrame.lookAt(gateAt, gateAt + toVillage)
+	for _, x in ipairs({ -1, 1 }) do
+		part({ Name = "DojoGatePost", Size = Vector3.new(1.6, 14, 1.6), CFrame = gcf * CFrame.new(x * 8, 7, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	end
+	part({ Name = "DojoGateBeam", Size = Vector3.new(20, 1.4, 2), CFrame = gcf * CFrame.new(0, 14.5, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "DojoGateRoof", Size = Vector3.new(23, 1, 4), CFrame = gcf * CFrame.new(0, 15.7, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	local plaque = part({ Name = "DojoPlaque", Size = Vector3.new(12, 3, 0.4), CFrame = gcf * CFrame.new(0, 12, -0.4), Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(plaque, Enum.NormalId.Front, { { "🏯 상급 수련장", GOLD, 1 } })
+	sign(plaque, Enum.NormalId.Back, { { "🏯 상급 수련장", GOLD, 1 } })
 end
 
 ------------------------------------------------------------------------
