@@ -675,11 +675,11 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			att.model:SetAttribute("Pulse", fa.pulseN)
 		end
-		if aStyle.id == "maehwa" then
+		if aStyle.id == "maehwa" or aStyle.petals then
 			if t - att.stacks.petalAt > 1.2 then
 				att.stacks.petal = 0
 			end
-			att.stacks.petal = math.min(20, att.stacks.petal + 1)
+			att.stacks.petal = math.min(aStyle.petalMax or 20, att.stacks.petal + 1)
 			att.stacks.petalAt = t
 		elseif aStyle.chargeEvery then
 			att.stacks.charge += 1

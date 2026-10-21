@@ -996,7 +996,10 @@ function Trial.start(player: Player, styleId: string)
 	ef.model:SetAttribute("Style", styleId)
 	local T = { kind = "duel", style = styleId, foes = { ef }, count = 0, need = 1, wave = 0, master = master, at = spawnAt, deadline = os.clock() + (hpMul and 300 or 150) }
 	activeTrial[player] = T
-	if style.trialBoss then
+	if style.trialBoss and style.trialIntro then
+		-- 그 밖의 보스 시련 (초월의 시련 등): 사부의 한마디만
+		Push:FireClient(player, "dialog", { who = master.name, title = style.trialIntro.title, text = style.trialIntro.text })
+	elseif style.trialBoss then
 		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
 		World.setClock(12)
 		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
@@ -1135,8 +1138,9 @@ Combat.init(Push, {
 				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
-					local ridx = Calc.realm(p)
-					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)) * (Premium.owns(killer, "train2x") and 2 or 1))
+					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
+					local kf = Combat.fighterOfPlayer(killer)
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(((kf :: any) and (kf :: any).power) or 100) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -1168,8 +1172,21 @@ Combat.init(Push, {
 					end
 				end
 				addMastery(killer, p, xp)
+				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
+				local statGain = 0
+				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not (f.npc :: any).dummy then
+					local KG = Config.KILL_GAIN
+					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
+					local each = math.max(1, math.floor(g / #Config.Stats))
+					for _, sd in ipairs(Config.Stats) do
+						p.stats[sd.id] += each
+					end
+					statGain = each * #Config.Stats
+					refreshFighter(killer)
+					Story.check(killer)
+				end
 				states[killer].dirty = true
-				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss, gems = gems })
+				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss, gems = gems, stats = statGain })
 				updateTag(killer)
 				pushState(killer)
 			end
@@ -1322,7 +1339,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		if slot < 1 or slot > #style.combo then
 			return
 		end
-	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
+	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "X" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
@@ -1379,7 +1396,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		end
 		f.cds.H = t + Config.HEAVY_CD
 	end
-	if slot == "E" or slot == "R" or slot == "G" then
+	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not Calc.unlocked(p, slot) then
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -1405,7 +1422,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local bloom = false
 	local dmgScale = 1
 	if slot == "H" then
-		if style.id == "maehwa" and f.stacks.petal >= 20 then
+		if (style.id == "maehwa" or style.petals) and f.stacks.petal >= (style.petalMax or 20) then
 			bloom = true
 			f.stacks.petal = 0
 		elseif style.id == "taeheo" and f.stacks.flow > 0 then
@@ -2299,7 +2316,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		p.coins += math.clamp(tonumber(arg) or 1000, 0, 1e9)
 	elseif action == "testStats" then
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 1e7)
+			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 2e8)
 		end
 		-- 테스트: 닿은 경지까지 관문도 모두 넘긴다
 		for i = Config.GATE.from, Config.realmOf(Calc.total(p)) do

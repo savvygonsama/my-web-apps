@@ -120,19 +120,20 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	{ name = "생사경", need = 95000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 150000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 230000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 350000, color = Color3.fromRGB(255, 150, 255) },
+	-- 1.5판: 사경 너머는 문턱이 경지마다 약 3.6배씩 (적을 쓰러뜨려 얻는 능력치로 오른다). 천외천은 능력치 합 5억
+	{ name = "생사경", need = 218000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 791000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 2874000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 10438000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 520000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 760000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 1100000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 37908000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 137674000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 500000000, color = Color3.fromRGB(255, 255, 160) },
 }
--- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 (후반일수록 크게 뛴다)
--- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×14.9, 천외천 ×34)
+-- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
+-- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
 function Config.realmPower(idx: number): number
-	return 1.22 ^ (math.min(idx, 9) - 1) * 1.32 ^ math.max(0, idx - 9)
+	return 1.22 ^ (math.min(idx, 9) - 1) * 1.38 ^ math.max(0, idx - 9)
 end
 
 function Config.realmOf(total: number): (number, any)
@@ -143,6 +144,42 @@ function Config.realmOf(total: number): (number, any)
 		end
 	end
 	return idx, Config.Realms[idx]
+end
+
+------------------------------------------------------------------------
+-- 1.5판: 적을 쓰러뜨리면 능력치가 오른다 (강해지는 길의 중심)
+-- 경지마다 그 경지에 막 오른 사람의 전투력과, 다음 경지까지 몇 마리면 되는지를 잡아 두고
+-- (앞 경지는 스무 마리 남짓, 뒤로 갈수록 일흔 마리 남짓), 쓰러뜨린 적의 전투력으로 그 사이를 이어 얻는 양을 정한다
+------------------------------------------------------------------------
+Config.KILL_GAIN = { boss = 8, elite = 2, tower = 0.5 }
+local killTable: { { number } } = {}
+do
+	local n = #Config.Realms
+	for i, r in ipairs(Config.Realms) do
+		local nxt = i < n and Config.Realms[i + 1].need or r.need * 2
+		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
+		local gain = (nxt - r.need) / (15 + 4 * i)
+		table.insert(killTable, { power, gain })
+	end
+end
+-- 전투력 power인 적 하나를 쓰러뜨리면 오르는 능력치 합 (네 능력치에 고루 나눈다)
+function Config.killGain(power: number): number
+	local p = math.max(1, power)
+	local first, last = killTable[1], killTable[#killTable]
+	if p <= first[1] then
+		return math.max(1, first[2] * (p / first[1]) ^ 2)
+	end
+	if p >= last[1] then
+		return last[2] * (p / last[1]) ^ 1.5
+	end
+	for i = 1, #killTable - 1 do
+		local a, b = killTable[i], killTable[i + 1]
+		if p <= b[1] then
+			local t = math.log(p / a[1]) / math.log(b[1] / a[1])
+			return math.exp(math.log(a[2]) + (math.log(b[2]) - math.log(a[2])) * t)
+		end
+	end
+	return last[2]
 end
 
 ------------------------------------------------------------------------
@@ -167,7 +204,7 @@ Config.Training = {
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
-Config.TRAIN_GAIN = 0.9 -- 1.0판: 0.6 → 0.9 (한 번에 오르는 양 1.5배)
+Config.TRAIN_GAIN = 0.6 -- 1.5판: 강해지는 길의 중심은 싸움 (적을 쓰러뜨려 능력치를 얻는다). 수련은 처음에 거드는 정도
 Config.TRAIN_REALM_BONUS = 0.12
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
 Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
@@ -1086,8 +1123,8 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0, ["초월"] = 3.6 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1099,6 +1136,7 @@ Config.GRADE_COLOR = {
 	["천외천"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
+	["초월"] = Color3.fromRGB(255, 160, 210),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1116,7 +1154,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -1133,6 +1171,53 @@ end
 function Config.actSpeed(style: any, up: number?, frenzy: boolean?): number
 	return (style.speed or 1) * Config.gradeSpeed(style, up) * (frenzy and 1.2 or 1)
 end
+------------------------------------------------------------------------
+-- 1.5판: 초월 권법. 기존 권법을 넘어선 권법으로, 모든 기술이 새로 짜였고 오의(G) 위에 초 오의(X)가 하나 더 있다
+-- 초·매화난무권: 두 손에 벚꽃 부채. 모든 기술을 벚꽃 칼바람이 따라 인다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chomaehwa",
+	name = "초·매화난무권",
+	hanja = "超梅花亂舞拳",
+	icon = "🌸",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(255, 138, 192),
+	color2 = Color3.fromRGB(255, 238, 247),
+	fx = "petal",
+	fans = true, -- 두 손에 벚꽃 부채 (화면이 그린다)
+	petals = true, -- 매화난무권의 꽃잎 쌓기를 이어받는다 (더 많이, 더 크게)
+	petalMax = 30,
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "maehwa",
+	trialHp = 10,
+	unlockHint = "매화난무권을 익히고 천외천에 오른 자만이, 매화원 가장 깊은 벚꽃 언덕의 천앵선을 만난다",
+	desc = "매화난무권을 넘어선 권법. 두 손의 벚꽃 부채가 펼쳐질 때마다 꽃잎이 칼날이 되어 흩날린다. 꽃은 지는 순간이 가장 아름답다.",
+	gimmick = "벚꽃: 1.2초 안에 계속 맞히면 꽃잎이 쌓인다 (최대 30). 다 차면 Z가 천앵만개로 크게 터진다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.25,
+	speed = 1.25,
+	stance = "stance_sakura",
+	combo = {
+		{ id = "cm1", name = "앵선일섬", pose = "fan_slash_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 8, 7, 0.3, 5) } },
+		{ id = "cm2", name = "앵선이섬", pose = "fan_slash_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 8, 7, 0.3, 5) } },
+		{ id = "cm3", name = "화선회", pose = "fan_twirl", dur = 0.36, lunge = 2, hits = { hit(0.12, 4, 7, 6, 6, 0.3, 6, nil, true), hit(0.26, 4, 7, 6, 6, 0.3, 6, nil, true) } },
+		{ id = "cm4", name = "낙앵선퇴", pose = "fan_kick", dur = 0.44, lunge = 3, hits = { hit(0.2, 7, 6, 13, 14, 0.5, 26) } },
+	},
+	heavy = { id = "cmH", name = "천앵일섬", pose = "fan_dash", dur = 0.5, lunge = 18, iframes = 0.25, hits = { hit(0.2, 8, 5.5, 20, 20, 0.55, 18) }, bloom = { radius = 18, dmg = 55, posture = 60 } },
+	skills = {
+		E = { id = "cmE", name = "선화난무", desc = "두 부채를 펼치고 춤추듯 돈다. 2.5초 동안 몸을 따라 벚꽃 칼바람이 휘돌며 둘레를 계속 벤다 (움직일 수 있다)", pose = "fan_dance", dur = 0.6, cd = 9, chi = 20,
+			mech = { kind = "moving", radius = 13, dur = 2.5, every = 0.25, delay = 0.1, hit = hit(0, 0, 0, 6, 6, 0.25, 4) } },
+		R = { id = "cmR", name = "만개보", desc = "벚꽃잎이 되어 둘레의 적 여섯 사이를 번개처럼 오간다 (무적). 지나간 자리마다 꽃이 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25,
+			mech = { kind = "chainTp", n = 6, range = 34, delay = 0.08, every = 0.12, hit = hit(0, 0, 0, 22, 18, 0.4, 14) } },
+		G = { id = "cmG", name = "천본앵", desc = "하늘로 솟아 부채를 펼치면 천 그루의 벚꽃이 칼날이 되어 둘레를 휘감는다. 3초 동안 끌어당기며 베고, 마지막에 한가운데로 모여 꽃처럼 터진다", pose = "ult_sakura", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sakuraStorm", radius = 30, dur = 3.2, every = 0.25, delay = 0.5, pull = 30, hit = hit(0, 0, 0, 7, 10, 0.25, 0), final = hit(0, 0, 0, 95, 120, 1.4, 60, 22) } },
+		X = { id = "cmX", name = "만앵참월", desc = "초 오의. 보이지 않게 둘레의 적 열을 베고 지나가며 하늘에 칼자국을 남긴다. 세상이 잿빛으로 멈춘 한 박자 뒤, 칼바람이 일어 적들을 휘감고, 마지막에 터지며 화면까지 한칼에 두 동강 낸다 (그동안 무적)", pose = "ult_sever", dur = 1.2, cd = 60, chi = 150, armor = true,
+			mech = { kind = "sakuraSever", n = 10, range = 45, delay = 0.25, every = 0.06, still = 0.9, wind = 1.3, windEvery = 0.18, cut = hit(0, 0, 0, 40, 40, 0.8, 0), windHit = hit(0, 0, 0, 9, 10, 0.3, 0), final = hit(0, 0, 0, 170, 200, 1.8, 80, 26), finalRadius = 22 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1182,6 +1267,7 @@ local FINISHERS = {
 	agong = { name = "아공승천장", pose = "void_push" },
 	unryu = { name = "운류승천장", pose = "double_palm" },
 	seongha = { name = "성하승천권", pose = "star_punch_r" },
+	chomaehwa = { name = "앵화승천선", pose = "fan_rise" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1199,7 +1285,9 @@ Config.MASTERY_MAX = 10
 function Config.masteryNeed(level: number): number
 	return math.floor(40 * level ^ 1.5)
 end
-Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5 }
+Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
+-- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
+Config.SUPER_ULT_MULT = 1.6
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
 -- D = 대시 직후 클릭 (돌진 일격), A = 공중에서 클릭 (낙하격), C = 흘리기 직후 클릭 (반격)
@@ -1488,6 +1576,22 @@ boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("charge", "천문 돌파", 3, { length = 60, width = 11, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 46, 60, 1.0, 60) }),
 	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 70, 25) }),
 } })
+
+-- 초월의 시련: 천앵선이 직접, 보스처럼 세 단계로 싸운다 (벚꽃비 → 화륜 → 만개)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chomaehwa" then
+		local pink = Color3.fromRGB(255, 150, 200)
+		st.trialIntro = { title = "초월의 시련", text = "매화를 넘어서겠다고? 그럼 꽃이 지는 모습을 끝까지 보아라. 세 번 피고 세 번 질 때까지 서 있다면 이 부채를 넘겨주지." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
+			P("rain", "벚꽃비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "fan_dance", fx = "star", color = pink, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
+			P("donut", "화륜", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "fan_twirl", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "앵선돌진", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "fan_dash", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
+			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
 
 -- 일월의 시련: 권존이 분신 없이 직접, 보스처럼 세 단계로 싸운다 (한낮 → 밤 → 새벽)
 for _, st in ipairs(Config.Styles) do
@@ -2064,6 +2168,10 @@ Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -1
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
+-- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
+Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
+Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
+	quote = "꽃은 지는 순간이 가장 아름답다. 그 순간을 베어라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
@@ -2231,6 +2339,8 @@ Poses.stances = {
 	stance_cloud = { W = { 5, -15, 0 }, N = { 0, 15, 0 }, RS = { 70, 0, 20 }, RE = { 35, 0, 0 }, LS = { 60, 0, -25 }, LE = { 40, 0, 0 } },
 	-- 성하: 한 주먹은 하늘을 가리키듯 높이, 한 주먹은 허리에 (별을 끌어내리는 자세)
 	stance_galaxy = { W = { 0, -25, 0 }, N = { -5, 25, 0 }, RS = { 150, 0, 20 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 110, 0, 0 } },
+	-- 초·매화: 오른 부채는 머리 위로 높이 펼쳐 들고, 왼 부채는 허리 앞에서 비스듬히 아래로 겨눈다 (벚꽃이 흩날리는 춤의 첫 자세)
+	stance_sakura = { W = { 0, -25, 0 }, N = { -5, 22, 0 }, RS = { 160, 0, 32 }, RE = { 48, 0, 0 }, LS = { 48, 0, -52 }, LE = { 24, 0, 0 } },
 	-- 적: 무기를 쥐고
 	stance_weapon = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 35, 0, 15 }, RE = { 60, 0, 0 }, LS = { 25, 0, -15 }, LE = { 50, 0, 0 } },
 	stance_spear = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 30, 0, 20 }, RE = { 70, 0, 0 }, LS = { 65, 0, -10 }, LE = { 30, 0, 0 } },
@@ -2258,6 +2368,8 @@ Poses.stanceLegs = {
 	stance_subspace = { RH = { -18, 0, 10 }, LH = { 26, 0, -8 }, RK = { -34, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } },
 	stance_cloud = { RH = { -15, 0, 14 }, LH = { 22, 0, -12 }, RK = { -40, 0, 0 }, LK = { -36, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } },
 	stance_galaxy = { RH = { -12, 0, 10 }, LH = { 24, 0, -8 }, RK = { -30, 0, 0 }, LK = { -26, 0, 0 }, R = { 0, 0, 0, 0, -0.45, 0 } },
+	-- 초·매화: 한 발을 앞으로 엇갈려 내딛고 무릎을 살짝 굽힌 춤의 자세
+	stance_sakura = { RH = { 12, 0, -14 }, LH = { -6, 0, -6 }, RK = { -26, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, -10, 0, 0, -0.3, 0 } },
 	stance_duel = { RH = { -15, 0, 10 }, LH = { 25, 0, -6 }, RK = { -32, 0, 0 }, LK = { -28, 0, 0 }, R = { -5, 0, 0, 0, -0.55, 0 } },
 	default = { RH = { -10, 0, 6 }, LH = { 14, 0, -4 }, RK = { -16, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0 } },
 }
@@ -3583,6 +3695,70 @@ A.ult_volcano = {
 	{ t = 1, j = { RS = { 50, 0, 30 }, RE = { 110, 0, 0 }, LS = { 70, 0, -10 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } } },
 }
 
+------------------------------------------------------------------------
+-- 초·매화난무권 (두 손에 벚꽃 부채)
+------------------------------------------------------------------------
+-- 오른 부채로 왼쪽에서 오른쪽으로 크게 가르기
+A.fan_slash_r = {
+	{ t = 0, j = { W = { 0, 35, 0 }, N = { 0, -20, 0 }, RS = { 95, 0, -40 }, RE = { 25, 0, 0 }, LS = { 45, 0, -55 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0.2 } } },
+	{ t = 0.38, e = "snap", j = { W = { 0, -45, 0 }, N = { 0, 30, 0 }, RS = { 88, 0, 85 }, RE = { 5, 0, 0 }, LS = { 60, 0, -65 }, LE = { 15, 0, 0 }, RH = { 15, 0, 0 }, RK = { -20, 0, 0 }, R = { -6, 0, 0, 0, -0.45, -0.5 } } },
+	{ t = 1, j = { W = { 0, -15, 0 }, RS = { 120, 0, 50 }, RE = { 30, 0, 0 }, LS = { 50, 0, -50 }, LE = { 25, 0, 0 }, R = { 0, 0, 0, 0, -0.35, -0.2 } } },
+}
+A.fan_slash_l = mirror(A.fan_slash_r)
+-- 두 부채를 활짝 펼치고 두 바퀴 돈다
+A.fan_twirl = {
+	{ t = 0, j = { RS = { 85, 0, 70 }, RE = { 10, 0, 0 }, LS = { 85, 0, -70 }, LE = { 10, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
+	{ t = 0.5, e = "snap", j = { N = { -10, 0, 0 }, RS = { 95, 0, 90 }, RE = { 0, 0, 0 }, LS = { 95, 0, -90 }, LE = { 0, 0, 0 }, RH = { 10, 0, 15 }, RK = { -30, 0, 0 }, R = { 0, -360, 0, 0, -0.2, -0.3 } } },
+	{ t = 1, j = { RS = { 90, 0, 75 }, RE = { 10, 0, 0 }, LS = { 90, 0, -75 }, LE = { 10, 0, 0 }, R = { 0, -720, 0, 0, -0.4, -0.3 } } },
+}
+-- 두 부채를 날개처럼 벌린 채 반달 차기
+A.fan_kick = {
+	{ t = 0, j = { W = { 0, -15, 0 }, RS = { 100, 0, 70 }, RE = { 20, 0, 0 }, LS = { 100, 0, -70 }, LE = { 20, 0, 0 }, RH = { 40, 0, 50 }, RK = { -60, 0, 0 }, LK = { -15, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 20, 0 }, N = { 0, -15, 0 }, RS = { 110, 0, 95 }, RE = { 0, 0, 0 }, LS = { 110, 0, -95 }, LE = { 0, 0, 0 }, RH = { 115, 0, -15 }, RK = { 0, 0, 0 }, LK = { -10, 0, 0 }, R = { 12, -30, 0, 0, 0, -0.5 } } },
+	{ t = 1, j = { RS = { 90, 0, 60 }, RE = { 20, 0, 0 }, LS = { 90, 0, -60 }, LE = { 20, 0, 0 }, RH = { -10, 0, 5 }, RK = { -20, 0, 0 }, R = { 0, -30, 0, 0, -0.3, -0.3 } } },
+}
+-- 부채를 뒤로 젖혔다가 한 줄기 빛처럼 꿰뚫고 지나간다
+A.fan_dash = {
+	{ t = 0, j = { W = { -10, -40, 0 }, N = { 0, 35, 0 }, RS = { -30, 0, 60 }, RE = { 20, 0, 0 }, LS = { -30, 0, -60 }, LE = { 20, 0, 0 }, RK = { -50, 0, 0 }, LK = { -50, 0, 0 }, R = { -15, 0, 0, 0, -1.1, 0.4 } } },
+	{ t = 0.35, e = "snap", j = { W = { -10, 45, 0 }, N = { 10, -35, 0 }, RS = { 90, 0, 95 }, RE = { 0, 0, 0 }, LS = { 30, 0, -100 }, LE = { 0, 0, 0 }, RH = { 70, 0, 0 }, RK = { -80, 0, 0 }, LH = { -60, 0, 0 }, LK = { -5, 0, 0 }, R = { -20, 0, 0, 0, -1.4, -1.6 } } },
+	{ t = 1, j = { W = { 0, 20, 0 }, RS = { 120, 0, 60 }, RE = { 20, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, R = { 0, 0, 0, 0, -0.6, -0.6 } } },
+}
+-- 선화난무: 두 부채를 번갈아 높이 들며 춤추듯 두 바퀴
+A.fan_dance = {
+	{ t = 0, j = { RS = { 160, 0, 40 }, RE = { 30, 0, 0 }, LS = { 40, 0, -65 }, LE = { 20, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.3, j = { RS = { 40, 0, 65 }, RE = { 20, 0, 0 }, LS = { 160, 0, -40 }, LE = { 30, 0, 0 }, RH = { 20, 0, 10 }, RK = { -40, 0, 0 }, R = { 0, -240, 0, 0, 0.2, 0 } } },
+	{ t = 0.65, e = "snap", j = { RS = { 160, 0, 40 }, RE = { 30, 0, 0 }, LS = { 40, 0, -65 }, LE = { 20, 0, 0 }, LH = { 20, 0, -10 }, LK = { -40, 0, 0 }, R = { 0, -480, 0, 0, 0.3, 0 } } },
+	{ t = 1, j = { RS = { 100, 0, 85 }, RE = { 0, 0, 0 }, LS = { 100, 0, -85 }, LE = { 0, 0, 0 }, R = { 0, -720, 0, 0, -0.3, 0 } } },
+}
+-- 만개보: 몸을 낮춰 꽃잎이 되어 흩어진다
+A.sakura_step = {
+	{ t = 0, j = { W = { -20, 0, 0 }, N = { 15, 0, 0 }, RS = { -40, 0, 60 }, RE = { 10, 0, 0 }, LS = { -40, 0, -60 }, LE = { 10, 0, 0 }, R = { -30, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.5, j = { W = { -25, 0, 0 }, N = { 20, 0, 0 }, RS = { -60, 0, 80 }, RE = { 0, 0, 0 }, LS = { -60, 0, -80 }, LE = { 0, 0, 0 }, RH = { 30, 0, 0 }, RK = { -30, 0, 0 }, LH = { -50, 0, 0 }, LK = { -30, 0, 0 }, R = { -40, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.8, e = "snap", j = { RS = { 110, 0, 90 }, RE = { 0, 0, 0 }, LS = { 110, 0, -90 }, LE = { 0, 0, 0 }, R = { -5, -200, 0, 0, -0.4, 0 } } },
+	{ t = 1, j = { RS = { 150, 0, 35 }, RE = { 40, 0, 0 }, LS = { 50, 0, -50 }, LE = { 25, 0, 0 }, R = { 0, -360, 0, 0, -0.3, 0 } } },
+}
+-- 천본앵: 부채를 가슴에 모았다가 돌며 하늘로 솟아, 두 부채를 활짝 펼치고 내리친다
+A.ult_sakura = {
+	{ t = 0, j = { RS = { 60, 0, -40 }, RE = { 100, 0, 0 }, LS = { 60, 0, 40 }, LE = { 100, 0, 0 }, RK = { -50, 0, 0 }, LK = { -50, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.3, j = { N = { 20, 0, 0 }, RS = { 170, 0, 30 }, RE = { 10, 0, 0 }, LS = { 170, 0, -30 }, LE = { 10, 0, 0 }, RH = { 40, 0, 10 }, RK = { -80, 0, 0 }, R = { 0, -360, 0, 0, 2.0, 0 } } },
+	{ t = 0.6, j = { N = { 15, 0, 0 }, RS = { 95, 0, 115 }, RE = { 0, 0, 0 }, LS = { 95, 0, -115 }, LE = { 0, 0, 0 }, RH = { 40, 0, 10 }, RK = { -80, 0, 0 }, R = { 0, -720, 0, 0, 2.6, 0 } } },
+	{ t = 0.85, e = "snap", j = { N = { -10, 0, 0 }, RS = { 55, 0, 70 }, RE = { 0, 0, 0 }, LS = { 55, 0, -70 }, LE = { 0, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -15, -1080, 0, 0, -1.2, 0 } } },
+	{ t = 1, j = { RS = { 100, 0, 60 }, RE = { 20, 0, 0 }, LS = { 100, 0, -60 }, LE = { 20, 0, 0 }, R = { 0, -1080, 0, 0, -0.6, 0 } } },
+}
+-- 만앵참월 (초 오의): 낮게 웅크려 두 부채를 가슴 앞에 엇갈려 쥐고 숨을 멈췄다가, 한순간 두 팔을 크게 펼치며 사라진다
+A.ult_sever = {
+	{ t = 0, j = { W = { 10, 0, 0 }, N = { 10, 0, 0 }, RS = { 70, 0, -50 }, RE = { 95, 0, 0 }, LS = { 70, 0, 50 }, LE = { 95, 0, 0 }, RH = { 40, 0, 0 }, RK = { -75, 0, 0 }, LH = { -20, 0, 0 }, LK = { -60, 0, 0 }, R = { -15, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.55, j = { W = { 12, 0, 0 }, N = { 12, 0, 0 }, RS = { 72, 0, -55 }, RE = { 100, 0, 0 }, LS = { 72, 0, 55 }, LE = { 100, 0, 0 }, RH = { 42, 0, 0 }, RK = { -80, 0, 0 }, LH = { -22, 0, 0 }, LK = { -62, 0, 0 }, R = { -18, 0, 0, 0, -1.4, 0 } } },
+	{ t = 0.72, e = "snap", j = { W = { -10, 0, 0 }, N = { -10, 0, 0 }, RS = { 40, 0, 125 }, RE = { 0, 0, 0 }, LS = { 40, 0, -125 }, LE = { 0, 0, 0 }, RH = { 60, 0, 0 }, RK = { -40, 0, 0 }, LH = { -70, 0, 0 }, LK = { -10, 0, 0 }, R = { -25, 0, 0, 0, -1.0, -2.0 } } },
+	{ t = 1, j = { RS = { 50, 0, 110 }, RE = { 10, 0, 0 }, LS = { 50, 0, -110 }, LE = { 10, 0, 0 }, R = { -10, 0, 0, 0, -0.7, -1.0 } } },
+}
+-- 앵화승천선: 부채로 올려 베며 한 바퀴 솟는다
+A.fan_rise = {
+	{ t = 0, j = { W = { 0, -30, 0 }, RS = { 30, 0, 40 }, RE = { 60, 0, 0 }, LS = { 50, 0, -50 }, LE = { 30, 0, 0 }, RK = { -50, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -10, 30, 0 }, N = { -15, 0, 0 }, RS = { 175, 0, 25 }, RE = { 0, 0, 0 }, LS = { 60, 0, -90 }, LE = { 0, 0, 0 }, RH = { 60, 0, 0 }, RK = { -60, 0, 0 }, R = { 0, -180, 0, 0, 0.9, 0 } } },
+	{ t = 1, j = { RS = { 150, 0, 35 }, RE = { 40, 0, 0 }, LS = { 50, 0, -50 }, LE = { 25, 0, 0 }, R = { 0, -360, 0, 0, 0.2, 0 } } },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
@@ -4661,7 +4837,10 @@ function Trial.start(player: Player, styleId: string)
 	ef.model:SetAttribute("Style", styleId)
 	local T = { kind = "duel", style = styleId, foes = { ef }, count = 0, need = 1, wave = 0, master = master, at = spawnAt, deadline = os.clock() + (hpMul and 300 or 150) }
 	activeTrial[player] = T
-	if style.trialBoss then
+	if style.trialBoss and style.trialIntro then
+		-- 그 밖의 보스 시련 (초월의 시련 등): 사부의 한마디만
+		Push:FireClient(player, "dialog", { who = master.name, title = style.trialIntro.title, text = style.trialIntro.text })
+	elseif style.trialBoss then
 		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
 		World.setClock(12)
 		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
@@ -4800,8 +4979,9 @@ Combat.init(Push, {
 				end
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
-					local ridx = Calc.realm(p)
-					local gain = math.floor(Config.Training.simma.reward * (1 + 0.25 * (ridx - 1)) * (Premium.owns(killer, "train2x") and 2 or 1))
+					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
+					local kf = Combat.fighterOfPlayer(killer)
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(((kf :: any) and (kf :: any).power) or 100) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -4833,8 +5013,21 @@ Combat.init(Push, {
 					end
 				end
 				addMastery(killer, p, xp)
+				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
+				local statGain = 0
+				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not (f.npc :: any).dummy then
+					local KG = Config.KILL_GAIN
+					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
+					local each = math.max(1, math.floor(g / #Config.Stats))
+					for _, sd in ipairs(Config.Stats) do
+						p.stats[sd.id] += each
+					end
+					statGain = each * #Config.Stats
+					refreshFighter(killer)
+					Story.check(killer)
+				end
 				states[killer].dirty = true
-				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss, gems = gems })
+				Push:FireClient(killer, "reward", { coins = coins, xp = xp, name = f.name, boss = isBoss, gems = gems, stats = statGain })
 				updateTag(killer)
 				pushState(killer)
 			end
@@ -4987,7 +5180,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		if slot < 1 or slot > #style.combo then
 			return
 		end
-	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
+	elseif slot ~= "H" and slot ~= "E" and slot ~= "R" and slot ~= "G" and slot ~= "X" and slot ~= "F" and not Config.ACTION_MOVES[slot] then
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
@@ -5044,7 +5237,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		end
 		f.cds.H = t + Config.HEAVY_CD
 	end
-	if slot == "E" or slot == "R" or slot == "G" then
+	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not Calc.unlocked(p, slot) then
 			toast(player, string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -5070,7 +5263,7 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local bloom = false
 	local dmgScale = 1
 	if slot == "H" then
-		if style.id == "maehwa" and f.stacks.petal >= 20 then
+		if (style.id == "maehwa" or style.petals) and f.stacks.petal >= (style.petalMax or 20) then
 			bloom = true
 			f.stacks.petal = 0
 		elseif style.id == "taeheo" and f.stacks.flow > 0 then
@@ -5964,7 +6157,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		p.coins += math.clamp(tonumber(arg) or 1000, 0, 1e9)
 	elseif action == "testStats" then
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 1e7)
+			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 2e8)
 		end
 		-- 테스트: 닿은 경지까지 관문도 모두 넘긴다
 		for i = Config.GATE.from, Config.realmOf(Calc.total(p)) do
@@ -7802,11 +7995,11 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			att.model:SetAttribute("Pulse", fa.pulseN)
 		end
-		if aStyle.id == "maehwa" then
+		if aStyle.id == "maehwa" or aStyle.petals then
 			if t - att.stacks.petalAt > 1.2 then
 				att.stacks.petal = 0
 			end
-			att.stacks.petal = math.min(20, att.stacks.petal + 1)
+			att.stacks.petal = math.min(aStyle.petalMax or 20, att.stacks.petal + 1)
 			att.stacks.petalAt = t
 		elseif aStyle.chargeEvery then
 			att.stacks.charge += 1
@@ -8509,6 +8702,40 @@ function Npc.populate()
 			end
 		end
 	end
+	pcall(Npc.publishPower)
+end
+
+-- 1.5판: 지역마다 권장 전투력 (그 땅 적들의 가운데 전투력보다 조금 높게). 보스는 따로. 화면의 지도와 지역 알림이 쓴다
+function Npc.publishPower()
+	local groups: { [string]: { number } } = {}
+	local bosses: { [string]: number } = {}
+	for _, e in ipairs(Npc.list) do
+		local key = e.region
+		if key == "sky" then
+			local isl = Config.skyIslandAt(e.f.root.Position)
+			key = isl and ("sky_" .. isl.id) or "sky"
+		end
+		if key ~= "trial" and key ~= "test" and key ~= "summon" and key ~= "simma" and key ~= "wilds" then
+			local pw = (e.f :: any).power or 0
+			if e.kind == "boss" then
+				bosses[key] = math.max(bosses[key] or 0, pw)
+			else
+				groups[key] = groups[key] or {}
+				table.insert(groups[key], pw)
+			end
+		end
+	end
+	local folder = ReplicatedStorage:FindFirstChild("KwonRegionPower") or Instance.new("Folder")
+	folder.Name = "KwonRegionPower"
+	for key, list in pairs(groups) do
+		table.sort(list)
+		local mid = list[math.max(1, math.ceil(#list / 2))]
+		folder:SetAttribute(key, math.floor(mid * 1.15))
+	end
+	for key, pw in pairs(bosses) do
+		folder:SetAttribute(key .. "_boss", math.floor(pw))
+	end
+	folder.Parent = ReplicatedStorage
 end
 
 ------------------------------------------------------------------------
@@ -9745,6 +9972,9 @@ return Npc
 --   shock    기술의 마지막 타격 뒤 앞쪽에 충격파가 터진다 (맨 타격뿐인 기술을 보완)
 --   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고, 끝에서 부서진다
 --   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
+--   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고, 한가운데로 모여 터진다
+--   sakuraSever  (초·매화 만앵참월, 초 오의) 보이지 않게 적들을 베고 지나가 칼자국을 남기고 → 세상이 잿빛으로 멈추고 →
+--                칼바람이 적들을 휘감고 → 마지막에 터지며 화면까지 한칼에 가른다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -9820,9 +10050,10 @@ function Skills.run(f: any, move: any, ctx: any)
 		return
 	end
 	local sp = ctx.speed or 1
-	-- 오의(G)는 모두 한층 더 세다
-	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
-	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1)
+	-- 오의(G)는 모두 한층 더 세다. 초 오의(X)는 그보다 더
+	local tail = type(move.id) == "string" and string.sub(move.id, -1) or ""
+	local isUlt = tail == "G" or tail == "X"
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1) * (tail == "X" and Config.SUPER_ULT_MULT or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean
@@ -10325,6 +10556,108 @@ function Skills.run(f: any, move: any, ctx: any)
 					o.root.AssemblyLinearVelocity = Vector3.new(0, 80, 0)
 				end
 				strike(f, o, scaled(m.geyser, sc), move)
+			end
+		end)
+	elseif kind == "sakuraStorm" then
+		Push:FireAllClients("skillfx", { kind = "sakuraStorm", m = f.model, at = f.root.Position, radius = m.radius, dur = (m.delay + m.dur) / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				local c = f.root.Position
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					pullTo(o, c, m.pull)
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			local c = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "sakuraBurst", at = c, radius = m.radius, style = style })
+			for _, o in ipairs(hostilesNear(f, c, m.radius + 4)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "sakuraSever" then
+		local list = nearestList(f, m.range, m.n)
+		local start = f.root.Position
+		local pass = m.delay + math.max(1, #list) * m.every
+		local total = pass + m.still + m.wind + 0.5
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		f.model:SetAttribute("Vanish", true)
+		Push:FireAllClients("skillfx", { kind = "severStart", m = f.model, at = start, dur = total / sp, style = style })
+		-- 도중에 쓰러져도 모습은 돌아온다
+		task.delay(pass / sp + 0.2, function()
+			if f.model.Parent then
+				f.model:SetAttribute("Vanish", nil)
+			end
+		end)
+		-- 1) 보이지 않게 베고 지나간다 (하늘에 칼자국)
+		local points = { start }
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				local from = f.root.Position
+				local tp = o.root.Parent and o.root.Position or from
+				local dir = flat(tp - from)
+				local land = tp + dir * 5
+				local cf = CFrame.lookAt(land, land + dir)
+				if f.player and f.player.Character then
+					f.player.Character:PivotTo(cf)
+				else
+					f.root.CFrame = cf
+				end
+				table.insert(points, land)
+				Push:FireAllClients("skillfx", { kind = "severCut", from = from, to = land, at = tp, style = style, i = i })
+				strike(f, o, scaled(m.cut, sc), move)
+			end)
+		end
+		local function targetModels(): { Model }
+			local out = {}
+			for _, o in ipairs(list) do
+				if not o.dead and o.root.Parent then
+					table.insert(out, o.model)
+				end
+			end
+			return out
+		end
+		-- 2) 세상이 잿빛으로 멈춘다
+		after(pass, function()
+			f.model:SetAttribute("Vanish", nil)
+			Push:FireAllClients("skillfx", { kind = "severStill", m = f.model, at = f.root.Position, dur = m.still / sp, points = points, style = style })
+			for _, o in ipairs(list) do
+				if not o.dead then
+					o.stunUntil = math.max(o.stunUntil, os.clock() + (m.still + m.wind + 0.4) / sp)
+				end
+			end
+		end)
+		-- 3) 칼바람이 일어 적들을 휘감는다
+		after(pass + m.still, function()
+			Push:FireAllClients("skillfx", { kind = "severWind", m = f.model, at = f.root.Position, targets = targetModels(), dur = m.wind / sp, style = style })
+			local n = math.floor(m.wind / m.windEvery)
+			for i = 0, n - 1 do
+				after(i * m.windEvery, function()
+					for _, o in ipairs(list) do
+						if not o.dead and o.root.Parent then
+							strike(f, o, scaled(m.windHit, sc), move)
+						end
+					end
+				end)
+			end
+		end)
+		-- 4) 터지며 한칼에 가른다
+		after(pass + m.still + m.wind, function()
+			local c = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "severEnd", m = f.model, at = c, targets = targetModels(), radius = m.finalRadius, style = style })
+			local hitSet = {}
+			for _, o in ipairs(list) do
+				if not o.dead and o.root.Parent then
+					hitSet[o] = true
+					strike(f, o, scaled(m.final, sc), move)
+				end
+			end
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				if not hitSet[o] then
+					strike(f, o, scaled(m.final, sc * 0.6), move)
+				end
 			end
 		end)
 	elseif kind == "flash" or kind == "bolt" then
@@ -13696,6 +14029,64 @@ local function regionFrames()
 	end
 end
 
+-- 1.5판: 초월 권법의 사부 자리. 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕 (돌 단, 거대한 벚나무, 떨어지는 꽃잎)
+local function sakuraHill()
+	local at = Config.SAKURA_HILL
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "SakuraHill"
+	f.Parent = folder
+	local pink = Color3.fromRGB(255, 175, 210)
+	-- 세 겹의 둥근 돌 단 (위로 갈수록 좁다)
+	for i, r in ipairs({ 22, 17, 12 }) do
+		disc("SakuraTerrace", at + Vector3.new(0, (i - 0.5) * 1.55, 0), r, 1.55, Color3.fromRGB(190, 180, 175):Lerp(Color3.fromRGB(230, 215, 215), i * 0.2), Enum.Material.Granite, f)
+	end
+	-- 오르는 돌계단 (남쪽)
+	for k = 0, 5 do
+		part({ Name = "SakuraStep", Size = Vector3.new(8, 0.8, 2.2), Position = at + Vector3.new(0, 0.4 + k * 0.78, 23 - k * 2.2), Color = Color3.fromRGB(200, 190, 185), Material = Enum.Material.Granite, Parent = f })
+	end
+	-- 거대한 벚나무: 굵은 줄기, 갈라진 가지, 분홍 꽃구름
+	local base = at + Vector3.new(-6, 4.6, -6)
+	part({ Name = "SakuraTrunk", Size = Vector3.new(3.4, 16, 3.4), CFrame = CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(6)), Color = Color3.fromRGB(80, 50, 45), Material = Enum.Material.Wood, Parent = f })
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2
+		local from = base + Vector3.new(0, 13, 0)
+		local to = from + Vector3.new(math.cos(a) * 9, 5 + (k % 2) * 2, math.sin(a) * 9)
+		part({ Name = "SakuraBranch", Size = Vector3.new(1.4, 1.4, (to - from).Magnitude), CFrame = CFrame.lookAt((from + to) / 2, to), Color = Color3.fromRGB(85, 55, 48), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		for j = 0, 2 do
+			part({ Name = "SakuraBloom", Shape = Enum.PartType.Ball, Size = Vector3.one * (9 - j * 1.5), Position = to + Vector3.new(math.cos(a + j) * 2.5, j * 1.5 - 1, math.sin(a + j) * 2.5),
+				Color = pink:Lerp(Color3.new(1, 1, 1), (j % 2) * 0.25 + (k % 2) * 0.1), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+	end
+	local crown = part({ Name = "SakuraCrown", Shape = Enum.PartType.Ball, Size = Vector3.one * 14, Position = base + Vector3.new(0, 21, 0), Color = pink, Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	-- 꽃잎이 언덕 가득 흩날린다
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 225), Color3.fromRGB(255, 150, 195))
+	pe.Size = NumberSequence.new(0.5, 0.3)
+	pe.Squash = NumberSequence.new(0.5)
+	pe.Lifetime = NumberRange.new(5, 8)
+	pe.Rate = 40
+	pe.Speed = NumberRange.new(1, 3)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Acceleration = Vector3.new(1.2, -1.5, 0.6)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.RotSpeed = NumberRange.new(-120, 120)
+	pe.LightEmission = 0.3
+	pe.Parent = crown
+	light(crown, pink, 40, 1.2)
+	-- 땅에 깔린 꽃잎 (분홍 얼룩)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		disc("FallenPetals", at + Vector3.new(math.cos(a) * (26 + (k % 3) * 4), 0.05, math.sin(a) * (26 + (k % 3) * 4)), 3 + (k % 3), 0.1, pink:Lerp(Color3.new(1, 1, 1), 0.3), Enum.Material.SmoothPlastic, f, false)
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		stoneLantern(at + Vector3.new(sx * 6, 0, 26), f, true)
+	end
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -13982,6 +14373,7 @@ function World.build(): any
 		{ "지역 테두리", regionFrames },
 		{ "길가", roadside },
 		{ "표지", regionSigns },
+		{ "벚꽃 언덕", sakuraHill },
 		{ "천상계", function()
 			skyWorld(out)
 		end },
@@ -14040,6 +14432,7 @@ local Cutscene = require(script:WaitForChild("Cutscene"))
 local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
+local Sakura = require(script:WaitForChild("Sakura"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -14078,6 +14471,8 @@ local function watchChar(char: Model)
 	char:GetAttributeChangedSignal("Vanish"):Connect(function()
 		Ults.watchVanish(char)
 	end)
+	-- 초월 권법의 벚꽃 부채
+	Sakura.watch(char)
 	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
 	Mount.watch(char)
 	char:GetAttributeChangedSignal("Mount"):Connect(function()
@@ -14097,6 +14492,15 @@ for _, p in ipairs(Players:GetPlayers()) do
 	watchPlayer(p)
 end
 Players.PlayerAdded:Connect(watchPlayer)
+-- 사부와 적도 부채를 든다 (초월의 시련, 사부 자리)
+task.spawn(function()
+	for _, name in ipairs({ "Masters", "Enemies" }) do
+		local f = workspace:WaitForChild(name, 60)
+		if f then
+			Sakura.watchFolder(f)
+		end
+	end
+end)
 task.spawn(function()
 	local enemies = workspace:WaitForChild("Enemies")
 	local function add(m: Instance)
@@ -14285,6 +14689,7 @@ task.spawn(function()
 						Anim.play(m :: Model, mv.pose, mv.dur)
 						Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
+						Sakura.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -14552,7 +14957,7 @@ startMove = function(slot: any, charge: number?)
 		cds.H = now + Config.HEAVY_CD
 		cdLen.H = Config.HEAVY_CD
 	end
-	if slot == "E" or slot == "R" or slot == "G" then
+	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not unlocked(slot) then
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -14582,6 +14987,7 @@ startMove = function(slot: any, charge: number?)
 	Anim.play(char, move.pose, dur, { align = first and first.t / speed or nil })
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
 	Fx.cast(style.id, slot, char, dur)
+	Sakura.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -14658,13 +15064,18 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "G" then
-		UI.cinematic(move.name, style.color, dur)
+	if slot == "G" or slot == "X" then
+		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		if slot == "X" then
+			Sakura.superIntro(char)
+		end
 		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
 		UI.ultFrame(style.color, style.color2)
 		fovPunch(-10, 0.55)
 		Fx.skillAura(char, style.color, style.color2, math.max(1.2, dur), true)
-		if move.mech then
+		if move.mech and slot == "X" then
+			Fx.skillAura(char, style.color, style.color2, math.max(2, dur), true)
+		elseif move.mech then
 			Ults.intro(style.id, char)
 		else
 			Fx.ult(style.id, char, dur)
@@ -15008,6 +15419,12 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		skill("R")
 	elseif k == Enum.KeyCode.G then
 		skill("G")
+	elseif k == Enum.KeyCode.X then
+		-- 초 오의 (초월 권법만)
+		local st = myStyle()
+		if st and st.skills.X then
+			skill("X")
+		end
 	elseif k == Enum.KeyCode.Q then
 		dash()
 	elseif k == Enum.KeyCode.F then
@@ -15062,6 +15479,12 @@ UI.mobile({
 	end,
 	G = function()
 		skill("G")
+	end,
+	X = function()
+		local st = myStyle()
+		if st and st.skills.X then
+			skill("X")
+		end
 	end,
 	potion = function()
 		Request:FireServer("potion")
@@ -15295,6 +15718,7 @@ function handlers.act(data: any)
 	local style = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
 	if style and data.slot ~= nil then
 		Fx.cast(style.id, data.slot, m, data.dur)
+		Sakura.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
@@ -15336,7 +15760,16 @@ function handlers.act(data: any)
 			end
 		end)
 	end
-	if type(data.id) == "string" and string.sub(data.id, -1) == "G" and style then
+	if type(data.id) == "string" and string.sub(data.id, -1) == "X" and style then
+		-- 남의 초 오의: 벚꽃이 쏟아지고 크게 흔들린다
+		local r = rootOf(m)
+		if r then
+			Sakura.petals(r.Position + Vector3.new(0, 3, 0), 40, 14, 2.2)
+		end
+		if near then
+			shake(1)
+		end
+	elseif type(data.id) == "string" and string.sub(data.id, -1) == "G" and style then
 		local gm = style.skills and style.skills.G
 		if gm and gm.mech then
 			Ults.intro(style.id, m)
@@ -15738,6 +16171,9 @@ function handlers.skillfx(data: any)
 	elseif data.kind == "pillar" and data.fx == "spear" then
 		Ults.spear(data.at, data.dir or Vector3.new(0, 0, -1), data.style)
 		return
+	elseif Sakura.handles(data.kind) then
+		Sakura.run(data)
+		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
 		return
@@ -15874,9 +16310,10 @@ function handlers.pdodge(data: any)
 end
 
 function handlers.reward(data: any)
-	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d%s", data.name, data.coins, data.xp, (data.gems or 0) > 0 and string.format("  💠 +%d", data.gems) or ""))
+	local st = (data.stats or 0) > 0 and ("  📈 능력치 +" .. Config.formatNumber(data.stats)) or ""
+	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d%s%s", data.name, data.coins, data.xp, st, (data.gems or 0) > 0 and string.format("  💠 +%d", data.gems) or ""))
 	if data.boss then
-		UI.banner("🏆 " .. data.name .. " 격파!", string.format("💰 +%d", data.coins), Color3.fromRGB(255, 210, 120))
+		UI.banner("🏆 " .. data.name .. " 격파!", string.format("💰 +%d%s", data.coins, st), Color3.fromRGB(255, 210, 120))
 	end
 end
 
@@ -15992,19 +16429,23 @@ RunService.RenderStepped:Connect(function()
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },
 	}
-	for _, slot in ipairs({ "E", "R", "G" }) do
+	for _, slot in ipairs({ "E", "R", "G", "X" }) do
 		local sk = style.skills[slot]
-		local left = (cds[slot] or 0) - now
-		info[slot] = { name = sk.name, locked = not unlocked(slot), cd = left > 0 and left / (cdLen[slot] or 1) or (slot == "G" and type(chi) == "number" and chi < 100 and 1 - chi / 100 or 0) }
+		if sk then
+			local left = (cds[slot] or 0) - now
+			local need = sk.chi or 100
+			info[slot] = { name = sk.name, locked = not unlocked(slot), cd = left > 0 and left / (cdLen[slot] or 1) or ((slot == "G" or slot == "X") and type(chi) == "number" and chi < need and 1 - chi / need or 0) }
+		end
 	end
 	UI.slots(info)
 	-- 권법 장치 표시
 	local stacks = ""
 	if style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
-	elseif style.id == "maehwa" then
+	elseif style.id == "maehwa" or style.petals then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
-		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
+		local cap = style.petalMax or 20
+		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
 	elseif style.chargeEvery then
 		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
@@ -21274,6 +21715,809 @@ return Music
         </Item>
         <Item class="ModuleScript" referent="21">
           <Properties>
+            <string name="Name">Sakura</string>
+            <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
+-- 벚꽃이 늘 앞에 서도록: 부채에서 꽃잎이 끊임없이 흘러내리고, 모든 기술이 꽃잎의 궤적을 남긴다
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Sakura = {}
+local player = Players.LocalPlayer
+
+local PINKS = {
+	Color3.fromRGB(255, 168, 204),
+	Color3.fromRGB(255, 196, 222),
+	Color3.fromRGB(255, 224, 238),
+	Color3.fromRGB(255, 140, 188),
+	Color3.fromRGB(255, 246, 250),
+}
+local PINK = Color3.fromRGB(255, 150, 200)
+local PINK_DEEP = Color3.fromRGB(240, 90, 150)
+local WHITE = Color3.new(1, 1, 1)
+local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonSakura"
+folder.Parent = workspace
+
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(time, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function rootOf(m: Instance?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function pinkAt(i: number?): Color3
+	return PINKS[((i or math.random(1, 99)) % #PINKS) + 1]
+end
+
+-- 떠다니는 조각 (물리 없음)
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, ell: boolean?): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.Transparency = alpha or 0
+	if ell then
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = p
+	end
+	p.Parent = folder
+	return p
+end
+
+------------------------------------------------------------------------
+-- 꽃잎: 납작한 타원 조각이 팔랑이며 흩날린다 (한꺼번에 너무 많지 않게)
+------------------------------------------------------------------------
+local live = 0
+local MAX_PETALS = 420
+function Sakura.petals(pos: Vector3, n: number, spread: number, life: number, push: Vector3?, size: number?)
+	local k = size or 1
+	for _ = 1, n do
+		if live >= MAX_PETALS then
+			return
+		end
+		live += 1
+		local p = part(Vector3.new(0.8, 0.07, 0.55) * k, pinkAt(), Enum.Material.SmoothPlastic, 0, true)
+		local from = pos + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * spread * 0.4
+		p.CFrame = CFrame.new(from) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+		local drift = (push or Vector3.zero) + Vector3.new(math.random() - 0.5, math.random() * 0.6 - 0.1, math.random() - 0.5) * spread
+		local l = life * (0.7 + math.random() * 0.6)
+		tween(p, l, { CFrame = CFrame.new(from + drift - Vector3.new(0, l * 1.2, 0)) * CFrame.Angles(math.random() * 12, math.random() * 12, math.random() * 12), Transparency = 1 }, Enum.EasingStyle.Sine)
+		task.delay(l, function()
+			live -= 1
+			p:Destroy()
+		end)
+	end
+end
+-- 꽃잎 입자 (가볍게 많이)
+local function petalEmitter(parent: Instance, rate: number, size: number, speed: number, life: number): ParticleEmitter
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = TEX_SPARK
+	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, PINKS[3]), ColorSequenceKeypoint.new(0.5, PINKS[1]), ColorSequenceKeypoint.new(1, PINKS[4]) })
+	pe.LightEmission = 0.4
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size), NumberSequenceKeypoint.new(1, size * 0.6) })
+	pe.Squash = NumberSequence.new(0.5)
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.8, 0.3), NumberSequenceKeypoint.new(1, 1) })
+	pe.Lifetime = NumberRange.new(life * 0.7, life)
+	pe.Rate = rate
+	pe.Speed = NumberRange.new(speed * 0.4, speed)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.RotSpeed = NumberRange.new(-180, 180)
+	pe.Acceleration = Vector3.new(0, -2, 0)
+	pe.Drag = 1.5
+	pe.Parent = parent
+	return pe
+end
+
+------------------------------------------------------------------------
+-- 벚꽃 부채: 손에 쥔 손잡이에서 열한 개의 살이 퍼지고, 살 사이에 분홍 부채 면, 면 위에 다섯 잎 꽃
+------------------------------------------------------------------------
+local fans: { [Model]: { Instance } } = {}
+local function weldTo(p: BasePart, hand: BasePart, cf: CFrame)
+	p.Massless = true
+	p.CFrame = hand.CFrame * cf
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = hand
+	w.Part1 = p
+	w.Parent = p
+	p.Anchored = false
+end
+local function buildFan(model: Model, hand: BasePart, side: number): { Instance }
+	local out: { Instance } = {}
+	local s = 1.0
+	local base = CFrame.new(0, -0.35, 0) * CFrame.Angles(0, side * math.rad(12), 0)
+	-- 부채 조각은 몸 밖의 폴더에 둔다 (몸의 조각을 도는 다른 효과가 부채까지 건드리지 않게). 용접으로 손을 따라간다
+	local holder = Instance.new("Folder")
+	holder.Name = "Fan_" .. model.Name
+	holder.Parent = folder
+	table.insert(out, holder)
+	local function add(size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, ell: boolean?): Part
+		local p = part(size * s, color, mat, alpha, ell)
+		weldTo(p, hand, base * cf)
+		p.Parent = holder
+		table.insert(out, p)
+		return p
+	end
+	local wood = Color3.fromRGB(70, 40, 30)
+	local gold = Color3.fromRGB(240, 200, 120)
+	add(Vector3.new(0.22, 0.4, 0.22), CFrame.new(0, 0.05, 0), wood, Enum.Material.Wood)
+	add(Vector3.new(0.18, 0.18, 0.18), CFrame.new(0, 0.28, 0), gold, Enum.Material.Metal, 0, true)
+	local R0, R1, L = 0.5, 2.2, 2.3
+	local n = 11
+	local spanA = math.rad(150)
+	for i = 0, n - 1 do
+		local th = -spanA / 2 + spanA * i / (n - 1)
+		add(Vector3.new(0.06, L, 0.05), CFrame.Angles(0, 0, th) * CFrame.new(0, -L / 2, 0), wood, Enum.Material.Wood)
+		if i < n - 1 then
+			local tm = th + spanA / (n - 1) / 2
+			local rm = (R0 + R1) / 2
+			local w = 2 * rm * math.sin(spanA / (n - 1) / 2) * 1.12
+			local col = PINKS[(i % 3) + 1]:Lerp(WHITE, (i % 2) * 0.15)
+			add(Vector3.new(w, R1 - R0, 0.03), CFrame.Angles(0, 0, tm) * CFrame.new(0, -rm, 0.02), col, Enum.Material.SmoothPlastic)
+			-- 바깥 테 (짙은 분홍)
+			add(Vector3.new(w * 1.05, 0.12, 0.04), CFrame.Angles(0, 0, tm) * CFrame.new(0, -R1, 0.02), PINK_DEEP, Enum.Material.SmoothPlastic)
+		end
+	end
+	-- 부채 면 위의 벚꽃 세 송이 (다섯 잎 + 금빛 꽃술)
+	for k, at in ipairs({ { -0.5, 1.55 }, { 0.55, 1.35 }, { 0.05, 1.9 } }) do
+		local c = CFrame.Angles(0, 0, at[1]) * CFrame.new(0, -at[2], 0.06)
+		for j = 0, 4 do
+			local a = j / 5 * math.pi * 2
+			add(Vector3.new(0.26, 0.2, 0.02), c * CFrame.Angles(0, 0, a) * CFrame.new(0, 0.13, 0), k == 2 and WHITE or PINKS[4], Enum.Material.SmoothPlastic, 0, true)
+		end
+		add(Vector3.new(0.09, 0.09, 0.03), c, gold, Enum.Material.Neon, 0, true)
+	end
+	-- 부채 끝에서 꽃잎이 끊임없이 흘러내린다
+	local tip = add(Vector3.new(0.1, 0.1, 0.1), CFrame.new(0, -R1, 0), WHITE, nil, 1)
+	petalEmitter(tip, 9, 0.35, 1.5, 1.6)
+	local glow = Instance.new("PointLight")
+	glow.Color = PINK
+	glow.Range = 7
+	glow.Brightness = 0.6
+	glow.Parent = tip
+	return out
+end
+local function clearFans(model: Model)
+	local list = fans[model]
+	if list then
+		for _, p in ipairs(list) do
+			p:Destroy()
+		end
+		fans[model] = nil
+	end
+end
+local builtFor: { [Model]: string } = {}
+local waiting: { [Model]: boolean } = {}
+local tryFans: (Model) -> ()
+local function refreshFans(model: Model)
+	local id = model:GetAttribute("Style")
+	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
+	if not st or not st.fans then
+		clearFans(model)
+		builtFor[model] = nil
+		return
+	end
+	-- 같은 권법이면 다시 만들지 않는다
+	if builtFor[model] == st.id and fans[model] then
+		return
+	end
+	clearFans(model)
+	builtFor[model] = st.id
+	-- 먼저 자리를 잡아 둔다 (같은 몸을 두 번 만들지 않게)
+	local list: { Instance } = {}
+	fans[model] = list
+	for _, pair in ipairs({ { "RightHand", 1 }, { "LeftHand", -1 } }) do
+		local hand = model:FindFirstChild(pair[1])
+		if hand and hand:IsA("BasePart") then
+			for _, p in ipairs(buildFan(model, hand, pair[2])) do
+				table.insert(list, p)
+			end
+		end
+	end
+end
+-- 부채 권법일 때만 손이 생기기를 기다렸다가 만든다 (다른 몸은 기다리지 않는다)
+function tryFans(model: Model)
+	local id = model:GetAttribute("Style")
+	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
+	if not st or not st.fans then
+		refreshFans(model)
+		return
+	end
+	if builtFor[model] == st.id and fans[model] or waiting[model] then
+		return
+	end
+	waiting[model] = true
+	task.spawn(function()
+		model:WaitForChild("RightHand", 10)
+		model:WaitForChild("LeftHand", 10)
+		waiting[model] = nil
+		refreshFans(model)
+	end)
+end
+local watched: { [Model]: boolean } = {}
+function Sakura.watch(model: Model)
+	if watched[model] then
+		return
+	end
+	watched[model] = true
+	tryFans(model)
+	model:GetAttributeChangedSignal("Style"):Connect(function()
+		tryFans(model)
+	end)
+	-- 사라지는 기술 (만앵참월 등) 동안 부채도 감춘다
+	model:GetAttributeChangedSignal("Vanish"):Connect(function()
+		local hide = model:GetAttribute("Vanish") == true
+		for _, p in ipairs(fans[model] or {}) do
+			if p:IsA("BasePart") then
+				p.LocalTransparencyModifier = hide and 1 or 0
+			end
+		end
+	end)
+	model.AncestryChanged:Connect(function()
+		if not model.Parent then
+			clearFans(model)
+			watched[model] = nil
+			builtFor[model] = nil
+		end
+	end)
+end
+-- 폴더 안의 모든 몸 (사부·적)
+function Sakura.watchFolder(f: Instance)
+	for _, m in ipairs(f:GetChildren()) do
+		if m:IsA("Model") then
+			Sakura.watch(m)
+		end
+	end
+	f.ChildAdded:Connect(function(m)
+		if m:IsA("Model") then
+			Sakura.watch(m)
+		end
+	end)
+end
+
+-- 부채를 든 사람은 걸을 때마다 발밑에 꽃잎이 흩날린다
+local walkAcc = 0
+RunService.Heartbeat:Connect(function(dt)
+	walkAcc += dt
+	if walkAcc < 0.25 then
+		return
+	end
+	walkAcc = 0
+	for model in pairs(fans) do
+		local r = rootOf(model)
+		if r and near(r.Position, 110) and model:GetAttribute("Vanish") ~= true then
+			local v = r.AssemblyLinearVelocity
+			local moving = Vector3.new(v.X, 0, v.Z).Magnitude > 3
+			Sakura.petals(r.Position + Vector3.new(0, moving and -1.5 or 1, 0), moving and 4 or 1, moving and 4 or 3, moving and 1.2 or 1.8, moving and -v * 0.15 or nil)
+		end
+	end
+end)
+
+------------------------------------------------------------------------
+-- 기술마다 꽃잎의 궤적: 부채가 지나간 반달 모양 칼자국과 그 길을 따라 흩어지는 꽃잎
+------------------------------------------------------------------------
+local function crescent(cf: CFrame, radius: number, color: Color3, life: number, thick: number?)
+	local segs = 9
+	for i = 0, segs - 1 do
+		local a = -1.1 + 2.2 * i / (segs - 1)
+		local pos = cf * Vector3.new(math.sin(a) * radius, 0, -math.cos(a) * radius)
+		local nxt = cf * Vector3.new(math.sin(a + 0.25) * radius, 0, -math.cos(a + 0.25) * radius)
+		local w = (1 - math.abs(a) / 1.2) * (thick or 0.5) + 0.05
+		local p = part(Vector3.new(w, w * 0.3, (nxt - pos).Magnitude * 1.2), i % 2 == 0 and color or WHITE, Enum.Material.Neon, 0.15, true)
+		p.CFrame = CFrame.lookAt(pos, nxt)
+		tween(p, life, { Transparency = 1, Size = p.Size * Vector3.new(0.3, 0.3, 1.3) })
+		Debris:AddItem(p, life + 0.05)
+	end
+end
+function Sakura.cast(styleId: any, slot: any, model: Model, dur: number)
+	local st = type(styleId) == "string" and Config.STYLE_BY_ID[styleId] or nil
+	if not st or not st.fans then
+		return
+	end
+	local r = rootOf(model)
+	if not r or not near(r.Position, 160) then
+		return
+	end
+	local look = r.CFrame
+	if type(slot) == "number" or slot == "H" or slot == "F" then
+		-- 연타·강타: 앞쪽으로 반달 칼자국 하나 (강타는 크게), 꽃잎이 그 길을 따라
+		local big = slot == "H"
+		task.delay(math.min(0.12, dur * 0.35), function()
+			local cf = look * CFrame.new(0, 0.6, -1) * CFrame.Angles(0, 0, (type(slot) == "number" and slot % 2 == 0) and 0.5 or -0.5)
+			crescent(cf, big and 7 or 4.5, PINK, big and 0.4 or 0.28, big and 0.9 or 0.5)
+			Sakura.petals((look * CFrame.new(0, 0.5, -3)).Position, big and 18 or 8, big and 8 or 5, 1.1, look.LookVector * (big and 10 or 5))
+		end)
+	elseif slot == "E" then
+		Sakura.petals(r.Position, 30, 10, 1.6)
+		for i = 0, 2 do
+			task.delay(i * 0.18, function()
+				crescent(r.CFrame * CFrame.Angles(0, i * 2.1, 0), 6, PINKS[i + 1], 0.35, 0.6)
+			end)
+		end
+	elseif slot == "R" then
+		Sakura.petals(r.Position, 24, 6, 1.4)
+	elseif slot == "G" or slot == "X" then
+		Sakura.petals(r.Position + Vector3.new(0, 2, 0), 50, 14, 2.2)
+		Fx.ring(r.Position - Vector3.new(0, 2.4, 0), PINK, 2, 30, 0.7)
+	end
+end
+
+------------------------------------------------------------------------
+-- 천본앵 (G): 둘레가 벚꽃 칼바람의 소용돌이. 세 겹의 꽃잎 고리가 돌며 좁아지고, 끝에 한가운데로 모여 터진다
+------------------------------------------------------------------------
+local storms: { [any]: any } = {}
+local function stormRun(data: any)
+	local m = data.m
+	local r = rootOf(m)
+	local center0 = data.at or (r and r.Position) or Vector3.zero
+	if not near(center0, 300) then
+		return
+	end
+	local radius = data.radius or 30
+	local dur = data.dur or 3.5
+	local rings = {}
+	local blades = {}
+	-- 세 겹의 꽃잎 고리 (안쪽일수록 빠르다)
+	for ring = 1, 3 do
+		local list = {}
+		local count = 26 - ring * 4
+		for i = 1, count do
+			local p = part(Vector3.new(1.6, 0.1, 1.0) * (1.25 - ring * 0.12), pinkAt(i + ring), Enum.Material.SmoothPlastic, 0, true)
+			table.insert(list, { p = p, a = i / count * math.pi * 2, h = (ring - 2) * 4 + math.random() * 2, spin = math.random() * 6 })
+		end
+		table.insert(rings, { list = list, r = radius * (0.35 + ring * 0.2), speed = (4.2 - ring) * 1.1 })
+	end
+	-- 칼날 같은 빛의 꽃잎 (길고 빛난다)
+	for i = 1, 10 do
+		local p = part(Vector3.new(0.35, 0.12, 4.2), i % 2 == 0 and WHITE or PINK, Enum.Material.Neon, 0.2, true)
+		table.insert(blades, { p = p, a = i / 10 * math.pi * 2, h = math.random() * 6 - 1 })
+	end
+	-- 발밑의 꽃 진과 기둥처럼 솟는 꽃잎 회오리
+	local disc = part(Vector3.new(0.2, radius * 2, radius * 2), PINK, Enum.Material.Neon, 0.75)
+	disc.Shape = Enum.PartType.Cylinder
+	disc.CFrame = CFrame.new(center0 - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local column = part(Vector3.new(2, 2, 2), WHITE, nil, 1)
+	column.Position = center0
+	local pe = petalEmitter(column, 90, 0.7, 18, 2.2)
+	pe.SpreadAngle = Vector2.new(25, 25)
+	pe.Acceleration = Vector3.new(0, 10, 0)
+	local light = Instance.new("PointLight")
+	light.Color = PINK
+	light.Range = 40
+	light.Brightness = 2
+	light.Parent = column
+	Fx.sound("ping", 0.6, 0.6, center0)
+	local t0 = os.clock()
+	local key = {}
+	storms[m or key] = { rings = rings, blades = blades, disc = disc, column = column }
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local rr = rootOf(m)
+		local c = rr and rr.Position or center0
+		local shrink = 1 - math.clamp(t / dur, 0, 1) * 0.35
+		for _, ring in ipairs(rings) do
+			for _, e in ipairs(ring.list) do
+				local a = e.a + t * ring.speed
+				local pos = c + Vector3.new(math.cos(a) * ring.r * shrink, e.h + math.sin(t * 3 + e.a) * 0.8, math.sin(a) * ring.r * shrink)
+				e.p.CFrame = CFrame.new(pos) * CFrame.Angles(t * 4 + e.spin, a, t * 3)
+			end
+		end
+		for _, b in ipairs(blades) do
+			local a = b.a - t * 5
+			local rad = radius * 0.55 * shrink
+			local pos = c + Vector3.new(math.cos(a) * rad, b.h, math.sin(a) * rad)
+			b.p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a)))
+		end
+		disc.CFrame = CFrame.new(c - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, t * 0.8, math.rad(90))
+		column.Position = c
+		if t > dur + 0.6 then
+			conn:Disconnect()
+		end
+	end)
+	task.delay(dur + 0.7, function()
+		local s = storms[m or key]
+		if s then
+			for _, ring in ipairs(s.rings) do
+				for _, e in ipairs(ring.list) do
+					e.p:Destroy()
+				end
+			end
+			for _, b in ipairs(s.blades) do
+				b.p:Destroy()
+			end
+			s.disc:Destroy()
+			s.column:Destroy()
+			storms[m or key] = nil
+		end
+	end)
+end
+local function stormBurst(data: any)
+	local at = data.at
+	if not at or not near(at, 300) then
+		return
+	end
+	local radius = data.radius or 30
+	-- 고리들이 한가운데로 모여든 뒤 꽃처럼 터진다
+	for _, s in pairs(storms) do
+		for _, ring in ipairs(s.rings) do
+			for _, e in ipairs(ring.list) do
+				tween(e.p, 0.22, { CFrame = CFrame.new(at + Vector3.new(0, 1, 0)), Transparency = 0.6 }, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+			end
+		end
+	end
+	task.delay(0.22, function()
+		Fx.blast(at, PINK, WHITE, 3)
+		Fx.flash(at, PINK, 80, 5, 0.6)
+		Fx.ring(at - Vector3.new(0, 2.3, 0), PINK, 4, radius * 2.4, 0.6)
+		Fx.ring(at + Vector3.new(0, 1, 0), WHITE, 2, radius * 1.6, 0.45)
+		Sakura.petals(at + Vector3.new(0, 2, 0), 90, radius * 1.4, 2.4)
+		-- 하늘로 솟는 꽃잎 기둥
+		local col = part(Vector3.new(radius * 0.7, 60, radius * 0.7), PINKS[3], Enum.Material.Neon, 0.3)
+		col.Shape = Enum.PartType.Cylinder
+		col.Size = Vector3.new(60, radius * 0.7, radius * 0.7)
+		col.CFrame = CFrame.new(at + Vector3.new(0, 28, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(col, 0.7, { Size = Vector3.new(70, 0.5, 0.5), Transparency = 1 })
+		Debris:AddItem(col, 0.75)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 만앵참월 (X, 초 오의)
+------------------------------------------------------------------------
+local cuts: { [any]: { BasePart } } = {}
+local grey: ColorCorrectionEffect? = nil
+local function mineOrNear(data: any, d: number): boolean
+	local me = player.Character
+	if data.m and data.m == me then
+		return true
+	end
+	local r = rootOf(me)
+	return r ~= nil and data.at ~= nil and (r.Position - data.at).Magnitude < d
+end
+local function setGrey(on: boolean, time: number)
+	if not grey then
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "KwonSakuraGrey"
+		cc.Parent = Lighting
+		grey = cc
+	end
+	local cc = grey :: ColorCorrectionEffect
+	tween(cc, time, { Saturation = on and -1 or 0, Contrast = on and 0.25 or 0, Brightness = on and -0.06 or 0, TintColor = on and Color3.fromRGB(235, 235, 240) or WHITE })
+end
+
+-- 화면 위의 큰 글자와 칼자국 (내 화면에서만)
+local function screenGui(): ScreenGui
+	local pg = player:WaitForChild("PlayerGui")
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonSever"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 80
+	g.Parent = pg
+	return g
+end
+local function bigName(name: string, life: number)
+	local g = screenGui()
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.AnchorPoint = Vector2.new(0.5, 0.5)
+	t.Position = UDim2.fromScale(0.5, 0.42)
+	t.Size = UDim2.fromScale(0.8, 0.16)
+	t.Font = Enum.Font.GothamBlack
+	t.TextScaled = true
+	t.Text = name
+	t.TextColor3 = Color3.fromRGB(255, 236, 246)
+	t.TextTransparency = 1
+	t.TextStrokeColor3 = PINK_DEEP
+	t.TextStrokeTransparency = 1
+	t.Parent = g
+	local sub = t:Clone()
+	sub.Position = UDim2.fromScale(0.5, 0.53)
+	sub.Size = UDim2.fromScale(0.5, 0.05)
+	sub.Text = "超 · 萬櫻斬月"
+	sub.Parent = g
+	tween(t, 0.25, { TextTransparency = 0, TextStrokeTransparency = 0.2 })
+	tween(sub, 0.35, { TextTransparency = 0.1, TextStrokeTransparency = 0.4 })
+	task.delay(life, function()
+		tween(t, 0.3, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		tween(sub, 0.3, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		Debris:AddItem(g, 0.35)
+	end)
+end
+-- 화면을 비스듬히 한칼에 가르고, 두 쪽이 갈라지며 빛이 새어 나온 뒤 다시 붙는다
+local function screenSplit()
+	local g = screenGui()
+	local angle = -26
+	local holder = Instance.new("Frame")
+	holder.BackgroundTransparency = 1
+	holder.Size = UDim2.fromScale(1, 1)
+	holder.Parent = g
+	local function band(color: Color3, alpha: number, thick: number, z: number): Frame
+		local f = Instance.new("Frame")
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.Position = UDim2.fromScale(0.5, 0.5)
+		f.Size = UDim2.new(0, 0, 0, thick)
+		f.Rotation = angle
+		f.BorderSizePixel = 0
+		f.BackgroundColor3 = color
+		f.BackgroundTransparency = alpha
+		f.ZIndex = z
+		f.Parent = holder
+		local gr = Instance.new("UIGradient")
+		gr.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.15, 0), NumberSequenceKeypoint.new(0.85, 0), NumberSequenceKeypoint.new(1, 1) })
+		gr.Parent = f
+		return f
+	end
+	-- 두 쪽 (위·아래): 어둡게 비치는 큰 판이 칼자국을 따라 갈라진다
+	local halves: { Frame } = {}
+	for _, s in ipairs({ -1, 1 }) do
+		local f = Instance.new("Frame")
+		f.AnchorPoint = Vector2.new(0.5, s < 0 and 1 or 0)
+		f.Position = UDim2.fromScale(0.5, 0.5)
+		f.Size = UDim2.fromScale(3, 3)
+		f.Rotation = angle
+		f.BorderSizePixel = 0
+		f.BackgroundColor3 = Color3.fromRGB(20, 10, 16)
+		f.BackgroundTransparency = 1
+		f.ZIndex = 2
+		f.Parent = holder
+		table.insert(halves, f)
+	end
+	local glow = band(Color3.fromRGB(255, 120, 180), 0.2, 26, 3)
+	local core = band(WHITE, 0, 6, 4)
+	-- 1) 한 줄기 칼날이 화면을 가로지른다
+	tween(glow, 0.09, { Size = UDim2.new(2.6, 0, 0, 26) }, Enum.EasingStyle.Quint)
+	tween(core, 0.09, { Size = UDim2.new(2.6, 0, 0, 6) }, Enum.EasingStyle.Quint)
+	task.delay(0.1, function()
+		-- 2) 두 쪽이 갈라지며 틈으로 빛이 새어 나온다
+		local rad = math.rad(angle)
+		local nx, ny = -math.sin(rad), math.cos(rad)
+		for i, f in ipairs(halves) do
+			local s = i == 1 and -1 or 1
+			f.BackgroundTransparency = 0.82
+			tween(f, 0.28, { Position = UDim2.new(0.5, nx * 46 * s, 0.5, ny * 46 * s) }, Enum.EasingStyle.Back)
+		end
+		tween(glow, 0.28, { Size = UDim2.new(2.6, 0, 0, 120), BackgroundTransparency = 0.35 }, Enum.EasingStyle.Back)
+		tween(core, 0.28, { Size = UDim2.new(2.6, 0, 0, 40) }, Enum.EasingStyle.Back)
+	end)
+	task.delay(0.55, function()
+		-- 3) 다시 붙으며 사라진다
+		for _, f in ipairs(halves) do
+			tween(f, 0.35, { Position = UDim2.fromScale(0.5, 0.5), BackgroundTransparency = 1 })
+		end
+		tween(glow, 0.45, { Size = UDim2.new(2.6, 0, 0, 0), BackgroundTransparency = 1 })
+		tween(core, 0.45, { Size = UDim2.new(2.6, 0, 0, 0), BackgroundTransparency = 1 })
+		Debris:AddItem(g, 0.5)
+	end)
+end
+
+local function severCut(data: any)
+	local from, to = data.from, data.to
+	if not from or not to or not near(to, 300) then
+		return
+	end
+	-- 지나간 길보다 길게, 가슴 높이에 비스듬히 남는 하늘의 칼자국
+	local dir = to - from
+	if dir.Magnitude < 0.5 then
+		dir = Vector3.new(0, 0, -1)
+	end
+	local mid = (from + to) / 2 + Vector3.new(0, 1.5, 0)
+	local len = dir.Magnitude + 14
+	local cf = CFrame.lookAt(mid, mid + dir) * CFrame.Angles(0, 0, (math.random() - 0.5) * 1.6)
+	local glow = part(Vector3.new(1.6, 0.25, len), PINK, Enum.Material.Neon, 0.35, true)
+	glow.CFrame = cf
+	local core = part(Vector3.new(0.45, 0.12, len * 0.98), WHITE, Enum.Material.Neon, 0, true)
+	core.CFrame = cf
+	glow.Size = Vector3.new(1.6, 0.25, 0.5)
+	core.Size = Vector3.new(0.45, 0.12, 0.5)
+	tween(glow, 0.08, { Size = Vector3.new(1.6, 0.25, len) })
+	tween(core, 0.08, { Size = Vector3.new(0.45, 0.12, len * 0.98) })
+	local key = data.style or "x"
+	cuts[key] = cuts[key] or {}
+	table.insert(cuts[key], glow)
+	table.insert(cuts[key], core)
+	Sakura.petals(data.at or to, 14, 5, 1.2, dir.Unit * 8)
+	Fx.burst("spark", data.at or to, WHITE, 8, 1)
+	Fx.sound("ping", 0.4, 1.8 + (data.i or 0) * 0.05, to)
+	-- 오래 남지 않게 (끝을 못 보면 스스로 사라진다)
+	Debris:AddItem(glow, 6)
+	Debris:AddItem(core, 6)
+end
+
+local function severStill(data: any)
+	if mineOrNear(data, 160) then
+		setGrey(true, 0.12)
+		if data.m == player.Character then
+			bigName("만앵참월", (data.dur or 0.9) + 1.0)
+		end
+	end
+	-- 멈춘 세상에서 칼자국만 숨 쉬듯 빛난다
+	for _, list in pairs(cuts) do
+		for _, p in ipairs(list) do
+			if p.Parent then
+				tween(p, 0.4, { Transparency = 0 }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+			end
+		end
+	end
+	Fx.sound("ping", 0.7, 0.45, data.at)
+end
+
+local function severWind(data: any)
+	local dur = data.dur or 1.3
+	for _, m in ipairs(data.targets or {}) do
+		local r = rootOf(m)
+		if r and near(r.Position, 260) then
+			-- 적마다 칼바람의 회오리: 도는 초승달 칼날 여섯, 솟구치는 꽃잎과 흰 바람
+			local blades = {}
+			for i = 1, 6 do
+				local p = part(Vector3.new(0.3, 0.1, 3.6), i % 2 == 0 and WHITE or PINK, Enum.Material.Neon, 0.15, true)
+				table.insert(blades, { p = p, a = i / 6 * math.pi * 2, h = (i % 3) * 1.4 - 1 })
+			end
+			local holder = part(Vector3.new(1, 1, 1), WHITE, nil, 1)
+			holder.Position = r.Position
+			local pe = petalEmitter(holder, 60, 0.55, 14, 1.0)
+			pe.SpreadAngle = Vector2.new(30, 30)
+			pe.Acceleration = Vector3.new(0, 18, 0)
+			local t0 = os.clock()
+			local conn
+			conn = RunService.RenderStepped:Connect(function()
+				local t = os.clock() - t0
+				local rr = rootOf(m)
+				local c = rr and rr.Position or holder.Position
+				holder.Position = c
+				for _, b in ipairs(blades) do
+					local a = b.a + t * 9
+					local rad = 3.2 + math.sin(t * 6 + b.a) * 0.6
+					local pos = c + Vector3.new(math.cos(a) * rad, b.h + t * 1.2, math.sin(a) * rad)
+					b.p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0.3, math.cos(a)))
+				end
+				if t > dur then
+					conn:Disconnect()
+					for _, b in ipairs(blades) do
+						b.p:Destroy()
+					end
+					pe.Enabled = false
+					Debris:AddItem(holder, 1.2)
+				end
+			end)
+		end
+	end
+end
+
+local function severEnd(data: any)
+	local at = data.at
+	for _, m in ipairs(data.targets or {}) do
+		local r = rootOf(m)
+		if r and near(r.Position, 300) then
+			Fx.blast(r.Position, PINK, WHITE, 2.6)
+			Fx.flash(r.Position, PINK, 40, 4, 0.4)
+			Sakura.petals(r.Position, 26, 12, 1.8)
+		end
+	end
+	if at and near(at, 300) then
+		Fx.ring(at - Vector3.new(0, 2.3, 0), PINK, 4, (data.radius or 22) * 2.6, 0.6)
+		Fx.flash(at, WHITE, 90, 5, 0.5)
+	end
+	-- 하늘의 칼자국이 꽃잎으로 부서진다
+	for key, list in pairs(cuts) do
+		for _, p in ipairs(list) do
+			if p.Parent then
+				local pos = p.Position
+				tween(p, 0.25, { Size = p.Size * Vector3.new(3, 3, 1.1), Transparency = 1 })
+				Debris:AddItem(p, 0.3)
+				Sakura.petals(pos, 8, p.Size.Z * 0.5, 1.6)
+			end
+		end
+		cuts[key] = nil
+	end
+	if mineOrNear(data, 160) then
+		-- 화면을 한칼에 가르고, 잿빛이 풀리며 분홍빛이 번진다
+		screenSplit()
+		task.delay(0.12, function()
+			setGrey(false, 0.6)
+		end)
+	end
+	Fx.sound("ping", 1, 0.35, at)
+end
+
+local function severStart(data: any)
+	local r = rootOf(data.m)
+	if r and near(r.Position, 300) then
+		Sakura.petals(r.Position, 40, 6, 1.4)
+		Fx.flash(r.Position, WHITE, 30, 3, 0.25)
+	end
+	-- 끝을 못 받더라도 잿빛은 스스로 풀린다
+	task.delay((data.dur or 4) + 1.5, function()
+		if grey and grey.Saturation < -0.1 then
+			setGrey(false, 0.4)
+		end
+	end)
+end
+
+local HANDLERS: { [string]: (any) -> () } = {
+	sakuraStorm = stormRun,
+	sakuraBurst = stormBurst,
+	severStart = severStart,
+	severCut = severCut,
+	severStill = severStill,
+	severWind = severWind,
+	severEnd = severEnd,
+}
+function Sakura.handles(kind: any): boolean
+	return type(kind) == "string" and HANDLERS[kind] ~= nil
+end
+function Sakura.run(data: any)
+	local h = HANDLERS[data.kind]
+	if h then
+		h(data)
+	end
+end
+
+-- 초 오의를 펼칠 때 (내 화면): 화면 가장자리가 벚꽃빛으로 물들고, 꽃잎이 화면 가득 쏟아진다
+function Sakura.superIntro(model: Model)
+	local r = rootOf(model)
+	if r then
+		Sakura.petals(r.Position + Vector3.new(0, 3, 0), 60, 16, 2.4)
+		Fx.sigil(r.Position - Vector3.new(0, 2.6, 0), 20, PINK, WHITE, 1.4)
+	end
+	local g = screenGui()
+	local edge = Instance.new("Frame")
+	edge.Size = UDim2.fromScale(1, 1)
+	edge.BackgroundTransparency = 1
+	edge.Parent = g
+	local st = Instance.new("UIStroke")
+	st.Color = PINK
+	st.Thickness = 60
+	st.Transparency = 0.2
+	st.Parent = edge
+	tween(st, 1.2, { Transparency = 1, Thickness = 10 })
+	-- 화면 위로 흩날리는 꽃잎 (글자 대신 둥근 판)
+	for i = 1, 26 do
+		local p = Instance.new("Frame")
+		p.AnchorPoint = Vector2.new(0.5, 0.5)
+		p.Position = UDim2.fromScale(math.random(), -0.05)
+		local s = math.random(10, 22)
+		p.Size = UDim2.fromOffset(s, s * 0.65)
+		p.Rotation = math.random(0, 360)
+		p.BackgroundColor3 = pinkAt(i)
+		p.BorderSizePixel = 0
+		p.Parent = g
+		local cr = Instance.new("UICorner")
+		cr.CornerRadius = UDim.new(1, 0)
+		cr.Parent = p
+		tween(p, 1.4 + math.random(), { Position = UDim2.fromScale(math.random(), 1.05), Rotation = p.Rotation + math.random(-360, 360), BackgroundTransparency = 0.6 }, Enum.EasingStyle.Sine)
+	end
+	Debris:AddItem(g, 2.6)
+end
+
+return Sakura
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="22">
+          <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
 local Players = game:GetService("Players")
@@ -21532,7 +22776,7 @@ local function buildHud()
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
 	HUD.slots = {}
-	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
+	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "X", "X 초 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
 		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.1, Parent = row }, { corner(8) })
 		local st = stroke(C.line, 1.2)
 		st.Parent = cell
@@ -21569,6 +22813,10 @@ function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number
 	end
 	for key, s in pairs(HUD.slots) do
 		local i = info[key]
+		-- 초 오의 칸은 초월 권법일 때만
+		if key == "X" then
+			s.cell.Visible = i ~= nil
+		end
 		if i then
 			s.name.Text = (i.locked and "🔒 " or "") .. i.name
 			s.name.TextColor3 = i.locked and C.dim or C.text
@@ -21577,8 +22825,8 @@ function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number
 			-- 쓸 수 있는 기술은 테가 권법 빛으로 빛난다
 			if s.stripe and HUD.styleColor then
 				s.stripe.BackgroundColor3 = HUD.styleColor
-				s.stroke.Color = (cdr <= 0 and not i.locked and (key == "E" or key == "R" or key == "G")) and HUD.styleColor or C.line
-				s.stroke.Thickness = (cdr <= 0 and not i.locked and key == "G") and 2.5 or 1.2
+				s.stroke.Color = (cdr <= 0 and not i.locked and (key == "E" or key == "R" or key == "G" or key == "X")) and HUD.styleColor or C.line
+				s.stroke.Thickness = (cdr <= 0 and not i.locked and (key == "G" or key == "X")) and (key == "X" and 3.5 or 2.5) or 1.2
 			end
 		end
 	end
@@ -21875,11 +23123,14 @@ local function buildStyles()
 		table.insert(lines, "<b>Z 강타</b>  " .. s.heavy.name)
 		local m = state and state.mastery and state.mastery[id]
 		local lv = m and m.lv or 0
-		for _, slot in ipairs({ "E", "R", "G" }) do
+		for _, slot in ipairs({ "E", "R", "G", "X" }) do
 			local sk = s.skills[slot]
-			local need = Config.SKILL_UNLOCK[slot]
-			local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
-			table.insert(lines, string.format("<b>%s %s</b>%s  %s", slot == "G" and "오의 G" or slot, sk.name, lockTxt, sk.desc))
+			if sk then
+				local need = Config.SKILL_UNLOCK[slot]
+				local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
+				local label = slot == "G" and "오의 G" or (slot == "X" and '<font color="#FF9AC8">초 오의 X</font>' or slot)
+				table.insert(lines, string.format("<b>%s %s</b>%s  %s", label, sk.name, lockTxt, sk.desc))
+			end
 		end
 		-- 각성
 		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
@@ -22051,7 +23302,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
 		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
@@ -22533,7 +23784,7 @@ local function buildTest()
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 200000 },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -22818,6 +24069,28 @@ local masterMarks: { [string]: { stroke: UIStroke, icon: TextLabel, color: Color
 local beacons: { [string]: Part } = {}
 local storyMark: Frame? = nil
 
+-- 1.5판: 지역마다 권장 전투력 (서버가 적들의 전투력으로 정해 ReplicatedStorage.KwonRegionPower에 적어 둔다)
+local function regionPower(id: string): (number?, number?)
+	local f = game:GetService("ReplicatedStorage"):FindFirstChild("KwonRegionPower")
+	if not f then
+		return nil, nil
+	end
+	local a, b = f:GetAttribute(id), f:GetAttribute(id .. "_boss")
+	return (type(a) == "number" and a or nil), (type(b) == "number" and b or nil)
+end
+UI.regionPower = regionPower
+-- 권장 전투력과 내 전투력을 견준 한 줄 (위험·알맞음·여유)
+local function powerAdvice(rec: number): string
+	local mine = state and state.power or 0
+	if mine <= 0 then
+		return string.format("⚔ 권장 전투력 %s", Config.formatNumber(rec))
+	end
+	local r = mine / rec
+	local tag = r < 0.6 and "⚠ 위험" or (r < 1 and "조금 버거움" or (r < 2.5 and "알맞음" or "여유"))
+	return string.format("⚔ 권장 %s (내 %s · %s)", Config.formatNumber(rec), Config.formatNumber(mine), tag)
+end
+local recLabels: { [string]: TextLabel } = {}
+
 local function mapUV(p: Vector3): UDim2
 	local H = Config.WORLD_HALF
 	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
@@ -22897,8 +24170,27 @@ local function buildMap()
 			else
 				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
 			end
+			-- 권장 전투력 (큰 지도에서)
+			if not r.safe then
+				local at = r.boss and (r.center + Vector3.new(0, 0, r.size.Z / 2 - 60)) or (r.center + Vector3.new(0, 0, 45))
+				recLabels[r.id] = label(at, "", 11, Color3.fromRGB(255, 215, 130), 9, true)
+			end
 		end
 	end
+	local function fillRec()
+		for id, l in pairs(recLabels) do
+			local rec, boss = regionPower(id)
+			l.Text = rec and (string.format("⚔ 권장 %s", Config.formatNumber(rec)) .. (boss and string.format(" · 👹 %s", Config.formatNumber(boss)) or "")) or ""
+		end
+	end
+	fillRec()
+	task.spawn(function()
+		local f = game:GetService("ReplicatedStorage"):WaitForChild("KwonRegionPower", 60)
+		if f then
+			fillRec()
+			f.AttributeChanged:Connect(fillRec)
+		end
+	end)
 	-- 큰 볼거리
 	for _, lm in ipairs(Config.Landmarks) do
 		label(lm.at, lm.icon, 16, Color3.new(1, 1, 1), 8)
@@ -23275,7 +24567,8 @@ local function skyTick(pos: Vector3)
 	if id ~= regionNow then
 		regionNow = id
 		if isl then
-			UI.toast(string.format("📍 천상계 · %s%s", isl.name, isl.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(Vector3.new(pos.X, Config.SKY.y, pos.Z)))))
+			local rec = regionPower("sky_" .. isl.id)
+			UI.toast(string.format("📍 천상계 · %s%s%s", isl.name, isl.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(Vector3.new(pos.X, Config.SKY.y, pos.Z))), (rec and not isl.safe) and ("  · " .. powerAdvice(rec)) or ""))
 		end
 	end
 	local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
@@ -23325,7 +24618,8 @@ local function ambientTick(pos: Vector3)
 		regionNow = id
 		if r then
 			local lv = Config.enemyLevel(pos)
-			UI.toast(string.format("📍 %s%s", r.name, r.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", lv)))
+			local rec = regionPower(r.id)
+			UI.toast(string.format("📍 %s%s%s", r.name, r.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", lv), (rec and not r.safe) and ("  · " .. powerAdvice(rec)) or ""))
 		end
 	end
 	local a = AMBIENT[r and r.ambient or "default"] or AMBIENT.default
@@ -23445,6 +24739,9 @@ function UI.mobile(actions: { [string]: any })
 	round("E", UDim2.fromScale(0.12, 0.62), 50, C.panel2, actions.E)
 	round("R", UDim2.fromScale(0.62, 0.28), 50, C.panel2, actions.R)
 	round("G", UDim2.fromScale(0.22, 0.3), 50, C.gold, actions.G)
+	if actions.X then
+		round("X", UDim2.fromScale(0.36, 0.14), 46, Color3.fromRGB(255, 140, 190), actions.X)
+	end
 	round("🧪", UDim2.fromScale(0.95, 0.05), 44, C.green, actions.potion)
 	round("●", UDim2.fromScale(0.05, 0.95), 44, C.chi, actions.train)
 	round("🐎", UDim2.fromScale(0.05, 0.62), 44, C.panel2, actions.mount)
@@ -23604,7 +24901,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -26279,7 +27576,7 @@ return Ults
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="23">
+  <Item class="Workspace" referent="24">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

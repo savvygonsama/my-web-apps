@@ -255,7 +255,7 @@ local function buildHud()
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
 	HUD.slots = {}
-	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
+	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "X", "X 초 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
 		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.1, Parent = row }, { corner(8) })
 		local st = stroke(C.line, 1.2)
 		st.Parent = cell
@@ -292,6 +292,10 @@ function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number
 	end
 	for key, s in pairs(HUD.slots) do
 		local i = info[key]
+		-- 초 오의 칸은 초월 권법일 때만
+		if key == "X" then
+			s.cell.Visible = i ~= nil
+		end
 		if i then
 			s.name.Text = (i.locked and "🔒 " or "") .. i.name
 			s.name.TextColor3 = i.locked and C.dim or C.text
@@ -300,8 +304,8 @@ function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number
 			-- 쓸 수 있는 기술은 테가 권법 빛으로 빛난다
 			if s.stripe and HUD.styleColor then
 				s.stripe.BackgroundColor3 = HUD.styleColor
-				s.stroke.Color = (cdr <= 0 and not i.locked and (key == "E" or key == "R" or key == "G")) and HUD.styleColor or C.line
-				s.stroke.Thickness = (cdr <= 0 and not i.locked and key == "G") and 2.5 or 1.2
+				s.stroke.Color = (cdr <= 0 and not i.locked and (key == "E" or key == "R" or key == "G" or key == "X")) and HUD.styleColor or C.line
+				s.stroke.Thickness = (cdr <= 0 and not i.locked and (key == "G" or key == "X")) and (key == "X" and 3.5 or 2.5) or 1.2
 			end
 		end
 	end
@@ -598,11 +602,14 @@ local function buildStyles()
 		table.insert(lines, "<b>Z 강타</b>  " .. s.heavy.name)
 		local m = state and state.mastery and state.mastery[id]
 		local lv = m and m.lv or 0
-		for _, slot in ipairs({ "E", "R", "G" }) do
+		for _, slot in ipairs({ "E", "R", "G", "X" }) do
 			local sk = s.skills[slot]
-			local need = Config.SKILL_UNLOCK[slot]
-			local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
-			table.insert(lines, string.format("<b>%s %s</b>%s  %s", slot == "G" and "오의 G" or slot, sk.name, lockTxt, sk.desc))
+			if sk then
+				local need = Config.SKILL_UNLOCK[slot]
+				local lockTxt = lv >= need and "" or string.format(' <font color="#AA9988">(숙련 %d)</font>', need)
+				local label = slot == "G" and "오의 G" or (slot == "X" and '<font color="#FF9AC8">초 오의 X</font>' or slot)
+				table.insert(lines, string.format("<b>%s %s</b>%s  %s", label, sk.name, lockTxt, sk.desc))
+			end
 		end
 		-- 각성
 		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
@@ -774,7 +781,7 @@ local function buildStats()
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
 		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
 		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
@@ -1256,7 +1263,7 @@ local function buildTest()
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 200000 },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -1541,6 +1548,28 @@ local masterMarks: { [string]: { stroke: UIStroke, icon: TextLabel, color: Color
 local beacons: { [string]: Part } = {}
 local storyMark: Frame? = nil
 
+-- 1.5판: 지역마다 권장 전투력 (서버가 적들의 전투력으로 정해 ReplicatedStorage.KwonRegionPower에 적어 둔다)
+local function regionPower(id: string): (number?, number?)
+	local f = game:GetService("ReplicatedStorage"):FindFirstChild("KwonRegionPower")
+	if not f then
+		return nil, nil
+	end
+	local a, b = f:GetAttribute(id), f:GetAttribute(id .. "_boss")
+	return (type(a) == "number" and a or nil), (type(b) == "number" and b or nil)
+end
+UI.regionPower = regionPower
+-- 권장 전투력과 내 전투력을 견준 한 줄 (위험·알맞음·여유)
+local function powerAdvice(rec: number): string
+	local mine = state and state.power or 0
+	if mine <= 0 then
+		return string.format("⚔ 권장 전투력 %s", Config.formatNumber(rec))
+	end
+	local r = mine / rec
+	local tag = r < 0.6 and "⚠ 위험" or (r < 1 and "조금 버거움" or (r < 2.5 and "알맞음" or "여유"))
+	return string.format("⚔ 권장 %s (내 %s · %s)", Config.formatNumber(rec), Config.formatNumber(mine), tag)
+end
+local recLabels: { [string]: TextLabel } = {}
+
 local function mapUV(p: Vector3): UDim2
 	local H = Config.WORLD_HALF
 	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
@@ -1620,8 +1649,27 @@ local function buildMap()
 			else
 				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
 			end
+			-- 권장 전투력 (큰 지도에서)
+			if not r.safe then
+				local at = r.boss and (r.center + Vector3.new(0, 0, r.size.Z / 2 - 60)) or (r.center + Vector3.new(0, 0, 45))
+				recLabels[r.id] = label(at, "", 11, Color3.fromRGB(255, 215, 130), 9, true)
+			end
 		end
 	end
+	local function fillRec()
+		for id, l in pairs(recLabels) do
+			local rec, boss = regionPower(id)
+			l.Text = rec and (string.format("⚔ 권장 %s", Config.formatNumber(rec)) .. (boss and string.format(" · 👹 %s", Config.formatNumber(boss)) or "")) or ""
+		end
+	end
+	fillRec()
+	task.spawn(function()
+		local f = game:GetService("ReplicatedStorage"):WaitForChild("KwonRegionPower", 60)
+		if f then
+			fillRec()
+			f.AttributeChanged:Connect(fillRec)
+		end
+	end)
 	-- 큰 볼거리
 	for _, lm in ipairs(Config.Landmarks) do
 		label(lm.at, lm.icon, 16, Color3.new(1, 1, 1), 8)
@@ -1998,7 +2046,8 @@ local function skyTick(pos: Vector3)
 	if id ~= regionNow then
 		regionNow = id
 		if isl then
-			UI.toast(string.format("📍 천상계 · %s%s", isl.name, isl.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(Vector3.new(pos.X, Config.SKY.y, pos.Z)))))
+			local rec = regionPower("sky_" .. isl.id)
+			UI.toast(string.format("📍 천상계 · %s%s%s", isl.name, isl.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(Vector3.new(pos.X, Config.SKY.y, pos.Z))), (rec and not isl.safe) and ("  · " .. powerAdvice(rec)) or ""))
 		end
 	end
 	local atmo = game:GetService("Lighting"):FindFirstChildOfClass("Atmosphere")
@@ -2048,7 +2097,8 @@ local function ambientTick(pos: Vector3)
 		regionNow = id
 		if r then
 			local lv = Config.enemyLevel(pos)
-			UI.toast(string.format("📍 %s%s", r.name, r.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", lv)))
+			local rec = regionPower(r.id)
+			UI.toast(string.format("📍 %s%s%s", r.name, r.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", lv), (rec and not r.safe) and ("  · " .. powerAdvice(rec)) or ""))
 		end
 	end
 	local a = AMBIENT[r and r.ambient or "default"] or AMBIENT.default
@@ -2168,6 +2218,9 @@ function UI.mobile(actions: { [string]: any })
 	round("E", UDim2.fromScale(0.12, 0.62), 50, C.panel2, actions.E)
 	round("R", UDim2.fromScale(0.62, 0.28), 50, C.panel2, actions.R)
 	round("G", UDim2.fromScale(0.22, 0.3), 50, C.gold, actions.G)
+	if actions.X then
+		round("X", UDim2.fromScale(0.36, 0.14), 46, Color3.fromRGB(255, 140, 190), actions.X)
+	end
 	round("🧪", UDim2.fromScale(0.95, 0.05), 44, C.green, actions.potion)
 	round("●", UDim2.fromScale(0.05, 0.95), 44, C.chi, actions.train)
 	round("🐎", UDim2.fromScale(0.05, 0.62), 44, C.panel2, actions.mount)

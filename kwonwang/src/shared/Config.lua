@@ -100,19 +100,20 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	{ name = "생사경", need = 95000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 150000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 230000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 350000, color = Color3.fromRGB(255, 150, 255) },
+	-- 1.5판: 사경 너머는 문턱이 경지마다 약 3.6배씩 (적을 쓰러뜨려 얻는 능력치로 오른다). 천외천은 능력치 합 5억
+	{ name = "생사경", need = 218000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 791000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 2874000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 10438000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 520000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 760000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 1100000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 37908000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 137674000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 500000000, color = Color3.fromRGB(255, 255, 160) },
 }
--- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.32씩 (후반일수록 크게 뛴다)
--- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×14.9, 천외천 ×34)
+-- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
+-- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
 function Config.realmPower(idx: number): number
-	return 1.22 ^ (math.min(idx, 9) - 1) * 1.32 ^ math.max(0, idx - 9)
+	return 1.22 ^ (math.min(idx, 9) - 1) * 1.38 ^ math.max(0, idx - 9)
 end
 
 function Config.realmOf(total: number): (number, any)
@@ -123,6 +124,42 @@ function Config.realmOf(total: number): (number, any)
 		end
 	end
 	return idx, Config.Realms[idx]
+end
+
+------------------------------------------------------------------------
+-- 1.5판: 적을 쓰러뜨리면 능력치가 오른다 (강해지는 길의 중심)
+-- 경지마다 그 경지에 막 오른 사람의 전투력과, 다음 경지까지 몇 마리면 되는지를 잡아 두고
+-- (앞 경지는 스무 마리 남짓, 뒤로 갈수록 일흔 마리 남짓), 쓰러뜨린 적의 전투력으로 그 사이를 이어 얻는 양을 정한다
+------------------------------------------------------------------------
+Config.KILL_GAIN = { boss = 8, elite = 2, tower = 0.5 }
+local killTable: { { number } } = {}
+do
+	local n = #Config.Realms
+	for i, r in ipairs(Config.Realms) do
+		local nxt = i < n and Config.Realms[i + 1].need or r.need * 2
+		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
+		local gain = (nxt - r.need) / (15 + 4 * i)
+		table.insert(killTable, { power, gain })
+	end
+end
+-- 전투력 power인 적 하나를 쓰러뜨리면 오르는 능력치 합 (네 능력치에 고루 나눈다)
+function Config.killGain(power: number): number
+	local p = math.max(1, power)
+	local first, last = killTable[1], killTable[#killTable]
+	if p <= first[1] then
+		return math.max(1, first[2] * (p / first[1]) ^ 2)
+	end
+	if p >= last[1] then
+		return last[2] * (p / last[1]) ^ 1.5
+	end
+	for i = 1, #killTable - 1 do
+		local a, b = killTable[i], killTable[i + 1]
+		if p <= b[1] then
+			local t = math.log(p / a[1]) / math.log(b[1] / a[1])
+			return math.exp(math.log(a[2]) + (math.log(b[2]) - math.log(a[2])) * t)
+		end
+	end
+	return last[2]
 end
 
 ------------------------------------------------------------------------
@@ -147,7 +184,7 @@ Config.Training = {
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
-Config.TRAIN_GAIN = 0.9 -- 1.0판: 0.6 → 0.9 (한 번에 오르는 양 1.5배)
+Config.TRAIN_GAIN = 0.6 -- 1.5판: 강해지는 길의 중심은 싸움 (적을 쓰러뜨려 능력치를 얻는다). 수련은 처음에 거드는 정도
 Config.TRAIN_REALM_BONUS = 0.12
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
 Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
@@ -1066,8 +1103,8 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0 }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0, ["초월"] = 3.6 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1079,6 +1116,7 @@ Config.GRADE_COLOR = {
 	["천외천"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
+	["초월"] = Color3.fromRGB(255, 160, 210),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1096,7 +1134,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -1113,6 +1151,53 @@ end
 function Config.actSpeed(style: any, up: number?, frenzy: boolean?): number
 	return (style.speed or 1) * Config.gradeSpeed(style, up) * (frenzy and 1.2 or 1)
 end
+------------------------------------------------------------------------
+-- 1.5판: 초월 권법. 기존 권법을 넘어선 권법으로, 모든 기술이 새로 짜였고 오의(G) 위에 초 오의(X)가 하나 더 있다
+-- 초·매화난무권: 두 손에 벚꽃 부채. 모든 기술을 벚꽃 칼바람이 따라 인다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chomaehwa",
+	name = "초·매화난무권",
+	hanja = "超梅花亂舞拳",
+	icon = "🌸",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(255, 138, 192),
+	color2 = Color3.fromRGB(255, 238, 247),
+	fx = "petal",
+	fans = true, -- 두 손에 벚꽃 부채 (화면이 그린다)
+	petals = true, -- 매화난무권의 꽃잎 쌓기를 이어받는다 (더 많이, 더 크게)
+	petalMax = 30,
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "maehwa",
+	trialHp = 10,
+	unlockHint = "매화난무권을 익히고 천외천에 오른 자만이, 매화원 가장 깊은 벚꽃 언덕의 천앵선을 만난다",
+	desc = "매화난무권을 넘어선 권법. 두 손의 벚꽃 부채가 펼쳐질 때마다 꽃잎이 칼날이 되어 흩날린다. 꽃은 지는 순간이 가장 아름답다.",
+	gimmick = "벚꽃: 1.2초 안에 계속 맞히면 꽃잎이 쌓인다 (최대 30). 다 차면 Z가 천앵만개로 크게 터진다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.25,
+	speed = 1.25,
+	stance = "stance_sakura",
+	combo = {
+		{ id = "cm1", name = "앵선일섬", pose = "fan_slash_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 8, 7, 0.3, 5) } },
+		{ id = "cm2", name = "앵선이섬", pose = "fan_slash_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 8, 7, 0.3, 5) } },
+		{ id = "cm3", name = "화선회", pose = "fan_twirl", dur = 0.36, lunge = 2, hits = { hit(0.12, 4, 7, 6, 6, 0.3, 6, nil, true), hit(0.26, 4, 7, 6, 6, 0.3, 6, nil, true) } },
+		{ id = "cm4", name = "낙앵선퇴", pose = "fan_kick", dur = 0.44, lunge = 3, hits = { hit(0.2, 7, 6, 13, 14, 0.5, 26) } },
+	},
+	heavy = { id = "cmH", name = "천앵일섬", pose = "fan_dash", dur = 0.5, lunge = 18, iframes = 0.25, hits = { hit(0.2, 8, 5.5, 20, 20, 0.55, 18) }, bloom = { radius = 18, dmg = 55, posture = 60 } },
+	skills = {
+		E = { id = "cmE", name = "선화난무", desc = "두 부채를 펼치고 춤추듯 돈다. 2.5초 동안 몸을 따라 벚꽃 칼바람이 휘돌며 둘레를 계속 벤다 (움직일 수 있다)", pose = "fan_dance", dur = 0.6, cd = 9, chi = 20,
+			mech = { kind = "moving", radius = 13, dur = 2.5, every = 0.25, delay = 0.1, hit = hit(0, 0, 0, 6, 6, 0.25, 4) } },
+		R = { id = "cmR", name = "만개보", desc = "벚꽃잎이 되어 둘레의 적 여섯 사이를 번개처럼 오간다 (무적). 지나간 자리마다 꽃이 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25,
+			mech = { kind = "chainTp", n = 6, range = 34, delay = 0.08, every = 0.12, hit = hit(0, 0, 0, 22, 18, 0.4, 14) } },
+		G = { id = "cmG", name = "천본앵", desc = "하늘로 솟아 부채를 펼치면 천 그루의 벚꽃이 칼날이 되어 둘레를 휘감는다. 3초 동안 끌어당기며 베고, 마지막에 한가운데로 모여 꽃처럼 터진다", pose = "ult_sakura", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sakuraStorm", radius = 30, dur = 3.2, every = 0.25, delay = 0.5, pull = 30, hit = hit(0, 0, 0, 7, 10, 0.25, 0), final = hit(0, 0, 0, 95, 120, 1.4, 60, 22) } },
+		X = { id = "cmX", name = "만앵참월", desc = "초 오의. 보이지 않게 둘레의 적 열을 베고 지나가며 하늘에 칼자국을 남긴다. 세상이 잿빛으로 멈춘 한 박자 뒤, 칼바람이 일어 적들을 휘감고, 마지막에 터지며 화면까지 한칼에 두 동강 낸다 (그동안 무적)", pose = "ult_sever", dur = 1.2, cd = 60, chi = 150, armor = true,
+			mech = { kind = "sakuraSever", n = 10, range = 45, delay = 0.25, every = 0.06, still = 0.9, wind = 1.3, windEvery = 0.18, cut = hit(0, 0, 0, 40, 40, 0.8, 0), windHit = hit(0, 0, 0, 9, 10, 0.3, 0), final = hit(0, 0, 0, 170, 200, 1.8, 80, 26), finalRadius = 22 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1162,6 +1247,7 @@ local FINISHERS = {
 	agong = { name = "아공승천장", pose = "void_push" },
 	unryu = { name = "운류승천장", pose = "double_palm" },
 	seongha = { name = "성하승천권", pose = "star_punch_r" },
+	chomaehwa = { name = "앵화승천선", pose = "fan_rise" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1179,7 +1265,9 @@ Config.MASTERY_MAX = 10
 function Config.masteryNeed(level: number): number
 	return math.floor(40 * level ^ 1.5)
 end
-Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5 }
+Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
+-- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
+Config.SUPER_ULT_MULT = 1.6
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
 -- D = 대시 직후 클릭 (돌진 일격), A = 공중에서 클릭 (낙하격), C = 흘리기 직후 클릭 (반격)
@@ -1468,6 +1556,22 @@ boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
 	P("charge", "천문 돌파", 3, { length = 60, width = 11, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 46, 60, 1.0, 60) }),
 	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 70, 25) }),
 } })
+
+-- 초월의 시련: 천앵선이 직접, 보스처럼 세 단계로 싸운다 (벚꽃비 → 화륜 → 만개)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chomaehwa" then
+		local pink = Color3.fromRGB(255, 150, 200)
+		st.trialIntro = { title = "초월의 시련", text = "매화를 넘어서겠다고? 그럼 꽃이 지는 모습을 끝까지 보아라. 세 번 피고 세 번 질 때까지 서 있다면 이 부채를 넘겨주지." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
+			P("rain", "벚꽃비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "fan_dance", fx = "star", color = pink, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
+			P("donut", "화륜", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "fan_twirl", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "앵선돌진", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "fan_dash", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
+			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
 
 -- 일월의 시련: 권존이 분신 없이 직접, 보스처럼 세 단계로 싸운다 (한낮 → 밤 → 새벽)
 for _, st in ipairs(Config.Styles) do
@@ -2044,6 +2148,10 @@ Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -1
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
+-- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
+Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
+Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
+	quote = "꽃은 지는 순간이 가장 아름답다. 그 순간을 베어라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }

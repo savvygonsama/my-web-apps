@@ -354,6 +354,40 @@ function Npc.populate()
 			end
 		end
 	end
+	pcall(Npc.publishPower)
+end
+
+-- 1.5판: 지역마다 권장 전투력 (그 땅 적들의 가운데 전투력보다 조금 높게). 보스는 따로. 화면의 지도와 지역 알림이 쓴다
+function Npc.publishPower()
+	local groups: { [string]: { number } } = {}
+	local bosses: { [string]: number } = {}
+	for _, e in ipairs(Npc.list) do
+		local key = e.region
+		if key == "sky" then
+			local isl = Config.skyIslandAt(e.f.root.Position)
+			key = isl and ("sky_" .. isl.id) or "sky"
+		end
+		if key ~= "trial" and key ~= "test" and key ~= "summon" and key ~= "simma" and key ~= "wilds" then
+			local pw = (e.f :: any).power or 0
+			if e.kind == "boss" then
+				bosses[key] = math.max(bosses[key] or 0, pw)
+			else
+				groups[key] = groups[key] or {}
+				table.insert(groups[key], pw)
+			end
+		end
+	end
+	local folder = ReplicatedStorage:FindFirstChild("KwonRegionPower") or Instance.new("Folder")
+	folder.Name = "KwonRegionPower"
+	for key, list in pairs(groups) do
+		table.sort(list)
+		local mid = list[math.max(1, math.ceil(#list / 2))]
+		folder:SetAttribute(key, math.floor(mid * 1.15))
+	end
+	for key, pw in pairs(bosses) do
+		folder:SetAttribute(key .. "_boss", math.floor(pw))
+	end
+	folder.Parent = ReplicatedStorage
 end
 
 ------------------------------------------------------------------------

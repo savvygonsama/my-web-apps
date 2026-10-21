@@ -3090,6 +3090,64 @@ local function regionFrames()
 	end
 end
 
+-- 1.5판: 초월 권법의 사부 자리. 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕 (돌 단, 거대한 벚나무, 떨어지는 꽃잎)
+local function sakuraHill()
+	local at = Config.SAKURA_HILL
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "SakuraHill"
+	f.Parent = folder
+	local pink = Color3.fromRGB(255, 175, 210)
+	-- 세 겹의 둥근 돌 단 (위로 갈수록 좁다)
+	for i, r in ipairs({ 22, 17, 12 }) do
+		disc("SakuraTerrace", at + Vector3.new(0, (i - 0.5) * 1.55, 0), r, 1.55, Color3.fromRGB(190, 180, 175):Lerp(Color3.fromRGB(230, 215, 215), i * 0.2), Enum.Material.Granite, f)
+	end
+	-- 오르는 돌계단 (남쪽)
+	for k = 0, 5 do
+		part({ Name = "SakuraStep", Size = Vector3.new(8, 0.8, 2.2), Position = at + Vector3.new(0, 0.4 + k * 0.78, 23 - k * 2.2), Color = Color3.fromRGB(200, 190, 185), Material = Enum.Material.Granite, Parent = f })
+	end
+	-- 거대한 벚나무: 굵은 줄기, 갈라진 가지, 분홍 꽃구름
+	local base = at + Vector3.new(-6, 4.6, -6)
+	part({ Name = "SakuraTrunk", Size = Vector3.new(3.4, 16, 3.4), CFrame = CFrame.new(base + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.rad(6)), Color = Color3.fromRGB(80, 50, 45), Material = Enum.Material.Wood, Parent = f })
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2
+		local from = base + Vector3.new(0, 13, 0)
+		local to = from + Vector3.new(math.cos(a) * 9, 5 + (k % 2) * 2, math.sin(a) * 9)
+		part({ Name = "SakuraBranch", Size = Vector3.new(1.4, 1.4, (to - from).Magnitude), CFrame = CFrame.lookAt((from + to) / 2, to), Color = Color3.fromRGB(85, 55, 48), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		for j = 0, 2 do
+			part({ Name = "SakuraBloom", Shape = Enum.PartType.Ball, Size = Vector3.one * (9 - j * 1.5), Position = to + Vector3.new(math.cos(a + j) * 2.5, j * 1.5 - 1, math.sin(a + j) * 2.5),
+				Color = pink:Lerp(Color3.new(1, 1, 1), (j % 2) * 0.25 + (k % 2) * 0.1), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+	end
+	local crown = part({ Name = "SakuraCrown", Shape = Enum.PartType.Ball, Size = Vector3.one * 14, Position = base + Vector3.new(0, 21, 0), Color = pink, Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	-- 꽃잎이 언덕 가득 흩날린다
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 225), Color3.fromRGB(255, 150, 195))
+	pe.Size = NumberSequence.new(0.5, 0.3)
+	pe.Squash = NumberSequence.new(0.5)
+	pe.Lifetime = NumberRange.new(5, 8)
+	pe.Rate = 40
+	pe.Speed = NumberRange.new(1, 3)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Acceleration = Vector3.new(1.2, -1.5, 0.6)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.RotSpeed = NumberRange.new(-120, 120)
+	pe.LightEmission = 0.3
+	pe.Parent = crown
+	light(crown, pink, 40, 1.2)
+	-- 땅에 깔린 꽃잎 (분홍 얼룩)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		disc("FallenPetals", at + Vector3.new(math.cos(a) * (26 + (k % 3) * 4), 0.05, math.sin(a) * (26 + (k % 3) * 4)), 3 + (k % 3), 0.1, pink:Lerp(Color3.new(1, 1, 1), 0.3), Enum.Material.SmoothPlastic, f, false)
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		stoneLantern(at + Vector3.new(sx * 6, 0, 26), f, true)
+	end
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -3376,6 +3434,7 @@ function World.build(): any
 		{ "지역 테두리", regionFrames },
 		{ "길가", roadside },
 		{ "표지", regionSigns },
+		{ "벚꽃 언덕", sakuraHill },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

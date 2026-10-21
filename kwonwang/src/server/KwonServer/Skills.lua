@@ -20,6 +20,9 @@
 --   shock    기술의 마지막 타격 뒤 앞쪽에 충격파가 터진다 (맨 타격뿐인 기술을 보완)
 --   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고, 끝에서 부서진다
 --   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
+--   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고, 한가운데로 모여 터진다
+--   sakuraSever  (초·매화 만앵참월, 초 오의) 보이지 않게 적들을 베고 지나가 칼자국을 남기고 → 세상이 잿빛으로 멈추고 →
+--                칼바람이 적들을 휘감고 → 마지막에 터지며 화면까지 한칼에 가른다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -95,9 +98,10 @@ function Skills.run(f: any, move: any, ctx: any)
 		return
 	end
 	local sp = ctx.speed or 1
-	-- 오의(G)는 모두 한층 더 세다
-	local isUlt = type(move.id) == "string" and string.sub(move.id, -1) == "G"
-	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1)
+	-- 오의(G)는 모두 한층 더 세다. 초 오의(X)는 그보다 더
+	local tail = type(move.id) == "string" and string.sub(move.id, -1) or ""
+	local isUlt = tail == "G" or tail == "X"
+	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1) * (tail == "X" and Config.SUPER_ULT_MULT or 1)
 	local look = flat(Combat.look(f))
 	local style = f.style
 	local function alive(): boolean
@@ -600,6 +604,108 @@ function Skills.run(f: any, move: any, ctx: any)
 					o.root.AssemblyLinearVelocity = Vector3.new(0, 80, 0)
 				end
 				strike(f, o, scaled(m.geyser, sc), move)
+			end
+		end)
+	elseif kind == "sakuraStorm" then
+		Push:FireAllClients("skillfx", { kind = "sakuraStorm", m = f.model, at = f.root.Position, radius = m.radius, dur = (m.delay + m.dur) / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				local c = f.root.Position
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					pullTo(o, c, m.pull)
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			local c = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "sakuraBurst", at = c, radius = m.radius, style = style })
+			for _, o in ipairs(hostilesNear(f, c, m.radius + 4)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "sakuraSever" then
+		local list = nearestList(f, m.range, m.n)
+		local start = f.root.Position
+		local pass = m.delay + math.max(1, #list) * m.every
+		local total = pass + m.still + m.wind + 0.5
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		f.model:SetAttribute("Vanish", true)
+		Push:FireAllClients("skillfx", { kind = "severStart", m = f.model, at = start, dur = total / sp, style = style })
+		-- 도중에 쓰러져도 모습은 돌아온다
+		task.delay(pass / sp + 0.2, function()
+			if f.model.Parent then
+				f.model:SetAttribute("Vanish", nil)
+			end
+		end)
+		-- 1) 보이지 않게 베고 지나간다 (하늘에 칼자국)
+		local points = { start }
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				local from = f.root.Position
+				local tp = o.root.Parent and o.root.Position or from
+				local dir = flat(tp - from)
+				local land = tp + dir * 5
+				local cf = CFrame.lookAt(land, land + dir)
+				if f.player and f.player.Character then
+					f.player.Character:PivotTo(cf)
+				else
+					f.root.CFrame = cf
+				end
+				table.insert(points, land)
+				Push:FireAllClients("skillfx", { kind = "severCut", from = from, to = land, at = tp, style = style, i = i })
+				strike(f, o, scaled(m.cut, sc), move)
+			end)
+		end
+		local function targetModels(): { Model }
+			local out = {}
+			for _, o in ipairs(list) do
+				if not o.dead and o.root.Parent then
+					table.insert(out, o.model)
+				end
+			end
+			return out
+		end
+		-- 2) 세상이 잿빛으로 멈춘다
+		after(pass, function()
+			f.model:SetAttribute("Vanish", nil)
+			Push:FireAllClients("skillfx", { kind = "severStill", m = f.model, at = f.root.Position, dur = m.still / sp, points = points, style = style })
+			for _, o in ipairs(list) do
+				if not o.dead then
+					o.stunUntil = math.max(o.stunUntil, os.clock() + (m.still + m.wind + 0.4) / sp)
+				end
+			end
+		end)
+		-- 3) 칼바람이 일어 적들을 휘감는다
+		after(pass + m.still, function()
+			Push:FireAllClients("skillfx", { kind = "severWind", m = f.model, at = f.root.Position, targets = targetModels(), dur = m.wind / sp, style = style })
+			local n = math.floor(m.wind / m.windEvery)
+			for i = 0, n - 1 do
+				after(i * m.windEvery, function()
+					for _, o in ipairs(list) do
+						if not o.dead and o.root.Parent then
+							strike(f, o, scaled(m.windHit, sc), move)
+						end
+					end
+				end)
+			end
+		end)
+		-- 4) 터지며 한칼에 가른다
+		after(pass + m.still + m.wind, function()
+			local c = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "severEnd", m = f.model, at = c, targets = targetModels(), radius = m.finalRadius, style = style })
+			local hitSet = {}
+			for _, o in ipairs(list) do
+				if not o.dead and o.root.Parent then
+					hitSet[o] = true
+					strike(f, o, scaled(m.final, sc), move)
+				end
+			end
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				if not hitSet[o] then
+					strike(f, o, scaled(m.final, sc * 0.6), move)
+				end
 			end
 		end)
 	elseif kind == "flash" or kind == "bolt" then

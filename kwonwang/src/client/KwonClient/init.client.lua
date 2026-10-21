@@ -16,6 +16,7 @@ local Cutscene = require(script:WaitForChild("Cutscene"))
 local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
+local Sakura = require(script:WaitForChild("Sakura"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -54,6 +55,8 @@ local function watchChar(char: Model)
 	char:GetAttributeChangedSignal("Vanish"):Connect(function()
 		Ults.watchVanish(char)
 	end)
+	-- 초월 권법의 벚꽃 부채
+	Sakura.watch(char)
 	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
 	Mount.watch(char)
 	char:GetAttributeChangedSignal("Mount"):Connect(function()
@@ -73,6 +76,15 @@ for _, p in ipairs(Players:GetPlayers()) do
 	watchPlayer(p)
 end
 Players.PlayerAdded:Connect(watchPlayer)
+-- 사부와 적도 부채를 든다 (초월의 시련, 사부 자리)
+task.spawn(function()
+	for _, name in ipairs({ "Masters", "Enemies" }) do
+		local f = workspace:WaitForChild(name, 60)
+		if f then
+			Sakura.watchFolder(f)
+		end
+	end
+end)
 task.spawn(function()
 	local enemies = workspace:WaitForChild("Enemies")
 	local function add(m: Instance)
@@ -261,6 +273,7 @@ task.spawn(function()
 						Anim.play(m :: Model, mv.pose, mv.dur)
 						Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
+						Sakura.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -528,7 +541,7 @@ startMove = function(slot: any, charge: number?)
 		cds.H = now + Config.HEAVY_CD
 		cdLen.H = Config.HEAVY_CD
 	end
-	if slot == "E" or slot == "R" or slot == "G" then
+	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
 		if not unlocked(slot) then
 			UI.toast(string.format("🔒 %s: 숙련도 %d에 열려요", move.name, Config.SKILL_UNLOCK[slot]))
 			return
@@ -558,6 +571,7 @@ startMove = function(slot: any, charge: number?)
 	Anim.play(char, move.pose, dur, { align = first and first.t / speed or nil })
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
 	Fx.cast(style.id, slot, char, dur)
+	Sakura.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -634,13 +648,18 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "G" then
-		UI.cinematic(move.name, style.color, dur)
+	if slot == "G" or slot == "X" then
+		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		if slot == "X" then
+			Sakura.superIntro(char)
+		end
 		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
 		UI.ultFrame(style.color, style.color2)
 		fovPunch(-10, 0.55)
 		Fx.skillAura(char, style.color, style.color2, math.max(1.2, dur), true)
-		if move.mech then
+		if move.mech and slot == "X" then
+			Fx.skillAura(char, style.color, style.color2, math.max(2, dur), true)
+		elseif move.mech then
 			Ults.intro(style.id, char)
 		else
 			Fx.ult(style.id, char, dur)
@@ -984,6 +1003,12 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		skill("R")
 	elseif k == Enum.KeyCode.G then
 		skill("G")
+	elseif k == Enum.KeyCode.X then
+		-- 초 오의 (초월 권법만)
+		local st = myStyle()
+		if st and st.skills.X then
+			skill("X")
+		end
 	elseif k == Enum.KeyCode.Q then
 		dash()
 	elseif k == Enum.KeyCode.F then
@@ -1038,6 +1063,12 @@ UI.mobile({
 	end,
 	G = function()
 		skill("G")
+	end,
+	X = function()
+		local st = myStyle()
+		if st and st.skills.X then
+			skill("X")
+		end
 	end,
 	potion = function()
 		Request:FireServer("potion")
@@ -1271,6 +1302,7 @@ function handlers.act(data: any)
 	local style = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
 	if style and data.slot ~= nil then
 		Fx.cast(style.id, data.slot, m, data.dur)
+		Sakura.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
@@ -1312,7 +1344,16 @@ function handlers.act(data: any)
 			end
 		end)
 	end
-	if type(data.id) == "string" and string.sub(data.id, -1) == "G" and style then
+	if type(data.id) == "string" and string.sub(data.id, -1) == "X" and style then
+		-- 남의 초 오의: 벚꽃이 쏟아지고 크게 흔들린다
+		local r = rootOf(m)
+		if r then
+			Sakura.petals(r.Position + Vector3.new(0, 3, 0), 40, 14, 2.2)
+		end
+		if near then
+			shake(1)
+		end
+	elseif type(data.id) == "string" and string.sub(data.id, -1) == "G" and style then
 		local gm = style.skills and style.skills.G
 		if gm and gm.mech then
 			Ults.intro(style.id, m)
@@ -1714,6 +1755,9 @@ function handlers.skillfx(data: any)
 	elseif data.kind == "pillar" and data.fx == "spear" then
 		Ults.spear(data.at, data.dir or Vector3.new(0, 0, -1), data.style)
 		return
+	elseif Sakura.handles(data.kind) then
+		Sakura.run(data)
+		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
 		return
@@ -1850,9 +1894,10 @@ function handlers.pdodge(data: any)
 end
 
 function handlers.reward(data: any)
-	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d%s", data.name, data.coins, data.xp, (data.gems or 0) > 0 and string.format("  💠 +%d", data.gems) or ""))
+	local st = (data.stats or 0) > 0 and ("  📈 능력치 +" .. Config.formatNumber(data.stats)) or ""
+	UI.toast(string.format("%s 쓰러뜨림  💰 +%d  숙련 +%d%s%s", data.name, data.coins, data.xp, st, (data.gems or 0) > 0 and string.format("  💠 +%d", data.gems) or ""))
 	if data.boss then
-		UI.banner("🏆 " .. data.name .. " 격파!", string.format("💰 +%d", data.coins), Color3.fromRGB(255, 210, 120))
+		UI.banner("🏆 " .. data.name .. " 격파!", string.format("💰 +%d%s", data.coins, st), Color3.fromRGB(255, 210, 120))
 	end
 end
 
@@ -1968,19 +2013,23 @@ RunService.RenderStepped:Connect(function()
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },
 	}
-	for _, slot in ipairs({ "E", "R", "G" }) do
+	for _, slot in ipairs({ "E", "R", "G", "X" }) do
 		local sk = style.skills[slot]
-		local left = (cds[slot] or 0) - now
-		info[slot] = { name = sk.name, locked = not unlocked(slot), cd = left > 0 and left / (cdLen[slot] or 1) or (slot == "G" and type(chi) == "number" and chi < 100 and 1 - chi / 100 or 0) }
+		if sk then
+			local left = (cds[slot] or 0) - now
+			local need = sk.chi or 100
+			info[slot] = { name = sk.name, locked = not unlocked(slot), cd = left > 0 and left / (cdLen[slot] or 1) or ((slot == "G" or slot == "X") and type(chi) == "number" and chi < need and 1 - chi / need or 0) }
+		end
 	end
 	UI.slots(info)
 	-- 권법 장치 표시
 	local stacks = ""
 	if style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
-	elseif style.id == "maehwa" then
+	elseif style.id == "maehwa" or style.petals then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
-		stacks = n >= 20 and "🌸 만개 준비! (Z)" or string.format("꽃잎 %d / 20", n)
+		local cap = style.petalMax or 20
+		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
 	elseif style.chargeEvery then
 		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
