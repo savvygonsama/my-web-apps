@@ -1610,7 +1610,7 @@ Config.Story = {
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 150, stats = 15 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
-	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·일격·버티기·제자 연무·목인진)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
+	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
@@ -1665,25 +1665,20 @@ function Config.enemyLevel(home: Vector3): number
 end
 Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 -- 1.4판: 사부의 시험 (분신과 겨루는 대신 사부마다 다른 시험). 각성 시련과 권존의 일월 시련은 그대로
---   deflect = 사부의 공격을 흘려 내기 (F), hits = 쓰러지지 않는 사부를 맞히기, survive = 사부와 제자들 사이에서 버티기,
---   disciples = 제자들이 세 번 몰려온다 (마지막은 수제자), dummies = 맞받아치는 목인을 시간 안에 모두 부수기
+--   deflect = 사부의 공격을 흘려 내기 (F), survive = 사부와 제자들 사이에서 버티기, disciples = 제자들이 세 번 몰려온다 (마지막은 수제자)
 Config.TRIAL_KIND = {
-	taeheo = "deflect", geumgang = "survive", maehwa = "hits", cheonryong = "disciples", muyeong = "hits", byeokryeok = "dummies",
-	chwi = "deflect", changhae = "disciples", yeolhwa = "dummies", pungsin = "hits", gaecheon = "deflect", taecho = "survive",
-	yeonggeop = "hits", agong = "dummies", unryu = "deflect", seongha = "disciples",
+	taeheo = "deflect", geumgang = "survive", maehwa = "deflect", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
+	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "deflect", gaecheon = "deflect", taecho = "survive",
+	yeonggeop = "survive", agong = "survive", unryu = "deflect", seongha = "disciples",
 }
 -- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
 Config.TRIAL_KINDS = {
 	deflect = { icon = "🌊", title = "흘리기 시험", need = 6, time = 120,
 		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹을 %d번 흘려 내면(F) 제자로 받아 주마.", goal = "사부의 공격을 흘려라 (F)" },
-	hits = { icon = "🎯", title = "일격 시험", need = 14, time = 100,
-		ask = "내 몸에 %d번 손을 대 보아라. 나는 쓰러지지 않는다. 다만 빠를 뿐이다.", goal = "쓰러지지 않는 사부를 맞혀라" },
 	survive = { icon = "⏳", title = "버티기 시험", need = 45, time = 45,
 		ask = "%d초를 버텨라. 나와 내 제자들이 한꺼번에 덤빈다. 쓰러지지만 않으면 된다.", goal = "쓰러지지 말고 버텨라" },
 	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
 		ask = "내 제자들을 넘어 보아라. %d번 몰려온다. 마지막은 수제자다.", goal = "몰려오는 제자들을 꺾어라" },
-	dummies = { icon = "🪵", title = "목인진", need = 8, time = 60,
-		ask = "움직이는 목인 %d개를 시간 안에 모두 부숴라. 목인도 맞받아친다.", goal = "맞받아치는 목인을 모두 부숴라" },
 }
 function Config.trialNeed(styleId: string): (string, number)
 	local kind = Config.TRIAL_KIND[styleId] or "duel"

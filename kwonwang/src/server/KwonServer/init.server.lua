@@ -909,8 +909,6 @@ function Trial.start(player: Player, styleId: string)
 		end
 		if kind == "deflect" then
 			immortalMaster(17, 0.55)
-		elseif kind == "hits" then
-			immortalMaster(24, 0.45)
 		elseif kind == "survive" then
 			immortalMaster(19, 0.8)
 			for i = 1, 2 do
@@ -925,23 +923,6 @@ function Trial.start(player: Player, styleId: string)
 			end
 		elseif kind == "disciples" then
 			trialWave(player, T)
-		elseif kind == "dummies" then
-			for i = 1, need do
-				local a = i / need * math.pi * 2
-				local at = spawnAt + Vector3.new(math.cos(a) * 16, 0, math.sin(a) * 16)
-				local ef = trialFoe(player, f, style, master, "dummy", at, 0.5, 0.25, function(def)
-					def.name = "목인"
-					def.speed = 2
-					def.aggro = 30
-					def.scale = 1.1
-					def.shirt = Color3.fromRGB(120, 82, 50)
-					def.pants = Color3.fromRGB(95, 64, 40)
-				end)
-				if ef then
-					ef.dmgMult *= 0.5
-					table.insert(T.foes, ef)
-				end
-			end
 		end
 		Push:FireClient(player, "dialog", { who = master.name, title = K.icon .. " " .. K.title, text = string.format(K.ask, need) })
 		Push:FireClient(player, "trial", { m = T.foes[1] and T.foes[1].model, name = master.name, style = styleId, kind = kind, title = K.title })
@@ -1052,12 +1033,6 @@ function Trial.killed(player: Player, foe: any)
 	end
 	if T.kind == "duel" then
 		Trial.ended(player, true)
-	elseif T.kind == "dummies" then
-		T.count += 1
-		trialProgress(player)
-		if T.count >= T.need then
-			trialWin(player)
-		end
 	elseif T.kind == "disciples" then
 		for _, ef in ipairs(T.foes) do
 			if not ef.dead then
@@ -1070,18 +1045,7 @@ function Trial.killed(player: Player, foe: any)
 	end
 end
 
--- 맞히기 · 흘리기 시험의 셈
-function Trial.onHit(att: any, tgt: any)
-	local player = att.player
-	local T = player and activeTrial[player]
-	if T and T.kind == "hits" and tgt.trialOwner == player then
-		T.count += 1
-		trialProgress(player)
-		if T.count >= T.need then
-			trialWin(player)
-		end
-	end
-end
+-- 흘리기 시험의 셈
 function Trial.onDeflect(tgt: any, att: any)
 	local player = tgt.player
 	local T = player and activeTrial[player]
@@ -1253,8 +1217,7 @@ Combat.init(Push, {
 			end)
 		end
 	end,
-	onHit = function(att: any, tgt: any, dmg: number, opt: any)
-		Trial.onHit(att, tgt)
+	onHit = function(att: any, _tgt: any, dmg: number, opt: any)
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
