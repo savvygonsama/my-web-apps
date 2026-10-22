@@ -13,7 +13,7 @@
 `narr`·`act`·`ask`·`then`·`memo`·`cap`·엔딩 글은 세 판이 같이 쓰는 **순수 한국어**다.
 
 ## 삽화
-- 장면에 `pic: "c1-shop"`을 달면 `img/c1-shop.webp`(없으면 .png → .jpg)를 그 장면 위에 보여 준다. 파일이 없으면 자리를 접는다.
+- 장면에 `pic: "c1-shop"`을 달고 `data/index.js`의 `self.SH_PICS`에 `"c1-shop": "webp"`처럼 적으면 `img/c1-shop.webp`를 그 장면 위에 보여 준다. 목록에 없는 그림은 자리 없이 글만 나온다.
 - `film: "95.7.23"`를 같이 달면 1995년 필름 사진 액자(흰 테두리, 주황 날짜 도장)로 그린다. 파일 이름은 `p01`~`p36`.
 - `cap`은 그림 아래 한 줄 설명(한국어).
 - 제미나이용 프롬프트 목록: `tools/ILLUSTRATIONS.md`.
