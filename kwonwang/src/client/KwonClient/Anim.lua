@@ -552,6 +552,28 @@ local function step(dt: number)
 			end
 			continue
 		end
+		-- 초·취: 쓰러질 듯 크게 비틀거리고, 몇 초마다 한쪽으로 크게 휘청한다 (고개는 한 박자 늦게 따라간다)
+		local wob = 0
+		local sw, sw2, swN, lurch = 0, 0, 0, 0
+		local wsid = model:GetAttribute("Style")
+		local wst = type(wsid) == "string" and Config.STYLE_BY_ID[wsid] or nil
+		if wst and wst.wobble and not dead then
+			local wr = rec :: any
+			wr.wobT = (wr.wobT or math.random() * 10) + dt
+			wr.lurchT = (wr.lurchT or 0) + dt
+			if wr.lurchT > (wr.lurchNext or 3) then
+				wr.lurchT = 0
+				wr.lurchNext = 2.5 + math.random() * 2.5
+				wr.lurchDir = math.random() < 0.5 and -1 or 1
+			end
+			local lu = math.clamp(wr.lurchT / 0.9, 0, 1)
+			lurch = math.sin(lu * math.pi) * (wr.lurchDir or 1) * ((wr.lurchNext and lu < 1) and 1 or 0)
+			local wt = wr.wobT
+			sw = math.sin(wt * 1.5)
+			sw2 = math.sin(wt * 2.3 + 1)
+			swN = math.sin(wt * 1.5 - 0.9)
+			wob = (1 - (actPose and actW or 0)) * (1 - 0.35 * rec.moveW) * (1 - rec.airW)
+		end
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
 			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
@@ -582,6 +604,23 @@ local function step(dt: number)
 					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
 				end
 				-- (어깨는 숨에 맞춰 흔들지 않는다: 손끝이 떨려 보인다)
+			end
+			if wob > 0.01 then
+				if name == "R" then
+					out = CFrame.new((0.35 * sw + 0.55 * lurch) * wob, -0.12 * math.abs(lurch) * wob, 0.15 * sw2 * wob) * out * CFrame.Angles(math.rad(5 * sw2) * wob, 0, math.rad(-(13 * sw + 20 * lurch)) * wob)
+				elseif name == "W" then
+					out = out * CFrame.Angles(math.rad(4 * sw2) * wob, math.rad(8 * sw2) * wob, math.rad(9 * sw + 12 * lurch) * wob)
+				elseif name == "N" then
+					out = out * CFrame.Angles(math.rad(7 * sw2) * wob, 0, math.rad(16 * swN + 10 * lurch) * wob)
+				elseif name == "RK" then
+					out = out * CFrame.Angles(math.rad(-10 * math.max(0, sw + lurch)) * wob, 0, 0)
+				elseif name == "LK" then
+					out = out * CFrame.Angles(math.rad(-10 * math.max(0, -sw - lurch)) * wob, 0, 0)
+				elseif name == "RS" then
+					out = out * CFrame.Angles(math.rad(7 * sw2) * wob, 0, math.rad(8 * lurch) * wob)
+				elseif name == "LS" then
+					out = out * CFrame.Angles(math.rad(12 * swN) * wob, 0, math.rad(-10 * math.abs(lurch)) * wob)
+				end
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))

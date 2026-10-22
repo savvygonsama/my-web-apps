@@ -17,6 +17,7 @@ local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
+local Drunk = require(script:WaitForChild("Drunk"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -274,6 +275,7 @@ task.spawn(function()
 						Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
 						Sakura.cast(style.id, slot, m :: Model, mv.dur)
+						Drunk.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -572,6 +574,7 @@ startMove = function(slot: any, charge: number?)
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
 	Fx.cast(style.id, slot, char, dur)
 	Sakura.cast(style.id, slot, char, dur)
+	Drunk.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -648,9 +651,13 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "G" or slot == "X" then
+	if slot == "X" and style.soju then
+		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
+		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "G" or slot == "X" then
 		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
-		if slot == "X" then
+		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
 		end
 		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
@@ -1303,6 +1310,7 @@ function handlers.act(data: any)
 	if style and data.slot ~= nil then
 		Fx.cast(style.id, data.slot, m, data.dur)
 		Sakura.cast(style.id, data.slot, m, data.dur)
+		Drunk.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
@@ -1347,7 +1355,7 @@ function handlers.act(data: any)
 	if type(data.id) == "string" and string.sub(data.id, -1) == "X" and style then
 		-- 남의 초 오의: 벚꽃이 쏟아지고 크게 흔들린다
 		local r = rootOf(m)
-		if r then
+		if r and style.fans then
 			Sakura.petals(r.Position + Vector3.new(0, 3, 0), 40, 14, 2.2)
 		end
 		if near then
@@ -1758,6 +1766,9 @@ function handlers.skillfx(data: any)
 	elseif Sakura.handles(data.kind) then
 		Sakura.run(data)
 		return
+	elseif Drunk.handles(data) then
+		Drunk.run(data)
+		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
 		return
@@ -2030,6 +2041,8 @@ RunService.RenderStepped:Connect(function()
 		local n = tonumber(char:GetAttribute("Petal")) or 0
 		local cap = style.petalMax or 20
 		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
+	elseif style.noBlock then
+		stacks = "🍾 만취 · 막기 ✕ · 흘리기만 ○"
 	elseif style.chargeEvery then
 		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)

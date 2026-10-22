@@ -1198,6 +1198,54 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 초·취팔선권: 초록 술병을 들고 머리엔 넥타이를 질끈 동여맨 채, 쓰러질 듯 비틀거린다.
+-- 막기는 아예 안 되고 (맞는다), 흘리기만 된다. 대신 흘리는 틈이 넓고, 움직이는 동안 저절로 잘 피한다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chochwi",
+	name = "초·취팔선권",
+	hanja = "超醉八仙拳",
+	icon = "🍾",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(70, 200, 110),
+	color2 = Color3.fromRGB(215, 255, 225),
+	fx = "drunk",
+	soju = true, -- 오른손에 초록 술병, 머리엔 넥타이 (화면이 그린다)
+	wobble = true, -- 서 있어도 쓰러질 듯 크게 비틀거린다
+	noBlock = true, -- 막기가 안 된다. 흘리기만 된다
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "chwi",
+	trialHp = 10,
+	unlockHint = "취팔선권을 익히고 천외천에 오른 자만이, 취선 주막 남쪽 술독 마루의 만취선을 만난다",
+	desc = "취팔선권을 넘어선 권법. 술병 하나와 넥타이 하나로 천하를 비틀거린다. 넘어지는 것처럼 보이는 모든 몸짓이 공격이고, 쓰러지는 순간이 가장 빠르다.",
+	gimmick = "만취: 막기가 되지 않는다 (막아도 그대로 맞는다). 대신 흘리기 틈이 넓고, 움직이거나 기술을 쓰는 동안 30% 확률로 저절로 피한다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.32,
+	dodgeChance = 0.3,
+	speed = 1.2,
+	stance = "stance_soju",
+	combo = {
+		{ id = "cc1", name = "병나발 휘두르기", pose = "soju_swing_r", dur = 0.32, lunge = 3, hits = { hit(0.14, 6, 5, 9, 8, 0.3, 8) } },
+		{ id = "cc2", name = "비틀 팔꿈치", pose = "soju_elbow_l", dur = 0.32, lunge = 3, hits = { hit(0.14, 5, 4.5, 9, 8, 0.3, 8) } },
+		{ id = "cc3", name = "자빠지며 걷어차기", pose = "soju_fallkick", dur = 0.44, lunge = 2, hits = { hit(0.16, 5, 6, 7, 6, 0.3, 8, nil, true), hit(0.32, 5, 6, 7, 6, 0.3, 10, nil, true) } },
+		{ id = "cc4", name = "술병 내려찍기", pose = "soju_smash", dur = 0.5, lunge = 3, hits = { hit(0.26, 6, 6.5, 16, 18, 0.6, 30, nil, true) } },
+	},
+	heavy = { id = "ccH", name = "취선 몸통박치기", pose = "soju_lurch", dur = 0.55, lunge = 16, iframes = 0.2, hits = { hit(0.28, 7, 6, 22, 24, 0.6, 42) } },
+	skills = {
+		E = { id = "ccE", name = "취화방사", desc = "술병을 흔들어 입구에 불똥을 튀긴다. 1.6초 동안 앞으로 초록 불길이 뿜어져 나가 부채꼴을 계속 태운다", pose = "soju_spray", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "cone", range = 20, angle = 60, dur = 1.6, every = 0.2, delay = 0.25, hit = hit(0, 0, 0, 6, 7, 0.2, 4), fx = "soju" } },
+		R = { id = "ccR", name = "팔선취보", desc = "쓰러질 듯 여덟 걸음을 갈지자로 내딛는다. 걸음마다 둘레를 후려치고, 그동안 무엇도 맞히지 못한다", pose = "soju_stagger", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "zigzag", n = 8, step = 4.5, side = 4, every = 0.09, delay = 0.05, radius = 6.5, hit = hit(0, 0, 0, 10, 10, 0.3, 10) } },
+		G = { id = "ccG", name = "취몽팔선진", desc = "술병을 하늘 높이 던진다. 병이 깨지며 둘레에 술비가 쏟아져 적을 적시고, 불똥 하나에 온 땅이 초록 불길로 타오르며 여덟 취선의 그림자가 한꺼번에 덮친다", pose = "soju_throw", dur = 1.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sojuRain", radius = 26, delay = 0.6, rain = 1.6, every = 0.3, slow = 0.5, hit = hit(0, 0, 0, 6, 8, 0.2, 0), ghosts = 8, final = hit(0, 0, 0, 95, 120, 1.4, 55, 22) } },
+		X = { id = "ccX", name = "취선만권", desc = "초 오의. 세상이 멈춘 듯한 한순간, 점점 빨라지는 앞구르기로 굴러 들어가 (그동안 무적) 적들에게 와다다다 수백 주먹을 퍼붓고, 마지막에 술병을 깨뜨리며 터뜨린다", pose = "soju_rolls", dur = 2.8, cd = 60, chi = 150, armor = true,
+			mech = { kind = "drunkRush", cut = 1.0, roll = 18, rush = 1.8, every = 0.06, hop = 0.45, range = 36, n = 5, reach = 8, hit = hit(0, 0, 0, 4.5, 5, 0.15, 2), final = hit(0, 0, 0, 180, 200, 1.8, 80, 26), finalRadius = 22 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1248,6 +1296,7 @@ local FINISHERS = {
 	unryu = { name = "운류승천장", pose = "double_palm" },
 	seongha = { name = "성하승천권", pose = "star_punch_r" },
 	chomaehwa = { name = "앵화승천선", pose = "fan_rise" },
+	chochwi = { name = "취선승천권", pose = "soju_rise" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1573,6 +1622,22 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
 			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
 			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
+
+-- 초월의 시련: 만취선이 직접 (술비 → 굴렁쇠 → 만취)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chochwi" then
+		local green = Color3.fromRGB(90, 220, 120)
+		st.trialIntro = { title = "초월의 시련", text = "어이, 거기. 한 잔 받을 텐가? 싫으면 덤벼 보게. 내가 쓰러지는 걸 보면 이 병을 넘겨주지. 근데 난 안 쓰러져. 끄억." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
+			P("rain", "술비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "soju_throw", fx = "fire", color = green, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
+			P("donut", "취선 회오리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "soju_fallkick", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "굴렁쇠", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "drunk_roll", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "취화", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "soju_spray", fx = "fire", color = Color3.fromRGB(180, 255, 200), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "술병 내려찍기", 3, { radius = 18, warn = 0.9, cd = 7, pose = "soju_smash", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
+			P("quake", "만취", 3, { radius = 27, warn = 1.3, cd = 9, pose = "soju_rolls", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2156,6 +2221,11 @@ Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.
 Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
 Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
 	quote = "꽃은 지는 순간이 가장 아름답다. 그 순간을 베어라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
+
+-- 초·취팔선권의 사부: 취선 주막 남쪽 길가, 술독이 쌓인 마루의 만취선 (지도에 나오지 않는다)
+Config.SOJU_HILL = Vector3.new(-170, 0, 980)
+Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.new(0, 3.2, 0), region = "취선 주막 남쪽 (술독 마루)", regionId = "tavern", secret = true,
+	quote = "넘어지는 게 아니야. 땅이 나한테 오는 거지.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 넥타이를 머리에 맨 노인이 코를 곤다더라" }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }

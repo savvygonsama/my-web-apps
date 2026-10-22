@@ -9,6 +9,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Drunk = require(script.Parent:WaitForChild("Drunk"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -195,7 +196,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not st.fans then
+	if not st or not (st.fans or st.soju) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -209,6 +210,13 @@ local function refreshFans(model: Model)
 	-- 먼저 자리를 잡아 둔다 (같은 몸을 두 번 만들지 않게)
 	local list: { Instance } = {}
 	fans[model] = list
+	-- 초·취팔선권은 부채 대신 술병과 넥타이
+	if st.soju then
+		for _, p in ipairs(Drunk.build(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
 	for _, pair in ipairs({ { "RightHand", 1 }, { "LeftHand", -1 } }) do
 		local hand = model:FindFirstChild(pair[1])
 		if hand and hand:IsA("BasePart") then
@@ -222,7 +230,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not st.fans then
+	if not st or not (st.fans or st.soju) then
 		refreshFans(model)
 		return
 	end
@@ -232,7 +240,7 @@ function tryFans(model: Model)
 	waiting[model] = true
 	task.spawn(function()
 		model:WaitForChild("RightHand", 10)
-		model:WaitForChild("LeftHand", 10)
+		model:WaitForChild(st.soju and "Head" or "LeftHand", 10)
 		waiting[model] = nil
 		refreshFans(model)
 	end)
@@ -288,7 +296,9 @@ RunService.Heartbeat:Connect(function(dt)
 	walkAcc = 0
 	for model in pairs(fans) do
 		local r = rootOf(model)
-		if r and near(r.Position, 110) and model:GetAttribute("Vanish") ~= true then
+		local sid = model:GetAttribute("Style")
+		local st = type(sid) == "string" and Config.STYLE_BY_ID[sid] or nil
+		if st and st.fans and r and near(r.Position, 110) and model:GetAttribute("Vanish") ~= true then
 			local v = r.AssemblyLinearVelocity
 			local moving = Vector3.new(v.X, 0, v.Z).Magnitude > 3
 			Sakura.petals(r.Position + Vector3.new(0, moving and -1.5 or 1, 0), moving and 4 or 1, moving and 4 or 3, moving and 1.2 or 1.8, moving and -v * 0.15 or nil)

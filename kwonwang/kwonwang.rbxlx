@@ -1218,6 +1218,54 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 초·취팔선권: 초록 술병을 들고 머리엔 넥타이를 질끈 동여맨 채, 쓰러질 듯 비틀거린다.
+-- 막기는 아예 안 되고 (맞는다), 흘리기만 된다. 대신 흘리는 틈이 넓고, 움직이는 동안 저절로 잘 피한다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chochwi",
+	name = "초·취팔선권",
+	hanja = "超醉八仙拳",
+	icon = "🍾",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(70, 200, 110),
+	color2 = Color3.fromRGB(215, 255, 225),
+	fx = "drunk",
+	soju = true, -- 오른손에 초록 술병, 머리엔 넥타이 (화면이 그린다)
+	wobble = true, -- 서 있어도 쓰러질 듯 크게 비틀거린다
+	noBlock = true, -- 막기가 안 된다. 흘리기만 된다
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "chwi",
+	trialHp = 10,
+	unlockHint = "취팔선권을 익히고 천외천에 오른 자만이, 취선 주막 남쪽 술독 마루의 만취선을 만난다",
+	desc = "취팔선권을 넘어선 권법. 술병 하나와 넥타이 하나로 천하를 비틀거린다. 넘어지는 것처럼 보이는 모든 몸짓이 공격이고, 쓰러지는 순간이 가장 빠르다.",
+	gimmick = "만취: 막기가 되지 않는다 (막아도 그대로 맞는다). 대신 흘리기 틈이 넓고, 움직이거나 기술을 쓰는 동안 30% 확률로 저절로 피한다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.32,
+	dodgeChance = 0.3,
+	speed = 1.2,
+	stance = "stance_soju",
+	combo = {
+		{ id = "cc1", name = "병나발 휘두르기", pose = "soju_swing_r", dur = 0.32, lunge = 3, hits = { hit(0.14, 6, 5, 9, 8, 0.3, 8) } },
+		{ id = "cc2", name = "비틀 팔꿈치", pose = "soju_elbow_l", dur = 0.32, lunge = 3, hits = { hit(0.14, 5, 4.5, 9, 8, 0.3, 8) } },
+		{ id = "cc3", name = "자빠지며 걷어차기", pose = "soju_fallkick", dur = 0.44, lunge = 2, hits = { hit(0.16, 5, 6, 7, 6, 0.3, 8, nil, true), hit(0.32, 5, 6, 7, 6, 0.3, 10, nil, true) } },
+		{ id = "cc4", name = "술병 내려찍기", pose = "soju_smash", dur = 0.5, lunge = 3, hits = { hit(0.26, 6, 6.5, 16, 18, 0.6, 30, nil, true) } },
+	},
+	heavy = { id = "ccH", name = "취선 몸통박치기", pose = "soju_lurch", dur = 0.55, lunge = 16, iframes = 0.2, hits = { hit(0.28, 7, 6, 22, 24, 0.6, 42) } },
+	skills = {
+		E = { id = "ccE", name = "취화방사", desc = "술병을 흔들어 입구에 불똥을 튀긴다. 1.6초 동안 앞으로 초록 불길이 뿜어져 나가 부채꼴을 계속 태운다", pose = "soju_spray", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "cone", range = 20, angle = 60, dur = 1.6, every = 0.2, delay = 0.25, hit = hit(0, 0, 0, 6, 7, 0.2, 4), fx = "soju" } },
+		R = { id = "ccR", name = "팔선취보", desc = "쓰러질 듯 여덟 걸음을 갈지자로 내딛는다. 걸음마다 둘레를 후려치고, 그동안 무엇도 맞히지 못한다", pose = "soju_stagger", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "zigzag", n = 8, step = 4.5, side = 4, every = 0.09, delay = 0.05, radius = 6.5, hit = hit(0, 0, 0, 10, 10, 0.3, 10) } },
+		G = { id = "ccG", name = "취몽팔선진", desc = "술병을 하늘 높이 던진다. 병이 깨지며 둘레에 술비가 쏟아져 적을 적시고, 불똥 하나에 온 땅이 초록 불길로 타오르며 여덟 취선의 그림자가 한꺼번에 덮친다", pose = "soju_throw", dur = 1.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sojuRain", radius = 26, delay = 0.6, rain = 1.6, every = 0.3, slow = 0.5, hit = hit(0, 0, 0, 6, 8, 0.2, 0), ghosts = 8, final = hit(0, 0, 0, 95, 120, 1.4, 55, 22) } },
+		X = { id = "ccX", name = "취선만권", desc = "초 오의. 세상이 멈춘 듯한 한순간, 점점 빨라지는 앞구르기로 굴러 들어가 (그동안 무적) 적들에게 와다다다 수백 주먹을 퍼붓고, 마지막에 술병을 깨뜨리며 터뜨린다", pose = "soju_rolls", dur = 2.8, cd = 60, chi = 150, armor = true,
+			mech = { kind = "drunkRush", cut = 1.0, roll = 18, rush = 1.8, every = 0.06, hop = 0.45, range = 36, n = 5, reach = 8, hit = hit(0, 0, 0, 4.5, 5, 0.15, 2), final = hit(0, 0, 0, 180, 200, 1.8, 80, 26), finalRadius = 22 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1268,6 +1316,7 @@ local FINISHERS = {
 	unryu = { name = "운류승천장", pose = "double_palm" },
 	seongha = { name = "성하승천권", pose = "star_punch_r" },
 	chomaehwa = { name = "앵화승천선", pose = "fan_rise" },
+	chochwi = { name = "취선승천권", pose = "soju_rise" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1593,6 +1642,22 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
 			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
 			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
+
+-- 초월의 시련: 만취선이 직접 (술비 → 굴렁쇠 → 만취)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chochwi" then
+		local green = Color3.fromRGB(90, 220, 120)
+		st.trialIntro = { title = "초월의 시련", text = "어이, 거기. 한 잔 받을 텐가? 싫으면 덤벼 보게. 내가 쓰러지는 걸 보면 이 병을 넘겨주지. 근데 난 안 쓰러져. 끄억." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
+			P("rain", "술비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "soju_throw", fx = "fire", color = green, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
+			P("donut", "취선 회오리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "soju_fallkick", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "굴렁쇠", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "drunk_roll", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "취화", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "soju_spray", fx = "fire", color = Color3.fromRGB(180, 255, 200), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "술병 내려찍기", 3, { radius = 18, warn = 0.9, cd = 7, pose = "soju_smash", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
+			P("quake", "만취", 3, { radius = 27, warn = 1.3, cd = 9, pose = "soju_rolls", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2177,6 +2242,11 @@ Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
 Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
 	quote = "꽃은 지는 순간이 가장 아름답다. 그 순간을 베어라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
 
+-- 초·취팔선권의 사부: 취선 주막 남쪽 길가, 술독이 쌓인 마루의 만취선 (지도에 나오지 않는다)
+Config.SOJU_HILL = Vector3.new(-170, 0, 980)
+Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.new(0, 3.2, 0), region = "취선 주막 남쪽 (술독 마루)", regionId = "tavern", secret = true,
+	quote = "넘어지는 게 아니야. 땅이 나한테 오는 거지.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 넥타이를 머리에 맨 노인이 코를 곤다더라" }
+
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
 Config.SKY_SHOP = {
@@ -2337,6 +2407,8 @@ Poses.stances = {
 	stance_galaxy = { W = { 0, -25, 0 }, N = { -5, 25, 0 }, RS = { 150, 0, 20 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 110, 0, 0 } },
 	-- 초·매화: 오른 부채는 머리 위로 높이 펼쳐 들고, 왼 부채는 허리 앞에서 비스듬히 아래로 겨눈다 (벚꽃이 흩날리는 춤의 첫 자세)
 	stance_sakura = { W = { 0, -25, 0 }, N = { -5, 22, 0 }, RS = { 160, 0, 32 }, RE = { 48, 0, 0 }, LS = { 48, 0, -52 }, LE = { 24, 0, 0 } },
+	-- 초·취: 오른손 술병을 머리 옆까지 치켜들고, 왼팔은 축 늘어뜨린 채 몸이 한쪽으로 쏠린다 (화면이 크게 비틀거리게 한다)
+	stance_soju = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 } },
 	-- 적: 무기를 쥐고
 	stance_weapon = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 35, 0, 15 }, RE = { 60, 0, 0 }, LS = { 25, 0, -15 }, LE = { 50, 0, 0 } },
 	stance_spear = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 30, 0, 20 }, RE = { 70, 0, 0 }, LS = { 65, 0, -10 }, LE = { 30, 0, 0 } },
@@ -2366,6 +2438,8 @@ Poses.stanceLegs = {
 	stance_galaxy = { RH = { -12, 0, 10 }, LH = { 24, 0, -8 }, RK = { -30, 0, 0 }, LK = { -26, 0, 0 }, R = { 0, 0, 0, 0, -0.45, 0 } },
 	-- 초·매화: 한 발을 앞으로 엇갈려 내딛고 무릎을 살짝 굽힌 춤의 자세
 	stance_sakura = { RH = { 12, 0, -14 }, LH = { -6, 0, -6 }, RK = { -26, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, -10, 0, 0, -0.3, 0 } },
+	-- 초·취: 무릎이 안으로 꺾인 엉거주춤한 다리
+	stance_soju = { RH = { 16, 0, 12 }, LH = { -12, 0, -14 }, RK = { -32, 0, 0 }, LK = { -14, 0, 0 }, R = { 0, 8, 14, 0.3, -0.45, 0 } },
 	stance_duel = { RH = { -15, 0, 10 }, LH = { 25, 0, -6 }, RK = { -32, 0, 0 }, LK = { -28, 0, 0 }, R = { -5, 0, 0, 0, -0.55, 0 } },
 	default = { RH = { -10, 0, 6 }, LH = { 14, 0, -4 }, RK = { -16, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0 } },
 }
@@ -3755,6 +3829,106 @@ A.fan_rise = {
 	{ t = 1, j = { RS = { 150, 0, 35 }, RE = { 40, 0, 0 }, LS = { 50, 0, -50 }, LE = { 25, 0, 0 }, R = { 0, -360, 0, 0, 0.2, 0 } } },
 }
 
+------------------------------------------------------------------------
+-- 초·취팔선권 (오른손에 술병)
+------------------------------------------------------------------------
+local SOJU_END = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 }, R = { 0, 8, 14, 0.3, -0.45, 0 } }
+-- 술병을 오른쪽 위에서 왼쪽 아래로 크게 휘두르며 몸이 따라 쏠린다
+A.soju_swing_r = {
+	{ t = 0, j = { W = { 0, -35, 10 }, N = { 0, 25, 10 }, RS = { 120, 0, 75 }, RE = { 30, 0, 0 }, LS = { 30, 0, -40 }, LE = { 40, 0, 0 }, R = { 0, 0, -10, -0.3, -0.4, 0.2 } } },
+	{ t = 0.42, e = "snap", j = { W = { 10, 55, -20 }, N = { 10, -30, 20 }, RS = { 80, 0, -45 }, RE = { 10, 0, 0 }, LS = { 10, 0, -60 }, LE = { 20, 0, 0 }, RH = { 25, 0, 15 }, RK = { -35, 0, 0 }, LH = { -15, 0, -10 }, R = { -10, 0, 18, 0.5, -0.5, -0.6 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 휘청 돌며 왼 팔꿈치를 꽂는다
+A.soju_elbow_l = {
+	{ t = 0, j = { W = { 0, 30, 15 }, N = { 0, -15, -15 }, LS = { 60, 0, -40 }, LE = { 130, 0, 0 }, RS = { 140, 0, 20 }, RE = { 60, 0, 0 }, R = { 0, 0, 15, 0.4, -0.4, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { 5, -55, -10 }, N = { 0, 30, -10 }, LS = { 92, 0, 10 }, LE = { 145, 0, 0 }, RS = { 150, 0, 40 }, RE = { 50, 0, 0 }, LH = { 30, 0, -10 }, LK = { -40, 0, 0 }, RH = { -15, 0, 0 }, R = { -8, 0, -16, -0.4, -0.5, -0.7 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 뒤로 자빠지는 듯하다가 두 발로 번갈아 걷어찬다
+A.soju_fallkick = {
+	{ t = 0, j = { W = { -10, 0, 0 }, N = { -10, 0, 0 }, RS = { 150, 0, 40 }, RE = { 40, 0, 0 }, LS = { 60, 0, -60 }, LE = { 20, 0, 0 }, R = { 15, 0, 0, 0, -0.5, 0.3 } } },
+	{ t = 0.34, e = "snap", j = { W = { -20, 0, 0 }, N = { 20, 0, 0 }, RS = { 160, 0, 60 }, RE = { 20, 0, 0 }, LS = { 30, 0, -80 }, LE = { 10, 0, 0 }, RH = { 115, 0, 0 }, RK = { 0, 0, 0 }, LH = { 20, 0, 0 }, LK = { -70, 0, 0 }, R = { 45, 0, 0, 0, -1.4, 0.6 } } },
+	{ t = 0.6, e = "snap", j = { W = { -20, 0, 0 }, N = { 20, 0, 0 }, RS = { 160, 0, 60 }, RE = { 20, 0, 0 }, LS = { 30, 0, -80 }, LE = { 10, 0, 0 }, RH = { 30, 0, 0 }, RK = { -60, 0, 0 }, LH = { 120, 0, 0 }, LK = { 0, 0, 0 }, R = { 50, 0, 0, 0, -1.5, 0.5 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 술병을 머리 위로 치켜들었다가 온몸으로 내려찍는다
+A.soju_smash = {
+	{ t = 0, j = { W = { -25, 0, -5 }, N = { -25, 0, 0 }, RS = { 178, 0, 10 }, RE = { 25, 0, 0 }, LS = { 120, 0, -40 }, LE = { 30, 0, 0 }, R = { 10, 0, -6, 0, 0.2, 0.3 } } },
+	{ t = 0.5, e = "snap", j = { W = { 45, 0, 5 }, N = { 20, 0, 10 }, RS = { 40, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -50 }, LE = { 20, 0, 0 }, RH = { 40, 0, 10 }, RK = { -80, 0, 0 }, LH = { -20, 0, 0 }, LK = { -70, 0, 0 }, R = { -20, 0, 10, 0.2, -1.6, -1.0 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 고꾸라질 듯 앞으로 쏠리며 어깨로 들이받는다
+A.soju_lurch = {
+	{ t = 0, j = { W = { 15, 30, 0 }, N = { -10, -20, 15 }, RS = { 140, 0, 30 }, RE = { 60, 0, 0 }, LS = { -20, 0, -30 }, LE = { 20, 0, 0 }, R = { -15, 0, 10, 0, -0.6, 0.3 } } },
+	{ t = 0.5, e = "snap", j = { W = { 25, -40, 0 }, N = { 20, 30, 0 }, RS = { 160, 0, 50 }, RE = { 40, 0, 0 }, LS = { 30, 0, 40 }, LE = { 120, 0, 0 }, RH = { -40, 0, 0 }, RK = { -20, 0, 0 }, LH = { 60, 0, 0 }, LK = { -60, 0, 0 }, R = { -38, -20, 0, 0, -1.1, -1.6 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 취화방사: 술병을 앞으로 내밀어 흔들며 불길을 뿜는다 (왼손은 불똥을 튀긴다)
+A.soju_spray = {
+	{ t = 0, j = { W = { 0, 20, 0 }, RS = { 140, 0, 20 }, RE = { 90, 0, 0 }, LS = { 60, 0, 20 }, LE = { 90, 0, 0 }, R = { 0, 0, 8, 0, -0.5, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { -5, 25, 0 }, N = { 0, -15, 0 }, RS = { 88, 0, -10 }, RE = { 15, 0, 0 }, LS = { 80, 0, 30 }, LE = { 60, 0, 0 }, RH = { 20, 0, 0 }, RK = { -30, 0, 0 }, LH = { -20, 0, 0 }, R = { -4, 0, 4, 0, -0.6, -0.3 } } },
+	{ t = 0.5, j = { W = { -5, 22, 3 }, RS = { 92, 0, -6 }, RE = { 10, 0, 0 }, LS = { 75, 0, 34 }, LE = { 65, 0, 0 }, R = { -4, 0, 8, 0.1, -0.6, -0.3 } } },
+	{ t = 0.7, j = { W = { -5, 28, -3 }, RS = { 86, 0, -14 }, RE = { 18, 0, 0 }, LS = { 82, 0, 28 }, LE = { 58, 0, 0 }, R = { -4, 0, 0, -0.1, -0.6, -0.3 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 팔선취보: 갈지자로 비틀비틀 (몸이 좌우로 크게 쏠린다)
+A.soju_stagger = {
+	{ t = 0, j = { RS = { 150, 0, 40 }, RE = { 40, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, R = { -10, 0, 0, 0, -0.5, 0 } } },
+}
+for i = 1, 8 do
+	local sd = i % 2 == 1 and 1 or -1
+	table.insert(A.soju_stagger, { t = i / 9, e = "snap", j = { W = { 10, 30 * sd, -25 * sd }, N = { 0, -20 * sd, 25 * sd }, RS = { 150, 0, 40 + 30 * sd }, RE = { 30, 0, 0 }, LS = { 50, 0, -60 + 20 * sd }, LE = { 20, 0, 0 }, RH = { 30 * sd, 0, 10 }, RK = { -40, 0, 0 }, LH = { -30 * sd, 0, -10 }, LK = { -40, 0, 0 }, R = { -15, 20 * sd, 25 * sd, 0.4 * sd, -0.7, 0 } } })
+end
+table.insert(A.soju_stagger, { t = 1, j = SOJU_END })
+-- 취몽팔선진: 술병을 하늘 높이 던지고, 두 팔을 벌려 비를 맞는다
+A.soju_throw = {
+	{ t = 0, j = { W = { 20, 0, 0 }, RS = { 30, 0, 20 }, RE = { 60, 0, 0 }, R = { -10, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { -25, 0, 0 }, N = { -40, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 60, 0, -40 }, LE = { 20, 0, 0 }, R = { 12, 0, 0, 0, 0.4, 0 } } },
+	{ t = 0.6, j = { W = { -20, 0, 0 }, N = { -35, 0, 0 }, RS = { 120, 0, 90 }, RE = { 10, 0, 0 }, LS = { 120, 0, -90 }, LE = { 10, 0, 0 }, R = { 10, 0, 6, 0, -0.2, 0 } } },
+	{ t = 0.85, j = { W = { -15, 0, 8 }, N = { -30, 0, 20 }, RS = { 125, 0, 95 }, RE = { 10, 0, 0 }, LS = { 115, 0, -85 }, LE = { 10, 0, 0 }, R = { 8, 0, 12, 0.2, -0.3, 0 } } },
+	{ t = 1, j = SOJU_END },
+}
+-- 취선만권 (초 오의): 점점 빨라지는 앞구르기 다섯 바퀴 → 와다다다 주먹 → 술병 내려찍기
+-- 앞 35.7% (= 컷씬 1초 / 전체 2.8초) 동안 구른다. 구른 각도는 -1800도로 남아 있어야 거꾸로 풀리지 않는다
+A.soju_rolls = {
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { 20, 0, 0 }, RS = { 60, 0, 20 }, RE = { 120, 0, 0 }, LS = { 60, 0, -20 }, LE = { 120, 0, 0 }, RH = { 60, 0, 0 }, RK = { -100, 0, 0 }, LH = { 60, 0, 0 }, LK = { -100, 0, 0 }, R = { -20, 0, 0, 0, -1.4, 0 } } },
+}
+do
+	local CUT = 1.0 / 2.8
+	local TUCK = { W = { -40, 0, 0 }, N = { -40, 0, 0 }, RS = { 120, 0, 30 }, RE = { 70, 0, 0 }, LS = { 120, 0, -30 }, LE = { 70, 0, 0 }, RH = { 110, 0, 0 }, RK = { -135, 0, 0 }, LH = { 110, 0, 0 }, LK = { -135, 0, 0 } }
+	for k = 1, 10 do
+		-- 각도가 시간의 제곱으로 늘어난다 (갈수록 빨라진다)
+		local j = table.clone(TUCK)
+		j.R = { -180 * k, 0, 0, 0, -1.5, 0 }
+		table.insert(A.soju_rolls, { t = CUT * math.sqrt(k / 10), j = j })
+	end
+	local spin = -1800
+	-- 벌떡 일어나 주먹을 퍼붓는다 (좌우 번갈아 스무 번, 몸은 비틀비틀)
+	local n = 20
+	for i = 1, n do
+		local r = i % 2 == 1
+		local t = CUT + 0.02 + (0.94 - CUT - 0.02) * (i - 1) / (n - 1)
+		local sway = math.sin(i * 1.3) * 12
+		table.insert(A.soju_rolls, { t = t, e = "snap", j = {
+			W = { 0, r and 40 or -40, sway * 0.5 }, N = { 0, r and -25 or 25, sway },
+			RS = r and { 92, 0, 0 } or { 140, 0, 20 }, RE = r and { 0, 0, 0 } or { 70, 0, 0 },
+			LS = r and { 40, 0, -20 } or { 92, 0, 0 }, LE = r and { 100, 0, 0 } or { 0, 0, 0 },
+			RH = { 25, 0, 10 }, RK = { -35, 0, 0 }, LH = { -20, 0, -10 }, LK = { -25, 0, 0 },
+			R = { spin - 6, r and 6 or -6, sway, 0, -0.55, r and -0.4 or -0.2 },
+		} })
+	end
+	table.insert(A.soju_rolls, { t = 0.96, j = { W = { -25, 0, 0 }, N = { -25, 0, 0 }, RS = { 178, 0, 10 }, RE = { 20, 0, 0 }, LS = { 100, 0, -40 }, LE = { 30, 0, 0 }, R = { spin + 10, 0, 0, 0, 0.1, 0 } } })
+	table.insert(A.soju_rolls, { t = 0.99, e = "snap", j = { W = { 45, 0, 0 }, N = { 20, 0, 0 }, RS = { 40, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -50 }, LE = { 20, 0, 0 }, RH = { 40, 0, 10 }, RK = { -80, 0, 0 }, LK = { -70, 0, 0 }, R = { spin - 20, 0, 0, 0, -1.6, -1.0 } } })
+	table.insert(A.soju_rolls, { t = 1, j = { W = { 45, 0, 0 }, N = { 20, 0, 0 }, RS = { 40, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -50 }, LE = { 20, 0, 0 }, RH = { 40, 0, 10 }, RK = { -80, 0, 0 }, LK = { -70, 0, 0 }, R = { spin - 20, 0, 0, 0, -1.6, -1.0 } } })
+end
+-- 취선승천권: 술병째 올려 치며 한 바퀴 솟는다
+A.soju_rise = {
+	{ t = 0, j = { W = { 15, -30, 0 }, RS = { 20, 0, 30 }, RE = { 60, 0, 0 }, LS = { 40, 0, -40 }, LE = { 40, 0, 0 }, RK = { -60, 0, 0 }, LK = { -50, 0, 0 }, R = { -10, 0, 10, 0, -1.0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -15, 40, 0 }, N = { -20, 0, 0 }, RS = { 178, 0, 10 }, RE = { 0, 0, 0 }, LS = { 50, 0, -80 }, LE = { 10, 0, 0 }, RH = { 60, 0, 0 }, RK = { -70, 0, 0 }, R = { 10, -200, -10, 0, 1.0, 0 } } },
+	{ t = 1, j = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 }, R = { 0, -352, 14, 0.3, -0.45, 0 } } },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
@@ -3804,6 +3978,8 @@ Poses.limbs = {
 	hour_strike = { "RightHand" }, rewind_step = { "RightHand" }, stop_palm = { "RightHand", "LeftHand" }, ult_clock = { "RightHand", "LeftHand" },
 	fire_jab_r = { "RightHand" }, fire_jab_l = { "LeftHand" }, flame_wheel = { "RightFoot" }, blaze_punch = { "RightHand" },
 	blaze_hammer = { "RightHand", "LeftHand" }, flame_dash = { "RightHand", "LeftHand" }, fire_breath_palm = { "RightHand", "LeftHand" }, ult_volcano = { "RightHand", "LeftHand" },
+	soju_swing_r = { "RightHand" }, soju_elbow_l = { "LeftHand" }, soju_fallkick = { "RightFoot", "LeftFoot" }, soju_smash = { "RightHand" }, soju_lurch = { "RightHand" },
+	soju_spray = { "RightHand" }, soju_stagger = { "RightFoot", "LeftFoot" }, soju_throw = { "RightHand" }, soju_rolls = { "RightHand", "LeftHand" }, soju_rise = { "RightHand" },
 }
 
 -- 관절 이름 → R15 모터 (부품 이름, 모터 이름)
@@ -7856,7 +8032,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			return "deflect"
 		end
-		-- 그냥 막기
+		-- 그냥 막기 (만취한 권법은 막지 못하고 그대로 맞는다)
+	end
+	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
@@ -8306,6 +8484,9 @@ function Combat.tick(dt: number)
 				speed = 0
 			elseif f.guarding then
 				speed = f.walk * 0.4
+			elseif t < ((f :: any).slowUntil or 0) then
+				-- 술비에 젖어 굼뜨다
+				speed = f.walk * ((f :: any).slowMul or 0.5)
 			elseif f.act and not f.npc then
 				speed = f.walk * 0.35
 			elseif (f :: any).mountMult then
@@ -9991,6 +10172,9 @@ return Npc
 --   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고, 한가운데로 모여 터진다
 --   sakuraSever  (초·매화 만앵참월, 초 오의) 보이지 않게 적들을 베고 지나가 칼자국을 남기고 → 세상이 잿빛으로 멈추고 →
 --                칼바람이 적들을 휘감고 → 마지막에 터지며 화면까지 한칼에 가른다
+--   zigzag   (초·취 팔선취보) 갈지자로 비틀비틀 여덟 걸음, 걸음마다 둘레를 후려친다 (그동안 무적)
+--   sojuRain (초·취 취몽팔선진) 하늘로 던진 술병이 깨져 술비가 쏟아지고 (적이 굼떠진다), 불이 붙으며 여덟 취선의 그림자가 덮친다
+--   drunkRush (초·취 취선만권, 초 오의) 점점 빨라지는 앞구르기 (무적) → 적에서 적으로 옮겨 다니며 와다다다 → 술병을 깨뜨려 터뜨린다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -10057,6 +10241,24 @@ local function pullTo(o: any, center: Vector3, power: number)
 	elseif not o.root.Anchored then
 		o.root.AssemblyLinearVelocity = vel + Vector3.new(0, o.root.AssemblyLinearVelocity.Y, 0)
 	end
+end
+
+local function moveTo(f: any, cf: CFrame)
+	if f.player and f.player.Character then
+		f.player.Character:PivotTo(cf)
+	else
+		f.root.CFrame = cf
+	end
+end
+
+local function modelsOf(list: { any }): { Model }
+	local out = {}
+	for _, o in ipairs(list) do
+		if not o.dead and o.root.Parent then
+			table.insert(out, o.model)
+		end
+	end
+	return out
 end
 
 -- 기술 하나의 장치를 돌린다. ctx = { scale, speed }
@@ -10674,6 +10876,102 @@ function Skills.run(f: any, move: any, ctx: any)
 				if not hitSet[o] then
 					strike(f, o, scaled(m.final, sc * 0.6), move)
 				end
+			end
+		end)
+	elseif kind == "zigzag" then
+		local start = f.root.Position
+		local right = Vector3.new(-look.Z, 0, look.X)
+		local total = m.delay + m.n * m.every
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.15) / sp)
+		Push:FireAllClients("skillfx", { kind = "zigzagStart", m = f.model, dur = total / sp, style = style })
+		for i = 1, m.n do
+			after(m.delay + (i - 1) * m.every, function()
+				local from = f.root.Position
+				local side = i % 2 == 1 and 1 or -1
+				local to = start + look * (m.step * i) + right * (side * m.side * (0.6 + math.random() * 0.5))
+				to = Vector3.new(to.X, from.Y, to.Z)
+				moveTo(f, CFrame.lookAt(to, to + flat(to - from)))
+				Push:FireAllClients("skillfx", { kind = "zigzagStep", m = f.model, from = from, to = to, style = style, i = i })
+				for _, o in ipairs(hostilesNear(f, to, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "sojuRain" then
+		local c = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "sojuThrow", m = f.model, at = c, radius = m.radius, delay = m.delay / sp, rain = m.rain / sp, style = style })
+		local n = math.floor(m.rain / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					o.slowUntil = os.clock() + 1
+					o.slowMul = m.slow
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.rain, function()
+			local list = hostilesNear(f, c, m.radius + 2)
+			Push:FireAllClients("skillfx", { kind = "sojuIgnite", m = f.model, at = c, radius = m.radius, ghosts = m.ghosts, targets = modelsOf(list), style = style })
+			after(0.35, function()
+				for _, o in ipairs(list) do
+					if not o.dead and o.root.Parent then
+						strike(f, o, scaled(m.final, sc), move)
+					end
+				end
+			end)
+		end)
+	elseif kind == "drunkRush" then
+		local start = f.root.Position
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.cut + 0.15) / sp)
+		Push:FireAllClients("skillfx", { kind = "rushCut", m = f.model, dur = m.cut / sp, style = style })
+		-- 1) 점점 빨라지는 앞구르기 (컷씬, 무적)
+		local steps = 12
+		for k = 1, steps do
+			after(m.cut * k / steps, function()
+				local u = k / steps
+				local p = start + look * (m.roll * u * u)
+				local at = Vector3.new(p.X, f.root.Position.Y, p.Z)
+				moveTo(f, CFrame.lookAt(at, at + look))
+			end)
+		end
+		-- 2) 와다다다: 적에서 적으로 옮겨 다니며 주먹을 퍼붓는다
+		after(m.cut, function()
+			local list = nearestList(f, m.range, m.n)
+			Push:FireAllClients("skillfx", { kind = "rushFlurry", m = f.model, dur = m.rush / sp, targets = modelsOf(list), style = style })
+			local ticks = math.floor(m.rush / m.every)
+			local hopEvery = math.max(1, math.floor(m.hop / m.every))
+			local idx = 0
+			for i = 0, ticks - 1 do
+				after(i * m.every, function()
+					if i % hopEvery == 0 and #list > 0 then
+						for _ = 1, #list do
+							idx = idx % #list + 1
+							local tgt = list[idx]
+							if not tgt.dead and tgt.root.Parent then
+								local tp = tgt.root.Position
+								local dir = flat(tp - f.root.Position)
+								local at = Vector3.new(tp.X, f.root.Position.Y, tp.Z) - dir * 3.2
+								moveTo(f, CFrame.lookAt(at, at + dir))
+								Push:FireAllClients("blink", f.model, at)
+								break
+							end
+						end
+					end
+					local fwd = flat(Combat.look(f))
+					for _, o in ipairs(hostilesNear(f, f.root.Position + fwd * 3, m.reach)) do
+						o.stunUntil = math.max(o.stunUntil, os.clock() + 0.25)
+						strike(f, o, hit, move)
+					end
+				end)
+			end
+		end)
+		-- 3) 술병을 깨뜨려 터뜨린다
+		after(m.cut + m.rush, function()
+			local c = f.root.Position + flat(Combat.look(f)) * 3
+			Push:FireAllClients("skillfx", { kind = "rushEnd", m = f.model, at = c, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "flash" or kind == "bolt" then
@@ -14103,6 +14401,70 @@ local function sakuraHill()
 	end
 end
 
+-- 술독 마루: 초·취팔선권의 만취선이 코를 고는 나무 마루. 둘레에 술독이 산처럼 쌓이고, 하나는 엎어져 웅덩이가 졌다
+local function sojuHill()
+	local at = Config.SOJU_HILL
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "SojuHill"
+	f.Parent = folder
+	local plank = Color3.fromRGB(120, 85, 55)
+	local clay = Color3.fromRGB(125, 75, 45)
+	local green = Color3.fromRGB(70, 170, 95)
+	-- 두 겹의 둥근 나무 마루
+	disc("SojuDeck", at + Vector3.new(0, 0.8, 0), 16, 1.6, plank, Enum.Material.WoodPlanks, f)
+	disc("SojuDeck", at + Vector3.new(0, 2.4, 0), 11, 1.6, plank:Lerp(Color3.new(1, 1, 1), 0.08), Enum.Material.WoodPlanks, f)
+	for k = 0, 2 do
+		part({ Name = "SojuStep", Size = Vector3.new(7, 0.8, 2.2), Position = at + Vector3.new(0, 0.4 + k * 1.05, 18 - k * 2.4), Color = plank, Material = Enum.Material.Wood, Parent = f })
+	end
+	-- 술독: 배가 불룩한 항아리 (몸통 + 어깨 + 검은 뚜껑)
+	local function jar(p: Vector3, size: number, tipped: boolean?)
+		local cf = CFrame.new(p + Vector3.new(0, size * 0.7, 0))
+		if tipped then
+			cf = CFrame.new(p + Vector3.new(0, size * 0.75, 0)) * CFrame.Angles(0, math.random() * 6, math.rad(90))
+		end
+		part({ Name = "SojuJar", Shape = Enum.PartType.Ball, Size = Vector3.new(size * 1.5, size * 1.5, size * 1.5), CFrame = cf, Color = clay, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "SojuJarNeck", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.5, size * 0.9, size * 0.9), CFrame = cf * CFrame.new(0, size * 0.75, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = clay:Lerp(Color3.new(0, 0, 0), 0.15), Material = Enum.Material.Slate, Parent = f })
+		if not tipped then
+			part({ Name = "SojuJarLid", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.15, size * 1.0, size * 1.0), CFrame = cf * CFrame.new(0, size * 1.02, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(40, 30, 25), Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2 + 0.3
+		if math.abs(a - math.pi / 2) > 0.45 then -- 계단 쪽(남)은 비운다
+			local r = 20 + (k % 3) * 2
+			local p = at + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+			jar(p, 2.2 + (k % 3) * 0.5)
+			if k % 2 == 0 then
+				jar(p + Vector3.new(0, 3.2 + (k % 3) * 0.7, 0), 1.6)
+			end
+		end
+	end
+	-- 엎어진 큰 술독과 웅덩이
+	local tip = at + Vector3.new(-12, 3.2, -4)
+	jar(tip, 2.4, true)
+	disc("SojuPuddle", at + Vector3.new(-12, 3.25, 1), 3.4, 0.05, Color3.fromRGB(190, 225, 200), Enum.Material.Glass, f, false).Transparency = 0.35
+	-- 낮은 술상과 초록 병 몇 개 (상표 없는 빈 병)
+	part({ Name = "SojuTable", Size = Vector3.new(5, 0.5, 3), Position = at + Vector3.new(5, 4.2, -3), Color = Color3.fromRGB(90, 55, 35), Material = Enum.Material.Wood, Parent = f })
+	for _, o in ipairs({ { 3.6, 0 }, { 4.6, 0.6 }, { 6.2, -0.4 } }) do
+		part({ Name = "SojuBottle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 0.55, 0.55), CFrame = CFrame.new(at + Vector3.new(o[1], 5.15, -3 + o[2])) * CFrame.Angles(0, 0, math.rad(90)), Color = green, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	end
+	part({ Name = "SojuBottle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 0.55, 0.55), CFrame = CFrame.new(at + Vector3.new(3, 3.5, 4)) * CFrame.Angles(math.rad(90), 0.4, 0), Color = green, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	-- 붉은 종이 등 (마루 네 귀퉁이, 장대에 매달아)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		local p = at + Vector3.new(math.cos(a) * 14, 0, math.sin(a) * 14)
+		part({ Name = "SojuPole", Size = Vector3.new(0.6, 10, 0.6), Position = p + Vector3.new(0, 6.6, 0), Color = Color3.fromRGB(60, 40, 28), Material = Enum.Material.Wood, Parent = f })
+		local lamp = part({ Name = "SojuLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(2.2, 2.6, 2.2), Position = p + Vector3.new(0, 10.6, 0), Color = Color3.fromRGB(235, 70, 50), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(lamp, Color3.fromRGB(255, 140, 90), 22, 1.2)
+	end
+	local board = part({ Name = "SojuSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 21.5), at + Vector3.new(0, 4.5, 40)), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "술독 마루", Color3.fromRGB(190, 255, 200), 1 } })
+	part({ Name = "SojuSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 21.5), Color = Color3.fromRGB(60, 40, 28), Material = Enum.Material.Wood, Parent = f })
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -14390,6 +14752,7 @@ function World.build(): any
 		{ "길가", roadside },
 		{ "표지", regionSigns },
 		{ "벚꽃 언덕", sakuraHill },
+		{ "술독 마루", sojuHill },
 		{ "천상계", function()
 			skyWorld(out)
 		end },
@@ -14449,6 +14812,7 @@ local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
+local Drunk = require(script:WaitForChild("Drunk"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -14706,6 +15070,7 @@ task.spawn(function()
 						Fx.limbTrails(m :: Model, mv.pose, mv.dur, style.color, style.color2)
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
 						Sakura.cast(style.id, slot, m :: Model, mv.dur)
+						Drunk.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -15004,6 +15369,7 @@ startMove = function(slot: any, charge: number?)
 	Fx.limbTrails(char, move.pose, dur, style.color, style.color2)
 	Fx.cast(style.id, slot, char, dur)
 	Sakura.cast(style.id, slot, char, dur)
+	Drunk.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -15080,9 +15446,13 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "G" or slot == "X" then
+	if slot == "X" and style.soju then
+		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
+		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "G" or slot == "X" then
 		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
-		if slot == "X" then
+		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
 		end
 		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
@@ -15735,6 +16105,7 @@ function handlers.act(data: any)
 	if style and data.slot ~= nil then
 		Fx.cast(style.id, data.slot, m, data.dur)
 		Sakura.cast(style.id, data.slot, m, data.dur)
+		Drunk.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
@@ -15779,7 +16150,7 @@ function handlers.act(data: any)
 	if type(data.id) == "string" and string.sub(data.id, -1) == "X" and style then
 		-- 남의 초 오의: 벚꽃이 쏟아지고 크게 흔들린다
 		local r = rootOf(m)
-		if r then
+		if r and style.fans then
 			Sakura.petals(r.Position + Vector3.new(0, 3, 0), 40, 14, 2.2)
 		end
 		if near then
@@ -16190,6 +16561,9 @@ function handlers.skillfx(data: any)
 	elseif Sakura.handles(data.kind) then
 		Sakura.run(data)
 		return
+	elseif Drunk.handles(data) then
+		Drunk.run(data)
+		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
 		return
@@ -16462,6 +16836,8 @@ RunService.RenderStepped:Connect(function()
 		local n = tonumber(char:GetAttribute("Petal")) or 0
 		local cap = style.petalMax or 20
 		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
+	elseif style.noBlock then
+		stacks = "🍾 만취 · 막기 ✕ · 흘리기만 ○"
 	elseif style.chargeEvery then
 		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
@@ -17060,6 +17436,28 @@ local function step(dt: number)
 			end
 			continue
 		end
+		-- 초·취: 쓰러질 듯 크게 비틀거리고, 몇 초마다 한쪽으로 크게 휘청한다 (고개는 한 박자 늦게 따라간다)
+		local wob = 0
+		local sw, sw2, swN, lurch = 0, 0, 0, 0
+		local wsid = model:GetAttribute("Style")
+		local wst = type(wsid) == "string" and Config.STYLE_BY_ID[wsid] or nil
+		if wst and wst.wobble and not dead then
+			local wr = rec :: any
+			wr.wobT = (wr.wobT or math.random() * 10) + dt
+			wr.lurchT = (wr.lurchT or 0) + dt
+			if wr.lurchT > (wr.lurchNext or 3) then
+				wr.lurchT = 0
+				wr.lurchNext = 2.5 + math.random() * 2.5
+				wr.lurchDir = math.random() < 0.5 and -1 or 1
+			end
+			local lu = math.clamp(wr.lurchT / 0.9, 0, 1)
+			lurch = math.sin(lu * math.pi) * (wr.lurchDir or 1) * ((wr.lurchNext and lu < 1) and 1 or 0)
+			local wt = wr.wobT
+			sw = math.sin(wt * 1.5)
+			sw2 = math.sin(wt * 2.3 + 1)
+			swN = math.sin(wt * 1.5 - 0.9)
+			wob = (1 - (actPose and actW or 0)) * (1 - 0.35 * rec.moveW) * (1 - rec.airW)
+		end
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
 			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
@@ -17090,6 +17488,23 @@ local function step(dt: number)
 					out = out * CFrame.Angles(-b * 1.2 * RAD * still, 0, 0)
 				end
 				-- (어깨는 숨에 맞춰 흔들지 않는다: 손끝이 떨려 보인다)
+			end
+			if wob > 0.01 then
+				if name == "R" then
+					out = CFrame.new((0.35 * sw + 0.55 * lurch) * wob, -0.12 * math.abs(lurch) * wob, 0.15 * sw2 * wob) * out * CFrame.Angles(math.rad(5 * sw2) * wob, 0, math.rad(-(13 * sw + 20 * lurch)) * wob)
+				elseif name == "W" then
+					out = out * CFrame.Angles(math.rad(4 * sw2) * wob, math.rad(8 * sw2) * wob, math.rad(9 * sw + 12 * lurch) * wob)
+				elseif name == "N" then
+					out = out * CFrame.Angles(math.rad(7 * sw2) * wob, 0, math.rad(16 * swN + 10 * lurch) * wob)
+				elseif name == "RK" then
+					out = out * CFrame.Angles(math.rad(-10 * math.max(0, sw + lurch)) * wob, 0, 0)
+				elseif name == "LK" then
+					out = out * CFrame.Angles(math.rad(-10 * math.max(0, -sw - lurch)) * wob, 0, 0)
+				elseif name == "RS" then
+					out = out * CFrame.Angles(math.rad(7 * sw2) * wob, 0, math.rad(8 * lurch) * wob)
+				elseif name == "LS" then
+					out = out * CFrame.Angles(math.rad(12 * swN) * wob, 0, math.rad(-10 * math.abs(lurch)) * wob)
+				end
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))
@@ -17435,6 +17850,769 @@ return Cutscene
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="16">
+          <Properties>
+            <string name="Name">Drunk</string>
+            <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
+-- 술병은 상표 없는 초록 유리병. 몸짓마다 초록 불길과 유리 조각, 술 방울이 튄다
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Drunk = {}
+local player = Players.LocalPlayer
+
+local GREEN = Color3.fromRGB(70, 200, 110)
+local GLASS = Color3.fromRGB(60, 165, 95)
+local PALE = Color3.fromRGB(215, 255, 225)
+local FLAME = Color3.fromRGB(120, 255, 160)
+local WHITE = Color3.new(1, 1, 1)
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
+local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonDrunk"
+folder.Parent = workspace
+
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(time, style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function rootOf(m: Instance?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+
+-- 떠다니는 조각 (물리 없음)
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.Neon
+	p.Transparency = alpha or 0
+	if shape == "ball" then
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = p
+	elseif shape == "cyl" then
+		p.Shape = Enum.PartType.Cylinder
+	end
+	p.Parent = folder
+	return p
+end
+
+------------------------------------------------------------------------
+-- 술병과 넥타이 (손과 머리에 붙는다)
+------------------------------------------------------------------------
+local tails: { { weld: Weld, base: CFrame, phase: number } } = {}
+local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, list: { Instance }, flutter: number?)
+	p.Massless = true
+	p.Anchored = false
+	if flutter then
+		-- 넥타이 꼬리는 바람에 흔들린다 (용접 각도를 매 순간 바꾼다)
+		local w = Instance.new("Weld")
+		w.Part0 = to
+		w.Part1 = p
+		w.C0 = cf
+		w.Parent = p
+		table.insert(tails, { weld = w, base = cf, phase = flutter })
+	else
+		p.CFrame = to.CFrame * cf
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = to
+		w.Part1 = p
+		w.Parent = p
+	end
+	p.Parent = holder
+	table.insert(list, p)
+end
+
+-- 상표 없는 초록 유리병: 손이 목을 쥐고, 몸통은 새끼손가락 쪽으로 뻗는다
+local function buildBottle(hand: BasePart, holder: Instance, list: { Instance })
+	local up = CFrame.Angles(0, 0, math.rad(90)) -- 원기둥의 축(X)을 손의 위아래(Y)로
+	local function cyl(len: number, d: number, y: number, color: Color3, mat: Enum.Material, alpha: number?)
+		local p = part(Vector3.new(len, d, d), color, mat, alpha, "cyl")
+		attach(p, hand, CFrame.new(0, y, 0) * up, holder, list)
+		return p
+	end
+	cyl(0.75, 0.28, -0.05, GLASS, Enum.Material.Glass, 0.15) -- 목
+	cyl(0.16, 0.31, 0.36, Color3.fromRGB(40, 120, 70), Enum.Material.Metal) -- 뚜껑
+	local shoulder = part(Vector3.new(0.68, 0.5, 0.68), GLASS, Enum.Material.Glass, 0.2, "ball")
+	attach(shoulder, hand, CFrame.new(0, -0.5, 0), holder, list)
+	cyl(1.5, 0.68, -1.25, GLASS, Enum.Material.Glass, 0.22) -- 몸통
+	cyl(1.1, 0.56, -1.35, Color3.fromRGB(225, 250, 230), Enum.Material.SmoothPlastic, 0.55) -- 속에 찰랑이는 술
+	cyl(0.62, 0.7, -1.2, Color3.fromRGB(240, 245, 238), Enum.Material.SmoothPlastic) -- 빈 띠 (글씨 없음)
+	cyl(0.05, 0.71, -0.9, GREEN, Enum.Material.SmoothPlastic)
+	cyl(0.05, 0.71, -1.5, GREEN, Enum.Material.SmoothPlastic)
+	cyl(0.06, 0.66, -2.0, Color3.fromRGB(40, 110, 65), Enum.Material.Glass, 0.1) -- 바닥
+	-- 병 입구의 작은 초록 빛 (불을 뿜는 자리)
+	local mouth = part(Vector3.new(0.12, 0.12, 0.12), FLAME, Enum.Material.Neon, 1)
+	mouth.Name = "SojuMouth"
+	attach(mouth, hand, CFrame.new(0, 0.45, 0), holder, list)
+	local glow = Instance.new("PointLight")
+	glow.Color = FLAME
+	glow.Range = 5
+	glow.Brightness = 0.5
+	glow.Parent = mouth
+end
+
+-- 머리에 질끈 동여맨 붉은 넥타이: 이마를 한 바퀴 두르고, 오른쪽 뒤에 매듭, 두 꼬리가 늘어져 흔들린다
+local function buildTie(head: BasePart, holder: Instance, list: { Instance })
+	local r = math.max(head.Size.X, head.Size.Z) * 0.5 + 0.04
+	local y = head.Size.Y * 0.2
+	local red = Color3.fromRGB(205, 40, 50)
+	local dark = Color3.fromRGB(120, 20, 35)
+	local n = 14
+	local chord = 2 * r * math.sin(math.pi / n) * 1.08
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = part(Vector3.new(chord, 0.26, 0.06), k % 3 == 0 and dark or red, Enum.Material.Fabric)
+		attach(p, head, CFrame.Angles(0, a, 0) * CFrame.new(0, y, -r), holder, list)
+	end
+	local knotA = math.rad(-125)
+	local knotCF = CFrame.Angles(0, knotA, 0) * CFrame.new(0, y, -r - 0.08)
+	local knot = part(Vector3.new(0.3, 0.3, 0.2), dark, Enum.Material.Fabric)
+	attach(knot, head, knotCF, holder, list)
+	-- 두 꼬리: 넓은 쪽과 좁은 쪽 (끝은 뾰족하게)
+	for i, spec in ipairs({ { 0.34, 1.25, 18 }, { 0.24, 1.0, -14 } }) do
+		local w, len, tilt = spec[1], spec[2], spec[3]
+		local base = knotCF * CFrame.Angles(math.rad(-25), 0, math.rad(tilt)) * CFrame.new(0, -len / 2 - 0.1, -0.05)
+		local tail = part(Vector3.new(w, len, 0.05), red, Enum.Material.Fabric)
+		attach(tail, head, base, holder, list, i * 1.7)
+		local tip = part(Vector3.new(w * 0.72, w * 0.72, 0.05), red, Enum.Material.Fabric)
+		attach(tip, head, base * CFrame.new(0, -len / 2, 0) * CFrame.Angles(0, 0, math.rad(45)), holder, list, i * 1.7)
+		-- 사선 줄무늬
+		for s = 0, 1 do
+			local stripe = part(Vector3.new(w * 1.02, 0.07, 0.055), dark, Enum.Material.Fabric)
+			attach(stripe, head, base * CFrame.new(0, 0.25 - s * 0.45, 0) * CFrame.Angles(0, 0, math.rad(30)), holder, list, i * 1.7)
+		end
+	end
+end
+
+local mouths: { [Model]: BasePart } = {}
+-- 몸 하나에 술병과 넥타이를 만든다 (Sakura가 부채와 같은 자리에서 부른다). 만든 것들을 돌려준다
+function Drunk.build(model: Model): { Instance }
+	local out: { Instance } = {}
+	local holder = Instance.new("Folder")
+	holder.Name = "Soju_" .. model.Name
+	holder.Parent = folder
+	table.insert(out, holder)
+	local hand = model:FindFirstChild("RightHand")
+	if hand and hand:IsA("BasePart") then
+		buildBottle(hand, holder, out)
+	end
+	local head = model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		buildTie(head, holder, out)
+	end
+	for _, p in ipairs(out) do
+		if p.Name == "SojuMouth" and p:IsA("BasePart") then
+			mouths[model] = p
+		end
+	end
+	return out
+end
+
+RunService.Heartbeat:Connect(function()
+	local t = os.clock()
+	for i = #tails, 1, -1 do
+		local tl = tails[i]
+		if not tl.weld.Parent then
+			table.remove(tails, i)
+		else
+			tl.weld.C0 = tl.base * CFrame.Angles(math.sin(t * 3.1 + tl.phase) * 0.22, 0, math.sin(t * 2.3 + tl.phase) * 0.12)
+		end
+	end
+	for m, p in pairs(mouths) do
+		if not p.Parent or not m.Parent then
+			mouths[m] = nil
+		end
+	end
+end)
+
+local function mouthOf(model: Model): Vector3?
+	local p = mouths[model]
+	if p and p.Parent then
+		return p.Position
+	end
+	local h = model:FindFirstChild("RightHand")
+	return (h and h:IsA("BasePart")) and h.Position or nil
+end
+
+------------------------------------------------------------------------
+-- 작은 연출 조각들
+------------------------------------------------------------------------
+-- 술 방울이 튄다 (초록빛 도는 투명한 알갱이)
+local function splash(pos: Vector3, n: number, spread: number, up: number?)
+	for _ = 1, n do
+		local d = part(Vector3.one * (0.25 + math.random() * 0.3), Color3.fromRGB(200, 245, 215), Enum.Material.Glass, 0.3, "ball")
+		d.Position = pos
+		local v = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5).Unit * spread * (0.4 + math.random() * 0.6) + Vector3.new(0, (up or 4) * (0.5 + math.random()), 0)
+		local life = 0.45 + math.random() * 0.3
+		tween(d, life, { Position = pos + v - Vector3.new(0, 3, 0), Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Debris:AddItem(d, life + 0.05)
+	end
+end
+-- 유리 조각이 튄다 (깨진 술병)
+local function shards(pos: Vector3, n: number, spread: number)
+	for _ = 1, n do
+		local s = part(Vector3.new(0.4 + math.random() * 0.5, 0.05, 0.25 + math.random() * 0.4), GLASS, Enum.Material.Glass, 0.15)
+		s.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+		local v = Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5).Unit * spread * (0.5 + math.random() * 0.5)
+		local life = 0.5 + math.random() * 0.4
+		tween(s, life, { CFrame = CFrame.new(pos + v - Vector3.new(0, 2, 0)) * CFrame.Angles(math.random() * 12, math.random() * 12, math.random() * 12), Transparency = 1 })
+		Debris:AddItem(s, life + 0.05)
+	end
+end
+-- 초록 불길 기둥
+local function flameAt(pos: Vector3, size: number, life: number)
+	local p = part(Vector3.new(size, 0.2, size), FLAME, Enum.Material.Neon, 1)
+	p.Position = pos
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = TEX_FIRE
+	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 255, 200)), ColorSequenceKeypoint.new(0.4, FLAME), ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 140, 120)) })
+	pe.LightEmission = 0.9
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size * 0.6), NumberSequenceKeypoint.new(1, size * 0.15) })
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	pe.Lifetime = NumberRange.new(0.5, 0.9)
+	pe.Speed = NumberRange.new(size * 1.2, size * 2.2)
+	pe.SpreadAngle = Vector2.new(12, 12)
+	pe.EmissionDirection = Enum.NormalId.Top
+	pe.Rate = 40
+	pe.Parent = p
+	task.delay(life, function()
+		pe.Enabled = false
+	end)
+	Debris:AddItem(p, life + 1)
+end
+-- 반달 휘두름 자국 (초록)
+local function swoosh(cf: CFrame, radius: number, life: number, thick: number)
+	local n = 9
+	for i = 0, n - 1 do
+		local a = -1.2 + 2.4 * i / (n - 1)
+		local seg = part(Vector3.new(radius * 2.4 / n, thick * (1 - math.abs(a) * 0.5), 0.08), i % 2 == 0 and GREEN or PALE, Enum.Material.Neon, 0.15)
+		seg.CFrame = cf * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -radius)
+		tween(seg, life, { Transparency = 1, Size = seg.Size * Vector3.new(1.2, 0.2, 1) })
+		Debris:AddItem(seg, life + 0.05)
+	end
+end
+-- 초록 반투명 잔상 (몸을 본뜬 그림자)
+local function ghostOf(model: Model, at: CFrame, color: Color3, alpha: number): { BasePart }
+	local r = rootOf(model)
+	local out = {}
+	if not r then
+		return out
+	end
+	for _, d in ipairs(model:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 0.9 then
+			local g = part(d.Size, color, Enum.Material.Neon, alpha)
+			g.CFrame = at * r.CFrame:ToObjectSpace(d.CFrame)
+			table.insert(out, g)
+		end
+	end
+	return out
+end
+
+------------------------------------------------------------------------
+-- 연타·강타·기술을 쓸 때 (모두가 본다)
+------------------------------------------------------------------------
+function Drunk.cast(styleId: any, slot: any, model: Model, dur: number)
+	local st = type(styleId) == "string" and Config.STYLE_BY_ID[styleId] or nil
+	if not st or not st.soju then
+		return
+	end
+	local r = rootOf(model)
+	if not r or not near(r.Position, 160) then
+		return
+	end
+	if type(slot) == "number" or slot == "H" or slot == "F" then
+		local big = slot == 4 or slot == "H" or slot == "F"
+		task.delay(math.min(0.14, dur * 0.4), function()
+			local look = r.CFrame
+			swoosh(look * CFrame.new(0, 0.8, 0) * CFrame.Angles(0, 0, (type(slot) == "number" and slot % 2 == 0) and 0.6 or -0.6), big and 6 or 4, big and 0.4 or 0.25, big and 0.9 or 0.5)
+			local m = mouthOf(model)
+			if m then
+				splash(m, big and 10 or 4, big and 6 or 3, 3)
+			end
+			if slot == 4 or slot == "F" then
+				local feet = (look * CFrame.new(0, -2.4, -3)).Position
+				Fx.ring(feet, GREEN, 2, 16, 0.35)
+				shards(feet + Vector3.new(0, 1, 0), 8, 6)
+				Fx.sound("block", 0.5, 1.5, feet)
+			elseif slot == "H" then
+				Fx.afterimage(model, GREEN, 0.3)
+			end
+		end)
+	elseif slot == "E" then
+		local m = mouthOf(model)
+		if m then
+			splash(m, 10, 3, 5)
+		end
+	elseif slot == "R" then
+		Fx.text(r.Position + Vector3.new(0, 4, 0), "딸꾹!", PALE, 26, 0.9)
+	elseif slot == "G" then
+		splash(r.Position + Vector3.new(0, 2, 0), 16, 6, 6)
+		Fx.ring(r.Position - Vector3.new(0, 2.4, 0), GREEN, 2, 26, 0.6)
+	end
+end
+
+------------------------------------------------------------------------
+-- 기술 장치의 연출 (서버의 skillfx)
+------------------------------------------------------------------------
+-- 취화방사 (E): 병 입구에서 초록 불길이 앞으로 뿜어져 나간다
+local function sprayCone(data: any)
+	local m0: Model? = data.m
+	local r = rootOf(m0)
+	if not m0 or not r or not near(r.Position, 200) then
+		return
+	end
+	local m = m0 :: Model
+	local range = data.range or 20
+	local nozzle = part(Vector3.new(0.4, 0.4, 0.4), FLAME, Enum.Material.Neon, 1)
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = TEX_FIRE
+	pe.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(240, 255, 220)), ColorSequenceKeypoint.new(0.3, FLAME), ColorSequenceKeypoint.new(0.75, GREEN), ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 110, 90)) })
+	pe.LightEmission = 1
+	pe.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.5, 3.2), NumberSequenceKeypoint.new(1, 5) })
+	pe.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.7, 0.4), NumberSequenceKeypoint.new(1, 1) })
+	pe.Lifetime = NumberRange.new(0.4, 0.55)
+	pe.Speed = NumberRange.new(range * 1.7, range * 2.1)
+	pe.SpreadAngle = Vector2.new((data.angle or 60) * 0.35, (data.angle or 60) * 0.2)
+	pe.EmissionDirection = Enum.NormalId.Front
+	pe.Drag = 1.2
+	pe.Rate = 0
+	pe.Parent = nozzle
+	local light = Instance.new("PointLight")
+	light.Color = FLAME
+	light.Range = 18
+	light.Brightness = 2
+	light.Parent = nozzle
+	local delay = data.delay or 0
+	local dur = data.dur or 1.6
+	local t0 = os.clock()
+	local conn
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if t > delay + dur + 0.6 or not m.Parent then
+			conn:Disconnect()
+			nozzle:Destroy()
+			return
+		end
+		local from = mouthOf(m) or r.Position
+		local look = flat(r.CFrame.LookVector)
+		nozzle.CFrame = CFrame.lookAt(from, from + look + Vector3.new(0, -0.05, 0))
+		pe.Rate = (t > delay and t < delay + dur) and 90 or 0
+	end)
+	task.delay(delay, function()
+		Fx.sound("splash", 0.5, 1.6, r.Position)
+	end)
+end
+
+-- 팔선취보 (R): 걸음마다 초록 잔상과 술 방울
+local function zigzagStep(data: any)
+	local to0: Vector3? = data.to
+	if not to0 or not near(to0, 200) then
+		return
+	end
+	local to = to0 :: Vector3
+	local m: Model? = data.m
+	if m then
+		Fx.afterimage(m, GREEN, 0.35)
+	end
+	Fx.ring(to - Vector3.new(0, 2.5, 0), GREEN, 1.5, 11, 0.3)
+	splash(to, 5, 4, 3)
+	if data.i and data.i % 3 == 0 then
+		Fx.text(to + Vector3.new(0, 4, 0), "딸꾹", PALE, 20, 0.7)
+	end
+	Fx.sound("swing", 0.35, 0.8 + math.random() * 0.3, to)
+end
+
+-- 취몽팔선진 (G): 하늘로 던진 술병 → 깨져서 술비 → 웅덩이
+local puddles: { [any]: Part } = {}
+local function sojuThrow(data: any)
+	local at: Vector3 = data.at
+	if not at or not near(at, 260) then
+		return
+	end
+	local radius = data.radius or 26
+	local delay = data.delay or 0.6
+	local rain = data.rain or 1.6
+	local m: Model? = data.m
+	local from = (m and mouthOf(m)) or at + Vector3.new(0, 3, 0)
+	local top = at + Vector3.new(0, 34, 0)
+	-- 날아오르며 빙글빙글 도는 술병
+	local bottle = part(Vector3.new(1.6, 0.7, 0.7), GLASS, Enum.Material.Glass, 0.2, "cyl")
+	bottle.CFrame = CFrame.new(from)
+	tween(bottle, delay, { CFrame = CFrame.new(top) * CFrame.Angles(math.pi * 6, math.pi * 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	Debris:AddItem(bottle, delay + 0.05)
+	task.delay(delay, function()
+		-- 하늘에서 깨진다
+		shards(top, 26, 16)
+		Fx.flash(top, FLAME, 60, 4, 0.4)
+		Fx.sound("shatter", 1, 0.9, at)
+		-- 술비: 둘레 위에서 방울이 쏟아진다
+		local cloud = part(Vector3.new(radius * 2, 1, radius * 2), PALE, Enum.Material.Neon, 1)
+		cloud.Position = at + Vector3.new(0, 26, 0)
+		local pe = Instance.new("ParticleEmitter")
+		pe.Texture = TEX_SPARK
+		pe.Color = ColorSequence.new(Color3.fromRGB(215, 255, 230), Color3.fromRGB(150, 230, 180))
+		pe.LightEmission = 0.5
+		pe.Size = NumberSequence.new(0.35, 0.2)
+		pe.Squash = NumberSequence.new(-2) -- 길쭉한 빗줄기
+		pe.Transparency = NumberSequence.new(0.2, 0.6)
+		pe.Lifetime = NumberRange.new(0.6, 0.8)
+		pe.Speed = NumberRange.new(36, 44)
+		pe.EmissionDirection = Enum.NormalId.Bottom
+		pe.SpreadAngle = Vector2.new(4, 4)
+		pe.Shape = Enum.ParticleEmitterShape.Box
+		pe.Rate = 260
+		pe.Parent = cloud
+		task.delay(rain, function()
+			pe.Enabled = false
+		end)
+		Debris:AddItem(cloud, rain + 1)
+		-- 바닥에 번지는 술 웅덩이
+		local pool = part(Vector3.new(0.12, 2, 2), Color3.fromRGB(190, 240, 205), Enum.Material.Glass, 0.45, "cyl")
+		pool.CFrame = CFrame.new(at - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(pool, rain, { Size = Vector3.new(0.12, radius * 2, radius * 2) }, Enum.EasingStyle.Sine)
+		puddles[data.m or at] = pool
+		Debris:AddItem(pool, rain + 3)
+	end)
+end
+-- 불똥 하나에 웅덩이가 타오르고, 여덟 취선의 그림자가 한가운데로 덮친다
+local function sojuIgnite(data: any)
+	local at: Vector3 = data.at
+	if not at or not near(at, 260) then
+		return
+	end
+	local radius = data.radius or 26
+	local pool = puddles[data.m or at]
+	puddles[data.m or at] = nil
+	if pool and pool.Parent then
+		pool.Material = Enum.Material.Neon
+		pool.Color = FLAME
+		tween(pool, 1.4, { Transparency = 1 })
+	end
+	-- 바닥 가득 초록 불길
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2
+		for _, rr in ipairs({ radius * 0.45, radius * 0.85 }) do
+			flameAt(at + Vector3.new(math.cos(a) * rr, -2.4, math.sin(a) * rr), 3 + math.random() * 2, 1.1)
+		end
+	end
+	flameAt(at - Vector3.new(0, 2.4, 0), 8, 1.2)
+	Fx.flash(at, FLAME, radius * 3, 5, 0.6)
+	Fx.sound("heavy", 1, 0.6, at)
+	-- 여덟 취선의 그림자
+	local m: Model? = data.m
+	local n = data.ghosts or 8
+	local targets: { Model } = data.targets or {}
+	if m then
+		for i = 1, n do
+			local a = (i - 1) / n * math.pi * 2
+			local from = at + Vector3.new(math.cos(a) * radius * 0.7, 0, math.sin(a) * radius * 0.7)
+			local tgt = targets[((i - 1) % math.max(1, #targets)) + 1]
+			local tr = tgt and rootOf(tgt)
+			local to = tr and tr.Position or at
+			local cf0 = CFrame.lookAt(from, Vector3.new(to.X, from.Y, to.Z))
+			local list = ghostOf(m, cf0, i % 2 == 0 and GREEN or PALE, 0.45)
+			local lunge = flat(to - from) * math.max(0, (to - from).Magnitude - 3)
+			for _, g in ipairs(list) do
+				tween(g, 0.32, { CFrame = g.CFrame + lunge }, Enum.EasingStyle.Back, Enum.EasingDirection.In)
+				task.delay(0.32, function()
+					tween(g, 0.3, { Transparency = 1 })
+				end)
+				Debris:AddItem(g, 0.7)
+			end
+		end
+	end
+	task.delay(0.35, function()
+		for _, t in ipairs(targets) do
+			local tr = rootOf(t)
+			if tr then
+				Fx.blast(tr.Position, GREEN, PALE, 1.4)
+				shards(tr.Position, 6, 6)
+			end
+		end
+		Fx.ring(at - Vector3.new(0, 2.3, 0), FLAME, 4, radius * 2.4, 0.6)
+	end)
+end
+
+-- 취선만권 (X): 구르는 몸에 초록 잔상 (모두가 본다)
+local function rushCut(data: any)
+	local m0: Model? = data.m
+	local r = rootOf(m0)
+	if not m0 or not r or not near(r.Position, 200) then
+		return
+	end
+	local m = m0 :: Model
+	local dur = data.dur or 1
+	local t0 = os.clock()
+	local last = 0
+	local conn
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if t > dur or not m.Parent then
+			conn:Disconnect()
+			return
+		end
+		-- 갈수록 잔상이 촘촘해진다
+		local gap = 0.14 - 0.1 * (t / dur)
+		if t - last > gap then
+			last = t
+			Fx.afterimage(m, t / dur > 0.6 and PALE or GREEN, 0.25)
+			Fx.dust(r.Position - Vector3.new(0, 2.6, 0), 1.2 + t / dur)
+		end
+	end)
+end
+-- 와다다다: 앞으로 쏟아지는 주먹 그림자와 맞는 자리의 불꽃
+local function rushFlurry(data: any)
+	local m0: Model? = data.m
+	local r = rootOf(m0)
+	if not m0 or not r or not near(r.Position, 200) then
+		return
+	end
+	local m = m0 :: Model
+	local dur = data.dur or 1.8
+	Fx.text(r.Position + Vector3.new(0, 6, 0), "와다다다다다!", Color3.fromRGB(230, 255, 120), 40, 1.4)
+	local t0 = os.clock()
+	local last = 0
+	local conn
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if t > dur or not m.Parent then
+			conn:Disconnect()
+			return
+		end
+		if t - last < 0.035 then
+			return
+		end
+		last = t
+		local cf = r.CFrame
+		for _ = 1, 2 do
+			local off = Vector3.new((math.random() - 0.5) * 2.6, (math.random() - 0.3) * 1.8, 0)
+			local fist = part(Vector3.new(0.9, 0.9, 0.9), math.random() < 0.5 and GREEN or PALE, Enum.Material.Neon, 0.25, "ball")
+			fist.CFrame = cf * CFrame.new(off + Vector3.new(0, 0.6, -1.2))
+			tween(fist, 0.16, { CFrame = cf * CFrame.new(off * 1.3 + Vector3.new(0, 0.6, -4.5)), Transparency = 1, Size = Vector3.new(1.6, 1.6, 0.4) })
+			Debris:AddItem(fist, 0.2)
+		end
+		if math.random() < 0.35 then
+			local hitAt = (cf * CFrame.new((math.random() - 0.5) * 3, 0.6 + (math.random() - 0.5) * 2, -4)).Position
+			Fx.spark(hitAt, math.random() < 0.5 and WHITE or FLAME, 0.7, 3)
+			Fx.sound("hit", 0.25, 1.2 + math.random() * 0.4, hitAt)
+		end
+	end)
+end
+-- 마지막: 술병을 깨뜨리며 초록 불길이 터진다
+local function rushEnd(data: any)
+	local at: Vector3 = data.at
+	if not at or not near(at, 260) then
+		return
+	end
+	local radius = data.radius or 22
+	shards(at + Vector3.new(0, 1, 0), 30, 14)
+	splash(at, 24, 12, 8)
+	Fx.blast(at, GREEN, PALE, 3)
+	Fx.flash(at, FLAME, 90, 6, 0.5)
+	Fx.ring(at - Vector3.new(0, 2.3, 0), FLAME, 4, radius * 2.6, 0.6)
+	Fx.ring(at - Vector3.new(0, 2.2, 0), WHITE, 3, radius * 1.6, 0.4)
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		flameAt(at + Vector3.new(math.cos(a) * radius * 0.5, -2.4, math.sin(a) * radius * 0.5), 4, 0.8)
+	end
+	Fx.sound("shatter", 1, 0.8, at)
+	Fx.sound("heavy", 1, 0.5, at)
+end
+
+local HANDLERS: { [string]: (any) -> () } = {
+	zigzagStep = zigzagStep,
+	sojuThrow = sojuThrow,
+	sojuIgnite = sojuIgnite,
+	rushCut = rushCut,
+	rushFlurry = rushFlurry,
+	rushEnd = rushEnd,
+}
+function Drunk.handles(data: any): boolean
+	return (data.kind == "cone" and data.fx == "soju") or data.kind == "zigzagStart" or HANDLERS[data.kind] ~= nil
+end
+function Drunk.run(data: any)
+	if data.kind == "cone" then
+		sprayCone(data)
+		return
+	end
+	local fn = HANDLERS[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+------------------------------------------------------------------------
+-- 초 오의 취선만권의 컷씬 (쓴 사람 화면에서만, 1초, 대사 없이):
+-- 위아래 검은 띠, 옆에서 낮게 잡은 카메라, 점점 빨라지는 앞구르기와 몰려드는 속도선 → 띠가 걷히며 와다다다
+------------------------------------------------------------------------
+local cutActive = false
+function Drunk.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?)
+	local cam = workspace.CurrentCamera
+	local r = rootOf(model)
+	if not cam or not r or cutActive then
+		return
+	end
+	cutActive = true
+	local pg = player:WaitForChild("PlayerGui")
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonDrunkCut"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 85
+	g.Parent = pg
+	-- 초록빛 도는 가장자리
+	local tintF = Instance.new("Frame")
+	tintF.Size = UDim2.fromScale(1, 1)
+	tintF.BackgroundColor3 = Color3.fromRGB(20, 60, 35)
+	tintF.BackgroundTransparency = 1
+	tintF.BorderSizePixel = 0
+	tintF.Parent = g
+	local grad = Instance.new("UIGradient")
+	grad.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(0.3, 1), NumberSequenceKeypoint.new(0.7, 1), NumberSequenceKeypoint.new(1, 0.2) })
+	grad.Parent = tintF
+	tween(tintF, 0.15, { BackgroundTransparency = 0.55 })
+	-- 속도선: 화면을 가로질러 뒤로 흘러간다 (갈수록 빠르다)
+	local lines: { Frame } = {}
+	for i = 1, 16 do
+		local l = Instance.new("Frame")
+		l.AnchorPoint = Vector2.new(0.5, 0.5)
+		l.Position = UDim2.fromScale(math.random(), 0.15 + 0.7 * (i - 0.5) / 16)
+		l.Size = UDim2.new(0.1 + math.random() * 0.2, 0, 0, 2 + math.random(0, 2))
+		l.BackgroundColor3 = i % 3 == 0 and PALE or WHITE
+		l.BackgroundTransparency = 0.35
+		l.BorderSizePixel = 0
+		l.ZIndex = 2
+		l.Parent = g
+		table.insert(lines, l)
+	end
+	-- 위아래 검은 띠
+	local bars: { Frame } = {}
+	for i, y in ipairs({ 0, 1 }) do
+		local b = Instance.new("Frame")
+		b.AnchorPoint = Vector2.new(0, y)
+		b.Position = UDim2.fromScale(0, y)
+		b.Size = UDim2.new(1, 0, 0, 0)
+		b.BackgroundColor3 = Color3.new(0, 0, 0)
+		b.BorderSizePixel = 0
+		b.ZIndex = 5
+		b.Parent = g
+		tween(b, 0.12, { Size = UDim2.new(1, 0, 0.14, 0) })
+		bars[i] = b
+	end
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.AnchorPoint = Vector2.new(1, 0.5)
+	label.Position = UDim2.new(1, -30, 0.5, 0)
+	label.Size = UDim2.new(0.5, 0, 0.45, 0)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextXAlignment = Enum.TextXAlignment.Right
+	label.Text = "초 오의 · " .. name
+	label.TextColor3 = PALE
+	label.TextStrokeColor3 = GREEN
+	label.TextStrokeTransparency = 0.3
+	label.TextTransparency = 1
+	label.ZIndex = 6
+	label.Parent = bars[2]
+	tween(label, 0.2, { TextTransparency = 0 })
+
+	-- 카메라: 구르는 방향의 옆에서 낮게 (시작할 때의 방향으로 고정)
+	local oldType = cam.CameraType
+	local oldFov = cam.FieldOfView
+	local look = flat(r.CFrame.LookVector)
+	local side = Vector3.new(-look.Z, 0, look.X)
+	cam.CameraType = Enum.CameraType.Scriptable
+	local t0 = os.clock()
+	local focus = r.Position
+	local finished = false
+	local function restore()
+		if finished then
+			return
+		end
+		finished = true
+		RunService:UnbindFromRenderStep("KwonDrunkCut")
+		cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
+		cam.FieldOfView = oldFov
+		cutActive = false
+	end
+	RunService:BindToRenderStep("KwonDrunkCut", Enum.RenderPriority.Camera.Value, function(dt: number)
+		if finished then
+			return
+		end
+		local t = os.clock() - t0
+		local u = math.clamp(t / dur, 0, 1)
+		if not r.Parent then
+			restore()
+			return
+		end
+		focus = focus:Lerp(r.Position, math.min(1, dt * 14))
+		-- 처음엔 옆에서, 끝으로 갈수록 앞쪽으로 돌아 들어간다
+		local orbit = side * (10 - 3 * u) + look * (-2 + 6 * u) + Vector3.new(0, 1.6 - 0.6 * u, 0)
+		cam.CFrame = CFrame.lookAt(focus + orbit, focus + look * (2 + 3 * u) + Vector3.new(0, -0.3, 0))
+		cam.FieldOfView = oldFov - 18 + 10 * u * u
+		-- 속도선이 점점 빨라진다
+		local speed = 1.2 + 6 * u * u
+		for i, l in ipairs(lines) do
+			local x = l.Position.X.Scale - speed * dt * (0.8 + (i % 4) * 0.15)
+			if x < -0.2 then
+				x += 1.4
+			end
+			l.Position = UDim2.fromScale(x, l.Position.Y.Scale)
+			l.BackgroundTransparency = 0.6 - 0.4 * u
+		end
+		if shake and u > 0.5 then
+			shake(0.15 + u * 0.5)
+		end
+	end)
+	task.delay(dur, function()
+		restore()
+		-- 띠가 걷히고 하얗게 번쩍인 뒤 와다다다
+		for _, b in ipairs(bars) do
+			tween(b, 0.18, { Size = UDim2.new(1, 0, 0, 0) })
+		end
+		tween(label, 0.15, { TextTransparency = 1, TextStrokeTransparency = 1 })
+		for _, l in ipairs(lines) do
+			l:Destroy()
+		end
+		tintF.BackgroundColor3 = Color3.fromRGB(235, 255, 240)
+		tintF.BackgroundTransparency = 0.2
+		grad:Destroy()
+		tween(tintF, 0.3, { BackgroundTransparency = 1 })
+		if shake then
+			shake(1.4)
+		end
+		Debris:AddItem(g, 0.5)
+	end)
+end
+
+return Drunk
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="17">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -20310,7 +21488,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -20491,7 +21669,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -21664,7 +22842,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -21730,7 +22908,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -21744,6 +22922,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Drunk = require(script.Parent:WaitForChild("Drunk"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -21930,7 +23109,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not st.fans then
+	if not st or not (st.fans or st.soju) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -21944,6 +23123,13 @@ local function refreshFans(model: Model)
 	-- 먼저 자리를 잡아 둔다 (같은 몸을 두 번 만들지 않게)
 	local list: { Instance } = {}
 	fans[model] = list
+	-- 초·취팔선권은 부채 대신 술병과 넥타이
+	if st.soju then
+		for _, p in ipairs(Drunk.build(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
 	for _, pair in ipairs({ { "RightHand", 1 }, { "LeftHand", -1 } }) do
 		local hand = model:FindFirstChild(pair[1])
 		if hand and hand:IsA("BasePart") then
@@ -21957,7 +23143,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not st.fans then
+	if not st or not (st.fans or st.soju) then
 		refreshFans(model)
 		return
 	end
@@ -21967,7 +23153,7 @@ function tryFans(model: Model)
 	waiting[model] = true
 	task.spawn(function()
 		model:WaitForChild("RightHand", 10)
-		model:WaitForChild("LeftHand", 10)
+		model:WaitForChild(st.soju and "Head" or "LeftHand", 10)
 		waiting[model] = nil
 		refreshFans(model)
 	end)
@@ -22023,7 +23209,9 @@ RunService.Heartbeat:Connect(function(dt)
 	walkAcc = 0
 	for model in pairs(fans) do
 		local r = rootOf(model)
-		if r and near(r.Position, 110) and model:GetAttribute("Vanish") ~= true then
+		local sid = model:GetAttribute("Style")
+		local st = type(sid) == "string" and Config.STYLE_BY_ID[sid] or nil
+		if st and st.fans and r and near(r.Position, 110) and model:GetAttribute("Vanish") ~= true then
 			local v = r.AssemblyLinearVelocity
 			local moving = Vector3.new(v.X, 0, v.Z).Magnitude > 3
 			Sakura.petals(r.Position + Vector3.new(0, moving and -1.5 or 1, 0), moving and 4 or 1, moving and 4 or 3, moving and 1.2 or 1.8, moving and -v * 0.15 or nil)
@@ -22688,7 +23876,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -23956,7 +25144,7 @@ local function buildTest()
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -25085,7 +26273,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -27760,7 +28948,7 @@ return Ults
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="23">
+  <Item class="Workspace" referent="24">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

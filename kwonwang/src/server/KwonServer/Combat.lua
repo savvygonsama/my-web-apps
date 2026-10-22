@@ -527,7 +527,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			return "deflect"
 		end
-		-- 그냥 막기
+		-- 그냥 막기 (만취한 권법은 막지 못하고 그대로 맞는다)
+	end
+	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
@@ -977,6 +979,9 @@ function Combat.tick(dt: number)
 				speed = 0
 			elseif f.guarding then
 				speed = f.walk * 0.4
+			elseif t < ((f :: any).slowUntil or 0) then
+				-- 술비에 젖어 굼뜨다
+				speed = f.walk * ((f :: any).slowMul or 0.5)
 			elseif f.act and not f.npc then
 				speed = f.walk * 0.35
 			elseif (f :: any).mountMult then

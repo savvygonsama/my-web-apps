@@ -23,6 +23,9 @@
 --   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고, 한가운데로 모여 터진다
 --   sakuraSever  (초·매화 만앵참월, 초 오의) 보이지 않게 적들을 베고 지나가 칼자국을 남기고 → 세상이 잿빛으로 멈추고 →
 --                칼바람이 적들을 휘감고 → 마지막에 터지며 화면까지 한칼에 가른다
+--   zigzag   (초·취 팔선취보) 갈지자로 비틀비틀 여덟 걸음, 걸음마다 둘레를 후려친다 (그동안 무적)
+--   sojuRain (초·취 취몽팔선진) 하늘로 던진 술병이 깨져 술비가 쏟아지고 (적이 굼떠진다), 불이 붙으며 여덟 취선의 그림자가 덮친다
+--   drunkRush (초·취 취선만권, 초 오의) 점점 빨라지는 앞구르기 (무적) → 적에서 적으로 옮겨 다니며 와다다다 → 술병을 깨뜨려 터뜨린다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Combat = require(script.Parent:WaitForChild("Combat"))
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
@@ -89,6 +92,24 @@ local function pullTo(o: any, center: Vector3, power: number)
 	elseif not o.root.Anchored then
 		o.root.AssemblyLinearVelocity = vel + Vector3.new(0, o.root.AssemblyLinearVelocity.Y, 0)
 	end
+end
+
+local function moveTo(f: any, cf: CFrame)
+	if f.player and f.player.Character then
+		f.player.Character:PivotTo(cf)
+	else
+		f.root.CFrame = cf
+	end
+end
+
+local function modelsOf(list: { any }): { Model }
+	local out = {}
+	for _, o in ipairs(list) do
+		if not o.dead and o.root.Parent then
+			table.insert(out, o.model)
+		end
+	end
+	return out
 end
 
 -- 기술 하나의 장치를 돌린다. ctx = { scale, speed }
@@ -706,6 +727,102 @@ function Skills.run(f: any, move: any, ctx: any)
 				if not hitSet[o] then
 					strike(f, o, scaled(m.final, sc * 0.6), move)
 				end
+			end
+		end)
+	elseif kind == "zigzag" then
+		local start = f.root.Position
+		local right = Vector3.new(-look.Z, 0, look.X)
+		local total = m.delay + m.n * m.every
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.15) / sp)
+		Push:FireAllClients("skillfx", { kind = "zigzagStart", m = f.model, dur = total / sp, style = style })
+		for i = 1, m.n do
+			after(m.delay + (i - 1) * m.every, function()
+				local from = f.root.Position
+				local side = i % 2 == 1 and 1 or -1
+				local to = start + look * (m.step * i) + right * (side * m.side * (0.6 + math.random() * 0.5))
+				to = Vector3.new(to.X, from.Y, to.Z)
+				moveTo(f, CFrame.lookAt(to, to + flat(to - from)))
+				Push:FireAllClients("skillfx", { kind = "zigzagStep", m = f.model, from = from, to = to, style = style, i = i })
+				for _, o in ipairs(hostilesNear(f, to, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "sojuRain" then
+		local c = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "sojuThrow", m = f.model, at = c, radius = m.radius, delay = m.delay / sp, rain = m.rain / sp, style = style })
+		local n = math.floor(m.rain / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					o.slowUntil = os.clock() + 1
+					o.slowMul = m.slow
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.rain, function()
+			local list = hostilesNear(f, c, m.radius + 2)
+			Push:FireAllClients("skillfx", { kind = "sojuIgnite", m = f.model, at = c, radius = m.radius, ghosts = m.ghosts, targets = modelsOf(list), style = style })
+			after(0.35, function()
+				for _, o in ipairs(list) do
+					if not o.dead and o.root.Parent then
+						strike(f, o, scaled(m.final, sc), move)
+					end
+				end
+			end)
+		end)
+	elseif kind == "drunkRush" then
+		local start = f.root.Position
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.cut + 0.15) / sp)
+		Push:FireAllClients("skillfx", { kind = "rushCut", m = f.model, dur = m.cut / sp, style = style })
+		-- 1) 점점 빨라지는 앞구르기 (컷씬, 무적)
+		local steps = 12
+		for k = 1, steps do
+			after(m.cut * k / steps, function()
+				local u = k / steps
+				local p = start + look * (m.roll * u * u)
+				local at = Vector3.new(p.X, f.root.Position.Y, p.Z)
+				moveTo(f, CFrame.lookAt(at, at + look))
+			end)
+		end
+		-- 2) 와다다다: 적에서 적으로 옮겨 다니며 주먹을 퍼붓는다
+		after(m.cut, function()
+			local list = nearestList(f, m.range, m.n)
+			Push:FireAllClients("skillfx", { kind = "rushFlurry", m = f.model, dur = m.rush / sp, targets = modelsOf(list), style = style })
+			local ticks = math.floor(m.rush / m.every)
+			local hopEvery = math.max(1, math.floor(m.hop / m.every))
+			local idx = 0
+			for i = 0, ticks - 1 do
+				after(i * m.every, function()
+					if i % hopEvery == 0 and #list > 0 then
+						for _ = 1, #list do
+							idx = idx % #list + 1
+							local tgt = list[idx]
+							if not tgt.dead and tgt.root.Parent then
+								local tp = tgt.root.Position
+								local dir = flat(tp - f.root.Position)
+								local at = Vector3.new(tp.X, f.root.Position.Y, tp.Z) - dir * 3.2
+								moveTo(f, CFrame.lookAt(at, at + dir))
+								Push:FireAllClients("blink", f.model, at)
+								break
+							end
+						end
+					end
+					local fwd = flat(Combat.look(f))
+					for _, o in ipairs(hostilesNear(f, f.root.Position + fwd * 3, m.reach)) do
+						o.stunUntil = math.max(o.stunUntil, os.clock() + 0.25)
+						strike(f, o, hit, move)
+					end
+				end)
+			end
+		end)
+		-- 3) 술병을 깨뜨려 터뜨린다
+		after(m.cut + m.rush, function()
+			local c = f.root.Position + flat(Combat.look(f)) * 3
+			Push:FireAllClients("skillfx", { kind = "rushEnd", m = f.model, at = c, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "flash" or kind == "bolt" then

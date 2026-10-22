@@ -3148,6 +3148,70 @@ local function sakuraHill()
 	end
 end
 
+-- 술독 마루: 초·취팔선권의 만취선이 코를 고는 나무 마루. 둘레에 술독이 산처럼 쌓이고, 하나는 엎어져 웅덩이가 졌다
+local function sojuHill()
+	local at = Config.SOJU_HILL
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "SojuHill"
+	f.Parent = folder
+	local plank = Color3.fromRGB(120, 85, 55)
+	local clay = Color3.fromRGB(125, 75, 45)
+	local green = Color3.fromRGB(70, 170, 95)
+	-- 두 겹의 둥근 나무 마루
+	disc("SojuDeck", at + Vector3.new(0, 0.8, 0), 16, 1.6, plank, Enum.Material.WoodPlanks, f)
+	disc("SojuDeck", at + Vector3.new(0, 2.4, 0), 11, 1.6, plank:Lerp(Color3.new(1, 1, 1), 0.08), Enum.Material.WoodPlanks, f)
+	for k = 0, 2 do
+		part({ Name = "SojuStep", Size = Vector3.new(7, 0.8, 2.2), Position = at + Vector3.new(0, 0.4 + k * 1.05, 18 - k * 2.4), Color = plank, Material = Enum.Material.Wood, Parent = f })
+	end
+	-- 술독: 배가 불룩한 항아리 (몸통 + 어깨 + 검은 뚜껑)
+	local function jar(p: Vector3, size: number, tipped: boolean?)
+		local cf = CFrame.new(p + Vector3.new(0, size * 0.7, 0))
+		if tipped then
+			cf = CFrame.new(p + Vector3.new(0, size * 0.75, 0)) * CFrame.Angles(0, math.random() * 6, math.rad(90))
+		end
+		part({ Name = "SojuJar", Shape = Enum.PartType.Ball, Size = Vector3.new(size * 1.5, size * 1.5, size * 1.5), CFrame = cf, Color = clay, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "SojuJarNeck", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.5, size * 0.9, size * 0.9), CFrame = cf * CFrame.new(0, size * 0.75, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = clay:Lerp(Color3.new(0, 0, 0), 0.15), Material = Enum.Material.Slate, Parent = f })
+		if not tipped then
+			part({ Name = "SojuJarLid", Shape = Enum.PartType.Cylinder, Size = Vector3.new(size * 0.15, size * 1.0, size * 1.0), CFrame = cf * CFrame.new(0, size * 1.02, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(40, 30, 25), Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2 + 0.3
+		if math.abs(a - math.pi / 2) > 0.45 then -- 계단 쪽(남)은 비운다
+			local r = 20 + (k % 3) * 2
+			local p = at + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+			jar(p, 2.2 + (k % 3) * 0.5)
+			if k % 2 == 0 then
+				jar(p + Vector3.new(0, 3.2 + (k % 3) * 0.7, 0), 1.6)
+			end
+		end
+	end
+	-- 엎어진 큰 술독과 웅덩이
+	local tip = at + Vector3.new(-12, 3.2, -4)
+	jar(tip, 2.4, true)
+	disc("SojuPuddle", at + Vector3.new(-12, 3.25, 1), 3.4, 0.05, Color3.fromRGB(190, 225, 200), Enum.Material.Glass, f, false).Transparency = 0.35
+	-- 낮은 술상과 초록 병 몇 개 (상표 없는 빈 병)
+	part({ Name = "SojuTable", Size = Vector3.new(5, 0.5, 3), Position = at + Vector3.new(5, 4.2, -3), Color = Color3.fromRGB(90, 55, 35), Material = Enum.Material.Wood, Parent = f })
+	for _, o in ipairs({ { 3.6, 0 }, { 4.6, 0.6 }, { 6.2, -0.4 } }) do
+		part({ Name = "SojuBottle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 0.55, 0.55), CFrame = CFrame.new(at + Vector3.new(o[1], 5.15, -3 + o[2])) * CFrame.Angles(0, 0, math.rad(90)), Color = green, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	end
+	part({ Name = "SojuBottle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 0.55, 0.55), CFrame = CFrame.new(at + Vector3.new(3, 3.5, 4)) * CFrame.Angles(math.rad(90), 0.4, 0), Color = green, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	-- 붉은 종이 등 (마루 네 귀퉁이, 장대에 매달아)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		local p = at + Vector3.new(math.cos(a) * 14, 0, math.sin(a) * 14)
+		part({ Name = "SojuPole", Size = Vector3.new(0.6, 10, 0.6), Position = p + Vector3.new(0, 6.6, 0), Color = Color3.fromRGB(60, 40, 28), Material = Enum.Material.Wood, Parent = f })
+		local lamp = part({ Name = "SojuLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(2.2, 2.6, 2.2), Position = p + Vector3.new(0, 10.6, 0), Color = Color3.fromRGB(235, 70, 50), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(lamp, Color3.fromRGB(255, 140, 90), 22, 1.2)
+	end
+	local board = part({ Name = "SojuSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 21.5), at + Vector3.new(0, 4.5, 40)), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "술독 마루", Color3.fromRGB(190, 255, 200), 1 } })
+	part({ Name = "SojuSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 21.5), Color = Color3.fromRGB(60, 40, 28), Material = Enum.Material.Wood, Parent = f })
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -3435,6 +3499,7 @@ function World.build(): any
 		{ "길가", roadside },
 		{ "표지", regionSigns },
 		{ "벚꽃 언덕", sakuraHill },
+		{ "술독 마루", sojuHill },
 		{ "천상계", function()
 			skyWorld(out)
 		end },
