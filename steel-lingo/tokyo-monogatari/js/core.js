@@ -180,6 +180,14 @@
       }
       if (x.ja) checkParts(where, x.ja, x.parts);
     };
+    /** 삽화 자리: pic은 img/ 파일 이름(확장자 없이), cap은 한국어 설명, film은 1995년 사진의 날짜 도장 */
+    const checkPic = (where, x) => {
+      if (x.pic != null && !/^[a-z0-9-]+$/.test(x.pic)) E(`${where}: pic "${x.pic}"은 소문자·숫자·하이픈만`);
+      if (x.pic) { stats.pics = (stats.pics || 0) + 1; if (SH.picIds) SH.picIds.push(x.pic); }
+      if (!x.pic && (x.cap || x.film)) E(`${where}: pic 없이 cap/film만 있음`);
+      checkKo(where + " cap", x.cap);
+      if (x.film && !/^\d\d\.\d{1,2}\.\d{1,2}$/.test(x.film)) E(`${where}: film 날짜는 "95.12.24" 꼴`);
+    };
     const useCond = (where, c) => condTerms(c).forEach((f) => uses.push({ f, where: `[${ch.id}] ${where}` }));
     const addSets = (f) => SH.flagList(f).forEach((x) => sets.add(x));
 
@@ -201,6 +209,7 @@
       checkKo(at + " ask", s.ask);
       checkKo(at + " act", s.act);
       checkWho(at, s.who);
+      checkPic(at, s);
       if (s.speaker) E(`${at}: speaker 대신 who(cast 키)를 쓴다`);
       if (s.ko || s.ja || s.jx) { stats.lines++; if (!s.who) E(`${at}: 대사에 who 없음`); }
       checkLine(at, s, false);
@@ -211,6 +220,7 @@
         if (!a.if && !a.any) E(`${aw}: 조건(if/any)이 없음`);
         useCond(aw, a);
         checkKo(`${aw} narr`, a.narr); checkJa(`${aw} narj`, a.narj); checkKo(`${aw} act`, a.act);
+        checkPic(aw, a);
         checkWho(aw, a.who);
         if (a.ko || a.ja || a.jx) checkLine(aw, a, true);
         else { checkJa(aw + " hint", a.hint); checkJa(aw + " hx", a.hx); }
