@@ -22297,7 +22297,7 @@ local function triangle(a: Vector3, b: Vector3, c: Vector3, color: Color3, alpha
 	return out
 end
 
--- 갈라진 화면에 금이 퍼지고, 유리처럼 산산이 깨져 흩어진다 (내 화면에서만)
+-- 갈라진 화면이 유리처럼 산산이 깨져 흩어진다 (내 화면에서만)
 local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	local cam = workspace.CurrentCamera
 	if not cam then
@@ -22309,7 +22309,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	local vp = cam.ViewportSize
 	local W, H = math.max(vp.X, 1), math.max(vp.Y, 1)
 	local cx, cy = W * 0.5 + math.random(-30, 30), H * 0.5
-	-- 칼자국 위의 한 점에서 사방으로 금이 간다: 칼자국 방향 두 줄 + 무작위 줄기
+	-- 칼자국 위의 한 점에서 사방으로 조각이 나뉜다: 칼자국 방향 두 줄 + 무작위 줄기
 	local rays: { number } = { math.rad(angle), math.rad(angle) + math.pi }
 	local N = 14
 	for i = 1, N - 2 do
@@ -22329,41 +22329,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	end
 	local center = Vector2.new(cx, cy)
 
-	-- 1) 금: 흰 선이 중심에서 뻗어 나간다
-	local cracks: { Frame } = {}
-	local function crack(p: Vector2, q: Vector2, thick: number, delay: number)
-		local d = q - p
-		local f = Instance.new("Frame")
-		f.AnchorPoint = Vector2.new(0, 0.5)
-		f.Position = UDim2.fromOffset(p.X, p.Y)
-		f.Size = UDim2.fromOffset(0, thick)
-		f.Rotation = math.deg(math.atan2(d.Y, d.X))
-		f.BorderSizePixel = 0
-		f.BackgroundColor3 = Color3.fromRGB(255, 250, 252)
-		f.BackgroundTransparency = 0.05
-		f.ZIndex = 6
-		f.Parent = g
-		local st = Instance.new("UIStroke")
-		st.Color = PINK
-		st.Thickness = 1
-		st.Transparency = 0.4
-		st.Parent = f
-		table.insert(cracks, f)
-		task.delay(delay, function()
-			tween(f, 0.07, { Size = UDim2.fromOffset(d.Magnitude, thick) }, Enum.EasingStyle.Quad)
-		end)
-	end
-	for i = 1, #rays do
-		local j = i % #rays + 1
-		crack(center, rings[1][i], 3, 0)
-		crack(rings[1][i], rings[2][i], 2.5, 0.06)
-		crack(rings[2][i], rings[3][i], 2, 0.12)
-		crack(rings[1][i], rings[1][j], 2, 0.1)
-		crack(rings[2][i], rings[2][j], 1.5, 0.16)
-	end
-	Fx.sound("block", 0.9, 1.6)
-
-	-- 2) 화면 앞에 깔린 유리 조각들 (금과 같은 모양)
+	-- 2) 화면 앞에 깔린 유리 조각들
 	local depth = 2
 	local h = depth * math.tan(math.rad(cam.FieldOfView) * 0.5)
 	local function toCam(v: Vector2): Vector3
@@ -22409,7 +22375,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	place()
 
 	-- 3) 깨진다: 조각이 사방으로 튀며 떨어지고, 잿빛이 풀린다
-	task.delay(0.42, function()
+	task.delay(0.2, function()
 		holdConn:Disconnect()
 		Fx.sound("shatter", 1, 1)
 		Fx.sound("block", 0.8, 0.7)
@@ -22424,9 +22390,6 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 		flash.ZIndex = 7
 		flash.Parent = g
 		tween(flash, 0.35, { BackgroundTransparency = 1 })
-		for _, f in ipairs(cracks) do
-			f:Destroy()
-		end
 		for _, s in ipairs(shards) do
 			for _, w in ipairs(s.parts) do
 				w.p.Transparency = 0.45
@@ -22459,7 +22422,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	end)
 end
 
--- 화면을 비스듬히 한칼에 가르고, 두 쪽이 갈라지며 빛이 새어 나온 뒤 금이 퍼져 산산이 깨진다
+-- 화면을 비스듬히 한칼에 가르고, 두 쪽이 갈라지며 빛이 새어 나온 뒤 산산이 깨진다
 local function screenSplit(onBreak: (() -> ())?)
 	local g = screenGui()
 	local angle = -26
@@ -22516,7 +22479,7 @@ local function screenSplit(onBreak: (() -> ())?)
 		tween(core, 0.28, { Size = UDim2.new(2.6, 0, 0, 40) }, Enum.EasingStyle.Back)
 	end)
 	task.delay(0.5, function()
-		-- 3) 갈라진 틈에서 금이 퍼지고, 화면이 유리처럼 깨진다
+		-- 3) 갈라진 화면이 유리처럼 깨진다
 		screenShatter(g, angle, function()
 			for _, f in ipairs(halves) do
 				tween(f, 0.25, { BackgroundTransparency = 1 })
