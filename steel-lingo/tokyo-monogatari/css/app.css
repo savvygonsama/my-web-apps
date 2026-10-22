@@ -441,3 +441,36 @@ table.parts td.w .why { display: block; font-size: 12.5px; line-height: 1.75; ma
 .ed-pill { background: var(--accent-soft); color: var(--accent); }
 .no-furi .furi-on rt { display: ruby-text; }
 .no-furi .furi-on .ja { line-height: 2.05; }
+
+/* ── 東京物語: 상황 묘사 가독성 — 줄거리를 끌고 가는 글이라 대사만큼 또렷하게 ─── */
+.narr {
+  align-self: stretch; max-width: 100%; text-align: left;
+  font-size: 16.5px; line-height: 1.85; color: var(--ink);
+  background: var(--surface); border: 0; border-left: 3px solid var(--accent);
+  border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow);
+}
+.narr .np { display: block; }
+.narr .np + .np { margin-top: .55em; }
+.narr.then { background: var(--accent-soft); box-shadow: none; }
+.act { font-size: 14.5px; color: var(--ink-2); }
+.big .narr { font-size: 18.5px; }
+.big .bubble .kt, .big .choice .kt { font-size: 19px; }
+.big .ko, .big .choice .ck { font-size: 16px; }
+.big .act { font-size: 15.5px; }
+.big .hint { font-size: 15px; }
+
+/* ── 삽화와 1995년 필름 사진 ─── */
+.figwrap { align-self: stretch; }
+.pic { margin: 2px 0 0; border-radius: 12px; overflow: hidden; background: var(--surface-2); box-shadow: var(--shadow); position: relative; }
+.pic img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; }
+.pic figcaption { padding: 8px 12px 10px; font-size: 13px; color: var(--ink-2); background: var(--surface); word-break: keep-all; }
+.pic.film { width: 86%; margin: 6px auto 0; padding: 10px 10px 0; background: #fbfaf6; border-radius: 3px; transform: rotate(-1.2deg); }
+.pic.film img { aspect-ratio: 3 / 2; filter: saturate(.85) contrast(.95) sepia(.12); }
+.pic.film figcaption { background: transparent; color: #4b4036; text-align: center; font-family: var(--sans); padding: 8px 4px 12px; }
+.pic.film .fdate {
+  position: absolute; right: 20px; bottom: 50px;
+  font: 700 15px/1 "Courier New", monospace; letter-spacing: .06em;
+  color: #ff8a1f; text-shadow: 0 0 3px rgba(255, 120, 0, .65);
+}
+.pic.film:not(:has(figcaption)) .fdate { bottom: 14px; }
+@media (min-width: 560px) { .pic.film { width: 80%; } }

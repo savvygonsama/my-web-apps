@@ -17,12 +17,13 @@
   /* ═══════════ 상태 ═══════════ */
   const fresh = () => ({
     v: 1,
-    settings: { furi: false, rate: 1 },
+    settings: { furi: false, big: false, rate: 1 },
     chapters: {}, // id → { done, plays, flags, picks:[문장], got }
     run: null, // { ch, at, hist:[{id, a, pick?}], flags, picks, got }
     notes: {}, // "c3:osusume" → { t, ok, ng }
     seen: {}, // 장면 id → [가 본 선택지 번호] (새 여행에도 남는다)
     endings: {}, // 엔딩 id → 처음 본 시각 (새 여행에도 남는다)
+    pics: {}, // 본 삽화 id → 처음 본 시각 (새 여행에도 남는다)
     lastEnding: null,
     trips: 0
   });
@@ -36,11 +37,13 @@
   let ED = EDS[urlEd] ? urlEd : EDS[SH.store.lastEd()] ? SH.store.lastEd() : "easy";
   let S;
   function useEdition(ed) {
+    const big = S && S.settings.big; // 글자 크기는 판을 바꿔도 따라간다
     ED = ed;
     SH.store.lastEd(ed);
     SH.store.use(ed);
     S = Object.assign(fresh(), SH.store.load() || {});
     S.settings = Object.assign(fresh().settings, S.settings);
+    if (big != null) S.settings.big = big;
   }
   useEdition(ED);
   const save = () => { S.savedAt = Date.now(); return SH.store.save(S); };
@@ -62,6 +65,27 @@
     html.classList.toggle("easy", isEasy());
     html.classList.toggle("ed-ko", isKo());
     html.classList.toggle("no-furi", isHard() && !S.settings.furi);
+    html.classList.toggle("big", !!S.settings.big);
+  }
+
+  /* 상황 묘사는 두세 문장씩 끊어 문단으로 — 한 덩어리로 길게 이어지면 읽기 어렵다 */
+  function paras(htmlText) {
+    const sent = htmlText.split(/(?<=[.!?。！？])\s+/);
+    const out = [];
+    for (let i = 0; i < sent.length; i += 2) out.push(sent.slice(i, i + 2).join(" "));
+    return out.map((p) => `<span class="np">${p}</span>`).join("");
+  }
+
+  /* 삽화: 장면의 pic → img/<pic>.<확장자>. data/index.js 의 SH_PICS 에 적힌 그림만 보여 준다.
+     film: "95.12.24" 처럼 날짜를 주면 1995년 필름 사진 액자로 그린다 */
+  const PICS = self.SH_PICS || {};
+  window.SH_imgFail = (el) => { el.closest("figure").hidden = true; };
+  window.SH_imgLoad = () => { const sc = $("#logScroll"); if (sc && sc.scrollHeight - sc.scrollTop - sc.clientHeight < 600) scrollDown(false); };
+  function figHTML(s) {
+    if (!s.pic || !PICS[s.pic]) return "";
+    if (S.pics && !S.pics[s.pic]) S.pics[s.pic] = Date.now();
+    return `<figure class="pic${s.film ? " film" : ""}"><img src="img/${esc(s.pic)}.${esc(PICS[s.pic])}" alt="${esc(s.cap || "")}" loading="lazy" decoding="async" onload="SH_imgLoad()" onerror="SH_imgFail(this)">${
+      s.film ? `<span class="fdate">'${esc(s.film).replace(/\./g, " ")}</span>` : ""}${s.cap ? `<figcaption>${esc(s.cap)}</figcaption>` : ""}</figure>`;
   }
 
   /* 판별 글 고르기. 데이터의 한 줄(장면·선택지)이 세 판의 말을 함께 들고 있다 */
@@ -72,7 +96,7 @@
     raw: (x) => (isKo() ? x.ko : isHard() ? x.jx || x.ja : x.ja),
     /** 기록해 둔 원문을 다시 그리기 */
     show: (t) => (isKo() ? esc(t) : ruby(t)),
-    narr: (s) => ruby(!isKo() && s.narj ? s.narj : s.narr),
+    narr: (s) => paras(ruby(!isKo() && s.narj ? s.narj : s.narr)),
     who: (w) => {
       if (w === "me") return "나 · 김링고";
       const c = SH.seasonDef && SH.seasonDef.cast && SH.seasonDef.cast[w];
@@ -229,7 +253,7 @@
         <p class="rule">정답은 없어요. 내가 한 말에 상대가 반응하고, 그 반응이 다음 이야기를 바꿉니다.</p>
         <div class="seg ed-seg" role="radiogroup" aria-label="판 고르기">${eds}</div>
         <p class="level-desc">${EDS[ED].desc}${isHard() ? ` <button class="linkish" data-act="furiall" aria-pressed="${!!S.settings.furi}">${S.settings.furi ? "후리가나 늘 보이기: 켬" : "후리가나 늘 보이기: 끔"}</button>` : ""}</p>
-        <p class="fine ed-note">판마다 진행 기록과 엔딩 앨범이 따로 저장돼요.</p>
+        <p class="fine ed-note">판마다 진행 기록과 엔딩 앨범이 따로 저장돼요. <button class="linkish" data-act="bigtext" aria-pressed="${!!S.settings.big}">글자 크기: ${S.settings.big ? "크게" : "보통"}</button></p>
         <div class="title-actions btn-col">
           ${run
             ? `<button class="btn primary resume" data-act="resume"><span>이어하기 · ${T.chHead(run)}</span>
@@ -312,8 +336,10 @@
         <div class="tools">${ttsBtn(T.raw(x))}${koBtn()}${isHard() ? furiBtn() : glossBtn(x.parts)}</div>${isEasy() ? glossHTML(x.parts) : ""}</div>`;
   }
   function lineHTML(s, isNew) {
-    if (s.narr && !s.ko) return `<p class="narr ${isNew ? "new" : ""}">${T.narr(s)}</p>`;
-    if (!s.ko) return "";
+    const fig = figHTML(s);
+    if (s.narr && !s.ko) return `${fig ? `<div class="figwrap ${isNew ? "new" : ""}">${fig}</div>` : ""}<p class="narr ${isNew ? "new" : ""}">${T.narr(s)}</p>`;
+    if (!s.ko) return fig ? `<div class="figwrap ${isNew ? "new" : ""}">${fig}</div>` : "";
+    if (fig) return `<div class="figwrap ${isNew ? "new" : ""}">${fig}</div>` + lineHTML(Object.assign({}, s, { pic: null }), isNew);
     const me = s.who === "me";
     const h = T.hint(s);
     return `<div class="msg ${me ? "me" : "them"} ${isNew ? "new" : ""}">
@@ -733,7 +759,7 @@
     return a;
   }
   function newTrip() {
-    const keep = { settings: S.settings, notes: S.notes, seen: S.seen, endings: S.endings, lastEnding: S.lastEnding, trips: S.trips };
+    const keep = { settings: S.settings, notes: S.notes, seen: S.seen, endings: S.endings, pics: S.pics, lastEnding: S.lastEnding, trips: S.trips };
     S = Object.assign(fresh(), keep);
     save();
   }
@@ -801,6 +827,7 @@
     if (d.q != null) return answerQuiz(+d.q);
     switch (d.act) {
       case "title": return go("title");
+      case "bigtext": S.settings.big = !S.settings.big; save(); applySettings(); return renderTitle();
       case "furiall": S.settings.furi = !S.settings.furi; save(); applySettings(); return renderTitle();
       case "map": return go("map");
       case "album": return go("album");

@@ -1,14 +1,14 @@
 // 이 앱의 설정과 콘텐츠 파일 목록 — 앱과 오프라인 저장(service worker)이 함께 읽는다.
 // 東京物語는 大阪物語와 같은 분기형 엔진에 '한국어편 · 초급편 · 상급편' 세 판을 얹은 별도 앱이다.
 // 판마다 기록이 따로 저장된다(storeKey + ".ko" / ".easy" / ".hard").
-// v2: 이야기를 '하루토의 도쿄 안내'로 새로 썼다. 1판(자정의 골목 식당) 기록과 섞이지 않게 저장 이름을 올렸다.
+// v3: 이야기를 '1995年のフィルム'으로 새로 썼다. 앞 판들의 기록과 섞이지 않게 저장 이름을 올렸다.
 self.SH_APP = {
-  storeKey: "tokyomono.v2",         // 기기 저장 이름(뒤에 판 이름이 붙는다)
+  storeKey: "tokyomono.v3",         // 기기 저장 이름(뒤에 판 이름이 붙는다)
   cachePrefix: "tokyomono-",        // 오프라인 저장 이름
   titleText: "東京物語",
   titleHTML: "<ruby>東京<rt>とうきょう</rt></ruby><ruby>物語<rt>ものがたり</rt></ruby>",
   titleKo: "도쿄 이야기",
-  tagline: "여행편 ② 열 살 안내인과 걷는 도쿄 사흘",
+  tagline: "여행편 ② 엄마의 1995년 필름을 따라 걷는 도쿄",
   from: "SEL",
   to: "TYO",
   passenger: "金リンゴ / 休暇中",
@@ -18,7 +18,7 @@ self.SH_APP = {
   noteKo: "여행 노트",
   mapTitle: "旅のしおり",
   mapKo: "여행 일정표",
-  itin: "ITINERARY · 3박 4일 중 사흘",
+  itin: "ITINERARY · 1995 → 2026",
   mascotLabel: "여행 가는 코일 마스코트"
 };
 
@@ -32,3 +32,9 @@ self.SH_DATA_FILES = [
   "chapter6.js",
   "season.js"
 ];
+
+// 삽화 목록: img/ 에 실제로 올린 그림만 적는다. 이름 → 확장자.
+// 적혀 있지 않은 삽화 자리는 그림 없이 지나간다(없는 파일을 찾느라 요청을 낭비하지 않게).
+// 예) "c1-roll": "webp", "p01": "png"
+self.SH_PICS = {
+};
