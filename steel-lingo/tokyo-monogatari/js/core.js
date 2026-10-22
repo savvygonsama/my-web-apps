@@ -317,6 +317,10 @@
       }));
       def.endings.forEach((e) => { if (!used.has(e.id)) warns.push(`엔딩 ${e.id}: 이어지는 끝 장면이 없음`); });
     }
-    return { errors, warns, rows, flags: [...sets].sort() };
+    // 삽화 목록에 적었는데 쓰는 장면이 없는 그림
+    const usedPics = new Set();
+    SH.chapters.forEach((ch) => ch.scenes.forEach((s) => { if (s.pic) usedPics.add(s.pic); (s.alt || []).forEach((a) => a.pic && usedPics.add(a.pic)); }));
+    Object.keys(self.SH_PICS || {}).forEach((p) => { if (!usedPics.has(p)) warns.push(`삽화 ${p}: SH_PICS에 있지만 쓰는 장면이 없음`); });
+    return { errors, warns, rows, flags: [...sets].sort(), pics: [...usedPics] };
   };
 })();

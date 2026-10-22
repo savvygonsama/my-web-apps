@@ -54,14 +54,20 @@
 5. shot37 서른일곱 번째 사진: yumi_here + shot37
 6. aoi 딸의 안내: aoi_meet
 7. juunen 10년 뒤, 여기서: promise10
-8. note 추억 노트: note_reply
-9. tape 보행자 천국의 카세트: tape
-10. bluebird 블루버드의 노래: joji_song
-11. ken 누나의 하야시라이스: ken_relay
-12. album 그때와 지금: remake_asakusa + remake_bridge + remake_ginza
-13. fujita 사진관의 제자: fujita_ally + shot37
-14. kokuhaku 엄마의 고백: twist
-15. ema 메이지신궁의 에마: ema_new
-16. haha 엄마의 도쿄: mom_here
+8. haha 엄마의 도쿄: mom_here
+9. kokuhaku 엄마의 고백: twist
+10. note 추억 노트: note_reply
+11. tape 보행자 천국의 카세트: tape
+12. bluebird 블루버드의 노래: joji_song
+13. ken 누나의 하야시라이스: ken_relay
+14. album 그때와 지금: remake_asakusa + remake_bridge + remake_ginza
+15. fujita 사진관의 제자: fujita_ally + shot37
+16. ema 메이지신궁의 에마: ema_new
 17. himitsu 서울에서 건넨 사진: mom_secret
 18. tsuzuku 필름은 계속된다: 나머지
+
+## 6장 아침의 갈림
+- go_office, 또는 mom_fly + yumi_office → 유미 씨 사무소(yumi_here)
+- ken_relay → 유미 씨의 전화(오사카 출장, yumi_call)
+- 나머지 → 롯폰기힐스에서 혼자
+- mom_fly → 낮에 엄마 도착(mom_here)

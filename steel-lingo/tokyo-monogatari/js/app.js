@@ -76,19 +76,15 @@
     return out.map((p) => `<span class="np">${p}</span>`).join("");
   }
 
-  /* 삽화: 장면의 pic → img/<pic>.webp (없으면 .png → .jpg, 그래도 없으면 자리를 접는다)
+  /* 삽화: 장면의 pic → img/<pic>.<확장자>. data/index.js 의 SH_PICS 에 적힌 그림만 보여 준다.
      film: "95.12.24" 처럼 날짜를 주면 1995년 필름 사진 액자로 그린다 */
-  const IMG_EXT = [".webp", ".png", ".jpg"];
-  window.SH_imgFail = (el) => {
-    const n = +(el.dataset.try || 0) + 1;
-    if (n < IMG_EXT.length) { el.dataset.try = n; el.src = "img/" + el.dataset.pic + IMG_EXT[n]; }
-    else el.closest("figure").hidden = true;
-  };
+  const PICS = self.SH_PICS || {};
+  window.SH_imgFail = (el) => { el.closest("figure").hidden = true; };
   window.SH_imgLoad = () => { const sc = $("#logScroll"); if (sc && sc.scrollHeight - sc.scrollTop - sc.clientHeight < 600) scrollDown(false); };
   function figHTML(s) {
-    if (!s.pic) return "";
+    if (!s.pic || !PICS[s.pic]) return "";
     if (S.pics && !S.pics[s.pic]) S.pics[s.pic] = Date.now();
-    return `<figure class="pic${s.film ? " film" : ""}"><img src="img/${esc(s.pic)}.webp" data-pic="${esc(s.pic)}" alt="${esc(s.cap || "")}" loading="lazy" decoding="async" onload="SH_imgLoad()" onerror="SH_imgFail(this)">${
+    return `<figure class="pic${s.film ? " film" : ""}"><img src="img/${esc(s.pic)}.${esc(PICS[s.pic])}" alt="${esc(s.cap || "")}" loading="lazy" decoding="async" onload="SH_imgLoad()" onerror="SH_imgFail(this)">${
       s.film ? `<span class="fdate">'${esc(s.film).replace(/\./g, " ")}</span>` : ""}${s.cap ? `<figcaption>${esc(s.cap)}</figcaption>` : ""}</figure>`;
   }
 

@@ -32,3 +32,9 @@ self.SH_DATA_FILES = [
   "chapter6.js",
   "season.js"
 ];
+
+// 삽화 목록: img/ 에 실제로 올린 그림만 적는다. 이름 → 확장자.
+// 적혀 있지 않은 삽화 자리는 그림 없이 지나간다(없는 파일을 찾느라 요청을 낭비하지 않게).
+// 예) "c1-roll": "webp", "p01": "png"
+self.SH_PICS = {
+};
