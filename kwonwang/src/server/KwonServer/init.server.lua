@@ -598,12 +598,15 @@ local function addMastery(player: Player, p: Profile, amount: number)
 	end
 	if leveled then
 		local style = Config.STYLE_BY_ID[p.style]
-		local unlocked = nil
-		for slot, need in pairs(Config.SKILL_UNLOCK) do
-			if need == m.lv then
-				unlocked = style.skills[slot].name .. " (" .. slot .. ")"
+		-- 이 숙련에 열리는 기술 (초 오의 X는 초월 권법에만 있다)
+		local opened = {}
+		for _, slot in ipairs({ "E", "R", "G", "X" }) do
+			local sk = style and style.skills[slot]
+			if Config.SKILL_UNLOCK[slot] == m.lv and sk then
+				table.insert(opened, sk.name .. " (" .. slot .. ")")
 			end
 		end
+		local unlocked = #opened > 0 and table.concat(opened, " · ") or nil
 		local awaken = nil
 		for tier, a in ipairs(Config.AWAKEN) do
 			if a.lv == m.lv then
@@ -757,6 +760,8 @@ end
 local Gate: any
 local Train: any
 local Tower: any
+local Maze: any = {}
+local Raid: any = {}
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -1107,6 +1112,12 @@ Combat.init(Push, {
 			if f.towerOwner then
 				Tower.killed(f.towerOwner, f)
 			end
+			if f.mazeOwner then
+				Maze.killed(f.mazeOwner, f)
+			end
+			if f.raid then
+				Raid.killed(f)
+			end
 			local killer = by and by.player
 			local p = killer and profiles[killer]
 			if killer and p then
@@ -1174,7 +1185,7 @@ Combat.init(Push, {
 				addMastery(killer, p, xp)
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
-				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not (f.npc :: any).dummy then
+				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
 					local each = math.max(1, math.floor(g / #Config.Stats))
@@ -1195,6 +1206,7 @@ Combat.init(Push, {
 			Trial.ended(player, false)
 			Gate.ended(player, false)
 			Tower.ended(player, "dead")
+			Maze.ended(player, "dead")
 			if states[player] then
 				(states[player] :: any).diedInSky = f.root.Position.Y > Config.SKY.y - 300
 			end
@@ -1235,6 +1247,9 @@ Combat.init(Push, {
 		end
 	end,
 	onHit = function(att: any, _tgt: any, dmg: number, opt: any)
+		if _tgt.raid and att.player then
+			Raid.onHit(att.player, _tgt, dmg)
+		end
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
@@ -1874,7 +1889,7 @@ Tower = {}
 local towerSlots: { [number]: Player } = {}
 local activeTower: { [Player]: any } = {}
 
-function Tower.start(player: Player)
+function Tower.start(player: Player, back: Vector3?)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not st or not f or f.dead then
@@ -1883,7 +1898,7 @@ function Tower.start(player: Player)
 	if activeTower[player] then
 		return
 	end
-	if activeTrial[player] or activeGate[player] then
+	if activeTrial[player] or activeGate[player] or Maze.active(player) then
 		toast(player, "다른 시련 중에는 탑에 오를 수 없어요")
 		return
 	end
@@ -1910,7 +1925,7 @@ function Tower.start(player: Player)
 	towerSlots[slot] = player
 	Train.stop(player)
 	Combat.dismount(f)
-	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0 }
+	local run = { slot = slot, center = center, floor = 0, alive = {}, token = 0, back = back }
 	activeTower[player] = run
 	local char = player.Character
 	if char then
@@ -2060,7 +2075,8 @@ function Tower.ended(player: Player, reason: string)
 	if reason ~= "dead" then
 		local char = player.Character
 		if char then
-			local at = Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22
+			-- 들어온 문으로 돌아간다 (천궁의 탑 문으로 들어왔으면 천궁으로)
+			local at = run.back or (Config.TOWER.enter + Vector3.new(0, 4, 0) + Vector3.new(-Config.TOWER.enter.X, 0, -Config.TOWER.enter.Z).Unit * 22)
 			char:PivotTo(CFrame.new(at))
 		end
 	end
@@ -2068,6 +2084,352 @@ end
 
 function Tower.active(player: Player): any
 	return activeTower[player]
+end
+
+-- 1.7판: 어디서든 천층탑 입구로 (싸우는 중·시련 중에는 안 된다)
+function Tower.teleport(player: Player)
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not f or f.dead then
+		return
+	end
+	if activeTrial[player] or activeGate[player] or activeTower[player] or Maze.active(player) then
+		toast(player, "시련 중에는 이동할 수 없어요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 이동할 수 없어요")
+		return
+	end
+	Train.stop(player)
+	Combat.dismount(f)
+	local char = player.Character
+	if char then
+		local E = Config.TOWER.enter
+		local at = E + Vector3.new(0, 4, 0) + Vector3.new(-E.X, 0, -E.Z).Unit * 22
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(E.X, at.Y, E.Z)))
+		Push:FireAllClients("blink", char, at)
+	end
+	toast(player, "🗼 천층탑 입구로 왔어요 (탑 문 앞에서 T)")
+end
+
+------------------------------------------------------------------------
+-- 1.7판 구름 미궁: 혼자 들어가는 일곱 방. 방의 적을 다 쓰러뜨리면 다음 다리의 구름 문이 걷힌다
+------------------------------------------------------------------------
+local activeMaze: { [Player]: any } = {}
+local mazeSlots: { [number]: Player } = {}
+local mazeRewardAt: { [Player]: number } = {}
+local mazeChestHooked: { [number]: boolean } = {}
+
+function Maze.active(player: Player): any
+	return activeMaze[player]
+end
+
+local function mazePush(player: Player, run: any)
+	local M = Config.MAZE
+	local room = M.rooms[run.room]
+	Push:FireClient(player, "maze", { room = run.room, total = #M.rooms, name = room and room.name or "", kind = room and room.kind or "", cleared = run.cleared })
+end
+
+-- 방 하나를 연다: 적이 나타나거나 (함정 방은 함정도), 보물방은 상자가 기다린다
+function Maze.room(player: Player, run: any, i: number)
+	local M = Config.MAZE
+	local room = M.rooms[i]
+	local f = Combat.fighterOfPlayer(player)
+	if not room or not f or activeMaze[player] ~= run then
+		return
+	end
+	run.room = i
+	run.cleared = false
+	run.token += 1
+	local token = run.token
+	run.alive = {}
+	mazePush(player, run)
+	local c = run.rooms.centers[i]
+	if room.kind == "treasure" then
+		run.chestOpen = false
+		return
+	end
+	task.delay(1.6, function()
+		if activeMaze[player] ~= run or run.token ~= token then
+			return
+		end
+		local list = {}
+		if room.kind == "boss" then
+			table.insert(list, { room.boss, true })
+		else
+			for k = 1, room.count or 3 do
+				table.insert(list, { room.enemies[(k - 1) % #room.enemies + 1], false })
+			end
+		end
+		local pf = Combat.fighterOfPlayer(player)
+		local mine = (pf and (pf :: any).power) or 100
+		for k, item in ipairs(list) do
+			local a = k / #list * math.pi * 2
+			local at = c + Vector3.new(math.cos(a), 0, math.sin(a)) * (item[2] and 0 or M.roomRadius * 0.45)
+			local e = Npc.spawn(item[1], item[2], at, "trial")
+			if e then
+				local ef = e.f :: any
+				ef.mazeOwner = player
+				ef.trialOwner = player
+				local want = mine * M.power * (item[2] and M.bossPower or (room.power or 1))
+				local kk = want / math.max(1, ef.power or 100)
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * kk * (item[2] and M.bossHp or 1)))
+				ef.hp = ef.maxHp
+				ef.dmgMult *= kk
+				ef.power = math.floor(want)
+				ef.rewardMult = 0.3
+				ef.model:SetAttribute("Power", ef.power)
+				ef.model:SetAttribute("Label", string.format("🌀 %s · %s", room.name, ef.name))
+				Combat.sync(ef)
+				e.target = pf
+				run.alive[ef] = true
+			end
+		end
+		-- 함정 방: 적이 남아 있는 동안 바닥에 원이 차오르고, 다 차면 벼락 (서리) 이 떨어진다
+		if room.trap then
+			local T = M.trap
+			task.spawn(function()
+				while activeMaze[player] == run and run.token == token and next(run.alive) do
+					local me = Combat.fighterOfPlayer(player)
+					if not me or me.dead then
+						break
+					end
+					local spots = { Vector3.new(me.root.Position.X, c.Y + 2.4, me.root.Position.Z) }
+					for _ = 1, T.count do
+						local a, r = math.random() * math.pi * 2, math.random() * M.roomRadius * 0.85
+						table.insert(spots, c + Vector3.new(math.cos(a) * r, 2.4, math.sin(a) * r))
+					end
+					local color = room.color
+					for _, at in ipairs(spots) do
+						Push:FireClient(player, "skillfx", { kind = "telegraph", at = at, radius = T.radius, time = T.warn, color = color })
+					end
+					task.wait(T.warn)
+					if activeMaze[player] ~= run or run.token ~= token then
+						break
+					end
+					for _, at in ipairs(spots) do
+						Push:FireClient(player, "skillfx", { kind = "strike", at = at, radius = T.radius, color = color, fx = room.trap == "ice" and "ice" or nil })
+					end
+					local now = Combat.fighterOfPlayer(player)
+					if now and not now.dead and os.clock() > now.iframeUntil then
+						for _, at in ipairs(spots) do
+							if Vector3.new(now.root.Position.X - at.X, 0, now.root.Position.Z - at.Z).Magnitude <= T.radius then
+								now.hp -= now.maxHp * T.dmg
+								Combat.sync(now)
+								Push:FireClient(player, "toast", room.trap == "ice" and "❄ 서리 창에 맞았다!" or "⚡ 벼락에 맞았다!")
+								if now.hp <= 0 then
+									Combat.kill(now, nil)
+								end
+								break
+							end
+						end
+					end
+					task.wait(T.every - T.warn)
+				end
+			end)
+		end
+	end)
+end
+
+-- 방을 넘었다: 다음 다리의 구름 문을 걷는다. 마지막 방이면 다 넘은 것
+function Maze.cleared(player: Player, run: any)
+	local M = Config.MAZE
+	run.cleared = true
+	local gate = run.rooms.gates[run.room]
+	if gate then
+		World.mazeGate(gate, false)
+	end
+	if run.room >= #M.rooms then
+		Maze.finish(player, run)
+		return
+	end
+	mazePush(player, run)
+	Push:FireClient(player, "mazeClear", { room = run.room, name = M.rooms[run.room].name })
+end
+
+function Maze.killed(player: Player, ef: any)
+	local run = activeMaze[player]
+	if not run or not run.alive[ef] then
+		return
+	end
+	run.alive[ef] = nil
+	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
+	local p = profiles[player]
+	if p then
+		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1)
+		local each = math.max(1, math.floor(g / #Config.Stats))
+		for _, sd in ipairs(Config.Stats) do
+			p.stats[sd.id] += each
+		end
+		states[player].dirty = true
+		refreshFighter(player)
+	end
+	if not next(run.alive) and not run.cleared then
+		Maze.cleared(player, run)
+	end
+end
+
+function Maze.finish(player: Player, run: any)
+	local p, st = profiles[player], states[player]
+	local M = Config.MAZE
+	if p and st then
+		local ready = os.clock() >= (mazeRewardAt[player] or 0)
+		local data = { first = ready, gems = 0, coins = 0, scrolls = 0, stats = 0 }
+		if ready then
+			mazeRewardAt[player] = os.clock() + M.cooldown
+			local R = M.reward
+			local f = Combat.fighterOfPlayer(player)
+			local each = math.max(1, math.floor(Config.killGain(((f :: any) and (f :: any).power) or 100) * R.statKills / #Config.Stats))
+			for _, sd in ipairs(Config.Stats) do
+				p.stats[sd.id] += each
+			end
+			p.skyGems += R.gems
+			p.coins += R.coins
+			p.scrolls += R.scrolls
+			data.gems, data.coins, data.scrolls, data.stats = R.gems, R.coins, R.scrolls, each * #Config.Stats
+			refreshFighter(player)
+			Story.check(player)
+		else
+			data.wait = math.ceil((mazeRewardAt[player] - os.clock()) / 60)
+		end
+		st.dirty = true
+		Push:FireClient(player, "mazeDone", data)
+		pushState(player)
+	end
+	task.delay(4, function()
+		if activeMaze[player] == run then
+			Maze.ended(player, "done")
+		end
+	end)
+end
+
+-- reason: "done" / "dead" / "fall" / "leave" / "left"
+function Maze.ended(player: Player, reason: string)
+	local run = activeMaze[player]
+	if not run then
+		return
+	end
+	activeMaze[player] = nil
+	run.token += 1
+	mazeSlots[run.slot] = nil
+	for ef in pairs(run.alive) do
+		if not ef.dead then
+			Npc.despawn(ef)
+		end
+	end
+	run.alive = {}
+	if reason == "left" then
+		return
+	end
+	Push:FireClient(player, "maze", nil)
+	Push:FireClient(player, "boss", nil)
+	if reason ~= "done" then
+		toast(player, string.format("🌀 구름 미궁 %d번째 방에서 멈췄어요", run.room))
+	end
+	if reason ~= "dead" then
+		local char = player.Character
+		if char and run.back then
+			char:PivotTo(CFrame.new(run.back))
+		end
+	end
+end
+
+function Maze.start(player: Player, back: Vector3?, force: boolean?)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	local M = Config.MAZE
+	if not p or not st or not f or f.dead or activeMaze[player] then
+		return
+	end
+	if not force and Calc.realm(p) < Config.SKY.realm then
+		toast(player, string.format("🌀 구름 미궁은 %s의 경지부터 들어갈 수 있어요", Config.Realms[Config.SKY.realm].name))
+		return
+	end
+	if activeTrial[player] or activeGate[player] or activeTower[player] then
+		toast(player, "다른 시련 중에는 들어갈 수 없어요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 들어갈 수 없어요")
+		return
+	end
+	local slot
+	for i = 1, M.slots do
+		if not mazeSlots[i] then
+			slot = i
+			break
+		end
+	end
+	if not slot then
+		toast(player, "🌀 미궁이 붐벼요. 잠시 뒤에 다시 오세요")
+		return
+	end
+	local ok, rooms = pcall(World.mazeRooms, slot)
+	if not ok then
+		warn("[권왕] 구름 미궁 만들기 오류:", rooms)
+		return
+	end
+	mazeSlots[slot] = player
+	for _, g in pairs(rooms.gates) do
+		World.mazeGate(g, true)
+	end
+	-- 보물 상자 (방마다 한 번, 주인만)
+	if rooms.chest and not mazeChestHooked[slot] then
+		mazeChestHooked[slot] = true
+		rooms.chest.Triggered:Connect(function(who: Player)
+			local r = activeMaze[who]
+			local pp = profiles[who]
+			if not r or r.slot ~= slot or not pp or r.chestOpen or M.rooms[r.room].kind ~= "treasure" then
+				return
+			end
+			r.chestOpen = true
+			pp.skyGems += M.chest.gems
+			pp.coins += M.chest.coins
+			states[who].dirty = true
+			toast(who, string.format("🎁 보물 상자: 💎 %d  💰 %s", M.chest.gems, Config.formatNumber(M.chest.coins)))
+			pushState(who)
+			Maze.cleared(who, r)
+		end)
+	end
+	Train.stop(player)
+	Combat.dismount(f)
+	local run = { slot = slot, rooms = rooms, room = 0, alive = {}, token = 0, cleared = false, back = back or (Config.SKY.islands[1].at + Vector3.new(0, 5, 30)) }
+	activeMaze[player] = run
+	local c1 = rooms.centers[1]
+	local char = player.Character
+	if char then
+		local at = c1 + Vector3.new(0, 4, -Config.MAZE.roomRadius * 0.6)
+		char:PivotTo(CFrame.lookAt(at, Vector3.new(c1.X, at.Y, c1.Z + 100)))
+	end
+	f.hp = f.maxHp
+	f.chi = (f :: any).chiMax or Config.CHI_MAX
+	Combat.sync(f)
+	Maze.room(player, run, 1)
+	-- 걸어서 다음 방에 들어서면 그 방이 열린다. 떨어지면 끝, 적이 떨어지면 쓰러뜨린 것으로
+	task.spawn(function()
+		local base = rooms.centers[1]
+		while activeMaze[player] == run do
+			task.wait(0.4)
+			local ff = Combat.fighterOfPlayer(player)
+			if activeMaze[player] ~= run then
+				break
+			end
+			if ff and not ff.dead and ff.root.Position.Y < base.Y - 30 then
+				Maze.ended(player, "fall")
+				break
+			end
+			for ef in pairs(run.alive) do
+				if not ef.dead and (not ef.root.Parent or ef.root.Position.Y < base.Y - 30) then
+					Combat.kill(ef, ff)
+				end
+			end
+			local nextC = rooms.centers[run.room + 1]
+			if ff and run.cleared and nextC and Vector3.new(ff.root.Position.X - nextC.X, 0, ff.root.Position.Z - nextC.Z).Magnitude < Config.MAZE.roomRadius - 6 then
+				Maze.room(player, run, run.room + 1)
+			end
+		end
+	end)
 end
 
 ------------------------------------------------------------------------
@@ -2414,6 +2776,28 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		toast(player, "💠 천정 +1000")
 	elseif action == "testMeteor" then
 		_G.KwonMeteorNow = true
+	elseif action == "testMaze" then
+		Maze.start(player, nil, true)
+	elseif action == "testMazeSkip" then
+		-- (시험용) 지금 미궁 방의 적을 모두 쓰러뜨린다
+		local run = Maze.active(player)
+		if run and f then
+			for ef in pairs(run.alive) do
+				if not ef.dead then
+					Combat.kill(ef, f)
+				end
+			end
+		end
+	elseif action == "testRaidKill" then
+		-- (시험용) 지금 레이드 보스를 내 몫 절반으로 쓰러뜨린다
+		local c = Raid.cur
+		if c and f then
+			c.dmg[player] = (c.dmg[player] or 0) + c.f.maxHp * 0.5
+			Combat.kill(c.f, f)
+		end
+	elseif action == "testRaid" then
+		_G.KwonRaidNow = true
+		toast(player, "⚔ 곧 천겁이 내려와요 (천상계에 있어야 해요)")
 	elseif action == "testSky" then
 		-- 천상계로 바로 (경지와 상관없이)
 		if f then
@@ -2783,6 +3167,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
+	elseif action == "towerTp" then
+		Tower.teleport(player)
+	elseif action == "mazeLeave" then
+		Maze.ended(player, "leave")
 	elseif action == "manualDraw" then
 		Manual.draw(player, a1)
 	elseif action == "manualEquip" then
@@ -2869,6 +3257,22 @@ end
 if W.tower then
 	W.tower.Triggered:Connect(function(player: Player)
 		Tower.start(player)
+	end)
+end
+-- 천궁의 미궁 문: 미궁에 들어가고, 끝나면 문 앞으로 돌아온다
+if W.mazeGate then
+	W.mazeGate.Triggered:Connect(function(player: Player)
+		local gate = W.mazeGate.Parent
+		local back = (gate and gate:IsA("BasePart")) and (gate.Position + Vector3.new(0, 3, 0) + Vector3.new(-gate.Position.X, 0, -gate.Position.Z).Unit * 8) or nil
+		Maze.start(player, back)
+	end)
+end
+-- 천궁의 탑 문: 바로 탑에 오르고, 끝나면 천궁으로 돌아온다
+if W.towerGate then
+	W.towerGate.Triggered:Connect(function(player: Player)
+		local gate = W.towerGate.Parent
+		local back = (gate and gate:IsA("BasePart")) and (gate.Position + Vector3.new(0, 3, 0) + Vector3.new(-gate.Position.X, 0, -gate.Position.Z).Unit * 8) or nil
+		Tower.start(player, back)
 	end)
 end
 
@@ -3090,7 +3494,7 @@ task.spawn(function()
 			nextAt = os.clock() + M.every
 			local choices = {}
 			for _, isl in ipairs(Config.SKY.islands) do
-				if not isl.safe and not isl.hidden then
+				if not isl.safe and not isl.hidden and not isl.raid then
 					table.insert(choices, isl)
 				end
 			end
@@ -3116,6 +3520,186 @@ task.spawn(function()
 		end
 	end
 end)
+
+------------------------------------------------------------------------
+-- 1.7판 천상 레이드: 천공 투기장에 정해진 때마다 천겁이 내려온다
+-- 그때 천상계에 있는 사람 수만큼 체력이 늘고, 체력의 1% 이상 친 사람은 친 만큼 나눠 받는다
+------------------------------------------------------------------------
+Raid.cur = nil :: any
+local function playersInSky(): { Player }
+	local out = {}
+	for player in pairs(profiles) do
+		local f = Combat.fighterOfPlayer(player)
+		if f and f.root.Position.Y > Config.SKY.y - 300 then
+			table.insert(out, player)
+		end
+	end
+	return out
+end
+-- 천상계에 오를 수 있는 사람 모두에게 알린다
+local function raidTell(kind: string, data: any)
+	for player, p in pairs(profiles) do
+		if Calc.realm(p) >= Config.SKY.realm then
+			Push:FireClient(player, kind, data)
+		end
+	end
+end
+function Raid.onHit(player: Player, f: any, dmg: number)
+	local c = Raid.cur
+	if c and c.f == f then
+		c.dmg[player] = (c.dmg[player] or 0) + dmg
+	end
+end
+local function raidRanking(c: any): { { player: Player, dmg: number } }
+	local list = {}
+	for player, d in pairs(c.dmg) do
+		table.insert(list, { player = player, dmg = d })
+	end
+	table.sort(list, function(a, b)
+		return a.dmg > b.dmg
+	end)
+	return list
+end
+function Raid.spawn()
+	local R = Config.RAID
+	local isl = Config.SKY_BY_ID[R.island]
+	if Raid.cur or not isl then
+		return
+	end
+	local n = math.max(1, #playersInSky())
+	local ok, e = pcall(Npc.spawn, R.boss, true, isl.at + Vector3.new(0, 0, 10), "summon")
+	if not ok or not e then
+		warn("[권왕] 레이드 보스 만들기 오류:", e)
+		return
+	end
+	local ef = e.f :: any
+	ef.raid = true
+	ef.maxHp = math.floor(ef.maxHp * (1 + R.hpPer * (n - 1)))
+	ef.hp = ef.maxHp
+	ef.model:SetAttribute("Label", "⚔ 레이드 · " .. ef.name)
+	ef.model:SetAttribute("Raid", true)
+	Combat.sync(ef)
+	local c = { f = ef, dmg = {}, endsAt = os.clock() + R.life, n = n }
+	Raid.cur = c
+	raidTell("raidAlert", { stage = "on", name = ef.name, n = n, life = R.life })
+	-- 남은 시간 안에 못 쓰러뜨리면 하늘로 돌아간다
+	task.delay(R.life, function()
+		if Raid.cur == c and not ef.dead then
+			Raid.cur = nil
+			Npc.despawn(ef)
+			raidTell("raidAlert", { stage = "fail", name = ef.name })
+			for _, player in ipairs(playersInSky()) do
+				Push:FireClient(player, "raid", nil)
+			end
+		end
+	end)
+	-- 투기장 둘레 사람에게 1초마다 형편을 알린다 (체력·남은 시간·내 기여·순위)
+	task.spawn(function()
+		while Raid.cur == c and not ef.dead do
+			local rank = raidRanking(c)
+			local top = {}
+			for i = 1, math.min(3, #rank) do
+				top[i] = { name = rank[i].player.DisplayName, share = rank[i].dmg / ef.maxHp }
+			end
+			for _, player in ipairs(playersInSky()) do
+				local pf = Combat.fighterOfPlayer(player)
+				if pf and Vector3.new(pf.root.Position.X - isl.at.X, 0, pf.root.Position.Z - isl.at.Z).Magnitude < isl.radius + 60 then
+					local myRank = 0
+					for i, r in ipairs(rank) do
+						if r.player == player then
+							myRank = i
+						end
+					end
+					Push:FireClient(player, "raid", { name = ef.name, hp = ef.hp, maxHp = ef.maxHp, left = c.endsAt - os.clock(), mine = (c.dmg[player] or 0) / ef.maxHp, rank = myRank, top = top })
+				else
+					Push:FireClient(player, "raid", nil)
+				end
+			end
+			task.wait(1)
+		end
+	end)
+end
+function Raid.killed(f: any)
+	local c = Raid.cur
+	if not c or c.f ~= f then
+		return
+	end
+	Raid.cur = nil
+	local R = Config.RAID
+	local rank = raidRanking(c)
+	local names = {}
+	for i = 1, math.min(3, #rank) do
+		table.insert(names, string.format("%d. %s %d%%", i, rank[i].player.DisplayName, math.floor(rank[i].dmg / f.maxHp * 100 + 0.5)))
+	end
+	raidTell("raidAlert", { stage = "win", name = f.name, top = names })
+	for i, r in ipairs(rank) do
+		local player = r.player
+		local p, st = profiles[player], states[player]
+		local share = math.clamp(r.dmg / f.maxHp, 0, 1)
+		if p and st and share >= R.minShare then
+			local k = 0.4 + share
+			local gems = math.floor(R.gems * k)
+			local coins = math.floor(R.coins * k)
+			local scrolls = R.scrolls + (i == 1 and 1 or 0)
+			p.skyGems += gems
+			p.coins += coins
+			p.scrolls += scrolls
+			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
+			local pf = Combat.fighterOfPlayer(player)
+			local each = math.max(1, math.floor(Config.killGain(((pf :: any) and (pf :: any).power) or 100) * R.statKills * (0.3 + share) / #Config.Stats))
+			for _, sd in ipairs(Config.Stats) do
+				p.stats[sd.id] += each
+			end
+			st.dirty = true
+			refreshFighter(player)
+			Story.check(player)
+			Push:FireClient(player, "raidReward", { rank = i, share = share, gems = gems, coins = coins, scrolls = scrolls, stats = each * #Config.Stats })
+			pushState(player)
+		end
+	end
+	for _, player in ipairs(playersInSky()) do
+		Push:FireClient(player, "raid", nil)
+	end
+end
+-- 때가 되면 알리고, 잠시 뒤 내려온다 (천상계에 아무도 없으면 미룬다)
+task.spawn(function()
+	local R = Config.RAID
+	local nextAt = os.clock() + R.first
+	while true do
+		task.wait(1)
+		if not Raid.cur and (os.clock() >= nextAt or _G.KwonRaidNow) and #playersInSky() > 0 then
+			local now = _G.KwonRaidNow
+			_G.KwonRaidNow = nil
+			nextAt = os.clock() + R.every
+			local warnFor = now and 3 or R.warn
+			raidTell("raidAlert", { stage = "warn", name = (Config.Bosses[R.boss] or {}).name, warn = warnFor })
+			task.wait(warnFor)
+			Raid.spawn()
+		end
+	end
+end)
+-- 천궁의 투기장 문: 투기장 가장자리로 (싸우는 중에는 안 된다)
+if W.raidGate then
+	W.raidGate.Triggered:Connect(function(player: Player)
+		local f = Combat.fighterOfPlayer(player)
+		local isl = Config.SKY_BY_ID[Config.RAID.island]
+		if not f or f.dead or not isl then
+			return
+		end
+		if f.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 이동할 수 없어요")
+			return
+		end
+		Combat.dismount(f)
+		local char = player.Character
+		if char then
+			local d = Vector3.new(Config.SKY.islands[1].at.X - isl.at.X, 0, Config.SKY.islands[1].at.Z - isl.at.Z).Unit
+			local at = isl.at + d * (isl.radius * 0.6) + Vector3.new(0, 5, 0)
+			char:PivotTo(CFrame.lookAt(at, Vector3.new(isl.at.X, at.Y, isl.at.Z)))
+		end
+		toast(player, Raid.cur and "⚔ 천공 투기장 · 천겁과 싸우는 중!" or "⚔ 천공 투기장 · 천겁이 내려오면 알려 드려요")
+	end)
+end
 
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
@@ -3356,6 +3940,7 @@ end
 
 local function onPlayerRemoving(player: Player)
 	Tower.ended(player, "left")
+	Maze.ended(player, "left")
 	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
 	pcall(Trial.ended, player, false)
 	saveProfile(player)

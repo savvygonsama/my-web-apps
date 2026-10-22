@@ -18,6 +18,7 @@ local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
 local Drunk = require(script:WaitForChild("Drunk"))
+local Polish = require(script:WaitForChild("Polish"))
 
 local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
@@ -276,6 +277,7 @@ task.spawn(function()
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
 						Sakura.cast(style.id, slot, m :: Model, mv.dur)
 						Drunk.cast(style.id, slot, m :: Model, mv.dur)
+						Polish.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -575,6 +577,7 @@ startMove = function(slot: any, charge: number?)
 	Fx.cast(style.id, slot, char, dur)
 	Sakura.cast(style.id, slot, char, dur)
 	Drunk.cast(style.id, slot, char, dur)
+	Polish.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -1176,6 +1179,57 @@ function handlers.towerClear(data: any)
 	Fx.sound("ping", 0.8, 1.2)
 end
 
+-- 1.7판 구름 미궁
+local lastMazeRoom = 0
+function handlers.maze(data: any?)
+	UI.setMaze(data)
+	if not data then
+		lastMazeRoom = 0
+		return
+	end
+	if data.room ~= lastMazeRoom and not data.cleared then
+		lastMazeRoom = data.room
+		local sub = ({ wave = "모든 적을 쓰러뜨려라", trap = "차오르는 원을 피하며 적을 쓰러뜨려라", elite = "강한 수호자들이 지킨다", treasure = "보물 상자를 열어라 (T)", boss = "미궁의 주인이 기다린다" })[data.kind] or ""
+		UI.banner(string.format("🌀 %d번째 방 · %s", data.room, tostring(data.name)), sub, Color3.fromRGB(190, 225, 255))
+	end
+end
+function handlers.mazeClear(data: any)
+	UI.banner("✓ " .. tostring(data.name) .. "을(를) 넘었다", "구름 문이 걷혔다 · 다리를 건너 다음 방으로", Color3.fromRGB(190, 255, 210))
+	Fx.sound("ping", 0.7, 1.3)
+end
+function handlers.mazeDone(data: any)
+	if data.first then
+		UI.banner("🏆 구름 미궁을 다 넘었다!", string.format("💎 %s  💰 %s  📜 %d  📈 능력치 +%s", Config.formatNumber(data.gems or 0), Config.formatNumber(data.coins or 0), data.scrolls or 0, Config.formatNumber(data.stats or 0)), Color3.fromRGB(255, 220, 120))
+	else
+		UI.banner("🏆 구름 미궁을 다 넘었다!", string.format("다 넘은 보상은 %d분 뒤에 다시 받을 수 있어요", data.wait or 1), Color3.fromRGB(255, 220, 120))
+	end
+	Fx.sound("ping", 1, 1)
+end
+
+-- 1.7판 천상 레이드
+function handlers.raid(data: any?)
+	UI.setRaid(data)
+end
+function handlers.raidAlert(data: any)
+	local purple = Color3.fromRGB(210, 130, 255)
+	if data.stage == "warn" then
+		UI.banner("⚔ 하늘이 갈라진다!", string.format("%d초 뒤 천공 투기장에 %s이(가) 내려온다 · 천궁의 ⚔ 문으로", data.warn or 0, tostring(data.name or "천겁")), purple)
+		Fx.sound("heavy", 0.8, 0.5)
+		shake(0.6)
+	elseif data.stage == "on" then
+		UI.banner("⚔ 레이드 · " .. tostring(data.name), string.format("함께 쓰러뜨려라 (체력 ×%.1f · %d분 안에)", 1 + Config.RAID.hpPer * ((data.n or 1) - 1), math.floor((data.life or 0) / 60)), purple)
+		Fx.sound("heavy", 1, 0.4)
+	elseif data.stage == "win" then
+		UI.banner("🏆 천겁을 쓰러뜨렸다!", table.concat(data.top or {}, "   "), Color3.fromRGB(255, 220, 120))
+	elseif data.stage == "fail" then
+		UI.toast("☁ " .. tostring(data.name) .. "이(가) 하늘로 돌아갔다… 다음에 다시 내려온다")
+	end
+end
+function handlers.raidReward(data: any)
+	UI.toast(string.format("⚔ 레이드 보상 (%d위 · 기여 %.1f%%): 💎 %s  💰 %s  📜 %d  📈 능력치 +%s", data.rank or 0, (data.share or 0) * 100, Config.formatNumber(data.gems or 0), Config.formatNumber(data.coins or 0), data.scrolls or 0, Config.formatNumber(data.stats or 0)))
+	Fx.sound("ping", 0.9, 1.1)
+end
+
 -- 운석 낙하: 하늘에서 불덩이가 떨어지고, 자리에 표시
 function handlers.meteor(data: any)
 	UI.banner("☄ 운석이 떨어진다!", data.island .. "에 운석 수호수가 나타난다", Color3.fromRGB(200, 150, 255))
@@ -1311,6 +1365,7 @@ function handlers.act(data: any)
 		Fx.cast(style.id, data.slot, m, data.dur)
 		Sakura.cast(style.id, data.slot, m, data.dur)
 		Drunk.cast(style.id, data.slot, m, data.dur)
+		Polish.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
@@ -1414,6 +1469,7 @@ function handlers.hit(data: any)
 	local dir = (aRoot and tRoot) and flat(tRoot.Position - aRoot.Position) or Vector3.new(0, 0, -1)
 	local kind = data.kind
 	if kind == "hit" then
+		Polish.hit(data.style, pos, data.heavy == true, data.skill == true, dir)
 		local predicted = mine and predictedAt[t] and os.clock() - predictedAt[t] < 0.6
 		if not predicted then
 			local hs = data.broken and 0.16 or (data.heavy and 0.1 or 0.055)

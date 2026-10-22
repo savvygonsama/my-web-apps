@@ -1043,6 +1043,62 @@ function UI.setTower(data: any?)
 	end
 end
 
+-- 1.7판 구름 미궁 진행 (가운데 위): 몇 번째 방 · 방 이름 · 나가기
+local mazeFrame: Frame? = nil
+local mazeLabel: TextLabel? = nil
+function UI.setMaze(data: any?)
+	UI.mazeActive = data ~= nil
+	if not mazeFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 132), Size = UDim2.new(0, 480, 0, 46), BackgroundColor3 = Color3.fromRGB(14, 18, 30), BackgroundTransparency = 0.2, Visible = false, Parent = gui }, { corner(10), stroke(Color3.fromRGB(190, 225, 255), 1.5) })
+		scaled(f)
+		mazeLabel = text({ Position = UDim2.new(0, 14, 0, 0), Size = UDim2.new(1, -120, 1, 0), TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(205, 230, 255), Parent = f })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 96, 0, 32), Text = "🚪 나가기", TextSize = 15, BackgroundColor3 = C.red, Parent = f }, function()
+			Request:FireServer("mazeLeave")
+		end)
+		mazeFrame = f
+	end
+	local f = mazeFrame :: Frame
+	f.Visible = data ~= nil
+	if data and mazeLabel then
+		local icon = ({ wave = "⚔", trap = "⚡", elite = "🛡", treasure = "🎁", boss = "👹" })[data.kind] or "🌀"
+		mazeLabel.Text = string.format("🌀 구름 미궁 %d / %d  ·  %s %s%s", data.room or 1, data.total or 7, icon, tostring(data.name or ""), data.cleared and "  ✓ 다음 방으로" or "")
+	end
+end
+
+-- 1.7판 천상 레이드 현황 (오른쪽 위): 보스 체력, 남은 시간, 내 기여와 순위, 상위 셋
+local raidFrame: Frame? = nil
+local raidTitle: TextLabel? = nil
+local raidBar: Frame? = nil
+local raidInfo: TextLabel? = nil
+local raidTop: TextLabel? = nil
+function UI.setRaid(data: any?)
+	if not raidFrame then
+		local f = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 420), Size = UDim2.new(0, 300, 0, 132), BackgroundColor3 = Color3.fromRGB(24, 10, 30), BackgroundTransparency = 0.15, Visible = false, Parent = gui }, { corner(10), stroke(Color3.fromRGB(200, 110, 255), 1.6) })
+		scaled(f)
+		raidTitle = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 24), TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(230, 180, 255), Parent = f })
+		local back = new("Frame", { Position = UDim2.new(0, 10, 0, 32), Size = UDim2.new(1, -20, 0, 14), BackgroundColor3 = Color3.fromRGB(30, 15, 35), Parent = f }, { corner(5) })
+		raidBar = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(190, 70, 255), Parent = back }, { corner(5) })
+		raidInfo = text({ Position = UDim2.new(0, 10, 0, 50), Size = UDim2.new(1, -20, 0, 22), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = C.text, Parent = f })
+		raidTop = text({ Position = UDim2.new(0, 10, 0, 74), Size = UDim2.new(1, -20, 0, 54), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, Parent = f })
+		raidFrame = f
+	end
+	local f = raidFrame :: Frame
+	f.Visible = data ~= nil
+	if not data then
+		return
+	end
+	local frac = math.clamp((data.hp or 0) / math.max(1, data.maxHp or 1), 0, 1)
+	;(raidTitle :: TextLabel).Text = "⚔ 레이드 · " .. tostring(data.name or "")
+	;(raidBar :: Frame).Size = UDim2.fromScale(frac, 1)
+	local left = math.max(0, math.floor(data.left or 0))
+	;(raidInfo :: TextLabel).Text = string.format("체력 %d%%  ·  남은 %d:%02d  ·  내 기여 %.1f%%%s", math.floor(frac * 100 + 0.5), left // 60, left % 60, (data.mine or 0) * 100, (data.rank or 0) > 0 and string.format(" (%d위)", data.rank) or "")
+	local lines = {}
+	for i, t in ipairs(data.top or {}) do
+		table.insert(lines, string.format("%d. %s  %.1f%%", i, tostring(t.name), (t.share or 0) * 100))
+	end
+	;(raidTop :: TextLabel).Text = #lines > 0 and table.concat(lines, "\n") or "아직 아무도 치지 않았다"
+end
+
 -- 사부의 시험 진행 (흘리기 3/6 · 남은 시간)
 local trialFrame: Frame? = nil
 local trialLabel: TextLabel? = nil
@@ -1263,7 +1319,7 @@ local function buildTest()
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
 		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -1987,7 +2043,7 @@ function UI.dialogOpen(): boolean
 end
 
 local function buildStory(topLeft: Frame)
-	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 418), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
+	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 424), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
 	-- 아직 받지 않은 이야기: 눌러서 받는다
@@ -2278,11 +2334,13 @@ function UI.init(req: RemoteEvent)
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 500), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
-	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 380), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "pvp", "⚔ PvP 켜짐" }, { "test", "🧪 테스트" } }) do
-		local b = button({ Size = UDim2.new(1, 0, 0, 38), Text = item[2], TextSize = 17, Parent = menu }, function()
+	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 424), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "test", "🧪 테스트" } }) do
+		local b = button({ Size = UDim2.new(1, 0, 0, 34), Text = item[2], TextSize = 17, Parent = menu }, function()
 			if item[1] == "pvp" then
 				Request:FireServer("pvpToggle")
+			elseif item[1] == "tower" then
+				Request:FireServer("towerTp")
 			elseif item[1] == "map" then
 				UI.toggleMap()
 			else

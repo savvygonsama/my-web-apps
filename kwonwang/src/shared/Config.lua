@@ -1530,6 +1530,11 @@ E.starsage = variant(E.cultelder, { name = "성운 도사", shirt = Color3.fromR
 E.throneguard = variant(E.ironguard, { name = "천위병", shirt = Color3.fromRGB(250, 235, 190), pants = Color3.fromRGB(180, 150, 80), hp = 380, mult = 20, elite = true, scale = 1.3 })
 E.meteorguard = variant(E.stonegolem, { name = "운석 수호수", shirt = Color3.fromRGB(90, 60, 120), pants = Color3.fromRGB(50, 30, 70), hp = 900, mult = 16, elite = true, scale = 1.8 })
 E.throneblade = variant(E.shadowblade, { name = "천위 검객", shirt = Color3.fromRGB(255, 245, 220), pants = Color3.fromRGB(150, 120, 60), hp = 300, mult = 20, elite = true })
+-- 1.7판: 새 섬의 적 (옥좌대보다 한 단계, 두 단계 위)
+E.frostguard = variant(E.spearman, { name = "빙정 수위", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(90, 130, 180), hp = 400, mult = 23, elite = true, scale = 1.2 })
+E.icespirit = variant(E.shadowblade, { name = "얼음 정령", shirt = Color3.fromRGB(170, 230, 255), pants = Color3.fromRGB(110, 170, 220), hp = 320, mult = 23, elite = true })
+E.phoenixguard = variant(E.ironguard, { name = "봉황 무사", shirt = Color3.fromRGB(220, 70, 40), pants = Color3.fromRGB(120, 40, 20), hp = 440, mult = 27, elite = true, scale = 1.3 })
+E.flamesage = variant(E.cultelder, { name = "불새 술사", shirt = Color3.fromRGB(255, 150, 60), pants = Color3.fromRGB(150, 60, 20), hp = 340, mult = 27, elite = true })
 local B = Config.Bosses
 B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
 B.hyeolma = variant(B.hyeolrang, { name = "혈마 · 혈교의 주인", shirt = Color3.fromRGB(150, 0, 20), pants = Color3.fromRGB(20, 0, 5), hp = 2400, posture = 420, scale = 1.5, speed = 23, coins = 3000, xp = 800, respawn = 300 })
@@ -2100,6 +2105,9 @@ Config.CUTSCENES = {
 	boss_noeje = { who = "뇌제", lines = { "하늘의 벼락은 두 번 묻지 않는다." } },
 	boss_seonggun = { who = "성군", lines = { "별이 지는 자리에 네 이름도 묻어 주마." } },
 	boss_cheonjon = { who = "천존", lines = { "땅에서 올라온 주먹이 어디까지 닿는지 보자." } },
+	boss_bingje = { who = "빙제", lines = { "만 년을 얼어 있던 궁이다. 네 숨도 여기서 멎는다." } },
+	boss_yeombong = { who = "염봉", lines = { "봉황은 죽지 않는다. 타고 남은 재에서 다시 날 뿐." } },
+	boss_cheongeop = { who = "천겁", lines = { "하늘이 내린 재앙이다. 혼자라면 도망쳐라. 함께라면, 덤벼라." } },
 }
 
 ------------------------------------------------------------------------
@@ -2190,9 +2198,17 @@ Config.SKY = {
 			boss = { id = "cheonjon", at = Vector3.new(0, SY, -720) } },
 		-- 숨은 섬: 운해 평원 서쪽 끝에서 거의 보이지 않는 다리로만 건너간다
 		{ id = "subspace", name = "금 간 허공", at = Vector3.new(-760, SY, 640), radius = 60, hidden = true, ground = Color3.fromRGB(30, 20, 50), material = Enum.Material.Glass },
+		-- 1.7판: 천상 확장. 운해 평원 동쪽 너머 빙정궁, 옥좌대 북쪽 너머 봉황대, 성운원 북쪽의 천공 투기장 (레이드)
+		{ id = "frost", name = "빙정궁", at = Vector3.new(620, SY, 520), radius = 190, ground = Color3.fromRGB(215, 235, 250), material = Enum.Material.Glacier,
+			camps = { { enemy = "frostguard", count = 3, at = Vector3.new(560, SY, 460) }, { enemy = "icespirit", count = 3, at = Vector3.new(560, SY, 600) }, { enemy = "frostguard", count = 2, at = Vector3.new(680, SY, 620) } },
+			boss = { id = "bingje", at = Vector3.new(700, SY, 470) } },
+		{ id = "phoenix", name = "봉황대", at = Vector3.new(0, SY, -1120), radius = 180, ground = Color3.fromRGB(150, 60, 40), material = Enum.Material.Basalt,
+			camps = { { enemy = "phoenixguard", count = 3, at = Vector3.new(-80, SY, -1060) }, { enemy = "flamesage", count = 3, at = Vector3.new(80, SY, -1060) }, { enemy = "phoenixguard", count = 2, at = Vector3.new(0, SY, -1180) } },
+			boss = { id = "yeombong", at = Vector3.new(0, SY, -1220) } },
+		{ id = "raidarena", name = "천공 투기장", at = Vector3.new(-620, SY, -640), radius = 150, ground = Color3.fromRGB(200, 190, 175), material = Enum.Material.Slate, raid = true },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -2269,6 +2285,84 @@ Config.Bosses.cheonjon = variant(Config.Bosses.cheonmun, { name = "천존 · 천
 		P("quake", "천지개벽", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 120, 1.5, 80, 30) }),
 	} })
 
+-- 1.7판: 새 섬의 주인 둘과, 천공 투기장에 정해진 때마다 내려오는 레이드 보스
+Config.Bosses.bingje = variant(Config.Bosses.cheonmun, { name = "빙제 · 빙정궁의 주인", shirt = Color3.fromRGB(190, 225, 255), pants = Color3.fromRGB(60, 100, 160), hp = 820000, posture = 1800, scale = 3.3, speed = 15, coins = 320000, xp = 36000, respawn = 300, mult = 3.4,
+	patterns = {
+		P("rain", "빙우", 1, { count = 10, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 235, 255), hit = hit(0, 0, 0, 46, 58, 1.0, 25) }),
+		P("donut", "설한 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 66, 1.1, 45) }),
+		P("summon", "얼음 정령들아", 2, { enemy = "icespirit", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("charge", "빙하 돌진", 2, { length = 62, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 60) }),
+		P("quake", "만년빙 붕괴", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 84, 124, 1.6, 80, 30) }),
+	} })
+Config.Bosses.yeombong = variant(Config.Bosses.cheonmun, { name = "염봉 · 봉황대의 주인", shirt = Color3.fromRGB(255, 110, 40), pants = Color3.fromRGB(140, 30, 15), hp = 1000000, posture = 2000, scale = 3.5, speed = 16, coins = 420000, xp = 45000, respawn = 300, mult = 3.9,
+	patterns = {
+		P("rain", "불새비", 1, { count = 11, radius = 9, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 150, 60), hit = hit(0, 0, 0, 48, 60, 1.0, 25) }),
+		P("leap", "봉황 낙하", 1, { radius = 19, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 62, 82, 1.3, 50, 20) }),
+		P("donut", "불꽃 날개", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
+		P("summon", "불새 술사들", 2, { enemy = "flamesage", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("charge", "열화 돌격", 3, { length = 64, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 54, 64, 1.0, 60) }),
+		P("quake", "봉황 재생", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 90, 130, 1.6, 80, 30) }),
+	} })
+Config.Bosses.cheongeop = variant(Config.Bosses.cheonmun, { name = "천겁 · 하늘의 재앙", shirt = Color3.fromRGB(40, 30, 60), pants = Color3.fromRGB(15, 10, 25), hp = 1400000, posture = 3200, scale = 5.2, speed = 15, coins = 600000, xp = 60000, respawn = 99999, mult = 4.2, raid = true,
+	patterns = {
+		P("rain", "겁화", 1, { count = 14, radius = 9, spread = 40, warn = 1.0, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(190, 80, 255), hit = hit(0, 0, 0, 46, 58, 1.0, 25) }),
+		P("donut", "재앙의 고리", 1, { inner = 12, outer = 40, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 68, 1.1, 50) }),
+		P("summon", "겁병들아!", 2, { enemy = "throneblade", count = 4, max = 8, warn = 0.9, cd = 18, pose = "w_overhead" }),
+		P("charge", "하늘 가르기", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 54, 66, 1.0, 60) }),
+		P("leap", "천붕", 2, { radius = 22, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 66, 86, 1.3, 55, 22) }),
+		P("quake", "천겁", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 96, 140, 1.7, 90, 32) }),
+	} })
+-- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
+Config.RAID = {
+	island = "raidarena",
+	boss = "cheongeop",
+	first = 240, -- 서버가 열리고 처음 내려오기까지 (초)
+	every = 900, -- 그다음부터 (15분마다)
+	warn = 25, -- 알리고 내려오기까지
+	life = 480, -- 이만큼 안에 못 쓰러뜨리면 하늘로 돌아간다
+	hpPer = 0.6, -- 사람 한 명이 늘 때마다 체력 +60%
+	minShare = 0.01, -- 체력의 1% 이상 친 사람만 보상
+	gems = 400, -- 천정 (기여 비율에 따라 0.4~1.4배)
+	coins = 250000,
+	scrolls = 2,
+	statKills = 10, -- 능력치: 내 전투력의 적 처치 몫 × 이만큼 × (0.3 + 기여)
+}
+
+-- 1.7판 구름 미궁: 천궁의 🌀 문으로 들어가는 혼자만의 미궁. 구름 다리로 이어진 일곱 방을 차례로 넘는다
+-- 앞 방을 넘어야 다음 다리의 구름 문이 걷힌다. 적의 세기는 들어간 사람의 전투력에 맞춘다
+Config.Bosses.unmugun = variant(Config.Bosses.cheonmun, { name = "운무군 · 미궁의 주인", shirt = Color3.fromRGB(200, 215, 240), pants = Color3.fromRGB(80, 95, 140), hp = 6000, posture = 900, scale = 2.6, speed = 17, coins = 0, xp = 2000, respawn = 99999,
+	patterns = {
+		P("rain", "운무우", 1, { count = 8, radius = 7, spread = 22, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 36, 44, 0.8, 25) }),
+		P("donut", "구름 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 44, 54, 1.0, 45) }),
+		P("summon", "운병들아", 2, { enemy = "cloudguard", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("charge", "안개 돌진", 2, { length = 50, width = 10, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
+		P("quake", "운해 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 96, 1.4, 70, 25) }),
+	} })
+Config.MAZE = {
+	arena = Vector3.new(1700, 1800, -1700), -- 첫 미궁 자리 (사람마다 옆으로 비켜 놓는다)
+	slotGap = 600,
+	slots = 8,
+	roomGap = 120, -- 방과 방 사이 (가운데끼리)
+	roomRadius = 36,
+	power = 0.75, -- 적 전투력 = 들어간 사람의 전투력 × 이만큼
+	bossPower = 1.15,
+	bossHp = 3,
+	killGain = 0.5, -- 미궁의 적을 쓰러뜨리면 보통 처치 몫의 절반만큼 능력치
+	trap = { every = 1.8, warn = 1.0, radius = 7, count = 3, dmg = 0.1 }, -- 함정 방: 최대 체력의 10%
+	chest = { gems = 30, coins = 20000 },
+	reward = { gems = 220, coins = 150000, scrolls = 2, statKills = 4 },
+	cooldown = 600, -- 다 넘은 보상은 10분에 한 번 (그 사이엔 상자와 처치 몫만)
+	rooms = {
+		{ kind = "wave", name = "구름 회랑", enemies = { "cloudguard", "cranesword" }, count = 4, color = Color3.fromRGB(225, 238, 255) },
+		{ kind = "trap", name = "벼락의 방", enemies = { "thunderimp", "thunderguard" }, count = 4, trap = "bolt", color = Color3.fromRGB(130, 160, 255) },
+		{ kind = "elite", name = "수호자의 방", enemies = { "throneguard", "throneblade" }, count = 2, power = 1.6, color = Color3.fromRGB(250, 225, 160) },
+		{ kind = "treasure", name = "보물방", color = Color3.fromRGB(255, 205, 90) },
+		{ kind = "wave", name = "별의 방", enemies = { "starspirit", "starsage" }, count = 5, color = Color3.fromRGB(190, 140, 255) },
+		{ kind = "trap", name = "서리의 방", enemies = { "icespirit", "frostguard" }, count = 4, trap = "ice", color = Color3.fromRGB(180, 230, 255) },
+		{ kind = "boss", name = "미궁의 주인", boss = "unmugun", color = Color3.fromRGB(150, 165, 210) },
+	},
+}
+
 ------------------------------------------------------------------------
 -- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
 ------------------------------------------------------------------------
@@ -2280,7 +2374,7 @@ Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 
 Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
 Config.LIFESTEAL_SEC_CAP = 0.04 -- 1초 동안 최대 체력의 이만큼까지 (진 혈마신수는 0.05)
 Config.LIFESTEAL_FRENZY = 1.5 -- 광란 중 흡혈 배율
-for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon" }) do
+for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon", "bingje", "yeombong", "cheongeop" }) do
 	local b = Config.Bosses[id]
 	if b then
 		b.late = true

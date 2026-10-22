@@ -3371,6 +3371,14 @@ local function skyWorld(out: any)
 	part({ Name = "PavilionRoof2", Size = Vector3.new(16, 1.2, 16), Position = pav + Vector3.new(0, 15, 0), Color = Color3.fromRGB(80, 125, 190), Material = Enum.Material.Slate, Parent = f })
 	-- 남서: 땅으로 내려가는 문
 	out.skyDown = prompt(portalGate(town + Vector3.new(-100, 0, 100), math.rad(45), Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	-- 1.7판: 광장 둘레의 세 문 (천층탑 · 구름 미궁 · 천공 투기장). 받침은 광장 쪽에
+	local function plazaGate(off: Vector3, color: Color3, label: string, action: string, title: string, name: string): ProximityPrompt
+		local yaw = math.atan2(off.X, off.Z)
+		return prompt(portalGate(town + off, yaw, color, f, label), action, title, name)
+	end
+	out.towerGate = plazaGate(Vector3.new(72, 0, 34), Color3.fromRGB(255, 190, 110), "🗼 천층탑", "탑에 오르기", "천층탑 문", "TowerGate")
+	out.mazeGate = plazaGate(Vector3.new(72, 0, -34), Color3.fromRGB(190, 230, 255), "🌀 구름 미궁", "미궁에 들어가기", "구름 미궁 문", "MazeGate")
+	out.raidGate = plazaGate(Vector3.new(-78, 0, 30), Color3.fromRGB(255, 120, 120), "⚔ 천공 투기장", "투기장으로", "천공 투기장 문", "RaidGate")
 	-- 둘레의 집들 (큰길 양옆)
 	for k = 0, 3 do
 		local base = k * math.pi / 2
@@ -3431,6 +3439,83 @@ local function skyWorld(out: any)
 		local size = rng:NextNumber(1.5, 4)
 		part({ Name = "SpaceCube", Size = Vector3.new(size, size, size), CFrame = CFrame.new(sb + Vector3.new(rng:NextNumber(-40, 40), rng:NextNumber(6, 22), rng:NextNumber(-40, 40))) * CFrame.Angles(rng:NextNumber() * 6, rng:NextNumber() * 6, 0), Color = Color3.fromRGB(70, 30, 140), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
 	end
+	-- 1.7판 빙정궁: 얼음 첨탑과 수정 숲, 얼어붙은 궁 (빙제의 자리 앞엔 얼음 단)
+	local fr = I.frost.at
+	local ICE = Color3.fromRGB(170, 225, 255)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.3
+		spire(fr + Vector3.new(math.cos(a) * 135, 0, math.sin(a) * 135), 4, 5, ICE, f)
+	end
+	for _ = 1, 22 do
+		local a, r = rng:NextNumber() * math.pi * 2, rng:NextNumber(30, 165)
+		local h = rng:NextNumber(6, 18)
+		part({ Name = "IceShard", Size = Vector3.new(h * 0.35, h, h * 0.35), CFrame = CFrame.new(fr + Vector3.new(math.cos(a) * r, h * 0.4, math.sin(a) * r)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber() * 6, rng:NextNumber(-0.3, 0.3)), Color = ICE:Lerp(Color3.new(1, 1, 1), rng:NextNumber() * 0.5), Material = Enum.Material.Ice, Transparency = 0.15, Parent = f })
+	end
+	building(fr + Vector3.new(-40, 0, 40), 34, 24, math.rad(225), f, { tiers = 2, sign = "빙정궁", h = 12, wall = Color3.fromRGB(225, 240, 255), roof = Color3.fromRGB(120, 180, 230) })
+	disc("FrostDais", fr + Vector3.new(80, 0.4, -50), 26, 0.8, Color3.fromRGB(200, 235, 255), Enum.Material.Ice, f)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		crystal(fr + Vector3.new(80 + math.cos(a) * 24, 8, -50 + math.sin(a) * 24), 3, ICE, f)
+	end
+	-- 봉황대: 검붉은 현무암, 용암 갈라짐, 불꽃 화로, 가운데 날개 편 봉황 석상
+	local ph = I.phoenix.at
+	local EMBER = Color3.fromRGB(255, 120, 40)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		part({ Name = "LavaCrack", Size = Vector3.new(1.2, 0.2, rng:NextNumber(30, 70)), CFrame = CFrame.new(ph + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -rng:NextNumber(40, 90)), Color = EMBER, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local p = ph + Vector3.new(math.cos(a) * 140, 0, math.sin(a) * 140)
+		part({ Name = "PhoenixPillar", Size = Vector3.new(5, 26, 5), Position = p + Vector3.new(0, 13, 0), Color = Color3.fromRGB(90, 30, 20), Material = Enum.Material.Basalt, Parent = f })
+		brazier(p + Vector3.new(0, 26, 0), 1.3, f)
+	end
+	-- 봉황 석상: 몸통, 목과 머리, 활짝 편 두 날개(깃털 판), 길게 늘어진 꼬리깃
+	local st = ph + Vector3.new(0, 0, 40)
+	part({ Name = "PhoenixPlinth", Size = Vector3.new(16, 4, 16), Position = st + Vector3.new(0, 2, 0), Color = Color3.fromRGB(70, 25, 18), Material = Enum.Material.Basalt, Parent = f })
+	part({ Name = "PhoenixBody", Shape = Enum.PartType.Ball, Size = Vector3.new(8, 8, 8), Position = st + Vector3.new(0, 10, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "PhoenixNeck", Size = Vector3.new(2.4, 7, 2.4), CFrame = CFrame.new(st + Vector3.new(0, 15, 2)) * CFrame.Angles(math.rad(-20), 0, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "PhoenixHead", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.4, 3.4), Position = st + Vector3.new(0, 19, 3.4), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		for k = 0, 5 do
+			local len = 14 - k * 1.4
+			part({ Name = "PhoenixFeather", Size = Vector3.new(len, 0.6, 2.4), CFrame = CFrame.new(st + Vector3.new(sx * 4, 12, 0)) * CFrame.Angles(0, 0, sx * math.rad(20 + k * 13)) * CFrame.new(sx * len / 2, 0, -k * 0.3), Color = k % 2 == 0 and EMBER or GOLD, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+	end
+	for k = 0, 4 do
+		part({ Name = "PhoenixTail", Size = Vector3.new(1.4, 0.5, 18), CFrame = CFrame.new(st + Vector3.new(0, 7, -4)) * CFrame.Angles(math.rad(25), math.rad(-30 + k * 15), 0) * CFrame.new(0, 0, -9), Color = k % 2 == 0 and EMBER or GOLD, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	light(part({ Name = "PhoenixGlow", Size = Vector3.new(1, 1, 1), Position = st + Vector3.new(0, 14, 0), Transparency = 1, CanCollide = false, Parent = f }), EMBER, 60, 3)
+	-- 천공 투기장: 둥근 결투장과 계단식 관람석, 네 기둥과 큰 징
+	local ra = I.raidarena.at
+	disc("RaidFloor", ra + Vector3.new(0, 0.2, 0), 100, 0.4, Color3.fromRGB(180, 170, 155), Enum.Material.Slate, f)
+	disc("RaidRing", ra + Vector3.new(0, 0.3, 0), 70, 0.4, Color3.fromRGB(150, 40, 45), Enum.Material.Fabric, f, false)
+	disc("RaidCore", ra + Vector3.new(0, 0.35, 0), 66, 0.4, Color3.fromRGB(195, 185, 170), Enum.Material.Slate, f, false)
+	for tier = 1, 3 do
+		local r = 110 + tier * 9
+		local n = 40
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2
+			-- 다리 쪽 (남동: 성운원으로) 은 비운다
+			local toBridge = math.atan2(I.nebula.at.Z - ra.Z, I.nebula.at.X - ra.X)
+			if math.abs((a - toBridge + math.pi) % (2 * math.pi) - math.pi) > 0.22 then
+				local p = ra + Vector3.new(math.cos(a) * r, tier * 1.5, math.sin(a) * r)
+				part({ Name = "RaidSeat", Size = Vector3.new(2 * math.pi * r / n + 0.3, tier * 3, 8), CFrame = CFrame.lookAt(p, Vector3.new(ra.X, p.Y, ra.Z)), Color = STONE:Lerp(Color3.fromRGB(120, 110, 100), tier * 0.15), Material = Enum.Material.Marble, Parent = f })
+			end
+		end
+	end
+	for k = 0, 3 do
+		local a = math.pi / 4 + k * math.pi / 2
+		local p = ra + Vector3.new(math.cos(a) * 92, 0, math.sin(a) * 92)
+		part({ Name = "RaidPillar", Size = Vector3.new(6, 40, 6), Position = p + Vector3.new(0, 20, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		brazier(p + Vector3.new(0, 40, 0), 1.6, f)
+	end
+	local gong = part({ Name = "RaidGong", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 14, 14), CFrame = CFrame.new(ra + Vector3.new(0, 14, -104)) * CFrame.Angles(0, math.rad(90), 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+	local _ = gong
+	part({ Name = "RaidGongFrame", Size = Vector3.new(20, 1.4, 1.4), Position = ra + Vector3.new(0, 22, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "RaidGongPost", Size = Vector3.new(1.4, 22, 1.4), Position = ra + Vector3.new(sx * 9.5, 11, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	end
 end
 
 local arenas: { [number]: Vector3 } = {}
@@ -3465,6 +3550,84 @@ function World.towerArena(slot: number): Vector3
 	end
 	arenas[slot] = center
 	return center
+end
+
+-- 1.7판 구름 미궁: 사람마다 한 줄. 일곱 방(둥근 구름 단)을 구름 다리로 잇고, 다리 입구마다 구름 문을 둔다
+-- 돌려주는 것: { centers = 방 가운데들, gates = 다리마다 구름 문, chest = 보물방의 상자 (T) }
+local mazes: { [number]: any } = {}
+function World.mazeRooms(slot: number): any
+	local M = Config.MAZE
+	if mazes[slot] then
+		return mazes[slot]
+	end
+	local base = M.arena + Vector3.new((slot - 1) * M.slotGap, 0, 0)
+	local f = Instance.new("Folder")
+	f.Name = "CloudMaze" .. slot
+	f.Parent = folder
+	local R = M.roomRadius
+	local out = { centers = {}, gates = {}, chest = nil :: any }
+	local n = #M.rooms
+	for i, room in ipairs(M.rooms) do
+		local c = base + Vector3.new(0, 0, (i - 1) * M.roomGap)
+		out.centers[i] = c
+		disc("MazeFloor", c - Vector3.new(0, 2, 0), R, 4, Color3.fromRGB(240, 242, 248), Enum.Material.Marble, f)
+		disc("MazeTint", c + Vector3.new(0, 0.05, 0), R * 0.62, 0.2, room.color, Enum.Material.Neon, f, false).Transparency = 0.75
+		disc("MazeTrim", c - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, room.color, Enum.Material.Metal, f)
+		disc("MazeUnder", c - Vector3.new(0, 8, 0), R * 0.7, 8, Color3.fromRGB(220, 225, 235), Enum.Material.SmoothPlastic, f)
+		-- 아래쪽 구름 뭉치
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			local size = 14 + (k % 3) * 5
+			part({ Name = "MazeCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = c + Vector3.new(math.cos(a) * R * 0.85, -9 - (k % 2) * 4, math.sin(a) * R * 0.85), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = f })
+		end
+		-- 보이지 않는 둘레 벽 (앞뒤 다리 자리는 비운다)
+		local m = 36
+		for k = 0, m - 1 do
+			local a = k / m * math.pi * 2
+			local dz = math.sin(a)
+			local toNext = i < n and dz > 0.97
+			local toPrev = i > 1 and dz < -0.97
+			if not toNext and not toPrev then
+				local p = c + Vector3.new(math.cos(a) * (R + 0.5), 7, math.sin(a) * (R + 0.5))
+				part({ Name = "MazeWall", Size = Vector3.new(2 * math.pi * R / m + 1, 14, 1), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Transparency = 1, Parent = f })
+			end
+		end
+		-- 네 귀의 빛기둥 (방의 빛깔)
+		for k = 0, 3 do
+			local a = math.pi / 4 + k * math.pi / 2
+			local p = c + Vector3.new(math.cos(a) * (R - 3), 0, math.sin(a) * (R - 3))
+			part({ Name = "MazePost", Size = Vector3.new(2, 12, 2), Position = p + Vector3.new(0, 6, 0), Color = Color3.fromRGB(245, 245, 250), Material = Enum.Material.Marble, Parent = f })
+			crystal(p + Vector3.new(0, 14, 0), 2, room.color, f)
+		end
+		if room.kind == "treasure" then
+			local chest = part({ Name = "MazeChest", Size = Vector3.new(6, 4, 4), Position = c + Vector3.new(0, 2, 0), Color = Color3.fromRGB(130, 80, 40), Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "MazeChestLid", Size = Vector3.new(6.4, 1.2, 4.4), Position = c + Vector3.new(0, 4.6, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = f })
+			light(chest, Color3.fromRGB(255, 210, 120), 20, 1.5)
+			out.chest = prompt(chest, "열기", "보물 상자", "MazeChest")
+		end
+		-- 다음 방으로 가는 구름 다리와 그 입구의 구름 문
+		if i < n then
+			local from = c + Vector3.new(0, 0, R - 2)
+			local to = c + Vector3.new(0, 0, M.roomGap - R + 2)
+			local len = (to - from).Magnitude
+			local mid = (from + to) / 2
+			part({ Name = "MazeBridge", Size = Vector3.new(12, 1, len), Position = mid - Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(235, 240, 250), Material = Enum.Material.Marble, Parent = f })
+			for _, x in ipairs({ -1, 1 }) do
+				part({ Name = "MazeBridgeWall", Size = Vector3.new(1, 10, len), Position = mid + Vector3.new(x * 6.5, 5, 0), Transparency = 1, Parent = f })
+				part({ Name = "MazeBridgeCurb", Size = Vector3.new(0.8, 1, len), Position = mid + Vector3.new(x * 5.6, 0.5, 0), Color = room.color, Material = Enum.Material.Neon, Parent = f })
+			end
+			local gate = part({ Name = "MazeGate", Size = Vector3.new(12, 14, 1.5), Position = c + Vector3.new(0, 7, R + 1), Color = Color3.fromRGB(230, 240, 255), Material = Enum.Material.ForceField, Transparency = 0.2, Parent = f })
+			out.gates[i] = gate
+		end
+	end
+	mazes[slot] = out
+	return out
+end
+
+-- 구름 문을 닫거나 (true) 걷는다 (false)
+function World.mazeGate(gate: BasePart, closed: boolean)
+	gate.CanCollide = closed
+	gate.Transparency = closed and 0.2 or 1
 end
 
 function World.build(): any
