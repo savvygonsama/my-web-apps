@@ -28,6 +28,7 @@ local SOUNDS = {
 	fall = "rbxasset://sounds/action_falling.mp3",
 	jump = "rbxasset://sounds/action_jump.mp3",
 	splash = "rbxasset://sounds/impact_water.mp3",
+	shatter = "rbxasset://sounds/glassbreak.wav",
 }
 
 function Fx.sound(name: string, volume: number?, pitch: number?, at: Vector3?)
