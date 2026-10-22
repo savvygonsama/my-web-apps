@@ -3452,7 +3452,20 @@ task.spawn(function()
 	Npc.start()
 end)
 
--- 사부를 찾았는가 (가까이 가면 찾은 것)
+-- 사부를 찾았는가 (사부가 사는 지역에 한 번 들어가면 찾은 것, 숨은 사부는 가까이 가야)
+local masterRegion: { [string]: any } = {}
+for _, r in ipairs(Config.Regions) do
+	if r.master then
+		masterRegion[r.master] = r
+	end
+end
+local function visited(pos: Vector3, id: string, m: any): boolean
+	local r = masterRegion[id]
+	if r and not m.secret and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 and pos.Y < Config.SKY.y - 200 then
+		return true
+	end
+	return (pos - m.at).Magnitude < 50
+end
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -3460,7 +3473,7 @@ task.spawn(function()
 			local f = Combat.fighterOfPlayer(player)
 			if f and not f.dead then
 				for id, m in pairs(Config.MASTERS) do
-					if not p.found[id] and (f.root.Position - m.at).Magnitude < 50 then
+					if not p.found[id] and visited(f.root.Position, id, m) then
 						p.found[id] = true
 						states[player].dirty = true
 						Push:FireClient(player, "found", { style = id, master = m.name, region = m.region })

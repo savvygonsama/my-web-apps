@@ -7293,7 +7293,20 @@ task.spawn(function()
 	Npc.start()
 end)
 
--- 사부를 찾았는가 (가까이 가면 찾은 것)
+-- 사부를 찾았는가 (사부가 사는 지역에 한 번 들어가면 찾은 것, 숨은 사부는 가까이 가야)
+local masterRegion: { [string]: any } = {}
+for _, r in ipairs(Config.Regions) do
+	if r.master then
+		masterRegion[r.master] = r
+	end
+end
+local function visited(pos: Vector3, id: string, m: any): boolean
+	local r = masterRegion[id]
+	if r and not m.secret and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 and pos.Y < Config.SKY.y - 200 then
+		return true
+	end
+	return (pos - m.at).Magnitude < 50
+end
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -7301,7 +7314,7 @@ task.spawn(function()
 			local f = Combat.fighterOfPlayer(player)
 			if f and not f.dead then
 				for id, m in pairs(Config.MASTERS) do
-					if not p.found[id] and (f.root.Position - m.at).Magnitude < 50 then
+					if not p.found[id] and visited(f.root.Position, id, m) then
 						p.found[id] = true
 						states[player].dirty = true
 						Push:FireClient(player, "found", { style = id, master = m.name, region = m.region })
@@ -24283,6 +24296,22 @@ local function powerAdvice(rec: number): string
 	return string.format("⚔ 권장 %s (내 %s · %s)", Config.formatNumber(rec), Config.formatNumber(mine), tag)
 end
 local recLabels: { [string]: TextLabel } = {}
+-- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
+local function refreshRec()
+	local mine = state and state.power or 0
+	for id, l in pairs(recLabels) do
+		local rec, boss = regionPower(id)
+		if not rec then
+			l.Text = ""
+		elseif mapBig then
+			l.Text = string.format("⚔ 권장 %s", Config.formatNumber(rec)) .. (boss and string.format(" · 👹 %s", Config.formatNumber(boss)) or "")
+		else
+			l.Text = "⚔" .. Config.formatNumber(rec)
+		end
+		local r = (rec and mine > 0) and mine / rec or 1
+		l.TextColor3 = r < 0.6 and Color3.fromRGB(255, 105, 95) or (r < 1 and Color3.fromRGB(255, 190, 90) or (r < 2.5 and Color3.fromRGB(150, 240, 130) or Color3.fromRGB(205, 205, 205)))
+	end
+end
 
 local function mapUV(p: Vector3): UDim2
 	local H = Config.WORLD_HALF
@@ -24314,6 +24343,7 @@ local function placeMap()
 			end
 		end
 	end
+	refreshRec()
 end
 
 function UI.toggleMap()
@@ -24363,25 +24393,19 @@ local function buildMap()
 			else
 				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
 			end
-			-- 권장 전투력 (큰 지도에서)
+			-- 권장 전투력 (작은 지도엔 짧게, 큰 지도엔 보스까지)
 			if not r.safe then
 				local at = r.boss and (r.center + Vector3.new(0, 0, r.size.Z / 2 - 60)) or (r.center + Vector3.new(0, 0, 45))
-				recLabels[r.id] = label(at, "", 11, Color3.fromRGB(255, 215, 130), 9, true)
+				recLabels[r.id] = label(at, "", 10, Color3.fromRGB(255, 215, 130), 9)
 			end
 		end
 	end
-	local function fillRec()
-		for id, l in pairs(recLabels) do
-			local rec, boss = regionPower(id)
-			l.Text = rec and (string.format("⚔ 권장 %s", Config.formatNumber(rec)) .. (boss and string.format(" · 👹 %s", Config.formatNumber(boss)) or "")) or ""
-		end
-	end
-	fillRec()
+	refreshRec()
 	task.spawn(function()
 		local f = game:GetService("ReplicatedStorage"):WaitForChild("KwonRegionPower", 60)
 		if f then
-			fillRec()
-			f.AttributeChanged:Connect(fillRec)
+			refreshRec()
+			f.AttributeChanged:Connect(refreshRec)
 		end
 	end)
 	-- 큰 볼거리
@@ -24632,6 +24656,7 @@ end
 
 function UI.refreshWorld(s: any)
 	refreshFound(s)
+	refreshRec()
 	refreshStory(s)
 end
 
