@@ -676,9 +676,6 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			att.model:SetAttribute("Pulse", fa.pulseN)
 		end
 		if aStyle.id == "maehwa" or aStyle.petals then
-			if t - att.stacks.petalAt > 1.2 then
-				att.stacks.petal = 0
-			end
 			att.stacks.petal = math.min(aStyle.petalMax or 20, att.stacks.petal + 1)
 			att.stacks.petalAt = t
 		elseif aStyle.chargeEvery then
@@ -952,6 +949,16 @@ function Combat.tick(dt: number)
 					local rate = f.npc and 0.04 or (inSafe(f.root.Position) and Config.REGEN_SAFE_RATE or Config.REGEN_RATE)
 					f.hp = math.min(f.maxHp, f.hp + f.maxHp * rate * dt)
 					f.model:SetAttribute("Hp", math.floor(f.hp + 0.5))
+				end
+			end
+			-- 꽃잎은 때리지 않아도 한동안 남아 있다가 (다 모이면 더 오래) 한 잎씩 진다
+			if f.stacks.petal > 0 then
+				local ps = Config.STYLE_BY_ID[f.style]
+				local full = f.stacks.petal >= ((ps and ps.petalMax) or 20)
+				if t - f.stacks.petalAt > (full and Config.PETAL_KEEP_FULL or Config.PETAL_KEEP) then
+					f.stacks.petal -= 1
+					f.stacks.petalAt = t - (full and Config.PETAL_KEEP_FULL or Config.PETAL_KEEP) + 1 / Config.PETAL_DRAIN
+					f.model:SetAttribute("Petal", f.stacks.petal)
 				end
 			end
 			local cmax = (f :: any).chiMax or Config.CHI_MAX

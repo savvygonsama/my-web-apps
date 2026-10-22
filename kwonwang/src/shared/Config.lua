@@ -1267,6 +1267,10 @@ function Config.masteryNeed(level: number): number
 end
 Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
+-- 매화·벚꽃 꽃잎: 마지막으로 때린 뒤 6초 (가득 차면 15초) 남아 있다가 1초에 3잎씩 진다
+Config.PETAL_KEEP = 6
+Config.PETAL_KEEP_FULL = 15
+Config.PETAL_DRAIN = 3
 Config.SUPER_ULT_MULT = 1.6
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
