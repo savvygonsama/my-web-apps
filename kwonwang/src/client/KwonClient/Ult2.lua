@@ -1011,43 +1011,71 @@ local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, l
 	p.Parent = holder
 	table.insert(list, p)
 end
+-- 2.2판: 토시를 새로. 팔꿈치에서 손목으로 좁아지는 쇠 토시 두 겹, 보랏빛 테두리, 바깥쪽의 번개 무늬와 번개 날개 둘,
+-- 팔꿈치 보호구, 손목의 노란 고리, 주먹 끝의 빛나는 마디 셋 (주먹을 뻗으면 앞으로 빛난다)
 function Ult2.buildGauntlets(model: Model): { Instance }
 	local out: { Instance } = {}
 	local holder = Instance.new("Folder")
 	holder.Name = "Thunder_" .. model.Name
 	holder.Parent = folder
 	table.insert(out, holder)
-	local iron = Color3.fromRGB(45, 42, 60)
-	for _, name in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
-		local arm = model:FindFirstChild(name)
+	local iron = Color3.fromRGB(52, 46, 72)
+	local gold = Color3.fromRGB(255, 245, 170)
+	for _, side in ipairs({ "Right", "Left" }) do
+		local arm = model:FindFirstChild(side .. "LowerArm")
+		local hand = model:FindFirstChild(side .. "Hand")
+		local sx = side == "Right" and 1 or -1 -- 팔의 바깥쪽
 		if arm and arm:IsA("BasePart") then
 			local sz = arm.Size
-			-- 쇠 토시: 팔뚝을 감싼 판 + 보랏빛 띠 셋 + 손목의 빛나는 고리
-			attach(part(Vector3.new(sz.X + 0.22, sz.Y * 0.8, sz.Z + 0.22), iron, Enum.Material.Metal, 0), arm, CFrame.new(0, -sz.Y * 0.05, 0), holder, out)
-			for k = -1, 1 do
-				attach(part(Vector3.new(sz.X + 0.3, 0.12, sz.Z + 0.3), VIOLET, Enum.Material.Neon, 0), arm, CFrame.new(0, k * sz.Y * 0.25, 0), holder, out)
+			-- 두 겹 쇠 토시 (팔꿈치 쪽이 더 넓다)
+			attach(part(Vector3.new(sz.X + 0.36, sz.Y * 0.46, sz.Z + 0.36), iron, Enum.Material.Metal, 0), arm, CFrame.new(0, sz.Y * 0.2, 0), holder, out)
+			attach(part(Vector3.new(sz.X + 0.26, sz.Y * 0.44, sz.Z + 0.26), iron, Enum.Material.Metal, 0), arm, CFrame.new(0, -sz.Y * 0.24, 0), holder, out)
+			-- 보랏빛 테두리 셋
+			for _, y in ipairs({ sz.Y * 0.43, -sz.Y * 0.02, -sz.Y * 0.46 }) do
+				attach(part(Vector3.new(sz.X + 0.4, 0.09, sz.Z + 0.4), VIOLET, Enum.Material.Neon, 0), arm, CFrame.new(0, y, 0), holder, out)
 			end
-			local cuff = part(Vector3.new(sz.X + 0.4, 0.22, sz.Z + 0.4), Color3.fromRGB(255, 245, 170), Enum.Material.Neon, 0)
-			attach(cuff, arm, CFrame.new(0, -sz.Y * 0.45, 0), holder, out)
-			-- 팔뚝 위로 솟은 뿔 같은 쇠 가시
-			attach(part(Vector3.new(0.18, 0.18, 0.9), iron, Enum.Material.Metal, 0), arm, CFrame.new(0, sz.Y * 0.1, sz.Z * 0.5 + 0.35) * CFrame.Angles(math.rad(-30), 0, 0), holder, out)
+			-- 바깥쪽의 번개 무늬 (금빛 갈지자)
+			local face = sx * (sz.X / 2 + 0.19)
+			local zig = { { 0.18, 20 }, { 0.0, -28 }, { -0.18, 20 } }
+			for _, zz in ipairs(zig) do
+				attach(part(Vector3.new(0.06, sz.Y * 0.2, 0.12), gold, Enum.Material.Neon, 0), arm, CFrame.new(face, zz[1] * sz.Y, 0) * CFrame.Angles(math.rad(zz[2]), 0, 0), holder, out)
+			end
+			-- 바깥쪽 번개 날개 둘 (팔꿈치 쪽으로 비스듬히 솟는다)
+			for k = 0, 1 do
+				local fin = part(Vector3.new(0.12, 0.5 - k * 0.12, 0.9 - k * 0.2), VIOLET, Enum.Material.Neon, 0.05)
+				attach(fin, arm, CFrame.new(sx * (sz.X / 2 + 0.28 + k * 0.05), sz.Y * (0.3 - k * 0.25), 0.15) * CFrame.Angles(math.rad(-35), 0, sx * math.rad(-20)), holder, out)
+			end
+			-- 팔꿈치 보호구 (둥근 쇠 + 빛나는 심)
+			attach(part(Vector3.new(0.75, 0.75, 0.75), iron, Enum.Material.Metal, 0, "ball"), arm, CFrame.new(0, sz.Y * 0.5, sz.Z * 0.35), holder, out)
+			attach(part(Vector3.new(0.32, 0.32, 0.32), VIOLET, Enum.Material.Neon, 0, "ball"), arm, CFrame.new(0, sz.Y * 0.5, sz.Z * 0.35 + 0.3), holder, out)
+			-- 손목의 노란 고리 (여기서 번개가 튄다)
+			local cuff = part(Vector3.new(sz.X + 0.44, 0.16, sz.Z + 0.44), gold, Enum.Material.Neon, 0)
+			attach(cuff, arm, CFrame.new(0, -sz.Y * 0.5 + 0.05, 0), holder, out)
 			local a = Instance.new("Attachment")
 			a.Parent = cuff
 			local e = Instance.new("ParticleEmitter")
 			e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-			e.Color = ColorSequence.new(Color3.fromRGB(255, 245, 170), VIOLET)
+			e.Color = ColorSequence.new(gold, VIOLET)
 			e.LightEmission = 1
-			e.Rate = 10
+			e.Rate = 12
 			e.Lifetime = NumberRange.new(0.15, 0.35)
 			e.Speed = NumberRange.new(3, 7)
 			e.SpreadAngle = Vector2.new(180, 180)
-			e.Size = NumberSequence.new(0.35, 0)
+			e.Size = NumberSequence.new(0.3, 0)
 			e.Parent = a
 			local l = Instance.new("PointLight")
 			l.Color = VIOLET
-			l.Range = 7
-			l.Brightness = 0.9
+			l.Range = 8
+			l.Brightness = 1
 			l.Parent = cuff
+		end
+		if hand and hand:IsA("BasePart") then
+			local hs = hand.Size
+			-- 손등을 덮는 쇠판과 주먹 끝의 빛나는 마디 셋
+			attach(part(Vector3.new(hs.X + 0.16, hs.Y * 0.5, hs.Z + 0.16), iron, Enum.Material.Metal, 0), hand, CFrame.new(0, hs.Y * 0.1, 0), holder, out)
+			for k = -1, 1 do
+				attach(part(Vector3.new(0.2, 0.14, 0.24), gold, Enum.Material.Neon, 0), hand, CFrame.new(k * hs.X * 0.3, -hs.Y / 2 - 0.02, 0), holder, out)
+			end
 		end
 	end
 	return out

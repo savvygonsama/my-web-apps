@@ -67,7 +67,7 @@ type Profile = {
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
-	statVer: number, -- 능력치 숫자의 판 (2 = 2.0판의 작은 숫자, 3 = 2.1판)
+	statVer: number, -- 능력치 숫자의 판 (없음 = 1.9판까지, 2 = 2.0판, 3 = 2.1판, 4 = 2.2판: 다시 1.9판 숫자)
 }
 
 local function defaultProfile(): Profile
@@ -103,7 +103,7 @@ local function defaultProfile(): Profile
 		rebirth = 0,
 		ach = {},
 		counts = {},
-		statVer = 3,
+		statVer = 4,
 	}
 end
 
@@ -121,16 +121,14 @@ local function sanitize(data: any): Profile
 	p.coins = math.floor(num(data.coins, 1e12))
 	if type(data.stats) == "table" then
 		-- 예전 판의 기록은 숫자의 크기가 다르다: 같은 세기의 지금 숫자로 바꾼다 (경지는 그대로)
-		-- (2.0판 전 = 큰 숫자, 2.0판 = 아주 작은 숫자, 2.1판 = 지금)
+		-- (2.0판 = 아주 작은 숫자, 2.1판 = 작은 숫자. 1.9판까지와 2.2판은 같은 숫자)
 		local ver = data.statVer
 		for _, s in ipairs(Config.Stats) do
 			local v = num(data.stats[s.id], 1e13)
-			if ver == 3 then
-				p.stats[s.id] = math.floor(v)
-			elseif ver == 2 then
-				p.stats[s.id] = Config.statFromV2(v)
+			if ver == 2 or ver == 3 then
+				p.stats[s.id] = Config.statFromVer(ver, v)
 			else
-				p.stats[s.id] = Config.statToNew(v)
+				p.stats[s.id] = math.floor(v)
 			end
 		end
 	end

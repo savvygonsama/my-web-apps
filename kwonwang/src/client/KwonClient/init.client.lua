@@ -21,6 +21,7 @@ local Drunk = require(script:WaitForChild("Drunk"))
 local Awake = require(script:WaitForChild("Awake"))
 local Reaper = require(script:WaitForChild("Reaper"))
 local Ult2 = require(script:WaitForChild("Ult2"))
+local Awake3 = require(script:WaitForChild("Awake3"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -1886,6 +1887,7 @@ function handlers.skillfx(data: any)
 		Awake.init({ shake = shake, tint = tint })
 		Reaper.init({ shake = shake, tint = tint })
 		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })
+		Awake3.init({ shake = shake })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1906,6 +1908,9 @@ function handlers.skillfx(data: any)
 		return
 	elseif Reaper.handles(data) then
 		Reaper.run(data)
+		return
+	elseif Awake3.handles(data) then
+		Awake3.run(data)
 		return
 	elseif Ult2.handles(data) then
 		Ult2.run(data)

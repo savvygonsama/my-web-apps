@@ -101,32 +101,25 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	-- 2.1판: 사경 너머의 문턱 (2.0판의 9만 ~ 50만은 너무 작았다 → 17만 ~ 1억). 경지의 세기는 그대로다
-	{ name = "생사경", need = 170000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 500000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 1450000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 4200000, color = Color3.fromRGB(255, 150, 255) },
+	-- 2.2판: 문턱은 다시 예전 (1.9판) 숫자 그대로. 대신 적이 주는 능력치를 줄였다
+	{ name = "생사경", need = 218000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 791000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 2874000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 10438000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 12000000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 35000000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 100000000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 37908000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 137674000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 500000000, color = Color3.fromRGB(255, 255, 160) },
 	-- 1.9판: 천외천 너머. 환생해야 하나씩 열린다 (환생 한 번에 한 경지)
-	{ name = "혼원경", need = 180000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
-	{ name = "무량경", need = 320000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
-	{ name = "태허경", need = 560000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
-	{ name = "권왕", need = 1000000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
+	{ name = "혼원경", need = 2500000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
+	{ name = "무량경", need = 12500000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
+	{ name = "태허경", need = 62500000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
+	{ name = "권왕", need = 312500000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
 }
 -- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
 local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000 }
 -- 2.0판의 문턱 (2.0판 기록을 2.1판 숫자로 옮길 때 쓴다)
 local V2_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 90000, 130000, 180000, 240000, 310000, 400000, 500000, 650000, 850000, 1100000, 1500000 }
-local function curNeed(): { number }
-	local t = {}
-	for i, r in ipairs(Config.Realms) do
-		t[i] = r.need
-	end
-	return t
-end
 -- 능력치 합 total(문턱표 N의 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
 local function toOldBy(N: { number }, total: number): number
 	if total <= N[9] then
@@ -144,39 +137,16 @@ local function toOldBy(N: { number }, total: number): number
 	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
 	return math.exp(math.log(OLD_NEED[n]) + slope * (total - N[n]))
 end
-local function toNewBy(N: { number }, oldTotal: number): number
-	if oldTotal <= OLD_NEED[9] then
-		return oldTotal
-	end
-	for i = 9, #N - 1 do
-		local a, b = OLD_NEED[i], OLD_NEED[i + 1]
-		if oldTotal <= b then
-			local t = (math.log(oldTotal) - math.log(a)) / (math.log(b) - math.log(a))
-			return N[i] + (N[i + 1] - N[i]) * t
-		end
-	end
-	local n = #N
-	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
-	return N[n] + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
-end
-local NOW_NEED: { number }? = nil
-local function toOld(total: number): number
-	NOW_NEED = NOW_NEED or curNeed()
-	return toOldBy(NOW_NEED :: { number }, total)
-end
--- 능력치 하나(새 숫자)의 효과를 낼 예전 숫자 (네 능력치가 고르게 오른다고 보고 합으로 셈한다)
+-- 2.1판의 문턱
+local V21_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 170000, 500000, 1450000, 4200000, 12000000, 35000000, 100000000, 180000000, 320000000, 560000000, 1000000000 }
+-- 2.2판: 문턱이 예전 숫자로 돌아와 능력치 숫자가 곧 그 효과다
 function Config.statEquiv(x: number): number
-	return toOld(x * 4) / 4
+	return x
 end
--- 예전 (1.9판까지) 기록의 능력치 하나를 지금 숫자로
-function Config.statToNew(oldX: number): number
-	NOW_NEED = NOW_NEED or curNeed()
-	return math.floor(toNewBy(NOW_NEED :: { number }, math.max(0, oldX) * 4) / 4 + 0.5)
-end
--- 2.0판 기록의 능력치 하나를 지금 숫자로 (세기는 그대로)
-function Config.statFromV2(x: number): number
-	NOW_NEED = NOW_NEED or curNeed()
-	return math.floor(toNewBy(NOW_NEED :: { number }, toOldBy(V2_NEED, math.max(0, x) * 4)) / 4 + 0.5)
+-- 2.0판 (ver 2) · 2.1판 (ver 3) 기록의 능력치 하나를 지금 (예전과 같은) 숫자로 (세기는 그대로)
+function Config.statFromVer(ver: number, x: number): number
+	local N = ver == 2 and V2_NEED or V21_NEED
+	return math.floor(toOldBy(N, math.max(0, x) * 4) / 4 + 0.5)
 end
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
@@ -233,10 +203,11 @@ end
 ------------------------------------------------------------------------
 Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
--- 2.1판: 사경 너머는 문턱이 커진 만큼 얻는 양도 크다 (처치 수는 2.0판과 같다)
+-- 2.2판: 문턱은 예전 숫자, 적이 주는 양은 2.0판 비율의 절반 (경지 하나에 처치 수 두 배: 앞 경지 서른 마리 남짓 · 천외천 삼백삼십 마리 남짓)
+-- 환생으로 열리는 경지의 적은 그 환생 배수만큼 덜 준다 (환생 배수는 다시 오르는 앞 경지를 빠르게 하는 몫)
 local GAIN_TABLE: { { number } } = {
-	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 150 }, { 905, 210 }, { 1174, 280 }, { 1508, 1200 }, { 2343, 3100 },
-	{ 3595, 8300 }, { 5460, 22000 }, { 8223, 58000 }, { 12298, 160000 }, { 18283, 420000 }, { 27041, 480000 }, { 40433, 800000 }, { 60098, 1300000 }, { 88871, 2300000 }, { 130833, 2800000 },
+	{ 100, 5 }, { 168, 9 }, { 256, 20 }, { 374, 33 }, { 516, 45 }, { 686, 75 }, { 905, 110 }, { 1174, 140 }, { 1508, 860 }, { 2343, 2700 },
+	{ 3595, 9100 }, { 5460, 30000 }, { 8223, 100000 }, { 12298, 350000 }, { 18283, 1200000 }, { 27041, 6000000 }, { 40433, 14500000 }, { 60098, 47000000 }, { 88871, 160000000 }, { 130833, 160000000 },
 }
 function Config.killGain(power: number): number
 	local p = math.max(1, power)
@@ -1357,6 +1328,83 @@ do
 	end
 end
 
+------------------------------------------------------------------------
+-- 2.2판: 각성 권법 아홉의 E·R을 모두 새 장치로 (원래 권법과도, 서로와도 겹치지 않게)
+-- 진 열화·진 창해의 오의, 초·벽력신권의 R·오의도 새로 (용 오의 셋, 소용돌이 오의 둘, 벼락 비 둘이 겹쳤다)
+------------------------------------------------------------------------
+do
+	local NEW: { [string]: { [string]: any } } = {
+		hyeolma2 = {
+			E = { id = "vhmE2", name = "혈침", desc = "손톱 끝의 피를 바늘로 날려 둘레의 적 넷에게 꽂는다. 1초 뒤 바늘이 몸속에서 터지고, 터진 만큼 체력을 빨아온다", pose = "blood_phantom", dur = 0.45, cd = 8, chi = 20,
+				mech = { kind = "bloodNeedles", n = 4, range = 30, delay = 0.2, mark = 1.0, radius = 5, heal = 0.012, hit = hit(0, 0, 0, 14, 10, 0.3, 0), burst = hit(0, 0, 0, 40, 34, 0.7, 14, 8) } },
+			R = { id = "vhmR2", name = "혈마수인", desc = "앞의 땅에서 거대한 피의 손이 솟아 둘레의 적을 움켜쥔다. 세 번 쥐어짜고, 마지막에 땅에 내리꽂는다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
+				mech = { kind = "bloodGrip", dist = 10, radius = 10, delay = 0.35, squeezes = 3, every = 0.3, hit = hit(0, 0, 0, 16, 16, 0.4, 0), squeeze = hit(0, 0, 0, 14, 16, 0.3, 0), final = hit(0, 0, 0, 52, 60, 1.0, 10, -20) } },
+		},
+		cheonryong2 = {
+			E = { id = "vcrE2", name = "용음", desc = "금룡의 울음을 앞으로 토해낸다. 부채꼴 안의 적이 멀리 날아가고 1초 동안 몸이 굳는다 (막을 수 없다)", pose = "dragon_coil", dur = 0.55, cd = 8, chi = 20,
+				mech = { kind = "dragonRoar", range = 22, angle = 80, delay = 0.22, stun = 1.0, hit = hit(0, 0, 0, 26, 40, 0.6, 70, 10, true) } },
+			R = { id = "vcrR2", name = "항룡장", desc = "금룡의 머리 모양 장력이 앞으로 길게 뻗어 나가며 닿는 적을 모두 꿰뚫고, 끝에서 터진다", pose = "dragon_rise", dur = 0.7, cd = 10, chi = 25,
+				mech = { kind = "dragonPalm", delay = 0.2, length = 34, speed = 70, width = 5, hit = hit(0, 0, 0, 34, 34, 0.6, 40), finalRadius = 10, final = hit(0, 0, 0, 40, 40, 0.8, 30, 20) } },
+		},
+		byeokryeok2 = {
+			E = { id = "vbkE2", name = "뇌인진", desc = "땅을 내리쳐 둘레 네 곳에 보랏빛 뇌인을 새긴다. 2.6초 동안 적이 밟으면 벼락이 떨어지고 (뇌인마다 두 번), 끝에 모두 터진다", pose = "thunder_hammer", dur = 0.5, cd = 9, chi = 20,
+				mech = { kind = "sigils", n = 4, dist = 9, radius = 4, dur = 2.6, every = 0.2, delay = 0.25, charges = 2, hit = hit(0, 0, 0, 22, 20, 0.6, 6), finalRadius = 7, final = hit(0, 0, 0, 30, 30, 0.7, 20, 10) } },
+			R = { id = "vbkR2", name = "섬뢰포", desc = "주먹에 뇌전을 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고, 지나간 줄이 1.2초 동안 지지직 지진다", pose = "thunder_jab", dur = 0.8, cd = 11, chi = 25,
+				mech = { kind = "railBeam", delay = 0.4, length = 40, width = 3.2, linger = 1.2, every = 0.3, hit = hit(0, 0, 0, 50, 46, 0.8, 30), tick = hit(0, 0, 0, 8, 8, 0.2, 0) } },
+		},
+		geumgang2 = {
+			E = { id = "gkE2", name = "금강종", desc = "하늘에서 금빛 큰 종이 떨어져 몸을 덮는다 (1.4초 무적). 종이 세 번 울릴 때마다 둘레를 밀어내고, 마지막 울림이 가장 크다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
+				mech = { kind = "goldenBell", dur = 1.4, rings = 3, every = 0.45, delay = 0.35, radius = 10, hit = hit(0, 0, 0, 18, 26, 0.5, 30), final = hit(0, 0, 0, 40, 50, 1.0, 50, 10) } },
+			R = { id = "gkR2", name = "항마저", desc = "금강저를 던진다. 앞으로 날아갔다가 손으로 되돌아오며, 가는 길과 오는 길에 한 번씩 친다", pose = "grav_hammer", dur = 0.7, cd = 10, chi = 25,
+				mech = { kind = "vajra", delay = 0.25, dist = 26, time = 0.45, radius = 5, hit = hit(0, 0, 0, 30, 34, 0.6, 24) } },
+		},
+		muyeong2 = {
+			E = { id = "mkE2", name = "분영", desc = "양옆에 그림자 분신 둘이 떨어져 나와, 저마다 가까운 적에게 세 번 덮쳐 찬다", pose = "shadow_heel", dur = 0.5, cd = 9, chi = 20,
+				mech = { kind = "shadowClones", side = 6, delay = 0.35, waves = 3, every = 0.35, range = 22, radius = 6, hit = hit(0, 0, 0, 20, 18, 0.5, 20, 8) } },
+			R = { id = "mkR2", name = "그림자 밟기", desc = "내 그림자만 앞으로 미끄러져 나가며 밟은 적의 그림자를 땅에 꿰맨다 (1.6초 묶임). 그림자 끝으로 몸이 옮겨 가 되돌아 걷어찬다", pose = "point_sky", dur = 0.7, cd = 11, chi = 25,
+				mech = { kind = "shadowStep", dist = 24, slide = 0.45, width = 4, pin = 1.6, hit = hit(0, 0, 0, 14, 16, 0.4, 0), final = hit(0, 0, 0, 48, 50, 1.0, 40, 16) } },
+		},
+		taeheo2 = {
+			E = { id = "tkE2", name = "회류환", desc = "물방울 셋이 3초 동안 몸을 감아 돌며 닿는 적을 친다. 끝에 물결로 퍼진다", pose = "push_palm", dur = 0.5, cd = 10, chi = 20,
+				mech = { kind = "waterOrbit", n = 3, radius = 8, dur = 3, every = 0.15, gap = 0.45, hit = hit(0, 0, 0, 12, 16, 0.3, 14), final = hit(0, 0, 0, 30, 40, 0.7, 40, 10) } },
+			R = { id = "tkR2", name = "간헐천", desc = "가까운 적 여섯의 발밑에서 차례로 뜨거운 물기둥이 솟아 하늘로 쳐올린다", pose = "water_spiral", dur = 0.8, cd = 11, chi = 25,
+				mech = { kind = "geysers", n = 6, range = 28, delay = 0.3, every = 0.14, radius = 5, hit = hit(0, 0, 0, 30, 30, 0.9, 0, 48) } },
+		},
+		yeolhwa2 = {
+			E = { id = "ykE2", name = "화륜", desc = "불의 바퀴를 앞으로 굴린다. 닿는 적을 치고, 바퀴가 지나간 길이 2초 동안 불탄다", pose = "blaze_punch", dur = 0.45, cd = 8, chi = 20,
+				mech = { kind = "fireWheel", dist = 36, time = 0.8, radius = 4.5, trail = 3, burn = 2.0, every = 0.4, hit = hit(0, 0, 0, 26, 22, 0.5, 24, 10), tick = hit(0, 0, 0, 6, 4, 0.1, 0) } },
+			R = { id = "ykR2", name = "폭염륜", desc = "솟구쳤다가 내려앉으며 둘레로 불의 고리를 퍼뜨린다. 고리가 지나가는 순간 맞는다", pose = "blaze_hammer", dur = 0.9, cd = 10, chi = 25, jump = 26,
+				mech = { kind = "flameRing", delay = 0.5, radius = 20, expand = 0.55, hit = hit(0, 0, 0, 40, 36, 0.7, 40, 14) } },
+			G = { id = "ykG2", name = "화산천붕", desc = "앞의 땅이 부풀어 오른다. 적의 발밑마다 용암이 뿜어지고, 한가운데에서 화산이 터져 불덩이 열 개가 쏟아진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
+				mech = { kind = "volcano", dist = 8, radius = 26, range = 34, delay = 0.4, vents = 8, every = 0.12, ventRadius = 6, hit = hit(0, 0, 0, 30, 30, 0.6, 10, 30), mainDelay = 0.35, mainRadius = 16, main = hit(0, 0, 0, 100, 130, 1.3, 50, 30), meteors = 10, meteorEvery = 0.13, meteorRadius = 6, meteor = hit(0, 0, 0, 26, 24, 0.5, 16, 8) } },
+		},
+		changhae2 = {
+			E = { id = "cyE2", name = "수포옥", desc = "가까운 적 셋을 물방울 감옥에 가둬 띄운다. 1.6초 동안 지지고, 끝에 펑 터진다", pose = "push_palm", dur = 0.5, cd = 9, chi = 20,
+				mech = { kind = "bubbles", n = 3, range = 26, delay = 0.25, dur = 1.6, every = 0.4, radius = 7, hit = hit(0, 0, 0, 10, 10, 0.3, 0), tick = hit(0, 0, 0, 8, 10, 0.2, 0), final = hit(0, 0, 0, 40, 40, 0.8, 30, 26) } },
+			R = { id = "cyR2", name = "해룡창", desc = "하늘에서 물의 창 일곱이 적들에게 차례로 내리꽂힌다 (적이 없으면 앞으로 한 줄)", pose = "point_sky", dur = 0.8, cd = 10, chi = 25,
+				mech = { kind = "waterSpears", count = 7, range = 30, start = 5, spacing = 4.5, delay = 0.3, every = 0.08, radius = 4.5, hit = hit(0, 0, 0, 30, 30, 0.6, 10, -8) } },
+			G = { id = "cyG2", name = "고래강림", desc = "발밑에서 거대한 물의 고래가 솟구쳐 앞으로 크게 뛰어오른다. 고래가 땅을 덮치며 떨어지는 자리의 적은 모두 짓눌린다", pose = "ult_tsunami", dur = 1.8, cd = 30, chi = 100, armor = true,
+				mech = { kind = "whaleBreach", dist = 30, delay = 0.35, flight = 1.3, launchRadius = 12, launch = hit(0, 0, 0, 40, 40, 0.8, 10, 50), radius = 20, hit = hit(0, 0, 0, 20, 20, 0.4, 10, 10), final = hit(0, 0, 0, 120, 150, 1.4, 60, 20) } },
+		},
+		pungsin2 = {
+			E = { id = "pkE2", name = "회풍", desc = "작은 회오리를 풀어 놓는다. 3초 동안 가까운 적을 쫓아다니며 들어 올리고, 끝에 흩어지며 친다", pose = "gale_spin", dur = 0.5, cd = 9, chi = 20,
+				mech = { kind = "wanderTornado", radius = 5, seek = 30, speed = 20, dur = 3, every = 0.1, gap = 0.35, hit = hit(0, 0, 0, 10, 10, 0.3, 0, 22), final = hit(0, 0, 0, 30, 30, 0.6, 30, 30) } },
+			R = { id = "pkR2", name = "풍압", desc = "솟구친 뒤 하늘의 바람을 끌어내린다. 둘레의 적을 가운데로 빨아들여 땅에 짓누른다 (1.2초 기절)", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25, jump = 30,
+				mech = { kind = "downdraft", delay = 0.55, radius = 15, stun = 1.2, hit = hit(0, 0, 0, 40, 46, 0.8, 0, -30) } },
+		},
+	}
+	for _, st in ipairs(Config.Styles) do
+		local n = NEW[st.id]
+		if n then
+			for slot, sk in pairs(n) do
+				st.skills[slot] = sk
+			end
+			st.gimmick = string.gsub(st.gimmick, "오의 화룡천멸: .*$", "오의 화산천붕: 적의 발밑마다 용암이 뿜어지고, 화산이 터져 불덩이가 쏟아진다")
+			st.gimmick = string.gsub(st.gimmick, "오의 심해강림: .*$", "오의 고래강림: 거대한 물의 고래가 솟구쳤다가 땅을 덮친다")
+		end
+	end
+end
+
 -- 모든 기술을 한 치수 크게 (장치의 반경·범위, 기술 타격의 반경), 맨 타격뿐인 E·R에는 마지막 충격파를 더한다
 Config.SKILL_SCALE = 1.25
 local RADIUS_KEYS = { radius = true, finalRadius = true, bigRadius = true, geyserRadius = true, outer = true, width = true }
@@ -1630,6 +1678,40 @@ table.insert(Config.Styles, {
 			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 8, 7, 0.3, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 24 } },
 	},
 })
+
+-- 2.2판: 초·벽력신권의 새 R·오의, 두 초 오의를 더 길게 (구천뇌정은 벼락 비 대신 하나하나 겨눠 내리꽂는 심판의 벼락)
+do
+	local NEW: { [string]: { [string]: any } } = {
+		chobyeok = {
+			R = { id = "cbR2", name = "뇌신낙", desc = "하늘로 솟았다가 벼락이 되어 가까운 적에게 내리꽂힌다. 떨어진 자리에서 네 갈래로 땅이 갈라지며 번개가 달린다", pose = "thunder_hammer", dur = 0.85, cd = 11, chi = 25, jump = 30,
+				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 44, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 26, 24, 0.6, 16, 10) } },
+			G = { id = "cbG2", name = "천뢰구", desc = "커다란 구슬 번개를 앞으로 천천히 굴린다. 2.4초 동안 둘레의 적을 번개 줄기로 끌어당기며 지지고, 끝에 크게 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
+				mech = { kind = "ballLightning", delay = 0.4, speed = 12, dur = 2.4, every = 0.2, radius = 14, pull = 18, hit = hit(0, 0, 0, 14, 12, 0.3, 0), finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.4, 60, 20) } },
+		},
+	}
+	for _, st in ipairs(Config.Styles) do
+		for slot, sk in pairs(NEW[st.id] or {}) do
+			st.skills[slot] = sk
+		end
+	end
+	for _, st in ipairs(Config.Styles) do
+		if st.id == "chohyeolma" then
+			local X = st.skills.X
+			X.mech.rain = 2.4
+			X.dur = 4.2
+			X.desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 등 뒤에서 날개 달린 우두머리 악마가 솟아 큰 낫을 휘두르고, 핏빛 초승달이 2.4초 동안 쏟아진다. 마지막에 악마의 낫이 하늘과 땅을, 화면까지 가른다"
+		elseif st.id == "chobyeok" then
+			local X = st.skills.X
+			X.mech.rain = 2.6
+			X.mech.every = 0.2
+			X.mech.n = 12
+			X.mech.radius = 7
+			X.mech.hit = hit(0, 0, 0, 30, 24, 0.5, 10)
+			X.dur = 4.2
+			X.desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 눈이 둘레의 적을 하나하나 겨누고, 2.6초 동안 겨눈 차례대로 심판의 벼락이 내리꽂힌다. 마지막에 하늘에서 땅까지 닿는 벼락 기둥"
+		end
+	end
+end
 
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
