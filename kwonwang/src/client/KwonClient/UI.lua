@@ -1804,10 +1804,9 @@ local function declutter()
 	if not mapInner then
 		return
 	end
-	local inner = mapInner.AbsoluteSize
-	if inner.X < 10 then
-		return
-	end
+	-- 지도 판의 크기 (UIScale을 곱하기 전 값: 글자 크기도 같은 단위라 그대로 견준다)
+	local side = (mapBig and MAP_BIG or MAP_SMALL) - 12
+	local inner = Vector2.new(side, side)
 	local z = viewZoom()
 	local cs = inner.X * z
 	local ox = mapCanvas.Position.X.Scale * inner.X
@@ -1969,31 +1968,38 @@ local function buildMap()
 	end
 	local dragging = false
 	local dragLast = Vector3.zero
-	mapInner.InputBegan:Connect(function(input: InputObject)
-		if mapBig and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-			dragging = true
-			dragLast = input.Position
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(input: InputObject)
-		if not mapBig then
-			return
-		end
-		if input.UserInputType == Enum.UserInputType.MouseWheel then
-			zoomBy(input.Position.Z > 0 and 1.25 or 0.8)
-		elseif dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local d = input.Position - dragLast
-			dragLast = input.Position
-			local cs = math.max(1, mapInner.AbsoluteSize.X * bigZoom)
-			bigCenter -= Vector3.new(d.X / cs * 2 * H, 0, d.Y / cs * 2 * H)
-			applyView(nil)
-			declutter()
-		end
+	-- (입력 연결이 실패해도 지도는 그대로 쓰이게)
+	pcall(function()
+		mapInner.InputBegan:Connect(function(input: InputObject)
+			if mapBig and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+				dragging = true
+				dragLast = input.Position
+			end
+		end)
+		UserInputService.InputEnded:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = false
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(input: InputObject)
+			if not mapBig then
+				return
+			end
+			if input.UserInputType == Enum.UserInputType.MouseWheel then
+				zoomBy(input.Position.Z > 0 and 1.25 or 0.8)
+			elseif dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				local d = input.Position - dragLast
+				dragLast = input.Position
+				local px = (MAP_BIG - 12)
+				pcall(function()
+					px = mapInner.AbsoluteSize.X
+				end)
+				local cs = math.max(1, px * bigZoom)
+				bigCenter -= Vector3.new(d.X / cs * 2 * H, 0, d.Y / cs * 2 * H)
+				applyView(nil)
+				declutter()
+			end
+		end)
 	end)
 	placeMap()
 end
