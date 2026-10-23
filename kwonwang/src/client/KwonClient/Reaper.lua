@@ -205,8 +205,8 @@ end)
 ------------------------------------------------------------------------
 -- 핏빛 초승달 (몸짓의 궤적): 몸 둘레에 기울어진 호를 조각으로 그린다
 ------------------------------------------------------------------------
-local function crescent(center: CFrame, radius: number, from: number, to: number, thick: number, life: number, color: Color3?)
-	local n = math.clamp(math.floor(math.abs(to - from) / 12), 6, 30)
+local function crescent(center: CFrame, radius: number, from: number, to: number, thick: number, life: number, color: Color3?, segs: number?)
+	local n = segs or math.clamp(math.floor(math.abs(to - from) / 12), 6, 30)
 	for i = 0, n - 1 do
 		local a0 = math.rad(from + (to - from) * i / n)
 		local a1 = math.rad(from + (to - from) * (i + 1) / n)
@@ -580,7 +580,7 @@ local function moonSlash(data: any)
 			local g = ground(at) + Vector3.new(0, 0.2, 0)
 			local yaw = math.random() * math.pi * 2
 			local cf = CFrame.new(at + Vector3.new(0, 1, 0)) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(0, 0, math.rad(math.random(50, 90)))
-			crescent(cf, (data.radius or 6) * 0.9, -70, 70, 0.9, 0.22, math.random() < 0.3 and PALE or RED)
+			crescent(cf, (data.radius or 6) * 0.9, -70, 70, 0.9, 0.22, math.random() < 0.3 and PALE or RED, 6)
 			local mark = part(Vector3.new(0.15, 3, 3), BLOOD, Enum.Material.Neon, 0.3, "cyl")
 			mark.CFrame = CFrame.new(g) * CFrame.Angles(0, 0, math.rad(90))
 			fadeOut(mark, 0.35, { Size = Vector3.new(0.1, 7, 7) })

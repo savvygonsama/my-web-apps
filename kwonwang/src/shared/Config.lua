@@ -1415,7 +1415,7 @@ table.insert(Config.Styles, {
 		G = { id = "cqG", name = "혈마수확", desc = "등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고, 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다", pose = "ult_reap", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "harvest", radius = 26, delay = 0.45, sweeps = 2, sweepTime = 0.55, heal = 0.01, hit = hit(0, 0, 0, 30, 30, 0.6, 20), mark = 0.6, burst = hit(0, 0, 0, 60, 80, 1.2, 40, 24) } },
 		X = { id = "cqX", name = "혈월만겸", desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 달빛을 받은 낫이 수백 개의 핏빛 초승달이 되어 둘레에 쏟아지고, 마지막에 달까지 닿는 한 줄기 낫질이 하늘과 땅을, 화면까지 가른다", pose = "reap_moon", dur = 3.2, cd = 60, chi = 150, armor = true,
-			mech = { kind = "bloodMoon", cut = 1.4, rain = 1.4, every = 0.08, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 6, 0.2, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 26 } },
+			mech = { kind = "bloodMoon", cut = 1.4, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 6, 0.2, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 26 } },
 	},
 })
 
