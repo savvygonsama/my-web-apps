@@ -1407,10 +1407,10 @@ function Skills.run(f: any, move: any, ctx: any)
 	elseif kind == "thousandArms" then
 		-- 진 금강불괴신공 천수여래: 등 뒤로 거대한 금빛 여래가 솟아 여러 팔로 적들을 차례로 내리치고, 마지막에 하늘의 손바닥이 땅을 누른다
 		local center = f.root.Position
-		local list = nearestList(f, m.range, m.strikes)
-		Push:FireAllClients("skillfx", { kind = "armsStart", m = f.model, dur = (m.delay + m.strikes * m.every + m.palmDelay + 0.6) / sp, style = style })
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + m.strikes * m.every + 0.3) / sp)
-		for i = 1, m.strikes do
+		local list = nearestList(f, m.range, m.count)
+		Push:FireAllClients("skillfx", { kind = "armsStart", m = f.model, dur = (m.delay + m.count * m.every + m.palmDelay + 0.6) / sp, style = style })
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + m.count * m.every + 0.3) / sp)
+		for i = 1, m.count do
 			after(m.delay + (i - 1) * m.every, function()
 				local tgt = list[#list > 0 and ((i - 1) % #list + 1) or 1]
 				local at = (tgt and not tgt.dead and tgt.root.Parent) and tgt.root.Position or (f.root.Position + look * (6 + i))
@@ -1420,7 +1420,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end
-		local palmAt = m.delay + m.strikes * m.every
+		local palmAt = m.delay + m.count * m.every
 		after(palmAt, function()
 			Push:FireAllClients("skillfx", { kind = "buddhaPalm", at = center, radius = m.radius, delay = m.palmDelay / sp, quakes = 2, every = 0.35 / sp, style = style })
 		end)
