@@ -354,6 +354,24 @@ function Combat.kill(f: Fighter, by: Fighter?)
 		by.chi = math.min((by :: any).chiMax or Config.CHI_MAX, by.chi + 20)
 		Combat.sync(by)
 	end
+	-- 2.0판 진 열화 업화: 불타던 적이 쓰러지면 그 자리에서 터져 둘레를 태운다
+	local fb = f :: any
+	local burner = fb.burnBy
+	if burner and (fb.burnUntil or 0) > now() and not burner.dead then
+		local bs = Combat.styleOf(burner)
+		local bb = bs and bs.burnBurst
+		if bb then
+			local at = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "ignite", at = at, radius = bb.radius, style = burner.style })
+			task.defer(function()
+				for _, other in pairs(Combat.fighters) do
+					if other ~= f and Combat.hostile(burner, other) and not other.dead and (other.root.Position - at).Magnitude <= bb.radius then
+						Combat.applyHit(burner, other, { dmg = bb.dmg, posture = bb.posture, stun = 0.5, kb = 26, up = 10 }, { chain = true, isSkill = true, move = { name = "업화 폭렬" } })
+					end
+				end
+			end)
+		end
+	end
 	if hooks.onKill then
 		hooks.onKill(f, by)
 	end

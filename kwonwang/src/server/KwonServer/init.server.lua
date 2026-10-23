@@ -2929,6 +2929,11 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		for i = Config.GATE.from, Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth)) do
 			p.gates[tostring(i)] = true
 		end
+	elseif action == "testAwakenTp" then
+		if f then
+			f.root.CFrame = CFrame.new(Config.AWAKEN_MASTER.at + Vector3.new(0, 4, 18))
+			toast(player, "🔥 " .. Config.AWAKEN_MASTER.name .. " (상급 수련장)")
+		end
 	elseif action == "testRebirthReady" then
 		-- 테스트: 지금 열린 끝 경지까지 능력치를 채우고 관문도 넘긴다 (바로 환생할 수 있게)
 		local cap = Config.realmCap(p.rebirth)
@@ -3478,7 +3483,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 		local A = Config.AWAKEN_STYLE
 		local f0 = Combat.fighterOfPlayer(player)
-		if Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
+		local AM = Config.AWAKEN_MASTER
+		local far = AM and f0 and Vector3.new(f0.root.Position.X - AM.at.X, 0, f0.root.Position.Z - AM.at.Z).Magnitude > AM.range
+		if far and not st.tester then
+			toast(player, string.format("🔥 각성은 상급 수련장의 %s 곁에서만 할 수 있어요", AM.name))
+		elseif Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
 			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
 		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
 			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
@@ -3526,6 +3535,14 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 end)
 
 -- 월드의 T 누르기
+-- 2.0판 각성선인: 권법 창을 열어 각성할 권법을 고르게 한다
+if W.awaken then
+	W.awaken.Triggered:Connect(function(player: Player)
+		local AM = Config.AWAKEN_MASTER
+		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "「" .. AM.quote .. "」", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
+		Push:FireClient(player, "open", { page = "styles" })
+	end)
+end
 if W.shop then
 	W.shop.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "shop" })

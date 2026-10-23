@@ -3477,6 +3477,100 @@ local function reaperAltar()
 	part({ Name = "ReaperSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 27), Color = Color3.fromRGB(40, 20, 20), Material = Enum.Material.Wood, Parent = f })
 end
 
+-- 2.0판: 초·벽력신권의 사부 뇌천선이 있는 쇠기둥 봉우리 (뇌운 고원 동쪽 벼랑 끝, 지도에 나오지 않는다)
+-- 바위 봉우리 위 둥근 쇠 단, 둘레에 피뢰침 쇠기둥, 가운데 높은 쇠탑 꼭대기에서 보랏빛 번개가 늘 튄다
+local function thunderPeak()
+	local at = Config.THUNDER_PEAK
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "ThunderPeak"
+	f.Parent = folder
+	local rock = Color3.fromRGB(80, 78, 92)
+	local iron = Color3.fromRGB(55, 58, 70)
+	local bolt = Color3.fromRGB(170, 140, 255)
+	-- 층진 바위 봉우리
+	for k = 0, 2 do
+		disc("PeakRock", at + Vector3.new(0, 1 + k * 2, 0), 22 - k * 5, 2.2, rock:Lerp(Color3.new(0, 0, 0), k * 0.08), Enum.Material.Slate, f)
+	end
+	disc("PeakPlate", at + Vector3.new(0, 6.2, 0), 9, 0.4, iron, Enum.Material.DiamondPlate, f)
+	disc("PeakRune", at + Vector3.new(0, 6.45, 0), 7, 0.1, bolt, Enum.Material.Neon, f, false).Transparency = 0.4
+	-- 오르는 돌계단 (남쪽)
+	for k = 0, 5 do
+		part({ Name = "PeakStep", Size = Vector3.new(6, 1, 2.4), Position = at + Vector3.new(0, 0.5 + k * 1.05, 23 - k * 2.4), Color = rock, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 피뢰침 쇠기둥 여섯 (꼭대기에 빛)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.3
+		if math.abs(a - math.pi / 2) > 0.35 then
+			local p = at + Vector3.new(math.cos(a) * 15, 0, math.sin(a) * 15)
+			local h = 14 + (k % 2) * 4
+			part({ Name = "PeakRod", Size = Vector3.new(0.9, h, 0.9), Position = p + Vector3.new(0, 4 + h / 2, 0), Color = iron, Material = Enum.Material.Metal, Parent = f })
+			local tip = part({ Name = "PeakSpark", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1.2, 1.2), Position = p + Vector3.new(0, 4.6 + h, 0), Color = bolt, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(tip, bolt, 16, 1.4)
+		end
+	end
+	-- 가운데 쇠탑 (뒤쪽)
+	local tower = at + Vector3.new(0, 0, -6)
+	for k = 0, 3 do
+		part({ Name = "PeakTower", Size = Vector3.new(2.6 - k * 0.5, 7, 2.6 - k * 0.5), Position = tower + Vector3.new(0, 9.5 + k * 7, 0), Color = iron, Material = Enum.Material.Metal, Parent = f })
+	end
+	local orb = part({ Name = "PeakOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.4, 3.4), Position = tower + Vector3.new(0, 38, 0), Color = bolt, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	orb.Transparency = 0.1
+	light(orb, bolt, 40, 2)
+	local board = part({ Name = "PeakSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 26), at + Vector3.new(0, 4.5, 50)), Color = Color3.fromRGB(30, 28, 40), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "쇠기둥 봉우리", Color3.fromRGB(210, 190, 255), 1 } })
+	part({ Name = "PeakSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 26), Color = iron, Material = Enum.Material.Metal, Parent = f })
+end
+
+-- 2.0판: 각성 사부 각성선인의 자리 (상급 수련장 안). 연꽃 단 위에 앉은 금빛 노인, 둘레에 진 권법들의 깃발
+local function awakenAltar(out: any)
+	local A = Config.AWAKEN_MASTER
+	if not A then
+		return
+	end
+	local at = A.at
+	local f = Instance.new("Folder")
+	f.Name = "AwakenAltar"
+	f.Parent = folder
+	local stone = Color3.fromRGB(170, 160, 140)
+	local gold = Color3.fromRGB(255, 200, 90)
+	disc("AwakenBase", at + Vector3.new(0, 0.6, 0), 14, 1.2, stone, Enum.Material.Marble, f)
+	disc("AwakenRing", at + Vector3.new(0, 1.25, 0), 11, 0.1, Color3.fromRGB(255, 120, 140), Enum.Material.Neon, f, false).Transparency = 0.45
+	-- 연꽃 단 (꽃잎 열둘)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		part({ Name = "AwakenPetal", Size = Vector3.new(2.2, 0.6, 3.6), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 3.4, 1.6, math.sin(a) * 3.4)) * CFrame.Angles(0, -a + math.pi / 2, math.rad(-20)), Color = Color3.fromRGB(255, 170, 190), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+	-- 앉은 금빛 노인 (조각): 몸 · 머리 · 무릎 · 합장한 두 손
+	local body = part({ Name = "AwakenSage", Size = Vector3.new(3, 3.4, 2), Position = at + Vector3.new(0, 3.8, 0), Color = gold, Material = Enum.Material.Foil, Parent = f })
+	part({ Name = "AwakenSage", Shape = Enum.PartType.Ball, Size = Vector3.new(1.9, 1.9, 1.9), Position = at + Vector3.new(0, 6.4, 0), Color = gold, Material = Enum.Material.Foil, Parent = f })
+	part({ Name = "AwakenSage", Size = Vector3.new(4.4, 1.2, 3), Position = at + Vector3.new(0, 2.3, -0.6), Color = gold, Material = Enum.Material.Foil, Parent = f })
+	part({ Name = "AwakenSage", Size = Vector3.new(0.8, 1.6, 0.6), Position = at + Vector3.new(0, 4.4, -1.3), Color = gold, Material = Enum.Material.Foil, Parent = f })
+	local halo = part({ Name = "AwakenHalo", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 5, 5), CFrame = CFrame.new(at + Vector3.new(0, 6.6, 1.2)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(255, 235, 170), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	halo.Transparency = 0.35
+	light(halo, Color3.fromRGB(255, 220, 150), 24, 1.2)
+	-- 진 권법들의 깃발 (각성 권법 빛깔로)
+	local n = 0
+	for _, st in ipairs(Config.Styles) do
+		if st.awakenOf then
+			n += 1
+		end
+	end
+	local k = 0
+	for _, st in ipairs(Config.Styles) do
+		if st.awakenOf then
+			local a = k / math.max(1, n) * math.pi * 2
+			banner(at + Vector3.new(math.cos(a) * 12, 0, math.sin(a) * 12), 9, st.color, f)
+			k += 1
+		end
+	end
+	local board = part({ Name = "AwakenSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 16), at + Vector3.new(0, 4.5, 40)), Color = Color3.fromRGB(40, 28, 20), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "각성선인", Color3.fromRGB(255, 220, 140), 1 } })
+	out.awaken = prompt(body, "각성", A.name, "Awaken")
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -4000,6 +4094,10 @@ function World.build(): any
 		{ "벚꽃 언덕", sakuraHill },
 		{ "술독 마루", sojuHill },
 		{ "혈월 제단", reaperAltar },
+		{ "쇠기둥 봉우리", thunderPeak },
+		{ "각성선인", function()
+			awakenAltar(out)
+		end },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

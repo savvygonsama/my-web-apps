@@ -1221,6 +1221,123 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 2.0판: 새 각성 권법 셋 (열화·창해·풍신). 1.9판의 셋처럼 기술과 고유 장치를 새로 짰다. 각성 사부에게서 각성한다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "yeolhwa2", name = "진 열화신권", hanja = "眞烈火神拳", icon = "🔥", grade = "신화",
+	color = Color3.fromRGB(255, 70, 20), color2 = Color3.fromRGB(255, 235, 150), fx = "fire",
+	awakenOf = "yeolhwa", hidden = true, rebirthReq = 1,
+	unlockHint = "열화신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 꺼지지 않는 업화가 깨어났다. 불은 맞은 자를 태우는 것으로 끝나지 않는다. 쓰러지는 순간 터져 곁의 모두를 삼킨다.",
+	gimmick = "업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고, 떨어진 자리가 용암이 되어 터진다",
+	deflect = 0.2, speed = 1.05,
+	burn = { dur = 4, every = 0.5, dmg = 8 },
+	burnBurst = { radius = 11, dmg = 26, posture = 30 },
+	stance = "stance_fire",
+	combo = {
+		{ id = "yk1", name = "업화장", pose = "fire_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+		{ id = "yk2", name = "화염쌍조", pose = "fire_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+		{ id = "yk3", name = "염륜선풍", pose = "flame_wheel", dur = 0.44, lunge = 2, hits = { hit(0.16, 5, 6.5, 9, 9, 0.35, 10, 6, true), hit(0.3, 5, 6.5, 9, 9, 0.35, 12, 8, true) } },
+		{ id = "yk4", name = "멸화권", pose = "blaze_punch", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
+	},
+	heavy = { id = "ykH", name = "업화폭추", pose = "blaze_hammer", dur = 0.72, lunge = 3, hits = { hit(0.36, 8, 7, 34, 46, 0.85, 50, 8, true) }, ignite = { radius = 14, dmg = 40, posture = 40 } },
+	skills = {
+		E = { id = "ykE", name = "염룡질주", desc = "불길이 되어 앞으로 꿰뚫고 지나간다 (무적). 지나간 길이 한 박자 뒤 불기둥으로 터진다", pose = "flame_dash", dur = 0.45, cd = 7, chi = 15, lunge = 26, iframes = 0.42,
+			hits = { hit(0.15, 6, 5, 16, 14, 0.4, 16) },
+			mech = { kind = "trail", delay = 0.45, count = 6, radius = 7, hit = hit(0, 0, 0, 22, 18, 0.5, 10, 14), fx = "fire" } },
+		R = { id = "ykR", name = "화산주", desc = "땅을 내리쳐 앞으로 불기둥 여덟을 차례로 세운다", pose = "blaze_hammer", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "line", count = 8, start = 4, spacing = 4.4, step = 0.06, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 24, 22, 0.6, 14, 24), fx = "fire" } },
+		G = { id = "ykG", name = "화룡천멸", desc = "몸에서 불의 용이 솟아 하늘을 한 바퀴 돌고, 적들에게 네 번 내리꽂힌다. 마지막에 떨어진 자리가 용암이 되어 세 번 터진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "fireDragon", n = 1, ringRadius = 8, rise = 1.1, riseHit = hit(0, 0, 0, 24, 24, 0.6, 10, 26), range = 40, dives = 4, every = 0.34, diveRadius = 11, hit = hit(0, 0, 0, 44, 40, 0.8, 20, 10), finalRadius = 18, final = hit(0, 0, 0, 90, 110, 1.3, 50, 22), lava = 3, lavaHit = hit(0, 0, 0, 22, 24, 0.5, 10, 16) } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "changhae2", name = "진 창해신권", hanja = "眞滄海神拳", icon = "🐋", grade = "신화",
+	color = Color3.fromRGB(20, 90, 210), color2 = Color3.fromRGB(190, 240, 255), fx = "ocean",
+	awakenOf = "changhae", hidden = true, rebirthReq = 1,
+	unlockHint = "창해신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 깊은 바다가 깨어났다. 파도는 더 자주, 더 깊이 밀려온다. 바다의 바닥은 아무도 본 적이 없다.",
+	gimmick = "심해: 세 번 맞힐 때마다 상대 자리에서 큰 물기둥이 솟는다 (더 넓고 세다). 밀어냄 1.4배. 오의 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고, 거대한 물기둥이 하늘로 쳐올린다",
+	deflect = 0.24, kbMult = 1.4,
+	pulse = { every = 3, kind = "tide", radius = 14, delay = 0.25, name = "심해 파도", dmg = 30, posture = 30, stun = 0.6, kb = 38, up = 18 },
+	stance = "stance_ocean",
+	combo = {
+		{ id = "cy1", name = "심해장", pose = "wave_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 11, 10, 0.35, 12) } },
+		{ id = "cy2", name = "역류장", pose = "wave_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 11, 10, 0.35, 12) } },
+		{ id = "cy3", name = "와류각", pose = "whirl_kick", dur = 0.42, lunge = 2, hits = { hit(0.22, 0, 8, 13, 14, 0.4, 18, nil, true) } },
+		{ id = "cy4", name = "대해권", pose = "tidal_punch", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 22, 26, 0.6, 46) } },
+	},
+	heavy = { id = "cyH", name = "해룡노도", pose = "billow_strike", dur = 0.7, lunge = 3, hits = { hit(0.36, 10, 7, 32, 46, 0.85, 80, 10) } },
+	skills = {
+		E = { id = "cyE", name = "해류보", desc = "물살을 타고 미끄러져 꿰뚫는다 (무적). 지나간 길에 물기둥이 솟는다", pose = "surf_dash", dur = 0.5, cd = 7, chi = 15, lunge = 28, iframes = 0.44,
+			hits = { hit(0.15, 6, 5, 16, 16, 0.45, 26) },
+			mech = { kind = "trail", delay = 0.5, count = 6, radius = 7, hit = hit(0, 0, 0, 20, 20, 0.5, 24, 16), fx = "tide" } },
+		R = { id = "cyR", name = "해일용권", desc = "발밑에서 물기둥이 솟아 둘레의 적을 하늘로 띄우고, 물줄기가 내리꽂힌다", pose = "wall_raise", dur = 0.9, cd = 11, chi = 25,
+			mech = { kind = "launch", delay = 0.3, radius = 15, up = 64, stun = 1.4, hitAt = 0.55, hit = hit(0, 0, 0, 34, 34, 0.8, 0, -12) } },
+		G = { id = "cyG", name = "심해강림", desc = "앞의 땅이 깊은 바다가 된다. 1.8초 동안 적이 가라앉아 움직이지 못하고, 마지막에 한가운데서 거대한 물기둥이 솟아 모두 하늘로 쳐올린다", pose = "ult_tsunami", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "abyss", radius = 24, dist = 6, dur = 1.8, every = 0.3, delay = 0.4, hit = hit(0, 0, 0, 10, 14, 0.3, 0), final = hit(0, 0, 0, 120, 150, 1.4, 20, 70) } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "pungsin2", name = "진 풍신각", hanja = "眞風神脚", icon = "🌀", grade = "신화",
+	color = Color3.fromRGB(90, 240, 190), color2 = Color3.fromRGB(235, 255, 248), fx = "wind",
+	awakenOf = "pungsin", hidden = true, rebirthReq = 1,
+	unlockHint = "풍신각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바람이 된 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 바람의 칼이 깨어났다. 발끝이 지나간 자리마다 칼날이 남고, 그 칼날이 모여 하늘까지 닿는 회오리가 된다.",
+	gimmick = "칼바람: 대시 두 번, 대시 대기 0.4초, 밀어냄 1.5배, 더 빠르다. 오의 천풍만검: 바람의 칼날 열둘이 몸을 돌다가 사방으로 쏘아지고, 거대한 회오리가 모두 들어 올린다",
+	deflect = 0.22, dashCd = 0.4, dashCharges = 2, speed = 1.15, kbMult = 1.5,
+	stance = "stance_gale",
+	combo = {
+		{ id = "pk1", name = "풍인각", pose = "gale_snap", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 4.5, 9, 8, 0.3, 12) } },
+		{ id = "pk2", name = "회선풍각", pose = "gale_hook", dur = 0.34, lunge = 2, hits = { hit(0.16, 6, 5, 10, 9, 0.35, 14) } },
+		{ id = "pk3", name = "쌍풍비각", pose = "gale_double", dur = 0.42, lunge = 3, hits = { hit(0.14, 6, 4.5, 8, 7, 0.3, 8, 10), hit(0.28, 6, 5, 10, 9, 0.35, 12, 14) } },
+		{ id = "pk4", name = "대선풍", pose = "gale_cyclone", dur = 0.5, lunge = 2, hits = { hit(0.24, 0, 9, 16, 18, 0.5, 36, nil, true) } },
+	},
+	heavy = { id = "pkH", name = "천풍인", pose = "gale_blast", dur = 0.6, lunge = 0, proj = { speed = 120, life = 0.55, radius = 6, dmg = 26, posture = 26, stun = 0.6, kb = 46 } },
+	skills = {
+		E = { id = "pkE", name = "질풍만보", desc = "바람처럼 꿰뚫고 지나간다 (무적). 지나간 길의 바람 칼날이 한 박자 뒤 베어 낸다", pose = "gale_dash", dur = 0.45, cd = 6, chi = 15, lunge = 28, iframes = 0.42,
+			hits = { hit(0.15, 6, 4.5, 14, 12, 0.4, 22) },
+			mech = { kind = "trail", delay = 0.4, count = 5, radius = 7, hit = hit(0, 0, 0, 18, 14, 0.4, 18, 10) } },
+		R = { id = "pkR", name = "칼바람 회오리", desc = "앞에 칼바람 회오리를 2.5초 세운다. 둘레의 적을 빨아들이며 계속 벤다", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25,
+			mech = { kind = "zone", dist = 9, radius = 13, dur = 2.5, every = 0.25, delay = 0.3, pull = 30, hit = hit(0, 0, 0, 7, 9, 0.3, 0), fx = "wind" } },
+		G = { id = "pkG", name = "천풍만검", desc = "바람의 칼날 열둘이 몸을 감아 돌며 둘레를 베고, 사방으로 쏘아진다. 마지막에 앞에서 하늘까지 닿는 회오리가 모두 들어 올려 내던진다", pose = "ult_gale", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "galeBlades", blades = 12, orbit = 9, spin = 1.2, every = 0.2, delay = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 6), range = 24, shoot = hit(0, 0, 0, 34, 30, 0.6, 30, 10), finalRadius = 16, final = hit(0, 0, 0, 90, 110, 1.3, 40, 60) } },
+	},
+})
+
+------------------------------------------------------------------------
+-- 2.0판: 각성 오의 여섯을 새로 (원래 오의를 키운 것이 아니라, 전혀 다른 장치로)
+------------------------------------------------------------------------
+do
+	local NEW_G: { [string]: any } = {
+		hyeolma2 = { id = "vhmG", name = "혈해만마", desc = "발밑이 피의 바다가 된다. 피에서 마수의 손톱이 열두 번 솟아 적들을 찢고 (찢을 때마다 체력이 돌아온다), 마지막에 바다가 핏빛 소용돌이 기둥으로 솟아 터진다. 그 뒤 10초 광란", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 10 },
+			mech = { kind = "bloodSea", radius = 26, delay = 0.45, claws = 12, every = 0.18, clawRadius = 7, heal = 0.006, hit = hit(0, 0, 0, 26, 24, 0.6, 10, 18), final = hit(0, 0, 0, 110, 140, 1.4, 50, 30) } },
+		cheonryong2 = { id = "vcrG", name = "구룡승천", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른다. 하늘을 돈 용들이 적들에게 하나씩 내리꽂히고, 마지막에 한가운데로 모여 터진다", pose = "ult_dragon", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "nineDragons", n = 9, ringRadius = 14, rise = 1.1, riseHit = hit(0, 0, 0, 24, 24, 0.6, 10, 30), range = 40, dives = 9, every = 0.13, diveRadius = 8, hit = hit(0, 0, 0, 30, 28, 0.7, 20, -6), finalRadius = 22, final = hit(0, 0, 0, 100, 130, 1.4, 60, 24) } },
+		byeokryeok2 = { id = "vbkG", name = "뇌정천망", desc = "둘레의 적 열을 보랏빛 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고, 마지막에 적마다 천뢰가 떨어진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "thunderNet", range = 34, n = 10, delay = 0.4, pulses = 5, every = 0.36, hit = hit(0, 0, 0, 16, 16, 0.4, 0), finalRadius = 8, final = hit(0, 0, 0, 70, 90, 1.2, 30, 20) } },
+		geumgang2 = { id = "gkG", name = "천수여래", desc = "등 뒤로 팔이 여럿 달린 거대한 금빛 여래가 솟아 적들을 차례로 여덟 번 내리친다. 마지막에 하늘이 갈라지며 산만 한 손바닥이 땅을 누른다", pose = "ult_buddha", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "thousandArms", range = 34, strikes = 8, delay = 0.7, every = 0.2, armRadius = 8, hit = hit(0, 0, 0, 28, 34, 0.7, 20, -8), radius = 26, palmDelay = 0.9, final = hit(0, 0, 0, 110, 150, 1.6, 10, -10) } },
+		muyeong2 = { id = "mkG", name = "무영천살", desc = "세상이 어두워지고 몸이 사라진다. 적들의 몸에 붉은 표식이 하나씩 새겨지고, 빛이 돌아오는 순간 모두 한꺼번에 터진다. 마지막에 하늘에서 그림자의 발이 짓밟는다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "shadowKill", range = 36, n = 10, delay = 0.4, every = 0.12, hold = 0.5, hit = hit(0, 0, 0, 60, 60, 1.0, 20, 30), finalRadius = 20, final = hit(0, 0, 0, 80, 110, 1.3, 40, -10) } },
+		taeheo2 = { id = "tkG", name = "창해만류", desc = "발밑에 거대한 소용돌이가 일어 적들을 가운데로 빨아들인다. 둘레에 물의 벽이 높이 솟았다가, 마지막에 안쪽으로 한꺼번에 무너져 내린다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "maelstrom", radius = 24, dur = 2.4, every = 0.24, delay = 0.3, pull = 34, hit = hit(0, 0, 0, 8, 12, 0.3, 0), final = hit(0, 0, 0, 110, 140, 1.4, 60, 30) } },
+	}
+	for _, st in ipairs(Config.Styles) do
+		local g = NEW_G[st.id]
+		if g then
+			st.skills.G = g
+			st.gimmick = string.gsub(st.gimmick, "진 혈마강림: .*$", "진 오의 혈해만마: 피의 바다에서 마수의 손톱이 열두 번 솟는다")
+			st.gimmick = string.gsub(st.gimmick, "진 진룡강림: .*$", "진 오의 구룡승천: 금룡 아홉이 솟아 하늘을 돌고 내리꽂힌다")
+			st.gimmick = string.gsub(st.gimmick, "진 뇌신화: .*$", "진 오의 뇌정천망: 번개 그물이 적들을 모두 잇는다")
+			st.gimmick = string.gsub(st.gimmick, "오의 만불조종: .*$", "오의 천수여래: 팔이 여럿 달린 금빛 여래가 내리치고 하늘의 손바닥이 누른다")
+			st.gimmick = string.gsub(st.gimmick, "오의 백귀야행: .*$", "오의 무영천살: 어둠 속에서 적마다 표식이 새겨지고 한꺼번에 터진다")
+			st.gimmick = string.gsub(st.gimmick, "오의 천하수류: .*$", "오의 창해만류: 소용돌이가 빨아들이고 물의 벽이 무너진다")
+		end
+	end
+end
+
 -- 모든 기술을 한 치수 크게 (장치의 반경·범위, 기술 타격의 반경), 맨 타격뿐인 E·R에는 마지막 충격파를 더한다
 Config.SKILL_SCALE = 1.25
 local RADIUS_KEYS = { radius = true, finalRadius = true, bigRadius = true, geyserRadius = true, outer = true, width = true }
@@ -1450,6 +1567,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 2.0판 초·벽력신권: 두 팔에 뇌전을 두른 토시. 맞힐 때마다 전하, 세 번이면 연쇄 천뢰. 초 오의는 하늘의 천둥 눈
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chobyeok",
+	name = "초·벽력신권",
+	hanja = "超霹靂神拳",
+	icon = "⚡",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(150, 120, 255),
+	color2 = Color3.fromRGB(255, 245, 170),
+	fx = "lightning",
+	gauntlets = true, -- 두 팔에 뇌전 토시 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "byeokryeok",
+	trialHp = 10,
+	unlockHint = "벽력신권을 익히고 천외천에 오른 자만이, 뇌운 고원 동쪽 벼랑 끝 쇠기둥 봉우리의 뇌천선을 만난다",
+	desc = "벽력신권을 넘어선 권법. 두 팔에 두른 토시에 하늘의 번개가 깃들었다. 주먹은 소리보다 빠르고, 세 번째 주먹마다 하늘이 대답한다.",
+	gimmick = "천뢰: 세 번 맞힐 때마다 둘레로 연쇄 천뢰가 튄다 (더 넓고 세다). 몸이 가볍다 (동작 ×1.25). 오의 위에 초 오의(X)가 있다",
+	deflect = 0.24,
+	chargeEvery = 3, chainDmg = 26, chainRange = 24,
+	speed = 1.25,
+	stance = "stance_byeokryeok",
+	combo = {
+		{ id = "cb1", name = "뇌섬", pose = "thunder_jab", dur = 0.26, lunge = 4, hits = { hit(0.1, 6, 4.5, 10, 9, 0.35, 8) } },
+		{ id = "cb2", name = "쌍뢰", pose = "thunder_cross", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 9, 0.35, 8) } },
+		{ id = "cb3", name = "뇌명선풍", pose = "roundhouse", dur = 0.38, lunge = 2, hits = { hit(0.18, 5, 6.5, 12, 11, 0.4, 14, nil, true) } },
+		{ id = "cb4", name = "벽력천추", pose = "thunder_hammer", dur = 0.46, lunge = 4, hits = { hit(0.22, 7, 6.5, 20, 22, 0.6, 30, 10, true) } },
+	},
+	heavy = { id = "cbH", name = "뇌광일섬", pose = "lightning_dash", dur = 0.5, lunge = 22, iframes = 0.25, hits = { hit(0.2, 7, 6, 26, 26, 0.6, 36, nil, true) } },
+	skills = {
+		E = { id = "cbE", name = "뇌전쇄", desc = "손을 뻗어 둘레의 적 여섯에게 차례로 벼락을 꽂는다 (마비)", pose = "point_sky", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 24, 20, 1.0, 6), fx = "lightning" } },
+		R = { id = "cbR", name = "뇌운", desc = "머리 위로 먹구름을 부른다. 2.4초 동안 둘레의 적에게 번개가 떨어지고, 마지막에 큰 벼락이 내리친다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
+			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 12, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 50, 60, 1.0, 30, 12) } },
+		G = { id = "cbG", name = "뇌룡승천", desc = "몸에서 번개의 용이 솟아 하늘을 감아 돌고, 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
+			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 22, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 36, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 100, 120, 1.4, 50, 22) } },
+		X = { id = "cbX", name = "구천뇌정", desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고, 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다", pose = "ult_thunder", dur = 3.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 8, 7, 0.3, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 24 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1505,6 +1667,10 @@ local FINISHERS = {
 	muyeong2 = { name = "귀영승천각", pose = "back_spin_kick" },
 	taeheo2 = { name = "유수승천장", pose = "double_palm" },
 	chohyeolma = { name = "혈겸승천", pose = "reap_rise" },
+	yeolhwa2 = { name = "업화승천권", pose = "blaze_punch" },
+	changhae2 = { name = "심해승천장", pose = "tidal_punch" },
+	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
+	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -2515,6 +2681,13 @@ Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.n
 Config.REAPER_ALTAR = Vector3.new(2080, 0, -2080)
 Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vector3.new(0, 3.3, 0), region = "혈교 본산 밖 (혈월 제단)", regionId = "cult", secret = true,
 	quote = "피는 흘리라고 있는 것이다. 남의 것이든, 내 것이든.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
+
+-- 2.0판 초·벽력신권의 사부: 뇌운 고원 동쪽 벼랑 끝, 쇠기둥 봉우리의 뇌천선 (지도에 나오지 않는다)
+Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
+Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
+	quote = "번개는 두 번 치지 않는다고? 나는 세 번 친다.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+-- 2.0판 각성 사부: 모든 각성 권법(진)은 상급 수련장의 각성선인에게서만 각성할 수 있다 (가까이 가야 한다)
+Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }

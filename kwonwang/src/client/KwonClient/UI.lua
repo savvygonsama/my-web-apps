@@ -659,7 +659,7 @@ local function buildStyles()
 			if sd.awakenOf == id and owned then
 				local A = Config.AWAKEN_STYLE
 				table.insert(lines, "")
-				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (어디서나)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (각성선인 곁에서)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
 			end
 		end
 		dBody.Text = table.concat(lines, "\n")
@@ -1399,6 +1399,11 @@ local function buildTest()
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
+	section("⚡ 2.0판: 새 각성·초·벽력신권·각성선인", {
+		{ "🔥 진 열화신권 바로 쓰기", "testStyle", "yeolhwa2" }, { "🐋 진 창해신권 바로 쓰기", "testStyle", "changhae2" }, { "🌀 진 풍신각 바로 쓰기", "testStyle", "pungsin2" },
+		{ "⚡ 초·벽력신권 바로 쓰기 (초월)", "testStyle", "chobyeok" }, { "⚡ 뇌천선에게 (초월의 시련)", "testSecretMaster", "chobyeok" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🩸 진 혈마신수 바로 쓰기", "testStyle", "hyeolma2" }, { "🐲 진 천룡파천장 바로 쓰기", "testStyle", "cheonryong2" }, { "🌩 진 벽력신권 바로 쓰기", "testStyle", "byeokryeok2" },
+	})
 	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
 		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
 		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
@@ -1460,7 +1465,7 @@ local function buildTest()
 		elseif st.awakenOf then
 			local base = Config.STYLE_BY_ID[st.awakenOf]
 			local A = Config.AWAKEN_STYLE
-			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지%s + 💰 %s → 권법 창의 '🔥 각성 시련' (어디서나) → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
+			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지%s + 💰 %s → 상급 수련장의 각성선인 곁에서 권법 창의 '🔥 각성 시련' → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
 				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
