@@ -28432,6 +28432,9 @@ function UI.toast(msg: string)
 	end
 	local l = text({ Size = UDim2.new(1, 0, 0, 34), Text = msg, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = toastBox })
 	task.delay(3, function()
+		if not l.Parent then
+			return
+		end
 		TweenService:Create(l, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		task.delay(0.45, function()
 			l:Destroy()
