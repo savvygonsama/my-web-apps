@@ -301,12 +301,20 @@ local PLAN: { [string]: { [string]: string } } = {
 	time = { H = "crack", E = "orbit", R = "rain" },
 	wind = { R = "spiral" },
 }
+-- 1.9판: 권법마다 따로 (같은 속성이라도 각성 권법은 모양이 다르다)
+local PLAN_STYLE: { [string]: { [string]: string } } = {
+	geumgang2 = { H = "crack", E = "dome", R = "spikes" },
+	muyeong2 = { H = "fan", E = "cross", R = "vortex" },
+	taeheo2 = { H = "nova", E = "wave", R = "spiral" },
+}
 local MAT: { [string]: Enum.Material } = {
 	cloud = Enum.Material.SmoothPlastic,
 	ocean = Enum.Material.Glass,
 	subspace = Enum.Material.Glass,
 	duel = Enum.Material.Metal,
 	gravity = Enum.Material.Neon,
+	geumgang2 = Enum.Material.Foil,
+	taeheo2 = Enum.Material.Glass,
 }
 
 function SkillFx.cast(styleId: any, slot: any, model: Model, dur: number)
@@ -314,14 +322,14 @@ function SkillFx.cast(styleId: any, slot: any, model: Model, dur: number)
 	if not style or (slot ~= "H" and slot ~= "E" and slot ~= "R") then
 		return
 	end
-	local plan = PLAN[style.fx]
+	local plan = PLAN_STYLE[style.id] or PLAN[style.fx]
 	local shape = plan and plan[slot]
 	local fn = shape and P[shape]
 	local r = rootOf(model)
 	if not fn or not r or not near(r.Position, 180) then
 		return
 	end
-	local L: Look = { c = style.color, c2 = style.color2, mat = MAT[style.fx] or Enum.Material.Neon, s = slot == "H" and 0.9 or 1.15 }
+	local L: Look = { c = style.color, c2 = style.color2, mat = MAT[style.id] or MAT[style.fx] or Enum.Material.Neon, s = slot == "H" and 0.9 or 1.15 }
 	task.delay(math.min(0.15, dur * 0.3), function()
 		local rr = rootOf(model)
 		if not rr then

@@ -10,6 +10,7 @@ local Debris = game:GetService("Debris")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Drunk = require(script.Parent:WaitForChild("Drunk"))
+local Reaper = require(script.Parent:WaitForChild("Reaper"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -196,7 +197,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju) then
+	if not st or not (st.fans or st.soju or st.scythe) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -217,6 +218,13 @@ local function refreshFans(model: Model)
 		end
 		return
 	end
+	-- 초·혈마신수는 붉은 큰 낫과 손톱
+	if st.scythe then
+		for _, p in ipairs(Reaper.build(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
 	for _, pair in ipairs({ { "RightHand", 1 }, { "LeftHand", -1 } }) do
 		local hand = model:FindFirstChild(pair[1])
 		if hand and hand:IsA("BasePart") then
@@ -230,7 +238,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju) then
+	if not st or not (st.fans or st.soju or st.scythe) then
 		refreshFans(model)
 		return
 	end

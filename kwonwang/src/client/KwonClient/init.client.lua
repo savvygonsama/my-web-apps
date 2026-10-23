@@ -18,6 +18,8 @@ local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
 local Drunk = require(script:WaitForChild("Drunk"))
+local Awake = require(script:WaitForChild("Awake"))
+local Reaper = require(script:WaitForChild("Reaper"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -278,6 +280,7 @@ task.spawn(function()
 						Fx.cast(style.id, slot, m :: Model, mv.dur)
 						Sakura.cast(style.id, slot, m :: Model, mv.dur)
 						Drunk.cast(style.id, slot, m :: Model, mv.dur)
+						Reaper.cast(style.id, slot, m :: Model, mv.dur)
 						SkillFx.cast(style.id, slot, m :: Model, mv.dur)
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
@@ -578,6 +581,7 @@ startMove = function(slot: any, charge: number?)
 	Fx.cast(style.id, slot, char, dur)
 	Sakura.cast(style.id, slot, char, dur)
 	Drunk.cast(style.id, slot, char, dur)
+	Reaper.cast(style.id, slot, char, dur)
 	SkillFx.cast(style.id, slot, char, dur)
 	local perfect = nextPerfect
 	nextPerfect = false
@@ -655,7 +659,10 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "X" and style.soju then
+	if slot == "X" and style.scythe then
+		-- 혈월만겸: 붉은 달이 뜨는 컷씬 (대사 없이) 동안 무적, 컷씬이 걷히면 핏빛 초승달이 쏟아진다
+		Reaper.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
+	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
@@ -1366,6 +1373,7 @@ function handlers.act(data: any)
 		Fx.cast(style.id, data.slot, m, data.dur)
 		Sakura.cast(style.id, data.slot, m, data.dur)
 		Drunk.cast(style.id, data.slot, m, data.dur)
+		Reaper.cast(style.id, data.slot, m, data.dur)
 		SkillFx.cast(style.id, data.slot, m, data.dur)
 		local mv = Config.move(style.id, data.slot)
 		for _, h in ipairs(mv and mv.hits or {}) do
@@ -1811,6 +1819,8 @@ function handlers.skillfx(data: any)
 	if not ultsReady then
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
+		Awake.init({ shake = shake, tint = tint })
+		Reaper.init({ shake = shake, tint = tint })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1825,6 +1835,12 @@ function handlers.skillfx(data: any)
 		return
 	elseif Drunk.handles(data) then
 		Drunk.run(data)
+		return
+	elseif Awake.handles(data) then
+		Awake.run(data)
+		return
+	elseif Reaper.handles(data) then
+		Reaper.run(data)
 		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
@@ -2037,6 +2053,74 @@ function handlers.duel(data: any)
 	UI.toast(string.format("⚔ %s: %s 승, %s 패", data.ring == false and "들판 PvP" or "비무대", data.winner, data.loser))
 end
 
+-- 1.9판: 업적을 이뤘다
+function handlers.ach(data: any)
+	local a = Config.ACH_BY_ID[data.id]
+	if not a then
+		return
+	end
+	local parts = {}
+	if a.coins then
+		table.insert(parts, "💰 +" .. Config.formatNumber(a.coins))
+	end
+	if a.gems then
+		table.insert(parts, "💎 +" .. Config.formatNumber(a.gems))
+	end
+	if a.scrolls then
+		table.insert(parts, "📜 +" .. a.scrolls)
+	end
+	if a.title then
+		table.insert(parts, "칭호 「" .. a.title .. "」 (🏆 업적에서 달기)")
+	end
+	UI.banner("🏆 업적: " .. a.icon .. " " .. a.name, table.concat(parts, "  "), Config.ACH_COLOR[a.kind] or Color3.fromRGB(255, 220, 120))
+	Fx.sound("ping", 0.9, 1.25)
+end
+
+-- 1.9판: 누군가 환생한다. 빛기둥이 솟고, 몸이 한순간 하얗게 비었다가 환생 빛깔로 다시 차오른다
+function handlers.rebirth(data: any)
+	local m: Model? = data.m
+	local r = m and rootOf(m)
+	if not r then
+		return
+	end
+	local col = Config.REBIRTH.colors[data.n or 1] or Color3.new(1, 1, 1)
+	local base = r.Position - Vector3.new(0, 2.8, 0)
+	local pillar = Instance.new("Part")
+	pillar.Anchored = true
+	pillar.CanCollide = false
+	pillar.CanQuery = false
+	pillar.CanTouch = false
+	pillar.Material = Enum.Material.Neon
+	pillar.Color = col
+	pillar.Shape = Enum.PartType.Cylinder
+	pillar.Transparency = 0.15
+	pillar.Size = Vector3.new(400, 1, 1)
+	pillar.CFrame = CFrame.new(base + Vector3.new(0, 200, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	pillar.Parent = workspace
+	TweenService:Create(pillar, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(400, 14, 14) }):Play()
+	task.delay(0.5, function()
+		TweenService:Create(pillar, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = Vector3.new(400, 0.2, 0.2), Transparency = 1 }):Play()
+	end)
+	task.delay(2.2, function()
+		pillar:Destroy()
+	end)
+	for i = 0, 2 do
+		task.delay(i * 0.25, function()
+			Fx.ring(base + Vector3.new(0, 0.3, 0), col, 4, 40 + i * 14, 1.1)
+		end)
+	end
+	Fx.burst("spark", r.Position, col, 50, 2.4)
+	Fx.flash(r.Position, col, 50, 6, 1.6)
+	Fx.sound("deflect", 1, 0.45, r.Position)
+	if m ~= myChar() then
+		UI.toast(string.format("♻ %s, %s 환생!", data.name or "", Config.REBIRTH.names[data.n or 1] or ""))
+	end
+end
+function handlers.rebirthDone(data: any)
+	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0)), Config.REBIRTH.colors[data.n or 1])
+	shake(1.2)
+end
+
 function handlers.realm(data: any)
 	UI.banner(string.format("✨ %s, %s의 경지에 오르다", data.name, data.realm), nil, Color3.fromRGB(255, 220, 140))
 end
@@ -2100,6 +2184,17 @@ RunService.RenderStepped:Connect(function()
 		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
 	elseif style.noBlock then
 		stacks = "🍾 만취 · 막기 ✕ · 흘리기만 ○"
+	elseif style.bloodPact then
+		local php, pmx = tonumber(char:GetAttribute("Hp")) or 0, tonumber(char:GetAttribute("MaxHp")) or 1
+		local k = 1 + style.bloodPact * (1 - math.clamp(php / math.max(1, pmx), 0, 1))
+		stacks = string.format("🩸 피의 계약 · 피해 ×%.2f", k)
+	elseif style.hurtPulse then
+		local n = math.clamp(tonumber(char:GetAttribute("HurtN")) or 0, 0, style.hurtPulse.every)
+		stacks = string.format("🗿 불괴 %d / %d (맞으면 쌓인다)", n, style.hurtPulse.every)
+	elseif style.shadowEcho then
+		stacks = "👤 영각 · 그림자가 한 번 더 찬다"
+	elseif style.deflectWave then
+		stacks = "🌊 역류 · 흘리면 물결이 터진다"
 	elseif style.chargeEvery then
 		local n = math.clamp(tonumber(char:GetAttribute("Charge")) or 0, 0, style.chargeEvery)
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)

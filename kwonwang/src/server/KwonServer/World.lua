@@ -3422,6 +3422,61 @@ local function sojuHill()
 	part({ Name = "SojuSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 21.5), Color = Color3.fromRGB(60, 40, 28), Material = Enum.Material.Wood, Parent = f })
 end
 
+-- 1.9판: 초·혈마신수의 사부 혈월선이 있는 혈월 제단 (혈교 본산 성벽 밖 북동쪽 끝, 지도에 나오지 않는다)
+-- 핏빛 돌단 위, 땅에 거꾸로 꽂힌 거대한 붉은 낫과 핏빛 달 모양의 둥근 문
+local function reaperAltar()
+	local at = Config.REAPER_ALTAR
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "ReaperAltar"
+	f.Parent = folder
+	local stone = Color3.fromRGB(45, 22, 24)
+	local blood = Color3.fromRGB(200, 20, 35)
+	disc("ReaperBase", at + Vector3.new(0, 0.8, 0), 22, 1.6, stone, Enum.Material.Slate, f)
+	disc("ReaperBase", at + Vector3.new(0, 2.4, 0), 15, 1.6, stone:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Basalt, f)
+	disc("ReaperRune", at + Vector3.new(0, 3.25, 0), 12, 0.1, blood, Enum.Material.Neon, f, false).Transparency = 0.35
+	for k = 0, 2 do
+		part({ Name = "ReaperStep", Size = Vector3.new(8, 0.8, 2.4), Position = at + Vector3.new(0, 0.4 + k * 1.05, 24 - k * 2.6), Color = stone, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 돌단을 두른 핏빛 돌기둥 여덟과 그 위의 불
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		if math.abs(a - math.pi / 2) > 0.3 then
+			local p = at + Vector3.new(math.cos(a) * 19, 0, math.sin(a) * 19)
+			local h = 9 + (k % 3) * 2
+			part({ Name = "ReaperPillar", Size = Vector3.new(2.4, h, 2.4), CFrame = CFrame.new(p + Vector3.new(0, h / 2 + 1.6, 0)) * CFrame.Angles(0, a, math.rad((k % 2 == 0 and 1 or -1) * 4)), Color = stone, Material = Enum.Material.Basalt, Parent = f })
+			local flame = part({ Name = "ReaperFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = p + Vector3.new(0, h + 2.6, 0), Color = blood, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(flame, Color3.fromRGB(255, 60, 60), 18, 1.2)
+		end
+	end
+	-- 거꾸로 꽂힌 거대한 붉은 낫 (자루는 하늘로, 날은 돌단에 박혔다)
+	local shaftCF = CFrame.new(at + Vector3.new(-6, 14, -6)) * CFrame.Angles(math.rad(8), math.rad(35), math.rad(-6))
+	part({ Name = "ReaperShaft", Size = Vector3.new(1.1, 26, 1.1), CFrame = shaftCF, Color = Color3.fromRGB(30, 12, 14), Material = Enum.Material.Wood, Parent = f })
+	for k = -2, 2 do
+		part({ Name = "ReaperWrap", Size = Vector3.new(1.3, 0.5, 1.3), CFrame = shaftCF * CFrame.new(0, k * 4.5, 0), Color = Color3.fromRGB(120, 15, 25), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+	end
+	local head = shaftCF * CFrame.new(0, -12.5, 0)
+	for k = 0, 6 do
+		local seg = part({ Name = "ReaperBlade", Size = Vector3.new(0.5, 2.2 - k * 0.22, 3.4), CFrame = head * CFrame.Angles(0, 0, math.rad(-12 * k)) * CFrame.new(0, -0.6, -2.6 - k * 2.8), Color = blood, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		seg.Transparency = 0.05
+	end
+	-- 핏빛 달 모양의 둥근 문 (돌단 뒤)
+	local gateC = at + Vector3.new(0, 15, -14)
+	local n = 22
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		part({ Name = "ReaperMoon", Size = Vector3.new(2.6, 1.6, 2.2), CFrame = CFrame.new(gateC) * CFrame.Angles(0, 0, a) * CFrame.new(0, 10, 0), Color = k % 2 == 0 and Color3.fromRGB(150, 15, 25) or stone, Material = k % 2 == 0 and Enum.Material.Neon or Enum.Material.Slate, CanCollide = false, Parent = f })
+	end
+	local moon = part({ Name = "ReaperMoonCore", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 18, 18), CFrame = CFrame.new(gateC) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(170, 20, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	moon.Transparency = 0.55
+	light(moon, Color3.fromRGB(255, 50, 50), 40, 1.5)
+	local board = part({ Name = "ReaperSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 27), at + Vector3.new(0, 4.5, 50)), Color = Color3.fromRGB(30, 12, 14), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "혈월 제단", Color3.fromRGB(255, 120, 120), 1 } })
+	part({ Name = "ReaperSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 27), Color = Color3.fromRGB(40, 20, 20), Material = Enum.Material.Wood, Parent = f })
+end
+
 local function regionSigns()
 	for _, r in ipairs(Config.Regions) do
 		-- 문루가 선 지역은 문루의 현판이 이름표 (따로 팻말을 세우지 않는다)
@@ -3944,6 +3999,7 @@ function World.build(): any
 		{ "표지", regionSigns },
 		{ "벚꽃 언덕", sakuraHill },
 		{ "술독 마루", sojuHill },
+		{ "혈월 제단", reaperAltar },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

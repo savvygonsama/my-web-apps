@@ -1092,6 +1092,215 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+	elseif kind == "palm" then
+		-- 1.9판 만불조종: 하늘에서 산만 한 금빛 손바닥이 내려와 둘레를 누르고, 땅이 몇 번 더 울린다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "buddhaPalm", at = center, radius = m.radius, delay = m.delay / sp, quakes = m.quakes, every = m.every / sp, style = style })
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + 0.3) / sp)
+		after(m.delay, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, hit, move)
+				if not o.dead then
+					Combat.stun(o, 1.6)
+				end
+			end
+			for q = 1, m.quakes do
+				after(q * m.every, function()
+					for _, o in ipairs(hostilesNear(f, center, m.radius * (1 + q * 0.15))) do
+						strike(f, o, scaled(m.quake, sc), move)
+					end
+				end)
+			end
+		end)
+	elseif kind == "parade" then
+		-- 1.9판 백귀야행: 그림자들이 둘레를 엇갈려 가로지르며 짓밟고, 마지막에 한가운데로 모여 걷어찬다
+		local center = f.root.Position
+		local total = m.delay + m.passes * m.every + 0.5
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "paradeStart", m = f.model, at = center, radius = m.radius, ghosts = m.ghosts, dur = total / sp, style = style })
+		for i = 1, m.passes do
+			after(m.delay + (i - 1) * m.every, function()
+				local list = hostilesNear(f, center, m.radius)
+				local through = #list > 0 and list[math.random(1, #list)].root.Position or center
+				local a = math.random() * math.pi * 2
+				local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+				local from = through - dir * m.radius
+				local to = through + dir * m.radius
+				Push:FireAllClients("skillfx", { kind = "paradePass", from = from, to = to, dur = m.every * 1.6 / sp, style = style, i = i })
+				for _, o in ipairs(list) do
+					local rel = o.root.Position - from
+					local along = rel:Dot(dir)
+					local side = rel - dir * along
+					if along >= -2 and along <= m.radius * 2 + 2 and Vector3.new(side.X, 0, side.Z).Magnitude <= m.width then
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.delay + m.passes * m.every + 0.15, function()
+			Push:FireAllClients("skillfx", { kind = "paradeEnd", at = center, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "waterDragons" then
+		-- 1.9판 천하수류: 물의 용들이 몸을 감아 돌며 둘레를 휩쓸고, 마지막에 하나로 엉겨 앞으로 덮친다
+		Push:FireAllClients("skillfx", { kind = "waterDragons", m = f.model, n = m.n, radius = m.radius, dur = m.dur / sp, delay = m.delay / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 0, ticks - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, f.root.Position, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			local fwd = flat(Combat.look(f))
+			local at = f.root.Position + fwd * m.finalDist
+			Push:FireAllClients("skillfx", { kind = "dragonWave", at = at, from = f.root.Position, dir = fwd, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "reapHook" then
+		-- 1.9판 혈사슬: 사슬 낫으로 둘레의 적을 낚아 내 앞으로 끌어온 뒤, 한 바퀴 돌며 벤다
+		local list = nearestList(f, m.range, m.n)
+		Push:FireAllClients("skillfx", { kind = "reapHook", m = f.model, targets = modelsOf(list), delay = m.delay / sp, pull = m.pull / sp, style = style })
+		after(m.delay, function()
+			for _, o in ipairs(list) do
+				if not o.dead and o.root.Parent then
+					strike(f, o, hit, move)
+					o.stunUntil = math.max(o.stunUntil, os.clock() + 0.9)
+				end
+			end
+		end)
+		after(m.delay + m.pull, function()
+			local fwd = flat(Combat.look(f))
+			for i, o in ipairs(list) do
+				if not o.dead and o.root.Parent and not o.root.Anchored then
+					local a = (i - (#list + 1) / 2) * 0.7
+					local side = Vector3.new(fwd.Z, 0, -fwd.X)
+					local at = f.root.Position + fwd * 4 + side * a * 3
+					if o.player then
+						Push:FireClient(o.player, "knock", (at - o.root.Position) * 4, 0.4)
+					else
+						o.root.CFrame = CFrame.lookAt(Vector3.new(at.X, o.root.Position.Y, at.Z), f.root.Position)
+					end
+				end
+			end
+		end)
+		after(m.delay + m.pull + 0.12, function()
+			Push:FireAllClients("skillfx", { kind = "reapSpin", m = f.model, radius = m.radius, style = style })
+			for _, o in ipairs(hostilesNear(f, f.root.Position, m.radius)) do
+				strike(f, o, scaled(m.slash, sc), move)
+			end
+		end)
+	elseif kind == "reapCleave" then
+		-- 1.9판 혈월낙참: 내리꽂은 낫이 앞의 땅에 핏빛 초승달 자국을 새기고, 한 박자 뒤 자국이 터진다
+		after(m.delay, function()
+			local fwd = flat(Combat.look(f))
+			local from = f.root.Position + fwd * 2
+			local mid = from + fwd * (m.length / 2)
+			Push:FireAllClients("skillfx", { kind = "reapScar", at = mid, dir = fwd, length = m.length, width = m.width, burst = m.burst / sp, style = style })
+			local function inStrip(o: any): boolean
+				local rel = o.root.Position - from
+				local along = rel:Dot(fwd)
+				local side = rel - fwd * along
+				return along >= -2 and along <= m.length and Vector3.new(side.X, 0, side.Z).Magnitude <= m.width
+			end
+			for _, o in ipairs(hostilesNear(f, mid, m.length)) do
+				if inStrip(o) then
+					strike(f, o, hit, move)
+				end
+			end
+			after(m.burst, function()
+				for _, o in ipairs(hostilesNear(f, mid, m.length)) do
+					if inStrip(o) then
+						strike(f, o, scaled(m.burstHit, sc), move)
+					end
+				end
+			end)
+		end)
+	elseif kind == "harvest" then
+		-- 1.9판 혈마수확: 하늘만 한 피의 낫이 둘레를 휩쓴다. 베인 적에 낙인, 낫이 꽂히면 낙인이 한꺼번에 터진다
+		local marked: { [any]: boolean } = {}
+		local total = m.delay + m.sweeps * m.sweepTime
+		Push:FireAllClients("skillfx", { kind = "harvest", m = f.model, radius = m.radius, delay = m.delay / sp, sweeps = m.sweeps, sweepTime = m.sweepTime / sp, mark = m.mark / sp, style = style })
+		for k = 1, m.sweeps do
+			-- 한 바퀴를 넷으로 나눠 친다 (낫이 지나가는 쪽부터)
+			for q = 0, 3 do
+				after(m.delay + (k - 1) * m.sweepTime + q * m.sweepTime / 4, function()
+					local victims = hostilesNear(f, f.root.Position, m.radius)
+					local n = 0
+					for _, o in ipairs(victims) do
+						local rel = flat(o.root.Position - f.root.Position)
+						local ang = (math.atan2(rel.X, rel.Z) / (math.pi * 2)) % 1
+						if math.floor(ang * 4) == q then
+							strike(f, o, hit, move)
+							marked[o] = true
+							n += 1
+						end
+					end
+					if m.heal and n > 0 then
+						f.hp = math.min(f.maxHp, f.hp + f.maxHp * m.heal * n)
+						Combat.sync(f)
+					end
+				end)
+			end
+		end
+		after(total + m.mark, function()
+			local list = {}
+			for o in pairs(marked) do
+				if not o.dead and o.root.Parent then
+					table.insert(list, o)
+				end
+			end
+			Push:FireAllClients("skillfx", { kind = "harvestBurst", m = f.model, targets = modelsOf(list), at = f.root.Position, radius = m.radius, style = style })
+			for _, o in ipairs(list) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "bloodMoon" then
+		-- 1.9판 혈월만겸 (초 오의): 핏빛 하늘과 붉은 달 (컷씬, 무적) → 핏빛 초승달이 쏟아진다 → 하늘과 땅을 가르는 마지막 낫질
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.cut + m.rain + 0.4) / sp)
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "moonRise", m = f.model, at = center, dur = (m.cut + m.rain + 0.6) / sp, cut = m.cut / sp, range = m.range, style = style })
+		local ticks = math.floor(m.rain / m.every)
+		for i = 0, ticks - 1 do
+			after(m.cut + i * m.every, function()
+				local list = hostilesNear(f, center, m.range)
+				local spots = {}
+				for _ = 1, m.n do
+					local at
+					if #list > 0 and math.random() < 0.7 then
+						at = list[math.random(1, #list)].root.Position
+					else
+						local a = math.random() * math.pi * 2
+						at = center + Vector3.new(math.cos(a), 0, math.sin(a)) * math.random(4, math.floor(m.range))
+					end
+					table.insert(spots, at)
+				end
+				Push:FireAllClients("skillfx", { kind = "moonSlash", spots = spots, radius = m.radius, style = style })
+				local done = {}
+				for _, at in ipairs(spots) do
+					for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+						if not done[o] then
+							done[o] = true
+							o.stunUntil = math.max(o.stunUntil, os.clock() + 0.2)
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(m.cut + m.rain + 0.15, function()
+			local fwd = flat(Combat.look(f))
+			local c = f.root.Position + fwd * 6
+			Push:FireAllClients("skillfx", { kind = "moonCleave", m = f.model, at = c, dir = fwd, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	end
 end
 

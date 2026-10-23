@@ -250,6 +250,10 @@ local function defense(f: Fighter): number
 	if style and style.armorWhileAttacking and act and t < act.start + act.dur then
 		m *= style.armorWhileAttacking
 	end
+	-- 진 금강불괴: 늘 덜 아프다
+	if style and style.hurtTaken then
+		m *= style.hurtTaken
+	end
 	-- 심법: 금강호체공
 	m *= 1 - ((f :: any).mDef or 0)
 	return m
@@ -365,12 +369,42 @@ local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act
 	if isSkill then
 		d *= att.skillMult
 	end
+	-- 1.9판 초·혈마 피의 계약: 체력이 깎일수록 더 깊이 벤다
+	local pact = Combat.styleOf(att)
+	if pact and pact.bloodPact and att.maxHp > 0 then
+		d *= 1 + pact.bloodPact * (1 - math.clamp(att.hp / att.maxHp, 0, 1))
+	end
 	if act and act.charge > 0 and move.chargeMult then
 		local style = Combat.styleOf(att)
 		local k = math.clamp(act.charge / (style and style.charge or 1.5), 0, 1)
 		d *= 1 + (move.chargeMult - 1) * k
 	end
 	return d
+end
+
+-- 1.9판 진 금강불괴: 맞은 횟수가 쌓이면 몸에서 진동이 터져 둘레를 날린다
+local function hurtPulse(tgt: Fighter, style: any)
+	local hp = style and style.hurtPulse
+	if not hp or tgt.dead then
+		return
+	end
+	local ft = tgt :: any
+	ft.hurtN = (ft.hurtN or 0) + 1
+	tgt.model:SetAttribute("HurtN", ft.hurtN)
+	if ft.hurtN < hp.every then
+		return
+	end
+	ft.hurtN = 0
+	tgt.model:SetAttribute("HurtN", 0)
+	local at = tgt.root.Position
+	Push:FireAllClients("skillfx", { kind = "vajraQuake", m = tgt.model, at = at, radius = hp.radius, style = tgt.style })
+	task.defer(function()
+		for _, other in pairs(Combat.fighters) do
+			if Combat.hostile(tgt, other) and not other.dead and (other.root.Position - at).Magnitude <= hp.radius then
+				Combat.applyHit(tgt, other, { dmg = hp.dmg, posture = hp.posture, stun = hp.stun, kb = hp.kb, up = hp.up }, { chain = true, isSkill = true, move = { name = hp.name } })
+			end
+		end
+	end)
 end
 
 ------------------------------------------------------------------------
@@ -522,6 +556,20 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			local side = redirect(tgt, att)
 			Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, side = side })
 			;(tgt :: any).deflectAt = now()
+			-- 1.9판 진 태허: 흘려 낸 힘이 물결이 되어 둘레로 터진다
+			local dw = tStyle and tStyle.deflectWave
+			if dw and t - ((tgt :: any).waveAt or 0) > 0.35 then
+				(tgt :: any).waveAt = t
+				local at = tgt.root.Position
+				Push:FireAllClients("skillfx", { kind = "flowWave", m = tgt.model, at = at, radius = dw.radius, style = tgt.style })
+				task.defer(function()
+					for _, other in pairs(Combat.fighters) do
+						if Combat.hostile(tgt, other) and not other.dead and (other.root.Position - at).Magnitude <= dw.radius then
+							Combat.applyHit(tgt, other, { dmg = dw.dmg, posture = dw.posture, stun = dw.stun, kb = dw.kb, up = dw.up }, { chain = true, isSkill = true, move = { name = "역류" } })
+						end
+					end
+				end)
+			end
 			if hooks.onDeflect then
 				hooks.onDeflect(tgt, att)
 			end
@@ -541,6 +589,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = broke and "guardbreak" or "block", pos = pos, dmg = d })
 		if tgt.hp <= 0 then
 			Combat.kill(tgt, att)
+		else
+			hurtPulse(tgt, tStyle)
 		end
 		return broke and "guardbreak" or "block"
 	end
@@ -736,6 +786,19 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	if tgt.hp <= 0 then
 		Combat.kill(tgt, att)
+	else
+		hurtPulse(tgt, tStyle)
+	end
+	-- 1.9판 진 무영: 그림자가 한 박자 뒤 같은 자리를 한 번 더 찬다 (연타·강타만)
+	if aStyle and aStyle.shadowEcho and not opt.chain and not opt.isSkill and not opt.proj and not tgt.dead then
+		local k = aStyle.shadowEcho
+		task.delay(0.16, function()
+			if att.dead or tgt.dead or not tgt.root.Parent then
+				return
+			end
+			Push:FireAllClients("skillfx", { kind = "shadowEcho", a = att.model, t = tgt.model, pose = move.pose, style = att.style })
+			Combat.applyHit(att, tgt, { dmg = (hit.dmg or 0) * k, posture = (hit.posture or 0) * k, stun = 0.2, kb = (hit.kb or 0) * 0.5, up = hit.up }, { chain = true, move = { name = "영각" } })
+		end)
 	end
 	-- 벽력: 연쇄 번개
 	if chain then

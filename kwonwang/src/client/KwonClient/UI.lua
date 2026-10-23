@@ -451,7 +451,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -656,7 +656,7 @@ local function buildStyles()
 			if sd.awakenOf == id and owned then
 				local A = Config.AWAKEN_STYLE
 				table.insert(lines, "")
-				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상 · 💰 %s → 각성 시련 (어디서나)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins)))
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (어디서나)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
 			end
 		end
 		dBody.Text = table.concat(lines, "\n")
@@ -767,9 +767,34 @@ local function buildStats()
 		Request:FireServer("gate")
 		window.Visible = false
 	end)
+	-- 1.9판 환생: 열린 끝 경지에 오르면 보인다. 두 번 눌러야 한다 (실수로 누르지 않게)
+	local rebirthArmed = 0
+	local rebirthBtn: TextButton
+	rebirthBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 68), Size = UDim2.new(0, 300, 0, 58), Text = "♻ 환생", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 60, 140), Visible = false, ZIndex = 3, Parent = page }, function()
+		if os.clock() - rebirthArmed > 4 then
+			rebirthArmed = os.clock()
+			rebirthBtn.Text = "♻ 정말 환생? 한 번 더 누르기"
+			task.delay(4, function()
+				if os.clock() - rebirthArmed >= 3.9 and refreshers.stats then
+					refreshers.stats()
+				end
+			end)
+			return
+		end
+		rebirthArmed = 0
+		Request:FireServer("rebirth")
+		window.Visible = false
+	end)
 	refreshers.stats = function()
 		if not state then
 			return
+		end
+		local rb = state.rebirth or 0
+		local cap = state.realmCap or 16
+		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap
+		rebirthBtn.Visible = canRebirth
+		if canRebirth and os.clock() - rebirthArmed > 4 then
+			rebirthBtn.Text = string.format("♻ %s (%d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
 		end
 		gateBtn.Visible = state.gateNext ~= nil
 		if state.gateNext then
@@ -780,8 +805,18 @@ local function buildStats()
 		local idx = state.realm
 		local realm = Config.Realms[idx]
 		local nextRealm = Config.Realms[idx + 1]
-		table.insert(lines, string.format("<b>경지: %s</b>  (능력치 합 %s%s)", realm.name, Config.formatNumber(state.total), nextRealm and string.format(" / 다음 %s는 %s", nextRealm.name, Config.formatNumber(nextRealm.need)) or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 열여섯 단계", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		local locked = nextRealm and (nextRealm.rebirth or 0) > rb
+		table.insert(lines, string.format("<b>경지: %s%s</b>  (능력치 합 %s%s)", rb > 0 and ((Config.REBIRTH.names[rb] or "") .. " · ") or "", realm.name, Config.formatNumber(state.total),
+			nextRealm and string.format(" / 다음 %s는 %s%s", nextRealm.name, Config.formatNumber(nextRealm.need), locked and ' <font color="#FF9AD8">(환생해야 열림)</font>' or "") or ""))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		if rb > 0 then
+			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 주는 피해·체력 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
+		end
+		if canRebirth then
+			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 피해·체력 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
+		elseif rb < Config.REBIRTH.max then
+			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
+		end
 		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
@@ -806,6 +841,81 @@ local function buildStats()
 			table.insert(lines, string.format("💊 소환단: %d초 남음 (수련 2배)", state.elixirLeft))
 		end
 		info.Text = table.concat(lines, "\n")
+	end
+end
+
+------------------------------------------------------------------------
+-- 1.9판: 업적과 칭호
+------------------------------------------------------------------------
+local function buildAch()
+	local page = makePage("ach")
+	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 17, RichText = true, Parent = page })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 4), Size = UDim2.new(0, 150, 0, 44), Text = "칭호 떼기", TextSize = 16, Parent = page }, function()
+		Request:FireServer("title", "")
+	end)
+	local list = scroller(page, UDim2.new(1, 0, 1, -60), UDim2.new(0, 0, 0, 60))
+	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local rows: { [string]: any } = {}
+	for i, a in ipairs(Config.ACHIEVEMENTS) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel, LayoutOrder = i, Parent = list }, { corner(10) })
+		local st = stroke(C.line, 1.5)
+		st.Parent = card
+		text({ Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 50, 1, 0), Text = a.icon, TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		local name = text({ Position = UDim2.new(0, 64, 0, 6), Size = UDim2.new(1, -260, 0, 24), Text = a.name, TextSize = 19, Font = Enum.Font.GothamBlack, RichText = true, Parent = card })
+		local rewards = {}
+		if a.coins then
+			table.insert(rewards, "💰 " .. Config.formatNumber(a.coins))
+		end
+		if a.gems then
+			table.insert(rewards, "💎 " .. Config.formatNumber(a.gems))
+		end
+		if a.scrolls then
+			table.insert(rewards, "📜 " .. a.scrolls)
+		end
+		if a.title then
+			table.insert(rewards, "칭호 「" .. a.title .. "」")
+		end
+		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 26), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, Parent = card })
+		local bar = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 170, 0, 30), BackgroundColor3 = Color3.fromRGB(25, 18, 16), Parent = card }, { corner(8) })
+		local fill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.green, Parent = bar }, { corner(8) })
+		local label = text({ Size = UDim2.fromScale(1, 1), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 2, Parent = bar })
+		local equip = button({ Size = UDim2.fromScale(1, 1), Text = "", BackgroundTransparency = 1, ZIndex = 3, Visible = false, Parent = bar }, function()
+			Request:FireServer("title", a.id)
+		end)
+		rows[a.id] = { card = card, stroke = st, name = name, sub = sub, fill = fill, label = label, equip = equip }
+	end
+	refreshers.ach = function()
+		if not state then
+			return
+		end
+		local done, total = 0, #Config.ACHIEVEMENTS
+		local ach = state.ach or {}
+		local prog = state.achProg or {}
+		for _, a in ipairs(Config.ACHIEVEMENTS) do
+			local r = rows[a.id]
+			local ok = ach[a.id] == true
+			if ok then
+				done += 1
+			end
+			local v = prog[a.id] or 0
+			r.fill.Size = UDim2.fromScale(ok and 1 or math.clamp(v / a.n, 0, 1), 1)
+			r.fill.BackgroundColor3 = ok and C.gold or C.green
+			local col = Config.ACH_COLOR[a.kind] or C.gold
+			r.stroke.Color = ok and col or C.line
+			r.card.BackgroundColor3 = ok and Color3.fromRGB(56, 40, 26) or C.panel
+			r.name.TextColor3 = ok and col or C.text
+			local wearing = state.title == a.id
+			if ok and a.title then
+				r.label.Text = wearing and "✔ 달고 있음" or "칭호 달기"
+				r.fill.BackgroundColor3 = wearing and C.green or C.gold
+				r.equip.Visible = not wearing
+			else
+				r.label.Text = ok and "✔ 이룸" or string.format("%s / %s", Config.formatNumber(v), Config.formatNumber(a.n))
+				r.equip.Visible = false
+			end
+		end
+		local t = state.title and Config.ACH_BY_ID[state.title]
+		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and ("「" .. t.title .. "」") or "없음 (칭호가 붙은 업적을 이루면 달 수 있다)")
 	end
 end
 
@@ -1281,6 +1391,11 @@ local function buildTest()
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
+	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
+		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" },
+		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
+		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
+	})
 	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
 		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
 		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
@@ -1342,8 +1457,8 @@ local function buildTest()
 		elseif st.awakenOf then
 			local base = Config.STYLE_BY_ID[st.awakenOf]
 			local A = Config.AWAKEN_STYLE
-			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지 + 💰 %s → 권법 창의 '🔥 각성 시련' (어디서나) → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
-				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, Config.formatNumber(A.coins), A.trialHp)
+			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지%s + 💰 %s → 권법 창의 '🔥 각성 시련' (어디서나) → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
+				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
 			if st.id == "mugeuk" then
@@ -2339,7 +2454,7 @@ function UI.init(req: RemoteEvent)
 	scaled(topLeft)
 	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 424), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
-	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "test", "🧪 테스트" } }) do
+	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "test", "🧪 테스트" } }) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 34), Text = item[2], TextSize = 17, Parent = menu }, function()
 			if item[1] == "pvp" then
 				Request:FireServer("pvpToggle")
@@ -2416,6 +2531,7 @@ function UI.init(req: RemoteEvent)
 	end)
 	buildStyles()
 	buildStats()
+	buildAch()
 	buildShop()
 	buildManuals()
 	buildSkyShop()

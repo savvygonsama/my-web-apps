@@ -109,6 +109,11 @@ Config.Realms = {
 	{ name = "반선", need = 37908000, color = Color3.fromRGB(200, 255, 255) },
 	{ name = "등선", need = 137674000, color = Color3.fromRGB(255, 240, 200) },
 	{ name = "천외천", need = 500000000, color = Color3.fromRGB(255, 255, 160) },
+	-- 1.9판: 천외천 너머. 환생해야 하나씩 열린다 (환생 한 번에 한 경지)
+	{ name = "혼원경", need = 2500000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
+	{ name = "무량경", need = 12500000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
+	{ name = "태허경", need = 62500000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
+	{ name = "권왕", need = 312500000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
 }
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
@@ -117,19 +122,46 @@ function Config.realmPower(idx: number): number
 end
 -- 1.8판: 후반 경지의 공격력 (피해에만 곱한다). 능력치가 로그로 자라 후반에 주먹이 너무 가벼웠다
 -- 생사경 ×1.5 · 신화경 ×2.2 · 천인합일 ×3 · 무극 ×4 · 반선 ×5.5 · 등선 ×7 · 천외천 ×9
-Config.LATE_ATK = { [10] = 1.5, [11] = 2.2, [12] = 3, [13] = 4, [14] = 5.5, [15] = 7, [16] = 9 }
+-- (1.9판: 혼원경 ×11 · 무량경 ×13.5 · 태허경 ×16.5 · 권왕 ×20)
+Config.LATE_ATK = { [10] = 1.5, [11] = 2.2, [12] = 3, [13] = 4, [14] = 5.5, [15] = 7, [16] = 9, [17] = 11, [18] = 13.5, [19] = 16.5, [20] = 20 }
 function Config.lateAtk(idx: number): number
-	return Config.LATE_ATK[idx] or (idx > 16 and 9 or 1)
+	return Config.LATE_ATK[idx] or (idx > 20 and 20 or 1)
 end
 
-function Config.realmOf(total: number): (number, any)
+-- cap: 오를 수 있는 가장 높은 경지 (환생으로 열린 만큼). 없으면 끝까지
+function Config.realmOf(total: number, cap: number?): (number, any)
 	local idx = 1
 	for i, r in ipairs(Config.Realms) do
-		if total >= r.need then
+		if total >= r.need and i <= (cap or #Config.Realms) then
 			idx = i
 		end
 	end
 	return idx, Config.Realms[idx]
+end
+
+------------------------------------------------------------------------
+-- 1.9판: 환생. 열린 가장 높은 경지(처음엔 천외천)에 오르면 환생할 수 있다
+-- 능력치를 모두 내려놓고 삼류로 돌아간다. 권법·숙련·깨달음·심법·탈것·은자·관문 기록은 그대로 남는다
+-- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 +50%, 천외천 너머의 경지가 하나 열린다
+------------------------------------------------------------------------
+Config.REBIRTH = {
+	max = 4,
+	base = 16, -- 환생 전 끝 경지 (천외천)
+	power = 0.25,
+	gain = 0.5,
+	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
+	names = { "일환", "이환", "삼환", "사환" },
+	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70) },
+}
+function Config.realmCap(rebirth: number): number
+	return math.min(#Config.Realms, Config.REBIRTH.base + math.clamp(rebirth, 0, Config.REBIRTH.max))
+end
+-- 환생 배율: 피해·체력 (겹치지 않고 더한다)
+function Config.rebirthPower(rebirth: number): number
+	return 1 + Config.REBIRTH.power * rebirth
+end
+function Config.rebirthGain(rebirth: number): number
+	return 1 + Config.REBIRTH.gain * rebirth
 end
 
 ------------------------------------------------------------------------
@@ -144,8 +176,13 @@ do
 	local n = #Config.Realms
 	for i, r in ipairs(Config.Realms) do
 		local nxt = i < n and Config.Realms[i + 1].need or r.need * 2
+		-- 천외천의 몫은 예전 그대로 (환생으로 열리는 경지가 앞 경지의 오름새를 바꾸지 않게)
+		if Config.Realms[i + 1] and Config.Realms[i + 1].rebirth and not r.rebirth then
+			nxt = r.need * 2
+		end
 		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
-		local gain = (nxt - r.need) / (30 + 8 * i)
+		-- 환생으로 열린 경지는 세 배 더 오래 (보스 몫이 커서 금방 오르지 않게)
+		local gain = (nxt - r.need) / ((30 + 8 * i) * (r.rebirth and 3 or 1))
 		table.insert(killTable, { power, gain })
 	end
 end
@@ -1072,6 +1109,87 @@ do
 	G.mech.finalRadius = 26
 end
 
+------------------------------------------------------------------------
+-- 1.9판: 새 각성 권법 셋. 원래 권법을 그대로 키운 진 권법(혈마·천룡·벽력)과 달리, 기술도 고유 장치도 새로 짰다
+-- 조건: 원래 권법 숙련 최대 + 깨달음 두 번 + 무극 경지 + 은자 + 환생 한 번 (rebirthReq) → 각성 시련
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "geumgang2", name = "진 금강불괴신공", hanja = "眞金剛不壞神功", icon = "🗿", grade = "신화",
+	color = Color3.fromRGB(255, 176, 40), color2 = Color3.fromRGB(255, 250, 225), fx = "gold",
+	awakenOf = "geumgang", hidden = true, rebirthReq = 1,
+	unlockHint = "불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 금강이 깨어났다. 이제 주먹이 아니라 몸 자체가 무기다. 맞을수록 단단해지고, 쌓인 충격은 땅을 울리는 진동이 되어 되돌아간다.",
+	gimmick = "불괴: 받는 피해 30% 감소. 여덟 번 맞을 때마다 (막아도 센다) 몸에서 금강 진동이 저절로 터져 둘레를 날린다. 오의 만불조종: 하늘에서 거대한 금빛 손바닥이 내려와 땅을 누른다",
+	deflect = 0.2, speed = 0.92, hurtTaken = 0.7, armorWhileAttacking = 0.8,
+	hurtPulse = { every = 8, radius = 16, dmg = 38, posture = 60, stun = 0.8, kb = 40, up = 14, name = "불괴진동" },
+	stance = "stance_geumgang",
+	combo = {
+		{ id = "gk1", name = "항마장", pose = "buddha_palm", dur = 0.48, lunge = 3, hits = { hit(0.2, 6, 5, 17, 18, 0.45, 16, nil, true) } },
+		{ id = "gk2", name = "금강주", pose = "elbow_r", dur = 0.46, lunge = 3, hits = { hit(0.2, 5, 4.5, 17, 18, 0.45, 16) } },
+		{ id = "gk3", name = "천근각", pose = "grav_stomp", dur = 0.55, lunge = 1, hits = { hit(0.26, 3, 8, 15, 22, 0.55, 22, 10, true) } },
+		{ id = "gk4", name = "불괴추", pose = "hammer_down", dur = 0.68, lunge = 3, hits = { hit(0.34, 6, 7, 30, 40, 0.8, 30, 18, true) } },
+	},
+	heavy = { id = "gkH", name = "금강파산권", pose = "punch_r_heavy", dur = 0.75, lunge = 6, hits = { hit(0.36, 8, 6.5, 36, 55, 0.9, 60) }, chargeMult = 1.8 },
+	skills = {
+		E = { id = "gkE", name = "금강반탄", desc = "1.2초 동안 금빛 종이 몸을 덮는다. 그동안 받는 모든 공격을 튕겨 되돌리고, 끝에 종이 울려 둘레를 친다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "reflect", dur = 1.2, radius = 14, hit = hit(0, 0, 0, 22, 30, 0.6, 30), wave = hit(0, 0, 0, 28, 40, 0.8, 40, 12) } },
+		R = { id = "gkR", name = "항마금강저", desc = "땅을 내리찍으면 앞으로 금강저 일곱 개가 차례로 솟아 길을 가르고 적을 띄운다", pose = "grav_hammer", dur = 0.8, cd = 10, chi = 25,
+			mech = { kind = "line", count = 7, start = 5, spacing = 4.6, step = 0.07, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 26, 30, 0.6, 18, 26), fx = "gold" } },
+		G = { id = "gkG", name = "만불조종", desc = "하늘이 갈라지며 산만 한 금빛 손바닥이 내려와 둘레의 땅을 누른다. 눌린 적은 오래 묶이고, 땅이 세 번 울린다", pose = "ult_buddha", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "palm", radius = 26, delay = 1.0, hit = hit(0, 0, 0, 120, 150, 1.6, 10, -10), quake = hit(0, 0, 0, 24, 30, 0.5, 20, 14), quakes = 3, every = 0.35 } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "muyeong2", name = "진 무영귀각", hanja = "眞無影鬼脚", icon = "👤", grade = "신화",
+	color = Color3.fromRGB(110, 60, 220), color2 = Color3.fromRGB(215, 200, 255), fx = "shadow",
+	awakenOf = "muyeong", hidden = true, rebirthReq = 1,
+	unlockHint = "무영귀각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 그림자뿐인 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 그림자가 따로 걷기 시작했다. 내 발이 닿은 곳에 한 박자 늦게 그림자의 발이 또 닿는다. 상대는 두 번 맞고도 한 번 본다.",
+	gimmick = "영각: 연타·강타가 맞을 때마다 그림자가 한 박자 뒤 같은 자리를 한 번 더 찬다 (45%). 대시 세 번, 등 뒤를 차면 1.7배. 오의 백귀야행: 그림자 여덟이 둘레를 가로지르며 짓밟는다",
+	deflect = 0.2, speed = 1.12, backstab = 1.7, dashCharges = 3, shadowEcho = 0.45,
+	stance = "stance_muyeong",
+	combo = {
+		{ id = "mk1", name = "영각", pose = "side_kick", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4, 9, 8, 0.3, 6) } },
+		{ id = "mk2", name = "쌍영각", pose = "roundhouse", dur = 0.36, lunge = 2, hits = { hit(0.12, 6, 4.5, 6, 6, 0.25, 4), hit(0.24, 6, 4.5, 6, 6, 0.3, 8) } },
+		{ id = "mk3", name = "귀선퇴", pose = "whirl_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 5, 6, 11, 10, 0.4, 12, nil, true) } },
+		{ id = "mk4", name = "낙귀각", pose = "axe_kick", dur = 0.5, lunge = 3, hits = { hit(0.26, 6, 4.5, 18, 22, 0.55, 8, 24) } },
+	},
+	heavy = { id = "mkH", name = "귀영섬각", pose = "flying_kick", dur = 0.5, lunge = 20, iframes = 0.25, hits = { hit(0.22, 7, 5, 24, 26, 0.6, 34) } },
+	skills = {
+		E = { id = "mkE", name = "영보삼연", desc = "그림자를 밟고 가장 가까운 적 셋의 등 뒤로 차례로 건너뛰며 찬다 (무적, 모두 등 뒤 치명)", pose = "shadow_heel", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "chainTp", n = 3, range = 30, delay = 0.06, every = 0.16, hit = hit(0, 0, 0, 22, 18, 0.5, 18) } },
+		R = { id = "mkR", name = "그림자 감옥", desc = "발밑의 그림자가 둘레로 번져 적들의 발을 붙든다. 1.2초 뒤 그림자가 솟아 한꺼번에 걷어찬다", pose = "point_sky", dur = 0.7, cd = 12, chi = 25,
+			mech = { kind = "freeze", delay = 0.2, radius = 16, dur = 1.3, hitAt = 1.2, hit = hit(0, 0, 0, 34, 36, 0.8, 26, 22) } },
+		G = { id = "mkG", name = "백귀야행", desc = "세상이 어두워지고 그림자 여덟이 둘레의 땅에서 솟는다. 그림자들이 적들 사이를 엇갈려 가로지르며 열두 번 짓밟고, 마지막에 모두 한가운데로 모여 하늘로 걷어찬다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "parade", radius = 24, ghosts = 8, passes = 12, delay = 0.45, every = 0.16, width = 5, hit = hit(0, 0, 0, 14, 14, 0.4, 10), final = hit(0, 0, 0, 90, 110, 1.3, 20, 60), finalRadius = 18 } },
+	},
+})
+table.insert(Config.Styles, {
+	id = "taeheo2", name = "진 태허유수장", hanja = "眞太虛流水掌", icon = "🌊", grade = "신화",
+	color = Color3.fromRGB(50, 200, 255), color2 = Color3.fromRGB(225, 252, 255), fx = "water",
+	awakenOf = "taeheo", hidden = true, rebirthReq = 1,
+	unlockHint = "태허유수장을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 물이 된 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸이 물이 되었다. 흘려 낸 힘은 사라지지 않고 물결이 되어 둘레를 덮친다. 물은 다투지 않는다. 다만 모든 것을 덮을 뿐.",
+	gimmick = "역류: 흘리기 틈이 넓고 (0.3초), 흘려 낼 때마다 물결이 둘레로 터져 적을 밀어낸다. 오의 천하수류: 물의 용 셋이 나를 감아 돌며 둘레를 휩쓸고, 마지막에 한데 모여 앞으로 덮친다",
+	deflect = 0.3, speed = 1.05, deflectWave = { radius = 14, dmg = 26, posture = 40, stun = 0.6, kb = 36, up = 8 },
+	stance = "stance_taeheo",
+	combo = {
+		{ id = "tk1", name = "유수장", pose = "wave_palm_r", dur = 0.32, lunge = 2, hits = { hit(0.13, 6, 4.5, 9, 10, 0.35, 8) } },
+		{ id = "tk2", name = "역수장", pose = "wave_palm_l", dur = 0.32, lunge = 2, hits = { hit(0.13, 6, 4.5, 9, 10, 0.35, 8) } },
+		{ id = "tk3", name = "회류", pose = "circle_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 4, 7, 10, 12, 0.4, 10, nil, true) } },
+		{ id = "tk4", name = "해일장", pose = "double_palm", dur = 0.52, lunge = 3, hits = { hit(0.24, 7, 5.5, 17, 24, 0.55, 40) } },
+	},
+	heavy = { id = "tkH", name = "만류반탄장", pose = "tide_push", dur = 0.6, lunge = 2, hits = { hit(0.28, 7, 6, 22, 34, 0.65, 55) }, stackDmg = 0.6 },
+	skills = {
+		E = { id = "tkE", name = "수벽파", desc = "두 손으로 물의 벽을 밀어낸다. 1초 동안 앞쪽 부채꼴로 물결이 계속 밀려가 적을 밀어내고 균형을 깎는다", pose = "push_palm", dur = 0.6, cd = 9, chi = 20,
+			mech = { kind = "cone", range = 22, angle = 70, dur = 1.0, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 8, 16, 0.35, 26), fx = "water" } },
+		R = { id = "tkR", name = "용오름", desc = "발밑에서 물기둥이 솟아 둘레의 적을 하늘로 띄운다. 떠오른 적에게 물줄기가 내리꽂힌다", pose = "water_spiral", dur = 0.8, cd = 11, chi = 25,
+			mech = { kind = "launch", delay = 0.3, radius = 14, up = 60, stun = 1.4, hitAt = 0.55, hit = hit(0, 0, 0, 30, 30, 0.8, 0, -10) } },
+		G = { id = "tkG", name = "천하수류", desc = "물의 용 셋이 몸을 감고 솟아올라 2.6초 동안 둘레를 휘감아 돌며 휩쓴다. 마지막에 셋이 하나로 엉겨 앞으로 거대한 물결이 되어 덮친다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "waterDragons", n = 3, radius = 20, dur = 2.6, every = 0.22, delay = 0.3, hit = hit(0, 0, 0, 9, 12, 0.3, 12), final = hit(0, 0, 0, 100, 130, 1.4, 70, 18), finalDist = 16, finalRadius = 18 } },
+	},
+})
+
 -- 모든 기술을 한 치수 크게 (장치의 반경·범위, 기술 타격의 반경), 맨 타격뿐인 E·R에는 마지막 충격파를 더한다
 Config.SKILL_SCALE = 1.25
 local RADIUS_KEYS = { radius = true, finalRadius = true, bigRadius = true, geyserRadius = true, outer = true, width = true }
@@ -1254,6 +1372,53 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 1.9판 초·혈마신수: 오른손에 피처럼 붉은 큰 낫을 거머쥐고, 짐승처럼 웅크려 낫을 머리 위로 치켜든다
+-- 피의 계약: 체력이 깎일수록 낫이 무거워진다 (주는 피해가 오른다). 벤 만큼 되찾는다
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chohyeolma",
+	name = "초·혈마신수",
+	hanja = "超血魔神手",
+	icon = "🩸",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(220, 20, 40),
+	color2 = Color3.fromRGB(255, 170, 170),
+	fx = "blood",
+	scythe = true, -- 오른손에 붉은 큰 낫 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "hyeolma",
+	trialHp = 10,
+	unlockHint = "혈마신수를 익히고 천외천에 오른 자만이, 혈교 본산 성벽 너머 혈월 제단의 혈월선을 만난다",
+	desc = "혈마신수를 넘어선 권법. 손톱이 자라 낫이 되었다. 피처럼 붉은 큰 낫을 휘두를 때마다 핏빛 초승달이 하늘에 걸린다. 피를 흘릴수록 더 깊이 벤다.",
+	gimmick = "피의 계약: 체력이 깎일수록 주는 피해가 오른다 (체력이 바닥이면 최대 1.6배). 벤 피해의 3%를 되찾는다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.24,
+	lifesteal = 0.03,
+	bloodPact = 0.6,
+	speed = 1.15,
+	stance = "stance_reaper",
+	combo = {
+		{ id = "cq1", name = "혈겸 내려베기", pose = "reap_slash_r", dur = 0.34, lunge = 4, hits = { hit(0.15, 8, 6, 10, 9, 0.3, 8) } },
+		{ id = "cq2", name = "역겸 올려베기", pose = "reap_slash_l", dur = 0.34, lunge = 3, hits = { hit(0.15, 8, 6, 10, 9, 0.3, 10, 8) } },
+		{ id = "cq3", name = "혈륜참", pose = "reap_spin", dur = 0.46, lunge = 2, hits = { hit(0.16, 6, 9, 8, 7, 0.3, 8, nil, true), hit(0.34, 6, 9, 8, 7, 0.3, 12, nil, true) } },
+		{ id = "cq4", name = "참수", pose = "reap_overhead", dur = 0.56, lunge = 4, hits = { hit(0.3, 8, 7.5, 19, 22, 0.65, 26, nil, true) } },
+	},
+	heavy = { id = "cqH", name = "혈월 회선참", pose = "reap_wave", dur = 0.6, lunge = 14, iframes = 0.2, hits = { hit(0.24, 9, 9, 15, 16, 0.45, 14, nil, true), hit(0.4, 9, 9, 15, 16, 0.55, 34, nil, true) } },
+	skills = {
+		E = { id = "cqE", name = "혈사슬", desc = "낫을 사슬에 매달아 던진다. 둘레의 적 셋을 낫 끝으로 낚아 내 앞으로 끌어온 뒤, 한 바퀴 돌며 벤다", pose = "reap_hook", dur = 0.75, cd = 9, chi = 20,
+			mech = { kind = "reapHook", n = 3, range = 30, delay = 0.2, pull = 0.28, hit = hit(0, 0, 0, 10, 12, 0.6, 0), slash = hit(0, 0, 0, 22, 26, 0.6, 24), radius = 9 } },
+		R = { id = "cqR", name = "혈월낙참", desc = "하늘로 솟아 낫을 거꾸로 쥐고 내리꽂는다. 앞의 땅에 핏빛 초승달 자국이 새겨지고, 한 박자 뒤 자국이 터진다", pose = "reap_leap", dur = 0.85, cd = 10, chi = 25, jump = 34,
+			mech = { kind = "reapCleave", delay = 0.5, dist = 9, length = 22, width = 8, burst = 0.45, hit = hit(0, 0, 0, 34, 36, 0.8, 10, -10), burstHit = hit(0, 0, 0, 22, 26, 0.6, 20, 30) } },
+		G = { id = "cqG", name = "혈마수확", desc = "등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고, 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다", pose = "ult_reap", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "harvest", radius = 26, delay = 0.45, sweeps = 2, sweepTime = 0.55, heal = 0.01, hit = hit(0, 0, 0, 30, 30, 0.6, 20), mark = 0.6, burst = hit(0, 0, 0, 60, 80, 1.2, 40, 24) } },
+		X = { id = "cqX", name = "혈월만겸", desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 달빛을 받은 낫이 수백 개의 핏빛 초승달이 되어 둘레에 쏟아지고, 마지막에 달까지 닿는 한 줄기 낫질이 하늘과 땅을, 화면까지 가른다", pose = "reap_moon", dur = 3.2, cd = 60, chi = 150, armor = true,
+			mech = { kind = "bloodMoon", cut = 1.4, rain = 1.4, every = 0.08, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 6, 0.2, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 26 } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -1305,6 +1470,10 @@ local FINISHERS = {
 	seongha = { name = "성하승천권", pose = "star_punch_r" },
 	chomaehwa = { name = "앵화승천선", pose = "fan_rise" },
 	chochwi = { name = "취선승천권", pose = "soju_rise" },
+	geumgang2 = { name = "불괴승천추", pose = "elbow_r" },
+	muyeong2 = { name = "귀영승천각", pose = "back_spin_kick" },
+	taeheo2 = { name = "유수승천장", pose = "double_palm" },
+	chohyeolma = { name = "혈겸승천", pose = "reap_rise" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -1664,6 +1833,22 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "취화", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "soju_spray", fx = "fire", color = Color3.fromRGB(180, 255, 200), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
 			P("leap", "술병 내려찍기", 3, { radius = 18, warn = 0.9, cd = 7, pose = "soju_smash", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
 			P("quake", "만취", 3, { radius = 27, warn = 1.3, cd = 9, pose = "soju_rolls", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
+
+-- 1.9판 초월의 시련: 혈월선이 직접 (핏빛 비 → 낫 돌진 → 혈월)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chohyeolma" then
+		local red = Color3.fromRGB(230, 30, 45)
+		st.trialIntro = { title = "초월의 시련", text = "혈마의 손을 쥐었다고? 그 손톱은 아직 짧다. 내 낫 앞에서 피를 흘려 보아라. 끝까지 서 있으면, 이 낫이 너를 주인으로 고를 것이다." }
+		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.6, speed = 24, patterns = {
+			P("rain", "핏빛 초승달", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "reap_hook", fx = "fire", color = red, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
+			P("donut", "혈륜", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "reap_spin", hit = hit(0, 0, 0, 42, 52, 0.9, 40) }),
+			P("charge", "혈겸 돌진", 2, { length = 54, width = 9, warn = 0.7, cd = 6, times = 3, pose = "reap_wave", hit = hit(0, 0, 0, 38, 46, 0.8, 50) }),
+			P("rain", "피의 비", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "ult_reap", fx = "fire", color = Color3.fromRGB(255, 120, 120), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "참수", 3, { radius = 18, warn = 0.9, cd = 7, pose = "reap_leap", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
+			P("quake", "혈월", 3, { radius = 28, warn = 1.3, cd = 9, pose = "reap_moon", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2295,6 +2480,11 @@ Config.SOJU_HILL = Vector3.new(-170, 0, 980)
 Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.new(0, 3.2, 0), region = "취선 주막 남쪽 (술독 마루)", regionId = "tavern", secret = true,
 	quote = "넘어지는 게 아니야. 땅이 나한테 오는 거지.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 넥타이를 머리에 맨 노인이 코를 곤다더라" }
 
+-- 1.9판 초·혈마신수의 사부: 혈교 본산 성벽 밖 북동쪽 끝, 혈월 제단의 혈월선 (지도에 나오지 않는다)
+Config.REAPER_ALTAR = Vector3.new(2080, 0, -2080)
+Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vector3.new(0, 3.3, 0), region = "혈교 본산 밖 (혈월 제단)", regionId = "cult", secret = true,
+	quote = "피는 흘리라고 있는 것이다. 남의 것이든, 내 것이든.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
+
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
 Config.SKY_SHOP = {
@@ -2486,5 +2676,64 @@ for id, k in pairs({ bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 
 		b.speed = math.floor(b.speed * 0.85)
 	end
 end
+
+------------------------------------------------------------------------
+-- 1.9판: 업적과 칭호. 조건을 채우면 저절로 이루어지고 보상을 받는다 (칭호가 붙은 업적은 이름표 위에 칭호를 달 수 있다)
+-- kind: kills 쓰러뜨린 적 · bossSum 보스 처치 합 · boss 그 보스 · realm 경지 · rebirth 환생 · styles 익힌 권법 · transcend 초월 권법
+--       mastery 숙련 최대 권법 · tower 천층탑 최고 층 · pvp 비무 승리 · raid 레이드 승리 · maze 미궁 완주 · masters 찾은 사부 · mounts 탈것 · manuals 심법
+------------------------------------------------------------------------
+Config.ACHIEVEMENTS = {
+	{ id = "k100", icon = "⚔", name = "백인참", desc = "적 100을 쓰러뜨린다", kind = "kills", n = 100, coins = 3000 },
+	{ id = "k1000", icon = "⚔", name = "천인참", desc = "적 1,000을 쓰러뜨린다", kind = "kills", n = 1000, coins = 30000, title = "천인참" },
+	{ id = "k10000", icon = "⚔", name = "만인적", desc = "적 10,000을 쓰러뜨린다", kind = "kills", n = 10000, coins = 300000, scrolls = 3, title = "만인적" },
+	{ id = "k100000", icon = "☠", name = "강호의 재앙", desc = "적 100,000을 쓰러뜨린다", kind = "kills", n = 100000, coins = 3000000, scrolls = 10, title = "강호의 재앙" },
+	{ id = "b1", icon = "👹", name = "첫 보스", desc = "보스 하나를 쓰러뜨린다", kind = "bossSum", n = 1, coins = 5000 },
+	{ id = "b100", icon = "👹", name = "보스 사냥꾼", desc = "보스를 100번 쓰러뜨린다", kind = "bossSum", n = 100, coins = 500000, scrolls = 5, title = "보스 사냥꾼" },
+	{ id = "b1000", icon = "👹", name = "마왕 도살자", desc = "보스를 1,000번 쓰러뜨린다", kind = "bossSum", n = 1000, coins = 5000000, scrolls = 15, title = "마왕 도살자" },
+	{ id = "hyeolma", icon = "🩸", name = "혈교 토벌", desc = "혈마를 쓰러뜨린다", kind = "boss", arg = "hyeolma", n = 1, coins = 20000, title = "혈교 토벌자" },
+	{ id = "cheonma", icon = "🌑", name = "하늘을 되찾다", desc = "천마를 쓰러뜨린다", kind = "boss", arg = "cheonma", n = 1, coins = 100000, title = "천마를 꺾은 자" },
+	{ id = "cheonjon", icon = "👑", name = "옥좌의 주인", desc = "천존을 쓰러뜨린다", kind = "boss", arg = "cheonjon", n = 1, gems = 300, title = "옥좌를 빼앗은 자" },
+	{ id = "seonhak", icon = "🕊", name = "학을 꺾다", desc = "선학을 쓰러뜨린다", kind = "boss", arg = "seonhak", n = 1, gems = 400 },
+	{ id = "raid1", icon = "☄", name = "재앙을 막다", desc = "천상 레이드 천겁을 쓰러뜨린다 (기여 인정)", kind = "raid", n = 1, gems = 500, title = "재앙을 막은 자" },
+	{ id = "raid20", icon = "☄", name = "하늘의 방패", desc = "천상 레이드를 20번 이긴다", kind = "raid", n = 20, gems = 3000, scrolls = 10, title = "하늘의 방패" },
+	{ id = "maze1", icon = "🌀", name = "구름 속으로", desc = "구름 미궁을 끝까지 간다", kind = "maze", n = 1, gems = 100 },
+	{ id = "maze30", icon = "🌀", name = "미궁의 길잡이", desc = "구름 미궁을 30번 끝까지 간다", kind = "maze", n = 30, gems = 1500, scrolls = 5, title = "미궁의 길잡이" },
+	{ id = "r5", icon = "⛰", name = "절정 고수", desc = "절정의 경지에 오른다", kind = "realm", n = 5, coins = 10000 },
+	{ id = "r9", icon = "⛰", name = "사경을 넘어", desc = "사경의 경지에 오른다", kind = "realm", n = 9, coins = 100000, title = "사경 고수" },
+	{ id = "r13", icon = "⛰", name = "무극", desc = "무극의 경지에 오른다", kind = "realm", n = 13, coins = 1000000, title = "무극" },
+	{ id = "r16", icon = "✴", name = "하늘 밖의 하늘", desc = "천외천의 경지에 오른다", kind = "realm", n = 16, coins = 5000000, scrolls = 10, title = "천외천" },
+	{ id = "r20", icon = "👑", name = "권왕", desc = "모든 경지의 끝, 권왕에 오른다", kind = "realm", n = 20, coins = 100000000, scrolls = 50, title = "권왕" },
+	{ id = "rb1", icon = "♻", name = "다시 태어나다", desc = "처음 환생한다", kind = "rebirth", n = 1, coins = 2000000, title = "환생자" },
+	{ id = "rb2", icon = "♻", name = "두 번째 삶", desc = "두 번 환생한다", kind = "rebirth", n = 2, coins = 5000000, scrolls = 10 },
+	{ id = "rb3", icon = "♻", name = "윤회의 바퀴", desc = "세 번 환생한다", kind = "rebirth", n = 3, coins = 12000000, scrolls = 15, title = "윤회자" },
+	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존" },
+	{ id = "s5", icon = "🥋", name = "다섯 갈래", desc = "권법 다섯을 익힌다", kind = "styles", n = 5, coins = 20000 },
+	{ id = "s15", icon = "🥋", name = "백가쟁명", desc = "권법 열다섯을 익힌다", kind = "styles", n = 15, coins = 1000000, title = "백가의 주인" },
+	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },
+	{ id = "t1", icon = "🌸", name = "초월", desc = "초월 권법 하나를 익힌다", kind = "transcend", n = 1, coins = 3000000, title = "초월자" },
+	{ id = "t3", icon = "🌸", name = "삼초", desc = "초월 권법 셋을 모두 익힌다", kind = "transcend", n = 3, coins = 20000000, scrolls = 20, title = "삼초" },
+	{ id = "m1", icon = "✦", name = "완전 각성", desc = "권법 하나의 숙련을 끝까지 올린다", kind = "mastery", n = 1, coins = 20000 },
+	{ id = "m10", icon = "✦", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
+	{ id = "tw30", icon = "🗼", name = "탑의 문턱", desc = "천층탑 30층에 오른다", kind = "tower", n = 30, coins = 20000 },
+	{ id = "tw100", icon = "🗼", name = "백층", desc = "천층탑 100층에 오른다", kind = "tower", n = 100, coins = 1000000, scrolls = 5, title = "백층 돌파" },
+	{ id = "tw150", icon = "🗼", name = "구름 위의 층", desc = "천층탑 150층에 오른다", kind = "tower", n = 150, coins = 10000000, scrolls = 15, title = "탑의 주인" },
+	{ id = "pvp10", icon = "🏆", name = "비무 열 승", desc = "다른 무인을 열 번 이긴다", kind = "pvp", n = 10, coins = 50000 },
+	{ id = "pvp100", icon = "🏆", name = "비무왕", desc = "다른 무인을 백 번 이긴다", kind = "pvp", n = 100, coins = 2000000, title = "비무왕" },
+	{ id = "mst10", icon = "🧭", name = "사부를 찾아서", desc = "사부 열을 찾는다", kind = "masters", n = 10, coins = 200000, title = "구도자" },
+	{ id = "mnt4", icon = "🐎", name = "말 부자", desc = "탈것 넷을 가진다", kind = "mounts", n = 4, gems = 200 },
+	{ id = "man10", icon = "📜", name = "심법 수집가", desc = "심법 열을 가진다", kind = "manuals", n = 10, coins = 200000 },
+}
+Config.ACH_BY_ID = {}
+for i, a in ipairs(Config.ACHIEVEMENTS) do
+	a.index = i
+	Config.ACH_BY_ID[a.id] = a
+end
+-- 칭호 빛깔: 칭호가 붙은 업적의 차례(어려울수록 뒤)로 정하지 않고, 업적 갈래로 정한다
+Config.ACH_COLOR = {
+	kills = Color3.fromRGB(255, 140, 120), bossSum = Color3.fromRGB(255, 110, 80), boss = Color3.fromRGB(255, 90, 90), raid = Color3.fromRGB(255, 170, 70),
+	maze = Color3.fromRGB(170, 210, 255), realm = Color3.fromRGB(255, 240, 160), rebirth = Color3.fromRGB(255, 120, 220), styles = Color3.fromRGB(160, 255, 190),
+	transcend = Color3.fromRGB(255, 160, 210), mastery = Color3.fromRGB(255, 220, 120), tower = Color3.fromRGB(150, 230, 255), pvp = Color3.fromRGB(255, 200, 80),
+	masters = Color3.fromRGB(200, 255, 230), mounts = Color3.fromRGB(220, 200, 160), manuals = Color3.fromRGB(210, 180, 255),
+}
 
 return Config

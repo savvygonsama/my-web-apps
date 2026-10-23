@@ -63,6 +63,10 @@ type Profile = {
 	mountSel: string, -- 고른 탈것
 	skyGems: number, -- 천정 (천상계 화폐)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
+	rebirth: number, -- 환생 횟수 (1.9판)
+	ach: { [string]: boolean }, -- 이룬 업적
+	title: string?, -- 단 칭호 (업적 id)
+	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
 }
 
 local function defaultProfile(): Profile
@@ -95,6 +99,9 @@ local function defaultProfile(): Profile
 		mountSel = "horse",
 		skyGems = 0,
 		skyBuffUntil = 0,
+		rebirth = 0,
+		ach = {},
+		counts = {},
 	}
 end
 
@@ -112,7 +119,7 @@ local function sanitize(data: any): Profile
 	p.coins = math.floor(num(data.coins, 1e12))
 	if type(data.stats) == "table" then
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] = math.floor(num(data.stats[s.id], 1e9))
+			p.stats[s.id] = math.floor(num(data.stats[s.id], 1e13))
 		end
 	end
 	if type(data.styles) == "table" then
@@ -209,6 +216,18 @@ local function sanitize(data: any): Profile
 	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
 	p.autoOn = data.autoOn == true or nil
+	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
+	p.ach = flags(data.ach, function(k)
+		return Config.ACH_BY_ID[k] ~= nil
+	end)
+	if type(data.title) == "string" and p.ach[data.title] and Config.ACH_BY_ID[data.title].title then
+		p.title = data.title
+	end
+	if type(data.counts) == "table" then
+		for _, k in ipairs({ "raid", "maze" }) do
+			p.counts[k] = math.floor(num(data.counts[k], 1e9))
+		end
+	end
 	p.autoStat = (data.autoStat == "all" or (type(data.autoStat) == "string" and Config.AUTO_TRAIN.kinds[data.autoStat] ~= nil)) and data.autoStat or nil
 	return p
 end
@@ -310,7 +329,7 @@ end
 
 -- 지금 경지: 능력치로 닿은 경지라도, 특급부터는 그 경지의 관문을 넘어야 오른다
 function Calc.realm(p: Profile): (number, any)
-	local idx = Config.realmOf(Calc.total(p))
+	local idx = Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth or 0))
 	for i = Config.GATE.from, idx do
 		if not (p.gates and p.gates[tostring(i)]) then
 			idx = i - 1
@@ -321,7 +340,7 @@ function Calc.realm(p: Profile): (number, any)
 end
 -- 능력치는 닿았는데 관문을 아직 못 넘은 경지 (없으면 nil)
 function Calc.gateNext(p: Profile): number?
-	local reach = Config.realmOf(Calc.total(p))
+	local reach = Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth or 0))
 	local now = Calc.realm(p)
 	if reach > now then
 		return now + 1
@@ -390,11 +409,97 @@ local function cutscene(player: Player, id: string, data: any?): boolean
 	return true
 end
 
+------------------------------------------------------------------------
+-- 1.9판: 업적. 조건을 채우면 저절로 이루어지고 보상이 들어온다 (상태를 보낼 때마다 살핀다)
+------------------------------------------------------------------------
+local Ach = {}
+local function keyCount(t: { [any]: any }?): number
+	local n = 0
+	for _ in pairs(t or {}) do
+		n += 1
+	end
+	return n
+end
+function Ach.value(p: Profile, a: any): number
+	local k = a.kind
+	if k == "kills" then
+		return p.kills
+	elseif k == "bossSum" then
+		local n = 0
+		for _, v in pairs(p.bosses) do
+			n += v
+		end
+		return n
+	elseif k == "boss" then
+		return p.bosses[a.arg] or 0
+	elseif k == "realm" then
+		return (Calc.realm(p))
+	elseif k == "rebirth" then
+		return p.rebirth
+	elseif k == "styles" then
+		return keyCount(p.styles)
+	elseif k == "transcend" then
+		local n = 0
+		for id in pairs(p.styles) do
+			local sd = Config.STYLE_BY_ID[id]
+			if sd and sd.transcend then
+				n += 1
+			end
+		end
+		return n
+	elseif k == "mastery" then
+		local n = 0
+		for id, m in pairs(p.mastery) do
+			if p.styles[id] and m.lv >= Config.MASTERY_MAX then
+				n += 1
+			end
+		end
+		return n
+	elseif k == "tower" then
+		return p.towerBest
+	elseif k == "pvp" then
+		return p.pvpWins
+	elseif k == "raid" or k == "maze" then
+		return p.counts[k] or 0
+	elseif k == "masters" then
+		return keyCount(p.found)
+	elseif k == "mounts" then
+		return keyCount(p.mounts)
+	elseif k == "manuals" then
+		return keyCount(p.manuals)
+	end
+	return 0
+end
+-- 새로 이룬 업적에 보상을 주고 알린다 (상태는 부른 쪽이 보낸다)
+function Ach.check(player: Player, p: Profile)
+	for _, a in ipairs(Config.ACHIEVEMENTS) do
+		if not p.ach[a.id] and Ach.value(p, a) >= a.n then
+			p.ach[a.id] = true
+			p.coins += a.coins or 0
+			p.skyGems += a.gems or 0
+			p.scrolls += a.scrolls or 0
+			local st = states[player]
+			if st then
+				st.dirty = true
+			end
+			Push:FireClient(player, "ach", { id = a.id })
+		end
+	end
+end
+function Ach.progress(p: Profile): { [string]: number }
+	local out = {}
+	for _, a in ipairs(Config.ACHIEVEMENTS) do
+		out[a.id] = math.min(a.n, Ach.value(p, a))
+	end
+	return out
+end
+
 local function pushState(player: Player)
 	local p, st = profiles[player], states[player]
 	if not p or not st then
 		return
 	end
+	Ach.check(player, p)
 	local idx, realm = Calc.realm(p)
 	local mastery = {}
 	for id in pairs(p.styles) do
@@ -447,6 +552,11 @@ local function pushState(player: Player)
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
+		rebirth = p.rebirth,
+		realmCap = Config.realmCap(p.rebirth),
+		ach = p.ach,
+		achProg = Ach.progress(p),
+		title = p.title,
 		power = (function()
 			local f = Combat.fighterOfPlayer(player)
 			return f and (f :: any).power or 0
@@ -469,6 +579,17 @@ local function updateTag(player: Player)
 		g.Name = "KwonTag"
 		g.Size = UDim2.new(0, 300, 0, 60)
 		g.StudsOffset = Vector3.new(0, 2.6, 0)
+		-- 칭호 (업적): 이름 위에 작게
+		local tl = Instance.new("TextLabel")
+		tl.Name = "Title"
+		tl.BackgroundTransparency = 1
+		tl.Position = UDim2.fromScale(0, -0.42)
+		tl.Size = UDim2.fromScale(1, 0.4)
+		tl.Font = Enum.Font.GothamBlack
+		tl.TextScaled = true
+		tl.TextStrokeTransparency = 0.2
+		tl.Text = ""
+		tl.Parent = g
 		g.AlwaysOnTop = true
 		g.LightInfluence = 0
 		g.MaxDistance = 120
@@ -495,8 +616,15 @@ local function updateTag(player: Player)
 	local g = gui :: BillboardGui
 	local top = g:FindFirstChild("Top") :: TextLabel
 	local bottom = g:FindFirstChild("Bottom") :: TextLabel
-	top.Text = string.format("[%s] %s", realm.name, player.DisplayName)
+	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
+	top.Text = string.format("[%s%s] %s", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
 	top.TextColor3 = realm.color
+	local tl = g:FindFirstChild("Title") :: TextLabel?
+	local ta = p.title and Config.ACH_BY_ID[p.title]
+	if tl then
+		tl.Text = ta and ("「" .. ta.title .. "」") or ""
+		tl.TextColor3 = ta and (Config.ACH_COLOR[ta.kind] or Color3.new(1, 1, 1)) or Color3.new(1, 1, 1)
+	end
 	bottom.Text = style and (style.icon .. " " .. style.name) or "권법 없음"
 	bottom.TextColor3 = style and style.color or Color3.fromRGB(200, 200, 200)
 	char:SetAttribute("Realm", realm.name)
@@ -520,9 +648,13 @@ local function rewardPower(player: Player): number
 	local f = Combat.fighterOfPlayer(player)
 	local pw = ((f :: any) and (f :: any).power) or 100
 	if p then
-		pw /= math.sqrt(Config.lateAtk((Calc.realm(p))))
+		pw /= math.sqrt(Config.lateAtk((Calc.realm(p)))) * Config.rebirthPower(p.rebirth)
 	end
 	return pw
+end
+-- 능력치를 얻는 배율 (환생할수록 많이)
+local function gainMult(p: Profile): number
+	return Config.rebirthGain(p.rebirth or 0)
 end
 
 local function refreshFighter(player: Player)
@@ -539,12 +671,61 @@ local function refreshFighter(player: Player)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx)
+	local rb = Config.rebirthPower(p.rebirth)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * rb
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power * (1 + mb.hp))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power * (1 + mb.hp) * rb)
+	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
+	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
+	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
+	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
+	if rootPart and p.rebirth > 0 then
+		local col = Config.REBIRTH.colors[p.rebirth] or Color3.new(1, 1, 1)
+		if not aura then
+			local at = Instance.new("Attachment")
+			at.Name = "RebirthAura"
+			at.Position = Vector3.new(0, -2.6, 0)
+			local rise = Instance.new("ParticleEmitter")
+			rise.Name = "Rise"
+			rise.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+			rise.LightEmission = 1
+			rise.Lifetime = NumberRange.new(0.8, 1.4)
+			rise.Speed = NumberRange.new(4, 8)
+			rise.SpreadAngle = Vector2.new(12, 12)
+			rise.Acceleration = Vector3.new(0, 3, 0)
+			rise.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 0) })
+			rise.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+			rise.Shape = Enum.ParticleEmitterShape.Disc
+			rise.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+			rise.ShapeInOut = Enum.ParticleEmitterShapeInOut.Outward
+			rise.Parent = at
+			local ring = Instance.new("ParticleEmitter")
+			ring.Name = "Ring"
+			ring.Texture = "rbxasset://textures/particles/smoke_main.dds"
+			ring.LightEmission = 0.8
+			ring.Lifetime = NumberRange.new(1, 1.6)
+			ring.Speed = NumberRange.new(0.5, 1)
+			ring.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 2.6) })
+			ring.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 1) })
+			ring.Shape = Enum.ParticleEmitterShape.Disc
+			ring.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+			ring.Parent = at
+			at.Parent = rootPart
+			aura = at
+		end
+		local au = aura :: Attachment
+		for _, e in ipairs(au:GetChildren()) do
+			if e:IsA("ParticleEmitter") then
+				e.Color = ColorSequence.new(col, Color3.new(1, 1, 1):Lerp(col, 0.4))
+				e.Rate = (e.Name == "Rise" and 6 or 3) * p.rebirth
+			end
+		end
+	elseif aura then
+		aura:Destroy()
+	end
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
@@ -769,6 +950,7 @@ end
 ------------------------------------------------------------------------
 -- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
 local Gate: any
+local Rebirth: any
 local Train: any
 local Tower: any
 local Maze: any = {}
@@ -1161,7 +1343,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1))
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -1199,7 +1381,7 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 내 전투력의 capRatio배를 넘는 적은 그만큼으로만 센다
 					local mine = rewardPower(killer)
-					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
+					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each
@@ -1786,6 +1968,53 @@ end
 Gate = {}
 local activeGate: { [Player]: any } = {}
 
+------------------------------------------------------------------------
+-- 1.9판: 환생. 열린 끝 경지에 오르면, 능력치를 모두 내려놓고 삼류로 다시 태어난다
+------------------------------------------------------------------------
+Rebirth = {}
+function Rebirth.go(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st or not f or f.dead then
+		return
+	end
+	local RB = Config.REBIRTH
+	if p.rebirth >= RB.max then
+		toast(player, "♻ 이미 네 번 환생했어요 (더는 환생할 수 없어요)")
+		return
+	end
+	local cap = Config.realmCap(p.rebirth)
+	if (Calc.realm(p)) < cap then
+		toast(player, string.format("♻ %s의 경지에 올라야 환생할 수 있어요", Config.Realms[cap].name))
+		return
+	end
+	if Tower.active(player) or Maze.active(player) or activeGate[player] then
+		toast(player, "지금은 환생할 수 없어요 (탑·미궁·관문 밖에서)")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 환생할 수 없어요")
+		return
+	end
+	Train.stop(player)
+	for _, sd in ipairs(Config.Stats) do
+		p.stats[sd.id] = 0
+	end
+	p.rebirth += 1
+	p.coins += RB.coins * p.rebirth
+	st.dirty = true
+	refreshFighter(player)
+	f.hp = f.maxHp
+	Combat.sync(f)
+	local newRealm = Config.Realms[Config.realmCap(p.rebirth)]
+	Push:FireAllClients("rebirth", { m = f.model, n = p.rebirth, name = player.DisplayName, me = false })
+	Push:FireClient(player, "rebirthDone", { n = p.rebirth, name = RB.names[p.rebirth], realm = newRealm.name, coins = RB.coins * p.rebirth,
+		power = math.floor((Config.rebirthPower(p.rebirth) - 1) * 100 + 0.5), gain = math.floor((Config.rebirthGain(p.rebirth) - 1) * 100 + 0.5) })
+	Story.check(player)
+	pushState(player)
+end
+
+
 -- 관문이 막 열렸으면 한 번 알려 준다
 function Gate.notify(player: Player, p: Profile, st: State)
 	local nxt = Calc.gateNext(p)
@@ -2287,11 +2516,12 @@ function Maze.finish(player: Player, run: any)
 	local M = Config.MAZE
 	if p and st then
 		local ready = os.clock() >= (mazeRewardAt[player] or 0)
+		p.counts.maze = (p.counts.maze or 0) + 1
 		local data = { first = ready, gems = 0, coins = 0, scrolls = 0, stats = 0 }
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
 			local R = M.reward
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -2633,7 +2863,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Calc.realm(p)
-	local mult = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1)
+	local mult = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -2689,12 +2919,28 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		p.coins += math.clamp(tonumber(arg) or 1000, 0, 1e9)
 	elseif action == "testStats" then
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 2e8)
+			p.stats[s.id] += math.clamp(tonumber(arg) or 100, 0, 1e11)
 		end
 		-- 테스트: 닿은 경지까지 관문도 모두 넘긴다
-		for i = Config.GATE.from, Config.realmOf(Calc.total(p)) do
+		for i = Config.GATE.from, Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth)) do
 			p.gates[tostring(i)] = true
 		end
+	elseif action == "testRebirthReady" then
+		-- 테스트: 지금 열린 끝 경지까지 능력치를 채우고 관문도 넘긴다 (바로 환생할 수 있게)
+		local cap = Config.realmCap(p.rebirth)
+		local each = math.ceil(Config.Realms[cap].need / #Config.Stats) + 1
+		for _, s in ipairs(Config.Stats) do
+			p.stats[s.id] = math.max(p.stats[s.id], each)
+		end
+		for i = Config.GATE.from, cap do
+			p.gates[tostring(i)] = true
+		end
+		toast(player, "♻ 환생 준비 완료 (" .. Config.Realms[cap].name .. ")")
+	elseif action == "testRebirthReset" then
+		p.rebirth = 0
+		p.ach = {}
+		p.title = nil
+		toast(player, "♻ 환생·업적 기록을 지웠어요")
 	elseif action == "testGateReset" then
 		p.gates = {}
 		toast(player, "⛩ 관문 기록을 지웠어요")
@@ -3058,6 +3304,21 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "gate" then
 		Gate.start(player)
+	elseif action == "rebirth" then
+		Rebirth.go(player)
+	elseif action == "title" then
+		-- 칭호 달기 (이룬 업적 중 칭호가 있는 것), 빈 글이면 뗀다
+		local id = tostring(a1 or "")
+		if id == "" then
+			p.title = nil
+		elseif p.ach[id] and Config.ACH_BY_ID[id] and Config.ACH_BY_ID[id].title then
+			p.title = id
+		else
+			return
+		end
+		st.dirty = true
+		updateTag(player)
+		pushState(player)
 	elseif action == "mount" then
 		-- 탈것 타기·내리기
 		local f = Combat.fighterOfPlayer(player)
@@ -3219,6 +3480,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
 		elseif Calc.realm(p) < A.realm then
 			toast(player, string.format("각성은 %s의 경지부터예요", Config.Realms[A.realm].name))
+		elseif (v2.rebirthReq or 0) > p.rebirth then
+			toast(player, string.format("%s은(는) 환생을 %d번 한 몸이라야 깨어나요", v2.name, v2.rebirthReq))
 		elseif p.coins < A.coins then
 			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(A.coins)))
 		elseif f0 and f0.combatUntil > os.clock() then
@@ -3656,7 +3919,8 @@ function Raid.killed(f: any)
 			p.coins += coins
 			p.scrolls += scrolls
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
+			p.counts.raid = (p.counts.raid or 0) + 1
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
