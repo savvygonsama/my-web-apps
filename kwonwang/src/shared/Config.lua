@@ -170,7 +170,8 @@ end
 -- (앞 경지는 스무 마리 남짓, 뒤로 갈수록 일흔 마리 남짓), 쓰러뜨린 적의 전투력으로 그 사이를 이어 얻는 양을 정한다
 ------------------------------------------------------------------------
 -- 1.8판: 너무 빨리 오른다 → 경지마다 필요한 마릿수를 두 배로, 보스 몫 ×8 → ×4
-Config.KILL_GAIN = { boss = 4, elite = 1.5, tower = 0.5, capRatio = 1.5 } -- capRatio: 내 전투력의 이 배까지만 센다
+-- 1.9.1판: 후반에도 한 번에 너무 많이 오른다 → 마릿수 두 배 더, 보스 ×4 → ×2.5, 정예 ×1.2, 센 적은 내 전투력의 1.2배까지만
+Config.KILL_GAIN = { boss = 2.5, elite = 1.2, tower = 0.5, capRatio = 1.2 } -- capRatio: 내 전투력의 이 배까지만 센다
 local killTable: { { number } } = {}
 do
 	local n = #Config.Realms
@@ -182,14 +183,16 @@ do
 		end
 		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
 		-- 환생으로 열린 경지는 세 배 더 오래 (보스 몫이 커서 금방 오르지 않게)
-		local gain = (nxt - r.need) / ((30 + 8 * i) * (r.rebirth and 3 or 1))
+		local gain = (nxt - r.need) / ((60 + 16 * i) * (r.rebirth and 3 or 1))
 		table.insert(killTable, { power, gain })
 	end
 end
 -- 전투력 power인 적 하나를 쓰러뜨리면 오르는 능력치 합 (네 능력치에 고루 나눈다)
-function Config.killGain(power: number): number
+function Config.killGain(power: number, maxRow: number?): number
+	-- maxRow: 이 사람이 오를 수 있는 끝 경지 (환생 전이면 천외천). 그 너머의 줄은 보지 않는다
+	local n = math.clamp(maxRow or #killTable, 1, #killTable)
 	local p = math.max(1, power)
-	local first, last = killTable[1], killTable[#killTable]
+	local first, last = killTable[1], killTable[n]
 	if p <= first[1] then
 		return math.max(1, first[2] * (p / first[1]) ^ 2)
 	end
@@ -197,7 +200,7 @@ function Config.killGain(power: number): number
 		-- 표 너머는 더 오르지 않는다 (아주 센 보스 하나에 터무니없이 오르지 않게)
 		return last[2]
 	end
-	for i = 1, #killTable - 1 do
+	for i = 1, n - 1 do
 		local a, b = killTable[i], killTable[i + 1]
 		if p <= b[1] then
 			local t = math.log(p / a[1]) / math.log(b[1] / a[1])
@@ -2249,10 +2252,10 @@ Config.TOWER = {
 	slots = 10,
 	radius = 46,
 	bossEvery = 10,
-	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.06
-	-- (10층 약 100 · 50층 약 1,000 · 80층 약 6,000 · 100층 약 19,000 · 120층 약 62,000)
+	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.07 (1.9.1판: ×1.06 → ×1.07, 위로 갈수록 더 가파르게)
+	-- (10층 약 110 · 50층 약 1,640 · 80층 약 12,000 · 100층 약 48,000 · 120층 약 190,000 · 150층 약 1,440,000)
 	powerStart = 60,
-	powerGrowth = 1.06,
+	powerGrowth = 1.07,
 	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)

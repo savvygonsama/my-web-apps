@@ -190,7 +190,8 @@ end
 -- (앞 경지는 스무 마리 남짓, 뒤로 갈수록 일흔 마리 남짓), 쓰러뜨린 적의 전투력으로 그 사이를 이어 얻는 양을 정한다
 ------------------------------------------------------------------------
 -- 1.8판: 너무 빨리 오른다 → 경지마다 필요한 마릿수를 두 배로, 보스 몫 ×8 → ×4
-Config.KILL_GAIN = { boss = 4, elite = 1.5, tower = 0.5, capRatio = 1.5 } -- capRatio: 내 전투력의 이 배까지만 센다
+-- 1.9.1판: 후반에도 한 번에 너무 많이 오른다 → 마릿수 두 배 더, 보스 ×4 → ×2.5, 정예 ×1.2, 센 적은 내 전투력의 1.2배까지만
+Config.KILL_GAIN = { boss = 2.5, elite = 1.2, tower = 0.5, capRatio = 1.2 } -- capRatio: 내 전투력의 이 배까지만 센다
 local killTable: { { number } } = {}
 do
 	local n = #Config.Realms
@@ -202,14 +203,16 @@ do
 		end
 		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
 		-- 환생으로 열린 경지는 세 배 더 오래 (보스 몫이 커서 금방 오르지 않게)
-		local gain = (nxt - r.need) / ((30 + 8 * i) * (r.rebirth and 3 or 1))
+		local gain = (nxt - r.need) / ((60 + 16 * i) * (r.rebirth and 3 or 1))
 		table.insert(killTable, { power, gain })
 	end
 end
 -- 전투력 power인 적 하나를 쓰러뜨리면 오르는 능력치 합 (네 능력치에 고루 나눈다)
-function Config.killGain(power: number): number
+function Config.killGain(power: number, maxRow: number?): number
+	-- maxRow: 이 사람이 오를 수 있는 끝 경지 (환생 전이면 천외천). 그 너머의 줄은 보지 않는다
+	local n = math.clamp(maxRow or #killTable, 1, #killTable)
 	local p = math.max(1, power)
-	local first, last = killTable[1], killTable[#killTable]
+	local first, last = killTable[1], killTable[n]
 	if p <= first[1] then
 		return math.max(1, first[2] * (p / first[1]) ^ 2)
 	end
@@ -217,7 +220,7 @@ function Config.killGain(power: number): number
 		-- 표 너머는 더 오르지 않는다 (아주 센 보스 하나에 터무니없이 오르지 않게)
 		return last[2]
 	end
-	for i = 1, #killTable - 1 do
+	for i = 1, n - 1 do
 		local a, b = killTable[i], killTable[i + 1]
 		if p <= b[1] then
 			local t = math.log(p / a[1]) / math.log(b[1] / a[1])
@@ -2269,10 +2272,10 @@ Config.TOWER = {
 	slots = 10,
 	radius = 46,
 	bossEvery = 10,
-	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.06
-	-- (10층 약 100 · 50층 약 1,000 · 80층 약 6,000 · 100층 약 19,000 · 120층 약 62,000)
+	-- 층의 세기는 정해져 있다 (누가 오르든 같다): 1층 전투력 60, 층마다 ×1.07 (1.9.1판: ×1.06 → ×1.07, 위로 갈수록 더 가파르게)
+	-- (10층 약 110 · 50층 약 1,640 · 80층 약 12,000 · 100층 약 48,000 · 120층 약 190,000 · 150층 약 1,440,000)
 	powerStart = 60,
-	powerGrowth = 1.06,
+	powerGrowth = 1.07,
 	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
@@ -5905,7 +5908,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer), Config.realmCap(p.rebirth)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -5943,7 +5946,7 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 내 전투력의 capRatio배를 넘는 적은 그만큼으로만 센다
 					local mine = rewardPower(killer)
-					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio), Config.realmCap(p.rebirth)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each
@@ -7060,7 +7063,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1)
+		local g = Config.killGain(math.min(ef.power or 100, rewardPower(player) * Config.KILL_GAIN.capRatio), Config.realmCap(p.rebirth)) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			p.stats[sd.id] += each
@@ -7083,7 +7086,7 @@ function Maze.finish(player: Player, run: any)
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
 			local R = M.reward
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player), Config.realmCap(p.rebirth)) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -8481,7 +8484,7 @@ function Raid.killed(f: any)
 			p.coins += coins
 			p.scrolls += scrolls
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player), Config.realmCap(p.rebirth)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
 			p.counts.raid = (p.counts.raid or 0) + 1
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
@@ -30057,21 +30060,29 @@ local function powerAdvice(rec: number): string
 	local tag = r < 0.6 and "⚠ 위험" or (r < 1 and "조금 버거움" or (r < 2.5 and "알맞음" or "여유"))
 	return string.format("⚔ 권장 %s (내 %s · %s)", Config.formatNumber(rec), Config.formatNumber(mine), tag)
 end
-local recLabels: { [string]: TextLabel } = {}
+-- 1.9.1판: 지도 글자 정돈. 지역 이름과 권장 전투력은 한 덩어리 (지역 가운데)로 묶고,
+-- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
+local regionTags: { [string]: { label: TextLabel, name: string } } = {}
+local mapCanvas: Frame
+type MapText = { label: TextLabel, prio: number, small: number, big: number }
+local mapTexts: { MapText } = {}
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
 	local mine = state and state.power or 0
-	for id, l in pairs(recLabels) do
+	for id, tg in pairs(regionTags) do
 		local rec, boss = regionPower(id)
+		local l = tg.label
 		if not rec then
-			l.Text = ""
-		elseif mapBig then
-			l.Text = string.format("⚔ 권장 %s", Config.formatNumber(rec)) .. (boss and string.format(" · 👹 %s", Config.formatNumber(boss)) or "")
+			l.Text = tg.name
 		else
-			l.Text = "⚔" .. Config.formatNumber(rec)
+			local r = mine > 0 and mine / rec or 1
+			local col = r < 0.6 and "#FF6A5F" or (r < 1 and "#FFBE5A" or (r < 2.5 and "#96F082" or "#CDCDCD"))
+			local line = string.format('<font color="%s">⚔%s</font>', col, Config.formatNumber(rec))
+			if boss and mapBig then
+				line ..= string.format('  <font color="#FF9A9A">👹%s</font>', Config.formatNumber(boss))
+			end
+			l.Text = tg.name .. "\n" .. line
 		end
-		local r = (rec and mine > 0) and mine / rec or 1
-		l.TextColor3 = r < 0.6 and Color3.fromRGB(255, 105, 95) or (r < 1 and Color3.fromRGB(255, 190, 90) or (r < 2.5 and Color3.fromRGB(150, 240, 130) or Color3.fromRGB(205, 205, 205)))
 	end
 end
 
@@ -30081,7 +30092,75 @@ local function mapUV(p: Vector3): UDim2
 end
 
 local MAP_SMALL = 250
-local MAP_BIG = 600
+local MAP_BIG = 760
+local SMALL_SPAN = 1300 -- 작은 지도 한 변에 보이는 넓이 (칸)
+local bigZoom = 1
+local bigCenter = Vector3.zero
+local function viewZoom(): number
+	return mapBig and bigZoom or (2 * Config.WORLD_HALF) / SMALL_SPAN
+end
+-- 지도 판을 옮긴다: 작은 지도는 내가 가운데, 큰 지도는 고른 가운데 (세상 밖이 보이지 않게 묶는다)
+local function applyView(pos: Vector3?)
+	if not mapCanvas then
+		return
+	end
+	local H = Config.WORLD_HALF
+	local z = viewZoom()
+	local c = mapBig and bigCenter or (pos or Vector3.zero)
+	local u, v = (c.X + H) / (2 * H), (c.Z + H) / (2 * H)
+	if mapBig then
+		local half = 0.5 / z
+		u = math.clamp(u, half, 1 - half)
+		v = math.clamp(v, half, 1 - half)
+		bigCenter = Vector3.new(u * 2 * H - H, 0, v * 2 * H - H)
+	end
+	mapCanvas.Size = UDim2.fromScale(z, z)
+	mapCanvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
+end
+-- 겹치는 글자 감추기 (중요한 것부터 자리를 잡는다)
+local function declutter()
+	if not mapInner then
+		return
+	end
+	local inner = mapInner.AbsoluteSize
+	if inner.X < 10 then
+		return
+	end
+	local z = viewZoom()
+	local cs = inner.X * z
+	local ox = mapCanvas.Position.X.Scale * inner.X
+	local oy = mapCanvas.Position.Y.Scale * inner.Y
+	local placed: { { number } } = {}
+	for _, t in ipairs(mapTexts) do
+		local l = t.label
+		local size = mapBig and t.big or t.small
+		local px = ox + l.Position.X.Scale * cs
+		local py = oy + l.Position.Y.Scale * cs
+		local plain = string.gsub(l.Text, "<[^>]+>", "")
+		local lines = string.split(plain, "\n")
+		local wide = 0
+		for _, ln in ipairs(lines) do
+			wide = math.max(wide, utf8.len(ln) or #ln)
+		end
+		local w = wide * size * 0.62 + 4
+		local h = #lines * size * 1.15
+		local x0, y0, x1, y1 = px - w / 2, py - h / 2, px + w / 2, py + h / 2
+		local ok = wide > 0 and x1 > 0 and y1 > 0 and x0 < inner.X and y0 < inner.Y
+		if ok then
+			for _, r in ipairs(placed) do
+				if x0 < r[3] and x1 > r[1] and y0 < r[4] and y1 > r[2] then
+					ok = false
+					break
+				end
+			end
+		end
+		l.Visible = ok
+		if ok then
+			table.insert(placed, { x0, y0, x1, y1 })
+		end
+	end
+end
+local zoomBtns: { GuiObject } = {}
 local function placeMap()
 	if mapBig then
 		mapFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -30094,39 +30173,47 @@ local function placeMap()
 	end
 	-- 휴대폰은 버튼과 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다
 	mapFrame.Visible = mapBig or not UserInputService.TouchEnabled
-	for _, l in ipairs(mapInner:GetDescendants()) do
-		if l:IsA("TextLabel") then
-			local base = l:GetAttribute("MapText")
-			if type(base) == "number" then
-				l.TextSize = base * (mapBig and 1.6 or 1)
-			end
-			if l:GetAttribute("BigOnly") then
-				l.Visible = mapBig
-			end
-		end
+	for _, t in ipairs(mapTexts) do
+		t.label.TextSize = mapBig and t.big or t.small
+	end
+	for _, b in ipairs(zoomBtns) do
+		b.Visible = mapBig
 	end
 	refreshRec()
+	applyView(myPos())
+	task.defer(declutter)
 end
 
 function UI.toggleMap()
 	mapBig = not mapBig
+	if mapBig then
+		-- 큰 지도는 온 세상부터
+		bigZoom = 1
+		bigCenter = Vector3.zero
+	end
 	placeMap()
+end
+
+local function zoomBy(k: number)
+	bigZoom = math.clamp(bigZoom * k, 1, 6)
+	applyView(nil)
+	declutter()
 end
 
 local function buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
 	scaled(mapFrame, "map")
-	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(95, 125, 75), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
+	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(70, 95, 120), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
+	-- 모든 것을 얹는 판 (작은 지도에서는 크게 키워 나를 따라 옮긴다)
+	mapCanvas = new("Frame", { Name = "Canvas", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(95, 125, 75), BorderSizePixel = 0, ZIndex = 5, Parent = mapInner })
+	local canvas = mapCanvas
 	local H = Config.WORLD_HALF
 	local function rect(center: Vector3, size: Vector3, color: Color3, z: number): Frame
-		return new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(center), Size = UDim2.fromScale(size.X / (2 * H), size.Z / (2 * H)), BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = z, Parent = mapInner })
+		return new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(center), Size = UDim2.fromScale(size.X / (2 * H), size.Z / (2 * H)), BackgroundColor3 = color, BorderSizePixel = 0, ZIndex = z, Parent = canvas })
 	end
-	local function label(at: Vector3, t: string, size: number, color: Color3, z: number, bigOnly: boolean?): TextLabel
-		local l = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(at), Size = UDim2.new(0, 160, 0, 24), Text = t, TextSize = size, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, TextWrapped = false, ZIndex = z, Parent = mapInner })
-		l:SetAttribute("MapText", size)
-		if bigOnly then
-			l:SetAttribute("BigOnly", true)
-		end
+	local function label(at: Vector3, t: string, small: number, big: number, color: Color3, z: number, prio: number): TextLabel
+		local l = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(at), Size = UDim2.new(0, 10, 0, 10), AutomaticSize = Enum.AutomaticSize.XY, Text = t, TextSize = small, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.15, TextWrapped = false, RichText = true, ZIndex = z, Parent = canvas })
+		table.insert(mapTexts, { label = l, prio = prio, small = small, big = big })
 		return l
 	end
 	-- 길
@@ -30134,56 +30221,98 @@ local function buildMap()
 		for i = 1, #road - 1 do
 			local a, b = road[i], road[i + 1]
 			local d = b - a
-			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV((a + b) / 2), Size = UDim2.new(d.Magnitude / (2 * H), 0, 0, 3), Rotation = math.deg(math.atan2(d.Z, d.X)), BackgroundColor3 = Color3.fromRGB(190, 165, 120), BorderSizePixel = 0, ZIndex = 6, Parent = mapInner })
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV((a + b) / 2), Size = UDim2.new(d.Magnitude / (2 * H), 0, 0, 3), Rotation = math.deg(math.atan2(d.Z, d.X)), BackgroundColor3 = Color3.fromRGB(190, 165, 120), BorderSizePixel = 0, ZIndex = 6, Parent = canvas })
 		end
 	end
-	-- 지역과 사부
+	-- 지역과 사부: 표시(사부·보스)는 늘 보이고, 이름과 권장 전투력은 한 덩어리
 	for _, r in ipairs(Config.Regions) do
 		if not r.noGround then
 			local f = rect(r.center, r.size, r.ground, 6)
 			f.BackgroundTransparency = 0.15
 			local style = r.master and Config.STYLE_BY_ID[r.master]
+			local tagAt = r.center
 			if style then
 				-- 사부 자리는 찾기 전엔 물음표만
 				local st = new("UIStroke", { Color = style.color, Thickness = 2, Enabled = false, Parent = f })
-				local icon = label(r.masterAt, "❓", 16, Color3.fromRGB(220, 210, 190), 9)
+				local icon = label(r.masterAt, "❓", 14, 17, Color3.fromRGB(220, 210, 190), 9, 3)
 				masterMarks[r.master] = { stroke = st, icon = icon, color = style.color, glyph = style.icon }
-				label(r.masterAt + Vector3.new(0, 0, 80), r.name, 12, Color3.new(1, 1, 1), 9, true)
+				tagAt = r.masterAt + Vector3.new(0, 0, 95)
 			elseif r.boss then
-				label(r.boss.at, "👹", 15, C.red, 9)
-				label(r.center + Vector3.new(0, 0, r.size.Z / 2 - 30), r.name, 12, Color3.new(1, 1, 1), 9, true)
-			else
-				label(r.center, r.name, 12, Color3.new(1, 1, 1), 9, r.id ~= "village")
+				label(r.boss.at, "👹", 13, 16, C.red, 9, 3)
 			end
-			-- 권장 전투력 (작은 지도엔 짧게, 큰 지도엔 보스까지)
-			if not r.safe then
-				local at = r.boss and (r.center + Vector3.new(0, 0, r.size.Z / 2 - 60)) or (r.center + Vector3.new(0, 0, 45))
-				recLabels[r.id] = label(at, "", 10, Color3.fromRGB(255, 215, 130), 9)
-			end
+			local tag = label(tagAt, r.name, 11, 12, Color3.new(1, 1, 1), 9, r.id == "village" and 2.5 or 2)
+			regionTags[r.id] = { label = tag, name = r.name }
 		end
 	end
+	-- 큰 볼거리 (표시는 조금 덜 중요, 이름은 가장 덜 중요)
+	for _, lm in ipairs(Config.Landmarks) do
+		label(lm.at, lm.icon, 13, 15, Color3.new(1, 1, 1), 8, 1.5)
+		label(lm.at + Vector3.new(0, 0, 80), lm.name, 10, 11, Color3.fromRGB(230, 225, 210), 8, 1)
+	end
+	table.sort(mapTexts, function(x, y)
+		return x.prio > y.prio
+	end)
 	refreshRec()
 	task.spawn(function()
 		local f = game:GetService("ReplicatedStorage"):WaitForChild("KwonRegionPower", 60)
 		if f then
 			refreshRec()
-			f.AttributeChanged:Connect(refreshRec)
+			f.AttributeChanged:Connect(function()
+				refreshRec()
+				declutter()
+			end)
 		end
 	end)
-	-- 큰 볼거리
-	for _, lm in ipairs(Config.Landmarks) do
-		label(lm.at, lm.icon, 16, Color3.new(1, 1, 1), 8)
-		label(lm.at + Vector3.new(0, 0, 70), lm.name, 12, Color3.fromRGB(230, 225, 210), 8, true)
-	end
 	-- 적 점 (가까운 것만)
 	for i = 1, 50 do
-		mapDots[i] = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 5, 0, 5), BackgroundColor3 = Color3.fromRGB(255, 60, 50), BorderSizePixel = 0, Visible = false, ZIndex = 10, Parent = mapInner }, { corner(99) })
+		mapDots[i] = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 5, 0, 5), BackgroundColor3 = Color3.fromRGB(255, 60, 50), BorderSizePixel = 0, Visible = false, ZIndex = 10, Parent = canvas }, { corner(99) })
 	end
-	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = mapInner }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
-	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = mapInner }, { stroke(Color3.new(0, 0, 0), 1.5) })
-	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = mapInner })
-	mapMe:SetAttribute("MapText", 18)
-	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 140, 0, 18), Text = "M: 지도 크게", TextSize = 14, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = canvas }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
+	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = canvas }, { stroke(Color3.new(0, 0, 0), 1.5) })
+	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = canvas })
+	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	-- 큰 지도: 확대·축소·내 자리 단추, 휠과 끌기
+	for i, spec in ipairs({ { "＋", 1.4 }, { "－", 1 / 1.4 }, { "◎", 0 } }) do
+		local b = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10 + (i - 1) * 46), Size = UDim2.new(0, 40, 0, 40), Text = spec[1], TextSize = 22, BackgroundColor3 = C.panel2, ZIndex = 13, Visible = false, Parent = mapFrame }, function()
+			if spec[2] == 0 then
+				bigZoom = math.max(bigZoom, 3)
+				bigCenter = myPos() or Vector3.zero
+				applyView(nil)
+				declutter()
+			else
+				zoomBy(spec[2])
+			end
+		end)
+		table.insert(zoomBtns, b)
+	end
+	local dragging = false
+	local dragLast = Vector3.zero
+	mapInner.InputBegan:Connect(function(input: InputObject)
+		if mapBig and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+			dragging = true
+			dragLast = input.Position
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input: InputObject)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input: InputObject)
+		if not mapBig then
+			return
+		end
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			zoomBy(input.Position.Z > 0 and 1.25 or 0.8)
+		elseif dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local d = input.Position - dragLast
+			dragLast = input.Position
+			local cs = math.max(1, mapInner.AbsoluteSize.X * bigZoom)
+			bigCenter -= Vector3.new(d.X / cs * 2 * H, 0, d.Y / cs * 2 * H)
+			applyView(nil)
+			declutter()
+		end
+	end)
 	placeMap()
 end
 
@@ -30622,6 +30751,9 @@ local function updateMap(dt: number)
 	local root = char and char:FindFirstChild("HumanoidRootPart")
 	if pos and root and root:IsA("BasePart") then
 		mapMe.Position = mapUV(pos)
+		if not mapBig then
+			applyView(pos)
+		end
 		local look = root.CFrame.LookVector
 		mapMe.Rotation = math.deg(math.atan2(look.X, -look.Z))
 	end
@@ -30646,10 +30778,11 @@ local function updateMap(dt: number)
 	if pos then
 		ambientTick(pos)
 	end
+	declutter()
 	local n = 0
 	local enemies = workspace:FindFirstChild("Enemies")
 	if enemies and pos then
-		local range = mapBig and 600 or 350
+		local range = mapBig and 900 or 700
 		for _, e in ipairs(enemies:GetChildren()) do
 			local r = e:FindFirstChild("HumanoidRootPart")
 			if n < #mapDots and r and r:IsA("BasePart") and e:GetAttribute("Dead") ~= true and (r.Position - pos).Magnitude < range then
