@@ -191,7 +191,8 @@ end
 ------------------------------------------------------------------------
 -- 1.8판: 너무 빨리 오른다 → 경지마다 필요한 마릿수를 두 배로, 보스 몫 ×8 → ×4
 -- 1.9.1판: 후반에도 한 번에 너무 많이 오른다 → 마릿수 두 배 더, 보스 ×4 → ×2.5, 정예 ×1.2, 센 적은 내 전투력의 1.2배까지만
-Config.KILL_GAIN = { boss = 2.5, elite = 1.2, tower = 0.5, capRatio = 1.2 } -- capRatio: 내 전투력의 이 배까지만 센다
+-- 1.9.2판: 그래도 많다 → 마릿수 두 배 더 (앞 경지 약 140마리 · 천외천 약 630마리), 보스 ×2.2
+Config.KILL_GAIN = { boss = 2.2, elite = 1.2, tower = 0.5, capRatio = 1.2 } -- capRatio: 내 전투력의 이 배까지만 센다
 local killTable: { { number } } = {}
 do
 	local n = #Config.Realms
@@ -203,7 +204,7 @@ do
 		end
 		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
 		-- 환생으로 열린 경지는 세 배 더 오래 (보스 몫이 커서 금방 오르지 않게)
-		local gain = (nxt - r.need) / ((60 + 16 * i) * (r.rebirth and 3 or 1))
+		local gain = (nxt - r.need) / ((120 + 32 * i) * (r.rebirth and 3 or 1))
 		table.insert(killTable, { power, gain })
 	end
 end
