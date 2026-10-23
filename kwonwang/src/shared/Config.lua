@@ -101,64 +101,82 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	-- 2.0판: 사경 너머의 문턱을 작은 숫자로 (예전 21.8만 ~ 5억 → 9만 ~ 50만). 경지의 세기는 그대로다
-	{ name = "생사경", need = 90000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 130000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 180000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 240000, color = Color3.fromRGB(255, 150, 255) },
+	-- 2.1판: 사경 너머의 문턱 (2.0판의 9만 ~ 50만은 너무 작았다 → 17만 ~ 1억). 경지의 세기는 그대로다
+	{ name = "생사경", need = 170000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 500000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 1450000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 4200000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 310000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 400000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 500000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 12000000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 35000000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 100000000, color = Color3.fromRGB(255, 255, 160) },
 	-- 1.9판: 천외천 너머. 환생해야 하나씩 열린다 (환생 한 번에 한 경지)
-	{ name = "혼원경", need = 650000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
-	{ name = "무량경", need = 850000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
-	{ name = "태허경", need = 1100000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
-	{ name = "권왕", need = 1500000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
+	{ name = "혼원경", need = 180000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
+	{ name = "무량경", need = 320000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
+	{ name = "태허경", need = 560000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
+	{ name = "권왕", need = 1000000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
 }
 -- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
 local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000 }
--- 능력치 합 total(새 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
-local function toOld(total: number): number
-	local R = Config.Realms
-	if total <= R[9].need then
+-- 2.0판의 문턱 (2.0판 기록을 2.1판 숫자로 옮길 때 쓴다)
+local V2_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 90000, 130000, 180000, 240000, 310000, 400000, 500000, 650000, 850000, 1100000, 1500000 }
+local function curNeed(): { number }
+	local t = {}
+	for i, r in ipairs(Config.Realms) do
+		t[i] = r.need
+	end
+	return t
+end
+-- 능력치 합 total(문턱표 N의 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
+local function toOldBy(N: { number }, total: number): number
+	if total <= N[9] then
 		return total -- 사경까지는 그대로
 	end
-	for i = 9, #R - 1 do
-		local a, b = R[i].need, R[i + 1].need
+	for i = 9, #N - 1 do
+		local a, b = N[i], N[i + 1]
 		if total <= b then
 			local t = (total - a) / (b - a)
 			return math.exp(math.log(OLD_NEED[i]) + (math.log(OLD_NEED[i + 1]) - math.log(OLD_NEED[i])) * t)
 		end
 	end
 	-- 권왕 너머: 마지막 마디의 기울기로 늘린다
-	local n = #R
-	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
-	return math.exp(math.log(OLD_NEED[n]) + slope * (total - R[n].need))
+	local n = #N
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
+	return math.exp(math.log(OLD_NEED[n]) + slope * (total - N[n]))
 end
-local function toNew(oldTotal: number): number
-	local R = Config.Realms
+local function toNewBy(N: { number }, oldTotal: number): number
 	if oldTotal <= OLD_NEED[9] then
 		return oldTotal
 	end
-	for i = 9, #R - 1 do
+	for i = 9, #N - 1 do
 		local a, b = OLD_NEED[i], OLD_NEED[i + 1]
 		if oldTotal <= b then
 			local t = (math.log(oldTotal) - math.log(a)) / (math.log(b) - math.log(a))
-			return R[i].need + (R[i + 1].need - R[i].need) * t
+			return N[i] + (N[i + 1] - N[i]) * t
 		end
 	end
-	local n = #R
-	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
-	return R[n].need + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
+	local n = #N
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
+	return N[n] + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
+end
+local NOW_NEED: { number }? = nil
+local function toOld(total: number): number
+	NOW_NEED = NOW_NEED or curNeed()
+	return toOldBy(NOW_NEED :: { number }, total)
 end
 -- 능력치 하나(새 숫자)의 효과를 낼 예전 숫자 (네 능력치가 고르게 오른다고 보고 합으로 셈한다)
 function Config.statEquiv(x: number): number
 	return toOld(x * 4) / 4
 end
--- 예전 기록의 능력치 하나를 새 숫자로
+-- 예전 (1.9판까지) 기록의 능력치 하나를 지금 숫자로
 function Config.statToNew(oldX: number): number
-	return math.floor(toNew(math.max(0, oldX) * 4) / 4 + 0.5)
+	NOW_NEED = NOW_NEED or curNeed()
+	return math.floor(toNewBy(NOW_NEED :: { number }, math.max(0, oldX) * 4) / 4 + 0.5)
+end
+-- 2.0판 기록의 능력치 하나를 지금 숫자로 (세기는 그대로)
+function Config.statFromV2(x: number): number
+	NOW_NEED = NOW_NEED or curNeed()
+	return math.floor(toNewBy(NOW_NEED :: { number }, toOldBy(V2_NEED, math.max(0, x) * 4)) / 4 + 0.5)
 end
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
@@ -187,13 +205,13 @@ end
 ------------------------------------------------------------------------
 -- 1.9판: 환생. 열린 가장 높은 경지(처음엔 천외천)에 오르면 환생할 수 있다
 -- 능력치를 모두 내려놓고 삼류로 돌아간다. 권법·숙련·깨달음·심법·탈것·은자·관문 기록은 그대로 남는다
--- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 +50%, 천외천 너머의 경지가 하나 열린다
+-- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
 	max = 4,
 	base = 16, -- 환생 전 끝 경지 (천외천)
 	power = 0.25,
-	gain = 0.5,
+	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
 	names = { "일환", "이환", "삼환", "사환" },
 	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70) },
@@ -215,9 +233,10 @@ end
 ------------------------------------------------------------------------
 Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
+-- 2.1판: 사경 너머는 문턱이 커진 만큼 얻는 양도 크다 (처치 수는 2.0판과 같다)
 local GAIN_TABLE: { { number } } = {
-	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 154 }, { 905, 213 }, { 1174, 282 }, { 1508, 316 }, { 2343, 381 },
-	{ 3595, 435 }, { 5460, 480 }, { 8223, 519 }, { 12298, 621 }, { 18283, 645 }, { 27041, 909 }, { 40433, 1143 }, { 60098, 1351 }, { 88871, 2051 }, { 130833, 2500 },
+	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 150 }, { 905, 210 }, { 1174, 280 }, { 1508, 1200 }, { 2343, 3100 },
+	{ 3595, 8300 }, { 5460, 22000 }, { 8223, 58000 }, { 12298, 160000 }, { 18283, 420000 }, { 27041, 480000 }, { 40433, 800000 }, { 60098, 1300000 }, { 88871, 2300000 }, { 130833, 2800000 },
 }
 function Config.killGain(power: number): number
 	local p = math.max(1, power)
@@ -2277,14 +2296,15 @@ Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 -- 1.4판: 사부의 시험 (분신과 겨루는 대신 사부마다 다른 시험). 각성 시련과 권존의 일월 시련은 그대로
 --   deflect = 사부의 공격을 흘려 내기 (F), survive = 사부와 제자들 사이에서 버티기, disciples = 제자들이 세 번 몰려온다 (마지막은 수제자)
 Config.TRIAL_KIND = {
-	taeheo = "deflect", geumgang = "survive", maehwa = "deflect", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
-	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "deflect", gaecheon = "deflect", taecho = "survive",
-	yeonggeop = "survive", agong = "survive", unryu = "deflect", seongha = "disciples",
+	-- 2.1판: 흘리기 시험은 취팔선권의 사부만 낸다 (다른 사부는 버티기나 제자 연무)
+	taeheo = "survive", geumgang = "survive", maehwa = "disciples", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
+	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "disciples", gaecheon = "survive", taecho = "survive",
+	yeonggeop = "survive", agong = "survive", unryu = "disciples", seongha = "disciples",
 }
 -- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
 Config.TRIAL_KINDS = {
 	deflect = { icon = "🌊", title = "흘리기 시험", need = 6, time = 120,
-		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹을 %d번 흘려 내면(F) 제자로 받아 주마.", goal = "사부의 공격을 흘려라 (F)" },
+		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹이 닿기 직전, 머리 위에 F가 번쩍일 때 F를 눌러라. %d번 흘려 내면 제자로 받아 주마.", goal = "F가 번쩍이면 F! 사부의 공격을 흘려라" },
 	survive = { icon = "⏳", title = "버티기 시험", need = 45, time = 45,
 		ask = "%d초를 버텨라. 나와 내 제자들이 한꺼번에 덤빈다. 쓰러지지만 않으면 된다.", goal = "쓰러지지 말고 버텨라" },
 	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
@@ -2424,10 +2444,9 @@ Config.MANUALS = {
 	{ id = "cheolgol", name = "철골공", icon = "🦴", stat = "hp", base = 0.04, desc = "최대 체력" },
 	{ id = "pagoe", name = "파괴심법", icon = "💥", stat = "dmg", base = 0.03, desc = "주는 피해" },
 	{ id = "hoche", name = "금강호체공", icon = "🛡", stat = "def", base = 0.025, desc = "받는 피해 감소" },
-	{ id = "hyeolgi", name = "혈기공", icon = "🩸", stat = "steal", base = 0.008, desc = "준 피해만큼 체력 회복" },
 	{ id = "jilpung", name = "질풍심법", icon = "🍃", stat = "speed", base = 0.025, desc = "이동 속도" },
 	{ id = "ungi", name = "운기심법", icon = "🌀", stat = "chi", base = 0.06, desc = "내공 회복" },
-	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.025, desc = "기술 대기 감소" },
+	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.045, desc = "기술 대기 감소" }, -- 2.1판: 2.5% → 4.5% (혈기공은 빠졌다)
 	{ id = "ohui", name = "오의심법", icon = "✴", stat = "ult", base = 0.05, desc = "오의 피해" },
 }
 Config.MANUAL_BY_ID = {}

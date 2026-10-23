@@ -121,64 +121,82 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	-- 2.0판: 사경 너머의 문턱을 작은 숫자로 (예전 21.8만 ~ 5억 → 9만 ~ 50만). 경지의 세기는 그대로다
-	{ name = "생사경", need = 90000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 130000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 180000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 240000, color = Color3.fromRGB(255, 150, 255) },
+	-- 2.1판: 사경 너머의 문턱 (2.0판의 9만 ~ 50만은 너무 작았다 → 17만 ~ 1억). 경지의 세기는 그대로다
+	{ name = "생사경", need = 170000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 500000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 1450000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 4200000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 310000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 400000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 500000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 12000000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 35000000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 100000000, color = Color3.fromRGB(255, 255, 160) },
 	-- 1.9판: 천외천 너머. 환생해야 하나씩 열린다 (환생 한 번에 한 경지)
-	{ name = "혼원경", need = 650000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
-	{ name = "무량경", need = 850000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
-	{ name = "태허경", need = 1100000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
-	{ name = "권왕", need = 1500000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
+	{ name = "혼원경", need = 180000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
+	{ name = "무량경", need = 320000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
+	{ name = "태허경", need = 560000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
+	{ name = "권왕", need = 1000000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
 }
 -- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
 local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000 }
--- 능력치 합 total(새 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
-local function toOld(total: number): number
-	local R = Config.Realms
-	if total <= R[9].need then
+-- 2.0판의 문턱 (2.0판 기록을 2.1판 숫자로 옮길 때 쓴다)
+local V2_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 90000, 130000, 180000, 240000, 310000, 400000, 500000, 650000, 850000, 1100000, 1500000 }
+local function curNeed(): { number }
+	local t = {}
+	for i, r in ipairs(Config.Realms) do
+		t[i] = r.need
+	end
+	return t
+end
+-- 능력치 합 total(문턱표 N의 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
+local function toOldBy(N: { number }, total: number): number
+	if total <= N[9] then
 		return total -- 사경까지는 그대로
 	end
-	for i = 9, #R - 1 do
-		local a, b = R[i].need, R[i + 1].need
+	for i = 9, #N - 1 do
+		local a, b = N[i], N[i + 1]
 		if total <= b then
 			local t = (total - a) / (b - a)
 			return math.exp(math.log(OLD_NEED[i]) + (math.log(OLD_NEED[i + 1]) - math.log(OLD_NEED[i])) * t)
 		end
 	end
 	-- 권왕 너머: 마지막 마디의 기울기로 늘린다
-	local n = #R
-	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
-	return math.exp(math.log(OLD_NEED[n]) + slope * (total - R[n].need))
+	local n = #N
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
+	return math.exp(math.log(OLD_NEED[n]) + slope * (total - N[n]))
 end
-local function toNew(oldTotal: number): number
-	local R = Config.Realms
+local function toNewBy(N: { number }, oldTotal: number): number
 	if oldTotal <= OLD_NEED[9] then
 		return oldTotal
 	end
-	for i = 9, #R - 1 do
+	for i = 9, #N - 1 do
 		local a, b = OLD_NEED[i], OLD_NEED[i + 1]
 		if oldTotal <= b then
 			local t = (math.log(oldTotal) - math.log(a)) / (math.log(b) - math.log(a))
-			return R[i].need + (R[i + 1].need - R[i].need) * t
+			return N[i] + (N[i + 1] - N[i]) * t
 		end
 	end
-	local n = #R
-	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
-	return R[n].need + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
+	local n = #N
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (N[n] - N[n - 1])
+	return N[n] + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
+end
+local NOW_NEED: { number }? = nil
+local function toOld(total: number): number
+	NOW_NEED = NOW_NEED or curNeed()
+	return toOldBy(NOW_NEED :: { number }, total)
 end
 -- 능력치 하나(새 숫자)의 효과를 낼 예전 숫자 (네 능력치가 고르게 오른다고 보고 합으로 셈한다)
 function Config.statEquiv(x: number): number
 	return toOld(x * 4) / 4
 end
--- 예전 기록의 능력치 하나를 새 숫자로
+-- 예전 (1.9판까지) 기록의 능력치 하나를 지금 숫자로
 function Config.statToNew(oldX: number): number
-	return math.floor(toNew(math.max(0, oldX) * 4) / 4 + 0.5)
+	NOW_NEED = NOW_NEED or curNeed()
+	return math.floor(toNewBy(NOW_NEED :: { number }, math.max(0, oldX) * 4) / 4 + 0.5)
+end
+-- 2.0판 기록의 능력치 하나를 지금 숫자로 (세기는 그대로)
+function Config.statFromV2(x: number): number
+	NOW_NEED = NOW_NEED or curNeed()
+	return math.floor(toNewBy(NOW_NEED :: { number }, toOldBy(V2_NEED, math.max(0, x) * 4)) / 4 + 0.5)
 end
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
@@ -207,13 +225,13 @@ end
 ------------------------------------------------------------------------
 -- 1.9판: 환생. 열린 가장 높은 경지(처음엔 천외천)에 오르면 환생할 수 있다
 -- 능력치를 모두 내려놓고 삼류로 돌아간다. 권법·숙련·깨달음·심법·탈것·은자·관문 기록은 그대로 남는다
--- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 +50%, 천외천 너머의 경지가 하나 열린다
+-- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
 	max = 4,
 	base = 16, -- 환생 전 끝 경지 (천외천)
 	power = 0.25,
-	gain = 0.5,
+	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
 	names = { "일환", "이환", "삼환", "사환" },
 	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70) },
@@ -235,9 +253,10 @@ end
 ------------------------------------------------------------------------
 Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
+-- 2.1판: 사경 너머는 문턱이 커진 만큼 얻는 양도 크다 (처치 수는 2.0판과 같다)
 local GAIN_TABLE: { { number } } = {
-	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 154 }, { 905, 213 }, { 1174, 282 }, { 1508, 316 }, { 2343, 381 },
-	{ 3595, 435 }, { 5460, 480 }, { 8223, 519 }, { 12298, 621 }, { 18283, 645 }, { 27041, 909 }, { 40433, 1143 }, { 60098, 1351 }, { 88871, 2051 }, { 130833, 2500 },
+	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 150 }, { 905, 210 }, { 1174, 280 }, { 1508, 1200 }, { 2343, 3100 },
+	{ 3595, 8300 }, { 5460, 22000 }, { 8223, 58000 }, { 12298, 160000 }, { 18283, 420000 }, { 27041, 480000 }, { 40433, 800000 }, { 60098, 1300000 }, { 88871, 2300000 }, { 130833, 2800000 },
 }
 function Config.killGain(power: number): number
 	local p = math.max(1, power)
@@ -2297,14 +2316,15 @@ Config.MASTER_RANGE = 26 -- 사부 곁 이만큼 안에서 배운다
 -- 1.4판: 사부의 시험 (분신과 겨루는 대신 사부마다 다른 시험). 각성 시련과 권존의 일월 시련은 그대로
 --   deflect = 사부의 공격을 흘려 내기 (F), survive = 사부와 제자들 사이에서 버티기, disciples = 제자들이 세 번 몰려온다 (마지막은 수제자)
 Config.TRIAL_KIND = {
-	taeheo = "deflect", geumgang = "survive", maehwa = "deflect", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
-	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "deflect", gaecheon = "deflect", taecho = "survive",
-	yeonggeop = "survive", agong = "survive", unryu = "deflect", seongha = "disciples",
+	-- 2.1판: 흘리기 시험은 취팔선권의 사부만 낸다 (다른 사부는 버티기나 제자 연무)
+	taeheo = "survive", geumgang = "survive", maehwa = "disciples", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
+	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "disciples", gaecheon = "survive", taecho = "survive",
+	yeonggeop = "survive", agong = "survive", unryu = "disciples", seongha = "disciples",
 }
 -- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
 Config.TRIAL_KINDS = {
 	deflect = { icon = "🌊", title = "흘리기 시험", need = 6, time = 120,
-		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹을 %d번 흘려 내면(F) 제자로 받아 주마.", goal = "사부의 공격을 흘려라 (F)" },
+		ask = "나를 쓰러뜨릴 필요는 없다. 흘려라. 내 주먹이 닿기 직전, 머리 위에 F가 번쩍일 때 F를 눌러라. %d번 흘려 내면 제자로 받아 주마.", goal = "F가 번쩍이면 F! 사부의 공격을 흘려라" },
 	survive = { icon = "⏳", title = "버티기 시험", need = 45, time = 45,
 		ask = "%d초를 버텨라. 나와 내 제자들이 한꺼번에 덤빈다. 쓰러지지만 않으면 된다.", goal = "쓰러지지 말고 버텨라" },
 	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
@@ -2444,10 +2464,9 @@ Config.MANUALS = {
 	{ id = "cheolgol", name = "철골공", icon = "🦴", stat = "hp", base = 0.04, desc = "최대 체력" },
 	{ id = "pagoe", name = "파괴심법", icon = "💥", stat = "dmg", base = 0.03, desc = "주는 피해" },
 	{ id = "hoche", name = "금강호체공", icon = "🛡", stat = "def", base = 0.025, desc = "받는 피해 감소" },
-	{ id = "hyeolgi", name = "혈기공", icon = "🩸", stat = "steal", base = 0.008, desc = "준 피해만큼 체력 회복" },
 	{ id = "jilpung", name = "질풍심법", icon = "🍃", stat = "speed", base = 0.025, desc = "이동 속도" },
 	{ id = "ungi", name = "운기심법", icon = "🌀", stat = "chi", base = 0.06, desc = "내공 회복" },
-	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.025, desc = "기술 대기 감소" },
+	{ id = "jipjung", name = "집중심법", icon = "🎯", stat = "cd", base = 0.045, desc = "기술 대기 감소" }, -- 2.1판: 2.5% → 4.5% (혈기공은 빠졌다)
 	{ id = "ohui", name = "오의심법", icon = "✴", stat = "ult", base = 0.05, desc = "오의 피해" },
 }
 Config.MANUAL_BY_ID = {}
@@ -4849,7 +4868,7 @@ type Profile = {
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
-	statVer: number, -- 능력치 숫자의 판 (2 = 2.0판의 작은 숫자)
+	statVer: number, -- 능력치 숫자의 판 (2 = 2.0판의 작은 숫자, 3 = 2.1판)
 }
 
 local function defaultProfile(): Profile
@@ -4885,7 +4904,7 @@ local function defaultProfile(): Profile
 		rebirth = 0,
 		ach = {},
 		counts = {},
-		statVer = 2,
+		statVer = 3,
 	}
 end
 
@@ -4902,11 +4921,18 @@ local function sanitize(data: any): Profile
 	end
 	p.coins = math.floor(num(data.coins, 1e12))
 	if type(data.stats) == "table" then
-		-- 2.0판 전의 기록은 큰 숫자다: 같은 세기의 작은 숫자로 바꾼다 (경지는 그대로)
-		local old = data.statVer ~= 2
+		-- 예전 판의 기록은 숫자의 크기가 다르다: 같은 세기의 지금 숫자로 바꾼다 (경지는 그대로)
+		-- (2.0판 전 = 큰 숫자, 2.0판 = 아주 작은 숫자, 2.1판 = 지금)
+		local ver = data.statVer
 		for _, s in ipairs(Config.Stats) do
 			local v = num(data.stats[s.id], 1e13)
-			p.stats[s.id] = old and Config.statToNew(v) or math.floor(v)
+			if ver == 3 then
+				p.stats[s.id] = math.floor(v)
+			elseif ver == 2 then
+				p.stats[s.id] = Config.statFromV2(v)
+			else
+				p.stats[s.id] = Config.statToNew(v)
+			end
 		end
 	end
 	if type(data.styles) == "table" then
@@ -4958,6 +4984,9 @@ local function sanitize(data: any): Profile
 		for id, r in pairs(data.manuals) do
 			if type(id) == "string" and Config.MANUAL_BY_ID[id] and type(r) == "number" then
 				p.manuals[id] = math.clamp(math.floor(r), 1, #Config.MANUAL_RARITY)
+			elseif id == "hyeolgi" and type(r) == "number" then
+				-- 2.1판: 혈기공이 빠졌다. 가졌던 사람은 등급만큼 두루마리로 돌려받는다
+				p.scrolls = (p.scrolls or 0) + math.clamp(math.floor(r), 1, #Config.MANUAL_RARITY) * 3
 			end
 		end
 	end
@@ -4968,7 +4997,7 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.scrolls = math.floor(num(data.scrolls, 1e6))
+	p.scrolls = math.floor(num(data.scrolls, 1e6)) + (p.scrolls or 0)
 	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
 	p.towerBest = math.floor(num(data.towerBest, 100000))
 	p.seen = flags(data.seen, function(k)
@@ -5893,7 +5922,10 @@ function Trial.start(player: Player, styleId: string)
 			return ef
 		end
 		if kind == "deflect" then
-			immortalMaster(17, 0.55)
+			local ef = immortalMaster(17, 0.55)
+			if ef then
+				ef.deflectCue = true
+			end
 		elseif kind == "survive" then
 			immortalMaster(19, 0.8)
 			for i = 1, 2 do
@@ -11358,7 +11390,11 @@ end
 ------------------------------------------------------------------------
 -- 생각하기 (0.1초마다)
 ------------------------------------------------------------------------
+-- 2.1판: 높이가 크게 다르면 (지상과 천상) 아주 먼 것으로 친다. 천상의 적이 바로 아래 땅의 사람을 쫓지 않게
 local function flatDist(a: Vector3, b: Vector3): number
+	if math.abs(a.Y - b.Y) > 600 then
+		return math.huge
+	end
 	return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
 end
 
@@ -11401,6 +11437,10 @@ local function attack(e: Enemy, move: any)
 	faceTo(e, tgt.root.Position)
 	local act = Combat.begin(f, move, move.id, e.seq, { enemy = true, speed = speed, align = move.windup / speed })
 	f.hum:MoveTo(f.root.Position)
+	-- 2.1판: 흘리기 시험의 사부는 주먹이 닿기 직전을 머리 위의 F로 알려 준다
+	if (f :: any).deflectCue and tgt.player and move.hits[1] then
+		Push:FireClient(tgt.player, "deflectCue", { m = f.model, t = move.hits[1].t / speed })
+	end
 	-- 순간이동 (보스): 멈칫이 끝나기 직전 상대 등 뒤로
 	if move.teleport then
 		task.delay(math.max(0, move.windup / speed - 0.12), function()
@@ -11659,6 +11699,13 @@ local function think(e: Enemy, t: number)
 	if (f :: any).retaliate then
 		(f :: any).retaliate = nil
 		e.nextAttack = math.min(e.nextAttack, t)
+	end
+	-- 2.1판: 천상의 섬에서 떨어져 땅까지 내려온 적 (또는 그 반대)은 곧바로 제자리로 돌아간다
+	if math.abs(pos.Y - e.home.Y) > 600 then
+		e.target = nil
+		f.root.AssemblyLinearVelocity = Vector3.zero
+		f.model:PivotTo(CFrame.new(e.home + Vector3.new(0, 3, 0)) * f.root.CFrame.Rotation)
+		return
 	end
 	-- 근처에 사람이 없으면 쉰다
 	local anyone = false
@@ -13159,7 +13206,7 @@ function Skills.run(f: any, move: any, ctx: any)
 					end
 					table.insert(spots, at)
 				end
-				Push:FireAllClients("skillfx", { kind = "moonSlash", spots = spots, radius = m.radius, style = style })
+				Push:FireAllClients("skillfx", { kind = "moonSlash", m = f.model, spots = spots, radius = m.radius, style = style })
 				local done = {}
 				for _, at in ipairs(spots) do
 					for _, o in ipairs(hostilesNear(f, at, m.radius)) do
@@ -18944,6 +18991,66 @@ function handlers.trial(data: any)
 	UI.banner("⚔ " .. data.name .. "의 " .. (K and K.title or "시험"), K and K.goal or "꺾어라 · 흘리고(F) 반격하라", color)
 	shake(0.8)
 end
+-- 2.1판 흘리기 시험: 사부의 주먹이 닿기 직전, 사부 머리 위에 F가 떠올라 번쩍인다 (번쩍일 때 누르면 흘린다)
+function handlers.deflectCue(data: any)
+	local m = data and data.m
+	local r = m and rootOf(m)
+	if not r then
+		return
+	end
+	local hitIn = tonumber(data.t) or 0.5
+	local key = UserInputService.TouchEnabled and "🛡" or "F"
+	task.delay(math.max(0, hitIn - 0.6), function()
+		if not r.Parent then
+			return
+		end
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.fromOffset(90, 90)
+		bb.StudsOffsetWorldSpace = Vector3.new(0, 6.5, 0)
+		bb.AlwaysOnTop = true
+		bb.Adornee = r
+		local ring = Instance.new("Frame")
+		ring.AnchorPoint = Vector2.new(0.5, 0.5)
+		ring.Position = UDim2.fromScale(0.5, 0.5)
+		ring.Size = UDim2.fromScale(1, 1)
+		ring.BackgroundTransparency = 1
+		ring.Parent = bb
+		local st = Instance.new("UIStroke")
+		st.Thickness = 4
+		st.Color = Color3.fromRGB(170, 230, 255)
+		st.Parent = ring
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0.5, 0)
+		c.Parent = ring
+		local l = Instance.new("TextLabel")
+		l.AnchorPoint = Vector2.new(0.5, 0.5)
+		l.Position = UDim2.fromScale(0.5, 0.5)
+		l.Size = UDim2.fromScale(0.6, 0.6)
+		l.BackgroundTransparency = 1
+		l.Font = Enum.Font.GothamBlack
+		l.Text = key
+		l.TextScaled = true
+		l.TextColor3 = Color3.fromRGB(200, 235, 255)
+		l.TextStrokeTransparency = 0
+		l.Parent = bb
+		bb.Parent = r
+		-- 고리가 좁혀 들어오다가, 눌러야 할 때 노랗게 번쩍
+		local lead = math.min(0.6, hitIn)
+		TweenService:Create(ring, TweenInfo.new(math.max(0.05, lead - 0.18)), { Size = UDim2.fromScale(0.62, 0.62) }):Play()
+		task.delay(math.max(0, lead - 0.2), function()
+			if not bb.Parent then
+				return
+			end
+			l.TextColor3 = Color3.fromRGB(255, 240, 120)
+			st.Color = Color3.fromRGB(255, 230, 90)
+			l.Size = UDim2.fromScale(0.85, 0.85)
+			TweenService:Create(l, TweenInfo.new(0.25), { Size = UDim2.fromScale(0.6, 0.6) }):Play()
+		end)
+		task.delay(lead + 0.15, function()
+			bb:Destroy()
+		end)
+	end)
+end
 function handlers.trialProg(data: any?)
 	UI.setTrial(data)
 end
@@ -21417,6 +21524,213 @@ return Cutscene
         </Item>
         <Item class="ModuleScript" referent="18">
           <Properties>
+            <string name="Name">Demon</string>
+            <string name="Source"><![CDATA[-- 권왕 2.1판: 피의 악마들 (화면에만 보이는 연출)
+-- 혈해만마: 피의 바다에서 허리까지 솟은 마수들이 손톱을 휘두른다
+-- 혈월만겸: 쓴 사람 뒤에서 날개 달린 거대한 우두머리 악마가 솟아, 큰 낫을 치켜들었다가 내리찍는다
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local Demon = {}
+
+local SKIN = Color3.fromRGB(70, 8, 14)
+local SKIN2 = Color3.fromRGB(110, 14, 22)
+local WING = Color3.fromRGB(90, 10, 20)
+local BONE = Color3.fromRGB(235, 215, 200)
+local EYE = Color3.fromRGB(255, 60, 40)
+local RED = Color3.fromRGB(220, 20, 40)
+local PALE = Color3.fromRGB(255, 170, 170)
+local SHAFT = Color3.fromRGB(38, 10, 14)
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonDemon"
+folder.Parent = workspace
+
+type Piece = { p: BasePart, limb: string, off: CFrame }
+export type Handle = {
+	root: CFrame,
+	armR: number,
+	armL: number,
+	scale: number,
+	pieces: { Piece },
+	model: Model,
+	alive: boolean,
+	born: number,
+	anim: ((t: number) -> ())?,
+	conn: RBXScriptConnection?,
+}
+
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): Part
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.Slate
+	p.Transparency = alpha or 0
+	if shape == "ball" then
+		p.Shape = Enum.PartType.Ball
+	elseif shape == "cyl" then
+		p.Shape = Enum.PartType.Cylinder
+	end
+	return p
+end
+
+-- 어깨 (팔은 어깨를 축으로 앞뒤로 돈다: 0 = 아래로 늘어뜨림, π/2 = 앞으로 뻗음, π = 머리 위)
+local SHOULDER_R = Vector3.new(1.95, 6.5, 0)
+local SHOULDER_L = Vector3.new(-1.95, 6.5, 0)
+
+local function place(h: Handle)
+	local s = h.scale
+	local root = h.root
+	local sR = root * CFrame.new(SHOULDER_R * s) * CFrame.Angles(h.armR, 0, 0)
+	local sL = root * CFrame.new(SHOULDER_L * s) * CFrame.Angles(h.armL, 0, 0)
+	for _, pc in ipairs(h.pieces) do
+		local base = pc.limb == "R" and sR or (pc.limb == "L" and sL or root)
+		pc.p.CFrame = base * pc.off
+	end
+end
+
+-- rootCf: 발밑 (악마는 -Z 쪽을 본다). scale 1 = 사람보다 조금 큰 키 (약 9칸)
+function Demon.spawn(rootCf: CFrame, scale: number, opts: { scythe: boolean?, wings: boolean?, legs: boolean? }?): Handle
+	local o = opts or {}
+	local s = scale
+	local model = Instance.new("Model")
+	model.Name = "KwonDemon"
+	local h: Handle = { root = rootCf, armR = 0.3, armL = 0.3, scale = s, pieces = {}, model = model, alive = true, born = os.clock() }
+	local function add(limb: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?): Part
+		local p = part(size * s, color, mat, alpha, shape)
+		p.Parent = model
+		table.insert(h.pieces, { p = p, limb = limb, off = CFrame.new(cf.Position * s) * cf.Rotation })
+		return p
+	end
+	-- 몸통: 굽은 등, 넓은 가슴
+	add("B", Vector3.new(2.2, 1.2, 1.3), CFrame.new(0, 3.6, 0), SKIN)
+	add("B", Vector3.new(2.0, 1.6, 1.2), CFrame.new(0, 4.8, 0.05), SKIN2)
+	add("B", Vector3.new(3.4, 1.9, 1.8), CFrame.new(0, 6.2, 0) * CFrame.Angles(math.rad(-8), 0, 0), SKIN)
+	-- 가슴의 핏빛 금 (속에서 빛이 샌다)
+	add("B", Vector3.new(0.18, 1.5, 0.1), CFrame.new(0, 6.1, -0.92), RED, Enum.Material.Neon)
+	add("B", Vector3.new(1.4, 0.14, 0.1), CFrame.new(0, 5.5, -0.62), RED, Enum.Material.Neon)
+	-- 등뼈 가시
+	for i = 0, 3 do
+		add("B", Vector3.new(0.32, 1.0 - i * 0.12, 0.32), CFrame.new(0, 7.0 - i * 0.85, 0.95 + i * 0.05) * CFrame.Angles(math.rad(-40), 0, 0), BONE, Enum.Material.SmoothPlastic)
+	end
+	-- 어깨 덩어리와 뿔 가시
+	for _, side in ipairs({ -1, 1 }) do
+		add("B", Vector3.new(1.2, 1.0, 1.3), CFrame.new(side * 1.95, 6.95, 0), SKIN2)
+		add("B", Vector3.new(0.3, 1.1, 0.3), CFrame.new(side * 2.15, 7.7, 0.1) * CFrame.Angles(0, 0, side * math.rad(-25)), BONE, Enum.Material.SmoothPlastic)
+	end
+	-- 머리: 앞으로 내민 머리, 턱, 빛나는 눈과 입
+	add("B", Vector3.new(1.45, 1.35, 1.45), CFrame.new(0, 7.7, -0.3), SKIN2)
+	add("B", Vector3.new(1.25, 0.45, 1.1), CFrame.new(0, 7.05, -0.45), SKIN)
+	for _, side in ipairs({ -1, 1 }) do
+		add("B", Vector3.new(0.4, 0.18, 0.1), CFrame.new(side * 0.36, 7.85, -1.03) * CFrame.Angles(0, 0, side * math.rad(-12)), EYE, Enum.Material.Neon)
+		-- 이빨
+		add("B", Vector3.new(0.14, 0.4, 0.14), CFrame.new(side * 0.35, 6.85, -0.95), BONE, Enum.Material.SmoothPlastic)
+		-- 뿔: 위로 솟다가 뒤로 휜다
+		for j = 0, 4 do
+			local w = 0.42 - j * 0.07
+			add("B", Vector3.new(w, 0.75, w), CFrame.new(side * (0.62 + 0.22 * j), 8.35 + 0.55 * j, 0.0 + 0.3 * j * j * 0.5) * CFrame.Angles(math.rad(-18 * j), 0, side * math.rad(-28 + 14 * j)), BONE, Enum.Material.SmoothPlastic)
+		end
+	end
+	add("B", Vector3.new(0.85, 0.12, 0.1), CFrame.new(0, 7.22, -1.0), RED, Enum.Material.Neon)
+	-- 다리
+	if o.legs ~= false then
+		for _, side in ipairs({ -1, 1 }) do
+			add("B", Vector3.new(0.95, 2.0, 1.0), CFrame.new(side * 0.72, 2.3, 0.05) * CFrame.Angles(math.rad(12), 0, 0), SKIN)
+			add("B", Vector3.new(0.8, 1.7, 0.8), CFrame.new(side * 0.78, 0.9, 0.25) * CFrame.Angles(math.rad(-14), 0, 0), SKIN2)
+			add("B", Vector3.new(0.9, 0.35, 1.3), CFrame.new(side * 0.78, 0.15, -0.1), SKIN)
+		end
+	end
+	-- 날개: 뼈대와 찢긴 막
+	if o.wings then
+		for _, side in ipairs({ -1, 1 }) do
+			add("B", Vector3.new(0.35, 4.8, 0.35), CFrame.new(side * 2.4, 8.4, 1.5) * CFrame.Angles(math.rad(15), 0, side * math.rad(-58)), SKIN)
+			add("B", Vector3.new(0.28, 4.2, 0.28), CFrame.new(side * 5.4, 9.3, 1.9) * CFrame.Angles(math.rad(15), 0, side * math.rad(-12)), SKIN)
+			add("B", Vector3.new(0.4, 0.9, 0.4), CFrame.new(side * 5.7, 11.5, 2.0), BONE, Enum.Material.SmoothPlastic)
+			add("B", Vector3.new(4.6, 4.2, 0.12), CFrame.new(side * 3.9, 7.2, 1.8) * CFrame.Angles(0, side * math.rad(-12), side * math.rad(-14)), WING, Enum.Material.SmoothPlastic, 0.12)
+			add("B", Vector3.new(2.4, 3.0, 0.12), CFrame.new(side * 6.0, 7.4, 2.1) * CFrame.Angles(0, side * math.rad(-20), side * math.rad(8)), WING, Enum.Material.SmoothPlastic, 0.2)
+		end
+	end
+	-- 팔 (어깨 기준): 윗팔, 팔꿈치 가시, 아래팔, 손, 손톱 셋
+	for _, limb in ipairs({ "R", "L" }) do
+		add(limb, Vector3.new(0.95, 2.3, 0.95), CFrame.new(0, -1.15, 0), SKIN)
+		add(limb, Vector3.new(0.25, 0.9, 0.25), CFrame.new(0, -2.3, 0.55) * CFrame.Angles(math.rad(-50), 0, 0), BONE, Enum.Material.SmoothPlastic)
+		add(limb, Vector3.new(0.85, 2.2, 0.85), CFrame.new(0, -3.3, -0.1), SKIN2)
+		add(limb, Vector3.new(1.0, 0.75, 1.0), CFrame.new(0, -4.6, -0.15), SKIN)
+		if not (limb == "R" and o.scythe) then
+			for k = -1, 1 do
+				add(limb, Vector3.new(0.2, 1.2, 0.2), CFrame.new(k * 0.32, -5.35, -0.45) * CFrame.Angles(math.rad(28), 0, 0), RED, Enum.Material.Neon)
+			end
+		end
+	end
+	-- 큰 낫: 손에서 길게 뻗은 검붉은 자루, 끝에서 휘어 나간 핏빛 날 (내리찍는 쪽으로 날이 선다)
+	if o.scythe then
+		add("R", Vector3.new(0.4, 13, 0.4), CFrame.new(0, -9.6, -0.15), SHAFT, Enum.Material.Metal)
+		add("R", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, -3.4, -0.15), RED, Enum.Material.Neon)
+		local tip = Vector3.new(0, -15.8, -0.15)
+		add("R", Vector3.new(0.9, 1.2, 0.9), CFrame.new(tip), SKIN2, Enum.Material.Metal)
+		local prev = tip
+		local n = 9
+		for k = 1, n do
+			local u = k / n
+			local pt = tip + Vector3.new(0, 3.4 * u * u, 7.5 * u)
+			local mid = (prev + pt) / 2
+			local len = (pt - prev).Magnitude + 0.15
+			local w = 1.5 * (1 - u * 0.75)
+			local cf = CFrame.lookAt(mid, pt)
+			add("R", Vector3.new(0.3, w, len), cf, RED, Enum.Material.Neon, 0.02)
+			-- 날끝 (바깥 가장자리)
+			add("R", Vector3.new(0.18, 0.22, len), cf * CFrame.new(0, -w / 2, 0), PALE, Enum.Material.Neon)
+			prev = pt
+		end
+	end
+	model.Parent = folder
+	place(h)
+	h.conn = RunService.RenderStepped:Connect(function()
+		if not h.alive then
+			return
+		end
+		local fn = h.anim
+		if fn then
+			local ok = pcall(fn, os.clock() - h.born)
+			if not ok then
+				h.anim = nil
+			end
+		end
+		place(h)
+	end)
+	return h
+end
+
+-- 사라지기: 흐려지며 가라앉는다
+function Demon.remove(h: Handle, time: number?)
+	if not h.alive or (h :: any).leaving then
+		return
+	end
+	(h :: any).leaving = true
+	local t = time or 0.6
+	for _, pc in ipairs(h.pieces) do
+		TweenService:Create(pc.p, TweenInfo.new(t), { Transparency = 1 }):Play()
+	end
+	task.delay(t + 0.05, function()
+		h.alive = false
+		if h.conn then
+			h.conn:Disconnect()
+		end
+		h.model:Destroy()
+	end)
+end
+
+return Demon
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="19">
+          <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
 -- 술병은 상표 없는 초록 유리병. 몸짓마다 초록 불길과 유리 조각, 술 방울이 튄다
@@ -22187,7 +22501,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -25007,7 +25321,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -25188,7 +25502,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -26361,7 +26675,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -26427,7 +26741,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -26768,7 +27082,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -26782,6 +27096,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Reaper = {}
 local player = Players.LocalPlayer
@@ -27292,6 +27607,74 @@ end
 -- 혈월만겸 (초 오의): 붉은 달이 뜨고, 핏빛 초승달이 쏟아지고, 마지막에 하늘과 땅과 화면을 가른다
 ------------------------------------------------------------------------
 local moonState: { cc: ColorCorrectionEffect?, moon: BasePart?, untilT: number } = { untilT = 0 }
+-- 2.1판: 혈월의 우두머리 악마 (쓴 사람마다 하나). 낫을 머리 뒤로 치켜들고 있다가 휘두른다
+type Alpha = { h: Demon.Handle, swingAt: number, swingDur: number, swingTo: number, slam: boolean }
+local alphas: { [Instance]: Alpha } = {}
+local RAISED = 3.5 -- 머리 뒤로 치켜든 팔
+local function alphaArm(a: Alpha, t: number): number
+	local u = (os.clock() - a.swingAt) / a.swingDur
+	if u < 0 or u > 2.2 then
+		return RAISED + math.sin(t * 2) * 0.08
+	end
+	if u <= 1 then
+		-- 내리찍기 (빠르게)
+		return RAISED + (a.swingTo - RAISED) * (u * u)
+	end
+	-- 다시 치켜든다 (천천히). 마지막 일격은 내리찍은 채로 머문다
+	if a.slam then
+		return a.swingTo
+	end
+	local k = (u - 1) / 1.2
+	return a.swingTo + (RAISED - a.swingTo) * (1 - (1 - k) ^ 2)
+end
+local function alphaSwing(m: Instance?, to: number, dur: number, slam: boolean)
+	local a = m and alphas[m]
+	if not a then
+		return
+	end
+	local busy = (os.clock() - a.swingAt) < a.swingDur * 2.2
+	if busy and not slam then
+		return
+	end
+	a.swingAt = os.clock()
+	a.swingDur = dur
+	a.swingTo = to
+	a.slam = slam
+end
+local function alphaRise(m: Model, r: BasePart)
+	local old = alphas[m]
+	if old then
+		Demon.remove(old.h, 0.2)
+	end
+	local look = flat(r.CFrame.LookVector)
+	local back = r.Position - look * 24
+	local g = ground(back)
+	local base = CFrame.lookAt(g, g + look)
+	local sc = 4.2
+	local dm = Demon.spawn(base * CFrame.new(0, -11 * sc, 0), sc, { scythe = true, wings = true })
+	local a: Alpha = { h = dm, swingAt = -100, swingDur = 0.3, swingTo = 1, slam = false }
+	alphas[m] = a
+	dm.armR = RAISED
+	dm.anim = function(t: number)
+		local rise = math.clamp(t / 1.1, 0, 1)
+		rise = 1 - (1 - rise) ^ 3
+		dm.root = base * CFrame.new(0, -11 * sc * (1 - rise) + math.sin(t * 1.6) * 0.35 * sc, 0) * CFrame.Angles(math.rad(-6), 0, 0)
+		dm.armR = alphaArm(a, t)
+		-- 왼팔은 앞으로 벌려 손톱을 세운다
+		dm.armL = 1.0 + math.sin(t * 2.4) * 0.15
+	end
+	-- 피의 원에서 솟는다
+	Fx.ring(g + Vector3.new(0, 0.3, 0), RED, 6, 50, 0.9)
+	Fx.burst("spark", g + Vector3.new(0, 4, 0), RED, 40, 3)
+	Fx.sound("heavy", 1, 0.35, g)
+	-- 끝내 마지막 일격이 오지 않아도 사라진다
+	task.delay(12, function()
+		if alphas[m] == a then
+			alphas[m] = nil
+			Demon.remove(dm, 0.8)
+		end
+	end)
+end
 local function moonRise(data: any)
 	local r = rootOf(data.m)
 	if not r or not near(r.Position, 220) then
@@ -27299,6 +27682,7 @@ local function moonRise(data: any)
 	end
 	local dur = data.dur or 3.4
 	moonState.untilT = math.max(moonState.untilT, os.clock() + dur)
+	alphaRise(data.m, r)
 	-- 하늘이 핏빛으로 (보는 사람 화면만)
 	local cc = moonState.cc
 	if not cc or not cc.Parent then
@@ -27351,6 +27735,8 @@ local function moonRise(data: any)
 end
 -- 하늘에서 떨어지는 핏빛 초승달 하나하나
 local function moonSlash(data: any)
+	-- 우두머리 악마가 초승달마다 낫을 한 번씩 휘두른다 (휘두르는 중이면 건너뛴다)
+	alphaSwing(data.m, 1.3, 0.22, false)
 	for _, at in ipairs(data.spots or {}) do
 		if near(at, 200) then
 			local g = ground(at) + Vector3.new(0, 0.2, 0)
@@ -27427,6 +27813,18 @@ local function moonCleave(data: any)
 	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
 	local R = data.radius or 26
 	local g = ground(at)
+	-- 우두머리 악마의 마지막 내리찍기: 낫이 땅에 박힌 채 잠시 머물다 사라진다
+	local m = data.m
+	local a = m and alphas[m]
+	if a then
+		alphaSwing(m, 0.55, 0.14, true)
+		task.delay(1.1, function()
+			if alphas[m] == a then
+				alphas[m] = nil
+				Demon.remove(a.h, 0.9)
+			end
+		end)
+	end
 	-- 하늘에서 땅까지 세로로 선 거대한 칼날 (얇은 판)
 	local blade = part(Vector3.new(0.6, 200, R * 2.4), RED, Enum.Material.Neon, 0.05)
 	blade.CFrame = CFrame.lookAt(g + Vector3.new(0, 100, 0), g + Vector3.new(0, 100, 0) + dir)
@@ -27633,7 +28031,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -28617,7 +29015,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -28971,7 +29369,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -30386,7 +30784,7 @@ local function buildTest()
 		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
 	})
 	section("☁ 베타 14: 천상계·아공신권·탈것", {
-		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 77500 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
+		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 3000000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
 		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
 		{ "🐉 청룡 탈것 (테스트로 켜기)", "testPremium", "dragon" }, { "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
 		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
@@ -30416,9 +30814,9 @@ local function buildTest()
 	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
 		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
-		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 60000 },
+		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 1050000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 125000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 25000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -30727,7 +31125,7 @@ end
 -- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
 local regionTags: { [string]: { label: TextLabel, name: string } } = {}
 local mapCanvas: Frame
-type MapText = { label: TextLabel, prio: number, small: number, big: number }
+type MapText = { label: TextLabel, prio: number, small: number, big: number, base: UDim2? }
 local mapTexts: { MapText } = {}
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
@@ -30754,7 +31152,7 @@ local function mapUV(p: Vector3): UDim2
 	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
 end
 
-local MAP_SMALL = 250
+local MAP_SMALL = 375 -- 2.1판: 250 → 375 (1.5배)
 local MAP_BIG = 760
 local SMALL_SPAN = 1300 -- 작은 지도 한 변에 보이는 넓이 (칸)
 local bigZoom = 1
@@ -30780,7 +31178,7 @@ local function applyView(pos: Vector3?)
 	mapCanvas.Size = UDim2.fromScale(z, z)
 	mapCanvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
 end
--- 겹치는 글자 감추기 (중요한 것부터 자리를 잡는다)
+-- 겹치는 글자 비켜 놓기 (중요한 것부터 자리를 잡는다). 2.1판: 감추지 않는다. 위아래로 비켜서라도 다 보인다
 local function declutter()
 	if not mapInner then
 		return
@@ -30796,8 +31194,10 @@ local function declutter()
 	for _, t in ipairs(mapTexts) do
 		local l = t.label
 		local size = mapBig and t.big or t.small
-		local px = ox + l.Position.X.Scale * cs
-		local py = oy + l.Position.Y.Scale * cs
+		t.base = t.base or UDim2.fromScale(l.Position.X.Scale, l.Position.Y.Scale)
+		local base = t.base :: UDim2
+		local px = ox + base.X.Scale * cs
+		local py = oy + base.Y.Scale * cs
 		local plain = string.gsub(l.Text, "<[^>]+>", "")
 		local lines = string.split(plain, "\n")
 		local wide = 0
@@ -30806,20 +31206,29 @@ local function declutter()
 		end
 		local w = wide * size * 0.62 + 4
 		local h = #lines * size * 1.15
-		local x0, y0, x1, y1 = px - w / 2, py - h / 2, px + w / 2, py + h / 2
-		local ok = wide > 0 and x1 > 0 and y1 > 0 and x0 < inner.X and y0 < inner.Y
-		if ok then
-			for _, r in ipairs(placed) do
-				if x0 < r[3] and x1 > r[1] and y0 < r[4] and y1 > r[2] then
-					ok = false
+		local x0, x1 = px - w / 2, px + w / 2
+		local inView = wide > 0 and x1 > 0 and py + h / 2 > 0 and x0 < inner.X and py - h / 2 < inner.Y
+		-- 빈 자리를 찾아 위아래로 조금씩 비킨다 (끝내 못 찾으면 제자리에 겹쳐서라도 보인다)
+		local dy = 0
+		if inView then
+			for _, k in ipairs({ 0, 1, -1, 2, -2, 3, -3 }) do
+				local y0, y1 = py - h / 2 + k * h, py + h / 2 + k * h
+				local free = true
+				for _, r in ipairs(placed) do
+					if x0 < r[3] and x1 > r[1] and y0 < r[4] and y1 > r[2] then
+						free = false
+						break
+					end
+				end
+				if free then
+					dy = k * h
 					break
 				end
 			end
+			table.insert(placed, { x0, py - h / 2 + dy, x1, py + h / 2 + dy })
 		end
-		l.Visible = ok
-		if ok then
-			table.insert(placed, { x0, y0, x1, y1 })
-		end
+		l.Position = UDim2.new(base.X.Scale, 0, base.Y.Scale, dy)
+		l.Visible = wide > 0
 	end
 end
 local zoomBtns: { GuiObject } = {}
@@ -31690,7 +32099,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -31704,6 +32113,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Ult2 = {}
 local player = Players.LocalPlayer
@@ -32022,6 +32432,31 @@ local function bloodSea(data: any)
 	end)
 	tintNear(at, Color3.fromRGB(140, 0, 20), 0.3, dur)
 	Fx.sound("splash", 1, 0.5, at)
+	-- 2.1판: 피의 바다에서 악마 다섯이 허리까지 솟아 바깥을 보며 손톱을 휘두른다
+	local n = 5
+	local spin = math.random() * math.pi * 2
+	for i = 1, n do
+		local ang = spin + (i / n) * math.pi * 2
+		local out = Vector3.new(math.cos(ang), 0, math.sin(ang))
+		local pos = g + out * R * 0.6
+		local base = CFrame.lookAt(pos, pos + out)
+		local sc = 1.15 + math.random() * 0.35
+		local ph = math.random() * 6
+		local dm = Demon.spawn(base * CFrame.new(0, -9 * sc, 0), sc, { legs = false })
+		dm.anim = function(t: number)
+			local rise = math.clamp(t / 0.45, 0, 1)
+			rise = 1 - (1 - rise) ^ 3
+			local sink = math.clamp((t - dur) / 0.6, 0, 1)
+			local y = -9 * sc + 5.8 * sc * rise - 6 * sc * sink
+			dm.root = base * CFrame.new(0, y + math.sin(t * 3 + ph) * 0.3 * sc, 0) * CFrame.Angles(0, math.sin(t * 1.3 + ph) * 0.35, 0)
+			dm.armR = 0.4 + 2.0 * math.max(0, math.sin(t * 4.4 + ph))
+			dm.armL = 0.4 + 2.0 * math.max(0, math.sin(t * 4.4 + ph + math.pi))
+		end
+		task.delay(dur + 0.6, function()
+			Demon.remove(dm, 0.3)
+		end)
+	end
+	Fx.sound("deflect", 0.8, 0.35, at)
 end
 local function bloodClaw(data: any)
 	local at: Vector3 = data.at
@@ -32914,7 +33349,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -35589,7 +36024,7 @@ return Ults
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="30">
+  <Item class="Workspace" referent="31">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

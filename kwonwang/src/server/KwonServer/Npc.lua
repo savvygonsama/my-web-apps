@@ -1083,7 +1083,11 @@ end
 ------------------------------------------------------------------------
 -- 생각하기 (0.1초마다)
 ------------------------------------------------------------------------
+-- 2.1판: 높이가 크게 다르면 (지상과 천상) 아주 먼 것으로 친다. 천상의 적이 바로 아래 땅의 사람을 쫓지 않게
 local function flatDist(a: Vector3, b: Vector3): number
+	if math.abs(a.Y - b.Y) > 600 then
+		return math.huge
+	end
 	return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
 end
 
@@ -1126,6 +1130,10 @@ local function attack(e: Enemy, move: any)
 	faceTo(e, tgt.root.Position)
 	local act = Combat.begin(f, move, move.id, e.seq, { enemy = true, speed = speed, align = move.windup / speed })
 	f.hum:MoveTo(f.root.Position)
+	-- 2.1판: 흘리기 시험의 사부는 주먹이 닿기 직전을 머리 위의 F로 알려 준다
+	if (f :: any).deflectCue and tgt.player and move.hits[1] then
+		Push:FireClient(tgt.player, "deflectCue", { m = f.model, t = move.hits[1].t / speed })
+	end
 	-- 순간이동 (보스): 멈칫이 끝나기 직전 상대 등 뒤로
 	if move.teleport then
 		task.delay(math.max(0, move.windup / speed - 0.12), function()
@@ -1384,6 +1392,13 @@ local function think(e: Enemy, t: number)
 	if (f :: any).retaliate then
 		(f :: any).retaliate = nil
 		e.nextAttack = math.min(e.nextAttack, t)
+	end
+	-- 2.1판: 천상의 섬에서 떨어져 땅까지 내려온 적 (또는 그 반대)은 곧바로 제자리로 돌아간다
+	if math.abs(pos.Y - e.home.Y) > 600 then
+		e.target = nil
+		f.root.AssemblyLinearVelocity = Vector3.zero
+		f.model:PivotTo(CFrame.new(e.home + Vector3.new(0, 3, 0)) * f.root.CFrame.Rotation)
+		return
 	end
 	-- 근처에 사람이 없으면 쉰다
 	local anyone = false

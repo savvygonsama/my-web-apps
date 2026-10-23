@@ -1349,6 +1349,66 @@ function handlers.trial(data: any)
 	UI.banner("⚔ " .. data.name .. "의 " .. (K and K.title or "시험"), K and K.goal or "꺾어라 · 흘리고(F) 반격하라", color)
 	shake(0.8)
 end
+-- 2.1판 흘리기 시험: 사부의 주먹이 닿기 직전, 사부 머리 위에 F가 떠올라 번쩍인다 (번쩍일 때 누르면 흘린다)
+function handlers.deflectCue(data: any)
+	local m = data and data.m
+	local r = m and rootOf(m)
+	if not r then
+		return
+	end
+	local hitIn = tonumber(data.t) or 0.5
+	local key = UserInputService.TouchEnabled and "🛡" or "F"
+	task.delay(math.max(0, hitIn - 0.6), function()
+		if not r.Parent then
+			return
+		end
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.fromOffset(90, 90)
+		bb.StudsOffsetWorldSpace = Vector3.new(0, 6.5, 0)
+		bb.AlwaysOnTop = true
+		bb.Adornee = r
+		local ring = Instance.new("Frame")
+		ring.AnchorPoint = Vector2.new(0.5, 0.5)
+		ring.Position = UDim2.fromScale(0.5, 0.5)
+		ring.Size = UDim2.fromScale(1, 1)
+		ring.BackgroundTransparency = 1
+		ring.Parent = bb
+		local st = Instance.new("UIStroke")
+		st.Thickness = 4
+		st.Color = Color3.fromRGB(170, 230, 255)
+		st.Parent = ring
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0.5, 0)
+		c.Parent = ring
+		local l = Instance.new("TextLabel")
+		l.AnchorPoint = Vector2.new(0.5, 0.5)
+		l.Position = UDim2.fromScale(0.5, 0.5)
+		l.Size = UDim2.fromScale(0.6, 0.6)
+		l.BackgroundTransparency = 1
+		l.Font = Enum.Font.GothamBlack
+		l.Text = key
+		l.TextScaled = true
+		l.TextColor3 = Color3.fromRGB(200, 235, 255)
+		l.TextStrokeTransparency = 0
+		l.Parent = bb
+		bb.Parent = r
+		-- 고리가 좁혀 들어오다가, 눌러야 할 때 노랗게 번쩍
+		local lead = math.min(0.6, hitIn)
+		TweenService:Create(ring, TweenInfo.new(math.max(0.05, lead - 0.18)), { Size = UDim2.fromScale(0.62, 0.62) }):Play()
+		task.delay(math.max(0, lead - 0.2), function()
+			if not bb.Parent then
+				return
+			end
+			l.TextColor3 = Color3.fromRGB(255, 240, 120)
+			st.Color = Color3.fromRGB(255, 230, 90)
+			l.Size = UDim2.fromScale(0.85, 0.85)
+			TweenService:Create(l, TweenInfo.new(0.25), { Size = UDim2.fromScale(0.6, 0.6) }):Play()
+		end)
+		task.delay(lead + 0.15, function()
+			bb:Destroy()
+		end)
+	end)
+end
 function handlers.trialProg(data: any?)
 	UI.setTrial(data)
 end

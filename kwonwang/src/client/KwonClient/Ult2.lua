@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Ult2 = {}
 local player = Players.LocalPlayer
@@ -327,6 +328,31 @@ local function bloodSea(data: any)
 	end)
 	tintNear(at, Color3.fromRGB(140, 0, 20), 0.3, dur)
 	Fx.sound("splash", 1, 0.5, at)
+	-- 2.1판: 피의 바다에서 악마 다섯이 허리까지 솟아 바깥을 보며 손톱을 휘두른다
+	local n = 5
+	local spin = math.random() * math.pi * 2
+	for i = 1, n do
+		local ang = spin + (i / n) * math.pi * 2
+		local out = Vector3.new(math.cos(ang), 0, math.sin(ang))
+		local pos = g + out * R * 0.6
+		local base = CFrame.lookAt(pos, pos + out)
+		local sc = 1.15 + math.random() * 0.35
+		local ph = math.random() * 6
+		local dm = Demon.spawn(base * CFrame.new(0, -9 * sc, 0), sc, { legs = false })
+		dm.anim = function(t: number)
+			local rise = math.clamp(t / 0.45, 0, 1)
+			rise = 1 - (1 - rise) ^ 3
+			local sink = math.clamp((t - dur) / 0.6, 0, 1)
+			local y = -9 * sc + 5.8 * sc * rise - 6 * sc * sink
+			dm.root = base * CFrame.new(0, y + math.sin(t * 3 + ph) * 0.3 * sc, 0) * CFrame.Angles(0, math.sin(t * 1.3 + ph) * 0.35, 0)
+			dm.armR = 0.4 + 2.0 * math.max(0, math.sin(t * 4.4 + ph))
+			dm.armL = 0.4 + 2.0 * math.max(0, math.sin(t * 4.4 + ph + math.pi))
+		end
+		task.delay(dur + 0.6, function()
+			Demon.remove(dm, 0.3)
+		end)
+	end
+	Fx.sound("deflect", 0.8, 0.35, at)
 end
 local function bloodClaw(data: any)
 	local at: Vector3 = data.at

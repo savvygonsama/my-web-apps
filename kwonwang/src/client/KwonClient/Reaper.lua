@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Reaper = {}
 local player = Players.LocalPlayer
@@ -519,6 +520,74 @@ end
 -- 혈월만겸 (초 오의): 붉은 달이 뜨고, 핏빛 초승달이 쏟아지고, 마지막에 하늘과 땅과 화면을 가른다
 ------------------------------------------------------------------------
 local moonState: { cc: ColorCorrectionEffect?, moon: BasePart?, untilT: number } = { untilT = 0 }
+-- 2.1판: 혈월의 우두머리 악마 (쓴 사람마다 하나). 낫을 머리 뒤로 치켜들고 있다가 휘두른다
+type Alpha = { h: Demon.Handle, swingAt: number, swingDur: number, swingTo: number, slam: boolean }
+local alphas: { [Instance]: Alpha } = {}
+local RAISED = 3.5 -- 머리 뒤로 치켜든 팔
+local function alphaArm(a: Alpha, t: number): number
+	local u = (os.clock() - a.swingAt) / a.swingDur
+	if u < 0 or u > 2.2 then
+		return RAISED + math.sin(t * 2) * 0.08
+	end
+	if u <= 1 then
+		-- 내리찍기 (빠르게)
+		return RAISED + (a.swingTo - RAISED) * (u * u)
+	end
+	-- 다시 치켜든다 (천천히). 마지막 일격은 내리찍은 채로 머문다
+	if a.slam then
+		return a.swingTo
+	end
+	local k = (u - 1) / 1.2
+	return a.swingTo + (RAISED - a.swingTo) * (1 - (1 - k) ^ 2)
+end
+local function alphaSwing(m: Instance?, to: number, dur: number, slam: boolean)
+	local a = m and alphas[m]
+	if not a then
+		return
+	end
+	local busy = (os.clock() - a.swingAt) < a.swingDur * 2.2
+	if busy and not slam then
+		return
+	end
+	a.swingAt = os.clock()
+	a.swingDur = dur
+	a.swingTo = to
+	a.slam = slam
+end
+local function alphaRise(m: Model, r: BasePart)
+	local old = alphas[m]
+	if old then
+		Demon.remove(old.h, 0.2)
+	end
+	local look = flat(r.CFrame.LookVector)
+	local back = r.Position - look * 24
+	local g = ground(back)
+	local base = CFrame.lookAt(g, g + look)
+	local sc = 4.2
+	local dm = Demon.spawn(base * CFrame.new(0, -11 * sc, 0), sc, { scythe = true, wings = true })
+	local a: Alpha = { h = dm, swingAt = -100, swingDur = 0.3, swingTo = 1, slam = false }
+	alphas[m] = a
+	dm.armR = RAISED
+	dm.anim = function(t: number)
+		local rise = math.clamp(t / 1.1, 0, 1)
+		rise = 1 - (1 - rise) ^ 3
+		dm.root = base * CFrame.new(0, -11 * sc * (1 - rise) + math.sin(t * 1.6) * 0.35 * sc, 0) * CFrame.Angles(math.rad(-6), 0, 0)
+		dm.armR = alphaArm(a, t)
+		-- 왼팔은 앞으로 벌려 손톱을 세운다
+		dm.armL = 1.0 + math.sin(t * 2.4) * 0.15
+	end
+	-- 피의 원에서 솟는다
+	Fx.ring(g + Vector3.new(0, 0.3, 0), RED, 6, 50, 0.9)
+	Fx.burst("spark", g + Vector3.new(0, 4, 0), RED, 40, 3)
+	Fx.sound("heavy", 1, 0.35, g)
+	-- 끝내 마지막 일격이 오지 않아도 사라진다
+	task.delay(12, function()
+		if alphas[m] == a then
+			alphas[m] = nil
+			Demon.remove(dm, 0.8)
+		end
+	end)
+end
 local function moonRise(data: any)
 	local r = rootOf(data.m)
 	if not r or not near(r.Position, 220) then
@@ -526,6 +595,7 @@ local function moonRise(data: any)
 	end
 	local dur = data.dur or 3.4
 	moonState.untilT = math.max(moonState.untilT, os.clock() + dur)
+	alphaRise(data.m, r)
 	-- 하늘이 핏빛으로 (보는 사람 화면만)
 	local cc = moonState.cc
 	if not cc or not cc.Parent then
@@ -578,6 +648,8 @@ local function moonRise(data: any)
 end
 -- 하늘에서 떨어지는 핏빛 초승달 하나하나
 local function moonSlash(data: any)
+	-- 우두머리 악마가 초승달마다 낫을 한 번씩 휘두른다 (휘두르는 중이면 건너뛴다)
+	alphaSwing(data.m, 1.3, 0.22, false)
 	for _, at in ipairs(data.spots or {}) do
 		if near(at, 200) then
 			local g = ground(at) + Vector3.new(0, 0.2, 0)
@@ -654,6 +726,18 @@ local function moonCleave(data: any)
 	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
 	local R = data.radius or 26
 	local g = ground(at)
+	-- 우두머리 악마의 마지막 내리찍기: 낫이 땅에 박힌 채 잠시 머물다 사라진다
+	local m = data.m
+	local a = m and alphas[m]
+	if a then
+		alphaSwing(m, 0.55, 0.14, true)
+		task.delay(1.1, function()
+			if alphas[m] == a then
+				alphas[m] = nil
+				Demon.remove(a.h, 0.9)
+			end
+		end)
+	end
 	-- 하늘에서 땅까지 세로로 선 거대한 칼날 (얇은 판)
 	local blade = part(Vector3.new(0.6, 200, R * 2.4), RED, Enum.Material.Neon, 0.05)
 	blade.CFrame = CFrame.lookAt(g + Vector3.new(0, 100, 0), g + Vector3.new(0, 100, 0) + dir)

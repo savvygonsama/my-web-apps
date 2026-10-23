@@ -1280,7 +1280,7 @@ function Skills.run(f: any, move: any, ctx: any)
 					end
 					table.insert(spots, at)
 				end
-				Push:FireAllClients("skillfx", { kind = "moonSlash", spots = spots, radius = m.radius, style = style })
+				Push:FireAllClients("skillfx", { kind = "moonSlash", m = f.model, spots = spots, radius = m.radius, style = style })
 				local done = {}
 				for _, at in ipairs(spots) do
 					for _, o in ipairs(hostilesNear(f, at, m.radius)) do

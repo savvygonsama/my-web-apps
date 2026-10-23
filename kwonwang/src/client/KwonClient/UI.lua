@@ -1410,7 +1410,7 @@ local function buildTest()
 		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
 	})
 	section("☁ 베타 14: 천상계·아공신권·탈것", {
-		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 77500 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
+		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 3000000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
 		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
 		{ "🐉 청룡 탈것 (테스트로 켜기)", "testPremium", "dragon" }, { "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
 		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
@@ -1440,9 +1440,9 @@ local function buildTest()
 	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
 		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
-		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 60000 },
+		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 1050000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 125000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 25000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
@@ -1751,7 +1751,7 @@ end
 -- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
 local regionTags: { [string]: { label: TextLabel, name: string } } = {}
 local mapCanvas: Frame
-type MapText = { label: TextLabel, prio: number, small: number, big: number }
+type MapText = { label: TextLabel, prio: number, small: number, big: number, base: UDim2? }
 local mapTexts: { MapText } = {}
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
@@ -1778,7 +1778,7 @@ local function mapUV(p: Vector3): UDim2
 	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
 end
 
-local MAP_SMALL = 250
+local MAP_SMALL = 375 -- 2.1판: 250 → 375 (1.5배)
 local MAP_BIG = 760
 local SMALL_SPAN = 1300 -- 작은 지도 한 변에 보이는 넓이 (칸)
 local bigZoom = 1
@@ -1804,7 +1804,7 @@ local function applyView(pos: Vector3?)
 	mapCanvas.Size = UDim2.fromScale(z, z)
 	mapCanvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
 end
--- 겹치는 글자 감추기 (중요한 것부터 자리를 잡는다)
+-- 겹치는 글자 비켜 놓기 (중요한 것부터 자리를 잡는다). 2.1판: 감추지 않는다. 위아래로 비켜서라도 다 보인다
 local function declutter()
 	if not mapInner then
 		return
@@ -1820,8 +1820,10 @@ local function declutter()
 	for _, t in ipairs(mapTexts) do
 		local l = t.label
 		local size = mapBig and t.big or t.small
-		local px = ox + l.Position.X.Scale * cs
-		local py = oy + l.Position.Y.Scale * cs
+		t.base = t.base or UDim2.fromScale(l.Position.X.Scale, l.Position.Y.Scale)
+		local base = t.base :: UDim2
+		local px = ox + base.X.Scale * cs
+		local py = oy + base.Y.Scale * cs
 		local plain = string.gsub(l.Text, "<[^>]+>", "")
 		local lines = string.split(plain, "\n")
 		local wide = 0
@@ -1830,20 +1832,29 @@ local function declutter()
 		end
 		local w = wide * size * 0.62 + 4
 		local h = #lines * size * 1.15
-		local x0, y0, x1, y1 = px - w / 2, py - h / 2, px + w / 2, py + h / 2
-		local ok = wide > 0 and x1 > 0 and y1 > 0 and x0 < inner.X and y0 < inner.Y
-		if ok then
-			for _, r in ipairs(placed) do
-				if x0 < r[3] and x1 > r[1] and y0 < r[4] and y1 > r[2] then
-					ok = false
+		local x0, x1 = px - w / 2, px + w / 2
+		local inView = wide > 0 and x1 > 0 and py + h / 2 > 0 and x0 < inner.X and py - h / 2 < inner.Y
+		-- 빈 자리를 찾아 위아래로 조금씩 비킨다 (끝내 못 찾으면 제자리에 겹쳐서라도 보인다)
+		local dy = 0
+		if inView then
+			for _, k in ipairs({ 0, 1, -1, 2, -2, 3, -3 }) do
+				local y0, y1 = py - h / 2 + k * h, py + h / 2 + k * h
+				local free = true
+				for _, r in ipairs(placed) do
+					if x0 < r[3] and x1 > r[1] and y0 < r[4] and y1 > r[2] then
+						free = false
+						break
+					end
+				end
+				if free then
+					dy = k * h
 					break
 				end
 			end
+			table.insert(placed, { x0, py - h / 2 + dy, x1, py + h / 2 + dy })
 		end
-		l.Visible = ok
-		if ok then
-			table.insert(placed, { x0, y0, x1, y1 })
-		end
+		l.Position = UDim2.new(base.X.Scale, 0, base.Y.Scale, dy)
+		l.Visible = wide > 0
 	end
 end
 local zoomBtns: { GuiObject } = {}
