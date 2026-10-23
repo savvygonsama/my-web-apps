@@ -703,6 +703,15 @@ function Drunk.superCut(model: Model, dur: number, name: string, shake: ((number
 		cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
 		cam.FieldOfView = oldFov
 		cutActive = false
+		-- 1.9.3판: 컷씬이 끝나면 카메라를 내 등 뒤 조금 높은 곳으로 (앞에서 터지는 기술이 잘 보이게)
+		local function behind()
+			if r.Parent then
+				local lk = flat(r.CFrame.LookVector)
+				cam.CFrame = CFrame.lookAt(r.Position - lk * 15 + Vector3.new(0, 6, 0), r.Position + lk * 6 + Vector3.new(0, 1, 0))
+			end
+		end
+		behind()
+		task.defer(behind)
 	end
 	RunService:BindToRenderStep("KwonDrunkCut", Enum.RenderPriority.Camera.Value, function(dt: number)
 		if finished then

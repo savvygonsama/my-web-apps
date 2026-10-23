@@ -98,6 +98,9 @@ local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, l
 end
 local AXIS_Z = CFrame.Angles(0, math.rad(90), 0) -- 원기둥의 축(X)을 손의 Z로
 local SHAFT_BACK, SHAFT_FRONT = 2.0, 4.6
+-- 날 머리를 자루 둘레로 돌린 각도 (1.9.3판: 옆으로 뻗던 날을 90도 돌려, 치켜든 자세에서 날이 앞으로 드리우게)
+local HEAD_ROLL = -90
+local HEAD = CFrame.Angles(0, 0, math.rad(HEAD_ROLL))
 local function buildScythe(hand: BasePart, holder: Instance, list: { Instance })
 	local len = SHAFT_BACK + SHAFT_FRONT
 	local mid = (SHAFT_FRONT - SHAFT_BACK) / 2
@@ -111,10 +114,10 @@ local function buildScythe(hand: BasePart, holder: Instance, list: { Instance })
 	attach(butt, hand, CFrame.new(0, 0, -SHAFT_BACK - 0.35), holder, list)
 	-- 날 머리: 검은 쇠 고리 + 붉은 눈 (빛)
 	local head = part(Vector3.new(0.5, 0.55, 0.55), Color3.fromRGB(25, 20, 22), Enum.Material.Metal, 0)
-	attach(head, hand, CFrame.new(0, 0, SHAFT_FRONT), holder, list)
+	attach(head, hand, HEAD * CFrame.new(0, 0, SHAFT_FRONT), holder, list)
 	local eye = part(Vector3.new(0.28, 0.28, 0.28), RED, Enum.Material.Neon, 0, "ball")
 	eye.Name = "ReaperEye"
-	attach(eye, hand, CFrame.new(0, 0.3, SHAFT_FRONT), holder, list)
+	attach(eye, hand, HEAD * CFrame.new(0, 0.3, SHAFT_FRONT), holder, list)
 	local glow = Instance.new("PointLight")
 	glow.Color = RED
 	glow.Range = 8
@@ -130,9 +133,9 @@ local function buildScythe(hand: BasePart, holder: Instance, list: { Instance })
 		local c = p + dir * (segLen / 2)
 		local cf = CFrame.lookAt(c, c + dir, Vector3.new(0, 1, 0))
 		-- 등 (검붉은 쇠)과 날 (핏빛으로 빛나는 가장자리)
-		attach(part(Vector3.new(width, 0.12, segLen * 1.08), Color3.fromRGB(110, 8, 20), Enum.Material.Metal, 0), hand, cf * CFrame.new(-width * 0.15, 0, 0), holder, list)
+		attach(part(Vector3.new(width, 0.12, segLen * 1.08), Color3.fromRGB(110, 8, 20), Enum.Material.Metal, 0), hand, HEAD * cf * CFrame.new(-width * 0.15, 0, 0), holder, list)
 		local edge = part(Vector3.new(0.14, 0.13, segLen * 1.1), RED, Enum.Material.Neon, 0)
-		attach(edge, hand, cf * CFrame.new(width * 0.38, 0, 0), holder, list)
+		attach(edge, hand, HEAD * cf * CFrame.new(width * 0.38, 0, 0), holder, list)
 		if k == n then
 			edge.Name = "ReaperTip"
 		end
@@ -142,7 +145,7 @@ local function buildScythe(hand: BasePart, holder: Instance, list: { Instance })
 	end
 	-- 머리에서 늘어진 짧은 쇠사슬
 	for k = 1, 4 do
-		attach(part(Vector3.new(0.22, 0.32, 0.22), Color3.fromRGB(60, 50, 55), Enum.Material.Metal, 0, "ball"), hand, CFrame.new(0.15, -0.3 - k * 0.3, SHAFT_FRONT - 0.2), holder, list)
+		attach(part(Vector3.new(0.22, 0.32, 0.22), Color3.fromRGB(60, 50, 55), Enum.Material.Metal, 0, "ball"), hand, HEAD * CFrame.new(0.15, -0.3 - k * 0.3, SHAFT_FRONT - 0.2), holder, list)
 	end
 end
 -- 왼손: 붉은 손톱 셋
@@ -800,6 +803,15 @@ function Reaper.superCut(model: Model, dur: number, name: string, shake: ((numbe
 		cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
 		cam.FieldOfView = oldFov
 		cutActive = false
+		-- 1.9.3판: 컷씬이 끝나면 카메라를 내 등 뒤 조금 높은 곳으로 (앞에서 터지는 기술이 잘 보이게)
+		local function behind()
+			if r.Parent then
+				local lk = flat(r.CFrame.LookVector)
+				cam.CFrame = CFrame.lookAt(r.Position - lk * 15 + Vector3.new(0, 6, 0), r.Position + lk * 6 + Vector3.new(0, 1, 0))
+			end
+		end
+		behind()
+		task.defer(behind)
 	end
 	RunService:BindToRenderStep("KwonReaperCut", Enum.RenderPriority.Camera.Value, function(dt: number)
 		if finished then
