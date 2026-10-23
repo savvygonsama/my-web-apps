@@ -67,6 +67,7 @@ type Profile = {
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
+	statVer: number, -- 능력치 숫자의 판 (2 = 2.0판의 작은 숫자)
 }
 
 local function defaultProfile(): Profile
@@ -102,6 +103,7 @@ local function defaultProfile(): Profile
 		rebirth = 0,
 		ach = {},
 		counts = {},
+		statVer = 2,
 	}
 end
 
@@ -118,8 +120,11 @@ local function sanitize(data: any): Profile
 	end
 	p.coins = math.floor(num(data.coins, 1e12))
 	if type(data.stats) == "table" then
+		-- 2.0판 전의 기록은 큰 숫자다: 같은 세기의 작은 숫자로 바꾼다 (경지는 그대로)
+		local old = data.statVer ~= 2
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] = math.floor(num(data.stats[s.id], 1e13))
+			local v = num(data.stats[s.id], 1e13)
+			p.stats[s.id] = old and Config.statToNew(v) or math.floor(v)
 		end
 	end
 	if type(data.styles) == "table" then
@@ -1343,7 +1348,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer), Config.realmCap(p.rebirth)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -1379,9 +1384,8 @@ Combat.init(Push, {
 				local statGain = 0
 				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
-					-- 내 전투력의 capRatio배를 넘는 적은 그만큼으로만 센다
-					local mine = rewardPower(killer)
-					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio), Config.realmCap(p.rebirth)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
+					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each
@@ -2498,7 +2502,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = Config.killGain(math.min(ef.power or 100, rewardPower(player) * Config.KILL_GAIN.capRatio), Config.realmCap(p.rebirth)) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
+		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			p.stats[sd.id] += each
@@ -2521,7 +2525,7 @@ function Maze.finish(player: Player, run: any)
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
 			local R = M.reward
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player), Config.realmCap(p.rebirth)) * R.statKills * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -3919,7 +3923,7 @@ function Raid.killed(f: any)
 			p.coins += coins
 			p.scrolls += scrolls
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player), Config.realmCap(p.rebirth)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
 			p.counts.raid = (p.counts.raid or 0) + 1
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each

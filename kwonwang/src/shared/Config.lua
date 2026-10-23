@@ -71,8 +71,9 @@ Config.Stats = {
 	{ id = "chi", name = "내공", icon = "🌀", desc = "내공 회복과 기술 위력" },
 }
 
+-- 2.0판: 능력치 숫자를 줄였다 (천외천 5억 → 50만). 세기는 그대로 두려고, 효과는 예전 숫자로 되돌려 셈한다 (Config.statEquiv)
 function Config.statMult(x: number): number
-	return 1 + 0.3 * math.log(1 + math.max(0, x) / 15)
+	return 1 + 0.3 * math.log(1 + Config.statEquiv(math.max(0, x)) / 15)
 end
 
 function Config.maxHp(vit: number): number
@@ -81,7 +82,7 @@ end
 
 -- 내공 그릇: 내공 능력치와 경지가 오를수록 커진다 (100 → 최대 500). 오의는 늘 100을 쓴다
 function Config.chiMax(chi: number, realm: number): number
-	return math.min(500, 100 + math.floor(40 * math.log(1 + math.max(0, chi) / 60)) + 8 * (realm - 1))
+	return math.min(500, 100 + math.floor(40 * math.log(1 + Config.statEquiv(math.max(0, chi)) / 60)) + 8 * (realm - 1))
 end
 
 function Config.walkSpeed(agi: number): number
@@ -100,21 +101,65 @@ Config.Realms = {
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
 	{ name = "현경", need = 36000, color = Color3.fromRGB(120, 255, 230) },
 	{ name = "사경", need = 60000, color = Color3.fromRGB(255, 80, 120) },
-	-- 1.5판: 사경 너머는 문턱이 경지마다 약 3.6배씩 (적을 쓰러뜨려 얻는 능력치로 오른다). 천외천은 능력치 합 5억
-	{ name = "생사경", need = 218000, color = Color3.fromRGB(255, 255, 255) },
-	{ name = "신화경", need = 791000, color = Color3.fromRGB(255, 220, 120) },
-	{ name = "천인합일", need = 2874000, color = Color3.fromRGB(160, 220, 255) },
-	{ name = "무극", need = 10438000, color = Color3.fromRGB(255, 150, 255) },
+	-- 2.0판: 사경 너머의 문턱을 작은 숫자로 (예전 21.8만 ~ 5억 → 9만 ~ 50만). 경지의 세기는 그대로다
+	{ name = "생사경", need = 90000, color = Color3.fromRGB(255, 255, 255) },
+	{ name = "신화경", need = 130000, color = Color3.fromRGB(255, 220, 120) },
+	{ name = "천인합일", need = 180000, color = Color3.fromRGB(160, 220, 255) },
+	{ name = "무극", need = 240000, color = Color3.fromRGB(255, 150, 255) },
 	-- 무극 너머 (허공 균열의 적과 천마를 상대하려면)
-	{ name = "반선", need = 37908000, color = Color3.fromRGB(200, 255, 255) },
-	{ name = "등선", need = 137674000, color = Color3.fromRGB(255, 240, 200) },
-	{ name = "천외천", need = 500000000, color = Color3.fromRGB(255, 255, 160) },
+	{ name = "반선", need = 310000, color = Color3.fromRGB(200, 255, 255) },
+	{ name = "등선", need = 400000, color = Color3.fromRGB(255, 240, 200) },
+	{ name = "천외천", need = 500000, color = Color3.fromRGB(255, 255, 160) },
 	-- 1.9판: 천외천 너머. 환생해야 하나씩 열린다 (환생 한 번에 한 경지)
-	{ name = "혼원경", need = 2500000000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
-	{ name = "무량경", need = 12500000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
-	{ name = "태허경", need = 62500000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
-	{ name = "권왕", need = 312500000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
+	{ name = "혼원경", need = 650000, color = Color3.fromRGB(255, 120, 200), rebirth = 1 },
+	{ name = "무량경", need = 850000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
+	{ name = "태허경", need = 1100000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
+	{ name = "권왕", need = 1500000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
 }
+-- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
+local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000 }
+-- 능력치 합 total(새 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
+local function toOld(total: number): number
+	local R = Config.Realms
+	if total <= R[9].need then
+		return total -- 사경까지는 그대로
+	end
+	for i = 9, #R - 1 do
+		local a, b = R[i].need, R[i + 1].need
+		if total <= b then
+			local t = (total - a) / (b - a)
+			return math.exp(math.log(OLD_NEED[i]) + (math.log(OLD_NEED[i + 1]) - math.log(OLD_NEED[i])) * t)
+		end
+	end
+	-- 권왕 너머: 마지막 마디의 기울기로 늘린다
+	local n = #R
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
+	return math.exp(math.log(OLD_NEED[n]) + slope * (total - R[n].need))
+end
+local function toNew(oldTotal: number): number
+	local R = Config.Realms
+	if oldTotal <= OLD_NEED[9] then
+		return oldTotal
+	end
+	for i = 9, #R - 1 do
+		local a, b = OLD_NEED[i], OLD_NEED[i + 1]
+		if oldTotal <= b then
+			local t = (math.log(oldTotal) - math.log(a)) / (math.log(b) - math.log(a))
+			return R[i].need + (R[i + 1].need - R[i].need) * t
+		end
+	end
+	local n = #R
+	local slope = (math.log(OLD_NEED[n]) - math.log(OLD_NEED[n - 1])) / (R[n].need - R[n - 1].need)
+	return R[n].need + (math.log(oldTotal) - math.log(OLD_NEED[n])) / slope
+end
+-- 능력치 하나(새 숫자)의 효과를 낼 예전 숫자 (네 능력치가 고르게 오른다고 보고 합으로 셈한다)
+function Config.statEquiv(x: number): number
+	return toOld(x * 4) / 4
+end
+-- 예전 기록의 능력치 하나를 새 숫자로
+function Config.statToNew(oldX: number): number
+	return math.floor(toNew(math.max(0, oldX) * 4) / 4 + 0.5)
+end
 -- 경지 배율은 겹으로 쌓인다: 사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 (후반일수록 크게 뛴다)
 -- (일류 ×1.5, 절정 ×2.2, 사경 ×4.9, 무극 ×18.6, 천외천 ×46)
 function Config.realmPower(idx: number): number
@@ -165,44 +210,26 @@ function Config.rebirthGain(rebirth: number): number
 end
 
 ------------------------------------------------------------------------
--- 1.5판: 적을 쓰러뜨리면 능력치가 오른다 (강해지는 길의 중심)
--- 경지마다 그 경지에 막 오른 사람의 전투력과, 다음 경지까지 몇 마리면 되는지를 잡아 두고
--- (앞 경지는 스무 마리 남짓, 뒤로 갈수록 일흔 마리 남짓), 쓰러뜨린 적의 전투력으로 그 사이를 이어 얻는 양을 정한다
+-- 2.0판: 적을 쓰러뜨리면 능력치가 오른다. 얻는 양은 그 적의 전투력만으로 정해진다 (내 경지·필요 마릿수와 상관없다)
+-- 그 경지 적이면 앞 경지는 열다섯 마리 남짓, 천외천은 백육십 마리 남짓에 다음 경지 (보스 ×3, 정예 ×1.5)
 ------------------------------------------------------------------------
--- 1.8판: 너무 빨리 오른다 → 경지마다 필요한 마릿수를 두 배로, 보스 몫 ×8 → ×4
--- 1.9.1판: 후반에도 한 번에 너무 많이 오른다 → 마릿수 두 배 더, 보스 ×4 → ×2.5, 정예 ×1.2, 센 적은 내 전투력의 1.2배까지만
--- 1.9.2판: 그래도 많다 → 마릿수 두 배 더 (앞 경지 약 140마리 · 천외천 약 630마리), 보스 ×2.2
-Config.KILL_GAIN = { boss = 2.2, elite = 1.2, tower = 0.5, capRatio = 1.2 } -- capRatio: 내 전투력의 이 배까지만 센다
-local killTable: { { number } } = {}
-do
-	local n = #Config.Realms
-	for i, r in ipairs(Config.Realms) do
-		local nxt = i < n and Config.Realms[i + 1].need or r.need * 2
-		-- 천외천의 몫은 예전 그대로 (환생으로 열리는 경지가 앞 경지의 오름새를 바꾸지 않게)
-		if Config.Realms[i + 1] and Config.Realms[i + 1].rebirth and not r.rebirth then
-			nxt = r.need * 2
-		end
-		local power = 100 * Config.realmPower(i) * Config.statMult(r.need / 4)
-		-- 환생으로 열린 경지는 세 배 더 오래 (보스 몫이 커서 금방 오르지 않게)
-		local gain = (nxt - r.need) / ((120 + 32 * i) * (r.rebirth and 3 or 1))
-		table.insert(killTable, { power, gain })
-	end
-end
--- 전투력 power인 적 하나를 쓰러뜨리면 오르는 능력치 합 (네 능력치에 고루 나눈다)
-function Config.killGain(power: number, maxRow: number?): number
-	-- maxRow: 이 사람이 오를 수 있는 끝 경지 (환생 전이면 천외천). 그 너머의 줄은 보지 않는다
-	local n = math.clamp(maxRow or #killTable, 1, #killTable)
+Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
+-- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
+local GAIN_TABLE: { { number } } = {
+	{ 100, 10 }, { 168, 18 }, { 256, 40 }, { 374, 67 }, { 516, 91 }, { 686, 154 }, { 905, 213 }, { 1174, 282 }, { 1508, 316 }, { 2343, 381 },
+	{ 3595, 435 }, { 5460, 480 }, { 8223, 519 }, { 12298, 621 }, { 18283, 645 }, { 27041, 909 }, { 40433, 1143 }, { 60098, 1351 }, { 88871, 2051 }, { 130833, 2500 },
+}
+function Config.killGain(power: number): number
 	local p = math.max(1, power)
-	local first, last = killTable[1], killTable[n]
+	local first, last = GAIN_TABLE[1], GAIN_TABLE[#GAIN_TABLE]
 	if p <= first[1] then
-		return math.max(1, first[2] * (p / first[1]) ^ 2)
+		return math.max(1, first[2] * p / first[1])
 	end
 	if p >= last[1] then
-		-- 표 너머는 더 오르지 않는다 (아주 센 보스 하나에 터무니없이 오르지 않게)
 		return last[2]
 	end
-	for i = 1, n - 1 do
-		local a, b = killTable[i], killTable[i + 1]
+	for i = 1, #GAIN_TABLE - 1 do
+		local a, b = GAIN_TABLE[i], GAIN_TABLE[i + 1]
 		if p <= b[1] then
 			local t = math.log(p / a[1]) / math.log(b[1] / a[1])
 			return math.exp(math.log(a[2]) + (math.log(b[2]) - math.log(a[2])) * t)

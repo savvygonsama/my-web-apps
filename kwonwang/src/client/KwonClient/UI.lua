@@ -1405,7 +1405,7 @@ local function buildTest()
 		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
 	})
 	section("☁ 베타 14: 천상계·아공신권·탈것", {
-		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 600000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
+		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 77500 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
 		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
 		{ "🐉 청룡 탈것 (테스트로 켜기)", "testPremium", "dragon" }, { "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
 		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
@@ -1435,9 +1435,9 @@ local function buildTest()
 	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
 		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
 		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
-		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 40000 },
+		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 60000 },
 		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 130000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
+		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 125000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
 		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
 		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
 		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
