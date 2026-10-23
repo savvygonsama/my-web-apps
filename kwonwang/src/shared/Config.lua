@@ -2050,6 +2050,22 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
+-- 2.0판 초월의 시련: 뇌천선이 직접 (벼락 비 → 뇌광 돌진 → 구천뇌정)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "chobyeok" then
+		local violet = Color3.fromRGB(170, 130, 255)
+		st.trialIntro = { title = "초월의 시련", text = "번개를 쥐었다고 번개가 되는 건 아니다. 내 벼락을 세 번 맞고도 서 있거든, 이 토시를 네 팔에 채워 주마." }
+		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 26, patterns = {
+			P("rain", "벼락 비", 1, { count = 8, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = violet, hit = hit(0, 0, 0, 32, 36, 0.8, 20) }),
+			P("donut", "뇌전 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "thunder_hammer", hit = hit(0, 0, 0, 42, 52, 0.9, 40) }),
+			P("charge", "뇌광 돌진", 2, { length = 56, width = 8, warn = 0.6, cd = 6, times = 3, pose = "lightning_dash", hit = hit(0, 0, 0, 38, 46, 0.8, 50) }),
+			P("rain", "천뢰", 2, { count = 11, radius = 6, spread = 26, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 245, 170), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
+			P("leap", "벽력천추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "thunder_hammer", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
+			P("quake", "구천뇌정", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_thunder", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+end
+
 -- 일월의 시련: 권존이 분신 없이 직접, 보스처럼 세 단계로 싸운다 (한낮 → 밤 → 새벽)
 for _, st in ipairs(Config.Styles) do
 	if st.id == "ilwol" then

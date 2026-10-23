@@ -306,6 +306,10 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	geumgang2 = { H = "crack", E = "dome", R = "spikes" },
 	muyeong2 = { H = "fan", E = "cross", R = "vortex" },
 	taeheo2 = { H = "nova", E = "wave", R = "spiral" },
+	yeolhwa2 = { H = "comet", E = "spikes", R = "pillar" },
+	changhae2 = { H = "tunnel", E = "wave", R = "spiral" },
+	pungsin2 = { H = "fan", E = "cross", R = "spiral" },
+	chobyeok = { H = "cross", E = "beam", R = "rain" },
 }
 local MAT: { [string]: Enum.Material } = {
 	cloud = Enum.Material.SmoothPlastic,

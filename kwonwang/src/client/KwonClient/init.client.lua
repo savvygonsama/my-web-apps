@@ -20,6 +20,7 @@ local Sakura = require(script:WaitForChild("Sakura"))
 local Drunk = require(script:WaitForChild("Drunk"))
 local Awake = require(script:WaitForChild("Awake"))
 local Reaper = require(script:WaitForChild("Reaper"))
+local Ult2 = require(script:WaitForChild("Ult2"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -659,7 +660,10 @@ startMove = function(slot: any, charge: number?)
 	if move.jump then
 		root.AssemblyLinearVelocity = Vector3.new(root.AssemblyLinearVelocity.X, move.jump, root.AssemblyLinearVelocity.Z)
 	end
-	if slot == "X" and style.scythe then
+	if slot == "X" and style.gauntlets then
+		-- 구천뇌정: 하늘의 천둥 눈을 올려다보는 컷씬 (대사 없이, 무적), 걷히면 벼락이 쏟아진다
+		Ult2.superCut(char, ((move.mech and move.mech.cut) or 1.3) / speed, move.name, shake)
+	elseif slot == "X" and style.scythe then
 		-- 혈월만겸: 붉은 달이 뜨는 컷씬 (대사 없이) 동안 무적, 컷씬이 걷히면 핏빛 초승달이 쏟아진다
 		Reaper.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
 	elseif slot == "X" and style.soju then
@@ -1821,6 +1825,7 @@ function handlers.skillfx(data: any)
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
 		Awake.init({ shake = shake, tint = tint })
 		Reaper.init({ shake = shake, tint = tint })
+		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1841,6 +1846,9 @@ function handlers.skillfx(data: any)
 		return
 	elseif Reaper.handles(data) then
 		Reaper.run(data)
+		return
+	elseif Ult2.handles(data) then
+		Ult2.run(data)
 		return
 	elseif Ults.handles(data.kind) then
 		Ults.run(data)
