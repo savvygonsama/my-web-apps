@@ -514,6 +514,17 @@ local function updateTag(player: Player)
 end
 
 -- 능력치·권법·숙련이 바뀌면 무인 수치를 다시 맞춘다
+-- 보상 계산용 내 전투력: 후반 공격력 배율은 빼고 센다 (1.8판에 공격력이 오른 만큼 보상이 부풀지 않게)
+local function rewardPower(player: Player): number
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	local pw = ((f :: any) and (f :: any).power) or 100
+	if p then
+		pw /= math.sqrt(Config.lateAtk((Calc.realm(p))))
+	end
+	return pw
+end
+
 local function refreshFighter(player: Player)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
@@ -528,7 +539,7 @@ local function refreshFighter(player: Player)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1)
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
@@ -1150,8 +1161,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local kf = Combat.fighterOfPlayer(killer)
-					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(((kf :: any) and (kf :: any).power) or 100) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1))
+					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1))
 					for _, st in ipairs(Config.Stats) do
 						p.stats[st.id] += gain
 					end
@@ -1187,7 +1197,9 @@ Combat.init(Push, {
 				local statGain = 0
 				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
-					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
+					-- 내 전투력의 capRatio배를 넘는 적은 그만큼으로만 센다
+					local mine = rewardPower(killer)
+					local g = Config.killGain(math.min(f.power or 100, mine * KG.capRatio)) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each
@@ -2279,8 +2291,7 @@ function Maze.finish(player: Player, run: any)
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
 			local R = M.reward
-			local f = Combat.fighterOfPlayer(player)
-			local each = math.max(1, math.floor(Config.killGain(((f :: any) and (f :: any).power) or 100) * R.statKills / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -3645,8 +3656,7 @@ function Raid.killed(f: any)
 			p.coins += coins
 			p.scrolls += scrolls
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
-			local pf = Combat.fighterOfPlayer(player)
-			local each = math.max(1, math.floor(Config.killGain(((pf :: any) and (pf :: any).power) or 100) * R.statKills * (0.3 + share) / #Config.Stats))
+			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end

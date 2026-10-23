@@ -1573,66 +1573,10 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	local c, c2 = style.color, style.color2
 	local pos = r.Position
 	local look = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z)
-	-- 기를 끌어올리는 순간: 몸 둘레로 빛 가루가 솟고 잠깐 밝아진다
-	Fx.burst("glitter", pos, c2, 16, 1)
-	Fx.flash(pos, c, 18, 2.5, 0.45)
+	-- 1.8판: 모든 기술에 똑같이 붙던 공통 틀 (발밑 진·고리·몸의 기운·손의 빛 구슬·앞으로 뻗는 초승달) 은 없앴다
+	-- 기술마다의 이펙트는 아래 (속성:칸) 과 SkillFx 가 맡는다
 	look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
 	local feet = pos - Vector3.new(0, 2.6, 0)
-	-- 공통: 발밑의 기술 진, 고리와 몸의 기운
-	Fx.sigil(feet, slot == "H" and 5 or 7, c, c2, slot == "H" and 0.5 or 0.7)
-	Fx.ring(feet + Vector3.new(0, 0.2, 0), c, 2, slot == "H" and 14 or 20, 0.45)
-	-- 기술을 쓰는 동안 몸에서 기운이 타오른다
-	if slot == "E" or slot == "R" then
-		Fx.skillAura(model, c, c2, math.max(0.5, dur), false)
-	end
-	-- E·R: 두 손에 기가 모인다 (빛 구슬이 부풀었다 터지고, 둘레에서 빛줄기가 손으로 빨려 든다)
-	if slot == "E" or slot == "R" then
-		for _, hn in ipairs({ "RightHand", "LeftHand" }) do
-			local hand = model:FindFirstChild(hn)
-			if hand and hand:IsA("BasePart") then
-				local orb = piece(Vector3.new(0.4, 0.4, 0.4), c2, Enum.Material.Neon, Enum.PartType.Ball, 0)
-				orb.Position = hand.Position
-				tween(orb, 0.16, { Size = Vector3.new(1.8, 1.8, 1.8) })
-				task.delay(0.16, function()
-					if orb.Parent then
-						tween(orb, 0.14, { Size = Vector3.new(3.2, 3.2, 3.2), Transparency = 1 })
-					end
-				end)
-				Debris:AddItem(orb, 0.32)
-				for k = 0, 3 do
-					local a = k / 4 * math.pi * 2 + math.random()
-					local from = hand.Position + Vector3.new(math.cos(a) * 3.5, math.random() * 2 - 0.5, math.sin(a) * 3.5)
-					streak(from, hand.Position, k % 2 == 0 and c or c2, 0.15, 0.14)
-				end
-			end
-		end
-	end
-	-- E·R: 기술이 나가는 순간 앞으로 뻗는 두 겹 기운의 초승달 (기술마다 같은 틀, 권법 빛깔로)
-	if slot == "E" or slot == "R" then
-		task.delay(math.min(0.22, dur * 0.3), function()
-			local rr = rootPart(model)
-			if not rr then
-				return
-			end
-			local lk = Vector3.new(rr.CFrame.LookVector.X, 0, rr.CFrame.LookVector.Z)
-			lk = lk.Magnitude > 0.01 and lk.Unit or Vector3.new(0, 0, -1)
-			local cf = CFrame.lookAt(rr.Position, rr.Position + lk)
-			for layer = 0, 1 do
-				local rad = 5 + layer * 2
-				for k = 0, 8 do
-					local a = math.rad(-70 + k * 17.5)
-					local w = 1 - math.abs(k - 4) / 4
-					local lp = CFrame.new(math.sin(a) * rad, 0.2 * layer, -math.cos(a) * rad) * CFrame.Angles(0, -a, 0)
-					local seg = piece(Vector3.new(rad * 0.22, 0.3, 0.3 + w * 0.9), layer == 0 and c2 or c, Enum.Material.Neon, nil, 0.05)
-					seg.CFrame = cf * lp
-					tween(seg, 0.3, { CFrame = cf * CFrame.new(0, 0, -9 - layer * 3) * lp, Transparency = 1 })
-					Debris:AddItem(seg, 0.35)
-				end
-			end
-			Fx.flash(rr.Position + lk * 6, c, 26, 3, 0.3)
-		end)
-	end
-	flare(pos, c, slot == "H" and 2.5 or 3.5)
 	Fx.sound("swing", 0.5, slot == "H" and 0.7 or 0.55)
 	-- 각성한 기술: 금빛 (완전 각성은 흰빛) 고리가 한 겹 더, 머리 위에 覺
 	local tier = tonumber(model:GetAttribute("Awaken")) or 0

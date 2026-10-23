@@ -1,7 +1,6 @@
 -- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
 -- 권법마다 '속성의 서명'을 하나씩 둔다: 불은 불씨와 불혀, 물은 물방울 왕관, 번개는 잔 번개, 바람은 휘감는 바람결 …
---   · 기술(강타·E·R·오의·초 오의)을 쓰는 순간 몸 앞에 서명이 피어난다
---   · 따로 만든 E·R 연출이 없던 권법은 기술이 이어지는 동안 몸을 따라 서명이 흐른다
+--   (1.8판: 기술을 쓸 때 몸 앞에 피던 서명은 뺐다. 모든 기술이 비슷해 보였다. 쓸 때의 모양은 SkillFx가 기술마다 다르게)
 --   · 기술로 맞힐 때마다 맞은 자리에 서명이 터진다 (타격 연출이 비어 있던 불·바다·일월·바람·취권은 평타에도)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -302,10 +301,6 @@ end
 local function styleOf(id: any): any
 	return type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 end
-local function rootOf(m: Instance?): BasePart?
-	local r = m and m:FindFirstChild("HumanoidRootPart")
-	return (r and r:IsA("BasePart")) and r or nil
-end
 local function sig(style: any, pos: Vector3, look: Vector3, s: number)
 	if not near(pos, 180) then
 		return
@@ -318,66 +313,6 @@ local function sig(style: any, pos: Vector3, look: Vector3, s: number)
 	end
 	local fn = SIG[style.fx] or SIG.basic
 	fn(pos, look, s, style.color, style.color2)
-end
-
--- Fx.cast에 따로 만든 E·R 연출이 없는 속성 (기술 동안 몸을 따라 서명이 흐른다)
-local CAST_DONE: { [string]: boolean } = {}
-for _, k in ipairs({ "basic", "blood", "cosmic", "dragon", "drunk", "gold", "king", "lightning", "petal", "shadow", "void", "water" }) do
-	CAST_DONE[k] = true
-end
-
-------------------------------------------------------------------------
--- 기술을 쓸 때 (모두가 본다)
-------------------------------------------------------------------------
-function Polish.cast(styleId: any, slot: any, model: Model, dur: number)
-	local style = styleOf(styleId)
-	local r = rootOf(model)
-	if not style or not r or type(slot) == "number" or slot == "J" then
-		return
-	end
-	local look = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z)
-	look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
-	local big = slot == "G" or slot == "X"
-	-- 기술이 나가는 순간 몸 앞에 서명
-	task.delay(math.min(0.18, dur * 0.3), function()
-		local rr = rootOf(model)
-		if rr then
-			sig(style, rr.Position + look * 3 + Vector3.new(0, 0.5, 0), look, big and 1.8 or (slot == "H" and 1.1 or 1.3))
-		end
-	end)
-	-- 따로 만든 연출이 없던 E·R: 기술이 이어지는 동안 손과 발을 따라 서명이 흐른다
-	if (slot == "E" or slot == "R") and not CAST_DONE[style.fx] then
-		local t0 = os.clock()
-		local last = 0
-		local conn
-		conn = RunService.Heartbeat:Connect(function()
-			local t = os.clock() - t0
-			if t > math.min(1.2, dur) or not model.Parent then
-				conn:Disconnect()
-				return
-			end
-			if t - last < 0.14 then
-				return
-			end
-			last = t
-			local limb = model:FindFirstChild(math.random() < 0.5 and "RightHand" or "LeftHand")
-			if limb and limb:IsA("BasePart") then
-				sig(style, limb.Position, look, 0.55)
-			end
-		end)
-	end
-	-- 오의·초 오의: 발밑에서 서명이 둥글게 한 번 더
-	if big then
-		for k = 0, 3 do
-			local a = k / 4 * math.pi * 2
-			task.delay(0.1 + k * 0.05, function()
-				local rr = rootOf(model)
-				if rr then
-					sig(style, rr.Position + Vector3.new(math.cos(a) * 5, -1.5, math.sin(a) * 5), look, 0.9)
-				end
-			end)
-		end
-	end
 end
 
 ------------------------------------------------------------------------

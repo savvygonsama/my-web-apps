@@ -375,33 +375,51 @@ end
 ------------------------------------------------------------------------
 -- 작은 것들 (집, 나무, 바위, 대나무)
 ------------------------------------------------------------------------
+-- 나무 (1.8판에 다듬음): 아래가 굵은 두 토막 줄기, 비스듬히 뻗은 가지 둘, 짙고 옅은 잎 덩이 다섯
 local function tree(at: Vector3, s: number, parent: Instance, blossom: boolean?)
-	part({ Name = "Trunk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(10 * s, 1.6 * s, 1.6 * s), CFrame = CFrame.new(at + Vector3.new(0, 5 * s, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(90, 60, 40), Material = Enum.Material.Wood, Parent = parent })
+	local bark = Color3.fromRGB(90, 60, 40)
+	local lean = rng:NextNumber(-0.08, 0.08)
+	part({ Name = "Trunk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(6 * s, 1.9 * s, 1.9 * s), CFrame = CFrame.new(at + Vector3.new(0, 3 * s, 0)) * CFrame.Angles(lean, 0, math.rad(90)), Color = bark, Material = Enum.Material.Wood, Parent = parent })
+	part({ Name = "Trunk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(5.5 * s, 1.3 * s, 1.3 * s), CFrame = CFrame.new(at + Vector3.new(0, 8 * s, lean * 4 * s)) * CFrame.Angles(lean * 2, 0, math.rad(90)), Color = bark, Material = Enum.Material.Wood, Parent = parent })
 	-- 매화는 짙은 홍매와 흰 백매를 섞는다
-	local leaf = blossom and (rng:NextNumber() < 0.6 and Color3.fromRGB(215, 55, 85) or Color3.fromRGB(250, 236, 240)) or Color3.fromRGB(70, 120, 60)
+	local leaf = blossom and (rng:NextNumber() < 0.6 and Color3.fromRGB(215, 55, 85) or Color3.fromRGB(250, 236, 240)) or Color3.fromRGB(70, 120, 60):Lerp(Color3.fromRGB(100, 150, 70), rng:NextNumber())
+	local top = at + Vector3.new(0, 10 * s, 0)
+	for k = 0, 1 do
+		local a = rng:NextNumber(0, 6.28) + k * math.pi
+		local to = top + Vector3.new(math.cos(a) * 3.5 * s, -1 * s, math.sin(a) * 3.5 * s)
+		local from = at + Vector3.new(0, 7 * s, 0)
+		part({ Name = "Branch", Size = Vector3.new(0.6 * s, 0.6 * s, (to - from).Magnitude), CFrame = CFrame.lookAt((from + to) / 2, to), Color = bark, Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = Vector3.one * rng:NextNumber(4.5, 6) * s, Position = to + Vector3.new(0, 1.2 * s, 0), Color = leaf:Lerp(Color3.new(0, 0, 0), 0.12), Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = parent })
+	end
 	for i = 1, 3 do
 		part({
 			Name = "Leaves",
 			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(1, 1, 1) * (6 + i) * s,
-			CFrame = CFrame.new(at + Vector3.new(rng:NextNumber(-2, 2) * s, (8 + i * 1.5) * s, rng:NextNumber(-2, 2) * s)),
-			Color = leaf:Lerp(Color3.new(1, 1, 1), rng:NextNumber(0, 0.15)),
-			Material = Enum.Material.Grass,
+			Size = Vector3.new(1, 0.85, 1) * (6 + i) * s,
+			CFrame = CFrame.new(top + Vector3.new(rng:NextNumber(-2, 2) * s, (i - 1) * 1.8 * s, rng:NextNumber(-2, 2) * s)),
+			Color = leaf:Lerp(Color3.new(1, 1, 1), (i - 1) * 0.06 + rng:NextNumber(0, 0.08)),
+			Material = Enum.Material.LeafyGrass,
 			CanCollide = false,
 			Parent = parent,
 		})
 	end
 end
 
+-- 바위 (1.8판에 다듬음): 큰 돌에 작은 돌이 기대고, 윗면엔 가끔 이끼
 local function rock(at: Vector3, s: number, parent: Instance, color: Color3?)
-	part({
+	local c = color or Color3.fromRGB(120, 115, 110)
+	local main = part({
 		Name = "Rock",
 		Size = Vector3.new(rng:NextNumber(0.8, 1.3), rng:NextNumber(0.5, 0.9), rng:NextNumber(0.8, 1.3)) * s,
 		CFrame = CFrame.new(at + Vector3.new(0, s * 0.3, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 6), rng:NextNumber(-0.3, 0.3)),
-		Color = color or Color3.fromRGB(120, 115, 110),
+		Color = c,
 		Material = Enum.Material.Slate,
 		Parent = parent,
 	})
+	part({ Name = "Rock", Size = main.Size * 0.5, CFrame = CFrame.new(at + Vector3.new(main.Size.X * 0.5, s * 0.15, rng:NextNumber(-0.3, 0.3) * s)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), rng:NextNumber(-0.4, 0.4)), Color = c:Lerp(Color3.new(0, 0, 0), 0.1), Material = Enum.Material.Slate, Parent = parent })
+	if s > 2.5 and rng:NextNumber() < 0.5 then
+		part({ Name = "Moss", Size = Vector3.new(main.Size.X * 0.8, 0.25, main.Size.Z * 0.8), CFrame = main.CFrame * CFrame.new(0, main.Size.Y / 2, 0), Color = Color3.fromRGB(85, 120, 60), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
+	end
 end
 
 local function bamboo(at: Vector3, parent: Instance)
@@ -454,7 +472,7 @@ end
 local function ground()
 	-- 바탕 풀밭 (2048 넘지 않게 4×4 조각)
 	local W = Config.WORLD_HALF
-	local n = 4
+	local n = math.ceil(W * 2 / 2000)
 	local tile = W * 2 / n
 	for i = 0, n - 1 do
 		for j = 0, n - 1 do
@@ -2838,6 +2856,198 @@ local function reeds(at: Vector3, f: Instance)
 			Color = Color3.fromRGB(120, 130, 70), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 	end
 end
+
+------------------------------------------------------------------------
+-- 1.8판: 세상 끝 네 땅 (단풍산 · 석림 · 거균림 · 운무 차밭)
+------------------------------------------------------------------------
+-- 떨어지는 잎·포자·안개 같은 입자
+local function drift(at: Vector3, size: Vector3, colors: { Color3 }, rate: number, psize: number, life: number, fall: number, f: Instance, glow: number?)
+	local holder = part({ Name = "Drift", Size = size, Position = at, Transparency = 1, CanCollide = false, Parent = f })
+	local pe = Instance.new("ParticleEmitter")
+	pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	local keys = {}
+	for i, c in ipairs(colors) do
+		table.insert(keys, ColorSequenceKeypoint.new(#colors == 1 and 0 or (i - 1) / (#colors - 1), c))
+	end
+	if #keys == 1 then
+		table.insert(keys, ColorSequenceKeypoint.new(1, colors[1]))
+	end
+	pe.Color = ColorSequence.new(keys)
+	pe.Size = NumberSequence.new(psize, psize * 0.6)
+	pe.Squash = NumberSequence.new(0.4)
+	pe.Lifetime = NumberRange.new(life * 0.7, life)
+	pe.Rate = rate
+	pe.Speed = NumberRange.new(0.5, 2)
+	pe.SpreadAngle = Vector2.new(180, 180)
+	pe.Acceleration = Vector3.new(0.8, -fall, 0.4)
+	pe.Rotation = NumberRange.new(0, 360)
+	pe.RotSpeed = NumberRange.new(-90, 90)
+	pe.LightEmission = glow or 0.2
+	pe.Shape = Enum.ParticleEmitterShape.Box
+	pe.Parent = holder
+end
+
+-- 단풍나무: 굽은 줄기, 갈라진 가지, 붉고 노란 잎 덩이
+local MAPLE = { Color3.fromRGB(205, 55, 35), Color3.fromRGB(235, 120, 40), Color3.fromRGB(240, 180, 60), Color3.fromRGB(180, 40, 45) }
+local function mapleTree(at: Vector3, s: number, f: Instance)
+	local lean = rng:NextNumber(-0.12, 0.12)
+	local trunkH = 11 * s
+	part({ Name = "MapleTrunk", Size = Vector3.new(1.5 * s, trunkH, 1.5 * s), CFrame = CFrame.new(at + Vector3.new(0, trunkH / 2, 0)) * CFrame.Angles(lean, rng:NextNumber(0, 6), -lean), Color = Color3.fromRGB(70, 45, 35), Material = Enum.Material.Wood, Parent = f })
+	local top = at + Vector3.new(0, trunkH, 0)
+	for k = 0, 2 do
+		local a = k / 3 * math.pi * 2 + rng:NextNumber(0, 1)
+		local to = top + Vector3.new(math.cos(a) * 4 * s, 2.5 * s, math.sin(a) * 4 * s)
+		part({ Name = "MapleBranch", Size = Vector3.new(0.6 * s, 0.6 * s, (to - top).Magnitude), CFrame = CFrame.lookAt((top + to) / 2, to), Color = Color3.fromRGB(70, 45, 35), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		part({ Name = "MapleLeaves", Shape = Enum.PartType.Ball, Size = Vector3.one * rng:NextNumber(6, 8.5) * s, Position = to + Vector3.new(0, 1 * s, 0), Color = MAPLE[rng:NextInteger(1, #MAPLE)], Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = f })
+	end
+	part({ Name = "MapleCrown", Shape = Enum.PartType.Ball, Size = Vector3.one * 9 * s, Position = top + Vector3.new(0, 4.5 * s, 0), Color = MAPLE[rng:NextInteger(1, #MAPLE)], Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = f })
+end
+
+function OUTER.maple(r: any, f: Instance)
+	for _ = 1, 60 do
+		local p = randIn(r, 25)
+		if clearOf(p, r) then
+			mapleTree(p, rng:NextNumber(0.9, 1.5), f)
+		end
+	end
+	-- 땅에 깔린 낙엽 (붉고 노란 얼룩)
+	for _ = 1, 26 do
+		local p = randIn(r, 30)
+		disc("FallenLeaves", p + Vector3.new(0, 0.12, 0), rng:NextNumber(6, 14), 0.12, MAPLE[rng:NextInteger(1, #MAPLE)]:Lerp(Color3.fromRGB(120, 70, 40), 0.25), Enum.Material.LeafyGrass, f, false)
+	end
+	for _ = 1, 14 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) then
+			crag(p, rng:NextNumber(1, 1.8), Color3.fromRGB(120, 100, 85), f)
+		end
+	end
+	-- 풍엽의 자리: 붉은 기둥의 정자와 돌계단, 둘레에 석등
+	local b = r.boss.at
+	disc("MapleDais", b + Vector3.new(0, 0.5, 0), 40, 1, Color3.fromRGB(150, 120, 95), Enum.Material.Cobblestone, f)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local q = b + Vector3.new(math.cos(a) * 44, 0, math.sin(a) * 44)
+		stoneLantern(q, f, true)
+	end
+	building(b + Vector3.new(0, 0, -60), 26, 18, 0, f, { tiers = 2, sign = "풍엽각", h = 11, wall = Color3.fromRGB(235, 220, 200), roof = Color3.fromRGB(150, 50, 35) })
+	drift(r.center + Vector3.new(0, 30, 0), Vector3.new(r.size.X * 0.9, 4, r.size.Z * 0.9), { MAPLE[1], MAPLE[2], MAPLE[3] }, 60, 0.6, 9, 1.6, f)
+end
+
+-- 석림: 겹겹이 쌓인 회색 돌기둥, 꼭대기엔 이끼와 작은 소나무
+function OUTER.stoneforest(r: any, f: Instance)
+	local STONE_A = Color3.fromRGB(165, 165, 158)
+	for _ = 1, 75 do
+		local p = randIn(r, 25)
+		if clearOf(p, r) then
+			local y = 0
+			local w = rng:NextNumber(8, 16)
+			local n = rng:NextInteger(3, 6)
+			for i = 1, n do
+				local h = rng:NextNumber(7, 13)
+				local ww = w * (1 - i * 0.1)
+				part({ Name = "KarstStone", Size = Vector3.new(ww, h, ww * rng:NextNumber(0.8, 1.1)), CFrame = CFrame.new(p + Vector3.new(rng:NextNumber(-1, 1), y + h / 2, rng:NextNumber(-1, 1))) * CFrame.Angles(rng:NextNumber(-0.05, 0.05), rng:NextNumber(0, 6), rng:NextNumber(-0.05, 0.05)),
+					Color = STONE_A:Lerp(Color3.fromRGB(120, 120, 115), rng:NextNumber()), Material = Enum.Material.Limestone, Parent = f })
+				y += h * 0.95
+			end
+			if rng:NextNumber() < 0.6 then
+				part({ Name = "KarstMoss", Shape = Enum.PartType.Ball, Size = Vector3.new(w * 0.7, w * 0.35, w * 0.7), Position = p + Vector3.new(0, y + 0.5, 0), Color = Color3.fromRGB(80, 120, 60), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+			else
+				pine(p + Vector3.new(0, y, 0), 0.6, f, false)
+			end
+		end
+	end
+	for _ = 1, 24 do
+		local p = randIn(r, 20)
+		if clearOf(p, r) then
+			rock(p, rng:NextNumber(3, 7), f, Color3.fromRGB(150, 150, 142))
+		end
+	end
+	-- 석왕의 돌 마당: 둘레에 선 일곱 돌기둥
+	local b = r.boss.at
+	disc("StoneCourt", b + Vector3.new(0, 0.4, 0), 42, 0.8, Color3.fromRGB(175, 172, 165), Enum.Material.Slate, f)
+	for k = 0, 6 do
+		local a = k / 7 * math.pi * 2
+		part({ Name = "StoneMonolith", Size = Vector3.new(5, 26, 5), CFrame = CFrame.new(b + Vector3.new(math.cos(a) * 48, 13, math.sin(a) * 48)) * CFrame.Angles(0, a, 0), Color = Color3.fromRGB(140, 140, 132), Material = Enum.Material.Limestone, Parent = f })
+	end
+	drift(r.center + Vector3.new(0, 8, 0), Vector3.new(r.size.X * 0.9, 6, r.size.Z * 0.9), { Color3.fromRGB(235, 235, 235) }, 40, 6, 10, -0.05, f, 0)
+end
+
+-- 거균림: 집채만 한 버섯 (줄기, 점박이 갓, 빛나는 갓 밑), 바닥의 작은 빛 버섯, 떠도는 포자
+local CAPS = { Color3.fromRGB(200, 50, 60), Color3.fromRGB(150, 80, 210), Color3.fromRGB(60, 170, 170), Color3.fromRGB(230, 140, 50) }
+local function bigMushroom(at: Vector3, s: number, f: Instance)
+	local h = rng:NextNumber(12, 26) * s
+	local cap = CAPS[rng:NextInteger(1, #CAPS)]
+	local tilt = rng:NextNumber(-0.12, 0.12)
+	part({ Name = "MushStem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, 3 * s, 3 * s), CFrame = CFrame.new(at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(tilt, 0, math.rad(90)), Color = Color3.fromRGB(235, 225, 205), Material = Enum.Material.SmoothPlastic, Parent = f })
+	local w = rng:NextNumber(14, 22) * s
+	local top = at + Vector3.new(0, h, 0)
+	local capPart = part({ Name = "MushCap", Shape = Enum.PartType.Ball, Size = Vector3.new(w, w * 0.45, w), Position = top + Vector3.new(0, w * 0.12, 0), Color = cap, Material = Enum.Material.SmoothPlastic, Parent = f })
+	local under = part({ Name = "MushGill", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, w * 0.8, w * 0.8), CFrame = CFrame.new(top - Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = cap:Lerp(Color3.new(1, 1, 1), 0.5), Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+	light(under, cap:Lerp(Color3.new(1, 1, 1), 0.4), w, 0.8)
+	for _ = 1, 5 do
+		local a, rr = rng:NextNumber(0, 6.28), rng:NextNumber(0, w * 0.35)
+		part({ Name = "MushSpot", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 0.5, 1.6) * s, Position = capPart.Position + Vector3.new(math.cos(a) * rr, w * 0.2 - rr * 0.25, math.sin(a) * rr), Color = Color3.fromRGB(250, 245, 235), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+end
+function OUTER.mushroom(r: any, f: Instance)
+	for _ = 1, 42 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) then
+			bigMushroom(p, rng:NextNumber(0.8, 1.4), f)
+		end
+	end
+	for _ = 1, 40 do
+		local p = randIn(r, 15)
+		if clearOf(p, r) then
+			for k = 1, 3 do
+				local c = CAPS[rng:NextInteger(1, #CAPS)]
+				local q = p + Vector3.new(rng:NextNumber(-2, 2), 0, rng:NextNumber(-2, 2))
+				local hh = rng:NextNumber(1, 2.5)
+				part({ Name = "SmallStem", Size = Vector3.new(0.4, hh, 0.4), Position = q + Vector3.new(0, hh / 2, 0), Color = Color3.fromRGB(235, 230, 215), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+				part({ Name = "SmallCap", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 0.7, 1.6) * (0.7 + k * 0.2), Position = q + Vector3.new(0, hh, 0), Color = c, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	-- 균왕의 자리: 버섯 고리
+	local b = r.boss.at
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		bigMushroom(b + Vector3.new(math.cos(a) * 52, 0, math.sin(a) * 52), 0.7, f)
+	end
+	drift(r.center + Vector3.new(0, 10, 0), Vector3.new(r.size.X * 0.9, 16, r.size.Z * 0.9), { Color3.fromRGB(200, 150, 255), Color3.fromRGB(150, 255, 230) }, 70, 0.35, 8, -0.2, f, 0.8)
+end
+
+-- 운무 차밭: 고랑을 따라 늘어선 차나무 줄, 돌담 수로, 정자, 연못, 낮게 깔린 안개
+function OUTER.teafield(r: any, f: Instance)
+	local TEA = Color3.fromRGB(60, 120, 55)
+	local x0, x1 = r.center.X - r.size.X / 2 + 30, r.center.X + r.size.X / 2 - 30
+	local z = r.center.Z - r.size.Z / 2 + 30
+	local row = 0
+	while z < r.center.Z + r.size.Z / 2 - 30 do
+		local x = x0 + (row % 2) * 16
+		while x < x1 do
+			local len = 34
+			local mid = Vector3.new(x + len / 2, 0, z)
+			if clearOf(mid, r) and clearOf(mid + Vector3.new(len / 2, 0, 0), r) and clearOf(mid - Vector3.new(len / 2, 0, 0), r) then
+				part({ Name = "TeaRow", Size = Vector3.new(len, 2.4, 3.4), Position = mid + Vector3.new(0, 1.2, 0), Color = TEA:Lerp(Color3.fromRGB(110, 170, 80), rng:NextNumber() * 0.5), Material = Enum.Material.LeafyGrass, Parent = f })
+				part({ Name = "TeaTop", Size = Vector3.new(len - 1, 0.6, 2.6), Position = mid + Vector3.new(0, 2.6, 0), Color = Color3.fromRGB(120, 180, 90), Material = Enum.Material.LeafyGrass, CanCollide = false, Parent = f })
+			end
+			x += len + 14
+		end
+		z += 28
+		row += 1
+	end
+	-- 다선의 정자와 연못
+	local b = r.boss.at
+	disc("TeaPond", b + Vector3.new(70, 0.2, 40), 26, 0.4, Color3.fromRGB(120, 175, 190), Enum.Material.Glass, f, false).Transparency = 0.2
+	disc("TeaCourt", b + Vector3.new(0, 0.4, 0), 36, 0.8, Color3.fromRGB(190, 180, 160), Enum.Material.Cobblestone, f)
+	building(b + Vector3.new(-60, 0, 0), 20, 16, math.rad(90), f, { sign = "운무다원", h = 10, wall = Color3.fromRGB(240, 235, 220), roof = Color3.fromRGB(70, 110, 80) })
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		stoneLantern(b + Vector3.new(math.cos(a) * 40, 0, math.sin(a) * 40), f, true)
+	end
+	drift(r.center + Vector3.new(0, 4, 0), Vector3.new(r.size.X * 0.9, 4, r.size.Z * 0.9), { Color3.fromRGB(240, 245, 240) }, 50, 8, 10, -0.03, f, 0)
+end
 local function cloudBank(at: Vector3, s: number, f: Instance)
 	for _ = 1, 3 do
 		local sz = rng:NextNumber(6, 10) * s
@@ -3269,6 +3479,26 @@ local function skyWorld(out: any)
 		disc("SkyIslandEdge", c - Vector3.new(0, 0.2, 0), R + 1.2, 0.6, GOLD, Enum.Material.Metal, f)
 		disc("SkyIslandUnder", c - Vector3.new(0, 10, 0), R * 0.75, 8, Color3.fromRGB(150, 140, 130), Enum.Material.Rock, f)
 		disc("SkyIslandUnder2", c - Vector3.new(0, 20, 0), R * 0.45, 12, Color3.fromRGB(130, 120, 110), Enum.Material.Rock, f)
+		-- 1.8판: 섬 밑에 매달린 바위 뿔 (떠 있는 섬처럼), 둘레에 떠도는 작은 바위섬
+		for k = 0, 9 do
+			local a = k / 10 * math.pi * 2 + rng:NextNumber(0, 0.5)
+			local rr = R * rng:NextNumber(0.15, 0.6)
+			local h = rng:NextNumber(14, 34) * math.clamp(R / 180, 0.4, 1.3)
+			local w = rng:NextNumber(8, 16) * math.clamp(R / 180, 0.4, 1.2)
+			part({ Name = "SkyStalactite", Size = Vector3.new(w, h, w), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * rr, -24 - h * 0.4, math.sin(a) * rr)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 6), rng:NextNumber(-0.2, 0.2)),
+				Color = Color3.fromRGB(125, 115, 105):Lerp(Color3.fromRGB(95, 88, 80), rng:NextNumber()), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
+		end
+		if not isl.hidden then
+			for k = 0, 3 do
+				local a = k / 4 * math.pi * 2 + rng:NextNumber(0, 1)
+				local d = R + rng:NextNumber(40, 90)
+				local p = c + Vector3.new(math.cos(a) * d, rng:NextNumber(-30, 25), math.sin(a) * d)
+				local w = rng:NextNumber(10, 22)
+				part({ Name = "SkyIslet", Shape = Enum.PartType.Cylinder, Size = Vector3.new(w * 0.5, w, w), CFrame = CFrame.new(p) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(130, 120, 110), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
+				part({ Name = "SkyIsletTop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, w * 1.02, w * 1.02), CFrame = CFrame.new(p + Vector3.new(0, w * 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = isl.ground, Material = isl.material, CanCollide = false, Parent = f })
+				part({ Name = "SkyIsletRoot", Size = Vector3.new(w * 0.5, w * 0.8, w * 0.5), CFrame = CFrame.new(p - Vector3.new(0, w * 0.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(110, 100, 92), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
+			end
+		end
 		-- 둘레의 구름 뭉치 (아래쪽)
 		local n = math.max(8, math.floor(R / 14))
 		for k = 0, n - 1 do
@@ -3515,6 +3745,57 @@ local function skyWorld(out: any)
 	part({ Name = "RaidGongFrame", Size = Vector3.new(20, 1.4, 1.4), Position = ra + Vector3.new(0, 22, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
 	for _, sx in ipairs({ -1, 1 }) do
 		part({ Name = "RaidGongPost", Size = Vector3.new(1.4, 22, 1.4), Position = ra + Vector3.new(sx * 9.5, 11, -104), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	end
+	-- 1.8판 비천폭: 섬 한가운데 바위산에서 쏟아지는 폭포가 섬 끝을 넘어 구름 아래로 떨어진다
+	local fa = I.falls.at
+	local cliff = fa + Vector3.new(0, 0, -60)
+	for i = 1, 4 do
+		part({ Name = "FallsCliff", Size = Vector3.new(70 - i * 12, 14, 40 - i * 6), CFrame = CFrame.new(cliff + Vector3.new(0, i * 13 - 6, 0)) * CFrame.Angles(0, rng:NextNumber(-0.2, 0.2), 0), Color = Color3.fromRGB(110, 120, 110), Material = Enum.Material.Rock, Parent = f })
+	end
+	local WATER = Color3.fromRGB(150, 210, 255)
+	local fallTop = cliff + Vector3.new(0, 52, 16)
+	local sheet = part({ Name = "Waterfall", Size = Vector3.new(16, 52, 2), Position = fallTop - Vector3.new(0, 26, 0), Color = WATER, Material = Enum.Material.Glass, Transparency = 0.25, CanCollide = false, Parent = f })
+	local foam = Instance.new("ParticleEmitter")
+	foam.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	foam.Color = ColorSequence.new(Color3.fromRGB(235, 248, 255), WATER)
+	foam.Size = NumberSequence.new(1.2, 0.4)
+	foam.Lifetime = NumberRange.new(0.8, 1.2)
+	foam.Rate = 60
+	foam.Speed = NumberRange.new(20, 30)
+	foam.EmissionDirection = Enum.NormalId.Bottom
+	foam.SpreadAngle = Vector2.new(8, 8)
+	foam.Shape = Enum.ParticleEmitterShape.Box
+	foam.LightEmission = 0.4
+	foam.Parent = sheet
+	-- 폭포가 흘러 섬 끝까지 이어지는 물길과, 섬 끝에서 아래로 떨어지는 긴 물줄기
+	local edge = fa + Vector3.new(0, 0, -I.falls.radius + 2)
+	part({ Name = "FallsStream", Size = Vector3.new(14, 0.4, (cliff - edge).Magnitude), Position = (cliff + edge) / 2 + Vector3.new(0, 0.25, 8), Color = WATER, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	part({ Name = "FallsDrop", Size = Vector3.new(14, 160, 2), Position = edge + Vector3.new(0, -80, -2), Color = WATER, Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
+	disc("FallsPool", cliff + Vector3.new(0, 0.3, 30), 22, 0.4, WATER, Enum.Material.Glass, f, false).Transparency = 0.2
+	for _ = 1, 16 do
+		local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber(40, 150)
+		tree(fa + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr), rng:NextNumber(0.8, 1.3), f)
+	end
+	-- 청학봉: 흰 대리석 단과 학 둥지, 날개를 편 흰 학 석상 넷, 높은 소나무
+	local cr = I.crane.at
+	for i = 1, 3 do
+		disc("CraneTier", cr + Vector3.new(0, i * 1.2 - 0.6, 60), 40 - i * 9, 1.2, Color3.fromRGB(245, 245, 240), Enum.Material.Marble, f)
+	end
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		local base = cr + Vector3.new(math.cos(a) * 120, 0, math.sin(a) * 120)
+		part({ Name = "CranePlinth", Size = Vector3.new(8, 4, 8), Position = base + Vector3.new(0, 2, 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
+		part({ Name = "CraneBody", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 4, 7), Position = base + Vector3.new(0, 8, 0), Color = Color3.fromRGB(250, 250, 250), Material = Enum.Material.Marble, Parent = f })
+		part({ Name = "CraneNeck", Size = Vector3.new(0.8, 6, 0.8), CFrame = CFrame.new(base + Vector3.new(0, 12, -2.5)) * CFrame.Angles(math.rad(-15), 0, 0), Color = Color3.fromRGB(250, 250, 250), Material = Enum.Material.Marble, Parent = f })
+		part({ Name = "CraneCrest", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = base + Vector3.new(0, 15.2, -3.4), Color = Color3.fromRGB(220, 30, 40), Material = Enum.Material.SmoothPlastic, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "CraneWing", Size = Vector3.new(10, 0.5, 4), CFrame = CFrame.new(base + Vector3.new(sx * 6, 10, 0)) * CFrame.Angles(0, 0, sx * math.rad(25)), Color = Color3.fromRGB(245, 245, 245), Material = Enum.Material.Marble, Parent = f })
+			part({ Name = "CraneWingTip", Size = Vector3.new(3, 0.55, 4.2), CFrame = CFrame.new(base + Vector3.new(sx * 11.5, 12.6, 0)) * CFrame.Angles(0, 0, sx * math.rad(25)), Color = Color3.fromRGB(30, 30, 35), Material = Enum.Material.SmoothPlastic, Parent = f })
+		end
+	end
+	for _ = 1, 18 do
+		local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber(50, 165)
+		pine(cr + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr), rng:NextNumber(1.2, 2), f, false)
 	end
 end
 

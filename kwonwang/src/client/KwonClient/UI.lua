@@ -2090,6 +2090,10 @@ local AMBIENT = {
 	volcano = { d = 0.48, h = 2.6, c = Color3.fromRGB(200, 90, 50) },
 	desert = { d = 0.34, h = 2.2, c = Color3.fromRGB(240, 200, 140) },
 	sky = { d = 0.3, h = 1.2, c = Color3.fromRGB(235, 242, 255) },
+	maple = { d = 0.28, h = 1.5, c = Color3.fromRGB(255, 200, 150) },
+	stone = { d = 0.45, h = 2.2, c = Color3.fromRGB(225, 228, 230) },
+	mushroom = { d = 0.45, h = 2.4, c = Color3.fromRGB(170, 130, 210) },
+	tea = { d = 0.42, h = 1.8, c = Color3.fromRGB(225, 240, 225) },
 }
 local regionNow = ""
 local function regionAt(pos: Vector3): any
