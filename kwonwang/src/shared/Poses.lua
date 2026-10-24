@@ -953,6 +953,16 @@ A.ult_void = {
 	{ t = 1, j = { RS = { 60, 0, 15 }, RE = { 60, 0, 0 }, LS = { 60, 0, -15 }, LE = { 60, 0, 0 }, R = { 0, 360, 0, 0, -0.7, 0 } } },
 }
 
+-- 2.6판 태극인: 합장하고 떠올라 버티다가, 두 팔을 들어 태극을 띄우고, 두 손바닥으로 땅을 내리찍는다
+A.ult_taiji = {
+	{ t = 0, j = { RS = { 60, 0, 15 }, RE = { 90, 0, 0 }, LS = { 60, 0, -15 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.15, j = { N = { 8, 0, 0 }, RS = { 70, 0, -35 }, RE = { 70, 0, 0 }, LS = { 70, 0, 35 }, LE = { 70, 0, 0 }, RH = { 80, 0, 30 }, RK = { -100, 0, 0 }, LH = { 80, 0, -30 }, LK = { -100, 0, 0 }, R = { 0, 0, 0, 0, 0.6, 0 } } },
+	{ t = 0.55, j = { N = { 12, 0, 0 }, RS = { 72, 0, -35 }, RE = { 70, 0, 0 }, LS = { 72, 0, 35 }, LE = { 70, 0, 0 }, RH = { 80, 0, 30 }, RK = { -100, 0, 0 }, LH = { 80, 0, -30 }, LK = { -100, 0, 0 }, R = { 0, 90, 0, 0, 1.5, 0 } } },
+	{ t = 0.72, j = { N = { 30, 0, 0 }, W = { 8, 0, 0 }, RS = { 170, 0, 25 }, RE = { 10, 0, 0 }, LS = { 170, 0, -25 }, LE = { 10, 0, 0 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 4, 180, 0, 0, 2.0, 0 } } },
+	{ t = 0.875, e = "snap", j = { N = { -20, 0, 0 }, W = { -40, 0, 0 }, RS = { 70, 0, 20 }, RE = { 0, 0, 0 }, LS = { 70, 0, -20 }, LE = { 0, 0, 0 }, RH = { 60, 0, 0 }, RK = { -110, 0, 0 }, LH = { 60, 0, 0 }, LK = { -110, 0, 0 }, R = { -30, 360, 0, 0, -1.5, 0 } } },
+	{ t = 1, j = { RS = { 60, 0, 15 }, RE = { 60, 0, 0 }, LS = { 60, 0, -15 }, LE = { 60, 0, 0 }, R = { 0, 360, 0, 0, -0.7, 0 } } },
+}
+
 -- 혈마: 웅크린 짐승처럼, 손톱으로 할퀴고 덮친다
 A.blood_claw_r = {
 	{ t = 0, j = { W = { -20, -35, 0 }, N = { 15, 25, 0 }, RS = { 110, 0, 50 }, RE = { 60, 0, 0 }, LS = { 50, 0, -20 }, LE = { 80, 0, 0 }, R = { -10, 0, 0, 0, -0.8, 0.2 } } },
@@ -1783,7 +1793,7 @@ Poses.limbs = {
 	dragon_coil = { "RightHand", "LeftHand" }, dragon_rise = { "RightHand", "LeftHand" }, ult_dragon = { "RightHand", "LeftHand" },
 	side_kick = { "RightFoot" }, tornado_kick = { "RightFoot", "LeftFoot" }, shadow_heel = { "RightFoot" }, ult_shadow = { "RightFoot", "LeftFoot" },
 	thunder_jab = { "LeftHand" }, thunder_cross = { "RightHand" }, knee_strike = { "RightFoot" }, thunder_hammer = { "RightHand" },
-	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, ult_star = { "RightHand", "LeftHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
+	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, ult_star = { "RightHand", "LeftHand" }, ult_taiji = { "RightHand", "LeftHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
 	void_palm_r = { "RightHand" }, void_palm_l = { "LeftHand" }, void_circle = { "RightHand", "LeftHand" }, void_push = { "RightHand", "LeftHand" },
 	void_sink = { "RightHand" }, void_point = { "RightHand" }, void_gather = { "RightHand", "LeftHand" }, ult_void = { "RightHand", "LeftHand" },
 	blood_claw_r = { "RightHand" }, blood_claw_l = { "LeftHand" }, blood_rake = { "RightHand", "LeftHand" }, blood_lunge = { "RightHand" },

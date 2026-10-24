@@ -2341,6 +2341,89 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "yinyangShot" then
+		-- 2.6판 무극 음양탄 (E): 검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 날아간다. 지나는 길의 적을 치고,
+		-- 끝에서 둘이 부딪쳐 그 자리로 적을 빨아들이며 터진다
+		local from = f.root.Position + look * 2
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "yyShot", from = from, dir = look, length = m.length, travel = m.travel / sp, delay = m.delay / sp, radius = m.radius, style = style })
+		after(m.delay + m.travel * 0.5, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.travel, function()
+			for _, o in ipairs(hostilesNear(f, to, m.radius)) do
+				pullTo(o, to, m.pull)
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "taijiOrbit" then
+		-- 2.6판 무극 태극선회 (R): 검은 구슬과 흰 구슬이 나를 축으로 소용돌이치며 멀리 퍼졌다가 되돌아온다.
+		-- 구슬에 닿은 적을 치고 (한 번에 한 번), 돌아올 때 둘레의 적을 내 앞으로 끌어 모아 한 번 더 친다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "yyOrbit", at = center, radius = m.radius, dur = m.dur / sp, delay = m.delay / sp, turns = m.turns, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for k = 1, ticks do
+			after(m.delay + k * m.every, function()
+				local u = k / ticks
+				local r = m.radius * math.sin(u * math.pi)
+				local a = u * m.turns * math.pi * 2
+				local hitOnce = {}
+				for side = 0, 1 do
+					local aa = a + side * math.pi
+					local op = center + Vector3.new(math.cos(aa) * r, 0, math.sin(aa) * r)
+					for _, o in ipairs(hostilesNear(f, op, m.orbRadius)) do
+						if not hitOnce[o] then
+							hitOnce[o] = true
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			local at = center + look * 3
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				pullTo(o, at, m.pull)
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "taijiSeal" then
+		-- 2.6판 무극 태극인 (오의): 세상의 빛깔이 빠지고 발밑에 거대한 태극이 그려진다. 그 위의 적은 모두 멈춘다.
+		-- 태극이 돌며 땅에서 떠올라 하늘에서 뒤집힌 뒤, 도장처럼 내리찍는다. 이어 흑과 백의 물결이 한 번 더 지나간다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "taijiSeal", at = center, radius = m.radius, delay = m.delay / sp, liftAt = m.liftAt / sp, hitAt = m.hitAt / sp, style = style })
+		after(m.delay, function()
+			local victims = hostilesNear(f, center, m.radius)
+			for _, o in ipairs(victims) do
+				Combat.stun(o, (m.hitAt - m.delay) / sp + 0.3)
+				o.model:SetAttribute("Frozen", true)
+			end
+			after(m.hitAt - m.delay, function()
+				for _, o in ipairs(victims) do
+					if o.model.Parent then
+						o.model:SetAttribute("Frozen", nil)
+					end
+				end
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					strike(f, o, hit, move)
+				end
+				after(m.waveAt, function()
+					for _, o in ipairs(hostilesNear(f, center, m.radius + 6)) do
+						strike(f, o, scaled(m.wave, sc), move)
+					end
+				end)
+			end)
+			-- 혹시 중간에 끊겨도 멈춤은 풀린다
+			task.delay((m.hitAt - m.delay) / sp + 0.6, function()
+				for _, o in ipairs(victims) do
+					if o.model.Parent then
+						o.model:SetAttribute("Frozen", nil)
+					end
+				end
+			end)
+		end)
 	elseif kind == "thunderStar" then
 		-- 2.6판 초·벽력 뇌성강림 (오의): 머리 위로 띄운 뇌성(천둥별)에서 작은 별 여섯이 떨어져 나와 둘레를 돈다.
 		-- 별마다 가까운 적을 골라 번개 줄기를 쏘고 (한 번에 한 적은 한 줄기만 맞는다), 끝에 모두 다시 하나로 모여 땅에 떨어진다

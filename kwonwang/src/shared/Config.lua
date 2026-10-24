@@ -552,12 +552,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "mgH", name = "무극장", pose = "void_sink", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 5.5, 28, 50, 0.8, 50) } },
 	skills = {
-		E = { id = "mgE", name = "허공격", desc = "빈 허공을 쳐서 멀리 있는 적까지 꿰뚫는다", pose = "void_point", dur = 0.55, cd = 6, chi = 15,
-			proj = { speed = 120, life = 0.5, radius = 5, dmg = 22, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
-		R = { id = "mgR", name = "무극회선", desc = "둘레의 모든 것을 한 점으로 끌어당긴 뒤 그 자리에서 터뜨린다", pose = "void_gather", dur = 0.9, cd = 9, chi = 25,
-				mech = { kind = "zone", at = "self", radius = 16, dur = 0.9, every = 0.3, delay = 0.1, pull = 40, hit = hit(0, 0, 0, 10, 24, 0.5, 0), fx = "void" } },
-		G = { id = "mgG", name = "무극귀일", desc = "세상의 빛깔이 뒤집히고 하늘에 눈이 열린다. 둘레 30칸의 시간이 멈추고, 멈춘 적을 하늘의 손이 한꺼번에 지운다", pose = "ult_void", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "freeze", delay = 0.5, radius = 30, dur = 2.2, hitAt = 1.3, hit = hit(0, 0, 0, 80, 300, 1.0, 50, 20) } },
+		-- 2.6판: 무극신권의 기술 셋을 흑백 음양으로 새로
+		E = { id = "mgE", name = "음양탄", desc = "두 손을 맞댔다가 밀어낸다. 검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 날아가 길의 적을 치고, 끝에서 부딪쳐 둘레의 적을 빨아들이며 터진다", pose = "void_point", dur = 0.55, cd = 6, chi = 15,
+			mech = { kind = "yinyangShot", delay = 0.15, length = 30, travel = 0.45, width = 4, radius = 8, pull = 30, hit = hit(0, 0, 0, 12, 22, 0.4, 10), burst = hit(0, 0, 0, 16, 30, 0.6, 0) } },
+		R = { id = "mgR", name = "태극선회", desc = "제자리에서 원을 그린다. 검은 구슬과 흰 구슬이 나를 축으로 소용돌이치며 16칸까지 퍼졌다가 되돌아오고, 돌아올 때 둘레의 적을 내 앞으로 끌어 모아 한 번 더 친다", pose = "void_circle", dur = 0.9, cd = 9, chi = 25,
+			mech = { kind = "taijiOrbit", delay = 0.1, radius = 16, dur = 1.1, every = 0.1, turns = 1.5, orbRadius = 4.5, pull = 36, hit = hit(0, 0, 0, 8, 14, 0.3, 0), final = hit(0, 0, 0, 16, 36, 0.6, 0) } },
+		G = { id = "mgG", name = "태극인", desc = "세상의 빛깔이 빠지고 발밑에 30칸 넓이의 태극이 그려진다. 그 위의 적은 모두 멈춘다. 태극이 돌며 하늘로 떠올라 뒤집힌 뒤 도장처럼 내리찍고, 흑과 백의 물결이 한 번 더 지나간다", pose = "ult_taiji", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "taijiSeal", delay = 0.35, radius = 30, liftAt = 1.1, hitAt = 1.75, hit = hit(0, 0, 0, 80, 300, 1.0, 50, 20), waveAt = 0.3, wave = hit(0, 0, 0, 24, 60, 0.4, 60, 8) } },
 	},
 })
 table.insert(Config.Styles, {

@@ -1695,6 +1695,305 @@ local function starCrash(data: any)
 		shakeNear(at, 2.6, 140)
 	end)
 end
+------------------------------------------------------------------------
+-- 2.6판 무극신권: 음양탄 · 태극선회 · 태극인 (흑과 백)
+------------------------------------------------------------------------
+local INK = Color3.fromRGB(14, 14, 20)
+local function yinOrb(black: boolean, d: number): (BasePart, BasePart)
+	local core = part(Vector3.new(d, d, d), black and INK or WHITE, black and Enum.Material.SmoothPlastic or Enum.Material.Neon, 0, "ball")
+	local halo = part(Vector3.new(d, d, d) * 1.7, black and WHITE or INK, Enum.Material.ForceField, 0.15, "ball")
+	return core, halo
+end
+-- 지나간 자리에 남는 작은 흑백 점
+local function dot(at: Vector3, black: boolean, d: number, life: number)
+	local p = part(Vector3.new(d, d, d), black and INK or WHITE, black and Enum.Material.SmoothPlastic or Enum.Material.Neon, 0.1, "ball")
+	p.CFrame = CFrame.new(at)
+	fadeOut(p, life, { Size = Vector3.new(0.1, 0.1, 0.1) })
+end
+-- 태극 문양 (판의 위가 +Y). 흰 원 위에 왼쪽 반을 검게 덮고, 위 작은 원은 검게, 아래 작은 원은 희게, 눈 둘
+-- 뒤집혀도 보이도록 아래쪽에도 같은 층을 거꾸로 쌓는다 (테두리는 얇게 사이에 끼운다)
+type Piece = { p: BasePart, cf: CFrame }
+local function buildTaiji(R: number, rim: Color3): { Piece }
+	local out: { Piece } = {}
+	local UP = CFrame.Angles(0, 0, math.rad(90))
+	local function both(i: number, make: () -> BasePart, x: number, z: number, rot: CFrame)
+		for _, sgn in ipairs({ 1, -1 }) do
+			table.insert(out, { p = make(), cf = CFrame.new(x, sgn * 0.02 * i, z) * rot })
+		end
+	end
+	local function circle(i: number, r: number, z: number, color: Color3, mat: Enum.Material)
+		both(i, function()
+			return part(Vector3.new(0.3, r * 2, r * 2), color, mat, 0, "cyl")
+		end, 0, z, UP)
+	end
+	table.insert(out, { p = part(Vector3.new(0.2, (R + 0.8) * 2, (R + 0.8) * 2), rim, Enum.Material.Neon, 0, "cyl"), cf = UP })
+	circle(1, R, 0, WHITE, Enum.Material.Neon)
+	local strips = 14
+	for k = 1, strips do
+		local x0 = -R + (k - 1) * R / strips
+		local w = R / strips
+		local h = 2 * math.sqrt(math.max(0, R * R - x0 * x0))
+		if h > 0.2 then
+			both(2, function()
+				return part(Vector3.new(w + 0.05, 0.3, h), INK, Enum.Material.SmoothPlastic, 0)
+			end, x0 + w / 2, 0, CFrame.identity)
+		end
+	end
+	circle(3, R / 2, R / 2, INK, Enum.Material.SmoothPlastic)
+	circle(4, R / 2, -R / 2, WHITE, Enum.Material.Neon)
+	circle(5, R / 8, R / 2, WHITE, Enum.Material.Neon)
+	circle(5, R / 8, -R / 2, INK, Enum.Material.SmoothPlastic)
+	return out
+end
+local function placeTaiji(pieces: { Piece }, cf: CFrame)
+	for _, pc in ipairs(pieces) do
+		pc.p.CFrame = cf * pc.cf
+	end
+end
+local function dropTaiji(pieces: { Piece }, life: number)
+	for _, pc in ipairs(pieces) do
+		fadeOut(pc.p, life)
+	end
+end
+
+local function yyShot(data: any)
+	local from: Vector3 = data.from
+	if not near(from, 220) then
+		return
+	end
+	local c = colors(data.style)
+	local dir: Vector3 = flat(data.dir or Vector3.new(0, 0, -1))
+	local L = data.length or 30
+	local travel = data.travel or 0.45
+	local delay = data.delay or 0.15
+	local right = dir:Cross(Vector3.new(0, 1, 0)).Unit
+	local up = Vector3.new(0, 1, 0)
+	local bk, bh = yinOrb(true, 1.6)
+	local wk, wh = yinOrb(false, 1.6)
+	local t0 = os.clock()
+	local frame = 0
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local u = math.clamp((t - delay) / travel, 0, 1)
+		local th = u * math.pi * 6 + t * 4
+		local rad = 1.8 * (1 - u * 0.5)
+		local axis = from + dir * (L * u)
+		local off = right * math.cos(th) * rad + up * math.sin(th) * rad
+		bk.CFrame, bh.CFrame = CFrame.new(axis + off), CFrame.new(axis + off)
+		wk.CFrame, wh.CFrame = CFrame.new(axis - off), CFrame.new(axis - off)
+		frame += 1
+		if u > 0 and u < 1 and frame % 2 == 0 then
+			dot(axis + off, true, 0.9, 0.35)
+			dot(axis - off, false, 0.9, 0.35)
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, p in ipairs({ bk, bh, wk, wh }) do
+				p:Destroy()
+			end
+			-- 부딪친다: 작은 태극이 빠르게 돌며 터지고, 흑백 고리가 안으로 조였다가 밖으로 퍼진다
+			local at = axis
+			local R = data.radius or 8
+			local pieces = buildTaiji(2.2, c)
+			local s0 = os.clock()
+			local c2conn: RBXScriptConnection
+			c2conn = RunService.Heartbeat:Connect(function()
+				local k = os.clock() - s0
+				if k > 0.5 then
+					c2conn:Disconnect()
+					return
+				end
+				placeTaiji(pieces, CFrame.lookAt(at, at - dir) * CFrame.Angles(math.rad(90), 0, 0) * CFrame.Angles(0, k * 30, 0))
+			end)
+			dropTaiji(pieces, 0.5)
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), INK, R * 2.4, 2, 0.25)
+			task.delay(0.2, function()
+				Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), WHITE, 2, R * 2.4, 0.4)
+				Fx.ring(ground(at) + Vector3.new(0, 0.35, 0), INK, 2, R * 2, 0.45)
+			end)
+			Fx.burst("spark", at, WHITE, 10, 1)
+			Fx.sound("shatter", 0.6, 1.5, at)
+			shakeNear(at, 0.5, 60)
+		end
+	end)
+	Fx.sound("swing", 0.6, 0.7, from)
+end
+
+local function yyOrbit(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local c = colors(data.style)
+	local R = data.radius or 16
+	local dur = data.dur or 1.1
+	local delay = data.delay or 0.1
+	local turns = data.turns or 1.5
+	local bk, bh = yinOrb(true, 2.4)
+	local wk, wh = yinOrb(false, 2.4)
+	local t0 = os.clock()
+	local frame = 0
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local u = math.clamp((t - delay) / dur, 0, 1)
+		local r = R * math.sin(u * math.pi)
+		local a = u * turns * math.pi * 2
+		local bob = Vector3.new(0, math.sin(t * 8) * 0.6, 0)
+		local pb = at + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r) + bob
+		local pw = at + Vector3.new(math.cos(a + math.pi) * r, 0, math.sin(a + math.pi) * r) - bob
+		bk.CFrame, bh.CFrame = CFrame.new(pb), CFrame.new(pb)
+		wk.CFrame, wh.CFrame = CFrame.new(pw), CFrame.new(pw)
+		frame += 1
+		if u > 0 and u < 1 then
+			if frame % 2 == 0 then
+				dot(pb, true, 1.4, 0.5)
+				dot(pw, false, 1.4, 0.5)
+			end
+			-- 땅에 소용돌이 자국
+			if frame % 3 == 0 then
+				local g1 = part(Vector3.new(0.12, 1.6, 1.6), INK, Enum.Material.SmoothPlastic, 0.2, "cyl")
+				g1.CFrame = CFrame.new(ground(pb) + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+				fadeOut(g1, 0.9)
+				local g2 = part(Vector3.new(0.12, 1.6, 1.6), WHITE, Enum.Material.Neon, 0.2, "cyl")
+				g2.CFrame = CFrame.new(ground(pw) + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+				fadeOut(g2, 0.9)
+			end
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, p in ipairs({ bk, bh, wk, wh }) do
+				p:Destroy()
+			end
+			-- 되돌아와 하나로: 고리가 안으로 조이고, 발밑에 태극이 번쩍인다
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), WHITE, R * 2, 3, 0.3)
+			Fx.ring(ground(at) + Vector3.new(0, 0.35, 0), INK, R * 1.8, 3, 0.35)
+			local pieces = buildTaiji(5, c)
+			placeTaiji(pieces, CFrame.new(ground(at) + Vector3.new(0, 0.2, 0)))
+			dropTaiji(pieces, 0.6)
+			Fx.burst("spark", at, c, 12, 1)
+			Fx.sound("heavy", 0.7, 1.2, at)
+			shakeNear(at, 0.6, 60)
+		end
+	end)
+	Fx.sound("swing", 0.7, 0.6, at)
+end
+
+local function taijiSeal(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 280) then
+		return
+	end
+	local c = colors(data.style)
+	local R = data.radius or 30
+	local delay, liftAt, hitAt = data.delay or 0.35, data.liftAt or 1.1, data.hitAt or 1.75
+	local base = ground(at) + Vector3.new(0, 0.2, 0)
+	local pieces = buildTaiji(R, c)
+	for _, pc in ipairs(pieces) do
+		pc.p.Transparency = 1
+		tween(pc.p, delay, { Transparency = 0 })
+	end
+	-- 세상의 빛깔이 빠진다 (가까이 있는 사람만)
+	local cc: ColorCorrectionEffect? = nil
+	if near(at, 160) then
+		local e = Instance.new("ColorCorrectionEffect")
+		e.Name = "KwonTaiji"
+		e.Parent = game:GetService("Lighting")
+		tween(e, delay, { Saturation = -1, Contrast = 0.25 })
+		cc = e
+	end
+	Fx.ring(base, WHITE, 2, R * 2.2, delay + 0.1)
+	Fx.sound("deflect", 0.9, 0.5, at)
+	local t0 = os.clock()
+	local slammed = false
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if t > hitAt + 0.8 then
+			conn:Disconnect()
+			return
+		end
+		local spin
+		if t < liftAt then
+			spin = t * 0.9
+		else
+			spin = liftAt * 0.9 + (t - liftAt) * (t - liftAt) * 9
+		end
+		local cf
+		local fall = hitAt - 0.14
+		if t < liftAt then
+			cf = CFrame.new(base) * CFrame.Angles(0, spin, 0)
+		elseif t < fall then
+			-- 떠올라 뒤집힌다
+			local k = (t - liftAt) / (fall - liftAt)
+			local e = 1 - (1 - k) * (1 - k)
+			cf = CFrame.new(base + Vector3.new(0, 26 * e, 0)) * CFrame.Angles(math.pi * e, spin, 0)
+		elseif t < hitAt then
+			local k = (t - fall) / 0.14
+			cf = CFrame.new(base + Vector3.new(0, 26 * (1 - k * k), 0)) * CFrame.Angles(math.pi, spin, 0)
+		else
+			cf = CFrame.new(base) * CFrame.Angles(math.pi, spin, 0)
+		end
+		placeTaiji(pieces, cf)
+		-- 태극에서 흑백 기운이 솟는다
+		if t > delay and t < liftAt and math.random() < 0.5 then
+			local a, r = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+			local p0 = base + Vector3.new(math.cos(a) * r, 0.5, math.sin(a) * r)
+			local black = math.random() < 0.5
+			local q = part(Vector3.new(0.7, 0.7, 0.7), black and INK or WHITE, black and Enum.Material.SmoothPlastic or Enum.Material.Neon, 0.1, "ball")
+			q.CFrame = CFrame.new(p0)
+			fadeOut(q, 0.8, { CFrame = CFrame.new(p0 + Vector3.new(0, 7, 0)), Size = Vector3.new(0.2, 0.2, 0.2) })
+		end
+		if t >= hitAt and not slammed then
+			slammed = true
+			-- 도장이 찍힌다
+			Fx.ring(base + Vector3.new(0, 0.2, 0), WHITE, R * 1.4, R * 2.6, 0.45)
+			Fx.ring(base + Vector3.new(0, 0.25, 0), INK, R * 1.2, R * 2.3, 0.5)
+			local col = column(base, 70, 5, WHITE, 0.05)
+			fadeOut(col, 0.5, { Size = Vector3.new(70, 0.4, 0.4) })
+			Fx.burst("spark", at, WHITE, 24, 2)
+			Fx.flash(at, WHITE, 120, 10, 0.5)
+			Fx.sound("shatter", 1, 0.6, at)
+			Fx.sound("heavy", 1, 0.5, at)
+			shakeNear(at, 2.8, 150)
+			local e = cc
+			if e then
+				-- 한순간 흑백이 뒤집혔다가 빛깔이 돌아온다
+				e.Contrast = 1
+				e.Brightness = 0.3
+				tween(e, 0.25, { Contrast = 0.25, Brightness = 0 })
+				task.delay(0.6, function()
+					tween(e, 0.8, { Saturation = 0, Contrast = 0 })
+					task.delay(0.85, function()
+						e:Destroy()
+					end)
+				end)
+			end
+			-- 흑과 백의 물결
+			task.delay(0.3, function()
+				for k = 0, 2 do
+					task.delay(k * 0.08, function()
+						Fx.ring(base + Vector3.new(0, 0.3, 0), k % 2 == 0 and INK or WHITE, R * 0.6, (R + 6) * 2, 0.5)
+					end)
+				end
+			end)
+			dropTaiji(pieces, 0.7)
+		end
+	end)
+	-- 기술이 끊기면 빛깔만은 꼭 돌려놓는다
+	task.delay(hitAt + 3, function()
+		if cc and cc.Parent then
+			cc:Destroy()
+		end
+		for _, pc in ipairs(pieces) do
+			if pc.p.Parent then
+				pc.p:Destroy()
+			end
+		end
+	end)
+end
+
 -- 심판의 벼락: 겨눈 적마다 머리 위에 돌아가는 조준 고리
 local function lockOn(data: any)
 	local c, c2 = colors(data.style)
@@ -2418,6 +2717,9 @@ local HANDLERS: { [string]: (any) -> () } = {
 	downdraft = downdraft,
 	diveMark = diveMark,
 	diveImpact = diveImpact,
+	yyShot = yyShot,
+	yyOrbit = yyOrbit,
+	taijiSeal = taijiSeal,
 	starStart = starStart,
 	starBeam = starBeam,
 	starCrash = starCrash,
