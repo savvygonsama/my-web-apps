@@ -1520,6 +1520,8 @@ local function buildTest()
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
 		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
+		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})
 	do
 		-- 2.6판: 심법 등급 체험 (모든 심법을 한 등급으로), 자동 뽑기, 새 오의·무극신권·보스 차림

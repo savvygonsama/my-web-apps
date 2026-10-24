@@ -4270,6 +4270,141 @@ local function skyWorld(out: any)
 		local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber(50, 165)
 		pine(cr + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr), rng:NextNumber(1.2, 2), f, false)
 	end
+
+	-- 2.7판 운무 죽림: 구름 속 대숲. 마디 있는 대나무 무리, 가운데를 지나는 돌길, 대나무 정자, 낮게 깔린 안개
+	local bb = I.bamboo.at
+	local BAMBOO_C = Color3.fromRGB(104, 160, 64)
+	local function bambooStalk(p0: Vector3, h: number, d: number, lean: number, yaw: number)
+		local cf = CFrame.new(p0) * CFrame.Angles(0, yaw, 0) * CFrame.Angles(lean, 0, 0)
+		part({ Name = "Bamboo", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, d, d), CFrame = cf * CFrame.new(0, h / 2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = BAMBOO_C:Lerp(Color3.fromRGB(140, 184, 80), rng:NextNumber()), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		for k = 1, math.floor(h / 4) do
+			part({ Name = "BambooNode", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.25, d * 1.15, d * 1.15), CFrame = cf * CFrame.new(0, k * 4, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(176, 196, 112), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		end
+		for k = 0, 2 do
+			local a = k * 2.1 + yaw
+			part({ Name = "BambooLeaves", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 1.6, 3), CFrame = cf * CFrame.new(math.cos(a) * 2, h - 1 - k * 1.5, math.sin(a) * 2) * CFrame.Angles(0, -a, math.rad(-15)), Color = Color3.fromRGB(80, 140, 58):Lerp(Color3.fromRGB(120, 176, 80), rng:NextNumber()), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+	end
+	-- 돌길: 다리에서 가운데로, 가운데에서 서쪽 정자로
+	local toCrane = (I.crane.at - bb) * Vector3.new(1, 0, 1)
+	toCrane = toCrane.Unit
+	for k = 0, 16 do
+		local p = bb + toCrane * (170 - k * 10)
+		part({ Name = "BambooPath", Size = Vector3.new(7, 0.3, 5), CFrame = CFrame.lookAt(p, p + toCrane) * CFrame.new(rng:NextNumber(-0.6, 0.6), 0.1, 0) * CFrame.Angles(0, rng:NextNumber(-0.1, 0.1), 0), Color = Color3.fromRGB(150, 150, 140), Material = Enum.Material.Slate, Parent = f })
+	end
+	for _ = 1, 46 do
+		local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber(36, 168)
+		local p = bb + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+		-- 길과 가운데 빈터는 비워 둔다
+		local along = (p - bb):Dot(toCrane)
+		local off = ((p - bb) - toCrane * along).Magnitude
+		if not (along > 0 and off < 10) then
+			for _ = 1, rng:NextInteger(3, 6) do
+				bambooStalk(p + Vector3.new(rng:NextNumber(-3, 3), 0, rng:NextNumber(-3, 3)), rng:NextNumber(18, 32), rng:NextNumber(0.8, 1.3), rng:NextNumber(-0.08, 0.08), rng:NextNumber(0, 6))
+			end
+		end
+	end
+	-- 대나무 정자 (가운데 서쪽)
+	local pv = bb + Vector3.new(-70, 0, 0)
+	part({ Name = "BambooDeck", Size = Vector3.new(20, 1, 20), Position = pv + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(170, 150, 100), Material = Enum.Material.Wood, Parent = f })
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "BambooPost", Shape = Enum.PartType.Cylinder, Size = Vector3.new(11, 1.1, 1.1), CFrame = CFrame.new(pv + Vector3.new(sx * 8.5, 6.5, sz * 8.5)) * CFrame.Angles(0, 0, math.rad(90)), Color = BAMBOO_C, Material = Enum.Material.SmoothPlastic, Parent = f })
+		end
+	end
+	part({ Name = "BambooRoof", Size = Vector3.new(24, 1.2, 24), Position = pv + Vector3.new(0, 12.4, 0), Color = Color3.fromRGB(180, 160, 100), Material = Enum.Material.Fabric, Parent = f })
+	part({ Name = "BambooRoof2", Size = Vector3.new(14, 1.2, 14), Position = pv + Vector3.new(0, 13.8, 0), Color = Color3.fromRGB(160, 140, 90), Material = Enum.Material.Fabric, Parent = f })
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		local p = bb + Vector3.new(math.cos(a) * rng:NextNumber(40, 150), 1.2, math.sin(a) * rng:NextNumber(40, 150))
+		part({ Name = "BambooMist", Shape = Enum.PartType.Ball, Size = Vector3.new(rng:NextNumber(30, 50), 3, rng:NextNumber(30, 50)), Position = p, Color = Color3.fromRGB(245, 248, 250), Material = Enum.Material.SmoothPlastic, Transparency = 0.6, CanCollide = false, Parent = f })
+	end
+
+	-- 2.7판 월광 호수: 섬 북쪽의 넓은 호수, 호수에 비친 달, 한가운데 작은 섬의 흰 팔각정과 그리로 가는 돌다리, 연잎과 연꽃, 하늘의 큰 달
+	local ml = I.moonlake.at
+	local lakeC = ml + Vector3.new(0, 0, 30)
+	disc("MoonLake", lakeC + Vector3.new(0, 0.3, 0), 95, 0.3, Color3.fromRGB(70, 110, 170), Enum.Material.Glass, f, false).Transparency = 0.15
+	disc("MoonLakeEdge", lakeC + Vector3.new(0, 0.2, 0), 99, 0.3, Color3.fromRGB(220, 226, 236), Enum.Material.Marble, f, false)
+	disc("MoonReflect", lakeC + Vector3.new(20, 0.5, 30), 14, 0.1, Color3.fromRGB(235, 242, 255), Enum.Material.Neon, f, false).Transparency = 0.35
+	disc("MoonIsle", lakeC + Vector3.new(0, 0.6, 0), 22, 1.2, Color3.fromRGB(226, 230, 240), Enum.Material.Marble, f)
+	-- 팔각정
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		part({ Name = "MoonPavilionPost", Size = Vector3.new(1.2, 12, 1.2), Position = lakeC + Vector3.new(math.cos(a) * 12, 7.2, math.sin(a) * 12), Color = Color3.fromRGB(240, 242, 248), Material = Enum.Material.Marble, Parent = f })
+	end
+	disc("MoonPavilionRoof", lakeC + Vector3.new(0, 13.6, 0), 16, 1.2, Color3.fromRGB(70, 90, 140), Enum.Material.Slate, f)
+	disc("MoonPavilionRoof2", lakeC + Vector3.new(0, 15, 0), 10, 1.2, Color3.fromRGB(80, 100, 155), Enum.Material.Slate, f)
+	part({ Name = "MoonPavilionTop", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 2.4, 2.4), Position = lakeC + Vector3.new(0, 16.5, 0), Color = Color3.fromRGB(230, 236, 255), Material = Enum.Material.Glass, Parent = f })
+	-- 돌다리 (남쪽 물가에서 섬으로)
+	for k = 0, 9 do
+		part({ Name = "MoonBridge", Size = Vector3.new(6, 1, 8.4), Position = lakeC + Vector3.new(0, 0.8 + math.sin(k / 9 * math.pi) * 1.5, -96 + 22 + k * 7.4), Color = Color3.fromRGB(220, 224, 232), Material = Enum.Material.Marble, Parent = f })
+	end
+	-- 연잎과 연꽃
+	for _ = 1, 30 do
+		local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber(28, 88)
+		local p = lakeC + Vector3.new(math.cos(a) * rr, 0.5, math.sin(a) * rr)
+		disc("LotusLeaf", p, rng:NextNumber(1.6, 3.2), 0.2, Color3.fromRGB(70, 130, 70), Enum.Material.SmoothPlastic, f, false)
+		if rng:NextNumber() < 0.4 then
+			part({ Name = "LotusFlower", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.0, 1.4), Position = p + Vector3.new(0.5, 0.5, 0), Color = Color3.fromRGB(250, 200, 220), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		end
+	end
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		stoneLantern(lakeC + Vector3.new(math.cos(a) * 104, 0, math.sin(a) * 104) - Vector3.new(0, 0, 0), f, true)
+	end
+	local moon = part({ Name = "SkyMoon", Shape = Enum.PartType.Ball, Size = Vector3.new(40, 40, 40), Position = lakeC + Vector3.new(60, 140, 120), Color = Color3.fromRGB(240, 244, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	moon.Transparency = 0.1
+	light(moon, Color3.fromRGB(200, 215, 255), 60, 1.2)
+
+	-- 2.7판 금운사: 금빛 다섯 층 탑, 넓은 돌계단, 사자 석상 둘, 큰 종이 걸린 종각, 향로
+	local gt = I.goldtemple.at
+	local GOLDEN = Color3.fromRGB(232, 190, 90)
+	local RED_WOOD = Color3.fromRGB(150, 50, 36)
+	local pagoda = gt + Vector3.new(0, 0, -150)
+	disc("TempleBase", pagoda + Vector3.new(0, 1, 0), 34, 2, Color3.fromRGB(236, 226, 200), Enum.Material.Marble, f)
+	for i = 0, 4 do
+		local w = 30 - i * 5
+		local y = 2 + i * 11
+		part({ Name = "PagodaFloor", Size = Vector3.new(w, 9, w), Position = pagoda + Vector3.new(0, y + 4.5, 0), Color = RED_WOOD, Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "PagodaRoof", Size = Vector3.new(w + 8, 1.6, w + 8), Position = pagoda + Vector3.new(0, y + 9.8, 0), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+		for _, cx in ipairs({ -1, 1 }) do
+			for _, cz in ipairs({ -1, 1 }) do
+				part({ Name = "PagodaEave", Size = Vector3.new(3, 1.2, 3), CFrame = CFrame.new(pagoda + Vector3.new(cx * (w / 2 + 4), y + 10.6, cz * (w / 2 + 4))) * CFrame.Angles(cz * math.rad(18), 0, -cx * math.rad(18)), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+			end
+		end
+	end
+	local spireTop = part({ Name = "PagodaSpire", Size = Vector3.new(1.6, 14, 1.6), Position = pagoda + Vector3.new(0, 64, 0), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+	local _ = spireTop
+	local jewel = part({ Name = "PagodaJewel", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.4, 3.4), Position = pagoda + Vector3.new(0, 72, 0), Color = Color3.fromRGB(255, 230, 150), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(jewel, Color3.fromRGB(255, 220, 140), 40, 1.6)
+	-- 계단 (남쪽 다리에서 탑 쪽으로)
+	for k = 0, 7 do
+		part({ Name = "TempleStep", Size = Vector3.new(30, 1, 4), Position = gt + Vector3.new(0, 0.5 + k * 0.6, 40 - k * 4), Color = Color3.fromRGB(230, 222, 200), Material = Enum.Material.Marble, Parent = f })
+	end
+	-- 사자 석상 둘 (계단 양옆)
+	for _, sx in ipairs({ -1, 1 }) do
+		local base = gt + Vector3.new(sx * 22, 0, 44)
+		part({ Name = "LionPlinth", Size = Vector3.new(7, 4, 9), Position = base + Vector3.new(0, 2, 0), Color = Color3.fromRGB(200, 190, 170), Material = Enum.Material.Granite, Parent = f })
+		part({ Name = "LionBody", Size = Vector3.new(4.5, 4, 7), Position = base + Vector3.new(0, 6, 0.5), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+		part({ Name = "LionHead", Shape = Enum.PartType.Ball, Size = Vector3.new(4.5, 4.5, 4.5), Position = base + Vector3.new(0, 9.4, -2.6), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+		part({ Name = "LionMane", Shape = Enum.PartType.Ball, Size = Vector3.new(6, 6, 3.5), Position = base + Vector3.new(0, 9.4, -1.6), Color = Color3.fromRGB(200, 150, 60), Material = Enum.Material.Metal, Parent = f })
+		part({ Name = "LionPaw", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 1.6, 2), Position = base + Vector3.new(sx * -1.2, 4.6, -3.4), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+	end
+	-- 종각과 큰 종
+	local bell = gt + Vector3.new(90, 0, -40)
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			part({ Name = "BellPost", Size = Vector3.new(1.4, 16, 1.4), Position = bell + Vector3.new(sx * 7, 8, sz * 7), Color = RED_WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	part({ Name = "BellRoof", Size = Vector3.new(20, 1.4, 20), Position = bell + Vector3.new(0, 16.6, 0), Color = GOLDEN, Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "TempleBell", Shape = Enum.PartType.Cylinder, Size = Vector3.new(7, 6, 6), CFrame = CFrame.new(bell + Vector3.new(0, 11, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(140, 110, 70), Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "BellLip", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 6.6, 6.6), CFrame = CFrame.new(bell + Vector3.new(0, 7.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(160, 130, 80), Material = Enum.Material.Metal, Parent = f })
+	-- 향로 (가운데)
+	part({ Name = "Censer", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 4, 5), Position = gt + Vector3.new(0, 3, -10), Color = Color3.fromRGB(150, 120, 70), Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "CenserLeg", Size = Vector3.new(4, 2, 4), Position = gt + Vector3.new(0, 1, -10), Color = Color3.fromRGB(120, 95, 60), Material = Enum.Material.Metal, Parent = f })
+	local smoke = part({ Name = "CenserGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = gt + Vector3.new(0, 5.4, -10), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(smoke, Color3.fromRGB(255, 200, 120), 20, 1)
 end
 
 local arenas: { [number]: Vector3 } = {}

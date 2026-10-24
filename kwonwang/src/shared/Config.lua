@@ -2149,6 +2149,13 @@ E.fallsguard = variant(E.spearman, { name = "폭포 수문장", shirt = Color3.f
 E.craneguard = variant(E.spearman, { name = "학익 위사", shirt = Color3.fromRGB(250, 250, 250), pants = Color3.fromRGB(30, 30, 40), hp = 450, mult = 28, elite = true, scale = 1.2 })
 E.cranemaster = variant(E.assassin, { name = "청학 검선", shirt = Color3.fromRGB(240, 245, 240), pants = Color3.fromRGB(60, 120, 100), hp = 360, mult = 28, elite = true })
 E.phoenixguard = variant(E.ironguard, { name = "봉황 무사", shirt = Color3.fromRGB(220, 70, 40), pants = Color3.fromRGB(120, 40, 20), hp = 440, mult = 27, elite = true, scale = 1.3 })
+-- 2.7판: 천상의 새 세 섬 (청학봉과 같거나 조금 위)
+E.jukgeom = variant(E.assassin, { name = "죽림 검객", shirt = Color3.fromRGB(110, 150, 90), pants = Color3.fromRGB(50, 70, 40), hp = 380, mult = 30, elite = true })
+E.jukseon = variant(E.cultelder, { name = "죽림 선인", shirt = Color3.fromRGB(200, 215, 170), pants = Color3.fromRGB(80, 100, 60), hp = 420, mult = 30, elite = true, scale = 1.1 })
+E.moonspirit = variant(E.shadowblade, { name = "월광 정령", shirt = Color3.fromRGB(220, 230, 255), pants = Color3.fromRGB(140, 150, 200), hp = 380, mult = 31, elite = true })
+E.lakeguard = variant(E.spearman, { name = "호수 수호병", shirt = Color3.fromRGB(70, 90, 130), pants = Color3.fromRGB(30, 40, 70), hp = 480, mult = 31, elite = true, scale = 1.2 })
+E.goldmonk = variant(E.brute, { name = "금운 무승", shirt = Color3.fromRGB(230, 170, 60), pants = Color3.fromRGB(140, 80, 30), hp = 520, mult = 34, elite = true, scale = 1.2 })
+E.guardlion = variant(E.brute, { name = "사자 수호수", shirt = Color3.fromRGB(220, 180, 90), pants = Color3.fromRGB(170, 120, 50), hp = 640, mult = 34, elite = true, scale = 1.5, weapon = "none" })
 -- 1.8판: 세상 끝 네 땅의 적
 E.mapleblade = variant(E.shadowblade, { name = "단풍 검객", shirt = Color3.fromRGB(210, 90, 40), pants = Color3.fromRGB(90, 40, 25), hp = 230, mult = 14 })
 E.maplemonk = variant(E.brute, { name = "낙엽 승병", shirt = Color3.fromRGB(180, 120, 50), pants = Color3.fromRGB(80, 55, 30), hp = 300, scale = 1.4, mult = 14, elite = true })
@@ -2821,6 +2828,9 @@ Config.CUTSCENES = {
 	boss_dason = { who = "다선", lines = { "차 한 잔 식을 동안만 상대해 주지." } },
 	boss_pokryong = { who = "비천", lines = { "하늘에서 떨어지는 물은 바위도 뚫는다." } },
 	boss_seonhak = { who = "선학", lines = { "학은 한 번 날개를 펴면 구름 위로만 난다." } },
+	boss_jukwang = { who = "죽왕", lines = { "대나무는 꺾이지 않는다. 휘었다가 너를 친다." } },
+	boss_wolyeong = { who = "월영", lines = { "호수에 비친 달을 베어 본 적이 있느냐." } },
+	boss_geumgang = { who = "금강천왕", lines = { "이 몸은 금강이다. 부서지는 것은 네 주먹이다." } },
 	boss_cheongeop = { who = "천겁", lines = { "하늘이 내린 재앙이다. 혼자라면 도망쳐라. 함께라면, 덤벼라." } },
 }
 
@@ -2927,9 +2937,19 @@ Config.SKY = {
 		{ id = "crane", name = "청학봉", at = Vector3.new(0, SY, 1250), radius = 180, ground = Color3.fromRGB(225, 235, 230), material = Enum.Material.Marble,
 			camps = { { enemy = "craneguard", count = 3, at = Vector3.new(-70, SY, 1200) }, { enemy = "cranemaster", count = 3, at = Vector3.new(70, SY, 1300) } },
 			boss = { id = "seonhak", at = Vector3.new(0, SY, 1350) } },
+		-- 2.7판: 천상 확장. 청학봉 서쪽의 운무 죽림, 동쪽의 월광 호수, 봉황대 북쪽 너머의 금운사
+		{ id = "bamboo", name = "운무 죽림", at = Vector3.new(-560, SY, 1000), radius = 180, ground = Color3.fromRGB(118, 156, 96), material = Enum.Material.Grass,
+			camps = { { enemy = "jukgeom", count = 3, at = Vector3.new(-500, SY, 940) }, { enemy = "jukseon", count = 3, at = Vector3.new(-620, SY, 1060) }, { enemy = "jukgeom", count = 2, at = Vector3.new(-640, SY, 920) } },
+			boss = { id = "jukwang", at = Vector3.new(-600, SY, 1090) } },
+		{ id = "moonlake", name = "월광 호수", at = Vector3.new(560, SY, 1050), radius = 180, ground = Color3.fromRGB(196, 210, 230), material = Enum.Material.Marble,
+			camps = { { enemy = "moonspirit", count = 3, at = Vector3.new(500, SY, 990) }, { enemy = "lakeguard", count = 3, at = Vector3.new(620, SY, 1110) }, { enemy = "moonspirit", count = 2, at = Vector3.new(640, SY, 980) } },
+			boss = { id = "wolyeong", at = Vector3.new(560, SY, 1150) } },
+		{ id = "goldtemple", name = "금운사", at = Vector3.new(0, SY, -1600), radius = 190, ground = Color3.fromRGB(236, 214, 156), material = Enum.Material.Marble,
+			camps = { { enemy = "goldmonk", count = 3, at = Vector3.new(-80, SY, -1540) }, { enemy = "guardlion", count = 2, at = Vector3.new(80, SY, -1540) }, { enemy = "goldmonk", count = 2, at = Vector3.new(0, SY, -1650) } },
+			boss = { id = "geumgang", at = Vector3.new(0, SY, -1700) } },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -3130,6 +3150,32 @@ Config.Bosses.seonhak = variant(Config.Bosses.cheonmun, { name = "선학 · 청�
 		P("charge", "청학 비상", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 56, 66, 1.0, 60) }),
 		P("quake", "학명", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 92, 132, 1.6, 80, 30) }),
 	} })
+-- 2.7판: 새 섬의 주인 셋
+Config.Bosses.jukwang = variant(Config.Bosses.cheonmun, { name = "죽왕 · 운무 죽림의 주인", shirt = Color3.fromRGB(110, 150, 90), pants = Color3.fromRGB(50, 70, 40), hp = 1250000, posture = 2200, scale = 3.2, speed = 19, coins = 520000, xp = 54000, respawn = 300, mult = 4.3,
+	patterns = {
+		P("rain", "죽창 비", 1, { count = 12, radius = 7, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 210, 110), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
+		P("charge", "대숲 질주", 1, { length = 66, width = 11, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 56, 66, 1.0, 60) }),
+		P("summon", "죽림 검객들", 2, { enemy = "jukgeom", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("donut", "대숲 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 60, 72, 1.1, 50) }),
+		P("quake", "만죽 낙하", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 94, 136, 1.6, 80, 30) }),
+	} })
+Config.Bosses.wolyeong = variant(Config.Bosses.cheonmun, { name = "월영 · 월광 호수의 주인", shirt = Color3.fromRGB(225, 232, 250), pants = Color3.fromRGB(90, 100, 150), hp = 1300000, posture = 2250, scale = 3.2, speed = 18, coins = 540000, xp = 56000, respawn = 300, mult = 4.4,
+	patterns = {
+		P("rain", "달빛 비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(220, 230, 255), hit = hit(0, 0, 0, 52, 64, 1.0, 25) }),
+		P("leap", "월하 낙영", 1, { radius = 19, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 66, 86, 1.3, 50, 22) }),
+		P("summon", "월광 정령들", 2, { enemy = "moonspirit", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("charge", "호수 위 달그림자", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58, 68, 1.0, 60) }),
+		P("quake", "만월", 3, { radius = 33, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 96, 138, 1.6, 80, 30) }),
+	} })
+Config.Bosses.geumgang = variant(Config.Bosses.cheonmun, { name = "금강천왕 · 금운사의 주인", shirt = Color3.fromRGB(235, 175, 60), pants = Color3.fromRGB(140, 80, 30), hp = 1400000, posture = 2400, scale = 3.6, speed = 16, coins = 580000, xp = 60000, respawn = 300, mult = 4.6,
+	patterns = {
+		P("quake", "금강 진각", 1, { radius = 24, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 70, 96, 1.4, 60, 20) }),
+		P("rain", "금빛 법륜", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 220, 120), hit = hit(0, 0, 0, 54, 66, 1.0, 25) }),
+		P("summon", "사자 수호수들", 2, { enemy = "guardlion", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+		P("donut", "금강 고리", 2, { inner = 10, outer = 36, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 62, 76, 1.1, 50) }),
+		P("leap", "천왕 낙하", 3, { radius = 22, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 76, 100, 1.4, 60, 24) }),
+		P("quake", "금강불괴", 3, { radius = 34, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 100, 144, 1.6, 80, 30) }),
+	} })
 -- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
 Config.RAID = {
 	island = "raidarena",
@@ -3193,7 +3239,7 @@ Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 
 Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
 Config.LIFESTEAL_SEC_CAP = 0.04 -- 1초 동안 최대 체력의 이만큼까지 (진 혈마신수는 0.05)
 Config.LIFESTEAL_FRENZY = 1.5 -- 광란 중 흡혈 배율
-for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon", "bingje", "yeombong", "cheongeop", "pungyeop", "seokwang", "gyunwang", "dason", "pokryong", "seonhak" }) do
+for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheonmun", "noeje", "seonggun", "cheonjon", "bingje", "yeombong", "cheongeop", "pungyeop", "seokwang", "gyunwang", "dason", "pokryong", "seonhak", "jukwang", "wolyeong", "geumgang" }) do
 	local b = Config.Bosses[id]
 	if b then
 		b.late = true
