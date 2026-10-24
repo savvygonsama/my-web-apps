@@ -1589,6 +1589,58 @@ function Skills.run(f: any, move: any, ctx: any)
 	------------------------------------------------------------------------
 	-- 2.2판: 각성 권법 아홉의 새 E·R, 진 열화·진 창해의 새 오의, 초·벽력신권의 새 R·오의
 	------------------------------------------------------------------------
+	elseif kind == "thunderDrums" then
+		-- 초·벽력신권 뇌고천무 (초 오의, 2.3판): 등 뒤 하늘에 뇌고 여덟이 둥글게 뜬다 (컷씬, 무적).
+		-- 북을 열여섯 번 친다 (점점 빨라진다). 칠 때마다 그 북에서 적에게 벼락이 꽂히고, 네 번째마다 둘레로 천둥이 울린다.
+		-- 마지막에 북이 모두 한가운데로 모여 하나의 뇌구가 되어 앞의 땅에 내리꽂힌다
+		local gaps = {}
+		local sum = 0
+		for i = 1, m.beats do
+			local u = (i - 1) / math.max(1, m.beats - 1)
+			gaps[i] = m.first + (m.last - m.first) * u
+			sum += gaps[i]
+		end
+		local total = m.cut + sum + m.finaleDelay
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.3) / sp)
+		Push:FireAllClients("skillfx", { kind = "drumRing", m = f.model, n = m.drums, dur = (total + 0.4) / sp, style = style })
+		local list = nearestList(f, m.range, m.n)
+		local tAt = m.cut
+		for i = 1, m.beats do
+			tAt += gaps[i]
+			after(tAt, function()
+				local tgt = #list > 0 and list[(i - 1) % #list + 1] or nil
+				local at
+				if tgt and not tgt.dead and tgt.root.Parent then
+					at = tgt.root.Position
+				else
+					local a = math.random() * math.pi * 2
+					at = f.root.Position + Vector3.new(math.cos(a), 0, math.sin(a)) * math.random(5, 16)
+				end
+				local shock = i % 4 == 0
+				Push:FireAllClients("skillfx", { kind = "drumBeat", m = f.model, drum = (i - 1) % m.drums + 1, at = at, radius = m.radius, i = i, shock = shock, shockRadius = m.shockRadius, style = style })
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					o.stunUntil = math.max(o.stunUntil, os.clock() + 0.3)
+					strike(f, o, hit, move)
+				end
+				if shock then
+					for _, o in ipairs(hostilesNear(f, f.root.Position, m.shockRadius)) do
+						strike(f, o, scaled(m.shock, sc), move)
+					end
+				end
+			end)
+		end
+		after(total, function()
+			local c = f.root.Position + flat(Combat.look(f)) * m.finaleDist
+			Push:FireAllClients("skillfx", { kind = "drumFinale", m = f.model, at = c, radius = m.finalRadius, fall = 0.3 / sp, style = style })
+			after(0.3, function()
+				for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+					strike(f, o, scaled(m.final, sc), move)
+					if not o.dead then
+						Combat.stun(o, 1.5)
+					end
+				end
+			end)
+		end)
 	elseif kind == "bloodNeedles" then
 		-- 진 혈마 혈침: 피의 바늘을 적들에게 꽂고, 잠시 뒤 바늘이 몸속에서 터지며 체력을 빨아온다
 		local list = nearestList(f, m.range, m.n)

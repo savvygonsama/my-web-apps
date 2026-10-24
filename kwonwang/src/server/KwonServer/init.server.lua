@@ -1396,7 +1396,7 @@ Combat.init(Push, {
 				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
-					local g = Config.killGain(f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					local g = Config.killGain((f :: any).basePower or f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each

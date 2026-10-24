@@ -1399,6 +1399,13 @@ local function buildTest()
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
+	section("👹 2.3판: 새 생김새 적·뇌고천무·벚꽃나무", {
+		{ "⚡ 초·벽력신권 바로 쓰기 (X 뇌고천무)", "testStyle", "chobyeok" }, { "🌸 초·매화난무권 바로 쓰기 (X 벚꽃나무)", "testStyle", "chomaehwa" },
+		{ "🗿 돌 거인 부르기", "testEnemy", "stonegolem" }, { "😈 화염 소악귀 부르기", "testEnemy", "flameimp" }, { "👻 모래 망령 부르기", "testEnemy", "sandwraith" },
+		{ "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
+		{ "💧 물보라 정령 부르기", "testEnemy", "waterspirit" }, { "🐍 독수 뱀 자객 부르기", "testEnemy", "swampfang" }, { "🐸 늪 거한 부르기", "testEnemy", "bogbrute" },
+		{ "🐺 혈랑 (늑대) 부르기", "testBoss", "hyeolrang" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" }, { "🔥 염봉 (봉황) 부르기", "testBoss", "yeombong" },
+	})
 	section("⚡ 2.0판: 새 각성·초·벽력신권·각성선인", {
 		{ "🔥 진 열화신권 바로 쓰기", "testStyle", "yeolhwa2" }, { "🐋 진 창해신권 바로 쓰기", "testStyle", "changhae2" }, { "🌀 진 풍신각 바로 쓰기", "testStyle", "pungsin2" },
 		{ "⚡ 초·벽력신권 바로 쓰기 (초월)", "testStyle", "chobyeok" }, { "⚡ 뇌천선에게 (초월의 시련)", "testSecretMaster", "chobyeok" }, { "🔥 각성선인에게", "testAwakenTp" },

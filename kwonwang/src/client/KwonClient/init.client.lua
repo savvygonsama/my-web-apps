@@ -1887,7 +1887,7 @@ function handlers.skillfx(data: any)
 		Awake.init({ shake = shake, tint = tint })
 		Reaper.init({ shake = shake, tint = tint })
 		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })
-		Awake3.init({ shake = shake })
+		Awake3.init({ shake = shake, flash = UI.flash })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return

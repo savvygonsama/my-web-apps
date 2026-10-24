@@ -870,7 +870,115 @@ local function severWind(data: any)
 	end
 end
 
+------------------------------------------------------------------------
+-- 2.3판: 초 오의 만앵참월에 거대한 벚꽃나무. 쓴 사람 뒤 땅에서 솟아 가지를 펴고 꽃을 피운다.
+-- 꽃이 쏟아지는 동안 서 있다가, 마지막 일격에 꽃잎이 한꺼번에 흩어지며 사라진다
+------------------------------------------------------------------------
+type Tree = { trunk: { BasePart }, blooms: { BasePart }, base: Vector3 }
+local trees: { [Instance]: Tree } = {}
+local BARK = Color3.fromRGB(86, 52, 44)
+local function limb(a: Vector3, b: Vector3, w: number): Part
+	local p = part(Vector3.new(w, w, math.max(0.2, (b - a).Magnitude + w * 0.4)), BARK, Enum.Material.Wood, 0)
+	p.CFrame = CFrame.lookAt((a + b) / 2, b)
+	return p
+end
+local function growTree(m: Instance, r: BasePart)
+	local old = trees[m]
+	if old then
+		for _, p in ipairs(old.trunk) do
+			p:Destroy()
+		end
+		for _, p in ipairs(old.blooms) do
+			p:Destroy()
+		end
+	end
+	local look = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z)
+	look = look.Magnitude > 1e-3 and look.Unit or Vector3.new(0, 0, -1)
+	local right = Vector3.new(-look.Z, 0, look.X)
+	local base = r.Position - look * 16 - Vector3.new(0, 2.6, 0)
+	local t: Tree = { trunk = {}, blooms = {}, base = base }
+	trees[m] = t
+	-- 줄기: 다섯 마디가 조금씩 휘며 오른다
+	local pts = { base }
+	local p = base
+	for i = 1, 5 do
+		p = p + Vector3.new(0, 5.2, 0) + right * math.sin(i * 1.3) * 1.2 - look * 0.4
+		table.insert(pts, p)
+	end
+	for i = 1, 5 do
+		table.insert(t.trunk, limb(pts[i], pts[i + 1], 3.4 - i * 0.4))
+	end
+	-- 뿌리 셋
+	for k = 0, 2 do
+		local a = k * math.pi * 2 / 3 + 0.4
+		local d = look * math.cos(a) + right * math.sin(a)
+		table.insert(t.trunk, limb(base + Vector3.new(0, 1, 0), base + d * 5 - Vector3.new(0, 0.5, 0), 1.6))
+	end
+	-- 가지 일곱과 그 끝의 꽃송이
+	local ends = {}
+	for k = 1, 7 do
+		local from = pts[3 + (k % 3)]
+		local a = k * 2.4
+		local d = (look * math.cos(a) + right * math.sin(a)) * (6 + (k % 3) * 2.5) + Vector3.new(0, 4 + (k % 2) * 3, 0)
+		local mid = from + d * 0.55 + Vector3.new(0, 1.2, 0)
+		table.insert(t.trunk, limb(from, mid, 1.3))
+		table.insert(t.trunk, limb(mid, from + d, 0.8))
+		table.insert(ends, from + d)
+	end
+	table.insert(ends, pts[6] + Vector3.new(0, 2, 0))
+	for i, e in ipairs(ends) do
+		for j = 0, 2 do
+			local sz = 7 + ((i + j) % 3) * 2.2
+			local b = part(Vector3.new(sz, sz * 0.7, sz), pinkAt(i + j), Enum.Material.SmoothPlastic, 0.05, true)
+			b.CFrame = CFrame.new(e + Vector3.new((j - 1) * 2.6, (j % 2) * 1.6, ((i + j) % 2 - 0.5) * 2.4))
+			table.insert(t.blooms, b)
+		end
+	end
+	-- 땅에서 솟는다: 나무 전체를 아래에서 끌어올리고, 꽃송이는 0에서 피어난다
+	local sink = Vector3.new(0, -30, 0)
+	for _, q in ipairs(t.trunk) do
+		local cf = q.CFrame
+		q.CFrame = cf + sink
+		tween(q, 0.7, { CFrame = cf }, Enum.EasingStyle.Back)
+	end
+	for i, b in ipairs(t.blooms) do
+		local full = b.Size
+		b.Size = Vector3.new(0.2, 0.2, 0.2)
+		task.delay(0.55 + (i % 6) * 0.04, function()
+			if b.Parent then
+				tween(b, 0.4, { Size = full }, Enum.EasingStyle.Back)
+			end
+		end)
+		if i % 3 == 0 then
+			local a = Instance.new("Attachment")
+			a.Parent = b
+			petalEmitter(a, 14, 0.5, 4, 2.6)
+		end
+	end
+	Fx.dust(base + Vector3.new(0, 1, 0), 10)
+	Fx.sound("heavy", 0.8, 0.6, base)
+end
+local function treeFall(m: Instance)
+	local t = trees[m]
+	if not t then
+		return
+	end
+	trees[m] = nil
+	for _, b in ipairs(t.blooms) do
+		if b.Parent then
+			Sakura.petals(b.CFrame.Position, 14, b.Size.X, 2.4, Vector3.new(0, 2, 0))
+			tween(b, 0.35, { Size = b.Size * 1.4, Transparency = 1 })
+			Debris:AddItem(b, 0.4)
+		end
+	end
+	for _, q in ipairs(t.trunk) do
+		tween(q, 1.2, { Transparency = 1 })
+		Debris:AddItem(q, 1.25)
+	end
+end
+
 local function severEnd(data: any)
+	treeFall(data.m)
 	local at = data.at
 	for _, m in ipairs(data.targets or {}) do
 		local r = rootOf(m)
@@ -910,7 +1018,13 @@ local function severStart(data: any)
 	if r and near(r.Position, 300) then
 		Sakura.petals(r.Position, 40, 6, 1.4)
 		Fx.flash(r.Position, WHITE, 30, 3, 0.25)
+		growTree(data.m, r)
 	end
+	-- 마지막 일격을 못 받더라도 나무는 스스로 진다
+	local m = data.m
+	task.delay((data.dur or 4) + 1.2, function()
+		treeFall(m)
+	end)
 	-- 끝을 못 받더라도 잿빛은 스스로 풀린다
 	task.delay((data.dur or 4) + 1.5, function()
 		if grey and grey.Saturation < -0.1 then

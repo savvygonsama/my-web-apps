@@ -1566,6 +1566,228 @@ local function judgeBolt(data: any)
 	shakeNear(at, 0.9, 100)
 end
 
+------------------------------------------------------------------------
+-- 초·벽력신권 뇌고천무 (초 오의, 2.3판): 등 뒤 하늘의 뇌고 여덟, 칠 때마다 벼락, 마지막 뇌구
+------------------------------------------------------------------------
+type Drum = { body: BasePart, face: BasePart, rims: { BasePart }, sigil: { BasePart }, pulse: number }
+type DrumSet = { drums: { Drum }, links: { BasePart }, core: BasePart, r: BasePart, born: number, gather: number?, spin: number }
+local drumSets: { [Instance]: DrumSet } = {}
+local function drumCenter(ds: DrumSet): (Vector3, Vector3, Vector3)
+	local look = flat(ds.r.CFrame.LookVector)
+	local right = Vector3.new(-look.Z, 0, look.X)
+	return ds.r.Position - look * 7 + Vector3.new(0, 15, 0), look, right
+end
+local function drumPos(ds: DrumSet, i: number): (Vector3, Vector3)
+	local c, look, right = drumCenter(ds)
+	local n = #ds.drums
+	local R = 13 * (1 - (ds.gather or 0))
+	local a = (i - 1) / n * math.pi * 2 + ds.spin
+	return c + (right * math.cos(a) + Vector3.yAxis * math.sin(a)) * R, look
+end
+local function drumRing(data: any)
+	local m = data.m
+	local r = rootOf(m)
+	if not r or not near(r.Position, 260) then
+		return
+	end
+	local old = drumSets[m]
+	if old then
+		drumSets[m] = nil
+		for _, d in ipairs(old.drums) do
+			d.body:Destroy()
+			d.face:Destroy()
+		end
+	end
+	local c, c2 = colors(data.style)
+	local ds: DrumSet = { drums = {}, links = {}, core = part(Vector3.new(1, 1, 1), WHITE, Enum.Material.Neon, 0.1, "ball"), r = r, born = os.clock(), gather = nil, spin = 0 }
+	local n = data.n or 8
+	local WOOD = Color3.fromRGB(105, 35, 40)
+	local GOLD = Color3.fromRGB(255, 220, 120)
+	for _ = 1, n do
+		local d: Drum = {
+			body = part(Vector3.new(2.4, 4.6, 4.6), WOOD, Enum.Material.Wood, 0, "cyl"),
+			face = part(Vector3.new(0.2, 4.2, 4.2), c2, Enum.Material.Neon, 0.35, "cyl"),
+			rims = { part(Vector3.new(0.3, 4.9, 4.9), GOLD, Enum.Material.Metal, 0, "cyl"), part(Vector3.new(0.3, 4.9, 4.9), GOLD, Enum.Material.Metal, 0, "cyl") },
+			sigil = { part(Vector3.new(0.1, 1.6, 0.35), c, Enum.Material.Neon, 0), part(Vector3.new(0.1, 1.6, 0.35), c, Enum.Material.Neon, 0), part(Vector3.new(0.1, 1.6, 0.35), c, Enum.Material.Neon, 0) },
+			pulse = 0,
+		}
+		table.insert(ds.drums, d)
+		table.insert(ds.links, part(Vector3.new(0.3, 0.3, 1), c, Enum.Material.Neon, 0.3))
+	end
+	drumSets[m] = ds
+	local dur = data.dur or 5
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function(dt: number)
+		local t = os.clock() - ds.born
+		if drumSets[m] ~= ds or t > dur + 1.5 or not r.Parent then
+			conn:Disconnect()
+			if drumSets[m] == ds then
+				drumSets[m] = nil
+			end
+			for _, d in ipairs(ds.drums) do
+				for _, p in ipairs({ d.body, d.face, d.rims[1], d.rims[2], d.sigil[1], d.sigil[2], d.sigil[3] }) do
+					fadeOut(p, 0.3)
+				end
+			end
+			for _, l in ipairs(ds.links) do
+				fadeOut(l, 0.3)
+			end
+			fadeOut(ds.core, 0.3)
+			return
+		end
+		ds.spin += dt * (ds.gather and 6 or 0.35)
+		local appear = math.clamp(t / 0.6, 0, 1)
+		local cen, look = drumCenter(ds)
+		ds.core.CFrame = CFrame.new(cen)
+		local cs = 2 + (ds.gather or 0) * 7 + math.sin(t * 12) * 0.3
+		ds.core.Size = Vector3.new(cs, cs, cs)
+		for i, d in ipairs(ds.drums) do
+			local pos = drumPos(ds, i)
+			pos = cen:Lerp(pos, appear)
+			d.pulse = math.max(0, d.pulse - dt * 5)
+			local k = 1 + d.pulse * 0.35
+			-- 북은 쓴 사람이 보는 쪽을 향한다 (원기둥 축 = 앞뒤)
+			local cf = CFrame.lookAt(pos, pos + look) * CFrame.Angles(0, math.rad(90), 0)
+			d.body.Size = Vector3.new(2.4, 4.6 * k, 4.6 * k)
+			d.body.CFrame = cf
+			d.face.Size = Vector3.new(0.2, 4.2 * k, 4.2 * k)
+			d.face.CFrame = cf * CFrame.new(-1.25, 0, 0)
+			d.face.Transparency = 0.35 - d.pulse * 0.35
+			d.face.Color = d.pulse > 0.5 and WHITE or c2
+			d.rims[1].CFrame = cf * CFrame.new(-1.1, 0, 0)
+			d.rims[2].CFrame = cf * CFrame.new(1.1, 0, 0)
+			d.rims[1].Size = Vector3.new(0.3, 4.9 * k, 4.9 * k)
+			d.rims[2].Size = d.rims[1].Size
+			-- 앞면의 번개 무늬 (갈지자 셋)
+			for j, sp in ipairs(d.sigil) do
+				sp.CFrame = cf * CFrame.new(-1.38, (j - 2) * 1.1 * k, 0) * CFrame.Angles(math.rad(j == 2 and -30 or 30), 0, 0)
+			end
+			-- 이웃 북을 잇는 번개 줄
+			local nxt = drumPos(ds, i % #ds.drums + 1)
+			nxt = cen:Lerp(nxt, appear)
+			local l = ds.links[i]
+			l.Size = Vector3.new(0.3, 0.3, math.max(0.2, (nxt - pos).Magnitude))
+			l.CFrame = CFrame.lookAt((pos + nxt) / 2, nxt)
+			l.Transparency = 0.25 + math.random() * 0.4
+		end
+		if math.random() < 0.15 then
+			local i = math.random(1, #ds.drums)
+			Fx.lightning(cen, drumPos(ds, i), c, 0.3)
+		end
+	end)
+	Fx.sound("deflect", 1, 0.3, r.Position)
+end
+local function drumBeat(data: any)
+	local ds = drumSets[data.m]
+	local c, c2 = colors(data.style)
+	local at: Vector3 = data.at
+	local from = at + Vector3.new(0, 40, 0)
+	if ds then
+		local d = ds.drums[data.drum or 1]
+		if d then
+			d.pulse = 1
+			from = d.face.CFrame.Position
+			Fx.ring(d.face.CFrame.Position, c2, 2, 12, 0.3, flat(ds.r.CFrame.LookVector))
+		end
+	end
+	if not near(at, 260) then
+		return
+	end
+	local g = ground(at)
+	-- 북에서 적까지 벼락, 땅에 닿는 자리에 짧은 기둥
+	Fx.lightning(from, g, WHITE, 0.8)
+	Fx.lightning(from, g, c, 0.5)
+	local col = column(g, 14, 2, c2, 0.1)
+	fadeOut(col, 0.25, { Size = Vector3.new(14, 0.3, 0.3) })
+	impact(at, data.radius or 7, c, c2, 0.9)
+	-- 북소리: 낮게 둥, 박자가 오를수록 조금씩 높게
+	Fx.sound("heavy", 0.9, 0.45 + (data.i or 1) * 0.02, at)
+	shakeNear(at, 0.5 + (data.i or 1) * 0.03, 90)
+	if data.shock and ds then
+		local rg = ground(ds.r.Position)
+		for k = 0, 2 do
+			task.delay(k * 0.05, function()
+				Fx.ring(rg + Vector3.new(0, 0.4 + k, 0), k == 1 and c2 or c, 3, (data.shockRadius or 13) * 2.2 + k * 4, 0.45)
+			end)
+		end
+		if opts.flash then
+			opts.flash(Color3.fromRGB(235, 225, 255), 0.25)
+		end
+		Fx.sound("shatter", 0.6, 1.1, at)
+	end
+end
+local function drumFinale(data: any)
+	local ds = drumSets[data.m]
+	local c, c2 = colors(data.style)
+	local at: Vector3 = data.at
+	local fall = data.fall or 0.3
+	local from = at + Vector3.new(0, 30, 0)
+	if ds then
+		-- 북이 모두 한가운데로 모이며 빠르게 돈다
+		ds.gather = 0
+		local t0 = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / (fall * 0.8), 0, 1)
+			ds.gather = u
+			for _, d in ipairs(ds.drums) do
+				d.pulse = 1
+			end
+			if u >= 1 then
+				conn:Disconnect()
+			end
+		end)
+		from = (drumCenter(ds))
+		task.delay(fall * 0.8, function()
+			if drumSets[data.m] == ds then
+				drumSets[data.m] = nil
+			end
+		end)
+	end
+	if not near(at, 300) then
+		return
+	end
+	-- 뇌구가 하늘에서 땅으로 떨어진다
+	local orb = part(Vector3.new(9, 9, 9), WHITE, Enum.Material.Neon, 0, "ball")
+	local shell = part(Vector3.new(14, 14, 14), c, Enum.Material.ForceField, 0.1, "ball")
+	orb.CFrame = CFrame.new(from)
+	shell.CFrame = CFrame.new(from)
+	local g = ground(at)
+	task.delay(fall * 0.6, function()
+		tween(orb, fall * 0.4, { CFrame = CFrame.new(g + Vector3.new(0, 2, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(shell, fall * 0.4, { CFrame = CFrame.new(g + Vector3.new(0, 2, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	end)
+	task.delay(fall, function()
+		orb:Destroy()
+		shell:Destroy()
+		local R = data.radius or 26
+		local core = column(g, 200, 5, WHITE, 0)
+		local outer = column(g, 200, R * 0.8, c, 0.3)
+		fadeOut(core, 0.4, { Size = Vector3.new(200, 0.4, 0.4) })
+		fadeOut(outer, 0.7, { Size = Vector3.new(200, R * 1.6, R * 1.6) })
+		local dome = part(Vector3.new(4, 4, 4), c2, Enum.Material.Neon, 0.2, "ball")
+		dome.CFrame = CFrame.new(g)
+		fadeOut(dome, 0.6, { Size = Vector3.new(R * 2.4, R * 1.4, R * 2.4) })
+		for k = 0, 4 do
+			task.delay(k * 0.06, function()
+				Fx.ring(g + Vector3.new(0, 0.4, 0), k % 2 == 0 and c or c2, 4, R * 2.4 + k * 10, 0.8)
+			end)
+		end
+		for k = 1, 12 do
+			local a = (k / 12) * math.pi * 2
+			Fx.lightning(g + Vector3.new(0, 3, 0), g + Vector3.new(math.cos(a) * R * 1.1, 0, math.sin(a) * R * 1.1), k % 2 == 0 and c or c2, 0.8)
+		end
+		Fx.debris(g, 16, 50, Color3.fromRGB(80, 75, 95))
+		Fx.flash(at, c2, 120, 10, 0.8)
+		if opts.flash then
+			opts.flash(WHITE, 0.5)
+		end
+		Fx.sound("shatter", 1, 0.6, at)
+		Fx.sound("heavy", 1, 0.3, at)
+		shakeNear(at, 3, 160)
+	end)
+end
+
 local HANDLERS: { [string]: (any) -> () } = {
 	needleShot = needleShot,
 	needleBurst = needleBurst,
@@ -1611,6 +1833,9 @@ local HANDLERS: { [string]: (any) -> () } = {
 	ballBurst = ballBurst,
 	lockOn = lockOn,
 	judgeBolt = judgeBolt,
+	drumRing = drumRing,
+	drumBeat = drumBeat,
+	drumFinale = drumFinale,
 }
 function Awake3.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil
