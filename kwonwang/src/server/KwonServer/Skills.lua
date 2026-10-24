@@ -1672,8 +1672,22 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+		-- 남은 가시덤불이 한동안 찌른다
+		for i = 1, math.floor((m.linger or 0) / (m.every or 0.3)) do
+			after(m.delay + m.sprout + i * m.every, function()
+				local done = {}
+				for _, at in ipairs(spots) do
+					for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+						if not done[o] then
+							done[o] = true
+							strike(f, o, scaled(m.tick, sc), move)
+						end
+					end
+				end
+			end)
+		end
 		after(m.delay + m.sprout, function()
-			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, style = style })
+			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, linger = (m.linger or 0) / sp, style = style })
 			local done = {}
 			for _, at in ipairs(spots) do
 				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
@@ -1701,6 +1715,15 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 			heal(f, m.heal)
 		end)
+		-- 꽃잎 회오리: 핀 꽃에서 꽃잎이 둘레로 휘몰아쳐 한 번 더 친다
+		if m.wave then
+			after(m.delay + m.wave, function()
+				Push:FireAllClients("skillfx", { kind = "budPetals", at = at, radius = m.waveRadius, style = style })
+				for _, o in ipairs(hostilesNear(f, at, m.waveRadius)) do
+					strike(f, o, scaled(m.waveHit, sc), move)
+				end
+			end)
+		end
 	elseif kind == "treant" then
 		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고, 팔로 휩쓸고, 땅 곳곳에서 뿌리가 솟는다
 		local base = f.root.Position
@@ -1723,6 +1746,20 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+		-- 잎 폭풍: 휩쓴 뒤 나무 정령의 잎이 둘레에 쏟아진다
+		if m.leafTicks then
+			local gap = (m.rootsAt - m.sweepAt - 0.3) / m.leafTicks
+			after(m.sweepAt + 0.2, function()
+				Push:FireAllClients("skillfx", { kind = "leafStorm", at = base, radius = m.leafRadius, dur = (gap * m.leafTicks) / sp, style = style })
+			end)
+			for i = 1, m.leafTicks do
+				after(m.sweepAt + 0.2 + i * gap, function()
+					for _, o in ipairs(hostilesNear(f, base, m.leafRadius)) do
+						strike(f, o, scaled(m.leaf, sc), move)
+					end
+				end)
+			end
+		end
 		after(m.rootsAt, function()
 			local list = nearestList(f, m.rootRange, m.roots)
 			local spots = {}

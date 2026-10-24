@@ -1793,8 +1793,9 @@ end
 ------------------------------------------------------------------------
 local BARK = Color3.fromRGB(92, 66, 44)
 local LEAF = Color3.fromRGB(80, 170, 70)
-local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
+local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3, linger: number?)
 	local g = ground(at)
+	local hold = 0.9 + (linger or 0)
 	-- 가시 여덟이 땅에서 비스듬히 솟는다
 	for k = 1, 8 do
 		local a = k / 8 * math.pi * 2 + math.random() * 0.4
@@ -1804,7 +1805,7 @@ local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
 		tween(thorn, 0.12, { Size = Vector3.new(0.6, 0.6, (tip - g).Magnitude), CFrame = CFrame.lookAt((g + tip) / 2, tip) }, Enum.EasingStyle.Back)
 		local point = part(Vector3.new(0.3, 0.3, 1.2), c2, Enum.Material.Neon, 0)
 		point.CFrame = CFrame.lookAt(tip, tip + (tip - g).Unit)
-		task.delay(0.9, function()
+		task.delay(hold, function()
 			fadeOut(thorn, 0.4, { CFrame = thorn.CFrame * CFrame.new(0, 0, (tip - g).Magnitude * 0.3) })
 			fadeOut(point, 0.3)
 		end)
@@ -1812,7 +1813,15 @@ local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
 	local leaves = part(Vector3.new(1, 1, 1), c, Enum.Material.Grass, 0.1, "ball")
 	leaves.CFrame = CFrame.new(g + Vector3.new(0, 0.8, 0))
 	tween(leaves, 0.15, { Size = Vector3.new(radius * 1.3, radius * 0.6, radius * 1.3) }, Enum.EasingStyle.Back)
-	task.delay(0.9, function()
+	-- 덤불 위로 작은 꽃 셋
+	for k = 1, 3 do
+		local fl = part(Vector3.new(0.8, 0.8, 0.8), k == 2 and Color3.fromRGB(255, 240, 120) or Color3.fromRGB(255, 170, 210), Enum.Material.Neon, 0, "ball")
+		fl.CFrame = CFrame.new(g + Vector3.new(math.cos(k * 2.1) * radius * 0.35, radius * 0.55, math.sin(k * 2.1) * radius * 0.35))
+		task.delay(hold, function()
+			fadeOut(fl, 0.3)
+		end)
+	end
+	task.delay(hold, function()
 		fadeOut(leaves, 0.4)
 	end)
 	Fx.burst("spark", at, c, 10, 1)
@@ -1844,7 +1853,7 @@ local function thornSprout(data: any)
 	local c, c2 = colors(data.style)
 	for _, at in ipairs(data.spots or {}) do
 		if near(at, 200) then
-			thornBush(at, data.radius or 6, c, c2)
+			thornBush(at, data.radius or 6, c, c2, data.linger)
 		end
 	end
 	local first = (data.spots or {})[1]
@@ -1868,7 +1877,7 @@ local function budRise(data: any)
 		return
 	end
 	local c, c2 = colors(data.style)
-	local R = (data.radius or 14) * 0.55
+	local R = (data.radius or 16) * 0.65
 	local g = ground(at)
 	local key = keyOf(at)
 	local stem = part(Vector3.new(R * 0.9, 1.2, 1.2), Color3.fromRGB(70, 140, 60), Enum.Material.SmoothPlastic, 0, "cyl")
@@ -1961,8 +1970,8 @@ local function treantRise(data: any)
 	end
 	local c, c2 = colors(data.style)
 	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
-	local S = 3
-	local g = ground(at) - dir * 12
+	local S = 3.6
+	local g = ground(at) - dir * 14
 	local face = CFrame.lookAt(g, g + dir)
 	local pieces: { TPiece } = {}
 	local function add(limb: string, size: Vector3, off: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?)
@@ -2114,6 +2123,62 @@ local function treantRoots(data: any)
 	end
 	local _ = c2
 end
+
+-- 개화의 꽃잎 회오리: 핀 꽃에서 꽃잎 수십 장이 나선으로 둘레에 휘몰아친다
+local function budPetals(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = data.radius or 22
+	local g = ground(at)
+	for k = 1, 28 do
+		local a0 = k / 28 * math.pi * 2
+		local p = part(Vector3.new(1.4, 0.12, 0.9), k % 3 == 0 and c2 or PETAL, Enum.Material.SmoothPlastic, 0, "ball")
+		local t0 = os.clock()
+		local life = 0.55
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / life, 0, 1)
+			local a = a0 + u * 3
+			local r = 2 + (R - 2) * u
+			p.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * r, 3 + math.sin(u * math.pi) * 4, math.sin(a) * r)) * CFrame.Angles(u * 9, a, u * 5)
+			p.Transparency = u * u
+			if u >= 1 then
+				conn:Disconnect()
+				p:Destroy()
+			end
+		end)
+	end
+	Fx.ring(g + Vector3.new(0, 0.4, 0), PETAL, 3, R * 2.2, 0.5)
+	Fx.sound("swing", 0.9, 1.1, at)
+	local _ = c
+end
+-- 목령강림의 잎 폭풍: 둘레에 큰 잎이 소용돌이치며 쏟아진다
+local function leafStorm(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 240) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = data.radius or 22
+	local dur = data.dur or 0.8
+	local g = ground(at)
+	local n = 36
+	for k = 1, n do
+		task.delay((k / n) * dur, function()
+			local a = math.random() * math.pi * 2
+			local r = math.random() * R
+			local top = g + Vector3.new(math.cos(a) * r, 24, math.sin(a) * r)
+			local leaf = part(Vector3.new(1.8, 0.14, 1.1), k % 2 == 0 and LEAF or c, Enum.Material.SmoothPlastic, 0, "ball")
+			leaf.CFrame = CFrame.new(top) * CFrame.Angles(math.random() * 3, math.random() * 3, 0)
+			fadeOut(leaf, 0.6, { CFrame = CFrame.new(top - Vector3.new(math.sin(a) * 6, 23, -math.cos(a) * 6)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0) })
+		end)
+	end
+	Fx.ring(g + Vector3.new(0, 0.4, 0), c2, 2, R * 2.2, dur)
+	Fx.sound("swing", 0.8, 0.7, at)
+end
 -- 만목신권 생장 (네 번째 맞힘): 상대 자리의 가시덤불
 local function thornPulse(data: any)
 	if near(data.at, 200) then
@@ -2181,6 +2246,8 @@ local HANDLERS: { [string]: (any) -> () } = {
 	treantSweep = treantSweep,
 	treantRoots = treantRoots,
 	thornPulse = thornPulse,
+	budPetals = budPetals,
+	leafStorm = leafStorm,
 }
 function Awake3.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil

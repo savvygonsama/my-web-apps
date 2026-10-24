@@ -155,15 +155,16 @@ function Config.realmPower(idx: number): number
 end
 -- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
 function Config.realmDmg(idx: number): number
-	return Config.realmPower(math.min(idx, 16)) * 1.08 ^ math.max(0, idx - 16)
+	return Config.realmPower(math.min(idx, 16)) * 1.1 ^ math.max(0, idx - 16)
 end
 -- 1.8판: 후반 경지의 공격력 (피해에만 곱한다). 능력치가 로그로 자라 후반에 주먹이 너무 가벼웠다
 -- 생사경 ×1.5 · 신화경 ×2.2 · 천인합일 ×3 · 무극 ×4 · 반선 ×5.5 · 등선 ×7 · 천외천 ×9
 -- (1.9판: 혼원경 ×11 · 무량경 ×13.5 · 태허경 ×16.5 · 권왕 ×20)
--- 2.4.1판: 후반 공격력 배율을 아주 작게 (공격력 자체가 너무 세서 다 한 방이었다): 생사경 ×1.1 · 무극 ×1.45 · 천외천 ×2, 그 너머는 더 오르지 않는다
-Config.LATE_ATK = { [10] = 1.1, [11] = 1.2, [12] = 1.3, [13] = 1.45, [14] = 1.6, [15] = 1.8, [16] = 2, [17] = 2, [18] = 2, [19] = 2, [20] = 2 }
+-- 2.4.1판: 후반 공격력 배율을 아주 작게 (공격력 자체가 너무 세서 다 한 방이었다). 2.5판: 아주 조금 올렸다 (약 +10%)
+-- 생사경 ×1.2 · 무극 ×1.6 · 천외천 ×2.2, 그 너머는 더 오르지 않는다
+Config.LATE_ATK = { [10] = 1.2, [11] = 1.3, [12] = 1.45, [13] = 1.6, [14] = 1.75, [15] = 1.95, [16] = 2.2, [17] = 2.2, [18] = 2.2, [19] = 2.2, [20] = 2.2 }
 function Config.lateAtk(idx: number): number
-	return Config.LATE_ATK[idx] or (idx > 20 and 2 or 1)
+	return Config.LATE_ATK[idx] or (idx > 20 and 2.2 or 1)
 end
 
 -- cap: 오를 수 있는 가장 높은 경지 (환생으로 열린 만큼). 없으면 끝까지
@@ -1454,7 +1455,8 @@ end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
 Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0, ["초월"] = 3.6 }
+-- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["초월"] = 3.1 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1712,21 +1714,21 @@ table.insert(Config.Styles, {
 	postureMult = 1.4,
 	speed = 1.0,
 	pulse = { every = 4, kind = "bloom", radius = 10, delay = 0.3, name = "가시덤불", dmg = 32, posture = 34, stun = 0.8, kb = 10, up = 6 },
-	stance = "stance_taeheo",
+	stance = "stance_wood",
 	combo = {
-		{ id = "mm1", name = "새싹장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
-		{ id = "mm2", name = "덩굴장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
-		{ id = "mm3", name = "풍엽각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 5, 6.5, 20, 20, 0.45, 16, nil, true) } },
-		{ id = "mm4", name = "고목권", pose = "double_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 28, 32, 0.6, 34) } },
+		{ id = "mm1", name = "새싹장", pose = "wood_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm2", name = "덩굴장", pose = "wood_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm3", name = "뿌리 쓸기", pose = "wood_sweep", dur = 0.5, lunge = 1, hits = { hit(0.28, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+		{ id = "mm4", name = "고목권", pose = "wood_palm_r", dur = 0.48, lunge = 5, hits = { hit(0.22, 8, 6, 30, 34, 0.6, 38) } },
 	},
-	heavy = { id = "mmH", name = "천년근", pose = "grav_hammer", dur = 0.75, lunge = 3, hits = { hit(0.38, 10, 7, 50, 76, 1.0, 50, 8, true) } },
+	heavy = { id = "mmH", name = "천년근", pose = "wood_slam", dur = 0.75, lunge = 2, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
 	skills = {
-		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 다섯을 부채꼴로 튕긴다. 씨앗이 땅이나 적에 박혔다가 가시덤불로 터져 둘레를 묶는다", pose = "push_palm", dur = 0.5, cd = 8, chi = 20,
-			mech = { kind = "seedBurst", n = 5, spread = 60, dist = 16, range = 24, delay = 0.18, sprout = 0.5, radius = 6, root = 0.9, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10) } },
-		R = { id = "mmR", name = "개화", desc = "앞의 땅에서 거대한 꽃봉오리가 솟는다. 봉오리가 활짝 피는 순간 꽃가루가 터져 둘레의 적이 2초 동안 잠들고, 나는 체력을 되찾는다", pose = "point_sky", dur = 0.9, cd = 12, chi = 30,
-			mech = { kind = "bloomBud", dist = 10, radius = 14, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12) } },
-		G = { id = "mmG", name = "목령강림", desc = "등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 앞을 주먹으로 내리치고, 팔로 크게 휩쓴 뒤, 땅 곳곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력을 되찾는다", pose = "ult_origin", dur = 2.4, cd = 32, chi = 100, armor = true,
-			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 15, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 30, sweepAngle = 140, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), rootsAt = 2.4, roots = 10, rootRange = 30, rootRadius = 6, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
+		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 일곱을 부채꼴로 튕긴다. 씨앗이 적의 몸이나 땅에 박혔다가 가시덤불로 터져 묶고, 덤불은 1.5초 동안 남아 찌른다", pose = "wood_flick", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "seedBurst", n = 7, spread = 70, dist = 18, range = 26, delay = 0.18, sprout = 0.45, radius = 6.5, root = 1.1, linger = 1.5, every = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10), tick = hit(0, 0, 0, 8, 6, 0.2, 0) } },
+		R = { id = "mmR", name = "개화", desc = "웅크렸다가 꽃이 피듯 일어선다. 앞의 땅에서 거대한 꽃봉오리가 솟아 활짝 피며 꽃가루가 터져 둘레의 적이 2초 동안 잠든다. 이어 꽃잎이 회오리치며 날아가 한 번 더 친다. 나는 체력 8%를 되찾는다", pose = "wood_bloom", dur = 0.9, cd = 12, chi = 30,
+			mech = { kind = "bloomBud", dist = 10, radius = 16, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12), wave = 0.4, waveRadius = 22, waveHit = hit(0, 0, 0, 30, 30, 0.4, 40, 8) } },
+		G = { id = "mmG", name = "목령강림", desc = "무릎을 꿇고 땅에 손을 대면, 등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 주먹으로 앞을 내리치고, 몸을 돌려 팔로 휩쓸고, 잎 폭풍을 일으킨 뒤, 두 팔로 땅을 쳐 열 곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력 10%를 되찾는다", pose = "ult_wood", dur = 2.4, cd = 32, chi = 100, armor = true,
+			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 16, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 32, sweepAngle = 150, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), leafTicks = 4, leafRadius = 22, leaf = hit(0, 0, 0, 12, 10, 0.2, 0), rootsAt = 2.6, roots = 10, rootRange = 32, rootRadius = 6.5, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
 	},
 })
 
@@ -1832,9 +1834,14 @@ Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18,
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000, 500000, 500000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
-Config.MASTERY_MAX = 10
+-- 2.5판: 숙련은 20까지 (각성·승급은 그대로 숙련 10에서). 11부터는 레벨마다 피해 +1%, 오르기는 점점 더디다
+Config.MASTERY_MAX = 20
+Config.MASTERY_FULL = 10
 function Config.masteryNeed(level: number): number
-	return math.floor(40 * level ^ 1.5)
+	return math.floor(40 * level ^ 1.5 * (1 + 0.35 * math.max(0, level - 10)))
+end
+function Config.masteryDmg(lv: number): number
+	return 1 + 0.03 * (math.min(lv, 10) - 1) + 0.01 * math.max(0, lv - 10)
 end
 Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
@@ -2887,7 +2894,37 @@ Config.SKY_SHOP = {
 	{ id = "skyelixir", name = "천상 영약", icon = "✨", cost = 30, desc = "10분 동안 주는 피해 +15%" },
 	{ id = "skypill", name = "천정단", icon = "💎", cost = 150, desc = "모든 능력치 +800" },
 	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것 (은자 대신 천정으로)" },
+	{ id = "wine", name = "선로주", icon = "🍶", cost = 120, desc = "천상의 이슬로 빚은 술 (초·취팔선권의 재료)" },
 }
+-- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
+--   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
+--   선로주: 천궁 상점에서 천정으로 빚는다
+--   혈월정: 밤에만, 천상계 어디서든 적이 떨어뜨린다 (보스는 여럿)
+--   뇌정석: 천상계의 보스만 떨어뜨린다 (뇌제는 더 많이)
+Config.SKY_MATS = {
+	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 한 무더기)", island = "crane", chance = 0.35, boss = 12 },
+	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
+	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 여럿)", night = true, chance = 0.25, boss = 6 },
+	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (뇌제는 더 많이)", bossOnly = 3, bossBonus = { noeje = 8 } },
+}
+Config.SKY_MAT_BY_ID = {}
+for _, m in ipairs(Config.SKY_MATS) do
+	Config.SKY_MAT_BY_ID[m.id] = m
+end
+-- 초월 권법의 조건: 원래 권법 숙련 20 + 각성 권법 숙련 20 (그 권법의 각성이 없으면 아무 각성 권법) + 천상 재료 (시련에 한 번, 배울 때 한 번)
+Config.TRANSCEND_REQ = {
+	chomaehwa = { base = "maehwa", awakened = "any", lv = 20, challenge = { petal = 15 }, learn = { petal = 30 } },
+	chochwi = { base = "chwi", awakened = "any", lv = 20, challenge = { wine = 2 }, learn = { wine = 4 } },
+	chohyeolma = { base = "hyeolma", awakened = "hyeolma2", lv = 20, challenge = { bloodmoon = 12 }, learn = { bloodmoon = 24 } },
+	chobyeok = { base = "byeokryeok", awakened = "byeokryeok2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
+}
+for sid, R in pairs(Config.TRANSCEND_REQ) do
+	for _, st in ipairs(Config.Styles) do
+		if st.id == sid then
+			st.unlockHint = (st.unlockHint or "") .. string.format(". 그리고 원래 권법과 각성 권법(진)을 숙련 %d까지, 천상계에서만 나는 재료를 모아야 한다", R.lv)
+		end
+	end
+end
 Config.SKY_SHOP_BY_ID = {}
 for _, it in ipairs(Config.SKY_SHOP) do
 	Config.SKY_SHOP_BY_ID[it.id] = it

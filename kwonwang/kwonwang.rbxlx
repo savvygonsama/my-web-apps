@@ -175,15 +175,16 @@ function Config.realmPower(idx: number): number
 end
 -- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
 function Config.realmDmg(idx: number): number
-	return Config.realmPower(math.min(idx, 16)) * 1.08 ^ math.max(0, idx - 16)
+	return Config.realmPower(math.min(idx, 16)) * 1.1 ^ math.max(0, idx - 16)
 end
 -- 1.8판: 후반 경지의 공격력 (피해에만 곱한다). 능력치가 로그로 자라 후반에 주먹이 너무 가벼웠다
 -- 생사경 ×1.5 · 신화경 ×2.2 · 천인합일 ×3 · 무극 ×4 · 반선 ×5.5 · 등선 ×7 · 천외천 ×9
 -- (1.9판: 혼원경 ×11 · 무량경 ×13.5 · 태허경 ×16.5 · 권왕 ×20)
--- 2.4.1판: 후반 공격력 배율을 아주 작게 (공격력 자체가 너무 세서 다 한 방이었다): 생사경 ×1.1 · 무극 ×1.45 · 천외천 ×2, 그 너머는 더 오르지 않는다
-Config.LATE_ATK = { [10] = 1.1, [11] = 1.2, [12] = 1.3, [13] = 1.45, [14] = 1.6, [15] = 1.8, [16] = 2, [17] = 2, [18] = 2, [19] = 2, [20] = 2 }
+-- 2.4.1판: 후반 공격력 배율을 아주 작게 (공격력 자체가 너무 세서 다 한 방이었다). 2.5판: 아주 조금 올렸다 (약 +10%)
+-- 생사경 ×1.2 · 무극 ×1.6 · 천외천 ×2.2, 그 너머는 더 오르지 않는다
+Config.LATE_ATK = { [10] = 1.2, [11] = 1.3, [12] = 1.45, [13] = 1.6, [14] = 1.75, [15] = 1.95, [16] = 2.2, [17] = 2.2, [18] = 2.2, [19] = 2.2, [20] = 2.2 }
 function Config.lateAtk(idx: number): number
-	return Config.LATE_ATK[idx] or (idx > 20 and 2 or 1)
+	return Config.LATE_ATK[idx] or (idx > 20 and 2.2 or 1)
 end
 
 -- cap: 오를 수 있는 가장 높은 경지 (환생으로 열린 만큼). 없으면 끝까지
@@ -1474,7 +1475,8 @@ end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
 Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.9, ["천외천"] = 2.25, ["태초"] = 2.6, ["지존"] = 3.0, ["초월"] = 3.6 }
+-- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["초월"] = 3.1 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1732,21 +1734,21 @@ table.insert(Config.Styles, {
 	postureMult = 1.4,
 	speed = 1.0,
 	pulse = { every = 4, kind = "bloom", radius = 10, delay = 0.3, name = "가시덤불", dmg = 32, posture = 34, stun = 0.8, kb = 10, up = 6 },
-	stance = "stance_taeheo",
+	stance = "stance_wood",
 	combo = {
-		{ id = "mm1", name = "새싹장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
-		{ id = "mm2", name = "덩굴장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
-		{ id = "mm3", name = "풍엽각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 5, 6.5, 20, 20, 0.45, 16, nil, true) } },
-		{ id = "mm4", name = "고목권", pose = "double_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 28, 32, 0.6, 34) } },
+		{ id = "mm1", name = "새싹장", pose = "wood_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm2", name = "덩굴장", pose = "wood_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm3", name = "뿌리 쓸기", pose = "wood_sweep", dur = 0.5, lunge = 1, hits = { hit(0.28, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+		{ id = "mm4", name = "고목권", pose = "wood_palm_r", dur = 0.48, lunge = 5, hits = { hit(0.22, 8, 6, 30, 34, 0.6, 38) } },
 	},
-	heavy = { id = "mmH", name = "천년근", pose = "grav_hammer", dur = 0.75, lunge = 3, hits = { hit(0.38, 10, 7, 50, 76, 1.0, 50, 8, true) } },
+	heavy = { id = "mmH", name = "천년근", pose = "wood_slam", dur = 0.75, lunge = 2, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
 	skills = {
-		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 다섯을 부채꼴로 튕긴다. 씨앗이 땅이나 적에 박혔다가 가시덤불로 터져 둘레를 묶는다", pose = "push_palm", dur = 0.5, cd = 8, chi = 20,
-			mech = { kind = "seedBurst", n = 5, spread = 60, dist = 16, range = 24, delay = 0.18, sprout = 0.5, radius = 6, root = 0.9, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10) } },
-		R = { id = "mmR", name = "개화", desc = "앞의 땅에서 거대한 꽃봉오리가 솟는다. 봉오리가 활짝 피는 순간 꽃가루가 터져 둘레의 적이 2초 동안 잠들고, 나는 체력을 되찾는다", pose = "point_sky", dur = 0.9, cd = 12, chi = 30,
-			mech = { kind = "bloomBud", dist = 10, radius = 14, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12) } },
-		G = { id = "mmG", name = "목령강림", desc = "등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 앞을 주먹으로 내리치고, 팔로 크게 휩쓴 뒤, 땅 곳곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력을 되찾는다", pose = "ult_origin", dur = 2.4, cd = 32, chi = 100, armor = true,
-			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 15, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 30, sweepAngle = 140, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), rootsAt = 2.4, roots = 10, rootRange = 30, rootRadius = 6, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
+		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 일곱을 부채꼴로 튕긴다. 씨앗이 적의 몸이나 땅에 박혔다가 가시덤불로 터져 묶고, 덤불은 1.5초 동안 남아 찌른다", pose = "wood_flick", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "seedBurst", n = 7, spread = 70, dist = 18, range = 26, delay = 0.18, sprout = 0.45, radius = 6.5, root = 1.1, linger = 1.5, every = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10), tick = hit(0, 0, 0, 8, 6, 0.2, 0) } },
+		R = { id = "mmR", name = "개화", desc = "웅크렸다가 꽃이 피듯 일어선다. 앞의 땅에서 거대한 꽃봉오리가 솟아 활짝 피며 꽃가루가 터져 둘레의 적이 2초 동안 잠든다. 이어 꽃잎이 회오리치며 날아가 한 번 더 친다. 나는 체력 8%를 되찾는다", pose = "wood_bloom", dur = 0.9, cd = 12, chi = 30,
+			mech = { kind = "bloomBud", dist = 10, radius = 16, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12), wave = 0.4, waveRadius = 22, waveHit = hit(0, 0, 0, 30, 30, 0.4, 40, 8) } },
+		G = { id = "mmG", name = "목령강림", desc = "무릎을 꿇고 땅에 손을 대면, 등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 주먹으로 앞을 내리치고, 몸을 돌려 팔로 휩쓸고, 잎 폭풍을 일으킨 뒤, 두 팔로 땅을 쳐 열 곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력 10%를 되찾는다", pose = "ult_wood", dur = 2.4, cd = 32, chi = 100, armor = true,
+			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 16, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 32, sweepAngle = 150, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), leafTicks = 4, leafRadius = 22, leaf = hit(0, 0, 0, 12, 10, 0.2, 0), rootsAt = 2.6, roots = 10, rootRange = 32, rootRadius = 6.5, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
 	},
 })
 
@@ -1852,9 +1854,14 @@ Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18,
 Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000, 500000, 500000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
-Config.MASTERY_MAX = 10
+-- 2.5판: 숙련은 20까지 (각성·승급은 그대로 숙련 10에서). 11부터는 레벨마다 피해 +1%, 오르기는 점점 더디다
+Config.MASTERY_MAX = 20
+Config.MASTERY_FULL = 10
 function Config.masteryNeed(level: number): number
-	return math.floor(40 * level ^ 1.5)
+	return math.floor(40 * level ^ 1.5 * (1 + 0.35 * math.max(0, level - 10)))
+end
+function Config.masteryDmg(lv: number): number
+	return 1 + 0.03 * (math.min(lv, 10) - 1) + 0.01 * math.max(0, lv - 10)
 end
 Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 -- 초 오의 (초월 권법의 X): 오의보다 이만큼 더 세다
@@ -2907,7 +2914,37 @@ Config.SKY_SHOP = {
 	{ id = "skyelixir", name = "천상 영약", icon = "✨", cost = 30, desc = "10분 동안 주는 피해 +15%" },
 	{ id = "skypill", name = "천정단", icon = "💎", cost = 150, desc = "모든 능력치 +800" },
 	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것 (은자 대신 천정으로)" },
+	{ id = "wine", name = "선로주", icon = "🍶", cost = 120, desc = "천상의 이슬로 빚은 술 (초·취팔선권의 재료)" },
 }
+-- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
+--   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
+--   선로주: 천궁 상점에서 천정으로 빚는다
+--   혈월정: 밤에만, 천상계 어디서든 적이 떨어뜨린다 (보스는 여럿)
+--   뇌정석: 천상계의 보스만 떨어뜨린다 (뇌제는 더 많이)
+Config.SKY_MATS = {
+	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 한 무더기)", island = "crane", chance = 0.35, boss = 12 },
+	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
+	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 여럿)", night = true, chance = 0.25, boss = 6 },
+	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (뇌제는 더 많이)", bossOnly = 3, bossBonus = { noeje = 8 } },
+}
+Config.SKY_MAT_BY_ID = {}
+for _, m in ipairs(Config.SKY_MATS) do
+	Config.SKY_MAT_BY_ID[m.id] = m
+end
+-- 초월 권법의 조건: 원래 권법 숙련 20 + 각성 권법 숙련 20 (그 권법의 각성이 없으면 아무 각성 권법) + 천상 재료 (시련에 한 번, 배울 때 한 번)
+Config.TRANSCEND_REQ = {
+	chomaehwa = { base = "maehwa", awakened = "any", lv = 20, challenge = { petal = 15 }, learn = { petal = 30 } },
+	chochwi = { base = "chwi", awakened = "any", lv = 20, challenge = { wine = 2 }, learn = { wine = 4 } },
+	chohyeolma = { base = "hyeolma", awakened = "hyeolma2", lv = 20, challenge = { bloodmoon = 12 }, learn = { bloodmoon = 24 } },
+	chobyeok = { base = "byeokryeok", awakened = "byeokryeok2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
+}
+for sid, R in pairs(Config.TRANSCEND_REQ) do
+	for _, st in ipairs(Config.Styles) do
+		if st.id == sid then
+			st.unlockHint = (st.unlockHint or "") .. string.format(". 그리고 원래 권법과 각성 권법(진)을 숙련 %d까지, 천상계에서만 나는 재료를 모아야 한다", R.lv)
+		end
+	end
+end
 Config.SKY_SHOP_BY_ID = {}
 for _, it in ipairs(Config.SKY_SHOP) do
 	Config.SKY_SHOP_BY_ID[it.id] = it
@@ -3246,12 +3283,15 @@ Poses.stances = {
 	stance_soju = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 } },
 	-- 초·혈마: 짐승처럼 웅크려 오른손의 큰 낫을 머리 위로 치켜들고 (날이 앞으로 드리운다), 왼손 손톱을 낮게 벌린다
 	stance_reaper = { W = { -20, -25, 0 }, N = { 18, 25, 0 }, RS = { 150, 0, 35 }, RE = { 70, 0, 0 }, LS = { 55, 0, -40 }, LE = { 50, 0, 0 } },
+	-- 2.5판 만목: 뿌리내린 나무처럼. 오른손은 가지처럼 위로 펴고, 왼손은 앞으로 낮게 내민다
+	stance_wood = { W = { 5, -15, 0 }, N = { 0, 15, 0 }, RS = { 125, 0, 30 }, RE = { 35, 0, 0 }, LS = { 55, 0, -25 }, LE = { 45, 0, 0 } },
 	-- 적: 무기를 쥐고
 	stance_weapon = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 35, 0, 15 }, RE = { 60, 0, 0 }, LS = { 25, 0, -15 }, LE = { 50, 0, 0 } },
 	stance_spear = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 30, 0, 20 }, RE = { 70, 0, 0 }, LS = { 65, 0, -10 }, LE = { 30, 0, 0 } },
 }
 -- 자세마다 다리 (서 있을 때만)
 Poses.stanceLegs = {
+	stance_wood = { RH = { -22, 0, 22 }, LH = { 26, 0, -22 }, RK = { -55, 0, 0 }, LK = { -50, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } },
 	stance_base = { RH = { -15, 0, 8 }, LH = { 20, 0, -6 }, RK = { -25, 0, 0 }, LK = { -25, 0, 0 }, R = { -4, 0, 0, 0, -0.5, 0 } },
 	stance_taeheo = { RH = { -20, 0, 12 }, LH = { 28, 0, -8 }, RK = { -45, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } },
 	stance_geumgang = { RH = { 0, 0, 32 }, LH = { 0, 0, -32 }, RK = { -55, 0, 0 }, LK = { -55, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } },
@@ -4863,10 +4903,51 @@ A.reap_rise = {
 	{ t = 1, j = reapEnd(-360) },
 }
 
+
+-- 2.5판 만목신권: 뿌리내린 장 (두 발을 땅에 박고 몸을 틀어 밀어낸다)
+A.wood_palm_r = {
+	{ t = 0, j = { W = { 0, -40, 0 }, N = { 0, 30, 0 }, RS = { 30, 0, 40 }, RE = { 110, 0, 0 }, LS = { 60, 0, -20 }, LE = { 60, 0, 0 }, RH = { -20, 0, 15 }, LH = { 25, 0, -15 }, RK = { -50, 0, 0 }, LK = { -45, 0, 0 }, R = { 0, 0, 0, 0, -1.2, 0.4 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 40, 0 }, N = { 0, -30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 100, 0, 0 }, RH = { -30, 0, 15 }, LH = { 35, 0, -15 }, RK = { -40, 0, 0 }, LK = { -55, 0, 0 }, R = { -10, 0, 0, 0, -1.3, -1.0 } } },
+	{ t = 1, j = { RS = { 70, 0, 10 }, RE = { 40, 0, 0 }, LS = { 50, 0, -20 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -1.2, -0.4 } } },
+}
+A.wood_palm_l = mirror(A.wood_palm_r)
+-- 낮게 앉아 다리로 땅을 쓸며 한 바퀴 (뿌리 쓸기)
+A.wood_sweep = {
+	{ t = 0, j = { R = { 0, 0, 0, 0, -1.6, 0 }, RH = { 40, 0, 40 }, RK = { -10, 0, 0 }, LH = { -10, 0, -10 }, LK = { -90, 0, 0 }, RS = { 40, 0, 60 }, LS = { 40, 0, -60 } } },
+	{ t = 0.5, j = { R = { 0, -200, 0, 0, -1.8, 0 }, RH = { 80, 0, 60 }, RK = { 0, 0, 0 }, LK = { -100, 0, 0 }, RS = { 30, 0, 70 }, LS = { 30, 0, -70 } } },
+	{ t = 0.8, e = "snap", j = { R = { 0, -360, 0, 0, -1.8, 0 }, RH = { 60, 0, 50 }, LK = { -100, 0, 0 } } },
+	{ t = 1, j = { R = { 0, -360, 0, 0, -1.2, 0 }, RH = { 0, 0, 10 }, RK = { -30, 0, 0 }, LK = { -40, 0, 0 }, RS = { 60, 0, 20 }, LS = { 60, 0, -20 } } },
+}
+-- 두 주먹을 머리 위로 모았다가 땅을 내리친다 (천년근)
+A.wood_slam = {
+	{ t = 0, j = { W = { -15, 0, 0 }, N = { 15, 0, 0 }, RS = { 170, 0, 15 }, RE = { 20, 0, 0 }, LS = { 170, 0, -15 }, LE = { 20, 0, 0 }, R = { 10, 0, 0, 0, 0.2, 0.3 } } },
+	{ t = 0.45, e = "snap", j = { W = { 40, 0, 0 }, N = { -20, 0, 0 }, RS = { 60, 0, 10 }, RE = { 0, 0, 0 }, LS = { 60, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 0 }, LH = { 40, 0, 0 }, RK = { -90, 0, 0 }, LK = { -60, 0, 0 }, R = { -30, 0, 0, 0, -1.6, -0.8 } } },
+	{ t = 1, j = { W = { 10, 0, 0 }, RS = { 60, 0, 15 }, LS = { 60, 0, -15 }, RK = { -40, 0, 0 }, LK = { -40, 0, 0 }, R = { -5, 0, 0, 0, -1.0, -0.4 } } },
+}
+-- 몸을 틀며 손끝으로 씨앗을 부채꼴로 튕긴다
+A.wood_flick = {
+	{ t = 0, j = { W = { 0, -60, 0 }, N = { 0, 40, 0 }, RS = { 40, 0, -30 }, RE = { 100, 0, 0 }, LS = { 30, 0, -30 }, LE = { 80, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0.2 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 50, 0 }, N = { 0, -30, 0 }, RS = { 90, 0, 60 }, RE = { 10, 0, 0 }, LS = { 40, 0, -40 }, LE = { 90, 0, 0 }, RH = { 20, 0, 0 }, RK = { -30, 0, 0 }, R = { -5, 0, 0, 0, -1.0, -0.6 } } },
+	{ t = 1, j = { RS = { 70, 0, 40 }, RE = { 30, 0, 0 }, LS = { 50, 0, -25 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, -0.3 } } },
+}
+-- 웅크려 두 손을 모았다가 꽃이 피듯 일어서며 두 팔을 하늘로 활짝 편다
+A.wood_bloom = {
+	{ t = 0, j = { W = { 30, 0, 0 }, N = { -10, 0, 0 }, RS = { 60, 0, -20 }, RE = { 60, 0, 0 }, LS = { 60, 0, 20 }, LE = { 60, 0, 0 }, RH = { 60, 0, 0 }, LH = { 60, 0, 0 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { 0, 0, 0, 0, -1.8, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { -15, 0, 0 }, N = { 25, 0, 0 }, RS = { 165, 0, 45 }, RE = { 0, 0, 0 }, LS = { 165, 0, -45 }, LE = { 0, 0, 0 }, RH = { 0, 0, 0 }, LH = { 0, 0, 0 }, RK = { -5, 0, 0 }, LK = { -5, 0, 0 }, R = { 0, 0, 0, 0, 0.3, 0 } } },
+	{ t = 1, j = { RS = { 140, 0, 40 }, LS = { 140, 0, -40 }, R = { 0, 0, 0, 0, 0, 0 } } },
+}
+-- 목령강림: 한 무릎을 꿇고 두 손바닥을 땅에 댔다가, 나무가 솟듯 일어서며 두 팔을 넓게 펼친다
+A.ult_wood = {
+	{ t = 0, j = { W = { 40, 0, 0 }, N = { -10, 0, 0 }, RS = { 80, 0, 10 }, RE = { 20, 0, 0 }, LS = { 80, 0, -10 }, LE = { 20, 0, 0 }, RH = { 90, 0, 0 }, RK = { -90, 0, 0 }, LH = { -20, 0, 0 }, LK = { -110, 0, 0 }, R = { 0, 0, 0, 0, -1.8, 0 } } },
+	{ t = 0.35, j = { W = { 50, 0, 0 }, N = { -15, 0, 0 }, RS = { 60, 0, 10 }, LS = { 60, 0, -10 }, RH = { 90, 0, 0 }, RK = { -90, 0, 0 }, LH = { -20, 0, 0 }, LK = { -115, 0, 0 }, R = { 0, 0, 0, 0, -2.0, 0 } } },
+	{ t = 0.7, e = "snap", j = { W = { -20, 0, 0 }, N = { 30, 0, 0 }, RS = { 170, 0, 70 }, RE = { 0, 0, 0 }, LS = { 170, 0, -70 }, LE = { 0, 0, 0 }, RH = { 0, 0, 0 }, LH = { 0, 0, 0 }, RK = { -10, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, 0, 0, 0, 0.8, 0 } } },
+	{ t = 1, j = { RS = { 160, 0, 60 }, LS = { 160, 0, -60 }, R = { 0, 0, 0, 0, 0.5, 0 } } },
+}
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
 Poses.limbs = {
+	wood_palm_r = { "RightHand" }, wood_palm_l = { "LeftHand" }, wood_sweep = { "RightFoot" }, wood_slam = { "RightHand", "LeftHand" }, wood_flick = { "RightHand" }, wood_bloom = { "RightHand", "LeftHand" }, ult_wood = { "RightHand", "LeftHand" },
 	palm_r = { "RightHand" }, palm_l = { "LeftHand" }, circle_palm = { "RightHand" }, double_palm = { "RightHand", "LeftHand" },
 	push_palm = { "RightHand" }, whirl = { "RightHand", "LeftHand" }, ult_raise = { "RightHand", "LeftHand" },
 	punch_r_heavy = { "RightHand" }, punch_l_heavy = { "LeftHand" }, punch_r = { "RightHand" }, jab_r = { "RightHand" }, jab_l = { "LeftHand" },
@@ -5011,6 +5092,7 @@ type Profile = {
 	mounts: { [string]: boolean }, -- 가진 탈것
 	mountSel: string, -- 고른 탈것
 	skyGems: number, -- 천정 (천상계 화폐)
+	mats: { [string]: number }, -- 2.5판: 천상 재료 (초월 권법)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	ach: { [string]: boolean }, -- 이룬 업적
@@ -5048,6 +5130,7 @@ local function defaultProfile(): Profile
 		mounts = { horse = true },
 		mountSel = "horse",
 		skyGems = 0,
+		mats = {},
 		skyBuffUntil = 0,
 		rebirth = 0,
 		ach = {},
@@ -5155,6 +5238,13 @@ local function sanitize(data: any): Profile
 	end)
 	p.mounts.horse = true
 	p.skyGems = math.floor(num(data.skyGems, 1e9))
+	if type(data.mats) == "table" then
+		for id, n in pairs(data.mats) do
+			if type(id) == "string" and Config.SKY_MAT_BY_ID[id] and type(n) == "number" then
+				p.mats[id] = math.floor(num(n, 1e6))
+			end
+		end
+	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
@@ -5412,7 +5502,7 @@ function Ach.value(p: Profile, a: any): number
 	elseif k == "mastery" then
 		local n = 0
 		for id, m in pairs(p.mastery) do
-			if p.styles[id] and m.lv >= Config.MASTERY_MAX then
+			if p.styles[id] and m.lv >= Config.MASTERY_FULL then
 				n += 1
 			end
 		end
@@ -5510,6 +5600,7 @@ local function pushState(player: Player)
 		mounts = p.mounts,
 		mountSel = p.mountSel,
 		skyGems = p.skyGems,
+		mats = p.mats,
 		skyBuffLeft = math.max(0, p.skyBuffUntil - os.time()),
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
@@ -5636,7 +5727,7 @@ local function refreshFighter(player: Player)
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
+	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
@@ -5919,6 +6010,55 @@ local Train: any
 local Tower: any
 local Maze: any = {}
 local Raid: any = {}
+-- 2.5판: 초월 권법의 조건 (원래 권법 숙련 20 · 각성 권법 숙련 20 · 천상 재료). stage = "challenge" (시련) / "learn" (배우기)
+local function matList(need: { [string]: number }): string
+	local out = {}
+	for id, n in pairs(need) do
+		local M = Config.SKY_MAT_BY_ID[id]
+		table.insert(out, (M and (M.icon .. " " .. M.name) or id) .. " " .. n)
+	end
+	return table.concat(out, " · ")
+end
+local function transcendCheck(p: Profile, styleId: string, stage: string): (boolean, string)
+	local R = Config.TRANSCEND_REQ[styleId]
+	if not R then
+		return true, ""
+	end
+	local base = Config.STYLE_BY_ID[R.base]
+	if not p.styles[R.base] or Calc.mastery(p, R.base).lv < R.lv then
+		return false, string.format("%s 숙련 %d이 필요해요 (지금 %d)", base and base.name or R.base, R.lv, p.styles[R.base] and Calc.mastery(p, R.base).lv or 0)
+	end
+	if R.awakened == "any" then
+		local okA = false
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf and p.styles[sd.id] and Calc.mastery(p, sd.id).lv >= R.lv then
+				okA = true
+			end
+		end
+		if not okA then
+			return false, string.format("각성 권법(진) 하나를 숙련 %d까지 올려야 해요", R.lv)
+		end
+	else
+		local a = Config.STYLE_BY_ID[R.awakened]
+		if not p.styles[R.awakened] or Calc.mastery(p, R.awakened).lv < R.lv then
+			return false, string.format("%s 숙련 %d이 필요해요", a and a.name or R.awakened, R.lv)
+		end
+	end
+	local need = stage == "learn" and R.learn or R.challenge
+	for id, n in pairs(need) do
+		if (p.mats[id] or 0) < n then
+			local M = Config.SKY_MAT_BY_ID[id]
+			return false, string.format("%s %s이(가) %d개 필요해요 (지금 %d) · %s", M.icon, M.name, n, p.mats[id] or 0, M.how)
+		end
+	end
+	return true, ""
+end
+local function spendMats(p: Profile, need: { [string]: number })
+	for id, n in pairs(need) do
+		p.mats[id] = math.max(0, (p.mats[id] or 0) - n)
+	end
+end
+
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -6045,6 +6185,18 @@ function Trial.start(player: Player, styleId: string)
 	if Tower.active(player) then
 		toast(player, "천층탑 안에서는 시험을 청할 수 없어요")
 		return
+	end
+	-- 2.5판: 초월의 시련은 숙련과 천상 재료가 있어야 청할 수 있다 (재료는 시련을 청할 때 바친다)
+	local pz = profiles[player]
+	local TR = Config.TRANSCEND_REQ[styleId]
+	if pz and TR and not pz.styles[styleId] then
+		local ok, msg = transcendCheck(pz, styleId, "challenge")
+		if not ok then
+			toast(player, "🔒 " .. msg)
+			return
+		end
+		spendMats(pz, TR.challenge)
+		toast(player, "🙏 재료를 바쳤어요: " .. matList(TR.challenge))
 	end
 	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
 	local kind, need = Config.trialNeed(styleId)
@@ -6327,6 +6479,30 @@ Combat.init(Push, {
 					local G = Config.SKY_GEMS
 					gems = f.meteor and G.meteor or (isBoss and G.boss or (f.npc.elite and G.elite or G.enemy))
 					p.skyGems += gems
+					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
+					local got = {}
+					local isl = Config.skyIslandAt(f.root.Position)
+					for _, M in ipairs(Config.SKY_MATS) do
+						local n = 0
+						if M.island then
+							if isl and isl.id == M.island then
+								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+							end
+						elseif M.night then
+							if not Combat.isDay() then
+								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+							end
+						elseif M.bossOnly and isBoss then
+							n = (M.bossBonus and M.bossBonus[(f :: any).typeId]) or M.bossOnly
+						end
+						if n > 0 then
+							p.mats[M.id] = (p.mats[M.id] or 0) + n
+							table.insert(got, M.icon .. " " .. M.name .. " +" .. n)
+						end
+					end
+					if #got > 0 then
+						toast(killer, table.concat(got, " · "))
+					end
 				end
 				p.kills += 1
 				if isBossKill then
@@ -6872,6 +7048,16 @@ function Actions.learn(player: Player, id: any)
 		if p.coins < cost then
 			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
 			return
+		end
+		-- 2.5판: 초월 권법은 배울 때도 천상 재료가 든다
+		local TRq = Config.TRANSCEND_REQ[style.id]
+		if TRq then
+			local ok, msg = transcendCheck(p, style.id, "learn")
+			if not ok then
+				toast(player, "🔒 " .. msg)
+				return
+			end
+			spendMats(p, TRq.learn)
 		end
 		p.coins -= cost
 		p.styles[style.id] = true
@@ -7915,6 +8101,12 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testGateReset" then
 		p.gates = {}
 		toast(player, "⛩ 관문 기록을 지웠어요")
+	elseif action == "testMats" then
+		-- 테스트: 천상 재료를 넉넉히
+		for _, M in ipairs(Config.SKY_MATS) do
+			p.mats[M.id] = (p.mats[M.id] or 0) + 50
+		end
+		toast(player, "🧪 천상 재료 +50씩")
 	elseif action == "testMastery" then
 		if p.style ~= "" then
 			local m = Calc.mastery(p, p.style)
@@ -8379,6 +8571,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif it.id == "cloudmount" then
 			p.mounts.cloud = true
 			p.mountSel = "cloud"
+		elseif it.id == "wine" then
+			p.mats.wine = (p.mats.wine or 0) + 1
 		end
 		st.dirty = true
 		refreshFighter(player)
@@ -8449,8 +8643,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		local far = AM and f0 and Vector3.new(f0.root.Position.X - AM.at.X, 0, f0.root.Position.Z - AM.at.Z).Magnitude > AM.range
 		if far and not st.tester then
 			toast(player, string.format("🔥 각성은 상급 수련장의 %s 곁에서만 할 수 있어요", AM.name))
-		elseif Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
-			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
+		elseif Calc.mastery(p, base.id).lv < Config.MASTERY_FULL then
+			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_FULL))
 		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
 			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
 		elseif Calc.realm(p) < A.realm then
@@ -8475,8 +8669,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if not step then
 			toast(player, "더 오를 깨달음이 없어요")
 			return
-		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_MAX then
-			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_MAX))
+		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_FULL then
+			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_FULL))
 			return
 		elseif Calc.realm(p) < step.realm then
 			toast(player, string.format("%s은(는) %s의 경지부터예요", step.name, Config.Realms[step.realm].name))
@@ -9259,6 +9453,13 @@ task.spawn(function()
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
 		end
+		if not p.styles[styleId] and not p.trials[styleId] and Config.TRANSCEND_REQ[styleId] then
+			local ok, msg = transcendCheck(p, styleId, "challenge")
+			if not ok then
+				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
+				return
+			end
+		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (function()
@@ -9413,6 +9614,7 @@ local function isDay(): boolean
 	local h = Lighting.ClockTime
 	return h >= 6 and h < 18
 end
+Combat.isDay = isDay
 
 local function flat(v: Vector3): Vector3
 	local f = Vector3.new(v.X, 0, v.Z)
@@ -14177,8 +14379,22 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+		-- 남은 가시덤불이 한동안 찌른다
+		for i = 1, math.floor((m.linger or 0) / (m.every or 0.3)) do
+			after(m.delay + m.sprout + i * m.every, function()
+				local done = {}
+				for _, at in ipairs(spots) do
+					for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+						if not done[o] then
+							done[o] = true
+							strike(f, o, scaled(m.tick, sc), move)
+						end
+					end
+				end
+			end)
+		end
 		after(m.delay + m.sprout, function()
-			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, style = style })
+			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, linger = (m.linger or 0) / sp, style = style })
 			local done = {}
 			for _, at in ipairs(spots) do
 				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
@@ -14206,6 +14422,15 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 			heal(f, m.heal)
 		end)
+		-- 꽃잎 회오리: 핀 꽃에서 꽃잎이 둘레로 휘몰아쳐 한 번 더 친다
+		if m.wave then
+			after(m.delay + m.wave, function()
+				Push:FireAllClients("skillfx", { kind = "budPetals", at = at, radius = m.waveRadius, style = style })
+				for _, o in ipairs(hostilesNear(f, at, m.waveRadius)) do
+					strike(f, o, scaled(m.waveHit, sc), move)
+				end
+			end)
+		end
 	elseif kind == "treant" then
 		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고, 팔로 휩쓸고, 땅 곳곳에서 뿌리가 솟는다
 		local base = f.root.Position
@@ -14228,6 +14453,20 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end
 		end)
+		-- 잎 폭풍: 휩쓴 뒤 나무 정령의 잎이 둘레에 쏟아진다
+		if m.leafTicks then
+			local gap = (m.rootsAt - m.sweepAt - 0.3) / m.leafTicks
+			after(m.sweepAt + 0.2, function()
+				Push:FireAllClients("skillfx", { kind = "leafStorm", at = base, radius = m.leafRadius, dur = (gap * m.leafTicks) / sp, style = style })
+			end)
+			for i = 1, m.leafTicks do
+				after(m.sweepAt + 0.2 + i * gap, function()
+					for _, o in ipairs(hostilesNear(f, base, m.leafRadius)) do
+						strike(f, o, scaled(m.leaf, sc), move)
+					end
+				end)
+			end
+		end
 		after(m.rootsAt, function()
 			local list = nearestList(f, m.rootRange, m.roots)
 			local spots = {}
@@ -24590,8 +24829,9 @@ end
 ------------------------------------------------------------------------
 local BARK = Color3.fromRGB(92, 66, 44)
 local LEAF = Color3.fromRGB(80, 170, 70)
-local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
+local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3, linger: number?)
 	local g = ground(at)
+	local hold = 0.9 + (linger or 0)
 	-- 가시 여덟이 땅에서 비스듬히 솟는다
 	for k = 1, 8 do
 		local a = k / 8 * math.pi * 2 + math.random() * 0.4
@@ -24601,7 +24841,7 @@ local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
 		tween(thorn, 0.12, { Size = Vector3.new(0.6, 0.6, (tip - g).Magnitude), CFrame = CFrame.lookAt((g + tip) / 2, tip) }, Enum.EasingStyle.Back)
 		local point = part(Vector3.new(0.3, 0.3, 1.2), c2, Enum.Material.Neon, 0)
 		point.CFrame = CFrame.lookAt(tip, tip + (tip - g).Unit)
-		task.delay(0.9, function()
+		task.delay(hold, function()
 			fadeOut(thorn, 0.4, { CFrame = thorn.CFrame * CFrame.new(0, 0, (tip - g).Magnitude * 0.3) })
 			fadeOut(point, 0.3)
 		end)
@@ -24609,7 +24849,15 @@ local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
 	local leaves = part(Vector3.new(1, 1, 1), c, Enum.Material.Grass, 0.1, "ball")
 	leaves.CFrame = CFrame.new(g + Vector3.new(0, 0.8, 0))
 	tween(leaves, 0.15, { Size = Vector3.new(radius * 1.3, radius * 0.6, radius * 1.3) }, Enum.EasingStyle.Back)
-	task.delay(0.9, function()
+	-- 덤불 위로 작은 꽃 셋
+	for k = 1, 3 do
+		local fl = part(Vector3.new(0.8, 0.8, 0.8), k == 2 and Color3.fromRGB(255, 240, 120) or Color3.fromRGB(255, 170, 210), Enum.Material.Neon, 0, "ball")
+		fl.CFrame = CFrame.new(g + Vector3.new(math.cos(k * 2.1) * radius * 0.35, radius * 0.55, math.sin(k * 2.1) * radius * 0.35))
+		task.delay(hold, function()
+			fadeOut(fl, 0.3)
+		end)
+	end
+	task.delay(hold, function()
 		fadeOut(leaves, 0.4)
 	end)
 	Fx.burst("spark", at, c, 10, 1)
@@ -24641,7 +24889,7 @@ local function thornSprout(data: any)
 	local c, c2 = colors(data.style)
 	for _, at in ipairs(data.spots or {}) do
 		if near(at, 200) then
-			thornBush(at, data.radius or 6, c, c2)
+			thornBush(at, data.radius or 6, c, c2, data.linger)
 		end
 	end
 	local first = (data.spots or {})[1]
@@ -24665,7 +24913,7 @@ local function budRise(data: any)
 		return
 	end
 	local c, c2 = colors(data.style)
-	local R = (data.radius or 14) * 0.55
+	local R = (data.radius or 16) * 0.65
 	local g = ground(at)
 	local key = keyOf(at)
 	local stem = part(Vector3.new(R * 0.9, 1.2, 1.2), Color3.fromRGB(70, 140, 60), Enum.Material.SmoothPlastic, 0, "cyl")
@@ -24758,8 +25006,8 @@ local function treantRise(data: any)
 	end
 	local c, c2 = colors(data.style)
 	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
-	local S = 3
-	local g = ground(at) - dir * 12
+	local S = 3.6
+	local g = ground(at) - dir * 14
 	local face = CFrame.lookAt(g, g + dir)
 	local pieces: { TPiece } = {}
 	local function add(limb: string, size: Vector3, off: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?)
@@ -24911,6 +25159,62 @@ local function treantRoots(data: any)
 	end
 	local _ = c2
 end
+
+-- 개화의 꽃잎 회오리: 핀 꽃에서 꽃잎 수십 장이 나선으로 둘레에 휘몰아친다
+local function budPetals(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = data.radius or 22
+	local g = ground(at)
+	for k = 1, 28 do
+		local a0 = k / 28 * math.pi * 2
+		local p = part(Vector3.new(1.4, 0.12, 0.9), k % 3 == 0 and c2 or PETAL, Enum.Material.SmoothPlastic, 0, "ball")
+		local t0 = os.clock()
+		local life = 0.55
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / life, 0, 1)
+			local a = a0 + u * 3
+			local r = 2 + (R - 2) * u
+			p.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * r, 3 + math.sin(u * math.pi) * 4, math.sin(a) * r)) * CFrame.Angles(u * 9, a, u * 5)
+			p.Transparency = u * u
+			if u >= 1 then
+				conn:Disconnect()
+				p:Destroy()
+			end
+		end)
+	end
+	Fx.ring(g + Vector3.new(0, 0.4, 0), PETAL, 3, R * 2.2, 0.5)
+	Fx.sound("swing", 0.9, 1.1, at)
+	local _ = c
+end
+-- 목령강림의 잎 폭풍: 둘레에 큰 잎이 소용돌이치며 쏟아진다
+local function leafStorm(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 240) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = data.radius or 22
+	local dur = data.dur or 0.8
+	local g = ground(at)
+	local n = 36
+	for k = 1, n do
+		task.delay((k / n) * dur, function()
+			local a = math.random() * math.pi * 2
+			local r = math.random() * R
+			local top = g + Vector3.new(math.cos(a) * r, 24, math.sin(a) * r)
+			local leaf = part(Vector3.new(1.8, 0.14, 1.1), k % 2 == 0 and LEAF or c, Enum.Material.SmoothPlastic, 0, "ball")
+			leaf.CFrame = CFrame.new(top) * CFrame.Angles(math.random() * 3, math.random() * 3, 0)
+			fadeOut(leaf, 0.6, { CFrame = CFrame.new(top - Vector3.new(math.sin(a) * 6, 23, -math.cos(a) * 6)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0) })
+		end)
+	end
+	Fx.ring(g + Vector3.new(0, 0.4, 0), c2, 2, R * 2.2, dur)
+	Fx.sound("swing", 0.8, 0.7, at)
+end
 -- 만목신권 생장 (네 번째 맞힘): 상대 자리의 가시덤불
 local function thornPulse(data: any)
 	if near(data.at, 200) then
@@ -24978,6 +25282,8 @@ local HANDLERS: { [string]: (any) -> () } = {
 	treantSweep = treantSweep,
 	treantRoots = treantRoots,
 	thornPulse = thornPulse,
+	budPetals = budPetals,
+	leafStorm = leafStorm,
 }
 function Awake3.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil
@@ -33928,12 +34234,55 @@ local function buildStyles()
 		if req then
 			table.insert(lines, string.format('<font color="#FFE8A0"><b>먼저 익힐 권법</b>  %s</font>', req.name))
 		end
+		-- 2.5판: 초월 권법의 조건 (숙련 20 둘 + 천상 재료)
+		local TR = Config.TRANSCEND_REQ[id]
+		if TR and not owned then
+			local function lvOf(sid: string): number
+				local mm = state and state.mastery and state.mastery[sid]
+				return (mm and table.find(state.styles or {}, sid)) and mm.lv or 0
+			end
+			local function mark(ok: boolean): string
+				return ok and '<font color="#9CFF9C">✔</font>' or '<font color="#FF8A8A">✘</font>'
+			end
+			local base = Config.STYLE_BY_ID[TR.base]
+			table.insert(lines, "")
+			table.insert(lines, '<font color="#FFB6E6"><b>초월의 조건</b></font>')
+			table.insert(lines, string.format("%s %s 숙련 %d (지금 %d)", mark(lvOf(TR.base) >= TR.lv), base and base.name or TR.base, TR.lv, lvOf(TR.base)))
+			if TR.awakened == "any" then
+				local best = 0
+				for _, sd in ipairs(Config.Styles) do
+					if sd.awakenOf then
+						best = math.max(best, lvOf(sd.id))
+					end
+				end
+				table.insert(lines, string.format("%s 각성 권법(진) 하나를 숙련 %d (가장 높은 것 %d)", mark(best >= TR.lv), TR.lv, best))
+			else
+				local a = Config.STYLE_BY_ID[TR.awakened]
+				table.insert(lines, string.format("%s %s 숙련 %d (지금 %d)", mark(lvOf(TR.awakened) >= TR.lv), a and a.name or TR.awakened, TR.lv, lvOf(TR.awakened)))
+			end
+			local mats = state and state.mats or {}
+			for _, stage in ipairs({ { "시련을 청할 때", TR.challenge }, { "배울 때", TR.learn } }) do
+				local parts = {}
+				local all = true
+				for mid, n in pairs(stage[2]) do
+					local M = Config.SKY_MAT_BY_ID[mid]
+					local have = mats[mid] or 0
+					all = all and have >= n
+					table.insert(parts, string.format("%s %s %d/%d", M.icon, M.name, have, n))
+				end
+				table.insert(lines, string.format("%s %s: %s", mark(all), stage[1], table.concat(parts, " · ")))
+			end
+			for mid in pairs(TR.learn) do
+				local M = Config.SKY_MAT_BY_ID[mid]
+				table.insert(lines, string.format('<font color="#C8B8A0">%s 얻는 곳: %s (천상계에서만)</font>', M.icon, M.how))
+			end
+		end
 		-- 승급 (깨달음)
 		if owned then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
-				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_MAX, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
 			else
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
@@ -33943,12 +34292,12 @@ local function buildStyles()
 			if sd.awakenOf == id and owned then
 				local A = Config.AWAKEN_STYLE
 				table.insert(lines, "")
-				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (각성선인 곁에서)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (각성선인 곁에서)</font>', sd.name, Config.MASTERY_FULL, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
 			end
 		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
-		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_MAX
+		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
 		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
 		local v2 = nil
 		for _, sd in ipairs(Config.Styles) do
@@ -33956,7 +34305,7 @@ local function buildStyles()
 				v2 = sd
 			end
 		end
-		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_MAX
+		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_FULL
 		if canAwaken and v2 then
 			local A = Config.AWAKEN_STYLE
 			dBtn.Text = string.format("🔥 각성 시련 → %s  💰 %s", v2.name, Config.formatNumber(A.coins))
@@ -34409,7 +34758,11 @@ local function buildSkyShop()
 	end
 	refreshers.skyshop = function()
 		local g = state and state.skyGems or 0
-		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "")
+		local matsTxt = {}
+		for _, M in ipairs(Config.SKY_MATS) do
+			table.insert(matsTxt, M.icon .. " " .. tostring((state and state.mats and state.mats[M.id]) or 0))
+		end
+		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s  ·  초월 재료 %s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "", table.concat(matsTxt, " "))
 		for _, it in ipairs(Config.SKY_SHOP) do
 			btns[it.id].BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
 		end
@@ -34683,6 +35036,11 @@ local function buildTest()
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
+	section("🌸 2.5판: 초월의 조건 (숙련 20 · 천상 재료)", {
+		{ "🎒 천상 재료 +50씩", "testMats" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
+		{ "🌸 천앵선에게 (초·매화)", "testSecretMaster", "chomaehwa" }, { "🍶 만취선에게 (초·취)", "testSecretMaster", "chochwi" },
+		{ "🩸 혈월선에게 (초·혈마)", "testSecretMaster", "chohyeolma" }, { "⚡ 뇌천선에게 (초·벽력)", "testSecretMaster", "chobyeok" },
+	})
 	section("🌳 2.4판: 만목신권·새 랜드마크", {
 		{ "🌳 만목신권 바로 쓰기 (태초)", "testStyle", "manmok" }, { "🌳 목선에게 (만목원)", "testSecretMaster", "manmok" },
 	})
@@ -34760,7 +35118,7 @@ local function buildTest()
 			local base = Config.STYLE_BY_ID[st.awakenOf]
 			local A = Config.AWAKEN_STYLE
 			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지%s + 💰 %s → 상급 수련장의 각성선인 곁에서 권법 창의 '🔥 각성 시련' → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
-				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
+				base and base.name or st.awakenOf, Config.MASTERY_FULL, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
 			if st.id == "mugeuk" then

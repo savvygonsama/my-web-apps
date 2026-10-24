@@ -62,6 +62,7 @@ type Profile = {
 	mounts: { [string]: boolean }, -- 가진 탈것
 	mountSel: string, -- 고른 탈것
 	skyGems: number, -- 천정 (천상계 화폐)
+	mats: { [string]: number }, -- 2.5판: 천상 재료 (초월 권법)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	ach: { [string]: boolean }, -- 이룬 업적
@@ -99,6 +100,7 @@ local function defaultProfile(): Profile
 		mounts = { horse = true },
 		mountSel = "horse",
 		skyGems = 0,
+		mats = {},
 		skyBuffUntil = 0,
 		rebirth = 0,
 		ach = {},
@@ -206,6 +208,13 @@ local function sanitize(data: any): Profile
 	end)
 	p.mounts.horse = true
 	p.skyGems = math.floor(num(data.skyGems, 1e9))
+	if type(data.mats) == "table" then
+		for id, n in pairs(data.mats) do
+			if type(id) == "string" and Config.SKY_MAT_BY_ID[id] and type(n) == "number" then
+				p.mats[id] = math.floor(num(n, 1e6))
+			end
+		end
+	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
@@ -463,7 +472,7 @@ function Ach.value(p: Profile, a: any): number
 	elseif k == "mastery" then
 		local n = 0
 		for id, m in pairs(p.mastery) do
-			if p.styles[id] and m.lv >= Config.MASTERY_MAX then
+			if p.styles[id] and m.lv >= Config.MASTERY_FULL then
 				n += 1
 			end
 		end
@@ -561,6 +570,7 @@ local function pushState(player: Player)
 		mounts = p.mounts,
 		mountSel = p.mountSel,
 		skyGems = p.skyGems,
+		mats = p.mats,
 		skyBuffLeft = math.max(0, p.skyBuffUntil - os.time()),
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
@@ -687,7 +697,7 @@ local function refreshFighter(player: Player)
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
+	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
@@ -970,6 +980,55 @@ local Train: any
 local Tower: any
 local Maze: any = {}
 local Raid: any = {}
+-- 2.5판: 초월 권법의 조건 (원래 권법 숙련 20 · 각성 권법 숙련 20 · 천상 재료). stage = "challenge" (시련) / "learn" (배우기)
+local function matList(need: { [string]: number }): string
+	local out = {}
+	for id, n in pairs(need) do
+		local M = Config.SKY_MAT_BY_ID[id]
+		table.insert(out, (M and (M.icon .. " " .. M.name) or id) .. " " .. n)
+	end
+	return table.concat(out, " · ")
+end
+local function transcendCheck(p: Profile, styleId: string, stage: string): (boolean, string)
+	local R = Config.TRANSCEND_REQ[styleId]
+	if not R then
+		return true, ""
+	end
+	local base = Config.STYLE_BY_ID[R.base]
+	if not p.styles[R.base] or Calc.mastery(p, R.base).lv < R.lv then
+		return false, string.format("%s 숙련 %d이 필요해요 (지금 %d)", base and base.name or R.base, R.lv, p.styles[R.base] and Calc.mastery(p, R.base).lv or 0)
+	end
+	if R.awakened == "any" then
+		local okA = false
+		for _, sd in ipairs(Config.Styles) do
+			if sd.awakenOf and p.styles[sd.id] and Calc.mastery(p, sd.id).lv >= R.lv then
+				okA = true
+			end
+		end
+		if not okA then
+			return false, string.format("각성 권법(진) 하나를 숙련 %d까지 올려야 해요", R.lv)
+		end
+	else
+		local a = Config.STYLE_BY_ID[R.awakened]
+		if not p.styles[R.awakened] or Calc.mastery(p, R.awakened).lv < R.lv then
+			return false, string.format("%s 숙련 %d이 필요해요", a and a.name or R.awakened, R.lv)
+		end
+	end
+	local need = stage == "learn" and R.learn or R.challenge
+	for id, n in pairs(need) do
+		if (p.mats[id] or 0) < n then
+			local M = Config.SKY_MAT_BY_ID[id]
+			return false, string.format("%s %s이(가) %d개 필요해요 (지금 %d) · %s", M.icon, M.name, n, p.mats[id] or 0, M.how)
+		end
+	end
+	return true, ""
+end
+local function spendMats(p: Profile, need: { [string]: number })
+	for id, n in pairs(need) do
+		p.mats[id] = math.max(0, (p.mats[id] or 0) - n)
+	end
+end
+
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -1096,6 +1155,18 @@ function Trial.start(player: Player, styleId: string)
 	if Tower.active(player) then
 		toast(player, "천층탑 안에서는 시험을 청할 수 없어요")
 		return
+	end
+	-- 2.5판: 초월의 시련은 숙련과 천상 재료가 있어야 청할 수 있다 (재료는 시련을 청할 때 바친다)
+	local pz = profiles[player]
+	local TR = Config.TRANSCEND_REQ[styleId]
+	if pz and TR and not pz.styles[styleId] then
+		local ok, msg = transcendCheck(pz, styleId, "challenge")
+		if not ok then
+			toast(player, "🔒 " .. msg)
+			return
+		end
+		spendMats(pz, TR.challenge)
+		toast(player, "🙏 재료를 바쳤어요: " .. matList(TR.challenge))
 	end
 	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
 	local kind, need = Config.trialNeed(styleId)
@@ -1378,6 +1449,30 @@ Combat.init(Push, {
 					local G = Config.SKY_GEMS
 					gems = f.meteor and G.meteor or (isBoss and G.boss or (f.npc.elite and G.elite or G.enemy))
 					p.skyGems += gems
+					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
+					local got = {}
+					local isl = Config.skyIslandAt(f.root.Position)
+					for _, M in ipairs(Config.SKY_MATS) do
+						local n = 0
+						if M.island then
+							if isl and isl.id == M.island then
+								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+							end
+						elseif M.night then
+							if not Combat.isDay() then
+								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+							end
+						elseif M.bossOnly and isBoss then
+							n = (M.bossBonus and M.bossBonus[(f :: any).typeId]) or M.bossOnly
+						end
+						if n > 0 then
+							p.mats[M.id] = (p.mats[M.id] or 0) + n
+							table.insert(got, M.icon .. " " .. M.name .. " +" .. n)
+						end
+					end
+					if #got > 0 then
+						toast(killer, table.concat(got, " · "))
+					end
 				end
 				p.kills += 1
 				if isBossKill then
@@ -1923,6 +2018,16 @@ function Actions.learn(player: Player, id: any)
 		if p.coins < cost then
 			toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
 			return
+		end
+		-- 2.5판: 초월 권법은 배울 때도 천상 재료가 든다
+		local TRq = Config.TRANSCEND_REQ[style.id]
+		if TRq then
+			local ok, msg = transcendCheck(p, style.id, "learn")
+			if not ok then
+				toast(player, "🔒 " .. msg)
+				return
+			end
+			spendMats(p, TRq.learn)
 		end
 		p.coins -= cost
 		p.styles[style.id] = true
@@ -2966,6 +3071,12 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 	elseif action == "testGateReset" then
 		p.gates = {}
 		toast(player, "⛩ 관문 기록을 지웠어요")
+	elseif action == "testMats" then
+		-- 테스트: 천상 재료를 넉넉히
+		for _, M in ipairs(Config.SKY_MATS) do
+			p.mats[M.id] = (p.mats[M.id] or 0) + 50
+		end
+		toast(player, "🧪 천상 재료 +50씩")
 	elseif action == "testMastery" then
 		if p.style ~= "" then
 			local m = Calc.mastery(p, p.style)
@@ -3430,6 +3541,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif it.id == "cloudmount" then
 			p.mounts.cloud = true
 			p.mountSel = "cloud"
+		elseif it.id == "wine" then
+			p.mats.wine = (p.mats.wine or 0) + 1
 		end
 		st.dirty = true
 		refreshFighter(player)
@@ -3500,8 +3613,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		local far = AM and f0 and Vector3.new(f0.root.Position.X - AM.at.X, 0, f0.root.Position.Z - AM.at.Z).Magnitude > AM.range
 		if far and not st.tester then
 			toast(player, string.format("🔥 각성은 상급 수련장의 %s 곁에서만 할 수 있어요", AM.name))
-		elseif Calc.mastery(p, base.id).lv < Config.MASTERY_MAX then
-			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_MAX))
+		elseif Calc.mastery(p, base.id).lv < Config.MASTERY_FULL then
+			toast(player, string.format("각성하려면 %s 숙련 %d이 필요해요", base.name, Config.MASTERY_FULL))
 		elseif (p.gradeUp[base.id] or 0) < #Config.BREAKTHROUGH then
 			toast(player, "각성하려면 먼저 깨달음(승급)을 모두 얻어야 해요")
 		elseif Calc.realm(p) < A.realm then
@@ -3526,8 +3639,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if not step then
 			toast(player, "더 오를 깨달음이 없어요")
 			return
-		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_MAX then
-			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_MAX))
+		elseif Calc.mastery(p, sd.id).lv < Config.MASTERY_FULL then
+			toast(player, string.format("승급하려면 %s 숙련 %d이 필요해요", sd.name, Config.MASTERY_FULL))
 			return
 		elseif Calc.realm(p) < step.realm then
 			toast(player, string.format("%s은(는) %s의 경지부터예요", step.name, Config.Realms[step.realm].name))
@@ -4309,6 +4422,13 @@ task.spawn(function()
 		if req and not p.styles[styleId] and not p.styles[req.id] then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
+		end
+		if not p.styles[styleId] and not p.trials[styleId] and Config.TRANSCEND_REQ[styleId] then
+			local ok, msg = transcendCheck(p, styleId, "challenge")
+			if not ok then
+				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
+				return
+			end
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다

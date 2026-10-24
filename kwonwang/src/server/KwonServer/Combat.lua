@@ -79,6 +79,7 @@ local function isDay(): boolean
 	local h = Lighting.ClockTime
 	return h >= 6 and h < 18
 end
+Combat.isDay = isDay
 
 local function flat(v: Vector3): Vector3
 	local f = Vector3.new(v.X, 0, v.Z)

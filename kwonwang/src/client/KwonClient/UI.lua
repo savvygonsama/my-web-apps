@@ -644,12 +644,55 @@ local function buildStyles()
 		if req then
 			table.insert(lines, string.format('<font color="#FFE8A0"><b>먼저 익힐 권법</b>  %s</font>', req.name))
 		end
+		-- 2.5판: 초월 권법의 조건 (숙련 20 둘 + 천상 재료)
+		local TR = Config.TRANSCEND_REQ[id]
+		if TR and not owned then
+			local function lvOf(sid: string): number
+				local mm = state and state.mastery and state.mastery[sid]
+				return (mm and table.find(state.styles or {}, sid)) and mm.lv or 0
+			end
+			local function mark(ok: boolean): string
+				return ok and '<font color="#9CFF9C">✔</font>' or '<font color="#FF8A8A">✘</font>'
+			end
+			local base = Config.STYLE_BY_ID[TR.base]
+			table.insert(lines, "")
+			table.insert(lines, '<font color="#FFB6E6"><b>초월의 조건</b></font>')
+			table.insert(lines, string.format("%s %s 숙련 %d (지금 %d)", mark(lvOf(TR.base) >= TR.lv), base and base.name or TR.base, TR.lv, lvOf(TR.base)))
+			if TR.awakened == "any" then
+				local best = 0
+				for _, sd in ipairs(Config.Styles) do
+					if sd.awakenOf then
+						best = math.max(best, lvOf(sd.id))
+					end
+				end
+				table.insert(lines, string.format("%s 각성 권법(진) 하나를 숙련 %d (가장 높은 것 %d)", mark(best >= TR.lv), TR.lv, best))
+			else
+				local a = Config.STYLE_BY_ID[TR.awakened]
+				table.insert(lines, string.format("%s %s 숙련 %d (지금 %d)", mark(lvOf(TR.awakened) >= TR.lv), a and a.name or TR.awakened, TR.lv, lvOf(TR.awakened)))
+			end
+			local mats = state and state.mats or {}
+			for _, stage in ipairs({ { "시련을 청할 때", TR.challenge }, { "배울 때", TR.learn } }) do
+				local parts = {}
+				local all = true
+				for mid, n in pairs(stage[2]) do
+					local M = Config.SKY_MAT_BY_ID[mid]
+					local have = mats[mid] or 0
+					all = all and have >= n
+					table.insert(parts, string.format("%s %s %d/%d", M.icon, M.name, have, n))
+				end
+				table.insert(lines, string.format("%s %s: %s", mark(all), stage[1], table.concat(parts, " · ")))
+			end
+			for mid in pairs(TR.learn) do
+				local M = Config.SKY_MAT_BY_ID[mid]
+				table.insert(lines, string.format('<font color="#C8B8A0">%s 얻는 곳: %s (천상계에서만)</font>', M.icon, M.how))
+			end
+		end
 		-- 승급 (깨달음)
 		if owned then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
-				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_MAX, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
 			else
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
@@ -659,12 +702,12 @@ local function buildStyles()
 			if sd.awakenOf == id and owned then
 				local A = Config.AWAKEN_STYLE
 				table.insert(lines, "")
-				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (각성선인 곁에서)</font>', sd.name, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
+				table.insert(lines, string.format('<font color="#FF8A9A"><b>🔥 각성: %s</b>  숙련 %d · 깨달음 %d번 · %s 이상%s · 💰 %s → 각성 시련 (각성선인 곁에서)</font>', sd.name, Config.MASTERY_FULL, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, sd.rebirthReq and string.format(" · ♻ 환생 %d번", sd.rebirthReq) or "", Config.formatNumber(A.coins)))
 			end
 		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
-		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_MAX
+		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
 		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
 		local v2 = nil
 		for _, sd in ipairs(Config.Styles) do
@@ -672,7 +715,7 @@ local function buildStyles()
 				v2 = sd
 			end
 		end
-		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_MAX
+		local canAwaken = owned and v2 ~= nil and not (state and table.find(state.styles, v2.id)) and ups >= #Config.BREAKTHROUGH and lv >= Config.MASTERY_FULL
 		if canAwaken and v2 then
 			local A = Config.AWAKEN_STYLE
 			dBtn.Text = string.format("🔥 각성 시련 → %s  💰 %s", v2.name, Config.formatNumber(A.coins))
@@ -1125,7 +1168,11 @@ local function buildSkyShop()
 	end
 	refreshers.skyshop = function()
 		local g = state and state.skyGems or 0
-		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "")
+		local matsTxt = {}
+		for _, M in ipairs(Config.SKY_MATS) do
+			table.insert(matsTxt, M.icon .. " " .. tostring((state and state.mats and state.mats[M.id]) or 0))
+		end
+		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s  ·  초월 재료 %s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "", table.concat(matsTxt, " "))
 		for _, it in ipairs(Config.SKY_SHOP) do
 			btns[it.id].BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
 		end
@@ -1399,6 +1446,11 @@ local function buildTest()
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
+	section("🌸 2.5판: 초월의 조건 (숙련 20 · 천상 재료)", {
+		{ "🎒 천상 재료 +50씩", "testMats" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
+		{ "🌸 천앵선에게 (초·매화)", "testSecretMaster", "chomaehwa" }, { "🍶 만취선에게 (초·취)", "testSecretMaster", "chochwi" },
+		{ "🩸 혈월선에게 (초·혈마)", "testSecretMaster", "chohyeolma" }, { "⚡ 뇌천선에게 (초·벽력)", "testSecretMaster", "chobyeok" },
+	})
 	section("🌳 2.4판: 만목신권·새 랜드마크", {
 		{ "🌳 만목신권 바로 쓰기 (태초)", "testStyle", "manmok" }, { "🌳 목선에게 (만목원)", "testSecretMaster", "manmok" },
 	})
@@ -1476,7 +1528,7 @@ local function buildTest()
 			local base = Config.STYLE_BY_ID[st.awakenOf]
 			local A = Config.AWAKEN_STYLE
 			line = string.format("각성 권법: %s 숙련 %d + 깨달음(승급) %d번 + %s 경지%s + 💰 %s → 상급 수련장의 각성선인 곁에서 권법 창의 '🔥 각성 시련' → 각성한 그림자(체력 %d배)를 넘으면 바로 얻는다",
-				base and base.name or st.awakenOf, Config.MASTERY_MAX, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
+				base and base.name or st.awakenOf, Config.MASTERY_FULL, #Config.BREAKTHROUGH, Config.Realms[A.realm].name, st.rebirthReq and string.format(" + ♻ 환생 %d번", st.rebirthReq) or "", Config.formatNumber(A.coins), A.trialHp)
 		elseif HIDDEN_HOW[st.id] then
 			line = HIDDEN_HOW[st.id]
 			if st.id == "mugeuk" then
