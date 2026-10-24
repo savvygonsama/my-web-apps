@@ -2639,7 +2639,7 @@ Config.Roads = {
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 베타 8: 적은 훨씬 질기고 (체력 ×2.2, 멀수록 더), 후반 적의 피해는 크게 줄였다 (오래 겨루는 싸움)
 Config.ENEMY_HP = 2.2
-Config.ENEMY_BOSS_HP = 1.35 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤)
+Config.ENEMY_BOSS_HP = 0.54 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤). 2.7.1판: 모든 보스 체력 60% 줄임 (1.35 → 0.54)
 Config.ENEMY_HP_LEVEL = 0.35 -- 단계마다 체력 +35%
 Config.ENEMY_DMG_LEVEL = 0.12 -- 단계마다 피해 +12%
 Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 이만큼의 거듭제곱으로만 (×14 → ×4.9)
@@ -3252,7 +3252,7 @@ Config.MAZE = {
 ------------------------------------------------------------------------
 Config.BOSS_DMG = 0.7 -- 모든 보스의 공격력 배율 (1.0판: 0.6 → 0.7)
 Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에게 그 전투력의 이만큼까지 힘을 끌어올린다 (보상은 원래 몫)
-Config.LATE_BOSS_DMG = 0.52 -- 후반 보스 (빙마부터 천상계까지)는 더 낮게: 한두 대에 쓰러지지 않게 (1.0판: 0.45 → 0.52)
+Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
 Config.BOSS_LEASH = 340 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
 Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 그만둔다
 -- 흡혈 한도: 거대한 체력의 보스를 치면 한 대에 다 차던 것을 막는다
@@ -39118,8 +39118,15 @@ end
 -- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
 local regionTags: { [string]: { label: TextLabel, name: string } } = {}
 local mapCanvas: Frame
+local skyCanvas: Frame? = nil
+local mapSky = false -- 2.7.1판: 지금 보이는 지도가 천상 지도인가
 type MapText = { label: TextLabel, prio: number, small: number, big: number, base: UDim2? }
 local mapTexts: { MapText } = {}
+local skyTexts: { MapText } = {}
+-- 지금 보이는 지도 판과 그 위의 글자들
+local function activeCanvas(): Frame
+	return (mapSky and skyCanvas) or mapCanvas
+end
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
 	local mine = state and state.power or 0
@@ -39140,9 +39147,21 @@ local function refreshRec()
 	end
 end
 
-local function mapUV(p: Vector3): UDim2
-	local H = Config.WORLD_HALF
-	return UDim2.fromScale(math.clamp((p.X + H) / (2 * H), 0, 1), math.clamp((p.Z + H) / (2 * H), 0, 1))
+-- 2.7.1판: 천상 전용 지도. 천상계에 오르면 지도가 저절로 천상 지도로 바뀌고, 큰 지도의 ☁ 단추로 땅과 하늘을 골라 볼 수도 있다
+local SKY_MAP_C = Vector3.new(0, 0, -180) -- 천상 지도의 가운데 (섬들이 남북으로 길게 늘어서 있다)
+local SKY_MAP_H = 1700 -- 천상 지도 한 변의 절반
+local function mapFrameOf(sky: boolean): (Vector3, number)
+	if sky then
+		return SKY_MAP_C, SKY_MAP_H
+	end
+	return Vector3.zero, Config.WORLD_HALF
+end
+local function isSkyPos(p: Vector3): boolean
+	return Config.SKY ~= nil and p.Y > Config.SKY.y - 300
+end
+local function mapUV(p: Vector3, sky: boolean?): UDim2
+	local c, H = mapFrameOf(if sky == nil then mapSky else sky)
+	return UDim2.fromScale(math.clamp((p.X - c.X + H) / (2 * H), 0, 1), math.clamp((p.Z - c.Z + H) / (2 * H), 0, 1))
 end
 
 local MAP_SMALL = 250
@@ -39151,25 +39170,27 @@ local SMALL_SPAN = 870 -- 작은 지도 한 변에 보이는 넓이 (칸). 2.2�
 local bigZoom = 1
 local bigCenter = Vector3.zero
 local function viewZoom(): number
-	return mapBig and bigZoom or (2 * Config.WORLD_HALF) / SMALL_SPAN
+	local _, H = mapFrameOf(mapSky)
+	return mapBig and bigZoom or (2 * H) / SMALL_SPAN
 end
 -- 지도 판을 옮긴다: 작은 지도는 내가 가운데, 큰 지도는 고른 가운데 (세상 밖이 보이지 않게 묶는다)
 local function applyView(pos: Vector3?)
 	if not mapCanvas then
 		return
 	end
-	local H = Config.WORLD_HALF
+	local C0, H = mapFrameOf(mapSky)
+	local canvas = activeCanvas()
 	local z = viewZoom()
-	local c = mapBig and bigCenter or (pos or Vector3.zero)
-	local u, v = (c.X + H) / (2 * H), (c.Z + H) / (2 * H)
+	local c = mapBig and bigCenter or (pos or C0)
+	local u, v = (c.X - C0.X + H) / (2 * H), (c.Z - C0.Z + H) / (2 * H)
 	if mapBig then
 		local half = 0.5 / z
 		u = math.clamp(u, half, 1 - half)
 		v = math.clamp(v, half, 1 - half)
-		bigCenter = Vector3.new(u * 2 * H - H, 0, v * 2 * H - H)
+		bigCenter = Vector3.new(u * 2 * H - H + C0.X, 0, v * 2 * H - H + C0.Z)
 	end
-	mapCanvas.Size = UDim2.fromScale(z, z)
-	mapCanvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
+	canvas.Size = UDim2.fromScale(z, z)
+	canvas.Position = UDim2.fromScale(0.5 - u * z, 0.5 - v * z)
 end
 -- 겹치는 글자 비켜 놓기 (중요한 것부터 자리를 잡는다). 2.1판: 감추지 않는다. 위아래로 비켜서라도 다 보인다
 local function declutter()
@@ -39181,10 +39202,11 @@ local function declutter()
 	local inner = Vector2.new(side, side)
 	local z = viewZoom()
 	local cs = inner.X * z
-	local ox = mapCanvas.Position.X.Scale * inner.X
-	local oy = mapCanvas.Position.Y.Scale * inner.Y
+	local canvas = activeCanvas()
+	local ox = canvas.Position.X.Scale * inner.X
+	local oy = canvas.Position.Y.Scale * inner.Y
 	local placed: { { number } } = {}
-	for _, t in ipairs(mapTexts) do
+	for _, t in ipairs(mapSky and skyTexts or mapTexts) do
 		local l = t.label
 		local size = mapBig and t.big or t.small
 		t.base = t.base or UDim2.fromScale(l.Position.X.Scale, l.Position.Y.Scale)
@@ -39237,8 +39259,10 @@ local function placeMap()
 	end
 	-- 휴대폰은 버튼과 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다
 	mapFrame.Visible = mapBig or not UserInputService.TouchEnabled
-	for _, t in ipairs(mapTexts) do
-		t.label.TextSize = mapBig and t.big or t.small
+	for _, list in ipairs({ mapTexts, skyTexts }) do
+		for _, t in ipairs(list) do
+			t.label.TextSize = mapBig and t.big or t.small
+		end
 	end
 	for _, b in ipairs(zoomBtns) do
 		b.Visible = mapBig
@@ -39248,20 +39272,149 @@ local function placeMap()
 	task.defer(declutter)
 end
 
+-- 길잡이·이야기 표시는 그 자리가 지금 보이는 지도 (땅 또는 하늘) 위에 있을 때만
+local guideAt: Vector3? = nil
+local storyMarkAt: Vector3? = nil
+local function showMark(mark: GuiObject?, at: Vector3?)
+	if not mark then
+		return
+	end
+	local g = mark :: GuiObject
+	g.Visible = at ~= nil and isSkyPos(at) == mapSky
+	if at then
+		g.Position = mapUV(at)
+	end
+end
+local skyBtn: TextButton? = nil
+local skyTitle: TextLabel? = nil
+local inSkyNow = false
+-- 지도를 땅 또는 하늘로 바꾼다 (나·적 점·길잡이를 그 판으로 옮긴다)
+local function setMapWorld(sky: boolean)
+	local sc = skyCanvas
+	if sky == mapSky or not sc then
+		return
+	end
+	mapSky = sky
+	mapCanvas.Visible = not sky
+	sc.Visible = sky
+	local cv = activeCanvas()
+	for _, d in ipairs(mapDots) do
+		d.Parent = cv
+	end
+	mapMe.Parent = cv
+	mapGuide.Parent = cv
+	if storyMark then
+		storyMark.Parent = cv
+	end
+	mapInner.BackgroundColor3 = sky and Color3.fromRGB(150, 185, 225) or Color3.fromRGB(70, 95, 120)
+	if skyBtn then
+		skyBtn.Text = sky and "⛰" or "☁"
+	end
+	if skyTitle then
+		skyTitle.Visible = sky
+	end
+	bigZoom = 1
+	bigCenter = (mapFrameOf(sky))
+	showMark(mapGuide, guideAt)
+	showMark(storyMark, storyMarkAt)
+	placeMap()
+end
+
 function UI.toggleMap()
 	mapBig = not mapBig
 	if mapBig then
 		-- 큰 지도는 온 세상부터
 		bigZoom = 1
-		bigCenter = Vector3.zero
+		bigCenter = (mapFrameOf(mapSky))
+		placeMap()
+	elseif mapSky ~= inSkyNow then
+		-- 작은 지도는 늘 내가 서 있는 세상
+		setMapWorld(inSkyNow)
+	else
+		placeMap()
 	end
-	placeMap()
 end
 
 local function zoomBy(k: number)
 	bigZoom = math.clamp(bigZoom * k, 1, 6)
 	applyView(nil)
 	declutter()
+end
+
+-- 천상 지도: 구름 바다 위의 섬과 다리, 섬 이름과 권장 전투력, 보스, 천궁의 문과 가게, 천상의 사부
+local function buildSkyMap()
+	local SKY = Config.SKY
+	if not SKY then
+		return
+	end
+	local cv = new("Frame", { Name = "SkyCanvas", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(196, 214, 238), BorderSizePixel = 0, Visible = false, ZIndex = 5, Parent = mapInner })
+	skyCanvas = cv
+	local H = SKY_MAP_H
+	local function label(at: Vector3, t: string, small: number, big: number, color: Color3, z: number, prio: number): TextLabel
+		local l = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(at, true), Size = UDim2.new(0, 10, 0, 10), AutomaticSize = Enum.AutomaticSize.XY, Text = t, TextSize = small, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.15, TextWrapped = false, RichText = true, ZIndex = z, Parent = cv })
+		table.insert(skyTexts, { label = l, prio = prio, small = small, big = big })
+		return l
+	end
+	-- 흘러가는 구름 바다 (옅은 흰 구름 덩이)
+	for i = 1, 18 do
+		local a = i * 2.39996
+		local rr = 0.12 + 0.36 * ((i * 0.618) % 1)
+		local w = 0.1 + 0.08 * ((i * 0.37) % 1)
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5 + math.cos(a) * rr, 0.5 + math.sin(a) * rr), Size = UDim2.fromScale(w, w * 0.55), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.55, BorderSizePixel = 0, ZIndex = 5, Parent = cv }, { corner(99) })
+	end
+	-- 다리 (숨은 다리는 그리지 않는다)
+	for _, br in ipairs(SKY.bridges) do
+		local a, b = SKY.islands[br[1]], SKY.islands[br[2]]
+		if a and b and not br.hidden and not a.hidden and not b.hidden then
+			local d = b.at - a.at
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV((a.at + b.at) / 2, true), Size = UDim2.new(Vector3.new(d.X, 0, d.Z).Magnitude / (2 * H), 0, 0, 4), Rotation = math.deg(math.atan2(d.Z, d.X)), BackgroundColor3 = Color3.fromRGB(240, 228, 196), BorderSizePixel = 0, ZIndex = 6, Parent = cv }, { stroke(Color3.fromRGB(150, 130, 95), 1) })
+		end
+	end
+	-- 섬
+	for _, isl in ipairs(SKY.islands) do
+		if not isl.hidden then
+			local d = 2 * isl.radius / (2 * H)
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(isl.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = isl.ground, BorderSizePixel = 0, ZIndex = 7, Parent = cv }, { corner(9999), stroke(Color3.new(1, 1, 1), 2) })
+			if isl.boss then
+				label(isl.boss.at, "👹", 13, 16, C.red, 9, 3)
+			elseif isl.raid then
+				label(isl.at, "⚔", 14, 17, C.red, 9, 3)
+			end
+			local tagAt = isl.at + Vector3.new(0, 0, isl.safe and isl.radius * 0.72 or 0)
+			local tag = label(tagAt, isl.name, 11, 13, Color3.new(1, 1, 1), 9, isl.safe and 2.5 or 2)
+			if not isl.safe then
+				regionTags["sky_" .. isl.id] = { label = tag, name = isl.name }
+			end
+		end
+	end
+	-- 천궁 안의 문과 가게 (작은 지도에선 표시만, 이름은 덜 중요)
+	local town = SKY.islands[1].at
+	for _, it in ipairs({
+		{ Vector3.new(-100, 0, 100), "⬇", "땅으로" },
+		{ Vector3.new(100, 0, -100), "🏮", "객잔" },
+		{ Vector3.new(100, 0, 100), "💎", "천상 상점" },
+		{ Vector3.new(72, 0, 34), "🗼", "천층탑" },
+		{ Vector3.new(72, 0, -34), "🌀", "구름 미궁" },
+		{ Vector3.new(-78, 0, 30), "⚔", "투기장 문" },
+	}) do
+		label(town + it[1], it[2], 12, 15, Color3.new(1, 1, 1), 8, 1.5)
+		label(town + it[1] + Vector3.new(0, 0, 34), it[3], 9, 11, Color3.fromRGB(70, 60, 45), 8, 1)
+	end
+	-- 천상의 사부 (숨은 사부는 지도에 없다). 찾기 전엔 물음표만
+	for id, m in pairs(Config.MASTERS) do
+		local style = Config.STYLE_BY_ID[id]
+		if style and not m.secret and isSkyPos(m.at) and not masterMarks[id] then
+			local ring = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(m.at, true), Size = UDim2.new(0, 22, 0, 22), BackgroundTransparency = 1, ZIndex = 8, Parent = cv }, { corner(99) })
+			local st = new("UIStroke", { Color = style.color, Thickness = 2, Enabled = false, Parent = ring })
+			local icon = label(m.at, "❓", 14, 17, Color3.fromRGB(90, 80, 70), 9, 3)
+			masterMarks[id] = { stroke = st, icon = icon, color = style.color, glyph = style.icon }
+		end
+	end
+	table.sort(skyTexts, function(x, y)
+		return x.prio > y.prio
+	end)
+	skyTitle = text({ Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(0, 160, 0, 20), Text = "☁ 천상계", TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.1, Visible = false, ZIndex = 12, Parent = mapFrame })
+	refreshRec()
 end
 
 local function buildMap()
@@ -39349,6 +39502,11 @@ local function buildMap()
 		end)
 		table.insert(zoomBtns, b)
 	end
+	-- 땅 ↔ 하늘 지도 바꾸기
+	skyBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10 + 3 * 46), Size = UDim2.new(0, 40, 0, 40), Text = "☁", TextSize = 22, BackgroundColor3 = C.panel2, ZIndex = 13, Visible = false, Parent = mapFrame }, function()
+		setMapWorld(not mapSky)
+	end)
+	table.insert(zoomBtns, (skyBtn :: any) :: GuiObject)
 	local dragging = false
 	local dragLast = Vector3.zero
 	-- (입력 연결이 실패해도 지도는 그대로 쓰이게)
@@ -39378,12 +39536,14 @@ local function buildMap()
 					px = mapInner.AbsoluteSize.X
 				end)
 				local cs = math.max(1, px * bigZoom)
-				bigCenter -= Vector3.new(d.X / cs * 2 * H, 0, d.Y / cs * 2 * H)
+				local _, VH = mapFrameOf(mapSky)
+				bigCenter -= Vector3.new(d.X / cs * 2 * VH, 0, d.Y / cs * 2 * VH)
 				applyView(nil)
 				declutter()
 			end
 		end)
 	end)
+	buildSkyMap()
 	placeMap()
 end
 
@@ -39395,6 +39555,7 @@ function UI.setGuide(styleId: string?)
 	guidePart = nil
 	guideLabel = nil
 	guideStyle = nil
+	guideAt = nil
 	if mapGuide then
 		mapGuide.Visible = false
 	end
@@ -39417,10 +39578,8 @@ function UI.setGuide(styleId: string?)
 	local bb = new("BillboardGui", { Size = UDim2.new(0, 300, 0, 76), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = 100000, Parent = p })
 	guideLabel = text({ Size = UDim2.fromScale(1, 1), TextSize = 24, Font = Enum.Font.GothamBlack, TextColor3 = style.color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = bb })
 	guidePart = p
-	if mapGuide then
-		mapGuide.Position = mapUV(m.at)
-		mapGuide.Visible = true
-	end
+	guideAt = m.at
+	showMark(mapGuide, m.at)
 	UI.toast(string.format("📍 %s · %s에게 가세요 (하늘로 솟은 빛기둥)", m.region, m.name))
 end
 
@@ -39565,12 +39724,8 @@ local function refreshStory(s: any)
 			storyPart = p
 		end
 	end
-	if storyMark then
-		storyMark.Visible = at ~= nil
-		if at then
-			storyMark.Position = mapUV(at)
-		end
-	end
+	storyMarkAt = at
+	showMark(storyMark, at)
 end
 
 local function storyTick(pos: Vector3)
@@ -39820,6 +39975,12 @@ local function updateMap(dt: number)
 	local pos = myPos()
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if pos and isSkyPos(pos) ~= inSkyNow then
+		-- 천상계에 오르내리면 지도도 따라 바뀐다
+		inSkyNow = isSkyPos(pos)
+		setMapWorld(inSkyNow)
+	end
+	mapMe.Visible = inSkyNow == mapSky
 	if pos and root and root:IsA("BasePart") then
 		mapMe.Position = mapUV(pos)
 		if not mapBig then
@@ -39856,7 +40017,7 @@ local function updateMap(dt: number)
 		local range = mapBig and 900 or 700
 		for _, e in ipairs(enemies:GetChildren()) do
 			local r = e:FindFirstChild("HumanoidRootPart")
-			if n < #mapDots and r and r:IsA("BasePart") and e:GetAttribute("Dead") ~= true and (r.Position - pos).Magnitude < range then
+			if n < #mapDots and r and r:IsA("BasePart") and e:GetAttribute("Dead") ~= true and (r.Position - pos).Magnitude < range and isSkyPos(r.Position) == mapSky then
 				n += 1
 				local d = mapDots[n]
 				d.Position = mapUV(r.Position)
