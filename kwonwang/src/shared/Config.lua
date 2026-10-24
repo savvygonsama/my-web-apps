@@ -1692,6 +1692,55 @@ table.insert(Config.Styles, {
 })
 
 ------------------------------------------------------------------------
+-- 2.7판 초·창해신권 (초월): 창해신권과 진 창해신권을 모두 숙련 20까지, 비천폭의 진주를 모아 고경선을 넘는다.
+-- 손목의 진주 고리와 등 뒤로 흐르는 물의 띠 (화면이 그린다). 세 번째 주먹마다 소용돌이.
+-- E 조류창 · R 경음 (고래의 노래) · G 만경창파 (사방의 파도) · X 고경승천 (고대의 고래가 뛰어올라 머리 위를 지나간다)
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chochanghae",
+	name = "초·창해신권",
+	hanja = "超滄海神拳",
+	icon = "🐋",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(40, 150, 200),
+	color2 = Color3.fromRGB(215, 250, 255),
+	fx = "ocean",
+	pearls = true, -- 손목의 진주 고리와 물의 띠 (화면이 그린다)
+	whale = true, -- 초 오의 컷씬: 바다 밑의 고래
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "changhae",
+	trialHp = 10,
+	unlockHint = "창해신권을 익히고 천외천에 오른 자만이, 서해 바닷가 고래 뼈 바위에 앉은 고경선을 만난다",
+	desc = "창해신권을 넘어선 권법. 손목의 진주가 바다의 숨결을 머금었다. 밀물처럼 다가와 썰물처럼 끌고 간다. 바다 가장 깊은 곳에는 아직 고래가 산다.",
+	gimmick = "조수: 세 번 맞힐 때마다 상대 자리에 소용돌이가 생겨 둘레를 끌어들였다가 물기둥으로 터진다. 밀어냄 1.4배, 물살을 타 빠르다 (동작 ×1.15). 오의 위에 초 오의(X)가 있다",
+	deflect = 0.24,
+	kbMult = 1.4,
+	speed = 1.15,
+	pulse = { every = 3, kind = "tide", radius = 13, delay = 0.25, name = "조수", dmg = 30, posture = 30, stun = 0.6, kb = 20, up = 18, pull = 40 },
+	stance = "stance_ocean",
+	combo = {
+		{ id = "cc1", name = "창랑장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
+		{ id = "cc2", name = "회류장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.8, 11, 10, 0.35, 10) } },
+		{ id = "cc3", name = "대와각", pose = "whirl_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 0, 7.5, 13, 12, 0.4, 18, nil, true) } },
+		{ id = "cc4", name = "경파권", pose = "tidal_punch", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 21, 24, 0.6, 44, 8) } },
+	},
+	heavy = { id = "ccH", name = "거경격", pose = "billow_strike", dur = 0.65, lunge = 3, hits = { hit(0.32, 10, 7, 30, 44, 0.8, 76, 10, true) } },
+	skills = {
+		E = { id = "ccE", name = "조류창", desc = "손끝에 바다를 모아 소용돌이치는 물의 창을 던진다. 창은 앞의 적을 모두 꿰뚫고, 끝에서 1.2초 동안 소용돌이가 되어 둘레를 끌어당기다 물기둥으로 터진다", pose = "tidal_punch", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "tideSpear", delay = 0.18, length = 34, travel = 0.3, width = 4.5, hit = hit(0, 0, 0, 26, 22, 0.5, 10), vortexDur = 1.2, every = 0.3, radius = 9, pull = 30, tick = hit(0, 0, 0, 8, 8, 0.3, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 20, 18) } },
+		R = { id = "ccR", name = "경음", desc = "두 손을 모아 깊은 바다의 노래를 부른다. 고래의 울음이 물의 고리 셋이 되어 차례로 퍼지고, 맞은 적을 밀어내며 굼뜨게 만든다. 마지막 고리가 가장 넓다", pose = "wall_raise", dur = 0.8, cd = 11, chi = 25,
+			mech = { kind = "whaleSong", delay = 0.25, rings = 3, gap = 0.28, radius = 24, slow = 2.0, hit = hit(0, 0, 0, 22, 24, 0.5, 34) } },
+		G = { id = "ccG", name = "만경창파", desc = "둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고, 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다", pose = "ult_tsunami", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "fourWaves", delay = 0.4, radius = 26, waves = 4, travel = 0.8, gap = 0.25, pull = 40, hit = hit(0, 0, 0, 26, 26, 0.5, 0), final = hit(0, 0, 0, 110, 130, 1.4, 30, 40) } },
+		X = { id = "ccX", name = "고경승천", desc = "초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고, 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다", pose = "ult_tsunami", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "ancientWhale", cut = 1.4, behind = 58, ahead = 58, flight = 2.4, height = 50, scale = 3.0, every = 0.25, width = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0, 30), finalRadius = 30, final = hit(0, 0, 0, 200, 220, 1.8, 80, 26), waveAt = 0.4, waveRadius = 30, wave = hit(0, 0, 0, 60, 70, 0.8, 60, 10) } },
+	},
+})
+
+------------------------------------------------------------------------
 -- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고, 네 번이면 가시덤불이 터진다.
 -- E 종자탄 · R 개화 (거대한 꽃봉오리가 피며 꽃가루로 잠재운다) · G 목령강림 (거대한 나무 정령이 솟아 내리친다)
 ------------------------------------------------------------------------
@@ -1823,6 +1872,7 @@ local FINISHERS = {
 	changhae2 = { name = "심해승천장", pose = "tidal_punch" },
 	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
+	chochanghae = { name = "고경승천장", pose = "tidal_punch" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -2225,6 +2275,18 @@ end
 
 -- 2.0판 초월의 시련: 뇌천선이 직접 (벼락 비 → 뇌광 돌진 → 구천뇌정)
 for _, st in ipairs(Config.Styles) do
+	if st.id == "chochanghae" then
+		local sea = Color3.fromRGB(90, 200, 240)
+		st.trialIntro = { title = "초월의 시련", text = "파도를 일으킬 줄 안다고 바다가 되는 건 아니다. 내 바다 한가운데서 끝까지 숨을 쉬거든, 고래의 노래를 가르쳐 주마." }
+		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
+			P("rain", "물방울 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = sea, hit = hit(0, 0, 0, 30, 34, 0.8, 18) }),
+			P("donut", "소용돌이 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "wall_raise", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "파도타기", 2, { length = 54, width = 9, warn = 0.6, cd = 6, times = 3, pose = "surf_dash", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
+			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
+			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
 	if st.id == "chobyeok" then
 		local violet = Color3.fromRGB(170, 130, 255)
 		st.trialIntro = { title = "초월의 시련", text = "번개를 쥐었다고 번개가 되는 건 아니다. 내 벼락을 세 번 맞고도 서 있거든, 이 토시를 네 팔에 채워 주마." }
@@ -2882,6 +2944,10 @@ Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vec
 Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
 Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
 	quote = "번개는 두 번 치지 않는다고? 나는 세 번 친다.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+-- 2.7판 초·창해신권의 사부: 서해 바닷가, 반쯤 모래에 묻힌 옛 고래 뼈 위의 고경선 (지도에 나오지 않는다)
+Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
+Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
+	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
 -- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
 Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
 Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
@@ -2909,6 +2975,7 @@ Config.SKY_MATS = {
 	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
 	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 여럿)", night = true, chance = 0.25, boss = 6 },
 	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (뇌제는 더 많이)", bossOnly = 3, bossBonus = { noeje = 8 } },
+	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 한 무더기)", island = "falls", chance = 0.3, boss = 10 },
 }
 Config.SKY_MAT_BY_ID = {}
 for _, m in ipairs(Config.SKY_MATS) do
@@ -2920,6 +2987,7 @@ Config.TRANSCEND_REQ = {
 	chochwi = { base = "chwi", awakened = "any", lv = 20, challenge = { wine = 2 }, learn = { wine = 4 } },
 	chohyeolma = { base = "hyeolma", awakened = "hyeolma2", lv = 20, challenge = { bloodmoon = 12 }, learn = { bloodmoon = 24 } },
 	chobyeok = { base = "byeokryeok", awakened = "byeokryeok2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
+	chochanghae = { base = "changhae", awakened = "changhae2", lv = 20, challenge = { tidepearl = 10 }, learn = { tidepearl = 20 } },
 }
 for sid, R in pairs(Config.TRANSCEND_REQ) do
 	for _, st in ipairs(Config.Styles) do

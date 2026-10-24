@@ -310,6 +310,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	changhae2 = { H = "tunnel", E = "wave", R = "spiral" },
 	pungsin2 = { H = "fan", E = "cross", R = "spiral" },
 	chobyeok = { H = "cross", E = "beam", R = "rain" },
+	chochanghae = { H = "wave" },
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {

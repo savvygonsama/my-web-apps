@@ -3778,6 +3778,76 @@ local function thunderPeak()
 	part({ Name = "PeakSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 26), Color = iron, Material = Enum.Material.Metal, Parent = f })
 end
 
+-- 2.7판: 초·창해신권의 사부 고경선이 앉은 고래 뼈 바위 (서해 바닷가, 지도에 나오지 않는다)
+-- 모래에 반쯤 묻힌 거대한 옛 고래의 머리뼈 (위가 평평해 사부가 앉는다), 앞으로 뻗은 두 턱뼈, 뒤로 이어진 등뼈와 갈비뼈 일곱 쌍,
+-- 뼈 둘레의 물웅덩이와 따개비 바위, 머리뼈 위의 빛나는 진주
+local function whaleRock()
+	local at = Config.WHALE_ROCK
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "WhaleRock"
+	f.Parent = folder
+	local bone = Color3.fromRGB(222, 214, 196)
+	local bone2 = Color3.fromRGB(196, 188, 170)
+	local sand = Color3.fromRGB(214, 200, 160)
+	local sea = Color3.fromRGB(60, 140, 200)
+	-- 모래 둔덕
+	for k = 0, 2 do
+		disc("WhaleSand", at + Vector3.new(0, 0.3 + k * 0.5, 4), 34 - k * 8, 0.8, sand:Lerp(Color3.new(0, 0, 0), k * 0.04), Enum.Material.Sand, f)
+	end
+	-- 물웅덩이 둘 (뼈 둘레)
+	disc("WhalePool", at + Vector3.new(14, 0.55, -10), 7, 0.2, sea, Enum.Material.Glass, f, false).Transparency = 0.3
+	disc("WhalePool", at + Vector3.new(-12, 0.55, 14), 5, 0.2, sea, Enum.Material.Glass, f, false).Transparency = 0.3
+	-- 머리뼈: 둥근 덩이 위에 평평한 판 (사부가 앉는 자리)
+	part({ Name = "WhaleSkull", Shape = Enum.PartType.Ball, Size = Vector3.new(12, 8, 16), Position = at + Vector3.new(0, 3.4, -6), Color = bone, Material = Enum.Material.Limestone, Parent = f })
+	part({ Name = "WhaleSkullTop", Size = Vector3.new(8, 1, 9), Position = at + Vector3.new(0, 6.9, -6), Color = bone, Material = Enum.Material.Limestone, Parent = f })
+	for _, x in ipairs({ -1, 1 }) do
+		-- 눈구멍과 턱뼈 (앞으로 휘어 뻗는다)
+		part({ Name = "WhaleEyeHole", Shape = Enum.PartType.Ball, Size = Vector3.new(2.2, 2.2, 2.2), Position = at + Vector3.new(x * 5.4, 4.2, -9), Color = Color3.fromRGB(70, 66, 60), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		local cf = CFrame.new(at + Vector3.new(x * 4.4, 1.6, -11)) * CFrame.Angles(0, x * math.rad(-8), 0)
+		for j = 0, 3 do
+			part({ Name = "WhaleJaw", Size = Vector3.new(1.4 - j * 0.15, 1.2 - j * 0.12, 4.4), CFrame = cf * CFrame.new(0, 0, -2.2), Color = j % 2 == 0 and bone or bone2, Material = Enum.Material.Limestone, Parent = f })
+			cf = cf * CFrame.new(0, 0, -4.2) * CFrame.Angles(math.rad(4), x * math.rad(7), 0)
+		end
+	end
+	-- 등뼈와 갈비뼈 일곱 쌍 (모래에서 솟아 둥글게 휘어 오른다)
+	for i = 0, 6 do
+		local z = 4 + i * 4.2
+		local h = 9 - i * 0.8
+		part({ Name = "WhaleSpine", Size = Vector3.new(2.2 - i * 0.15, 1.8 - i * 0.12, 3.4), Position = at + Vector3.new(0, h, z), Color = bone2, Material = Enum.Material.Limestone, CanCollide = false, Parent = f })
+		part({ Name = "WhaleSpineFin", Size = Vector3.new(0.6, 1.6 - i * 0.12, 1.2), Position = at + Vector3.new(0, h + 1.5, z), Color = bone, Material = Enum.Material.Limestone, CanCollide = false, Parent = f })
+		for _, x in ipairs({ -1, 1 }) do
+			local w = 9 - i * 0.7
+			local n = 6
+			for k = 0, n - 1 do
+				local a0 = (k / n) * math.pi * 0.5
+				local a1 = ((k + 1) / n) * math.pi * 0.5
+				local p0 = at + Vector3.new(x * w * math.cos(a0), (h - 0.6) * math.sin(a0) + 0.6, z)
+				local p1 = at + Vector3.new(x * w * math.cos(a1), (h - 0.6) * math.sin(a1) + 0.6, z)
+				local len = (p1 - p0).Magnitude + 0.5
+				part({ Name = "WhaleRib", Size = Vector3.new(0.9 - k * 0.06, 0.9 - k * 0.06, len), CFrame = CFrame.lookAt((p0 + p1) / 2, p1), Color = k % 2 == 0 and bone or bone2, Material = Enum.Material.Limestone, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	-- 따개비 바위
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.4
+		local p = at + Vector3.new(math.cos(a) * 22, 0.8, math.sin(a) * 22 + 4)
+		part({ Name = "BarnacleRock", Shape = Enum.PartType.Ball, Size = Vector3.new(3 + k % 3, 2.2, 3 + (k + 1) % 3), Position = p, Color = Color3.fromRGB(96, 98, 100), Material = Enum.Material.Slate, Parent = f })
+		for b = 0, 3 do
+			part({ Name = "Barnacle", Shape = Enum.PartType.Ball, Size = Vector3.new(0.6, 0.5, 0.6), Position = p + Vector3.new(math.cos(b * 1.7) * 1.1, 1.0, math.sin(b * 1.7) * 1.1), Color = Color3.fromRGB(225, 222, 210), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+	end
+	-- 머리뼈 위의 진주 (옅게 빛난다)
+	local pearl = part({ Name = "WhalePearl", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = at + Vector3.new(0, 8.2, -1.8), Color = Color3.fromRGB(230, 245, 255), Material = Enum.Material.Glass, CanCollide = false, Parent = f })
+	light(pearl, Color3.fromRGB(140, 220, 255), 26, 1.6)
+	local board = part({ Name = "WhaleSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 3, -34), at + Vector3.new(0, 3, -60)), Color = Color3.fromRGB(110, 90, 70), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "고래 뼈 바위", Color3.fromRGB(200, 240, 255), 1 } })
+	part({ Name = "WhaleSignPost", Size = Vector3.new(0.6, 3, 0.6), Position = at + Vector3.new(0, 1.5, -34), Color = Color3.fromRGB(90, 70, 50), Material = Enum.Material.Wood, Parent = f })
+end
+
 -- 2.0판: 각성 사부 각성선인의 자리 (상급 수련장 안). 연꽃 단 위에 앉은 금빛 노인, 둘레에 진 권법들의 깃발
 local function awakenAltar(out: any)
 	local A = Config.AWAKEN_MASTER
@@ -4349,6 +4419,7 @@ function World.build(): any
 		{ "술독 마루", sojuHill },
 		{ "혈월 제단", reaperAltar },
 		{ "쇠기둥 봉우리", thunderPeak },
+		{ "고래 뼈 바위", whaleRock },
 		{ "들판 채우기", wilds },
 		{ "각성선인", function()
 			awakenAltar(out)

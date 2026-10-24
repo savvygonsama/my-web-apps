@@ -2424,6 +2424,111 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "tideSpear" then
+		-- 2.7판 초·창해 조류창 (E): 소용돌이치는 물의 창이 앞을 꿰뚫고, 끝에서 소용돌이가 되어 끌어당기다 터진다
+		local from = f.root.Position + look * 2
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "tideSpear", from = from, to = to, delay = m.delay / sp, travel = m.travel / sp, vortex = m.vortexDur / sp, radius = m.radius, style = style })
+		after(m.delay + m.travel * 0.6, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local ticks = math.floor(m.vortexDur / m.every)
+		for i = 1, ticks do
+			after(m.delay + m.travel + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, to, m.radius)) do
+					pullTo(o, to, m.pull)
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.travel + m.vortexDur, function()
+			for _, o in ipairs(hostilesNear(f, to, m.radius + 1)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "whaleSong" then
+		-- 2.7판 초·창해 경음 (R): 고래의 울음이 물의 고리 셋이 되어 퍼진다. 고리마다 그 너비 안의 적을 한 번씩, 맞으면 굼뜨다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "whaleSong", at = center, rings = m.rings, gap = m.gap / sp, delay = m.delay / sp, radius = m.radius, style = style })
+		for r = 1, m.rings do
+			after(m.delay + (r - 1) * m.gap, function()
+				local outer = m.radius * r / m.rings
+				local inner = r == 1 and 0 or m.radius * (r - 1) / m.rings - 2
+				for _, o in ipairs(hostilesNear(f, center, outer)) do
+					local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
+					if d >= inner then
+						o.slowUntil = os.clock() + m.slow / sp
+						o.slowMul = 0.5
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+	elseif kind == "fourWaves" then
+		-- 2.7판 초·창해 만경창파 (오의): 둘레가 바다가 되고 사방의 파도 넷이 가운데로 밀려와 쓸어 모은다. 마지막에 소용돌이
+		local center = f.root.Position
+		local right = Vector3.new(-look.Z, 0, look.X)
+		local dirs = { look, right, -look, -right }
+		Push:FireAllClients("skillfx", { kind = "fourWaves", at = center, dir = look, radius = m.radius, waves = m.waves, travel = m.travel / sp, gap = m.gap / sp, delay = m.delay / sp, style = style })
+		for w = 1, m.waves do
+			local from = dirs[(w - 1) % 4 + 1]
+			after(m.delay + (w - 1) * m.gap + m.travel * 0.5, function()
+				-- 그 파도가 지나가는 반쪽 (그 방향의 적)을 가운데로 쓸어 온다
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z)
+					if d.Magnitude < 3 or d.Unit:Dot(from) > -0.2 then
+						pullTo(o, center, m.pull)
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.delay + (m.waves - 1) * m.gap + m.travel + 0.15, function()
+			Push:FireAllClients("skillfx", { kind = "maelstrom", at = center, radius = m.radius * 0.6, style = style })
+			for _, o in ipairs(hostilesNear(f, center, m.radius * 0.7)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "ancientWhale" then
+		-- 2.7판 초·창해 고경승천 (초 오의): 땅이 바다가 되고 (컷씬, 무적) 고대의 고래가 뒤에서 솟구쳐 머리 위를 지나 앞으로 뛰어든다.
+		-- 고래 그림자 아래의 적은 떠오르고, 앞의 바다에 떨어질 때 해일이 둘레를 덮친다
+		local center = f.root.Position
+		local from = center - look * m.behind
+		local to = center + look * m.ahead
+		local total = m.cut + m.flight + m.waveAt + 0.3
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local wid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "ancientSea", id = wid, m = f.model, at = center, dir = look, from = from, to = to, cut = m.cut / sp, dur = total / sp, style = style })
+		after(m.cut, function()
+			Push:FireAllClients("skillfx", { kind = "ancientLeap", id = wid, from = from, to = to, flight = m.flight / sp, height = m.height, scale = m.scale, style = style })
+		end)
+		local done = {}
+		local ticks = math.floor(m.flight / m.every)
+		for k = 1, ticks do
+			after(m.cut + k * m.every, function()
+				local u = k * m.every / m.flight
+				local pos = from:Lerp(to, u)
+				for _, o in ipairs(hostilesNear(f, pos, m.width)) do
+					if not done[o] or os.clock() - done[o] > 0.6 then
+						done[o] = os.clock()
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.cut + m.flight, function()
+			Push:FireAllClients("skillfx", { kind = "ancientCrash", id = wid, at = to, center = center, radius = m.finalRadius, waveAt = m.waveAt / sp, waveRadius = m.waveRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, to, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+		after(m.cut + m.flight + m.waveAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.waveRadius)) do
+				strike(f, o, scaled(m.wave, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position

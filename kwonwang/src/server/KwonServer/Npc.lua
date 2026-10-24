@@ -657,6 +657,17 @@ local function dressMaster(model: Model, style: any)
 		for _, x in ipairs({ -1, 1 }) do
 			wear(model, "Head", "Cheek", Vector3.new(0.25, 0.14, 0.05), CFrame.new(x * hs.X * 0.28, -hs.Y * 0.05, -hs.Z * 0.51), Color3.fromRGB(240, 110, 110), Enum.Material.SmoothPlastic)
 		end
+	elseif id == "chochanghae" then
+		-- 고경선: 바닷바람에 센 흰 수염과 상투, 진주 목걸이, 손에 쥔 고래 뼈 지팡이 (끝에 진주)
+		beard(WHITE_HAIR)
+		wear(model, "Head", "Topknot", Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, hs.Y * 0.62, 0.05), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		for k = 0, 10 do
+			local a2 = (k / 10 - 0.5) * math.pi * 0.8
+			wear(model, "UpperTorso", "Pearl", Vector3.new(0.22, 0.22, 0.22), CFrame.new(math.sin(a2) * 0.6, 0.66 - math.cos(a2) * 0.25, -0.53), Color3.fromRGB(240, 244, 250), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		end
+		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
+		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
+		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
 	end
 end
 

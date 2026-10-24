@@ -23,6 +23,7 @@ local Reaper = require(script:WaitForChild("Reaper"))
 local Ult2 = require(script:WaitForChild("Ult2"))
 local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
+local Whale = require(script:WaitForChild("Whale"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -668,6 +669,9 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.scythe then
 		-- 혈월만겸: 붉은 달이 뜨는 컷씬 (대사 없이) 동안 무적, 컷씬이 걷히면 핏빛 초승달이 쏟아진다
 		Reaper.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
+	elseif slot == "X" and style.whale then
+		-- 고경승천: 바다 밑의 고래를 올려다보는 컷씬 (대사 없이, 무적), 걷히면 고래가 솟구친다
+		Whale.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
 	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
@@ -1898,6 +1902,7 @@ function handlers.skillfx(data: any)
 		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })
 		Awake3.init({ shake = shake, flash = UI.flash })
 		Forest.init({ shake = shake })
+		Whale.init({ shake = shake })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1906,6 +1911,9 @@ function handlers.skillfx(data: any)
 		return
 	elseif Forest.handles(data) then
 		Forest.run(data)
+		return
+	elseif Whale.handles(data) then
+		Whale.run(data)
 		return
 	elseif data.kind == "pulse" and data.fx == "bloom" then
 		Awake3.run({ kind = "thornPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })

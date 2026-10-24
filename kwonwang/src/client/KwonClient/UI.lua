@@ -1513,6 +1513,13 @@ local function buildTest()
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
+	section("🐋 2.7판: 초·창해신권 · 새 만목신권 · 새 악마 · 적 차림", {
+		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
+		{ "🐳 진 창해신권 (G 고래강림)", "testStyle", "changhae2" }, { "🎋 만목신권 (죽림창·천엽비수·신목강림)", "testStyle", "manmok" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
+		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
+		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
+		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
+	})
 	do
 		-- 2.6판: 심법 등급 체험 (모든 심법을 한 등급으로), 자동 뽑기, 새 오의·무극신권·보스 차림
 		local items: { any } = {}
