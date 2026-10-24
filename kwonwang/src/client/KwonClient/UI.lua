@@ -1399,6 +1399,9 @@ local function buildTest()
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
+	section("🌳 2.4판: 만목신권·새 랜드마크", {
+		{ "🌳 만목신권 바로 쓰기 (태초)", "testStyle", "manmok" }, { "🌳 목선에게 (만목원)", "testSecretMaster", "manmok" },
+	})
 	section("👹 2.3판: 새 생김새 적·뇌고천무·벚꽃나무", {
 		{ "⚡ 초·벽력신권 바로 쓰기 (X 뇌고천무)", "testStyle", "chobyeok" }, { "🌸 초·매화난무권 바로 쓰기 (X 벚꽃나무)", "testStyle", "chomaehwa" },
 		{ "🗿 돌 거인 부르기", "testEnemy", "stonegolem" }, { "😈 화염 소악귀 부르기", "testEnemy", "flameimp" }, { "👻 모래 망령 부르기", "testEnemy", "sandwraith" },

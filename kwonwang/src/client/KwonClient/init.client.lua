@@ -1891,6 +1891,9 @@ function handlers.skillfx(data: any)
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
+	elseif data.kind == "pulse" and data.fx == "bloom" then
+		Awake3.run({ kind = "thornPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
 	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
 		return
@@ -2273,8 +2276,8 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷" })[style.pulse.kind] or "✦"
-		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 ", bloom = "생장 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end

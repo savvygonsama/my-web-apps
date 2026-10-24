@@ -1701,6 +1701,48 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고, 네 번이면 가시덤불이 터진다.
+-- E 종자탄 · R 개화 (거대한 꽃봉오리가 피며 꽃가루로 잠재운다) · G 목령강림 (거대한 나무 정령이 솟아 내리친다)
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "manmok",
+	name = "만목신권",
+	hanja = "萬木神拳",
+	icon = "🌳",
+	color = Color3.fromRGB(90, 200, 90),
+	color2 = Color3.fromRGB(240, 255, 190),
+	fx = "nature",
+	grade = "태초",
+	hidden = true,
+	secret = true,
+	realmReq = 14,
+	trialHp = 10,
+	unlockHint = "반선의 경지에 오른 자만이, 남서쪽 들판 깊은 숲 만목원의 이끼 좌대에 앉은 목선을 만난다",
+	desc = "나무는 서두르지 않는다. 그러나 멈추지도 않는다. 씨앗 하나가 바위를 가르듯, 이 권은 맞을 때마다 상대의 몸에 뿌리를 내린다. 끝에는 숲 전체가 일어선다.",
+	gimmick = "생장: 네 번 맞힐 때마다 상대 자리에서 가시덤불이 터져 둘레를 묶는다. 몸이 단단하다 (균형 1.4배). 오의 목령강림: 거대한 나무 정령이 솟는다",
+	deflect = 0.28,
+	postureMult = 1.4,
+	speed = 1.0,
+	pulse = { every = 4, kind = "bloom", radius = 10, delay = 0.3, name = "가시덤불", dmg = 32, posture = 34, stun = 0.8, kb = 10, up = 6 },
+	stance = "stance_taeheo",
+	combo = {
+		{ id = "mm1", name = "새싹장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
+		{ id = "mm2", name = "덩굴장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
+		{ id = "mm3", name = "풍엽각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 5, 6.5, 20, 20, 0.45, 16, nil, true) } },
+		{ id = "mm4", name = "고목권", pose = "double_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 28, 32, 0.6, 34) } },
+	},
+	heavy = { id = "mmH", name = "천년근", pose = "grav_hammer", dur = 0.75, lunge = 3, hits = { hit(0.38, 10, 7, 50, 76, 1.0, 50, 8, true) } },
+	skills = {
+		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 다섯을 부채꼴로 튕긴다. 씨앗이 땅이나 적에 박혔다가 가시덤불로 터져 둘레를 묶는다", pose = "push_palm", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "seedBurst", n = 5, spread = 60, dist = 16, range = 24, delay = 0.18, sprout = 0.5, radius = 6, root = 0.9, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10) } },
+		R = { id = "mmR", name = "개화", desc = "앞의 땅에서 거대한 꽃봉오리가 솟는다. 봉오리가 활짝 피는 순간 꽃가루가 터져 둘레의 적이 2초 동안 잠들고, 나는 체력을 되찾는다", pose = "point_sky", dur = 0.9, cd = 12, chi = 30,
+			mech = { kind = "bloomBud", dist = 10, radius = 14, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12) } },
+		G = { id = "mmG", name = "목령강림", desc = "등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 앞을 주먹으로 내리치고, 팔로 크게 휩쓴 뒤, 땅 곳곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력을 되찾는다", pose = "ult_origin", dur = 2.4, cd = 32, chi = 100, armor = true,
+			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 15, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 30, sweepAngle = 140, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), rootsAt = 2.4, roots = 10, rootRange = 30, rootRadius = 6, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
+	},
+})
+
 -- 2.2판: 초·벽력신권의 새 R·오의, 두 초 오의를 더 길게 (구천뇌정은 벼락 비 대신 하나하나 겨눠 내리꽂는 심판의 벼락)
 do
 	local NEW: { [string]: { [string]: any } } = {
@@ -1789,6 +1831,7 @@ local FINISHERS = {
 	changhae2 = { name = "심해승천장", pose = "tidal_punch" },
 	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
+	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -2168,6 +2211,21 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
+-- 2.4판 만목신권의 시련: 목선이 직접 (가시 비 → 뿌리 고리 → 숲의 분노)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "manmok" then
+		local green = Color3.fromRGB(120, 220, 110)
+		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 숲의 가시와 뿌리 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
+		st.trialBoss = { hp = 3400, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
+			P("rain", "가시 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
+			P("donut", "뿌리 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 40, 50, 1.0, 30) }),
+			P("leap", "고목 내리치기", 2, { radius = 16, warn = 1.0, cd = 7, pose = "grav_hammer", hit = hit(0, 0, 0, 50, 70, 1.1, 40, 18) }),
+			P("rain", "꽃가루 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 26, 30, 0.7, 14) }),
+			P("quake", "숲의 분노", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_origin", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+		} }
+	end
+end
+
 -- 2.0판 초월의 시련: 뇌천선이 직접 (벼락 비 → 뇌광 돌진 → 구천뇌정)
 for _, st in ipairs(Config.Styles) do
 	if st.id == "chobyeok" then
@@ -2381,6 +2439,13 @@ Config.Landmarks = {
 	{ id = "gianthand", name = "거신의 손", icon = "✋", at = Vector3.new(-2500, 0, 1900) },
 	{ id = "crater", name = "별똥 분화구", icon = "☄", at = Vector3.new(1100, 0, -2700) },
 	{ id = "thousandsteps", name = "천 개의 계단", icon = "🪜", at = Vector3.new(-2700, 0, -2700) },
+	-- 2.4판: 허허벌판에 여섯 곳 더
+	{ id = "grove", name = "만목원", icon = "🌳", at = Vector3.new(-1700, 0, 1600) },
+	{ id = "fallengiant", name = "잠든 석장", icon = "⚔", at = Vector3.new(1900, 0, 1700) },
+	{ id = "stonecircle", name = "별바위 고리", icon = "🪨", at = Vector3.new(-1900, 0, -800) },
+	{ id = "beacon", name = "옛 봉화대", icon = "🔥", at = Vector3.new(900, 0, -2350) },
+	{ id = "hamlet", name = "버려진 마을", icon = "🏚", at = Vector3.new(0, 0, 2250) },
+	{ id = "archway", name = "하늘 아치", icon = "🌁", at = Vector3.new(-1400, 0, -2350) },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -2472,6 +2537,9 @@ function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
 Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
+-- 2.4판: 공격력 리미터 (사람 → 적). gapPow: 내가 더 셀 때 피해 × (적 전투력 ÷ 내 전투력)^gapPow
+-- 한 대 한도: 적 최대 체력의 base − perLevel × (단계 − 1) (min까지), 보스는 boss (한 대에 3%: 서른 대 넘게 맞아야 쓰러진다)
+Config.LIMITER = { gapPow = 0.4, base = 0.6, perLevel = 0.02, min = 0.12, boss = 0.03 }
 function Config.powerGap(ratio: number): (number, boolean, boolean)
 	local G = Config.POWER_GAP
 	if ratio >= G.immune then
@@ -2820,6 +2888,10 @@ Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vec
 Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
 Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
 	quote = "번개는 두 번 치지 않는다고? 나는 세 번 친다.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+-- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
+Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
+Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
+	quote = "나무는 서두르지 않는다. 그런데도 늘 이긴다.", rumor = "남서쪽 들판의 비틀린 고목들이 둥글게 선 숲 한가운데, 이끼 덮인 돌에 앉은 노인이 있다더라" }
 -- 2.0판 각성 사부: 모든 각성 권법(진)은 상급 수련장의 각성선인에게서만 각성할 수 있다 (가까이 가야 한다)
 Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
 
@@ -9914,6 +9986,20 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.posture = 0
 		crit = true
 	end
+	-- 2.4판: 공격력 리미터 (사람이 적을 칠 때)
+	-- ① 훨씬 센 사람의 주먹은 그 차이만큼 다 들어가지 않는다 (전투력 차의 gapPow제곱만큼 줄어든다)
+	-- ② 한 대에 깎이는 체력에 한도가 있다: 먼 땅(단계가 높은) 적일수록 낮고, 보스는 아주 낮다 (한 방에 쓰러지지 않게)
+	if att.player and tgt.npc and not (tgt.npc :: any).dummy then
+		local L = Config.LIMITER
+		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
+		if pa > pt then
+			d *= (pt / pa) ^ L.gapPow
+		end
+		local lv = tgt.model:GetAttribute("Level")
+		lv = type(lv) == "number" and lv or 1
+		local cap = tgt.model:GetAttribute("Boss") == true and L.boss or math.clamp(L.base - L.perLevel * (lv - 1), L.min, L.base)
+		d = math.min(d, tgt.maxHp * cap)
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)
@@ -14076,6 +14162,112 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "seedBurst" then
+		-- 만목신권 종자탄: 씨앗 다섯을 부채꼴로 튕긴다 (가까운 적이 있으면 그 몸에 박힌다). 잠시 뒤 가시덤불로 터져 묶는다
+		local from = f.root.Position
+		local half = math.rad(m.spread / 2)
+		local enemies = hostilesNear(f, from, m.range)
+		local spots = {}
+		for i = 1, m.n do
+			local a = -half + (2 * half) * (i - 1) / math.max(1, m.n - 1)
+			local d = (CFrame.Angles(0, a, 0) * CFrame.new(look)).Position
+			local at = from + d * m.dist
+			local best, bd = nil, 8
+			for _, o in ipairs(enemies) do
+				local dd = (o.root.Position - at).Magnitude
+				if dd < bd then
+					best, bd = o, dd
+				end
+			end
+			spots[i] = best and best.root.Position or at
+		end
+		Push:FireAllClients("skillfx", { kind = "seedShot", from = from, spots = spots, delay = m.delay / sp, sprout = m.sprout / sp, style = style })
+		after(m.delay + 0.15, function()
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, 2.5)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, hit, move)
+					end
+				end
+			end
+		end)
+		after(m.delay + m.sprout, function()
+			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, style = style })
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, scaled(m.burst, sc), move)
+						if not o.dead then
+							Combat.stun(o, m.root)
+						end
+					end
+				end
+			end
+		end)
+	elseif kind == "bloomBud" then
+		-- 만목신권 개화: 앞의 땅에서 거대한 꽃봉오리가 솟고, 활짝 피며 꽃가루가 터진다 (적은 잠들고 나는 체력을 되찾는다)
+		local at = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "budRise", at = at, radius = m.radius, delay = m.delay / sp, sleep = m.sleep / sp, style = style })
+		after(m.delay, function()
+			Push:FireAllClients("skillfx", { kind = "budBloom", at = at, radius = m.radius, sleep = m.sleep / sp, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+				strike(f, o, hit, move)
+				if not o.dead then
+					Combat.stun(o, m.sleep)
+				end
+			end
+			heal(f, m.heal)
+		end)
+	elseif kind == "treant" then
+		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고, 팔로 휩쓸고, 땅 곳곳에서 뿌리가 솟는다
+		local base = f.root.Position
+		local lk = look
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.rise / sp)
+		Push:FireAllClients("skillfx", { kind = "treantRise", m = f.model, at = base, dir = lk, rise = m.rise / sp, sweep = m.sweepAt / sp, roots = m.rootsAt / sp, dur = (m.rootsAt + 0.9) / sp, style = style })
+		after(m.rise, function()
+			local at = base + lk * m.slamDist
+			Push:FireAllClients("skillfx", { kind = "treantSlam", at = at, radius = m.slamRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.slamRadius)) do
+				strike(f, o, scaled(m.slam, sc), move)
+			end
+		end)
+		after(m.sweepAt, function()
+			local cosA = math.cos(math.rad(m.sweepAngle / 2))
+			Push:FireAllClients("skillfx", { kind = "treantSweep", at = base, dir = lk, range = m.sweepRange, angle = m.sweepAngle, style = style })
+			for _, o in ipairs(hostilesNear(f, base, m.sweepRange)) do
+				if flat(o.root.Position - base):Dot(lk) >= cosA or (o.root.Position - base).Magnitude < 5 then
+					strike(f, o, scaled(m.sweep, sc), move)
+				end
+			end
+		end)
+		after(m.rootsAt, function()
+			local list = nearestList(f, m.rootRange, m.roots)
+			local spots = {}
+			for i = 1, m.roots do
+				local o = list[i]
+				if o and o.root.Parent then
+					spots[i] = o.root.Position
+				else
+					local a = math.random() * math.pi * 2
+					spots[i] = base + Vector3.new(math.cos(a), 0, math.sin(a)) * math.random(6, math.max(7, math.floor(m.rootRange)))
+				end
+			end
+			Push:FireAllClients("skillfx", { kind = "treantRoots", spots = spots, radius = m.rootRadius, style = style })
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, m.rootRadius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, scaled(m.root, sc), move)
+					end
+				end
+			end
+			heal(f, m.heal)
+		end)
 	elseif kind == "bloodNeedles" then
 		-- 진 혈마 혈침: 피의 바늘을 적들에게 꽂고, 잠시 뒤 바늘이 몸속에서 터지며 체력을 빨아온다
 		local list = nearestList(f, m.range, m.n)
@@ -17946,6 +18138,260 @@ local function regionFrames()
 end
 
 -- 1.5판: 초월 권법의 사부 자리. 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕 (돌 단, 거대한 벚나무, 떨어지는 꽃잎)
+------------------------------------------------------------------------
+-- 2.4판: 새 랜드마크 여섯 (허허벌판을 채운다)
+------------------------------------------------------------------------
+-- 만목원: 비틀린 고목 아홉이 둥글게 서서 가지로 지붕을 이룬 숲. 가운데 이끼 덮인 돌 좌대에 목선 (만목신권의 사부)
+function LANDMARK.grove(at: Vector3, f: Instance)
+	local bark = Color3.fromRGB(78, 58, 42)
+	local moss = Color3.fromRGB(70, 120, 55)
+	disc("GroveFloor", at + Vector3.new(0, 0.15, 0), 70, 0.3, Color3.fromRGB(70, 105, 50), Enum.Material.Grass, f, false)
+	for k = 0, 8 do
+		local a = k / 9 * math.pi * 2
+		local base = at + Vector3.new(math.cos(a) * 46, 0, math.sin(a) * 46)
+		-- 휘어 오르는 줄기 세 마디, 가운데 쪽으로 기운다
+		local p = base
+		for j = 1, 3 do
+			local nxt = p + Vector3.new(0, 14, 0) + (at - base).Unit * (4 + j * 3) + Vector3.new(math.sin(k + j) * 2, 0, math.cos(k + j) * 2)
+			part({ Name = "GroveTrunk", Size = Vector3.new(6 - j, 6 - j, (nxt - p).Magnitude + 2), CFrame = CFrame.lookAt((p + nxt) / 2, nxt), Color = bark, Material = Enum.Material.Wood, Parent = f })
+			p = nxt
+		end
+		-- 가지가 가운데로 뻗어 지붕이 된다
+		local tip = at + Vector3.new(math.cos(a) * 12, 52 + (k % 3) * 3, math.sin(a) * 12)
+		part({ Name = "GroveBough", Size = Vector3.new(2.6, 2.6, (tip - p).Magnitude), CFrame = CFrame.lookAt((p + tip) / 2, tip), Color = bark, Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "GroveLeaves", Shape = Enum.PartType.Ball, Size = Vector3.new(1, 0.6, 1) * rng:NextNumber(24, 32), Position = p:Lerp(tip, 0.6) + Vector3.new(0, 5, 0), Color = moss:Lerp(Color3.fromRGB(120, 170, 80), rng:NextNumber()), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		-- 뿌리 둘
+		for _, s in ipairs({ -1, 1 }) do
+			local rp = base + Vector3.new(math.cos(a + s * 0.5) * 9, 0.8, math.sin(a + s * 0.5) * 9)
+			part({ Name = "GroveRoot", Size = Vector3.new(2.4, 2, 12), CFrame = CFrame.lookAt(rp, base + Vector3.new(0, 3, 0)), Color = bark, Material = Enum.Material.Wood, Parent = f })
+		end
+		-- 늘어진 덩굴
+		for v = 0, 1 do
+			local hang = tip:Lerp(p, 0.3 + v * 0.3)
+			part({ Name = "GroveVine", Size = Vector3.new(0.3, 14, 0.3), Position = hang - Vector3.new(0, 7, 0), Color = Color3.fromRGB(60, 110, 50), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+	end
+	-- 가운데: 작은 못과 이끼 덮인 돌 좌대
+	disc("GrovePond", at + Vector3.new(14, 0.25, 10), 8, 0.2, Color3.fromRGB(70, 140, 150), Enum.Material.Glass, f, false).Transparency = 0.2
+	disc("GroveSeat", at + Vector3.new(0, 1.2, 0), 7, 2.4, Color3.fromRGB(120, 120, 110), Enum.Material.Slate, f)
+	disc("GroveSeatMoss", at + Vector3.new(0, 2.45, 0), 6.4, 0.2, moss, Enum.Material.Grass, f, false)
+	-- 빛나는 버섯과 반딧불
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2 + 0.2
+		local mp = at + Vector3.new(math.cos(a) * rng:NextNumber(16, 34), 0, math.sin(a) * rng:NextNumber(16, 34))
+		part({ Name = "GroveShroomStem", Size = Vector3.new(0.5, 1.4, 0.5), Position = mp + Vector3.new(0, 0.7, 0), Color = Color3.fromRGB(230, 225, 210), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		local cap = part({ Name = "GroveShroom", Shape = Enum.PartType.Ball, Size = Vector3.new(1.8, 0.8, 1.8), Position = mp + Vector3.new(0, 1.5, 0), Color = Color3.fromRGB(140, 255, 190), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		if k % 3 == 0 then
+			light(cap, Color3.fromRGB(140, 255, 190), 10, 0.8)
+		end
+	end
+	local flies = part({ Name = "GroveFireflies", Size = Vector3.new(90, 30, 90), Position = at + Vector3.new(0, 16, 0), Transparency = 1, CanCollide = false, Parent = f })
+	emitter(flies, Color3.fromRGB(220, 255, 150), 18, 0.35, 1.5, 6)
+	local board = part({ Name = "GroveSign", Size = Vector3.new(10, 2.6, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.5, 60), at + Vector3.new(0, 4.5, 90)), Color = Color3.fromRGB(60, 45, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "만목원", Color3.fromRGB(200, 255, 170), 1 } })
+	part({ Name = "GroveSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 60), Color = bark, Material = Enum.Material.Wood, Parent = f })
+end
+
+-- 잠든 석장: 옛 싸움에서 쓰러진 거대한 돌 장수. 누운 몸통, 떨어진 투구 머리, 땅에 꽂힌 부러진 칼, 둘레의 돌 조각
+function LANDMARK.fallengiant(at: Vector3, f: Instance)
+	local stone = Color3.fromRGB(150, 145, 135)
+	local dark = Color3.fromRGB(110, 106, 98)
+	local yaw = CFrame.Angles(0, math.rad(25), 0)
+	local base = CFrame.new(at) * yaw
+	-- 누운 몸통과 팔다리 (반쯤 땅에 묻혔다)
+	part({ Name = "GiantChest", Size = Vector3.new(26, 12, 40), CFrame = base * CFrame.new(0, 4, 0) * CFrame.Angles(0, 0, math.rad(8)), Color = stone, Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "GiantPlate", Size = Vector3.new(22, 2, 30), CFrame = base * CFrame.new(-1, 10.5, 2) * CFrame.Angles(0, 0, math.rad(8)), Color = dark, Material = Enum.Material.Slate, Parent = f })
+	for _, s in ipairs({ -1, 1 }) do
+		part({ Name = "GiantArm", Size = Vector3.new(8, 7, 30), CFrame = base * CFrame.new(s * 18, 2.5, -6) * CFrame.Angles(0, s * math.rad(20), 0), Color = stone, Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "GiantLeg", Size = Vector3.new(9, 8, 34), CFrame = base * CFrame.new(s * 7, 2, 36) * CFrame.Angles(0, s * math.rad(6), 0), Color = dark, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 떨어져 굴러간 투구 머리
+	local head = base * CFrame.new(-6, 7, -36)
+	part({ Name = "GiantHead", Shape = Enum.PartType.Ball, Size = Vector3.new(15, 15, 15), CFrame = head, Color = stone, Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "GiantHelm", Size = Vector3.new(16, 6, 16), CFrame = head * CFrame.new(0, 5, 0) * CFrame.Angles(math.rad(20), 0, math.rad(-30)), Color = dark, Material = Enum.Material.Slate, Parent = f })
+	for _, s in ipairs({ -1, 1 }) do
+		part({ Name = "GiantEye", Size = Vector3.new(2, 1, 0.6), CFrame = head * CFrame.new(s * 3, 0, -7.4), Color = Color3.fromRGB(60, 58, 55), Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 부러진 큰 칼 (땅에 비스듬히 꽂혔다)
+	part({ Name = "GiantBlade", Size = Vector3.new(4, 46, 1.5), CFrame = base * CFrame.new(30, 18, 10) * CFrame.Angles(math.rad(15), 0, math.rad(-18)), Color = Color3.fromRGB(120, 125, 135), Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "GiantGuard", Size = Vector3.new(14, 2.4, 3), CFrame = base * CFrame.new(23.5, 39, 15.5) * CFrame.Angles(math.rad(15), 0, math.rad(-18)), Color = Color3.fromRGB(150, 120, 70), Material = Enum.Material.Metal, Parent = f })
+	-- 둘레의 돌 조각과 풀
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		rock(at + Vector3.new(math.cos(a) * rng:NextNumber(40, 60), 0, math.sin(a) * rng:NextNumber(40, 60)), rng:NextNumber(3, 7), f, stone)
+	end
+end
+
+-- 별바위 고리: 열두 선돌이 둥글게 서 있고, 가운데 돌단 위에서 별빛이 피어오른다
+function LANDMARK.stonecircle(at: Vector3, f: Instance)
+	local stone = Color3.fromRGB(120, 118, 130)
+	local glow = Color3.fromRGB(170, 200, 255)
+	disc("CircleFloor", at + Vector3.new(0, 0.2, 0), 34, 0.4, Color3.fromRGB(105, 120, 90), Enum.Material.Grass, f, false)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * 28, 0, math.sin(a) * 28)
+		local h = 14 + (k % 3) * 4
+		part({ Name = "Menhir", Size = Vector3.new(4.5, h, 3), CFrame = CFrame.lookAt(p + Vector3.new(0, h / 2, 0), at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad((k % 2 == 0 and 1 or -1) * 3)), Color = stone:Lerp(Color3.new(0, 0, 0), (k % 3) * 0.06), Material = Enum.Material.Slate, Parent = f })
+		-- 선돌 앞의 빛나는 문양
+		part({ Name = "MenhirRune", Size = Vector3.new(1.4, 1.4, 0.2), CFrame = CFrame.lookAt(p + (at - p).Unit * 1.6 + Vector3.new(0, 6, 0), at + Vector3.new(0, 6, 0)), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		-- 셋마다 위에 돌 들보
+		if k % 3 == 0 then
+			local q = at + Vector3.new(math.cos(a + math.pi / 12) * 28, 0, math.sin(a + math.pi / 12) * 28)
+			part({ Name = "Lintel", Size = Vector3.new(4, 3, 9), CFrame = CFrame.lookAt(q + Vector3.new(0, h + 1.5, 0), at + Vector3.new(0, h + 1.5, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = stone, Material = Enum.Material.Slate, Parent = f })
+		end
+	end
+	disc("CircleAltar", at + Vector3.new(0, 1, 0), 7, 2, stone, Enum.Material.Slate, f)
+	disc("CircleAltarRing", at + Vector3.new(0, 2.05, 0), 5.5, 0.1, glow, Enum.Material.Neon, f, false).Transparency = 0.4
+	local core = part({ Name = "CircleStar", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 2.4, 2.4), Position = at + Vector3.new(0, 6, 0), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(core, glow, 30, 1.6)
+	emitter(core, glow, 10, 0.5, 3, 3)
+end
+
+-- 옛 봉화대: 언덕 위 무너진 성벽 사이에 선 높은 돌탑. 꼭대기에 아직 꺼지지 않은 봉화
+function LANDMARK.beacon(at: Vector3, f: Instance)
+	local stone = Color3.fromRGB(140, 130, 115)
+	disc("BeaconMound", at + Vector3.new(0, 1.5, 0), 32, 3, Color3.fromRGB(95, 110, 70), Enum.Material.Grass, f)
+	for k = 0, 4 do
+		local w = 12 - k * 1.4
+		part({ Name = "BeaconTier", Size = Vector3.new(w, 8, w), Position = at + Vector3.new(0, 7 + k * 8, 0), Color = stone:Lerp(Color3.new(0, 0, 0), k * 0.04), Material = Enum.Material.Cobblestone, Parent = f })
+	end
+	part({ Name = "BeaconTop", Size = Vector3.new(9, 1.2, 9), Position = at + Vector3.new(0, 43.6, 0), Color = stone, Material = Enum.Material.Cobblestone, Parent = f })
+	for _, c in ipairs({ Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) }) do
+		part({ Name = "BeaconMerlon", Size = Vector3.new(1.6, 2.4, 1.6), Position = at + c * 3.8 + Vector3.new(0, 45.4, 0), Color = stone, Material = Enum.Material.Cobblestone, Parent = f })
+	end
+	brazier(at + Vector3.new(0, 44.2, 0), 2, f)
+	-- 무너진 성벽 조각들
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		if k % 3 ~= 1 then
+			local p = at + Vector3.new(math.cos(a) * 24, 0, math.sin(a) * 24)
+			local h = rng:NextNumber(3, 9)
+			part({ Name = "BeaconWall", Size = Vector3.new(12, h, 2.4), CFrame = CFrame.lookAt(p + Vector3.new(0, 3 + h / 2, 0), at + Vector3.new(0, 3 + h / 2, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = stone, Material = Enum.Material.Cobblestone, Parent = f })
+		end
+	end
+	banner(at + Vector3.new(8, 3, 8), 10, Color3.fromRGB(170, 50, 40), f)
+end
+
+-- 버려진 마을: 들판 가운데 오래전 비워진 집 다섯, 우물, 무너진 울타리, 묵은 밭
+function LANDMARK.hamlet(at: Vector3, f: Instance)
+	local spots = { { -24, -14, 0 }, { 18, -20, 90 }, { -20, 18, 180 }, { 24, 16, -90 }, { 0, 32, 180 } }
+	for _, s in ipairs(spots) do
+		house(at + Vector3.new(s[1], 0, s[2]), 14, 11, s[3], f)
+	end
+	-- 우물
+	cyl("WellRing", at + Vector3.new(0, 1.4, 0), 3.2, 2.8, Color3.fromRGB(130, 125, 115), Enum.Material.Cobblestone, f)
+	disc("WellWater", at + Vector3.new(0, 2.5, 0), 2.6, 0.1, Color3.fromRGB(50, 80, 90), Enum.Material.Glass, f, false)
+	for _, x in ipairs({ -1, 1 }) do
+		part({ Name = "WellPost", Size = Vector3.new(0.6, 6, 0.6), Position = at + Vector3.new(x * 3, 3, 0), Color = Color3.fromRGB(90, 65, 40), Material = Enum.Material.Wood, Parent = f })
+	end
+	part({ Name = "WellRoof", Size = Vector3.new(8, 0.5, 4), CFrame = CFrame.new(at + Vector3.new(0, 6.4, 0)) * CFrame.Angles(0, 0, 0), Color = Color3.fromRGB(80, 60, 45), Material = Enum.Material.Wood, Parent = f })
+	-- 묵은 밭 (이랑)과 허수아비
+	for k = 0, 5 do
+		part({ Name = "FieldRow", Size = Vector3.new(26, 0.8, 1.6), Position = at + Vector3.new(-50, 0.4, -10 + k * 4), Color = Color3.fromRGB(110, 85, 55), Material = Enum.Material.Ground, CanCollide = false, Parent = f })
+		if k % 2 == 0 then
+			for j = 0, 4 do
+				part({ Name = "FieldWeed", Size = Vector3.new(0.4, 1.4, 0.4), Position = at + Vector3.new(-60 + j * 5, 1.2, -10 + k * 4), Color = Color3.fromRGB(150, 140, 70), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	part({ Name = "ScarecrowPost", Size = Vector3.new(0.5, 7, 0.5), Position = at + Vector3.new(-50, 3.5, 2), Color = Color3.fromRGB(100, 75, 45), Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "ScarecrowArms", Size = Vector3.new(6, 0.4, 0.4), Position = at + Vector3.new(-50, 5.5, 2), Color = Color3.fromRGB(100, 75, 45), Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "ScarecrowHat", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 3.6, 3.6), CFrame = CFrame.new(at + Vector3.new(-50, 7.3, 2)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(200, 170, 110), Material = Enum.Material.Fabric, Parent = f })
+	-- 무너진 울타리
+	for k = 0, 9 do
+		if k % 4 ~= 2 then
+			local a = k / 10 * math.pi * 2
+			local p = at + Vector3.new(math.cos(a) * 46, 0, math.sin(a) * 46)
+			part({ Name = "OldFence", Size = Vector3.new(0.4, 2.6, 9), CFrame = CFrame.lookAt(p + Vector3.new(0, 1.3, 0), at + Vector3.new(0, 1.3, 0)) * CFrame.Angles(0, math.rad(90), math.rad((k % 3 - 1) * 8)), Color = Color3.fromRGB(95, 70, 45), Material = Enum.Material.Wood, Parent = f })
+		end
+	end
+	tree(at + Vector3.new(30, 0, -36), 1.8, f)
+	tree(at + Vector3.new(-36, 0, 34), 1.6, f)
+end
+
+-- 하늘 아치: 들판에 홀로 선 거대한 바위 아치. 위에서 덩굴과 작은 폭포가 흘러내린다
+function LANDMARK.archway(at: Vector3, f: Instance)
+	local rock2 = Color3.fromRGB(150, 115, 90)
+	local n = 11
+	for k = 0, n do
+		local u = k / n
+		local a = math.pi * u
+		local p = at + Vector3.new(math.cos(a) * 34, math.sin(a) * 40, 0)
+		local w = 14 - math.sin(a) * 5
+		part({ Name = "ArchStone", Size = Vector3.new(w, 12, 12), CFrame = CFrame.new(p) * CFrame.Angles(0, 0, a + math.pi / 2) * CFrame.Angles(0, rng:NextNumber(-0.1, 0.1), 0), Color = rock2:Lerp(Color3.fromRGB(110, 85, 70), rng:NextNumber()), Material = Enum.Material.Sandstone, Parent = f })
+	end
+	-- 꼭대기의 풀과 늘어진 덩굴
+	disc("ArchTopGrass", at + Vector3.new(0, 46.5, 0), 7, 0.6, Color3.fromRGB(90, 140, 60), Enum.Material.Grass, f, false)
+	for k = -3, 3 do
+		part({ Name = "ArchVine", Size = Vector3.new(0.35, 10 + (k % 2) * 6, 0.35), Position = at + Vector3.new(k * 2.6, 36 - (k % 2) * 3, rng:NextNumber(-3, 3)), Color = Color3.fromRGB(70, 120, 50), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+	-- 아치 아래로 흘러내리는 가는 폭포와 웅덩이
+	local fall = part({ Name = "ArchFall", Size = Vector3.new(3, 30, 0.6), Position = at + Vector3.new(6, 20, 4), Color = Color3.fromRGB(170, 215, 240), Material = Enum.Material.Glass, CanCollide = false, Parent = f })
+	fall.Transparency = 0.3
+	emitter(fall, Color3.fromRGB(220, 240, 255), 14, 0.6, 2, 1)
+	disc("ArchPool", at + Vector3.new(6, 0.25, 4), 9, 0.2, Color3.fromRGB(80, 150, 170), Enum.Material.Glass, f, false).Transparency = 0.2
+	for k = 0, 5 do
+		rock(at + Vector3.new(rng:NextNumber(-50, 50), 0, rng:NextNumber(-30, 30)), rng:NextNumber(3, 6), f, rock2)
+	end
+end
+
+------------------------------------------------------------------------
+-- 2.4판: 들판 채우기. 지역·길·랜드마크에서 떨어진 빈 땅에 작은 숲, 바위 무더기, 꽃밭, 덤불을 모아 놓는다 (늘 같은 자리)
+------------------------------------------------------------------------
+local function wilds()
+	local f = Instance.new("Folder")
+	f.Name = "Wilds"
+	f.Parent = folder
+	local R = Random.new(2404)
+	local W = Config.WORLD_HALF
+	local made = 0
+	local flowers = { Color3.fromRGB(255, 220, 90), Color3.fromRGB(240, 120, 160), Color3.fromRGB(180, 140, 255), Color3.fromRGB(255, 255, 255) }
+	for _ = 1, 500 do
+		if made >= 120 then
+			break
+		end
+		local c = Vector3.new(R:NextNumber(-W + 500, W - 500), 0, R:NextNumber(-W + 500, W - 500))
+		if not inAnyRegion(c, 60) and not nearFeature(c, 60) and not nearRoad(c, 30) then
+			made += 1
+			local kind = made % 5
+			if kind == 0 or kind == 1 then
+				-- 작은 숲 (나무 셋~다섯, 덤불)
+				local n = 3 + made % 3
+				for k = 0, n - 1 do
+					local a = k / n * math.pi * 2 + made
+					local p = c + Vector3.new(math.cos(a), 0, math.sin(a)) * R:NextNumber(6, 16)
+					if made % 7 == 0 then
+						pine(p, R:NextNumber(1.1, 1.6), f, false)
+					else
+						tree(p, R:NextNumber(1.1, 1.7), f, made % 9 == 0)
+					end
+				end
+				bush(c + Vector3.new(4, 0, 3), 2.4, Color3.fromRGB(70, 120, 50), f)
+			elseif kind == 2 then
+				-- 바위 무더기
+				for k = 0, 3 do
+					rock(c + Vector3.new(R:NextNumber(-8, 8), 0, R:NextNumber(-8, 8)), R:NextNumber(2.5, 6), f)
+				end
+				bush(c + Vector3.new(-5, 0, 5), 1.8, Color3.fromRGB(80, 115, 55), f)
+			elseif kind == 3 then
+				-- 꽃밭 (작은 꽃 열둘)
+				local col = flowers[made % #flowers + 1]
+				for k = 0, 11 do
+					local p = c + Vector3.new(R:NextNumber(-9, 9), 0, R:NextNumber(-9, 9))
+					part({ Name = "Flower", Shape = Enum.PartType.Ball, Size = Vector3.new(1, 0.5, 1), Position = p + Vector3.new(0, 0.6, 0), Color = col, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+					part({ Name = "FlowerStem", Size = Vector3.new(0.15, 0.6, 0.15), Position = p + Vector3.new(0, 0.3, 0), Color = Color3.fromRGB(70, 130, 50), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+				end
+			else
+				-- 덤불과 쓰러진 통나무
+				for k = 0, 2 do
+					bush(c + Vector3.new(R:NextNumber(-7, 7), 0, R:NextNumber(-7, 7)), R:NextNumber(1.6, 2.8), Color3.fromRGB(75, 125, 55), f)
+				end
+				part({ Name = "Log", Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, 1.6, 1.6), CFrame = CFrame.new(c + Vector3.new(0, 0.8, 0)) * CFrame.Angles(0, R:NextNumber(0, 3), 0), Color = Color3.fromRGB(95, 70, 45), Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+	end
+end
+
 local function sakuraHill()
 	local at = Config.SAKURA_HILL
 	if not at then
@@ -18740,6 +19186,7 @@ function World.build(): any
 		{ "술독 마루", sojuHill },
 		{ "혈월 제단", reaperAltar },
 		{ "쇠기둥 봉우리", thunderPeak },
+		{ "들판 채우기", wilds },
 		{ "각성선인", function()
 			awakenAltar(out)
 		end },
@@ -20676,6 +21123,9 @@ function handlers.skillfx(data: any)
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
+	elseif data.kind == "pulse" and data.fx == "bloom" then
+		Awake3.run({ kind = "thornPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
 	elseif data.kind == "strike" and data.fx == "sword" then
 		Ults.run({ kind = "sword", at = data.at, radius = data.radius, style = data.style })
 		return
@@ -21058,8 +21508,8 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷" })[style.pulse.kind] or "✦"
-		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
+		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "✦"
+		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 ", bloom = "생장 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
 	end
@@ -24151,6 +24601,342 @@ local function drumFinale(data: any)
 	end)
 end
 
+------------------------------------------------------------------------
+-- 만목신권 (2.4판): 씨앗·가시덤불, 거대한 꽃봉오리, 나무 정령
+------------------------------------------------------------------------
+local BARK = Color3.fromRGB(92, 66, 44)
+local LEAF = Color3.fromRGB(80, 170, 70)
+local function thornBush(at: Vector3, radius: number, c: Color3, c2: Color3)
+	local g = ground(at)
+	-- 가시 여덟이 땅에서 비스듬히 솟는다
+	for k = 1, 8 do
+		local a = k / 8 * math.pi * 2 + math.random() * 0.4
+		local d = Vector3.new(math.cos(a), 0, math.sin(a))
+		local tip = g + d * radius * 0.7 + Vector3.new(0, radius * 0.9, 0)
+		local thorn = beam(g + d * 0.5, g + d * 0.5 + Vector3.new(0, 0.1, 0), 0.6, BARK, 0, Enum.Material.Wood)
+		tween(thorn, 0.12, { Size = Vector3.new(0.6, 0.6, (tip - g).Magnitude), CFrame = CFrame.lookAt((g + tip) / 2, tip) }, Enum.EasingStyle.Back)
+		local point = part(Vector3.new(0.3, 0.3, 1.2), c2, Enum.Material.Neon, 0)
+		point.CFrame = CFrame.lookAt(tip, tip + (tip - g).Unit)
+		task.delay(0.9, function()
+			fadeOut(thorn, 0.4, { CFrame = thorn.CFrame * CFrame.new(0, 0, (tip - g).Magnitude * 0.3) })
+			fadeOut(point, 0.3)
+		end)
+	end
+	local leaves = part(Vector3.new(1, 1, 1), c, Enum.Material.Grass, 0.1, "ball")
+	leaves.CFrame = CFrame.new(g + Vector3.new(0, 0.8, 0))
+	tween(leaves, 0.15, { Size = Vector3.new(radius * 1.3, radius * 0.6, radius * 1.3) }, Enum.EasingStyle.Back)
+	task.delay(0.9, function()
+		fadeOut(leaves, 0.4)
+	end)
+	Fx.burst("spark", at, c, 10, 1)
+end
+local function seedShot(data: any)
+	local from: Vector3 = data.from
+	if not near(from, 220) then
+		return
+	end
+	local _, c2 = colors(data.style)
+	task.delay(data.delay or 0.18, function()
+		for i, at in ipairs(data.spots or {}) do
+			local seed = part(Vector3.new(0.7, 0.7, 0.9), Color3.fromRGB(150, 110, 60), Enum.Material.Wood, 0, "ball")
+			local glow = part(Vector3.new(1.1, 1.1, 1.1), c2, Enum.Material.Neon, 0.6, "ball")
+			seed.CFrame = CFrame.new(from + Vector3.new(0, 1.5, 0))
+			glow.CFrame = seed.CFrame
+			local to = ground(at) + Vector3.new(0, 0.4, 0)
+			tween(seed, 0.15 + i * 0.01, { CFrame = CFrame.new(to) }, Enum.EasingStyle.Linear)
+			tween(glow, 0.15 + i * 0.01, { CFrame = CFrame.new(to) }, Enum.EasingStyle.Linear)
+			task.delay((data.sprout or 0.5) - 0.02, function()
+				seed:Destroy()
+				glow:Destroy()
+			end)
+		end
+		Fx.sound("swing", 0.5, 1.6, from)
+	end)
+end
+local function thornSprout(data: any)
+	local c, c2 = colors(data.style)
+	for _, at in ipairs(data.spots or {}) do
+		if near(at, 200) then
+			thornBush(at, data.radius or 6, c, c2)
+		end
+	end
+	local first = (data.spots or {})[1]
+	if first then
+		Fx.sound("hit", 0.7, 0.8, first)
+	end
+end
+-- 거대한 꽃봉오리: 줄기와 잎 둘이 솟고, 꽃잎 여섯이 닫혀 있다가 활짝 펴진다
+local buds: { [string]: { stem: BasePart, petals: { BasePart }, core: BasePart, leaves: { BasePart }, g: Vector3, R: number } } = {}
+local PETAL = Color3.fromRGB(255, 170, 210)
+local function petalCF(g: Vector3, R: number, k: number, open: number): CFrame
+	local a = k / 6 * math.pi * 2
+	local center = g + Vector3.new(0, R * 0.9, 0)
+	-- open 0 = 위로 모여 닫힘, 1 = 바깥으로 눕도록 활짝
+	local tilt = math.rad(10 + 75 * open)
+	return CFrame.new(center) * CFrame.Angles(0, a, 0) * CFrame.Angles(-tilt, 0, 0) * CFrame.new(0, R * 0.32, 0)
+end
+local function budRise(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = (data.radius or 14) * 0.55
+	local g = ground(at)
+	local key = keyOf(at)
+	local stem = part(Vector3.new(R * 0.9, 1.2, 1.2), Color3.fromRGB(70, 140, 60), Enum.Material.SmoothPlastic, 0, "cyl")
+	stem.CFrame = CFrame.new(g + Vector3.new(0, R * 0.45, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local leaves = {}
+	for _, x in ipairs({ -1, 1 }) do
+		local l = part(Vector3.new(R * 0.7, 0.2, R * 0.3), LEAF, Enum.Material.SmoothPlastic, 0, "ball")
+		l.CFrame = CFrame.new(g + Vector3.new(x * R * 0.35, R * 0.25, 0)) * CFrame.Angles(0, 0, x * math.rad(-25))
+		table.insert(leaves, l)
+	end
+	local petals = {}
+	for k = 1, 6 do
+		local p = part(Vector3.new(R * 0.55, R * 0.75, 0.3), k % 2 == 0 and PETAL or c2:Lerp(PETAL, 0.5), Enum.Material.SmoothPlastic, 0, "ball")
+		p.CFrame = petalCF(g, R, k, 0)
+		table.insert(petals, p)
+	end
+	local core = part(Vector3.new(R * 0.4, R * 0.4, R * 0.4), Color3.fromRGB(255, 230, 120), Enum.Material.Neon, 0, "ball")
+	core.CFrame = CFrame.new(g + Vector3.new(0, R * 0.95, 0))
+	buds[key] = { stem = stem, petals = petals, core = core, leaves = leaves, g = g, R = R }
+	-- 땅에서 솟아오른다
+	local all = { stem, core }
+	for _, p in ipairs(petals) do
+		table.insert(all, p)
+	end
+	for _, p in ipairs(leaves) do
+		table.insert(all, p)
+	end
+	for _, p in ipairs(all) do
+		local cf = p.CFrame
+		p.CFrame = cf - Vector3.new(0, R * 1.4, 0)
+		tween(p, (data.delay or 0.7) * 0.6, { CFrame = cf }, Enum.EasingStyle.Back)
+	end
+	Fx.burst("dust", g + Vector3.new(0, 0.5, 0), Color3.fromRGB(140, 120, 90), 14, 1.4)
+	Fx.sound("heavy", 0.6, 0.9, at)
+	local _ = c
+end
+local function budBloom(data: any)
+	local key = keyOf(data.at)
+	local b = buds[key]
+	local c, c2 = colors(data.style)
+	if b then
+		buds[key] = nil
+		local t0 = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / 0.25, 0, 1)
+			for k, p in ipairs(b.petals) do
+				p.CFrame = petalCF(b.g, b.R, k, 1 - (1 - u) ^ 2)
+			end
+			if u >= 1 then
+				conn:Disconnect()
+			end
+		end)
+		task.delay((data.sleep or 2) * 0.6, function()
+			for _, p in ipairs(b.petals) do
+				fadeOut(p, 0.6)
+			end
+			for _, p in ipairs(b.leaves) do
+				fadeOut(p, 0.6)
+			end
+			fadeOut(b.stem, 0.6)
+			fadeOut(b.core, 0.4)
+		end)
+	end
+	if not near(data.at, 220) then
+		return
+	end
+	-- 꽃가루 구름 (노란 빛 가루가 둘레로 퍼진다) + 잠든 적 위의 'z'
+	local R = data.radius or 14
+	local g = ground(data.at)
+	local cloud = part(Vector3.new(2, 2, 2), Color3.fromRGB(255, 240, 150), Enum.Material.ForceField, 0.2, "ball")
+	cloud.CFrame = CFrame.new(g + Vector3.new(0, 3, 0))
+	fadeOut(cloud, 0.9, { Size = Vector3.new(R * 2.2, R * 0.8, R * 2.2) })
+	for k = 0, 2 do
+		task.delay(k * 0.08, function()
+			Fx.ring(g + Vector3.new(0, 0.4, 0), k == 1 and c2 or Color3.fromRGB(255, 240, 150), 2, R * 2.2 + k * 4, 0.6)
+		end)
+	end
+	Fx.burst("glitter", g + Vector3.new(0, 4, 0), Color3.fromRGB(255, 240, 150), 40, 2.4)
+	Fx.text(g + Vector3.new(0, 10, 0), "Zzz", Color3.fromRGB(200, 220, 255), 34, 1.6)
+	Fx.sound("ping", 0.8, 1.2, data.at)
+	local _ = c
+end
+-- 나무 정령: 그루터기 다리, 줄기 몸, 옹이 얼굴의 초록 눈, 머리와 어깨의 잎 덤불, 가지 뿔, 굵은 팔과 주먹
+type TPiece = { p: BasePart, limb: string, off: CFrame }
+local function treantRise(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 260) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
+	local S = 3
+	local g = ground(at) - dir * 12
+	local face = CFrame.lookAt(g, g + dir)
+	local pieces: { TPiece } = {}
+	local function add(limb: string, size: Vector3, off: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?)
+		local p = part(size * S, color, mat or Enum.Material.Wood, alpha or 0, shape)
+		table.insert(pieces, { p = p, limb = limb, off = CFrame.new(off.Position * S) * off.Rotation })
+	end
+	local dark = BARK:Lerp(Color3.new(0, 0, 0), 0.25)
+	for _, x in ipairs({ -1, 1 }) do
+		add("B", Vector3.new(1.7, 3.2, 1.7), CFrame.new(x * 1.2, 1.5, 0) * CFrame.Angles(0, 0, x * math.rad(8)), dark)
+		add("B", Vector3.new(0.6, 0.6, 2.4), CFrame.new(x * 1.8, 0.3, -0.8) * CFrame.Angles(math.rad(-20), x * math.rad(25), 0), dark)
+	end
+	add("B", Vector3.new(3.2, 5.2, 2.6), CFrame.new(0, 5.4, 0) * CFrame.Angles(math.rad(-6), 0, 0), BARK)
+	add("B", Vector3.new(2.4, 2.2, 2.2), CFrame.new(0, 9.0, -0.3), dark)
+	for _, x in ipairs({ -1, 1 }) do
+		add("B", Vector3.new(0.45, 0.35, 0.12), CFrame.new(x * 0.5, 9.2, -1.42), c2, Enum.Material.Neon)
+		add("B", Vector3.new(0.35, 2.6, 0.35), CFrame.new(x * 0.8, 11, 0.1) * CFrame.Angles(math.rad(-15), 0, x * math.rad(-30)), BARK)
+		add("B", Vector3.new(3.2, 2.4, 3.2), CFrame.new(x * 2.4, 8.4, 0.4), LEAF:Lerp(c, 0.3), Enum.Material.Grass, 0, "ball")
+	end
+	add("B", Vector3.new(0.8, 0.2, 0.12), CFrame.new(0, 8.5, -1.42), Color3.fromRGB(30, 20, 15), Enum.Material.SmoothPlastic)
+	add("B", Vector3.new(4.4, 3.2, 4.0), CFrame.new(0, 11.2, 0.5), LEAF, Enum.Material.Grass, 0, "ball")
+	add("B", Vector3.new(1.4, 1.4, 1.4), CFrame.new(0, 5.8, -1.35), c2, Enum.Material.Neon, 0.3, "ball")
+	for _, limb in ipairs({ "R", "L" }) do
+		add(limb, Vector3.new(1.2, 3.2, 1.2), CFrame.new(0, -1.6, 0), BARK)
+		add(limb, Vector3.new(1.1, 3.0, 1.1), CFrame.new(0, -4.4, -0.2), dark)
+		add(limb, Vector3.new(2.0, 1.7, 2.0), CFrame.new(0, -6.3, -0.3), BARK)
+		for k = -1, 1 do
+			add(limb, Vector3.new(0.3, 1.2, 0.3), CFrame.new(k * 0.6, -7.4, -0.5) * CFrame.Angles(math.rad(20), 0, 0), dark)
+		end
+		add(limb, Vector3.new(1.6, 1.2, 1.6), CFrame.new(0, 0.2, 0.2), LEAF, Enum.Material.Grass, 0, "ball")
+	end
+	local SH = { R = Vector3.new(2.6, 7.6, 0), L = Vector3.new(-2.6, 7.6, 0) }
+	local rise = data.rise or 0.9
+	local sweep = data.sweep or 1.6
+	local roots = data.roots or 2.4
+	local dur = data.dur or 3.3
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if t > dur + 0.8 then
+			conn:Disconnect()
+			for _, pc in ipairs(pieces) do
+				pc.p:Destroy()
+			end
+			return
+		end
+		-- 솟아오르기 · 가라앉기
+		local up = 1 - (1 - math.clamp(t / rise, 0, 1)) ^ 3
+		local down = math.clamp((t - dur) / 0.8, 0, 1)
+		local y = -13 * S * (1 - up) - 13 * S * down
+		-- 휩쓸기: 몸을 크게 돌린다
+		local yaw = 0
+		if t > sweep - 0.3 and t < sweep + 0.25 then
+			local u = math.clamp((t - (sweep - 0.3)) / 0.45, 0, 1)
+			yaw = -1.1 + 2.2 * u * u
+		elseif t >= sweep + 0.25 then
+			yaw = 1.1 * math.max(0, 1 - (t - sweep - 0.25) / 0.4)
+		end
+		local root = face * CFrame.new(0, y, 0) * CFrame.Angles(0, yaw, 0)
+		-- 팔: 오른팔을 치켜들었다 내리치고, 휩쓸 때는 앞으로 뻗고, 뿌리 때는 두 팔을 치켜들었다 땅을 친다
+		local aR, aL = 0.4, 0.4
+		if t < rise - 0.18 then
+			aR = 0.4 + 2.5 * math.clamp(t / (rise - 0.18), 0, 1)
+		elseif t < rise then
+			aR = 2.9 - 2.0 * ((t - (rise - 0.18)) / 0.18)
+		elseif t < sweep - 0.3 then
+			aR, aL = 0.9 + 0.7 * math.clamp((t - rise) / 0.3, 0, 1), 1.6 * math.clamp((t - rise) / 0.3, 0, 1)
+		elseif t < roots - 0.35 then
+			aR, aL = 1.6, 1.6
+			if t > sweep + 0.25 then
+				local u = math.clamp((t - sweep - 0.25) / 0.3, 0, 1)
+				aR, aL = 1.6 + 1.3 * u, 1.6 + 1.3 * u
+			end
+		elseif t < roots then
+			local u = (t - (roots - 0.35)) / 0.35
+			aR, aL = 2.9 - 2.4 * u * u, 2.9 - 2.4 * u * u
+		else
+			aR, aL = 0.5, 0.5
+		end
+		local sR = root * CFrame.new(SH.R * S) * CFrame.Angles(aR, 0, 0)
+		local sL = root * CFrame.new(SH.L * S) * CFrame.Angles(aL, 0, 0)
+		for _, pc in ipairs(pieces) do
+			local b = pc.limb == "R" and sR or (pc.limb == "L" and sL or root)
+			pc.p.CFrame = b * pc.off
+		end
+	end)
+	Fx.burst("dust", g + Vector3.new(0, 2, 0), Color3.fromRGB(120, 100, 70), 40, 3)
+	Fx.debris(g, 12, 30, BARK)
+	Fx.sound("heavy", 1, 0.35, g)
+	shakeNear(g, 1.4, 120)
+end
+local function treantSlam(data: any)
+	if near(data.at, 240) then
+		local c, c2 = colors(data.style)
+		impact(data.at, data.radius or 15, c, c2, 1.8)
+		Fx.debris(ground(data.at), 14, 40, Color3.fromRGB(100, 80, 55))
+		Fx.sound("heavy", 1, 0.45, data.at)
+		shakeNear(data.at, 2, 120)
+	end
+end
+local function treantSweep(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 240) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
+	local range = data.range or 30
+	local half = math.rad((data.angle or 140) / 2)
+	-- 휩쓴 자리에 흩날리는 잎 (부채꼴로)
+	for k = 0, 10 do
+		local a = -half + 2 * half * k / 10
+		local d = (CFrame.Angles(0, a, 0) * CFrame.new(dir)).Position
+		local p = at + d * range * 0.7 + Vector3.new(0, 2, 0)
+		local leaf = part(Vector3.new(1.4, 0.15, 0.9), k % 2 == 0 and LEAF or c2, Enum.Material.SmoothPlastic, 0, "ball")
+		leaf.CFrame = CFrame.new(at + d * 4 + Vector3.new(0, 3, 0))
+		fadeOut(leaf, 0.5, { CFrame = CFrame.new(p) * CFrame.Angles(math.random() * 3, math.random() * 3, 0) })
+	end
+	Fx.ring(ground(at) + Vector3.new(0, 0.4, 0), c, 3, range * 2, 0.5)
+	Fx.sound("swing", 1, 0.5, at)
+	shakeNear(at, 1.2, 90)
+end
+local function treantRoots(data: any)
+	local c, c2 = colors(data.style)
+	for i, at in ipairs(data.spots or {}) do
+		task.delay((i - 1) * 0.03, function()
+			if near(at, 220) then
+				local g = ground(at)
+				local R = data.radius or 6
+				-- 굵은 뿌리 셋이 땅을 뚫고 솟구친다
+				for k = 0, 2 do
+					local a = k / 3 * math.pi * 2 + math.random()
+					local base = g + Vector3.new(math.cos(a), 0, math.sin(a)) * R * 0.4
+					local tip = base + Vector3.new(math.cos(a) * 1.5, R * 1.6, math.sin(a) * 1.5)
+					local r = beam(base, base + Vector3.new(0, 0.2, 0), 1.2, BARK, 0, Enum.Material.Wood)
+					tween(r, 0.12, { Size = Vector3.new(1.2, 1.2, (tip - base).Magnitude), CFrame = CFrame.lookAt((base + tip) / 2, tip) }, Enum.EasingStyle.Back)
+					task.delay(0.7, function()
+						fadeOut(r, 0.4)
+					end)
+				end
+				Fx.ring(g + Vector3.new(0, 0.3, 0), c, 2, R * 2.2, 0.4)
+				Fx.debris(g, 4, 25, Color3.fromRGB(100, 80, 55))
+			end
+		end)
+	end
+	local first = (data.spots or {})[1]
+	if first then
+		Fx.sound("heavy", 0.8, 0.7, first)
+	end
+	local _ = c2
+end
+-- 만목신권 생장 (네 번째 맞힘): 상대 자리의 가시덤불
+local function thornPulse(data: any)
+	if near(data.at, 200) then
+		local c, c2 = colors(data.style)
+		task.delay(data.delay or 0.3, function()
+			thornBush(data.at, data.radius or 10, c, c2)
+		end)
+	end
+end
+
 local HANDLERS: { [string]: (any) -> () } = {
 	needleShot = needleShot,
 	needleBurst = needleBurst,
@@ -24199,6 +24985,15 @@ local HANDLERS: { [string]: (any) -> () } = {
 	drumRing = drumRing,
 	drumBeat = drumBeat,
 	drumFinale = drumFinale,
+	seedShot = seedShot,
+	thornSprout = thornSprout,
+	budRise = budRise,
+	budBloom = budBloom,
+	treantRise = treantRise,
+	treantSlam = treantSlam,
+	treantSweep = treantSweep,
+	treantRoots = treantRoots,
+	thornPulse = thornPulse,
 }
 function Awake3.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil
@@ -25880,6 +26675,16 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			tween(petal, 0.9, { CFrame = CFrame.new(to) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), Transparency = 1 })
 			Debris:AddItem(petal, 0.95)
 		end
+	elseif style.fx == "nature" then
+		-- 2.4판 만목신권: 잎이 흩날리고 작은 새싹 고리
+		for _ = 1, heavy and 12 or 7 do
+			local leaf = piece(Vector3.new(0.8, 0.08, 0.5), math.random() < 0.6 and c or c2, Enum.Material.SmoothPlastic)
+			leaf.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+			local to = pos + Vector3.new(math.random() * 9 - 4.5, math.random() * 4, math.random() * 9 - 4.5) * s
+			tween(leaf, 0.8, { CFrame = CFrame.new(to) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), Transparency = 1 })
+			Debris:AddItem(leaf, 0.85)
+		end
+		Fx.ring(pos, c2, 1, 8 * s, 0.3, dir)
 	elseif style.fx == "dragon" then
 		Fx.ring(pos, c, 1, 10 * s, 0.35, dir)
 		Fx.ring(pos, c2, 1, 6 * s, 0.25, dir)
@@ -32449,8 +33254,10 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	changhae2 = { H = "tunnel", E = "wave", R = "spiral" },
 	pungsin2 = { H = "fan", E = "cross", R = "spiral" },
 	chobyeok = { H = "cross", E = "beam", R = "rain" },
+	manmok = { H = "spikes", E = "fan", R = "nova" },
 }
 local MAT: { [string]: Enum.Material } = {
+	nature = Enum.Material.Grass,
 	cloud = Enum.Material.SmoothPlastic,
 	ocean = Enum.Material.Glass,
 	subspace = Enum.Material.Glass,
@@ -33891,6 +34698,9 @@ local function buildTest()
 		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" },
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
+	})
+	section("🌳 2.4판: 만목신권·새 랜드마크", {
+		{ "🌳 만목신권 바로 쓰기 (태초)", "testStyle", "manmok" }, { "🌳 목선에게 (만목원)", "testSecretMaster", "manmok" },
 	})
 	section("👹 2.3판: 새 생김새 적·뇌고천무·벚꽃나무", {
 		{ "⚡ 초·벽력신권 바로 쓰기 (X 뇌고천무)", "testStyle", "chobyeok" }, { "🌸 초·매화난무권 바로 쓰기 (X 벚꽃나무)", "testStyle", "chomaehwa" },

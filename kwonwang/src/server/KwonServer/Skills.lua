@@ -1641,6 +1641,112 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "seedBurst" then
+		-- 만목신권 종자탄: 씨앗 다섯을 부채꼴로 튕긴다 (가까운 적이 있으면 그 몸에 박힌다). 잠시 뒤 가시덤불로 터져 묶는다
+		local from = f.root.Position
+		local half = math.rad(m.spread / 2)
+		local enemies = hostilesNear(f, from, m.range)
+		local spots = {}
+		for i = 1, m.n do
+			local a = -half + (2 * half) * (i - 1) / math.max(1, m.n - 1)
+			local d = (CFrame.Angles(0, a, 0) * CFrame.new(look)).Position
+			local at = from + d * m.dist
+			local best, bd = nil, 8
+			for _, o in ipairs(enemies) do
+				local dd = (o.root.Position - at).Magnitude
+				if dd < bd then
+					best, bd = o, dd
+				end
+			end
+			spots[i] = best and best.root.Position or at
+		end
+		Push:FireAllClients("skillfx", { kind = "seedShot", from = from, spots = spots, delay = m.delay / sp, sprout = m.sprout / sp, style = style })
+		after(m.delay + 0.15, function()
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, 2.5)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, hit, move)
+					end
+				end
+			end
+		end)
+		after(m.delay + m.sprout, function()
+			Push:FireAllClients("skillfx", { kind = "thornSprout", spots = spots, radius = m.radius, style = style })
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, scaled(m.burst, sc), move)
+						if not o.dead then
+							Combat.stun(o, m.root)
+						end
+					end
+				end
+			end
+		end)
+	elseif kind == "bloomBud" then
+		-- 만목신권 개화: 앞의 땅에서 거대한 꽃봉오리가 솟고, 활짝 피며 꽃가루가 터진다 (적은 잠들고 나는 체력을 되찾는다)
+		local at = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "budRise", at = at, radius = m.radius, delay = m.delay / sp, sleep = m.sleep / sp, style = style })
+		after(m.delay, function()
+			Push:FireAllClients("skillfx", { kind = "budBloom", at = at, radius = m.radius, sleep = m.sleep / sp, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+				strike(f, o, hit, move)
+				if not o.dead then
+					Combat.stun(o, m.sleep)
+				end
+			end
+			heal(f, m.heal)
+		end)
+	elseif kind == "treant" then
+		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고, 팔로 휩쓸고, 땅 곳곳에서 뿌리가 솟는다
+		local base = f.root.Position
+		local lk = look
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.rise / sp)
+		Push:FireAllClients("skillfx", { kind = "treantRise", m = f.model, at = base, dir = lk, rise = m.rise / sp, sweep = m.sweepAt / sp, roots = m.rootsAt / sp, dur = (m.rootsAt + 0.9) / sp, style = style })
+		after(m.rise, function()
+			local at = base + lk * m.slamDist
+			Push:FireAllClients("skillfx", { kind = "treantSlam", at = at, radius = m.slamRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, at, m.slamRadius)) do
+				strike(f, o, scaled(m.slam, sc), move)
+			end
+		end)
+		after(m.sweepAt, function()
+			local cosA = math.cos(math.rad(m.sweepAngle / 2))
+			Push:FireAllClients("skillfx", { kind = "treantSweep", at = base, dir = lk, range = m.sweepRange, angle = m.sweepAngle, style = style })
+			for _, o in ipairs(hostilesNear(f, base, m.sweepRange)) do
+				if flat(o.root.Position - base):Dot(lk) >= cosA or (o.root.Position - base).Magnitude < 5 then
+					strike(f, o, scaled(m.sweep, sc), move)
+				end
+			end
+		end)
+		after(m.rootsAt, function()
+			local list = nearestList(f, m.rootRange, m.roots)
+			local spots = {}
+			for i = 1, m.roots do
+				local o = list[i]
+				if o and o.root.Parent then
+					spots[i] = o.root.Position
+				else
+					local a = math.random() * math.pi * 2
+					spots[i] = base + Vector3.new(math.cos(a), 0, math.sin(a)) * math.random(6, math.max(7, math.floor(m.rootRange)))
+				end
+			end
+			Push:FireAllClients("skillfx", { kind = "treantRoots", spots = spots, radius = m.rootRadius, style = style })
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, m.rootRadius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, scaled(m.root, sc), move)
+					end
+				end
+			end
+			heal(f, m.heal)
+		end)
 	elseif kind == "bloodNeedles" then
 		-- 진 혈마 혈침: 피의 바늘을 적들에게 꽂고, 잠시 뒤 바늘이 몸속에서 터지며 체력을 빨아온다
 		local list = nearestList(f, m.range, m.n)

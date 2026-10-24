@@ -369,6 +369,16 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			tween(petal, 0.9, { CFrame = CFrame.new(to) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), Transparency = 1 })
 			Debris:AddItem(petal, 0.95)
 		end
+	elseif style.fx == "nature" then
+		-- 2.4판 만목신권: 잎이 흩날리고 작은 새싹 고리
+		for _ = 1, heavy and 12 or 7 do
+			local leaf = piece(Vector3.new(0.8, 0.08, 0.5), math.random() < 0.6 and c or c2, Enum.Material.SmoothPlastic)
+			leaf.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+			local to = pos + Vector3.new(math.random() * 9 - 4.5, math.random() * 4, math.random() * 9 - 4.5) * s
+			tween(leaf, 0.8, { CFrame = CFrame.new(to) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), Transparency = 1 })
+			Debris:AddItem(leaf, 0.85)
+		end
+		Fx.ring(pos, c2, 1, 8 * s, 0.3, dir)
 	elseif style.fx == "dragon" then
 		Fx.ring(pos, c, 1, 10 * s, 0.35, dir)
 		Fx.ring(pos, c2, 1, 6 * s, 0.25, dir)

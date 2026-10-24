@@ -1681,6 +1681,48 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고, 네 번이면 가시덤불이 터진다.
+-- E 종자탄 · R 개화 (거대한 꽃봉오리가 피며 꽃가루로 잠재운다) · G 목령강림 (거대한 나무 정령이 솟아 내리친다)
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "manmok",
+	name = "만목신권",
+	hanja = "萬木神拳",
+	icon = "🌳",
+	color = Color3.fromRGB(90, 200, 90),
+	color2 = Color3.fromRGB(240, 255, 190),
+	fx = "nature",
+	grade = "태초",
+	hidden = true,
+	secret = true,
+	realmReq = 14,
+	trialHp = 10,
+	unlockHint = "반선의 경지에 오른 자만이, 남서쪽 들판 깊은 숲 만목원의 이끼 좌대에 앉은 목선을 만난다",
+	desc = "나무는 서두르지 않는다. 그러나 멈추지도 않는다. 씨앗 하나가 바위를 가르듯, 이 권은 맞을 때마다 상대의 몸에 뿌리를 내린다. 끝에는 숲 전체가 일어선다.",
+	gimmick = "생장: 네 번 맞힐 때마다 상대 자리에서 가시덤불이 터져 둘레를 묶는다. 몸이 단단하다 (균형 1.4배). 오의 목령강림: 거대한 나무 정령이 솟는다",
+	deflect = 0.28,
+	postureMult = 1.4,
+	speed = 1.0,
+	pulse = { every = 4, kind = "bloom", radius = 10, delay = 0.3, name = "가시덤불", dmg = 32, posture = 34, stun = 0.8, kb = 10, up = 6 },
+	stance = "stance_taeheo",
+	combo = {
+		{ id = "mm1", name = "새싹장", pose = "wave_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
+		{ id = "mm2", name = "덩굴장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 17, 14, 0.35, 8) } },
+		{ id = "mm3", name = "풍엽각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.2, 5, 6.5, 20, 20, 0.45, 16, nil, true) } },
+		{ id = "mm4", name = "고목권", pose = "double_palm", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 28, 32, 0.6, 34) } },
+	},
+	heavy = { id = "mmH", name = "천년근", pose = "grav_hammer", dur = 0.75, lunge = 3, hits = { hit(0.38, 10, 7, 50, 76, 1.0, 50, 8, true) } },
+	skills = {
+		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 다섯을 부채꼴로 튕긴다. 씨앗이 땅이나 적에 박혔다가 가시덤불로 터져 둘레를 묶는다", pose = "push_palm", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "seedBurst", n = 5, spread = 60, dist = 16, range = 24, delay = 0.18, sprout = 0.5, radius = 6, root = 0.9, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10) } },
+		R = { id = "mmR", name = "개화", desc = "앞의 땅에서 거대한 꽃봉오리가 솟는다. 봉오리가 활짝 피는 순간 꽃가루가 터져 둘레의 적이 2초 동안 잠들고, 나는 체력을 되찾는다", pose = "point_sky", dur = 0.9, cd = 12, chi = 30,
+			mech = { kind = "bloomBud", dist = 10, radius = 14, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12) } },
+		G = { id = "mmG", name = "목령강림", desc = "등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 앞을 주먹으로 내리치고, 팔로 크게 휩쓴 뒤, 땅 곳곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력을 되찾는다", pose = "ult_origin", dur = 2.4, cd = 32, chi = 100, armor = true,
+			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 15, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 30, sweepAngle = 140, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), rootsAt = 2.4, roots = 10, rootRange = 30, rootRadius = 6, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
+	},
+})
+
 -- 2.2판: 초·벽력신권의 새 R·오의, 두 초 오의를 더 길게 (구천뇌정은 벼락 비 대신 하나하나 겨눠 내리꽂는 심판의 벼락)
 do
 	local NEW: { [string]: { [string]: any } } = {
@@ -1769,6 +1811,7 @@ local FINISHERS = {
 	changhae2 = { name = "심해승천장", pose = "tidal_punch" },
 	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
+	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
@@ -2148,6 +2191,21 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
+-- 2.4판 만목신권의 시련: 목선이 직접 (가시 비 → 뿌리 고리 → 숲의 분노)
+for _, st in ipairs(Config.Styles) do
+	if st.id == "manmok" then
+		local green = Color3.fromRGB(120, 220, 110)
+		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 숲의 가시와 뿌리 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
+		st.trialBoss = { hp = 3400, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
+			P("rain", "가시 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
+			P("donut", "뿌리 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 40, 50, 1.0, 30) }),
+			P("leap", "고목 내리치기", 2, { radius = 16, warn = 1.0, cd = 7, pose = "grav_hammer", hit = hit(0, 0, 0, 50, 70, 1.1, 40, 18) }),
+			P("rain", "꽃가루 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 26, 30, 0.7, 14) }),
+			P("quake", "숲의 분노", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_origin", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+		} }
+	end
+end
+
 -- 2.0판 초월의 시련: 뇌천선이 직접 (벼락 비 → 뇌광 돌진 → 구천뇌정)
 for _, st in ipairs(Config.Styles) do
 	if st.id == "chobyeok" then
@@ -2361,6 +2419,13 @@ Config.Landmarks = {
 	{ id = "gianthand", name = "거신의 손", icon = "✋", at = Vector3.new(-2500, 0, 1900) },
 	{ id = "crater", name = "별똥 분화구", icon = "☄", at = Vector3.new(1100, 0, -2700) },
 	{ id = "thousandsteps", name = "천 개의 계단", icon = "🪜", at = Vector3.new(-2700, 0, -2700) },
+	-- 2.4판: 허허벌판에 여섯 곳 더
+	{ id = "grove", name = "만목원", icon = "🌳", at = Vector3.new(-1700, 0, 1600) },
+	{ id = "fallengiant", name = "잠든 석장", icon = "⚔", at = Vector3.new(1900, 0, 1700) },
+	{ id = "stonecircle", name = "별바위 고리", icon = "🪨", at = Vector3.new(-1900, 0, -800) },
+	{ id = "beacon", name = "옛 봉화대", icon = "🔥", at = Vector3.new(900, 0, -2350) },
+	{ id = "hamlet", name = "버려진 마을", icon = "🏚", at = Vector3.new(0, 0, 2250) },
+	{ id = "archway", name = "하늘 아치", icon = "🌁", at = Vector3.new(-1400, 0, -2350) },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -2452,6 +2517,9 @@ function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
 Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
+-- 2.4판: 공격력 리미터 (사람 → 적). gapPow: 내가 더 셀 때 피해 × (적 전투력 ÷ 내 전투력)^gapPow
+-- 한 대 한도: 적 최대 체력의 base − perLevel × (단계 − 1) (min까지), 보스는 boss (한 대에 3%: 서른 대 넘게 맞아야 쓰러진다)
+Config.LIMITER = { gapPow = 0.4, base = 0.6, perLevel = 0.02, min = 0.12, boss = 0.03 }
 function Config.powerGap(ratio: number): (number, boolean, boolean)
 	local G = Config.POWER_GAP
 	if ratio >= G.immune then
@@ -2800,6 +2868,10 @@ Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vec
 Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
 Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
 	quote = "번개는 두 번 치지 않는다고? 나는 세 번 친다.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+-- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
+Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
+Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
+	quote = "나무는 서두르지 않는다. 그런데도 늘 이긴다.", rumor = "남서쪽 들판의 비틀린 고목들이 둥글게 선 숲 한가운데, 이끼 덮인 돌에 앉은 노인이 있다더라" }
 -- 2.0판 각성 사부: 모든 각성 권법(진)은 상급 수련장의 각성선인에게서만 각성할 수 있다 (가까이 가야 한다)
 Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
 

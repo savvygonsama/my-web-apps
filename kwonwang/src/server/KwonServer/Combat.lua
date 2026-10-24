@@ -650,6 +650,20 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.posture = 0
 		crit = true
 	end
+	-- 2.4판: 공격력 리미터 (사람이 적을 칠 때)
+	-- ① 훨씬 센 사람의 주먹은 그 차이만큼 다 들어가지 않는다 (전투력 차의 gapPow제곱만큼 줄어든다)
+	-- ② 한 대에 깎이는 체력에 한도가 있다: 먼 땅(단계가 높은) 적일수록 낮고, 보스는 아주 낮다 (한 방에 쓰러지지 않게)
+	if att.player and tgt.npc and not (tgt.npc :: any).dummy then
+		local L = Config.LIMITER
+		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
+		if pa > pt then
+			d *= (pt / pa) ^ L.gapPow
+		end
+		local lv = tgt.model:GetAttribute("Level")
+		lv = type(lv) == "number" and lv or 1
+		local cap = tgt.model:GetAttribute("Boss") == true and L.boss or math.clamp(L.base - L.perLevel * (lv - 1), L.min, L.base)
+		d = math.min(d, tgt.maxHp * cap)
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)
