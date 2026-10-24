@@ -890,6 +890,15 @@ A.ult_thunder = {
 	{ t = 1, j = { RS = { 45, 0, 6 }, RE = { 125, 0, 0 }, LS = { 55, 0, -6 }, LE = { 125, 0, 0 }, R = { 0, 0, 0, 0, -0.7, -0.3 } } },
 }
 
+-- 2.6판 뇌성강림: 두 팔을 머리 위로 들어 별을 받치고 떠오르다가, 두 주먹을 끌어내려 별을 떨어뜨린다
+A.ult_star = {
+	{ t = 0, j = { RS = { 45, 0, 6 }, RE = { 125, 0, 0 }, LS = { 55, 0, -6 }, LE = { 125, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.2, j = { N = { 28, 0, 0 }, W = { 8, 0, 0 }, RS = { 165, 0, 22 }, RE = { 25, 0, 0 }, LS = { 165, 0, -22 }, LE = { 25, 0, 0 }, R = { 0, 0, 0, 0, 0.3, 0 } } },
+	{ t = 0.7, j = { N = { 32, 0, 0 }, W = { 12, 0, 0 }, RS = { 172, 0, 30 }, RE = { 15, 0, 0 }, LS = { 172, 0, -30 }, LE = { 15, 0, 0 }, RK = { -25, 0, 0 }, LK = { -25, 0, 0 }, R = { 4, 0, 0, 0, 1.2, 0 } } },
+	{ t = 0.86, e = "snap", j = { N = { -15, 0, 0 }, W = { -12, 0, 0 }, RS = { -25, 0, 35 }, RE = { 40, 0, 0 }, LS = { -25, 0, -35 }, LE = { 40, 0, 0 }, RH = { 40, 0, 0 }, RK = { -70, 0, 0 }, LH = { 40, 0, 0 }, LK = { -70, 0, 0 }, R = { -8, 0, 0, 0, -1.2, 0 } } },
+	{ t = 1, j = { RS = { 45, 0, 6 }, RE = { 125, 0, 0 }, LS = { 55, 0, -6 }, LE = { 125, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+}
+
 -- 취권: 앞으로 데굴 구르다 일어나며 찬다
 A.drunk_roll = {
 	{ t = 0, j = { W = { 0, 0, -20 }, RS = { 75, 0, 20 }, RE = { 95, 0, 0 }, LS = { 20, 0, -30 }, LE = { 40, 0, 0 }, R = { 0, 0, 15, 0, -0.4, 0 } } },
@@ -1774,7 +1783,7 @@ Poses.limbs = {
 	dragon_coil = { "RightHand", "LeftHand" }, dragon_rise = { "RightHand", "LeftHand" }, ult_dragon = { "RightHand", "LeftHand" },
 	side_kick = { "RightFoot" }, tornado_kick = { "RightFoot", "LeftFoot" }, shadow_heel = { "RightFoot" }, ult_shadow = { "RightFoot", "LeftFoot" },
 	thunder_jab = { "LeftHand" }, thunder_cross = { "RightHand" }, knee_strike = { "RightFoot" }, thunder_hammer = { "RightHand" },
-	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
+	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, ult_star = { "RightHand", "LeftHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
 	void_palm_r = { "RightHand" }, void_palm_l = { "LeftHand" }, void_circle = { "RightHand", "LeftHand" }, void_push = { "RightHand", "LeftHand" },
 	void_sink = { "RightHand" }, void_point = { "RightHand" }, void_gather = { "RightHand", "LeftHand" }, ult_void = { "RightHand", "LeftHand" },
 	blood_claw_r = { "RightHand" }, blood_claw_l = { "LeftHand" }, blood_rake = { "RightHand", "LeftHand" }, blood_lunge = { "RightHand" },

@@ -1,7 +1,7 @@
 -- 권왕 2.2판: 각성 권법 아홉의 새 E·R, 진 열화 화산천붕 · 진 창해 고래강림, 초·벽력신권의 뇌신낙 · 천뢰구 · 심판의 벼락 (화면)
 -- 기술마다 생김새가 겹치지 않게: 바늘, 피의 손, 용의 울음, 용머리 장력, 뇌인, 뇌전포, 금빛 종, 금강저, 그림자 분신,
 -- 미끄러지는 그림자, 감아 도는 물방울, 간헐천, 불의 바퀴, 불의 고리, 화산, 물방울 감옥, 물의 창, 고래, 떠도는 회오리,
--- 하늘의 바람, 벼락이 되어 떨어지기, 구슬 번개, 조준 고리
+-- 하늘의 바람, 벼락이 되어 떨어지기, 구슬 번개, 조준 고리, (2.6판) 천둥별과 작은 별 여섯
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -1506,6 +1506,195 @@ local function ballBurst(data: any)
 		shakeNear(at, 2.2, 120)
 	end)
 end
+-- 2.6판 뇌성강림: 고리 둘이 도는 천둥별, 떨어져 나와 둘레를 도는 작은 별 여섯, 별마다 쏘는 번개 줄기, 다시 모여 떨어지는 별
+type Star = { orb: (i: number) -> Vector3, starPos: () -> Vector3, parts: { BasePart }, done: boolean }
+local stars: { [number]: Star } = {}
+local function starStart(data: any)
+	local center: Vector3 = data.at
+	if not near(center, 260) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local n = data.n or 6
+	local orbit, height, spin = data.orbit or 13, data.height or 11, data.spin or 1.1
+	local delay, spread, dur, converge = data.delay or 0.45, data.spread or 0.4, data.dur or 2.4, data.converge or 0.4
+	local t1 = delay + spread
+	local t2 = t1 + dur
+	local t3 = t2 + converge
+	local top = center + Vector3.new(0, height + 4, 0)
+	local parts: { BasePart } = {}
+	local function keep(p: BasePart): BasePart
+		table.insert(parts, p)
+		return p
+	end
+	-- 천둥별: 흰 속, 푸른 껍질, 네 갈래 빛살, 고리 둘
+	local core = keep(part(Vector3.new(0.5, 0.5, 0.5), WHITE, Enum.Material.Neon, 0, "ball"))
+	local shell = keep(part(Vector3.new(0.5, 0.5, 0.5), c, Enum.Material.ForceField, 0.05, "ball"))
+	local spikes: { BasePart } = {}
+	for k = 1, 4 do
+		spikes[k] = keep(part(Vector3.new(0.5, 0.5, 0.5), k % 2 == 0 and c2 or WHITE, Enum.Material.Neon, 0.1))
+	end
+	local rings: { { BasePart } } = { {}, {} }
+	for r = 1, 2 do
+		for k = 1, 18 do
+			rings[r][k] = keep(part(Vector3.new(0.35, 0.35, 2.3), r == 1 and c2 or c, Enum.Material.Neon, 0.15))
+		end
+	end
+	local orbs: { BasePart } = {}
+	local halos: { BasePart } = {}
+	for i = 1, n do
+		orbs[i] = keep(part(Vector3.new(2, 2, 2), c2, Enum.Material.Neon, 1, "ball"))
+		halos[i] = keep(part(Vector3.new(3.6, 3.6, 3.6), c, Enum.Material.ForceField, 1, "ball"))
+	end
+	-- 땅에 별이 도는 자리를 그린다
+	local mark = keep(disc(ground(center) + Vector3.new(0, 0.15, 0), orbit * 2, c, 1))
+	tween(mark, delay, { Transparency = 0.75 })
+	local t0 = os.clock()
+	local function ease(x: number): number
+		x = math.clamp(x, 0, 1)
+		return 1 - (1 - x) * (1 - x)
+	end
+	local function orbitPos(i: number, t: number): Vector3
+		local a = (i - 1) / n * math.pi * 2 + t * spin
+		return center + Vector3.new(math.cos(a) * orbit, height, math.sin(a) * orbit)
+	end
+	local S: Star
+	local function starPos(): Vector3
+		local t = os.clock() - t0
+		if t <= t3 then
+			return top + Vector3.new(0, math.sin(t * 3) * 0.4, 0)
+		end
+		-- 떨어진다
+		local k = math.clamp((t - t3) / 0.12, 0, 1)
+		return top:Lerp(ground(center) + Vector3.new(0, 2, 0), k * k)
+	end
+	local function orb(i: number): Vector3
+		local t = os.clock() - t0
+		if t < delay then
+			return starPos()
+		elseif t < t1 then
+			return starPos():Lerp(orbitPos(i, 0), ease((t - delay) / spread))
+		elseif t < t2 then
+			return orbitPos(i, t - t1)
+		end
+		return orbitPos(i, dur):Lerp(starPos(), ease((t - t2) / converge))
+	end
+	S = { orb = orb, starPos = starPos, parts = parts, done = false }
+	stars[data.id] = S
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		if S.done or t > t3 + 1.5 then
+			conn:Disconnect()
+			for _, p in ipairs(parts) do
+				if p.Parent then
+					p:Destroy()
+				end
+			end
+			stars[data.id] = nil
+			return
+		end
+		local grow = ease(t / math.max(0.05, delay))
+		-- 별들이 떨어져 나가면 조금 작아졌다가, 다시 모이면 크게 부푼다
+		local mass = t < t1 and 1 or (t < t2 and 0.7 or 0.7 + 0.6 * ease((t - t2) / converge))
+		local sp = starPos()
+		local pulse = 1 + math.sin(t * 18) * 0.06
+		core.Size = Vector3.new(1, 1, 1) * 4 * grow * mass * pulse
+		shell.Size = Vector3.new(1, 1, 1) * 8 * grow * mass
+		core.CFrame = CFrame.new(sp)
+		shell.CFrame = CFrame.new(sp) * CFrame.Angles(t * 2, t * 3, 0)
+		for k, sk in ipairs(spikes) do
+			local len = (k % 2 == 0 and 12 or 16) * grow * mass * (1 + math.sin(t * 9 + k) * 0.1)
+			sk.Size = Vector3.new(0.35, 0.35, len)
+			-- 세운 판 위의 여덟 갈래 빛살 (천천히 돈다)
+			sk.CFrame = CFrame.new(sp) * CFrame.Angles(0, t * 0.6, 0) * CFrame.Angles((k - 1) * math.pi / 4, 0, 0)
+		end
+		for r = 1, 2 do
+			local rad = (r == 1 and 7 or 9) * grow * mass
+			local tilt = r == 1 and CFrame.Angles(math.rad(70), t * 1.5, 0) or CFrame.Angles(math.rad(-60), 0, math.rad(40) + t * -1.2)
+			for k, seg in ipairs(rings[r]) do
+				local a = k / #rings[r] * math.pi * 2 + t * (r == 1 and 2.5 or -2)
+				seg.CFrame = CFrame.new(sp) * tilt * CFrame.new(math.cos(a) * rad, 0, math.sin(a) * rad) * CFrame.Angles(0, -a, 0)
+			end
+		end
+		for i = 1, n do
+			local op = orb(i)
+			local vis = t < delay and 1 or (t > t3 and 1 or 0)
+			orbs[i].Transparency = vis
+			halos[i].Transparency = vis == 1 and 1 or 0.2
+			orbs[i].CFrame = CFrame.new(op)
+			halos[i].CFrame = CFrame.new(op) * CFrame.Angles(t * 4, t * 3, 0)
+			-- 별과 작은 별 사이를 잇는 번개 줄 (가끔)
+			if vis == 0 and math.random() < 0.05 then
+				Fx.lightning(sp, op, math.random() < 0.5 and c or c2, 0.25)
+			end
+		end
+	end)
+	Fx.sound("deflect", 0.9, 0.6, center)
+	task.delay(delay, function()
+		Fx.ring(top, c2, 4, 20, 0.4)
+		Fx.sound("shatter", 0.6, 1.4, center)
+	end)
+end
+local function starBeam(data: any)
+	local S = stars[data.id]
+	local to: Vector3 = data.to
+	if not S or not near(to, 260) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local from = S.orb(data.i or 1)
+	local b = beam(from, to, 0.9, WHITE, 0)
+	fadeOut(b, 0.22, { Size = Vector3.new(0.1, 0.1, b.Size.Z) })
+	local b2 = beam(from, to, 2.2, c, 0.55)
+	fadeOut(b2, 0.3)
+	Fx.lightning(from, to, c2, 0.5)
+	Fx.burst("spark", to, c2, 6, 0.8)
+	Fx.ring(ground(to) + Vector3.new(0, 0.3, 0), c, 1, 7, 0.3)
+	if math.random() < 0.35 then
+		Fx.sound("hit", 0.45, 1.7, to)
+	end
+end
+local function starCrash(data: any)
+	local at: Vector3 = data.at
+	local S = stars[data.id]
+	if S then
+		-- 떨어지는 걸 다 보이고 정리한다
+		task.delay(0.15, function()
+			S.done = true
+		end)
+	end
+	if not near(at, 280) then
+		return
+	end
+	local c, c2 = colors(data.style)
+	local R = data.radius or 20
+	task.delay(0.12, function()
+		local g = ground(at)
+		local s = part(Vector3.new(3, 3, 3), WHITE, Enum.Material.Neon, 0, "ball")
+		s.CFrame = CFrame.new(g)
+		fadeOut(s, 0.5, { Size = Vector3.new(1, 1, 1) * R * 1.6 })
+		local s2 = part(Vector3.new(3, 3, 3), c, Enum.Material.ForceField, 0.1, "ball")
+		s2.CFrame = CFrame.new(g)
+		fadeOut(s2, 0.7, { Size = Vector3.new(1, 1, 1) * R * 2.3 })
+		-- 하늘로 솟는 빛기둥과 땅을 달리는 번개 열둘
+		local col = column(g, 60, 6, c2, 0.1)
+		fadeOut(col, 0.6, { Size = Vector3.new(60, 0.5, 0.5) })
+		for k = 1, 12 do
+			local a = (k / 12) * math.pi * 2
+			local e = g + Vector3.new(math.cos(a) * R, 0.3, math.sin(a) * R)
+			Fx.lightning(g + Vector3.new(0, 0.5, 0), e, k % 2 == 0 and c or c2, 0.8)
+			task.delay(0.05 * (k % 4), function()
+				Fx.lightning(e + Vector3.new(0, 16, 0), e, c2, 0.5)
+			end)
+		end
+		impact(at, R, c, c2, 2.4)
+		Fx.flash(at, c2, 110, 10, 0.7)
+		Fx.sound("shatter", 1, 0.75, at)
+		Fx.sound("heavy", 1, 0.6, at)
+		shakeNear(at, 2.6, 140)
+	end)
+end
 -- 심판의 벼락: 겨눈 적마다 머리 위에 돌아가는 조준 고리
 local function lockOn(data: any)
 	local c, c2 = colors(data.style)
@@ -2229,6 +2418,9 @@ local HANDLERS: { [string]: (any) -> () } = {
 	downdraft = downdraft,
 	diveMark = diveMark,
 	diveImpact = diveImpact,
+	starStart = starStart,
+	starBeam = starBeam,
+	starCrash = starCrash,
 	ballStart = ballStart,
 	ballArc = ballArc,
 	ballBurst = ballBurst,

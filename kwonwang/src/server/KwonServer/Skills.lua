@@ -2341,6 +2341,50 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "thunderStar" then
+		-- 2.6판 초·벽력 뇌성강림 (오의): 머리 위로 띄운 뇌성(천둥별)에서 작은 별 여섯이 떨어져 나와 둘레를 돈다.
+		-- 별마다 가까운 적을 골라 번개 줄기를 쏘고 (한 번에 한 적은 한 줄기만 맞는다), 끝에 모두 다시 하나로 모여 땅에 떨어진다
+		local id = math.random(1, 1000000000)
+		local center = f.root.Position + look * (m.dist or 4)
+		local n = m.n
+		local t0 = m.delay + m.spread
+		Push:FireAllClients("skillfx", { kind = "starStart", id = id, at = center, n = n, orbit = m.orbit, height = m.height, spin = m.spin * sp, spread = m.spread / sp, dur = m.dur / sp, delay = m.delay / sp, converge = m.converge / sp, style = style })
+		local function orbPos(i: number, t: number): Vector3
+			local a = (i - 1) / n * math.pi * 2 + t * m.spin
+			return center + Vector3.new(math.cos(a) * m.orbit, m.height, math.sin(a) * m.orbit)
+		end
+		local ticks = math.floor(m.dur / m.every)
+		for k = 0, ticks - 1 do
+			local t = k * m.every
+			after(t0 + t, function()
+				local taken = {}
+				local list = hostilesNear(f, center, m.orbit + m.beamRange)
+				for i = 1, n do
+					local op = orbPos(i, t)
+					local best, bd = nil, m.beamRange
+					for _, o in ipairs(list) do
+						local d = Vector3.new(o.root.Position.X - op.X, 0, o.root.Position.Z - op.Z).Magnitude
+						if not taken[o] and d < bd then
+							best, bd = o, d
+						end
+					end
+					if best then
+						taken[best] = true
+						Push:FireAllClients("skillfx", { kind = "starBeam", id = id, i = i, to = best.root.Position, style = style })
+						strike(f, best, hit, move)
+					elseif (k + i) % 3 == 0 then
+						-- 겨눌 적이 없으면 땅을 때린다 (보이기만)
+						Push:FireAllClients("skillfx", { kind = "starBeam", id = id, i = i, to = Vector3.new(op.X, center.Y, op.Z), style = style })
+					end
+				end
+			end)
+		end
+		after(t0 + m.dur + m.converge, function()
+			Push:FireAllClients("skillfx", { kind = "starCrash", id = id, at = center, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	end
 end
 

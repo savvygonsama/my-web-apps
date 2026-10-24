@@ -1738,8 +1738,9 @@ do
 		chobyeok = {
 			R = { id = "cbR2", name = "뇌신낙", desc = "하늘로 솟았다가 벼락이 되어 가까운 적에게 내리꽂힌다. 떨어진 자리에서 네 갈래로 땅이 갈라지며 번개가 달린다", pose = "thunder_hammer", dur = 0.85, cd = 11, chi = 25, jump = 30,
 				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 44, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 26, 24, 0.6, 16, 10) } },
-			G = { id = "cbG2", name = "천뢰구", desc = "커다란 구슬 번개를 앞으로 천천히 굴린다. 2.4초 동안 둘레의 적을 번개 줄기로 끌어당기며 지지고, 끝에 크게 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
-				mech = { kind = "ballLightning", delay = 0.4, speed = 12, dur = 2.4, every = 0.2, radius = 14, pull = 18, hit = hit(0, 0, 0, 14, 12, 0.3, 0), finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.4, 60, 20) } },
+			-- 2.6판: 천뢰구 → 뇌성강림
+			G = { id = "cbG2", name = "뇌성강림", desc = "두 팔을 들어 머리 위에 고리 둘이 도는 천둥별을 띄운다. 별에서 작은 별 여섯이 떨어져 나와 둘레를 돌며 2.4초 동안 저마다 가까운 적에게 번개 줄기를 쏜다. 끝에 여섯이 다시 하나로 모여 천둥별이 땅에 떨어진다", pose = "ult_star", dur = 1.8, cd = 30, chi = 100, armor = true,
+				mech = { kind = "thunderStar", dist = 4, delay = 0.45, spread = 0.4, n = 6, orbit = 13, height = 11, spin = 1.1, dur = 2.4, every = 0.35, beamRange = 16, hit = hit(0, 0, 0, 18, 14, 0.35, 0), converge = 0.4, finalRadius = 20, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
 		},
 	}
 	for _, st in ipairs(Config.Styles) do
