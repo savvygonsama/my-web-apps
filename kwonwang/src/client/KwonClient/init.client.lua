@@ -24,6 +24,8 @@ local Ult2 = require(script:WaitForChild("Ult2"))
 local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
+local Ink = require(script:WaitForChild("Ink"))
+local Blossom = require(script:WaitForChild("Blossom"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -1903,6 +1905,8 @@ function handlers.skillfx(data: any)
 		Awake3.init({ shake = shake, flash = UI.flash })
 		Forest.init({ shake = shake })
 		Whale.init({ shake = shake })
+		Ink.init({ shake = shake })
+		Blossom.init({ shake = shake })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1914,6 +1918,15 @@ function handlers.skillfx(data: any)
 		return
 	elseif Whale.handles(data) then
 		Whale.run(data)
+		return
+	elseif data.kind == "pulse" and data.fx == "ink" then
+		Ink.run({ kind = "inkPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
+	elseif Ink.handles(data) then
+		Ink.run(data)
+		return
+	elseif Blossom.handles(data) then
+		Blossom.run(data)
 		return
 	elseif data.kind == "pulse" and data.fx == "bloom" then
 		Awake3.run({ kind = "thornPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })

@@ -953,6 +953,21 @@ A.ult_void = {
 	{ t = 1, j = { RS = { 60, 0, 15 }, RE = { 60, 0, 0 }, LS = { 60, 0, -15 }, LE = { 60, 0, 0 }, R = { 0, 360, 0, 0, -0.7, 0 } } },
 }
 
+-- 2.7판 진 무극: 붓 휘두르기 (오른팔을 왼 어깨 뒤로 감았다가 크게 가로로 그어 낸다)
+A.brush_sweep = {
+	{ t = 0, j = { W = { 0, 30, 0 }, RS = { 100, 0, -50 }, RE = { 60, 0, 0 }, LS = { 50, 0, -20 }, LE = { 80, 0, 0 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 20, 0, 0, -0.8, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { 0, -55, 0 }, N = { 0, 20, 0 }, RS = { 90, 0, 85 }, RE = { 5, 0, 0 }, RH = { 0, 0, -20 }, LS = { 70, 0, -40 }, LE = { 60, 0, 0 }, RK = { -50, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, -45, 0, 0, -1.0, -0.6 } } },
+	{ t = 0.7, j = { W = { 0, -60, 0 }, RS = { 88, 0, 92 }, RE = { 5, 0, 0 }, LS = { 70, 0, -40 }, LE = { 60, 0, 0 }, RK = { -45, 0, 0 }, R = { 0, -50, 0, 0, -1.0, -0.6 } } },
+	{ t = 1, j = { RS = { 70, 0, 10 }, RE = { 50, 0, 0 }, LS = { 60, 0, -20 }, LE = { 70, 0, 0 }, R = { 0, 0, 0, 0, -0.7, -0.3 } } },
+}
+-- 2.7판 진 무극: 붓으로 발밑에 원 그리기 (몸을 숙이고 오른팔을 낮게 뻗은 채 한 바퀴 돈다)
+A.brush_circle = {
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { 20, 0, 0 }, RS = { 60, 0, 30 }, RE = { 10, 0, 0 }, LS = { 30, 0, -30 }, LE = { 60, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { 15, 0, 0, 0, -1.4, 0 } } },
+	{ t = 0.65, j = { W = { 25, 0, 0 }, N = { 20, 0, 0 }, RS = { 55, 0, 40 }, RE = { 5, 0, 0 }, RH = { 30, 0, 0 }, LS = { 30, 0, -30 }, LE = { 60, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 18, -360, 0, 0, -1.6, 0 } } },
+	{ t = 0.8, e = "snap", j = { W = { -10, 0, 0 }, N = { -10, 0, 0 }, RS = { 150, 0, 30 }, RE = { 10, 0, 0 }, LS = { 150, 0, -30 }, LE = { 10, 0, 0 }, R = { -5, -360, 0, 0, -0.4, 0 } } },
+	{ t = 1, j = { RS = { 70, 0, 10 }, RE = { 50, 0, 0 }, LS = { 60, 0, -20 }, LE = { 70, 0, 0 }, R = { 0, -360, 0, 0, -0.7, 0 } } },
+}
+
 -- 2.6판 태극인: 합장하고 떠올라 버티다가, 두 팔을 들어 태극을 띄우고, 두 손바닥으로 땅을 내리찍는다
 A.ult_taiji = {
 	{ t = 0, j = { RS = { 60, 0, 15 }, RE = { 90, 0, 0 }, LS = { 60, 0, -15 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
@@ -1793,7 +1808,7 @@ Poses.limbs = {
 	dragon_coil = { "RightHand", "LeftHand" }, dragon_rise = { "RightHand", "LeftHand" }, ult_dragon = { "RightHand", "LeftHand" },
 	side_kick = { "RightFoot" }, tornado_kick = { "RightFoot", "LeftFoot" }, shadow_heel = { "RightFoot" }, ult_shadow = { "RightFoot", "LeftFoot" },
 	thunder_jab = { "LeftHand" }, thunder_cross = { "RightHand" }, knee_strike = { "RightFoot" }, thunder_hammer = { "RightHand" },
-	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, ult_star = { "RightHand", "LeftHand" }, ult_taiji = { "RightHand", "LeftHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
+	lightning_dash = { "RightHand" }, zigzag = { "RightHand", "LeftHand" }, ult_thunder = { "RightHand" }, ult_star = { "RightHand", "LeftHand" }, brush_sweep = { "RightHand" }, brush_circle = { "RightHand" }, ult_taiji = { "RightHand", "LeftHand" }, drunk_roll = { "RightFoot", "LeftFoot" },
 	void_palm_r = { "RightHand" }, void_palm_l = { "LeftHand" }, void_circle = { "RightHand", "LeftHand" }, void_push = { "RightHand", "LeftHand" },
 	void_sink = { "RightHand" }, void_point = { "RightHand" }, void_gather = { "RightHand", "LeftHand" }, ult_void = { "RightHand", "LeftHand" },
 	blood_claw_r = { "RightHand" }, blood_claw_l = { "LeftHand" }, blood_rake = { "RightHand", "LeftHand" }, blood_lunge = { "RightHand" },

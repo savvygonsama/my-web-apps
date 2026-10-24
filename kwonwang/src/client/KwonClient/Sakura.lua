@@ -363,14 +363,22 @@ function Sakura.cast(styleId: any, slot: any, model: Model, dur: number)
 			local cf = look * CFrame.new(0, 0.6, -1) * CFrame.Angles(0, 0, (type(slot) == "number" and slot % 2 == 0) and 0.5 or -0.5)
 			crescent(cf, big and 7 or 4.5, PINK, big and 0.4 or 0.28, big and 0.9 or 0.5)
 			Sakura.petals((look * CFrame.new(0, 0.5, -3)).Position, big and 18 or 8, big and 8 or 5, 1.1, look.LookVector * (big and 10 or 5))
+			-- 2.7판: 칼자국 끝에 벚꽃 한 송이가 활짝 피었다 흩어진다 (다섯 잎)
+			local at = (look * CFrame.new(0, 0.8, big and -5 or -3.6)).Position
+			local sz = big and 1.6 or 1.0
+			for j = 0, 4 do
+				local a = j / 5 * math.pi * 2
+				local pe = part(Vector3.new(0.6, 0.05, 0.5) * sz, j % 2 == 0 and PINK or WHITE, Enum.Material.SmoothPlastic, 0.05, true)
+				local cfA = CFrame.lookAt(at, at + look.LookVector) * CFrame.Angles(0, 0, a) * CFrame.Angles(math.rad(90), 0, 0)
+				pe.CFrame = cfA
+				tween(pe, 0.35, { CFrame = cfA * CFrame.new(0, 0, -0.9 * sz), Transparency = 1, Size = pe.Size * 1.6 })
+				task.delay(0.4, function()
+					pe:Destroy()
+				end)
+			end
 		end)
 	elseif slot == "E" then
-		Sakura.petals(r.Position, 30, 10, 1.6)
-		for i = 0, 2 do
-			task.delay(i * 0.18, function()
-				crescent(r.CFrame * CFrame.Angles(0, i * 2.1, 0), 6, PINKS[i + 1], 0.35, 0.6)
-			end)
-		end
+		Sakura.petals(r.Position, 14, 6, 1.2)
 	elseif slot == "R" then
 		Sakura.petals(r.Position, 24, 6, 1.4)
 	elseif slot == "G" or slot == "X" then

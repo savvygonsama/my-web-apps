@@ -1306,6 +1306,33 @@ table.insert(Config.Styles, {
 			mech = { kind = "galeBlades", blades = 12, orbit = 9, spin = 1.2, every = 0.2, delay = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 6), range = 24, shoot = hit(0, 0, 0, 34, 30, 0.6, 30, 10), finalRadius = 16, final = hit(0, 0, 0, 90, 110, 1.3, 40, 60) } },
 	},
 })
+-- 2.7판 진 무극신권 (각성): 먹과 붓의 권. 허공에 획을 긋고, 땅에 원을 그리고, 하늘의 붓이 먹의 꽃을 그린다
+table.insert(Config.Styles, {
+	id = "mugeuk2", name = "진 무극신권", hanja = "眞無極神拳", icon = "🖌", grade = "신화",
+	color = Color3.fromRGB(30, 30, 38), color2 = Color3.fromRGB(255, 214, 120), fx = "void",
+	awakenOf = "mugeuk", hidden = true, rebirthReq = 1,
+	unlockHint = "무극신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 무극이 붓을 들었다. 흑과 백을 넘어, 먹 한 방울에서 모든 것이 그려지고 지워진다. 손끝이 지나간 자리에 먹이 번지고, 먹은 금빛으로 타오른다.",
+	gimmick = "먹 번짐: 네 번 맞힐 때마다 상대 발밑에 먹이 번졌다가 금빛으로 터진다. 모든 타격이 균형을 두 배로 깎는다. 오의 무극필: 하늘의 큰 붓이 땅에 먹의 꽃을 그리고, 그림이 금빛으로 타오르며 터진다",
+	deflect = 0.32, postureMult = 2,
+	pulse = { every = 4, kind = "ink", radius = 10, delay = 0.45, name = "먹 번짐", dmg = 32, posture = 40, stun = 0.7, kb = 10, up = 10 },
+	stance = "stance_mugeuk",
+	combo = {
+		{ id = "mq1", name = "묵장", pose = "void_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 15, 16, 0.35, 10) } },
+		{ id = "mq2", name = "획장", pose = "void_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 15, 16, 0.35, 10) } },
+		{ id = "mq3", name = "점각", pose = "void_circle", dur = 0.38, lunge = 2, hits = { hit(0.18, 6, 5.5, 18, 22, 0.4, 14) } },
+		{ id = "mq4", name = "일필권", pose = "void_push", dur = 0.48, lunge = 3, hits = { hit(0.22, 7, 5.5, 28, 40, 0.6, 40) } },
+	},
+	heavy = { id = "mqH", name = "낙관", pose = "void_sink", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 6.5, 40, 70, 0.8, 50, 8, true) } },
+	skills = {
+		E = { id = "mqE", name = "일획", desc = "팔을 크게 휘둘러 허공에 먹으로 한 획을 긋는다. 앞의 26칸을 가르는 굵은 먹 획이 지나간 적을 베고, 0.5초 뒤 획이 금빛으로 타오르며 한 번 더 터진다", pose = "brush_sweep", dur = 0.5, cd = 7, chi = 18,
+			mech = { kind = "inkSlash", length = 26, width = 5, delay = 0.15, hit = hit(0, 0, 0, 24, 34, 0.5, 10), burstAt = 0.5, burst = hit(0, 0, 0, 22, 30, 0.5, 0, 12) } },
+		R = { id = "mqR", name = "원상", desc = "붓 끝으로 발밑에 커다란 먹 원을 한 번에 그린다. 원 안의 적은 먹에 붙잡혀 1초 동안 움직이지 못하고, 원이 다 그려지면 먹 벽이 솟았다가 금빛으로 무너진다", pose = "brush_circle", dur = 0.8, cd = 11, chi = 26,
+			mech = { kind = "enso", radius = 16, draw = 0.55, hold = 1.0, hit = hit(0, 0, 0, 20, 40, 1.0, 0), burstAt = 0.35, burst = hit(0, 0, 0, 34, 44, 0.6, 30, 14) } },
+		G = { id = "mqG", name = "무극필", desc = "하늘에 커다란 붓이 나타나 둘레의 땅에 먹의 꽃을 그린다. 소용돌이치는 획 여덟이 차례로 내리그어질 때마다 그 아래의 적을 베고, 마지막에 둘레에 원을 둘러 그림 전체가 금빛으로 타오르며 터진다", pose = "ult_taiji", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "inkFlower", radius = 22, strokes = 8, delay = 0.35, every = 0.16, width = 5, hit = hit(0, 0, 0, 30, 50, 0.6, 10), ringAt = 0.3, finalAt = 0.45, finalRadius = 26, final = hit(0, 0, 0, 110, 260, 1.2, 50, 22) } },
+	},
+})
 
 ------------------------------------------------------------------------
 -- 2.0판: 각성 오의 여섯을 새로 (원래 오의를 키운 것이 아니라, 전혀 다른 장치로)
@@ -1540,12 +1567,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "cmH", name = "천앵일섬", pose = "fan_dash", dur = 0.5, lunge = 18, iframes = 0.25, hits = { hit(0.2, 8, 5.5, 20, 20, 0.55, 18) }, bloom = { radius = 18, dmg = 55, posture = 60 } },
 	skills = {
-		E = { id = "cmE", name = "선화난무", desc = "두 부채를 펼치고 춤추듯 돈다. 2.5초 동안 몸을 따라 벚꽃 칼바람이 휘돌며 둘레를 계속 벤다 (움직일 수 있다)", pose = "fan_dance", dur = 0.6, cd = 9, chi = 20,
-			mech = { kind = "moving", radius = 13, dur = 2.5, every = 0.25, delay = 0.1, hit = hit(0, 0, 0, 6, 6, 0.25, 4) } },
-		R = { id = "cmR", name = "만개보", desc = "벚꽃잎이 되어 둘레의 적 여섯 사이를 번개처럼 오간다 (무적). 지나간 자리마다 꽃이 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25,
-			mech = { kind = "chainTp", n = 6, range = 34, delay = 0.08, every = 0.12, hit = hit(0, 0, 0, 22, 18, 0.4, 14) } },
-		G = { id = "cmG", name = "천본앵", desc = "하늘로 솟아 부채를 펼치면 천 그루의 벚꽃이 칼날이 되어 둘레를 휘감는다. 3초 동안 끌어당기며 베고, 마지막에 한가운데로 모여 꽃처럼 터진다", pose = "ult_sakura", dur = 1.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "sakuraStorm", radius = 30, dur = 3.2, every = 0.25, delay = 0.5, pull = 30, hit = hit(0, 0, 0, 7, 10, 0.25, 0), final = hit(0, 0, 0, 95, 120, 1.4, 60, 22) } },
+		-- 2.7판: 초 오의를 뺀 기술을 새로 (부채가 날아가고, 꽃 그림자가 베고, 하늘의 큰 부채가 쓸어 낸다)
+		E = { id = "cmE", name = "선풍낙화", desc = "두 부채를 펼쳐 양옆으로 던진다. 부채는 꽃잎을 흘리며 둥글게 앞으로 날아갔다 되돌아오고, 지나는 길의 적을 오갈 때 한 번씩 벤다", pose = "fan_twirl", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "fanBoomerang", dist = 24, width = 9, time = 1.0, every = 0.08, radius = 4.8, hit = hit(0, 0, 0, 20, 16, 0.35, 8) } },
+		R = { id = "cmR", name = "화영보", desc = "꽃잎이 되어 앞으로 미끄러진다 (무적). 지나간 길에 꽃 그림자 셋이 남아 차례로 부채를 휘두르고, 마지막에 모두 꽃잎으로 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25, lunge = 22, iframes = 0.4,
+			mech = { kind = "petalShadow", n = 3, gap = 7, delay = 0.25, every = 0.14, radius = 7.5, hit = hit(0, 0, 0, 26, 22, 0.45, 16), burstAt = 0.45, burst = hit(0, 0, 0, 22, 24, 0.5, 20, 10) } },
+		G = { id = "cmG", name = "만화천선", desc = "하늘에 커다란 벚꽃 부채가 펼쳐진다. 부채가 앞의 땅을 칼날처럼 두 번 쓸고 지나가고, 마지막에 접히며 탁 소리와 함께 꽃잎 폭풍이 둘레를 휘감는다", pose = "ult_sakura", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "skyFan", open = 0.6, sweeps = 2, sweepTime = 0.55, range = 34, angle = 200, hit = hit(0, 0, 0, 44, 48, 0.8, 30), closeAt = 0.35, closeRadius = 26, final = hit(0, 0, 0, 100, 120, 1.4, 60, 20) } },
 		X = { id = "cmX", name = "만앵참월", desc = "초 오의. 보이지 않게 둘레의 적 열을 베고 지나가며 하늘에 칼자국을 남긴다. 세상이 잿빛으로 멈춘 한 박자 뒤, 칼바람이 일어 적들을 휘감고, 마지막에 터지며 화면까지 한칼에 두 동강 낸다 (그동안 무적)", pose = "ult_sever", dur = 1.2, cd = 60, chi = 150, armor = true,
 			mech = { kind = "sakuraSever", n = 10, range = 45, delay = 0.25, every = 0.06, still = 0.9, wind = 1.3, windEvery = 0.18, cut = hit(0, 0, 0, 40, 40, 0.8, 0), windHit = hit(0, 0, 0, 9, 10, 0.3, 0), final = hit(0, 0, 0, 170, 200, 1.8, 80, 26), finalRadius = 22 } },
 	},
@@ -1873,6 +1901,7 @@ local FINISHERS = {
 	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
 	chochanghae = { name = "고경승천장", pose = "tidal_punch" },
+	mugeuk2 = { name = "진 무극승천장", pose = "void_push" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do

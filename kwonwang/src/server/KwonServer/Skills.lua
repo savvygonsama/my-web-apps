@@ -2424,6 +2424,141 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "inkSlash" then
+		-- 2.7판 진 무극 일획 (E): 허공에 먹으로 한 획을 긋는다. 지나간 적을 베고, 잠시 뒤 획이 금빛으로 타오르며 터진다
+		local from = f.root.Position + look * 2
+		local to = from + look * m.length
+		local seed = math.random(1, 1000)
+		Push:FireAllClients("skillfx", { kind = "inkSlash", from = from, to = to, delay = m.delay / sp, burstAt = m.burstAt / sp, width = m.width, seed = seed, style = style })
+		local hitList = {}
+		after(m.delay, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				table.insert(hitList, o)
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.burstAt, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width + 1)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "enso" then
+		-- 2.7판 진 무극 원상 (R): 발밑에 먹 원을 그린다. 원 안의 적은 먹에 붙잡히고, 다 그리면 먹 벽이 솟았다가 금빛으로 무너진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "enso", at = center, radius = m.radius, draw = m.draw / sp, burstAt = m.burstAt / sp, style = style })
+		after(m.draw, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				Combat.stun(o, m.hold / sp)
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.draw + m.burstAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 3)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "inkFlower" then
+		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
+		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)
+		local center = f.root.Position + look * 2
+		local rot = math.random() * math.pi * 2
+		Push:FireAllClients("skillfx", { kind = "inkFlower", at = center, radius = m.radius, strokes = m.strokes, delay = m.delay / sp, every = m.every / sp, ringAt = m.ringAt / sp, finalAt = m.finalAt / sp, rot = rot, style = style })
+		local order = { 1, 5, 3, 7, 2, 6, 4, 8 }
+		for i = 1, m.strokes do
+			after(m.delay + (i - 1) * m.every, function()
+				local a0 = rot + ((order[i] or i) - 1) / m.strokes * math.pi * 2
+				local hitSet = {}
+				local prev = center
+				for k = 1, 5 do
+					local r = 3 + (m.radius - 3) * k / 5
+					local a = a0 + 0.75 * k / 5
+					local pt = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+					for _, o in ipairs(hostilesOnSeg(f, prev, pt, m.width)) do
+						if not hitSet[o] then
+							hitSet[o] = true
+							strike(f, o, hit, move)
+						end
+					end
+					prev = pt
+				end
+			end)
+		end
+		local tEnd = m.delay + (m.strokes - 1) * m.every + m.ringAt + m.finalAt
+		after(tEnd, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "fanBoomerang" then
+		-- 2.7판 초·매화 선풍낙화 (E): 두 부채가 양옆으로 둥글게 날아갔다 되돌아온다. 가는 길과 오는 길에 한 번씩 벤다
+		local from = f.root.Position
+		local right = Vector3.new(-look.Z, 0, look.X)
+		Push:FireAllClients("skillfx", { kind = "fanBoomerang", m = f.model, from = from, dir = look, dist = m.dist, width = m.width, time = m.time / sp, style = style })
+		local ticks = math.floor(m.time / m.every)
+		local hits: { [any]: number } = {}
+		for k = 1, ticks do
+			after(k * m.every, function()
+				local u = k * m.every / m.time
+				local half = u < 0.5 and 1 or 2
+				for _, side in ipairs({ -1, 1 }) do
+					local pos = from + look * (m.dist * (1 - math.cos(2 * math.pi * u)) / 2) + right * side * (m.width * math.sin(2 * math.pi * u))
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						local key = (hits[o] or 0)
+						-- 가는 길에 한 번, 오는 길에 한 번
+						if key < half then
+							hits[o] = half
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+	elseif kind == "petalShadow" then
+		-- 2.7판 초·매화 화영보 (R): 앞으로 미끄러지며 지나간 길에 꽃 그림자 셋을 남긴다. 그림자가 차례로 베고, 마지막에 모두 꽃잎으로 터진다
+		local from = f.root.Position
+		local spots = {}
+		for i = 1, m.n do
+			spots[i] = from + look * (m.gap * i - 2)
+		end
+		Push:FireAllClients("skillfx", { kind = "petalShadow", m = f.model, spots = spots, dir = look, delay = m.delay / sp, every = m.every / sp, burstAt = m.burstAt / sp, radius = m.radius, style = style })
+		for i, at in ipairs(spots) do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + (m.n - 1) * m.every + m.burstAt, function()
+			local done = {}
+			for _, at in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, scaled(m.burst, sc), move)
+					end
+				end
+			end
+		end)
+	elseif kind == "skyFan" then
+		-- 2.7판 초·매화 만화천선 (오의): 하늘에 큰 부채가 펼쳐져 앞의 땅을 두 번 쓸고, 접히며 꽃잎 폭풍을 일으킨다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "skyFan", m = f.model, at = center, dir = look, open = m.open / sp, sweeps = m.sweeps, sweepTime = m.sweepTime / sp, range = m.range, angle = m.angle, closeAt = m.closeAt / sp, closeRadius = m.closeRadius, style = style })
+		local half = math.cos(math.rad(m.angle / 2))
+		for k = 1, m.sweeps do
+			after(m.open + (k - 1) * (m.sweepTime + 0.05) + m.sweepTime * 0.5, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z)
+					if d.Magnitude < 3 or d.Unit:Dot(look) >= half then
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.open + m.sweeps * (m.sweepTime + 0.05) + m.closeAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.closeRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "tideSpear" then
 		-- 2.7판 초·창해 조류창 (E): 소용돌이치는 물의 창이 앞을 꿰뚫고, 끝에서 소용돌이가 되어 끌어당기다 터진다
 		local from = f.root.Position + look * 2
