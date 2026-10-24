@@ -1066,16 +1066,88 @@ local function manualLine(id: string, r: number): string
 	end
 	return string.format('%s <font color="%s"><b>[%s] %s</b></font>  %s %.1f%%', m.icon, hex(R.color), R.name, m.name, m.desc, Config.manualValue(id, r) * 100)
 end
+local manualAuto = false
+local manualAutoBtn: TextButton? = nil
+local manualAutoTotal: { number } = {}
+local function canDraw10(): boolean
+	if not state then
+		return false
+	end
+	local sc = state.scrolls or 0
+	return sc >= 10 or (state.coins or 0) >= (10 - sc) * Config.MANUAL_DRAW.coins
+end
+function UI.setManualAuto(on: boolean)
+	if on and not canDraw10() then
+		UI.toast("자동 뽑기: 두루마리나 은자가 모자라요")
+		on = false
+	end
+	if on == manualAuto then
+		return
+	end
+	manualAuto = on
+	local b = manualAutoBtn
+	if b then
+		b.Text = on and "🔁 자동: 켜짐" or "🔁 자동: 꺼짐"
+		b.BackgroundColor3 = on and Color3.fromRGB(60, 140, 80) or C.panel2
+	end
+	if not on then
+		-- 끝날 때 모아서 한 줄로
+		local parts = {}
+		for i = #Config.MANUAL_RARITY, 1, -1 do
+			local c = manualAutoTotal[i] or 0
+			if c > 0 then
+				table.insert(parts, Config.MANUAL_RARITY[i].name .. " " .. c)
+			end
+		end
+		if #parts > 0 then
+			UI.toast("🔁 자동 뽑기 끝: " .. table.concat(parts, " · "))
+		end
+		manualAutoTotal = {}
+		return
+	end
+	task.spawn(function()
+		while manualAuto do
+			if not canDraw10() then
+				UI.setManualAuto(false)
+				break
+			end
+			Request:FireServer("manualDraw", 10, true)
+			task.wait(1.1)
+		end
+	end)
+end
+-- 자동 뽑기 한 번(10번)의 결과: 좋은 것이 나오면 크게, 아니면 짧게
+function UI.manualAutoResult(data: any)
+	if data.stop then
+		UI.setManualAuto(false)
+		return
+	end
+	for i, c in ipairs(data.counts or {}) do
+		manualAutoTotal[i] = (manualAutoTotal[i] or 0) + c
+	end
+	local best = data.best or 1
+	local R = Config.MANUAL_RARITY[best]
+	if R and best >= 4 then
+		UI.toast(string.format("🔁 자동 뽑기: [%s] 등장! (새로 얻거나 오른 심법 %d)", R.name, data.ups or 0))
+	end
+end
 local function buildManuals()
 	local page = makePage("manuals")
 	local D = Config.MANUAL_DRAW
-	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -168, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 1번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(150, 100, 40) }, function()
+	local head = text({ Size = UDim2.new(1, -440, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -292, 0, 0), Size = UDim2.new(0, 136, 0, 48), Text = "📜 1번 뽑기", TextSize = 17, BackgroundColor3 = Color3.fromRGB(150, 100, 40) }, function()
 		Request:FireServer("manualDraw", 1)
 	end).Parent = page
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 156, 0, 48), Text = "📜 10번 뽑기", TextSize = 18, BackgroundColor3 = Color3.fromRGB(190, 120, 30) }, function()
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -148, 0, 0), Size = UDim2.new(0, 136, 0, 48), Text = "📜 10번 뽑기", TextSize = 17, BackgroundColor3 = Color3.fromRGB(190, 120, 30) }, function()
 		Request:FireServer("manualDraw", 10)
 	end).Parent = page
+	-- 2.6판: 자동 뽑기 (켜 두면 두루마리·은자가 남는 동안 10번씩 연출 없이 뽑는다)
+	local autoBtn: TextButton
+	autoBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 136, 0, 48), Text = "🔁 자동: 꺼짐", TextSize = 17, BackgroundColor3 = C.panel2 }, function()
+		UI.setManualAuto(not manualAuto)
+	end)
+	autoBtn.Parent = page
+	manualAutoBtn = autoBtn
 	-- 끼운 세 칸
 	local slotRow = new("Frame", { Position = UDim2.new(0, 0, 0, 58), Size = UDim2.new(1, 0, 0, 74), BackgroundTransparency = 1, Parent = page })
 	new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 1, 0), CellPadding = UDim2.new(0, 8, 0, 0), Parent = slotRow })
@@ -1441,6 +1513,20 @@ local function buildTest()
 		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
+	do
+		-- 2.6판: 심법 등급 체험 (모든 심법을 한 등급으로), 자동 뽑기, 새 오의·무극신권·보스 차림
+		local items: { any } = {}
+		for i, R in ipairs(Config.MANUAL_RARITY) do
+			table.insert(items, { string.format("📜 모든 심법 [%s]로", R.name), "testManualRarity", i, color = R.color:Lerp(Color3.new(0, 0, 0), 0.55) })
+		end
+		table.insert(items, { "📜 두루마리 +100 (자동 뽑기용)", "testScrolls", 100 })
+		table.insert(items, { "⚡ 초·벽력신권 (G 뇌성강림)", "testStyle", "chobyeok" })
+		table.insert(items, { "☯ 무극신권 바로 쓰기", "testStyle", "mugeuk" })
+		table.insert(items, { "🗿 석왕 부르기", "testBoss", "seokwang" })
+		table.insert(items, { "👹 천존 부르기", "testBoss", "cheonjon" })
+		table.insert(items, { "🍄 균왕 부르기", "testBoss", "gyunwang" })
+		section("📜 2.6판: 심법 등급 체험 · 새 오의 · 보스 차림", items)
+	end
 	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
 		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" },
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
@@ -1467,7 +1553,7 @@ local function buildTest()
 		{ "🩸 진 혈마신수 바로 쓰기", "testStyle", "hyeolma2" }, { "🐲 진 천룡파천장 바로 쓰기", "testStyle", "cheonryong2" }, { "🌩 진 벽력신권 바로 쓰기", "testStyle", "byeokryeok2" },
 	})
 	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
-		{ "📜 심법 두루마리 +10", "testScrolls" }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
+		{ "📜 심법 두루마리 +10", "testScrolls" }, { "📜 심법 두루마리 +100 (자동 뽑기)", "testScrolls", 100 }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
 		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
 		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
 	})

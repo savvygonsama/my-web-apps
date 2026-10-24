@@ -1282,6 +1282,14 @@ function handlers.manualDraw(results: any)
 	Fx.sound("ping", 0.9, 1.3)
 end
 
+-- 2.6판: 자동 뽑기 결과 (연출 없이)
+function handlers.manualAuto(data: any)
+	UI.manualAutoResult(data)
+	if not data.stop then
+		Fx.sound("ping", 0.4, 1.6)
+	end
+end
+
 function handlers.toast(msg: string)
 	UI.toast(msg)
 end

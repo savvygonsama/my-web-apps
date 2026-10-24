@@ -2816,7 +2816,8 @@ local function rollRarity(p: Profile): number
 	return 1
 end
 
-function Manual.draw(player: Player, nArg: any)
+-- 2.6판: quiet = 자동 뽑기 (연출 없이 요약만)
+function Manual.draw(player: Player, nArg: any, quiet: any)
 	local p, st = profiles[player], states[player]
 	if not p or not st then
 		return
@@ -2827,6 +2828,9 @@ function Manual.draw(player: Player, nArg: any)
 	local coinCost = (n - useScroll) * D.coins
 	if p.coins < coinCost then
 		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(D.coins)))
+		if quiet then
+			Push:FireClient(player, "manualAuto", { stop = true })
+		end
 		return
 	end
 	p.scrolls -= useScroll
@@ -2853,7 +2857,22 @@ function Manual.draw(player: Player, nArg: any)
 	end
 	st.dirty = true
 	refreshFighter(player)
-	Push:FireClient(player, "manualDraw", results)
+	if quiet == true then
+		local counts, best, ups = {}, 1, 0
+		for i = 1, #Config.MANUAL_RARITY do
+			counts[i] = 0
+		end
+		for _, res in ipairs(results) do
+			counts[res.r] += 1
+			best = math.max(best, res.r)
+			if not res.refund then
+				ups += 1
+			end
+		end
+		Push:FireClient(player, "manualAuto", { counts = counts, best = best, ups = ups, n = n })
+	else
+		Push:FireClient(player, "manualDraw", results)
+	end
 	pushState(player)
 end
 
@@ -3130,8 +3149,25 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		Gate.ended(player, false)
 		Tower.ended(player, "leave")
 	elseif action == "testScrolls" then
-		p.scrolls += 10
-		toast(player, "📜 두루마리 +10")
+		local add = tonumber(arg) == 100 and 100 or 10
+		p.scrolls += add
+		toast(player, "📜 두루마리 +" .. add)
+	elseif action == "testManualRarity" then
+		-- 2.6판: 모든 심법을 한 등급으로 (다른 등급 체험)
+		local r = math.clamp(math.floor(tonumber(arg) or 1), 1, #Config.MANUAL_RARITY)
+		for _, m in ipairs(Config.MANUALS) do
+			p.manuals[m.id] = r
+		end
+		for _, m in ipairs(Config.MANUALS) do
+			if #p.equip >= Config.MANUAL_DRAW.slots then
+				break
+			end
+			if not table.find(p.equip, m.id) then
+				table.insert(p.equip, m.id)
+			end
+		end
+		refreshFighter(player)
+		toast(player, string.format("📜 모든 심법이 [%s] 등급으로", Config.MANUAL_RARITY[r].name))
 	elseif action == "testPvp" then
 		-- 비무 승리를 백 승 바로 앞까지 (한 번 더 이기면 무쌍신권)
 		p.pvpWins = math.max(p.pvpWins, Config.PVP_STYLE.wins - 1)
@@ -3579,7 +3615,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	elseif action == "mazeLeave" then
 		Maze.ended(player, "leave")
 	elseif action == "manualDraw" then
-		Manual.draw(player, a1)
+		Manual.draw(player, a1, a2 == true)
 	elseif action == "manualEquip" then
 		Manual.equip(player, a1, true)
 	elseif action == "manualUnequip" then
