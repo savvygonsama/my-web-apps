@@ -661,7 +661,9 @@ local function rewardPower(player: Player): number
 	local f = Combat.fighterOfPlayer(player)
 	local pw = ((f :: any) and (f :: any).power) or 100
 	if p then
-		pw /= math.sqrt(Config.lateAtk((Calc.realm(p)))) * Config.rebirthPower(p.rebirth)
+		-- 2.4.1판: 피해 쪽 배율(후반 공격력·환생 피해·환생 경지의 피해 배율)을 빼고, 경지 표의 전투력과 같은 잣대로
+		local idx = Calc.realm(p)
+		pw /= math.sqrt(Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Config.rebirthPower(p.rebirth) * Config.realmDmg(idx) / Config.realmPower(idx))
 	end
 	return pw
 end
@@ -685,7 +687,7 @@ local function refreshFighter(player: Player)
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * power * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * rb
+	f.dmgMult = Config.statMult(p.stats.str) * (1 + 0.03 * (m - 1)) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult

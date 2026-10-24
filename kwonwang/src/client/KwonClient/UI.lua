@@ -813,10 +813,10 @@ local function buildStats()
 			nextRealm and string.format(" / 다음 %s는 %s%s", nextRealm.name, Config.formatNumber(nextRealm.need), locked and ' <font color="#FF9AD8">(환생해야 열림)</font>' or "") or ""))
 		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
 		if rb > 0 then
-			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 주는 피해·체력 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
+			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 체력 ×%.2f · 주는 피해 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthDmg(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
 		end
 		if canRebirth then
-			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 피해·체력 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
+			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
 		end

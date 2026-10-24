@@ -153,14 +153,17 @@ end
 function Config.realmPower(idx: number): number
 	return 1.22 ^ (math.min(idx, 9) - 1) * 1.38 ^ math.max(0, idx - 9)
 end
+-- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
+function Config.realmDmg(idx: number): number
+	return Config.realmPower(math.min(idx, 16)) * 1.08 ^ math.max(0, idx - 16)
+end
 -- 1.8판: 후반 경지의 공격력 (피해에만 곱한다). 능력치가 로그로 자라 후반에 주먹이 너무 가벼웠다
 -- 생사경 ×1.5 · 신화경 ×2.2 · 천인합일 ×3 · 무극 ×4 · 반선 ×5.5 · 등선 ×7 · 천외천 ×9
 -- (1.9판: 혼원경 ×11 · 무량경 ×13.5 · 태허경 ×16.5 · 권왕 ×20)
--- 2.3판: 후반 공격력을 크게 낮췄다 (스킬 하나에 다 쓰러졌다): 생사경 ×1.3 · 신화경 ×1.6 · 천인합일 ×2 · 무극 ×2.5 · 반선 ×3 · 등선 ×3.5 · 천외천 ×4
--- (혼원경 ×4.6 · 무량경 ×5.2 · 태허경 ×5.8 · 권왕 ×6.5)
-Config.LATE_ATK = { [10] = 1.3, [11] = 1.6, [12] = 2, [13] = 2.5, [14] = 3, [15] = 3.5, [16] = 4, [17] = 4.6, [18] = 5.2, [19] = 5.8, [20] = 6.5 }
+-- 2.4.1판: 후반 공격력 배율을 아주 작게 (공격력 자체가 너무 세서 다 한 방이었다): 생사경 ×1.1 · 무극 ×1.45 · 천외천 ×2, 그 너머는 더 오르지 않는다
+Config.LATE_ATK = { [10] = 1.1, [11] = 1.2, [12] = 1.3, [13] = 1.45, [14] = 1.6, [15] = 1.8, [16] = 2, [17] = 2, [18] = 2, [19] = 2, [20] = 2 }
 function Config.lateAtk(idx: number): number
-	return Config.LATE_ATK[idx] or (idx > 20 and 6.5 or 1)
+	return Config.LATE_ATK[idx] or (idx > 20 and 2 or 1)
 end
 
 -- cap: 오를 수 있는 가장 높은 경지 (환생으로 열린 만큼). 없으면 끝까지
@@ -177,7 +180,7 @@ end
 ------------------------------------------------------------------------
 -- 1.9판: 환생. 열린 가장 높은 경지(처음엔 천외천)에 오르면 환생할 수 있다
 -- 능력치를 모두 내려놓고 삼류로 돌아간다. 권법·숙련·깨달음·심법·탈것·은자·관문 기록은 그대로 남는다
--- 환생할 때마다: 주는 피해·체력 영구 +25%, 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
+-- 환생할 때마다: 체력 영구 +25% · 주는 피해 +10% (2.4.1판), 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
 	max = 4,
@@ -194,6 +197,10 @@ end
 -- 환생 배율: 피해·체력 (겹치지 않고 더한다)
 function Config.rebirthPower(rebirth: number): number
 	return 1 + Config.REBIRTH.power * rebirth
+end
+-- 2.4.1판: 환생의 피해 배율은 작게 (한 번에 +10%). 체력은 rebirthPower (+25%)
+function Config.rebirthDmg(rebirth: number): number
+	return 1 + 0.1 * rebirth
 end
 function Config.rebirthGain(rebirth: number): number
 	return 1 + Config.REBIRTH.gain * rebirth
@@ -2517,9 +2524,6 @@ function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
 Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
--- 2.4판: 공격력 리미터 (사람 → 적). gapPow: 내가 더 셀 때 피해 × (적 전투력 ÷ 내 전투력)^gapPow
--- 한 대 한도: 적 최대 체력의 base − perLevel × (단계 − 1) (min까지), 보스는 boss (한 대에 3%: 서른 대 넘게 맞아야 쓰러진다)
-Config.LIMITER = { gapPow = 0.4, base = 0.6, perLevel = 0.02, min = 0.12, boss = 0.03 }
 function Config.powerGap(ratio: number): (number, boolean, boolean)
 	local G = Config.POWER_GAP
 	if ratio >= G.immune then
