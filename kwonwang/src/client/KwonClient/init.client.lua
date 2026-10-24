@@ -22,6 +22,7 @@ local Awake = require(script:WaitForChild("Awake"))
 local Reaper = require(script:WaitForChild("Reaper"))
 local Ult2 = require(script:WaitForChild("Ult2"))
 local Awake3 = require(script:WaitForChild("Awake3"))
+local Forest = require(script:WaitForChild("Forest"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -1896,8 +1897,15 @@ function handlers.skillfx(data: any)
 		Reaper.init({ shake = shake, tint = tint })
 		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })
 		Awake3.init({ shake = shake, flash = UI.flash })
+		Forest.init({ shake = shake })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
+		return
+	elseif data.kind == "pulse" and data.fx == "bamboo" then
+		Forest.run({ kind = "bambooShoot", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
+	elseif Forest.handles(data) then
+		Forest.run(data)
 		return
 	elseif data.kind == "pulse" and data.fx == "bloom" then
 		Awake3.run({ kind = "thornPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })

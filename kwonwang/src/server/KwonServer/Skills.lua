@@ -2424,6 +2424,60 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "bambooLine" then
+		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
+		local from = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "bambooLine", from = from, dir = look, n = m.n, start = m.start, gap = m.gap, delay = m.delay / sp, step = m.step / sp, stand = m.stand / sp, style = style })
+		local done = {}
+		for i = 1, m.n do
+			after(m.delay + (i - 1) * m.step, function()
+				local pos = from + look * (m.start + (i - 1) * m.gap)
+				for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+	elseif kind == "leafVolley" then
+		-- 2.7판 만목 천엽비수 (R): 잎이 둘레에서 소용돌이친 뒤 가까운 적 여럿에게 줄지어 날아가 벤다
+		Push:FireAllClients("skillfx", { kind = "leafGather", m = f.model, dur = m.gather / sp, style = style })
+		after(m.gather, function()
+			local list = nearestList(f, m.range, m.n)
+			Push:FireAllClients("skillfx", { kind = "leafVolley", m = f.model, targets = modelsOf(list), waves = m.waves, every = m.every / sp, travel = m.travel / sp, style = style })
+			heal(f, m.heal)
+			for w = 0, m.waves - 1 do
+				after(m.travel + w * m.every, function()
+					for _, o in ipairs(list) do
+						strike(f, o, hit, move)
+					end
+				end)
+			end
+		end)
+	elseif kind == "worldTree" then
+		-- 2.7판 만목 신목강림 (오의): 등 뒤에 천 년 은행나무가 솟고 금빛 잎이 쏟아진다. 끝에 잎이 사방으로 휘몰아친다
+		local center = f.root.Position
+		local at = center - look * m.back
+		local id = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "treeRise", id = id, at = at, center = center, dir = look, rise = m.rise / sp, dur = m.dur / sp, radius = m.radius, style = style })
+		after(m.rise, function()
+			heal(f, m.heal)
+		end)
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.rise + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.rise + m.dur, function()
+			Push:FireAllClients("skillfx", { kind = "treeBurst", id = id, at = at, center = center, radius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "thunderStar" then
 		-- 2.6판 초·벽력 뇌성강림 (오의): 머리 위로 띄운 뇌성(천둥별)에서 작은 별 여섯이 떨어져 나와 둘레를 돈다.
 		-- 별마다 가까운 적을 골라 번개 줄기를 쏘고 (한 번에 한 적은 한 줄기만 맞는다), 끝에 모두 다시 하나로 모여 땅에 떨어진다

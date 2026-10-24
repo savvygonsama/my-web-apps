@@ -372,7 +372,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 	elseif style.fx == "nature" then
 		-- 2.4판 만목신권: 잎이 흩날리고 작은 새싹 고리
 		for _ = 1, heavy and 12 or 7 do
-			local leaf = piece(Vector3.new(0.8, 0.08, 0.5), math.random() < 0.6 and c or c2, Enum.Material.SmoothPlastic)
+			local leaf = piece(Vector3.new(0.05, 0.34, 0.9), math.random() < 0.6 and c or c2, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 			leaf.CFrame = CFrame.new(pos) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
 			local to = pos + Vector3.new(math.random() * 9 - 4.5, math.random() * 4, math.random() * 9 - 4.5) * s
 			tween(leaf, 0.8, { CFrame = CFrame.new(to) * CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6), Transparency = 1 })

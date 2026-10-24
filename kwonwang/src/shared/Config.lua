@@ -1709,27 +1709,28 @@ table.insert(Config.Styles, {
 	realmReq = 14,
 	trialHp = 10,
 	unlockHint = "반선의 경지에 오른 자만이, 남서쪽 들판 깊은 숲 만목원의 이끼 좌대에 앉은 목선을 만난다",
-	desc = "나무는 서두르지 않는다. 그러나 멈추지도 않는다. 씨앗 하나가 바위를 가르듯, 이 권은 맞을 때마다 상대의 몸에 뿌리를 내린다. 끝에는 숲 전체가 일어선다.",
-	gimmick = "생장: 네 번 맞힐 때마다 상대 자리에서 가시덤불이 터져 둘레를 묶는다. 몸이 단단하다 (균형 1.4배). 오의 목령강림: 거대한 나무 정령이 솟는다",
+	desc = "나무는 서두르지 않는다. 그러나 멈추지도 않는다. 대숲의 바람처럼 부드럽게 흘러, 천 년 은행나무처럼 무겁게 내려앉는 권. 끝에는 숲 전체가 일어선다.",
+	gimmick = "죽순: 네 번 맞힐 때마다 상대 발밑에서 죽순이 창처럼 솟아 띄운다. 몸이 단단하다 (균형 1.4배). 오의 신목강림: 천 년 은행나무가 솟아 금빛 잎을 쏟는다",
 	deflect = 0.28,
 	postureMult = 1.4,
 	speed = 1.0,
-	pulse = { every = 4, kind = "bloom", radius = 10, delay = 0.3, name = "가시덤불", dmg = 32, posture = 34, stun = 0.8, kb = 10, up = 6 },
+	pulse = { every = 4, kind = "bamboo", radius = 7, delay = 0.2, name = "죽순", dmg = 32, posture = 34, stun = 0.8, kb = 6, up = 20 },
 	stance = "stance_wood",
 	combo = {
-		{ id = "mm1", name = "새싹장", pose = "wood_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
-		{ id = "mm2", name = "덩굴장", pose = "wood_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
-		{ id = "mm3", name = "뿌리 쓸기", pose = "wood_sweep", dur = 0.5, lunge = 1, hits = { hit(0.28, 0, 8, 20, 24, 0.5, 14, 10, true) } },
+		{ id = "mm1", name = "청엽장", pose = "wood_palm_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm2", name = "죽절장", pose = "wood_palm_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 18, 15, 0.35, 10) } },
+		{ id = "mm3", name = "송풍퇴", pose = "wood_sweep", dur = 0.5, lunge = 1, hits = { hit(0.28, 0, 8, 20, 24, 0.5, 14, 10, true) } },
 		{ id = "mm4", name = "고목권", pose = "wood_palm_r", dur = 0.48, lunge = 5, hits = { hit(0.22, 8, 6, 30, 34, 0.6, 38) } },
 	},
-	heavy = { id = "mmH", name = "천년근", pose = "wood_slam", dur = 0.75, lunge = 2, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
+	heavy = { id = "mmH", name = "천년송", pose = "wood_slam", dur = 0.75, lunge = 2, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
 	skills = {
-		E = { id = "mmE", name = "종자탄", desc = "손끝으로 씨앗 일곱을 부채꼴로 튕긴다. 씨앗이 적의 몸이나 땅에 박혔다가 가시덤불로 터져 묶고, 덤불은 1.5초 동안 남아 찌른다", pose = "wood_flick", dur = 0.5, cd = 8, chi = 20,
-			mech = { kind = "seedBurst", n = 7, spread = 70, dist = 18, range = 26, delay = 0.18, sprout = 0.45, radius = 6.5, root = 1.1, linger = 1.5, every = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 0), burst = hit(0, 0, 0, 34, 34, 0.7, 10, 10), tick = hit(0, 0, 0, 8, 6, 0.2, 0) } },
-		R = { id = "mmR", name = "개화", desc = "웅크렸다가 꽃이 피듯 일어선다. 앞의 땅에서 거대한 꽃봉오리가 솟아 활짝 피며 꽃가루가 터져 둘레의 적이 2초 동안 잠든다. 이어 꽃잎이 회오리치며 날아가 한 번 더 친다. 나는 체력 8%를 되찾는다", pose = "wood_bloom", dur = 0.9, cd = 12, chi = 30,
-			mech = { kind = "bloomBud", dist = 10, radius = 16, delay = 0.7, sleep = 2.0, heal = 0.08, hit = hit(0, 0, 0, 46, 50, 0.6, 20, 12), wave = 0.4, waveRadius = 22, waveHit = hit(0, 0, 0, 30, 30, 0.4, 40, 8) } },
-		G = { id = "mmG", name = "목령강림", desc = "무릎을 꿇고 땅에 손을 대면, 등 뒤의 땅이 갈라지며 거대한 나무 정령이 솟는다. 주먹으로 앞을 내리치고, 몸을 돌려 팔로 휩쓸고, 잎 폭풍을 일으킨 뒤, 두 팔로 땅을 쳐 열 곳에서 뿌리가 솟구친다. 나는 그 숲의 기운으로 체력 10%를 되찾는다", pose = "ult_wood", dur = 2.4, cd = 32, chi = 100, armor = true,
-			mech = { kind = "treant", rise = 0.9, slamDist = 14, slamRadius = 16, slam = hit(0, 0, 0, 90, 110, 1.3, 40, 10), sweepAt = 1.6, sweepRange = 32, sweepAngle = 150, sweep = hit(0, 0, 0, 70, 80, 1.0, 70, 16), leafTicks = 4, leafRadius = 22, leaf = hit(0, 0, 0, 12, 10, 0.2, 0), rootsAt = 2.6, roots = 10, rootRange = 32, rootRadius = 6.5, root = hit(0, 0, 0, 40, 40, 0.9, 10, 40), heal = 0.1 } },
+		-- 2.7판: 만목신권 기술을 모두 새로 (대숲 · 잎 · 은행나무)
+		E = { id = "mmE", name = "죽림창", desc = "손바닥으로 땅을 누른다. 앞으로 곧게 대나무 일곱 그루가 차례로 창처럼 솟구쳐 위의 적을 띄우고, 잠시 대숲으로 서 있다가 잎을 날리며 가라앉는다", pose = "wood_slam", dur = 0.5, cd = 8, chi = 20,
+			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 40, 40, 0.7, 8, 24) } },
+		R = { id = "mmR", name = "천엽비수", desc = "두 손을 돌리면 둘레에 푸른 잎 수십 장이 소용돌이친다. 잎은 가까운 적 여덟을 골라 세 줄기로 날아가 베고, 나는 체력 6%를 되찾는다", pose = "wood_bloom", dur = 0.8, cd = 11, chi = 28,
+			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 20, 18, 0.35, 6) } },
+		G = { id = "mmG", name = "신목강림", desc = "무릎을 꿇고 땅에 손을 대면 등 뒤에서 천 년 은행나무가 하늘 높이 솟는다. 2.4초 동안 금빛 잎이 둘레 24칸에 쏟아져 적을 베고, 나는 그 숲의 기운으로 체력 12%를 되찾는다. 끝에 나무가 빛나며 금빛 잎이 사방으로 휘몰아친다", pose = "ult_wood", dur = 2.2, cd = 32, chi = 100, armor = true,
+			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 18, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 120, 140, 1.4, 70, 18) } },
 	},
 })
 
@@ -2211,12 +2212,12 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "manmok" then
 		local green = Color3.fromRGB(120, 220, 110)
-		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 숲의 가시와 뿌리 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
+		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 대숲의 창과 잎 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
 		st.trialBoss = { hp = 3400, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
-			P("rain", "가시 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
-			P("donut", "뿌리 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 40, 50, 1.0, 30) }),
+			P("rain", "죽창 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
+			P("donut", "대숲 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 40, 50, 1.0, 30) }),
 			P("leap", "고목 내리치기", 2, { radius = 16, warn = 1.0, cd = 7, pose = "grav_hammer", hit = hit(0, 0, 0, 50, 70, 1.1, 40, 18) }),
-			P("rain", "꽃가루 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 26, 30, 0.7, 14) }),
+			P("rain", "은행잎 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 26, 30, 0.7, 14) }),
 			P("quake", "숲의 분노", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_origin", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
 		} }
 	end
