@@ -512,7 +512,7 @@ local LOOKS: { [string]: any } = {
 	karstsprite = { form = "spirit", skin = C3(120, 140, 110), eyes = C3(190, 255, 160), shard = C3(150, 150, 140), shardMat = Enum.Material.Slate },
 	stonewarden = { form = "golem", skin = C3(115, 125, 110), eyes = C3(180, 255, 150), moss = C3(70, 120, 50) },
 	meteorguard = { form = "golem", skin = C3(60, 60, 80), eyes = C3(140, 200, 255), ember = C3(150, 190, 255) },
-	seokwang = { form = "golem", skin = C3(140, 135, 125), eyes = C3(255, 220, 150), moss = C3(80, 120, 60) },
+	seokwang = { form = "golem", skin = C3(74, 70, 80), eyes = C3(255, 210, 120), ember = C3(255, 190, 80) },
 	craneguard = { form = "bird", feather = C3(235, 235, 235), crest = C3(200, 30, 30), beak = C3(220, 180, 80) },
 	cranemaster = { form = "bird", feather = C3(205, 232, 245), crest = C3(40, 120, 160), beak = C3(230, 200, 110) },
 	phoenixguard = { form = "bird", feather = C3(255, 140, 50), crest = C3(255, 220, 80), beak = C3(255, 200, 60), fire = C3(255, 150, 50) },
@@ -981,6 +981,292 @@ local function buildForm(model: Model, look: any): boolean
 	return true
 end
 
+------------------------------------------------------------------------
+-- 2.6판: 차림 손질
+-- 사람 적: 팔목 감개·장화·옷깃 (맨몸 같던 팔다리에 옷의 결을)
+-- 보스: 뒤로 늘어진 망토, 몸에서 피어오르는 기운, 그리고 보스마다 하나뿐인 표식 (관·날개·후광·북·잎 관 …)
+------------------------------------------------------------------------
+local function sizeOf(model: Model, name: string): Vector3
+	local p = model:FindFirstChild(name)
+	return (p and p:IsA("BasePart")) and p.Size or Vector3.new(1, 1, 1)
+end
+local function aura(model: Model, partName: string, color: Color3, rate: number, size: number, up: number)
+	local p = model:FindFirstChild(partName)
+	if not p or not p:IsA("BasePart") then
+		return
+	end
+	local a = Instance.new("Attachment")
+	a.Parent = p
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	e.Color = ColorSequence.new(color)
+	e.LightEmission = 0.7
+	e.Rate = rate
+	e.Lifetime = NumberRange.new(0.6, 1.2)
+	e.Speed = NumberRange.new(up * 0.5, up)
+	e.SpreadAngle = Vector2.new(40, 40)
+	e.Acceleration = Vector3.new(0, up, 0)
+	e.Size = NumberSequence.new(size, 0)
+	e.Parent = a
+end
+local function humanDetail(model: Model, look: any, k: number)
+	local cloth = look.cloth or Color3.fromRGB(60, 50, 40)
+	local wrapC = cloth:Lerp(Color3.fromRGB(230, 220, 200), 0.35)
+	local leather = Color3.fromRGB(48, 36, 28)
+	for _, side in ipairs({ "Left", "Right" }) do
+		local la = sizeOf(model, side .. "LowerArm")
+		wear(model, side .. "LowerArm", "Bracer", Vector3.new(la.X * 1.08, la.Y * 0.55, la.Z * 1.08), CFrame.new(0, -la.Y * 0.18, 0), wrapC, Enum.Material.Fabric)
+		local ll = sizeOf(model, side .. "LowerLeg")
+		wear(model, side .. "LowerLeg", "Boot", Vector3.new(ll.X * 1.1, ll.Y * 0.7, ll.Z * 1.1), CFrame.new(0, -ll.Y * 0.15, 0), leather, Enum.Material.Leather)
+		local ft = sizeOf(model, side .. "Foot")
+		wear(model, side .. "Foot", "BootToe", Vector3.new(ft.X * 1.08, ft.Y * 1.3, ft.Z * 1.12), CFrame.new(0, 0, -ft.Z * 0.04), leather, Enum.Material.Leather)
+	end
+	local ut = sizeOf(model, "UpperTorso")
+	-- 여밈 옷깃 (가슴에 비스듬한 깃 둘)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "Collar", Vector3.new(0.18 * k, ut.Y * 0.62, 0.08 * k), CFrame.new(x * ut.X * 0.12, ut.Y * 0.12, -ut.Z * 0.52) * CFrame.Angles(0, 0, x * math.rad(28)), cloth:Lerp(Color3.new(1, 1, 1), 0.2), Enum.Material.Fabric)
+	end
+end
+local SIG: { [string]: (Model, any, number) -> () } = {}
+local NEON2 = Enum.Material.Neon
+local function horns(model: Model, color: Color3, k: number, big: number)
+	local hs = sizeOf(model, "Head")
+	for _, x in ipairs({ -1, 1 }) do
+		for j = 0, 3 do
+			wear(model, "Head", "BossHorn", Vector3.new((0.3 - j * 0.05) * k, 0.55 * k * big, (0.3 - j * 0.05) * k), CFrame.new(x * (0.35 + j * 0.16) * hs.X, (0.55 + j * 0.3) * hs.Y, (0.05 + j * 0.14) * hs.Z) * CFrame.Angles(math.rad(-18 * j), 0, -x * math.rad(35 - j * 22)), color, Enum.Material.SmoothPlastic)
+		end
+	end
+end
+local function wings(model: Model, bone: Color3, skin: Color3, k: number, span: number, mat: Enum.Material?, alpha: number?)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "WingBone", Vector3.new(0.25 * k, 3.4 * k * span, 0.25 * k), CFrame.new(x * 1.6 * k * span, 1.4 * k, 0.75 * k) * CFrame.Angles(math.rad(15), 0, -x * math.rad(58)), bone, Enum.Material.SmoothPlastic)
+		for j = 0, 2 do
+			local w = wear(model, "UpperTorso", "Wing", Vector3.new(2.2 * k * span, (2.6 - j * 0.5) * k * span, 0.08 * k), CFrame.new(x * (1.6 + j * 1.1) * k * span, (0.6 - j * 0.35) * k, (0.8 + j * 0.06) * k) * CFrame.Angles(math.rad(12), x * math.rad(-18), x * math.rad(-12 + j * 14)), skin, mat or Enum.Material.SmoothPlastic)
+			if w and alpha then
+				w.Transparency = alpha
+			end
+		end
+	end
+end
+local function crown(model: Model, color: Color3, k: number, n: number, h: number, mat: Enum.Material?)
+	local hs = sizeOf(model, "Head")
+	for i = 0, n - 1 do
+		local a = i / n * math.pi * 2
+		wear(model, "Head", "CrownSpike", Vector3.new(0.16 * k, h * k * (i % 2 == 0 and 1 or 0.7), 0.16 * k), CFrame.new(math.cos(a) * hs.X * 0.42, hs.Y * 0.62, math.sin(a) * hs.Z * 0.42) * CFrame.Angles(math.sin(a) * 0.25, 0, -math.cos(a) * 0.25), color, mat or NEON2)
+	end
+	wear(model, "Head", "CrownBand", Vector3.new(0.14 * k, hs.X * 0.95, hs.Z * 0.95), CFrame.new(0, hs.Y * 0.48, 0) * CFrame.Angles(0, 0, math.rad(90)), color:Lerp(Color3.new(0, 0, 0), 0.25), Enum.Material.Metal, Cyl)
+end
+local function halo(model: Model, color: Color3, k: number, r: number, segments: number?, broken: boolean?)
+	local n = segments or 16
+	for i = 0, n - 1 do
+		if not (broken and i % 4 == 1) then
+			local a = i / n * math.pi * 2
+			wear(model, "UpperTorso", "Halo", Vector3.new(0.18 * k, 0.18 * k, r * k * 0.42), CFrame.new(math.cos(a) * r * k, 1.9 * k + math.sin(a) * r * k, 0.9 * k) * CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(a + math.pi / 2, 0, 0), color, NEON2)
+		end
+	end
+end
+SIG.heukho = function(model, look, k)
+	-- 흑호: 호랑이 가죽을 뒤집어쓴 두목 (줄무늬 머리 가죽과 귀, 이빨 목걸이)
+	local hs = sizeOf(model, "Head")
+	wear(model, "Head", "TigerPelt", Vector3.new(hs.X * 1.15, hs.Y * 0.7, hs.Z * 1.2), CFrame.new(0, hs.Y * 0.32, hs.Z * 0.12), Color3.fromRGB(215, 120, 40), Enum.Material.Fabric, Ball)
+	for i = -1, 1 do
+		wear(model, "Head", "TigerStripe", Vector3.new(0.12 * k, hs.Y * 0.4, hs.Z * 0.9), CFrame.new(i * hs.X * 0.25, hs.Y * 0.45, hs.Z * 0.15), Color3.fromRGB(25, 20, 15), Enum.Material.Fabric)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "TigerEar", Vector3.new(0.4 * k, 0.4 * k, 0.15 * k), CFrame.new(x * hs.X * 0.38, hs.Y * 0.75, 0), Color3.fromRGB(215, 120, 40), Enum.Material.Fabric, Ball)
+	end
+	for i = -2, 2 do
+		wear(model, "UpperTorso", "FangBead", Vector3.new(0.14 * k, 0.4 * k, 0.14 * k), CFrame.new(i * 0.28 * k, 0.55 * k - math.abs(i) * 0.08 * k, -0.62 * k) * CFrame.Angles(0, 0, i * 0.2), Color3.fromRGB(240, 230, 210), Enum.Material.SmoothPlastic)
+	end
+end
+SIG.bingma = function(model, look, k)
+	crown(model, Color3.fromRGB(170, 230, 255), k, 7, 1.0)
+	for _, x in ipairs({ -1, 1 }) do
+		for j = 0, 2 do
+			wear(model, "UpperTorso", "Icicle", Vector3.new(0.22 * k, (0.9 - j * 0.2) * k, 0.22 * k), CFrame.new(x * (1.0 + j * 0.25) * k, 1.0 * k, (j - 1) * 0.3 * k) * CFrame.Angles(0, 0, -x * math.rad(20 + j * 15)), Color3.fromRGB(200, 240, 255), Enum.Material.Glass)
+		end
+	end
+	aura(model, "UpperTorso", Color3.fromRGB(200, 240, 255), 8, 0.4 * k, 2)
+end
+SIG.bingje = function(model, look, k)
+	crown(model, Color3.fromRGB(190, 240, 255), k, 9, 1.3)
+	wings(model, Color3.fromRGB(200, 240, 255), Color3.fromRGB(170, 225, 255), k, 1.1, Enum.Material.Glass, 0.25)
+end
+SIG.hyeolma = function(model, look, k)
+	halo(model, Color3.fromRGB(220, 20, 40), k, 1.3, 14)
+	for _, side in ipairs({ "LeftHand", "RightHand" }) do
+		for j = -1, 1 do
+			wear(model, side, "BloodClaw", Vector3.new(0.12 * k, 0.9 * k, 0.12 * k), CFrame.new(j * 0.25 * k, -0.6 * k, -0.15 * k) * CFrame.Angles(math.rad(25), 0, 0), Color3.fromRGB(230, 20, 40), NEON2)
+		end
+	end
+	aura(model, "LowerTorso", Color3.fromRGB(200, 20, 40), 12, 0.5 * k, 3)
+end
+SIG.cheonma = function(model, look, k)
+	horns(model, Color3.fromRGB(30, 15, 40), k, 1.3)
+	wings(model, Color3.fromRGB(40, 20, 50), Color3.fromRGB(45, 15, 70), k, 1.25)
+	aura(model, "UpperTorso", Color3.fromRGB(170, 90, 255), 10, 0.5 * k, 2)
+end
+SIG.yeomje = function(model, look, k)
+	crown(model, Color3.fromRGB(255, 140, 40), k, 7, 1.2)
+	aura(model, "Head", Color3.fromRGB(255, 140, 40), 14, 0.6 * k, 6)
+	for _, x in ipairs({ -1, 1 }) do
+		local fs = wear(model, "UpperTorso", "FlameShoulder", Vector3.new(0.9 * k, 0.9 * k, 0.9 * k), CFrame.new(x * 1.2 * k, 0.95 * k, 0), Color3.fromRGB(255, 110, 30), NEON2, Ball)
+		if fs then
+			fs.Transparency = 0.3
+		end
+	end
+end
+SIG.sawang = function(model, look, k)
+	-- 사왕: 층층이 솟은 모래 왕관과 가슴의 청옥, 어깨에 늘어진 금 띠
+	local hs = sizeOf(model, "Head")
+	for j = 0, 3 do
+		wear(model, "Head", "SandCrown", Vector3.new(hs.Y * 0.28, hs.X * (1.0 - j * 0.12), hs.Z * (1.0 - j * 0.12)), CFrame.new(0, hs.Y * (0.45 + j * 0.24), 0) * CFrame.Angles(0, 0, math.rad(90)), j % 2 == 0 and Color3.fromRGB(230, 190, 80) or Color3.fromRGB(40, 90, 170), Enum.Material.Metal, Cyl)
+	end
+	wear(model, "UpperTorso", "Jewel", Vector3.new(0.7 * k, 0.7 * k, 0.2 * k), CFrame.new(0, 0.2 * k, -0.6 * k), Color3.fromRGB(60, 150, 220), NEON2, Ball)
+	aura(model, "LowerTorso", Color3.fromRGB(230, 200, 140), 10, 0.5 * k, 1)
+end
+SIG.cheonmun = function(model, look, k)
+	halo(model, Color3.fromRGB(255, 230, 150), k, 1.5, 18)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "GateTower", Vector3.new(0.6 * k, 1.6 * k, 0.6 * k), CFrame.new(x * 1.3 * k, 1.5 * k, 0.2 * k), Color3.fromRGB(240, 242, 255), Enum.Material.Marble)
+		wear(model, "UpperTorso", "GateTip", Vector3.new(0.4 * k, 0.4 * k, 0.4 * k), CFrame.new(x * 1.3 * k, 2.45 * k, 0.2 * k), Color3.fromRGB(255, 230, 150), NEON2, Ball)
+	end
+end
+SIG.noeje = function(model, look, k)
+	-- 뇌제: 등 뒤에 둥글게 걸린 천둥 북 여섯
+	for i = 0, 5 do
+		local a = i / 6 * math.pi * 2
+		local drum = wear(model, "UpperTorso", "ThunderDrum", Vector3.new(0.45 * k, 0.9 * k, 0.9 * k), CFrame.new(math.cos(a) * 1.9 * k, 1.5 * k + math.sin(a) * 1.9 * k, 0.9 * k) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(110, 40, 40), Enum.Material.Wood, Cyl)
+		wear(model, "UpperTorso", "DrumFace", Vector3.new(0.05 * k, 0.8 * k, 0.8 * k), CFrame.new(math.cos(a) * 1.9 * k, 1.5 * k + math.sin(a) * 1.9 * k, 0.65 * k) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(200, 220, 255), NEON2, Cyl)
+		local _ = drum
+	end
+	halo(model, Color3.fromRGB(150, 200, 255), k, 1.9, 24)
+	aura(model, "UpperTorso", Color3.fromRGB(170, 210, 255), 8, 0.3 * k, 4)
+end
+SIG.seonggun = function(model, look, k)
+	for i = 0, 4 do
+		local a = i / 5 * math.pi * 2 + math.pi / 2
+		wear(model, "UpperTorso", "StarPoint", Vector3.new(0.3 * k, 0.3 * k, 0.3 * k), CFrame.new(math.cos(a) * 1.5 * k, 1.8 * k + math.sin(a) * 1.5 * k, 0.8 * k), Color3.fromRGB(255, 240, 200), NEON2, Ball)
+	end
+	halo(model, Color3.fromRGB(200, 170, 255), k, 1.5, 20)
+	aura(model, "UpperTorso", Color3.fromRGB(220, 200, 255), 8, 0.35 * k, 1)
+end
+SIG.cheonjon = function(model, look, k)
+	halo(model, Color3.fromRGB(255, 225, 140), k, 1.8, 24)
+	-- 등 뒤로 퍼지는 금빛 살 여덟
+	for i = 0, 7 do
+		local a = (i / 7 - 0.5) * math.pi * 0.9
+		wear(model, "UpperTorso", "GoldRay", Vector3.new(0.15 * k, 3.2 * k, 0.15 * k), CFrame.new(math.sin(a) * 1.6 * k, 1.6 * k + math.cos(a) * 1.4 * k, 0.85 * k) * CFrame.Angles(0, 0, -a), Color3.fromRGB(255, 230, 150), NEON2)
+	end
+	aura(model, "LowerTorso", Color3.fromRGB(255, 230, 150), 10, 0.4 * k, 2)
+end
+SIG.cheongeop = function(model, look, k)
+	-- 천겁: 깨진 검은 후광과 둘레를 맴도는 폭풍 기운
+	halo(model, Color3.fromRGB(60, 20, 80), k, 1.7, 16, true)
+	horns(model, Color3.fromRGB(20, 15, 25), k, 0.9)
+	aura(model, "UpperTorso", Color3.fromRGB(140, 60, 200), 16, 0.6 * k, 3)
+end
+SIG.pungyeop = function(model, look, k)
+	-- 풍엽: 단풍잎 관과 떨어지는 잎
+	local hs = sizeOf(model, "Head")
+	for i = 0, 6 do
+		local a = (i / 6 - 0.5) * math.pi
+		wear(model, "Head", "MapleLeaf", Vector3.new(0.7 * k, 0.7 * k, 0.08 * k), CFrame.new(math.sin(a) * hs.X * 0.55, hs.Y * 0.6 + math.cos(a) * hs.Y * 0.25, hs.Z * 0.1) * CFrame.Angles(0, 0, -a + math.rad(45)), i % 2 == 0 and Color3.fromRGB(230, 70, 30) or Color3.fromRGB(255, 160, 40), Enum.Material.SmoothPlastic)
+	end
+	aura(model, "UpperTorso", Color3.fromRGB(240, 110, 40), 6, 0.5 * k, -2)
+end
+SIG.seokwang = function(model, look, k)
+	-- 석왕: 돌 거인의 왕. 호박빛 수정 관, 가슴의 빛나는 왕의 문양, 어깨에서 늘어진 돌판 망토, 팔의 빛나는 결, 머리 둘레에 떠 있는 수정
+	local amber = Color3.fromRGB(255, 190, 90)
+	for i = 0, 6 do
+		local a = i / 7 * math.pi * 2
+		wear(model, "Head", "CrystalCrown", Vector3.new(0.35 * k, (i % 2 == 0 and 1.4 or 0.9) * k, 0.35 * k), CFrame.new(math.cos(a) * 0.6 * k, 0.7 * k, math.sin(a) * 0.6 * k) * CFrame.Angles(math.sin(a) * 0.3, math.rad(45), -math.cos(a) * 0.3), amber, NEON2)
+	end
+	wear(model, "UpperTorso", "KingSigil", Vector3.new(0.08 * k, 1.1 * k, 1.1 * k), CFrame.new(0, 0.15 * k, -0.85 * k) * CFrame.Angles(0, math.rad(90), 0), amber, NEON2, Cyl)
+	wear(model, "UpperTorso", "KingSigilCore", Vector3.new(0.5 * k, 0.5 * k, 0.5 * k), CFrame.new(0, 0.15 * k, -0.9 * k), Color3.fromRGB(255, 240, 200), NEON2, Ball)
+	-- 돌판 망토 (네 장이 겹쳐 늘어진다)
+	for i = 0, 3 do
+		wear(model, "UpperTorso", "StoneCape", Vector3.new(1.0 * k, 2.6 * k - i * 0.2 * k, 0.3 * k), CFrame.new((i - 1.5) * 0.7 * k, -0.6 * k, 0.75 * k) * CFrame.Angles(math.rad(10), 0, (i - 1.5) * 0.12), Color3.fromRGB(105, 100, 92):Lerp(Color3.new(0, 0, 0), i * 0.05), Enum.Material.Slate)
+	end
+	for _, side in ipairs({ "LeftUpperArm", "RightUpperArm", "LeftLowerArm", "RightLowerArm" }) do
+		local s = sizeOf(model, side)
+		wear(model, side, "ArmVein", Vector3.new(0.1 * k, s.Y * 0.8, 0.06 * k), CFrame.new(0, 0, -s.Z * 0.55) * CFrame.Angles(0, 0, math.rad(12)), amber, NEON2)
+	end
+	for i = 0, 3 do
+		local a = i / 4 * math.pi * 2 + 0.4
+		wear(model, "Head", "FloatCrystal", Vector3.new(0.5 * k, 0.9 * k, 0.5 * k), CFrame.new(math.cos(a) * 1.8 * k, 0.4 * k, math.sin(a) * 1.8 * k) * CFrame.Angles(0.4, a, 0.4), amber:Lerp(Color3.new(1, 1, 1), 0.3), Enum.Material.Glass)
+	end
+	aura(model, "UpperTorso", amber, 8, 0.35 * k, 1.5)
+end
+SIG.gyunwang = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "ShoulderShroom", Vector3.new(1.4 * k, 0.6 * k, 1.4 * k), CFrame.new(x * 1.2 * k, 1.0 * k, 0), Color3.fromRGB(150, 30, 60), Enum.Material.SmoothPlastic, Ball)
+	end
+	aura(model, "Head", Color3.fromRGB(255, 200, 220), 14, 0.5 * k, -1)
+end
+SIG.dason = function(model, look, k)
+	-- 다선: 커다란 삿갓과 허리의 찻주전자, 날리는 찻잎
+	local hs = sizeOf(model, "Head")
+	wear(model, "Head", "BigHat", Vector3.new(0.14 * k, hs.X * 3.2, hs.Z * 3.2), CFrame.new(0, hs.Y * 0.5, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(200, 170, 110), Enum.Material.Fabric, Cyl)
+	wear(model, "Head", "BigHatTop", Vector3.new(hs.Y * 0.35, hs.X * 1.0, hs.Z * 1.0), CFrame.new(0, hs.Y * 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(180, 150, 95), Enum.Material.Fabric, Cyl)
+	wear(model, "LowerTorso", "TeaPot", Vector3.new(0.8 * k, 0.7 * k, 0.8 * k), CFrame.new(1.1 * k, -0.2 * k, 0), Color3.fromRGB(110, 80, 60), Enum.Material.SmoothPlastic, Ball)
+	aura(model, "UpperTorso", Color3.fromRGB(140, 200, 110), 6, 0.4 * k, 1)
+end
+SIG.pokryong = function(model, look, k)
+	-- 비천: 목에 감긴 물줄기 목도리 (투명한 물결 띠가 뒤로 흘러내린다)
+	for i = 0, 4 do
+		local w = wear(model, "UpperTorso", "WaterScarf", Vector3.new(1.4 * k - i * 0.15 * k, 0.5 * k, 0.12 * k), CFrame.new(0, 0.9 * k - i * 0.45 * k, 0.65 * k + i * 0.12 * k) * CFrame.Angles(math.rad(20 + i * 8), 0, (i % 2 - 0.5) * 0.3), Color3.fromRGB(140, 210, 255), Enum.Material.Glass)
+		if w then
+			w.Transparency = 0.3
+		end
+	end
+	aura(model, "UpperTorso", Color3.fromRGB(180, 230, 255), 10, 0.4 * k, -2)
+end
+SIG.unmugun = function(model, look, k)
+	for i = 0, 5 do
+		local a = i / 6 * math.pi * 2
+		wear(model, "UpperTorso", "CloudMantle", Vector3.new(1.0 * k, 0.8 * k, 1.0 * k), CFrame.new(math.cos(a) * 1.1 * k, 0.9 * k, math.sin(a) * 0.7 * k), Color3.fromRGB(240, 242, 250), Enum.Material.SmoothPlastic, Ball)
+	end
+	aura(model, "LowerTorso", Color3.fromRGB(240, 245, 255), 14, 0.7 * k, 0.5)
+end
+SIG.yeombong = function(model, look, k)
+	wings(model, Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 120, 40), k, 1.3, NEON2, 0.35)
+	aura(model, "UpperTorso", Color3.fromRGB(255, 150, 50), 14, 0.6 * k, 4)
+end
+SIG.seonhak = function(model, look, k)
+	for j = -2, 2 do
+		wear(model, "LowerTorso", "LongPlume", Vector3.new(0.2 * k, 3.0 * k, 0.06 * k), CFrame.new(j * 0.22 * k, -1.2 * k, 0.9 * k) * CFrame.Angles(math.rad(40), 0, math.rad(j * 8)), j == 0 and Color3.fromRGB(40, 140, 180) or Color3.fromRGB(250, 250, 250), Enum.Material.SmoothPlastic)
+	end
+	aura(model, "UpperTorso", Color3.fromRGB(200, 240, 255), 6, 0.4 * k, 1)
+end
+SIG.hyeolrang = function(model, look, k)
+	for i = 0, 2 do
+		wear(model, "UpperTorso", "BloodScarf", Vector3.new(1.4 * k - i * 0.2 * k, 0.4 * k, 0.1 * k), CFrame.new(0, 0.85 * k - i * 0.4 * k, 0.6 * k + i * 0.1 * k) * CFrame.Angles(math.rad(25 + i * 10), 0, 0), Color3.fromRGB(150, 15, 25), Enum.Material.Fabric)
+	end
+	aura(model, "Head", Color3.fromRGB(255, 60, 60), 4, 0.25 * k, 1)
+end
+local function bossRegalia(model: Model, look: any, typeId: string, isForm: boolean)
+	local k = sizeOf(model, "UpperTorso").Y / 1.6
+	-- 망토 (사람 보스만: 짐승·돌 거인은 표식만)
+	if not isForm then
+		local capeC = look.robe or look.cloth or (look.metal and look.metal:Lerp(Color3.new(0, 0, 0), 0.4)) or Color3.fromRGB(70, 40, 40)
+		local ut = sizeOf(model, "UpperTorso")
+		wear(model, "UpperTorso", "CapeCollar", Vector3.new(ut.X * 1.1, 0.35 * k, ut.Z * 1.1), CFrame.new(0, ut.Y * 0.5, 0.05 * k), capeC:Lerp(Color3.fromRGB(230, 190, 90), 0.3), Enum.Material.Fabric)
+		for i, x in ipairs({ -1, 0, 1 }) do
+			wear(model, "UpperTorso", "Cape", Vector3.new(ut.X * 0.42, 3.4 * k - math.abs(x) * 0.3 * k, 0.1 * k), CFrame.new(x * ut.X * 0.33, -1.0 * k, ut.Z * 0.62 + math.abs(x) * 0.05 * k) * CFrame.Angles(math.rad(8), x * math.rad(-10), 0), capeC:Lerp(Color3.new(0, 0, 0), (i % 2) * 0.12), Enum.Material.Fabric)
+		end
+	end
+	local fn = SIG[typeId]
+	if fn then
+		local ok, err = pcall(fn, model, look, k)
+		if not ok then
+			warn("[권왕] 보스 표식 오류:", typeId, err)
+		end
+	else
+		aura(model, "UpperTorso", look.eyes or Color3.fromRGB(255, 220, 160), 6, 0.35 * k, 1.5)
+	end
+end
+
 dressEnemy = function(model: Model, typeId: string, _def: any, isBoss: boolean)
 	local look = lookOf(typeId, isBoss)
 	local head = model:FindFirstChild("Head")
@@ -989,6 +1275,9 @@ dressEnemy = function(model: Model, typeId: string, _def: any, isBoss: boolean)
 	end
 	-- 2.3판: 사람이 아닌 적은 그 생김새로 (머리쓰개·얼굴·허리띠는 쓰지 않는다)
 	if look.form and buildForm(model, look) then
+		if isBoss then
+			bossRegalia(model, look, typeId, true)
+		end
 		return
 	end
 	local hs = head.Size
@@ -1014,7 +1303,8 @@ dressEnemy = function(model: Model, typeId: string, _def: any, isBoss: boolean)
 	elseif kind == "hood" then
 		-- 두건 겉옷: 뒤로 물린 둥근 두건 (얼굴은 드러난다)
 		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.16, hs.Y * 1.14, hs.Z * 1.12), CFrame.new(0, hs.Y * 0.08, hs.Z * 0.14), cloth, Enum.Material.Fabric, Ball)
-		wear(model, "UpperTorso", "HoodDrape", Vector3.new(2.0, 0.5, 1.2), CFrame.new(0, 0.85, 0.1), cloth)
+		local utH = sizeOf(model, "UpperTorso")
+		wear(model, "UpperTorso", "HoodDrape", Vector3.new(utH.X, 0.5 * utH.Y / 1.6, utH.Z * 1.2), CFrame.new(0, utH.Y * 0.53, 0.1 * utH.Y / 1.6), cloth)
 	elseif kind == "helmet" then
 		-- 투구: 머리 윗부분을 덮는 쇠 모자, 테, 코 가리개
 		local metal = look.metal or IRON
@@ -1065,21 +1355,30 @@ dressEnemy = function(model: Model, typeId: string, _def: any, isBoss: boolean)
 	end
 	face(model, head, look)
 	-- 옷: 허리띠는 모두, 갑옷·도포는 정해진 적만
-	wear(model, "LowerTorso", "Belt", Vector3.new(2.06, 0.32, 1.08), CFrame.new(0, 0.05, 0), Color3.fromRGB(55, 40, 28), Enum.Material.Fabric)
+	-- 2.6판: 몸 크기에 맞춘다 (큰 보스의 갑옷·허리띠가 몸속에 파묻히던 것을 고쳤다)
+	local ut, lt = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso")
+	local K = ut.Y / 1.6
+	wear(model, "LowerTorso", "Belt", Vector3.new(lt.X * 1.04, 0.32 * K, lt.Z * 1.1), CFrame.new(0, 0.05 * K, 0), Color3.fromRGB(55, 40, 28), Enum.Material.Fabric)
+	wear(model, "LowerTorso", "Buckle", Vector3.new(0.35 * K, 0.3 * K, 0.08 * K), CFrame.new(0, 0.05 * K, -lt.Z * 0.56), Color3.fromRGB(200, 170, 90), Enum.Material.Metal)
 	if look.armor then
 		local metal = look.metal or IRON
-		wear(model, "UpperTorso", "ChestPlate", Vector3.new(1.9, 1.2, 0.18), CFrame.new(0, 0.15, -0.55), metal, Enum.Material.Metal)
+		wear(model, "UpperTorso", "ChestPlate", Vector3.new(ut.X * 0.95, ut.Y * 0.75, 0.18 * K), CFrame.new(0, ut.Y * 0.1, -ut.Z * 0.55), metal, Enum.Material.Metal)
 		for _, x in ipairs({ -1, 1 }) do
-			wear(model, "UpperTorso", "Pauldron", Vector3.new(1.2, 0.42, 1.25), CFrame.new(x * 1.12, 0.7, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), metal, Enum.Material.Metal)
+			wear(model, "UpperTorso", "Pauldron", Vector3.new(ut.X * 0.6, 0.42 * K, ut.Z * 1.25), CFrame.new(x * ut.X * 0.56, ut.Y * 0.44, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), metal, Enum.Material.Metal)
+			wear(model, "UpperTorso", "PauldronRim", Vector3.new(ut.X * 0.62, 0.1 * K, ut.Z * 1.28), CFrame.new(x * ut.X * 0.58, ut.Y * 0.36, 0) * CFrame.Angles(0, 0, -x * math.rad(15)), metal:Lerp(Color3.fromRGB(230, 190, 90), 0.5), Enum.Material.Metal)
 		end
 	end
 	if look.robe then
 		for _, z in ipairs({ -1, 1 }) do
-			wear(model, "LowerTorso", "RobePanel", Vector3.new(2.05, 2.2, 0.16), CFrame.new(0, -1.25, z * 0.55), look.robe)
+			wear(model, "LowerTorso", "RobePanel", Vector3.new(lt.X * 1.02, 2.2 * K, 0.16 * K), CFrame.new(0, -1.25 * K, z * lt.Z * 0.55), look.robe)
 		end
 	end
 	if look.wrap then
-		wear(model, "UpperTorso", "WrapSash", Vector3.new(0.4, 2.2, 1.1), CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(35)), Color3.fromRGB(215, 195, 150))
+		wear(model, "UpperTorso", "WrapSash", Vector3.new(0.4 * K, ut.Y * 1.4, ut.Z * 1.1), CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.rad(35)), Color3.fromRGB(215, 195, 150))
+	end
+	humanDetail(model, look, K)
+	if isBoss then
+		bossRegalia(model, look, typeId, false)
 	end
 	-- 돌·용암 몸: 살갗을 돌결로
 	if look.stone then
