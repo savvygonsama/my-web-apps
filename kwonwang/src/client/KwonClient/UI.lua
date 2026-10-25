@@ -2460,6 +2460,27 @@ local function goalText(s: any, g: any): string
 		return nameOf(g.id) .. " 쓰러뜨리기"
 	elseif k == "fragment" then
 		return string.format("비급 조각 찾기  %d / %d (지도에 없다)", countKeys(s.fragments), g.n or 1)
+	-- 2.7.7판: 게임 전체를 이끄는 목표들
+	elseif k == "sky" then
+		return "천상 문으로 천상계에 오르기 (마을 안)"
+	elseif k == "manual" then
+		return string.format("심법 두루마리 펼쳐 심법 얻기  %d / %d (메뉴 → 심법)", countKeys(s.manuals), g.n or 1)
+	elseif k == "tower" then
+		return string.format("천층탑 %d층 넘기 (최고 %d층)", g.n or 1, s.towerBest or 0)
+	elseif k == "mastery" then
+		local st = Config.STYLE_BY_ID[s.style or ""]
+		local lv = st and s.mastery and s.mastery[st.id] and s.mastery[st.id].lv or 0
+		return string.format("%s 숙련 %d 만들기 (지금 %d)", st and st.name or "지금 권법", g.n or 1, lv)
+	elseif k == "maze" then
+		return "구름 미궁 끝까지 넘기 (천궁 광장 🌀 문)"
+	elseif k == "raid" then
+		return "천공 투기장에서 천겁 쓰러뜨리기 (천궁 광장 ⚔ 문)"
+	elseif k == "rebirth" then
+		return string.format("환생하기  %d / %d (천외천에서, 메뉴 → 환생)", s.rebirth or 0, g.n or 1)
+	elseif k == "awaken" then
+		return "각성 권법(진) 하나 익히기 (원래 사부에게 각성의 시련)"
+	elseif k == "transcend" then
+		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
 	return "강호를 마음껏 누비기"
 end

@@ -2549,6 +2549,10 @@ Config.INN_AT = Vector3.new(82, 0, 40)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
+-- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
+-- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
+Config.STORY_V = 2
+Config.STORY_OLD_TITLES = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "일류의 벽", "흑호채", "더 많은 사부", "혈월곡의 혈랑", "절정에 오르다", "설산의 빙마", "혈교의 그림자", "혈마", "무극에 오르다", "이름 없는 노인", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "하늘 밖의 하늘", "태초", "정점", "강호의 전설" }
 Config.Story = {
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
@@ -2558,23 +2562,39 @@ Config.Story = {
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
+	{ title = "경지의 관문", text = "특급부터는 능력치가 차도 경지가 저절로 오르지 않는다. 경지마다 관문 수호자가 길을 막는다. 능력치가 닿으면 나타나는 관문에 들어가 수호자를 꺾고 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 600, stats = 40 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
+	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 800 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 500, stats = 40 } },
+	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 60 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
 	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라. 특급부터는 몸만으로 오르지 않는다. 능력치가 닿으면 경지의 관문이 열리니, 관문 수호자를 꺾어라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
+	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고, 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 200 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 6000, stats = 300 } },
+	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 2000 } },
+	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 각성 권법(진) 하나를 익혀라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
+	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
+	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고, 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
 	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그러나 북서쪽 끝 허공 균열에서 더 깊은 어둠이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
+	{ title = "구름 미궁", text = "천궁 광장의 구름 미궁 문으로 들어가 방들을 넘고 미궁의 주인을 꺾어라. 들어간 사람의 세기에 맞춰 적이 선다.", goal = { kind = "maze", n = 1, at = Vector3.new(72, 4000, -34) }, reward = { coins = 150000, stats = 15000 } },
 	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
 	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 강호의 마지막 적이다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
 	{ title = "깨어난 화염산", text = "천마가 쓰러지자 동쪽 끝 화염산이 깨어났다. 불의 산 아래 염제를 꺾어라.", goal = { kind = "boss", id = "yeomje", at = Vector3.new(2950, 0, -1150) }, reward = { coins = 60000, stats = 3500 } },
 	{ title = "모래 왕릉", text = "남쪽 끝 모래 왕릉에서 사왕이 무덤을 박차고 일어났다. 왕릉으로 가 사왕을 다시 눕혀라.", goal = { kind = "boss", id = "sawang", at = Vector3.new(-900, 0, 2930) }, reward = { coins = 70000, stats = 4000 } },
 	{ title = "하늘 문지기", text = "북쪽 끝 구름바다 위, 천외봉으로 가는 길을 천문장이 막고 있다.", goal = { kind = "boss", id = "cheonmun", at = Vector3.new(0, 0, -2760) }, reward = { coins = 90000, stats = 5000 } },
+	{ title = "뇌정봉의 뇌제", text = "천궁 동쪽 다리 너머 뇌정봉에 벼락을 부리는 뇌제가 있다. 천상의 보스는 천상 재료를 떨어뜨린다. 뇌제를 꺾어라.", goal = { kind = "boss", id = "noeje", at = Vector3.new(720, 4000, -160) }, reward = { coins = 150000, stats = 15000 } },
+	{ title = "천존", text = "천궁 북쪽 옥좌대에 하늘의 옥좌를 지키는 천존이 있다. 천상의 주인을 꺾어라.", goal = { kind = "boss", id = "cheonjon", at = Vector3.new(0, 4000, -720) }, reward = { coins = 300000, stats = 40000 } },
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
+	{ title = "천공 투기장", text = "천궁 광장의 투기장 문 너머, 하늘의 재앙 천겁이 기다린다. 여럿이 함께 들어가 천겁을 쓰러뜨려라.", goal = { kind = "raid", n = 1, at = Vector3.new(-78, 4000, 30) }, reward = { coins = 400000, stats = 60000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
+	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
+	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
+	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
+	{ title = "권왕", text = "네 번 환생하여 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 5000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
@@ -3089,12 +3109,13 @@ Config.SKY_SHOP = {
 --   혈월정: 밤에만, 천상계 어디서든 적이 떨어뜨린다 (보스는 여럿)
 --   뇌정석: 천상계의 보스만 떨어뜨린다 (뇌제는 더 많이)
 Config.SKY_MATS = {
-	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 한 무더기)", island = "crane", chance = 0.35, boss = 12 },
+	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 꼭 둘)", island = "crane", chance = 0.35, boss = 12 },
 	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
-	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 여럿)", night = true, chance = 0.25, boss = 6 },
-	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (뇌제는 더 많이)", bossOnly = 3, bossBonus = { noeje = 8 } },
-	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 한 무더기)", island = "falls", chance = 0.3, boss = 10 },
+	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 꼭 둘)", night = true, chance = 0.25, boss = 6 },
+	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (한 번에 둘)", bossOnly = 3, bossBonus = { noeje = 8 } },
+	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 꼭 둘)", island = "falls", chance = 0.3, boss = 10 },
 }
+Config.MAT_DROP_MAX = 2 -- 2.7.7판: 한 번에 얻는 천상 재료는 많아야 둘 (보스의 "한 무더기"도 둘)
 Config.SKY_MAT_BY_ID = {}
 for _, m in ipairs(Config.SKY_MATS) do
 	Config.SKY_MAT_BY_ID[m.id] = m

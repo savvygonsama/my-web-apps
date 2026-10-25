@@ -68,6 +68,7 @@ type Profile = {
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
+	storyVer: number, -- 2.7.7판: 이야기 장 번호의 판 (없음 = 2.7.6판까지)
 	statVer: number, -- 능력치 숫자의 판 (없음 = 1.9판까지, 2 = 2.0판, 3 = 2.1판, 4 = 2.2판: 다시 1.9판 숫자)
 }
 
@@ -106,6 +107,7 @@ local function defaultProfile(): Profile
 		ach = {},
 		counts = {},
 		statVer = 4,
+		storyVer = Config.STORY_V,
 	}
 end
 
@@ -237,6 +239,20 @@ local function sanitize(data: any): Profile
 	p.prog = math.floor(num(data.prog, 1e6))
 	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
+	-- 2.7.7판: 장이 끼어들어 번호가 바뀌었다. 예전 기록은 그 장의 이름으로 새 번호를 찾는다
+	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
+		local oldN = math.floor(data.story)
+		local title = Config.STORY_OLD_TITLES[math.clamp(oldN, 1, #Config.STORY_OLD_TITLES)]
+		for i, ch in ipairs(Config.Story) do
+			if ch.title == title then
+				local wasAccepted = p.accepted == p.story or data.accepted == nil
+				p.story = i
+				p.accepted = wasAccepted and i or 0
+				break
+			end
+		end
+	end
+	p.storyVer = Config.STORY_V
 	p.autoOn = data.autoOn == true or nil
 	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
 	p.ach = flags(data.ach, function(k)
@@ -882,6 +898,28 @@ function Story.done(p: Profile, g: any): boolean
 		return Calc.realm(p) >= g.n
 	elseif k == "fragment" then
 		return countKeys(p.fragments) >= g.n
+	-- 2.7.7판: 게임 전체를 이끄는 목표들
+	elseif k == "sky" then
+		return p.prog >= 1
+	elseif k == "manual" then
+		return countKeys(p.manuals) >= (g.n or 1)
+	elseif k == "tower" then
+		return p.towerBest >= (g.n or 1)
+	elseif k == "mastery" then
+		return p.style ~= "" and Calc.mastery(p, p.style).lv >= (g.n or 1)
+	elseif k == "maze" or k == "raid" then
+		return (p.counts[k] or 0) >= (g.n or 1)
+	elseif k == "rebirth" then
+		return (p.rebirth or 0) >= (g.n or 1)
+	elseif k == "awaken" or k == "transcend" then
+		local n = 0
+		for id in pairs(p.styles) do
+			local st = Config.STYLE_BY_ID[id]
+			if st and ((k == "awaken" and st.awakenOf) or (k == "transcend" and st.transcend)) then
+				n += 1
+			end
+		end
+		return n >= (g.n or 1)
 	end
 	return false
 end
@@ -1465,6 +1503,8 @@ Combat.init(Push, {
 						elseif M.bossOnly and isBoss then
 							n = (M.bossBonus and M.bossBonus[(f :: any).typeId]) or M.bossOnly
 						end
+						-- 2.7.7판: 한 번에 떨어지는 재료는 많아야 둘 (보스도)
+						n = math.min(n, Config.MAT_DROP_MAX)
 						if n > 0 then
 							p.mats[M.id] = (p.mats[M.id] or 0) + n
 							table.insert(got, M.icon .. " " .. M.name .. " +" .. n)
@@ -2430,6 +2470,7 @@ function Tower.killed(player: Player, ef: any)
 	end
 	st.dirty = true
 	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest, gems = gems, stats = stats })
+	Story.check(player)
 	pushState(player)
 	Tower.next(player, run)
 end
@@ -2662,6 +2703,7 @@ function Maze.finish(player: Player, run: any)
 	if p and st then
 		local ready = os.clock() >= (mazeRewardAt[player] or 0)
 		p.counts.maze = (p.counts.maze or 0) + 1
+		task.defer(Story.check, player)
 		local data = { first = ready, gems = 0, coins = 0, scrolls = 0, stats = 0 }
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
@@ -3639,6 +3681,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Maze.ended(player, "leave")
 	elseif action == "manualDraw" then
 		Manual.draw(player, a1, a2 == true)
+		Story.check(player)
 	elseif action == "manualEquip" then
 		Manual.equip(player, a1, true)
 	elseif action == "manualUnequip" then
@@ -4127,6 +4170,7 @@ function Raid.killed(f: any)
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
 			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
 			p.counts.raid = (p.counts.raid or 0) + 1
+			task.defer(Story.check, player)
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -4552,6 +4596,13 @@ task.spawn(function()
 		for player, p in pairs(profiles) do
 			local f = Combat.fighterOfPlayer(player)
 			if f and not f.dead then
+				-- 2.7.7판: 이야기 '천상의 문' (하늘에 올랐는가)
+				if f.root.Position.Y > Config.SKY.y - 300 then
+					local ch = Config.Story[p.story]
+					if ch and ch.goal.kind == "sky" then
+						Story.event(player, "sky")
+					end
+				end
 				for id, m in pairs(Config.MASTERS) do
 					if not p.found[id] and visited(f.root.Position, id, m) then
 						p.found[id] = true

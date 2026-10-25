@@ -291,7 +291,7 @@ Config.TRAIN_REALM_BONUS = 0.12
 -- 2.7.5판: 후반 수련. 수련 효과가 경지마다 +12%씩만 늘어 후반엔 한 번에 수십밖에 오르지 않았다 (적 한 마리는 수백만).
 -- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
 -- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
-Config.TRAIN_LATE_SHARE = 0.02
+Config.TRAIN_LATE_SHARE = 1 / 150 -- 2.7.7판: 0.02(1/50) → 1/150. 수련 한 번이 그 경지 적 한 마리의 1/150
 Config.TRAIN_LATE_REF = 48 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 24)
 function Config.trainMult(idx: number): number
 	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
@@ -467,7 +467,7 @@ Config.Styles = {
 		skills = {
 			E = { id = "myE", name = "그림자 걸음", desc = "가장 가까운 적의 등 뒤로 순간이동해 찬다 (치명타)", pose = "shadow_heel", dur = 0.5, cd = 7, chi = 15, teleport = 26,
 				hits = { hit(0.2, 6, 4.5, 12, 14, 0.6, 20) } },
-			R = { id = "myR", name = "귀영난각", desc = "공중으로 솟아 회오리처럼 여섯 번 찬다", pose = "tornado_kick", dur = 0.9, cd = 10, chi = 25, jump = 38,
+			R = { id = "myR", name = "귀영난각", desc = "공중으로 솟아 회오리처럼 여섯 번 찬다", pose = "tornado_kick", dur = 1.0, cd = 10, chi = 25, jump = 38,
 				hits = { hit(0.2, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.32, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.44, 4, 7, 5, 6, 0.4, 2, 10, true),
 					hit(0.56, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.68, 4, 7, 5, 6, 0.4, 2, 10, true), hit(0.8, 4, 7.5, 10, 14, 0.6, 30, nil, true) } },
 			G = { id = "myG", name = "무영분신", desc = "그림자 분신이 둘레의 적마다 하나씩 나타나 동시에 세 번씩 걷어찬다 (나는 그 자리에서 지휘한다)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
@@ -2569,6 +2569,10 @@ Config.INN_AT = Vector3.new(82, 0, 40)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
+-- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
+-- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
+Config.STORY_V = 2
+Config.STORY_OLD_TITLES = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "일류의 벽", "흑호채", "더 많은 사부", "혈월곡의 혈랑", "절정에 오르다", "설산의 빙마", "혈교의 그림자", "혈마", "무극에 오르다", "이름 없는 노인", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "하늘 밖의 하늘", "태초", "정점", "강호의 전설" }
 Config.Story = {
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
@@ -2578,23 +2582,39 @@ Config.Story = {
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
+	{ title = "경지의 관문", text = "특급부터는 능력치가 차도 경지가 저절로 오르지 않는다. 경지마다 관문 수호자가 길을 막는다. 능력치가 닿으면 나타나는 관문에 들어가 수호자를 꺾고 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 600, stats = 40 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
+	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 800 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 500, stats = 40 } },
+	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 60 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
 	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라. 특급부터는 몸만으로 오르지 않는다. 능력치가 닿으면 경지의 관문이 열리니, 관문 수호자를 꺾어라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
+	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고, 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 200 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 6000, stats = 300 } },
+	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 2000 } },
+	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 각성 권법(진) 하나를 익혀라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
+	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
+	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고, 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
 	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그러나 북서쪽 끝 허공 균열에서 더 깊은 어둠이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
+	{ title = "구름 미궁", text = "천궁 광장의 구름 미궁 문으로 들어가 방들을 넘고 미궁의 주인을 꺾어라. 들어간 사람의 세기에 맞춰 적이 선다.", goal = { kind = "maze", n = 1, at = Vector3.new(72, 4000, -34) }, reward = { coins = 150000, stats = 15000 } },
 	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
 	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 강호의 마지막 적이다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
 	{ title = "깨어난 화염산", text = "천마가 쓰러지자 동쪽 끝 화염산이 깨어났다. 불의 산 아래 염제를 꺾어라.", goal = { kind = "boss", id = "yeomje", at = Vector3.new(2950, 0, -1150) }, reward = { coins = 60000, stats = 3500 } },
 	{ title = "모래 왕릉", text = "남쪽 끝 모래 왕릉에서 사왕이 무덤을 박차고 일어났다. 왕릉으로 가 사왕을 다시 눕혀라.", goal = { kind = "boss", id = "sawang", at = Vector3.new(-900, 0, 2930) }, reward = { coins = 70000, stats = 4000 } },
 	{ title = "하늘 문지기", text = "북쪽 끝 구름바다 위, 천외봉으로 가는 길을 천문장이 막고 있다.", goal = { kind = "boss", id = "cheonmun", at = Vector3.new(0, 0, -2760) }, reward = { coins = 90000, stats = 5000 } },
+	{ title = "뇌정봉의 뇌제", text = "천궁 동쪽 다리 너머 뇌정봉에 벼락을 부리는 뇌제가 있다. 천상의 보스는 천상 재료를 떨어뜨린다. 뇌제를 꺾어라.", goal = { kind = "boss", id = "noeje", at = Vector3.new(720, 4000, -160) }, reward = { coins = 150000, stats = 15000 } },
+	{ title = "천존", text = "천궁 북쪽 옥좌대에 하늘의 옥좌를 지키는 천존이 있다. 천상의 주인을 꺾어라.", goal = { kind = "boss", id = "cheonjon", at = Vector3.new(0, 4000, -720) }, reward = { coins = 300000, stats = 40000 } },
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
+	{ title = "천공 투기장", text = "천궁 광장의 투기장 문 너머, 하늘의 재앙 천겁이 기다린다. 여럿이 함께 들어가 천겁을 쓰러뜨려라.", goal = { kind = "raid", n = 1, at = Vector3.new(-78, 4000, 30) }, reward = { coins = 400000, stats = 60000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
+	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
+	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
+	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
+	{ title = "권왕", text = "네 번 환생하여 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 5000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 
@@ -3109,12 +3129,13 @@ Config.SKY_SHOP = {
 --   혈월정: 밤에만, 천상계 어디서든 적이 떨어뜨린다 (보스는 여럿)
 --   뇌정석: 천상계의 보스만 떨어뜨린다 (뇌제는 더 많이)
 Config.SKY_MATS = {
-	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 한 무더기)", island = "crane", chance = 0.35, boss = 12 },
+	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 꼭 둘)", island = "crane", chance = 0.35, boss = 12 },
 	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
-	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 여럿)", night = true, chance = 0.25, boss = 6 },
-	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (뇌제는 더 많이)", bossOnly = 3, bossBonus = { noeje = 8 } },
-	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 한 무더기)", island = "falls", chance = 0.3, boss = 10 },
+	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 꼭 둘)", night = true, chance = 0.25, boss = 6 },
+	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (한 번에 둘)", bossOnly = 3, bossBonus = { noeje = 8 } },
+	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 꼭 둘)", island = "falls", chance = 0.3, boss = 10 },
 }
+Config.MAT_DROP_MAX = 2 -- 2.7.7판: 한 번에 얻는 천상 재료는 많아야 둘 (보스의 "한 무더기"도 둘)
 Config.SKY_MAT_BY_ID = {}
 for _, m in ipairs(Config.SKY_MATS) do
 	Config.SKY_MAT_BY_ID[m.id] = m
@@ -5347,6 +5368,7 @@ type Profile = {
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
+	storyVer: number, -- 2.7.7판: 이야기 장 번호의 판 (없음 = 2.7.6판까지)
 	statVer: number, -- 능력치 숫자의 판 (없음 = 1.9판까지, 2 = 2.0판, 3 = 2.1판, 4 = 2.2판: 다시 1.9판 숫자)
 }
 
@@ -5385,6 +5407,7 @@ local function defaultProfile(): Profile
 		ach = {},
 		counts = {},
 		statVer = 4,
+		storyVer = Config.STORY_V,
 	}
 end
 
@@ -5516,6 +5539,20 @@ local function sanitize(data: any): Profile
 	p.prog = math.floor(num(data.prog, 1e6))
 	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
+	-- 2.7.7판: 장이 끼어들어 번호가 바뀌었다. 예전 기록은 그 장의 이름으로 새 번호를 찾는다
+	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
+		local oldN = math.floor(data.story)
+		local title = Config.STORY_OLD_TITLES[math.clamp(oldN, 1, #Config.STORY_OLD_TITLES)]
+		for i, ch in ipairs(Config.Story) do
+			if ch.title == title then
+				local wasAccepted = p.accepted == p.story or data.accepted == nil
+				p.story = i
+				p.accepted = wasAccepted and i or 0
+				break
+			end
+		end
+	end
+	p.storyVer = Config.STORY_V
 	p.autoOn = data.autoOn == true or nil
 	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
 	p.ach = flags(data.ach, function(k)
@@ -6161,6 +6198,28 @@ function Story.done(p: Profile, g: any): boolean
 		return Calc.realm(p) >= g.n
 	elseif k == "fragment" then
 		return countKeys(p.fragments) >= g.n
+	-- 2.7.7판: 게임 전체를 이끄는 목표들
+	elseif k == "sky" then
+		return p.prog >= 1
+	elseif k == "manual" then
+		return countKeys(p.manuals) >= (g.n or 1)
+	elseif k == "tower" then
+		return p.towerBest >= (g.n or 1)
+	elseif k == "mastery" then
+		return p.style ~= "" and Calc.mastery(p, p.style).lv >= (g.n or 1)
+	elseif k == "maze" or k == "raid" then
+		return (p.counts[k] or 0) >= (g.n or 1)
+	elseif k == "rebirth" then
+		return (p.rebirth or 0) >= (g.n or 1)
+	elseif k == "awaken" or k == "transcend" then
+		local n = 0
+		for id in pairs(p.styles) do
+			local st = Config.STYLE_BY_ID[id]
+			if st and ((k == "awaken" and st.awakenOf) or (k == "transcend" and st.transcend)) then
+				n += 1
+			end
+		end
+		return n >= (g.n or 1)
 	end
 	return false
 end
@@ -6744,6 +6803,8 @@ Combat.init(Push, {
 						elseif M.bossOnly and isBoss then
 							n = (M.bossBonus and M.bossBonus[(f :: any).typeId]) or M.bossOnly
 						end
+						-- 2.7.7판: 한 번에 떨어지는 재료는 많아야 둘 (보스도)
+						n = math.min(n, Config.MAT_DROP_MAX)
 						if n > 0 then
 							p.mats[M.id] = (p.mats[M.id] or 0) + n
 							table.insert(got, M.icon .. " " .. M.name .. " +" .. n)
@@ -7709,6 +7770,7 @@ function Tower.killed(player: Player, ef: any)
 	end
 	st.dirty = true
 	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest, gems = gems, stats = stats })
+	Story.check(player)
 	pushState(player)
 	Tower.next(player, run)
 end
@@ -7941,6 +8003,7 @@ function Maze.finish(player: Player, run: any)
 	if p and st then
 		local ready = os.clock() >= (mazeRewardAt[player] or 0)
 		p.counts.maze = (p.counts.maze or 0) + 1
+		task.defer(Story.check, player)
 		local data = { first = ready, gems = 0, coins = 0, scrolls = 0, stats = 0 }
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
@@ -8918,6 +8981,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Maze.ended(player, "leave")
 	elseif action == "manualDraw" then
 		Manual.draw(player, a1, a2 == true)
+		Story.check(player)
 	elseif action == "manualEquip" then
 		Manual.equip(player, a1, true)
 	elseif action == "manualUnequip" then
@@ -9406,6 +9470,7 @@ function Raid.killed(f: any)
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
 			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
 			p.counts.raid = (p.counts.raid or 0) + 1
+			task.defer(Story.check, player)
 			for _, sd in ipairs(Config.Stats) do
 				p.stats[sd.id] += each
 			end
@@ -9831,6 +9896,13 @@ task.spawn(function()
 		for player, p in pairs(profiles) do
 			local f = Combat.fighterOfPlayer(player)
 			if f and not f.dead then
+				-- 2.7.7판: 이야기 '천상의 문' (하늘에 올랐는가)
+				if f.root.Position.Y > Config.SKY.y - 300 then
+					local ch = Config.Story[p.story]
+					if ch and ch.goal.kind == "sky" then
+						Story.event(player, "sky")
+					end
+				end
 				for id, m in pairs(Config.MASTERS) do
 					if not p.found[id] and visited(f.root.Position, id, m) then
 						p.found[id] = true
@@ -10068,9 +10140,21 @@ function Combat.stunned(f: Fighter): boolean
 	return now() < f.stunUntil or f.dead
 end
 
--- 지금 무엇에도 밀리지 않는지 (기술의 armor, 철포삼, 금강체)
+-- 2.7.7판: 사람이 기술(E·R·G·X)을 쓰는 동안은 맞아도 끊기지 않는다 (피해는 받는다).
+-- 전엔 기술을 쓰다 맞거나 격돌이 나면 동작이 끊겨, 내공만 쓰고 장풍·맞힘이 사라지곤 했다
+local SKILL_SLOT = { E = true, R = true, G = true, X = true }
+local function castingSkill(f: Fighter): boolean
+	local act = f.act
+	return f.player ~= nil and act ~= nil and SKILL_SLOT[act.slot] == true and now() < act.start + act.dur
+end
+Combat.castingSkill = castingSkill
+
+-- 지금 무엇에도 밀리지 않는지 (기술의 armor, 철포삼, 금강체, 사람이 쓰는 기술)
 local function armored(f: Fighter): boolean
 	local t = now()
+	if castingSkill(f) then
+		return true
+	end
 	if (f.buffs.ironshirt or 0) > t or (f.buffs.giant or 0) > t then
 		return true
 	end
@@ -10112,7 +10196,7 @@ local function defense(f: Fighter): number
 end
 
 local function interrupt(f: Fighter)
-	if f.act then
+	if f.act and not castingSkill(f) then
 		f.act = nil
 		Push:FireAllClients("interrupt", f.model)
 	end
@@ -10324,7 +10408,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 
 	-- 격돌: 상대도 같은 순간 나를 향해 휘둘렀다
-	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe then
+	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe and not castingSkill(att) and not castingSkill(tgt) then
 		-- 둘 다 서로 반대쪽으로 튕겨 난다
 		knock(att, toAtt * 18 + Vector3.new(0, 6, 0), 0.3)
 		knock(tgt, -toAtt * 18 + Vector3.new(0, 6, 0), 0.3)
@@ -16275,8 +16359,31 @@ function Skills.run(f: any, move: any, ctx: any)
 		-- 2.7판 초·창해 고경승천 (초 오의): 땅이 바다가 되고 (컷씬, 무적) 고대의 고래가 뒤에서 솟구쳐 머리 위를 지나 앞으로 뛰어든다.
 		-- 고래 그림자 아래의 적은 떠오르고, 앞의 바다에 떨어질 때 해일이 둘레를 덮친다
 		local center = f.root.Position
+		-- 2.7.7판: 자동 타깃. 쓰는 순간 둘레에서 가장 가까운 적 (보스가 있으면 보스)을 골라 그쪽으로 뛰어든다 (뒤쫓지는 않는다)
+		local ahead = m.ahead
+		local pick, pickD = nil, math.huge
+		for _, o in ipairs(hostilesNear(f, center, m.targetRange or 110)) do
+			local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
+			if o.model:GetAttribute("Boss") == true then
+				d -= 1000
+			end
+			if d < pickD then
+				pick, pickD = o, d
+			end
+		end
+		if pick then
+			local d = Vector3.new(pick.root.Position.X - center.X, 0, pick.root.Position.Z - center.Z)
+			if d.Magnitude > 1 then
+				look = d.Unit
+				ahead = math.clamp(d.Magnitude, 24, m.ahead + 30)
+				-- 나도 그쪽을 본다
+				pcall(function()
+					f.model:PivotTo(CFrame.lookAt(center, center + look))
+				end)
+			end
+		end
 		local from = center - look * m.behind
-		local to = center + look * m.ahead
+		local to = center + look * ahead
 		local total = m.cut + m.flight + m.waveAt + 0.3
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
 		local wid = math.random(1, 1000000000)
@@ -21009,7 +21116,7 @@ return World
   <Item class="StarterPlayer" referent="12">
     <Properties>
       <string name="Name">StarterPlayer</string>
-      <float name="CameraMaxZoomDistance">45</float>
+      <float name="CameraMaxZoomDistance">120</float>
     </Properties>
     <Item class="StarterPlayerScripts" referent="13">
       <Properties>
@@ -21050,6 +21157,10 @@ local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
 local player = Players.LocalPlayer
+-- 2.7.7판: 기술을 멀리서 보게 줌 아웃 120칸까지
+pcall(function()
+	player.CameraMaxZoomDistance = 120
+end)
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
 local Request = remotes:WaitForChild("Request") :: RemoteEvent
 local Push = remotes:WaitForChild("Push") :: RemoteEvent
@@ -39798,6 +39909,27 @@ local function goalText(s: any, g: any): string
 		return nameOf(g.id) .. " 쓰러뜨리기"
 	elseif k == "fragment" then
 		return string.format("비급 조각 찾기  %d / %d (지도에 없다)", countKeys(s.fragments), g.n or 1)
+	-- 2.7.7판: 게임 전체를 이끄는 목표들
+	elseif k == "sky" then
+		return "천상 문으로 천상계에 오르기 (마을 안)"
+	elseif k == "manual" then
+		return string.format("심법 두루마리 펼쳐 심법 얻기  %d / %d (메뉴 → 심법)", countKeys(s.manuals), g.n or 1)
+	elseif k == "tower" then
+		return string.format("천층탑 %d층 넘기 (최고 %d층)", g.n or 1, s.towerBest or 0)
+	elseif k == "mastery" then
+		local st = Config.STYLE_BY_ID[s.style or ""]
+		local lv = st and s.mastery and s.mastery[st.id] and s.mastery[st.id].lv or 0
+		return string.format("%s 숙련 %d 만들기 (지금 %d)", st and st.name or "지금 권법", g.n or 1, lv)
+	elseif k == "maze" then
+		return "구름 미궁 끝까지 넘기 (천궁 광장 🌀 문)"
+	elseif k == "raid" then
+		return "천공 투기장에서 천겁 쓰러뜨리기 (천궁 광장 ⚔ 문)"
+	elseif k == "rebirth" then
+		return string.format("환생하기  %d / %d (천외천에서, 메뉴 → 환생)", s.rebirth or 0, g.n or 1)
+	elseif k == "awaken" then
+		return "각성 권법(진) 하나 익히기 (원래 사부에게 각성의 시련)"
+	elseif k == "transcend" then
+		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
 	return "강호를 마음껏 누비기"
 end
@@ -44355,10 +44487,18 @@ local TweenService = game:GetService("TweenService")
 
 local Whale = {}
 
-local BACK = Color3.fromRGB(46, 60, 78)
-local BACK2 = Color3.fromRGB(58, 74, 92)
-local BELLY = Color3.fromRGB(196, 204, 206)
-local GROOVE = Color3.fromRGB(150, 160, 166)
+-- 2.7.7판: 더 오래된 고래. 바위처럼 거칠고 이끼 낀 등, 누렇게 바랜 배, 등뼈를 따라 솟은 뼈 판,
+-- 등에 박힌 채 삭아 버린 옛 작살, 턱과 지느러미에서 늘어진 해초, 옆구리의 빛나는 옛 봉인 고리, 빛나는 눈
+local BACK = Color3.fromRGB(50, 62, 62)
+local BACK2 = Color3.fromRGB(66, 78, 74)
+local BELLY = Color3.fromRGB(184, 178, 160)
+local GROOVE = Color3.fromRGB(140, 136, 120)
+local BONE = Color3.fromRGB(214, 204, 176)
+local MOSS = Color3.fromRGB(72, 98, 58)
+local CORAL = Color3.fromRGB(196, 100, 74)
+local KELP = Color3.fromRGB(42, 72, 46)
+local WOOD = Color3.fromRGB(92, 70, 48)
+local RUST = Color3.fromRGB(116, 78, 56)
 local BARNACLE = Color3.fromRGB(222, 220, 208)
 local RUNE = Color3.fromRGB(120, 230, 255)
 local SCAR = Color3.fromRGB(170, 180, 186)
@@ -44417,7 +44557,7 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 	local back2 = wet and back:Lerp(Color3.new(1, 1, 1), 0.12) or BACK2
 	local belly = wet and (c2 or Color3.fromRGB(200, 240, 255)) or BELLY
 	local groove = wet and belly:Lerp(back, 0.4) or GROOVE
-	local skinMat = wet and Enum.Material.Glass or Enum.Material.SmoothPlastic
+	local skinMat = wet and Enum.Material.Glass or Enum.Material.Slate
 	local skinA = wet and 0.22 or 0
 	local function add(key: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?): BasePart
 		local p = newPart(size * S, color, mat, alpha, shape)
@@ -44493,7 +44633,12 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 		-- 눈: 둘째 마디 앞쪽 옆, 깊고 오래된 눈 (작은 빛)
 		add("S2", Vector3.new(0.62, 0.55, 0.62), CFrame.new(x * s2[2] * 0.93, -s2[3] * 0.18, -s2[1] * 0.45), wet and Color3.new(1, 1, 1) or EYE, wet and Enum.Material.Neon or Enum.Material.SmoothPlastic, 0, "ball")
 		if not wet then
-			add("S2", Vector3.new(0.2, 0.2, 0.2), CFrame.new(x * s2[2] * 0.99, -s2[3] * 0.12, -s2[1] * 0.5), RUNE, Enum.Material.Neon, 0, "ball")
+			local pupil = add("S2", Vector3.new(0.3, 0.3, 0.3), CFrame.new(x * s2[2] * 0.99, -s2[3] * 0.12, -s2[1] * 0.5), RUNE, Enum.Material.Neon, 0, "ball")
+			local glow = Instance.new("PointLight")
+			glow.Color = RUNE
+			glow.Range = 10 * S
+			glow.Brightness = 2
+			glow.Parent = pupil
 			add("S2", Vector3.new(0.9, 0.18, 0.5), CFrame.new(x * s2[2] * 0.9, -s2[3] * 0.02, -s2[1] * 0.45) * CFrame.Angles(0, 0, x * math.rad(-12)), back2)
 		end
 	end
@@ -44520,6 +44665,79 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 			local x = (k % 2 == 0) and 1 or -1
 			add("S" .. (3 + k % 2), Vector3.new(0.1, 0.1, 2.0 - k * 0.3), CFrame.new(x * sg[2] * 0.97, (k - 1.5) * 0.45, k * 0.3) * CFrame.Angles(math.rad(25 - k * 10), x * math.rad(-8), 0), SCAR)
 		end
+	end
+	if not wet then
+		-- 따개비 무리 하나 (부위 기준 자리)
+		local function barnacles(key: string, at: Vector3, n: number, k0: number)
+			for b = 0, n - 1 do
+				local a = b * 1.9 + k0
+				add(key, Vector3.new(0.34, 0.26, 0.34) * (1 - b * 0.1), CFrame.new(at + Vector3.new(math.cos(a) * 0.34, b * 0.03, math.sin(a) * 0.34)), BARNACLE, Enum.Material.Slate, 0, "ball")
+			end
+		end
+		-- 등뼈를 따라 솟은 뼈 판 (화석처럼 바랜 상아빛, 꼬리로 갈수록 작아진다)
+		for i = 2, 8 do
+			local sg = SEGS[i]
+			local h = 0.5 + (sg[3] / 3.6) * 0.9
+			for j = 0, 1 do
+				local z = (j - 0.5) * sg[1] * 0.7
+				add("S" .. i, Vector3.new(0.22, h, sg[1] * 0.42), CFrame.new(0, sg[3] * 0.96 + h * 0.3, z) * CFrame.Angles(math.rad(-18), 0, 0), BONE, Enum.Material.Marble, 0, "wedge")
+			end
+		end
+		-- 이끼와 산호 (등과 옆구리에 군데군데)
+		for i = 2, 6 do
+			local sg = SEGS[i]
+			for k = 0, 2 do
+				local a = (k - 1) * 0.75 + (i % 2) * 0.3
+				local at = Vector3.new(math.sin(a) * sg[2] * 0.92, math.cos(a) * sg[3] * 0.92, (k - 1) * sg[1] * 0.35)
+				add("S" .. i, Vector3.new(1.3, 0.3, 1.1) * (0.8 + (k % 2) * 0.4), CFrame.new(at) * CFrame.Angles(0, 0, -a), MOSS, Enum.Material.Grass, 0, "ball")
+			end
+			if i % 2 == 0 then
+				local x = (i % 4 == 0) and 1 or -1
+				local base = Vector3.new(x * sg[2] * 0.7, sg[3] * 0.72, 0.4)
+				for b = 0, 3 do
+					add("S" .. i, Vector3.new(0.16, 0.9 - b * 0.12, 0.16), CFrame.new(base) * CFrame.Angles(math.rad(-20 + b * 15), 0, x * math.rad(25 - b * 18)) * CFrame.new(0, 0.4, 0), CORAL, Enum.Material.Slate)
+				end
+			end
+			barnacles("S" .. i, Vector3.new(((i % 2 == 0) and 1 or -1) * sg[2] * 0.9, -sg[3] * 0.25, -0.4), 4, i)
+		end
+		-- 등에 박힌 채 삭아 버린 옛 작살 셋 (부러진 자루, 녹슨 촉, 감긴 밧줄)
+		for k, spec in ipairs({ { 3, -0.6, 1.6, 0.9 }, { 4, 0.8, 1.1, 2.4 }, { 5, -0.3, -0.5, 1.7 } }) do
+			local sg = SEGS[spec[1]]
+			local key = "S" .. spec[1]
+			local base = Vector3.new(spec[2], sg[3] * 0.9, spec[3])
+			local tilt = CFrame.new(base) * CFrame.Angles(math.rad(-30 - k * 8), math.rad(k * 40), math.rad(spec[2] * 20))
+			add(key, Vector3.new(0.22, spec[4], 0.22), tilt * CFrame.new(0, spec[4] / 2, 0), WOOD, Enum.Material.Wood)
+			add(key, Vector3.new(0.3, 0.5, 0.3), tilt * CFrame.new(0, -0.05, 0), RUST, Enum.Material.CorrodedMetal)
+			add(key, Vector3.new(0.3, 0.12, 0.3), tilt * CFrame.new(0, spec[4] * 0.55, 0), Color3.fromRGB(150, 130, 96), Enum.Material.Fabric, 0, "cyl")
+			add(key, Vector3.new(0.06, 1.6, 0.06), tilt * CFrame.new(0.1, spec[4] * 0.55, 0) * CFrame.Angles(0, 0, math.rad(150)) * CFrame.new(0, -0.8, 0), Color3.fromRGB(150, 130, 96), Enum.Material.Fabric)
+		end
+		-- 턱 아래와 가슴지느러미 뿌리의 해초: 아래로 늘어지면 다리처럼 보여, 몸을 따라 뒤로 흩날리게 눕힌다
+		for k = 0, 6 do
+			local x = (k - 3) * 0.55
+			local len = 2.0 + (k % 3) * 0.8
+			add("S1", Vector3.new(0.14, len, 0.1), CFrame.new(x, -h1[3] * 0.9, -1.8 + (k % 2) * 0.8) * CFrame.Angles(math.rad(-74), 0, math.rad((k - 3) * 3)) * CFrame.new(0, -len / 2, 0), KELP, Enum.Material.Grass)
+		end
+		for _, x in ipairs({ -1, 1 }) do
+			for k = 0, 2 do
+				local len = 2.2 + k * 0.7
+				add("S2", Vector3.new(0.12, len, 0.1), CFrame.new(x * s2[2] * 0.8, -s2[3] * 0.62, 0.6 + k * 0.5) * CFrame.Angles(math.rad(-70), 0, x * math.rad(8)) * CFrame.new(0, -len / 2, 0), KELP, Enum.Material.Grass)
+			end
+		end
+		-- 옆구리의 옛 봉인 고리 (빛나는 점이 둥글게, 가운데 큰 점)
+		for _, i in ipairs({ 3, 4 }) do
+			local sg = SEGS[i]
+			for _, x in ipairs({ -1, 1 }) do
+				local c0 = Vector3.new(x * sg[2] * 0.985, sg[3] * 0.1, 0)
+				for k = 0, 11 do
+					local a = k / 12 * math.pi * 2
+					add("S" .. i, Vector3.new(0.18, 0.18, 0.18), CFrame.new(c0 + Vector3.new(0, math.sin(a) * 1.1, math.cos(a) * 1.1)), RUNE, Enum.Material.Neon, 0.15, "ball")
+				end
+				add("S" .. i, Vector3.new(0.4, 0.4, 0.4), CFrame.new(c0), RUNE, Enum.Material.Neon, 0.1, "ball")
+			end
+		end
+		-- 머리 옆과 가슴지느러미 앞 가장자리에도 따개비
+		barnacles("S2", Vector3.new(s2[2] * 0.85, s2[3] * 0.5, 0.8), 5, 2)
+		barnacles("S2", Vector3.new(-s2[2] * 0.8, s2[3] * 0.4, 1.4), 4, 5)
 	end
 	-- 등지느러미 (작은 혹 지느러미)와 꼬리 쪽 등의 마디 혹
 	local s6 = SEGS[6]
