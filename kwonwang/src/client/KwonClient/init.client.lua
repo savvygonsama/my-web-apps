@@ -30,6 +30,10 @@ local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
 local player = Players.LocalPlayer
+-- 2.7.7판: 기술을 멀리서 보게 줌 아웃 120칸까지
+pcall(function()
+	player.CameraMaxZoomDistance = 120
+end)
 local remotes = ReplicatedStorage:WaitForChild("KwonRemotes")
 local Request = remotes:WaitForChild("Request") :: RemoteEvent
 local Push = remotes:WaitForChild("Push") :: RemoteEvent

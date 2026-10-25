@@ -28,7 +28,7 @@
     },
     "StarterPlayer": {
       "$properties": {
-        "CameraMaxZoomDistance": 45
+        "CameraMaxZoomDistance": 120
       },
       "StarterPlayerScripts": {
         "KwonClient": {

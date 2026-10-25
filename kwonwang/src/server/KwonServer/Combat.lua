@@ -217,9 +217,21 @@ function Combat.stunned(f: Fighter): boolean
 	return now() < f.stunUntil or f.dead
 end
 
--- 지금 무엇에도 밀리지 않는지 (기술의 armor, 철포삼, 금강체)
+-- 2.7.7판: 사람이 기술(E·R·G·X)을 쓰는 동안은 맞아도 끊기지 않는다 (피해는 받는다).
+-- 전엔 기술을 쓰다 맞거나 격돌이 나면 동작이 끊겨, 내공만 쓰고 장풍·맞힘이 사라지곤 했다
+local SKILL_SLOT = { E = true, R = true, G = true, X = true }
+local function castingSkill(f: Fighter): boolean
+	local act = f.act
+	return f.player ~= nil and act ~= nil and SKILL_SLOT[act.slot] == true and now() < act.start + act.dur
+end
+Combat.castingSkill = castingSkill
+
+-- 지금 무엇에도 밀리지 않는지 (기술의 armor, 철포삼, 금강체, 사람이 쓰는 기술)
 local function armored(f: Fighter): boolean
 	local t = now()
+	if castingSkill(f) then
+		return true
+	end
 	if (f.buffs.ironshirt or 0) > t or (f.buffs.giant or 0) > t then
 		return true
 	end
@@ -261,7 +273,7 @@ local function defense(f: Fighter): number
 end
 
 local function interrupt(f: Fighter)
-	if f.act then
+	if f.act and not castingSkill(f) then
 		f.act = nil
 		Push:FireAllClients("interrupt", f.model)
 	end
@@ -473,7 +485,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 
 	-- 격돌: 상대도 같은 순간 나를 향해 휘둘렀다
-	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe then
+	if not opt.chain and not opt.proj and math.abs(tgt.lastSwingAt - t) <= Config.CLASH_WINDOW and facing > 0.5 and tgt.act and not move.aoe and not castingSkill(att) and not castingSkill(tgt) then
 		-- 둘 다 서로 반대쪽으로 튕겨 난다
 		knock(att, toAtt * 18 + Vector3.new(0, 6, 0), 0.3)
 		knock(tgt, -toAtt * 18 + Vector3.new(0, 6, 0), 0.3)
