@@ -9736,11 +9736,19 @@ for _, r in ipairs(Config.Regions) do
 	end
 end
 local function visited(pos: Vector3, id: string, m: any): boolean
+	if m.secret then
+		return (pos - m.at).Magnitude < 50
+	end
 	local r = masterRegion[id]
-	if r and not m.secret and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 and pos.Y < Config.SKY.y - 200 then
+	if r and math.abs(pos.X - r.center.X) <= r.size.X / 2 and math.abs(pos.Z - r.center.Z) <= r.size.Z / 2 and pos.Y < Config.SKY.y - 200 then
 		return true
 	end
-	return (pos - m.at).Magnitude < 50
+	-- 2.7.3판: 한 번 다녀간 곳은 물음표가 사라진다. 천상의 사부는 그 섬에 들어가기만 해도, 그 밖의 사부는 그 근처(120칸)만 지나가도 찾은 것
+	local isl = m.regionId and m.at.Y > Config.SKY.y - 300 and Config.skyIslandAt(pos)
+	if isl and isl.id == m.regionId then
+		return true
+	end
+	return (pos - m.at).Magnitude < 120
 end
 task.spawn(function()
 	while true do
