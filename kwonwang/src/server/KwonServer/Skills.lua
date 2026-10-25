@@ -2457,6 +2457,171 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.burst, sc), move)
 			end
 		end)
+	elseif kind == "plumBranch" then
+		-- 2.9판 진 매화 설중매 (E): 땅을 따라 매화 가지가 뻗고, 마디마다 차례로 꽃이 피며 벤다. 잠시 뒤 가지의 꽃이 한꺼번에 터진다
+		local from = f.root.Position
+		local right = rightOf(look)
+		local nodes = {}
+		for i = 1, m.nodes do
+			local u = i / m.nodes
+			local sway = math.sin(i * 1.7) * 2.2 * (0.4 + u)
+			table.insert(nodes, from + look * (m.length * u) + right * sway)
+		end
+		Push:FireAllClients("skillfx", { kind = "plumBranch", from = from, nodes = nodes, delay = m.delay / sp, step = m.step / sp, burstAt = m.burstAt / sp, radius = m.radius, style = style })
+		local done = {}
+		for i, pt in ipairs(nodes) do
+			after(m.delay + (i - 1) * m.step, function()
+				for _, o in ipairs(hostilesNear(f, pt, m.radius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.delay + (#nodes - 1) * m.step + m.burstAt, function()
+			local burst = scaled(m.burst, sc)
+			local hitSet = {}
+			for _, pt in ipairs(nodes) do
+				for _, o in ipairs(hostilesNear(f, pt, m.radius)) do
+					if not hitSet[o] then
+						hitSet[o] = true
+						strike(f, o, burst, move)
+					end
+				end
+			end
+		end)
+	elseif kind == "plumRing" then
+		-- 2.9판 진 매화 한매오판 (R): 둘레 다섯 곳에 큰 매화가 피어 둘레의 적을 꽃술로 끌어당긴 뒤 눈보라와 함께 터진다
+		local center = f.root.Position
+		local rot = math.random() * math.pi * 2
+		local spots = {}
+		for i = 1, m.flowers do
+			local a = rot + (i - 1) / m.flowers * math.pi * 2
+			table.insert(spots, center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius)
+		end
+		Push:FireAllClients("skillfx", { kind = "plumRing", at = center, spots = spots, delay = m.delay / sp, hold = m.hold / sp, style = style })
+		local n = math.floor(m.hold / m.every)
+		for k = 0, n - 1 do
+			after(m.delay + k * m.every, function()
+				for _, pt in ipairs(spots) do
+					for _, o in ipairs(hostilesNear(f, pt, 7)) do
+						pullTo(o, pt, m.pull)
+						if k == 0 then
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(m.delay + m.hold, function()
+			local burst = scaled(m.burst, sc)
+			local hitSet = {}
+			for _, pt in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, pt, 8)) do
+					if not hitSet[o] then
+						hitSet[o] = true
+						o.slowUntil = os.clock() + m.slow
+						o.slowMul = 0.5
+						strike(f, o, burst, move)
+					end
+				end
+			end
+		end)
+	elseif kind == "plumSnow" then
+		-- 2.9판 진 매화 설중매화 (오의): 둘레에 함박눈과 붉은 꽃잎이 휘몰아쳐 계속 베고, 마지막에 하늘의 거대한 매화에서 꽃잎이 쏟아진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "plumSnow", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 1, n do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + 0.5
+					o.slowMul = 0.6
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "drunkZig" then
+		-- 2.9판 진 취팔선 취월삼보 (E): 좌우로 크게 휘청이며 세 번 뛰어든다 (무적). 내려설 때마다 둘레를 걷어찬다
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.hops * m.every + 0.2) / sp)
+		local right = rightOf(look)
+		local pos = f.root.Position
+		local hops = {}
+		for i = 1, m.hops do
+			local side = (i % 2 == 1) and 1 or -1
+			local d = (look * 0.8 + right * side * 0.6).Unit
+			pos = pos + d * m.dist
+			table.insert(hops, pos)
+		end
+		Push:FireAllClients("skillfx", { kind = "drunkZig", m = f.model, hops = hops, every = m.every / sp, style = style })
+		for i, at in ipairs(hops) do
+			after(i * m.every, function()
+				local y = f.root.Position.Y
+				local p = Vector3.new(at.X, y, at.Z)
+				moveTo(f, CFrame.lookAt(p, p + look))
+				for _, o in ipairs(hostilesNear(f, p, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "wineRiver" then
+		-- 2.9판 진 취팔선 주천강 (R): 호리병의 술이 앞으로 강이 되어 흐른다. 강 위의 적은 굼뜨고, 마지막에 강에 불이 붙는다
+		local from = f.root.Position + look * 2
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "wineRiver", m = f.model, from = from, to = to, width = m.width, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2 + 1)) do
+					o.slowUntil = os.clock() + 0.6
+					o.slowMul = 0.45
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2 + 2)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "eightImmortals" then
+		-- 2.9판 진 취팔선 팔선강림 (오의): 여덟 신선의 그림자가 둘레에 나타나 차례로 가까운 적에게 덮쳐 들고, 하늘에서 거대한 호리병이 내리꽂힌다
+		local center = f.root.Position
+		local spots = {}
+		for i = 1, m.n do
+			local a = (i - 1) / m.n * math.pi * 2
+			table.insert(spots, center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius)
+		end
+		local list = nearestList(f, m.range, m.n)
+		local targets = {}
+		for i = 1, m.n do
+			local t = #list > 0 and list[(i - 1) % #list + 1] or nil
+			targets[i] = t and t.model or false
+		end
+		Push:FireAllClients("skillfx", { kind = "eightImmortals", m = f.model, at = center, spots = spots, targets = targets, delay = m.delay / sp, every = m.every / sp, finalAt = m.finalAt / sp, finalRadius = m.finalRadius, style = style })
+		for i = 1, m.n do
+			after(m.delay + (i - 1) * m.every + 0.15, function()
+				local t = #list > 0 and list[(i - 1) % #list + 1] or nil
+				if t and not t.dead and t.root.Parent then
+					strike(f, t, hit, move)
+				else
+					for _, o in ipairs(hostilesNear(f, spots[i], 6)) do
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+		after(m.delay + (m.n - 1) * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "inkFlower" then
 		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
 		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)

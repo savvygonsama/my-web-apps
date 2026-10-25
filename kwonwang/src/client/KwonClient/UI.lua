@@ -1519,7 +1519,7 @@ local function buildTest()
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
 		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
 		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})

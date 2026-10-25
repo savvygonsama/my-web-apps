@@ -26,6 +26,8 @@ local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
+local Plum = require(script:WaitForChild("Plum"))
+local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
@@ -1937,6 +1939,8 @@ function handlers.skillfx(data: any)
 		Whale.init({ shake = shake })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
+		Plum.init({ shake = shake, tint = tint })
+		Gourd.init({ shake = shake, tint = tint })
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -1954,6 +1958,18 @@ function handlers.skillfx(data: any)
 		return
 	elseif Ink.handles(data) then
 		Ink.run(data)
+		return
+	elseif data.kind == "pulse" and data.fx == "plum" then
+		Plum.run({ kind = "plumPulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
+	elseif data.kind == "pulse" and data.fx == "wine" then
+		Gourd.run({ kind = "winePulse", at = data.at, radius = data.radius, delay = data.delay, style = data.style })
+		return
+	elseif Plum.handles(data) then
+		Plum.run(data)
+		return
+	elseif Gourd.handles(data) then
+		Gourd.run(data)
 		return
 	elseif Blossom.handles(data) then
 		Blossom.run(data)

@@ -1354,6 +1354,45 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 2.9판 진 매화난무권 (각성): 눈 속에 피는 붉은 매화 (설중매). 초·매화(벚꽃 부채)와 달리 가지와 눈과 매화
+awakened("maehwa", 1.5, {
+	id = "maehwa2", name = "진 매화난무권", hanja = "眞梅花亂舞拳", icon = "❄", grade = "신화",
+	color = Color3.fromRGB(215, 30, 60), color2 = Color3.fromRGB(240, 248, 255), fx = "petal",
+	rebirthReq = 1, petals = true, petalMax = 20,
+	unlockHint = "매화난무권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 눈 속에 핀 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에서 한겨울의 매화가 피었다. 눈이 쌓일수록 붉게 피는 설중매처럼, 손끝이 지나간 자리마다 매화 가지가 뻗고 눈 속에서 꽃이 터진다.",
+	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고, 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
+	deflect = 0.24, speed = 1.2,
+	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 26, posture = 28, stun = 0.6, kb = 8, up = 8 },
+	skills = {
+		E = { id = "mxE", name = "설중매", desc = "앞으로 손을 뻗으면 땅을 따라 매화 가지가 24칸 뻗는다. 마디마다 차례로 꽃이 피며 베고, 잠시 뒤 가지 전체의 꽃이 한꺼번에 터진다", pose = "plum_flash", dur = 0.55, cd = 7, chi = 18, lunge = 4,
+			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 18, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 16, 18, 0.4, 0, 10) } },
+		R = { id = "mxR", name = "한매오판", desc = "둘레 다섯 곳에 커다란 매화가 핀다. 꽃이 둘레의 적을 꽃술로 끌어당긴 뒤 눈보라와 함께 터진다 (맞은 적은 1초 굼뜨다)", pose = "petal_spin", dur = 0.8, cd = 11, chi = 25,
+			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 10, 12, 0.3, 0), burst = hit(0, 0, 0, 30, 34, 0.7, 30, 14), slow = 1 } },
+		G = { id = "mxG", name = "설중매화", desc = "둘레에 2초 동안 함박눈이 내리며 붉은 꽃잎이 휘몰아쳐 계속 벤다. 마지막에 하늘에 거대한 매화가 피어 꽃잎이 비처럼 쏟아진다", pose = "ult_bloom", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "plumSnow", radius = 24, dur = 2.0, every = 0.25, delay = 0.3, hit = hit(0, 0, 0, 9, 10, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 110, 140, 1.3, 40, 30) } },
+	},
+})
+-- 2.9판 진 취팔선권 (각성): 술 취한 신선. 달빛 아래 호리병을 든 취선. 초·취(소주병 난타)와 달리 술의 강과 여덟 신선
+awakened("chwi", 1.5, {
+	id = "chwi2", name = "진 취팔선권", hanja = "眞醉八仙拳", icon = "🏺", grade = "신화",
+	color = Color3.fromRGB(200, 120, 255), color2 = Color3.fromRGB(255, 225, 150), fx = "drunk",
+	rebirthReq = 1, dodgeChance = 0.3, weakBlock = 1.4,
+	unlockHint = "취팔선권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 술에 취한 자기 그림자를 넘어라",
+	desc = "다시 태어난 몸에 여덟 신선이 함께 취했다. 호리병의 술이 강이 되어 흐르고, 비틀거리는 걸음 하나하나가 신선의 걸음이 된다.",
+	gimmick = "취선: 30% 확률로 공격을 저절로 피한다. 네 번 맞힐 때마다 상대 자리에서 술이 튀어 어지럽힌다. 오의 팔선강림: 여덟 신선의 그림자가 둘레에 나타나 차례로 덮치고, 하늘에서 거대한 호리병이 내리꽂힌다",
+	deflect = 0.22,
+	pulse = { every = 4, kind = "wine", radius = 9, delay = 0.25, name = "술 튐", dmg = 22, posture = 26, stun = 0.8, kb = 10, up = 6 },
+	skills = {
+		E = { id = "cxE", name = "취월삼보", desc = "비틀비틀 세 걸음, 좌우로 크게 휘청이며 9칸씩 뛰어든다 (무적). 내려설 때마다 둘레를 걷어찬다", pose = "drunk_low", dur = 0.7, cd = 7, chi = 18, iframes = 0.6,
+			mech = { kind = "drunkZig", hops = 3, dist = 9, every = 0.18, radius = 7, hit = hit(0, 0, 0, 16, 16, 0.5, 20, 8) } },
+		R = { id = "cxR", name = "주천강", desc = "호리병을 기울여 앞으로 술의 강을 쏟는다. 2초 동안 강 위의 적은 굼뜨고 젖어 들며, 마지막에 강에 불이 붙어 한꺼번에 타오른다", pose = "soju_spray", dur = 0.8, cd = 11, chi = 25,
+			mech = { kind = "wineRiver", length = 26, width = 6, dur = 2.0, every = 0.3, delay = 0.25, hit = hit(0, 0, 0, 7, 8, 0.25, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 10, 12) } },
+		G = { id = "cxG", name = "팔선강림", desc = "여덟 신선의 그림자가 둘레에 나타나 차례로 가까운 적에게 덮쳐 든다. 마지막에 하늘에서 거대한 호리병이 내리꽂혀 술 물결이 사방으로 터진다", pose = "drunk_sway", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "eightImmortals", n = 8, radius = 12, delay = 0.35, every = 0.18, range = 30, hit = hit(0, 0, 0, 30, 30, 0.6, 20, 10), finalAt = 0.45, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 50, 25) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 2.0판: 각성 오의 여섯을 새로 (원래 오의를 키운 것이 아니라, 전혀 다른 장치로)
 ------------------------------------------------------------------------
@@ -1922,6 +1961,8 @@ local FINISHERS = {
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
 	chochanghae = { name = "고경승천장", pose = "tidal_punch" },
 	mugeuk2 = { name = "진 무극승천장", pose = "void_push" },
+	maehwa2 = { name = "설중매영각", pose = "crescent_kick" },
+	chwi2 = { name = "취선번천각", pose = "drunk_flop" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -3124,10 +3165,10 @@ Config.SKY_MAT_BY_ID = {}
 for _, m in ipairs(Config.SKY_MATS) do
 	Config.SKY_MAT_BY_ID[m.id] = m
 end
--- 초월 권법의 조건: 원래 권법 숙련 20 + 각성 권법 숙련 20 (그 권법의 각성이 없으면 아무 각성 권법) + 천상 재료 (시련에 한 번, 배울 때 한 번)
+-- 초월 권법의 조건: 원래 권법 숙련 20 + 각성 권법 숙련 20 (2.9판: 늘 그 권법 자신의 각성 권법) + 천상 재료 (시련에 한 번, 배울 때 한 번)
 Config.TRANSCEND_REQ = {
-	chomaehwa = { base = "maehwa", awakened = "any", lv = 20, challenge = { petal = 15 }, learn = { petal = 30 } },
-	chochwi = { base = "chwi", awakened = "any", lv = 20, challenge = { wine = 2 }, learn = { wine = 4 } },
+	chomaehwa = { base = "maehwa", awakened = "maehwa2", lv = 20, challenge = { petal = 15 }, learn = { petal = 30 } },
+	chochwi = { base = "chwi", awakened = "chwi2", lv = 20, challenge = { wine = 2 }, learn = { wine = 4 } },
 	chohyeolma = { base = "hyeolma", awakened = "hyeolma2", lv = 20, challenge = { bloodmoon = 12 }, learn = { bloodmoon = 24 } },
 	chobyeok = { base = "byeokryeok", awakened = "byeokryeok2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
 	chochanghae = { base = "changhae", awakened = "changhae2", lv = 20, challenge = { tidepearl = 10 }, learn = { tidepearl = 20 } },
