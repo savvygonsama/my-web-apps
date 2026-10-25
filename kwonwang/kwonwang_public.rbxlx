@@ -231,7 +231,8 @@ end
 -- 2.0판: 적을 쓰러뜨리면 능력치가 오른다. 얻는 양은 그 적의 전투력만으로 정해진다 (내 경지·필요 마릿수와 상관없다)
 -- 그 경지 적이면 앞 경지는 열다섯 마리 남짓, 천외천은 백육십 마리 남짓에 다음 경지 (보스 ×3, 정예 ×1.5)
 ------------------------------------------------------------------------
-Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
+-- overCap (2.7.4판): 나보다 센 적을 쓰러뜨려도 능력치는 내 전투력과 같은 적의 이 배수까지만 (보스·정예 배수는 그 위에 곱한다)
+Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5, overCap = 2 }
 Config.LATE_BOSS_KILLS = 15 -- 2.7.2판: 후반 보스 하나의 능력치 몫은 그 땅 졸병 열다섯 마리까지 (전엔 표 끝에 걸려 모두 6억 3천만)
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
 -- 2.2판: 문턱은 예전 숫자, 적이 주는 양은 2.0판 비율의 2/3 (경지 하나에 처치 수 1.5배: 앞 경지 스무 마리 남짓 · 천외천 이백오십 마리 남짓)
@@ -6712,7 +6713,9 @@ Combat.init(Push, {
 				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
-					local g = Config.killGain((f :: any).basePower or f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
+					local base = math.min(Config.killGain((f :: any).basePower or f.power or 100), Config.killGain(rewardPower(killer)) * KG.overCap)
+					local g = base * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
 					if isBoss and (f.npc :: any).late and not f.towerOwner then
 						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
