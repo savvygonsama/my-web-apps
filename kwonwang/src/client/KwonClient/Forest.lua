@@ -574,7 +574,7 @@ local function treeBurst(data: any)
 		fadeOut(q, 0.7, { CFrame = CFrame.lookAt(p0 + Vector3.new(math.cos(a), 0.1, math.sin(a)) * R, p0 + Vector3.new(math.cos(a), 0, math.sin(a)) * (R + 1)) })
 	end
 	Fx.flash(center, GOLD2, 90, 6, 0.6)
-	Fx.sound("shatter", 0.8, 0.9, center)
+	Fx.breakSound("wood", 0.8, 0.9, center)
 	shakeNear(center, 1.8, 140)
 end
 

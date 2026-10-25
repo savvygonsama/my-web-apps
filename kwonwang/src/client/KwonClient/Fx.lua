@@ -59,6 +59,23 @@ function Fx.sound(name: string, volume: number?, pitch: number?, at: Vector3?)
 	s:Play()
 end
 
+-- 2.8.1판: 부서지고 터지는 소리를 재질마다 다르게 (예전엔 나무가 부서져도 유리 깨지는 소리였다)
+--   glass 유리·얼음·병·결정   wood 나무가 쪼개진다   rock 바위·땅이 무너진다
+--   boom 벼락·북·기운이 터진다   whoosh 꽃잎·부채·먹이 흩날린다   slash 칼날이 가른다
+local BREAK: { [string]: { { any } } } = {
+	glass = { { "shatter", 1, 1 } },
+	wood = { { "heavy", 1, 0.55 }, { "block", 0.7, 0.45 } },
+	rock = { { "heavy", 1.2, 0.42 }, { "fall", 0.5, 0.6 } },
+	boom = { { "heavy", 1.3, 0.35 }, { "swing", 0.6, 0.4 } },
+	whoosh = { { "swing", 0.9, 0.75 } },
+	slash = { { "block", 1, 0.85 }, { "swing", 0.6, 0.6 } },
+}
+function Fx.breakSound(kind: string, volume: number?, pitch: number?, at: Vector3?)
+	for _, it in ipairs(BREAK[kind] or BREAK.boom) do
+		Fx.sound(it[1], (volume or 0.8) * it[2], (pitch or 1) * it[3], at)
+	end
+end
+
 ------------------------------------------------------------------------
 -- 기본 조각
 ------------------------------------------------------------------------

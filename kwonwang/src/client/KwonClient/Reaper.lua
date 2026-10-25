@@ -766,7 +766,7 @@ local function moonCleave(data: any)
 	Fx.burst("dust", g + Vector3.new(0, 0.5, 0), Color3.fromRGB(110, 50, 50), 40, 3)
 	Fx.debris(g, 12, 40, Color3.fromRGB(90, 40, 40))
 	Fx.flash(at, RED, 60, 8, 1)
-	Fx.sound("shatter", 0.8, 0.6, at)
+	Fx.breakSound("slash", 0.8, 0.6, at)
 	Fx.sound("heavy", 1, 0.4, at)
 	shakeNear(at, 2.6, 120)
 	if near(at, 120) then

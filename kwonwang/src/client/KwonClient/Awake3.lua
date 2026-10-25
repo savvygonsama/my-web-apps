@@ -519,7 +519,7 @@ local function railFire(data: any)
 		end)
 	end
 	Fx.flash(a, c, 50, 6, 0.3)
-	Fx.sound("shatter", 0.7, 1.4, a)
+	Fx.breakSound("boom", 0.7, 1.4, a)
 	shakeNear(a, 0.9, 80)
 end
 
@@ -1037,7 +1037,7 @@ local function eruptMain(data: any)
 	Fx.burst("ember", g + Vector3.new(0, 5, 0), FIRE, 60, 3)
 	Fx.debris(ground(at), 16, 50, ROCK)
 	Fx.flash(at, LAVA, 80, 8, 0.8)
-	Fx.sound("shatter", 0.8, 0.5, at)
+	Fx.breakSound("rock", 0.8, 0.5, at)
 	Fx.sound("heavy", 1, 0.35, at)
 	shakeNear(at, 2.4, 120)
 end
@@ -1390,7 +1390,7 @@ local function diveImpact(data: any)
 	impact(at, data.radius or 8, c, c2, 1.6)
 	Fx.flash(at, c, 70, 8, 0.4)
 	Fx.debris(g, 10, 35, Color3.fromRGB(80, 75, 90))
-	Fx.sound("shatter", 0.8, 1.2, at)
+	Fx.breakSound("rock", 0.8, 1.2, at)
 	shakeNear(at, 1.8, 100)
 	-- 네 갈래로 달리는 땅의 금과 번개
 	local dir: Vector3 = data.dir or Vector3.new(0, 0, -1)
@@ -1502,7 +1502,7 @@ local function ballBurst(data: any)
 		end
 		impact(at, R, c, c2, 2)
 		Fx.flash(at, c, 90, 9, 0.6)
-		Fx.sound("shatter", 0.9, 0.9, at)
+		Fx.breakSound("glass", 0.9, 0.9, at)
 		shakeNear(at, 2.2, 120)
 	end)
 end
@@ -1633,7 +1633,7 @@ local function starStart(data: any)
 	Fx.sound("deflect", 0.9, 0.6, center)
 	task.delay(delay, function()
 		Fx.ring(top, c2, 4, 20, 0.4)
-		Fx.sound("shatter", 0.6, 1.4, center)
+		Fx.breakSound("whoosh", 0.6, 1.4, center)
 	end)
 end
 local function starBeam(data: any)
@@ -1690,7 +1690,7 @@ local function starCrash(data: any)
 		end
 		impact(at, R, c, c2, 2.4)
 		Fx.flash(at, c2, 110, 10, 0.7)
-		Fx.sound("shatter", 1, 0.75, at)
+		Fx.breakSound("rock", 1, 0.75, at)
 		Fx.sound("heavy", 1, 0.6, at)
 		shakeNear(at, 2.6, 140)
 	end)
@@ -1813,7 +1813,7 @@ local function yyShot(data: any)
 				Fx.ring(ground(at) + Vector3.new(0, 0.35, 0), INK, 2, R * 2, 0.45)
 			end)
 			Fx.burst("spark", at, WHITE, 10, 1)
-			Fx.sound("shatter", 0.6, 1.5, at)
+			Fx.breakSound("whoosh", 0.6, 1.5, at)
 			shakeNear(at, 0.5, 60)
 		end
 	end)
@@ -1954,7 +1954,7 @@ local function taijiSeal(data: any)
 			fadeOut(col, 0.5, { Size = Vector3.new(70, 0.4, 0.4) })
 			Fx.burst("spark", at, WHITE, 24, 2)
 			Fx.flash(at, WHITE, 120, 10, 0.5)
-			Fx.sound("shatter", 1, 0.6, at)
+			Fx.breakSound("boom", 1, 0.6, at)
 			Fx.sound("heavy", 1, 0.5, at)
 			shakeNear(at, 2.8, 150)
 			local e = cc
@@ -2049,7 +2049,7 @@ local function judgeBolt(data: any)
 	impact(at, R, c, c2, 1.2)
 	Fx.flash(at, c2, 60, 6, 0.3)
 	if (data.i or 1) % 2 == 1 then
-		Fx.sound("shatter", 0.6, 1.3, at)
+		Fx.breakSound("boom", 0.6, 1.3, at)
 	end
 	shakeNear(at, 0.9, 100)
 end
@@ -2201,7 +2201,7 @@ local function drumBeat(data: any)
 		if opts.flash then
 			opts.flash(Color3.fromRGB(235, 225, 255), 0.25)
 		end
-		Fx.sound("shatter", 0.6, 1.1, at)
+		Fx.breakSound("boom", 0.6, 1.1, at)
 	end
 end
 local function drumFinale(data: any)
@@ -2270,7 +2270,7 @@ local function drumFinale(data: any)
 		if opts.flash then
 			opts.flash(WHITE, 0.5)
 		end
-		Fx.sound("shatter", 1, 0.6, at)
+		Fx.breakSound("boom", 1, 0.6, at)
 		Fx.sound("heavy", 1, 0.3, at)
 		shakeNear(at, 3, 160)
 	end)

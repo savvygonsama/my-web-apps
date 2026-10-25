@@ -992,7 +992,7 @@ local function thunderPillar(data: any)
 	if near(at, 120) and opts.flash then
 		opts.flash(WHITE, 0.6)
 	end
-	Fx.sound("shatter", 0.6, 0.5, at)
+	Fx.breakSound("boom", 0.6, 0.5, at)
 	Fx.sound("heavy", 1, 0.3, at)
 	shakeNear(at, 2.6, 120)
 end

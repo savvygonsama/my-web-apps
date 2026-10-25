@@ -676,7 +676,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	-- 3) 깨진다: 조각이 사방으로 튀며 떨어지고, 잿빛이 풀린다
 	task.delay(0.2, function()
 		holdConn:Disconnect()
-		Fx.sound("shatter", 1, 1)
+		Fx.breakSound("glass", 1, 1)
 		Fx.sound("block", 0.8, 0.7)
 		if onBreak then
 			onBreak()

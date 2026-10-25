@@ -413,7 +413,7 @@ local function sojuThrow(data: any)
 		-- 하늘에서 깨진다
 		shards(top, 26, 16)
 		Fx.flash(top, FLAME, 60, 4, 0.4)
-		Fx.sound("shatter", 1, 0.9, at)
+		Fx.breakSound("glass", 1, 0.9, at)
 		-- 술비: 둘레 위에서 방울이 쏟아진다
 		local cloud = part(Vector3.new(radius * 2, 1, radius * 2), PALE, Enum.Material.Neon, 1)
 		cloud.Position = at + Vector3.new(0, 26, 0)
@@ -584,7 +584,7 @@ local function rushEnd(data: any)
 		local a = k / 10 * math.pi * 2
 		flameAt(at + Vector3.new(math.cos(a) * radius * 0.5, -2.4, math.sin(a) * radius * 0.5), 4, 0.8)
 	end
-	Fx.sound("shatter", 1, 0.8, at)
+	Fx.breakSound("rock", 1, 0.8, at)
 	Fx.sound("heavy", 1, 0.5, at)
 end
 

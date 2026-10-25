@@ -281,7 +281,7 @@ local function petalShadow(data: any)
 			end
 			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), WHITE, 2, R * 2.4, 0.35)
 		end
-		Fx.sound("shatter", 0.6, 1.5, start)
+		Fx.breakSound("whoosh", 0.6, 1.5, start)
 		shakeNear(start, 0.6, 70)
 	end)
 end
@@ -355,7 +355,7 @@ local function skyFan(data: any)
 					Fx.ring(g + Vector3.new(0, 0.35, 0), WHITE, 4, R * 2, 0.5)
 				end)
 				Fx.flash(at, PINKS[2], 90, 6, 0.6)
-				Fx.sound("shatter", 1, 1.1, at)
+				Fx.breakSound("whoosh", 1, 1.1, at)
 				shakeNear(at, 1.8, 140)
 			end
 			return
