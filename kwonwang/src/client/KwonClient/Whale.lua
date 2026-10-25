@@ -7,10 +7,18 @@ local TweenService = game:GetService("TweenService")
 
 local Whale = {}
 
-local BACK = Color3.fromRGB(46, 60, 78)
-local BACK2 = Color3.fromRGB(58, 74, 92)
-local BELLY = Color3.fromRGB(196, 204, 206)
-local GROOVE = Color3.fromRGB(150, 160, 166)
+-- 2.7.7판: 더 오래된 고래. 바위처럼 거칠고 이끼 낀 등, 누렇게 바랜 배, 등뼈를 따라 솟은 뼈 판,
+-- 등에 박힌 채 삭아 버린 옛 작살, 턱과 지느러미에서 늘어진 해초, 옆구리의 빛나는 옛 봉인 고리, 빛나는 눈
+local BACK = Color3.fromRGB(50, 62, 62)
+local BACK2 = Color3.fromRGB(66, 78, 74)
+local BELLY = Color3.fromRGB(184, 178, 160)
+local GROOVE = Color3.fromRGB(140, 136, 120)
+local BONE = Color3.fromRGB(214, 204, 176)
+local MOSS = Color3.fromRGB(72, 98, 58)
+local CORAL = Color3.fromRGB(196, 100, 74)
+local KELP = Color3.fromRGB(42, 72, 46)
+local WOOD = Color3.fromRGB(92, 70, 48)
+local RUST = Color3.fromRGB(116, 78, 56)
 local BARNACLE = Color3.fromRGB(222, 220, 208)
 local RUNE = Color3.fromRGB(120, 230, 255)
 local SCAR = Color3.fromRGB(170, 180, 186)
@@ -69,7 +77,7 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 	local back2 = wet and back:Lerp(Color3.new(1, 1, 1), 0.12) or BACK2
 	local belly = wet and (c2 or Color3.fromRGB(200, 240, 255)) or BELLY
 	local groove = wet and belly:Lerp(back, 0.4) or GROOVE
-	local skinMat = wet and Enum.Material.Glass or Enum.Material.SmoothPlastic
+	local skinMat = wet and Enum.Material.Glass or Enum.Material.Slate
 	local skinA = wet and 0.22 or 0
 	local function add(key: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?): BasePart
 		local p = newPart(size * S, color, mat, alpha, shape)
@@ -145,7 +153,12 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 		-- 눈: 둘째 마디 앞쪽 옆, 깊고 오래된 눈 (작은 빛)
 		add("S2", Vector3.new(0.62, 0.55, 0.62), CFrame.new(x * s2[2] * 0.93, -s2[3] * 0.18, -s2[1] * 0.45), wet and Color3.new(1, 1, 1) or EYE, wet and Enum.Material.Neon or Enum.Material.SmoothPlastic, 0, "ball")
 		if not wet then
-			add("S2", Vector3.new(0.2, 0.2, 0.2), CFrame.new(x * s2[2] * 0.99, -s2[3] * 0.12, -s2[1] * 0.5), RUNE, Enum.Material.Neon, 0, "ball")
+			local pupil = add("S2", Vector3.new(0.3, 0.3, 0.3), CFrame.new(x * s2[2] * 0.99, -s2[3] * 0.12, -s2[1] * 0.5), RUNE, Enum.Material.Neon, 0, "ball")
+			local glow = Instance.new("PointLight")
+			glow.Color = RUNE
+			glow.Range = 10 * S
+			glow.Brightness = 2
+			glow.Parent = pupil
 			add("S2", Vector3.new(0.9, 0.18, 0.5), CFrame.new(x * s2[2] * 0.9, -s2[3] * 0.02, -s2[1] * 0.45) * CFrame.Angles(0, 0, x * math.rad(-12)), back2)
 		end
 	end
@@ -172,6 +185,79 @@ function Whale.build(S: number, water: boolean?, c: Color3?, c2: Color3?): Rig
 			local x = (k % 2 == 0) and 1 or -1
 			add("S" .. (3 + k % 2), Vector3.new(0.1, 0.1, 2.0 - k * 0.3), CFrame.new(x * sg[2] * 0.97, (k - 1.5) * 0.45, k * 0.3) * CFrame.Angles(math.rad(25 - k * 10), x * math.rad(-8), 0), SCAR)
 		end
+	end
+	if not wet then
+		-- 따개비 무리 하나 (부위 기준 자리)
+		local function barnacles(key: string, at: Vector3, n: number, k0: number)
+			for b = 0, n - 1 do
+				local a = b * 1.9 + k0
+				add(key, Vector3.new(0.34, 0.26, 0.34) * (1 - b * 0.1), CFrame.new(at + Vector3.new(math.cos(a) * 0.34, b * 0.03, math.sin(a) * 0.34)), BARNACLE, Enum.Material.Slate, 0, "ball")
+			end
+		end
+		-- 등뼈를 따라 솟은 뼈 판 (화석처럼 바랜 상아빛, 꼬리로 갈수록 작아진다)
+		for i = 2, 8 do
+			local sg = SEGS[i]
+			local h = 0.5 + (sg[3] / 3.6) * 0.9
+			for j = 0, 1 do
+				local z = (j - 0.5) * sg[1] * 0.7
+				add("S" .. i, Vector3.new(0.22, h, sg[1] * 0.42), CFrame.new(0, sg[3] * 0.96 + h * 0.3, z) * CFrame.Angles(math.rad(-18), 0, 0), BONE, Enum.Material.Marble, 0, "wedge")
+			end
+		end
+		-- 이끼와 산호 (등과 옆구리에 군데군데)
+		for i = 2, 6 do
+			local sg = SEGS[i]
+			for k = 0, 2 do
+				local a = (k - 1) * 0.75 + (i % 2) * 0.3
+				local at = Vector3.new(math.sin(a) * sg[2] * 0.92, math.cos(a) * sg[3] * 0.92, (k - 1) * sg[1] * 0.35)
+				add("S" .. i, Vector3.new(1.3, 0.3, 1.1) * (0.8 + (k % 2) * 0.4), CFrame.new(at) * CFrame.Angles(0, 0, -a), MOSS, Enum.Material.Grass, 0, "ball")
+			end
+			if i % 2 == 0 then
+				local x = (i % 4 == 0) and 1 or -1
+				local base = Vector3.new(x * sg[2] * 0.7, sg[3] * 0.72, 0.4)
+				for b = 0, 3 do
+					add("S" .. i, Vector3.new(0.16, 0.9 - b * 0.12, 0.16), CFrame.new(base) * CFrame.Angles(math.rad(-20 + b * 15), 0, x * math.rad(25 - b * 18)) * CFrame.new(0, 0.4, 0), CORAL, Enum.Material.Slate)
+				end
+			end
+			barnacles("S" .. i, Vector3.new(((i % 2 == 0) and 1 or -1) * sg[2] * 0.9, -sg[3] * 0.25, -0.4), 4, i)
+		end
+		-- 등에 박힌 채 삭아 버린 옛 작살 셋 (부러진 자루, 녹슨 촉, 감긴 밧줄)
+		for k, spec in ipairs({ { 3, -0.6, 1.6, 0.9 }, { 4, 0.8, 1.1, 2.4 }, { 5, -0.3, -0.5, 1.7 } }) do
+			local sg = SEGS[spec[1]]
+			local key = "S" .. spec[1]
+			local base = Vector3.new(spec[2], sg[3] * 0.9, spec[3])
+			local tilt = CFrame.new(base) * CFrame.Angles(math.rad(-30 - k * 8), math.rad(k * 40), math.rad(spec[2] * 20))
+			add(key, Vector3.new(0.22, spec[4], 0.22), tilt * CFrame.new(0, spec[4] / 2, 0), WOOD, Enum.Material.Wood)
+			add(key, Vector3.new(0.3, 0.5, 0.3), tilt * CFrame.new(0, -0.05, 0), RUST, Enum.Material.CorrodedMetal)
+			add(key, Vector3.new(0.3, 0.12, 0.3), tilt * CFrame.new(0, spec[4] * 0.55, 0), Color3.fromRGB(150, 130, 96), Enum.Material.Fabric, 0, "cyl")
+			add(key, Vector3.new(0.06, 1.6, 0.06), tilt * CFrame.new(0.1, spec[4] * 0.55, 0) * CFrame.Angles(0, 0, math.rad(150)) * CFrame.new(0, -0.8, 0), Color3.fromRGB(150, 130, 96), Enum.Material.Fabric)
+		end
+		-- 턱 아래와 가슴지느러미 뿌리의 해초: 아래로 늘어지면 다리처럼 보여, 몸을 따라 뒤로 흩날리게 눕힌다
+		for k = 0, 6 do
+			local x = (k - 3) * 0.55
+			local len = 2.0 + (k % 3) * 0.8
+			add("S1", Vector3.new(0.14, len, 0.1), CFrame.new(x, -h1[3] * 0.9, -1.8 + (k % 2) * 0.8) * CFrame.Angles(math.rad(-74), 0, math.rad((k - 3) * 3)) * CFrame.new(0, -len / 2, 0), KELP, Enum.Material.Grass)
+		end
+		for _, x in ipairs({ -1, 1 }) do
+			for k = 0, 2 do
+				local len = 2.2 + k * 0.7
+				add("S2", Vector3.new(0.12, len, 0.1), CFrame.new(x * s2[2] * 0.8, -s2[3] * 0.62, 0.6 + k * 0.5) * CFrame.Angles(math.rad(-70), 0, x * math.rad(8)) * CFrame.new(0, -len / 2, 0), KELP, Enum.Material.Grass)
+			end
+		end
+		-- 옆구리의 옛 봉인 고리 (빛나는 점이 둥글게, 가운데 큰 점)
+		for _, i in ipairs({ 3, 4 }) do
+			local sg = SEGS[i]
+			for _, x in ipairs({ -1, 1 }) do
+				local c0 = Vector3.new(x * sg[2] * 0.985, sg[3] * 0.1, 0)
+				for k = 0, 11 do
+					local a = k / 12 * math.pi * 2
+					add("S" .. i, Vector3.new(0.18, 0.18, 0.18), CFrame.new(c0 + Vector3.new(0, math.sin(a) * 1.1, math.cos(a) * 1.1)), RUNE, Enum.Material.Neon, 0.15, "ball")
+				end
+				add("S" .. i, Vector3.new(0.4, 0.4, 0.4), CFrame.new(c0), RUNE, Enum.Material.Neon, 0.1, "ball")
+			end
+		end
+		-- 머리 옆과 가슴지느러미 앞 가장자리에도 따개비
+		barnacles("S2", Vector3.new(s2[2] * 0.85, s2[3] * 0.5, 0.8), 5, 2)
+		barnacles("S2", Vector3.new(-s2[2] * 0.8, s2[3] * 0.4, 1.4), 4, 5)
 	end
 	-- 등지느러미 (작은 혹 지느러미)와 꼬리 쪽 등의 마디 혹
 	local s6 = SEGS[6]

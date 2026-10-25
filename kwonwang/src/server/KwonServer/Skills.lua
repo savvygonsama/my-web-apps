@@ -2630,8 +2630,31 @@ function Skills.run(f: any, move: any, ctx: any)
 		-- 2.7판 초·창해 고경승천 (초 오의): 땅이 바다가 되고 (컷씬, 무적) 고대의 고래가 뒤에서 솟구쳐 머리 위를 지나 앞으로 뛰어든다.
 		-- 고래 그림자 아래의 적은 떠오르고, 앞의 바다에 떨어질 때 해일이 둘레를 덮친다
 		local center = f.root.Position
+		-- 2.7.7판: 자동 타깃. 쓰는 순간 둘레에서 가장 가까운 적 (보스가 있으면 보스)을 골라 그쪽으로 뛰어든다 (뒤쫓지는 않는다)
+		local ahead = m.ahead
+		local pick, pickD = nil, math.huge
+		for _, o in ipairs(hostilesNear(f, center, m.targetRange or 110)) do
+			local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
+			if o.model:GetAttribute("Boss") == true then
+				d -= 1000
+			end
+			if d < pickD then
+				pick, pickD = o, d
+			end
+		end
+		if pick then
+			local d = Vector3.new(pick.root.Position.X - center.X, 0, pick.root.Position.Z - center.Z)
+			if d.Magnitude > 1 then
+				look = d.Unit
+				ahead = math.clamp(d.Magnitude, 24, m.ahead + 30)
+				-- 나도 그쪽을 본다
+				pcall(function()
+					f.model:PivotTo(CFrame.lookAt(center, center + look))
+				end)
+			end
+		end
 		local from = center - look * m.behind
-		local to = center + look * m.ahead
+		local to = center + look * ahead
 		local total = m.cut + m.flight + m.waveAt + 0.3
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
 		local wid = math.random(1, 1000000000)
