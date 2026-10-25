@@ -1494,6 +1494,14 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					local g = Config.killGain((f :: any).basePower or f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
+					if isBoss and (f.npc :: any).late and not f.towerOwner then
+						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
+						local key = (f :: any).regionKey
+						local rec = rp and key and rp:GetAttribute(key)
+						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
+						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
+					end
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each

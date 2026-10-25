@@ -232,6 +232,7 @@ end
 -- 그 경지 적이면 앞 경지는 열다섯 마리 남짓, 천외천은 백육십 마리 남짓에 다음 경지 (보스 ×3, 정예 ×1.5)
 ------------------------------------------------------------------------
 Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5 }
+Config.LATE_BOSS_KILLS = 15 -- 2.7.2판: 후반 보스 하나의 능력치 몫은 그 땅 졸병 열다섯 마리까지 (전엔 표 끝에 걸려 모두 6억 3천만)
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
 -- 2.2판: 문턱은 예전 숫자, 적이 주는 양은 2.0판 비율의 2/3 (경지 하나에 처치 수 1.5배: 앞 경지 스무 마리 남짓 · 천외천 이백오십 마리 남짓)
 -- 환생으로 열리는 경지의 적은 그 환생 배수만큼 덜 준다 (환생 배수는 다시 오르는 앞 경지를 빠르게 하는 몫)
@@ -6712,6 +6713,14 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					local g = Config.killGain((f :: any).basePower or f.power or 100) * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
+					if isBoss and (f.npc :: any).late and not f.towerOwner then
+						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
+						local key = (f :: any).regionKey
+						local rec = rp and key and rp:GetAttribute(key)
+						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
+						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
+					end
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					for _, sd in ipairs(Config.Stats) do
 						p.stats[sd.id] += each
@@ -12425,6 +12434,9 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)
+	-- 2.7.2판: 어느 땅의 적인지 (권장 전투력 표와 같은 이름). 후반 보스의 처치 몫을 그 땅 졸병에 견준다
+	local skyIsl = region == "sky" and Config.skyIslandAt(at) or nil
+	;(f :: any).regionKey = skyIsl and ("sky_" .. skyIsl.id) or region
 	local e: Enemy = {
 		f = f,
 		def = def,

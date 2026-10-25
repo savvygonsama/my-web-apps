@@ -298,6 +298,9 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)
+	-- 2.7.2판: 어느 땅의 적인지 (권장 전투력 표와 같은 이름). 후반 보스의 처치 몫을 그 땅 졸병에 견준다
+	local skyIsl = region == "sky" and Config.skyIslandAt(at) or nil
+	;(f :: any).regionKey = skyIsl and ("sky_" .. skyIsl.id) or region
 	local e: Enemy = {
 		f = f,
 		def = def,
