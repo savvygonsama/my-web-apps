@@ -65,6 +65,8 @@ type Profile = {
 	mats: { [string]: number }, -- 2.5판: 천상 재료 (초월 권법)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
 	rebirth: number, -- 환생 횟수 (1.9판)
+	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
+	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
 	ach: { [string]: boolean }, -- 이룬 업적
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
@@ -104,6 +106,8 @@ local function defaultProfile(): Profile
 		mats = {},
 		skyBuffUntil = 0,
 		rebirth = 0,
+		perks = {},
+		samsara = 0,
 		ach = {},
 		counts = {},
 		statVer = 4,
@@ -242,7 +246,12 @@ local function sanitize(data: any): Profile
 	-- 2.7.7판: 장이 끼어들어 번호가 바뀌었다. 예전 기록은 그 장의 이름으로 새 번호를 찾는다
 	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
 		local oldN = math.floor(data.story)
-		local title = Config.STORY_OLD_TITLES[math.clamp(oldN, 1, #Config.STORY_OLD_TITLES)]
+		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
+		local titles = data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local title = titles[math.clamp(oldN, 1, #titles)]
+		if data.storyVer == 2 then
+			title = Config.STORY_REMAP_V2[title] or title
+		end
 		for i, ch in ipairs(Config.Story) do
 			if ch.title == title then
 				local wasAccepted = p.accepted == p.story or data.accepted == nil
@@ -255,6 +264,17 @@ local function sanitize(data: any): Profile
 	p.storyVer = Config.STORY_V
 	p.autoOn = data.autoOn == true or nil
 	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
+	p.samsara = math.min(p.rebirth, math.floor(num(data.samsara, Config.REBIRTH.max)))
+	if type(data.perks) == "table" then
+		local left = Config.perkPoints(p.rebirth, p.samsara)
+		for _, pk in ipairs(Config.PERKS) do
+			local lv = math.min(math.floor(num(data.perks[pk.id], Config.PERK_MAX)), left)
+			if lv > 0 then
+				p.perks[pk.id] = lv
+				left -= lv
+			end
+		end
+	end
 	p.ach = flags(data.ach, function(k)
 		return Config.ACH_BY_ID[k] ~= nil
 	end)
@@ -384,6 +404,26 @@ function Calc.gateNext(p: Profile): number?
 		return now + 1
 	end
 	return nil
+end
+
+-- 2.9판: 지금 도전할 수 있는 윤회의 시련 (없으면 nil). n번째 환생 뒤 생사경에 오르면 n번째가 열린다
+function Calc.samsaraNext(p: Profile): number?
+	local n = (p.samsara or 0) + 1
+	if n <= (p.rebirth or 0) and Calc.realm(p) >= Config.SAMSARA.realm then
+		return n
+	end
+	return nil
+end
+-- 산 특전 단계의 합
+function Calc.perkUsed(p: Profile): number
+	local n = 0
+	for _, lv in pairs(p.perks or {}) do
+		n += lv
+	end
+	return n
+end
+function Calc.perk(p: Profile, id: string): number
+	return Config.perkMult(p.perks, id)
 end
 
 -- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
@@ -592,6 +632,9 @@ local function pushState(player: Player)
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
 		rebirth = p.rebirth,
+		perks = p.perks,
+		samsara = p.samsara,
+		samsaraNext = Calc.samsaraNext(p),
 		realmCap = Config.realmCap(p.rebirth),
 		ach = p.ach,
 		achProg = Ach.progress(p),
@@ -690,6 +733,8 @@ local function rewardPower(player: Player): number
 		-- 2.4.1판: 피해 쪽 배율(후반 공격력·환생 피해·환생 경지의 피해 배율)을 빼고, 경지 표의 전투력과 같은 잣대로
 		local idx = Calc.realm(p)
 		pw /= math.sqrt(Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Config.rebirthPower(p.rebirth) * Config.realmDmg(idx) / Config.realmPower(idx))
+		-- 2.9판: 환생 특전의 체력·피해도 빼고 센다
+		pw /= math.sqrt(Calc.perk(p, "hp") * Calc.perk(p, "dmg"))
 		-- 2.8판: 체력의 경지 배율이 완만해진 만큼 되돌려 (처치 몫의 잣대는 그대로)
 		pw *= math.sqrt(Config.realmPower(idx) / Config.realmHp(idx))
 	end
@@ -697,7 +742,7 @@ local function rewardPower(player: Player): number
 end
 -- 능력치를 얻는 배율 (환생할수록 많이)
 local function gainMult(p: Profile): number
-	return Config.rebirthGain(p.rebirth or 0)
+	return Config.rebirthGain(p.rebirth or 0) * Calc.perk(p, "gain")
 end
 
 local function refreshFighter(player: Player)
@@ -714,12 +759,12 @@ local function refreshFighter(player: Player)
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth)
+	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb)
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
@@ -771,7 +816,7 @@ local function refreshFighter(player: Player)
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
-	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed)
+	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed) * Calc.perk(p, "spd")
 	local cm = Config.chiMax(p.stats.chi, idx)
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
@@ -823,7 +868,7 @@ local function addMastery(player: Player, p: Profile, amount: number)
 	if m.lv >= Config.MASTERY_MAX then
 		return
 	end
-	m.xp += amount
+	m.xp += amount * Calc.perk(p, "mastery")
 	local leveled = false
 	while m.lv < Config.MASTERY_MAX and m.xp >= Config.masteryNeed(m.lv) do
 		m.xp -= Config.masteryNeed(m.lv)
@@ -912,6 +957,11 @@ function Story.done(p: Profile, g: any): boolean
 		return (p.counts[k] or 0) >= (g.n or 1)
 	elseif k == "rebirth" then
 		return (p.rebirth or 0) >= (g.n or 1)
+	-- 2.9판: 환생 특전 · 윤회의 시련
+	elseif k == "perk" then
+		return Calc.perkUsed(p) >= (g.n or 1)
+	elseif k == "samsara" then
+		return (p.samsara or 0) >= (g.n or 1)
 	elseif k == "awaken" or k == "transcend" then
 		local n = 0
 		for id in pairs(p.styles) do
@@ -1479,7 +1529,7 @@ Combat.init(Push, {
 					refreshFighter(killer)
 					Story.check(killer)
 				end
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin"))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -2183,11 +2233,155 @@ function Rebirth.go(player: Player)
 	local newRealm = Config.Realms[Config.realmCap(p.rebirth)]
 	Push:FireAllClients("rebirth", { m = f.model, n = p.rebirth, name = player.DisplayName, me = false })
 	Push:FireClient(player, "rebirthDone", { n = p.rebirth, name = RB.names[p.rebirth], realm = newRealm.name, coins = RB.coins * p.rebirth,
-		power = math.floor((Config.rebirthPower(p.rebirth) - 1) * 100 + 0.5), gain = math.floor((Config.rebirthGain(p.rebirth) - 1) * 100 + 0.5) })
+		power = math.floor((Config.rebirthPower(p.rebirth) - 1) * 100 + 0.5), gain = math.floor((Config.rebirthGain(p.rebirth) - 1) * 100 + 0.5),
+		perks = Config.PERK_PER_REBIRTH, points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p) })
 	Story.check(player)
 	pushState(player)
 end
 
+-- 2.9판: 환생 특전 한 단계 사기 (공덕 하나)
+function Rebirth.perk(player: Player, id: string)
+	local p, st = profiles[player], states[player]
+	local pk = Config.PERK_BY_ID[id]
+	if not p or not st or not pk then
+		return
+	end
+	local lv = p.perks[id] or 0
+	if lv >= Config.PERK_MAX then
+		toast(player, pk.icon .. " " .. pk.name .. "은(는) 이미 끝 단계예요")
+		return
+	end
+	if Calc.perkUsed(p) >= Config.perkPoints(p.rebirth, p.samsara) then
+		toast(player, "♻ 공덕이 모자라요 (환생하거나 윤회의 시련을 넘으면 쌓여요)")
+		return
+	end
+	p.perks[id] = lv + 1
+	st.dirty = true
+	refreshFighter(player)
+	toast(player, string.format("%s %s %d단계 · %s +%d%%", pk.icon, pk.name, lv + 1, pk.desc, math.floor(pk.per * (lv + 1) * 100 + 0.5)))
+	Story.check(player)
+	pushState(player)
+end
+
+-- 산 특전을 모두 되돌린다 (공덕은 돌아온다)
+function Rebirth.perkReset(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st then
+		return
+	end
+	if f and f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 특전을 되돌릴 수 없어요")
+		return
+	end
+	p.perks = {}
+	st.dirty = true
+	refreshFighter(player)
+	toast(player, "♻ 특전을 모두 되돌렸어요 (공덕 " .. Config.perkPoints(p.rebirth, p.samsara) .. ")")
+	pushState(player)
+end
+
+-- 2.9판: 윤회의 시련. 관문처럼 그 자리에 전생의 그림자가 선다 (관문과 같은 칸을 써서, 둘을 함께 할 수는 없다)
+function Rebirth.samsara(player: Player)
+	local p, st = profiles[player], states[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not st or not f or f.dead then
+		return
+	end
+	local SA = Config.SAMSARA
+	local n = Calc.samsaraNext(p)
+	if not n then
+		if (p.samsara or 0) >= Config.REBIRTH.max then
+			toast(player, "☯ 윤회의 시련을 모두 넘었어요")
+		elseif p.samsara >= p.rebirth then
+			toast(player, "☯ 환생해야 다음 윤회의 시련이 열려요")
+		else
+			toast(player, string.format("☯ 이번 삶에서 %s에 올라야 시련이 열려요", Config.Realms[SA.realm].name))
+		end
+		return
+	end
+	if activeGate[player] then
+		toast(player, "이미 시련 중이에요")
+		return
+	end
+	if Tower.active(player) or Maze.active(player) then
+		toast(player, "천층탑·미궁 안에서는 시련을 열 수 없어요")
+		return
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 시련을 열 수 없어요")
+		return
+	end
+	local t = os.clock()
+	if t - ((st :: any).samsaraAt or -999) < SA.cooldown then
+		toast(player, string.format("☯ 숨을 고르세요 (%d초)", math.ceil(SA.cooldown - (t - (st :: any).samsaraAt))))
+		return
+	end
+	;(st :: any).samsaraAt = t
+	Train.stop(player)
+	local at = f.root.Position + Combat.look(f) * 16
+	local e = Npc.spawn("samsara", false, at, "trial")
+	if not e then
+		return
+	end
+	local ef = e.f :: any
+	ef.gateOwner = player
+	ef.samsaraN = n
+	ef.trialOwner = player
+	ef.name = Config.REBIRTH.names[n] .. "의 그림자"
+	ef.model:SetAttribute("Label", ef.name)
+	ef.model:SetAttribute("Samsara", n)
+	-- 그림자는 지난 삶의 빛깔로 물든다
+	local col = Config.REBIRTH.colors[n] or Color3.new(1, 1, 1)
+	for _, d in ipairs(ef.model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+			d.Color = d.Color:Lerp(Color3.new(0.08, 0.04, 0.12), 0.55):Lerp(col, 0.25)
+			if d.Transparency < 1 then
+				d.Transparency = math.max(d.Transparency, 0.15)
+			end
+		end
+	end
+	local want = ((f :: any).power or 100) * SA.power[n]
+	local k = want / math.max(1, ef.power or 100)
+	ef.maxHp = math.floor(ef.maxHp * k * SA.hp[n])
+	ef.dmgMult *= k
+	ef.power = math.floor(want)
+	ef.model:SetAttribute("Power", ef.power)
+	ef.hp = ef.maxHp
+	Combat.sync(ef)
+	e.target = f
+	activeGate[player] = ef
+	Push:FireClient(player, "dialog", { who = "☯ " .. ef.name, title = "윤회의 시련 " .. n, text = SA.lines[n] })
+	Push:FireClient(player, "boss", ef.model)
+	Push:FireClient(player, "samsaraStart", { n = n, m = ef.model })
+	task.delay(SA.time, function()
+		if activeGate[player] == ef and not ef.dead then
+			activeGate[player] = nil
+			Npc.despawn(ef)
+			Push:FireClient(player, "boss", nil)
+			toast(player, "⌛ 그림자가 물러났어요. 다시 도전하세요")
+		end
+	end)
+end
+
+-- 윤회의 시련을 넘었다: 공덕 하나와 천정·두루마리·은자
+function Rebirth.samsaraWon(player: Player, n: number)
+	local p, st = profiles[player], states[player]
+	if not p or not st or n ~= (p.samsara or 0) + 1 then
+		return
+	end
+	local SA = Config.SAMSARA
+	p.samsara = n
+	p.skyGems += SA.gems[n]
+	p.scrolls += SA.scrolls[n]
+	p.coins += SA.coins[n]
+	st.dirty = true
+	Push:FireAllClients("realm", { name = player.DisplayName, realm = "윤회의 시련 " .. n })
+	Push:FireClient(player, "samsaraWon", { n = n, gems = SA.gems[n], scrolls = SA.scrolls[n], coins = SA.coins[n], points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p) })
+	refreshFighter(player)
+	Story.check(player)
+	pushState(player)
+end
 
 -- 관문이 막 열렸으면 한 번 알려 준다
 function Gate.notify(player: Player, p: Profile, st: State)
@@ -2277,6 +2471,14 @@ function Gate.ended(player: Player, won: boolean)
 	activeGate[player] = nil
 	local p = profiles[player]
 	Push:FireClient(player, "boss", nil)
+	if ef.samsaraN then
+		if won then
+			Rebirth.samsaraWon(player, ef.samsaraN)
+		elseif not ef.dead then
+			Npc.despawn(ef)
+		end
+		return
+	end
 	if won and p then
 		p.gates[tostring(ef.gateIdx)] = true
 		local _, realm = Calc.realm(p)
@@ -3070,7 +3272,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Calc.realm(p)
-	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p)
+	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p) * Calc.perk(p, "train")
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -3148,8 +3350,30 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.gates[tostring(i)] = true
 		end
 		toast(player, "♻ 환생 준비 완료 (" .. Config.Realms[cap].name .. ")")
+	elseif action == "testSamsaraReady" then
+		-- 테스트: 환생이 없으면 한 번 환생한 것으로, 능력치를 윤회의 시련 경지까지 채운다
+		if p.rebirth <= p.samsara and p.rebirth < Config.REBIRTH.max then
+			p.rebirth += 1
+		end
+		local need = Config.SAMSARA.realm
+		local each = math.ceil(Config.Realms[need].need / #Config.Stats) + 1
+		for _, s in ipairs(Config.Stats) do
+			p.stats[s.id] = math.max(p.stats[s.id], each)
+		end
+		for i = Config.GATE.from, need do
+			p.gates[tostring(i)] = true
+		end
+		refreshFighter(player)
+		toast(player, "☯ 윤회의 시련 준비 완료 (환생 " .. p.rebirth .. " · 넘은 시련 " .. p.samsara .. ")")
+	elseif action == "testPerkPoints" then
+		-- 테스트: 넘은 시련 수를 환생 수만큼 채운다 (공덕이 모두 쌓인다)
+		p.rebirth = Config.REBIRTH.max
+		p.samsara = Config.REBIRTH.max
+		toast(player, "♻ 공덕 " .. Config.perkPoints(p.rebirth, p.samsara))
 	elseif action == "testRebirthReset" then
 		p.rebirth = 0
+		p.perks = {}
+		p.samsara = 0
 		p.ach = {}
 		p.title = nil
 		toast(player, "♻ 환생·업적 기록을 지웠어요")
@@ -3541,6 +3765,12 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Gate.start(player)
 	elseif action == "rebirth" then
 		Rebirth.go(player)
+	elseif action == "perk" then
+		Rebirth.perk(player, tostring(a1 or ""))
+	elseif action == "perkReset" then
+		Rebirth.perkReset(player)
+	elseif action == "samsara" then
+		Rebirth.samsara(player)
 	elseif action == "title" then
 		-- 칭호 달기 (이룬 업적 중 칭호가 있는 것), 빈 글이면 뗀다
 		local id = tostring(a1 or "")

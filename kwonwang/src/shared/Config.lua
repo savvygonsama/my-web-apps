@@ -212,6 +212,52 @@ function Config.rebirthGain(rebirth: number): number
 end
 
 ------------------------------------------------------------------------
+-- 2.9판: 환생 공덕과 윤회의 시련
+-- 환생 한 번에 공덕 둘, 윤회의 시련 하나를 넘을 때마다 공덕 하나 (모두 열둘). 공덕으로 특전을 한 단계씩 산다 (특전마다 세 단계)
+-- 특전은 모두 합쳐 스물한 단계라 다 살 수는 없다. 되돌리기는 은자 없이 언제든 (싸우는 중만 빼고)
+------------------------------------------------------------------------
+Config.PERKS = {
+	{ id = "hp", icon = "🛡", name = "금강불괴", desc = "체력", per = 0.08 },
+	{ id = "dmg", icon = "👊", name = "파천력", desc = "주는 피해", per = 0.06 },
+	{ id = "gain", icon = "🌀", name = "흡성", desc = "얻는 능력치 (처치·수련 모두)", per = 0.1 },
+	{ id = "train", icon = "🧘", name = "심공", desc = "수련으로 얻는 능력치 (흡성에 더해)", per = 0.2 },
+	{ id = "coin", icon = "💰", name = "재물운", desc = "적이 떨구는 은자", per = 0.15 },
+	{ id = "mastery", icon = "📈", name = "오성", desc = "권법 숙련", per = 0.2 },
+	{ id = "spd", icon = "💨", name = "질풍", desc = "걷는 빠르기", per = 0.04 },
+}
+Config.PERK_BY_ID = {}
+for _, pk in ipairs(Config.PERKS) do
+	Config.PERK_BY_ID[pk.id] = pk
+end
+Config.PERK_MAX = 3
+Config.PERK_PER_REBIRTH = 2
+function Config.perkPoints(rebirth: number, samsara: number): number
+	return rebirth * Config.PERK_PER_REBIRTH + samsara
+end
+function Config.perkMult(perks: { [string]: number }?, id: string): number
+	local pk = Config.PERK_BY_ID[id]
+	return 1 + (pk and pk.per or 0) * ((perks and perks[id]) or 0)
+end
+
+-- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
+Config.SAMSARA = {
+	realm = 10, -- 생사경
+	power = { 1.15, 1.25, 1.35, 1.5 },
+	hp = { 4, 5, 6, 8 },
+	time = 180,
+	cooldown = 20,
+	gems = { 80, 150, 250, 400 },
+	scrolls = { 5, 8, 12, 20 },
+	coins = { 2000000, 5000000, 12000000, 30000000 },
+	lines = {
+		"삼류에서 다시 시작한 너를 비웃는 것은 다름 아닌 지난 삶의 너다. 그 그림자를 넘어라.",
+		"두 번 살았으면 두 번 졌던 기억도 있다. 그 기억이 형체를 얻었다.",
+		"세 번째 삶의 그림자는 네 버릇을 모두 안다. 버릇을 버려라.",
+		"마지막 그림자. 이것을 넘으면 윤회의 바퀴가 너를 놓아준다. 권왕의 자리가 보인다.",
+	},
+}
+
+------------------------------------------------------------------------
 -- 2.0판: 적을 쓰러뜨리면 능력치가 오른다. 얻는 양은 그 적의 전투력만으로 정해진다 (내 경지·필요 마릿수와 상관없다)
 -- 그 경지 적이면 앞 경지는 열다섯 마리 남짓, 천외천은 백육십 마리 남짓에 다음 경지 (보스 ×3, 정예 ×1.5)
 ------------------------------------------------------------------------
@@ -2171,6 +2217,8 @@ E.shadowblade.elite = true
 E.simma.elite = true
 -- 관문 수호자: 경지의 관문을 지키는 그림자 무인 (심마를 바탕으로)
 E.gatekeeper = variant(E.simma, { name = "관문 수호자", shirt = Color3.fromRGB(60, 50, 30), pants = Color3.fromRGB(30, 25, 15), scale = 1.3, coins = 500, xp = 200, duel = true })
+-- 2.9판: 윤회의 시련의 전생의 그림자 (지난 삶의 나)
+E.samsara = variant(E.simma, { name = "전생의 그림자", shirt = Color3.fromRGB(70, 30, 90), pants = Color3.fromRGB(25, 10, 35), scale = 1.35, coins = 2000, xp = 600, duel = true })
 E.iceguard = variant(E.ironguard, { name = "빙궁 무사", shirt = Color3.fromRGB(170, 210, 235), pants = Color3.fromRGB(90, 120, 150), hp = 260 })
 E.snowblade = variant(E.assassin, { name = "설원 자객", shirt = Color3.fromRGB(230, 235, 245), pants = Color3.fromRGB(150, 160, 175), hp = 95 })
 E.swampfang = variant(E.shadowblade, { name = "독수 자객", shirt = Color3.fromRGB(60, 90, 50), pants = Color3.fromRGB(35, 50, 30) })
@@ -2596,8 +2644,11 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 -- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
 -- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
-Config.STORY_V = 2
+Config.STORY_V = 3
 Config.STORY_OLD_TITLES = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "일류의 벽", "흑호채", "더 많은 사부", "혈월곡의 혈랑", "절정에 오르다", "설산의 빙마", "혈교의 그림자", "혈마", "무극에 오르다", "이름 없는 노인", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "하늘 밖의 하늘", "태초", "정점", "강호의 전설" }
+-- 2.9판: 권왕 한 장이 환생의 여러 장으로 나뉘었다 (2판 기록의 '권왕'은 그 첫 장으로)
+Config.STORY_TITLES_V2 = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "일류의 벽", "경지의 관문", "흑호채", "심법 두루마리", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "숙련과 각성", "설산의 빙마", "혈교의 그림자", "혈마", "생사의 경계", "각성 권법", "천인합일", "천상의 문", "무극에 오르다", "이름 없는 노인", "구름 미궁", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "하늘 밖의 하늘", "천공 투기장", "태초", "정점", "환생", "초월", "천층탑 백 층", "권왕", "강호의 전설" }
+Config.STORY_REMAP_V2 = { ["권왕"] = "윤회의 공덕" }
 Config.Story = {
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
@@ -2637,9 +2688,17 @@ Config.Story = {
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
+	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고, 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
+	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따른다.", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
-	{ title = "권왕", text = "네 번 환생하여 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 5000000 } },
+	{ title = "두 번째 삶", text = "다시 천외천 너머 혼원경에 올라 두 번째로 환생하라. 환생할수록 얻는 능력치가 커져, 다시 오르는 길은 처음보다 훨씬 빠르다.", goal = { kind = "rebirth", n = 2 }, reward = { coins = 2000000 } },
+	{ title = "두 번째 그림자", text = "두 번째 삶의 생사경에서 두 번째 그림자가 기다린다. 첫 그림자보다 질기다. 공덕으로 고른 특전을 믿어라.", goal = { kind = "samsara", n = 2 }, reward = { coins = 3000000, stats = 200000 } },
+	{ title = "세 번째 삶", text = "무량경에 올라 세 번째로 환생하라. 특전을 다시 고를 때다. 싸움에 쓸 것인가, 오르는 빠르기에 쓸 것인가.", goal = { kind = "rebirth", n = 3 }, reward = { coins = 5000000 } },
+	{ title = "세 번째 그림자", text = "세 번째 그림자는 네 버릇을 안다. 늘 쓰던 기술만 쓰면 막힌다.", goal = { kind = "samsara", n = 3 }, reward = { coins = 8000000, stats = 2000000 } },
+	{ title = "네 번째 삶", text = "태허경에 올라 마지막으로 환생하라. 더는 환생이 없다. 이제부터는 끝까지 오르는 일만 남는다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
+	{ title = "마지막 그림자", text = "윤회의 바퀴가 마지막 그림자를 내보낸다. 네 삶을 모두 넘어선 너만이 권왕의 자리에 앉는다.", goal = { kind = "samsara", n = 4 }, reward = { coins = 20000000, stats = 20000000 } },
+	{ title = "권왕", text = "네 삶을 넘었다. 이제 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
 

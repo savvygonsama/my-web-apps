@@ -831,9 +831,64 @@ local function buildStats()
 		Request:FireServer("rebirth")
 		window.Visible = false
 	end)
+	-- 2.9판: 윤회의 시련 (전생의 그림자) · 환생 특전
+	local samsaraBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 132), Size = UDim2.new(0, 300, 0, 58), Text = "☯ 윤회의 시련", TextSize = 20, BackgroundColor3 = Color3.fromRGB(80, 40, 120), Visible = false, ZIndex = 3, Parent = page }, function()
+		Request:FireServer("samsara")
+		window.Visible = false
+	end)
+	local perkPanel = Instance.new("Frame")
+	perkPanel.Size = UDim2.new(1, 0, 1, 0)
+	perkPanel.BackgroundColor3 = Color3.fromRGB(22, 16, 30)
+	perkPanel.BackgroundTransparency = 0.04
+	perkPanel.Visible = false
+	perkPanel.ZIndex = 6
+	perkPanel.Parent = page
+	local perkHead = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -340, 0, 60), TextSize = 18, RichText = true, ZIndex = 7, Parent = perkPanel })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 6), Size = UDim2.new(0, 150, 0, 48), Text = "↩ 모두 되돌리기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(110, 60, 60), ZIndex = 7, Parent = perkPanel }, function()
+		Request:FireServer("perkReset")
+	end)
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -166, 0, 6), Size = UDim2.new(0, 150, 0, 48), Text = "닫기", TextSize = 16, ZIndex = 7, Parent = perkPanel }, function()
+		perkPanel.Visible = false
+	end)
+	local perkRows: { [string]: TextLabel } = {}
+	local perkBtns: { [string]: TextButton } = {}
+	for i, pk in ipairs(Config.PERKS) do
+		local y = 74 + (i - 1) * 62
+		perkRows[pk.id] = text({ Position = UDim2.new(0, 10, 0, y), Size = UDim2.new(1, -150, 0, 56), TextSize = 17, RichText = true, ZIndex = 7, Parent = perkPanel })
+		perkBtns[pk.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, y + 4), Size = UDim2.new(0, 120, 0, 48), Text = "+ 1단계", TextSize = 17, BackgroundColor3 = Color3.fromRGB(150, 60, 130), ZIndex = 7, Parent = perkPanel }, function()
+			Request:FireServer("perk", pk.id)
+		end)
+	end
+	local perkBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 196), Size = UDim2.new(0, 300, 0, 50), Text = "♻ 환생 특전", TextSize = 18, BackgroundColor3 = Color3.fromRGB(120, 50, 110), Visible = false, ZIndex = 3, Parent = page }, function()
+		perkPanel.Visible = true
+	end)
 	refreshers.stats = function()
 		if not state then
 			return
+		end
+		do
+			local rb0 = state.rebirth or 0
+			local used = 0
+			for _, lv in pairs(state.perks or {}) do
+				used += lv
+			end
+			local total = Config.perkPoints(rb0, state.samsara or 0)
+			perkBtn.Visible = rb0 > 0
+			perkBtn.Text = string.format("♻ 환생 특전 (남은 공덕 %d)", total - used)
+			if rb0 == 0 then
+				perkPanel.Visible = false
+			end
+			perkHead.Text = string.format("<b>♻ 환생 특전</b>  공덕 <b>%d</b> / %d 남음\n<font color=\"#BBAACC\">환생 한 번에 공덕 %d · 윤회의 시련 하나에 공덕 1. 특전마다 %d단계. 되돌리면 공덕이 모두 돌아온다</font>", total - used, total, Config.PERK_PER_REBIRTH, Config.PERK_MAX)
+			for _, pk in ipairs(Config.PERKS) do
+				local lv = (state.perks and state.perks[pk.id]) or 0
+				perkRows[pk.id].Text = string.format("%s <b>%s</b>  %s%s   %s +%d%%%s", pk.icon, pk.name, string.rep("●", lv), string.rep("○", Config.PERK_MAX - lv), pk.desc, math.floor(pk.per * lv * 100 + 0.5),
+					lv < Config.PERK_MAX and string.format(' <font color="#BBAACC">(다음 +%d%%)</font>', math.floor(pk.per * (lv + 1) * 100 + 0.5)) or "")
+				perkBtns[pk.id].Visible = lv < Config.PERK_MAX and used < total
+			end
+			samsaraBtn.Visible = state.samsaraNext ~= nil
+			if state.samsaraNext then
+				samsaraBtn.Text = string.format("☯ 윤회의 시련 %d (%s의 그림자)", state.samsaraNext, Config.REBIRTH.names[state.samsaraNext] or "")
+			end
 		end
 		local rb = state.rebirth or 0
 		local cap = state.realmCap or 16
@@ -862,6 +917,19 @@ local function buildStats()
 			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
+		end
+		if rb > 0 then
+			local sa = state.samsara or 0
+			local parts = {}
+			for _, pk in ipairs(Config.PERKS) do
+				local lv = (state.perks and state.perks[pk.id]) or 0
+				if lv > 0 then
+					table.insert(parts, string.format("%s%s +%d%%", pk.icon, pk.name, math.floor(pk.per * lv * 100 + 0.5)))
+				end
+			end
+			table.insert(lines, string.format('<font color="#C9A0FF">☯ 윤회의 시련 %d / %d%s · 특전: %s</font>', sa, Config.REBIRTH.max,
+				sa < rb and (state.samsaraNext and " (지금 도전할 수 있다)" or string.format(" (이번 삶에서 %s에 오르면 다음 시련)", Config.Realms[Config.SAMSARA.realm].name)) or (sa < Config.REBIRTH.max and " (환생하면 다음 시련)" or ""),
+				#parts > 0 and table.concat(parts, " · ") or "아직 없음"))
 		end
 		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
@@ -1538,7 +1606,7 @@ local function buildTest()
 		section("📜 2.6판: 심법 등급 체험 · 새 오의 · 보스 차림", items)
 	end
 	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
-		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" },
+		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
@@ -2477,6 +2545,14 @@ local function goalText(s: any, g: any): string
 		return "천공 투기장에서 천겁 쓰러뜨리기 (천궁 광장 ⚔ 문)"
 	elseif k == "rebirth" then
 		return string.format("환생하기  %d / %d (천외천에서, 메뉴 → 환생)", s.rebirth or 0, g.n or 1)
+	elseif k == "perk" then
+		local used = 0
+		for _, lv in pairs(s.perks or {}) do
+			used += lv
+		end
+		return string.format("환생 특전 사기  %d / %d (능력치 창 → ♻ 환생 특전)", used, g.n or 1)
+	elseif k == "samsara" then
+		return string.format("윤회의 시련 넘기  %d / %d (이번 삶에서 %s에 오른 뒤 능력치 창 → ☯)", s.samsara or 0, g.n or 1, Config.Realms[Config.SAMSARA.realm].name)
 	elseif k == "awaken" then
 		return "각성 권법(진) 하나 익히기 (원래 사부에게 각성의 시련)"
 	elseif k == "transcend" then

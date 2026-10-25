@@ -3945,40 +3945,367 @@ local function skyWorld(out: any)
 	local vf = folder:FindFirstChild("Village") or f
 	out.skyUp = prompt(portalGate(SKY.portal, math.rad(45), Color3.fromRGB(150, 220, 255), vf, "☁ 천상 문"), "천상계로 오르기", "천상 문", "SkyUp")
 	local CLOUD = Color3.fromRGB(250, 250, 255)
+	-- 2.9판: 섬마다 다른 몸. 테두리·밑동·매달린 것·둘레 구름·떠도는 작은 섬을 섬마다 따로 짓는다
+	-- (예전엔 모든 섬이 같은 금 테두리 원판이라 그 금빛이 섬 바닥 전체를 덮었다)
+	local function rgb(r: number, g: number, b: number): Color3
+		return Color3.fromRGB(r, g, b)
+	end
+	local ROCK = Enum.Material.Rock
+	local SKY_BODY: { [string]: any } = {
+		skytown = { depth = 0.3, rim = "gold", under = { rgb(150, 140, 130), ROCK }, drip = "rock", cloud = { CLOUD, 0.15, 1 }, islet = "rock" },
+		cloudplain = { rim = "cloud", under = "cloud", cloud = { CLOUD, 0.05, 1.5 }, islet = "cloud" },
+		thunder = { depth = 0.45, blocky = true, rim = "crag", rimColor = rgb(55, 60, 78), under = { rgb(48, 50, 64), Enum.Material.Slate }, vein = rgb(120, 170, 255), drip = "spike", dripColor = rgb(40, 42, 55), cloud = { rgb(92, 96, 112), 0.2, 1.25 }, islet = "rod", ledges = 6 },
+		nebula = { depth = 0.22, core = "crystal", rim = "star", rimColor = rgb(200, 150, 255), under = { rgb(70, 50, 110), Enum.Material.Glass }, drip = "crystal", dripColor = rgb(170, 120, 255), cloud = { rgb(175, 135, 235), 0.4, 1 }, islet = "crystal" },
+		throne = { rim = "rail", rimColor = rgb(250, 245, 235), under = "pyramid", cloud = { CLOUD, 0.15, 1 }, islet = "dais" },
+		subspace = { depth = 0.4, blocky = true, rim = "none", under = { rgb(20, 12, 34), Enum.Material.Glass }, drip = "shard", dripColor = rgb(40, 20, 70) },
+		frost = { depth = 0.38, rim = "ice", under = { rgb(185, 220, 245), Enum.Material.Glacier }, drip = "icicle", dripColor = rgb(200, 235, 255), cloud = { rgb(245, 250, 255), 0.05, 1.1 }, islet = "ice", ledges = 5 },
+		phoenix = { depth = 0.42, blocky = true, rim = "lava", under = { rgb(62, 30, 24), Enum.Material.Basalt }, vein = rgb(255, 110, 30), drip = "lava", dripColor = rgb(55, 26, 20), cloud = { rgb(85, 62, 56), 0.3, 1.1 }, islet = "ember", ledges = 5 },
+		raidarena = { depth = 0.25, rim = "banner", rimColor = rgb(150, 40, 45), under = { rgb(125, 115, 104), Enum.Material.Granite }, drip = "rock", cloud = { CLOUD, 0.15, 1 }, islet = "rock" },
+		falls = { depth = 0.36, rim = "moss", under = { rgb(92, 108, 84), ROCK }, drip = "moss", dripColor = rgb(80, 96, 72), cloud = { rgb(235, 245, 250), 0.25, 1 }, islet = "moss", ledges = 6 },
+		crane = { rim = "rail", rimColor = rgb(245, 245, 240), under = "peak", cloud = { CLOUD, 0.1, 1.3 }, islet = "pine" },
+		bamboo = { depth = 0.32, rim = "fence", under = { rgb(112, 86, 60), Enum.Material.Ground }, drip = "root", dripColor = rgb(96, 70, 46), cloud = { rgb(236, 246, 236), 0.3, 1 }, islet = "bamboo", ledges = 4 },
+		moonlake = { depth = 0.16, rim = "silver", under = { rgb(180, 186, 204), Enum.Material.Marble }, drip = "water", cloud = { rgb(210, 222, 246), 0.25, 1 }, islet = "lotus" },
+		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
+	}
+	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
+	local function bridgeGaps(isl: any): { { number } }
+		local gaps = {}
+		for _, b in ipairs(SKY.bridges) do
+			local me = SKY.islands[b[1]] == isl and 1 or (SKY.islands[b[2]] == isl and 2 or nil)
+			if me then
+				local other = SKY.islands[b[me == 1 and 2 or 1]]
+				local d = other.at - isl.at
+				local w = b.hidden and 8 or 16
+				table.insert(gaps, { math.atan2(d.Z, d.X), math.asin(math.clamp((w / 2 + 4) / isl.radius, 0, 1)) })
+			end
+		end
+		return gaps
+	end
+	local function inGap(gaps: { { number } }, a: number, pad: number): boolean
+		for _, g in ipairs(gaps) do
+			if math.abs((a - g[1] + math.pi) % (2 * math.pi) - math.pi) < g[2] + pad then
+				return true
+			end
+		end
+		return false
+	end
+	-- 섬 둘레를 따라 도는 띠 (조각을 이어 붙인다. 원판으로 덮으면 섬 바닥까지 덮이니까)
+	local function ringBand(name: string, c: Vector3, r: number, width: number, height: number, y: number, color: Color3, mat: Enum.Material, f: Instance, gaps: { { number } }?, transp: number?)
+		local n = math.max(24, math.floor(2 * math.pi * r / 7))
+		for k = 0, n - 1 do
+			local a = (k + 0.5) / n * math.pi * 2
+			if not (gaps and inGap(gaps, a, 0)) then
+				local p = c + Vector3.new(math.cos(a) * r, y, math.sin(a) * r)
+				part({ Name = name, Size = Vector3.new(2 * math.pi * r / n + 0.4, height, width), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Color = color, Material = mat, Transparency = transp or 0, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	-- 테두리를 따라 같은 간격으로 무언가를 세운다
+	local function alongRim(c: Vector3, r: number, step: number, gaps: { { number } }, fn: (Vector3, number, number) -> ())
+		local n = math.max(8, math.floor(2 * math.pi * r / step))
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2
+			if not inGap(gaps, a, 0.02) then
+				fn(c + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r), a, 2 * math.pi * r / n)
+			end
+		end
+	end
+
+	local function skyIslandBody(isl: any, f: Instance)
+		local c, R = isl.at, isl.radius
+		local B = SKY_BODY[isl.id] or SKY_BODY.skytown
+		local k1 = math.clamp(R / 180, 0.4, 1.3)
+		local gaps = bridgeGaps(isl)
+		local underCol = type(B.under) == "table" and B.under[1] or Color3.fromRGB(140, 135, 128)
+		local underMat = type(B.under) == "table" and B.under[2] or ROCK
+		------------------------------------------------ 밑동
+		if B.under == "cloud" then
+			-- 운해 평원: 바위 대신 큰 구름 둑이 들판을 받친다
+			disc("SkyIslandUnder", c - Vector3.new(0, 9, 0), R * 0.92, 6, CLOUD, Enum.Material.SmoothPlastic, f)
+			for k = 0, 21 do
+				local a = k / 22 * math.pi * 2 + rng:NextNumber(0, 0.3)
+				local rr = R * rng:NextNumber(0.2, 0.85)
+				local sz = rng:NextNumber(40, 75) * k1
+				part({ Name = "SkyCloudBank", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz * 0.7, sz), Position = c + Vector3.new(math.cos(a) * rr, -16 - rng:NextNumber() * 18, math.sin(a) * rr), Color = CLOUD:Lerp(Color3.fromRGB(215, 224, 240), rng:NextNumber()), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+			end
+		elseif B.under == "pyramid" then
+			-- 옥좌대: 거꾸로 선 계단 피라미드 (층마다 금테), 맨 끝에 빛나는 구슬
+			for i = 0, 5 do
+				local w = R * 1.35 * (1 - i * 0.16)
+				local y = -6 - i * 9
+				local cf = CFrame.new(c + Vector3.new(0, y - 4.5, 0)) * CFrame.Angles(0, math.rad(45), 0)
+				part({ Name = "ThroneUnder", Size = Vector3.new(w, 9, w), CFrame = cf, Color = Color3.fromRGB(240, 232, 212), Material = Enum.Material.Marble, CanCollide = false, Parent = f })
+				part({ Name = "ThroneUnderTrim", Size = Vector3.new(w + 1.2, 1.2, w + 1.2), CFrame = cf * CFrame.new(0, -4.2, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			local orb = part({ Name = "ThroneUnderOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(12, 12, 12), Position = c - Vector3.new(0, 66, 0), Color = Color3.fromRGB(255, 225, 140), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(orb, Color3.fromRGB(255, 220, 140), 50, 1.5)
+		elseif B.under == "peak" then
+			-- 청학봉: 거꾸로 선 높은 바위 봉우리. 끝이 구름 아래 멀리 내려간다
+			disc("SkyIslandUnder", c - Vector3.new(0, 10, 0), R * 0.82, 8, Color3.fromRGB(150, 146, 138), ROCK, f)
+			for i = 1, 8 do
+				local w = R * 1.3 * (1 - i / 9)
+				part({ Name = "CranePeak", Size = Vector3.new(w, 18, w * 0.9), CFrame = CFrame.new(c - Vector3.new(rng:NextNumber(-4, 4), 12 + i * 16, rng:NextNumber(-4, 4))) * CFrame.Angles(0, i * 0.7, 0),
+					Color = Color3.fromRGB(150, 146, 138):Lerp(Color3.fromRGB(105, 102, 98), i / 8), Material = ROCK, CanCollide = false, Parent = f })
+			end
+			-- 봉우리 허리에 걸린 작은 소나무
+			for k = 0, 3 do
+				local a = k * math.pi / 2 + 0.4
+				local y = 30 + k * 14
+				local rr = R * 1.3 * (1 - (y / 16) / 9) / 2
+				pine(c + Vector3.new(math.cos(a) * rr, -y + 9, math.sin(a) * rr), 0.7, f, false)
+			end
+		else
+			-- 아래로 갈수록 좁아지는 바위 덩이 (섬마다 깊이와 결이 다르다: 뇌정봉은 각진 바위, 금운사는 금띠 두른 층)
+			local depth = (B.depth or 0.3) * R
+			local n = 5
+			for i = 1, n do
+				local rr = R * 0.82 * (1 - (i - 1) / (n + 0.8))
+				local h = depth / n + 2
+				local off = Vector3.new(rng:NextNumber(-1, 1), 0, rng:NextNumber(-1, 1)) * (R * 0.04 * i)
+				local at = c + off + Vector3.new(0, -6 - (i - 0.5) * depth / n, 0)
+				local col = underCol:Lerp(Color3.new(0, 0, 0), i * 0.035)
+				if B.blocky then
+					part({ Name = "SkyIslandUnder", Size = Vector3.new(rr * 1.45, h, rr * 1.45), CFrame = CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.05, 0.05), rng:NextNumber(0, 1.5), rng:NextNumber(-0.05, 0.05)), Color = col, Material = underMat, CanCollide = false, Parent = f })
+				else
+					disc("SkyIslandUnder", at, rr, h, col, underMat, f, false)
+				end
+				if B.bands then
+					disc("SkyUnderBand", at + Vector3.new(0, h / 2 - 0.6, 0), rr + 1, 1.2, GOLD, Enum.Material.Metal, f, false)
+				end
+			end
+			-- 성운원: 밑동 끝에서 커다란 수정 무리가 아래로 뻗는다
+			if B.core == "crystal" then
+				local tip = c - Vector3.new(0, 6 + depth, 0)
+				for k = 0, 5 do
+					local a = k / 6 * math.pi * 2
+					local h = rng:NextNumber(40, 80) * k1
+					local w = rng:NextNumber(10, 18) * k1
+					local cf = CFrame.new(tip) * CFrame.Angles(0, a, 0) * CFrame.Angles(math.rad(rng:NextNumber(12, 30)), 0, 0) * CFrame.new(0, -h / 2 + 4, 0) * CFrame.Angles(0, math.rad(45), 0)
+					part({ Name = "NebulaCrystal", Size = Vector3.new(w, h, w), CFrame = cf, Color = Color3.fromRGB(150, 100, 230):Lerp(Color3.fromRGB(110, 200, 255), rng:NextNumber()), Material = Enum.Material.Glass, Transparency = 0.12, CanCollide = false, Parent = f })
+					part({ Name = "NebulaCrystalCore", Size = Vector3.new(w * 0.3, h * 0.8, w * 0.3), CFrame = cf, Color = Color3.fromRGB(235, 210, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				end
+				local big = part({ Name = "NebulaCrystal", Size = Vector3.new(20 * k1, 110 * k1, 20 * k1), CFrame = CFrame.new(tip - Vector3.new(0, 50 * k1, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(170, 120, 255), Material = Enum.Material.Glass, Transparency = 0.1, CanCollide = false, Parent = f })
+				light(big, Color3.fromRGB(190, 140, 255), 60, 1.2)
+			end
+		end
+		-- 바위 결의 빛 줄기 (뇌정봉은 푸른 번개, 봉황대는 흐르는 용암)
+		if B.vein then
+			for k = 0, 11 do
+				local a = k / 12 * math.pi * 2 + rng:NextNumber(0, 0.2)
+				local rr = R * 0.75 + 0.1
+				part({ Name = "SkyVein", Size = Vector3.new(0.6, rng:NextNumber(6, 9), 0.6), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * rr, -10, math.sin(a) * rr)) * CFrame.Angles(0, 0, rng:NextNumber(-0.4, 0.4)), Color = B.vein, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		end
+		-- 둘레 아래쪽 바위 턱 (둥근 원판 모양을 깨뜨린다)
+		for k = 1, B.ledges or 0 do
+			local a = k / B.ledges * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+			if not inGap(gaps, a, 0.15) then
+				local lr = rng:NextNumber(18, 34) * k1
+				disc("SkyLedge", c + Vector3.new(math.cos(a) * (R - lr * 0.3), -7 - rng:NextNumber(0, 5), math.sin(a) * (R - lr * 0.3)), lr, rng:NextNumber(6, 10), underCol:Lerp(isl.ground, 0.25), underMat, f, false)
+			end
+		end
+		------------------------------------------------ 테두리
+		local rim = B.rim
+		local rimC = B.rimColor or GOLD
+		if rim == "gold" then
+			ringBand("SkyIslandEdge", c, R + 0.6, 1.6, 0.8, -0.1, GOLD, Enum.Material.Metal, f)
+		elseif rim == "cloud" then
+			alongRim(c, R - 1, 9, gaps, function(p)
+				local sz = rng:NextNumber(9, 15)
+				part({ Name = "CloudRim", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz * 0.6, sz), Position = p + Vector3.new(0, 0.6, 0), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.05, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "crag" then
+			alongRim(c, R - 1.5, 13, gaps, function(p, a)
+				local h = rng:NextNumber(5, 16)
+				local w = rng:NextNumber(3, 7)
+				part({ Name = "CragTooth", Size = Vector3.new(w, h, w * 1.3), CFrame = CFrame.new(p + Vector3.new(0, h * 0.35, 0)) * CFrame.Angles(0, -a, 0) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), 0, rng:NextNumber(0.1, 0.45)), Color = rimC:Lerp(Color3.fromRGB(80, 84, 100), rng:NextNumber()), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "star" then
+			ringBand("StarRim", c, R + 0.2, 1, 0.3, 0.02, rimC, Enum.Material.Neon, f, nil, 0.35)
+			for _ = 1, 18 do
+				local a = rng:NextNumber() * math.pi * 2
+				local d = R + rng:NextNumber(4, 14)
+				local sz = rng:NextNumber(0.8, 2)
+				part({ Name = "RimStar", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz, sz), Position = c + Vector3.new(math.cos(a) * d, rng:NextNumber(-6, 12), math.sin(a) * d), Color = rimC:Lerp(Color3.new(1, 1, 1), 0.5), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			end
+		elseif rim == "rail" then
+			-- 대리석 난간: 기둥과 가로대
+			alongRim(c, R - 0.8, 10, gaps, function(p, a, seg)
+				part({ Name = "RailPost", Size = Vector3.new(1.2, 4, 1.2), CFrame = CFrame.new(p + Vector3.new(0, 2, 0)) * CFrame.Angles(0, -a, 0), Color = rimC, Material = Enum.Material.Marble, CanCollide = false, Parent = f })
+				part({ Name = "RailCap", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = p + Vector3.new(0, 4.4, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				local tang = Vector3.new(-math.sin(a), 0, math.cos(a))
+				local mid = p + tang * (seg / 2) + Vector3.new(0, 3.4, 0)
+				part({ Name = "RailBar", Size = Vector3.new(0.8, 0.6, seg), CFrame = CFrame.lookAt(mid, mid + tang), Color = rimC, Material = Enum.Material.Marble, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "ice" then
+			ringBand("IceRim", c, R + 0.5, 2, 1, -0.2, Color3.fromRGB(200, 235, 255), Enum.Material.Ice, f)
+			alongRim(c, R - 1, 22, gaps, function(p, a)
+				local h = rng:NextNumber(6, 15)
+				part({ Name = "RimIce", Size = Vector3.new(h * 0.3, h, h * 0.3), CFrame = CFrame.new(p + Vector3.new(0, h * 0.35, 0)) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, rng:NextNumber(0.15, 0.5)), Color = Color3.fromRGB(180, 225, 255), Material = Enum.Material.Ice, Transparency = 0.2, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "lava" then
+			ringBand("LavaRimRock", c, R + 1.2, 3, 1.6, -0.4, Color3.fromRGB(50, 24, 18), Enum.Material.Basalt, f)
+			ringBand("LavaRim", c, R - 0.6, 0.8, 0.2, 0.05, Color3.fromRGB(255, 120, 40), Enum.Material.Neon, f, gaps, 0.15)
+		elseif rim == "banner" then
+			ringBand("ArenaRim", c, R + 0.5, 1.6, 1, -0.2, rimC, Enum.Material.Wood, f)
+			alongRim(c, R + 1.4, 26, gaps, function(p, a)
+				part({ Name = "RimBanner", Size = Vector3.new(5, 16, 0.3), CFrame = CFrame.new(p - Vector3.new(0, 8, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = rimC, Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+				part({ Name = "RimBannerMark", Size = Vector3.new(2.4, 2.4, 0.35), CFrame = CFrame.new(p - Vector3.new(0, 5, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0) * CFrame.Angles(0, 0, math.rad(45)), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "moss" then
+			alongRim(c, R - 0.5, 8, gaps, function(p)
+				local sz = rng:NextNumber(4, 7)
+				part({ Name = "MossRim", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz * 0.6, sz), Position = p, Color = Color3.fromRGB(78, 120, 60):Lerp(Color3.fromRGB(110, 140, 70), rng:NextNumber()), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+			end)
+		elseif rim == "fence" then
+			-- 대나무 울타리: 굵은 대 기둥과 두 줄 가로대
+			alongRim(c, R - 1, 8, gaps, function(p, a, seg)
+				part({ Name = "FencePost", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4.5, 0.8, 0.8), CFrame = CFrame.new(p + Vector3.new(0, 2.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(150, 170, 80), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+				local tang = Vector3.new(-math.sin(a), 0, math.cos(a))
+				for _, y in ipairs({ 1.4, 3.2 }) do
+					local mid = p + tang * (seg / 2) + Vector3.new(0, y, 0)
+					part({ Name = "FenceRail", Shape = Enum.PartType.Cylinder, Size = Vector3.new(seg, 0.4, 0.4), CFrame = CFrame.lookAt(mid, mid + tang) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(170, 185, 96), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+				end
+			end)
+		elseif rim == "silver" then
+			ringBand("SilverRim", c, R + 0.4, 1.2, 0.6, -0.1, Color3.fromRGB(215, 222, 236), Enum.Material.Metal, f)
+		elseif rim == "goldbell" then
+			ringBand("GoldRim", c, R + 0.6, 2, 0.8, -0.1, GOLD, Enum.Material.Metal, f)
+			ringBand("GoldRim2", c, R + 1.6, 1, 1.6, -1.2, Color3.fromRGB(160, 50, 36), Enum.Material.Wood, f)
+			alongRim(c, R + 1.4, 30, gaps, function(p)
+				part({ Name = "RimBellChain", Size = Vector3.new(0.3, 4, 0.3), Position = p - Vector3.new(0, 4, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				part({ Name = "RimBell", Shape = Enum.PartType.Ball, Size = Vector3.new(2.2, 2.6, 2.2), Position = p - Vector3.new(0, 7, 0), Color = Color3.fromRGB(210, 170, 70), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end)
+		end
+		------------------------------------------------ 밑에 매달린 것
+		local drip = B.drip
+		local dc = B.dripColor or Color3.fromRGB(120, 110, 100)
+		if drip == "moss" or drip == "water" then
+			-- 테두리에서 늘어진 덩굴 / 흘러내리는 가는 물줄기
+			alongRim(c, R + 0.3, drip == "moss" and 18 or 150, gaps, function(p, a)
+				if drip == "moss" then
+					local h = rng:NextNumber(8, 20)
+					part({ Name = "RimVine", Size = Vector3.new(0.5, h, 0.5), CFrame = CFrame.new(p + Vector3.new(math.cos(a), -h / 2, math.sin(a)) * 1), Color = Color3.fromRGB(70, 110, 55), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+				else
+					local len = rng:NextNumber(25, 55)
+					part({ Name = "RimWater", Size = Vector3.new(rng:NextNumber(8, 14), len, 0.6), CFrame = CFrame.new(p + Vector3.new(math.cos(a) * 1.2, -len / 2, math.sin(a) * 1.2)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(190, 215, 255), Material = Enum.Material.Glass, Transparency = 0.6, CanCollide = false, Parent = f })
+					part({ Name = "RimWaterMist", Shape = Enum.PartType.Ball, Size = Vector3.new(16, 8, 16), Position = p + Vector3.new(math.cos(a) * 2, -len, math.sin(a) * 2), Color = Color3.fromRGB(235, 242, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.5, CanCollide = false, Parent = f })
+				end
+			end)
+		end
+		if drip and drip ~= "water" then
+			local n = drip == "icicle" and 18 or (drip == "root" and 16 or 10)
+			for k = 0, n - 1 do
+				local a = k / n * math.pi * 2 + rng:NextNumber(0, 0.5)
+				local rr = R * rng:NextNumber(0.15, 0.62)
+				local h = rng:NextNumber(14, 34) * k1
+				local w = rng:NextNumber(8, 16) * math.clamp(R / 180, 0.4, 1.2)
+				local top = c + Vector3.new(math.cos(a) * rr, -22, math.sin(a) * rr)
+				if drip == "icicle" then
+					h *= 1.3
+					w *= 0.4
+					part({ Name = "Icicle", Size = Vector3.new(w, h, w), CFrame = CFrame.new(top - Vector3.new(0, h * 0.45, 0)) * CFrame.Angles(0, rng:NextNumber(0, 6), 0), Color = dc, Material = Enum.Material.Ice, Transparency = 0.15, CanCollide = false, Parent = f })
+				elseif drip == "crystal" or drip == "shard" then
+					part({ Name = "UnderCrystal", Size = Vector3.new(w * 0.6, h, w * 0.6), CFrame = CFrame.new(top - Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(0, math.rad(45) + a, 0) * CFrame.Angles(rng:NextNumber(-0.25, 0.25), 0, rng:NextNumber(-0.25, 0.25)), Color = dc, Material = Enum.Material.Glass, Transparency = 0.1, CanCollide = false, Parent = f })
+					if drip == "crystal" and k % 2 == 0 then
+						part({ Name = "UnderCrystalCore", Size = Vector3.new(w * 0.2, h * 0.7, w * 0.2), CFrame = CFrame.new(top - Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(0, math.rad(45) + a, 0), Color = Color3.fromRGB(230, 200, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					end
+				elseif drip == "root" then
+					local len = rng:NextNumber(10, 26)
+					part({ Name = "UnderRoot", Shape = Enum.PartType.Cylinder, Size = Vector3.new(len, rng:NextNumber(0.6, 1.4), rng:NextNumber(0.6, 1.4)), CFrame = CFrame.new(top + Vector3.new(0, 8, 0)) * CFrame.Angles(0, -a, 0) * CFrame.Angles(0, 0, math.rad(rng:NextNumber(-120, -60))) * CFrame.new(len / 2, 0, 0), Color = dc, Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+				else
+					local rock = part({ Name = "SkyStalactite", Size = Vector3.new(w * (drip == "spike" and 0.55 or 1), h * (drip == "spike" and 1.4 or 1), w * (drip == "spike" and 0.55 or 1)), CFrame = CFrame.new(top - Vector3.new(0, h * 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 6), rng:NextNumber(-0.2, 0.2)),
+						Color = dc:Lerp(dc:Lerp(Color3.new(0, 0, 0), 0.25), rng:NextNumber()), Material = drip == "lava" and Enum.Material.Basalt or (drip == "gold" and Enum.Material.Sandstone or (drip == "spike" and Enum.Material.Slate or ROCK)), CanCollide = false, Parent = f })
+					if drip == "lava" then
+						part({ Name = "LavaDrop", Shape = Enum.PartType.Ball, Size = Vector3.new(w * 0.35, w * 0.5, w * 0.35), Position = rock.Position - Vector3.new(0, h * 0.5, 0), Color = Color3.fromRGB(255, 120, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					elseif drip == "gold" then
+						part({ Name = "GoldBand", Size = Vector3.new(w * 1.05, 1.2, w * 1.05), CFrame = rock.CFrame * CFrame.new(0, h * 0.2, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+					elseif drip == "moss" then
+						part({ Name = "MossCap", Size = Vector3.new(w * 1.05, 2, w * 1.05), CFrame = rock.CFrame * CFrame.new(0, h * 0.4, 0), Color = Color3.fromRGB(80, 120, 60), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+					end
+				end
+			end
+		end
+		------------------------------------------------ 둘레 구름 (아래쪽)
+		if B.cloud then
+			local col, tr, sc = B.cloud[1], B.cloud[2], B.cloud[3] or 1
+			local n = math.max(8, math.floor(R / 14))
+			for k = 0, n - 1 do
+				local a = k / n * math.pi * 2 + rng:NextNumber() * 0.3
+				local size = rng:NextNumber(18, 34) * sc
+				part({ Name = "SkyCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size * 0.8, size), Position = c + Vector3.new(math.cos(a) * (R * 0.9), -9 - rng:NextNumber() * 6 * sc, math.sin(a) * (R * 0.9)), Color = col, Material = Enum.Material.SmoothPlastic, Transparency = tr, CanCollide = false, Parent = f })
+			end
+		end
+		------------------------------------------------ 떠도는 작은 섬
+		if isl.hidden or not B.islet then
+			return
+		end
+		for k = 0, 3 do
+			local a = k / 4 * math.pi * 2 + rng:NextNumber(0, 1)
+			local d = R + rng:NextNumber(40, 90)
+			local p = c + Vector3.new(math.cos(a) * d, rng:NextNumber(-30, 25), math.sin(a) * d)
+			local w = rng:NextNumber(10, 22)
+			local kind = B.islet
+			if kind == "cloud" then
+				for j = 0, 2 do
+					local sz = w * (1 - j * 0.2)
+					part({ Name = "IsletCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(sz, sz * 0.6, sz), Position = p + Vector3.new((j - 1) * w * 0.5, j * 0.6, rng:NextNumber(-2, 2)), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.1, CanCollide = false, Parent = f })
+				end
+			elseif kind == "crystal" or kind == "ice" then
+				local col = kind == "ice" and Color3.fromRGB(190, 230, 255) or Color3.fromRGB(190, 140, 255)
+				for j = 0, 2 do
+					local h = w * (1.2 - j * 0.3)
+					part({ Name = kind == "ice" and "IsletIce" or "IsletCrystal", Size = Vector3.new(h * 0.4, h, h * 0.4), CFrame = CFrame.new(p + Vector3.new((j - 1) * 3, 0, rng:NextNumber(-2, 2))) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), rng:NextNumber(-0.4, 0.4)),
+						Color = col, Material = kind == "ice" and Enum.Material.Ice or Enum.Material.Glass, Transparency = 0.15, CanCollide = false, Parent = f })
+				end
+				if kind == "crystal" then
+					part({ Name = "IsletCrystalCore", Size = Vector3.new(1, w * 0.7, 1), Position = p, Color = Color3.fromRGB(235, 210, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				end
+			elseif kind == "dais" then
+				-- 금테 두른 대리석 단과 작은 기둥 (옥좌대)
+				disc("IsletDais", p, w * 0.6, 2.4, Color3.fromRGB(245, 238, 220), Enum.Material.Marble, f, false)
+				ringBand("IsletDaisTrim", p, w * 0.6, 0.6, 0.6, -1.4, GOLD, Enum.Material.Metal, f)
+				part({ Name = "IsletDaisPillar", Size = Vector3.new(2, 10, 2), Position = p + Vector3.new(0, 6, 0), Color = Color3.fromRGB(250, 245, 235), Material = Enum.Material.Marble, CanCollide = false, Parent = f })
+				brazier(p + Vector3.new(0, 11, 0), 0.9, f)
+			else
+				-- 바위섬 (밑은 뾰족, 위는 그 섬의 땅빛)
+				local rockC = kind == "ember" and Color3.fromRGB(55, 28, 22) or (kind == "rod" and Color3.fromRGB(52, 55, 70) or (kind == "bell" and Color3.fromRGB(196, 165, 115) or Color3.fromRGB(130, 120, 110)))
+				local mat = kind == "ember" and Enum.Material.Basalt or (kind == "rod" and Enum.Material.Slate or (kind == "bell" and Enum.Material.Sandstone or ROCK))
+				part({ Name = "SkyIslet", Shape = Enum.PartType.Cylinder, Size = Vector3.new(w * 0.5, w, w), CFrame = CFrame.new(p) * CFrame.Angles(0, 0, math.rad(90)), Color = rockC, Material = mat, CanCollide = false, Parent = f })
+				part({ Name = "SkyIsletTop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, w * 1.02, w * 1.02), CFrame = CFrame.new(p + Vector3.new(0, w * 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = isl.ground, Material = isl.material, CanCollide = false, Parent = f })
+				part({ Name = "SkyIsletRoot", Size = Vector3.new(w * 0.5, w * 0.8, w * 0.5), CFrame = CFrame.new(p - Vector3.new(0, w * 0.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = rockC:Lerp(Color3.new(0, 0, 0), 0.15), Material = mat, CanCollide = false, Parent = f })
+				local top = p + Vector3.new(0, w * 0.25 + 0.5, 0)
+				if kind == "rod" then
+					-- 피뢰침: 쇠 기둥 끝에 푸른 번개 구슬
+					part({ Name = "IsletRod", Size = Vector3.new(0.6, 14, 0.6), Position = top + Vector3.new(0, 7, 0), Color = Color3.fromRGB(90, 95, 110), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+					part({ Name = "IsletRodTip", Shape = Enum.PartType.Ball, Size = Vector3.new(1.8, 1.8, 1.8), Position = top + Vector3.new(0, 14.5, 0), Color = Color3.fromRGB(140, 190, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				elseif kind == "ember" then
+					part({ Name = "IsletEmber", Size = Vector3.new(w * 0.7, 0.3, 0.8), CFrame = CFrame.new(top) * CFrame.Angles(0, rng:NextNumber(0, 3), 0), Color = Color3.fromRGB(255, 120, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				elseif kind == "moss" then
+					for _ = 1, 4 do
+						part({ Name = "IsletVine", Size = Vector3.new(0.4, rng:NextNumber(5, 10), 0.4), Position = p + Vector3.new(rng:NextNumber(-w, w) * 0.45, -4, rng:NextNumber(-w, w) * 0.45), Color = Color3.fromRGB(70, 110, 55), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+					end
+				elseif kind == "pine" then
+					pine(top, 0.6, f, false)
+				elseif kind == "bamboo" then
+					for j = 0, 2 do
+						local h = rng:NextNumber(10, 16)
+						part({ Name = "IsletBamboo", Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, 0.7, 0.7), CFrame = CFrame.new(top + Vector3.new((j - 1) * 1.6, h / 2, rng:NextNumber(-1, 1))) * CFrame.Angles(0, 0, math.rad(90 + rng:NextNumber(-6, 6))), Color = Color3.fromRGB(110, 165, 70), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+					end
+				elseif kind == "lotus" then
+					part({ Name = "IsletLotus", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 2, 3), Position = top + Vector3.new(0, 0.6, 0), Color = Color3.fromRGB(250, 200, 220), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+				elseif kind == "bell" then
+					part({ Name = "IsletBellChain", Size = Vector3.new(0.3, 5, 0.3), Position = p - Vector3.new(0, w * 0.9 + 2.5, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+					part({ Name = "IsletBell", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 3.4, 3.4), CFrame = CFrame.new(p - Vector3.new(0, w * 0.9 + 6.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(200, 160, 70), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				end
+			end
+		end
+	end
 	-- 섬
 	for _, isl in ipairs(SKY.islands) do
 		local c, R = isl.at, isl.radius
 		disc("SkyIsland", c - Vector3.new(0, 3, 0), R, 6, isl.ground, isl.material, f)
-		disc("SkyIslandEdge", c - Vector3.new(0, 0.2, 0), R + 1.2, 0.6, GOLD, Enum.Material.Metal, f)
-		disc("SkyIslandUnder", c - Vector3.new(0, 10, 0), R * 0.75, 8, Color3.fromRGB(150, 140, 130), Enum.Material.Rock, f)
-		disc("SkyIslandUnder2", c - Vector3.new(0, 20, 0), R * 0.45, 12, Color3.fromRGB(130, 120, 110), Enum.Material.Rock, f)
-		-- 1.8판: 섬 밑에 매달린 바위 뿔 (떠 있는 섬처럼), 둘레에 떠도는 작은 바위섬
-		for k = 0, 9 do
-			local a = k / 10 * math.pi * 2 + rng:NextNumber(0, 0.5)
-			local rr = R * rng:NextNumber(0.15, 0.6)
-			local h = rng:NextNumber(14, 34) * math.clamp(R / 180, 0.4, 1.3)
-			local w = rng:NextNumber(8, 16) * math.clamp(R / 180, 0.4, 1.2)
-			part({ Name = "SkyStalactite", Size = Vector3.new(w, h, w), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * rr, -24 - h * 0.4, math.sin(a) * rr)) * CFrame.Angles(rng:NextNumber(-0.2, 0.2), rng:NextNumber(0, 6), rng:NextNumber(-0.2, 0.2)),
-				Color = Color3.fromRGB(125, 115, 105):Lerp(Color3.fromRGB(95, 88, 80), rng:NextNumber()), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
-		end
-		if not isl.hidden then
-			for k = 0, 3 do
-				local a = k / 4 * math.pi * 2 + rng:NextNumber(0, 1)
-				local d = R + rng:NextNumber(40, 90)
-				local p = c + Vector3.new(math.cos(a) * d, rng:NextNumber(-30, 25), math.sin(a) * d)
-				local w = rng:NextNumber(10, 22)
-				part({ Name = "SkyIslet", Shape = Enum.PartType.Cylinder, Size = Vector3.new(w * 0.5, w, w), CFrame = CFrame.new(p) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(130, 120, 110), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
-				part({ Name = "SkyIsletTop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, w * 1.02, w * 1.02), CFrame = CFrame.new(p + Vector3.new(0, w * 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = isl.ground, Material = isl.material, CanCollide = false, Parent = f })
-				part({ Name = "SkyIsletRoot", Size = Vector3.new(w * 0.5, w * 0.8, w * 0.5), CFrame = CFrame.new(p - Vector3.new(0, w * 0.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(110, 100, 92), Material = Enum.Material.Rock, CanCollide = false, Parent = f })
-			end
-		end
-		-- 둘레의 구름 뭉치 (아래쪽)
-		local n = math.max(8, math.floor(R / 14))
-		for k = 0, n - 1 do
-			local a = k / n * math.pi * 2 + rng:NextNumber() * 0.3
-			local size = rng:NextNumber(18, 34)
-			part({ Name = "SkyCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(size, size, size), Position = c + Vector3.new(math.cos(a) * (R * 0.9), -9 - rng:NextNumber() * 6, math.sin(a) * (R * 0.9)), Color = CLOUD, Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = f })
-		end
+		skyIslandBody(isl, f)
 		-- 보이지 않는 난간 (떨어지지 않게). 다리가 이어지는 자리는 비워 둔다
 		local gaps: { { number } } = {}
 		for bi, b in ipairs(SKY.bridges) do

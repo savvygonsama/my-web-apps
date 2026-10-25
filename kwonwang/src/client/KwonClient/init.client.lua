@@ -2276,8 +2276,27 @@ function handlers.rebirth(data: any)
 	end
 end
 function handlers.rebirthDone(data: any)
-	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0)), Config.REBIRTH.colors[data.n or 1])
+	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0), data.perks or 0, data.points or 0), Config.REBIRTH.colors[data.n or 1])
 	shake(1.2)
+end
+-- 2.9판: 윤회의 시련. 그림자가 선 자리에 검보랏빛 바퀴가 돈다
+function handlers.samsaraStart(data: any)
+	local m = data.m
+	local root = m and m:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	local col = Config.REBIRTH.colors[data.n or 1] or Color3.new(1, 1, 1)
+	local at = root.Position - Vector3.new(0, 3, 0)
+	Fx.ring(at, col, 4, 40, 1.2)
+	Fx.ring(at, Color3.fromRGB(60, 20, 80), 2, 26, 1.6)
+	Fx.burst("spark", root.Position, col, 40, 2)
+	Fx.breakSound("boom", 0.8, 0.6, root.Position)
+	shake(0.6)
+end
+function handlers.samsaraWon(data: any)
+	UI.banner(string.format("☯ 윤회의 시련 %d 통과", data.n or 1), string.format("지난 삶을 넘었다 · 공덕 +1 (남은 공덕 %d) · 💎 +%d · 📜 +%d · 💰 +%s", data.points or 0, data.gems or 0, data.scrolls or 0, Config.formatNumber(data.coins or 0)), Config.REBIRTH.colors[data.n or 1])
+	shake(1)
 end
 
 function handlers.realm(data: any)
