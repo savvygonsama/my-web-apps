@@ -1494,8 +1494,8 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
-					local base = math.min(Config.killGain((f :: any).basePower or f.power or 100), Config.killGain(rewardPower(killer)) * KG.overCap)
-					local g = base * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
+					local kgBase = math.min(Config.killGain((f :: any).basePower or f.power or 100), Config.killGain(rewardPower(killer)) * KG.overCap)
+					local g = kgBase * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
 					if isBoss and (f.npc :: any).late and not f.towerOwner then
 						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
