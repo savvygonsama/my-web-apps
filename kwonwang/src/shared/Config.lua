@@ -154,6 +154,10 @@ function Config.realmPower(idx: number): number
 	return 1.22 ^ (math.min(idx, 9) - 1) * 1.38 ^ math.max(0, idx - 9)
 end
 -- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
+-- 2.8판: 체력의 경지 배율은 피해보다 완만하게 (경지 배율의 0.75제곱). 후반에 적이 스무 대를 때려야 쓰러질 만큼 단단했다
+function Config.realmHp(idx: number): number
+	return Config.realmPower(idx) ^ 0.75
+end
 function Config.realmDmg(idx: number): number
 	return Config.realmPower(math.min(idx, 16)) * 1.1 ^ math.max(0, idx - 16)
 end
@@ -271,7 +275,7 @@ Config.TRAIN_REALM_BONUS = 0.12
 -- 2.7.5판: 후반 수련. 수련 효과가 경지마다 +12%씩만 늘어 후반엔 한 번에 수십밖에 오르지 않았다 (적 한 마리는 수백만).
 -- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
 -- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
-Config.TRAIN_LATE_SHARE = 1 / 150 -- 2.7.7판: 0.02(1/50) → 1/150. 수련 한 번이 그 경지 적 한 마리의 1/150
+Config.TRAIN_LATE_SHARE = 1 / 100 -- 2.7.7판: 1/50 → 1/150. 2.8판: 1/100 (싸움의 약 1/7 빠르기: 수련은 덤이되, 하는 만큼 보이게)
 Config.TRAIN_LATE_REF = 48 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 24)
 function Config.trainMult(idx: number): number
 	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
@@ -3403,5 +3407,78 @@ Config.ACH_COLOR = {
 	transcend = Color3.fromRGB(255, 160, 210), mastery = Color3.fromRGB(255, 220, 120), tower = Color3.fromRGB(150, 230, 255), pvp = Color3.fromRGB(255, 200, 80),
 	masters = Color3.fromRGB(200, 255, 230), mounts = Color3.fromRGB(220, 200, 160), manuals = Color3.fromRGB(210, 180, 255),
 }
+
+------------------------------------------------------------------------
+-- 2.8판: 보스와 그 땅 졸병의 전투력 차이. 보스의 체력이 너무 커서 (졸병의 9~21배) 같은 땅의 보스가 딴 세상처럼 셌다.
+-- 이제 보스는 그 땅 졸병 (가운데) 전투력의 BOSS_POWER_RATIO배까지만 (넘으면 체력을 깎는다). 한 대는 졸병 한 대의 BOSS_HIT_RATIO배
+------------------------------------------------------------------------
+Config.BOSS_POWER_RATIO = 4
+Config.BOSS_HIT_RATIO = 2 -- 보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
+-- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
+function Config.npcStats(def: any, at: Vector3, isBoss: boolean): (number, number, number)
+	local lv = Config.enemyLevel(at)
+	local mult = def.mult or 1
+	local hp = math.floor(def.hp * (isBoss and Config.ENEMY_BOSS_HP or Config.ENEMY_HP) * (1 + Config.ENEMY_HP_LEVEL * (lv - 1)) * mult)
+	local dm = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and (def.late and Config.LATE_BOSS_DMG or Config.BOSS_DMG) or 1) * (def.dmgScale or 1)
+	return hp, dm, Config.enemyPower(dm, hp, isBoss)
+end
+-- 한 대의 크기 (기술마다 가장 센 맞힘의 평균)
+local function hitSize(def: any): number
+	local sum, n = 0, 0
+	for _, mv in ipairs(def.moves or {}) do
+		local best = 0
+		for _, h in ipairs(mv.hits or {}) do
+			best = math.max(best, h.dmg or 0)
+		end
+		if best > 0 then
+			sum += best
+			n += 1
+		end
+	end
+	return n > 0 and sum / n or 14
+end
+do
+	local function camp(camps: any): (number?, number?)
+		local list = {}
+		for _, c in ipairs(camps or {}) do
+			local e = Config.Enemies[c.enemy]
+			if e then
+				local _, dm, pw = Config.npcStats(e, c.at, false)
+				table.insert(list, { pw, dm * hitSize(e) })
+			end
+		end
+		if #list == 0 then
+			return nil, nil
+		end
+		table.sort(list, function(x, y)
+			return x[1] < y[1]
+		end)
+		local mid = list[math.ceil(#list / 2)]
+		return mid[1], mid[2]
+	end
+	local function norm(boss: any, camps: any)
+		local b = boss and Config.Bosses[boss.id]
+		local ep, ehit = camp(camps)
+		if not b or not ep or not ehit or b.powerNormed then
+			return
+		end
+		b.powerNormed = true
+		-- 한 대를 졸병의 BOSS_HIT_RATIO배로
+		local _, dm0 = Config.npcStats(b, boss.at, true)
+		b.dmgScale = Config.BOSS_HIT_RATIO * ehit / math.max(1e-6, dm0 * hitSize(b))
+		-- 전투력은 졸병의 BOSS_POWER_RATIO배까지 (체력으로 맞춘다)
+		local _, _, bp = Config.npcStats(b, boss.at, true)
+		local target = ep * Config.BOSS_POWER_RATIO
+		if bp > target then
+			b.hp = math.max(1, math.floor(b.hp * (target / bp) ^ 2))
+		end
+	end
+	for _, r in ipairs(Config.Regions) do
+		norm(r.boss, r.camps)
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		norm(isl.boss, isl.camps)
+	end
+end
 
 return Config

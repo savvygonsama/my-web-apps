@@ -690,6 +690,8 @@ local function rewardPower(player: Player): number
 		-- 2.4.1판: 피해 쪽 배율(후반 공격력·환생 피해·환생 경지의 피해 배율)을 빼고, 경지 표의 전투력과 같은 잣대로
 		local idx = Calc.realm(p)
 		pw /= math.sqrt(Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Config.rebirthPower(p.rebirth) * Config.realmDmg(idx) / Config.realmPower(idx))
+		-- 2.8판: 체력의 경지 배율이 완만해진 만큼 되돌려 (처치 몫의 잣대는 그대로)
+		pw *= math.sqrt(Config.realmPower(idx) / Config.realmHp(idx))
 	end
 	return pw
 end
@@ -708,7 +710,6 @@ local function refreshFighter(player: Player)
 	local m = p.style ~= "" and Calc.mastery(p, p.style).lv or 1
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
-	local power = Config.realmPower(idx)
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
 	local mb = Calc.manualBonus(p)
@@ -718,7 +719,7 @@ local function refreshFighter(player: Player)
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * power * (1 + mb.hp) * rb)
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb)
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
