@@ -267,7 +267,7 @@ SIG.eclipse = function(pos, look, s, c, c2)
 	local disc = bit(Vector3.new(0.2, 3, 3) * s, Color3.fromRGB(15, 10, 20), Enum.Material.SmoothPlastic, 0, false, 0.45)
 	disc.Shape = Enum.PartType.Cylinder
 	disc.CFrame = CFrame.lookAt(pos, pos + look) * CFrame.Angles(0, math.rad(90), 0)
-	local rim = bit(Vector3.new(0.15, 3.6, 3.6) * s, Color3.fromRGB(255, 200, 90), Enum.Material.Neon, 0.1, false, 0.45)
+	local rim = bit(Vector3.new(0.15, 3.6, 3.6) * s, c, Enum.Material.Neon, 0.1, false, 0.45)
 	rim.Shape = Enum.PartType.Cylinder
 	rim.CFrame = disc.CFrame * CFrame.new(-0.05, 0, 0)
 	tween(disc, 0.4, { Size = Vector3.new(0.2, 4.5, 4.5) * s, Transparency = 1 })

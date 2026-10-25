@@ -1159,6 +1159,26 @@ local function maybeControls()
 		Request:FireServer("seen", "controls")
 	end)
 end
+-- 2.7.6판: 일월신권은 밤이 되면 달의 테마로 (빛깔·표시·기술 이름). 낮과 밤은 온 세상이 같다
+task.spawn(function()
+	local Lighting = game:GetService("Lighting")
+	local was: boolean? = nil
+	while true do
+		local night = Config.isNightClock(Lighting.ClockTime)
+		if night ~= was then
+			local first = was == nil
+			was = night
+			Config.setIlwolNight(night)
+			if state then
+				pcall(UI.setState, state)
+				if not first and state.style == "ilwol" then
+					UI.toast(night and "🌙 밤이 되었다. 일월신권이 달의 힘으로 바뀐다 (받는 피해 -15%)" or "☀ 해가 떴다. 일월신권이 해의 힘으로 바뀐다 (주는 피해 +15%)")
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end)
 local firstState = true
 function handlers.state(data: any)
 	state = data
@@ -1195,6 +1215,12 @@ function handlers.tower(data: any?)
 end
 function handlers.towerClear(data: any)
 	local extra = (data.scrolls or 0) > 0 and string.format("  📜 +%d", data.scrolls) or ""
+	if (data.stats or 0) > 0 then
+		extra ..= string.format("  💪 +%s", Config.formatNumber(data.stats))
+	end
+	if (data.gems or 0) > 0 then
+		extra ..= string.format("  💎 +%d", data.gems)
+	end
 	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
 	Fx.sound("ping", 0.8, 1.2)
 end

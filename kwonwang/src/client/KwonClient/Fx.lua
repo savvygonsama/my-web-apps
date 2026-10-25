@@ -578,7 +578,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
 		for k = 0, 7 do
 			local a = k / 8 * math.pi * 2
-			local ray = piece(Vector3.new(0.2, 0.2, 0.2), Color3.fromRGB(255, 230, 160), Enum.Material.Neon, nil, 0)
+			local ray = piece(Vector3.new(0.2, 0.2, 0.2), c:Lerp(Color3.new(1, 1, 1), 0.45), Enum.Material.Neon, nil, 0)
 			ray.CFrame = lookAt(pos, pos + face:VectorToWorldSpace(Vector3.new(math.cos(a), math.sin(a), 0)))
 			tween(ray, 0.2, { Size = Vector3.new(0.06, 0.06, (k % 2 == 0 and 5 or 3) * s), Transparency = 1, CFrame = ray.CFrame * CFrame.new(0, 0, -2.2 * s) })
 			Debris:AddItem(ray, 0.22)

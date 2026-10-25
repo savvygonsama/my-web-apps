@@ -1490,7 +1490,8 @@ Combat.init(Push, {
 				addMastery(killer, p, xp)
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
-				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
+				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
+				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
@@ -2402,9 +2403,10 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
-	local coins = T.coins * floor
+	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
+	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50))
 	p.coins += coins
-	local scrolls = 0
+	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
 		p.towerBest = floor
 		if floor % T.scrollEvery == 0 then
@@ -2412,11 +2414,22 @@ function Tower.killed(player: Player, ef: any)
 		end
 		if floor % T.bossEvery == 0 then
 			scrolls += 2
+			-- 2.7.6판: 보스 층을 처음 넘으면 그 층 적 몇 마리 몫의 능력치와 천정 (높은 층일수록 많다. 내 수준 적의 2배까지)
+			local want = T.powerStart * T.powerGrowth ^ (floor - 1)
+			local g = math.min(Config.killGain(want), Config.killGain(rewardPower(player)) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
+			local each = math.max(1, math.floor(g / #Config.Stats))
+			for _, sd in ipairs(Config.Stats) do
+				p.stats[sd.id] += each
+			end
+			stats = each * #Config.Stats
+			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
+			p.skyGems += gems
+			refreshFighter(player)
 		end
 		p.scrolls += scrolls
 	end
 	st.dirty = true
-	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest })
+	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest, gems = gems, stats = stats })
 	pushState(player)
 	Tower.next(player, run)
 end

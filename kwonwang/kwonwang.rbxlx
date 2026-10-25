@@ -2387,6 +2387,54 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
+-- 2.7.6판: 일월신권의 밤 (18시~6시). 해의 금빛이 달의 은빛으로, ☀가 🌙로, 해의 기술은 달의 기술로 이름이 바뀐다.
+-- 낮과 밤은 온 세상이 같으니 모든 화면이 함께 바뀐다 (화면이 Config.setIlwolNight를 부른다)
+local function ilwolMoves(st: any): { any }
+	local list = {}
+	for _, m in ipairs(st.combo or {}) do
+		table.insert(list, m)
+	end
+	if st.heavy then
+		table.insert(list, st.heavy)
+	end
+	for _, m in pairs(st.skills or {}) do
+		table.insert(list, m)
+	end
+	return list
+end
+for _, st in ipairs(Config.Styles) do
+	if st.id == "ilwol" then
+		st.dayTheme = { color = st.color, color2 = st.color2, icon = st.icon, names = {}, descs = {} }
+		st.nightTheme = {
+			color = Color3.fromRGB(175, 200, 255),
+			color2 = Color3.fromRGB(130, 110, 235),
+			icon = "🌙",
+			names = { iw1 = "월출장", iw3 = "월륜각", iwH = "월영합벽", iwR = "월광낙하" },
+			descs = { iwR = "둘레의 적 여섯 머리 위로 작은 달이 떨어져 차가운 달빛 기둥이 되어 터진다" },
+		}
+		for _, m in ipairs(ilwolMoves(st)) do
+			st.dayTheme.names[m.id] = m.name
+			st.dayTheme.descs[m.id] = m.desc
+		end
+	end
+end
+function Config.isNightClock(h: number): boolean
+	return h < 6 or h >= 18
+end
+function Config.setIlwolNight(night: boolean)
+	for _, st in ipairs(Config.Styles) do
+		if st.id == "ilwol" and st.dayTheme and st.night ~= night then
+			st.night = night
+			local th = night and st.nightTheme or st.dayTheme
+			st.color, st.color2, st.icon = th.color, th.color2, th.icon
+			for _, m in ipairs(ilwolMoves(st)) do
+				m.name = (night and st.nightTheme.names[m.id]) or st.dayTheme.names[m.id] or m.name
+				m.desc = (night and st.nightTheme.descs[m.id]) or st.dayTheme.descs[m.id] or m.desc
+			end
+		end
+	end
+end
+
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
 -- 적은 근처에 사람이 있을 때만 움직인다
@@ -2783,6 +2831,11 @@ Config.TOWER = {
 	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
+	-- 2.7.6판: 후반 보상. 51층부터 은자가 층마다 ×1.04로 붙고, 보스 층을 처음 넘으면 그 층 적 bestStats마리 몫의 능력치와 천정
+	coinGrowth = 1.04,
+	bestStats = 8,
+	bestGems = 10,
+	bestGemsPerFloor = 0.5,
 	bands = {
 		{ 1, { "thug", "bandit" } },
 		{ 6, { "bandit", "spearman", "brute" } },
@@ -6716,7 +6769,8 @@ Combat.init(Push, {
 				addMastery(killer, p, xp)
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
-				if not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
+				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
+				if (not f.trialOwner or f.towerOwner) and not f.gateOwner and not f.simmaOwner and not f.raid and not (f.npc :: any).dummy then
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
@@ -7628,9 +7682,10 @@ function Tower.killed(player: Player, ef: any)
 	end
 	local T = Config.TOWER
 	local floor = run.floor
-	local coins = T.coins * floor
+	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
+	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50))
 	p.coins += coins
-	local scrolls = 0
+	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
 		p.towerBest = floor
 		if floor % T.scrollEvery == 0 then
@@ -7638,11 +7693,22 @@ function Tower.killed(player: Player, ef: any)
 		end
 		if floor % T.bossEvery == 0 then
 			scrolls += 2
+			-- 2.7.6판: 보스 층을 처음 넘으면 그 층 적 몇 마리 몫의 능력치와 천정 (높은 층일수록 많다. 내 수준 적의 2배까지)
+			local want = T.powerStart * T.powerGrowth ^ (floor - 1)
+			local g = math.min(Config.killGain(want), Config.killGain(rewardPower(player)) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
+			local each = math.max(1, math.floor(g / #Config.Stats))
+			for _, sd in ipairs(Config.Stats) do
+				p.stats[sd.id] += each
+			end
+			stats = each * #Config.Stats
+			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
+			p.skyGems += gems
+			refreshFighter(player)
 		end
 		p.scrolls += scrolls
 	end
 	st.dirty = true
-	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest })
+	Push:FireClient(player, "towerClear", { floor = floor, coins = coins, scrolls = scrolls, best = p.towerBest, gems = gems, stats = stats })
 	pushState(player)
 	Tower.next(player, run)
 end
@@ -22113,6 +22179,26 @@ local function maybeControls()
 		Request:FireServer("seen", "controls")
 	end)
 end
+-- 2.7.6판: 일월신권은 밤이 되면 달의 테마로 (빛깔·표시·기술 이름). 낮과 밤은 온 세상이 같다
+task.spawn(function()
+	local Lighting = game:GetService("Lighting")
+	local was: boolean? = nil
+	while true do
+		local night = Config.isNightClock(Lighting.ClockTime)
+		if night ~= was then
+			local first = was == nil
+			was = night
+			Config.setIlwolNight(night)
+			if state then
+				pcall(UI.setState, state)
+				if not first and state.style == "ilwol" then
+					UI.toast(night and "🌙 밤이 되었다. 일월신권이 달의 힘으로 바뀐다 (받는 피해 -15%)" or "☀ 해가 떴다. 일월신권이 해의 힘으로 바뀐다 (주는 피해 +15%)")
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end)
 local firstState = true
 function handlers.state(data: any)
 	state = data
@@ -22149,6 +22235,12 @@ function handlers.tower(data: any?)
 end
 function handlers.towerClear(data: any)
 	local extra = (data.scrolls or 0) > 0 and string.format("  📜 +%d", data.scrolls) or ""
+	if (data.stats or 0) > 0 then
+		extra ..= string.format("  💪 +%s", Config.formatNumber(data.stats))
+	end
+	if (data.gems or 0) > 0 then
+		extra ..= string.format("  💎 +%d", data.gems)
+	end
 	UI.banner(string.format("🗼 %d층 돌파!", data.floor), string.format("💰 +%s%s  ·  최고 %d층", Config.formatNumber(data.coins), extra, data.best), Color3.fromRGB(255, 210, 120))
 	Fx.sound("ping", 0.8, 1.2)
 end
@@ -30345,7 +30437,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 		local face = lookAt(pos, pos + (dir or Vector3.new(0, 0, -1)))
 		for k = 0, 7 do
 			local a = k / 8 * math.pi * 2
-			local ray = piece(Vector3.new(0.2, 0.2, 0.2), Color3.fromRGB(255, 230, 160), Enum.Material.Neon, nil, 0)
+			local ray = piece(Vector3.new(0.2, 0.2, 0.2), c:Lerp(Color3.new(1, 1, 1), 0.45), Enum.Material.Neon, nil, 0)
 			ray.CFrame = lookAt(pos, pos + face:VectorToWorldSpace(Vector3.new(math.cos(a), math.sin(a), 0)))
 			tween(ray, 0.2, { Size = Vector3.new(0.06, 0.06, (k % 2 == 0 and 5 or 3) * s), Transparency = 1, CFrame = ray.CFrame * CFrame.new(0, 0, -2.2 * s) })
 			Debris:AddItem(ray, 0.22)
@@ -34752,7 +34844,7 @@ SIG.eclipse = function(pos, look, s, c, c2)
 	local disc = bit(Vector3.new(0.2, 3, 3) * s, Color3.fromRGB(15, 10, 20), Enum.Material.SmoothPlastic, 0, false, 0.45)
 	disc.Shape = Enum.PartType.Cylinder
 	disc.CFrame = CFrame.lookAt(pos, pos + look) * CFrame.Angles(0, math.rad(90), 0)
-	local rim = bit(Vector3.new(0.15, 3.6, 3.6) * s, Color3.fromRGB(255, 200, 90), Enum.Material.Neon, 0.1, false, 0.45)
+	local rim = bit(Vector3.new(0.15, 3.6, 3.6) * s, c, Enum.Material.Neon, 0.1, false, 0.45)
 	rim.Shape = Enum.PartType.Cylinder
 	rim.CFrame = disc.CFrame * CFrame.new(-0.05, 0, 0)
 	tween(disc, 0.4, { Size = Vector3.new(0.2, 4.5, 4.5) * s, Transparency = 1 })
@@ -42918,8 +43010,16 @@ local function fadeAll(list: { BasePart }, steps: number, every: number)
 		end)
 	end
 end
+-- 일식은 해와 달을 함께 띄우니, 밤에도 해의 금빛과 달의 은빛 그대로
+local function sunMoonColors(id: any): (Color3, Color3)
+	local s = type(id) == "string" and Config.STYLE_BY_ID[id]
+	if s and s.dayTheme then
+		return s.dayTheme.color, s.dayTheme.color2
+	end
+	return styleColors(id)
+end
 function H.eclipse(data: any)
-	local c, c2 = styleColors(data.style)
+	local c, c2 = sunMoonColors(data.style)
 	local at: Vector3 = data.at
 	local R = math.min(data.radius or 60, 70)
 	local slashFrom, slashEvery, slashes = data.slashFrom or 0.6, data.slashEvery or 0.24, data.slashes or 5
@@ -43119,7 +43219,7 @@ end
 
 -- 일월동천의 빛살: 검은 해에서 적마다 금빛 빛기둥이 내리꽂힌다
 function H.eclipseBeams(data: any)
-	local c, c2 = styleColors(data.style)
+	local c, c2 = sunMoonColors(data.style)
 	local top = eclipseTop(data.at)
 	for i, spot in ipairs(data.spots or {}) do
 		task.delay((i - 1) * 0.03, function()
@@ -44031,32 +44131,35 @@ function Ults.variant(data: any): boolean
 		return true
 	elseif data.fx == "sun" and data.kind == "strike" then
 		-- 대일강림: 작은 해가 하늘에서 떨어져 불기둥이 되어 터진다
+		-- (2.7.6판: 밤에는 월광낙하. 은빛 달이 떨어져 차가운 달빛 기둥이 되고, 땅에는 그을음 대신 서리가 남는다)
+		local st = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
+		local night = st and st.night == true
 		local at: Vector3 = data.at
 		local r = data.radius or 8
 		local ground = at - Vector3.new(0, 2.4, 0)
 		local sun = piece(Vector3.new(5, 5, 5), c, Enum.Material.Neon, Enum.PartType.Ball, 0)
 		sun.Position = ground + Vector3.new(0, 60, 0)
-		local halo = piece(Vector3.new(8, 8, 8), Color3.fromRGB(255, 220, 140), Enum.Material.ForceField, Enum.PartType.Ball, 0.2)
+		local halo = piece(Vector3.new(8, 8, 8), night and Color3.fromRGB(205, 220, 255) or Color3.fromRGB(255, 220, 140), Enum.Material.ForceField, Enum.PartType.Ball, 0.2)
 		halo.Position = sun.Position
 		tween(sun, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		tween(halo, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		Debris:AddItem(sun, 0.2)
 		Debris:AddItem(halo, 0.2)
 		task.delay(0.18, function()
-			local pillar = piece(Vector3.new(40, r * 1.3, r * 1.3), Color3.fromRGB(255, 160, 50), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+			local pillar = piece(Vector3.new(40, r * 1.3, r * 1.3), night and Color3.fromRGB(150, 170, 255) or Color3.fromRGB(255, 160, 50), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
 			pillar.CFrame = CFrame.new(ground + Vector3.new(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90))
 			tween(pillar, 0.5, { Size = Vector3.new(46, 0.5, 0.5), Transparency = 1 })
 			Debris:AddItem(pillar, 0.55)
-			local core = piece(Vector3.new(40, r * 0.5, r * 0.5), Color3.fromRGB(255, 245, 210), Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+			local core = piece(Vector3.new(40, r * 0.5, r * 0.5), night and Color3.fromRGB(235, 240, 255) or Color3.fromRGB(255, 245, 210), Enum.Material.Neon, Enum.PartType.Cylinder, 0)
 			core.CFrame = pillar.CFrame
 			tween(core, 0.35, { Size = Vector3.new(46, 0.2, 0.2), Transparency = 1 })
 			Debris:AddItem(core, 0.4)
-			local scorch = piece(Vector3.new(0.2, r * 2, r * 2), Color3.fromRGB(60, 25, 10), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.2)
+			local scorch = piece(Vector3.new(0.2, r * 2, r * 2), night and Color3.fromRGB(200, 222, 245) or Color3.fromRGB(60, 25, 10), night and Enum.Material.Ice or Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.2)
 			scorch.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
 			fade(scorch, 0.9, 0.5)
 			Fx.ring(ground + Vector3.new(0, 0.5, 0), c, 2, r * 2.6, 0.45)
-			Fx.burst("ember", at, c, 20, 1.4)
-			Fx.burst("smoke", at, Color3.fromRGB(110, 80, 60), 6, 1.2)
+			Fx.burst(night and "glitter" or "ember", at, night and c2 or c, 20, 1.4)
+			Fx.burst("smoke", at, night and Color3.fromRGB(150, 160, 200) or Color3.fromRGB(110, 80, 60), 6, 1.2)
 			Fx.flash(at, c, 34, 5, 0.4)
 			Fx.sound("heavy", 0.7, 0.9, at)
 			if hooks.shake and near(at, 60) then

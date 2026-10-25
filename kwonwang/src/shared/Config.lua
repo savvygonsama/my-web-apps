@@ -2367,6 +2367,54 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
+-- 2.7.6판: 일월신권의 밤 (18시~6시). 해의 금빛이 달의 은빛으로, ☀가 🌙로, 해의 기술은 달의 기술로 이름이 바뀐다.
+-- 낮과 밤은 온 세상이 같으니 모든 화면이 함께 바뀐다 (화면이 Config.setIlwolNight를 부른다)
+local function ilwolMoves(st: any): { any }
+	local list = {}
+	for _, m in ipairs(st.combo or {}) do
+		table.insert(list, m)
+	end
+	if st.heavy then
+		table.insert(list, st.heavy)
+	end
+	for _, m in pairs(st.skills or {}) do
+		table.insert(list, m)
+	end
+	return list
+end
+for _, st in ipairs(Config.Styles) do
+	if st.id == "ilwol" then
+		st.dayTheme = { color = st.color, color2 = st.color2, icon = st.icon, names = {}, descs = {} }
+		st.nightTheme = {
+			color = Color3.fromRGB(175, 200, 255),
+			color2 = Color3.fromRGB(130, 110, 235),
+			icon = "🌙",
+			names = { iw1 = "월출장", iw3 = "월륜각", iwH = "월영합벽", iwR = "월광낙하" },
+			descs = { iwR = "둘레의 적 여섯 머리 위로 작은 달이 떨어져 차가운 달빛 기둥이 되어 터진다" },
+		}
+		for _, m in ipairs(ilwolMoves(st)) do
+			st.dayTheme.names[m.id] = m.name
+			st.dayTheme.descs[m.id] = m.desc
+		end
+	end
+end
+function Config.isNightClock(h: number): boolean
+	return h < 6 or h >= 18
+end
+function Config.setIlwolNight(night: boolean)
+	for _, st in ipairs(Config.Styles) do
+		if st.id == "ilwol" and st.dayTheme and st.night ~= night then
+			st.night = night
+			local th = night and st.nightTheme or st.dayTheme
+			st.color, st.color2, st.icon = th.color, th.color2, th.icon
+			for _, m in ipairs(ilwolMoves(st)) do
+				m.name = (night and st.nightTheme.names[m.id]) or st.dayTheme.names[m.id] or m.name
+				m.desc = (night and st.nightTheme.descs[m.id]) or st.dayTheme.descs[m.id] or m.desc
+			end
+		end
+	end
+end
+
 ------------------------------------------------------------------------
 -- 월드: 가운데 마을, 서쪽 대나무 숲, 북쪽 산적 소굴, 동쪽 폭포 계곡
 -- 적은 근처에 사람이 있을 때만 움직인다
@@ -2763,6 +2811,11 @@ Config.TOWER = {
 	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
+	-- 2.7.6판: 후반 보상. 51층부터 은자가 층마다 ×1.04로 붙고, 보스 층을 처음 넘으면 그 층 적 bestStats마리 몫의 능력치와 천정
+	coinGrowth = 1.04,
+	bestStats = 8,
+	bestGems = 10,
+	bestGemsPerFloor = 0.5,
 	bands = {
 		{ 1, { "thug", "bandit" } },
 		{ 6, { "bandit", "spearman", "brute" } },

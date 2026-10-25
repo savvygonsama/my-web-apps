@@ -1345,8 +1345,16 @@ local function fadeAll(list: { BasePart }, steps: number, every: number)
 		end)
 	end
 end
+-- 일식은 해와 달을 함께 띄우니, 밤에도 해의 금빛과 달의 은빛 그대로
+local function sunMoonColors(id: any): (Color3, Color3)
+	local s = type(id) == "string" and Config.STYLE_BY_ID[id]
+	if s and s.dayTheme then
+		return s.dayTheme.color, s.dayTheme.color2
+	end
+	return styleColors(id)
+end
 function H.eclipse(data: any)
-	local c, c2 = styleColors(data.style)
+	local c, c2 = sunMoonColors(data.style)
 	local at: Vector3 = data.at
 	local R = math.min(data.radius or 60, 70)
 	local slashFrom, slashEvery, slashes = data.slashFrom or 0.6, data.slashEvery or 0.24, data.slashes or 5
@@ -1546,7 +1554,7 @@ end
 
 -- 일월동천의 빛살: 검은 해에서 적마다 금빛 빛기둥이 내리꽂힌다
 function H.eclipseBeams(data: any)
-	local c, c2 = styleColors(data.style)
+	local c, c2 = sunMoonColors(data.style)
 	local top = eclipseTop(data.at)
 	for i, spot in ipairs(data.spots or {}) do
 		task.delay((i - 1) * 0.03, function()
@@ -2458,32 +2466,35 @@ function Ults.variant(data: any): boolean
 		return true
 	elseif data.fx == "sun" and data.kind == "strike" then
 		-- 대일강림: 작은 해가 하늘에서 떨어져 불기둥이 되어 터진다
+		-- (2.7.6판: 밤에는 월광낙하. 은빛 달이 떨어져 차가운 달빛 기둥이 되고, 땅에는 그을음 대신 서리가 남는다)
+		local st = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
+		local night = st and st.night == true
 		local at: Vector3 = data.at
 		local r = data.radius or 8
 		local ground = at - Vector3.new(0, 2.4, 0)
 		local sun = piece(Vector3.new(5, 5, 5), c, Enum.Material.Neon, Enum.PartType.Ball, 0)
 		sun.Position = ground + Vector3.new(0, 60, 0)
-		local halo = piece(Vector3.new(8, 8, 8), Color3.fromRGB(255, 220, 140), Enum.Material.ForceField, Enum.PartType.Ball, 0.2)
+		local halo = piece(Vector3.new(8, 8, 8), night and Color3.fromRGB(205, 220, 255) or Color3.fromRGB(255, 220, 140), Enum.Material.ForceField, Enum.PartType.Ball, 0.2)
 		halo.Position = sun.Position
 		tween(sun, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		tween(halo, 0.18, { Position = ground + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		Debris:AddItem(sun, 0.2)
 		Debris:AddItem(halo, 0.2)
 		task.delay(0.18, function()
-			local pillar = piece(Vector3.new(40, r * 1.3, r * 1.3), Color3.fromRGB(255, 160, 50), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
+			local pillar = piece(Vector3.new(40, r * 1.3, r * 1.3), night and Color3.fromRGB(150, 170, 255) or Color3.fromRGB(255, 160, 50), Enum.Material.Neon, Enum.PartType.Cylinder, 0.1)
 			pillar.CFrame = CFrame.new(ground + Vector3.new(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90))
 			tween(pillar, 0.5, { Size = Vector3.new(46, 0.5, 0.5), Transparency = 1 })
 			Debris:AddItem(pillar, 0.55)
-			local core = piece(Vector3.new(40, r * 0.5, r * 0.5), Color3.fromRGB(255, 245, 210), Enum.Material.Neon, Enum.PartType.Cylinder, 0)
+			local core = piece(Vector3.new(40, r * 0.5, r * 0.5), night and Color3.fromRGB(235, 240, 255) or Color3.fromRGB(255, 245, 210), Enum.Material.Neon, Enum.PartType.Cylinder, 0)
 			core.CFrame = pillar.CFrame
 			tween(core, 0.35, { Size = Vector3.new(46, 0.2, 0.2), Transparency = 1 })
 			Debris:AddItem(core, 0.4)
-			local scorch = piece(Vector3.new(0.2, r * 2, r * 2), Color3.fromRGB(60, 25, 10), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.2)
+			local scorch = piece(Vector3.new(0.2, r * 2, r * 2), night and Color3.fromRGB(200, 222, 245) or Color3.fromRGB(60, 25, 10), night and Enum.Material.Ice or Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.2)
 			scorch.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
 			fade(scorch, 0.9, 0.5)
 			Fx.ring(ground + Vector3.new(0, 0.5, 0), c, 2, r * 2.6, 0.45)
-			Fx.burst("ember", at, c, 20, 1.4)
-			Fx.burst("smoke", at, Color3.fromRGB(110, 80, 60), 6, 1.2)
+			Fx.burst(night and "glitter" or "ember", at, night and c2 or c, 20, 1.4)
+			Fx.burst("smoke", at, night and Color3.fromRGB(150, 160, 200) or Color3.fromRGB(110, 80, 60), 6, 1.2)
 			Fx.flash(at, c, 34, 5, 0.4)
 			Fx.sound("heavy", 0.7, 0.9, at)
 			if hooks.shake and near(at, 60) then
