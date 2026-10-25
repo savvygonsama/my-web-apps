@@ -241,6 +241,10 @@ local GAIN_TABLE: { { number } } = {
 	{ 100, 7 }, { 168, 12 }, { 256, 27 }, { 374, 44 }, { 516, 60 }, { 686, 100 }, { 905, 150 }, { 1174, 190 }, { 1508, 1100 }, { 2343, 3600 },
 	{ 3595, 12000 }, { 5460, 40000 }, { 8223, 130000 }, { 12298, 470000 }, { 18283, 1600000 }, { 27041, 8000000 }, { 40433, 19000000 }, { 60098, 63000000 }, { 88871, 210000000 }, { 130833, 210000000 },
 }
+-- 그 경지 적의 전투력 (경지 번호로 위 표를 읽는다)
+function Config.realmRefPower(idx: number): number
+	return GAIN_TABLE[math.clamp(idx, 1, #GAIN_TABLE)][1]
+end
 function Config.killGain(power: number): number
 	local p = math.max(1, power)
 	local first, last = GAIN_TABLE[1], GAIN_TABLE[#GAIN_TABLE]
@@ -284,6 +288,16 @@ Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
 Config.TRAIN_GAIN = 0.6 -- 1.5판: 강해지는 길의 중심은 싸움 (적을 쓰러뜨려 능력치를 얻는다). 수련은 처음에 거드는 정도
 Config.TRAIN_REALM_BONUS = 0.12
+-- 2.7.5판: 후반 수련. 수련 효과가 경지마다 +12%씩만 늘어 후반엔 한 번에 수십밖에 오르지 않았다 (적 한 마리는 수백만).
+-- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
+-- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
+Config.TRAIN_LATE_SHARE = 0.02
+Config.TRAIN_LATE_REF = 48 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 24)
+function Config.trainMult(idx: number): number
+	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
+	local late = Config.killGain(Config.realmRefPower(idx)) * Config.TRAIN_LATE_SHARE / Config.TRAIN_LATE_REF
+	return math.max(lin, late)
+end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
 Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
@@ -8226,7 +8240,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Calc.realm(p)
-	local mult = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1)) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p)
+	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p)
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -38086,7 +38100,7 @@ local function buildStats()
 		local locked = nextRealm and (nextRealm.rebirth or 0) > rb
 		table.insert(lines, string.format("<b>경지: %s%s</b>  (능력치 합 %s%s)", rb > 0 and ((Config.REBIRTH.names[rb] or "") .. " · ") or "", realm.name, Config.formatNumber(state.total),
 			nextRealm and string.format(" / 다음 %s는 %s%s", nextRealm.name, Config.formatNumber(nextRealm.need), locked and ' <font color="#FF9AD8">(환생해야 열림)</font>' or "") or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%, 생사경부터는 그 경지 적 한 마리에 견줘 크게) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
 		if rb > 0 then
 			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 체력 ×%.2f · 주는 피해 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthDmg(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
 		end

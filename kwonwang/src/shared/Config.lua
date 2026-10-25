@@ -221,6 +221,10 @@ local GAIN_TABLE: { { number } } = {
 	{ 100, 7 }, { 168, 12 }, { 256, 27 }, { 374, 44 }, { 516, 60 }, { 686, 100 }, { 905, 150 }, { 1174, 190 }, { 1508, 1100 }, { 2343, 3600 },
 	{ 3595, 12000 }, { 5460, 40000 }, { 8223, 130000 }, { 12298, 470000 }, { 18283, 1600000 }, { 27041, 8000000 }, { 40433, 19000000 }, { 60098, 63000000 }, { 88871, 210000000 }, { 130833, 210000000 },
 }
+-- 그 경지 적의 전투력 (경지 번호로 위 표를 읽는다)
+function Config.realmRefPower(idx: number): number
+	return GAIN_TABLE[math.clamp(idx, 1, #GAIN_TABLE)][1]
+end
 function Config.killGain(power: number): number
 	local p = math.max(1, power)
 	local first, last = GAIN_TABLE[1], GAIN_TABLE[#GAIN_TABLE]
@@ -264,6 +268,16 @@ Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
 Config.TRAIN_GAIN = 0.6 -- 1.5판: 강해지는 길의 중심은 싸움 (적을 쓰러뜨려 능력치를 얻는다). 수련은 처음에 거드는 정도
 Config.TRAIN_REALM_BONUS = 0.12
+-- 2.7.5판: 후반 수련. 수련 효과가 경지마다 +12%씩만 늘어 후반엔 한 번에 수십밖에 오르지 않았다 (적 한 마리는 수백만).
+-- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
+-- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
+Config.TRAIN_LATE_SHARE = 0.02
+Config.TRAIN_LATE_REF = 48 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 24)
+function Config.trainMult(idx: number): number
+	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
+	local late = Config.killGain(Config.realmRefPower(idx)) * Config.TRAIN_LATE_SHARE / Config.TRAIN_LATE_REF
+	return math.max(lin, late)
+end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
 Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터

@@ -854,7 +854,7 @@ local function buildStats()
 		local locked = nextRealm and (nextRealm.rebirth or 0) > rb
 		table.insert(lines, string.format("<b>경지: %s%s</b>  (능력치 합 %s%s)", rb > 0 and ((Config.REBIRTH.names[rb] or "") .. " · ") or "", realm.name, Config.formatNumber(state.total),
 			nextRealm and string.format(" / 다음 %s는 %s%s", nextRealm.name, Config.formatNumber(nextRealm.need), locked and ' <font color="#FF9AD8">(환생해야 열림)</font>' or "") or ""))
-		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
+		table.insert(lines, string.format("경지 배율 ×%.2f (사경까지 경지마다 ×1.22, 그 위로는 ×1.38씩 겹으로, 수련 효과 +%d%%, 생사경부터는 그 경지 적 한 마리에 견줘 크게) · 경지는 스무 단계 (천외천 너머 넷은 환생해야 열린다)", Config.realmPower(idx), math.floor(Config.TRAIN_REALM_BONUS * 100)))
 		if rb > 0 then
 			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 체력 ×%.2f · 주는 피해 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthDmg(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
 		end
