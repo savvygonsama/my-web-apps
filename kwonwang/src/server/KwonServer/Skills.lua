@@ -2622,163 +2622,271 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	-- 3.0판 환생 권법의 기술 ------------------------------------------------
-	elseif kind == "wheelThrow" then
-		-- 윤회권 윤회륜 (E): 등 뒤의 바퀴를 던진다. 세워진 채 구르며 앞으로 갔다가 내게로 되돌아온다
-		-- 바퀴 자리 = 던진 자리에서 지금 내 자리로 옮겨 가는 점 + 앞으로 dist × sin(πu) (화면도 같은 식)
+	-- 3.2판 환생 권법 (E·R·G 새로, 초 오의 X) ------------------------------------------------
+	elseif kind == "rinneTriWheel" then
+		-- 윤회권 윤회삼륜 (E): 금빛 바퀴와 지난 삶의 쪽빛 바퀴 둘이 부채꼴로 구르며 나갔다가 되돌아온다
+		-- 바퀴 k의 자리 = 던진 자리 + 방향k × dist × sin(πu). 방향k = look을 (k-2)×spread 도 돌린 것. 양옆 바퀴는 lag 늦게 출발 (화면도 같은 식)
 		local from = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "wheelThrow", m = f.model, from = from, dir = look, dist = m.dist, time = m.time / sp, style = style })
-		local last: { [any]: number } = {}
+		Push:FireAllClients("skillfx", { kind = "rinneTriWheel", m = f.model, from = from, dir = look, dist = m.dist, time = m.time / sp, spread = m.spread, lag = m.lag / sp, style = style })
+		local eh = scaled(m.echo, sc)
 		local n = math.floor(m.time / m.every)
-		for i = 1, n do
-			after(i * m.every, function()
-				local u = i / n
-				local pos = from:Lerp(f.root.Position, u) + look * (m.dist * math.sin(u * math.pi))
-				local now = os.clock()
-				for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
-					if not last[o] or now - last[o] > 0.25 then
-						last[o] = now
-						strike(f, o, hit, move)
+		for k = 1, 3 do
+			local dk = CFrame.Angles(0, math.rad((k - 2) * m.spread), 0):VectorToWorldSpace(look)
+			local start = k == 2 and 0 or m.lag
+			local last: { [any]: number } = {}
+			for i = 1, n do
+				after(start + i * m.every, function()
+					local pos = from + dk * (m.dist * math.sin(i / n * math.pi))
+					local now = os.clock()
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						if not last[o] or now - last[o] > 0.25 then
+							last[o] = now
+							strike(f, o, k == 2 and hit or eh, move)
+						end
 					end
-				end
-			end)
+				end)
+			end
 		end
-	elseif kind == "pastStep" then
-		-- 윤회권 전생보 (R): 앞으로 미끄러지며 베고, 지난 삶의 그림자 둘이 같은 길을 다시 내달린다
+	elseif kind == "threeLives" then
+		-- 윤회권 삼생보 (R): 미끄러지며 베면, 지난 세 삶의 그림자가 같은 길을 차례로 다시 내달리고, 끝에서 하나로 모여 터진다
 		local a = f.root.Position
 		local b = a + look * m.dist
-		Push:FireAllClients("skillfx", { kind = "pastStep", m = f.model, from = a, to = b, echoes = m.echoes, delay = m.delay / sp, gap = m.gap / sp, style = style })
+		Push:FireAllClients("skillfx", { kind = "threeLives", m = f.model, from = a, to = b, delay = m.delay / sp, gap = m.gap / sp, merge = m.merge / sp, style = style })
 		after(0.15, function()
 			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
 				strike(f, o, hit, move)
 			end
 		end)
 		local echo = scaled(m.echo, sc)
-		for k = 1, m.echoes do
+		for k = 1, 3 do
 			after(m.delay + (k - 1) * m.gap + 0.12, function()
 				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
 					strike(f, o, echo, move)
 				end
 			end)
 		end
-	elseif kind == "sixRealms" then
-		-- 윤회권 육도윤회 (오의): 하늘의 큰 바퀴에서 여섯 구슬이 떨어져 차례로 적에게 꽂히고, 바퀴가 땅에 누워 갈며 돈다
-		local center = f.root.Position
-		local list = nearestList(f, m.range, m.n)
-		local spots = {}
-		for i = 1, m.n do
-			local t = list[i]
-			if t then
-				spots[i] = t.root.Position
-			else
-				local a = (i - 1) / m.n * math.pi * 2
-				spots[i] = center + Vector3.new(math.cos(a), 0, math.sin(a)) * 12
+		after(m.merge, function()
+			for _, o in ipairs(hostilesNear(f, b, m.burstRadius)) do
+				strike(f, o, scaled(m.burst, sc), move)
 			end
+		end)
+	elseif kind == "sixRealms" then
+		-- 윤회권 육도윤회 (오의, 3.2판): 하늘로 오른 큰 바퀴의 여섯 구슬이 적 둘레 여섯 자리에 꽂혀 빛기둥이 되고 육각별로 이어진다.
+		-- 바퀴가 누워 내려와 별 위를 갈며 돌다가 내리박혀 터진다
+		local from = f.root.Position
+		local c = from + look * m.dist
+		local rot = math.atan2(look.Z, look.X)
+		local spots = {}
+		for i = 1, 6 do
+			local a = rot + (i - 1) / 6 * math.pi * 2
+			spots[i] = c + Vector3.new(math.cos(a), 0, math.sin(a)) * m.hexR
 		end
-		local T = m.rise + m.n * m.every + m.slamAt
-		Push:FireAllClients("skillfx", { kind = "sixRealms", m = f.model, at = center, spots = spots, rise = m.rise / sp, every = m.every / sp, slam = T / sp, grind = m.grind / sp, radius = m.grindRadius, style = style })
-		for i = 1, m.n do
-			after(m.rise + (i - 1) * m.every + 0.12, function()
+		local T1 = m.rise + 6 * m.every
+		local T2 = T1 + m.link
+		Push:FireAllClients("skillfx", { kind = "sixRealms", m = f.model, from = from, at = c, dir = look, spots = spots, rise = m.rise / sp, every = m.every / sp, fly = m.fly / sp,
+			link = m.link / sp, grind = m.grind / sp, hexR = m.hexR, radius = m.finalRadius, style = style })
+		for i = 1, 6 do
+			after(m.rise + (i - 1) * m.every + m.fly, function()
 				for _, o in ipairs(hostilesNear(f, spots[i], m.radius)) do
 					strike(f, o, hit, move)
 				end
 			end)
 		end
 		local gh = scaled(m.grindHit, sc)
-		local ticks = math.floor(m.grind / m.grindEvery)
-		for k = 0, ticks - 1 do
-			after(T + k * m.grindEvery, function()
-				for _, o in ipairs(hostilesNear(f, center, m.grindRadius)) do
-					pullTo(o, center, 10)
+		for i = 1, math.floor(m.grind / m.grindEvery) do
+			after(T2 + i * m.grindEvery, function()
+				for _, o in ipairs(hostilesNear(f, c, m.hexR + 4)) do
+					pullTo(o, c, m.pull)
 					strike(f, o, gh, move)
 				end
 			end)
 		end
-		after(T + m.grind, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+		after(T2 + m.grind, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "karmaOrbs" then
-		-- 업화권 업화탄 (E): 검은 불덩이 셋이 가까운 적 셋을 쫓아 날아가 터진다 (적이 없으면 앞으로)
-		local list = nearestList(f, m.range, m.n)
-		local points = {}
-		for i = 1, m.n do
-			local t = list[(i - 1) % math.max(1, #list) + 1]
-			if t then
-				points[i] = t.root.Position
-			else
-				points[i] = f.root.Position + (look + rightOf(look) * ((i - 2) * 0.35)).Unit * 18
-			end
-		end
-		local targets = {}
-		for i = 1, m.n do
-			local t = list[(i - 1) % math.max(1, #list) + 1]
-			targets[i] = t and t.model or false
-		end
-		Push:FireAllClients("skillfx", { kind = "karmaOrbs", m = f.model, targets = targets, points = points, delay = m.delay / sp, travel = m.travel / sp, radius = m.radius, style = style })
-		for i = 1, m.n do
-			after(m.delay + m.travel, function()
-				local t = list[(i - 1) % math.max(1, #list) + 1]
-				local at = (t and not t.dead and t.root.Parent) and t.root.Position or points[i]
-				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
-					strike(f, o, hit, move)
+	elseif kind == "rebirthCycle" then
+		-- 윤회권 윤회전생 (초 오의): 컷씬 동안 하늘에 거대한 윤회륜이 걸리고 지난 네 삶이 일어선다 (그동안 무적).
+		-- 전생의 군세가 적에게 번갈아 덮치고 → 바퀴가 땅에 누워 둘레를 가두고 갈며 끌어당기고 → 모두 하나로 모여 다시 태어나며 터진다
+		local C = f.root.Position
+		local T1 = m.cut
+		local T2 = T1 + m.army
+		local T3 = T2 + m.cage
+		local T4 = T3 + m.merge
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T4 / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "rebirthCycle", m = f.model, at = C, dir = look, cut = T1 / sp, army = m.army / sp, cage = m.cage / sp, merge = m.merge / sp, cageR = m.cageR, radius = m.finalRadius, style = style })
+		local sh = scaled(m.strike, sc)
+		for i = 1, math.floor(m.army / m.every) do
+			after(T1 + i * m.every, function()
+				local list = hostilesNear(f, C, m.range)
+				local ats = {}
+				for _ = 1, math.min(m.n, #list) do
+					local o = list[math.random(1, #list)]
+					table.insert(ats, o.root.Position)
+					strike(f, o, sh, move)
+				end
+				if #ats > 0 then
+					Push:FireAllClients("skillfx", { kind = "rebirthStrike", m = f.model, at = C, ats = ats, k = (i % 4) + 1, style = style })
 				end
 			end)
 		end
-	elseif kind == "hellTrail" then
-		-- 업화권 겁화보 (R): 검은 불꽃이 되어 내달린 길이 갈라지며 타고, 마지막에 한꺼번에 치솟는다
+		local gh = scaled(m.grind, sc)
+		for i = 1, math.floor(m.cage / m.cageEvery) do
+			after(T2 + i * m.cageEvery, function()
+				for _, o in ipairs(hostilesNear(f, C, m.cageR)) do
+					pullTo(o, C, m.pull)
+					strike(f, o, gh, move)
+				end
+			end)
+		end
+		after(T4, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "karmaChains" then
+		-- 업화권 업화쇄 (E): 두 팔의 달군 사슬이 가까운 적 셋에게 날아가 걸리고, 검은 불이 사슬을 타고 번지며 끌어온 뒤 적 발밑에서 터진다
+		local list = nearestList(f, m.range, m.n)
+		local to = f.root.Position + look * 14
+		Push:FireAllClients("skillfx", { kind = "karmaChains", m = f.model, targets = modelsOf(list), to = to, hook = m.hook / sp, hold = m.hold / sp, style = style })
+		local bh = scaled(m.burst, sc)
+		for _, o in ipairs(list) do
+			after(m.hook, function()
+				if not o.dead then
+					strike(f, o, hit, move)
+					pullTo(o, f.root.Position + look * 3, m.pull)
+				end
+			end)
+			after(m.hook + m.hold, function()
+				if o.root.Parent then
+					for _, q in ipairs(hostilesNear(f, o.root.Position, m.burstRadius)) do
+						strike(f, q, bh, move)
+					end
+				end
+			end)
+		end
+		if #list == 0 then
+			after(m.hook + m.hold, function()
+				for _, q in ipairs(hostilesNear(f, to, m.burstRadius)) do
+					strike(f, q, bh, move)
+				end
+			end)
+		end
+	elseif kind == "hellDash" then
+		-- 업화권 겁화질주 (R): 검은 불꽃이 되어 내달리면 지난 길이 용암 틈으로 갈라져 타고, 도화선처럼 불기둥이 차례로 치솟아 끝에서 크게 터진다
 		local a = f.root.Position
 		local b = a + look * m.dist
-		Push:FireAllClients("skillfx", { kind = "hellTrail", m = f.model, from = a, to = b, width = m.width, delay = m.delay / sp, dur = m.dur / sp, style = style })
-		local n = math.floor(m.dur / m.every)
-		for i = 0, n - 1 do
-			after(m.delay + i * m.every, function()
-				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
-					strike(f, o, hit, move)
-				end
-			end)
-		end
-		after(m.delay + m.dur, function()
-			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width + 1)) do
-				strike(f, o, scaled(m.burst, sc), move)
+		Push:FireAllClients("skillfx", { kind = "hellDash", m = f.model, from = a, to = b, burn = m.burn / sp, erupt = m.erupt / sp, pillars = m.pillars, step = m.step / sp, style = style })
+		after(0.12, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+				strike(f, o, hit, move)
 			end
 		end)
-	elseif kind == "avici" then
-		-- 업화권 무간지옥 (오의): 지옥불 기둥이 세 겹으로 퍼져 솟으며 적을 가운데로 끌고, 땅속의 불타는 손이 가운데를 움켜쥐어 터뜨린다
-		local center = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "avici", m = f.model, at = center, radius = m.radius, waves = m.waves, delay = m.delay / sp, every = m.every / sp, handAt = m.handAt / sp, grab = m.grab / sp, style = style })
-		local band = m.radius / m.waves
-		for w = 1, m.waves do
-			after(m.delay + (w - 1) * m.every, function()
-				local r = band * w
-				for _, o in ipairs(hostilesNear(f, center, r + 2)) do
-					local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
-					if d >= r - band - 1 then
-						strike(f, o, hit, move)
-					end
-					pullTo(o, center, m.pull)
+		local bh = scaled(m.burnHit, sc)
+		for i = 1, math.floor(m.burn / m.every) do
+			after(0.2 + i * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					strike(f, o, bh, move)
 				end
 			end)
 		end
-		local T = m.delay + m.waves * m.every + m.handAt
-		for k = 0, 3 do
-			after(T + k * m.grab / 4, function()
-				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-					pullTo(o, center, m.pull)
+		local ph = scaled(m.pillar, sc)
+		for i = 1, m.pillars do
+			after(m.erupt + (i - 1) * m.step, function()
+				for _, o in ipairs(hostilesNear(f, a:Lerp(b, i / m.pillars), m.pillarRadius)) do
+					strike(f, o, ph, move)
 				end
 			end)
 		end
-		after(T + m.grab, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+		after(m.erupt + m.pillars * m.step + 0.1, function()
+			for _, o in ipairs(hostilesNear(f, b, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "phantomBlink" then
-		-- 무상권 무상영 (E): 안개가 되어 가까운 적들의 등 뒤로 차례로 나타나며 친다 (그동안 무적)
+	elseif kind == "hellGate" then
+		-- 업화권 업화지옥문 (오의): 앞의 땅에서 거대한 지옥문이 솟아 열리고, 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다.
+		-- 문이 쾅 닫히고, 땅속으로 가라앉으며 지옥불 고리로 터진다
+		local from = f.root.Position
+		local c = from + look * m.dist
+		local T2 = m.rise + m.open
+		local T3 = T2 + m.drag
+		local T4 = T3 + m.shut
+		Push:FireAllClients("skillfx", { kind = "hellGate", m = f.model, from = from, at = c, dir = look, rise = m.rise / sp, open = m.open / sp, drag = m.drag / sp, shut = m.shut / sp, sink = m.sink / sp, dragR = m.dragR, radius = m.finalRadius, style = style })
+		for i = 1, math.floor(m.drag / m.every) do
+			after(T2 + i * m.every, function()
+				local ats = {}
+				for _, o in ipairs(hostilesNear(f, c, m.dragR)) do
+					pullTo(o, c, m.pull)
+					strike(f, o, hit, move)
+					table.insert(ats, o.root.Position)
+				end
+				if #ats > 0 and i % 2 == 1 then
+					Push:FireAllClients("skillfx", { kind = "gateChain", at = c, ats = ats, style = style })
+				end
+			end)
+		end
+		after(T4, function()
+			for _, o in ipairs(hostilesNear(f, c, m.shutR)) do
+				strike(f, o, scaled(m.shutHit, sc), move)
+			end
+		end)
+		after(T4 + m.sink, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "eightHells" then
+		-- 업화권 팔열지옥 (초 오의): 컷씬 동안 하늘이 핏빛이 되고 둘레에 검은 불기둥 여덟이 솟는다 (그동안 무적).
+		-- 기둥이 하나씩 적에게 지옥불을 내리꽂고 → 땅에서 솟은 거대한 두 손이 가운데를 맞잡아 짓누르고 → 기둥들이 모여 검은 해가 되어 내리꽂힌다
+		local C = f.root.Position
+		local T1 = m.cut
+		local T2 = T1 + 8 * m.every
+		local T3 = T2 + m.hands
+		local T4 = T3 + m.sun
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T4 / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "eightHells", m = f.model, at = C, dir = look, cut = T1 / sp, every = m.every / sp, hands = m.hands / sp, sun = m.sun / sp, ringR = m.ringR, radius = m.finalRadius, style = style })
+		local rot = math.atan2(look.Z, look.X)
+		for i = 1, 8 do
+			after(T1 + (i - 1) * m.every, function()
+				local a = rot + (i - 1) / 8 * math.pi * 2
+				local src = C + Vector3.new(math.cos(a), 0, math.sin(a)) * m.ringR
+				local list = hostilesNear(f, C, m.range)
+				local at = #list > 0 and list[math.random(1, #list)].root.Position or (C + (src - C) * 0.45)
+				Push:FireAllClients("skillfx", { kind = "hellStrike", m = f.model, at = at, from = src, idx = i, style = style })
+				task.delay(0.18 / sp, function()
+					if alive() then
+						for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+							strike(f, o, hit, move)
+						end
+					end
+				end)
+			end)
+		end
+		for i = 0, math.floor(m.hands / 0.2) - 1 do
+			after(T2 + i * 0.2, function()
+				for _, o in ipairs(hostilesNear(f, C, m.range)) do
+					pullTo(o, C, m.pull)
+				end
+			end)
+		end
+		after(T2 + m.hands * 0.85, function()
+			for _, o in ipairs(hostilesNear(f, C, m.clapR)) do
+				strike(f, o, scaled(m.clap, sc), move)
+			end
+		end)
+		after(T4, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "phantomRush" then
+		-- 무상권 무상섬 (E): 안개가 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 친다 (그동안 무적).
+		-- 지나간 자리마다 남은 잔상이 마지막에 한꺼번에 다시 베고 안개로 흩어진다
 		local list = nearestList(f, m.range, m.n)
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + math.max(1, #list) * m.every + 0.3) / sp)
-		Push:FireAllClients("skillfx", { kind = "phantomBlink", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, style = style })
+		local tEnd = m.delay + math.max(1, #list) * m.every
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (tEnd + 0.3) / sp)
+		Push:FireAllClients("skillfx", { kind = "phantomRush", m = f.model, from = f.root.Position, dir = look, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, echo = m.echoAt / sp, style = style })
 		if #list == 0 then
 			after(m.delay, function()
 				local p = f.root.Position + look * 12
@@ -2797,154 +2905,220 @@ function Skills.run(f: any, move: any, ctx: any)
 				local d = flat(tp - f.root.Position)
 				local p = Vector3.new(tp.X, f.root.Position.Y, tp.Z) + d * 3.2
 				moveTo(f, CFrame.lookAt(p, Vector3.new(tp.X, p.Y, tp.Z)))
-				strike(f, t, hit, move)
 				for _, o in ipairs(hostilesNear(f, tp, 5)) do
-					if o ~= t then
-						strike(f, o, hit, move)
-					end
-				end
-			end)
-		end
-	elseif kind == "illusions" then
-		-- 무상권 허상 (R): 몸이 흩어지며 둘레에 허상 셋. 허상이 적을 끌어모았다가 안개로 터진다 (나는 잠시 보이지 않는다)
-		local center = f.root.Position
-		local rot = math.atan2(look.Z, look.X)
-		local spots = {}
-		for i = 1, m.n do
-			local a = rot + (i - 1) / m.n * math.pi * 2
-			table.insert(spots, center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius)
-		end
-		f.model:SetAttribute("Vanish", true)
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.vanish / sp)
-		Push:FireAllClients("skillfx", { kind = "illusions", m = f.model, at = center, spots = spots, hold = m.hold / sp, style = style })
-		local ticks = math.floor(m.hold / m.every)
-		for k = 0, ticks - 1 do
-			after(k * m.every, function()
-				for _, pt in ipairs(spots) do
-					for _, o in ipairs(hostilesNear(f, pt, m.burstRadius + 5)) do
-						pullTo(o, pt, m.pull)
-					end
-				end
-			end)
-		end
-		after(m.hold, function()
-			local done = {}
-			local burst = scaled(m.burst, sc)
-			for _, pt in ipairs(spots) do
-				for _, o in ipairs(hostilesNear(f, pt, m.burstRadius)) do
-					if not done[o] then
-						done[o] = true
-						strike(f, o, burst, move)
-					end
-				end
-			end
-		end)
-		task.delay(m.vanish / sp, function()
-			if f.model.Parent then
-				f.model:SetAttribute("Vanish", nil)
-			end
-		end)
-	elseif kind == "allPasses" then
-		-- 무상권 제행무상 (오의): 세상이 잿빛으로 멈춘다. 몸이 일곱으로 갈라져 일곱 적을 한꺼번에 치고, 다시 하나로 모이며 터진다
-		local center = f.root.Position
-		local list = nearestList(f, m.range, m.n)
-		local total = m.delay + m.strikes * m.every + m.converge
-		f.model:SetAttribute("Vanish", true)
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
-		local spots = {}
-		for i = 1, m.n do
-			local t = list[i]
-			if t then
-				spots[i] = t.root.Position
-			else
-				local a = (i - 1) / m.n * math.pi * 2
-				spots[i] = center + Vector3.new(math.cos(a), 0, math.sin(a)) * 14
-			end
-		end
-		Push:FireAllClients("skillfx", { kind = "allPasses", m = f.model, at = center, spots = spots, delay = m.delay / sp, strikes = m.strikes, every = m.every / sp, converge = m.converge / sp, radius = m.finalRadius, style = style })
-		for k = 1, m.strikes do
-			after(m.delay + (k - 1) * m.every, function()
-				for i = 1, m.n do
-					local t = list[i]
-					if t and not t.dead and t.root.Parent then
-						strike(f, t, hit, move)
-					else
-						for _, o in ipairs(hostilesNear(f, spots[i], 5)) do
-							strike(f, o, hit, move)
-						end
-					end
-				end
-			end)
-		end
-		after(total, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-		task.delay(total / sp + 0.05, function()
-			if f.model.Parent then
-				f.model:SetAttribute("Vanish", nil)
-			end
-		end)
-	elseif kind == "kingFist" then
-		-- 권왕신권 왕권 (E): 등 뒤의 거대한 금빛 주먹이 앞으로 곧게 내지르고, 반 박자 뒤 반대쪽 주먹이 한 번 더
-		local a = f.root.Position
-		local b = a + look * m.length
-		Push:FireAllClients("skillfx", { kind = "kingFist", m = f.model, from = a, dir = look, length = m.length, width = m.width, delay = m.delay / sp, second = m.second / sp, style = style })
-		for k = 0, 1 do
-			after(m.delay + k * m.second + 0.08, function()
-				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
 					strike(f, o, hit, move)
 				end
 			end)
 		end
-	elseif kind == "royalRoad" then
-		-- 권왕신권 왕도 (R): 금빛 길을 내달리고 (무적), 길 위로 금빛 기둥이 차례로 솟는다
-		local a = f.root.Position
-		local b = a + look * m.length
-		Push:FireAllClients("skillfx", { kind = "royalRoad", m = f.model, from = a, to = b, width = m.width, run = m.run / sp, pillars = m.pillars, step = m.step / sp, style = style })
-		after(m.run * 0.5, function()
-			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
-				strike(f, o, hit, move)
+		local eh = scaled(m.echo, sc)
+		after(tEnd + m.echoAt, function()
+			for _, t in ipairs(list) do
+				if not t.dead and t.root.Parent then
+					strike(f, t, eh, move)
+				end
 			end
 		end)
-		local done = {}
-		local ph = scaled(m.pillar, sc)
-		for i = 1, m.pillars do
-			after(m.run + i * m.step, function()
-				local pt = a:Lerp(b, i / m.pillars)
-				for _, o in ipairs(hostilesNear(f, pt, m.width)) do
-					if not done[o] then
-						done[o] = true
-						strike(f, o, ph, move)
-					end
+	elseif kind == "mistStar" then
+		-- 무상권 허실분신 (R): 몸이 흩어져 (보이지 않는다) 안개 분신 다섯이 별처럼 사방으로 뻗어 베고,
+		-- 서로 엇갈려 되돌아오며 오각별을 긋고, 가운데에서 내가 다시 나타나며 터진다
+		local C = f.root.Position
+		local rot = math.atan2(look.Z, look.X)
+		local pts = {}
+		for k = 1, 5 do
+			local a = rot + (k - 1) / 5 * math.pi * 2
+			pts[k] = C + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius
+		end
+		f.model:SetAttribute("Vanish", true)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.back + 0.2) / sp)
+		Push:FireAllClients("skillfx", { kind = "mistStar", m = f.model, at = C, pts = pts, out = m.out / sp, cross = m.cross / sp, back = m.back / sp, style = style })
+		local model = f.model
+		task.delay(m.back / sp, function()
+			model:SetAttribute("Vanish", nil)
+		end)
+		after(m.out, function()
+			for k = 1, 5 do
+				for _, o in ipairs(hostilesOnSeg(f, C, pts[k], m.width)) do
+					strike(f, o, hit, move)
+				end
+			end
+		end)
+		local ch = scaled(m.crossHit, sc)
+		after(m.cross + 0.1, function()
+			for k = 1, 5 do
+				for _, o in ipairs(hostilesOnSeg(f, pts[k], pts[(k + 1) % 5 + 1], m.width)) do
+					strike(f, o, ch, move)
+				end
+			end
+		end)
+		after(m.back, function()
+			for _, o in ipairs(hostilesNear(f, C, m.burstRadius)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "mistSea" then
+		-- 무상권 무상해 (오의): 발밑에서 잿빛 안개의 바다가 퍼지고 세상의 빛깔이 빠진다. 안개에서 넋의 손이 솟아 적을 붙잡고,
+		-- 손뼉 한 번에 안개가 가운데로 빨려 들어 기둥이 되었다가 사방으로 베며 흩어진다
+		local C = f.root.Position
+		local list = nearestList(f, m.radius, 8)
+		Push:FireAllClients("skillfx", { kind = "mistSea", m = f.model, at = C, targets = modelsOf(list), spread = m.spread / sp, hold = m.hold / sp, implode = m.implode / sp, radius = m.radius, style = style })
+		for i = 1, math.floor(m.hold / m.every) do
+			after(m.spread + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
+					o.slowUntil = os.clock() + 0.4
+					o.slowMul = 0.5
+					strike(f, o, hit, move)
 				end
 			end)
 		end
-	elseif kind == "kingDescend" then
-		-- 권왕신권 권왕강림 (오의): 등 뒤에서 거대한 금빛 왕이 일어나 적을 골라 세 번 내리찍고, 두 주먹으로 마지막 충격파
-		local center = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "kingDescend", m = f.model, at = center, dir = look, rise = m.rise / sp, punches = m.punches, every = m.every / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		for i = 0, 2 do
+			after(m.spread + m.hold + i * 0.1, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius + 4)) do
+					pullTo(o, C, m.pull)
+				end
+			end)
+		end
+		after(m.spread + m.hold + m.implode, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "allReturn" then
+		-- 무상권 만상귀무 (초 오의): 컷씬 동안 세상이 잿빛이 되고 몸이 안개로 흩어진다 (그동안 무적, 보이지 않음).
+		-- 안개가 거대한 나의 그림자로 일어서 넋의 칼로 둘레를 세 번 크게 베고 → 시간이 멈춰 적마다 푸른 봉인이 찍히고
+		-- → 그림자가 내 자리로 흩어져 모이는 순간 빛깔이 돌아오며 봉인이 한꺼번에 깨진다
+		local C = f.root.Position
+		local T2 = m.cut + m.rise
+		local T3 = T2 + m.sweeps * m.sweepEvery
+		local T4 = T3 + m.freeze
+		f.model:SetAttribute("Vanish", true)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T4 / sp + 0.3)
+		Push:FireAllClients("skillfx", { kind = "allReturn", m = f.model, at = C, dir = look, cut = m.cut / sp, rise = m.rise / sp, sweeps = m.sweeps, sweepEvery = m.sweepEvery / sp, sweepT = m.sweepT / sp, freeze = m.freeze / sp, range = m.range, radius = m.finalRadius, style = style })
+		local model = f.model
+		task.delay(T4 / sp, function()
+			model:SetAttribute("Vanish", nil)
+		end)
+		local sw = scaled(m.sweep, sc)
+		for k = 1, m.sweeps do
+			after(T2 + (k - 1) * m.sweepEvery + m.sweepT, function()
+				for _, o in ipairs(hostilesNear(f, C, m.range)) do
+					strike(f, o, sw, move)
+				end
+			end)
+		end
+		after(T3, function()
+			local ats = {}
+			for _, o in ipairs(hostilesNear(f, C, m.range)) do
+				table.insert(ats, o.root.Position)
+			end
+			Push:FireAllClients("skillfx", { kind = "voidSeals", m = f.model, at = C, ats = ats, freeze = m.freeze / sp, style = style })
+		end)
+		after(T4, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingBarrage" then
+		-- 권왕신권 왕권천타 (E): 등 뒤에 금빛 주먹 여섯이 부채꼴로 나타나 차례로 앞으로 내지르고, 마지막에 큰 주먹이 가운데를 꿰뚫는다
+		-- k번째 주먹의 줄 = 옆으로 (짝수 +, 홀수 -) × ceil(k/2) × 1.6 (화면도 같은 식)
+		local from = f.root.Position
 		local right = rightOf(look)
-		for i = 1, m.punches do
-			after(m.rise + (i - 1) * m.every, function()
-				local list = nearestList(f, m.range, m.punches)
-				local t = list[(i - 1) % math.max(1, #list) + 1]
-				local side = (i % 2 == 1) and 1 or -1
-				local spot = t and t.root.Position or (center + look * 12 + right * side * 6)
-				Push:FireAllClients("skillfx", { kind = "kingPunch", m = f.model, at = spot, origin = center, dir = look, side = side, style = style })
-				task.delay(0.16 / sp, function()
+		Push:FireAllClients("skillfx", { kind = "kingBarrage", m = f.model, from = from, dir = look, n = m.n, every = m.every / sp, delay = m.delay / sp, finalAt = m.finalAt / sp, length = m.length, style = style })
+		for k = 1, m.n do
+			local off = right * ((k % 2 == 0 and 1 or -1) * math.ceil(k / 2) * 1.6)
+			after(m.delay + (k - 1) * m.every + 0.07, function()
+				for _, o in ipairs(hostilesOnSeg(f, from + off, from + off + look * m.length, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.n * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, from + look * (m.length + 6), m.width * 1.8)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingLeap" then
+		-- 권왕신권 왕도강림 (R): 붉은 길이 깔리고 그 위로 크게 뛰어올라 내려앉으면, 왕관의 가시 여덟이 둘레에서 솟았다가 안으로 무너지며 터진다
+		local a = f.root.Position
+		local b = a + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "kingLeap", m = f.model, from = a, to = b, land = m.land / sp, style = style })
+		after(m.land, function()
+			local p = f.root.Position
+			Push:FireAllClients("skillfx", { kind = "kingLand", m = f.model, at = p, collapse = m.collapse / sp, spikeR = m.spikeR, style = style })
+			for _, o in ipairs(hostilesNear(f, p, m.landR)) do
+				strike(f, o, hit, move)
+			end
+			task.delay(m.collapse / sp, function()
+				if alive() then
+					for _, o in ipairs(hostilesNear(f, p, m.spikeR + 2)) do
+						strike(f, o, scaled(m.burst, sc), move)
+					end
+				end
+			end)
+		end)
+	elseif kind == "crownCage" then
+		-- 권왕신권 만인지상 (오의): 하늘에서 거대한 금빛 왕관이 내려와 적들을 가두고, 돌며 조여 들고, 보석이 빛줄기를 쏘고,
+		-- 한 번 더 내리박혀 금빛으로 터진다
+		local from = f.root.Position
+		local c = from + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "crownCage", m = f.model, from = from, at = c, dir = look, descend = m.descend / sp, squeeze = m.squeeze / sp, slam = m.slam / sp, R = m.R, radius = m.finalRadius, style = style })
+		after(m.descend, function()
+			for _, o in ipairs(hostilesNear(f, c, m.R)) do
+				strike(f, o, scaled(m.drop, sc), move)
+			end
+		end)
+		for i = 1, math.floor(m.squeeze / m.every) do
+			after(m.descend + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.R + 2)) do
+					pullTo(o, c, m.pull)
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.descend + m.squeeze + m.slam, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingOfHeaven" then
+		-- 권왕신권 천하제일권 (초 오의): 컷씬 동안 금빛 구름이 갈라지고 등 뒤에 거대한 금빛 왕이 일어선다 (그동안 무적).
+		-- 왕이 앞의 땅에 금빛 주먹비를 쏟고 → 왕과 내가 함께 주먹을 당겨 힘을 모으고 → 함께 내지르면 거대한 주먹이 80칸을 꿰뚫고 끝에서 터진다
+		local C = f.root.Position
+		local right = rightOf(look)
+		local T1 = m.cut
+		local T2 = T1 + m.rain
+		local T3 = T2 + m.charge
+		local T4 = T3 + m.punch
+		local T5 = T4 + m.endAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T5 / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "kingOfHeaven", m = f.model, at = C, dir = look, cut = T1 / sp, rain = m.rain / sp, charge = m.charge / sp, punch = m.punch / sp, endAt = m.endAt / sp, length = m.length, width = m.width, style = style })
+		local rh = scaled(m.rainHit, sc)
+		for i = 1, math.floor(m.rain / m.every) do
+			after(T1 + i * m.every, function()
+				local list = hostilesNear(f, C + look * m.length * 0.3, m.range)
+				local at
+				if #list > 0 and math.random() < 0.75 then
+					at = list[math.random(1, #list)].root.Position
+				else
+					at = C + look * (8 + math.random() * 30) + right * (math.random() - 0.5) * 36
+				end
+				Push:FireAllClients("skillfx", { kind = "kingRain", m = f.model, at = at, from = C - look * 10 + Vector3.new(0, 34, 0), fall = m.fall / sp, style = style })
+				task.delay(m.fall / sp, function()
 					if alive() then
-						for _, o in ipairs(hostilesNear(f, spot, m.radius)) do
-							strike(f, o, hit, move)
+						for _, o in ipairs(hostilesNear(f, at, m.rainR)) do
+							strike(f, o, rh, move)
 						end
 					end
 				end)
 			end)
 		end
-		after(m.rise + m.punches * m.every + m.finalAt, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+		after(T4, function()
+			for _, o in ipairs(hostilesOnSeg(f, C, C + look * m.length, m.width)) do
 				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+		after(T5, function()
+			for _, o in ipairs(hostilesNear(f, C + look * m.length, m.endR)) do
+				strike(f, o, scaled(m.endHit, sc), move)
 			end
 		end)
 	-- 3.1판 극 일월신권 ------------------------------------------------

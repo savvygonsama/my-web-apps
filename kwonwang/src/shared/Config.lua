@@ -1951,7 +1951,7 @@ end
 
 ------------------------------------------------------------------------
 -- 3.0판: 환생 권법 넷. n번째 윤회의 시련을 넘으면 전생의 그림자가 n번째 권법을 남기고 간다
--- 초 권법처럼 모든 기술이 새로 짜였고 몸에 두르는 것이 있다 (초 오의 X는 없다)
+-- 초 권법처럼 모든 기술이 새로 짜였고 몸에 두르는 것이 있다 (3.2판부터 초 오의 X도 있다)
 ------------------------------------------------------------------------
 Config.REBIRTH_STYLES = { "rinne", "eophwa", "musangkwon", "kwonwangsin" }
 -- 윤회권: 등 뒤에 금빛 윤회륜이 돈다. 맞힐 때마다 지난 삶의 그림자가 한 박자 늦게 따라 친다
@@ -1982,12 +1982,14 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "rnH", name = "윤회일장", pose = "rinne_seal", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 26, 0.6, 22, nil, true) } },
 	skills = {
-		E = { id = "rnE", name = "윤회륜", desc = "등 뒤의 윤회륜을 앞으로 던진다. 커다란 금빛 바퀴가 세워진 채 구르며 26칸을 나아가 지나는 적을 갈고, 되돌아와 다시 등에 붙는다", pose = "rinne_throw", dur = 0.55, cd = 8, chi = 20,
-			mech = { kind = "wheelThrow", dist = 26, time = 1.2, every = 0.08, radius = 6, hit = hit(0, 0, 0, 14, 12, 0.3, 6) } },
-		R = { id = "rnR", name = "전생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 0.4초 뒤 지난 삶의 그림자 둘이 같은 길을 차례로 다시 내달려 벤다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.4,
-			mech = { kind = "pastStep", dist = 18, width = 5, echoes = 2, delay = 0.4, gap = 0.3, hit = hit(0, 0, 0, 24, 22, 0.5, 12), echo = hit(0, 0, 0, 20, 18, 0.45, 12) } },
-		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘 높이 떠올라 집채만큼 커진다. 바퀴의 여섯 구슬(여섯 갈래 세상)이 떨어져 나와 차례로 적에게 빛기둥으로 내리꽂히고, 마지막에 거대한 바퀴가 땅에 누워 둘레를 갈며 돌다가 터진다", pose = "ult_rinne", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "sixRealms", rise = 0.55, n = 6, every = 0.22, range = 32, radius = 7, hit = hit(0, 0, 0, 34, 34, 0.7, 10, 18), slamAt = 0.3, grind = 1.2, grindEvery = 0.2, grindRadius = 24, grindHit = hit(0, 0, 0, 12, 12, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+		E = { id = "rnE", name = "윤회삼륜", desc = "등 뒤의 윤회륜을 던진다. 금빛 바퀴가 세워진 채 구르며 26칸을 나아가고, 지난 삶의 쪽빛 바퀴 둘이 양옆으로 부채꼴을 그리며 뒤따른다. 셋 모두 땅에 금빛 바퀴 자국을 새기며 갈고, 되돌아와 등에 붙는다", pose = "rinne_throw", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "rinneTriWheel", dist = 26, time = 1.3, every = 0.08, spread = 24, lag = 0.12, radius = 5.5, hit = hit(0, 0, 0, 14, 12, 0.3, 6), echo = hit(0, 0, 0, 10, 9, 0.25, 4) } },
+		R = { id = "rnR", name = "삼생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 떠난 자리에 지난 세 삶의 그림자가 멈춰 서 있다가 차례로 같은 길을 다시 내달려 베고, 끝에서 나에게 하나로 모여드는 순간 바퀴 무늬로 터진다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.35,
+			mech = { kind = "threeLives", dist = 18, width = 5, delay = 0.4, gap = 0.16, merge = 1.05, hit = hit(0, 0, 0, 24, 22, 0.5, 12), echo = hit(0, 0, 0, 16, 14, 0.4, 10), burstRadius = 9, burst = hit(0, 0, 0, 40, 40, 0.7, 24, 14) } },
+		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘로 올라 집채만큼 커진다. 여섯 구슬 (여섯 갈래 세상) 이 차례로 떨어져 적 둘레의 여섯 자리에 빛기둥으로 꽂히고, 기둥끼리 이어져 땅에 육각별이 그려진다. 거대한 바퀴가 누워 내려와 별 위를 갈며 돌다가 내리박혀 터진다", pose = "ult_rinne", dur = 3.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sixRealms", dist = 10, hexR = 14, rise = 0.55, every = 0.18, fly = 0.22, radius = 7, hit = hit(0, 0, 0, 30, 30, 0.6, 8, 16), link = 0.35, grind = 1.0, grindEvery = 0.2, pull = 20, grindHit = hit(0, 0, 0, 12, 12, 0.3, 0), finalRadius = 24, final = hit(0, 0, 0, 140, 160, 1.5, 60, 26) } },
+		X = { id = "rnX", name = "윤회전생", desc = "초 오의. 컷씬: 하늘이 쪽빛으로 저물고 등 뒤 하늘에 거대한 윤회륜이 걸리며, 둘레의 땅에서 지난 네 삶의 내가 일어선다 (그동안 무적). 전생의 군세가 적에게 번갈아 덮쳐 친다. 바퀴가 땅에 누워 둘레를 가두고 돌며 끌어당기고, 모두가 나에게 모여드는 순간 다시 태어나며 금빛으로 터진다", pose = "ult_rinne_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "rebirthCycle", cut = 1.5, army = 1.8, every = 0.15, range = 45, n = 2, strike = hit(0, 0, 0, 22, 20, 0.4, 6), cage = 1.0, cageEvery = 0.2, cageR = 34, pull = 30, grind = hit(0, 0, 0, 14, 12, 0.3, 0), merge = 0.4, finalRadius = 38, final = hit(0, 0, 0, 240, 270, 1.8, 80, 30) } },
 	},
 })
 -- 업화권: 검은 불꽃과 붉은 사슬. 쌓인 업이 상대 발밑에서 지옥불로 터진다
@@ -2019,12 +2021,14 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "epH", name = "업화일권", pose = "karma_charge", dur = 0.66, lunge = 14, iframes = 0.2, hits = { hit(0.3, 9, 7, 30, 34, 0.7, 34) } },
 	skills = {
-		E = { id = "epE", name = "업화탄", desc = "두 주먹을 맞부딪쳐 검은 불덩이 셋을 피워 던진다. 불덩이는 가까운 적 셋을 쫓아 날아가 붉게 터진다", pose = "karma_throw", dur = 0.55, cd = 8, chi = 20,
-			mech = { kind = "karmaOrbs", n = 3, range = 30, delay = 0.2, travel = 0.4, radius = 6, hit = hit(0, 0, 0, 26, 24, 0.5, 14, 8) } },
-		R = { id = "epR", name = "겁화보", desc = "검은 불꽃이 되어 앞으로 20칸 내달린다 (무적). 지나간 땅이 갈라지며 2초 동안 불타고, 마지막에 불길이 한꺼번에 치솟는다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 20, iframes = 0.35,
-			mech = { kind = "hellTrail", dist = 20, width = 4.5, dur = 2.0, every = 0.3, delay = 0.15, hit = hit(0, 0, 0, 9, 8, 0.25, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 8, 20) } },
-		G = { id = "epG", name = "무간지옥", desc = "주먹으로 땅을 내리치면 둘레가 갈라지며 지옥불 기둥이 세 겹으로 퍼져 솟고, 적을 가운데로 끌어당긴다. 마지막에 땅속에서 불타는 거대한 손이 솟아 가운데를 움켜쥐고 터뜨린다", pose = "ult_karma", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "avici", radius = 26, waves = 3, every = 0.35, delay = 0.4, pull = 24, hit = hit(0, 0, 0, 26, 26, 0.5, 0, 14), handAt = 0.35, grab = 0.6, finalRadius = 16, final = hit(0, 0, 0, 140, 160, 1.5, 50, 30) } },
+		E = { id = "epE", name = "업화쇄", desc = "두 팔의 달군 사슬을 내던진다. 사슬은 가까운 적 셋에게 날아가 걸리고, 검은 불이 사슬을 타고 번지며 적을 끌어온 뒤 발밑에서 지옥불로 터진다", pose = "karma_throw", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "karmaChains", n = 3, range = 28, hook = 0.18, hold = 0.42, pull = 40, hit = hit(0, 0, 0, 16, 14, 0.4, 0), burstRadius = 6, burst = hit(0, 0, 0, 30, 28, 0.6, 10, 14) } },
+		R = { id = "epR", name = "겁화질주", desc = "검은 불꽃이 되어 앞으로 22칸 내달린다 (무적). 지나간 땅이 용암 틈으로 갈라져 타고, 양옆으로 사슬이 휘몰아친다. 잠시 뒤 도화선처럼 불기둥 여덟이 차례로 치솟고, 끝에서 크게 터진다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 22, iframes = 0.4,
+			mech = { kind = "hellDash", dist = 22, width = 4.5, burn = 1.2, every = 0.3, hit = hit(0, 0, 0, 22, 20, 0.5, 10), burnHit = hit(0, 0, 0, 7, 6, 0.2, 0), erupt = 1.3, pillars = 8, step = 0.06, pillarRadius = 4.5, pillar = hit(0, 0, 0, 20, 20, 0.5, 4, 18), finalRadius = 9, final = hit(0, 0, 0, 40, 40, 0.8, 20, 24) } },
+		G = { id = "epG", name = "업화지옥문", desc = "주먹으로 땅을 치면 앞의 땅이 갈라지며 붉은 글이 새겨진 거대한 지옥문이 솟는다. 문이 열리며 붉은 빛과 검은 불이 쏟아지고, 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다. 문이 쾅 닫히고, 땅속으로 가라앉으며 지옥불 고리로 터진다", pose = "ult_karma", dur = 2.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "hellGate", dist = 14, rise = 0.6, open = 0.4, drag = 1.0, every = 0.2, dragR = 26, pull = 34, hit = hit(0, 0, 0, 12, 12, 0.3, 0), shut = 0.4, sink = 0.5, shutR = 12, shutHit = hit(0, 0, 0, 70, 70, 0.9, 20, 10), finalRadius = 20, final = hit(0, 0, 0, 120, 140, 1.5, 50, 28) } },
+		X = { id = "epX", name = "팔열지옥", desc = "초 오의. 컷씬: 하늘이 핏빛이 되고 땅이 갈라지며 둘레에 검은 불기둥 여덟이 솟는다 (그동안 무적). 기둥이 하나씩 적에게 지옥불을 내리꽂고, 땅에서 솟은 거대한 불의 두 손이 가운데를 맞잡아 짓누른다. 여덟 기둥이 머리 위로 모여 검은 해가 되고, 땅을 내리치면 검은 해가 떨어져 둘레가 지옥불의 돔으로 터진다", pose = "ult_karma_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "eightHells", cut = 1.4, every = 0.2, ringR = 30, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 40, 0.7, 6, 20), hands = 0.9, pull = 34, clapR = 16, clap = hit(0, 0, 0, 90, 90, 1.0, 10, 10), sun = 0.9, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 80, 30) } },
 	},
 })
 -- 무상권: 잿빛 안개와 푸른 넋불. 몸이 흐려져 공격이 비켜 가고, 잔상이 상대 뒤에서 친다
@@ -2056,12 +2060,14 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "msH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
 	skills = {
-		E = { id = "msE", name = "무상영", desc = "안개가 되어 가까운 적 셋의 등 뒤로 차례로 나타나며 친다 (그동안 무적). 지나간 자리마다 잔상이 남았다가 흩어진다", pose = "ghost_flash", dur = 0.75, cd = 8, chi = 20,
-			mech = { kind = "phantomBlink", n = 3, range = 26, every = 0.22, delay = 0.08, hit = hit(0, 0, 0, 26, 24, 0.6, 10, 6) } },
-		R = { id = "msR", name = "허상", desc = "몸이 흩어지며 둘레에 허상 셋을 남긴다 (나는 1.2초 동안 보이지 않는다). 허상은 적을 끌어모았다가 안개로 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25, iframes = 0.6,
-			mech = { kind = "illusions", n = 3, radius = 9, hold = 1.2, every = 0.3, pull = 12, vanish = 1.2, burstRadius = 9, burst = hit(0, 0, 0, 32, 34, 0.7, 20, 10) } },
-		G = { id = "msG", name = "제행무상", desc = "세상이 잿빛으로 멈춘다 (그동안 무적·보이지 않음). 몸이 일곱으로 갈라져 일곱 적에게 한꺼번에 덮쳐 들고, 다시 하나로 모이는 순간 둘레가 안개 물결로 터진다", pose = "ult_mist", dur = 2.2, cd = 30, chi = 100, armor = true,
-			mech = { kind = "allPasses", n = 7, range = 32, delay = 0.6, strikes = 3, every = 0.18, hit = hit(0, 0, 0, 30, 28, 0.6, 6, 6), converge = 0.4, finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+		E = { id = "msE", name = "무상섬", desc = "안개가 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 엇갈려 벤다 (그동안 무적). 지나간 자리마다 흐릿한 잔상이 남아 있다가, 마지막에 한꺼번에 다시 베고 안개로 흩어진다", pose = "ghost_flash", dur = 0.8, cd = 8, chi = 20,
+			mech = { kind = "phantomRush", n = 5, range = 26, delay = 0.06, every = 0.14, hit = hit(0, 0, 0, 20, 18, 0.5, 8, 6), echoAt = 0.3, echo = hit(0, 0, 0, 18, 16, 0.5, 6, 6) } },
+		R = { id = "msR", name = "허실분신", desc = "몸이 흩어지고 (1초 동안 보이지 않는다) 안개 분신 다섯이 별처럼 사방으로 뻗어 나가며 벤다. 분신들은 서로 엇갈려 건너편으로 내달려 땅에 오각별을 긋고, 가운데에서 내가 다시 나타나는 순간 별이 안개로 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25, iframes = 0.6,
+			mech = { kind = "mistStar", radius = 11, width = 3.5, out = 0.15, cross = 0.55, back = 0.95, hit = hit(0, 0, 0, 20, 18, 0.5, 10), crossHit = hit(0, 0, 0, 16, 14, 0.4, 6), burstRadius = 10, burst = hit(0, 0, 0, 34, 34, 0.7, 18, 10) } },
+		G = { id = "msG", name = "무상해", desc = "발밑에서 잿빛 안개의 바다가 둘레 28칸으로 퍼지고 세상의 빛깔이 빠진다. 안개에서 넋의 손이 솟아 적을 붙잡고 (굼뜨게 한다), 넋불이 안개 위를 돈다. 손뼉 한 번에 안개가 가운데로 빨려 들어 기둥이 되었다가 사방으로 베며 흩어진다", pose = "ult_mist", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "mistSea", radius = 28, spread = 0.4, hold = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 12, 0.35, 0), implode = 0.35, pull = 40, finalRadius = 28, final = hit(0, 0, 0, 130, 150, 1.5, 60, 22) } },
+		X = { id = "mkX", name = "만상귀무", desc = "초 오의. 컷씬: 세상이 잿빛이 되고 몸이 안개로 흩어진다 (그동안 무적, 보이지 않음). 안개가 거대한 나의 그림자로 일어서 넋의 칼로 둘레를 세 번 크게 벤다. 시간이 멈추고 적마다 푸른 봉인이 찍힌다. 그림자가 내 자리로 흩어져 모이는 순간 빛깔이 돌아오며 모든 봉인이 한꺼번에 깨진다", pose = "ult_mist_x", dur = 4.4, cd = 60, chi = 150, armor = true,
+			mech = { kind = "allReturn", cut = 1.4, rise = 0.6, sweeps = 3, sweepEvery = 0.5, sweepT = 0.25, range = 42, sweep = hit(0, 0, 0, 50, 50, 0.8, 30, 10), freeze = 0.8, finalRadius = 42, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
 	},
 })
 -- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
@@ -2094,12 +2100,14 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "kwH", name = "왕권일격", pose = "king_cannon", dur = 0.66, lunge = 10, iframes = 0.2, hits = { hit(0.3, 10, 8, 36, 40, 0.8, 40, nil, true) } },
 	skills = {
-		E = { id = "kwE", name = "왕권", desc = "등 뒤에 집채만 한 금빛 주먹이 나타나 앞으로 30칸을 곧게 내지른다. 반 박자 뒤 반대쪽 주먹이 한 번 더 내지른다", pose = "king_cannon", dur = 0.7, cd = 8, chi = 22,
-			mech = { kind = "kingFist", length = 30, width = 7, delay = 0.3, second = 0.35, hit = hit(0, 0, 0, 30, 30, 0.6, 30, 6) } },
-		R = { id = "kwR", name = "왕도", desc = "발밑에서 앞으로 금빛 길이 깔리고, 그 길을 따라 30칸 내달린다 (무적). 지나간 길 위로 금빛 기둥이 차례로 솟아 적을 띄운다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 26, iframes = 0.45,
-			mech = { kind = "royalRoad", length = 30, width = 6, run = 0.35, pillars = 6, step = 0.08, hit = hit(0, 0, 0, 22, 20, 0.5, 14), pillar = hit(0, 0, 0, 28, 28, 0.6, 6, 26) } },
-		G = { id = "kwG", name = "권왕강림", desc = "등 뒤에서 관을 쓴 거대한 금빛 왕이 일어선다. 왕이 적을 골라 세 번 땅을 내리찍고, 마지막에 두 주먹을 한꺼번에 내리꽂아 금빛 충격파가 둘레 30칸을 휩쓴다", pose = "ult_king", dur = 3.0, cd = 30, chi = 100, armor = true,
-			mech = { kind = "kingDescend", rise = 0.7, punches = 3, every = 0.45, range = 30, radius = 9, hit = hit(0, 0, 0, 50, 50, 0.8, 20, 14), finalAt = 0.5, finalRadius = 30, final = hit(0, 0, 0, 150, 170, 1.6, 70, 26) } },
+		E = { id = "kwE", name = "왕권천타", desc = "등 뒤에 금빛 주먹 여섯이 부채꼴로 나타나 차례로 28칸을 내지른다. 마지막에 커다란 왕의 주먹이 가운데를 꿰뚫고 금빛 충격파가 줄지어 터진다", pose = "king_cannon", dur = 0.9, cd = 8, chi = 22,
+			mech = { kind = "kingBarrage", n = 6, delay = 0.15, every = 0.08, length = 28, width = 3.5, hit = hit(0, 0, 0, 12, 12, 0.3, 10), finalAt = 0.12, final = hit(0, 0, 0, 34, 34, 0.7, 34, 8) } },
+		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고, 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고, 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
+			mech = { kind = "kingLeap", dist = 24, land = 0.42, landR = 9, hit = hit(0, 0, 0, 30, 30, 0.6, 14, 10), collapse = 0.4, spikeR = 8, burst = hit(0, 0, 0, 30, 30, 0.6, 8, 22) } },
+		G = { id = "kwG", name = "만인지상", desc = "금빛 구름이 열리고 하늘에서 거대한 금빛 왕관이 내려와 앞의 적들을 가둔다. 왕관이 돌며 조여 들고 보석마다 빛줄기를 쏘다가, 한 번 더 내리박혀 금빛 기둥과 함께 터진다", pose = "ult_king", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "crownCage", dist = 12, R = 14, descend = 0.6, drop = hit(0, 0, 0, 40, 40, 0.8, 0, 8), squeeze = 1.2, every = 0.2, pull = 26, hit = hit(0, 0, 0, 14, 14, 0.35, 0), slam = 0.4, finalRadius = 22, final = hit(0, 0, 0, 140, 160, 1.6, 60, 26) } },
+		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 금빛 구름이 갈라지고 등 뒤에 관을 쓴 거대한 금빛 왕이 일어선다 (그동안 무적). 왕이 앞의 땅에 금빛 주먹비를 쏟는다. 왕과 내가 함께 주먹을 당겨 힘을 모으고, 함께 내지르면 거대한 금빛 주먹이 80칸을 꿰뚫고 끝에서 왕관 모양으로 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "kingOfHeaven", cut = 1.5, rain = 1.8, every = 0.1, fall = 0.25, range = 36, rainR = 6, rainHit = hit(0, 0, 0, 18, 16, 0.35, 4, 6), charge = 0.8, punch = 0.3, length = 80, width = 10, final = hit(0, 0, 0, 220, 250, 1.8, 90, 20), endAt = 0.4, endR = 20, endHit = hit(0, 0, 0, 80, 90, 1.2, 50, 26) } },
 	},
 })
 

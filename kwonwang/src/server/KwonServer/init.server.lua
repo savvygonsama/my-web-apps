@@ -899,7 +899,7 @@ local function addMastery(player: Player, p: Profile, amount: number)
 	end
 	if leveled then
 		local style = Config.STYLE_BY_ID[p.style]
-		-- 이 숙련에 열리는 기술 (초 오의 X는 초월 권법에만 있다)
+		-- 이 숙련에 열리는 기술 (초 오의 X는 초월·환생·극 권법에 있다)
 		local opened = {}
 		for _, slot in ipairs({ "E", "R", "G", "X" }) do
 			local sk = style and style.skills[slot]

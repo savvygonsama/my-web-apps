@@ -2041,14 +2041,70 @@ A.ult_king = {
 	{ t = 1, j = kingEnd() },
 }
 
+-- 3.2판 초 오의 몸동작
+-- 윤회전생: 웅크렸다가 두 팔을 벌려 떠오르고, 손으로 전생의 군세를 이끌고, 두 팔을 들었다가 내리쳐 바퀴를 앉히고, 두 주먹을 하늘로 (다시 태어남)
+A.ult_rinne_x = {
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { 10, 0, 0 }, RS = { 60, 0, -30 }, RE = { 90, 0, 0 }, LS = { 60, 0, 30 }, LE = { 90, 0, 0 }, RK = { -40, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.12, j = { W = { -15, 0, 0 }, N = { -30, 0, 0 }, RS = { 115, 0, 98 }, RE = { 0, 0, 0 }, LS = { 115, 0, -98 }, LE = { 0, 0, 0 }, RH = { 10, 0, 0 }, LH = { -10, 0, 0 }, LK = { -30, 0, 0 }, R = { 6, 0, 0, 0, 2.2, 0 } } },
+	{ t = 0.3, j = { W = { -15, 0, 0 }, N = { -30, 0, 0 }, RS = { 115, 0, 98 }, RE = { 0, 0, 0 }, LS = { 115, 0, -98 }, LE = { 0, 0, 0 }, RH = { 10, 0, 0 }, LH = { -10, 0, 0 }, LK = { -30, 0, 0 }, R = { 6, 0, 0, 0, 3.0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 3.0, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 3.0, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 3.0, 0 } } },
+	{ t = 0.67, j = { W = { -20, 0, 0 }, N = { -40, 0, 0 }, RS = { 178, 0, -5 }, RE = { 5, 0, 0 }, LS = { 178, 0, 5 }, LE = { 5, 0, 0 }, LK = { -40, 0, 0 }, RK = { -20, 0, 0 }, R = { 8, 0, 0, 0, 3.4, 0 } } },
+	{ t = 0.74, e = "snap", j = { W = { 50, 0, 0 }, N = { 20, 0, 0 }, RS = { 50, 0, 10 }, RE = { 0, 0, 0 }, LS = { 50, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 20 }, LH = { 40, 0, -20 }, RK = { -95, 0, 0 }, LK = { -95, 0, 0 }, R = { -20, 0, 0, 0, -1.6, -0.6 } } },
+	{ t = 0.86, j = { W = { 20, 0, 0 }, RS = { 60, 0, 70 }, RE = { 0, 0, 0 }, LS = { 60, 0, -70 }, LE = { 0, 0, 0 }, RK = { -50, 0, 0 }, LK = { -50, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.94, e = "snap", j = { W = { -25, 0, 0 }, N = { -45, 0, 0 }, RS = { 180, 0, 10 }, RE = { 0, 0, 0 }, LS = { 180, 0, -10 }, LE = { 0, 0, 0 }, LK = { -30, 0, 0 }, R = { 10, 0, 0, 0, 1.4, 0 } } },
+	{ t = 1, j = { RS = { 120, 0, 25 }, RE = { 25, 0, 0 }, LS = { 35, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, -0.4 } } },
+}
+-- 팔열지옥: 두 주먹을 들어 기둥을 세우고, 좌우로 번갈아 내질러 지옥불을 꽂고, 두 손을 앞에서 맞잡고, 오른 주먹을 하늘로 들었다가 땅을 내리친다
+A.ult_karma_x = {
+	{ t = 0, j = { W = { 25, 0, 0 }, N = { 10, 0, 0 }, RS = { 20, 0, 20 }, RE = { 110, 0, 0 }, LS = { 20, 0, -20 }, LE = { 110, 0, 0 }, RK = { -45, 0, 0 }, LK = { -45, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.12, j = { W = { -10, 0, 0 }, N = { -25, 0, 0 }, RS = { 150, 0, 40 }, RE = { 30, 0, 0 }, LS = { 150, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, 0.4, 0 } } },
+	{ t = 0.28, j = { W = { -15, 0, 0 }, N = { -30, 0, 0 }, RS = { 115, 0, 98 }, RE = { 0, 0, 0 }, LS = { 115, 0, -98 }, LE = { 0, 0, 0 }, RH = { 10, 0, 0 }, LH = { -10, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, 0.6, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.43, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.51, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.59, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.66, j = { W = { 10, 0, 0 }, RS = { 80, 0, 85 }, RE = { 0, 0, 0 }, LS = { 80, 0, -85 }, LE = { 0, 0, 0 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.75, e = "snap", j = { W = { 15, 0, 0 }, N = { 5, 0, 0 }, RS = { 90, 0, -18 }, RE = { 0, 0, 0 }, LS = { 90, 0, 18 }, LE = { 0, 0, 0 }, RK = { -35, 0, 0 }, LK = { -35, 0, 0 }, R = { 0, 0, 0, 0, -0.7, -0.4 } } },
+	{ t = 0.87, j = { W = { -20, 0, 0 }, N = { -40, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 30, 0, -30 }, LE = { 80, 0, 0 }, LK = { -20, 0, 0 }, R = { 6, 0, 0, 0, 0.6, 0 } } },
+	{ t = 0.95, e = "snap", j = { W = { 50, 0, 0 }, N = { 20, 0, 0 }, RS = { 50, 0, 10 }, RE = { 0, 0, 0 }, LS = { 50, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 20 }, LH = { 40, 0, -20 }, RK = { -95, 0, 0 }, LK = { -95, 0, 0 }, R = { -25, 0, 0, 0, -2.0, -0.8 } } },
+	{ t = 1, j = { RS = { 120, 0, 25 }, RE = { 25, 0, 0 }, LS = { 35, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, -0.4 } } },
+}
+-- 만상귀무: 몸이 흩어지는 동안 두 팔을 늘어뜨리고 떠오르듯 젖혀진다 (그 뒤로는 보이지 않는다)
+A.ult_mist_x = {
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 20, 0, 30 }, RE = { 20, 0, 0 }, LS = { 20, 0, -30 }, LE = { 20, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.3, j = { W = { -15, 0, 0 }, N = { -35, 0, 0 }, RS = { 40, 0, 60 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 10, 0, 0 }, LK = { -20, 0, 0 }, R = { 6, 0, 0, 0, 1.2, 0 } } },
+	{ t = 0.92, j = { W = { -15, 0, 0 }, N = { -35, 0, 0 }, RS = { 40, 0, 60 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 10, 0, 0 }, LK = { -20, 0, 0 }, R = { 6, 0, 0, 0, 1.2, 0 } } },
+	{ t = 0.97, e = "snap", j = { W = { 20, 20, 0 }, N = { 0, -15, 0 }, RS = { 90, 0, -10 }, RE = { 0, 0, 0 }, LS = { 40, 0, -60 }, LE = { 30, 0, 0 }, RK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, -0.6 } } },
+	{ t = 1, j = { RS = { 120, 0, 25 }, RE = { 25, 0, 0 }, LS = { 35, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, -0.4 } } },
+}
+-- 천하제일권: 팔짱을 꼈다가 주먹을 하늘로 (왕을 부른다), 두 팔을 벌리고, 빠르게 번갈아 내지르고 (주먹비), 오른 주먹을 깊이 당겨 모았다가 함께 내지른다
+A.ult_king_x = {
+	{ t = 0, j = { W = { 0, 0, 0 }, RS = { 40, 0, -50 }, RE = { 100, 0, 0 }, LS = { 40, 0, 50 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.18, e = "snap", j = { W = { -15, 0, 0 }, N = { -35, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 40, 0, 50 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, 0.3, 0 } } },
+	{ t = 0.3, j = { W = { -15, 0, 0 }, N = { -25, 0, 0 }, RS = { 120, 0, 70 }, RE = { 0, 0, 0 }, LS = { 120, 0, -70 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, 0.2, 0 } } },
+	{ t = 0.36, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.48, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.54, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { 10, 25, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, -6 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.66, e = "snap", j = { W = { 10, -25, 0 }, N = { 0, 20, 0 }, RS = { 30, 0, 40 }, RE = { 90, 0, 0 }, LS = { 92, 0, 6 }, LE = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.74, j = { W = { 10, -40, 0 }, N = { 0, 35, 0 }, RS = { -30, 0, 25 }, RE = { 110, 0, 0 }, LS = { 90, 0, 10 }, LE = { 20, 0, 0 }, RK = { -40, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0.4 } } },
+	{ t = 0.82, j = { W = { 12, -45, 0 }, N = { 0, 40, 0 }, RS = { -35, 0, 25 }, RE = { 115, 0, 0 }, LS = { 90, 0, 10 }, LE = { 20, 0, 0 }, RK = { -45, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0.4 } } },
+	{ t = 0.86, e = "snap", j = { W = { 15, 35, 0 }, N = { 0, -25, 0 }, RS = { 92, 0, -4 }, RE = { 0, 0, 0 }, LS = { -20, 0, -30 }, LE = { 60, 0, 0 }, RK = { -10, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, -1.6 } } },
+	{ t = 0.96, j = { W = { 15, 35, 0 }, N = { 0, -25, 0 }, RS = { 92, 0, -4 }, RE = { 0, 0, 0 }, LS = { -20, 0, -30 }, LE = { 60, 0, 0 }, RK = { -10, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, -1.6 } } },
+	{ t = 1, j = kingEnd() },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
 Poses.limbs = {
-	rinne_palm_r = { "RightHand" }, rinne_palm_l = { "LeftHand" }, rinne_wheel_kick = { "RightFoot", "LeftFoot" }, rinne_thrust = { "RightHand", "LeftHand" }, rinne_seal = { "RightHand" }, rinne_throw = { "RightHand", "LeftHand" }, rinne_dash = { "RightHand" }, ult_rinne = { "RightHand", "LeftHand" },
-	karma_jab_r = { "RightHand" }, karma_jab_l = { "LeftHand" }, karma_chain = { "RightHand", "LeftHand" }, karma_smash = { "RightHand", "LeftHand" }, karma_charge = { "RightHand" }, karma_throw = { "RightHand", "LeftHand" }, karma_dash = { "RightHand" }, ult_karma = { "RightHand" },
-	ghost_palm_r = { "RightHand" }, ghost_palm_l = { "LeftHand" }, ghost_sweep = { "RightFoot" }, ghost_flash = { "RightHand" }, ghost_split = { "RightHand", "LeftHand" }, ult_mist = { "RightHand" },
-	king_jab_r = { "RightHand" }, king_jab_l = { "LeftHand" }, king_uppercut = { "RightHand" }, king_hammer = { "RightHand", "LeftHand" }, king_cannon = { "RightHand" }, king_dash = { "RightHand" }, ult_king = { "RightHand", "LeftHand" },
+	rinne_palm_r = { "RightHand" }, rinne_palm_l = { "LeftHand" }, rinne_wheel_kick = { "RightFoot", "LeftFoot" }, rinne_thrust = { "RightHand", "LeftHand" }, rinne_seal = { "RightHand" }, rinne_throw = { "RightHand", "LeftHand" }, rinne_dash = { "RightHand" }, ult_rinne = { "RightHand", "LeftHand" }, ult_rinne_x = { "RightHand", "LeftHand" },
+	karma_jab_r = { "RightHand" }, karma_jab_l = { "LeftHand" }, karma_chain = { "RightHand", "LeftHand" }, karma_smash = { "RightHand", "LeftHand" }, karma_charge = { "RightHand" }, karma_throw = { "RightHand", "LeftHand" }, karma_dash = { "RightHand" }, ult_karma = { "RightHand" }, ult_karma_x = { "RightHand", "LeftHand" },
+	ghost_palm_r = { "RightHand" }, ghost_palm_l = { "LeftHand" }, ghost_sweep = { "RightFoot" }, ghost_flash = { "RightHand" }, ghost_split = { "RightHand", "LeftHand" }, ult_mist = { "RightHand" }, ult_mist_x = { "RightHand" },
+	king_jab_r = { "RightHand" }, king_jab_l = { "LeftHand" }, king_uppercut = { "RightHand" }, king_hammer = { "RightHand", "LeftHand" }, king_cannon = { "RightHand" }, king_dash = { "RightHand" }, ult_king = { "RightHand", "LeftHand" }, ult_king_x = { "RightHand", "LeftHand" },
 	wood_palm_r = { "RightHand" }, wood_palm_l = { "LeftHand" }, wood_sweep = { "RightFoot" }, wood_slam = { "RightHand", "LeftHand" }, wood_flick = { "RightHand" }, wood_bloom = { "RightHand", "LeftHand" }, ult_wood = { "RightHand", "LeftHand" },
 	palm_r = { "RightHand" }, palm_l = { "LeftHand" }, circle_palm = { "RightHand" }, double_palm = { "RightHand", "LeftHand" },
 	push_palm = { "RightHand" }, whirl = { "RightHand", "LeftHand" }, ult_raise = { "RightHand", "LeftHand" },
