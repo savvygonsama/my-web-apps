@@ -1587,9 +1587,9 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕" }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕", "극" }
 -- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4 }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1604,6 +1604,7 @@ Config.GRADE_COLOR = {
 	["초월"] = Color3.fromRGB(255, 160, 210),
 	["윤회"] = Color3.fromRGB(170, 140, 255),
 	["권왕"] = Color3.fromRGB(255, 70, 70),
+	["극"] = Color3.fromRGB(255, 140, 90),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1621,7 +1622,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" or style.grade == "극" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -2102,6 +2103,78 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
+-- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
+------------------------------------------------------------------------
+Config.GEUK_REQ = { geukilwol = { base = "ilwol", lv = 20, rebirth = 3 } }
+-- 극 일월신권: 어깨 뒤에 작은 해와 달이 떠 돈다. 극이 차면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈춘다
+table.insert(Config.Styles, {
+	id = "geukilwol",
+	name = "극 일월신권",
+	hanja = "極日月神拳",
+	icon = "🌗",
+	grade = "극",
+	geuk = true,
+	color = Color3.fromRGB(255, 190, 70),
+	color2 = Color3.fromRGB(205, 220, 255),
+	fx = "eclipse",
+	sunMoonOrbs = true, -- 어깨 뒤의 해와 달 (화면이 그린다). 황혼에는 머리 뒤의 황혼 고리로 합쳐진다
+	hidden = true,
+	secret = true,
+	realmReq = 12,
+	styleReq = "ilwol",
+	trialHp = 12,
+	unlockHint = "일월신권을 숙련 20까지 쌓고 세 번 환생한 자만이, 천상 윤회대의 황혼권존을 만난다",
+	desc = "일월신권의 끝. 해와 달을 쥐는 것을 넘어, 해와 달을 부린다. 싸움이 무르익으면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈추고, 그 황혼 속에서 모든 수가 다른 것이 된다.",
+	gimmick = "극 패시브 · 일월극변: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 40초 동안 세상이 황혼이 된다. 그동안 모든 기술이 황혼의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 낮에는 주는 피해 +20%, 밤에는 받는 피해 -20%. 모든 기술 대기 30% 짧음. 초 오의(X)가 있다",
+	deflect = 0.34,
+	postureMult = 1.8,
+	speed = 1.15,
+	cdMult = 0.7,
+	sunMoon = { day = 1.2, night = 0.8 },
+	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 48, posture = 46, stun = 0.6, kb = 20, up = 8 },
+	-- 극: 맞힐 때 2 (기술은 1), 맞을 때 4. 100이면 일월극변 (컷씬 3초 뒤 황혼 40초)
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 3, dur = 40 },
+	stance = "stance_sunmoon",
+	combo = {
+		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
+		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
+		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 28, 26, 0.45, 18, 6, true) } },
+		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 38, 42, 0.6, 36) } },
+	},
+	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 74, 110, 1.0, 64, 10, true) } },
+	skills = {
+		E = { id = "gwE", name = "일월쌍륜", desc = "해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 20,
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 30, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 50, 56, 0.8, 30, 10) } },
+		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
+			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 40, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 40, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 50, 56, 0.8, 30, 12) } },
+		G = { id = "gwG", name = "대일월천", desc = "앞의 땅에 거대한 해가 내려앉아 둘레를 태운다. 해가 타는 동안 하늘에서 거대한 달의 칼날이 해를 세로로 가르고, 둘이 겹쳐 일식이 되며 터진다", pose = "sun_call", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sunMoonFall", dist = 12, fall = 0.6, radius = 15, burn = 1.4, every = 0.2, hit = hit(0, 0, 0, 14, 12, 0.3, 0), cutAt = 1.2, cutWidth = 7, cut = hit(0, 0, 0, 70, 70, 0.9, 20, 10), finalRadius = 24, final = hit(0, 0, 0, 260, 300, 1.6, 70, 26) } },
+		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 하늘이 어두워지며 해와 달이 함께 떠오르고, 둘이 부딪쳐 하늘에 거대한 일식이 걸린다 (그동안 무적). 일식의 빛살이 2초 동안 둘레의 적을 쉬지 않고 꿰뚫고, 마지막에 하늘로 주먹을 내지르면 일식이 새벽빛으로 터진다", pose = "ult_eclipse", dur = 4.2, cd = 60, chi = 150, armor = true,
+			mech = { kind = "eclipseGenesis", rise = 1.0, collide = 1.8, rays = 2.0, every = 0.12, range = 45, n = 4, radius = 6, hit = hit(0, 0, 0, 22, 18, 0.35, 4), finalAt = 0.4, finalRadius = 32, final = hit(0, 0, 0, 320, 360, 1.8, 80, 30) } },
+	},
+	-- 황혼 (일월극변 동안): 기술이 모두 바뀐다. 해와 달이 하나로 겹친 노을빛
+	twilight = {
+		name = "황혼",
+		color = Color3.fromRGB(255, 120, 60),
+		color2 = Color3.fromRGB(165, 95, 235),
+		dmg = 1.3,
+		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 64, posture = 60, stun = 0.7, kb = 24, up = 10 },
+		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 100, 140, 1.1, 70, 12, true) } },
+		skills = {
+			E = { id = "gtE", name = "황혼참", desc = "노을빛 초승달 다섯을 부채꼴로 던진다. 초승달은 28칸 날아갔다가 되돌아오며 오갈 때 한 번씩 벤다", pose = "moon_throw", dur = 0.55, cd = 6, chi = 18,
+				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 34, 30, 0.45, 10) } },
+			R = { id = "gtR", name = "석양보", desc = "노을이 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 벤다 (무적). 지나간 노을빛 줄이 모두 한꺼번에 터진다", pose = "sun_wheel", dur = 0.8, cd = 9, chi = 22,
+				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 40, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 46, 50, 0.7, 20, 10) } },
+			G = { id = "gtG", name = "황혼낙일", desc = "거대한 석양이 앞의 땅으로 가라앉아 둘레가 노을빛 바다가 된다. 2초 동안 바다 위의 적은 타며 굼뜨고, 바다에서 달빛 기둥이 솟아 꿰뚫는다. 마지막에 바다가 한꺼번에 솟구친다", pose = "sun_call", dur = 2.4, cd = 26, chi = 100, armor = true,
+				mech = { kind = "sunsetSea", dist = 10, sink = 0.8, radius = 22, dur = 2.0, every = 0.2, hit = hit(0, 0, 0, 16, 14, 0.3, 0), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 40, 36, 0.6, 4, 20), finalRadius = 25, final = hit(0, 0, 0, 300, 340, 1.6, 70, 30) } },
+			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 해와 달이 양쪽에서 한꺼번에 떨어져 땅을 부수고, 서로를 향해 굴러와 가운데에서 하나가 된다. 그 순간 세상이 노을빛으로 하얗게 터진다 (그동안 무적)", pose = "ult_eclipse", dur = 3.2, cd = 50, chi = 150, armor = true,
+				mech = { kind = "twilightCollapse", side = 16, fall = 0.8, roll = 0.9, rollEvery = 0.15, rollRadius = 8, rollHit = hit(0, 0, 0, 30, 24, 0.5, 10), impactRadius = 12, impact = hit(0, 0, 0, 90, 90, 1.0, 30, 16), finalAt = 0.5, finalRadius = 50, final = hit(0, 0, 0, 420, 460, 2.0, 90, 34) } },
+		},
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -2169,6 +2242,7 @@ local FINISHERS = {
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
+	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -2221,15 +2295,17 @@ local ACTION_POSE = {
 local actionCache: { [string]: any } = {}
 
 -- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G", "D", "A", "C"
-function Config.move(styleId: string, slot: any): any
+-- alt: 극 권법의 황혼 (일월극변) 동안이면 바뀐 기술을 돌려준다
+function Config.move(styleId: string, slot: any, alt: boolean?): any
 	local s = Config.STYLE_BY_ID[styleId]
 	if not s then
 		return nil
 	end
+	local tw = alt and s.twilight
 	if type(slot) == "number" then
 		return s.combo[slot]
 	elseif slot == "H" then
-		return s.heavy
+		return tw and tw.heavy or s.heavy
 	elseif slot == "F" then
 		return s.finisher
 	elseif Config.ACTION_MOVES[slot] then
@@ -2244,7 +2320,7 @@ function Config.move(styleId: string, slot: any): any
 		end
 		return actionCache[key]
 	end
-	return s.skills[slot]
+	return tw and tw.skills[slot] or s.skills[slot]
 end
 
 ------------------------------------------------------------------------
@@ -2527,6 +2603,22 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
 			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
 			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
+
+-- 3.1판 극의 시련: 황혼권존이 직접 (해의 비 → 달의 고리 → 일식). 일월신권의 권존보다 훨씬 세다
+for _, st in ipairs(Config.Styles) do
+	if st.id == "geukilwol" then
+		local sun, moon = Color3.fromRGB(255, 170, 60), Color3.fromRGB(190, 210, 255)
+		st.trialIntro = { title = "극의 시련", text = "세 번을 죽고 세 번을 살았구나. 그래도 해와 달은 아직 너를 모른다. 내 황혼을 끝까지 버텨 보아라. 해가 지고 달이 뜨는 그 사이에 서 있을 수 있다면, 극을 넘겨주마." }
+		st.trialBoss = { hp = 5200, posture = 900, scale = 1.7, reach = 1.5, speed = 26, patterns = {
+			P("rain", "해의 비", 1, { count = 9, radius = 8, spread = 26, warn = 0.9, cd = 6, pose = "sun_call", fx = "star", color = sun, hit = hit(0, 0, 0, 40, 44, 0.8, 22) }),
+			P("donut", "달의 고리", 1, { inner = 8, outer = 28, warn = 1.0, cd = 7, pose = "moon_seal", hit = hit(0, 0, 0, 48, 58, 0.9, 40) }),
+			P("charge", "일월환보", 2, { length = 56, width = 9, warn = 0.65, cd = 6, times = 3, pose = "sun_wheel", hit = hit(0, 0, 0, 44, 52, 0.9, 50) }),
+			P("rain", "월광우", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "moon_throw", fx = "star", color = moon, hit = hit(0, 0, 0, 34, 40, 0.7, 20) }),
+			P("leap", "대일낙하", 3, { radius = 20, warn = 0.9, cd = 7, pose = "eclipse_push", hit = hit(0, 0, 0, 64, 84, 1.2, 50, 22) }),
+			P("quake", "황혼", 3, { radius = 30, warn = 1.2, cd = 8, pose = "ult_eclipse", hit = hit(0, 0, 0, 90, 120, 1.5, 60, 26) }),
 		} }
 	end
 end
@@ -3300,9 +3392,11 @@ Config.SKY = {
 		{ id = "goldtemple", name = "금운사", at = Vector3.new(0, SY, -1600), radius = 190, ground = Color3.fromRGB(236, 214, 156), material = Enum.Material.Marble,
 			camps = { { enemy = "goldmonk", count = 3, at = Vector3.new(-80, SY, -1540) }, { enemy = "guardlion", count = 2, at = Vector3.new(80, SY, -1540) }, { enemy = "goldmonk", count = 2, at = Vector3.new(0, SY, -1650) } },
 			boss = { id = "geumgang", at = Vector3.new(0, SY, -1700) } },
+		-- 3.1판: 윤회대. 천궁 서쪽, 다른 섬보다 높이 떠 있다. 가운데 환생 제단, 뒤편에 거대한 윤회륜
+		{ id = "rinnedae", name = "윤회대", at = Vector3.new(-640, SY + 40, 280), radius = 130, safe = true, ground = Color3.fromRGB(226, 220, 242), material = Enum.Material.Marble },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -3323,6 +3417,9 @@ end
 Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6, 640), region = "금 간 허공 (천상계)", regionId = "subspace", secret = true,
 	quote = "공간은 비어 있지 않다. 접혀 있을 뿐.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
 -- 천궁 정자의 운류자 (누구나 찾을 수 있다), 성운원 깊은 곳의 성하노군 (숨은 사부)
+-- 3.1판 극의 사부: 천상 윤회대의 황혼권존 (세 번 환생한 자에게만 모습을 보인다)
+Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
+	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,

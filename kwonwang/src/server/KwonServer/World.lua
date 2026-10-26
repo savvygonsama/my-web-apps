@@ -95,6 +95,19 @@ function World.setClock(hour: number)
 	clockT0 = os.clock() - phaseOf(hour)
 	Lighting.ClockTime = hour
 end
+-- 3.1판 일월극변: cut 초 동안은 화면이 해와 달을 번갈아 띄우고 (서버는 시각을 건드리지 않는다), 그 뒤 dur 초 동안 세상이 황혼에 멈춘다
+local twilightCut, twilightFrom, twilightUntil = 0, 0, 0
+function World.twilight(cut: number, dur: number)
+	local now = os.clock()
+	if now >= twilightUntil then
+		twilightCut = now
+		twilightFrom = now + cut
+	end
+	twilightUntil = math.max(twilightUntil, now + cut + dur)
+end
+function World.twilightOn(): boolean
+	return os.clock() < twilightUntil
+end
 -- 멈추면 지금 시각에 머문다. 다시 누르면 흐른다
 function World.toggleClockFreeze(): boolean
 	if clockFrozen then
@@ -137,8 +150,38 @@ function World.setupLighting()
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
 	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
+	local baseAtmo, baseDecay, baseTint = atmo.Color, atmo.Decay, cc.TintColor
+	local wasTwilight = false
 	task.spawn(function()
 		while true do
+			local now = os.clock()
+			if now < twilightUntil then
+				-- 일월극변: 컷씬 동안은 낮·밤을 번갈아, 그 뒤엔 황혼에 멈춘다
+				if now < twilightFrom then
+					-- 컷씬: 낮과 밤이 점점 빨라지며 번갈아 (화면의 해·달과 같은 박자)
+					local u = math.clamp((now - twilightCut) / math.max(0.1, twilightFrom - twilightCut), 0, 1)
+					local beat = math.floor((u * u) * 12 * 1.6)
+					Lighting.ClockTime = beat % 2 == 0 and 12.5 or 0.5
+					task.wait(0.05)
+					continue
+				else
+					wasTwilight = true
+					Lighting.ClockTime = 18.25
+					Lighting.OutdoorAmbient = Color3.fromRGB(190, 120, 150)
+					Lighting.Brightness = 1.9
+					atmo.Color = Color3.fromRGB(255, 165, 120)
+					atmo.Decay = Color3.fromRGB(150, 70, 120)
+					cc.TintColor = Color3.fromRGB(255, 214, 196)
+				end
+				task.wait(0.25)
+				continue
+			end
+			if wasTwilight then
+				wasTwilight = false
+				atmo.Color = baseAtmo
+				atmo.Decay = baseDecay
+				cc.TintColor = baseTint
+			end
 			local h = World.clockHour()
 			Lighting.ClockTime = h
 			local night = (h < 6.5 or h > 18.5) and 1 or 0
@@ -3978,6 +4021,7 @@ local function skyWorld(out: any)
 		crane = { rim = "rail", rimColor = rgb(245, 245, 240), under = "peak", cloud = { CLOUD, 0.1, 1.3 }, islet = "pine" },
 		bamboo = { depth = 0.32, rim = "fence", under = { rgb(112, 86, 60), Enum.Material.Ground }, drip = "root", dripColor = rgb(96, 70, 46), cloud = { rgb(236, 246, 236), 0.3, 1 }, islet = "bamboo", ledges = 4 },
 		moonlake = { depth = 0.16, rim = "silver", under = { rgb(180, 186, 204), Enum.Material.Marble }, drip = "water", cloud = { rgb(210, 222, 246), 0.25, 1 }, islet = "lotus" },
+		rinnedae = { depth = 0.36, bands = true, rim = "gold", under = { rgb(196, 186, 226), Enum.Material.Marble }, drip = "crystal", dripColor = rgb(180, 150, 255), cloud = { rgb(235, 230, 255), 0.2, 1.1 }, islet = "crystal" },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -4355,7 +4399,8 @@ local function skyWorld(out: any)
 		local to = B.at - dir.Unit * (B.radius - 4)
 		local len = (to - from).Magnitude
 		local mid = (from + to) / 2
-		local cf = CFrame.lookAt(mid, mid + dir)
+		-- 3.1판: 높이가 다른 섬 사이 (윤회대) 는 비탈진 다리
+		local cf = math.abs(to.Y - from.Y) > 0.5 and CFrame.lookAt(mid, to) or CFrame.lookAt(mid, mid + dir)
 		local w = b.hidden and 8 or 16
 		local deck = part({ Name = b.hidden and "HiddenBridge" or "SkyBridge", Size = Vector3.new(w, 1, len), CFrame = cf * CFrame.new(0, -0.5, 0), Color = b.hidden and Color3.fromRGB(200, 230, 255) or Color3.fromRGB(240, 238, 230), Material = b.hidden and Enum.Material.Glass or Enum.Material.Marble, Transparency = b.hidden and 0.88 or 0, Parent = f })
 		local _ = deck
@@ -4745,6 +4790,87 @@ local function skyWorld(out: any)
 	part({ Name = "CenserLeg", Size = Vector3.new(4, 2, 4), Position = gt + Vector3.new(0, 1, -10), Color = Color3.fromRGB(120, 95, 60), Material = Enum.Material.Metal, Parent = f })
 	local smoke = part({ Name = "CenserGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = gt + Vector3.new(0, 5.4, -10), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 	light(smoke, Color3.fromRGB(255, 200, 120), 20, 1)
+
+	-- 3.1판 윤회대: 가운데 환생 제단 (세 겹 단, 금테, 여섯 빛깔 기둥), 뒤편 (서쪽) 의 거대한 윤회륜, 둘레를 도는 구름 소용돌이
+	-- 윤회륜과 구름 소용돌이는 화면이 천천히 돌린다 (RinneWheel · RinneVortex)
+	local rd = I.rinnedae.at
+	local RINGOLD = Color3.fromRGB(255, 214, 110)
+	local INDIGO = Color3.fromRGB(120, 90, 255)
+	for i = 1, 3 do
+		disc("RinneAltarTier", rd + Vector3.new(0, i * 1.2 - 0.6, 0), 34 - i * 8, 1.2, Color3.fromRGB(240, 236, 250), Enum.Material.Marble, f)
+		disc("RinneAltarTrim", rd + Vector3.new(0, i * 1.2 - 1.15, 0), 34 - i * 8 + 0.6, 0.3, RINGOLD, Enum.Material.Metal, f, false)
+	end
+	local altarTop = rd + Vector3.new(0, 3.6, 0)
+	local seal = disc("RinneSeal", altarTop + Vector3.new(0, 0.05, 0), 8, 0.2, INDIGO, Enum.Material.Neon, f, false)
+	seal.Transparency = 0.35
+	local altar = part({ Name = "RinneAltar", Size = Vector3.new(4, 3, 4), CFrame = CFrame.new(altarTop + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(235, 230, 248), Material = Enum.Material.Marble, Parent = f })
+	local orb = part({ Name = "RinneOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 2.4, 2.4), Position = altarTop + Vector3.new(0, 4.4, 0), Color = Color3.fromRGB(200, 180, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(orb, Color3.fromRGB(190, 160, 255), 30, 1.5)
+	out.rinneAltar = prompt(altar, "환생하기 (길게 누르기)", "윤회대 · 환생 제단", "RinneAltar")
+	out.rinneAltar.HoldDuration = 2
+	-- 여섯 갈래 세상의 기둥
+	local REALM_C = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 214, 90), Color3.fromRGB(255, 80, 80), Color3.fromRGB(110, 230, 140), Color3.fromRGB(110, 170, 255), Color3.fromRGB(200, 120, 255) }
+	for k = 1, 6 do
+		local a = (k - 1) / 6 * math.pi * 2 + math.pi / 6
+		local p = rd + Vector3.new(math.cos(a) * 48, 0, math.sin(a) * 48)
+		part({ Name = "RinnePillar", Size = Vector3.new(4, 22, 4), Position = p + Vector3.new(0, 11, 0), Color = Color3.fromRGB(240, 236, 250), Material = Enum.Material.Marble, Parent = f })
+		part({ Name = "RinnePillarBand", Size = Vector3.new(4.4, 1, 4.4), Position = p + Vector3.new(0, 20, 0), Color = RINGOLD, Material = Enum.Material.Metal, Parent = f })
+		local gem = part({ Name = "RinnePillarGem", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = p + Vector3.new(0, 24, 0), Color = REALM_C[k], Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(gem, REALM_C[k], 16, 1)
+	end
+	-- 거대한 윤회륜 (서쪽, 세워져서 제단을 바라본다): 금 테 두 겹, 바퀴살 여덟, 굴대, 여섯 구슬
+	local wf = Instance.new("Folder")
+	wf.Name = "RinneWheel"
+	wf.Parent = f
+	local wc = rd + Vector3.new(-86, 34, 0)
+	local hub = part({ Name = "RinneHub", Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 7, 7), CFrame = CFrame.new(wc), Color = RINGOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = wf })
+	local R = 26
+	local function onWheel(name: string, size: Vector3, local_: CFrame, color: Color3, mat: Enum.Material, shape: Enum.PartType?)
+		local p = part({ Name = name, Size = size, CFrame = CFrame.new(wc) * CFrame.Angles(0, math.rad(90), 0) * local_, Color = color, Material = mat, CanCollide = false, Parent = wf })
+		if shape then
+			p.Shape = shape
+		end
+		return p
+	end
+	local n = 40
+	for i = 0, n - 1 do
+		local a = (i + 0.5) / n * math.pi * 2
+		onWheel("RinneRim", Vector3.new(2 * math.pi * R / n * 1.1, 2.2, 2), CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0), RINGOLD, Enum.Material.Metal)
+		if i % 2 == 0 then
+			onWheel("RinneInner", Vector3.new(2 * math.pi * R * 0.7 / n * 2.2, 0.9, 0.9), CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.7, 0), INDIGO, Enum.Material.Neon)
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		onWheel("RinneSpoke", Vector3.new(1.2, R * 0.95, 1.2), CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.5, 0), Color3.fromRGB(220, 160, 50), Enum.Material.Metal)
+	end
+	for k = 1, 6 do
+		local a = (k - 1) / 6 * math.pi * 2
+		local g = onWheel("RinneRealm", Vector3.new(4.4, 4.4, 4.4), CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0), REALM_C[k], Enum.Material.Neon, Enum.PartType.Ball)
+		light(g, REALM_C[k], 14, 0.8)
+	end
+	light(hub, RINGOLD, 60, 1.6)
+	-- 바퀴를 받치는 두 기둥과 받침
+	for _, z in ipairs({ -1, 1 }) do
+		part({ Name = "RinneWheelPost", Size = Vector3.new(4, 36, 4), Position = rd + Vector3.new(-86, 18, z * 6), Color = Color3.fromRGB(235, 230, 248), Material = Enum.Material.Marble, Parent = f })
+	end
+	part({ Name = "RinneWheelBase", Size = Vector3.new(14, 2, 20), Position = rd + Vector3.new(-86, 1, 0), Color = Color3.fromRGB(225, 220, 240), Material = Enum.Material.Marble, Parent = f })
+	-- 제단으로 이어지는 길 (다리 쪽, 동쪽에서)
+	for k = 0, 8 do
+		part({ Name = "RinnePath", Size = Vector3.new(8, 0.3, 6), Position = rd + Vector3.new(30 + k * 10, 0.15, 0), Color = Color3.fromRGB(240, 236, 250), Material = Enum.Material.Marble, Parent = f })
+	end
+	-- 둘레를 도는 구름 소용돌이 (세 갈래 나선)
+	local vortex = Instance.new("Folder")
+	vortex.Name = "RinneVortex"
+	vortex.Parent = f
+	for arm = 0, 2 do
+		for k = 0, 13 do
+			local a = arm / 3 * math.pi * 2 + k * 0.28
+			local r = 150 + k * 6
+			local sz = 26 - k * 0.9
+			part({ Name = "RinneVortexCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(sz * 1.4, sz * 0.5, sz), Position = rd + Vector3.new(math.cos(a) * r, -14 - k * 1.2, math.sin(a) * r), Color = Color3.fromRGB(240, 236, 255):Lerp(Color3.fromRGB(200, 180, 255), k / 14), Material = Enum.Material.SmoothPlastic, Transparency = 0.2 + k * 0.03, CanCollide = false, Parent = vortex })
+		end
+	end
 end
 
 local arenas: { [number]: Vector3 } = {}

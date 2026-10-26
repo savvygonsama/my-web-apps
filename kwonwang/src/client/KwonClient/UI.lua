@@ -614,6 +614,18 @@ local function buildStyles()
 				table.insert(lines, string.format("<b>%s %s</b>%s  %s", label, sk.name, lockTxt, sk.desc))
 			end
 		end
+		-- 3.1판: 극 권법의 황혼 (일월극변) 동안 바뀌는 기술
+		if s.twilight then
+			table.insert(lines, "")
+			table.insert(lines, string.format('<font color="#FF9A5A"><b>🌇 황혼 (일월극변)</b></font>  극을 채우면 40초 동안 세상이 황혼에 멈추고 기술이 바뀐다. 연타·강타 ×%.1f', s.twilight.dmg or 1))
+			table.insert(lines, string.format('<font color="#FF9A5A"><b>Z 강타</b></font>  %s', s.twilight.heavy.name))
+			for _, slot in ipairs({ "E", "R", "G", "X" }) do
+				local sk = s.twilight.skills[slot]
+				if sk then
+					table.insert(lines, string.format('<font color="#FF9A5A"><b>%s %s</b></font>  %s', slot == "G" and "오의 G" or (slot == "X" and "초 오의 X" or slot), sk.name, sk.desc))
+				end
+			end
+		end
 		-- 각성
 		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
 		local function tag(need: number): string
@@ -816,18 +828,8 @@ local function buildStats()
 	-- 1.9판 환생: 열린 끝 경지에 오르면 보인다. 두 번 눌러야 한다 (실수로 누르지 않게)
 	local rebirthArmed = 0
 	local rebirthBtn: TextButton
-	rebirthBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 68), Size = UDim2.new(0, 300, 0, 58), Text = "♻ 환생", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 60, 140), Visible = false, ZIndex = 3, Parent = page }, function()
-		if os.clock() - rebirthArmed > 4 then
-			rebirthArmed = os.clock()
-			rebirthBtn.Text = "♻ 정말 환생? 한 번 더 누르기"
-			task.delay(4, function()
-				if os.clock() - rebirthArmed >= 3.9 and refreshers.stats then
-					refreshers.stats()
-				end
-			end)
-			return
-		end
-		rebirthArmed = 0
+	-- 3.1판: 환생은 천상 윤회대 제단에서 (이 단추는 윤회대로 데려다 준다)
+	rebirthBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 68), Size = UDim2.new(0, 300, 0, 58), Text = "☸ 윤회대로 가기", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 60, 140), Visible = false, ZIndex = 3, Parent = page }, function()
 		Request:FireServer("rebirth")
 		window.Visible = false
 	end)
@@ -895,7 +897,7 @@ local function buildStats()
 		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap
 		rebirthBtn.Visible = canRebirth
 		if canRebirth and os.clock() - rebirthArmed > 4 then
-			rebirthBtn.Text = string.format("♻ %s (%d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
+			rebirthBtn.Text = string.format("☸ 윤회대로 가기 (%s · %d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
 		end
 		gateBtn.Visible = state.gateNext ~= nil
 		if state.gateNext then
@@ -914,7 +916,7 @@ local function buildStats()
 			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 체력 ×%.2f · 주는 피해 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthDmg(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
 		end
 		if canRebirth then
-			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
+			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 천상 윤회대의 제단에서 T를 길게 누른다. 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
 		end
@@ -1587,7 +1589,7 @@ local function buildTest()
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌗 극 일월신권 바로 쓰기 (극)", "testStyle", "geukilwol" }, { "🌇 극 가득 채우기 (일월극변)", "testGeuk" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
 		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
 		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})
@@ -1606,7 +1608,7 @@ local function buildTest()
 		section("📜 2.6판: 심법 등급 체험 · 새 오의 · 보스 차림", items)
 	end
 	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
-		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
+		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "☸ 윤회대로 가기", "rebirth" }, { "☸ 바로 환생 (제단 의식)", "testRebirthRite" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
@@ -1686,6 +1688,7 @@ local function buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
+		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]

@@ -748,13 +748,15 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				star = true
 			end
 		end
-		if aStyle.pulse then
+		-- 3.1판: 극 권법의 황혼 동안은 황혼의 연타 장치
+		local aPulse = aStyle.twilight and ((att :: any).twilightUntil or 0) > t and aStyle.twilight.pulse or aStyle.pulse
+		if aPulse then
 			-- 파천 중압·태초 창세: 정해진 수만큼 맞히면 상대 자리에서 터진다
 			local fa = att :: any
 			fa.pulseN = (fa.pulseN or 0) + 1
-			if fa.pulseN >= aStyle.pulse.every then
+			if fa.pulseN >= aPulse.every then
 				fa.pulseN = 0
-				pulse = aStyle.pulse
+				pulse = aPulse
 			end
 			att.model:SetAttribute("Pulse", fa.pulseN)
 		end

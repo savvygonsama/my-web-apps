@@ -28,6 +28,7 @@ local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
+local Geuk = require(script:WaitForChild("Geuk"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -540,7 +541,8 @@ startMove = function(slot: any, charge: number?)
 	if not style or not char or not root then
 		return
 	end
-	local move = Config.move(style.id, slot)
+	-- 3.1판: 극 권법의 황혼 동안은 바뀐 기술
+	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true)
 	if not move then
 		return
 	end
@@ -1488,7 +1490,7 @@ function handlers.act(data: any)
 		Drunk.cast(style.id, data.slot, m, data.dur)
 		Reaper.cast(style.id, data.slot, m, data.dur)
 		SkillFx.cast(style.id, data.slot, m, data.dur)
-		local mv = Config.move(style.id, data.slot)
+		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
 				if m.Parent then
@@ -1943,6 +1945,12 @@ function handlers.skillfx(data: any)
 		Plum.init({ shake = shake, tint = tint })
 		Gourd.init({ shake = shake, tint = tint })
 		Samsara.init({ shake = shake, tint = tint })
+		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+	end
+	-- 3.1판 극 권법의 기술 (평소·황혼)
+	if Geuk.handles(data) then
+		Geuk.run(data)
+		return
 	end
 	-- 3.0판 환생 권법 넷의 기술과 연타 장치
 	if Samsara.handles(data) then
@@ -2282,6 +2290,17 @@ function handlers.rebirth(data: any)
 		UI.toast(string.format("♻ %s, %s 환생!", data.name or "", Config.REBIRTH.names[data.n or 1] or ""))
 	end
 end
+-- 3.1판: 극 패시브 일월극변 (서버 전체 컷씬)
+function handlers.geukTwilight(data: any)
+	Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
+	Geuk.twilight(data)
+end
+-- 3.1판: 윤회대 제단의 환생 의식 (모두에게 보인다)
+function handlers.rebirthRite(data: any)
+	Samsara.init({ shake = shake, tint = tint })
+	Samsara.rite(data)
+end
 function handlers.rebirthDone(data: any)
 	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0), data.perks or 0, data.points or 0), Config.REBIRTH.colors[data.n or 1])
 	shake(1.2)
@@ -2351,8 +2370,12 @@ RunService.RenderStepped:Connect(function()
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },
 	}
+	local twilightNow = char:GetAttribute("Twilight") == true
+	if twilightNow and style.twilight then
+		info.H.name = style.twilight.heavy.name
+	end
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
-		local sk = style.skills[slot]
+		local sk = Config.move(style.id, slot, twilightNow)
 		if sk then
 			local left = (cds[slot] or 0) - now
 			local need = sk.chi or 100
@@ -2362,7 +2385,16 @@ RunService.RenderStepped:Connect(function()
 	UI.slots(info)
 	-- 권법 장치 표시
 	local stacks = ""
-	if style.id == "taeheo" then
+	if style.geukGauge then
+		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
+		if twilightNow then
+			stacks = "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+		else
+			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
+			local k = math.floor(g / style.geukGauge.max * 10)
+			stacks = string.format("극 %s%s %d", string.rep("▰", k), string.rep("▱", 10 - k), g)
+		end
+	elseif style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
 	elseif style.id == "maehwa" or style.petals then
 		local n = tonumber(char:GetAttribute("Petal")) or 0

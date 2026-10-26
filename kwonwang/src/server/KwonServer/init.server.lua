@@ -1087,6 +1087,7 @@ end
 -- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
 local Gate: any
 local Rebirth: any
+local Geuk: any = {}
 local Train: any
 local Tower: any
 local Maze: any = {}
@@ -1099,6 +1100,21 @@ local function matList(need: { [string]: number }): string
 		table.insert(out, (M and (M.icon .. " " .. M.name) or id) .. " " .. n)
 	end
 	return table.concat(out, " · ")
+end
+-- 3.1판: 극 권법의 조건 (환생 횟수 + 원래 권법 숙련)
+local function geukCheck(p: Profile, styleId: string): (boolean, string)
+	local R = Config.GEUK_REQ[styleId]
+	if not R then
+		return true, ""
+	end
+	if (p.rebirth or 0) < R.rebirth then
+		return false, string.format("세 번 환생한 몸이어야 해요 (지금 %d번)", p.rebirth or 0)
+	end
+	local base = Config.STYLE_BY_ID[R.base]
+	if not p.styles[R.base] or Calc.mastery(p, R.base).lv < R.lv then
+		return false, string.format("%s 숙련 %d이 필요해요 (지금 %d)", base and base.name or R.base, R.lv, p.styles[R.base] and Calc.mastery(p, R.base).lv or 0)
+	end
+	return true, ""
 end
 local function transcendCheck(p: Profile, styleId: string, stage: string): (boolean, string)
 	local R = Config.TRANSCEND_REQ[styleId]
@@ -1278,6 +1294,13 @@ function Trial.start(player: Player, styleId: string)
 		end
 		spendMats(pz, TR.challenge)
 		toast(player, "🙏 재료를 바쳤어요: " .. matList(TR.challenge))
+	end
+	if pz and Config.GEUK_REQ[styleId] and not pz.styles[styleId] then
+		local ok, msg = geukCheck(pz, styleId)
+		if not ok then
+			toast(player, "🔒 " .. msg)
+			return
+		end
 	end
 	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
 	local kind, need = Config.trialNeed(styleId)
@@ -1680,6 +1703,7 @@ Combat.init(Push, {
 		if _tgt.raid and att.player then
 			Raid.onHit(att.player, _tgt, dmg)
 		end
+		Geuk.onHit(att, _tgt, opt)
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
@@ -1788,7 +1812,9 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
-	local move = Config.move(p.style, slot)
+	-- 3.1판: 극 권법의 황혼 (일월극변) 동안이면 기술이 바뀐다
+	local twilight = (((f :: any).twilightUntil or 0) > os.clock()) and style.twilight ~= nil
+	local move = Config.move(p.style, slot, twilight)
 	if not move then
 		return
 	end
@@ -1915,6 +1941,10 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	-- 각성: 기술이 세진다 (완전 각성이면 연타까지 모두)
 	if tier >= 2 or (tier == 1 and type(slot) == "string") then
 		dmgScale *= Config.AWAKEN[tier].dmg
+	end
+	-- 황혼: 연타·강타·마무리도 세진다
+	if twilight and (type(slot) == "number" or slot == "H" or slot == "F") then
+		dmgScale *= style.twilight.dmg or 1
 	end
 	local first = move.hits and move.hits[1]
 	local newAct = Combat.begin(f, move, slot, seq, { speed = speed, charge = charge, bloom = bloom, align = first and first.t / speed or nil })
@@ -2144,6 +2174,13 @@ function Actions.learn(player: Player, id: any)
 			return
 		end
 		-- 2.5판: 초월 권법은 배울 때도 천상 재료가 든다
+		if Config.GEUK_REQ[style.id] then
+			local ok, msg = geukCheck(p, style.id)
+			if not ok then
+				toast(player, "🔒 " .. msg)
+				return
+			end
+		end
 		local TRq = Config.TRANSCEND_REQ[style.id]
 		if TRq then
 			local ok, msg = transcendCheck(p, style.id, "learn")
@@ -2218,6 +2255,79 @@ local activeGate: { [Player]: any } = {}
 -- 1.9판: 환생. 열린 끝 경지에 오르면, 능력치를 모두 내려놓고 삼류로 다시 태어난다
 ------------------------------------------------------------------------
 Rebirth = {}
+-- 3.1판: 환생은 천상 윤회대의 제단에서. 빛기둥이 내려오고 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
+local riteBusy: { [Player]: boolean } = {}
+function Rebirth.check(player: Player): boolean
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not f or f.dead then
+		return false
+	end
+	local RB = Config.REBIRTH
+	if p.rebirth >= RB.max then
+		toast(player, "♻ 이미 네 번 환생했어요 (더는 환생할 수 없어요)")
+		return false
+	end
+	local cap = Config.realmCap(p.rebirth)
+	if (Calc.realm(p)) < cap then
+		toast(player, string.format("♻ %s의 경지에 올라야 환생할 수 있어요", Config.Realms[cap].name))
+		return false
+	end
+	if Tower.active(player) or Maze.active(player) or activeGate[player] then
+		toast(player, "지금은 환생할 수 없어요 (탑·미궁·관문 밖에서)")
+		return false
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 환생할 수 없어요")
+		return false
+	end
+	return true
+end
+function Rebirth.rite(player: Player)
+	if riteBusy[player] or not Rebirth.check(player) then
+		return
+	end
+	local f = Combat.fighterOfPlayer(player)
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not f or not char or not root or not root:IsA("BasePart") then
+		return
+	end
+	riteBusy[player] = true
+	Train.stop(player)
+	local at = Config.SKY_BY_ID.rinnedae.at + Vector3.new(0, 3.6 + 3, 0)
+	local face = Vector3.new(-1, 0, 0)
+	char:PivotTo(CFrame.lookAt(at, at + face))
+	root.Anchored = true
+	f.iframeUntil = math.max(f.iframeUntil, os.clock() + 4)
+	local p = profiles[player]
+	Push:FireAllClients("rebirthRite", { m = char, at = at, n = (p and p.rebirth or 0) + 1, dur = 3.4 })
+	-- 몸이 천천히 떠오른다 (1.6초), 빛으로 흩어졌다가 (0.8초), 제단 위로 다시 내려선다
+	task.spawn(function()
+		local t0 = os.clock()
+		while os.clock() - t0 < 1.6 and char.Parent do
+			local u = (os.clock() - t0) / 1.6
+			char:PivotTo(CFrame.lookAt(at + Vector3.new(0, 7 * u * u, 0), at + Vector3.new(0, 7 * u * u, 0) + face))
+			task.wait()
+		end
+		if char.Parent then
+			char:SetAttribute("Vanish", true)
+		end
+		task.wait(0.8)
+		if char.Parent then
+			char:PivotTo(CFrame.lookAt(at, at + face))
+			char:SetAttribute("Vanish", nil)
+		end
+		task.wait(0.2)
+		if root.Parent then
+			root.Anchored = false
+		end
+		riteBusy[player] = nil
+		if player.Parent then
+			Rebirth.go(player)
+		end
+	end)
+end
 function Rebirth.go(player: Player)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
@@ -2416,6 +2526,58 @@ function Rebirth.samsaraWon(player: Player, n: number)
 	refreshFighter(player)
 	Story.check(player)
 	pushState(player)
+end
+
+------------------------------------------------------------------------
+-- 3.1판 극 패시브 (일월극변): 맞히고 맞으며 극을 채우면 서버 전체에 컷씬이 흐르고,
+-- 세상이 황혼에 멈추고, 그동안 그 사람의 기술이 모두 황혼의 기술로 바뀐다
+------------------------------------------------------------------------
+local function geukStyle(f: any): any
+	local st = Combat.styleOf(f)
+	return (st and st.geukGauge) and st or nil
+end
+function Geuk.trigger(f: any, st: any)
+	local G = st.geukGauge
+	local now = os.clock()
+	f.geuk = 0
+	f.model:SetAttribute("Geuk", 0)
+	f.twilightUntil = now + G.cut + G.dur
+	f.iframeUntil = math.max(f.iframeUntil, now + G.cut)
+	f.model:SetAttribute("Twilight", true)
+	local token = f.twilightUntil
+	task.delay(G.cut + G.dur, function()
+		if f.twilightUntil == token and f.model.Parent then
+			f.model:SetAttribute("Twilight", nil)
+		end
+	end)
+	local name = f.player and f.player.DisplayName or f.name
+	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+	World.twilight(G.cut, G.dur)
+end
+function Geuk.add(f: any, amount: number)
+	local st = geukStyle(f)
+	if not st or f.dead or (f.twilightUntil or 0) > os.clock() then
+		return
+	end
+	f.geuk = math.min(st.geukGauge.max, (f.geuk or 0) + amount)
+	f.model:SetAttribute("Geuk", math.floor(f.geuk))
+	if f.geuk >= st.geukGauge.max then
+		Geuk.trigger(f, st)
+	end
+end
+function Geuk.onHit(att: any, tgt: any, opt: any)
+	if att.player then
+		local st = geukStyle(att)
+		if st then
+			Geuk.add(att, (opt and opt.isSkill) and st.geukGauge.skillHit or st.geukGauge.hit)
+		end
+	end
+	if tgt.player then
+		local st = geukStyle(tgt)
+		if st then
+			Geuk.add(tgt, st.geukGauge.hurt)
+		end
+	end
 end
 
 -- 관문이 막 열렸으면 한 번 알려 준다
@@ -3806,7 +3968,24 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	elseif action == "gate" then
 		Gate.start(player)
 	elseif action == "rebirth" then
-		Rebirth.go(player)
+		-- 3.1판: 환생은 윤회대 제단에서. 능력치 창 단추는 윤회대로 데려다 준다
+		if Rebirth.check(player) then
+			Train.stop(player)
+			local char = player.Character
+			if char then
+				local at = Config.SKY_BY_ID.rinnedae.at + Vector3.new(26, 5, 0)
+				char:PivotTo(CFrame.lookAt(at, Config.SKY_BY_ID.rinnedae.at + Vector3.new(0, 5, 0)))
+			end
+			toast(player, "☸ 윤회대에 왔어요. 가운데 제단에서 T를 길게 누르면 환생해요")
+		end
+	elseif action == "testGeuk" then
+		-- 테스트: 극을 가득 채운다 (극 권법을 쓰는 중이면 바로 일월극변)
+		local fz = Combat.fighterOfPlayer(player)
+		if fz then
+			Geuk.add(fz, 1000)
+		end
+	elseif action == "testRebirthRite" then
+		Rebirth.rite(player)
 	elseif action == "perk" then
 		Rebirth.perk(player, tostring(a1 or ""))
 	elseif action == "perkReset" then
@@ -4257,6 +4436,12 @@ end)
 if W.skyShop then
 	W.skyShop.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "skyshop" })
+	end)
+end
+-- 3.1판: 윤회대의 환생 제단
+if W.rinneAltar then
+	W.rinneAltar.Triggered:Connect(function(player: Player)
+		Rebirth.rite(player)
 	end)
 end
 if W.skyInn then
@@ -4795,9 +4980,16 @@ task.spawn(function()
 			return
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
-		if req and not p.styles[styleId] and not p.styles[req.id] then
+		if req and not sdef.geuk and not p.styles[styleId] and not p.styles[req.id] then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
+		end
+		if not p.styles[styleId] and Config.GEUK_REQ[styleId] then
+			local ok, msg = geukCheck(p, styleId)
+			if not ok then
+				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...극은 한 번의 삶으로는 닿지 않는다. " .. msg .. "." })
+				return
+			end
 		end
 		if not p.styles[styleId] and not p.trials[styleId] and Config.TRANSCEND_REQ[styleId] then
 			local ok, msg = transcendCheck(p, styleId, "challenge")

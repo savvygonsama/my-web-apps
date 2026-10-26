@@ -1,9 +1,11 @@
 -- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
 -- 윤회권: 등 뒤의 금빛 윤회륜 · 업화권: 두 팔의 달군 사슬과 검은 불꽃 · 무상권: 몸 둘레의 넋불과 안개 띠
 -- 권왕신권: 머리 위의 금빛 관 · 붉은 망토 · 금빛 팔찌
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 
 local Samsara = {}
@@ -188,7 +190,7 @@ end
 ------------------------------------------------------------------------
 -- 몸에 두르는 것
 ------------------------------------------------------------------------
-type Moving = { weld: Weld, base: CFrame, kind: string, phase: number, model: Model, k: number? }
+type Moving = { weld: Weld, base: CFrame, kind: string, phase: number, model: Model, k: number?, parts: { BasePart }?, tw: boolean? }
 local moving: { Moving } = {}
 local wheelOf: { [Model]: { BasePart } } = {}
 
@@ -358,8 +360,52 @@ local function buildCrown(model: Model, holder: Instance, list: { Instance })
 	end
 end
 
+-- 3.1판 극 일월신권: 어깨 뒤에 작은 해 (오른쪽) 와 초승달 (왼쪽). 황혼에는 머리 뒤로 모여 노을빛·보랏빛으로 물든다
+local function buildSunMoon(model: Model, holder: Instance, list: { Instance })
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not (torso and torso:IsA("BasePart")) then
+		return
+	end
+	for _, side in ipairs({ 1, -1 }) do
+		local base = CFrame.new(side * 1.5, 1.5, torso.Size.Z / 2 + 0.6)
+		local hub = part(Vector3.new(0.2, 0.2, 0.2), WHITE, Enum.Material.Neon, 1)
+		hub.CFrame = torso.CFrame * base
+		attach(hub, torso, base, holder, list, model, side == 1 and "sunorb" or "moonorb", side)
+		local items = {}
+		local pieces: { BasePart } = {}
+		if side == 1 then
+			local core = part(Vector3.new(0.7, 0.7, 0.7), Color3.fromRGB(255, 245, 200), Enum.Material.Neon, 0, "ball")
+			local body = part(Vector3.new(1.05, 1.05, 1.05), Color3.fromRGB(255, 170, 50), Enum.Material.Neon, 0.25, "ball")
+			table.insert(items, { core, CFrame.new() })
+			table.insert(items, { body, CFrame.new() })
+			table.insert(pieces, body)
+			for k = 0, 7 do
+				local a = k / 8 * math.pi * 2
+				local ray = part(Vector3.new(0.1, 0.5, 0.1), Color3.fromRGB(255, 200, 90), Enum.Material.Neon)
+				table.insert(items, { ray, CFrame.Angles(0, 0, a) * CFrame.new(0, 0.78, 0) })
+				table.insert(pieces, ray)
+			end
+		else
+			for i = 0, 6 do
+				local a = math.rad(-100 + 200 * i / 6)
+				local w = 0.25 * math.sin((i + 0.5) / 7 * math.pi) + 0.08
+				local seg = part(Vector3.new(w, 0.32, 0.12), Color3.fromRGB(205, 220, 255), Enum.Material.Neon)
+				table.insert(items, { seg, CFrame.new(-math.cos(a) * 0.6, math.sin(a) * 0.6, 0) * CFrame.Angles(0, 0, a) })
+				table.insert(pieces, seg)
+			end
+		end
+		hubbed(hub, items, holder, list)
+		local glow = Instance.new("PointLight")
+		glow.Color = side == 1 and Color3.fromRGB(255, 170, 60) or Color3.fromRGB(190, 210, 255)
+		glow.Range = 6
+		glow.Brightness = 0.8
+		glow.Parent = hub
+		moving[#moving].parts = pieces
+	end
+end
+
 function Samsara.hasGear(st: any): boolean
-	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown) == true
+	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
 end
 function Samsara.buildGear(model: Model, st: any): { Instance }
 	local out: { Instance } = {}
@@ -375,6 +421,8 @@ function Samsara.buildGear(model: Model, st: any): { Instance }
 		buildWisps(model, holder, out)
 	elseif st.crown then
 		buildCrown(model, holder, out)
+	elseif st.sunMoonOrbs then
+		buildSunMoon(model, holder, out)
 	end
 	return out
 end
@@ -419,6 +467,22 @@ RunService.Heartbeat:Connect(function()
 					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 2.2 + ph + k * 0.5) * 0.05 * k, 0, math.sin(t * 1.7 + ph) * 0.02 * k)
 				elseif mv.kind == "bob" then
 					mv.weld.C0 = mv.base * CFrame.new(0, math.sin(t * 2) * 0.08, 0) * CFrame.Angles(0, t * 0.6, 0)
+				elseif mv.kind == "sunorb" or mv.kind == "moonorb" then
+					local tw = mv.model:GetAttribute("Twilight") == true
+					local side = mv.kind == "sunorb" and 1 or -1
+					if tw then
+						mv.weld.C0 = CFrame.new(side * 0.55, 2.4, 0.9) * CFrame.Angles(0, 0, t * 2.5 * side)
+					else
+						mv.weld.C0 = mv.base * CFrame.new(0, math.sin(t * 2 + ph) * 0.15, 0) * CFrame.Angles(0, 0, t * side)
+					end
+					if mv.tw ~= tw and mv.parts then
+						mv.tw = tw
+						for _, q in ipairs(mv.parts) do
+							if q.Parent then
+								q.Color = tw and (side == 1 and Color3.fromRGB(255, 120, 60) or Color3.fromRGB(165, 95, 235)) or (side == 1 and Color3.fromRGB(255, 170, 50) or Color3.fromRGB(205, 220, 255))
+							end
+						end
+					end
 				elseif mv.kind == "dangle" then
 					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 4 + ph) * 0.25, 0, math.sin(t * 3 + ph) * 0.2)
 				end
@@ -1475,6 +1539,148 @@ function H.kingPunch(d: any)
 				end
 			end)
 		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- 3.1판 윤회대: 거대한 윤회륜과 구름 소용돌이가 천천히 돈다 (환생 의식 동안은 빠르게)
+------------------------------------------------------------------------
+type Spinner = { center: CFrame, items: { { any } }, angle: number, speed: number, axis: string }
+local spinners: { [string]: Spinner } = {}
+local spinBoostUntil = 0
+local function findSpinner(name: string, center: CFrame, axis: string, speed: number)
+	if spinners[name] then
+		return
+	end
+	local f = workspace:FindFirstChild(name, true)
+	if not f then
+		return
+	end
+	local items = {}
+	for _, d in ipairs(f:GetDescendants()) do
+		if d:IsA("BasePart") then
+			table.insert(items, { d, center:ToObjectSpace(d.CFrame) })
+		end
+	end
+	spinners[name] = { center = center, items = items, angle = 0, speed = speed, axis = axis }
+end
+local lastLook = 0
+RunService.Heartbeat:Connect(function(dt: number)
+	local cam = workspace.CurrentCamera
+	local rd = Config.SKY_BY_ID and Config.SKY_BY_ID.rinnedae
+	if not cam or not rd then
+		return
+	end
+	if (cam.CFrame.Position - rd.at).Magnitude > 700 then
+		return
+	end
+	if os.clock() - lastLook > 2 then
+		lastLook = os.clock()
+		local hub = workspace:FindFirstChild("RinneHub", true)
+		if hub and hub:IsA("BasePart") then
+			findSpinner("RinneWheel", CFrame.new(hub.Position), "x", 0.25)
+		end
+		findSpinner("RinneVortex", CFrame.new(rd.at), "y", 0.06)
+	end
+	local boost = os.clock() < spinBoostUntil and 14 or 1
+	for _, sp in pairs(spinners) do
+		sp.angle += dt * sp.speed * (sp.axis == "x" and boost or 1)
+		local rot = sp.axis == "x" and CFrame.Angles(sp.angle, 0, 0) or CFrame.Angles(0, sp.angle, 0)
+		local base = sp.center * rot
+		for _, it in ipairs(sp.items) do
+			local p = it[1] :: BasePart
+			if p.Parent then
+				p.CFrame = base * (it[2] :: CFrame)
+			end
+		end
+	end
+end)
+
+-- 환생 의식: 하늘에서 빛기둥이 내려오고, 바퀴가 빠르게 돌고, 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
+function Samsara.rite(d: any)
+	local at: Vector3 = d.at
+	local dur = d.dur or 3.4
+	spinBoostUntil = os.clock() + dur
+	if not near(at, 600) then
+		return
+	end
+	local RB = Config.REBIRTH
+	local col = (RB and RB.colors and RB.colors[d.n or 1]) or Color3.fromRGB(200, 180, 255)
+	if opts.tint then
+		opts.tint(Color3.fromRGB(220, 205, 255), 0.35, dur + 0.4)
+	end
+	-- 하늘에서 내려오는 빛기둥
+	local top = at + Vector3.new(0, 400, 0)
+	local beam = part(Vector3.new(1, 2, 2), WHITE, Enum.Material.Neon, 0.1, "cyl")
+	local halo = part(Vector3.new(1, 6, 6), col, Enum.Material.Neon, 0.55, "cyl")
+	anim(0.45, function(u)
+		local h = 400 * u
+		beam.Size = Vector3.new(h, 4, 4)
+		beam.CFrame = CFrame.new(top - Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		halo.Size = Vector3.new(h, 11, 11)
+		halo.CFrame = beam.CFrame
+	end)
+	Fx.breakSound("boom", 0.8, 0.5, at)
+	-- 떠오르는 동안 빛 고리가 기둥을 타고 오르고, 빛 가루가 몸으로 빨려 든다
+	for k = 0, 7 do
+		task.delay(0.3 + k * 0.17, function()
+			Fx.ring(at - Vector3.new(0, 3, 0) + Vector3.new(0, k * 1.2, 0), k % 2 == 0 and col or WHITE, 4, 22, 0.5)
+		end)
+	end
+	local m = d.m
+	anim(1.6, function(u)
+		if math.random() < 0.6 then
+			local r = rootOf(m)
+			local c = r and r.Position or at
+			local a = math.random() * math.pi * 2
+			local from = c + Vector3.new(math.cos(a) * 14, math.random() * 10 - 3, math.sin(a) * 14)
+			local mote = part(Vector3.new(0.6, 0.6, 0.6), math.random() < 0.5 and col or WHITE, Enum.Material.Neon, 0.1, "ball")
+			mote.Position = from
+			tween(mote, 0.4, { Position = c, Size = Vector3.new(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.42, function()
+				mote:Destroy()
+			end)
+		end
+		if u >= 1 then
+			-- 몸이 빛으로 흩어진다
+			local r = rootOf(m)
+			local c = r and r.Position or at
+			if m and m.Parent then
+				Fx.afterimage(m, WHITE, 0.5)
+			end
+			for _ = 1, 28 do
+				local mote = part(Vector3.new(0.5, 0.5, 0.5), math.random() < 0.5 and col or WHITE, Enum.Material.Neon, 0.05, "ball")
+				mote.Position = c + Vector3.new(math.random() - 0.5, math.random() * 2 - 1, math.random() - 0.5) * 2
+				fadeOut(mote, 0.8, { Position = mote.Position + Vector3.new(math.random() * 16 - 8, math.random() * 14, math.random() * 16 - 8) })
+			end
+			Fx.burst("glitter", c, col, 30, 2)
+			Fx.flash(c, col, 40, 5, 0.5)
+			Fx.sound("deflect", 0.8, 0.5, c)
+			shakeNear(c, 0.6, 120)
+		end
+	end)
+	-- 다시 태어난다: 빛이 모여 번쩍, 큰 고리
+	task.delay(2.4, function()
+		for _ = 1, 20 do
+			local a = math.random() * math.pi * 2
+			local from = at + Vector3.new(math.cos(a) * 12, math.random() * 12 - 2, math.sin(a) * 12)
+			local mote = part(Vector3.new(0.6, 0.6, 0.6), col, Enum.Material.Neon, 0.05, "ball")
+			mote.Position = from
+			tween(mote, 0.22, { Position = at, Size = Vector3.new(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.24, function()
+				mote:Destroy()
+			end)
+		end
+		task.delay(0.24, function()
+			Fx.blast(at, col, WHITE, 2.4)
+			Fx.ring(at - Vector3.new(0, 3, 0), col, 6, 90, 0.9)
+			Fx.ring(at - Vector3.new(0, 2.5, 0), WHITE, 4, 60, 0.7)
+			Fx.flash(at, WHITE, 90, 7, 0.9)
+			Fx.breakSound("boom", 1, 0.45, at)
+			shakeNear(at, 1.4, 200)
+			fadeOut(beam, 0.6, { Size = Vector3.new(400, 0.3, 0.3) })
+			fadeOut(halo, 0.6, { Size = Vector3.new(400, 30, 30) })
+		end)
 	end)
 end
 

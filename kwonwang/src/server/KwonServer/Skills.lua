@@ -2947,6 +2947,233 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	-- 3.1판 극 일월신권 ------------------------------------------------
+	elseif kind == "twinDiscs" then
+		-- 일월쌍륜 (E): 해와 달의 원반이 엇갈리는 활을 그리며 날아가 앞에서 만나 터진다
+		-- 원반 자리 = 시작점 + 앞으로 dist·u + 옆으로 (해 +1, 달 -1) swing·sin(πu) (화면도 같은 식)
+		local from = f.root.Position
+		local right = rightOf(look)
+		Push:FireAllClients("skillfx", { kind = "twinDiscs", m = f.model, from = from, dir = look, dist = m.dist, swing = m.swing, time = m.time / sp, style = style })
+		local hitBy: { [string]: { [any]: boolean } } = { sun = {}, moon = {} }
+		local n = math.floor(m.time / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				local u = i / n
+				for _, side in ipairs({ 1, -1 }) do
+					local key = side == 1 and "sun" or "moon"
+					local pos = from + look * (m.dist * u) + right * (side * m.swing * math.sin(u * math.pi))
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						if not hitBy[key][o] then
+							hitBy[key][o] = true
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(m.time, function()
+			for _, o in ipairs(hostilesNear(f, from + look * m.dist, m.burstRadius)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "solarLunarStep" then
+		-- 일월환보 (R): 제자리에 해가 터지고, 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 터진다
+		local a = f.root.Position
+		local b = a + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "solarLunarStep", m = f.model, from = a, to = b, style = style })
+		after(0.05, function()
+			for _, o in ipairs(hostilesNear(f, a, m.sunRadius)) do
+				strike(f, o, scaled(m.sun, sc), move)
+			end
+		end)
+		after(0.3, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+				strike(f, o, scaled(m.moon, sc), move)
+			end
+		end)
+		after(0.45, function()
+			for _, o in ipairs(hostilesNear(f, b, m.landRadius)) do
+				strike(f, o, scaled(m.land, sc), move)
+			end
+		end)
+	elseif kind == "sunMoonFall" then
+		-- 대일월천 (오의): 거대한 해가 내려앉아 타고, 달의 칼날이 해를 세로로 가르고, 일식으로 터진다
+		local c = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "sunMoonFall", m = f.model, at = c, dir = look, fall = m.fall / sp, burn = m.burn / sp, cutAt = m.cutAt / sp, radius = m.radius, style = style })
+		local n = math.floor(m.burn / m.every)
+		for i = 0, n - 1 do
+			after(m.fall + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.fall + m.cutAt, function()
+			local right = rightOf(look)
+			for _, o in ipairs(hostilesOnSeg(f, c - look * m.radius, c + look * m.radius, m.cutWidth)) do
+				strike(f, o, scaled(m.cut, sc), move)
+			end
+			local _ = right
+		end)
+		after(m.fall + m.burn, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "eclipseGenesis" then
+		-- 일월개벽 (초 오의): 해와 달이 떠올라 부딪쳐 일식, 빛살이 둘레를 꿰뚫고, 새벽빛으로 터진다 (그동안 무적)
+		local center = f.root.Position
+		local total = m.collide + m.rays + m.finalAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "eclipseGenesis", m = f.model, at = center, rise = m.rise / sp, collide = m.collide / sp, rays = m.rays / sp, finalAt = m.finalAt / sp, range = m.range, radius = m.finalRadius, style = style })
+		local n = math.floor(m.rays / m.every)
+		for i = 0, n - 1 do
+			after(m.collide + i * m.every, function()
+				local list = hostilesNear(f, center, m.range)
+				local ats = {}
+				for _ = 1, math.min(m.n, #list) do
+					local o = list[math.random(1, #list)]
+					table.insert(ats, o.root.Position)
+					for _, q in ipairs(hostilesNear(f, o.root.Position, m.radius)) do
+						strike(f, q, hit, move)
+					end
+				end
+				if #ats > 0 then
+					Push:FireAllClients("skillfx", { kind = "eclipseRay", ats = ats, from = center + Vector3.new(0, 40, 0), style = style })
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "duskFan" then
+		-- 황혼참 (황혼 E): 노을빛 초승달 다섯이 부채꼴로 날아갔다가 되돌아온다. 오갈 때 한 번씩 벤다
+		local from = f.root.Position
+		local dirs = {}
+		for i = 1, m.n do
+			local ang = math.rad(-m.spread / 2 + (i - 1) * m.spread / math.max(1, m.n - 1))
+			local d = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), ang) * look)
+			table.insert(dirs, Vector3.new(d.X, 0, d.Z).Unit)
+		end
+		Push:FireAllClients("skillfx", { kind = "duskFan", m = f.model, from = from, dirs = dirs, dist = m.dist, time = m.time / sp, style = style })
+		local out: { [any]: boolean } = {}
+		local back: { [any]: boolean } = {}
+		local n = math.floor(m.time / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				local u = i / n
+				local reach = m.dist * math.sin(u * math.pi)
+				local set = u < 0.5 and out or back
+				for _, d in ipairs(dirs) do
+					local pos = from:Lerp(f.root.Position, u) + d * reach
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						if not set[o] then
+							set[o] = true
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+	elseif kind == "duskChain" then
+		-- 석양보 (황혼 R): 노을이 되어 적들의 등 뒤로 차례로 나타나며 베고, 지나간 노을빛 줄이 한꺼번에 터진다
+		local list = nearestList(f, m.range, m.n)
+		local start = f.root.Position
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + math.max(1, #list) * m.every + m.burstAt + 0.2) / sp)
+		Push:FireAllClients("skillfx", { kind = "duskChain", m = f.model, from = start, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, burstAt = m.burstAt / sp, style = style })
+		local path = { start }
+		for i, t in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				if t.dead or not t.root.Parent then
+					return
+				end
+				local tp = t.root.Position
+				local d = flat(tp - f.root.Position)
+				local p = Vector3.new(tp.X, f.root.Position.Y, tp.Z) + d * 3.2
+				table.insert(path, p)
+				moveTo(f, CFrame.lookAt(p, Vector3.new(tp.X, p.Y, tp.Z)))
+				strike(f, t, hit, move)
+			end)
+		end
+		after(m.delay + math.max(1, #list) * m.every + m.burstAt, function()
+			local done = {}
+			local burst = scaled(m.burst, sc)
+			for i = 1, #path - 1 do
+				for _, o in ipairs(hostilesOnSeg(f, path[i], path[i + 1], m.width)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, burst, move)
+					end
+				end
+			end
+		end)
+	elseif kind == "sunsetSea" then
+		-- 황혼낙일 (황혼 G): 석양이 가라앉아 노을빛 바다가 되고, 달빛 기둥이 솟고, 바다가 솟구친다
+		local c = f.root.Position + look * m.dist
+		local beams = {}
+		for i = 1, m.beams do
+			local a = math.random() * math.pi * 2
+			local r = math.random() * m.radius * 0.85
+			table.insert(beams, c + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r))
+		end
+		Push:FireAllClients("skillfx", { kind = "sunsetSea", m = f.model, at = c, sink = m.sink / sp, dur = m.dur / sp, radius = m.radius, beams = beams, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.sink + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					o.slowUntil = os.clock() + 0.4
+					o.slowMul = 0.55
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		local bh = scaled(m.beam, sc)
+		for i, pt in ipairs(beams) do
+			after(m.sink + (i - 0.5) * m.dur / m.beams, function()
+				for _, o in ipairs(hostilesNear(f, pt, m.beamRadius)) do
+					strike(f, o, bh, move)
+				end
+			end)
+		end
+		after(m.sink + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "twilightCollapse" then
+		-- 일월동귀 (황혼 X): 해와 달이 양쪽에 떨어지고, 서로를 향해 굴러와 가운데에서 하나가 되어 터진다 (그동안 무적)
+		local center = f.root.Position + look * 4
+		local right = rightOf(look)
+		local sunAt, moonAt = center + right * m.side, center - right * m.side
+		local total = m.fall + m.roll + m.finalAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "twilightCollapse", m = f.model, at = center, sunAt = sunAt, moonAt = moonAt, fall = m.fall / sp, roll = m.roll / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		after(m.fall, function()
+			for _, pt in ipairs({ sunAt, moonAt }) do
+				for _, o in ipairs(hostilesNear(f, pt, m.impactRadius)) do
+					strike(f, o, scaled(m.impact, sc), move)
+				end
+			end
+		end)
+		local rh = scaled(m.rollHit, sc)
+		local n = math.floor(m.roll / m.rollEvery)
+		for i = 1, n do
+			after(m.fall + i * m.rollEvery, function()
+				local u = i / n
+				for _, pt in ipairs({ sunAt:Lerp(center, u), moonAt:Lerp(center, u) }) do
+					for _, o in ipairs(hostilesNear(f, pt, m.rollRadius)) do
+						strike(f, o, rh, move)
+					end
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "inkFlower" then
 		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
 		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)

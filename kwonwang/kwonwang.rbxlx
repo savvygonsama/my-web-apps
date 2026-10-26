@@ -1607,9 +1607,9 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕" }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕", "극" }
 -- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4 }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1624,6 +1624,7 @@ Config.GRADE_COLOR = {
 	["초월"] = Color3.fromRGB(255, 160, 210),
 	["윤회"] = Color3.fromRGB(170, 140, 255),
 	["권왕"] = Color3.fromRGB(255, 70, 70),
+	["극"] = Color3.fromRGB(255, 140, 90),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1641,7 +1642,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" or style.grade == "극" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -2122,6 +2123,78 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
+-- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
+------------------------------------------------------------------------
+Config.GEUK_REQ = { geukilwol = { base = "ilwol", lv = 20, rebirth = 3 } }
+-- 극 일월신권: 어깨 뒤에 작은 해와 달이 떠 돈다. 극이 차면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈춘다
+table.insert(Config.Styles, {
+	id = "geukilwol",
+	name = "극 일월신권",
+	hanja = "極日月神拳",
+	icon = "🌗",
+	grade = "극",
+	geuk = true,
+	color = Color3.fromRGB(255, 190, 70),
+	color2 = Color3.fromRGB(205, 220, 255),
+	fx = "eclipse",
+	sunMoonOrbs = true, -- 어깨 뒤의 해와 달 (화면이 그린다). 황혼에는 머리 뒤의 황혼 고리로 합쳐진다
+	hidden = true,
+	secret = true,
+	realmReq = 12,
+	styleReq = "ilwol",
+	trialHp = 12,
+	unlockHint = "일월신권을 숙련 20까지 쌓고 세 번 환생한 자만이, 천상 윤회대의 황혼권존을 만난다",
+	desc = "일월신권의 끝. 해와 달을 쥐는 것을 넘어, 해와 달을 부린다. 싸움이 무르익으면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈추고, 그 황혼 속에서 모든 수가 다른 것이 된다.",
+	gimmick = "극 패시브 · 일월극변: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 40초 동안 세상이 황혼이 된다. 그동안 모든 기술이 황혼의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 낮에는 주는 피해 +20%, 밤에는 받는 피해 -20%. 모든 기술 대기 30% 짧음. 초 오의(X)가 있다",
+	deflect = 0.34,
+	postureMult = 1.8,
+	speed = 1.15,
+	cdMult = 0.7,
+	sunMoon = { day = 1.2, night = 0.8 },
+	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 48, posture = 46, stun = 0.6, kb = 20, up = 8 },
+	-- 극: 맞힐 때 2 (기술은 1), 맞을 때 4. 100이면 일월극변 (컷씬 3초 뒤 황혼 40초)
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 3, dur = 40 },
+	stance = "stance_sunmoon",
+	combo = {
+		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
+		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
+		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 28, 26, 0.45, 18, 6, true) } },
+		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 38, 42, 0.6, 36) } },
+	},
+	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 74, 110, 1.0, 64, 10, true) } },
+	skills = {
+		E = { id = "gwE", name = "일월쌍륜", desc = "해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 20,
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 30, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 50, 56, 0.8, 30, 10) } },
+		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
+			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 40, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 40, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 50, 56, 0.8, 30, 12) } },
+		G = { id = "gwG", name = "대일월천", desc = "앞의 땅에 거대한 해가 내려앉아 둘레를 태운다. 해가 타는 동안 하늘에서 거대한 달의 칼날이 해를 세로로 가르고, 둘이 겹쳐 일식이 되며 터진다", pose = "sun_call", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sunMoonFall", dist = 12, fall = 0.6, radius = 15, burn = 1.4, every = 0.2, hit = hit(0, 0, 0, 14, 12, 0.3, 0), cutAt = 1.2, cutWidth = 7, cut = hit(0, 0, 0, 70, 70, 0.9, 20, 10), finalRadius = 24, final = hit(0, 0, 0, 260, 300, 1.6, 70, 26) } },
+		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 하늘이 어두워지며 해와 달이 함께 떠오르고, 둘이 부딪쳐 하늘에 거대한 일식이 걸린다 (그동안 무적). 일식의 빛살이 2초 동안 둘레의 적을 쉬지 않고 꿰뚫고, 마지막에 하늘로 주먹을 내지르면 일식이 새벽빛으로 터진다", pose = "ult_eclipse", dur = 4.2, cd = 60, chi = 150, armor = true,
+			mech = { kind = "eclipseGenesis", rise = 1.0, collide = 1.8, rays = 2.0, every = 0.12, range = 45, n = 4, radius = 6, hit = hit(0, 0, 0, 22, 18, 0.35, 4), finalAt = 0.4, finalRadius = 32, final = hit(0, 0, 0, 320, 360, 1.8, 80, 30) } },
+	},
+	-- 황혼 (일월극변 동안): 기술이 모두 바뀐다. 해와 달이 하나로 겹친 노을빛
+	twilight = {
+		name = "황혼",
+		color = Color3.fromRGB(255, 120, 60),
+		color2 = Color3.fromRGB(165, 95, 235),
+		dmg = 1.3,
+		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 64, posture = 60, stun = 0.7, kb = 24, up = 10 },
+		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 100, 140, 1.1, 70, 12, true) } },
+		skills = {
+			E = { id = "gtE", name = "황혼참", desc = "노을빛 초승달 다섯을 부채꼴로 던진다. 초승달은 28칸 날아갔다가 되돌아오며 오갈 때 한 번씩 벤다", pose = "moon_throw", dur = 0.55, cd = 6, chi = 18,
+				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 34, 30, 0.45, 10) } },
+			R = { id = "gtR", name = "석양보", desc = "노을이 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 벤다 (무적). 지나간 노을빛 줄이 모두 한꺼번에 터진다", pose = "sun_wheel", dur = 0.8, cd = 9, chi = 22,
+				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 40, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 46, 50, 0.7, 20, 10) } },
+			G = { id = "gtG", name = "황혼낙일", desc = "거대한 석양이 앞의 땅으로 가라앉아 둘레가 노을빛 바다가 된다. 2초 동안 바다 위의 적은 타며 굼뜨고, 바다에서 달빛 기둥이 솟아 꿰뚫는다. 마지막에 바다가 한꺼번에 솟구친다", pose = "sun_call", dur = 2.4, cd = 26, chi = 100, armor = true,
+				mech = { kind = "sunsetSea", dist = 10, sink = 0.8, radius = 22, dur = 2.0, every = 0.2, hit = hit(0, 0, 0, 16, 14, 0.3, 0), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 40, 36, 0.6, 4, 20), finalRadius = 25, final = hit(0, 0, 0, 300, 340, 1.6, 70, 30) } },
+			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 해와 달이 양쪽에서 한꺼번에 떨어져 땅을 부수고, 서로를 향해 굴러와 가운데에서 하나가 된다. 그 순간 세상이 노을빛으로 하얗게 터진다 (그동안 무적)", pose = "ult_eclipse", dur = 3.2, cd = 50, chi = 150, armor = true,
+				mech = { kind = "twilightCollapse", side = 16, fall = 0.8, roll = 0.9, rollEvery = 0.15, rollRadius = 8, rollHit = hit(0, 0, 0, 30, 24, 0.5, 10), impactRadius = 12, impact = hit(0, 0, 0, 90, 90, 1.0, 30, 16), finalAt = 0.5, finalRadius = 50, final = hit(0, 0, 0, 420, 460, 2.0, 90, 34) } },
+		},
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -2189,6 +2262,7 @@ local FINISHERS = {
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
+	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -2241,15 +2315,17 @@ local ACTION_POSE = {
 local actionCache: { [string]: any } = {}
 
 -- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G", "D", "A", "C"
-function Config.move(styleId: string, slot: any): any
+-- alt: 극 권법의 황혼 (일월극변) 동안이면 바뀐 기술을 돌려준다
+function Config.move(styleId: string, slot: any, alt: boolean?): any
 	local s = Config.STYLE_BY_ID[styleId]
 	if not s then
 		return nil
 	end
+	local tw = alt and s.twilight
 	if type(slot) == "number" then
 		return s.combo[slot]
 	elseif slot == "H" then
-		return s.heavy
+		return tw and tw.heavy or s.heavy
 	elseif slot == "F" then
 		return s.finisher
 	elseif Config.ACTION_MOVES[slot] then
@@ -2264,7 +2340,7 @@ function Config.move(styleId: string, slot: any): any
 		end
 		return actionCache[key]
 	end
-	return s.skills[slot]
+	return tw and tw.skills[slot] or s.skills[slot]
 end
 
 ------------------------------------------------------------------------
@@ -2547,6 +2623,22 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
 			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
 			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+		} }
+	end
+end
+
+-- 3.1판 극의 시련: 황혼권존이 직접 (해의 비 → 달의 고리 → 일식). 일월신권의 권존보다 훨씬 세다
+for _, st in ipairs(Config.Styles) do
+	if st.id == "geukilwol" then
+		local sun, moon = Color3.fromRGB(255, 170, 60), Color3.fromRGB(190, 210, 255)
+		st.trialIntro = { title = "극의 시련", text = "세 번을 죽고 세 번을 살았구나. 그래도 해와 달은 아직 너를 모른다. 내 황혼을 끝까지 버텨 보아라. 해가 지고 달이 뜨는 그 사이에 서 있을 수 있다면, 극을 넘겨주마." }
+		st.trialBoss = { hp = 5200, posture = 900, scale = 1.7, reach = 1.5, speed = 26, patterns = {
+			P("rain", "해의 비", 1, { count = 9, radius = 8, spread = 26, warn = 0.9, cd = 6, pose = "sun_call", fx = "star", color = sun, hit = hit(0, 0, 0, 40, 44, 0.8, 22) }),
+			P("donut", "달의 고리", 1, { inner = 8, outer = 28, warn = 1.0, cd = 7, pose = "moon_seal", hit = hit(0, 0, 0, 48, 58, 0.9, 40) }),
+			P("charge", "일월환보", 2, { length = 56, width = 9, warn = 0.65, cd = 6, times = 3, pose = "sun_wheel", hit = hit(0, 0, 0, 44, 52, 0.9, 50) }),
+			P("rain", "월광우", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "moon_throw", fx = "star", color = moon, hit = hit(0, 0, 0, 34, 40, 0.7, 20) }),
+			P("leap", "대일낙하", 3, { radius = 20, warn = 0.9, cd = 7, pose = "eclipse_push", hit = hit(0, 0, 0, 64, 84, 1.2, 50, 22) }),
+			P("quake", "황혼", 3, { radius = 30, warn = 1.2, cd = 8, pose = "ult_eclipse", hit = hit(0, 0, 0, 90, 120, 1.5, 60, 26) }),
 		} }
 	end
 end
@@ -3320,9 +3412,11 @@ Config.SKY = {
 		{ id = "goldtemple", name = "금운사", at = Vector3.new(0, SY, -1600), radius = 190, ground = Color3.fromRGB(236, 214, 156), material = Enum.Material.Marble,
 			camps = { { enemy = "goldmonk", count = 3, at = Vector3.new(-80, SY, -1540) }, { enemy = "guardlion", count = 2, at = Vector3.new(80, SY, -1540) }, { enemy = "goldmonk", count = 2, at = Vector3.new(0, SY, -1650) } },
 			boss = { id = "geumgang", at = Vector3.new(0, SY, -1700) } },
+		-- 3.1판: 윤회대. 천궁 서쪽, 다른 섬보다 높이 떠 있다. 가운데 환생 제단, 뒤편에 거대한 윤회륜
+		{ id = "rinnedae", name = "윤회대", at = Vector3.new(-640, SY + 40, 280), radius = 130, safe = true, ground = Color3.fromRGB(226, 220, 242), material = Enum.Material.Marble },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -3343,6 +3437,9 @@ end
 Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6, 640), region = "금 간 허공 (천상계)", regionId = "subspace", secret = true,
 	quote = "공간은 비어 있지 않다. 접혀 있을 뿐.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
 -- 천궁 정자의 운류자 (누구나 찾을 수 있다), 성운원 깊은 곳의 성하노군 (숨은 사부)
+-- 3.1판 극의 사부: 천상 윤회대의 황혼권존 (세 번 환생한 자에게만 모습을 보인다)
+Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
+	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
@@ -6937,6 +7034,7 @@ end
 -- 관문과 수련 (아래에서 채운다: 위의 처치·쓰러짐에서도 부른다)
 local Gate: any
 local Rebirth: any
+local Geuk: any = {}
 local Train: any
 local Tower: any
 local Maze: any = {}
@@ -6949,6 +7047,21 @@ local function matList(need: { [string]: number }): string
 		table.insert(out, (M and (M.icon .. " " .. M.name) or id) .. " " .. n)
 	end
 	return table.concat(out, " · ")
+end
+-- 3.1판: 극 권법의 조건 (환생 횟수 + 원래 권법 숙련)
+local function geukCheck(p: Profile, styleId: string): (boolean, string)
+	local R = Config.GEUK_REQ[styleId]
+	if not R then
+		return true, ""
+	end
+	if (p.rebirth or 0) < R.rebirth then
+		return false, string.format("세 번 환생한 몸이어야 해요 (지금 %d번)", p.rebirth or 0)
+	end
+	local base = Config.STYLE_BY_ID[R.base]
+	if not p.styles[R.base] or Calc.mastery(p, R.base).lv < R.lv then
+		return false, string.format("%s 숙련 %d이 필요해요 (지금 %d)", base and base.name or R.base, R.lv, p.styles[R.base] and Calc.mastery(p, R.base).lv or 0)
+	end
+	return true, ""
 end
 local function transcendCheck(p: Profile, styleId: string, stage: string): (boolean, string)
 	local R = Config.TRANSCEND_REQ[styleId]
@@ -7128,6 +7241,13 @@ function Trial.start(player: Player, styleId: string)
 		end
 		spendMats(pz, TR.challenge)
 		toast(player, "🙏 재료를 바쳤어요: " .. matList(TR.challenge))
+	end
+	if pz and Config.GEUK_REQ[styleId] and not pz.styles[styleId] then
+		local ok, msg = geukCheck(pz, styleId)
+		if not ok then
+			toast(player, "🔒 " .. msg)
+			return
+		end
 	end
 	local spawnAt = master.at + (f.root.Position - master.at).Unit * 6
 	local kind, need = Config.trialNeed(styleId)
@@ -7530,6 +7650,7 @@ Combat.init(Push, {
 		if _tgt.raid and att.player then
 			Raid.onHit(att.player, _tgt, dmg)
 		end
+		Geuk.onHit(att, _tgt, opt)
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
@@ -7638,7 +7759,9 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		return
 	end
 	local seq = math.floor(tonumber(seqArg) or 0)
-	local move = Config.move(p.style, slot)
+	-- 3.1판: 극 권법의 황혼 (일월극변) 동안이면 기술이 바뀐다
+	local twilight = (((f :: any).twilightUntil or 0) > os.clock()) and style.twilight ~= nil
+	local move = Config.move(p.style, slot, twilight)
 	if not move then
 		return
 	end
@@ -7765,6 +7888,10 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	-- 각성: 기술이 세진다 (완전 각성이면 연타까지 모두)
 	if tier >= 2 or (tier == 1 and type(slot) == "string") then
 		dmgScale *= Config.AWAKEN[tier].dmg
+	end
+	-- 황혼: 연타·강타·마무리도 세진다
+	if twilight and (type(slot) == "number" or slot == "H" or slot == "F") then
+		dmgScale *= style.twilight.dmg or 1
 	end
 	local first = move.hits and move.hits[1]
 	local newAct = Combat.begin(f, move, slot, seq, { speed = speed, charge = charge, bloom = bloom, align = first and first.t / speed or nil })
@@ -7994,6 +8121,13 @@ function Actions.learn(player: Player, id: any)
 			return
 		end
 		-- 2.5판: 초월 권법은 배울 때도 천상 재료가 든다
+		if Config.GEUK_REQ[style.id] then
+			local ok, msg = geukCheck(p, style.id)
+			if not ok then
+				toast(player, "🔒 " .. msg)
+				return
+			end
+		end
 		local TRq = Config.TRANSCEND_REQ[style.id]
 		if TRq then
 			local ok, msg = transcendCheck(p, style.id, "learn")
@@ -8068,6 +8202,79 @@ local activeGate: { [Player]: any } = {}
 -- 1.9판: 환생. 열린 끝 경지에 오르면, 능력치를 모두 내려놓고 삼류로 다시 태어난다
 ------------------------------------------------------------------------
 Rebirth = {}
+-- 3.1판: 환생은 천상 윤회대의 제단에서. 빛기둥이 내려오고 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
+local riteBusy: { [Player]: boolean } = {}
+function Rebirth.check(player: Player): boolean
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not f or f.dead then
+		return false
+	end
+	local RB = Config.REBIRTH
+	if p.rebirth >= RB.max then
+		toast(player, "♻ 이미 네 번 환생했어요 (더는 환생할 수 없어요)")
+		return false
+	end
+	local cap = Config.realmCap(p.rebirth)
+	if (Calc.realm(p)) < cap then
+		toast(player, string.format("♻ %s의 경지에 올라야 환생할 수 있어요", Config.Realms[cap].name))
+		return false
+	end
+	if Tower.active(player) or Maze.active(player) or activeGate[player] then
+		toast(player, "지금은 환생할 수 없어요 (탑·미궁·관문 밖에서)")
+		return false
+	end
+	if f.combatUntil > os.clock() then
+		toast(player, "싸우는 중에는 환생할 수 없어요")
+		return false
+	end
+	return true
+end
+function Rebirth.rite(player: Player)
+	if riteBusy[player] or not Rebirth.check(player) then
+		return
+	end
+	local f = Combat.fighterOfPlayer(player)
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if not f or not char or not root or not root:IsA("BasePart") then
+		return
+	end
+	riteBusy[player] = true
+	Train.stop(player)
+	local at = Config.SKY_BY_ID.rinnedae.at + Vector3.new(0, 3.6 + 3, 0)
+	local face = Vector3.new(-1, 0, 0)
+	char:PivotTo(CFrame.lookAt(at, at + face))
+	root.Anchored = true
+	f.iframeUntil = math.max(f.iframeUntil, os.clock() + 4)
+	local p = profiles[player]
+	Push:FireAllClients("rebirthRite", { m = char, at = at, n = (p and p.rebirth or 0) + 1, dur = 3.4 })
+	-- 몸이 천천히 떠오른다 (1.6초), 빛으로 흩어졌다가 (0.8초), 제단 위로 다시 내려선다
+	task.spawn(function()
+		local t0 = os.clock()
+		while os.clock() - t0 < 1.6 and char.Parent do
+			local u = (os.clock() - t0) / 1.6
+			char:PivotTo(CFrame.lookAt(at + Vector3.new(0, 7 * u * u, 0), at + Vector3.new(0, 7 * u * u, 0) + face))
+			task.wait()
+		end
+		if char.Parent then
+			char:SetAttribute("Vanish", true)
+		end
+		task.wait(0.8)
+		if char.Parent then
+			char:PivotTo(CFrame.lookAt(at, at + face))
+			char:SetAttribute("Vanish", nil)
+		end
+		task.wait(0.2)
+		if root.Parent then
+			root.Anchored = false
+		end
+		riteBusy[player] = nil
+		if player.Parent then
+			Rebirth.go(player)
+		end
+	end)
+end
 function Rebirth.go(player: Player)
 	local p, st = profiles[player], states[player]
 	local f = Combat.fighterOfPlayer(player)
@@ -8266,6 +8473,58 @@ function Rebirth.samsaraWon(player: Player, n: number)
 	refreshFighter(player)
 	Story.check(player)
 	pushState(player)
+end
+
+------------------------------------------------------------------------
+-- 3.1판 극 패시브 (일월극변): 맞히고 맞으며 극을 채우면 서버 전체에 컷씬이 흐르고,
+-- 세상이 황혼에 멈추고, 그동안 그 사람의 기술이 모두 황혼의 기술로 바뀐다
+------------------------------------------------------------------------
+local function geukStyle(f: any): any
+	local st = Combat.styleOf(f)
+	return (st and st.geukGauge) and st or nil
+end
+function Geuk.trigger(f: any, st: any)
+	local G = st.geukGauge
+	local now = os.clock()
+	f.geuk = 0
+	f.model:SetAttribute("Geuk", 0)
+	f.twilightUntil = now + G.cut + G.dur
+	f.iframeUntil = math.max(f.iframeUntil, now + G.cut)
+	f.model:SetAttribute("Twilight", true)
+	local token = f.twilightUntil
+	task.delay(G.cut + G.dur, function()
+		if f.twilightUntil == token and f.model.Parent then
+			f.model:SetAttribute("Twilight", nil)
+		end
+	end)
+	local name = f.player and f.player.DisplayName or f.name
+	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+	World.twilight(G.cut, G.dur)
+end
+function Geuk.add(f: any, amount: number)
+	local st = geukStyle(f)
+	if not st or f.dead or (f.twilightUntil or 0) > os.clock() then
+		return
+	end
+	f.geuk = math.min(st.geukGauge.max, (f.geuk or 0) + amount)
+	f.model:SetAttribute("Geuk", math.floor(f.geuk))
+	if f.geuk >= st.geukGauge.max then
+		Geuk.trigger(f, st)
+	end
+end
+function Geuk.onHit(att: any, tgt: any, opt: any)
+	if att.player then
+		local st = geukStyle(att)
+		if st then
+			Geuk.add(att, (opt and opt.isSkill) and st.geukGauge.skillHit or st.geukGauge.hit)
+		end
+	end
+	if tgt.player then
+		local st = geukStyle(tgt)
+		if st then
+			Geuk.add(tgt, st.geukGauge.hurt)
+		end
+	end
 end
 
 -- 관문이 막 열렸으면 한 번 알려 준다
@@ -9656,7 +9915,24 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	elseif action == "gate" then
 		Gate.start(player)
 	elseif action == "rebirth" then
-		Rebirth.go(player)
+		-- 3.1판: 환생은 윤회대 제단에서. 능력치 창 단추는 윤회대로 데려다 준다
+		if Rebirth.check(player) then
+			Train.stop(player)
+			local char = player.Character
+			if char then
+				local at = Config.SKY_BY_ID.rinnedae.at + Vector3.new(26, 5, 0)
+				char:PivotTo(CFrame.lookAt(at, Config.SKY_BY_ID.rinnedae.at + Vector3.new(0, 5, 0)))
+			end
+			toast(player, "☸ 윤회대에 왔어요. 가운데 제단에서 T를 길게 누르면 환생해요")
+		end
+	elseif action == "testGeuk" then
+		-- 테스트: 극을 가득 채운다 (극 권법을 쓰는 중이면 바로 일월극변)
+		local fz = Combat.fighterOfPlayer(player)
+		if fz then
+			Geuk.add(fz, 1000)
+		end
+	elseif action == "testRebirthRite" then
+		Rebirth.rite(player)
 	elseif action == "perk" then
 		Rebirth.perk(player, tostring(a1 or ""))
 	elseif action == "perkReset" then
@@ -10107,6 +10383,12 @@ end)
 if W.skyShop then
 	W.skyShop.Triggered:Connect(function(player: Player)
 		Push:FireClient(player, "open", { page = "skyshop" })
+	end)
+end
+-- 3.1판: 윤회대의 환생 제단
+if W.rinneAltar then
+	W.rinneAltar.Triggered:Connect(function(player: Player)
+		Rebirth.rite(player)
 	end)
 end
 if W.skyInn then
@@ -10645,9 +10927,16 @@ task.spawn(function()
 			return
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
-		if req and not p.styles[styleId] and not p.styles[req.id] then
+		if req and not sdef.geuk and not p.styles[styleId] and not p.styles[req.id] then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
+		end
+		if not p.styles[styleId] and Config.GEUK_REQ[styleId] then
+			local ok, msg = geukCheck(p, styleId)
+			if not ok then
+				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...극은 한 번의 삶으로는 닿지 않는다. " .. msg .. "." })
+				return
+			end
 		end
 		if not p.styles[styleId] and not p.trials[styleId] and Config.TRANSCEND_REQ[styleId] then
 			local ok, msg = transcendCheck(p, styleId, "challenge")
@@ -11494,13 +11783,15 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				star = true
 			end
 		end
-		if aStyle.pulse then
+		-- 3.1판: 극 권법의 황혼 동안은 황혼의 연타 장치
+		local aPulse = aStyle.twilight and ((att :: any).twilightUntil or 0) > t and aStyle.twilight.pulse or aStyle.pulse
+		if aPulse then
 			-- 파천 중압·태초 창세: 정해진 수만큼 맞히면 상대 자리에서 터진다
 			local fa = att :: any
 			fa.pulseN = (fa.pulseN or 0) + 1
-			if fa.pulseN >= aStyle.pulse.every then
+			if fa.pulseN >= aPulse.every then
 				fa.pulseN = 0
-				pulse = aStyle.pulse
+				pulse = aPulse
 			end
 			att.model:SetAttribute("Pulse", fa.pulseN)
 		end
@@ -17508,6 +17799,233 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	-- 3.1판 극 일월신권 ------------------------------------------------
+	elseif kind == "twinDiscs" then
+		-- 일월쌍륜 (E): 해와 달의 원반이 엇갈리는 활을 그리며 날아가 앞에서 만나 터진다
+		-- 원반 자리 = 시작점 + 앞으로 dist·u + 옆으로 (해 +1, 달 -1) swing·sin(πu) (화면도 같은 식)
+		local from = f.root.Position
+		local right = rightOf(look)
+		Push:FireAllClients("skillfx", { kind = "twinDiscs", m = f.model, from = from, dir = look, dist = m.dist, swing = m.swing, time = m.time / sp, style = style })
+		local hitBy: { [string]: { [any]: boolean } } = { sun = {}, moon = {} }
+		local n = math.floor(m.time / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				local u = i / n
+				for _, side in ipairs({ 1, -1 }) do
+					local key = side == 1 and "sun" or "moon"
+					local pos = from + look * (m.dist * u) + right * (side * m.swing * math.sin(u * math.pi))
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						if not hitBy[key][o] then
+							hitBy[key][o] = true
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(m.time, function()
+			for _, o in ipairs(hostilesNear(f, from + look * m.dist, m.burstRadius)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "solarLunarStep" then
+		-- 일월환보 (R): 제자리에 해가 터지고, 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 터진다
+		local a = f.root.Position
+		local b = a + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "solarLunarStep", m = f.model, from = a, to = b, style = style })
+		after(0.05, function()
+			for _, o in ipairs(hostilesNear(f, a, m.sunRadius)) do
+				strike(f, o, scaled(m.sun, sc), move)
+			end
+		end)
+		after(0.3, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+				strike(f, o, scaled(m.moon, sc), move)
+			end
+		end)
+		after(0.45, function()
+			for _, o in ipairs(hostilesNear(f, b, m.landRadius)) do
+				strike(f, o, scaled(m.land, sc), move)
+			end
+		end)
+	elseif kind == "sunMoonFall" then
+		-- 대일월천 (오의): 거대한 해가 내려앉아 타고, 달의 칼날이 해를 세로로 가르고, 일식으로 터진다
+		local c = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "sunMoonFall", m = f.model, at = c, dir = look, fall = m.fall / sp, burn = m.burn / sp, cutAt = m.cutAt / sp, radius = m.radius, style = style })
+		local n = math.floor(m.burn / m.every)
+		for i = 0, n - 1 do
+			after(m.fall + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.fall + m.cutAt, function()
+			local right = rightOf(look)
+			for _, o in ipairs(hostilesOnSeg(f, c - look * m.radius, c + look * m.radius, m.cutWidth)) do
+				strike(f, o, scaled(m.cut, sc), move)
+			end
+			local _ = right
+		end)
+		after(m.fall + m.burn, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "eclipseGenesis" then
+		-- 일월개벽 (초 오의): 해와 달이 떠올라 부딪쳐 일식, 빛살이 둘레를 꿰뚫고, 새벽빛으로 터진다 (그동안 무적)
+		local center = f.root.Position
+		local total = m.collide + m.rays + m.finalAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "eclipseGenesis", m = f.model, at = center, rise = m.rise / sp, collide = m.collide / sp, rays = m.rays / sp, finalAt = m.finalAt / sp, range = m.range, radius = m.finalRadius, style = style })
+		local n = math.floor(m.rays / m.every)
+		for i = 0, n - 1 do
+			after(m.collide + i * m.every, function()
+				local list = hostilesNear(f, center, m.range)
+				local ats = {}
+				for _ = 1, math.min(m.n, #list) do
+					local o = list[math.random(1, #list)]
+					table.insert(ats, o.root.Position)
+					for _, q in ipairs(hostilesNear(f, o.root.Position, m.radius)) do
+						strike(f, q, hit, move)
+					end
+				end
+				if #ats > 0 then
+					Push:FireAllClients("skillfx", { kind = "eclipseRay", ats = ats, from = center + Vector3.new(0, 40, 0), style = style })
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "duskFan" then
+		-- 황혼참 (황혼 E): 노을빛 초승달 다섯이 부채꼴로 날아갔다가 되돌아온다. 오갈 때 한 번씩 벤다
+		local from = f.root.Position
+		local dirs = {}
+		for i = 1, m.n do
+			local ang = math.rad(-m.spread / 2 + (i - 1) * m.spread / math.max(1, m.n - 1))
+			local d = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), ang) * look)
+			table.insert(dirs, Vector3.new(d.X, 0, d.Z).Unit)
+		end
+		Push:FireAllClients("skillfx", { kind = "duskFan", m = f.model, from = from, dirs = dirs, dist = m.dist, time = m.time / sp, style = style })
+		local out: { [any]: boolean } = {}
+		local back: { [any]: boolean } = {}
+		local n = math.floor(m.time / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				local u = i / n
+				local reach = m.dist * math.sin(u * math.pi)
+				local set = u < 0.5 and out or back
+				for _, d in ipairs(dirs) do
+					local pos = from:Lerp(f.root.Position, u) + d * reach
+					for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+						if not set[o] then
+							set[o] = true
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+	elseif kind == "duskChain" then
+		-- 석양보 (황혼 R): 노을이 되어 적들의 등 뒤로 차례로 나타나며 베고, 지나간 노을빛 줄이 한꺼번에 터진다
+		local list = nearestList(f, m.range, m.n)
+		local start = f.root.Position
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + math.max(1, #list) * m.every + m.burstAt + 0.2) / sp)
+		Push:FireAllClients("skillfx", { kind = "duskChain", m = f.model, from = start, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, burstAt = m.burstAt / sp, style = style })
+		local path = { start }
+		for i, t in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				if t.dead or not t.root.Parent then
+					return
+				end
+				local tp = t.root.Position
+				local d = flat(tp - f.root.Position)
+				local p = Vector3.new(tp.X, f.root.Position.Y, tp.Z) + d * 3.2
+				table.insert(path, p)
+				moveTo(f, CFrame.lookAt(p, Vector3.new(tp.X, p.Y, tp.Z)))
+				strike(f, t, hit, move)
+			end)
+		end
+		after(m.delay + math.max(1, #list) * m.every + m.burstAt, function()
+			local done = {}
+			local burst = scaled(m.burst, sc)
+			for i = 1, #path - 1 do
+				for _, o in ipairs(hostilesOnSeg(f, path[i], path[i + 1], m.width)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, burst, move)
+					end
+				end
+			end
+		end)
+	elseif kind == "sunsetSea" then
+		-- 황혼낙일 (황혼 G): 석양이 가라앉아 노을빛 바다가 되고, 달빛 기둥이 솟고, 바다가 솟구친다
+		local c = f.root.Position + look * m.dist
+		local beams = {}
+		for i = 1, m.beams do
+			local a = math.random() * math.pi * 2
+			local r = math.random() * m.radius * 0.85
+			table.insert(beams, c + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r))
+		end
+		Push:FireAllClients("skillfx", { kind = "sunsetSea", m = f.model, at = c, sink = m.sink / sp, dur = m.dur / sp, radius = m.radius, beams = beams, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.sink + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+					o.slowUntil = os.clock() + 0.4
+					o.slowMul = 0.55
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		local bh = scaled(m.beam, sc)
+		for i, pt in ipairs(beams) do
+			after(m.sink + (i - 0.5) * m.dur / m.beams, function()
+				for _, o in ipairs(hostilesNear(f, pt, m.beamRadius)) do
+					strike(f, o, bh, move)
+				end
+			end)
+		end
+		after(m.sink + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "twilightCollapse" then
+		-- 일월동귀 (황혼 X): 해와 달이 양쪽에 떨어지고, 서로를 향해 굴러와 가운데에서 하나가 되어 터진다 (그동안 무적)
+		local center = f.root.Position + look * 4
+		local right = rightOf(look)
+		local sunAt, moonAt = center + right * m.side, center - right * m.side
+		local total = m.fall + m.roll + m.finalAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "twilightCollapse", m = f.model, at = center, sunAt = sunAt, moonAt = moonAt, fall = m.fall / sp, roll = m.roll / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		after(m.fall, function()
+			for _, pt in ipairs({ sunAt, moonAt }) do
+				for _, o in ipairs(hostilesNear(f, pt, m.impactRadius)) do
+					strike(f, o, scaled(m.impact, sc), move)
+				end
+			end
+		end)
+		local rh = scaled(m.rollHit, sc)
+		local n = math.floor(m.roll / m.rollEvery)
+		for i = 1, n do
+			after(m.fall + i * m.rollEvery, function()
+				local u = i / n
+				for _, pt in ipairs({ sunAt:Lerp(center, u), moonAt:Lerp(center, u) }) do
+					for _, o in ipairs(hostilesNear(f, pt, m.rollRadius)) do
+						strike(f, o, rh, move)
+					end
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "inkFlower" then
 		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
 		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)
@@ -17943,6 +18461,19 @@ function World.setClock(hour: number)
 	clockT0 = os.clock() - phaseOf(hour)
 	Lighting.ClockTime = hour
 end
+-- 3.1판 일월극변: cut 초 동안은 화면이 해와 달을 번갈아 띄우고 (서버는 시각을 건드리지 않는다), 그 뒤 dur 초 동안 세상이 황혼에 멈춘다
+local twilightCut, twilightFrom, twilightUntil = 0, 0, 0
+function World.twilight(cut: number, dur: number)
+	local now = os.clock()
+	if now >= twilightUntil then
+		twilightCut = now
+		twilightFrom = now + cut
+	end
+	twilightUntil = math.max(twilightUntil, now + cut + dur)
+end
+function World.twilightOn(): boolean
+	return os.clock() < twilightUntil
+end
 -- 멈추면 지금 시각에 머문다. 다시 누르면 흐른다
 function World.toggleClockFreeze(): boolean
 	if clockFrozen then
@@ -17985,8 +18516,38 @@ function World.setupLighting()
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
 	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
+	local baseAtmo, baseDecay, baseTint = atmo.Color, atmo.Decay, cc.TintColor
+	local wasTwilight = false
 	task.spawn(function()
 		while true do
+			local now = os.clock()
+			if now < twilightUntil then
+				-- 일월극변: 컷씬 동안은 낮·밤을 번갈아, 그 뒤엔 황혼에 멈춘다
+				if now < twilightFrom then
+					-- 컷씬: 낮과 밤이 점점 빨라지며 번갈아 (화면의 해·달과 같은 박자)
+					local u = math.clamp((now - twilightCut) / math.max(0.1, twilightFrom - twilightCut), 0, 1)
+					local beat = math.floor((u * u) * 12 * 1.6)
+					Lighting.ClockTime = beat % 2 == 0 and 12.5 or 0.5
+					task.wait(0.05)
+					continue
+				else
+					wasTwilight = true
+					Lighting.ClockTime = 18.25
+					Lighting.OutdoorAmbient = Color3.fromRGB(190, 120, 150)
+					Lighting.Brightness = 1.9
+					atmo.Color = Color3.fromRGB(255, 165, 120)
+					atmo.Decay = Color3.fromRGB(150, 70, 120)
+					cc.TintColor = Color3.fromRGB(255, 214, 196)
+				end
+				task.wait(0.25)
+				continue
+			end
+			if wasTwilight then
+				wasTwilight = false
+				atmo.Color = baseAtmo
+				atmo.Decay = baseDecay
+				cc.TintColor = baseTint
+			end
 			local h = World.clockHour()
 			Lighting.ClockTime = h
 			local night = (h < 6.5 or h > 18.5) and 1 or 0
@@ -21826,6 +22387,7 @@ local function skyWorld(out: any)
 		crane = { rim = "rail", rimColor = rgb(245, 245, 240), under = "peak", cloud = { CLOUD, 0.1, 1.3 }, islet = "pine" },
 		bamboo = { depth = 0.32, rim = "fence", under = { rgb(112, 86, 60), Enum.Material.Ground }, drip = "root", dripColor = rgb(96, 70, 46), cloud = { rgb(236, 246, 236), 0.3, 1 }, islet = "bamboo", ledges = 4 },
 		moonlake = { depth = 0.16, rim = "silver", under = { rgb(180, 186, 204), Enum.Material.Marble }, drip = "water", cloud = { rgb(210, 222, 246), 0.25, 1 }, islet = "lotus" },
+		rinnedae = { depth = 0.36, bands = true, rim = "gold", under = { rgb(196, 186, 226), Enum.Material.Marble }, drip = "crystal", dripColor = rgb(180, 150, 255), cloud = { rgb(235, 230, 255), 0.2, 1.1 }, islet = "crystal" },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -22203,7 +22765,8 @@ local function skyWorld(out: any)
 		local to = B.at - dir.Unit * (B.radius - 4)
 		local len = (to - from).Magnitude
 		local mid = (from + to) / 2
-		local cf = CFrame.lookAt(mid, mid + dir)
+		-- 3.1판: 높이가 다른 섬 사이 (윤회대) 는 비탈진 다리
+		local cf = math.abs(to.Y - from.Y) > 0.5 and CFrame.lookAt(mid, to) or CFrame.lookAt(mid, mid + dir)
 		local w = b.hidden and 8 or 16
 		local deck = part({ Name = b.hidden and "HiddenBridge" or "SkyBridge", Size = Vector3.new(w, 1, len), CFrame = cf * CFrame.new(0, -0.5, 0), Color = b.hidden and Color3.fromRGB(200, 230, 255) or Color3.fromRGB(240, 238, 230), Material = b.hidden and Enum.Material.Glass or Enum.Material.Marble, Transparency = b.hidden and 0.88 or 0, Parent = f })
 		local _ = deck
@@ -22593,6 +23156,87 @@ local function skyWorld(out: any)
 	part({ Name = "CenserLeg", Size = Vector3.new(4, 2, 4), Position = gt + Vector3.new(0, 1, -10), Color = Color3.fromRGB(120, 95, 60), Material = Enum.Material.Metal, Parent = f })
 	local smoke = part({ Name = "CenserGlow", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = gt + Vector3.new(0, 5.4, -10), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 	light(smoke, Color3.fromRGB(255, 200, 120), 20, 1)
+
+	-- 3.1판 윤회대: 가운데 환생 제단 (세 겹 단, 금테, 여섯 빛깔 기둥), 뒤편 (서쪽) 의 거대한 윤회륜, 둘레를 도는 구름 소용돌이
+	-- 윤회륜과 구름 소용돌이는 화면이 천천히 돌린다 (RinneWheel · RinneVortex)
+	local rd = I.rinnedae.at
+	local RINGOLD = Color3.fromRGB(255, 214, 110)
+	local INDIGO = Color3.fromRGB(120, 90, 255)
+	for i = 1, 3 do
+		disc("RinneAltarTier", rd + Vector3.new(0, i * 1.2 - 0.6, 0), 34 - i * 8, 1.2, Color3.fromRGB(240, 236, 250), Enum.Material.Marble, f)
+		disc("RinneAltarTrim", rd + Vector3.new(0, i * 1.2 - 1.15, 0), 34 - i * 8 + 0.6, 0.3, RINGOLD, Enum.Material.Metal, f, false)
+	end
+	local altarTop = rd + Vector3.new(0, 3.6, 0)
+	local seal = disc("RinneSeal", altarTop + Vector3.new(0, 0.05, 0), 8, 0.2, INDIGO, Enum.Material.Neon, f, false)
+	seal.Transparency = 0.35
+	local altar = part({ Name = "RinneAltar", Size = Vector3.new(4, 3, 4), CFrame = CFrame.new(altarTop + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(235, 230, 248), Material = Enum.Material.Marble, Parent = f })
+	local orb = part({ Name = "RinneOrb", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 2.4, 2.4), Position = altarTop + Vector3.new(0, 4.4, 0), Color = Color3.fromRGB(200, 180, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(orb, Color3.fromRGB(190, 160, 255), 30, 1.5)
+	out.rinneAltar = prompt(altar, "환생하기 (길게 누르기)", "윤회대 · 환생 제단", "RinneAltar")
+	out.rinneAltar.HoldDuration = 2
+	-- 여섯 갈래 세상의 기둥
+	local REALM_C = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 214, 90), Color3.fromRGB(255, 80, 80), Color3.fromRGB(110, 230, 140), Color3.fromRGB(110, 170, 255), Color3.fromRGB(200, 120, 255) }
+	for k = 1, 6 do
+		local a = (k - 1) / 6 * math.pi * 2 + math.pi / 6
+		local p = rd + Vector3.new(math.cos(a) * 48, 0, math.sin(a) * 48)
+		part({ Name = "RinnePillar", Size = Vector3.new(4, 22, 4), Position = p + Vector3.new(0, 11, 0), Color = Color3.fromRGB(240, 236, 250), Material = Enum.Material.Marble, Parent = f })
+		part({ Name = "RinnePillarBand", Size = Vector3.new(4.4, 1, 4.4), Position = p + Vector3.new(0, 20, 0), Color = RINGOLD, Material = Enum.Material.Metal, Parent = f })
+		local gem = part({ Name = "RinnePillarGem", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = p + Vector3.new(0, 24, 0), Color = REALM_C[k], Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(gem, REALM_C[k], 16, 1)
+	end
+	-- 거대한 윤회륜 (서쪽, 세워져서 제단을 바라본다): 금 테 두 겹, 바퀴살 여덟, 굴대, 여섯 구슬
+	local wf = Instance.new("Folder")
+	wf.Name = "RinneWheel"
+	wf.Parent = f
+	local wc = rd + Vector3.new(-86, 34, 0)
+	local hub = part({ Name = "RinneHub", Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 7, 7), CFrame = CFrame.new(wc), Color = RINGOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = wf })
+	local R = 26
+	local function onWheel(name: string, size: Vector3, local_: CFrame, color: Color3, mat: Enum.Material, shape: Enum.PartType?)
+		local p = part({ Name = name, Size = size, CFrame = CFrame.new(wc) * CFrame.Angles(0, math.rad(90), 0) * local_, Color = color, Material = mat, CanCollide = false, Parent = wf })
+		if shape then
+			p.Shape = shape
+		end
+		return p
+	end
+	local n = 40
+	for i = 0, n - 1 do
+		local a = (i + 0.5) / n * math.pi * 2
+		onWheel("RinneRim", Vector3.new(2 * math.pi * R / n * 1.1, 2.2, 2), CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0), RINGOLD, Enum.Material.Metal)
+		if i % 2 == 0 then
+			onWheel("RinneInner", Vector3.new(2 * math.pi * R * 0.7 / n * 2.2, 0.9, 0.9), CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.7, 0), INDIGO, Enum.Material.Neon)
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		onWheel("RinneSpoke", Vector3.new(1.2, R * 0.95, 1.2), CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.5, 0), Color3.fromRGB(220, 160, 50), Enum.Material.Metal)
+	end
+	for k = 1, 6 do
+		local a = (k - 1) / 6 * math.pi * 2
+		local g = onWheel("RinneRealm", Vector3.new(4.4, 4.4, 4.4), CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0), REALM_C[k], Enum.Material.Neon, Enum.PartType.Ball)
+		light(g, REALM_C[k], 14, 0.8)
+	end
+	light(hub, RINGOLD, 60, 1.6)
+	-- 바퀴를 받치는 두 기둥과 받침
+	for _, z in ipairs({ -1, 1 }) do
+		part({ Name = "RinneWheelPost", Size = Vector3.new(4, 36, 4), Position = rd + Vector3.new(-86, 18, z * 6), Color = Color3.fromRGB(235, 230, 248), Material = Enum.Material.Marble, Parent = f })
+	end
+	part({ Name = "RinneWheelBase", Size = Vector3.new(14, 2, 20), Position = rd + Vector3.new(-86, 1, 0), Color = Color3.fromRGB(225, 220, 240), Material = Enum.Material.Marble, Parent = f })
+	-- 제단으로 이어지는 길 (다리 쪽, 동쪽에서)
+	for k = 0, 8 do
+		part({ Name = "RinnePath", Size = Vector3.new(8, 0.3, 6), Position = rd + Vector3.new(30 + k * 10, 0.15, 0), Color = Color3.fromRGB(240, 236, 250), Material = Enum.Material.Marble, Parent = f })
+	end
+	-- 둘레를 도는 구름 소용돌이 (세 갈래 나선)
+	local vortex = Instance.new("Folder")
+	vortex.Name = "RinneVortex"
+	vortex.Parent = f
+	for arm = 0, 2 do
+		for k = 0, 13 do
+			local a = arm / 3 * math.pi * 2 + k * 0.28
+			local r = 150 + k * 6
+			local sz = 26 - k * 0.9
+			part({ Name = "RinneVortexCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(sz * 1.4, sz * 0.5, sz), Position = rd + Vector3.new(math.cos(a) * r, -14 - k * 1.2, math.sin(a) * r), Color = Color3.fromRGB(240, 236, 255):Lerp(Color3.fromRGB(200, 180, 255), k / 14), Material = Enum.Material.SmoothPlastic, Transparency = 0.2 + k * 0.03, CanCollide = false, Parent = vortex })
+		end
+	end
 end
 
 local arenas: { [number]: Vector3 } = {}
@@ -22817,6 +23461,7 @@ local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
+local Geuk = require(script:WaitForChild("Geuk"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -23329,7 +23974,8 @@ startMove = function(slot: any, charge: number?)
 	if not style or not char or not root then
 		return
 	end
-	local move = Config.move(style.id, slot)
+	-- 3.1판: 극 권법의 황혼 동안은 바뀐 기술
+	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true)
 	if not move then
 		return
 	end
@@ -24277,7 +24923,7 @@ function handlers.act(data: any)
 		Drunk.cast(style.id, data.slot, m, data.dur)
 		Reaper.cast(style.id, data.slot, m, data.dur)
 		SkillFx.cast(style.id, data.slot, m, data.dur)
-		local mv = Config.move(style.id, data.slot)
+		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
 				if m.Parent then
@@ -24732,6 +25378,12 @@ function handlers.skillfx(data: any)
 		Plum.init({ shake = shake, tint = tint })
 		Gourd.init({ shake = shake, tint = tint })
 		Samsara.init({ shake = shake, tint = tint })
+		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+	end
+	-- 3.1판 극 권법의 기술 (평소·황혼)
+	if Geuk.handles(data) then
+		Geuk.run(data)
+		return
 	end
 	-- 3.0판 환생 권법 넷의 기술과 연타 장치
 	if Samsara.handles(data) then
@@ -25071,6 +25723,17 @@ function handlers.rebirth(data: any)
 		UI.toast(string.format("♻ %s, %s 환생!", data.name or "", Config.REBIRTH.names[data.n or 1] or ""))
 	end
 end
+-- 3.1판: 극 패시브 일월극변 (서버 전체 컷씬)
+function handlers.geukTwilight(data: any)
+	Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
+	Geuk.twilight(data)
+end
+-- 3.1판: 윤회대 제단의 환생 의식 (모두에게 보인다)
+function handlers.rebirthRite(data: any)
+	Samsara.init({ shake = shake, tint = tint })
+	Samsara.rite(data)
+end
 function handlers.rebirthDone(data: any)
 	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0), data.perks or 0, data.points or 0), Config.REBIRTH.colors[data.n or 1])
 	shake(1.2)
@@ -25140,8 +25803,12 @@ RunService.RenderStepped:Connect(function()
 		F = { name = guarding and "막는 중" or "막기·흘리기" },
 		P = { name = string.format("금창약 %d", state and state.potions or 0) },
 	}
+	local twilightNow = char:GetAttribute("Twilight") == true
+	if twilightNow and style.twilight then
+		info.H.name = style.twilight.heavy.name
+	end
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
-		local sk = style.skills[slot]
+		local sk = Config.move(style.id, slot, twilightNow)
 		if sk then
 			local left = (cds[slot] or 0) - now
 			local need = sk.chi or 100
@@ -25151,7 +25818,16 @@ RunService.RenderStepped:Connect(function()
 	UI.slots(info)
 	-- 권법 장치 표시
 	local stacks = ""
-	if style.id == "taeheo" then
+	if style.geukGauge then
+		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
+		if twilightNow then
+			stacks = "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+		else
+			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
+			local k = math.floor(g / style.geukGauge.max * 10)
+			stacks = string.format("극 %s%s %d", string.rep("▰", k), string.rep("▱", 10 - k), g)
+		end
+	elseif style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
 	elseif style.id == "maehwa" or style.petals then
 		local n = tonumber(char:GetAttribute("Petal")) or 0
@@ -34736,6 +35412,794 @@ return Gacha
         </Item>
         <Item class="ModuleScript" referent="25">
           <Properties>
+            <string name="Name">Geuk</string>
+            <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
+-- 해: 주홍빛 심과 금빛 빛살 · 달: 푸른 흰빛 초승달 · 황혼: 노을빛 주홍과 보랏빛이 겹친다
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Geuk = {}
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonGeuk"
+folder.Parent = workspace
+
+local opts: any = {}
+function Geuk.init(o: any)
+	opts = o or {}
+end
+
+local SUN = Color3.fromRGB(255, 170, 50)
+local SUN_CORE = Color3.fromRGB(255, 245, 200)
+local MOON = Color3.fromRGB(205, 220, 255)
+local DUSK = Color3.fromRGB(255, 120, 60)
+local DUSK2 = Color3.fromRGB(165, 95, 235)
+local WHITE = Color3.new(1, 1, 1)
+local DARK = Color3.fromRGB(20, 14, 30)
+
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function ground(at: Vector3): Vector3
+	return Vector3.new(at.X, at.Y - 2.7, at.Z)
+end
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+	local q = Instance.new("Part")
+	if shape == "ball" then
+		q.Shape = Enum.PartType.Ball
+	elseif shape == "cyl" then
+		q.Shape = Enum.PartType.Cylinder
+	end
+	q.Anchored = true
+	q.CanCollide = false
+	q.CanQuery = false
+	q.CanTouch = false
+	q.CastShadow = false
+	q.Size = size
+	q.Color = color
+	q.Material = material or Enum.Material.Neon
+	q.Transparency = alpha or 0
+	q.Parent = folder
+	return q
+end
+local function fadeOut(p: BasePart, time: number, goal: { [string]: any }?)
+	local g = goal or {}
+	g.Transparency = 1
+	tween(p, time, g)
+	task.delay(time + 0.05, function()
+		p:Destroy()
+	end)
+end
+local function shakeNear(pos: Vector3, amount: number, range: number)
+	if opts.shake and near(pos, range) then
+		opts.shake(amount)
+	end
+end
+local function anim(life: number, fn: (number) -> ())
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local u = math.clamp((os.clock() - t0) / life, 0, 1)
+		fn(u)
+		if u >= 1 then
+			conn:Disconnect()
+		end
+	end)
+end
+local function rootOf(m: any): BasePart?
+	local r = typeof(m) == "Instance" and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+local function safeLook(from: Vector3, to: Vector3): CFrame
+	if (to - from).Magnitude < 1e-3 then
+		return CFrame.new(from)
+	end
+	return CFrame.lookAt(from, to)
+end
+
+-- 덩이 (조각 + 덩이 안의 자리)
+type Group = { items: { { any } } }
+local function group(): Group
+	return { items = {} }
+end
+local function gpart(g: Group, size: Vector3, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?, off: CFrame): BasePart
+	local p = part(size, color, mat, alpha, shape)
+	p:SetAttribute("A0", alpha or 0)
+	table.insert(g.items, { p, off })
+	return p
+end
+local function gset(g: Group, cf: CFrame)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			p.CFrame = cf * (it[2] :: CFrame)
+		end
+	end
+end
+local function gfade(g: Group, time: number)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			fadeOut(p, time)
+		end
+	end
+end
+local function galpha(g: Group, k: number)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			p.Transparency = math.clamp(math.max(k, p:GetAttribute("A0") or 0), 0, 1)
+		end
+	end
+end
+
+-- 해: 흰 심, 주홍 몸, 둘레의 금빛 빛살 열둘, 바깥의 흐린 빛
+local function sunGroup(R: number, color: Color3?): Group
+	local g = group()
+	local c = color or SUN
+	gpart(g, Vector3.new(R * 1.2, R * 1.2, R * 1.2), SUN_CORE, Enum.Material.Neon, 0, "ball", CFrame.new())
+	gpart(g, Vector3.new(R * 2, R * 2, R * 2), c, Enum.Material.Neon, 0.15, "ball", CFrame.new())
+	gpart(g, Vector3.new(R * 3, R * 3, R * 3), c, Enum.Material.Neon, 0.75, "ball", CFrame.new())
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		gpart(g, Vector3.new(R * 0.18, R * (k % 2 == 0 and 1.4 or 0.9), R * 0.18), c:Lerp(WHITE, 0.3), Enum.Material.Neon, 0.1, nil, CFrame.Angles(0, 0, a) * CFrame.new(0, R * 1.3, 0))
+	end
+	return g
+end
+-- 달: 초승달 (가운데가 두껍고 끝이 가는 호), 덩이의 XY 면, 오목한 쪽이 +X
+local function moonGroup(R: number, color: Color3?, thick: number?): Group
+	local g = group()
+	local c = color or MOON
+	local n = 16
+	for i = 0, n - 1 do
+		local a0 = math.rad(-110 + 220 * i / n)
+		local a1 = math.rad(-110 + 220 * (i + 1) / n)
+		local p0 = Vector3.new(-math.cos(a0) * R, math.sin(a0) * R, 0)
+		local p1 = Vector3.new(-math.cos(a1) * R, math.sin(a1) * R, 0)
+		local u = (i + 0.5) / n
+		local w = (thick or R * 0.45) * math.sin(u * math.pi) + R * 0.05
+		local mid = (p0 + p1) / 2
+		gpart(g, Vector3.new(w, (p1 - p0).Magnitude * 1.12, w * 0.6), c:Lerp(WHITE, (1 - math.sin(u * math.pi)) * 0.4), Enum.Material.Neon, 0.05, nil,
+			CFrame.new(mid) * CFrame.Angles(0, 0, math.atan2(p1.Y - p0.Y, p1.X - p0.X) - math.pi / 2))
+	end
+	return g
+end
+
+local H: { [string]: (any) -> () } = {}
+
+------------------------------------------------------------------------
+-- 일월쌍륜 (E): 해의 원반과 달의 원반이 엇갈리는 활을 그리며 날아가 앞에서 만나 일식처럼 터진다
+------------------------------------------------------------------------
+function H.twinDiscs(d: any)
+	local from: Vector3 = d.from
+	if not near(from, 300) then
+		return
+	end
+	local dir = flat(d.dir)
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	local time = d.time or 0.6
+	local sun = sunGroup(1.6)
+	local moon = moonGroup(2.4)
+	local last = 0
+	anim(time, function(u)
+		local sp = from + dir * (d.dist * u) + right * (d.swing * math.sin(u * math.pi))
+		local mp = from + dir * (d.dist * u) - right * (d.swing * math.sin(u * math.pi))
+		gset(sun, CFrame.new(sp) * CFrame.Angles(0, 0, u * 14))
+		gset(moon, CFrame.lookAt(mp, mp + dir) * CFrame.Angles(0, math.rad(90), 0) * CFrame.Angles(0, 0, -u * 16))
+		local now = os.clock()
+		if now - last > 0.04 then
+			last = now
+			local a = part(Vector3.new(0.6, 0.6, 0.6), SUN, Enum.Material.Neon, 0.1, "ball")
+			a.Position = sp
+			fadeOut(a, 0.35, { Size = Vector3.new(0.1, 0.1, 0.1) })
+			local b = part(Vector3.new(0.5, 0.5, 0.5), MOON, Enum.Material.Neon, 0.1, "ball")
+			b.Position = mp
+			fadeOut(b, 0.35, { Size = Vector3.new(0.1, 0.1, 0.1) })
+		end
+		if u >= 1 then
+			gfade(sun, 0.1)
+			gfade(moon, 0.1)
+			local at = from + dir * d.dist
+			local ecl = part(Vector3.new(3, 3, 3), DARK, Enum.Material.SmoothPlastic, 0, "ball")
+			ecl.Position = at
+			local ring = part(Vector3.new(4, 4, 4), SUN, Enum.Material.Neon, 0.3, "ball")
+			ring.Position = at
+			fadeOut(ecl, 0.5, { Size = Vector3.new(8, 8, 8) })
+			fadeOut(ring, 0.4, { Size = Vector3.new(22, 22, 22) })
+			Fx.blast(at, SUN, MOON, 1.6)
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), SUN, 2, 24, 0.4)
+			Fx.breakSound("boom", 0.8, 1.0, at)
+			shakeNear(at, 0.7, 120)
+		end
+	end)
+	Fx.breakSound("whoosh", 0.6, 1.0, from)
+end
+
+------------------------------------------------------------------------
+-- 일월환보 (R): 제자리에 해가 터지고, 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다
+------------------------------------------------------------------------
+function H.solarLunarStep(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 300) then
+		return
+	end
+	local m = d.m
+	task.delay(0.05, function()
+		local s = sunGroup(2.4)
+		gset(s, CFrame.new(a))
+		anim(0.35, function(u)
+			galpha(s, u)
+			gset(s, CFrame.new(a) * CFrame.Angles(0, 0, u * 3))
+			if u >= 1 then
+				gfade(s, 0.05)
+			end
+		end)
+		Fx.ring(ground(a) + Vector3.new(0, 0.3, 0), SUN, 2, 20, 0.4)
+		Fx.burst("ember", a, SUN, 14, 1.4)
+		Fx.breakSound("boom", 0.7, 1.1, a)
+	end)
+	for k = 0, 3 do
+		task.delay(k * 0.04, function()
+			if m and m.Parent then
+				Fx.afterimage(m, k % 2 == 0 and SUN or MOON, 0.35)
+			end
+		end)
+	end
+	task.delay(0.28, function()
+		local mid = (a + b) / 2
+		local len = (b - a).Magnitude
+		local slash = part(Vector3.new(0.3, 4.5, len), MOON, Enum.Material.Neon, 0.05)
+		slash.CFrame = safeLook(mid, b) * CFrame.Angles(0, 0, math.rad(20))
+		fadeOut(slash, 0.4, { Size = Vector3.new(0.05, 0.6, len) })
+		Fx.sound("swing", 0.7, 0.8, mid)
+	end)
+	task.delay(0.45, function()
+		local mg = moonGroup(6, MOON, 2)
+		local base = CFrame.new(b) * CFrame.Angles(math.rad(90), 0, 0)
+		anim(0.35, function(u)
+			gset(mg, base * CFrame.Angles(0, 0, u * math.pi * 1.5))
+			galpha(mg, u)
+			if u >= 1 then
+				gfade(mg, 0.05)
+			end
+		end)
+		Fx.ring(ground(b) + Vector3.new(0, 0.3, 0), MOON, 2, 24, 0.4)
+		Fx.burst("glitter", b, MOON, 16, 1.4)
+		shakeNear(b, 0.6, 100)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 대일월천 (오의): 거대한 해가 내려앉아 타고, 달의 칼날이 해를 세로로 가르고, 일식으로 터진다
+------------------------------------------------------------------------
+function H.sunMoonFall(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 400) then
+		return
+	end
+	local dir = flat(d.dir)
+	local fall, burn, cutAt = d.fall or 0.6, d.burn or 1.4, d.cutAt or 1.2
+	local R = (d.radius or 15) * 0.55
+	local sun = sunGroup(R)
+	local top = c + Vector3.new(0, 70, 0) - dir * 10
+	local land = ground(c) + Vector3.new(0, R * 0.6, 0)
+	if opts.tint then
+		opts.tint(Color3.fromRGB(255, 200, 140), 0.3, fall + burn + 0.3)
+	end
+	anim(fall + burn, function(u)
+		local t = u * (fall + burn)
+		local k = math.clamp(t / fall, 0, 1)
+		local p = top:Lerp(land, k * k)
+		gset(sun, CFrame.new(p) * CFrame.Angles(0, 0, t * 2))
+		if k >= 1 and math.random() < 0.5 then
+			local a = math.random() * math.pi * 2
+			Fx.burst("ember", ground(c) + Vector3.new(math.cos(a) * R * 1.6, 1, math.sin(a) * R * 1.6), SUN, 3, 1.4)
+		end
+		if u >= 1 then
+			gfade(sun, 0.2)
+		end
+	end)
+	task.delay(fall, function()
+		Fx.ring(ground(c) + Vector3.new(0, 0.4, 0), SUN, 4, (d.radius or 15) * 2.4, 0.6)
+		Fx.debris(ground(c), 14, 40)
+		Fx.breakSound("boom", 1, 0.6, c)
+		shakeNear(c, 1.2, 160)
+		local scorch = part(Vector3.new(0.2, 1, 1), Color3.fromRGB(255, 110, 40), Enum.Material.Neon, 0.4, "cyl")
+		scorch.CFrame = CFrame.new(ground(c) + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(scorch, 0.3, { Size = Vector3.new(0.2, (d.radius or 15) * 2, (d.radius or 15) * 2) })
+		task.delay(burn, function()
+			fadeOut(scorch, 0.5)
+		end)
+	end)
+	-- 달의 칼날이 하늘에서 해를 세로로 가른다
+	task.delay(fall + cutAt - 0.25, function()
+		local mg = moonGroup(R * 2.4, MOON, R * 0.5)
+		local right = Vector3.new(-dir.Z, 0, dir.X)
+		local from = c + Vector3.new(0, 60, 0)
+		anim(0.25, function(u)
+			local p = from:Lerp(ground(c) + Vector3.new(0, R, 0), u)
+			gset(mg, CFrame.fromMatrix(p, right, Vector3.new(0, 1, 0)) * CFrame.Angles(0, math.rad(90), 0))
+			if u >= 1 then
+				gfade(mg, 0.3)
+				Fx.flash(c, MOON, 60, 5, 0.4)
+				Fx.sound("deflect", 0.9, 0.6, c)
+				shakeNear(c, 0.9, 160)
+			end
+		end)
+	end)
+	task.delay(fall + burn, function()
+		local ecl = part(Vector3.new(4, 4, 4), DARK, Enum.Material.SmoothPlastic, 0, "ball")
+		ecl.Position = land
+		local corona = part(Vector3.new(6, 6, 6), SUN_CORE, Enum.Material.Neon, 0.3, "ball")
+		corona.Position = land
+		fadeOut(ecl, 0.6, { Size = Vector3.new(R * 3, R * 3, R * 3) })
+		fadeOut(corona, 0.5, { Size = Vector3.new(R * 6, R * 6, R * 6) })
+		Fx.blast(land, SUN, MOON, 3)
+		Fx.ring(ground(c) + Vector3.new(0, 0.5, 0), WHITE, 6, 70, 0.7)
+		Fx.flash(c, SUN_CORE, 90, 7, 0.8)
+		Fx.breakSound("boom", 1, 0.45, c)
+		shakeNear(c, 1.8, 200)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 일월개벽 (초 오의): 하늘이 어두워지며 해와 달이 떠오르고, 부딪쳐 하늘에 일식이 걸리고, 빛살이 쏟아지고, 새벽빛으로 터진다
+------------------------------------------------------------------------
+local eclipseSky: { [Vector3]: BasePart } = {}
+function H.eclipseGenesis(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 500) then
+		return
+	end
+	local rise, collide, rays, finalAt = d.rise or 1, d.collide or 1.8, d.rays or 2, d.finalAt or 0.4
+	local total = collide + rays + finalAt
+	if opts.tint then
+		opts.tint(Color3.fromRGB(120, 110, 150), 0.55, total)
+	end
+	local cam = workspace.CurrentCamera
+	local face = cam and flat(cam.CFrame.Position - c) or Vector3.new(0, 0, 1)
+	local right = Vector3.new(-face.Z, 0, face.X)
+	local sky = c + Vector3.new(0, 46, 0)
+	local sun = sunGroup(7)
+	local moon = moonGroup(9, MOON, 4)
+	anim(collide, function(u)
+		local t = u * collide
+		local k = math.clamp(t / rise, 0, 1)
+		-- 양쪽 땅에서 떠올라 (rise) 하늘 가운데로 모인다
+		local sStart, mStart = c + right * 30, c - right * 30
+		local sUp, mUp = sky + right * 26, sky - right * 26
+		local j = math.clamp((t - rise) / math.max(0.05, collide - rise), 0, 1)
+		local sp = (k < 1 and sStart:Lerp(sUp, 1 - (1 - k) ^ 2) or sUp:Lerp(sky, j * j))
+		local mp = (k < 1 and mStart:Lerp(mUp, 1 - (1 - k) ^ 2) or mUp:Lerp(sky + face * 0.5, j * j))
+		gset(sun, CFrame.new(sp) * CFrame.Angles(0, 0, t))
+		gset(moon, CFrame.lookAt(mp, mp + face) * CFrame.Angles(0, 0, -t * 0.6))
+		if u >= 1 then
+			gfade(sun, 0.2)
+			gfade(moon, 0.2)
+		end
+	end)
+	task.delay(collide, function()
+		-- 일식: 검은 해, 흰 빛 테, 금빛 빛살
+		local disc = part(Vector3.new(16, 16, 16), DARK, Enum.Material.SmoothPlastic, 0, "ball")
+		disc.Position = sky
+		local crown = part(Vector3.new(19, 19, 19), SUN_CORE, Enum.Material.Neon, 0.25, "ball")
+		crown.Position = sky
+		local glow = part(Vector3.new(30, 30, 30), SUN, Enum.Material.Neon, 0.75, "ball")
+		glow.Position = sky
+		eclipseSky[c] = disc
+		Fx.flash(sky, SUN_CORE, 140, 8, 0.6)
+		Fx.breakSound("boom", 1, 0.4, c)
+		shakeNear(c, 1.6, 240)
+		task.delay(rays + finalAt, function()
+			eclipseSky[c] = nil
+			fadeOut(disc, 0.6, { Size = Vector3.new(4, 4, 4) })
+			fadeOut(crown, 0.3, { Size = Vector3.new(120, 120, 120) })
+			fadeOut(glow, 0.5, { Size = Vector3.new(160, 160, 160) })
+		end)
+	end)
+	task.delay(total, function()
+		Fx.blast(c, SUN_CORE, SUN, 3.6)
+		Fx.ring(ground(c) + Vector3.new(0, 0.5, 0), SUN_CORE, 6, (d.radius or 32) * 2.8, 0.8)
+		Fx.ring(ground(c) + Vector3.new(0, 2, 0), MOON, 4, (d.radius or 32) * 2, 0.7)
+		local pillar = part(Vector3.new(120, 14, 14), SUN_CORE, Enum.Material.Neon, 0.1, "cyl")
+		pillar.CFrame = CFrame.new(c + Vector3.new(0, 60, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(pillar, 0.7, { Size = Vector3.new(120, 40, 40) })
+		Fx.flash(c, WHITE, 140, 9, 1)
+		Fx.breakSound("boom", 1, 0.35, c)
+		shakeNear(c, 2.4, 260)
+	end)
+end
+-- 일식의 빛살: 하늘의 일식에서 적에게 꽂힌다
+function H.eclipseRay(d: any)
+	local from: Vector3 = d.from
+	for _, at in ipairs(d.ats or {}) do
+		if near(at, 300) then
+			local len = (at - from).Magnitude
+			local beam = part(Vector3.new(0.7, 0.7, len), SUN_CORE, Enum.Material.Neon, 0.05)
+			beam.CFrame = safeLook((from + at) / 2, at)
+			fadeOut(beam, 0.2, { Size = Vector3.new(0.1, 0.1, len) })
+			Fx.burst("spark", at, SUN, 5, 1)
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), SUN, 1, 8, 0.25)
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 황혼의 기술
+------------------------------------------------------------------------
+-- 황혼 (연타 셋마다): 노을빛 해와 보랏빛 달이 함께 떨어져 겹치며 터진다
+function H.duskPulse(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local delay = d.delay or 0.3
+	local s = sunGroup(1.2, DUSK)
+	local mg = moonGroup(1.8, DUSK2, 0.7)
+	anim(delay, function(u)
+		local sp = (at + Vector3.new(6, 18, 0)):Lerp(at, u * u)
+		local mp = (at + Vector3.new(-6, 18, 0)):Lerp(at, u * u)
+		gset(s, CFrame.new(sp))
+		gset(mg, CFrame.new(mp) * CFrame.Angles(0, 0, u * 6))
+		if u >= 1 then
+			gfade(s, 0.1)
+			gfade(mg, 0.1)
+			Fx.blast(at, DUSK, DUSK2, 1.2)
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), DUSK, 1, 18, 0.35)
+			Fx.breakSound("boom", 0.6, 1.2, at)
+		end
+	end)
+end
+
+-- 황혼참 (E): 노을빛 초승달 다섯이 부채꼴로 날아갔다가 되돌아온다
+function H.duskFan(d: any)
+	local from: Vector3 = d.from
+	if not near(from, 300) then
+		return
+	end
+	local m = d.m
+	local time = d.time or 0.7
+	local moons = {}
+	for i, dir in ipairs(d.dirs or {}) do
+		moons[i] = { g = moonGroup(2.2, i % 2 == 0 and DUSK2 or DUSK, 0.9), dir = flat(dir) }
+	end
+	local last = 0
+	anim(time, function(u)
+		local r = rootOf(m)
+		local owner = r and r.Position or from
+		local base = from:Lerp(owner, u)
+		local now = os.clock()
+		for i, mo in ipairs(moons) do
+			local p = base + mo.dir * (d.dist * math.sin(u * math.pi))
+			gset(mo.g, CFrame.lookAt(p, p + mo.dir) * CFrame.Angles(math.rad(90), 0, 0) * CFrame.Angles(0, 0, -u * 20))
+			if now - last > 0.05 then
+				local tr = part(Vector3.new(0.5, 0.5, 0.5), i % 2 == 0 and DUSK2 or DUSK, Enum.Material.Neon, 0.15, "ball")
+				tr.Position = p
+				fadeOut(tr, 0.3, { Size = Vector3.new(0.1, 0.1, 0.1) })
+			end
+		end
+		if now - last > 0.05 then
+			last = now
+		end
+		if u >= 1 then
+			for _, mo in ipairs(moons) do
+				gfade(mo.g, 0.1)
+			end
+		end
+	end)
+	Fx.breakSound("whoosh", 0.8, 0.9, from)
+end
+
+-- 석양보 (R): 노을이 되어 적들의 등 뒤로 차례로 나타나고, 지나간 노을빛 줄이 한꺼번에 터진다
+function H.duskChain(d: any)
+	local prev: Vector3 = d.from
+	if not near(prev, 300) then
+		return
+	end
+	local m = d.m
+	local lines: { { Vector3 } } = {}
+	for i, t in ipairs(d.targets or {}) do
+		task.delay((d.delay or 0.08) + (i - 1) * (d.every or 0.12), function()
+			local tr = rootOf(t)
+			if not tr then
+				return
+			end
+			local to = tr.Position
+			if m and m.Parent then
+				Fx.afterimage(m, i % 2 == 0 and DUSK2 or DUSK, 0.4)
+			end
+			local len = (to - prev).Magnitude
+			if len > 0.3 then
+				local ln = part(Vector3.new(0.5, 0.5, len), DUSK, Enum.Material.Neon, 0.1)
+				ln.CFrame = safeLook((prev + to) / 2, to)
+				table.insert(lines, { prev, to })
+				task.delay(0.6 + (d.burstAt or 0.35), function()
+					fadeOut(ln, 0.2)
+				end)
+			end
+			Fx.burst("spark", to, DUSK, 8, 1.2)
+			Fx.sound("swing", 0.7, 1 + i * 0.1, to)
+			prev = to
+		end)
+	end
+	local n = math.max(1, #(d.targets or {}))
+	task.delay((d.delay or 0.08) + n * (d.every or 0.12) + (d.burstAt or 0.35), function()
+		for _, ln in ipairs(lines) do
+			local a, b = ln[1], ln[2]
+			for k = 0, 3 do
+				local p = a:Lerp(b, k / 3)
+				local boom = part(Vector3.new(2, 2, 2), k % 2 == 0 and DUSK or DUSK2, Enum.Material.Neon, 0.1, "ball")
+				boom.Position = p
+				fadeOut(boom, 0.35, { Size = Vector3.new(9, 9, 9) })
+			end
+		end
+		Fx.breakSound("boom", 0.9, 0.9, prev)
+		shakeNear(prev, 0.9, 140)
+	end)
+end
+
+-- 황혼낙일 (G): 거대한 석양이 땅으로 가라앉아 노을빛 바다가 되고, 달빛 기둥이 솟고, 바다가 솟구친다
+function H.sunsetSea(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 400) then
+		return
+	end
+	local sink, dur, R = d.sink or 0.8, d.dur or 2, d.radius or 22
+	if opts.tint then
+		opts.tint(Color3.fromRGB(255, 170, 140), 0.35, sink + dur + 0.3)
+	end
+	local sun = sunGroup(R * 0.45, DUSK)
+	local g = ground(c)
+	anim(sink, function(u)
+		local p = (g + Vector3.new(0, R * 1.2, 0)):Lerp(g - Vector3.new(0, R * 0.2, 0), u)
+		gset(sun, CFrame.new(p))
+		if u >= 1 then
+			gfade(sun, 0.4)
+		end
+	end)
+	task.delay(sink, function()
+		local sea = part(Vector3.new(0.3, 1, 1), DUSK, Enum.Material.Neon, 0.35, "cyl")
+		sea.CFrame = CFrame.new(g + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(sea, 0.3, { Size = Vector3.new(0.3, R * 2, R * 2) })
+		local deep = part(Vector3.new(0.35, 1, 1), DUSK2, Enum.Material.Neon, 0.5, "cyl")
+		deep.CFrame = CFrame.new(g + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(deep, 0.4, { Size = Vector3.new(0.35, R * 1.4, R * 1.4) })
+		Fx.ring(g + Vector3.new(0, 0.4, 0), DUSK, 4, R * 2.4, 0.6)
+		Fx.breakSound("boom", 1, 0.55, c)
+		shakeNear(c, 1.2, 160)
+		anim(dur, function(u)
+			if math.random() < 0.4 then
+				local a = math.random() * math.pi * 2
+				local r = math.random() * R
+				local bub = part(Vector3.new(1, 1, 1), math.random() < 0.5 and DUSK or DUSK2, Enum.Material.Neon, 0.2, "ball")
+				bub.Position = g + Vector3.new(math.cos(a) * r, 0.5, math.sin(a) * r)
+				fadeOut(bub, 0.5, { Size = Vector3.new(3, 0.5, 3) })
+			end
+			if u >= 1 then
+				fadeOut(sea, 0.4)
+				fadeOut(deep, 0.4)
+			end
+		end)
+		local beams = d.beams or {}
+		for i, pt in ipairs(beams) do
+			task.delay((i - 0.5) * dur / math.max(1, #beams), function()
+				local pg = ground(pt)
+				local beam = part(Vector3.new(30, 3, 3), MOON, Enum.Material.Neon, 0.1, "cyl")
+				beam.CFrame = CFrame.new(pg + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+				fadeOut(beam, 0.4, { Size = Vector3.new(30, 0.4, 0.4) })
+				Fx.ring(pg + Vector3.new(0, 0.4, 0), MOON, 1, 10, 0.3)
+				Fx.sound("deflect", 0.5, 1.2, pg)
+			end)
+		end
+	end)
+	task.delay(sink + dur, function()
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local p = g + Vector3.new(math.cos(a) * R * 0.6, 0, math.sin(a) * R * 0.6)
+			local col = part(Vector3.new(18, 4, 4), k % 2 == 0 and DUSK or DUSK2, Enum.Material.Neon, 0.1, "cyl")
+			col.CFrame = CFrame.new(p + Vector3.new(0, 9, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			fadeOut(col, 0.5, { Size = Vector3.new(26, 8, 8) })
+		end
+		Fx.blast(g + Vector3.new(0, 3, 0), DUSK, DUSK2, 3)
+		Fx.flash(c, DUSK, 90, 7, 0.8)
+		Fx.breakSound("boom", 1, 0.45, c)
+		shakeNear(c, 1.8, 200)
+	end)
+end
+
+-- 일월동귀 (X): 해와 달이 양쪽에 떨어지고, 서로를 향해 굴러와 가운데에서 하나가 되어 터진다
+function H.twilightCollapse(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 500) then
+		return
+	end
+	local fall, roll, finalAt = d.fall or 0.8, d.roll or 0.9, d.finalAt or 0.5
+	if opts.tint then
+		opts.tint(Color3.fromRGB(255, 160, 150), 0.45, fall + roll + finalAt + 0.4)
+	end
+	local sunAt, moonAt = d.sunAt, d.moonAt
+	local sun = sunGroup(6, DUSK)
+	local moon = moonGroup(8, DUSK2, 3.5)
+	local face = flat((moonAt - sunAt))
+	anim(fall + roll, function(u)
+		local t = u * (fall + roll)
+		local sp, mp
+		if t < fall then
+			local k = t / fall
+			sp = (sunAt + Vector3.new(0, 80, 0)):Lerp(ground(sunAt) + Vector3.new(0, 6, 0), k * k)
+			mp = (moonAt + Vector3.new(0, 80, 0)):Lerp(ground(moonAt) + Vector3.new(0, 8, 0), k * k)
+		else
+			local k = (t - fall) / roll
+			sp = (ground(sunAt) + Vector3.new(0, 6, 0)):Lerp(ground(c) + Vector3.new(0, 6, 0), k * k)
+			mp = (ground(moonAt) + Vector3.new(0, 8, 0)):Lerp(ground(c) + Vector3.new(0, 7, 0), k * k)
+			if math.random() < 0.6 then
+				Fx.burst("ember", ground(sp), DUSK, 3, 1.4)
+				Fx.burst("glitter", ground(mp), DUSK2, 3, 1.4)
+			end
+		end
+		gset(sun, CFrame.new(sp) * CFrame.Angles(0, 0, -t * 6))
+		gset(moon, CFrame.lookAt(mp, mp + face) * CFrame.Angles(0, 0, t * 6))
+		if u >= 1 then
+			gfade(sun, 0.15)
+			gfade(moon, 0.15)
+		end
+	end)
+	task.delay(fall, function()
+		for _, pt in ipairs({ sunAt, moonAt }) do
+			Fx.ring(ground(pt) + Vector3.new(0, 0.4, 0), pt == sunAt and DUSK or DUSK2, 4, 30, 0.5)
+			Fx.debris(ground(pt), 12, 40)
+		end
+		Fx.breakSound("boom", 1, 0.5, c)
+		shakeNear(c, 1.6, 200)
+	end)
+	task.delay(fall + roll + finalAt, function()
+		local g = ground(c)
+		local core = part(Vector3.new(6, 6, 6), WHITE, Enum.Material.Neon, 0, "ball")
+		core.Position = g + Vector3.new(0, 6, 0)
+		fadeOut(core, 0.6, { Size = Vector3.new(70, 70, 70) })
+		local shell = part(Vector3.new(8, 8, 8), DUSK, Enum.Material.Neon, 0.4, "ball")
+		shell.Position = core.Position
+		fadeOut(shell, 0.8, { Size = Vector3.new(110, 110, 110) })
+		Fx.ring(g + Vector3.new(0, 0.5, 0), DUSK, 8, (d.radius or 50) * 2.6, 0.9)
+		Fx.ring(g + Vector3.new(0, 3, 0), DUSK2, 6, (d.radius or 50) * 2, 0.8)
+		Fx.blast(g + Vector3.new(0, 4, 0), DUSK, DUSK2, 4)
+		Fx.flash(c, WHITE, 160, 10, 1.1)
+		Fx.breakSound("boom", 1, 0.3, c)
+		shakeNear(c, 2.6, 300)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 일월극변: 서버 전체에 컷씬. 하늘에서 해와 달이 미친 듯이 번갈아 뜨다가, 둘이 겹쳐 지는 해가 되고 세상이 황혼에 멈춘다
+-- (낮과 밤을 번갈아 바꾸는 것은 서버가 한다: 모두에게 같은 박자로. 화면은 하늘의 해·달과 소리·번쩍임만)
+------------------------------------------------------------------------
+local duskSky: BasePart? = nil
+function Geuk.twilight(d: any)
+	local cut, dur = d.cut or 3, d.dur or 40
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	local camPos = cam.CFrame.Position
+	local fwd = flat(cam.CFrame.LookVector)
+	local skyAt = camPos + fwd * 380 + Vector3.new(0, 170, 0)
+	local sun = sunGroup(18)
+	local moon = moonGroup(26, MOON, 11)
+	local beats = 12
+	local t0 = os.clock()
+	local lastBeat = -1
+	anim(cut, function(u)
+		-- 박자가 점점 빨라진다 (u²)
+		local beat = math.floor((u * u) * beats * 1.6)
+		local day = beat % 2 == 0
+		gset(sun, CFrame.new(skyAt) * CFrame.Angles(0, 0, os.clock() - t0))
+		gset(moon, CFrame.lookAt(skyAt, camPos) * CFrame.Angles(0, 0, -(os.clock() - t0)))
+		galpha(sun, day and 0 or 1)
+		galpha(moon, day and 1 or 0)
+		if beat ~= lastBeat then
+			lastBeat = beat
+			Fx.sound(day and "deflect" or "block", 0.5, day and 1.4 or 0.8)
+			if opts.flash then
+				opts.flash(day and SUN or MOON, 0.15)
+			end
+			if opts.shake then
+				opts.shake(0.25 + u * 0.6)
+			end
+		end
+		if u >= 1 then
+			gfade(sun, 0.4)
+			gfade(moon, 0.4)
+		end
+	end)
+	-- 해와 달이 겹친 지는 해: 황혼 동안 하늘 끝에 걸려 있다
+	task.delay(cut, function()
+		if duskSky then
+			duskSky:Destroy()
+		end
+		local horizon = camPos + fwd * 420 + Vector3.new(0, 40, 0)
+		local disc = part(Vector3.new(60, 60, 60), DUSK, Enum.Material.Neon, 0.1, "ball")
+		disc.Position = horizon
+		local veil = part(Vector3.new(90, 90, 90), DUSK2, Enum.Material.Neon, 0.7, "ball")
+		veil.Position = horizon
+		duskSky = disc
+		if opts.flash then
+			opts.flash(DUSK, 0.6)
+		end
+		if opts.shake then
+			opts.shake(1.4)
+		end
+		Fx.sound("deflect", 0.9, 0.5)
+		task.delay(dur, function()
+			fadeOut(disc, 1.2)
+			fadeOut(veil, 1.2)
+			if duskSky == disc then
+				duskSky = nil
+			end
+		end)
+	end)
+	-- 황혼의 주인: 몸에서 노을빛 불꽃과 보랏빛 연기가 피어오른다
+	local r = rootOf(d.m)
+	if r then
+		local a = Instance.new("Attachment")
+		a.Parent = r
+		local e = Instance.new("ParticleEmitter")
+		e.Texture = "rbxasset://textures/particles/fire_main.dds"
+		e.Color = ColorSequence.new(DUSK, DUSK2)
+		e.LightEmission = 0.8
+		e.Rate = 30
+		e.Lifetime = NumberRange.new(0.5, 0.9)
+		e.Speed = NumberRange.new(3, 6)
+		e.SpreadAngle = Vector2.new(25, 25)
+		e.Size = NumberSequence.new(1.6, 0)
+		e.Transparency = NumberSequence.new(0.2, 1)
+		e.Acceleration = Vector3.new(0, 8, 0)
+		e.Parent = a
+		local pl = Instance.new("PointLight")
+		pl.Color = DUSK
+		pl.Range = 14
+		pl.Brightness = 1.5
+		pl.Parent = a
+		task.delay(cut + dur, function()
+			e.Enabled = false
+			task.delay(1, function()
+				a:Destroy()
+			end)
+		end)
+	end
+end
+
+local PULSE: { [string]: string } = { dusk = "duskPulse" }
+function Geuk.handles(data: any): boolean
+	if data.kind == "pulse" then
+		return PULSE[data.fx or ""] ~= nil
+	end
+	return H[data.kind] ~= nil
+end
+function Geuk.run(data: any)
+	local fn = data.kind == "pulse" and H[PULSE[data.fx or ""] or ""] or H[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+return Geuk
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="26">
+          <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
 -- 호리병은 아래가 크고 위가 작은 두 구 (잘록한 허리에 끈), 좁은 목과 마개로 짓는다. 술은 보랏빛 도는 짙은 술빛
@@ -35149,7 +36613,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -35617,7 +37081,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -36790,7 +38254,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -36856,7 +38320,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -37261,7 +38725,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -37602,7 +39066,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -38551,7 +40015,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -39673,15 +41137,17 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
 -- 윤회권: 등 뒤의 금빛 윤회륜 · 업화권: 두 팔의 달군 사슬과 검은 불꽃 · 무상권: 몸 둘레의 넋불과 안개 띠
 -- 권왕신권: 머리 위의 금빛 관 · 붉은 망토 · 금빛 팔찌
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 
 local Samsara = {}
@@ -39866,7 +41332,7 @@ end
 ------------------------------------------------------------------------
 -- 몸에 두르는 것
 ------------------------------------------------------------------------
-type Moving = { weld: Weld, base: CFrame, kind: string, phase: number, model: Model, k: number? }
+type Moving = { weld: Weld, base: CFrame, kind: string, phase: number, model: Model, k: number?, parts: { BasePart }?, tw: boolean? }
 local moving: { Moving } = {}
 local wheelOf: { [Model]: { BasePart } } = {}
 
@@ -40036,8 +41502,52 @@ local function buildCrown(model: Model, holder: Instance, list: { Instance })
 	end
 end
 
+-- 3.1판 극 일월신권: 어깨 뒤에 작은 해 (오른쪽) 와 초승달 (왼쪽). 황혼에는 머리 뒤로 모여 노을빛·보랏빛으로 물든다
+local function buildSunMoon(model: Model, holder: Instance, list: { Instance })
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not (torso and torso:IsA("BasePart")) then
+		return
+	end
+	for _, side in ipairs({ 1, -1 }) do
+		local base = CFrame.new(side * 1.5, 1.5, torso.Size.Z / 2 + 0.6)
+		local hub = part(Vector3.new(0.2, 0.2, 0.2), WHITE, Enum.Material.Neon, 1)
+		hub.CFrame = torso.CFrame * base
+		attach(hub, torso, base, holder, list, model, side == 1 and "sunorb" or "moonorb", side)
+		local items = {}
+		local pieces: { BasePart } = {}
+		if side == 1 then
+			local core = part(Vector3.new(0.7, 0.7, 0.7), Color3.fromRGB(255, 245, 200), Enum.Material.Neon, 0, "ball")
+			local body = part(Vector3.new(1.05, 1.05, 1.05), Color3.fromRGB(255, 170, 50), Enum.Material.Neon, 0.25, "ball")
+			table.insert(items, { core, CFrame.new() })
+			table.insert(items, { body, CFrame.new() })
+			table.insert(pieces, body)
+			for k = 0, 7 do
+				local a = k / 8 * math.pi * 2
+				local ray = part(Vector3.new(0.1, 0.5, 0.1), Color3.fromRGB(255, 200, 90), Enum.Material.Neon)
+				table.insert(items, { ray, CFrame.Angles(0, 0, a) * CFrame.new(0, 0.78, 0) })
+				table.insert(pieces, ray)
+			end
+		else
+			for i = 0, 6 do
+				local a = math.rad(-100 + 200 * i / 6)
+				local w = 0.25 * math.sin((i + 0.5) / 7 * math.pi) + 0.08
+				local seg = part(Vector3.new(w, 0.32, 0.12), Color3.fromRGB(205, 220, 255), Enum.Material.Neon)
+				table.insert(items, { seg, CFrame.new(-math.cos(a) * 0.6, math.sin(a) * 0.6, 0) * CFrame.Angles(0, 0, a) })
+				table.insert(pieces, seg)
+			end
+		end
+		hubbed(hub, items, holder, list)
+		local glow = Instance.new("PointLight")
+		glow.Color = side == 1 and Color3.fromRGB(255, 170, 60) or Color3.fromRGB(190, 210, 255)
+		glow.Range = 6
+		glow.Brightness = 0.8
+		glow.Parent = hub
+		moving[#moving].parts = pieces
+	end
+end
+
 function Samsara.hasGear(st: any): boolean
-	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown) == true
+	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
 end
 function Samsara.buildGear(model: Model, st: any): { Instance }
 	local out: { Instance } = {}
@@ -40053,6 +41563,8 @@ function Samsara.buildGear(model: Model, st: any): { Instance }
 		buildWisps(model, holder, out)
 	elseif st.crown then
 		buildCrown(model, holder, out)
+	elseif st.sunMoonOrbs then
+		buildSunMoon(model, holder, out)
 	end
 	return out
 end
@@ -40097,6 +41609,22 @@ RunService.Heartbeat:Connect(function()
 					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 2.2 + ph + k * 0.5) * 0.05 * k, 0, math.sin(t * 1.7 + ph) * 0.02 * k)
 				elseif mv.kind == "bob" then
 					mv.weld.C0 = mv.base * CFrame.new(0, math.sin(t * 2) * 0.08, 0) * CFrame.Angles(0, t * 0.6, 0)
+				elseif mv.kind == "sunorb" or mv.kind == "moonorb" then
+					local tw = mv.model:GetAttribute("Twilight") == true
+					local side = mv.kind == "sunorb" and 1 or -1
+					if tw then
+						mv.weld.C0 = CFrame.new(side * 0.55, 2.4, 0.9) * CFrame.Angles(0, 0, t * 2.5 * side)
+					else
+						mv.weld.C0 = mv.base * CFrame.new(0, math.sin(t * 2 + ph) * 0.15, 0) * CFrame.Angles(0, 0, t * side)
+					end
+					if mv.tw ~= tw and mv.parts then
+						mv.tw = tw
+						for _, q in ipairs(mv.parts) do
+							if q.Parent then
+								q.Color = tw and (side == 1 and Color3.fromRGB(255, 120, 60) or Color3.fromRGB(165, 95, 235)) or (side == 1 and Color3.fromRGB(255, 170, 50) or Color3.fromRGB(205, 220, 255))
+							end
+						end
+					end
 				elseif mv.kind == "dangle" then
 					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 4 + ph) * 0.25, 0, math.sin(t * 3 + ph) * 0.2)
 				end
@@ -41156,6 +42684,148 @@ function H.kingPunch(d: any)
 	end)
 end
 
+------------------------------------------------------------------------
+-- 3.1판 윤회대: 거대한 윤회륜과 구름 소용돌이가 천천히 돈다 (환생 의식 동안은 빠르게)
+------------------------------------------------------------------------
+type Spinner = { center: CFrame, items: { { any } }, angle: number, speed: number, axis: string }
+local spinners: { [string]: Spinner } = {}
+local spinBoostUntil = 0
+local function findSpinner(name: string, center: CFrame, axis: string, speed: number)
+	if spinners[name] then
+		return
+	end
+	local f = workspace:FindFirstChild(name, true)
+	if not f then
+		return
+	end
+	local items = {}
+	for _, d in ipairs(f:GetDescendants()) do
+		if d:IsA("BasePart") then
+			table.insert(items, { d, center:ToObjectSpace(d.CFrame) })
+		end
+	end
+	spinners[name] = { center = center, items = items, angle = 0, speed = speed, axis = axis }
+end
+local lastLook = 0
+RunService.Heartbeat:Connect(function(dt: number)
+	local cam = workspace.CurrentCamera
+	local rd = Config.SKY_BY_ID and Config.SKY_BY_ID.rinnedae
+	if not cam or not rd then
+		return
+	end
+	if (cam.CFrame.Position - rd.at).Magnitude > 700 then
+		return
+	end
+	if os.clock() - lastLook > 2 then
+		lastLook = os.clock()
+		local hub = workspace:FindFirstChild("RinneHub", true)
+		if hub and hub:IsA("BasePart") then
+			findSpinner("RinneWheel", CFrame.new(hub.Position), "x", 0.25)
+		end
+		findSpinner("RinneVortex", CFrame.new(rd.at), "y", 0.06)
+	end
+	local boost = os.clock() < spinBoostUntil and 14 or 1
+	for _, sp in pairs(spinners) do
+		sp.angle += dt * sp.speed * (sp.axis == "x" and boost or 1)
+		local rot = sp.axis == "x" and CFrame.Angles(sp.angle, 0, 0) or CFrame.Angles(0, sp.angle, 0)
+		local base = sp.center * rot
+		for _, it in ipairs(sp.items) do
+			local p = it[1] :: BasePart
+			if p.Parent then
+				p.CFrame = base * (it[2] :: CFrame)
+			end
+		end
+	end
+end)
+
+-- 환생 의식: 하늘에서 빛기둥이 내려오고, 바퀴가 빠르게 돌고, 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
+function Samsara.rite(d: any)
+	local at: Vector3 = d.at
+	local dur = d.dur or 3.4
+	spinBoostUntil = os.clock() + dur
+	if not near(at, 600) then
+		return
+	end
+	local RB = Config.REBIRTH
+	local col = (RB and RB.colors and RB.colors[d.n or 1]) or Color3.fromRGB(200, 180, 255)
+	if opts.tint then
+		opts.tint(Color3.fromRGB(220, 205, 255), 0.35, dur + 0.4)
+	end
+	-- 하늘에서 내려오는 빛기둥
+	local top = at + Vector3.new(0, 400, 0)
+	local beam = part(Vector3.new(1, 2, 2), WHITE, Enum.Material.Neon, 0.1, "cyl")
+	local halo = part(Vector3.new(1, 6, 6), col, Enum.Material.Neon, 0.55, "cyl")
+	anim(0.45, function(u)
+		local h = 400 * u
+		beam.Size = Vector3.new(h, 4, 4)
+		beam.CFrame = CFrame.new(top - Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		halo.Size = Vector3.new(h, 11, 11)
+		halo.CFrame = beam.CFrame
+	end)
+	Fx.breakSound("boom", 0.8, 0.5, at)
+	-- 떠오르는 동안 빛 고리가 기둥을 타고 오르고, 빛 가루가 몸으로 빨려 든다
+	for k = 0, 7 do
+		task.delay(0.3 + k * 0.17, function()
+			Fx.ring(at - Vector3.new(0, 3, 0) + Vector3.new(0, k * 1.2, 0), k % 2 == 0 and col or WHITE, 4, 22, 0.5)
+		end)
+	end
+	local m = d.m
+	anim(1.6, function(u)
+		if math.random() < 0.6 then
+			local r = rootOf(m)
+			local c = r and r.Position or at
+			local a = math.random() * math.pi * 2
+			local from = c + Vector3.new(math.cos(a) * 14, math.random() * 10 - 3, math.sin(a) * 14)
+			local mote = part(Vector3.new(0.6, 0.6, 0.6), math.random() < 0.5 and col or WHITE, Enum.Material.Neon, 0.1, "ball")
+			mote.Position = from
+			tween(mote, 0.4, { Position = c, Size = Vector3.new(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.42, function()
+				mote:Destroy()
+			end)
+		end
+		if u >= 1 then
+			-- 몸이 빛으로 흩어진다
+			local r = rootOf(m)
+			local c = r and r.Position or at
+			if m and m.Parent then
+				Fx.afterimage(m, WHITE, 0.5)
+			end
+			for _ = 1, 28 do
+				local mote = part(Vector3.new(0.5, 0.5, 0.5), math.random() < 0.5 and col or WHITE, Enum.Material.Neon, 0.05, "ball")
+				mote.Position = c + Vector3.new(math.random() - 0.5, math.random() * 2 - 1, math.random() - 0.5) * 2
+				fadeOut(mote, 0.8, { Position = mote.Position + Vector3.new(math.random() * 16 - 8, math.random() * 14, math.random() * 16 - 8) })
+			end
+			Fx.burst("glitter", c, col, 30, 2)
+			Fx.flash(c, col, 40, 5, 0.5)
+			Fx.sound("deflect", 0.8, 0.5, c)
+			shakeNear(c, 0.6, 120)
+		end
+	end)
+	-- 다시 태어난다: 빛이 모여 번쩍, 큰 고리
+	task.delay(2.4, function()
+		for _ = 1, 20 do
+			local a = math.random() * math.pi * 2
+			local from = at + Vector3.new(math.cos(a) * 12, math.random() * 12 - 2, math.sin(a) * 12)
+			local mote = part(Vector3.new(0.6, 0.6, 0.6), col, Enum.Material.Neon, 0.05, "ball")
+			mote.Position = from
+			tween(mote, 0.22, { Position = at, Size = Vector3.new(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.24, function()
+				mote:Destroy()
+			end)
+		end
+		task.delay(0.24, function()
+			Fx.blast(at, col, WHITE, 2.4)
+			Fx.ring(at - Vector3.new(0, 3, 0), col, 6, 90, 0.9)
+			Fx.ring(at - Vector3.new(0, 2.5, 0), WHITE, 4, 60, 0.7)
+			Fx.flash(at, WHITE, 90, 7, 0.9)
+			Fx.breakSound("boom", 1, 0.45, at)
+			shakeNear(at, 1.4, 200)
+			fadeOut(beam, 0.6, { Size = Vector3.new(400, 0.3, 0.3) })
+			fadeOut(halo, 0.6, { Size = Vector3.new(400, 30, 30) })
+		end)
+	end)
+end
+
 local PULSE: { [string]: string } = { echo = "echoPulse", karma = "karmaPulse", phantom = "phantomPulse", king = "kingPulse" }
 function Samsara.handles(data: any): boolean
 	if data.kind == "pulse" then
@@ -41174,7 +42844,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -41777,7 +43447,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -42396,6 +44066,18 @@ local function buildStyles()
 				table.insert(lines, string.format("<b>%s %s</b>%s  %s", label, sk.name, lockTxt, sk.desc))
 			end
 		end
+		-- 3.1판: 극 권법의 황혼 (일월극변) 동안 바뀌는 기술
+		if s.twilight then
+			table.insert(lines, "")
+			table.insert(lines, string.format('<font color="#FF9A5A"><b>🌇 황혼 (일월극변)</b></font>  극을 채우면 40초 동안 세상이 황혼에 멈추고 기술이 바뀐다. 연타·강타 ×%.1f', s.twilight.dmg or 1))
+			table.insert(lines, string.format('<font color="#FF9A5A"><b>Z 강타</b></font>  %s', s.twilight.heavy.name))
+			for _, slot in ipairs({ "E", "R", "G", "X" }) do
+				local sk = s.twilight.skills[slot]
+				if sk then
+					table.insert(lines, string.format('<font color="#FF9A5A"><b>%s %s</b></font>  %s', slot == "G" and "오의 G" or (slot == "X" and "초 오의 X" or slot), sk.name, sk.desc))
+				end
+			end
+		end
 		-- 각성
 		local A1, A2 = Config.AWAKEN[1], Config.AWAKEN[2]
 		local function tag(need: number): string
@@ -42598,18 +44280,8 @@ local function buildStats()
 	-- 1.9판 환생: 열린 끝 경지에 오르면 보인다. 두 번 눌러야 한다 (실수로 누르지 않게)
 	local rebirthArmed = 0
 	local rebirthBtn: TextButton
-	rebirthBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 68), Size = UDim2.new(0, 300, 0, 58), Text = "♻ 환생", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 60, 140), Visible = false, ZIndex = 3, Parent = page }, function()
-		if os.clock() - rebirthArmed > 4 then
-			rebirthArmed = os.clock()
-			rebirthBtn.Text = "♻ 정말 환생? 한 번 더 누르기"
-			task.delay(4, function()
-				if os.clock() - rebirthArmed >= 3.9 and refreshers.stats then
-					refreshers.stats()
-				end
-			end)
-			return
-		end
-		rebirthArmed = 0
+	-- 3.1판: 환생은 천상 윤회대 제단에서 (이 단추는 윤회대로 데려다 준다)
+	rebirthBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 68), Size = UDim2.new(0, 300, 0, 58), Text = "☸ 윤회대로 가기", TextSize = 20, BackgroundColor3 = Color3.fromRGB(170, 60, 140), Visible = false, ZIndex = 3, Parent = page }, function()
 		Request:FireServer("rebirth")
 		window.Visible = false
 	end)
@@ -42677,7 +44349,7 @@ local function buildStats()
 		local canRebirth = rb < Config.REBIRTH.max and state.realm >= cap
 		rebirthBtn.Visible = canRebirth
 		if canRebirth and os.clock() - rebirthArmed > 4 then
-			rebirthBtn.Text = string.format("♻ %s (%d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
+			rebirthBtn.Text = string.format("☸ 윤회대로 가기 (%s · %d번째 환생)", Config.REBIRTH.names[rb + 1] or "환생", rb + 1)
 		end
 		gateBtn.Visible = state.gateNext ~= nil
 		if state.gateNext then
@@ -42696,7 +44368,7 @@ local function buildStats()
 			table.insert(lines, string.format('<font color="#FF9AD8">♻ 환생 %d번: 체력 ×%.2f · 주는 피해 ×%.2f · 얻는 능력치 ×%.1f · %s까지 열림</font>', rb, Config.rebirthPower(rb), Config.rebirthDmg(rb), Config.rebirthGain(rb), Config.Realms[cap].name))
 		end
 		if canRebirth then
-			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
+			table.insert(lines, string.format('<font color="#FF9AD8"><b>♻ 환생할 수 있다!</b> 천상 윤회대의 제단에서 T를 길게 누른다. 능력치를 모두 내려놓고 삼류로 돌아간다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>', Config.rebirthPower(rb + 1), Config.rebirthDmg(rb + 1), Config.rebirthGain(rb + 1), (Config.Realms[Config.realmCap(rb + 1)] or realm).name))
 		elseif rb < Config.REBIRTH.max then
 			table.insert(lines, string.format("♻ 환생: %s에 오르면 할 수 있다 (지금 %d / %d번)", Config.Realms[cap].name, rb, Config.REBIRTH.max))
 		end
@@ -43369,7 +45041,7 @@ local function buildTest()
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌗 극 일월신권 바로 쓰기 (극)", "testStyle", "geukilwol" }, { "🌇 극 가득 채우기 (일월극변)", "testGeuk" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
 		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
 		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})
@@ -43388,7 +45060,7 @@ local function buildTest()
 		section("📜 2.6판: 심법 등급 체험 · 새 오의 · 보스 차림", items)
 	end
 	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
-		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "♻ 환생하기", "rebirth" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
+		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "☸ 윤회대로 가기", "rebirth" }, { "☸ 바로 환생 (제단 의식)", "testRebirthRite" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
 		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
 		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
 	})
@@ -43468,6 +45140,7 @@ local function buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
+		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]
@@ -44927,7 +46600,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -46205,7 +47878,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -48888,7 +50561,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -49997,7 +51670,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="39">
+  <Item class="Workspace" referent="40">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
