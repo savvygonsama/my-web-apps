@@ -6,11 +6,11 @@
    새 버전을 올릴 때는 VERSION 숫자를 올린다. */
 importScripts("audio/manifest.js");
 const PREFIX = "nyumon-";
-const VERSION = 3;
+const VERSION = 4;
 const CACHE = PREFIX + "v" + VERSION;
 const TIMEOUT = 2500;
 const SHELL = [
-  "./", "./index.html", "./manifest.webmanifest", "./css/app.css", "./js/data.js", "./js/app.js", "./audio/manifest.js",
+  "./", "./index.html", "./manifest.webmanifest", "./css/app.css", "./js/data.js", "./js/lessons.js", "./js/app.js", "./audio/manifest.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png",
   "./char/dogeum_curious.webp","./char/dogeum_grin.webp","./char/dogeum_happy.webp","./char/dogeum_relaxed.webp","./char/eg_calm.webp","./char/eg_off.webp","./char/eg_polite.webp","./char/eg_work.webp","./char/poo_basic.webp","./char/poo_relief.webp","./char/poo_surprise.webp","./char/poo_tired.webp","./char/ssial_basic.webp","./char/ssial_fire.webp","./char/ssial_happy.webp","./char/ssial_shock.webp","./char/tarae_happy.webp","./char/tarae_puzzled.webp","./char/tarae_serious.webp","./char/tarae_surprised.webp"
 ].concat(Object.values((self.NY && self.NY.AUDIO) || {}).map((f) => "./audio/" + f));
