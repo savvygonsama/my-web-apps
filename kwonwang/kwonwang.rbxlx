@@ -40166,6 +40166,11 @@ local function fistGroup(s: number, alpha: number?): Group
 	gpart(g, Vector3.new(0.5, 4.3, 4.3) * s, GOLD, Enum.Material.Neon, a0, "cyl", CFrame.new(0, 0, 2.3 * s) * CFrame.Angles(0, math.rad(90), 0))
 	return g
 end
+-- 아래를 내리찍는 주먹의 자리: 앞(-Z)이 땅, 위(Y)가 내 앞쪽
+local function downCF(p: Vector3, f: Vector3): CFrame
+	local fwd = flat(f)
+	return CFrame.fromMatrix(p, fwd:Cross(Vector3.new(0, 1, 0)), fwd)
+end
 -- 땅에 부딪는 금빛 충격 (고리 둘, 불티, 흙)
 local function goldImpact(at: Vector3, s: number)
 	local g = ground(at)
@@ -40503,7 +40508,8 @@ function H.karmaOrbs(d: any)
 			anim(travel, function(u)
 				local tr = tgt and rootOf(tgt)
 				local to = tr and tr.Position or d.points[i]
-				local mid = (origin + to) / 2 + Vector3.new(0, 6, 0) + Vector3.new(-(to - origin).Z, 0, (to - origin).X).Unit * side * 0.3
+				local fd = flat(to - origin)
+				local mid = (origin + to) / 2 + Vector3.new(0, 6, 0) + Vector3.new(-fd.Z, 0, fd.X) * side * 0.3
 				local p = origin:Lerp(mid, u):Lerp(mid:Lerp(to, u), u)
 				core.Position = p
 				shell.Position = p
@@ -40919,7 +40925,7 @@ function H.kingPulse(d: any)
 	tween(mark, delay, { Size = Vector3.new(0.1, 7, 7) })
 	anim(delay, function(u)
 		local p = top:Lerp(at + Vector3.new(0, 2, 0), u * u)
-		gset(g, CFrame.lookAt(p, p - Vector3.new(0, 1, 0), Vector3.new(0, 0, 1)))
+		gset(g, downCF(p, Vector3.new(0, 0, 1)))
 		if u >= 1 then
 			gfade(g, 0.3)
 			mark:Destroy()
@@ -41100,7 +41106,7 @@ function H.kingDescend(d: any)
 			local stop = g + dir * 4 + Vector3.new(-dir.Z, 0, dir.X) * x * 5 + Vector3.new(0, 3, 0)
 			anim(0.2, function(u)
 				local p = start:Lerp(stop, u * u)
-				gset(fg, CFrame.lookAt(p, p + Vector3.new(0, -1, 0), dir))
+				gset(fg, downCF(p, dir))
 				if u >= 1 then
 					gfade(fg, 0.5)
 				end
@@ -41137,7 +41143,7 @@ function H.kingPunch(d: any)
 	local fg = fistGroup(0.95 * s / 1.6, 0)
 	anim(0.16, function(u)
 		local p = start:Lerp(at + Vector3.new(0, 3, 0), u * u)
-		gset(fg, CFrame.lookAt(p, p + Vector3.new(0, -1, 0), flat(d.dir)))
+		gset(fg, downCF(p, d.dir))
 		if u >= 1 then
 			gfade(fg, 0.3)
 			goldImpact(at, 1.2)
