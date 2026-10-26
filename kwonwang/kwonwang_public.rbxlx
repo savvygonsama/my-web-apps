@@ -12337,10 +12337,25 @@ local function wear(model: Model, partName: string, name: string, size: Vector3,
 	end
 	local p = Instance.new("Part")
 	p.Name = name
-	if shape then
+	-- 3.2.1판: 로블록스의 공 (Ball) 은 세 변이 같아지고 원통은 두 변이 같아진다. 늘인 공·원통은 구·원통 메시를 씌운 상자로
+	-- (전에는 납작하게 짠 깃·갈기·갓이 게임 안에서 둥근 공으로 부풀어 덩어리처럼 보였다)
+	local meshType: Enum.MeshType? = nil
+	if shape == Ball and (math.max(size.X, size.Y, size.Z) - math.min(size.X, size.Y, size.Z)) > 0.02 then
+		meshType = Enum.MeshType.Sphere
+	elseif shape == Cyl and math.abs(size.Y - size.Z) > 0.02 then
+		-- 원통 메시의 축은 Y: 상자를 돌려 축을 X에 맞춘다
+		meshType = Enum.MeshType.Cylinder
+		offset = offset * CFrame.Angles(0, 0, math.rad(-90))
+		size = Vector3.new(size.Y, size.X, size.Z)
+	elseif shape then
 		p.Shape = shape
 	end
 	p.Size = Vector3.new(math.max(0.05, size.X), math.max(0.05, size.Y), math.max(0.05, size.Z))
+	if meshType then
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = meshType
+		mesh.Parent = p
+	end
 	p.Color = color
 	p.Material = material or M.Fabric
 	p.CanCollide = false
@@ -13216,9 +13231,9 @@ local LOOKS: { [string]: any } = {
 	jukseon = { head = "topknot", hair = WHITE_HAIR, beard = "white", top = C3(206, 220, 176), bottom = C3(80, 100, 60), trim = C3(110, 150, 80), robe = C3(190, 206, 160), build = { h = 1.05, head = 0.86 } },
 	lakeguard = { head = "helmet", metal = C3(170, 186, 214), plume = C3(220, 230, 255), armor = true, top = C3(70, 90, 130), bottom = C3(30, 40, 70), trim = C3(210, 220, 240), build = { w = 1.15, h = 1.06, head = 0.88 } },
 	goldmonk = { head = "bald", beads = C3(110, 60, 30), top = C3(232, 172, 62), bottom = C3(140, 80, 30), trim = C3(170, 40, 30), robe = C3(220, 160, 56), sleeves = false, build = { w = 1.3, h = 1.06, head = 0.86 } },
-	jukwang = { head = "topknot", hair = C3(40, 50, 30), beard = "full", top = C3(100, 142, 84), bottom = C3(46, 64, 38), trim = C3(226, 216, 160), robe = C3(84, 124, 70), build = { w = 1.1, h = 1.06, head = 0.84 } },
-	wolyeong = { head = "hood", hoodColor = C3(228, 234, 250), crown = C3(210, 220, 245), gem = C3(200, 230, 255), eyes = C3(220, 235, 255), top = C3(226, 232, 250), bottom = C3(90, 100, 150), trim = C3(170, 186, 230), robe = C3(200, 210, 238), build = { h = 1.08, head = 0.84 } },
-	geumgang = { head = "bald", beads = C3(120, 60, 30), headband = C3(240, 200, 90), armor = true, metal = C3(230, 186, 80), armorTrim = C3(255, 230, 150), eyes = C3(255, 230, 150), top = C3(236, 176, 60), bottom = C3(140, 80, 30), trim = C3(180, 40, 30), sleeves = false, build = { w = 1.3, h = 1.06, head = 0.84 } },
+	jukwang = { head = "topknot", hair = C3(40, 50, 30), beard = "full", top = C3(100, 142, 84), bottom = C3(46, 64, 38), trim = C3(226, 216, 160), robe = C3(84, 124, 70), build = { w = 1.1, h = 1.06, head = 0.95 } },
+	wolyeong = { head = "hood", hoodColor = C3(228, 234, 250), crown = C3(210, 220, 245), gem = C3(200, 230, 255), eyes = C3(220, 235, 255), top = C3(226, 232, 250), bottom = C3(90, 100, 150), trim = C3(170, 186, 230), robe = C3(200, 210, 238), build = { h = 1.08, head = 0.95 } },
+	geumgang = { head = "bald", beads = C3(120, 60, 30), headband = C3(240, 200, 90), armor = true, metal = C3(230, 186, 80), armorTrim = C3(255, 230, 150), eyes = C3(255, 230, 150), top = C3(236, 176, 60), bottom = C3(140, 80, 30), trim = C3(180, 40, 30), sleeves = false, build = { w = 1.3, h = 1.06, head = 0.95 } },
 	-- 사람이 아닌 적
 	swampfang = { form = "naga", skin = C3(64, 104, 60), eyes = C3(230, 210, 60), build = { w = 0.9, h = 1.05, head = 0.86 } },
 	bogbrute = { form = "troll", skin = C3(108, 126, 82), build = { w = 1.4, h = 1.08, head = 0.85 } },
@@ -13246,22 +13261,22 @@ local LOOKS: { [string]: any } = {
 	shroombrute = { form = "shroom", capColor = C3(176, 36, 40), capSize = 3.6, build = { w = 1.2 } },
 	sporeimp = { form = "shroom", capColor = C3(116, 66, 156), skin = C3(214, 204, 222), capSize = 2.6, spot = C3(210, 180, 255), spotGlow = true, spore = C3(200, 160, 255) },
 	-- 보스
-	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(52, 48, 46), top = C3(36, 30, 30), bottom = C3(70, 24, 22), trim = C3(150, 40, 30), build = { w = 1.2, head = 0.86 } },
-	bingma = { head = "helmet", metal = C3(186, 220, 244), beard = "white", eyes = C3(160, 220, 255), top = C3(200, 228, 252), bottom = C3(80, 110, 150), trim = C3(240, 248, 255), robe = C3(110, 140, 180), build = { w = 1.15, head = 0.85 } },
-	bingje = { head = "helmet", metal = C3(200, 232, 250), armor = true, armorTrim = C3(240, 250, 255), eyes = C3(170, 230, 255), top = C3(190, 225, 252), bottom = C3(60, 100, 160), trim = C3(240, 250, 255), build = { w = 1.18, head = 0.85 } },
-	hyeolma = { head = "topknot", hair = C3(120, 12, 20), longHair = true, eyes = C3(240, 50, 50), top = C3(140, 4, 22), bottom = C3(24, 2, 6), trim = C3(40, 6, 10), robe = C3(110, 0, 16), build = { h = 1.05, head = 0.85 } },
-	cheonma = { head = "horns", hair = C3(20, 10, 30), hornColor = C3(28, 18, 34), hornLen = 1.5, eyes = C3(200, 100, 255), top = C3(30, 14, 52), bottom = C3(12, 2, 22), trim = C3(130, 80, 190), robe = C3(24, 10, 44), crown = C3(110, 70, 170), build = { h = 1.08, head = 0.84 } },
-	yeomje = { head = "topknot", hair = C3(170, 52, 20), beard = "full", eyes = C3(255, 170, 60), crown = GOLD, armor = true, metal = C3(150, 70, 32), armorTrim = GOLD, top = C3(220, 90, 30), bottom = C3(80, 22, 12), trim = GOLD, build = { w = 1.2, head = 0.85 } },
-	sawang = { head = "wrap", eyes = C3(255, 220, 130), top = C3(206, 168, 76), bottom = C3(90, 62, 32), trim = C3(40, 90, 160), robe = C3(150, 110, 44), build = { h = 1.06, head = 0.85 } },
-	cheonmun = { head = "helmet", metal = C3(236, 238, 248), plume = C3(220, 180, 90), armor = true, armorTrim = GOLD, eyes = C3(255, 240, 190), top = C3(236, 240, 252), bottom = C3(116, 146, 206), trim = GOLD, build = { w = 1.2, h = 1.08, head = 0.84 } },
-	noeje = { head = "helmet", metal = C3(70, 80, 150), plume = C3(150, 196, 255), armor = true, armorTrim = C3(220, 196, 110), beard = "full", eyes = C3(160, 210, 255), top = C3(60, 70, 146), bottom = C3(25, 30, 70), trim = C3(220, 196, 110), build = { w = 1.2, head = 0.84 } },
-	seonggun = { head = "hood", hoodColor = C3(90, 56, 170), crown = C3(220, 196, 255), gem = C3(255, 240, 200), eyes = C3(230, 200, 255), top = C3(104, 66, 196), bottom = C3(35, 20, 70), trim = C3(230, 210, 150), robe = C3(64, 34, 124), build = { h = 1.06, head = 0.84 } },
-	cheonjon = { head = "topknot", hair = WHITE_HAIR, beard = "white", crown = GOLD, gem = C3(255, 230, 160), armor = true, metal = C3(236, 210, 140), armorTrim = GOLD, eyes = C3(255, 240, 190), top = C3(250, 244, 220), bottom = C3(200, 160, 72), trim = GOLD, robe = C3(226, 206, 156), build = { w = 1.15, h = 1.06, head = 0.84 } },
-	cheongeop = { head = "horns", hair = C3(16, 10, 22), hornColor = C3(20, 14, 26), hornLen = 1.7, eyes = C3(170, 90, 255), top = C3(40, 30, 60), bottom = C3(15, 10, 25), trim = C3(110, 60, 170), robe = C3(28, 20, 44), build = { w = 1.1, head = 0.84 } },
-	pungyeop = { head = "topknot", hair = C3(110, 40, 20), top = C3(214, 84, 34), bottom = C3(106, 36, 22), trim = C3(246, 180, 70), robe = C3(190, 70, 30), build = { h = 1.04, head = 0.86 } },
-	dason = { head = "topknot", hair = WHITE_HAIR, beard = "white", top = C3(226, 236, 216), bottom = C3(100, 138, 88), trim = C3(110, 150, 90), robe = C3(212, 226, 200), build = { h = 1.04, head = 0.86 } },
-	pokryong = { head = "topknot", hair = C3(30, 50, 80), top = C3(86, 156, 216), bottom = C3(30, 70, 110), trim = C3(220, 240, 255), robe = C3(60, 120, 180), build = { h = 1.06, head = 0.86 } },
-	unmugun = { head = "hood", hoodColor = C3(230, 236, 248), eyes = C3(200, 220, 255), top = C3(206, 218, 240), bottom = C3(80, 95, 140), trim = C3(160, 180, 220), robe = C3(190, 204, 232), build = { h = 1.06, head = 0.86 } },
+	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(52, 48, 46), top = C3(36, 30, 30), bottom = C3(70, 24, 22), trim = C3(150, 40, 30), build = { w = 1.2, head = 0.95 } },
+	bingma = { head = "helmet", metal = C3(186, 220, 244), beard = "white", eyes = C3(160, 220, 255), top = C3(200, 228, 252), bottom = C3(80, 110, 150), trim = C3(240, 248, 255), robe = C3(110, 140, 180), build = { w = 1.15, head = 0.95 } },
+	bingje = { head = "helmet", metal = C3(200, 232, 250), armor = true, armorTrim = C3(240, 250, 255), eyes = C3(170, 230, 255), top = C3(190, 225, 252), bottom = C3(60, 100, 160), trim = C3(240, 250, 255), build = { w = 1.18, head = 0.95 } },
+	hyeolma = { head = "topknot", hair = C3(120, 12, 20), longHair = true, eyes = C3(240, 50, 50), top = C3(140, 4, 22), bottom = C3(24, 2, 6), trim = C3(40, 6, 10), robe = C3(110, 0, 16), build = { h = 1.05, head = 0.95 } },
+	cheonma = { head = "horns", hair = C3(20, 10, 30), hornColor = C3(28, 18, 34), hornLen = 1.5, eyes = C3(200, 100, 255), top = C3(30, 14, 52), bottom = C3(12, 2, 22), trim = C3(130, 80, 190), robe = C3(24, 10, 44), crown = C3(110, 70, 170), build = { h = 1.08, head = 0.95 } },
+	yeomje = { head = "topknot", hair = C3(170, 52, 20), beard = "full", eyes = C3(255, 170, 60), crown = GOLD, armor = true, metal = C3(150, 70, 32), armorTrim = GOLD, top = C3(220, 90, 30), bottom = C3(80, 22, 12), trim = GOLD, build = { w = 1.2, head = 0.95 } },
+	sawang = { head = "wrap", eyes = C3(255, 220, 130), top = C3(206, 168, 76), bottom = C3(90, 62, 32), trim = C3(40, 90, 160), robe = C3(150, 110, 44), build = { h = 1.06, head = 0.95 } },
+	cheonmun = { head = "helmet", metal = C3(236, 238, 248), plume = C3(220, 180, 90), armor = true, armorTrim = GOLD, eyes = C3(255, 240, 190), top = C3(236, 240, 252), bottom = C3(116, 146, 206), trim = GOLD, build = { w = 1.2, h = 1.08, head = 0.95 } },
+	noeje = { head = "helmet", metal = C3(70, 80, 150), plume = C3(150, 196, 255), armor = true, armorTrim = C3(220, 196, 110), beard = "full", eyes = C3(160, 210, 255), top = C3(60, 70, 146), bottom = C3(25, 30, 70), trim = C3(220, 196, 110), build = { w = 1.2, head = 0.95 } },
+	seonggun = { head = "hood", hoodColor = C3(90, 56, 170), crown = C3(220, 196, 255), gem = C3(255, 240, 200), eyes = C3(230, 200, 255), top = C3(104, 66, 196), bottom = C3(35, 20, 70), trim = C3(230, 210, 150), robe = C3(64, 34, 124), build = { h = 1.06, head = 0.95 } },
+	cheonjon = { head = "topknot", hair = WHITE_HAIR, beard = "white", crown = GOLD, gem = C3(255, 230, 160), armor = true, metal = C3(236, 210, 140), armorTrim = GOLD, eyes = C3(255, 240, 190), top = C3(250, 244, 220), bottom = C3(200, 160, 72), trim = GOLD, robe = C3(226, 206, 156), build = { w = 1.15, h = 1.06, head = 0.95 } },
+	cheongeop = { head = "horns", hair = C3(16, 10, 22), hornColor = C3(20, 14, 26), hornLen = 1.7, eyes = C3(170, 90, 255), top = C3(40, 30, 60), bottom = C3(15, 10, 25), trim = C3(110, 60, 170), robe = C3(28, 20, 44), build = { w = 1.1, head = 0.95 } },
+	pungyeop = { head = "topknot", hair = C3(110, 40, 20), top = C3(214, 84, 34), bottom = C3(106, 36, 22), trim = C3(246, 180, 70), robe = C3(190, 70, 30), build = { h = 1.04, head = 0.95 } },
+	dason = { head = "topknot", hair = WHITE_HAIR, beard = "white", top = C3(226, 236, 216), bottom = C3(100, 138, 88), trim = C3(110, 150, 90), robe = C3(212, 226, 200), build = { h = 1.04, head = 0.95 } },
+	pokryong = { head = "topknot", hair = C3(30, 50, 80), top = C3(86, 156, 216), bottom = C3(30, 70, 110), trim = C3(220, 240, 255), robe = C3(60, 120, 180), build = { h = 1.06, head = 0.95 } },
+	unmugun = { head = "hood", hoodColor = C3(230, 236, 248), eyes = C3(200, 220, 255), top = C3(206, 218, 240), bottom = C3(80, 95, 140), trim = C3(160, 180, 220), robe = C3(190, 204, 232), build = { h = 1.06, head = 0.95 } },
 	hyeolrang = { form = "wolf", fur = C3(84, 30, 32), pale = C3(150, 120, 110), eyes = C3(255, 70, 60), scarf = C3(150, 14, 24), build = { w = 0.92, h = 1.05, head = 0.85 } },
 	seokwang = { form = "golem", skin = C3(96, 98, 92), eyes = C3(255, 196, 110), moss = C3(70, 104, 50) },
 	gyunwang = { form = "shroom", capColor = C3(160, 26, 36), capSize = 3.8, spore = C3(255, 200, 200) },
@@ -13502,6 +13517,323 @@ SIG.seokwang = function(model, look, k, P)
 end
 
 ------------------------------------------------------------------------
+-- 3.2.1판: 사람이 아닌 보스의 몸을 새로 빚는다. 네모난 몸 조각은 감추고 (관절은 그대로 움직인다),
+-- 그 위에 생김새대로 깎은 조각을 붙인다. 몸통·팔·다리가 따로 읽히도록 마디 사이를 좁히고 빛깔을 나눈다
+------------------------------------------------------------------------
+local BOSS_BODY: { [string]: (Model, any, number) -> () } = {}
+local function ell(model: Model, partName: string, name: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material?): Part?
+	return wear(model, partName, name, size, cf, color, mat or M.SmoothPlastic, Ball)
+end
+-- 세운 원통 (길이 L, 굵기 d)
+local function rod(model: Model, partName: string, name: string, L: number, d: number, cf: CFrame, color: Color3, mat: Enum.Material?): Part?
+	return wear(model, partName, name, Vector3.new(L, d, d), cf * UPRIGHT, color, mat or M.SmoothPlastic, Cyl)
+end
+-- 축 방향 (부위 안의 방향 dir) 으로 긴 타원
+local function ellAlong(model: Model, partName: string, name: string, at: Vector3, dir: Vector3, w: number, L: number, color: Color3, mat: Enum.Material?): Part?
+	local cf = CFrame.lookAt(at, at + dir) * CFrame.Angles(math.rad(-90), 0, 0)
+	return ell(model, partName, name, Vector3.new(w, L, w), cf, color, mat)
+end
+local function hideBody(model: Model)
+	clearFace(model)
+	hide(model, { "Head", "UpperTorso", "LowerTorso" })
+	hide(model, ARMS)
+	hide(model, LEGS)
+end
+
+-- 학과 봉황: 앞으로 기운 달걀꼴 몸, 휘어 오른 긴 목 끝의 작은 머리와 부리, 팔이 곧 날개 (덮깃과 늘어진 칼깃), 가는 다리와 발가락
+local function birdKing(model: Model, look: any, k: number)
+	local feather = look.feather or C3(240, 240, 240)
+	local crest = look.crest or C3(210, 40, 40)
+	local beak = look.beak or C3(225, 185, 90)
+	local tip = look.tip or dark(feather, 0.75)
+	local breast = look.breast or light(feather, 0.14)
+	local legC = dark(beak, 0.2)
+	local phoenix = look.longCrest == true
+	hideBody(model)
+	local ut, lt, hs = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso"), sizeOf(model, "Head")
+	ell(model, "UpperTorso", "Body", Vector3.new(ut.X * 0.86, ut.Y * 1.45, ut.Z * 1.7), CFrame.new(0, -ut.Y * 0.1, ut.Z * 0.15) * CFrame.Angles(math.rad(-12), 0, 0), feather)
+	ell(model, "UpperTorso", "Breast", Vector3.new(ut.X * 0.62, ut.Y * 1.0, ut.Z * 0.55), CFrame.new(0, ut.Y * 0.02, -ut.Z * 0.55) * CFrame.Angles(math.rad(-12), 0, 0), breast)
+	ell(model, "LowerTorso", "Rump", Vector3.new(lt.X * 0.72, lt.Y * 3.2, lt.Z * 1.5), CFrame.new(0, -lt.Y * 0.2, lt.Z * 0.35), dark(feather, 0.05))
+	-- 목: 마디 넷이 앞으로 휘며 올라간다 (머리 관절에 붙어 머리와 함께 돈다)
+	local headAt = Vector3.new(0, hs.Y * 1.4, -hs.Z * 0.35)
+	local base = Vector3.new(0, -hs.Y * 0.3, hs.Z * 0.05)
+	local neckC = look.neckColor or (phoenix and feather or C3(30, 30, 34))
+	-- 마디를 촘촘히 겹쳐 매끈한 한 줄기로 (마디마다 휘는 방향을 따라 눕힌다)
+	local n = 8
+	local function neckAt(u: number): Vector3
+		return base:Lerp(headAt, u) + Vector3.new(0, 0, math.sin(u * math.pi) * hs.Z * 0.3)
+	end
+	for i = 0, n do
+		local u = i / n
+		local p = neckAt(u)
+		local dirN = neckAt(math.min(1, u + 0.05)) - neckAt(math.max(0, u - 0.05))
+		local d = hs.X * (0.5 - u * 0.16)
+		ellAlong(model, "Head", "Neck", p, dirN, d, hs.Y * 0.42, (u > 0.35 and not phoenix) and neckC or feather)
+	end
+	ell(model, "Head", "BirdHead", Vector3.new(hs.X * 0.66, hs.Y * 0.62, hs.Z * 0.92), CFrame.new(headAt), feather)
+	local bl = (phoenix and 0.75 or 1.4) * k
+	wear(model, "Head", "Beak", Vector3.new(0.2 * k, 0.17 * k, bl), CFrame.new(headAt + Vector3.new(0, -hs.Y * 0.05, -hs.Z * 0.4 - bl * 0.5)) * CFrame.Angles(math.rad(phoenix and -20 or -6), 0, 0), beak, M.SmoothPlastic)
+	wear(model, "Head", "BeakLow", Vector3.new(0.15 * k, 0.08 * k, bl * 0.8), CFrame.new(headAt + Vector3.new(0, -hs.Y * 0.15, -hs.Z * 0.38 - bl * 0.4)) * CFrame.Angles(math.rad(4), 0, 0), dark(beak, 0.2), M.SmoothPlastic)
+	for _, x in ipairs({ -1, 1 }) do
+		ell(model, "Head", "EyeRing", Vector3.new(0.05 * k, 0.2 * k, 0.2 * k), CFrame.new(headAt + Vector3.new(x * hs.X * 0.33, hs.Y * 0.08, -hs.Z * 0.16)), phoenix and C3(255, 220, 120) or WHITE)
+		ell(model, "Head", "Eye", Vector3.new(0.07 * k, 0.12 * k, 0.12 * k), CFrame.new(headAt + Vector3.new(x * hs.X * 0.35, hs.Y * 0.08, -hs.Z * 0.16)), look.eyes or C3(20, 20, 20))
+	end
+	if phoenix then
+		for j = 0, 3 do
+			local at = CFrame.new(headAt + Vector3.new(0, hs.Y * 0.28, hs.Z * (0.05 + j * 0.12))) * CFrame.Angles(math.rad(-30 - j * 16), 0, 0)
+			wear(model, "Head", "Crest", Vector3.new(0.08 * k, (0.9 - j * 0.12) * k, 0.3 * k), at * CFrame.new(0, (0.45 - j * 0.06) * k, 0), j == 0 and C3(255, 240, 170) or crest, M.SmoothPlastic)
+		end
+	else
+		ell(model, "Head", "Crown", Vector3.new(hs.X * 0.4, 0.14 * k, hs.Z * 0.48), CFrame.new(headAt + Vector3.new(0, hs.Y * 0.28, 0.02 * k)), crest)
+	end
+	-- 날개 (팔): 위팔의 덮깃, 아래팔과 손에서 뒤아래로 늘어진 칼깃 일곱 (끝은 짙게)
+	for _, side in ipairs({ "Left", "Right" }) do
+		local x = side == "Left" and -1 or 1
+		local ua, la = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm")
+		-- 접은 날개: 어깨에서 엉덩이 아래까지 몸 옆에 납작하게 붙은 한 장 (위는 덮깃 빛깔, 아래로 짙어진다)
+		ell(model, side .. "UpperArm", "Wing", Vector3.new(ua.X * 0.38, ua.Y * 2.5, ua.Z * 1.8), CFrame.new(x * ua.X * 0.08, -ua.Y * 0.45, ua.Z * 0.3) * CFrame.Angles(math.rad(-8), 0, 0), feather)
+		ell(model, side .. "UpperArm", "WingBar", Vector3.new(ua.X * 0.42, ua.Y * 0.9, ua.Z * 1.5), CFrame.new(x * ua.X * 0.1, -ua.Y * 1.05, ua.Z * 0.4) * CFrame.Angles(math.rad(-8), 0, 0), dark(feather, 0.1))
+		for j = 0, 6 do
+			local L = (1.5 + j * 0.3) * k
+			local at = CFrame.new(x * 0.05 * k, -la.Y * 0.05 + j * 0.06 * k, (0.15 + j * 0.15) * k) * CFrame.Angles(math.rad(-(6 + j * 6)), 0, x * math.rad(3))
+			wear(model, side .. "LowerArm", "Quill", Vector3.new(0.08 * k, L, 0.46 * k), at * CFrame.new(0, -L / 2, 0), j >= 4 and tip or (j % 2 == 0 and feather or dark(feather, 0.05)), M.SmoothPlastic)
+		end
+	end
+	-- 다리: 깃 덮인 넓적다리, 가는 정강이, 앞 발가락 셋과 뒷발가락
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ul, ll, ft = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg"), sizeOf(model, side .. "Foot")
+		ell(model, side .. "UpperLeg", "Thigh", Vector3.new(ul.X * 0.85, ul.Y * 0.95, ul.Z * 1.1), CFrame.new(0, ul.Y * 0.12, 0), dark(feather, 0.08))
+		rod(model, side .. "UpperLeg", "ShankTop", ul.Y * 0.6, 0.26 * k, CFrame.new(0, -ul.Y * 0.32, 0), legC)
+		rod(model, side .. "LowerLeg", "Shank", ll.Y * 1.3, 0.24 * k, CFrame.new(0, 0, 0), legC)
+		for j = -1, 1 do
+			local at = CFrame.new(j * 0.18 * k, -ft.Y * 0.2, -ft.Z * 0.1) * CFrame.Angles(0, j * 0.45, 0)
+			wear(model, side .. "Foot", "Toe", Vector3.new(0.12 * k, 0.1 * k, 0.8 * k), at * CFrame.new(0, 0, -0.4 * k), legC, M.SmoothPlastic)
+			wear(model, side .. "Foot", "Talon", Vector3.new(0.08 * k, 0.08 * k, 0.2 * k), at * CFrame.new(0, -0.03 * k, -0.85 * k) * CFrame.Angles(math.rad(25), 0, 0), C3(30, 26, 22), M.SmoothPlastic)
+		end
+		wear(model, side .. "Foot", "HindToe", Vector3.new(0.1 * k, 0.1 * k, 0.4 * k), CFrame.new(0, -ft.Y * 0.2, ft.Z * 0.35), legC, M.SmoothPlastic)
+	end
+	-- 꼬리: 학은 짙은 깃 부채, 봉황은 땅까지 흐르는 긴 깃 다섯
+	if look.longTail and phoenix then
+		for j = -2, 2 do
+			local cf = CFrame.new(j * 0.18 * k, -0.1 * k, lt.Z * 0.6 + 0.3 * k) * CFrame.Angles(math.rad(-55), 0, math.rad(j * 10))
+			for sgm = 0, 3 do
+				wear(model, "LowerTorso", "TailPlume", Vector3.new(0.22 * k, 1.15 * k, 0.06 * k), cf * CFrame.new(0, -0.58 * k, 0), sgm == 3 and look.longTail or (j == 0 and crest or feather), M.SmoothPlastic)
+				cf = cf * CFrame.new(0, -1.1 * k, 0) * CFrame.Angles(math.rad(-10), 0, 0)
+			end
+			ell(model, "LowerTorso", "TailEye", Vector3.new(0.4 * k, 0.4 * k, 0.08 * k), cf * CFrame.new(0, 0.3 * k, 0), C3(60, 120, 200))
+		end
+	else
+		for j = -3, 3 do
+			local L = (1.6 - math.abs(j) * 0.15) * k
+			wear(model, "LowerTorso", "TailFeather", Vector3.new(0.3 * k, L, 0.06 * k), CFrame.new(j * 0.16 * k, -0.2 * k, lt.Z * 0.7 + 0.3 * k) * CFrame.Angles(math.rad(-40), 0, math.rad(j * 9)) * CFrame.new(0, -L / 2, 0), look.longTail or tip, M.SmoothPlastic)
+		end
+	end
+	if look.fire then
+		flame(model, "UpperTorso", look.fire, dark(look.fire, 0.35), 3.5 * k, 4)
+		for _, side in ipairs({ "LeftLowerArm", "RightLowerArm" }) do
+			flame(model, side, look.fire, dark(look.fire, 0.35), 1.6 * k, 3)
+		end
+		glow(model, "UpperTorso", look.fire, 14 * k, 1.2)
+	end
+end
+BOSS_BODY.seonhak = birdKing
+BOSS_BODY.yeombong = birdKing
+
+-- 늑대왕 (혈랑): 앞으로 숙인 통 가슴과 가는 허리, 목과 어깨의 갈기 털 뭉치, 긴 주둥이와 엄니, 굵은 앞발과 꺾인 뒷다리, 털 꼬리, 핏빛 목도리
+BOSS_BODY.hyeolrang = function(model: Model, look: any, k: number)
+	local fur = look.fur or C3(84, 30, 32)
+	local pale = look.pale or light(fur, 0.35)
+	local deep = dark(fur, 0.25)
+	local bone = C3(232, 222, 205)
+	hideBody(model)
+	local ut, lt, hs = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso"), sizeOf(model, "Head")
+	ell(model, "UpperTorso", "Chest", Vector3.new(ut.X * 1.05, ut.Y * 1.25, ut.Z * 1.55), CFrame.new(0, ut.Y * 0.05, 0) * CFrame.Angles(math.rad(-18), 0, 0), fur, M.Fabric)
+	ell(model, "UpperTorso", "Belly", Vector3.new(ut.X * 0.58, ut.Y * 0.95, ut.Z * 0.7), CFrame.new(0, -ut.Y * 0.12, -ut.Z * 0.5) * CFrame.Angles(math.rad(-10), 0, 0), pale, M.Fabric)
+	ell(model, "LowerTorso", "Waist", Vector3.new(lt.X * 0.68, lt.Y * 2.6, lt.Z * 1.0), CFrame.new(0, lt.Y * 0.2, 0), dark(fur, 0.08), M.Fabric)
+	ell(model, "UpperTorso", "BackStripe", Vector3.new(ut.X * 0.5, ut.Y * 1.1, ut.Z * 0.5), CFrame.new(0, ut.Y * 0.1, ut.Z * 0.62) * CFrame.Angles(math.rad(-18), 0, 0), deep, M.Fabric)
+	-- 갈기: 목둘레 열넷 (앞은 작게, 뒤와 어깨는 크게 바깥으로)
+	for i = 0, 17 do
+		local a = i / 18 * math.pi * 2
+		local front = -math.sin(a)
+		local sz = front > 0.6 and 0.5 or 0.8
+		local pos = Vector3.new(math.cos(a) * ut.X * 0.42, ut.Y * 0.5, math.sin(a) * ut.Z * 0.7 + ut.Z * 0.1)
+		local out = Vector3.new(math.cos(a), 0.7, math.sin(a) * 0.8 + 0.5)
+		ellAlong(model, "UpperTorso", "Mane", pos, out, 0.6 * k * sz, 1.25 * k * sz, i % 2 == 0 and pale or fur, M.Fabric)
+	end
+	-- 머리: 앞으로 내민 머리뼈, 길고 끝이 가는 주둥이, 벌린 아래턱과 엄니, 눈두덩, 세운 귀
+	local H0 = Vector3.new(0, -hs.Y * 0.05, -hs.Z * 0.15)
+	ell(model, "Head", "Skull", Vector3.new(hs.X * 0.85, hs.Y * 0.8, hs.Z * 1.0), CFrame.new(H0), fur, M.Fabric)
+	wear(model, "Head", "Snout", Vector3.new(hs.X * 0.42, hs.Y * 0.32, hs.Z * 0.9), CFrame.new(H0 + Vector3.new(0, -hs.Y * 0.1, -hs.Z * 0.75)) * CFrame.Angles(math.rad(6), 0, 0), fur, M.Fabric)
+	wear(model, "Head", "Jaw", Vector3.new(hs.X * 0.34, hs.Y * 0.12, hs.Z * 0.75), CFrame.new(H0 + Vector3.new(0, -hs.Y * 0.32, -hs.Z * 0.66)) * CFrame.Angles(math.rad(14), 0, 0), pale, M.Fabric)
+	ell(model, "Head", "Nose", Vector3.new(hs.X * 0.2, hs.Y * 0.14, hs.Z * 0.14), CFrame.new(H0 + Vector3.new(0, -hs.Y * 0.02, -hs.Z * 1.2)), C3(15, 10, 10))
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "Fang", Vector3.new(0.07 * k, 0.24 * k, 0.07 * k), CFrame.new(H0 + Vector3.new(x * hs.X * 0.13, -hs.Y * 0.26, -hs.Z * 1.0)), bone, M.SmoothPlastic)
+		wear(model, "Head", "Brow", Vector3.new(hs.X * 0.32, 0.1 * k, 0.2 * k), CFrame.new(H0 + Vector3.new(x * hs.X * 0.2, hs.Y * 0.16, -hs.Z * 0.44)) * CFrame.Angles(0, 0, x * math.rad(-18)), deep, M.Fabric)
+		wear(model, "Head", "Eye", Vector3.new(0.22 * k, 0.07 * k, 0.05 * k), CFrame.new(H0 + Vector3.new(x * hs.X * 0.2, hs.Y * 0.06, -hs.Z * 0.5)) * CFrame.Angles(0, 0, x * math.rad(-16)), look.eyes or C3(255, 70, 60), M.Neon)
+		local ear = CFrame.new(H0 + Vector3.new(x * hs.X * 0.3, hs.Y * 0.36, hs.Z * 0.12)) * CFrame.Angles(math.rad(-14), 0, -x * math.rad(14))
+		wear(model, "Head", "Ear", Vector3.new(0.34 * k, 0.4 * k, 0.12 * k), ear * CFrame.new(0, 0.18 * k, 0), fur, M.Fabric)
+		wear(model, "Head", "EarTip", Vector3.new(0.18 * k, 0.24 * k, 0.11 * k), ear * CFrame.new(0, 0.48 * k, 0), deep, M.Fabric)
+		wear(model, "Head", "EarIn", Vector3.new(0.18 * k, 0.32 * k, 0.05 * k), ear * CFrame.new(0, 0.18 * k, -0.07 * k), pale, M.Fabric)
+	end
+	-- 앞발: 굵은 어깨와 팔뚝, 팔꿈치의 털, 큰 발과 긴 발톱
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
+		ell(model, side .. "UpperArm", "Shoulder", Vector3.new(ua.X * 1.0, ua.Y * 1.4, ua.Z * 1.0), CFrame.new(0, ua.Y * 0.05, 0), fur, M.Fabric)
+		ell(model, side .. "LowerArm", "Forearm", Vector3.new(la.X * 0.9, la.Y * 1.5, la.Z * 0.9), CFrame.new(0, -la.Y * 0.05, 0), dark(fur, 0.06), M.Fabric)
+		ellAlong(model, side .. "LowerArm", "ElbowTuft", Vector3.new(0, la.Y * 0.35, la.Z * 0.45), Vector3.new(0, 0.6, 1), 0.4 * k, 0.8 * k, pale, M.Fabric)
+		wear(model, side .. "LowerArm", "Wrap", Vector3.new(la.X * 1.12, la.Y * 0.3, la.Z * 1.12), CFrame.new(0, -la.Y * 0.3, 0), look.scarf or C3(150, 14, 24))
+		ell(model, side .. "Hand", "Paw", Vector3.new(hd.X * 1.15, hd.Y * 2.1, hd.Z * 1.25), CFrame.new(0, -hd.Y * 0.3, -hd.Z * 0.05), deep, M.Fabric)
+		for j = -1.5, 1.5, 1 do
+			wear(model, side .. "Hand", "Claw", Vector3.new(0.08 * k, 0.55 * k, 0.08 * k), CFrame.new(j * hd.X * 0.25, -hd.Y * 1.0, -hd.Z * 0.35) * CFrame.Angles(math.rad(30), 0, 0) * CFrame.new(0, -0.22 * k, 0), bone, M.SmoothPlastic)
+		end
+	end
+	-- 뒷다리: 굵은 넓적다리, 뒤로 꺾인 정강이, 긴 발
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ul, ll, ft = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg"), sizeOf(model, side .. "Foot")
+		ell(model, side .. "UpperLeg", "Haunch", Vector3.new(ul.X * 1.0, ul.Y * 1.35, ul.Z * 1.2), CFrame.new(0, ul.Y * 0.05, ul.Z * 0.12), fur, M.Fabric)
+		ell(model, side .. "LowerLeg", "Shin", Vector3.new(ll.X * 0.75, ll.Y * 1.5, ll.Z * 0.8), CFrame.new(0, 0, ll.Z * 0.25) * CFrame.Angles(math.rad(-22), 0, 0), dark(fur, 0.1), M.Fabric)
+		ell(model, side .. "Foot", "HindPaw", Vector3.new(ft.X * 0.95, ft.Y * 2.2, ft.Z * 1.4), CFrame.new(0, ft.Y * 0.3, -ft.Z * 0.15), deep, M.Fabric)
+		for j = -1, 1 do
+			wear(model, side .. "Foot", "Claw", Vector3.new(0.08 * k, 0.08 * k, 0.32 * k), CFrame.new(j * ft.X * 0.28, ft.Y * 0.1, -ft.Z * 0.85), bone, M.SmoothPlastic)
+		end
+	end
+	-- 꼬리: 굵은 털 마디가 뒤로 휘어 오르고 끝은 옅다
+	local prev = CFrame.new(0, -lt.Y * 0.2, lt.Z * 0.55)
+	for j = 1, 5 do
+		local seg = prev * CFrame.Angles(math.rad(j == 1 and -70 or 14), 0, 0) * CFrame.new(0, -0.38 * k, 0)
+		ell(model, "LowerTorso", "Tail", Vector3.new((0.62 - j * 0.04) * k, 0.95 * k, (0.62 - j * 0.04) * k), seg, j == 5 and pale or fur, M.Fabric)
+		prev = seg * CFrame.new(0, -0.38 * k, 0)
+	end
+	-- 가죽 허리끈과 핏빛 목도리 (목 앞 매듭, 등 뒤로 길게 휘날린다)
+	local cloth = look.scarf or C3(150, 14, 24)
+	wear(model, "LowerTorso", "Belt", Vector3.new(lt.X * 0.75, 0.28 * k, lt.Z * 1.06), CFrame.new(0, lt.Y * 0.45, 0), LEATHER, M.Leather)
+	ell(model, "UpperTorso", "ScarfKnot", Vector3.new(0.5 * k, 0.4 * k, 0.4 * k), CFrame.new(0, ut.Y * 0.35, -ut.Z * 0.75), cloth, M.Fabric)
+	for i = 0, 3 do
+		wear(model, "UpperTorso", "Scarf", Vector3.new((0.7 - i * 0.08) * k, 0.9 * k, 0.07 * k), CFrame.new(0.15 * k, (0.35 - i * 0.6) * k, ut.Z * 0.85 + i * 0.25 * k) * CFrame.Angles(math.rad(18 + i * 12), 0, math.rad(i * 6)), i == 3 and dark(cloth, 0.2) or cloth)
+	end
+end
+
+-- 석왕: 마디마다 따로 놓인 바위 몸. 가슴의 큰 바위와 가슴판, 사이를 지나는 빛나는 금, 어깨에 솟은 바위와 이끼,
+-- 큰 돌 주먹, 짧고 굵은 다리, 어깨 사이로 낮게 박힌 머리와 깊은 눈, 선돌 관 가운데의 빛나는 돌
+BOSS_BODY.seokwang = function(model: Model, look: any, k: number)
+	local rock = look.skin or C3(96, 98, 92)
+	local r1, r2 = dark(rock, 0.18), light(rock, 0.1)
+	local moss = look.moss or C3(70, 104, 50)
+	local vein = look.eyes or C3(255, 196, 110)
+	local mat = M.Slate
+	hideBody(model)
+	local ut, lt, hs = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso"), sizeOf(model, "Head")
+	wear(model, "UpperTorso", "Core", Vector3.new(ut.X * 1.1, ut.Y * 1.15, ut.Z * 1.3), CFrame.new(0, ut.Y * 0.05, ut.Z * 0.12) * CFrame.Angles(0.05, 0.08, 0.03), rock, mat)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "Pec", Vector3.new(ut.X * 0.48, ut.Y * 0.5, ut.Z * 0.5), CFrame.new(x * ut.X * 0.26, ut.Y * 0.18, -ut.Z * 0.6) * CFrame.Angles(0.1, x * 0.15, x * 0.08), r2, mat)
+	end
+	wear(model, "UpperTorso", "Gut", Vector3.new(ut.X * 0.72, ut.Y * 0.42, ut.Z * 0.9), CFrame.new(0, -ut.Y * 0.5, -ut.Z * 0.05) * CFrame.Angles(-0.05, -0.1, 0), r1, mat)
+	-- 빛나는 금: 가슴 가운데로 내려가 둘로 갈라진다
+	wear(model, "UpperTorso", "Vein", Vector3.new(0.1 * k, ut.Y * 0.75, 0.06 * k), CFrame.new(0, -ut.Y * 0.05, -ut.Z * 0.87) * CFrame.Angles(0, 0, math.rad(8)), vein, M.Neon)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "Vein", Vector3.new(ut.X * 0.3, 0.08 * k, 0.06 * k), CFrame.new(x * ut.X * 0.14, -ut.Y * 0.3, -ut.Z * 0.86) * CFrame.Angles(0, 0, x * math.rad(-25)), vein, M.Neon)
+	end
+	disc(model, "LowerTorso", "VeinRing", lt.X * 0.9, 0.14 * k, CFrame.new(0, lt.Y * 0.55, 0), vein, M.Neon)
+	wear(model, "LowerTorso", "Hip", Vector3.new(lt.X * 0.95, lt.Y * 2.1, lt.Z * 1.15), CFrame.new(0, -lt.Y * 0.35, 0) * CFrame.Angles(0, 0.15, 0), r1, mat)
+	for _, side in ipairs({ "Left", "Right" }) do
+		local x = side == "Left" and -1 or 1
+		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
+		wear(model, side .. "UpperArm", "ShoulderBoulder", Vector3.new(ua.X * 1.7, ua.Y * 0.8, ua.Z * 1.6), CFrame.new(x * ua.X * 0.1, ua.Y * 0.45, 0) * CFrame.Angles(0.1, 0.3 * x, -0.25 * x), rock, mat)
+		wear(model, side .. "UpperArm", "ShoulderMoss", Vector3.new(ua.X * 1.35, 0.14 * k, ua.Z * 1.25), CFrame.new(x * ua.X * 0.1, ua.Y * 0.87, 0) * CFrame.Angles(0.1, 0.3 * x, -0.25 * x), moss, M.Grass)
+		wear(model, side .. "UpperArm", "ArmRock", Vector3.new(ua.X * 1.0, ua.Y * 0.65, ua.Z * 1.0), CFrame.new(0, -ua.Y * 0.18, 0) * CFrame.Angles(0, 0.4, 0.05), r1, mat)
+		disc(model, side .. "LowerArm", "ElbowVein", la.X * 0.8, 0.1 * k, CFrame.new(0, la.Y * 0.5, 0), vein, M.Neon)
+		wear(model, side .. "LowerArm", "Forearm", Vector3.new(la.X * 1.35, la.Y * 1.1, la.Z * 1.35), CFrame.new(0, -la.Y * 0.05, 0) * CFrame.Angles(0, -0.3, 0), rock, mat)
+		wear(model, side .. "Hand", "Fist", Vector3.new(hd.X * 1.7, hd.Y * 4.0, hd.Z * 1.6), CFrame.new(0, -hd.Y * 1.3, 0) * CFrame.Angles(0, 0.2, 0), r2, mat)
+		for j = -1, 1 do
+			wear(model, side .. "Hand", "Knuckle", Vector3.new(hd.X * 0.45, hd.Y * 1.1, hd.Z * 0.4), CFrame.new(j * hd.X * 0.5, -hd.Y * 1.6, -hd.Z * 0.82), r1, mat)
+		end
+	end
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ul, ll, ft = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg"), sizeOf(model, side .. "Foot")
+		wear(model, side .. "UpperLeg", "Thigh", Vector3.new(ul.X * 1.25, ul.Y * 1.0, ul.Z * 1.25), CFrame.new(0, ul.Y * 0.05, 0) * CFrame.Angles(0, 0.2, 0), r1, mat)
+		disc(model, side .. "LowerLeg", "KneeVein", ll.X * 0.85, 0.1 * k, CFrame.new(0, ll.Y * 0.5, 0), vein, M.Neon)
+		wear(model, side .. "LowerLeg", "Shin", Vector3.new(ll.X * 1.2, ll.Y * 1.15, ll.Z * 1.2), CFrame.new(0, -ll.Y * 0.05, 0) * CFrame.Angles(0, -0.25, 0), rock, mat)
+		wear(model, side .. "Foot", "FootSlab", Vector3.new(ft.X * 1.5, ft.Y * 2.2, ft.Z * 1.6), CFrame.new(0, ft.Y * 0.4, -ft.Z * 0.15), r1, mat)
+	end
+	-- 머리: 어깨 사이로 낮게, 눈두덩 아래의 빛나는 눈, 이끼 수염, 선돌 관과 가운데 빛나는 돌
+	local H0 = Vector3.new(0, -hs.Y * 0.25, -hs.Z * 0.1)
+	wear(model, "Head", "Skull", Vector3.new(hs.X * 0.95, hs.Y * 0.8, hs.Z * 0.95), CFrame.new(H0) * CFrame.Angles(0.05, 0.1, 0), rock, mat)
+	wear(model, "Head", "Brow", Vector3.new(hs.X * 1.0, hs.Y * 0.2, hs.Z * 0.35), CFrame.new(H0 + Vector3.new(0, hs.Y * 0.18, -hs.Z * 0.42)) * CFrame.Angles(0.15, 0, 0), r1, mat)
+	wear(model, "Head", "Jaw", Vector3.new(hs.X * 0.85, hs.Y * 0.25, hs.Z * 0.8), CFrame.new(H0 + Vector3.new(0, -hs.Y * 0.42, -hs.Z * 0.1)), r1, mat)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "Eye", Vector3.new(0.24 * k, 0.09 * k, 0.05 * k), CFrame.new(H0 + Vector3.new(x * hs.X * 0.22, hs.Y * 0.02, -hs.Z * 0.49)), vein, M.Neon)
+	end
+	wear(model, "Head", "MossBeard", Vector3.new(hs.X * 0.75, hs.Y * 0.55, hs.Z * 0.25), CFrame.new(H0 + Vector3.new(0, -hs.Y * 0.55, -hs.Z * 0.4)), moss, M.Grass)
+	for i = 0, 6 do
+		local a = i / 7 * math.pi * 2
+		local h = (i % 2 == 0 and 0.75 or 0.5) * k
+		wear(model, "Head", "Menhir", Vector3.new(0.28 * k, h, 0.24 * k), CFrame.new(H0 + Vector3.new(math.sin(a) * hs.X * 0.38, hs.Y * 0.4 + h / 2, -math.cos(a) * hs.Z * 0.38)) * CFrame.Angles(-math.cos(a) * 0.18, -a, math.sin(a) * -0.18), r2, mat)
+	end
+	wear(model, "Head", "CrownGem", Vector3.new(0.3, 0.55, 0.3) * k, CFrame.new(H0 + Vector3.new(0, hs.Y * 0.62, 0)) * CFrame.Angles(0, math.rad(45), 0), vein, M.Neon)
+	glow(model, "UpperTorso", vein, 12 * k, 1.2)
+end
+
+-- 균왕: 아래가 불룩한 자루 몸, 늘어진 턱받이, 큰 갓 (몸과 따로 읽히게 목을 가늘게), 가는 자루 팔과 작은 갓 주먹,
+-- 땅으로 퍼지는 뿌리 다리, 어깨와 등에서 돋은 작은 버섯
+BOSS_BODY.gyunwang = function(model: Model, look: any, k: number)
+	local cap = look.capColor or C3(160, 26, 36)
+	local stem = look.skin or C3(232, 222, 198)
+	local gill = light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4)
+	local rootC = C3(110, 85, 60)
+	hideBody(model)
+	local ut, lt, hs = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso"), sizeOf(model, "Head")
+	rod(model, "UpperTorso", "Stem", ut.Y * 1.35, ut.X * 0.6, CFrame.new(0, ut.Y * 0.05, 0), stem)
+	ell(model, "LowerTorso", "Bulb", Vector3.new(ut.X * 0.85, lt.Y * 4.6, ut.X * 0.85), CFrame.new(0, -lt.Y * 0.7, 0), dark(stem, 0.06))
+	for i = -2, 2 do
+		wear(model, "UpperTorso", "StemGrain", Vector3.new(0.05 * k, ut.Y * 1.1, 0.04 * k), CFrame.new(i * ut.X * 0.07, 0, -ut.X * 0.3) * CFrame.Angles(0, i * 0.22, 0), dark(stem, 0.1))
+	end
+	-- 턱받이: 자루 위의 고리와 늘어진 주름 열둘
+	disc(model, "UpperTorso", "Ring", ut.X * 0.95, 0.14 * k, CFrame.new(0, ut.Y * 0.38, 0), light(stem, 0.1))
+	for i = 0, 11 do
+		local a = i / 12 * math.pi * 2
+		local r = ut.X * 0.42
+		wear(model, "UpperTorso", "RingFrill", Vector3.new(ut.X * 0.24, 0.55 * k, 0.06 * k), CFrame.new(math.cos(a) * r, ut.Y * 0.2, math.sin(a) * r) * CFrame.Angles(0, -a + math.pi / 2, 0) * CFrame.Angles(math.rad(-12), 0, 0), i % 2 == 0 and light(stem, 0.1) or stem)
+	end
+	-- 머리: 가는 목 위의 얼굴 (자루 빛깔), 그 위에 큰 갓
+	rod(model, "Head", "NeckStalk", hs.Y * 0.6, hs.X * 0.45, CFrame.new(0, -hs.Y * 0.35, 0), stem)
+	ell(model, "Head", "Face", Vector3.new(hs.X * 0.72, hs.Y * 0.8, hs.Z * 0.72), CFrame.new(0, 0, 0), stem)
+	for _, x in ipairs({ -1, 1 }) do
+		ell(model, "Head", "Eye", Vector3.new(0.17 * k, 0.24 * k, 0.08 * k), CFrame.new(x * hs.X * 0.16, -hs.Y * 0.02, -hs.Z * 0.35), C3(18, 14, 12))
+	end
+	local R = (look.capSize or 3.8) * k * 0.5
+	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, gill, look.spot or C3(245, 240, 228))
+	-- 팔: 가는 자루 두 마디와 작은 갓 주먹
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
+		rod(model, side .. "UpperArm", "ArmStalk", ua.Y * 1.05, ua.X * 0.48, CFrame.new(0, 0, 0), stem)
+		rod(model, side .. "LowerArm", "ArmStalk2", la.Y * 1.1, la.X * 0.42, CFrame.new(0, 0, 0), dark(stem, 0.05))
+		ell(model, side .. "Hand", "FistCap", Vector3.new(hd.X * 1.5, hd.Y * 2.6, hd.Z * 1.5), CFrame.new(0, -hd.Y * 0.3, 0), cap)
+		disc(model, side .. "Hand", "FistGill", hd.X * 1.35, 0.05 * k, CFrame.new(0, -hd.Y * 0.9, 0), gill)
+	end
+	-- 다리: 자루 두 마디, 발목에서 땅으로 퍼지는 뿌리 다섯
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ul, ll = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg")
+		rod(model, side .. "UpperLeg", "LegStalk", ul.Y * 1.0, ul.X * 0.55, CFrame.new(0, 0, 0), dark(stem, 0.1))
+		rod(model, side .. "LowerLeg", "LegStalk2", ll.Y * 1.1, ll.X * 0.6, CFrame.new(0, 0, 0), dark(stem, 0.18):Lerp(rootC, 0.4))
+		for j = 0, 4 do
+			local a = j / 5 * math.pi * 2
+			wear(model, side .. "Foot", "Root", Vector3.new(1.2 * k, 0.2 * k, 0.2 * k), CFrame.new(math.cos(a) * 0.45 * k, -0.05 * k, math.sin(a) * 0.45 * k) * CFrame.Angles(0, -a, -0.25), rootC, M.Wood, Cyl)
+		end
+	end
+	-- 어깨와 등에서 돋은 작은 버섯
+	local sprouts = { { -0.3, 0.45, 0.1, 1.0, -0.6 }, { -0.22, 0.42, 0.3, 0.7, -0.3 }, { 0.3, 0.45, 0.15, 0.85, 0.6 }, { 0.24, 0.3, -0.2, 0.6, 0.9 }, { -0.1, 0.1, 0.34, 0.75, -0.1 }, { 0.12, -0.2, 0.34, 0.6, 0.15 } }
+	for _, s in ipairs(sprouts) do
+		local x, y, z, sc, tilt = s[1], s[2], s[3], s[4] * 1.15, s[5]
+		local at = CFrame.new(x * ut.X, ut.Y * y, z * ut.X) * CFrame.Angles(z > 0.25 and math.rad(60) or 0, 0, -tilt * 0.6)
+		rod(model, "UpperTorso", "SproutStem", 0.55 * sc * k, 0.2 * sc * k, at * CFrame.new(0, 0.27 * sc * k, 0), stem)
+		ell(model, "UpperTorso", "SproutCap", Vector3.new(0.8 * sc * k, 0.42 * sc * k, 0.8 * sc * k), at * CFrame.new(0, 0.56 * sc * k, 0), cap)
+	end
+	if look.spore then
+		glow(model, "Head", look.spore, 8 * k, 0.8)
+	end
+end
+
+------------------------------------------------------------------------
 -- 입히기
 ------------------------------------------------------------------------
 function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
@@ -13518,7 +13850,10 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 	P.sash = look.sash or P.trim
 	P.wrap = look.wrap or light(P.bottom, 0.45):Lerp(C3(220, 210, 190), 0.3)
 	P.shoe = look.shoe or C3(36, 30, 26)
-	if look.form then
+	local bossBody = isBoss and BOSS_BODY[typeId] or nil
+	if bossBody then
+		bossBody(model, look, K)
+	elseif look.form then
 		local fn = FORMS[look.form]
 		if fn then
 			fn(model, look, K, isBoss)
@@ -13528,7 +13863,7 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		face(model, look)
 		outfit(model, look, P, K)
 	end
-	if isBoss then
+	if isBoss and not bossBody then
 		local sig = SIG[typeId]
 		if sig then
 			local ok, err = pcall(sig, model, look, K, P)
