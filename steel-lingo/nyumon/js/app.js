@@ -14,7 +14,7 @@
   const TABLE = ["あいうえお","かきくけこ","さしすせそ","たちつてと","なにぬねの","はひふへほ","まみむめも","や ゆ よ","らりるれろ","わ   を","ん    "];
   const HINT_VISIBLE_UNTIL = 5;      // 1~5회차는 한글 소리가 보이고, 6회차부터는 눌러야 보인다
   const MIX_FROM = 8;                // 8회차(2주째)부터 복습을 섞는다. 그 전에는 전날 글자만
-  const REVIEW_MAX = 5, BACK_MAX = 5, QUIZ_N = 6;
+  const REVIEW_MAX = 5, BACK_MAX = 5, KANA_Q = 5;   // 확인 퀴즈 8문제 = 글자 5 + 행·단 1 + 단어 듣기 1 + 단어 뜻 1
 
   /* ── 저장 ── */
   const blank = () => ({ done: [], wrong: {}, cur: null, last: 0, intro: false });
@@ -85,17 +85,29 @@
       items = items.slice(0, back ? BACK_MAX : REVIEW_MAX);
       shuffle(items).forEach((k) => plan.push(Object.assign(quizItem(k, before.length >= 4 ? before : pool, "listen"), { phase: "review" })));
     }
+    // 원리 카드 → 새 글자 → 헷갈리는 글자 비교 → 단어 읽기 → 두 단어 이어 읽기
+    if (L.rule) plan.push({ t: "rule" });
     L.new.forEach((k) => plan.push({ t: "card", k }));
+    (L.compare || []).forEach(([a, b, tip]) => plan.push({ t: "compare", a, b, tip }));
     L.read.forEach(([w, ko]) => plan.push({ t: "read", w, ko }));
+    if (L.phrase) plan.push({ t: "phrase", w: L.phrase[0], ko: L.phrase[1] });
 
-    // 확인 퀴즈: 오늘 글자 위주 + 단어 뜻 1문제. 새 글자가 적은 날(10회차)은 배운 글자 전체에서 고른다.
+    // 확인 퀴즈: 오늘 글자 5문제. 새 글자가 적은 날은 배운 글자에서 채운다.
     let today = shuffle(L.new);
-    if (today.length < 3) today = today.concat(shuffle(pool.filter((k) => !L.new.includes(k))).slice(0, QUIZ_N - 1 - today.length));
+    if (today.length < 3) today = today.concat(shuffle(pool.filter((k) => !L.new.includes(k))).slice(0, KANA_Q - today.length));
     const q = [];
-    for (let i = 0; q.length < QUIZ_N - 1 && i < 20; i++) {
+    for (let i = 0; q.length < KANA_Q && i < 20; i++) {
       const k = today[i % today.length];
       q.push(quizItem(k, pool, i % 2 ? "see" : "listen"));
     }
+    // 행·단 문제: 'か행의 い단 글자는?' — 규칙(자음 + 모음)으로 글자를 찾게 한다. 2회차부터.
+    const rowItem = buildRowQuiz(no, L, pool);
+    if (rowItem) q.push(rowItem); else q.push(quizItem(pick(L.new), pool, "listen"));
+    // 단어 듣기: 소리를 듣고 여러 글자로 된 단어를 고른다
+    const words = [...new Set(NY.LESSONS.filter((l) => l.no <= no).flatMap((l) => l.read.map((r) => r[0])))];
+    const hw = pick(L.read)[0];
+    const near = shuffle(words.filter((w) => w !== hw && Math.abs(w.length - hw.length) <= 1));
+    q.push({ t: "quiz", mode: "hear", ans: hw, opts: shuffle([hw].concat(near.slice(0, 3))) });
     const rw = pick(L.read);
     const meanings = NY.LESSONS.filter((l) => l.no <= no).flatMap((l) => l.read.map((r) => r[1]).concat(Object.values(l.cards).map((c) => c[1])));
     const others = shuffle([...new Set(meanings)]).filter((m) => m !== rw[1]);
@@ -103,6 +115,19 @@
     shuffle(q).forEach((x) => plan.push(Object.assign(x, { phase: "quiz" })));
     plan.push({ t: "done" });
     return plan;
+  }
+
+  function rowOf(k) { return Object.keys(NY.ROWS).find((r) => NY.ROWS[r].kana.includes(k)); }
+  function buildRowQuiz(no, L, pool) {
+    if (no < 2) return null;
+    const regular = (k) => !NY.IRREGULAR.includes(k) && rowOf(k) !== "あ";
+    const cand = shuffle(L.new.filter(regular));
+    if (!cand.length) return null;
+    const k = cand[0], row = rowOf(k), dan = NY.ROWS[row].kana.indexOf(k);
+    // 오답: 같은 줄의 다른 글자, 같은 단의 다른 줄 글자
+    const others = shuffle(pool.filter((x) => x !== k && regular(x) && (rowOf(x) === row || NY.ROWS[rowOf(x)].kana.indexOf(x) === dan)));
+    const fill2 = shuffle(pool.filter((x) => x !== k && !others.includes(x)));
+    return { t: "quiz", mode: "row", k, row, dan, opts: shuffle([k].concat(others.concat(fill2).slice(0, 3))) };
   }
 
   function startLesson(no) {
@@ -229,8 +254,8 @@
   function viewLesson() {
     const C = S.cur, it = C.plan[C.i], L = lesson(C.no);
     const total = C.plan.length - 1;
-    const phase = it.t === "start" ? -1 : it.t === "card" ? 1 : it.t === "read" ? 2 : it.phase === "quiz" ? 3 : it.t === "done" ? 4 : 0;
-    const names = ["복습", "새 글자", "읽기", "확인", "끝"];
+    const phase = it.t === "start" ? -1 : it.t === "rule" ? 1 : (it.t === "card" || it.t === "compare") ? 2 : (it.t === "read" || it.t === "phrase") ? 3 : it.phase === "quiz" ? 4 : it.t === "done" ? 5 : 0;
+    const names = ["복습", "원리", "새 글자", "읽기", "확인", "끝"];
     const head = it.t === "done" ? "" : `
       <div class="top"><button class="x" id="home" aria-label="저장하고 나가기">✕</button><h1>${C.no}회차 · ${esc(L.title)}</h1></div>
       <div class="bar"><i style="width:${(C.i / total) * 100}%"></i></div>
@@ -248,6 +273,36 @@
       foot = `<button class="btn primary big" id="nx">시작</button>`;
     }
 
+    else if (it.t === "rule") {
+      const R = L.rule, row = NY.ROWS[R.row];
+      const cells = (str, cls) => str.split("").map((c) => c === " " ? '<span class="gap"></span>' : `<span class="${cls}${NY.IRREGULAR.includes(c) ? " irr" : ""}">${c}</span>`).join("");
+      const vow = NY.VOWELS.map((v) => `<span class="v">${v}</span>`).join("");
+      const grid = R.row === "あ"
+        ? `<div class="rowgrid"><div class="r big">${cells("あいうえお", "k")}</div><div class="r">${vow}</div></div>`
+        : `<div class="rowgrid"><div class="r mut">${cells("あいうえお", "k")}</div><div class="r">${vow}</div>
+             <div class="plus">${esc(row.c)} + 모음</div><div class="r big">${cells(row.kana, "k")}</div></div>`;
+      body = `<div class="card rule"><p class="eyebrow">오늘의 원리</p><h2>${esc(R.title)}</h2>${grid}
+          ${R.lines.map((x) => `<p>${esc(x)}</p>`).join("")}</div>`;
+      foot = `<button class="btn primary big" id="nx">글자 배우기</button>`;
+    }
+
+    else if (it.t === "compare") {
+      body = `<div class="card center"><p class="lead">헷갈리기 쉬운 두 글자</p>
+          <div class="cmp"><button class="cmpk" id="ca"><span>${it.a}</span><small>${esc(NY.KANA[it.a])} · ${NY.ORIGIN[it.a]}</small></button>
+          <button class="cmpk" id="cb"><span>${it.b}</span><small>${esc(NY.KANA[it.b])} · ${NY.ORIGIN[it.b]}</small></button></div>
+          <p style="margin:12px 0 0">${esc(it.tip)}</p><p class="small" style="margin:4px 0 0">글자를 누르면 소리가 나요</p></div>`;
+      foot = `<button class="btn primary big" id="nx">다음</button>`;
+    }
+
+    else if (it.t === "phrase") {
+      body = `<div class="card center"><p class="lead">두 단어 이어 읽기</p>
+          <div class="read-w" style="font-size:46px">${esc(it.w)}</div>
+          <p class="small" style="margin:0">띄어 쓴 곳에서 살짝 쉬어 읽어요</p>
+          <div class="reveal" id="rv"></div>
+          <button class="btn" id="cmp" style="margin-top:8px">🔊 듣고 비교하기</button></div>`;
+      foot = `<button class="btn primary big" id="nx">다음</button>`;
+    }
+
     else if (it.t === "card") {
       const [w, m] = L.cards[it.k];
       const first = L.new[0] === it.k;
@@ -256,6 +311,7 @@
           <div class="kana-big">${it.k}</div>
           <button class="snd" id="s1">🔊 소리</button>
           <div class="hint" style="margin-top:10px">${showKo ? esc(NY.KANA[it.k]) : '<button id="hk">읽는 법 보기</button>'}</div>
+          <p class="origin">${NY.ORIGIN[it.k]} → ${it.k} <span>한자를 흘려 쓴 모양</span></p>
           <div class="word"><span class="w">${esc(w)}</span><span class="m">${esc(m)}</span><button class="snd" id="s2">🔊</button></div>
         </div>`;
       foot = `<button class="btn primary big" id="nx">다음</button>`;
@@ -275,7 +331,7 @@
     else if (it.t === "quiz") {
       const answered = it.picked != null;
       // 말풍선은 한 회차에 2~3번만: 틀렸을 때 위로는 그날 처음 한 번만 나온다(정답은 색으로만 알린다)
-      if (answered && it.picked !== (it.mode === "word" ? it.ans : it.k) && it.comfort) say = line("wrong");
+      if (answered && it.picked !== (it.ans != null ? it.ans : it.k) && it.comfort) say = line("wrong");
       let q = "", optsHTML = "";
       if (it.mode === "listen") {
         q = `<p class="lead">소리를 듣고 글자를 고르세요</p><button class="snd" id="qs" style="font-size:20px;padding:12px 22px">🔊 다시 듣기</button>`;
@@ -283,6 +339,13 @@
       } else if (it.mode === "see") {
         q = `<p class="lead">이 글자의 소리는?</p><div class="q-kana">${it.k}</div>`;
         optsHTML = it.opts.map((o) => `<button class="opt" data-v="${o}">${esc(NY.KANA[o])}</button>`).join("");
+      } else if (it.mode === "row") {
+        const c = NY.ROWS[it.row].c;
+        q = `<p class="lead">자음 + 모음으로 찾기</p><div class="rowq"><b>${it.row}행</b> · <b>${NY.DAN[it.dan]}</b></div><p class="small" style="margin:6px 0 0">${esc(c)} + ${NY.VOWELS[it.dan]}</p>`;
+        optsHTML = it.opts.map((o) => `<button class="opt jp" data-v="${o}">${o}</button>`).join("");
+      } else if (it.mode === "hear") {
+        q = `<p class="lead">소리를 듣고 단어를 고르세요</p><button class="snd" id="qs" style="font-size:20px;padding:12px 22px">🔊 다시 듣기</button>`;
+        optsHTML = it.opts.map((o) => `<button class="opt jp" style="font-size:26px" data-v="${esc(o)}">${esc(o)}</button>`).join("");
       } else {
         q = `<p class="lead">이 단어의 뜻은?</p><div class="read-w" style="font-size:48px">${esc(it.w)}</div>`;
         optsHTML = it.opts.map((o) => `<button class="opt" style="font-size:18px" data-v="${esc(o)}">${esc(o)}</button>`).join("");
@@ -307,14 +370,19 @@
       on("hk", (e) => { e.currentTarget.parentNode.textContent = NY.KANA[it.k]; });
       setTimeout(() => play(kanaSound(it.k), document.getElementById("s1")), 250);
     }
-    if (it.t === "read") on("cmp", () => {
+    if (it.t === "compare") {
+      on("ca", (e) => play(kanaSound(it.a), e.currentTarget));
+      on("cb", (e) => play(kanaSound(it.b), e.currentTarget));
+    }
+    if (it.t === "read" || it.t === "phrase") on("cmp", () => {
       play(it.w);
       document.getElementById("rv").innerHTML = `<b class="jp">${esc(it.w)}</b> · ${esc(it.ko)}`;
     });
     if (it.t === "quiz") {
-      const ans = it.mode === "word" ? it.ans : it.k;
-      on("qs", (e) => play(kanaSound(it.k), e.currentTarget));
-      if (it.mode === "listen" && it.picked == null) setTimeout(() => play(kanaSound(it.k), document.getElementById("qs")), 250);
+      const ans = it.ans != null ? it.ans : it.k;
+      const sound = it.mode === "hear" ? it.ans : kanaSound(it.k);
+      on("qs", (e) => play(sound, e.currentTarget));
+      if ((it.mode === "listen" || it.mode === "hear") && it.picked == null) setTimeout(() => play(sound, document.getElementById("qs")), 250);
       const btns = $app.querySelectorAll(".opt");
       const mark = () => btns.forEach((b) => {
         b.disabled = true;
@@ -333,7 +401,7 @@
           S.wrong[it.k] = (S.wrong[it.k] || 0) + 1;
           if (!C.wrongToday.includes(it.k)) C.wrongToday.push(it.k);
         }
-        if (it.mode !== "word") play(kanaSound(it.k));
+        if (it.mode === "hear") play(it.ans); else if (it.mode !== "word") play(kanaSound(it.k));
         save(); viewLesson();
       });
     }

@@ -19,6 +19,14 @@ for (const L of NY.LESSONS) {
     if (!A[w]) errors.push(`${L.no}회차: 「${w}」 음성 파일 없음`);
   }
   L.new.forEach((k) => { if (!L.cards[k]) errors.push(`${L.no}회차: ${k} 카드 단어 없음`); });
+  L.new.forEach((k) => { if (!NY.ORIGIN[k]) errors.push(`${L.no}회차: ${k} 유래 한자 없음`); });
+  if (!L.rule || !NY.ROWS[L.rule.row]) errors.push(`${L.no}회차: 원리 카드 없음`);
+  if (L.read.length < 4) errors.push(`${L.no}회차: 읽기 단어 4개 미만`);
+  (L.compare || []).forEach(([x, y]) => [x, y].forEach((ch) => { if (!learned.has(ch)) errors.push(`${L.no}회차: 비교 글자 ${ch}는 아직 안 배움`); }));
+  if (L.phrase) {
+    for (const ch of L.phrase[0].replace(/\s/g, "")) if (!learned.has(ch)) errors.push(`${L.no}회차: 이어 읽기 「${L.phrase[0]}」의 「${ch}」는 아직 안 배운 글자`);
+    if (!A[L.phrase[0]]) errors.push(`${L.no}회차: 이어 읽기 음성 없음`);
+  }
   for (const k of Object.keys(NY.KANA)) if (!A["@" + k]) errors.push(`글자 ${k} 음성 없음`);
 }
 for (const f of Object.values(A)) if (!fs.existsSync(path.join(root, "audio", f))) errors.push(`파일 없음: audio/${f}`);
