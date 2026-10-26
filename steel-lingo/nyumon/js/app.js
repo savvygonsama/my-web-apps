@@ -117,7 +117,7 @@
     const imgs = NY.LINES.intro.map((l) => `<img src="char/${l.who}_${l.face}.webp" alt="${NY.CHARS[l.who].name}">`).join("");
     let i = 0;
     $app.innerHTML = `
-      <div class="top"><h1>스틸링고 입문</h1></div>
+      <div class="top"><h1>스틸링고 입문</h1><button class="pill" id="installBtn" hidden>📲 설치</button></div>
       <div class="main">
         <div class="card center">
           <h2>히라가나부터, 기초 오브 기초</h2>
@@ -136,6 +136,7 @@
       document.getElementById("introSay").innerHTML = sayHTML(NY.LINES.intro[i]);
     };
     document.getElementById("go").onclick = () => { S.intro = true; save(); startLesson(1); };
+    Install.attach();
   }
 
   /* ── 화면: 홈 ── */
@@ -151,7 +152,7 @@
       const done = S.done.includes(i), locked = i > NY.OPEN_UNTIL;
       list += `<button data-no="${i}" class="${done ? "done" : ""} ${i === nx && !locked ? "next" : ""}" ${locked ? "disabled" : ""}>${i}</button>`;
     }
-    const resume = S.cur && S.cur.i > 0 && S.cur.plan[S.cur.i].t !== "done";
+    const resume = S.cur && S.cur.plan[S.cur.i].t !== "done";
     const mainBtn = resume
       ? `<button class="btn primary big" id="go">이어하기<small>${S.cur.no}회차 · 하던 자리부터</small></button>`
       : open
@@ -231,7 +232,7 @@
     const phase = it.t === "start" ? -1 : it.t === "card" ? 1 : it.t === "read" ? 2 : it.phase === "quiz" ? 3 : it.t === "done" ? 4 : 0;
     const names = ["복습", "새 글자", "읽기", "확인", "끝"];
     const head = it.t === "done" ? "" : `
-      <div class="top"><button class="x" id="home">✕</button><h1>${C.no}회차 · ${esc(L.title)}</h1></div>
+      <div class="top"><button class="x" id="home" aria-label="저장하고 나가기">✕</button><h1>${C.no}회차 · ${esc(L.title)}</h1></div>
       <div class="bar"><i style="width:${(C.i / total) * 100}%"></i></div>
       <div class="steps">${names.map((n, i) => (i === phase ? `<b>${n}</b>` : n)).join("<span>·</span>")}</div>`;
     const showKo = C.no <= HINT_VISIBLE_UNTIL;
@@ -297,7 +298,7 @@
 
     /* 동작 연결 */
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-    on("home", () => render("home"));
+    on("home", exitSheet);
     on("nx", () => step(1));
     if (it.t === "card") {
       const [w] = L.cards[it.k];
@@ -336,6 +337,25 @@
         save(); viewLesson();
       });
     }
+  }
+
+  /* ── 저장하고 나가기: 진행은 화면마다 자동 저장된다. 나갈 때 그 사실을 알려 준다 ── */
+  function exitSheet() {
+    const C = S.cur;
+    const left = C.plan.length - 1 - C.i;
+    const box = document.createElement("div");
+    box.className = "sheet";
+    box.innerHTML = `<div class="sheet-box" role="dialog" aria-label="저장하고 나가기">
+        <h3>💾 저장하고 나갈까요?</h3>
+        <p>${C.no}회차, 지금 화면까지 이 휴대폰에 저장돼 있어요. 다음에 열면 홈에서 <b>이어하기</b>를 누르면 이 자리부터 시작해요.</p>
+        <p class="small">남은 화면 ${left}개</p>
+        <div class="row"><button class="btn" id="exGo">저장하고 나가기</button><button class="btn primary" id="exStay">계속하기</button></div>
+      </div>`;
+    document.body.appendChild(box);
+    const close = () => box.remove();
+    box.addEventListener("click", (e) => { if (e.target === box) close(); });
+    box.querySelector("#exStay").onclick = close;
+    box.querySelector("#exGo").onclick = () => { save(); close(); render("home"); };
   }
 
   /* ── 화면: 완료 ── */
@@ -423,14 +443,16 @@
       steps.innerHTML = build() + "<p>설치하면 아이콘을 눌러 앱처럼 열리고, 인터넷이 끊겨도 계속 쓸 수 있습니다.</p>";
       nowBtn.hidden = !deferred; note.hidden = false;
     }
-    document.getElementById("installClose").onclick = () => { note.hidden = true; set(SEEN); };
+    document.getElementById("installClose").onclick = () => { note.hidden = true; };
     nowBtn.onclick = async () => { if (!deferred) return; deferred.prompt(); const r = await deferred.userChoice; deferred = null; if (r.outcome === "accepted") set(DONE); note.hidden = true; };
     return {
       attach() {
         const b = document.getElementById("installBtn");
         if (!b || standalone || get(DONE)) return;
         b.hidden = false; b.onclick = open;
-        if (!get(SEEN) && (isIOS || isAndroid || inApp)) { set(SEEN); setTimeout(() => { if (note.hidden) open(); }, 1200); }
+        let shown = false;
+        try { shown = sessionStorage.getItem(SEEN) === "1"; sessionStorage.setItem(SEEN, "1"); } catch (e) {}
+        if (!shown) setTimeout(() => { if (note.hidden) open(); }, 700);
       }
     };
   })();
