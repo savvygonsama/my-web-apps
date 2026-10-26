@@ -65,21 +65,34 @@ end
 
 
 -- 낮과 밤의 시계 (테스트에서 바꾸거나 멈출 수 있다)
-local DAY = 16 * 60
-local clockT0 = os.clock() - (16.2 - 6) / 24 * DAY
+-- 3.0판: 한 바퀴 16분 그대로, 낮(6시~19시)이 10분 · 밤이 6분 (예전엔 반반 8분씩)
+local DAY_PART, NIGHT_PART = 10 * 60, 6 * 60
+local DAY = DAY_PART + NIGHT_PART
+local function phaseOf(hour: number): number
+	local h = (hour - 6) % 24
+	if h < 13 then
+		return h / 13 * DAY_PART
+	end
+	return DAY_PART + (h - 13) / 11 * NIGHT_PART
+end
+local clockT0 = os.clock() - phaseOf(16.2)
 local clockFrozen: number? = nil
 function World.clockHour(): number
 	if clockFrozen then
 		return clockFrozen
 	end
-	return (6 + (os.clock() - clockT0) / DAY * 24) % 24
+	local t = (os.clock() - clockT0) % DAY
+	if t < DAY_PART then
+		return (6 + 13 * t / DAY_PART) % 24
+	end
+	return (19 + 11 * (t - DAY_PART) / NIGHT_PART) % 24
 end
 function World.setClock(hour: number)
 	hour = hour % 24
 	if clockFrozen then
 		clockFrozen = hour
 	end
-	clockT0 = os.clock() - (hour - 6) / 24 * DAY
+	clockT0 = os.clock() - phaseOf(hour)
 	Lighting.ClockTime = hour
 end
 -- 멈추면 지금 시각에 머문다. 다시 누르면 흐른다
@@ -123,7 +136,7 @@ function World.setupLighting()
 	cc.Contrast = 0.1
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
-	-- 낮과 밤: 한 바퀴 16분. 밤에도 길이 보이게 바깥 빛을 조금 남긴다
+	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
 	task.spawn(function()
 		while true do
 			local h = World.clockHour()

@@ -640,6 +640,42 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			fire.Position = pos
 			tween(fire, 0.35, { Size = Vector3.new(1, 1, 1) * 8, Transparency = 1 })
 			Debris:AddItem(fire, 0.4)
+		end	-- 3.0판 환생 권법
+	elseif style.fx == "rinne" then
+		-- 윤회권: 금빛 고리 둘이 바퀴처럼 엇갈려 돌고, 쪽빛 빛 가루
+		Fx.ring(pos, c2, 1, 10 * s, 0.35, dir)
+		Fx.ring(pos, c, 1, 6 * s, 0.3, dir and Vector3.new(-dir.Z, 0, dir.X) or nil)
+		Fx.burst("glitter", pos, c, heavy and 10 or 5, 1)
+	elseif style.fx == "karma" then
+		-- 업화권: 검붉은 불티와 그을음
+		Fx.ring(pos, c, 1, 9 * s, 0.35, dir)
+		Fx.burst("ember", pos, c, heavy and 12 or 6, 1.1)
+		local soot = piece(Vector3.new(1, 1, 1) * 1.6 * s, Color3.fromRGB(28, 10, 14), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.3)
+		soot.Position = pos
+		tween(soot, 0.45, { Size = Vector3.new(1, 1, 1) * 5 * s, Transparency = 1, Position = pos + Vector3.new(0, 1.5, 0) })
+		Debris:AddItem(soot, 0.5)
+	elseif style.fx == "mist" then
+		-- 무상권: 안개가 훅 퍼지고 푸른 칼빛이 엇갈린다
+		local puff = piece(Vector3.new(1, 1, 1) * 2 * s, c2, Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.4)
+		puff.Position = pos
+		tween(puff, 0.4, { Size = Vector3.new(1, 1, 1) * 6 * s, Transparency = 1 })
+		Debris:AddItem(puff, 0.45)
+		for k = -1, 1, 2 do
+			local sl = piece(Vector3.new(0.12, 4 * s, 0.4), c, Enum.Material.Neon, nil, 0.05)
+			sl.CFrame = CFrame.new(pos) * CFrame.Angles(0, math.random() * 6, math.rad(40 * k))
+			tween(sl, 0.25, { Transparency = 1, Size = Vector3.new(0.04, 5 * s, 0.1) })
+			Debris:AddItem(sl, 0.3)
+		end
+	elseif style.fx == "king" then
+		-- 권왕신권: 금빛 별 모양 충격선과 붉은 고리
+		Fx.ring(pos, c, 1, 12 * s, 0.35, dir)
+		Fx.ring(pos, c2, 1, 7 * s, 0.4, dir)
+		for k = 0, heavy and 7 or 4 do
+			local ray = piece(Vector3.new(0.25, 0.25, 3 * s), c, Enum.Material.Neon, nil, 0)
+			local a = k / (heavy and 8 or 5) * math.pi * 2
+			ray.CFrame = CFrame.lookAt(pos, pos + Vector3.new(math.cos(a), math.sin(a * 2) * 0.4, math.sin(a))) * CFrame.new(0, 0, -1.5 * s)
+			tween(ray, 0.25, { Transparency = 1, Size = Vector3.new(0.05, 0.05, 5 * s) })
+			Debris:AddItem(ray, 0.3)
 		end
 	end
 end

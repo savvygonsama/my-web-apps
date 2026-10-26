@@ -95,7 +95,7 @@ Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
 	{ name = "이류", need = 150, color = Color3.fromRGB(150, 220, 150) },
 	{ name = "일류", need = 600, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "특급", need = 2000, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "특급", need = 1500, color = Color3.fromRGB(90, 230, 200) },
 	{ name = "절정", need = 5000, color = Color3.fromRGB(190, 130, 255) },
 	{ name = "초절정", need = 10000, color = Color3.fromRGB(255, 190, 70) },
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
@@ -1587,9 +1587,9 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕" }
 -- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["초월"] = 3.1 }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1602,6 +1602,8 @@ Config.GRADE_COLOR = {
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
 	["초월"] = Color3.fromRGB(255, 160, 210),
+	["윤회"] = Color3.fromRGB(170, 140, 255),
+	["권왕"] = Color3.fromRGB(255, 70, 70),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1619,7 +1621,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -1946,6 +1948,160 @@ do
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.0판: 환생 권법 넷. n번째 윤회의 시련을 넘으면 전생의 그림자가 n번째 권법을 남기고 간다
+-- 초 권법처럼 모든 기술이 새로 짜였고 몸에 두르는 것이 있다 (초 오의 X는 없다)
+------------------------------------------------------------------------
+Config.REBIRTH_STYLES = { "rinne", "eophwa", "musangkwon", "kwonwangsin" }
+-- 윤회권: 등 뒤에 금빛 윤회륜이 돈다. 맞힐 때마다 지난 삶의 그림자가 한 박자 늦게 따라 친다
+table.insert(Config.Styles, {
+	id = "rinne",
+	name = "윤회권",
+	hanja = "輪廻拳",
+	icon = "☸",
+	grade = "윤회",
+	rebirthStyle = 1,
+	color = Color3.fromRGB(130, 100, 255),
+	color2 = Color3.fromRGB(255, 226, 150),
+	fx = "rinne",
+	wheel = true, -- 등 뒤의 윤회륜 (화면이 그린다)
+	hidden = true,
+	unlockHint = "한 번 환생한 몸으로 첫 번째 윤회의 시련을 넘으면, 전생의 그림자가 이 권을 남기고 간다",
+	desc = "돌고 도는 삶의 바퀴를 등에 진 권. 주먹이 닿을 때마다 지난 삶의 내가 한 박자 늦게 같은 자리를 다시 친다. 바퀴가 구를 때 여섯 갈래 세상이 함께 돈다.",
+	gimmick = "전생의 메아리: 네 번 맞힐 때마다 지난 삶의 그림자가 나타나 같은 자리를 다시 친다. 등 뒤의 윤회륜을 던지고, 부르고, 하늘에 띄운다",
+	deflect = 0.25,
+	speed = 1.2,
+	pulse = { every = 4, kind = "echo", radius = 8, delay = 0.4, name = "전생의 메아리", dmg = 28, posture = 26, stun = 0.5, kb = 10, up = 4 },
+	stance = "stance_rinne",
+	combo = {
+		{ id = "rn1", name = "윤장", pose = "rinne_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "rn2", name = "회장", pose = "rinne_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "rn3", name = "법륜각", pose = "rinne_wheel_kick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 8, 7, 7, 0.3, 8, nil, true), hit(0.3, 5, 8, 7, 7, 0.3, 8, nil, true) } },
+		{ id = "rn4", name = "전생일격", pose = "rinne_thrust", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 22, 0.6, 28) } },
+	},
+	heavy = { id = "rnH", name = "윤회일장", pose = "rinne_seal", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 26, 0.6, 22, nil, true) } },
+	skills = {
+		E = { id = "rnE", name = "윤회륜", desc = "등 뒤의 윤회륜을 앞으로 던진다. 커다란 금빛 바퀴가 세워진 채 구르며 26칸을 나아가 지나는 적을 갈고, 되돌아와 다시 등에 붙는다", pose = "rinne_throw", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "wheelThrow", dist = 26, time = 1.2, every = 0.08, radius = 6, hit = hit(0, 0, 0, 14, 12, 0.3, 6) } },
+		R = { id = "rnR", name = "전생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 0.4초 뒤 지난 삶의 그림자 둘이 같은 길을 차례로 다시 내달려 벤다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.4,
+			mech = { kind = "pastStep", dist = 18, width = 5, echoes = 2, delay = 0.4, gap = 0.3, hit = hit(0, 0, 0, 24, 22, 0.5, 12), echo = hit(0, 0, 0, 20, 18, 0.45, 12) } },
+		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘 높이 떠올라 집채만큼 커진다. 바퀴의 여섯 구슬(여섯 갈래 세상)이 떨어져 나와 차례로 적에게 빛기둥으로 내리꽂히고, 마지막에 거대한 바퀴가 땅에 누워 둘레를 갈며 돌다가 터진다", pose = "ult_rinne", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sixRealms", rise = 0.55, n = 6, every = 0.22, range = 32, radius = 7, hit = hit(0, 0, 0, 34, 34, 0.7, 10, 18), slamAt = 0.3, grind = 1.2, grindEvery = 0.2, grindRadius = 24, grindHit = hit(0, 0, 0, 12, 12, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+	},
+})
+-- 업화권: 검은 불꽃과 붉은 사슬. 쌓인 업이 상대 발밑에서 지옥불로 터진다
+table.insert(Config.Styles, {
+	id = "eophwa",
+	name = "업화권",
+	hanja = "業火拳",
+	icon = "🔥",
+	grade = "윤회",
+	rebirthStyle = 2,
+	color = Color3.fromRGB(235, 40, 30),
+	color2 = Color3.fromRGB(40, 12, 24),
+	fx = "karma",
+	chains = true, -- 두 팔에 감긴 붉게 달군 사슬과 검은 불꽃 (화면이 그린다)
+	hidden = true,
+	unlockHint = "두 번 환생한 몸으로 두 번째 윤회의 시련을 넘으면, 업을 진 그림자가 이 권을 남기고 간다",
+	desc = "두 삶 동안 쌓인 업이 검은 불꽃이 되었다. 달군 사슬을 팔에 감고 치는 주먹마다 업이 상대에게 옮겨 붙고, 업이 차면 발밑에서 지옥불이 솟는다.",
+	gimmick = "업보: 다섯 번 맞힐 때마다 상대에게 업의 낙인이 찍히고, 반 박자 뒤 발밑에서 검은 지옥불 기둥이 솟아 띄운다. 맞을수록 불은 더 무겁다 (균형 1.25배)",
+	deflect = 0.24,
+	postureMult = 1.25,
+	speed = 1.1,
+	pulse = { every = 5, kind = "karma", radius = 7, delay = 0.5, name = "업보", dmg = 36, posture = 32, stun = 0.6, kb = 6, up = 16 },
+	stance = "stance_karma",
+	combo = {
+		{ id = "ep1", name = "업화탄권", pose = "karma_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 11, 10, 0.3, 8) } },
+		{ id = "ep2", name = "흑염권", pose = "karma_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 11, 10, 0.3, 8) } },
+		{ id = "ep3", name = "사슬회권", pose = "karma_chain", dur = 0.46, lunge = 2, hits = { hit(0.18, 6, 9, 9, 9, 0.35, 10, nil, true), hit(0.34, 6, 9, 9, 9, 0.35, 12, nil, true) } },
+		{ id = "ep4", name = "겁화추", pose = "karma_smash", dur = 0.56, lunge = 4, hits = { hit(0.3, 7, 7, 24, 28, 0.7, 20, 12, true) } },
+	},
+	heavy = { id = "epH", name = "업화일권", pose = "karma_charge", dur = 0.66, lunge = 14, iframes = 0.2, hits = { hit(0.3, 9, 7, 30, 34, 0.7, 34) } },
+	skills = {
+		E = { id = "epE", name = "업화탄", desc = "두 주먹을 맞부딪쳐 검은 불덩이 셋을 피워 던진다. 불덩이는 가까운 적 셋을 쫓아 날아가 붉게 터진다", pose = "karma_throw", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "karmaOrbs", n = 3, range = 30, delay = 0.2, travel = 0.4, radius = 6, hit = hit(0, 0, 0, 26, 24, 0.5, 14, 8) } },
+		R = { id = "epR", name = "겁화보", desc = "검은 불꽃이 되어 앞으로 20칸 내달린다 (무적). 지나간 땅이 갈라지며 2초 동안 불타고, 마지막에 불길이 한꺼번에 치솟는다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 20, iframes = 0.35,
+			mech = { kind = "hellTrail", dist = 20, width = 4.5, dur = 2.0, every = 0.3, delay = 0.15, hit = hit(0, 0, 0, 9, 8, 0.25, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 8, 20) } },
+		G = { id = "epG", name = "무간지옥", desc = "주먹으로 땅을 내리치면 둘레가 갈라지며 지옥불 기둥이 세 겹으로 퍼져 솟고, 적을 가운데로 끌어당긴다. 마지막에 땅속에서 불타는 거대한 손이 솟아 가운데를 움켜쥐고 터뜨린다", pose = "ult_karma", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "avici", radius = 26, waves = 3, every = 0.35, delay = 0.4, pull = 24, hit = hit(0, 0, 0, 26, 26, 0.5, 0, 14), handAt = 0.35, grab = 0.6, finalRadius = 16, final = hit(0, 0, 0, 140, 160, 1.5, 50, 30) } },
+	},
+})
+-- 무상권: 잿빛 안개와 푸른 넋불. 몸이 흐려져 공격이 비켜 가고, 잔상이 상대 뒤에서 친다
+table.insert(Config.Styles, {
+	id = "musangkwon",
+	name = "무상권",
+	hanja = "無常拳",
+	icon = "🌫",
+	grade = "윤회",
+	rebirthStyle = 3,
+	color = Color3.fromRGB(140, 230, 255),
+	color2 = Color3.fromRGB(225, 230, 240),
+	fx = "mist",
+	wisps = true, -- 몸 둘레를 도는 넋불과 길게 흐르는 안개 띠 (화면이 그린다)
+	hidden = true,
+	unlockHint = "세 번 환생한 몸으로 세 번째 윤회의 시련을 넘으면, 흐릿한 그림자가 이 권을 남기고 간다",
+	desc = "세 번을 살고 나니 몸이 반쯤 안개가 되었다. 있는 듯 없는 듯, 친 자리에는 이미 없고, 없던 자리에서 손이 나온다. 모든 것은 흩어진다.",
+	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대 뒤에 잔상이 나타나 친다. 빠르다 (동작 ×1.3)",
+	deflect = 0.26,
+	dodgeChance = 0.25,
+	speed = 1.3,
+	pulse = { every = 4, kind = "phantom", radius = 6, delay = 0.3, name = "무상영", dmg = 26, posture = 24, stun = 0.7, kb = 8, up = 6 },
+	stance = "stance_mist",
+	combo = {
+		{ id = "ms1", name = "허장", pose = "ghost_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "ms2", name = "실장", pose = "ghost_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "ms3", name = "연무퇴", pose = "ghost_sweep", dur = 0.4, lunge = 2, hits = { hit(0.14, 0, 8, 8, 9, 0.35, 8, 6, true), hit(0.28, 0, 8, 8, 9, 0.35, 8, 6, true) } },
+		{ id = "ms4", name = "멸영장", pose = "ghost_flash", dur = 0.44, lunge = 7, hits = { hit(0.2, 8, 6, 18, 20, 0.55, 22) } },
+	},
+	heavy = { id = "msH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
+	skills = {
+		E = { id = "msE", name = "무상영", desc = "안개가 되어 가까운 적 셋의 등 뒤로 차례로 나타나며 친다 (그동안 무적). 지나간 자리마다 잔상이 남았다가 흩어진다", pose = "ghost_flash", dur = 0.75, cd = 8, chi = 20,
+			mech = { kind = "phantomBlink", n = 3, range = 26, every = 0.22, delay = 0.08, hit = hit(0, 0, 0, 26, 24, 0.6, 10, 6) } },
+		R = { id = "msR", name = "허상", desc = "몸이 흩어지며 둘레에 허상 셋을 남긴다 (나는 1.2초 동안 보이지 않는다). 허상은 적을 끌어모았다가 안개로 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25, iframes = 0.6,
+			mech = { kind = "illusions", n = 3, radius = 9, hold = 1.2, every = 0.3, pull = 12, vanish = 1.2, burstRadius = 9, burst = hit(0, 0, 0, 32, 34, 0.7, 20, 10) } },
+		G = { id = "msG", name = "제행무상", desc = "세상이 잿빛으로 멈춘다 (그동안 무적·보이지 않음). 몸이 일곱으로 갈라져 일곱 적에게 한꺼번에 덮쳐 들고, 다시 하나로 모이는 순간 둘레가 안개 물결로 터진다", pose = "ult_mist", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "allPasses", n = 7, range = 32, delay = 0.6, strikes = 3, every = 0.18, hit = hit(0, 0, 0, 30, 28, 0.6, 6, 6), converge = 0.4, finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+	},
+})
+-- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
+table.insert(Config.Styles, {
+	id = "kwonwangsin",
+	name = "권왕신권",
+	hanja = "拳王神拳",
+	icon = "👑",
+	grade = "권왕",
+	rebirthStyle = 4,
+	color = Color3.fromRGB(255, 204, 70),
+	color2 = Color3.fromRGB(200, 30, 45),
+	fx = "king",
+	crown = true, -- 머리 위의 금빛 관, 붉은 망토, 금빛 팔찌 (화면이 그린다)
+	hidden = true,
+	unlockHint = "네 번 환생한 몸으로 마지막 윤회의 시련을 넘으면, 네 삶의 그림자가 하나가 되어 이 권을 남기고 간다",
+	desc = "네 번의 삶을 모두 넘은 자의 권. 맨손의 강호에 왕은 하나다. 주먹을 들면 하늘에서 금빛 주먹이 함께 내려오고, 마지막에는 금빛 왕이 일어선다.",
+	gimmick = "왕의 주먹: 네 번 맞힐 때마다 하늘에서 거대한 금빛 주먹이 상대를 내리찍는다. 앞의 세 권을 품었다: 공격의 10%를 비켜 가고, 준 피해의 1.5%를 되찾는다",
+	deflect = 0.3,
+	dodgeChance = 0.1,
+	lifesteal = 0.015,
+	speed = 1.15,
+	pulse = { every = 4, kind = "king", radius = 8, delay = 0.45, name = "왕의 주먹", dmg = 40, posture = 44, stun = 0.7, kb = 4, up = 12 },
+	stance = "stance_king",
+	combo = {
+		{ id = "kw1", name = "왕권직타", pose = "king_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 13, 12, 0.35, 10) } },
+		{ id = "kw2", name = "왕권횡타", pose = "king_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 13, 12, 0.35, 10) } },
+		{ id = "kw3", name = "승천권", pose = "king_uppercut", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 6, 16, 18, 0.5, 6, 26) } },
+		{ id = "kw4", name = "천하일권", pose = "king_hammer", dur = 0.56, lunge = 4, hits = { hit(0.3, 8, 8, 28, 32, 0.7, 24, 10, true) } },
+	},
+	heavy = { id = "kwH", name = "왕권일격", pose = "king_cannon", dur = 0.66, lunge = 10, iframes = 0.2, hits = { hit(0.3, 10, 8, 36, 40, 0.8, 40, nil, true) } },
+	skills = {
+		E = { id = "kwE", name = "왕권", desc = "등 뒤에 집채만 한 금빛 주먹이 나타나 앞으로 30칸을 곧게 내지른다. 반 박자 뒤 반대쪽 주먹이 한 번 더 내지른다", pose = "king_cannon", dur = 0.7, cd = 8, chi = 22,
+			mech = { kind = "kingFist", length = 30, width = 7, delay = 0.3, second = 0.35, hit = hit(0, 0, 0, 30, 30, 0.6, 30, 6) } },
+		R = { id = "kwR", name = "왕도", desc = "발밑에서 앞으로 금빛 길이 깔리고, 그 길을 따라 30칸 내달린다 (무적). 지나간 길 위로 금빛 기둥이 차례로 솟아 적을 띄운다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 26, iframes = 0.45,
+			mech = { kind = "royalRoad", length = 30, width = 6, run = 0.35, pillars = 6, step = 0.08, hit = hit(0, 0, 0, 22, 20, 0.5, 14), pillar = hit(0, 0, 0, 28, 28, 0.6, 6, 26) } },
+		G = { id = "kwG", name = "권왕강림", desc = "등 뒤에서 관을 쓴 거대한 금빛 왕이 일어선다. 왕이 적을 골라 세 번 땅을 내리찍고, 마지막에 두 주먹을 한꺼번에 내리꽂아 금빛 충격파가 둘레 30칸을 휩쓴다", pose = "ult_king", dur = 3.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "kingDescend", rise = 0.7, punches = 3, every = 0.45, range = 30, radius = 9, hit = hit(0, 0, 0, 50, 50, 0.8, 20, 14), finalAt = 0.5, finalRadius = 30, final = hit(0, 0, 0, 150, 170, 1.6, 70, 26) } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -2009,6 +2165,10 @@ local FINISHERS = {
 	mugeuk2 = { name = "진 무극승천장", pose = "void_push" },
 	maehwa2 = { name = "설중매영각", pose = "crescent_kick" },
 	chwi2 = { name = "취선번천각", pose = "drunk_flop" },
+	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
+	eophwa = { name = "겁화승천권", pose = "karma_smash" },
+	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
+	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -2689,7 +2849,7 @@ Config.Story = {
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
 	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고, 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
-	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따른다.", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
+	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고, 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
 	{ title = "두 번째 삶", text = "다시 천외천 너머 혼원경에 올라 두 번째로 환생하라. 환생할수록 얻는 능력치가 커져, 다시 오르는 길은 처음보다 훨씬 빠르다.", goal = { kind = "rebirth", n = 2 }, reward = { coins = 2000000 } },

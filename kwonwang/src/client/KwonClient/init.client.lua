@@ -27,6 +27,7 @@ local Whale = require(script:WaitForChild("Whale"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
+local Samsara = require(script:WaitForChild("Samsara"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -1941,6 +1942,12 @@ function handlers.skillfx(data: any)
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
 		Gourd.init({ shake = shake, tint = tint })
+		Samsara.init({ shake = shake, tint = tint })
+	end
+	-- 3.0판 환생 권법 넷의 기술과 연타 장치
+	if Samsara.handles(data) then
+		Samsara.run(data)
+		return
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -2295,7 +2302,8 @@ function handlers.samsaraStart(data: any)
 	shake(0.6)
 end
 function handlers.samsaraWon(data: any)
-	UI.banner(string.format("☯ 윤회의 시련 %d 통과", data.n or 1), string.format("지난 삶을 넘었다 · 공덕 +1 (남은 공덕 %d) · 💎 +%d · 📜 +%d · 💰 +%s", data.points or 0, data.gems or 0, data.scrolls or 0, Config.formatNumber(data.coins or 0)), Config.REBIRTH.colors[data.n or 1])
+	local st = data.style and Config.STYLE_BY_ID[data.style]
+	UI.banner(string.format("☯ 윤회의 시련 %d 통과", data.n or 1), string.format("지난 삶을 넘었다 · 공덕 +1 (남은 공덕 %d) · 💎 +%d · 📜 +%d · 💰 +%s%s", data.points or 0, data.gems or 0, data.scrolls or 0, Config.formatNumber(data.coins or 0), st and (" · 그림자가 " .. st.icon .. " " .. st.name .. "을(를) 남겼다") or ""), Config.REBIRTH.colors[data.n or 1])
 	shake(1)
 end
 

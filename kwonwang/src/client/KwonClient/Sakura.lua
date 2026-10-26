@@ -11,6 +11,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Drunk = require(script.Parent:WaitForChild("Drunk"))
 local Reaper = require(script.Parent:WaitForChild("Reaper"))
+local Samsara = require(script.Parent:WaitForChild("Samsara"))
 local Ult2 = require(script.Parent:WaitForChild("Ult2"))
 local Whale = require(script.Parent:WaitForChild("Whale"))
 
@@ -199,7 +200,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -234,6 +235,13 @@ local function refreshFans(model: Model)
 		end
 		return
 	end
+	-- 3.0판 환생 권법: 윤회륜 · 사슬과 검은 불꽃 · 넋불과 안개 띠 · 관과 망토
+	if Samsara.hasGear(st) then
+		for _, p in ipairs(Samsara.buildGear(model, st)) do
+			table.insert(list, p)
+		end
+		return
+	end
 	-- 초·혈마신수는 붉은 큰 낫과 손톱
 	if st.scythe then
 		for _, p in ipairs(Reaper.build(model)) do
@@ -254,7 +262,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end

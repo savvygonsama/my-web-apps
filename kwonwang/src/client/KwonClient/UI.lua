@@ -931,7 +931,7 @@ local function buildStats()
 				sa < rb and (state.samsaraNext and " (지금 도전할 수 있다)" or string.format(" (이번 삶에서 %s에 오르면 다음 시련)", Config.Realms[Config.SAMSARA.realm].name)) or (sa < Config.REBIRTH.max and " (환생하면 다음 시련)" or ""),
 				#parts > 0 and table.concat(parts, " · ") or "아직 없음"))
 		end
-		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
+		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -1587,7 +1587,7 @@ local function buildTest()
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
 		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
 		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})
@@ -1682,6 +1682,10 @@ local function buildTest()
 		hyeolma = "북동쪽 끝 혈교 본산의 보스 '혈마'를 쓰러뜨리면 바로 얻는다",
 		pacheon = "북서쪽 끝 허공 균열의 보스 '천마'를 쓰러뜨리면 바로 얻는다",
 		musang = "마을 비무대에서 다른 사람을 백 번 이기면 바로 얻는다 (비무 승리는 능력치 창과 순위표에 나온다)",
+		rinne = "한 번 환생하고 다시 생사경에 올라 첫 번째 윤회의 시련을 넘으면 얻는다 (능력치 창 → ☯ 윤회의 시련)",
+		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
+		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
+		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]

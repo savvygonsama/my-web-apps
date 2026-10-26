@@ -265,6 +265,13 @@ local function sanitize(data: any): Profile
 	p.autoOn = data.autoOn == true or nil
 	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
 	p.samsara = math.min(p.rebirth, math.floor(num(data.samsara, Config.REBIRTH.max)))
+	-- 3.0판: 넘은 시련의 환생 권법 (2.9판에 넘은 기록에도 준다)
+	for i = 1, p.samsara do
+		local sid = Config.REBIRTH_STYLES[i]
+		if sid then
+			p.styles[sid] = true
+		end
+	end
 	if type(data.perks) == "table" then
 		local left = Config.perkPoints(p.rebirth, p.samsara)
 		for _, pk in ipairs(Config.PERKS) do
@@ -404,6 +411,21 @@ function Calc.gateNext(p: Profile): number?
 		return now + 1
 	end
 	return nil
+end
+
+-- 3.0판: 능력치를 더한다. 관문에 막혀 있으면 (능력치는 다음 경지에 닿았는데 관문을 못 넘었으면) 더 오르지 않는다
+-- 오르기 전 합이 이미 문턱을 넘어 있던 예전 기록은 그 자리에서 멈춘다 (깎지는 않는다). 실제로 오른 양을 돌려준다
+local function addStat(p: Profile, id: string, amount: number): number
+	local before = Calc.total(p)
+	p.stats[id] += amount
+	local nxt = Calc.gateNext(p)
+	if nxt then
+		local over = Calc.total(p) - math.max(before, Config.Realms[nxt].need)
+		if over > 0 then
+			p.stats[id] -= math.min(amount, over)
+		end
+	end
+	return Calc.total(p) - before
 end
 
 -- 2.9판: 지금 도전할 수 있는 윤회의 시련 (없으면 nil). n번째 환생 뒤 생사경에 오르면 n번째가 열린다
@@ -985,7 +1007,7 @@ function Story.advance(player: Player)
 		local r = ch.reward or {}
 		p.coins += r.coins or 0
 		for _, stat in ipairs(Config.Stats) do
-			p.stats[stat.id] += r.stats or 0
+			addStat(p, stat.id, r.stats or 0)
 		end
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
@@ -1523,7 +1545,7 @@ Combat.init(Push, {
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
 					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
-						p.stats[st.id] += gain
+						addStat(p, st.id, gain)
 					end
 					Push:FireClient(killer, "simmaWin", { gain = gain })
 					refreshFighter(killer)
@@ -1597,10 +1619,10 @@ Combat.init(Push, {
 						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
 					end
 					local each = math.max(1, math.floor(g / #Config.Stats))
+					statGain = 0
 					for _, sd in ipairs(Config.Stats) do
-						p.stats[sd.id] += each
+						statGain += addStat(p, sd.id, each)
 					end
-					statGain = each * #Config.Stats
 					refreshFighter(killer)
 					Story.check(killer)
 				end
@@ -2372,12 +2394,25 @@ function Rebirth.samsaraWon(player: Player, n: number)
 	end
 	local SA = Config.SAMSARA
 	p.samsara = n
+	-- 3.0판: 그림자가 n번째 환생 권법을 남기고 간다
+	local sid = Config.REBIRTH_STYLES[n]
+	local gotStyle = sid ~= nil and not p.styles[sid] and Config.STYLE_BY_ID[sid] ~= nil
+	if gotStyle then
+		p.styles[sid] = true
+	end
 	p.skyGems += SA.gems[n]
 	p.scrolls += SA.scrolls[n]
 	p.coins += SA.coins[n]
 	st.dirty = true
 	Push:FireAllClients("realm", { name = player.DisplayName, realm = "윤회의 시련 " .. n })
-	Push:FireClient(player, "samsaraWon", { n = n, gems = SA.gems[n], scrolls = SA.scrolls[n], coins = SA.coins[n], points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p) })
+	Push:FireClient(player, "samsaraWon", { n = n, gems = SA.gems[n], scrolls = SA.scrolls[n], coins = SA.coins[n], points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p), style = gotStyle and sid or nil })
+	if gotStyle then
+		task.delay(2.5, function()
+			if player.Parent then
+				Push:FireClient(player, "learned", { style = sid, hidden = true })
+			end
+		end)
+	end
 	refreshFighter(player)
 	Story.check(player)
 	pushState(player)
@@ -2389,7 +2424,7 @@ function Gate.notify(player: Player, p: Profile, st: State)
 	if nxt and (st :: any).gateNotified ~= nxt then
 		(st :: any).gateNotified = nxt
 		Push:FireClient(player, "dialog", { who = "⛩ 경지의 관문", title = Config.Realms[nxt].name .. "의 관문이 열렸다",
-			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. (능력치 창의 '⛩ 관문 도전')" })
+			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. 관문을 넘기 전에는 능력치가 더 오르지 않는다. (능력치 창의 '⛩ 관문 도전')" })
 		pushState(player)
 	end
 end
@@ -2662,7 +2697,7 @@ function Tower.killed(player: Player, ef: any)
 			local g = math.min(Config.killGain(want), Config.killGain(rewardPower(player)) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
 			local each = math.max(1, math.floor(g / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			stats = each * #Config.Stats
 			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
@@ -2890,7 +2925,7 @@ function Maze.killed(player: Player, ef: any)
 		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
-			p.stats[sd.id] += each
+			addStat(p, sd.id, each)
 		end
 		states[player].dirty = true
 		refreshFighter(player)
@@ -2913,7 +2948,7 @@ function Maze.finish(player: Player, run: any)
 			local R = M.reward
 			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			p.skyGems += R.gems
 			p.coins += R.coins
@@ -3277,12 +3312,19 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	local beforeIdx = idx
 	if info.gains then
 		-- 여러 능력치가 함께 오르는 수련
+		local got = 0
 		for stat, k in pairs(info.gains) do
-			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
+			local d = addStat(p, stat, math.max(1, math.floor(gain * k * mult + 0.5)))
+			if stat == info.stat then
+				got = d
+			end
 		end
-		amount = math.max(1, math.floor(gain * (info.gains[info.stat] or 1) * mult + 0.5))
+		amount = got
 	else
-		p.stats[info.stat] += amount
+		amount = addStat(p, info.stat, amount)
+	end
+	if amount <= 0 and Calc.gateNext(p) then
+		toast(player, "⛩ 관문을 넘어야 능력치가 더 올라요 (능력치 창 → 관문 도전)")
 	end
 	st.dirty = true
 	local afterIdx, realm = Calc.realm(p)
@@ -4403,7 +4445,7 @@ function Raid.killed(f: any)
 			p.counts.raid = (p.counts.raid or 0) + 1
 			task.defer(Story.check, player)
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			st.dirty = true
 			refreshFighter(player)

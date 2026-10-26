@@ -115,7 +115,7 @@ Config.Realms = {
 	{ name = "삼류", need = 0, color = Color3.fromRGB(200, 200, 200) },
 	{ name = "이류", need = 150, color = Color3.fromRGB(150, 220, 150) },
 	{ name = "일류", need = 600, color = Color3.fromRGB(110, 190, 255) },
-	{ name = "특급", need = 2000, color = Color3.fromRGB(90, 230, 200) },
+	{ name = "특급", need = 1500, color = Color3.fromRGB(90, 230, 200) },
 	{ name = "절정", need = 5000, color = Color3.fromRGB(190, 130, 255) },
 	{ name = "초절정", need = 10000, color = Color3.fromRGB(255, 190, 70) },
 	{ name = "화경", need = 20000, color = Color3.fromRGB(255, 110, 80) },
@@ -1607,9 +1607,9 @@ for _, st in ipairs(Config.Styles) do
 end
 
 -- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "초월" }
+Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕" }
 -- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["초월"] = 3.1 }
+Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4 }
 Config.GRADE_COLOR = {
 	["하급"] = Color3.fromRGB(190, 190, 190),
 	["중급"] = Color3.fromRGB(140, 220, 140),
@@ -1622,6 +1622,8 @@ Config.GRADE_COLOR = {
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
 	["초월"] = Color3.fromRGB(255, 160, 210),
+	["윤회"] = Color3.fromRGB(170, 140, 255),
+	["권왕"] = Color3.fromRGB(255, 70, 70),
 }
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
@@ -1639,7 +1641,7 @@ Config.BREAKTHROUGH = {
 function Config.styleGrade(style: any, up: number?): string
 	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
 	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" then
+	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" then
 		cap = Config.gradeIndex(style.grade)
 	end
 	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
@@ -1966,6 +1968,160 @@ do
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.0판: 환생 권법 넷. n번째 윤회의 시련을 넘으면 전생의 그림자가 n번째 권법을 남기고 간다
+-- 초 권법처럼 모든 기술이 새로 짜였고 몸에 두르는 것이 있다 (초 오의 X는 없다)
+------------------------------------------------------------------------
+Config.REBIRTH_STYLES = { "rinne", "eophwa", "musangkwon", "kwonwangsin" }
+-- 윤회권: 등 뒤에 금빛 윤회륜이 돈다. 맞힐 때마다 지난 삶의 그림자가 한 박자 늦게 따라 친다
+table.insert(Config.Styles, {
+	id = "rinne",
+	name = "윤회권",
+	hanja = "輪廻拳",
+	icon = "☸",
+	grade = "윤회",
+	rebirthStyle = 1,
+	color = Color3.fromRGB(130, 100, 255),
+	color2 = Color3.fromRGB(255, 226, 150),
+	fx = "rinne",
+	wheel = true, -- 등 뒤의 윤회륜 (화면이 그린다)
+	hidden = true,
+	unlockHint = "한 번 환생한 몸으로 첫 번째 윤회의 시련을 넘으면, 전생의 그림자가 이 권을 남기고 간다",
+	desc = "돌고 도는 삶의 바퀴를 등에 진 권. 주먹이 닿을 때마다 지난 삶의 내가 한 박자 늦게 같은 자리를 다시 친다. 바퀴가 구를 때 여섯 갈래 세상이 함께 돈다.",
+	gimmick = "전생의 메아리: 네 번 맞힐 때마다 지난 삶의 그림자가 나타나 같은 자리를 다시 친다. 등 뒤의 윤회륜을 던지고, 부르고, 하늘에 띄운다",
+	deflect = 0.25,
+	speed = 1.2,
+	pulse = { every = 4, kind = "echo", radius = 8, delay = 0.4, name = "전생의 메아리", dmg = 28, posture = 26, stun = 0.5, kb = 10, up = 4 },
+	stance = "stance_rinne",
+	combo = {
+		{ id = "rn1", name = "윤장", pose = "rinne_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "rn2", name = "회장", pose = "rinne_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "rn3", name = "법륜각", pose = "rinne_wheel_kick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 8, 7, 7, 0.3, 8, nil, true), hit(0.3, 5, 8, 7, 7, 0.3, 8, nil, true) } },
+		{ id = "rn4", name = "전생일격", pose = "rinne_thrust", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 22, 0.6, 28) } },
+	},
+	heavy = { id = "rnH", name = "윤회일장", pose = "rinne_seal", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 26, 0.6, 22, nil, true) } },
+	skills = {
+		E = { id = "rnE", name = "윤회륜", desc = "등 뒤의 윤회륜을 앞으로 던진다. 커다란 금빛 바퀴가 세워진 채 구르며 26칸을 나아가 지나는 적을 갈고, 되돌아와 다시 등에 붙는다", pose = "rinne_throw", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "wheelThrow", dist = 26, time = 1.2, every = 0.08, radius = 6, hit = hit(0, 0, 0, 14, 12, 0.3, 6) } },
+		R = { id = "rnR", name = "전생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 0.4초 뒤 지난 삶의 그림자 둘이 같은 길을 차례로 다시 내달려 벤다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.4,
+			mech = { kind = "pastStep", dist = 18, width = 5, echoes = 2, delay = 0.4, gap = 0.3, hit = hit(0, 0, 0, 24, 22, 0.5, 12), echo = hit(0, 0, 0, 20, 18, 0.45, 12) } },
+		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘 높이 떠올라 집채만큼 커진다. 바퀴의 여섯 구슬(여섯 갈래 세상)이 떨어져 나와 차례로 적에게 빛기둥으로 내리꽂히고, 마지막에 거대한 바퀴가 땅에 누워 둘레를 갈며 돌다가 터진다", pose = "ult_rinne", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "sixRealms", rise = 0.55, n = 6, every = 0.22, range = 32, radius = 7, hit = hit(0, 0, 0, 34, 34, 0.7, 10, 18), slamAt = 0.3, grind = 1.2, grindEvery = 0.2, grindRadius = 24, grindHit = hit(0, 0, 0, 12, 12, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+	},
+})
+-- 업화권: 검은 불꽃과 붉은 사슬. 쌓인 업이 상대 발밑에서 지옥불로 터진다
+table.insert(Config.Styles, {
+	id = "eophwa",
+	name = "업화권",
+	hanja = "業火拳",
+	icon = "🔥",
+	grade = "윤회",
+	rebirthStyle = 2,
+	color = Color3.fromRGB(235, 40, 30),
+	color2 = Color3.fromRGB(40, 12, 24),
+	fx = "karma",
+	chains = true, -- 두 팔에 감긴 붉게 달군 사슬과 검은 불꽃 (화면이 그린다)
+	hidden = true,
+	unlockHint = "두 번 환생한 몸으로 두 번째 윤회의 시련을 넘으면, 업을 진 그림자가 이 권을 남기고 간다",
+	desc = "두 삶 동안 쌓인 업이 검은 불꽃이 되었다. 달군 사슬을 팔에 감고 치는 주먹마다 업이 상대에게 옮겨 붙고, 업이 차면 발밑에서 지옥불이 솟는다.",
+	gimmick = "업보: 다섯 번 맞힐 때마다 상대에게 업의 낙인이 찍히고, 반 박자 뒤 발밑에서 검은 지옥불 기둥이 솟아 띄운다. 맞을수록 불은 더 무겁다 (균형 1.25배)",
+	deflect = 0.24,
+	postureMult = 1.25,
+	speed = 1.1,
+	pulse = { every = 5, kind = "karma", radius = 7, delay = 0.5, name = "업보", dmg = 36, posture = 32, stun = 0.6, kb = 6, up = 16 },
+	stance = "stance_karma",
+	combo = {
+		{ id = "ep1", name = "업화탄권", pose = "karma_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 11, 10, 0.3, 8) } },
+		{ id = "ep2", name = "흑염권", pose = "karma_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 11, 10, 0.3, 8) } },
+		{ id = "ep3", name = "사슬회권", pose = "karma_chain", dur = 0.46, lunge = 2, hits = { hit(0.18, 6, 9, 9, 9, 0.35, 10, nil, true), hit(0.34, 6, 9, 9, 9, 0.35, 12, nil, true) } },
+		{ id = "ep4", name = "겁화추", pose = "karma_smash", dur = 0.56, lunge = 4, hits = { hit(0.3, 7, 7, 24, 28, 0.7, 20, 12, true) } },
+	},
+	heavy = { id = "epH", name = "업화일권", pose = "karma_charge", dur = 0.66, lunge = 14, iframes = 0.2, hits = { hit(0.3, 9, 7, 30, 34, 0.7, 34) } },
+	skills = {
+		E = { id = "epE", name = "업화탄", desc = "두 주먹을 맞부딪쳐 검은 불덩이 셋을 피워 던진다. 불덩이는 가까운 적 셋을 쫓아 날아가 붉게 터진다", pose = "karma_throw", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "karmaOrbs", n = 3, range = 30, delay = 0.2, travel = 0.4, radius = 6, hit = hit(0, 0, 0, 26, 24, 0.5, 14, 8) } },
+		R = { id = "epR", name = "겁화보", desc = "검은 불꽃이 되어 앞으로 20칸 내달린다 (무적). 지나간 땅이 갈라지며 2초 동안 불타고, 마지막에 불길이 한꺼번에 치솟는다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 20, iframes = 0.35,
+			mech = { kind = "hellTrail", dist = 20, width = 4.5, dur = 2.0, every = 0.3, delay = 0.15, hit = hit(0, 0, 0, 9, 8, 0.25, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 8, 20) } },
+		G = { id = "epG", name = "무간지옥", desc = "주먹으로 땅을 내리치면 둘레가 갈라지며 지옥불 기둥이 세 겹으로 퍼져 솟고, 적을 가운데로 끌어당긴다. 마지막에 땅속에서 불타는 거대한 손이 솟아 가운데를 움켜쥐고 터뜨린다", pose = "ult_karma", dur = 2.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "avici", radius = 26, waves = 3, every = 0.35, delay = 0.4, pull = 24, hit = hit(0, 0, 0, 26, 26, 0.5, 0, 14), handAt = 0.35, grab = 0.6, finalRadius = 16, final = hit(0, 0, 0, 140, 160, 1.5, 50, 30) } },
+	},
+})
+-- 무상권: 잿빛 안개와 푸른 넋불. 몸이 흐려져 공격이 비켜 가고, 잔상이 상대 뒤에서 친다
+table.insert(Config.Styles, {
+	id = "musangkwon",
+	name = "무상권",
+	hanja = "無常拳",
+	icon = "🌫",
+	grade = "윤회",
+	rebirthStyle = 3,
+	color = Color3.fromRGB(140, 230, 255),
+	color2 = Color3.fromRGB(225, 230, 240),
+	fx = "mist",
+	wisps = true, -- 몸 둘레를 도는 넋불과 길게 흐르는 안개 띠 (화면이 그린다)
+	hidden = true,
+	unlockHint = "세 번 환생한 몸으로 세 번째 윤회의 시련을 넘으면, 흐릿한 그림자가 이 권을 남기고 간다",
+	desc = "세 번을 살고 나니 몸이 반쯤 안개가 되었다. 있는 듯 없는 듯, 친 자리에는 이미 없고, 없던 자리에서 손이 나온다. 모든 것은 흩어진다.",
+	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대 뒤에 잔상이 나타나 친다. 빠르다 (동작 ×1.3)",
+	deflect = 0.26,
+	dodgeChance = 0.25,
+	speed = 1.3,
+	pulse = { every = 4, kind = "phantom", radius = 6, delay = 0.3, name = "무상영", dmg = 26, posture = 24, stun = 0.7, kb = 8, up = 6 },
+	stance = "stance_mist",
+	combo = {
+		{ id = "ms1", name = "허장", pose = "ghost_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "ms2", name = "실장", pose = "ghost_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
+		{ id = "ms3", name = "연무퇴", pose = "ghost_sweep", dur = 0.4, lunge = 2, hits = { hit(0.14, 0, 8, 8, 9, 0.35, 8, 6, true), hit(0.28, 0, 8, 8, 9, 0.35, 8, 6, true) } },
+		{ id = "ms4", name = "멸영장", pose = "ghost_flash", dur = 0.44, lunge = 7, hits = { hit(0.2, 8, 6, 18, 20, 0.55, 22) } },
+	},
+	heavy = { id = "msH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
+	skills = {
+		E = { id = "msE", name = "무상영", desc = "안개가 되어 가까운 적 셋의 등 뒤로 차례로 나타나며 친다 (그동안 무적). 지나간 자리마다 잔상이 남았다가 흩어진다", pose = "ghost_flash", dur = 0.75, cd = 8, chi = 20,
+			mech = { kind = "phantomBlink", n = 3, range = 26, every = 0.22, delay = 0.08, hit = hit(0, 0, 0, 26, 24, 0.6, 10, 6) } },
+		R = { id = "msR", name = "허상", desc = "몸이 흩어지며 둘레에 허상 셋을 남긴다 (나는 1.2초 동안 보이지 않는다). 허상은 적을 끌어모았다가 안개로 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25, iframes = 0.6,
+			mech = { kind = "illusions", n = 3, radius = 9, hold = 1.2, every = 0.3, pull = 12, vanish = 1.2, burstRadius = 9, burst = hit(0, 0, 0, 32, 34, 0.7, 20, 10) } },
+		G = { id = "msG", name = "제행무상", desc = "세상이 잿빛으로 멈춘다 (그동안 무적·보이지 않음). 몸이 일곱으로 갈라져 일곱 적에게 한꺼번에 덮쳐 들고, 다시 하나로 모이는 순간 둘레가 안개 물결로 터진다", pose = "ult_mist", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "allPasses", n = 7, range = 32, delay = 0.6, strikes = 3, every = 0.18, hit = hit(0, 0, 0, 30, 28, 0.6, 6, 6), converge = 0.4, finalRadius = 26, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+	},
+})
+-- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
+table.insert(Config.Styles, {
+	id = "kwonwangsin",
+	name = "권왕신권",
+	hanja = "拳王神拳",
+	icon = "👑",
+	grade = "권왕",
+	rebirthStyle = 4,
+	color = Color3.fromRGB(255, 204, 70),
+	color2 = Color3.fromRGB(200, 30, 45),
+	fx = "king",
+	crown = true, -- 머리 위의 금빛 관, 붉은 망토, 금빛 팔찌 (화면이 그린다)
+	hidden = true,
+	unlockHint = "네 번 환생한 몸으로 마지막 윤회의 시련을 넘으면, 네 삶의 그림자가 하나가 되어 이 권을 남기고 간다",
+	desc = "네 번의 삶을 모두 넘은 자의 권. 맨손의 강호에 왕은 하나다. 주먹을 들면 하늘에서 금빛 주먹이 함께 내려오고, 마지막에는 금빛 왕이 일어선다.",
+	gimmick = "왕의 주먹: 네 번 맞힐 때마다 하늘에서 거대한 금빛 주먹이 상대를 내리찍는다. 앞의 세 권을 품었다: 공격의 10%를 비켜 가고, 준 피해의 1.5%를 되찾는다",
+	deflect = 0.3,
+	dodgeChance = 0.1,
+	lifesteal = 0.015,
+	speed = 1.15,
+	pulse = { every = 4, kind = "king", radius = 8, delay = 0.45, name = "왕의 주먹", dmg = 40, posture = 44, stun = 0.7, kb = 4, up = 12 },
+	stance = "stance_king",
+	combo = {
+		{ id = "kw1", name = "왕권직타", pose = "king_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 13, 12, 0.35, 10) } },
+		{ id = "kw2", name = "왕권횡타", pose = "king_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 13, 12, 0.35, 10) } },
+		{ id = "kw3", name = "승천권", pose = "king_uppercut", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 6, 16, 18, 0.5, 6, 26) } },
+		{ id = "kw4", name = "천하일권", pose = "king_hammer", dur = 0.56, lunge = 4, hits = { hit(0.3, 8, 8, 28, 32, 0.7, 24, 10, true) } },
+	},
+	heavy = { id = "kwH", name = "왕권일격", pose = "king_cannon", dur = 0.66, lunge = 10, iframes = 0.2, hits = { hit(0.3, 10, 8, 36, 40, 0.8, 40, nil, true) } },
+	skills = {
+		E = { id = "kwE", name = "왕권", desc = "등 뒤에 집채만 한 금빛 주먹이 나타나 앞으로 30칸을 곧게 내지른다. 반 박자 뒤 반대쪽 주먹이 한 번 더 내지른다", pose = "king_cannon", dur = 0.7, cd = 8, chi = 22,
+			mech = { kind = "kingFist", length = 30, width = 7, delay = 0.3, second = 0.35, hit = hit(0, 0, 0, 30, 30, 0.6, 30, 6) } },
+		R = { id = "kwR", name = "왕도", desc = "발밑에서 앞으로 금빛 길이 깔리고, 그 길을 따라 30칸 내달린다 (무적). 지나간 길 위로 금빛 기둥이 차례로 솟아 적을 띄운다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 26, iframes = 0.45,
+			mech = { kind = "royalRoad", length = 30, width = 6, run = 0.35, pillars = 6, step = 0.08, hit = hit(0, 0, 0, 22, 20, 0.5, 14), pillar = hit(0, 0, 0, 28, 28, 0.6, 6, 26) } },
+		G = { id = "kwG", name = "권왕강림", desc = "등 뒤에서 관을 쓴 거대한 금빛 왕이 일어선다. 왕이 적을 골라 세 번 땅을 내리찍고, 마지막에 두 주먹을 한꺼번에 내리꽂아 금빛 충격파가 둘레 30칸을 휩쓴다", pose = "ult_king", dur = 3.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "kingDescend", rise = 0.7, punches = 3, every = 0.45, range = 30, radius = 9, hit = hit(0, 0, 0, 50, 50, 0.8, 20, 14), finalAt = 0.5, finalRadius = 30, final = hit(0, 0, 0, 150, 170, 1.6, 70, 26) } },
+	},
+})
+
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -2029,6 +2185,10 @@ local FINISHERS = {
 	mugeuk2 = { name = "진 무극승천장", pose = "void_push" },
 	maehwa2 = { name = "설중매영각", pose = "crescent_kick" },
 	chwi2 = { name = "취선번천각", pose = "drunk_flop" },
+	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
+	eophwa = { name = "겁화승천권", pose = "karma_smash" },
+	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
+	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
 }
 for id, fin in pairs(FINISHERS) do
@@ -2709,7 +2869,7 @@ Config.Story = {
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
 	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고, 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
-	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따른다.", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
+	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고, 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
 	{ title = "두 번째 삶", text = "다시 천외천 너머 혼원경에 올라 두 번째로 환생하라. 환생할수록 얻는 능력치가 커져, 다시 오르는 길은 처음보다 훨씬 빠르다.", goal = { kind = "rebirth", n = 2 }, reward = { coins = 2000000 } },
@@ -3696,6 +3856,11 @@ Poses.stances = {
 	stance_soju = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 } },
 	-- 초·혈마: 짐승처럼 웅크려 오른손의 큰 낫을 머리 위로 치켜들고 (날이 앞으로 드리운다), 왼손 손톱을 낮게 벌린다
 	stance_reaper = { W = { -20, -25, 0 }, N = { 18, 25, 0 }, RS = { 150, 0, 35 }, RE = { 70, 0, 0 }, LS = { 55, 0, -40 }, LE = { 50, 0, 0 } },
+	-- 3.0판 환생 권법
+	stance_rinne = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 75, 0, 10 }, RE = { 40, 0, 0 }, LS = { 50, 0, -30 }, LE = { 115, 0, 0 } },
+	stance_karma = { W = { 18, -20, 0 }, N = { -12, 20, 0 }, RS = { 40, 0, 25 }, RE = { 125, 0, 0 }, LS = { 58, 0, -20 }, LE = { 118, 0, 0 } },
+	stance_mist = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { -15, 0, 30 }, RE = { 25, 0, 0 }, LS = { 40, 0, -35 }, LE = { 45, 0, 0 } },
+	stance_king = { W = { -5, -15, 0 }, N = { -10, 15, 0 }, RS = { 5, 0, 18 }, RE = { 95, 0, 0 }, LS = { 70, 0, -15 }, LE = { 70, 0, 0 } },
 	-- 2.5판 만목: 뿌리내린 나무처럼. 오른손은 가지처럼 위로 펴고, 왼손은 앞으로 낮게 내민다
 	stance_wood = { W = { 5, -15, 0 }, N = { 0, 15, 0 }, RS = { 125, 0, 30 }, RE = { 35, 0, 0 }, LS = { 55, 0, -25 }, LE = { 45, 0, 0 } },
 	-- 적: 무기를 쥐고
@@ -3732,6 +3897,10 @@ Poses.stanceLegs = {
 	stance_soju = { RH = { 16, 0, 12 }, LH = { -12, 0, -14 }, RK = { -32, 0, 0 }, LK = { -14, 0, 0 }, R = { 0, 8, 14, 0.3, -0.45, 0 } },
 	-- 초·혈마: 넓게 벌려 낮게 깔린 다리 (앞발은 굽혀 내딛고 뒷발은 뻗는다)
 	stance_reaper = { RH = { -25, 0, 18 }, LH = { 35, 0, -16 }, RK = { -50, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 0, 0, 0, -1.1, 0 } },
+	stance_rinne = { RH = { -18, 0, 10 }, LH = { 24, 0, -8 }, RK = { -35, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } },
+	stance_karma = { RH = { -25, 0, 16 }, LH = { 30, 0, -14 }, RK = { -55, 0, 0 }, LK = { -50, 0, 0 }, R = { -8, 0, 0, 0, -1.1, 0 } },
+	stance_mist = { RH = { -10, 0, 10 }, LH = { 15, 0, -6 }, RK = { -20, 0, 0 }, LK = { -25, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } },
+	stance_king = { RH = { -8, 0, 12 }, LH = { 12, 0, -12 }, RK = { -15, 0, 0 }, LK = { -18, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } },
 	stance_duel = { RH = { -15, 0, 10 }, LH = { 25, 0, -6 }, RK = { -32, 0, 0 }, LK = { -28, 0, 0 }, R = { -5, 0, 0, 0, -0.55, 0 } },
 	default = { RH = { -10, 0, 6 }, LH = { 14, 0, -4 }, RK = { -16, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0 } },
 }
@@ -5390,10 +5559,214 @@ A.ult_wood = {
 	{ t = 0.7, e = "snap", j = { W = { -20, 0, 0 }, N = { 30, 0, 0 }, RS = { 170, 0, 70 }, RE = { 0, 0, 0 }, LS = { 170, 0, -70 }, LE = { 0, 0, 0 }, RH = { 0, 0, 0 }, LH = { 0, 0, 0 }, RK = { -10, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, 0, 0, 0, 0.8, 0 } } },
 	{ t = 1, j = { RS = { 160, 0, 60 }, LS = { 160, 0, -60 }, R = { 0, 0, 0, 0, 0.5, 0 } } },
 }
+------------------------------------------------------------------------
+-- 3.0판 환생 권법 넷의 동작
+------------------------------------------------------------------------
+-- 윤회권: 한 손은 세운 손바닥으로 앞을 겨누고, 한 손은 가슴 앞에 합장하듯. 등 뒤에 바퀴를 지고 곧게 선다
+local RINNE = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 75, 0, 10 }, RE = { 40, 0, 0 }, LS = { 50, 0, -30 }, LE = { 115, 0, 0 }, RH = { -18, 0, 10 }, LH = { 24, 0, -8 }, RK = { -35, 0, 0 }, LK = { -40, 0, 0 } }
+local function rinneEnd(yaw: number?): Joints
+	local j = table.clone(RINNE)
+	j.R = { 0, yaw or 0, 0, 0, -0.8, 0 }
+	return j
+end
+-- 손바닥을 바퀴 돌리듯 원을 그리며 내민다
+A.rinne_palm_r = {
+	{ t = 0, j = { W = { 0, -40, 0 }, N = { 0, 30, 0 }, RS = { 140, 0, 40 }, RE = { 70, 0, 0 }, LS = { 50, 0, -30 }, LE = { 110, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 35, 0 }, N = { 0, -25, 0 }, RS = { 90, 0, -5 }, RE = { 0, 0, 0 }, LS = { 40, 0, -30 }, LE = { 120, 0, 0 }, RK = { -30, 0, 0 }, LK = { -50, 0, 0 }, R = { -8, 0, 0, 0, -1.0, -0.8 } } },
+	{ t = 1, j = rinneEnd() },
+}
+A.rinne_palm_l = mirror(A.rinne_palm_r)
+-- 몸을 바퀴처럼 눕혀 두 번 돌려 찬다
+A.rinne_wheel_kick = {
+	{ t = 0, j = { W = { 0, -30, 0 }, RS = { 60, 0, 60 }, LS = { 60, 0, -60 }, RE = { 20, 0, 0 }, LE = { 20, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { -10, 0, -25 }, RS = { 80, 0, 90 }, LS = { 80, 0, -90 }, RH = { 95, 0, 30 }, RK = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, -360, 20, 0, -0.2, 0 } } },
+	{ t = 0.7, e = "snap", j = { W = { -10, 0, 25 }, RS = { 80, 0, 90 }, LS = { 80, 0, -90 }, LH = { 95, 0, -30 }, LK = { 0, 0, 0 }, RK = { -20, 0, 0 }, R = { 0, -720, -20, 0, -0.2, 0 } } },
+	{ t = 1, j = rinneEnd(-720) },
+}
+-- 두 손을 겹쳐 앞으로 곧게 쭉 뻗는다 (전생일격)
+A.rinne_thrust = {
+	{ t = 0, j = { W = { -10, -50, 0 }, N = { 0, 40, 0 }, RS = { 30, 0, 30 }, RE = { 120, 0, 0 }, LS = { 40, 0, -10 }, LE = { 120, 0, 0 }, RK = { -60, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -1.2, 0.6 } } },
+	{ t = 0.45, e = "snap", j = { W = { 15, 30, 0 }, N = { -5, -20, 0 }, RS = { 92, 0, -8 }, RE = { 0, 0, 0 }, LS = { 92, 0, 8 }, LE = { 0, 0, 0 }, RH = { -40, 0, 0 }, RK = { -10, 0, 0 }, LH = { 50, 0, 0 }, LK = { -60, 0, 0 }, R = { -12, 0, 0, 0, -1.3, -1.6 } } },
+	{ t = 1, j = rinneEnd() },
+}
+-- 윤회일장 (강타): 손바닥으로 바퀴 무늬를 찍는다. 한 바퀴 돌아 낮게 내리누른다
+A.rinne_seal = {
+	{ t = 0, j = { W = { -15, 0, 0 }, RS = { 170, 0, 20 }, RE = { 30, 0, 0 }, LS = { 50, 0, -30 }, LE = { 110, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 20, 0, 0 }, RS = { 120, 0, 10 }, RE = { 10, 0, 0 }, LS = { 50, 0, -30 }, LE = { 110, 0, 0 }, RK = { -60, 0, 0 }, LK = { -70, 0, 0 }, R = { -10, -360, 0, 0, -1.4, -1.2 } } },
+	{ t = 0.6, e = "snap", j = { W = { 35, 0, 0 }, RS = { 60, 0, 0 }, RE = { 0, 0, 0 }, LS = { 40, 0, -30 }, LE = { 110, 0, 0 }, RK = { -80, 0, 0 }, LK = { -90, 0, 0 }, R = { -15, -360, 0, 0, -1.8, -1.4 } } },
+	{ t = 1, j = rinneEnd(-360) },
+}
+-- 등 뒤의 바퀴를 잡아 머리 위로 크게 돌려 던진다
+A.rinne_throw = {
+	{ t = 0, j = { W = { -20, 20, 0 }, N = { -10, -10, 0 }, RS = { 178, 0, 20 }, RE = { 40, 0, 0 }, LS = { 160, 0, -20 }, LE = { 40, 0, 0 }, RK = { -20, 0, 0 }, LK = { -30, 0, 0 }, R = { 8, 0, 0, 0, -0.4, 0.4 } } },
+	{ t = 0.45, e = "snap", j = { W = { 30, -10, 0 }, N = { 10, 0, 0 }, RS = { 80, 0, 0 }, RE = { 0, 0, 0 }, LS = { 80, 0, 0 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 45, 0, 0 }, LK = { -60, 0, 0 }, R = { -15, 0, 0, 0, -1.1, -1.2 } } },
+	{ t = 1, j = rinneEnd() },
+}
+-- 낮게 미끄러지며 손날로 길게 벤다
+A.rinne_dash = {
+	{ t = 0, j = { W = { 30, -40, 0 }, N = { -20, 40, 0 }, RS = { 20, 0, 60 }, RE = { 30, 0, 0 }, LS = { 40, 0, -40 }, LE = { 90, 0, 0 }, RK = { -80, 0, 0 }, LK = { -60, 0, 0 }, R = { -20, 0, 0, 0, -1.6, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { 30, 50, 0 }, N = { -20, -40, 0 }, RS = { 90, 0, -60 }, RE = { 0, 0, 0 }, LS = { 30, 0, -50 }, LE = { 80, 0, 0 }, RH = { -50, 0, 20 }, RK = { -20, 0, 0 }, LH = { 60, 0, 0 }, LK = { -100, 0, 0 }, R = { -25, 0, 0, 0, -1.9, -1.0 } } },
+	{ t = 1, j = rinneEnd() },
+}
+-- 육도윤회 (오의): 두 손을 하늘로 들어 바퀴를 띄우고, 합장했다가, 두 손바닥으로 땅을 누른다
+A.ult_rinne = {
+	{ t = 0, j = { W = { -20, 0, 0 }, N = { -30, 0, 0 }, RS = { 170, 0, 30 }, RE = { 10, 0, 0 }, LS = { 170, 0, -30 }, LE = { 10, 0, 0 }, R = { 5, 0, 0, 0, 0, 0 } } },
+	{ t = 0.3, j = { W = { -25, 0, 0 }, N = { -35, 0, 0 }, RS = { 175, 0, 40 }, RE = { 5, 0, 0 }, LS = { 175, 0, -40 }, LE = { 5, 0, 0 }, R = { 5, 0, 0, 0, 0.2, 0 } } },
+	{ t = 0.55, e = "snap", j = { W = { 0, 0, 0 }, N = { 0, 0, 0 }, RS = { 70, 0, -25 }, RE = { 100, 0, 0 }, LS = { 70, 0, 25 }, LE = { 100, 0, 0 }, RK = { -20, 0, 0 }, LK = { -20, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
+	{ t = 0.8, e = "snap", j = { W = { 45, 0, 0 }, N = { 20, 0, 0 }, RS = { 55, 0, 10 }, RE = { 0, 0, 0 }, LS = { 55, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 20 }, LH = { 40, 0, -20 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { -20, 0, 0, 0, -1.9, -0.6 } } },
+	{ t = 1, j = rinneEnd() },
+}
+
+-- 업화권: 낮게 웅크린 싸움꾼. 두 주먹을 턱 앞에 붙이고 어깨를 앞으로 말아 넣는다
+local KARMA = { W = { 18, -20, 0 }, N = { -12, 20, 0 }, RS = { 40, 0, 25 }, RE = { 125, 0, 0 }, LS = { 58, 0, -20 }, LE = { 118, 0, 0 }, RH = { -25, 0, 16 }, LH = { 30, 0, -14 }, RK = { -55, 0, 0 }, LK = { -50, 0, 0 } }
+local function karmaEnd(yaw: number?): Joints
+	local j = table.clone(KARMA)
+	j.R = { -8, yaw or 0, 0, 0, -1.1, 0 }
+	return j
+end
+-- 어깨부터 비틀어 꽂는 무거운 직권
+A.karma_jab_r = {
+	{ t = 0, j = { W = { 20, -50, 0 }, N = { -10, 45, 0 }, RS = { 30, 0, 40 }, RE = { 130, 0, 0 }, LS = { 60, 0, -20 }, LE = { 110, 0, 0 }, R = { -8, 0, 0, 0, -1.1, 0.4 } } },
+	{ t = 0.42, e = "snap", j = { W = { 25, 45, 0 }, N = { -10, -40, 0 }, RS = { 95, 0, -5 }, RE = { 0, 0, 0 }, LS = { 40, 0, -40 }, LE = { 125, 0, 0 }, RH = { -40, 0, 10 }, LH = { 45, 0, -10 }, LK = { -60, 0, 0 }, R = { -14, 0, 0, 0, -1.3, -1.2 } } },
+	{ t = 1, j = karmaEnd() },
+}
+A.karma_jab_l = mirror(A.karma_jab_r)
+-- 사슬을 휘감듯 두 팔을 크게 휘두르며 한 바퀴
+A.karma_chain = {
+	{ t = 0, j = { W = { 10, -60, 0 }, RS = { 70, 0, 80 }, RE = { 20, 0, 0 }, LS = { 50, 0, -40 }, LE = { 90, 0, 0 }, R = { -5, 0, 0, 0, -1.1, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 10, 40, 0 }, RS = { 95, 0, 90 }, RE = { 5, 0, 0 }, LS = { 95, 0, -90 }, LE = { 5, 0, 0 }, RK = { -50, 0, 0 }, LK = { -50, 0, 0 }, R = { -5, -200, 0, 0, -1.2, 0 } } },
+	{ t = 0.75, e = "snap", j = { W = { 10, 40, 0 }, RS = { 95, 0, 90 }, RE = { 5, 0, 0 }, LS = { 95, 0, -90 }, LE = { 5, 0, 0 }, RK = { -50, 0, 0 }, LK = { -50, 0, 0 }, R = { -5, -360, 0, 0, -1.2, -0.4 } } },
+	{ t = 1, j = karmaEnd(-360) },
+}
+-- 뛰어올라 두 주먹을 모아 땅을 내리찍는다 (겁화추)
+A.karma_smash = {
+	{ t = 0, j = { W = { -25, 0, 0 }, N = { -20, 0, 0 }, RS = { 175, 0, 15 }, RE = { 30, 0, 0 }, LS = { 175, 0, -15 }, LE = { 30, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 10, 0, 0, 0, 0.6, 0.2 } } },
+	{ t = 0.5, e = "snap", j = { W = { 50, 0, 0 }, N = { 20, 0, 0 }, RS = { 50, 0, 8 }, RE = { 0, 0, 0 }, LS = { 50, 0, -8 }, LE = { 0, 0, 0 }, RH = { -40, 0, 20 }, LH = { 40, 0, -20 }, RK = { -100, 0, 0 }, LK = { -80, 0, 0 }, R = { -30, 0, 0, 0, -1.9, -1.2 } } },
+	{ t = 1, j = karmaEnd() },
+}
+-- 업화일권 (강타): 주먹을 뒤로 한껏 당겼다가 몸째 날아들며 꽂는다
+A.karma_charge = {
+	{ t = 0, j = { W = { 10, -70, 0 }, N = { 0, 60, 0 }, RS = { -30, 0, 40 }, RE = { 100, 0, 0 }, LS = { 90, 0, -20 }, LE = { 40, 0, 0 }, RK = { -70, 0, 0 }, LK = { -40, 0, 0 }, R = { -5, 0, 0, 0, -1.4, 0.8 } } },
+	{ t = 0.45, e = "snap", j = { W = { 30, 60, 0 }, N = { -15, -50, 0 }, RS = { 95, 0, -10 }, RE = { 0, 0, 0 }, LS = { 20, 0, -60 }, LE = { 120, 0, 0 }, RH = { -60, 0, 0 }, RK = { -5, 0, 0 }, LH = { 70, 0, 0 }, LK = { -90, 0, 0 }, R = { -25, 0, 0, 0, -1.4, -2.0 } } },
+	{ t = 1, j = karmaEnd() },
+}
+-- 두 주먹을 맞부딪쳤다가 양옆으로 벌려 불덩이를 날린다
+A.karma_throw = {
+	{ t = 0, j = { W = { 5, 0, 0 }, RS = { 80, 0, -30 }, RE = { 100, 0, 0 }, LS = { 80, 0, 30 }, LE = { 100, 0, 0 }, R = { -5, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { -10, 0, 0 }, N = { -10, 0, 0 }, RS = { 100, 0, 60 }, RE = { 10, 0, 0 }, LS = { 100, 0, -60 }, LE = { 10, 0, 0 }, RK = { -40, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -1.0, -0.4 } } },
+	{ t = 1, j = karmaEnd() },
+}
+-- 검은 불꽃이 되어 낮게 내달리며 주먹을 끌고 간다
+A.karma_dash = {
+	{ t = 0, j = { W = { 40, 0, 0 }, N = { -30, 0, 0 }, RS = { -40, 0, 30 }, RE = { 40, 0, 0 }, LS = { -40, 0, -30 }, LE = { 40, 0, 0 }, RK = { -90, 0, 0 }, LK = { -60, 0, 0 }, R = { -30, 0, 0, 0, -1.7, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { 35, 30, 0 }, N = { -25, -20, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = { -40, 0, -30 }, LE = { 40, 0, 0 }, RH = { -40, 0, 10 }, LH = { 60, 0, 0 }, LK = { -100, 0, 0 }, R = { -30, 0, 0, 0, -1.8, -1.4 } } },
+	{ t = 1, j = karmaEnd() },
+}
+-- 무간지옥 (오의): 무릎을 꿇고 주먹으로 땅을 내리친 뒤, 일어서며 손을 움켜쥐어 하늘로 치켜든다
+A.ult_karma = {
+	{ t = 0, j = { W = { -20, 0, 0 }, N = { -20, 0, 0 }, RS = { 178, 0, 10 }, RE = { 40, 0, 0 }, LS = { 120, 0, -40 }, LE = { 60, 0, 0 }, R = { 5, 0, 0, 0, 0.2, 0 } } },
+	{ t = 0.2, e = "snap", j = { W = { 55, 0, 0 }, N = { 20, 0, 0 }, RS = { 40, 0, 0 }, RE = { 0, 0, 0 }, LS = { 60, 0, -40 }, LE = { 60, 0, 0 }, RH = { 90, 0, 0 }, RK = { -90, 0, 0 }, LH = { -20, 0, 0 }, LK = { -110, 0, 0 }, R = { -10, 0, 0, 0, -1.9, -0.6 } } },
+	{ t = 0.6, j = { W = { 55, 0, 0 }, N = { 25, 0, 0 }, RS = { 38, 0, 0 }, RE = { 0, 0, 0 }, LS = { 60, 0, -40 }, LE = { 60, 0, 0 }, RH = { 90, 0, 0 }, RK = { -90, 0, 0 }, LH = { -20, 0, 0 }, LK = { -110, 0, 0 }, R = { -10, 0, 0, 0, -2.0, -0.6 } } },
+	{ t = 0.8, e = "snap", j = { W = { -15, 0, 0 }, N = { -30, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 60, 0, -50 }, LE = { 90, 0, 0 }, RK = { -10, 0, 0 }, LK = { -10, 0, 0 }, R = { 5, 0, 0, 0, 0.3, 0 } } },
+	{ t = 1, j = karmaEnd() },
+}
+
+-- 무상권: 힘을 다 뺀 채 몸을 반쯤 돌리고, 두 팔은 바람에 흩날리듯 낮게 늘어뜨린다
+local MIST = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { -15, 0, 30 }, RE = { 25, 0, 0 }, LS = { 40, 0, -35 }, LE = { 45, 0, 0 }, RH = { -10, 0, 10 }, LH = { 15, 0, -6 }, RK = { -20, 0, 0 }, LK = { -25, 0, 0 } }
+local function mistEnd(yaw: number?): Joints
+	local j = table.clone(MIST)
+	j.R = { 0, yaw or 0, 0, 0, -0.4, 0 }
+	return j
+end
+-- 흐르듯 다가가 손끝으로 툭 친다
+A.ghost_palm_r = {
+	{ t = 0, j = { W = { 0, -50, 0 }, N = { 0, 45, 0 }, RS = { -30, 0, 30 }, RE = { 20, 0, 0 }, LS = { 30, 0, -40 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0.4 } } },
+	{ t = 0.4, e = "snap", j = { W = { 5, 30, 0 }, N = { 0, -25, 0 }, RS = { 88, 0, 10 }, RE = { 0, 0, 0 }, LS = { 20, 0, -50 }, LE = { 30, 0, 0 }, RK = { -15, 0, 0 }, LH = { 30, 0, 0 }, LK = { -30, 0, 0 }, R = { -5, 0, 0, 0, -0.6, -1.0 } } },
+	{ t = 1, j = mistEnd() },
+}
+A.ghost_palm_l = mirror(A.ghost_palm_r)
+-- 안개처럼 낮게 가라앉아 다리로 두 바퀴 쓴다
+A.ghost_sweep = {
+	{ t = 0, j = { W = { 20, 0, 0 }, RS = { 30, 0, 60 }, LS = { 30, 0, -60 }, RH = { 40, 0, 40 }, RK = { -10, 0, 0 }, LK = { -100, 0, 0 }, R = { 0, 0, 0, 0, -1.8, 0 } } },
+	{ t = 0.45, e = "snap", j = { W = { 20, 0, 0 }, RS = { 20, 0, 80 }, LS = { 20, 0, -80 }, RH = { 80, 0, 60 }, RK = { 0, 0, 0 }, LK = { -110, 0, 0 }, R = { 0, -360, 0, 0, -2.0, 0 } } },
+	{ t = 0.8, e = "snap", j = { W = { 20, 0, 0 }, RS = { 20, 0, 80 }, LS = { 20, 0, -80 }, RH = { 80, 0, 60 }, RK = { 0, 0, 0 }, LK = { -110, 0, 0 }, R = { 0, -720, 0, 0, -2.0, 0 } } },
+	{ t = 1, j = mistEnd(-720) },
+}
+-- 사라졌다가 상대 앞에서 손바닥으로 꿰뚫는다 (몸을 길게 늘인다)
+A.ghost_flash = {
+	{ t = 0, j = { W = { 40, -20, 0 }, N = { -30, 20, 0 }, RS = { -50, 0, 20 }, RE = { 10, 0, 0 }, LS = { -50, 0, -20 }, LE = { 10, 0, 0 }, RK = { -70, 0, 0 }, LK = { -60, 0, 0 }, R = { -30, 0, 0, 0, -1.6, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 10, 40, 0 }, N = { -5, -30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { -30, 0, -40 }, LE = { 20, 0, 0 }, RH = { -50, 0, 0 }, RK = { 0, 0, 0 }, LH = { 50, 0, 0 }, LK = { -40, 0, 0 }, R = { -15, 0, 0, 0, -1.1, -2.0 } } },
+	{ t = 1, j = mistEnd() },
+}
+-- 두 팔을 활짝 벌리며 몸이 흩어진다 (허상)
+A.ghost_split = {
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 60, 0, -30 }, RE = { 90, 0, 0 }, LS = { 60, 0, 30 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -15, 0, 0 }, N = { -20, 0, 0 }, RS = { 110, 0, 85 }, RE = { 0, 0, 0 }, LS = { 110, 0, -85 }, LE = { 0, 0, 0 }, RH = { 0, 0, 25 }, LH = { 0, 0, -25 }, R = { 0, 0, 0, 0, 0.2, 0 } } },
+	{ t = 1, j = mistEnd() },
+}
+-- 제행무상 (오의): 두 손을 모아 눈을 감았다가, 한 손을 옆으로 그으며 사라진다
+A.ult_mist = {
+	{ t = 0, j = { W = { 0, 0, 0 }, N = { 15, 0, 0 }, RS = { 60, 0, -30 }, RE = { 110, 0, 0 }, LS = { 60, 0, 30 }, LE = { 110, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.4, j = { W = { 0, 0, 0 }, N = { 20, 0, 0 }, RS = { 62, 0, -30 }, RE = { 112, 0, 0 }, LS = { 62, 0, 30 }, LE = { 112, 0, 0 }, R = { 0, 0, 0, 0, -0.35, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { 0, 60, 0 }, N = { 0, -40, 0 }, RS = { 92, 0, 80 }, RE = { 0, 0, 0 }, LS = { 30, 0, -30 }, LE = { 60, 0, 0 }, RK = { -40, 0, 0 }, LK = { -50, 0, 0 }, R = { -5, 0, 0, 0, -1.0, 0 } } },
+	{ t = 1, j = mistEnd() },
+}
+
+-- 권왕신권: 턱을 들고 가슴을 편 채, 한 주먹은 허리에 두고 한 팔뚝은 앞으로 세운다
+local KING = { W = { -5, -15, 0 }, N = { -10, 15, 0 }, RS = { 5, 0, 18 }, RE = { 95, 0, 0 }, LS = { 70, 0, -15 }, LE = { 70, 0, 0 }, RH = { -8, 0, 12 }, LH = { 12, 0, -12 }, RK = { -15, 0, 0 }, LK = { -18, 0, 0 } }
+local function kingEnd(yaw: number?): Joints
+	local j = table.clone(KING)
+	j.R = { 0, yaw or 0, 0, 0, -0.3, 0 }
+	return j
+end
+-- 무게를 실은 곧은 정권
+A.king_jab_r = {
+	{ t = 0, j = { W = { 0, -45, 0 }, N = { -10, 40, 0 }, RS = { 10, 0, 30 }, RE = { 120, 0, 0 }, LS = { 70, 0, -15 }, LE = { 80, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0.3 } } },
+	{ t = 0.42, e = "snap", j = { W = { 10, 40, 0 }, N = { -10, -35, 0 }, RS = { 92, 0, -4 }, RE = { 0, 0, 0 }, LS = { 30, 0, -20 }, LE = { 115, 0, 0 }, RH = { -30, 0, 10 }, LH = { 35, 0, -10 }, LK = { -45, 0, 0 }, R = { -8, 0, 0, 0, -0.8, -1.2 } } },
+	{ t = 1, j = kingEnd() },
+}
+A.king_jab_l = mirror(A.king_jab_r)
+-- 낮게 앉았다가 하늘로 솟구치며 올려 친다
+A.king_uppercut = {
+	{ t = 0, j = { W = { 25, -30, 0 }, N = { -15, 20, 0 }, RS = { -10, 0, 30 }, RE = { 110, 0, 0 }, LS = { 60, 0, -20 }, LE = { 100, 0, 0 }, RK = { -90, 0, 0 }, LK = { -80, 0, 0 }, R = { -10, 0, 0, 0, -1.8, 0 } } },
+	{ t = 0.45, e = "snap", j = { W = { -25, 30, 0 }, N = { -35, -20, 0 }, RS = { 170, 0, 5 }, RE = { 20, 0, 0 }, LS = { 30, 0, -40 }, LE = { 110, 0, 0 }, RH = { 10, 0, 0 }, RK = { -5, 0, 0 }, LH = { 60, 0, 0 }, LK = { -90, 0, 0 }, R = { 10, 0, 0, 0, 1.2, -0.6 } } },
+	{ t = 1, j = kingEnd() },
+}
+-- 두 주먹을 깍지 껴 머리 위로 들었다가 망치처럼 내리친다
+A.king_hammer = {
+	{ t = 0, j = { W = { -25, 0, 0 }, N = { -20, 0, 0 }, RS = { 175, 0, -10 }, RE = { 30, 0, 0 }, LS = { 175, 0, 10 }, LE = { 30, 0, 0 }, R = { 8, 0, 0, 0, 0.1, 0.3 } } },
+	{ t = 0.5, e = "snap", j = { W = { 45, 0, 0 }, N = { 15, 0, 0 }, RS = { 60, 0, -10 }, RE = { 0, 0, 0 }, LS = { 60, 0, 10 }, LE = { 0, 0, 0 }, RH = { -35, 0, 20 }, LH = { 35, 0, -20 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { -25, 0, 0, 0, -1.6, -1.0 } } },
+	{ t = 1, j = kingEnd() },
+}
+-- 왕권일격 · 왕권: 허리를 크게 틀어 온몸으로 내지르는 대포 같은 주먹 (앞발을 크게 내딛는다)
+A.king_cannon = {
+	{ t = 0, j = { W = { 5, -75, 0 }, N = { -10, 65, 0 }, RS = { -20, 0, 40 }, RE = { 110, 0, 0 }, LS = { 90, 0, -10 }, LE = { 30, 0, 0 }, RK = { -50, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0.8 } } },
+	{ t = 0.5, e = "snap", j = { W = { 20, 60, 0 }, N = { -10, -55, 0 }, RS = { 95, 0, -6 }, RE = { 0, 0, 0 }, LS = { 10, 0, -50 }, LE = { 120, 0, 0 }, RH = { -55, 0, 10 }, RK = { 0, 0, 0 }, LH = { 75, 0, -10 }, LK = { -80, 0, 0 }, R = { -15, 0, 0, 0, -1.4, -2.0 } } },
+	{ t = 1, j = kingEnd() },
+}
+-- 금빛 길 위를 가슴을 펴고 내달린다 (한 주먹을 앞으로)
+A.king_dash = {
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { -15, 0, 0 }, RS = { -30, 0, 20 }, RE = { 60, 0, 0 }, LS = { -30, 0, -20 }, LE = { 60, 0, 0 }, RK = { -70, 0, 0 }, LK = { -50, 0, 0 }, R = { -15, 0, 0, 0, -1.2, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { 15, 25, 0 }, N = { -15, -20, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = { -40, 0, -30 }, LE = { 50, 0, 0 }, RH = { -45, 0, 10 }, LH = { 55, 0, 0 }, LK = { -80, 0, 0 }, R = { -18, 0, 0, 0, -1.2, -1.6 } } },
+	{ t = 1, j = kingEnd() },
+}
+-- 권왕강림 (오의): 두 팔을 넓게 벌려 왕을 부르고, 주먹을 쥐어 하늘을 가리켰다가, 두 주먹을 땅에 내리꽂는다
+A.ult_king = {
+	{ t = 0, j = { W = { -15, 0, 0 }, N = { -25, 0, 0 }, RS = { 120, 0, 70 }, RE = { 0, 0, 0 }, LS = { 120, 0, -70 }, LE = { 0, 0, 0 }, R = { 5, 0, 0, 0, 0, 0 } } },
+	{ t = 0.3, j = { W = { -20, 0, 0 }, N = { -30, 0, 0 }, RS = { 125, 0, 75 }, RE = { 0, 0, 0 }, LS = { 125, 0, -75 }, LE = { 0, 0, 0 }, R = { 5, 0, 0, 0, 0.2, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -10, 0, 0 }, N = { -25, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 20, 0, -15 }, LE = { 110, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 0.82, e = "snap", j = { W = { 50, 0, 0 }, N = { 20, 0, 0 }, RS = { 50, 0, 10 }, RE = { 0, 0, 0 }, LS = { 50, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 20 }, LH = { 40, 0, -20 }, RK = { -95, 0, 0 }, LK = { -95, 0, 0 }, R = { -25, 0, 0, 0, -2.0, -0.8 } } },
+	{ t = 1, j = kingEnd() },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
 Poses.limbs = {
+	rinne_palm_r = { "RightHand" }, rinne_palm_l = { "LeftHand" }, rinne_wheel_kick = { "RightFoot", "LeftFoot" }, rinne_thrust = { "RightHand", "LeftHand" }, rinne_seal = { "RightHand" }, rinne_throw = { "RightHand", "LeftHand" }, rinne_dash = { "RightHand" }, ult_rinne = { "RightHand", "LeftHand" },
+	karma_jab_r = { "RightHand" }, karma_jab_l = { "LeftHand" }, karma_chain = { "RightHand", "LeftHand" }, karma_smash = { "RightHand", "LeftHand" }, karma_charge = { "RightHand" }, karma_throw = { "RightHand", "LeftHand" }, karma_dash = { "RightHand" }, ult_karma = { "RightHand" },
+	ghost_palm_r = { "RightHand" }, ghost_palm_l = { "LeftHand" }, ghost_sweep = { "RightFoot" }, ghost_flash = { "RightHand" }, ghost_split = { "RightHand", "LeftHand" }, ult_mist = { "RightHand" },
+	king_jab_r = { "RightHand" }, king_jab_l = { "LeftHand" }, king_uppercut = { "RightHand" }, king_hammer = { "RightHand", "LeftHand" }, king_cannon = { "RightHand" }, king_dash = { "RightHand" }, ult_king = { "RightHand", "LeftHand" },
 	wood_palm_r = { "RightHand" }, wood_palm_l = { "LeftHand" }, wood_sweep = { "RightFoot" }, wood_slam = { "RightHand", "LeftHand" }, wood_flick = { "RightHand" }, wood_bloom = { "RightHand", "LeftHand" }, ult_wood = { "RightHand", "LeftHand" },
 	palm_r = { "RightHand" }, palm_l = { "LeftHand" }, circle_palm = { "RightHand" }, double_palm = { "RightHand", "LeftHand" },
 	push_palm = { "RightHand" }, whirl = { "RightHand", "LeftHand" }, ult_raise = { "RightHand", "LeftHand" },
@@ -5742,6 +6115,13 @@ local function sanitize(data: any): Profile
 	p.autoOn = data.autoOn == true or nil
 	p.rebirth = math.floor(num(data.rebirth, Config.REBIRTH.max))
 	p.samsara = math.min(p.rebirth, math.floor(num(data.samsara, Config.REBIRTH.max)))
+	-- 3.0판: 넘은 시련의 환생 권법 (2.9판에 넘은 기록에도 준다)
+	for i = 1, p.samsara do
+		local sid = Config.REBIRTH_STYLES[i]
+		if sid then
+			p.styles[sid] = true
+		end
+	end
 	if type(data.perks) == "table" then
 		local left = Config.perkPoints(p.rebirth, p.samsara)
 		for _, pk in ipairs(Config.PERKS) do
@@ -5881,6 +6261,21 @@ function Calc.gateNext(p: Profile): number?
 		return now + 1
 	end
 	return nil
+end
+
+-- 3.0판: 능력치를 더한다. 관문에 막혀 있으면 (능력치는 다음 경지에 닿았는데 관문을 못 넘었으면) 더 오르지 않는다
+-- 오르기 전 합이 이미 문턱을 넘어 있던 예전 기록은 그 자리에서 멈춘다 (깎지는 않는다). 실제로 오른 양을 돌려준다
+local function addStat(p: Profile, id: string, amount: number): number
+	local before = Calc.total(p)
+	p.stats[id] += amount
+	local nxt = Calc.gateNext(p)
+	if nxt then
+		local over = Calc.total(p) - math.max(before, Config.Realms[nxt].need)
+		if over > 0 then
+			p.stats[id] -= math.min(amount, over)
+		end
+	end
+	return Calc.total(p) - before
 end
 
 -- 2.9판: 지금 도전할 수 있는 윤회의 시련 (없으면 nil). n번째 환생 뒤 생사경에 오르면 n번째가 열린다
@@ -6462,7 +6857,7 @@ function Story.advance(player: Player)
 		local r = ch.reward or {}
 		p.coins += r.coins or 0
 		for _, stat in ipairs(Config.Stats) do
-			p.stats[stat.id] += r.stats or 0
+			addStat(p, stat.id, r.stats or 0)
 		end
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
@@ -7000,7 +7395,7 @@ Combat.init(Push, {
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
 					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
-						p.stats[st.id] += gain
+						addStat(p, st.id, gain)
 					end
 					Push:FireClient(killer, "simmaWin", { gain = gain })
 					refreshFighter(killer)
@@ -7074,10 +7469,10 @@ Combat.init(Push, {
 						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
 					end
 					local each = math.max(1, math.floor(g / #Config.Stats))
+					statGain = 0
 					for _, sd in ipairs(Config.Stats) do
-						p.stats[sd.id] += each
+						statGain += addStat(p, sd.id, each)
 					end
-					statGain = each * #Config.Stats
 					refreshFighter(killer)
 					Story.check(killer)
 				end
@@ -7849,12 +8244,25 @@ function Rebirth.samsaraWon(player: Player, n: number)
 	end
 	local SA = Config.SAMSARA
 	p.samsara = n
+	-- 3.0판: 그림자가 n번째 환생 권법을 남기고 간다
+	local sid = Config.REBIRTH_STYLES[n]
+	local gotStyle = sid ~= nil and not p.styles[sid] and Config.STYLE_BY_ID[sid] ~= nil
+	if gotStyle then
+		p.styles[sid] = true
+	end
 	p.skyGems += SA.gems[n]
 	p.scrolls += SA.scrolls[n]
 	p.coins += SA.coins[n]
 	st.dirty = true
 	Push:FireAllClients("realm", { name = player.DisplayName, realm = "윤회의 시련 " .. n })
-	Push:FireClient(player, "samsaraWon", { n = n, gems = SA.gems[n], scrolls = SA.scrolls[n], coins = SA.coins[n], points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p) })
+	Push:FireClient(player, "samsaraWon", { n = n, gems = SA.gems[n], scrolls = SA.scrolls[n], coins = SA.coins[n], points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p), style = gotStyle and sid or nil })
+	if gotStyle then
+		task.delay(2.5, function()
+			if player.Parent then
+				Push:FireClient(player, "learned", { style = sid, hidden = true })
+			end
+		end)
+	end
 	refreshFighter(player)
 	Story.check(player)
 	pushState(player)
@@ -7866,7 +8274,7 @@ function Gate.notify(player: Player, p: Profile, st: State)
 	if nxt and (st :: any).gateNotified ~= nxt then
 		(st :: any).gateNotified = nxt
 		Push:FireClient(player, "dialog", { who = "⛩ 경지의 관문", title = Config.Realms[nxt].name .. "의 관문이 열렸다",
-			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. (능력치 창의 '⛩ 관문 도전')" })
+			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. 관문을 넘기 전에는 능력치가 더 오르지 않는다. (능력치 창의 '⛩ 관문 도전')" })
 		pushState(player)
 	end
 end
@@ -8139,7 +8547,7 @@ function Tower.killed(player: Player, ef: any)
 			local g = math.min(Config.killGain(want), Config.killGain(rewardPower(player)) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
 			local each = math.max(1, math.floor(g / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			stats = each * #Config.Stats
 			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
@@ -8367,7 +8775,7 @@ function Maze.killed(player: Player, ef: any)
 		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
-			p.stats[sd.id] += each
+			addStat(p, sd.id, each)
 		end
 		states[player].dirty = true
 		refreshFighter(player)
@@ -8390,7 +8798,7 @@ function Maze.finish(player: Player, run: any)
 			local R = M.reward
 			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			p.skyGems += R.gems
 			p.coins += R.coins
@@ -8754,12 +9162,19 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	local beforeIdx = idx
 	if info.gains then
 		-- 여러 능력치가 함께 오르는 수련
+		local got = 0
 		for stat, k in pairs(info.gains) do
-			p.stats[stat] += math.max(1, math.floor(gain * k * mult + 0.5))
+			local d = addStat(p, stat, math.max(1, math.floor(gain * k * mult + 0.5)))
+			if stat == info.stat then
+				got = d
+			end
 		end
-		amount = math.max(1, math.floor(gain * (info.gains[info.stat] or 1) * mult + 0.5))
+		amount = got
 	else
-		p.stats[info.stat] += amount
+		amount = addStat(p, info.stat, amount)
+	end
+	if amount <= 0 and Calc.gateNext(p) then
+		toast(player, "⛩ 관문을 넘어야 능력치가 더 올라요 (능력치 창 → 관문 도전)")
 	end
 	st.dirty = true
 	local afterIdx, realm = Calc.realm(p)
@@ -9880,7 +10295,7 @@ function Raid.killed(f: any)
 			p.counts.raid = (p.counts.raid or 0) + 1
 			task.defer(Story.check, player)
 			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += each
+				addStat(p, sd.id, each)
 			end
 			st.dirty = true
 			refreshFighter(player)
@@ -16768,6 +17183,331 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	-- 3.0판 환생 권법의 기술 ------------------------------------------------
+	elseif kind == "wheelThrow" then
+		-- 윤회권 윤회륜 (E): 등 뒤의 바퀴를 던진다. 세워진 채 구르며 앞으로 갔다가 내게로 되돌아온다
+		-- 바퀴 자리 = 던진 자리에서 지금 내 자리로 옮겨 가는 점 + 앞으로 dist × sin(πu) (화면도 같은 식)
+		local from = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "wheelThrow", m = f.model, from = from, dir = look, dist = m.dist, time = m.time / sp, style = style })
+		local last: { [any]: number } = {}
+		local n = math.floor(m.time / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				local u = i / n
+				local pos = from:Lerp(f.root.Position, u) + look * (m.dist * math.sin(u * math.pi))
+				local now = os.clock()
+				for _, o in ipairs(hostilesNear(f, pos, m.radius)) do
+					if not last[o] or now - last[o] > 0.25 then
+						last[o] = now
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+	elseif kind == "pastStep" then
+		-- 윤회권 전생보 (R): 앞으로 미끄러지며 베고, 지난 삶의 그림자 둘이 같은 길을 다시 내달린다
+		local a = f.root.Position
+		local b = a + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "pastStep", m = f.model, from = a, to = b, echoes = m.echoes, delay = m.delay / sp, gap = m.gap / sp, style = style })
+		after(0.15, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local echo = scaled(m.echo, sc)
+		for k = 1, m.echoes do
+			after(m.delay + (k - 1) * m.gap + 0.12, function()
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					strike(f, o, echo, move)
+				end
+			end)
+		end
+	elseif kind == "sixRealms" then
+		-- 윤회권 육도윤회 (오의): 하늘의 큰 바퀴에서 여섯 구슬이 떨어져 차례로 적에게 꽂히고, 바퀴가 땅에 누워 갈며 돈다
+		local center = f.root.Position
+		local list = nearestList(f, m.range, m.n)
+		local spots = {}
+		for i = 1, m.n do
+			local t = list[i]
+			if t then
+				spots[i] = t.root.Position
+			else
+				local a = (i - 1) / m.n * math.pi * 2
+				spots[i] = center + Vector3.new(math.cos(a), 0, math.sin(a)) * 12
+			end
+		end
+		local T = m.rise + m.n * m.every + m.slamAt
+		Push:FireAllClients("skillfx", { kind = "sixRealms", m = f.model, at = center, spots = spots, rise = m.rise / sp, every = m.every / sp, slam = T / sp, grind = m.grind / sp, radius = m.grindRadius, style = style })
+		for i = 1, m.n do
+			after(m.rise + (i - 1) * m.every + 0.12, function()
+				for _, o in ipairs(hostilesNear(f, spots[i], m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		local gh = scaled(m.grindHit, sc)
+		local ticks = math.floor(m.grind / m.grindEvery)
+		for k = 0, ticks - 1 do
+			after(T + k * m.grindEvery, function()
+				for _, o in ipairs(hostilesNear(f, center, m.grindRadius)) do
+					pullTo(o, center, 10)
+					strike(f, o, gh, move)
+				end
+			end)
+		end
+		after(T + m.grind, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "karmaOrbs" then
+		-- 업화권 업화탄 (E): 검은 불덩이 셋이 가까운 적 셋을 쫓아 날아가 터진다 (적이 없으면 앞으로)
+		local list = nearestList(f, m.range, m.n)
+		local points = {}
+		for i = 1, m.n do
+			local t = list[(i - 1) % math.max(1, #list) + 1]
+			if t then
+				points[i] = t.root.Position
+			else
+				points[i] = f.root.Position + (look + rightOf(look) * ((i - 2) * 0.35)).Unit * 18
+			end
+		end
+		local targets = {}
+		for i = 1, m.n do
+			local t = list[(i - 1) % math.max(1, #list) + 1]
+			targets[i] = t and t.model or false
+		end
+		Push:FireAllClients("skillfx", { kind = "karmaOrbs", m = f.model, targets = targets, points = points, delay = m.delay / sp, travel = m.travel / sp, radius = m.radius, style = style })
+		for i = 1, m.n do
+			after(m.delay + m.travel, function()
+				local t = list[(i - 1) % math.max(1, #list) + 1]
+				local at = (t and not t.dead and t.root.Parent) and t.root.Position or points[i]
+				for _, o in ipairs(hostilesNear(f, at, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "hellTrail" then
+		-- 업화권 겁화보 (R): 검은 불꽃이 되어 내달린 길이 갈라지며 타고, 마지막에 한꺼번에 치솟는다
+		local a = f.root.Position
+		local b = a + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "hellTrail", m = f.model, from = a, to = b, width = m.width, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 0, n - 1 do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width + 1)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "avici" then
+		-- 업화권 무간지옥 (오의): 지옥불 기둥이 세 겹으로 퍼져 솟으며 적을 가운데로 끌고, 땅속의 불타는 손이 가운데를 움켜쥐어 터뜨린다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "avici", m = f.model, at = center, radius = m.radius, waves = m.waves, delay = m.delay / sp, every = m.every / sp, handAt = m.handAt / sp, grab = m.grab / sp, style = style })
+		local band = m.radius / m.waves
+		for w = 1, m.waves do
+			after(m.delay + (w - 1) * m.every, function()
+				local r = band * w
+				for _, o in ipairs(hostilesNear(f, center, r + 2)) do
+					local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
+					if d >= r - band - 1 then
+						strike(f, o, hit, move)
+					end
+					pullTo(o, center, m.pull)
+				end
+			end)
+		end
+		local T = m.delay + m.waves * m.every + m.handAt
+		for k = 0, 3 do
+			after(T + k * m.grab / 4, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					pullTo(o, center, m.pull)
+				end
+			end)
+		end
+		after(T + m.grab, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "phantomBlink" then
+		-- 무상권 무상영 (E): 안개가 되어 가까운 적들의 등 뒤로 차례로 나타나며 친다 (그동안 무적)
+		local list = nearestList(f, m.range, m.n)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + math.max(1, #list) * m.every + 0.3) / sp)
+		Push:FireAllClients("skillfx", { kind = "phantomBlink", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, style = style })
+		if #list == 0 then
+			after(m.delay, function()
+				local p = f.root.Position + look * 12
+				moveTo(f, CFrame.lookAt(p, p + look))
+				for _, o in ipairs(hostilesNear(f, p, 6)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		for i, t in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				if t.dead or not t.root.Parent then
+					return
+				end
+				local tp = t.root.Position
+				local d = flat(tp - f.root.Position)
+				local p = Vector3.new(tp.X, f.root.Position.Y, tp.Z) + d * 3.2
+				moveTo(f, CFrame.lookAt(p, Vector3.new(tp.X, p.Y, tp.Z)))
+				strike(f, t, hit, move)
+				for _, o in ipairs(hostilesNear(f, tp, 5)) do
+					if o ~= t then
+						strike(f, o, hit, move)
+					end
+				end
+			end)
+		end
+	elseif kind == "illusions" then
+		-- 무상권 허상 (R): 몸이 흩어지며 둘레에 허상 셋. 허상이 적을 끌어모았다가 안개로 터진다 (나는 잠시 보이지 않는다)
+		local center = f.root.Position
+		local rot = math.atan2(look.Z, look.X)
+		local spots = {}
+		for i = 1, m.n do
+			local a = rot + (i - 1) / m.n * math.pi * 2
+			table.insert(spots, center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius)
+		end
+		f.model:SetAttribute("Vanish", true)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.vanish / sp)
+		Push:FireAllClients("skillfx", { kind = "illusions", m = f.model, at = center, spots = spots, hold = m.hold / sp, style = style })
+		local ticks = math.floor(m.hold / m.every)
+		for k = 0, ticks - 1 do
+			after(k * m.every, function()
+				for _, pt in ipairs(spots) do
+					for _, o in ipairs(hostilesNear(f, pt, m.burstRadius + 5)) do
+						pullTo(o, pt, m.pull)
+					end
+				end
+			end)
+		end
+		after(m.hold, function()
+			local done = {}
+			local burst = scaled(m.burst, sc)
+			for _, pt in ipairs(spots) do
+				for _, o in ipairs(hostilesNear(f, pt, m.burstRadius)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, burst, move)
+					end
+				end
+			end
+		end)
+		task.delay(m.vanish / sp, function()
+			if f.model.Parent then
+				f.model:SetAttribute("Vanish", nil)
+			end
+		end)
+	elseif kind == "allPasses" then
+		-- 무상권 제행무상 (오의): 세상이 잿빛으로 멈춘다. 몸이 일곱으로 갈라져 일곱 적을 한꺼번에 치고, 다시 하나로 모이며 터진다
+		local center = f.root.Position
+		local list = nearestList(f, m.range, m.n)
+		local total = m.delay + m.strikes * m.every + m.converge
+		f.model:SetAttribute("Vanish", true)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
+		local spots = {}
+		for i = 1, m.n do
+			local t = list[i]
+			if t then
+				spots[i] = t.root.Position
+			else
+				local a = (i - 1) / m.n * math.pi * 2
+				spots[i] = center + Vector3.new(math.cos(a), 0, math.sin(a)) * 14
+			end
+		end
+		Push:FireAllClients("skillfx", { kind = "allPasses", m = f.model, at = center, spots = spots, delay = m.delay / sp, strikes = m.strikes, every = m.every / sp, converge = m.converge / sp, radius = m.finalRadius, style = style })
+		for k = 1, m.strikes do
+			after(m.delay + (k - 1) * m.every, function()
+				for i = 1, m.n do
+					local t = list[i]
+					if t and not t.dead and t.root.Parent then
+						strike(f, t, hit, move)
+					else
+						for _, o in ipairs(hostilesNear(f, spots[i], 5)) do
+							strike(f, o, hit, move)
+						end
+					end
+				end
+			end)
+		end
+		after(total, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+		task.delay(total / sp + 0.05, function()
+			if f.model.Parent then
+				f.model:SetAttribute("Vanish", nil)
+			end
+		end)
+	elseif kind == "kingFist" then
+		-- 권왕신권 왕권 (E): 등 뒤의 거대한 금빛 주먹이 앞으로 곧게 내지르고, 반 박자 뒤 반대쪽 주먹이 한 번 더
+		local a = f.root.Position
+		local b = a + look * m.length
+		Push:FireAllClients("skillfx", { kind = "kingFist", m = f.model, from = a, dir = look, length = m.length, width = m.width, delay = m.delay / sp, second = m.second / sp, style = style })
+		for k = 0, 1 do
+			after(m.delay + k * m.second + 0.08, function()
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "royalRoad" then
+		-- 권왕신권 왕도 (R): 금빛 길을 내달리고 (무적), 길 위로 금빛 기둥이 차례로 솟는다
+		local a = f.root.Position
+		local b = a + look * m.length
+		Push:FireAllClients("skillfx", { kind = "royalRoad", m = f.model, from = a, to = b, width = m.width, run = m.run / sp, pillars = m.pillars, step = m.step / sp, style = style })
+		after(m.run * 0.5, function()
+			for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local done = {}
+		local ph = scaled(m.pillar, sc)
+		for i = 1, m.pillars do
+			after(m.run + i * m.step, function()
+				local pt = a:Lerp(b, i / m.pillars)
+				for _, o in ipairs(hostilesNear(f, pt, m.width)) do
+					if not done[o] then
+						done[o] = true
+						strike(f, o, ph, move)
+					end
+				end
+			end)
+		end
+	elseif kind == "kingDescend" then
+		-- 권왕신권 권왕강림 (오의): 등 뒤에서 거대한 금빛 왕이 일어나 적을 골라 세 번 내리찍고, 두 주먹으로 마지막 충격파
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "kingDescend", m = f.model, at = center, dir = look, rise = m.rise / sp, punches = m.punches, every = m.every / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		local right = rightOf(look)
+		for i = 1, m.punches do
+			after(m.rise + (i - 1) * m.every, function()
+				local list = nearestList(f, m.range, m.punches)
+				local t = list[(i - 1) % math.max(1, #list) + 1]
+				local side = (i % 2 == 1) and 1 or -1
+				local spot = t and t.root.Position or (center + look * 12 + right * side * 6)
+				Push:FireAllClients("skillfx", { kind = "kingPunch", m = f.model, at = spot, origin = center, dir = look, side = side, style = style })
+				task.delay(0.16 / sp, function()
+					if alive() then
+						for _, o in ipairs(hostilesNear(f, spot, m.radius)) do
+							strike(f, o, hit, move)
+						end
+					end
+				end)
+			end)
+		end
+		after(m.rise + m.punches * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "inkFlower" then
 		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
 		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)
@@ -17173,21 +17913,34 @@ end
 
 
 -- 낮과 밤의 시계 (테스트에서 바꾸거나 멈출 수 있다)
-local DAY = 16 * 60
-local clockT0 = os.clock() - (16.2 - 6) / 24 * DAY
+-- 3.0판: 한 바퀴 16분 그대로, 낮(6시~19시)이 10분 · 밤이 6분 (예전엔 반반 8분씩)
+local DAY_PART, NIGHT_PART = 10 * 60, 6 * 60
+local DAY = DAY_PART + NIGHT_PART
+local function phaseOf(hour: number): number
+	local h = (hour - 6) % 24
+	if h < 13 then
+		return h / 13 * DAY_PART
+	end
+	return DAY_PART + (h - 13) / 11 * NIGHT_PART
+end
+local clockT0 = os.clock() - phaseOf(16.2)
 local clockFrozen: number? = nil
 function World.clockHour(): number
 	if clockFrozen then
 		return clockFrozen
 	end
-	return (6 + (os.clock() - clockT0) / DAY * 24) % 24
+	local t = (os.clock() - clockT0) % DAY
+	if t < DAY_PART then
+		return (6 + 13 * t / DAY_PART) % 24
+	end
+	return (19 + 11 * (t - DAY_PART) / NIGHT_PART) % 24
 end
 function World.setClock(hour: number)
 	hour = hour % 24
 	if clockFrozen then
 		clockFrozen = hour
 	end
-	clockT0 = os.clock() - (hour - 6) / 24 * DAY
+	clockT0 = os.clock() - phaseOf(hour)
 	Lighting.ClockTime = hour
 end
 -- 멈추면 지금 시각에 머문다. 다시 누르면 흐른다
@@ -17231,7 +17984,7 @@ function World.setupLighting()
 	cc.Contrast = 0.1
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
-	-- 낮과 밤: 한 바퀴 16분. 밤에도 길이 보이게 바깥 빛을 조금 남긴다
+	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
 	task.spawn(function()
 		while true do
 			local h = World.clockHour()
@@ -22063,6 +22816,7 @@ local Whale = require(script:WaitForChild("Whale"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
+local Samsara = require(script:WaitForChild("Samsara"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -23977,6 +24731,12 @@ function handlers.skillfx(data: any)
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
 		Gourd.init({ shake = shake, tint = tint })
+		Samsara.init({ shake = shake, tint = tint })
+	end
+	-- 3.0판 환생 권법 넷의 기술과 연타 장치
+	if Samsara.handles(data) then
+		Samsara.run(data)
+		return
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
 		return
@@ -24331,7 +25091,8 @@ function handlers.samsaraStart(data: any)
 	shake(0.6)
 end
 function handlers.samsaraWon(data: any)
-	UI.banner(string.format("☯ 윤회의 시련 %d 통과", data.n or 1), string.format("지난 삶을 넘었다 · 공덕 +1 (남은 공덕 %d) · 💎 +%d · 📜 +%d · 💰 +%s", data.points or 0, data.gems or 0, data.scrolls or 0, Config.formatNumber(data.coins or 0)), Config.REBIRTH.colors[data.n or 1])
+	local st = data.style and Config.STYLE_BY_ID[data.style]
+	UI.banner(string.format("☯ 윤회의 시련 %d 통과", data.n or 1), string.format("지난 삶을 넘었다 · 공덕 +1 (남은 공덕 %d) · 💎 +%d · 📜 +%d · 💰 +%s%s", data.points or 0, data.gems or 0, data.scrolls or 0, Config.formatNumber(data.coins or 0), st and (" · 그림자가 " .. st.icon .. " " .. st.name .. "을(를) 남겼다") or ""), Config.REBIRTH.colors[data.n or 1])
 	shake(1)
 end
 
@@ -31554,6 +32315,42 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			fire.Position = pos
 			tween(fire, 0.35, { Size = Vector3.new(1, 1, 1) * 8, Transparency = 1 })
 			Debris:AddItem(fire, 0.4)
+		end	-- 3.0판 환생 권법
+	elseif style.fx == "rinne" then
+		-- 윤회권: 금빛 고리 둘이 바퀴처럼 엇갈려 돌고, 쪽빛 빛 가루
+		Fx.ring(pos, c2, 1, 10 * s, 0.35, dir)
+		Fx.ring(pos, c, 1, 6 * s, 0.3, dir and Vector3.new(-dir.Z, 0, dir.X) or nil)
+		Fx.burst("glitter", pos, c, heavy and 10 or 5, 1)
+	elseif style.fx == "karma" then
+		-- 업화권: 검붉은 불티와 그을음
+		Fx.ring(pos, c, 1, 9 * s, 0.35, dir)
+		Fx.burst("ember", pos, c, heavy and 12 or 6, 1.1)
+		local soot = piece(Vector3.new(1, 1, 1) * 1.6 * s, Color3.fromRGB(28, 10, 14), Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.3)
+		soot.Position = pos
+		tween(soot, 0.45, { Size = Vector3.new(1, 1, 1) * 5 * s, Transparency = 1, Position = pos + Vector3.new(0, 1.5, 0) })
+		Debris:AddItem(soot, 0.5)
+	elseif style.fx == "mist" then
+		-- 무상권: 안개가 훅 퍼지고 푸른 칼빛이 엇갈린다
+		local puff = piece(Vector3.new(1, 1, 1) * 2 * s, c2, Enum.Material.SmoothPlastic, Enum.PartType.Ball, 0.4)
+		puff.Position = pos
+		tween(puff, 0.4, { Size = Vector3.new(1, 1, 1) * 6 * s, Transparency = 1 })
+		Debris:AddItem(puff, 0.45)
+		for k = -1, 1, 2 do
+			local sl = piece(Vector3.new(0.12, 4 * s, 0.4), c, Enum.Material.Neon, nil, 0.05)
+			sl.CFrame = CFrame.new(pos) * CFrame.Angles(0, math.random() * 6, math.rad(40 * k))
+			tween(sl, 0.25, { Transparency = 1, Size = Vector3.new(0.04, 5 * s, 0.1) })
+			Debris:AddItem(sl, 0.3)
+		end
+	elseif style.fx == "king" then
+		-- 권왕신권: 금빛 별 모양 충격선과 붉은 고리
+		Fx.ring(pos, c, 1, 12 * s, 0.35, dir)
+		Fx.ring(pos, c2, 1, 7 * s, 0.4, dir)
+		for k = 0, heavy and 7 or 4 do
+			local ray = piece(Vector3.new(0.25, 0.25, 3 * s), c, Enum.Material.Neon, nil, 0)
+			local a = k / (heavy and 8 or 5) * math.pi * 2
+			ray.CFrame = CFrame.lookAt(pos, pos + Vector3.new(math.cos(a), math.sin(a * 2) * 0.4, math.sin(a))) * CFrame.new(0, 0, -1.5 * s)
+			tween(ray, 0.25, { Transparency = 1, Size = Vector3.new(0.05, 0.05, 5 * s) })
+			Debris:AddItem(ray, 0.3)
 		end
 	end
 end
@@ -37770,6 +38567,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Drunk = require(script.Parent:WaitForChild("Drunk"))
 local Reaper = require(script.Parent:WaitForChild("Reaper"))
+local Samsara = require(script.Parent:WaitForChild("Samsara"))
 local Ult2 = require(script.Parent:WaitForChild("Ult2"))
 local Whale = require(script.Parent:WaitForChild("Whale"))
 
@@ -37958,7 +38756,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -37993,6 +38791,13 @@ local function refreshFans(model: Model)
 		end
 		return
 	end
+	-- 3.0판 환생 권법: 윤회륜 · 사슬과 검은 불꽃 · 넋불과 안개 띠 · 관과 망토
+	if Samsara.hasGear(st) then
+		for _, p in ipairs(Samsara.buildGear(model, st)) do
+			table.insert(list, p)
+		end
+		return
+	end
 	-- 초·혈마신수는 붉은 큰 낫과 손톱
 	if st.scythe then
 		for _, p in ipairs(Reaper.build(model)) do
@@ -38013,7 +38818,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end
@@ -38870,6 +39675,1501 @@ return Sakura
         </Item>
         <Item class="ModuleScript" referent="33">
           <Properties>
+            <string name="Name">Samsara</string>
+            <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
+-- 윤회권: 등 뒤의 금빛 윤회륜 · 업화권: 두 팔의 달군 사슬과 검은 불꽃 · 무상권: 몸 둘레의 넋불과 안개 띠
+-- 권왕신권: 머리 위의 금빛 관 · 붉은 망토 · 금빛 팔찌
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Samsara = {}
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonSamsara"
+folder.Parent = workspace
+
+local opts: any = {}
+function Samsara.init(o: any)
+	opts = o or {}
+end
+
+local GOLD = Color3.fromRGB(255, 214, 110)
+local GOLD_DEEP = Color3.fromRGB(220, 160, 50)
+local INDIGO = Color3.fromRGB(120, 90, 255)
+local WHITE = Color3.new(1, 1, 1)
+local EMBER = Color3.fromRGB(255, 70, 30)
+local HELL = Color3.fromRGB(200, 25, 20)
+local CHAR = Color3.fromRGB(28, 10, 14)
+local MIST = Color3.fromRGB(225, 232, 242)
+local GHOST = Color3.fromRGB(140, 230, 255)
+local CRIMSON = Color3.fromRGB(190, 25, 40)
+-- 여섯 갈래 세상의 빛깔
+local REALMS = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 214, 90), Color3.fromRGB(255, 80, 80), Color3.fromRGB(110, 230, 140), Color3.fromRGB(110, 170, 255), Color3.fromRGB(200, 120, 255) }
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function ground(at: Vector3): Vector3
+	return Vector3.new(at.X, at.Y - 2.7, at.Z)
+end
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+	local q = Instance.new("Part")
+	if shape == "ball" then
+		q.Shape = Enum.PartType.Ball
+	elseif shape == "cyl" then
+		q.Shape = Enum.PartType.Cylinder
+	end
+	q.Anchored = true
+	q.CanCollide = false
+	q.CanQuery = false
+	q.CanTouch = false
+	q.CastShadow = false
+	q.Size = size
+	q.Color = color
+	q.Material = material or Enum.Material.SmoothPlastic
+	q.Transparency = alpha or 0
+	q.Parent = folder
+	return q
+end
+local function fadeOut(p: BasePart, time: number, goal: { [string]: any }?)
+	local g = goal or {}
+	g.Transparency = 1
+	tween(p, time, g)
+	task.delay(time + 0.05, function()
+		p:Destroy()
+	end)
+end
+local function shakeNear(pos: Vector3, amount: number, range: number)
+	if opts.shake and near(pos, range) then
+		opts.shake(amount)
+	end
+end
+-- 프레임마다 u (0 → 1)
+local function anim(life: number, fn: (number) -> ())
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local u = math.clamp((os.clock() - t0) / life, 0, 1)
+		fn(u)
+		if u >= 1 then
+			conn:Disconnect()
+		end
+	end)
+end
+local function rootOf(m: any): BasePart?
+	local r = typeof(m) == "Instance" and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+local function emitter(at: BasePart, tex: string, c0: Color3, c1: Color3, rate: number, size: number, life: number, speed: number, light: number?): ParticleEmitter
+	local a = Instance.new("Attachment")
+	a.Parent = at
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = tex
+	e.Color = ColorSequence.new(c0, c1)
+	e.LightEmission = light or 0.6
+	e.Rate = rate
+	e.Lifetime = NumberRange.new(life * 0.7, life)
+	e.Speed = NumberRange.new(speed * 0.5, speed)
+	e.SpreadAngle = Vector2.new(20, 20)
+	e.Size = NumberSequence.new(size, 0)
+	e.Transparency = NumberSequence.new(0.2, 1)
+	e.Parent = a
+	return e
+end
+
+-- 여러 조각을 한 덩이처럼 움직인다: { 조각, 덩이 안의 자리 }
+type Group = { items: { { any } } }
+local function group(): Group
+	return { items = {} }
+end
+local function gadd(g: Group, p: BasePart, off: CFrame): BasePart
+	table.insert(g.items, { p, off })
+	return p
+end
+local function gset(g: Group, cf: CFrame)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			p.CFrame = cf * (it[2] :: CFrame)
+		end
+	end
+end
+local function gfade(g: Group, time: number)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			fadeOut(p, time)
+		end
+	end
+end
+local function galpha(g: Group, k: number)
+	for _, it in ipairs(g.items) do
+		local p = it[1] :: BasePart
+		if p.Parent then
+			p.Transparency = math.clamp(math.max(k, p:GetAttribute("A0") or 0), 0, 1)
+		end
+	end
+end
+local function gpart(g: Group, size: Vector3, color: Color3, mat: Enum.Material?, alpha: number?, shape: string?, off: CFrame): BasePart
+	local p = part(size, color, mat, alpha, shape)
+	p:SetAttribute("A0", alpha or 0)
+	return gadd(g, p, off)
+end
+
+------------------------------------------------------------------------
+-- 윤회륜: 금빛 테 두 겹, 바퀴살 여덟, 가운데 굴대, 테 위의 여섯 구슬 (덩이의 XY 면에 선다, 굴대는 Z)
+------------------------------------------------------------------------
+local function wheelGroup(R: number, thick: number, alpha: number?): Group
+	local g = group()
+	local a0 = alpha or 0
+	local n = math.max(16, math.floor(R * 7))
+	for i = 0, n - 1 do
+		local a = (i + 0.5) / n * math.pi * 2
+		gpart(g, Vector3.new(2 * math.pi * R / n * 1.12, thick, thick * 0.9), GOLD, Enum.Material.Metal, a0, nil, CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0))
+		if i % 2 == 0 then
+			gpart(g, Vector3.new(2 * math.pi * R * 0.7 / n * 2.2, thick * 0.4, thick * 0.4), INDIGO, Enum.Material.Neon, a0, nil, CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.7, 0))
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		gpart(g, Vector3.new(thick * 0.45, R * 0.95, thick * 0.45), GOLD_DEEP, Enum.Material.Metal, a0, nil, CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.5, 0))
+	end
+	gpart(g, Vector3.new(thick * 1.4, R * 0.32, R * 0.32), GOLD, Enum.Material.Metal, a0, "cyl", CFrame.Angles(0, math.rad(90), 0))
+	gpart(g, Vector3.new(thick * 1.6, R * 0.16, R * 0.16), INDIGO, Enum.Material.Neon, a0, "cyl", CFrame.Angles(0, math.rad(90), 0))
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local d = thick * 2.1
+		gpart(g, Vector3.new(d, d, d), REALMS[k + 1], Enum.Material.Neon, a0, "ball", CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0))
+	end
+	return g
+end
+-- 테 위 k번째 구슬의 덩이 안 자리
+local function orbOffset(R: number, k: number): Vector3
+	local a = (k - 1) / 6 * math.pi * 2
+	return (CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0)).Position
+end
+
+------------------------------------------------------------------------
+-- 몸에 두르는 것
+------------------------------------------------------------------------
+type Moving = { weld: Weld, base: CFrame, kind: string, phase: number, model: Model, k: number? }
+local moving: { Moving } = {}
+local wheelOf: { [Model]: { BasePart } } = {}
+
+local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, list: { Instance }, model: Model?, kind: string?, phase: number?, k: number?)
+	p.Anchored = false
+	p.Massless = true
+	if kind and model then
+		p.CFrame = to.CFrame * cf
+		local w = Instance.new("Weld")
+		w.Part0 = to
+		w.Part1 = p
+		w.C0 = cf
+		w.Parent = p
+		table.insert(moving, { weld = w, base = cf, kind = kind, phase = phase or 0, model = model, k = k })
+	else
+		p.CFrame = to.CFrame * cf
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = to
+		w.Part1 = p
+		w.Parent = p
+	end
+	p.Parent = holder
+	table.insert(list, p)
+end
+-- 굴대 하나에 붙여 함께 도는 조각들 (굴대는 Weld 로 움직이고, 조각은 굴대에 고정)
+local function hubbed(hub: BasePart, items: { { any } }, holder: Instance, list: { Instance })
+	for _, it in ipairs(items) do
+		local p = it[1] :: BasePart
+		p.Anchored = false
+		p.Massless = true
+		p.CFrame = hub.CFrame * (it[2] :: CFrame)
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = hub
+		w.Part1 = p
+		w.Parent = p
+		p.Parent = holder
+		table.insert(list, p)
+	end
+end
+
+local function buildWheel(model: Model, holder: Instance, list: { Instance })
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not (torso and torso:IsA("BasePart")) then
+		return
+	end
+	local base = CFrame.new(0, 0.55, torso.Size.Z / 2 + 0.85)
+	local hub = part(Vector3.new(0.2, 0.2, 0.2), GOLD, Enum.Material.Metal, 1)
+	hub.CFrame = torso.CFrame * base
+	attach(hub, torso, base, holder, list, model, "spin", 0)
+	local g = wheelGroup(1.9, 0.2)
+	hubbed(hub, g.items, holder, list)
+	local parts: { BasePart } = {}
+	for _, it in ipairs(g.items) do
+		table.insert(parts, it[1])
+	end
+	wheelOf[model] = parts
+	local glow = Instance.new("PointLight")
+	glow.Color = GOLD
+	glow.Range = 7
+	glow.Brightness = 0.8
+	glow.Parent = hub
+end
+
+local function buildChains(model: Model, holder: Instance, list: { Instance })
+	for _, pair in ipairs({ { "RightLowerArm", "RightHand", 1 }, { "LeftLowerArm", "LeftHand", -1 } }) do
+		local arm = model:FindFirstChild(pair[1])
+		if arm and arm:IsA("BasePart") then
+			-- 팔뚝을 휘감은 달군 사슬 고리
+			for k = 0, 6 do
+				local a = k * 1.15 * pair[3]
+				local link = part(Vector3.new(0.4, 0.13, 0.24), Color3.fromRGB(45, 38, 38), Enum.Material.Metal)
+				attach(link, arm, CFrame.new(math.cos(a) * 0.56, -0.5 + k * 0.17, math.sin(a) * 0.56) * CFrame.Angles(0, -a, math.rad(k % 2 == 0 and 65 or -65)), holder, list)
+				if k % 2 == 1 then
+					local glint = part(Vector3.new(0.2, 0.06, 0.12), EMBER, Enum.Material.Neon)
+					attach(glint, arm, CFrame.new(math.cos(a) * 0.62, -0.5 + k * 0.17, math.sin(a) * 0.62) * CFrame.Angles(0, -a, 0), holder, list)
+				end
+			end
+			-- 손목에서 늘어진 사슬 셋 (흔들린다)
+			for k = 1, 3 do
+				local link = part(Vector3.new(0.12, 0.34, 0.22), Color3.fromRGB(55, 45, 45), Enum.Material.Metal)
+				attach(link, arm, CFrame.new(0.05 * pair[3], -0.65 - k * 0.3, 0.15) * CFrame.Angles(0, k % 2 == 0 and math.rad(90) or 0, 0), holder, list, model, "dangle", k * 0.7 * pair[3], k)
+			end
+		end
+		local hand = model:FindFirstChild(pair[2])
+		if hand and hand:IsA("BasePart") then
+			local fire = emitter(hand, TEX_FIRE, Color3.fromRGB(255, 70, 30), Color3.fromRGB(30, 5, 10), 22, 0.9, 0.45, 3, 0.5)
+			fire.Acceleration = Vector3.new(0, 6, 0)
+			fire.Name = "KarmaFire"
+			table.insert(list, fire.Parent :: Instance)
+			local smoke = emitter(hand, TEX_SMOKE, Color3.fromRGB(40, 15, 20), Color3.fromRGB(10, 5, 8), 6, 1.0, 0.8, 1.5, 0)
+			smoke.Acceleration = Vector3.new(0, 4, 0)
+			table.insert(list, smoke.Parent :: Instance)
+		end
+	end
+end
+
+local function buildWisps(model: Model, holder: Instance, list: { Instance })
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not (torso and torso:IsA("BasePart")) then
+		return
+	end
+	-- 몸 둘레를 도는 넋불 셋
+	for k = 1, 3 do
+		local orb = part(Vector3.new(0.5, 0.5, 0.5), GHOST, Enum.Material.Neon, 0.1, "ball")
+		attach(orb, torso, CFrame.new(2.2, 0, 0), holder, list, model, "orbit", (k - 1) / 3 * math.pi * 2)
+		local tail = emitter(orb, TEX_SMOKE, GHOST, MIST, 14, 0.7, 0.6, 0.5, 0.6)
+		tail.SpreadAngle = Vector2.new(5, 5)
+		table.insert(list, tail.Parent :: Instance)
+	end
+	-- 목 뒤에서 길게 흘러내리는 안개 띠
+	for k = 0, 6 do
+		local seg = part(Vector3.new(0.55 - k * 0.03, 0.06, 0.62), MIST:Lerp(GHOST, k / 10), Enum.Material.SmoothPlastic, 0.15 + k * 0.08)
+		local base = CFrame.new(0, 0.7 - k * 0.42, torso.Size.Z / 2 + 0.3 + k * 0.32) * CFrame.Angles(math.rad(55 - k * 4), 0, 0)
+		attach(seg, torso, base, holder, list, model, "scarf", k * 0.7, k)
+	end
+end
+
+local function buildCrown(model: Model, holder: Instance, list: { Instance })
+	local head = model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		-- 머리 위에 뜬 금빛 관: 둥근 테와 여섯 뿔, 뿔 끝의 붉은 구슬, 이마의 큰 보석
+		local base = CFrame.new(0, head.Size.Y / 2 + 0.55, 0)
+		local hub = part(Vector3.new(0.2, 0.2, 0.2), GOLD, Enum.Material.Metal, 1)
+		hub.CFrame = head.CFrame * base
+		attach(hub, head, base, holder, list, model, "bob", 0)
+		local items = {}
+		local n = 14
+		local r = math.max(head.Size.X, head.Size.Z) * 0.5 + 0.12
+		for i = 0, n - 1 do
+			local a = (i + 0.5) / n * math.pi * 2
+			table.insert(items, { part(Vector3.new(2 * math.pi * r / n * 1.15, 0.2, 0.1), GOLD, Enum.Material.Metal), CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -r) })
+		end
+		for k = 0, 5 do
+			local a = k / 6 * math.pi * 2
+			local h = k == 0 and 0.75 or 0.5
+			table.insert(items, { part(Vector3.new(0.16, h, 0.1), GOLD, Enum.Material.Metal), CFrame.Angles(0, a, 0) * CFrame.new(0, h / 2, -r) * CFrame.Angles(math.rad(-12), 0, 0) })
+			table.insert(items, { part(Vector3.new(0.17, 0.17, 0.17), CRIMSON, Enum.Material.Neon, 0, "ball"), CFrame.Angles(0, a, 0) * CFrame.new(0, h + 0.05, -r - 0.08) })
+		end
+		table.insert(items, { part(Vector3.new(0.3, 0.3, 0.3), Color3.fromRGB(255, 60, 70), Enum.Material.Neon, 0, "ball"), CFrame.new(0, 0.05, -r - 0.05) })
+		hubbed(hub, items, holder, list)
+		local glow = Instance.new("PointLight")
+		glow.Color = GOLD
+		glow.Range = 6
+		glow.Brightness = 0.7
+		glow.Parent = hub
+	end
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if torso and torso:IsA("BasePart") then
+		-- 붉은 망토: 어깨에서 세 줄, 다섯 단 (아래로 갈수록 크게 흔들린다). 맨 아래 단엔 금테
+		for c = -1, 1 do
+			for r = 0, 4 do
+				local panel = part(Vector3.new(0.66, 0.64, 0.06), r == 4 and GOLD_DEEP or CRIMSON:Lerp(Color3.fromRGB(120, 10, 20), r * 0.08), r == 4 and Enum.Material.Metal or Enum.Material.Fabric)
+				local base = CFrame.new(c * 0.64, 0.75 - r * 0.62, torso.Size.Z / 2 + 0.1 + r * 0.1) * CFrame.Angles(math.rad(8 + r * 3), 0, 0)
+				attach(panel, torso, base, holder, list, model, "cape", c * 0.6, r)
+			end
+		end
+	end
+	-- 손목의 금빛 팔찌와 붉은 보석
+	for _, name in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
+		local arm = model:FindFirstChild(name)
+		if arm and arm:IsA("BasePart") then
+			local cuff = part(Vector3.new(0.38, 0.66, 0.66), GOLD, Enum.Material.Metal, 0, "cyl")
+			attach(cuff, arm, CFrame.new(0, -0.32, 0) * CFrame.Angles(0, 0, math.rad(90)), holder, list)
+			local gem = part(Vector3.new(0.2, 0.2, 0.2), CRIMSON, Enum.Material.Neon, 0, "ball")
+			attach(gem, arm, CFrame.new(0, -0.32, -0.34), holder, list)
+		end
+	end
+end
+
+function Samsara.hasGear(st: any): boolean
+	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown) == true
+end
+function Samsara.buildGear(model: Model, st: any): { Instance }
+	local out: { Instance } = {}
+	local holder = Instance.new("Folder")
+	holder.Name = "Samsara_" .. model.Name
+	holder.Parent = folder
+	table.insert(out, holder)
+	if st.wheel then
+		buildWheel(model, holder, out)
+	elseif st.chains then
+		buildChains(model, holder, out)
+	elseif st.wisps then
+		buildWisps(model, holder, out)
+	elseif st.crown then
+		buildCrown(model, holder, out)
+	end
+	return out
+end
+-- 던지는 동안 등의 바퀴를 감춘다
+local function hideWheel(model: Model, sec: number)
+	local parts = wheelOf[model]
+	if not parts then
+		return
+	end
+	for _, p in ipairs(parts) do
+		if p.Parent then
+			p.LocalTransparencyModifier = 1
+		end
+	end
+	task.delay(sec, function()
+		for _, p in ipairs(parts) do
+			if p.Parent and model:GetAttribute("Vanish") ~= true then
+				p.LocalTransparencyModifier = 0
+			end
+		end
+	end)
+end
+
+RunService.Heartbeat:Connect(function()
+	local t = os.clock()
+	local cam = workspace.CurrentCamera
+	for i = #moving, 1, -1 do
+		local mv = moving[i]
+		if not mv.weld.Parent or not mv.model.Parent then
+			table.remove(moving, i)
+		else
+			local r = mv.weld.Part0
+			if cam and r and (cam.CFrame.Position - r.Position).Magnitude < 160 then
+				local ph, k = mv.phase, mv.k or 0
+				if mv.kind == "spin" then
+					mv.weld.C0 = mv.base * CFrame.Angles(0, 0, t * 1.3)
+				elseif mv.kind == "orbit" then
+					mv.weld.C0 = CFrame.Angles(0, t * 1.8 + ph, 0) * CFrame.new(2.2, math.sin(t * 2.4 + ph) * 0.7, 0)
+				elseif mv.kind == "scarf" then
+					mv.weld.C0 = mv.base * CFrame.new(math.sin(t * 3 + ph) * 0.12 * k, math.sin(t * 2.2 + ph) * 0.05 * k, 0) * CFrame.Angles(math.sin(t * 2.6 + ph) * 0.06, 0, math.sin(t * 3 + ph) * 0.08)
+				elseif mv.kind == "cape" then
+					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 2.2 + ph + k * 0.5) * 0.05 * k, 0, math.sin(t * 1.7 + ph) * 0.02 * k)
+				elseif mv.kind == "bob" then
+					mv.weld.C0 = mv.base * CFrame.new(0, math.sin(t * 2) * 0.08, 0) * CFrame.Angles(0, t * 0.6, 0)
+				elseif mv.kind == "dangle" then
+					mv.weld.C0 = mv.base * CFrame.Angles(math.sin(t * 4 + ph) * 0.25, 0, math.sin(t * 3 + ph) * 0.2)
+				end
+			end
+		end
+	end
+	for m, ps in pairs(wheelOf) do
+		if not m.Parent or not (ps[1] and ps[1].Parent) then
+			wheelOf[m] = nil
+		end
+	end
+end)
+
+------------------------------------------------------------------------
+-- 몸의 그림자 (지난 삶·허상·잔상): 몸 조각을 그대로 본뜬 빛 조각 덩이. 뿌리 자리를 기준으로 움직인다
+------------------------------------------------------------------------
+local function ghostOf(model: Model, color: Color3, alpha: number, mat: Enum.Material?): (Group, CFrame)
+	local g = group()
+	local r = rootOf(model)
+	local rootCF = r and r.CFrame or CFrame.new()
+	for _, d in ipairs(model:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 0.9 then
+			gpart(g, d.Size, color, mat or Enum.Material.Neon, alpha, d:IsA("Part") and d.Shape == Enum.PartType.Ball and "ball" or nil, rootCF:ToObjectSpace(d.CFrame))
+		end
+	end
+	return g, rootCF
+end
+
+-- 바닥에 그어지는 얇은 빛 줄
+local function streak(a: Vector3, b: Vector3, color: Color3, w: number, life: number, h: number?)
+	local len = (b - a).Magnitude
+	if len < 0.2 then
+		return
+	end
+	local p = part(Vector3.new(w, h or 0.15, len), color, Enum.Material.Neon, 0.1)
+	p.CFrame = CFrame.lookAt((a + b) / 2, b)
+	fadeOut(p, life, { Size = Vector3.new(w * 0.2, h or 0.15, len) })
+end
+-- 빛기둥 (하늘에서 땅까지)
+local function pillar(at: Vector3, color: Color3, d: number, h: number, life: number)
+	local p = part(Vector3.new(h, d, d), color, Enum.Material.Neon, 0.15, "cyl")
+	p.CFrame = CFrame.new(at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local core = part(Vector3.new(h, d * 0.4, d * 0.4), WHITE, Enum.Material.Neon, 0.05, "cyl")
+	core.CFrame = p.CFrame
+	fadeOut(p, life, { Size = Vector3.new(h, d * 1.8, d * 1.8) })
+	fadeOut(core, life * 0.7, { Size = Vector3.new(h, 0.1, 0.1) })
+end
+-- 십자로 엇갈린 칼자국 (무상)
+local function slashX(at: Vector3, color: Color3, size: number, life: number)
+	for k = -1, 1, 2 do
+		local p = part(Vector3.new(0.18, size, 0.6), color, Enum.Material.Neon, 0.05)
+		p.CFrame = CFrame.new(at) * CFrame.Angles(math.random() * 0.5, math.random() * 6, math.rad(40 * k))
+		fadeOut(p, life, { Size = Vector3.new(0.05, size * 1.4, 0.2) })
+	end
+end
+-- 금빛 주먹 덩이: 팔뚝 (뒤로 길게) · 주먹 · 마디 넷 · 붉은 소매 띠. 덩이의 -Z 쪽이 앞
+local function fistGroup(s: number, alpha: number?): Group
+	local g = group()
+	local a0 = alpha or 0
+	gpart(g, Vector3.new(4.4, 4, 4.6) * s, GOLD, Enum.Material.Metal, a0, nil, CFrame.new())
+	for k = 0, 3 do
+		gpart(g, Vector3.new(1.15, 1.15, 1.15) * s, GOLD:Lerp(WHITE, 0.25), Enum.Material.Metal, a0, "ball", CFrame.new((-1.5 + k) * 1.05 * s, 1.3 * s, -2.2 * s))
+	end
+	gpart(g, Vector3.new(1.4, 1.6, 2.4) * s, GOLD_DEEP, Enum.Material.Metal, a0, nil, CFrame.new(-2.5 * s, 0.3 * s, -0.6 * s))
+	gpart(g, Vector3.new(9, 3.2, 3.2) * s, GOLD_DEEP, Enum.Material.Metal, a0, "cyl", CFrame.new(0, 0, 6.5 * s) * CFrame.Angles(0, math.rad(90), 0))
+	gpart(g, Vector3.new(1.2, 4, 4) * s, CRIMSON, Enum.Material.Fabric, a0, "cyl", CFrame.new(0, 0, 3 * s) * CFrame.Angles(0, math.rad(90), 0))
+	gpart(g, Vector3.new(0.5, 4.3, 4.3) * s, GOLD, Enum.Material.Neon, a0, "cyl", CFrame.new(0, 0, 2.3 * s) * CFrame.Angles(0, math.rad(90), 0))
+	return g
+end
+-- 땅에 부딪는 금빛 충격 (고리 둘, 불티, 흙)
+local function goldImpact(at: Vector3, s: number)
+	local g = ground(at)
+	Fx.ring(g + Vector3.new(0, 0.3, 0), GOLD, 2, 22 * s, 0.5)
+	Fx.ring(g + Vector3.new(0, 0.4, 0), CRIMSON, 1, 14 * s, 0.6)
+	Fx.burst("spark", at, GOLD, math.floor(18 * s), 1.6 * s)
+	Fx.debris(g, math.floor(6 * s), 30 * s)
+	Fx.flash(at, GOLD, 30 * s, 4, 0.4)
+	Fx.breakSound("rock", 0.8, 0.8, at)
+	shakeNear(at, 0.5 * s, 90)
+end
+
+------------------------------------------------------------------------
+-- 윤회권
+------------------------------------------------------------------------
+local H: { [string]: (any) -> () } = {}
+
+-- 전생의 메아리 (연타 넷마다): 쪽빛 손바닥이 옆에서 날아와 같은 자리를 다시 치고, 금빛 바퀴 무늬가 번쩍인다
+function H.echoPulse(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local side = math.random() < 0.5 and 1 or -1
+	local cam = workspace.CurrentCamera
+	local right = cam and flat(cam.CFrame.RightVector) or Vector3.new(1, 0, 0)
+	local from = at + right * side * 7 + Vector3.new(0, 2, 0)
+	local palm = group()
+	gpart(palm, Vector3.new(2.4, 2.8, 0.4), INDIGO, Enum.Material.Neon, 0.35, nil, CFrame.new())
+	for k = 0, 3 do
+		gpart(palm, Vector3.new(0.45, 1.5, 0.35), INDIGO:Lerp(WHITE, 0.2), Enum.Material.Neon, 0.35, nil, CFrame.new((-1.5 + k) * 0.6, 2.1, 0))
+	end
+	gpart(palm, Vector3.new(0.5, 1.2, 0.35), INDIGO, Enum.Material.Neon, 0.35, nil, CFrame.new(side * -1.5, 0.2, 0) * CFrame.Angles(0, 0, math.rad(side * 40)))
+	local delay = d.delay or 0.4
+	anim(delay, function(u)
+		local p = from:Lerp(at, u * u)
+		gset(palm, CFrame.lookAt(p, at + Vector3.new(0, 0, 0.01)) * CFrame.Angles(0, math.rad(90 * side), 0))
+		if u >= 1 then
+			gfade(palm, 0.25)
+		end
+	end)
+	task.delay(delay, function()
+		local w = wheelGroup(3.2, 0.18, 0.2)
+		local cf = CFrame.lookAt(at, at + right)
+		anim(0.45, function(u)
+			gset(w, cf * CFrame.Angles(0, 0, -u * 4))
+			galpha(w, u)
+		end)
+		task.delay(0.47, function()
+			gfade(w, 0.05)
+		end)
+		Fx.ring(at, INDIGO, 1, 12, 0.35)
+		Fx.burst("glitter", at, GOLD, 10, 1)
+		Fx.sound("deflect", 0.6, 1.3, at)
+	end)
+end
+
+-- 윤회륜 (E): 바퀴가 세워진 채 구르며 앞으로 갔다가 주인에게 되돌아온다. 지나간 땅에 금빛 바퀴 자국과 불티
+function H.wheelThrow(d: any)
+	local m = d.m
+	local from: Vector3 = d.from
+	local dir: Vector3 = flat(d.dir)
+	local time = d.time or 1.2
+	hideWheel(m, time + 0.1)
+	if not near(from, 300) then
+		return
+	end
+	local R = 2.8
+	local w = wheelGroup(R, 0.32)
+	local light = part(Vector3.new(0.2, 0.2, 0.2), GOLD, Enum.Material.Neon, 1)
+	local pl = Instance.new("PointLight")
+	pl.Color = GOLD
+	pl.Range = 14
+	pl.Brightness = 2
+	pl.Parent = light
+	local lastMark = 0
+	local lastSound = 0
+	local mid = false
+	anim(time, function(u)
+		local r = rootOf(m)
+		local owner = r and r.Position or from
+		local pos = from:Lerp(owner, u) + dir * (d.dist * math.sin(u * math.pi)) + Vector3.new(0, R - 2.5, 0)
+		local cf = CFrame.fromMatrix(pos, dir, Vector3.new(0, 1, 0)) * CFrame.Angles(0, 0, -u * math.pi * 9)
+		gset(w, cf)
+		light.CFrame = CFrame.new(pos)
+		local now = os.clock()
+		if now - lastMark > 0.04 then
+			lastMark = now
+			local g = Vector3.new(pos.X, pos.Y - R + 0.15, pos.Z)
+			local mark = part(Vector3.new(0.5, 0.12, 1.6), GOLD, Enum.Material.Neon, 0.2)
+			mark.CFrame = CFrame.lookAt(g, g + dir)
+			fadeOut(mark, 0.5)
+			Fx.burst("spark", g, GOLD, 2, 0.8)
+		end
+		if now - lastSound > 0.25 then
+			lastSound = now
+			Fx.breakSound("whoosh", 0.4, 1.2, pos)
+		end
+		if not mid and u >= 0.5 then
+			mid = true
+			Fx.ring(pos, GOLD, 2, 16, 0.4, dir)
+		end
+		if u >= 1 then
+			gfade(w, 0.15)
+			light:Destroy()
+			Fx.ring(pos, INDIGO, 1, 8, 0.3)
+		end
+	end)
+end
+
+-- 전생보 (R): 내달린 길에 금빛 줄, 지난 삶의 그림자 둘이 같은 길을 차례로 다시 내달려 벤다
+function H.pastStep(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 300) then
+		return
+	end
+	local m = d.m
+	local dir = flat(b - a)
+	streak(ground(a) + Vector3.new(0, 0.2, 0), ground(b) + Vector3.new(0, 0.2, 0), GOLD, 1.2, 0.8)
+	for k = 0, 3 do
+		task.delay(k * 0.04, function()
+			if m and m.Parent then
+				Fx.afterimage(m, k % 2 == 0 and INDIGO or GOLD, 0.45)
+			end
+		end)
+	end
+	for e = 1, d.echoes or 2 do
+		task.delay((d.delay or 0.4) + (e - 1) * (d.gap or 0.3), function()
+			if not (m and m.Parent) then
+				return
+			end
+			local g = ghostOf(m, e == 1 and INDIGO or Color3.fromRGB(90, 60, 200), 0.4)
+			local yaw = CFrame.lookAt(a, a + dir)
+			anim(0.16, function(u)
+				local p = a:Lerp(b, u)
+				gset(g, yaw.Rotation + p)
+				if u >= 1 then
+					gfade(g, 0.35)
+				end
+			end)
+			task.delay(0.12, function()
+				-- 길을 따라 긋는 쪽빛 칼자국과 바퀴 고리
+				local mid = (a + b) / 2
+				local slash = part(Vector3.new(0.25, 3.2, (b - a).Magnitude), INDIGO, Enum.Material.Neon, 0.1)
+				slash.CFrame = CFrame.lookAt(mid, b) * CFrame.Angles(0, 0, math.rad(e == 1 and 30 or -30))
+				fadeOut(slash, 0.35, { Size = Vector3.new(0.05, 0.6, (b - a).Magnitude) })
+				Fx.ring(b, GOLD, 1, 10, 0.3)
+				Fx.sound("swing", 0.6, 0.8 + e * 0.15, mid)
+			end)
+		end)
+	end
+end
+
+-- 육도윤회 (오의): 하늘에 뜬 거대한 바퀴, 여섯 구슬이 빛기둥으로 떨어지고, 바퀴가 땅에 누워 갈며 돌다가 터진다
+function H.sixRealms(d: any)
+	local m = d.m
+	local center: Vector3 = d.at
+	local r = rootOf(m)
+	local look = r and flat(r.CFrame.LookVector) or Vector3.new(0, 0, -1)
+	local right = Vector3.new(-look.Z, 0, look.X)
+	local rise, every, slam, grind = d.rise or 0.55, d.every or 0.22, d.slam or 2, d.grind or 1.2
+	hideWheel(m, slam + grind + 0.3)
+	if not near(center, 400) then
+		return
+	end
+	local R = 13
+	local w = wheelGroup(R, 1.1, 0)
+	galpha(w, 1)
+	local skyPos = center + Vector3.new(0, 24, 0) - look * 6
+	local orbsGone: { [number]: boolean } = {}
+	-- 구슬 여섯은 따로 (떨어져 나갈 때 감춘다)
+	local orbIdx: { [number]: BasePart } = {}
+	local n = #w.items
+	for k = 1, 6 do
+		orbIdx[k] = w.items[n - 6 + k][1]
+	end
+	if opts.tint then
+		opts.tint(Color3.fromRGB(200, 185, 255), 0.25, slam + grind + 0.4)
+	end
+	local total = slam + grind
+	local landed = false
+	local light = part(Vector3.new(0.2, 0.2, 0.2), GOLD, Enum.Material.Neon, 1)
+	local pl = Instance.new("PointLight")
+	pl.Color = GOLD
+	pl.Range = 40
+	pl.Brightness = 2
+	pl.Parent = light
+	anim(total, function(u)
+		local t = u * total
+		local cf
+		if t < slam - 0.3 then
+			-- 떠오르며 드러나고 천천히 돈다 (세워진 채, 나를 향해)
+			local k = math.clamp(t / rise, 0, 1)
+			local pos = (center + Vector3.new(0, 4, 0)):Lerp(skyPos, 1 - (1 - k) ^ 2)
+			cf = CFrame.fromMatrix(pos, right, Vector3.new(0, 1, 0)) * CFrame.Angles(0, 0, t * 0.8)
+			galpha(w, 1 - k)
+		elseif t < slam then
+			-- 눕듯 기울며 땅으로 내려앉는다
+			local k = (t - (slam - 0.3)) / 0.3
+			local pos = skyPos:Lerp(ground(center) + Vector3.new(0, 1.2, 0), k * k)
+			cf = CFrame.fromMatrix(pos, right, Vector3.new(0, 1, 0)) * CFrame.Angles(-math.rad(90) * k, 0, 0) * CFrame.Angles(0, 0, t * 0.8)
+			galpha(w, 0)
+		else
+			if not landed then
+				landed = true
+				Fx.ring(ground(center) + Vector3.new(0, 0.4, 0), GOLD, 4, 60, 0.7)
+				Fx.ring(ground(center) + Vector3.new(0, 0.5, 0), INDIGO, 2, 40, 0.8)
+				Fx.debris(ground(center), 16, 45)
+				Fx.breakSound("boom", 1, 0.7, center)
+				shakeNear(center, 1.4, 160)
+			end
+			local spin = (t - slam) * 9
+			cf = CFrame.fromMatrix(ground(center) + Vector3.new(0, 1.2, 0), right, Vector3.new(0, 1, 0)) * CFrame.Angles(-math.rad(90), 0, 0) * CFrame.Angles(0, 0, slam * 0.8 + spin)
+			if math.random() < 0.6 then
+				local a = math.random() * math.pi * 2
+				Fx.burst("spark", ground(center) + Vector3.new(math.cos(a) * R, 1, math.sin(a) * R), GOLD, 3, 1.2)
+			end
+		end
+		gset(w, cf)
+		for k, p in pairs(orbIdx) do
+			if orbsGone[k] then
+				p.Transparency = 1
+			end
+		end
+		light.CFrame = cf
+		if u >= 1 then
+			light:Destroy()
+			gfade(w, 0.4)
+			Fx.blast(ground(center) + Vector3.new(0, 2, 0), INDIGO, GOLD, 3)
+			Fx.ring(ground(center) + Vector3.new(0, 0.5, 0), GOLD, 6, (d.radius or 24) * 2.6, 0.8)
+			Fx.flash(center, GOLD, 80, 6, 0.8)
+			shakeNear(center, 1.8, 200)
+		end
+	end)
+	-- 여섯 구슬이 떨어져 빛기둥으로 꽂힌다
+	for k = 1, 6 do
+		local spot: Vector3? = d.spots and d.spots[k]
+		if spot then
+			task.delay(rise + (k - 1) * every, function()
+				orbsGone[k] = true
+				local col = REALMS[k]
+				local orbFrom = CFrame.fromMatrix(skyPos, right, Vector3.new(0, 1, 0)) * orbOffset(R, k)
+				local orb = part(Vector3.new(2.6, 2.6, 2.6), col, Enum.Material.Neon, 0, "ball")
+				anim(0.12, function(u)
+					orb.Position = orbFrom:Lerp(spot, u)
+					if u >= 1 then
+						orb:Destroy()
+					end
+				end)
+				task.delay(0.12, function()
+					pillar(ground(spot), col, 5, 60, 0.6)
+					Fx.ring(ground(spot) + Vector3.new(0, 0.3, 0), col, 2, 18, 0.45)
+					Fx.burst("glitter", spot, col, 14, 1.4)
+					Fx.sound("deflect", 0.7, 0.7 + k * 0.08, spot)
+					shakeNear(spot, 0.5, 100)
+				end)
+			end)
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 업화권
+------------------------------------------------------------------------
+-- 검은 불기둥: 검붉은 겉불, 붉은 심, 위로 솟는 불티
+local function hellPillar(at: Vector3, h: number, dd: number, life: number)
+	local g = ground(at)
+	local outer = part(Vector3.new(0.5, dd, dd), CHAR, Enum.Material.SmoothPlastic, 0.2, "cyl")
+	outer.CFrame = CFrame.new(g) * CFrame.Angles(0, 0, math.rad(90))
+	local core = part(Vector3.new(0.5, dd * 0.55, dd * 0.55), EMBER, Enum.Material.Neon, 0.05, "cyl")
+	core.CFrame = outer.CFrame
+	tween(outer, 0.14, { Size = Vector3.new(h, dd, dd), CFrame = CFrame.new(g + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)) })
+	tween(core, 0.12, { Size = Vector3.new(h * 1.05, dd * 0.55, dd * 0.55), CFrame = CFrame.new(g + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)) })
+	task.delay(0.15, function()
+		fadeOut(outer, life, { Size = Vector3.new(h * 1.2, dd * 1.6, dd * 1.6) })
+		fadeOut(core, life * 0.8, { Size = Vector3.new(h * 1.2, 0.2, 0.2) })
+	end)
+	Fx.burst("ember", g + Vector3.new(0, h * 0.4, 0), EMBER, 6, 1.2)
+end
+-- 땅의 붉은 금 (갈라짐): 가운데에서 바깥으로 꺾이며 뻗는다
+local function crack(at: Vector3, len: number, angle: number, life: number)
+	local p = ground(at) + Vector3.new(0, 0.12, 0)
+	local a = angle
+	local seg = len / 4
+	for _ = 1, 4 do
+		a += (math.random() - 0.5) * 0.8
+		local q = p + Vector3.new(math.cos(a), 0, math.sin(a)) * seg
+		local s = part(Vector3.new(0.45, 0.1, seg + 0.2), EMBER, Enum.Material.Neon, 0.05)
+		s.CFrame = CFrame.lookAt((p + q) / 2, q)
+		fadeOut(s, life)
+		p = q
+	end
+end
+
+-- 업보 (연타 다섯마다): 상대 발밑에 붉은 낙인이 찍혔다가 검은 지옥불 기둥이 솟는다
+function H.karmaPulse(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local g = ground(at) + Vector3.new(0, 0.15, 0)
+	local seal = part(Vector3.new(0.12, 1, 1), HELL, Enum.Material.Neon, 0.2, "cyl")
+	seal.CFrame = CFrame.new(g) * CFrame.Angles(0, 0, math.rad(90))
+	tween(seal, d.delay or 0.5, { Size = Vector3.new(0.12, 9, 9) })
+	for k = 0, 4 do
+		crack(at, 4, k / 5 * math.pi * 2, (d.delay or 0.5) + 0.4)
+	end
+	task.delay(d.delay or 0.5, function()
+		seal:Destroy()
+		hellPillar(at, 18, 5, 0.5)
+		Fx.ring(g, EMBER, 1, 14, 0.4)
+		Fx.breakSound("boom", 0.6, 1.1, at)
+		shakeNear(at, 0.4, 80)
+	end)
+end
+
+-- 업화탄 (E): 주먹 사이에서 검은 불덩이 셋이 피어 적을 쫓아 날아가 붉게 터진다
+function H.karmaOrbs(d: any)
+	local m = d.m
+	local r = rootOf(m)
+	if not r or not near(r.Position, 300) then
+		return
+	end
+	local origin = r.Position + flat(r.CFrame.LookVector) * 2 + Vector3.new(0, 1, 0)
+	Fx.burst("ember", origin, EMBER, 12, 1.2)
+	for i = 1, #(d.points or {}) do
+		task.delay((d.delay or 0.2) + (i - 1) * 0.04, function()
+			local core = part(Vector3.new(1.8, 1.8, 1.8), CHAR, Enum.Material.SmoothPlastic, 0, "ball")
+			local shell = part(Vector3.new(2.6, 2.6, 2.6), EMBER, Enum.Material.Neon, 0.45, "ball")
+			local fire = emitter(core, TEX_FIRE, Color3.fromRGB(255, 80, 30), CHAR, 40, 1.6, 0.3, 2, 0.5)
+			fire.Acceleration = Vector3.new(0, 4, 0)
+			local tgt = d.targets and d.targets[i]
+			local side = (i - 2) * 6
+			local travel = d.travel or 0.4
+			anim(travel, function(u)
+				local tr = tgt and rootOf(tgt)
+				local to = tr and tr.Position or d.points[i]
+				local mid = (origin + to) / 2 + Vector3.new(0, 6, 0) + Vector3.new(-(to - origin).Z, 0, (to - origin).X).Unit * side * 0.3
+				local p = origin:Lerp(mid, u):Lerp(mid:Lerp(to, u), u)
+				core.Position = p
+				shell.Position = p
+				if u >= 1 then
+					core:Destroy()
+					shell:Destroy()
+					local boom = part(Vector3.new(2, 2, 2), EMBER, Enum.Material.Neon, 0.1, "ball")
+					boom.Position = to
+					fadeOut(boom, 0.35, { Size = Vector3.new(12, 12, 12) })
+					local soot = part(Vector3.new(3, 3, 3), CHAR, Enum.Material.SmoothPlastic, 0.3, "ball")
+					soot.Position = to
+					fadeOut(soot, 0.6, { Size = Vector3.new(10, 10, 10), Position = to + Vector3.new(0, 3, 0) })
+					Fx.ring(ground(to) + Vector3.new(0, 0.3, 0), HELL, 1, 14, 0.4)
+					Fx.burst("ember", to, EMBER, 14, 1.4)
+					Fx.breakSound("boom", 0.7, 1.0, to)
+					shakeNear(to, 0.4, 80)
+				end
+			end)
+		end)
+	end
+end
+
+-- 겁화보 (R): 내달린 길이 갈라져 2초 동안 검은 불로 타고, 마지막에 불기둥이 줄지어 치솟는다
+function H.hellTrail(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 300) then
+		return
+	end
+	local m = d.m
+	for k = 0, 4 do
+		task.delay(k * 0.04, function()
+			if m and m.Parent then
+				Fx.afterimage(m, k % 2 == 0 and HELL or CHAR, 0.4)
+			end
+		end)
+	end
+	local dir = flat(b - a)
+	local len = (b - a).Magnitude
+	local dur = d.dur or 2
+	task.delay(d.delay or 0.15, function()
+		-- 그을린 땅과 갈라진 붉은 금
+		local scorch = part(Vector3.new(d.width * 1.6, 0.1, len), CHAR, Enum.Material.SmoothPlastic, 0.15)
+		scorch.CFrame = CFrame.lookAt((ground(a) + ground(b)) / 2 + Vector3.new(0, 0.1, 0), ground(b) + Vector3.new(0, 0.1, 0))
+		task.delay(dur, function()
+			fadeOut(scorch, 0.6)
+		end)
+		local zig = {}
+		for i = 0, 8 do
+			local p = ground(a):Lerp(ground(b), i / 8) + Vector3.new(-dir.Z, 0, dir.X) * (i % 2 == 0 and 0.8 or -0.8) + Vector3.new(0, 0.18, 0)
+			table.insert(zig, p)
+		end
+		for i = 1, #zig - 1 do
+			local s = part(Vector3.new(0.5, 0.1, (zig[i + 1] - zig[i]).Magnitude + 0.2), EMBER, Enum.Material.Neon, 0.05)
+			s.CFrame = CFrame.lookAt((zig[i] + zig[i + 1]) / 2, zig[i + 1])
+			task.delay(dur, function()
+				fadeOut(s, 0.4)
+			end)
+		end
+		-- 길 위의 불꽃
+		for i = 1, 6 do
+			local p = ground(a):Lerp(ground(b), (i - 0.5) / 6) + Vector3.new(0, 0.5, 0)
+			local base = part(Vector3.new(0.4, 0.4, 0.4), EMBER, Enum.Material.Neon, 1)
+			base.Position = p
+			local e = emitter(base, TEX_FIRE, Color3.fromRGB(255, 90, 30), CHAR, 30, 2.6, 0.6, 5, 0.5)
+			e.Acceleration = Vector3.new(0, 8, 0)
+			task.delay(dur, function()
+				e.Enabled = false
+				task.delay(0.7, function()
+					base:Destroy()
+				end)
+			end)
+		end
+		task.delay(dur, function()
+			for i = 1, 7 do
+				task.delay((i - 1) * 0.04, function()
+					hellPillar(a:Lerp(b, (i - 1) / 6), 16, 4.5, 0.45)
+				end)
+			end
+			Fx.breakSound("boom", 0.9, 0.9, (a + b) / 2)
+			shakeNear((a + b) / 2, 0.8, 120)
+		end)
+	end)
+end
+
+-- 지옥불 속의 거대한 손: 손바닥 (세워진 판) · 손가락 넷 (두 마디) · 엄지. 손가락은 +Z 쪽으로 말려 주먹이 된다
+local function hellHand(s: number): (Group, { { any } })
+	local g = group()
+	gpart(g, Vector3.new(6, 7, 2) * s, CHAR, Enum.Material.SmoothPlastic, 0, nil, CFrame.new())
+	gpart(g, Vector3.new(4, 5, 2.1) * s, EMBER, Enum.Material.Neon, 0.6, nil, CFrame.new(0, 0, 0.05 * s))
+	gpart(g, Vector3.new(4.4, 6, 2.4) * s, CHAR, Enum.Material.SmoothPlastic, 0, "cyl", CFrame.new(0, -6 * s, 0) * CFrame.Angles(0, 0, math.rad(90)))
+	local fingers = {}
+	for k = 0, 3 do
+		local x = (-2.25 + k * 1.5) * s
+		local L1 = (k == 1 or k == 2) and 3.6 * s or 3 * s
+		local p1 = part(Vector3.new(1.3, L1, 1.4) * Vector3.new(s, 1, s), CHAR, Enum.Material.SmoothPlastic)
+		local p2 = part(Vector3.new(1.2, L1 * 0.8, 1.3) * Vector3.new(s, 1, s), CHAR, Enum.Material.SmoothPlastic)
+		local tip = part(Vector3.new(0.6, 0.6, 0.6) * s, EMBER, Enum.Material.Neon, 0, "ball")
+		table.insert(fingers, { p1, p2, tip, x, L1 })
+	end
+	local thumb = part(Vector3.new(1.4, 3.2, 1.4) * s, CHAR, Enum.Material.SmoothPlastic)
+	table.insert(fingers, { thumb, nil, nil, -3.6 * s, 3.2 * s, true })
+	return g, fingers
+end
+local function setHand(g: Group, fingers: { { any } }, cf: CFrame, curl: number, s: number)
+	gset(g, cf)
+	for _, fg in ipairs(fingers) do
+		local x, L1 = fg[4] :: number, fg[5] :: number
+		if fg[6] then
+			local base = cf * CFrame.new(x, -0.5 * s, 0.6 * s) * CFrame.Angles(0, 0, math.rad(40)) * CFrame.Angles(-curl * 0.9, 0, 0)
+			;(fg[1] :: BasePart).CFrame = base * CFrame.new(0, L1 / 2, 0)
+		else
+			local b1 = cf * CFrame.new(x, 3.5 * s, 0) * CFrame.Angles(curl, 0, 0)
+			;(fg[1] :: BasePart).CFrame = b1 * CFrame.new(0, L1 / 2, 0)
+			local b2 = b1 * CFrame.new(0, L1, 0) * CFrame.Angles(curl * 0.9, 0, 0)
+			;(fg[2] :: BasePart).CFrame = b2 * CFrame.new(0, L1 * 0.4, 0)
+			;(fg[3] :: BasePart).CFrame = b2 * CFrame.new(0, L1 * 0.8, 0)
+		end
+	end
+end
+
+-- 무간지옥 (오의): 갈라진 땅, 세 겹으로 퍼져 솟는 지옥불, 땅속에서 솟은 거대한 손이 가운데를 움켜쥐고 터뜨린다
+function H.avici(d: any)
+	local center: Vector3 = d.at
+	if not near(center, 400) then
+		return
+	end
+	local R = d.radius or 26
+	local delay, every, waves = d.delay or 0.4, d.every or 0.35, d.waves or 3
+	local handAt, grab = d.handAt or 0.35, d.grab or 0.6
+	if opts.tint then
+		opts.tint(Color3.fromRGB(255, 120, 110), 0.3, delay + waves * every + handAt + grab + 0.4)
+	end
+	-- 내리친 자리에서 사방으로 갈라진다
+	local g = ground(center)
+	local pit = part(Vector3.new(0.1, 1, 1), CHAR, Enum.Material.SmoothPlastic, 0.1, "cyl")
+	pit.CFrame = CFrame.new(g + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(pit, delay + 0.3, { Size = Vector3.new(0.1, R * 2, R * 2) })
+	local glow = part(Vector3.new(0.12, 1, 1), HELL, Enum.Material.Neon, 0.55, "cyl")
+	glow.CFrame = CFrame.new(g + Vector3.new(0, 0.14, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(glow, delay + 0.3, { Size = Vector3.new(0.12, R * 1.6, R * 1.6) })
+	local life = delay + waves * every + handAt + grab + 0.3
+	task.delay(life, function()
+		fadeOut(pit, 0.6)
+		fadeOut(glow, 0.6)
+	end)
+	for k = 0, 11 do
+		crack(center, R * 0.9, k / 12 * math.pi * 2, life)
+	end
+	shakeNear(center, 0.8, 140)
+	Fx.breakSound("rock", 1, 0.6, center)
+	-- 세 겹 불기둥
+	for w = 1, waves do
+		task.delay(delay + (w - 1) * every, function()
+			local rr = R * w / waves
+			local n = 5 + w * 4
+			for i = 0, n - 1 do
+				local a = i / n * math.pi * 2 + w * 0.3
+				hellPillar(center + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr), 14 + w * 4, 3.4, 0.5)
+			end
+			Fx.ring(g + Vector3.new(0, 0.4, 0), EMBER, rr * 0.6, rr * 2.2, 0.4)
+			Fx.breakSound("boom", 0.8, 0.8 + w * 0.1, center)
+			shakeNear(center, 0.6, 140)
+		end)
+	end
+	-- 땅속에서 솟는 거대한 손
+	local T = delay + waves * every + handAt
+	task.delay(T - 0.35, function()
+		local s = 2.6
+		local hg, fingers = hellHand(s)
+		local cam = workspace.CurrentCamera
+		local face = cam and flat(cam.CFrame.Position - center) or Vector3.new(0, 0, 1)
+		local fire: { ParticleEmitter } = {}
+		for _, it in ipairs(hg.items) do
+			local p = it[1] :: BasePart
+			if p.Material == Enum.Material.SmoothPlastic and #fire < 3 then
+				local e = emitter(p, TEX_FIRE, Color3.fromRGB(255, 80, 30), CHAR, 40, 5, 0.6, 6, 0.5)
+				e.Acceleration = Vector3.new(0, 10, 0)
+				table.insert(fire, e)
+			end
+		end
+		local base = CFrame.lookAt(g, g - face)
+		anim(0.35 + grab, function(u)
+			local t = u * (0.35 + grab)
+			local rise = math.clamp(t / 0.35, 0, 1)
+			local curl = t < 0.35 and math.rad(-8) or math.rad(-8 + 115 * math.clamp((t - 0.35) / grab, 0, 1) ^ 0.6)
+			local cf = base * CFrame.new(0, -16 * s + rise * 16 * s + 3 * s, 0) * CFrame.Angles(math.rad(-8), 0, 0)
+			setHand(hg, fingers, cf, curl, s)
+			if u >= 1 then
+				gfade(hg, 0.4)
+				for _, fg in ipairs(fingers) do
+					for i = 1, 3 do
+						local p = fg[i]
+						if p then
+							fadeOut(p, 0.4)
+						end
+					end
+				end
+				for _, e in ipairs(fire) do
+					e.Enabled = false
+				end
+				-- 움켜쥔 손 안에서 터진다
+				Fx.blast(center + Vector3.new(0, 6, 0), HELL, EMBER, 3.2)
+				hellPillar(center, 50, 12, 0.7)
+				Fx.ring(g + Vector3.new(0, 0.5, 0), EMBER, 4, R * 2.6, 0.7)
+				Fx.flash(center, EMBER, 90, 6, 0.8)
+				Fx.breakSound("boom", 1, 0.6, center)
+				shakeNear(center, 2, 220)
+			end
+		end)
+		Fx.debris(g, 20, 50)
+		Fx.breakSound("rock", 1, 0.5, center)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 무상권
+------------------------------------------------------------------------
+local function mistPuff(at: Vector3, size: number, life: number)
+	for k = 0, 3 do
+		local p = part(Vector3.new(size, size * 0.7, size) * (0.6 + k * 0.15), MIST:Lerp(GHOST, k * 0.15), Enum.Material.SmoothPlastic, 0.45 + k * 0.1, "ball")
+		p.Position = at + Vector3.new(math.random() - 0.5, math.random() * 0.6, math.random() - 0.5) * size * 0.5
+		fadeOut(p, life * (0.7 + k * 0.15), { Size = p.Size * 1.8, Position = p.Position + Vector3.new(0, size * 0.3, 0) })
+	end
+end
+
+-- 무상영 (연타 넷마다): 상대 뒤에 흐릿한 잔상이 나타나 엇갈려 벤다
+function H.phantomPulse(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local cam = workspace.CurrentCamera
+	local back = cam and flat(at - cam.CFrame.Position) or Vector3.new(0, 0, -1)
+	local behind = at + back * 2.5
+	mistPuff(behind, 3, 0.5)
+	task.delay(d.delay or 0.3, function()
+		slashX(at, GHOST, 7, 0.3)
+		mistPuff(at, 2.5, 0.4)
+		Fx.ring(at, GHOST, 1, 10, 0.3)
+		Fx.sound("swing", 0.6, 1.4, at)
+	end)
+end
+
+-- 무상영 (E): 안개가 되어 적의 등 뒤로 차례로 나타난다. 지나간 자리마다 흐릿한 잔상과 푸른 칼빛
+function H.phantomBlink(d: any)
+	local m = d.m
+	local prev: Vector3 = d.from
+	if not near(prev, 300) then
+		return
+	end
+	mistPuff(prev, 4, 0.6)
+	for i, t in ipairs(d.targets or {}) do
+		task.delay((d.delay or 0.08) + (i - 1) * (d.every or 0.22), function()
+			local tr = rootOf(t)
+			if not tr then
+				return
+			end
+			local to = tr.Position
+			if m and m.Parent then
+				local g, cf0 = ghostOf(m, MIST, 0.5, Enum.Material.SmoothPlastic)
+				gset(g, cf0)
+				gfade(g, 0.5)
+			end
+			streak(prev, to, GHOST, 0.35, 0.35, 0.35)
+			slashX(to, GHOST, 8, 0.3)
+			mistPuff(to, 3, 0.5)
+			Fx.ring(to, GHOST, 1, 12, 0.3)
+			Fx.sound("swing", 0.7, 1.2 + i * 0.1, to)
+			prev = to
+		end)
+	end
+end
+
+-- 허상 (R): 몸이 안개로 흩어지고 둘레에 허상 셋. 허상 둘레로 안개가 빨려 들다가 허상이 안개로 터진다
+function H.illusions(d: any)
+	local m = d.m
+	local center: Vector3 = d.at
+	if not near(center, 300) then
+		return
+	end
+	mistPuff(center, 5, 0.7)
+	Fx.sound("deflect", 0.6, 0.6, center)
+	local hold = d.hold or 1.2
+	local ghosts: { Group } = {}
+	if m and m.Parent then
+		for _, spot in ipairs(d.spots or {}) do
+			local g, cf0 = ghostOf(m, MIST:Lerp(GHOST, 0.3), 0.45, Enum.Material.SmoothPlastic)
+			local face = flat(spot - center)
+			local base = CFrame.lookAt(Vector3.new(spot.X, cf0.Position.Y, spot.Z), Vector3.new(spot.X, cf0.Position.Y, spot.Z) + face)
+			table.insert(ghosts, g)
+			anim(hold, function(u)
+				gset(g, base * CFrame.new(0, math.sin(u * math.pi * 4) * 0.3, 0))
+				if math.random() < 0.15 then
+					local a = math.random() * math.pi * 2
+					local from = spot + Vector3.new(math.cos(a) * 9, math.random() * 3, math.sin(a) * 9)
+					local mote = part(Vector3.new(0.6, 0.6, 0.6), GHOST, Enum.Material.Neon, 0.2, "ball")
+					mote.Position = from
+					tween(mote, 0.35, { Position = spot, Size = Vector3.new(0.1, 0.1, 0.1) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+					task.delay(0.36, function()
+						mote:Destroy()
+					end)
+				end
+			end)
+		end
+	end
+	task.delay(hold, function()
+		for i, g in ipairs(ghosts) do
+			gfade(g, 0.2)
+			local spot = d.spots[i]
+			mistPuff(spot, 6, 0.7)
+			Fx.ring(spot, GHOST, 1, 20, 0.4)
+			for _ = 1, 6 do
+				local sh = part(Vector3.new(0.4, 1.4, 0.1), MIST, Enum.Material.Glass, 0.2)
+				sh.CFrame = CFrame.new(spot) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+				fadeOut(sh, 0.5, { CFrame = sh.CFrame + Vector3.new(math.random() * 8 - 4, math.random() * 5, math.random() * 8 - 4) })
+			end
+		end
+		Fx.breakSound("glass", 0.6, 1.3, center)
+		shakeNear(center, 0.6, 100)
+	end)
+end
+
+-- 제행무상 (오의): 세상이 잿빛으로 멈춘다. 일곱 그림자가 일곱 적에게 덮쳐 엇갈려 베고, 하나로 모이며 안개 물결로 터진다
+function H.allPasses(d: any)
+	local m = d.m
+	local center: Vector3 = d.at
+	if not near(center, 400) then
+		return
+	end
+	local delay, strikes, every, converge = d.delay or 0.6, d.strikes or 3, d.every or 0.18, d.converge or 0.4
+	local total = delay + strikes * every + converge
+	if opts.tint then
+		opts.tint(Color3.fromRGB(175, 180, 190), 0.6, total)
+	end
+	mistPuff(center, 6, 0.8)
+	-- 발밑의 잿빛 물결
+	local still = part(Vector3.new(0.1, 1, 1), MIST, Enum.Material.SmoothPlastic, 0.6, "cyl")
+	still.CFrame = CFrame.new(ground(center) + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(still, delay, { Size = Vector3.new(0.1, (d.radius or 26) * 2, (d.radius or 26) * 2) })
+	task.delay(total, function()
+		fadeOut(still, 0.4)
+	end)
+	if not (m and m.Parent) then
+		return
+	end
+	local ghosts = {}
+	for i, spot in ipairs(d.spots or {}) do
+		local g, cf0 = ghostOf(m, i % 2 == 0 and GHOST or MIST, 0.4, Enum.Material.Neon)
+		local y = cf0.Position.Y
+		local to = Vector3.new(spot.X, y, spot.Z)
+		local from = Vector3.new(center.X, y, center.Z)
+		local face = flat(to - from)
+		table.insert(ghosts, { g = g, from = from, to = to, face = face })
+		task.delay(delay * 0.6, function()
+			anim(delay * 0.4, function(u)
+				local p = from:Lerp(to - face * 2.5, u * u)
+				gset(g, CFrame.lookAt(p, p + face))
+			end)
+		end)
+	end
+	for k = 1, strikes do
+		task.delay(delay + (k - 1) * every, function()
+			for _, gh in ipairs(ghosts) do
+				slashX(gh.to, k % 2 == 0 and WHITE or GHOST, 8, 0.25)
+				if k == 1 then
+					mistPuff(gh.to, 2.5, 0.4)
+				end
+			end
+			Fx.sound("swing", 0.8, 1 + k * 0.15, center)
+			shakeNear(center, 0.4, 120)
+		end)
+	end
+	task.delay(delay + strikes * every, function()
+		for _, gh in ipairs(ghosts) do
+			local from = gh.to - gh.face * 2.5
+			anim(converge, function(u)
+				local p = from:Lerp(gh.from, u * u)
+				gset(gh.g, CFrame.lookAt(p, p + gh.face))
+				if u >= 1 then
+					gfade(gh.g, 0.1)
+				end
+			end)
+		end
+	end)
+	task.delay(total, function()
+		local g = ground(center)
+		local wave = part(Vector3.new(4, 2, 2), MIST, Enum.Material.SmoothPlastic, 0.35, "cyl")
+		wave.CFrame = CFrame.new(g + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(wave, 0.7, { Size = Vector3.new(1, (d.radius or 26) * 2.4, (d.radius or 26) * 2.4) })
+		Fx.ring(g + Vector3.new(0, 0.4, 0), GHOST, 3, (d.radius or 26) * 2.4, 0.6)
+		Fx.ring(g + Vector3.new(0, 2, 0), WHITE, 2, (d.radius or 26) * 1.6, 0.5)
+		Fx.blast(center, GHOST, MIST, 2.4)
+		Fx.flash(center, GHOST, 70, 5, 0.6)
+		Fx.breakSound("glass", 0.8, 0.8, center)
+		shakeNear(center, 1.6, 200)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 권왕신권
+------------------------------------------------------------------------
+-- 왕의 주먹 (연타 넷마다): 하늘에서 금빛 주먹이 내리찍는다
+function H.kingPulse(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local g = fistGroup(0.55, 0.05)
+	local top = at + Vector3.new(0, 26, 0)
+	local delay = d.delay or 0.45
+	local mark = part(Vector3.new(0.1, 1, 1), GOLD, Enum.Material.Neon, 0.4, "cyl")
+	mark.CFrame = CFrame.new(ground(at) + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(mark, delay, { Size = Vector3.new(0.1, 7, 7) })
+	anim(delay, function(u)
+		local p = top:Lerp(at + Vector3.new(0, 2, 0), u * u)
+		gset(g, CFrame.lookAt(p, p - Vector3.new(0, 1, 0), Vector3.new(0, 0, 1)))
+		if u >= 1 then
+			gfade(g, 0.3)
+			mark:Destroy()
+			goldImpact(at, 0.6)
+		end
+	end)
+end
+
+-- 왕권 (E): 등 뒤에 집채만 한 금빛 주먹이 나타나 앞으로 곧게 내지르고, 반 박자 뒤 반대쪽 주먹이 한 번 더
+function H.kingFist(d: any)
+	local from: Vector3 = d.from
+	if not near(from, 320) then
+		return
+	end
+	local dir = flat(d.dir)
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	for k = 0, 1 do
+		local side = k == 0 and 1 or -1
+		task.delay((d.delay or 0.3) - 0.2 + k * (d.second or 0.35), function()
+			local g = fistGroup(0.9, 0)
+			local start = from - dir * 4 + right * side * 5 + Vector3.new(0, 4, 0)
+			local stop = from + dir * (d.length or 30) + right * side * 1.5 + Vector3.new(0, 1, 0)
+			galpha(g, 1)
+			anim(0.2, function(u)
+				gset(g, CFrame.lookAt(start, start + dir))
+				galpha(g, 1 - u)
+			end)
+			task.delay(0.2, function()
+				local lastRing = 0
+				anim(0.18, function(u)
+					local p = start:Lerp(stop, 1 - (1 - u) ^ 3)
+					gset(g, CFrame.lookAt(p, p + dir))
+					if u - lastRing > 0.25 then
+						lastRing = u
+						Fx.ring(p, GOLD, 3, 14, 0.3, dir)
+					end
+					if u >= 1 then
+						gfade(g, 0.35)
+						Fx.blast(stop, GOLD, CRIMSON, 1.6)
+						Fx.breakSound("boom", 0.8, 1.0, stop)
+						shakeNear(stop, 0.8, 120)
+					end
+				end)
+				streak(ground(start) + Vector3.new(0, 0.2, 0), ground(stop) + Vector3.new(0, 0.2, 0), GOLD, 2.4, 0.5)
+				Fx.breakSound("whoosh", 0.8, 0.7, from)
+			end)
+		end)
+	end
+end
+
+-- 왕도 (R): 발밑에서 앞으로 금빛 길이 깔리고, 길을 따라 금빛 기둥이 차례로 솟는다
+function H.royalRoad(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 320) then
+		return
+	end
+	local m = d.m
+	local dir = flat(b - a)
+	local len = (b - a).Magnitude
+	local run = d.run or 0.35
+	local w = d.width or 6
+	local ga = ground(a) + Vector3.new(0, 0.15, 0)
+	local carpet = part(Vector3.new(w, 0.2, 0.1), GOLD, Enum.Material.Metal, 0)
+	local edges = { part(Vector3.new(0.5, 0.25, 0.1), CRIMSON, Enum.Material.Fabric), part(Vector3.new(0.5, 0.25, 0.1), CRIMSON, Enum.Material.Fabric) }
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	anim(run, function(u)
+		local L = math.max(0.1, len * u)
+		local c = ga + dir * (L / 2)
+		carpet.Size = Vector3.new(w, 0.2, L)
+		carpet.CFrame = CFrame.lookAt(c, c + dir)
+		for i, e in ipairs(edges) do
+			e.Size = Vector3.new(0.5, 0.25, L)
+			e.CFrame = CFrame.lookAt(c + right * (i == 1 and 1 or -1) * (w / 2 + 0.25), c + right * (i == 1 and 1 or -1) * (w / 2 + 0.25) + dir)
+		end
+		if m and m.Parent and math.random() < 0.5 then
+			Fx.afterimage(m, GOLD, 0.35)
+		end
+	end)
+	task.delay(run + (d.pillars or 6) * (d.step or 0.08) + 0.6, function()
+		fadeOut(carpet, 0.5)
+		for _, e in ipairs(edges) do
+			fadeOut(e, 0.5)
+		end
+	end)
+	for i = 1, d.pillars or 6 do
+		task.delay(run + i * (d.step or 0.08), function()
+			local pt = a:Lerp(b, i / (d.pillars or 6))
+			pillar(ground(pt), GOLD, 4, 22, 0.5)
+			Fx.ring(ground(pt) + Vector3.new(0, 0.3, 0), GOLD, 1, 12, 0.35)
+			Fx.burst("spark", pt, GOLD, 8, 1.2)
+			Fx.sound("deflect", 0.5, 0.8 + i * 0.06, pt)
+		end)
+	end
+	shakeNear(a, 0.5, 100)
+end
+
+-- 거대한 금빛 왕: 관 · 머리 · 가슴 · 어깨 · 두 팔 (위팔·아래팔·주먹) · 붉은 망토. 덩이의 -Z 쪽이 앞
+type King = { g: Group, fists: { BasePart } }
+local function kingGroup(s: number): King
+	local g = group()
+	gpart(g, Vector3.new(12, 6, 6) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(0, 10 * s, 0))
+	gpart(g, Vector3.new(9, 8, 5) * s, GOLD_DEEP, Enum.Material.Metal, 0, nil, CFrame.new(0, 3.5 * s, 0))
+	gpart(g, Vector3.new(4, 4, 0.6) * s, CRIMSON, Enum.Material.Neon, 0.2, nil, CFrame.new(0, 9 * s, -3.1 * s) * CFrame.Angles(0, 0, math.rad(45)))
+	gpart(g, Vector3.new(5, 5, 5) * s, GOLD, Enum.Material.Metal, 0, "ball", CFrame.new(0, 16 * s, 0))
+	for _, x in ipairs({ -1, 1 }) do
+		gpart(g, Vector3.new(0.9, 0.5, 0.3) * s, WHITE, Enum.Material.Neon, 0, nil, CFrame.new(x * 1.1 * s, 16.4 * s, -2.4 * s))
+	end
+	-- 관
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		gpart(g, Vector3.new(1.9, 1.2, 0.4) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(0, 18.8 * s, 0) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -2.6 * s))
+		if k % 2 == 0 then
+			gpart(g, Vector3.new(0.5, 2.2, 0.4) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(0, 20.3 * s, 0) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -2.6 * s))
+			gpart(g, Vector3.new(0.7, 0.7, 0.7) * s, CRIMSON, Enum.Material.Neon, 0, "ball", CFrame.new(0, 21.6 * s, 0) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -2.6 * s))
+		end
+	end
+	-- 어깨와 팔 (주먹은 따로 기억해 둔다: 내리찍을 때 감춘다)
+	local fists = {}
+	for _, x in ipairs({ -1, 1 }) do
+		gpart(g, Vector3.new(5.5, 5.5, 5.5) * s, GOLD, Enum.Material.Metal, 0, "ball", CFrame.new(x * 7.5 * s, 12 * s, 0))
+		gpart(g, Vector3.new(3.6, 8, 3.6) * s, GOLD_DEEP, Enum.Material.Metal, 0, nil, CFrame.new(x * 8.6 * s, 7.5 * s, -0.5 * s) * CFrame.Angles(math.rad(-15), 0, math.rad(x * 10)))
+		gpart(g, Vector3.new(3.2, 7, 3.2) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(x * 9 * s, 2.5 * s, -3 * s) * CFrame.Angles(math.rad(-55), 0, 0))
+		table.insert(fists, gpart(g, Vector3.new(4.6, 4.6, 4.6) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(x * 9 * s, 0.5 * s, -6 * s)))
+	end
+	-- 망토
+	gpart(g, Vector3.new(14, 18, 0.6) * s, CRIMSON, Enum.Material.Fabric, 0, nil, CFrame.new(0, 4 * s, 3.4 * s) * CFrame.Angles(math.rad(10), 0, 0))
+	gpart(g, Vector3.new(14.4, 1, 0.7) * s, GOLD, Enum.Material.Metal, 0, nil, CFrame.new(0, -4.8 * s, 5 * s) * CFrame.Angles(math.rad(10), 0, 0))
+	return { g = g, fists = fists }
+end
+local kings: { [Model]: { king: King, base: CFrame, s: number } } = {}
+
+-- 권왕강림 (오의): 등 뒤에서 관을 쓴 거대한 금빛 왕이 일어선다
+function H.kingDescend(d: any)
+	local m = d.m
+	local center: Vector3 = d.at
+	if not near(center, 400) then
+		return
+	end
+	local dir = flat(d.dir)
+	local s = 1.6
+	local king = kingGroup(s)
+	local stand = CFrame.lookAt(ground(center) - dir * 12, ground(center) - dir * 12 + dir)
+	local rise = d.rise or 0.7
+	local total = rise + (d.punches or 3) * (d.every or 0.45) + (d.finalAt or 0.5)
+	kings[m] = { king = king, base = stand, s = s }
+	if opts.tint then
+		opts.tint(Color3.fromRGB(255, 230, 160), 0.3, total + 0.3)
+	end
+	Fx.debris(ground(center) - dir * 12, 14, 40)
+	Fx.breakSound("rock", 1, 0.6, center)
+	local light = part(Vector3.new(0.2, 0.2, 0.2), GOLD, Enum.Material.Neon, 1)
+	local pl = Instance.new("PointLight")
+	pl.Color = GOLD
+	pl.Range = 50
+	pl.Brightness = 2
+	pl.Parent = light
+	anim(total, function(u)
+		local t = u * total
+		local k = math.clamp(t / rise, 0, 1)
+		local cf = stand * CFrame.new(0, -24 * s * (1 - k) ^ 2, 0)
+		gset(king.g, cf)
+		galpha(king.g, 1 - math.min(1, k * 1.5))
+		light.CFrame = cf * CFrame.new(0, 12 * s, 0)
+		if u >= 1 then
+			light:Destroy()
+		end
+	end)
+	shakeNear(center, 1, 160)
+	-- 마지막: 두 주먹을 한꺼번에 내리꽂는다
+	task.delay(total, function()
+		for _, f in ipairs(king.fists) do
+			f.Transparency = 1
+		end
+		local g = ground(center)
+		for _, x in ipairs({ -1, 1 }) do
+			local fg = fistGroup(1.3, 0)
+			local start = (stand * CFrame.new(x * 9 * s, 14 * s, -6 * s)).Position
+			local stop = g + dir * 4 + Vector3.new(-dir.Z, 0, dir.X) * x * 5 + Vector3.new(0, 3, 0)
+			anim(0.2, function(u)
+				local p = start:Lerp(stop, u * u)
+				gset(fg, CFrame.lookAt(p, p + Vector3.new(0, -1, 0), dir))
+				if u >= 1 then
+					gfade(fg, 0.5)
+				end
+			end)
+		end
+		task.delay(0.2, function()
+			local R = d.radius or 30
+			Fx.ring(g + Vector3.new(0, 0.5, 0), GOLD, 6, R * 2.6, 0.8)
+			Fx.ring(g + Vector3.new(0, 1.5, 0), CRIMSON, 4, R * 2, 0.7)
+			Fx.ring(g + Vector3.new(0, 4, 0), WHITE, 2, R * 1.4, 0.5)
+			Fx.blast(g + Vector3.new(0, 3, 0), GOLD, CRIMSON, 3.4)
+			Fx.debris(g, 24, 60)
+			Fx.flash(center, GOLD, 100, 7, 0.9)
+			Fx.breakSound("boom", 1, 0.55, center)
+			shakeNear(center, 2.2, 240)
+			gfade(king.g, 0.7)
+			kings[m] = nil
+		end)
+	end)
+end
+-- 왕이 고른 적을 내리찍는다 (그쪽 주먹이 내려왔다가 돌아간다)
+function H.kingPunch(d: any)
+	local k = kings[d.m]
+	local at: Vector3 = d.at
+	if not near(at, 400) then
+		return
+	end
+	local s = k and k.s or 1.6
+	local fistPart = k and k.king.fists[(d.side or 1) == -1 and 1 or 2]
+	local start = (k and fistPart) and fistPart.Position or (at + Vector3.new(0, 30, 0))
+	if fistPart then
+		fistPart.Transparency = 1
+	end
+	local fg = fistGroup(0.95 * s / 1.6, 0)
+	anim(0.16, function(u)
+		local p = start:Lerp(at + Vector3.new(0, 3, 0), u * u)
+		gset(fg, CFrame.lookAt(p, p + Vector3.new(0, -1, 0), flat(d.dir)))
+		if u >= 1 then
+			gfade(fg, 0.3)
+			goldImpact(at, 1.2)
+			task.delay(0.2, function()
+				if fistPart and fistPart.Parent then
+					fistPart.Transparency = 0
+				end
+			end)
+		end
+	end)
+end
+
+local PULSE: { [string]: string } = { echo = "echoPulse", karma = "karmaPulse", phantom = "phantomPulse", king = "kingPulse" }
+function Samsara.handles(data: any): boolean
+	if data.kind == "pulse" then
+		return PULSE[data.fx or ""] ~= nil
+	end
+	return H[data.kind] ~= nil
+end
+function Samsara.run(data: any)
+	local fn = data.kind == "pulse" and H[PULSE[data.fx or ""] or ""] or H[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+return Samsara
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="34">
+          <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
 -- 예전엔 모든 기술에 같은 틀 (발밑 진·고리·초승달) 이 붙어 다 비슷해 보였다. 그 틀을 없애고,
@@ -39471,7 +41771,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -40407,7 +42707,7 @@ local function buildStats()
 				sa < rb and (state.samsaraNext and " (지금 도전할 수 있다)" or string.format(" (이번 삶에서 %s에 오르면 다음 시련)", Config.Realms[Config.SAMSARA.realm].name)) or (sa < Config.REBIRTH.max and " (환생하면 다음 시련)" or ""),
 				#parts > 0 and table.concat(parts, " · ") or "아직 없음"))
 		end
-		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다)</font>', Config.Realms[state.gateNext].name) or ""))
+		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
@@ -41063,7 +43363,7 @@ local function buildTest()
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
 		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
+		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
 		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
 		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
 	})
@@ -41158,6 +43458,10 @@ local function buildTest()
 		hyeolma = "북동쪽 끝 혈교 본산의 보스 '혈마'를 쓰러뜨리면 바로 얻는다",
 		pacheon = "북서쪽 끝 허공 균열의 보스 '천마'를 쓰러뜨리면 바로 얻는다",
 		musang = "마을 비무대에서 다른 사람을 백 번 이기면 바로 얻는다 (비무 승리는 능력치 창과 순위표에 나온다)",
+		rinne = "한 번 환생하고 다시 생사경에 올라 첫 번째 윤회의 시련을 넘으면 얻는다 (능력치 창 → ☯ 윤회의 시련)",
+		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
+		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
+		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
 	}
 	for _, st in ipairs(Config.Styles) do
 		local m = Config.MASTERS[st.id]
@@ -42617,7 +44921,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -43895,7 +46199,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -46578,7 +48882,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -47687,7 +49991,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="38">
+  <Item class="Workspace" referent="39">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
