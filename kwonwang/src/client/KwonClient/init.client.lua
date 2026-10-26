@@ -687,6 +687,10 @@ startMove = function(slot: any, charge: number?)
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.sunMoonOrbs then
+		-- 일월개벽·일월동귀: 해와 달이 솟는 (내려오는) 하늘을 보는 컷씬 (대사 없이, 무적), 걷히면 하늘에서 벌어진다
+		Geuk.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "twilightCollapse")
+		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "G" or slot == "X" then
 		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
 		if slot == "X" and style.fans then

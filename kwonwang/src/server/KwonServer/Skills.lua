@@ -2997,38 +2997,65 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "sunMoonFall" then
-		-- 대일월천 (오의): 거대한 해가 내려앉아 타고, 달의 칼날이 해를 세로로 가르고, 일식으로 터진다
-		local c = f.root.Position + look * m.dist
-		Push:FireAllClients("skillfx", { kind = "sunMoonFall", m = f.model, at = c, dir = look, fall = m.fall / sp, burn = m.burn / sp, cutAt = m.cutAt / sp, radius = m.radius, style = style })
-		local n = math.floor(m.burn / m.every)
+		-- 대일월천 (오의, 3.1.1판): 등 뒤에 해와 달이 떠오르고, 해의 빛줄기가 앞의 땅을 앞뒤로 쓸고, 달의 초승달 셋이 내리꽂히고,
+		-- 둘이 적 위에서 부딪쳐 일식이 되어 땅에 박히며 터진다
+		local from = f.root.Position
+		local c = from + look * m.dist
+		local slamAt = m.summon + 0.15
+		Push:FireAllClients("skillfx", { kind = "sunMoonFall", m = f.model, at = c, from = from, dir = look, summon = m.summon / sp, beam = m.beam / sp, sweep = m.sweep,
+			slams = m.slams, slamAt = slamAt / sp, slamEvery = m.slamEvery / sp, travel = m.travel / sp, merge = m.merge / sp, radius = m.finalRadius, style = style })
+		local n = math.floor(m.beam / m.every)
 		for i = 0, n - 1 do
-			after(m.fall + i * m.every, function()
-				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
+			after(m.summon + i * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, c - look * (m.sweep + 2), c + look * (m.sweep + 2), m.width)) do
 					strike(f, o, hit, move)
 				end
 			end)
 		end
-		after(m.fall + m.cutAt, function()
-			local right = rightOf(look)
-			for _, o in ipairs(hostilesOnSeg(f, c - look * m.radius, c + look * m.radius, m.cutWidth)) do
-				strike(f, o, scaled(m.cut, sc), move)
-			end
-			local _ = right
-		end)
-		after(m.fall + m.burn, function()
+		local sh = scaled(m.slam, sc)
+		for i = 1, m.slams do
+			after(slamAt + (i - 1) * m.slamEvery + m.travel, function()
+				for _, o in ipairs(hostilesNear(f, c, m.slamRadius)) do
+					strike(f, o, sh, move)
+				end
+			end)
+		end
+		after(m.summon + m.beam + m.merge, function()
 			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "eclipseGenesis" then
-		-- 일월개벽 (초 오의): 해와 달이 떠올라 부딪쳐 일식, 빛살이 둘레를 꿰뚫고, 새벽빛으로 터진다 (그동안 무적)
+		-- 일월개벽 (초 오의, 3.1.1판): 컷씬 동안 등 뒤 지평선에서 해와 달이 솟고 (그동안 무적),
+		-- 둘이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 → 머리 위에서 부딪쳐 일식 → 일식의 빛살 → 일식이 깨지며 새벽빛으로 터진다
 		local center = f.root.Position
-		local total = m.collide + m.rays + m.finalAt
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
-		Push:FireAllClients("skillfx", { kind = "eclipseGenesis", m = f.model, at = center, rise = m.rise / sp, collide = m.collide / sp, rays = m.rays / sp, finalAt = m.finalAt / sp, range = m.range, radius = m.finalRadius, style = style })
+		local T1 = m.cut
+		local T2 = T1 + m.orbit
+		local T3 = T2 + m.collide
+		local T4 = T3 + m.rays
+		local T5 = T4 + m.finalAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T5 / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "eclipseGenesis", m = f.model, at = center, dir = look, cut = T1 / sp, orbit = m.orbit / sp, collide = m.collide / sp, rays = m.rays / sp,
+			finalAt = m.finalAt / sp, orbitR = m.orbitR, range = m.range, radius = m.finalRadius, style = style })
+		local oh = scaled(m.orbitHit, sc)
+		local no = math.floor(m.orbit / m.orbitEvery)
+		for i = 1, no do
+			after(T1 + i * m.orbitEvery, function()
+				local list = hostilesNear(f, center, m.range)
+				local ats = {}
+				for _ = 1, math.min(m.orbitN, #list) do
+					local o = list[math.random(1, #list)]
+					table.insert(ats, o.root.Position)
+					strike(f, o, oh, move)
+				end
+				if #ats > 0 then
+					Push:FireAllClients("skillfx", { kind = "eclipseStrike", m = f.model, ats = ats, who = (i % 2 == 0) and "moon" or "sun", style = style })
+				end
+			end)
+		end
 		local n = math.floor(m.rays / m.every)
 		for i = 0, n - 1 do
-			after(m.collide + i * m.every, function()
+			after(T3 + i * m.every, function()
 				local list = hostilesNear(f, center, m.range)
 				local ats = {}
 				for _ = 1, math.min(m.n, #list) do
@@ -3043,7 +3070,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end
-		after(total, function()
+		after(T5, function()
 			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
@@ -3110,18 +3137,19 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "sunsetSea" then
-		-- 황혼낙일 (황혼 G): 석양이 가라앉아 노을빛 바다가 되고, 달빛 기둥이 솟고, 바다가 솟구친다
+		-- 황혼낙일 (황혼 G, 3.1.1판): 거대한 석양이 내려와 앞의 땅으로 가라앉는다. 바다 위의 적은 타며 굼뜨고, 노을 물결 넷이 퍼지고,
+		-- 달빛 기둥이 솟는다. 다 잠기면 잠깐 고요하다가 바다가 노을 불꽃의 왕관으로 솟구친다
 		local c = f.root.Position + look * m.dist
 		local beams = {}
-		for i = 1, m.beams do
+		for _ = 1, m.beams do
 			local a = math.random() * math.pi * 2
 			local r = math.random() * m.radius * 0.85
 			table.insert(beams, c + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r))
 		end
-		Push:FireAllClients("skillfx", { kind = "sunsetSea", m = f.model, at = c, sink = m.sink / sp, dur = m.dur / sp, radius = m.radius, beams = beams, style = style })
-		local n = math.floor(m.dur / m.every)
+		Push:FireAllClients("skillfx", { kind = "sunsetSea", m = f.model, at = c, dir = look, descend = m.descend / sp, sink = m.sink / sp, dark = m.dark / sp, waves = m.waves, radius = m.radius, beams = beams, style = style })
+		local n = math.floor(m.sink / m.every)
 		for i = 0, n - 1 do
-			after(m.sink + i * m.every, function()
+			after(m.descend + i * m.every, function()
 				for _, o in ipairs(hostilesNear(f, c, m.radius)) do
 					o.slowUntil = os.clock() + 0.4
 					o.slowMul = 0.55
@@ -3129,47 +3157,57 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end
+		local wh = scaled(m.wave, sc)
+		for i = 1, m.waves do
+			after(m.descend + (i - 0.5) * m.sink / m.waves, function()
+				for _, o in ipairs(hostilesNear(f, c, m.radius * 1.2)) do
+					strike(f, o, wh, move)
+				end
+			end)
+		end
 		local bh = scaled(m.beam, sc)
 		for i, pt in ipairs(beams) do
-			after(m.sink + (i - 0.5) * m.dur / m.beams, function()
+			after(m.descend + (i - 0.5) * m.sink / m.beams, function()
 				for _, o in ipairs(hostilesNear(f, pt, m.beamRadius)) do
 					strike(f, o, bh, move)
 				end
 			end)
 		end
-		after(m.sink + m.dur, function()
+		after(m.descend + m.sink + m.dark, function()
 			for _, o in ipairs(hostilesNear(f, c, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "twilightCollapse" then
-		-- 일월동귀 (황혼 X): 해와 달이 양쪽에 떨어지고, 서로를 향해 굴러와 가운데에서 하나가 되어 터진다 (그동안 무적)
-		local center = f.root.Position + look * 4
-		local right = rightOf(look)
-		local sunAt, moonAt = center + right * m.side, center - right * m.side
-		local total = m.fall + m.roll + m.finalAt
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp + 0.2)
-		Push:FireAllClients("skillfx", { kind = "twilightCollapse", m = f.model, at = center, sunAt = sunAt, moonAt = moonAt, fall = m.fall / sp, roll = m.roll / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
-		after(m.fall, function()
-			for _, pt in ipairs({ sunAt, moonAt }) do
-				for _, o in ipairs(hostilesNear(f, pt, m.impactRadius)) do
-					strike(f, o, scaled(m.impact, sc), move)
-				end
-			end
-		end)
-		local rh = scaled(m.rollHit, sc)
-		local n = math.floor(m.roll / m.rollEvery)
+		-- 일월동귀 (황혼 X, 3.1.1판): 컷씬 동안 석양과 달이 내려와 (그동안 무적) 내 두 손에 맺히고, 발밑 진의 테두리를 서로 반대로 내달려
+		-- 불의 원을 그린다. 앞에서 만나 황혼의 구슬이 되어 둘레를 빨아들이다가 한 점으로 줄어들고, 노을빛으로 하얗게 터진다
+		local center = f.root.Position
+		local T1 = m.cut
+		local T2 = T1 + m.gather
+		local T3 = T2 + m.circle
+		local T4 = T3 + m.fuse
+		local T5 = T4 + m.collapse
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + T5 / sp + 0.2)
+		Push:FireAllClients("skillfx", { kind = "twilightCollapse", m = f.model, at = center, dir = look, cut = T1 / sp, gather = m.gather / sp, circle = m.circle / sp, fuse = m.fuse / sp,
+			collapse = m.collapse / sp, rim = m.rim, radius = m.finalRadius, style = style })
+		local rh = scaled(m.rimHit, sc)
+		local n = math.floor(m.circle / m.every)
 		for i = 1, n do
-			after(m.fall + i * m.rollEvery, function()
-				local u = i / n
-				for _, pt in ipairs({ sunAt:Lerp(center, u), moonAt:Lerp(center, u) }) do
-					for _, o in ipairs(hostilesNear(f, pt, m.rollRadius)) do
-						strike(f, o, rh, move)
-					end
+			after(T2 + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.rim + 6)) do
+					strike(f, o, rh, move)
 				end
 			end)
 		end
-		after(total, function()
+		local np = math.floor(m.fuse / 0.15)
+		for i = 0, np do
+			after(T3 + i * 0.15, function()
+				for _, o in ipairs(hostilesNear(f, center, m.rim * 1.6)) do
+					pullTo(o, center, m.pull)
+				end
+			end)
+		end
+		after(T5, function()
 			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
