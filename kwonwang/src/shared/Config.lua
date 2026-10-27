@@ -2945,7 +2945,7 @@ Config.Story = {
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
 	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
 	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
-	{ title = "남쪽 늪의 독아", text = "남쪽 독안개 늪의 독아가 길손을 문다. 특급이면 해볼 만하다. 독아 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "swampfang", n = 8, at = Vector3.new(-250, 0, 1400) }, reward = { coins = 1200, stats = 200 } },
+	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 1200, stats = 200 } },
 	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 250 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 2000, stats = 300 } },
@@ -3105,6 +3105,32 @@ Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 �
 -- 전투력: 피해 배율과 체력으로 잰다. 차이가 크면 약한 쪽의 공격은 통하지 않는다
 function Config.playerPower(dmgMult: number, maxHp: number): number
 	return math.floor(100 * math.sqrt(math.max(0.01, dmgMult) * math.max(1, maxHp) / 100))
+end
+-- 3.2.7판: 적 전투력이 기술의 세기를 보지 않아, 한 방이 센 적 (흑영 자객·철갑 무사·독수 자객·혈교 장로 같은 정예)은 숫자보다 훨씬 셌다.
+-- 들판의 적은 그 적 기술의 초당 피해를 보통 적 (산적 도객·혈교도, 7.1)에 견줘 전투력에 곱한다 (약한 적은 깎지 않는다: 1~2.5배)
+-- 보스·분신 (duel)은 그대로 (보스는 따로 졸병에 맞춘다)
+Config.MOVE_DPS_REF = 7.1
+local moveFactorCache: { [any]: number } = {}
+function Config.enemyMoveFactor(def: any, boss: boolean?): number
+	if boss or def.duel or def.dummy then
+		return 1
+	end
+	local cached = moveFactorCache[def]
+	if cached then
+		return cached
+	end
+	local tot, n = 0, 0
+	for _, mv in ipairs(def.moves or {}) do
+		local d = 0
+		for _, h in ipairs(mv.hits or {}) do
+			d += h.dmg or 0
+		end
+		tot += d / ((mv.dur or 1) + 0.9)
+		n += 1
+	end
+	local k = n > 0 and math.clamp(tot / n / Config.MOVE_DPS_REF, 1, 2.5) or 1
+	moveFactorCache[def] = k
+	return k
 end
 function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / (120 * Config.ENEMY_HP)) * (boss and 1.5 or 1))

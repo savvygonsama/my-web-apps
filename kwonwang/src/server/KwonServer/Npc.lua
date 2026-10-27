@@ -295,7 +295,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	end
 	;(f :: any).typeId = typeId
 	model:SetAttribute("TypeId", typeId)
-	local cp = Config.enemyPower(f.dmgMult, f.maxHp, isBoss)
+	local cp = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
 	;(f :: any).power = cp
 	model:SetAttribute("Power", cp)
 	-- 2.7.2판: 어느 땅의 적인지 (권장 전투력 표와 같은 이름). 후반 보스의 처치 몫을 그 땅 졸병에 견준다
