@@ -247,11 +247,13 @@ local function sanitize(data: any): Profile
 	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
-		local titles = data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		-- 3.2.6판: 3판 기록은 3판 장 이름으로
+		local titles = data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title
 		end
+		title = Config.STORY_REMAP_V3[title] or title
 		for i, ch in ipairs(Config.Story) do
 			if ch.title == title then
 				local wasAccepted = p.accepted == p.story or data.accepted == nil
@@ -987,6 +989,13 @@ function Story.done(p: Profile, g: any): boolean
 		return p.towerBest >= (g.n or 1)
 	elseif k == "mastery" then
 		return p.style ~= "" and Calc.mastery(p, p.style).lv >= (g.n or 1)
+	-- 3.2.6판: 깨달음 (어느 권법이든 승급한 횟수)
+	elseif k == "enlight" then
+		local best = 0
+		for _, v in pairs(p.gradeUp) do
+			best = math.max(best, v)
+		end
+		return best >= (g.n or 1)
 	elseif k == "maze" or k == "raid" then
 		return (p.counts[k] or 0) >= (g.n or 1)
 	elseif k == "rebirth" then
@@ -4219,6 +4228,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		st.dirty = true
 		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), step = step.name })
 		refreshFighter(player)
+		Story.check(player)
 		pushState(player)
 	elseif string.sub(action, 1, 4) == "test" and st.tester then
 		testAction(player, p, action, a1)

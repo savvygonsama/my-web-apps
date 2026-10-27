@@ -2548,6 +2548,8 @@ local function goalText(s: any, g: any): string
 		local st = Config.STYLE_BY_ID[s.style or ""]
 		local lv = st and s.mastery and s.mastery[st.id] and s.mastery[st.id].lv or 0
 		return string.format("%s 숙련 %d 만들기 (지금 %d)", st and st.name or "지금 권법", g.n or 1, lv)
+	elseif k == "enlight" then
+		return string.format("숙련 %d인 권법 하나 깨닫기 (메뉴 → 권법 → 깨달음)", Config.MASTERY_FULL)
 	elseif k == "maze" then
 		return "구름 미궁 끝까지 넘기 (천궁 광장 🌀 문)"
 	elseif k == "raid" then
