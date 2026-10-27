@@ -915,6 +915,7 @@ local LOOKS: { [string]: any } = {
 	lancer = { head = "straw", hat = C3(170, 140, 90), mask = C3(160, 130, 95), top = C3(160, 116, 72), bottom = C3(98, 70, 46), trim = C3(120, 60, 40), build = { h = 1.05, head = 0.88 } },
 	pirate = { head = "bandana", beard = "full", eyepatch = true, top = C3(50, 68, 106), bottom = C3(40, 40, 50), trim = C3(160, 34, 34), build = { w = 1.05, head = 0.9 } },
 	cultist = { head = "hood", mask = C3(130, 20, 30), top = C3(104, 16, 26), bottom = C3(30, 10, 12), trim = C3(40, 10, 14), robe = C3(84, 12, 20), build = { head = 0.88 } },
+	cultguard = { head = "helmet", metal = C3(120, 30, 34), armor = true, armorTrim = C3(190, 140, 70), eyes = C3(255, 90, 80), top = C3(90, 12, 20), bottom = C3(30, 6, 10), trim = C3(190, 140, 70), robe = C3(70, 8, 14), build = { w = 1.15, h = 1.08, head = 0.88 } },
 	cultelder = { head = "hood", beard = "white", eyes = C3(240, 80, 70), top = C3(66, 8, 16), bottom = C3(22, 5, 8), trim = C3(170, 130, 70), robe = C3(56, 6, 12), build = { h = 1.04, head = 0.88 } },
 	apostle = { head = "hood", eyes = C3(190, 110, 250), top = C3(24, 12, 40), bottom = C3(12, 6, 22), trim = C3(120, 80, 190), robe = C3(18, 8, 30), crown = C3(130, 90, 200), build = { h = 1.08, head = 0.86 } },
 	skyguard = { head = "helmet", metal = C3(225, 228, 240), armor = true, plume = C3(110, 150, 220), top = C3(230, 234, 248), bottom = C3(160, 180, 220), trim = C3(110, 150, 220), build = { w = 1.15, h = 1.08, head = 0.88 } },
@@ -942,6 +943,7 @@ local LOOKS: { [string]: any } = {
 	-- 사람이 아닌 적
 	swampfang = { form = "naga", skin = C3(64, 104, 60), eyes = C3(230, 210, 60), build = { w = 0.9, h = 1.05, head = 0.86 } },
 	bogbrute = { form = "troll", skin = C3(108, 126, 82), build = { w = 1.4, h = 1.08, head = 0.85 } },
+	riftyaksha = { form = "imp", skin = C3(128, 58, 108), eyes = C3(255, 140, 200), hornColor = C3(40, 15, 30), spark = C3(230, 110, 200), build = { w = 1.0, h = 1.05, head = 0.88 } },
 	riftling = { form = "imp", skin = C3(96, 72, 132), eyes = C3(220, 150, 255), hornColor = C3(30, 20, 40), spark = C3(170, 110, 255), build = { w = 0.85, h = 0.95, head = 0.9 } },
 	flameimp = { form = "imp", skin = C3(170, 66, 46), eyes = C3(255, 220, 90), hornColor = C3(50, 26, 22), fire = C3(255, 130, 40), build = { w = 0.85, h = 0.95, head = 0.92 } },
 	thunderimp = { form = "imp", skin = C3(104, 120, 190), eyes = C3(230, 240, 255), hornColor = C3(220, 220, 190), spark = C3(170, 200, 255), build = { w = 0.85, h = 0.95, head = 0.9 } },

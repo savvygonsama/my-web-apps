@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.2.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.2.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2482,8 +2482,11 @@ E.lancer = variant(E.spearman, { name = "황야 창수", shirt = Color3.fromRGB(
 E.pirate = variant(E.bandit, { name = "해적 도객", shirt = Color3.fromRGB(50, 70, 110), pants = Color3.fromRGB(40, 40, 50), hp = 120 })
 E.cultist = variant(E.bandit, { name = "혈교도", shirt = Color3.fromRGB(110, 15, 25), pants = Color3.fromRGB(30, 10, 12), hp = 150, speed = 17 })
 E.cultelder = variant(E.shadowblade, { name = "혈교 장로", shirt = Color3.fromRGB(60, 10, 15), pants = Color3.fromRGB(20, 5, 8), hp = 260, scale = 1.15 })
+E.cultguard = variant(E.cultelder, { name = "혈교 호법", shirt = Color3.fromRGB(90, 12, 20), pants = Color3.fromRGB(30, 6, 10), hp = 280, mult = 2.4, scale = 1.25, coins = 140, xp = 60 })
 -- 허공 균열 (북서쪽 끝): 사경 이후의 적. mult = 체력·피해를 겹으로 더 세게
 E.riftling = variant(E.assassin, { name = "균열 마물", shirt = Color3.fromRGB(80, 50, 120), pants = Color3.fromRGB(40, 25, 60), hp = 90, mult = 4 })
+-- 3.2.6판: 사경의 사냥터 (전투력 1500~2300이 비어 있었다). 균열 어귀의 야차와 혈교 본산 깊은 곳의 호법
+E.riftyaksha = variant(E.riftling, { name = "균열 야차", shirt = Color3.fromRGB(110, 40, 90), pants = Color3.fromRGB(50, 20, 45), hp = 110, mult = 6, scale = 1.1 })
 E.voidwalker = variant(E.shadowblade, { name = "허공 마인", shirt = Color3.fromRGB(30, 20, 60), pants = Color3.fromRGB(15, 10, 30), hp = 150, mult = 6 })
 E.stonegolem = variant(E.ironguard, { name = "석상 수호자", shirt = Color3.fromRGB(130, 125, 140), pants = Color3.fromRGB(90, 85, 100), hp = 240, scale = 1.8, speed = 11, mult = 8 })
 E.apostle = variant(E.cultelder, { name = "천마 사도", shirt = Color3.fromRGB(20, 10, 40), pants = Color3.fromRGB(10, 5, 20), hp = 260, mult = 10, elite = true })
@@ -2822,10 +2825,12 @@ Config.Regions = {
 	{ id = "coast", name = "서해 절벽", center = Vector3.new(-1720, 0, 0), size = Vector3.new(700, 0, 1200), ground = Color3.fromRGB(160, 155, 120), material = Enum.Material.Sand, ambient = "coast",
 		camps = { { enemy = "pirate", count = 4, at = Vector3.new(-1800, 0, -250) }, { enemy = "pirate", count = 3, at = Vector3.new(-1650, 0, 300) }, { enemy = "lancer", count = 2, at = Vector3.new(-1850, 0, 450) } } },
 	{ id = "cult", name = "혈교 본산", center = Vector3.new(1750, 0, -1750), size = Vector3.new(700, 0, 700), ground = Color3.fromRGB(60, 30, 32), material = Enum.Material.Slate, ambient = "cult",
-		camps = { { enemy = "cultist", count = 4, at = Vector3.new(1600, 0, -1550) }, { enemy = "cultist", count = 3, at = Vector3.new(1850, 0, -1600) }, { enemy = "cultelder", count = 2, at = Vector3.new(1700, 0, -1800) }, { enemy = "cultelder", count = 2, at = Vector3.new(1850, 0, -1850) } },
+		camps = { { enemy = "cultist", count = 4, at = Vector3.new(1600, 0, -1550) }, { enemy = "cultist", count = 3, at = Vector3.new(1850, 0, -1600) }, { enemy = "cultelder", count = 2, at = Vector3.new(1700, 0, -1800) }, { enemy = "cultelder", count = 2, at = Vector3.new(1850, 0, -1850) },
+			{ enemy = "cultguard", count = 2, at = Vector3.new(1560, 0, -1960) }, { enemy = "cultguard", count = 2, at = Vector3.new(2000, 0, -1700) } },
 		boss = { id = "hyeolma", at = Vector3.new(1800, 0, -1950) } },
 	{ id = "rift", name = "허공 균열", center = Vector3.new(-1750, 0, -1750), size = Vector3.new(700, 0, 700), ground = Color3.fromRGB(35, 25, 55), material = Enum.Material.Slate, ambient = "rift",
-		camps = { { enemy = "riftling", count = 4, at = Vector3.new(-1500, 0, -1500) }, { enemy = "riftling", count = 3, at = Vector3.new(-1650, 0, -1450) }, { enemy = "voidwalker", count = 3, at = Vector3.new(-1550, 0, -1700) },
+		camps = { { enemy = "riftling", count = 4, at = Vector3.new(-1500, 0, -1500) }, { enemy = "riftling", count = 3, at = Vector3.new(-1650, 0, -1450) }, { enemy = "riftyaksha", count = 3, at = Vector3.new(-1420, 0, -1650) }, { enemy = "riftyaksha", count = 2, at = Vector3.new(-1650, 0, -1600) },
+			{ enemy = "voidwalker", count = 3, at = Vector3.new(-1550, 0, -1700) },
 			{ enemy = "stonegolem", count = 2, at = Vector3.new(-1800, 0, -1600) }, { enemy = "apostle", count = 2, at = Vector3.new(-1850, 0, -1850) }, { enemy = "apostle", count = 2, at = Vector3.new(-1700, 0, -1900) } },
 		boss = { id = "cheonma", at = Vector3.new(-1950, 0, -1950) } },
 	-- 더 넓어진 강호: 천마 뒤의 세 땅 (가장 멀고 가장 세다)
