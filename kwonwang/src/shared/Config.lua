@@ -3310,13 +3310,13 @@ Config.MUSIC = {
 -- 로벅스 상품 (게임패스). gamepass = 로블록스 홈페이지에 만든 게임패스 번호 (0이면 아직 없음)
 ------------------------------------------------------------------------
 Config.Premium = {
-	{ id = "train2x", gamepass = 0, price = 199, icon = "🔥", name = "두 배 수련", tag = "영구",
+	{ id = "train2x", gamepass = 2057242581, price = 199, icon = "🔥", name = "두 배 수련", tag = "영구",
 		lines = { "모든 수련의 능력치가 영원히 두 배", "소환단·강화 수련·자동 수련과 겹친다", "심마 대련 보상도 두 배" } },
-	{ id = "autoTrain", gamepass = 0, price = 99, icon = "🤖", name = "자동 수련", tag = "영구", toggle = true,
+	{ id = "autoTrain", gamepass = 2056912560, price = 99, icon = "🤖", name = "자동 수련", tag = "영구", toggle = true,
 		lines = { "수련 화면에서 박자마다 대신 눌러 준다 ('좋음')", "수련 자리를 떠나면 멈춘다 (어디서나 오르지 않는다)", "손은 편해지지만 사람보다 빠르지 않다" } },
-	{ id = "autoTrain2", gamepass = 0, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
+	{ id = "autoTrain2", gamepass = 2058388537, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
 		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
-	{ id = "dragon", gamepass = 0, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
+	{ id = "dragon", gamepass = 2058382534, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
 		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
