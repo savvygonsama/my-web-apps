@@ -762,6 +762,17 @@ local function rewardPower(player: Player): number
 	end
 	return pw
 end
+-- 3.2.2판: 처치 몫의 잣대 (내 수준 적 한 마리가 주는 능력치). 내 전투력과 내 경지의 기준 적 가운데 작은 쪽으로 센다.
+-- 처치 몫 표가 가파라 (전투력 1.5배에 능력치 3~5배) 권법 등급·숙련·심법으로 전투력이 경지보다 높으면 한 마리 몫이 몇 배로 불어,
+-- 센 권법을 든 후반에는 경지 하나를 스무 마리 남짓에 넘었다. 센 사람은 더 빨리 쓰러뜨려 앞서 가되, 한 마리 몫은 그 경지만큼
+local function shareGain(player: Player): number
+	local mine = Config.killGain(rewardPower(player))
+	local p = profiles[player]
+	if not p then
+		return mine
+	end
+	return math.min(mine, Config.killGain(Config.realmRefPower(Calc.realm(p))))
+end
 -- 능력치를 얻는 배율 (환생할수록 많이)
 local function gainMult(p: Profile): number
 	return Config.rebirthGain(p.rebirth or 0) * Calc.perk(p, "gain")
@@ -1566,7 +1577,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, Config.killGain(rewardPower(killer)) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
+					local gain = math.floor(math.max(Config.Training.simma.reward, shareGain(killer) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						addStat(p, st.id, gain)
 					end
@@ -1631,7 +1642,7 @@ Combat.init(Push, {
 					local KG = Config.KILL_GAIN
 					-- 2.0판: 얻는 양은 쓰러뜨린 적의 전투력으로만 정해진다
 					-- 2.7.4판: 나보다 훨씬 센 적은 처치 몫이 가파르게 늘어 (전투력 1.5배에 능력치 3.4배) 몇 마리면 경지가 올랐다. 내 수준 적의 OVER_CAP배까지만
-					local kgBase = math.min(Config.killGain((f :: any).basePower or f.power or 100), Config.killGain(rewardPower(killer)) * KG.overCap)
+					local kgBase = math.min(Config.killGain((f :: any).basePower or f.power or 100), shareGain(killer) * KG.overCap)
 					local g = kgBase * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
 					if isBoss and (f.npc :: any).late and not f.towerOwner then
@@ -2856,7 +2867,7 @@ function Tower.killed(player: Player, ef: any)
 			scrolls += 2
 			-- 2.7.6판: 보스 층을 처음 넘으면 그 층 적 몇 마리 몫의 능력치와 천정 (높은 층일수록 많다. 내 수준 적의 2배까지)
 			local want = T.powerStart * T.powerGrowth ^ (floor - 1)
-			local g = math.min(Config.killGain(want), Config.killGain(rewardPower(player)) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
+			local g = math.min(Config.killGain(want), shareGain(player) * Config.KILL_GAIN.overCap) * T.bestStats * gainMult(p)
 			local each = math.max(1, math.floor(g / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				addStat(p, sd.id, each)
@@ -3084,7 +3095,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = Config.killGain(ef.power or 100) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
+		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			addStat(p, sd.id, each)
@@ -3108,7 +3119,7 @@ function Maze.finish(player: Player, run: any)
 		if ready then
 			mazeRewardAt[player] = os.clock() + M.cooldown
 			local R = M.reward
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(shareGain(player) * R.statKills * gainMult(p) / #Config.Stats))
 			for _, sd in ipairs(Config.Stats) do
 				addStat(p, sd.id, each)
 			end
@@ -4626,7 +4637,7 @@ function Raid.killed(f: any)
 			p.coins += coins
 			p.scrolls += scrolls
 			-- 능력치는 내 전투력의 적을 statKills 마리 쓰러뜨린 몫 × (0.3 + 기여) (보스가 아주 세도 터무니없이 커지지 않게)
-			local each = math.max(1, math.floor(Config.killGain(rewardPower(player)) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
+			local each = math.max(1, math.floor(shareGain(player) * R.statKills * (0.3 + share) * gainMult(p) / #Config.Stats))
 			p.counts.raid = (p.counts.raid or 0) + 1
 			task.defer(Story.check, player)
 			for _, sd in ipairs(Config.Stats) do
