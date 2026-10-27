@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.2.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.2.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -349,7 +349,13 @@ function Config.trainMult(idx: number): number
 	return math.max(lin, late)
 end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
-Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20 }
+Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20, easeHp = 0.4, easeDmg = 0.6, easeRealms = 6 }
+-- 3.2.4판: 초반 관문은 순하게. 특급 관문은 체력 ×0.4 · 피해 ×0.6에서 시작해 여섯 경지(생사경)에 걸쳐 원래 세기로 돌아온다
+function Config.gateEase(nxt: number): (number, number)
+	local G = Config.GATE
+	local a = math.clamp((nxt - G.from) / G.easeRealms, 0, 1)
+	return G.easeHp + (1 - G.easeHp) * a, G.easeDmg + (1 - G.easeDmg) * a
+end
 -- 강화 수련: 박자가 빠르고 판정이 좁지만 얻는 능력치가 세 배. 경지 이류부터
 Config.HARD_TRAIN = { mult = 2, realm = 2, period = 1.05, perfect = 0.065, good = 0.14 }
 -- 보통 수련 판정 (넓을수록 쉽다)
@@ -8715,15 +8721,14 @@ function Gate.start(player: Player)
 	ef.name = Config.Realms[nxt].name .. "의 관문 수호자"
 	ef.model:SetAttribute("Label", ef.name)
 	-- 수호자는 도전자와 비슷한 힘, 체력은 넉넉히 (경지가 높을수록 더)
+	-- 3.2.4판: 처음부터 더 센 수호자도 도전자에 맞춰 낮추고, 초반 관문은 체력·피해를 덜어 준다
 	local want = ((f :: any).power or 100) * Config.GATE.power
 	local k = want / math.max(1, ef.power or 100)
-	if k > 1 then
-		ef.maxHp = math.floor(ef.maxHp * k)
-		ef.dmgMult *= k
-		ef.power = math.floor(want)
-		ef.model:SetAttribute("Power", ef.power)
-	end
-	ef.maxHp = math.floor(ef.maxHp * (Config.GATE.hp + Config.GATE.hpPerRealm * (nxt - Config.GATE.from)))
+	local easeHp, easeDmg = Config.gateEase(nxt)
+	ef.maxHp = math.floor(ef.maxHp * k * easeHp * (Config.GATE.hp + Config.GATE.hpPerRealm * (nxt - Config.GATE.from)))
+	ef.dmgMult *= k * easeDmg
+	ef.power = math.floor(want * math.sqrt(easeDmg))
+	ef.model:SetAttribute("Power", ef.power)
 	ef.hp = ef.maxHp
 	Combat.sync(ef)
 	e.target = f

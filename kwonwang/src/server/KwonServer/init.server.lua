@@ -2644,15 +2644,14 @@ function Gate.start(player: Player)
 	ef.name = Config.Realms[nxt].name .. "의 관문 수호자"
 	ef.model:SetAttribute("Label", ef.name)
 	-- 수호자는 도전자와 비슷한 힘, 체력은 넉넉히 (경지가 높을수록 더)
+	-- 3.2.4판: 처음부터 더 센 수호자도 도전자에 맞춰 낮추고, 초반 관문은 체력·피해를 덜어 준다
 	local want = ((f :: any).power or 100) * Config.GATE.power
 	local k = want / math.max(1, ef.power or 100)
-	if k > 1 then
-		ef.maxHp = math.floor(ef.maxHp * k)
-		ef.dmgMult *= k
-		ef.power = math.floor(want)
-		ef.model:SetAttribute("Power", ef.power)
-	end
-	ef.maxHp = math.floor(ef.maxHp * (Config.GATE.hp + Config.GATE.hpPerRealm * (nxt - Config.GATE.from)))
+	local easeHp, easeDmg = Config.gateEase(nxt)
+	ef.maxHp = math.floor(ef.maxHp * k * easeHp * (Config.GATE.hp + Config.GATE.hpPerRealm * (nxt - Config.GATE.from)))
+	ef.dmgMult *= k * easeDmg
+	ef.power = math.floor(want * math.sqrt(easeDmg))
+	ef.model:SetAttribute("Power", ef.power)
 	ef.hp = ef.maxHp
 	Combat.sync(ef)
 	e.target = f
