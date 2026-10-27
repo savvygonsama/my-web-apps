@@ -395,7 +395,8 @@ end
 -- 지금 경지: 능력치로 닿은 경지라도, 특급부터는 그 경지의 관문을 넘어야 오른다
 function Calc.realm(p: Profile): (number, any)
 	local idx = Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth or 0))
-	for i = Config.GATE.from, idx do
+	-- 3.2.5판: 관문이 꺼져 있으면 능력치로 닿은 경지 그대로
+	for i = Config.GATE.from, Config.GATE.enabled and idx or 0 do
 		if not (p.gates and p.gates[tostring(i)]) then
 			idx = i - 1
 			break

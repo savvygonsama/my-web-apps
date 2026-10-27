@@ -349,7 +349,8 @@ function Config.trainMult(idx: number): number
 	return math.max(lin, late)
 end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 그 경지의 관문 수호자를 꺾어야 오른다
-Config.GATE = { from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20, easeHp = 0.08, easeDmg = 0.25, easeRealms = 6 }
+-- 3.2.5판: 관문을 껐다 (enabled = false). 능력치가 닿으면 경지가 바로 오른다. 다시 켜려면 true
+Config.GATE = { enabled = false, from = 4, hp = 3, hpPerRealm = 0.3, power = 1.05, time = 180, cooldown = 20, easeHp = 0.08, easeDmg = 0.25, easeRealms = 6 }
 -- 3.2.4판: 초반 관문은 순하게. 3.2.5판: 훨씬 순하게. 특급 관문은 체력 ×0.08 · 피해 ×0.25에서 시작해
 -- 여섯 경지(생사경)에 걸쳐 원래 세기로 돌아온다. 처음 몇 경지는 천천히, 생사경에 가까울수록 빨리 오른다
 function Config.gateEase(nxt: number): (number, number)
@@ -2945,13 +2946,13 @@ Config.Story = {
 	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 20 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라.", goal = { kind = "learn", n = 2 }, reward = { coins = 200 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다.", goal = { kind = "realm", n = 3 }, reward = { coins = 400, stats = 30 } },
-	{ title = "경지의 관문", text = "특급부터는 능력치가 차도 경지가 저절로 오르지 않는다. 경지마다 관문 수호자가 길을 막는다. 능력치가 닿으면 나타나는 관문에 들어가 수호자를 꺾고 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 600, stats = 40 } },
+	{ title = "경지의 관문", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 600, stats = 40 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 800, stats = 50 } },
 	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 800 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 500, stats = 40 } },
 	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 60 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 1200, stats = 80 } },
-	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라. 특급부터는 몸만으로 오르지 않는다. 능력치가 닿으면 경지의 관문이 열리니, 관문 수호자를 꺾어라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
+	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라.", goal = { kind = "realm", n = 5 }, reward = { coins = 1500, stats = 100 } },
 	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고, 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 200 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 2500, stats = 150 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 2500, stats = 150 } },
@@ -3342,7 +3343,7 @@ Config.Premium = {
 	{ id = "autoTrain", gamepass = 2056912560, price = 99, icon = "🤖", name = "자동 수련", tag = "영구", toggle = true,
 		lines = { "수련 화면에서 박자마다 대신 눌러 준다 ('좋음')", "수련 자리를 떠나면 멈춘다 (어디서나 오르지 않는다)", "손은 편해지지만 사람보다 빠르지 않다" } },
 	{ id = "autoTrain2", gamepass = 2058388537, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
-		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다 · 경지의 관문은 직접 넘어야 한다" } },
+		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다" } },
 	{ id = "dragon", gamepass = 2058382534, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
 		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
 }
@@ -6473,7 +6474,8 @@ end
 -- 지금 경지: 능력치로 닿은 경지라도, 특급부터는 그 경지의 관문을 넘어야 오른다
 function Calc.realm(p: Profile): (number, any)
 	local idx = Config.realmOf(Calc.total(p), Config.realmCap(p.rebirth or 0))
-	for i = Config.GATE.from, idx do
+	-- 3.2.5판: 관문이 꺼져 있으면 능력치로 닿은 경지 그대로
+	for i = Config.GATE.from, Config.GATE.enabled and idx or 0 do
 		if not (p.gates and p.gates[tostring(i)]) then
 			idx = i - 1
 			break
@@ -47282,7 +47284,9 @@ local function buildStats()
 				sa < rb and (state.samsaraNext and " (지금 도전할 수 있다)" or string.format(" (이번 삶에서 %s에 오르면 다음 시련)", Config.Realms[Config.SAMSARA.realm].name)) or (sa < Config.REBIRTH.max and " (환생하면 다음 시련)" or ""),
 				#parts > 0 and table.concat(parts, " · ") or "아직 없음"))
 		end
-		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
+		if Config.GATE.enabled then
+			table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
+		end
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0

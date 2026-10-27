@@ -933,7 +933,9 @@ local function buildStats()
 				sa < rb and (state.samsaraNext and " (지금 도전할 수 있다)" or string.format(" (이번 삶에서 %s에 오르면 다음 시련)", Config.Realms[Config.SAMSARA.realm].name)) or (sa < Config.REBIRTH.max and " (환생하면 다음 시련)" or ""),
 				#parts > 0 and table.concat(parts, " · ") or "아직 없음"))
 		end
-		table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
+		if Config.GATE.enabled then
+			table.insert(lines, string.format("⛩ %s부터는 능력치가 닿아도 <b>관문 수호자</b>를 꺾어야 경지가 오른다%s", Config.Realms[Config.GATE.from].name, state.gateNext and string.format(' <font color="#FFD25A">(지금 %s의 관문이 열려 있다 · 넘기 전에는 능력치가 더 오르지 않는다)</font>', Config.Realms[state.gateNext].name) or ""))
+		end
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
