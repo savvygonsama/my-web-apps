@@ -6842,7 +6842,7 @@ local function shareGain(player: Player): number
 	if not p then
 		return mine
 	end
-	return math.min(mine, Config.killGain(Config.realmRefPower(Calc.realm(p))))
+	return math.min(mine, Config.killGain(Config.realmRefPower((Calc.realm(p)))))
 end
 -- 능력치를 얻는 배율 (환생할수록 많이)
 local function gainMult(p: Profile): number
