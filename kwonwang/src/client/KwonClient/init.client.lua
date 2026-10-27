@@ -34,6 +34,32 @@ local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 
 local player = Players.LocalPlayer
+-- 판 표시: 화면 오른쪽 아래 구석의 작은 글씨 (게시한 판이 맞는지, 게임패스 번호가 들어갔는지 보려고)
+task.spawn(function()
+	local passes = 0
+	for _, it in ipairs(Config.Premium or {}) do
+		if (it.gamepass or 0) > 0 then
+			passes += 1
+		end
+	end
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "KwonVersion"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 1
+	gui.Parent = player:WaitForChild("PlayerGui")
+	local label = Instance.new("TextLabel")
+	label.AnchorPoint = Vector2.new(1, 1)
+	label.Position = UDim2.new(1, -6, 1, -4)
+	label.Size = UDim2.new(0, 220, 0, 14)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 11
+	label.TextXAlignment = Enum.TextXAlignment.Right
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextTransparency = 0.45
+	label.Text = string.format("권왕 %s · 게임패스 %d/%d", tostring(Config.VERSION), passes, #(Config.Premium or {}))
+	label.Parent = gui
+end)
 -- 2.7.7판: 기술을 멀리서 보게 줌 아웃 120칸까지
 pcall(function()
 	player.CameraMaxZoomDistance = 120

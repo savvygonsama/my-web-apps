@@ -4803,7 +4803,7 @@ function Premium.prompt(player: Player, id: string)
 		return
 	end
 	if it.gamepass <= 0 or not Marketplace then
-		toast(player, "아직 판매 준비 중이에요 (게임패스 번호를 넣어야 해요)")
+		toast(player, "아직 판매 준비 중이에요 (이 서버의 판에는 게임패스 번호가 없어요)")
 		return
 	end
 	pcall(function()
