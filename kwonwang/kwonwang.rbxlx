@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.2.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.2.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3557,7 +3557,7 @@ Config.SKY_SHOP = {
 Config.SKY_MATS = {
 	{ id = "petal", name = "천앵 꽃잎", icon = "🌸", how = "청학봉 섬의 적 (선학은 꼭 둘)", island = "crane", chance = 0.35, boss = 12 },
 	{ id = "wine", name = "선로주", icon = "🍶", how = "천궁 상점에서 천정으로 빚는다", shop = 120 },
-	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 꼭 둘)", night = true, chance = 0.25, boss = 6 },
+	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 꼭 둘)", night = true, chance = 0.55, boss = 6 }, -- 3.2.7판: 밤이 6분 → 2분이라 0.25 → 0.55,
 	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (한 번에 둘)", bossOnly = 3, bossBonus = { noeje = 8 } },
 	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 꼭 둘)", island = "falls", chance = 0.3, boss = 10 },
 }
@@ -47842,70 +47842,272 @@ function UI.setTrial(data: any?)
 	end
 end
 
+-- 3.2.7판: 도움말을 갈래로 나눴다 (위의 단추로 고른다). 지상과 천상은 따로, 땅·사부·경지 목록은 Config에서 읽어 늘 맞게
+local HELP_TABS = {
+	{ id = "controls", label = "🎮 조작" },
+	{ id = "fight", label = "⚔ 싸움" },
+	{ id = "grow", label = "📈 강해지기" },
+	{ id = "styles", label = "🥋 권법·사부" },
+	{ id = "ground", label = "🏔 지상" },
+	{ id = "sky", label = "☁ 천상계" },
+	{ id = "late", label = "♻ 환생·후반" },
+	{ id = "etc", label = "💰 상점·기타" },
+}
+local function helpRec(id: string): string
+	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
+	local a = f and f:GetAttribute(id)
+	local b = f and f:GetAttribute(id .. "_boss")
+	local parts = {}
+	if type(a) == "number" then
+		table.insert(parts, "권장 " .. Config.formatNumber(a))
+	end
+	if type(b) == "number" then
+		table.insert(parts, "보스 " .. Config.formatNumber(b))
+	end
+	return #parts > 0 and ("  <font color=\"#FFD27A\">(" .. table.concat(parts, " · ") .. ")</font>") or ""
+end
+-- 땅 목록은 권장 전투력이 낮은 땅부터 (아직 모르면 원래 차례대로 뒤에)
+local function helpRecNum(id: string): number
+	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
+	local a = f and f:GetAttribute(id)
+	return type(a) == "number" and a or math.huge
+end
+local function helpSorted(list: { any }, key: (any) -> string): { any }
+	local out = {}
+	for i, x in ipairs(list) do
+		table.insert(out, { x = x, i = i, rec = helpRecNum(key(x)) })
+	end
+	table.sort(out, function(p, q)
+		if p.rec ~= q.rec then
+			return p.rec < q.rec
+		end
+		return p.i < q.i
+	end)
+	local res = {}
+	for _, o in ipairs(out) do
+		table.insert(res, o.x)
+	end
+	return res
+end
+local function helpBossName(id: string?): string?
+	local b = id and Config.Bosses[id]
+	return b and b.name or nil
+end
+local function helpText(tab: string): { string }
+	local L: { string } = {}
+	local function add(s: string)
+		table.insert(L, s)
+	end
+	if tab == "controls" then
+		add("<b>🎮 조작</b>")
+		add("• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방, 천룡장은 누르고 있다 놓기)")
+		add(string.format("• E: 기술 · R: 기술 (숙련 %d) · G: 오의 (숙련 %d, 내공 가득) · X: 초 오의 (초월·환생 권법)", Config.SKILL_UNLOCK.R, Config.SKILL_UNLOCK.G))
+		add("• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다")
+		add("• Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기 · Shift: 달리기")
+		add("• T (가까이): 사부·수련·상점·문 · H: 금창약 · Tab: 능력치 · M: 지도")
+		add("• 휴대폰: 화면 오른쪽 아래의 단추가 같은 일을 한다")
+		add("")
+		add("• 오른쪽 위 메뉴에서 권법·지도·능력치·업적·수련 안내·심법·만물상을 연다")
+		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
+	elseif tab == "fight" then
+		add("<b>⚔ 연타는 박자</b>")
+		add("• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)")
+		add("• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다")
+		add("• 숙련 6 각성: 연타 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격")
+		add("")
+		add("<b>몸놀림</b>")
+		add("• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b>")
+		add("• 흘리기 바로 뒤 클릭: <b>반격</b> (크게 아프고 균형을 많이 깎는다)")
+		add("• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고, 곧바로 클릭하면 반격")
+		add("")
+		add("<b>합을 겨루는 법</b>")
+		add("• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b> — 무릎이 꺾여 큰 피해를 받는다")
+		add("• 적의 무기가 반짝이면 곧 휘두른다 — 흘릴 때다")
+		add("• <b>붉게 빛나는 공격</b>은 막을 수 없다. 대시로 피해라")
+		add("• 서로 같은 순간에 치면 <b>격돌</b>: 주먹이 부딪혀 둘 다 튕겨 난다")
+		add("")
+		add("<b>전투력</b>")
+		add("• 머리 위 숫자. 체력·피해·기술 세기를 함께 센다. 내 전투력은 능력치 창에 있다")
+		add(string.format("• 내가 상대보다 %.1f배 넘게 세면 덜 아프고, %.1f배 넘으면 휘청이지 않고, %d배 넘으면 호신강기에 튕겨 나간다", Config.POWER_GAP.soft, Config.POWER_GAP.steady, Config.POWER_GAP.immune))
+		add("• 지도의 권장 전투력: 빨강 위험 · 주황 버거움 · 초록 알맞음 · 회색 여유")
+	elseif tab == "grow" then
+		add("<b>📈 능력치는 싸움과 수련으로</b>")
+		add("• 적을 쓰러뜨리면 그 적의 전투력만큼 네 능력치가 고루 오른다. <b>내 수준의 땅</b>에서 잡을 때 가장 알차다")
+		add(string.format("• 보스는 %d배, 정예는 %.1f배. 나보다 훨씬 센 적도 내 경지 몫의 %.1f배까지만", Config.KILL_GAIN.boss, Config.KILL_GAIN.elite, Config.KILL_GAIN.overCap))
+		add(string.format("• 수련: 박자를 맞추면 두 배. 이류부터 바위의 🔥 강화 수련 (%d배). 경지마다 새 수련이 열린다 (메뉴 → 수련 안내)", Config.HARD_TRAIN.mult))
+		add("")
+		add("<b>경지</b> (능력치 합으로 오른다. 오를 때마다 피해·체력이 크게 오른다)")
+		local names = {}
+		for i, r in ipairs(Config.Realms) do
+			if not r.rebirth then
+				table.insert(names, string.format("%s %s", r.name, i == 1 and "" or Config.formatNumber(r.need)))
+			end
+		end
+		add("• " .. table.concat(names, " → "))
+		add("• 천외천 너머 (환생해야 하나씩 열린다): 혼원경 → 무량경 → 태허경 → 권왕")
+		add("")
+		add("<b>숙련 · 각성 · 깨달음</b>")
+		add(string.format("• 그 권법으로 맞힐수록 숙련이 오른다. 숙련 %d에 R, %d에 오의(G), 6에 각성 (기술이 세지고 연타 마무리가 띄운다)", Config.SKILL_UNLOCK.R, Config.SKILL_UNLOCK.G))
+		local bt = {}
+		for _, s in ipairs(Config.BREAKTHROUGH) do
+			table.insert(bt, string.format("%s (%s부터 · 💰 %s)", s.name, Config.Realms[s.realm].name, Config.formatNumber(s.coins)))
+		end
+		add(string.format("• 숙련 %d인 권법은 깨달음으로 등급이 오른다: %s", Config.MASTERY_FULL, table.concat(bt, " · ")))
+		add("")
+		add("<b>심법 · 천층탑</b>")
+		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 심법)")
+		add("• 마을 안 천층탑: 층마다 세기가 정해져 있고 열 층마다 보스. 처음 넘는 보스 층엔 두루마리와 큰 몫")
+		add("")
+		add("<b>이야기</b>")
+		add("• 화면 왼쪽의 이야기 목표를 따라가면 게임 전체를 차례로 배운다. 청운 장로에게 말을 걸면 다음 장을 받는다")
+	elseif tab == "styles" then
+		add("<b>🥋 권법 얻기</b>")
+		add("• 처음엔 삼재권. 다른 권법은 <b>그 사부를 찾아가</b> T로 시험을 청하고, 넘으면 은자를 내고 배운다")
+		local cost = {}
+		for i = 2, 5 do
+			table.insert(cost, Config.formatNumber(Config.LEARN_COST[i]))
+		end
+		add("• 배우는 값 (둘째부터): 💰 " .. table.concat(cost, " → ") .. " → …")
+		add("• 시험은 사부마다 다르다: 흘리기 · 버티기 · 제자 연무")
+		add("• 권법 창의 📍 길 안내를 누르면 화면과 지도에 길잡이가 뜬다. 하늘로 솟은 빛기둥이 사부의 자리")
+		add("")
+		add("<b>지상의 사부</b>")
+		for _, r in ipairs(Config.Regions) do
+			local st = r.master and Config.STYLE_BY_ID[r.master]
+			if st then
+				add(string.format("• %s %s — %s의 %s", st.icon or "", st.name, r.name, r.masterName or "사부"))
+			end
+		end
+		add("")
+		add("<b>숨은 권법</b>")
+		add("• 지도에 없는 사부와 특별한 조건으로 얻는 권법이 많다. 권법 창에서 잠긴 권법을 누르면 실마리가 나온다")
+		add("• 각성 권법(진): 원래 권법을 숙련 끝까지 올리고 두 번 깨달은 뒤 각성의 시련을 넘는다")
+		add("• 초월 권법(초): 원래 권법과 그 진 권법을 숙련 20까지 + 천상 재료 → 숨은 초월의 사부")
+	elseif tab == "ground" then
+		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
+		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 비무대 · 수련터 · 천층탑 · 천상 문")
+		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
+		for _, r in ipairs(helpSorted(Config.Regions, function(r)
+			return r.id
+		end)) do
+			if not r.safe and (r.camps or r.boss) and r.id ~= "wilds" then
+				local bn = r.boss and helpBossName(r.boss.id)
+				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", helpRec(r.id)))
+			end
+		end
+		add("• 사부 가는 길목 (강호 들판): 창병 · 곤봉 산적 · 쌍도 자객. 아주 먼 곳엔 흑영 자객 · 철갑 무사")
+		add("")
+		add("• 비급 조각 다섯이 강호 곳곳에 숨어 있다 (지도에 없다)")
+		add(string.format("• 낮과 밤이 돈다 (낮 10분 · 밤 2분). 일월신권은 낮과 밤에 따라 세기가 바뀐다"))
+	elseif tab == "sky" then
+		local sr = Config.Realms[Config.SKY.realm]
+		add("<b>☁ 천상계</b>")
+		add(string.format("• %s에 오르면 마을 안 <b>천상 문</b>이 열린다. 지도는 하늘에 오르면 천상 지도로 바뀐다", sr and sr.name or "천인합일"))
+		add("• 천궁 (안전): 천상 객잔 · 천정 상점 · 운류자 (운류장) · 구름 미궁 문 🌀 · 천공 투기장 문 ⚔")
+		add("• 천정 💠: 천상의 적과 보스가 떨어뜨린다. 천정 상점에서 두루마리·영약·천정단·탈것을 산다")
+		add("")
+		add("<b>섬</b> (권장 전투력이 낮은 섬부터)")
+		for _, isl in ipairs(helpSorted(Config.SKY.islands, function(isl)
+			return "sky_" .. isl.id
+		end)) do
+			if not isl.safe and (isl.camps or isl.boss) then
+				local bn = isl.boss and helpBossName(isl.boss.id)
+				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", helpRec("sky_" .. isl.id)))
+			end
+		end
+		add("")
+		add("<b>천상 재료</b> (초월 권법에 든다. 한 번에 많아야 둘)")
+		for _, m in ipairs(Config.SKY_MATS) do
+			add(string.format("• %s %s — %s", m.icon, m.name, m.how))
+		end
+		add("")
+		add("• 구름 미궁: 방을 넘어 미궁의 주인을 꺾는다. 들어간 사람의 세기에 맞춰 적이 선다")
+		add("• 천공 투기장: 여럿이 함께 하늘의 재앙 천겁을 쓰러뜨린다")
+	elseif tab == "late" then
+		add("<b>♻ 환생</b>")
+		add(string.format("• 천외천에 오르면 천상 윤회대의 제단에서 환생한다 (모두 %d번). 경지는 삼류부터지만 얻는 능력치가 커진다", Config.REBIRTH.max))
+		add("• 권법·숙련·깨달음·심법·탈것·은자는 그대로 남는다. 환생할 때마다 천외천 너머 경지가 하나씩 열린다")
+		add("• 환생 한 번에 공덕 둘. 능력치 창 → ♻ 환생 특전에서 특전을 산다 (언제든 되돌려 다시 고를 수 있다)")
+		add("")
+		add("<b>☯ 윤회의 시련</b>")
+		add(string.format("• n번째 환생 뒤 %s에 다시 오르면 n번째 시련이 열린다. 전생의 그림자를 꺾으면 공덕 하나와 환생 권법 하나", Config.Realms[Config.SAMSARA.realm].name))
+		add("• 환생 권법: 윤회권 → 업화권 → 무상권 → 권왕신권 (모두 초 오의 X가 있다)")
+		add("")
+		add("<b>끝까지</b>")
+		add("• 초월 권법(초) · 극 일월신권 (일월신권 숙련 20, 세 번 환생) · 마지막 경지 권왕")
+		add("• 업적과 칭호 (메뉴 → 업적): 이룬 만큼 은자와 칭호가 붙는다")
+	elseif tab == "etc" then
+		add("<b>💰 은자로 사는 것</b>")
+		add("• 만물상 (마을): 금창약 (H) · 소환단 (수련 2배) · 대환단 (능력치)")
+		local mounts = {}
+		for _, m in ipairs(Config.MOUNTS) do
+			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)")))
+		end
+		add("• 탈것: " .. table.concat(mounts, " · "))
+		add("")
+		add("<b>💎 게임패스</b> (로벅스. 한 번 사면 영구)")
+		for _, g in ipairs(Config.Premium) do
+			add(string.format("• %s %s — R$ %d", g.icon, g.name, g.price))
+		end
+		add("")
+		add("<b>그 밖에</b>")
+		add("• ⚔ 비무대 (마을): 올라선 사람끼리 1대1. 메뉴의 PvP 단추로 들판 PvP를 켜고 끈다")
+		add("• 비무에서 많이 이긴 자만 얻는 권법이 있다")
+		add("• 하늘에서 별똥별이 떨어지면 가 보라 (천상)")
+	end
+	return L
+end
+
 local function buildHelp()
 	local page = makePage("help")
-	-- 처음 조작법 안내를 다시 본다
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 200, 0, 40), Text = "🎮 조작법 다시 보기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(170, 120, 40), ZIndex = 3, Parent = page }, function()
-		window.Visible = false
-		local Cutscene = require(script.Parent:WaitForChild("Cutscene")) :: any
-		Cutscene.controls(nil)
-	end)
-	local scroll = scroller(page, UDim2.fromScale(1, 1))
-	text({
+	-- 갈래 단추 (두 줄에 넷씩)
+	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, Parent = page })
+	new("UIGridLayout", { CellSize = UDim2.new(0.25, -6, 0, 34), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = bar })
+	local scroll = scroller(page, UDim2.new(1, 0, 1, -86), UDim2.new(0, 0, 0, 86))
+	local body = text({
 		Size = UDim2.new(1, -14, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		TextSize = 17,
 		RichText = true,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Parent = scroll,
-		Text = table.concat({
-			"<b>🥋 맨손 하나로 강호를 꺾어라</b>",
-			"",
-			"<b>조작</b>",
-			"• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방) (천룡장은 누르고 있다 놓기)",
-			"• E · R: 기술 · G: 오의 (내공 100) · Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기",
-			"• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다",
-			"• H: 금창약 · T(가까이): 사부·수련·상점 · Tab: 능력치 · M: 지도 · Shift: 달리기",
-			"",
-			"<b>연타는 박자</b>",
-			"• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)",
-			"• 너무 일찍 마구 누르면 <b>흐트러진다</b>: 연타가 끊기고 적이 읽어서 막고 흘린다",
-			"• 숙련 6 각성: 연타 다섯 번째 마무리가 상대를 하늘로 띄운다 → 두 번 뛰고 공중에서 클릭 = 공중 연격 (세 번)",
-			"• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고, 곧바로 클릭하면 반격",
-			"",
-			"<b>몸놀림</b>",
-			"• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b> (내리꽂아 주변을 친다)",
-			"• 흘리기 바로 뒤 클릭: <b>반격</b> (크게 아프고 균형을 많이 깎는다)",
-			"• 뒤로 대시하면 공중제비, 옆으로 대시하면 구르기",
-			"",
-			"<b>합을 겨루는 법</b>",
-			"• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b> — 무릎이 꺾여 큰 피해를 받는다",
-			"• 흘리기를 당한 쪽도 균형이 크게 깎인다. 흘리고, 흘리고, 무너뜨려라",
-			"• 서로 같은 순간에 치면 <b>격돌</b>: 주먹이 부딪혀 둘 다 튕겨 난다",
-			"• 적의 무기가 반짝이면 곧 휘두른다 — 흘릴 때다",
-			"• <b>붉게 빛나는 공격</b>은 막을 수 없다. 대시로 피해라",
-			"",
-			"<b>강해지기</b>",
-			"• 수련: 바위 들기(근골) · 목인장(체력·경공) · 폭포 명상(내공). 박자를 맞추면 2배",
-			"• 능력치는 천천히 오른다 (로그). 오래 수련한 쪽이 조금 유리할 뿐, 흘리기를 잘하면 이긴다",
-			"• 숙련도: 그 권법으로 맞힐수록 오른다. 숙련 3에 R, 5에 오의가 열린다",
-			"• 경지: 능력치 합으로 삼류 → 이류 → 일류 → 절정 → 초절정 → 화경 → 현경 → 생사경",
-			"",
-			"<b>일곱 사부</b>",
-			"• 첫 권법은 어디서든 공짜. 그다음 권법은 <b>그 사부를 찾아가</b> T를 누르고 배운다",
-			"• 권법 창의 📍 길 안내를 누르면 화면과 지도에 길잡이가 뜬다. 하늘로 솟은 빛기둥이 사부의 자리",
-			"• 태허호(남서) · 금강사(북동) · 매화원(북서) · 천룡봉(먼 동쪽) · 무영곡(먼 서쪽) · 뇌운 고원(남동) · 취선 주막(남쪽)",
-			"",
-			"<b>강호</b>",
-			"• 청운 마을 (안전): 사부 안내판, 만물상, 비무대, 수련터",
-			"• 남쪽 청운 들판: 무뢰배 (처음 싸워 보기 좋다)",
-			"• 적은 마을에서 멀수록 세다 (Lv). 아주 먼 곳엔 철갑 무사·흑영 자객과 두목이 있다",
-			"• 먼 북쪽 흑호채: 두목 흑호 · 먼 남동쪽 혈월곡 (핏빛 달 아래): 우두머리 혈랑",
-			"• 서쪽 대나무 숲: 산적 도객, 창병 · 동쪽 비류 폭포 계곡: 산적, 쌍도 자객",
-			"• 볼거리: 거신상 · 하늘 고리 · 옛 투기장 · 수정 들판 · 천년 고목",
-			"• ⚔ 비무대: 올라선 사람끼리 1대1로 겨룬다",
-		}, "\n"),
 	})
+	-- 조작 갈래에만: 처음 조작법 안내를 다시 본다
+	local again = button({ Size = UDim2.new(0, 220, 0, 40), Text = "🎮 조작법 다시 보기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(170, 120, 40), Parent = scroll }, function()
+		window.Visible = false
+		local Cutscene = require(script.Parent:WaitForChild("Cutscene")) :: any
+		Cutscene.controls(nil)
+	end)
+	new("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = scroll })
+	body.LayoutOrder = 1
+	again.LayoutOrder = 2
+	local tabBtns: { [string]: TextButton } = {}
+	local function show(id: string)
+		for tid, b in pairs(tabBtns) do
+			b.BackgroundColor3 = tid == id and Color3.fromRGB(170, 120, 40) or C.panel2
+		end
+		body.Text = table.concat(helpText(id), "\n")
+		again.Visible = id == "controls"
+		scroll.CanvasPosition = Vector2.zero
+	end
+	for i, t in ipairs(HELP_TABS) do
+		tabBtns[t.id] = button({ Text = t.label, TextSize = 15, LayoutOrder = i, Parent = bar }, function()
+			show(t.id)
+		end)
+	end
+	show("controls")
+	-- 열 때마다 권장 전투력을 새로 읽도록, 보이게 될 때 지금 갈래를 다시 그린다
+	local cur = "controls"
+	for _, t in ipairs(HELP_TABS) do
+		tabBtns[t.id].Activated:Connect(function()
+			cur = t.id
+		end)
+	end
+	page:GetPropertyChangedSignal("Visible"):Connect(function()
+		if page.Visible then
+			show(cur)
+		end
+	end)
 end
 
 -- 수련마다 하는 법 (수련 창 아래와 수련 안내 창에 나온다)
