@@ -10,6 +10,7 @@
   --navy: #1F4A6B;
   --red: #D64534;
   --teal: #1E8E8A;
+  --logo-soft: #DCE6EE;
   --known: #1D2430;
   --unknown: #CFC8B8;
   --ok: #2F7D4F;
@@ -25,13 +26,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #15181D; --card: #1F242C; --ink: #ECEEF1; --ink2: #B5BCC6; --mut: #858D98; --line: #2E3540;
-    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --known: #ECEEF1; --unknown: #4A5260;
+    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --logo-soft: #2A3A4A; --known: #ECEEF1; --unknown: #4A5260;
     --ok: #6CC08F; --ng: #F08A7A; --shadow: none; --toast-bg: #ECEEF1; --toast-fg: #15181D; --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #15181D; --card: #1F242C; --ink: #ECEEF1; --ink2: #B5BCC6; --mut: #858D98; --line: #2E3540;
-    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --known: #ECEEF1; --unknown: #4A5260;
+    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --logo-soft: #2A3A4A; --known: #ECEEF1; --unknown: #4A5260;
     --ok: #6CC08F; --ng: #F08A7A; --shadow: none; --toast-bg: #ECEEF1; --toast-fg: #15181D; --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -205,3 +206,27 @@ a.btn { text-decoration: none; display: flex; flex-direction: column; align-item
 .cmp.wide .cmpk span { font-size: 54px; white-space: nowrap; }
 .units.wide { grid-template-columns: repeat(3, 1fr); }
 .units.wide .unit span { font-size: 26px; white-space: nowrap; }
+
+/* 스틸링고 시리즈 공통 머리 — 코일 로고 + 「스틸링고」 + 앱 이름 꼬리표 (스틸링고 Lite와 같은 짜임) */
+.masthead { padding: 18px 0 14px; border-bottom: 1px solid var(--line); }
+.mast-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.byline { margin: 0; font-size: 12.5px; color: var(--mut); letter-spacing: .02em; }
+.byline .c { letter-spacing: .16em; margin-right: 8px; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo { width: 68px; height: auto; flex: 0 0 auto; }
+.lg-body { fill: var(--logo-soft); stroke: var(--navy); stroke-width: 2.6; }
+.lg-fill { fill: var(--logo-soft); }
+.lg-edge { stroke: var(--navy); stroke-width: 2.6; stroke-linecap: round; }
+.lg-face { fill: var(--card); stroke: var(--navy); stroke-width: 2.6; }
+.lg-spiral { fill: none; stroke: var(--navy); stroke-width: 2.2; stroke-linecap: round; }
+.lg-eye { fill: var(--navy); }
+.lg-smile { fill: none; stroke: var(--navy); stroke-width: 2.3; stroke-linecap: round; }
+.lg-cheek { fill: var(--red); opacity: .4; }
+.masthead h1 { margin: 0; font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -.01em; }
+.masthead h1 .tag { font-size: .5em; font-weight: 700; color: #FFFFFF; background: var(--navy); border-radius: 999px; padding: 4px 12px; vertical-align: .3em; margin-left: 10px; letter-spacing: .04em; }
+.cr { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; padding-top: 4px; }
+.cr b { font-size: 13.5px; color: var(--ink2); }
+.cr span { font-size: 12.5px; color: var(--mut); }
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .masthead h1 .tag { color: var(--bg); } }
+:root[data-theme="dark"] .masthead h1 .tag { color: var(--bg); }

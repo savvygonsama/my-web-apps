@@ -43,7 +43,7 @@ NY.LINES = {
     { who: "poo", face: "relief", text: "어제 문장부터 한 번. 입 풀고 가자." }
   ],
   read3: [
-    { who: "ssial", face: "basic", text: "세 번 끝. 다음은 해설이다." }
+    { who: "ssial", face: "basic", text: "마지막 세 번째. 소리랑 동시에 읽어라." }
   ],
   quiz: [
     { who: "eg", face: "work", text: "블록을 순서대로 눌러 주세요. 자연스러운 순서면 다 정답이에요." }

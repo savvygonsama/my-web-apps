@@ -1,6 +1,7 @@
 /* 한문장 — 화면
 
-   하루 흐름: 시작 → (어제 문장 한 번) → [단계마다 3번 따라 읽기 → 🔍 해설] × 단계 수 → 조립 퀴즈 → 완성 문장 3번 → 끝
+   하루 흐름: 시작 → (어제 문장 한 번) → [단계마다 3번 따라 읽기 + 🔍 해설을 한 화면에] × 단계 수 → 조립 퀴즈 → 완성 문장 3번 → 끝
+   - 해설은 따라 읽는 화면 아래에 바로 붙는다. 문장이나 뜻을 가리지 않는다.
    - 하루에 새 문장은 하나. 오늘 끝냈으면 다음 문장은 기기 날짜로 내일 열린다. 밀린 날을 몰아서 열 수는 없다.
    - 끝낸 문장은 보관함에서 언제든 다시 듣고 다시 할 수 있다(기록 날짜는 바뀌지 않는다).
    - 채점·녹음·음성 인식은 없다. 따라 읽었으면 「읽었어요」를 누른다.
@@ -14,12 +15,12 @@
   const GUIDE = [
     ["1번째", "천천히 듣고 따라 읽기"],
     ["2번째", "보통 속도로 따라 읽기"],
-    ["3번째", "새 블록을 가리고 겹쳐 읽기"]
+    ["3번째", "소리와 동시에 겹쳐 읽기"]
   ];
   const FINAL_GUIDE = [
     ["1번째", "천천히, 블록마다 끊어 읽기"],
     ["2번째", "보통 속도로 이어 읽기"],
-    ["3번째", "후리가나 없이 겹쳐 읽기"]
+    ["3번째", "소리와 동시에 겹쳐 읽기"]
   ];
 
   /* ── 저장 ── */
@@ -84,8 +85,7 @@
       const inner = rubyOf(p.t, o.ruby !== false);
       if (!p.role || (o.onlyFresh && !p.fresh)) return `<span>${inner}</span>`;
       const c = NY.ROLES[p.role].c;
-      const mask = o.mask && p.fresh;
-      return `<span class="blk c-${c}${p.fresh && o.onlyFresh ? " grow" : ""}${mask ? " mask" : ""}" data-i="${i}">${inner}</span>`;
+      return `<span class="blk c-${c}${p.fresh && o.onlyFresh ? " grow" : ""}" data-i="${i}">${inner}</span>`;
     }).join("");
   }
   function legendHTML(segs) {
@@ -141,7 +141,7 @@
     const plan = [{ t: "start" }];
     const prev = dayOf(D.day - 1);
     if (prev && S.done[prev.day]) plan.push({ t: "warm" });
-    D.steps.forEach((_, i) => { plan.push({ t: "read", s: i }); plan.push({ t: "expl", s: i }); });
+    D.steps.forEach((_, i) => { plan.push({ t: "read", s: i }); });
     plan.push({ t: "quiz" }, { t: "final" }, { t: "done" });
     return plan;
   }
@@ -158,7 +158,19 @@
   }
 
   const top = (title) => `<div class="top"><h1>${title}</h1><button class="pill" id="installBtn" hidden>📲 설치</button></div>`;
-  const credit = () => `<p class="note">기획과 구성 by 곤사마 · 캐릭터 스틸 그레이드 가챠 · 음성 ${Object.keys(NY.AUDIO || {}).length ? "VOICEVOX:No.7" : "기기 일본어 음성"}</p>`;
+  /* 스틸링고 시리즈 공통 머리: 코일 로고 + 「스틸링고」 + 앱 이름 꼬리표, 위에 기획과 구성 줄 (Lite와 같은 짜임) */
+  const LOGO = `<svg class="logo" viewBox="0 0 76 58" role="img" aria-label="스틸링고 로고">
+      <ellipse cx="56" cy="29" rx="10" ry="19" class="lg-body"/><rect x="20" y="10" width="36" height="38" class="lg-fill"/>
+      <line x1="20" y1="10" x2="56" y2="10" class="lg-edge"/><line x1="20" y1="48" x2="56" y2="48" class="lg-edge"/>
+      <ellipse cx="20" cy="29" rx="10" ry="19" class="lg-face"/><path d="M20 16 a7 13 0 1 1 -6.2 12.6 a4.2 7.6 0 1 0 6.2 -6.6" class="lg-spiral"/>
+      <circle cx="36" cy="26" r="2.7" class="lg-eye"/><circle cx="47" cy="26" r="2.7" class="lg-eye"/>
+      <path d="M37.5 34.5 q4 3.6 8 0" class="lg-smile"/><ellipse cx="31" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/><ellipse cx="52" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+    </svg>`;
+  const mast = () => `<header class="masthead">
+      <div class="mast-top"><p class="byline"><span class="c">&copy; 2026</span>기획과 구성 by 곤사마 @POSCO</p><button class="pill" id="installBtn" hidden>📲 설치</button></div>
+      <div class="brand">${LOGO}<h1>스틸링고<span class="tag">한문장</span></h1></div>
+    </header>`;
+  const credit = () => `<div class="cr"><b>스틸링고 한문장 · 기획과 구성 by 곤사마 @POSCO</b><span>캐릭터 스틸 그레이드 가챠 · 음성 ${Object.keys(NY.AUDIO || {}).length ? "VOICEVOX:No.7" : "기기 일본어 음성"}</span></div>`;
 
   /* ── 화면: 첫 소개 ── */
   function viewIntro() {
@@ -167,10 +179,10 @@
     const demo = D.steps.slice(0, 3).map((s, i) => `<div class="demo-l jp" style="animation-delay:${i * 0.5}s">${sentHTML(parse(s.r), { onlyFresh: true })}</div>`).join("");
     let i = 0;
     $app.innerHTML = `
-      ${top("한문장")}
+      ${mast()}
       <div class="main">
         <div class="card center">
-          <p class="eyebrow">스틸링고 · 일본어 쉐도잉</p>
+          <p class="eyebrow">일본어 쉐도잉 · 하루 한 문장</p>
           <h2 style="margin-top:4px">하루 딱 한 문장,<br>늘려 가며 따라 읽기</h2>
           <div class="demo">${demo}<div class="demo-more">⋯ 블록 7개짜리 문장까지</div></div>
         </div>
@@ -178,16 +190,11 @@
           <p class="eyebrow">이렇게 해요 · 하루 10분</p>
           <ol>
             <li><b>짧은 문장에서 출발</b> — 「밥을 먹습니다」부터 블록을 하나씩 붙여요</li>
-            <li><b>단계마다 3번 따라 읽기</b> — 천천히 → 보통 속도 → 새 블록 가리고</li>
-            <li><b>🔍 뜯어보기</b> — 새로 붙은 단어·한자·문법·틀리기 쉬운 것</li>
+            <li><b>단계마다 3번 따라 읽기</b> — 천천히 → 보통 속도 → 소리와 동시에</li>
+            <li><b>🔍 뜯어보기</b> — 읽는 화면 바로 아래에 새로 붙은 단어·한자·문법·틀리기 쉬운 것</li>
             <li><b>조립하고 한 번에</b> — 완성 문장을 블록으로 맞추고 처음부터 끝까지 3번</li>
           </ol>
           <p class="small" style="margin:8px 0 0">새 문장은 하루에 하나만 열려요. 끝낸 문장은 보관함에서 언제든 다시.</p>
-        </div>
-        <div class="card credit">
-          <p class="eyebrow">기획과 구성</p>
-          <b>곤사마</b>
-          <p class="small" style="margin:4px 0 0">ます체 · 30일 · 입문 졸업 다음 단계 · 캐릭터 스틸 그레이드 가챠</p>
         </div>
         <div class="friends">${imgs}</div>
         <div id="introSay">${sayHTML(NY.LINES.intro[0])}</div>
@@ -195,6 +202,7 @@
       <div class="foot">
         <button class="btn" id="next">다음 친구</button>
         <button class="btn primary big" id="go">1일차 시작<small>${esc(D.title)} · 약 10분</small></button>
+        ${credit()}
       </div>`;
     document.getElementById("next").onclick = () => {
       i = (i + 1) % NY.LINES.intro.length;
@@ -239,7 +247,7 @@
       </div>`;
     }).join("");
     $app.innerHTML = `
-      ${top("한문장")}
+      ${mast()}
       <div class="main">
         <div class="card">
           <div class="prog"><b>${n}</b><span class="lead">/ ${NY.TOTAL}일 · 한 문장씩</span></div>
@@ -264,6 +272,7 @@
   function viewLesson() {
     const C = S.cur, D = dayOf(C.day), it = C.plan[C.i];
     if (it.t === "done") return viewDone();
+    if (it.t === "expl") return step(1);   // 해설이 따로 있던 이전 판에서 저장된 계획
     const pct = (C.i / (C.plan.length - 1)) * 100;
     const stepNo = it.s != null ? it.s + 1 : it.t === "quiz" || it.t === "final" ? D.steps.length : 0;
     const tower = D.steps.map((_, k) => `<i class="${k < stepNo ? "on" : ""}${k === stepNo - 1 && it.t === "read" ? " now" : ""}"></i>`).join("");
@@ -297,33 +306,6 @@
     if (it.t === "read") {
       const st = D.steps[it.s], segs = parse(st.r), r = C.r;
       const fresh = segs.filter((p) => p.fresh).map((p) => `<span class="chip c-${NY.ROLES[p.role].c}">${esc(plain(p.t))} · ${NY.ROLES[p.role].name}</span>`).join("");
-      body = `<div class="card">
-        <p class="eyebrow">${it.s === 0 ? "출발 문장" : "새로 붙은 블록"}</p>
-        <div class="legend">${fresh}</div>
-        <p class="sent jp">${sentHTML(segs, { onlyFresh: true, mask: r === 2 })}</p>
-        <p class="ko${r === 0 ? "" : " dim"}">${r === 0 ? esc(st.ko) : '<button class="peek" id="peekKo">뜻 보기</button>'}</p>
-        <div class="guide"><b>${GUIDE[r][0]}</b> ${GUIDE[r][1]}${r === 2 ? ' <span class="small">(가린 곳을 누르면 보여요)</span>' : ""}</div>
-        <div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < r ? "on" : k === r ? "cur" : ""}"></i>`).join("")}</div>
-        <div class="center"><button class="snd" id="ply">${r === 0 ? "🐢 천천히 듣기" : "🔊 듣기"}</button></div>
-      </div>`;
-      say = r === 0 && st.say ? st.say : it.s === 0 && r === 2 ? line("read3") : null;
-      foot = `<button class="btn primary big" id="rd">읽었어요<small>${r + 1} / ${READS}</small></button>`;
-      after = () => {
-        const text = plain(st.r), b = document.getElementById("ply");
-        b.onclick = () => play(text, r === 0, b);
-        if (C.autoplay) { C.autoplay = false; setTimeout(() => play(text, r === 0, b), 250); }
-        $app.querySelectorAll(".blk.mask").forEach((m) => m.onclick = () => m.classList.toggle("show"));
-        const pk = document.getElementById("peekKo");
-        if (pk) pk.onclick = () => { pk.parentNode.textContent = st.ko; };
-        document.getElementById("rd").onclick = () => {
-          if (C.r < READS - 1) { C.r++; C.autoplay = true; save(); render("lesson"); }
-          else step(1);
-        };
-      };
-    }
-
-    if (it.t === "expl") {
-      const st = D.steps[it.s];
       const words = st.words.map((w, k) => `<button class="wcard" data-w="${k}">
           <span class="jp ww">${esc(w.w)}</span><span class="wy jp">${esc(w.y)}</span>
           <span class="wk">${esc(w.ko)}</span><span class="wp">${esc(w.pos)}</span>
@@ -331,19 +313,37 @@
         </button>`).join("");
       const gram = st.gram.map((g) => `<div class="gram"><b>${esc(g.t)}</b><p>${esc(g.d)}</p></div>`).join("");
       const trap = (st.trap || []).map((t) => `<div class="trap"><p class="ng jp">❌ ${esc(t.ng)}</p><p>${esc(t.why)}</p></div>`).join("");
+      const tsay = st.say && r === 0 ? st.say : it.s === 0 && r === 2 ? line("read3") : null;
       body = `<div class="card">
-          <p class="eyebrow">🔍 뜯어보기 · ${it.s + 1}단계</p>
-          <p class="sent sm jp">${sentHTML(parse(st.r), { onlyFresh: true })}</p>
+          <p class="eyebrow">${it.s === 0 ? "출발 문장" : "새로 붙은 블록"}</p>
+          <div class="legend">${fresh}</div>
+          <p class="sent jp">${sentHTML(segs, { onlyFresh: true })}</p>
           <p class="ko">${esc(st.ko)}</p>
+          <div class="guide"><b>${GUIDE[r][0]}</b> ${GUIDE[r][1]}</div>
+          <div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < r ? "on" : k === r ? "cur" : ""}"></i>`).join("")}</div>
+          <div class="center"><button class="snd" id="ply">${r === 0 ? "🐢 천천히 듣기" : "🔊 듣기"}</button></div>
         </div>
-        <div class="sec"><p class="eyebrow">단어</p><div class="words">${words}</div></div>
-        <div class="sec"><p class="eyebrow">문법</p>${gram}</div>
-        ${trap ? `<div class="sec"><p class="eyebrow">틀리기 쉬운 것</p>${trap}</div>` : ""}
-        ${st.more ? `<details class="more"><summary>한 걸음 더</summary><p>${esc(st.more)}</p></details>` : ""}`;
-      say = st.point ? { who: "eg", face: "work", text: st.point } : null;
+        ${tsay ? sayHTML(tsay) : ""}
+        <div class="expl">
+          <p class="expl-h">🔍 뜯어보기</p>
+          <div class="sec"><p class="eyebrow">단어 · 누르면 소리</p><div class="words">${words}</div></div>
+          <div class="sec"><p class="eyebrow">문법</p>${gram}</div>
+          ${trap ? `<div class="sec"><p class="eyebrow">틀리기 쉬운 것</p>${trap}</div>` : ""}
+          ${st.more ? `<details class="more"><summary>한 걸음 더</summary><p>${esc(st.more)}</p></details>` : ""}
+          ${st.point ? sayHTML({ who: "eg", face: "work", text: st.point }) : ""}
+        </div>`;
       const last = it.s === D.steps.length - 1;
-      foot = `<button class="btn primary big" id="nx">${last ? "조립 퀴즈로" : "다음 블록 붙이기 →"}</button>`;
-      after = () => $app.querySelectorAll(".wcard").forEach((b) => b.onclick = () => play(st.words[+b.dataset.w].w, false, b));
+      foot = `<button class="btn primary big" id="rd">${r < READS - 1 ? "읽었어요" : last ? "읽었어요 · 조립 퀴즈로" : "읽었어요 · 다음 블록 붙이기"}<small>${r + 1} / ${READS}</small></button>`;
+      after = () => {
+        const text = plain(st.r), b = document.getElementById("ply");
+        b.onclick = () => play(text, r === 0, b);
+        if (C.autoplay) { C.autoplay = false; setTimeout(() => play(text, r === 0, b), 250); }
+        $app.querySelectorAll(".wcard").forEach((w) => w.onclick = () => play(st.words[+w.dataset.w].w, false, w));
+        document.getElementById("rd").onclick = () => {
+          if (C.r < READS - 1) { C.r++; C.autoplay = true; save(); render("lesson"); }
+          else step(1);
+        };
+      };
     }
 
     if (it.t === "quiz") {
@@ -379,9 +379,9 @@
       const segs = fullSegs(D), r = C.r, last = D.steps[D.steps.length - 1];
       body = `<div class="card">
         <p class="eyebrow">완성 문장 · 처음부터 끝까지</p>
-        <p class="sent jp">${sentHTML(segs, { ruby: r < 2 })}</p>
+        <p class="sent jp">${sentHTML(segs, { ruby: true })}</p>
         ${legendHTML(segs)}
-        <p class="ko${r === 0 ? "" : " dim"}">${r === 0 ? esc(last.ko) : '<button class="peek" id="peekKo">뜻 보기</button>'}</p>
+        <p class="ko">${esc(last.ko)}</p>
         <div class="guide"><b>${FINAL_GUIDE[r][0]}</b> ${FINAL_GUIDE[r][1]}</div>
         <div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < r ? "on" : k === r ? "cur" : ""}"></i>`).join("")}</div>
         <div class="center"><button class="snd" id="ply">${r === 0 ? "🐢 천천히 듣기" : "🔊 듣기"}</button></div>
@@ -392,8 +392,6 @@
         const text = plain(last.r), b = document.getElementById("ply");
         b.onclick = () => play(text, r === 0, b);
         if (C.autoplay) { C.autoplay = false; setTimeout(() => play(text, r === 0, b), 250); }
-        const pk = document.getElementById("peekKo");
-        if (pk) pk.onclick = () => { pk.parentNode.textContent = last.ko; };
         document.getElementById("rd").onclick = () => {
           if (C.r < READS - 1) { C.r++; C.autoplay = true; save(); render("lesson"); }
           else step(1);
@@ -406,7 +404,7 @@
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="tower" aria-label="블록 ${stepNo} / ${D.steps.length}">${tower}<span>${stepNo ? `블록 ${stepNo}/${D.steps.length}` : "준비"}</span></div>
       <div class="main">${body}${sayHTML(say, vars)}</div>
-      <div class="foot">${foot}${C.i > 0 && it.t !== "quiz" ? '<button class="x back" id="prev">← 앞 화면</button>' : ""}</div>`;
+      <div class="foot${it.t === "read" || it.t === "final" ? " sticky" : ""}">${foot}${C.i > 0 && it.t !== "quiz" ? '<button class="x back" id="prev">← 앞 화면</button>' : ""}</div>`;
     document.getElementById("home").onclick = () => { stopSound(); render("home"); };
     const nx = document.getElementById("nx");
     if (nx) nx.onclick = () => { C.autoplay = true; step(1); };

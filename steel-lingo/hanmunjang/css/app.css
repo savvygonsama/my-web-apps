@@ -14,6 +14,7 @@
   --blue: #2F6FB3;
   --plum: #8A4F9E;
   --gold: #B7811E;
+  --logo-soft: #DCE6EE;
   --known: #1D2430;
   --unknown: #CFC8B8;
   --ok: #2F7D4F;
@@ -29,13 +30,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #15181D; --card: #1F242C; --ink: #ECEEF1; --ink2: #B5BCC6; --mut: #858D98; --line: #2E3540;
-    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --blue: #7FAEE6; --plum: #C79AD6; --gold: #E2B55A; --known: #ECEEF1; --unknown: #4A5260;
+    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --blue: #7FAEE6; --plum: #C79AD6; --gold: #E2B55A; --logo-soft: #2A3A4A; --known: #ECEEF1; --unknown: #4A5260;
     --ok: #6CC08F; --ng: #F08A7A; --shadow: none; --toast-bg: #ECEEF1; --toast-fg: #15181D; --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #15181D; --card: #1F242C; --ink: #ECEEF1; --ink2: #B5BCC6; --mut: #858D98; --line: #2E3540;
-    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --blue: #7FAEE6; --plum: #C79AD6; --gold: #E2B55A; --known: #ECEEF1; --unknown: #4A5260;
+    --navy: #7FB2D9; --red: #F07A6A; --teal: #5CC3BE; --blue: #7FAEE6; --plum: #C79AD6; --gold: #E2B55A; --logo-soft: #2A3A4A; --known: #ECEEF1; --unknown: #4A5260;
     --ok: #6CC08F; --ng: #F08A7A; --shadow: none; --toast-bg: #ECEEF1; --toast-fg: #15181D; --scrim: rgba(0, 0, 0, .6); color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -94,10 +95,6 @@ h2 { font-size: 22px; margin: 0; letter-spacing: -.3px; }
 .blk { background: color-mix(in srgb, var(--c) 13%, transparent); border-bottom: 2.5px solid var(--c); border-radius: 6px 6px 2px 2px; padding: 0 2px; }
 .blk.grow { animation: grow .45s ease-out; display: inline-block; }
 @keyframes grow { from { transform: scaleX(.3); opacity: 0; } to { transform: none; opacity: 1; } }
-.blk.mask { color: transparent; background: var(--line); cursor: pointer; }
-.blk.mask rt { color: transparent; }
-.blk.mask.show { color: inherit; background: color-mix(in srgb, var(--c) 13%, transparent); }
-.blk.mask.show rt { color: var(--mut); }
 .chip { display: inline-block; font-size: 12.5px; padding: 2px 9px; border-radius: 99px; color: var(--c); border: 1px solid var(--c); background: color-mix(in srgb, var(--c) 8%, var(--card)); font-weight: 600; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
 .center .legend { justify-content: center; }
@@ -107,7 +104,6 @@ h2 { font-size: 22px; margin: 0; letter-spacing: -.3px; }
 .sent.sm { font-size: 20px; line-height: 2; margin: 6px 0 2px; }
 .sent ruby rt, .demo ruby rt { font-size: 11px; color: var(--mut); font-family: var(--jp); }
 .ko { margin: 4px 0 0; font-size: 15.5px; color: var(--ink2); min-height: 26px; }
-.ko.dim { color: var(--mut); }
 .peek { border: 1px dashed var(--line); background: none; border-radius: 10px; padding: 3px 12px; font-size: 14px; color: var(--ink2); cursor: pointer; }
 .guide { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 15px; color: var(--ink2); }
 .guide b { color: var(--navy); margin-right: 4px; }
@@ -198,7 +194,35 @@ h2 { font-size: 22px; margin: 0; letter-spacing: -.3px; }
 .sheet-box ol { padding-left: 20px; margin: 8px 0; }
 .sheet-box p { margin: 6px 0; font-size: 15px; color: var(--ink2); }
 .sheet-box .row { margin-top: 12px; }
-.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 20; }
+.toast { position: fixed; left: 50%; bottom: calc(120px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--toast-bg); color: var(--toast-fg); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 20; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
 @media (prefers-reduced-motion: reduce) { .demo-l { opacity: 1; } }
+
+/* 스틸링고 시리즈 공통 머리 — 코일 로고 + 「스틸링고」 + 앱 이름 꼬리표 (스틸링고 Lite와 같은 짜임) */
+.masthead { padding: 18px 0 14px; border-bottom: 1px solid var(--line); }
+.mast-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.byline { margin: 0; font-size: 12.5px; color: var(--mut); letter-spacing: .02em; }
+.byline .c { letter-spacing: .16em; margin-right: 8px; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.logo { width: 68px; height: auto; flex: 0 0 auto; }
+.lg-body { fill: var(--logo-soft); stroke: var(--navy); stroke-width: 2.6; }
+.lg-fill { fill: var(--logo-soft); }
+.lg-edge { stroke: var(--navy); stroke-width: 2.6; stroke-linecap: round; }
+.lg-face { fill: var(--card); stroke: var(--navy); stroke-width: 2.6; }
+.lg-spiral { fill: none; stroke: var(--navy); stroke-width: 2.2; stroke-linecap: round; }
+.lg-eye { fill: var(--navy); }
+.lg-smile { fill: none; stroke: var(--navy); stroke-width: 2.3; stroke-linecap: round; }
+.lg-cheek { fill: var(--red); opacity: .4; }
+.masthead h1 { margin: 0; font-size: 30px; line-height: 1.2; font-weight: 800; letter-spacing: -.01em; }
+.masthead h1 .tag { font-size: .5em; font-weight: 700; color: #FFFFFF; background: var(--navy); border-radius: 999px; padding: 4px 12px; vertical-align: .3em; margin-left: 10px; letter-spacing: .04em; }
+.cr { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; padding-top: 4px; }
+.cr b { font-size: 13.5px; color: var(--ink2); }
+.cr span { font-size: 12.5px; color: var(--mut); }
+
+/* 따라 읽기 화면 아래 해설 */
+.expl { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+.expl-h { margin: 6px 0 0; font-size: 17px; font-weight: 700; }
+.foot.sticky { position: sticky; bottom: 0; z-index: 5; background: linear-gradient(to bottom, transparent, var(--bg) 22px); padding-top: 26px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .masthead h1 .tag { color: var(--bg); } }
+:root[data-theme="dark"] .masthead h1 .tag { color: var(--bg); }
