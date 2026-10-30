@@ -39,6 +39,9 @@ NY.LINES = {
     { who: "poo", face: "basic", text: "왔네. 오늘은 한 문장, {k}단계. 10분이면 돼." },
     { who: "poo", face: "basic", text: "시작하자. 짧은 데서 출발해." }
   ],
+  back: [
+    { who: "poo", face: "relief", text: "왔네. 멈춘 데서부터 하자." }
+  ],
   warm: [
     { who: "poo", face: "relief", text: "어제 문장부터 한 번. 입 풀고 가자." }
   ],
@@ -63,7 +66,7 @@ NY.LINES = {
     { who: "poo", face: "basic", text: "됐어. 내일 한 문장 또." }
   ],
   progress: [
-    { who: "ssial", face: "happy", text: "{t}일 중 {n}일. 문장 {n}개가 보관함에 있다." }
+    { who: "ssial", face: "happy", text: "{t}일 중 {n}일. 완성한 문장 {n}개는 아래 목록에서 언제든 다시." }
   ],
   wait: [
     { who: "poo", face: "tired", text: "오늘 몫은 끝났어. 내일 다음 문장이 열려." },
