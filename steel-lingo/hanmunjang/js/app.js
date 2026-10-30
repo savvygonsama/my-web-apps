@@ -136,7 +136,8 @@
   }
   const line = (k) => pick(NY.LINES[k]);
 
-  /* ── 하루 계획 ── */
+  /* ── 하루 계획 ──
+     화면 목록(plan)과 화면마다 따라 읽은 횟수(reps)를 저장한다. 앞 문장·다음 문장으로 자유롭게 오가도 횟수는 남는다. */
   function buildPlan(D) {
     const plan = [{ t: "start" }];
     const prev = dayOf(D.day - 1);
@@ -148,13 +149,19 @@
   function startDay(n, review) {
     const D = dayOf(n);
     if (!D) return;
-    S.cur = { day: n, i: 0, r: 0, plan: buildPlan(D), review: !!review, picked: [], miss: 0 };
+    if (S.cur && S.cur.day === n) return render("lesson");   // 멈춘 자리가 있으면 그 자리부터
+    S.cur = { day: n, i: 0, reps: {}, plan: buildPlan(D), review: !!review, picked: [], miss: 0 };
     save(); render("lesson");
   }
   function step(d) {
     stopSound();
     S.cur.i = Math.max(0, Math.min(S.cur.plan.length - 1, S.cur.i + d));
-    S.cur.r = 0; S.cur.picked = []; save(); render("lesson");
+    save(); render("lesson");
+  }
+  function saveAndExit() {
+    stopSound(); save();
+    render("home");
+    toast("저장했어요. 홈의 「이어서 하기」로 이 자리부터 시작해요.");
   }
 
   const top = (title) => `<div class="top"><h1>${title}</h1><button class="pill" id="installBtn" hidden>📲 설치</button></div>`;
@@ -194,7 +201,7 @@
             <li><b>🔍 뜯어보기</b> — 읽는 화면 바로 아래에 새로 붙은 단어·한자·문법·틀리기 쉬운 것</li>
             <li><b>조립하고 한 번에</b> — 완성 문장을 블록으로 맞추고 처음부터 끝까지 3번</li>
           </ol>
-          <p class="small" style="margin:8px 0 0">새 문장은 하루에 하나만 열려요. 끝낸 문장은 보관함에서 언제든 다시.</p>
+          <p class="small" style="margin:8px 0 0">새 문장은 하루에 하나만 열려요. 끝낸 회차는 목록에서 언제든 다시.</p>
         </div>
         <div class="friends">${imgs}</div>
         <div id="introSay">${sayHTML(NY.LINES.intro[0])}</div>
@@ -215,69 +222,86 @@
   /* ── 화면: 홈 ── */
   function viewHome() {
     const n = doneDays().length, nx = nextDay(), D = dayOf(nx);
-    const resume = S.cur && S.cur.plan[S.cur.i].t !== "done";
-    let main, bub;
-    if (resume) {
-      const C = dayOf(S.cur.day);
-      main = `<button class="btn primary big" id="go">이어하기<small>${S.cur.day}일차 · ${esc(C.title)} · 하던 자리부터</small></button>`;
-      bub = line("start");
-    } else if (nx > NY.TOTAL) {
-      main = `<div class="card center"><b>🎓 ${NY.TOTAL}일, ${NY.TOTAL}문장 완성</b><p class="small" style="margin:4px 0 0">보관함에서 다시 듣고 다시 읽어 보세요.</p></div>`;
-      bub = line("done");
-    } else if (doneToday()) {
-      main = `<div class="card center todaydone"><b>✓ 오늘 문장 끝</b><p class="small" style="margin:4px 0 0">${D ? `내일 ${nx}일차 「${esc(D.title)}」가 열려요` : `내일 ${nx}일차가 열려요`}</p></div>`;
-      bub = line("wait");
-    } else if (D) {
-      main = `<button class="btn primary big" id="go">오늘의 문장 시작<small>${nx}일차 · ${esc(D.title)} · ${D.steps.length}단계 · 약 10분</small></button>`;
-      bub = n ? NY.LINES.progress[0] : line("start");
-    } else {
-      main = `<div class="card center"><b>${nx}일차 준비 중</b><p class="small" style="margin:4px 0 0">지금까지 나온 ${NY.DAYS.length}문장은 모두 끝냈어요.</p></div>`;
-      bub = NY.LINES.locked[0];
+    const C = S.cur && S.cur.plan[S.cur.i].t !== "done" ? S.cur : null;
+    let main = "", bub;
+    if (C) {
+      const X = dayOf(C.day), it = C.plan[C.i];
+      const where = it.t === "read" ? `${it.s + 1}번째 문장` : it.t === "quiz" ? "조립 퀴즈" : it.t === "final" ? "완성 문장" : "시작";
+      main = `<div class="card resume"><b>📌 이어서 하기</b><p class="small" style="margin:4px 0 10px">${C.day}일차 · ${esc(X.title)} — ${where}에서 멈췄어요.</p>
+        <button class="btn primary big" id="resume">이어서 하기 →</button></div>`;
+      bub = NY.LINES.back[0];
     }
-    const cells = Array.from({ length: NY.TOTAL }, (_, k) => {
-      const d = k + 1;
-      return `<i class="${S.done[d] ? "done" : d === nx && !doneToday() && dayOf(d) ? "next" : ""}" title="${d}일차"></i>`;
+    if (C && C.day === nx) { /* 오늘 문장을 하다 멈춘 경우: 이어서 하기 하나만 */ }
+    else if (nx > NY.TOTAL) {
+      main += `<div class="card center"><b>🎓 ${NY.TOTAL}일, ${NY.TOTAL}문장 완성</b><p class="small" style="margin:4px 0 0">아래 목록에서 언제든 다시 해 보세요.</p></div>`;
+      bub = bub || line("done");
+    } else if (doneToday()) {
+      main += `<div class="card center todaydone"><b>✓ 오늘 문장 끝</b><p class="small" style="margin:4px 0 0">${D ? `내일 ${nx}일차 「${esc(D.title)}」가 열려요` : `내일 ${nx}일차가 열려요`} · 끝낸 회차는 아래에서 다시</p></div>`;
+      bub = bub || line("wait");
+    } else if (D) {
+      main += `<button class="btn ${C ? "" : "primary "}big" id="go">오늘의 문장 시작<small>${nx}일차 · ${esc(D.title)} · ${D.steps.length}단계 · 약 10분</small></button>`;
+      bub = bub || (n ? NY.LINES.progress[0] : line("start"));
+    } else {
+      main += `<div class="card center"><b>${nx}일차 준비 중</b><p class="small" style="margin:4px 0 0">지금까지 나온 ${NY.DAYS.length}문장은 모두 끝냈어요. 아래에서 다시 해 보세요.</p></div>`;
+      bub = bub || NY.LINES.locked[0];
+    }
+    // 회차 목록: 대표 문장(완성 문장)이 위에서 아래로. 끝낸 회차는 언제든 다시 들어간다.
+    const rows = NY.DAYS.map((X) => {
+      const d = X.day, done = !!S.done[d], open = done || (d === nx && !doneToday());
+      const last = X.steps[X.steps.length - 1];
+      const state = C && C.day === d ? '<em class="st now">이어서</em>' : done ? '<em class="st ok">완료 ✓</em>' : open ? '<em class="st today">오늘</em>' : `<em class="st lock">🔒 ${d === nx ? "내일" : "잠김"}</em>`;
+      return `<div class="drow${open ? "" : " locked"}" ${open ? `data-day="${d}" role="button" tabindex="0"` : ""}>
+          <div class="dnum">${d}</div>
+          <div class="dbody">
+            <div class="dhead"><b>${esc(X.title)}</b>${state}</div>
+            <p class="dsent jp">${esc(plain(last.r))}</p>
+            <p class="dko">${esc(last.ko)}</p>
+          </div>
+          ${done ? `<button class="dplay" data-say="${d}" aria-label="듣기">🔊</button>` : ""}
+        </div>`;
     }).join("");
-    const shelf = doneDays().map((d) => {
-      const X = dayOf(d); if (!X) return "";
-      return `<div class="shelf-i">
-        <div class="shelf-h"><b>${d}일차 · ${esc(X.title)}</b><span class="small">${esc(S.done[d])}</span></div>
-        <p class="jp shelf-s">${esc(plain(X.steps[X.steps.length - 1].r))}</p>
-        <div class="row"><button class="snd" data-say="${d}">🔊 듣기</button><button class="snd" data-redo="${d}">↻ 다시 하기</button></div>
-      </div>`;
-    }).join("");
+    const rest = NY.TOTAL - NY.DAYS.length;
     $app.innerHTML = `
       ${mast()}
-      <div class="main">
-        <div class="card">
-          <div class="prog"><b>${n}</b><span class="lead">/ ${NY.TOTAL}일 · 한 문장씩</span></div>
-          <div class="cal">${cells}</div>
-        </div>
+      <div class="main top-al">
+        <div class="card slim"><div class="prog"><b>${n}</b><span class="lead">/ ${NY.TOTAL}일 · 하루 한 문장</span></div></div>
         ${main}
+        <button class="btn" id="installBig" hidden>📲 앱으로 설치하기<small>홈 화면에 아이콘 · 인터넷 없이도</small></button>
         ${sayHTML(bub, { n, t: NY.TOTAL, k: D ? D.steps.length : 0 })}
-        <div class="card">
-          <b>문장 보관함</b>
-          ${shelf || '<p class="small" style="margin:6px 0 0">완성한 문장이 여기에 쌓여요.</p>'}
-        </div>
+        <div class="list-h"><b>회차 목록</b><span class="small">끝낸 회차는 눌러서 언제든 다시</span></div>
+        <div class="dlist">${rows}${rest > 0 ? `<div class="drow locked more-r"><div class="dnum">…</div><div class="dbody"><b>${NY.DAYS.length + 1}~${NY.TOTAL}일차</b><p class="dko">준비 중</p></div></div>` : ""}</div>
       </div>
       <div class="foot">${credit()}</div>`;
     const go = document.getElementById("go");
-    if (go) go.onclick = () => (resume ? render("lesson") : startDay(nx));
+    if (go) go.onclick = () => startDay(nx);
+    const rs = document.getElementById("resume");
+    if (rs) rs.onclick = () => render("lesson");
+    $app.querySelectorAll(".drow[data-day]").forEach((el) => {
+      const open = () => { const d = +el.dataset.day; startDay(d, !!S.done[d]); };
+      el.onclick = (e) => { if (!e.target.closest(".dplay")) open(); };
+      el.onkeydown = (e) => { if (e.key === "Enter") open(); };
+    });
     $app.querySelectorAll("[data-say]").forEach((b) => b.onclick = () => { const X = dayOf(+b.dataset.say); play(plain(X.steps[X.steps.length - 1].r), false, b); });
-    $app.querySelectorAll("[data-redo]").forEach((b) => b.onclick = () => startDay(+b.dataset.redo, true));
     Install.attach();
   }
 
-  /* ── 화면: 학습 ── */
+  /* ── 화면: 학습 ──
+     아래 고정 막대: ← 앞 문장 · 가운데 할 일 · 다음 문장 →. 3번을 채우지 않아도 오갈 수 있다. */
   function viewLesson() {
     const C = S.cur, D = dayOf(C.day), it = C.plan[C.i];
     if (it.t === "done") return viewDone();
     if (it.t === "expl") return step(1);   // 해설이 따로 있던 이전 판에서 저장된 계획
+    if (!C.reps) C.reps = {};
+    const reps = C.reps[C.i] || 0, r = Math.min(reps, READS - 1);
     const pct = (C.i / (C.plan.length - 1)) * 100;
     const stepNo = it.s != null ? it.s + 1 : it.t === "quiz" || it.t === "final" ? D.steps.length : 0;
     const tower = D.steps.map((_, k) => `<i class="${k < stepNo ? "on" : ""}${k === stepNo - 1 && it.t === "read" ? " now" : ""}"></i>`).join("");
-    let body = "", foot = "", say = null, after = null;
+    let body = "", center = "", say = null, after = null, text = null;
     const vars = { k: D.steps.length, b: D.quiz.blocks.length };
+    const dots = () => `<div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < reps ? "on" : k === reps ? "cur" : ""}"></i>`).join("")}</div>`;
+    const readBtn = (nextLabel) => reps >= READS
+      ? `<button class="btn primary" id="fwd2">${nextLabel}</button>`
+      : `<button class="btn primary" id="rd">따라 읽었어요<small>${reps + 1} / ${READS}</small></button>`;
 
     if (it.t === "start") {
       body = `<div class="card center">
@@ -285,26 +309,28 @@
         <h2 style="margin:4px 0 6px">${esc(D.title)}</h2>
         <p class="lead">오늘의 동사 <span class="jp big-v">${esc(D.verb)}</span></p>
         <p class="small" style="margin:10px 0 0">${D.steps.length}단계 · 단계마다 3번 · 오늘 배울 것: ${esc(D.gist)}</p>
+        <p class="small" style="margin:6px 0 0">아래 ← 앞 문장 · 다음 문장 → 으로 언제든 오갈 수 있고, 📌로 저장하고 나갈 수 있어요.</p>
       </div>`;
       say = line("start");
-      foot = `<button class="btn primary big" id="nx">첫 블록부터</button>`;
+      center = `<button class="btn primary" id="fwd2">첫 블록부터</button>`;
     }
 
     if (it.t === "warm") {
-      const P = dayOf(C.day - 1);
+      const P = dayOf(C.day - 1), last = P.steps[P.steps.length - 1];
+      text = plain(last.r);
       body = `<div class="card">
         <p class="eyebrow">어제 문장 · ${P.day}일차 ${esc(P.title)}</p>
         <p class="sent jp">${sentHTML(fullSegs(P), { ruby: true })}</p>
-        <p class="ko">${esc(P.steps[P.steps.length - 1].ko)}</p>
+        <p class="ko">${esc(last.ko)}</p>
         <div class="center"><button class="snd" id="ply">🔊 듣기</button></div>
       </div>`;
       say = NY.LINES.warm[0];
-      foot = `<button class="btn primary big" id="nx">한 번 읽었어요</button>`;
-      after = () => { const b = document.getElementById("ply"); b.onclick = () => play(plain(P.steps[P.steps.length - 1].r), false, b); };
+      center = `<button class="btn primary" id="fwd2">한 번 읽었어요</button>`;
     }
 
     if (it.t === "read") {
-      const st = D.steps[it.s], segs = parse(st.r), r = C.r;
+      const st = D.steps[it.s], segs = parse(st.r);
+      text = plain(st.r);
       const fresh = segs.filter((p) => p.fresh).map((p) => `<span class="chip c-${NY.ROLES[p.role].c}">${esc(plain(p.t))} · ${NY.ROLES[p.role].name}</span>`).join("");
       const words = st.words.map((w, k) => `<button class="wcard" data-w="${k}">
           <span class="jp ww">${esc(w.w)}</span><span class="wy jp">${esc(w.y)}</span>
@@ -313,15 +339,15 @@
         </button>`).join("");
       const gram = st.gram.map((g) => `<div class="gram"><b>${esc(g.t)}</b><p>${esc(g.d)}</p></div>`).join("");
       const trap = (st.trap || []).map((t) => `<div class="trap"><p class="ng jp">❌ ${esc(t.ng)}</p><p>${esc(t.why)}</p></div>`).join("");
-      const tsay = st.say && r === 0 ? st.say : it.s === 0 && r === 2 ? line("read3") : null;
+      const tsay = st.say && reps === 0 ? st.say : it.s === 0 && reps === 2 ? line("read3") : null;
       body = `<div class="card">
-          <p class="eyebrow">${it.s === 0 ? "출발 문장" : "새로 붙은 블록"}</p>
+          <p class="eyebrow">문장 ${it.s + 1} / ${D.steps.length} · ${it.s === 0 ? "출발 문장" : "새로 붙은 블록"}</p>
           <div class="legend">${fresh}</div>
           <p class="sent jp">${sentHTML(segs, { onlyFresh: true })}</p>
           <p class="ko">${esc(st.ko)}</p>
-          <div class="guide"><b>${GUIDE[r][0]}</b> ${GUIDE[r][1]}</div>
-          <div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < r ? "on" : k === r ? "cur" : ""}"></i>`).join("")}</div>
-          <div class="center"><button class="snd" id="ply">${r === 0 ? "🐢 천천히 듣기" : "🔊 듣기"}</button></div>
+          <div class="guide">${reps >= READS ? "<b>3번 끝</b> 더 읽어도 좋고, 다음 문장으로 가도 돼요" : `<b>${GUIDE[r][0]}</b> ${GUIDE[r][1]}`}</div>
+          ${dots()}
+          <div class="row snds"><button class="snd" id="ply">🔊 듣기</button><button class="snd" id="slow">🐢 천천히</button></div>
         </div>
         ${tsay ? sayHTML(tsay) : ""}
         <div class="expl">
@@ -332,18 +358,8 @@
           ${st.more ? `<details class="more"><summary>한 걸음 더</summary><p>${esc(st.more)}</p></details>` : ""}
           ${st.point ? sayHTML({ who: "eg", face: "work", text: st.point }) : ""}
         </div>`;
-      const last = it.s === D.steps.length - 1;
-      foot = `<button class="btn primary big" id="rd">${r < READS - 1 ? "읽었어요" : last ? "읽었어요 · 조립 퀴즈로" : "읽었어요 · 다음 블록 붙이기"}<small>${r + 1} / ${READS}</small></button>`;
-      after = () => {
-        const text = plain(st.r), b = document.getElementById("ply");
-        b.onclick = () => play(text, r === 0, b);
-        if (C.autoplay) { C.autoplay = false; setTimeout(() => play(text, r === 0, b), 250); }
-        $app.querySelectorAll(".wcard").forEach((w) => w.onclick = () => play(st.words[+w.dataset.w].w, false, w));
-        document.getElementById("rd").onclick = () => {
-          if (C.r < READS - 1) { C.r++; C.autoplay = true; save(); render("lesson"); }
-          else step(1);
-        };
-      };
+      center = readBtn(it.s === D.steps.length - 1 ? "조립 퀴즈로 →" : "다음 블록 붙이기 →");
+      after = () => $app.querySelectorAll(".wcard").forEach((w) => w.onclick = () => play(st.words[+w.dataset.w].w, false, w));
     }
 
     if (it.t === "quiz") {
@@ -359,57 +375,64 @@
         <div class="pool">${C.order.map((k) => `<button class="opt jp" data-k="${k}" ${picked.includes(k) ? "disabled" : ""}>${esc(Q.blocks[k])}</button>`).join("")}</div>
         ${picked.length && !complete ? '<div class="center"><button class="peek" id="undo">↩ 하나 되돌리기</button></div>' : ""}`;
       say = complete ? NY.LINES.quizOk[0] : C.miss ? C.lastSay : NY.LINES.quiz[0];
-      foot = complete ? `<button class="btn primary big" id="nx">완성 문장 읽기</button>` : "";
+      center = complete ? `<button class="btn primary" id="fwd2">완성 문장 읽기</button>` : `<button class="btn" disabled>블록을 맞춰 주세요</button>`;
       after = () => {
         $app.querySelectorAll(".pool .opt").forEach((b) => b.onclick = () => {
           const k = +b.dataset.k, next = picked.concat(k);
           const okay = Q.orders.some((o) => next.every((x, j) => o[j] === x));
-          if (okay) { C.picked = next; save(); render("lesson"); }
+          if (okay) { C.picked = next; save(); render("lesson", true); }
           else {
             b.classList.add("ng"); setTimeout(() => b.classList.remove("ng"), 450);
-            if (!C.miss) { C.lastSay = line("wrong"); C.miss = 1; save(); render("lesson"); }
+            if (!C.miss) { C.lastSay = line("wrong"); C.miss = 1; save(); render("lesson", true); }
           }
         });
         const u = document.getElementById("undo");
-        if (u) u.onclick = () => { C.picked = picked.slice(0, -1); save(); render("lesson"); };
+        if (u) u.onclick = () => { C.picked = picked.slice(0, -1); save(); render("lesson", true); };
       };
     }
 
     if (it.t === "final") {
-      const segs = fullSegs(D), r = C.r, last = D.steps[D.steps.length - 1];
+      const segs = fullSegs(D), last = D.steps[D.steps.length - 1];
+      text = plain(last.r);
       body = `<div class="card">
         <p class="eyebrow">완성 문장 · 처음부터 끝까지</p>
         <p class="sent jp">${sentHTML(segs, { ruby: true })}</p>
         ${legendHTML(segs)}
         <p class="ko">${esc(last.ko)}</p>
-        <div class="guide"><b>${FINAL_GUIDE[r][0]}</b> ${FINAL_GUIDE[r][1]}</div>
-        <div class="dots">${Array.from({ length: READS }, (_, k) => `<i class="${k < r ? "on" : k === r ? "cur" : ""}"></i>`).join("")}</div>
-        <div class="center"><button class="snd" id="ply">${r === 0 ? "🐢 천천히 듣기" : "🔊 듣기"}</button></div>
+        <div class="guide">${reps >= READS ? "<b>3번 끝</b> 오늘 문장 완성!" : `<b>${FINAL_GUIDE[r][0]}</b> ${FINAL_GUIDE[r][1]}`}</div>
+        ${dots()}
+        <div class="row snds"><button class="snd" id="ply">🔊 듣기</button><button class="snd" id="slow">🐢 천천히</button></div>
       </div>`;
-      say = r === 0 ? NY.LINES.final[0] : null;
-      foot = `<button class="btn primary big" id="rd">읽었어요<small>${r + 1} / ${READS}</small></button>`;
-      after = () => {
-        const text = plain(last.r), b = document.getElementById("ply");
-        b.onclick = () => play(text, r === 0, b);
-        if (C.autoplay) { C.autoplay = false; setTimeout(() => play(text, r === 0, b), 250); }
-        document.getElementById("rd").onclick = () => {
-          if (C.r < READS - 1) { C.r++; C.autoplay = true; save(); render("lesson"); }
-          else step(1);
-        };
-      };
+      say = reps === 0 ? NY.LINES.final[0] : null;
+      center = readBtn("오늘 완성 ✓");
     }
 
+    const atFirst = C.i === 0, atLast = C.i >= C.plan.length - 2;
     $app.innerHTML = `
-      <div class="top"><button class="x" id="home">← 홈</button><h1>${C.day}일차 · ${esc(D.title)}</h1></div>
+      <div class="top"><h1>${C.day}일차 · ${esc(D.title)}</h1><button class="pill" id="save">📌 저장하고 나가기</button></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="tower" aria-label="블록 ${stepNo} / ${D.steps.length}">${tower}<span>${stepNo ? `블록 ${stepNo}/${D.steps.length}` : "준비"}</span></div>
       <div class="main">${body}${sayHTML(say, vars)}</div>
-      <div class="foot${it.t === "read" || it.t === "final" ? " sticky" : ""}">${foot}${C.i > 0 && it.t !== "quiz" ? '<button class="x back" id="prev">← 앞 화면</button>' : ""}</div>`;
-    document.getElementById("home").onclick = () => { stopSound(); render("home"); };
-    const nx = document.getElementById("nx");
-    if (nx) nx.onclick = () => { C.autoplay = true; step(1); };
-    const pv = document.getElementById("prev");
-    if (pv) pv.onclick = () => step(-1);
+      <div class="footbar"><div class="footin">
+        <button class="btn nav" id="back" ${atFirst ? "disabled" : ""}>← 앞 문장</button>
+        ${center}
+        <button class="btn nav" id="fwd">${atLast ? "끝내기 →" : "다음 문장 →"}</button>
+      </div></div>`;
+    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+    on("save", saveAndExit);
+    on("back", () => step(-1));
+    on("fwd", () => { C.autoplay = true; step(1); });
+    on("fwd2", () => { C.autoplay = true; step(1); });
+    on("rd", () => { C.reps[C.i] = reps + 1; C.autoplay = reps + 1 < READS; save(); render("lesson", true); });
+    if (text) {
+      const slow = reps === 0;
+      on("ply", (e) => play(text, false, e.currentTarget));
+      on("slow", (e) => play(text, true, e.currentTarget));
+      if (C.autoplay && (it.t === "read" || it.t === "final" || it.t === "warm")) {
+        C.autoplay = false;
+        setTimeout(() => play(text, slow, document.getElementById(slow ? "slow" : "ply")), 250);
+      }
+    }
     if (after) after();
   }
 
@@ -445,9 +468,9 @@
 
   /* ── 라우팅 ── */
   let view = "home";
-  function render(v) {
+  function render(v, keepScroll) {
     if (v) view = v;
-    window.scrollTo(0, 0);
+    if (!keepScroll) window.scrollTo(0, 0);
     if (!S.intro) return viewIntro();
     if (view === "lesson" && S.cur) return viewLesson();
     view = "home";
@@ -504,8 +527,10 @@
     return {
       attach() {
         const b = document.getElementById("installBtn");
-        if (!b || standalone || get(DONE)) return;
-        b.hidden = false; b.onclick = open;
+        const big = document.getElementById("installBig");
+        if (standalone) return;   // 설치한 앱으로 연 때만 숨긴다. 지웠다 다시 깔 수 있게, 설치 기록으로는 숨기지 않는다.
+        [b, big].forEach((x) => { if (x) { x.hidden = false; x.onclick = open; } });
+        if (!b && !big) return;
         let shown = false;
         try { shown = sessionStorage.getItem(SEEN) === "1"; sessionStorage.setItem(SEEN, "1"); } catch (e) {}
         if (!shown) setTimeout(() => { if (note.hidden) open(); }, 700);
