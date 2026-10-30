@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.3.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.3.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3296,14 +3296,16 @@ Config.BATTLE = {
 	placeId = 0, -- 알면 적는다 (0이면 이름으로 찾는다)
 	hp = 200,
 	ref = 8,
-	dmgK = 1.8,
+	-- 3.3.1판: 너무 빨리 쓰러졌다 → 1.8 → 1.5, 한 대 34 → 22, 1초 70 → 32 (쓰러지기까지 적어도 6초 남짓)
+	dmgK = 1.5,
 	dmgPow = 0.6,
-	hitCap = 34,
-	secCap = 70,
+	hitCap = 22,
+	secCap = 32,
 	gradeStep = 0.02,
 	walk = 18,
 	respawn = 4,
-	shield = 3, -- 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
+	shield = 5, -- 싸움터에 들어가거나 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
+	lobbyLeave = 5, -- 싸운 뒤 이만큼 지나야 대기실로 나갈 수 있다
 	mapTime = 300, -- 맵 하나에 5분
 	warnAt = 15, -- 바뀌기 전 알림
 	fallY = -70, -- 맵 바닥에서 이만큼 아래로 떨어지면 쓰러진다

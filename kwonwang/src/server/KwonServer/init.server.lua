@@ -1043,6 +1043,9 @@ function Story.done(p: Profile, g: any): boolean
 end
 
 function Story.advance(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	for _ = 1, 3 do
 		local ch = p and Config.Story[p.story]
@@ -1071,6 +1074,9 @@ end
 
 -- 무슨 일이 일어났다 (적을 쓰러뜨림, 수련, 시험 통과 ...)
 function Story.event(player: Player, kind: string, id: string?, amount: number?)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
@@ -1097,6 +1103,9 @@ end
 
 -- 청운 장로와 이야기
 function Story.talk(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
@@ -1116,6 +1125,9 @@ end
 
 -- 이야기 받기: 이때부터 목표가 보이고 세어진다
 function Story.accept(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	if not p or p.accepted == p.story then
 		return
@@ -3966,6 +3978,12 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			return
 		end
 		Actions.potion(player)
+	elseif BATTLE and (action == "battleEnter" or action == "battleLobby" or action == "battleVote") then
+		-- 3.3.1판: 배틀그라운드 대기실
+		local msg = Battle.request(player, action, a1)
+		if msg then
+			toast(player, msg)
+		end
 	elseif action == "battleGo" or action == "battleBack" then
 		-- 3.3판: 메인 월드 ↔ 배틀그라운드
 		local f = Combat.fighterOfPlayer(player)
@@ -3996,8 +4014,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif not st.canSave then
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
-		-- 이야기 첫 장이면 장로를 찾아가라고
-		if p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
+		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
+		if BATTLE then
+			Push:FireClient(player, "dialog", { who = "⚔ 배틀그라운드", title = "대기실", text = string.format("여기는 대기실이라 싸움이 없다. 권법 창에서 쓸 권법을 고르고, 다음 맵에 투표하고, 준비되면 '⚔ 싸움터로 들어가기'. 모두 체력 %d, 같은 힘으로 겨룬다.", Config.BATTLE.hp) })
+		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
 	elseif action == "talkElder" then
@@ -4937,6 +4957,7 @@ local function setupCharacter(player: Player, char: Model)
 	refreshFighter(player)
 	if BATTLE then
 		f.hp = f.maxHp
+		Battle.onCharacter(player, char)
 		task.defer(function()
 			if char.Parent then
 				char:PivotTo(Battle.spawnCF(player))
@@ -5211,6 +5232,21 @@ end)
 -- 3.3판 배틀그라운드: 맵을 돌리고, 떨어진 사람을 쓰러뜨리고, 판 상태를 알린다
 ------------------------------------------------------------------------
 if BATTLE then
+	-- 대기실의 싸움터 문과 연습용 목인
+	local L = Battle.lobby
+	if L then
+		L.gate.Triggered:Connect(function(player: Player)
+			local msg = Battle.request(player, "battleEnter", nil)
+			if msg then
+				toast(player, msg)
+			end
+		end)
+		task.spawn(function()
+			for _, at in ipairs(L.dummies) do
+				pcall(Npc.spawn, "dummy", false, at, "test")
+			end
+		end)
+	end
 	Battle.start({
 		push = Push,
 		respawn = respawnPlayer,

@@ -72,16 +72,14 @@ UI.new, UI.corner, UI.stroke, UI.text, UI.button = new, corner, stroke, text, bu
 local gui: ScreenGui
 local uiScale = 1
 local windowScale = 1
+-- (바깥 지역 변수가 200개 한도에 가까워 기기·터치 단추·메뉴 것은 한 표에) device: "pc" | "phone" | "tablet"
+local V: any = { device = "pc", padScale = 1, mapScale = 1, hooks = {}, padBtns = {}, trainPad = nil, menuFrame = nil, menuToggle = nil, menuOpen = true }
 -- 3.2.9판: 기기마다 다른 크기와 배치. 터치 기기는 화면 짧은 쪽이 600 미만이면 휴대폰, 아니면 태블릿 (아이패드)
-local device = "pc"
-local padScale = 1
-local mapScale = 1
-local layoutHooks: { (Vector2) -> () } = {}
 local function isTouch(): boolean
 	return UserInputService.TouchEnabled and not (UserInputService.KeyboardEnabled and UserInputService.MouseEnabled)
 end
 function UI.device(): string
-	return device
+	return V.device
 end
 
 -- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
@@ -91,9 +89,9 @@ local function scaleFor(kind: string): number
 	if kind == "window" then
 		return windowScale
 	elseif kind == "map" then
-		return mapScale
+		return V.mapScale
 	elseif kind == "pad" then
-		return padScale
+		return V.padScale
 	end
 	return uiScale
 end
@@ -111,29 +109,29 @@ local function measure()
 	if vp.X < 320 or vp.Y < 240 then
 		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
 	end
-	device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
-	if device == "phone" then
+	V.device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
+	if V.device == "phone" then
 		-- 휴대폰: 글자·막대는 작게, 누르는 단추는 손가락 크기 (약 48pt)
 		uiScale = math.clamp(vp.Y / 560, 0.6, 0.9)
-		padScale = math.clamp(vp.Y / 430, 0.8, 1.05)
+		V.padScale = math.clamp(vp.Y / 430, 0.8, 1.05)
 		windowScale = math.clamp(vp.Y / 580, 0.55, 0.9)
-	elseif device == "tablet" then
+	elseif V.device == "tablet" then
 		uiScale = math.clamp(vp.Y / 740, 0.9, 1.35)
-		padScale = uiScale
+		V.padScale = uiScale
 		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.6, 1.4)
 	else
 		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
-		padScale = uiScale
+		V.padScale = uiScale
 		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
 	end
 	-- 큰 지도 (760)도 화면 높이를 넘지 않게
-	mapScale = math.min(uiScale * 0.9, windowScale, vp.Y * 0.94 / 760)
+	V.mapScale = math.min(uiScale * 0.9, windowScale, vp.Y * 0.94 / 760)
 	for _, e in ipairs(scales) do
 		if e.s.Parent then
 			e.s.Scale = scaleFor(e.kind)
 		end
 	end
-	for _, f in ipairs(layoutHooks) do
+	for _, f in ipairs(V.hooks) do
 		f(vp)
 	end
 end
@@ -322,14 +320,12 @@ function UI.bars(hp: number, maxHp: number, posture: number, postureMax: number,
 end
 
 -- 기술 칸 (이름, 잠김, 대기 시간 비율)
-local padBtns: { [string]: { b: TextButton, st: UIStroke, label: string, color: Color3 } } = {}
-local trainPadBtn: TextButton? = nil
 function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number? } })
 	if not HUD.slots then
 		return
 	end
 	-- 3.2.9판: 터치 단추에도 잠김·대기를 보인다 (기술 칸은 터치 기기에서 숨긴다)
-	for key, pb in pairs(padBtns) do
+	for key, pb in pairs(V.padBtns) do
 		local i = info[key]
 		if key == "X" then
 			pb.b.Visible = i ~= nil
@@ -1489,7 +1485,8 @@ function UI.setTrial(data: any?)
 end
 
 -- 3.2.7판: 도움말을 갈래로 나눴다 (위의 단추로 고른다). 지상과 천상은 따로, 땅·사부·경지 목록은 Config에서 읽어 늘 맞게
-local HELP_TABS = {
+local HELP: any = {}
+HELP.TABS = {
 	{ id = "controls", label = "🎮 조작" },
 	{ id = "fight", label = "⚔ 싸움" },
 	{ id = "grow", label = "📈 강해지기" },
@@ -1499,7 +1496,7 @@ local HELP_TABS = {
 	{ id = "late", label = "♻ 환생·후반" },
 	{ id = "etc", label = "💰 상점·기타" },
 }
-local function helpRec(id: string): string
+function HELP.helpRec(id: string): string
 	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 	local a = f and f:GetAttribute(id)
 	local b = f and f:GetAttribute(id .. "_boss")
@@ -1513,15 +1510,15 @@ local function helpRec(id: string): string
 	return #parts > 0 and ("  <font color=\"#FFD27A\">(" .. table.concat(parts, " · ") .. ")</font>") or ""
 end
 -- 땅 목록은 권장 전투력이 낮은 땅부터 (아직 모르면 원래 차례대로 뒤에)
-local function helpRecNum(id: string): number
+function HELP.helpRecNum(id: string): number
 	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 	local a = f and f:GetAttribute(id)
 	return type(a) == "number" and a or math.huge
 end
-local function helpSorted(list: { any }, key: (any) -> string): { any }
+function HELP.helpSorted(list: { any }, key: (any) -> string): { any }
 	local out = {}
 	for i, x in ipairs(list) do
-		table.insert(out, { x = x, i = i, rec = helpRecNum(key(x)) })
+		table.insert(out, { x = x, i = i, rec = HELP.helpRecNum(key(x)) })
 	end
 	table.sort(out, function(p, q)
 		if p.rec ~= q.rec then
@@ -1535,11 +1532,11 @@ local function helpSorted(list: { any }, key: (any) -> string): { any }
 	end
 	return res
 end
-local function helpBossName(id: string?): string?
+function HELP.helpBossName(id: string?): string?
 	local b = id and Config.Bosses[id]
 	return b and b.name or nil
 end
-local function helpText(tab: string): { string }
+function HELP.helpText(tab: string): { string }
 	local L: { string } = {}
 	local function add(s: string)
 		table.insert(L, s)
@@ -1634,12 +1631,12 @@ local function helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
-		for _, r in ipairs(helpSorted(Config.Regions, function(r)
+		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
 		end)) do
 			if not r.safe and (r.camps or r.boss) and r.id ~= "wilds" then
-				local bn = r.boss and helpBossName(r.boss.id)
-				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", helpRec(r.id)))
+				local bn = r.boss and HELP.helpBossName(r.boss.id)
+				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec(r.id)))
 			end
 		end
 		add("• 사부 가는 길목 (강호 들판): 창병 · 곤봉 산적 · 쌍도 자객. 아주 먼 곳엔 흑영 자객 · 철갑 무사")
@@ -1654,12 +1651,12 @@ local function helpText(tab: string): { string }
 		add("• 천정 💠: 천상의 적과 보스가 떨어뜨린다. 천정 상점에서 두루마리·영약·천정단·탈것을 산다")
 		add("")
 		add("<b>섬</b> (권장 전투력이 낮은 섬부터)")
-		for _, isl in ipairs(helpSorted(Config.SKY.islands, function(isl)
+		for _, isl in ipairs(HELP.helpSorted(Config.SKY.islands, function(isl)
 			return "sky_" .. isl.id
 		end)) do
 			if not isl.safe and (isl.camps or isl.boss) then
-				local bn = isl.boss and helpBossName(isl.boss.id)
-				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", helpRec("sky_" .. isl.id)))
+				local bn = isl.boss and HELP.helpBossName(isl.boss.id)
+				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec("sky_" .. isl.id)))
 			end
 		end
 		add("")
@@ -1700,7 +1697,8 @@ local function helpText(tab: string): { string }
 		add("<b>⚔ 배틀그라운드</b> (사람끼리는 여기서만 싸운다)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
-		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 누구도 한 방에 쓰러지지 않는다. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap))
+		add("• 처음엔 대기실 (싸움이 없다): 권법을 고르고, 수련 목인으로 시험하고, 다음 맵에 투표하고, '⚔ 싸움터로 들어가기'. 메뉴 → 🏯 대기실로 나올 수 있다 (싸운 직후는 안 된다)")
+		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 쓰러지기까지 적어도 %d초. 들어가거나 일어나면 %d초 보호. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap, math.floor(Config.BATTLE.hp / Config.BATTLE.secCap), Config.BATTLE.shield))
 		local mapNames = {}
 		for _, m in ipairs(Config.BATTLE.maps) do
 			table.insert(mapNames, m.name)
@@ -1742,11 +1740,11 @@ local function buildHelp()
 		for tid, b in pairs(tabBtns) do
 			b.BackgroundColor3 = tid == id and Color3.fromRGB(170, 120, 40) or C.panel2
 		end
-		body.Text = table.concat(helpText(id), "\n")
+		body.Text = table.concat(HELP.helpText(id), "\n")
 		again.Visible = id == "controls"
 		scroll.CanvasPosition = Vector2.zero
 	end
-	for i, t in ipairs(HELP_TABS) do
+	for i, t in ipairs(HELP.TABS) do
 		tabBtns[t.id] = button({ Text = t.label, TextSize = 15, LayoutOrder = i, Parent = bar }, function()
 			show(t.id)
 		end)
@@ -1754,7 +1752,7 @@ local function buildHelp()
 	show("controls")
 	-- 열 때마다 권장 전투력을 새로 읽도록, 보이게 될 때 지금 갈래를 다시 그린다
 	local cur = "controls"
-	for _, t in ipairs(HELP_TABS) do
+	for _, t in ipairs(HELP.TABS) do
 		tabBtns[t.id].Activated:Connect(function()
 			cur = t.id
 		end)
@@ -2028,8 +2026,8 @@ function UI.trainStop()
 	end
 	trainPress = nil
 	trainFrame.Visible = false
-	if trainPadBtn then
-		trainPadBtn.Visible = false
+	if V.trainPad then
+		V.trainPad.Visible = false
 	end
 	for _, c in ipairs(trainArea:GetChildren()) do
 		c:Destroy()
@@ -2061,14 +2059,14 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	UI.trainStop()
 	local info = Config.Training[kind]
 	trainFrame.Visible = true
-	if trainPadBtn then
-		trainPadBtn.Visible = true
+	if V.trainPad then
+		V.trainPad.Visible = true
 	end
 	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
 	local guide = TRAIN_GUIDE[kind] or info.desc
-	if device ~= "pc" then
+	if V.device ~= "pc" then
 		-- 터치 기기: Space 대신 가운데 '지금!' 단추
 		guide = string.gsub(guide, "Space", "지금! 단추")
 	end
@@ -2190,9 +2188,6 @@ end
 -- 상태 받기
 ------------------------------------------------------------------------
 local topInfo: TextLabel
-local menuFrame: Frame? = nil
-local menuToggle: TextButton? = nil
-local menuOpen = true
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
@@ -2200,7 +2195,7 @@ function UI.setState(s: any)
 		local st = Config.STYLE_BY_ID[s.style or ""]
 		topInfo.Text = string.format("⚔ 배틀그라운드 · ❤ %d · %s", Config.BATTLE.hp, st and (st.icon .. " " .. st.name) or "")
 		topInfo.TextColor3 = Color3.fromRGB(255, 200, 120)
-	elseif device == "phone" then
+	elseif V.device == "phone" then
 		-- 휴대폰: 경지·전투력·은자만 (능력치는 능력치 창에)
 		topInfo.Text = string.format("[%s] ⚔ %s  💰 %s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins))
 	else
@@ -2414,7 +2409,7 @@ local function placeMap()
 		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
 	end
 	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
-	mapFrame.Visible = (mapBig or device ~= "phone") and not Config.BATTLE_MODE
+	mapFrame.Visible = (mapBig or V.device ~= "phone") and not Config.BATTLE_MODE
 	for _, list in ipairs({ mapTexts, skyTexts }) do
 		for _, t in ipairs(list) do
 			t.label.TextSize = mapBig and t.big or t.small
@@ -3284,7 +3279,7 @@ function UI.mobile(actions: { [string]: any })
 			b.MouseLeave:Connect(up)
 		end
 		if key then
-			padBtns[key] = { b = b, st = st, label = label, color = color }
+			V.padBtns[key] = { b = b, st = st, label = label, color = color }
 		end
 		return b
 	end
@@ -3309,26 +3304,44 @@ function UI.mobile(actions: { [string]: any })
 		round(nil, "🐎", 226, -86, 44, dark, actions.mount)
 	end
 	-- 수련: 할 때만 공격 단추 자리에
-	trainPadBtn = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
-	;(trainPadBtn :: TextButton).ZIndex = 3
-	;(trainPadBtn :: TextButton).BackgroundTransparency = 0
-	;(trainPadBtn :: TextButton).Visible = false
+	V.trainPad = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
+	;(V.trainPad :: TextButton).ZIndex = 3
+	;(V.trainPad :: TextButton).BackgroundTransparency = 0
+	;(V.trainPad :: TextButton).Visible = false
 end
 
 ------------------------------------------------------------------------
 -- 3.3판 배틀그라운드: 위 가운데 (맵 이름·남은 시간), 오른쪽 위 순위 (이번 판 쓰러뜨린 수)
 ------------------------------------------------------------------------
-local battleTop: Frame? = nil
-local battleMap: TextLabel? = nil
-local battleTime: TextLabel? = nil
-local battleBoard: Frame? = nil
-local battleRows: { TextLabel } = {}
+-- (화면 파일의 바깥 지역 변수가 200개 한도에 닿아, 배틀 화면 것은 한 표에 모은다)
+local BH: any = { rows = {}, votes = {}, myVote = 0 }
+local function buildLobbyPanel()
+	local panel = new("Frame", { Name = "LobbyPanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -210), Size = UDim2.new(0, 470, 0, 236), BackgroundColor3 = C.bg, BackgroundTransparency = 0.12, Parent = gui }, { corner(14), stroke(C.line, 2) })
+	scaled(panel)
+	text({ Position = UDim2.new(0, 16, 0, 10), Size = UDim2.new(1, -32, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏯 대기실 · 여기서는 싸우지 않는다", Parent = panel })
+	BH.info = text({ Position = UDim2.new(0, 16, 0, 40), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.dim, Text = "", Parent = panel })
+	button({ Position = UDim2.new(0, 16, 0, 66), Size = UDim2.new(1, -32, 0, 46), Text = "⚔ 싸움터로 들어가기", TextSize = 21, BackgroundColor3 = Color3.fromRGB(170, 50, 40), Parent = panel }, function()
+		Request:FireServer("battleEnter")
+	end)
+	text({ Position = UDim2.new(0, 16, 0, 120), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.text, Text = "🗳 다음 맵 투표", Parent = panel })
+	local grid = new("Frame", { Position = UDim2.new(0, 16, 0, 142), Size = UDim2.new(1, -32, 0, 66), BackgroundTransparency = 1, Parent = panel }, {
+		new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.new(0, 8, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	for i, m in ipairs(Config.BATTLE.maps) do
+		BH.votes[i] = button({ Text = m.name, TextSize = 15, LayoutOrder = i, Parent = grid }, function()
+			BH.myVote = i
+			Request:FireServer("battleVote", i)
+		end)
+	end
+	text({ Position = UDim2.new(0, 16, 1, -26), Size = UDim2.new(1, -32, 0, 20), TextSize = 13, TextColor3 = C.dim, Text = "🥋 메뉴 → 권법에서 쓸 권법을 고르자 · 🪵 수련 목인으로 기술을 시험할 수 있다", Parent = panel })
+	BH.lobby = panel
+end
 local function buildBattleHud()
 	local top = new("Frame", { Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 360, 0, 62), BackgroundColor3 = C.bg, BackgroundTransparency = 0.2, Parent = gui }, { corner(12), stroke(Color3.fromRGB(200, 80, 60), 1.5) })
 	scaled(top)
-	battleMap = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
-	battleTime = text({ Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(1, -24, 0, 20), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = top })
-	battleTop = top
+	BH.map = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
+	BH.time = text({ Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(1, -24, 0, 20), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = top })
+	BH.top = top
 	local board = new("Frame", { Name = "BattleBoard", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 60), Size = UDim2.new(0, 230, 0, 40), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = gui }, {
 		corner(10), stroke(C.line, 1),
 		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }),
@@ -3337,14 +3350,15 @@ local function buildBattleHud()
 	scaled(board)
 	text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏆 이번 판   처치 / 쓰러짐", LayoutOrder = 0, Parent = board })
 	for i = 1, 6 do
-		table.insert(battleRows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
+		table.insert(BH.rows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
 	end
-	battleBoard = board
+	BH.board = board
+	buildLobbyPanel()
 end
 
 function UI.battleState(data: any, myId: number)
-	local bm, bt = battleMap, battleTime
-	if not battleTop or not bm or not bt then
+	local bm, bt = BH.map, BH.time
+	if not BH.top or not bm or not bt then
 		return
 	end
 	bm.Text = "⚔ " .. tostring(data.map or "")
@@ -3360,7 +3374,7 @@ function UI.battleState(data: any, myId: number)
 			mineRank = i
 		end
 	end
-	for i, row in ipairs(battleRows) do
+	for i, row in ipairs(BH.rows) do
 		local e = list[i]
 		-- 다섯째까지, 여섯째 칸은 내 자리 (다섯 안에 없을 때)
 		if i == 6 and mine and mineRank > 5 then
@@ -3375,9 +3389,24 @@ function UI.battleState(data: any, myId: number)
 			row.TextColor3 = e.id == myId and Color3.fromRGB(255, 220, 120) or C.text
 		end
 	end
+	-- 대기실 패널: 내가 싸움터 밖에 있을 때만
+	local ch = player.Character
+	local here = ch and ch:GetAttribute("InArena") == true
+	if BH.lobby then
+		BH.lobby.Visible = not here
+	end
+	if BH.info then
+		BH.info.Text = string.format("지금 싸움터: %s · ⏳ %d:%02d · 싸움터 %d명 / 모두 %d명", tostring(data.map or ""), left // 60, left % 60, data.arena or 0, data.total or 0)
+	end
+	local vc = data.votes or {}
+	for i, b in ipairs(BH.votes) do
+		local m = Config.BATTLE.maps[i]
+		b.Text = string.format("%s  (%d)%s", m.name, vc[i] or 0, data.next == m.name and " ▶" or "")
+		b.BackgroundColor3 = BH.myVote == i and Color3.fromRGB(150, 110, 40) or C.panel2
+	end
 	if mine and topInfo then
 		local streak = (mine.streak or 0) >= 2 and string.format(" · 🔥%d연속", mine.streak) or ""
-		if device == "phone" then
+		if V.device == "phone" then
 			topInfo.Text = string.format("⚔ %d / %d%s · 모두 %d", mine.k, mine.d, streak, mine.total or 0)
 		else
 			topInfo.Text = string.format("⚔ 배틀그라운드 · 이번 판 %d / %d%s · 모두 %d명 쓰러뜨림", mine.k, mine.d, streak, mine.total or 0)
@@ -3427,29 +3456,31 @@ function UI.init(req: RemoteEvent)
 	topInfo = text({ Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -44, 0, 34), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	-- 3.2.9판: 메뉴는 ☰ 단추로 접고 편다 (PC는 처음부터 펴 있고, 터치 기기는 접혀 있다가 하나를 고르면 다시 접힌다)
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(0, 144, 0, 424), BackgroundTransparency = 1, ZIndex = 5, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
-	menuFrame = menu
-	menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()
-		menuOpen = not menuOpen
-		menu.Visible = menuOpen
+	V.menuFrame = menu
+	V.menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()
+		V.menuOpen = not V.menuOpen
+		menu.Visible = V.menuOpen
 	end)
-	new("UIStroke", { Color = C.line, Thickness = 1, Parent = menuToggle })
+	new("UIStroke", { Color = C.line, Thickness = 1, Parent = V.menuToggle })
 	-- 세 줄 (글꼴에 없는 기기도 있어 직접 그린다)
 	for i = 0, 2 do
-		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, (i - 1) * 7), Size = UDim2.new(0, 18, 0, 3), BackgroundColor3 = C.gold, BorderSizePixel = 0, Parent = menuToggle }, { corner(2) })
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, (i - 1) * 7), Size = UDim2.new(0, 18, 0, 3), BackgroundColor3 = C.gold, BorderSizePixel = 0, Parent = V.menuToggle }, { corner(2) })
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
-	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
+	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
 		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
-			if device ~= "pc" then
-				menuOpen = false
+			if V.device ~= "pc" then
+				V.menuOpen = false
 				menu.Visible = false
 			end
 			if item[1] == "battle" then
 				Request:FireServer("battleGo")
 			elseif item[1] == "back" then
 				Request:FireServer("battleBack")
+			elseif item[1] == "lobby" then
+				Request:FireServer("battleLobby")
 			elseif item[1] == "tower" then
 				Request:FireServer("towerTp")
 			elseif item[1] == "map" then
@@ -3559,15 +3590,15 @@ function UI.init(req: RemoteEvent)
 	-- 3.2.9판: 기기마다 배치 (화면 크기가 바뀔 때마다 다시)
 	local lastDevice = ""
 	local function layoutForDevice(vp: Vector2)
-		local touch = device ~= "pc"
-		local phone = device == "phone"
+		local touch = V.device ~= "pc"
+		local phone = V.device == "phone"
 		-- 아래 막대: 터치 기기는 기술 칸을 숨기고 (터치 단추가 대신 보인다) 좁게
 		if HUD.root then
 			HUD.row.Visible = not touch
 			HUD.root.Size = touch and UDim2.new(0, 440, 0, 124) or UDim2.new(0, 660, 0, 176)
 			if touch then
 				-- 터치 단추 (오른쪽 아래)와 겹치지 않게: 막대의 오른쪽 끝이 단추 고리 왼쪽에서 멈춘다
-				local padLeft = vp.X - 16 - 250 * padScale - 10
+				local padLeft = vp.X - 16 - 250 * V.padScale - 10
 				local half = 440 * uiScale / 2
 				local cx = math.max(half + 8, math.min(vp.X / 2, padLeft - half))
 				HUD.root.Position = UDim2.new(0, cx, 1, -8)
@@ -3576,11 +3607,11 @@ function UI.init(req: RemoteEvent)
 			end
 		end
 		-- 메뉴: 기기가 바뀔 때만 접힘을 다시 정한다
-		if device ~= lastDevice then
-			lastDevice = device
-			menuOpen = not touch
-			if menuFrame then
-				menuFrame.Visible = menuOpen
+		if V.device ~= lastDevice then
+			lastDevice = V.device
+			V.menuOpen = not touch
+			if V.menuFrame then
+				V.menuFrame.Visible = V.menuOpen
 			end
 		end
 		-- 이야기 칸: 메뉴가 접히는 터치 기기는 윗줄 바로 아래
@@ -3592,9 +3623,14 @@ function UI.init(req: RemoteEvent)
 		if storyChip then
 			storyChip.Position = touch and UDim2.new(0, 44, 0, 40) or UDim2.new(0, 154, 0, 40)
 		end
+		-- 대기실 패널: 휴대폰은 가운데 왼쪽 (터치 단추를 가리지 않게)
+		if BH.lobby then
+			BH.lobby.AnchorPoint = phone and Vector2.new(0.5, 0.5) or Vector2.new(0.5, 1)
+			BH.lobby.Position = phone and UDim2.new(0.5, -90, 0.5, 6) or UDim2.new(0.5, 0, 1, -210)
+		end
 		-- 배틀그라운드 순위: 휴대폰은 맨 위 오른쪽 (터치 단추 고리 위)
-		if battleBoard then
-			battleBoard.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -14, 0, 60)
+		if BH.board then
+			BH.board.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -14, 0, 60)
 		end
 		-- 보스 막대: 휴대폰은 맨 위에 좁게
 		bossFrame.Size = phone and UDim2.new(0, 600, 0, 92) or UDim2.new(0, 760, 0, 92)
@@ -3612,7 +3648,7 @@ function UI.init(req: RemoteEvent)
 			placeMap()
 		end
 	end
-	table.insert(layoutHooks, layoutForDevice)
+	table.insert(V.hooks, layoutForDevice)
 	measure()
 end
 

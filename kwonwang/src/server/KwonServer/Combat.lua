@@ -139,6 +139,10 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		if not Config.BATTLE_MODE then
 			return false
 		end
+		-- 3.3.1판: 둘 다 싸움터에 있어야 (대기실에서는 싸우지 않는다)
+		if a.model:GetAttribute("InArena") ~= true or b.model:GetAttribute("InArena") ~= true then
+			return false
+		end
 		local t = now()
 		return t >= ((a :: any).battleShield or 0) and t >= ((b :: any).battleShield or 0)
 	end

@@ -181,20 +181,20 @@ local BUILD: { [string]: (Vector3, Folder) -> { spawns: { Vector3 }, floorY: num
 
 -- 죽림 비무장: 풀밭 가운데 돌 마당, 둘레에 대나무 덤불 (몸을 숨긴다), 마당 안의 낮은 돌담
 BUILD.bamboo = function(c: Vector3, f: Folder)
-	local R = 105
+	local R = 140 -- 3.3.1판: 105 → 140
 	local G = rnd(11)
 	disc("Ground", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(86, 120, 62), Enum.Material.Grass, f)
-	disc("Court", c + Vector3.new(0, 0.25, 0), 48, 0.6, Color3.fromRGB(150, 146, 136), Enum.Material.Slate, f)
-	disc("CourtRing", c + Vector3.new(0, 0.6, 0), 49.5, 0.3, Color3.fromRGB(120, 92, 60), Enum.Material.Wood, f, false)
+	disc("Court", c + Vector3.new(0, 0.25, 0), 62, 0.6, Color3.fromRGB(150, 146, 136), Enum.Material.Slate, f)
+	disc("CourtRing", c + Vector3.new(0, 0.6, 0), 63.5, 0.3, Color3.fromRGB(120, 92, 60), Enum.Material.Wood, f, false)
 	disc("CourtMark", c + Vector3.new(0, 0.62, 0), 9, 0.2, Color3.fromRGB(170, 50, 40), Enum.Material.Fabric, f, false)
 	-- 마당 안의 돌담 (엄폐)
-	for i, v in ipairs(ring(4, 28, math.pi / 4)) do
+	for i, v in ipairs(ring(4, 36, math.pi / 4)) do
 		local a = (i - 1) / 4 * math.pi * 2 + math.pi / 4
 		part({ Name = "LowWall", Size = Vector3.new(14, 4.2, 2.2), CFrame = CFrame.new(c + v + Vector3.new(0, 2.4, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(128, 124, 116), Material = Enum.Material.Cobblestone, Parent = f })
 		part({ Name = "WallCap", Size = Vector3.new(15, 0.6, 2.8), CFrame = CFrame.new(c + v + Vector3.new(0, 4.8, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(70, 60, 50), Material = Enum.Material.Slate, Parent = f })
 	end
 	-- 석등
-	for _, v in ipairs(ring(6, 46, 0.3)) do
+	for _, v in ipairs(ring(8, 60, 0.3)) do
 		part({ Name = "LanternBase", Size = Vector3.new(1.6, 4, 1.6), Position = c + v + Vector3.new(0, 2.4, 0), Color = Color3.fromRGB(140, 136, 128), Material = Enum.Material.Granite, Parent = f })
 		local lamp = part({ Name = "Lantern", Size = Vector3.new(2.4, 1.6, 2.4), Position = c + v + Vector3.new(0, 5.2, 0), Color = Color3.fromRGB(255, 210, 140), Material = Enum.Material.Neon, Transparency = 0.2, Parent = f })
 		local l = Instance.new("PointLight")
@@ -213,20 +213,20 @@ BUILD.bamboo = function(c: Vector3, f: Folder)
 		end
 		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 5, 5), Position = at + Vector3.new((G() - 0.5) * 2, h + 1, (G() - 0.5) * 2), Color = Color3.fromRGB(70, 130, 60), Material = Enum.Material.Grass, CanCollide = false, Transparency = 0.15, Parent = f })
 	end
-	for _, base in ipairs(ring(9, 68, 0.15)) do
+	for _, base in ipairs(ring(12, 92, 0.15)) do
 		for _ = 1, 6 + math.floor(G() * 4) do
 			stalk(c + base + Vector3.new((G() - 0.5) * 12, 0, (G() - 0.5) * 12), 20 + G() * 14)
 		end
 	end
 	-- 둘레: 빽빽한 대숲
-	for _, v in ipairs(ring(40, R + 6)) do
+	for _, v in ipairs(ring(54, R + 6)) do
 		for _ = 1, 3 do
 			stalk(c + v + Vector3.new((G() - 0.5) * 8, 0, (G() - 0.5) * 8), 26 + G() * 16)
 		end
 	end
 	fence(c, R, 60, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 82, 0.4)) do
+	for _, v in ipairs(ring(10, 112, 0.4)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -234,13 +234,13 @@ end
 
 -- 빙호 설원: 가운데 얼어붙은 호수 (탁 트였다), 얼음 기둥, 가장자리의 눈 언덕과 소나무
 BUILD.frost = function(c: Vector3, f: Folder)
-	local R = 108
+	local R = 145 -- 3.3.1판: 108 → 145
 	local G = rnd(23)
 	disc("Snow", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(236, 240, 248), Enum.Material.Snow, f)
-	disc("Lake", c + Vector3.new(0, 0.2, 0), 58, 0.5, Color3.fromRGB(170, 215, 240), Enum.Material.Ice, f)
-	disc("LakeEdge", c + Vector3.new(0, 0.1, 0), 60.5, 0.4, Color3.fromRGB(210, 230, 245), Enum.Material.Glacier, f, false)
+	disc("Lake", c + Vector3.new(0, 0.2, 0), 80, 0.5, Color3.fromRGB(170, 215, 240), Enum.Material.Ice, f)
+	disc("LakeEdge", c + Vector3.new(0, 0.1, 0), 82.5, 0.4, Color3.fromRGB(210, 230, 245), Enum.Material.Glacier, f, false)
 	-- 얼음 기둥
-	for i, v in ipairs(ring(7, 36, 0.5)) do
+	for i, v in ipairs(ring(9, 50, 0.5)) do
 		local h = 14 + G() * 12
 		part({ Name = "IcePillar", Size = Vector3.new(5 + G() * 3, h, 5 + G() * 3), CFrame = CFrame.new(c + v + Vector3.new(0, h / 2, 0)) * CFrame.Angles((G() - 0.5) * 0.25, G() * 3, (G() - 0.5) * 0.25), Color = Color3.fromRGB(150, 215, 255), Material = Enum.Material.Glass, Transparency = 0.25, Parent = f })
 		if i % 2 == 0 then
@@ -248,7 +248,7 @@ BUILD.frost = function(c: Vector3, f: Folder)
 		end
 	end
 	-- 눈 언덕 (반쯤 묻힌 공)
-	for _, v in ipairs(ring(10, 80, 0.2)) do
+	for _, v in ipairs(ring(13, 108, 0.2)) do
 		local s = 14 + G() * 10
 		part({ Name = "Drift", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + v + Vector3.new(0, -s * 0.28, 0), Color = Color3.fromRGB(240, 244, 252), Material = Enum.Material.Snow, Parent = f })
 	end
@@ -261,12 +261,12 @@ BUILD.frost = function(c: Vector3, f: Folder)
 			part({ Name = "SnowCap", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, r * 1.6, r * 1.6), CFrame = CFrame.new(at + Vector3.new(0, h * (0.35 + k * 0.2) + h * 0.11, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(245, 248, 255), Material = Enum.Material.Snow, CanCollide = false, Parent = f })
 		end
 	end
-	for _, v in ipairs(ring(26, R + 4)) do
+	for _, v in ipairs(ring(34, R + 4)) do
 		pine(c + v + Vector3.new((G() - 0.5) * 6, 0, (G() - 0.5) * 6), 24 + G() * 12)
 	end
 	fence(c, R, 60, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 70, 0.6)) do
+	for _, v in ipairs(ring(10, 96, 0.6)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -274,13 +274,13 @@ end
 
 -- 화산 분지: 검은 현무암 바닥, 용암 줄기 (보기만), 가운데 높은 단과 네 비탈, 바위 기둥, 둘레의 분화구 벽
 BUILD.crater = function(c: Vector3, f: Folder)
-	local R = 104
+	local R = 140 -- 3.3.1판: 104 → 140
 	local G = rnd(37)
 	disc("Basalt", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(48, 40, 38), Enum.Material.Basalt, f)
 	-- 용암 줄기 (바닥에 얕게, 밟아도 괜찮다)
 	for i = 1, 6 do
 		local a = (i - 1) / 6 * math.pi * 2 + 0.3
-		local lava = part({ Name = "Lava", Size = Vector3.new(4 + G() * 3, 0.3, 46), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 62, 0.05, math.sin(a) * 62)) * CFrame.Angles(0, -a, 0), Color = Color3.fromRGB(255, 110, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		local lava = part({ Name = "Lava", Size = Vector3.new(4 + G() * 3, 0.3, 62), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 84, 0.05, math.sin(a) * 84)) * CFrame.Angles(0, -a, 0), Color = Color3.fromRGB(255, 110, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 		local l = Instance.new("PointLight")
 		l.Range = 22
 		l.Brightness = 2
@@ -288,26 +288,26 @@ BUILD.crater = function(c: Vector3, f: Folder)
 		l.Parent = lava
 	end
 	-- 가운데 단 (높이 9)과 네 비탈
-	disc("Plateau", c + Vector3.new(0, 4.5, 0), 26, 9, Color3.fromRGB(70, 58, 52), Enum.Material.Basalt, f)
-	disc("PlateauTop", c + Vector3.new(0, 9.1, 0), 24, 0.4, Color3.fromRGB(95, 72, 60), Enum.Material.Slate, f)
+	disc("Plateau", c + Vector3.new(0, 4.5, 0), 32, 9, Color3.fromRGB(70, 58, 52), Enum.Material.Basalt, f)
+	disc("PlateauTop", c + Vector3.new(0, 9.1, 0), 30, 0.4, Color3.fromRGB(95, 72, 60), Enum.Material.Slate, f)
 	for i = 1, 4 do
 		local a = (i - 1) / 4 * math.pi * 2
 		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
-		part({ Class = "WedgePart", Name = "Ramp", Size = Vector3.new(12, 9, 22), CFrame = CFrame.lookAt(c + dir * 35 + Vector3.new(0, 4.5, 0), c + dir * 60 + Vector3.new(0, 4.5, 0)), Color = Color3.fromRGB(78, 64, 56), Material = Enum.Material.Basalt, Parent = f })
+		part({ Class = "WedgePart", Name = "Ramp", Size = Vector3.new(12, 9, 22), CFrame = CFrame.lookAt(c + dir * 42 + Vector3.new(0, 4.5, 0), c + dir * 70 + Vector3.new(0, 4.5, 0)), Color = Color3.fromRGB(78, 64, 56), Material = Enum.Material.Basalt, Parent = f })
 	end
 	-- 바위 기둥 (엄폐)
-	for _, v in ipairs(ring(6, 56, 0.55)) do
+	for _, v in ipairs(ring(8, 76, 0.55)) do
 		local h = 12 + G() * 10
 		part({ Name = "Rock", Size = Vector3.new(7 + G() * 4, h, 7 + G() * 4), CFrame = CFrame.new(c + v + Vector3.new(0, h / 2 - 1, 0)) * CFrame.Angles((G() - 0.5) * 0.3, G() * 3, (G() - 0.5) * 0.3), Color = Color3.fromRGB(60, 50, 46), Material = Enum.Material.Basalt, Parent = f })
 	end
 	-- 분화구 벽
-	for _, v in ipairs(ring(30, R + 8)) do
+	for _, v in ipairs(ring(38, R + 8)) do
 		local h = 24 + G() * 18
 		part({ Name = "CraterWall", Size = Vector3.new(26, h, 14), CFrame = CFrame.lookAt(c + v + Vector3.new(0, h / 2 - 2, 0), c + Vector3.new(0, h / 2 - 2, 0)) * CFrame.Angles(math.rad(-14), 0, 0), Color = Color3.fromRGB(55, 44, 40), Material = Enum.Material.Basalt, Parent = f })
 	end
 	fence(c, R, 70, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 80, 0.2)) do
+	for _, v in ipairs(ring(10, 110, 0.2)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -319,7 +319,8 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 	local WOOD = Color3.fromRGB(150, 95, 60)
 	local DECK = Color3.fromRGB(196, 160, 112)
 	local ROOF = Color3.fromRGB(60, 80, 110)
-	local outer = ring(3, 62, -math.pi / 2)
+	local OR, DR, CR = 86, 34, 22 -- 3.3.1판: 누각 사이 62 → 86, 누각 28 → 34, 가운데 18 → 22
+	local outer = ring(3, OR, -math.pi / 2)
 	local function deck(at: Vector3, r: number, roof: boolean)
 		disc("Deck", at + Vector3.new(0, -1, 0), r, 2, DECK, Enum.Material.WoodPlanks, f)
 		disc("DeckRim", at + Vector3.new(0, -1.2, 0), r + 1, 2.2, WOOD, Enum.Material.Wood, f)
@@ -336,10 +337,10 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 		end
 	end
 	for _, v in ipairs(outer) do
-		deck(c + v, 28, true)
+		deck(c + v, DR, true)
 	end
 	-- 가운데 단 (조금 높다) + 계단
-	deck(c + Vector3.new(0, 5, 0), 18, false)
+	deck(c + Vector3.new(0, 5, 0), CR, false)
 	-- 다리: 바깥 누각 → 가운데 (오르막), 바깥끼리
 	local function bridge(a: Vector3, b: Vector3, w: number)
 		local mid = (a + b) / 2
@@ -351,25 +352,87 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 	end
 	for _, v in ipairs(outer) do
 		local dir = v.Unit
-		bridge(c + dir * 34 + Vector3.new(0, -0.4, 0), c + dir * 17 + Vector3.new(0, 4.4, 0), 7)
+		bridge(c + dir * (OR - DR + 1) + Vector3.new(0, -0.4, 0), c + dir * (CR - 1) + Vector3.new(0, 4.4, 0), 8)
 	end
 	for i = 1, 3 do
 		local a, b = outer[i], outer[i % 3 + 1]
 		local dir = (b - a).Unit
-		bridge(c + a + dir * 27 + Vector3.new(0, -0.4, 0), c + b - dir * 27 + Vector3.new(0, -0.4, 0), 6)
+		bridge(c + a + dir * (DR - 1) + Vector3.new(0, -0.4, 0), c + b - dir * (DR - 1) + Vector3.new(0, -0.4, 0), 7)
 	end
 	-- 아래의 구름 (밟을 수 없다)
 	for _ = 1, 40 do
 		local s = 20 + G() * 30
-		part({ Name = "Cloud", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + Vector3.new((G() - 0.5) * 260, -30 - G() * 30, (G() - 0.5) * 260), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, CastShadow = false, Parent = f })
+		part({ Name = "Cloud", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + Vector3.new((G() - 0.5) * 340, -30 - G() * 30, (G() - 0.5) * 260), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, CastShadow = false, Parent = f })
 	end
 	local sp = {}
 	for _, v in ipairs(outer) do
-		for _, o in ipairs(ring(3, 12, 0.5)) do
+		for _, o in ipairs(ring(4, 16, 0.5)) do
 			table.insert(sp, c + v + o + Vector3.new(0, 4, 0))
 		end
 	end
-	return { spawns = sp, floorY = c.Y, R = 110, fall = true }
+	return { spawns = sp, floorY = c.Y, R = 140, fall = true }
+end
+
+-- 3.3.1판 대기실: 싸움이 없는 돌 마당. 가운데 정자, 둘레의 맵 깃발 넷, 북쪽의 싸움터 문, 연습용 목인 자리
+local lobby: any = nil
+local function buildLobby(c: Vector3, f: Folder): any
+	local G = rnd(5)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), 95, 4, Color3.fromRGB(96, 128, 74), Enum.Material.Grass, f)
+	disc("LobbyPlaza", c + Vector3.new(0, 0.25, 0), 58, 0.6, Color3.fromRGB(205, 198, 184), Enum.Material.Marble, f)
+	disc("LobbyRing", c + Vector3.new(0, 0.6, 0), 59.5, 0.3, Color3.fromRGB(150, 110, 70), Enum.Material.Wood, f, false)
+	-- 가운데 정자
+	for _, v in ipairs(ring(8, 13, math.pi / 8)) do
+		part({ Name = "PavPillar", Size = Vector3.new(1.6, 14, 1.6), Position = c + v + Vector3.new(0, 7.5, 0), Color = Color3.fromRGB(170, 42, 36), Material = Enum.Material.Wood, Parent = f })
+	end
+	disc("PavFloor", c + Vector3.new(0, 0.9, 0), 15, 1.2, Color3.fromRGB(120, 86, 56), Enum.Material.WoodPlanks, f)
+	part({ Name = "PavRoof", Size = Vector3.new(30, 1.6, 30), CFrame = CFrame.new(c + Vector3.new(0, 15.2, 0)) * CFrame.Angles(0, math.pi / 8, 0), Color = Color3.fromRGB(50, 66, 92), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "PavRoof2", Size = Vector3.new(19, 1.8, 19), CFrame = CFrame.new(c + Vector3.new(0, 16.8, 0)) * CFrame.Angles(0, math.pi / 8 + math.pi / 4, 0), Color = Color3.fromRGB(42, 56, 80), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "PavTop", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = c + Vector3.new(0, 18.6, 0), Color = Color3.fromRGB(255, 205, 110), Material = Enum.Material.Metal, Parent = f })
+	-- 맵 깃발 넷 (투표는 화면에서)
+	for i, v in ipairs(ring(#B.maps, 40, math.pi / 4)) do
+		local m = B.maps[i]
+		part({ Name = "FlagPole", Size = Vector3.new(0.8, 16, 0.8), Position = c + v + Vector3.new(0, 8, 0), Color = Color3.fromRGB(70, 50, 36), Material = Enum.Material.Wood, Parent = f })
+		local board = part({ Name = "MapBoard", Size = Vector3.new(11, 5, 0.6), CFrame = CFrame.lookAt(c + v + Vector3.new(0, 11, 0), c + Vector3.new(0, 11, 0)), Color = Color3.fromRGB(40, 28, 22), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = Enum.NormalId.Front
+		sg.PixelsPerStud = 40
+		sg.Parent = board
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(1, 1)
+		t.TextScaled = true
+		t.Font = Enum.Font.GothamBlack
+		t.TextColor3 = Color3.fromRGB(255, 215, 140)
+		t.Text = string.format("%d. %s", i, m.name)
+		t.Parent = sg
+	end
+	-- 북쪽: 싸움터 문 (T 또는 화면의 '싸움터로 들어가기')
+	local gateAt = c + Vector3.new(0, 0, -54)
+	for _, x in ipairs({ -1, 1 }) do
+		part({ Name = "ArenaGatePost", Size = Vector3.new(2.4, 18, 2.4), Position = gateAt + Vector3.new(x * 8, 9, 0), Color = Color3.fromRGB(150, 40, 34), Material = Enum.Material.Wood, Parent = f })
+	end
+	part({ Name = "ArenaGateBeam", Size = Vector3.new(22, 1.8, 3), Position = gateAt + Vector3.new(0, 18.6, 0), Color = Color3.fromRGB(150, 40, 34), Material = Enum.Material.Wood, Parent = f })
+	local veil = part({ Name = "ArenaVeil", Size = Vector3.new(13.6, 15, 0.4), Position = gateAt + Vector3.new(0, 7.8, 0), Color = Color3.fromRGB(255, 120, 80), Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = "ArenaGate"
+	pp.ActionText = "싸움터로 들어가기"
+	pp.ObjectText = "⚔ 싸움터"
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 16
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.T
+	pp.Parent = veil
+	-- 둘레 나무와 낮은 담
+	for _, v in ipairs(ring(28, 80)) do
+		part({ Name = "Trunk", Size = Vector3.new(1.8, 9, 1.8), Position = c + v + Vector3.new(0, 4.5, 0), Color = Color3.fromRGB(96, 70, 48), Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "Canopy", Shape = Enum.PartType.Ball, Size = Vector3.new(10, 10, 10) * (0.8 + G() * 0.4), Position = c + v + Vector3.new(0, 11, 0), Color = Color3.fromRGB(70 + math.floor(G() * 30), 120, 66), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+	fence(c, 88, 40, f)
+	local spots = {}
+	for _, v in ipairs(ring(10, 28, 0.2)) do
+		table.insert(spots, c + v + Vector3.new(0, 4, 0))
+	end
+	return { center = c, spots = spots, gate = pp, dummies = { c + Vector3.new(-22, 3, 30), c + Vector3.new(22, 3, 30) } }
 end
 
 function Battle.build(): any
@@ -390,7 +453,9 @@ function Battle.build(): any
 		end
 		table.insert(maps, { id = m.id, name = m.name, desc = m.desc, center = c, info = info, folder = mf })
 	end
-	-- 처음 태어나는 자리 (첫 맵)
+	lobby = buildLobby(Vector3.new(17000, 0, 20000), f)
+	Battle.lobby = lobby
+	-- 처음 태어나는 자리 (대기실)
 	local sl = Instance.new("SpawnLocation")
 	sl.Name = "BattleSpawn"
 	sl.Anchored = true
@@ -399,7 +464,7 @@ function Battle.build(): any
 	sl.CanCollide = false
 	sl.Neutral = true
 	sl.Duration = 0
-	sl.CFrame = CFrame.new(maps[1].info.spawns[1] - Vector3.new(0, 3, 0))
+	sl.CFrame = CFrame.new(lobby.spots[1] - Vector3.new(0, 3, 0))
 	sl.Parent = f
 	Battle.spawnLoc = sl
 	return { train = {}, rings = {} }
@@ -410,6 +475,11 @@ end
 ------------------------------------------------------------------------
 local cur = 1
 local roundEnd = 0
+local inArena: { [Player]: boolean } = {}
+local votes: { [Player]: number } = {}
+function Battle.inArena(player: Player): boolean
+	return inArena[player] == true
+end
 type Sess = { k: number, d: number, streak: number, rec: Rec, dirty: boolean, loaded: boolean }
 local sess: { [Player]: Sess } = {}
 local ctx: any = nil
@@ -420,12 +490,16 @@ end
 
 -- 다른 사람에게서 가장 먼 자리
 function Battle.spawnCF(player: Player?): CFrame
+	if player and not inArena[player] and lobby then
+		local sp = lobby.spots[math.random(1, #lobby.spots)]
+		return CFrame.lookAt(sp, Vector3.new(lobby.center.X, sp.Y, lobby.center.Z))
+	end
 	local m = maps[cur]
 	local best, bestD = m.info.spawns[1], -1
 	for _, sp in ipairs(m.info.spawns) do
 		local near = math.huge
 		for _, other in ipairs(Players:GetPlayers()) do
-			if other ~= player then
+			if other ~= player and inArena[other] then
 				local ch = other.Character
 				local r = ch and ch:FindFirstChild("HumanoidRootPart")
 				if r and r:IsA("BasePart") then
@@ -533,6 +607,8 @@ end
 function Battle.leave(player: Player)
 	saveRec(player)
 	sess[player] = nil
+	inArena[player] = nil
+	votes[player] = nil
 end
 function Battle.saveAll()
 	for player in pairs(sess) do
@@ -578,7 +654,7 @@ end
 local function standings(): { any }
 	local list = {}
 	for player, s in pairs(sess) do
-		table.insert(list, { id = player.UserId, name = player.DisplayName, k = s.k, d = s.d, streak = s.streak, total = s.rec.kills })
+		table.insert(list, { id = player.UserId, name = player.DisplayName, k = s.k, d = s.d, streak = s.streak, total = s.rec.kills, arena = inArena[player] == true })
 	end
 	table.sort(list, function(a, b)
 		if a.k ~= b.k then
@@ -591,14 +667,82 @@ end
 
 local function moveAllTo(idx: number)
 	cur = idx
-	if Battle.spawnLoc then
-		Battle.spawnLoc.CFrame = CFrame.new(maps[cur].info.spawns[1] - Vector3.new(0, 3, 0))
-	end
 	for _, player in ipairs(Players:GetPlayers()) do
-		if ctx then
+		if ctx and inArena[player] then
 			ctx.respawn(player)
 		end
 	end
+end
+
+-- 다음 맵: 표가 가장 많은 맵 (같으면 차례대로 다음)
+local function voteCounts(): { number }
+	local n = {}
+	for i = 1, #maps do
+		n[i] = 0
+	end
+	for player, i in pairs(votes) do
+		if player.Parent and n[i] then
+			n[i] += 1
+		end
+	end
+	return n
+end
+local function nextMap(): number
+	local n = voteCounts()
+	local best, bestN = cur % #maps + 1, 0
+	for k = 1, #maps do
+		local i = (cur + k - 1) % #maps + 1
+		if n[i] > bestN then
+			best, bestN = i, n[i]
+		end
+	end
+	return best
+end
+
+-- 대기실 ↔ 싸움터, 투표. 안 되면 까닭을 돌려준다
+function Battle.request(player: Player, action: string, arg: any): string?
+	if not ctx then
+		return nil
+	end
+	local f = ctx.fighter(player)
+	if action == "battleEnter" then
+		if inArena[player] then
+			return "이미 싸움터에 있어요"
+		end
+		if not f or f.dead then
+			return "잠시 뒤에 다시"
+		end
+		inArena[player] = true
+		f.model:SetAttribute("InArena", true)
+		ctx.respawn(player)
+		ctx.push:FireClient(player, "battleNote", { text = "⚔ " .. maps[cur].name .. " 싸움터에 들어왔다! (5초 동안 보호)" })
+		return nil
+	elseif action == "battleLobby" then
+		if not inArena[player] then
+			return "이미 대기실이에요"
+		end
+		if f and f.combatUntil > os.clock() then
+			return string.format("싸우는 중에는 나갈 수 없어요 (마지막으로 맞거나 때린 뒤 %d초)", B.lobbyLeave)
+		end
+		inArena[player] = nil
+		if f then
+			f.model:SetAttribute("InArena", nil)
+		end
+		ctx.respawn(player)
+		return "🏯 대기실로 나왔어요"
+	elseif action == "battleVote" then
+		local i = math.floor(tonumber(arg) or 0)
+		if i < 1 or i > #maps then
+			return nil
+		end
+		votes[player] = i
+		return "🗳 다음 맵으로 '" .. maps[i].name .. "'에 투표했어요"
+	end
+	return nil
+end
+-- 캐릭터가 새로 생기면 싸움터 표시를 다시 붙인다
+function Battle.onCharacter(player: Player, model: Model)
+	model:SetAttribute("InArena", inArena[player] or nil)
 end
 
 function Battle.start(c: any)
@@ -613,7 +757,7 @@ function Battle.start(c: any)
 			local left = math.max(0, roundEnd - t)
 			if left <= B.warnAt and not warned then
 				warned = true
-				local nxt = maps[cur % #maps + 1]
+				local nxt = maps[nextMap()]
 				ctx.push:FireAllClients("battleNote", { text = string.format("⏳ %d초 뒤 다음 맵: %s", B.warnAt, nxt.name) })
 			end
 			if left <= 0 then
@@ -630,11 +774,13 @@ function Battle.start(c: any)
 						end
 					end
 				end
-				ctx.push:FireAllClients("battleRound", { winner = winnerName, kills = top and top.k or 0, map = maps[cur].name, next = maps[cur % #maps + 1].name })
+				local nxt = nextMap()
+				ctx.push:FireAllClients("battleRound", { winner = winnerName, kills = top and top.k or 0, map = maps[cur].name, next = maps[nxt].name })
 				for _, s in pairs(sess) do
 					s.k, s.d, s.streak = 0, 0, 0
 				end
-				moveAllTo(cur % #maps + 1)
+				table.clear(votes)
+				moveAllTo(nxt)
 				roundEnd = os.clock() + B.mapTime
 				warned = false
 			end
@@ -642,13 +788,19 @@ function Battle.start(c: any)
 			local m = maps[cur]
 			for _, player in ipairs(Players:GetPlayers()) do
 				local f = ctx.fighter(player)
-				if f and not f.dead and f.root.Position.Y < m.info.floorY + B.fallY then
+				if f and not f.dead and inArena[player] and f.root.Position.Y < m.info.floorY + B.fallY then
 					ctx.kill(f)
 				end
 			end
 			-- 모두에게 판 상태
 			local st = standings()
-			ctx.push:FireAllClients("battle", { map = m.name, desc = m.desc, left = math.floor(left), list = st })
+			local arenaN = 0
+			for _, on in pairs(inArena) do
+				if on then
+					arenaN += 1
+				end
+			end
+			ctx.push:FireAllClients("battle", { map = m.name, desc = m.desc, left = math.floor(left), list = st, votes = voteCounts(), next = maps[nextMap()].name, arena = arenaN, total = #Players:GetPlayers() })
 			if t >= saveAt then
 				saveAt = t + 60
 				Battle.saveAll()

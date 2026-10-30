@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.3.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.3.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3316,14 +3316,16 @@ Config.BATTLE = {
 	placeId = 0, -- 알면 적는다 (0이면 이름으로 찾는다)
 	hp = 200,
 	ref = 8,
-	dmgK = 1.8,
+	-- 3.3.1판: 너무 빨리 쓰러졌다 → 1.8 → 1.5, 한 대 34 → 22, 1초 70 → 32 (쓰러지기까지 적어도 6초 남짓)
+	dmgK = 1.5,
 	dmgPow = 0.6,
-	hitCap = 34,
-	secCap = 70,
+	hitCap = 22,
+	secCap = 32,
 	gradeStep = 0.02,
 	walk = 18,
 	respawn = 4,
-	shield = 3, -- 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
+	shield = 5, -- 싸움터에 들어가거나 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
+	lobbyLeave = 5, -- 싸운 뒤 이만큼 지나야 대기실로 나갈 수 있다
 	mapTime = 300, -- 맵 하나에 5분
 	warnAt = 15, -- 바뀌기 전 알림
 	fallY = -70, -- 맵 바닥에서 이만큼 아래로 떨어지면 쓰러진다
@@ -7237,6 +7239,9 @@ function Story.done(p: Profile, g: any): boolean
 end
 
 function Story.advance(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	for _ = 1, 3 do
 		local ch = p and Config.Story[p.story]
@@ -7265,6 +7270,9 @@ end
 
 -- 무슨 일이 일어났다 (적을 쓰러뜨림, 수련, 시험 통과 ...)
 function Story.event(player: Player, kind: string, id: string?, amount: number?)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
@@ -7291,6 +7299,9 @@ end
 
 -- 청운 장로와 이야기
 function Story.talk(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	local ch = p and Config.Story[p.story]
 	if not ch then
@@ -7310,6 +7321,9 @@ end
 
 -- 이야기 받기: 이때부터 목표가 보이고 세어진다
 function Story.accept(player: Player)
+	if BATTLE then
+		return -- 배틀그라운드에는 이야기가 없다
+	end
 	local p = profiles[player]
 	if not p or p.accepted == p.story then
 		return
@@ -10160,6 +10174,12 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			return
 		end
 		Actions.potion(player)
+	elseif BATTLE and (action == "battleEnter" or action == "battleLobby" or action == "battleVote") then
+		-- 3.3.1판: 배틀그라운드 대기실
+		local msg = Battle.request(player, action, a1)
+		if msg then
+			toast(player, msg)
+		end
 	elseif action == "battleGo" or action == "battleBack" then
 		-- 3.3판: 메인 월드 ↔ 배틀그라운드
 		local f = Combat.fighterOfPlayer(player)
@@ -10190,8 +10210,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		elseif not st.canSave then
 			toast(player, "저장이 꺼져 있어요. 이번 기록은 저장되지 않아요")
 		end
-		-- 이야기 첫 장이면 장로를 찾아가라고
-		if p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
+		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
+		if BATTLE then
+			Push:FireClient(player, "dialog", { who = "⚔ 배틀그라운드", title = "대기실", text = string.format("여기는 대기실이라 싸움이 없다. 권법 창에서 쓸 권법을 고르고, 다음 맵에 투표하고, 준비되면 '⚔ 싸움터로 들어가기'. 모두 체력 %d, 같은 힘으로 겨룬다.", Config.BATTLE.hp) })
+		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
 	elseif action == "talkElder" then
@@ -11131,6 +11153,7 @@ local function setupCharacter(player: Player, char: Model)
 	refreshFighter(player)
 	if BATTLE then
 		f.hp = f.maxHp
+		Battle.onCharacter(player, char)
 		task.defer(function()
 			if char.Parent then
 				char:PivotTo(Battle.spawnCF(player))
@@ -11405,6 +11428,21 @@ end)
 -- 3.3판 배틀그라운드: 맵을 돌리고, 떨어진 사람을 쓰러뜨리고, 판 상태를 알린다
 ------------------------------------------------------------------------
 if BATTLE then
+	-- 대기실의 싸움터 문과 연습용 목인
+	local L = Battle.lobby
+	if L then
+		L.gate.Triggered:Connect(function(player: Player)
+			local msg = Battle.request(player, "battleEnter", nil)
+			if msg then
+				toast(player, msg)
+			end
+		end)
+		task.spawn(function()
+			for _, at in ipairs(L.dummies) do
+				pcall(Npc.spawn, "dummy", false, at, "test")
+			end
+		end)
+	end
 	Battle.start({
 		push = Push,
 		respawn = respawnPlayer,
@@ -11608,20 +11646,20 @@ local BUILD: { [string]: (Vector3, Folder) -> { spawns: { Vector3 }, floorY: num
 
 -- 죽림 비무장: 풀밭 가운데 돌 마당, 둘레에 대나무 덤불 (몸을 숨긴다), 마당 안의 낮은 돌담
 BUILD.bamboo = function(c: Vector3, f: Folder)
-	local R = 105
+	local R = 140 -- 3.3.1판: 105 → 140
 	local G = rnd(11)
 	disc("Ground", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(86, 120, 62), Enum.Material.Grass, f)
-	disc("Court", c + Vector3.new(0, 0.25, 0), 48, 0.6, Color3.fromRGB(150, 146, 136), Enum.Material.Slate, f)
-	disc("CourtRing", c + Vector3.new(0, 0.6, 0), 49.5, 0.3, Color3.fromRGB(120, 92, 60), Enum.Material.Wood, f, false)
+	disc("Court", c + Vector3.new(0, 0.25, 0), 62, 0.6, Color3.fromRGB(150, 146, 136), Enum.Material.Slate, f)
+	disc("CourtRing", c + Vector3.new(0, 0.6, 0), 63.5, 0.3, Color3.fromRGB(120, 92, 60), Enum.Material.Wood, f, false)
 	disc("CourtMark", c + Vector3.new(0, 0.62, 0), 9, 0.2, Color3.fromRGB(170, 50, 40), Enum.Material.Fabric, f, false)
 	-- 마당 안의 돌담 (엄폐)
-	for i, v in ipairs(ring(4, 28, math.pi / 4)) do
+	for i, v in ipairs(ring(4, 36, math.pi / 4)) do
 		local a = (i - 1) / 4 * math.pi * 2 + math.pi / 4
 		part({ Name = "LowWall", Size = Vector3.new(14, 4.2, 2.2), CFrame = CFrame.new(c + v + Vector3.new(0, 2.4, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(128, 124, 116), Material = Enum.Material.Cobblestone, Parent = f })
 		part({ Name = "WallCap", Size = Vector3.new(15, 0.6, 2.8), CFrame = CFrame.new(c + v + Vector3.new(0, 4.8, 0)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(70, 60, 50), Material = Enum.Material.Slate, Parent = f })
 	end
 	-- 석등
-	for _, v in ipairs(ring(6, 46, 0.3)) do
+	for _, v in ipairs(ring(8, 60, 0.3)) do
 		part({ Name = "LanternBase", Size = Vector3.new(1.6, 4, 1.6), Position = c + v + Vector3.new(0, 2.4, 0), Color = Color3.fromRGB(140, 136, 128), Material = Enum.Material.Granite, Parent = f })
 		local lamp = part({ Name = "Lantern", Size = Vector3.new(2.4, 1.6, 2.4), Position = c + v + Vector3.new(0, 5.2, 0), Color = Color3.fromRGB(255, 210, 140), Material = Enum.Material.Neon, Transparency = 0.2, Parent = f })
 		local l = Instance.new("PointLight")
@@ -11640,20 +11678,20 @@ BUILD.bamboo = function(c: Vector3, f: Folder)
 		end
 		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = Vector3.new(5, 5, 5), Position = at + Vector3.new((G() - 0.5) * 2, h + 1, (G() - 0.5) * 2), Color = Color3.fromRGB(70, 130, 60), Material = Enum.Material.Grass, CanCollide = false, Transparency = 0.15, Parent = f })
 	end
-	for _, base in ipairs(ring(9, 68, 0.15)) do
+	for _, base in ipairs(ring(12, 92, 0.15)) do
 		for _ = 1, 6 + math.floor(G() * 4) do
 			stalk(c + base + Vector3.new((G() - 0.5) * 12, 0, (G() - 0.5) * 12), 20 + G() * 14)
 		end
 	end
 	-- 둘레: 빽빽한 대숲
-	for _, v in ipairs(ring(40, R + 6)) do
+	for _, v in ipairs(ring(54, R + 6)) do
 		for _ = 1, 3 do
 			stalk(c + v + Vector3.new((G() - 0.5) * 8, 0, (G() - 0.5) * 8), 26 + G() * 16)
 		end
 	end
 	fence(c, R, 60, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 82, 0.4)) do
+	for _, v in ipairs(ring(10, 112, 0.4)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -11661,13 +11699,13 @@ end
 
 -- 빙호 설원: 가운데 얼어붙은 호수 (탁 트였다), 얼음 기둥, 가장자리의 눈 언덕과 소나무
 BUILD.frost = function(c: Vector3, f: Folder)
-	local R = 108
+	local R = 145 -- 3.3.1판: 108 → 145
 	local G = rnd(23)
 	disc("Snow", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(236, 240, 248), Enum.Material.Snow, f)
-	disc("Lake", c + Vector3.new(0, 0.2, 0), 58, 0.5, Color3.fromRGB(170, 215, 240), Enum.Material.Ice, f)
-	disc("LakeEdge", c + Vector3.new(0, 0.1, 0), 60.5, 0.4, Color3.fromRGB(210, 230, 245), Enum.Material.Glacier, f, false)
+	disc("Lake", c + Vector3.new(0, 0.2, 0), 80, 0.5, Color3.fromRGB(170, 215, 240), Enum.Material.Ice, f)
+	disc("LakeEdge", c + Vector3.new(0, 0.1, 0), 82.5, 0.4, Color3.fromRGB(210, 230, 245), Enum.Material.Glacier, f, false)
 	-- 얼음 기둥
-	for i, v in ipairs(ring(7, 36, 0.5)) do
+	for i, v in ipairs(ring(9, 50, 0.5)) do
 		local h = 14 + G() * 12
 		part({ Name = "IcePillar", Size = Vector3.new(5 + G() * 3, h, 5 + G() * 3), CFrame = CFrame.new(c + v + Vector3.new(0, h / 2, 0)) * CFrame.Angles((G() - 0.5) * 0.25, G() * 3, (G() - 0.5) * 0.25), Color = Color3.fromRGB(150, 215, 255), Material = Enum.Material.Glass, Transparency = 0.25, Parent = f })
 		if i % 2 == 0 then
@@ -11675,7 +11713,7 @@ BUILD.frost = function(c: Vector3, f: Folder)
 		end
 	end
 	-- 눈 언덕 (반쯤 묻힌 공)
-	for _, v in ipairs(ring(10, 80, 0.2)) do
+	for _, v in ipairs(ring(13, 108, 0.2)) do
 		local s = 14 + G() * 10
 		part({ Name = "Drift", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + v + Vector3.new(0, -s * 0.28, 0), Color = Color3.fromRGB(240, 244, 252), Material = Enum.Material.Snow, Parent = f })
 	end
@@ -11688,12 +11726,12 @@ BUILD.frost = function(c: Vector3, f: Folder)
 			part({ Name = "SnowCap", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, r * 1.6, r * 1.6), CFrame = CFrame.new(at + Vector3.new(0, h * (0.35 + k * 0.2) + h * 0.11, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(245, 248, 255), Material = Enum.Material.Snow, CanCollide = false, Parent = f })
 		end
 	end
-	for _, v in ipairs(ring(26, R + 4)) do
+	for _, v in ipairs(ring(34, R + 4)) do
 		pine(c + v + Vector3.new((G() - 0.5) * 6, 0, (G() - 0.5) * 6), 24 + G() * 12)
 	end
 	fence(c, R, 60, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 70, 0.6)) do
+	for _, v in ipairs(ring(10, 96, 0.6)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -11701,13 +11739,13 @@ end
 
 -- 화산 분지: 검은 현무암 바닥, 용암 줄기 (보기만), 가운데 높은 단과 네 비탈, 바위 기둥, 둘레의 분화구 벽
 BUILD.crater = function(c: Vector3, f: Folder)
-	local R = 104
+	local R = 140 -- 3.3.1판: 104 → 140
 	local G = rnd(37)
 	disc("Basalt", c + Vector3.new(0, -2, 0), R + 20, 4, Color3.fromRGB(48, 40, 38), Enum.Material.Basalt, f)
 	-- 용암 줄기 (바닥에 얕게, 밟아도 괜찮다)
 	for i = 1, 6 do
 		local a = (i - 1) / 6 * math.pi * 2 + 0.3
-		local lava = part({ Name = "Lava", Size = Vector3.new(4 + G() * 3, 0.3, 46), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 62, 0.05, math.sin(a) * 62)) * CFrame.Angles(0, -a, 0), Color = Color3.fromRGB(255, 110, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		local lava = part({ Name = "Lava", Size = Vector3.new(4 + G() * 3, 0.3, 62), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 84, 0.05, math.sin(a) * 84)) * CFrame.Angles(0, -a, 0), Color = Color3.fromRGB(255, 110, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 		local l = Instance.new("PointLight")
 		l.Range = 22
 		l.Brightness = 2
@@ -11715,26 +11753,26 @@ BUILD.crater = function(c: Vector3, f: Folder)
 		l.Parent = lava
 	end
 	-- 가운데 단 (높이 9)과 네 비탈
-	disc("Plateau", c + Vector3.new(0, 4.5, 0), 26, 9, Color3.fromRGB(70, 58, 52), Enum.Material.Basalt, f)
-	disc("PlateauTop", c + Vector3.new(0, 9.1, 0), 24, 0.4, Color3.fromRGB(95, 72, 60), Enum.Material.Slate, f)
+	disc("Plateau", c + Vector3.new(0, 4.5, 0), 32, 9, Color3.fromRGB(70, 58, 52), Enum.Material.Basalt, f)
+	disc("PlateauTop", c + Vector3.new(0, 9.1, 0), 30, 0.4, Color3.fromRGB(95, 72, 60), Enum.Material.Slate, f)
 	for i = 1, 4 do
 		local a = (i - 1) / 4 * math.pi * 2
 		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
-		part({ Class = "WedgePart", Name = "Ramp", Size = Vector3.new(12, 9, 22), CFrame = CFrame.lookAt(c + dir * 35 + Vector3.new(0, 4.5, 0), c + dir * 60 + Vector3.new(0, 4.5, 0)), Color = Color3.fromRGB(78, 64, 56), Material = Enum.Material.Basalt, Parent = f })
+		part({ Class = "WedgePart", Name = "Ramp", Size = Vector3.new(12, 9, 22), CFrame = CFrame.lookAt(c + dir * 42 + Vector3.new(0, 4.5, 0), c + dir * 70 + Vector3.new(0, 4.5, 0)), Color = Color3.fromRGB(78, 64, 56), Material = Enum.Material.Basalt, Parent = f })
 	end
 	-- 바위 기둥 (엄폐)
-	for _, v in ipairs(ring(6, 56, 0.55)) do
+	for _, v in ipairs(ring(8, 76, 0.55)) do
 		local h = 12 + G() * 10
 		part({ Name = "Rock", Size = Vector3.new(7 + G() * 4, h, 7 + G() * 4), CFrame = CFrame.new(c + v + Vector3.new(0, h / 2 - 1, 0)) * CFrame.Angles((G() - 0.5) * 0.3, G() * 3, (G() - 0.5) * 0.3), Color = Color3.fromRGB(60, 50, 46), Material = Enum.Material.Basalt, Parent = f })
 	end
 	-- 분화구 벽
-	for _, v in ipairs(ring(30, R + 8)) do
+	for _, v in ipairs(ring(38, R + 8)) do
 		local h = 24 + G() * 18
 		part({ Name = "CraterWall", Size = Vector3.new(26, h, 14), CFrame = CFrame.lookAt(c + v + Vector3.new(0, h / 2 - 2, 0), c + Vector3.new(0, h / 2 - 2, 0)) * CFrame.Angles(math.rad(-14), 0, 0), Color = Color3.fromRGB(55, 44, 40), Material = Enum.Material.Basalt, Parent = f })
 	end
 	fence(c, R, 70, f)
 	local sp = {}
-	for _, v in ipairs(ring(8, 80, 0.2)) do
+	for _, v in ipairs(ring(10, 110, 0.2)) do
 		table.insert(sp, c + v + Vector3.new(0, 4, 0))
 	end
 	return { spawns = sp, floorY = c.Y, R = R }
@@ -11746,7 +11784,8 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 	local WOOD = Color3.fromRGB(150, 95, 60)
 	local DECK = Color3.fromRGB(196, 160, 112)
 	local ROOF = Color3.fromRGB(60, 80, 110)
-	local outer = ring(3, 62, -math.pi / 2)
+	local OR, DR, CR = 86, 34, 22 -- 3.3.1판: 누각 사이 62 → 86, 누각 28 → 34, 가운데 18 → 22
+	local outer = ring(3, OR, -math.pi / 2)
 	local function deck(at: Vector3, r: number, roof: boolean)
 		disc("Deck", at + Vector3.new(0, -1, 0), r, 2, DECK, Enum.Material.WoodPlanks, f)
 		disc("DeckRim", at + Vector3.new(0, -1.2, 0), r + 1, 2.2, WOOD, Enum.Material.Wood, f)
@@ -11763,10 +11802,10 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 		end
 	end
 	for _, v in ipairs(outer) do
-		deck(c + v, 28, true)
+		deck(c + v, DR, true)
 	end
 	-- 가운데 단 (조금 높다) + 계단
-	deck(c + Vector3.new(0, 5, 0), 18, false)
+	deck(c + Vector3.new(0, 5, 0), CR, false)
 	-- 다리: 바깥 누각 → 가운데 (오르막), 바깥끼리
 	local function bridge(a: Vector3, b: Vector3, w: number)
 		local mid = (a + b) / 2
@@ -11778,25 +11817,87 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 	end
 	for _, v in ipairs(outer) do
 		local dir = v.Unit
-		bridge(c + dir * 34 + Vector3.new(0, -0.4, 0), c + dir * 17 + Vector3.new(0, 4.4, 0), 7)
+		bridge(c + dir * (OR - DR + 1) + Vector3.new(0, -0.4, 0), c + dir * (CR - 1) + Vector3.new(0, 4.4, 0), 8)
 	end
 	for i = 1, 3 do
 		local a, b = outer[i], outer[i % 3 + 1]
 		local dir = (b - a).Unit
-		bridge(c + a + dir * 27 + Vector3.new(0, -0.4, 0), c + b - dir * 27 + Vector3.new(0, -0.4, 0), 6)
+		bridge(c + a + dir * (DR - 1) + Vector3.new(0, -0.4, 0), c + b - dir * (DR - 1) + Vector3.new(0, -0.4, 0), 7)
 	end
 	-- 아래의 구름 (밟을 수 없다)
 	for _ = 1, 40 do
 		local s = 20 + G() * 30
-		part({ Name = "Cloud", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + Vector3.new((G() - 0.5) * 260, -30 - G() * 30, (G() - 0.5) * 260), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, CastShadow = false, Parent = f })
+		part({ Name = "Cloud", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s, s), Position = c + Vector3.new((G() - 0.5) * 340, -30 - G() * 30, (G() - 0.5) * 260), Color = Color3.fromRGB(250, 250, 255), Material = Enum.Material.SmoothPlastic, Transparency = 0.25, CanCollide = false, CastShadow = false, Parent = f })
 	end
 	local sp = {}
 	for _, v in ipairs(outer) do
-		for _, o in ipairs(ring(3, 12, 0.5)) do
+		for _, o in ipairs(ring(4, 16, 0.5)) do
 			table.insert(sp, c + v + o + Vector3.new(0, 4, 0))
 		end
 	end
-	return { spawns = sp, floorY = c.Y, R = 110, fall = true }
+	return { spawns = sp, floorY = c.Y, R = 140, fall = true }
+end
+
+-- 3.3.1판 대기실: 싸움이 없는 돌 마당. 가운데 정자, 둘레의 맵 깃발 넷, 북쪽의 싸움터 문, 연습용 목인 자리
+local lobby: any = nil
+local function buildLobby(c: Vector3, f: Folder): any
+	local G = rnd(5)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), 95, 4, Color3.fromRGB(96, 128, 74), Enum.Material.Grass, f)
+	disc("LobbyPlaza", c + Vector3.new(0, 0.25, 0), 58, 0.6, Color3.fromRGB(205, 198, 184), Enum.Material.Marble, f)
+	disc("LobbyRing", c + Vector3.new(0, 0.6, 0), 59.5, 0.3, Color3.fromRGB(150, 110, 70), Enum.Material.Wood, f, false)
+	-- 가운데 정자
+	for _, v in ipairs(ring(8, 13, math.pi / 8)) do
+		part({ Name = "PavPillar", Size = Vector3.new(1.6, 14, 1.6), Position = c + v + Vector3.new(0, 7.5, 0), Color = Color3.fromRGB(170, 42, 36), Material = Enum.Material.Wood, Parent = f })
+	end
+	disc("PavFloor", c + Vector3.new(0, 0.9, 0), 15, 1.2, Color3.fromRGB(120, 86, 56), Enum.Material.WoodPlanks, f)
+	part({ Name = "PavRoof", Size = Vector3.new(30, 1.6, 30), CFrame = CFrame.new(c + Vector3.new(0, 15.2, 0)) * CFrame.Angles(0, math.pi / 8, 0), Color = Color3.fromRGB(50, 66, 92), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "PavRoof2", Size = Vector3.new(19, 1.8, 19), CFrame = CFrame.new(c + Vector3.new(0, 16.8, 0)) * CFrame.Angles(0, math.pi / 8 + math.pi / 4, 0), Color = Color3.fromRGB(42, 56, 80), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "PavTop", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = c + Vector3.new(0, 18.6, 0), Color = Color3.fromRGB(255, 205, 110), Material = Enum.Material.Metal, Parent = f })
+	-- 맵 깃발 넷 (투표는 화면에서)
+	for i, v in ipairs(ring(#B.maps, 40, math.pi / 4)) do
+		local m = B.maps[i]
+		part({ Name = "FlagPole", Size = Vector3.new(0.8, 16, 0.8), Position = c + v + Vector3.new(0, 8, 0), Color = Color3.fromRGB(70, 50, 36), Material = Enum.Material.Wood, Parent = f })
+		local board = part({ Name = "MapBoard", Size = Vector3.new(11, 5, 0.6), CFrame = CFrame.lookAt(c + v + Vector3.new(0, 11, 0), c + Vector3.new(0, 11, 0)), Color = Color3.fromRGB(40, 28, 22), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = Enum.NormalId.Front
+		sg.PixelsPerStud = 40
+		sg.Parent = board
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(1, 1)
+		t.TextScaled = true
+		t.Font = Enum.Font.GothamBlack
+		t.TextColor3 = Color3.fromRGB(255, 215, 140)
+		t.Text = string.format("%d. %s", i, m.name)
+		t.Parent = sg
+	end
+	-- 북쪽: 싸움터 문 (T 또는 화면의 '싸움터로 들어가기')
+	local gateAt = c + Vector3.new(0, 0, -54)
+	for _, x in ipairs({ -1, 1 }) do
+		part({ Name = "ArenaGatePost", Size = Vector3.new(2.4, 18, 2.4), Position = gateAt + Vector3.new(x * 8, 9, 0), Color = Color3.fromRGB(150, 40, 34), Material = Enum.Material.Wood, Parent = f })
+	end
+	part({ Name = "ArenaGateBeam", Size = Vector3.new(22, 1.8, 3), Position = gateAt + Vector3.new(0, 18.6, 0), Color = Color3.fromRGB(150, 40, 34), Material = Enum.Material.Wood, Parent = f })
+	local veil = part({ Name = "ArenaVeil", Size = Vector3.new(13.6, 15, 0.4), Position = gateAt + Vector3.new(0, 7.8, 0), Color = Color3.fromRGB(255, 120, 80), Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = "ArenaGate"
+	pp.ActionText = "싸움터로 들어가기"
+	pp.ObjectText = "⚔ 싸움터"
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 16
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.T
+	pp.Parent = veil
+	-- 둘레 나무와 낮은 담
+	for _, v in ipairs(ring(28, 80)) do
+		part({ Name = "Trunk", Size = Vector3.new(1.8, 9, 1.8), Position = c + v + Vector3.new(0, 4.5, 0), Color = Color3.fromRGB(96, 70, 48), Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "Canopy", Shape = Enum.PartType.Ball, Size = Vector3.new(10, 10, 10) * (0.8 + G() * 0.4), Position = c + v + Vector3.new(0, 11, 0), Color = Color3.fromRGB(70 + math.floor(G() * 30), 120, 66), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+	fence(c, 88, 40, f)
+	local spots = {}
+	for _, v in ipairs(ring(10, 28, 0.2)) do
+		table.insert(spots, c + v + Vector3.new(0, 4, 0))
+	end
+	return { center = c, spots = spots, gate = pp, dummies = { c + Vector3.new(-22, 3, 30), c + Vector3.new(22, 3, 30) } }
 end
 
 function Battle.build(): any
@@ -11817,7 +11918,9 @@ function Battle.build(): any
 		end
 		table.insert(maps, { id = m.id, name = m.name, desc = m.desc, center = c, info = info, folder = mf })
 	end
-	-- 처음 태어나는 자리 (첫 맵)
+	lobby = buildLobby(Vector3.new(17000, 0, 20000), f)
+	Battle.lobby = lobby
+	-- 처음 태어나는 자리 (대기실)
 	local sl = Instance.new("SpawnLocation")
 	sl.Name = "BattleSpawn"
 	sl.Anchored = true
@@ -11826,7 +11929,7 @@ function Battle.build(): any
 	sl.CanCollide = false
 	sl.Neutral = true
 	sl.Duration = 0
-	sl.CFrame = CFrame.new(maps[1].info.spawns[1] - Vector3.new(0, 3, 0))
+	sl.CFrame = CFrame.new(lobby.spots[1] - Vector3.new(0, 3, 0))
 	sl.Parent = f
 	Battle.spawnLoc = sl
 	return { train = {}, rings = {} }
@@ -11837,6 +11940,11 @@ end
 ------------------------------------------------------------------------
 local cur = 1
 local roundEnd = 0
+local inArena: { [Player]: boolean } = {}
+local votes: { [Player]: number } = {}
+function Battle.inArena(player: Player): boolean
+	return inArena[player] == true
+end
 type Sess = { k: number, d: number, streak: number, rec: Rec, dirty: boolean, loaded: boolean }
 local sess: { [Player]: Sess } = {}
 local ctx: any = nil
@@ -11847,12 +11955,16 @@ end
 
 -- 다른 사람에게서 가장 먼 자리
 function Battle.spawnCF(player: Player?): CFrame
+	if player and not inArena[player] and lobby then
+		local sp = lobby.spots[math.random(1, #lobby.spots)]
+		return CFrame.lookAt(sp, Vector3.new(lobby.center.X, sp.Y, lobby.center.Z))
+	end
 	local m = maps[cur]
 	local best, bestD = m.info.spawns[1], -1
 	for _, sp in ipairs(m.info.spawns) do
 		local near = math.huge
 		for _, other in ipairs(Players:GetPlayers()) do
-			if other ~= player then
+			if other ~= player and inArena[other] then
 				local ch = other.Character
 				local r = ch and ch:FindFirstChild("HumanoidRootPart")
 				if r and r:IsA("BasePart") then
@@ -11960,6 +12072,8 @@ end
 function Battle.leave(player: Player)
 	saveRec(player)
 	sess[player] = nil
+	inArena[player] = nil
+	votes[player] = nil
 end
 function Battle.saveAll()
 	for player in pairs(sess) do
@@ -12005,7 +12119,7 @@ end
 local function standings(): { any }
 	local list = {}
 	for player, s in pairs(sess) do
-		table.insert(list, { id = player.UserId, name = player.DisplayName, k = s.k, d = s.d, streak = s.streak, total = s.rec.kills })
+		table.insert(list, { id = player.UserId, name = player.DisplayName, k = s.k, d = s.d, streak = s.streak, total = s.rec.kills, arena = inArena[player] == true })
 	end
 	table.sort(list, function(a, b)
 		if a.k ~= b.k then
@@ -12018,14 +12132,82 @@ end
 
 local function moveAllTo(idx: number)
 	cur = idx
-	if Battle.spawnLoc then
-		Battle.spawnLoc.CFrame = CFrame.new(maps[cur].info.spawns[1] - Vector3.new(0, 3, 0))
-	end
 	for _, player in ipairs(Players:GetPlayers()) do
-		if ctx then
+		if ctx and inArena[player] then
 			ctx.respawn(player)
 		end
 	end
+end
+
+-- 다음 맵: 표가 가장 많은 맵 (같으면 차례대로 다음)
+local function voteCounts(): { number }
+	local n = {}
+	for i = 1, #maps do
+		n[i] = 0
+	end
+	for player, i in pairs(votes) do
+		if player.Parent and n[i] then
+			n[i] += 1
+		end
+	end
+	return n
+end
+local function nextMap(): number
+	local n = voteCounts()
+	local best, bestN = cur % #maps + 1, 0
+	for k = 1, #maps do
+		local i = (cur + k - 1) % #maps + 1
+		if n[i] > bestN then
+			best, bestN = i, n[i]
+		end
+	end
+	return best
+end
+
+-- 대기실 ↔ 싸움터, 투표. 안 되면 까닭을 돌려준다
+function Battle.request(player: Player, action: string, arg: any): string?
+	if not ctx then
+		return nil
+	end
+	local f = ctx.fighter(player)
+	if action == "battleEnter" then
+		if inArena[player] then
+			return "이미 싸움터에 있어요"
+		end
+		if not f or f.dead then
+			return "잠시 뒤에 다시"
+		end
+		inArena[player] = true
+		f.model:SetAttribute("InArena", true)
+		ctx.respawn(player)
+		ctx.push:FireClient(player, "battleNote", { text = "⚔ " .. maps[cur].name .. " 싸움터에 들어왔다! (5초 동안 보호)" })
+		return nil
+	elseif action == "battleLobby" then
+		if not inArena[player] then
+			return "이미 대기실이에요"
+		end
+		if f and f.combatUntil > os.clock() then
+			return string.format("싸우는 중에는 나갈 수 없어요 (마지막으로 맞거나 때린 뒤 %d초)", B.lobbyLeave)
+		end
+		inArena[player] = nil
+		if f then
+			f.model:SetAttribute("InArena", nil)
+		end
+		ctx.respawn(player)
+		return "🏯 대기실로 나왔어요"
+	elseif action == "battleVote" then
+		local i = math.floor(tonumber(arg) or 0)
+		if i < 1 or i > #maps then
+			return nil
+		end
+		votes[player] = i
+		return "🗳 다음 맵으로 '" .. maps[i].name .. "'에 투표했어요"
+	end
+	return nil
+end
+-- 캐릭터가 새로 생기면 싸움터 표시를 다시 붙인다
+function Battle.onCharacter(player: Player, model: Model)
+	model:SetAttribute("InArena", inArena[player] or nil)
 end
 
 function Battle.start(c: any)
@@ -12040,7 +12222,7 @@ function Battle.start(c: any)
 			local left = math.max(0, roundEnd - t)
 			if left <= B.warnAt and not warned then
 				warned = true
-				local nxt = maps[cur % #maps + 1]
+				local nxt = maps[nextMap()]
 				ctx.push:FireAllClients("battleNote", { text = string.format("⏳ %d초 뒤 다음 맵: %s", B.warnAt, nxt.name) })
 			end
 			if left <= 0 then
@@ -12057,11 +12239,13 @@ function Battle.start(c: any)
 						end
 					end
 				end
-				ctx.push:FireAllClients("battleRound", { winner = winnerName, kills = top and top.k or 0, map = maps[cur].name, next = maps[cur % #maps + 1].name })
+				local nxt = nextMap()
+				ctx.push:FireAllClients("battleRound", { winner = winnerName, kills = top and top.k or 0, map = maps[cur].name, next = maps[nxt].name })
 				for _, s in pairs(sess) do
 					s.k, s.d, s.streak = 0, 0, 0
 				end
-				moveAllTo(cur % #maps + 1)
+				table.clear(votes)
+				moveAllTo(nxt)
 				roundEnd = os.clock() + B.mapTime
 				warned = false
 			end
@@ -12069,13 +12253,19 @@ function Battle.start(c: any)
 			local m = maps[cur]
 			for _, player in ipairs(Players:GetPlayers()) do
 				local f = ctx.fighter(player)
-				if f and not f.dead and f.root.Position.Y < m.info.floorY + B.fallY then
+				if f and not f.dead and inArena[player] and f.root.Position.Y < m.info.floorY + B.fallY then
 					ctx.kill(f)
 				end
 			end
 			-- 모두에게 판 상태
 			local st = standings()
-			ctx.push:FireAllClients("battle", { map = m.name, desc = m.desc, left = math.floor(left), list = st })
+			local arenaN = 0
+			for _, on in pairs(inArena) do
+				if on then
+					arenaN += 1
+				end
+			end
+			ctx.push:FireAllClients("battle", { map = m.name, desc = m.desc, left = math.floor(left), list = st, votes = voteCounts(), next = maps[nextMap()].name, arena = arenaN, total = #Players:GetPlayers() })
 			if t >= saveAt then
 				saveAt = t + 60
 				Battle.saveAll()
@@ -12235,6 +12425,10 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 	if a.player and b.player then
 		-- 3.3판: 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없앰). 배틀그라운드에서는 늘 싸운다 (막 일어난 사람은 잠깐 빼고)
 		if not Config.BATTLE_MODE then
+			return false
+		end
+		-- 3.3.1판: 둘 다 싸움터에 있어야 (대기실에서는 싸우지 않는다)
+		if a.model:GetAttribute("InArena") ~= true or b.model:GetAttribute("InArena") ~= true then
 			return false
 		end
 		local t = now()
@@ -47397,16 +47591,14 @@ UI.new, UI.corner, UI.stroke, UI.text, UI.button = new, corner, stroke, text, bu
 local gui: ScreenGui
 local uiScale = 1
 local windowScale = 1
+-- (바깥 지역 변수가 200개 한도에 가까워 기기·터치 단추·메뉴 것은 한 표에) device: "pc" | "phone" | "tablet"
+local V: any = { device = "pc", padScale = 1, mapScale = 1, hooks = {}, padBtns = {}, trainPad = nil, menuFrame = nil, menuToggle = nil, menuOpen = true }
 -- 3.2.9판: 기기마다 다른 크기와 배치. 터치 기기는 화면 짧은 쪽이 600 미만이면 휴대폰, 아니면 태블릿 (아이패드)
-local device = "pc"
-local padScale = 1
-local mapScale = 1
-local layoutHooks: { (Vector2) -> () } = {}
 local function isTouch(): boolean
 	return UserInputService.TouchEnabled and not (UserInputService.KeyboardEnabled and UserInputService.MouseEnabled)
 end
 function UI.device(): string
-	return device
+	return V.device
 end
 
 -- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
@@ -47416,9 +47608,9 @@ local function scaleFor(kind: string): number
 	if kind == "window" then
 		return windowScale
 	elseif kind == "map" then
-		return mapScale
+		return V.mapScale
 	elseif kind == "pad" then
-		return padScale
+		return V.padScale
 	end
 	return uiScale
 end
@@ -47436,29 +47628,29 @@ local function measure()
 	if vp.X < 320 or vp.Y < 240 then
 		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
 	end
-	device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
-	if device == "phone" then
+	V.device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
+	if V.device == "phone" then
 		-- 휴대폰: 글자·막대는 작게, 누르는 단추는 손가락 크기 (약 48pt)
 		uiScale = math.clamp(vp.Y / 560, 0.6, 0.9)
-		padScale = math.clamp(vp.Y / 430, 0.8, 1.05)
+		V.padScale = math.clamp(vp.Y / 430, 0.8, 1.05)
 		windowScale = math.clamp(vp.Y / 580, 0.55, 0.9)
-	elseif device == "tablet" then
+	elseif V.device == "tablet" then
 		uiScale = math.clamp(vp.Y / 740, 0.9, 1.35)
-		padScale = uiScale
+		V.padScale = uiScale
 		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.6, 1.4)
 	else
 		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
-		padScale = uiScale
+		V.padScale = uiScale
 		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
 	end
 	-- 큰 지도 (760)도 화면 높이를 넘지 않게
-	mapScale = math.min(uiScale * 0.9, windowScale, vp.Y * 0.94 / 760)
+	V.mapScale = math.min(uiScale * 0.9, windowScale, vp.Y * 0.94 / 760)
 	for _, e in ipairs(scales) do
 		if e.s.Parent then
 			e.s.Scale = scaleFor(e.kind)
 		end
 	end
-	for _, f in ipairs(layoutHooks) do
+	for _, f in ipairs(V.hooks) do
 		f(vp)
 	end
 end
@@ -47647,14 +47839,12 @@ function UI.bars(hp: number, maxHp: number, posture: number, postureMax: number,
 end
 
 -- 기술 칸 (이름, 잠김, 대기 시간 비율)
-local padBtns: { [string]: { b: TextButton, st: UIStroke, label: string, color: Color3 } } = {}
-local trainPadBtn: TextButton? = nil
 function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number? } })
 	if not HUD.slots then
 		return
 	end
 	-- 3.2.9판: 터치 단추에도 잠김·대기를 보인다 (기술 칸은 터치 기기에서 숨긴다)
-	for key, pb in pairs(padBtns) do
+	for key, pb in pairs(V.padBtns) do
 		local i = info[key]
 		if key == "X" then
 			pb.b.Visible = i ~= nil
@@ -48814,7 +49004,8 @@ function UI.setTrial(data: any?)
 end
 
 -- 3.2.7판: 도움말을 갈래로 나눴다 (위의 단추로 고른다). 지상과 천상은 따로, 땅·사부·경지 목록은 Config에서 읽어 늘 맞게
-local HELP_TABS = {
+local HELP: any = {}
+HELP.TABS = {
 	{ id = "controls", label = "🎮 조작" },
 	{ id = "fight", label = "⚔ 싸움" },
 	{ id = "grow", label = "📈 강해지기" },
@@ -48824,7 +49015,7 @@ local HELP_TABS = {
 	{ id = "late", label = "♻ 환생·후반" },
 	{ id = "etc", label = "💰 상점·기타" },
 }
-local function helpRec(id: string): string
+function HELP.helpRec(id: string): string
 	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 	local a = f and f:GetAttribute(id)
 	local b = f and f:GetAttribute(id .. "_boss")
@@ -48838,15 +49029,15 @@ local function helpRec(id: string): string
 	return #parts > 0 and ("  <font color=\"#FFD27A\">(" .. table.concat(parts, " · ") .. ")</font>") or ""
 end
 -- 땅 목록은 권장 전투력이 낮은 땅부터 (아직 모르면 원래 차례대로 뒤에)
-local function helpRecNum(id: string): number
+function HELP.helpRecNum(id: string): number
 	local f = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 	local a = f and f:GetAttribute(id)
 	return type(a) == "number" and a or math.huge
 end
-local function helpSorted(list: { any }, key: (any) -> string): { any }
+function HELP.helpSorted(list: { any }, key: (any) -> string): { any }
 	local out = {}
 	for i, x in ipairs(list) do
-		table.insert(out, { x = x, i = i, rec = helpRecNum(key(x)) })
+		table.insert(out, { x = x, i = i, rec = HELP.helpRecNum(key(x)) })
 	end
 	table.sort(out, function(p, q)
 		if p.rec ~= q.rec then
@@ -48860,11 +49051,11 @@ local function helpSorted(list: { any }, key: (any) -> string): { any }
 	end
 	return res
 end
-local function helpBossName(id: string?): string?
+function HELP.helpBossName(id: string?): string?
 	local b = id and Config.Bosses[id]
 	return b and b.name or nil
 end
-local function helpText(tab: string): { string }
+function HELP.helpText(tab: string): { string }
 	local L: { string } = {}
 	local function add(s: string)
 		table.insert(L, s)
@@ -48959,12 +49150,12 @@ local function helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
-		for _, r in ipairs(helpSorted(Config.Regions, function(r)
+		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
 		end)) do
 			if not r.safe and (r.camps or r.boss) and r.id ~= "wilds" then
-				local bn = r.boss and helpBossName(r.boss.id)
-				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", helpRec(r.id)))
+				local bn = r.boss and HELP.helpBossName(r.boss.id)
+				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec(r.id)))
 			end
 		end
 		add("• 사부 가는 길목 (강호 들판): 창병 · 곤봉 산적 · 쌍도 자객. 아주 먼 곳엔 흑영 자객 · 철갑 무사")
@@ -48979,12 +49170,12 @@ local function helpText(tab: string): { string }
 		add("• 천정 💠: 천상의 적과 보스가 떨어뜨린다. 천정 상점에서 두루마리·영약·천정단·탈것을 산다")
 		add("")
 		add("<b>섬</b> (권장 전투력이 낮은 섬부터)")
-		for _, isl in ipairs(helpSorted(Config.SKY.islands, function(isl)
+		for _, isl in ipairs(HELP.helpSorted(Config.SKY.islands, function(isl)
 			return "sky_" .. isl.id
 		end)) do
 			if not isl.safe and (isl.camps or isl.boss) then
-				local bn = isl.boss and helpBossName(isl.boss.id)
-				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", helpRec("sky_" .. isl.id)))
+				local bn = isl.boss and HELP.helpBossName(isl.boss.id)
+				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec("sky_" .. isl.id)))
 			end
 		end
 		add("")
@@ -49025,7 +49216,8 @@ local function helpText(tab: string): { string }
 		add("<b>⚔ 배틀그라운드</b> (사람끼리는 여기서만 싸운다)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
-		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 누구도 한 방에 쓰러지지 않는다. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap))
+		add("• 처음엔 대기실 (싸움이 없다): 권법을 고르고, 수련 목인으로 시험하고, 다음 맵에 투표하고, '⚔ 싸움터로 들어가기'. 메뉴 → 🏯 대기실로 나올 수 있다 (싸운 직후는 안 된다)")
+		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 쓰러지기까지 적어도 %d초. 들어가거나 일어나면 %d초 보호. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap, math.floor(Config.BATTLE.hp / Config.BATTLE.secCap), Config.BATTLE.shield))
 		local mapNames = {}
 		for _, m in ipairs(Config.BATTLE.maps) do
 			table.insert(mapNames, m.name)
@@ -49067,11 +49259,11 @@ local function buildHelp()
 		for tid, b in pairs(tabBtns) do
 			b.BackgroundColor3 = tid == id and Color3.fromRGB(170, 120, 40) or C.panel2
 		end
-		body.Text = table.concat(helpText(id), "\n")
+		body.Text = table.concat(HELP.helpText(id), "\n")
 		again.Visible = id == "controls"
 		scroll.CanvasPosition = Vector2.zero
 	end
-	for i, t in ipairs(HELP_TABS) do
+	for i, t in ipairs(HELP.TABS) do
 		tabBtns[t.id] = button({ Text = t.label, TextSize = 15, LayoutOrder = i, Parent = bar }, function()
 			show(t.id)
 		end)
@@ -49079,7 +49271,7 @@ local function buildHelp()
 	show("controls")
 	-- 열 때마다 권장 전투력을 새로 읽도록, 보이게 될 때 지금 갈래를 다시 그린다
 	local cur = "controls"
-	for _, t in ipairs(HELP_TABS) do
+	for _, t in ipairs(HELP.TABS) do
 		tabBtns[t.id].Activated:Connect(function()
 			cur = t.id
 		end)
@@ -49353,8 +49545,8 @@ function UI.trainStop()
 	end
 	trainPress = nil
 	trainFrame.Visible = false
-	if trainPadBtn then
-		trainPadBtn.Visible = false
+	if V.trainPad then
+		V.trainPad.Visible = false
 	end
 	for _, c in ipairs(trainArea:GetChildren()) do
 		c:Destroy()
@@ -49386,14 +49578,14 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	UI.trainStop()
 	local info = Config.Training[kind]
 	trainFrame.Visible = true
-	if trainPadBtn then
-		trainPadBtn.Visible = true
+	if V.trainPad then
+		V.trainPad.Visible = true
 	end
 	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
 	local guide = TRAIN_GUIDE[kind] or info.desc
-	if device ~= "pc" then
+	if V.device ~= "pc" then
 		-- 터치 기기: Space 대신 가운데 '지금!' 단추
 		guide = string.gsub(guide, "Space", "지금! 단추")
 	end
@@ -49515,9 +49707,6 @@ end
 -- 상태 받기
 ------------------------------------------------------------------------
 local topInfo: TextLabel
-local menuFrame: Frame? = nil
-local menuToggle: TextButton? = nil
-local menuOpen = true
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
@@ -49525,7 +49714,7 @@ function UI.setState(s: any)
 		local st = Config.STYLE_BY_ID[s.style or ""]
 		topInfo.Text = string.format("⚔ 배틀그라운드 · ❤ %d · %s", Config.BATTLE.hp, st and (st.icon .. " " .. st.name) or "")
 		topInfo.TextColor3 = Color3.fromRGB(255, 200, 120)
-	elseif device == "phone" then
+	elseif V.device == "phone" then
 		-- 휴대폰: 경지·전투력·은자만 (능력치는 능력치 창에)
 		topInfo.Text = string.format("[%s] ⚔ %s  💰 %s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins))
 	else
@@ -49739,7 +49928,7 @@ local function placeMap()
 		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
 	end
 	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
-	mapFrame.Visible = (mapBig or device ~= "phone") and not Config.BATTLE_MODE
+	mapFrame.Visible = (mapBig or V.device ~= "phone") and not Config.BATTLE_MODE
 	for _, list in ipairs({ mapTexts, skyTexts }) do
 		for _, t in ipairs(list) do
 			t.label.TextSize = mapBig and t.big or t.small
@@ -50609,7 +50798,7 @@ function UI.mobile(actions: { [string]: any })
 			b.MouseLeave:Connect(up)
 		end
 		if key then
-			padBtns[key] = { b = b, st = st, label = label, color = color }
+			V.padBtns[key] = { b = b, st = st, label = label, color = color }
 		end
 		return b
 	end
@@ -50634,26 +50823,44 @@ function UI.mobile(actions: { [string]: any })
 		round(nil, "🐎", 226, -86, 44, dark, actions.mount)
 	end
 	-- 수련: 할 때만 공격 단추 자리에
-	trainPadBtn = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
-	;(trainPadBtn :: TextButton).ZIndex = 3
-	;(trainPadBtn :: TextButton).BackgroundTransparency = 0
-	;(trainPadBtn :: TextButton).Visible = false
+	V.trainPad = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
+	;(V.trainPad :: TextButton).ZIndex = 3
+	;(V.trainPad :: TextButton).BackgroundTransparency = 0
+	;(V.trainPad :: TextButton).Visible = false
 end
 
 ------------------------------------------------------------------------
 -- 3.3판 배틀그라운드: 위 가운데 (맵 이름·남은 시간), 오른쪽 위 순위 (이번 판 쓰러뜨린 수)
 ------------------------------------------------------------------------
-local battleTop: Frame? = nil
-local battleMap: TextLabel? = nil
-local battleTime: TextLabel? = nil
-local battleBoard: Frame? = nil
-local battleRows: { TextLabel } = {}
+-- (화면 파일의 바깥 지역 변수가 200개 한도에 닿아, 배틀 화면 것은 한 표에 모은다)
+local BH: any = { rows = {}, votes = {}, myVote = 0 }
+local function buildLobbyPanel()
+	local panel = new("Frame", { Name = "LobbyPanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -210), Size = UDim2.new(0, 470, 0, 236), BackgroundColor3 = C.bg, BackgroundTransparency = 0.12, Parent = gui }, { corner(14), stroke(C.line, 2) })
+	scaled(panel)
+	text({ Position = UDim2.new(0, 16, 0, 10), Size = UDim2.new(1, -32, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏯 대기실 · 여기서는 싸우지 않는다", Parent = panel })
+	BH.info = text({ Position = UDim2.new(0, 16, 0, 40), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.dim, Text = "", Parent = panel })
+	button({ Position = UDim2.new(0, 16, 0, 66), Size = UDim2.new(1, -32, 0, 46), Text = "⚔ 싸움터로 들어가기", TextSize = 21, BackgroundColor3 = Color3.fromRGB(170, 50, 40), Parent = panel }, function()
+		Request:FireServer("battleEnter")
+	end)
+	text({ Position = UDim2.new(0, 16, 0, 120), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.text, Text = "🗳 다음 맵 투표", Parent = panel })
+	local grid = new("Frame", { Position = UDim2.new(0, 16, 0, 142), Size = UDim2.new(1, -32, 0, 66), BackgroundTransparency = 1, Parent = panel }, {
+		new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.new(0, 8, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	for i, m in ipairs(Config.BATTLE.maps) do
+		BH.votes[i] = button({ Text = m.name, TextSize = 15, LayoutOrder = i, Parent = grid }, function()
+			BH.myVote = i
+			Request:FireServer("battleVote", i)
+		end)
+	end
+	text({ Position = UDim2.new(0, 16, 1, -26), Size = UDim2.new(1, -32, 0, 20), TextSize = 13, TextColor3 = C.dim, Text = "🥋 메뉴 → 권법에서 쓸 권법을 고르자 · 🪵 수련 목인으로 기술을 시험할 수 있다", Parent = panel })
+	BH.lobby = panel
+end
 local function buildBattleHud()
 	local top = new("Frame", { Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 360, 0, 62), BackgroundColor3 = C.bg, BackgroundTransparency = 0.2, Parent = gui }, { corner(12), stroke(Color3.fromRGB(200, 80, 60), 1.5) })
 	scaled(top)
-	battleMap = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
-	battleTime = text({ Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(1, -24, 0, 20), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = top })
-	battleTop = top
+	BH.map = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
+	BH.time = text({ Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(1, -24, 0, 20), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = top })
+	BH.top = top
 	local board = new("Frame", { Name = "BattleBoard", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 60), Size = UDim2.new(0, 230, 0, 40), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = gui }, {
 		corner(10), stroke(C.line, 1),
 		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }),
@@ -50662,14 +50869,15 @@ local function buildBattleHud()
 	scaled(board)
 	text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏆 이번 판   처치 / 쓰러짐", LayoutOrder = 0, Parent = board })
 	for i = 1, 6 do
-		table.insert(battleRows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
+		table.insert(BH.rows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
 	end
-	battleBoard = board
+	BH.board = board
+	buildLobbyPanel()
 end
 
 function UI.battleState(data: any, myId: number)
-	local bm, bt = battleMap, battleTime
-	if not battleTop or not bm or not bt then
+	local bm, bt = BH.map, BH.time
+	if not BH.top or not bm or not bt then
 		return
 	end
 	bm.Text = "⚔ " .. tostring(data.map or "")
@@ -50685,7 +50893,7 @@ function UI.battleState(data: any, myId: number)
 			mineRank = i
 		end
 	end
-	for i, row in ipairs(battleRows) do
+	for i, row in ipairs(BH.rows) do
 		local e = list[i]
 		-- 다섯째까지, 여섯째 칸은 내 자리 (다섯 안에 없을 때)
 		if i == 6 and mine and mineRank > 5 then
@@ -50700,9 +50908,24 @@ function UI.battleState(data: any, myId: number)
 			row.TextColor3 = e.id == myId and Color3.fromRGB(255, 220, 120) or C.text
 		end
 	end
+	-- 대기실 패널: 내가 싸움터 밖에 있을 때만
+	local ch = player.Character
+	local here = ch and ch:GetAttribute("InArena") == true
+	if BH.lobby then
+		BH.lobby.Visible = not here
+	end
+	if BH.info then
+		BH.info.Text = string.format("지금 싸움터: %s · ⏳ %d:%02d · 싸움터 %d명 / 모두 %d명", tostring(data.map or ""), left // 60, left % 60, data.arena or 0, data.total or 0)
+	end
+	local vc = data.votes or {}
+	for i, b in ipairs(BH.votes) do
+		local m = Config.BATTLE.maps[i]
+		b.Text = string.format("%s  (%d)%s", m.name, vc[i] or 0, data.next == m.name and " ▶" or "")
+		b.BackgroundColor3 = BH.myVote == i and Color3.fromRGB(150, 110, 40) or C.panel2
+	end
 	if mine and topInfo then
 		local streak = (mine.streak or 0) >= 2 and string.format(" · 🔥%d연속", mine.streak) or ""
-		if device == "phone" then
+		if V.device == "phone" then
 			topInfo.Text = string.format("⚔ %d / %d%s · 모두 %d", mine.k, mine.d, streak, mine.total or 0)
 		else
 			topInfo.Text = string.format("⚔ 배틀그라운드 · 이번 판 %d / %d%s · 모두 %d명 쓰러뜨림", mine.k, mine.d, streak, mine.total or 0)
@@ -50752,29 +50975,31 @@ function UI.init(req: RemoteEvent)
 	topInfo = text({ Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -44, 0, 34), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
 	-- 3.2.9판: 메뉴는 ☰ 단추로 접고 편다 (PC는 처음부터 펴 있고, 터치 기기는 접혀 있다가 하나를 고르면 다시 접힌다)
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(0, 144, 0, 424), BackgroundTransparency = 1, ZIndex = 5, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
-	menuFrame = menu
-	menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()
-		menuOpen = not menuOpen
-		menu.Visible = menuOpen
+	V.menuFrame = menu
+	V.menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()
+		V.menuOpen = not V.menuOpen
+		menu.Visible = V.menuOpen
 	end)
-	new("UIStroke", { Color = C.line, Thickness = 1, Parent = menuToggle })
+	new("UIStroke", { Color = C.line, Thickness = 1, Parent = V.menuToggle })
 	-- 세 줄 (글꼴에 없는 기기도 있어 직접 그린다)
 	for i = 0, 2 do
-		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, (i - 1) * 7), Size = UDim2.new(0, 18, 0, 3), BackgroundColor3 = C.gold, BorderSizePixel = 0, Parent = menuToggle }, { corner(2) })
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, (i - 1) * 7), Size = UDim2.new(0, 18, 0, 3), BackgroundColor3 = C.gold, BorderSizePixel = 0, Parent = V.menuToggle }, { corner(2) })
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
-	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
+	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
 		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
-			if device ~= "pc" then
-				menuOpen = false
+			if V.device ~= "pc" then
+				V.menuOpen = false
 				menu.Visible = false
 			end
 			if item[1] == "battle" then
 				Request:FireServer("battleGo")
 			elseif item[1] == "back" then
 				Request:FireServer("battleBack")
+			elseif item[1] == "lobby" then
+				Request:FireServer("battleLobby")
 			elseif item[1] == "tower" then
 				Request:FireServer("towerTp")
 			elseif item[1] == "map" then
@@ -50884,15 +51109,15 @@ function UI.init(req: RemoteEvent)
 	-- 3.2.9판: 기기마다 배치 (화면 크기가 바뀔 때마다 다시)
 	local lastDevice = ""
 	local function layoutForDevice(vp: Vector2)
-		local touch = device ~= "pc"
-		local phone = device == "phone"
+		local touch = V.device ~= "pc"
+		local phone = V.device == "phone"
 		-- 아래 막대: 터치 기기는 기술 칸을 숨기고 (터치 단추가 대신 보인다) 좁게
 		if HUD.root then
 			HUD.row.Visible = not touch
 			HUD.root.Size = touch and UDim2.new(0, 440, 0, 124) or UDim2.new(0, 660, 0, 176)
 			if touch then
 				-- 터치 단추 (오른쪽 아래)와 겹치지 않게: 막대의 오른쪽 끝이 단추 고리 왼쪽에서 멈춘다
-				local padLeft = vp.X - 16 - 250 * padScale - 10
+				local padLeft = vp.X - 16 - 250 * V.padScale - 10
 				local half = 440 * uiScale / 2
 				local cx = math.max(half + 8, math.min(vp.X / 2, padLeft - half))
 				HUD.root.Position = UDim2.new(0, cx, 1, -8)
@@ -50901,11 +51126,11 @@ function UI.init(req: RemoteEvent)
 			end
 		end
 		-- 메뉴: 기기가 바뀔 때만 접힘을 다시 정한다
-		if device ~= lastDevice then
-			lastDevice = device
-			menuOpen = not touch
-			if menuFrame then
-				menuFrame.Visible = menuOpen
+		if V.device ~= lastDevice then
+			lastDevice = V.device
+			V.menuOpen = not touch
+			if V.menuFrame then
+				V.menuFrame.Visible = V.menuOpen
 			end
 		end
 		-- 이야기 칸: 메뉴가 접히는 터치 기기는 윗줄 바로 아래
@@ -50917,9 +51142,14 @@ function UI.init(req: RemoteEvent)
 		if storyChip then
 			storyChip.Position = touch and UDim2.new(0, 44, 0, 40) or UDim2.new(0, 154, 0, 40)
 		end
+		-- 대기실 패널: 휴대폰은 가운데 왼쪽 (터치 단추를 가리지 않게)
+		if BH.lobby then
+			BH.lobby.AnchorPoint = phone and Vector2.new(0.5, 0.5) or Vector2.new(0.5, 1)
+			BH.lobby.Position = phone and UDim2.new(0.5, -90, 0.5, 6) or UDim2.new(0.5, 0, 1, -210)
+		end
 		-- 배틀그라운드 순위: 휴대폰은 맨 위 오른쪽 (터치 단추 고리 위)
-		if battleBoard then
-			battleBoard.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -14, 0, 60)
+		if BH.board then
+			BH.board.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -14, 0, 60)
 		end
 		-- 보스 막대: 휴대폰은 맨 위에 좁게
 		bossFrame.Size = phone and UDim2.new(0, 600, 0, 92) or UDim2.new(0, 760, 0, 92)
@@ -50937,7 +51167,7 @@ function UI.init(req: RemoteEvent)
 			placeMap()
 		end
 	end
-	table.insert(layoutHooks, layoutForDevice)
+	table.insert(V.hooks, layoutForDevice)
 	measure()
 end
 
