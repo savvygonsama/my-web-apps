@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.2.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.2.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -46485,6 +46485,17 @@ UI.new, UI.corner, UI.stroke, UI.text, UI.button = new, corner, stroke, text, bu
 local gui: ScreenGui
 local uiScale = 1
 local windowScale = 1
+-- 3.2.9판: 기기마다 다른 크기와 배치. 터치 기기는 화면 짧은 쪽이 600 미만이면 휴대폰, 아니면 태블릿 (아이패드)
+local device = "pc"
+local padScale = 1
+local mapScale = 1
+local layoutHooks: { (Vector2) -> () } = {}
+local function isTouch(): boolean
+	return UserInputService.TouchEnabled and not (UserInputService.KeyboardEnabled and UserInputService.MouseEnabled)
+end
+function UI.device(): string
+	return device
+end
 
 -- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
 -- (그때 재면 창이 안 보일 만큼 작아진다) 크기가 바뀔 때마다 다시 재고, 너무 작으면 무시한다
@@ -46493,7 +46504,9 @@ local function scaleFor(kind: string): number
 	if kind == "window" then
 		return windowScale
 	elseif kind == "map" then
-		return math.min(uiScale * 0.9, windowScale)
+		return mapScale
+	elseif kind == "pad" then
+		return padScale
 	end
 	return uiScale
 end
@@ -46511,12 +46524,30 @@ local function measure()
 	if vp.X < 320 or vp.Y < 240 then
 		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
 	end
-	uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
-	windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
+	device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
+	if device == "phone" then
+		-- 휴대폰: 글자·막대는 작게, 누르는 단추는 손가락 크기 (약 48pt)
+		uiScale = math.clamp(vp.Y / 560, 0.6, 0.9)
+		padScale = math.clamp(vp.Y / 430, 0.8, 1.05)
+		windowScale = math.clamp(vp.Y / 580, 0.55, 0.9)
+	elseif device == "tablet" then
+		uiScale = math.clamp(vp.Y / 740, 0.9, 1.35)
+		padScale = uiScale
+		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.6, 1.4)
+	else
+		uiScale = math.clamp(vp.Y / 720, 0.75, 1.7)
+		padScale = uiScale
+		windowScale = math.clamp(math.min(uiScale, vp.Y * 0.9 / 600, vp.X * 0.95 / 900), 0.5, 1.7)
+	end
+	-- 큰 지도 (760)도 화면 높이를 넘지 않게
+	mapScale = math.min(uiScale * 0.9, windowScale, vp.Y * 0.94 / 760)
 	for _, e in ipairs(scales) do
 		if e.s.Parent then
 			e.s.Scale = scaleFor(e.kind)
 		end
+	end
+	for _, f in ipairs(layoutHooks) do
+		f(vp)
 	end
 end
 
@@ -46656,6 +46687,7 @@ end
 local function buildHud()
 	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
 	scaled(hud)
+	HUD.root = hud
 	-- 막대 뒤의 어두운 판과 금빛 테
 	local plate = new("Frame", { Position = UDim2.new(0, -14, 0, 48), Size = UDim2.new(1, 28, 0, 76), BackgroundColor3 = Color3.fromRGB(14, 10, 9), BackgroundTransparency = 0.35, ZIndex = 0, Parent = hud }, { corner(12), stroke(Color3.fromRGB(150, 115, 70), 1) })
 	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(0.2, 0.6), Parent = plate })
@@ -46670,6 +46702,7 @@ local function buildHud()
 	local row = new("Frame", { Position = UDim2.new(0, 0, 0, 124), Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, Parent = hud }, {
 		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) }),
 	})
+	HUD.row = row
 	HUD.slots = {}
 	for _, s in ipairs({ { "M1", "클릭" }, { "H", "Z 강타" }, { "E", "E" }, { "R", "R" }, { "G", "G 오의" }, { "X", "X 초 오의" }, { "Q", "Q 대시" }, { "F", "F 막기" }, { "P", "H 약" } }) do
 		local cell = new("Frame", { Size = UDim2.new(0, 76, 1, 0), BackgroundColor3 = C.panel, BackgroundTransparency = 0.1, Parent = row }, { corner(8) })
@@ -46702,9 +46735,27 @@ function UI.bars(hp: number, maxHp: number, posture: number, postureMax: number,
 end
 
 -- 기술 칸 (이름, 잠김, 대기 시간 비율)
+local padBtns: { [string]: { b: TextButton, st: UIStroke, label: string, color: Color3 } } = {}
+local trainPadBtn: TextButton? = nil
 function UI.slots(info: { [string]: { name: string, locked: boolean?, cd: number? } })
 	if not HUD.slots then
 		return
+	end
+	-- 3.2.9판: 터치 단추에도 잠김·대기를 보인다 (기술 칸은 터치 기기에서 숨긴다)
+	for key, pb in pairs(padBtns) do
+		local i = info[key]
+		if key == "X" then
+			pb.b.Visible = i ~= nil
+		end
+		if i then
+			local cdr = math.clamp(i.cd or 0, 0, 1)
+			local ready = not i.locked and cdr <= 0
+			pb.b.Text = i.locked and "🔒" or pb.label
+			pb.b.BackgroundTransparency = ready and 0.15 or 0.62
+			pb.b.TextTransparency = ready and 0 or 0.35
+			pb.st.Color = (ready and HUD.styleColor) or Color3.fromRGB(255, 255, 255)
+			pb.st.Transparency = ready and 0 or 0.6
+		end
 	end
 	for key, s in pairs(HUD.slots) do
 		local i = info[key]
@@ -47913,9 +47964,10 @@ local function helpText(tab: string): { string }
 		add("• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다")
 		add("• Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기 · Shift: 달리기")
 		add("• T (가까이): 사부·수련·상점·문 · H: 금창약 · Tab: 능력치 · M: 지도")
-		add("• 휴대폰: 화면 오른쪽 아래의 단추가 같은 일을 한다")
+		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
+		add("  단추가 흐리면 아직 쓸 수 없다 (대기 중이거나 🔒 잠김). 수련할 때는 가운데에 지금! 단추가 뜬다")
 		add("")
-		add("• 오른쪽 위 메뉴에서 권법·지도·능력치·업적·수련 안내·심법·만물상을 연다")
+		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·수련 안내·심법·만물상·도움말")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
 	elseif tab == "fight" then
 		add("<b>⚔ 연타는 박자</b>")
@@ -48380,6 +48432,9 @@ function UI.trainStop()
 	end
 	trainPress = nil
 	trainFrame.Visible = false
+	if trainPadBtn then
+		trainPadBtn.Visible = false
+	end
 	for _, c in ipairs(trainArea:GetChildren()) do
 		c:Destroy()
 	end
@@ -48410,10 +48465,18 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 	UI.trainStop()
 	local info = Config.Training[kind]
 	trainFrame.Visible = true
+	if trainPadBtn then
+		trainPadBtn.Visible = true
+	end
 	trainTitle.Text = (hard and "🔥 강화 수련 · " or info.icon .. " ") .. info.name
 	trainTitle.TextColor3 = hard and Color3.fromRGB(255, 120, 70) or C.gold
 	trainHint.Text = info.desc .. (UserInputService.TouchEnabled and "  (화면 버튼)" or "  (Space 또는 클릭, 움직이면 끝)")
-	trainGuide.Text = "📘 " .. (TRAIN_GUIDE[kind] or info.desc)
+	local guide = TRAIN_GUIDE[kind] or info.desc
+	if device ~= "pc" then
+		-- 터치 기기: Space 대신 가운데 '지금!' 단추
+		guide = string.gsub(guide, "Space", "지금! 단추")
+	end
+	trainGuide.Text = "📘 " .. guide
 	-- 상급 수련은 앞의 수련과 같은 판정 화면을 쓴다
 	kind = info.ui or kind
 	if kind == "bamboo" then
@@ -48531,10 +48594,18 @@ end
 -- 상태 받기
 ------------------------------------------------------------------------
 local topInfo: TextLabel
+local menuFrame: Frame? = nil
+local menuToggle: TextButton? = nil
+local menuOpen = true
 function UI.setState(s: any)
 	state = s
 	local realm = Config.Realms[s.realm]
-	topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	if device == "phone" then
+		-- 휴대폰: 경지·전투력·은자만 (능력치는 능력치 창에)
+		topInfo.Text = string.format("[%s] ⚔ %s  💰 %s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins))
+	else
+		topInfo.Text = string.format("[%s] ⚔ 전투력 %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins), s.potions, Config.formatNumber(s.stats.str), Config.formatNumber(s.stats.vit), Config.formatNumber(s.stats.agi), Config.formatNumber(s.stats.chi))
+	end
 	if s.gateNext then
 		topInfo.Text ..= "   ⛩ 관문 열림"
 	end
@@ -48740,8 +48811,8 @@ local function placeMap()
 		mapFrame.Position = UDim2.new(1, -16, 0, 160)
 		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
 	end
-	-- 휴대폰은 버튼과 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다
-	mapFrame.Visible = mapBig or not UserInputService.TouchEnabled
+	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
+	mapFrame.Visible = mapBig or device ~= "phone"
 	for _, list in ipairs({ mapTexts, skyTexts }) do
 		for _, t in ipairs(list) do
 			t.label.TextSize = mapBig and t.big or t.small
@@ -49581,33 +49652,50 @@ end
 ------------------------------------------------------------------------
 -- 휴대폰 버튼
 ------------------------------------------------------------------------
+-- 3.2.9판: 터치 단추를 큰 공격 단추 둘레의 두 고리로 정리했다 (안쪽: 강타·대시·막기, 바깥: E·R·G·X).
+-- 약·탈것은 고리 위 오른쪽 끝에 작게, 수련 단추는 수련할 때만 공격 단추 자리에 크게
 function UI.mobile(actions: { [string]: any })
 	if not UserInputService.TouchEnabled then
 		return
 	end
-	local pad = new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -190), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
-	scaled(pad)
-	local function round(label: string, pos: UDim2, size: number, color: Color3, down: () -> (), up: (() -> ())?)
-		local b = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = pos, Size = UDim2.new(0, size, 0, size), BackgroundColor3 = color, BackgroundTransparency = 0.25, Text = label, TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = C.text, Parent = pad }, { corner(999), stroke(Color3.new(1, 1, 1), 2) })
+	local pad = new("Frame", { Name = "TouchPad", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -12), Size = UDim2.new(0, 250, 0, 250), BackgroundTransparency = 1, Parent = gui })
+	scaled(pad, "pad")
+	local function round(key: string?, label: string, cx: number, cy: number, size: number, color: Color3, down: () -> (), up: (() -> ())?, textSize: number?): TextButton
+		local st = stroke(Color3.new(1, 1, 1), 2)
+		st.Transparency = 0.25
+		local b = new("TextButton", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, cx, 0, cy), Size = UDim2.new(0, size, 0, size), BackgroundColor3 = color, BackgroundTransparency = 0.15, AutoButtonColor = true, Text = label, TextSize = textSize or math.floor(size * 0.36), Font = Enum.Font.GothamBlack, TextColor3 = C.text, TextStrokeTransparency = 0.5, Parent = pad }, { corner(999), st })
 		b.MouseButton1Down:Connect(down)
 		if up then
 			b.MouseButton1Up:Connect(up)
 			b.MouseLeave:Connect(up)
 		end
+		if key then
+			padBtns[key] = { b = b, st = st, label = label, color = color }
+		end
+		return b
 	end
-	round("👊", UDim2.fromScale(0.72, 0.72), 96, C.red, actions.attack)
-	round("💥", UDim2.fromScale(0.36, 0.86), 62, C.panel2, actions.heavyDown, actions.heavyUp)
-	round("🛡", UDim2.fromScale(0.95, 0.38), 62, C.panel2, actions.guardDown, actions.guardUp)
-	round("💨", UDim2.fromScale(0.42, 0.52), 58, C.panel2, actions.dash)
-	round("E", UDim2.fromScale(0.12, 0.62), 50, C.panel2, actions.E)
-	round("R", UDim2.fromScale(0.62, 0.28), 50, C.panel2, actions.R)
-	round("G", UDim2.fromScale(0.22, 0.3), 50, C.gold, actions.G)
+	local dark = Color3.fromRGB(42, 32, 28)
+	round(nil, "👊", 182, 182, 96, Color3.fromRGB(190, 55, 45), actions.attack, nil, 38)
+	-- 안쪽 고리
+	round(nil, "💥", 90, 182, 60, dark, actions.heavyDown, actions.heavyUp)
+	round(nil, "💨", 117, 117, 60, dark, actions.dash)
+	round(nil, "🛡", 182, 90, 60, dark, actions.guardDown, actions.guardUp)
+	-- 바깥 고리: 기술
+	round("E", "E", 24, 154, 56, Color3.fromRGB(70, 52, 40), actions.E)
+	round("R", "R", 51, 90, 56, Color3.fromRGB(70, 52, 40), actions.R)
+	round("G", "G", 102, 43, 56, Color3.fromRGB(170, 125, 45), actions.G)
 	if actions.X then
-		round("X", UDim2.fromScale(0.36, 0.14), 46, Color3.fromRGB(255, 140, 190), actions.X)
+		local x = round("X", "X", 168, 22, 52, Color3.fromRGB(190, 80, 140), actions.X)
+		x.Visible = false
 	end
-	round("🧪", UDim2.fromScale(0.95, 0.05), 44, C.green, actions.potion)
-	round("●", UDim2.fromScale(0.05, 0.95), 44, C.chi, actions.train)
-	round("🐎", UDim2.fromScale(0.05, 0.62), 44, C.panel2, actions.mount)
+	-- 작은 단추 (오른쪽 끝, 고리 위)
+	round(nil, "🧪", 226, -34, 44, Color3.fromRGB(46, 120, 80), actions.potion)
+	round(nil, "🐎", 226, -86, 44, dark, actions.mount)
+	-- 수련: 할 때만 공격 단추 자리에
+	trainPadBtn = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
+	;(trainPadBtn :: TextButton).ZIndex = 3
+	;(trainPadBtn :: TextButton).BackgroundTransparency = 0
+	;(trainPadBtn :: TextButton).Visible = false
 end
 
 ------------------------------------------------------------------------
@@ -49649,10 +49737,25 @@ function UI.init(req: RemoteEvent)
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 500), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
-	topInfo = text({ Size = UDim2.new(1, 0, 0, 28), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
-	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 34), Size = UDim2.new(0, 150, 0, 424), BackgroundTransparency = 1, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	topInfo = text({ Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -44, 0, 34), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
+	-- 3.2.9판: 메뉴는 ☰ 단추로 접고 편다 (PC는 처음부터 펴 있고, 터치 기기는 접혀 있다가 하나를 고르면 다시 접힌다)
+	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(0, 144, 0, 424), BackgroundTransparency = 1, ZIndex = 5, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
+	menuFrame = menu
+	menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()
+		menuOpen = not menuOpen
+		menu.Visible = menuOpen
+	end)
+	new("UIStroke", { Color = C.line, Thickness = 1, Parent = menuToggle })
+	-- 세 줄 (글꼴에 없는 기기도 있어 직접 그린다)
+	for i = 0, 2 do
+		new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, (i - 1) * 7), Size = UDim2.new(0, 18, 0, 3), BackgroundColor3 = C.gold, BorderSizePixel = 0, Parent = menuToggle }, { corner(2) })
+	end
 	for _, item in ipairs({ { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "test", "🧪 테스트" } }) do
-		local b = button({ Size = UDim2.new(1, 0, 0, 34), Text = item[2], TextSize = 17, Parent = menu }, function()
+		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
+			if device ~= "pc" then
+				menuOpen = false
+				menu.Visible = false
+			end
 			if item[1] == "pvp" then
 				Request:FireServer("pvpToggle")
 			elseif item[1] == "tower" then
@@ -49757,6 +49860,60 @@ function UI.init(req: RemoteEvent)
 	-- 쓰러짐
 	koFrame = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(30, 0, 0), BackgroundTransparency = 0.55, Visible = false, ZIndex = 35, Parent = gui })
 	koText = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 0, 0, 60), TextSize = 30, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, ZIndex = 36, Parent = koFrame })
+	-- 3.2.9판: 기기마다 배치 (화면 크기가 바뀔 때마다 다시)
+	local lastDevice = ""
+	local function layoutForDevice(vp: Vector2)
+		local touch = device ~= "pc"
+		local phone = device == "phone"
+		-- 아래 막대: 터치 기기는 기술 칸을 숨기고 (터치 단추가 대신 보인다) 좁게
+		if HUD.root then
+			HUD.row.Visible = not touch
+			HUD.root.Size = touch and UDim2.new(0, 440, 0, 124) or UDim2.new(0, 660, 0, 176)
+			if touch then
+				-- 터치 단추 (오른쪽 아래)와 겹치지 않게: 막대의 오른쪽 끝이 단추 고리 왼쪽에서 멈춘다
+				local padLeft = vp.X - 16 - 250 * padScale - 10
+				local half = 440 * uiScale / 2
+				local cx = math.max(half + 8, math.min(vp.X / 2, padLeft - half))
+				HUD.root.Position = UDim2.new(0, cx, 1, -8)
+			else
+				HUD.root.Position = UDim2.new(0.5, 0, 1, -14)
+			end
+		end
+		-- 메뉴: 기기가 바뀔 때만 접힘을 다시 정한다
+		if device ~= lastDevice then
+			lastDevice = device
+			menuOpen = not touch
+			if menuFrame then
+				menuFrame.Visible = menuOpen
+			end
+		end
+		-- 이야기 칸: 메뉴가 접히는 터치 기기는 윗줄 바로 아래
+		if storyBox then
+			-- PC는 메뉴 오른쪽 (아래 막대와 겹치지 않게)
+			storyBox.Position = touch and UDim2.new(0, 0, 0, 40) or UDim2.new(0, 154, 0, 40)
+			storyBox.Size = phone and UDim2.new(0, 340, 0, 74) or UDim2.new(0, 400, 0, 74)
+		end
+		if storyChip then
+			storyChip.Position = touch and UDim2.new(0, 44, 0, 40) or UDim2.new(0, 154, 0, 40)
+		end
+		-- 보스 막대: 휴대폰은 맨 위에 좁게
+		bossFrame.Size = phone and UDim2.new(0, 600, 0, 92) or UDim2.new(0, 760, 0, 92)
+		bossFrame.Position = phone and UDim2.new(0.5, 0, 0, 4) or UDim2.new(0.5, 0, 0, 34)
+		-- 창: 휴대폰은 화면을 거의 다 쓴다 (글자가 너무 작아지지 않게)
+		if phone then
+			window.Size = UDim2.new(0, math.min(1000, vp.X / windowScale - 24), 0, vp.Y / windowScale - 14)
+		else
+			window.Size = UDim2.new(0, 900, 0, 600)
+		end
+		-- 대화 창은 터치 단추를 덜 가리게 조금 왼쪽·아래로
+		dialogFrame.Size = phone and UDim2.new(0, 640, 0, 180) or UDim2.new(0, 820, 0, 200)
+		dialogFrame.Position = phone and UDim2.new(0.5, -110, 1, -100) or (touch and UDim2.new(0.5, -80, 1, -150) or UDim2.new(0.5, 0, 1, -150))
+		if mapFrame then
+			placeMap()
+		end
+	end
+	table.insert(layoutHooks, layoutForDevice)
+	measure()
 end
 
 function UI.gui(): ScreenGui
