@@ -10,6 +10,7 @@
 |---|---|---|
 | 🚂 **자정 열차** | 선택으로 이야기를 만들어가는 인터랙티브 소설. 장면 65개, 결말 11개(숨은 결말 1개) | [`midnight-train/`](midnight-train/) |
 | 🔰 **스틸링고 입문** | 일본어를 하나도 모르는 사람이 히라가나부터. 하루 10분·25회(히라가나 → 점·작은 글자·긴 소리 → 가타카나 → 인사 → Lite 문장 졸업). 회차마다 원리 카드·글자 유래·헷갈리는 글자 비교·단어장. 스틸 그레이드 가챠 캐릭터가 학습 도우미, 음성 VOICEVOX:No.7. 원고는 `tools/content.py` | [`steel-lingo/nyumon/`](steel-lingo/nyumon/) |
+| 🧱 **한문장** | 하루 딱 한 문장. 「ご飯を食べます」처럼 짧은 문장에 블록을 하나씩 붙여 늘려 가며, 단계마다 3번씩 따라 읽는 일본어 쉐도잉(ます체). 단계마다 🔍 단어·한자·문법·틀리기 쉬운 것 해설, 조립 퀴즈, 문장 보관함. 스틸 그레이드 가챠 캐릭터가 도우미. 입문 졸업 다음 단계. 원고는 `js/days.js`(현재 3일치) | [`steel-lingo/hanmunjang/`](steel-lingo/hanmunjang/) |
 | 🏭 **스틸링고 Lite** | 철강·자동차 업계 일본어 입문. 생활 소재로 가볍게 시작 | [`steel-lingo/lite/`](steel-lingo/lite/) |
 | 🏭 **스틸링고 Pro** | 철강·자동차 업계 실무 일본어 훈련. 용어·예문·기사 독해·상담 회화·퀴즈 | [`steel-lingo/pro/`](steel-lingo/pro/) |
 | ✈️ **스틸링고 出張編** | 일본 출장 서바이벌 분기형 스토리. 고객사 방문·회식·상담에서 경어 수위를 골라 익힘. 문장마다 🔍 뜯어보기 | [`steel-lingo/shucchou/`](steel-lingo/shucchou/) |
@@ -46,6 +47,7 @@
 | 앱 | 웹 주소 |
 |---|---|
 | 스틸링고 입문 | https://savvygonsama.github.io/my-web-apps/steel-lingo/nyumon/ |
+| 한문장 | https://savvygonsama.github.io/my-web-apps/steel-lingo/hanmunjang/ |
 | 스틸링고 Lite | https://savvygonsama.github.io/my-web-apps/steel-lingo/lite/ |
 | 스틸링고 Pro | https://savvygonsama.github.io/my-web-apps/steel-lingo/pro/ |
 | 스틸링고 出張編 | https://savvygonsama.github.io/my-web-apps/steel-lingo/shucchou/ |
