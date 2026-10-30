@@ -167,10 +167,10 @@
       <path d="M37.5 34.5 q4 3.6 8 0" class="lg-smile"/><ellipse cx="31" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/><ellipse cx="52" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
     </svg>`;
   const mast = () => `<header class="masthead">
-      <div class="mast-top"><p class="byline"><span class="c">&copy; 2026</span>기획과 구성 by 곤사마 @POSCO</p><button class="pill" id="installBtn" hidden>📲 설치</button></div>
+      <div class="mast-top"><p class="byline"><span class="c">&copy; 2026</span>기획과 구성 by 곤사마</p><button class="pill" id="installBtn" hidden>📲 설치</button></div>
       <div class="brand">${LOGO}<h1>스틸링고<span class="tag">한문장</span></h1></div>
     </header>`;
-  const credit = () => `<div class="cr"><b>스틸링고 한문장 · 기획과 구성 by 곤사마 @POSCO</b><span>캐릭터 스틸 그레이드 가챠 · 음성 ${Object.keys(NY.AUDIO || {}).length ? "VOICEVOX:No.7" : "기기 일본어 음성"}</span></div>`;
+  const credit = () => `<div class="cr"><b>스틸링고 한문장 · 기획과 구성 by 곤사마</b><span>캐릭터 스틸 그레이드 가챠 · 음성 ${Object.keys(NY.AUDIO || {}).length ? "VOICEVOX:No.7" : "기기 일본어 음성"}</span></div>`;
 
   /* ── 화면: 첫 소개 ── */
   function viewIntro() {

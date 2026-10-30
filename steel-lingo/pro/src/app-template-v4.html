@@ -2073,7 +2073,7 @@ function renderDay(d) {
       const ch = t.me && t.ch && t.ch.length ? t.ch : null;
       return `
       <div class="turn ${t.me ? "me" : ""} ${ch ? "chunked" : ""}">
-        <div class="who">${t.me ? "나<br>POSCO" : "담당자<br>고객"}</div>
+        <div class="who">${t.me ? "나<br>당사" : "담당자<br>고객"}</div>
         <div class="bubble">
           <div class="turn-head">${spk(t.jp)}<span style="font-size:11px;color:var(--ink-3)">${i + 1}턴</span></div>
           ${ch ? `
