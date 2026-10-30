@@ -6,7 +6,7 @@
    새 버전을 올릴 때는 VERSION 숫자를 올린다. */
 importScripts("audio/manifest.js");
 const PREFIX = "hanmunjang-";
-const VERSION = 1;
+const VERSION = 2;
 const CACHE = PREFIX + "v" + VERSION;
 const TIMEOUT = 2500;
 const SHELL = [

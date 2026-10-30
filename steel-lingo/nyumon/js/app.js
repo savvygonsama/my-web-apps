@@ -208,12 +208,26 @@
   }
   function step(n) { S.cur.i = Math.max(0, Math.min(S.cur.plan.length - 1, S.cur.i + n)); save(); render("lesson"); }
 
+  /* 스틸링고 시리즈 공통 머리: 코일 로고 + 「스틸링고」 + 앱 이름 꼬리표, 위에 기획과 구성 줄 (Lite와 같은 짜임) */
+  const LOGO = `<svg class="logo" viewBox="0 0 76 58" role="img" aria-label="스틸링고 로고">
+      <ellipse cx="56" cy="29" rx="10" ry="19" class="lg-body"/><rect x="20" y="10" width="36" height="38" class="lg-fill"/>
+      <line x1="20" y1="10" x2="56" y2="10" class="lg-edge"/><line x1="20" y1="48" x2="56" y2="48" class="lg-edge"/>
+      <ellipse cx="20" cy="29" rx="10" ry="19" class="lg-face"/><path d="M20 16 a7 13 0 1 1 -6.2 12.6 a4.2 7.6 0 1 0 6.2 -6.6" class="lg-spiral"/>
+      <circle cx="36" cy="26" r="2.7" class="lg-eye"/><circle cx="47" cy="26" r="2.7" class="lg-eye"/>
+      <path d="M37.5 34.5 q4 3.6 8 0" class="lg-smile"/><ellipse cx="31" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/><ellipse cx="52" cy="33" rx="2.8" ry="1.9" class="lg-cheek"/>
+    </svg>`;
+  const mast = () => `<header class="masthead">
+      <div class="mast-top"><p class="byline"><span class="c">&copy; 2026</span>기획과 구성 by 곤사마 @POSCO</p><button class="pill" id="installBtn" hidden>📲 설치</button></div>
+      <div class="brand">${LOGO}<h1>스틸링고<span class="tag">입문</span></h1></div>
+    </header>`;
+  const credit = () => `<div class="cr"><b>스틸링고 입문 · 기획과 구성 by 곤사마 @POSCO</b><span>캐릭터 스틸 그레이드 가챠 · 음성 VOICEVOX:No.7</span></div>`;
+
   /* ── 화면: 첫 소개 ── */
   function viewIntro() {
     const imgs = NY.LINES.intro.map((l) => `<img src="char/${l.who}_${l.face}.webp" alt="${NY.CHARS[l.who].name}">`).join("");
     let i = 0;
     $app.innerHTML = `
-      <div class="top"><h1>스틸링고 입문</h1><button class="pill" id="installBtn" hidden>📲 설치</button></div>
+      ${mast()}
       <div class="main">
         <div class="card center">
           <h2>히라가나부터, 기초 오브 기초</h2>
@@ -226,6 +240,7 @@
       <div class="foot">
         <button class="btn" id="next">다음 친구</button>
         <button class="btn primary big" id="go">1회차 시작<small>약 10분</small></button>
+        ${credit()}
       </div>`;
     document.getElementById("next").onclick = () => {
       i = (i + 1) % NY.LINES.intro.length;
@@ -257,7 +272,7 @@
         : `<a class="btn primary big" href="${LITE_URL}">스틸링고 Lite로 가기<small>25회 모두 끝 · 다음 단계</small></a>`;
     const bub = nx > NY.TOTAL ? line("done") : n ? NY.LINES.progress[wrongCount() ? 0 : 1] : line("start");
     $app.innerHTML = `
-      <div class="top"><h1>스틸링고 입문</h1><button class="pill" id="installBtn" hidden>📲 설치</button></div>
+      ${mast()}
       <div class="main">
         <div class="card">
           <div class="prog"><b>${n}</b><span class="lead">/ 25회 완료</span></div>
@@ -271,7 +286,7 @@
         </div>
         ${sayHTML(bub, { n, w: wrongCount(), k: nl ? nl.new.length : 0 })}
       </div>
-      <div class="foot"><p class="note">기획과 구성 by 곤사마 · 음성 VOICEVOX:No.7 · 캐릭터 스틸 그레이드 가챠</p></div>`;
+      <div class="foot">${credit()}</div>`;
     const go = document.getElementById("go");
     if (go) go.onclick = () => (resume ? render("lesson") : startLesson(nx));
     document.getElementById("table").onclick = () => render("table");
