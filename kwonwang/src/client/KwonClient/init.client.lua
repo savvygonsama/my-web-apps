@@ -1791,7 +1791,7 @@ function handlers.ko(m: Model, _by: Model?)
 		actSeq = -1
 		guarding = false
 		UI.setBoss(nil)
-		UI.ko(true, Config.RESPAWN_TIME)
+		UI.ko(true, Config.BATTLE_MODE and Config.BATTLE.respawn or Config.RESPAWN_TIME)
 	end
 end
 
@@ -2255,6 +2255,30 @@ function handlers.afterimage(m: Model)
 	if m and m.Parent then
 		Fx.afterimage(m, Color3.fromRGB(255, 50, 40), 0.5)
 	end
+end
+
+-- 3.3판 배틀그라운드: 판 상태 (맵·남은 시간·순위), 쓰러뜨림 알림, 판 끝, 알림
+function handlers.battle(data: any)
+	UI.battleState(data, player.UserId)
+end
+function handlers.battleKill(data: any)
+	local me = player.DisplayName
+	local streak = (data.streak or 0) >= 3 and string.format("  🔥 %d연속", data.streak) or ""
+	if data.killer then
+		UI.toast(string.format("⚔ %s → %s%s", data.killer, data.victim, streak))
+		if data.killer == me then
+			UI.banner("⚔ 쓰러뜨렸다", data.victim .. streak, Color3.fromRGB(255, 200, 100))
+		end
+	else
+		UI.toast(string.format("💀 %s 쓰러짐", data.victim))
+	end
+end
+function handlers.battleRound(data: any)
+	local who = data.winner and string.format("🏆 %s (%d명)", data.winner, data.kills or 0) or "이긴 사람 없음"
+	UI.banner("⚔ " .. tostring(data.map) .. " 끝", who .. "  ·  다음: " .. tostring(data.next), Color3.fromRGB(255, 210, 120))
+end
+function handlers.battleNote(data: any)
+	UI.toast(data.text)
 end
 
 function handlers.duel(data: any)

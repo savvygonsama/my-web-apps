@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.2.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.3.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -11,6 +11,9 @@ local okBuild, build = pcall(function()
 end)
 Config.PUBLIC = okBuild and type(build) == "table" and build.public == true
 Config.TEST_MODE = not Config.PUBLIC
+-- 3.3판: 배틀그라운드 (따로 게시하는 PvP 세계). battleground.project.json으로 만들면 ReplicatedStorage.KwonBattle이 들어간다
+local battleMod = script.Parent and script.Parent:FindFirstChild("KwonBattle")
+Config.BATTLE_MODE = battleMod ~= nil
 
 ------------------------------------------------------------------------
 -- 싸움의 기본 규칙
@@ -300,21 +303,23 @@ end
 -- 수련 4종 (월드 곳곳). 화면의 박자 맞추기: 완벽 2배, 좋음 1배, 놓침 0
 ------------------------------------------------------------------------
 Config.Training = {
-	rock = { name = "바위 들기", stat = "str", icon = "🪨", desc = "고리가 줄어들 때 맞춰 누르세요", base = 1 },
-	waterfall = { name = "폭포 명상", stat = "chi", icon = "💧", desc = "숨이 가장 커질 때 누르세요", base = 1 },
+	-- 3.3판: 수련마다 한 번에 오르는 양이 1~24로 들쭉날쭉했다. 이제 단계마다 거의 같다 (삼류 넷 · 일류·특급 다섯 · 상급 여섯 · 천상 여섯),
+	-- 박자가 빠른 수련은 그만큼 조금 덜 (1분에 오르는 양이 고르게). 새 수련은 능력치 섞임이 다를 뿐 크게 앞서지 않는다
+	rock = { name = "바위 들기", stat = "str", gains = { str = 3, vit = 1 }, icon = "🪨", desc = "고리가 줄어들 때 맞춰 누르세요. 근골과 체력이 오른다", base = 1 },
+	waterfall = { name = "폭포 명상", stat = "chi", gains = { chi = 3, vit = 1 }, icon = "💧", desc = "숨이 가장 커질 때 누르세요. 내공과 체력이 오른다", base = 1 },
 	-- 목인장: 나무팔을 흘리며 몸과 발놀림을 함께 단련한다 (경공 수련은 없앴다)
-	dummy = { name = "목인장", stat = "vit", gains = { vit = 1, agi = 1 }, icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F). 체력과 경공이 함께 오른다", base = 1 },
+	dummy = { name = "목인장", stat = "vit", gains = { vit = 2, agi = 2 }, icon = "🪵", desc = "나무팔이 들어오는 순간 흘리세요 (F). 체력과 경공이 함께 오른다", base = 1 },
 	-- 경지마다 열리는 수련 (gains = 한 번에 오르는 능력치들, realm = 이 경지부터)
 	mabo = { name = "마보 참장", stat = "vit", gains = { vit = 2, str = 1, agi = 1 }, icon = "🧱", desc = "말뚝 위에서 버티세요. 누를 때마다 몸이 오른쪽으로, 가만두면 왼쪽으로 기운다", base = 1, realm = 1 },
-	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
-	breathing = { name = "운기조식", stat = "chi", gains = { chi = 5, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
+	ironpalm = { name = "철사장 수련", stat = "str", gains = { str = 3, vit = 1 }, icon = "🔥", desc = "달군 쇠모래가 튀어 오를 때 내리치세요 (빠르다)", base = 1, realm = 3, period = 1.25 },
+	breathing = { name = "운기조식", stat = "chi", gains = { chi = 3, vit = 2 }, icon = "🌀", desc = "기가 몸을 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 4 },
 	simma = { name = "심마 대련", stat = "str", icon = "👁", desc = "마음속의 마귀가 형체를 얻는다. 이기면 모든 능력치가 크게 오른다", base = 1, realm = 9, fight = true, reward = 60 },
 	-- 상급 수련 (상급 수련장, 천궁): 판정은 앞의 수련과 같고 (ui = 같은 화면), 한 번에 오르는 양이 크다. 조금 더 빠르다
-	geumjong = { name = "금종조 수련", stat = "vit", gains = { vit = 7, str = 2, agi = 2 }, icon = "🔔", desc = "큰 종 아래에서 버티세요 (마보 참장처럼 가운데에 붙잡기)", base = 1, realm = 6, ui = "mabo", advanced = true },
-	cheongeun = { name = "천근추 수련", stat = "str", gains = { str = 8, vit = 2 }, icon = "🏋", desc = "천 근 쇳덩이를 고리가 가장 작을 때 들어 올리세요", base = 1, realm = 7, ui = "rock", period = 1.3, advanced = true },
-	jucheon = { name = "주천 운기", stat = "chi", gains = { chi = 9, vit = 3, agi = 1 }, icon = "☯", desc = "기가 온몸을 크게 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 8, ui = "breathing", period = 1.35, advanced = true },
-	heogong = { name = "허공답보", stat = "agi", gains = { agi = 8, str = 2, vit = 1 }, icon = "🦶", desc = "떠 있는 디딤돌이 번쩍이는 순간 밟으세요 (빠르다)", base = 1, realm = 9, ui = "ironpalm", period = 1.15, advanced = true },
-	cheonsang = { name = "천상 수련", stat = "str", gains = { str = 6, vit = 6, agi = 6, chi = 6 }, icon = "🌤", desc = "천궁의 구름 연꽃 위에서 숨을 고르세요 (모든 능력치)", base = 1, realm = 12, ui = "breathing", period = 1.3, advanced = true },
+	geumjong = { name = "금종조 수련", stat = "vit", gains = { vit = 4, str = 1, agi = 1 }, icon = "🔔", desc = "큰 종 아래에서 버티세요 (마보 참장처럼 가운데에 붙잡기)", base = 1, realm = 6, ui = "mabo", advanced = true },
+	cheongeun = { name = "천근추 수련", stat = "str", gains = { str = 4, vit = 1 }, icon = "🏋", desc = "천 근 쇳덩이를 고리가 가장 작을 때 들어 올리세요", base = 1, realm = 7, ui = "rock", period = 1.3, advanced = true },
+	jucheon = { name = "주천 운기", stat = "chi", gains = { chi = 3, vit = 1, agi = 1 }, icon = "☯", desc = "기가 온몸을 크게 한 바퀴 돌아 가득 찰 때 누르세요", base = 1, realm = 8, ui = "breathing", period = 1.35, advanced = true },
+	heogong = { name = "허공답보", stat = "agi", gains = { agi = 3, str = 1 }, icon = "🦶", desc = "떠 있는 디딤돌이 번쩍이는 순간 밟으세요 (빠르다)", base = 1, realm = 9, ui = "ironpalm", period = 1.15, advanced = true },
+	cheonsang = { name = "천상 수련", stat = "str", gains = { str = 2, vit = 2, agi = 1, chi = 1 }, icon = "🌤", desc = "천궁의 구름 연꽃 위에서 숨을 고르세요 (모든 능력치)", base = 1, realm = 12, ui = "breathing", period = 1.3, advanced = true },
 }
 Config.TRAIN_COOLDOWN = 0.6 -- 한 번 수련하고 다음까지
 -- 수련으로 오르는 양 (판정은 그대로, 오르는 양만 줄였다): 기본 배율, 경지마다 더해지는 수련 효과
@@ -324,7 +329,7 @@ Config.TRAIN_REALM_BONUS = 0.12
 -- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
 -- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
 Config.TRAIN_LATE_SHARE = 1 / 100 -- 2.7.7판: 1/50 → 1/150. 2.8판: 1/100 (싸움의 약 1/7 빠르기: 수련은 덤이되, 하는 만큼 보이게)
-Config.TRAIN_LATE_REF = 48 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 24)
+Config.TRAIN_LATE_REF = 12 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 6). 3.3판: 천상 수련이 24 → 6이 되어 48 → 12 (후반 수련 몫은 그대로)
 function Config.trainMult(idx: number): number
 	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
 	local late = Config.killGain(Config.realmRefPower(idx)) * Config.TRAIN_LATE_SHARE / Config.TRAIN_LATE_REF
@@ -943,8 +948,8 @@ table.insert(Config.Styles, {
 	fx = "duel",
 	grade = "신화",
 	hidden = true,
-	unlockHint = "비무대에서 백 번 이긴 자만이 강호 제일의 비무 권법을 얻는다",
-	desc = "비무대에서 백 번을 이긴 자의 주먹. 화려함 없이 오직 상대를 꺾는 데만 다듬어졌다. 적을 쓰러뜨릴 때마다 숨이 돌아온다.",
+	unlockHint = "배틀그라운드에서 백 명을 쓰러뜨린 자만이 강호 제일의 비무 권법을 얻는다",
+	desc = "배틀그라운드에서 백 명을 쓰러뜨린 자의 주먹. 화려함 없이 오직 상대를 꺾는 데만 다듬어졌다. 적을 쓰러뜨릴 때마다 숨이 돌아온다.",
 	gimmick = "무쌍: 사람을 상대로 주는 피해 +20%. 적을 쓰러뜨릴 때마다 체력 10%와 내공 20을 되찾는다. 흘리기 판정이 넓다",
 	deflect = 0.3,
 	pvpDmg = 1.2,
@@ -1640,7 +1645,9 @@ function Config.styleGrade(style: any, up: number?): string
 end
 -- 등급이 높을수록 조금씩 빠르다: 한 단계마다 동작 +2.5%, 걸음 +1.5% (천외면 동작 ×1.175)
 function Config.gradeSpeed(style: any, up: number?): number
-	return 1 + 0.025 * (Config.gradeIndex(Config.styleGrade(style, up)) - 1)
+	-- 배틀그라운드: 등급이 높아도 아주 조금만 빠르다 (극이 하급보다 약 10%)
+	local k = Config.BATTLE_MODE and 0.008 or 0.025
+	return 1 + k * (Config.gradeIndex(Config.styleGrade(style, up)) - 1)
 end
 function Config.gradeWalk(style: any, up: number?): number
 	return 1 + 0.015 * (Config.gradeIndex(Config.styleGrade(style, up)) - 1)
@@ -3276,6 +3283,65 @@ Config.TOWER = {
 Config.PVP_STYLE = { wins = 100, style = "musang" }
 -- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 한 번 쓰러진 뒤부터는 스스로 끌 수 있다
 Config.PVP = { offAfterDeath = true, toggleCooldown = 30 }
+------------------------------------------------------------------------
+-- 3.3판: 배틀그라운드. 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없음).
+-- 따로 게시한 배틀그라운드 장소에서 늘 PvP. 모두 체력 200, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (숙련은 모두 끝까지 연 것으로).
+-- 권법마다 기본 피해의 크기가 달라 (삼재권 연타 5 · 극 일월 30), 먼저 그 권법의 연타 한 대를 ref로 맞춘다 (기술·오의는 그 권법 안의 비율 그대로).
+-- 그다음 눌러 담는다 (dmgK × 피해^dmgPow): 연타 한 대 6 남짓 · 기술 11 남짓 · 오의 25 남짓 · 초 오의는 한 대 상한.
+-- 한 대는 hitCap까지, 1초에 받는 피해는 secCap까지 (누구도 한 방에, 한 번의 몰아치기로 쓰러지지 않는다).
+-- 좋은 권법은 아주 조금 세다: 등급 한 칸마다 gradeStep (하급 1 → 극 약 1.26 이지만 눌러 담겨 실제로는 15% 남짓)
+------------------------------------------------------------------------
+Config.BATTLE = {
+	placeName = "배틀그라운드", -- 같은 체험 안의 장소 이름 (이 이름이 든 장소로 보낸다)
+	placeId = 0, -- 알면 적는다 (0이면 이름으로 찾는다)
+	hp = 200,
+	ref = 8,
+	dmgK = 1.8,
+	dmgPow = 0.6,
+	hitCap = 34,
+	secCap = 70,
+	gradeStep = 0.02,
+	walk = 18,
+	respawn = 4,
+	shield = 3, -- 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
+	mapTime = 300, -- 맵 하나에 5분
+	warnAt = 15, -- 바뀌기 전 알림
+	fallY = -70, -- 맵 바닥에서 이만큼 아래로 떨어지면 쓰러진다
+	store = "KwonBattle_v1",
+	coinsPerKill = 60, -- 메인 월드로 돌아가면 받는 은자 (경지가 높을수록 더: × (1 + 0.5 × (경지 - 1)))
+	coinsPerWin = 300, -- 한 판 (맵 하나)에서 가장 많이 쓰러뜨린 사람
+	maps = {
+		{ id = "bamboo", name = "죽림 비무장", desc = "대숲에 둘러싸인 돌 마당. 대나무 덤불 뒤에 숨어 파고든다" },
+		{ id = "frost", name = "빙호 설원", desc = "얼어붙은 호수와 얼음 기둥. 가운데는 탁 트였고 가장자리는 눈 언덕" },
+		{ id = "crater", name = "화산 분지", desc = "용암이 흐르는 분화구 안의 두 층 단. 높은 곳을 잡아라" },
+		{ id = "cloud", name = "운상 누각", desc = "구름 위에 뜬 누각 셋과 다리. 떨어지면 쓰러진다" },
+	},
+}
+-- 그 권법 연타 한 대의 평균 피해 (배틀그라운드에서 권법마다 크기를 맞출 때)
+local battleScaleCache: { [any]: number } = {}
+function Config.battleScale(style: any): number
+	if not style then
+		return 10
+	end
+	local c = battleScaleCache[style]
+	if c then
+		return c
+	end
+	local tot, n = 0, 0
+	for _, m in ipairs(style.combo or {}) do
+		for _, h in ipairs(m.hits or {}) do
+			tot += h.dmg or 0
+			n += 1
+		end
+	end
+	local v = n > 0 and math.max(1, tot / n) or 10
+	battleScaleCache[style] = v
+	return v
+end
+Config.isBattle = function(): boolean
+	return Config.BATTLE_MODE
+end
+
 -- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고, 적이 덤비지 않는다
 function Config.inSafe(pos: Vector3): boolean
 	-- 천상계에서는 천궁만 안전하다
@@ -3317,7 +3383,7 @@ Config.CUTSCENES = {
 	intro = { who = "청운 장로", lines = { "강호에 온 것을 환영하네. 맨손 하나로 이름을 떨치겠다는 젊은이가 또 왔구먼.", "먼저 내게 와서 말을 걸게. 노란 길잡이를 따라오면 되네." } },
 	gate_first = { who = "관문 수호자", lines = { "몸이 경지에 닿았다고 경지에 오르는 것은 아니다.", "나를 넘어라. 그래야 다음 경지다." } },
 	tower_first = { who = "천층탑", lines = { "천층탑. 한 층 오를 때마다 적이 강해진다.", "쓰러지거나 떨어지면 처음부터다. 열 층마다 주인이 기다린다." } },
-	pvp100 = { who = "강호", lines = { "비무대에서 백 번을 이겼다. 이제 강호에 너를 모르는 자가 없다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
+	pvp100 = { who = "강호", lines = { "배틀그라운드에서 백 명을 쓰러뜨렸다. 이제 강호에 너를 모르는 자가 없다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
 	boss_heukho = { who = "흑호", lines = { "내 산채에 발을 들인 놈은 살아서 나간 적이 없다." } },
 	boss_hyeolrang = { who = "혈랑", lines = { "피 냄새가 나는군. 네 피다." } },
 	boss_bingma = { who = "빙마", lines = { "이 설산에서 숨 쉬는 건 나 하나로 족하다." } },

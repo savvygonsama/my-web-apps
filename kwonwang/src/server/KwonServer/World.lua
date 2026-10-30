@@ -689,30 +689,30 @@ local function village(out: any)
 		tree(Vector3.new(s[1], 0, s[2]), 1.1, f)
 	end
 
-	-- 비무대: 돌 단, 네 기둥, 붉은 줄, 계단
+	-- 3.3판: 비무대 자리에 배틀그라운드의 문 (메인 월드에서는 사람끼리 싸우지 않는다). 돌 단 위의 붉은 문과 빛의 막
 	local ring = Config.RING
 	local c = ring.center
-	part({ Name = "RingBase", Size = Vector3.new(ring.size, ring.height, ring.size), Position = c + Vector3.new(0, ring.height / 2, 0), Color = Color3.fromRGB(150, 140, 125), Material = Enum.Material.Granite, Parent = f })
-	part({ Name = "RingTop", Size = Vector3.new(ring.size - 2, 0.3, ring.size - 2), Position = c + Vector3.new(0, ring.height + 0.1, 0), Color = Color3.fromRGB(175, 60, 50), Material = Enum.Material.Fabric, Parent = f })
-	part({ Name = "RingMark", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 18, 18), CFrame = CFrame.new(c + Vector3.new(0, ring.height + 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(240, 230, 210), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
-	local hs = ring.size / 2
+	part({ Name = "BattleBase", Size = Vector3.new(30, 1.6, 18), Position = c + Vector3.new(0, 0.8, 0), Color = Color3.fromRGB(150, 140, 125), Material = Enum.Material.Granite, Parent = f })
+	for i = 1, 2 do
+		part({ Name = "BattleStep", Size = Vector3.new(16, 0.8, 3), Position = c + Vector3.new(0, 0.4 * i - 0.4 + 0.4, -10.5 - (2 - i) * 2.2), Color = Color3.fromRGB(135, 126, 112), Material = Enum.Material.Granite, Parent = f })
+	end
 	for _, x in ipairs({ -1, 1 }) do
-		for _, z in ipairs({ -1, 1 }) do
-			part({ Name = "RingPost", Size = Vector3.new(2, 8, 2), Position = c + Vector3.new(x * (hs - 1), ring.height + 4, z * (hs - 1)), Color = Color3.fromRGB(60, 40, 30), Material = Enum.Material.Wood, Parent = f })
-		end
+		part({ Name = "BattlePost", Size = Vector3.new(2.4, 18, 2.4), Position = c + Vector3.new(x * 8, 10.6, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "BattlePostFoot", Size = Vector3.new(3.4, 1.4, 3.4), Position = c + Vector3.new(x * 8, 2.3, 0), Color = Color3.fromRGB(60, 50, 40), Material = Enum.Material.Slate, Parent = f })
 	end
-	for _, h in ipairs({ 3.5, 6 }) do
-		for _, side in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 } }) do
-			local size = side[1] ~= 0 and Vector3.new(0.3, 0.3, ring.size - 2) or Vector3.new(ring.size - 2, 0.3, 0.3)
-			part({ Name = "RingRope", Size = size, Position = c + Vector3.new(side[1] * (hs - 1), ring.height + h, side[2] * (hs - 1)), Color = Color3.fromRGB(220, 40, 40), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
-		end
-	end
-	for i = 1, 3 do
-		part({ Name = "RingStep", Size = Vector3.new(14, i, 3), Position = c + Vector3.new(0, i / 2, -hs - 4.5 + i * 1.5 - 1.5), Color = Color3.fromRGB(140, 130, 115), Material = Enum.Material.Granite, Parent = f })
-	end
-	local board = part({ Name = "RingSign", Size = Vector3.new(26, 7, 1), Position = c + Vector3.new(0, ring.height + 12, hs + 1), Color = Color3.fromRGB(40, 25, 20), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	sign(board, Enum.NormalId.Front, { { "⚔ 비무대", Color3.fromRGB(255, 220, 140), 0.6 }, { "올라선 사람끼리 겨룬다", Color3.fromRGB(255, 255, 255), 0.4 } })
-	sign(board, Enum.NormalId.Back, { { "⚔ 비무대", Color3.fromRGB(255, 220, 140), 0.6 }, { "올라선 사람끼리 겨룬다", Color3.fromRGB(255, 255, 255), 0.4 } })
+	part({ Name = "BattleBeam", Size = Vector3.new(22, 1.8, 3), Position = c + Vector3.new(0, 20.2, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "BattleBeam2", Size = Vector3.new(18, 1, 2), Position = c + Vector3.new(0, 17.4, 0), Color = Color3.fromRGB(60, 40, 30), Material = Enum.Material.Wood, Parent = f })
+	local veil = part({ Name = "BattleVeil", Size = Vector3.new(13.6, 15, 0.4), Position = c + Vector3.new(0, 9.4, 0), Color = Color3.fromRGB(255, 120, 80), Material = Enum.Material.Neon, Transparency = 0.55, CanCollide = false, Parent = f })
+	local glow = Instance.new("PointLight")
+	glow.Range = 22
+	glow.Brightness = 1.6
+	glow.Color = Color3.fromRGB(255, 130, 90)
+	glow.Parent = veil
+	out.battle = prompt(veil, "들어가기", "⚔ 배틀그라운드 (사람끼리 겨룬다)", "BattleGate")
+	out.battle.MaxActivationDistance = 16
+	local board = part({ Name = "BattleSign", Size = Vector3.new(16, 5, 1), Position = c + Vector3.new(0, 24.4, 0), Color = Color3.fromRGB(40, 25, 20), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
+	sign(board, Enum.NormalId.Back, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
 
 	-- 강호 안내판: 일곱 사부가 어디 있는지 (양옆에 일곱 권법의 깃발)
 	local boardAt = Vector3.new(0, 0, -110)
@@ -789,7 +789,7 @@ local function village(out: any)
 	local side = Vector3.new(-toC.Z, 0, toC.X)
 	part({ Name = "BoardPlinth", Size = Vector3.new(50, 1.2, 12), CFrame = CFrame.lookAt(bAt, bAt + toC) * CFrame.new(0, 0.6, 0), Color = STONE_DARK, Material = Enum.Material.Cobblestone, Parent = f })
 	out.boards = {}
-	for i, b in ipairs({ { "realm", "🏯 강호 고수", "총 능력치" }, { "pvp", "⚔ 비무 승리", "비무대에서 이긴 수" }, { "tower", "🗼 천층탑", "오른 가장 높은 층" } }) do
+	for i, b in ipairs({ { "realm", "🏯 강호 고수", "총 능력치" }, { "pvp", "⚔ 배틀 처치", "배틀그라운드에서 쓰러뜨린 수" }, { "tower", "🗼 천층탑", "오른 가장 높은 층" } }) do
 		local at = bAt + side * ((i - 2) * 16) + Vector3.new(0, 11, 0)
 		local cf = CFrame.lookAt(at, at + toC)
 		for _, sx in ipairs({ -1, 1 }) do

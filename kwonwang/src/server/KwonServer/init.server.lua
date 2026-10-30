@@ -10,6 +10,9 @@ local World = require(script:WaitForChild("World"))
 local Combat = require(script:WaitForChild("Combat"))
 local Npc = require(script:WaitForChild("Npc"))
 local Skills = require(script:WaitForChild("Skills"))
+local Battle = require(script:WaitForChild("Battle"))
+-- 3.3판: 배틀그라운드 장소인가 (battleground.project.json으로 만든 파일에만 ReplicatedStorage.KwonBattle이 있다)
+local BATTLE = Config.BATTLE_MODE
 
 local DATASTORE_NAME = "Kwonwang_v1"
 local SAVE_INTERVAL = 90
@@ -501,7 +504,7 @@ end
 -- 컷씬: 그 장면을 처음 맞을 때만 (보았다고 적어 둔다). data = { at = 비출 자리, m = 비출 모델 }
 local function cutscene(player: Player, id: string, data: any?): boolean
 	local p, st = profiles[player], states[player]
-	if not p or not st or p.seen[id] or not Config.CUTSCENES[id] then
+	if BATTLE or not p or not st or p.seen[id] or not Config.CUTSCENES[id] then
 		return false
 	end
 	p.seen[id] = true
@@ -575,6 +578,9 @@ function Ach.value(p: Profile, a: any): number
 end
 -- 새로 이룬 업적에 보상을 주고 알린다 (상태는 부른 쪽이 보낸다)
 function Ach.check(player: Player, p: Profile)
+	if BATTLE then
+		return -- 배틀그라운드에서는 업적을 세지 않는다 (기록을 저장하지 않으니)
+	end
 	for _, a in ipairs(Config.ACHIEVEMENTS) do
 		if not p.ach[a.id] and Ach.value(p, a) >= a.n then
 			p.ach[a.id] = true
@@ -849,11 +855,23 @@ local function refreshFighter(player: Player)
 	elseif aura then
 		aura:Destroy()
 	end
+	-- 3.3판 배틀그라운드: 모두 체력 200, 공격력은 권법 등급만 아주 조금 (능력치·경지·숙련·심법·특전은 보지 않는다)
+	if BATTLE then
+		local gi = styleDef and Config.gradeIndex(Config.styleGrade(styleDef, p.gradeUp[p.style])) or 1
+		f.dmgMult = 1 + Config.BATTLE.gradeStep * (gi - 1)
+		f.skillMult = 1
+		fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = 0, 0, 0, 0, 0
+		f.maxHp = Config.BATTLE.hp
+	end
 	if oldMax > 0 then
 		f.hp = math.min(f.maxHp, f.hp * f.maxHp / oldMax)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed) * Calc.perk(p, "spd")
 	local cm = Config.chiMax(p.stats.chi, idx)
+	if BATTLE then
+		f.walk = Config.BATTLE.walk
+		cm = Config.CHI_MAX
+	end
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
 	local cp = Config.playerPower(f.dmgMult, f.maxHp)
@@ -863,6 +881,7 @@ local function refreshFighter(player: Player)
 	Combat.sync(f)
 	updateTag(player)
 end
+
 
 ------------------------------------------------------------------------
 -- 쓰러짐과 보상
@@ -882,7 +901,12 @@ local function respawnPlayer(player: Player)
 	Combat.sync(f)
 	local char = player.Character
 	local st = states[player]
-	if char then
+	if char and BATTLE then
+		-- 배틀그라운드: 지금 맵에서 다른 사람과 가장 먼 자리, 잠깐 보호
+		char:PivotTo(Battle.spawnCF(player))
+		Battle.shield(f)
+		f.chi = 0
+	elseif char then
 		-- 천상계에서 쓰러졌으면 천궁에서 일어난다
 		if st and (st :: any).diedInSky then
 			char:PivotTo(CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30)))
@@ -1684,19 +1708,14 @@ Combat.init(Push, {
 			if states[player] then
 				(states[player] :: any).diedInSky = f.root.Position.Y > Config.SKY.y - 300
 			end
-			-- 처음 쓰러지면: 이제부터 들판 PvP를 스스로 끌 수 있다
-			local dp = profiles[player]
-			if dp and not dp.pvpUnlocked and Config.PVP.offAfterDeath then
-				dp.pvpUnlocked = true
-				states[player].dirty = true
-				Push:FireClient(player, "dialog", { who = "⚔ 들판 PvP", title = "PvP를 끌 수 있게 됐다",
-					text = "마을과 사당 같은 안전한 곳 밖에서는 사람끼리도 싸운다. 한 번 쓰러졌으니 이제 원하면 PvP를 끌 수 있다. (화면 위의 ⚔ PvP 버튼)" })
-				pushState(player)
-			end
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
-			-- 비무대에서 이기면 기록
-			local winner = by and by.player
+			-- 3.3판 배틀그라운드: 점수를 세고, 잠시 뒤 지금 맵에서 일어난다 (메인 월드에는 사람끼리 싸움이 없다)
+			if BATTLE then
+				Battle.onDeath(player, by and by.player or nil)
+				return
+			end
+			local winner = nil -- 3.2판까지 비무대 승리 (이제 메인 월드에서는 없다)
 			if winner and profiles[winner] then
 				local wp = profiles[winner]
 				wp.pvpWins += 1
@@ -1748,7 +1767,7 @@ Combat.init(Push, {
 ------------------------------------------------------------------------
 -- 맵을 먼저 짓고, 요청·사부·적은 아래에서 차례로 (적 만들기가 늦거나 틀려도 나머지는 돈다)
 pcall(World.setupLighting)
-local okWorld, builtWorld = pcall(World.build)
+local okWorld, builtWorld = pcall(BATTLE and Battle.build or World.build)
 if not okWorld then
 	warn("[권왕] 맵 만들기 오류:", builtWorld)
 end
@@ -3942,7 +3961,26 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Push:FireAllClients("djump", f.model)
 		end
 	elseif action == "potion" then
+		if BATTLE then
+			toast(player, "⚔ 배틀그라운드에서는 금창약을 쓸 수 없어요")
+			return
+		end
 		Actions.potion(player)
+	elseif action == "battleGo" or action == "battleBack" then
+		-- 3.3판: 메인 월드 ↔ 배틀그라운드
+		local f = Combat.fighterOfPlayer(player)
+		if f and f.combatUntil > os.clock() and action == "battleGo" then
+			toast(player, "싸우는 중에는 떠날 수 없어요")
+			return
+		end
+		toast(player, action == "battleGo" and "⚔ 배틀그라운드로 가는 중..." or "🏠 메인 월드로 가는 중...")
+		saveProfile(player)
+		task.spawn(function()
+			local ok, why = Battle.teleport(player, action == "battleGo")
+			if not ok then
+				toast(player, "⚠ " .. tostring(why))
+			end
+		end)
 	elseif action == "learn" then
 		Actions.learn(player, a1)
 	elseif action == "buy" then
@@ -4123,28 +4161,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		toast(player, it.icon .. " " .. it.name .. "을(를) 샀어요")
 		pushState(player)
 	elseif action == "pvpToggle" then
-		-- 들판 PvP 켜기·끄기 (한 번 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
-		local f = Combat.fighterOfPlayer(player)
-		if not p.pvpUnlocked then
-			toast(player, "⚔ 한 번 쓰러진 뒤부터 PvP를 끌 수 있어요")
-			return
-		end
-		if f and f.combatUntil > os.clock() then
-			toast(player, "싸우는 중에는 PvP를 바꿀 수 없어요")
-			return
-		end
-		if t - ((st :: any).pvpAt or -999) < Config.PVP.toggleCooldown then
-			toast(player, string.format("⚔ %d초 뒤에 다시 바꿀 수 있어요", math.ceil(Config.PVP.toggleCooldown - (t - (st :: any).pvpAt))))
-			return
-		end
-		;(st :: any).pvpAt = t
-		p.pvpOff = not p.pvpOff or nil
-		st.dirty = true
-		if f then
-			f.model:SetAttribute("PvpOff", p.pvpOff == true)
-		end
-		toast(player, p.pvpOff and "🕊 들판 PvP를 껐어요 (비무대는 그대로)" or "⚔ 들판 PvP를 켰어요")
-		pushState(player)
+		-- 3.3판: 들판 PvP는 없어졌다 (사람끼리는 배틀그라운드에서)
+		toast(player, "⚔ 사람끼리 겨루기는 배틀그라운드에서 (메뉴 → ⚔ 배틀그라운드)")
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
 	elseif action == "towerTp" then
@@ -4315,6 +4333,9 @@ end
 
 -- 천상계에서 떨어지면: 사람은 천궁으로 되돌리고, 적은 쓰러뜨린 것으로 친다 (땅으로 떨어지지 않게)
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	local Y = Config.SKY.y
 	while true do
 		task.wait(0.5)
@@ -4444,6 +4465,9 @@ function Board.update()
 end
 
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	task.wait(8)
 	while true do
 		local ok, err = pcall(Board.update)
@@ -4480,6 +4504,9 @@ end
 
 -- 운석 낙하: 천상계에 사람이 있으면 몇 분마다, 천궁이 아닌 섬 어딘가에 운석이 떨어지고 운석 수호수가 나타난다
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	local M = Config.METEOR
 	local nextAt = os.clock() + M.first
 	while true do
@@ -4666,6 +4693,9 @@ function Raid.killed(f: any)
 end
 -- 때가 되면 알리고, 잠시 뒤 내려온다 (천상계에 아무도 없으면 미룬다)
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	local R = Config.RAID
 	local nextAt = os.clock() + R.first
 	while true do
@@ -4704,6 +4734,24 @@ if W.raidGate then
 	end)
 end
 
+-- 3.3판: 마을의 배틀그라운드 문
+if W.battle then
+	W.battle.Triggered:Connect(function(player: Player)
+		local f = Combat.fighterOfPlayer(player)
+		if f and f.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 떠날 수 없어요")
+			return
+		end
+		toast(player, "⚔ 배틀그라운드로 가는 중...")
+		saveProfile(player)
+		task.spawn(function()
+			local ok, why = Battle.teleport(player, true)
+			if not ok then
+				toast(player, "⚠ " .. tostring(why))
+			end
+		end)
+	end)
+end
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
@@ -4887,6 +4935,16 @@ local function setupCharacter(player: Player, char: Model)
 	char:SetAttribute("PvpOff", p.pvpOff == true)
 	f.iframeUntil = os.clock() + 2
 	refreshFighter(player)
+	if BATTLE then
+		f.hp = f.maxHp
+		task.defer(function()
+			if char.Parent then
+				char:PivotTo(Battle.spawnCF(player))
+				Battle.shield(f)
+				Combat.sync(f)
+			end
+		end)
+	end
 	char.AncestryChanged:Connect(function()
 		if not char.Parent then
 			Combat.unregister(char)
@@ -4929,8 +4987,42 @@ local function onPlayerAdded(player: Player)
 	if profile.style == "" then
 		profile.style = "samjae"
 	end
+	if BATTLE then
+		-- 배틀그라운드: 메인 월드 기록은 읽기만 (여기서는 절대 저장하지 않는다). 익힌 권법은 모두 숙련 끝까지 연 것으로
+		ok = false
+		for id in pairs(profile.styles) do
+			local m = Calc.mastery(profile, id)
+			m.lv = math.max(m.lv, 20)
+		end
+		Battle.join(player)
+	end
 	profiles[player] = profile
 	st.canSave = ok
+	if not BATTLE and ok then
+		-- 배틀그라운드에서 쌓은 기록을 받는다: 쓰러뜨린 수 (무쌍신권), 은자
+		task.spawn(function()
+			local kills, coins = Battle.claim(player)
+			local p = profiles[player]
+			if not p then
+				return
+			end
+			if kills > p.pvpWins then
+				p.pvpWins = kills
+				st.dirty = true
+			end
+			if coins > 0 then
+				p.coins += coins
+				st.dirty = true
+				toast(player, string.format("⚔ 배틀그라운드 몫 💰 %s 은자를 받았어요", Config.formatNumber(coins)))
+			end
+			local PS = Config.PVP_STYLE
+			if p.pvpWins >= PS.wins and not p.styles[PS.style] then
+				grantStyle(player, PS.style, false)
+				toast(player, "⚔ 배틀그라운드에서 " .. PS.wins .. "명을 쓰러뜨렸다! " .. Config.STYLE_BY_ID[PS.style].name .. "을(를) 얻었어요")
+			end
+			pushState(player)
+		end)
+	end
 	player.CharacterAdded:Connect(function(char)
 		setupCharacter(player, char)
 	end)
@@ -4942,6 +5034,9 @@ local function onPlayerAdded(player: Player)
 end
 
 local function onPlayerRemoving(player: Player)
+	if BATTLE then
+		Battle.leave(player)
+	end
 	Tower.ended(player, "left")
 	Maze.ended(player, "left")
 	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
@@ -4971,6 +5066,9 @@ end)
 
 -- 서버가 닫힐 때: 모두 저장하고, 저장이 끝날 때까지 (최대 25초) 기다린다
 game:BindToClose(function()
+	if BATTLE then
+		Battle.saveAll()
+	end
 	for player in pairs(profiles) do
 		task.spawn(saveProfile, player)
 	end
@@ -4985,6 +5083,9 @@ end)
 -- 사부와 적 (몸 만들기는 시간이 걸릴 수 있어 맨 나중에, 따로)
 ------------------------------------------------------------------------
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	local ok, err = pcall(Npc.spawnMasters, function(player: Player, styleId: string)
 		local p = profiles[player]
 		if not p then
@@ -5077,6 +5178,9 @@ local function visited(pos: Vector3, id: string, m: any): boolean
 	return (pos - m.at).Magnitude < 120
 end
 task.spawn(function()
+	if BATTLE then
+		return -- 배틀그라운드에는 없다
+	end
 	while true do
 		task.wait(1)
 		for player, p in pairs(profiles) do
@@ -5102,3 +5206,23 @@ task.spawn(function()
 		end
 	end
 end)
+
+------------------------------------------------------------------------
+-- 3.3판 배틀그라운드: 맵을 돌리고, 떨어진 사람을 쓰러뜨리고, 판 상태를 알린다
+------------------------------------------------------------------------
+if BATTLE then
+	Battle.start({
+		push = Push,
+		respawn = respawnPlayer,
+		fighter = Combat.fighterOfPlayer,
+		kill = function(f: any)
+			local la = f.lastAttacker
+			local by = (la and la.player and f.combatUntil > os.clock()) and la or nil
+			Combat.kill(f, by)
+		end,
+		realmOf = function(player: Player): number
+			local p = profiles[player]
+			return p and (Calc.realm(p)) or 1
+		end,
+	})
+end

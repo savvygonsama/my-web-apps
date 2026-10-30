@@ -135,15 +135,12 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		return false
 	end
 	if a.player and b.player then
-		local pa, pb = a.root.Position, b.root.Position
-		if Combat.onRing(pa) and Combat.onRing(pb) then
-			return true
-		end
-		-- 들판 PvP: 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고)
-		if Config.inSafe(pa) or Config.inSafe(pb) then
+		-- 3.3판: 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없앰). 배틀그라운드에서는 늘 싸운다 (막 일어난 사람은 잠깐 빼고)
+		if not Config.BATTLE_MODE then
 			return false
 		end
-		return a.model:GetAttribute("PvpOff") ~= true and b.model:GetAttribute("PvpOff") ~= true
+		local t = now()
+		return t >= ((a :: any).battleShield or 0) and t >= ((b :: any).battleShield or 0)
 	end
 	if not a.player and not b.player then
 		return false
@@ -390,6 +387,28 @@ function Combat.kill(f: Fighter, by: Fighter?)
 	end
 end
 
+-- 3.3판 배틀그라운드: 사람이 받는 피해를 눌러 담고 (기술 크기의 거듭제곱), 한 대·1초 상한을 둔다
+local function battleShape(att: Fighter, tgt: Fighter, d: number): number
+	if not Config.BATTLE_MODE or not tgt.player or d <= 0 then
+		return d
+	end
+	local B = Config.BATTLE
+	-- 그 권법의 연타 한 대를 ref로 (권법마다 기본 피해 크기가 다르다)
+	local n = d * B.ref / Config.battleScale(Combat.styleOf(att))
+	local v = B.dmgK * n ^ B.dmgPow
+	v = math.min(v, B.hitCap)
+	local t = now()
+	local ft = tgt :: any
+	if t - (ft.bWinAt or 0) >= 1 then
+		ft.bWinAt = t
+		ft.bWinSum = 0
+	end
+	v = math.max(0, math.min(v, B.secCap - (ft.bWinSum or 0)))
+	ft.bWinSum = (ft.bWinSum or 0) + v
+	return v
+end
+Combat.battleShape = battleShape
+
 -- 피해 숫자 (공격자 쪽 배율)
 local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act: Act?): number
 	local d = hit.dmg * att.dmgMult
@@ -443,6 +462,11 @@ end
 -- opt = { move, act, isSkill, unblockable, slotKey, chain }
 ------------------------------------------------------------------------
 function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
+	-- 배틀그라운드: 일어난 뒤의 보호는 먼저 때리면 풀린다
+	if Config.BATTLE_MODE and att.player and ((att :: any).battleShield or 0) > 0 then
+		(att :: any).battleShield = 0
+		att.model:SetAttribute("BattleShield", nil)
+	end
 	if not Combat.hostile(att, tgt) then
 		return "miss"
 	end
@@ -610,6 +634,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
+		d = battleShape(att, tgt, d)
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
 		if not steady then
@@ -663,6 +688,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.posture = 0
 		crit = true
 	end
+	d = battleShape(att, tgt, d)
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)
@@ -697,8 +723,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if not armored(tgt) and not steady then
 		local stun = hit.stun or 0.3
 		local fa = tgt :: any
-		if tgt.npc then
+		if tgt.npc or (Config.BATTLE_MODE and tgt.player) then
 			-- 적은 경직이 짧고, 2.5초 안에 너무 오래 묶이면 잠깐 버티며 곧바로 되받아친다 (무한 경직 방지)
+			-- 3.3판: 배틀그라운드의 사람도 같다 (누구도 끝까지 묶여 맞지 않게)
 			stun *= 0.6
 			if t - (fa.poiseAt or 0) > 2.5 then
 				fa.poiseAt = t
