@@ -5,7 +5,7 @@
     voicevox_onnxruntime-linux-x64-1.17.3/  open_jtalk_dic_utf_8-1.11/  vvm/6.vvm
   파이썬 패키지: voicevox_core 0.16.4 휠
 
-js/days.js 의 모든 단계 문장과 새 단어를 읽어 audio/ 에 mp3로 저장하고 audio/manifest.js 를 쓴다.
+js/days*.js 의 모든 단계 문장과 새 단어를 읽어 audio/ 에 mp3로 저장하고 audio/manifest.js 를 쓴다.
 목소리: VOICEVOX:No.7 (アナウンス), 보통 속도. 앱의 '천천히 듣기'는 같은 파일을 0.8배로 튼다.
 manifest.js 에 파일이 하나라도 있으면 앱 아래쪽 표기가 'VOICEVOX:No.7'로 바뀐다.
 음성 파일이 없는 문장은 기기의 일본어 음성으로 읽는다. """
@@ -25,7 +25,7 @@ js = subprocess.run(["node", "-e", """
 const fs=require('fs'),vm=require('vm');const c={};c.self=c.window=c;vm.createContext(c);
 for (const f of process.argv.slice(1)) vm.runInContext(fs.readFileSync(f,'utf8'),c);
 console.log(JSON.stringify(c.NY.DAYS));
-""", os.path.join(ROOT, "js/data.js"), os.path.join(ROOT, "js/days.js")], capture_output=True, text=True, check=True).stdout
+""", os.path.join(ROOT, "js/data.js")] + [os.path.join(ROOT, "js", f) for f in ("days.js", "days-w1.js", "days-w2.js", "days-w3.js", "days-w4.js")], capture_output=True, text=True, check=True).stdout
 DAYS = json.loads(js)
 
 plain = lambda r: re.sub(r"([一-龯々〆ヶ]+)\[[^\]]+\]", r"\1", re.sub(r"\{\w+:|\}", "", r))
