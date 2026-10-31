@@ -135,9 +135,12 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		return false
 	end
 	if a.player and b.player then
-		-- 3.3판: 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없앰). 배틀그라운드에서는 늘 싸운다 (막 일어난 사람은 잠깐 빼고)
+		-- 3.4.1판: 메인 월드의 들판 PvP를 되살린다. 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고, 끄려면 사람에게 한 번 쓰러져야)
 		if not Config.BATTLE_MODE then
-			return false
+			if Config.inSafe(a.root.Position) or Config.inSafe(b.root.Position) then
+				return false
+			end
+			return a.model:GetAttribute("PvpOff") ~= true and b.model:GetAttribute("PvpOff") ~= true
 		end
 		-- 3.3.1판: 둘 다 싸움터에 있어야 (대기실에서는 싸우지 않는다)
 		if a.model:GetAttribute("InArena") ~= true or b.model:GetAttribute("InArena") ~= true then

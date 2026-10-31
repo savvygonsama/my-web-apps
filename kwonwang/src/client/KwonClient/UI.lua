@@ -1694,7 +1694,11 @@ function HELP.helpText(tab: string): { string }
 			add(string.format("• %s %s — R$ %d", g.icon, g.name, g.price))
 		end
 		add("")
-		add("<b>⚔ 배틀그라운드</b> (사람끼리는 여기서만 싸운다)")
+		add("<b>⚔ 들판 PvP</b>")
+		add("• 마을·사당·사부의 자리 같은 안전한 곳 밖에서는 사람끼리도 싸운다")
+		add("• 처음엔 끌 수 없다 (🔒). 사람에게 한 번 쓰러지면 메뉴의 ⚔ PvP 단추로 끄고 켤 수 있다 (싸우는 중에는 못 바꾸고, 한 번 바꾸면 잠시 기다린다)")
+		add("")
+		add("<b>⚔ 배틀그라운드</b> (모두 같은 힘으로 겨루는 곳)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
 		add("• 처음엔 대기실 (싸움이 없다): 권법을 고르고, 수련 목인으로 시험하고, 다음 맵에 투표하고, '⚔ 싸움터로 들어가기'. 메뉴 → 🏯 대기실로 나올 수 있다 (싸운 직후는 안 된다)")
@@ -2215,7 +2219,7 @@ function UI.setState(s: any)
 	if testBtn then
 		testBtn.Visible = s.tester == true
 	end
-	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 한 번 쓰러지기 전에는 끌 수 없다 (자물쇠)
+	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 사람에게 쓰러지기 전에는 끌 수 없다 (자물쇠)
 	local pvpBtn = menu and menu:FindFirstChild("PvpButton")
 	if pvpBtn and pvpBtn:IsA("TextButton") then
 		pvpBtn.Text = s.pvpOff and "🕊 PvP 꺼짐" or ((s.pvpUnlocked and "⚔" or "🔒") .. " PvP 켜짐")
@@ -3468,14 +3472,16 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
 				V.menuOpen = false
 				menu.Visible = false
 			end
-			if item[1] == "battle" then
+			if item[1] == "pvp" then
+				Request:FireServer("pvpToggle")
+			elseif item[1] == "battle" then
 				Request:FireServer("battleGo")
 			elseif item[1] == "back" then
 				Request:FireServer("battleBack")
@@ -3493,6 +3499,9 @@ function UI.init(req: RemoteEvent)
 		if item[1] == "test" then
 			b.Name = "TestButton"
 			b.Visible = false
+		elseif item[1] == "pvp" then
+			b.Name = "PvpButton"
+			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)
 		elseif item[1] == "battle" or item[1] == "back" then
 			b.Name = "BattleButton"
 			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)

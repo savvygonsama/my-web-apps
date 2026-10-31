@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.4.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.4.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3364,7 +3364,7 @@ Config.TOWER = {
 -- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
 ------------------------------------------------------------------------
 Config.PVP_STYLE = { wins = 100, style = "musang" }
--- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 한 번 쓰러진 뒤부터는 스스로 끌 수 있다
+-- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 3.4.1판: 사람에게 한 번 쓰러진 뒤부터만 스스로 끌 수 있다
 Config.PVP = { offAfterDeath = true, toggleCooldown = 30 }
 ------------------------------------------------------------------------
 -- 3.3판: 배틀그라운드. 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없음).
@@ -6419,7 +6419,8 @@ type Profile = {
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
 	seen: { [string]: boolean }, -- 본 장면 (컷씬)
-	pvpUnlocked: boolean?, -- 한 번 쓰러진 뒤: PvP를 끌 수 있다
+	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
+	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
 	mounts: { [string]: boolean }, -- 가진 탈것
 	mountSel: string, -- 고른 탈것
@@ -6570,7 +6571,9 @@ local function sanitize(data: any): Profile
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
-	p.pvpUnlocked = data.pvpUnlocked == true or nil
+	-- 3.4.1판: 예전 (아무에게나 한 번 쓰러지면 열림) 규칙으로 열린 PvP 끄기는 다시 잠근다
+	p.pvpUnlocked = (data.pvpRule == 2 and data.pvpUnlocked == true) or nil
+	p.pvpRule = 2
 	p.mounts = flags(data.mounts, function(k)
 		return Config.MOUNT_BY_ID[k] ~= nil
 	end)
@@ -8085,6 +8088,20 @@ Combat.init(Push, {
 			if BATTLE then
 				Battle.onDeath(player, by and by.player or nil)
 				return
+			end
+			-- 3.4.1판 들판 PvP: 사람에게 쓰러져야만 PvP를 끌 수 있게 된다
+			local killer = by and by.player
+			if killer and killer ~= player then
+				toast(killer, "⚔ " .. player.DisplayName .. "을(를) 쓰러뜨렸다")
+				toast(player, "⚔ " .. killer.DisplayName .. "에게 쓰러졌다")
+				local dp = profiles[player]
+				if dp and not dp.pvpUnlocked then
+					dp.pvpUnlocked = true
+					states[player].dirty = true
+					Push:FireClient(player, "dialog", { who = "⚔ 들판 PvP", title = "PvP를 끌 수 있게 됐다",
+						text = "마을과 사당 같은 안전한 곳 밖에서는 사람끼리도 싸운다. 사람에게 한 번 쓰러졌으니 이제 원하면 PvP를 끌 수 있다. (메뉴의 ⚔ PvP 단추)" })
+					pushState(player)
+				end
 			end
 			local winner = nil -- 3.2판까지 비무대 승리 (이제 메인 월드에서는 없다)
 			if winner and profiles[winner] then
@@ -10540,8 +10557,33 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		toast(player, it.icon .. " " .. it.name .. "을(를) 샀어요")
 		pushState(player)
 	elseif action == "pvpToggle" then
-		-- 3.3판: 들판 PvP는 없어졌다 (사람끼리는 배틀그라운드에서)
-		toast(player, "⚔ 사람끼리 겨루기는 배틀그라운드에서 (메뉴 → ⚔ 배틀그라운드)")
+		-- 3.4.1판: 들판 PvP 켜기·끄기 (사람에게 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
+		if BATTLE then
+			return
+		end
+		local f = Combat.fighterOfPlayer(player)
+		local tNow = os.clock()
+		if not p.pvpUnlocked then
+			toast(player, "🔒 사람에게 한 번 쓰러져야 PvP를 끌 수 있어요")
+			return
+		end
+		if f and f.combatUntil > tNow then
+			toast(player, "싸우는 중에는 PvP를 바꿀 수 없어요")
+			return
+		end
+		local pst = states[player] :: any
+		if tNow - (pst.pvpAt or -999) < Config.PVP.toggleCooldown then
+			toast(player, string.format("⚔ %d초 뒤에 다시 바꿀 수 있어요", math.ceil(Config.PVP.toggleCooldown - (tNow - pst.pvpAt))))
+			return
+		end
+		pst.pvpAt = tNow
+		p.pvpOff = not p.pvpOff or nil
+		pst.dirty = true
+		if f then
+			f.model:SetAttribute("PvpOff", p.pvpOff == true)
+		end
+		toast(player, p.pvpOff and "🕊 들판 PvP를 껐어요" or "⚔ 들판 PvP를 켰어요")
+		pushState(player)
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
 	elseif action == "towerTp" then
@@ -12586,9 +12628,12 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		return false
 	end
 	if a.player and b.player then
-		-- 3.3판: 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없앰). 배틀그라운드에서는 늘 싸운다 (막 일어난 사람은 잠깐 빼고)
+		-- 3.4.1판: 메인 월드의 들판 PvP를 되살린다. 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고, 끄려면 사람에게 한 번 쓰러져야)
 		if not Config.BATTLE_MODE then
-			return false
+			if Config.inSafe(a.root.Position) or Config.inSafe(b.root.Position) then
+				return false
+			end
+			return a.model:GetAttribute("PvpOff") ~= true and b.model:GetAttribute("PvpOff") ~= true
 		end
 		-- 3.3.1판: 둘 다 싸움터에 있어야 (대기실에서는 싸우지 않는다)
 		if a.model:GetAttribute("InArena") ~= true or b.model:GetAttribute("InArena") ~= true then
@@ -50711,7 +50756,11 @@ function HELP.helpText(tab: string): { string }
 			add(string.format("• %s %s — R$ %d", g.icon, g.name, g.price))
 		end
 		add("")
-		add("<b>⚔ 배틀그라운드</b> (사람끼리는 여기서만 싸운다)")
+		add("<b>⚔ 들판 PvP</b>")
+		add("• 마을·사당·사부의 자리 같은 안전한 곳 밖에서는 사람끼리도 싸운다")
+		add("• 처음엔 끌 수 없다 (🔒). 사람에게 한 번 쓰러지면 메뉴의 ⚔ PvP 단추로 끄고 켤 수 있다 (싸우는 중에는 못 바꾸고, 한 번 바꾸면 잠시 기다린다)")
+		add("")
+		add("<b>⚔ 배틀그라운드</b> (모두 같은 힘으로 겨루는 곳)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
 		add("• 처음엔 대기실 (싸움이 없다): 권법을 고르고, 수련 목인으로 시험하고, 다음 맵에 투표하고, '⚔ 싸움터로 들어가기'. 메뉴 → 🏯 대기실로 나올 수 있다 (싸운 직후는 안 된다)")
@@ -51232,7 +51281,7 @@ function UI.setState(s: any)
 	if testBtn then
 		testBtn.Visible = s.tester == true
 	end
-	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 한 번 쓰러지기 전에는 끌 수 없다 (자물쇠)
+	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 사람에게 쓰러지기 전에는 끌 수 없다 (자물쇠)
 	local pvpBtn = menu and menu:FindFirstChild("PvpButton")
 	if pvpBtn and pvpBtn:IsA("TextButton") then
 		pvpBtn.Text = s.pvpOff and "🕊 PvP 꺼짐" or ((s.pvpUnlocked and "⚔" or "🔒") .. " PvP 켜짐")
@@ -52485,14 +52534,16 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
 				V.menuOpen = false
 				menu.Visible = false
 			end
-			if item[1] == "battle" then
+			if item[1] == "pvp" then
+				Request:FireServer("pvpToggle")
+			elseif item[1] == "battle" then
 				Request:FireServer("battleGo")
 			elseif item[1] == "back" then
 				Request:FireServer("battleBack")
@@ -52510,6 +52561,9 @@ function UI.init(req: RemoteEvent)
 		if item[1] == "test" then
 			b.Name = "TestButton"
 			b.Visible = false
+		elseif item[1] == "pvp" then
+			b.Name = "PvpButton"
+			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)
 		elseif item[1] == "battle" or item[1] == "back" then
 			b.Name = "BattleButton"
 			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.4.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.4.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3344,7 +3344,7 @@ Config.TOWER = {
 -- 비무 백 승: 비무대에서 백 번 이긴 자에게 무쌍신권
 ------------------------------------------------------------------------
 Config.PVP_STYLE = { wins = 100, style = "musang" }
--- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 한 번 쓰러진 뒤부터는 스스로 끌 수 있다
+-- 들판 PvP: 안전한 곳(마을·사당) 밖에서는 사람끼리도 싸운다. 3.4.1판: 사람에게 한 번 쓰러진 뒤부터만 스스로 끌 수 있다
 Config.PVP = { offAfterDeath = true, toggleCooldown = 30 }
 ------------------------------------------------------------------------
 -- 3.3판: 배틀그라운드. 메인 월드에서는 사람끼리 싸우지 않는다 (들판 PvP·비무대 없음).

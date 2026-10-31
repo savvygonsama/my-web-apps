@@ -60,7 +60,8 @@ type Profile = {
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
 	seen: { [string]: boolean }, -- 본 장면 (컷씬)
-	pvpUnlocked: boolean?, -- 한 번 쓰러진 뒤: PvP를 끌 수 있다
+	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
+	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
 	mounts: { [string]: boolean }, -- 가진 탈것
 	mountSel: string, -- 고른 탈것
@@ -211,7 +212,9 @@ local function sanitize(data: any): Profile
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
-	p.pvpUnlocked = data.pvpUnlocked == true or nil
+	-- 3.4.1판: 예전 (아무에게나 한 번 쓰러지면 열림) 규칙으로 열린 PvP 끄기는 다시 잠근다
+	p.pvpUnlocked = (data.pvpRule == 2 and data.pvpUnlocked == true) or nil
+	p.pvpRule = 2
 	p.mounts = flags(data.mounts, function(k)
 		return Config.MOUNT_BY_ID[k] ~= nil
 	end)
@@ -1726,6 +1729,20 @@ Combat.init(Push, {
 			if BATTLE then
 				Battle.onDeath(player, by and by.player or nil)
 				return
+			end
+			-- 3.4.1판 들판 PvP: 사람에게 쓰러져야만 PvP를 끌 수 있게 된다
+			local killer = by and by.player
+			if killer and killer ~= player then
+				toast(killer, "⚔ " .. player.DisplayName .. "을(를) 쓰러뜨렸다")
+				toast(player, "⚔ " .. killer.DisplayName .. "에게 쓰러졌다")
+				local dp = profiles[player]
+				if dp and not dp.pvpUnlocked then
+					dp.pvpUnlocked = true
+					states[player].dirty = true
+					Push:FireClient(player, "dialog", { who = "⚔ 들판 PvP", title = "PvP를 끌 수 있게 됐다",
+						text = "마을과 사당 같은 안전한 곳 밖에서는 사람끼리도 싸운다. 사람에게 한 번 쓰러졌으니 이제 원하면 PvP를 끌 수 있다. (메뉴의 ⚔ PvP 단추)" })
+					pushState(player)
+				end
 			end
 			local winner = nil -- 3.2판까지 비무대 승리 (이제 메인 월드에서는 없다)
 			if winner and profiles[winner] then
@@ -4181,8 +4198,33 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		toast(player, it.icon .. " " .. it.name .. "을(를) 샀어요")
 		pushState(player)
 	elseif action == "pvpToggle" then
-		-- 3.3판: 들판 PvP는 없어졌다 (사람끼리는 배틀그라운드에서)
-		toast(player, "⚔ 사람끼리 겨루기는 배틀그라운드에서 (메뉴 → ⚔ 배틀그라운드)")
+		-- 3.4.1판: 들판 PvP 켜기·끄기 (사람에게 쓰러진 뒤부터, 싸우는 중에는 못 바꾼다)
+		if BATTLE then
+			return
+		end
+		local f = Combat.fighterOfPlayer(player)
+		local tNow = os.clock()
+		if not p.pvpUnlocked then
+			toast(player, "🔒 사람에게 한 번 쓰러져야 PvP를 끌 수 있어요")
+			return
+		end
+		if f and f.combatUntil > tNow then
+			toast(player, "싸우는 중에는 PvP를 바꿀 수 없어요")
+			return
+		end
+		local pst = states[player] :: any
+		if tNow - (pst.pvpAt or -999) < Config.PVP.toggleCooldown then
+			toast(player, string.format("⚔ %d초 뒤에 다시 바꿀 수 있어요", math.ceil(Config.PVP.toggleCooldown - (tNow - pst.pvpAt))))
+			return
+		end
+		pst.pvpAt = tNow
+		p.pvpOff = not p.pvpOff or nil
+		pst.dirty = true
+		if f then
+			f.model:SetAttribute("PvpOff", p.pvpOff == true)
+		end
+		toast(player, p.pvpOff and "🕊 들판 PvP를 껐어요" or "⚔ 들판 PvP를 켰어요")
+		pushState(player)
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
 	elseif action == "towerTp" then
