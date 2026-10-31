@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.12.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.13.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4198,7 +4198,77 @@ Config.ACHIEVEMENTS = {
 	{ id = "mst10", icon = "🧭", name = "사부를 찾아서", desc = "사부 열을 찾는다", kind = "masters", n = 10, coins = 200000, title = "구도자" },
 	{ id = "mnt4", icon = "🐎", name = "말 부자", desc = "탈것 넷을 가진다", kind = "mounts", n = 4, gems = 200 },
 	{ id = "man10", icon = "📜", name = "심법 수집가", desc = "심법 열을 가진다", kind = "manuals", n = 10, coins = 200000 },
+	-- 3.13판: 업적 확장 (tier: 1 일반 · 2 희귀 · 3 영웅 · 4 전설 · 5 신화. 높을수록 머리 위 칭호가 화려하다)
+	{ id = "k1m", icon = "💀", name = "천하무적", desc = "적 1,000,000을 쓰러뜨린다", kind = "kills", n = 1000000, coins = 30000000, scrolls = 30, title = "천하무적", tier = 5 },
+	{ id = "b5000", icon = "👹", name = "보스의 악몽", desc = "보스를 5,000번 쓰러뜨린다", kind = "bossSum", n = 5000, coins = 20000000, scrolls = 30, title = "보스의 악몽", tier = 5 },
+	{ id = "seokwang", icon = "🪨", name = "돌을 깨다", desc = "석왕을 쓰러뜨린다", kind = "boss", arg = "seokwang", n = 1, coins = 60000, title = "돌을 깬 주먹", tier = 2 },
+	{ id = "gyunwang", icon = "🍄", name = "버섯 숲의 끝", desc = "균왕을 쓰러뜨린다", kind = "boss", arg = "gyunwang", n = 1, coins = 60000, tier = 2 },
+	{ id = "noeje", icon = "⚡", name = "벼락을 꺾다", desc = "뇌제를 쓰러뜨린다", kind = "boss", arg = "noeje", n = 1, gems = 400, title = "벼락을 꺾은 자", tier = 3 },
+	{ id = "yeombong", icon = "🔥", name = "불새를 떨구다", desc = "염봉을 쓰러뜨린다", kind = "boss", arg = "yeombong", n = 1, gems = 400, title = "불새를 떨군 자", tier = 3 },
+	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5 },
+	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5 },
+	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
+	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5 },
+	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
+	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
+	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5 },
+	{ id = "rbs1", icon = "♾", name = "윤회의 권", desc = "환생 권법 하나를 익힌다", kind = "rebirthStyles", n = 1, coins = 5000000, title = "윤회의 권", tier = 3 },
+	{ id = "m25", icon = "✦", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
+	{ id = "gear5", icon = "🎐", name = "장신구 수집가", desc = "시그니처 장신구가 있는 권법 다섯을 익힌다", kind = "gear", n = 5, gems = 800, title = "장신구 수집가", tier = 3 },
+	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5 },
+	{ id = "tint3", icon = "🌌", name = "천상의 빛깔", desc = "장신구 셋을 천상 빛깔로 물들인다", kind = "tint", n = 3, gems = 600, title = "천상의 빛깔", tier = 3 },
+	{ id = "aura1", icon = "💫", name = "별을 두르다", desc = "천상 오라를 얻는다", kind = "aura", n = 1, gems = 300, title = "별을 두른 자", tier = 4 },
+	{ id = "manLeg", icon = "📜", name = "심법의 대가", desc = "전설 등급 심법을 가진다", kind = "manualTop", n = 4, coins = 1000000, title = "심법의 대가", tier = 3 },
+	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5 },
+	{ id = "egg1", icon = "🔍", name = "호기심", desc = "강호에 숨은 것 하나를 찾는다", kind = "eggs", n = 1, coins = 77777, tier = 2 },
+	{ id = "egg4", icon = "🔍", name = "숨은 것을 찾는 자", desc = "강호에 숨은 것 넷을 모두 찾는다 (돌탑 일곱·고양이·오리 가족·바위의 검)", kind = "eggs", n = 4, coins = 7777777, scrolls = 7, title = "숨은 것을 찾는 자", tier = 4 },
+	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5 },
 }
+-- 3.13판: 업적 등급 (칭호의 화려함) · 갈래
+Config.ACH_TIERS = {
+	{ name = "일반", color = Color3.fromRGB(205, 205, 205) },
+	{ name = "희귀", color = Color3.fromRGB(110, 190, 255) },
+	{ name = "영웅", color = Color3.fromRGB(200, 120, 255) },
+	{ name = "전설", color = Color3.fromRGB(255, 200, 80) },
+	{ name = "신화", color = Color3.fromRGB(255, 90, 110) },
+}
+Config.ACH_CATS = {
+	{ id = "combat", name = "전투", icon = "⚔" },
+	{ id = "realm", name = "경지", icon = "⛰" },
+	{ id = "art", name = "권법", icon = "🥋" },
+	{ id = "trial", name = "도전", icon = "🗼" },
+	{ id = "jianghu", name = "강호", icon = "🧭" },
+	{ id = "duel", name = "비무", icon = "🏆" },
+}
+local ACH_CAT_OF = {
+	kills = "combat", bossSum = "combat", boss = "combat",
+	realm = "realm", rebirth = "realm", samsara = "realm", story = "realm",
+	styles = "art", transcend = "art", mastery = "art", rebirthStyles = "art", gear = "art", tint = "art",
+	tower = "trial", raid = "trial", maze = "trial",
+	masters = "jianghu", mounts = "jianghu", manuals = "jianghu", manualTop = "jianghu", eggs = "jianghu", aura = "jianghu",
+	pvp = "duel",
+}
+local ACH_TIER = {
+	k100 = 1, k1000 = 2, k10000 = 3, k100000 = 4, b1 = 1, b100 = 3, b1000 = 4, hyeolma = 2, cheonma = 3, cheonjon = 3, seonhak = 3,
+	raid1 = 3, raid20 = 4, maze1 = 2, maze30 = 4, r5 = 1, r9 = 2, r13 = 3, r16 = 4, r20 = 5, rb1 = 3, rb2 = 3, rb3 = 4, rb4 = 5,
+	s5 = 1, s15 = 3, s25 = 4, t1 = 3, t3 = 4, m1 = 1, m10 = 3, tw30 = 1, tw100 = 3, tw150 = 5, pvp10 = 2, pvp100 = 4, mst10 = 2, mnt4 = 2, man10 = 2,
+}
+do
+	-- 장신구 권법의 수 (모두 모으기 업적의 목표)
+	local gearN = 0
+	for _, st in ipairs(Config.Styles) do
+		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs then
+			gearN += 1
+		end
+	end
+	for _, a in ipairs(Config.ACHIEVEMENTS) do
+		a.tier = a.tier or ACH_TIER[a.id] or 1
+		a.cat = ACH_CAT_OF[a.kind] or "jianghu"
+		if a.id == "gearAll" then
+			a.n = gearN
+		end
+	end
+end
 Config.ACH_BY_ID = {}
 for i, a in ipairs(Config.ACHIEVEMENTS) do
 	a.index = i
@@ -4210,6 +4280,8 @@ Config.ACH_COLOR = {
 	maze = Color3.fromRGB(170, 210, 255), realm = Color3.fromRGB(255, 240, 160), rebirth = Color3.fromRGB(255, 120, 220), styles = Color3.fromRGB(160, 255, 190),
 	transcend = Color3.fromRGB(255, 160, 210), mastery = Color3.fromRGB(255, 220, 120), tower = Color3.fromRGB(150, 230, 255), pvp = Color3.fromRGB(255, 200, 80),
 	masters = Color3.fromRGB(200, 255, 230), mounts = Color3.fromRGB(220, 200, 160), manuals = Color3.fromRGB(210, 180, 255),
+	samsara = Color3.fromRGB(255, 130, 200), story = Color3.fromRGB(240, 220, 180), rebirthStyles = Color3.fromRGB(255, 150, 230), gear = Color3.fromRGB(150, 236, 255),
+	tint = Color3.fromRGB(170, 230, 255), aura = Color3.fromRGB(160, 236, 255), manualTop = Color3.fromRGB(220, 190, 255), eggs = Color3.fromRGB(200, 240, 170),
 }
 
 ------------------------------------------------------------------------

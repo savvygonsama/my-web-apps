@@ -18,6 +18,8 @@ local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
 UI.previewGear = Sakura.preview
+local Titles = require(script:WaitForChild("Titles"))
+Titles.init()
 local Drunk = require(script:WaitForChild("Drunk"))
 local Awake = require(script:WaitForChild("Awake"))
 local Reaper = require(script:WaitForChild("Reaper"))
@@ -2365,8 +2367,20 @@ function handlers.ach(data: any)
 	if a.title then
 		table.insert(parts, "칭호 「" .. a.title .. "」 (🏆 업적에서 달기)")
 	end
-	UI.banner("🏆 업적: " .. a.icon .. " " .. a.name, table.concat(parts, "  "), Config.ACH_COLOR[a.kind] or Color3.fromRGB(255, 220, 120))
+	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
+	local tier = a.tier or 1
+	local T = Config.ACH_TIERS[tier]
+	UI.banner(string.format("🏆 [%s] %s %s", T.name, a.icon, a.name), table.concat(parts, "  "), tier >= 2 and T.color or (Config.ACH_COLOR[a.kind] or Color3.fromRGB(255, 220, 120)))
 	Fx.sound("ping", 0.9, 1.25)
+	if tier >= 4 then
+		UI.flash(T.color, tier == 5 and 0.45 or 0.3)
+		Fx.sound("heavy", 0.6, tier == 5 and 0.5 or 0.7)
+		local root = myRoot()
+		if root then
+			Fx.burst("glitter", root.Position + Vector3.new(0, 2, 0), T.color, tier == 5 and 60 or 34, 2.2)
+			Fx.ring(root.Position - Vector3.new(0, 2.5, 0), T.color, 3, tier == 5 and 30 or 20, 0.7)
+		end
+	end
 end
 
 -- 1.9판: 누군가 환생한다. 빛기둥이 솟고, 몸이 한순간 하얗게 비었다가 환생 빛깔로 다시 차오른다

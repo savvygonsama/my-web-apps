@@ -606,6 +606,38 @@ function Ach.value(p: Profile, a: any): number
 		return keyCount(p.mounts)
 	elseif k == "manuals" then
 		return keyCount(p.manuals)
+	-- 3.13판
+	elseif k == "samsara" then
+		return p.samsara or 0
+	elseif k == "story" then
+		return p.story or 0
+	elseif k == "rebirthStyles" or k == "gear" then
+		local n = 0
+		for id in pairs(p.styles) do
+			local sd = Config.STYLE_BY_ID[id]
+			if sd and ((k == "rebirthStyles" and sd.rebirthStyle) or (k == "gear" and Config.hasGear(sd))) then
+				n += 1
+			end
+		end
+		return n
+	elseif k == "tint" then
+		return keyCount(p.skyTint or {})
+	elseif k == "aura" then
+		return p.skyAura and 1 or 0
+	elseif k == "manualTop" then
+		local best = 0
+		for _, r in pairs(p.manuals) do
+			best = math.max(best, r)
+		end
+		return best
+	elseif k == "eggs" then
+		local n = 0
+		for _, key in ipairs({ "egg_cairnAll", "egg_cat", "egg_ducks", "egg_sword" }) do
+			if p.seen[key] then
+				n += 1
+			end
+		end
+		return n
 	end
 	return 0
 end
@@ -773,9 +805,10 @@ local function updateTag(player: Player)
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
 	if tl then
-		tl.Text = ta and ("「" .. ta.title .. "」") or ""
-		tl.TextColor3 = ta and (Config.ACH_COLOR[ta.kind] or Color3.new(1, 1, 1)) or Color3.new(1, 1, 1)
+		-- 3.13판: 칭호는 화면이 등급에 따라 화려하게 따로 그린다 (TitleId 속성)
+		tl.Text = ""
 	end
+	char:SetAttribute("TitleId", (ta and ta.title) and ta.id or nil)
 	bottom.Text = style and (style.icon .. " " .. style.name) or "권법 없음"
 	bottom.TextColor3 = style and style.color or Color3.fromRGB(200, 200, 200)
 	char:SetAttribute("Realm", realm.name)

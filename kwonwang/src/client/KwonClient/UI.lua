@@ -1037,74 +1037,150 @@ end
 -- 1.9판: 업적과 칭호
 ------------------------------------------------------------------------
 local function buildAch()
+	-- 3.13판: 갈래 칸 (전체 · 전투 · 경지 · 권법 · 도전 · 강호 · 비무), 등급 딱지, 칭호 미리보기 (등급 빛깔), 갈래마다 이룬 수
 	local page = makePage("ach")
 	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 17, RichText = true, Parent = page })
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 4), Size = UDim2.new(0, 150, 0, 44), Text = "칭호 떼기", TextSize = 16, Parent = page }, function()
 		Request:FireServer("title", "")
 	end)
-	local list = scroller(page, UDim2.new(1, 0, 1, -60), UDim2.new(0, 0, 0, 60))
+	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 56), Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, Parent = page }, {
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	local cats = { { id = "all", name = "전체", icon = "📋" } }
+	for _, c in ipairs(Config.ACH_CATS) do
+		table.insert(cats, c)
+	end
+	local filter = "all"
+	local tabBtns: { [string]: TextButton } = {}
+	local list = scroller(page, UDim2.new(1, 0, 1, -100), UDim2.new(0, 0, 0, 98))
 	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local rows: { [string]: any } = {}
-	for i, a in ipairs(Config.ACHIEVEMENTS) do
-		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel, LayoutOrder = i, Parent = list }, { corner(10) })
+	-- 갈래 안에서는 등급 순 (낮은 것부터), 같은 등급이면 목표 순
+	local order = table.clone(Config.ACHIEVEMENTS)
+	table.sort(order, function(a, b)
+		if a.cat ~= b.cat then
+			local ia, ib = 0, 0
+			for i, c in ipairs(Config.ACH_CATS) do
+				if c.id == a.cat then
+					ia = i
+				end
+				if c.id == b.cat then
+					ib = i
+				end
+			end
+			return ia < ib
+		end
+		if a.tier ~= b.tier then
+			return a.tier < b.tier
+		end
+		return a.index < b.index
+	end)
+	for i, a in ipairs(order) do
+		local T = Config.ACH_TIERS[a.tier or 1]
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel, LayoutOrder = i, Parent = list }, { corner(10) })
 		local st = stroke(C.line, 1.5)
 		st.Parent = card
-		text({ Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 50, 1, 0), Text = a.icon, TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
-		local name = text({ Position = UDim2.new(0, 64, 0, 6), Size = UDim2.new(1, -260, 0, 24), Text = a.name, TextSize = 19, Font = Enum.Font.GothamBlack, RichText = true, Parent = card })
+		-- 등급 띠 (왼쪽)
+		new("Frame", { Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = T.color, BorderSizePixel = 0, Parent = card })
+		text({ Position = UDim2.new(0, 10, 0, 0), Size = UDim2.new(0, 50, 1, 0), Text = a.icon, TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		local badge = new("Frame", { Position = UDim2.new(0, 64, 0, 8), Size = UDim2.new(0, 44, 0, 20), BackgroundColor3 = T.color, Parent = card }, { corner(10) })
+		text({ Size = UDim2.fromScale(1, 1), TextSize = 12, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Color3.fromRGB(20, 14, 12), Text = T.name, Parent = badge })
+		local name = text({ Position = UDim2.new(0, 114, 0, 6), Size = UDim2.new(1, -310, 0, 24), Text = a.name, TextSize = 19, Font = Enum.Font.GothamBlack, RichText = true, Parent = card })
 		local rewards = {}
 		if a.coins then
 			table.insert(rewards, "💰 " .. Config.formatNumber(a.coins))
 		end
 		if a.gems then
-			table.insert(rewards, "💎 " .. Config.formatNumber(a.gems))
+			table.insert(rewards, "💠 " .. Config.formatNumber(a.gems))
 		end
 		if a.scrolls then
 			table.insert(rewards, "📜 " .. a.scrolls)
 		end
+		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
+		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
+		local tp: TextLabel? = nil
 		if a.title then
-			table.insert(rewards, "칭호 「" .. a.title .. "」")
+			local t = text({ Position = UDim2.new(0, 64, 0, 50), Size = UDim2.new(1, -260, 0, 18), Text = "칭호 「" .. a.title .. "」", TextSize = 14, Font = Enum.Font.GothamBlack, TextColor3 = (a.tier or 1) >= 3 and Color3.new(1, 1, 1) or T.color, Parent = card })
+			if (a.tier or 1) >= 3 then
+				local cols = (a.tier == 5) and { Color3.fromRGB(255, 90, 110), Color3.fromRGB(255, 200, 80), Color3.fromRGB(140, 255, 160), Color3.fromRGB(110, 200, 255), Color3.fromRGB(200, 120, 255) }
+					or (a.tier == 4 and { Color3.fromRGB(255, 196, 70), Color3.fromRGB(255, 250, 220), Color3.fromRGB(255, 196, 70) } or { Color3.fromRGB(255, 255, 255), Color3.fromRGB(210, 150, 255) })
+				local kps = {}
+				for k, c in ipairs(cols) do
+					table.insert(kps, ColorSequenceKeypoint.new((k - 1) / (#cols - 1), c))
+				end
+				new("UIGradient", { Color = ColorSequence.new(kps), Parent = t })
+			end
+			tp = t
 		end
-		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 26), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, Parent = card })
 		local bar = new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 170, 0, 30), BackgroundColor3 = Color3.fromRGB(25, 18, 16), Parent = card }, { corner(8) })
 		local fill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.green, Parent = bar }, { corner(8) })
 		local label = text({ Size = UDim2.fromScale(1, 1), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 2, Parent = bar })
 		local equip = button({ Size = UDim2.fromScale(1, 1), Text = "", BackgroundTransparency = 1, ZIndex = 3, Visible = false, Parent = bar }, function()
 			Request:FireServer("title", a.id)
 		end)
-		rows[a.id] = { card = card, stroke = st, name = name, sub = sub, fill = fill, label = label, equip = equip }
+		rows[a.id] = { card = card, stroke = st, name = name, sub = sub, fill = fill, label = label, equip = equip, tp = tp, cat = a.cat }
 	end
+	local function applyFilter()
+		for _, r in pairs(rows) do
+			r.card.Visible = filter == "all" or r.cat == filter
+		end
+		for cid, b in pairs(tabBtns) do
+			b.BackgroundColor3 = cid == filter and Color3.fromRGB(150, 110, 40) or C.panel2
+		end
+	end
+	for i, c in ipairs(cats) do
+		tabBtns[c.id] = button({ LayoutOrder = i, Size = UDim2.new(0, 108, 1, 0), Text = c.icon .. " " .. c.name, TextSize = 14, Parent = tabRow }, function()
+			filter = c.id
+			applyFilter()
+		end)
+	end
+	applyFilter()
 	refreshers.ach = function()
 		if not state then
 			return
 		end
 		local done, total = 0, #Config.ACHIEVEMENTS
+		local catDone: { [string]: number } = {}
+		local catAll: { [string]: number } = {}
 		local ach = state.ach or {}
 		local prog = state.achProg or {}
 		for _, a in ipairs(Config.ACHIEVEMENTS) do
 			local r = rows[a.id]
 			local ok = ach[a.id] == true
+			catAll[a.cat] = (catAll[a.cat] or 0) + 1
 			if ok then
 				done += 1
+				catDone[a.cat] = (catDone[a.cat] or 0) + 1
 			end
 			local v = prog[a.id] or 0
+			local T = Config.ACH_TIERS[a.tier or 1]
 			r.fill.Size = UDim2.fromScale(ok and 1 or math.clamp(v / a.n, 0, 1), 1)
-			r.fill.BackgroundColor3 = ok and C.gold or C.green
-			local col = Config.ACH_COLOR[a.kind] or C.gold
-			r.stroke.Color = ok and col or C.line
+			r.fill.BackgroundColor3 = ok and T.color or C.green
+			r.stroke.Color = ok and T.color or C.line
+			r.stroke.Thickness = ok and ((a.tier or 1) >= 4 and 2.5 or 1.8) or 1.2
 			r.card.BackgroundColor3 = ok and Color3.fromRGB(56, 40, 26) or C.panel
-			r.name.TextColor3 = ok and col or C.text
+			r.name.TextColor3 = ok and T.color or C.text
 			local wearing = state.title == a.id
 			if ok and a.title then
 				r.label.Text = wearing and "✔ 달고 있음" or "칭호 달기"
-				r.fill.BackgroundColor3 = wearing and C.green or C.gold
+				r.fill.BackgroundColor3 = wearing and C.green or T.color
 				r.equip.Visible = not wearing
 			else
 				r.label.Text = ok and "✔ 이룸" or string.format("%s / %s", Config.formatNumber(v), Config.formatNumber(a.n))
 				r.equip.Visible = false
 			end
 		end
+		for _, c in ipairs(cats) do
+			local b = tabBtns[c.id]
+			if c.id == "all" then
+				b.Text = string.format("📋 전체 %d/%d", done, total)
+			else
+				b.Text = string.format("%s %s %d/%d", c.icon, c.name, catDone[c.id] or 0, catAll[c.id] or 0)
+			end
+		end
 		local t = state.title and Config.ACH_BY_ID[state.title]
-		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and ("「" .. t.title .. "」") or "없음 (칭호가 붙은 업적을 이루면 달 수 있다)")
+		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
+		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 (칭호가 붙은 업적을 이루면 달 수 있다 · 등급이 높을수록 머리 위 칭호가 화려하다)")
 	end
 end
 
