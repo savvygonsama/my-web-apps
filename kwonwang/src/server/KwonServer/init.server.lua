@@ -4092,7 +4092,13 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 		Actions.potion(player)
 	elseif BATTLE and (action == "battleEnter" or action == "battleLobby" or action == "battleVote") then
-		-- 3.3.1판: 배틀그라운드 대기실
+		-- 3.3.1판: 배틀그라운드 대기실. 3.11판: 대기실 창에서 고른 권법으로 들어간다
+		if action == "battleEnter" and type(a1) == "string" then
+			local bp = profiles[player]
+			if bp and bp.styles[a1] and bp.style ~= a1 and not Battle.inArena(player) then
+				Actions.learn(player, a1)
+			end
+		end
 		local msg = Battle.request(player, action, a1)
 		if msg then
 			toast(player, msg)

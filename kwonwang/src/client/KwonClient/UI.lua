@@ -3343,26 +3343,133 @@ end
 ------------------------------------------------------------------------
 -- (화면 파일의 바깥 지역 변수가 200개 한도에 닿아, 배틀 화면 것은 한 표에 모은다)
 local BH: any = { rows = {}, votes = {}, myVote = 0 }
+-- 3.11판 대기실 창: 내가 익힌 권법이 카드로 늘어서 있고, 하나를 골라 그 권법으로 싸움터에 들어간다.
+-- 오른쪽에는 고른 권법의 기술, 지금 싸움터, 다음 맵 투표. ✕로 닫고 대기실을 둘러볼 수 있다
 local function buildLobbyPanel()
-	local panel = new("Frame", { Name = "LobbyPanel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -210), Size = UDim2.new(0, 470, 0, 236), BackgroundColor3 = C.bg, BackgroundTransparency = 0.12, Parent = gui }, { corner(14), stroke(C.line, 2) })
+	local panel = new("Frame", { Name = "LobbyPanel", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 14), Size = UDim2.new(0, 900, 0, 486), BackgroundColor3 = C.bg, BackgroundTransparency = 0.06, Parent = gui }, { corner(16), stroke(C.line, 2) })
 	scaled(panel)
-	text({ Position = UDim2.new(0, 16, 0, 10), Size = UDim2.new(1, -32, 0, 28), TextSize = 22, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏯 대기실 · 여기서는 싸우지 않는다", Parent = panel })
-	BH.info = text({ Position = UDim2.new(0, 16, 0, 40), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.dim, Text = "", Parent = panel })
-	button({ Position = UDim2.new(0, 16, 0, 66), Size = UDim2.new(1, -32, 0, 46), Text = "⚔ 싸움터로 들어가기", TextSize = 21, BackgroundColor3 = Color3.fromRGB(170, 50, 40), Parent = panel }, function()
-		Request:FireServer("battleEnter")
+	text({ Position = UDim2.new(0, 20, 0, 12), Size = UDim2.new(0.6, 0, 0, 32), TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "⚔ 비무당 · 권법을 골라 싸움터로", Parent = panel })
+	BH.info = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -64, 0, 18), Size = UDim2.new(0.4, -40, 0, 22), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Right, Text = "", Parent = panel })
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 12), Size = UDim2.new(0, 40, 0, 34), Text = "✕", TextSize = 20, Parent = panel }, function()
+		BH.closed = true
+		panel.Visible = false
+		if BH.reopen then
+			BH.reopen.Visible = true
+		end
 	end)
-	text({ Position = UDim2.new(0, 16, 0, 120), Size = UDim2.new(1, -32, 0, 20), TextSize = 15, TextColor3 = C.text, Text = "🗳 다음 맵 투표", Parent = panel })
-	local grid = new("Frame", { Position = UDim2.new(0, 16, 0, 142), Size = UDim2.new(1, -32, 0, 66), BackgroundTransparency = 1, Parent = panel }, {
+	-- 왼쪽: 권법 카드
+	local list = scroller(panel, UDim2.new(0.56, -24, 1, -96), UDim2.new(0, 16, 0, 56))
+	new("UIGridLayout", { CellSize = UDim2.new(0.5, -6, 0, 78), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	new("UIPadding", { PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 2), Parent = list })
+	BH.list = list
+	text({ Position = UDim2.new(0, 18, 1, -36), Size = UDim2.new(0.56, -24, 0, 26), TextSize = 13, TextColor3 = C.dim, Text = "🪵 서쪽 마당의 목인으로 기술을 시험해 볼 수 있다 · ✕를 눌러 둘러보기", Parent = panel })
+	-- 오른쪽: 고른 권법
+	local side = new("Frame", { Position = UDim2.new(0.56, 0, 0, 56), Size = UDim2.new(0.44, -16, 1, -72), BackgroundColor3 = C.panel, Parent = panel }, { corner(12), stroke(C.line, 1.2) })
+	BH.dName = text({ Position = UDim2.new(0, 14, 0, 10), Size = UDim2.new(1, -28, 0, 34), TextSize = 28, Font = Enum.Font.GothamBlack, Text = "", Parent = side })
+	BH.dSub = text({ Position = UDim2.new(0, 14, 0, 44), Size = UDim2.new(1, -28, 0, 20), TextSize = 15, TextColor3 = C.dim, Text = "", Parent = side })
+	BH.dSkills = text({ Position = UDim2.new(0, 14, 0, 70), Size = UDim2.new(1, -28, 0, 96), TextSize = 15, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Text = "", Parent = side })
+	text({ Position = UDim2.new(0, 14, 0, 170), Size = UDim2.new(1, -28, 0, 20), TextSize = 15, TextColor3 = C.text, Text = "🗳 다음 맵 투표", Parent = side })
+	local grid = new("Frame", { Position = UDim2.new(0, 14, 0, 192), Size = UDim2.new(1, -28, 0, 66), BackgroundTransparency = 1, Parent = side }, {
 		new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 30), CellPadding = UDim2.new(0, 8, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
 	for i, m in ipairs(Config.BATTLE.maps) do
-		BH.votes[i] = button({ Text = m.name, TextSize = 15, LayoutOrder = i, Parent = grid }, function()
+		BH.votes[i] = button({ Text = m.name, TextSize = 14, LayoutOrder = i, Parent = grid }, function()
 			BH.myVote = i
 			Request:FireServer("battleVote", i)
 		end)
 	end
-	text({ Position = UDim2.new(0, 16, 1, -26), Size = UDim2.new(1, -32, 0, 20), TextSize = 13, TextColor3 = C.dim, Text = "🥋 메뉴 → 권법에서 쓸 권법을 고르자 · 🪵 수련 목인으로 기술을 시험할 수 있다", Parent = panel })
+	BH.enter = button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 14, 1, -14), Size = UDim2.new(1, -28, 0, 56), Text = "⚔ 이 권법으로 입장", TextSize = 22, BackgroundColor3 = Color3.fromRGB(170, 50, 40), Parent = side }, function()
+		Request:FireServer("battleEnter", BH.sel)
+	end)
 	BH.lobby = panel
+	-- 닫은 뒤 다시 여는 단추
+	local re = button({ Name = "LobbyReopen", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -200), Size = UDim2.new(0, 280, 0, 48), Text = "🥋 권법 고르기 · 입장", TextSize = 19, BackgroundColor3 = Color3.fromRGB(150, 50, 40), Visible = false, Parent = gui }, function()
+		BH.closed = false
+		panel.Visible = true
+		BH.reopen.Visible = false
+	end)
+	scaled(re)
+	BH.reopen = re
+	BH.cards = {}
+	BH.showSel = function()
+		local st = Config.STYLE_BY_ID[BH.sel or ""]
+		for id, card in pairs(BH.cards) do
+			local sk = card:FindFirstChildOfClass("UIStroke")
+			if sk then
+				sk.Color = id == BH.sel and C.gold or C.line
+				sk.Thickness = id == BH.sel and 3 or 1
+			end
+			card.BackgroundColor3 = id == BH.sel and C.panel2 or C.panel
+		end
+		if not st then
+			BH.dName.Text = "권법을 고르세요"
+			BH.dSub.Text = ""
+			BH.dSkills.Text = ""
+			return
+		end
+		local ups = (state and state.gradeUp and state.gradeUp[st.id]) or 0
+		local g = Config.styleGrade(st, ups)
+		BH.dName.Text = st.icon .. " " .. st.name
+		BH.dName.TextColor3 = st.color
+		BH.dSub.Text = string.format("[%s] %s%s", g, st.hanja or "", (state and state.style == st.id) and "  · 지금 쓰는 권법" or "")
+		BH.dSub.TextColor3 = Config.GRADE_COLOR[g] or C.dim
+		local lines = {}
+		for _, slot in ipairs({ "E", "R", "G", "X" }) do
+			local s = st.skills and st.skills[slot]
+			if s then
+				table.insert(lines, string.format('<font color="#FFD278"><b>%s</b></font>  %s', slot, s.name))
+			end
+		end
+		if st.heavy then
+			table.insert(lines, string.format('<font color="#FFD278"><b>강</b></font>  %s', st.heavy.name))
+		end
+		BH.dSkills.Text = table.concat(lines, "\n")
+	end
+	BH.refreshCards = function()
+		if not state or not state.styles then
+			return
+		end
+		local ids = table.clone(state.styles)
+		local function rank(id: string): number
+			local s = Config.STYLE_BY_ID[id]
+			local ups = (state.gradeUp and state.gradeUp[id]) or 0
+			return s and (table.find(Config.GRADE_ORDER, Config.styleGrade(s, ups)) or 0) or 0
+		end
+		table.sort(ids, function(a, b)
+			local ra, rb = rank(a), rank(b)
+			if ra ~= rb then
+				return ra > rb
+			end
+			return a < b
+		end)
+		local key = table.concat(ids, ",") .. "|" .. tostring(state.style)
+		if key ~= BH.cardKey then
+			BH.cardKey = key
+			for _, card in pairs(BH.cards) do
+				card:Destroy()
+			end
+			BH.cards = {}
+			for i, id in ipairs(ids) do
+				local s = Config.STYLE_BY_ID[id]
+				if s then
+					local ups = (state.gradeUp and state.gradeUp[id]) or 0
+					local g = Config.styleGrade(s, ups)
+					local card = button({ LayoutOrder = i, BackgroundColor3 = C.panel, Parent = BH.list }, function()
+						BH.sel = id
+						BH.showSel()
+					end)
+					new("UIStroke", { Color = C.line, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = card })
+					text({ Name = "Title", Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(1, -20, 0, 28), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = s.color, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = s.icon .. " " .. s.name, Parent = card })
+					text({ Name = "Sub", Position = UDim2.new(0, 12, 0, 40), Size = UDim2.new(1, -20, 0, 26), TextSize = 14, TextColor3 = Config.GRADE_COLOR[g] or C.dim, Text = "[" .. g .. "] " .. (s.hanja or "") .. (state.style == id and "  ✔" or ""), Parent = card })
+					BH.cards[id] = card
+				end
+			end
+			if not BH.sel or not BH.cards[BH.sel] then
+				BH.sel = (state.style ~= "" and BH.cards[state.style]) and state.style or ids[1]
+			end
+		end
+		BH.showSel()
+	end
 end
 local function buildBattleHud()
 	local top = new("Frame", { Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 360, 0, 62), BackgroundColor3 = C.bg, BackgroundTransparency = 0.2, Parent = gui }, { corner(12), stroke(Color3.fromRGB(200, 80, 60), 1.5) })
@@ -3421,7 +3528,17 @@ function UI.battleState(data: any, myId: number)
 	local ch = player.Character
 	local here = ch and ch:GetAttribute("InArena") == true
 	if BH.lobby then
-		BH.lobby.Visible = not here
+		-- 싸움터에서 대기실로 돌아오면 다시 연다
+		if here then
+			BH.closed = false
+		end
+		BH.lobby.Visible = not here and not BH.closed
+		if BH.reopen then
+			BH.reopen.Visible = not here and BH.closed == true
+		end
+		if BH.refreshCards and not here then
+			BH.refreshCards()
+		end
 	end
 	if BH.info then
 		BH.info.Text = string.format("지금 싸움터: %s · ⏳ %d:%02d · 싸움터 %d명 / 모두 %d명", tostring(data.map or ""), left // 60, left % 60, data.arena or 0, data.total or 0)
