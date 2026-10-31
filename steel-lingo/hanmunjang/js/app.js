@@ -2,7 +2,7 @@
 
    하루 흐름: 시작 → (어제 문장 한 번) → [단계마다 3번 따라 읽기 + 🔍 해설을 한 화면에] × 단계 수 → 조립 퀴즈 → 완성 문장 3번 → 끝
    - 해설은 따라 읽는 화면 아래에 바로 붙는다. 문장이나 뜻을 가리지 않는다.
-   - 하루에 새 문장은 하나. 오늘 끝냈으면 다음 문장은 기기 날짜로 내일 열린다. 밀린 날을 몰아서 열 수는 없다.
+   - 하루 한 문장을 권하지만 막지는 않는다. 끝내면 다음 문장이 바로 열린다(건너뛰기는 못 한다: 앞 회차를 끝내야 다음이 열린다).
    - 끝낸 문장은 보관함에서 언제든 다시 듣고 다시 할 수 있다(기록 날짜는 바뀌지 않는다).
    - 채점·녹음·음성 인식은 없다. 따라 읽었으면 「읽었어요」를 누른다.
    - 시작하면 그날 할 화면 목록(plan)을 저장한다. 닫았다 열면 그 자리에서 이어진다.
@@ -201,7 +201,7 @@
             <li><b>🔍 뜯어보기</b> — 읽는 화면 바로 아래에 새로 붙은 단어·한자·문법·틀리기 쉬운 것</li>
             <li><b>조립하고 한 번에</b> — 완성 문장을 블록으로 맞추고 처음부터 끝까지 3번</li>
           </ol>
-          <p class="small" style="margin:8px 0 0">새 문장은 하루에 하나만 열려요. 끝낸 회차는 목록에서 언제든 다시.</p>
+          <p class="small" style="margin:8px 0 0">하루 한 문장을 권해요. 더 하고 싶으면 끝내자마자 다음 문장으로 넘어가도 돼요. 끝낸 회차는 목록에서 언제든 다시.</p>
         </div>
         <div class="friends">${imgs}</div>
         <div id="introSay">${sayHTML(NY.LINES.intro[0])}</div>
@@ -234,27 +234,22 @@
     if (C && C.day === nx) { /* 오늘 문장을 하다 멈춘 경우: 이어서 하기 하나만 */ }
     else if (nx > NY.TOTAL) {
       main += `<div class="card center"><b>🎓 ${NY.TOTAL}일, ${NY.TOTAL}문장 완성</b><p class="small" style="margin:4px 0 0">아래 목록에서 언제든 다시 해 보세요.</p></div>`;
-      bub = bub || line("done");
-    } else if (doneToday()) {
-      main += `<div class="card center todaydone"><b>✓ 오늘 문장 끝</b><p class="small" style="margin:4px 0 0">${D ? `내일 ${nx}일차 「${esc(D.title)}」가 열려요` : `내일 ${nx}일차가 열려요`} · 끝낸 회차는 아래에서 다시</p></div>`;
-      bub = bub || line("wait");
+      bub = bub || line("all");
     } else if (D) {
-      main += `<button class="btn ${C ? "" : "primary "}big" id="go">오늘의 문장 시작<small>${nx}일차 · ${esc(D.title)} · ${D.steps.length}단계 · 약 10분</small></button>`;
-      bub = bub || (n ? NY.LINES.progress[0] : line("start"));
-    } else {
-      main += `<div class="card center"><b>${nx}일차 준비 중</b><p class="small" style="margin:4px 0 0">지금까지 나온 ${NY.DAYS.length}문장은 모두 끝냈어요. 아래에서 다시 해 보세요.</p></div>`;
-      bub = bub || NY.LINES.locked[0];
+      const label = n === 0 ? "첫 문장 시작" : doneToday() ? "다음 문장 바로 하기" : "오늘의 문장 시작";
+      main += `<button class="btn ${C ? "" : "primary "}big" id="go">${label}<small>${nx}일차 · ${esc(D.title)} · ${D.steps.length}단계 · 약 10분</small></button>`;
+      bub = bub || (doneToday() ? line("wait") : n ? NY.LINES.progress[0] : line("start"));
     }
     // 회차 목록: 대표 문장(완성 문장)이 위에서 아래로. 끝낸 회차는 언제든 다시 들어간다.
     const rows = NY.DAYS.map((X) => {
-      const d = X.day, done = !!S.done[d], open = done || (d === nx && !doneToday());
+      const d = X.day, done = !!S.done[d], open = done || d === nx;
       const last = X.steps[X.steps.length - 1];
-      const state = C && C.day === d ? '<em class="st now">이어서</em>' : done ? '<em class="st ok">완료 ✓</em>' : open ? '<em class="st today">오늘</em>' : `<em class="st lock">🔒 ${d === nx ? "내일" : "잠김"}</em>`;
+      const state = C && C.day === d ? '<em class="st now">이어서</em>' : done ? '<em class="st ok">완료 ✓</em>' : open ? `<em class="st today">${doneToday() ? "다음" : "오늘"}</em>` : '<em class="st lock">🔒 앞 회차 먼저</em>';
       return `<div class="drow${open ? "" : " locked"}" ${open ? `data-day="${d}" role="button" tabindex="0"` : ""}>
           <div class="dnum">${d}</div>
           <div class="dbody">
             <div class="dhead"><b>${esc(X.title)}</b>${state}</div>
-            <p class="dsent jp">${esc(plain(last.r))}</p>
+            <p class="dsent jp" lang="ja">${esc(plain(last.r))}</p>
             <p class="dko">${esc(last.ko)}</p>
           </div>
           ${done ? `<button class="dplay" data-say="${d}" aria-label="듣기">🔊</button>` : ""}
@@ -320,7 +315,7 @@
       text = plain(last.r);
       body = `<div class="card">
         <p class="eyebrow">어제 문장 · ${P.day}일차 ${esc(P.title)}</p>
-        <p class="sent jp">${sentHTML(fullSegs(P), { ruby: true })}</p>
+        <p class="sent jp" lang="ja">${sentHTML(fullSegs(P), { ruby: true })}</p>
         <p class="ko">${esc(last.ko)}</p>
         <div class="center"><button class="snd" id="ply">🔊 듣기</button></div>
       </div>`;
@@ -343,7 +338,7 @@
       body = `<div class="card">
           <p class="eyebrow">문장 ${it.s + 1} / ${D.steps.length} · ${it.s === 0 ? "출발 문장" : "새로 붙은 블록"}</p>
           <div class="legend">${fresh}</div>
-          <p class="sent jp">${sentHTML(segs, { onlyFresh: true })}</p>
+          <p class="sent jp" lang="ja">${sentHTML(segs, { onlyFresh: true })}</p>
           <p class="ko">${esc(st.ko)}</p>
           <div class="guide">${reps >= READS ? "<b>3번 끝</b> 더 읽어도 좋고, 다음 문장으로 가도 돼요" : `<b>${GUIDE[r][0]}</b> ${GUIDE[r][1]}`}</div>
           ${dots()}
@@ -396,7 +391,7 @@
       text = plain(last.r);
       body = `<div class="card">
         <p class="eyebrow">완성 문장 · 처음부터 끝까지</p>
-        <p class="sent jp">${sentHTML(segs, { ruby: true })}</p>
+        <p class="sent jp" lang="ja">${sentHTML(segs, { ruby: true })}</p>
         ${legendHTML(segs)}
         <p class="ko">${esc(last.ko)}</p>
         <div class="guide">${reps >= READS ? "<b>3번 끝</b> 오늘 문장 완성!" : `<b>${FINAL_GUIDE[r][0]}</b> ${FINAL_GUIDE[r][1]}`}</div>
@@ -443,25 +438,30 @@
     const segs = fullSegs(D), first = D.steps[0], last = D.steps[D.steps.length - 1];
     const n = doneDays().length;
     const reads = D.steps.length * READS + READS;
+    const nextD = dayOf(nextDay());
+    const finish = C.day === NY.TOTAL ? `<div class="card center"><b>🎓 30일, 30문장 완주</b><p class="small" style="margin:4px 0 0">「밥을 먹습니다」에서 시작해 「공급을 늘릴 예정입니다」까지 왔어요. 홈 목록에서 언제든 다시 읽어 보세요.</p></div>` : "";
     $app.innerHTML = `
       ${top(`${C.day}일차 완성`)}
       <div class="main">
         <div class="card center">
-          <p class="eyebrow">🎉 오늘의 한 문장</p>
-          <p class="from jp">${esc(plain(first.r))}</p>
-          <p class="arrow">↓ 블록 ${D.quiz.blocks.length - 2}개를 붙여서</p>
-          <p class="sent jp">${sentHTML(segs, { ruby: true })}</p>
+          <p class="eyebrow">🎉 ${C.day}일차 완성 문장</p>
+          <p class="from jp" lang="ja">${esc(plain(first.r))}</p>
+          <p class="arrow">↓ 블록 ${D.steps.length - 1}개를 더 붙여서</p>
+          <p class="sent jp" lang="ja">${sentHTML(segs, { ruby: true })}</p>
           ${legendHTML(segs)}
           <p class="ko">${esc(last.ko)}</p>
           <button class="snd" id="ply">🔊 다시 듣기</button>
         </div>
+        ${finish}
         <p class="small center" style="margin:0">따라 읽기 ${reads}번 · ${NY.TOTAL}일 중 ${n}일 완료</p>
         ${sayHTML(C.review ? NY.LINES.done[1] : NY.LINES.done[0])}
         ${C.review ? "" : sayHTML(NY.LINES.progress[0], { n, t: NY.TOTAL })}
       </div>
-      <div class="foot"><button class="btn primary big" id="hm">홈으로</button></div>`;
+      <div class="foot">${nextD ? `<button class="btn primary big" id="more">다음 문장 바로 하기 →<small>${nextD.day}일차 · ${esc(nextD.title)}</small></button>` : ""}<button class="btn${nextD ? "" : " primary big"}" id="hm">홈으로</button></div>`;
     S.cur = null; save();
     document.getElementById("hm").onclick = () => render("home");
+    const mo = document.getElementById("more");
+    if (mo) mo.onclick = () => startDay(nextD.day);
     const b = document.getElementById("ply");
     b.onclick = () => play(plain(last.r), false, b);
   }

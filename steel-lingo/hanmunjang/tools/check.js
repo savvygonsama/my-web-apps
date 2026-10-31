@@ -7,7 +7,7 @@
 const fs = require("fs"), path = require("path"), vm = require("vm");
 const root = path.join(__dirname, "..");
 const ctx = {}; ctx.window = ctx.self = ctx; vm.createContext(ctx);
-["js/data.js", "js/days.js"].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx));
+["js/data.js", "js/days.js", "js/days-w1.js", "js/days-w2.js", "js/days-w3.js", "js/days-w4.js"].forEach((f) => vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx));
 const NY = ctx.NY;
 const errs = [];
 const plain = (r) => r.replace(/\{\w+:/g, "").replace(/\}/g, "").replace(/([一-龯々〆ヶ]+)\[([^\]]+)\]/g, "$1");
@@ -42,4 +42,5 @@ NY.DAYS.forEach((D, di) => {
 Object.keys(NY.LINES).forEach((k) => NY.LINES[k].forEach((l, i) => sayOk(l, `LINES.${k}[${i}]`)));
 Object.entries(NY.CHARS).forEach(([k, c]) => c.faces.forEach((f) => { if (!fs.existsSync(path.join(root, "char", `${k}_${f}.webp`))) errs.push(`char/${k}_${f}.webp 없음`); }));
 if (errs.length) { console.log("문제 " + errs.length + "개\n- " + errs.join("\n- ")); process.exit(1); }
+if (NY.DAYS.length !== NY.TOTAL) { console.log(`경고: ${NY.DAYS.length}일치뿐입니다(전체 ${NY.TOTAL}일)`); }
 console.log(`통과: ${NY.DAYS.length}일치, 단계 ${NY.DAYS.reduce((a, d) => a + d.steps.length, 0)}개`);

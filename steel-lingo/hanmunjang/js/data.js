@@ -14,16 +14,31 @@ NY.CHARS = {
 /* 블록 역할 — 색과 이름. 완성 화면의 범례에도 쓴다. */
 NY.ROLES = {
   subj:   { name: "주제",   c: "navy" },
+  subjga: { name: "주어",   c: "navy" },
+  topic:  { name: "화제",   c: "navy" },
   obj:    { name: "목적어", c: "red" },
+  name:   { name: "이름",   c: "red" },
+  plan:   { name: "예정",   c: "red" },
   verb:   { name: "동사",   c: "ink" },
+  pred:   { name: "서술",   c: "ink" },
   time:   { name: "때",     c: "blue" },
+  clause: { name: "때(절)", c: "blue" },
+  seq:    { name: "이어짐", c: "blue" },
+  comp:   { name: "비교",   c: "blue" },
+  cond:   { name: "조건",   c: "blue" },
   place:  { name: "장소",   c: "teal" },
   dest:   { name: "가는 곳", c: "teal" },
-  way:    { name: "수단",   c: "plum" },
-  with:   { name: "함께",   c: "gold" },
   from:   { name: "출발점", c: "teal" },
+  aim:    { name: "목적",   c: "teal" },
+  way:    { name: "수단",   c: "plum" },
+  mod:    { name: "꾸밈",   c: "plum" },
+  tgt:    { name: "대상",   c: "plum" },
+  with:   { name: "함께",   c: "gold" },
   qty:    { name: "수량",   c: "gold" },
-  clause: { name: "때(절)", c: "blue" }
+  list:   { name: "나열",   c: "gold" },
+  deg:    { name: "정도",   c: "gold" },
+  reason: { name: "이유",   c: "gold" },
+  pre:    { name: "쿠션말", c: "gold" }
 };
 
 /* {n}=끝낸 날 수, {t}=전체 날 수, {k}=오늘 단계 수, {b}=완성 블록 수 */
@@ -63,14 +78,18 @@ NY.LINES = {
   ],
   done: [
     { who: "poo", face: "relief", text: "오늘 끝. 퇴근." },
-    { who: "poo", face: "basic", text: "됐어. 내일 한 문장 또." }
+    { who: "poo", face: "basic", text: "됐어. 더 하고 싶으면 다음 문장도 열려 있어." }
   ],
   progress: [
     { who: "ssial", face: "happy", text: "{t}일 중 {n}일. 완성한 문장 {n}개는 아래 목록에서 언제든 다시." }
   ],
   wait: [
-    { who: "poo", face: "tired", text: "오늘 몫은 끝났어. 내일 다음 문장이 열려." },
-    { who: "dogeum", face: "grin", text: "하루 한 문장이잖아~ 보관함에서 다시 듣는 건 얼마든지~" }
+    { who: "poo", face: "tired", text: "오늘 한 문장은 끝났어. 더 하고 싶으면 다음 문장도 바로 열려 있어." },
+    { who: "dogeum", face: "grin", text: "하루 한 문장이 딱 좋긴 한데~ 더 하고 싶으면 해도 되잖아~" }
+  ],
+  all: [
+    { who: "poo", face: "relief", text: "서른 문장 끝. 수고했어." },
+    { who: "dogeum", face: "happy", text: "다 했잖아~ 처음 문장이랑 비교해 봐~ 대단하잖아~" }
   ],
   locked: [
     { who: "eg", face: "calm", text: "다음 문장은 지금 만드는 중이에요. 조금만 기다려 주세요." }
