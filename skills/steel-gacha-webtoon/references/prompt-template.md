@@ -51,11 +51,14 @@ Create the same image again with the speech bubbles and name tag left EMPTY (whi
 - SSIAL: light silver-grey body, a low side-swept crest like a swoop of bangs, light face plate, determined slanted eyebrows. Blue vest with a round emblem of four small circles and one bar.
 - DOGEUM: WARM grey body, smooth round dome helmet with NO crest and a raised headband rim, light face plate, relaxed lowered eyelids, very wide smile. Purple vest with a hexagon emblem with three horizontal stripes.
 - EG: NO vest. Body split vertically down the exact middle into a flat TEAL half (#2A8F96) and a flat MATTE GREY half (#A3A9B0); in a front view the TEAL half is on the viewer's LEFT. Rounded-square head split the same way, light face plate, a small binder clip on top of the head, small round fuel cap on the teal-side shoulder. Polite smile. Slightly shorter than the others.
-- TARAE: a wire-person. A round light-grey head inside one large dark charcoal wire ring that circles the head, with two short antennae topped with small balls. Coil-spring torso (stacked rings) with a small bronze spiral swirl on the belly. Thin dark wire arms and legs, round light-grey ball hands, small wire-ring feet. Dot eyes with sparkles, cheerful open smile.
+- TARAE: a wire-person made of dark charcoal wire (#5F646B) with a light-grey round head. The head floats in the CENTER of one large wire ring; TWO short STRAIGHT wire struts connect the top of the head to the top of the ring (they are struts, NOT antennae, and have NO balls on the ends). Plain small dot eyes and a small simple smile (no sparkles in the eyes). The ring sits on top of a coil-spring torso of about 4-5 stacked turns, with a small bronze spiral swirl (#A0722A) on the lower right of the coil. Each arm is ONE thin straight wire ending in a round light-grey ball hand. Two thin straight wire legs ending in flat round wire-ring feet. Same height as PO (top of the ring level with the top of PO's crest).
+
+**캐릭터 문장은 원본 피규어와 캐릭터 시트에서만 가져온다.** 완성된 에피소드 그림(이미 조금 흐트러졌을 수 있음)을 보고 고치지 않는다. 4화 초안에서 타래가 '공 달린 더듬이·반짝이 눈'으로 그려진 건 3화 시안 그림을 보고 쓴 문장 탓이었다.
 
 새 조연은 `art-prompts.md`의 시트 프롬프트로 시트를 먼저 만들고, 같은 형식의 한 줄을 여기에 추가한다.
 
 ## 무대 문장
+- 야외 마당(새 기본 야외): `an outdoor yard between the flat-steel building and the wire-rod building in daytime: light grey concrete ground, a low wire-mesh fence dividing the two sides, the edge of a roofed shipping bay in the background with a few wrapped steel coils on V-shaped saddles, a few trees, soft natural light`
 - 견본실(기본): `a small, cozy steel sample room in daytime: light beige walls, wooden wall shelves with small flat steel sample plates and a few mini coils, a wooden work table with a teapot and cups, a window with soft daylight, a plain door on the left wall`
 - 사무실: `a bright office desk area in daytime: light grey-blue wall, wide window with pale blue sky, plain white desk with a light wood edge, black office chair`
 - 고깃집(2화): `a cozy Korean BBQ restaurant: round table with a built-in grill, silver exhaust duct above, side dishes, lettuce basket, stainless water jug, plain warm beige wall` + `soft neutral lighting; characters keep their daytime colors`
