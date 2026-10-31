@@ -1055,7 +1055,7 @@ local function doubleJump()
 	Request:FireServer("djump")
 end
 
--- Shift를 누르고 있으면 달린다
+-- C (또는 Ctrl)를 누르고 있으면 달린다 (3.11.3판: Shift는 로블록스 시프트 락과 겹쳐 바꿨다)
 local function setSprint(on: boolean)
 	if sprinting == on then
 		return
@@ -1121,7 +1121,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 				doEmote(id)
 			end
 		end
-	elseif k == Enum.KeyCode.LeftShift or k == Enum.KeyCode.RightShift then
+	elseif k == Enum.KeyCode.C or k == Enum.KeyCode.LeftControl or k == Enum.KeyCode.RightControl then
 		setSprint(true)
 	end
 end)
@@ -1130,12 +1130,24 @@ UserInputService.InputEnded:Connect(function(input: InputObject)
 		heavyUp()
 	elseif input.KeyCode == Enum.KeyCode.F then
 		guardUp()
-	elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+	elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
 		setSprint(false)
 	end
 end)
 UI.mobile({
 	attack = attack,
+	-- 3.11.3판: 묶음 안의 점프 단추 (땅에서는 뛰고, 공중에서는 두 번 뛰기)
+	jump = function()
+		local hum = myHum()
+		if not hum or dead then
+			return
+		end
+		if hum.FloorMaterial ~= Enum.Material.Air then
+			hum.Jump = true
+		else
+			doubleJump()
+		end
+	end,
 	heavyDown = heavyDown,
 	heavyUp = heavyUp,
 	guardDown = guardDown,

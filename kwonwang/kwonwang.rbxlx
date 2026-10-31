@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.11.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.11.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4985,7 +4985,7 @@ A.dive_kick = {
 	{ t = 0.5, e = "snap", j = { W = { 25, 0, 0 }, RS = { -30, 0, 50 }, LS = { -30, 0, -50 }, RH = { -10, 0, 0 }, RK = { 0, 0, 0 }, LH = { 70, 0, 0 }, LK = { -100, 0, 0 }, R = { -20, 0, 0, 0, -0.9, 0 } } },
 	{ t = 1, j = { RS = { 20, 0, 30 }, LS = { 20, 0, -30 }, RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -5, 0, 0, 0, -0.6, 0 } } },
 }
--- 달리기 (Shift): 윗몸을 숙이고 두 팔을 뒤로 젖힌다
+-- 달리기 (C · Ctrl): 윗몸을 숙이고 두 팔을 뒤로 젖힌다
 A.sprint_upper = {
 	{ t = 0, j = { W = { 25, 0, 0 }, N = { -15, 0, 0 }, RS = { -60, 0, 15 }, RE = { 15, 0, 0 }, LS = { -60, 0, -15 }, LE = { 15, 0, 0 }, R = { -18, 0, 0, 0, 0, 0 } } },
 }
@@ -28973,7 +28973,7 @@ local function doubleJump()
 	Request:FireServer("djump")
 end
 
--- Shift를 누르고 있으면 달린다
+-- C (또는 Ctrl)를 누르고 있으면 달린다 (3.11.3판: Shift는 로블록스 시프트 락과 겹쳐 바꿨다)
 local function setSprint(on: boolean)
 	if sprinting == on then
 		return
@@ -29039,7 +29039,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 				doEmote(id)
 			end
 		end
-	elseif k == Enum.KeyCode.LeftShift or k == Enum.KeyCode.RightShift then
+	elseif k == Enum.KeyCode.C or k == Enum.KeyCode.LeftControl or k == Enum.KeyCode.RightControl then
 		setSprint(true)
 	end
 end)
@@ -29048,12 +29048,24 @@ UserInputService.InputEnded:Connect(function(input: InputObject)
 		heavyUp()
 	elseif input.KeyCode == Enum.KeyCode.F then
 		guardUp()
-	elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+	elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
 		setSprint(false)
 	end
 end)
 UI.mobile({
 	attack = attack,
+	-- 3.11.3판: 묶음 안의 점프 단추 (땅에서는 뛰고, 공중에서는 두 번 뛰기)
+	jump = function()
+		local hum = myHum()
+		if not hum or dead then
+			return
+		end
+		if hum.FloorMaterial ~= Enum.Material.Air then
+			hum.Jump = true
+		else
+			doubleJump()
+		end
+	end,
 	heavyDown = heavyDown,
 	heavyUp = heavyUp,
 	guardDown = guardDown,
@@ -35180,7 +35192,7 @@ function Cutscene.controls(onDone: (() -> ())?)
 		{ "Z (누르고 떼기)", "강타 · 모아치기" },
 		{ "E · R / G", "기술 / 오의" },
 		{ "F", "막기. 맞기 직전에 누르면 흘리기" },
-		{ "Q / Shift", "회피 / 달리기" },
+		{ "Q / C", "회피 / 달리기 (C 또는 Ctrl)" },
 		{ "Space 두 번", "이단 뛰기" },
 		{ "T", "말 걸기 · 수련 · 상점" },
 		{ "Tab / M / H", "능력치 / 지도 / 회복약" },
@@ -56018,7 +56030,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방, 천룡장은 누르고 있다 놓기)")
 		add(string.format("• E: 기술 · R: 기술 (숙련 %d) · G: 오의 (숙련 %d, 내공 가득) · X: 초 오의 (초월·환생 권법)", Config.SKILL_UNLOCK.R, Config.SKILL_UNLOCK.G))
 		add("• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다")
-		add("• Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기 · Shift: 달리기")
+		add("• Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기 · C (또는 Ctrl): 달리기")
 		add("• T (가까이): 사부·수련·상점·문 · H: 금창약 · Tab: 능력치 · M: 지도")
 		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
 		add("  단추가 흐리면 아직 쓸 수 없다 (대기 중이거나 🔒 잠김). 수련할 때는 가운데에 지금! 단추가 뜬다")
@@ -56252,7 +56264,7 @@ end
 local TRAIN_GUIDE: { [string]: string } = {
 	rock = "① 금빛 고리가 줄어든다  ② 고리가 가운데 흰 원에 겹칠 때 Space  ③ 딱 맞으면 완벽 (두 배)",
 	waterfall = "① 파란 원이 커졌다 작아졌다 한다  ② 가장 커졌을 때 Space  ③ 숨 쉬듯 천천히",
-	bamboo = "① 화살표를 따라 빛나는 고리로 달린다  ② 고리를 지나면 저절로 오른다  ③ Shift로 달리면 빠르다",
+	bamboo = "① 화살표를 따라 빛나는 고리로 달린다  ② 고리를 지나면 저절로 오른다  ③ C (또는 Ctrl)로 달리면 빠르다",
 	dummy = "① 나무팔이 들어오며 원이 밝아진다  ② 가장 밝게 번쩍일 때 Space  ③ 실전의 흘리기 박자와 같다",
 	mabo = "① 흰 바늘을 초록 칸 안에 붙잡는다  ② 누르면 오른쪽, 놓으면 왼쪽  ③ 짧게 톡톡 누르는 게 요령",
 	ironpalm = "① 쇠모래가 번쩍일 때 Space  ② 바위 들기보다 조금 빠르다  ③ 근골이 크게 오른다",
@@ -57745,7 +57757,9 @@ function UI.mobile(actions: { [string]: any })
 	if not UserInputService.TouchEnabled then
 		return
 	end
-	local pad = new("Frame", { Name = "TouchPad", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -12), Size = UDim2.new(0, 250, 0, 250), BackgroundTransparency = 1, Parent = gui })
+	-- 3.11.3판: 로블록스 기본 점프 단추가 이 묶음과 같은 자리 (오른쪽 아래)에 있어 겹쳤다.
+	-- 기본 점프 단추는 숨기고, 점프를 이 묶음 안에 넣는다. 공격 단추를 가운데로 두 겹 부채꼴로 고르게 벌려 놓는다
+	local pad = new("Frame", { Name = "TouchPad", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -12), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
 	scaled(pad, "pad")
 	local function round(key: string?, label: string, cx: number, cy: number, size: number, color: Color3, down: () -> (), up: (() -> ())?, textSize: number?): TextButton
 		local st = stroke(Color3.new(1, 1, 1), 2)
@@ -57762,27 +57776,71 @@ function UI.mobile(actions: { [string]: any })
 		return b
 	end
 	local dark = Color3.fromRGB(42, 32, 28)
-	round(nil, "👊", 182, 182, 96, Color3.fromRGB(190, 55, 45), actions.attack, nil, 38)
-	-- 안쪽 고리
-	round(nil, "💥", 90, 182, 60, dark, actions.heavyDown, actions.heavyUp)
-	round(nil, "💨", 117, 117, 60, dark, actions.dash)
-	round(nil, "🛡", 182, 90, 60, dark, actions.guardDown, actions.guardUp)
-	-- 바깥 고리: 기술
-	round("E", "E", 24, 154, 56, Color3.fromRGB(70, 52, 40), actions.E)
-	round("R", "R", 51, 90, 56, Color3.fromRGB(70, 52, 40), actions.R)
-	round("G", "G", 102, 43, 56, Color3.fromRGB(170, 125, 45), actions.G)
+	local CX, CY = 190, 190
+	local function at(r: number, deg: number): (number, number)
+		local a = math.rad(deg)
+		return CX + r * math.cos(a), CY + r * math.sin(a)
+	end
+	round(nil, "👊", CX, CY, 100, Color3.fromRGB(190, 55, 45), actions.attack, nil, 40)
+	-- 안쪽 부채꼴: 점프 (바로 왼쪽, 엄지가 가장 쉽게 닿는 곳) · 강타 · 대시 · 막기
+	local jx, jy = at(114, 180)
+	round(nil, "⤒", jx, jy, 64, Color3.fromRGB(60, 110, 170), actions.jump, nil, 30)
+	local hx, hy = at(114, 210)
+	round(nil, "💥", hx, hy, 58, dark, actions.heavyDown, actions.heavyUp)
+	local dx, dy = at(114, 240)
+	round(nil, "💨", dx, dy, 58, dark, actions.dash)
+	local gx, gy = at(114, 270)
+	round(nil, "🛡", gx, gy, 58, dark, actions.guardDown, actions.guardUp)
+	-- 바깥 부채꼴: 기술
+	local ex, ey = at(182, 190)
+	round("E", "E", ex, ey, 56, Color3.fromRGB(70, 52, 40), actions.E)
+	local rx, ry = at(182, 215)
+	round("R", "R", rx, ry, 56, Color3.fromRGB(70, 52, 40), actions.R)
+	local g2x, g2y = at(182, 240)
+	round("G", "G", g2x, g2y, 56, Color3.fromRGB(170, 125, 45), actions.G)
 	if actions.X then
-		local x = round("X", "X", 168, 22, 52, Color3.fromRGB(190, 80, 140), actions.X)
+		local xx, xy = at(182, 265)
+		local x = round("X", "X", xx, xy, 54, Color3.fromRGB(190, 80, 140), actions.X)
 		x.Visible = false
 	end
-	-- 작은 단추 (오른쪽 끝, 고리 위)
+	-- 작은 단추 (오른쪽 끝, 위)
 	if not Config.BATTLE_MODE then
 		-- 배틀그라운드에서는 금창약·탈것을 쓰지 않는다
-		round(nil, "🧪", 226, -34, 44, Color3.fromRGB(46, 120, 80), actions.potion)
-		round(nil, "🐎", 226, -86, 44, dark, actions.mount)
+		round(nil, "🧪", 236, -10, 44, Color3.fromRGB(46, 120, 80), actions.potion)
+		round(nil, "🐎", 236, -60, 44, dark, actions.mount)
 	end
+	-- 로블록스 기본 점프 단추 숨기기 (다시 켜지면 또 끈다)
+	task.spawn(function()
+		local tg = player:WaitForChild("PlayerGui"):WaitForChild("TouchGui", 30)
+		local frame = tg and tg:WaitForChild("TouchControlFrame", 10)
+		local jb = frame and frame:WaitForChild("JumpButton", 10)
+		if jb and jb:IsA("GuiObject") then
+			local jbo = jb :: GuiObject
+			jbo.Visible = false
+			jbo:GetPropertyChangedSignal("Visible"):Connect(function()
+				if jbo.Visible then
+					jbo.Visible = false
+				end
+			end)
+		end
+	end)
+	-- 터치 화면이 달린 컴퓨터: 마우스·자판을 쓰면 단추 묶음을 감추고, 화면을 만지면 다시 보인다
+	local function touchMode(): boolean
+		local lt = UserInputService:GetLastInputType()
+		if lt == Enum.UserInputType.Touch then
+			return true
+		end
+		if lt == Enum.UserInputType.Keyboard or lt == Enum.UserInputType.MouseButton1 or lt == Enum.UserInputType.MouseButton2 or lt == Enum.UserInputType.MouseMovement or lt == Enum.UserInputType.MouseWheel then
+			return false
+		end
+		return not UserInputService.KeyboardEnabled
+	end
+	pad.Visible = touchMode()
+	UserInputService.LastInputTypeChanged:Connect(function()
+		pad.Visible = touchMode()
+	end)
 	-- 수련: 할 때만 공격 단추 자리에
-	V.trainPad = round(nil, "지금!", 182, 182, 104, C.chi, actions.train, nil, 28)
+	V.trainPad = round(nil, "지금!", CX, CY, 108, C.chi, actions.train, nil, 28)
 	;(V.trainPad :: TextButton).ZIndex = 3
 	;(V.trainPad :: TextButton).BackgroundTransparency = 0
 	;(V.trainPad :: TextButton).Visible = false
