@@ -554,6 +554,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	pungsin2 = { H = "fan", E = "cross", R = "spiral" },
 	chobyeok = { H = "cross", E = "beam", R = "rain" },
 	chochanghae = { H = "wave" },
+	chosengha = { H = "nova" },
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {

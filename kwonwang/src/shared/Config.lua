@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.3.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.4.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1894,6 +1894,56 @@ table.insert(Config.Styles, {
 })
 
 ------------------------------------------------------------------------
+-- 3.4판 초·성하신권 (초월): 성하신권을 숙련 20까지, 성운원의 별가루를 모아 관성대의 천성선을 넘는다.
+-- 오른손에 별이 달린 지팡이 (화면이 그린다). 때릴 때마다 가끔 상대 둘레에 마법진이 열리고 별이 튀어나와 찌른다.
+-- E 별똥 화살 · R 성좌진 · G 은하수 (지팡이를 꽂아 세 빛 안개 속에 별의 소용돌이) · X 성천궁 (남색 돔, 마법진, 별과 메테오, 별자리 폭발)
+------------------------------------------------------------------------
+table.insert(Config.Styles, {
+	id = "chosengha",
+	name = "초·성하신권",
+	hanja = "超星河神拳",
+	icon = "🪄",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(60, 50, 170),
+	color2 = Color3.fromRGB(255, 226, 120),
+	fx = "galaxy",
+	staff = true, -- 오른손에 별 지팡이 (화면이 그린다)
+	starDome = true, -- 초 오의 컷씬: 별이 뜨는 남색 하늘
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "seongha",
+	trialHp = 10,
+	unlockHint = "성하신권을 익히고 천외천에 오른 자만이, 천상계 성운원 남쪽 끝 관성대에서 별을 헤아리는 천성선을 만난다",
+	desc = "성하신권을 넘어선 권법. 주먹에 담던 별을 이제 지팡이 끝에 매달았다. 휘두를 때마다 마법진이 열리고, 별이 쏟아지고, 하늘에 별자리가 그려진다.",
+	gimmick = "별진: 맞힐 때마다 25% (네 번째는 반드시) 상대 둘레에 마법진이 열리고 별이 튀어나와 찌른다. 균형을 1.3배로 깎고, 기술 대기 15% 짧다. 오의 위에 초 오의(X)가 있다",
+	deflect = 0.24,
+	postureMult = 1.3,
+	cdMult = 0.85,
+	speed = 1.1,
+	pulse = { every = 4, chance = 0.25, kind = "starSigil", radius = 8, delay = 0.35, name = "별진", dmg = 24, posture = 24, stun = 0.5, kb = 12, up = 10 },
+	stance = "stance_staff",
+	combo = {
+		{ id = "cg1", name = "성장 휘두르기", pose = "staff_swing_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 7, 5.2, 11, 10, 0.35, 10) } },
+		{ id = "cg2", name = "역성장", pose = "staff_swing_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 7, 5.2, 11, 10, 0.35, 10, 6) } },
+		{ id = "cg3", name = "성환", pose = "staff_spin", dur = 0.44, lunge = 2, hits = { hit(0.16, 0, 8, 7, 6, 0.3, 8, nil, true), hit(0.33, 0, 8, 8, 7, 0.3, 14, nil, true) } },
+		{ id = "cg4", name = "낙성추", pose = "staff_slam", dur = 0.5, lunge = 4, hits = { hit(0.25, 8, 7, 21, 24, 0.6, 30, 10, true) } },
+	},
+	heavy = { id = "cgH", name = "유성장", pose = "staff_thrust", dur = 0.62, lunge = 6, hits = { hit(0.28, 10, 6.5, 30, 42, 0.8, 70, 8) } },
+	skills = {
+		E = { id = "cgE", name = "별똥 화살", desc = "지팡이 끝에 마법진을 펼쳐 별 다섯을 쏜다. 별은 둘레의 적을 쫓아가 꽂히고, 꽂힌 자리에서 작게 터진다", pose = "staff_point", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "starVolley", n = 5, range = 36, delay = 0.18, every = 0.07, travel = 0.28, radius = 4, hit = hit(0, 0, 0, 16, 14, 0.35, 10, 4) } },
+		R = { id = "cgR", name = "성좌진", desc = "앞의 땅에 큰 마법진을 그린다. 둘레에 별 일곱이 떠올라 하나씩 선으로 이어져 별자리가 되는 동안 적을 끌어모으고, 별자리가 완성되면 별빛 기둥이 솟는다", pose = "staff_sigil", dur = 0.8, cd = 10, chi = 25,
+			mech = { kind = "starSeal", dist = 10, radius = 12, delay = 0.35, stars = 7, link = 0.1, pull = 26, tick = hit(0, 0, 0, 6, 8, 0.3, 0), burst = hit(0, 0, 0, 40, 44, 0.8, 20, 30) } },
+		G = { id = "cgG", name = "은하수", desc = "지팡이가 커다랗게 자라 땅에 꽂힌다. 둘레 24칸에 보라·남색·노란 안개가 피어오르고, 그 안에서 별들이 소용돌이치며 은하수가 된다. 소용돌이는 적을 끌어들이며 계속 치고, 마지막에 은하가 한가운데로 모여 터진다", pose = "staff_plant", dur = 1.6, cd = 30, chi = 100, armor = true,
+			mech = { kind = "galaxyStaff", dist = 5, delay = 0.55, radius = 24, dur = 3.2, every = 0.25, pull = 24, tick = hit(0, 0, 0, 9, 9, 0.3, 0), final = hit(0, 0, 0, 100, 120, 1.4, 30, 36) } },
+		X = { id = "cgX", name = "성천궁", desc = "초 오의. 하늘이 밤이 되고 (그동안 무적) 둘레 34칸을 덮는 커다란 남색 돔이 내려앉는다. 돔 안 곳곳에 마법진이 열려 별이 쏟아지고 메테오가 떨어진다. 마지막에 돔 표면에 별자리들이 빛으로 그려지고, 모두 한꺼번에 터진다", pose = "staff_dome", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "starDome", cut = 1.4, radius = 34, rain = 2.6, every = 0.15, n = 3, hit = hit(0, 0, 0, 6, 6, 0.2, 4), meteorEvery = 4, meteorRadius = 8, meteor = hit(0, 0, 0, 20, 24, 0.5, 20, 10), draw = 0.9, final = hit(0, 0, 0, 190, 210, 1.8, 60, 30) } },
+	},
+})
+
+------------------------------------------------------------------------
 -- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고, 네 번이면 가시덤불이 터진다.
 -- E 종자탄 · R 개화 (거대한 꽃봉오리가 피며 꽃가루로 잠재운다) · G 목령강림 (거대한 나무 정령이 솟아 내리친다)
 ------------------------------------------------------------------------
@@ -2260,6 +2310,7 @@ local FINISHERS = {
 	pungsin2 = { name = "천풍승천각", pose = "gale_double" },
 	chobyeok = { name = "천뢰승천권", pose = "knee_strike" },
 	chochanghae = { name = "고경승천장", pose = "tidal_punch" },
+	chosengha = { name = "성장승천", pose = "staff_rise" },
 	mugeuk2 = { name = "진 무극승천장", pose = "void_push" },
 	maehwa2 = { name = "설중매영각", pose = "crescent_kick" },
 	chwi2 = { name = "취선번천각", pose = "drunk_flop" },
@@ -2710,6 +2761,18 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
 			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
 			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+	if st.id == "chosengha" then
+		local star = Color3.fromRGB(255, 226, 120)
+		st.trialIntro = { title = "초월의 시련", text = "별을 쥐었다고 별을 부리는 건 아니다. 내 별의 돔 아래서 끝까지 서 있거든, 이 지팡이 끝의 별을 네게 걸어 주마." }
+		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
+			P("rain", "별똥비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = star, hit = hit(0, 0, 0, 30, 34, 0.8, 18) }),
+			P("donut", "성좌 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "staff_sigil", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
+			P("charge", "유성장", 2, { length = 52, width = 8, warn = 0.6, cd = 6, times = 3, pose = "staff_thrust", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
+			P("rain", "메테오", 2, { count = 6, radius = 9, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(150, 120, 255), hit = hit(0, 0, 0, 36, 40, 0.8, 24) }),
+			P("leap", "낙성추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "staff_slam", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
+			P("quake", "성천궁", 3, { radius = 28, warn = 1.3, cd = 9, pose = "staff_dome", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
 		} }
 	end
 	if st.id == "chobyeok" then
@@ -3580,6 +3643,10 @@ Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vecto
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+-- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
+Config.STAR_TERRACE = Vector3.new(-600, SY, -20)
+Config.MASTERS.chosengha = { name = "천성선", at = Config.STAR_TERRACE + Vector3.new(0, 4.4, 0), region = "성운원 남쪽 끝 관성대 (천상계)", regionId = "nebula", secret = true,
+	quote = "별을 주먹에 쥐었다고? 나는 별에게 길을 가르친다.", rumor = "성운원 남쪽 끝, 구리 고리가 저절로 도는 둥근 관측대 위에서 지팡이로 별을 헤아리는 노인이 있다더라" }
 -- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
 Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
 Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
@@ -3608,6 +3675,7 @@ Config.SKY_MATS = {
 	{ id = "bloodmoon", name = "혈월정", icon = "🔴", how = "밤에 천상계의 적 (보스는 꼭 둘)", night = true, chance = 0.55, boss = 6 }, -- 3.2.7판: 밤이 6분 → 2분이라 0.25 → 0.55,
 	{ id = "thunderstone", name = "뇌정석", icon = "⚡", how = "천상계의 보스만 (한 번에 둘)", bossOnly = 3, bossBonus = { noeje = 8 } },
 	{ id = "tidepearl", name = "비천 진주", icon = "🐚", how = "비천폭 섬의 적 (비천은 꼭 둘)", island = "falls", chance = 0.3, boss = 10 },
+	{ id = "stardust", name = "별가루", icon = "✨", how = "성운원 섬의 적 (성군은 꼭 둘)", island = "nebula", chance = 0.3, boss = 10 },
 }
 Config.MAT_DROP_MAX = 2 -- 2.7.7판: 한 번에 얻는 천상 재료는 많아야 둘 (보스의 "한 무더기"도 둘)
 Config.SKY_MAT_BY_ID = {}
@@ -3621,11 +3689,13 @@ Config.TRANSCEND_REQ = {
 	chohyeolma = { base = "hyeolma", awakened = "hyeolma2", lv = 20, challenge = { bloodmoon = 12 }, learn = { bloodmoon = 24 } },
 	chobyeok = { base = "byeokryeok", awakened = "byeokryeok2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
 	chochanghae = { base = "changhae", awakened = "changhae2", lv = 20, challenge = { tidepearl = 10 }, learn = { tidepearl = 20 } },
+	-- 3.4판: 성하신권에는 각성 권법(진)이 없어 원래 권법만 (재료를 더 많이)
+	chosengha = { base = "seongha", lv = 20, challenge = { stardust = 12 }, learn = { stardust = 24 } },
 }
 for sid, R in pairs(Config.TRANSCEND_REQ) do
 	for _, st in ipairs(Config.Styles) do
 		if st.id == sid then
-			st.unlockHint = (st.unlockHint or "") .. string.format(". 그리고 원래 권법과 각성 권법(진)을 숙련 %d까지, 천상계에서만 나는 재료를 모아야 한다", R.lv)
+			st.unlockHint = (st.unlockHint or "") .. string.format(R.awakened and ". 그리고 원래 권법과 각성 권법(진)을 숙련 %d까지, 천상계에서만 나는 재료를 모아야 한다" or ". 그리고 원래 권법을 숙련 %d까지, 천상계에서만 나는 재료를 모아야 한다", R.lv)
 		end
 	end
 end

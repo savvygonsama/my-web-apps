@@ -1192,7 +1192,7 @@ local function transcendCheck(p: Profile, styleId: string, stage: string): (bool
 		if not okA then
 			return false, string.format("각성 권법(진) 하나를 숙련 %d까지 올려야 해요", R.lv)
 		end
-	else
+	elseif R.awakened then
 		local a = Config.STYLE_BY_ID[R.awakened]
 		if not p.styles[R.awakened] or Calc.mastery(p, R.awakened).lv < R.lv then
 			return false, string.format("%s 숙련 %d이 필요해요", a and a.name or R.awakened, R.lv)

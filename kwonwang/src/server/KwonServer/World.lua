@@ -3835,6 +3835,62 @@ local function thunderPeak()
 	part({ Name = "PeakSignPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(0, 2, 26), Color = iron, Material = Enum.Material.Metal, Parent = f })
 end
 
+-- 3.4판: 초·성하신권의 사부 천성선이 선 관성대 (천상계 성운원 남쪽 끝, 지도에 나오지 않는다)
+-- 두 단의 둥근 돌 관측대, 남쪽 계단, 가장자리의 별 등 여덟, 금빛 고리 셋이 엇갈린 혼천의, 떠 있는 별 수정
+local function starTerrace()
+	local at = Config.STAR_TERRACE
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "StarTerrace"
+	f.Parent = folder
+	local stone = Color3.fromRGB(70, 66, 110)
+	local stone2 = Color3.fromRGB(96, 90, 140)
+	local brass = Color3.fromRGB(214, 176, 92)
+	local star = Color3.fromRGB(255, 226, 120)
+	local violet = Color3.fromRGB(170, 130, 255)
+	disc("TerraceBase", at + Vector3.new(0, 0.7, 0), 16, 1.4, stone, Enum.Material.Slate, f)
+	disc("TerraceTop", at + Vector3.new(0, 2.1, 0), 12, 1.4, stone2, Enum.Material.Marble, f)
+	disc("TerraceInlay", at + Vector3.new(0, 2.82, 0), 9, 0.06, Color3.fromRGB(60, 50, 170), Enum.Material.Neon, f, false).Transparency = 0.4
+	disc("TerraceInlayCore", at + Vector3.new(0, 2.84, 0), 3, 0.06, star, Enum.Material.Neon, f, false).Transparency = 0.2
+	-- 남쪽 계단
+	for k = 1, 3 do
+		part({ Name = "TerraceStep", Size = Vector3.new(6, k * 0.95, 2.2), Position = at + Vector3.new(0, k * 0.475, 18.5 - k * 2.2), Color = stone, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 가장자리의 별 등 여덟
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + math.pi / 8
+		local p = at + Vector3.new(math.cos(a) * 14.5, 1.4, math.sin(a) * 14.5)
+		part({ Name = "StarLampPost", Size = Vector3.new(0.6, 5, 0.6), Position = p + Vector3.new(0, 2.5, 0), Color = brass, Material = Enum.Material.Metal, Parent = f })
+		local orb = part({ Name = "StarLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = p + Vector3.new(0, 5.6, 0), Color = k % 2 == 0 and star or violet, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(orb, orb.Color, 14, 1.2)
+	end
+	-- 혼천의: 받침 위에 엇갈린 금빛 고리 셋, 가운데 별 구슬
+	local arm = at + Vector3.new(-6, 2.8, -5)
+	part({ Name = "ArmillaryStand", Size = Vector3.new(1.2, 5, 1.2), Position = arm + Vector3.new(0, 2.5, 0), Color = brass, Material = Enum.Material.Metal, Parent = f })
+	local center = arm + Vector3.new(0, 9, 0)
+	for ri, tilt in ipairs({ CFrame.Angles(0, 0, 0), CFrame.Angles(math.rad(90), 0, 0), CFrame.Angles(math.rad(60), math.rad(45), math.rad(30)) }) do
+		local R = 4 - ri * 0.4
+		for k = 0, 23 do
+			local a0, a1 = k / 24 * math.pi * 2, (k + 1) / 24 * math.pi * 2
+			local p0 = Vector3.new(math.cos(a0) * R, 0, math.sin(a0) * R)
+			local p1 = Vector3.new(math.cos(a1) * R, 0, math.sin(a1) * R)
+			part({ Name = "ArmillaryRing", Size = Vector3.new(0.25, 0.25, (p1 - p0).Magnitude * 1.08), CFrame = CFrame.new(center) * tilt * CFrame.lookAt((p0 + p1) / 2, p1), Color = brass, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+		end
+	end
+	local core = part({ Name = "ArmillaryStar", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = center, Color = star, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	light(core, star, 24, 2)
+	-- 떠 있는 별 수정
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		crystal(at + Vector3.new(math.cos(a) * 22, 9 + (k % 2) * 4, math.sin(a) * 22), 1.6, k % 2 == 0 and star or violet, f)
+	end
+	local board = part({ Name = "TerraceSign", Size = Vector3.new(8, 2.2, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(4.5, 4, 22), at + Vector3.new(4.5, 4, 40)), Color = Color3.fromRGB(30, 28, 50), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "관성대", star, 1 } })
+	part({ Name = "TerraceSignPost", Size = Vector3.new(0.5, 3.4, 0.5), Position = at + Vector3.new(4.5, 1.7, 22), Color = brass, Material = Enum.Material.Metal, Parent = f })
+end
+
 -- 2.7판: 초·창해신권의 사부 고경선이 앉은 고래 뼈 바위 (서해 바닷가, 지도에 나오지 않는다)
 -- 모래에 반쯤 묻힌 거대한 옛 고래의 머리뼈 (위가 평평해 사부가 앉는다), 앞으로 뻗은 두 턱뼈, 뒤로 이어진 등뼈와 갈비뼈 일곱 쌍,
 -- 뼈 둘레의 물웅덩이와 따개비 바위, 머리뼈 위의 빛나는 진주
@@ -5022,6 +5078,7 @@ function World.build(): any
 		{ "혈월 제단", reaperAltar },
 		{ "쇠기둥 봉우리", thunderPeak },
 		{ "고래 뼈 바위", whaleRock },
+		{ "관성대", starTerrace },
 		{ "들판 채우기", wilds },
 		{ "각성선인", function()
 			awakenAltar(out)

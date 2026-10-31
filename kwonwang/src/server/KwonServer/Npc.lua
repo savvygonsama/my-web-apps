@@ -671,6 +671,17 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "chosengha" then
+		-- 천성선: 흰 수염, 별을 수놓은 남색 높은 관, 어깨의 금빛 별 둘, 손에 쥔 별 지팡이
+		beard(WHITE_HAIR)
+		wear(model, "Head", "StarCrown", Vector3.new(hs.X * 0.8, hs.Y * 0.9, hs.Z * 0.8), CFrame.new(0, hs.Y * 0.85, 0), Color3.fromRGB(40, 40, 120), Enum.Material.Fabric)
+		wear(model, "Head", "CrownStar", Vector3.new(0.45, 0.45, 0.45), CFrame.new(0, hs.Y * 1.35, 0), style.color2, Enum.Material.Neon, Enum.PartType.Ball)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "UpperTorso", "ShoulderStar", Vector3.new(0.35, 0.35, 0.35), CFrame.new(x * 0.9, 0.85, -0.2), style.color2, Enum.Material.Neon, Enum.PartType.Ball)
+		end
+		wear(model, "RightHand", "StarStaff", Vector3.new(0.3, 6.6, 0.3), CFrame.new(0, 1.2, 0), Color3.fromRGB(46, 36, 70), Enum.Material.Wood)
+		wear(model, "RightHand", "StarStaffRing", Vector3.new(0.2, 1.6, 1.6), CFrame.new(0, 4.7, 0) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(214, 176, 92), Enum.Material.Metal, Enum.PartType.Cylinder)
+		wear(model, "RightHand", "StarStaffGem", Vector3.new(0.9, 0.9, 0.9), CFrame.new(0, 4.7, 0), style.color2, Enum.Material.Neon, Enum.PartType.Ball)
 	end
 end
 

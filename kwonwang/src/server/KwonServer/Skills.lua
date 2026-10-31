@@ -3616,6 +3616,113 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.wave, sc), move)
 			end
 		end)
+	elseif kind == "starVolley" then
+		-- 3.4판 초·성하 별똥 화살 (E): 지팡이 끝의 마법진에서 별 다섯이 차례로 날아가 둘레의 적을 쫓아 꽂힌다 (적이 적으면 같은 적에게 여럿, 없으면 앞으로 부채꼴)
+		local list = nearestList(f, m.range, m.n)
+		local origin = f.root.Position + look * 2.5 + Vector3.new(0, 1.5, 0)
+		local right = rightOf(look)
+		local aims = {}
+		local targets = {}
+		for i = 1, m.n do
+			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
+			targets[i] = o
+			local at = o and o.root.Position or (f.root.Position + look * (m.range * 0.6) + right * (i - (m.n + 1) / 2) * 5)
+			aims[i] = { m = o and o.model or nil, at = at }
+		end
+		Push:FireAllClients("skillfx", { kind = "starVolley", m = f.model, from = origin, aims = aims, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, radius = m.radius, style = style })
+		for i = 1, m.n do
+			after(m.delay + (i - 1) * m.every + m.travel, function()
+				local o = targets[i]
+				local at = (o and not o.dead and o.root.Parent) and o.root.Position or aims[i].at
+				for _, v in ipairs(hostilesNear(f, at, m.radius)) do
+					strike(f, v, hit, move)
+				end
+			end)
+		end
+	elseif kind == "starSeal" then
+		-- 3.4판 초·성하 성좌진 (R): 앞의 땅에 마법진. 별이 하나씩 떠올라 선으로 이어지는 동안 끌어모으고, 별자리가 다 그려지면 별빛 기둥
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "starSeal", at = center, dir = look, radius = m.radius, stars = m.stars, delay = m.delay / sp, link = m.link / sp, style = style })
+		for i = 1, m.stars do
+			after(m.delay + i * m.link, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					pullTo(o, center, m.pull)
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + (m.stars + 1) * m.link + 0.1, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 1)) do
+				strike(f, o, scaled(m.burst, sc), move)
+			end
+		end)
+	elseif kind == "galaxyStaff" then
+		-- 3.4판 초·성하 은하수 (오의): 지팡이가 커져 땅에 꽂히고, 세 빛 안개 속에서 별이 소용돌이친다. 끌어들이며 치다가 은하가 가운데로 모여 터진다
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "galaxyStaff", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					pullTo(o, center, m.pull)
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "starDome" then
+		-- 3.4판 초·성하 성천궁 (초 오의): 컷씬 (무적) 뒤 남색 돔이 내려앉는다. 돔 안 곳곳의 마법진에서 별이 쏟아지고 메테오가 떨어진다.
+		-- 마지막에 돔 표면에 별자리가 그려지고 한꺼번에 터진다
+		local center = f.root.Position
+		local total = m.cut + m.rain + m.draw + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local did = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "starDomeOpen", id = did, m = f.model, at = center, radius = m.radius, cut = m.cut / sp, rain = m.rain / sp, draw = m.draw / sp, style = style })
+		local ticks = math.floor(m.rain / m.every)
+		for k = 1, ticks do
+			after(m.cut + k * m.every, function()
+				local list = hostilesNear(f, center, m.radius)
+				local pts = {}
+				for j = 1, m.n do
+					if #list > 0 then
+						local o = list[math.random(1, #list)]
+						strike(f, o, hit, move)
+						pts[j] = o.root.Position
+					else
+						local a, r = math.random() * math.pi * 2, math.sqrt(math.random()) * m.radius * 0.8
+						pts[j] = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+					end
+				end
+				Push:FireAllClients("skillfx", { kind = "domeStars", id = did, at = center, pts = pts, style = style })
+				if k % m.meteorEvery == 0 then
+					local at: Vector3
+					if #list > 0 then
+						at = list[math.random(1, #list)].root.Position
+					else
+						local a, r = math.random() * math.pi * 2, math.sqrt(math.random()) * m.radius * 0.7
+						at = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+					end
+					Push:FireAllClients("skillfx", { kind = "domeMeteor", id = did, at = at, radius = m.meteorRadius, fall = 0.35 / sp, style = style })
+					after(0.35, function()
+						for _, o in ipairs(hostilesNear(f, at, m.meteorRadius)) do
+							strike(f, o, scaled(m.meteor, sc), move)
+						end
+					end)
+				end
+			end)
+		end
+		after(m.cut + m.rain, function()
+			Push:FireAllClients("skillfx", { kind = "domeDraw", id = did, at = center, radius = m.radius, draw = m.draw / sp, style = style })
+		end)
+		after(m.cut + m.rain + m.draw, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position

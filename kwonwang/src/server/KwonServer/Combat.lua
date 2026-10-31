@@ -785,7 +785,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			-- 파천 중압·태초 창세: 정해진 수만큼 맞히면 상대 자리에서 터진다
 			local fa = att :: any
 			fa.pulseN = (fa.pulseN or 0) + 1
-			if fa.pulseN >= aPulse.every then
+			-- 3.4판: chance가 있으면 그 사이에도 가끔 (every번째는 반드시)
+			if fa.pulseN >= aPulse.every or (aPulse.chance and math.random() < aPulse.chance) then
 				fa.pulseN = 0
 				pulse = aPulse
 			end

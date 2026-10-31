@@ -24,6 +24,7 @@ local Ult2 = require(script:WaitForChild("Ult2"))
 local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
+local Star = require(script:WaitForChild("Star"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -706,6 +707,9 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.scythe then
 		-- 혈월만겸: 붉은 달이 뜨는 컷씬 (대사 없이) 동안 무적, 컷씬이 걷히면 핏빛 초승달이 쏟아진다
 		Reaper.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
+	elseif slot == "X" and style.starDome then
+		-- 성천궁: 남색 밤하늘에 별이 뜨는 컷씬 (대사 없이, 무적), 걷히면 돔이 내려앉는다
+		Star.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
 	elseif slot == "X" and style.whale then
 		-- 고경승천: 바다 밑의 고래를 올려다보는 컷씬 (대사 없이, 무적), 걷히면 고래가 솟구친다
 		Whale.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
@@ -1974,6 +1978,7 @@ function handlers.skillfx(data: any)
 		Awake3.init({ shake = shake, flash = UI.flash })
 		Forest.init({ shake = shake })
 		Whale.init({ shake = shake })
+		Star.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -1989,6 +1994,11 @@ function handlers.skillfx(data: any)
 	-- 3.0판 환생 권법 넷의 기술과 연타 장치
 	if Samsara.handles(data) then
 		Samsara.run(data)
+		return
+	end
+	-- 3.4판 초·성하신권의 기술과 별진
+	if Star.handles(data) then
+		Star.run(data)
 		return
 	end
 	if (data.fx == "gravity" or data.fx == "prism" or data.fx == "sun" or data.fx == "tide" or data.fx == "time") and Ults.variant(data) then
