@@ -27,6 +27,7 @@ local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
+local Dream = require(script:WaitForChild("Dream"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -1983,6 +1984,7 @@ function handlers.skillfx(data: any)
 		Star.init({ shake = shake, flash = UI.flash })
 		Mujo.init({ shake = shake, flash = UI.flash })
 		Royal.init({ shake = shake, flash = UI.flash })
+		Dream.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -1996,6 +1998,18 @@ function handlers.skillfx(data: any)
 		return
 	end
 	-- 3.6판 무상권 (전부 새로)과 권왕신권의 새 오의·초 오의
+	-- 3.7판 사부의 부탁: 차례로 짚은 돌이 빛난다 (그 사람 화면에서만)
+	if data.kind == "mqLight" then
+		Fx.ring(data.at + Vector3.new(0, 0.5, 0), Color3.fromRGB(255, 236, 170), 2, 14, 0.5)
+		Fx.flash(data.at + Vector3.new(0, 4, 0), Color3.fromRGB(255, 236, 170), 24, 3, 0.4)
+		Fx.sound("ping", 0.5, 1.5, data.at)
+		return
+	end
+	-- 3.7판 호접몽권
+	if Dream.handles(data) then
+		Dream.run(data)
+		return
+	end
 	if Mujo.handles(data) then
 		Mujo.run(data)
 		return

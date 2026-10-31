@@ -3885,6 +3885,85 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "butterflySwarm" then
+		-- 3.7판 호접몽 몽접군무 (E): 나비 열둘이 둘레의 적 넷에게 날아가 맴돌다 하나씩 부딪친다
+		local list = nearestList(f, m.range, m.targets)
+		Push:FireAllClients("skillfx", { kind = "butterflySwarm", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
+		for i = 1, m.n do
+			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
+			if o then
+				after(m.delay + (i - 1) * m.every + m.travel, function()
+					strike(f, o, hit, move)
+				end)
+			end
+		end
+	elseif kind == "dreamTrap" then
+		-- 3.7판 호접몽 몽포 (R): 꿈 거품이 적을 가두고 띄웠다가 터진다
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "dreamTrap", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
+		local caught: { any } = {}
+		after(m.delay, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				table.insert(caught, o)
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.hold, function()
+			local seen: { [any]: boolean } = {}
+			for _, o in ipairs(caught) do
+				seen[o] = true
+				if not o.dead and o.root.Parent then
+					strike(f, o, scaled(m.burst, sc), move)
+				end
+			end
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				if not seen[o] then
+					strike(f, o, scaled(m.burst, sc), move)
+				end
+			end
+		end)
+	elseif kind == "dreamSea" then
+		-- 3.7판 호접몽 몽중몽 (오의): 둘레가 꿈이 된다. 꿈속의 적은 굼뜨고 계속 맞다가 꿈에서 깨듯 터진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "dreamSea", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = m.slow
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "butterflyDream" then
+		-- 3.7판 호접몽 호접지몽 (초 오의): 컷씬 (무적) 뒤 거대한 꿈나비. 날갯짓 셋마다 무지갯빛 가루 물결, 날개를 접어 감싸 안고 무지개 꽃으로 터진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.flaps * m.flapEvery + m.fold + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "butterflyDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, flaps = m.flaps, flapEvery = m.flapEvery / sp, fold = m.fold / sp, range = m.range, finalRadius = m.finalRadius, style = style })
+		for k = 1, m.flaps do
+			after(m.cut + m.rise + (k - 1) * m.flapEvery + 0.15, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					strike(f, o, scaled(m.flap, sc), move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.flaps * m.flapEvery, function()
+			for _, o in ipairs(hostilesNear(f, center, m.range)) do
+				pullTo(o, center, m.pull)
+			end
+		end)
+		after(m.cut + m.rise + m.flaps * m.flapEvery + m.fold, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position

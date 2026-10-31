@@ -4145,6 +4145,55 @@ local function easterEggs(out: any)
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.7판 사부의 부탁: 찾을 것 (빛나는 작은 것)과 차례로 짚을 돌 (높이나 빛깔로 차례를 안다)
+------------------------------------------------------------------------
+local function questProps(out: any)
+	local f = Instance.new("Folder")
+	f.Name = "QuestProps"
+	f.Parent = folder
+	out.mq = {}
+	for sid, q in pairs(Config.MINIQUEST or {}) do
+		local st = Config.STYLE_BY_ID[sid]
+		local glow = st and st.color2 or GOLD
+		for si, step in ipairs(q.steps) do
+			if step.kind == "find" then
+				for i, at in ipairs(step.items) do
+					local base = at + Vector3.new(0, 0.2, 0)
+					part({ Name = "QuestMound", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 3.2, 3.2), CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 110, 96), Material = Enum.Material.Slate, Parent = f })
+					local gem = part({ Name = "QuestFind", Size = Vector3.new(0.9, 1.3, 0.9), CFrame = CFrame.new(base + Vector3.new(0, 1.2, 0)) * CFrame.Angles(math.rad(45), math.rad(i * 37), math.rad(45)), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					light(gem, glow, 10, 1)
+					local a = Instance.new("Attachment")
+					a.Parent = gem
+					local e = Instance.new("ParticleEmitter")
+					e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+					e.Color = ColorSequence.new(glow)
+					e.LightEmission = 0.8
+					e.Rate = 3
+					e.Lifetime = NumberRange.new(0.8, 1.4)
+					e.Speed = NumberRange.new(0.5, 1.5)
+					e.Size = NumberSequence.new(0.25, 0)
+					e.Parent = a
+					local pp = prompt(gem, "살펴보기", step.name or "빛나는 것", "MQFind")
+					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+				end
+			elseif step.kind == "order" then
+				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
+				for i, sd in ipairs(step.stones) do
+					local h = sd.h or 3
+					local col = sd.color or glow
+					cyl("QuestPillar", sd.at + Vector3.new(0, h / 2, 0), 0.9, h, STONE_DARK, Enum.Material.Granite, f)
+					local lamp = part({ Name = "QuestLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(1.3, 1.3, 1.3), Position = sd.at + Vector3.new(0, h + 0.7, 0), Color = col, Material = Enum.Material.Glass, CanCollide = false, Parent = f })
+					lamp.Transparency = 0.25
+					light(lamp, col, 8, 0.6)
+					local pp = prompt(lamp, "짚기", step.name or "돌", "MQOrder")
+					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+				end
+			end
+		end
+	end
+end
+
 local function wilds()
 	local f = Instance.new("Folder")
 	f.Name = "Wilds"
@@ -5669,6 +5718,9 @@ function World.build(): any
 		{ "빈 들 채우기", scatterFill },
 		{ "숨은 것", function()
 			easterEggs(out)
+		end },
+		{ "사부의 부탁", function()
+			questProps(out)
 		end },
 		{ "들판 채우기", wilds },
 		{ "각성선인", function()

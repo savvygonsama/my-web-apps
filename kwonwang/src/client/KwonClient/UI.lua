@@ -746,6 +746,28 @@ local function buildStyles()
 				table.insert(lines, string.format('<font color="#C8B8A0">%s 얻는 곳: %s (천상계에서만)</font>', M.icon, M.how))
 			end
 		end
+		-- 3.7판 사부의 부탁 (높은 권법은 시험 전에)
+		local MQ = Config.MINIQUEST and Config.MINIQUEST[id]
+		if MQ and not owned then
+			local cur = (state and state.mq and state.mq[id]) or 0
+			local got = (state and state.mqn and state.mqn[id]) or 0
+			table.insert(lines, "")
+			table.insert(lines, string.format('<font color="#B8E0FF"><b>📜 사부의 부탁 「%s」</b></font>', MQ.title))
+			if cur == 0 then
+				table.insert(lines, '<font color="#C8C8C8">사부를 찾아 말을 걸면 시험 전에 부탁을 한다</font>')
+			end
+			for i, stp in ipairs(MQ.steps) do
+				local mark = (cur > i) and '<font color="#9CFF9C">✔</font>' or (cur == i and '<font color="#FFD27A">▶</font>' or '<font color="#8A8A8A">·</font>')
+				local extra = ""
+				if cur == i then
+					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or (stp.kind == "kill" and stp.n or 0))
+					if total > 0 then
+						extra = string.format(" (%d/%d)", got, total)
+					end
+				end
+				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, stp.night and " 🌙" or ""))
+			end
+		end
 		-- 승급 (깨달음)
 		if owned then
 			local step = Config.BREAKTHROUGH[ups + 1]
@@ -1856,7 +1878,7 @@ local function buildTest()
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🐋 2.7판: 초·창해신권 · 새 만목신권 · 새 악마 · 적 차림", {
-		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
+		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🦋 호접몽권 바로 쓰기 (X 호접지몽)", "testStyle", "hojeop" }, { "🦋 몽선에게", "testSecretMaster", "hojeop" }, { "📜 사부의 부탁 한 단계 넘기기", "testQuestSkip" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
 		{ "🐳 진 창해신권 (G 고래강림)", "testStyle", "changhae2" }, { "🎋 만목신권 (죽림창·천엽비수·신목강림)", "testStyle", "manmok" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },

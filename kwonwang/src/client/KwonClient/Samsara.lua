@@ -2730,6 +2730,7 @@ local CUT_LOOK: { [string]: { any } } = {
 	eophwa = { Color3.fromRGB(90, 10, 10), Color3.fromRGB(255, 150, 120), CHAR },
 	musangkwon = { Color3.fromRGB(60, 70, 80), MIST, Color3.fromRGB(60, 110, 140) },
 	kwonwangsin = { Color3.fromRGB(90, 60, 10), GOLD, CRIMSON },
+	hojeop = { Color3.fromRGB(150, 110, 200), Color3.fromRGB(255, 200, 230), Color3.fromRGB(130, 236, 226) },
 }
 local cutActive = false
 function Samsara.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, sid: string)

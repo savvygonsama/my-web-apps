@@ -555,6 +555,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	chobyeok = { H = "cross", E = "beam", R = "rain" },
 	chochanghae = { H = "wave" },
 	chosengha = { H = "nova" },
+	hojeop = {},
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.6.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.7.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2207,6 +2207,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.7판 호접몽권 (두 번째 윤회의 꿈): 등에 빛깔이 흐르는 나비 날개. 꿈처럼 가볍고 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
+-- E 몽접군무 (나비 떼) · R 몽포 (꿈 거품) · G 몽중몽 (꿈속의 꿈) · X 호접지몽 (거대한 꿈나비)
+table.insert(Config.Styles, {
+	id = "hojeop",
+	name = "호접몽권",
+	hanja = "胡蝶夢拳",
+	icon = "🦋",
+	grade = "윤회",
+	rebirthStyle = 2,
+	rebirthReq = 2,
+	color = Color3.fromRGB(196, 150, 255),
+	color2 = Color3.fromRGB(130, 236, 226),
+	fx = "cloud",
+	dreamWings = true, -- 등의 나비 날개와 둘레의 비눗방울 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	trialHp = 10,
+	unlockHint = "두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라",
+	desc = "두 번째 삶의 꿈에서 배운 권. 주먹이 닿는 곳마다 빛깔 고운 꿈이 피어난다. 나비가 나인지, 내가 나비인지 아무도 모른다.",
+	gimmick = "꿈결: 네 번 맞힐 때마다 상대가 무지갯빛 꿈 거품에 갇혀 둥실 떠올랐다가 터진다. 꿈처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
+	deflect = 0.24,
+	dodgeChance = 0.15,
+	speed = 1.2,
+	pulse = { every = 4, kind = "dreamBubble", radius = 6, delay = 0.6, name = "꿈 거품", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
+	stance = "stance_cloud",
+	combo = {
+		{ id = "hj1", name = "나비 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj2", name = "꽃잎 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj3", name = "꿈 바퀴", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
+		{ id = "hj4", name = "깨는 손", pose = "double_palm", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 24, 8) } },
+	},
+	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
+	skills = {
+		E = { id = "hjE", name = "몽접군무", desc = "소매에서 빛깔 고운 나비 열둘이 쏟아져 둘레의 적 넷에게 날아가 팔랑이며 맴돌다 하나씩 부딪쳐 빛가루로 흩어진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "butterflySwarm", n = 12, range = 32, targets = 4, delay = 0.15, every = 0.04, travel = 0.5, hit = hit(0, 0, 0, 9, 8, 0.3, 4, 4) } },
+		R = { id = "hjR", name = "몽포", desc = "앞에 커다란 무지갯빛 꿈 거품이 부풀어 그 안의 적을 가두고 둥실 띄운다. 1.2초 뒤 거품이 터지며 별 사탕 같은 빛조각이 흩어진다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "dreamTrap", dist = 9, radius = 9, delay = 0.25, hold = 1.2, hit = hit(0, 0, 0, 12, 10, 1.4, 0, 16), burst = hit(0, 0, 0, 40, 40, 0.8, 10, 10) } },
+		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈이 된다. 땅은 무지갯빛 구름 바다, 하늘엔 커다란 초승달과 오로라, 비눗방울이 떠오르고 별과 달 조각이 쏟아진다. 꿈속의 적은 굼뜨고 계속 맞다가, 마지막에 꿈에서 깨듯 펑 터진다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "dreamSea", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
+		X = { id = "hjX", name = "호접지몽", desc = "초 오의. 컷씬: 하늘이 분홍과 라일락빛 새벽이 된다 (그동안 무적). 등 뒤에서 날개폭이 하늘을 가리는 꿈나비가 날아오른다. 날갯짓 세 번마다 무지갯빛 가루 물결이 둘레를 휩쓸어 적을 띄우고, 나비가 날개를 접어 모두를 감싸 안으면 커다란 무지개 꽃으로 터진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "butterflyDream", cut = 1.4, rise = 0.6, flaps = 3, flapEvery = 0.6, range = 40, flap = hit(0, 0, 0, 40, 40, 0.8, 10, 18), fold = 0.6, pull = 40, finalRadius = 34, final = hit(0, 0, 0, 220, 250, 1.8, 60, 28) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
 -- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
@@ -2371,6 +2416,7 @@ local FINISHERS = {
 	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
+	hojeop = { name = "몽접승천", pose = "petal_spin" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -2815,6 +2861,17 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
 			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
 			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+	if st.id == "hojeop" then
+		local pink = Color3.fromRGB(255, 180, 220)
+		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 나비 다루는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
+			P("rain", "별사탕 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
+			P("donut", "꿈 거품 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
+			P("charge", "나비 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
+			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 34, 38, 0.8, 20) }),
+			P("quake", "호접지몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "chosengha" then
@@ -3721,6 +3778,9 @@ Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vecto
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+-- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
+Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
+	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
 Config.STAR_TERRACE = Vector3.new(-600, SY, -20)
 Config.MASTERS.chosengha = { name = "천성선", at = Config.STAR_TERRACE + Vector3.new(0, 4.4, 0), region = "성운원 남쪽 끝 관성대 (천상계)", regionId = "nebula", secret = true,
@@ -4118,6 +4178,86 @@ do
 		norm(isl.boss, isl.camps)
 	end
 end
+
+------------------------------------------------------------------------
+-- 3.7판 사부의 부탁 (미니 퀘스트): 높은 권법의 사부는 시험 전에 부탁을 하나씩 한다. 다 들어주어야 시험을 낸다
+-- 단계: visit (그곳에 가기, night = 밤에만) · find (흩어진 것 찾기, T) · order (차례대로 짚기, T. 틀리면 처음부터) ·
+--       kill (그 적 쓰러뜨리기) · return (사부에게 돌아가 말 걸기)
+------------------------------------------------------------------------
+local function ring(c: Vector3, r: number, n: number, y: number?): { Vector3 }
+	local out = {}
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2 + 0.5
+		table.insert(out, c + Vector3.new(math.cos(a) * r, y or 0, math.sin(a) * r))
+	end
+	return out
+end
+local RAINBOW = { Color3.fromRGB(255, 120, 130), Color3.fromRGB(255, 180, 110), Color3.fromRGB(255, 232, 120), Color3.fromRGB(140, 226, 150), Color3.fromRGB(130, 180, 255) }
+Config.MINIQUEST = {
+	taecho = { title = "처음의 돌", steps = {
+		{ kind = "visit", at = Vector3.new(1100, 0, -2700), r = 26, text = "세상의 처음은 하늘에서 떨어졌다. 별똥 분화구 한가운데에 서 보아라", say = "발밑이 따뜻하다. 아주 오래전, 여기에 별이 떨어졌다." },
+		{ kind = "find", name = "처음의 돌", icon = "🪨", items = ring(Vector3.new(1100, 0, -2700), 48, 3), text = "분화구 둘레에 흩어진 '처음의 돌' 셋을 주워라 (빛나는 돌, T)" },
+		{ kind = "return", text = "처음의 돌을 시원자에게 가져가라" },
+	} },
+	ilwol = { title = "해와 달의 차례", steps = {
+		{ kind = "order", name = "해의 기둥", stones = { { at = Vector3.new(3200, 0, 3300) + Vector3.new(20, 0, 0), h = 2 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, 20), h = 3.5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(-20, 0, 0), h = 5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, -20), h = 6.5 } },
+			text = "해시계 광장의 해의 기둥 넷을, 해가 떠오르듯 가장 낮은 것부터 가장 높은 것까지 차례로 짚어라 (T)" },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 16, night = true, text = "달이 뜬 밤, 거울 호수 가운데 섬에 서서 물에 비친 달을 보아라", say = "물속의 달이 하늘의 달보다 밝다." },
+		{ kind = "return", text = "해와 달을 모두 본 몸으로 권존에게 돌아가라" },
+	} },
+	yeonggeop = { title = "멈춘 시계", steps = {
+		{ kind = "find", name = "시계 톱니", icon = "⚙", items = { Vector3.new(40, 0, 2290), Vector3.new(-46, 0, 2210), Vector3.new(3236, 0, 3336), Vector3.new(3166, 0, 3262) }, text = "버려진 마을과 해시계 광장에 흩어진 멈춘 시계의 톱니 넷을 모아라 (T)" },
+		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리가 몇 번 울리는지 들어라", say = "종이 한 번 울렸다. 그런데 소리는 천 년째 울리고 있다." },
+		{ kind = "return", text = "톱니를 영겁노인에게 가져가라" },
+	} },
+	agong = { title = "허공의 틈", steps = {
+		{ kind = "kill", enemy = "voidwalker", n = 5, text = "허공 균열의 허공 마인 다섯을 쓰러뜨려 틈을 닫아라" },
+		{ kind = "visit", at = Vector3.new(1400, 0, 1400), r = 24, text = "끊어진 하늘다리 끝에 서서, 다리 너머의 허공을 들여다보아라", say = "허공도 너를 들여다본다." },
+		{ kind = "return", text = "아공선인에게 돌아가라" },
+	} },
+	seongha = { title = "별을 헤아리는 밤", steps = {
+		{ kind = "visit", at = Vector3.new(-1900, 0, -800), r = 22, night = true, text = "밤에 별바위 고리 한가운데에서 별을 헤아려라", say = "별을 헤아리다 보니 별도 너를 헤아린다." },
+		{ kind = "find", name = "떨어진 별 조각", icon = "⭐", items = ring(Vector3.new(-620, SY, -160), 70, 5, 0), text = "천상계 성운원에 떨어진 별 조각 다섯을 주워라 (T)" },
+		{ kind = "return", text = "별 조각을 성하노군에게 가져가라" },
+	} },
+	manmok = { title = "시든 묘목", steps = {
+		{ kind = "find", name = "시든 묘목", icon = "🌱", items = ring(Vector3.new(-1700, 0, 1600), 46, 4), text = "만목원 둘레의 시든 묘목 넷에 물을 주어라 (T)" },
+		{ kind = "kill", enemy = "bogbrute", n = 3, text = "숲을 썩게 하는 독안개 늪의 늪 거한 셋을 쓰러뜨려라" },
+		{ kind = "return", text = "목선에게 돌아가라" },
+	} },
+	chomaehwa = { title = "떨어진 부채 장식", steps = {
+		{ kind = "find", name = "부채 장식", icon = "🌸", items = ring(Config.SAKURA_HILL, 40, 3), text = "벚꽃 언덕 아래 떨어진 부채 장식 셋을 찾아라 (T)" },
+		{ kind = "return", text = "천앵선에게 돌아가라" },
+	} },
+	chochwi = { title = "술잔 찾기", steps = {
+		{ kind = "find", name = "만취선의 술잔", icon = "🍶", items = ring(Config.SOJU_HILL, 36, 4), text = "술독 마루 둘레에 굴러간 만취선의 술잔 넷을 찾아라 (T)" },
+		{ kind = "return", text = "술잔을 만취선에게 가져가라" },
+	} },
+	chohyeolma = { title = "핏빛 달 아래", steps = {
+		{ kind = "visit", at = Vector3.new(1000, 0, 1000), r = 28, night = true, text = "밤에 혈월곡의 핏빛 달 아래에 서라", say = "달빛이 손톱 끝까지 붉게 스민다." },
+		{ kind = "return", text = "혈월선에게 돌아가라" },
+	} },
+	chobyeok = { title = "번개를 기다리다", steps = {
+		{ kind = "visit", at = Vector3.new(1300, 0, -1000), r = 26, text = "만검총 한가운데, 가장 높은 검 아래에서 번개를 기다려라", say = "검 끝에서 파란 불꽃이 튄다. 번개가 너를 알아보았다." },
+		{ kind = "return", text = "뇌천선에게 돌아가라" },
+	} },
+	chochanghae = { title = "고래 뼈 조각", steps = {
+		{ kind = "find", name = "고래 뼈 조각", icon = "🦴", items = ring(Config.WHALE_ROCK, 44, 4), text = "서해 바닷가 고래 뼈 바위 둘레의 뼈 조각 넷을 찾아라 (T)" },
+		{ kind = "return", text = "고경선에게 돌아가라" },
+	} },
+	chosengha = { title = "별 등의 차례", steps = {
+		{ kind = "order", name = "별 등", stones = { { at = Config.STAR_TERRACE + Vector3.new(10, 0, 4), h = 1.5 }, { at = Config.STAR_TERRACE + Vector3.new(-9, 0, 6), h = 2.5 }, { at = Config.STAR_TERRACE + Vector3.new(4, 0, -10), h = 3.5 }, { at = Config.STAR_TERRACE + Vector3.new(-6, 0, -8), h = 4.5 }, { at = Config.STAR_TERRACE + Vector3.new(0, 0, 10), h = 5.5 } },
+			text = "관성대의 별 등 다섯을, 가장 낮은 별부터 가장 높은 별까지 차례로 밝혀라 (T)" },
+		{ kind = "return", text = "천성선에게 돌아가라" },
+	} },
+	hojeop = { title = "몽선의 꿈", steps = {
+		{ kind = "find", name = "꿈나비", icon = "🦋", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈나비 다섯을 깨워라 (T)" },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
+		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
+			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
+		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
+	} },
+}
 
 return Config
 ]]></string>
@@ -6436,6 +6576,7 @@ local Combat = require(script:WaitForChild("Combat"))
 local Npc = require(script:WaitForChild("Npc"))
 local Skills = require(script:WaitForChild("Skills"))
 local Battle = require(script:WaitForChild("Battle"))
+local MiniQuest = require(script:WaitForChild("MiniQuest"))
 -- 3.3판: 배틀그라운드 장소인가 (battleground.project.json으로 만든 파일에만 ReplicatedStorage.KwonBattle이 있다)
 local BATTLE = Config.BATTLE_MODE
 
@@ -6486,6 +6627,8 @@ type Profile = {
 	towerBest: number, -- 천층탑 최고 층
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
+	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
+	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
@@ -6523,6 +6666,8 @@ local function defaultProfile(): Profile
 		fragments = {},
 		accepted = 1,
 		gradeUp = {},
+		mq = {},
+		mqn = {},
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -6655,6 +6800,16 @@ local function sanitize(data: any): Profile
 	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
+	for _, key in ipairs({ "mq", "mqn" }) do
+		local src = (data :: any)[key]
+		if type(src) == "table" then
+			for sid, v in pairs(src) do
+				if type(sid) == "string" and Config.MINIQUEST and Config.MINIQUEST[sid] and type(v) == "number" then
+					(p :: any)[key][sid] = math.floor(num(v, 100))
+				end
+			end
+		end
+	end
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
@@ -7084,6 +7239,8 @@ local function pushState(player: Player)
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
 		pvpOff = p.pvpOff == true,
+		mq = p.mq,
+		mqn = p.mqn,
 		mounts = p.mounts,
 		mountSel = p.mountSel,
 		skyGems = p.skyGems,
@@ -7643,6 +7800,26 @@ local function spendMats(p: Profile, need: { [string]: number })
 	end
 end
 
+-- 3.7판 사부의 부탁
+MiniQuest.init({
+	profiles = profiles,
+	states = states,
+	toast = toast,
+	pushState = pushState,
+	dialog = function(player: Player, d: any)
+		Push:FireClient(player, "dialog", d)
+	end,
+	isDay = function(): boolean
+		return Combat.isDay()
+	end,
+	rootOf = function(player: Player): BasePart?
+		local f = Combat.fighterOfPlayer(player)
+		return f and f.root or nil
+	end,
+	fx = function(player: Player, kind: string, at: Vector3)
+		Push:FireClient(player, "skillfx", { kind = kind, at = at })
+	end,
+})
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -8098,6 +8275,7 @@ Combat.init(Push, {
 					end
 				end
 				p.kills += 1
+				MiniQuest.onKill(killer, (f :: any).typeId)
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
@@ -8658,6 +8836,14 @@ function Actions.learn(player: Player, id: any)
 		if d > Config.MASTER_RANGE then
 			toast(player, string.format("📍 %s을(를) 배우려면 %s의 %s에게 가야 해요", style.name, master.region, master.name))
 			Push:FireClient(player, "guide", { style = style.id })
+			return
+		end
+		if style.rebirthReq and (p.rebirth or 0) < style.rebirthReq then
+			toast(player, string.format("🔒 %s은(는) 환생을 %d번 한 몸이라야 배울 수 있어요", style.name, style.rebirthReq))
+			return
+		end
+		if not p.trials[style.id] and not MiniQuest.done(p, style.id) then
+			toast(player, "📜 먼저 사부의 부탁을 들어주세요 · " .. MiniQuest.line(p, style.id))
 			return
 		end
 		if not p.trials[style.id] then
@@ -10183,6 +10369,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		else
 			toast(player, "천층탑 안에서 쓰세요")
 		end
+	elseif action == "testQuestSkip" then
+		MiniQuest.skip(player)
 	elseif action == "testPvpUnlock" then
 		p.pvpUnlocked = true
 		toast(player, "⚔ PvP 끄기를 열었어요")
@@ -11241,6 +11429,26 @@ if W.battle then
 		end)
 	end)
 end
+-- 3.7판 사부의 부탁: 들판에 놓인 것 (찾기·차례), 1초마다 가야 할 곳 확인
+if W.mq then
+	for _, it in ipairs(W.mq) do
+		it.prompt.Triggered:Connect(function(player: Player)
+			if not BATTLE then
+				MiniQuest.touch(player, it.sid, it.step, it.idx)
+			end
+		end)
+	end
+end
+if not BATTLE then
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			for _, pl in ipairs(Players:GetPlayers()) do
+				pcall(MiniQuest.tick, pl)
+			end
+		end
+	end)
+end
 -- 3.6판 숨은 것들: 돌탑 일곱, 낮잠 자는 고양이, 뽑히지 않는 검, 소원 우물, 오리 가족
 if W.eggs then
 	local E = Config.EGGS
@@ -11713,6 +11921,16 @@ task.spawn(function()
 				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
 				return
 			end
+		end
+		-- 3.7판: 두 번 환생해야 만나 주는 사부 (호접몽권)
+		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...드르렁. (깨지 않는다. 환생을 %d번 한 몸이라야 이 꿈에 들어올 수 있을 것 같다)", sdef.rebirthReq) })
+			return
+		end
+		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다
+		if not p.styles[styleId] and not p.trials[styleId] and MiniQuest.has(styleId) and not MiniQuest.done(p, styleId) then
+			MiniQuest.talk(player, styleId)
+			return
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
@@ -15425,6 +15643,238 @@ return Dress
       </Item>
       <Item class="ModuleScript" referent="12">
         <Properties>
+          <string name="Name">MiniQuest</string>
+          <string name="Source"><![CDATA[-- 권왕 3.7판: 사부의 부탁 (미니 퀘스트). 높은 권법의 사부는 시험 전에 부탁을 한다
+-- 기록: p.mq[권법] = 지금 단계 (1부터, 다 끝나면 단계 수 + 1), p.mqn[권법] = 그 단계에서 해낸 수 (찾기·차례·쓰러뜨리기)
+-- 찾은 것 하나하나는 p.seen["mq_권법_단계_번호"]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+
+local MiniQuest = {}
+
+local ctx: any = nil
+-- ctx = { profiles, states, toast, dialog, pushState, isDay, rootOf, fx }
+function MiniQuest.init(c: any)
+	ctx = c
+end
+
+local function quest(sid: string): any
+	return Config.MINIQUEST and Config.MINIQUEST[sid]
+end
+function MiniQuest.has(sid: string): boolean
+	return quest(sid) ~= nil
+end
+-- 부탁을 다 들어주었나 (부탁이 없는 권법은 늘 그렇다)
+function MiniQuest.done(p: any, sid: string): boolean
+	local q = quest(sid)
+	if not q then
+		return true
+	end
+	return (p.mq[sid] or 0) > #q.steps
+end
+local function stepOf(p: any, sid: string): (any, number)
+	local q = quest(sid)
+	local i = p.mq[sid] or 0
+	return q and q.steps[i], i
+end
+local function progressText(p: any, sid: string, step: any): string
+	local n = p.mqn[sid] or 0
+	if step.kind == "find" then
+		return string.format(" (%d/%d)", n, #step.items)
+	elseif step.kind == "order" then
+		return string.format(" (%d/%d)", n, #step.stones)
+	elseif step.kind == "kill" then
+		return string.format(" (%d/%d)", n, step.n)
+	end
+	return ""
+end
+-- 지금 부탁을 한 줄로 (사부 대화·토스트에 쓴다)
+function MiniQuest.line(p: any, sid: string): string
+	local q = quest(sid)
+	local step, i = stepOf(p, sid)
+	if not q or not step then
+		return ""
+	end
+	return string.format("「%s」 %d/%d · %s%s", q.title, i, #q.steps, step.text, progressText(p, sid, step))
+end
+
+local function advance(player: Player, sid: string)
+	local p, st = ctx.profiles[player], ctx.states[player]
+	local q = quest(sid)
+	if not p or not st or not q then
+		return
+	end
+	p.mq[sid] = (p.mq[sid] or 0) + 1
+	p.mqn[sid] = 0
+	st.dirty = true
+	local m = Config.MASTERS[sid]
+	local step = q.steps[p.mq[sid]]
+	if step then
+		ctx.toast(player, "📜 " .. (m and m.name or "사부") .. "의 부탁 · " .. step.text)
+	else
+		ctx.toast(player, "📜 부탁을 모두 들어주었다")
+	end
+	ctx.pushState(player)
+end
+
+-- 사부에게 말을 걸었다: 부탁을 시작하거나, 지금 단계를 알려 주거나, 돌아왔음을 받는다.
+-- true면 사부가 시험을 낼 수 있다 (부탁을 다 들어주었다)
+function MiniQuest.talk(player: Player, sid: string): boolean
+	local p, st = ctx.profiles[player], ctx.states[player]
+	local q = quest(sid)
+	if not q or not p or not st then
+		return true
+	end
+	local m = Config.MASTERS[sid]
+	local who = m and m.name or "사부"
+	local title = m and ("「" .. m.quote .. "」") or ""
+	if (p.mq[sid] or 0) == 0 then
+		p.mq[sid] = 1
+		p.mqn[sid] = 0
+		st.dirty = true
+		ctx.dialog(player, { who = who, title = title, text = "시험을 청하기 전에, 부탁이 하나 있다. 「" .. q.title .. "」\n" .. q.steps[1].text .. progressText(p, sid, q.steps[1]) })
+		ctx.pushState(player)
+		return false
+	end
+	local step = q.steps[p.mq[sid]]
+	if not step then
+		return true
+	end
+	if step.kind == "return" then
+		advance(player, sid)
+		ctx.dialog(player, { who = who, title = title, text = "...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+		return false
+	end
+	ctx.dialog(player, { who = who, title = title, text = "아직 부탁이 남았다. " .. MiniQuest.line(p, sid) })
+	return false
+end
+
+-- 들판에 놓인 것을 짚었다 (찾기·차례)
+function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: number)
+	local p, st = ctx.profiles[player], ctx.states[player]
+	if not p or not st then
+		return
+	end
+	local step, cur = stepOf(p, sid)
+	if not step or cur ~= stepIdx then
+		ctx.toast(player, "…아직은 그저 고운 것 같다")
+		return
+	end
+	if step.kind == "find" then
+		local key = string.format("mq_%s_%d_%d", sid, stepIdx, idx)
+		if p.seen[key] then
+			ctx.toast(player, "이미 찾은 것이에요")
+			return
+		end
+		p.seen[key] = true
+		p.mqn[sid] = (p.mqn[sid] or 0) + 1
+		st.dirty = true
+		ctx.toast(player, string.format("%s %s (%d/%d)", step.icon or "✨", step.name or "찾았다", p.mqn[sid], #step.items))
+		if p.mqn[sid] >= #step.items then
+			advance(player, sid)
+		else
+			ctx.pushState(player)
+		end
+	elseif step.kind == "order" then
+		local n = (p.mqn[sid] or 0) + 1
+		if idx == n then
+			p.mqn[sid] = n
+			st.dirty = true
+			ctx.toast(player, string.format("✨ %s %d/%d", step.name or "차례", n, #step.stones))
+			if ctx.fx then
+				ctx.fx(player, "mqLight", step.stones[idx].at)
+			end
+			if n >= #step.stones then
+				advance(player, sid)
+			else
+				ctx.pushState(player)
+			end
+		else
+			p.mqn[sid] = 0
+			st.dirty = true
+			ctx.toast(player, "💨 차례가 틀렸다. 처음부터 다시")
+			ctx.pushState(player)
+		end
+	end
+end
+
+-- 적을 쓰러뜨렸다
+function MiniQuest.onKill(player: Player, typeId: string?)
+	local p = ctx.profiles[player]
+	if not p or not typeId then
+		return
+	end
+	for sid, _ in pairs(Config.MINIQUEST or {}) do
+		local step = stepOf(p, sid)
+		if step and step.kind == "kill" and step.enemy == typeId then
+			p.mqn[sid] = (p.mqn[sid] or 0) + 1
+			ctx.states[player].dirty = true
+			if p.mqn[sid] >= step.n then
+				advance(player, sid)
+			else
+				ctx.toast(player, string.format("📜 %s (%d/%d)", step.text, p.mqn[sid], step.n))
+			end
+		end
+	end
+end
+
+-- 1초마다: 가야 할 곳에 닿았나
+function MiniQuest.tick(player: Player)
+	local p = ctx.profiles[player]
+	if not p then
+		return
+	end
+	local r = ctx.rootOf(player)
+	if not r then
+		return
+	end
+	for sid, _ in pairs(Config.MINIQUEST or {}) do
+		local step = stepOf(p, sid)
+		if step and step.kind == "visit" then
+			local d = Vector3.new(r.Position.X - step.at.X, 0, r.Position.Z - step.at.Z).Magnitude
+			if d <= step.r and math.abs(r.Position.Y - step.at.Y) < 200 then
+				if step.night and ctx.isDay() then
+					local st = ctx.states[player] :: any
+					if os.clock() - (st.mqNightHint or 0) > 20 then
+						st.mqNightHint = os.clock()
+						ctx.toast(player, "🌙 여기는 밤에 와야 할 것 같다")
+					end
+				else
+					if step.say then
+						ctx.dialog(player, { who = "📜 " .. quest(sid).title, title = "", text = step.say })
+					end
+					advance(player, sid)
+				end
+			end
+		end
+	end
+end
+
+-- 테스트: 진행 중인 부탁을 한 단계씩 넘긴다
+function MiniQuest.skip(player: Player)
+	local p = ctx.profiles[player]
+	if not p then
+		return
+	end
+	local any = false
+	for sid, q in pairs(Config.MINIQUEST or {}) do
+		local i = p.mq[sid] or 0
+		if i >= 1 and i <= #q.steps then
+			advance(player, sid)
+			any = true
+		end
+	end
+	if not any then
+		ctx.toast(player, "진행 중인 부탁이 없어요 (사부에게 먼저 말을 거세요)")
+	end
+end
+
+return MiniQuest
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="13">
+        <Properties>
           <string name="Name">Npc</string>
           <string name="Source"><![CDATA[-- 권왕: 무기를 든 적과 보스 (서버가 움직인다)
 local Players = game:GetService("Players")
@@ -16099,6 +16549,15 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "hojeop" then
+		-- 몽선: 흰 머리를 틀어 올린 졸린 노인, 어깨의 작은 나비 날개 둘, 머리의 꽃 장식, 손의 연꽃
+		beard(WHITE_HAIR)
+		wear(model, "Head", "HairBun", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, hs.Y * 0.62, 0.15), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "Head", "HairFlower", Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.35, hs.Y * 0.62, 0.1), Color3.fromRGB(255, 170, 210), Enum.Material.Neon, Enum.PartType.Ball)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "UpperTorso", "DreamWing", Vector3.new(1.6, 1.3, 0.08), CFrame.new(x * 0.9, 0.5, 0.65) * CFrame.Angles(0, x * math.rad(25), x * math.rad(-20)), x > 0 and Color3.fromRGB(200, 170, 255) or Color3.fromRGB(150, 240, 210), Enum.Material.Glass, Enum.PartType.Ball)
+		end
+		wear(model, "LeftHand", "Lotus", Vector3.new(0.9, 0.5, 0.9), CFrame.new(0, -0.5, 0), Color3.fromRGB(255, 190, 210), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 	elseif id == "chosengha" then
 		-- 천성선: 흰 수염, 별을 수놓은 남색 높은 관, 어깨의 금빛 별 둘, 손에 쥔 별 지팡이
 		beard(WHITE_HAIR)
@@ -16860,7 +17319,7 @@ return Npc
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">Skills</string>
           <string name="Source"><![CDATA[-- 권왕: 권법마다 다른 기술 장치 (서버)
@@ -20750,6 +21209,85 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "butterflySwarm" then
+		-- 3.7판 호접몽 몽접군무 (E): 나비 열둘이 둘레의 적 넷에게 날아가 맴돌다 하나씩 부딪친다
+		local list = nearestList(f, m.range, m.targets)
+		Push:FireAllClients("skillfx", { kind = "butterflySwarm", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
+		for i = 1, m.n do
+			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
+			if o then
+				after(m.delay + (i - 1) * m.every + m.travel, function()
+					strike(f, o, hit, move)
+				end)
+			end
+		end
+	elseif kind == "dreamTrap" then
+		-- 3.7판 호접몽 몽포 (R): 꿈 거품이 적을 가두고 띄웠다가 터진다
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "dreamTrap", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
+		local caught: { any } = {}
+		after(m.delay, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				table.insert(caught, o)
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.hold, function()
+			local seen: { [any]: boolean } = {}
+			for _, o in ipairs(caught) do
+				seen[o] = true
+				if not o.dead and o.root.Parent then
+					strike(f, o, scaled(m.burst, sc), move)
+				end
+			end
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				if not seen[o] then
+					strike(f, o, scaled(m.burst, sc), move)
+				end
+			end
+		end)
+	elseif kind == "dreamSea" then
+		-- 3.7판 호접몽 몽중몽 (오의): 둘레가 꿈이 된다. 꿈속의 적은 굼뜨고 계속 맞다가 꿈에서 깨듯 터진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "dreamSea", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = m.slow
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "butterflyDream" then
+		-- 3.7판 호접몽 호접지몽 (초 오의): 컷씬 (무적) 뒤 거대한 꿈나비. 날갯짓 셋마다 무지갯빛 가루 물결, 날개를 접어 감싸 안고 무지개 꽃으로 터진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.flaps * m.flapEvery + m.fold + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "butterflyDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, flaps = m.flaps, flapEvery = m.flapEvery / sp, fold = m.fold / sp, range = m.range, finalRadius = m.finalRadius, style = style })
+		for k = 1, m.flaps do
+			after(m.cut + m.rise + (k - 1) * m.flapEvery + 0.15, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					strike(f, o, scaled(m.flap, sc), move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.flaps * m.flapEvery, function()
+			for _, o in ipairs(hostilesNear(f, center, m.range)) do
+				pullTo(o, center, m.pull)
+			end
+		end)
+		after(m.cut + m.rise + m.flaps * m.flapEvery + m.fold, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position
@@ -20855,7 +21393,7 @@ return Skills
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">World</string>
           <string name="Source"><![CDATA[-- 권왕: 강호 (오픈 월드). 가운데 청운 마을, 서쪽 대나무 숲, 북쪽 흑호채, 동쪽 비류 폭포 계곡, 남쪽 들판
@@ -25005,6 +25543,55 @@ local function easterEggs(out: any)
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.7판 사부의 부탁: 찾을 것 (빛나는 작은 것)과 차례로 짚을 돌 (높이나 빛깔로 차례를 안다)
+------------------------------------------------------------------------
+local function questProps(out: any)
+	local f = Instance.new("Folder")
+	f.Name = "QuestProps"
+	f.Parent = folder
+	out.mq = {}
+	for sid, q in pairs(Config.MINIQUEST or {}) do
+		local st = Config.STYLE_BY_ID[sid]
+		local glow = st and st.color2 or GOLD
+		for si, step in ipairs(q.steps) do
+			if step.kind == "find" then
+				for i, at in ipairs(step.items) do
+					local base = at + Vector3.new(0, 0.2, 0)
+					part({ Name = "QuestMound", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 3.2, 3.2), CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 110, 96), Material = Enum.Material.Slate, Parent = f })
+					local gem = part({ Name = "QuestFind", Size = Vector3.new(0.9, 1.3, 0.9), CFrame = CFrame.new(base + Vector3.new(0, 1.2, 0)) * CFrame.Angles(math.rad(45), math.rad(i * 37), math.rad(45)), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					light(gem, glow, 10, 1)
+					local a = Instance.new("Attachment")
+					a.Parent = gem
+					local e = Instance.new("ParticleEmitter")
+					e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+					e.Color = ColorSequence.new(glow)
+					e.LightEmission = 0.8
+					e.Rate = 3
+					e.Lifetime = NumberRange.new(0.8, 1.4)
+					e.Speed = NumberRange.new(0.5, 1.5)
+					e.Size = NumberSequence.new(0.25, 0)
+					e.Parent = a
+					local pp = prompt(gem, "살펴보기", step.name or "빛나는 것", "MQFind")
+					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+				end
+			elseif step.kind == "order" then
+				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
+				for i, sd in ipairs(step.stones) do
+					local h = sd.h or 3
+					local col = sd.color or glow
+					cyl("QuestPillar", sd.at + Vector3.new(0, h / 2, 0), 0.9, h, STONE_DARK, Enum.Material.Granite, f)
+					local lamp = part({ Name = "QuestLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(1.3, 1.3, 1.3), Position = sd.at + Vector3.new(0, h + 0.7, 0), Color = col, Material = Enum.Material.Glass, CanCollide = false, Parent = f })
+					lamp.Transparency = 0.25
+					light(lamp, col, 8, 0.6)
+					local pp = prompt(lamp, "짚기", step.name or "돌", "MQOrder")
+					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+				end
+			end
+		end
+	end
+end
+
 local function wilds()
 	local f = Instance.new("Folder")
 	f.Name = "Wilds"
@@ -26530,6 +27117,9 @@ function World.build(): any
 		{ "숨은 것", function()
 			easterEggs(out)
 		end },
+		{ "사부의 부탁", function()
+			questProps(out)
+		end },
 		{ "들판 채우기", wilds },
 		{ "각성선인", function()
 			awakenAltar(out)
@@ -26562,16 +27152,16 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="15">
+  <Item class="StarterPlayer" referent="16">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMaxZoomDistance">120</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="16">
+    <Item class="StarterPlayerScripts" referent="17">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="17">
+      <Item class="LocalScript" referent="18">
         <Properties>
           <string name="Name">KwonClient</string>
           <string name="Source"><![CDATA[-- 권왕(拳王): 맨손의 강호 — 화면
@@ -26603,6 +27193,7 @@ local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
+local Dream = require(script:WaitForChild("Dream"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -28559,6 +29150,7 @@ function handlers.skillfx(data: any)
 		Star.init({ shake = shake, flash = UI.flash })
 		Mujo.init({ shake = shake, flash = UI.flash })
 		Royal.init({ shake = shake, flash = UI.flash })
+		Dream.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -28572,6 +29164,18 @@ function handlers.skillfx(data: any)
 		return
 	end
 	-- 3.6판 무상권 (전부 새로)과 권왕신권의 새 오의·초 오의
+	-- 3.7판 사부의 부탁: 차례로 짚은 돌이 빛난다 (그 사람 화면에서만)
+	if data.kind == "mqLight" then
+		Fx.ring(data.at + Vector3.new(0, 0.5, 0), Color3.fromRGB(255, 236, 170), 2, 14, 0.5)
+		Fx.flash(data.at + Vector3.new(0, 4, 0), Color3.fromRGB(255, 236, 170), 24, 3, 0.4)
+		Fx.sound("ping", 0.5, 1.5, data.at)
+		return
+	end
+	-- 3.7판 호접몽권
+	if Dream.handles(data) then
+		Dream.run(data)
+		return
+	end
 	if Mujo.handles(data) then
 		Mujo.run(data)
 		return
@@ -29111,7 +29715,7 @@ end)
 Request:FireServer("hello")
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">Anim</string>
             <string name="Source"><![CDATA[-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
@@ -29769,7 +30373,7 @@ return Anim
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">Awake</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 새 각성 권법 셋의 화면 (진 금강불괴신공 · 진 무영귀각 · 진 태허유수장)
@@ -30375,7 +30979,7 @@ return Awake
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Awake3</string>
             <string name="Source"><![CDATA[-- 권왕 2.2판: 각성 권법 아홉의 새 E·R, 진 열화 화산천붕 · 진 창해 고래강림, 초·벽력신권의 뇌신낙 · 천뢰구 · 심판의 벼락 (화면)
@@ -33138,7 +33742,7 @@ return Awake3
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Blossom</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 초·매화난무권의 새 기술 (화면). 날아가는 부채, 꽃 그림자, 하늘의 큰 부채
@@ -33541,7 +34145,7 @@ return Blossom
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Cutscene</string>
             <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
@@ -33853,7 +34457,7 @@ return Cutscene
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Demon</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 피의 악마 (화면에만 보이는 연출). 처음부터 다시 짰다
@@ -34189,7 +34793,625 @@ return Demon
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
+          <Properties>
+            <string name="Name">Dream</string>
+            <string name="Source"><![CDATA[-- 권왕 3.7판: 호접몽권 (화면). 꿈처럼 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
+-- 등의 나비 날개, 꿈 거품, 나비 떼, 꿈의 바다 (구름·초승달·오로라·비눗방울), 하늘을 가리는 꿈나비
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Dream = {}
+
+local PASTEL = {
+	Color3.fromRGB(255, 170, 210), -- 분홍
+	Color3.fromRGB(200, 170, 255), -- 라일락
+	Color3.fromRGB(150, 210, 255), -- 하늘
+	Color3.fromRGB(150, 240, 210), -- 민트
+	Color3.fromRGB(255, 236, 150), -- 레몬
+}
+local WHITE = Color3.new(1, 1, 1)
+local MOON = Color3.fromRGB(255, 244, 196)
+local BODY = Color3.fromRGB(70, 56, 96)
+local UP = CFrame.Angles(0, 0, math.rad(90))
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonDream"
+folder.Parent = workspace
+
+local opts: any = {}
+function Dream.init(o: any)
+	opts = o or {}
+end
+
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+	local q = Instance.new("Part")
+	if shape == "ball" then
+		q.Shape = Enum.PartType.Ball
+	elseif shape == "cyl" then
+		q.Shape = Enum.PartType.Cylinder
+	end
+	q.Anchored = true
+	q.CanCollide = false
+	q.CanQuery = false
+	q.CanTouch = false
+	q.CastShadow = false
+	q.Size = size
+	q.Color = color
+	q.Material = material or Enum.Material.SmoothPlastic
+	q.Transparency = alpha or 0
+	q.Parent = folder
+	return q
+end
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function fadeOut(p: BasePart, time: number, goal: { [string]: any }?)
+	local g = goal or {}
+	g.Transparency = 1
+	tween(p, time, g)
+	task.delay(time + 0.05, function()
+		p:Destroy()
+	end)
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function rootOf(m: Instance?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+local function ground(at: Vector3): Vector3
+	return Vector3.new(at.X, at.Y - 2.7, at.Z)
+end
+local function shakeNear(pos: Vector3, amount: number, range: number)
+	if opts.shake and near(pos, range) then
+		opts.shake(amount)
+	end
+end
+local function pastel(k: number): Color3
+	return PASTEL[(k - 1) % #PASTEL + 1]
+end
+-- 빛깔이 천천히 도는 무지갯빛 (시간 t)
+local function iris(t: number): Color3
+	local u = (t * 0.6) % 1 * #PASTEL
+	local i = math.floor(u)
+	return pastel(i + 1):Lerp(pastel(i + 2), u - i)
+end
+-- 반짝이 가루 (위로 조금 떠올랐다 사라진다)
+local function sparkle(at: Vector3, n: number, s: number)
+	for k = 1, n do
+		local q = part(Vector3.new(0.35, 0.35, 0.35) * s, pastel(k), Enum.Material.Neon, 0.05, "ball")
+		q.CFrame = CFrame.new(at)
+		fadeOut(q, 0.6 + math.random() * 0.5, { CFrame = CFrame.new(at + Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5) * 7 * s) })
+	end
+end
+-- 작은 별 사탕 (뾰족한 다섯 갈래를 납작한 판 둘로 흉내)
+local function candy(at: Vector3, color: Color3, s: number, life: number, fall: number)
+	local a = part(Vector3.new(0.9, 0.9, 0.2) * s, color, Enum.Material.Neon, 0.05)
+	local b = part(Vector3.new(0.9, 0.9, 0.2) * s, color:Lerp(WHITE, 0.3), Enum.Material.Neon, 0.05)
+	local cf = CFrame.new(at) * CFrame.Angles(0, math.random() * 6, 0)
+	a.CFrame = cf * CFrame.Angles(0, 0, math.rad(45))
+	b.CFrame = cf
+	local to = CFrame.new(at - Vector3.new(0, fall, 0)) * CFrame.Angles(0, math.random() * 6, math.random() * 3)
+	fadeOut(a, life, { CFrame = to * CFrame.Angles(0, 0, math.rad(45)) })
+	fadeOut(b, life, { CFrame = to })
+end
+local function pop(at: Vector3, s: number)
+	Fx.ring(at, WHITE, 1, 10 * s, 0.35, Vector3.new(0, 1, 0))
+	for k = 1, 3 do
+		Fx.ring(at, pastel(k), 1, (6 + k * 3) * s, 0.3 + k * 0.06)
+	end
+	sparkle(at, 10, s)
+	for k = 1, 5 do
+		candy(at + Vector3.new(math.random() - 0.5, 0.5, math.random() - 0.5) * 3 * s, pastel(k), s, 0.9, 3 * s)
+	end
+	Fx.sound("ping", 0.45, 1.8, at)
+end
+
+------------------------------------------------------------------------
+-- 나비 (몸 + 큰 윗날개 둘 + 작은 아랫날개 둘). 날개는 몸의 앞뒤 축으로 접혔다 펴진다
+------------------------------------------------------------------------
+type Fly = { body: BasePart, wings: { { p: BasePart, side: number, off: CFrame } }, s: number }
+local function butterfly(s: number, c1: Color3, c2: Color3, alpha: number?): Fly
+	local body = part(Vector3.new(0.25, 0.25, 1.2) * s, BODY, Enum.Material.SmoothPlastic, 0)
+	local wings = {}
+	for _, side in ipairs({ -1, 1 }) do
+		local up = part(Vector3.new(1.3, 0.06, 1.2) * s, c1, Enum.Material.Glass, alpha or 0.15, "ball")
+		local lo = part(Vector3.new(0.9, 0.06, 0.8) * s, c2, Enum.Material.Glass, alpha or 0.15, "ball")
+		table.insert(wings, { p = up, side = side, off = CFrame.new(side * 0.65 * s, 0, -0.25 * s) })
+		table.insert(wings, { p = lo, side = side, off = CFrame.new(side * 0.5 * s, 0, 0.45 * s) })
+	end
+	return { body = body, wings = wings, s = s }
+end
+local function placeFly(f: Fly, cf: CFrame, flap: number)
+	f.body.CFrame = cf
+	for _, w in ipairs(f.wings) do
+		-- 몸 축 (Z)으로 날개를 들어 올린다 (flap 0 = 편 날개, 1 = 위로 모은 날개)
+		local hinge = cf * CFrame.Angles(0, 0, -w.side * flap * math.rad(75))
+		w.p.CFrame = hinge * w.off
+	end
+end
+local function fadeFly(f: Fly, time: number)
+	fadeOut(f.body, time)
+	for _, w in ipairs(f.wings) do
+		fadeOut(w.p, time)
+	end
+end
+
+------------------------------------------------------------------------
+-- 차림: 등에 빛깔이 흐르는 나비 날개 넷 (천천히 팔랑인다), 둘레를 도는 비눗방울 셋
+------------------------------------------------------------------------
+function Dream.buildGear(model: Model): { Instance }
+	local out: { Instance } = {}
+	local holder = Instance.new("Folder")
+	holder.Name = "Dream_" .. model.Name
+	holder.Parent = folder
+	table.insert(out, holder)
+	local torso = model:FindFirstChild("UpperTorso")
+	if not (torso and torso:IsA("BasePart")) then
+		return out
+	end
+	local wings: { { p: BasePart, rim: BasePart, side: number, big: boolean } } = {}
+	for _, side in ipairs({ -1, 1 }) do
+		for _, big in ipairs({ true, false }) do
+			local sz = big and Vector3.new(2.6, 0.08, 2.1) or Vector3.new(1.7, 0.08, 1.4)
+			local p = part(sz, big and PASTEL[2] or PASTEL[4], Enum.Material.Glass, 0.3, "ball")
+			local rim = part(sz * Vector3.new(1.06, 0.5, 1.06), WHITE, Enum.Material.Neon, 0.7, "ball")
+			p.Parent = holder
+			rim.Parent = holder
+			table.insert(out, p)
+			table.insert(out, rim)
+			table.insert(wings, { p = p, rim = rim, side = side, big = big })
+		end
+	end
+	local bubbles: { BasePart } = {}
+	for k = 1, 3 do
+		local b = part(Vector3.new(0.6, 0.6, 0.6), pastel(k + 1), Enum.Material.Glass, 0.55, "ball")
+		b.Parent = holder
+		table.insert(out, b)
+		bubbles[k] = b
+	end
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		if not holder.Parent or not torso.Parent then
+			conn:Disconnect()
+			return
+		end
+		local t = os.clock() - t0
+		local hide = model:GetAttribute("Vanish") == true
+		local flap = 0.25 + 0.2 * math.sin(t * 2.6)
+		local back = torso.CFrame * CFrame.new(0, 0.35, torso.Size.Z / 2 + 0.12)
+		for _, w in ipairs(wings) do
+			-- 등에 세운 날개: 위 날개는 어깨 위로, 아래 날개는 허리 쪽으로 비스듬히
+			local tilt = w.big and math.rad(30) or math.rad(-35)
+			local cf = back * CFrame.Angles(0, -w.side * (math.rad(25) + flap), 0) * CFrame.Angles(0, 0, -w.side * tilt) * CFrame.new(w.side * (w.big and 1.35 or 0.9), w.big and 0.5 or -0.6, 0) * CFrame.Angles(math.rad(90), 0, 0)
+			w.p.CFrame = cf
+			w.rim.CFrame = cf
+			w.p.Color = iris(t + (w.big and 0 or 1.5) + (w.side > 0 and 0.4 or 0))
+			w.p.LocalTransparencyModifier = hide and 1 or 0
+			w.rim.LocalTransparencyModifier = hide and 1 or 0
+		end
+		for k, b in ipairs(bubbles) do
+			local a = t * 0.8 + k * 2.1
+			b.CFrame = torso.CFrame * CFrame.new(math.cos(a) * 2.4, 0.5 + math.sin(t * 1.3 + k) * 0.8, math.sin(a) * 2.4)
+			b.LocalTransparencyModifier = hide and 1 or 0
+		end
+	end)
+	return out
+end
+
+------------------------------------------------------------------------
+-- 연타 장치 꿈 거품: 상대가 무지갯빛 거품에 갇혀 둥실 떠올랐다가 터진다
+------------------------------------------------------------------------
+local function dreamBubble(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 200) then
+		return
+	end
+	local delay = data.delay or 0.6
+	local b = part(Vector3.new(1, 1, 1), PASTEL[2], Enum.Material.Glass, 0.6, "ball")
+	b.CFrame = CFrame.new(at)
+	local shine = part(Vector3.new(0.8, 0.5, 0.2), WHITE, Enum.Material.Neon, 0.3, "ball")
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local u = math.clamp(t / delay, 0, 1)
+		local size = 6.5 * math.min(1, t / 0.15)
+		local pos = at + Vector3.new(0, 3 * u + math.sin(t * 6) * 0.2, 0)
+		b.Size = Vector3.new(size, size, size)
+		b.CFrame = CFrame.new(pos)
+		b.Color = iris(t * 2)
+		shine.CFrame = CFrame.new(pos + Vector3.new(-size * 0.25, size * 0.3, -size * 0.3))
+		if u >= 1 then
+			conn:Disconnect()
+			b:Destroy()
+			shine:Destroy()
+			pop(pos, 0.9)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- E 몽접군무: 나비 열둘이 적에게 날아가 맴돌다 부딪친다
+------------------------------------------------------------------------
+local function butterflySwarm(data: any)
+	local m: Model? = data.m
+	local r = rootOf(m)
+	if not r or not near(r.Position, 220) then
+		return
+	end
+	local n = data.n or 12
+	local targets = data.targets or {}
+	local look = flat(r.CFrame.LookVector)
+	local delay = data.delay or 0.15
+	local every = data.every or 0.04
+	local travel = data.travel or 0.5
+	sparkle(r.Position + Vector3.new(0, 1, 0), 8, 1)
+	Fx.sound("swing", 0.4, 1.7, r.Position)
+	for i = 1, n do
+		task.delay(delay + (i - 1) * every, function()
+			local rr = rootOf(m)
+			local from = (rr and rr.Position or r.Position) + Vector3.new(math.random() - 0.5, 1 + math.random(), math.random() - 0.5) * 2
+			local tgt = #targets > 0 and targets[(i - 1) % #targets + 1] or nil
+			local fly = butterfly(0.9 + math.random() * 0.4, pastel(i), pastel(i + 2))
+			local side = Vector3.new(math.random() - 0.5, math.random() * 0.6, math.random() - 0.5).Unit * (4 + math.random() * 3)
+			local t0 = os.clock()
+			local last = from
+			local conn: RBXScriptConnection
+			conn = RunService.Heartbeat:Connect(function()
+				local t = os.clock() - t0
+				local u = math.clamp(t / travel, 0, 1)
+				local tr = rootOf(tgt)
+				local goal = tr and tr.Position or (from + look * 22)
+				local pos = from:Lerp(goal, u * u * (3 - 2 * u)) + side * math.sin(u * math.pi) + Vector3.new(0, math.sin(t * 20) * 0.25, 0)
+				local dir = (pos - last).Magnitude > 1e-3 and (pos - last).Unit or look
+				placeFly(fly, CFrame.lookAt(pos, pos + dir), 0.5 + 0.5 * math.sin(t * 30))
+				last = pos
+				if u >= 1 then
+					conn:Disconnect()
+					fadeFly(fly, 0.15)
+					sparkle(pos, 5, 0.7)
+				end
+			end)
+		end)
+	end
+end
+
+------------------------------------------------------------------------
+-- R 몽포: 커다란 무지갯빛 거품이 부풀어 가두고 둥실 떠올랐다가 터진다
+------------------------------------------------------------------------
+local function dreamTrap(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local R = data.radius or 9
+	local delay = data.delay or 0.25
+	local hold = data.hold or 1.2
+	local g = ground(at)
+	local b = part(Vector3.new(1, 1, 1), PASTEL[2], Enum.Material.Glass, 0.65, "ball")
+	local inner = part(Vector3.new(1, 1, 1), WHITE, Enum.Material.Neon, 0.94, "ball")
+	local shine = part(Vector3.new(2, 1.2, 0.3), WHITE, Enum.Material.Neon, 0.3, "ball")
+	local t0 = os.clock()
+	Fx.sound("ping", 0.5, 1.2, at)
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local grow = math.clamp(t / delay, 0, 1)
+		local u = math.clamp((t - delay) / hold, 0, 1)
+		local d = R * 2 * (1 - (1 - grow) ^ 3) * (1 + 0.04 * math.sin(t * 7))
+		local pos = g + Vector3.new(0, R * 0.8 + u * 5 + math.sin(t * 3) * 0.3, 0)
+		b.Size = Vector3.new(d, d * 0.96, d)
+		b.CFrame = CFrame.new(pos)
+		b.Color = iris(t * 1.5)
+		inner.Size = b.Size * 0.9
+		inner.CFrame = b.CFrame
+		shine.CFrame = CFrame.new(pos + Vector3.new(-d * 0.22, d * 0.3, -d * 0.28)) * CFrame.Angles(0, 0.6, 0.4)
+		if math.random() < 0.3 then
+			sparkle(pos + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * d * 0.7, 1, 0.8)
+		end
+		if t >= delay + hold then
+			conn:Disconnect()
+			b:Destroy()
+			inner:Destroy()
+			shine:Destroy()
+			pop(pos, 2.2)
+			for k = 1, 10 do
+				candy(pos + Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * R, pastel(k), 1.6, 1.2, pos.Y - g.Y)
+			end
+			Fx.flash(pos, PASTEL[1], 40, 3, 0.3)
+			Fx.sound("splash", 0.6, 1.6, pos)
+			shakeNear(pos, 0.8, 90)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- G 몽중몽: 무지갯빛 구름 바다, 초승달, 오로라, 떠오르는 비눗방울, 쏟아지는 별과 달 조각. 끝에 꿈에서 깨듯 펑
+------------------------------------------------------------------------
+local function dreamSea(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 260) then
+		return
+	end
+	local R = data.radius or 26
+	local delay = data.delay or 0.4
+	local dur = data.dur or 3.0
+	local g = ground(at)
+	local parts: { BasePart } = {}
+	-- 땅: 무지개 고리 (바깥에서 안으로)와 구름 덩이
+	for k = 1, 5 do
+		local d = R * 2 * (1 - (k - 1) * 0.16)
+		local ringP = part(Vector3.new(0.2, 1, 1), pastel(k), Enum.Material.Neon, 0.72, "cyl")
+		ringP.CFrame = CFrame.new(g + Vector3.new(0, 0.1 + k * 0.02, 0)) * UP
+		tween(ringP, delay + 0.2, { Size = Vector3.new(0.2, d, d) })
+		table.insert(parts, ringP)
+	end
+	for k = 1, 12 do
+		local a = k / 12 * math.pi * 2
+		local rr = R * (0.55 + (k % 3) * 0.15)
+		local c = part(Vector3.new(1, 1, 1), pastel(k):Lerp(WHITE, 0.45), Enum.Material.SmoothPlastic, 0.15, "ball")
+		local size = Vector3.new(9 + (k % 4) * 2, 3.2, 7 + (k % 3) * 2)
+		c.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * rr, 0.8, math.sin(a) * rr)) * CFrame.Angles(0, a, 0)
+		tween(c, delay + 0.3, { Size = size }, Enum.EasingStyle.Back)
+		table.insert(parts, c)
+	end
+	-- 하늘: 초승달 (호를 따라 조각을 이어) 과 오로라 띠 셋
+	local moonC = g + Vector3.new(0, 34, 0)
+	for k = 0, 12 do
+		local a = math.rad(-110 + k * 18)
+		local w = 2.4 * math.sin((k + 0.5) / 13 * math.pi) + 0.5
+		local seg = part(Vector3.new(w, 2.6, 0.6), MOON, Enum.Material.Neon, 1)
+		seg.CFrame = CFrame.new(moonC + Vector3.new(math.cos(a) * 7, math.sin(a) * 7, 0)) * CFrame.Angles(0, 0, a)
+		tween(seg, 0.6, { Transparency = 0.05 })
+		table.insert(parts, seg)
+	end
+	local aurora: { { p: BasePart, k: number, j: number } } = {}
+	for k = 1, 3 do
+		for j = 0, 9 do
+			local p = part(Vector3.new(6, 8, 0.2), pastel(k + 1), Enum.Material.Neon, 0.75)
+			table.insert(aurora, { p = p, k = k, j = j })
+			table.insert(parts, p)
+		end
+	end
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		for _, it in ipairs(aurora) do
+			local x = (it.j - 4.5) * 5.6
+			local y = 26 + it.k * 3 + math.sin(t * 1.4 + it.j * 0.6 + it.k) * 1.6
+			it.p.CFrame = CFrame.new(g + Vector3.new(x, y, -R * 0.4 + it.k * 3)) * CFrame.Angles(0, math.sin(t + it.j) * 0.2, 0)
+		end
+		if t > delay and t < delay + dur then
+			-- 떠오르는 비눗방울
+			if math.random() < 0.5 then
+				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+				local bp = g + Vector3.new(math.cos(a) * rr, 1, math.sin(a) * rr)
+				local bub = part(Vector3.new(1, 1, 1) * (0.8 + math.random() * 1.6), pastel(math.random(1, 5)), Enum.Material.Glass, 0.55, "ball")
+				bub.CFrame = CFrame.new(bp)
+				fadeOut(bub, 1.6, { CFrame = CFrame.new(bp + Vector3.new(math.random() - 0.5, 9, math.random() - 0.5)) })
+			end
+			-- 쏟아지는 별과 달 조각
+			if math.random() < 0.55 then
+				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+				candy(g + Vector3.new(math.cos(a) * rr, 18 + math.random() * 6, math.sin(a) * rr), pastel(math.random(1, 5)), 1.2, 0.8, 16)
+			end
+		end
+		if t >= delay + dur then
+			conn:Disconnect()
+		end
+	end)
+	Fx.sound("ping", 0.6, 0.9, at)
+	shakeNear(g, 0.8, 120)
+	task.delay(delay + dur, function()
+		-- 꿈에서 깬다: 하얀 빛이 번지고 모든 것이 반짝이로
+		for _, p in ipairs(parts) do
+			if p.Parent then
+				fadeOut(p, 0.5, { Size = p.Size * 1.2 })
+			end
+		end
+		local core = part(Vector3.new(4, 4, 4), WHITE, Enum.Material.Neon, 0, "ball")
+		core.CFrame = CFrame.new(g + Vector3.new(0, 4, 0))
+		fadeOut(core, 0.5, { Size = Vector3.new(R * 1.8, R * 1.8, R * 1.8) })
+		for k = 1, 5 do
+			task.delay(k * 0.05, function()
+				Fx.ring(g + Vector3.new(0, 0.5 + k * 0.6, 0), pastel(k), 4, R * 2.4 + k * 6, 0.6)
+			end)
+		end
+		for _ = 1, 6 do
+			local a, rr = math.random() * math.pi * 2, math.random() * R
+			sparkle(g + Vector3.new(math.cos(a) * rr, 3, math.sin(a) * rr), 6, 1.4)
+		end
+		Fx.flash(g + Vector3.new(0, 4, 0), PASTEL[1], 90, 6, 0.5)
+		Fx.sound("shatter", 0.7, 1.6, g)
+		Fx.sound("heavy", 0.8, 0.8, g)
+		shakeNear(g, 2.2, 150)
+	end)
+end
+
+------------------------------------------------------------------------
+-- X 호접지몽: 날개폭이 하늘을 가리는 꿈나비. 날갯짓마다 무지갯빛 물결, 날개를 접어 감싸 안고 무지개 꽃으로
+------------------------------------------------------------------------
+type BigFly = { body: BasePart, panels: { { p: BasePart, side: number, off: CFrame, base: Color3 } } }
+local function bigButterfly(S: number): BigFly
+	local body = part(Vector3.new(1.4, 1.4, 12) * S / 30, BODY, Enum.Material.SmoothPlastic, 0, "ball")
+	local panels = {}
+	for _, side in ipairs({ -1, 1 }) do
+		-- 윗날개 (큰 판 + 안쪽 빛깔 판 + 흰 테 + 점 무늬), 아랫날개
+		local defs = {
+			{ Vector3.new(16, 0.3, 13), CFrame.new(side * 8.5, 0, -3.5), PASTEL[2], Enum.Material.Glass, 0.25 },
+			{ Vector3.new(10, 0.32, 8), CFrame.new(side * 7.5, 0.1, -3), PASTEL[1], Enum.Material.Glass, 0.3 },
+			{ Vector3.new(17, 0.2, 14), CFrame.new(side * 8.5, -0.1, -3.5), WHITE, Enum.Material.Neon, 0.75 },
+			{ Vector3.new(2.2, 0.34, 2.2), CFrame.new(side * 12.5, 0.2, -6), PASTEL[5], Enum.Material.Neon, 0.1 },
+			{ Vector3.new(11, 0.3, 9), CFrame.new(side * 6, 0, 6), PASTEL[4], Enum.Material.Glass, 0.25 },
+			{ Vector3.new(6, 0.32, 5), CFrame.new(side * 5.5, 0.1, 6.5), PASTEL[3], Enum.Material.Glass, 0.3 },
+			{ Vector3.new(1.6, 0.34, 1.6), CFrame.new(side * 8, 0.2, 8.5), PASTEL[5], Enum.Material.Neon, 0.1 },
+		}
+		for _, d in ipairs(defs) do
+			local p = part(d[1] * S / 30, d[3], d[4], d[5], "ball")
+			table.insert(panels, { p = p, side = side, off = CFrame.new(d[2].Position * S / 30), base = d[3] })
+		end
+	end
+	return { body = body, panels = panels }
+end
+local function placeBig(f: BigFly, cf: CFrame, flap: number, t: number)
+	f.body.CFrame = cf
+	for i, it in ipairs(f.panels) do
+		local hinge = cf * CFrame.Angles(0, 0, -it.side * flap * math.rad(80))
+		it.p.CFrame = hinge * it.off
+		if it.p.Material == Enum.Material.Glass then
+			it.p.Color = it.base:Lerp(iris(t + i * 0.2), 0.35)
+		end
+	end
+end
+local function butterflyDream(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 340) then
+		return
+	end
+	local dir = flat(data.dir or Vector3.new(0, 0, -1))
+	local cut = data.cut or 1.4
+	local rise = data.rise or 0.6
+	local flaps = data.flaps or 3
+	local every = data.flapEvery or 0.6
+	local fold = data.fold or 0.6
+	local range = data.range or 40
+	local g = ground(at)
+	local fly = bigButterfly(60)
+	local startP = g - dir * 14 + Vector3.new(0, -6, 0)
+	local hover = g - dir * 6 + Vector3.new(0, 26, 0)
+	local t0 = os.clock()
+	local flapped = 0
+	-- 컷씬 동안 둘레에 꿈의 빛 기둥 다섯이 피어오른다
+	for k = 1, 5 do
+		local a = k / 5 * math.pi * 2
+		local p = g + Vector3.new(math.cos(a) * range * 0.6, 0, math.sin(a) * range * 0.6)
+		local col = part(Vector3.new(2, 3, 3), pastel(k), Enum.Material.Neon, 0.4, "cyl")
+		col.CFrame = CFrame.new(p) * UP
+		tween(col, cut * 0.6, { Size = Vector3.new(50, 3, 3), CFrame = CFrame.new(p + Vector3.new(0, 25, 0)) * UP })
+		task.delay(cut + 0.2, function()
+			fadeOut(col, 0.6)
+		end)
+	end
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local pos: Vector3
+		local flap: number
+		local look = CFrame.lookAt(Vector3.zero, -dir) -- 몸은 쓴 사람이 보는 쪽으로 (머리 = -Z)
+		if t < cut then
+			pos = startP
+			flap = 1
+		elseif t < cut + rise then
+			local u = (t - cut) / rise
+			pos = startP:Lerp(hover, 1 - (1 - u) ^ 2)
+			flap = 1 - u * 0.6
+		elseif t < cut + rise + flaps * every then
+			local tt = t - cut - rise
+			local k = math.floor(tt / every)
+			local u = (tt - k * every) / every
+			-- 날개를 크게 아래로 쳤다가 천천히 든다
+			flap = u < 0.3 and (0.9 - u / 0.3 * 1.15) or (-0.25 + (u - 0.3) / 0.7 * 1.15)
+			pos = hover + Vector3.new(0, math.sin(tt * 4) * 0.8 - (u < 0.3 and u * 3 or 0.9 - (u - 0.3) * 1.3), 0)
+			if k + 1 > flapped and k < flaps then
+				flapped = k + 1
+				-- 날갯짓 물결: 무지개 빛깔 고리가 둘레를 휩쓴다
+				for c = 1, 5 do
+					task.delay(c * 0.04, function()
+						Fx.ring(g + Vector3.new(0, 0.6 + c * 0.4, 0), pastel(c), 6, range * 2.2, 0.55)
+					end)
+				end
+				for _ = 1, 8 do
+					local a, rr = math.random() * math.pi * 2, math.random() * range
+					sparkle(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 4, 1.3)
+				end
+				Fx.sound("swing", 0.9, 0.5, g)
+				shakeNear(g, 1.4, 180)
+			end
+		elseif t < cut + rise + flaps * every + fold then
+			local u = (t - cut - rise - flaps * every) / fold
+			pos = hover:Lerp(g + Vector3.new(0, 10, 0), u * u)
+			flap = 0.6 + u * 0.55 -- 날개를 위로 접어 감싸 안는다
+		else
+			conn:Disconnect()
+			fadeOut(fly.body, 0.3)
+			for _, it in ipairs(fly.panels) do
+				fadeOut(it.p, 0.3, { Size = it.p.Size * 1.4 })
+			end
+			-- 무지개 꽃: 꽃잎 열이 활짝 피었다 흩어진다
+			for k = 1, 10 do
+				local a = k / 10 * math.pi * 2
+				local petal = part(Vector3.new(4, 1, 8), pastel(k), Enum.Material.Neon, 0.15, "ball")
+				local cf0 = CFrame.new(g + Vector3.new(0, 2, 0)) * CFrame.Angles(0, a, 0)
+				petal.CFrame = cf0 * CFrame.new(0, 0, -2) * CFrame.Angles(math.rad(70), 0, 0)
+				local cf1 = cf0 * CFrame.new(0, 1, -(data.finalRadius or 34) * 0.55) * CFrame.Angles(math.rad(10), 0, 0)
+				tween(petal, 0.35, { CFrame = cf1, Size = Vector3.new(12, 1.4, 24) }, Enum.EasingStyle.Back)
+				task.delay(0.45, function()
+					fadeOut(petal, 0.6, { Size = Vector3.new(16, 0.4, 30) })
+				end)
+			end
+			local core = part(Vector3.new(6, 6, 6), WHITE, Enum.Material.Neon, 0, "ball")
+			core.CFrame = CFrame.new(g + Vector3.new(0, 4, 0))
+			fadeOut(core, 0.6, { Size = Vector3.new(60, 60, 60) })
+			for c = 1, 5 do
+				task.delay(c * 0.06, function()
+					Fx.ring(g + Vector3.new(0, 0.6 + c, 0), pastel(c), 6, (data.finalRadius or 34) * 2.6 + c * 8, 0.8)
+				end)
+			end
+			for _ = 1, 12 do
+				local a, rr = math.random() * math.pi * 2, math.random() * (data.finalRadius or 34)
+				sparkle(g + Vector3.new(math.cos(a) * rr, 3 + math.random() * 6, math.sin(a) * rr), 6, 1.6)
+			end
+			Fx.flash(g + Vector3.new(0, 6, 0), PASTEL[1], 150, 9, 0.7)
+			Fx.sound("shatter", 0.9, 1.4, g)
+			Fx.sound("heavy", 1, 0.6, g)
+			shakeNear(g, 3.2, 220)
+			if opts.flash and near(g, 120) then
+				opts.flash(PASTEL[1], 0.3)
+			end
+			return
+		end
+		placeBig(fly, CFrame.new(pos) * look.Rotation * CFrame.Angles(math.rad(-25), 0, 0), flap, t)
+	end)
+end
+
+local HANDLERS: { [string]: (any) -> () } = {
+	butterflySwarm = butterflySwarm,
+	dreamTrap = dreamTrap,
+	dreamSea = dreamSea,
+	butterflyDream = butterflyDream,
+}
+function Dream.handles(data: any): boolean
+	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "dreamBubble")
+end
+function Dream.run(data: any)
+	if data.kind == "pulse" then
+		dreamBubble(data)
+		return
+	end
+	local fn = HANDLERS[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+return Dream
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
@@ -34961,7 +36183,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Forest</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 만목신권의 숲 (화면). 대나무 창 · 소용돌이치는 잎 · 천 년 은행나무
@@ -35570,7 +36792,7 @@ return Forest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -38453,7 +39675,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -38634,7 +39856,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
@@ -40277,7 +41499,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -40692,7 +41914,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -41160,7 +42382,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -42333,7 +43555,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 꺼지는 촛불
@@ -43065,7 +44287,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -43131,7 +44353,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -43536,7 +44758,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -43877,7 +45099,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -44826,7 +46048,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 권왕신권의 오의 · 초 오의 (화면)
@@ -45461,7 +46683,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -45482,6 +46704,7 @@ local Ult2 = require(script.Parent:WaitForChild("Ult2"))
 local Whale = require(script.Parent:WaitForChild("Whale"))
 local Star = require(script.Parent:WaitForChild("Star"))
 local Mujo = require(script.Parent:WaitForChild("Mujo"))
+local Dream = require(script.Parent:WaitForChild("Dream"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -45668,7 +46891,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -45692,6 +46915,13 @@ local function refreshFans(model: Model)
 	-- 초·창해신권은 손목의 진주 고리와 물의 띠
 	if st.pearls then
 		for _, p in ipairs(Whale.buildGear(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
+	-- 3.7판 호접몽권은 등의 나비 날개
+	if st.dreamWings then
+		for _, p in ipairs(Dream.buildGear(model)) do
 			table.insert(list, p)
 		end
 		return
@@ -45744,7 +46974,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end
@@ -46599,7 +47829,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -49334,6 +50564,7 @@ local CUT_LOOK: { [string]: { any } } = {
 	eophwa = { Color3.fromRGB(90, 10, 10), Color3.fromRGB(255, 150, 120), CHAR },
 	musangkwon = { Color3.fromRGB(60, 70, 80), MIST, Color3.fromRGB(60, 110, 140) },
 	kwonwangsin = { Color3.fromRGB(90, 60, 10), GOLD, CRIMSON },
+	hojeop = { Color3.fromRGB(150, 110, 200), Color3.fromRGB(255, 200, 230), Color3.fromRGB(130, 236, 226) },
 }
 local cutActive = false
 function Samsara.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, sid: string)
@@ -49626,7 +50857,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -50186,6 +51417,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	chobyeok = { H = "cross", E = "beam", R = "rain" },
 	chochanghae = { H = "wave" },
 	chosengha = { H = "nova" },
+	hojeop = {},
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {
@@ -50230,7 +51462,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -51370,7 +52602,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -52119,6 +53351,28 @@ local function buildStyles()
 			for mid in pairs(TR.learn) do
 				local M = Config.SKY_MAT_BY_ID[mid]
 				table.insert(lines, string.format('<font color="#C8B8A0">%s 얻는 곳: %s (천상계에서만)</font>', M.icon, M.how))
+			end
+		end
+		-- 3.7판 사부의 부탁 (높은 권법은 시험 전에)
+		local MQ = Config.MINIQUEST and Config.MINIQUEST[id]
+		if MQ and not owned then
+			local cur = (state and state.mq and state.mq[id]) or 0
+			local got = (state and state.mqn and state.mqn[id]) or 0
+			table.insert(lines, "")
+			table.insert(lines, string.format('<font color="#B8E0FF"><b>📜 사부의 부탁 「%s」</b></font>', MQ.title))
+			if cur == 0 then
+				table.insert(lines, '<font color="#C8C8C8">사부를 찾아 말을 걸면 시험 전에 부탁을 한다</font>')
+			end
+			for i, stp in ipairs(MQ.steps) do
+				local mark = (cur > i) and '<font color="#9CFF9C">✔</font>' or (cur == i and '<font color="#FFD27A">▶</font>' or '<font color="#8A8A8A">·</font>')
+				local extra = ""
+				if cur == i then
+					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or (stp.kind == "kill" and stp.n or 0))
+					if total > 0 then
+						extra = string.format(" (%d/%d)", got, total)
+					end
+				end
+				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, stp.night and " 🌙" or ""))
 			end
 		end
 		-- 승급 (깨달음)
@@ -53231,7 +54485,7 @@ local function buildTest()
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🐋 2.7판: 초·창해신권 · 새 만목신권 · 새 악마 · 적 차림", {
-		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
+		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🦋 호접몽권 바로 쓰기 (X 호접지몽)", "testStyle", "hojeop" }, { "🦋 몽선에게", "testSecretMaster", "hojeop" }, { "📜 사부의 부탁 한 단계 넘기기", "testQuestSkip" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
 		{ "🐳 진 창해신권 (G 고래강림)", "testStyle", "changhae2" }, { "🎋 만목신권 (죽림창·천엽비수·신목강림)", "testStyle", "manmok" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
@@ -55049,7 +56303,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -56327,7 +57581,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -59010,7 +60264,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -60119,7 +61373,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="46">
+  <Item class="Workspace" referent="48">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

@@ -671,6 +671,15 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "hojeop" then
+		-- 몽선: 흰 머리를 틀어 올린 졸린 노인, 어깨의 작은 나비 날개 둘, 머리의 꽃 장식, 손의 연꽃
+		beard(WHITE_HAIR)
+		wear(model, "Head", "HairBun", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, hs.Y * 0.62, 0.15), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "Head", "HairFlower", Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.35, hs.Y * 0.62, 0.1), Color3.fromRGB(255, 170, 210), Enum.Material.Neon, Enum.PartType.Ball)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "UpperTorso", "DreamWing", Vector3.new(1.6, 1.3, 0.08), CFrame.new(x * 0.9, 0.5, 0.65) * CFrame.Angles(0, x * math.rad(25), x * math.rad(-20)), x > 0 and Color3.fromRGB(200, 170, 255) or Color3.fromRGB(150, 240, 210), Enum.Material.Glass, Enum.PartType.Ball)
+		end
+		wear(model, "LeftHand", "Lotus", Vector3.new(0.9, 0.5, 0.9), CFrame.new(0, -0.5, 0), Color3.fromRGB(255, 190, 210), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 	elseif id == "chosengha" then
 		-- 천성선: 흰 수염, 별을 수놓은 남색 높은 관, 어깨의 금빛 별 둘, 손에 쥔 별 지팡이
 		beard(WHITE_HAIR)

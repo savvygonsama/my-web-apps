@@ -11,6 +11,7 @@ local Combat = require(script:WaitForChild("Combat"))
 local Npc = require(script:WaitForChild("Npc"))
 local Skills = require(script:WaitForChild("Skills"))
 local Battle = require(script:WaitForChild("Battle"))
+local MiniQuest = require(script:WaitForChild("MiniQuest"))
 -- 3.3판: 배틀그라운드 장소인가 (battleground.project.json으로 만든 파일에만 ReplicatedStorage.KwonBattle이 있다)
 local BATTLE = Config.BATTLE_MODE
 
@@ -61,6 +62,8 @@ type Profile = {
 	towerBest: number, -- 천층탑 최고 층
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
+	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
+	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
@@ -98,6 +101,8 @@ local function defaultProfile(): Profile
 		fragments = {},
 		accepted = 1,
 		gradeUp = {},
+		mq = {},
+		mqn = {},
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -230,6 +235,16 @@ local function sanitize(data: any): Profile
 	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
+	for _, key in ipairs({ "mq", "mqn" }) do
+		local src = (data :: any)[key]
+		if type(src) == "table" then
+			for sid, v in pairs(src) do
+				if type(sid) == "string" and Config.MINIQUEST and Config.MINIQUEST[sid] and type(v) == "number" then
+					(p :: any)[key][sid] = math.floor(num(v, 100))
+				end
+			end
+		end
+	end
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
@@ -659,6 +674,8 @@ local function pushState(player: Player)
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
 		pvpOff = p.pvpOff == true,
+		mq = p.mq,
+		mqn = p.mqn,
 		mounts = p.mounts,
 		mountSel = p.mountSel,
 		skyGems = p.skyGems,
@@ -1218,6 +1235,26 @@ local function spendMats(p: Profile, need: { [string]: number })
 	end
 end
 
+-- 3.7판 사부의 부탁
+MiniQuest.init({
+	profiles = profiles,
+	states = states,
+	toast = toast,
+	pushState = pushState,
+	dialog = function(player: Player, d: any)
+		Push:FireClient(player, "dialog", d)
+	end,
+	isDay = function(): boolean
+		return Combat.isDay()
+	end,
+	rootOf = function(player: Player): BasePart?
+		local f = Combat.fighterOfPlayer(player)
+		return f and f.root or nil
+	end,
+	fx = function(player: Player, kind: string, at: Vector3)
+		Push:FireClient(player, "skillfx", { kind = kind, at = at })
+	end,
+})
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
 
@@ -1673,6 +1710,7 @@ Combat.init(Push, {
 					end
 				end
 				p.kills += 1
+				MiniQuest.onKill(killer, (f :: any).typeId)
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
@@ -2233,6 +2271,14 @@ function Actions.learn(player: Player, id: any)
 		if d > Config.MASTER_RANGE then
 			toast(player, string.format("📍 %s을(를) 배우려면 %s의 %s에게 가야 해요", style.name, master.region, master.name))
 			Push:FireClient(player, "guide", { style = style.id })
+			return
+		end
+		if style.rebirthReq and (p.rebirth or 0) < style.rebirthReq then
+			toast(player, string.format("🔒 %s은(는) 환생을 %d번 한 몸이라야 배울 수 있어요", style.name, style.rebirthReq))
+			return
+		end
+		if not p.trials[style.id] and not MiniQuest.done(p, style.id) then
+			toast(player, "📜 먼저 사부의 부탁을 들어주세요 · " .. MiniQuest.line(p, style.id))
 			return
 		end
 		if not p.trials[style.id] then
@@ -3758,6 +3804,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		else
 			toast(player, "천층탑 안에서 쓰세요")
 		end
+	elseif action == "testQuestSkip" then
+		MiniQuest.skip(player)
 	elseif action == "testPvpUnlock" then
 		p.pvpUnlocked = true
 		toast(player, "⚔ PvP 끄기를 열었어요")
@@ -4816,6 +4864,26 @@ if W.battle then
 		end)
 	end)
 end
+-- 3.7판 사부의 부탁: 들판에 놓인 것 (찾기·차례), 1초마다 가야 할 곳 확인
+if W.mq then
+	for _, it in ipairs(W.mq) do
+		it.prompt.Triggered:Connect(function(player: Player)
+			if not BATTLE then
+				MiniQuest.touch(player, it.sid, it.step, it.idx)
+			end
+		end)
+	end
+end
+if not BATTLE then
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			for _, pl in ipairs(Players:GetPlayers()) do
+				pcall(MiniQuest.tick, pl)
+			end
+		end
+	end)
+end
 -- 3.6판 숨은 것들: 돌탑 일곱, 낮잠 자는 고양이, 뽑히지 않는 검, 소원 우물, 오리 가족
 if W.eggs then
 	local E = Config.EGGS
@@ -5288,6 +5356,16 @@ task.spawn(function()
 				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
 				return
 			end
+		end
+		-- 3.7판: 두 번 환생해야 만나 주는 사부 (호접몽권)
+		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...드르렁. (깨지 않는다. 환생을 %d번 한 몸이라야 이 꿈에 들어올 수 있을 것 같다)", sdef.rebirthReq) })
+			return
+		end
+		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다
+		if not p.styles[styleId] and not p.trials[styleId] and MiniQuest.has(styleId) and not MiniQuest.done(p, styleId) then
+			MiniQuest.talk(player, styleId)
+			return
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다

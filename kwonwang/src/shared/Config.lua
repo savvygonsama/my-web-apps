@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.6.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.7.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2187,6 +2187,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.7판 호접몽권 (두 번째 윤회의 꿈): 등에 빛깔이 흐르는 나비 날개. 꿈처럼 가볍고 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
+-- E 몽접군무 (나비 떼) · R 몽포 (꿈 거품) · G 몽중몽 (꿈속의 꿈) · X 호접지몽 (거대한 꿈나비)
+table.insert(Config.Styles, {
+	id = "hojeop",
+	name = "호접몽권",
+	hanja = "胡蝶夢拳",
+	icon = "🦋",
+	grade = "윤회",
+	rebirthStyle = 2,
+	rebirthReq = 2,
+	color = Color3.fromRGB(196, 150, 255),
+	color2 = Color3.fromRGB(130, 236, 226),
+	fx = "cloud",
+	dreamWings = true, -- 등의 나비 날개와 둘레의 비눗방울 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	trialHp = 10,
+	unlockHint = "두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라",
+	desc = "두 번째 삶의 꿈에서 배운 권. 주먹이 닿는 곳마다 빛깔 고운 꿈이 피어난다. 나비가 나인지, 내가 나비인지 아무도 모른다.",
+	gimmick = "꿈결: 네 번 맞힐 때마다 상대가 무지갯빛 꿈 거품에 갇혀 둥실 떠올랐다가 터진다. 꿈처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
+	deflect = 0.24,
+	dodgeChance = 0.15,
+	speed = 1.2,
+	pulse = { every = 4, kind = "dreamBubble", radius = 6, delay = 0.6, name = "꿈 거품", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
+	stance = "stance_cloud",
+	combo = {
+		{ id = "hj1", name = "나비 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj2", name = "꽃잎 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj3", name = "꿈 바퀴", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
+		{ id = "hj4", name = "깨는 손", pose = "double_palm", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 24, 8) } },
+	},
+	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
+	skills = {
+		E = { id = "hjE", name = "몽접군무", desc = "소매에서 빛깔 고운 나비 열둘이 쏟아져 둘레의 적 넷에게 날아가 팔랑이며 맴돌다 하나씩 부딪쳐 빛가루로 흩어진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "butterflySwarm", n = 12, range = 32, targets = 4, delay = 0.15, every = 0.04, travel = 0.5, hit = hit(0, 0, 0, 9, 8, 0.3, 4, 4) } },
+		R = { id = "hjR", name = "몽포", desc = "앞에 커다란 무지갯빛 꿈 거품이 부풀어 그 안의 적을 가두고 둥실 띄운다. 1.2초 뒤 거품이 터지며 별 사탕 같은 빛조각이 흩어진다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "dreamTrap", dist = 9, radius = 9, delay = 0.25, hold = 1.2, hit = hit(0, 0, 0, 12, 10, 1.4, 0, 16), burst = hit(0, 0, 0, 40, 40, 0.8, 10, 10) } },
+		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈이 된다. 땅은 무지갯빛 구름 바다, 하늘엔 커다란 초승달과 오로라, 비눗방울이 떠오르고 별과 달 조각이 쏟아진다. 꿈속의 적은 굼뜨고 계속 맞다가, 마지막에 꿈에서 깨듯 펑 터진다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "dreamSea", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
+		X = { id = "hjX", name = "호접지몽", desc = "초 오의. 컷씬: 하늘이 분홍과 라일락빛 새벽이 된다 (그동안 무적). 등 뒤에서 날개폭이 하늘을 가리는 꿈나비가 날아오른다. 날갯짓 세 번마다 무지갯빛 가루 물결이 둘레를 휩쓸어 적을 띄우고, 나비가 날개를 접어 모두를 감싸 안으면 커다란 무지개 꽃으로 터진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "butterflyDream", cut = 1.4, rise = 0.6, flaps = 3, flapEvery = 0.6, range = 40, flap = hit(0, 0, 0, 40, 40, 0.8, 10, 18), fold = 0.6, pull = 40, finalRadius = 34, final = hit(0, 0, 0, 220, 250, 1.8, 60, 28) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
 -- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
@@ -2351,6 +2396,7 @@ local FINISHERS = {
 	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
+	hojeop = { name = "몽접승천", pose = "petal_spin" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -2795,6 +2841,17 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
 			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
 			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+	if st.id == "hojeop" then
+		local pink = Color3.fromRGB(255, 180, 220)
+		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 나비 다루는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
+		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
+			P("rain", "별사탕 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
+			P("donut", "꿈 거품 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
+			P("charge", "나비 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
+			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 34, 38, 0.8, 20) }),
+			P("quake", "호접지몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "chosengha" then
@@ -3701,6 +3758,9 @@ Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vecto
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+-- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
+Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
+	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
 Config.STAR_TERRACE = Vector3.new(-600, SY, -20)
 Config.MASTERS.chosengha = { name = "천성선", at = Config.STAR_TERRACE + Vector3.new(0, 4.4, 0), region = "성운원 남쪽 끝 관성대 (천상계)", regionId = "nebula", secret = true,
@@ -4098,5 +4158,85 @@ do
 		norm(isl.boss, isl.camps)
 	end
 end
+
+------------------------------------------------------------------------
+-- 3.7판 사부의 부탁 (미니 퀘스트): 높은 권법의 사부는 시험 전에 부탁을 하나씩 한다. 다 들어주어야 시험을 낸다
+-- 단계: visit (그곳에 가기, night = 밤에만) · find (흩어진 것 찾기, T) · order (차례대로 짚기, T. 틀리면 처음부터) ·
+--       kill (그 적 쓰러뜨리기) · return (사부에게 돌아가 말 걸기)
+------------------------------------------------------------------------
+local function ring(c: Vector3, r: number, n: number, y: number?): { Vector3 }
+	local out = {}
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2 + 0.5
+		table.insert(out, c + Vector3.new(math.cos(a) * r, y or 0, math.sin(a) * r))
+	end
+	return out
+end
+local RAINBOW = { Color3.fromRGB(255, 120, 130), Color3.fromRGB(255, 180, 110), Color3.fromRGB(255, 232, 120), Color3.fromRGB(140, 226, 150), Color3.fromRGB(130, 180, 255) }
+Config.MINIQUEST = {
+	taecho = { title = "처음의 돌", steps = {
+		{ kind = "visit", at = Vector3.new(1100, 0, -2700), r = 26, text = "세상의 처음은 하늘에서 떨어졌다. 별똥 분화구 한가운데에 서 보아라", say = "발밑이 따뜻하다. 아주 오래전, 여기에 별이 떨어졌다." },
+		{ kind = "find", name = "처음의 돌", icon = "🪨", items = ring(Vector3.new(1100, 0, -2700), 48, 3), text = "분화구 둘레에 흩어진 '처음의 돌' 셋을 주워라 (빛나는 돌, T)" },
+		{ kind = "return", text = "처음의 돌을 시원자에게 가져가라" },
+	} },
+	ilwol = { title = "해와 달의 차례", steps = {
+		{ kind = "order", name = "해의 기둥", stones = { { at = Vector3.new(3200, 0, 3300) + Vector3.new(20, 0, 0), h = 2 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, 20), h = 3.5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(-20, 0, 0), h = 5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, -20), h = 6.5 } },
+			text = "해시계 광장의 해의 기둥 넷을, 해가 떠오르듯 가장 낮은 것부터 가장 높은 것까지 차례로 짚어라 (T)" },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 16, night = true, text = "달이 뜬 밤, 거울 호수 가운데 섬에 서서 물에 비친 달을 보아라", say = "물속의 달이 하늘의 달보다 밝다." },
+		{ kind = "return", text = "해와 달을 모두 본 몸으로 권존에게 돌아가라" },
+	} },
+	yeonggeop = { title = "멈춘 시계", steps = {
+		{ kind = "find", name = "시계 톱니", icon = "⚙", items = { Vector3.new(40, 0, 2290), Vector3.new(-46, 0, 2210), Vector3.new(3236, 0, 3336), Vector3.new(3166, 0, 3262) }, text = "버려진 마을과 해시계 광장에 흩어진 멈춘 시계의 톱니 넷을 모아라 (T)" },
+		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리가 몇 번 울리는지 들어라", say = "종이 한 번 울렸다. 그런데 소리는 천 년째 울리고 있다." },
+		{ kind = "return", text = "톱니를 영겁노인에게 가져가라" },
+	} },
+	agong = { title = "허공의 틈", steps = {
+		{ kind = "kill", enemy = "voidwalker", n = 5, text = "허공 균열의 허공 마인 다섯을 쓰러뜨려 틈을 닫아라" },
+		{ kind = "visit", at = Vector3.new(1400, 0, 1400), r = 24, text = "끊어진 하늘다리 끝에 서서, 다리 너머의 허공을 들여다보아라", say = "허공도 너를 들여다본다." },
+		{ kind = "return", text = "아공선인에게 돌아가라" },
+	} },
+	seongha = { title = "별을 헤아리는 밤", steps = {
+		{ kind = "visit", at = Vector3.new(-1900, 0, -800), r = 22, night = true, text = "밤에 별바위 고리 한가운데에서 별을 헤아려라", say = "별을 헤아리다 보니 별도 너를 헤아린다." },
+		{ kind = "find", name = "떨어진 별 조각", icon = "⭐", items = ring(Vector3.new(-620, SY, -160), 70, 5, 0), text = "천상계 성운원에 떨어진 별 조각 다섯을 주워라 (T)" },
+		{ kind = "return", text = "별 조각을 성하노군에게 가져가라" },
+	} },
+	manmok = { title = "시든 묘목", steps = {
+		{ kind = "find", name = "시든 묘목", icon = "🌱", items = ring(Vector3.new(-1700, 0, 1600), 46, 4), text = "만목원 둘레의 시든 묘목 넷에 물을 주어라 (T)" },
+		{ kind = "kill", enemy = "bogbrute", n = 3, text = "숲을 썩게 하는 독안개 늪의 늪 거한 셋을 쓰러뜨려라" },
+		{ kind = "return", text = "목선에게 돌아가라" },
+	} },
+	chomaehwa = { title = "떨어진 부채 장식", steps = {
+		{ kind = "find", name = "부채 장식", icon = "🌸", items = ring(Config.SAKURA_HILL, 40, 3), text = "벚꽃 언덕 아래 떨어진 부채 장식 셋을 찾아라 (T)" },
+		{ kind = "return", text = "천앵선에게 돌아가라" },
+	} },
+	chochwi = { title = "술잔 찾기", steps = {
+		{ kind = "find", name = "만취선의 술잔", icon = "🍶", items = ring(Config.SOJU_HILL, 36, 4), text = "술독 마루 둘레에 굴러간 만취선의 술잔 넷을 찾아라 (T)" },
+		{ kind = "return", text = "술잔을 만취선에게 가져가라" },
+	} },
+	chohyeolma = { title = "핏빛 달 아래", steps = {
+		{ kind = "visit", at = Vector3.new(1000, 0, 1000), r = 28, night = true, text = "밤에 혈월곡의 핏빛 달 아래에 서라", say = "달빛이 손톱 끝까지 붉게 스민다." },
+		{ kind = "return", text = "혈월선에게 돌아가라" },
+	} },
+	chobyeok = { title = "번개를 기다리다", steps = {
+		{ kind = "visit", at = Vector3.new(1300, 0, -1000), r = 26, text = "만검총 한가운데, 가장 높은 검 아래에서 번개를 기다려라", say = "검 끝에서 파란 불꽃이 튄다. 번개가 너를 알아보았다." },
+		{ kind = "return", text = "뇌천선에게 돌아가라" },
+	} },
+	chochanghae = { title = "고래 뼈 조각", steps = {
+		{ kind = "find", name = "고래 뼈 조각", icon = "🦴", items = ring(Config.WHALE_ROCK, 44, 4), text = "서해 바닷가 고래 뼈 바위 둘레의 뼈 조각 넷을 찾아라 (T)" },
+		{ kind = "return", text = "고경선에게 돌아가라" },
+	} },
+	chosengha = { title = "별 등의 차례", steps = {
+		{ kind = "order", name = "별 등", stones = { { at = Config.STAR_TERRACE + Vector3.new(10, 0, 4), h = 1.5 }, { at = Config.STAR_TERRACE + Vector3.new(-9, 0, 6), h = 2.5 }, { at = Config.STAR_TERRACE + Vector3.new(4, 0, -10), h = 3.5 }, { at = Config.STAR_TERRACE + Vector3.new(-6, 0, -8), h = 4.5 }, { at = Config.STAR_TERRACE + Vector3.new(0, 0, 10), h = 5.5 } },
+			text = "관성대의 별 등 다섯을, 가장 낮은 별부터 가장 높은 별까지 차례로 밝혀라 (T)" },
+		{ kind = "return", text = "천성선에게 돌아가라" },
+	} },
+	hojeop = { title = "몽선의 꿈", steps = {
+		{ kind = "find", name = "꿈나비", icon = "🦋", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈나비 다섯을 깨워라 (T)" },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
+		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
+			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
+		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
+	} },
+}
 
 return Config
