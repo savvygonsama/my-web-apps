@@ -131,7 +131,9 @@ function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: numb
 		end
 	elseif step.kind == "order" then
 		local n = (p.mqn[sid] or 0) + 1
-		if idx == n then
+		-- 같은 글자가 둘이면 어느 쪽을 짚어도 된다 (N U L L)
+		local want, got = step.stones[n], step.stones[idx]
+		if idx == n or (got and want and got.label ~= nil and got.label == want.label) then
 			p.mqn[sid] = n
 			st.dirty = true
 			ctx.toast(player, string.format("✨ %s %d/%d", step.name or "차례", n, #step.stones))

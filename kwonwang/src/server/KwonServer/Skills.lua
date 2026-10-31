@@ -3964,6 +3964,93 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "eraseBox" then
+		-- 3.8판 공백 소거 (E): 앞에 흰 선택 상자, 안이 검게 지워졌다가 화소 조각으로 부서진다
+		local from = f.root.Position + look * m.dist
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "eraseBox", from = from, to = to, width = m.width, delay = m.delay / sp, shardAt = m.shardAt / sp, style = style })
+		after(m.delay, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.shardAt, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2 + 1)) do
+				strike(f, o, scaled(m.shard, sc), move)
+			end
+		end)
+	elseif kind == "glitchBlink" then
+		-- 3.8판 공백 끊김 (R): 둘레의 적 넷 사이를 끊기듯 옮겨 다니며 친다. 마지막 적의 등 뒤에 나타난다
+		local list = nearestList(f, m.range, m.n)
+		Push:FireAllClients("skillfx", { kind = "glitchBlink", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, style = style })
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				strike(f, o, hit, move)
+			end)
+		end
+		if #list > 0 then
+			after(m.delay + #list * m.every, function()
+				local last = list[#list]
+				if last.dead or not last.root.Parent then
+					return
+				end
+				local back = last.root.Position - flat(last.root.CFrame.LookVector) * 3.5
+				moveTo(f, CFrame.lookAt(back, Vector3.new(last.root.Position.X, back.Y, last.root.Position.Z)))
+			end)
+		end
+	elseif kind == "voidGrid" then
+		-- 3.8판 공백 허공 격자 (오의): 둘레가 흰 격자의 검은 허공이 되어 끌어 지우다가, 한 점으로 오그라들어 흰 잡음으로 터진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "voidGrid", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, collapse = m.collapse / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					pullTo(o, center, m.pull)
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur + m.collapse, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "nullOut" then
+		-- 3.8판 공백 존재소거 (초 오의): 컷씬 (무적) 뒤 화면 균열, 하늘에서 빈칸 상자들이 떨어지고, 멈췄다가, 화소 조각으로 무너진다
+		local center = f.root.Position
+		local total = m.cut + m.rain + m.freeze + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local nid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "nullOpen", id = nid, m = f.model, at = center, range = m.range, cut = m.cut / sp, rain = m.rain / sp, freeze = m.freeze / sp, style = style })
+		local ticks = math.floor(m.rain / m.every)
+		for k = 1, ticks do
+			after(m.cut + (k - 1) * m.every, function()
+				local list = hostilesNear(f, center, m.range)
+				local pts = {}
+				for j = 1, m.n do
+					if #list > 0 then
+						pts[j] = list[math.random(1, #list)].root.Position
+					else
+						local a, r = math.random() * math.pi * 2, math.sqrt(math.random()) * m.range * 0.8
+						pts[j] = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+					end
+				end
+				Push:FireAllClients("skillfx", { kind = "nullCubes", id = nid, pts = pts, fall = 0.25 / sp, style = style })
+				after(0.25, function()
+					for _, pt in ipairs(pts) do
+						for _, o in ipairs(hostilesNear(f, pt, m.cubeRadius)) do
+							strike(f, o, hit, move)
+						end
+					end
+				end)
+			end)
+		end
+		after(m.cut + m.rain + m.freeze, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position

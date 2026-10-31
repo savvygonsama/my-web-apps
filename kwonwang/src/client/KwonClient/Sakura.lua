@@ -17,6 +17,7 @@ local Whale = require(script.Parent:WaitForChild("Whale"))
 local Star = require(script.Parent:WaitForChild("Star"))
 local Mujo = require(script.Parent:WaitForChild("Mujo"))
 local Dream = require(script.Parent:WaitForChild("Dream"))
+local Null = require(script.Parent:WaitForChild("Null"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -203,7 +204,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -227,6 +228,13 @@ local function refreshFans(model: Model)
 	-- 초·창해신권은 손목의 진주 고리와 물의 띠
 	if st.pearls then
 		for _, p in ipairs(Whale.buildGear(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
+	-- 3.8판 공백권은 몸 둘레에서 지직거리는 빈칸 상자 셋
+	if st.nullCubes then
+		for _, p in ipairs(Null.buildGear(model)) do
 			table.insert(list, p)
 		end
 		return
@@ -286,7 +294,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end

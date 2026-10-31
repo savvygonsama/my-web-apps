@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.7.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.8.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2232,6 +2232,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.8판 공백권 (숨은 윤회 권법): 지워진 것, 있어서는 안 되는 빈칸. 검정과 흰색, 가끔 번쩍이는 붉은빛, 깨진 화면
+-- 지도에도 이야기에도 나오지 않는다. 세상의 남동쪽 끝 '빈칸'의 이름 없는 자에게서만 (이스터에그)
+-- E 소거 (선택 상자 속을 지운다) · R 끊김 (화면이 끊기듯 순간이동하며 친다) · G 허공 격자 · X 존재소거
+table.insert(Config.Styles, {
+	id = "gongbaek",
+	name = "공백권",
+	hanja = "空白拳",
+	icon = "⬛",
+	grade = "윤회",
+	rebirthReq = 1,
+	color = Color3.fromRGB(24, 22, 28),
+	color2 = Color3.fromRGB(235, 235, 240),
+	fx = "subspace",
+	nullCubes = true, -- 몸 둘레에서 지직거리며 튀는 빈칸 상자 셋 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	trialHp = 10,
+	unlockHint = "???",
+	desc = "null. 이 권법의 설명은 지워졌다. 주먹이 닿은 자리는 비어 버리고, 비어 버린 자리는 다시 채워지지 않는다.",
+	gimmick = "빈칸: 네 번 맞힐 때마다 상대가 검은 네모 칸에 지워졌다가 깨진 화면처럼 돌아온다. 끊김: 공격의 12%가 몸을 비켜 간다 (지직). 동작 ×1.25",
+	deflect = 0.24,
+	dodgeChance = 0.12,
+	speed = 1.25,
+	pulse = { every = 4, kind = "voidCell", radius = 6, delay = 0.4, name = "빈칸", dmg = 30, posture = 28, stun = 0.7, kb = 4, up = 4 },
+	stance = "stance_subspace",
+	combo = {
+		{ id = "gb1", name = "지직", pose = "void_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 9, 8, 0.28, 6) } },
+		{ id = "gb2", name = "끊김", pose = "void_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 9, 8, 0.28, 6) } },
+		{ id = "gb3", name = "되감기", pose = "back_spin_kick", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 10, nil, true), hit(0.3, 0, 8, 8, 8, 0.3, 10, nil, true) } },
+		{ id = "gb4", name = "덮어쓰기", pose = "void_push", dur = 0.46, lunge = 5, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 26) } },
+	},
+	heavy = { id = "gbH", name = "빈 주먹", pose = "void_point", dur = 0.58, lunge = 10, iframes = 0.2, hits = { hit(0.26, 9, 6, 26, 28, 0.7, 36, 6) } },
+	skills = {
+		E = { id = "gbE", name = "소거", desc = "앞에 흰 선택 상자가 그어지고 깜박인다. 상자 안의 모든 것이 검게 지워졌다가, 상자가 화소 조각으로 부서진다", pose = "void_point", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "eraseBox", dist = 3, length = 24, width = 9, delay = 0.35, hit = hit(0, 0, 0, 34, 30, 0.7, 10, 6), shardAt = 0.25, shard = hit(0, 0, 0, 14, 12, 0.3, 14) } },
+		R = { id = "gbR", name = "끊김", desc = "화면이 끊기듯 둘레의 적 넷 사이를 순간이동하며 친다 (그동안 무적). 지나간 자리마다 어긋난 잔상이 남고, 마지막 적의 등 뒤에 나타난다", pose = "void_sink", dur = 0.7, cd = 11, chi = 25, iframes = 0.7,
+			mech = { kind = "glitchBlink", n = 4, range = 26, delay = 0.08, every = 0.13, hit = hit(0, 0, 0, 22, 20, 0.5, 8, 4) } },
+		G = { id = "gbG", name = "허공 격자", desc = "둘레 26칸의 빛깔이 빠지고 땅이 흰 격자의 검은 허공이 된다. 허공 위로 붉은 null 글자가 떠다니며 적을 가운데로 끌어 지우다가, 허공이 한 점으로 오그라든 뒤 흰 잡음으로 터진다", pose = "void_gather", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "voidGrid", radius = 26, delay = 0.35, dur = 2.6, every = 0.3, pull = 26, tick = hit(0, 0, 0, 10, 10, 0.3, 0), collapse = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 30, 20) } },
+		X = { id = "gbX", name = "존재소거", desc = "초 오의. 화면이 깨진다 (그동안 무적). 둘레 40칸에 검은 화면 균열이 미끄러지고, 하늘에서 빈칸 상자들이 적에게 떨어진다. 모든 것이 멈추고 빛깔이 뒤집힌 뒤, 삑 소리 한 번에 둘레가 화소 조각으로 무너진다", pose = "ult_void", dur = 4.4, cd = 60, chi = 150, armor = true,
+			mech = { kind = "nullOut", cut = 1.4, range = 40, rain = 2.0, every = 0.12, n = 2, cubeRadius = 5, hit = hit(0, 0, 0, 10, 10, 0.3, 4, 4), freeze = 0.5, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 50, 20) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
 -- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
@@ -2397,6 +2442,7 @@ local FINISHERS = {
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
 	hojeop = { name = "몽접승천", pose = "petal_spin" },
+	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -2841,6 +2887,17 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
 			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
 			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+	if st.id == "gongbaek" then
+		local red = Color3.fromRGB(230, 40, 60)
+		st.trialIntro = { title = "null", text = "...ㄴ...ㅓ...는 누구지. 아니, 나는 누구였지. 내가 지워지기 전에 나를 이겨 봐. 그러면 이 빈칸은 네 것이다." }
+		st.trialBoss = { hp = 3700, posture = 780, scale = 1.5, reach = 1.5, speed = 26, patterns = {
+			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
+			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 40, 50, 0.9, 30) }),
+			P("charge", "끊김", 2, { length = 52, width = 8, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 34, 42, 0.8, 30) }),
+			P("rain", "ERROR", 2, { count = 8, radius = 8, spread = 26, warn = 0.8, cd = 7, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 36, 40, 0.8, 20) }),
+			P("quake", "존재소거", 3, { radius = 28, warn = 1.2, cd = 9, pose = "ult_void", hit = hit(0, 0, 0, 76, 106, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "hojeop" then
@@ -3758,6 +3815,10 @@ Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vecto
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+-- 3.8판 공백권: 세상의 남동쪽 끝, 지도에 그려지지 않은 '빈칸'에 선 이름 없는 자 (이스터에그, 지도·이야기에 나오지 않는다)
+Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
+Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
+	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
 -- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
@@ -4236,6 +4297,13 @@ Config.MINIQUEST = {
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
 		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
+	} },
+	gongbaek = { title = "null", steps = {
+		{ kind = "find", name = "지워진 글자", icon = "⬛", items = { Vector3.new(3700, 0, -1806), Vector3.new(3700, 0, 214), Vector3.new(2100, 0, -3683), Vector3.new(-2200, 0, -3737) }, text = "강호의 랜드마크 넷 (버려진 광산 입구 · 일검 바위 틈 · 귀부 비석 뒤 · 선인송 아래)에 떨어진 지워진 글자를 주워라 (T)" },
+		{ kind = "visit", at = Vector3.new(-4120, 0, -4120), r = 30, night = true, text = "밤에, 세상의 반대편 끝 (북서쪽 맨 끝)의 아무것도 없는 곳에 서라", say = "...아무것도 없다. 정말로 아무것도 없다. 소리조차." },
+		{ kind = "order", name = "글자 상자", stones = { { at = Config.NULL_SPOT + Vector3.new(-9, 0, 12), label = "N" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, 12), label = "U" }, { at = Config.NULL_SPOT + Vector3.new(-9, 0, -12), label = "L" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, -12), label = "L" } },
+			text = "빈칸의 글자 상자 넷을 그 이름의 차례로 짚어라 (T)" },
+		{ kind = "return", text = "???에게 말을 걸어라" },
 	} },
 }
 

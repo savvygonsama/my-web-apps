@@ -4180,6 +4180,16 @@ local function questProps(out: any)
 			elseif step.kind == "order" then
 				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
 				for i, sd in ipairs(step.stones) do
+					if sd.label then
+						-- 3.8판 글자 상자: 떠 있는 검은 상자의 네 면에 흰 글자
+						local box = part({ Name = "QuestGlyph", Size = Vector3.new(3, 3, 3), CFrame = CFrame.new(sd.at + Vector3.new(0, 3.2, 0)) * CFrame.Angles(0, math.rad(i * 23), 0), Color = Color3.fromRGB(18, 18, 22), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+						for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Left, Enum.NormalId.Right }) do
+							sign(box, face, { { sd.label, Color3.fromRGB(240, 240, 245), 1 } })
+						end
+						local pp = prompt(box, "짚기", step.name or "상자", "MQOrder")
+						table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+						continue
+					end
 					local h = sd.h or 3
 					local col = sd.color or glow
 					cyl("QuestPillar", sd.at + Vector3.new(0, h / 2, 0), 0.9, h, STONE_DARK, Enum.Material.Granite, f)
@@ -4192,6 +4202,53 @@ local function questProps(out: any)
 			end
 		end
 	end
+end
+
+-- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳. 흰 격자의 검은 바닥, 떠 있는 '빠진 무늬' 상자 (자홍·검정 바둑판),
+-- 붉은 테의 깨진 검은 판, 'null' 팻말. 이름 없는 자가 가운데 서 있다
+local function nullSpot()
+	local at = Config.NULL_SPOT
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "NullSpot"
+	f.Parent = folder
+	local BLACK = Color3.fromRGB(14, 14, 18)
+	local MAGENTA = Color3.fromRGB(255, 0, 220)
+	local RED = Color3.fromRGB(230, 40, 60)
+	disc("NullFloor", at + Vector3.new(0, 0.2, 0), 24, 0.4, BLACK, Enum.Material.SmoothPlastic, f)
+	for k = -4, 4 do
+		local len = 2 * math.sqrt(math.max(0, 24 * 24 - (k * 5) ^ 2)) - 2
+		part({ Name = "NullGridX", Size = Vector3.new(len, 0.05, 0.12), Position = at + Vector3.new(0, 0.43, k * 5), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
+		part({ Name = "NullGridZ", Size = Vector3.new(0.12, 0.05, len), Position = at + Vector3.new(k * 5, 0.43, 0), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
+	end
+	-- 빠진 무늬 상자 (작은 상자 여덟이 바둑판으로)
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2 + 0.3
+		local c = at + Vector3.new(math.cos(a) * 17, 5 + (k % 3) * 3.5, math.sin(a) * 17)
+		local rot = CFrame.Angles(k * 0.7, k * 1.1, k * 0.4)
+		local s = 1.2 + (k % 2) * 0.4
+		for x = 0, 1 do
+			for y = 0, 1 do
+				for z = 0, 1 do
+					part({ Name = "MissingCube", Size = Vector3.new(s, s, s), CFrame = CFrame.new(c) * rot * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s), Color = ((x + y + z) % 2 == 0) and MAGENTA or BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+				end
+			end
+		end
+	end
+	-- 깨진 검은 판 (붉은 테)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.8
+		local c = at + Vector3.new(math.cos(a) * 26, 3 + (k % 2) * 2, math.sin(a) * 26)
+		local cf = CFrame.lookAt(c, at + Vector3.new(0, c.Y - at.Y, 0)) * CFrame.Angles(0, 0, math.rad(-8 + k * 4))
+		part({ Name = "BrokenPanel", Size = Vector3.new(4.5 + k % 3, 3 + k % 2, 0.2), CFrame = cf, Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		part({ Name = "BrokenEdge", Size = Vector3.new(4.6 + k % 3, 0.12, 0.22), CFrame = cf * CFrame.new(0, (3 + k % 2) / 2, 0), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local post = part({ Name = "NullPost", Size = Vector3.new(0.5, 4, 0.5), Position = at + Vector3.new(0, 2, 27), Color = BLACK, Material = Enum.Material.SmoothPlastic, Parent = f })
+	local board = part({ Name = "NullSign", Size = Vector3.new(5, 2, 0.3), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.4, 27), at + Vector3.new(0, 4.4, 40)), Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "null", Color3.fromRGB(240, 240, 245), 1 } })
+	post.Transparency = 0
 end
 
 local function wilds()
@@ -5719,6 +5776,7 @@ function World.build(): any
 		{ "숨은 것", function()
 			easterEggs(out)
 		end },
+		{ "빈칸", nullSpot },
 		{ "사부의 부탁", function()
 			questProps(out)
 		end },

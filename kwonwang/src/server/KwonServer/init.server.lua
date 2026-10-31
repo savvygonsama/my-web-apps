@@ -4930,7 +4930,7 @@ if W.eggs then
 					p.coins += E.cairnAll.coins
 					p.scrolls += E.cairnAll.scrolls
 					Push:FireClient(player, "dialog", { who = "🪨 일곱 돌탑", title = "길이 답했다",
-						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
+						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
 				end
 			elseif id == "cat" then
 				if not p.seen.egg_cat then

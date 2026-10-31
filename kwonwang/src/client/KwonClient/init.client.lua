@@ -28,6 +28,7 @@ local Star = require(script:WaitForChild("Star"))
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
 local Dream = require(script:WaitForChild("Dream"))
+local Null = require(script:WaitForChild("Null"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -719,6 +720,10 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.nullCubes then
+		-- 존재소거: 화면이 깨지고 장면이 끊겨 붙는 컷씬 (대사 없이, 무적)
+		Null.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.rebirthStyle then
 		-- 환생 권법의 초 오의: 권법마다 다른 하늘을 보는 컷씬 (대사 없이, 무적), 걷히면 벌어진다
@@ -1985,6 +1990,7 @@ function handlers.skillfx(data: any)
 		Mujo.init({ shake = shake, flash = UI.flash })
 		Royal.init({ shake = shake, flash = UI.flash })
 		Dream.init({ shake = shake, flash = UI.flash })
+		Null.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -2003,6 +2009,11 @@ function handlers.skillfx(data: any)
 		Fx.ring(data.at + Vector3.new(0, 0.5, 0), Color3.fromRGB(255, 236, 170), 2, 14, 0.5)
 		Fx.flash(data.at + Vector3.new(0, 4, 0), Color3.fromRGB(255, 236, 170), 24, 3, 0.4)
 		Fx.sound("ping", 0.5, 1.5, data.at)
+		return
+	end
+	-- 3.8판 공백권
+	if Null.handles(data) then
+		Null.run(data)
 		return
 	end
 	-- 3.7판 호접몽권

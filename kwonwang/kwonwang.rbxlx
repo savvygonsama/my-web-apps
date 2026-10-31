@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.7.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.8.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2252,6 +2252,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.8판 공백권 (숨은 윤회 권법): 지워진 것, 있어서는 안 되는 빈칸. 검정과 흰색, 가끔 번쩍이는 붉은빛, 깨진 화면
+-- 지도에도 이야기에도 나오지 않는다. 세상의 남동쪽 끝 '빈칸'의 이름 없는 자에게서만 (이스터에그)
+-- E 소거 (선택 상자 속을 지운다) · R 끊김 (화면이 끊기듯 순간이동하며 친다) · G 허공 격자 · X 존재소거
+table.insert(Config.Styles, {
+	id = "gongbaek",
+	name = "공백권",
+	hanja = "空白拳",
+	icon = "⬛",
+	grade = "윤회",
+	rebirthReq = 1,
+	color = Color3.fromRGB(24, 22, 28),
+	color2 = Color3.fromRGB(235, 235, 240),
+	fx = "subspace",
+	nullCubes = true, -- 몸 둘레에서 지직거리며 튀는 빈칸 상자 셋 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	trialHp = 10,
+	unlockHint = "???",
+	desc = "null. 이 권법의 설명은 지워졌다. 주먹이 닿은 자리는 비어 버리고, 비어 버린 자리는 다시 채워지지 않는다.",
+	gimmick = "빈칸: 네 번 맞힐 때마다 상대가 검은 네모 칸에 지워졌다가 깨진 화면처럼 돌아온다. 끊김: 공격의 12%가 몸을 비켜 간다 (지직). 동작 ×1.25",
+	deflect = 0.24,
+	dodgeChance = 0.12,
+	speed = 1.25,
+	pulse = { every = 4, kind = "voidCell", radius = 6, delay = 0.4, name = "빈칸", dmg = 30, posture = 28, stun = 0.7, kb = 4, up = 4 },
+	stance = "stance_subspace",
+	combo = {
+		{ id = "gb1", name = "지직", pose = "void_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 9, 8, 0.28, 6) } },
+		{ id = "gb2", name = "끊김", pose = "void_palm_l", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 9, 8, 0.28, 6) } },
+		{ id = "gb3", name = "되감기", pose = "back_spin_kick", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 10, nil, true), hit(0.3, 0, 8, 8, 8, 0.3, 10, nil, true) } },
+		{ id = "gb4", name = "덮어쓰기", pose = "void_push", dur = 0.46, lunge = 5, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 26) } },
+	},
+	heavy = { id = "gbH", name = "빈 주먹", pose = "void_point", dur = 0.58, lunge = 10, iframes = 0.2, hits = { hit(0.26, 9, 6, 26, 28, 0.7, 36, 6) } },
+	skills = {
+		E = { id = "gbE", name = "소거", desc = "앞에 흰 선택 상자가 그어지고 깜박인다. 상자 안의 모든 것이 검게 지워졌다가, 상자가 화소 조각으로 부서진다", pose = "void_point", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "eraseBox", dist = 3, length = 24, width = 9, delay = 0.35, hit = hit(0, 0, 0, 34, 30, 0.7, 10, 6), shardAt = 0.25, shard = hit(0, 0, 0, 14, 12, 0.3, 14) } },
+		R = { id = "gbR", name = "끊김", desc = "화면이 끊기듯 둘레의 적 넷 사이를 순간이동하며 친다 (그동안 무적). 지나간 자리마다 어긋난 잔상이 남고, 마지막 적의 등 뒤에 나타난다", pose = "void_sink", dur = 0.7, cd = 11, chi = 25, iframes = 0.7,
+			mech = { kind = "glitchBlink", n = 4, range = 26, delay = 0.08, every = 0.13, hit = hit(0, 0, 0, 22, 20, 0.5, 8, 4) } },
+		G = { id = "gbG", name = "허공 격자", desc = "둘레 26칸의 빛깔이 빠지고 땅이 흰 격자의 검은 허공이 된다. 허공 위로 붉은 null 글자가 떠다니며 적을 가운데로 끌어 지우다가, 허공이 한 점으로 오그라든 뒤 흰 잡음으로 터진다", pose = "void_gather", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "voidGrid", radius = 26, delay = 0.35, dur = 2.6, every = 0.3, pull = 26, tick = hit(0, 0, 0, 10, 10, 0.3, 0), collapse = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 30, 20) } },
+		X = { id = "gbX", name = "존재소거", desc = "초 오의. 화면이 깨진다 (그동안 무적). 둘레 40칸에 검은 화면 균열이 미끄러지고, 하늘에서 빈칸 상자들이 적에게 떨어진다. 모든 것이 멈추고 빛깔이 뒤집힌 뒤, 삑 소리 한 번에 둘레가 화소 조각으로 무너진다", pose = "ult_void", dur = 4.4, cd = 60, chi = 150, armor = true,
+			mech = { kind = "nullOut", cut = 1.4, range = 40, rain = 2.0, every = 0.12, n = 2, cubeRadius = 5, hit = hit(0, 0, 0, 10, 10, 0.3, 4, 4), freeze = 0.5, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 50, 20) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
 -- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
@@ -2417,6 +2462,7 @@ local FINISHERS = {
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
 	hojeop = { name = "몽접승천", pose = "petal_spin" },
+	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -2861,6 +2907,17 @@ for _, st in ipairs(Config.Styles) do
 			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
 			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
 			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+		} }
+	end
+	if st.id == "gongbaek" then
+		local red = Color3.fromRGB(230, 40, 60)
+		st.trialIntro = { title = "null", text = "...ㄴ...ㅓ...는 누구지. 아니, 나는 누구였지. 내가 지워지기 전에 나를 이겨 봐. 그러면 이 빈칸은 네 것이다." }
+		st.trialBoss = { hp = 3700, posture = 780, scale = 1.5, reach = 1.5, speed = 26, patterns = {
+			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
+			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 40, 50, 0.9, 30) }),
+			P("charge", "끊김", 2, { length = 52, width = 8, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 34, 42, 0.8, 30) }),
+			P("rain", "ERROR", 2, { count = 8, radius = 8, spread = 26, warn = 0.8, cd = 7, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 36, 40, 0.8, 20) }),
+			P("quake", "존재소거", 3, { radius = 28, warn = 1.2, cd = 9, pose = "ult_void", hit = hit(0, 0, 0, 76, 106, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "hojeop" then
@@ -3778,6 +3835,10 @@ Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vecto
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+-- 3.8판 공백권: 세상의 남동쪽 끝, 지도에 그려지지 않은 '빈칸'에 선 이름 없는 자 (이스터에그, 지도·이야기에 나오지 않는다)
+Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
+Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
+	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
 -- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
@@ -4256,6 +4317,13 @@ Config.MINIQUEST = {
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
 		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
+	} },
+	gongbaek = { title = "null", steps = {
+		{ kind = "find", name = "지워진 글자", icon = "⬛", items = { Vector3.new(3700, 0, -1806), Vector3.new(3700, 0, 214), Vector3.new(2100, 0, -3683), Vector3.new(-2200, 0, -3737) }, text = "강호의 랜드마크 넷 (버려진 광산 입구 · 일검 바위 틈 · 귀부 비석 뒤 · 선인송 아래)에 떨어진 지워진 글자를 주워라 (T)" },
+		{ kind = "visit", at = Vector3.new(-4120, 0, -4120), r = 30, night = true, text = "밤에, 세상의 반대편 끝 (북서쪽 맨 끝)의 아무것도 없는 곳에 서라", say = "...아무것도 없다. 정말로 아무것도 없다. 소리조차." },
+		{ kind = "order", name = "글자 상자", stones = { { at = Config.NULL_SPOT + Vector3.new(-9, 0, 12), label = "N" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, 12), label = "U" }, { at = Config.NULL_SPOT + Vector3.new(-9, 0, -12), label = "L" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, -12), label = "L" } },
+			text = "빈칸의 글자 상자 넷을 그 이름의 차례로 짚어라 (T)" },
+		{ kind = "return", text = "???에게 말을 걸어라" },
 	} },
 }
 
@@ -11479,7 +11547,7 @@ if W.eggs then
 					p.coins += E.cairnAll.coins
 					p.scrolls += E.cairnAll.scrolls
 					Push:FireClient(player, "dialog", { who = "🪨 일곱 돌탑", title = "길이 답했다",
-						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
+						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
 				end
 			elseif id == "cat" then
 				if not p.seen.egg_cat then
@@ -15761,7 +15829,9 @@ function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: numb
 		end
 	elseif step.kind == "order" then
 		local n = (p.mqn[sid] or 0) + 1
-		if idx == n then
+		-- 같은 글자가 둘이면 어느 쪽을 짚어도 된다 (N U L L)
+		local want, got = step.stones[n], step.stones[idx]
+		if idx == n or (got and want and got.label ~= nil and got.label == want.label) then
 			p.mqn[sid] = n
 			st.dirty = true
 			ctx.toast(player, string.format("✨ %s %d/%d", step.name or "차례", n, #step.stones))
@@ -16533,6 +16603,13 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "gongbaek" then
+		-- 이름 없는 자: 얼굴이 검게 지워졌고, 흰 점 둘만 보인다. 가슴을 가로지르는 붉은 잡음 줄
+		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(10, 10, 14), Enum.Material.SmoothPlastic)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "VoidEye", Vector3.new(0.14, 0.14, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.56), Color3.fromRGB(245, 245, 250), Enum.Material.Neon)
+		end
+		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "hojeop" then
 		-- 몽선: 흰 머리를 틀어 올린 졸린 노인, 어깨의 작은 나비 날개 둘, 머리의 꽃 장식, 손의 연꽃
 		beard(WHITE_HAIR)
@@ -21272,6 +21349,93 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "eraseBox" then
+		-- 3.8판 공백 소거 (E): 앞에 흰 선택 상자, 안이 검게 지워졌다가 화소 조각으로 부서진다
+		local from = f.root.Position + look * m.dist
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "eraseBox", from = from, to = to, width = m.width, delay = m.delay / sp, shardAt = m.shardAt / sp, style = style })
+		after(m.delay, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.shardAt, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width / 2 + 1)) do
+				strike(f, o, scaled(m.shard, sc), move)
+			end
+		end)
+	elseif kind == "glitchBlink" then
+		-- 3.8판 공백 끊김 (R): 둘레의 적 넷 사이를 끊기듯 옮겨 다니며 친다. 마지막 적의 등 뒤에 나타난다
+		local list = nearestList(f, m.range, m.n)
+		Push:FireAllClients("skillfx", { kind = "glitchBlink", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, style = style })
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				strike(f, o, hit, move)
+			end)
+		end
+		if #list > 0 then
+			after(m.delay + #list * m.every, function()
+				local last = list[#list]
+				if last.dead or not last.root.Parent then
+					return
+				end
+				local back = last.root.Position - flat(last.root.CFrame.LookVector) * 3.5
+				moveTo(f, CFrame.lookAt(back, Vector3.new(last.root.Position.X, back.Y, last.root.Position.Z)))
+			end)
+		end
+	elseif kind == "voidGrid" then
+		-- 3.8판 공백 허공 격자 (오의): 둘레가 흰 격자의 검은 허공이 되어 끌어 지우다가, 한 점으로 오그라들어 흰 잡음으로 터진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "voidGrid", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, collapse = m.collapse / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					pullTo(o, center, m.pull)
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur + m.collapse, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "nullOut" then
+		-- 3.8판 공백 존재소거 (초 오의): 컷씬 (무적) 뒤 화면 균열, 하늘에서 빈칸 상자들이 떨어지고, 멈췄다가, 화소 조각으로 무너진다
+		local center = f.root.Position
+		local total = m.cut + m.rain + m.freeze + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local nid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "nullOpen", id = nid, m = f.model, at = center, range = m.range, cut = m.cut / sp, rain = m.rain / sp, freeze = m.freeze / sp, style = style })
+		local ticks = math.floor(m.rain / m.every)
+		for k = 1, ticks do
+			after(m.cut + (k - 1) * m.every, function()
+				local list = hostilesNear(f, center, m.range)
+				local pts = {}
+				for j = 1, m.n do
+					if #list > 0 then
+						pts[j] = list[math.random(1, #list)].root.Position
+					else
+						local a, r = math.random() * math.pi * 2, math.sqrt(math.random()) * m.range * 0.8
+						pts[j] = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+					end
+				end
+				Push:FireAllClients("skillfx", { kind = "nullCubes", id = nid, pts = pts, fall = 0.25 / sp, style = style })
+				after(0.25, function()
+					for _, pt in ipairs(pts) do
+						for _, o in ipairs(hostilesNear(f, pt, m.cubeRadius)) do
+							strike(f, o, hit, move)
+						end
+					end
+				end)
+			end)
+		end
+		after(m.cut + m.rain + m.freeze, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "bambooLine" then
 		-- 2.7판 만목 죽림창 (E): 앞으로 곧게 대나무가 차례로 창처럼 솟는다. 적은 한 번만 맞는다
 		local from = f.root.Position
@@ -25562,6 +25726,16 @@ local function questProps(out: any)
 			elseif step.kind == "order" then
 				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
 				for i, sd in ipairs(step.stones) do
+					if sd.label then
+						-- 3.8판 글자 상자: 떠 있는 검은 상자의 네 면에 흰 글자
+						local box = part({ Name = "QuestGlyph", Size = Vector3.new(3, 3, 3), CFrame = CFrame.new(sd.at + Vector3.new(0, 3.2, 0)) * CFrame.Angles(0, math.rad(i * 23), 0), Color = Color3.fromRGB(18, 18, 22), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+						for _, face in ipairs({ Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Left, Enum.NormalId.Right }) do
+							sign(box, face, { { sd.label, Color3.fromRGB(240, 240, 245), 1 } })
+						end
+						local pp = prompt(box, "짚기", step.name or "상자", "MQOrder")
+						table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
+						continue
+					end
 					local h = sd.h or 3
 					local col = sd.color or glow
 					cyl("QuestPillar", sd.at + Vector3.new(0, h / 2, 0), 0.9, h, STONE_DARK, Enum.Material.Granite, f)
@@ -25574,6 +25748,53 @@ local function questProps(out: any)
 			end
 		end
 	end
+end
+
+-- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳. 흰 격자의 검은 바닥, 떠 있는 '빠진 무늬' 상자 (자홍·검정 바둑판),
+-- 붉은 테의 깨진 검은 판, 'null' 팻말. 이름 없는 자가 가운데 서 있다
+local function nullSpot()
+	local at = Config.NULL_SPOT
+	if not at then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "NullSpot"
+	f.Parent = folder
+	local BLACK = Color3.fromRGB(14, 14, 18)
+	local MAGENTA = Color3.fromRGB(255, 0, 220)
+	local RED = Color3.fromRGB(230, 40, 60)
+	disc("NullFloor", at + Vector3.new(0, 0.2, 0), 24, 0.4, BLACK, Enum.Material.SmoothPlastic, f)
+	for k = -4, 4 do
+		local len = 2 * math.sqrt(math.max(0, 24 * 24 - (k * 5) ^ 2)) - 2
+		part({ Name = "NullGridX", Size = Vector3.new(len, 0.05, 0.12), Position = at + Vector3.new(0, 0.43, k * 5), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
+		part({ Name = "NullGridZ", Size = Vector3.new(0.12, 0.05, len), Position = at + Vector3.new(k * 5, 0.43, 0), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
+	end
+	-- 빠진 무늬 상자 (작은 상자 여덟이 바둑판으로)
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2 + 0.3
+		local c = at + Vector3.new(math.cos(a) * 17, 5 + (k % 3) * 3.5, math.sin(a) * 17)
+		local rot = CFrame.Angles(k * 0.7, k * 1.1, k * 0.4)
+		local s = 1.2 + (k % 2) * 0.4
+		for x = 0, 1 do
+			for y = 0, 1 do
+				for z = 0, 1 do
+					part({ Name = "MissingCube", Size = Vector3.new(s, s, s), CFrame = CFrame.new(c) * rot * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s), Color = ((x + y + z) % 2 == 0) and MAGENTA or BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+				end
+			end
+		end
+	end
+	-- 깨진 검은 판 (붉은 테)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2 + 0.8
+		local c = at + Vector3.new(math.cos(a) * 26, 3 + (k % 2) * 2, math.sin(a) * 26)
+		local cf = CFrame.lookAt(c, at + Vector3.new(0, c.Y - at.Y, 0)) * CFrame.Angles(0, 0, math.rad(-8 + k * 4))
+		part({ Name = "BrokenPanel", Size = Vector3.new(4.5 + k % 3, 3 + k % 2, 0.2), CFrame = cf, Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		part({ Name = "BrokenEdge", Size = Vector3.new(4.6 + k % 3, 0.12, 0.22), CFrame = cf * CFrame.new(0, (3 + k % 2) / 2, 0), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local post = part({ Name = "NullPost", Size = Vector3.new(0.5, 4, 0.5), Position = at + Vector3.new(0, 2, 27), Color = BLACK, Material = Enum.Material.SmoothPlastic, Parent = f })
+	local board = part({ Name = "NullSign", Size = Vector3.new(5, 2, 0.3), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.4, 27), at + Vector3.new(0, 4.4, 40)), Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "null", Color3.fromRGB(240, 240, 245), 1 } })
+	post.Transparency = 0
 end
 
 local function wilds()
@@ -27101,6 +27322,7 @@ function World.build(): any
 		{ "숨은 것", function()
 			easterEggs(out)
 		end },
+		{ "빈칸", nullSpot },
 		{ "사부의 부탁", function()
 			questProps(out)
 		end },
@@ -27178,6 +27400,7 @@ local Star = require(script:WaitForChild("Star"))
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
 local Dream = require(script:WaitForChild("Dream"))
+local Null = require(script:WaitForChild("Null"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -27869,6 +28092,10 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.nullCubes then
+		-- 존재소거: 화면이 깨지고 장면이 끊겨 붙는 컷씬 (대사 없이, 무적)
+		Null.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.rebirthStyle then
 		-- 환생 권법의 초 오의: 권법마다 다른 하늘을 보는 컷씬 (대사 없이, 무적), 걷히면 벌어진다
@@ -29135,6 +29362,7 @@ function handlers.skillfx(data: any)
 		Mujo.init({ shake = shake, flash = UI.flash })
 		Royal.init({ shake = shake, flash = UI.flash })
 		Dream.init({ shake = shake, flash = UI.flash })
+		Null.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -29153,6 +29381,11 @@ function handlers.skillfx(data: any)
 		Fx.ring(data.at + Vector3.new(0, 0.5, 0), Color3.fromRGB(255, 236, 170), 2, 14, 0.5)
 		Fx.flash(data.at + Vector3.new(0, 4, 0), Color3.fromRGB(255, 236, 170), 24, 3, 0.4)
 		Fx.sound("ping", 0.5, 1.5, data.at)
+		return
+	end
+	-- 3.8판 공백권
+	if Null.handles(data) then
+		Null.run(data)
 		return
 	end
 	-- 3.7판 호접몽권
@@ -44339,6 +44572,806 @@ return Music
         </Item>
         <Item class="ModuleScript" referent="34">
           <Properties>
+            <string name="Name">Null</string>
+            <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
+-- 빛깔은 검정·흰색, 가끔 번쩍이는 붉은빛과 '빠진 무늬' (자홍·검정 바둑판). 움직임은 부드럽지 않고 끊긴다 (지직)
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Null = {}
+
+local BLACK = Color3.fromRGB(14, 14, 18)
+local WHITE = Color3.fromRGB(240, 240, 245)
+local RED = Color3.fromRGB(230, 40, 60)
+local CYAN = Color3.fromRGB(60, 230, 240)
+local MAGENTA = Color3.fromRGB(255, 0, 220)
+local UP = CFrame.Angles(0, 0, math.rad(90))
+local player = Players.LocalPlayer
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonNull"
+folder.Parent = workspace
+
+local opts: any = {}
+function Null.init(o: any)
+	opts = o or {}
+end
+
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?): Part
+	local q = Instance.new("Part")
+	q.Anchored = true
+	q.CanCollide = false
+	q.CanQuery = false
+	q.CanTouch = false
+	q.CastShadow = false
+	q.Size = size
+	q.Color = color
+	q.Material = material or Enum.Material.SmoothPlastic
+	q.Transparency = alpha or 0
+	q.Parent = folder
+	return q
+end
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function fadeOut(p: BasePart, time: number, goal: { [string]: any }?)
+	local g = goal or {}
+	g.Transparency = 1
+	tween(p, time, g)
+	task.delay(time + 0.05, function()
+		p:Destroy()
+	end)
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function rootOf(m: Instance?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+local function ground(at: Vector3): Vector3
+	return Vector3.new(at.X, at.Y - 2.7, at.Z)
+end
+local function shakeNear(pos: Vector3, amount: number, range: number)
+	if opts.shake and near(pos, range) then
+		opts.shake(amount)
+	end
+end
+-- 화소 조각: 검정·흰색·가끔 자홍의 작은 정육면체가 튄다 (돌지 않고 곧게, 끊기듯)
+local function pixels(at: Vector3, n: number, s: number, spread: number?)
+	for k = 1, n do
+		local c = (k % 7 == 0) and MAGENTA or ((k % 2 == 0) and BLACK or WHITE)
+		local q = part(Vector3.one * (0.4 + math.random() * 0.5) * s, c, c == WHITE and Enum.Material.Neon or Enum.Material.SmoothPlastic, 0)
+		q.CFrame = CFrame.new(at + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2 * s)
+		local d = Vector3.new(math.random() - 0.5, math.random() * 0.7, math.random() - 0.5).Unit * (spread or 6) * s * (0.5 + math.random())
+		fadeOut(q, 0.5 + math.random() * 0.4, { CFrame = CFrame.new(q.Position + d) })
+	end
+end
+-- 찢어진 화면 줄 (가로로 길고 얇은 붉은·푸른 빛줄이 잠깐)
+local function tear(at: Vector3, len: number, life: number)
+	for k, c in ipairs({ RED, CYAN, WHITE }) do
+		local q = part(Vector3.new(len, 0.12, 0.05), c, Enum.Material.Neon, 0.1)
+		q.CFrame = CFrame.lookAt(at + Vector3.new(0, (k - 2) * 0.35, 0), at + Vector3.new(0, (k - 2) * 0.35, 0) + (workspace.CurrentCamera and workspace.CurrentCamera.CFrame.LookVector or Vector3.new(0, 0, -1))) * CFrame.new((k - 2) * 0.4, 0, 0)
+		task.delay(life, function()
+			q:Destroy()
+		end)
+	end
+end
+-- 상자 테두리 (모서리 열둘)
+local function boxEdges(cf: CFrame, size: Vector3, color: Color3, w: number): { BasePart }
+	local out: { BasePart } = {}
+	local hx, hy, hz = size.X / 2, size.Y / 2, size.Z / 2
+	for _, sy in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			local q = part(Vector3.new(size.X, w, w), color, Enum.Material.Neon, 0)
+			q.CFrame = cf * CFrame.new(0, sy * hy, sz * hz)
+			table.insert(out, q)
+		end
+		for _, sx in ipairs({ -1, 1 }) do
+			local q = part(Vector3.new(w, w, size.Z), color, Enum.Material.Neon, 0)
+			q.CFrame = cf * CFrame.new(sx * hx, sy * hy, 0)
+			table.insert(out, q)
+		end
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			local q = part(Vector3.new(w, size.Y, w), color, Enum.Material.Neon, 0)
+			q.CFrame = cf * CFrame.new(sx * hx, 0, sz * hz)
+			table.insert(out, q)
+		end
+	end
+	return out
+end
+-- 빠진 무늬 상자 (작은 상자 여덟)
+local function missingCube(cf: CFrame, s: number): { BasePart }
+	local out: { BasePart } = {}
+	for x = 0, 1 do
+		for y = 0, 1 do
+			for z = 0, 1 do
+				local q = part(Vector3.one * s, ((x + y + z) % 2 == 0) and MAGENTA or BLACK, Enum.Material.SmoothPlastic, 0)
+				q.CFrame = cf * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s)
+				table.insert(out, q)
+			end
+		end
+	end
+	return out
+end
+local function moveCube(list: { BasePart }, cf: CFrame, s: number)
+	local i = 0
+	for x = 0, 1 do
+		for y = 0, 1 do
+			for z = 0, 1 do
+				i += 1
+				local q = list[i]
+				if q and q.Parent then
+					q.CFrame = cf * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s)
+				end
+			end
+		end
+	end
+end
+-- 빛깔 빼기 (가까울 때만, 내 화면에서)
+local function gradeTo(cc: ColorCorrectionEffect?, time: number, goal: { [string]: any }): ColorCorrectionEffect
+	local c = cc
+	if not c then
+		local nc = Instance.new("ColorCorrectionEffect")
+		nc.Name = "KwonNullGrade"
+		nc.Parent = Lighting
+		c = nc
+	end
+	tween(c :: ColorCorrectionEffect, time, goal)
+	return c :: ColorCorrectionEffect
+end
+local function gradeEnd(cc: ColorCorrectionEffect?, time: number)
+	if cc then
+		tween(cc, time, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = Color3.new(1, 1, 1) })
+		task.delay(time + 0.1, function()
+			cc:Destroy()
+		end)
+	end
+end
+-- 화면 잡음 (가로 줄들이 지직거리고 null 글자가 번쩍인다). 내 화면에서만
+local function screenGlitch(dur: number, strength: number)
+	local pg = player and player:FindFirstChild("PlayerGui")
+	if not pg then
+		return
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonNullGlitch"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 86
+	g.Parent = pg
+	local bars: { Frame } = {}
+	for k = 1, math.floor(8 * strength) do
+		local b = Instance.new("Frame")
+		b.BorderSizePixel = 0
+		b.BackgroundColor3 = k % 3 == 0 and RED or (k % 3 == 1 and BLACK or WHITE)
+		b.BackgroundTransparency = 0.3
+		b.Visible = false
+		b.Parent = g
+		bars[k] = b
+	end
+	local words: { TextLabel } = {}
+	for k, c in ipairs({ RED, CYAN, WHITE }) do
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(0.4, 0.16)
+		t.AnchorPoint = Vector2.new(0.5, 0.5)
+		t.Font = Enum.Font.Code
+		t.TextScaled = true
+		t.Text = "null"
+		t.TextColor3 = c
+		t.TextTransparency = 1
+		t.ZIndex = 2 + k
+		t.Parent = g
+		words[k] = t
+	end
+	local t0 = os.clock()
+	local nextAt = 0
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > dur then
+			conn:Disconnect()
+			g:Destroy()
+			return
+		end
+		if t < nextAt then
+			return
+		end
+		nextAt = t + 0.04 + math.random() * 0.08
+		for _, b in ipairs(bars) do
+			b.Visible = math.random() < 0.6
+			b.Position = UDim2.fromScale(math.random() * 0.3 - 0.1, math.random())
+			b.Size = UDim2.new(0.5 + math.random() * 0.8, 0, 0, 2 + math.random() * 14)
+		end
+		local show = math.random() < 0.35
+		local cx, cy = 0.3 + math.random() * 0.4, 0.3 + math.random() * 0.4
+		for k, w in ipairs(words) do
+			w.TextTransparency = show and 0.1 or 1
+			w.Position = UDim2.fromScale(cx + (k - 2) * 0.006, cy + (k - 2) * 0.004)
+		end
+	end)
+end
+local function glitchNear(at: Vector3, range: number, dur: number, strength: number)
+	if near(at, range) then
+		screenGlitch(dur, strength)
+	end
+end
+
+------------------------------------------------------------------------
+-- 차림: 몸 둘레의 빈칸 상자 셋. 천천히 돌다가 가끔 끊기듯 다른 자리로 튄다. 가끔 붉은 찢어진 줄
+------------------------------------------------------------------------
+function Null.buildGear(model: Model): { Instance }
+	local out: { Instance } = {}
+	local holder = Instance.new("Folder")
+	holder.Name = "Null_" .. model.Name
+	holder.Parent = folder
+	table.insert(out, holder)
+	local torso = model:FindFirstChild("UpperTorso")
+	if not (torso and torso:IsA("BasePart")) then
+		return out
+	end
+	local cubes: { { list: { BasePart }, s: number, phase: number, jump: Vector3, until_: number } } = {}
+	for k = 1, 3 do
+		local s = 0.32 + (k % 2) * 0.08
+		local list = missingCube(CFrame.new(torso.Position), s)
+		for _, q in ipairs(list) do
+			q.Parent = holder
+			table.insert(out, q)
+		end
+		table.insert(cubes, { list = list, s = s, phase = k * 2.1, jump = Vector3.zero, until_ = 0 })
+	end
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		if not holder.Parent or not torso.Parent then
+			conn:Disconnect()
+			return
+		end
+		local t = os.clock() - t0
+		local hide = model:GetAttribute("Vanish") == true
+		for _, c in ipairs(cubes) do
+			-- 가끔 (지직) 엉뚱한 자리로 튀었다가 돌아온다
+			if t > c.until_ and math.random() < 0.012 then
+				c.jump = Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 3
+				c.until_ = t + 0.08 + math.random() * 0.1
+			elseif t > c.until_ then
+				c.jump = Vector3.zero
+			end
+			local a = t * 0.9 + c.phase
+			local cf = torso.CFrame * CFrame.new(math.cos(a) * 2.3, 0.6 + math.sin(t * 1.1 + c.phase) * 0.7, math.sin(a) * 2.3) + c.jump
+			-- 돌지 않고 각진 채로 (90도씩 끊어서 돈다)
+			local step = math.floor(t * 2 + c.phase) * math.rad(90)
+			moveCube(c.list, CFrame.new(cf.Position) * CFrame.Angles(step, step * 0.5, 0), c.s)
+			for _, q in ipairs(c.list) do
+				q.LocalTransparencyModifier = hide and 1 or 0
+			end
+		end
+	end)
+	return out
+end
+
+------------------------------------------------------------------------
+-- 연타 장치 빈칸: 상대가 검은 네모 칸에 지워졌다가, 깨진 화면처럼 돌아온다
+------------------------------------------------------------------------
+local function voidCell(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 200) then
+		return
+	end
+	local delay = data.delay or 0.4
+	local size = Vector3.new(5, 6.5, 5)
+	local box = part(size, BLACK, Enum.Material.SmoothPlastic, 0.02)
+	box.CFrame = CFrame.new(at)
+	local edges = boxEdges(CFrame.new(at), size, WHITE, 0.12)
+	Fx.sound("ping", 0.4, 2.2, at)
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		-- 끊기듯 흔들린다
+		local j = (math.random() < 0.3) and Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 0.8 or Vector3.zero
+		box.CFrame = CFrame.new(at + j)
+		if t >= delay then
+			conn:Disconnect()
+			box:Destroy()
+			for _, e in ipairs(edges) do
+				e:Destroy()
+			end
+			pixels(at, 18, 1)
+			tear(at, 8, 0.12)
+			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), RED, 2, (data.radius or 6) * 2, 0.3)
+			Fx.sound("shatter", 0.5, 1.8, at)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- E 소거: 흰 선택 상자가 깜박이고, 안이 검게 지워졌다가 화소로 부서진다
+------------------------------------------------------------------------
+local function eraseBox(data: any)
+	local from: Vector3, to: Vector3 = data.from, data.to
+	if not near(from, 220) then
+		return
+	end
+	local dir = flat(to - from)
+	local L = (Vector3.new(to.X, 0, to.Z) - Vector3.new(from.X, 0, from.Z)).Magnitude
+	local W = data.width or 9
+	local delay = data.delay or 0.35
+	local mid = ground((from + to) / 2)
+	local base = CFrame.lookAt(mid, mid + dir)
+	-- 바닥의 점선 상자 (선택 영역)
+	local dashes: { BasePart } = {}
+	local function dashLine(a: Vector3, b: Vector3)
+		local n = math.max(2, math.floor((b - a).Magnitude / 2))
+		for k = 0, n - 1, 2 do
+			local p0, p1 = a:Lerp(b, k / n), a:Lerp(b, (k + 1) / n)
+			local q = part(Vector3.new(0.18, 0.08, (p1 - p0).Magnitude), WHITE, Enum.Material.Neon, 0)
+			q.CFrame = CFrame.lookAt((p0 + p1) / 2, p1)
+			table.insert(dashes, q)
+		end
+	end
+	local c1 = (base * CFrame.new(-W / 2, 0.15, L / 2)).Position
+	local c2 = (base * CFrame.new(W / 2, 0.15, L / 2)).Position
+	local c3 = (base * CFrame.new(W / 2, 0.15, -L / 2)).Position
+	local c4 = (base * CFrame.new(-W / 2, 0.15, -L / 2)).Position
+	dashLine(c1, c2)
+	dashLine(c2, c3)
+	dashLine(c3, c4)
+	dashLine(c4, c1)
+	-- 깜박임 셋
+	for k = 1, 3 do
+		task.delay(delay * (k - 0.5) / 3, function()
+			for _, q in ipairs(dashes) do
+				q.Transparency = 1
+			end
+			task.wait(0.04)
+			for _, q in ipairs(dashes) do
+				q.Transparency = 0
+			end
+		end)
+	end
+	Fx.sound("block", 0.4, 2, from)
+	task.delay(delay, function()
+		for _, q in ipairs(dashes) do
+			q:Destroy()
+		end
+		local H = 8
+		local vol = part(Vector3.new(W, H, L), BLACK, Enum.Material.SmoothPlastic, 0.04)
+		vol.CFrame = base * CFrame.new(0, H / 2, 0)
+		local edges = boxEdges(vol.CFrame, vol.Size, WHITE, 0.15)
+		tear((from + to) / 2 + Vector3.new(0, 2, 0), L * 0.8, 0.1)
+		Fx.sound("ping", 0.6, 2.4, from)
+		shakeNear(mid, 1.0, 100)
+		task.delay(data.shardAt or 0.25, function()
+			-- 부서진다: 상자 부피 곳곳에서 화소 조각
+			for k = 0, 7 do
+				pixels((base * CFrame.new((math.random() - 0.5) * W, 1 + math.random() * H, (k / 7 - 0.5) * L)).Position, 6, 1.2)
+			end
+			vol:Destroy()
+			for _, e in ipairs(edges) do
+				fadeOut(e, 0.15)
+			end
+			Fx.flash(mid + Vector3.new(0, 3, 0), WHITE, 40, 3, 0.2)
+			Fx.sound("shatter", 0.7, 1.5, mid)
+		end)
+	end)
+end
+
+------------------------------------------------------------------------
+-- R 끊김: 적 넷 사이를 끊기듯 옮겨 다니며 친다. 자리마다 붉은·푸른으로 어긋난 잔상
+------------------------------------------------------------------------
+local function ghostAt(model: Model?, cf: CFrame, color: Color3, alpha: number, life: number)
+	local r = rootOf(model)
+	local body = model
+	if not body or not r then
+		return
+	end
+	for _, d in ipairs(body:GetChildren()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 0.9 then
+			local q = part(d.Size, color, Enum.Material.SmoothPlastic, alpha)
+			q.CFrame = cf * r.CFrame:ToObjectSpace(d.CFrame)
+			task.delay(life, function()
+				q:Destroy()
+			end)
+		end
+	end
+end
+local function glitchBlink(data: any)
+	local from: Vector3 = data.from
+	if not near(from, 220) then
+		return
+	end
+	local m: Model? = data.m
+	local targets = data.targets or {}
+	local delay = data.delay or 0.08
+	local every = data.every or 0.13
+	local r0 = rootOf(m)
+	if r0 then
+		ghostAt(m, r0.CFrame, BLACK, 0.2, 0.25)
+	end
+	for i, t in ipairs(targets) do
+		task.delay(delay + (i - 1) * every, function()
+			local tr = rootOf(t)
+			if not tr then
+				return
+			end
+			local look = flat(tr.Position - from)
+			local cf = CFrame.lookAt(tr.Position - look * 3, tr.Position)
+			ghostAt(m, cf * CFrame.new(0.35, 0, 0), RED, 0.55, 0.12)
+			ghostAt(m, cf * CFrame.new(-0.35, 0, 0), CYAN, 0.55, 0.12)
+			ghostAt(m, cf, BLACK, 0.1, 0.18)
+			tear(tr.Position + Vector3.new(0, 1, 0), 6, 0.1)
+			pixels(tr.Position, 10, 0.9)
+			Fx.sound("ping", 0.4, 2 + i * 0.1, tr.Position)
+		end)
+	end
+	glitchNear(from, 60, delay + #targets * every, 0.6)
+end
+
+------------------------------------------------------------------------
+-- G 허공 격자: 빛깔이 빠지고 흰 격자의 검은 허공, 붉은 null 글자가 떠다니다 한 점으로 오그라든 뒤 흰 잡음으로
+------------------------------------------------------------------------
+local function voidGrid(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 260) then
+		return
+	end
+	local R = data.radius or 26
+	local delay = data.delay or 0.35
+	local dur = data.dur or 2.6
+	local collapse = data.collapse or 0.35
+	local g = ground(at)
+	local parts: { BasePart } = {}
+	local floor = part(Vector3.new(0.2, 1, 1), BLACK, Enum.Material.SmoothPlastic, 0.05)
+	floor.Shape = Enum.PartType.Cylinder
+	floor.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * UP
+	tween(floor, delay, { Size = Vector3.new(0.2, R * 2, R * 2) })
+	table.insert(parts, floor)
+	local n = math.floor(R / 4)
+	for k = -n, n do
+		local len = 2 * math.sqrt(math.max(0, R * R - (k * 4) ^ 2))
+		local a = part(Vector3.new(len, 0.06, 0.14), WHITE, Enum.Material.Neon, 1)
+		a.CFrame = CFrame.new(g + Vector3.new(0, 0.25, k * 4))
+		local b = part(Vector3.new(0.14, 0.06, len), WHITE, Enum.Material.Neon, 1)
+		b.CFrame = CFrame.new(g + Vector3.new(k * 4, 0.25, 0))
+		task.delay(delay * (0.3 + math.abs(k) / n * 0.7), function()
+			a.Transparency = 0.35
+			b.Transparency = 0.35
+		end)
+		table.insert(parts, a)
+		table.insert(parts, b)
+	end
+	-- 떠다니는 붉은 null 글자 (머리 위 판)
+	local words: { { p: BasePart, a: number, r: number, h: number } } = {}
+	for k = 1, 7 do
+		local holder = part(Vector3.new(0.2, 0.2, 0.2), RED, Enum.Material.Neon, 1)
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.fromScale(7, 2.4)
+		bb.AlwaysOnTop = false
+		bb.LightInfluence = 0
+		bb.Parent = holder
+		local tl = Instance.new("TextLabel")
+		tl.BackgroundTransparency = 1
+		tl.Size = UDim2.fromScale(1, 1)
+		tl.Font = Enum.Font.Code
+		tl.TextScaled = true
+		tl.Text = (k % 3 == 0) and "ERROR" or "null"
+		tl.TextColor3 = RED
+		tl.Parent = bb
+		table.insert(words, { p = holder, a = k / 7 * math.pi * 2, r = R * (0.5 + (k % 3) * 0.15), h = 4 + (k % 4) * 2 })
+		table.insert(parts, holder)
+	end
+	local cc: ColorCorrectionEffect? = nil
+	if near(at, R * 2.5) then
+		cc = gradeTo(nil, 0.3, { Saturation = -1, Contrast = 0.25, Brightness = -0.03 })
+	end
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local t = os.clock() - t0
+		local u = math.clamp((t - delay) / dur, 0, 1)
+		for i, w in ipairs(words) do
+			local a = w.a + t * 0.6
+			local r = w.r * (1 - u * 0.6)
+			local jump = (math.random() < 0.08) and Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 4 or Vector3.zero
+			w.p.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * r, w.h + math.sin(t * 2 + i), math.sin(a) * r) + jump)
+		end
+		if math.random() < 0.15 then
+			local aa, rr = math.random() * math.pi * 2, math.random() * R
+			tear(g + Vector3.new(math.cos(aa) * rr, 1 + math.random() * 5, math.sin(aa) * rr), 4 + math.random() * 6, 0.08)
+		end
+		if t >= delay + dur then
+			conn:Disconnect()
+		end
+	end)
+	Fx.sound("ping", 0.5, 0.6, at)
+	-- 오그라든다: 모든 것이 가운데 한 점으로
+	task.delay(delay + dur, function()
+		local center = g + Vector3.new(0, 2, 0)
+		for _, p in ipairs(parts) do
+			if p.Parent then
+				tween(p, collapse, { CFrame = CFrame.new(center) * p.CFrame.Rotation, Size = p.Size * 0.05 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			end
+		end
+		local dot = part(Vector3.new(2, 2, 2), BLACK, Enum.Material.SmoothPlastic, 0)
+		dot.CFrame = CFrame.new(center)
+		tween(dot, collapse, { Size = Vector3.new(0.3, 0.3, 0.3) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(collapse, function()
+			for _, p in ipairs(parts) do
+				if p.Parent then
+					p:Destroy()
+				end
+			end
+			dot:Destroy()
+			-- 흰 잡음으로 터진다
+			pixels(center, 40, 2.4, 9)
+			local flash = part(Vector3.new(4, 4, 4), WHITE, Enum.Material.Neon, 0)
+			flash.Shape = Enum.PartType.Ball
+			flash.CFrame = CFrame.new(center)
+			fadeOut(flash, 0.4, { Size = Vector3.new(R * 2, R * 2, R * 2) })
+			Fx.ring(g + Vector3.new(0, 0.5, 0), WHITE, 4, R * 2.6, 0.5)
+			Fx.ring(g + Vector3.new(0, 0.8, 0), RED, 4, R * 2.2, 0.4)
+			Fx.flash(center, WHITE, 90, 7, 0.4)
+			Fx.sound("shatter", 0.9, 1.2, center)
+			Fx.sound("heavy", 0.8, 0.8, center)
+			shakeNear(center, 2.4, 150)
+			glitchNear(center, 120, 0.4, 1)
+			gradeEnd(cc, 0.5)
+		end)
+	end)
+end
+
+------------------------------------------------------------------------
+-- X 존재소거: 화면 균열이 미끄러지고, 빈칸 상자들이 떨어지고, 멈추고 (빛깔이 날아가고), 삑, 화소로 무너진다
+------------------------------------------------------------------------
+type NullState = { at: Vector3, range: number, cc: ColorCorrectionEffect?, done: boolean, panels: { BasePart } }
+local nulls: { [number]: NullState } = {}
+local function nullOpen(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 340) then
+		return
+	end
+	local range = data.range or 40
+	local cut = data.cut or 1.4
+	local rain = data.rain or 2.0
+	local freeze = data.freeze or 0.5
+	local g = ground(at)
+	local st: NullState = { at = g, range = range, cc = nil, done = false, panels = {} }
+	nulls[data.id] = st
+	if near(at, range * 2.5) then
+		st.cc = gradeTo(nil, 0.4, { Saturation = -0.85, Contrast = 0.2 })
+	end
+	-- 하늘에서 땅까지 검은 화면 균열 판들이 미끄러진다
+	task.delay(cut, function()
+		for k = 1, 8 do
+			local a = k / 8 * math.pi * 2
+			local p = part(Vector3.new(0.3, 60, 3 + (k % 3) * 2), BLACK, Enum.Material.SmoothPlastic, 0.05)
+			local c0 = g + Vector3.new(math.cos(a) * range * 0.9, 30, math.sin(a) * range * 0.9)
+			p.CFrame = CFrame.lookAt(c0, Vector3.new(g.X, c0.Y, g.Z))
+			local edge = part(Vector3.new(0.32, 60, 0.15), RED, Enum.Material.Neon, 0.1)
+			edge.CFrame = p.CFrame * CFrame.new(0, 0, p.Size.Z / 2)
+			table.insert(st.panels, p)
+			table.insert(st.panels, edge)
+			local side = Vector3.new(-math.sin(a), 0, math.cos(a)) * 14
+			tween(p, rain, { CFrame = p.CFrame + side }, Enum.EasingStyle.Linear)
+			tween(edge, rain, { CFrame = edge.CFrame + side }, Enum.EasingStyle.Linear)
+		end
+		shakeNear(g, 1.6, 200)
+		Fx.sound("heavy", 0.8, 0.5, g)
+	end)
+	-- 멈춤: 빛깔이 하얗게 날아간다, 삑
+	task.delay(cut + rain, function()
+		if st.done then
+			return
+		end
+		if st.cc then
+			gradeTo(st.cc, 0.08, { Saturation = -1, Contrast = 1, Brightness = 0.35 })
+		end
+		Fx.sound("ping", 1, 3, g)
+		glitchNear(g, range * 2.5, freeze, 1.4)
+	end)
+	-- 무너진다
+	task.delay(cut + rain + freeze, function()
+		if st.done then
+			return
+		end
+		st.done = true
+		for _, p in ipairs(st.panels) do
+			if p.Parent then
+				pixels(p.Position, 6, 1.6)
+				p:Destroy()
+			end
+		end
+		for _ = 1, 14 do
+			local a, rr = math.random() * math.pi * 2, math.random() * range
+			pixels(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 6, math.sin(a) * rr), 8, 1.6, 8)
+		end
+		for k = 1, 3 do
+			task.delay(k * 0.06, function()
+				Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k == 2 and RED or WHITE, 6, range * 2.4 + k * 10, 0.6)
+			end)
+		end
+		Fx.flash(g + Vector3.new(0, 5, 0), WHITE, 150, 9, 0.6)
+		Fx.sound("shatter", 1, 0.7, g)
+		Fx.sound("heavy", 1, 0.4, g)
+		shakeNear(g, 3.4, 220)
+		if opts.flash and near(g, 120) then
+			opts.flash(WHITE, 0.3)
+		end
+		gradeEnd(st.cc, 0.6)
+		nulls[data.id] = nil
+	end)
+	task.delay(cut + rain + freeze + 4, function()
+		if nulls[data.id] == st then
+			nulls[data.id] = nil
+			gradeEnd(st.cc, 0.3)
+		end
+	end)
+end
+local function nullCubes(data: any)
+	local st = nulls[data.id]
+	if not st or st.done then
+		return
+	end
+	local fall = data.fall or 0.25
+	for _, pt in ipairs(data.pts or {}) do
+		local s = 1.6
+		local top = pt + Vector3.new((math.random() - 0.5) * 4, 34, (math.random() - 0.5) * 4)
+		local list = missingCube(CFrame.new(top), s)
+		local t0 = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / fall, 0, 1)
+			-- 떨어지는 것도 끊기듯 (네 칸씩 툭툭)
+			local q = math.floor(u * 6) / 6
+			moveCube(list, CFrame.new(top:Lerp(pt, q)), s)
+			if u >= 1 then
+				conn:Disconnect()
+				for _, c in ipairs(list) do
+					c:Destroy()
+				end
+				pixels(pt, 10, 1.1)
+				Fx.ring(ground(pt) + Vector3.new(0, 0.3, 0), RED, 2, 10, 0.25)
+			end
+		end)
+	end
+end
+
+-- 초 오의 컷씬 (쓴 사람 화면에서만): 화면이 깨진다. 카메라가 끊기듯 이리저리 튀며 나를 비추고, 붉고 푸르게 어긋난 null
+local cutActive = false
+function Null.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?)
+	local cam = workspace.CurrentCamera
+	local r = rootOf(model)
+	if not cam or not r or cutActive or not player then
+		return
+	end
+	cutActive = true
+	screenGlitch(dur, 1.6)
+	local pg = player:WaitForChild("PlayerGui")
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonNullCut"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 85
+	g.Parent = pg
+	local tint = Instance.new("Frame")
+	tint.Size = UDim2.fromScale(1, 1)
+	tint.BackgroundColor3 = BLACK
+	tint.BackgroundTransparency = 1
+	tint.BorderSizePixel = 0
+	tint.Parent = g
+	tween(tint, 0.2, { BackgroundTransparency = 0.45 })
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.AnchorPoint = Vector2.new(1, 1)
+	label.Position = UDim2.new(1, -30, 1, -30)
+	label.Size = UDim2.new(0.5, 0, 0.1, 0)
+	label.Font = Enum.Font.Code
+	label.TextScaled = true
+	label.TextXAlignment = Enum.TextXAlignment.Right
+	label.Text = "초 오의 · " .. name
+	label.TextColor3 = WHITE
+	label.TextStrokeColor3 = RED
+	label.TextStrokeTransparency = 0.2
+	label.ZIndex = 5
+	label.Parent = g
+	local oldType = cam.CameraType
+	local oldFov = cam.FieldOfView
+	local look = flat(r.CFrame.LookVector)
+	local side = Vector3.new(-look.Z, 0, look.X)
+	cam.CameraType = Enum.CameraType.Scriptable
+	local t0 = os.clock()
+	local focus = r.Position
+	local finished = false
+	local shot = 0
+	local nextCut = 0
+	local function restore()
+		if finished then
+			return
+		end
+		finished = true
+		RunService:UnbindFromRenderStep("KwonNullCut")
+		cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
+		cam.FieldOfView = oldFov
+		cutActive = false
+		tween(tint, 0.2, { BackgroundTransparency = 1 })
+		tween(label, 0.2, { TextTransparency = 1 })
+		task.delay(0.25, function()
+			g:Destroy()
+		end)
+	end
+	RunService:BindToRenderStep("KwonNullCut", Enum.RenderPriority.Camera.Value + 2, function()
+		local t = os.clock() - t0
+		-- 몇 장면을 끊어 붙인다 (부드럽게 움직이지 않는다)
+		if t >= nextCut then
+			shot += 1
+			nextCut = t + 0.18 + math.random() * 0.22
+		end
+		local k = shot % 4
+		local eye: Vector3
+		if k == 0 then
+			eye = focus + look * 7 + Vector3.new(0, 1.2, 0)
+		elseif k == 1 then
+			eye = focus + side * 8 + Vector3.new(0, 3, 0)
+		elseif k == 2 then
+			eye = focus + look * 3 + Vector3.new(0, 0.4, 0) - side * 2
+		else
+			eye = focus + look * 14 + Vector3.new(0, 9, 0)
+		end
+		cam.CFrame = CFrame.lookAt(eye, focus + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, (shot % 2 == 0) and 0.04 or -0.04)
+		cam.FieldOfView = oldFov + (k == 2 and 20 or 4)
+		if t >= dur then
+			restore()
+		end
+	end)
+	if shake then
+		task.delay(dur * 0.5, function()
+			shake(0.8)
+		end)
+	end
+	task.delay(dur + 1, restore)
+end
+
+local HANDLERS: { [string]: (any) -> () } = {
+	eraseBox = eraseBox,
+	glitchBlink = glitchBlink,
+	voidGrid = voidGrid,
+	nullOpen = nullOpen,
+	nullCubes = nullCubes,
+}
+function Null.handles(data: any): boolean
+	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "voidCell")
+end
+function Null.run(data: any)
+	if data.kind == "pulse" then
+		voidCell(data)
+		return
+	end
+	local fn = HANDLERS[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+return Null
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="35">
+          <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
 -- 매화는 둥근 꽃잎 다섯 (가운데로 오목하게 겹친다), 노란 꽃술, 흰 꽃눈으로 짓는다. 가지는 짙은 밤빛으로 꺾이며 가늘어진다
@@ -44742,7 +45775,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -45083,7 +46116,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -46032,7 +47065,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 권왕신권의 오의 · 초 오의 (화면)
@@ -46667,7 +47700,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -46689,6 +47722,7 @@ local Whale = require(script.Parent:WaitForChild("Whale"))
 local Star = require(script.Parent:WaitForChild("Star"))
 local Mujo = require(script.Parent:WaitForChild("Mujo"))
 local Dream = require(script.Parent:WaitForChild("Dream"))
+local Null = require(script.Parent:WaitForChild("Null"))
 
 local Sakura = {}
 local player = Players.LocalPlayer
@@ -46875,7 +47909,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -46899,6 +47933,13 @@ local function refreshFans(model: Model)
 	-- 초·창해신권은 손목의 진주 고리와 물의 띠
 	if st.pearls then
 		for _, p in ipairs(Whale.buildGear(model)) do
+			table.insert(list, p)
+		end
+		return
+	end
+	-- 3.8판 공백권은 몸 둘레에서 지직거리는 빈칸 상자 셋
+	if st.nullCubes then
+		for _, p in ipairs(Null.buildGear(model)) do
 			table.insert(list, p)
 		end
 		return
@@ -46958,7 +47999,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end
@@ -47813,7 +48854,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -50841,7 +51882,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -51402,6 +52443,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	chochanghae = { H = "wave" },
 	chosengha = { H = "nova" },
 	hojeop = {},
+	gongbaek = {},
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {
@@ -51446,7 +52488,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -52586,7 +53628,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -54469,7 +55511,7 @@ local function buildTest()
 		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🐋 2.7판: 초·창해신권 · 새 만목신권 · 새 악마 · 적 차림", {
-		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🦋 호접몽권 바로 쓰기 (X 호접지몽)", "testStyle", "hojeop" }, { "🦋 몽선에게", "testSecretMaster", "hojeop" }, { "📜 사부의 부탁 한 단계 넘기기", "testQuestSkip" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
+		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🦋 호접몽권 바로 쓰기 (X 호접지몽)", "testStyle", "hojeop" }, { "🦋 몽선에게", "testSecretMaster", "hojeop" }, { "⬛ 공백권 바로 쓰기 (X 존재소거)", "testStyle", "gongbaek" }, { "⬛ ???에게 (빈칸)", "testSecretMaster", "gongbaek" }, { "📜 사부의 부탁 한 단계 넘기기", "testQuestSkip" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
 		{ "🐳 진 창해신권 (G 고래강림)", "testStyle", "changhae2" }, { "🎋 만목신권 (죽림창·천엽비수·신목강림)", "testStyle", "manmok" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
 		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
 		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
@@ -56287,7 +57329,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -57565,7 +58607,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -60248,7 +61290,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -61357,7 +62399,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="46">
+  <Item class="Workspace" referent="47">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
