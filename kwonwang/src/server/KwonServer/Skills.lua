@@ -3972,18 +3972,37 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "sheepCount" then
-		-- 3.10판 몽유 양 세기 (E): 꿈양 다섯이 허공의 울타리를 넘어 둘레의 적에게 뛰어든다
-		local list = nearestList(f, m.range, m.targets)
-		Push:FireAllClients("skillfx", { kind = "sheepCount", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
-		for i = 1, m.n do
-			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
-			if o then
-				after(m.delay + (i - 1) * m.every + m.travel, function()
-					strike(f, o, hit, move)
-				end)
-			end
+	elseif kind == "dreamWalk" then
+		-- 3.10.1판 몽유 꿈길 걸음 (E): 눈을 감고 앞으로 걷는다. 달빛 디딤돌 길 위의 적은 잠이 들고 (기절),
+		-- 길 끝에 닿으면 디딤돌이 별가루로 터지며 잠든 적을 깨운다 (한 번 더 친다)
+		local from = f.root.Position
+		local dir = look
+		local to = from + dir * m.dist
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.slide + 0.4) / sp)
+		Push:FireAllClients("skillfx", { kind = "dreamWalk", m = f.model, from = from, to = to, time = m.slide / sp, style = style })
+		local slept = {}
+		local steps = 7
+		for i = 1, steps do
+			after(i * m.slide / steps, function()
+				local a = from + dir * (m.dist * (i - 1) / steps)
+				local b = from + dir * (m.dist * i / steps)
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					if not slept[o] then
+						slept[o] = true
+						Combat.stun(o, m.sleep / sp)
+						strike(f, o, hit, move)
+					end
+				end
+			end)
 		end
+		after(m.slide, function()
+			moveTo(f, CFrame.lookAt(to + Vector3.new(0, 3, 0), to + Vector3.new(0, 3, 0) + dir))
+		end)
+		after(m.slide + 0.1 + 0.15, function()
+			for o in pairs(slept) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "upsideDown" then
 		-- 3.10판 몽유 거꾸로 꿈 (R): 앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 떠올랐다가 꿈이 바로 서면 내리꽂힌다
 		local center = f.root.Position + look * m.dist

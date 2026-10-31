@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.10.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.10.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2189,7 +2189,7 @@ table.insert(Config.Styles, {
 
 -- 3.10판 몽유권 (두 번째 윤회의 꿈, 예전 호접몽권): 반쯤 잠든 채 꿈속을 걷는 권. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고,
 -- 달이 손에 닿는다. 빛깔은 밤하늘빛과 달빛 (안개처럼 번지는 보라·남빛, 따뜻한 달빛 금빛)
--- E 양 세기 (울타리를 넘는 꿈양) · R 거꾸로 꿈 (중력이 뒤집힌다) · G 몽중몽 (떠다니는 섬·계단·문) · X 월하몽 (보름달과 밤 호수)
+-- E 꿈길 걸음 (달빛 디딤돌 길) · R 거꾸로 꿈 (중력이 뒤집힌다) · G 몽중몽 (떠다니는 섬·계단·문) · X 월하몽 (보름달과 밤 호수)
 table.insert(Config.Styles, {
 	id = "hojeop",
 	name = "몽유권",
@@ -2222,8 +2222,8 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
 	skills = {
-		E = { id = "hjE", name = "양 세기", desc = "하나, 둘, 셋... 구름 같은 꿈양 다섯이 허공의 나무 울타리를 차례로 뛰어넘어 둘레의 적에게 뛰어들고, 부딪치면 잠의 별가루로 터진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "sheepCount", n = 5, range = 32, targets = 4, delay = 0.15, every = 0.14, travel = 0.55, hit = hit(0, 0, 0, 18, 16, 0.4, 6, 8) } },
+		E = { id = "hjE", name = "꿈길 걸음", desc = "눈을 감은 채 앞으로 18칸을 걷는다 (그동안 무적). 발 앞 허공에 달빛 디딤돌이 하나씩 놓여 밤하늘 길이 되고, 길 위의 적은 꾸벅 잠이 든다 (0.8초 기절). 길 끝에 닿으면 디딤돌이 차례로 별가루가 되어 솟구치며 잠든 적을 한 번 더 친다", pose = "dash_strike", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "dreamWalk", dist = 18, slide = 0.45, width = 4.5, sleep = 0.8, hit = hit(0, 0, 0, 20, 18, 0.3, 0, 4), final = hit(0, 0, 0, 50, 50, 0.9, 20, 14) } },
 		R = { id = "hjR", name = "거꾸로 꿈", desc = "앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 그 안의 적은 하늘로 떨어지듯 거꾸로 떠오르다가, 꿈이 바로 서는 순간 땅에 내리꽂힌다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "upsideDown", dist = 9, radius = 11, delay = 0.25, hold = 1.2, every = 0.3, tick = hit(0, 0, 0, 8, 8, 0.3, 0, 12), slam = hit(0, 0, 0, 40, 40, 0.8, 10, 0) } },
 		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈속이 된다. 밤하늘에 커다란 달이 뜨고, 풀이 덮인 작은 섬과 끝이 없는 계단과 문들이 둥실 떠다닌다. 문이 적 곁에서 열렸다 닫힐 때마다 꿈에 베이고, 마지막에 모든 것이 아래로 떨어지며 꿈에서 깬다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
@@ -4350,7 +4350,7 @@ Config.MINIQUEST = {
 		{ kind = "return", text = "천성선에게 돌아가라" },
 	} },
 	hojeop = { title = "몽선의 꿈", steps = {
-		{ kind = "find", name = "잠든 꿈양", icon = "🐑", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈양 다섯을 깨워라 (T)" },
+		{ kind = "find", name = "잠든 별", icon = "⭐", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에 떨어져 잠든 별 다섯을 깨워라 (T)" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },

@@ -1,5 +1,5 @@
 -- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
--- 빛깔은 밤하늘빛 (남빛·보랏빛, 안개처럼 번진다)과 따뜻한 달빛. 꿈의 문, 울타리를 넘는 꿈양, 뒤집히는 중력, 떠다니는 섬·계단·문, 보름달과 밤 호수
+-- 빛깔은 밤하늘빛 (남빛·보랏빛, 안개처럼 번진다)과 따뜻한 달빛. 꿈의 문, 달빛 디딤돌 꿈길, 뒤집히는 중력, 떠다니는 섬·계단·문, 보름달과 밤 호수
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -13,7 +13,6 @@ local LAVENDER = Color3.fromRGB(196, 176, 255)
 local MOON = Color3.fromRGB(255, 232, 170)
 local STAR = Color3.fromRGB(255, 250, 232)
 local MIST = Color3.fromRGB(205, 205, 255)
-local WOOL = Color3.fromRGB(246, 244, 240)
 local DOORWOOD = Color3.fromRGB(72, 58, 104)
 local UP = CFrame.Angles(0, 0, math.rad(90))
 local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -290,123 +289,120 @@ local function dreamDoorPulse(data: any)
 end
 
 ------------------------------------------------------------------------
--- E 양 세기: 울타리를 넘어 적에게 뛰어드는 꿈양 (머리 위에 하나, 둘, 셋...)
+-- E 꿈길 걸음: 눈을 감고 앞으로 걷는 꿈속의 나 (반투명). 발 앞 허공에 달빛 디딤돌이 하나씩 놓이며 밤하늘 길이 되고,
+-- 길 위에 z Z가 떠오른다. 길 끝에 닿으면 디딤돌이 처음부터 차례로 별가루가 되어 솟구친다
 ------------------------------------------------------------------------
-local COUNT = { "하나", "둘", "셋", "넷", "다섯", "여섯" }
-type Sheep = { list: { { p: Part, off: CFrame } }, tag: Part }
-local function makeSheep(s: number, label: string): Sheep
-	local list = {}
-	for k, off in ipairs({ Vector3.new(0, 0, 0), Vector3.new(0.5, 0.25, 0.4), Vector3.new(-0.5, 0.2, 0.4), Vector3.new(0.4, 0.2, -0.45), Vector3.new(-0.4, 0.3, -0.4), Vector3.new(0, 0.5, 0) }) do
-		local b = part(Vector3.one * (k == 1 and 1.6 or 1.0) * s, WOOL, Enum.Material.SmoothPlastic, 0, "ball")
-		table.insert(list, { p = b, off = CFrame.new(off * s) })
+local function dreamGhost(model: Model): { { p: Part, off: CFrame } }
+	local out = {}
+	local r = rootOf(model)
+	if not r then
+		return out
 	end
-	local head = part(Vector3.new(0.65, 0.6, 0.75) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0, "ball")
-	table.insert(list, { p = head, off = CFrame.new(0, 0.25 * s, -0.95 * s) })
-	for _, x in ipairs({ -1, 1 }) do
-		local ear = part(Vector3.new(0.35, 0.12, 0.2) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0)
-		table.insert(list, { p = ear, off = CFrame.new(x * 0.38 * s, 0.4 * s, -0.95 * s) })
-	end
-	for _, x in ipairs({ -1, 1 }) do
-		for _, z in ipairs({ -1, 1 }) do
-			local leg = part(Vector3.new(0.18, 0.6, 0.18) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0)
-			table.insert(list, { p = leg, off = CFrame.new(x * 0.4 * s, -0.75 * s, z * 0.45 * s) })
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 0.9 and d.Size.Magnitude < 8 and (d.Parent == model or (d.Parent and d.Parent:IsA("Accessory"))) then
+			local q = part(d.Size, LAVENDER:Lerp(DUSK, math.random() * 0.3), Enum.Material.Glass, 1)
+			table.insert(out, { p = q, off = r.CFrame:ToObjectSpace(d.CFrame) })
 		end
 	end
-	local tag = part(Vector3.new(0.2, 0.2, 0.2), WOOL, Enum.Material.Neon, 1)
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.fromScale(3, 1.4)
-	bb.StudsOffset = Vector3.new(0, 1.6 * s, 0)
-	bb.LightInfluence = 0
-	bb.Parent = tag
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.Size = UDim2.fromScale(1, 1)
-	t.Font = Enum.Font.FredokaOne
-	t.TextScaled = true
-	t.Text = label
-	t.TextColor3 = MOON
-	t.TextStrokeTransparency = 0.4
-	t.TextStrokeColor3 = NIGHT
-	t.Parent = bb
-	return { list = list, tag = tag }
+	return out
 end
-local function placeSheep(sh: Sheep, cf: CFrame)
-	placeList(sh.list, cf)
-	sh.tag.CFrame = cf
-end
-local function poofSheep(sh: Sheep, at: Vector3)
-	for _, it in ipairs(sh.list) do
-		fadeOut(it.p, 0.25, { Size = it.p.Size * 1.8 })
-	end
-	sh.tag:Destroy()
-	mist(at, 0.6, 0.6)
-	stardust(at, 8, 1, 3)
-	zzz(at + Vector3.new(0, 1.5, 0), 0.9)
-end
-local function sheepCount(data: any)
-	local m: Model? = data.m
-	local r = rootOf(m)
-	if not r or not near(r.Position, 220) then
+local function dreamWalk(data: any)
+	local from: Vector3, to: Vector3 = data.from, data.to
+	if not near(from, 220) then
 		return
 	end
-	local n = data.n or 5
-	local targets = data.targets or {}
-	local look = flat(r.CFrame.LookVector)
-	local side = Vector3.new(-look.Z, 0, look.X)
-	local delay = data.delay or 0.15
-	local every = data.every or 0.14
-	local travel = data.travel or 0.55
-	-- 허공의 울타리 (내 앞에 떠 있다)
-	local fenceAt = r.Position + look * 3 + Vector3.new(0, 0.4, 0)
-	local fence: { Part } = {}
-	for _, x in ipairs({ -1.6, 1.6 }) do
-		local post = part(Vector3.new(0.3, 2, 0.3), Color3.fromRGB(150, 116, 82), Enum.Material.Wood, 0)
-		post.CFrame = CFrame.lookAt(fenceAt + side * x, fenceAt + side * x + look)
-		table.insert(fence, post)
-	end
-	for _, y in ipairs({ -0.3, 0.5 }) do
-		local rail = part(Vector3.new(3.6, 0.2, 0.15), Color3.fromRGB(176, 140, 100), Enum.Material.Wood, 0)
-		rail.CFrame = CFrame.lookAt(fenceAt + Vector3.new(0, y, 0), fenceAt + Vector3.new(0, y, 0) + look)
-		table.insert(fence, rail)
-	end
-	mist(fenceAt - Vector3.new(0, 1, 0), 0.6, 0.9)
-	task.delay(delay + n * every + travel + 0.3, function()
-		for _, p in ipairs(fence) do
-			fadeOut(p, 0.3)
-		end
-	end)
-	for i = 1, n do
-		task.delay(delay + (i - 1) * every, function()
-			local rr = rootOf(m) or r
-			local start = rr.Position - look * 1.5 + Vector3.new(0, 0.5, 0)
-			local tgt = #targets > 0 and targets[(i - 1) % #targets + 1] or nil
-			local sh = makeSheep(0.9, COUNT[i] or tostring(i))
-			Fx.sound("ping", 0.3, 1.2 + i * 0.12, start)
-			local t0 = os.clock()
-			local conn: RBXScriptConnection
-			conn = RunService.Heartbeat:Connect(function()
-				local u = math.clamp((os.clock() - t0) / travel, 0, 1)
-				local tr = rootOf(tgt)
-				local goal = tr and tr.Position or (start + look * 18 + side * (i - 3) * 2)
-				-- 울타리를 넘고 (첫 30%), 그다음 통통 튀며 날아간다
-				local pos: Vector3
-				if u < 0.3 then
-					local v = u / 0.3
-					pos = start:Lerp(fenceAt + look * 1.5, v) + Vector3.new(0, 3.2 * math.sin(v * math.pi), 0)
-				else
-					local v = (u - 0.3) / 0.7
-					local base = (fenceAt + look * 1.5):Lerp(goal, v)
-					pos = base + Vector3.new(0, math.abs(math.sin(v * math.pi * 2)) * 2.2, 0)
-				end
-				local dir = flat(goal - pos)
-				placeSheep(sh, CFrame.lookAt(pos, pos + dir))
-				if u >= 1 then
-					conn:Disconnect()
-					poofSheep(sh, pos)
-				end
-			end)
+	local time = data.time or 0.45
+	local n = 7
+	local dir = flat(to - from)
+	local side = Vector3.new(-dir.Z, 0, dir.X)
+	local g0 = ground(from)
+	-- 밤하늘 길 (얇은 남빛 띠, 속에 별 점)
+	local len = (to - from).Magnitude
+	local road = part(Vector3.new(3.4, 0.06, 0.2), NIGHT, Enum.Material.Neon, 0.45)
+	road.CFrame = CFrame.lookAt(g0 + Vector3.new(0, 0.12, 0), g0 + Vector3.new(0, 0.12, 0) + dir)
+	tween(road, time, { Size = Vector3.new(3.4, 0.06, len), CFrame = CFrame.lookAt(g0 + dir * (len / 2) + Vector3.new(0, 0.12, 0), g0 + dir * len + Vector3.new(0, 0.12, 0)) })
+	for k = 1, 10 do
+		local sp = part(Vector3.one * 0.22, STAR, Enum.Material.Neon, 1, "ball")
+		sp.CFrame = CFrame.new(g0 + dir * (len * (k - 0.5) / 10) + side * (math.random() - 0.5) * 2.6 + Vector3.new(0, 0.2, 0))
+		task.delay(time * (k - 0.5) / 10, function()
+			tween(sp, 0.1, { Transparency = 0.1 })
+		end)
+		task.delay(time + 0.9, function()
+			fadeOut(sp, 0.4)
 		end)
 	end
+	-- 꿈속의 나: 반투명한 내가 눈을 감고 길을 미끄러져 간다 (지나간 자리에 잔상)
+	local ghost = data.m and dreamGhost(data.m) or {}
+	for _, it in ipairs(ghost) do
+		tween(it.p, 0.08, { Transparency = 0.5 })
+	end
+	local t0 = os.clock()
+	local lastShade = 0
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local u = math.clamp((os.clock() - t0) / time, 0, 1)
+		local e = u * u * (3 - 2 * u)
+		local pos = from:Lerp(to, e) + Vector3.new(0, 0.6 + math.sin(u * math.pi) * 0.8, 0)
+		placeList(ghost, CFrame.lookAt(pos, pos + dir))
+		if u - lastShade > 0.25 then
+			lastShade = u
+			for _, it in ipairs(ghost) do
+				local q = part(it.p.Size, LAVENDER, Enum.Material.Neon, 0.75)
+				q.CFrame = it.p.CFrame
+				fadeOut(q, 0.4)
+			end
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, it in ipairs(ghost) do
+				fadeOut(it.p, 0.15, { Size = it.p.Size * 1.3 })
+			end
+		end
+	end)
+	-- 달빛 디딤돌: 발 앞에 하나씩 (좌우로 번갈아), 놓일 때마다 높아지는 종소리
+	local stones: { { Part } } = {}
+	for i = 1, n do
+		local at = g0 + dir * (len * (i - 0.4) / n) + side * ((i % 2 == 0) and 0.7 or -0.7) + Vector3.new(0, 0.5 + math.sin(i / n * math.pi) * 0.6, 0)
+		task.delay(time * (i - 1) / n, function()
+			local rim = part(Vector3.new(0.12, 0.2, 0.2), LAVENDER, Enum.Material.Glass, 0.35, "cyl")
+			rim.CFrame = CFrame.new(at - Vector3.new(0, 0.08, 0)) * UP
+			tween(rim, 0.12, { Size = Vector3.new(0.12, 3.1, 3.1) }, Enum.EasingStyle.Back)
+			local stone = part(Vector3.new(0.22, 0.2, 0.2), MOON, Enum.Material.Neon, 0.05, "cyl")
+			stone.CFrame = CFrame.new(at) * UP
+			tween(stone, 0.12, { Size = Vector3.new(0.22, 2.3, 2.3) }, Enum.EasingStyle.Back)
+			stones[i] = { stone, rim }
+			if i % 2 == 1 then
+				zzz(at + Vector3.new(0, 1.6, 0), 0.8)
+			end
+			Fx.sound("ping", 0.3, 0.9 + i * 0.1, at)
+		end)
+	end
+	mist(g0, 0.7, 0.8)
+	-- 길 끝: 디딤돌이 차례로 별가루가 되어 솟는다
+	task.delay(time + 0.1, function()
+		mist(ground(to), 0.9, 1)
+		Fx.ring(ground(to) + Vector3.new(0, 0.3, 0), LAVENDER, 2, 12, 0.4)
+		for i = 1, n do
+			task.delay((i - 1) * 0.05, function()
+				local st = stones[i]
+				if not st then
+					return
+				end
+				local at = st[1].Position
+				for _, p in ipairs(st) do
+					fadeOut(p, 0.25, { Size = p.Size * Vector3.new(1, 1.6, 1.6) })
+				end
+				stardust(at, 6, 0.9, 5)
+				local col = part(Vector3.new(6, 0.8, 0.8), MOON, Enum.Material.Neon, 0.2, "cyl")
+				col.CFrame = CFrame.new(at + Vector3.new(0, 3, 0)) * UP
+				fadeOut(col, 0.35, { Size = Vector3.new(9, 0.1, 0.1), CFrame = CFrame.new(at + Vector3.new(0, 4.5, 0)) * UP })
+			end)
+		end
+		Fx.sound("splash", 0.4, 1.6, to)
+		Fx.sound("ping", 0.5, 1.8, to)
+		shakeNear(to, 0.6, 120)
+		fadeOut(road, 0.6)
+	end)
 end
 
 ------------------------------------------------------------------------
@@ -756,7 +752,7 @@ local function moonDream(data: any)
 end
 
 local HANDLERS: { [string]: (any) -> () } = {
-	sheepCount = sheepCount,
+	dreamWalk = dreamWalk,
 	upsideDown = upsideDown,
 	dreamIsles = dreamIsles,
 	moonDream = moonDream,
