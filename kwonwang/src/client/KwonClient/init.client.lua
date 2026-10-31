@@ -17,6 +17,7 @@ local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
+UI.previewGear = Sakura.preview
 local Drunk = require(script:WaitForChild("Drunk"))
 local Awake = require(script:WaitForChild("Awake"))
 local Reaper = require(script:WaitForChild("Reaper"))

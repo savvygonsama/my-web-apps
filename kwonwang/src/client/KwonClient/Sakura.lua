@@ -309,6 +309,16 @@ function tryFans(model: Model)
 		refreshFans(model)
 	end)
 end
+-- 3.11.2판: 대기실 창의 3D 미리보기 인형에 그 권법의 시그니처 장신구를 입힌다 (만든 것들을 돌려준다)
+function Sakura.preview(model: Model, id: string?): { Instance }
+	model:SetAttribute("Style", id)
+	refreshFans(model)
+	return fans[model] or {}
+end
+function Sakura.forget(model: Model)
+	clearFans(model)
+	builtFor[model] = nil
+end
 local watched: { [Model]: boolean } = {}
 function Sakura.watch(model: Model)
 	if watched[model] then
