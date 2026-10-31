@@ -4251,6 +4251,57 @@ local function nullSpot()
 	post.Transparency = 0
 end
 
+-- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 돌 마당 (한 변 340칸). 낮은 담, 바닥의 줄, 작은 목인 줄과 큰 목인 줄의 팻말,
+-- 들어오는 자리와 돌아가는 문. 사람끼리는 싸우지 않는다 (Config.inSafe)
+local function testRoom(out: any)
+	local TR = Config.TEST_ROOM
+	if not TR then
+		return
+	end
+	local at = TR.at
+	local H = TR.half
+	local f = Instance.new("Folder")
+	f.Name = "TestRoom"
+	f.Parent = folder
+	local floorC = Color3.fromRGB(96, 92, 100)
+	local lineC = Color3.fromRGB(150, 144, 136)
+	part({ Name = "TestFloor", Size = Vector3.new(H * 2, 2, H * 2), Position = at - Vector3.new(0, 1, 0), Color = floorC, Material = Enum.Material.Slate, Parent = f })
+	for k = -H + 20, H - 20, 20 do
+		part({ Name = "TestLineX", Size = Vector3.new(H * 2 - 8, 0.06, 0.3), Position = at + Vector3.new(0, 0.03, k), Color = lineC, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		part({ Name = "TestLineZ", Size = Vector3.new(0.3, 0.06, H * 2 - 8), Position = at + Vector3.new(k, 0.03, 0), Color = lineC, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+	-- 둘레 담 (낮은 돌담과 위의 기와 테)
+	for _, side in ipairs({ { Vector3.new(0, 0, -H), Vector3.new(H * 2 + 8, 14, 4) }, { Vector3.new(0, 0, H), Vector3.new(H * 2 + 8, 14, 4) }, { Vector3.new(-H, 0, 0), Vector3.new(4, 14, H * 2) }, { Vector3.new(H, 0, 0), Vector3.new(4, 14, H * 2) } }) do
+		part({ Name = "TestWall", Size = side[2], Position = at + side[1] + Vector3.new(0, 7, 0), Color = Color3.fromRGB(150, 140, 126), Material = Enum.Material.Cobblestone, Parent = f })
+		part({ Name = "TestWallCap", Size = side[2] * Vector3.new(1, 0, 1) + Vector3.new(2, 1.2, 2), Position = at + side[1] + Vector3.new(0, 14.6, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	end
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			brazier(at + Vector3.new(sx * (H - 10), 0, sz * (H - 10)), 1.6, f)
+		end
+	end
+	-- 줄 팻말
+	for _, row in ipairs({ { -40, "작은 목인" }, { -110, "큰 목인" } }) do
+		local board = part({ Name = "RowSign", Size = Vector3.new(14, 3, 0.4), CFrame = CFrame.lookAt(at + Vector3.new(-H + 30, 4, row[1]), at + Vector3.new(-H + 30, 4, row[1] + 10)), Color = Color3.fromRGB(60, 46, 36), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(board, Enum.NormalId.Front, { { row[2], Color3.fromRGB(255, 226, 160), 1 } })
+		part({ Name = "RowPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(-H + 30, 2, row[1]), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "RowStrip", Size = Vector3.new(H * 1.6, 0.08, 6), Position = at + Vector3.new(0, 0.05, row[1]), Color = Color3.fromRGB(120, 106, 90), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
+	end
+	-- 들어오는 자리와 돌아가는 문
+	disc("TestSpawnPad", at + Vector3.new(0, 0.1, H - 50), 8, 0.2, GOLD, Enum.Material.Marble, f, false)
+	local gate = at + Vector3.new(0, 0, H - 22)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "ExitPost", Size = Vector3.new(1.6, 14, 1.6), Position = gate + Vector3.new(sx * 7, 7, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	end
+	part({ Name = "ExitBeam", Size = Vector3.new(18, 1.4, 2), Position = gate + Vector3.new(0, 13.8, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "ExitRoof", Size = Vector3.new(21, 1, 3), Position = gate + Vector3.new(0, 15, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
+	local veil = part({ Name = "ExitVeil", Size = Vector3.new(12.4, 12, 0.4), Position = gate + Vector3.new(0, 6.5, 0), Color = Color3.fromRGB(255, 226, 160), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	veil.Transparency = 0.75
+	local board = part({ Name = "TestSign", Size = Vector3.new(16, 3, 0.4), CFrame = CFrame.lookAt(gate + Vector3.new(0, 17.4, 0), gate + Vector3.new(0, 17.4, -10)), Color = Color3.fromRGB(60, 46, 36), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	sign(board, Enum.NormalId.Front, { { "권법 시험장", Color3.fromRGB(255, 226, 160), 1 } })
+	out.testExit = prompt(veil, "마을로 돌아가기", "권법 시험장", "TestExit")
+end
+
 local function wilds()
 	local f = Instance.new("Folder")
 	f.Name = "Wilds"
@@ -5777,6 +5828,9 @@ function World.build(): any
 			easterEggs(out)
 		end },
 		{ "빈칸", nullSpot },
+		{ "권법 시험장", function()
+			testRoom(out)
+		end },
 		{ "사부의 부탁", function()
 			questProps(out)
 		end },

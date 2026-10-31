@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.8.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.9.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2573,21 +2573,27 @@ Config.Enemies = {
 		name = "수련 목인", dummy = true, hp = 1000000, posture = 100000, speed = 0, aggro = 0, keep = 0,
 		shirt = Color3.fromRGB(150, 110, 70), pants = Color3.fromRGB(110, 80, 50), coins = 0, xp = 0, moves = {},
 	},
+	-- 3.9판 큰 목인: 권법 시험장의 큰 허수아비 (보스만 한 몸집)
+	bigdummy = {
+		name = "큰 수련 목인", dummy = true, hp = 1000000000, posture = 100000000, speed = 0, aggro = 0, keep = 0, scale = 3.2,
+		shirt = Color3.fromRGB(130, 96, 62), pants = Color3.fromRGB(96, 70, 46), coins = 0, xp = 0, moves = {},
+	},
 	thug = {
-		name = "무뢰배", weapon = "staff", hp = 55, posture = 50, speed = 13, aggro = 38, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
+		-- 3.9판: 처음 싸우는 적이라 훨씬 순하게 (체력 55 → 34, 피해 거의 반, 덤비는 거리 38 → 24, 휘두르기 전 틈이 길다)
+		name = "무뢰배", weapon = "staff", hp = 34, posture = 36, speed = 12, aggro = 24, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
 		coins = 6, xp = 5,
 		moves = {
-			{ id = "t1", name = "몽둥이질", pose = "w_slash", windup = 0.6, dur = 0.9, range = 6, hits = { hit(0.6, 6, 4, 6, 9, 0.35, 10) } },
-			{ id = "t2", name = "내려치기", pose = "w_overhead", windup = 0.85, dur = 1.25, range = 6, unblockable = true, hits = { hit(0.85, 6, 4.5, 11, 18, 0.6, 20) } },
+			{ id = "t1", name = "몽둥이질", pose = "w_slash", windup = 0.75, dur = 1.05, range = 6, hits = { hit(0.75, 6, 4, 4, 6, 0.3, 8) } },
+			{ id = "t2", name = "내려치기", pose = "w_overhead", windup = 1.0, dur = 1.4, range = 6, unblockable = true, hits = { hit(1.0, 6, 4.5, 7, 12, 0.5, 16) } },
 		},
 	},
 	bandit = {
-		name = "산적 도객", weapon = "saber", hp = 90, posture = 70, speed = 15, aggro = 45, keep = 5, shirt = Color3.fromRGB(120, 90, 60), pants = Color3.fromRGB(60, 50, 40),
+		name = "산적 도객", weapon = "saber", hp = 72, posture = 60, speed = 14, aggro = 36, keep = 5, shirt = Color3.fromRGB(120, 90, 60), pants = Color3.fromRGB(60, 50, 40),
 		coins = 12, xp = 8,
 		moves = {
-			{ id = "b1", name = "베기", pose = "w_slash", windup = 0.45, dur = 0.8, range = 6, hits = { hit(0.45, 6, 4, 9, 12, 0.4, 10) } },
-			{ id = "b2", name = "연속 베기", pose = "w_slash2", windup = 0.4, dur = 1.1, range = 6, hits = { hit(0.4, 6, 4, 7, 10, 0.35, 6), hit(0.7, 6, 4, 8, 12, 0.4, 12) } },
-			{ id = "b3", name = "내려찍기", pose = "w_overhead", windup = 0.75, dur = 1.2, range = 6, unblockable = true, hits = { hit(0.75, 6, 4.5, 18, 30, 0.7, 25) } },
+			{ id = "b1", name = "베기", pose = "w_slash", windup = 0.55, dur = 0.9, range = 6, hits = { hit(0.55, 6, 4, 7, 10, 0.35, 10) } },
+			{ id = "b2", name = "연속 베기", pose = "w_slash2", windup = 0.5, dur = 1.2, range = 6, hits = { hit(0.5, 6, 4, 5, 8, 0.3, 6), hit(0.8, 6, 4, 6, 9, 0.35, 12) } },
+			{ id = "b3", name = "내려찍기", pose = "w_overhead", windup = 0.85, dur = 1.3, range = 6, unblockable = true, hits = { hit(0.85, 6, 4.5, 13, 22, 0.6, 25) } },
 		},
 	},
 	spearman = {
@@ -3137,7 +3143,9 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 -- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
 -- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
-Config.STORY_V = 4
+Config.STORY_V = 5
+-- 3.9판: 4판 장 이름 (튜토리얼과 후반 장이 끼어들어 번호가 바뀌었다)
+Config.STORY_TITLES_V4 = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "이류의 문턱", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "손에 익히기", "일류의 벽", "두 번째 사부", "특급에 오르다", "흑호채", "오의를 열어라", "심법 두루마리", "서해의 해적", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "네 번째 권법", "숙련과 각성", "초절정의 몸", "설산의 빙마", "화경에 들다", "첫 깨달음", "혈교의 그림자", "현경의 고요", "혈마", "사경의 문", "생사의 경계", "각성 권법", "천인합일", "천상의 문", "무극에 오르다", "이름 없는 노인", "구름 미궁", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "하늘 밖의 하늘", "천공 투기장", "태초", "정점", "환생", "윤회의 공덕", "전생의 그림자", "초월", "천층탑 백 층", "두 번째 삶", "두 번째 그림자", "세 번째 삶", "세 번째 그림자", "네 번째 삶", "마지막 그림자", "권왕", "강호의 전설" }
 -- 3.2.6판: 3판 장 이름 (장이 끼어들어 번호가 바뀌었다. 예전 기록은 이 이름으로 새 번호를 찾는다)
 Config.STORY_TITLES_V3 = { "강호의 문", "들판의 무뢰배", "몸을 만드는 법", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "일류의 벽", "경지의 관문", "흑호채", "심법 두루마리", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "숙련과 각성", "설산의 빙마", "혈교의 그림자", "혈마", "생사의 경계", "각성 권법", "천인합일", "천상의 문", "무극에 오르다", "이름 없는 노인", "구름 미궁", "허공 균열", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "하늘 밖의 하늘", "천공 투기장", "태초", "정점", "환생", "윤회의 공덕", "전생의 그림자", "초월", "천층탑 백 층", "두 번째 삶", "두 번째 그림자", "세 번째 삶", "세 번째 그림자", "네 번째 삶", "마지막 그림자", "권왕", "강호의 전설" }
 -- 이름이 바뀐 장 (어느 판 기록이든)
@@ -3149,6 +3157,10 @@ Config.STORY_REMAP_V2 = { ["권왕"] = "윤회의 공덕" }
 Config.Story = {
 	-- 3.2.6판: 초반을 잘게 나눴다 (경지 하나마다 한 장, 권법은 둘째·셋째·넷째를 따로, 숙련 3·5에서 R·G). 능력치 몫은 네 능력치에 각각 붙는다
 	{ title = "강호의 문", text = "젊은이, 맨손으로 강호에 나서겠다고? 좋다. 우선 기본부터. 삼재권은 이미 네 몸에 있다. 마을 남쪽 들판의 무뢰배들이 요즘 행패가 심하니, 그놈들부터 손봐 주게.", goal = { kind = "talk" }, reward = { coins = 50 } },
+	-- 3.9판 튜토리얼: 마을 목인으로 몸풀기 (공격 · 강타 · 기술)
+	{ title = "첫 주먹", text = "몸부터 풀자. 마을 입구의 수련 목인을 여덟 번 쳐라. 클릭 (휴대폰은 👊)을 이어 누르면 연타가 이어진다.", goal = { kind = "hit", n = 8, at = Vector3.new(0, 0, -46) }, reward = { coins = 40, stats = 4 } },
+	{ title = "강타", text = "힘을 실어 한 번에. 오른쪽 클릭 (휴대폰은 💥)으로 강타를 목인에게 두 번 맞혀라. 강타는 느리지만 상대의 균형을 크게 깎는다.", goal = { kind = "heavy", n = 2, at = Vector3.new(0, 0, -46) }, reward = { coins = 40, stats = 4 } },
+	{ title = "첫 기술", text = "권법마다 기술이 있다. E를 눌러 삼재권의 기술을 목인에게 써 보아라. 기술은 내공을 쓰고, 쓰면 잠시 기다려야 한다.", goal = { kind = "skill", n = 1, at = Vector3.new(0, 0, -46) }, reward = { coins = 60, stats = 6 } },
 	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "이류의 문턱", text = "싸움과 수련으로 능력치를 채워 이류에 올라라. 이류부터는 박자가 빠른 대신 세 배로 오르는 강화 수련이 열린다.", goal = { kind = "realm", n = 2 }, reward = { coins = 120, stats = 15 } },
@@ -3164,6 +3176,7 @@ Config.Story = {
 	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
 	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
+	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 1200, stats = 200 } },
 	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 250 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 2000, stats = 300 } },
@@ -3177,23 +3190,31 @@ Config.Story = {
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 8000, stats = 1000 } },
 	{ title = "현경의 고요", text = "현경에 올라라. 현경부터 주천 운기가 열린다. 혈마의 손을 마주하려면 이만한 몸이 필요하다.", goal = { kind = "realm", n = 8 }, reward = { coins = 10000, stats = 1500 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 15000, stats = 2000 } },
+	{ title = "두 번째 깨달음", text = "한 권법을 두 번 깨달으면 피해가 크게 오르고, 각성의 문이 열린다. 숙련 10인 권법을 골라 두 번째 깨달음을 얻어라.", goal = { kind = "enlight", n = 2 }, reward = { coins = 15000, stats = 2000 } },
 	{ title = "사경의 문", text = "죽음의 문턱, 사경에 올라라. 사경부터 마음속 마귀와 겨루는 심마 대련과 허공답보가 열린다. 심마를 꺾으면 능력치가 크게 오른다.", goal = { kind = "realm", n = 9 }, reward = { coins = 15000, stats = 2500 } },
 	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 5000 } },
+	{ title = "신화경에 들다", text = "생사의 경계를 넘으면 몸이 전설이 된다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 각성 권법(진) 하나를 익혀라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
 	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고, 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
+	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고, 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
 	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그러나 북서쪽 끝 허공 균열에서 더 깊은 어둠이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
 	{ title = "구름 미궁", text = "천궁 광장의 구름 미궁 문으로 들어가 방들을 넘고 미궁의 주인을 꺾어라. 들어간 사람의 세기에 맞춰 적이 선다.", goal = { kind = "maze", n = 1, at = Vector3.new(72, 4000, -34) }, reward = { coins = 150000, stats = 15000 } },
+	{ title = "천층탑 서른 층", text = "마을의 천층탑 서른 층에 올라라. 보스 층마다 두루마리가 기다린다.", goal = { kind = "tower", n = 30, at = Vector3.new(-185, 0, -185) }, reward = { coins = 20000, stats = 1500 } },
 	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
+	{ title = "다섯 번째 권법", text = "적마다 잘 듣는 권법이 다르다. 사부를 하나 더 찾아 다섯 번째 권법을 익혀라.", goal = { kind = "learn", n = 5 }, reward = { coins = 25000, stats = 1500 } },
 	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 강호의 마지막 적이다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
 	{ title = "깨어난 화염산", text = "천마가 쓰러지자 동쪽 끝 화염산이 깨어났다. 불의 산 아래 염제를 꺾어라.", goal = { kind = "boss", id = "yeomje", at = Vector3.new(2950, 0, -1150) }, reward = { coins = 60000, stats = 3500 } },
 	{ title = "모래 왕릉", text = "남쪽 끝 모래 왕릉에서 사왕이 무덤을 박차고 일어났다. 왕릉으로 가 사왕을 다시 눕혀라.", goal = { kind = "boss", id = "sawang", at = Vector3.new(-900, 0, 2930) }, reward = { coins = 70000, stats = 4000 } },
 	{ title = "하늘 문지기", text = "북쪽 끝 구름바다 위, 천외봉으로 가는 길을 천문장이 막고 있다.", goal = { kind = "boss", id = "cheonmun", at = Vector3.new(0, 0, -2760) }, reward = { coins = 90000, stats = 5000 } },
 	{ title = "뇌정봉의 뇌제", text = "천궁 동쪽 다리 너머 뇌정봉에 벼락을 부리는 뇌제가 있다. 천상의 보스는 천상 재료를 떨어뜨린다. 뇌제를 꺾어라.", goal = { kind = "boss", id = "noeje", at = Vector3.new(720, 4000, -160) }, reward = { coins = 150000, stats = 15000 } },
 	{ title = "천존", text = "천궁 북쪽 옥좌대에 하늘의 옥좌를 지키는 천존이 있다. 천상의 주인을 꺾어라.", goal = { kind = "boss", id = "cheonjon", at = Vector3.new(0, 4000, -720) }, reward = { coins = 300000, stats = 40000 } },
+	{ title = "반선", text = "사람과 신선의 사이, 반선에 올라라.", goal = { kind = "realm", n = 14 }, reward = { coins = 80000, stats = 4000 } },
+	{ title = "등선", text = "구름을 밟고 오르는 등선의 경지에 올라라. 천외천이 멀지 않다.", goal = { kind = "realm", n = 15 }, reward = { coins = 90000, stats = 4500 } },
 	{ title = "하늘 밖의 하늘", text = "경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다.", goal = { kind = "realm", n = 16 }, reward = { coins = 100000, stats = 5000 } },
 	{ title = "천공 투기장", text = "천궁 광장의 투기장 문 너머, 하늘의 재앙 천겁이 기다린다. 여럿이 함께 들어가 천겁을 쓰러뜨려라.", goal = { kind = "raid", n = 1, at = Vector3.new(-78, 4000, 30) }, reward = { coins = 400000, stats = 60000 } },
+	{ title = "천층탑 쉰 층", text = "천층탑 쉰 층에 올라라. 위로 갈수록 몫이 가파르게 붙는다.", goal = { kind = "tower", n = 50, at = Vector3.new(-185, 0, -185) }, reward = { coins = 150000, stats = 8000 } },
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
@@ -3201,15 +3222,46 @@ Config.Story = {
 	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고, 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
+	{ title = "혼원경", text = "환생한 몸으로 다시 올라 천외천을 넘어라. 혼원경이 열려 있다.", goal = { kind = "realm", n = 17 }, reward = { coins = 1500000, stats = 300000 } },
 	{ title = "두 번째 삶", text = "다시 천외천 너머 혼원경에 올라 두 번째로 환생하라. 환생할수록 얻는 능력치가 커져, 다시 오르는 길은 처음보다 훨씬 빠르다.", goal = { kind = "rebirth", n = 2 }, reward = { coins = 2000000 } },
 	{ title = "두 번째 그림자", text = "두 번째 삶의 생사경에서 두 번째 그림자가 기다린다. 첫 그림자보다 질기다. 공덕으로 고른 특전을 믿어라.", goal = { kind = "samsara", n = 2 }, reward = { coins = 3000000, stats = 200000 } },
+	{ title = "무량경", text = "끝이 없는 경지, 무량경에 올라라.", goal = { kind = "realm", n = 18 }, reward = { coins = 4000000, stats = 800000 } },
 	{ title = "세 번째 삶", text = "무량경에 올라 세 번째로 환생하라. 특전을 다시 고를 때다. 싸움에 쓸 것인가, 오르는 빠르기에 쓸 것인가.", goal = { kind = "rebirth", n = 3 }, reward = { coins = 5000000 } },
 	{ title = "세 번째 그림자", text = "세 번째 그림자는 네 버릇을 안다. 늘 쓰던 기술만 쓰면 막힌다.", goal = { kind = "samsara", n = 3 }, reward = { coins = 8000000, stats = 2000000 } },
+	{ title = "태허경", text = "텅 빈 하늘의 경지, 태허경에 올라라. 마지막 환생이 기다린다.", goal = { kind = "realm", n = 19 }, reward = { coins = 9000000, stats = 1500000 } },
 	{ title = "네 번째 삶", text = "태허경에 올라 마지막으로 환생하라. 더는 환생이 없다. 이제부터는 끝까지 오르는 일만 남는다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
 	{ title = "마지막 그림자", text = "윤회의 바퀴가 마지막 그림자를 내보낸다. 네 삶을 모두 넘어선 너만이 권왕의 자리에 앉는다.", goal = { kind = "samsara", n = 4 }, reward = { coins = 20000000, stats = 20000000 } },
 	{ title = "권왕", text = "네 삶을 넘었다. 이제 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
 }
+
+-- 3.9판: 보상을 늘린다. 흑호채부터 은자 ×2.5 · 능력치 ×2, 보스 장에는 심법 두루마리 (뒤로 갈수록 많이)
+do
+	local from = 0
+	for i, ch in ipairs(Config.Story) do
+		if ch.title == "흑호채" then
+			from = i
+		end
+	end
+	for i, ch in ipairs(Config.Story) do
+		local r = ch.reward or {}
+		if from > 0 and i >= from then
+			if r.coins then
+				r.coins = math.floor(r.coins * 2.5)
+			end
+			if r.stats then
+				r.stats = math.floor(r.stats * 2)
+			end
+		end
+		if ch.goal.kind == "boss" then
+			r.scrolls = math.clamp(math.floor(i / 8) + 1, 2, 12)
+		end
+		ch.reward = r
+	end
+end
+
+-- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 전투방 (사람끼리는 싸우지 않는다). 작은 목인과 큰 목인, 초당 피해가 보인다
+Config.TEST_ROOM = { at = Vector3.new(0, 1200, 0), half = 170 }
 
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {
@@ -3581,6 +3633,11 @@ end
 
 -- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고, 적이 덤비지 않는다
 function Config.inSafe(pos: Vector3): boolean
+	-- 3.9판 권법 시험장
+	local TR = Config.TEST_ROOM
+	if TR and math.abs(pos.X - TR.at.X) <= TR.half and math.abs(pos.Z - TR.at.Z) <= TR.half and math.abs(pos.Y - TR.at.Y) < 120 then
+		return true
+	end
 	-- 천상계에서는 천궁만 안전하다
 	if Config.SKY and pos.Y > Config.SKY.y - 300 then
 		local town = Config.SKY.islands[1]

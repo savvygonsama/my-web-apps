@@ -271,7 +271,7 @@ local function sanitize(data: any): Profile
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
 		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local titles = data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title
@@ -1013,7 +1013,7 @@ end
 
 function Story.done(p: Profile, g: any): boolean
 	local k = g.kind
-	if k == "kill" or k == "train" or k == "trial" or k == "boss" then
+	if k == "kill" or k == "train" or k == "trial" or k == "boss" or k == "hit" or k == "heavy" or k == "skill" then
 		return p.prog >= (g.n or 1)
 	elseif k == "found" then
 		return countKeys(p.found) >= g.n
@@ -1076,8 +1076,12 @@ function Story.advance(player: Player)
 		end
 		local r = ch.reward or {}
 		p.coins += r.coins or 0
+		p.scrolls += r.scrolls or 0
 		for _, stat in ipairs(Config.Stats) do
 			addStat(p, stat.id, r.stats or 0)
+		end
+		if (r.scrolls or 0) > 0 then
+			toast(player, string.format("📜 심법 두루마리 +%d", r.scrolls))
 		end
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
@@ -1813,6 +1817,18 @@ Combat.init(Push, {
 			Raid.onHit(att.player, _tgt, dmg)
 		end
 		Geuk.onHit(att, _tgt, opt)
+		-- 3.9판 튜토리얼: 때리기 · 강타 · 기술
+		if att.player and not opt.chain then
+			local mv = opt.move
+			local mid = mv and type(mv.id) == "string" and mv.id or ""
+			local tail = string.sub(mid, -1)
+			if not opt.isSkill then
+				Story.event(att.player, "hit")
+			end
+			if tail == "H" and not opt.isSkill then
+				Story.event(att.player, "heavy")
+			end
+		end
 		if att.player and not opt.chain then
 			local p = profiles[att.player]
 			if p then
@@ -2066,6 +2082,10 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 		echoAct(f, move, slot, speed, dmgScale)
 	end
 	;(newAct :: any).teleport = teleported
+	-- 3.9판 튜토리얼: 기술을 썼다
+	if slot == "E" or slot == "R" or slot == "G" or slot == "X" then
+		Story.event(player, "skill")
+	end
 	-- 권법마다 다른 기술 장치
 	if move.mech then
 		Skills.run(f, move, { scale = dmgScale, speed = speed })
@@ -3998,6 +4018,32 @@ end
 ------------------------------------------------------------------------
 -- 요청 받기
 ------------------------------------------------------------------------
+-- 3.9판 권법 시험장 오가기 (들어가 있으면 돌아온다)
+local function toggleTestRoom(player: Player)
+	local TR = Config.TEST_ROOM
+	local f = Combat.fighterOfPlayer(player)
+	local char = player.Character
+	if BATTLE or not TR or not f or not char then
+		return
+	end
+	local pos = f.root.Position
+	local inside = math.abs(pos.X - TR.at.X) <= TR.half and math.abs(pos.Z - TR.at.Z) <= TR.half and math.abs(pos.Y - TR.at.Y) < 120
+	local sst = states[player] :: any
+	if inside then
+		local back = sst.roomBack or CFrame.new(Config.SPAWN)
+		sst.roomBack = nil
+		char:PivotTo(back)
+		toast(player, "🏯 마을로 돌아왔어요")
+	else
+		if f.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 갈 수 없어요")
+			return
+		end
+		sst.roomBack = char:GetPivot()
+		char:PivotTo(CFrame.lookAt(TR.at + Vector3.new(0, 4, TR.half - 50), TR.at + Vector3.new(0, 4, 0)))
+		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 목인 머리 위에 초당 피해가 보여요")
+	end
+end
 Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2: any, a3: any)
 	local p, st = profiles[player], states[player]
 	if not p or not st or type(action) ~= "string" then
@@ -4277,6 +4323,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif action == "towerLeave" then
 		Tower.ended(player, "leave")
+	elseif action == "testRoom" then
+		toggleTestRoom(player)
 	elseif action == "towerTp" then
 		Tower.teleport(player)
 	elseif action == "mazeLeave" then
@@ -4862,6 +4910,12 @@ if W.battle then
 				toast(player, "⚠ " .. tostring(why))
 			end
 		end)
+	end)
+end
+-- 3.9판 권법 시험장의 돌아가는 문
+if W.testExit then
+	W.testExit.Triggered:Connect(function(player: Player)
+		toggleTestRoom(player)
 	end)
 end
 -- 3.7판 사부의 부탁: 들판에 놓인 것 (찾기·차례), 1초마다 가야 할 곳 확인
@@ -5453,6 +5507,38 @@ task.spawn(function()
 		end
 	end
 end)
+
+------------------------------------------------------------------------
+-- 3.9판 목인 세우기: 마을 입구의 튜토리얼 목인 셋, 권법 시험장의 작은 목인 다섯 · 큰 목인 셋 (자리를 정확히 맞춘다)
+------------------------------------------------------------------------
+if not BATTLE then
+	task.spawn(function()
+		task.wait(3)
+		local function place(typeId: string, at: Vector3, region: string)
+			local ok, e = pcall(Npc.spawn, typeId, false, at, region)
+			if ok and e and e.f and e.f.model then
+				local def = Config.Enemies[typeId]
+				local face = Vector3.new(at.X, at.Y, at.Z + 10)
+				pcall(function()
+					e.f.model:PivotTo(CFrame.lookAt(at + Vector3.new(0, 3 * (def and def.scale or 1), 0), face + Vector3.new(0, 3 * (def and def.scale or 1), 0)))
+				end)
+				e.home = at
+			end
+		end
+		for _, x in ipairs({ -12, 0, 12 }) do
+			place("dummy", Vector3.new(x, 0, -48 - (x == 0 and 3 or 0)), "tutorial")
+		end
+		local TR = Config.TEST_ROOM
+		if TR then
+			for k = -2, 2 do
+				place("dummy", TR.at + Vector3.new(k * 22, 0, -40), "testroom")
+			end
+			for k = -1, 1 do
+				place("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
+			end
+		end
+	end)
+end
 
 ------------------------------------------------------------------------
 -- 3.3판 배틀그라운드: 맵을 돌리고, 떨어진 사람을 쓰러뜨리고, 판 상태를 알린다

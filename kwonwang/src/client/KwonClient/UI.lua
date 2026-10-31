@@ -1625,6 +1625,9 @@ function HELP.helpText(tab: string): { string }
 		add("• 권법이 변한 모습은 등급과 따로다: 진 (각성) · 초 · 극")
 		add("• 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다")
 		add("")
+		add("<b>🎯 권법 시험장</b>")
+		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
+		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 심법)")
 		add("• 마을 안 천층탑: 층마다 세기가 정해져 있고 열 층마다 보스. 처음 넘는 보스 층엔 두루마리와 큰 몫")
@@ -1847,128 +1850,123 @@ local function buildTrainGuide()
 end
 
 local function buildTest()
+	-- 3.9판: 갈래별로 다시 정리 (판마다 쌓이던 버튼을 걷어 냈다). 사부·보스·적·권법은 Config에서 저절로 만든다
 	local page = makePage("test")
 	local list = scroller(page, UDim2.fromScale(1, 1))
 	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local order = 0
-	local function section(title: string, items: { any })
+	local function section(title: string, items: { any }, cols: number?)
+		local n = cols or 3
 		order += 1
 		text({ Size = UDim2.new(1, -12, 0, 26), Text = title, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = order, Parent = list })
 		order += 1
-		local rows = math.ceil(#items / 3)
-		local grid = new("Frame", { Size = UDim2.new(1, -12, 0, rows * 52), BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
-		new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 0, 44), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
+		local rows = math.ceil(#items / n)
+		local grid = new("Frame", { Size = UDim2.new(1, -12, 0, rows * 50), BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
+		new("UIGridLayout", { CellSize = UDim2.new(1 / n, -8, 0, 42), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
 		for _, item in ipairs(items) do
-			local b = button({ Text = item[1], TextSize = 16, BackgroundColor3 = item.color or C.panel2 }, function()
-				-- 길잡이는 화면에서만 (숨은 사부 자리를 따라간다)
-				if string.sub(item[2], 1, 6) == "guide:" then
-					UI.setGuide(string.sub(item[2], 7))
-					window.Visible = false
-					return
-				end
+			local b = button({ Text = item[1], TextSize = 15, BackgroundColor3 = item.color or C.panel2 }, function()
 				Request:FireServer(item[2], item[3])
+				if item.close then
+					window.Visible = false
+				end
 			end)
 			b.Parent = grid
 		end
 	end
-	section("기본", {
-		{ "💰 은자 +5000", "testCoins", 5000 }, { "📊 능력치 +200", "testStats", 200 }, { "📈 능력치 +5000", "testStats", 5000 },
-		{ "🥋 숙련 최대", "testMastery" }, { "🌀 내공 무한·쿨 없음 (켜기·끄기)", "testChi" }, { "❤ 회복", "testHeal" },
-		{ "🌀 다음 사부에게", "testTp" }, { "📜 이야기 다음 장", "testStory" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
-		{ "⛩ 관문 기록 지우기", "testGateReset" }, { "↺ 처음으로", "testReset", color = C.red },
+	section("⚡ 빠른 도구", {
+		{ "💰 은자 +1만", "testCoins", 10000 }, { "💰 은자 +100만", "testCoins", 1000000 }, { "📊 능력치 +5000", "testStats", 5000 },
+		{ "⭐ 지금 권법 숙련 최대", "testMastery" }, { "⬆ 지금 권법 승급 최대", "testBreak" }, { "🌀 내공 무한·쿨 없음", "testChi" },
+		{ "❤ 회복", "testHeal" }, { "📜 두루마리 +100", "testScrolls", 100 }, { "🎒 천상 재료 +50씩", "testMats" },
+		{ "💠 천정 +1000", "testGems" }, { "⚔ PvP 끄기 열기", "testPvpUnlock" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
-	section("🐋 2.7판: 초·창해신권 · 새 만목신권 · 새 악마 · 적 차림", {
-		{ "🐋 초·창해신권 바로 쓰기 (X 고경승천)", "testStyle", "chochanghae" }, { "🐋 고경선에게 (초월의 시련)", "testSecretMaster", "chochanghae" }, { "🪄 초·성하신권 바로 쓰기 (X 성천궁)", "testStyle", "chosengha" }, { "🪄 천성선에게 (초월의 시련)", "testSecretMaster", "chosengha" }, { "🦋 호접몽권 바로 쓰기 (X 호접지몽)", "testStyle", "hojeop" }, { "🦋 몽선에게", "testSecretMaster", "hojeop" }, { "⬛ 공백권 바로 쓰기 (X 존재소거)", "testStyle", "gongbaek" }, { "⬛ ???에게 (빈칸)", "testSecretMaster", "gongbaek" }, { "📜 사부의 부탁 한 단계 넘기기", "testQuestSkip" }, { "🎒 천상 재료 +50씩 (비천 진주 포함)", "testMats" },
-		{ "🐳 진 창해신권 (G 고래강림)", "testStyle", "changhae2" }, { "🎋 만목신권 (죽림창·천엽비수·신목강림)", "testStyle", "manmok" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
-		{ "🩸 초·혈마신수 (X 우두머리 악마)", "testStyle", "chohyeolma" }, { "🩸 진 혈마신수 (G 혈해만마)", "testStyle", "hyeolma2" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" },
-		{ "🗿 석왕 부르기", "testBoss", "seokwang" }, { "🐯 흑호 부르기", "testBoss", "heukho" }, { "🥁 뇌제 부르기", "testBoss", "noeje" },
-		{ "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "🖌 진 무극신권 바로 쓰기 (각성)", "testStyle", "mugeuk2" }, { "❄ 진 매화난무권 바로 쓰기 (각성)", "testStyle", "maehwa2" }, { "🏺 진 취팔선권 바로 쓰기 (각성)", "testStyle", "chwi2" }, { "☸ 윤회권 바로 쓰기 (환생)", "testStyle", "rinne" }, { "🔥 업화권 바로 쓰기 (환생)", "testStyle", "eophwa" }, { "🌫 무상권 바로 쓰기 (환생)", "testStyle", "musangkwon" }, { "👑 권왕신권 바로 쓰기 (환생)", "testStyle", "kwonwangsin" }, { "🌗 극 일월신권 바로 쓰기 (극)", "testStyle", "geukilwol" }, { "🌇 극 가득 채우기 (일월극변)", "testGeuk" }, { "🌸 초·매화난무권 (새 E·R·G)", "testStyle", "chomaehwa" }, { "🔥 각성선인에게", "testAwakenTp" },
-		{ "☁ 천상계로 (새 섬: 운무 죽림 · 월광 호수 · 금운사)", "testSky" }, { "🎋 죽왕 부르기", "testBoss", "jukwang" }, { "🌙 월영 부르기", "testBoss", "wolyeong" },
-		{ "🛕 금강천왕 부르기", "testBoss", "geumgang" }, { "🦁 사자 수호수 부르기", "testEnemy", "guardlion" }, { "🌙 월광 정령 부르기", "testEnemy", "moonspirit" },
+	section("🎯 시험·전투", {
+		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적·목인 치우기", "testClear" },
+		{ "🎬 컷씬 다시 보기", "testSeen" }, { "🗼 탑: 다음 보스 층", "testTower" }, { "🗼 탑: 이 층 쓸기", "testTower", "clear" },
+	})
+	section("📜 이야기·사부", {
+		{ "📜 이야기 다음 장", "testStory" }, { "📜 사부의 부탁 한 단계", "testQuestSkip" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
+		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
+	})
+	section("♻ 환생·극", {
+		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
+		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" },
+		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
+	})
+	section("🌍 이동·이벤트", {
+		{ "☁ 천상계로", "testSky", close = true }, { "☸ 윤회대로", "rebirth", close = true }, { "🌀 구름 미궁 바로", "testMaze", true },
+		{ "⚔ 천겁 레이드 지금", "testRaid", true }, { "☄ 운석 지금", "testMeteor" },
+	})
+	section("🕐 시간", {
+		{ "⏸ 멈춤·흐름", "testTime", "freeze" }, { "🌅 6시", "testTime", 6 }, { "☀ 12시", "testTime", 12 }, { "🌇 18시", "testTime", 18 },
+		{ "🌙 0시", "testTime", 0 }, { "⏩ +3시간", "testTime", "+3" },
+	}, 3)
+	section("💎 상품 (테스트로 켜기)", {
+		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" },
+		{ "🐉 청룡 탈것", "testPremium", "dragon" },
 	})
 	do
-		-- 2.6판: 심법 등급 체험 (모든 심법을 한 등급으로), 자동 뽑기, 새 오의·무극신권·보스 차림
 		local items: { any } = {}
 		for i, R in ipairs(Config.MANUAL_RARITY) do
-			table.insert(items, { string.format("📜 모든 심법 [%s]로", R.name), "testManualRarity", i, color = R.color:Lerp(Color3.new(0, 0, 0), 0.55) })
+			table.insert(items, { string.format("📜 모두 [%s]", R.name), "testManualRarity", i, color = R.color:Lerp(Color3.new(0, 0, 0), 0.55) })
 		end
-		table.insert(items, { "📜 두루마리 +100 (자동 뽑기용)", "testScrolls", 100 })
-		table.insert(items, { "⚡ 초·벽력신권 (G 뇌성강림)", "testStyle", "chobyeok" })
-		table.insert(items, { "☯ 무극신권 바로 쓰기", "testStyle", "mugeuk" })
-		table.insert(items, { "🗿 석왕 부르기", "testBoss", "seokwang" })
-		table.insert(items, { "👹 천존 부르기", "testBoss", "cheonjon" })
-		table.insert(items, { "🍄 균왕 부르기", "testBoss", "gyunwang" })
-		section("📜 2.6판: 심법 등급 체험 · 새 오의 · 보스 차림", items)
+		section("📜 심법 등급", items, 4)
 	end
-	section("♻ 1.9판: 환생·업적·각성·초·혈마신수", {
-		{ "♻ 환생 조건 채우기 (열린 끝 경지까지)", "testRebirthReady" }, { "☸ 윤회대로 가기", "rebirth" }, { "☸ 바로 환생 (제단 의식)", "testRebirthRite" }, { "♻ 환생·업적 기록 지우기", "testRebirthReset" }, { "☯ 윤회의 시련 준비 (환생·생사경)", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
-		{ "🩸 초·혈마신수 바로 쓰기 (초월)", "testStyle", "chohyeolma" }, { "🩸 혈월선에게 (초월의 시련)", "testSecretMaster", "chohyeolma" },
-		{ "🗿 진 금강불괴 바로 쓰기", "testStyle", "geumgang2" }, { "👤 진 무영귀각 바로 쓰기", "testStyle", "muyeong2" }, { "🌊 진 태허유수장 바로 쓰기", "testStyle", "taeheo2" },
-	})
-	section("🌸 2.5판: 초월의 조건 (숙련 20 · 천상 재료)", {
-		{ "🎒 천상 재료 +50씩", "testMats" }, { "⭐ 지금 권법 숙련 20으로", "testMastery" },
-		{ "🌸 천앵선에게 (초·매화)", "testSecretMaster", "chomaehwa" }, { "🍶 만취선에게 (초·취)", "testSecretMaster", "chochwi" },
-		{ "🩸 혈월선에게 (초·혈마)", "testSecretMaster", "chohyeolma" }, { "⚡ 뇌천선에게 (초·벽력)", "testSecretMaster", "chobyeok" },
-	})
-	section("🌳 2.4판: 만목신권·새 랜드마크", {
-		{ "🌳 만목신권 바로 쓰기 (태초)", "testStyle", "manmok" }, { "🌳 목선에게 (만목원)", "testSecretMaster", "manmok" },
-	})
-	section("👹 2.3판: 새 생김새 적·뇌고천무·벚꽃나무", {
-		{ "⚡ 초·벽력신권 바로 쓰기 (X 뇌고천무)", "testStyle", "chobyeok" }, { "🌸 초·매화난무권 바로 쓰기 (X 벚꽃나무)", "testStyle", "chomaehwa" },
-		{ "🗿 돌 거인 부르기", "testEnemy", "stonegolem" }, { "😈 화염 소악귀 부르기", "testEnemy", "flameimp" }, { "👻 모래 망령 부르기", "testEnemy", "sandwraith" },
-		{ "🐦 학익 검객 부르기", "testEnemy", "cranesword" }, { "💀 왕릉 해골병 부르기", "testEnemy", "tombguard" }, { "🍄 버섯 거한 부르기", "testEnemy", "shroombrute" },
-		{ "💧 물보라 정령 부르기", "testEnemy", "waterspirit" }, { "🐍 독수 뱀 자객 부르기", "testEnemy", "swampfang" }, { "🐸 늪 거한 부르기", "testEnemy", "bogbrute" },
-		{ "🐺 혈랑 (늑대) 부르기", "testBoss", "hyeolrang" }, { "🍄 균왕 부르기", "testBoss", "gyunwang" }, { "🔥 염봉 (봉황) 부르기", "testBoss", "yeombong" },
-	})
-	section("⚡ 2.0판: 새 각성·초·벽력신권·각성선인", {
-		{ "🔥 진 열화신권 바로 쓰기", "testStyle", "yeolhwa2" }, { "🐋 진 창해신권 바로 쓰기", "testStyle", "changhae2" }, { "🌀 진 풍신각 바로 쓰기", "testStyle", "pungsin2" },
-		{ "⚡ 초·벽력신권 바로 쓰기 (초월)", "testStyle", "chobyeok" }, { "⚡ 뇌천선에게 (초월의 시련)", "testSecretMaster", "chobyeok" }, { "🔥 각성선인에게", "testAwakenTp" },
-		{ "🩸 진 혈마신수 바로 쓰기", "testStyle", "hyeolma2" }, { "🐲 진 천룡파천장 바로 쓰기", "testStyle", "cheonryong2" }, { "🌩 진 벽력신권 바로 쓰기", "testStyle", "byeokryeok2" },
-	})
-	section("🗼 베타 13: 천층탑·심법·비무·컷씬", {
-		{ "📜 심법 두루마리 +10", "testScrolls" }, { "📜 심법 두루마리 +100 (자동 뽑기)", "testScrolls", 100 }, { "💰 은자 +300000 (뽑기 10번)", "testCoins", 300000 }, { "🗼 다음 보스 층으로 (탑 안에서)", "testTower" },
-		{ "⚔ 비무 99승으로 (한 번 더 이기면 무쌍신권)", "testPvp" }, { "⚔ 무쌍신권 바로 쓰기", "testStyle", "musang" }, { "🎬 컷씬 기록 지우기 (다시 보기)", "testSeen" },
-		{ "🗼 이 층 적 모두 쓰러뜨리기 (탑 안에서)", "testTower", "clear" },
-	})
-	section("☁ 베타 14: 천상계·아공신권·탈것", {
-		{ "☁ 천상계로 가기", "testSky" }, { "✴ 반선 경지로 (능력치)", "testStats", 9477000 }, { "🧭 아공선인에게 가기", "testSecretMaster", "agong" },
-		{ "📍 아공선인 길잡이", "guide:agong" }, { "🌌 아공신권 바로 쓰기", "testStyle", "agong" }, { "💰 은자 +2,000,000 (탈것)", "testCoins", 2000000 },
-		{ "🐉 청룡 탈것 (테스트로 켜기)", "testPremium", "dragon" }, { "💠 천정 +1000", "testGems" }, { "☄ 운석 지금 떨어뜨리기 (천상계에서)", "testMeteor" }, { "☁ 운류장 바로 쓰기", "testStyle", "unryu" },
-		{ "🌠 성하신권 바로 쓰기", "testStyle", "seongha" }, { "🧭 성하노군에게 가기", "testSecretMaster", "seongha" }, { "🧭 운류자에게 가기", "testSecretMaster", "unryu" },
-		{ "👹 뇌제 부르기", "testBoss", "noeje" }, { "👹 성군 부르기", "testBoss", "seonggun" }, { "👹 천존 부르기", "testBoss", "cheonjon" }, { "⚔ PvP 끄기 열기 (쓰러진 셈)", "testPvpUnlock" },
-	})
-	section("🎯 수련 목인·시간", {
-		{ "🎯 수련 목인 세우기", "testDummy" }, { "🧹 테스트로 부른 것 치우기", "testClear" }, { "⏸ 시간 멈춤·흐름", "testTime", "freeze" },
-		{ "🌅 새벽 (6시)", "testTime", 6 }, { "☀ 한낮 (12시)", "testTime", 12 }, { "🌇 저녁 (18시)", "testTime", 18 },
-		{ "🌙 한밤 (0시)", "testTime", 0 }, { "⏩ 3시간 뒤로", "testTime", "+3" },
-		{ "💎 두 배 수련 (테스트로 켜기)", "testPremium", "train2x" }, { "🤖 자동 수련 (테스트로 켜기)", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련 (테스트로 켜기)", "testPremium", "autoTrain2" },
-	})
 	-- 수련 자리로 바로 (종류마다 첫 자리)
 	local trainItems = {}
 	for _, id in ipairs({ "rock", "dummy", "waterfall", "mabo", "ironpalm", "breathing", "simma", "geumjong", "cheongeun", "jucheon", "heogong", "cheonsang" }) do
 		local t = Config.Training[id]
 		if t then
-			table.insert(trainItems, { "🌀 " .. t.icon .. " " .. t.name, "testTrainTp", id })
+			table.insert(trainItems, { t.icon .. " " .. t.name, "testTrainTp", id, close = true })
 		end
 	end
-	section("🏋 수련 텔레포트", trainItems)
-	-- 권법 테스트: 어떤 권법이든 바로 (숙련 최대·내공 가득)
+	section("🏋 수련 자리로", trainItems, 4)
+	-- 권법: 등급 차례로 (바로 익혀 숙련 최대)
 	local styleItems = {}
-	for _, st in ipairs(Config.Styles) do
-		table.insert(styleItems, { st.icon .. " " .. st.name .. " [" .. st.grade .. "]", "testStyle", st.id, color = st.color:Lerp(Color3.new(0, 0, 0), 0.55) })
+	local sorted = table.clone(Config.Styles)
+	table.sort(sorted, function(a, b)
+		local ga, gb = Config.gradeIndex(a.grade), Config.gradeIndex(b.grade)
+		if ga ~= gb then
+			return ga < gb
+		end
+		return a.name < b.name
+	end)
+	for _, st in ipairs(sorted) do
+		table.insert(styleItems, { st.icon .. " " .. st.name, "testStyle", st.id, color = st.color:Lerp(Color3.new(0, 0, 0), 0.55) })
 	end
-	section("🥋 권법 테스트 (바로 익혀 숙련 최대로)", styleItems)
-	section("🔓 시크릿 테스트 (숨은 권법 얻는 길)", {
-		{ "📖 비급 조각 +1", "testSecret", "fragment" }, { "🧭 다음 비급 조각으로", "testSecret", "fragmentTp" }, { "🌌 무극신권 얻기", "testSecret", "mugeuk" },
-		{ "🩸 혈마신수 얻기", "testSecret", "hyeolma" }, { "🔒 숨은 권법 다시 잠그기", "testSecret", "lock" }, { "👹 혈마 부르기", "testBoss", "hyeolma" },
-		{ "🧭 숨은 사부에게 가기", "testSecretMaster" }, { "📍 숨은 사부 길잡이", "guide:gaecheon" }, { "✨ 무극 경지로 (능력치)", "testStats", 2609500 },
-		{ "⬆ 지금 권법 승급 최대", "testBreak" }, { "👹 천마 부르기", "testBoss", "cheonma" }, { "👑 천제신권 바로 쓰기", "testStyle", "gaecheon" },
-		{ "🌑 파천신권 얻기 (천마 처치 보상)", "testSecret", "pacheon" }, { "🌪 풍신각 바로 쓰기", "testStyle", "pungsin" }, { "✴ 천외천 경지로 (능력치)", "testStats", 125000000 }, { "🌸 초·매화난무권 바로 쓰기 (초월)", "testStyle", "chomaehwa" }, { "🌸 천앵선에게 (초월의 시련)", "testSecretMaster", "chomaehwa" }, { "🍾 초·취팔선권 바로 쓰기 (초월)", "testStyle", "chochwi" }, { "🍾 만취선에게 (초월의 시련)", "testSecretMaster", "chochwi" }, { "⚔ 천겁 레이드 지금 (천상계에서)", "testRaid", true }, { "🌀 구름 미궁 바로 들어가기", "testMaze", true },
-		{ "🧭 시원자에게 가기 (태초신권)", "testSecretMaster", "taecho" }, { "📍 시원자 길잡이", "guide:taecho" }, { "✴ 태초신권 바로 쓰기", "testStyle", "taecho" },
-		{ "🧭 권존에게 가기 (일월신권)", "testSecretMaster", "ilwol" }, { "📍 권존 길잡이", "guide:ilwol" }, { "☀ 일월신권 바로 쓰기", "testStyle", "ilwol" },
-		{ "🧭 영겁노인에게 가기 (영겁신권)", "testSecretMaster", "yeonggeop" }, { "📍 영겁노인 길잡이", "guide:yeonggeop" }, { "⏳ 영겁신권 바로 쓰기", "testStyle", "yeonggeop" },
-	})
+	section("🥋 권법 바로 쓰기 (등급 차례)", styleItems, 4)
+	-- 숨은 사부에게 (지도에 안 나오는 사부)
+	local masterItems = {}
+	for id, m in pairs(Config.MASTERS) do
+		local st = Config.STYLE_BY_ID[id]
+		if m.secret and st then
+			table.insert(masterItems, { st.icon .. " " .. m.name .. " · " .. st.name, "testSecretMaster", id, close = true })
+		end
+	end
+	table.sort(masterItems, function(a, b)
+		return a[1] < b[1]
+	end)
+	section("🧭 숨은 사부에게", masterItems, 3)
+	-- 보스와 적 부르기
+	local bossItems = {}
+	for id, def in pairs(Config.Bosses) do
+		if id ~= "cheongeop" then
+			table.insert(bossItems, { "👹 " .. (string.match(def.name, "^[^·]+") or def.name), "testBoss", id })
+		end
+	end
+	table.sort(bossItems, function(a, b)
+		return a[1] < b[1]
+	end)
+	section("👹 보스 부르기", bossItems, 4)
+	local enemyItems = {}
+	for id, def in pairs(Config.Enemies) do
+		if not def.dummy and id ~= "simma" then
+			table.insert(enemyItems, { def.name, "testEnemy", id })
+		end
+	end
+	table.sort(enemyItems, function(a, b)
+		return a[1] < b[1]
+	end)
+	section("🗡 적 부르기", enemyItems, 4)
 	-- 모든 권법 얻는 법 (테스트 창에만 적는다)
 	order += 1
 	text({ Size = UDim2.new(1, -12, 0, 26), Text = "📖 모든 권법 얻는 법", TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = order, Parent = list })
@@ -2023,14 +2021,6 @@ local function buildTest()
 	end
 	order += 1
 	text({ Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 16, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, LayoutOrder = order, Parent = list, Text = table.concat(how, "\n") })
-	section("적과 보스", {
-		{ "👹 흑호", "testBoss", "heukho" }, { "👹 혈랑", "testBoss", "hyeolrang" }, { "👹 빙마", "testBoss", "bingma" },
-		{ "🪵 무뢰배", "testEnemy", "thug" }, { "🗡 산적", "testEnemy", "bandit" }, { "🔱 창병", "testEnemy", "spearman" },
-		{ "🪓 곤봉 산적", "testEnemy", "brute" }, { "🥷 쌍도 자객", "testEnemy", "assassin" }, { "🛡 철갑 무사", "testEnemy", "ironguard" },
-		{ "🌑 흑영 자객", "testEnemy", "shadowblade" }, { "🩸 혈교도", "testEnemy", "cultist" }, { "🩸 혈교 장로", "testEnemy", "cultelder" },
-		{ "🌀 균열 마물", "testEnemy", "riftling" }, { "🌌 허공 마인", "testEnemy", "voidwalker" }, { "🗿 석상 수호자", "testEnemy", "stonegolem" },
-		{ "👁 천마 사도", "testEnemy", "apostle" },
-	})
 end
 
 ------------------------------------------------------------------------
@@ -2837,6 +2827,13 @@ local function goalText(s: any, g: any): string
 		return string.format("%s 쓰러뜨리기  %d / %d", nameOf(g.id), prog, g.n or 1)
 	elseif k == "train" then
 		return string.format("수련터에서 수련하기  %d / %d", prog, g.n or 1)
+	-- 3.9판 튜토리얼
+	elseif k == "hit" then
+		return string.format("목인 치기 (클릭 · 👊)  %d / %d", prog, g.n or 1)
+	elseif k == "heavy" then
+		return string.format("강타 맞히기 (오른쪽 클릭 · 💥)  %d / %d", prog, g.n or 1)
+	elseif k == "skill" then
+		return string.format("기술 쓰기 (E)  %d / %d", prog, g.n or 1)
 	elseif k == "found" then
 		return string.format("소문을 따라 사부 찾기  %d / %d", countKeys(s.found), g.n or 1)
 	elseif k == "trial" then
@@ -3499,7 +3496,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -3508,6 +3505,8 @@ function UI.init(req: RemoteEvent)
 			end
 			if item[1] == "pvp" then
 				Request:FireServer("pvpToggle")
+			elseif item[1] == "testroom" then
+				Request:FireServer("testRoom")
 			elseif item[1] == "battle" then
 				Request:FireServer("battleGo")
 			elseif item[1] == "back" then
