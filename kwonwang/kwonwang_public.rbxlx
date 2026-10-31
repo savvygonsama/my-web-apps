@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.11.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.12.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3681,7 +3681,7 @@ Config.MOUNTS = {
 	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 2.25, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
 	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
-	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
+	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
@@ -3912,15 +3912,22 @@ Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.n
 Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
+-- 3.12판: 은자는 운 (뽑기·소모품), 천정은 확정 (골라서 올리기·천상 꾸미기). 은자로는 살 수 없는 것만 판다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
 Config.SKY_SHOP = {
-	{ id = "skyscroll", name = "천상 두루마리", icon = "📜", cost = 40, desc = "심법 두루마리 하나" },
-	{ id = "skyscroll10", name = "천상 두루마리 묶음", icon = "📚", cost = 360, desc = "심법 두루마리 열 (한 번에 사면 싸다)" },
+	{ id = "skytint", name = "천상 빛깔", icon = "🌌", cost = 500, desc = "지금 쓰는 권법의 시그니처 장신구를 별빛 도는 천상 빛깔로 (권법마다 한 번, 메뉴로 켜고 끈다)" },
+	{ id = "skyaura", name = "천상 오라", icon = "💫", cost = 1500, desc = "몸 둘레에 천정 조각 셋이 맴돌고 발밑에 별빛이 인다 (한 번 사면 늘)" },
+	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것. 천정으로만 얻는다" },
 	{ id = "skyelixir", name = "천상 영약", icon = "✨", cost = 30, desc = "10분 동안 주는 피해 +15%" },
-	{ id = "skypill", name = "천정단", icon = "💎", cost = 150, desc = "모든 능력치 +800" },
-	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것 (은자 대신 천정으로)" },
 	{ id = "wine", name = "선로주", icon = "🍶", cost = 120, desc = "천상의 이슬로 빚은 술 (초·취팔선권의 재료)" },
+	{ id = "skyscroll10", name = "천상 두루마리 묶음", icon = "📚", cost = 360, desc = "심법 두루마리 열" },
 }
+-- 3.12판 심법 확정 강화 (천정): 가진 심법 하나를 골라 등급을 한 칸 올린다 (천상까지). [지금 등급] = 드는 천정
+Config.SKY_REFINE = { 80, 200, 500, 1400, 3600 }
+-- 시그니처 장신구가 있는 권법인가 (천상 빛깔을 입힐 수 있는가)
+function Config.hasGear(st: any): boolean
+	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
+end
 -- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
 --   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
 --   선로주: 천궁 상점에서 천정으로 빚는다
@@ -6755,6 +6762,9 @@ type Profile = {
 	skyGems: number, -- 천정 (천상계 화폐)
 	mats: { [string]: number }, -- 2.5판: 천상 재료 (초월 권법)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
+	skyTint: { [string]: boolean }, -- 3.12판: 천상 빛깔을 입힌 권법 (장신구)
+	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
+	skyAura: boolean?, -- 3.12판: 천상 오라
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
 	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
@@ -6798,6 +6808,7 @@ local function defaultProfile(): Profile
 		skyGems = 0,
 		mats = {},
 		skyBuffUntil = 0,
+		skyTint = {},
 		rebirth = 0,
 		perks = {},
 		samsara = 0,
@@ -6917,6 +6928,15 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
+	if type(data.skyTint) == "table" then
+		for id, on in pairs(data.skyTint) do
+			if type(id) == "string" and Config.STYLE_BY_ID[id] and on == true then
+				p.skyTint[id] = true
+			end
+		end
+	end
+	p.skyTintOff = data.skyTintOff == true or nil
+	p.skyAura = data.skyAura == true or nil
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	for _, key in ipairs({ "mq", "mqn" }) do
 		local src = (data :: any)[key]
@@ -7364,6 +7384,9 @@ local function pushState(player: Player)
 		skyGems = p.skyGems,
 		mats = p.mats,
 		skyBuffLeft = math.max(0, p.skyBuffUntil - os.time()),
+		skyTint = p.skyTint,
+		skyTintOff = p.skyTintOff == true,
+		skyAura = p.skyAura == true,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -7513,6 +7536,9 @@ local function refreshFighter(player: Player)
 	local oldMax = f.maxHp
 	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
+	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
+	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
+	f.model:SetAttribute("SkyAura", p.skyAura or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -10924,6 +10950,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			if action ~= "mountBuy" then
 				return
 			end
+			if m.gemsOnly then
+				toast(player, "☁ " .. m.name .. "은(는) 천정으로만 얻어요 (천궁의 천상 상점)")
+				return
+			end
 			if p.coins < m.cost then
 				toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(m.cost)))
 				return
@@ -10949,6 +10979,19 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "☁ 이미 날개구름이 있어요")
 			return
 		end
+		local cur = Config.STYLE_BY_ID[p.style]
+		if it.id == "skytint" then
+			if not Config.hasGear(cur) then
+				toast(player, "🌌 지금 쓰는 권법에는 시그니처 장신구가 없어요 (장신구가 있는 권법을 쓰고 사세요)")
+				return
+			elseif p.skyTint[p.style] then
+				toast(player, "🌌 " .. cur.name .. "의 장신구는 이미 천상 빛깔이에요")
+				return
+			end
+		elseif it.id == "skyaura" and p.skyAura then
+			toast(player, "💫 이미 천상 오라가 있어요")
+			return
+		end
 		if p.skyGems < it.cost then
 			toast(player, string.format("💠 천정이 부족해요 (%d 필요)", it.cost))
 			return
@@ -10966,11 +11009,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 					pushState(player)
 				end
 			end)
-		elseif it.id == "skypill" then
-			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += 800
-			end
-			Story.check(player)
+		elseif it.id == "skytint" then
+			p.skyTint[p.style] = true
+			p.skyTintOff = nil
+		elseif it.id == "skyaura" then
+			p.skyAura = true
 		elseif it.id == "cloudmount" then
 			p.mounts.cloud = true
 			p.mountSel = "cloud"
@@ -11025,6 +11068,35 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Manual.equip(player, a1, true)
 	elseif action == "manualUnequip" then
 		Manual.equip(player, a1, false)
+	elseif action == "manualRefine" then
+		-- 3.12판 심법 확정 강화: 천정으로 등급을 한 칸 올린다
+		local m = type(a1) == "string" and Config.MANUAL_BY_ID[a1]
+		local r = m and p.manuals[a1]
+		if not m or not r then
+			return
+		end
+		local cost = Config.SKY_REFINE[r]
+		if not cost then
+			toast(player, "💠 이미 가장 높은 등급 (천상)이에요")
+			return
+		end
+		if p.skyGems < cost then
+			toast(player, string.format("💠 천정이 부족해요 (%d 필요)", cost))
+			return
+		end
+		p.skyGems -= cost
+		p.manuals[a1] = r + 1
+		st.dirty = true
+		refreshFighter(player)
+		local R2 = Config.MANUAL_RARITY[r + 1]
+		toast(player, string.format("💠 %s %s → %s", m.icon, m.name, R2.name))
+		pushState(player)
+	elseif action == "skyTintToggle" then
+		p.skyTintOff = not p.skyTintOff or nil
+		st.dirty = true
+		refreshFighter(player)
+		toast(player, p.skyTintOff and "🌌 천상 빛깔을 껐어요" or "🌌 천상 빛깔을 켰어요")
+		pushState(player)
 	elseif action == "seen" then
 		-- 화면에서 본 것 (조작 안내, 보스와 처음 맞붙는 컷씬)
 		if type(a1) == "string" and not p.seen[a1] and (a1 == "controls" or (string.sub(a1, 1, 5) == "boss_" and Config.CUTSCENES[a1] ~= nil)) then
@@ -48727,10 +48799,52 @@ local function clearFans(model: Model)
 		fans[model] = nil
 	end
 end
+-- 3.12판 천상 빛깔: 장신구 조각을 별빛 도는 은청·연보랏빛으로 바꾸고 반짝임을 단다
+local SKY_NEON = Color3.fromRGB(160, 236, 255)
+local SKY_SOFT = Color3.fromRGB(232, 222, 255)
+local function gearKey(model: Model, id: string): string
+	return id .. (model:GetAttribute("SkyTint") == true and "*" or "")
+end
+local function skyTint(list: { Instance })
+	local sparkled = 0
+	local function tint(p: BasePart)
+		if p.Material == Enum.Material.Neon then
+			p.Color = SKY_NEON:Lerp(p.Color, 0.2)
+		else
+			p.Color = p.Color:Lerp(SKY_SOFT, 0.55)
+			if p.Material ~= Enum.Material.Glass then
+				p.Reflectance = math.max(p.Reflectance, 0.15)
+			end
+		end
+		if sparkled < 3 and p.Size.Magnitude > 0.8 then
+			sparkled += 1
+			local e = Instance.new("ParticleEmitter")
+			e.Texture = TEX_SPARK
+			e.Color = ColorSequence.new(SKY_NEON, Color3.fromRGB(255, 240, 200))
+			e.LightEmission = 1
+			e.Size = NumberSequence.new(0.25, 0)
+			e.Lifetime = NumberRange.new(0.5, 1)
+			e.Speed = NumberRange.new(0.3, 1)
+			e.Rate = 6
+			e.Parent = p
+		end
+	end
+	for _, inst in ipairs(list) do
+		if inst:IsA("BasePart") then
+			tint(inst)
+		end
+		for _, d in ipairs(inst:GetDescendants()) do
+			if d:IsA("BasePart") then
+				tint(d)
+			end
+		end
+	end
+end
 local builtFor: { [Model]: string } = {}
 local waiting: { [Model]: boolean } = {}
 local tryFans: (Model) -> ()
-local function refreshFans(model: Model)
+local refreshFans: (Model) -> ()
+local function buildGearFor(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
@@ -48738,12 +48852,13 @@ local function refreshFans(model: Model)
 		builtFor[model] = nil
 		return
 	end
-	-- 같은 권법이면 다시 만들지 않는다
-	if builtFor[model] == st.id and fans[model] then
+	-- 같은 권법 (같은 빛깔)이면 다시 만들지 않는다
+	local key = gearKey(model, st.id)
+	if builtFor[model] == key and fans[model] then
 		return
 	end
 	clearFans(model)
-	builtFor[model] = st.id
+	builtFor[model] = key
 	-- 먼저 자리를 잡아 둔다 (같은 몸을 두 번 만들지 않게)
 	local list: { Instance } = {}
 	fans[model] = list
@@ -48819,6 +48934,14 @@ local function refreshFans(model: Model)
 		end
 	end
 end
+refreshFans = function(model: Model)
+	local before = fans[model]
+	buildGearFor(model)
+	local list = fans[model]
+	if list and list ~= before and model:GetAttribute("SkyTint") == true then
+		skyTint(list)
+	end
+end
 -- 부채 권법일 때만 손이 생기기를 기다렸다가 만든다 (다른 몸은 기다리지 않는다)
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
@@ -48827,7 +48950,7 @@ function tryFans(model: Model)
 		refreshFans(model)
 		return
 	end
-	if builtFor[model] == st.id and fans[model] or waiting[model] then
+	if builtFor[model] == gearKey(model, st.id) and fans[model] or waiting[model] then
 		return
 	end
 	waiting[model] = true
@@ -48849,6 +48972,70 @@ function Sakura.forget(model: Model)
 	builtFor[model] = nil
 end
 local watched: { [Model]: boolean } = {}
+-- 3.12판 천상 오라: 몸 둘레에 천정 조각 셋이 맴돌고, 걸을 때 발밑에 별빛이 인다
+local auras: { [Model]: { parts: { BasePart }, conn: RBXScriptConnection } } = {}
+function Sakura.aura(model: Model)
+	local on = model:GetAttribute("SkyAura") == true and model.Parent ~= nil
+	local cur = auras[model]
+	if not on then
+		if cur then
+			cur.conn:Disconnect()
+			for _, p in ipairs(cur.parts) do
+				p:Destroy()
+			end
+			auras[model] = nil
+		end
+		return
+	end
+	if cur then
+		return
+	end
+	local parts: { BasePart } = {}
+	for i = 1, 3 do
+		local q = Instance.new("Part")
+		q.Name = "SkyAuraGem"
+		q.Anchored = true
+		q.CanCollide = false
+		q.CanQuery = false
+		q.CanTouch = false
+		q.CastShadow = false
+		q.Material = Enum.Material.Neon
+		q.Color = i == 2 and Color3.fromRGB(255, 236, 180) or SKY_NEON
+		q.Size = Vector3.new(0.45, 0.8, 0.45)
+		q.Transparency = 0.1
+		q.Parent = folder
+		if i == 1 then
+			local l = Instance.new("PointLight")
+			l.Color = SKY_NEON
+			l.Range = 10
+			l.Brightness = 0.8
+			l.Parent = q
+		end
+		table.insert(parts, q)
+	end
+	local t0 = os.clock()
+	local dustAt = 0
+	local conn = RunService.Heartbeat:Connect(function()
+		local r = rootOf(model)
+		if not r or not model.Parent then
+			return
+		end
+		local t = os.clock() - t0
+		local hide = model:GetAttribute("Vanish") == true
+		for i, q in ipairs(parts) do
+			local a = t * 1.6 + (i - 1) / 3 * math.pi * 2
+			local pos = r.Position + Vector3.new(math.cos(a) * 2.6, 0.6 + math.sin(t * 2 + i) * 0.5, math.sin(a) * 2.6)
+			q.CFrame = CFrame.new(pos) * CFrame.Angles(0, t * 3 + i, math.rad(45))
+			q.LocalTransparencyModifier = hide and 1 or 0
+		end
+		-- 걸을 때 발밑의 별빛
+		if not hide and t - dustAt > 0.3 and r.AssemblyLinearVelocity.Magnitude > 6 and near(r.Position, 90) then
+			dustAt = t
+			Fx.burst("glitter", r.Position - Vector3.new(0, 2.6, 0), SKY_NEON, 3, 0.7)
+		end
+	end)
+	auras[model] = { parts = parts, conn = conn }
+end
 function Sakura.watch(model: Model)
 	if watched[model] then
 		return
@@ -48858,6 +49045,13 @@ function Sakura.watch(model: Model)
 	model:GetAttributeChangedSignal("Style"):Connect(function()
 		tryFans(model)
 	end)
+	model:GetAttributeChangedSignal("SkyTint"):Connect(function()
+		tryFans(model)
+	end)
+	model:GetAttributeChangedSignal("SkyAura"):Connect(function()
+		Sakura.aura(model)
+	end)
+	Sakura.aura(model)
 	-- 사라지는 기술 (만앵참월 등) 동안 부채도 감춘다
 	model:GetAttributeChangedSignal("Vanish"):Connect(function()
 		local hide = model:GetAttribute("Vanish") == true
@@ -48872,6 +49066,7 @@ function Sakura.watch(model: Model)
 			clearFans(model)
 			watched[model] = nil
 			builtFor[model] = nil
+			Sakura.aura(model)
 		end
 	end)
 end
@@ -55635,9 +55830,9 @@ local function buildShop()
 			local b = mountBtns[m.id]
 			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
 			local sel = state and state.mountSel == m.id
-			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or ("💰 " .. Config.formatNumber(m.cost))
+			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.gemsOnly and "💠 천정 전용" or ("💰 " .. Config.formatNumber(m.cost)))
 			b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
-			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost) and C.red or C.panel))
+			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost and not m.gemsOnly) and C.red or C.panel))
 		end
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
@@ -55779,14 +55974,20 @@ local function buildManuals()
 	local rows = {}
 	for _, m in ipairs(Config.MANUALS) do
 		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 44), BackgroundColor3 = C.panel, Parent = list }, { corner(8), stroke(C.line, 1) })
-		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -130, 1, 0), TextSize = 15, RichText = true, Parent = row })
+		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -250, 1, 0), TextSize = 15, RichText = true, Parent = row })
 		local b = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 100, 0, 32), Text = "끼우기", TextSize = 14, Parent = row }, function()
 			if not state or not state.manuals or not state.manuals[m.id] then
 				return
 			end
 			Request:FireServer(table.find(state.equip or {}, m.id) and "manualUnequip" or "manualEquip", m.id)
 		end)
-		rows[m.id] = { label = l, btn = b }
+		-- 3.12판: 천정으로 등급을 한 칸 확정으로 올린다
+		local up = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -116, 0.5, 0), Size = UDim2.new(0, 112, 0, 32), Text = "💠 올리기", TextSize = 13, BackgroundColor3 = Color3.fromRGB(50, 100, 170), Parent = row }, function()
+			if state and state.manuals and state.manuals[m.id] then
+				Request:FireServer("manualRefine", m.id)
+			end
+		end)
+		rows[m.id] = { label = l, btn = b, up = up }
 	end
 	local rates = {}
 	for _, R in ipairs(Config.MANUAL_RARITY) do
@@ -55797,7 +55998,7 @@ local function buildManuals()
 		if not state then
 			return
 		end
-		head.Text = string.format("📜 두루마리 <b>%d</b>개\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
+		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
 		local equip = state.equip or {}
 		for i, sl in ipairs(slots) do
 			local id = equip[i]
@@ -55814,9 +56015,14 @@ local function buildManuals()
 				row.btn.Visible = true
 				row.btn.Text = on and "✅ 빼기" or "끼우기"
 				row.btn.BackgroundColor3 = on and Color3.fromRGB(60, 120, 70) or C.panel2
+				local cost = Config.SKY_REFINE[r]
+				row.up.Visible = true
+				row.up.Text = cost and ("💠 " .. cost .. " ▲") or "천상 (끝)"
+				row.up.BackgroundColor3 = (cost and (state.skyGems or 0) >= cost) and Color3.fromRGB(50, 100, 170) or C.panel
 			else
 				row.label.Text = string.format('<font color="#8A7C6A">%s %s · %s (아직 없음)</font>', m.icon, m.name, m.desc)
 				row.btn.Visible = false
+				row.up.Visible = false
 			end
 		end
 	end
@@ -55837,7 +56043,11 @@ end
 ------------------------------------------------------------------------
 local function buildSkyShop()
 	local page = makePage("skyshop")
-	local head = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
+	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
+	-- 3.12판: 천상 빛깔 켜기·끄기
+	local tintBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 180, 0, 32), Text = "🌌 빛깔: 켜짐", TextSize = 14, BackgroundColor3 = Color3.fromRGB(60, 90, 150), Parent = page }, function()
+		Request:FireServer("skyTintToggle")
+	end)
 	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
 	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = list })
 	local btns: { [string]: TextButton } = {}
@@ -55856,9 +56066,30 @@ local function buildSkyShop()
 			table.insert(matsTxt, M.icon .. " " .. tostring((state and state.mats and state.mats[M.id]) or 0))
 		end
 		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s  ·  초월 재료 %s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "", table.concat(matsTxt, " "))
+		local cur = state and Config.STYLE_BY_ID[state.style or ""]
+		local tinted = state and state.skyTint and state.style and state.skyTint[state.style]
 		for _, it in ipairs(Config.SKY_SHOP) do
-			btns[it.id].BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
+			local owned = (it.id == "cloudmount" and state and state.mounts and state.mounts.cloud)
+				or (it.id == "skyaura" and state and state.skyAura)
+				or (it.id == "skytint" and tinted)
+			local btn = btns[it.id]
+			if owned then
+				btn.Text = it.id == "skytint" and "✔ 이 권법은 완료" or "✔ 가짐"
+				btn.BackgroundColor3 = Color3.fromRGB(50, 110, 70)
+			elseif it.id == "skytint" and not Config.hasGear(cur) then
+				btn.Text = "장신구 권법만"
+				btn.BackgroundColor3 = C.panel
+			else
+				btn.Text = "💠 " .. it.cost
+				btn.BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
+			end
 		end
+		local anyTint = false
+		for _ in pairs(state and state.skyTint or {}) do
+			anyTint = true
+		end
+		tintBtn.Visible = anyTint
+		tintBtn.Text = (state and state.skyTintOff) and "🌌 빛깔: 꺼짐" or "🌌 빛깔: 켜짐"
 	end
 end
 
@@ -56185,7 +56416,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 만물상 (마을): 금창약 (H) · 소환단 (수련 2배) · 대환단 (능력치)")
 		local mounts = {}
 		for _, m in ipairs(Config.MOUNTS) do
-			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)")))
+			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.gemsOnly and " (💠 천정 전용 · 천궁 상점)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)"))))
 		end
 		add("• 탈것: " .. table.concat(mounts, " · "))
 		add("")
@@ -57986,6 +58217,7 @@ local function buildLobbyPanel()
 		end
 		BH.yaw = 0
 		doll:PivotTo(CFrame.new())
+		doll:SetAttribute("SkyTint", (state and state.skyTint and state.skyTint[st.id] and not state.skyTintOff) or nil)
 		local ok, list = pcall(UI.previewGear, doll, st.id)
 		if ok and type(list) == "table" then
 			for _, inst in ipairs(list) do

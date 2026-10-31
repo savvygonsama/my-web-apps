@@ -198,10 +198,52 @@ local function clearFans(model: Model)
 		fans[model] = nil
 	end
 end
+-- 3.12판 천상 빛깔: 장신구 조각을 별빛 도는 은청·연보랏빛으로 바꾸고 반짝임을 단다
+local SKY_NEON = Color3.fromRGB(160, 236, 255)
+local SKY_SOFT = Color3.fromRGB(232, 222, 255)
+local function gearKey(model: Model, id: string): string
+	return id .. (model:GetAttribute("SkyTint") == true and "*" or "")
+end
+local function skyTint(list: { Instance })
+	local sparkled = 0
+	local function tint(p: BasePart)
+		if p.Material == Enum.Material.Neon then
+			p.Color = SKY_NEON:Lerp(p.Color, 0.2)
+		else
+			p.Color = p.Color:Lerp(SKY_SOFT, 0.55)
+			if p.Material ~= Enum.Material.Glass then
+				p.Reflectance = math.max(p.Reflectance, 0.15)
+			end
+		end
+		if sparkled < 3 and p.Size.Magnitude > 0.8 then
+			sparkled += 1
+			local e = Instance.new("ParticleEmitter")
+			e.Texture = TEX_SPARK
+			e.Color = ColorSequence.new(SKY_NEON, Color3.fromRGB(255, 240, 200))
+			e.LightEmission = 1
+			e.Size = NumberSequence.new(0.25, 0)
+			e.Lifetime = NumberRange.new(0.5, 1)
+			e.Speed = NumberRange.new(0.3, 1)
+			e.Rate = 6
+			e.Parent = p
+		end
+	end
+	for _, inst in ipairs(list) do
+		if inst:IsA("BasePart") then
+			tint(inst)
+		end
+		for _, d in ipairs(inst:GetDescendants()) do
+			if d:IsA("BasePart") then
+				tint(d)
+			end
+		end
+	end
+end
 local builtFor: { [Model]: string } = {}
 local waiting: { [Model]: boolean } = {}
 local tryFans: (Model) -> ()
-local function refreshFans(model: Model)
+local refreshFans: (Model) -> ()
+local function buildGearFor(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
 	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
@@ -209,12 +251,13 @@ local function refreshFans(model: Model)
 		builtFor[model] = nil
 		return
 	end
-	-- 같은 권법이면 다시 만들지 않는다
-	if builtFor[model] == st.id and fans[model] then
+	-- 같은 권법 (같은 빛깔)이면 다시 만들지 않는다
+	local key = gearKey(model, st.id)
+	if builtFor[model] == key and fans[model] then
 		return
 	end
 	clearFans(model)
-	builtFor[model] = st.id
+	builtFor[model] = key
 	-- 먼저 자리를 잡아 둔다 (같은 몸을 두 번 만들지 않게)
 	local list: { Instance } = {}
 	fans[model] = list
@@ -290,6 +333,14 @@ local function refreshFans(model: Model)
 		end
 	end
 end
+refreshFans = function(model: Model)
+	local before = fans[model]
+	buildGearFor(model)
+	local list = fans[model]
+	if list and list ~= before and model:GetAttribute("SkyTint") == true then
+		skyTint(list)
+	end
+end
 -- 부채 권법일 때만 손이 생기기를 기다렸다가 만든다 (다른 몸은 기다리지 않는다)
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
@@ -298,7 +349,7 @@ function tryFans(model: Model)
 		refreshFans(model)
 		return
 	end
-	if builtFor[model] == st.id and fans[model] or waiting[model] then
+	if builtFor[model] == gearKey(model, st.id) and fans[model] or waiting[model] then
 		return
 	end
 	waiting[model] = true
@@ -320,6 +371,70 @@ function Sakura.forget(model: Model)
 	builtFor[model] = nil
 end
 local watched: { [Model]: boolean } = {}
+-- 3.12판 천상 오라: 몸 둘레에 천정 조각 셋이 맴돌고, 걸을 때 발밑에 별빛이 인다
+local auras: { [Model]: { parts: { BasePart }, conn: RBXScriptConnection } } = {}
+function Sakura.aura(model: Model)
+	local on = model:GetAttribute("SkyAura") == true and model.Parent ~= nil
+	local cur = auras[model]
+	if not on then
+		if cur then
+			cur.conn:Disconnect()
+			for _, p in ipairs(cur.parts) do
+				p:Destroy()
+			end
+			auras[model] = nil
+		end
+		return
+	end
+	if cur then
+		return
+	end
+	local parts: { BasePart } = {}
+	for i = 1, 3 do
+		local q = Instance.new("Part")
+		q.Name = "SkyAuraGem"
+		q.Anchored = true
+		q.CanCollide = false
+		q.CanQuery = false
+		q.CanTouch = false
+		q.CastShadow = false
+		q.Material = Enum.Material.Neon
+		q.Color = i == 2 and Color3.fromRGB(255, 236, 180) or SKY_NEON
+		q.Size = Vector3.new(0.45, 0.8, 0.45)
+		q.Transparency = 0.1
+		q.Parent = folder
+		if i == 1 then
+			local l = Instance.new("PointLight")
+			l.Color = SKY_NEON
+			l.Range = 10
+			l.Brightness = 0.8
+			l.Parent = q
+		end
+		table.insert(parts, q)
+	end
+	local t0 = os.clock()
+	local dustAt = 0
+	local conn = RunService.Heartbeat:Connect(function()
+		local r = rootOf(model)
+		if not r or not model.Parent then
+			return
+		end
+		local t = os.clock() - t0
+		local hide = model:GetAttribute("Vanish") == true
+		for i, q in ipairs(parts) do
+			local a = t * 1.6 + (i - 1) / 3 * math.pi * 2
+			local pos = r.Position + Vector3.new(math.cos(a) * 2.6, 0.6 + math.sin(t * 2 + i) * 0.5, math.sin(a) * 2.6)
+			q.CFrame = CFrame.new(pos) * CFrame.Angles(0, t * 3 + i, math.rad(45))
+			q.LocalTransparencyModifier = hide and 1 or 0
+		end
+		-- 걸을 때 발밑의 별빛
+		if not hide and t - dustAt > 0.3 and r.AssemblyLinearVelocity.Magnitude > 6 and near(r.Position, 90) then
+			dustAt = t
+			Fx.burst("glitter", r.Position - Vector3.new(0, 2.6, 0), SKY_NEON, 3, 0.7)
+		end
+	end)
+	auras[model] = { parts = parts, conn = conn }
+end
 function Sakura.watch(model: Model)
 	if watched[model] then
 		return
@@ -329,6 +444,13 @@ function Sakura.watch(model: Model)
 	model:GetAttributeChangedSignal("Style"):Connect(function()
 		tryFans(model)
 	end)
+	model:GetAttributeChangedSignal("SkyTint"):Connect(function()
+		tryFans(model)
+	end)
+	model:GetAttributeChangedSignal("SkyAura"):Connect(function()
+		Sakura.aura(model)
+	end)
+	Sakura.aura(model)
 	-- 사라지는 기술 (만앵참월 등) 동안 부채도 감춘다
 	model:GetAttributeChangedSignal("Vanish"):Connect(function()
 		local hide = model:GetAttribute("Vanish") == true
@@ -343,6 +465,7 @@ function Sakura.watch(model: Model)
 			clearFans(model)
 			watched[model] = nil
 			builtFor[model] = nil
+			Sakura.aura(model)
 		end
 	end)
 end

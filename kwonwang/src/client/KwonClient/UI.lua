@@ -1167,9 +1167,9 @@ local function buildShop()
 			local b = mountBtns[m.id]
 			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
 			local sel = state and state.mountSel == m.id
-			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or ("💰 " .. Config.formatNumber(m.cost))
+			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.gemsOnly and "💠 천정 전용" or ("💰 " .. Config.formatNumber(m.cost)))
 			b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
-			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost) and C.red or C.panel))
+			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost and not m.gemsOnly) and C.red or C.panel))
 		end
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
@@ -1311,14 +1311,20 @@ local function buildManuals()
 	local rows = {}
 	for _, m in ipairs(Config.MANUALS) do
 		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 44), BackgroundColor3 = C.panel, Parent = list }, { corner(8), stroke(C.line, 1) })
-		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -130, 1, 0), TextSize = 15, RichText = true, Parent = row })
+		local l = text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -250, 1, 0), TextSize = 15, RichText = true, Parent = row })
 		local b = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 100, 0, 32), Text = "끼우기", TextSize = 14, Parent = row }, function()
 			if not state or not state.manuals or not state.manuals[m.id] then
 				return
 			end
 			Request:FireServer(table.find(state.equip or {}, m.id) and "manualUnequip" or "manualEquip", m.id)
 		end)
-		rows[m.id] = { label = l, btn = b }
+		-- 3.12판: 천정으로 등급을 한 칸 확정으로 올린다
+		local up = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -116, 0.5, 0), Size = UDim2.new(0, 112, 0, 32), Text = "💠 올리기", TextSize = 13, BackgroundColor3 = Color3.fromRGB(50, 100, 170), Parent = row }, function()
+			if state and state.manuals and state.manuals[m.id] then
+				Request:FireServer("manualRefine", m.id)
+			end
+		end)
+		rows[m.id] = { label = l, btn = b, up = up }
 	end
 	local rates = {}
 	for _, R in ipairs(Config.MANUAL_RARITY) do
@@ -1329,7 +1335,7 @@ local function buildManuals()
 		if not state then
 			return
 		end
-		head.Text = string.format("📜 두루마리 <b>%d</b>개\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
+		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
 		local equip = state.equip or {}
 		for i, sl in ipairs(slots) do
 			local id = equip[i]
@@ -1346,9 +1352,14 @@ local function buildManuals()
 				row.btn.Visible = true
 				row.btn.Text = on and "✅ 빼기" or "끼우기"
 				row.btn.BackgroundColor3 = on and Color3.fromRGB(60, 120, 70) or C.panel2
+				local cost = Config.SKY_REFINE[r]
+				row.up.Visible = true
+				row.up.Text = cost and ("💠 " .. cost .. " ▲") or "천상 (끝)"
+				row.up.BackgroundColor3 = (cost and (state.skyGems or 0) >= cost) and Color3.fromRGB(50, 100, 170) or C.panel
 			else
 				row.label.Text = string.format('<font color="#8A7C6A">%s %s · %s (아직 없음)</font>', m.icon, m.name, m.desc)
 				row.btn.Visible = false
+				row.up.Visible = false
 			end
 		end
 	end
@@ -1369,7 +1380,11 @@ end
 ------------------------------------------------------------------------
 local function buildSkyShop()
 	local page = makePage("skyshop")
-	local head = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
+	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
+	-- 3.12판: 천상 빛깔 켜기·끄기
+	local tintBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 180, 0, 32), Text = "🌌 빛깔: 켜짐", TextSize = 14, BackgroundColor3 = Color3.fromRGB(60, 90, 150), Parent = page }, function()
+		Request:FireServer("skyTintToggle")
+	end)
 	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
 	new("UIListLayout", { Padding = UDim.new(0, 8), Parent = list })
 	local btns: { [string]: TextButton } = {}
@@ -1388,9 +1403,30 @@ local function buildSkyShop()
 			table.insert(matsTxt, M.icon .. " " .. tostring((state and state.mats and state.mats[M.id]) or 0))
 		end
 		head.Text = string.format("💠 천정 %s  ·  천상계의 적·보스·운석 수호수가 떨어뜨린다%s  ·  초월 재료 %s", Config.formatNumber(g), (state and (state.skyBuffLeft or 0) > 0) and string.format("  ·  ✨ 영약 %d초", state.skyBuffLeft) or "", table.concat(matsTxt, " "))
+		local cur = state and Config.STYLE_BY_ID[state.style or ""]
+		local tinted = state and state.skyTint and state.style and state.skyTint[state.style]
 		for _, it in ipairs(Config.SKY_SHOP) do
-			btns[it.id].BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
+			local owned = (it.id == "cloudmount" and state and state.mounts and state.mounts.cloud)
+				or (it.id == "skyaura" and state and state.skyAura)
+				or (it.id == "skytint" and tinted)
+			local btn = btns[it.id]
+			if owned then
+				btn.Text = it.id == "skytint" and "✔ 이 권법은 완료" or "✔ 가짐"
+				btn.BackgroundColor3 = Color3.fromRGB(50, 110, 70)
+			elseif it.id == "skytint" and not Config.hasGear(cur) then
+				btn.Text = "장신구 권법만"
+				btn.BackgroundColor3 = C.panel
+			else
+				btn.Text = "💠 " .. it.cost
+				btn.BackgroundColor3 = g >= it.cost and Color3.fromRGB(60, 120, 200) or C.panel
+			end
 		end
+		local anyTint = false
+		for _ in pairs(state and state.skyTint or {}) do
+			anyTint = true
+		end
+		tintBtn.Visible = anyTint
+		tintBtn.Text = (state and state.skyTintOff) and "🌌 빛깔: 꺼짐" or "🌌 빛깔: 켜짐"
 	end
 end
 
@@ -1717,7 +1753,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 만물상 (마을): 금창약 (H) · 소환단 (수련 2배) · 대환단 (능력치)")
 		local mounts = {}
 		for _, m in ipairs(Config.MOUNTS) do
-			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)")))
+			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.gemsOnly and " (💠 천정 전용 · 천궁 상점)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)"))))
 		end
 		add("• 탈것: " .. table.concat(mounts, " · "))
 		add("")
@@ -3518,6 +3554,7 @@ local function buildLobbyPanel()
 		end
 		BH.yaw = 0
 		doll:PivotTo(CFrame.new())
+		doll:SetAttribute("SkyTint", (state and state.skyTint and state.skyTint[st.id] and not state.skyTintOff) or nil)
 		local ok, list = pcall(UI.previewGear, doll, st.id)
 		if ok and type(list) == "table" then
 			for _, inst in ipairs(list) do

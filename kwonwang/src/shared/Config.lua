@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.11.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.12.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3661,7 +3661,7 @@ Config.MOUNTS = {
 	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 2.25, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
 	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
-	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
+	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
@@ -3892,15 +3892,22 @@ Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.n
 Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
+-- 3.12판: 은자는 운 (뽑기·소모품), 천정은 확정 (골라서 올리기·천상 꾸미기). 은자로는 살 수 없는 것만 판다
 Config.SKY_GEMS = { enemy = 2, elite = 4, boss = 80, meteor = 60 }
 Config.SKY_SHOP = {
-	{ id = "skyscroll", name = "천상 두루마리", icon = "📜", cost = 40, desc = "심법 두루마리 하나" },
-	{ id = "skyscroll10", name = "천상 두루마리 묶음", icon = "📚", cost = 360, desc = "심법 두루마리 열 (한 번에 사면 싸다)" },
+	{ id = "skytint", name = "천상 빛깔", icon = "🌌", cost = 500, desc = "지금 쓰는 권법의 시그니처 장신구를 별빛 도는 천상 빛깔로 (권법마다 한 번, 메뉴로 켜고 끈다)" },
+	{ id = "skyaura", name = "천상 오라", icon = "💫", cost = 1500, desc = "몸 둘레에 천정 조각 셋이 맴돌고 발밑에 별빛이 인다 (한 번 사면 늘)" },
+	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것. 천정으로만 얻는다" },
 	{ id = "skyelixir", name = "천상 영약", icon = "✨", cost = 30, desc = "10분 동안 주는 피해 +15%" },
-	{ id = "skypill", name = "천정단", icon = "💎", cost = 150, desc = "모든 능력치 +800" },
-	{ id = "cloudmount", name = "날개구름 (탈것)", icon = "☁", cost = 600, desc = "가장 빠른 탈것 (은자 대신 천정으로)" },
 	{ id = "wine", name = "선로주", icon = "🍶", cost = 120, desc = "천상의 이슬로 빚은 술 (초·취팔선권의 재료)" },
+	{ id = "skyscroll10", name = "천상 두루마리 묶음", icon = "📚", cost = 360, desc = "심법 두루마리 열" },
 }
+-- 3.12판 심법 확정 강화 (천정): 가진 심법 하나를 골라 등급을 한 칸 올린다 (천상까지). [지금 등급] = 드는 천정
+Config.SKY_REFINE = { 80, 200, 500, 1400, 3600 }
+-- 시그니처 장신구가 있는 권법인가 (천상 빛깔을 입힐 수 있는가)
+function Config.hasGear(st: any): boolean
+	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
+end
 -- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
 --   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
 --   선로주: 천궁 상점에서 천정으로 빚는다

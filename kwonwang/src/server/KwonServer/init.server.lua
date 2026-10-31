@@ -72,6 +72,9 @@ type Profile = {
 	skyGems: number, -- 천정 (천상계 화폐)
 	mats: { [string]: number }, -- 2.5판: 천상 재료 (초월 권법)
 	skyBuffUntil: number, -- 천상 영약 (주는 피해 +15%)
+	skyTint: { [string]: boolean }, -- 3.12판: 천상 빛깔을 입힌 권법 (장신구)
+	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
+	skyAura: boolean?, -- 3.12판: 천상 오라
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
 	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
@@ -115,6 +118,7 @@ local function defaultProfile(): Profile
 		skyGems = 0,
 		mats = {},
 		skyBuffUntil = 0,
+		skyTint = {},
 		rebirth = 0,
 		perks = {},
 		samsara = 0,
@@ -234,6 +238,15 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
+	if type(data.skyTint) == "table" then
+		for id, on in pairs(data.skyTint) do
+			if type(id) == "string" and Config.STYLE_BY_ID[id] and on == true then
+				p.skyTint[id] = true
+			end
+		end
+	end
+	p.skyTintOff = data.skyTintOff == true or nil
+	p.skyAura = data.skyAura == true or nil
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	for _, key in ipairs({ "mq", "mqn" }) do
 		local src = (data :: any)[key]
@@ -681,6 +694,9 @@ local function pushState(player: Player)
 		skyGems = p.skyGems,
 		mats = p.mats,
 		skyBuffLeft = math.max(0, p.skyBuffUntil - os.time()),
+		skyTint = p.skyTint,
+		skyTintOff = p.skyTintOff == true,
+		skyAura = p.skyAura == true,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -830,6 +846,9 @@ local function refreshFighter(player: Player)
 	local oldMax = f.maxHp
 	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
+	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
+	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
+	f.model:SetAttribute("SkyAura", p.skyAura or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -4241,6 +4260,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			if action ~= "mountBuy" then
 				return
 			end
+			if m.gemsOnly then
+				toast(player, "☁ " .. m.name .. "은(는) 천정으로만 얻어요 (천궁의 천상 상점)")
+				return
+			end
 			if p.coins < m.cost then
 				toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(m.cost)))
 				return
@@ -4266,6 +4289,19 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "☁ 이미 날개구름이 있어요")
 			return
 		end
+		local cur = Config.STYLE_BY_ID[p.style]
+		if it.id == "skytint" then
+			if not Config.hasGear(cur) then
+				toast(player, "🌌 지금 쓰는 권법에는 시그니처 장신구가 없어요 (장신구가 있는 권법을 쓰고 사세요)")
+				return
+			elseif p.skyTint[p.style] then
+				toast(player, "🌌 " .. cur.name .. "의 장신구는 이미 천상 빛깔이에요")
+				return
+			end
+		elseif it.id == "skyaura" and p.skyAura then
+			toast(player, "💫 이미 천상 오라가 있어요")
+			return
+		end
 		if p.skyGems < it.cost then
 			toast(player, string.format("💠 천정이 부족해요 (%d 필요)", it.cost))
 			return
@@ -4283,11 +4319,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 					pushState(player)
 				end
 			end)
-		elseif it.id == "skypill" then
-			for _, sd in ipairs(Config.Stats) do
-				p.stats[sd.id] += 800
-			end
-			Story.check(player)
+		elseif it.id == "skytint" then
+			p.skyTint[p.style] = true
+			p.skyTintOff = nil
+		elseif it.id == "skyaura" then
+			p.skyAura = true
 		elseif it.id == "cloudmount" then
 			p.mounts.cloud = true
 			p.mountSel = "cloud"
@@ -4342,6 +4378,35 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Manual.equip(player, a1, true)
 	elseif action == "manualUnequip" then
 		Manual.equip(player, a1, false)
+	elseif action == "manualRefine" then
+		-- 3.12판 심법 확정 강화: 천정으로 등급을 한 칸 올린다
+		local m = type(a1) == "string" and Config.MANUAL_BY_ID[a1]
+		local r = m and p.manuals[a1]
+		if not m or not r then
+			return
+		end
+		local cost = Config.SKY_REFINE[r]
+		if not cost then
+			toast(player, "💠 이미 가장 높은 등급 (천상)이에요")
+			return
+		end
+		if p.skyGems < cost then
+			toast(player, string.format("💠 천정이 부족해요 (%d 필요)", cost))
+			return
+		end
+		p.skyGems -= cost
+		p.manuals[a1] = r + 1
+		st.dirty = true
+		refreshFighter(player)
+		local R2 = Config.MANUAL_RARITY[r + 1]
+		toast(player, string.format("💠 %s %s → %s", m.icon, m.name, R2.name))
+		pushState(player)
+	elseif action == "skyTintToggle" then
+		p.skyTintOff = not p.skyTintOff or nil
+		st.dirty = true
+		refreshFighter(player)
+		toast(player, p.skyTintOff and "🌌 천상 빛깔을 껐어요" or "🌌 천상 빛깔을 켰어요")
+		pushState(player)
 	elseif action == "seen" then
 		-- 화면에서 본 것 (조작 안내, 보스와 처음 맞붙는 컷씬)
 		if type(a1) == "string" and not p.seen[a1] and (a1 == "controls" or (string.sub(a1, 1, 5) == "boss_" and Config.CUTSCENES[a1] ~= nil)) then
