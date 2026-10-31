@@ -2016,7 +2016,7 @@ function handlers.skillfx(data: any)
 		Null.run(data)
 		return
 	end
-	-- 3.7판 호접몽권
+	-- 3.7판 몽유권
 	if Dream.handles(data) then
 		Dream.run(data)
 		return

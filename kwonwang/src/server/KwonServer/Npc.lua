@@ -679,14 +679,19 @@ local function dressMaster(model: Model, style: any)
 		end
 		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "hojeop" then
-		-- 몽선: 흰 머리를 틀어 올린 졸린 노인, 어깨의 작은 나비 날개 둘, 머리의 꽃 장식, 손의 연꽃
+		-- 몽선: 흰 수염의 졸린 노인, 남색 잠꼬깔 (끝에 별 방울), 등 뒤의 창백한 초승달, 손에 든 작은 달 등불
 		beard(WHITE_HAIR)
-		wear(model, "Head", "HairBun", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, hs.Y * 0.62, 0.15), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		wear(model, "Head", "HairFlower", Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.35, hs.Y * 0.62, 0.1), Color3.fromRGB(255, 170, 210), Enum.Material.Neon, Enum.PartType.Ball)
-		for _, x in ipairs({ -1, 1 }) do
-			wear(model, "UpperTorso", "DreamWing", Vector3.new(1.6, 1.3, 0.08), CFrame.new(x * 0.9, 0.5, 0.65) * CFrame.Angles(0, x * math.rad(25), x * math.rad(-20)), x > 0 and Color3.fromRGB(200, 170, 255) or Color3.fromRGB(150, 240, 210), Enum.Material.Glass, Enum.PartType.Ball)
+		local NIGHT = Color3.fromRGB(46, 50, 120)
+		local MOONC = Color3.fromRGB(255, 236, 180)
+		wear(model, "Head", "NightCap", Vector3.new(hs.X * 1.05, hs.Y * 0.45, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.55, 0), NIGHT, Enum.Material.Fabric)
+		wear(model, "Head", "NightCapTip", Vector3.new(hs.X * 0.6, hs.Y * 0.7, hs.Z * 0.6), CFrame.new(hs.X * 0.25, hs.Y * 0.95, 0.1) * CFrame.Angles(0, 0, math.rad(-35)), NIGHT, Enum.Material.Fabric)
+		wear(model, "Head", "NightCapStar", Vector3.new(0.4, 0.4, 0.4), CFrame.new(hs.X * 0.6, hs.Y * 1.05, 0.15), MOONC, Enum.Material.Neon, Enum.PartType.Ball)
+		for k = 0, 5 do
+			local a = math.rad(-75 + k * 30)
+			wear(model, "UpperTorso", "DreamMoon", Vector3.new(0.35, 0.75 - math.abs(k - 2.5) * 0.08, 0.15), CFrame.new(math.sin(a) * 1.3, 1.1 + math.cos(a) * 1.3 - 0.9, 0.9) * CFrame.Angles(0, 0, -a), MOONC, Enum.Material.Neon)
 		end
-		wear(model, "LeftHand", "Lotus", Vector3.new(0.9, 0.5, 0.9), CFrame.new(0, -0.5, 0), Color3.fromRGB(255, 190, 210), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "LeftHand", "MoonLamp", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, -0.6, 0), MOONC, Enum.Material.Neon, Enum.PartType.Ball)
+		wear(model, "LeftHand", "MoonLampCap", Vector3.new(0.75, 0.15, 0.75), CFrame.new(0, -0.2, 0), NIGHT, Enum.Material.Metal)
 	elseif id == "chosengha" then
 		-- 천성선: 흰 수염, 별을 수놓은 남색 높은 관, 어깨의 금빛 별 둘, 손에 쥔 별 지팡이
 		beard(WHITE_HAIR)

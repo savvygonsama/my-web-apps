@@ -5411,7 +5411,7 @@ task.spawn(function()
 				return
 			end
 		end
-		-- 3.7판: 두 번 환생해야 만나 주는 사부 (호접몽권)
+		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...드르렁. (깨지 않는다. 환생을 %d번 한 몸이라야 이 꿈에 들어올 수 있을 것 같다)", sdef.rebirthReq) })
 			return

@@ -1,4 +1,4 @@
--- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 꺼지는 촛불
+-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
 -- 빛깔은 은빛 재와 차가운 푸른 넋불 둘뿐 (번쩍이는 색을 쓰지 않는다)
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
@@ -12,7 +12,6 @@ local ASH_DARK = Color3.fromRGB(110, 114, 124)
 local SOUL = Color3.fromRGB(110, 210, 255)
 local SAND = Color3.fromRGB(214, 200, 168)
 local WOOD = Color3.fromRGB(70, 56, 46)
-local WAX = Color3.fromRGB(236, 232, 222)
 local WHITE = Color3.new(1, 1, 1)
 local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
 local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
@@ -511,25 +510,63 @@ local function hourglass(data: any)
 end
 
 ------------------------------------------------------------------------
--- X 만등멸: 빛깔이 빠지고, 둘레에 푸른 촛불 서른여섯. 하나씩 꺼지며 넋불이 적에게, 마지막엔 어둠과 한 번의 숨
+-- X 경화수월: 빛깔이 빠지고, 둘레에 거울 열둘이 솟는다. 발밑은 물처럼 비치는 바닥, 하늘엔 창백한 달과 바닥에 비친 달.
+-- 거울 속 잿빛 내가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭하다, 거울마다 금이 가고 한가운데로 깨져 쏟아진다
 ------------------------------------------------------------------------
-type Candle = { body: BasePart, flame: BasePart, light: PointLight?, pos: Vector3, lit: boolean }
-type Rite = { at: Vector3, R: number, candles: { Candle }, cc: ColorCorrectionEffect?, done: boolean }
-local rites: { [number]: Rite } = {}
-local function riteEnd(r: Rite)
-	if r.done then
+local GLASS = Color3.fromRGB(200, 222, 236)
+type Ghost = { parts: { BasePart }, rel: { CFrame }, cf: CFrame }
+type Mirror = { at: Vector3, R: number, panels: { BasePart }, extras: { BasePart }, model: Model?, cc: ColorCorrectionEffect?, done: boolean, ghosts: { Ghost } }
+local mirrors: { [number]: Mirror } = {}
+local function ghostOf(model: Model, cf: CFrame): Ghost
+	local list = statueOf(model, cf)
+	local rel: { CFrame } = {}
+	for i, q in ipairs(list) do
+		q.Material = Enum.Material.Glass
+		q.Color = GLASS:Lerp(SOUL, math.random() * 0.3)
+		q.Transparency = 1
+		q.Reflectance = 0.3
+		rel[i] = cf:ToObjectSpace(q.CFrame)
+	end
+	return { parts = list, rel = rel, cf = cf }
+end
+local function ghostMove(gh: Ghost, cf: CFrame)
+	gh.cf = cf
+	for i, q in ipairs(gh.parts) do
+		if q.Parent then
+			q.CFrame = cf * gh.rel[i]
+		end
+	end
+end
+local function ghostAlpha(gh: Ghost, a: number, time: number)
+	for _, q in ipairs(gh.parts) do
+		if q.Parent then
+			tween(q, time, { Transparency = a })
+		end
+	end
+end
+local function mirrorEnd(mr: Mirror)
+	if mr.done then
 		return
 	end
-	r.done = true
-	for _, c in ipairs(r.candles) do
-		if c.body.Parent then
-			fadeOut(c.body, 0.6, { Size = c.body.Size * Vector3.new(1, 0.2, 1), CFrame = c.body.CFrame - Vector3.new(0, c.body.Size.Y * 0.4, 0) })
-		end
-		if c.flame.Parent then
-			fadeOut(c.flame, 0.2)
+	mr.done = true
+	for _, gh in ipairs(mr.ghosts) do
+		for _, q in ipairs(gh.parts) do
+			if q.Parent then
+				fadeOut(q, 0.2)
+			end
 		end
 	end
-	local cc = r.cc
+	for _, q in ipairs(mr.panels) do
+		if q.Parent then
+			fadeOut(q, 0.3)
+		end
+	end
+	for _, q in ipairs(mr.extras) do
+		if q.Parent then
+			fadeOut(q, 0.6)
+		end
+	end
+	local cc = mr.cc
 	if cc then
 		tween(cc, 0.9, { Saturation = 0, Brightness = 0, Contrast = 0, TintColor = WHITE })
 		task.delay(1, function()
@@ -537,168 +574,227 @@ local function riteEnd(r: Rite)
 		end)
 	end
 end
-local function candleOpen(data: any)
+local function mirrorOpen(data: any)
 	local at: Vector3 = data.at
 	if not near(at, 320) then
 		return
 	end
-	local R = data.radius or 38
-	local n = data.candles or 36
+	local R = data.radius or 36
 	local cut = data.cut or 1.4
-	local light = data.light or 0.4
-	local out = data.out or 2.2
-	local dark = data.dark or 0.5
+	local rise = data.rise or 0.5
+	local echo = data.echo or 1.6
+	local crack = data.crack or 0.5
 	local g = ground(at)
-	local rite: Rite = { at = g, R = R, candles = {}, cc = nil, done = false }
-	rites[data.id] = rite
-	-- 가까이 있으면 세상의 빛깔이 빠진다
+	local mr: Mirror = { at = g, R = R, panels = {}, extras = {}, model = data.m, cc = nil, done = false, ghosts = {} }
+	mirrors[data.id] = mr
 	if near(at, R * 2.5) then
 		local cc = Instance.new("ColorCorrectionEffect")
 		cc.Name = "KwonMujoGrade"
 		cc.Parent = Lighting
-		tween(cc, 0.5, { Saturation = -0.9, Brightness = -0.04, Contrast = 0.1 })
-		rite.cc = cc
+		tween(cc, 0.6, { Saturation = -1, Brightness = -0.06, Contrast = 0.15, TintColor = Color3.fromRGB(225, 236, 255) })
+		mr.cc = cc
 	end
-	-- 촛불: 바깥 고리 (둘레의 90%), 높이가 조금씩 다르다
-	for i = 1, n do
-		local a = (i - 1) / n * math.pi * 2
-		local pos = g + Vector3.new(math.cos(a) * R * 0.9, 0, math.sin(a) * R * 0.9)
-		local h = 2 + (i % 3) * 0.6
-		local body = part(Vector3.new(0.7, h, 0.7), WAX, Enum.Material.SmoothPlastic, 1)
-		body.CFrame = CFrame.new(pos + Vector3.new(0, h / 2, 0))
-		local flame = part(Vector3.new(0.45, 0.9, 0.45), SOUL, Enum.Material.Neon, 1, "ball")
-		flame.CFrame = CFrame.new(pos + Vector3.new(0, h + 0.5, 0))
-		local pl: PointLight? = nil
-		if i % 4 == 0 then
-			local l = Instance.new("PointLight")
-			l.Color = SOUL
-			l.Range = 12
-			l.Brightness = 0
-			l.Parent = flame
-			pl = l
-		end
-		table.insert(rite.candles, { body = body, flame = flame, light = pl, pos = pos + Vector3.new(0, h + 0.5, 0), lit = false })
-	end
-	-- 차례로 켜진다 (내 앞에서부터 양쪽으로)
-	for i, c in ipairs(rite.candles) do
-		task.delay(cut * 0.4 + (i - 1) / n * (cut * 0.5 + light), function()
-			if rite.done then
-				return
-			end
-			tween(c.body, 0.2, { Transparency = 0 })
-			tween(c.flame, 0.2, { Transparency = 0.05 })
-			local l = c.light
-			if l then
-				tween(l, 0.3, { Brightness = 1.2 })
-			end
-			c.lit = true
+	-- 물처럼 비치는 바닥 (컷씬 동안 천천히 번진다)
+	local floor = part(Vector3.new(0.2, 4, 4), GLASS, Enum.Material.Glass, 0.55, "cyl")
+	floor.Reflectance = 0.6
+	floor.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * UP
+	tween(floor, cut + rise, { Size = Vector3.new(0.2, R * 2, R * 2) })
+	table.insert(mr.extras, floor)
+	-- 하늘의 달과 바닥에 비친 달 (경화수월: 거울 속 꽃, 물 속 달)
+	local moonPos = g + Vector3.new(0, 46, 0) + flat(Vector3.new(math.random() - 0.5, 0, math.random() - 0.5)) * 10
+	local moon = part(Vector3.new(9, 9, 9), Color3.fromRGB(236, 242, 255), Enum.Material.Neon, 1, "ball")
+	moon.CFrame = CFrame.new(moonPos)
+	tween(moon, cut, { Transparency = 0.1 })
+	table.insert(mr.extras, moon)
+	local halo = part(Vector3.new(0.2, 18, 18), SOUL, Enum.Material.Neon, 1, "cyl")
+	halo.CFrame = CFrame.lookAt(moonPos, at) * CFrame.Angles(0, math.rad(90), 0)
+	tween(halo, cut, { Transparency = 0.85 })
+	table.insert(mr.extras, halo)
+	local water = part(Vector3.new(0.1, 8, 8), Color3.fromRGB(236, 242, 255), Enum.Material.Neon, 1, "cyl")
+	water.CFrame = CFrame.new(Vector3.new(moonPos.X, g.Y + 0.2, moonPos.Z)) * UP
+	tween(water, cut, { Transparency = 0.35 })
+	table.insert(mr.extras, water)
+	-- 물결 (컷씬 동안 바닥에 동심원)
+	for k = 0, 3 do
+		task.delay(k * cut / 4, function()
+			Fx.ring(g + Vector3.new(0, 0.3, 0), GLASS, 0.6, R * 2, 0.9)
 		end)
 	end
-	-- 촛불이 흔들린다
-	local t0 = os.clock()
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		if rite.done then
-			conn:Disconnect()
-			return
-		end
-		local t = os.clock() - t0
-		for i, c in ipairs(rite.candles) do
-			if c.lit and c.flame.Parent then
-				local w = math.sin(t * 9 + i) * 0.08
-				c.flame.CFrame = CFrame.new(c.pos) * CFrame.Angles(w, 0, w * 0.7)
+	Fx.sound("ping", 0.5, 0.5, at)
+	-- 거울 열둘이 둘레에서 솟는다 (가운데를 바라본다)
+	local n = 12
+	for i = 1, n do
+		local a = (i - 1) / n * math.pi * 2
+		local pos = g + Vector3.new(math.cos(a) * R * 0.85, 0, math.sin(a) * R * 0.85)
+		local face = CFrame.lookAt(pos, Vector3.new(g.X, pos.Y, g.Z))
+		local h, w = 13, 7
+		local glass = part(Vector3.new(w, h, 0.3), GLASS, Enum.Material.Glass, 0.3)
+		glass.Reflectance = 0.75
+		local frame = part(Vector3.new(w + 1, h + 1, 0.2), ASH_DARK, Enum.Material.Slate, 0)
+		local top = face * CFrame.new(0, h / 2 + 0.5, 0)
+		local downCF = face * CFrame.new(0, -h / 2 - 1, 0)
+		glass.CFrame = downCF
+		frame.CFrame = downCF * CFrame.new(0, 0, 0.3)
+		table.insert(mr.panels, glass)
+		table.insert(mr.extras, frame)
+		task.delay(cut + (i % 4) * rise * 0.12, function()
+			if mr.done then
+				return
 			end
-		end
+			tween(glass, rise * 0.6, { CFrame = top }, Enum.EasingStyle.Back)
+			tween(frame, rise * 0.6, { CFrame = top * CFrame.new(0, 0, 0.3) }, Enum.EasingStyle.Back)
+			ashPuff(pos, 3, 1, 2)
+		end)
+	end
+	task.delay(cut, function()
+		Fx.sound("heavy", 0.6, 1.4, at)
+		shakeNear(g, 1.2, 160)
 	end)
-	-- 마지막 촛불이 꺼지면 어둠, 그리고 한 번의 숨
-	task.delay(cut + light + out, function()
-		local cc = rite.cc
-		if cc then
-			tween(cc, 0.25, { Brightness = -0.35, Contrast = 0.3 })
-		end
-		Fx.sound("fall", 0.5, 0.5, g)
-	end)
-	task.delay(cut + light + out + dark, function()
-		if rite.done then
+	-- 금이 간다: 거울마다 넋빛 금이 번진다
+	task.delay(cut + rise + echo, function()
+		if mr.done then
 			return
 		end
-		local cc = rite.cc
-		if cc then
-			cc.Brightness = 0.3
-		end
-		-- 숨: 하얀 바람의 고리가 가운데에서 퍼지고, 모든 것이 재로
-		for k = 0, 3 do
-			task.delay(k * 0.07, function()
-				Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and WHITE or SOUL, 4, R * 2.4 + k * 10, 0.8)
+		for i, q in ipairs(mr.panels) do
+			task.delay((i % 6) * crack * 0.08, function()
+				if q.Parent then
+					crackLines(q.Position, 5, 6, crack, SOUL, q.CFrame.LookVector)
+					tween(q, crack * 0.5, { Transparency = 0.15 })
+				end
 			end)
 		end
-		for _ = 1, 10 do
-			local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
-			ashPuff(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 6, 1.6, 6)
+		crackLines(g + Vector3.new(0, 0.3, 0), 10, R * 0.8, crack + 0.2, SOUL)
+		if water.Parent then
+			crackLines(water.Position + Vector3.new(0, 0.1, 0), 5, 5, crack, WHITE)
 		end
-		Fx.burst("smoke", g + Vector3.new(0, 3, 0), ASH, 30, 3.5)
-		Fx.flash(g + Vector3.new(0, 4, 0), WHITE, 140, 9, 0.6)
-		Fx.sound("shatter", 1, 0.5, g)
-		Fx.sound("heavy", 1, 0.4, g)
-		shakeNear(g, 3.2, 220)
-		if opts.flash and near(g, R * 2) then
-			opts.flash(WHITE, 0.3)
-		end
-		riteEnd(rite)
+		Fx.sound("deflect", 0.8, 0.6, at)
+		shakeNear(g, 0.8, 160)
 	end)
-	task.delay(cut + light + out + dark + 4, function()
-		riteEnd(rite)
-		rites[data.id] = nil
-	end)
-end
-local function candleOut(data: any)
-	local rite = rites[data.id]
-	if not rite or rite.done then
-		return
-	end
-	local c = rite.candles[data.idx or 0]
-	if not c then
-		return
-	end
-	c.lit = false
-	local from = c.pos
-	fadeOut(c.flame, 0.15, { Size = Vector3.new(0.1, 0.1, 0.1) })
-	local l = c.light
-	if l then
-		tween(l, 0.15, { Brightness = 0 })
-	end
-	c.body.Color = Color3.fromRGB(180, 176, 168)
-	Fx.burst("smoke", from, ASH, 2, 0.6)
-	-- 넋불이 적에게 날아가 몸을 깎는다
-	local target = rootOf(data.to)
-	local to = target and target.Position or rite.at + Vector3.new(0, 3, 0)
-	local wisp = part(Vector3.new(0.7, 0.7, 0.7), SOUL, Enum.Material.Neon, 0.05, "ball")
-	wisp.CFrame = CFrame.new(from)
-	local t0 = os.clock()
-	local last = from
-	local side = Vector3.new(math.random() - 0.5, 1, math.random() - 0.5) * 4
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		local u = math.clamp((os.clock() - t0) / 0.3, 0, 1)
-		local goal = target and target.Parent and target.Position or to
-		local pos = from:Lerp(goal, u * u) + side * math.sin(u * math.pi)
-		wisp.CFrame = CFrame.new(pos)
-		if (pos - last).Magnitude > 0.5 then
-			local tr = beam(last, pos, 0.25, SOUL, 0.3)
-			fadeOut(tr, 0.25, { Size = Vector3.new(0.02, 0.02, tr.Size.Z) })
-			last = pos
+	-- 깨진다: 거울 조각이 모두 한가운데로 쏟아져 들어가 터진다
+	task.delay(cut + rise + echo + crack, function()
+		if mr.done then
+			return
 		end
-		if u >= 1 then
-			conn:Disconnect()
-			wisp:Destroy()
-			if target then
-				shards(pos, 4, 0.6, ASH)
-				ashPuff(pos, 3, 0.8, 2)
+		local mid = g + Vector3.new(0, 4, 0)
+		for _, q in ipairs(mr.panels) do
+			local from = q.Position
+			for _ = 1, 6 do
+				local s = part(Vector3.new(1.8, 0.12, 1.4) * (0.6 + math.random() * 0.8), GLASS, Enum.Material.Glass, 0.15, "wedge")
+				s.Reflectance = 0.6
+				s.CFrame = CFrame.new(from + Vector3.new((math.random() - 0.5) * 6, (math.random() - 0.5) * 10, (math.random() - 0.5) * 2)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+				local land = mid + Vector3.new((math.random() - 0.5) * 3, (math.random() - 0.5) * 3, (math.random() - 0.5) * 3)
+				tween(s, 0.28, { CFrame = CFrame.new(land) * CFrame.Angles(math.random() * 9, math.random() * 9, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				task.delay(0.3, function()
+					s:Destroy()
+				end)
 			end
 		end
+		for _, q in ipairs(mr.panels) do
+			q:Destroy()
+		end
+		table.clear(mr.panels)
+		Fx.sound("shatter", 1, 0.8, at)
+		task.delay(0.3, function()
+			for k = 0, 3 do
+				task.delay(k * 0.07, function()
+					Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and WHITE or SOUL, 4, R * 2.4 + k * 10, 0.8)
+				end)
+			end
+			shards(mid, 30, 2.2, GLASS)
+			for _ = 1, 8 do
+				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+				ashPuff(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 5, 1.5, 6)
+			end
+			if moon.Parent then
+				shards(moon.Position, 14, 1.6, Color3.fromRGB(236, 242, 255))
+				moon:Destroy()
+			end
+			Fx.burst("smoke", mid, ASH, 26, 3.5)
+			Fx.flash(mid, WHITE, 140, 9, 0.6)
+			Fx.sound("shatter", 1, 0.5, at)
+			Fx.sound("heavy", 1, 0.4, at)
+			shakeNear(g, 3.2, 220)
+			if opts.flash and near(g, R * 2) then
+				opts.flash(WHITE, 0.3)
+			end
+			mirrorEnd(mr)
+		end)
 	end)
-	if (data.idx or 0) % 3 == 0 then
-		Fx.sound("ping", 0.25, 0.6 + (data.idx or 0) / 40, from)
+	task.delay(cut + rise + echo + crack + 5, function()
+		mirrorEnd(mr)
+		mirrors[data.id] = nil
+	end)
+end
+local function mirrorEcho(data: any)
+	local mr = mirrors[data.id]
+	if not mr or mr.done then
+		return
+	end
+	local model = mr.model
+	if not model then
+		return
+	end
+	local every = data.every or 0.25
+	local n = data.n or 6
+	local targets = data.targets or {}
+	local count = math.min(#targets, 6)
+	for ti = 1, count do
+		local tm: Model? = targets[ti]
+		local tr = rootOf(tm)
+		if tr then
+			local gh = ghostOf(model, CFrame.new(mr.at))
+			table.insert(mr.ghosts, gh)
+			-- 칠 때마다 다른 거울에서 나온다
+			for k = 1, n do
+				task.delay((k - 1) * every, function()
+					if mr.done or #mr.panels == 0 then
+						return
+					end
+					local panel = mr.panels[((ti * 5 + k * 7) % #mr.panels) + 1]
+					local goal = tr.Parent and tr.Position or mr.at + Vector3.new(0, 3, 0)
+					local from = panel.Position - Vector3.new(0, 3, 0)
+					local dir = flat(goal - from)
+					local startCF = CFrame.lookAt(from, from + dir)
+					ghostMove(gh, startCF)
+					ghostAlpha(gh, 0.25, 0.05)
+					tween(panel, 0.08, { Transparency = 0.05 })
+					task.delay(0.1, function()
+						if panel.Parent then
+							tween(panel, 0.15, { Transparency = 0.3 })
+						end
+					end)
+					local hitPos = goal - dir * 2.5
+					local endCF = CFrame.lookAt(hitPos, hitPos + dir)
+					local t0 = os.clock()
+					local last = from + Vector3.new(0, 1, 0)
+					local conn: RBXScriptConnection
+					conn = RunService.Heartbeat:Connect(function()
+						local u = math.clamp((os.clock() - t0) / (every * 0.45), 0, 1)
+						local e = 1 - (1 - u) * (1 - u)
+						local cf = startCF:Lerp(endCF, e)
+						ghostMove(gh, cf)
+						local p = cf.Position + Vector3.new(0, 1, 0)
+						if (p - last).Magnitude > 1.5 then
+							local trl = beam(last, p, 0.5, GLASS, 0.5, Enum.Material.Glass)
+							fadeOut(trl, 0.25, { Size = Vector3.new(0.05, 0.05, trl.Size.Z) })
+							last = p
+						end
+						if u >= 1 or mr.done then
+							conn:Disconnect()
+							if mr.done then
+								return
+							end
+							shards(goal, 4, 0.7, GLASS)
+							crackLines(goal, 3, 2, 0.12, SOUL, -dir)
+							ghostAlpha(gh, 1, every * 0.4)
+						end
+					end)
+					if ti == 1 then
+						Fx.sound("swing", 0.45, 1.1 + k * 0.05, goal)
+					end
+				end)
+			end
+		end
 	end
 end
 
@@ -706,8 +802,8 @@ local HANDLERS: { [string]: (any) -> () } = {
 	ashStatues = ashStatues,
 	witherBloom = witherBloom,
 	hourglass = hourglass,
-	candleOpen = candleOpen,
-	candleOut = candleOut,
+	mirrorOpen = mirrorOpen,
+	mirrorEcho = mirrorEcho,
 }
 function Mujo.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "ashCrack")

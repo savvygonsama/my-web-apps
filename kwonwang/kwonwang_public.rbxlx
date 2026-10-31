@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.9.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.10.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2127,7 +2127,7 @@ table.insert(Config.Styles, {
 	},
 })
 -- 무상권 (3.6판 새로): 모든 것은 지나간다. 닿는 것마다 사기처럼 금이 가고 재로 흩어진다. 머리 뒤에 이 빠진 은빛 후광
--- E 잔영멸 (재로 빚은 나 다섯) · R 화무십일 (잿빛 꽃이 피었다 시든다) · G 제행무상 (모래시계) · X 만등멸 (촛불 서른여섯이 꺼진다)
+-- E 잔영멸 (재로 빚은 나 다섯) · R 화무십일 (잿빛 꽃이 피었다 시든다) · G 제행무상 (모래시계) · X 경화수월 (거울 열둘이 깨진다)
 table.insert(Config.Styles, {
 	id = "musangkwon",
 	name = "무상권",
@@ -2162,8 +2162,8 @@ table.insert(Config.Styles, {
 			mech = { kind = "witherBloom", dist = 9, radius = 11, bloom = 0.35, hold = 0.9, every = 0.3, pull = 28, tick = hit(0, 0, 0, 10, 10, 0.3, 0), burst = hit(0, 0, 0, 42, 40, 0.8, 16, 12) } },
 		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고, 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "hourglass", radius = 26, descend = 0.5, run = 2.4, every = 0.3, slow = 0.5, tick = hit(0, 0, 0, 10, 10, 0.3, 0), crack = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 60, 20) } },
-		X = { id = "mkX", name = "만등멸", desc = "초 오의. 컷씬: 세상의 빛깔이 빠진다 (그동안 무적). 둘레 38칸의 땅에 푸른 촛불 서른여섯이 둥글게 켜진다. 바람이 돌며 촛불이 하나씩 꺼질 때마다 그 넋불이 적에게 날아가 몸을 깎는다. 마지막 촛불이 꺼지면 세상이 어두워지고, 한 번의 숨에 모든 것이 재가 되어 흩어진다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
-			mech = { kind = "candleRite", cut = 1.4, radius = 38, candles = 36, light = 0.4, out = 2.2, hit = hit(0, 0, 0, 6, 6, 0.2, 0), dark = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
+		X = { id = "mkX", name = "경화수월", desc = "초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고, 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "mirrorWorld", cut = 1.4, radius = 36, rise = 0.5, echo = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 10, 0.3, 0), crack = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
 	},
 })
 -- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
@@ -2200,55 +2200,56 @@ table.insert(Config.Styles, {
 			mech = { kind = "kingBarrage", n = 6, delay = 0.15, every = 0.08, length = 28, width = 3.5, hit = hit(0, 0, 0, 12, 12, 0.3, 10), finalAt = 0.12, final = hit(0, 0, 0, 34, 34, 0.7, 34, 8) } },
 		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고, 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고, 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
 			mech = { kind = "kingLeap", dist = 24, land = 0.42, landR = 9, hit = hit(0, 0, 0, 30, 30, 0.6, 14, 10), collapse = 0.4, spikeR = 8, burst = hit(0, 0, 0, 30, 30, 0.6, 8, 22) } },
-		G = { id = "kwG", name = "패왕행차", desc = "발밑에서 앞으로 30칸 붉은 길이 깔리고 양옆에 금빛 깃발 여덟이 솟는다. 등 뒤에서 관을 쓴 금빛 왕의 그림자 넷이 길을 따라 내달리며 앞의 적을 짓밟고, 길 끝에서 함께 뛰어올라 내리찍어 왕관 모양으로 터진다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
-			mech = { kind = "kingProcession", length = 30, width = 9, unroll = 0.45, charge = 0.75, every = 0.1, hit = hit(0, 0, 0, 22, 22, 0.5, 14, 6), leap = 0.35, finalRadius = 16, final = hit(0, 0, 0, 150, 170, 1.6, 40, 30) } },
-		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛과 붉은빛으로 갈라지고 왕관 모양의 해가 떠오른다 (그동안 무적). 둘레 40칸의 적마다 하늘에서 왕의 인장이 찍힌다. 하늘에 금빛 문이 열리고 붉은 소매를 두른 거대한 금빛 팔이 내려와 가장 강한 적을 땅째 내리찍으며, 충격파 세 겹이 퍼진다. 마지막에 왕관의 해가 그 자리로 떨어지며 모든 인장이 함께 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
-			mech = { kind = "royalDecree", cut = 1.5, range = 40, seals = 0.8, seal = hit(0, 0, 0, 16, 16, 0.4, 0), gate = 0.5, fall = 0.45, fistR = 20, fist = hit(0, 0, 0, 160, 170, 1.4, 60, 10), rings = 3, ringEvery = 0.22, ringHit = hit(0, 0, 0, 30, 30, 0.6, 40, 8), sunAt = 0.9, finalRadius = 30, final = hit(0, 0, 0, 200, 230, 1.8, 80, 30), sealBurst = hit(0, 0, 0, 40, 40, 0.6, 20, 10) } },
+		G = { id = "kwG", name = "패왕난무", desc = "둘레에 금빛 기둥 여덟이 솟아 왕의 투기장이 되고 적을 안으로 끌어들인다. 기둥마다 붉은 소매의 거대한 금빛 주먹이 나타나 차례로 한가운데를 내지르고, 마지막에 땅속에서 솟은 주먹이 모두를 하늘로 올려친다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "kingArena", radius = 22, rise = 0.35, pull = 34, fists = 8, every = 0.12, width = 6, hit = hit(0, 0, 0, 14, 14, 0.5, 10, 4), upper = 0.3, final = hit(0, 0, 0, 140, 160, 1.6, 10, 46) } },
+		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛으로 갈라진다 (그동안 무적). 몸에서 금빛이 솟아 등 뒤에 관과 망토를 두른 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 왕이 주먹을 당겨 하늘의 금빛을 모으고 가장 강한 적에게 내리꽂는다. 땅이 꺼지며 충격파 세 겹, 금빛 빛기둥 넷이 십자로 내달린 뒤, 하늘에서 빛의 왕관이 내려와 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "kingAvatar", cut = 1.5, rise = 0.8, charge = 0.6, punch = 0.3, range = 44, fistR = 20, fist = hit(0, 0, 0, 170, 180, 1.4, 40, 20), rings = 3, ringEvery = 0.2, ringHit = hit(0, 0, 0, 26, 26, 0.6, 40, 8), cross = 0.6, crossLen = 40, crossW = 7, crossHit = hit(0, 0, 0, 40, 40, 0.7, 20, 14), crownAt = 0.4, finalRadius = 28, final = hit(0, 0, 0, 190, 220, 1.8, 60, 30) } },
 	},
 })
 
--- 3.7판 호접몽권 (두 번째 윤회의 꿈): 등에 빛깔이 흐르는 나비 날개. 꿈처럼 가볍고 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
--- E 몽접군무 (나비 떼) · R 몽포 (꿈 거품) · G 몽중몽 (꿈속의 꿈) · X 호접지몽 (거대한 꿈나비)
+-- 3.10판 몽유권 (두 번째 윤회의 꿈, 예전 호접몽권): 반쯤 잠든 채 꿈속을 걷는 권. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고,
+-- 달이 손에 닿는다. 빛깔은 밤하늘빛과 달빛 (안개처럼 번지는 보라·남빛, 따뜻한 달빛 금빛)
+-- E 양 세기 (울타리를 넘는 꿈양) · R 거꾸로 꿈 (중력이 뒤집힌다) · G 몽중몽 (떠다니는 섬·계단·문) · X 월하몽 (보름달과 밤 호수)
 table.insert(Config.Styles, {
 	id = "hojeop",
-	name = "호접몽권",
-	hanja = "胡蝶夢拳",
-	icon = "🦋",
+	name = "몽유권",
+	hanja = "夢遊拳",
+	icon = "🌙",
 	grade = "윤회",
 	rebirthStyle = 2,
 	rebirthReq = 2,
-	color = Color3.fromRGB(196, 150, 255),
-	color2 = Color3.fromRGB(130, 236, 226),
+	color = Color3.fromRGB(120, 124, 230),
+	color2 = Color3.fromRGB(255, 232, 170),
 	fx = "cloud",
-	dreamWings = true, -- 등의 나비 날개와 둘레의 비눗방울 (화면이 그린다)
+	dreamMoon = true, -- 머리 뒤를 천천히 도는 초승달과 작은 별, 발밑에 번지는 꿈 안개 (화면이 그린다)
 	hidden = true,
 	secret = true,
 	realmReq = 16,
 	trialHp = 10,
 	unlockHint = "두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라",
-	desc = "두 번째 삶의 꿈에서 배운 권. 주먹이 닿는 곳마다 빛깔 고운 꿈이 피어난다. 나비가 나인지, 내가 나비인지 아무도 모른다.",
-	gimmick = "꿈결: 네 번 맞힐 때마다 상대가 무지갯빛 꿈 거품에 갇혀 둥실 떠올랐다가 터진다. 꿈처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
+	desc = "두 번째 삶의 꿈속을 걷는 권. 반쯤 잠든 채 싸운다. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고, 달이 손에 닿는다.",
+	gimmick = "꿈길: 네 번 맞힐 때마다 상대 등 뒤 허공에 꿈의 문이 열려 상대를 빨아들였다가 뱉어 낸다. 잠결처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
 	deflect = 0.24,
 	dodgeChance = 0.15,
 	speed = 1.2,
-	pulse = { every = 4, kind = "dreamBubble", radius = 6, delay = 0.6, name = "꿈 거품", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
+	pulse = { every = 4, kind = "dreamDoor", radius = 6, delay = 0.6, name = "꿈의 문", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
 	stance = "stance_cloud",
 	combo = {
-		{ id = "hj1", name = "나비 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
-		{ id = "hj2", name = "꽃잎 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
-		{ id = "hj3", name = "꿈 바퀴", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
+		{ id = "hj1", name = "잠결 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj2", name = "꿈결 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj3", name = "뒤척임", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
 		{ id = "hj4", name = "깨는 손", pose = "double_palm", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 24, 8) } },
 	},
 	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
 	skills = {
-		E = { id = "hjE", name = "몽접군무", desc = "소매에서 빛깔 고운 나비 열둘이 쏟아져 둘레의 적 넷에게 날아가 팔랑이며 맴돌다 하나씩 부딪쳐 빛가루로 흩어진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "butterflySwarm", n = 12, range = 32, targets = 4, delay = 0.15, every = 0.04, travel = 0.5, hit = hit(0, 0, 0, 9, 8, 0.3, 4, 4) } },
-		R = { id = "hjR", name = "몽포", desc = "앞에 커다란 무지갯빛 꿈 거품이 부풀어 그 안의 적을 가두고 둥실 띄운다. 1.2초 뒤 거품이 터지며 별 사탕 같은 빛조각이 흩어진다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
-			mech = { kind = "dreamTrap", dist = 9, radius = 9, delay = 0.25, hold = 1.2, hit = hit(0, 0, 0, 12, 10, 1.4, 0, 16), burst = hit(0, 0, 0, 40, 40, 0.8, 10, 10) } },
-		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈이 된다. 땅은 무지갯빛 구름 바다, 하늘엔 커다란 초승달과 오로라, 비눗방울이 떠오르고 별과 달 조각이 쏟아진다. 꿈속의 적은 굼뜨고 계속 맞다가, 마지막에 꿈에서 깨듯 펑 터진다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "dreamSea", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
-		X = { id = "hjX", name = "호접지몽", desc = "초 오의. 컷씬: 하늘이 분홍과 라일락빛 새벽이 된다 (그동안 무적). 등 뒤에서 날개폭이 하늘을 가리는 꿈나비가 날아오른다. 날갯짓 세 번마다 무지갯빛 가루 물결이 둘레를 휩쓸어 적을 띄우고, 나비가 날개를 접어 모두를 감싸 안으면 커다란 무지개 꽃으로 터진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
-			mech = { kind = "butterflyDream", cut = 1.4, rise = 0.6, flaps = 3, flapEvery = 0.6, range = 40, flap = hit(0, 0, 0, 40, 40, 0.8, 10, 18), fold = 0.6, pull = 40, finalRadius = 34, final = hit(0, 0, 0, 220, 250, 1.8, 60, 28) } },
+		E = { id = "hjE", name = "양 세기", desc = "하나, 둘, 셋... 구름 같은 꿈양 다섯이 허공의 나무 울타리를 차례로 뛰어넘어 둘레의 적에게 뛰어들고, 부딪치면 잠의 별가루로 터진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "sheepCount", n = 5, range = 32, targets = 4, delay = 0.15, every = 0.14, travel = 0.55, hit = hit(0, 0, 0, 18, 16, 0.4, 6, 8) } },
+		R = { id = "hjR", name = "거꾸로 꿈", desc = "앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 그 안의 적은 하늘로 떨어지듯 거꾸로 떠오르다가, 꿈이 바로 서는 순간 땅에 내리꽂힌다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "upsideDown", dist = 9, radius = 11, delay = 0.25, hold = 1.2, every = 0.3, tick = hit(0, 0, 0, 8, 8, 0.3, 0, 12), slam = hit(0, 0, 0, 40, 40, 0.8, 10, 0) } },
+		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈속이 된다. 밤하늘에 커다란 달이 뜨고, 풀이 덮인 작은 섬과 끝이 없는 계단과 문들이 둥실 떠다닌다. 문이 적 곁에서 열렸다 닫힐 때마다 꿈에 베이고, 마지막에 모든 것이 아래로 떨어지며 꿈에서 깬다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "dreamIsles", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
+		X = { id = "hjX", name = "월하몽", desc = "초 오의. 컷씬: 밤이 내리고 하늘을 가득 채우는 보름달이 떠오른다 (그동안 무적). 둘레 40칸의 땅이 달을 비추는 고요한 밤 호수가 되고, 등불과 문이 떠오른다. 적은 잠든 듯 둥실 떠올라 별의 소용돌이에 감기고, 마지막에 달이 천천히 내려와 호수에 닿는 순간 하얀 빛이 소리 없이 번지며 모두 떨어진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "moonDream", cut = 1.4, rise = 0.5, drift = 2.0, every = 0.25, range = 40, hit = hit(0, 0, 0, 10, 10, 0.3, 0, 6), descend = 0.8, finalRadius = 36, final = hit(0, 0, 0, 230, 260, 1.8, 40, 20) } },
 	},
 })
 
@@ -2461,7 +2462,7 @@ local FINISHERS = {
 	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
-	hojeop = { name = "몽접승천", pose = "petal_spin" },
+	hojeop = { name = "몽유승천", pose = "petal_spin" },
 	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
@@ -2928,13 +2929,13 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "hojeop" then
 		local pink = Color3.fromRGB(255, 180, 220)
-		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 나비 다루는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
+		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 꿈길 걷는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
-			P("rain", "별사탕 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
-			P("donut", "꿈 거품 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
-			P("charge", "나비 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
+			P("rain", "잠의 별비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
+			P("donut", "꿈문 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
+			P("charge", "몽유 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
 			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 34, 38, 0.8, 20) }),
-			P("quake", "호접지몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+			P("quake", "월하몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "chosengha" then
@@ -3896,7 +3897,7 @@ Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vect
 Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
 Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
 	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
--- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
+-- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
@@ -4369,7 +4370,7 @@ Config.MINIQUEST = {
 		{ kind = "return", text = "천성선에게 돌아가라" },
 	} },
 	hojeop = { title = "몽선의 꿈", steps = {
-		{ kind = "find", name = "꿈나비", icon = "🦋", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈나비 다섯을 깨워라 (T)" },
+		{ kind = "find", name = "잠든 꿈양", icon = "🐑", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈양 다섯을 깨워라 (T)" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
@@ -12093,7 +12094,7 @@ task.spawn(function()
 				return
 			end
 		end
-		-- 3.7판: 두 번 환생해야 만나 주는 사부 (호접몽권)
+		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
 			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...드르렁. (깨지 않는다. 환생을 %d번 한 몸이라야 이 꿈에 들어올 수 있을 것 같다)", sdef.rebirthReq) })
 			return
@@ -16762,14 +16763,19 @@ local function dressMaster(model: Model, style: any)
 		end
 		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "hojeop" then
-		-- 몽선: 흰 머리를 틀어 올린 졸린 노인, 어깨의 작은 나비 날개 둘, 머리의 꽃 장식, 손의 연꽃
+		-- 몽선: 흰 수염의 졸린 노인, 남색 잠꼬깔 (끝에 별 방울), 등 뒤의 창백한 초승달, 손에 든 작은 달 등불
 		beard(WHITE_HAIR)
-		wear(model, "Head", "HairBun", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, hs.Y * 0.62, 0.15), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		wear(model, "Head", "HairFlower", Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.35, hs.Y * 0.62, 0.1), Color3.fromRGB(255, 170, 210), Enum.Material.Neon, Enum.PartType.Ball)
-		for _, x in ipairs({ -1, 1 }) do
-			wear(model, "UpperTorso", "DreamWing", Vector3.new(1.6, 1.3, 0.08), CFrame.new(x * 0.9, 0.5, 0.65) * CFrame.Angles(0, x * math.rad(25), x * math.rad(-20)), x > 0 and Color3.fromRGB(200, 170, 255) or Color3.fromRGB(150, 240, 210), Enum.Material.Glass, Enum.PartType.Ball)
+		local NIGHT = Color3.fromRGB(46, 50, 120)
+		local MOONC = Color3.fromRGB(255, 236, 180)
+		wear(model, "Head", "NightCap", Vector3.new(hs.X * 1.05, hs.Y * 0.45, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.55, 0), NIGHT, Enum.Material.Fabric)
+		wear(model, "Head", "NightCapTip", Vector3.new(hs.X * 0.6, hs.Y * 0.7, hs.Z * 0.6), CFrame.new(hs.X * 0.25, hs.Y * 0.95, 0.1) * CFrame.Angles(0, 0, math.rad(-35)), NIGHT, Enum.Material.Fabric)
+		wear(model, "Head", "NightCapStar", Vector3.new(0.4, 0.4, 0.4), CFrame.new(hs.X * 0.6, hs.Y * 1.05, 0.15), MOONC, Enum.Material.Neon, Enum.PartType.Ball)
+		for k = 0, 5 do
+			local a = math.rad(-75 + k * 30)
+			wear(model, "UpperTorso", "DreamMoon", Vector3.new(0.35, 0.75 - math.abs(k - 2.5) * 0.08, 0.15), CFrame.new(math.sin(a) * 1.3, 1.1 + math.cos(a) * 1.3 - 0.9, 0.9) * CFrame.Angles(0, 0, -a), MOONC, Enum.Material.Neon)
 		end
-		wear(model, "LeftHand", "Lotus", Vector3.new(0.9, 0.5, 0.9), CFrame.new(0, -0.5, 0), Color3.fromRGB(255, 190, 210), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		wear(model, "LeftHand", "MoonLamp", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0, -0.6, 0), MOONC, Enum.Material.Neon, Enum.PartType.Ball)
+		wear(model, "LeftHand", "MoonLampCap", Vector3.new(0.75, 0.15, 0.75), CFrame.new(0, -0.2, 0), NIGHT, Enum.Material.Metal)
 	elseif id == "chosengha" then
 		-- 천성선: 흰 수염, 별을 수놓은 남색 높은 관, 어깨의 금빛 별 둘, 손에 쥔 별 지팡이
 		beard(WHITE_HAIR)
@@ -21314,192 +21320,6 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "candleRite" then
-		-- 3.6판 무상 만등멸 (초 오의): 컷씬 (무적) 뒤 둘레에 촛불 서른여섯. 하나씩 꺼질 때마다 그 넋불이 적을 깎고,
-		-- 마지막 촛불이 꺼지면 어두워졌다가 모든 것이 재로 흩어진다
-		local center = f.root.Position
-		local total = m.cut + m.light + m.out + m.dark + 0.3
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		local cid = math.random(1, 1000000000)
-		Push:FireAllClients("skillfx", { kind = "candleOpen", id = cid, m = f.model, at = center, dir = look, radius = m.radius, candles = m.candles, cut = m.cut / sp, light = m.light / sp, out = m.out / sp, dark = m.dark / sp, style = style })
-		for c = 1, m.candles do
-			after(m.cut + m.light + (c - 1) * m.out / m.candles, function()
-				local list = hostilesNear(f, center, m.radius)
-				local o = #list > 0 and list[(c - 1) % #list + 1] or nil
-				if o then
-					strike(f, o, hit, move)
-				end
-				Push:FireAllClients("skillfx", { kind = "candleOut", id = cid, idx = c, to = o and o.model or nil, style = style })
-			end)
-		end
-		after(m.cut + m.light + m.out + m.dark, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "kingProcession" then
-		-- 3.6판 권왕 패왕행차 (오의): 붉은 길과 금빛 깃발, 금빛 왕의 그림자 넷이 길을 따라 짓밟고, 끝에서 함께 내리찍는다
-		local from = f.root.Position
-		local to = from + look * m.length
-		Push:FireAllClients("skillfx", { kind = "kingProcession", m = f.model, from = from, to = to, width = m.width, unroll = m.unroll / sp, charge = m.charge / sp, leap = m.leap / sp, radius = m.finalRadius, style = style })
-		local ticks = math.floor(m.charge / m.every)
-		local lastHit: { [any]: number } = {}
-		for k = 1, ticks do
-			after(m.unroll + k * m.every, function()
-				local a = from:Lerp(to, (k - 1) / ticks)
-				local b = from:Lerp(to, k / ticks)
-				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
-					if not lastHit[o] or os.clock() - lastHit[o] > 0.3 then
-						lastHit[o] = os.clock()
-						strike(f, o, hit, move)
-					end
-				end
-			end)
-		end
-		after(m.unroll + m.charge + m.leap, function()
-			for _, o in ipairs(hostilesNear(f, to, m.finalRadius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "royalDecree" then
-		-- 3.6판 권왕 천하제일권 (초 오의): 컷씬 (무적) 뒤 둘레의 적마다 왕의 인장. 하늘의 금빛 문에서 거대한 팔이 내려와
-		-- 가장 강한 적을 땅째 내리찍고 충격파 세 겹, 마지막에 왕관의 해가 떨어지며 모든 인장이 함께 터진다
-		local center = f.root.Position
-		local total = m.cut + m.seals + m.gate + m.fall + m.sunAt + 0.4
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		local rid = math.random(1, 1000000000)
-		Push:FireAllClients("skillfx", { kind = "decreeOpen", id = rid, m = f.model, at = center, dir = look, cut = m.cut / sp, style = style })
-		local marked: { any } = {}
-		after(m.cut, function()
-			local list = hostilesNear(f, center, m.range)
-			Push:FireAllClients("skillfx", { kind = "decreeSeals", id = rid, targets = modelsOf(list), span = m.seals / sp, style = style })
-			for i, o in ipairs(list) do
-				table.insert(marked, o)
-				after((i - 1) / math.max(1, #list) * m.seals + 0.25, function()
-					strike(f, o, scaled(m.seal, sc), move)
-				end)
-			end
-		end)
-		after(m.cut + m.seals, function()
-			-- 내리찍을 곳: 보스가 있으면 보스, 없으면 가장 가까운 적, 없으면 앞
-			local pick, pickD = nil, math.huge
-			for _, o in ipairs(hostilesNear(f, center, m.range)) do
-				local d = (o.root.Position - center).Magnitude
-				if o.model:GetAttribute("Boss") == true then
-					d -= 1000
-				end
-				if d < pickD then
-					pick, pickD = o, d
-				end
-			end
-			local at = pick and pick.root.Position or center + look * 16
-			Push:FireAllClients("skillfx", { kind = "decreeFist", id = rid, at = at, gate = m.gate / sp, fall = m.fall / sp, radius = m.fistR, rings = m.rings, ringEvery = m.ringEvery / sp, sunAt = m.sunAt / sp, finalRadius = m.finalRadius, style = style })
-			after(m.gate + m.fall, function()
-				for _, o in ipairs(hostilesNear(f, at, m.fistR)) do
-					strike(f, o, scaled(m.fist, sc), move)
-				end
-			end)
-			for k = 1, m.rings do
-				local R0, R1 = m.fistR * (0.5 + (k - 1) * 0.6), m.fistR * (0.5 + k * 0.6)
-				after(m.gate + m.fall + k * m.ringEvery, function()
-					for _, o in ipairs(hostilesNear(f, at, R1)) do
-						local d = Vector3.new(o.root.Position.X - at.X, 0, o.root.Position.Z - at.Z).Magnitude
-						if d >= R0 - 2 then
-							strike(f, o, scaled(m.ringHit, sc), move)
-						end
-					end
-				end)
-			end
-			after(m.gate + m.fall + m.sunAt, function()
-				for _, o in ipairs(hostilesNear(f, at, m.finalRadius)) do
-					strike(f, o, scaled(m.final, sc), move)
-				end
-				for _, o in ipairs(marked) do
-					if not o.dead and o.root.Parent then
-						strike(f, o, scaled(m.sealBurst, sc), move)
-					end
-				end
-			end)
-		end)
-	elseif kind == "butterflySwarm" then
-		-- 3.7판 호접몽 몽접군무 (E): 나비 열둘이 둘레의 적 넷에게 날아가 맴돌다 하나씩 부딪친다
-		local list = nearestList(f, m.range, m.targets)
-		Push:FireAllClients("skillfx", { kind = "butterflySwarm", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
-		for i = 1, m.n do
-			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
-			if o then
-				after(m.delay + (i - 1) * m.every + m.travel, function()
-					strike(f, o, hit, move)
-				end)
-			end
-		end
-	elseif kind == "dreamTrap" then
-		-- 3.7판 호접몽 몽포 (R): 꿈 거품이 적을 가두고 띄웠다가 터진다
-		local center = f.root.Position + look * m.dist
-		Push:FireAllClients("skillfx", { kind = "dreamTrap", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
-		local caught: { any } = {}
-		after(m.delay, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				table.insert(caught, o)
-				strike(f, o, hit, move)
-			end
-		end)
-		after(m.delay + m.hold, function()
-			local seen: { [any]: boolean } = {}
-			for _, o in ipairs(caught) do
-				seen[o] = true
-				if not o.dead and o.root.Parent then
-					strike(f, o, scaled(m.burst, sc), move)
-				end
-			end
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				if not seen[o] then
-					strike(f, o, scaled(m.burst, sc), move)
-				end
-			end
-		end)
-	elseif kind == "dreamSea" then
-		-- 3.7판 호접몽 몽중몽 (오의): 둘레가 꿈이 된다. 꿈속의 적은 굼뜨고 계속 맞다가 꿈에서 깨듯 터진다
-		local center = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "dreamSea", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
-		local ticks = math.floor(m.dur / m.every)
-		for i = 1, ticks do
-			after(m.delay + (i - 1) * m.every, function()
-				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-					o.slowUntil = os.clock() + (m.every + 0.2) / sp
-					o.slowMul = m.slow
-					strike(f, o, scaled(m.tick, sc), move)
-				end
-			end)
-		end
-		after(m.delay + m.dur, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "butterflyDream" then
-		-- 3.7판 호접몽 호접지몽 (초 오의): 컷씬 (무적) 뒤 거대한 꿈나비. 날갯짓 셋마다 무지갯빛 가루 물결, 날개를 접어 감싸 안고 무지개 꽃으로 터진다
-		local center = f.root.Position
-		local total = m.cut + m.rise + m.flaps * m.flapEvery + m.fold + 0.4
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		Push:FireAllClients("skillfx", { kind = "butterflyDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, flaps = m.flaps, flapEvery = m.flapEvery / sp, fold = m.fold / sp, range = m.range, finalRadius = m.finalRadius, style = style })
-		for k = 1, m.flaps do
-			after(m.cut + m.rise + (k - 1) * m.flapEvery + 0.15, function()
-				for _, o in ipairs(hostilesNear(f, center, m.range)) do
-					strike(f, o, scaled(m.flap, sc), move)
-				end
-			end)
-		end
-		after(m.cut + m.rise + m.flaps * m.flapEvery, function()
-			for _, o in ipairs(hostilesNear(f, center, m.range)) do
-				pullTo(o, center, m.pull)
-			end
-		end)
-		after(m.cut + m.rise + m.flaps * m.flapEvery + m.fold, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
 	elseif kind == "eraseBox" then
 		-- 3.8판 공백 소거 (E): 앞에 흰 선택 상자, 안이 검게 지워졌다가 화소 조각으로 부서진다
 		local from = f.root.Position + look * m.dist
@@ -21583,6 +21403,180 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 		after(m.cut + m.rain + m.freeze, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "mirrorWorld" then
+		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.echo + m.crack + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local mid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "mirrorOpen", id = mid, m = f.model, at = center, radius = m.radius, cut = m.cut / sp, rise = m.rise / sp, echo = m.echo / sp, crack = m.crack / sp, style = style })
+		local ticks = math.floor(m.echo / m.every)
+		for i = 1, ticks do
+			after(m.cut + m.rise + (i - 1) * m.every, function()
+				local list = hostilesNear(f, center, m.radius)
+				if i == 1 then
+					Push:FireAllClients("skillfx", { kind = "mirrorEcho", id = mid, targets = modelsOf(list), every = m.every / sp, n = ticks, style = style })
+				end
+				for _, o in ipairs(list) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.echo + m.crack, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingArena" then
+		-- 3.10판 권왕 패왕난무 (오의): 금빛 기둥 여덟의 투기장, 기둥마다 거대한 주먹이 차례로 한가운데를 내지르고, 땅속 주먹이 올려친다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "kingArena", m = f.model, at = center, radius = m.radius, rise = m.rise / sp, fists = m.fists, every = m.every / sp, upper = m.upper / sp, style = style })
+		after(m.rise * 0.5, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 6)) do
+				pullTo(o, center, m.pull)
+			end
+		end)
+		for k = 1, m.fists do
+			local a = (k - 1) / m.fists * math.pi * 2
+			local from = center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius
+			after(m.rise + (k - 1) * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, from, center, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.rise + m.fists * m.every + m.upper, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius * 0.6)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingAvatar" then
+		-- 3.10판 권왕 천하제일권 (초 오의): 컷씬 (무적) 뒤 등 뒤에 하늘만 한 금빛 왕 (나의 모습)이 일어서서 가장 강한 적에게 한 방.
+		-- 충격파 세 겹, 십자로 내달리는 빛기둥 넷, 내려오는 빛의 왕관
+		local center = f.root.Position
+		local pick, pickD = nil, math.huge
+		for _, o in ipairs(hostilesNear(f, center, m.range)) do
+			local d = (o.root.Position - center).Magnitude
+			if o.model:GetAttribute("Boss") == true then
+				d -= 1000
+			end
+			if d < pickD then
+				pick, pickD = o, d
+			end
+		end
+		local to = pick and pick.root.Position or center + look * 18
+		local impact = m.cut + m.rise + m.charge + m.punch
+		local total = impact + 0.2 + m.cross + m.crownAt + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local aid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "kingAvatar", id = aid, m = f.model, at = center, to = to, cut = m.cut / sp, rise = m.rise / sp, charge = m.charge / sp, punch = m.punch / sp, style = style })
+		after(impact, function()
+			Push:FireAllClients("skillfx", { kind = "kingImpact", id = aid, at = to, dir = look, radius = m.fistR, rings = m.rings, ringEvery = m.ringEvery / sp, cross = m.cross / sp, crossLen = m.crossLen, crownAt = m.crownAt / sp, finalRadius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, to, m.fistR)) do
+				strike(f, o, scaled(m.fist, sc), move)
+			end
+		end)
+		for k = 1, m.rings do
+			local R0, R1 = m.fistR * (0.5 + (k - 1) * 0.6), m.fistR * (0.5 + k * 0.6)
+			after(impact + k * m.ringEvery, function()
+				for _, o in ipairs(hostilesNear(f, to, R1)) do
+					local d = Vector3.new(o.root.Position.X - to.X, 0, o.root.Position.Z - to.Z).Magnitude
+					if d >= R0 - 2 then
+						strike(f, o, scaled(m.ringHit, sc), move)
+					end
+				end
+			end)
+		end
+		local right = rightOf(look)
+		local arms = { look, right, -look, -right }
+		local steps = 6
+		local crossHit: { [any]: boolean } = {}
+		for k = 1, steps do
+			after(impact + 0.2 + (k - 1) * m.cross / steps, function()
+				for _, dir in ipairs(arms) do
+					local a = to + dir * (m.crossLen * (k - 1) / steps)
+					local b = to + dir * (m.crossLen * k / steps)
+					for _, o in ipairs(hostilesOnSeg(f, a, b, m.crossW)) do
+						if not crossHit[o] then
+							crossHit[o] = true
+							strike(f, o, scaled(m.crossHit, sc), move)
+						end
+					end
+				end
+			end)
+		end
+		after(impact + 0.2 + m.cross + m.crownAt, function()
+			for _, o in ipairs(hostilesNear(f, to, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "sheepCount" then
+		-- 3.10판 몽유 양 세기 (E): 꿈양 다섯이 허공의 울타리를 넘어 둘레의 적에게 뛰어든다
+		local list = nearestList(f, m.range, m.targets)
+		Push:FireAllClients("skillfx", { kind = "sheepCount", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
+		for i = 1, m.n do
+			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
+			if o then
+				after(m.delay + (i - 1) * m.every + m.travel, function()
+					strike(f, o, hit, move)
+				end)
+			end
+		end
+	elseif kind == "upsideDown" then
+		-- 3.10판 몽유 거꾸로 꿈 (R): 앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 떠올랐다가 꿈이 바로 서면 내리꽂힌다
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "upsideDown", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
+		local ticks = math.floor(m.hold / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.hold, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 1)) do
+				strike(f, o, scaled(m.slam, sc), move)
+			end
+		end)
+	elseif kind == "dreamIsles" then
+		-- 3.10판 몽유 몽중몽 (오의): 둘레가 꿈속이 된다 (달, 떠다니는 섬·계단·문). 문이 열리고 닫힐 때마다 베이고, 마지막에 모두 떨어지며 깬다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "dreamIsles", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = m.slow
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "moonDream" then
+		-- 3.10판 몽유 월하몽 (초 오의): 컷씬 (무적) 뒤 보름달과 밤 호수. 적은 잠든 듯 떠올라 별의 소용돌이에 감기고, 달이 내려와 호수에 닿으면 터진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.drift + m.descend + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "moonDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, drift = m.drift / sp, descend = m.descend / sp, range = m.range, finalRadius = m.finalRadius, style = style })
+		local ticks = math.floor(m.drift / m.every)
+		for i = 1, ticks do
+			after(m.cut + m.rise + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.drift + m.descend, function()
 			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
@@ -29581,7 +29575,7 @@ function handlers.skillfx(data: any)
 		Null.run(data)
 		return
 	end
-	-- 3.7판 호접몽권
+	-- 3.7판 몽유권
 	if Dream.handles(data) then
 		Dream.run(data)
 		return
@@ -35206,25 +35200,25 @@ return Demon
         <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Dream</string>
-            <string name="Source"><![CDATA[-- 권왕 3.7판: 호접몽권 (화면). 꿈처럼 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
--- 등의 나비 날개, 꿈 거품, 나비 떼, 꿈의 바다 (구름·초승달·오로라·비눗방울), 하늘을 가리는 꿈나비
+            <string name="Source"><![CDATA[-- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
+-- 빛깔은 밤하늘빛 (남빛·보랏빛, 안개처럼 번진다)과 따뜻한 달빛. 꿈의 문, 울타리를 넘는 꿈양, 뒤집히는 중력, 떠다니는 섬·계단·문, 보름달과 밤 호수
+local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Fx = require(script.Parent:WaitForChild("Fx"))
 
 local Dream = {}
 
-local PASTEL = {
-	Color3.fromRGB(255, 170, 210), -- 분홍
-	Color3.fromRGB(200, 170, 255), -- 라일락
-	Color3.fromRGB(150, 210, 255), -- 하늘
-	Color3.fromRGB(150, 240, 210), -- 민트
-	Color3.fromRGB(255, 236, 150), -- 레몬
-}
-local WHITE = Color3.new(1, 1, 1)
-local MOON = Color3.fromRGB(255, 244, 196)
-local BODY = Color3.fromRGB(70, 56, 96)
+local NIGHT = Color3.fromRGB(34, 38, 96)
+local DUSK = Color3.fromRGB(120, 124, 230)
+local LAVENDER = Color3.fromRGB(196, 176, 255)
+local MOON = Color3.fromRGB(255, 232, 170)
+local STAR = Color3.fromRGB(255, 250, 232)
+local MIST = Color3.fromRGB(205, 205, 255)
+local WOOL = Color3.fromRGB(246, 244, 240)
+local DOORWOOD = Color3.fromRGB(72, 58, 104)
 local UP = CFrame.Angles(0, 0, math.rad(90))
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
 
 local folder = Instance.new("Folder")
 folder.Name = "KwonDream"
@@ -35235,7 +35229,7 @@ function Dream.init(o: any)
 	opts = o or {}
 end
 
-local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): Part
 	local q = Instance.new("Part")
 	if shape == "ball" then
 		q.Shape = Enum.PartType.Ball
@@ -35287,78 +35281,66 @@ local function shakeNear(pos: Vector3, amount: number, range: number)
 		opts.shake(amount)
 	end
 end
-local function pastel(k: number): Color3
-	return PASTEL[(k - 1) % #PASTEL + 1]
-end
--- 빛깔이 천천히 도는 무지갯빛 (시간 t)
-local function iris(t: number): Color3
-	local u = (t * 0.6) % 1 * #PASTEL
-	local i = math.floor(u)
-	return pastel(i + 1):Lerp(pastel(i + 2), u - i)
-end
--- 반짝이 가루 (위로 조금 떠올랐다 사라진다)
-local function sparkle(at: Vector3, n: number, s: number)
+-- 별가루 (위로 천천히 떠오르며 깜박인다)
+local function stardust(at: Vector3, n: number, s: number, rise: number?)
 	for k = 1, n do
-		local q = part(Vector3.new(0.35, 0.35, 0.35) * s, pastel(k), Enum.Material.Neon, 0.05, "ball")
-		q.CFrame = CFrame.new(at)
-		fadeOut(q, 0.6 + math.random() * 0.5, { CFrame = CFrame.new(at + Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5) * 7 * s) })
+		local c = (k % 3 == 0) and MOON or ((k % 3 == 1) and STAR or LAVENDER)
+		local q = part(Vector3.one * 0.3 * s, c, Enum.Material.Neon, 0.05, "ball")
+		q.CFrame = CFrame.new(at + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2 * s)
+		fadeOut(q, 0.9 + math.random() * 0.6, { CFrame = q.CFrame + Vector3.new((math.random() - 0.5) * 3 * s, (rise or 4) * (0.4 + math.random()), (math.random() - 0.5) * 3 * s) })
 	end
 end
--- 작은 별 사탕 (뾰족한 다섯 갈래를 납작한 판 둘로 흉내)
-local function candy(at: Vector3, color: Color3, s: number, life: number, fall: number)
-	local a = part(Vector3.new(0.9, 0.9, 0.2) * s, color, Enum.Material.Neon, 0.05)
-	local b = part(Vector3.new(0.9, 0.9, 0.2) * s, color:Lerp(WHITE, 0.3), Enum.Material.Neon, 0.05)
-	local cf = CFrame.new(at) * CFrame.Angles(0, math.random() * 6, 0)
-	a.CFrame = cf * CFrame.Angles(0, 0, math.rad(45))
-	b.CFrame = cf
-	local to = CFrame.new(at - Vector3.new(0, fall, 0)) * CFrame.Angles(0, math.random() * 6, math.random() * 3)
-	fadeOut(a, life, { CFrame = to * CFrame.Angles(0, 0, math.rad(45)) })
-	fadeOut(b, life, { CFrame = to })
+-- 잠의 Z (글자 판이 떠올라 사라진다)
+local function zzz(at: Vector3, s: number)
+	local holder = part(Vector3.new(0.2, 0.2, 0.2), LAVENDER, Enum.Material.Neon, 1)
+	holder.CFrame = CFrame.new(at)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromScale(2.4 * s, 2.4 * s)
+	bb.LightInfluence = 0
+	bb.Parent = holder
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Font = Enum.Font.FredokaOne
+	t.TextScaled = true
+	t.Text = "z Z"
+	t.TextColor3 = LAVENDER
+	t.Parent = bb
+	tween(holder, 1.2, { CFrame = CFrame.new(at + Vector3.new(0.6, 3, 0)) })
+	tween(t, 1.2, { TextTransparency = 1 })
+	task.delay(1.25, function()
+		holder:Destroy()
+	end)
 end
-local function pop(at: Vector3, s: number)
-	Fx.ring(at, WHITE, 1, 10 * s, 0.35, Vector3.new(0, 1, 0))
-	for k = 1, 3 do
-		Fx.ring(at, pastel(k), 1, (6 + k * 3) * s, 0.3 + k * 0.06)
-	end
-	sparkle(at, 10, s)
-	for k = 1, 5 do
-		candy(at + Vector3.new(math.random() - 0.5, 0.5, math.random() - 0.5) * 3 * s, pastel(k), s, 0.9, 3 * s)
-	end
-	Fx.sound("ping", 0.45, 1.8, at)
-end
-
-------------------------------------------------------------------------
--- 나비 (몸 + 큰 윗날개 둘 + 작은 아랫날개 둘). 날개는 몸의 앞뒤 축으로 접혔다 펴진다
-------------------------------------------------------------------------
-type Fly = { body: BasePart, wings: { { p: BasePart, side: number, off: CFrame } }, s: number }
-local function butterfly(s: number, c1: Color3, c2: Color3, alpha: number?): Fly
-	local body = part(Vector3.new(0.25, 0.25, 1.2) * s, BODY, Enum.Material.SmoothPlastic, 0)
-	local wings = {}
-	for _, side in ipairs({ -1, 1 }) do
-		local up = part(Vector3.new(1.3, 0.06, 1.2) * s, c1, Enum.Material.Glass, alpha or 0.15, "ball")
-		local lo = part(Vector3.new(0.9, 0.06, 0.8) * s, c2, Enum.Material.Glass, alpha or 0.15, "ball")
-		table.insert(wings, { p = up, side = side, off = CFrame.new(side * 0.65 * s, 0, -0.25 * s) })
-		table.insert(wings, { p = lo, side = side, off = CFrame.new(side * 0.5 * s, 0, 0.45 * s) })
-	end
-	return { body = body, wings = wings, s = s }
-end
-local function placeFly(f: Fly, cf: CFrame, flap: number)
-	f.body.CFrame = cf
-	for _, w in ipairs(f.wings) do
-		-- 몸 축 (Z)으로 날개를 들어 올린다 (flap 0 = 편 날개, 1 = 위로 모은 날개)
-		local hinge = cf * CFrame.Angles(0, 0, -w.side * flap * math.rad(75))
-		w.p.CFrame = hinge * w.off
+-- 꿈 안개 한 무더기 (낮게 번진다)
+local function mist(at: Vector3, s: number, life: number)
+	for k = 1, 4 do
+		local m = part(Vector3.new(4, 1.4, 4) * s, (k % 2 == 0) and MIST or LAVENDER, Enum.Material.SmoothPlastic, 0.6, "ball")
+		m.CFrame = CFrame.new(at + Vector3.new((math.random() - 0.5) * 3 * s, 0.4, (math.random() - 0.5) * 3 * s))
+		fadeOut(m, life, { Size = m.Size * 1.8, CFrame = m.CFrame + Vector3.new(0, 0.8 * s, 0) })
 	end
 end
-local function fadeFly(f: Fly, time: number)
-	fadeOut(f.body, time)
-	for _, w in ipairs(f.wings) do
-		fadeOut(w.p, time)
+-- 초승달 (호를 따라 조각을 이어 붙인다): 조각 목록과 각 조각의 자리 (틀 기준)
+local function crescentParts(R: number, thick: number, color: Color3, alpha: number?): { { p: Part, off: CFrame } }
+	local out = {}
+	for k = 0, 10 do
+		local a = math.rad(-100 + k * 20)
+		local w = thick * math.sin((k + 0.5) / 11 * math.pi) + thick * 0.12
+		local seg = part(Vector3.new(w, R * 0.34, w * 0.7), color, Enum.Material.Neon, alpha or 0)
+		table.insert(out, { p = seg, off = CFrame.new(math.cos(a) * R, math.sin(a) * R, 0) * CFrame.Angles(0, 0, a) })
+	end
+	return out
+end
+local function placeList(list: { { p: Part, off: CFrame } }, cf: CFrame)
+	for _, it in ipairs(list) do
+		if it.p.Parent then
+			it.p.CFrame = cf * it.off
+		end
 	end
 end
 
 ------------------------------------------------------------------------
--- 차림: 등에 빛깔이 흐르는 나비 날개 넷 (천천히 팔랑인다), 둘레를 도는 비눗방울 셋
+-- 차림: 머리 뒤를 천천히 도는 초승달, 둘레에서 깜박이는 작은 별 셋, 발밑에 번지는 꿈 안개
 ------------------------------------------------------------------------
 function Dream.buildGear(model: Model): { Instance }
 	local out: { Instance } = {}
@@ -35366,132 +35348,263 @@ function Dream.buildGear(model: Model): { Instance }
 	holder.Name = "Dream_" .. model.Name
 	holder.Parent = folder
 	table.insert(out, holder)
+	local head = model:FindFirstChild("Head")
 	local torso = model:FindFirstChild("UpperTorso")
-	if not (torso and torso:IsA("BasePart")) then
+	if not (head and head:IsA("BasePart")) or not (torso and torso:IsA("BasePart")) then
 		return out
 	end
-	local wings: { { p: BasePart, rim: BasePart, side: number, big: boolean } } = {}
-	for _, side in ipairs({ -1, 1 }) do
-		for _, big in ipairs({ true, false }) do
-			local sz = big and Vector3.new(2.6, 0.08, 2.1) or Vector3.new(1.7, 0.08, 1.4)
-			local p = part(sz, big and PASTEL[2] or PASTEL[4], Enum.Material.Glass, 0.3, "ball")
-			local rim = part(sz * Vector3.new(1.06, 0.5, 1.06), WHITE, Enum.Material.Neon, 0.7, "ball")
-			p.Parent = holder
-			rim.Parent = holder
-			table.insert(out, p)
-			table.insert(out, rim)
-			table.insert(wings, { p = p, rim = rim, side = side, big = big })
-		end
+	local moon = crescentParts(0.85, 0.32, MOON, 0.05)
+	for _, it in ipairs(moon) do
+		it.p.Parent = holder
+		table.insert(out, it.p)
 	end
-	local bubbles: { BasePart } = {}
+	local stars: { Part } = {}
 	for k = 1, 3 do
-		local b = part(Vector3.new(0.6, 0.6, 0.6), pastel(k + 1), Enum.Material.Glass, 0.55, "ball")
-		b.Parent = holder
-		table.insert(out, b)
-		bubbles[k] = b
+		local s = part(Vector3.new(0.22, 0.22, 0.22), STAR, Enum.Material.Neon, 0, "ball")
+		s.Parent = holder
+		table.insert(out, s)
+		stars[k] = s
 	end
+	local foot = part(Vector3.new(2, 0.2, 2), LAVENDER, Enum.Material.SmoothPlastic, 1)
+	foot.Parent = holder
+	table.insert(out, foot)
+	local a0 = Instance.new("Attachment")
+	a0.Parent = foot
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = TEX_SMOKE
+	e.Color = ColorSequence.new(LAVENDER, MIST)
+	e.LightEmission = 0.3
+	e.Rate = 4
+	e.Lifetime = NumberRange.new(1.2, 2)
+	e.Speed = NumberRange.new(0.2, 0.8)
+	e.SpreadAngle = Vector2.new(180, 10)
+	e.Size = NumberSequence.new(1.2, 3)
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.75), NumberSequenceKeypoint.new(1, 1) })
+	e.Parent = a0
 	local t0 = os.clock()
 	local conn: RBXScriptConnection
 	conn = RunService.RenderStepped:Connect(function()
-		if not holder.Parent or not torso.Parent then
+		if not holder.Parent or not head.Parent then
 			conn:Disconnect()
 			return
 		end
 		local t = os.clock() - t0
 		local hide = model:GetAttribute("Vanish") == true
-		local flap = 0.25 + 0.2 * math.sin(t * 2.6)
-		local back = torso.CFrame * CFrame.new(0, 0.35, torso.Size.Z / 2 + 0.12)
-		for _, w in ipairs(wings) do
-			-- 등에 세운 날개: 위 날개는 어깨 위로, 아래 날개는 허리 쪽으로 비스듬히
-			local tilt = w.big and math.rad(30) or math.rad(-35)
-			local cf = back * CFrame.Angles(0, -w.side * (math.rad(25) + flap), 0) * CFrame.Angles(0, 0, -w.side * tilt) * CFrame.new(w.side * (w.big and 1.35 or 0.9), w.big and 0.5 or -0.6, 0) * CFrame.Angles(math.rad(90), 0, 0)
-			w.p.CFrame = cf
-			w.rim.CFrame = cf
-			w.p.Color = iris(t + (w.big and 0 or 1.5) + (w.side > 0 and 0.4 or 0))
-			w.p.LocalTransparencyModifier = hide and 1 or 0
-			w.rim.LocalTransparencyModifier = hide and 1 or 0
+		local cf = head.CFrame * CFrame.new(0.2, 0.55 + math.sin(t * 1.4) * 0.12, 0.7) * CFrame.Angles(0, 0, math.rad(-25) + math.sin(t * 0.7) * 0.15)
+		placeList(moon, cf)
+		for _, it in ipairs(moon) do
+			it.p.LocalTransparencyModifier = hide and 1 or 0
 		end
-		for k, b in ipairs(bubbles) do
-			local a = t * 0.8 + k * 2.1
-			b.CFrame = torso.CFrame * CFrame.new(math.cos(a) * 2.4, 0.5 + math.sin(t * 1.3 + k) * 0.8, math.sin(a) * 2.4)
-			b.LocalTransparencyModifier = hide and 1 or 0
+		for k, s in ipairs(stars) do
+			local a = t * 0.6 + k * 2.1
+			s.CFrame = torso.CFrame * CFrame.new(math.cos(a) * 1.9, 1.2 + math.sin(t + k) * 0.5, math.sin(a) * 1.9)
+			s.Transparency = 0.2 + 0.6 * (0.5 + 0.5 * math.sin(t * 3 + k * 2))
+			s.LocalTransparencyModifier = hide and 1 or 0
 		end
+		foot.CFrame = CFrame.new(torso.Position - Vector3.new(0, 2.9, 0))
+		e.Enabled = not hide
 	end)
 	return out
 end
 
 ------------------------------------------------------------------------
--- 연타 장치 꿈 거품: 상대가 무지갯빛 거품에 갇혀 둥실 떠올랐다가 터진다
+-- 문 (꿈의 문): 문틀 + 문짝 (경첩 둘레로 열린다) + 문 안의 달빛
 ------------------------------------------------------------------------
-local function dreamBubble(data: any)
-	local at: Vector3 = data.at
-	if not near(at, 200) then
-		return
+type Door = { frame: { Part }, panel: Part, light: Part, cf: CFrame, w: number, h: number, open: number }
+local function makeDoor(cf: CFrame, w: number, h: number): Door
+	local frame: { Part } = {}
+	for _, x in ipairs({ -1, 1 }) do
+		local post = part(Vector3.new(0.35, h + 0.4, 0.4), DOORWOOD, Enum.Material.Wood, 0)
+		post.CFrame = cf * CFrame.new(x * (w / 2 + 0.15), 0, 0)
+		table.insert(frame, post)
 	end
-	local delay = data.delay or 0.6
-	local b = part(Vector3.new(1, 1, 1), PASTEL[2], Enum.Material.Glass, 0.6, "ball")
-	b.CFrame = CFrame.new(at)
-	local shine = part(Vector3.new(0.8, 0.5, 0.2), WHITE, Enum.Material.Neon, 0.3, "ball")
+	local top = part(Vector3.new(w + 0.8, 0.4, 0.45), DOORWOOD, Enum.Material.Wood, 0)
+	top.CFrame = cf * CFrame.new(0, h / 2 + 0.2, 0)
+	table.insert(frame, top)
+	local light = part(Vector3.new(w, h, 0.1), MOON, Enum.Material.Neon, 0.15)
+	light.CFrame = cf
+	local panel = part(Vector3.new(w, h, 0.18), LAVENDER, Enum.Material.SmoothPlastic, 0)
+	panel.CFrame = cf * CFrame.new(0, 0, -0.08)
+	return { frame = frame, panel = panel, light = light, cf = cf, w = w, h = h, open = 0 }
+end
+local function setDoor(d: Door, open: number)
+	d.open = open
+	-- 왼쪽 경첩을 축으로 바깥쪽 (-Z)으로 열린다
+	local hinge = d.cf * CFrame.new(-d.w / 2, 0, -0.08)
+	d.panel.CFrame = hinge * CFrame.Angles(0, open * math.rad(105), 0) * CFrame.new(d.w / 2, 0, 0)
+end
+local function killDoor(d: Door, time: number)
+	for _, p in ipairs(d.frame) do
+		fadeOut(p, time)
+	end
+	fadeOut(d.panel, time)
+	fadeOut(d.light, time)
+end
+-- 문을 열었다 닫는다 (총 time 초), 열린 동안 별이 흘러나온다
+local function doorBlink(d: Door, time: number, onShut: (() -> ())?)
 	local t0 = os.clock()
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
-		local t = os.clock() - t0
-		local u = math.clamp(t / delay, 0, 1)
-		local size = 6.5 * math.min(1, t / 0.15)
-		local pos = at + Vector3.new(0, 3 * u + math.sin(t * 6) * 0.2, 0)
-		b.Size = Vector3.new(size, size, size)
-		b.CFrame = CFrame.new(pos)
-		b.Color = iris(t * 2)
-		shine.CFrame = CFrame.new(pos + Vector3.new(-size * 0.25, size * 0.3, -size * 0.3))
+		local u = math.clamp((os.clock() - t0) / time, 0, 1)
+		local o = u < 0.3 and (u / 0.3) or (u < 0.75 and 1 or (1 - (u - 0.75) / 0.25))
+		setDoor(d, o)
+		if o > 0.5 and math.random() < 0.4 then
+			stardust(d.cf.Position + d.cf.LookVector * -0.5, 1, 0.8, 2)
+		end
 		if u >= 1 then
 			conn:Disconnect()
-			b:Destroy()
-			shine:Destroy()
-			pop(pos, 0.9)
+			if onShut then
+				onShut()
+			end
 		end
 	end)
 end
 
 ------------------------------------------------------------------------
--- E 몽접군무: 나비 열둘이 적에게 날아가 맴돌다 부딪친다
+-- 연타 장치 꿈의 문: 상대 등 뒤 허공에 문이 열려 빨아들였다가 쾅 닫히며 뱉어 낸다
 ------------------------------------------------------------------------
-local function butterflySwarm(data: any)
+local function dreamDoorPulse(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 200) then
+		return
+	end
+	local delay = data.delay or 0.6
+	local cam = workspace.CurrentCamera
+	local away = cam and flat(at - cam.CFrame.Position) or Vector3.new(0, 0, -1)
+	local doorPos = at + away * 2.6 + Vector3.new(0, 1.2, 0)
+	local d = makeDoor(CFrame.lookAt(doorPos, doorPos - away), 3.2, 5.2)
+	-- 문 안으로 별이 빨려 든다
+	for k = 1, 8 do
+		task.delay(k * delay / 10, function()
+			local from = at + Vector3.new(math.random() - 0.5, math.random() * 2 - 0.5, math.random() - 0.5) * 3
+			local s = part(Vector3.new(0.3, 0.3, 0.3), k % 2 == 0 and MOON or LAVENDER, Enum.Material.Neon, 0, "ball")
+			s.CFrame = CFrame.new(from)
+			fadeOut(s, 0.3, { CFrame = CFrame.new(doorPos) })
+		end)
+	end
+	doorBlink(d, delay, function()
+		Fx.sound("block", 0.5, 1.4, doorPos)
+		stardust(at, 12, 1.1, 5)
+		zzz(at + Vector3.new(0, 2, 0), 1)
+		Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), LAVENDER, 2, (data.radius or 6) * 2, 0.35)
+		killDoor(d, 0.35)
+	end)
+end
+
+------------------------------------------------------------------------
+-- E 양 세기: 울타리를 넘어 적에게 뛰어드는 꿈양 (머리 위에 하나, 둘, 셋...)
+------------------------------------------------------------------------
+local COUNT = { "하나", "둘", "셋", "넷", "다섯", "여섯" }
+type Sheep = { list: { { p: Part, off: CFrame } }, tag: Part }
+local function makeSheep(s: number, label: string): Sheep
+	local list = {}
+	for k, off in ipairs({ Vector3.new(0, 0, 0), Vector3.new(0.5, 0.25, 0.4), Vector3.new(-0.5, 0.2, 0.4), Vector3.new(0.4, 0.2, -0.45), Vector3.new(-0.4, 0.3, -0.4), Vector3.new(0, 0.5, 0) }) do
+		local b = part(Vector3.one * (k == 1 and 1.6 or 1.0) * s, WOOL, Enum.Material.SmoothPlastic, 0, "ball")
+		table.insert(list, { p = b, off = CFrame.new(off * s) })
+	end
+	local head = part(Vector3.new(0.65, 0.6, 0.75) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0, "ball")
+	table.insert(list, { p = head, off = CFrame.new(0, 0.25 * s, -0.95 * s) })
+	for _, x in ipairs({ -1, 1 }) do
+		local ear = part(Vector3.new(0.35, 0.12, 0.2) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0)
+		table.insert(list, { p = ear, off = CFrame.new(x * 0.38 * s, 0.4 * s, -0.95 * s) })
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		for _, z in ipairs({ -1, 1 }) do
+			local leg = part(Vector3.new(0.18, 0.6, 0.18) * s, Color3.fromRGB(70, 62, 78), Enum.Material.SmoothPlastic, 0)
+			table.insert(list, { p = leg, off = CFrame.new(x * 0.4 * s, -0.75 * s, z * 0.45 * s) })
+		end
+	end
+	local tag = part(Vector3.new(0.2, 0.2, 0.2), WOOL, Enum.Material.Neon, 1)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromScale(3, 1.4)
+	bb.StudsOffset = Vector3.new(0, 1.6 * s, 0)
+	bb.LightInfluence = 0
+	bb.Parent = tag
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Font = Enum.Font.FredokaOne
+	t.TextScaled = true
+	t.Text = label
+	t.TextColor3 = MOON
+	t.TextStrokeTransparency = 0.4
+	t.TextStrokeColor3 = NIGHT
+	t.Parent = bb
+	return { list = list, tag = tag }
+end
+local function placeSheep(sh: Sheep, cf: CFrame)
+	placeList(sh.list, cf)
+	sh.tag.CFrame = cf
+end
+local function poofSheep(sh: Sheep, at: Vector3)
+	for _, it in ipairs(sh.list) do
+		fadeOut(it.p, 0.25, { Size = it.p.Size * 1.8 })
+	end
+	sh.tag:Destroy()
+	mist(at, 0.6, 0.6)
+	stardust(at, 8, 1, 3)
+	zzz(at + Vector3.new(0, 1.5, 0), 0.9)
+end
+local function sheepCount(data: any)
 	local m: Model? = data.m
 	local r = rootOf(m)
 	if not r or not near(r.Position, 220) then
 		return
 	end
-	local n = data.n or 12
+	local n = data.n or 5
 	local targets = data.targets or {}
 	local look = flat(r.CFrame.LookVector)
+	local side = Vector3.new(-look.Z, 0, look.X)
 	local delay = data.delay or 0.15
-	local every = data.every or 0.04
-	local travel = data.travel or 0.5
-	sparkle(r.Position + Vector3.new(0, 1, 0), 8, 1)
-	Fx.sound("swing", 0.4, 1.7, r.Position)
+	local every = data.every or 0.14
+	local travel = data.travel or 0.55
+	-- 허공의 울타리 (내 앞에 떠 있다)
+	local fenceAt = r.Position + look * 3 + Vector3.new(0, 0.4, 0)
+	local fence: { Part } = {}
+	for _, x in ipairs({ -1.6, 1.6 }) do
+		local post = part(Vector3.new(0.3, 2, 0.3), Color3.fromRGB(150, 116, 82), Enum.Material.Wood, 0)
+		post.CFrame = CFrame.lookAt(fenceAt + side * x, fenceAt + side * x + look)
+		table.insert(fence, post)
+	end
+	for _, y in ipairs({ -0.3, 0.5 }) do
+		local rail = part(Vector3.new(3.6, 0.2, 0.15), Color3.fromRGB(176, 140, 100), Enum.Material.Wood, 0)
+		rail.CFrame = CFrame.lookAt(fenceAt + Vector3.new(0, y, 0), fenceAt + Vector3.new(0, y, 0) + look)
+		table.insert(fence, rail)
+	end
+	mist(fenceAt - Vector3.new(0, 1, 0), 0.6, 0.9)
+	task.delay(delay + n * every + travel + 0.3, function()
+		for _, p in ipairs(fence) do
+			fadeOut(p, 0.3)
+		end
+	end)
 	for i = 1, n do
 		task.delay(delay + (i - 1) * every, function()
-			local rr = rootOf(m)
-			local from = (rr and rr.Position or r.Position) + Vector3.new(math.random() - 0.5, 1 + math.random(), math.random() - 0.5) * 2
+			local rr = rootOf(m) or r
+			local start = rr.Position - look * 1.5 + Vector3.new(0, 0.5, 0)
 			local tgt = #targets > 0 and targets[(i - 1) % #targets + 1] or nil
-			local fly = butterfly(0.9 + math.random() * 0.4, pastel(i), pastel(i + 2))
-			local side = Vector3.new(math.random() - 0.5, math.random() * 0.6, math.random() - 0.5).Unit * (4 + math.random() * 3)
+			local sh = makeSheep(0.9, COUNT[i] or tostring(i))
+			Fx.sound("ping", 0.3, 1.2 + i * 0.12, start)
 			local t0 = os.clock()
-			local last = from
 			local conn: RBXScriptConnection
 			conn = RunService.Heartbeat:Connect(function()
-				local t = os.clock() - t0
-				local u = math.clamp(t / travel, 0, 1)
+				local u = math.clamp((os.clock() - t0) / travel, 0, 1)
 				local tr = rootOf(tgt)
-				local goal = tr and tr.Position or (from + look * 22)
-				local pos = from:Lerp(goal, u * u * (3 - 2 * u)) + side * math.sin(u * math.pi) + Vector3.new(0, math.sin(t * 20) * 0.25, 0)
-				local dir = (pos - last).Magnitude > 1e-3 and (pos - last).Unit or look
-				placeFly(fly, CFrame.lookAt(pos, pos + dir), 0.5 + 0.5 * math.sin(t * 30))
-				last = pos
+				local goal = tr and tr.Position or (start + look * 18 + side * (i - 3) * 2)
+				-- 울타리를 넘고 (첫 30%), 그다음 통통 튀며 날아간다
+				local pos: Vector3
+				if u < 0.3 then
+					local v = u / 0.3
+					pos = start:Lerp(fenceAt + look * 1.5, v) + Vector3.new(0, 3.2 * math.sin(v * math.pi), 0)
+				else
+					local v = (u - 0.3) / 0.7
+					local base = (fenceAt + look * 1.5):Lerp(goal, v)
+					pos = base + Vector3.new(0, math.abs(math.sin(v * math.pi * 2)) * 2.2, 0)
+				end
+				local dir = flat(goal - pos)
+				placeSheep(sh, CFrame.lookAt(pos, pos + dir))
 				if u >= 1 then
 					conn:Disconnect()
-					fadeFly(fly, 0.15)
-					sparkle(pos, 5, 0.7)
+					poofSheep(sh, pos)
 				end
 			end)
 		end)
@@ -35499,58 +35612,86 @@ local function butterflySwarm(data: any)
 end
 
 ------------------------------------------------------------------------
--- R 몽포: 커다란 무지갯빛 거품이 부풀어 가두고 둥실 떠올랐다가 터진다
+-- R 거꾸로 꿈: 앞의 땅이 밤하늘이 되고, 풀과 돌이 하늘로 떨어진다. 꿈이 바로 서면 쾅
 ------------------------------------------------------------------------
-local function dreamTrap(data: any)
+local function upsideDown(data: any)
 	local at: Vector3 = data.at
 	if not near(at, 220) then
 		return
 	end
-	local R = data.radius or 9
+	local R = data.radius or 11
 	local delay = data.delay or 0.25
 	local hold = data.hold or 1.2
 	local g = ground(at)
-	local b = part(Vector3.new(1, 1, 1), PASTEL[2], Enum.Material.Glass, 0.65, "ball")
-	local inner = part(Vector3.new(1, 1, 1), WHITE, Enum.Material.Neon, 0.94, "ball")
-	local shine = part(Vector3.new(2, 1.2, 0.3), WHITE, Enum.Material.Neon, 0.3, "ball")
+	local sky = part(Vector3.new(0.2, 1, 1), NIGHT, Enum.Material.SmoothPlastic, 0.1, "cyl")
+	sky.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * UP
+	tween(sky, delay, { Size = Vector3.new(0.2, R * 2, R * 2) })
+	local rim = part(Vector3.new(0.25, 1, 1), DUSK, Enum.Material.Neon, 0.4, "cyl")
+	rim.CFrame = CFrame.new(g + Vector3.new(0, 0.1, 0)) * UP
+	tween(rim, delay, { Size = Vector3.new(0.25, R * 2 + 1, R * 2 + 1) })
+	-- 땅 아래 하늘의 별 (거꾸로 비친 밤하늘)
+	local dots: { Part } = {}
+	for k = 1, 18 do
+		local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R * 0.9
+		local d = part(Vector3.new(0.3, 0.3, 0.3), k % 4 == 0 and MOON or STAR, Enum.Material.Neon, 0.1, "ball")
+		d.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * rr, 0.25, math.sin(a) * rr))
+		table.insert(dots, d)
+	end
+	-- 풀과 작은 돌이 하늘로 떨어진다 (거꾸로)
 	local t0 = os.clock()
-	Fx.sound("ping", 0.5, 1.2, at)
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
 		local t = os.clock() - t0
-		local grow = math.clamp(t / delay, 0, 1)
-		local u = math.clamp((t - delay) / hold, 0, 1)
-		local d = R * 2 * (1 - (1 - grow) ^ 3) * (1 + 0.04 * math.sin(t * 7))
-		local pos = g + Vector3.new(0, R * 0.8 + u * 5 + math.sin(t * 3) * 0.3, 0)
-		b.Size = Vector3.new(d, d * 0.96, d)
-		b.CFrame = CFrame.new(pos)
-		b.Color = iris(t * 1.5)
-		inner.Size = b.Size * 0.9
-		inner.CFrame = b.CFrame
-		shine.CFrame = CFrame.new(pos + Vector3.new(-d * 0.22, d * 0.3, -d * 0.28)) * CFrame.Angles(0, 0.6, 0.4)
-		if math.random() < 0.3 then
-			sparkle(pos + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * d * 0.7, 1, 0.8)
+		if t > delay and t < delay + hold and math.random() < 0.6 then
+			local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+			local p = g + Vector3.new(math.cos(a) * rr, 0.4, math.sin(a) * rr)
+			local bit = part(Vector3.new(0.4, 0.4, 0.4) * (0.6 + math.random()), math.random() < 0.5 and Color3.fromRGB(110, 140, 90) or Color3.fromRGB(120, 112, 104), Enum.Material.SmoothPlastic, 0)
+			bit.CFrame = CFrame.new(p) * CFrame.Angles(math.random() * 3, math.random() * 3, 0)
+			fadeOut(bit, 1.1, { CFrame = CFrame.new(p + Vector3.new(0, 10 + math.random() * 6, 0)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0) })
 		end
 		if t >= delay + hold then
 			conn:Disconnect()
-			b:Destroy()
-			inner:Destroy()
-			shine:Destroy()
-			pop(pos, 2.2)
-			for k = 1, 10 do
-				candy(pos + Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * R, pastel(k), 1.6, 1.2, pos.Y - g.Y)
-			end
-			Fx.flash(pos, PASTEL[1], 40, 3, 0.3)
-			Fx.sound("splash", 0.6, 1.6, pos)
-			shakeNear(pos, 0.8, 90)
 		end
+	end)
+	Fx.sound("ping", 0.4, 0.7, at)
+	task.delay(delay + hold, function()
+		for _, d in ipairs(dots) do
+			fadeOut(d, 0.2)
+		end
+		fadeOut(sky, 0.4)
+		fadeOut(rim, 0.4)
+		Fx.ring(g + Vector3.new(0, 0.4, 0), LAVENDER, 2, R * 2.6, 0.45)
+		Fx.ring(g + Vector3.new(0, 0.6, 0), MOON, 2, R * 1.8, 0.35)
+		Fx.burst("dust", g + Vector3.new(0, 0.5, 0), Color3.fromRGB(150, 140, 170), 14, 1.4)
+		stardust(g + Vector3.new(0, 1, 0), 14, 1.4, 3)
+		Fx.sound("heavy", 0.8, 1.0, g)
+		shakeNear(g, 1.6, 100)
 	end)
 end
 
 ------------------------------------------------------------------------
--- G 몽중몽: 무지갯빛 구름 바다, 초승달, 오로라, 떠오르는 비눗방울, 쏟아지는 별과 달 조각. 끝에 꿈에서 깨듯 펑
+-- G 몽중몽: 커다란 달, 떠다니는 작은 섬과 끝없는 계단과 문. 문이 여기저기서 열렸다 닫힌다. 끝에 모두 떨어지며 깬다
 ------------------------------------------------------------------------
-local function dreamSea(data: any)
+local function island(at: Vector3, s: number): { Part }
+	local list: { Part } = {}
+	local rock = part(Vector3.new(4 * s, 3 * s, 4 * s), Color3.fromRGB(110, 100, 120), Enum.Material.Slate, 0, "ball")
+	rock.CFrame = CFrame.new(at - Vector3.new(0, 1.2 * s, 0))
+	table.insert(list, rock)
+	local tip = part(Vector3.new(2 * s, 2.6 * s, 2 * s), Color3.fromRGB(96, 88, 108), Enum.Material.Slate, 0, "ball")
+	tip.CFrame = CFrame.new(at - Vector3.new(0, 2.8 * s, 0))
+	table.insert(list, tip)
+	local grass = part(Vector3.new(0.4 * s, 4.2 * s, 4.2 * s), Color3.fromRGB(120, 170, 130), Enum.Material.Grass, 0, "cyl")
+	grass.CFrame = CFrame.new(at) * UP
+	table.insert(list, grass)
+	local trunk = part(Vector3.new(0.3, 1.6, 0.3) * s, Color3.fromRGB(90, 70, 60), Enum.Material.Wood, 0)
+	trunk.CFrame = CFrame.new(at + Vector3.new(0.6 * s, 0.9 * s, 0))
+	table.insert(list, trunk)
+	local leaf = part(Vector3.new(1.6, 1.4, 1.6) * s, Color3.fromRGB(200, 170, 240), Enum.Material.SmoothPlastic, 0, "ball")
+	leaf.CFrame = CFrame.new(at + Vector3.new(0.6 * s, 2 * s, 0))
+	table.insert(list, leaf)
+	return list
+end
+local function dreamIsles(data: any)
 	local at: Vector3 = data.at
 	if not near(at, 260) then
 		return
@@ -35559,256 +35700,275 @@ local function dreamSea(data: any)
 	local delay = data.delay or 0.4
 	local dur = data.dur or 3.0
 	local g = ground(at)
-	local parts: { BasePart } = {}
-	-- 땅: 무지개 고리 (바깥에서 안으로)와 구름 덩이
-	for k = 1, 5 do
-		local d = R * 2 * (1 - (k - 1) * 0.16)
-		local ringP = part(Vector3.new(0.2, 1, 1), pastel(k), Enum.Material.Neon, 0.72, "cyl")
-		ringP.CFrame = CFrame.new(g + Vector3.new(0, 0.1 + k * 0.02, 0)) * UP
-		tween(ringP, delay + 0.2, { Size = Vector3.new(0.2, d, d) })
-		table.insert(parts, ringP)
+	local cc: ColorCorrectionEffect? = nil
+	if near(at, R * 2.5) then
+		local c = Instance.new("ColorCorrectionEffect")
+		c.Name = "KwonDreamGrade"
+		c.Parent = Lighting
+		tween(c, 0.5, { TintColor = Color3.fromRGB(200, 196, 255), Brightness = -0.06, Saturation = 0.1 })
+		cc = c
 	end
-	for k = 1, 12 do
-		local a = k / 12 * math.pi * 2
-		local rr = R * (0.55 + (k % 3) * 0.15)
-		local c = part(Vector3.new(1, 1, 1), pastel(k):Lerp(WHITE, 0.45), Enum.Material.SmoothPlastic, 0.15, "ball")
-		local size = Vector3.new(9 + (k % 4) * 2, 3.2, 7 + (k % 3) * 2)
-		c.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * rr, 0.8, math.sin(a) * rr)) * CFrame.Angles(0, a, 0)
-		tween(c, delay + 0.3, { Size = size }, Enum.EasingStyle.Back)
-		table.insert(parts, c)
+	local things: { { list: { Part }, base: Vector3, bob: number } } = {}
+	-- 큰 달 (머리 위, 한쪽으로)
+	local moonC = g + Vector3.new(R * 0.4, 34, -R * 0.3)
+	local moon = part(Vector3.new(1, 1, 1), MOON, Enum.Material.Neon, 0.05, "ball")
+	moon.CFrame = CFrame.new(moonC)
+	tween(moon, 0.6, { Size = Vector3.new(16, 16, 16) }, Enum.EasingStyle.Back)
+	local halo = part(Vector3.new(1, 1, 1), MOON, Enum.Material.Neon, 0.85, "ball")
+	halo.CFrame = CFrame.new(moonC)
+	tween(halo, 0.8, { Size = Vector3.new(30, 30, 30) })
+	-- 떠다니는 섬 여섯
+	for k = 1, 6 do
+		local a = k / 6 * math.pi * 2 + 0.3
+		local base = g + Vector3.new(math.cos(a) * R * 0.75, 8 + (k % 3) * 4, math.sin(a) * R * 0.75)
+		table.insert(things, { list = island(base, 0.9 + (k % 2) * 0.4), base = base, bob = k })
 	end
-	-- 하늘: 초승달 (호를 따라 조각을 이어) 과 오로라 띠 셋
-	local moonC = g + Vector3.new(0, 34, 0)
-	for k = 0, 12 do
-		local a = math.rad(-110 + k * 18)
-		local w = 2.4 * math.sin((k + 0.5) / 13 * math.pi) + 0.5
-		local seg = part(Vector3.new(w, 2.6, 0.6), MOON, Enum.Material.Neon, 1)
-		seg.CFrame = CFrame.new(moonC + Vector3.new(math.cos(a) * 7, math.sin(a) * 7, 0)) * CFrame.Angles(0, 0, a)
-		tween(seg, 0.6, { Transparency = 0.05 })
-		table.insert(parts, seg)
-	end
-	local aurora: { { p: BasePart, k: number, j: number } } = {}
+	-- 끝없는 계단 셋 (빙글 돌며 올라가다 허공에서 끊긴다)
 	for k = 1, 3 do
-		for j = 0, 9 do
-			local p = part(Vector3.new(6, 8, 0.2), pastel(k + 1), Enum.Material.Neon, 0.75)
-			table.insert(aurora, { p = p, k = k, j = j })
-			table.insert(parts, p)
+		local a0 = k / 3 * math.pi * 2
+		local c = g + Vector3.new(math.cos(a0) * R * 0.45, 0, math.sin(a0) * R * 0.45)
+		local list: { Part } = {}
+		for j = 0, 13 do
+			local a = a0 + j * 0.42
+			local st = part(Vector3.new(3, 0.5, 1.4), j % 2 == 0 and LAVENDER or Color3.fromRGB(230, 222, 250), Enum.Material.SmoothPlastic, 0.05)
+			st.CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 3, 1 + j * 1.1, math.sin(a) * 3)) * CFrame.Angles(0, -a, 0)
+			st.Transparency = 1
+			task.delay(delay + j * 0.04, function()
+				tween(st, 0.2, { Transparency = 0.05 })
+			end)
+			table.insert(list, st)
 		end
+		table.insert(things, { list = list, base = c, bob = 10 + k })
+	end
+	-- 문 다섯 (떠다니며 가끔 열렸다 닫힌다)
+	local doors: { Door } = {}
+	for k = 1, 5 do
+		local a = k / 5 * math.pi * 2 + 1
+		local p = g + Vector3.new(math.cos(a) * R * 0.55, 4 + (k % 2) * 3, math.sin(a) * R * 0.55)
+		doors[k] = makeDoor(CFrame.lookAt(p, Vector3.new(g.X, p.Y, g.Z)), 3, 5)
 	end
 	local t0 = os.clock()
+	local nextDoor = delay
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
 		local t = os.clock() - t0
-		for _, it in ipairs(aurora) do
-			local x = (it.j - 4.5) * 5.6
-			local y = 26 + it.k * 3 + math.sin(t * 1.4 + it.j * 0.6 + it.k) * 1.6
-			it.p.CFrame = CFrame.new(g + Vector3.new(x, y, -R * 0.4 + it.k * 3)) * CFrame.Angles(0, math.sin(t + it.j) * 0.2, 0)
+		for _, th in ipairs(things) do
+			local off = Vector3.new(0, math.sin(t * 1.2 + th.bob) * 0.6, 0)
+			for _, p in ipairs(th.list) do
+				if p.Parent then
+					p.CFrame = p.CFrame + off * 0.03
+				end
+			end
 		end
-		if t > delay and t < delay + dur then
-			-- 떠오르는 비눗방울
-			if math.random() < 0.5 then
-				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
-				local bp = g + Vector3.new(math.cos(a) * rr, 1, math.sin(a) * rr)
-				local bub = part(Vector3.new(1, 1, 1) * (0.8 + math.random() * 1.6), pastel(math.random(1, 5)), Enum.Material.Glass, 0.55, "ball")
-				bub.CFrame = CFrame.new(bp)
-				fadeOut(bub, 1.6, { CFrame = CFrame.new(bp + Vector3.new(math.random() - 0.5, 9, math.random() - 0.5)) })
-			end
-			-- 쏟아지는 별과 달 조각
-			if math.random() < 0.55 then
-				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
-				candy(g + Vector3.new(math.cos(a) * rr, 18 + math.random() * 6, math.sin(a) * rr), pastel(math.random(1, 5)), 1.2, 0.8, 16)
-			end
+		if t >= nextDoor and t < delay + dur then
+			nextDoor = t + 0.35
+			local d = doors[math.random(1, #doors)]
+			doorBlink(d, 0.5)
+			Fx.sound("block", 0.25, 1.6, d.cf.Position)
+		end
+		if math.random() < 0.3 then
+			local a, rr = math.random() * math.pi * 2, math.random() * R
+			stardust(g + Vector3.new(math.cos(a) * rr, 1, math.sin(a) * rr), 1, 1, 6)
 		end
 		if t >= delay + dur then
 			conn:Disconnect()
 		end
 	end)
-	Fx.sound("ping", 0.6, 0.9, at)
-	shakeNear(g, 0.8, 120)
+	mist(g, 2.4, dur + delay)
+	Fx.sound("ping", 0.6, 0.6, at)
+	-- 깬다: 모든 것이 아래로 떨어지고 하얀 빛
 	task.delay(delay + dur, function()
-		-- 꿈에서 깬다: 하얀 빛이 번지고 모든 것이 반짝이로
-		for _, p in ipairs(parts) do
-			if p.Parent then
-				fadeOut(p, 0.5, { Size = p.Size * 1.2 })
+		local all: { Part } = { moon, halo }
+		for _, th in ipairs(things) do
+			for _, p in ipairs(th.list) do
+				table.insert(all, p)
 			end
 		end
-		local core = part(Vector3.new(4, 4, 4), WHITE, Enum.Material.Neon, 0, "ball")
+		for _, d in ipairs(doors) do
+			for _, p in ipairs(d.frame) do
+				table.insert(all, p)
+			end
+			table.insert(all, d.panel)
+			table.insert(all, d.light)
+		end
+		for _, p in ipairs(all) do
+			if p.Parent then
+				fadeOut(p, 0.6, { CFrame = p.CFrame - Vector3.new(0, 18, 0) })
+			end
+		end
+		local core = part(Vector3.new(4, 4, 4), STAR, Enum.Material.Neon, 0, "ball")
 		core.CFrame = CFrame.new(g + Vector3.new(0, 4, 0))
-		fadeOut(core, 0.5, { Size = Vector3.new(R * 1.8, R * 1.8, R * 1.8) })
-		for k = 1, 5 do
-			task.delay(k * 0.05, function()
-				Fx.ring(g + Vector3.new(0, 0.5 + k * 0.6, 0), pastel(k), 4, R * 2.4 + k * 6, 0.6)
+		fadeOut(core, 0.6, { Size = Vector3.new(R * 1.8, R * 1.8, R * 1.8) })
+		for k = 1, 3 do
+			task.delay(k * 0.06, function()
+				Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k == 2 and MOON or LAVENDER, 4, R * 2.4 + k * 6, 0.6)
 			end)
 		end
-		for _ = 1, 6 do
-			local a, rr = math.random() * math.pi * 2, math.random() * R
-			sparkle(g + Vector3.new(math.cos(a) * rr, 3, math.sin(a) * rr), 6, 1.4)
-		end
-		Fx.flash(g + Vector3.new(0, 4, 0), PASTEL[1], 90, 6, 0.5)
-		Fx.sound("shatter", 0.7, 1.6, g)
+		stardust(g + Vector3.new(0, 4, 0), 30, 2.2, 6)
+		Fx.flash(g + Vector3.new(0, 4, 0), MOON, 90, 6, 0.5)
+		Fx.sound("splash", 0.6, 1.4, g)
 		Fx.sound("heavy", 0.8, 0.8, g)
 		shakeNear(g, 2.2, 150)
+		if cc then
+			tween(cc, 0.6, { TintColor = Color3.new(1, 1, 1), Brightness = 0, Saturation = 0 })
+			task.delay(0.7, function()
+				cc:Destroy()
+			end)
+		end
 	end)
 end
 
 ------------------------------------------------------------------------
--- X 호접지몽: 날개폭이 하늘을 가리는 꿈나비. 날갯짓마다 무지갯빛 물결, 날개를 접어 감싸 안고 무지개 꽃으로
+-- X 월하몽: 보름달이 떠오르고 땅이 밤 호수가 된다. 등불과 문이 떠오르고 별이 소용돌이친다. 달이 내려와 호수에 닿으면 소리 없이 하얗게
 ------------------------------------------------------------------------
-type BigFly = { body: BasePart, panels: { { p: BasePart, side: number, off: CFrame, base: Color3 } } }
-local function bigButterfly(S: number): BigFly
-	local body = part(Vector3.new(1.4, 1.4, 12) * S / 30, BODY, Enum.Material.SmoothPlastic, 0, "ball")
-	local panels = {}
-	for _, side in ipairs({ -1, 1 }) do
-		-- 윗날개 (큰 판 + 안쪽 빛깔 판 + 흰 테 + 점 무늬), 아랫날개
-		local defs = {
-			{ Vector3.new(16, 0.3, 13), CFrame.new(side * 8.5, 0, -3.5), PASTEL[2], Enum.Material.Glass, 0.25 },
-			{ Vector3.new(10, 0.32, 8), CFrame.new(side * 7.5, 0.1, -3), PASTEL[1], Enum.Material.Glass, 0.3 },
-			{ Vector3.new(17, 0.2, 14), CFrame.new(side * 8.5, -0.1, -3.5), WHITE, Enum.Material.Neon, 0.75 },
-			{ Vector3.new(2.2, 0.34, 2.2), CFrame.new(side * 12.5, 0.2, -6), PASTEL[5], Enum.Material.Neon, 0.1 },
-			{ Vector3.new(11, 0.3, 9), CFrame.new(side * 6, 0, 6), PASTEL[4], Enum.Material.Glass, 0.25 },
-			{ Vector3.new(6, 0.32, 5), CFrame.new(side * 5.5, 0.1, 6.5), PASTEL[3], Enum.Material.Glass, 0.3 },
-			{ Vector3.new(1.6, 0.34, 1.6), CFrame.new(side * 8, 0.2, 8.5), PASTEL[5], Enum.Material.Neon, 0.1 },
-		}
-		for _, d in ipairs(defs) do
-			local p = part(d[1] * S / 30, d[3], d[4], d[5], "ball")
-			table.insert(panels, { p = p, side = side, off = CFrame.new(d[2].Position * S / 30), base = d[3] })
-		end
-	end
-	return { body = body, panels = panels }
-end
-local function placeBig(f: BigFly, cf: CFrame, flap: number, t: number)
-	f.body.CFrame = cf
-	for i, it in ipairs(f.panels) do
-		local hinge = cf * CFrame.Angles(0, 0, -it.side * flap * math.rad(80))
-		it.p.CFrame = hinge * it.off
-		if it.p.Material == Enum.Material.Glass then
-			it.p.Color = it.base:Lerp(iris(t + i * 0.2), 0.35)
-		end
-	end
-end
-local function butterflyDream(data: any)
+local function moonDream(data: any)
 	local at: Vector3 = data.at
 	if not near(at, 340) then
 		return
 	end
 	local dir = flat(data.dir or Vector3.new(0, 0, -1))
 	local cut = data.cut or 1.4
-	local rise = data.rise or 0.6
-	local flaps = data.flaps or 3
-	local every = data.flapEvery or 0.6
-	local fold = data.fold or 0.6
+	local rise = data.rise or 0.5
+	local drift = data.drift or 2.0
+	local descend = data.descend or 0.8
 	local range = data.range or 40
 	local g = ground(at)
-	local fly = bigButterfly(60)
-	local startP = g - dir * 14 + Vector3.new(0, -6, 0)
-	local hover = g - dir * 6 + Vector3.new(0, 26, 0)
-	local t0 = os.clock()
-	local flapped = 0
-	-- 컷씬 동안 둘레에 꿈의 빛 기둥 다섯이 피어오른다
-	for k = 1, 5 do
-		local a = k / 5 * math.pi * 2
-		local p = g + Vector3.new(math.cos(a) * range * 0.6, 0, math.sin(a) * range * 0.6)
-		local col = part(Vector3.new(2, 3, 3), pastel(k), Enum.Material.Neon, 0.4, "cyl")
-		col.CFrame = CFrame.new(p) * UP
-		tween(col, cut * 0.6, { Size = Vector3.new(50, 3, 3), CFrame = CFrame.new(p + Vector3.new(0, 25, 0)) * UP })
-		task.delay(cut + 0.2, function()
-			fadeOut(col, 0.6)
-		end)
+	local cc: ColorCorrectionEffect? = nil
+	if near(at, range * 2.5) then
+		local c = Instance.new("ColorCorrectionEffect")
+		c.Name = "KwonMoonGrade"
+		c.Parent = Lighting
+		tween(c, 0.8, { TintColor = Color3.fromRGB(170, 176, 255), Brightness = -0.12, Contrast = 0.1 })
+		cc = c
 	end
+	local parts: { Part } = {}
+	-- 하늘을 채우는 보름달 (등 뒤에서 떠오른다)
+	local moonFrom = g - dir * 60 + Vector3.new(0, -20, 0)
+	local moonAt = g - dir * 50 + Vector3.new(0, 55, 0)
+	local moon = part(Vector3.new(56, 56, 56), MOON, Enum.Material.Neon, 0.02, "ball")
+	moon.CFrame = CFrame.new(moonFrom)
+	local glow = part(Vector3.new(90, 90, 90), MOON, Enum.Material.Neon, 0.9, "ball")
+	glow.CFrame = CFrame.new(moonFrom)
+	tween(moon, cut, { CFrame = CFrame.new(moonAt) }, Enum.EasingStyle.Sine)
+	tween(glow, cut, { CFrame = CFrame.new(moonAt) }, Enum.EasingStyle.Sine)
+	table.insert(parts, moon)
+	table.insert(parts, glow)
+	-- 밤 호수 (달이 비친다)
+	local lake = part(Vector3.new(0.3, 1, 1), NIGHT, Enum.Material.Glass, 0.05, "cyl")
+	lake.Reflectance = 0.5
+	lake.CFrame = CFrame.new(g + Vector3.new(0, 0.15, 0)) * UP
+	table.insert(parts, lake)
+	local reflect = part(Vector3.new(0.32, 1, 1), MOON, Enum.Material.Neon, 0.5, "cyl")
+	reflect.CFrame = CFrame.new(g - dir * range * 0.45 + Vector3.new(0, 0.2, 0)) * UP
+	table.insert(parts, reflect)
+	task.delay(cut, function()
+		tween(lake, rise, { Size = Vector3.new(0.3, range * 2, range * 2) })
+		tween(reflect, rise, { Size = Vector3.new(0.32, range * 0.5, range * 0.5) })
+		Fx.ring(g + Vector3.new(0, 0.4, 0), LAVENDER, 4, range * 2.2, 0.8)
+		Fx.sound("splash", 0.5, 0.7, g)
+		-- 호수에 박힌 별, 떠오르는 등불, 떠다니는 문
+		for k = 1, 30 do
+			local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * range * 0.95
+			local s = part(Vector3.new(0.4, 0.4, 0.4), k % 5 == 0 and MOON or STAR, Enum.Material.Neon, 0.1, "ball")
+			s.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * rr, 0.35, math.sin(a) * rr))
+			table.insert(parts, s)
+		end
+		for k = 1, 10 do
+			local a = k / 10 * math.pi * 2
+			local p0 = g + Vector3.new(math.cos(a) * range * 0.7, 0.5, math.sin(a) * range * 0.7)
+			local lantern = part(Vector3.new(1.2, 1.6, 1.2), Color3.fromRGB(255, 196, 130), Enum.Material.Neon, 0.1)
+			lantern.CFrame = CFrame.new(p0)
+			tween(lantern, rise + drift + descend, { CFrame = CFrame.new(p0 + Vector3.new(0, 14 + (k % 3) * 4, 0)) }, Enum.EasingStyle.Sine)
+			table.insert(parts, lantern)
+		end
+		for k = 1, 4 do
+			local a = k / 4 * math.pi * 2 + 0.4
+			local p = g + Vector3.new(math.cos(a) * range * 0.45, 6, math.sin(a) * range * 0.45)
+			local d = makeDoor(CFrame.lookAt(p, Vector3.new(g.X, p.Y, g.Z)), 3.4, 5.6)
+			task.delay(rise + k * 0.4, function()
+				doorBlink(d, 0.8)
+			end)
+			task.delay(rise + drift + descend, function()
+				killDoor(d, 0.5)
+			end)
+		end
+	end)
+	-- 별의 소용돌이 (가운데를 감싸며 천천히 오른다)
+	local spin: { Part } = {}
+	for k = 1, 28 do
+		local s = part(Vector3.new(0.5, 0.5, 0.5), k % 3 == 0 and MOON or (k % 3 == 1 and STAR or LAVENDER), Enum.Material.Neon, 1, "ball")
+		table.insert(spin, s)
+		table.insert(parts, s)
+	end
+	local t0 = os.clock()
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
 		local t = os.clock() - t0
-		local pos: Vector3
-		local flap: number
-		local look = CFrame.lookAt(Vector3.zero, -dir) -- 몸은 쓴 사람이 보는 쪽으로 (머리 = -Z)
-		if t < cut then
-			pos = startP
-			flap = 1
-		elseif t < cut + rise then
-			local u = (t - cut) / rise
-			pos = startP:Lerp(hover, 1 - (1 - u) ^ 2)
-			flap = 1 - u * 0.6
-		elseif t < cut + rise + flaps * every then
-			local tt = t - cut - rise
-			local k = math.floor(tt / every)
-			local u = (tt - k * every) / every
-			-- 날개를 크게 아래로 쳤다가 천천히 든다
-			flap = u < 0.3 and (0.9 - u / 0.3 * 1.15) or (-0.25 + (u - 0.3) / 0.7 * 1.15)
-			pos = hover + Vector3.new(0, math.sin(tt * 4) * 0.8 - (u < 0.3 and u * 3 or 0.9 - (u - 0.3) * 1.3), 0)
-			if k + 1 > flapped and k < flaps then
-				flapped = k + 1
-				-- 날갯짓 물결: 무지개 빛깔 고리가 둘레를 휩쓴다
-				for c = 1, 5 do
-					task.delay(c * 0.04, function()
-						Fx.ring(g + Vector3.new(0, 0.6 + c * 0.4, 0), pastel(c), 6, range * 2.2, 0.55)
-					end)
-				end
-				for _ = 1, 8 do
-					local a, rr = math.random() * math.pi * 2, math.random() * range
-					sparkle(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 4, 1.3)
-				end
-				Fx.sound("swing", 0.9, 0.5, g)
-				shakeNear(g, 1.4, 180)
+		local u = math.clamp((t - cut - rise) / drift, 0, 1)
+		if t > cut + rise and t < cut + rise + drift + descend then
+			for k, s in ipairs(spin) do
+				local a = t * 0.9 + k / #spin * math.pi * 2
+				local rr = range * (0.25 + (k % 4) * 0.15) * (1 - u * 0.3)
+				s.Transparency = 0.1
+				s.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * rr, 3 + (k % 5) * 2 + u * 4, math.sin(a) * rr))
 			end
-		elseif t < cut + rise + flaps * every + fold then
-			local u = (t - cut - rise - flaps * every) / fold
-			pos = hover:Lerp(g + Vector3.new(0, 10, 0), u * u)
-			flap = 0.6 + u * 0.55 -- 날개를 위로 접어 감싸 안는다
-		else
-			conn:Disconnect()
-			fadeOut(fly.body, 0.3)
-			for _, it in ipairs(fly.panels) do
-				fadeOut(it.p, 0.3, { Size = it.p.Size * 1.4 })
+			if math.random() < 0.25 then
+				local a, rr = math.random() * math.pi * 2, math.random() * range
+				zzz(g + Vector3.new(math.cos(a) * rr, 4 + math.random() * 4, math.sin(a) * rr), 1.2)
 			end
-			-- 무지개 꽃: 꽃잎 열이 활짝 피었다 흩어진다
-			for k = 1, 10 do
-				local a = k / 10 * math.pi * 2
-				local petal = part(Vector3.new(4, 1, 8), pastel(k), Enum.Material.Neon, 0.15, "ball")
-				local cf0 = CFrame.new(g + Vector3.new(0, 2, 0)) * CFrame.Angles(0, a, 0)
-				petal.CFrame = cf0 * CFrame.new(0, 0, -2) * CFrame.Angles(math.rad(70), 0, 0)
-				local cf1 = cf0 * CFrame.new(0, 1, -(data.finalRadius or 34) * 0.55) * CFrame.Angles(math.rad(10), 0, 0)
-				tween(petal, 0.35, { CFrame = cf1, Size = Vector3.new(12, 1.4, 24) }, Enum.EasingStyle.Back)
-				task.delay(0.45, function()
-					fadeOut(petal, 0.6, { Size = Vector3.new(16, 0.4, 30) })
-				end)
-			end
-			local core = part(Vector3.new(6, 6, 6), WHITE, Enum.Material.Neon, 0, "ball")
-			core.CFrame = CFrame.new(g + Vector3.new(0, 4, 0))
-			fadeOut(core, 0.6, { Size = Vector3.new(60, 60, 60) })
-			for c = 1, 5 do
-				task.delay(c * 0.06, function()
-					Fx.ring(g + Vector3.new(0, 0.6 + c, 0), pastel(c), 6, (data.finalRadius or 34) * 2.6 + c * 8, 0.8)
-				end)
-			end
-			for _ = 1, 12 do
-				local a, rr = math.random() * math.pi * 2, math.random() * (data.finalRadius or 34)
-				sparkle(g + Vector3.new(math.cos(a) * rr, 3 + math.random() * 6, math.sin(a) * rr), 6, 1.6)
-			end
-			Fx.flash(g + Vector3.new(0, 6, 0), PASTEL[1], 150, 9, 0.7)
-			Fx.sound("shatter", 0.9, 1.4, g)
-			Fx.sound("heavy", 1, 0.6, g)
-			shakeNear(g, 3.2, 220)
-			if opts.flash and near(g, 120) then
-				opts.flash(PASTEL[1], 0.3)
-			end
-			return
 		end
-		placeBig(fly, CFrame.new(pos) * look.Rotation * CFrame.Angles(math.rad(-25), 0, 0), flap, t)
+		if t >= cut + rise + drift + descend then
+			conn:Disconnect()
+		end
+	end)
+	-- 달이 내려와 호수에 닿는다
+	task.delay(cut + rise + drift, function()
+		tween(moon, descend, { CFrame = CFrame.new(g + Vector3.new(0, 20, 0)), Size = Vector3.new(40, 40, 40) }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+		tween(glow, descend, { CFrame = CFrame.new(g + Vector3.new(0, 20, 0)) }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+	end)
+	task.delay(cut + rise + drift + descend, function()
+		-- 소리 없이 하얗게 번진다
+		local bloom = part(Vector3.new(10, 10, 10), STAR, Enum.Material.Neon, 0, "ball")
+		bloom.CFrame = CFrame.new(g + Vector3.new(0, 6, 0))
+		fadeOut(bloom, 1.0, { Size = Vector3.new(range * 2.4, range * 2.4, range * 2.4) })
+		for k = 1, 4 do
+			task.delay(k * 0.1, function()
+				Fx.ring(g + Vector3.new(0, 0.4, 0), k % 2 == 0 and MOON or LAVENDER, 6, range * 2.4 + k * 8, 0.9)
+			end)
+		end
+		stardust(g + Vector3.new(0, 6, 0), 40, 2.4, 8)
+		Fx.flash(g + Vector3.new(0, 6, 0), STAR, 160, 9, 0.9)
+		Fx.sound("splash", 0.7, 0.6, g)
+		shakeNear(g, 2.0, 220)
+		if opts.flash and near(g, 120) then
+			opts.flash(STAR, 0.35)
+		end
+		for _, p in ipairs(parts) do
+			if p.Parent then
+				fadeOut(p, 0.8, { CFrame = p.CFrame - Vector3.new(0, 4, 0) })
+			end
+		end
+		if cc then
+			tween(cc, 0.9, { TintColor = Color3.new(1, 1, 1), Brightness = 0, Contrast = 0 })
+			task.delay(1, function()
+				cc:Destroy()
+			end)
+		end
 	end)
 end
 
 local HANDLERS: { [string]: (any) -> () } = {
-	butterflySwarm = butterflySwarm,
-	dreamTrap = dreamTrap,
-	dreamSea = dreamSea,
-	butterflyDream = butterflyDream,
+	sheepCount = sheepCount,
+	upsideDown = upsideDown,
+	dreamIsles = dreamIsles,
+	moonDream = moonDream,
 }
 function Dream.handles(data: any): boolean
-	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "dreamBubble")
+	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "dreamDoor")
 end
 function Dream.run(data: any)
 	if data.kind == "pulse" then
-		dreamBubble(data)
+		dreamDoorPulse(data)
 		return
 	end
 	local fn = HANDLERS[data.kind]
@@ -43968,7 +44128,7 @@ return Mount
         <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Mujo</string>
-            <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 꺼지는 촛불
+            <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
 -- 빛깔은 은빛 재와 차가운 푸른 넋불 둘뿐 (번쩍이는 색을 쓰지 않는다)
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
@@ -43982,7 +44142,6 @@ local ASH_DARK = Color3.fromRGB(110, 114, 124)
 local SOUL = Color3.fromRGB(110, 210, 255)
 local SAND = Color3.fromRGB(214, 200, 168)
 local WOOD = Color3.fromRGB(70, 56, 46)
-local WAX = Color3.fromRGB(236, 232, 222)
 local WHITE = Color3.new(1, 1, 1)
 local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
 local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
@@ -44481,25 +44640,63 @@ local function hourglass(data: any)
 end
 
 ------------------------------------------------------------------------
--- X 만등멸: 빛깔이 빠지고, 둘레에 푸른 촛불 서른여섯. 하나씩 꺼지며 넋불이 적에게, 마지막엔 어둠과 한 번의 숨
+-- X 경화수월: 빛깔이 빠지고, 둘레에 거울 열둘이 솟는다. 발밑은 물처럼 비치는 바닥, 하늘엔 창백한 달과 바닥에 비친 달.
+-- 거울 속 잿빛 내가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭하다, 거울마다 금이 가고 한가운데로 깨져 쏟아진다
 ------------------------------------------------------------------------
-type Candle = { body: BasePart, flame: BasePart, light: PointLight?, pos: Vector3, lit: boolean }
-type Rite = { at: Vector3, R: number, candles: { Candle }, cc: ColorCorrectionEffect?, done: boolean }
-local rites: { [number]: Rite } = {}
-local function riteEnd(r: Rite)
-	if r.done then
+local GLASS = Color3.fromRGB(200, 222, 236)
+type Ghost = { parts: { BasePart }, rel: { CFrame }, cf: CFrame }
+type Mirror = { at: Vector3, R: number, panels: { BasePart }, extras: { BasePart }, model: Model?, cc: ColorCorrectionEffect?, done: boolean, ghosts: { Ghost } }
+local mirrors: { [number]: Mirror } = {}
+local function ghostOf(model: Model, cf: CFrame): Ghost
+	local list = statueOf(model, cf)
+	local rel: { CFrame } = {}
+	for i, q in ipairs(list) do
+		q.Material = Enum.Material.Glass
+		q.Color = GLASS:Lerp(SOUL, math.random() * 0.3)
+		q.Transparency = 1
+		q.Reflectance = 0.3
+		rel[i] = cf:ToObjectSpace(q.CFrame)
+	end
+	return { parts = list, rel = rel, cf = cf }
+end
+local function ghostMove(gh: Ghost, cf: CFrame)
+	gh.cf = cf
+	for i, q in ipairs(gh.parts) do
+		if q.Parent then
+			q.CFrame = cf * gh.rel[i]
+		end
+	end
+end
+local function ghostAlpha(gh: Ghost, a: number, time: number)
+	for _, q in ipairs(gh.parts) do
+		if q.Parent then
+			tween(q, time, { Transparency = a })
+		end
+	end
+end
+local function mirrorEnd(mr: Mirror)
+	if mr.done then
 		return
 	end
-	r.done = true
-	for _, c in ipairs(r.candles) do
-		if c.body.Parent then
-			fadeOut(c.body, 0.6, { Size = c.body.Size * Vector3.new(1, 0.2, 1), CFrame = c.body.CFrame - Vector3.new(0, c.body.Size.Y * 0.4, 0) })
-		end
-		if c.flame.Parent then
-			fadeOut(c.flame, 0.2)
+	mr.done = true
+	for _, gh in ipairs(mr.ghosts) do
+		for _, q in ipairs(gh.parts) do
+			if q.Parent then
+				fadeOut(q, 0.2)
+			end
 		end
 	end
-	local cc = r.cc
+	for _, q in ipairs(mr.panels) do
+		if q.Parent then
+			fadeOut(q, 0.3)
+		end
+	end
+	for _, q in ipairs(mr.extras) do
+		if q.Parent then
+			fadeOut(q, 0.6)
+		end
+	end
+	local cc = mr.cc
 	if cc then
 		tween(cc, 0.9, { Saturation = 0, Brightness = 0, Contrast = 0, TintColor = WHITE })
 		task.delay(1, function()
@@ -44507,168 +44704,227 @@ local function riteEnd(r: Rite)
 		end)
 	end
 end
-local function candleOpen(data: any)
+local function mirrorOpen(data: any)
 	local at: Vector3 = data.at
 	if not near(at, 320) then
 		return
 	end
-	local R = data.radius or 38
-	local n = data.candles or 36
+	local R = data.radius or 36
 	local cut = data.cut or 1.4
-	local light = data.light or 0.4
-	local out = data.out or 2.2
-	local dark = data.dark or 0.5
+	local rise = data.rise or 0.5
+	local echo = data.echo or 1.6
+	local crack = data.crack or 0.5
 	local g = ground(at)
-	local rite: Rite = { at = g, R = R, candles = {}, cc = nil, done = false }
-	rites[data.id] = rite
-	-- 가까이 있으면 세상의 빛깔이 빠진다
+	local mr: Mirror = { at = g, R = R, panels = {}, extras = {}, model = data.m, cc = nil, done = false, ghosts = {} }
+	mirrors[data.id] = mr
 	if near(at, R * 2.5) then
 		local cc = Instance.new("ColorCorrectionEffect")
 		cc.Name = "KwonMujoGrade"
 		cc.Parent = Lighting
-		tween(cc, 0.5, { Saturation = -0.9, Brightness = -0.04, Contrast = 0.1 })
-		rite.cc = cc
+		tween(cc, 0.6, { Saturation = -1, Brightness = -0.06, Contrast = 0.15, TintColor = Color3.fromRGB(225, 236, 255) })
+		mr.cc = cc
 	end
-	-- 촛불: 바깥 고리 (둘레의 90%), 높이가 조금씩 다르다
-	for i = 1, n do
-		local a = (i - 1) / n * math.pi * 2
-		local pos = g + Vector3.new(math.cos(a) * R * 0.9, 0, math.sin(a) * R * 0.9)
-		local h = 2 + (i % 3) * 0.6
-		local body = part(Vector3.new(0.7, h, 0.7), WAX, Enum.Material.SmoothPlastic, 1)
-		body.CFrame = CFrame.new(pos + Vector3.new(0, h / 2, 0))
-		local flame = part(Vector3.new(0.45, 0.9, 0.45), SOUL, Enum.Material.Neon, 1, "ball")
-		flame.CFrame = CFrame.new(pos + Vector3.new(0, h + 0.5, 0))
-		local pl: PointLight? = nil
-		if i % 4 == 0 then
-			local l = Instance.new("PointLight")
-			l.Color = SOUL
-			l.Range = 12
-			l.Brightness = 0
-			l.Parent = flame
-			pl = l
-		end
-		table.insert(rite.candles, { body = body, flame = flame, light = pl, pos = pos + Vector3.new(0, h + 0.5, 0), lit = false })
-	end
-	-- 차례로 켜진다 (내 앞에서부터 양쪽으로)
-	for i, c in ipairs(rite.candles) do
-		task.delay(cut * 0.4 + (i - 1) / n * (cut * 0.5 + light), function()
-			if rite.done then
-				return
-			end
-			tween(c.body, 0.2, { Transparency = 0 })
-			tween(c.flame, 0.2, { Transparency = 0.05 })
-			local l = c.light
-			if l then
-				tween(l, 0.3, { Brightness = 1.2 })
-			end
-			c.lit = true
+	-- 물처럼 비치는 바닥 (컷씬 동안 천천히 번진다)
+	local floor = part(Vector3.new(0.2, 4, 4), GLASS, Enum.Material.Glass, 0.55, "cyl")
+	floor.Reflectance = 0.6
+	floor.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * UP
+	tween(floor, cut + rise, { Size = Vector3.new(0.2, R * 2, R * 2) })
+	table.insert(mr.extras, floor)
+	-- 하늘의 달과 바닥에 비친 달 (경화수월: 거울 속 꽃, 물 속 달)
+	local moonPos = g + Vector3.new(0, 46, 0) + flat(Vector3.new(math.random() - 0.5, 0, math.random() - 0.5)) * 10
+	local moon = part(Vector3.new(9, 9, 9), Color3.fromRGB(236, 242, 255), Enum.Material.Neon, 1, "ball")
+	moon.CFrame = CFrame.new(moonPos)
+	tween(moon, cut, { Transparency = 0.1 })
+	table.insert(mr.extras, moon)
+	local halo = part(Vector3.new(0.2, 18, 18), SOUL, Enum.Material.Neon, 1, "cyl")
+	halo.CFrame = CFrame.lookAt(moonPos, at) * CFrame.Angles(0, math.rad(90), 0)
+	tween(halo, cut, { Transparency = 0.85 })
+	table.insert(mr.extras, halo)
+	local water = part(Vector3.new(0.1, 8, 8), Color3.fromRGB(236, 242, 255), Enum.Material.Neon, 1, "cyl")
+	water.CFrame = CFrame.new(Vector3.new(moonPos.X, g.Y + 0.2, moonPos.Z)) * UP
+	tween(water, cut, { Transparency = 0.35 })
+	table.insert(mr.extras, water)
+	-- 물결 (컷씬 동안 바닥에 동심원)
+	for k = 0, 3 do
+		task.delay(k * cut / 4, function()
+			Fx.ring(g + Vector3.new(0, 0.3, 0), GLASS, 0.6, R * 2, 0.9)
 		end)
 	end
-	-- 촛불이 흔들린다
-	local t0 = os.clock()
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		if rite.done then
-			conn:Disconnect()
-			return
-		end
-		local t = os.clock() - t0
-		for i, c in ipairs(rite.candles) do
-			if c.lit and c.flame.Parent then
-				local w = math.sin(t * 9 + i) * 0.08
-				c.flame.CFrame = CFrame.new(c.pos) * CFrame.Angles(w, 0, w * 0.7)
+	Fx.sound("ping", 0.5, 0.5, at)
+	-- 거울 열둘이 둘레에서 솟는다 (가운데를 바라본다)
+	local n = 12
+	for i = 1, n do
+		local a = (i - 1) / n * math.pi * 2
+		local pos = g + Vector3.new(math.cos(a) * R * 0.85, 0, math.sin(a) * R * 0.85)
+		local face = CFrame.lookAt(pos, Vector3.new(g.X, pos.Y, g.Z))
+		local h, w = 13, 7
+		local glass = part(Vector3.new(w, h, 0.3), GLASS, Enum.Material.Glass, 0.3)
+		glass.Reflectance = 0.75
+		local frame = part(Vector3.new(w + 1, h + 1, 0.2), ASH_DARK, Enum.Material.Slate, 0)
+		local top = face * CFrame.new(0, h / 2 + 0.5, 0)
+		local downCF = face * CFrame.new(0, -h / 2 - 1, 0)
+		glass.CFrame = downCF
+		frame.CFrame = downCF * CFrame.new(0, 0, 0.3)
+		table.insert(mr.panels, glass)
+		table.insert(mr.extras, frame)
+		task.delay(cut + (i % 4) * rise * 0.12, function()
+			if mr.done then
+				return
 			end
-		end
+			tween(glass, rise * 0.6, { CFrame = top }, Enum.EasingStyle.Back)
+			tween(frame, rise * 0.6, { CFrame = top * CFrame.new(0, 0, 0.3) }, Enum.EasingStyle.Back)
+			ashPuff(pos, 3, 1, 2)
+		end)
+	end
+	task.delay(cut, function()
+		Fx.sound("heavy", 0.6, 1.4, at)
+		shakeNear(g, 1.2, 160)
 	end)
-	-- 마지막 촛불이 꺼지면 어둠, 그리고 한 번의 숨
-	task.delay(cut + light + out, function()
-		local cc = rite.cc
-		if cc then
-			tween(cc, 0.25, { Brightness = -0.35, Contrast = 0.3 })
-		end
-		Fx.sound("fall", 0.5, 0.5, g)
-	end)
-	task.delay(cut + light + out + dark, function()
-		if rite.done then
+	-- 금이 간다: 거울마다 넋빛 금이 번진다
+	task.delay(cut + rise + echo, function()
+		if mr.done then
 			return
 		end
-		local cc = rite.cc
-		if cc then
-			cc.Brightness = 0.3
-		end
-		-- 숨: 하얀 바람의 고리가 가운데에서 퍼지고, 모든 것이 재로
-		for k = 0, 3 do
-			task.delay(k * 0.07, function()
-				Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and WHITE or SOUL, 4, R * 2.4 + k * 10, 0.8)
+		for i, q in ipairs(mr.panels) do
+			task.delay((i % 6) * crack * 0.08, function()
+				if q.Parent then
+					crackLines(q.Position, 5, 6, crack, SOUL, q.CFrame.LookVector)
+					tween(q, crack * 0.5, { Transparency = 0.15 })
+				end
 			end)
 		end
-		for _ = 1, 10 do
-			local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
-			ashPuff(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 6, 1.6, 6)
+		crackLines(g + Vector3.new(0, 0.3, 0), 10, R * 0.8, crack + 0.2, SOUL)
+		if water.Parent then
+			crackLines(water.Position + Vector3.new(0, 0.1, 0), 5, 5, crack, WHITE)
 		end
-		Fx.burst("smoke", g + Vector3.new(0, 3, 0), ASH, 30, 3.5)
-		Fx.flash(g + Vector3.new(0, 4, 0), WHITE, 140, 9, 0.6)
-		Fx.sound("shatter", 1, 0.5, g)
-		Fx.sound("heavy", 1, 0.4, g)
-		shakeNear(g, 3.2, 220)
-		if opts.flash and near(g, R * 2) then
-			opts.flash(WHITE, 0.3)
-		end
-		riteEnd(rite)
+		Fx.sound("deflect", 0.8, 0.6, at)
+		shakeNear(g, 0.8, 160)
 	end)
-	task.delay(cut + light + out + dark + 4, function()
-		riteEnd(rite)
-		rites[data.id] = nil
-	end)
-end
-local function candleOut(data: any)
-	local rite = rites[data.id]
-	if not rite or rite.done then
-		return
-	end
-	local c = rite.candles[data.idx or 0]
-	if not c then
-		return
-	end
-	c.lit = false
-	local from = c.pos
-	fadeOut(c.flame, 0.15, { Size = Vector3.new(0.1, 0.1, 0.1) })
-	local l = c.light
-	if l then
-		tween(l, 0.15, { Brightness = 0 })
-	end
-	c.body.Color = Color3.fromRGB(180, 176, 168)
-	Fx.burst("smoke", from, ASH, 2, 0.6)
-	-- 넋불이 적에게 날아가 몸을 깎는다
-	local target = rootOf(data.to)
-	local to = target and target.Position or rite.at + Vector3.new(0, 3, 0)
-	local wisp = part(Vector3.new(0.7, 0.7, 0.7), SOUL, Enum.Material.Neon, 0.05, "ball")
-	wisp.CFrame = CFrame.new(from)
-	local t0 = os.clock()
-	local last = from
-	local side = Vector3.new(math.random() - 0.5, 1, math.random() - 0.5) * 4
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		local u = math.clamp((os.clock() - t0) / 0.3, 0, 1)
-		local goal = target and target.Parent and target.Position or to
-		local pos = from:Lerp(goal, u * u) + side * math.sin(u * math.pi)
-		wisp.CFrame = CFrame.new(pos)
-		if (pos - last).Magnitude > 0.5 then
-			local tr = beam(last, pos, 0.25, SOUL, 0.3)
-			fadeOut(tr, 0.25, { Size = Vector3.new(0.02, 0.02, tr.Size.Z) })
-			last = pos
+	-- 깨진다: 거울 조각이 모두 한가운데로 쏟아져 들어가 터진다
+	task.delay(cut + rise + echo + crack, function()
+		if mr.done then
+			return
 		end
-		if u >= 1 then
-			conn:Disconnect()
-			wisp:Destroy()
-			if target then
-				shards(pos, 4, 0.6, ASH)
-				ashPuff(pos, 3, 0.8, 2)
+		local mid = g + Vector3.new(0, 4, 0)
+		for _, q in ipairs(mr.panels) do
+			local from = q.Position
+			for _ = 1, 6 do
+				local s = part(Vector3.new(1.8, 0.12, 1.4) * (0.6 + math.random() * 0.8), GLASS, Enum.Material.Glass, 0.15, "wedge")
+				s.Reflectance = 0.6
+				s.CFrame = CFrame.new(from + Vector3.new((math.random() - 0.5) * 6, (math.random() - 0.5) * 10, (math.random() - 0.5) * 2)) * CFrame.Angles(math.random() * 6, math.random() * 6, 0)
+				local land = mid + Vector3.new((math.random() - 0.5) * 3, (math.random() - 0.5) * 3, (math.random() - 0.5) * 3)
+				tween(s, 0.28, { CFrame = CFrame.new(land) * CFrame.Angles(math.random() * 9, math.random() * 9, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				task.delay(0.3, function()
+					s:Destroy()
+				end)
 			end
 		end
+		for _, q in ipairs(mr.panels) do
+			q:Destroy()
+		end
+		table.clear(mr.panels)
+		Fx.sound("shatter", 1, 0.8, at)
+		task.delay(0.3, function()
+			for k = 0, 3 do
+				task.delay(k * 0.07, function()
+					Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and WHITE or SOUL, 4, R * 2.4 + k * 10, 0.8)
+				end)
+			end
+			shards(mid, 30, 2.2, GLASS)
+			for _ = 1, 8 do
+				local a, rr = math.random() * math.pi * 2, math.sqrt(math.random()) * R
+				ashPuff(g + Vector3.new(math.cos(a) * rr, 2 + math.random() * 4, math.sin(a) * rr), 5, 1.5, 6)
+			end
+			if moon.Parent then
+				shards(moon.Position, 14, 1.6, Color3.fromRGB(236, 242, 255))
+				moon:Destroy()
+			end
+			Fx.burst("smoke", mid, ASH, 26, 3.5)
+			Fx.flash(mid, WHITE, 140, 9, 0.6)
+			Fx.sound("shatter", 1, 0.5, at)
+			Fx.sound("heavy", 1, 0.4, at)
+			shakeNear(g, 3.2, 220)
+			if opts.flash and near(g, R * 2) then
+				opts.flash(WHITE, 0.3)
+			end
+			mirrorEnd(mr)
+		end)
 	end)
-	if (data.idx or 0) % 3 == 0 then
-		Fx.sound("ping", 0.25, 0.6 + (data.idx or 0) / 40, from)
+	task.delay(cut + rise + echo + crack + 5, function()
+		mirrorEnd(mr)
+		mirrors[data.id] = nil
+	end)
+end
+local function mirrorEcho(data: any)
+	local mr = mirrors[data.id]
+	if not mr or mr.done then
+		return
+	end
+	local model = mr.model
+	if not model then
+		return
+	end
+	local every = data.every or 0.25
+	local n = data.n or 6
+	local targets = data.targets or {}
+	local count = math.min(#targets, 6)
+	for ti = 1, count do
+		local tm: Model? = targets[ti]
+		local tr = rootOf(tm)
+		if tr then
+			local gh = ghostOf(model, CFrame.new(mr.at))
+			table.insert(mr.ghosts, gh)
+			-- 칠 때마다 다른 거울에서 나온다
+			for k = 1, n do
+				task.delay((k - 1) * every, function()
+					if mr.done or #mr.panels == 0 then
+						return
+					end
+					local panel = mr.panels[((ti * 5 + k * 7) % #mr.panels) + 1]
+					local goal = tr.Parent and tr.Position or mr.at + Vector3.new(0, 3, 0)
+					local from = panel.Position - Vector3.new(0, 3, 0)
+					local dir = flat(goal - from)
+					local startCF = CFrame.lookAt(from, from + dir)
+					ghostMove(gh, startCF)
+					ghostAlpha(gh, 0.25, 0.05)
+					tween(panel, 0.08, { Transparency = 0.05 })
+					task.delay(0.1, function()
+						if panel.Parent then
+							tween(panel, 0.15, { Transparency = 0.3 })
+						end
+					end)
+					local hitPos = goal - dir * 2.5
+					local endCF = CFrame.lookAt(hitPos, hitPos + dir)
+					local t0 = os.clock()
+					local last = from + Vector3.new(0, 1, 0)
+					local conn: RBXScriptConnection
+					conn = RunService.Heartbeat:Connect(function()
+						local u = math.clamp((os.clock() - t0) / (every * 0.45), 0, 1)
+						local e = 1 - (1 - u) * (1 - u)
+						local cf = startCF:Lerp(endCF, e)
+						ghostMove(gh, cf)
+						local p = cf.Position + Vector3.new(0, 1, 0)
+						if (p - last).Magnitude > 1.5 then
+							local trl = beam(last, p, 0.5, GLASS, 0.5, Enum.Material.Glass)
+							fadeOut(trl, 0.25, { Size = Vector3.new(0.05, 0.05, trl.Size.Z) })
+							last = p
+						end
+						if u >= 1 or mr.done then
+							conn:Disconnect()
+							if mr.done then
+								return
+							end
+							shards(goal, 4, 0.7, GLASS)
+							crackLines(goal, 3, 2, 0.12, SOUL, -dir)
+							ghostAlpha(gh, 1, every * 0.4)
+						end
+					end)
+					if ti == 1 then
+						Fx.sound("swing", 0.45, 1.1 + k * 0.05, goal)
+					end
+				end)
+			end
+		end
 	end
 end
 
@@ -44676,8 +44932,8 @@ local HANDLERS: { [string]: (any) -> () } = {
 	ashStatues = ashStatues,
 	witherBloom = witherBloom,
 	hourglass = hourglass,
-	candleOpen = candleOpen,
-	candleOut = candleOut,
+	mirrorOpen = mirrorOpen,
+	mirrorEcho = mirrorEcho,
 }
 function Mujo.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "ashCrack")
@@ -47261,9 +47517,9 @@ return Reaper
         <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Royal</string>
-            <string name="Source"><![CDATA[-- 권왕 3.6판: 권왕신권의 오의 · 초 오의 (화면)
--- 패왕행차: 붉은 길과 금빛 깃발, 관과 망토를 두른 금빛 왕의 그림자 넷이 내달려 함께 내리찍는다
--- 천하제일권: 왕관의 해, 적마다 찍히는 왕의 인장, 하늘의 금빛 문에서 내려오는 붉은 소매의 거대한 팔, 충격파 세 겹, 떨어지는 해
+            <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
+-- 패왕난무: 금빛 투기장과 금 기둥 여덟, 기둥마다 거대한 주먹이 한가운데를 내지르고 땅속 주먹이 올려친다
+-- 천하제일권: 등 뒤에 하늘만 한 금빛 왕 (나의 모습)이 일어서서 한 방, 충격파 세 겹, 십자 빛기둥, 내려와 박히는 빛의 왕관
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Fx = require(script.Parent:WaitForChild("Fx"))
@@ -47394,39 +47650,10 @@ local function kingShade(model: Model?, alpha: number): Group
 	return g
 end
 
+
 ------------------------------------------------------------------------
--- G 패왕행차
+-- 공용: 왕관 쐐기, 금빛 폭발
 ------------------------------------------------------------------------
-local function banner(pos: Vector3, h: number, face: Vector3, rise: number): { BasePart }
-	local list: { BasePart } = {}
-	local pole = part(Vector3.new(0.5, h, 0.5), GOLD_DEEP, Enum.Material.Metal)
-	local cloth = part(Vector3.new(0.12, h * 0.5, 2.6), CRIMSON, Enum.Material.Fabric)
-	local trim = part(Vector3.new(0.14, 0.3, 2.7), GOLD, Enum.Material.Metal)
-	local emblem = part(Vector3.new(0.16, 1.1, 1.1), GOLD, Enum.Material.Neon, 0, "cyl")
-	local tip = part(Vector3.new(0.7, 0.7, 0.7), GOLD, Enum.Material.Neon, 0, "ball")
-	list = { pole, cloth, trim, emblem, tip }
-	local side = Vector3.new(-face.Z, 0, face.X)
-	local function placeAt(y: number)
-		local b = pos + Vector3.new(0, y, 0)
-		pole.CFrame = CFrame.new(b + Vector3.new(0, h / 2, 0))
-		local clothC = b + Vector3.new(0, h * 0.7, 0) + side * 1.4
-		cloth.CFrame = CFrame.lookAt(clothC, clothC + face)
-		trim.CFrame = CFrame.lookAt(clothC - Vector3.new(0, h * 0.25, 0), clothC - Vector3.new(0, h * 0.25, 0) + face)
-		emblem.CFrame = CFrame.lookAt(clothC + face * 0.1, clothC + face * 5) * CFrame.Angles(0, math.rad(90), 0)
-		tip.CFrame = CFrame.new(b + Vector3.new(0, h + 0.3, 0))
-	end
-	placeAt(-h)
-	local t0 = os.clock()
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		local u = math.clamp((os.clock() - t0) / rise, 0, 1)
-		placeAt(-h * (1 - u) ^ 2)
-		if u >= 1 then
-			conn:Disconnect()
-		end
-	end)
-	return list
-end
 local function crownSpikes(at: Vector3, R: number, n: number, h: number)
 	for k = 0, n - 1 do
 		local a = k / n * math.pi * 2
@@ -47469,415 +47696,443 @@ local function goldBlast(at: Vector3, R: number)
 	Fx.breakSound("boom", 1, 0.55, g)
 	shakeNear(g, 2.8, 170)
 end
-local function kingProcession(data: any)
-	local from: Vector3, to: Vector3 = data.from, data.to
-	if not near(from, 260) then
+-- 큰 주먹 (붉은 소매에 금 팔찌). 기준은 주먹 가운데, 소매는 위(+Y)로 뻗는다. s배로 키운다
+local function armGroup(s: number): Group
+	local g: Group = { list = {} }
+	local function add(p: BasePart, off: CFrame)
+		p.Size *= s
+		table.insert(g.list, { p = p, off = CFrame.new(off.Position * s) * off.Rotation })
+	end
+	add(part(Vector3.new(14, 12, 12), GOLD, Enum.Material.Metal, 0), CFrame.new())
+	for k = 0, 3 do
+		add(part(Vector3.new(3.8, 3.8, 3.8), GOLD_DEEP, Enum.Material.Metal, 0, "ball"), CFrame.new(-5.2 + k * 3.5, -6, -4.5))
+	end
+	add(part(Vector3.new(4, 8, 4), GOLD, Enum.Material.Metal), CFrame.new(7.5, 0, -2) * CFrame.Angles(0, 0, math.rad(-15)))
+	add(part(Vector3.new(5, 15, 15), GOLD_DEEP, Enum.Material.Metal, 0, "cyl"), CFrame.new(0, 8, 0) * UP)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		add(part(Vector3.new(1.6, 1.6, 1.6), CRIMSON, Enum.Material.Neon, 0, "ball"), CFrame.new(math.cos(a) * 7.6, 8, math.sin(a) * 7.6))
+	end
+	add(part(Vector3.new(60, 16, 16), CRIMSON, Enum.Material.Fabric, 0, "cyl"), CFrame.new(0, 40, 0) * UP)
+	for _, y in ipairs({ 12, 22 }) do
+		add(part(Vector3.new(1.4, 17, 17), GOLD, Enum.Material.Metal, 0, "cyl"), CFrame.new(0, y, 0) * UP)
+	end
+	return g
+end
+-- 주먹이 dir 쪽을 향하게 (소매는 뒤로)
+local function fistCF(pos: Vector3, dir: Vector3): CFrame
+	return CFrame.lookAt(pos, pos + dir) * CFrame.Angles(math.rad(90), 0, 0)
+end
+-- 땅이 패이며 갈라지는 금빛 금
+local function goldCracks(g: Vector3, n: number, len: number, life: number)
+	for k = 1, n do
+		local a = (k / n + math.random() * 0.08) * math.pi * 2
+		local p = g + Vector3.new(0, 0.2, 0)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		for j = 1, 3 do
+			local q = p + dir * (len / 3) * (0.7 + math.random() * 0.6)
+			local seg = part(Vector3.new(0.5 / j + 0.2, 0.15, (q - p).Magnitude), j == 1 and PALE or GOLD, Enum.Material.Neon, 0)
+			seg.CFrame = CFrame.lookAt((p + q) / 2, q)
+			task.delay(life + math.random() * 0.3, function()
+				fadeOut(seg, 0.4)
+			end)
+			p = q
+			local turn = (math.random() - 0.5) * 0.9
+			dir = Vector3.new(dir.X * math.cos(turn) - dir.Z * math.sin(turn), 0, dir.X * math.sin(turn) + dir.Z * math.cos(turn))
+		end
+	end
+	-- 패인 자리의 바위 테두리
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 2 + math.random() * 0.2
+		local p = g + Vector3.new(math.cos(a), 0, math.sin(a)) * len * 0.35
+		local rock = part(Vector3.new(2.5, 1.6, 2) * (0.7 + math.random() * 0.6), Color3.fromRGB(120, 104, 86), Enum.Material.Slate, 0, "wedge")
+		rock.CFrame = CFrame.lookAt(p, g) * CFrame.Angles(math.rad(-20), math.rad(180), 0)
+		task.delay(life + 0.6 + math.random() * 0.4, function()
+			fadeOut(rock, 0.5, { CFrame = rock.CFrame - Vector3.new(0, 1.5, 0) })
+		end)
+	end
+end
+
+------------------------------------------------------------------------
+-- G 패왕난무: 발밑에 금빛 투기장, 둘레의 금 기둥 여덟. 기둥마다 거대한 주먹이 차례로 한가운데를 내지르고, 땅속 주먹이 올려친다
+------------------------------------------------------------------------
+local function kingArena(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 260) then
 		return
 	end
-	local dir = flat(to - from)
-	local side = Vector3.new(-dir.Z, 0, dir.X)
-	local W = data.width or 9
-	local unroll = data.unroll or 0.45
-	local charge = data.charge or 0.75
-	local leap = data.leap or 0.35
-	local g0, g1 = ground(from), ground(to)
-	local L = (g1 - g0).Magnitude
-	-- 붉은 길 (금빛 테두리)이 앞으로 펼쳐진다
-	local road = part(Vector3.new(W * 0.7, 0.2, 0.1), CRIMSON, Enum.Material.Fabric)
-	local edges = { part(Vector3.new(0.4, 0.24, 0.1), GOLD, Enum.Material.Metal), part(Vector3.new(0.4, 0.24, 0.1), GOLD, Enum.Material.Metal) }
-	local runner = part(Vector3.new(W * 0.25, 0.22, 0.1), CRIMSON_DARK, Enum.Material.Fabric)
-	local function placeRoad(len: number)
-		local mid = g0 + dir * (len / 2) + Vector3.new(0, 0.12, 0)
-		road.Size = Vector3.new(W * 0.7, 0.2, math.max(0.1, len))
-		road.CFrame = CFrame.lookAt(mid, mid + dir)
-		runner.Size = Vector3.new(W * 0.25, 0.22, math.max(0.1, len))
-		runner.CFrame = road.CFrame
-		for i, e in ipairs(edges) do
-			e.Size = Vector3.new(0.4, 0.24, math.max(0.1, len))
-			e.CFrame = road.CFrame * CFrame.new((i == 1 and -1 or 1) * W * 0.35, 0, 0)
-		end
+	local R = data.radius or 22
+	local rise = data.rise or 0.35
+	local n = data.fists or 8
+	local every = data.every or 0.12
+	local upper = data.upper or 0.3
+	local g = ground(at)
+	local keep: { BasePart } = {}
+	-- 투기장 바닥: 금 테, 붉은 안쪽, 관 무늬 (가운데 금 원)
+	local floor = part(Vector3.new(0.2, 2, 2), CRIMSON_DARK, Enum.Material.Neon, 0.55, "cyl")
+	floor.CFrame = CFrame.new(g + Vector3.new(0, 0.1, 0)) * UP
+	tween(floor, rise, { Size = Vector3.new(0.2, R * 2, R * 2) })
+	local rim = part(Vector3.new(0.3, 2, 2), GOLD, Enum.Material.Neon, 0.2, "cyl")
+	rim.CFrame = CFrame.new(g + Vector3.new(0, 0.05, 0)) * UP
+	tween(rim, rise, { Size = Vector3.new(0.3, R * 2 + 2, R * 2 + 2) })
+	local mid = part(Vector3.new(0.25, 2, 2), GOLD, Enum.Material.Neon, 0.25, "cyl")
+	mid.CFrame = CFrame.new(g + Vector3.new(0, 0.15, 0)) * UP
+	tween(mid, rise, { Size = Vector3.new(0.25, R * 0.5, R * 0.5) })
+	table.insert(keep, floor)
+	table.insert(keep, rim)
+	table.insert(keep, mid)
+	Fx.sound("heavy", 0.7, 0.8, at)
+	shakeNear(g, 1.2, 140)
+	-- 금 기둥 여덟이 솟는다 (꼭대기에 붉은 보석)
+	local pillars: { Vector3 } = {}
+	for k = 1, n do
+		local a = (k - 1) / n * math.pi * 2
+		local p = g + Vector3.new(math.cos(a), 0, math.sin(a)) * R
+		pillars[k] = p
+		local h = 14
+		local col = part(Vector3.new(h, 2.6, 2.6), GOLD_DEEP, Enum.Material.Metal, 0, "cyl")
+		local cap = part(Vector3.new(1, 3.6, 3.6), GOLD, Enum.Material.Metal, 0, "cyl")
+		local gem = part(Vector3.new(1.8, 1.8, 1.8), k % 2 == 0 and CRIMSON or PALE, Enum.Material.Neon, 0, "ball")
+		col.CFrame = CFrame.new(p - Vector3.new(0, h / 2, 0)) * UP
+		cap.CFrame = CFrame.new(p) * UP
+		gem.CFrame = CFrame.new(p + Vector3.new(0, 0.8, 0))
+		tween(col, rise, { CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * UP }, Enum.EasingStyle.Back)
+		tween(cap, rise, { CFrame = CFrame.new(p + Vector3.new(0, h, 0)) * UP }, Enum.EasingStyle.Back)
+		tween(gem, rise, { CFrame = CFrame.new(p + Vector3.new(0, h + 1.4, 0)) }, Enum.EasingStyle.Back)
+		table.insert(keep, col)
+		table.insert(keep, cap)
+		table.insert(keep, gem)
+		Fx.burst("dust", p, Color3.fromRGB(170, 150, 120), 4, 1.2)
 	end
-	placeRoad(0.1)
-	local t0 = os.clock()
-	local conn: RBXScriptConnection
-	conn = RunService.Heartbeat:Connect(function()
-		local u = math.clamp((os.clock() - t0) / unroll, 0, 1)
-		placeRoad(L * (1 - (1 - u) ^ 2))
-		if u >= 1 then
-			conn:Disconnect()
+	-- 기둥마다 주먹이 한가운데로
+	for k = 1, n do
+		task.delay(rise + (k - 1) * every, function()
+			local from = pillars[k] + Vector3.new(0, 5, 0)
+			local to = g + Vector3.new(0, 3, 0)
+			local dir = (to - from).Unit
+			local arm = armGroup(0.32)
+			local t0 = os.clock()
+			local dur = math.max(0.08, every * 1.3)
+			local conn: RBXScriptConnection
+			conn = RunService.Heartbeat:Connect(function()
+				local u = math.clamp((os.clock() - t0) / dur, 0, 1)
+				gplace(arm, fistCF(from:Lerp(to - dir * 2, u * u), dir))
+				if u >= 1 then
+					conn:Disconnect()
+					gfade(arm, 0.25)
+					local hit = part(Vector3.new(2, 2, 2), PALE, Enum.Material.Neon, 0, "ball")
+					hit.CFrame = CFrame.new(to)
+					fadeOut(hit, 0.25, { Size = Vector3.new(9, 9, 9) })
+					Fx.ring(g + Vector3.new(0, 0.4, 0), k % 2 == 0 and CRIMSON or GOLD, 2, 14, 0.3)
+					Fx.burst("glitter", to, GOLD, 6, 1.2)
+				end
+			end)
+			Fx.sound("hit", 0.55, 0.8 + k * 0.05, to)
+			shakeNear(g, 0.6, 120)
+		end)
+	end
+	-- 땅속에서 솟는 주먹이 올려친다
+	local up = rise + n * every + upper
+	task.delay(up - 0.15, function()
+		goldCracks(g, 8, R * 0.5, 0.4)
+		Fx.burst("dust", g, Color3.fromRGB(170, 150, 120), 12, 2)
+	end)
+	task.delay(up, function()
+		local arm = armGroup(0.6)
+		local from = g - Vector3.new(0, 10, 0)
+		local to = g + Vector3.new(0, 8, 0)
+		local base = CFrame.Angles(math.pi, 0, 0)
+		local t0 = os.clock()
+		local conn: RBXScriptConnection
+		conn = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - t0) / 0.14, 0, 1)
+			gplace(arm, CFrame.new(from:Lerp(to, 1 - (1 - u) ^ 2)) * base)
+			if u >= 1 then
+				conn:Disconnect()
+				task.delay(0.25, function()
+					gfade(arm, 0.35)
+				end)
+			end
+		end)
+		goldBlast(at, R * 0.6)
+		crownSpikes(g, R * 0.6, 10, 10)
+		if opts.flash and near(g, R * 2) then
+			opts.flash(GOLD, 0.2)
+		end
+		for _, q in ipairs(keep) do
+			if q.Parent then
+				fadeOut(q, 0.6)
+			end
 		end
 	end)
-	-- 깃발 여덟 (양옆에 넷씩)
-	local flags: { BasePart } = {}
-	for k = 1, 4 do
-		for s = -1, 1, 2 do
-			local pos = g0 + dir * (L * k / 4.6) + side * s * (W * 0.62)
-			task.delay(unroll * k / 5, function()
-				for _, p in ipairs(banner(pos, 9, dir, 0.25)) do
-					table.insert(flags, p)
-				end
-			end)
-		end
-	end
-	Fx.sound("deflect", 0.6, 0.6, from)
-	-- 금빛 왕의 그림자 넷: 두 줄 대형으로 뒤에서 내달린다
-	local shades: { { g: Group, off: Vector3 } } = {}
-	local offs = { side * -2.4, side * 2.4, side * -4.2 - dir * 3.5, side * 4.2 - dir * 3.5 }
-	for i = 1, 4 do
-		table.insert(shades, { g = kingShade(data.m, 0.35), off = offs[i] })
-	end
-	local start = from - dir * 5
-	for _, sh in ipairs(shades) do
-		gplace(sh.g, CFrame.lookAt(start + sh.off, start + sh.off + dir))
-	end
-	local c0 = os.clock() + unroll
-	local lastDust = 0
-	local conn2: RBXScriptConnection
-	conn2 = RunService.Heartbeat:Connect(function()
-		local now = os.clock()
-		if now < c0 then
-			return
-		end
-		local t = now - c0
-		local u = math.clamp(t / charge, 0, 1)
-		local lu = math.clamp((t - charge) / leap, 0, 1)
-		for i, sh in ipairs(shades) do
-			local base = start:Lerp(to, u * u * (3 - 2 * u))
-			local bob = math.abs(math.sin(t * 18 + i)) * 0.6
-			local pos = base + sh.off * (1 - lu) + Vector3.new(0, bob + 10 * math.sin(lu * math.pi) - lu * 1.5, 0)
-			gplace(sh.g, CFrame.lookAt(pos, pos + dir) * CFrame.Angles(-lu * 0.6, 0, 0))
-		end
-		if now - lastDust > 0.08 and u < 1 then
-			lastDust = now
-			local p = ground(start:Lerp(to, u)) + Vector3.new(0, 0.5, 0)
-			Fx.burst("dust", p, Color3.fromRGB(170, 150, 120), 3, 0.9)
-			Fx.burst("glitter", p + Vector3.new(0, 2, 0), GOLD, 2, 0.8)
-		end
-		if lu >= 1 then
-			conn2:Disconnect()
-			for _, sh in ipairs(shades) do
-				gfade(sh.g, 0.3)
+	task.delay(up + 3, function()
+		for _, q in ipairs(keep) do
+			if q.Parent then
+				q:Destroy()
 			end
-			goldBlast(to, data.radius or 16)
-			crownSpikes(g1, (data.radius or 16) * 0.65, 10, 9)
-			task.delay(0.6, function()
-				for _, p in ipairs(flags) do
-					if p.Parent then
-						fadeOut(p, 0.6)
-					end
-				end
-				for _, p in ipairs({ road, runner, edges[1], edges[2] }) do
-					fadeOut(p, 0.8)
-				end
-			end)
 		end
 	end)
 end
 
 ------------------------------------------------------------------------
--- X 천하제일권
+-- X 천하제일권: 등 뒤에 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 오른팔을 당겼다가 가장 강한 적에게 한 방.
+-- 충격파 세 겹, 십자로 내달리는 빛기둥 넷, 하늘에서 내려와 박히는 빛의 왕관
 ------------------------------------------------------------------------
-type Decree = { at: Vector3, sun: Group?, sunCF: CFrame?, seals: { BasePart }, done: boolean }
-local decrees: { [number]: Decree } = {}
-local function sunGroup(R: number): Group
-	local g: Group = { list = {} }
-	table.insert(g.list, { p = part(Vector3.new(1.2, R * 2, R * 2), GOLD, Enum.Material.Neon, 0.05, "cyl"), off = CFrame.Angles(0, math.rad(90), 0) })
-	table.insert(g.list, { p = part(Vector3.new(1.4, R * 1.3, R * 1.3), PALE, Enum.Material.Neon, 0, "cyl"), off = CFrame.Angles(0, math.rad(90), 0) })
-	table.insert(g.list, { p = part(Vector3.new(0.6, R * 2.7, R * 2.7), GOLD, Enum.Material.Neon, 0.7, "cyl"), off = CFrame.Angles(0, math.rad(90), 0) })
-	-- 위쪽의 왕관 가시 다섯과 보석
-	for k = -2, 2 do
-		local a = math.rad(k * 26)
-		local w = part(Vector3.new(0.8, R * 0.9, R * 0.35), GOLD, Enum.Material.Neon, 0.05, "wedge")
-		table.insert(g.list, { p = w, off = CFrame.Angles(0, 0, -a) * CFrame.new(0, R * 1.25, 0) * CFrame.Angles(0, math.rad(90), 0) })
-		local gem = part(Vector3.new(R * 0.22, R * 0.22, R * 0.22), k % 2 == 0 and CRIMSON or PALE, Enum.Material.Neon, 0, "ball")
-		table.insert(g.list, { p = gem, off = CFrame.Angles(0, 0, -a) * CFrame.new(0, R * 1.75, 0) })
-	end
-	return g
-end
-local function decreeOpen(data: any)
-	local at: Vector3 = data.at
-	if not near(at, 360) then
+type Avatar = { body: Group, arm: Group?, done: boolean }
+local avatars: { [number]: Avatar } = {}
+local function avatarEnd(av: Avatar)
+	if av.done then
 		return
 	end
-	local d: Decree = { at = at, sun = nil, sunCF = nil, seals = {}, done = false }
-	decrees[data.id] = d
-	local dir = flat(data.dir or Vector3.new(0, 0, -1))
-	local sun = sunGroup(9)
-	d.sun = sun
-	local high = at - dir * 26 + Vector3.new(0, 52, 0)
-	local low = at - dir * 26 + Vector3.new(0, 20, 0)
+	av.done = true
+	gfade(av.body, 0.8)
+	local arm = av.arm
+	if arm then
+		gfade(arm, 0.5)
+	end
+end
+local function kingAvatar(data: any)
+	local at: Vector3 = data.at
+	local to: Vector3 = data.to
+	if not near(at, 400) then
+		return
+	end
 	local cut = data.cut or 1.5
+	local rise = data.rise or 0.8
+	local charge = data.charge or 0.6
+	local punch = data.punch or 0.3
+	local g = ground(at)
+	local S = 9
+	local dir = flat(to - at)
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	-- 왕: 나의 몸을 금빛 유리로 아홉 배, 머리 위에 관, 등에 붉은 망토
+	local body = kingShade(data.m, 0.35)
+	for _, it in ipairs(body.list) do
+		it.p.Size *= S
+		it.off = CFrame.new(it.off.Position * S) * it.off.Rotation
+		it.p.Transparency = 1
+	end
+	local av: Avatar = { body = body, arm = nil, done = false }
+	avatars[data.id] = av
+	local base = g - dir * 16 - right * 6
+	local stand = base + Vector3.new(0, 3 * S, 0)
+	local face = CFrame.lookAt(stand, stand + dir)
+	-- 등 뒤의 빛기둥과 금빛 바람
+	local glow = part(Vector3.new(120, 26, 26), PALE, Enum.Material.Neon, 1, "cyl")
+	glow.CFrame = CFrame.new(base + Vector3.new(0, 60, 0)) * UP
+	tween(glow, cut * 0.6, { Transparency = 0.82 })
+	Fx.ring(base + Vector3.new(0, 0.4, 0), GOLD, 4, 60, 1)
+	Fx.sound("heavy", 0.8, 0.45, at)
+	-- 땅에서 솟아 일어선다 (컷씬 동안부터)
 	local t0 = os.clock()
+	local from = cut * 0.25
+	local riseT = cut * 0.75 + rise
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
-		if d.done then
+		if av.done then
 			conn:Disconnect()
 			return
 		end
-		local u = math.clamp((os.clock() - t0) / cut, 0, 1)
-		local pos = low:Lerp(high, 1 - (1 - u) ^ 3)
-		-- 해는 늘 쓴 사람 쪽을 본다
-		local cf = CFrame.lookAt(pos, Vector3.new(at.X, pos.Y, at.Z))
-		d.sunCF = cf
-		gplace(sun, cf)
+		local t = os.clock() - t0
+		local u = math.clamp((t - from) / riseT, 0, 1)
+		local e = 1 - (1 - u) ^ 3
+		local bob = math.sin(t * 2) * 0.6
+		gplace(body, face - Vector3.new(0, (1 - e) * 4 * S, 0) + Vector3.new(0, bob, 0))
 	end)
-	Fx.sound("deflect", 0.8, 0.5, at)
-	-- 금빛 구름 테 (둘레에 떠서 천천히 돈다)
-	for k = 0, 9 do
-		local a = k / 10 * math.pi * 2
-		local c = part(Vector3.new(10, 3.4, 7), Color3.fromRGB(255, 226, 160), Enum.Material.SmoothPlastic, 0.4, "ball")
-		c.CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 46, 38, math.sin(a) * 46))
-		tween(c, 4, { CFrame = CFrame.new(at + Vector3.new(math.cos(a + 0.4) * 46, 38, math.sin(a + 0.4) * 46)) }, Enum.EasingStyle.Linear)
-		task.delay(4, function()
-			fadeOut(c, 0.8)
-		end)
-	end
-	task.delay(10, function()
-		if not d.done then
-			d.done = true
-			gfade(sun, 0.5)
-			for _, s in ipairs(d.seals) do
-				if s.Parent then
-					fadeOut(s, 0.3)
-				end
+	task.delay(from, function()
+		for _, it in ipairs(body.list) do
+			if it.p.Parent then
+				tween(it.p, riseT * 0.8, { Transparency = it.p.Material == Enum.Material.Glass and 0.35 or 0.1 })
 			end
 		end
-		decrees[data.id] = nil
+		shakeNear(g, 1.5, 200)
+		Fx.burst("dust", base, Color3.fromRGB(170, 150, 120), 20, 3)
 	end)
-end
--- 왕의 인장: 금빛 원판 (가운데 관 무늬)이 하늘에서 떨어져 발밑에 찍힌다
-local function sealOn(d: Decree, model: Model)
-	local r = rootOf(model)
-	if not r then
-		return
-	end
-	local g = ground(r.Position) + Vector3.new(0, 0.15, 0)
-	local disc = part(Vector3.new(0.3, 7, 7), GOLD, Enum.Material.Neon, 0.1, "cyl")
-	local inner = part(Vector3.new(0.32, 4.6, 4.6), CRIMSON, Enum.Material.Neon, 0.25, "cyl")
-	local top = g + Vector3.new(0, 22, 0)
-	disc.CFrame = CFrame.new(top) * UP
-	inner.CFrame = CFrame.new(top) * UP
-	tween(disc, 0.22, { CFrame = CFrame.new(g) * UP }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	tween(inner, 0.22, { CFrame = CFrame.new(g + Vector3.new(0, 0.02, 0)) * UP }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	table.insert(d.seals, disc)
-	table.insert(d.seals, inner)
-	task.delay(0.24, function()
-		-- 관 무늬: 가시 다섯
-		for k = -2, 2 do
-			local w = part(Vector3.new(0.6, 0.12, 1.4), PALE, Enum.Material.Neon, 0)
-			w.CFrame = CFrame.new(g + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, math.rad(k * 30), 0) * CFrame.new(0, 0, -1.3)
-			table.insert(d.seals, w)
+	task.delay(cut, function()
+		Fx.sound("heavy", 1, 0.35, at)
+		for k = 0, 2 do
+			task.delay(k * 0.15, function()
+				Fx.ring(base + Vector3.new(0, 0.5 + k * 3, 0), k == 1 and CRIMSON or GOLD, 3, 50 + k * 16, 0.8)
+			end)
 		end
-		Fx.ring(g + Vector3.new(0, 0.2, 0), GOLD, 2, 12, 0.35)
-		Fx.sound("block", 0.4, 1.4, g)
 	end)
-end
-local function decreeSeals(data: any)
-	local d = decrees[data.id]
-	if not d or d.done then
-		return
-	end
-	local list = data.targets or {}
-	local span = data.span or 0.8
-	for i, m in ipairs(list) do
-		task.delay((i - 1) / math.max(1, #list) * span, function()
-			if not d.done then
-				sealOn(d, m)
+	-- 오른팔을 당긴다: 어깨 뒤에 거대한 주먹, 금빛이 모여든다
+	local shoulder = stand + right * 1.6 * S + Vector3.new(0, 1.4 * S, 0)
+	local goal = to + Vector3.new(0, 2, 0)
+	local pd = (goal - shoulder).Unit
+	local back = shoulder - pd * 10 + Vector3.new(0, 4, 0)
+	task.delay(cut + rise, function()
+		if av.done then
+			return
+		end
+		local arm = armGroup(1)
+		av.arm = arm
+		gplace(arm, fistCF(back, pd))
+		for _, it in ipairs(arm.list) do
+			local a = it.p.Transparency
+			it.p.Transparency = 1
+			tween(it.p, charge * 0.5, { Transparency = a })
+		end
+		for k = 0, 9 do
+			task.delay(k * charge / 10, function()
+				local o = back + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5).Unit * 22
+				local mote = part(Vector3.new(1.2, 1.2, 1.2), k % 3 == 0 and PALE or GOLD, Enum.Material.Neon, 0, "ball")
+				mote.CFrame = CFrame.new(o)
+				fadeOut(mote, charge * 0.4, { CFrame = CFrame.new(back), Size = Vector3.new(0.3, 0.3, 0.3) })
+			end)
+		end
+		Fx.sound("ping", 0.9, 0.4, at)
+		shakeNear(g, 0.8, 200)
+	end)
+	-- 한 방
+	task.delay(cut + rise + charge, function()
+		local arm = av.arm
+		if av.done or not arm then
+			return
+		end
+		local st = os.clock()
+		local last = back
+		local c2: RBXScriptConnection
+		c2 = RunService.Heartbeat:Connect(function()
+			local u = math.clamp((os.clock() - st) / punch, 0, 1)
+			local p = back:Lerp(goal - pd * 6, u ^ 2.2)
+			gplace(arm, fistCF(p, pd))
+			if (p - last).Magnitude > 4 then
+				local tr = part(Vector3.new(8, 8, (p - last).Magnitude), GOLD, Enum.Material.Neon, 0.5)
+				tr.CFrame = CFrame.lookAt((p + last) / 2, p)
+				fadeOut(tr, 0.3, { Size = Vector3.new(0.5, 0.5, tr.Size.Z) })
+				last = p
+			end
+			if u >= 1 then
+				c2:Disconnect()
 			end
 		end)
-	end
+		Fx.sound("swing", 1, 0.4, at)
+	end)
+	task.delay(cut + rise + charge + punch + 0.5, function()
+		local arm = av.arm
+		if arm and not av.done then
+			gfade(arm, 0.4)
+			av.arm = nil
+		end
+	end)
+	task.delay(cut + rise + charge + punch + 4, function()
+		avatarEnd(av)
+		fadeOut(glow, 0.6)
+		avatars[data.id] = nil
+	end)
 end
--- 하늘의 금빛 문 (고리)과 붉은 소매를 두른 거대한 팔
-local function gateRing(center: Vector3, R: number): { BasePart }
-	local list: { BasePart } = {}
-	local n = 28
-	for k = 0, n - 1 do
-		local a0, a1 = k / n * math.pi * 2, (k + 1) / n * math.pi * 2
-		local p0 = center + Vector3.new(math.cos(a0) * R, 0, math.sin(a0) * R)
-		local p1 = center + Vector3.new(math.cos(a1) * R, 0, math.sin(a1) * R)
-		local seg = part(Vector3.new(1.6, 1.6, (p1 - p0).Magnitude * 1.05), GOLD, Enum.Material.Neon, 0.05)
-		seg.CFrame = CFrame.lookAt((p0 + p1) / 2, p1)
-		table.insert(list, seg)
-	end
-	local inner = part(Vector3.new(0.4, R * 1.9, R * 1.9), CRIMSON, Enum.Material.Neon, 0.35, "cyl")
-	inner.CFrame = CFrame.new(center) * UP
-	table.insert(list, inner)
-	return list
-end
-local function armGroup(): Group
-	local g: Group = { list = {} }
-	-- 기준: 주먹 가운데. 소매는 위(+Y)로 길게 뻗는다
-	local fist = part(Vector3.new(14, 12, 12), GOLD, Enum.Material.Metal, 0)
-	table.insert(g.list, { p = fist, off = CFrame.new() })
-	for k = 0, 3 do
-		local kn = part(Vector3.new(3.8, 3.8, 3.8), GOLD_DEEP, Enum.Material.Metal, 0, "ball")
-		table.insert(g.list, { p = kn, off = CFrame.new(-5.2 + k * 3.5, -6, -4.5) })
-	end
-	table.insert(g.list, { p = part(Vector3.new(4, 8, 4), GOLD, Enum.Material.Metal), off = CFrame.new(7.5, 0, -2) * CFrame.Angles(0, 0, math.rad(-15)) })
-	-- 손목의 금 팔찌 (붉은 보석 줄)
-	table.insert(g.list, { p = part(Vector3.new(5, 15, 15), GOLD_DEEP, Enum.Material.Metal, 0, "cyl"), off = CFrame.new(0, 8, 0) * UP })
-	for k = 0, 5 do
-		local a = k / 6 * math.pi * 2
-		table.insert(g.list, { p = part(Vector3.new(1.6, 1.6, 1.6), CRIMSON, Enum.Material.Neon, 0, "ball"), off = CFrame.new(math.cos(a) * 7.6, 8, math.sin(a) * 7.6) })
-	end
-	-- 붉은 소매 (금 테 둘)
-	table.insert(g.list, { p = part(Vector3.new(60, 16, 16), CRIMSON, Enum.Material.Fabric, 0, "cyl"), off = CFrame.new(0, 40, 0) * UP })
-	for _, y in ipairs({ 12, 22 }) do
-		table.insert(g.list, { p = part(Vector3.new(1.4, 17, 17), GOLD, Enum.Material.Metal, 0, "cyl"), off = CFrame.new(0, y, 0) * UP })
-	end
-	return g
-end
-local function decreeFist(data: any)
-	local d = decrees[data.id]
+local function kingImpact(data: any)
 	local at: Vector3 = data.at
-	if not near(at, 360) then
+	if not near(at, 400) then
 		return
 	end
-	local gate = data.gate or 0.5
-	local fall = data.fall or 0.45
-	local R = data.radius or 20
 	local g = ground(at)
-	local top = g + Vector3.new(0, 75, 0)
-	-- 문이 열린다
-	local ring = gateRing(top, 0.5)
-	local holder = part(Vector3.new(1, 1, 1), GOLD, Enum.Material.Neon, 1)
-	holder.CFrame = CFrame.new(top)
+	local R = data.radius or 20
+	local rings = data.rings or 3
+	local ringEvery = data.ringEvery or 0.2
+	local cross = data.cross or 0.6
+	local len = data.crossLen or 40
+	local crownAt = data.crownAt or 0.4
+	local FR = data.finalRadius or 28
+	local dir = flat(data.dir or Vector3.new(0, 0, -1))
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	-- 맞은 자리: 하얀 빛, 금빛 폭발, 패인 땅
+	goldBlast(at, R)
+	goldCracks(g, 12, R * 1.4, 1.6)
+	Fx.flash(g + Vector3.new(0, 6, 0), WHITE, 160, 10, 0.6)
+	Fx.breakSound("boom", 1, 0.4, g)
+	shakeNear(g, 3.4, 240)
+	if opts.flash and near(g, R * 3) then
+		opts.flash(PALE, 0.3)
+	end
+	-- 충격파 세 겹
+	for k = 1, rings do
+		task.delay(k * ringEvery, function()
+			local r1 = R * (0.5 + k * 0.6)
+			Fx.ring(g + Vector3.new(0, 0.6, 0), k % 2 == 0 and CRIMSON or GOLD, 5, r1 * 2, 0.5)
+			Fx.ring(g + Vector3.new(0, 3, 0), PALE, 2, r1 * 1.8, 0.4)
+			Fx.burst("dust", g, Color3.fromRGB(170, 150, 120), 10, 2 + k * 0.4)
+			Fx.sound("heavy", 0.7, 0.6 + k * 0.1, g)
+			shakeNear(g, 1.4, 200)
+		end)
+	end
+	-- 십자로 내달리는 빛기둥 넷
+	local steps = 6
+	for _, d in ipairs({ dir, right, -dir, -right }) do
+		local streak = part(Vector3.new(7, 0.3, 1), PALE, Enum.Material.Neon, 0.1)
+		streak.CFrame = CFrame.lookAt(g + Vector3.new(0, 0.3, 0), g + Vector3.new(0, 0.3, 0) + d)
+		for k = 1, steps do
+			task.delay(0.2 + (k - 1) * cross / steps, function()
+				local tip = g + d * (len * k / steps)
+				local l = len * k / steps
+				if streak.Parent then
+					local mid = g + d * (l / 2) + Vector3.new(0, 0.3, 0)
+					tween(streak, cross / steps, { Size = Vector3.new(7, 0.3, l), CFrame = CFrame.lookAt(mid, mid + d) })
+				end
+				local col = part(Vector3.new(4, 6, 6), k == steps and WHITE or GOLD, Enum.Material.Neon, 0.05, "cyl")
+				col.CFrame = CFrame.new(tip) * UP
+				tween(col, 0.15, { Size = Vector3.new(50, 6, 6), CFrame = CFrame.new(tip + Vector3.new(0, 25, 0)) * UP })
+				task.delay(0.18, function()
+					fadeOut(col, 0.35, { Size = Vector3.new(50, 0.5, 0.5) })
+				end)
+				Fx.burst("glitter", tip, GOLD, 4, 1.4)
+			end)
+		end
+		task.delay(0.2 + cross + crownAt + 0.3, function()
+			fadeOut(streak, 0.5)
+		end)
+	end
+	Fx.sound("ping", 0.8, 0.5, g)
+	-- 빛의 왕관이 하늘에서 내려와 박힌다
+	local crown: Group = { list = {} }
+	crownInto(crown, CFrame.new(), FR * 0.55, 9, 10)
+	for _, it in ipairs(crown.list) do
+		it.p.Material = Enum.Material.Neon
+		it.p.Transparency = 1
+		tween(it.p, 0.3, { Transparency = 0.15 })
+	end
+	local high = g + Vector3.new(0, 70, 0)
+	local land = g + Vector3.new(0, 1, 0)
 	local t0 = os.clock()
+	local fall0 = 0.2 + cross * 0.4
+	local fallT = 0.2 + cross + crownAt - fall0
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
-		local u = math.clamp((os.clock() - t0) / gate, 0, 1)
-		local rr = 0.5 + 15 * (1 - (1 - u) ^ 3)
-		local n = #ring - 1
-		for k = 0, n - 1 do
-			local a0, a1 = k / n * math.pi * 2, (k + 1) / n * math.pi * 2
-			local p0 = top + Vector3.new(math.cos(a0) * rr, 0, math.sin(a0) * rr)
-			local p1 = top + Vector3.new(math.cos(a1) * rr, 0, math.sin(a1) * rr)
-			local seg = ring[k + 1]
-			seg.Size = Vector3.new(1.6, 1.6, (p1 - p0).Magnitude * 1.05)
-			seg.CFrame = CFrame.lookAt((p0 + p1) / 2, p1)
-		end
-		ring[#ring].Size = Vector3.new(0.4, rr * 1.9, rr * 1.9)
+		local t = os.clock() - t0
+		local u = math.clamp((t - fall0) / fallT, 0, 1)
+		gplace(crown, CFrame.new(high:Lerp(land, u ^ 2.5)) * CFrame.Angles(0, t * 1.2, 0))
 		if u >= 1 then
 			conn:Disconnect()
 		end
 	end)
-	-- 땅에 내리찍힐 자리가 붉게 물든다
-	local mark = part(Vector3.new(0.2, R * 2, R * 2), CRIMSON, Enum.Material.Neon, 0.75, "cyl")
-	mark.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * UP
-	Fx.sound("deflect", 0.9, 0.4, top)
-	-- 팔이 내려온다
-	task.delay(gate, function()
-		local arm = armGroup()
-		local from = top + Vector3.new(0, 30, 0)
-		local to = g + Vector3.new(0, 6, 0)
-		local f0 = os.clock()
-		local c2: RBXScriptConnection
-		c2 = RunService.Heartbeat:Connect(function()
-			local u = math.clamp((os.clock() - f0) / fall, 0, 1)
-			local pos = from:Lerp(to, u * u)
-			gplace(arm, CFrame.new(pos))
-			if u >= 1 then
-				c2:Disconnect()
-				-- 내리찍음: 땅이 갈라지고 충격파 세 겹
-				fadeOut(mark, 0.3)
-				local core = part(Vector3.new(6, 6, 6), WHITE, Enum.Material.Neon, 0, "ball")
-				core.CFrame = CFrame.new(g + Vector3.new(0, 2, 0))
-				fadeOut(core, 0.4, { Size = Vector3.new(R * 2, R * 2, R * 2) })
-				for k = 0, 9 do
-					local a = k / 10 * math.pi * 2 + math.random() * 0.3
-					local len = R * (0.8 + math.random() * 0.6)
-					local c = part(Vector3.new(1.2, 0.3, len), Color3.fromRGB(40, 20, 15), Enum.Material.Slate, 0)
-					c.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * len / 2, 0.15, math.sin(a) * len / 2)) * CFrame.Angles(0, -a + math.pi / 2, 0)
-					local glow = part(Vector3.new(0.4, 0.34, len * 0.9), GOLD, Enum.Material.Neon, 0.1)
-					glow.CFrame = c.CFrame
-					task.delay(2.4, function()
-						fadeOut(c, 0.6)
-						fadeOut(glow, 0.4)
-					end)
-				end
-				for k = 1, data.rings or 3 do
-					task.delay(k * (data.ringEvery or 0.22), function()
-						local R1 = R * (0.5 + k * 0.6)
-						Fx.ring(g + Vector3.new(0, 0.5, 0), k % 2 == 1 and GOLD or CRIMSON, R1 * 0.6, R1 * 2.2, 0.5)
-						Fx.burst("dust", g + Vector3.new(0, 0.6, 0), Color3.fromRGB(170, 150, 120), 10, 1.4 + k * 0.4)
-						shakeNear(g, 1.4, 170)
-					end)
-				end
-				Fx.burst("dust", g + Vector3.new(0, 1, 0), Color3.fromRGB(170, 150, 120), 30, 2.6)
-				Fx.flash(g + Vector3.new(0, 4, 0), GOLD, 120, 8, 0.5)
-				Fx.sound("heavy", 1, 0.35, g)
-				Fx.breakSound("boom", 1, 0.4, g)
-				shakeNear(g, 3.5, 220)
-				if opts.flash and near(g, 120) then
-					opts.flash(GOLD, 0.25)
-				end
-				-- 팔이 문으로 돌아가고 문이 닫힌다
-				task.delay(0.35, function()
-					local r0 = os.clock()
-					local c3: RBXScriptConnection
-					c3 = RunService.Heartbeat:Connect(function()
-						local u2 = math.clamp((os.clock() - r0) / 0.5, 0, 1)
-						gplace(arm, CFrame.new(to:Lerp(from, u2 * u2)))
-						if u2 >= 1 then
-							c3:Disconnect()
-							gfade(arm, 0.2)
-						end
-					end)
-					task.delay(0.5, function()
-						for _, p in ipairs(ring) do
-							fadeOut(p, 0.4, { Size = p.Size * 0.3 })
-						end
-						holder:Destroy()
-					end)
-				end)
-			end
-		end)
-	end)
-	-- 왕관의 해가 그 자리로 떨어지고 모든 인장이 함께 터진다
-	local sunAt = data.sunAt or 0.9
-	task.delay(gate + fall + sunAt - 0.35, function()
-		if not d or d.done or not d.sun or not d.sunCF then
-			return
+	task.delay(0.2 + cross + crownAt, function()
+		gfade(crown, 0.5)
+		goldBlast(at, FR)
+		crownSpikes(g, FR, 14, 18)
+		for k = 0, 3 do
+			task.delay(k * 0.08, function()
+				Fx.ring(g + Vector3.new(0, 0.6 + k * 2, 0), k % 2 == 1 and CRIMSON or GOLD, 6, FR * 2.6 + k * 14, 0.8)
+			end)
 		end
-		d.done = true
-		local sun = d.sun
-		local from = (d.sunCF :: CFrame).Position
-		local s0 = os.clock()
-		local c4: RBXScriptConnection
-		c4 = RunService.Heartbeat:Connect(function()
-			local u = math.clamp((os.clock() - s0) / 0.35, 0, 1)
-			local pos = from:Lerp(g + Vector3.new(0, 4, 0), u * u)
-			gplace(sun, CFrame.lookAt(pos, pos + Vector3.new(0, -1, 0.001)) * CFrame.Angles(math.rad(90), 0, 0))
-			if u >= 1 then
-				c4:Disconnect()
-				gfade(sun, 0.3)
-				goldBlast(at, data.finalRadius or 30)
-				crownSpikes(g, (data.finalRadius or 30) * 0.6, 12, 14)
-				for _, s in ipairs(d.seals) do
-					if s.Parent then
-						local p = s.Position
-						s.Color = WHITE
-						fadeOut(s, 0.4, { Size = s.Size * 1.6 })
-						if s.Size.Y > 6 then
-							local col = part(Vector3.new(2, 3, 3), GOLD, Enum.Material.Neon, 0.1, "cyl")
-							col.CFrame = CFrame.new(p) * UP
-							tween(col, 0.15, { Size = Vector3.new(30, 3, 3), CFrame = CFrame.new(p + Vector3.new(0, 15, 0)) * UP })
-							task.delay(0.18, function()
-								fadeOut(col, 0.35)
-							end)
-						end
-					end
-				end
-			end
-		end)
+		Fx.flash(g + Vector3.new(0, 8, 0), WHITE, 200, 12, 0.8)
+		Fx.sound("heavy", 1, 0.3, g)
+		Fx.breakSound("boom", 1, 0.35, g)
+		shakeNear(g, 4, 260)
+		if opts.flash and near(g, FR * 3) then
+			opts.flash(WHITE, 0.4)
+		end
+		local av = avatars[data.id]
+		if av then
+			avatarEnd(av)
+		end
 	end)
 end
 
 local HANDLERS: { [string]: (any) -> () } = {
-	kingProcession = kingProcession,
-	decreeOpen = decreeOpen,
-	decreeSeals = decreeSeals,
-	decreeFist = decreeFist,
+	kingArena = kingArena,
+	kingAvatar = kingAvatar,
+	kingImpact = kingImpact,
 }
 function Royal.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil
@@ -48102,7 +48357,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -48137,8 +48392,8 @@ local function refreshFans(model: Model)
 		end
 		return
 	end
-	-- 3.7판 호접몽권은 등의 나비 날개
-	if st.dreamWings then
+	-- 3.10판 몽유권은 머리 뒤의 초승달과 별
+	if st.dreamMoon then
 		for _, p in ipairs(Dream.buildGear(model)) do
 			table.insert(list, p)
 		end
@@ -48192,7 +48447,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end
@@ -51776,13 +52031,14 @@ end
 -- 초 오의 컷씬 (쓴 사람 화면에서만, 대사 없이). 권법마다 카메라 길과 빛깔이 다르다
 -- 윤회권: 앞쪽 낮은 곳에서 등 뒤 하늘의 바퀴를 올려다본다 · 업화권: 낮게 나를 돌며 솟는 불기둥을 본다
 -- 무상권: 얼굴 가까이에서 흩어지는 몸을 보다가 멀리 물러선다 · 권왕신권: 앞에서 나와 등 뒤의 거대한 왕을 올려다본다
+-- 몽유권: 밤하늘 남색 빛깔
 ------------------------------------------------------------------------
 local CUT_LOOK: { [string]: { any } } = {
 	rinne = { Color3.fromRGB(40, 30, 90), GOLD, INDIGO },
 	eophwa = { Color3.fromRGB(90, 10, 10), Color3.fromRGB(255, 150, 120), CHAR },
 	musangkwon = { Color3.fromRGB(60, 70, 80), MIST, Color3.fromRGB(60, 110, 140) },
 	kwonwangsin = { Color3.fromRGB(90, 60, 10), GOLD, CRIMSON },
-	hojeop = { Color3.fromRGB(150, 110, 200), Color3.fromRGB(255, 200, 230), Color3.fromRGB(130, 236, 226) },
+	hojeop = { Color3.fromRGB(24, 28, 80), Color3.fromRGB(255, 232, 170), Color3.fromRGB(150, 140, 240) },
 }
 local cutActive = false
 function Samsara.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, sid: string)

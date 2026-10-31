@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.9.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.10.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2107,7 +2107,7 @@ table.insert(Config.Styles, {
 	},
 })
 -- 무상권 (3.6판 새로): 모든 것은 지나간다. 닿는 것마다 사기처럼 금이 가고 재로 흩어진다. 머리 뒤에 이 빠진 은빛 후광
--- E 잔영멸 (재로 빚은 나 다섯) · R 화무십일 (잿빛 꽃이 피었다 시든다) · G 제행무상 (모래시계) · X 만등멸 (촛불 서른여섯이 꺼진다)
+-- E 잔영멸 (재로 빚은 나 다섯) · R 화무십일 (잿빛 꽃이 피었다 시든다) · G 제행무상 (모래시계) · X 경화수월 (거울 열둘이 깨진다)
 table.insert(Config.Styles, {
 	id = "musangkwon",
 	name = "무상권",
@@ -2142,8 +2142,8 @@ table.insert(Config.Styles, {
 			mech = { kind = "witherBloom", dist = 9, radius = 11, bloom = 0.35, hold = 0.9, every = 0.3, pull = 28, tick = hit(0, 0, 0, 10, 10, 0.3, 0), burst = hit(0, 0, 0, 42, 40, 0.8, 16, 12) } },
 		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고, 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "hourglass", radius = 26, descend = 0.5, run = 2.4, every = 0.3, slow = 0.5, tick = hit(0, 0, 0, 10, 10, 0.3, 0), crack = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 60, 20) } },
-		X = { id = "mkX", name = "만등멸", desc = "초 오의. 컷씬: 세상의 빛깔이 빠진다 (그동안 무적). 둘레 38칸의 땅에 푸른 촛불 서른여섯이 둥글게 켜진다. 바람이 돌며 촛불이 하나씩 꺼질 때마다 그 넋불이 적에게 날아가 몸을 깎는다. 마지막 촛불이 꺼지면 세상이 어두워지고, 한 번의 숨에 모든 것이 재가 되어 흩어진다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
-			mech = { kind = "candleRite", cut = 1.4, radius = 38, candles = 36, light = 0.4, out = 2.2, hit = hit(0, 0, 0, 6, 6, 0.2, 0), dark = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
+		X = { id = "mkX", name = "경화수월", desc = "초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고, 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "mirrorWorld", cut = 1.4, radius = 36, rise = 0.5, echo = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 10, 0.3, 0), crack = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
 	},
 })
 -- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
@@ -2180,55 +2180,56 @@ table.insert(Config.Styles, {
 			mech = { kind = "kingBarrage", n = 6, delay = 0.15, every = 0.08, length = 28, width = 3.5, hit = hit(0, 0, 0, 12, 12, 0.3, 10), finalAt = 0.12, final = hit(0, 0, 0, 34, 34, 0.7, 34, 8) } },
 		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고, 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고, 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
 			mech = { kind = "kingLeap", dist = 24, land = 0.42, landR = 9, hit = hit(0, 0, 0, 30, 30, 0.6, 14, 10), collapse = 0.4, spikeR = 8, burst = hit(0, 0, 0, 30, 30, 0.6, 8, 22) } },
-		G = { id = "kwG", name = "패왕행차", desc = "발밑에서 앞으로 30칸 붉은 길이 깔리고 양옆에 금빛 깃발 여덟이 솟는다. 등 뒤에서 관을 쓴 금빛 왕의 그림자 넷이 길을 따라 내달리며 앞의 적을 짓밟고, 길 끝에서 함께 뛰어올라 내리찍어 왕관 모양으로 터진다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
-			mech = { kind = "kingProcession", length = 30, width = 9, unroll = 0.45, charge = 0.75, every = 0.1, hit = hit(0, 0, 0, 22, 22, 0.5, 14, 6), leap = 0.35, finalRadius = 16, final = hit(0, 0, 0, 150, 170, 1.6, 40, 30) } },
-		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛과 붉은빛으로 갈라지고 왕관 모양의 해가 떠오른다 (그동안 무적). 둘레 40칸의 적마다 하늘에서 왕의 인장이 찍힌다. 하늘에 금빛 문이 열리고 붉은 소매를 두른 거대한 금빛 팔이 내려와 가장 강한 적을 땅째 내리찍으며, 충격파 세 겹이 퍼진다. 마지막에 왕관의 해가 그 자리로 떨어지며 모든 인장이 함께 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
-			mech = { kind = "royalDecree", cut = 1.5, range = 40, seals = 0.8, seal = hit(0, 0, 0, 16, 16, 0.4, 0), gate = 0.5, fall = 0.45, fistR = 20, fist = hit(0, 0, 0, 160, 170, 1.4, 60, 10), rings = 3, ringEvery = 0.22, ringHit = hit(0, 0, 0, 30, 30, 0.6, 40, 8), sunAt = 0.9, finalRadius = 30, final = hit(0, 0, 0, 200, 230, 1.8, 80, 30), sealBurst = hit(0, 0, 0, 40, 40, 0.6, 20, 10) } },
+		G = { id = "kwG", name = "패왕난무", desc = "둘레에 금빛 기둥 여덟이 솟아 왕의 투기장이 되고 적을 안으로 끌어들인다. 기둥마다 붉은 소매의 거대한 금빛 주먹이 나타나 차례로 한가운데를 내지르고, 마지막에 땅속에서 솟은 주먹이 모두를 하늘로 올려친다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "kingArena", radius = 22, rise = 0.35, pull = 34, fists = 8, every = 0.12, width = 6, hit = hit(0, 0, 0, 14, 14, 0.5, 10, 4), upper = 0.3, final = hit(0, 0, 0, 140, 160, 1.6, 10, 46) } },
+		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛으로 갈라진다 (그동안 무적). 몸에서 금빛이 솟아 등 뒤에 관과 망토를 두른 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 왕이 주먹을 당겨 하늘의 금빛을 모으고 가장 강한 적에게 내리꽂는다. 땅이 꺼지며 충격파 세 겹, 금빛 빛기둥 넷이 십자로 내달린 뒤, 하늘에서 빛의 왕관이 내려와 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "kingAvatar", cut = 1.5, rise = 0.8, charge = 0.6, punch = 0.3, range = 44, fistR = 20, fist = hit(0, 0, 0, 170, 180, 1.4, 40, 20), rings = 3, ringEvery = 0.2, ringHit = hit(0, 0, 0, 26, 26, 0.6, 40, 8), cross = 0.6, crossLen = 40, crossW = 7, crossHit = hit(0, 0, 0, 40, 40, 0.7, 20, 14), crownAt = 0.4, finalRadius = 28, final = hit(0, 0, 0, 190, 220, 1.8, 60, 30) } },
 	},
 })
 
--- 3.7판 호접몽권 (두 번째 윤회의 꿈): 등에 빛깔이 흐르는 나비 날개. 꿈처럼 가볍고 고운 빛깔 (분홍·라일락·하늘·민트·레몬)
--- E 몽접군무 (나비 떼) · R 몽포 (꿈 거품) · G 몽중몽 (꿈속의 꿈) · X 호접지몽 (거대한 꿈나비)
+-- 3.10판 몽유권 (두 번째 윤회의 꿈, 예전 호접몽권): 반쯤 잠든 채 꿈속을 걷는 권. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고,
+-- 달이 손에 닿는다. 빛깔은 밤하늘빛과 달빛 (안개처럼 번지는 보라·남빛, 따뜻한 달빛 금빛)
+-- E 양 세기 (울타리를 넘는 꿈양) · R 거꾸로 꿈 (중력이 뒤집힌다) · G 몽중몽 (떠다니는 섬·계단·문) · X 월하몽 (보름달과 밤 호수)
 table.insert(Config.Styles, {
 	id = "hojeop",
-	name = "호접몽권",
-	hanja = "胡蝶夢拳",
-	icon = "🦋",
+	name = "몽유권",
+	hanja = "夢遊拳",
+	icon = "🌙",
 	grade = "윤회",
 	rebirthStyle = 2,
 	rebirthReq = 2,
-	color = Color3.fromRGB(196, 150, 255),
-	color2 = Color3.fromRGB(130, 236, 226),
+	color = Color3.fromRGB(120, 124, 230),
+	color2 = Color3.fromRGB(255, 232, 170),
 	fx = "cloud",
-	dreamWings = true, -- 등의 나비 날개와 둘레의 비눗방울 (화면이 그린다)
+	dreamMoon = true, -- 머리 뒤를 천천히 도는 초승달과 작은 별, 발밑에 번지는 꿈 안개 (화면이 그린다)
 	hidden = true,
 	secret = true,
 	realmReq = 16,
 	trialHp = 10,
 	unlockHint = "두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라",
-	desc = "두 번째 삶의 꿈에서 배운 권. 주먹이 닿는 곳마다 빛깔 고운 꿈이 피어난다. 나비가 나인지, 내가 나비인지 아무도 모른다.",
-	gimmick = "꿈결: 네 번 맞힐 때마다 상대가 무지갯빛 꿈 거품에 갇혀 둥실 떠올랐다가 터진다. 꿈처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
+	desc = "두 번째 삶의 꿈속을 걷는 권. 반쯤 잠든 채 싸운다. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고, 달이 손에 닿는다.",
+	gimmick = "꿈길: 네 번 맞힐 때마다 상대 등 뒤 허공에 꿈의 문이 열려 상대를 빨아들였다가 뱉어 낸다. 잠결처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
 	deflect = 0.24,
 	dodgeChance = 0.15,
 	speed = 1.2,
-	pulse = { every = 4, kind = "dreamBubble", radius = 6, delay = 0.6, name = "꿈 거품", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
+	pulse = { every = 4, kind = "dreamDoor", radius = 6, delay = 0.6, name = "꿈의 문", dmg = 28, posture = 26, stun = 0.8, kb = 2, up = 22 },
 	stance = "stance_cloud",
 	combo = {
-		{ id = "hj1", name = "나비 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
-		{ id = "hj2", name = "꽃잎 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
-		{ id = "hj3", name = "꿈 바퀴", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
+		{ id = "hj1", name = "잠결 손", pose = "palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj2", name = "꿈결 손", pose = "palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 9, 8, 0.3, 6) } },
+		{ id = "hj3", name = "뒤척임", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 0, 8, 8, 8, 0.3, 8, 4, true), hit(0.3, 0, 8, 8, 8, 0.3, 8, 6, true) } },
 		{ id = "hj4", name = "깨는 손", pose = "double_palm", dur = 0.46, lunge = 4, hits = { hit(0.22, 8, 6, 20, 22, 0.6, 24, 8) } },
 	},
 	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
 	skills = {
-		E = { id = "hjE", name = "몽접군무", desc = "소매에서 빛깔 고운 나비 열둘이 쏟아져 둘레의 적 넷에게 날아가 팔랑이며 맴돌다 하나씩 부딪쳐 빛가루로 흩어진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "butterflySwarm", n = 12, range = 32, targets = 4, delay = 0.15, every = 0.04, travel = 0.5, hit = hit(0, 0, 0, 9, 8, 0.3, 4, 4) } },
-		R = { id = "hjR", name = "몽포", desc = "앞에 커다란 무지갯빛 꿈 거품이 부풀어 그 안의 적을 가두고 둥실 띄운다. 1.2초 뒤 거품이 터지며 별 사탕 같은 빛조각이 흩어진다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
-			mech = { kind = "dreamTrap", dist = 9, radius = 9, delay = 0.25, hold = 1.2, hit = hit(0, 0, 0, 12, 10, 1.4, 0, 16), burst = hit(0, 0, 0, 40, 40, 0.8, 10, 10) } },
-		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈이 된다. 땅은 무지갯빛 구름 바다, 하늘엔 커다란 초승달과 오로라, 비눗방울이 떠오르고 별과 달 조각이 쏟아진다. 꿈속의 적은 굼뜨고 계속 맞다가, 마지막에 꿈에서 깨듯 펑 터진다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "dreamSea", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
-		X = { id = "hjX", name = "호접지몽", desc = "초 오의. 컷씬: 하늘이 분홍과 라일락빛 새벽이 된다 (그동안 무적). 등 뒤에서 날개폭이 하늘을 가리는 꿈나비가 날아오른다. 날갯짓 세 번마다 무지갯빛 가루 물결이 둘레를 휩쓸어 적을 띄우고, 나비가 날개를 접어 모두를 감싸 안으면 커다란 무지개 꽃으로 터진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
-			mech = { kind = "butterflyDream", cut = 1.4, rise = 0.6, flaps = 3, flapEvery = 0.6, range = 40, flap = hit(0, 0, 0, 40, 40, 0.8, 10, 18), fold = 0.6, pull = 40, finalRadius = 34, final = hit(0, 0, 0, 220, 250, 1.8, 60, 28) } },
+		E = { id = "hjE", name = "양 세기", desc = "하나, 둘, 셋... 구름 같은 꿈양 다섯이 허공의 나무 울타리를 차례로 뛰어넘어 둘레의 적에게 뛰어들고, 부딪치면 잠의 별가루로 터진다", pose = "petal_flurry", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "sheepCount", n = 5, range = 32, targets = 4, delay = 0.15, every = 0.14, travel = 0.55, hit = hit(0, 0, 0, 18, 16, 0.4, 6, 8) } },
+		R = { id = "hjR", name = "거꾸로 꿈", desc = "앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 그 안의 적은 하늘로 떨어지듯 거꾸로 떠오르다가, 꿈이 바로 서는 순간 땅에 내리꽂힌다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "upsideDown", dist = 9, radius = 11, delay = 0.25, hold = 1.2, every = 0.3, tick = hit(0, 0, 0, 8, 8, 0.3, 0, 12), slam = hit(0, 0, 0, 40, 40, 0.8, 10, 0) } },
+		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈속이 된다. 밤하늘에 커다란 달이 뜨고, 풀이 덮인 작은 섬과 끝이 없는 계단과 문들이 둥실 떠다닌다. 문이 적 곁에서 열렸다 닫힐 때마다 꿈에 베이고, 마지막에 모든 것이 아래로 떨어지며 꿈에서 깬다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "dreamIsles", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
+		X = { id = "hjX", name = "월하몽", desc = "초 오의. 컷씬: 밤이 내리고 하늘을 가득 채우는 보름달이 떠오른다 (그동안 무적). 둘레 40칸의 땅이 달을 비추는 고요한 밤 호수가 되고, 등불과 문이 떠오른다. 적은 잠든 듯 둥실 떠올라 별의 소용돌이에 감기고, 마지막에 달이 천천히 내려와 호수에 닿는 순간 하얀 빛이 소리 없이 번지며 모두 떨어진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "moonDream", cut = 1.4, rise = 0.5, drift = 2.0, every = 0.25, range = 40, hit = hit(0, 0, 0, 10, 10, 0.3, 0, 6), descend = 0.8, finalRadius = 36, final = hit(0, 0, 0, 230, 260, 1.8, 40, 20) } },
 	},
 })
 
@@ -2441,7 +2442,7 @@ local FINISHERS = {
 	rinne = { name = "윤회승천장", pose = "rinne_thrust" },
 	eophwa = { name = "겁화승천권", pose = "karma_smash" },
 	musangkwon = { name = "무상승천각", pose = "ghost_flash" },
-	hojeop = { name = "몽접승천", pose = "petal_spin" },
+	hojeop = { name = "몽유승천", pose = "petal_spin" },
 	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
@@ -2908,13 +2909,13 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "hojeop" then
 		local pink = Color3.fromRGB(255, 180, 220)
-		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 나비 다루는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
+		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 꿈길 걷는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
-			P("rain", "별사탕 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
-			P("donut", "꿈 거품 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
-			P("charge", "나비 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
+			P("rain", "잠의 별비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
+			P("donut", "꿈문 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
+			P("charge", "몽유 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
 			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 34, 38, 0.8, 20) }),
-			P("quake", "호접지몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+			P("quake", "월하몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "chosengha" then
@@ -3876,7 +3877,7 @@ Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vect
 Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
 Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
 	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
--- 3.7판 호접몽권의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
+-- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
@@ -4349,7 +4350,7 @@ Config.MINIQUEST = {
 		{ kind = "return", text = "천성선에게 돌아가라" },
 	} },
 	hojeop = { title = "몽선의 꿈", steps = {
-		{ kind = "find", name = "꿈나비", icon = "🦋", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈나비 다섯을 깨워라 (T)" },
+		{ kind = "find", name = "잠든 꿈양", icon = "🐑", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에서 잠든 꿈양 다섯을 깨워라 (T)" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },

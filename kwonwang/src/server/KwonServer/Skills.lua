@@ -3778,192 +3778,6 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "candleRite" then
-		-- 3.6판 무상 만등멸 (초 오의): 컷씬 (무적) 뒤 둘레에 촛불 서른여섯. 하나씩 꺼질 때마다 그 넋불이 적을 깎고,
-		-- 마지막 촛불이 꺼지면 어두워졌다가 모든 것이 재로 흩어진다
-		local center = f.root.Position
-		local total = m.cut + m.light + m.out + m.dark + 0.3
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		local cid = math.random(1, 1000000000)
-		Push:FireAllClients("skillfx", { kind = "candleOpen", id = cid, m = f.model, at = center, dir = look, radius = m.radius, candles = m.candles, cut = m.cut / sp, light = m.light / sp, out = m.out / sp, dark = m.dark / sp, style = style })
-		for c = 1, m.candles do
-			after(m.cut + m.light + (c - 1) * m.out / m.candles, function()
-				local list = hostilesNear(f, center, m.radius)
-				local o = #list > 0 and list[(c - 1) % #list + 1] or nil
-				if o then
-					strike(f, o, hit, move)
-				end
-				Push:FireAllClients("skillfx", { kind = "candleOut", id = cid, idx = c, to = o and o.model or nil, style = style })
-			end)
-		end
-		after(m.cut + m.light + m.out + m.dark, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "kingProcession" then
-		-- 3.6판 권왕 패왕행차 (오의): 붉은 길과 금빛 깃발, 금빛 왕의 그림자 넷이 길을 따라 짓밟고, 끝에서 함께 내리찍는다
-		local from = f.root.Position
-		local to = from + look * m.length
-		Push:FireAllClients("skillfx", { kind = "kingProcession", m = f.model, from = from, to = to, width = m.width, unroll = m.unroll / sp, charge = m.charge / sp, leap = m.leap / sp, radius = m.finalRadius, style = style })
-		local ticks = math.floor(m.charge / m.every)
-		local lastHit: { [any]: number } = {}
-		for k = 1, ticks do
-			after(m.unroll + k * m.every, function()
-				local a = from:Lerp(to, (k - 1) / ticks)
-				local b = from:Lerp(to, k / ticks)
-				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
-					if not lastHit[o] or os.clock() - lastHit[o] > 0.3 then
-						lastHit[o] = os.clock()
-						strike(f, o, hit, move)
-					end
-				end
-			end)
-		end
-		after(m.unroll + m.charge + m.leap, function()
-			for _, o in ipairs(hostilesNear(f, to, m.finalRadius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "royalDecree" then
-		-- 3.6판 권왕 천하제일권 (초 오의): 컷씬 (무적) 뒤 둘레의 적마다 왕의 인장. 하늘의 금빛 문에서 거대한 팔이 내려와
-		-- 가장 강한 적을 땅째 내리찍고 충격파 세 겹, 마지막에 왕관의 해가 떨어지며 모든 인장이 함께 터진다
-		local center = f.root.Position
-		local total = m.cut + m.seals + m.gate + m.fall + m.sunAt + 0.4
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		local rid = math.random(1, 1000000000)
-		Push:FireAllClients("skillfx", { kind = "decreeOpen", id = rid, m = f.model, at = center, dir = look, cut = m.cut / sp, style = style })
-		local marked: { any } = {}
-		after(m.cut, function()
-			local list = hostilesNear(f, center, m.range)
-			Push:FireAllClients("skillfx", { kind = "decreeSeals", id = rid, targets = modelsOf(list), span = m.seals / sp, style = style })
-			for i, o in ipairs(list) do
-				table.insert(marked, o)
-				after((i - 1) / math.max(1, #list) * m.seals + 0.25, function()
-					strike(f, o, scaled(m.seal, sc), move)
-				end)
-			end
-		end)
-		after(m.cut + m.seals, function()
-			-- 내리찍을 곳: 보스가 있으면 보스, 없으면 가장 가까운 적, 없으면 앞
-			local pick, pickD = nil, math.huge
-			for _, o in ipairs(hostilesNear(f, center, m.range)) do
-				local d = (o.root.Position - center).Magnitude
-				if o.model:GetAttribute("Boss") == true then
-					d -= 1000
-				end
-				if d < pickD then
-					pick, pickD = o, d
-				end
-			end
-			local at = pick and pick.root.Position or center + look * 16
-			Push:FireAllClients("skillfx", { kind = "decreeFist", id = rid, at = at, gate = m.gate / sp, fall = m.fall / sp, radius = m.fistR, rings = m.rings, ringEvery = m.ringEvery / sp, sunAt = m.sunAt / sp, finalRadius = m.finalRadius, style = style })
-			after(m.gate + m.fall, function()
-				for _, o in ipairs(hostilesNear(f, at, m.fistR)) do
-					strike(f, o, scaled(m.fist, sc), move)
-				end
-			end)
-			for k = 1, m.rings do
-				local R0, R1 = m.fistR * (0.5 + (k - 1) * 0.6), m.fistR * (0.5 + k * 0.6)
-				after(m.gate + m.fall + k * m.ringEvery, function()
-					for _, o in ipairs(hostilesNear(f, at, R1)) do
-						local d = Vector3.new(o.root.Position.X - at.X, 0, o.root.Position.Z - at.Z).Magnitude
-						if d >= R0 - 2 then
-							strike(f, o, scaled(m.ringHit, sc), move)
-						end
-					end
-				end)
-			end
-			after(m.gate + m.fall + m.sunAt, function()
-				for _, o in ipairs(hostilesNear(f, at, m.finalRadius)) do
-					strike(f, o, scaled(m.final, sc), move)
-				end
-				for _, o in ipairs(marked) do
-					if not o.dead and o.root.Parent then
-						strike(f, o, scaled(m.sealBurst, sc), move)
-					end
-				end
-			end)
-		end)
-	elseif kind == "butterflySwarm" then
-		-- 3.7판 호접몽 몽접군무 (E): 나비 열둘이 둘레의 적 넷에게 날아가 맴돌다 하나씩 부딪친다
-		local list = nearestList(f, m.range, m.targets)
-		Push:FireAllClients("skillfx", { kind = "butterflySwarm", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
-		for i = 1, m.n do
-			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
-			if o then
-				after(m.delay + (i - 1) * m.every + m.travel, function()
-					strike(f, o, hit, move)
-				end)
-			end
-		end
-	elseif kind == "dreamTrap" then
-		-- 3.7판 호접몽 몽포 (R): 꿈 거품이 적을 가두고 띄웠다가 터진다
-		local center = f.root.Position + look * m.dist
-		Push:FireAllClients("skillfx", { kind = "dreamTrap", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
-		local caught: { any } = {}
-		after(m.delay, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				table.insert(caught, o)
-				strike(f, o, hit, move)
-			end
-		end)
-		after(m.delay + m.hold, function()
-			local seen: { [any]: boolean } = {}
-			for _, o in ipairs(caught) do
-				seen[o] = true
-				if not o.dead and o.root.Parent then
-					strike(f, o, scaled(m.burst, sc), move)
-				end
-			end
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				if not seen[o] then
-					strike(f, o, scaled(m.burst, sc), move)
-				end
-			end
-		end)
-	elseif kind == "dreamSea" then
-		-- 3.7판 호접몽 몽중몽 (오의): 둘레가 꿈이 된다. 꿈속의 적은 굼뜨고 계속 맞다가 꿈에서 깨듯 터진다
-		local center = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "dreamSea", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
-		local ticks = math.floor(m.dur / m.every)
-		for i = 1, ticks do
-			after(m.delay + (i - 1) * m.every, function()
-				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-					o.slowUntil = os.clock() + (m.every + 0.2) / sp
-					o.slowMul = m.slow
-					strike(f, o, scaled(m.tick, sc), move)
-				end
-			end)
-		end
-		after(m.delay + m.dur, function()
-			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
-	elseif kind == "butterflyDream" then
-		-- 3.7판 호접몽 호접지몽 (초 오의): 컷씬 (무적) 뒤 거대한 꿈나비. 날갯짓 셋마다 무지갯빛 가루 물결, 날개를 접어 감싸 안고 무지개 꽃으로 터진다
-		local center = f.root.Position
-		local total = m.cut + m.rise + m.flaps * m.flapEvery + m.fold + 0.4
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
-		Push:FireAllClients("skillfx", { kind = "butterflyDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, flaps = m.flaps, flapEvery = m.flapEvery / sp, fold = m.fold / sp, range = m.range, finalRadius = m.finalRadius, style = style })
-		for k = 1, m.flaps do
-			after(m.cut + m.rise + (k - 1) * m.flapEvery + 0.15, function()
-				for _, o in ipairs(hostilesNear(f, center, m.range)) do
-					strike(f, o, scaled(m.flap, sc), move)
-				end
-			end)
-		end
-		after(m.cut + m.rise + m.flaps * m.flapEvery, function()
-			for _, o in ipairs(hostilesNear(f, center, m.range)) do
-				pullTo(o, center, m.pull)
-			end
-		end)
-		after(m.cut + m.rise + m.flaps * m.flapEvery + m.fold, function()
-			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
-				strike(f, o, scaled(m.final, sc), move)
-			end
-		end)
 	elseif kind == "eraseBox" then
 		-- 3.8판 공백 소거 (E): 앞에 흰 선택 상자, 안이 검게 지워졌다가 화소 조각으로 부서진다
 		local from = f.root.Position + look * m.dist
@@ -4047,6 +3861,180 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 		after(m.cut + m.rain + m.freeze, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "mirrorWorld" then
+		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.echo + m.crack + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local mid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "mirrorOpen", id = mid, m = f.model, at = center, radius = m.radius, cut = m.cut / sp, rise = m.rise / sp, echo = m.echo / sp, crack = m.crack / sp, style = style })
+		local ticks = math.floor(m.echo / m.every)
+		for i = 1, ticks do
+			after(m.cut + m.rise + (i - 1) * m.every, function()
+				local list = hostilesNear(f, center, m.radius)
+				if i == 1 then
+					Push:FireAllClients("skillfx", { kind = "mirrorEcho", id = mid, targets = modelsOf(list), every = m.every / sp, n = ticks, style = style })
+				end
+				for _, o in ipairs(list) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.echo + m.crack, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingArena" then
+		-- 3.10판 권왕 패왕난무 (오의): 금빛 기둥 여덟의 투기장, 기둥마다 거대한 주먹이 차례로 한가운데를 내지르고, 땅속 주먹이 올려친다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "kingArena", m = f.model, at = center, radius = m.radius, rise = m.rise / sp, fists = m.fists, every = m.every / sp, upper = m.upper / sp, style = style })
+		after(m.rise * 0.5, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 6)) do
+				pullTo(o, center, m.pull)
+			end
+		end)
+		for k = 1, m.fists do
+			local a = (k - 1) / m.fists * math.pi * 2
+			local from = center + Vector3.new(math.cos(a), 0, math.sin(a)) * m.radius
+			after(m.rise + (k - 1) * m.every, function()
+				for _, o in ipairs(hostilesOnSeg(f, from, center, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.rise + m.fists * m.every + m.upper, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius * 0.6)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "kingAvatar" then
+		-- 3.10판 권왕 천하제일권 (초 오의): 컷씬 (무적) 뒤 등 뒤에 하늘만 한 금빛 왕 (나의 모습)이 일어서서 가장 강한 적에게 한 방.
+		-- 충격파 세 겹, 십자로 내달리는 빛기둥 넷, 내려오는 빛의 왕관
+		local center = f.root.Position
+		local pick, pickD = nil, math.huge
+		for _, o in ipairs(hostilesNear(f, center, m.range)) do
+			local d = (o.root.Position - center).Magnitude
+			if o.model:GetAttribute("Boss") == true then
+				d -= 1000
+			end
+			if d < pickD then
+				pick, pickD = o, d
+			end
+		end
+		local to = pick and pick.root.Position or center + look * 18
+		local impact = m.cut + m.rise + m.charge + m.punch
+		local total = impact + 0.2 + m.cross + m.crownAt + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		local aid = math.random(1, 1000000000)
+		Push:FireAllClients("skillfx", { kind = "kingAvatar", id = aid, m = f.model, at = center, to = to, cut = m.cut / sp, rise = m.rise / sp, charge = m.charge / sp, punch = m.punch / sp, style = style })
+		after(impact, function()
+			Push:FireAllClients("skillfx", { kind = "kingImpact", id = aid, at = to, dir = look, radius = m.fistR, rings = m.rings, ringEvery = m.ringEvery / sp, cross = m.cross / sp, crossLen = m.crossLen, crownAt = m.crownAt / sp, finalRadius = m.finalRadius, style = style })
+			for _, o in ipairs(hostilesNear(f, to, m.fistR)) do
+				strike(f, o, scaled(m.fist, sc), move)
+			end
+		end)
+		for k = 1, m.rings do
+			local R0, R1 = m.fistR * (0.5 + (k - 1) * 0.6), m.fistR * (0.5 + k * 0.6)
+			after(impact + k * m.ringEvery, function()
+				for _, o in ipairs(hostilesNear(f, to, R1)) do
+					local d = Vector3.new(o.root.Position.X - to.X, 0, o.root.Position.Z - to.Z).Magnitude
+					if d >= R0 - 2 then
+						strike(f, o, scaled(m.ringHit, sc), move)
+					end
+				end
+			end)
+		end
+		local right = rightOf(look)
+		local arms = { look, right, -look, -right }
+		local steps = 6
+		local crossHit: { [any]: boolean } = {}
+		for k = 1, steps do
+			after(impact + 0.2 + (k - 1) * m.cross / steps, function()
+				for _, dir in ipairs(arms) do
+					local a = to + dir * (m.crossLen * (k - 1) / steps)
+					local b = to + dir * (m.crossLen * k / steps)
+					for _, o in ipairs(hostilesOnSeg(f, a, b, m.crossW)) do
+						if not crossHit[o] then
+							crossHit[o] = true
+							strike(f, o, scaled(m.crossHit, sc), move)
+						end
+					end
+				end
+			end)
+		end
+		after(impact + 0.2 + m.cross + m.crownAt, function()
+			for _, o in ipairs(hostilesNear(f, to, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "sheepCount" then
+		-- 3.10판 몽유 양 세기 (E): 꿈양 다섯이 허공의 울타리를 넘어 둘레의 적에게 뛰어든다
+		local list = nearestList(f, m.range, m.targets)
+		Push:FireAllClients("skillfx", { kind = "sheepCount", m = f.model, targets = modelsOf(list), n = m.n, delay = m.delay / sp, every = m.every / sp, travel = m.travel / sp, style = style })
+		for i = 1, m.n do
+			local o = #list > 0 and list[(i - 1) % #list + 1] or nil
+			if o then
+				after(m.delay + (i - 1) * m.every + m.travel, function()
+					strike(f, o, hit, move)
+				end)
+			end
+		end
+	elseif kind == "upsideDown" then
+		-- 3.10판 몽유 거꾸로 꿈 (R): 앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 떠올랐다가 꿈이 바로 서면 내리꽂힌다
+		local center = f.root.Position + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "upsideDown", at = center, radius = m.radius, delay = m.delay / sp, hold = m.hold / sp, style = style })
+		local ticks = math.floor(m.hold / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.hold, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 1)) do
+				strike(f, o, scaled(m.slam, sc), move)
+			end
+		end)
+	elseif kind == "dreamIsles" then
+		-- 3.10판 몽유 몽중몽 (오의): 둘레가 꿈속이 된다 (달, 떠다니는 섬·계단·문). 문이 열리고 닫힐 때마다 베이고, 마지막에 모두 떨어지며 깬다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "dreamIsles", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
+		local ticks = math.floor(m.dur / m.every)
+		for i = 1, ticks do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = m.slow
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.dur, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "moonDream" then
+		-- 3.10판 몽유 월하몽 (초 오의): 컷씬 (무적) 뒤 보름달과 밤 호수. 적은 잠든 듯 떠올라 별의 소용돌이에 감기고, 달이 내려와 호수에 닿으면 터진다
+		local center = f.root.Position
+		local total = m.cut + m.rise + m.drift + m.descend + 0.4
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "moonDream", m = f.model, at = center, dir = look, cut = m.cut / sp, rise = m.rise / sp, drift = m.drift / sp, descend = m.descend / sp, range = m.range, finalRadius = m.finalRadius, style = style })
+		local ticks = math.floor(m.drift / m.every)
+		for i = 1, ticks do
+			after(m.cut + m.rise + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.cut + m.rise + m.drift + m.descend, function()
 			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end

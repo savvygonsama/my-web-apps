@@ -2724,13 +2724,14 @@ end
 -- 초 오의 컷씬 (쓴 사람 화면에서만, 대사 없이). 권법마다 카메라 길과 빛깔이 다르다
 -- 윤회권: 앞쪽 낮은 곳에서 등 뒤 하늘의 바퀴를 올려다본다 · 업화권: 낮게 나를 돌며 솟는 불기둥을 본다
 -- 무상권: 얼굴 가까이에서 흩어지는 몸을 보다가 멀리 물러선다 · 권왕신권: 앞에서 나와 등 뒤의 거대한 왕을 올려다본다
+-- 몽유권: 밤하늘 남색 빛깔
 ------------------------------------------------------------------------
 local CUT_LOOK: { [string]: { any } } = {
 	rinne = { Color3.fromRGB(40, 30, 90), GOLD, INDIGO },
 	eophwa = { Color3.fromRGB(90, 10, 10), Color3.fromRGB(255, 150, 120), CHAR },
 	musangkwon = { Color3.fromRGB(60, 70, 80), MIST, Color3.fromRGB(60, 110, 140) },
 	kwonwangsin = { Color3.fromRGB(90, 60, 10), GOLD, CRIMSON },
-	hojeop = { Color3.fromRGB(150, 110, 200), Color3.fromRGB(255, 200, 230), Color3.fromRGB(130, 236, 226) },
+	hojeop = { Color3.fromRGB(24, 28, 80), Color3.fromRGB(255, 232, 170), Color3.fromRGB(150, 140, 240) },
 }
 local cutActive = false
 function Samsara.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, sid: string)

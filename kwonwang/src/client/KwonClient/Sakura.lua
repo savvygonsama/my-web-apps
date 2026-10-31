@@ -204,7 +204,7 @@ local tryFans: (Model) -> ()
 local function refreshFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
 		clearFans(model)
 		builtFor[model] = nil
 		return
@@ -239,8 +239,8 @@ local function refreshFans(model: Model)
 		end
 		return
 	end
-	-- 3.7판 호접몽권은 등의 나비 날개
-	if st.dreamWings then
+	-- 3.10판 몽유권은 머리 뒤의 초승달과 별
+	if st.dreamMoon then
 		for _, p in ipairs(Dream.buildGear(model)) do
 			table.insert(list, p)
 		end
@@ -294,7 +294,7 @@ end
 function tryFans(model: Model)
 	local id = model:GetAttribute("Style")
 	local st = type(id) == "string" and Config.STYLE_BY_ID[id] or nil
-	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamWings or st.nullCubes or Samsara.hasGear(st)) then
+	if not st or not (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or Samsara.hasGear(st)) then
 		refreshFans(model)
 		return
 	end
