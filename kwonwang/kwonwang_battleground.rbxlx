@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.9.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.9.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -25664,15 +25664,6 @@ local function biomeAt(p: Vector3): string
 	end
 	return best
 end
-local PATCH = {
-	green = { Color3.fromRGB(104, 136, 76), Enum.Material.Grass },
-	snow = { Color3.fromRGB(232, 236, 242), Enum.Material.Snow },
-	dry = { Color3.fromRGB(176, 150, 108), Enum.Material.Sand },
-	wet = { Color3.fromRGB(78, 92, 62), Enum.Material.Mud },
-	ash = { Color3.fromRGB(78, 70, 68), Enum.Material.Slate },
-	coast = { Color3.fromRGB(196, 186, 150), Enum.Material.Sand },
-	autumn = { Color3.fromRGB(150, 120, 70), Enum.Material.Grass },
-}
 local function nearEgg(p: Vector3, d: number): boolean
 	for _, c in ipairs(Config.CAIRNS or {}) do
 		if (Vector3.new(p.X, 0, p.Z) - c).Magnitude < d then
@@ -25700,10 +25691,7 @@ local function scatterFill()
 			if not inAnyRegion(c, 50) and not nearFeature(c, 40) and not nearRoad(c, 24) and not nearEgg(c, 40) then
 				made += 1
 				local b = biomeAt(c)
-				local pc = PATCH[b] or PATCH.green
-				-- 바닥 무늬 (둘레 땅과 조금 다른 빛깔의 낮은 원)
-				part({ Name = "Patch", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, R:NextNumber(40, 80), R:NextNumber(40, 80)), CFrame = CFrame.new(c + Vector3.new(0, 0.08, 0)) * CFrame.Angles(0, R:NextNumber(0, 3), math.rad(90)),
-					Color = pc[1]:Lerp(Color3.new(1, 1, 1), R:NextNumber(-0.04, 0.06)), Material = pc[2], CanCollide = false, Parent = f })
+				-- 3.9.1판: 바닥의 둥근 무늬는 반복돼 어색해서 걷어 냈다
 				local roll = R:NextNumber()
 				if b == "snow" then
 					for k = 0, 1 + made % 2 do
