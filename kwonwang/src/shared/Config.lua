@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.5.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.6.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1604,8 +1604,8 @@ end
 -- 3.5판 권법 등급: 다섯 단계 (상급 · 전설 · 신화 · 태초 · 윤회). 지존은 나중에 새 권법이 나오면 쓰려고 비워 둔다.
 -- 진 (각성) · 초 · 극은 등급이 아니라 권법이 변한 모습이라 예전 그대로 둔다 (진 = 신화, 초 = 초월, 극 = 극).
 -- 모습의 한계: 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다 (FORM_LIMIT)
-Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "극" }
-Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["극"] = 3.8 }
+Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "권왕", "극" }
+Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8 }
 Config.GRADE_COLOR = {
 	["상급"] = Color3.fromRGB(120, 190, 255),
 	["전설"] = Color3.fromRGB(255, 200, 80),
@@ -1614,6 +1614,7 @@ Config.GRADE_COLOR = {
 	["지존"] = Color3.fromRGB(255, 200, 90),
 	["윤회"] = Color3.fromRGB(170, 140, 255),
 	["초월"] = Color3.fromRGB(255, 160, 210),
+	["권왕"] = Color3.fromRGB(255, 70, 70),
 	["극"] = Color3.fromRGB(255, 140, 90),
 }
 Config.FORM_LIMIT = { ["상급"] = "초", ["전설"] = "초", ["신화"] = "극", ["태초"] = "극", ["지존"] = "극", ["윤회"] = "극" }
@@ -2105,26 +2106,27 @@ table.insert(Config.Styles, {
 			mech = { kind = "eightHells", cut = 1.4, every = 0.2, ringR = 30, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 40, 0.7, 6, 20), hands = 0.9, pull = 34, clapR = 16, clap = hit(0, 0, 0, 90, 90, 1.0, 10, 10), sun = 0.9, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 80, 30) } },
 	},
 })
--- 무상권: 잿빛 안개와 푸른 넋불. 몸이 흐려져 공격이 비켜 가고, 잔상이 상대 뒤에서 친다
+-- 무상권 (3.6판 새로): 모든 것은 지나간다. 닿는 것마다 사기처럼 금이 가고 재로 흩어진다. 머리 뒤에 이 빠진 은빛 후광
+-- E 잔영멸 (재로 빚은 나 다섯) · R 화무십일 (잿빛 꽃이 피었다 시든다) · G 제행무상 (모래시계) · X 만등멸 (촛불 서른여섯이 꺼진다)
 table.insert(Config.Styles, {
 	id = "musangkwon",
 	name = "무상권",
 	hanja = "無常拳",
-	icon = "🌫",
+	icon = "🕯",
 	grade = "윤회",
 	rebirthStyle = 3,
-	color = Color3.fromRGB(140, 230, 255),
-	color2 = Color3.fromRGB(225, 230, 240),
+	color = Color3.fromRGB(205, 212, 228),
+	color2 = Color3.fromRGB(110, 210, 255),
 	fx = "mist",
-	wisps = true, -- 몸 둘레를 도는 넋불과 길게 흐르는 안개 띠 (화면이 그린다)
+	ashHalo = true, -- 머리 뒤의 이 빠진 은빛 후광과 떨어지는 재 (화면이 그린다)
 	hidden = true,
-	unlockHint = "세 번 환생한 몸으로 세 번째 윤회의 시련을 넘으면, 흐릿한 그림자가 이 권을 남기고 간다",
-	desc = "세 번을 살고 나니 몸이 반쯤 안개가 되었다. 있는 듯 없는 듯, 친 자리에는 이미 없고, 없던 자리에서 손이 나온다. 모든 것은 흩어진다.",
-	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대 뒤에 잔상이 나타나 친다. 빠르다 (동작 ×1.3)",
+	unlockHint = "세 번 환생한 몸으로 세 번째 윤회의 시련을 넘으면, 재가 된 그림자가 이 권을 남기고 간다",
+	desc = "세 번을 살고 나니 모든 것이 지나간다는 것을 알았다. 닿는 것마다 금이 가고, 금 간 것은 재가 되어 흩어진다. 꽃은 지고, 모래는 다 흐르고, 촛불은 꺼진다.",
+	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대에게 사기 같은 금이 가고, 잠시 뒤 산산이 깨져 재로 흩어진다. 빠르다 (동작 ×1.3)",
 	deflect = 0.26,
 	dodgeChance = 0.25,
 	speed = 1.3,
-	pulse = { every = 4, kind = "phantom", radius = 6, delay = 0.3, name = "무상영", dmg = 26, posture = 24, stun = 0.7, kb = 8, up = 6 },
+	pulse = { every = 4, kind = "ashCrack", radius = 6, delay = 0.45, name = "무상인", dmg = 28, posture = 26, stun = 0.7, kb = 8, up = 6 },
 	stance = "stance_mist",
 	combo = {
 		{ id = "ms1", name = "허장", pose = "ghost_palm_r", dur = 0.24, lunge = 4, hits = { hit(0.09, 6, 5, 8, 7, 0.25, 5) } },
@@ -2134,14 +2136,14 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "msH", name = "일장무상", pose = "ghost_flash", dur = 0.52, lunge = 16, iframes = 0.3, hits = { hit(0.22, 9, 6, 24, 24, 0.6, 26) } },
 	skills = {
-		E = { id = "msE", name = "무상섬", desc = "안개가 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 엇갈려 벤다 (그동안 무적). 지나간 자리마다 흐릿한 잔상이 남아 있다가, 마지막에 한꺼번에 다시 베고 안개로 흩어진다", pose = "ghost_flash", dur = 0.8, cd = 8, chi = 20,
-			mech = { kind = "phantomRush", n = 5, range = 26, delay = 0.06, every = 0.14, hit = hit(0, 0, 0, 20, 18, 0.5, 8, 6), echoAt = 0.3, echo = hit(0, 0, 0, 18, 16, 0.5, 6, 6) } },
-		R = { id = "msR", name = "허실분신", desc = "몸이 흩어지고 (1초 동안 보이지 않는다) 안개 분신 다섯이 별처럼 사방으로 뻗어 나가며 벤다. 분신들은 서로 엇갈려 건너편으로 내달려 땅에 오각별을 긋고, 가운데에서 내가 다시 나타나는 순간 별이 안개로 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25, iframes = 0.6,
-			mech = { kind = "mistStar", radius = 11, width = 3.5, out = 0.15, cross = 0.55, back = 0.95, hit = hit(0, 0, 0, 20, 18, 0.5, 10), crossHit = hit(0, 0, 0, 16, 14, 0.4, 6), burstRadius = 10, burst = hit(0, 0, 0, 34, 34, 0.7, 18, 10) } },
-		G = { id = "msG", name = "무상해", desc = "발밑에서 잿빛 안개의 바다가 둘레 28칸으로 퍼지고 세상의 빛깔이 빠진다. 안개에서 넋의 손이 솟아 적을 붙잡고 (굼뜨게 한다), 넋불이 안개 위를 돈다. 손뼉 한 번에 안개가 가운데로 빨려 들어 기둥이 되었다가 사방으로 베며 흩어진다", pose = "ult_mist", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "mistSea", radius = 28, spread = 0.4, hold = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 12, 0.35, 0), implode = 0.35, pull = 40, finalRadius = 28, final = hit(0, 0, 0, 130, 150, 1.5, 60, 22) } },
-		X = { id = "mkX", name = "만상귀무", desc = "초 오의. 컷씬: 세상이 잿빛이 되고 몸이 안개로 흩어진다 (그동안 무적, 보이지 않음). 안개가 거대한 나의 그림자로 일어서 넋의 칼로 둘레를 세 번 크게 벤다. 시간이 멈추고 적마다 푸른 봉인이 찍힌다. 그림자가 내 자리로 흩어져 모이는 순간 빛깔이 돌아오며 모든 봉인이 한꺼번에 깨진다", pose = "ult_mist_x", dur = 4.4, cd = 60, chi = 150, armor = true,
-			mech = { kind = "allReturn", cut = 1.4, rise = 0.6, sweeps = 3, sweepEvery = 0.5, sweepT = 0.25, range = 42, sweep = hit(0, 0, 0, 50, 50, 0.8, 30, 10), freeze = 0.8, finalRadius = 42, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
+		E = { id = "msE", name = "잔영멸", desc = "재가 되어 앞으로 20칸을 스친다 (무적). 지나간 자리에 재로 빚은 내 모습 다섯이 남아 있다가, 차례로 금이 가고 무너지며 둘레를 친다", pose = "ghost_flash", dur = 0.5, cd = 8, chi = 20, lunge = 20, iframes = 0.4,
+			mech = { kind = "ashStatues", dist = 20, n = 5, width = 4, hit = hit(0, 0, 0, 14, 12, 0.4, 8), crumble = 0.45, step = 0.1, radius = 6, burst = hit(0, 0, 0, 20, 18, 0.5, 12, 8) } },
+		R = { id = "msR", name = "화무십일", desc = "앞의 땅에 커다란 잿빛 꽃이 피어난다. 꽃잎 여덟이 적을 감싸 안으로 끌어들이다가, 꽃이 시들어 재로 무너지며 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "witherBloom", dist = 9, radius = 11, bloom = 0.35, hold = 0.9, every = 0.3, pull = 28, tick = hit(0, 0, 0, 10, 10, 0.3, 0), burst = hit(0, 0, 0, 42, 40, 0.8, 16, 12) } },
+		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고, 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "hourglass", radius = 26, descend = 0.5, run = 2.4, every = 0.3, slow = 0.5, tick = hit(0, 0, 0, 10, 10, 0.3, 0), crack = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 60, 20) } },
+		X = { id = "mkX", name = "만등멸", desc = "초 오의. 컷씬: 세상의 빛깔이 빠진다 (그동안 무적). 둘레 38칸의 땅에 푸른 촛불 서른여섯이 둥글게 켜진다. 바람이 돌며 촛불이 하나씩 꺼질 때마다 그 넋불이 적에게 날아가 몸을 깎는다. 마지막 촛불이 꺼지면 세상이 어두워지고, 한 번의 숨에 모든 것이 재가 되어 흩어진다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
+			mech = { kind = "candleRite", cut = 1.4, radius = 38, candles = 36, light = 0.4, out = 2.2, hit = hit(0, 0, 0, 6, 6, 0.2, 0), dark = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
 	},
 })
 -- 권왕신권: 머리 위의 금빛 관과 붉은 망토, 금빛 팔찌. 앞의 셋을 모두 품은 마지막 권
@@ -2178,10 +2180,10 @@ table.insert(Config.Styles, {
 			mech = { kind = "kingBarrage", n = 6, delay = 0.15, every = 0.08, length = 28, width = 3.5, hit = hit(0, 0, 0, 12, 12, 0.3, 10), finalAt = 0.12, final = hit(0, 0, 0, 34, 34, 0.7, 34, 8) } },
 		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고, 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고, 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
 			mech = { kind = "kingLeap", dist = 24, land = 0.42, landR = 9, hit = hit(0, 0, 0, 30, 30, 0.6, 14, 10), collapse = 0.4, spikeR = 8, burst = hit(0, 0, 0, 30, 30, 0.6, 8, 22) } },
-		G = { id = "kwG", name = "만인지상", desc = "금빛 구름이 열리고 하늘에서 거대한 금빛 왕관이 내려와 앞의 적들을 가둔다. 왕관이 돌며 조여 들고 보석마다 빛줄기를 쏘다가, 한 번 더 내리박혀 금빛 기둥과 함께 터진다", pose = "ult_king", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "crownCage", dist = 12, R = 14, descend = 0.6, drop = hit(0, 0, 0, 40, 40, 0.8, 0, 8), squeeze = 1.2, every = 0.2, pull = 26, hit = hit(0, 0, 0, 14, 14, 0.35, 0), slam = 0.4, finalRadius = 22, final = hit(0, 0, 0, 140, 160, 1.6, 60, 26) } },
-		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 금빛 구름이 갈라지고 등 뒤에 관을 쓴 거대한 금빛 왕이 일어선다 (그동안 무적). 왕이 앞의 땅에 금빛 주먹비를 쏟는다. 왕과 내가 함께 주먹을 당겨 힘을 모으고, 함께 내지르면 거대한 금빛 주먹이 80칸을 꿰뚫고 끝에서 왕관 모양으로 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
-			mech = { kind = "kingOfHeaven", cut = 1.5, rain = 1.8, every = 0.1, fall = 0.25, range = 36, rainR = 6, rainHit = hit(0, 0, 0, 18, 16, 0.35, 4, 6), charge = 0.8, punch = 0.3, length = 80, width = 10, final = hit(0, 0, 0, 220, 250, 1.8, 90, 20), endAt = 0.4, endR = 20, endHit = hit(0, 0, 0, 80, 90, 1.2, 50, 26) } },
+		G = { id = "kwG", name = "패왕행차", desc = "발밑에서 앞으로 30칸 붉은 길이 깔리고 양옆에 금빛 깃발 여덟이 솟는다. 등 뒤에서 관을 쓴 금빛 왕의 그림자 넷이 길을 따라 내달리며 앞의 적을 짓밟고, 길 끝에서 함께 뛰어올라 내리찍어 왕관 모양으로 터진다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "kingProcession", length = 30, width = 9, unroll = 0.45, charge = 0.75, every = 0.1, hit = hit(0, 0, 0, 22, 22, 0.5, 14, 6), leap = 0.35, finalRadius = 16, final = hit(0, 0, 0, 150, 170, 1.6, 40, 30) } },
+		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛과 붉은빛으로 갈라지고 왕관 모양의 해가 떠오른다 (그동안 무적). 둘레 40칸의 적마다 하늘에서 왕의 인장이 찍힌다. 하늘에 금빛 문이 열리고 붉은 소매를 두른 거대한 금빛 팔이 내려와 가장 강한 적을 땅째 내리찍으며, 충격파 세 겹이 퍼진다. 마지막에 왕관의 해가 그 자리로 떨어지며 모든 인장이 함께 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+			mech = { kind = "royalDecree", cut = 1.5, range = 40, seals = 0.8, seal = hit(0, 0, 0, 16, 16, 0.4, 0), gate = 0.5, fall = 0.45, fistR = 20, fist = hit(0, 0, 0, 160, 170, 1.4, 60, 10), rings = 3, ringEvery = 0.22, ringHit = hit(0, 0, 0, 30, 30, 0.6, 40, 8), sunAt = 0.9, finalRadius = 30, final = hit(0, 0, 0, 200, 230, 1.8, 80, 30), sealBurst = hit(0, 0, 0, 40, 40, 0.6, 20, 10) } },
 	},
 })
 
@@ -2262,8 +2264,8 @@ for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
 	local old = g or st.grade or "중급"
 	st.rank = OLD_RANK[old] or 2
-	if st.awakenOf or st.transcend or st.geuk then
-		st.grade = old -- 진·초·극: 예전 그대로
+	if st.awakenOf or st.transcend or st.geuk or st.id == "kwonwangsin" then
+		st.grade = old -- 진·초·극과 권왕신권 (권왕 ×3.4): 예전 그대로
 	else
 		st.grade = GRADE_REMAP[old] or "상급"
 	end
@@ -3122,6 +3124,30 @@ Config.Landmarks = {
 	{ id = "beacon", name = "옛 봉화대", icon = "🔥", at = Vector3.new(900, 0, -2350) },
 	{ id = "hamlet", name = "버려진 마을", icon = "🏚", at = Vector3.new(0, 0, 2250) },
 	{ id = "archway", name = "하늘 아치", icon = "🌁", at = Vector3.new(-1400, 0, -2350) },
+	-- 3.6판: 아직 비어 있던 바깥 땅에 열 곳 더
+	{ id = "pagoda", name = "구층석탑", icon = "🛕", at = Vector3.new(3600, 0, -800) },
+	{ id = "lotuspond", name = "연화정", icon = "🪷", at = Vector3.new(-2400, 0, 3100) },
+	{ id = "splitrock", name = "일검 바위", icon = "🪨", at = Vector3.new(3700, 0, 200) },
+	{ id = "lanternway", name = "천등 회랑", icon = "🏮", at = Vector3.new(1400, 0, 3700) },
+	{ id = "oldwall", name = "무너진 장성", icon = "🧱", at = Vector3.new(-700, 0, -3750) },
+	{ id = "cranepond", name = "학 연못", icon = "🕊", at = Vector3.new(450, 0, -3750) },
+	{ id = "turtlestele", name = "귀부 비석", icon = "🐢", at = Vector3.new(2100, 0, -3700) },
+	{ id = "oldmine", name = "버려진 광산", icon = "⛏", at = Vector3.new(3700, 0, -1800) },
+	{ id = "lonepine", name = "선인송", icon = "🌲", at = Vector3.new(-2200, 0, -3750) },
+	{ id = "sundial", name = "해시계 광장", icon = "🕰", at = Vector3.new(3200, 0, 3300) },
+}
+-- 3.6판 숨은 것들 (지도에 나오지 않는다). 찾으면 한 번씩 몫이 있다
+Config.CAIRNS = {
+	Vector3.new(-3500, 0, -600), Vector3.new(3300, 0, 1800), Vector3.new(-300, 0, -3550), Vector3.new(1800, 0, 3950),
+	Vector3.new(-3800, 0, 2600), Vector3.new(1650, 0, -3300), Vector3.new(650, 0, 1950),
+}
+Config.EGGS = {
+	cairnEach = { coins = 7777 }, -- 돌탑 하나
+	cairnAll = { coins = 777777, scrolls = 7 }, -- 일곱 모두
+	cat = { at = Vector3.new(2700, 0, 900) + Vector3.new(-8, 0, 18.6), potions = 3 }, -- 천년 종루 아래 낮잠 자는 고양이
+	sword = { at = Vector3.new(-4050, 0, 4050), pulls = 100, coins = 1000000 }, -- 세상 끝 바위에 박힌 검 (백 번 당기면)
+	well = { at = Vector3.new(0, 0, 2250), cost = 1000, jackpot = 100000 }, -- 버려진 마을의 소원 우물
+	ducks = { at = Vector3.new(1100, 0, 2500) + Vector3.new(40, 0, 30), scrolls = 1 }, -- 거울 호수의 오리 가족
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number

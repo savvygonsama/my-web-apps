@@ -59,7 +59,8 @@ type Profile = {
 	scrolls: number, -- 심법 두루마리
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
-	seen: { [string]: boolean }, -- 본 장면 (컷씬)
+	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
+	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
@@ -228,6 +229,7 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.skyBuffUntil = num(data.skyBuffUntil, 4e9)
+	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
@@ -4813,6 +4815,110 @@ if W.battle then
 			end
 		end)
 	end)
+end
+-- 3.6판 숨은 것들: 돌탑 일곱, 낮잠 자는 고양이, 뽑히지 않는 검, 소원 우물, 오리 가족
+if W.eggs then
+	local E = Config.EGGS
+	local eggAt: { [Player]: number } = {}
+	Players.PlayerRemoving:Connect(function(pl: Player)
+		eggAt[pl] = nil
+	end)
+	local function pick(list: { string }): string
+		return list[math.random(1, #list)]
+	end
+	local CAT = { "고양이가 그르릉거린다", "고양이가 한쪽 눈만 뜨고 너를 본다", "고양이가 기지개를 켜고 다시 잠든다", "고양이가 꼬리로 네 손을 툭 친다", "고양이가 하품을 한다" }
+	local SWORD = { "꿈쩍도 않는다", "손바닥만 얼얼하다", "바위가 웃는 것 같다", "검이 너를 시험하는 것 같다", "조금도 움직이지 않는다" }
+	local WELL = { "물소리만 들린다", "은자가 바닥에 닿는 소리가 오래 들린다", "우물 속에서 누군가 고맙다고 한 것 같다", "물 위에 네 얼굴이 비친다. 조금 지쳐 보인다", "아무 일도 일어나지 않았다. 아마도" }
+	local DUCK = { "꽥!", "꽥꽥!", "새끼 오리들이 줄지어 꽥", "어미 오리가 너를 노려본다", "꽥? 꽥!" }
+	for id, pp in pairs(W.eggs) do
+		pp.Triggered:Connect(function(player: Player)
+			local p, est = profiles[player], states[player]
+			if not p or not est or BATTLE then
+				return
+			end
+			local now = os.clock()
+			if now - (eggAt[player] or -99) < 0.9 then
+				return
+			end
+			eggAt[player] = now
+			local cairnNo = tonumber(string.match(id, "^cairn(%d+)$"))
+			if cairnNo then
+				local key = "egg_cairn" .. cairnNo
+				if p.seen[key] then
+					toast(player, "🪨 이미 돌을 올린 돌탑이에요")
+					return
+				end
+				p.seen[key] = true
+				p.coins += E.cairnEach.coins
+				local n = 0
+				for i = 1, #Config.CAIRNS do
+					if p.seen["egg_cairn" .. i] then
+						n += 1
+					end
+				end
+				toast(player, string.format("🪨 돌탑에 돌 하나를 올렸다 (%d/%d) · 💰 %s", n, #Config.CAIRNS, Config.formatNumber(E.cairnEach.coins)))
+				if n >= #Config.CAIRNS and not p.seen.egg_cairnAll then
+					p.seen.egg_cairnAll = true
+					p.coins += E.cairnAll.coins
+					p.scrolls += E.cairnAll.scrolls
+					Push:FireClient(player, "dialog", { who = "🪨 일곱 돌탑", title = "길이 답했다",
+						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
+				end
+			elseif id == "cat" then
+				if not p.seen.egg_cat then
+					p.seen.egg_cat = true
+					p.potions += E.cat.potions
+					toast(player, string.format("🐈 고양이가 깔고 자던 금창약 %d병을 내주었다", E.cat.potions))
+				else
+					toast(player, "🐈 " .. pick(CAT))
+				end
+			elseif id == "sword" then
+				if p.seen.egg_sword then
+					toast(player, "🗡 뽑았던 검을 도로 꽂아 두었다. 다음 사람을 위해")
+					return
+				end
+				p.swordPulls = (p.swordPulls or 0) + 1
+				local n = p.swordPulls :: number
+				if n >= E.sword.pulls then
+					p.seen.egg_sword = true
+					p.coins += E.sword.coins
+					Push:FireClient(player, "dialog", { who = "🗡 바위에 박힌 검", title = "검이 빠졌다",
+						text = string.format("백 번째 당기자 검이 스르륵 빠졌다. 칼자루에 작은 글씨가 있다. '힘이 아니라 끈기였다.' 검은 녹슬었지만, 칼자루 속에서 💰 %s 은자가 쏟아졌다.", Config.formatNumber(E.sword.coins)) })
+				elseif n % 10 == 0 then
+					toast(player, string.format("🗡 검이 아주 조금 움직인 것 같다 (%d/%d)", n, E.sword.pulls))
+				else
+					toast(player, "🗡 " .. pick(SWORD))
+				end
+			elseif id == "well" then
+				if p.coins < E.well.cost then
+					toast(player, "💰 던질 은자가 모자라요")
+					return
+				end
+				p.coins -= E.well.cost
+				local r = math.random()
+				if r < 0.02 then
+					p.coins += E.well.jackpot
+					toast(player, string.format("🪙 우물이 반짝였다! 💰 %s 은자가 솟아올랐다", Config.formatNumber(E.well.jackpot)))
+				elseif r < 0.27 then
+					p.skyBuffUntil = math.max(p.skyBuffUntil, os.time()) + 300
+					toast(player, "🪙 소원이 닿았다. 5분 동안 주는 피해 +15%")
+					refreshFighter(player)
+				else
+					toast(player, "🪙 " .. pick(WELL))
+				end
+			elseif id == "ducks" then
+				if not p.seen.egg_ducks then
+					p.seen.egg_ducks = true
+					p.scrolls += E.ducks.scrolls
+					toast(player, "🦆 꽥! 어미 오리가 심법 두루마리 하나를 물어다 주었다")
+				else
+					toast(player, "🦆 " .. pick(DUCK))
+				end
+			end
+			est.dirty = true
+			pushState(player)
+		end)
+	end
 end
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)

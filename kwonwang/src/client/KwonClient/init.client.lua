@@ -25,6 +25,8 @@ local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
+local Mujo = require(script:WaitForChild("Mujo"))
+local Royal = require(script:WaitForChild("Royal"))
 local Ink = require(script:WaitForChild("Ink"))
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
@@ -1979,6 +1981,8 @@ function handlers.skillfx(data: any)
 		Forest.init({ shake = shake })
 		Whale.init({ shake = shake })
 		Star.init({ shake = shake, flash = UI.flash })
+		Mujo.init({ shake = shake, flash = UI.flash })
+		Royal.init({ shake = shake, flash = UI.flash })
 		Ink.init({ shake = shake })
 		Blossom.init({ shake = shake })
 		Plum.init({ shake = shake, tint = tint })
@@ -1989,6 +1993,15 @@ function handlers.skillfx(data: any)
 	-- 3.1판 극 권법의 기술 (평소·황혼)
 	if Geuk.handles(data) then
 		Geuk.run(data)
+		return
+	end
+	-- 3.6판 무상권 (전부 새로)과 권왕신권의 새 오의·초 오의
+	if Mujo.handles(data) then
+		Mujo.run(data)
+		return
+	end
+	if Royal.handles(data) then
+		Royal.run(data)
 		return
 	end
 	-- 3.0판 환생 권법 넷의 기술과 연타 장치
