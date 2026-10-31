@@ -1957,7 +1957,7 @@ function handlers.breakthrough(data: any)
 		return
 	end
 	UI.cinematic("⬆ " .. s.name .. " · " .. data.step, s.color, 2.2)
-	UI.banner("⬆ " .. data.step .. "!", string.format("%s 등급이 [%s]로 올랐다", s.name, data.grade), Config.GRADE_COLOR[data.grade] or s.color)
+	UI.banner("⬆ " .. data.step .. "!", string.format("%s [%s] 피해가 ×%.2f로 올랐다", s.name, data.grade, data.mult or 1), Config.GRADE_COLOR[data.grade] or s.color)
 	local char = myChar()
 	if char then
 		Fx.ult(s.id, char, 1.6)

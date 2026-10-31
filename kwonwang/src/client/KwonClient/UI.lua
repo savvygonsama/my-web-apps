@@ -751,7 +751,7 @@ local function buildStyles()
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
-				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → 피해 ×%.2f → ×%.2f", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.gradeMult(s, ups), Config.gradeMult(s, ups + 1)))
 			else
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
@@ -1596,7 +1596,12 @@ function HELP.helpText(tab: string): { string }
 		for _, s in ipairs(Config.BREAKTHROUGH) do
 			table.insert(bt, string.format("%s (%s부터 · 💰 %s)", s.name, Config.Realms[s.realm].name, Config.formatNumber(s.coins)))
 		end
-		add(string.format("• 숙련 %d인 권법은 깨달음으로 등급이 오른다: %s", Config.MASTERY_FULL, table.concat(bt, " · ")))
+		add(string.format("• 숙련 %d인 권법은 깨달음으로 피해가 오른다 (상급·전설은 두 번 모두, 신화는 한 번만, 태초 이상은 오르지 않는다): %s", Config.MASTERY_FULL, table.concat(bt, " · ")))
+		add("")
+		add("<b>권법 등급</b>")
+		add("• 다섯 등급: 상급 → 전설 → 신화 → 태초 → 윤회 (지존은 새 권법을 위해 비워 둔 자리)")
+		add("• 권법이 변한 모습은 등급과 따로다: 진 (각성) · 초 · 극")
+		add("• 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 심법)")

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.4.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.5.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1621,56 +1621,63 @@ for _, st in ipairs(Config.Styles) do
 	end
 end
 
--- 권법 등급: 높을수록 같은 숙련에서 더 세다 (여덟 단계)
-Config.GRADE_ORDER = { "하급", "중급", "상급", "최상급", "절세", "전설", "신화", "천외천", "태초", "지존", "윤회", "초월", "권왕", "극" }
--- 2.5판: 후반 권법이 너무 세다 → 신화 1.9→1.8 · 천외천 2.25→2.1 · 태초 2.6→2.35 · 지존 3.0→2.65 · 초월 3.6→3.1
-Config.GRADES = { ["하급"] = 0.85, ["중급"] = 1.0, ["상급"] = 1.15, ["최상급"] = 1.3, ["절세"] = 1.45, ["전설"] = 1.65, ["신화"] = 1.8, ["천외천"] = 2.1, ["태초"] = 2.35, ["지존"] = 2.65, ["윤회"] = 2.9, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8 }
+-- 3.5판 권법 등급: 다섯 단계 (상급 · 전설 · 신화 · 태초 · 윤회). 지존은 나중에 새 권법이 나오면 쓰려고 비워 둔다.
+-- 진 (각성) · 초 · 극은 등급이 아니라 권법이 변한 모습이라 예전 그대로 둔다 (진 = 신화, 초 = 초월, 극 = 극).
+-- 모습의 한계: 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다 (FORM_LIMIT)
+Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "극" }
+Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["극"] = 3.8 }
 Config.GRADE_COLOR = {
-	["하급"] = Color3.fromRGB(190, 190, 190),
-	["중급"] = Color3.fromRGB(140, 220, 140),
 	["상급"] = Color3.fromRGB(120, 190, 255),
-	["최상급"] = Color3.fromRGB(90, 230, 230),
-	["절세"] = Color3.fromRGB(220, 130, 255),
 	["전설"] = Color3.fromRGB(255, 200, 80),
 	["신화"] = Color3.fromRGB(255, 120, 90),
-	["천외천"] = Color3.fromRGB(255, 255, 210),
 	["태초"] = Color3.fromRGB(190, 225, 255),
 	["지존"] = Color3.fromRGB(255, 200, 90),
-	["초월"] = Color3.fromRGB(255, 160, 210),
 	["윤회"] = Color3.fromRGB(170, 140, 255),
-	["권왕"] = Color3.fromRGB(255, 70, 70),
+	["초월"] = Color3.fromRGB(255, 160, 210),
 	["극"] = Color3.fromRGB(255, 140, 90),
 }
-for _, st in ipairs(Config.Styles) do
-	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
-	st.grade = g or st.grade or "중급"
-end
+Config.FORM_LIMIT = { ["상급"] = "초", ["전설"] = "초", ["신화"] = "극", ["태초"] = "극", ["지존"] = "극", ["윤회"] = "극" }
+-- 예전 열네 등급 → 다섯 등급 (진·초·극은 그대로)
+local GRADE_REMAP = { ["하급"] = "상급", ["중급"] = "상급", ["상급"] = "상급", ["최상급"] = "전설", ["절세"] = "전설", ["전설"] = "전설", ["신화"] = "신화", ["천외천"] = "신화", ["태초"] = "태초", ["지존"] = "태초", ["윤회"] = "윤회", ["권왕"] = "윤회" }
+-- 예전 등급 순위 (동작 빠르기·배틀그라운드 몫은 예전 열네 칸 그대로 센다)
+local OLD_RANK = { ["하급"] = 1, ["중급"] = 2, ["상급"] = 3, ["최상급"] = 4, ["절세"] = 5, ["전설"] = 6, ["신화"] = 7, ["천외천"] = 8, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 11, ["초월"] = 12, ["권왕"] = 13, ["극"] = 14 }
+-- (등급 다시 매기기는 모든 권법이 들어온 뒤, STYLE_BY_ID 바로 앞에서 한다)
 function Config.gradeIndex(name: string): number
-	return table.find(Config.GRADE_ORDER, name) or 2
+	return table.find(Config.GRADE_ORDER, name) or 1
 end
 -- 권법 승급 (깨달음): 숙련 10인 권법을 한 단계씩 끌어올린다 (두 번까지). 경지와 은자가 든다
 Config.BREAKTHROUGH = {
 	{ realm = 3, coins = 3000, name = "1차 깨달음" },
 	{ realm = 7, coins = 20000, name = "2차 깨달음" },
 }
--- 그 권법의 지금 등급 (승급까지 더해서)
-function Config.styleGrade(style: any, up: number?): string
-	-- 태초 등급은 태초신권만, 지존은 일월신권만 (다른 권법은 승급해도 천외천까지)
-	local cap = Config.gradeIndex("천외천")
-	if style.grade == "태초" or style.grade == "지존" or style.grade == "초월" or style.grade == "윤회" or style.grade == "권왕" or style.grade == "극" then
-		cap = Config.gradeIndex(style.grade)
-	end
-	local i = math.max(Config.gradeIndex(style.grade), math.min(cap, Config.gradeIndex(style.grade) + (up or 0)))
-	return Config.GRADE_ORDER[i]
+-- 그 권법의 등급 (3.5판: 깨달음은 등급을 바꾸지 않고 피해를 올린다)
+function Config.styleGrade(style: any, _up: number?): string
+	return style.grade
 end
--- 등급이 높을수록 조금씩 빠르다: 한 단계마다 동작 +2.5%, 걸음 +1.5% (천외면 동작 ×1.175)
+-- 깨달음 한 번에 오르는 피해 (예전 등급 두 칸과 비슷하게). 신화는 예전처럼 한 칸만, 태초 이상과 초·극은 오르지 않는다
+local BREAK_BONUS = { ["상급"] = { 0.13, 0.26 }, ["전설"] = { 0.13, 0.26 }, ["신화"] = { 0.17, 0.17 } }
+function Config.gradeMult(style: any, up: number?): number
+	local base = Config.GRADES[style.grade] or 1
+	local b = BREAK_BONUS[style.grade]
+	local u = math.clamp(math.floor(up or 0), 0, 2)
+	return base * (1 + ((b and u > 0) and b[u] or 0))
+end
+-- 빠르기 순위: 예전 열네 칸 순위 + 깨달음 (예전처럼 천외천 칸까지, 태초 이상과 초·극은 그대로)
+function Config.gradeRank(style: any, up: number?): number
+	local r = style.rank or 1
+	if r >= OLD_RANK["태초"] then
+		return r
+	end
+	return math.min(OLD_RANK["천외천"], r + math.clamp(math.floor(up or 0), 0, 2))
+end
+-- 등급이 높을수록 조금씩 빠르다: 한 칸마다 동작 +2.5%, 걸음 +1.5%
 function Config.gradeSpeed(style: any, up: number?): number
 	-- 배틀그라운드: 등급이 높아도 아주 조금만 빠르다 (극이 하급보다 약 10%)
 	local k = Config.BATTLE_MODE and 0.008 or 0.025
-	return 1 + k * (Config.gradeIndex(Config.styleGrade(style, up)) - 1)
+	return 1 + k * (Config.gradeRank(style, up) - 1)
 end
 function Config.gradeWalk(style: any, up: number?): number
-	return 1 + 0.015 * (Config.gradeIndex(Config.styleGrade(style, up)) - 1)
+	return 1 + 0.015 * (Config.gradeRank(style, up) - 1)
 end
 -- 기술 동작 속도 (권법 고유 빠르기 × 등급 × 혈마 광란)
 function Config.actSpeed(style: any, up: number?, frenzy: boolean?): number
@@ -2270,6 +2277,31 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.5판: 모든 권법이 들어온 뒤 등급을 다섯 단계로 다시 매긴다
+for _, st in ipairs(Config.Styles) do
+	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
+	local old = g or st.grade or "중급"
+	st.rank = OLD_RANK[old] or 2
+	if st.awakenOf or st.transcend or st.geuk then
+		st.grade = old -- 진·초·극: 예전 그대로
+	else
+		st.grade = GRADE_REMAP[old] or "상급"
+	end
+end
+-- 극 모습은 신화 이상 권법에서만 (어기면 경고만)
+for _, st in ipairs(Config.Styles) do
+	if st.geuk and st.styleReq then
+		local base
+		for _, b in ipairs(Config.Styles) do
+			if b.id == st.styleReq then
+				base = b
+			end
+		end
+		if base and Config.FORM_LIMIT[base.grade] ~= "극" then
+			warn("[권왕] " .. st.name .. ": 극 모습은 신화 이상 권법에서만")
+		end
+	end
+end
 Config.STYLE_BY_ID = {}
 for i, s in ipairs(Config.Styles) do
 	s.index = i
@@ -7168,7 +7200,7 @@ local function refreshFighter(player: Player)
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
-	local grade = styleDef and Config.GRADES[Config.styleGrade(styleDef, p.gradeUp[p.style])] or 1
+	local grade = styleDef and Config.gradeMult(styleDef, p.gradeUp[p.style]) or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
 	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
@@ -7227,7 +7259,7 @@ local function refreshFighter(player: Player)
 	end
 	-- 3.3판 배틀그라운드: 모두 체력 200, 공격력은 권법 등급만 아주 조금 (능력치·경지·숙련·심법·특전은 보지 않는다)
 	if BATTLE then
-		local gi = styleDef and Config.gradeIndex(Config.styleGrade(styleDef, p.gradeUp[p.style])) or 1
+		local gi = styleDef and Config.gradeRank(styleDef, p.gradeUp[p.style]) or 1
 		f.dmgMult = 1 + Config.BATTLE.gradeStep * (gi - 1)
 		f.skillMult = 1
 		fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = 0, 0, 0, 0, 0
@@ -10673,7 +10705,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		p.coins -= step.coins
 		p.gradeUp[sd.id] = ups + 1
 		st.dirty = true
-		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), step = step.name })
+		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), mult = Config.gradeMult(sd, ups + 1), step = step.name })
 		refreshFighter(player)
 		Story.check(player)
 		pushState(player)
@@ -27616,7 +27648,7 @@ function handlers.breakthrough(data: any)
 		return
 	end
 	UI.cinematic("⬆ " .. s.name .. " · " .. data.step, s.color, 2.2)
-	UI.banner("⬆ " .. data.step .. "!", string.format("%s 등급이 [%s]로 올랐다", s.name, data.grade), Config.GRADE_COLOR[data.grade] or s.color)
+	UI.banner("⬆ " .. data.step .. "!", string.format("%s [%s] 피해가 ×%.2f로 올랐다", s.name, data.grade, data.mult or 1), Config.GRADE_COLOR[data.grade] or s.color)
 	local char = myChar()
 	if char then
 		Fx.ult(s.id, char, 1.6)
@@ -49821,7 +49853,7 @@ local function buildStyles()
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
-				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → [%s] (피해 ×%.2f → ×%.2f)", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.styleGrade(s, ups + 1), Config.GRADES[gradeNow], Config.GRADES[Config.styleGrade(s, ups + 1)]))
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → 피해 ×%.2f → ×%.2f", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.gradeMult(s, ups), Config.gradeMult(s, ups + 1)))
 			else
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end
@@ -50666,7 +50698,12 @@ function HELP.helpText(tab: string): { string }
 		for _, s in ipairs(Config.BREAKTHROUGH) do
 			table.insert(bt, string.format("%s (%s부터 · 💰 %s)", s.name, Config.Realms[s.realm].name, Config.formatNumber(s.coins)))
 		end
-		add(string.format("• 숙련 %d인 권법은 깨달음으로 등급이 오른다: %s", Config.MASTERY_FULL, table.concat(bt, " · ")))
+		add(string.format("• 숙련 %d인 권법은 깨달음으로 피해가 오른다 (상급·전설은 두 번 모두, 신화는 한 번만, 태초 이상은 오르지 않는다): %s", Config.MASTERY_FULL, table.concat(bt, " · ")))
+		add("")
+		add("<b>권법 등급</b>")
+		add("• 다섯 등급: 상급 → 전설 → 신화 → 태초 → 윤회 (지존은 새 권법을 위해 비워 둔 자리)")
+		add("• 권법이 변한 모습은 등급과 따로다: 진 (각성) · 초 · 극")
+		add("• 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 심법)")
