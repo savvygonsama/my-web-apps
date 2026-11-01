@@ -1442,6 +1442,10 @@ local function trialWave(player: Player, T: any)
 	T.count = T.wave - 1
 	local style, master = Config.STYLE_BY_ID[T.style], T.master
 	local waves = { { n = 2, k = 0.6, hp = 0.7 }, { n = 3, k = 0.65, hp = 0.7 }, { n = 1, k = 0.95, hp = 2.2, chief = true } }
+	if Config.trialEasy(T.style) then
+		-- 3.17.6판 초반 권법: 제자 둘 → 수제자 (약하게)
+		waves = { { n = 2, k = 0.45, hp = 0.55 }, { n = 1, k = 0.7, hp = 1.4, chief = true } }
+	end
 	local W = waves[T.wave]
 	if not W then
 		T.count = T.need
@@ -1457,6 +1461,9 @@ local function trialWave(player: Player, T: any)
 			def.pants = Color3.fromRGB(40, 36, 34)
 		end)
 		if ef then
+			if Config.trialEasy(T.style) then
+				ef.dmgMult *= Config.EASY_TRIAL.hit
+			end
 			table.insert(T.foes, ef)
 		end
 	end
@@ -1512,8 +1519,14 @@ function Trial.start(player: Player, styleId: string)
 		local K = Config.TRIAL_KINDS[kind]
 		local T = { kind = kind, style = styleId, foes = {}, count = 0, need = need, wave = 0, master = master, at = spawnAt, deadline = os.clock() + (kind == "survive" and need or K.time * (style.trialHp and 1.5 or 1)) }
 		activeTrial[player] = T
+		-- 3.17.6판 초반 권법: 사부·제자가 약하고 덜 아프다
+		local easy = Config.trialEasy(styleId)
+		local EZ = Config.EASY_TRIAL
 		local function immortalMaster(speed: number, dmgK: number): any
-			local ef = trialFoe(player, f, style, master, "master", spawnAt, style.secret and 1.0 or 0.85, nil, function(def)
+			if easy then
+				dmgK *= EZ.hit
+			end
+			local ef = trialFoe(player, f, style, master, "master", spawnAt, style.secret and 1.0 or (easy and 0.85 * EZ.power or 0.85), nil, function(def)
 				def.name = master.name
 				def.speed = speed
 				def.aggro = 140
@@ -1534,11 +1547,14 @@ function Trial.start(player: Player, styleId: string)
 			immortalMaster(19, 0.8)
 			for i = 1, 2 do
 				local at = spawnAt + Vector3.new(i == 1 and -8 or 8, 0, 0)
-				local ef = trialFoe(player, f, style, master, "disciple", at, 0.6, 0.6, function(def)
+				local ef = trialFoe(player, f, style, master, "disciple", at, easy and 0.6 * EZ.power or 0.6, 0.6, function(def)
 					def.name = master.name .. "의 제자"
 					def.pants = Color3.fromRGB(40, 36, 34)
 				end)
 				if ef then
+					if easy then
+						ef.dmgMult *= EZ.hit
+					end
 					table.insert(T.foes, ef)
 				end
 			end

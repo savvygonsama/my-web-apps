@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2528,7 +2528,8 @@ end
 Config.RHYTHM = { early = 0.3, perfectFrom = 0.62, perfectTo = 1.0, late = 0.18, bonus = 1.15, chain = 3, chainBonus = 1.3, breakLock = 0.25, earlyLimit = 4 }
 
 -- 권법 배우는 값 (이미 배운 권법 수에 따라). 첫 권법은 공짜
-Config.LEARN_COST = { 0, 300, 750, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000, 500000, 500000 }
+-- 3.17.6판: 처음 몇 권법은 싸게 (두 번째 300 → 100, 세 번째 750 → 300, 네 번째 1500 → 700)
+Config.LEARN_COST = { 0, 100, 300, 700, 1500, 3000, 5000, 7500, 9000, 12000, 20000, 50000, 50000, 50000, 100000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 500000, 500000, 500000 }
 
 -- 숙련도: 그 권법으로 맞힐 때마다 오른다. 레벨마다 그 권법 피해 +3%
 -- 2.5판: 숙련은 20까지 (각성·승급은 그대로 숙련 10에서). 11부터는 레벨마다 피해 +1%, 오르기는 점점 더디다
@@ -3434,11 +3435,26 @@ Config.TRIAL_KINDS = {
 	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
 		ask = "내 제자들을 넘어 보아라. %d번 몰려온다. 마지막은 수제자다.", goal = "몰려오는 제자들을 꺾어라" },
 }
+-- 3.17.6판: 초반 권법 (상급 권법의 사부)은 시험이 쉽다. 해낼 수가 적고, 사부·제자가 약하다
+--   need: 흘리기 6 → 4번 · 버티기 45 → 30초 · 제자 연무 세 번 → 두 번 (제자 둘 → 수제자)
+--   power: 사부·제자의 세기 배율 (내 전투력 기준, 보통 0.85 → 0.6), hit: 사부·제자가 주는 피해 배율
+Config.EASY_TRIAL = {
+	styles = { taeheo = true, geumgang = true, maehwa = true, muyeong = true, byeokryeok = true, chwi = true, unryu = true },
+	need = { deflect = 4, survive = 30, disciples = 2 },
+	power = 0.7,
+	hit = 0.65,
+}
+function Config.trialEasy(styleId: string): boolean
+	return Config.EASY_TRIAL.styles[styleId] == true
+end
 function Config.trialNeed(styleId: string): (string, number)
 	local kind = Config.TRIAL_KIND[styleId] or "duel"
 	local K = Config.TRIAL_KINDS[kind]
 	if not K then
 		return "duel", 1
+	end
+	if Config.trialEasy(styleId) and Config.EASY_TRIAL.need[kind] then
+		return kind, Config.EASY_TRIAL.need[kind]
 	end
 	local st = Config.STYLE_BY_ID[styleId]
 	local mul = (st and st.trialHp) and 1.5 or 1
