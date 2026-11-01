@@ -731,6 +731,10 @@ startMove = function(slot: any, charge: number?)
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.id == "geuknull" then
+		-- 3.17.1판 극 공백권 초 오의: 낮게 돌며 올려다보는 컷씬 (격자선이 하늘로 뻗는다, 무적)
+		Null.gridCut(char, ((move.mech and move.mech.cut) or 1.6) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.nullCubes then
 		-- 존재소거: 화면이 깨지고 장면이 끊겨 붙는 컷씬 (대사 없이, 무적)
 		Null.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake)

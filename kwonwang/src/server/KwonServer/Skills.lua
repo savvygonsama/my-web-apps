@@ -3976,6 +3976,53 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end)
+	elseif kind == "latticeDrop" then
+		-- 3.17.1판 극 공백권 천공 격자 (오의): 하늘에 거대한 흰 격자 정육면체가 짜여 내려꽂힌다. 땅에 격자가 새겨지고 칸마다 붉게 터지다가, 정육면체가 산산이 흩어진다
+		local list = nearestList(f, m.range, 1)
+		local tgt = (#list > 0 and list[1].root.Position) or (f.root.Position + look * m.dist)
+		local center = Vector3.new(tgt.X, f.root.Position.Y, tgt.Z)
+		Push:FireAllClients("skillfx", { kind = "latticeDrop", at = center, size = m.size, appear = m.appear / sp, fall = m.fall / sp, waves = m.waves, every = m.every / sp, finalAt = m.finalAt / sp, style = style })
+		local land = m.appear + m.fall
+		after(land, function()
+			for _, o in ipairs(hostilesNear(f, center, m.size * 0.7)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		for i = 1, m.waves do
+			after(land + i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.size)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = 0.45
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(land + m.waves * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.size * 1.1)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "dimensionCut" then
+		-- 3.17.1판 극 공백권 차원 절단 (초 오의): 컷씬 (무적) 뒤 둘레에 흰 격자 하늘이 둥글게 짜이고,
+		-- 거대한 빛의 칼날 판이 공간을 여러 번 가른다 (가를 때마다 공간이 어긋난다). 멈추고 빛깔이 뒤집힌 뒤, 모든 격자가 한 점으로 빨려 들어 하얗게 터진다
+		local center = f.root.Position
+		local total = m.cut + m.build + m.slices * m.every + m.freeze + 0.5
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		Push:FireAllClients("skillfx", { kind = "dimensionCut", m = f.model, at = center, range = m.range, cut = m.cut / sp, build = m.build / sp, slices = m.slices, every = m.every / sp, freeze = m.freeze / sp, seed = math.random(1, 1000000), style = style })
+		for i = 1, m.slices do
+			after(m.cut + m.build + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.range)) do
+					o.slowUntil = os.clock() + (m.every + 0.3) / sp
+					o.slowMul = 0.25
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.cut + m.build + m.slices * m.every + m.freeze, function()
+			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "mirrorWorld" then
 		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
 		local center = f.root.Position

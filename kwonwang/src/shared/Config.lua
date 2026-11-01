@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2394,10 +2394,10 @@ table.insert(Config.Styles, {
 			mech = { kind = "coordSlash", dist = 13, len = 32, n = 3, width = 3.5, delay = 0.35, hit = hit(0, 0, 0, 58, 52, 0.7, 12, 6), seamAt = 0.3, seam = hit(0, 0, 0, 26, 22, 0.35, 8) } },
 		R = { id = "gnR", name = "좌표 교환", desc = "가장 가까운 적과 나를 흰 격자 상자에 가두고 좌표를 맞바꾼다 (그동안 무적). 적이 서 있던 자리에 내가, 내가 서 있던 자리에 적이 놓이고, 그 상자가 오그라들며 터진다", pose = "void_sink", dur = 0.6, cd = 9, chi = 22, iframes = 0.6,
 			mech = { kind = "coordSwap", n = 1, range = 36, delay = 0.18, every = 0.3, radius = 9, hit = hit(0, 0, 0, 70, 64, 0.8, 4, 4), implode = 0.3, final = hit(0, 0, 0, 110, 100, 0.9, 20, 10) } },
-		G = { id = "gnG", name = "좌표 평면", desc = "허리 높이에 둘레 30칸의 둥근 격자 평면이 펼쳐진다. 평면 위와 아래의 공간이 서로 반대로 네 번 미끄러지며 벤다. 끝에 평면이 조각나 바깥으로 흩어진다", pose = "void_gather", dur = 2.0, cd = 26, chi = 100, armor = true,
-			mech = { kind = "planeShear", radius = 30, delay = 0.45, shears = 4, every = 0.32, shift = 5, tick = hit(0, 0, 0, 34, 32, 0.4, 0), finalAt = 0.35, final = hit(0, 0, 0, 250, 280, 1.5, 40, 20) } },
-		X = { id = "gnX", name = "무한 좌표", desc = "초 오의. 화면이 깨진다 (그동안 무적). 둘레 50칸의 적마다 흰 격자 상자가 씌워지고 좌표선으로 이어진다. 상자가 세 번 오그라들며 조이다가, 모든 상자가 한꺼번에 한 점으로 지워진다", pose = "ult_void", dur = 4.4, cd = 55, chi = 150, armor = true,
-			mech = { kind = "latticePrison", cut = 1.4, range = 50, max = 12, build = 0.6, steps = 3, every = 0.45, hit = hit(0, 0, 0, 60, 60, 0.6, 0), finalAt = 0.5, finalRadius = 50, final = hit(0, 0, 0, 380, 420, 1.9, 60, 24) } },
+		G = { id = "gnG", name = "천공 격자", desc = "가까운 적의 하늘에 거대한 흰 격자 정육면체가 짜여 내려꽂힌다. 땅에 격자가 새겨지고 칸마다 붉게 세 번 터지다가, 정육면체가 산산이 흩어진다", pose = "void_gather", dur = 1.6, cd = 26, chi = 100, armor = true,
+			mech = { kind = "latticeDrop", range = 40, dist = 14, size = 26, appear = 0.55, fall = 0.3, hit = hit(0, 0, 0, 120, 140, 1.2, 10, 14), waves = 3, every = 0.28, tick = hit(0, 0, 0, 40, 40, 0.45, 0), finalAt = 0.35, final = hit(0, 0, 0, 230, 260, 1.5, 44, 20) } },
+		X = { id = "gnX", name = "차원 절단", desc = "초 오의. 컷씬 (그동안 무적): 손끝에서 흰 격자가 하늘로 뻗는다. 둘레 52칸에 흰 격자 하늘이 둥글게 짜이고, 거대한 빛의 칼날 판이 공간을 여섯 번 가른다 (가를 때마다 공간이 어긋난다). 멈추고 빛깔이 뒤집힌 뒤, 모든 격자가 한 점으로 빨려 들어 하얗게 터진다", pose = "ult_void", dur = 4.6, cd = 55, chi = 150, armor = true,
+			mech = { kind = "dimensionCut", cut = 1.6, range = 52, build = 0.7, slices = 6, every = 0.32, hit = hit(0, 0, 0, 56, 56, 0.6, 0), freeze = 0.45, finalRadius = 52, final = hit(0, 0, 0, 400, 440, 2.0, 70, 26) } },
 	},
 	-- 격자 공간 (격자 전개 동안): 기술이 모두 바뀐다
 	twilight = {
@@ -2412,10 +2412,10 @@ table.insert(Config.Styles, {
 				mech = { kind = "coordSlash", dist = 15, len = 40, n = 6, width = 4, delay = 0.3, hit = hit(0, 0, 0, 80, 72, 0.8, 14, 8), seamAt = 0.25, seam = hit(0, 0, 0, 34, 30, 0.4, 10) } },
 			R = { id = "gxR", name = "좌표 도약", desc = "가까운 적 셋과 차례로 좌표를 맞바꾸며 친다 (무적). 바뀐 자리마다 상자가 오그라들며 터진다", pose = "void_sink", dur = 0.9, cd = 8, chi = 22, iframes = 0.9,
 				mech = { kind = "coordSwap", n = 3, range = 42, delay = 0.12, every = 0.22, radius = 9, hit = hit(0, 0, 0, 64, 58, 0.7, 4, 4), implode = 0.28, final = hit(0, 0, 0, 90, 84, 0.8, 18, 8) } },
-			G = { id = "gxG", name = "격자 단층", desc = "둘레 40칸의 둥근 격자 평면이 펼쳐지고, 위아래의 공간이 다섯 번 미끄러지며 벤다. 끝에 평면이 산산이 흩어진다", pose = "void_gather", dur = 2.2, cd = 22, chi = 90, armor = true,
-				mech = { kind = "planeShear", radius = 40, delay = 0.35, shears = 5, every = 0.28, shift = 7, tick = hit(0, 0, 0, 42, 40, 0.45, 0), finalAt = 0.3, final = hit(0, 0, 0, 330, 370, 1.7, 50, 24) } },
-			X = { id = "gxX", name = "공간 삭제", desc = "격자의 초 오의 (그동안 무적). 격자 안 62칸의 적마다 상자가 씌워지고, 세 번 조인 뒤 공간째 지워진다", pose = "ult_void", dur = 4.6, cd = 50, chi = 140, armor = true,
-				mech = { kind = "latticePrison", cut = 1.3, range = 62, max = 16, build = 0.5, steps = 3, every = 0.4, hit = hit(0, 0, 0, 76, 76, 0.7, 0), finalAt = 0.45, finalRadius = 62, final = hit(0, 0, 0, 470, 510, 2.0, 70, 28) } },
+			G = { id = "gxG", name = "격자 붕락", desc = "격자 공간의 오의. 더 큰 격자 정육면체 (34칸)가 내려꽂히고 칸마다 네 번 터진다", pose = "void_gather", dur = 1.6, cd = 22, chi = 90, armor = true,
+				mech = { kind = "latticeDrop", range = 48, dist = 16, size = 34, appear = 0.45, fall = 0.26, hit = hit(0, 0, 0, 150, 170, 1.3, 12, 16), waves = 4, every = 0.24, tick = hit(0, 0, 0, 48, 48, 0.5, 0), finalAt = 0.3, final = hit(0, 0, 0, 300, 340, 1.7, 50, 24) } },
+			X = { id = "gxX", name = "공간 삭제", desc = "격자의 초 오의 (그동안 무적). 격자 하늘이 70칸으로 짜이고 빛의 칼날 판이 여덟 번 가른 뒤, 공간째 지워진다", pose = "ult_void", dur = 4.8, cd = 50, chi = 140, armor = true,
+				mech = { kind = "dimensionCut", cut = 1.4, range = 70, build = 0.6, slices = 8, every = 0.27, hit = hit(0, 0, 0, 66, 66, 0.7, 0), freeze = 0.45, finalRadius = 70, final = hit(0, 0, 0, 480, 520, 2.1, 80, 30) } },
 		},
 	},
 })
