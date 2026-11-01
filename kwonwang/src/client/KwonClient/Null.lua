@@ -21,6 +21,8 @@ folder.Name = "KwonNull"
 folder.Parent = workspace
 
 local opts: any = {}
+-- 3.17.2판: 펼쳐진 격자 공간 (쓴 사람 모델 → 공간). 격자 공간 기술이 이 격자선을 직접 움직인다
+local domainState: { [Model]: any } = {}
 function Null.init(o: any)
 	opts = o or {}
 end
@@ -1825,7 +1827,433 @@ function Null.gridCut(model: Model, dur: number, name: string, shake: ((number) 
 	task.delay(dur + 1, restore)
 end
 
+------------------------------------------------------------------------
+-- 3.17.2판 극 공백권 · 격자 공간 기술: 이미 펼쳐진 격자 공간의 격자선을 직접 쥐고 움직인다
+------------------------------------------------------------------------
+-- 펼쳐진 격자를 잠깐 쥔다 (그동안 격자 전개는 손대지 않는다). 놓을 때 원래대로
+local function grabDomain(m: Model?): any
+	local ds = m and domainState[m]
+	if not ds or ds.hijack then
+		return nil
+	end
+	ds.hijack = true
+	ds.saved = {}
+	for i, S in ipairs(ds.segs) do
+		ds.saved[i] = { cf = S.p.CFrame, size = S.p.Size, alpha = S.p.Transparency, color = S.p.Color }
+	end
+	return ds
+end
+local function releaseDomain(ds: any)
+	for i, S in ipairs(ds.segs) do
+		local o = ds.saved[i]
+		if o and S.p.Parent then
+			S.p.CFrame = o.cf
+			S.p.Size = o.size
+			S.p.Transparency = o.alpha
+			S.p.Color = o.color
+		end
+	end
+	ds.hijack = false
+end
+-- 쥔 격자를 옮긴다: fn(원래 가운데) → 새 가운데, 가로 배율, 세로 배율
+local function moveDomain(ds: any, fn: (Vector3) -> (Vector3, number, number), color: Color3?, alpha: number?)
+	for i, S in ipairs(ds.segs) do
+		local o = ds.saved[i]
+		if o and S.p.Parent and o.alpha < 0.99 then
+			local c, sh, sv = fn(o.cf.Position)
+			local sz = o.size
+			if S.axis == "x" then
+				sz = Vector3.new(math.max(0.05, sz.X * sh), sz.Y, sz.Z)
+			elseif S.axis == "z" then
+				sz = Vector3.new(sz.X, sz.Y, math.max(0.05, sz.Z * sh))
+			else
+				sz = Vector3.new(sz.X, math.max(0.05, sz.Y * sv), sz.Z)
+			end
+			S.p.Size = sz
+			S.p.CFrame = CFrame.new(c)
+			if color then
+				S.p.Color = color
+			end
+			if alpha then
+				S.p.Transparency = math.min(o.alpha, alpha)
+			end
+		end
+	end
+end
+local function line(a: Vector3, b: Vector3, w: number, color: Color3, alpha: number): BasePart
+	local q = part(Vector3.new(w, w, math.max(0.05, (b - a).Magnitude)), color, Enum.Material.Neon, alpha)
+	q.CFrame = CFrame.lookAt((a + b) / 2, b + (b - a).Unit * 0.001)
+	return q
+end
+
+-- E 격자선 베기: 적이 선 자리를 지나는 격자선 셋이 공간 끝에서 끝까지 붉게 켜졌다가 하얗게 선째 벤다
+local function gridLine(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 400) then
+		return
+	end
+	local R = data.radius or 85
+	local top = data.top or 84
+	local delay = data.delay or 0.35
+	local seamAt = data.seamAt or 0.25
+	local ds = data.m and domainState[data.m]
+	Fx.sound("ping", 0.6, 2.2, at)
+	for i, t in ipairs(data.targets or {}) do
+		local tr = rootOf(t)
+		if tr then
+			local P = tr.Position
+			local d = P - at
+			local hx = math.sqrt(math.max(1, R * R - d.Z * d.Z))
+			local hz = math.sqrt(math.max(1, R * R - d.X * d.X))
+			local ends = {
+				{ Vector3.new(at.X - hx, P.Y, P.Z), Vector3.new(at.X + hx, P.Y, P.Z) },
+				{ Vector3.new(P.X, P.Y, at.Z - hz), Vector3.new(P.X, P.Y, at.Z + hz) },
+				{ Vector3.new(P.X, at.Y, P.Z), Vector3.new(P.X, at.Y + top, P.Z) },
+			}
+			task.delay((i - 1) * 0.03, function()
+				for _, e in ipairs(ends) do
+					-- 적 자리에서 양쪽 끝으로 뻗는다
+					for _, tip in ipairs({ e[1], e[2] }) do
+						local q = line(P, P, 0.22, RED, 0.05)
+						local tt0 = os.clock()
+						local conn: RBXScriptConnection
+						conn = RunService.Heartbeat:Connect(function()
+							local u = math.clamp((os.clock() - tt0) / (delay * 0.7), 0, 1)
+							local b = P:Lerp(tip, 1 - (1 - u) ^ 3)
+							q.Size = Vector3.new(0.22, 0.22, math.max(0.05, (b - P).Magnitude))
+							if (b - P).Magnitude > 0.01 then
+								q.CFrame = CFrame.lookAt((P + b) / 2, b)
+							end
+							if u >= 1 then
+								conn:Disconnect()
+							end
+						end)
+						task.delay(delay, function()
+							q.Color = WHITE
+							q.Size = Vector3.new(0.8, 0.8, q.Size.Z)
+							fadeOut(q, 0.35, { Size = Vector3.new(0.05, 0.05, q.Size.Z) })
+						end)
+					end
+				end
+				-- 둘레의 펼쳐진 격자선도 붉게 지직인다
+				if ds and not ds.hijack then
+					local rel = P - at
+					for _, S in ipairs(ds.segs) do
+						local mid = S.a + (S.b - S.a) * 0.5
+						if (mid - rel).Magnitude < (ds.STEP or 26) * 1.1 then
+							S.p.Color = RED
+							task.delay(delay + 0.3, function()
+								if S.p.Parent then
+									S.p.Color = WHITE
+								end
+							end)
+						end
+					end
+				end
+			end)
+			task.delay(delay, function()
+				tear(P + Vector3.new(0, 1, 0), 10, 0.1)
+				pixels(P, 14, 1.2, 8)
+				Fx.flash(P, WHITE, 30, 4, 0.2)
+			end)
+			task.delay(delay + seamAt, function()
+				pixels(P, 8, 0.9)
+				Fx.ring(ground(P) + Vector3.new(0, 0.3, 0), RED, 2, 12, 0.25)
+			end)
+		end
+	end
+	task.delay(delay, function()
+		Fx.sound("shatter", 0.8, 1.4, at)
+		shakeNear(at, 1.4, 200)
+		glitchNear(at, R * 1.5, 0.12, 0.6)
+	end)
+end
+
+-- R 격자 질주: 격자선을 따라 직각으로 꺾어 달린다. 지나간 선이 하얗게 타오르고 꺾인 자리마다 붉은 마디
+local function gridRun(data: any)
+	local from: Vector3 = data.from
+	if not near(from, 400) then
+		return
+	end
+	local m: Model? = data.m
+	local delay = data.delay or 0.08
+	local every = data.every or 0.14
+	local prev = from
+	local r0 = rootOf(m)
+	if r0 then
+		ghostAt(m, r0.CFrame, BLACK, 0.2, 0.25)
+	end
+	for i, t in ipairs(data.targets or {}) do
+		task.delay(delay + (i - 1) * every, function()
+			local tr = rootOf(t)
+			if not tr then
+				return
+			end
+			local P = tr.Position
+			local corner = Vector3.new(P.X, prev.Y, prev.Z)
+			local corner2 = Vector3.new(P.X, prev.Y, P.Z)
+			for _, sg in ipairs({ { prev, corner }, { corner, corner2 }, { corner2, P } }) do
+				if (sg[2] - sg[1]).Magnitude > 0.2 then
+					local q = line(sg[1], sg[2], 0.55, WHITE, 0)
+					fadeOut(q, 0.6, { Size = Vector3.new(0.08, 0.08, q.Size.Z) })
+					local glow = line(sg[1], sg[2], 1.4, Color3.fromRGB(200, 210, 255), 0.7)
+					fadeOut(glow, 0.3)
+				end
+			end
+			for _, c in ipairs({ corner, corner2 }) do
+				local nd = part(Vector3.one * 1.2, RED, Enum.Material.Neon, 0)
+				nd.Shape = Enum.PartType.Ball
+				nd.CFrame = CFrame.new(c)
+				fadeOut(nd, 0.5, { Size = Vector3.one * 0.2 })
+			end
+			local look = flat(P - prev)
+			local cf = CFrame.lookAt(P - look * 3, P)
+			ghostAt(m, cf * CFrame.new(0.35, 0, 0), RED, 0.55, 0.12)
+			ghostAt(m, cf * CFrame.new(-0.35, 0, 0), CYAN, 0.55, 0.12)
+			ghostAt(m, cf, BLACK, 0.1, 0.18)
+			pixels(P, 10, 0.9)
+			Fx.sound("ping", 0.45, 1.8 + i * 0.12, P)
+			prev = P
+		end)
+	end
+	glitchNear(from, 80, delay + #(data.targets or {}) * every, 0.5)
+end
+
+-- G 격자 수축: 펼친 격자 전체가 한 점으로 오그라들며 붉어진다 (끌려간다), 버티다가 튕겨 펼쳐지며 터진다
+local function gridCrush(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 400) then
+		return
+	end
+	local point: Vector3 = data.point or at
+	local pull = data.pull or 1.0
+	local hold = data.hold or 0.3
+	local R = data.radius or 85
+	local ds = grabDomain(data.m)
+	Fx.sound("deflect", 0.8, 0.35, point)
+	shakeNear(point, 1.2, 240)
+	local core = part(Vector3.one * 1, BLACK, Enum.Material.SmoothPlastic, 0)
+	core.Shape = Enum.PartType.Ball
+	core.CFrame = CFrame.new(point)
+	tween(core, pull, { Size = Vector3.one * 9 })
+	local rim = part(Vector3.one * 1.2, RED, Enum.Material.Neon, 0.5)
+	rim.Shape = Enum.PartType.Ball
+	rim.CFrame = CFrame.new(point)
+	tween(rim, pull, { Size = Vector3.one * 10.5 })
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if ds then
+			if t < pull then
+				local u = t / pull
+				local k = 1 - 0.86 * (u * u * (3 - 2 * u))
+				moveDomain(ds, function(c: Vector3)
+					return point + (c - point) * k, k, k
+				end, WHITE:Lerp(RED, u), 0.05)
+			elseif t < pull + hold then
+				-- 버틴다 (떨린다)
+				local j = Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 0.6
+				moveDomain(ds, function(c: Vector3)
+					return point + (c - point) * 0.14 + j, 0.14, 0.14
+				end, RED, 0.02)
+			elseif t < pull + hold + 0.3 then
+				-- 튕겨 펼쳐진다 (조금 넘쳤다가 제자리)
+				local u = (t - pull - hold) / 0.3
+				local k = 0.14 + (1 - 0.14) * (1 + 0.15 * math.sin(u * math.pi)) * u
+				moveDomain(ds, function(c: Vector3)
+					return point + (c - point) * k, k, k
+				end, RED:Lerp(WHITE, u), 0.1)
+			else
+				conn:Disconnect()
+				releaseDomain(ds)
+			end
+		elseif t > pull + hold + 0.3 then
+			conn:Disconnect()
+		end
+	end)
+	if not ds then
+		-- 격자가 안 보이는 자리: 둘레의 붉은 고리가 오그라든다
+		Fx.ring(ground(point) + Vector3.new(0, 0.4, 0), RED, R * 2, 4, pull)
+	end
+	task.delay(pull + hold, function()
+		core:Destroy()
+		rim:Destroy()
+		local ball = part(Vector3.one * 3, WHITE, Enum.Material.Neon, 0)
+		ball.Shape = Enum.PartType.Ball
+		ball.CFrame = CFrame.new(point)
+		fadeOut(ball, 0.45, { Size = Vector3.one * 56 })
+		Fx.ring(ground(point) + Vector3.new(0, 0.5, 0), WHITE, 4, 70, 0.5)
+		Fx.ring(ground(point) + Vector3.new(0, 0.8, 0), RED, 4, 56, 0.45)
+		pixels(point, 40, 1.8, 20)
+		Fx.flash(point, WHITE, 120, 10, 0.5)
+		Fx.sound("shatter", 1, 0.7, point)
+		Fx.sound("heavy", 1, 0.5, point)
+		shakeNear(point, 3, 260)
+		glitchNear(point, 140, 0.3, 1)
+		if opts.flash and near(point, 100) then
+			opts.flash(WHITE, 0.2)
+		end
+	end)
+	task.delay(pull + hold + 2, function()
+		if ds and ds.hijack then
+			releaseDomain(ds)
+		end
+	end)
+end
+
+-- X 공간 접기: 네 벽이 네 번에 걸쳐 안으로 접혀 들고 (흰 벽판이 쾅), 위아래로 눌려 한 점이 된 뒤 공간째 지워진다 (격자 공간 끝)
+local function domainFold(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 450) then
+		return
+	end
+	local R = data.radius or 85
+	local top = data.top or 84
+	local cut = data.cut or 1.3
+	local folds = data.folds or 4
+	local every = data.every or 0.38
+	local squash = data.squash or 0.5
+	local mid = at + Vector3.new(0, top * 0.4, 0)
+	task.delay(cut, function()
+		local ds = grabDomain(data.m)
+		local cc: ColorCorrectionEffect? = nil
+		if near(at, R * 2.2) then
+			cc = gradeTo(nil, 0.3, { Saturation = -0.85, Contrast = 0.25 })
+		end
+		local kh = 1
+		local walls: { BasePart } = {}
+		local function wallsAt(k: number): { CFrame }
+			local r = R * k
+			return {
+				CFrame.new(at + Vector3.new(r, top / 2, 0)) * CFrame.Angles(0, math.rad(90), 0),
+				CFrame.new(at + Vector3.new(-r, top / 2, 0)) * CFrame.Angles(0, math.rad(90), 0),
+				CFrame.new(at + Vector3.new(0, top / 2, r)),
+				CFrame.new(at + Vector3.new(0, top / 2, -r)),
+			}
+		end
+		for _, cf in ipairs(wallsAt(1)) do
+			local w = part(Vector3.new(R * 2, top, 0.4), WHITE, Enum.Material.Neon, 0.82)
+			w.CFrame = cf
+			table.insert(walls, w)
+		end
+		for i = 1, folds do
+			task.delay((i - 1) * every, function()
+				local k0 = kh
+				local k1 = 1 - i / folds * 0.9
+				kh = k1
+				local t0 = os.clock()
+				local conn: RBXScriptConnection
+				conn = RunService.RenderStepped:Connect(function()
+					local u = math.clamp((os.clock() - t0) / 0.14, 0, 1)
+					local k = k0 + (k1 - k0) * (u * u)
+					if ds then
+						moveDomain(ds, function(c: Vector3)
+							return Vector3.new(at.X + (c.X - at.X) * k, c.Y, at.Z + (c.Z - at.Z) * k), k, 1
+						end, i % 2 == 0 and WHITE or RED, 0.05)
+					end
+					local cfs = wallsAt(k)
+					for wi, w in ipairs(walls) do
+						w.CFrame = cfs[wi]
+						w.Size = Vector3.new(R * 2 * k, top, 0.4)
+					end
+					if u >= 1 then
+						conn:Disconnect()
+					end
+				end)
+				-- 쾅
+				for _, w in ipairs(walls) do
+					w.Transparency = 0.35
+					tween(w, every * 0.7, { Transparency = 0.82 })
+				end
+				Fx.flash(mid, i % 2 == 0 and WHITE or RED, 160, 8, 0.25)
+				Fx.sound("heavy", 1, 0.5 + i * 0.08, at)
+				Fx.sound("shatter", 0.7, 0.7 + i * 0.1, at)
+				shakeNear(at, 2 + i * 0.4, 300)
+				glitchNear(at, R * 2.4, 0.12, 0.9)
+				if opts.flash and near(at, R * 1.4) then
+					opts.flash(WHITE, 0.08)
+				end
+			end)
+		end
+		-- 위아래로 눌려 한 점이 된다
+		task.delay(folds * every, function()
+			if cc then
+				gradeTo(cc, 0.06, { Saturation = -1, Contrast = 1, Brightness = 0.3 })
+			end
+			Fx.sound("ping", 1, 3, at)
+			local t0 = os.clock()
+			local conn: RBXScriptConnection
+			conn = RunService.RenderStepped:Connect(function()
+				local u = math.clamp((os.clock() - t0) / squash, 0, 1)
+				local kv = 1 - 0.98 * u * u
+				local k = kh * (1 - u * 0.95)
+				if ds then
+					moveDomain(ds, function(c: Vector3)
+						return Vector3.new(mid.X + (c.X - at.X) * k, mid.Y + (c.Y - mid.Y) * kv, mid.Z + (c.Z - at.Z) * k), k, kv
+					end, WHITE, 0)
+				end
+				for _, w in ipairs(walls) do
+					w.Size = Vector3.new(math.max(0.1, R * 2 * k), math.max(0.1, top * kv), 0.4)
+					w.CFrame = CFrame.new(mid + (w.Position - mid) * (1 - u * 0.1)) * w.CFrame.Rotation
+				end
+				if u >= 1 then
+					conn:Disconnect()
+				end
+			end)
+		end)
+		-- 공간째 지워진다
+		task.delay(folds * every + squash, function()
+			for _, w in ipairs(walls) do
+				w:Destroy()
+			end
+			if ds then
+				ds.finish()
+			end
+			local ball = part(Vector3.one * 2, WHITE, Enum.Material.Neon, 0)
+			ball.Shape = Enum.PartType.Ball
+			ball.CFrame = CFrame.new(mid)
+			fadeOut(ball, 0.8, { Size = Vector3.one * R * 2.4 })
+			local blackBall = part(Vector3.one * 1, BLACK, Enum.Material.SmoothPlastic, 0)
+			blackBall.Shape = Enum.PartType.Ball
+			blackBall.CFrame = CFrame.new(mid)
+			fadeOut(blackBall, 0.5, { Size = Vector3.one * R * 1.2 })
+			for k = 1, 4 do
+				task.delay(k * 0.07, function()
+					Fx.ring(at + Vector3.new(0, 0.5 + k, 0), k % 2 == 0 and RED or WHITE, 6, R * 2.8 + k * 12, 0.8)
+				end)
+			end
+			for _ = 1, 18 do
+				local a, rr = math.random() * math.pi * 2, math.random() * R
+				pixels(at + Vector3.new(math.cos(a) * rr, 2 + math.random() * top * 0.5, math.sin(a) * rr), 8, 1.8, 12)
+			end
+			Fx.flash(mid, WHITE, 200, 12, 0.8)
+			Fx.sound("shatter", 1, 0.4, at)
+			Fx.sound("heavy", 1, 0.3, at)
+			shakeNear(at, 4.5, 360)
+			if opts.flash and near(at, R * 2) then
+				opts.flash(WHITE, 0.45)
+			end
+			gradeEnd(cc, 0.9)
+		end)
+		task.delay(folds * every + squash + 3, function()
+			for _, w in ipairs(walls) do
+				if w.Parent then
+					w:Destroy()
+				end
+			end
+			if cc and cc.Parent then
+				gradeEnd(cc, 0.3)
+			end
+		end)
+	end)
+end
+
 local HANDLERS: { [string]: (any) -> () } = {
+	gridLine = gridLine,
+	gridRun = gridRun,
+	gridCrush = gridCrush,
+	domainFold = domainFold,
 	latticeDrop = latticeDrop,
 	dimensionCut = dimensionCut,
 	coordSlash = coordSlash,
@@ -2031,11 +2459,22 @@ function Null.domain(data: any)
 		if domains[key] == finish then
 			domains[key] = nil
 		end
+		if owner and domainState[owner] and domainState[owner].finish == finish then
+			domainState[owner] = nil
+		end
 		gradeEnd(cc, 0.6)
 		holder:Destroy()
 	end
 	domains[key] = finish
+	local myState = { at = at, R = R, TOP = TOP, STEP = STEP, segs = segs, hijack = false, finish = finish }
+	if owner then
+		domainState[owner] = myState
+	end
 	local function step()
+		-- 격자 공간 기술이 격자를 쥐고 있으면 그동안은 손대지 않는다
+		if myState.hijack then
+			return
+		end
 		local now = os.clock()
 		local t = now - t0
 		if now < tStart then

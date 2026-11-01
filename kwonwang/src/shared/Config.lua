@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2408,14 +2408,14 @@ table.insert(Config.Styles, {
 		pulse = { every = 3, kind = "voidCell", radius = 12, delay = 0.3, name = "격자", dmg = 70, posture = 64, stun = 0.8, kb = 10, up = 8 },
 		heavy = { id = "gxH", name = "좌표 고정", pose = "void_point", dur = 0.56, lunge = 14, iframes = 0.3, hits = { hit(0.26, 12, 9, 110, 150, 1.1, 60, 10) } },
 		skills = {
-			E = { id = "gxE", name = "삼차 좌표선", desc = "격자의 좌표축 여섯 줄이 한꺼번에 그어진다. 40칸 길이의 줄을 따라 공간이 어긋나며 베고 다시 붙는다", pose = "void_point", dur = 0.5, cd = 6, chi = 18,
-				mech = { kind = "coordSlash", dist = 15, len = 40, n = 6, width = 4, delay = 0.3, hit = hit(0, 0, 0, 80, 72, 0.8, 14, 8), seamAt = 0.25, seam = hit(0, 0, 0, 34, 30, 0.4, 10) } },
-			R = { id = "gxR", name = "좌표 도약", desc = "가까운 적 셋과 차례로 좌표를 맞바꾸며 친다 (무적). 바뀐 자리마다 상자가 오그라들며 터진다", pose = "void_sink", dur = 0.9, cd = 8, chi = 22, iframes = 0.9,
-				mech = { kind = "coordSwap", n = 3, range = 42, delay = 0.12, every = 0.22, radius = 9, hit = hit(0, 0, 0, 64, 58, 0.7, 4, 4), implode = 0.28, final = hit(0, 0, 0, 90, 84, 0.8, 18, 8) } },
-			G = { id = "gxG", name = "격자 붕락", desc = "격자 공간의 오의. 더 큰 격자 정육면체 (34칸)가 내려꽂히고 칸마다 네 번 터진다", pose = "void_gather", dur = 1.6, cd = 22, chi = 90, armor = true,
-				mech = { kind = "latticeDrop", range = 48, dist = 16, size = 34, appear = 0.45, fall = 0.26, hit = hit(0, 0, 0, 150, 170, 1.3, 12, 16), waves = 4, every = 0.24, tick = hit(0, 0, 0, 48, 48, 0.5, 0), finalAt = 0.3, final = hit(0, 0, 0, 300, 340, 1.7, 50, 24) } },
-			X = { id = "gxX", name = "공간 삭제", desc = "격자의 초 오의 (그동안 무적). 격자 하늘이 70칸으로 짜이고 빛의 칼날 판이 여덟 번 가른 뒤, 공간째 지워진다", pose = "ult_void", dur = 4.8, cd = 50, chi = 140, armor = true,
-				mech = { kind = "dimensionCut", cut = 1.4, range = 70, build = 0.6, slices = 8, every = 0.27, hit = hit(0, 0, 0, 66, 66, 0.7, 0), freeze = 0.45, finalRadius = 70, final = hit(0, 0, 0, 480, 520, 2.1, 80, 30) } },
+			E = { id = "gxE", name = "격자선 베기", desc = "펼친 격자 공간 안의 적 여섯 (어디 있든)이 선 자리를 지나는 격자선 셋 (가로·세로·높이)이 공간 끝에서 끝까지 붉게 켜졌다가, 선째 벤다. 그 둘레의 격자도 함께 붉게 지직인다", pose = "void_point", dur = 0.5, cd = 6, chi = 18,
+				mech = { kind = "gridLine", n = 6, delay = 0.35, hit = hit(0, 0, 0, 80, 72, 0.8, 8, 6), seamAt = 0.25, seam = hit(0, 0, 0, 38, 34, 0.4, 6) } },
+			R = { id = "gxR", name = "격자 질주", desc = "격자선을 따라 직각으로 꺾어 달리며 공간 안의 적 다섯을 차례로 친다 (무적). 지나간 격자선이 하얗게 타오른다", pose = "void_sink", dur = 0.9, cd = 8, chi = 22, iframes = 0.9,
+				mech = { kind = "gridRun", n = 5, delay = 0.08, every = 0.14, hit = hit(0, 0, 0, 70, 62, 0.6, 8, 4) } },
+			G = { id = "gxG", name = "격자 수축", desc = "펼친 격자 공간 전체가 적이 가장 많은 곳으로 오그라들며 (선이 붉어진다) 공간 안의 적을 모두 끌어모은다. 잠깐 버티다가 다시 튕겨 펼쳐지며 그 자리가 하얗게 터진다", pose = "void_gather", dur = 2.0, cd = 22, chi = 90, armor = true,
+				mech = { kind = "gridCrush", pull = 1.0, every = 0.2, power = 46, tick = hit(0, 0, 0, 30, 30, 0.3, 0), hold = 0.3, finalRadius = 26, final = hit(0, 0, 0, 340, 380, 1.7, 60, 28) } },
+			X = { id = "gxX", name = "공간 접기", desc = "격자의 초 오의 (그동안 무적). 펼친 공간의 네 벽이 네 번에 걸쳐 안으로 접혀 들며 공간 안의 적을 짓누르고, 위아래로 눌려 한 점이 된 뒤, 공간째 지워진다. 격자 공간은 여기서 끝난다", pose = "ult_void", dur = 4.4, cd = 50, chi = 140, armor = true,
+				mech = { kind = "domainFold", cut = 1.3, folds = 4, every = 0.38, power = 30, hit = hit(0, 0, 0, 72, 72, 0.8, 0), squash = 0.5, final = hit(0, 0, 0, 520, 560, 2.2, 80, 30) } },
 		},
 	},
 })

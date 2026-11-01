@@ -2789,6 +2789,10 @@ function Geuk.trigger(f: any, st: any)
 	if D then
 		-- 3.16판 극 공백권 · 격자 전개: 선 자리에서 흰 3차원 격자가 한 점에서 천천히 펼쳐져 머문다 (세상은 그대로)
 		local at = f.root.Position - Vector3.new(0, 3, 0)
+		-- 3.17.2판: 격자 공간 기술이 이 공간을 쓴다 (공간 안의 적 어디든)
+		f.domainAt = at
+		f.domainR = D.radius * 0.85
+		f.domainTop = D.top
 		Push:FireAllClients("geukDomain", { m = f.model, name = name, style = st.id, at = at, cut = G.cut, dur = G.dur, radius = D.radius, top = D.top, step = D.step, levels = D.levels, unfold = D.unfold })
 		task.spawn(function()
 			local t0 = now + G.cut

@@ -4023,6 +4023,129 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "gridLine" or kind == "gridRun" or kind == "gridCrush" or kind == "domainFold" then
+		-- 3.17.2판 극 공백권 · 격자 공간 기술: 이미 펼친 격자 공간 (f.domainAt) 안의 적은 어디 있든 닿는다
+		local fd = f :: any
+		local dAt: Vector3 = fd.domainAt or (f.root.Position - Vector3.new(0, 3, 0))
+		local dR: number = fd.domainR or 60
+		local dTop: number = fd.domainTop or 60
+		local function inDomain(): { any }
+			local out = {}
+			for _, o in pairs(Combat.fighters) do
+				if Combat.hostile(f, o) and not o.dead then
+					local d = o.root.Position - dAt
+					if Vector3.new(d.X, 0, d.Z).Magnitude <= dR and d.Y > -8 and d.Y <= dTop + 6 then
+						table.insert(out, o)
+					end
+				end
+			end
+			table.sort(out, function(a, b)
+				return (a.root.Position - f.root.Position).Magnitude < (b.root.Position - f.root.Position).Magnitude
+			end)
+			return out
+		end
+		if kind == "gridLine" then
+			-- E 격자선 베기: 공간 안의 적 여섯이 선 자리를 지나는 격자선 셋 (가로·세로·높이)이 붉게 켜졌다가 선째 벤다
+			local list = inDomain()
+			while #list > m.n do
+				table.remove(list)
+			end
+			Push:FireAllClients("skillfx", { kind = "gridLine", m = f.model, targets = modelsOf(list), at = dAt, radius = dR, top = dTop, delay = m.delay / sp, seamAt = m.seamAt / sp, style = style })
+			after(m.delay, function()
+				for _, o in ipairs(list) do
+					strike(f, o, hit, move)
+				end
+			end)
+			after(m.delay + m.seamAt, function()
+				for _, o in ipairs(list) do
+					strike(f, o, scaled(m.seam, sc), move)
+				end
+			end)
+		elseif kind == "gridRun" then
+			-- R 격자 질주: 격자선을 따라 꺾어 달리며 공간 안의 적 다섯을 차례로 친다 (무적)
+			local list = inDomain()
+			while #list > m.n do
+				table.remove(list)
+			end
+			f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + #list * m.every + 0.3) / sp)
+			Push:FireAllClients("skillfx", { kind = "gridRun", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, style = style })
+			for i, o in ipairs(list) do
+				after(m.delay + (i - 1) * m.every, function()
+					strike(f, o, hit, move)
+				end)
+			end
+			if #list > 0 then
+				after(m.delay + #list * m.every, function()
+					local last = list[#list]
+					if last.dead or not last.root.Parent or f.dead then
+						return
+					end
+					local back = last.root.Position - flat(last.root.CFrame.LookVector) * 3.5
+					moveTo(f, CFrame.lookAt(back, Vector3.new(last.root.Position.X, back.Y, last.root.Position.Z)))
+				end)
+			end
+		elseif kind == "gridCrush" then
+			-- G 격자 수축: 펼친 격자 전체가 적이 가장 많은 곳으로 오그라들며 공간 안의 적을 끌어모으고, 다시 튕겨 펼쳐지며 터진다
+			local list = inDomain()
+			local point = dAt + Vector3.new(0, 3, 0)
+			if #list > 0 then
+				local sum = Vector3.zero
+				for _, o in ipairs(list) do
+					sum += o.root.Position
+				end
+				point = sum / #list
+			end
+			Push:FireAllClients("skillfx", { kind = "gridCrush", m = f.model, at = dAt, radius = dR, top = dTop, point = point, pull = m.pull / sp, hold = m.hold / sp, style = style })
+			local ticks = math.max(1, math.floor(m.pull / m.every))
+			for i = 1, ticks do
+				after((i - 1) * m.every, function()
+					for _, o in ipairs(inDomain()) do
+						pullTo(o, point, m.power)
+						o.slowUntil = os.clock() + (m.every + 0.2) / sp
+						o.slowMul = 0.3
+						strike(f, o, scaled(m.tick, sc), move)
+					end
+				end)
+			end
+			after(m.pull + m.hold, function()
+				for _, o in ipairs(hostilesNear(f, point, m.finalRadius)) do
+					strike(f, o, scaled(m.final, sc), move)
+				end
+			end)
+		else
+			-- X 공간 접기: 펼친 공간의 네 벽이 안으로 접혀 들며 (접힐 때마다 공간 안의 적을 짓누른다), 위아래로 눌려 한 점이 되고, 공간째 지워진다.
+			-- 격자 공간은 여기서 끝난다 (극을 다 쓴다)
+			local total = m.cut + m.folds * m.every + m.squash + 0.5
+			f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+			Push:FireAllClients("skillfx", { kind = "domainFold", m = f.model, at = dAt, radius = dR, top = dTop, cut = m.cut / sp, folds = m.folds, every = m.every / sp, squash = m.squash / sp, style = style })
+			for i = 1, m.folds do
+				after(m.cut + (i - 1) * m.every, function()
+					for _, o in ipairs(inDomain()) do
+						pullTo(o, dAt, m.power)
+						o.slowUntil = os.clock() + (m.every + 0.3) / sp
+						o.slowMul = 0.2
+						strike(f, o, hit, move)
+					end
+				end)
+			end
+			after(m.cut + m.folds * m.every + m.squash, function()
+				local seen = {}
+				for _, o in ipairs(inDomain()) do
+					seen[o] = true
+					strike(f, o, scaled(m.final, sc), move)
+				end
+				for _, o in ipairs(hostilesNear(f, dAt, dR + 10)) do
+					if not seen[o] then
+						strike(f, o, scaled(m.final, sc * 0.6), move)
+					end
+				end
+				-- 공간이 지워졌으니 격자 공간도 끝난다
+				fd.twilightUntil = os.clock()
+				if f.model.Parent then
+					f.model:SetAttribute("Twilight", nil)
+				end
+			end)
+		end
 	elseif kind == "mirrorWorld" then
 		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
 		local center = f.root.Position
