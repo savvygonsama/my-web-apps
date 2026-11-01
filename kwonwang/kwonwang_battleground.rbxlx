@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.14.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.15.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3127,6 +3127,13 @@ Config.Regions = {
 	{ id = "teafield", name = "운무 차밭", center = Vector3.new(-3300, 0, -3000), size = Vector3.new(900, 0, 900), ground = Color3.fromRGB(95, 140, 80), material = Enum.Material.Grass, ambient = "tea",
 		camps = { { enemy = "teaguard", count = 4, at = Vector3.new(-3050, 0, -2800) }, { enemy = "teasage", count = 3, at = Vector3.new(-3550, 0, -2800) }, { enemy = "teaguard", count = 3, at = Vector3.new(-3050, 0, -3250) }, { enemy = "teasage", count = 2, at = Vector3.new(-3550, 0, -3250) } },
 		boss = { id = "dason", at = Vector3.new(-3300, 0, -3050) } },
+	-- 3.15판 지상 확장: 남쪽 세상 끝 벼랑 (벼랑 끝 무너지는 돌길 너머에 숨은 정원), 동쪽 끝 황사 협곡
+	{ id = "edge", name = "세상 끝 벼랑", center = Vector3.new(0, 0, 4450), size = Vector3.new(1500, 0, 760), ground = Color3.fromRGB(150, 160, 150), material = Enum.Material.Grass, ambient = "rift",
+		camps = { { enemy = "voidwalker", count = 3, at = Vector3.new(-450, 0, 4300) }, { enemy = "stonewarden", count = 2, at = Vector3.new(450, 0, 4300) }, { enemy = "riftyaksha", count = 3, at = Vector3.new(-300, 0, 4600) }, { enemy = "apostle", count = 2, at = Vector3.new(350, 0, 4620) } },
+		boss = { id = "mumyeong", at = Vector3.new(-520, 0, 4600) } },
+	{ id = "canyon", name = "황사 협곡", center = Vector3.new(4520, 0, -250), size = Vector3.new(760, 0, 1500), ground = Color3.fromRGB(206, 150, 96), material = Enum.Material.Sandstone, ambient = "badlands",
+		camps = { { enemy = "marauder", count = 3, at = Vector3.new(4400, 0, -700) }, { enemy = "lancer", count = 3, at = Vector3.new(4600, 0, -300) }, { enemy = "magmabrute", count = 2, at = Vector3.new(4450, 0, 150) }, { enemy = "marauder", count = 3, at = Vector3.new(4650, 0, 350) } },
+		boss = { id = "hwangsa", at = Vector3.new(4600, 0, -850) } },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
@@ -3335,6 +3342,8 @@ Config.EGGS = {
 	sword = { at = Vector3.new(-4050, 0, 4050), pulls = 100, coins = 1000000 }, -- 세상 끝 바위에 박힌 검 (백 번 당기면)
 	well = { at = Vector3.new(0, 0, 2250), cost = 1000, jackpot = 100000 }, -- 버려진 마을의 소원 우물
 	ducks = { at = Vector3.new(1100, 0, 2500) + Vector3.new(40, 0, 30), scrolls = 1 }, -- 거울 호수의 오리 가족
+	-- 3.15판: 세상 끝 벼랑 너머 숨은 정원 (무너지는 돌길로만 닿는다). 처음 상자를 열 때 한 번
+	edge = { cliff = Vector3.new(0, 0, 4780), garden = Vector3.new(0, 128, 5080), coins = 3000000, gems = 500, scrolls = 7 },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -3373,7 +3382,7 @@ function Config.trialNeed(styleId: string): (string, number)
 	local mul = (st and st.trialHp) and 1.5 or 1
 	return kind, math.floor(K.need * mul + 0.5)
 end
-Config.WORLD_HALF = 4400 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지
+Config.WORLD_HALF = 5200 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지. 3.15판: 4400 → 5200 (남쪽 세상 끝 벼랑 · 동쪽 끝 협곡)
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
 	-- 1.8판: 세상 끝 네 땅으로
@@ -3853,9 +3862,16 @@ Config.SKY = {
 			boss = { id = "geumgang", at = Vector3.new(0, SY, -1700) } },
 		-- 3.1판: 윤회대. 천궁 서쪽, 다른 섬보다 높이 떠 있다. 가운데 환생 제단, 뒤편에 거대한 윤회륜
 		{ id = "rinnedae", name = "윤회대", at = Vector3.new(-640, SY + 40, 280), radius = 130, safe = true, ground = Color3.fromRGB(226, 220, 242), material = Enum.Material.Marble },
+		-- 3.15판 천상 확장: 뇌정봉 동쪽 너머 극광대 (하늘에 극광이 흐른다), 성운원 서쪽 너머 선계 정원 (복사꽃과 신선의 정원)
+		{ id = "aurora", name = "극광대", at = Vector3.new(1280, SY, -160), radius = 185, ground = Color3.fromRGB(180, 220, 220), material = Enum.Material.Glacier,
+			camps = { { enemy = "icespirit", count = 3, at = Vector3.new(1210, SY, -90) }, { enemy = "starspirit", count = 3, at = Vector3.new(1300, SY, -260) }, { enemy = "frostguard", count = 3, at = Vector3.new(1360, SY, -80) } },
+			boss = { id = "geukgwang", at = Vector3.new(1370, SY, -170) } },
+		{ id = "peachgarden", name = "선계 정원", at = Vector3.new(-1280, SY, -160), radius = 185, ground = Color3.fromRGB(150, 196, 120), material = Enum.Material.Grass,
+			camps = { { enemy = "cranemaster", count = 3, at = Vector3.new(-1210, SY, -90) }, { enemy = "jukseon", count = 3, at = Vector3.new(-1300, SY, -260) }, { enemy = "moonspirit", count = 3, at = Vector3.new(-1360, SY, -80) } },
+			boss = { id = "doseon", at = Vector3.new(-1370, SY, -170) } },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 }, { 3, 16 }, { 4, 17 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -4133,6 +4149,35 @@ Config.Bosses.unmugun = variant(Config.Bosses.cheonmun, { name = "운무군 · �
 		P("charge", "안개 돌진", 2, { length = 50, width = 10, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
 		P("quake", "운해 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 96, 1.4, 70, 25) }),
 	} })
+-- 3.15판: 새 땅·새 섬의 주인 넷
+Config.Bosses.mumyeong = variant(Config.Bosses.cheonmun, { name = "무명 · 세상 끝의 파수꾼", shirt = Color3.fromRGB(150, 156, 168), pants = Color3.fromRGB(58, 62, 72), hp = 900000, posture = 1400, scale = 3.4, speed = 16, coins = 95000, xp = 12000, respawn = 300, mult = 2.4,
+	patterns = {
+		P("rain", "끝의 안개비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 200, 220), hit = hit(0, 0, 0, 46, 56, 0.9, 25) }),
+		P("charge", "벼랑 가르기", 1, { length = 70, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 55) }),
+		P("donut", "망각의 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 66, 1.0, 45) }),
+		P("quake", "세상 끝", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 88, 120, 1.5, 80, 28) }),
+	} })
+Config.Bosses.hwangsa = variant(Config.Bosses.cheonmun, { name = "황사 · 협곡의 주인", shirt = Color3.fromRGB(206, 130, 64), pants = Color3.fromRGB(110, 62, 30), hp = 860000, posture = 1300, scale = 3.3, speed = 17, coins = 90000, xp = 11500, respawn = 300, mult = 2.3,
+	patterns = {
+		P("rain", "모래 화살비", 1, { count = 12, radius = 8, spread = 34, warn = 1.0, cd = 7, pose = "w_overhead", fx = "sand", color = Color3.fromRGB(230, 180, 110), hit = hit(0, 0, 0, 44, 54, 0.9, 25) }),
+		P("leap", "협곡 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 62, 80, 1.2, 50, 20) }),
+		P("summon", "모래 도적들아!", 2, { enemy = "marauder", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
+		P("quake", "황사 폭풍", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 86, 118, 1.5, 80, 28) }),
+	} })
+Config.Bosses.geukgwang = variant(Config.Bosses.cheonmun, { name = "극광 · 극광대의 주인", shirt = Color3.fromRGB(150, 240, 220), pants = Color3.fromRGB(40, 80, 110), hp = 1500000, posture = 2500, scale = 3.4, speed = 17, coins = 620000, xp = 64000, respawn = 300, mult = 4.8,
+	patterns = {
+		P("rain", "극광 낙하", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(140, 255, 220), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
+		P("donut", "빛의 장막", 1, { inner = 12, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
+		P("charge", "오로라 질주", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 56, 68, 1.0, 60) }),
+		P("quake", "극야", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+	} })
+Config.Bosses.doseon = variant(Config.Bosses.cheonmun, { name = "도선 · 선계 정원의 주인", shirt = Color3.fromRGB(255, 222, 232), pants = Color3.fromRGB(120, 84, 116), hp = 1550000, posture = 2500, scale = 3.2, speed = 18, coins = 640000, xp = 66000, respawn = 300, mult = 4.9,
+	patterns = {
+		P("rain", "복사꽃 비", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 170, 200), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
+		P("leap", "선녀 강림", 1, { radius = 20, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 68, 88, 1.3, 55, 22) }),
+		P("summon", "동자들아!", 2, { enemy = "jukseon", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
+		P("quake", "무릉도원", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+	} })
 Config.MAZE = {
 	arena = Vector3.new(1700, 1800, -1700), -- 첫 미궁 자리 (사람마다 옆으로 비켜 놓는다)
 	slotGap = 600,
@@ -4255,6 +4300,11 @@ Config.ACHIEVEMENTS = {
 	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5, mount = "cheonho" },
 	{ id = "egg1", icon = "🔍", name = "호기심", desc = "강호에 숨은 것 하나를 찾는다", kind = "eggs", n = 1, coins = 77777, tier = 2 },
 	{ id = "egg4", icon = "🔍", name = "숨은 것을 찾는 자", desc = "강호에 숨은 것 넷을 모두 찾는다 (돌탑 일곱·고양이·오리 가족·바위의 검)", kind = "eggs", n = 4, coins = 7777777, scrolls = 7, title = "숨은 것을 찾는 자", tier = 4 },
+	{ id = "edge", icon = "🌫", name = "세상 끝 너머", desc = "세상 끝 벼랑의 무너지는 돌길을 건너 숨은 정원의 상자를 연다", kind = "seen", arg = "egg_edge", n = 1, gems = 300, coins = 1000000, title = "세상 끝을 넘은 자", tier = 4 },
+	{ id = "mumyeong", icon = "🌫", name = "파수꾼을 넘다", desc = "무명을 쓰러뜨린다", kind = "boss", arg = "mumyeong", n = 1, coins = 120000, title = "끝을 지킨 자를 넘은 자", tier = 3 },
+	{ id = "hwangsa", icon = "🏜", name = "모래를 가르다", desc = "황사를 쓰러뜨린다", kind = "boss", arg = "hwangsa", n = 1, coins = 120000, tier = 2 },
+	{ id = "geukgwang", icon = "🌌", name = "극광을 꺾다", desc = "극광을 쓰러뜨린다", kind = "boss", arg = "geukgwang", n = 1, gems = 500, title = "극광을 꺾은 자", tier = 3 },
+	{ id = "doseon", icon = "🍑", name = "무릉도원", desc = "도선을 쓰러뜨린다", kind = "boss", arg = "doseon", n = 1, gems = 500, title = "무릉의 객", tier = 3 },
 	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5, mount = "rainbowcloud" },
 }
 -- 3.13판: 업적 등급 (칭호의 화려함) · 갈래
@@ -4278,7 +4328,7 @@ local ACH_CAT_OF = {
 	realm = "realm", rebirth = "realm", samsara = "realm", story = "realm",
 	styles = "art", transcend = "art", mastery = "art", rebirthStyles = "art", gear = "art", tint = "art",
 	tower = "trial", raid = "trial", maze = "trial",
-	masters = "jianghu", mounts = "jianghu", manuals = "jianghu", manualTop = "jianghu", eggs = "jianghu", aura = "jianghu",
+	masters = "jianghu", mounts = "jianghu", manuals = "jianghu", manualTop = "jianghu", eggs = "jianghu", aura = "jianghu", seen = "jianghu",
 	pvp = "duel",
 }
 local ACH_TIER = {
@@ -4314,7 +4364,7 @@ Config.ACH_COLOR = {
 	transcend = Color3.fromRGB(255, 160, 210), mastery = Color3.fromRGB(255, 220, 120), tower = Color3.fromRGB(150, 230, 255), pvp = Color3.fromRGB(255, 200, 80),
 	masters = Color3.fromRGB(200, 255, 230), mounts = Color3.fromRGB(220, 200, 160), manuals = Color3.fromRGB(210, 180, 255),
 	samsara = Color3.fromRGB(255, 130, 200), story = Color3.fromRGB(240, 220, 180), rebirthStyles = Color3.fromRGB(255, 150, 230), gear = Color3.fromRGB(150, 236, 255),
-	tint = Color3.fromRGB(170, 230, 255), aura = Color3.fromRGB(160, 236, 255), manualTop = Color3.fromRGB(220, 190, 255), eggs = Color3.fromRGB(200, 240, 170),
+	tint = Color3.fromRGB(170, 230, 255), aura = Color3.fromRGB(160, 236, 255), manualTop = Color3.fromRGB(220, 190, 255), eggs = Color3.fromRGB(200, 240, 170), seen = Color3.fromRGB(200, 210, 230),
 }
 
 ------------------------------------------------------------------------
@@ -7413,6 +7463,8 @@ function Ach.value(p: Profile, a: any): number
 			best = math.max(best, r)
 		end
 		return best
+	elseif k == "seen" then
+		return p.seen[a.arg] and 1 or 0
 	elseif k == "eggs" then
 		local n = 0
 		for _, key in ipairs({ "egg_cairnAll", "egg_cat", "egg_ducks", "egg_sword" }) do
@@ -10751,6 +10803,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				toast(player, "🌀 " .. m.region .. " · " .. m.name)
 			end
 		end
+	elseif action == "testEdgeTp" then
+		-- 3.15판: 세상 끝 벼랑 위 (무너지는 돌길 앞)
+		if f then
+			local E = Config.EGGS.edge
+			f.root.CFrame = CFrame.new(E.cliff + Vector3.new(0, 44, 60))
+			toast(player, "🌫 세상 끝 벼랑 · 앞의 무너지는 돌길을 건너 숨은 정원으로")
+		end
 	elseif action == "testStyle" then
 		-- 권법 테스트: 어떤 권법이든 (숨은 것도) 바로 익혀 숙련 최대로 쓴다
 		local sd = type(arg) == "string" and Config.STYLE_BY_ID[arg]
@@ -11930,6 +11989,19 @@ if W.eggs then
 				else
 					toast(player, "🪙 " .. pick(WELL))
 				end
+			elseif id == "edge" then
+				-- 3.15판 세상 끝 너머 숨은 정원의 상자 (처음 한 번)
+				if p.seen.egg_edge then
+					toast(player, "🌫 상자는 비어 있다. 바람만 머문다")
+					return
+				end
+				local EE = E.edge
+				p.seen.egg_edge = true
+				p.coins += EE.coins
+				p.skyGems += EE.gems
+				p.scrolls += EE.scrolls
+				Push:FireClient(player, "dialog", { who = "🌫 망각의 정원", title = "세상의 끝, 그 너머",
+					text = string.format("무너지는 돌길을 건너 아무도 오지 않는 정원에 닿았다. 낡은 상자 속에 누군가 남긴 글이 있다. '끝이라 부르는 곳은, 대개 아직 아무도 건너지 않은 곳이다.' 💰 %s 은자 · 💠 천정 %d · 📜 두루마리 %d개를 얻었다.", Config.formatNumber(EE.coins), EE.gems, EE.scrolls) })
 			elseif id == "ducks" then
 				if not p.seen.egg_ducks then
 					p.seen.egg_ducks = true
@@ -15753,6 +15825,11 @@ local LOOKS: { [string]: any } = {
 	cheonjon = { head = "topknot", hair = WHITE_HAIR, beard = "white", crown = GOLD, gem = C3(255, 230, 160), armor = true, metal = C3(236, 210, 140), armorTrim = GOLD, eyes = C3(255, 240, 190), top = C3(250, 244, 220), bottom = C3(200, 160, 72), trim = GOLD, robe = C3(226, 206, 156), build = { w = 1.08, h = 1.06, head = 1.06 } },
 	cheongeop = { head = "horns", hair = C3(16, 10, 22), hornColor = C3(20, 14, 26), hornLen = 1.7, eyes = C3(170, 90, 255), top = C3(40, 30, 60), bottom = C3(15, 10, 25), trim = C3(110, 60, 170), robe = C3(28, 20, 44), build = { w = 1.08, head = 1.06 } },
 	pungyeop = { head = "topknot", hair = C3(110, 40, 20), top = C3(214, 84, 34), bottom = C3(106, 36, 22), trim = C3(246, 180, 70), robe = C3(190, 70, 30), build = { h = 1.04, head = 1.06 } },
+	-- 3.15판 새 주인 넷
+	mumyeong = { head = "hood", hoodColor = C3(120, 126, 140), eyes = C3(220, 230, 255), top = C3(150, 156, 168), bottom = C3(58, 62, 72), trim = C3(200, 206, 220), robe = C3(110, 116, 130), build = { h = 1.08, head = 1.06 } },
+	hwangsa = { head = "wrap", eyes = C3(255, 210, 120), beard = "full", top = C3(206, 130, 64), bottom = C3(110, 62, 30), trim = C3(240, 200, 120), robe = C3(170, 100, 50), build = { w = 1.08, h = 1.04, head = 1.06 } },
+	geukgwang = { head = "helmet", metal = C3(170, 240, 230), plume = C3(140, 255, 220), armor = true, armorTrim = C3(220, 255, 250), eyes = C3(150, 255, 230), top = C3(150, 240, 220), bottom = C3(40, 80, 110), trim = C3(220, 255, 250), build = { w = 1.06, h = 1.06, head = 1.06 } },
+	doseon = { head = "topknot", hair = C3(30, 20, 30), crown = C3(255, 200, 220), gem = C3(255, 150, 190), top = C3(255, 222, 232), bottom = C3(120, 84, 116), trim = C3(255, 170, 200), robe = C3(250, 210, 225), build = { h = 1.06, head = 1.06 } },
 	dason = { head = "topknot", hair = WHITE_HAIR, beard = "white", top = C3(226, 236, 216), bottom = C3(100, 138, 88), trim = C3(110, 150, 90), robe = C3(212, 226, 200), build = { h = 1.04, head = 1.06 } },
 	pokryong = { head = "topknot", hair = C3(30, 50, 80), top = C3(86, 156, 216), bottom = C3(30, 70, 110), trim = C3(220, 240, 255), robe = C3(60, 120, 180), build = { h = 1.06, head = 1.06 } },
 	unmugun = { head = "hood", hoodColor = C3(230, 236, 248), eyes = C3(200, 220, 255), top = C3(206, 218, 240), bottom = C3(80, 95, 140), trim = C3(160, 180, 220), robe = C3(190, 204, 232), build = { h = 1.06, head = 1.06 } },
@@ -27082,6 +27159,8 @@ local function skyWorld(out: any)
 		bamboo = { depth = 0.32, rim = "fence", under = { rgb(112, 86, 60), Enum.Material.Ground }, drip = "root", dripColor = rgb(96, 70, 46), cloud = { rgb(236, 246, 236), 0.3, 1 }, islet = "bamboo", ledges = 4 },
 		moonlake = { depth = 0.16, rim = "silver", under = { rgb(180, 186, 204), Enum.Material.Marble }, drip = "water", cloud = { rgb(210, 222, 246), 0.25, 1 }, islet = "lotus" },
 		rinnedae = { depth = 0.36, bands = true, rim = "gold", under = { rgb(196, 186, 226), Enum.Material.Marble }, drip = "crystal", dripColor = rgb(180, 150, 255), cloud = { rgb(235, 230, 255), 0.2, 1.1 }, islet = "crystal" },
+		aurora = { depth = 0.3, rim = "ice", under = { rgb(120, 170, 190), Enum.Material.Glacier }, drip = "icicle", dripColor = rgb(170, 250, 230), cloud = { rgb(190, 250, 236), 0.35, 1.1 }, islet = "ice", ledges = 4 },
+		peachgarden = { depth = 0.32, rim = "fence", under = { rgb(120, 96, 72), Enum.Material.Ground }, drip = "root", dripColor = rgb(100, 78, 56), cloud = { rgb(255, 236, 244), 0.3, 1 }, islet = "pine", ledges = 4 },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -27931,6 +28010,247 @@ local function skyWorld(out: any)
 			part({ Name = "RinneVortexCloud", Shape = Enum.PartType.Ball, Size = Vector3.new(sz * 1.4, sz * 0.5, sz), Position = rd + Vector3.new(math.cos(a) * r, -14 - k * 1.2, math.sin(a) * r), Color = Color3.fromRGB(240, 236, 255):Lerp(Color3.fromRGB(200, 180, 255), k / 14), Material = Enum.Material.SmoothPlastic, Transparency = 0.2 + k * 0.03, CanCollide = false, Parent = vortex })
 		end
 	end
+
+	-- 3.15판 극광대: 하늘에 흐르는 극광 띠, 얼음 결정 무리, 가운데 빛나는 얼음 첨탑
+	local au = I.aurora and I.aurora.at
+	if au then
+		for band = 0, 2 do
+			for k = 0, 15 do
+				local x = -150 + k * 20
+				local y = 70 + band * 14 + math.sin(k * 0.6 + band) * 10
+				local col = Color3.fromRGB(110, 255, 200):Lerp(Color3.fromRGB(170, 120, 255), (k / 15 + band * 0.2) % 1)
+				part({ Name = "AuroraRibbon", Size = Vector3.new(22, 16, 0.4), CFrame = CFrame.new(au + Vector3.new(x, y, -60 + band * 30)) * CFrame.Angles(0, 0, math.sin(k * 0.6) * 0.15), Color = col, Material = Enum.Material.Neon, Transparency = 0.55, CanCollide = false, CastShadow = false, Parent = f })
+			end
+		end
+		for _ = 1, 14 do
+			local a, rr = rng:NextNumber(0, math.pi * 2), rng:NextNumber(30, 150)
+			crystal(au + Vector3.new(math.cos(a) * rr, rng:NextNumber(2, 5), math.sin(a) * rr), rng:NextNumber(2, 5), Color3.fromRGB(150, 255, 230), f)
+		end
+		for k = 0, 4 do
+			part({ Name = "AuroraSpire", Size = Vector3.new(9 - k * 1.6, 12, 9 - k * 1.6), CFrame = CFrame.new(au + Vector3.new(-40, 6 + k * 11, 40)) * CFrame.Angles(0, k * 0.4, 0), Color = Color3.fromRGB(190, 240, 250), Material = Enum.Material.Glass, Transparency = 0.2, Parent = f })
+		end
+		crystal(au + Vector3.new(-40, 64, 40), 6, Color3.fromRGB(140, 255, 220), f)
+	end
+	-- 3.15판 선계 정원: 복사나무 숲, 돌 바둑판과 걸상, 둥근 연못과 돌다리, 학 두 마리 (흰 몸)
+	local pg = I.peachgarden and I.peachgarden.at
+	if pg then
+		for _ = 1, 22 do
+			local a, rr = rng:NextNumber(0, math.pi * 2), rng:NextNumber(40, 160)
+			local p = pg + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+			local s = rng:NextNumber(0.9, 1.4)
+			part({ Name = "PeachTrunk", Size = Vector3.new(1.6, 9, 1.6) * s, CFrame = CFrame.new(p + Vector3.new(0, 4.5 * s, 0)) * CFrame.Angles(rng:NextNumber(-0.15, 0.15), 0, rng:NextNumber(-0.15, 0.15)), Color = Color3.fromRGB(110, 76, 60), Material = Enum.Material.Wood, Parent = f })
+			for k = 1, 3 do
+				part({ Name = "PeachBloom", Shape = Enum.PartType.Ball, Size = Vector3.new(8, 6, 8) * s, Position = p + Vector3.new(rng:NextNumber(-3, 3), 10 * s + k, rng:NextNumber(-3, 3)) * Vector3.new(1, 1, 1), Color = Color3.fromRGB(255, 180, 200):Lerp(Color3.fromRGB(255, 230, 240), rng:NextNumber()), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+			end
+		end
+		local pond = pg + Vector3.new(40, 0, 40)
+		disc("PeachPond", pond + Vector3.new(0, 0.3, 0), 26, 0.3, Color3.fromRGB(110, 170, 190), Enum.Material.Glass, f, false)
+		part({ Name = "PeachBridge", Size = Vector3.new(6, 1.2, 60), CFrame = CFrame.new(pond + Vector3.new(0, 1.4, 0)) * CFrame.Angles(0, 0.4, 0), Color = Color3.fromRGB(190, 186, 176), Material = Enum.Material.Granite, Parent = f })
+		local tb = pg + Vector3.new(-30, 0, 30)
+		part({ Name = "GoTable", Size = Vector3.new(6, 2.4, 6), Position = tb + Vector3.new(0, 1.2, 0), Color = Color3.fromRGB(170, 166, 156), Material = Enum.Material.Granite, Parent = f })
+		part({ Name = "GoBoard", Size = Vector3.new(4.6, 0.3, 4.6), Position = tb + Vector3.new(0, 2.55, 0), Color = Color3.fromRGB(220, 180, 110), Material = Enum.Material.Wood, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "GoStool", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.6, 2.6, 2.6), CFrame = CFrame.new(tb + Vector3.new(sx * 5, 0.8, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(160, 156, 146), Material = Enum.Material.Granite, Parent = f })
+		end
+		drift(pg + Vector3.new(0, 20, 0), Vector3.new(300, 6, 300), { Color3.fromRGB(255, 190, 210), Color3.fromRGB(255, 230, 240) }, 30, 0.6, 9, 1.2, f)
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.15판 지상 확장: 세상 끝 벼랑 (옅은 풀밭에 선돌과 마른 나무, 깔린 안개) · 황사 협곡 (붉은 사암 벽 사이 마른 강바닥)
+------------------------------------------------------------------------
+function OUTER.edge(r: any, f: Instance)
+	local GREY = Color3.fromRGB(150, 156, 160)
+	for _ = 1, 26 do
+		local p = randIn(r, 40)
+		if clearOf(p, r) and p.Z < 4700 then
+			deadTree(p, rng:NextNumber(0.9, 1.6), f)
+		end
+	end
+	-- 선돌 (기울어진 큰 돌)
+	for _ = 1, 22 do
+		local p = randIn(r, 40)
+		if clearOf(p, r) and p.Z < 4700 then
+			local h = rng:NextNumber(10, 22)
+			part({ Name = "Menhir", Size = Vector3.new(rng:NextNumber(3, 5), h, rng:NextNumber(2, 3.5)), CFrame = CFrame.new(p + Vector3.new(0, h * 0.42, 0)) * CFrame.Angles(rng:NextNumber(-0.15, 0.15), rng:NextNumber(0, 6), rng:NextNumber(-0.15, 0.15)), Color = GREY:Lerp(Color3.fromRGB(110, 116, 122), rng:NextNumber()), Material = Enum.Material.Slate, Parent = f })
+		end
+	end
+	for _ = 1, 16 do
+		local p = randIn(r, 30)
+		if clearOf(p, r) and p.Z < 4700 then
+			crag(p, rng:NextNumber(0.8, 1.5), Color3.fromRGB(120, 126, 132), f)
+		end
+	end
+	-- 무명의 자리: 둥글게 선 선돌 열둘과 가운데 낮은 돌단
+	local b = r.boss.at
+	disc("EdgeDais", b + Vector3.new(0, 0.5, 0), 36, 1, Color3.fromRGB(130, 136, 146), Enum.Material.Slate, f)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local h = (k % 3 == 0) and 24 or 16
+		part({ Name = "EdgeStone", Size = Vector3.new(4, h, 2.6), CFrame = CFrame.lookAt(b + Vector3.new(math.cos(a) * 46, h / 2, math.sin(a) * 46), b + Vector3.new(0, h / 2, 0)), Color = GREY, Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 벼랑 쪽으로 가는 깨진 돌길
+	for k = 0, 22 do
+		local z = 4120 + k * 26
+		local p = Vector3.new(math.sin(k * 0.5) * 30, 0.15, z)
+		part({ Name = "EdgePath", Size = Vector3.new(rng:NextNumber(8, 12), 0.3, rng:NextNumber(6, 9)), CFrame = CFrame.new(p) * CFrame.Angles(0, rng:NextNumber(-0.4, 0.4), 0), Color = Color3.fromRGB(150, 146, 136), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
+	end
+	drift(r.center + Vector3.new(0, 8, 0), Vector3.new(r.size.X * 0.9, 6, r.size.Z * 0.9), { Color3.fromRGB(230, 234, 240), Color3.fromRGB(200, 206, 220) }, 30, 4, 10, 0.2, f)
+end
+function OUTER.canyon(r: any, f: Instance)
+	local SAND = Color3.fromRGB(196, 130, 80)
+	-- 양쪽 높은 사암 벽 (협곡)
+	for _, sx in ipairs({ -1, 1 }) do
+		for k = 0, 18 do
+			local z = r.center.Z - r.size.Z / 2 + 40 + k * (r.size.Z - 80) / 18
+			local h = rng:NextNumber(40, 80)
+			local x = r.center.X + sx * (r.size.X / 2 - 30) + rng:NextNumber(-10, 10)
+			part({ Name = "CanyonWall", Size = Vector3.new(rng:NextNumber(40, 60), h, rng:NextNumber(70, 90)), CFrame = CFrame.new(x, h / 2 - 3, z) * CFrame.Angles(0, rng:NextNumber(-0.2, 0.2), sx * rng:NextNumber(0.02, 0.1)), Color = SAND:Lerp(Color3.fromRGB(230, 170, 110), rng:NextNumber()), Material = Enum.Material.Sandstone, Parent = f })
+			-- 켜켜이 쌓인 띠
+			part({ Name = "CanyonBand", Size = Vector3.new(62, 2, 92), CFrame = CFrame.new(x, h * rng:NextNumber(0.3, 0.7), z), Color = Color3.fromRGB(170, 90, 60), Material = Enum.Material.Sandstone, CanCollide = false, Parent = f })
+		end
+	end
+	-- 마른 강바닥 (가운데)
+	for k = 0, 14 do
+		local z = r.center.Z - r.size.Z / 2 + 50 + k * (r.size.Z - 100) / 14
+		part({ Name = "DryRiver", Size = Vector3.new(rng:NextNumber(30, 44), 0.3, (r.size.Z - 100) / 14 + 8), CFrame = CFrame.new(r.center.X + math.sin(k * 0.7) * 40, 0.12, z), Color = Color3.fromRGB(170, 140, 110), Material = Enum.Material.Ground, CanCollide = false, Parent = f })
+	end
+	for _ = 1, 28 do
+		local p = randIn(r, 70)
+		if clearOf(p, r) then
+			hoodoo(p, rng:NextNumber(1, 1.8), f)
+		end
+	end
+	for _ = 1, 14 do
+		local p = randIn(r, 60)
+		if clearOf(p, r) then
+			deadTree(p, rng:NextNumber(0.8, 1.2), f)
+		end
+	end
+	-- 황사의 자리: 무너진 성채 문과 깃발
+	local b = r.boss.at
+	disc("CanyonDais", b + Vector3.new(0, 0.5, 0), 38, 1, Color3.fromRGB(180, 140, 100), Enum.Material.Sandstone, f)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "RuinTower", Size = Vector3.new(14, 36, 14), Position = b + Vector3.new(sx * 46, 18, -40), Color = Color3.fromRGB(190, 150, 110), Material = Enum.Material.Sandstone, Parent = f })
+		banner(b + Vector3.new(sx * 46, 36, -40), 14, Color3.fromRGB(170, 60, 30), f)
+	end
+	part({ Name = "RuinGate", Size = Vector3.new(80, 8, 12), Position = b + Vector3.new(0, 32, -40), Color = Color3.fromRGB(180, 140, 100), Material = Enum.Material.Sandstone, Parent = f })
+	drift(r.center + Vector3.new(0, 12, 0), Vector3.new(r.size.X * 0.8, 10, r.size.Z * 0.9), { Color3.fromRGB(230, 190, 140), Color3.fromRGB(210, 160, 110) }, 40, 3, 6, -0.5, f)
+end
+
+------------------------------------------------------------------------
+-- 3.15판 세상 끝 너머: 남쪽 끝 높은 벼랑과 그 아래 바다, 벼랑 끝에서 하늘로 이어지는 무너지는 돌길,
+-- 그 끝에 떠 있는 숨은 정원 (상자 하나). 돌을 밟으면 흔들리다 떨어지고, 잠시 뒤 제자리로 돌아온다 (여섯째마다 쉬는 돌)
+------------------------------------------------------------------------
+local function edgeSecret(out: any)
+	local E = Config.EGGS.edge
+	if not E then
+		return
+	end
+	local f = Instance.new("Folder")
+	f.Name = "WorldsEdge"
+	f.Parent = folder
+	local W = Config.WORLD_HALF
+	local cz = E.cliff.Z
+	local H = 40
+	-- 벼랑 (높은 바위 단)과 오르는 비탈
+	part({ Name = "EdgeCliff", Size = Vector3.new(420, H, 170), Position = Vector3.new(0, H / 2 - 0.5, cz), Color = Color3.fromRGB(118, 122, 128), Material = Enum.Material.Slate, Parent = f })
+	part({ Name = "EdgeCliffTop", Size = Vector3.new(420, 1, 170), Position = Vector3.new(0, H, cz), Color = Color3.fromRGB(140, 150, 140), Material = Enum.Material.Grass, Parent = f })
+	wedge({ Name = "EdgeRamp", Size = Vector3.new(36, H, 150), CFrame = CFrame.new(0, H / 2 - 0.5, cz - 85 - 75) * CFrame.Angles(0, math.pi, 0), Color = Color3.fromRGB(128, 132, 136), Material = Enum.Material.Slate, Parent = f })
+	-- 벼랑 앞면의 바위 (들쭉날쭉)
+	for k = -10, 10 do
+		local h = rng:NextNumber(H * 0.6, H + 6)
+		part({ Name = "CliffFace", Size = Vector3.new(24, h, rng:NextNumber(10, 18)), CFrame = CFrame.new(k * 20, h / 2 - 2, cz + 85 + rng:NextNumber(-2, 4)) * CFrame.Angles(rng:NextNumber(-0.1, 0.1), rng:NextNumber(-0.2, 0.2), 0), Color = Color3.fromRGB(100, 104, 110), Material = Enum.Material.Slate, Parent = f })
+	end
+	-- 벼랑 아래 바다 (세상 끝까지)
+	local seaZ0 = cz + 90
+	local seaLen = W - seaZ0
+	for k = -2, 2 do
+		part({ Name = "EndSea", Size = Vector3.new(640, 1, seaLen), Position = Vector3.new(k * 640, 0.25, seaZ0 + seaLen / 2), Color = Color3.fromRGB(30, 70, 110), Material = Enum.Material.Glass, Transparency = 0.05, CanCollide = false, Parent = f })
+	end
+	-- 벼랑 끝 표지
+	local post = part({ Name = "EdgeSignPost", Size = Vector3.new(1, 7, 1), Position = Vector3.new(-14, H + 3.5, cz + 70), Color = Color3.fromRGB(90, 70, 50), Material = Enum.Material.Wood, Parent = f })
+	local board = part({ Name = "EdgeSign", Size = Vector3.new(10, 4, 0.4), Position = Vector3.new(-14, H + 7.5, cz + 70), Color = Color3.fromRGB(120, 92, 60), Material = Enum.Material.Wood, Parent = f })
+	local _ = post
+	sign(board, Enum.NormalId.Back, { { "세상의 끝", Color3.fromRGB(255, 240, 200), 0.5 }, { "...돌을 밟는 자는 서두르라", Color3.fromRGB(230, 220, 200), 0.4 } })
+	-- 무너지는 돌길
+	local garden = E.garden
+	local N = 22
+	local start = Vector3.new(0, H + 1.5, cz + 92)
+	local finish = garden + Vector3.new(0, -1, -40)
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	for i = 1, N do
+		local u = i / N
+		local pos = Vector3.new(math.sin(u * math.pi * 2.5) * 26, start.Y + (finish.Y - start.Y) * u, start.Z + (finish.Z - start.Z) * u)
+		local rest = i % 6 == 0
+		local blk = part({ Name = rest and "EdgeRest" or "EdgeStep", Size = rest and Vector3.new(9, 1.6, 9) or Vector3.new(6, 1.6, 6), CFrame = CFrame.new(pos) * CFrame.Angles(0, rng:NextNumber(-0.4, 0.4), 0),
+			Color = rest and Color3.fromRGB(220, 226, 240) or Color3.fromRGB(110, 120, 140), Material = rest and Enum.Material.Marble or Enum.Material.Slate, Parent = f })
+		if rest then
+			light(blk, Color3.fromRGB(190, 210, 255), 14, 1.2)
+		else
+			-- 밟으면 흔들리다 떨어진다 (5초 뒤 돌아온다)
+			local home = blk.CFrame
+			local busy = false
+			local touched = (blk :: any).Touched
+			touched:Connect(function(hit: BasePart)
+				if busy then
+					return
+				end
+				local ch = hit.Parent
+				if not ch or not Players:GetPlayerFromCharacter(ch) then
+					return
+				end
+				busy = true
+				blk.Color = Color3.fromRGB(170, 120, 110)
+				task.spawn(function()
+					for k = 1, 8 do
+						blk.CFrame = home * CFrame.new((k % 2 == 0 and 0.15 or -0.15), 0, 0) * CFrame.Angles(0, 0, (k % 2 == 0 and 0.03 or -0.03))
+						task.wait(0.07)
+					end
+					blk.CanCollide = false
+					TweenService:Create(blk, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = home * CFrame.new(0, -36, 0) * CFrame.Angles(0.6, 0, 0.4), Transparency = 1 }):Play()
+					task.wait(5)
+					blk.CFrame = home
+					blk.Transparency = 0
+					blk.Color = Color3.fromRGB(110, 120, 140)
+					blk.CanCollide = true
+					busy = false
+				end)
+			end)
+		end
+	end
+	-- 숨은 정원: 떠 있는 섬 (풀 덮인 위, 거꾸로 선 바위 밑동), 빛나는 흰 꽃나무, 돌 아치, 석등, 상자
+	local gR = 34
+	disc("GardenTop", garden + Vector3.new(0, -0.5, 0), gR, 1, Color3.fromRGB(150, 200, 140), Enum.Material.Grass, f)
+	for k = 1, 5 do
+		disc("GardenUnder", garden + Vector3.new(0, -1 - k * 5, 0), gR * (1 - k * 0.17), 5, Color3.fromRGB(110, 110, 118):Lerp(Color3.fromRGB(70, 72, 84), k / 5), Enum.Material.Slate, f)
+	end
+	local tr = garden + Vector3.new(8, 0, 6)
+	part({ Name = "GardenTreeTrunk", Size = Vector3.new(2.6, 16, 2.6), Position = tr + Vector3.new(0, 8, 0), Color = Color3.fromRGB(230, 226, 220), Material = Enum.Material.Wood, Parent = f })
+	for k = 1, 6 do
+		local a = k / 6 * math.pi * 2
+		local c = part({ Name = "GardenBloom", Shape = Enum.PartType.Ball, Size = Vector3.new(11, 9, 11), Position = tr + Vector3.new(math.cos(a) * 5, 17 + (k % 2) * 3, math.sin(a) * 5), Color = Color3.fromRGB(255, 236, 246), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+		if k == 1 then
+			light(c, Color3.fromRGB(255, 220, 240), 40, 1.6)
+		end
+	end
+	drift(tr + Vector3.new(0, 18, 0), Vector3.new(30, 4, 30), { Color3.fromRGB(255, 240, 250), Color3.fromRGB(255, 210, 230) }, 20, 0.6, 6, 1, f, 0.8)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "GardenArchPost", Size = Vector3.new(2.4, 14, 2.4), Position = garden + Vector3.new(sx * 7, 7, -22), Color = Color3.fromRGB(200, 204, 214), Material = Enum.Material.Marble, Parent = f })
+	end
+	part({ Name = "GardenArchTop", Size = Vector3.new(18, 2.4, 3), Position = garden + Vector3.new(0, 15, -22), Color = Color3.fromRGB(200, 204, 214), Material = Enum.Material.Marble, Parent = f })
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		stoneLantern(garden + Vector3.new(math.cos(a) * 24, 0, math.sin(a) * 24), f, true)
+	end
+	local chest = part({ Name = "GardenChest", Size = Vector3.new(4, 2.6, 2.8), Position = garden + Vector3.new(-6, 1.3, 4), Color = Color3.fromRGB(150, 100, 50), Material = Enum.Material.Wood, Parent = f })
+	part({ Name = "GardenChestLid", Size = Vector3.new(4.2, 0.6, 3), Position = garden + Vector3.new(-6, 2.9, 4), Color = Color3.fromRGB(220, 180, 80), Material = Enum.Material.Metal, Parent = f })
+	light(chest, Color3.fromRGB(255, 220, 140), 12, 1)
+	local gs = part({ Name = "GardenSign", Size = Vector3.new(8, 3, 0.4), Position = garden + Vector3.new(0, 4, -26), Color = Color3.fromRGB(120, 92, 60), Material = Enum.Material.Wood, Parent = f })
+	sign(gs, Enum.NormalId.Back, { { "망각의 정원", Color3.fromRGB(255, 236, 246), 0.55 }, { "내려가는 길은 하나뿐. 뛰어라", Color3.fromRGB(230, 220, 210), 0.35 } })
+	out.eggs = out.eggs or {}
+	out.eggs.edge = prompt(chest, "열기", "망각의 정원의 상자", "EggEdge")
 end
 
 local arenas: { [number]: Vector3 } = {}
@@ -28085,6 +28405,9 @@ function World.build(): any
 		{ "빈 들 채우기", scatterFill },
 		{ "숨은 것", function()
 			easterEggs(out)
+		end },
+		{ "세상 끝 너머", function()
+			edgeSecret(out)
 		end },
 		{ "빈칸", nullSpot },
 		{ "권법 시험장", function()
@@ -57119,7 +57442,7 @@ local function buildTest()
 	})
 	section("📜 이야기·사부", {
 		{ "📜 이야기 다음 장", "testStory" }, { "📜 사부의 부탁 한 단계", "testQuestSkip" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
-		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
+		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "🌫 세상 끝 벼랑으로", "testEdgeTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
 	})
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },

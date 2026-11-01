@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.14.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.15.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3107,6 +3107,13 @@ Config.Regions = {
 	{ id = "teafield", name = "운무 차밭", center = Vector3.new(-3300, 0, -3000), size = Vector3.new(900, 0, 900), ground = Color3.fromRGB(95, 140, 80), material = Enum.Material.Grass, ambient = "tea",
 		camps = { { enemy = "teaguard", count = 4, at = Vector3.new(-3050, 0, -2800) }, { enemy = "teasage", count = 3, at = Vector3.new(-3550, 0, -2800) }, { enemy = "teaguard", count = 3, at = Vector3.new(-3050, 0, -3250) }, { enemy = "teasage", count = 2, at = Vector3.new(-3550, 0, -3250) } },
 		boss = { id = "dason", at = Vector3.new(-3300, 0, -3050) } },
+	-- 3.15판 지상 확장: 남쪽 세상 끝 벼랑 (벼랑 끝 무너지는 돌길 너머에 숨은 정원), 동쪽 끝 황사 협곡
+	{ id = "edge", name = "세상 끝 벼랑", center = Vector3.new(0, 0, 4450), size = Vector3.new(1500, 0, 760), ground = Color3.fromRGB(150, 160, 150), material = Enum.Material.Grass, ambient = "rift",
+		camps = { { enemy = "voidwalker", count = 3, at = Vector3.new(-450, 0, 4300) }, { enemy = "stonewarden", count = 2, at = Vector3.new(450, 0, 4300) }, { enemy = "riftyaksha", count = 3, at = Vector3.new(-300, 0, 4600) }, { enemy = "apostle", count = 2, at = Vector3.new(350, 0, 4620) } },
+		boss = { id = "mumyeong", at = Vector3.new(-520, 0, 4600) } },
+	{ id = "canyon", name = "황사 협곡", center = Vector3.new(4520, 0, -250), size = Vector3.new(760, 0, 1500), ground = Color3.fromRGB(206, 150, 96), material = Enum.Material.Sandstone, ambient = "badlands",
+		camps = { { enemy = "marauder", count = 3, at = Vector3.new(4400, 0, -700) }, { enemy = "lancer", count = 3, at = Vector3.new(4600, 0, -300) }, { enemy = "magmabrute", count = 2, at = Vector3.new(4450, 0, 150) }, { enemy = "marauder", count = 3, at = Vector3.new(4650, 0, 350) } },
+		boss = { id = "hwangsa", at = Vector3.new(4600, 0, -850) } },
 }
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
@@ -3315,6 +3322,8 @@ Config.EGGS = {
 	sword = { at = Vector3.new(-4050, 0, 4050), pulls = 100, coins = 1000000 }, -- 세상 끝 바위에 박힌 검 (백 번 당기면)
 	well = { at = Vector3.new(0, 0, 2250), cost = 1000, jackpot = 100000 }, -- 버려진 마을의 소원 우물
 	ducks = { at = Vector3.new(1100, 0, 2500) + Vector3.new(40, 0, 30), scrolls = 1 }, -- 거울 호수의 오리 가족
+	-- 3.15판: 세상 끝 벼랑 너머 숨은 정원 (무너지는 돌길로만 닿는다). 처음 상자를 열 때 한 번
+	edge = { cliff = Vector3.new(0, 0, 4780), garden = Vector3.new(0, 128, 5080), coins = 3000000, gems = 500, scrolls = 7 },
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -3353,7 +3362,7 @@ function Config.trialNeed(styleId: string): (string, number)
 	local mul = (st and st.trialHp) and 1.5 or 1
 	return kind, math.floor(K.need * mul + 0.5)
 end
-Config.WORLD_HALF = 4400 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지
+Config.WORLD_HALF = 5200 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지. 3.15판: 4400 → 5200 (남쪽 세상 끝 벼랑 · 동쪽 끝 협곡)
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
 	-- 1.8판: 세상 끝 네 땅으로
@@ -3833,9 +3842,16 @@ Config.SKY = {
 			boss = { id = "geumgang", at = Vector3.new(0, SY, -1700) } },
 		-- 3.1판: 윤회대. 천궁 서쪽, 다른 섬보다 높이 떠 있다. 가운데 환생 제단, 뒤편에 거대한 윤회륜
 		{ id = "rinnedae", name = "윤회대", at = Vector3.new(-640, SY + 40, 280), radius = 130, safe = true, ground = Color3.fromRGB(226, 220, 242), material = Enum.Material.Marble },
+		-- 3.15판 천상 확장: 뇌정봉 동쪽 너머 극광대 (하늘에 극광이 흐른다), 성운원 서쪽 너머 선계 정원 (복사꽃과 신선의 정원)
+		{ id = "aurora", name = "극광대", at = Vector3.new(1280, SY, -160), radius = 185, ground = Color3.fromRGB(180, 220, 220), material = Enum.Material.Glacier,
+			camps = { { enemy = "icespirit", count = 3, at = Vector3.new(1210, SY, -90) }, { enemy = "starspirit", count = 3, at = Vector3.new(1300, SY, -260) }, { enemy = "frostguard", count = 3, at = Vector3.new(1360, SY, -80) } },
+			boss = { id = "geukgwang", at = Vector3.new(1370, SY, -170) } },
+		{ id = "peachgarden", name = "선계 정원", at = Vector3.new(-1280, SY, -160), radius = 185, ground = Color3.fromRGB(150, 196, 120), material = Enum.Material.Grass,
+			camps = { { enemy = "cranemaster", count = 3, at = Vector3.new(-1210, SY, -90) }, { enemy = "jukseon", count = 3, at = Vector3.new(-1300, SY, -260) }, { enemy = "moonspirit", count = 3, at = Vector3.new(-1360, SY, -80) } },
+			boss = { id = "doseon", at = Vector3.new(-1370, SY, -170) } },
 	},
 	-- 다리: 섬 번호 둘 (hidden = 거의 보이지 않는다)
-	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 } },
+	bridges = { { 1, 2 }, { 1, 3 }, { 1, 4 }, { 1, 5 }, { 2, 6, hidden = true }, { 2, 7 }, { 5, 8 }, { 4, 9 }, { 3, 10 }, { 2, 11 }, { 11, 12 }, { 11, 13 }, { 8, 14 }, { 1, 15 }, { 3, 16 }, { 4, 17 } },
 }
 Config.SKY_BY_ID = {}
 for _, isl in ipairs(Config.SKY.islands) do
@@ -4113,6 +4129,35 @@ Config.Bosses.unmugun = variant(Config.Bosses.cheonmun, { name = "운무군 · �
 		P("charge", "안개 돌진", 2, { length = 50, width = 10, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
 		P("quake", "운해 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 96, 1.4, 70, 25) }),
 	} })
+-- 3.15판: 새 땅·새 섬의 주인 넷
+Config.Bosses.mumyeong = variant(Config.Bosses.cheonmun, { name = "무명 · 세상 끝의 파수꾼", shirt = Color3.fromRGB(150, 156, 168), pants = Color3.fromRGB(58, 62, 72), hp = 900000, posture = 1400, scale = 3.4, speed = 16, coins = 95000, xp = 12000, respawn = 300, mult = 2.4,
+	patterns = {
+		P("rain", "끝의 안개비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 200, 220), hit = hit(0, 0, 0, 46, 56, 0.9, 25) }),
+		P("charge", "벼랑 가르기", 1, { length = 70, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 55) }),
+		P("donut", "망각의 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 66, 1.0, 45) }),
+		P("quake", "세상 끝", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 88, 120, 1.5, 80, 28) }),
+	} })
+Config.Bosses.hwangsa = variant(Config.Bosses.cheonmun, { name = "황사 · 협곡의 주인", shirt = Color3.fromRGB(206, 130, 64), pants = Color3.fromRGB(110, 62, 30), hp = 860000, posture = 1300, scale = 3.3, speed = 17, coins = 90000, xp = 11500, respawn = 300, mult = 2.3,
+	patterns = {
+		P("rain", "모래 화살비", 1, { count = 12, radius = 8, spread = 34, warn = 1.0, cd = 7, pose = "w_overhead", fx = "sand", color = Color3.fromRGB(230, 180, 110), hit = hit(0, 0, 0, 44, 54, 0.9, 25) }),
+		P("leap", "협곡 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 62, 80, 1.2, 50, 20) }),
+		P("summon", "모래 도적들아!", 2, { enemy = "marauder", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
+		P("quake", "황사 폭풍", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 86, 118, 1.5, 80, 28) }),
+	} })
+Config.Bosses.geukgwang = variant(Config.Bosses.cheonmun, { name = "극광 · 극광대의 주인", shirt = Color3.fromRGB(150, 240, 220), pants = Color3.fromRGB(40, 80, 110), hp = 1500000, posture = 2500, scale = 3.4, speed = 17, coins = 620000, xp = 64000, respawn = 300, mult = 4.8,
+	patterns = {
+		P("rain", "극광 낙하", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(140, 255, 220), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
+		P("donut", "빛의 장막", 1, { inner = 12, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
+		P("charge", "오로라 질주", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 56, 68, 1.0, 60) }),
+		P("quake", "극야", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+	} })
+Config.Bosses.doseon = variant(Config.Bosses.cheonmun, { name = "도선 · 선계 정원의 주인", shirt = Color3.fromRGB(255, 222, 232), pants = Color3.fromRGB(120, 84, 116), hp = 1550000, posture = 2500, scale = 3.2, speed = 18, coins = 640000, xp = 66000, respawn = 300, mult = 4.9,
+	patterns = {
+		P("rain", "복사꽃 비", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 170, 200), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
+		P("leap", "선녀 강림", 1, { radius = 20, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 68, 88, 1.3, 55, 22) }),
+		P("summon", "동자들아!", 2, { enemy = "jukseon", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
+		P("quake", "무릉도원", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+	} })
 Config.MAZE = {
 	arena = Vector3.new(1700, 1800, -1700), -- 첫 미궁 자리 (사람마다 옆으로 비켜 놓는다)
 	slotGap = 600,
@@ -4235,6 +4280,11 @@ Config.ACHIEVEMENTS = {
 	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5, mount = "cheonho" },
 	{ id = "egg1", icon = "🔍", name = "호기심", desc = "강호에 숨은 것 하나를 찾는다", kind = "eggs", n = 1, coins = 77777, tier = 2 },
 	{ id = "egg4", icon = "🔍", name = "숨은 것을 찾는 자", desc = "강호에 숨은 것 넷을 모두 찾는다 (돌탑 일곱·고양이·오리 가족·바위의 검)", kind = "eggs", n = 4, coins = 7777777, scrolls = 7, title = "숨은 것을 찾는 자", tier = 4 },
+	{ id = "edge", icon = "🌫", name = "세상 끝 너머", desc = "세상 끝 벼랑의 무너지는 돌길을 건너 숨은 정원의 상자를 연다", kind = "seen", arg = "egg_edge", n = 1, gems = 300, coins = 1000000, title = "세상 끝을 넘은 자", tier = 4 },
+	{ id = "mumyeong", icon = "🌫", name = "파수꾼을 넘다", desc = "무명을 쓰러뜨린다", kind = "boss", arg = "mumyeong", n = 1, coins = 120000, title = "끝을 지킨 자를 넘은 자", tier = 3 },
+	{ id = "hwangsa", icon = "🏜", name = "모래를 가르다", desc = "황사를 쓰러뜨린다", kind = "boss", arg = "hwangsa", n = 1, coins = 120000, tier = 2 },
+	{ id = "geukgwang", icon = "🌌", name = "극광을 꺾다", desc = "극광을 쓰러뜨린다", kind = "boss", arg = "geukgwang", n = 1, gems = 500, title = "극광을 꺾은 자", tier = 3 },
+	{ id = "doseon", icon = "🍑", name = "무릉도원", desc = "도선을 쓰러뜨린다", kind = "boss", arg = "doseon", n = 1, gems = 500, title = "무릉의 객", tier = 3 },
 	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5, mount = "rainbowcloud" },
 }
 -- 3.13판: 업적 등급 (칭호의 화려함) · 갈래
@@ -4258,7 +4308,7 @@ local ACH_CAT_OF = {
 	realm = "realm", rebirth = "realm", samsara = "realm", story = "realm",
 	styles = "art", transcend = "art", mastery = "art", rebirthStyles = "art", gear = "art", tint = "art",
 	tower = "trial", raid = "trial", maze = "trial",
-	masters = "jianghu", mounts = "jianghu", manuals = "jianghu", manualTop = "jianghu", eggs = "jianghu", aura = "jianghu",
+	masters = "jianghu", mounts = "jianghu", manuals = "jianghu", manualTop = "jianghu", eggs = "jianghu", aura = "jianghu", seen = "jianghu",
 	pvp = "duel",
 }
 local ACH_TIER = {
@@ -4294,7 +4344,7 @@ Config.ACH_COLOR = {
 	transcend = Color3.fromRGB(255, 160, 210), mastery = Color3.fromRGB(255, 220, 120), tower = Color3.fromRGB(150, 230, 255), pvp = Color3.fromRGB(255, 200, 80),
 	masters = Color3.fromRGB(200, 255, 230), mounts = Color3.fromRGB(220, 200, 160), manuals = Color3.fromRGB(210, 180, 255),
 	samsara = Color3.fromRGB(255, 130, 200), story = Color3.fromRGB(240, 220, 180), rebirthStyles = Color3.fromRGB(255, 150, 230), gear = Color3.fromRGB(150, 236, 255),
-	tint = Color3.fromRGB(170, 230, 255), aura = Color3.fromRGB(160, 236, 255), manualTop = Color3.fromRGB(220, 190, 255), eggs = Color3.fromRGB(200, 240, 170),
+	tint = Color3.fromRGB(170, 230, 255), aura = Color3.fromRGB(160, 236, 255), manualTop = Color3.fromRGB(220, 190, 255), eggs = Color3.fromRGB(200, 240, 170), seen = Color3.fromRGB(200, 210, 230),
 }
 
 ------------------------------------------------------------------------

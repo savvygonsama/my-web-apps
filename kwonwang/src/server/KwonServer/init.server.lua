@@ -630,6 +630,8 @@ function Ach.value(p: Profile, a: any): number
 			best = math.max(best, r)
 		end
 		return best
+	elseif k == "seen" then
+		return p.seen[a.arg] and 1 or 0
 	elseif k == "eggs" then
 		local n = 0
 		for _, key in ipairs({ "egg_cairnAll", "egg_cat", "egg_ducks", "egg_sword" }) do
@@ -3968,6 +3970,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				toast(player, "🌀 " .. m.region .. " · " .. m.name)
 			end
 		end
+	elseif action == "testEdgeTp" then
+		-- 3.15판: 세상 끝 벼랑 위 (무너지는 돌길 앞)
+		if f then
+			local E = Config.EGGS.edge
+			f.root.CFrame = CFrame.new(E.cliff + Vector3.new(0, 44, 60))
+			toast(player, "🌫 세상 끝 벼랑 · 앞의 무너지는 돌길을 건너 숨은 정원으로")
+		end
 	elseif action == "testStyle" then
 		-- 권법 테스트: 어떤 권법이든 (숨은 것도) 바로 익혀 숙련 최대로 쓴다
 		local sd = type(arg) == "string" and Config.STYLE_BY_ID[arg]
@@ -5147,6 +5156,19 @@ if W.eggs then
 				else
 					toast(player, "🪙 " .. pick(WELL))
 				end
+			elseif id == "edge" then
+				-- 3.15판 세상 끝 너머 숨은 정원의 상자 (처음 한 번)
+				if p.seen.egg_edge then
+					toast(player, "🌫 상자는 비어 있다. 바람만 머문다")
+					return
+				end
+				local EE = E.edge
+				p.seen.egg_edge = true
+				p.coins += EE.coins
+				p.skyGems += EE.gems
+				p.scrolls += EE.scrolls
+				Push:FireClient(player, "dialog", { who = "🌫 망각의 정원", title = "세상의 끝, 그 너머",
+					text = string.format("무너지는 돌길을 건너 아무도 오지 않는 정원에 닿았다. 낡은 상자 속에 누군가 남긴 글이 있다. '끝이라 부르는 곳은, 대개 아직 아무도 건너지 않은 곳이다.' 💰 %s 은자 · 💠 천정 %d · 📜 두루마리 %d개를 얻었다.", Config.formatNumber(EE.coins), EE.gems, EE.scrolls) })
 			elseif id == "ducks" then
 				if not p.seen.egg_ducks then
 					p.seen.egg_ducks = true
