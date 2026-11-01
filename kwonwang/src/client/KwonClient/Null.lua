@@ -777,6 +777,254 @@ local HANDLERS: { [string]: (any) -> () } = {
 	nullOpen = nullOpen,
 	nullCubes = nullCubes,
 }
+------------------------------------------------------------------------
+-- 3.16판 극 공백권 · 격자 전개 (극 패시브)
+-- 한 점에서 시작해 흰 3차원 격자가 천천히 펼쳐진다 (세 축의 선이 먼저 뻗고, 가까운 선부터 차례로 켜지며 상자가 커진다).
+-- 다 펼쳐지면 30초 동안 머문다: 격자 위로 빛의 물결이 바깥으로 흐르고, 가끔 몇 줄이 붉게 지직거리고, 빈칸 상자가 떠다닌다.
+-- 끝나면 격자가 한 점으로 접혀 들어가 흰 잡음으로 터진다. 격자 안에 들어오면 화면의 빛깔이 빠진다
+------------------------------------------------------------------------
+type Line = { p: Part, axis: string, a: number, b: number, dist: number, shell: boolean, base: number }
+function Null.domain(data: any)
+	local at: Vector3 = data.at
+	if not at or not near(at, 700) then
+		return
+	end
+	local cut = data.cut or 1.6
+	local dur = data.dur or 30
+	local unfold = data.unfold or 3.6
+	local H, TOP, STEP, LEVEL = data.half or 60, data.top or 72, data.step or 15, data.level or 12
+	local holder = Instance.new("Folder")
+	holder.Name = "KwonNullDomain"
+	holder.Parent = folder
+	local function mk(thick: number): Part
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Material = Enum.Material.Neon
+		p.Color = WHITE
+		p.Size = Vector3.new(thick, thick, thick)
+		p.Transparency = 1
+		p.Parent = holder
+		return p
+	end
+	local xs: { number } = {}
+	local v = -H
+	while v <= H + 0.01 do
+		table.insert(xs, v)
+		v += STEP
+	end
+	local ys: { number } = {}
+	v = 0
+	while v <= TOP + 0.01 do
+		table.insert(ys, v)
+		v += LEVEL
+	end
+	local lines: { Line } = {}
+	local function addLine(axis: string, a: number, b: number, dist: number, shell: boolean)
+		local thick = shell and 0.24 or 0.14
+		table.insert(lines, { p = mk(thick), axis = axis, a = a, b = b, dist = dist, shell = shell, base = shell and 0.12 or 0.5 })
+	end
+	-- x축 선 (높이 y, 깊이 z) · z축 선 (높이 y, 가로 x) · 세로 선 (가로 x, 깊이 z)
+	for _, y in ipairs(ys) do
+		for _, z in ipairs(xs) do
+			addLine("x", y, z, math.max(math.abs(z), y * H / TOP), math.abs(z) >= H - 0.01 or y == 0 or y >= TOP - 0.01)
+			addLine("z", y, z, math.max(math.abs(z), y * H / TOP), math.abs(z) >= H - 0.01 or y == 0 or y >= TOP - 0.01)
+		end
+	end
+	for _, x in ipairs(xs) do
+		for _, z in ipairs(xs) do
+			addLine("y", x, z, math.max(math.abs(x), math.abs(z)), math.abs(x) >= H - 0.01 or math.abs(z) >= H - 0.01)
+		end
+	end
+	-- 바닥: 검은 유리판 (격자와 함께 넓어진다)
+	local floor = mk(0.2)
+	floor.Material = Enum.Material.Glass
+	floor.Color = BLACK
+	-- 씨앗: 한가운데 흰 테의 검은 상자
+	local seedAt = at + Vector3.new(0, 4, 0)
+	local seed = boxEdges(CFrame.new(seedAt), Vector3.one * 2.4, WHITE, 0.16)
+	local core = part(Vector3.one * 2, BLACK, Enum.Material.SmoothPlastic, 0)
+	core.CFrame = CFrame.new(seedAt)
+	-- 떠다니는 빈칸 상자
+	type Drifter = { list: { BasePart }, rel: { CFrame }, base: Vector3, ph: number }
+	local drifters: { Drifter } = {}
+	local function place(L: Line, h: number, top: number, alphaMul: number)
+		local p = L.p
+		if L.axis == "y" then
+			local vis = math.max(math.abs(L.a), math.abs(L.b)) <= h + 0.01 and top > 0.2
+			if not vis then
+				p.Transparency = 1
+				return
+			end
+			p.Size = Vector3.new(p.Size.X, top, p.Size.Z)
+			p.CFrame = CFrame.new(at + Vector3.new(L.a, top / 2, L.b))
+		else
+			local y, off = L.a, L.b
+			local vis = math.abs(off) <= h + 0.01 and y <= top + 0.01 and h > 0.2
+			if not vis then
+				p.Transparency = 1
+				return
+			end
+			if L.axis == "x" then
+				p.Size = Vector3.new(h * 2, p.Size.Y, p.Size.Z)
+				p.CFrame = CFrame.new(at + Vector3.new(0, y, off))
+			else
+				p.Size = Vector3.new(p.Size.X, p.Size.Y, h * 2)
+				p.CFrame = CFrame.new(at + Vector3.new(off, y, 0))
+			end
+		end
+		-- 펼쳐지는 앞머리에 가까운 선은 밝게, 막 켜진 선은 서서히
+		local fresh = math.clamp((h - L.dist) / STEP, 0, 1)
+		local front = math.clamp(1 - math.abs(h - L.dist) / (STEP * 0.8), 0, 1)
+		p.Transparency = 1 - (1 - L.base) * fresh * alphaMul
+		if front > 0 then
+			p.Transparency = math.min(p.Transparency, 0.05 + (1 - front) * 0.6)
+		end
+	end
+	-- 내 화면: 격자 안에 들어오면 빛깔이 빠진다
+	local cc: ColorCorrectionEffect? = nil
+	local inside = false
+	local function gradeFor(h: number, top: number)
+		local r = rootOf(player and player.Character)
+		local now = false
+		if r then
+			local d = r.Position - at
+			now = math.abs(d.X) <= h and math.abs(d.Z) <= h and d.Y > -8 and d.Y <= top + 4
+		end
+		if now ~= inside then
+			inside = now
+			if now then
+				cc = gradeTo(cc, 0.6, { Saturation = -0.85, Contrast = 0.25, Brightness = 0.02, TintColor = Color3.fromRGB(236, 236, 255) })
+			elseif cc then
+				tween(cc, 0.6, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = Color3.new(1, 1, 1) })
+			end
+		end
+	end
+	-- 1) 컷 동안: 씨앗이 맥박치고 화면이 지직거린다
+	glitchNear(at, H * 2, cut * 0.8, 0.8)
+	Fx.sound("deflect", 0.8, 0.4, at)
+	shakeNear(at, 1, 200)
+	local t0 = os.clock()
+	local tStart = t0 + cut
+	local tEnd = tStart + dur
+	local nextGlitch = 0
+	local nextGrade = 0
+	local collapsing = false
+	local conn: RBXScriptConnection
+	conn = RunService.RenderStepped:Connect(function()
+		local now = os.clock()
+		local t = now - t0
+		if now < tStart then
+			local pulse = 1 + 0.25 * math.sin(t * 14)
+			moveCube(seed, CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0), 2.4 * pulse)
+			core.CFrame = CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0)
+			return
+		end
+		local u = math.clamp((now - tStart) / unfold, 0, 1)
+		local s = 1 - (1 - u) ^ 3
+		local alphaMul = 1
+		if now >= tEnd then
+			-- 3) 접힘: 0.7초 동안 한 점으로
+			if not collapsing then
+				collapsing = true
+				Fx.sound("shatter", 0.9, 0.6, at)
+			end
+			local k = math.clamp((now - tEnd) / 0.7, 0, 1)
+			s = (1 - k) ^ 2
+			alphaMul = 1 - k * 0.4
+			if k >= 1 then
+				conn:Disconnect()
+				pixels(seedAt, 40, 1.6, 30)
+				Fx.flash(seedAt, WHITE, 90, 8, 0.6)
+				Fx.ring(at + Vector3.new(0, 0.5, 0), WHITE, 4, H * 2.4, 0.6)
+				shakeNear(at, 2, 200)
+				if cc then
+					gradeEnd(cc, 0.6)
+				end
+				holder:Destroy()
+				for _, q in ipairs(seed) do
+					q:Destroy()
+				end
+				core:Destroy()
+				for _, d in ipairs(drifters) do
+					for _, q in ipairs(d.list) do
+						q:Destroy()
+					end
+				end
+				return
+			end
+		end
+		local h, top = H * s, TOP * s
+		-- 씨앗은 펼쳐질수록 작아져 사라진다
+		local seedS = 2.4 * (1 - s)
+		moveCube(seed, CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0), math.max(0.05, seedS))
+		core.Size = Vector3.one * math.max(0.05, 2 * (1 - s))
+		core.CFrame = CFrame.new(seedAt)
+		for _, L in ipairs(lines) do
+			place(L, h, top, alphaMul)
+		end
+		floor.Size = Vector3.new(h * 2, 0.2, h * 2)
+		floor.CFrame = CFrame.new(at + Vector3.new(0, 0.12, 0))
+		floor.Transparency = 1 - 0.55 * s
+		-- 2) 머무는 동안: 빛의 물결이 바깥으로 흐르고, 가끔 몇 줄이 붉게 지직거린다
+		if u >= 1 and not collapsing then
+			local wave = (t * 30) % (H * 1.4)
+			for _, L in ipairs(lines) do
+				local w = math.clamp(1 - math.abs(L.dist - wave) / 6, 0, 1)
+				if w > 0 then
+					L.p.Transparency = math.min(L.p.Transparency, 0.1 + (1 - w) * 0.5)
+				end
+			end
+			if now >= nextGlitch then
+				nextGlitch = now + 0.15 + math.random() * 0.35
+				for _ = 1, 4 do
+					local L = lines[math.random(1, #lines)]
+					L.p.Color = RED
+					task.delay(0.12, function()
+						if L.p.Parent then
+							L.p.Color = WHITE
+						end
+					end)
+				end
+			end
+			if #drifters == 0 then
+				for k = 1, 10 do
+					local base = at + Vector3.new(math.random(-H + 10, H - 10), math.random(8, math.floor(TOP * 0.7)), math.random(-H + 10, H - 10))
+					local sz = 2 + math.random() * 3
+					local list = boxEdges(CFrame.new(base), Vector3.one * sz, k % 3 == 0 and RED or WHITE, 0.12)
+					local rel: { CFrame } = {}
+					for i, q in ipairs(list) do
+						rel[i] = CFrame.new(base):ToObjectSpace(q.CFrame)
+					end
+					table.insert(drifters, { list = list, rel = rel, base = base, ph = math.random() * 6 })
+				end
+			end
+			for _, d in ipairs(drifters) do
+				local cf = CFrame.new(d.base + Vector3.new(0, math.sin(t * 0.8 + d.ph) * 3, 0)) * CFrame.Angles(t * 0.5 + d.ph, t * 0.7, 0)
+				-- 테두리 상자는 통째로 옮긴다
+				for i, q in ipairs(d.list) do
+					q.CFrame = cf * d.rel[i]
+				end
+			end
+		end
+		if now >= nextGrade then
+			nextGrade = now + 0.2
+			gradeFor(h, top)
+		end
+	end)
+	-- 펼쳐지기 시작: 세 축으로 빛이 뻗는다
+	task.delay(cut, function()
+		Fx.sound("shatter", 0.7, 0.35, at)
+		Fx.flash(seedAt, WHITE, 70, 6, 0.4)
+		pixels(seedAt, 24, 1.2, 12)
+		shakeNear(at, 1.6, 220)
+		glitchNear(at, H * 2, 0.5, 0.5)
+	end)
+end
+
 function Null.handles(data: any): boolean
 	return HANDLERS[data.kind] ~= nil or (data.kind == "pulse" and data.fx == "voidCell")
 end

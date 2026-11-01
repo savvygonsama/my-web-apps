@@ -671,6 +671,17 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "geuknull" then
+		-- 격자지기: 공백권 사부와 같은 지워진 얼굴이지만 하얗게 뒤집혔다. 검은 점 둘, 등 뒤의 흰 격자 틀, 붉은 잡음 줄
+		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(240, 240, 245), Enum.Material.SmoothPlastic)
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "VoidEye", Vector3.new(0.14, 0.14, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.56), Color3.fromRGB(12, 12, 16), Enum.Material.SmoothPlastic)
+		end
+		for k = -1, 1 do
+			wear(model, "UpperTorso", "GridBarV", Vector3.new(0.08, 3.2, 0.08), CFrame.new(k * 1.1, 0.6, 0.9), Color3.fromRGB(245, 245, 250), Enum.Material.Neon)
+			wear(model, "UpperTorso", "GridBarH", Vector3.new(3.2, 0.08, 0.08), CFrame.new(0, 0.6 + k * 1.1, 0.9), Color3.fromRGB(245, 245, 250), Enum.Material.Neon)
+		end
+		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "gongbaek" then
 		-- 이름 없는 자: 얼굴이 검게 지워졌고, 흰 점 둘만 보인다. 가슴을 가로지르는 붉은 잡음 줄
 		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(10, 10, 14), Enum.Material.SmoothPlastic)

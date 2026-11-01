@@ -2435,6 +2435,12 @@ function handlers.geukTwilight(data: any)
 	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
 	Geuk.twilight(data)
 end
+-- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
+function handlers.geukDomain(data: any)
+	Null.init({ shake = shake, flash = UI.flash })
+	UI.banner(string.format("⬜ 격자 전개 · %s", data.name or ""), "한 점에서 흰 격자가 천천히 펼쳐진다. 격자 안의 적은 굼뜨고 격자에 베이며, 그의 기술이 모두 바뀐다", Color3.fromRGB(240, 240, 245))
+	Null.domain(data)
+end
 -- 3.1판: 윤회대 제단의 환생 의식 (모두에게 보인다)
 function handlers.rebirthRite(data: any)
 	Samsara.init({ shake = shake, tint = tint })
@@ -2527,7 +2533,7 @@ RunService.RenderStepped:Connect(function()
 	if style.geukGauge then
 		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
 		if twilightNow then
-			stacks = "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+			stacks = style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)

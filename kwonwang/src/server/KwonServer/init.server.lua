@@ -2753,6 +2753,42 @@ function Geuk.trigger(f: any, st: any)
 		end
 	end)
 	local name = f.player and f.player.DisplayName or f.name
+	local D = st.geukDomain
+	if D then
+		-- 3.16판 극 공백권 · 격자 전개: 선 자리에서 흰 3차원 격자가 한 점에서 천천히 펼쳐져 머문다 (세상은 그대로)
+		local at = f.root.Position - Vector3.new(0, 3, 0)
+		Push:FireAllClients("geukDomain", { m = f.model, name = name, style = st.id, at = at, cut = G.cut, dur = G.dur, half = D.half, top = D.top, step = D.step, level = D.level, unfold = D.unfold })
+		task.spawn(function()
+			local t0 = now + G.cut
+			local nextTick = t0
+			while f.twilightUntil == token and f.model.Parent and not f.dead do
+				local tn = os.clock()
+				if tn >= t0 then
+					local u = math.clamp((tn - t0) / D.unfold, 0, 1)
+					local s = 1 - (1 - u) ^ 3
+					local H, top = D.half * s, D.top * s
+					local doTick = tn >= nextTick
+					if doTick then
+						nextTick = tn + D.every
+					end
+					for _, o in pairs(Combat.fighters) do
+						if o ~= f and not o.dead and Combat.hostile(f, o) then
+							local d = o.root.Position - at
+							if math.abs(d.X) <= H and math.abs(d.Z) <= H and d.Y > -8 and d.Y <= top + 4 then
+								o.slowUntil = tn + 0.6
+								o.slowMul = D.slow
+								if doTick then
+									Combat.applyHit(f, o, D.tick, { move = { name = "격자" }, unblockable = true })
+								end
+							end
+						end
+					end
+				end
+				task.wait(0.25)
+			end
+		end)
+		return
+	end
 	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
 	World.twilight(G.cut, G.dur)
 end
