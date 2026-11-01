@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.16.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.16.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3571,6 +3571,34 @@ Config.TrainingSpots = {
 	{ kind = "cheonsang", at = Vector3.new(-55, 4000, -55) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
+-- 3.16.4판: 강호 곳곳의 주막. 주막 앞 탁자에서 T를 누르면 쉬고 (체력·내공 가득), 그 주막이 '깨어날 곳'이 된다.
+-- 쓰러지거나 다시 들어오면 마지막으로 쉰 주막 앞에서 일어난다 (천상에서 쓰러지면 천궁). face = 주막 앞 (길 쪽)
+Config.JUMAK = {
+	{ id = "village", name = "청운 마을 객잔", at = Config.INN_AT, village = true },
+	{ id = "maple", name = "단풍산 길목 주막", at = Vector3.new(3167, 0, -2574), face = Vector3.new(-0.99, 0, -0.16) },
+	{ id = "tea", name = "차밭 언덕 주막", at = Vector3.new(-2546, 0, -2689), face = Vector3.new(-0.65, 0, 0.76) },
+	{ id = "mushroom", name = "버섯 숲 어귀 주막", at = Vector3.new(2847, 0, 1699), face = Vector3.new(0.86, 0, -0.5) },
+	{ id = "stone", name = "석림 길가 주막", at = Vector3.new(-2809, 0, 994), face = Vector3.new(0.75, 0, 0.66) },
+	{ id = "cloudsea", name = "운해 길목 주막", at = Vector3.new(-94, 0, -2375), face = Vector3.new(0.99, 0, 0.17) },
+	{ id = "sand", name = "모래 왕릉 가는 길 주막", at = Vector3.new(-542, 0, 2350), face = Vector3.new(-0.76, 0, -0.65) },
+	{ id = "flame", name = "불 제단 아래 주막", at = Vector3.new(2324, 0, -385), face = Vector3.new(0.67, 0, 0.74) },
+	{ id = "rift", name = "균열 고개 주막", at = Vector3.new(-1513, 0, -1048), face = Vector3.new(1, 0, -0.07) },
+	{ id = "wind", name = "바람 언덕 주막", at = Vector3.new(-1000, 0, 925), face = Vector3.new(0.64, 0, 0.77) },
+	{ id = "bandit", name = "산채 아랫마을 주막", at = Vector3.new(298, 0, -1144), face = Vector3.new(-1, 0, 0) },
+}
+Config.JUMAK_BY_ID = {}
+for _, j in ipairs(Config.JUMAK) do
+	Config.JUMAK_BY_ID[j.id] = j
+end
+-- 주막 앞에서 일어나는 자리
+function Config.jumakSpawn(j: any): CFrame
+	if j.village then
+		return CFrame.new(Config.SPAWN)
+	end
+	local face = j.face.Unit
+	local at = j.at + face * 13 + Vector3.new(0, 4, 0)
+	return CFrame.lookAt(at, at + face)
+end
 
 ------------------------------------------------------------------------
 -- 상점 (마을)

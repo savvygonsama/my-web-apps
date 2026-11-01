@@ -1779,6 +1779,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
+		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
 		end)) do
@@ -2758,6 +2759,12 @@ local function buildMap()
 	for _, lm in ipairs(Config.Landmarks) do
 		label(lm.at, lm.icon, 13, 15, Color3.new(1, 1, 1), 8, 1.5)
 		label(lm.at + Vector3.new(0, 0, 80), lm.name, 10, 11, Color3.fromRGB(230, 225, 210), 8, 1)
+	end
+	-- 3.16.4판: 주막 (깨어날 곳을 정하는 곳)
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village then
+			label(j.at, "🏮", 11, 13, Color3.new(1, 1, 1), 8, 1.4)
+		end
 	end
 	table.sort(mapTexts, function(x, y)
 		return x.prio > y.prio

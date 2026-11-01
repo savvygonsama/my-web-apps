@@ -2695,6 +2695,12 @@ local function terrainHills()
 		if eg and Vector3.new(p.X - eg.garden.X, 0, p.Z - eg.garden.Z).Magnitude < 700 then
 			return true
 		end
+		-- 3.16.4판: 주막 둘레엔 언덕을 쌓지 않는다
+		for _, j in ipairs(Config.JUMAK or {}) do
+			if not j.village and Vector3.new(p.X - j.at.X, 0, p.Z - j.at.Z).Magnitude < 40 + pad then
+				return true
+			end
+		end
 		return false
 	end
 	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
@@ -2752,6 +2758,12 @@ local function inAnyRegion(p: Vector3, pad: number): boolean
 	return false
 end
 local function nearFeature(p: Vector3, d: number): boolean
+	-- 3.16.4판: 주막 자리
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village and (Vector3.new(p.X, 0, p.Z) - Vector3.new(j.at.X, 0, j.at.Z)).Magnitude < 28 + d then
+			return true
+		end
+	end
 	for _, lm in ipairs(Config.Landmarks) do
 		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(lm.at.X, 0, lm.at.Z)).Magnitude < 90 + d then
 			return true
@@ -4224,6 +4236,50 @@ local function nullSpot()
 	for k = 0, 4 do
 		local a = k / 5 * math.pi * 2 + 0.4
 		part({ Name = "LeanGrass", Size = Vector3.new(0.3, 1.4 + (k % 2) * 0.6, 0.3), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 5.2, 0.6, math.sin(a) * 5.2)) * CFrame.Angles(0.2, a, 0.15), Color = Color3.fromRGB(110, 140, 80), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+end
+
+-- 3.16.4판 주막: 길가의 작은 한 채 주막. 길 쪽으로 문, 처마 밑 붉은 등 둘, 술 깃발, 앞마당의 평상과 탁자.
+-- 탁자에서 T를 누르면 쉬고 (체력·내공 가득), 그 주막이 깨어날 곳이 된다
+local function jumaks(out: any)
+	local f = Instance.new("Folder")
+	f.Name = "Jumak"
+	f.Parent = folder
+	out.jumak = {}
+	local RED = Color3.fromRGB(210, 60, 45)
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village then
+			local face = j.face.Unit
+			local rot = math.atan2(-face.X, -face.Z)
+			local cf = CFrame.new(j.at) * CFrame.Angles(0, rot, 0)
+			building(j.at, 14, 10, rot, f, { tiers = 1, sign = "주막", awningColor = Color3.fromRGB(150, 70, 40) })
+			-- 앞마당 (흙 바닥), 평상, 탁자
+			part({ Name = "JumakYard", Size = Vector3.new(20, 0.2, 12), CFrame = cf * CFrame.new(0, 0.1, -12), Color = Color3.fromRGB(150, 125, 90), Material = Enum.Material.Ground, Parent = f })
+			part({ Name = "JumakBench", Size = Vector3.new(7, 1.4, 4), CFrame = cf * CFrame.new(-5.5, 0.9, -11), Color = Color3.fromRGB(130, 95, 60), Material = Enum.Material.WoodPlanks, Parent = f })
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sz in ipairs({ -1, 1 }) do
+					part({ Name = "JumakBenchLeg", Size = Vector3.new(0.5, 0.6, 0.5), CFrame = cf * CFrame.new(-5.5 + sx * 3, 0.3, -11 + sz * 1.6), Color = Color3.fromRGB(100, 70, 45), Material = Enum.Material.Wood, Parent = f })
+				end
+			end
+			local desk = part({ Name = "JumakTable", Size = Vector3.new(3.4, 2.6, 2.6), CFrame = cf * CFrame.new(4.5, 1.3, -11), Color = Color3.fromRGB(120, 85, 55), Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "JumakJar", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1.3, 1.2), CFrame = cf * CFrame.new(4.0, 3.2, -11), Color = Color3.fromRGB(120, 80, 50), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "JumakBowl", Size = Vector3.new(0.8, 0.3, 0.8), CFrame = cf * CFrame.new(5.2, 2.75, -10.6), Color = Color3.fromRGB(230, 225, 210), Material = Enum.Material.SmoothPlastic, Parent = f })
+			-- 처마 밑 붉은 등 둘
+			for _, sx in ipairs({ -1, 1 }) do
+				local lamp = part({ Name = "JumakLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.8, 1.4), CFrame = cf * CFrame.new(sx * 4.5, 7.6, -6.6), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				lamp.Transparency = 0.1
+				light(lamp, Color3.fromRGB(255, 150, 90), 16, 1.2)
+			end
+			-- 술 깃발 (장대 끝 흰 천에 붉은 테)
+			local pole = cf * CFrame.new(9.5, 0, -9)
+			part({ Name = "JumakFlagPole", Size = Vector3.new(0.5, 14, 0.5), CFrame = pole * CFrame.new(0, 7, 0), Color = Color3.fromRGB(110, 80, 50), Material = Enum.Material.Wood, Parent = f })
+			local flag = part({ Name = "JumakFlag", Size = Vector3.new(0.15, 5, 2.6), CFrame = pole * CFrame.new(0, 11, -1.5), Color = Color3.fromRGB(240, 236, 220), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+			part({ Name = "JumakFlagEdge", Size = Vector3.new(0.17, 5, 0.3), CFrame = pole * CFrame.new(0, 11, -2.7), Color = RED, Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+			sign(flag, Enum.NormalId.Right, { { "주", Color3.fromRGB(170, 40, 30), 1 } })
+			sign(flag, Enum.NormalId.Left, { { "주", Color3.fromRGB(170, 40, 30), 1 } })
+			local pp = prompt(desk, "쉬고 여기서 깨어나기", j.name, "Jumak")
+			table.insert(out.jumak, { id = j.id, prompt = pp })
+		end
 	end
 end
 
@@ -6034,6 +6090,9 @@ function World.build(): any
 		{ "숨은 자리", secretSite },
 		{ "지형", terrainHills },
 		{ "지역 테두리", regionFrames },
+		{ "주막", function()
+			jumaks(out)
+		end },
 		{ "길가", roadside },
 		{ "표지", regionSigns },
 		{ "벚꽃 언덕", sakuraHill },

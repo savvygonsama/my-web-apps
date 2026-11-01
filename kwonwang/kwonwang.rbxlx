@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.16.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.16.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3591,6 +3591,34 @@ Config.TrainingSpots = {
 	{ kind = "cheonsang", at = Vector3.new(-55, 4000, -55) },
 }
 Config.SPAWN = Vector3.new(0, 4, -20)
+-- 3.16.4판: 강호 곳곳의 주막. 주막 앞 탁자에서 T를 누르면 쉬고 (체력·내공 가득), 그 주막이 '깨어날 곳'이 된다.
+-- 쓰러지거나 다시 들어오면 마지막으로 쉰 주막 앞에서 일어난다 (천상에서 쓰러지면 천궁). face = 주막 앞 (길 쪽)
+Config.JUMAK = {
+	{ id = "village", name = "청운 마을 객잔", at = Config.INN_AT, village = true },
+	{ id = "maple", name = "단풍산 길목 주막", at = Vector3.new(3167, 0, -2574), face = Vector3.new(-0.99, 0, -0.16) },
+	{ id = "tea", name = "차밭 언덕 주막", at = Vector3.new(-2546, 0, -2689), face = Vector3.new(-0.65, 0, 0.76) },
+	{ id = "mushroom", name = "버섯 숲 어귀 주막", at = Vector3.new(2847, 0, 1699), face = Vector3.new(0.86, 0, -0.5) },
+	{ id = "stone", name = "석림 길가 주막", at = Vector3.new(-2809, 0, 994), face = Vector3.new(0.75, 0, 0.66) },
+	{ id = "cloudsea", name = "운해 길목 주막", at = Vector3.new(-94, 0, -2375), face = Vector3.new(0.99, 0, 0.17) },
+	{ id = "sand", name = "모래 왕릉 가는 길 주막", at = Vector3.new(-542, 0, 2350), face = Vector3.new(-0.76, 0, -0.65) },
+	{ id = "flame", name = "불 제단 아래 주막", at = Vector3.new(2324, 0, -385), face = Vector3.new(0.67, 0, 0.74) },
+	{ id = "rift", name = "균열 고개 주막", at = Vector3.new(-1513, 0, -1048), face = Vector3.new(1, 0, -0.07) },
+	{ id = "wind", name = "바람 언덕 주막", at = Vector3.new(-1000, 0, 925), face = Vector3.new(0.64, 0, 0.77) },
+	{ id = "bandit", name = "산채 아랫마을 주막", at = Vector3.new(298, 0, -1144), face = Vector3.new(-1, 0, 0) },
+}
+Config.JUMAK_BY_ID = {}
+for _, j in ipairs(Config.JUMAK) do
+	Config.JUMAK_BY_ID[j.id] = j
+end
+-- 주막 앞에서 일어나는 자리
+function Config.jumakSpawn(j: any): CFrame
+	if j.village then
+		return CFrame.new(Config.SPAWN)
+	end
+	local face = j.face.Unit
+	local at = j.at + face * 13 + Vector3.new(0, 4, 0)
+	return CFrame.lookAt(at, at + face)
+end
 
 ------------------------------------------------------------------------
 -- 상점 (마을)
@@ -6980,6 +7008,7 @@ type Profile = {
 	skyTint: { [string]: boolean }, -- 3.12판: 천상 빛깔을 입힌 권법 (장신구)
 	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
 	skyAura: boolean?, -- 3.12판: 천상 오라
+	spawnAt: string?, -- 3.16.4판: 깨어날 주막 (없으면 청운 마을)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
 	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
@@ -7152,6 +7181,7 @@ local function sanitize(data: any): Profile
 	end
 	p.skyTintOff = data.skyTintOff == true or nil
 	p.skyAura = data.skyAura == true or nil
+	p.spawnAt = (type(data.spawnAt) == "string" and Config.JUMAK_BY_ID[data.spawnAt] and not Config.JUMAK_BY_ID[data.spawnAt].village) and data.spawnAt or nil
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	for _, key in ipairs({ "mq", "mqn" }) do
 		local src = (data :: any)[key]
@@ -7647,6 +7677,7 @@ local function pushState(player: Player)
 		skyTint = p.skyTint,
 		skyTintOff = p.skyTintOff == true,
 		skyAura = p.skyAura == true,
+		spawnAt = p.spawnAt or "village",
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -7903,7 +7934,10 @@ local function respawnPlayer(player: Player)
 		if st and (st :: any).diedInSky then
 			char:PivotTo(CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30)))
 		else
-			char:PivotTo(CFrame.new(Config.SPAWN))
+			-- 3.16.4판: 마지막으로 쉰 주막 앞에서 일어난다
+			local p = profiles[player]
+			local J = p and p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+			char:PivotTo(J and Config.jumakSpawn(J) or CFrame.new(Config.SPAWN))
 		end
 	end
 	if st then
@@ -11599,6 +11633,34 @@ task.spawn(function()
 	end
 end)
 
+-- 3.16.4판: 세상 끝 벼랑 너머 바다 (무너지는 돌길 아래)에 떨어지면 벼랑 위 돌길 시작점으로 돌아간다. 예전엔 바다 밑 땅에 그냥 내려앉았다
+task.spawn(function()
+	local E = Config.EGGS and Config.EGGS.edge
+	if BATTLE or not E then
+		return
+	end
+	local seaZ = E.cliff.Z + 88
+	while true do
+		task.wait(0.25)
+		for player in pairs(profiles) do
+			local f = Combat.fighterOfPlayer(player)
+			if f and not f.dead and f.root.Parent then
+				local p = f.root.Position
+				if p.Z > seaZ and math.abs(p.X) < 1600 and p.Y < 6 then
+					-- 벼랑 위 돌길 시작점으로 되돌린다
+					f.root.AssemblyLinearVelocity = Vector3.zero
+					local back = Vector3.new(0, 44, E.cliff.Z + 72)
+					local ch = player.Character
+					if ch then
+						ch:PivotTo(CFrame.lookAt(back, back + Vector3.new(0, 0, 1)))
+					end
+					toast(player, "🌊 바다에 빠졌다가 벼랑 위로 기어올라왔다 · 돌길은 다시 처음부터")
+				end
+			end
+		end
+	end
+end)
+
 -- 강호 순위표: 1분마다. 저장소(정렬 저장소)가 되면 모든 서버의 기록, 안 되면 이 서버 사람만
 local Board = {}
 local boardStores: { [string]: any } = {}
@@ -12144,7 +12206,40 @@ if W.inn then
 			f.chi = (f :: any).chiMax or Config.CHI_MAX
 			Combat.sync(f)
 		end
-		toast(player, "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
+		-- 3.16.4판: 마을 객잔도 깨어날 곳이 된다
+		local was = p.spawnAt
+		p.spawnAt = nil
+		local est = states[player]
+		if est then
+			est.dirty = true
+		end
+		toast(player, was and "🛏 푹 쉬었다. 체력과 내공이 가득 찼다 · 이제 쓰러지면 청운 마을에서 깨어난다" or "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
+		pushState(player)
+	end)
+end
+-- 3.16.4판: 강호 곳곳의 주막. 쉬면 체력·내공이 차고, 그 주막이 깨어날 곳이 된다
+for _, jp in ipairs(W.jumak or {}) do
+	jp.prompt.Triggered:Connect(function(player: Player)
+		local p = profiles[player]
+		local J = Config.JUMAK_BY_ID[jp.id]
+		if not p or not J then
+			return
+		end
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead then
+			f.hp = f.maxHp
+			f.posture = 0
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f)
+		end
+		local was = p.spawnAt
+		p.spawnAt = J.id
+		local est = states[player]
+		if est then
+			est.dirty = true
+		end
+		toast(player, was == J.id and ("🏮 " .. J.name .. "에서 푹 쉬었다. 체력과 내공이 가득 찼다") or ("🏮 " .. J.name .. "에서 쉬었다 · 이제 쓰러지면 여기서 깨어난다"))
+		pushState(player)
 	end)
 end
 -- 비급 조각 줍기 (다섯을 모으면 무극신권)
@@ -12333,6 +12428,15 @@ local function setupCharacter(player: Player, char: Model)
 	local st = states[player]
 	if st then
 		st.training = nil
+	end
+	-- 3.16.4판: 들어올 때도 마지막으로 쉰 주막 앞에서
+	local J = not BATTLE and p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+	if J then
+		task.defer(function()
+			if char.Parent then
+				char:PivotTo(Config.jumakSpawn(J))
+			end
+		end)
 	end
 end
 
@@ -25303,6 +25407,12 @@ local function terrainHills()
 		if eg and Vector3.new(p.X - eg.garden.X, 0, p.Z - eg.garden.Z).Magnitude < 700 then
 			return true
 		end
+		-- 3.16.4판: 주막 둘레엔 언덕을 쌓지 않는다
+		for _, j in ipairs(Config.JUMAK or {}) do
+			if not j.village and Vector3.new(p.X - j.at.X, 0, p.Z - j.at.Z).Magnitude < 40 + pad then
+				return true
+			end
+		end
 		return false
 	end
 	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
@@ -25360,6 +25470,12 @@ local function inAnyRegion(p: Vector3, pad: number): boolean
 	return false
 end
 local function nearFeature(p: Vector3, d: number): boolean
+	-- 3.16.4판: 주막 자리
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village and (Vector3.new(p.X, 0, p.Z) - Vector3.new(j.at.X, 0, j.at.Z)).Magnitude < 28 + d then
+			return true
+		end
+	end
 	for _, lm in ipairs(Config.Landmarks) do
 		if (Vector3.new(p.X, 0, p.Z) - Vector3.new(lm.at.X, 0, lm.at.Z)).Magnitude < 90 + d then
 			return true
@@ -26832,6 +26948,50 @@ local function nullSpot()
 	for k = 0, 4 do
 		local a = k / 5 * math.pi * 2 + 0.4
 		part({ Name = "LeanGrass", Size = Vector3.new(0.3, 1.4 + (k % 2) * 0.6, 0.3), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 5.2, 0.6, math.sin(a) * 5.2)) * CFrame.Angles(0.2, a, 0.15), Color = Color3.fromRGB(110, 140, 80), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+	end
+end
+
+-- 3.16.4판 주막: 길가의 작은 한 채 주막. 길 쪽으로 문, 처마 밑 붉은 등 둘, 술 깃발, 앞마당의 평상과 탁자.
+-- 탁자에서 T를 누르면 쉬고 (체력·내공 가득), 그 주막이 깨어날 곳이 된다
+local function jumaks(out: any)
+	local f = Instance.new("Folder")
+	f.Name = "Jumak"
+	f.Parent = folder
+	out.jumak = {}
+	local RED = Color3.fromRGB(210, 60, 45)
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village then
+			local face = j.face.Unit
+			local rot = math.atan2(-face.X, -face.Z)
+			local cf = CFrame.new(j.at) * CFrame.Angles(0, rot, 0)
+			building(j.at, 14, 10, rot, f, { tiers = 1, sign = "주막", awningColor = Color3.fromRGB(150, 70, 40) })
+			-- 앞마당 (흙 바닥), 평상, 탁자
+			part({ Name = "JumakYard", Size = Vector3.new(20, 0.2, 12), CFrame = cf * CFrame.new(0, 0.1, -12), Color = Color3.fromRGB(150, 125, 90), Material = Enum.Material.Ground, Parent = f })
+			part({ Name = "JumakBench", Size = Vector3.new(7, 1.4, 4), CFrame = cf * CFrame.new(-5.5, 0.9, -11), Color = Color3.fromRGB(130, 95, 60), Material = Enum.Material.WoodPlanks, Parent = f })
+			for _, sx in ipairs({ -1, 1 }) do
+				for _, sz in ipairs({ -1, 1 }) do
+					part({ Name = "JumakBenchLeg", Size = Vector3.new(0.5, 0.6, 0.5), CFrame = cf * CFrame.new(-5.5 + sx * 3, 0.3, -11 + sz * 1.6), Color = Color3.fromRGB(100, 70, 45), Material = Enum.Material.Wood, Parent = f })
+				end
+			end
+			local desk = part({ Name = "JumakTable", Size = Vector3.new(3.4, 2.6, 2.6), CFrame = cf * CFrame.new(4.5, 1.3, -11), Color = Color3.fromRGB(120, 85, 55), Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "JumakJar", Shape = Enum.PartType.Ball, Size = Vector3.new(1.2, 1.3, 1.2), CFrame = cf * CFrame.new(4.0, 3.2, -11), Color = Color3.fromRGB(120, 80, 50), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "JumakBowl", Size = Vector3.new(0.8, 0.3, 0.8), CFrame = cf * CFrame.new(5.2, 2.75, -10.6), Color = Color3.fromRGB(230, 225, 210), Material = Enum.Material.SmoothPlastic, Parent = f })
+			-- 처마 밑 붉은 등 둘
+			for _, sx in ipairs({ -1, 1 }) do
+				local lamp = part({ Name = "JumakLamp", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.8, 1.4), CFrame = cf * CFrame.new(sx * 4.5, 7.6, -6.6), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				lamp.Transparency = 0.1
+				light(lamp, Color3.fromRGB(255, 150, 90), 16, 1.2)
+			end
+			-- 술 깃발 (장대 끝 흰 천에 붉은 테)
+			local pole = cf * CFrame.new(9.5, 0, -9)
+			part({ Name = "JumakFlagPole", Size = Vector3.new(0.5, 14, 0.5), CFrame = pole * CFrame.new(0, 7, 0), Color = Color3.fromRGB(110, 80, 50), Material = Enum.Material.Wood, Parent = f })
+			local flag = part({ Name = "JumakFlag", Size = Vector3.new(0.15, 5, 2.6), CFrame = pole * CFrame.new(0, 11, -1.5), Color = Color3.fromRGB(240, 236, 220), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+			part({ Name = "JumakFlagEdge", Size = Vector3.new(0.17, 5, 0.3), CFrame = pole * CFrame.new(0, 11, -2.7), Color = RED, Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+			sign(flag, Enum.NormalId.Right, { { "주", Color3.fromRGB(170, 40, 30), 1 } })
+			sign(flag, Enum.NormalId.Left, { { "주", Color3.fromRGB(170, 40, 30), 1 } })
+			local pp = prompt(desk, "쉬고 여기서 깨어나기", j.name, "Jumak")
+			table.insert(out.jumak, { id = j.id, prompt = pp })
+		end
 	end
 end
 
@@ -28642,6 +28802,9 @@ function World.build(): any
 		{ "숨은 자리", secretSite },
 		{ "지형", terrainHills },
 		{ "지역 테두리", regionFrames },
+		{ "주막", function()
+			jumaks(out)
+		end },
 		{ "길가", roadside },
 		{ "표지", regionSigns },
 		{ "벚꽃 언덕", sakuraHill },
@@ -58318,6 +58481,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
+		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
 		end)) do
@@ -59297,6 +59461,12 @@ local function buildMap()
 	for _, lm in ipairs(Config.Landmarks) do
 		label(lm.at, lm.icon, 13, 15, Color3.new(1, 1, 1), 8, 1.5)
 		label(lm.at + Vector3.new(0, 0, 80), lm.name, 10, 11, Color3.fromRGB(230, 225, 210), 8, 1)
+	end
+	-- 3.16.4판: 주막 (깨어날 곳을 정하는 곳)
+	for _, j in ipairs(Config.JUMAK or {}) do
+		if not j.village then
+			label(j.at, "🏮", 11, 13, Color3.new(1, 1, 1), 8, 1.4)
+		end
 	end
 	table.sort(mapTexts, function(x, y)
 		return x.prio > y.prio

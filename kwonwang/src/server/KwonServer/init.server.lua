@@ -75,6 +75,7 @@ type Profile = {
 	skyTint: { [string]: boolean }, -- 3.12판: 천상 빛깔을 입힌 권법 (장신구)
 	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
 	skyAura: boolean?, -- 3.12판: 천상 오라
+	spawnAt: string?, -- 3.16.4판: 깨어날 주막 (없으면 청운 마을)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
 	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
@@ -247,6 +248,7 @@ local function sanitize(data: any): Profile
 	end
 	p.skyTintOff = data.skyTintOff == true or nil
 	p.skyAura = data.skyAura == true or nil
+	p.spawnAt = (type(data.spawnAt) == "string" and Config.JUMAK_BY_ID[data.spawnAt] and not Config.JUMAK_BY_ID[data.spawnAt].village) and data.spawnAt or nil
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	for _, key in ipairs({ "mq", "mqn" }) do
 		local src = (data :: any)[key]
@@ -742,6 +744,7 @@ local function pushState(player: Player)
 		skyTint = p.skyTint,
 		skyTintOff = p.skyTintOff == true,
 		skyAura = p.skyAura == true,
+		spawnAt = p.spawnAt or "village",
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -998,7 +1001,10 @@ local function respawnPlayer(player: Player)
 		if st and (st :: any).diedInSky then
 			char:PivotTo(CFrame.new(Config.SKY.islands[1].at + Vector3.new(0, 5, 30)))
 		else
-			char:PivotTo(CFrame.new(Config.SPAWN))
+			-- 3.16.4판: 마지막으로 쉰 주막 앞에서 일어난다
+			local p = profiles[player]
+			local J = p and p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+			char:PivotTo(J and Config.jumakSpawn(J) or CFrame.new(Config.SPAWN))
 		end
 	end
 	if st then
@@ -4694,6 +4700,34 @@ task.spawn(function()
 	end
 end)
 
+-- 3.16.4판: 세상 끝 벼랑 너머 바다 (무너지는 돌길 아래)에 떨어지면 벼랑 위 돌길 시작점으로 돌아간다. 예전엔 바다 밑 땅에 그냥 내려앉았다
+task.spawn(function()
+	local E = Config.EGGS and Config.EGGS.edge
+	if BATTLE or not E then
+		return
+	end
+	local seaZ = E.cliff.Z + 88
+	while true do
+		task.wait(0.25)
+		for player in pairs(profiles) do
+			local f = Combat.fighterOfPlayer(player)
+			if f and not f.dead and f.root.Parent then
+				local p = f.root.Position
+				if p.Z > seaZ and math.abs(p.X) < 1600 and p.Y < 6 then
+					-- 벼랑 위 돌길 시작점으로 되돌린다
+					f.root.AssemblyLinearVelocity = Vector3.zero
+					local back = Vector3.new(0, 44, E.cliff.Z + 72)
+					local ch = player.Character
+					if ch then
+						ch:PivotTo(CFrame.lookAt(back, back + Vector3.new(0, 0, 1)))
+					end
+					toast(player, "🌊 바다에 빠졌다가 벼랑 위로 기어올라왔다 · 돌길은 다시 처음부터")
+				end
+			end
+		end
+	end
+end)
+
 -- 강호 순위표: 1분마다. 저장소(정렬 저장소)가 되면 모든 서버의 기록, 안 되면 이 서버 사람만
 local Board = {}
 local boardStores: { [string]: any } = {}
@@ -5239,7 +5273,40 @@ if W.inn then
 			f.chi = (f :: any).chiMax or Config.CHI_MAX
 			Combat.sync(f)
 		end
-		toast(player, "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
+		-- 3.16.4판: 마을 객잔도 깨어날 곳이 된다
+		local was = p.spawnAt
+		p.spawnAt = nil
+		local est = states[player]
+		if est then
+			est.dirty = true
+		end
+		toast(player, was and "🛏 푹 쉬었다. 체력과 내공이 가득 찼다 · 이제 쓰러지면 청운 마을에서 깨어난다" or "🛏 푹 쉬었다. 체력과 내공이 가득 찼다")
+		pushState(player)
+	end)
+end
+-- 3.16.4판: 강호 곳곳의 주막. 쉬면 체력·내공이 차고, 그 주막이 깨어날 곳이 된다
+for _, jp in ipairs(W.jumak or {}) do
+	jp.prompt.Triggered:Connect(function(player: Player)
+		local p = profiles[player]
+		local J = Config.JUMAK_BY_ID[jp.id]
+		if not p or not J then
+			return
+		end
+		local f = Combat.fighterOfPlayer(player)
+		if f and not f.dead then
+			f.hp = f.maxHp
+			f.posture = 0
+			f.chi = (f :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f)
+		end
+		local was = p.spawnAt
+		p.spawnAt = J.id
+		local est = states[player]
+		if est then
+			est.dirty = true
+		end
+		toast(player, was == J.id and ("🏮 " .. J.name .. "에서 푹 쉬었다. 체력과 내공이 가득 찼다") or ("🏮 " .. J.name .. "에서 쉬었다 · 이제 쓰러지면 여기서 깨어난다"))
+		pushState(player)
 	end)
 end
 -- 비급 조각 줍기 (다섯을 모으면 무극신권)
@@ -5428,6 +5495,15 @@ local function setupCharacter(player: Player, char: Model)
 	local st = states[player]
 	if st then
 		st.training = nil
+	end
+	-- 3.16.4판: 들어올 때도 마지막으로 쉰 주막 앞에서
+	local J = not BATTLE and p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+	if J then
+		task.defer(function()
+			if char.Parent then
+				char:PivotTo(Config.jumakSpawn(J))
+			end
+		end)
 	end
 end
 
