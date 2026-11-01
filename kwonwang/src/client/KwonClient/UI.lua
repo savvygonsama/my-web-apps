@@ -1096,6 +1096,10 @@ local function buildAch()
 		if a.scrolls then
 			table.insert(rewards, "📜 " .. a.scrolls)
 		end
+		local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
+		if mt then
+			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
+		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
@@ -1243,9 +1247,9 @@ local function buildShop()
 			local b = mountBtns[m.id]
 			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
 			local sel = state and state.mountSel == m.id
-			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.gemsOnly and "💠 천정 전용" or ("💰 " .. Config.formatNumber(m.cost)))
+			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.achOnly and "🏆 신화 업적" or (m.gemsOnly and "💠 천정 전용" or ("💰 " .. Config.formatNumber(m.cost))))
 			b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
-			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost and not m.gemsOnly) and C.red or C.panel))
+			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost and not m.gemsOnly and not m.achOnly) and C.red or C.panel))
 		end
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
@@ -1829,7 +1833,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 만물상 (마을): 금창약 (H) · 소환단 (수련 2배) · 대환단 (능력치)")
 		local mounts = {}
 		for _, m in ipairs(Config.MOUNTS) do
-			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.gemsOnly and " (💠 천정 전용 · 천궁 상점)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)"))))
+			table.insert(mounts, string.format("%s %s%s", m.icon, m.name, m.premium and " (💎)" or (m.achOnly and " (🏆 신화 업적 전용)" or m.gemsOnly and " (💠 천정 전용 · 천궁 상점)" or (m.cost > 0 and (" 💰" .. Config.formatNumber(m.cost)) or " (처음부터)"))))
 		end
 		add("• 탈것: " .. table.concat(mounts, " · "))
 		add("")

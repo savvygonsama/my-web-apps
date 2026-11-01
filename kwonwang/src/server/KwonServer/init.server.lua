@@ -647,11 +647,22 @@ function Ach.check(player: Player, p: Profile)
 		return -- 배틀그라운드에서는 업적을 세지 않는다 (기록을 저장하지 않으니)
 	end
 	for _, a in ipairs(Config.ACHIEVEMENTS) do
+		-- 3.14판: 이미 이룬 신화 업적의 전용 탈것도 받는다 (이 판 전에 이룬 사람)
+		if p.ach[a.id] and a.mount and not p.mounts[a.mount] then
+			p.mounts[a.mount] = true
+			local st0 = states[player]
+			if st0 then
+				st0.dirty = true
+			end
+		end
 		if not p.ach[a.id] and Ach.value(p, a) >= a.n then
 			p.ach[a.id] = true
 			p.coins += a.coins or 0
 			p.skyGems += a.gems or 0
 			p.scrolls += a.scrolls or 0
+			if a.mount then
+				p.mounts[a.mount] = true
+			end
 			local st = states[player]
 			if st then
 				st.dirty = true
@@ -4295,6 +4306,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			end
 			if m.gemsOnly then
 				toast(player, "☁ " .. m.name .. "은(는) 천정으로만 얻어요 (천궁의 천상 상점)")
+				return
+			end
+			if m.achOnly then
+				toast(player, "🏆 " .. m.name .. "은(는) 신화 업적을 이루면 얻어요")
 				return
 			end
 			if p.coins < m.cost then

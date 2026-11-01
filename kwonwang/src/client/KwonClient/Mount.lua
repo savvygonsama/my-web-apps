@@ -610,17 +610,18 @@ local function buildDragon(rig: Rig)
 	local m = rig.m
 	local k = rig.k
 	local c, gold = m.color, m.mane
-	local deep = Color3.fromRGB(18, 66, 104)
-	local belly = Color3.fromRGB(242, 226, 168)
+	-- 3.14판: 신화 탈것 금룡은 빛깔을 바꿔 쓴다
+	local deep = m.deep or Color3.fromRGB(18, 66, 104)
+	local belly = m.belly or Color3.fromRGB(242, 226, 168)
 	local glowGold = Color3.fromRGB(255, 232, 150)
-	local spirit = Color3.fromRGB(120, 255, 220)
+	local spirit = m.spirit or Color3.fromRGB(120, 255, 220)
 	local N = DRAGON.N
 	for i = 0, N - 1 do
 		local w = segW(i)
 		local b = "s" .. i
 		-- 머리 쪽 비취빛에서 꼬리 쪽 짙은 바닷빛으로
 		local col = c:Lerp(deep, i / (N - 1) * 0.55)
-		local sheen = col:Lerp(Color3.fromRGB(130, 230, 210), 0.3)
+		local sheen = col:Lerp(m.sheen or Color3.fromRGB(130, 230, 210), 0.3)
 		local body = add(rig, b, "ell", V(w, w * 0.92, 1.85), CF(), col)
 		body.p.Reflectance = 0.12
 		add(rig, b, "ell", V(w * 0.74, w * 0.42, 1.6), CF(0, -w * 0.32, 0), belly)
@@ -851,6 +852,79 @@ local function poof(model: Model, color: Color3, big: boolean?)
 	end
 end
 
+
+------------------------------------------------------------------------
+-- 3.14판 신화 업적 탈것: 몸에 깃든 기운 (빛·뿌리개), 머리 위 빛 고리, 지나간 자리의 자취
+--   gold 금룡: 금빛 기운이 흘러내리고 금빛 고리 · flame 혈염마: 불타는 갈기와 핏빛 불꽃
+--   frost 천상 백호: 별빛 서리와 푸른 고리 · rainbow 무지개 구름: 일곱 빛깔 반짝임과 무지개 자취
+------------------------------------------------------------------------
+local RAINBOW = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 110)),
+	ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 180, 70)),
+	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 240, 110)),
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(120, 255, 150)),
+	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(110, 190, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 120, 255)),
+})
+local function mythicFx(rig: Rig)
+	local m = rig.m
+	if not m.mythic then
+		return
+	end
+	local k = rig.k
+	local glow = m.glow or m.mane
+	local core = rig.kind == "dragon" and "s2" or "body"
+	local holder = add(rig, core, "ball", V(0.8, 0.8, 0.8), CF(0, rig.kind == "cloud" and -0.5 or 0.2, 0), glow, Enum.Material.Neon, 1).p
+	local light = Instance.new("PointLight")
+	light.Color = glow
+	light.Range = 18
+	light.Brightness = 1.6
+	light.Parent = holder
+	if m.fx == "gold" then
+		local e = emitter(holder, TEX_SPARK, glow, 0.7 * k, 30, 1.4, 2.5, 180)
+		e.Color = ColorSequence.new(Color3.fromRGB(255, 240, 180), Color3.fromRGB(255, 180, 60))
+		local f = emitter(holder, TEX_FIRE, glow, 1.6 * k, 10, 0.8, 1.5, 60)
+		f.Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(200, 40, 40))
+		f.Transparency = NumberSequence.new(0.5, 1)
+	elseif m.fx == "flame" then
+		local f = emitter(holder, TEX_FIRE, glow, 2.2 * k, 26, 0.7, 2, 50)
+		f.Color = ColorSequence.new(Color3.fromRGB(255, 160, 60), Color3.fromRGB(150, 10, 20))
+		f.Acceleration = V(0, 8, 0)
+		local s = emitter(holder, TEX_SMOKE, Color3.fromRGB(40, 20, 20), 2.4 * k, 6, 1.6, 1.5, 80)
+		s.Transparency = NumberSequence.new(0.6, 1)
+		-- 발굽 둘레 불꽃 (다리 마디 끝에)
+		for _, b in ipairs({ "LFp", "RFp", "LHp", "RHp" }) do
+			local hp = add(rig, b, "ball", V(0.5, 0.5, 0.5), CF(0, -0.4, 0), glow, Enum.Material.Neon, 1).p
+			local hf = emitter(hp, TEX_FIRE, glow, 1.2 * k, 16, 0.5, 1, 40)
+			hf.Color = ColorSequence.new(Color3.fromRGB(255, 120, 40), Color3.fromRGB(120, 0, 10))
+		end
+	elseif m.fx == "frost" then
+		local e = emitter(holder, TEX_SPARK, glow, 0.6 * k, 26, 1.6, 2, 180)
+		e.Color = ColorSequence.new(Color3.fromRGB(220, 245, 255), Color3.fromRGB(110, 190, 255))
+		local mist = emitter(holder, TEX_SMOKE, Color3.fromRGB(220, 240, 255), 2.6 * k, 6, 1.8, 1, 90)
+		mist.Transparency = NumberSequence.new(0.7, 1)
+	elseif m.fx == "rainbow" then
+		local e = emitter(holder, TEX_SPARK, glow, 0.8 * k, 36, 1.6, 2.5, 180)
+		e.Color = RAINBOW
+		local tr = emitter(holder, TEX_SMOKE, glow, 3 * k, 14, 2.4, 0.4, 30)
+		tr.Color = RAINBOW
+		tr.Transparency = NumberSequence.new(0.55, 1)
+		tr.EmissionDirection = Enum.NormalId.Back
+	end
+	-- 머리 위 빛 고리 (구름은 몸 위)
+	local ringBone = rig.kind == "cloud" and "body" or "head"
+	local ringAt = rig.kind == "cloud" and CF(0, 1.2, 0) or CF(0, 1.4, 0.1)
+	local n = 14
+	for i = 1, n do
+		local a = (i - 1) / n * math.pi * 2
+		local col = glow
+		if m.fx == "rainbow" then
+			col = RAINBOW.Keypoints[(i - 1) % #RAINBOW.Keypoints + 1].Value
+		end
+		add(rig, ringBone, "ball", V(0.2, 0.2, 0.2), ringAt * CF(math.cos(a) * 0.95, 0, math.sin(a) * 0.95), col, Enum.Material.Neon, 0.05)
+	end
+end
+
 local function build(model: Model, id: string)
 	local m = Config.MOUNT_BY_ID[id]
 	if not m then
@@ -897,8 +971,9 @@ local function build(model: Model, id: string)
 	else
 		buildHorse(rig)
 	end
+	mythicFx(rig)
 	rigs[model] = rig
-	poof(model, m.mane, m.kind == "dragon")
+	poof(model, m.glow or m.mane, m.kind == "dragon" or m.mythic == true)
 end
 
 local function clear(model: Model, fx: boolean?)

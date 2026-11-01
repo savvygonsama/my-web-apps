@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.13.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.14.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3662,6 +3662,19 @@ Config.MOUNTS = {
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
 	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
 	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
+	-- 3.14판: 신화 업적 전용 탈것 (살 수 없다. 그 갈래의 신화 업적을 이루면 저절로 얻는다). 모두 날개구름보다 빠르다
+	{ id = "geumryong", name = "금룡", icon = "🐲", kind = "dragon", speed = 3.3, cost = 0, achOnly = true, mythic = true, fx = "gold",
+		color = Color3.fromRGB(236, 180, 50), mane = Color3.fromRGB(200, 34, 40), deep = Color3.fromRGB(150, 84, 18), belly = Color3.fromRGB(255, 242, 205), sheen = Color3.fromRGB(255, 232, 150), spirit = Color3.fromRGB(255, 200, 90), glow = Color3.fromRGB(255, 214, 110),
+		desc = "황금 비늘에 붉은 지느러미. 금빛 기운이 흘러내리는 황제의 용 (경지 신화 업적: 권왕 · 사환지존 · 윤회를 끊은 자)" },
+	{ id = "hyeolyeom", name = "혈염마", icon = "🐎", kind = "horse", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "flame",
+		color = Color3.fromRGB(22, 14, 16), mane = Color3.fromRGB(255, 70, 36), glow = Color3.fromRGB(255, 80, 40),
+		desc = "칠흑의 몸에 불타는 갈기. 발굽마다 핏빛 불꽃이 인다 (전투 신화 업적: 천하무적 · 보스의 악몽)" },
+	{ id = "cheonho", name = "천상 백호", icon = "🐅", kind = "tiger", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "frost",
+		color = Color3.fromRGB(236, 246, 255), mane = Color3.fromRGB(90, 170, 255), glow = Color3.fromRGB(150, 230, 255),
+		desc = "푸른 빛 줄무늬의 흰 범. 별빛 서리가 흩날린다 (권법·강호 신화 업적: 천하의 모든 권 · 시그니처의 주인 · 천상 심법)" },
+	{ id = "rainbowcloud", name = "무지개 구름", icon = "🌈", kind = "cloud", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "rainbow",
+		color = Color3.fromRGB(255, 246, 252), mane = Color3.fromRGB(255, 170, 220), glow = Color3.fromRGB(255, 200, 240),
+		desc = "일곱 빛깔이 도는 구름. 지나간 자리에 무지개가 남는다 (도전·비무 신화 업적: 재앙의 끝 · 구름의 왕 · 탑의 주인 · 강호 제일권)" },
 }
 Config.MOUNT_BY_ID = {}
 for _, m in ipairs(Config.MOUNTS) do
@@ -4178,11 +4191,11 @@ Config.ACHIEVEMENTS = {
 	{ id = "r9", icon = "⛰", name = "사경을 넘어", desc = "사경의 경지에 오른다", kind = "realm", n = 9, coins = 100000, title = "사경 고수" },
 	{ id = "r13", icon = "⛰", name = "무극", desc = "무극의 경지에 오른다", kind = "realm", n = 13, coins = 1000000, title = "무극" },
 	{ id = "r16", icon = "✴", name = "하늘 밖의 하늘", desc = "천외천의 경지에 오른다", kind = "realm", n = 16, coins = 5000000, scrolls = 10, title = "천외천" },
-	{ id = "r20", icon = "👑", name = "권왕", desc = "모든 경지의 끝, 권왕에 오른다", kind = "realm", n = 20, coins = 100000000, scrolls = 50, title = "권왕" },
+	{ id = "r20", icon = "👑", name = "권왕", desc = "모든 경지의 끝, 권왕에 오른다", kind = "realm", n = 20, coins = 100000000, scrolls = 50, title = "권왕", mount = "geumryong" },
 	{ id = "rb1", icon = "♻", name = "다시 태어나다", desc = "처음 환생한다", kind = "rebirth", n = 1, coins = 2000000, title = "환생자" },
 	{ id = "rb2", icon = "♻", name = "두 번째 삶", desc = "두 번 환생한다", kind = "rebirth", n = 2, coins = 5000000, scrolls = 10 },
 	{ id = "rb3", icon = "♻", name = "윤회의 바퀴", desc = "세 번 환생한다", kind = "rebirth", n = 3, coins = 12000000, scrolls = 15, title = "윤회자" },
-	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존" },
+	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존", mount = "geumryong" },
 	{ id = "s5", icon = "🥋", name = "다섯 갈래", desc = "권법 다섯을 익힌다", kind = "styles", n = 5, coins = 20000 },
 	{ id = "s15", icon = "🥋", name = "백가쟁명", desc = "권법 열다섯을 익힌다", kind = "styles", n = 15, coins = 1000000, title = "백가의 주인" },
 	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },
@@ -4192,37 +4205,37 @@ Config.ACHIEVEMENTS = {
 	{ id = "m10", icon = "✦", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
 	{ id = "tw30", icon = "🗼", name = "탑의 문턱", desc = "천층탑 30층에 오른다", kind = "tower", n = 30, coins = 20000 },
 	{ id = "tw100", icon = "🗼", name = "백층", desc = "천층탑 100층에 오른다", kind = "tower", n = 100, coins = 1000000, scrolls = 5, title = "백층 돌파" },
-	{ id = "tw150", icon = "🗼", name = "구름 위의 층", desc = "천층탑 150층에 오른다", kind = "tower", n = 150, coins = 10000000, scrolls = 15, title = "탑의 주인" },
+	{ id = "tw150", icon = "🗼", name = "구름 위의 층", desc = "천층탑 150층에 오른다", kind = "tower", n = 150, coins = 10000000, scrolls = 15, title = "탑의 주인", mount = "rainbowcloud" },
 	{ id = "pvp10", icon = "🏆", name = "비무 열 승", desc = "다른 무인을 열 번 이긴다", kind = "pvp", n = 10, coins = 50000 },
 	{ id = "pvp100", icon = "🏆", name = "비무왕", desc = "다른 무인을 백 번 이긴다", kind = "pvp", n = 100, coins = 2000000, title = "비무왕" },
 	{ id = "mst10", icon = "🧭", name = "사부를 찾아서", desc = "사부 열을 찾는다", kind = "masters", n = 10, coins = 200000, title = "구도자" },
 	{ id = "mnt4", icon = "🐎", name = "말 부자", desc = "탈것 넷을 가진다", kind = "mounts", n = 4, gems = 200 },
 	{ id = "man10", icon = "📜", name = "심법 수집가", desc = "심법 열을 가진다", kind = "manuals", n = 10, coins = 200000 },
 	-- 3.13판: 업적 확장 (tier: 1 일반 · 2 희귀 · 3 영웅 · 4 전설 · 5 신화. 높을수록 머리 위 칭호가 화려하다)
-	{ id = "k1m", icon = "💀", name = "천하무적", desc = "적 1,000,000을 쓰러뜨린다", kind = "kills", n = 1000000, coins = 30000000, scrolls = 30, title = "천하무적", tier = 5 },
-	{ id = "b5000", icon = "👹", name = "보스의 악몽", desc = "보스를 5,000번 쓰러뜨린다", kind = "bossSum", n = 5000, coins = 20000000, scrolls = 30, title = "보스의 악몽", tier = 5 },
+	{ id = "k1m", icon = "💀", name = "천하무적", desc = "적 1,000,000을 쓰러뜨린다", kind = "kills", n = 1000000, coins = 30000000, scrolls = 30, title = "천하무적", tier = 5, mount = "hyeolyeom" },
+	{ id = "b5000", icon = "👹", name = "보스의 악몽", desc = "보스를 5,000번 쓰러뜨린다", kind = "bossSum", n = 5000, coins = 20000000, scrolls = 30, title = "보스의 악몽", tier = 5, mount = "hyeolyeom" },
 	{ id = "seokwang", icon = "🪨", name = "돌을 깨다", desc = "석왕을 쓰러뜨린다", kind = "boss", arg = "seokwang", n = 1, coins = 60000, title = "돌을 깬 주먹", tier = 2 },
 	{ id = "gyunwang", icon = "🍄", name = "버섯 숲의 끝", desc = "균왕을 쓰러뜨린다", kind = "boss", arg = "gyunwang", n = 1, coins = 60000, tier = 2 },
 	{ id = "noeje", icon = "⚡", name = "벼락을 꺾다", desc = "뇌제를 쓰러뜨린다", kind = "boss", arg = "noeje", n = 1, gems = 400, title = "벼락을 꺾은 자", tier = 3 },
 	{ id = "yeombong", icon = "🔥", name = "불새를 떨구다", desc = "염봉을 쓰러뜨린다", kind = "boss", arg = "yeombong", n = 1, gems = 400, title = "불새를 떨군 자", tier = 3 },
-	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5 },
-	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5 },
+	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
+	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
-	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5 },
+	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5, mount = "geumryong" },
 	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
-	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5 },
+	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho" },
 	{ id = "rbs1", icon = "♾", name = "윤회의 권", desc = "환생 권법 하나를 익힌다", kind = "rebirthStyles", n = 1, coins = 5000000, title = "윤회의 권", tier = 3 },
 	{ id = "m25", icon = "✦", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
 	{ id = "gear5", icon = "🎐", name = "장신구 수집가", desc = "시그니처 장신구가 있는 권법 다섯을 익힌다", kind = "gear", n = 5, gems = 800, title = "장신구 수집가", tier = 3 },
-	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5 },
+	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5, mount = "cheonho" },
 	{ id = "tint3", icon = "🌌", name = "천상의 빛깔", desc = "장신구 셋을 천상 빛깔로 물들인다", kind = "tint", n = 3, gems = 600, title = "천상의 빛깔", tier = 3 },
 	{ id = "aura1", icon = "💫", name = "별을 두르다", desc = "천상 오라를 얻는다", kind = "aura", n = 1, gems = 300, title = "별을 두른 자", tier = 4 },
 	{ id = "manLeg", icon = "📜", name = "심법의 대가", desc = "전설 등급 심법을 가진다", kind = "manualTop", n = 4, coins = 1000000, title = "심법의 대가", tier = 3 },
-	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5 },
+	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5, mount = "cheonho" },
 	{ id = "egg1", icon = "🔍", name = "호기심", desc = "강호에 숨은 것 하나를 찾는다", kind = "eggs", n = 1, coins = 77777, tier = 2 },
 	{ id = "egg4", icon = "🔍", name = "숨은 것을 찾는 자", desc = "강호에 숨은 것 넷을 모두 찾는다 (돌탑 일곱·고양이·오리 가족·바위의 검)", kind = "eggs", n = 4, coins = 7777777, scrolls = 7, title = "숨은 것을 찾는 자", tier = 4 },
-	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5 },
+	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5, mount = "rainbowcloud" },
 }
 -- 3.13판: 업적 등급 (칭호의 화려함) · 갈래
 Config.ACH_TIERS = {

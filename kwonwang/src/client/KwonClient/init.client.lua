@@ -2367,6 +2367,10 @@ function handlers.ach(data: any)
 	if a.title then
 		table.insert(parts, "칭호 「" .. a.title .. "」 (🏆 업적에서 달기)")
 	end
+	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
+	if mt then
+		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (🐎 탈것 창에서 고르기)")
+	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1
 	local T = Config.ACH_TIERS[tier]
