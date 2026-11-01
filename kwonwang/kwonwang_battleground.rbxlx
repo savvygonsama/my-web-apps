@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.16.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.16.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2989,7 +2989,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "gongbaek" then
 		local red = Color3.fromRGB(230, 40, 60)
-		st.trialIntro = { title = "null", text = "...ㄴ...ㅓ...는 누구지. 아니, 나는 누구였지. 내가 지워지기 전에 나를 이겨 봐. 그러면 이 빈칸은 네 것이다." }
+		st.trialIntro = { title = "???", text = "..." }
 		st.trialBoss = { hp = 3700, posture = 780, scale = 1.5, reach = 1.5, speed = 26, patterns = {
 			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
 			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 40, 50, 0.9, 30) }),
@@ -4009,8 +4009,11 @@ Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vect
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
 -- 3.8판 공백권: 세상의 남동쪽 끝, 지도에 그려지지 않은 '빈칸'에 선 이름 없는 자 (이스터에그, 지도·이야기에 나오지 않는다)
 Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
-Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
-	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
+-- 3.16.3판: 이름 없는 자는 빛나는 장식 없이, 큰 바위 바로 옆에 기대어 서 있는 수수한 사람이다 (멀리서는 잘 안 보인다)
+--   plain: 발밑 진 없음 · 이름표는 가까이 가야 보인다 · 수수한 빛깔. lean: 바위 쪽 (오른쪽)으로 기운 각도, rock: 바위까지 거리
+Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 0.05, 0), region = "???", regionId = "null", secret = true,
+	plain = true, lean = 11, rock = 6.3,
+	quote = "...", rumor = "...세상 남동쪽 끝, 큰 바위 옆에 누가 서 있다는데, 말을 들은 사람은 없다더라" }
 -- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
@@ -17533,12 +17536,16 @@ local function dressMaster(model: Model, style: any)
 		end
 		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "gongbaek" then
-		-- 이름 없는 자: 얼굴이 검게 지워졌고, 흰 점 둘만 보인다. 가슴을 가로지르는 붉은 잡음 줄
-		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(10, 10, 14), Enum.Material.SmoothPlastic)
-		for _, x in ipairs({ -1, 1 }) do
-			wear(model, "Head", "VoidEye", Vector3.new(0.14, 0.14, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.56), Color3.fromRGB(245, 245, 250), Enum.Material.Neon)
+		-- 3.16.3판 이름 없는 자: 빛나는 것 없이 수수하다. 잿빛 두건을 깊게 눌러써서 얼굴이 그늘에 잠겼고, 낡은 목도리와 해진 겉옷
+		local HOOD = Color3.fromRGB(70, 69, 68)
+		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.18, hs.Y * 1.12, hs.Z * 1.2), CFrame.new(0, hs.Y * 0.08, hs.Z * 0.06), HOOD, Enum.Material.Fabric)
+		wear(model, "Head", "HoodBrim", Vector3.new(hs.X * 1.2, hs.Y * 0.22, hs.Z * 0.35), CFrame.new(0, hs.Y * 0.42, -hs.Z * 0.5) * CFrame.Angles(math.rad(-12), 0, 0), HOOD, Enum.Material.Fabric)
+		wear(model, "Head", "FaceShade", Vector3.new(hs.X * 0.9, hs.Y * 0.62, 0.05), CFrame.new(0, hs.Y * 0.12, -hs.Z * 0.55), Color3.fromRGB(26, 25, 25), Enum.Material.SmoothPlastic)
+		wear(model, "UpperTorso", "Scarf", Vector3.new(2.3, 0.55, 1.35), CFrame.new(0, 0.85, 0), Color3.fromRGB(96, 92, 86), Enum.Material.Fabric)
+		wear(model, "UpperTorso", "ScarfTail", Vector3.new(0.5, 1.4, 0.15), CFrame.new(0.5, 0.2, -0.62) * CFrame.Angles(0, 0, math.rad(6)), Color3.fromRGB(96, 92, 86), Enum.Material.Fabric)
+		for _, z in ipairs({ -1, 1 }) do
+			wear(model, "LowerTorso", "TornCoat", Vector3.new(2.1, 2.2, 0.15), CFrame.new(0, -1.25, z * 0.56), Color3.fromRGB(74, 73, 70), Enum.Material.Fabric)
 		end
-		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "hojeop" then
 		-- 몽선: 흰 수염의 졸린 노인, 남색 잠꼬깔 (끝에 별 방울), 등 뒤의 창백한 초승달, 손에 든 작은 달 등불
 		beard(WHITE_HAIR)
@@ -17621,7 +17628,10 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 		if info then
 			local ok, err = pcall(function()
 				local s = 1.2
-				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
+				-- 3.16.3판: plain 사부는 수수한 잿빛 옷 (멀리서 눈에 띄지 않게)
+				local cols = info.plain and { head = SKIN, torso = Color3.fromRGB(78, 78, 80), arms = Color3.fromRGB(88, 87, 86), legs = Color3.fromRGB(58, 57, 56) }
+					or { head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }
+				local model = body(cols, s)
 				model.Name = "Master_" .. style.id
 				local hum = model:FindFirstChildOfClass("Humanoid")
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
@@ -17636,7 +17646,7 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					local sash = Instance.new("Part")
 					sash.Name = "Sash"
 					sash.Size = Vector3.new(lower.Size.X * 1.08, 0.35, lower.Size.Z * 1.15)
-					sash.Color = style.color2
+					sash.Color = info.plain and Color3.fromRGB(64, 62, 60) or style.color2
 					sash.Material = Enum.Material.Fabric
 					sash.CanCollide = false
 					sash.CanQuery = false
@@ -17654,14 +17664,19 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 				local face = Vector3.new(0, at.Y, 0) - at
 				face = Vector3.new(face.X, 0, face.Z)
 				local pos = at + Vector3.new(0, up, 0)
-				model:PivotTo(CFrame.lookAt(pos, pos + (face.Magnitude > 1 and face.Unit or Vector3.new(0, 0, 1))))
+				local base = CFrame.lookAt(pos, pos + (face.Magnitude > 1 and face.Unit or Vector3.new(0, 0, 1)))
+				if info.lean then
+					-- 오른쪽 바위에 기대어 선다 (발을 축으로 몸을 오른쪽으로 기울인다)
+					base = base * CFrame.new(0, -up, 0) * CFrame.Angles(0, 0, -math.rad(info.lean)) * CFrame.new(0, up, 0)
+				end
+				model:PivotTo(base)
 				root.Anchored = true
 				model:SetAttribute("NPC", true)
 				model:SetAttribute("Master", true)
-				model:SetAttribute("Awaken", 2)
+				model:SetAttribute("Awaken", info.plain and 0 or 2)
 				model:SetAttribute("Quote", info.quote)
-				-- 발밑의 빛나는 진
-				for i, r in ipairs({ 5, 3.2 }) do
+				-- 발밑의 빛나는 진 (plain 사부는 없다)
+				for i, r in ipairs(info.plain and {} or { 5, 3.2 }) do
 					local sig = Instance.new("Part")
 					sig.Name = "MasterSigil"
 					sig.Anchored = true
@@ -17675,11 +17690,22 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					sig.Transparency = i == 1 and 0.55 or 0.7
 					sig.Parent = mf
 				end
-				model:SetAttribute("Style", style.id)
+				-- plain 사부는 권법 자세·기운 구슬·시범·장신구 없이 그냥 서 있다 (Style을 달지 않는다)
+				if info.plain then
+					model:SetAttribute("Plain", true)
+				else
+					model:SetAttribute("Style", style.id)
+				end
 				model:SetAttribute("Label", info.name)
 				local head = model:FindFirstChild("Head")
 				if head and head:IsA("BasePart") then
 					masterTag(head, info.name, style)
+					local tag = head:FindFirstChild("MasterTag")
+					if info.plain and tag and tag:IsA("BillboardGui") then
+						-- 가까이 가야 이름표가 보인다
+						tag.MaxDistance = 22
+						tag.AlwaysOnTop = false
+					end
 				end
 				local pp = Instance.new("ProximityPrompt")
 				pp.Name = "Master"
@@ -25288,6 +25314,11 @@ local function terrainHills()
 		if sm and Vector3.new(p.X - sm.at.X, 0, p.Z - sm.at.Z).Magnitude < 160 + pad then
 			return true
 		end
+		-- 3.16.3판: 세상 끝 벼랑 너머 (돌길·바다·떠 있는 정원)는 산이 덮지 않는다 (예전엔 정원과 격자지기가 산 속에 묻혔다)
+		local eg = Config.EGGS and Config.EGGS.edge
+		if eg and Vector3.new(p.X - eg.garden.X, 0, p.Z - eg.garden.Z).Magnitude < 700 then
+			return true
+		end
 		return false
 	end
 	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
@@ -26792,51 +26823,32 @@ local function questProps(out: any)
 	end
 end
 
--- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳. 흰 격자의 검은 바닥, 떠 있는 '빠진 무늬' 상자 (자홍·검정 바둑판),
--- 붉은 테의 깨진 검은 판, 'null' 팻말. 이름 없는 자가 가운데 서 있다
+-- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳.
+-- 3.16.3판: 흰 격자 바닥·빠진 무늬 상자·깨진 판·null 팻말을 모두 걷었다. 그냥 들판에 큰 바위 하나, 그 바로 옆에 이름 없는 자가 기대어 서 있다
 local function nullSpot()
 	local at = Config.NULL_SPOT
-	if not at then
+	local m = Config.MASTERS.gongbaek
+	if not at or not m then
 		return
 	end
 	local f = Instance.new("Folder")
 	f.Name = "NullSpot"
 	f.Parent = folder
-	local BLACK = Color3.fromRGB(14, 14, 18)
-	local MAGENTA = Color3.fromRGB(255, 0, 220)
-	local RED = Color3.fromRGB(230, 40, 60)
-	disc("NullFloor", at + Vector3.new(0, 0.2, 0), 24, 0.4, BLACK, Enum.Material.SmoothPlastic, f)
-	for k = -4, 4 do
-		local len = 2 * math.sqrt(math.max(0, 24 * 24 - (k * 5) ^ 2)) - 2
-		part({ Name = "NullGridX", Size = Vector3.new(len, 0.05, 0.12), Position = at + Vector3.new(0, 0.43, k * 5), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
-		part({ Name = "NullGridZ", Size = Vector3.new(0.12, 0.05, len), Position = at + Vector3.new(k * 5, 0.43, 0), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
-	end
-	-- 빠진 무늬 상자 (작은 상자 여덟이 바둑판으로)
+	-- 사부가 보는 쪽 (세상 가운데)의 오른쪽에 바위
+	local face = Vector3.new(-at.X, 0, -at.Z).Unit
+	local right = Vector3.new(-face.Z, 0, face.X)
+	local c = Vector3.new(at.X, 0, at.Z) + right * (m.rock or 6.3)
+	local ROCK = Color3.fromRGB(112, 110, 104)
+	local ROCK2 = Color3.fromRGB(96, 95, 90)
+	part({ Name = "LeanRock", Shape = Enum.PartType.Ball, Size = Vector3.new(9, 9, 9), Position = c + Vector3.new(0, 3.2, 0), Color = ROCK, Material = Enum.Material.Rock, Parent = f })
+	part({ Name = "LeanRockBack", Size = Vector3.new(7, 7.5, 8), CFrame = CFrame.new(c + right * 2.2 - face * 2 + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0.15, 0.6, -0.12), Color = ROCK2, Material = Enum.Material.Rock, Parent = f })
+	part({ Name = "LeanRockSmall", Size = Vector3.new(3, 2.2, 2.6), CFrame = CFrame.new(c + face * 4.2 + right * 1.5 + Vector3.new(0, 0.8, 0)) * CFrame.Angles(0.2, 1.1, 0.1), Color = ROCK, Material = Enum.Material.Rock, Parent = f })
+	-- 바위 밑의 이끼와 풀 몇 포기
+	part({ Name = "LeanMoss", Size = Vector3.new(5, 0.3, 4), CFrame = CFrame.new(c + face * 1.5 + Vector3.new(0, 7.2, 0)) * CFrame.Angles(0.3, 0.4, -0.2), Color = Color3.fromRGB(92, 120, 70), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 	for k = 0, 4 do
-		local a = k / 5 * math.pi * 2 + 0.3
-		local c = at + Vector3.new(math.cos(a) * 17, 5 + (k % 3) * 3.5, math.sin(a) * 17)
-		local rot = CFrame.Angles(k * 0.7, k * 1.1, k * 0.4)
-		local s = 1.2 + (k % 2) * 0.4
-		for x = 0, 1 do
-			for y = 0, 1 do
-				for z = 0, 1 do
-					part({ Name = "MissingCube", Size = Vector3.new(s, s, s), CFrame = CFrame.new(c) * rot * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s), Color = ((x + y + z) % 2 == 0) and MAGENTA or BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-				end
-			end
-		end
+		local a = k / 5 * math.pi * 2 + 0.4
+		part({ Name = "LeanGrass", Size = Vector3.new(0.3, 1.4 + (k % 2) * 0.6, 0.3), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 5.2, 0.6, math.sin(a) * 5.2)) * CFrame.Angles(0.2, a, 0.15), Color = Color3.fromRGB(110, 140, 80), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 	end
-	-- 깨진 검은 판 (붉은 테)
-	for k = 0, 5 do
-		local a = k / 6 * math.pi * 2 + 0.8
-		local c = at + Vector3.new(math.cos(a) * 26, 3 + (k % 2) * 2, math.sin(a) * 26)
-		local cf = CFrame.lookAt(c, at + Vector3.new(0, c.Y - at.Y, 0)) * CFrame.Angles(0, 0, math.rad(-8 + k * 4))
-		part({ Name = "BrokenPanel", Size = Vector3.new(4.5 + k % 3, 3 + k % 2, 0.2), CFrame = cf, Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-		part({ Name = "BrokenEdge", Size = Vector3.new(4.6 + k % 3, 0.12, 0.22), CFrame = cf * CFrame.new(0, (3 + k % 2) / 2, 0), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	end
-	local post = part({ Name = "NullPost", Size = Vector3.new(0.5, 4, 0.5), Position = at + Vector3.new(0, 2, 27), Color = BLACK, Material = Enum.Material.SmoothPlastic, Parent = f })
-	local board = part({ Name = "NullSign", Size = Vector3.new(5, 2, 0.3), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.4, 27), at + Vector3.new(0, 4.4, 40)), Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-	sign(board, Enum.NormalId.Front, { { "null", Color3.fromRGB(240, 240, 245), 1 } })
-	post.Transparency = 0
 end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 돌 마당 (한 변 340칸). 낮은 담, 바닥의 줄, 작은 목인 줄과 큰 목인 줄의 팻말,
@@ -29023,6 +29035,11 @@ task.spawn(function()
 		for _, m in ipairs(masters:GetChildren()) do
 			local root = m:FindFirstChild("HumanoidRootPart")
 			local style = Config.STYLE_BY_ID[m:GetAttribute("Style") :: any]
+			-- 3.16.3판: 바위에 기댄 수수한 사부는 가까이 가면 "..." 한마디뿐
+			if m:GetAttribute("Plain") == true and me and me:IsA("BasePart") and root and root:IsA("BasePart") and (root.Position - me.Position).Magnitude < 18 and os.clock() >= (nextSpeak[m] or 0) then
+				nextSpeak[m] = os.clock() + 30
+				speak(m :: Model, tostring(m:GetAttribute("Quote") or ""), Color3.fromRGB(140, 138, 134))
+			end
 			if me and me:IsA("BasePart") and root and root:IsA("BasePart") and style and (root.Position - me.Position).Magnitude < 70 then
 				local t = os.clock()
 				local dist = (root.Position - me.Position).Magnitude

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.16.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.16.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2969,7 +2969,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "gongbaek" then
 		local red = Color3.fromRGB(230, 40, 60)
-		st.trialIntro = { title = "null", text = "...ㄴ...ㅓ...는 누구지. 아니, 나는 누구였지. 내가 지워지기 전에 나를 이겨 봐. 그러면 이 빈칸은 네 것이다." }
+		st.trialIntro = { title = "???", text = "..." }
 		st.trialBoss = { hp = 3700, posture = 780, scale = 1.5, reach = 1.5, speed = 26, patterns = {
 			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
 			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 40, 50, 0.9, 30) }),
@@ -3989,8 +3989,11 @@ Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vect
 	quote = "바다를 다 안다고? 그 바다의 바닥에는 아직 고래가 헤엄친다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
 -- 3.8판 공백권: 세상의 남동쪽 끝, 지도에 그려지지 않은 '빈칸'에 선 이름 없는 자 (이스터에그, 지도·이야기에 나오지 않는다)
 Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
-Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 2.0, 0), region = "???", regionId = "null", secret = true,
-	quote = "null", rumor = "...(알 수 없는 글자가 지직거린다)" }
+-- 3.16.3판: 이름 없는 자는 빛나는 장식 없이, 큰 바위 바로 옆에 기대어 서 있는 수수한 사람이다 (멀리서는 잘 안 보인다)
+--   plain: 발밑 진 없음 · 이름표는 가까이 가야 보인다 · 수수한 빛깔. lean: 바위 쪽 (오른쪽)으로 기운 각도, rock: 바위까지 거리
+Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0, 0.05, 0), region = "???", regionId = "null", secret = true,
+	plain = true, lean = 11, rock = 6.3,
+	quote = "...", rumor = "...세상 남동쪽 끝, 큰 바위 옆에 누가 서 있다는데, 말을 들은 사람은 없다더라" }
 -- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
 	quote = "흐아암... 나는 지금 꿈을 꾸는 걸까, 꿈이 나를 꾸는 걸까.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }

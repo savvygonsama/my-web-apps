@@ -2690,6 +2690,11 @@ local function terrainHills()
 		if sm and Vector3.new(p.X - sm.at.X, 0, p.Z - sm.at.Z).Magnitude < 160 + pad then
 			return true
 		end
+		-- 3.16.3판: 세상 끝 벼랑 너머 (돌길·바다·떠 있는 정원)는 산이 덮지 않는다 (예전엔 정원과 격자지기가 산 속에 묻혔다)
+		local eg = Config.EGGS and Config.EGGS.edge
+		if eg and Vector3.new(p.X - eg.garden.X, 0, p.Z - eg.garden.Z).Magnitude < 700 then
+			return true
+		end
 		return false
 	end
 	-- 세상 끝 산맥 (북쪽은 눈, 동쪽은 붉은 바위, 서쪽은 바다라 낮게)
@@ -4194,51 +4199,32 @@ local function questProps(out: any)
 	end
 end
 
--- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳. 흰 격자의 검은 바닥, 떠 있는 '빠진 무늬' 상자 (자홍·검정 바둑판),
--- 붉은 테의 깨진 검은 판, 'null' 팻말. 이름 없는 자가 가운데 서 있다
+-- 3.8판 빈칸: 세상의 남동쪽 끝, 지도에 그려지지 않은 곳.
+-- 3.16.3판: 흰 격자 바닥·빠진 무늬 상자·깨진 판·null 팻말을 모두 걷었다. 그냥 들판에 큰 바위 하나, 그 바로 옆에 이름 없는 자가 기대어 서 있다
 local function nullSpot()
 	local at = Config.NULL_SPOT
-	if not at then
+	local m = Config.MASTERS.gongbaek
+	if not at or not m then
 		return
 	end
 	local f = Instance.new("Folder")
 	f.Name = "NullSpot"
 	f.Parent = folder
-	local BLACK = Color3.fromRGB(14, 14, 18)
-	local MAGENTA = Color3.fromRGB(255, 0, 220)
-	local RED = Color3.fromRGB(230, 40, 60)
-	disc("NullFloor", at + Vector3.new(0, 0.2, 0), 24, 0.4, BLACK, Enum.Material.SmoothPlastic, f)
-	for k = -4, 4 do
-		local len = 2 * math.sqrt(math.max(0, 24 * 24 - (k * 5) ^ 2)) - 2
-		part({ Name = "NullGridX", Size = Vector3.new(len, 0.05, 0.12), Position = at + Vector3.new(0, 0.43, k * 5), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
-		part({ Name = "NullGridZ", Size = Vector3.new(0.12, 0.05, len), Position = at + Vector3.new(k * 5, 0.43, 0), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Neon, CanCollide = false, Parent = f }).Transparency = 0.55
-	end
-	-- 빠진 무늬 상자 (작은 상자 여덟이 바둑판으로)
+	-- 사부가 보는 쪽 (세상 가운데)의 오른쪽에 바위
+	local face = Vector3.new(-at.X, 0, -at.Z).Unit
+	local right = Vector3.new(-face.Z, 0, face.X)
+	local c = Vector3.new(at.X, 0, at.Z) + right * (m.rock or 6.3)
+	local ROCK = Color3.fromRGB(112, 110, 104)
+	local ROCK2 = Color3.fromRGB(96, 95, 90)
+	part({ Name = "LeanRock", Shape = Enum.PartType.Ball, Size = Vector3.new(9, 9, 9), Position = c + Vector3.new(0, 3.2, 0), Color = ROCK, Material = Enum.Material.Rock, Parent = f })
+	part({ Name = "LeanRockBack", Size = Vector3.new(7, 7.5, 8), CFrame = CFrame.new(c + right * 2.2 - face * 2 + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0.15, 0.6, -0.12), Color = ROCK2, Material = Enum.Material.Rock, Parent = f })
+	part({ Name = "LeanRockSmall", Size = Vector3.new(3, 2.2, 2.6), CFrame = CFrame.new(c + face * 4.2 + right * 1.5 + Vector3.new(0, 0.8, 0)) * CFrame.Angles(0.2, 1.1, 0.1), Color = ROCK, Material = Enum.Material.Rock, Parent = f })
+	-- 바위 밑의 이끼와 풀 몇 포기
+	part({ Name = "LeanMoss", Size = Vector3.new(5, 0.3, 4), CFrame = CFrame.new(c + face * 1.5 + Vector3.new(0, 7.2, 0)) * CFrame.Angles(0.3, 0.4, -0.2), Color = Color3.fromRGB(92, 120, 70), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 	for k = 0, 4 do
-		local a = k / 5 * math.pi * 2 + 0.3
-		local c = at + Vector3.new(math.cos(a) * 17, 5 + (k % 3) * 3.5, math.sin(a) * 17)
-		local rot = CFrame.Angles(k * 0.7, k * 1.1, k * 0.4)
-		local s = 1.2 + (k % 2) * 0.4
-		for x = 0, 1 do
-			for y = 0, 1 do
-				for z = 0, 1 do
-					part({ Name = "MissingCube", Size = Vector3.new(s, s, s), CFrame = CFrame.new(c) * rot * CFrame.new((x - 0.5) * s, (y - 0.5) * s, (z - 0.5) * s), Color = ((x + y + z) % 2 == 0) and MAGENTA or BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-				end
-			end
-		end
+		local a = k / 5 * math.pi * 2 + 0.4
+		part({ Name = "LeanGrass", Size = Vector3.new(0.3, 1.4 + (k % 2) * 0.6, 0.3), CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 5.2, 0.6, math.sin(a) * 5.2)) * CFrame.Angles(0.2, a, 0.15), Color = Color3.fromRGB(110, 140, 80), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 	end
-	-- 깨진 검은 판 (붉은 테)
-	for k = 0, 5 do
-		local a = k / 6 * math.pi * 2 + 0.8
-		local c = at + Vector3.new(math.cos(a) * 26, 3 + (k % 2) * 2, math.sin(a) * 26)
-		local cf = CFrame.lookAt(c, at + Vector3.new(0, c.Y - at.Y, 0)) * CFrame.Angles(0, 0, math.rad(-8 + k * 4))
-		part({ Name = "BrokenPanel", Size = Vector3.new(4.5 + k % 3, 3 + k % 2, 0.2), CFrame = cf, Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-		part({ Name = "BrokenEdge", Size = Vector3.new(4.6 + k % 3, 0.12, 0.22), CFrame = cf * CFrame.new(0, (3 + k % 2) / 2, 0), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	end
-	local post = part({ Name = "NullPost", Size = Vector3.new(0.5, 4, 0.5), Position = at + Vector3.new(0, 2, 27), Color = BLACK, Material = Enum.Material.SmoothPlastic, Parent = f })
-	local board = part({ Name = "NullSign", Size = Vector3.new(5, 2, 0.3), CFrame = CFrame.lookAt(at + Vector3.new(0, 4.4, 27), at + Vector3.new(0, 4.4, 40)), Color = BLACK, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
-	sign(board, Enum.NormalId.Front, { { "null", Color3.fromRGB(240, 240, 245), 1 } })
-	post.Transparency = 0
 end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 돌 마당 (한 변 340칸). 낮은 담, 바닥의 줄, 작은 목인 줄과 큰 목인 줄의 팻말,

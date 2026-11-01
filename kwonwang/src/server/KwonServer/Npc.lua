@@ -683,12 +683,16 @@ local function dressMaster(model: Model, style: any)
 		end
 		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "gongbaek" then
-		-- 이름 없는 자: 얼굴이 검게 지워졌고, 흰 점 둘만 보인다. 가슴을 가로지르는 붉은 잡음 줄
-		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(10, 10, 14), Enum.Material.SmoothPlastic)
-		for _, x in ipairs({ -1, 1 }) do
-			wear(model, "Head", "VoidEye", Vector3.new(0.14, 0.14, 0.05), CFrame.new(x * hs.X * 0.18, hs.Y * 0.08, -hs.Z * 0.56), Color3.fromRGB(245, 245, 250), Enum.Material.Neon)
+		-- 3.16.3판 이름 없는 자: 빛나는 것 없이 수수하다. 잿빛 두건을 깊게 눌러써서 얼굴이 그늘에 잠겼고, 낡은 목도리와 해진 겉옷
+		local HOOD = Color3.fromRGB(70, 69, 68)
+		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.18, hs.Y * 1.12, hs.Z * 1.2), CFrame.new(0, hs.Y * 0.08, hs.Z * 0.06), HOOD, Enum.Material.Fabric)
+		wear(model, "Head", "HoodBrim", Vector3.new(hs.X * 1.2, hs.Y * 0.22, hs.Z * 0.35), CFrame.new(0, hs.Y * 0.42, -hs.Z * 0.5) * CFrame.Angles(math.rad(-12), 0, 0), HOOD, Enum.Material.Fabric)
+		wear(model, "Head", "FaceShade", Vector3.new(hs.X * 0.9, hs.Y * 0.62, 0.05), CFrame.new(0, hs.Y * 0.12, -hs.Z * 0.55), Color3.fromRGB(26, 25, 25), Enum.Material.SmoothPlastic)
+		wear(model, "UpperTorso", "Scarf", Vector3.new(2.3, 0.55, 1.35), CFrame.new(0, 0.85, 0), Color3.fromRGB(96, 92, 86), Enum.Material.Fabric)
+		wear(model, "UpperTorso", "ScarfTail", Vector3.new(0.5, 1.4, 0.15), CFrame.new(0.5, 0.2, -0.62) * CFrame.Angles(0, 0, math.rad(6)), Color3.fromRGB(96, 92, 86), Enum.Material.Fabric)
+		for _, z in ipairs({ -1, 1 }) do
+			wear(model, "LowerTorso", "TornCoat", Vector3.new(2.1, 2.2, 0.15), CFrame.new(0, -1.25, z * 0.56), Color3.fromRGB(74, 73, 70), Enum.Material.Fabric)
 		end
-		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "hojeop" then
 		-- 몽선: 흰 수염의 졸린 노인, 남색 잠꼬깔 (끝에 별 방울), 등 뒤의 창백한 초승달, 손에 든 작은 달 등불
 		beard(WHITE_HAIR)
@@ -771,7 +775,10 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 		if info then
 			local ok, err = pcall(function()
 				local s = 1.2
-				local model = body({ head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }, s)
+				-- 3.16.3판: plain 사부는 수수한 잿빛 옷 (멀리서 눈에 띄지 않게)
+				local cols = info.plain and { head = SKIN, torso = Color3.fromRGB(78, 78, 80), arms = Color3.fromRGB(88, 87, 86), legs = Color3.fromRGB(58, 57, 56) }
+					or { head = SKIN, torso = style.color:Lerp(Color3.new(1, 1, 1), 0.1), arms = style.color:Lerp(Color3.new(1, 1, 1), 0.25), legs = style.color:Lerp(Color3.new(0, 0, 0), 0.55) }
+				local model = body(cols, s)
 				model.Name = "Master_" .. style.id
 				local hum = model:FindFirstChildOfClass("Humanoid")
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
@@ -786,7 +793,7 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					local sash = Instance.new("Part")
 					sash.Name = "Sash"
 					sash.Size = Vector3.new(lower.Size.X * 1.08, 0.35, lower.Size.Z * 1.15)
-					sash.Color = style.color2
+					sash.Color = info.plain and Color3.fromRGB(64, 62, 60) or style.color2
 					sash.Material = Enum.Material.Fabric
 					sash.CanCollide = false
 					sash.CanQuery = false
@@ -804,14 +811,19 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 				local face = Vector3.new(0, at.Y, 0) - at
 				face = Vector3.new(face.X, 0, face.Z)
 				local pos = at + Vector3.new(0, up, 0)
-				model:PivotTo(CFrame.lookAt(pos, pos + (face.Magnitude > 1 and face.Unit or Vector3.new(0, 0, 1))))
+				local base = CFrame.lookAt(pos, pos + (face.Magnitude > 1 and face.Unit or Vector3.new(0, 0, 1)))
+				if info.lean then
+					-- 오른쪽 바위에 기대어 선다 (발을 축으로 몸을 오른쪽으로 기울인다)
+					base = base * CFrame.new(0, -up, 0) * CFrame.Angles(0, 0, -math.rad(info.lean)) * CFrame.new(0, up, 0)
+				end
+				model:PivotTo(base)
 				root.Anchored = true
 				model:SetAttribute("NPC", true)
 				model:SetAttribute("Master", true)
-				model:SetAttribute("Awaken", 2)
+				model:SetAttribute("Awaken", info.plain and 0 or 2)
 				model:SetAttribute("Quote", info.quote)
-				-- 발밑의 빛나는 진
-				for i, r in ipairs({ 5, 3.2 }) do
+				-- 발밑의 빛나는 진 (plain 사부는 없다)
+				for i, r in ipairs(info.plain and {} or { 5, 3.2 }) do
 					local sig = Instance.new("Part")
 					sig.Name = "MasterSigil"
 					sig.Anchored = true
@@ -825,11 +837,22 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 					sig.Transparency = i == 1 and 0.55 or 0.7
 					sig.Parent = mf
 				end
-				model:SetAttribute("Style", style.id)
+				-- plain 사부는 권법 자세·기운 구슬·시범·장신구 없이 그냥 서 있다 (Style을 달지 않는다)
+				if info.plain then
+					model:SetAttribute("Plain", true)
+				else
+					model:SetAttribute("Style", style.id)
+				end
 				model:SetAttribute("Label", info.name)
 				local head = model:FindFirstChild("Head")
 				if head and head:IsA("BasePart") then
 					masterTag(head, info.name, style)
+					local tag = head:FindFirstChild("MasterTag")
+					if info.plain and tag and tag:IsA("BillboardGui") then
+						-- 가까이 가야 이름표가 보인다
+						tag.MaxDistance = 22
+						tag.AlwaysOnTop = false
+					end
 				end
 				local pp = Instance.new("ProximityPrompt")
 				pp.Name = "Master"

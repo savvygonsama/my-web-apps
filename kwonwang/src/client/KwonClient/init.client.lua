@@ -309,6 +309,11 @@ task.spawn(function()
 		for _, m in ipairs(masters:GetChildren()) do
 			local root = m:FindFirstChild("HumanoidRootPart")
 			local style = Config.STYLE_BY_ID[m:GetAttribute("Style") :: any]
+			-- 3.16.3판: 바위에 기댄 수수한 사부는 가까이 가면 "..." 한마디뿐
+			if m:GetAttribute("Plain") == true and me and me:IsA("BasePart") and root and root:IsA("BasePart") and (root.Position - me.Position).Magnitude < 18 and os.clock() >= (nextSpeak[m] or 0) then
+				nextSpeak[m] = os.clock() + 30
+				speak(m :: Model, tostring(m:GetAttribute("Quote") or ""), Color3.fromRGB(140, 138, 134))
+			end
 			if me and me:IsA("BasePart") and root and root:IsA("BasePart") and style and (root.Position - me.Position).Magnitude < 70 then
 				local t = os.clock()
 				local dist = (root.Position - me.Position).Magnitude
