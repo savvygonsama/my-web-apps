@@ -3865,6 +3865,117 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "coordSlash" then
+		-- 3.16.2판 극 공백권 좌표선 (E): 앞의 허공에 좌표축 n줄이 별 모양으로 그어지고, 줄을 따라 공간이 어긋났다가 다시 붙는다
+		local center = f.root.Position + look * m.dist
+		local right = rightOf(look)
+		local segs = {}
+		for i = 0, m.n - 1 do
+			local a = math.rad(i * 180 / m.n)
+			local dir = look * math.cos(a) + right * math.sin(a)
+			table.insert(segs, { center - dir * m.len / 2, center + dir * m.len / 2 })
+		end
+		Push:FireAllClients("skillfx", { kind = "coordSlash", at = center, segs = segs, delay = m.delay / sp, seamAt = m.seamAt / sp, style = style })
+		local function onLines(width: number): { any }
+			local seen, out = {}, {}
+			for _, s in ipairs(segs) do
+				for _, o in ipairs(hostilesOnSeg(f, s[1], s[2], width)) do
+					if not seen[o] then
+						seen[o] = true
+						table.insert(out, o)
+					end
+				end
+			end
+			return out
+		end
+		after(m.delay, function()
+			for _, o in ipairs(onLines(m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(m.delay + m.seamAt, function()
+			for _, o in ipairs(onLines(m.width + 1)) do
+				strike(f, o, scaled(m.seam, sc), move)
+			end
+		end)
+	elseif kind == "coordSwap" then
+		-- 3.16.2판 극 공백권 좌표 교환 (R): 나와 적을 흰 격자 상자에 가두고 좌표를 맞바꾼다 (무적). 바뀐 자리의 상자가 오그라들며 터진다
+		local list = nearestList(f, m.range, m.n)
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + #list * m.every + m.implode + 0.2) / sp)
+		Push:FireAllClients("skillfx", { kind = "coordSwap", m = f.model, from = f.root.Position, targets = modelsOf(list), delay = m.delay / sp, every = m.every / sp, implode = m.implode / sp, radius = m.radius, style = style })
+		for i, o in ipairs(list) do
+			after(m.delay + (i - 1) * m.every, function()
+				if o.dead or f.dead or not o.root.Parent then
+					return
+				end
+				local mine, theirs = f.root.Position, o.root.Position
+				moveTo(f, CFrame.lookAt(theirs, theirs + flat(mine - theirs)))
+				if not o.player and not o.root.Anchored and o.model:GetAttribute("Boss") ~= true then
+					o.root.CFrame = CFrame.new(mine) * o.root.CFrame.Rotation
+				end
+				strike(f, o, hit, move)
+				after(m.implode, function()
+					for _, x in ipairs(hostilesNear(f, mine, m.radius)) do
+						strike(f, x, scaled(m.final, sc), move)
+					end
+				end)
+			end)
+		end
+	elseif kind == "planeShear" then
+		-- 3.16.2판 극 공백권 좌표 평면 (오의): 허리 높이에 둥근 격자 평면이 펼쳐지고, 평면 위아래의 공간이 서로 반대로 미끄러지며 벤다. 끝에 평면이 조각나 흩어진다
+		local center = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "planeShear", at = center, radius = m.radius, delay = m.delay / sp, shears = m.shears, every = m.every / sp, shift = m.shift, finalAt = m.finalAt / sp, style = style })
+		for i = 1, m.shears do
+			after(m.delay + (i - 1) * m.every, function()
+				for _, o in ipairs(hostilesNear(f, center, m.radius)) do
+					o.slowUntil = os.clock() + (m.every + 0.2) / sp
+					o.slowMul = 0.5
+					strike(f, o, scaled(m.tick, sc), move)
+				end
+			end)
+		end
+		after(m.delay + m.shears * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, center, m.radius + 2)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "latticePrison" then
+		-- 3.16.2판 극 공백권 무한 좌표 (초 오의): 컷씬 (무적) 뒤 둘레의 적마다 흰 격자 상자가 씌워지고 좌표선으로 이어진다.
+		-- 상자가 한 칸씩 오그라들며 조이다가, 모든 상자가 한꺼번에 한 점으로 지워진다
+		local center = f.root.Position
+		local total = m.cut + m.build + m.steps * m.every + m.finalAt + 0.3
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
+		after(m.cut, function()
+			local list = hostilesNear(f, center, m.range)
+			table.sort(list, function(a, b)
+				return (a.root.Position - center).Magnitude < (b.root.Position - center).Magnitude
+			end)
+			while #list > m.max do
+				table.remove(list)
+			end
+			Push:FireAllClients("skillfx", { kind = "latticePrison", m = f.model, at = center, range = m.range, targets = modelsOf(list), build = m.build / sp, steps = m.steps, every = m.every / sp, finalAt = m.finalAt / sp, style = style })
+			for i = 1, m.steps do
+				after(m.build + (i - 1) * m.every, function()
+					for _, o in ipairs(list) do
+						o.slowUntil = os.clock() + (m.every + 0.2) / sp
+						o.slowMul = 0.3
+						strike(f, o, hit, move)
+					end
+				end)
+			end
+			after(m.build + m.steps * m.every + m.finalAt, function()
+				local seen = {}
+				for _, o in ipairs(list) do
+					seen[o] = true
+					strike(f, o, scaled(m.final, sc), move)
+				end
+				for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+					if not seen[o] then
+						strike(f, o, scaled(m.final, sc * 0.6), move)
+					end
+				end
+			end)
+		end)
 	elseif kind == "mirrorWorld" then
 		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
 		local center = f.root.Position

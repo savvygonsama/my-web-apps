@@ -2757,7 +2757,7 @@ function Geuk.trigger(f: any, st: any)
 	if D then
 		-- 3.16판 극 공백권 · 격자 전개: 선 자리에서 흰 3차원 격자가 한 점에서 천천히 펼쳐져 머문다 (세상은 그대로)
 		local at = f.root.Position - Vector3.new(0, 3, 0)
-		Push:FireAllClients("geukDomain", { m = f.model, name = name, style = st.id, at = at, cut = G.cut, dur = G.dur, half = D.half, top = D.top, step = D.step, level = D.level, unfold = D.unfold })
+		Push:FireAllClients("geukDomain", { m = f.model, name = name, style = st.id, at = at, cut = G.cut, dur = G.dur, radius = D.radius, top = D.top, step = D.step, levels = D.levels, unfold = D.unfold })
 		task.spawn(function()
 			local t0 = now + G.cut
 			local nextTick = t0
@@ -2766,7 +2766,7 @@ function Geuk.trigger(f: any, st: any)
 				if tn >= t0 then
 					local u = math.clamp((tn - t0) / D.unfold, 0, 1)
 					local s = 1 - (1 - u) ^ 3
-					local H, top = D.half * s, D.top * s
+					local R, top = D.radius * 0.85 * s, D.top * s
 					local doTick = tn >= nextTick
 					if doTick then
 						nextTick = tn + D.every
@@ -2774,7 +2774,7 @@ function Geuk.trigger(f: any, st: any)
 					for _, o in pairs(Combat.fighters) do
 						if o ~= f and not o.dead and Combat.hostile(f, o) then
 							local d = o.root.Position - at
-							if math.abs(d.X) <= H and math.abs(d.Z) <= H and d.Y > -8 and d.Y <= top + 4 then
+							if Vector3.new(d.X, 0, d.Z).Magnitude <= R and d.Y > -8 and d.Y <= top + 4 then
 								o.slowUntil = tn + 0.6
 								o.slowMul = D.slow
 								if doTick then
@@ -2785,6 +2785,13 @@ function Geuk.trigger(f: any, st: any)
 					end
 				end
 				task.wait(0.25)
+			end
+			-- 3.16.2판: 쓰러지면 격자 공간도 바로 끝난다 (화면의 격자는 Twilight가 꺼지는 걸 보고 접힌다)
+			if f.twilightUntil == token and f.dead then
+				f.twilightUntil = os.clock()
+				if f.model.Parent then
+					f.model:SetAttribute("Twilight", nil)
+				end
 			end
 		end)
 		return

@@ -770,7 +770,525 @@ function Null.superCut(model: Model, dur: number, name: string, shake: ((number)
 	task.delay(dur + 1, restore)
 end
 
+------------------------------------------------------------------------
+-- 3.16.2판 극 공백권 기술 (좌표선 · 좌표 교환 · 좌표 평면 · 무한 좌표)
+------------------------------------------------------------------------
+-- 격자 상자: 모서리 열둘을 크기 k배로 다시 놓는다 (굵기는 그대로)
+type Cage = { list: { BasePart }, rel: { CFrame }, base: { Vector3 }, w: number }
+local function cage(size: Vector3, color: Color3, w: number, parent: Instance): Cage
+	local list = boxEdges(CFrame.new(), size, color, w)
+	local rel: { CFrame } = {}
+	local base: { Vector3 } = {}
+	for i, q in ipairs(list) do
+		rel[i] = q.CFrame
+		base[i] = q.Size
+		q.Parent = parent
+	end
+	return { list = list, rel = rel, base = base, w = w }
+end
+local function placeCage(c: Cage, cf: CFrame, k: number)
+	for i, q in ipairs(c.list) do
+		local r, b = c.rel[i], c.base[i]
+		local function ax(v: number): number
+			return v > c.w * 1.5 and math.max(0.05, v * k) or v
+		end
+		q.Size = Vector3.new(ax(b.X), ax(b.Y), ax(b.Z))
+		q.CFrame = cf * CFrame.new(r.Position * k) * r.Rotation
+	end
+end
+local function cageColor(c: Cage, color: Color3, alpha: number?)
+	for _, q in ipairs(c.list) do
+		q.Color = color
+		if alpha then
+			q.Transparency = alpha
+		end
+	end
+end
+-- 막대 하나를 a에서 b까지 놓는다
+local function beam(p: BasePart, a: Vector3, b: Vector3, w: number)
+	local d = (b - a).Magnitude
+	p.Size = Vector3.new(w, w, math.max(0.05, d))
+	if d > 1e-3 then
+		p.CFrame = CFrame.lookAt((a + b) / 2, b)
+	end
+end
+
+-- E 좌표선: 허공에 좌표축이 별 모양으로 그어지고 (눈금이 찍히고), 줄을 따라 공간이 위아래로 어긋났다가 다시 붙는다
+local function coordSlash(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 220) then
+		return
+	end
+	local delay = data.delay or 0.35
+	local seamAt = data.seamAt or 0.3
+	local y = ground(at).Y + 3
+	local holder = Instance.new("Folder")
+	holder.Name = "KwonCoordSlash"
+	holder.Parent = folder
+	local AXES = { "x", "y", "z", "u", "v", "w" }
+	type Ln = { a: Vector3, b: Vector3, line: BasePart, up: BasePart?, dn: BasePart?, side: Vector3 }
+	local lns: { Ln } = {}
+	Fx.sound("ping", 0.45, 2.6, at)
+	for i, s in ipairs(data.segs or {}) do
+		local a = Vector3.new(s[1].X, y, s[1].Z)
+		local b = Vector3.new(s[2].X, y, s[2].Z)
+		local dir = (b - a).Unit
+		local len = (b - a).Magnitude
+		local line = part(Vector3.new(0.14, 0.14, 0.1), WHITE, Enum.Material.Neon, 0)
+		line.Parent = holder
+		line.CFrame = CFrame.lookAt(a, b)
+		local draw = delay * 0.55
+		local st = (i - 1) * delay * 0.08
+		task.delay(st, function()
+			tween(line, draw, { Size = Vector3.new(0.14, 0.14, len), CFrame = CFrame.lookAt((a + b) / 2, b) }, Enum.EasingStyle.Quart)
+		end)
+		-- 눈금 (4칸마다)
+		local d = 4
+		while d < len - 1 do
+			local tick = part(Vector3.new(0.08, d % 8 == 0 and 1.1 or 0.6, 0.08), WHITE, Enum.Material.Neon, 1)
+			tick.Parent = holder
+			tick.CFrame = CFrame.new(a + dir * d)
+			task.delay(st + draw * d / len, function()
+				if tick.Parent then
+					tick.Transparency = 0.2
+				end
+			end)
+			d += 4
+		end
+		-- 축 이름 (끝에 작은 글씨)
+		local tip = part(Vector3.one * 0.2, WHITE, Enum.Material.Neon, 1)
+		tip.Parent = holder
+		tip.CFrame = CFrame.new(b + Vector3.new(0, 1.4, 0))
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.new(0, 40, 0, 26)
+		bb.AlwaysOnTop = true
+		bb.LightInfluence = 0
+		bb.Parent = tip
+		local tl = Instance.new("TextLabel")
+		tl.BackgroundTransparency = 1
+		tl.Size = UDim2.fromScale(1, 1)
+		tl.Font = Enum.Font.Code
+		tl.TextScaled = true
+		tl.Text = AXES[i] or "?"
+		tl.TextColor3 = i % 3 == 0 and RED or WHITE
+		tl.TextStrokeTransparency = 0.4
+		tl.Parent = bb
+		table.insert(lns, { a = a, b = b, line = line, side = Vector3.new(-dir.Z, 0, dir.X) })
+	end
+	-- 어긋남: 줄 위·아래로 얇은 검은 막이 생겨 서로 반대로 미끄러진다
+	task.delay(delay, function()
+		if not holder.Parent then
+			return
+		end
+		shakeNear(at, 1.1, 100)
+		Fx.sound("shatter", 0.55, 1.9, at)
+		glitchNear(at, 50, 0.15, 0.4)
+		for _, L in ipairs(lns) do
+			local mid = (L.a + L.b) / 2
+			local len = (L.b - L.a).Magnitude
+			local base = CFrame.lookAt(mid, L.b)
+			local up = part(Vector3.new(0.25, 5, len), BLACK, Enum.Material.SmoothPlastic, 0.2)
+			local dn = part(Vector3.new(0.25, 5, len), BLACK, Enum.Material.SmoothPlastic, 0.2)
+			up.Parent, dn.Parent = holder, holder
+			up.CFrame = base * CFrame.new(0, 2.5, 0)
+			dn.CFrame = base * CFrame.new(0, -2.5, 0)
+			tween(up, 0.08, { CFrame = base * CFrame.new(0, 2.5, 0) + L.side * 1.4 })
+			tween(dn, 0.08, { CFrame = base * CFrame.new(0, -2.5, 0) - L.side * 1.4 })
+			L.up, L.dn = up, dn
+			L.line.Color = RED
+			tear(mid + Vector3.new(0, 1, 0), len * 0.6, 0.08)
+			for k = 0, 2 do
+				pixels(L.a:Lerp(L.b, 0.2 + k * 0.3), 5, 0.9)
+			end
+		end
+	end)
+	-- 다시 붙는다
+	task.delay(delay + seamAt, function()
+		if not holder.Parent then
+			return
+		end
+		Fx.sound("ping", 0.6, 1.5, at)
+		for _, L in ipairs(lns) do
+			local mid = (L.a + L.b) / 2
+			local base = CFrame.lookAt(mid, L.b)
+			L.line.Color = WHITE
+			if L.up and L.dn then
+				tween(L.up, 0.06, { CFrame = base * CFrame.new(0, 2.5, 0) })
+				tween(L.dn, 0.06, { CFrame = base * CFrame.new(0, -2.5, 0) })
+			end
+			pixels(mid, 6, 1)
+		end
+		Fx.flash(at + Vector3.new(0, 3, 0), WHITE, 40, 3, 0.25)
+		task.delay(0.08, function()
+			for _, q in ipairs(holder:GetChildren()) do
+				if q:IsA("BasePart") then
+					fadeOut(q, 0.25)
+				end
+			end
+		end)
+	end)
+	task.delay(delay + seamAt + 1.5, function()
+		holder:Destroy()
+	end)
+end
+
+-- R 좌표 교환: 나와 적이 흰 격자 상자에 갇히고, 점선으로 이어졌다가, 자리가 맞바뀐다. 바뀐 자리의 상자가 오그라들며 터진다
+local function coordSwap(data: any)
+	local from: Vector3 = data.from
+	if not near(from, 220) then
+		return
+	end
+	local m: Model? = data.m
+	local delay = data.delay or 0.18
+	local every = data.every or 0.3
+	local implode = data.implode or 0.3
+	local radius = data.radius or 9
+	local holder = Instance.new("Folder")
+	holder.Name = "KwonCoordSwap"
+	holder.Parent = folder
+	local box = Vector3.new(5, 6.5, 5)
+	for i, t in ipairs(data.targets or {}) do
+		task.delay((i - 1) * every, function()
+			local tr = rootOf(t)
+			local mr = rootOf(m)
+			if not tr or not holder.Parent then
+				return
+			end
+			local A = (i == 1 or not mr) and from or mr.Position
+			local B = tr.Position
+			local ca = cage(box, WHITE, 0.14, holder)
+			local cb = cage(box, WHITE, 0.14, holder)
+			placeCage(ca, CFrame.new(A), 1)
+			placeCage(cb, CFrame.new(B), 1)
+			-- 두 좌표를 잇는 점선
+			local dashes: { BasePart } = {}
+			local n = math.max(4, math.floor((B - A).Magnitude / 2.5))
+			for k = 0, n - 1, 2 do
+				local q = part(Vector3.one * 0.1, WHITE, Enum.Material.Neon, 0.1)
+				q.Parent = holder
+				beam(q, A:Lerp(B, k / n), A:Lerp(B, (k + 1) / n), 0.1)
+				table.insert(dashes, q)
+			end
+			Fx.sound("ping", 0.5, 2.2, B)
+			task.delay(delay, function()
+				if not holder.Parent then
+					return
+				end
+				-- 맞바뀐다: 두 자리에 어긋난 잔상, 찢어진 줄
+				ghostAt(m, CFrame.new(A), CYAN, 0.5, 0.15)
+				ghostAt(t, CFrame.new(B), RED, 0.5, 0.15)
+				tear(A + Vector3.new(0, 1, 0), 6, 0.08)
+				tear(B + Vector3.new(0, 1, 0), 6, 0.08)
+				pixels(A, 10, 0.9)
+				pixels(B, 10, 0.9)
+				for _, q in ipairs(dashes) do
+					q:Destroy()
+				end
+				cageColor(ca, RED)
+				for _, q in ipairs(cb.list) do
+					fadeOut(q, 0.2)
+				end
+				Fx.sound("shatter", 0.45, 2.2, A)
+				glitchNear(A, 50, 0.15, 0.5)
+				-- 바뀐 자리 (A)의 상자가 오그라든다
+				local t0 = os.clock()
+				local conn: RBXScriptConnection
+				conn = RunService.Heartbeat:Connect(function()
+					local u = math.clamp((os.clock() - t0) / implode, 0, 1)
+					placeCage(ca, CFrame.new(A) * CFrame.Angles(0, u * 1.2, 0), 1 - 0.9 * u * u)
+					if u >= 1 then
+						conn:Disconnect()
+						for _, q in ipairs(ca.list) do
+							q:Destroy()
+						end
+						pixels(A, 22, 1.3, 9)
+						Fx.ring(ground(A) + Vector3.new(0, 0.3, 0), RED, 2, radius * 2, 0.3)
+						Fx.ring(ground(A) + Vector3.new(0, 0.5, 0), WHITE, 2, radius * 1.6, 0.25)
+						Fx.flash(A, WHITE, 40, 4, 0.25)
+						Fx.sound("heavy", 0.6, 1.4, A)
+						shakeNear(A, 1.2, 90)
+					end
+				end)
+			end)
+		end)
+	end
+	task.delay(#(data.targets or {}) * every + delay + implode + 1.5, function()
+		holder:Destroy()
+	end)
+end
+
+-- G 좌표 평면: 허리 높이에 둥근 격자 평면이 펼쳐지고, 평면의 위층·아래층이 서로 반대로 미끄러진다 (방향이 매번 90도씩 돈다). 끝에 조각나 흩어진다
+local function planeShear(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 260) then
+		return
+	end
+	local R = data.radius or 30
+	local delay = data.delay or 0.45
+	local shears = data.shears or 4
+	local every = data.every or 0.32
+	local shift = data.shift or 5
+	local finalAt = data.finalAt or 0.35
+	local g = ground(at)
+	local c = Vector3.new(at.X, g.Y + 3.2, at.Z)
+	local holder = Instance.new("Folder")
+	holder.Name = "KwonPlaneShear"
+	holder.Parent = folder
+	type Bar = { p: BasePart, cf: CFrame, len: number, w: number }
+	local upper: { Bar } = {}
+	local lower: { Bar } = {}
+	local function addBar(list: { Bar }, cf: CFrame, len: number, w: number, color: Color3, alpha: number)
+		local p = part(Vector3.new(w, w, 0.05), color, Enum.Material.Neon, alpha)
+		p.Parent = holder
+		p.CFrame = cf
+		table.insert(list, { p = p, cf = cf, len = len, w = w })
+	end
+	local GAP = 6
+	local v = -R + GAP / 2
+	while v < R do
+		local hl = math.sqrt(math.max(0, R * R - v * v))
+		if hl > 2 then
+			addBar(upper, CFrame.lookAt(c + Vector3.new(0, 0.25, v), c + Vector3.new(1, 0.25, v)), hl * 2, 0.12, WHITE, 0.15)
+			addBar(lower, CFrame.lookAt(c + Vector3.new(v, -0.25, 0), c + Vector3.new(v, -0.25, 1)), hl * 2, 0.12, WHITE, 0.35)
+		end
+		v += GAP
+	end
+	-- 둘레 (위층)
+	local RIM = 28
+	for k = 0, RIM - 1 do
+		local a0, a1 = k / RIM * math.pi * 2, (k + 1) / RIM * math.pi * 2
+		local p0 = c + Vector3.new(math.cos(a0) * R, 0.25, math.sin(a0) * R)
+		local p1 = c + Vector3.new(math.cos(a1) * R, 0.25, math.sin(a1) * R)
+		addBar(upper, CFrame.lookAt((p0 + p1) / 2, p1), (p1 - p0).Magnitude, 0.18, WHITE, 0.05)
+	end
+	-- 평면 (검은 유리판)
+	local disc = part(Vector3.new(0.12, R * 2, R * 2), BLACK, Enum.Material.Glass, 1)
+	disc.Shape = Enum.PartType.Cylinder
+	disc.Parent = holder
+	disc.CFrame = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90))
+	tween(disc, delay, { Transparency = 0.6 })
+	-- 펼쳐진다: 막대가 가운데에서 양끝으로 자란다
+	for _, list in ipairs({ upper, lower }) do
+		for _, b in ipairs(list) do
+			tween(b.p, delay * 0.85, { Size = Vector3.new(b.w, b.w, b.len) }, Enum.EasingStyle.Quart)
+		end
+	end
+	Fx.sound("ping", 0.6, 1.3, c)
+	-- 미끄러짐
+	for i = 1, shears do
+		task.delay(delay + (i - 1) * every, function()
+			if not holder.Parent then
+				return
+			end
+			local a = (i - 1) * math.pi / 2
+			local dir = Vector3.new(math.cos(a), 0, math.sin(a)) * shift
+			for _, b in ipairs(upper) do
+				tween(b.p, 0.07, { CFrame = b.cf + dir })
+			end
+			for _, b in ipairs(lower) do
+				tween(b.p, 0.07, { CFrame = b.cf - dir })
+			end
+			task.delay(every * 0.55, function()
+				for _, b in ipairs(upper) do
+					if b.p.Parent then
+						tween(b.p, every * 0.3, { CFrame = b.cf })
+					end
+				end
+				for _, b in ipairs(lower) do
+					if b.p.Parent then
+						tween(b.p, every * 0.3, { CFrame = b.cf })
+					end
+				end
+			end)
+			-- 붉은 이음매가 번쩍
+			local seam = part(Vector3.new(0.08, R * 2, R * 2), RED, Enum.Material.Neon, 0.55)
+			seam.Shape = Enum.PartType.Cylinder
+			seam.CFrame = disc.CFrame
+			fadeOut(seam, 0.18)
+			tear(c + dir * 0.5, R * 0.8, 0.07)
+			Fx.sound("shatter", 0.4, 1.6 + i * 0.1, c)
+			shakeNear(c, 0.7, 90)
+		end)
+	end
+	-- 조각나 흩어진다
+	task.delay(delay + shears * every + finalAt, function()
+		if not holder.Parent then
+			return
+		end
+		for _, list in ipairs({ upper, lower }) do
+			for _, b in ipairs(list) do
+				local out = flat(b.p.Position - c)
+				local spin = CFrame.Angles(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5)
+				tween(b.p, 0.5, { CFrame = (b.p.CFrame + out * R * 0.5 + Vector3.new(0, math.random() * 6, 0)) * spin, Transparency = 1 })
+			end
+		end
+		tween(disc, 0.3, { Transparency = 1 })
+		for _ = 1, 10 do
+			local a, rr = math.random() * math.pi * 2, math.random() * R
+			pixels(c + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr), 6, 1.3, 8)
+		end
+		Fx.ring(g + Vector3.new(0, 0.5, 0), WHITE, 4, R * 2.4, 0.5)
+		Fx.ring(c, RED, 4, R * 2.1, 0.4)
+		Fx.flash(c, WHITE, 90, 7, 0.4)
+		Fx.sound("shatter", 0.9, 1.1, c)
+		Fx.sound("heavy", 0.8, 0.8, c)
+		shakeNear(c, 2.2, 150)
+		glitchNear(c, 120, 0.3, 0.8)
+		task.delay(0.6, function()
+			holder:Destroy()
+		end)
+	end)
+	task.delay(delay + shears * every + finalAt + 3, function()
+		if holder.Parent then
+			holder:Destroy()
+		end
+	end)
+end
+
+-- X 무한 좌표: 머리 위 한 점에서 좌표선이 뻗어 둘레의 적마다 흰 격자 상자를 씌운다.
+-- 상자가 세 번 오그라들며 조이고 (붉게 번쩍), 빛깔이 뒤집힌 뒤 모든 상자가 한꺼번에 한 점으로 지워진다
+local function latticePrison(data: any)
+	local at: Vector3 = data.at
+	if not near(at, 340) then
+		return
+	end
+	local range = data.range or 50
+	local build = data.build or 0.6
+	local steps = data.steps or 3
+	local every = data.every or 0.45
+	local finalAt = data.finalAt or 0.5
+	local g = ground(at)
+	local hub = g + Vector3.new(0, 16, 0)
+	local holder = Instance.new("Folder")
+	holder.Name = "KwonLatticePrison"
+	holder.Parent = folder
+	local cc: ColorCorrectionEffect? = nil
+	if near(at, range * 2.2) then
+		cc = gradeTo(nil, 0.3, { Saturation = -0.6, Contrast = 0.15 })
+	end
+	local hubCage = cage(Vector3.one * 2.4, WHITE, 0.14, holder)
+	type Item = { tr: BasePart, c: Cage, link: BasePart, size: Vector3, k: number, goal: number, last: Vector3 }
+	local items: { Item } = {}
+	local targets = data.targets or {}
+	for i, t in ipairs(targets) do
+		local tr = rootOf(t)
+		if tr then
+			local ext = (t :: Model):GetExtentsSize()
+			local size = Vector3.new(math.clamp(ext.X, 4, 16) + 1.5, math.clamp(ext.Y, 5, 20) + 1.5, math.clamp(ext.Z, 4, 16) + 1.5)
+			local c = cage(size, WHITE, 0.16, holder)
+			placeCage(c, CFrame.new(tr.Position), 0.01)
+			local link = part(Vector3.one * 0.1, WHITE, Enum.Material.Neon, 1)
+			link.Parent = holder
+			local it: Item = { tr = tr, c = c, link = link, size = size, k = 0.01, goal = 0.01, last = tr.Position }
+			table.insert(items, it)
+			task.delay(build * (i - 1) / math.max(1, #targets), function()
+				it.goal = 1
+				link.Transparency = 0.35
+				Fx.sound("ping", 0.35, 2 + i * 0.05, tr.Position)
+			end)
+		end
+	end
+	Fx.sound("heavy", 0.6, 0.6, hub)
+	shakeNear(g, 1.2, 200)
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	local done = false
+	local function finish()
+		if done then
+			return
+		end
+		done = true
+		conn:Disconnect()
+		gradeEnd(cc, 0.5)
+		holder:Destroy()
+	end
+	conn = RunService.RenderStepped:Connect(function()
+		local ok = pcall(function()
+			local t = os.clock() - t0
+			placeCage(hubCage, CFrame.new(hub) * CFrame.Angles(t * 1.5, t * 2, 0), 1)
+			for _, it in ipairs(items) do
+				if it.tr.Parent then
+					it.last = it.tr.Position
+				end
+				it.k += (it.goal - it.k) * 0.3
+				placeCage(it.c, CFrame.new(it.last), it.k)
+				local top = it.last + Vector3.new(0, it.size.Y / 2 * it.k, 0)
+				beam(it.link, hub, top, 0.1)
+			end
+		end)
+		if not ok then
+			finish()
+		end
+	end)
+	-- 조인다
+	for s = 1, steps do
+		task.delay(build + (s - 1) * every, function()
+			if done then
+				return
+			end
+			for _, it in ipairs(items) do
+				it.goal = 1 - s * 0.17
+				cageColor(it.c, RED)
+				pixels(it.last, 4, 0.8)
+			end
+			task.delay(0.1, function()
+				for _, it in ipairs(items) do
+					if it.c.list[1] and it.c.list[1].Parent then
+						cageColor(it.c, WHITE)
+					end
+				end
+			end)
+			Fx.sound("ping", 0.6, 1.4 + s * 0.3, hub)
+			shakeNear(g, 0.8 + s * 0.3, 160)
+		end)
+	end
+	-- 멈춤: 빛깔이 뒤집힌다
+	task.delay(build + steps * every, function()
+		if done then
+			return
+		end
+		if cc then
+			gradeTo(cc, 0.08, { Saturation = -1, Contrast = 0.8, Brightness = 0.25 })
+		end
+		glitchNear(g, range * 2.2, finalAt, 1)
+	end)
+	-- 지워진다
+	task.delay(build + steps * every + finalAt, function()
+		if done then
+			return
+		end
+		for _, it in ipairs(items) do
+			it.goal = 0.01
+			it.link.Transparency = 1
+		end
+		task.delay(0.12, function()
+			for _, it in ipairs(items) do
+				pixels(it.last, 18, 1.4, 9)
+				Fx.ring(ground(it.last) + Vector3.new(0, 0.4, 0), RED, 2, 14, 0.35)
+			end
+			for k = 1, 3 do
+				task.delay(k * 0.06, function()
+					Fx.ring(g + Vector3.new(0, 0.5 + k, 0), k == 2 and RED or WHITE, 6, range * 2.2 + k * 10, 0.6)
+				end)
+			end
+			Fx.flash(g + Vector3.new(0, 5, 0), WHITE, 150, 9, 0.6)
+			Fx.sound("shatter", 1, 0.7, g)
+			Fx.sound("heavy", 1, 0.45, g)
+			shakeNear(g, 3.2, 220)
+			if opts.flash and near(g, 120) then
+				opts.flash(WHITE, 0.3)
+			end
+			finish()
+		end)
+	end)
+	task.delay(build + steps * every + finalAt + 3, finish)
+end
+
 local HANDLERS: { [string]: (any) -> () } = {
+	coordSlash = coordSlash,
+	coordSwap = coordSwap,
+	planeShear = planeShear,
+	latticePrison = latticePrison,
 	eraseBox = eraseBox,
 	glitchBlink = glitchBlink,
 	voidGrid = voidGrid,
@@ -778,25 +1296,48 @@ local HANDLERS: { [string]: (any) -> () } = {
 	nullCubes = nullCubes,
 }
 ------------------------------------------------------------------------
--- 3.16판 극 공백권 · 격자 전개 (극 패시브)
--- 한 점에서 시작해 흰 3차원 격자가 천천히 펼쳐진다 (세 축의 선이 먼저 뻗고, 가까운 선부터 차례로 켜지며 상자가 커진다).
--- 다 펼쳐지면 30초 동안 머문다: 격자 위로 빛의 물결이 바깥으로 흐르고, 가끔 몇 줄이 붉게 지직거리고, 빈칸 상자가 떠다닌다.
--- 끝나면 격자가 한 점으로 접혀 들어가 흰 잡음으로 터진다. 격자 안에 들어오면 화면의 빛깔이 빠진다
+-- 3.16판 극 공백권 · 격자 전개 (극 패시브). 3.16.2판에서 다시 짰다
+-- 네모 상자가 아니다: 둥글고 들쭉날쭉한 둘레 안에 성긴 흰 격자가 허공에 떠 있고, 둘레에서는 선이 반쯤 뻗다가 허공에서 끊긴다.
+-- 한가운데 한 점에서 가까운 마디부터 선이 바깥으로 자라 공간이 펼쳐진다 (4.5초). 30초 동안 머물며 빛의 물결이 바깥으로 흐르고,
+-- 가끔 끊긴 선 끝이 붉게 지직거리고, 빈칸 상자 몇이 떠다닌다. 끝나면 선이 가운데로 접혀 들어가 흰 잡음으로 터진다.
+-- 3.16.2판 고침: 끝나도 격자가 남던 문제. 모든 조각을 한 폴더에 모으고, 정리를 한 곳(finish)에서 한 번만, 늦어도 끝 시각 3초 뒤에는 반드시 지운다.
+-- 쓴 사람이 쓰러지거나 사라지면 (Twilight가 꺼지면) 바로 접힌다
 ------------------------------------------------------------------------
-type Line = { p: Part, axis: string, a: number, b: number, dist: number, shell: boolean, base: number }
+type Seg = { p: BasePart, a: Vector3, b: Vector3, axis: string, d: number, len: number, frac: number, base: number, edge: boolean }
+local domains: { [any]: () -> () } = {}
 function Null.domain(data: any)
 	local at: Vector3 = data.at
-	if not at or not near(at, 700) then
+	if not at or not near(at, 800) then
 		return
 	end
 	local cut = data.cut or 1.6
 	local dur = data.dur or 30
-	local unfold = data.unfold or 3.6
-	local H, TOP, STEP, LEVEL = data.half or 60, data.top or 72, data.step or 15, data.level or 12
+	local unfold = data.unfold or 4.5
+	local R, TOP, STEP = data.radius or 100, data.top or 84, data.step or 26
+	local LEVELS: { number } = data.levels or { 6, 28, 50, 72 }
+	local owner: Model? = data.m
+	local key: any = owner or at
+	if domains[key] then
+		domains[key]()
+	end
 	local holder = Instance.new("Folder")
 	holder.Name = "KwonNullDomain"
 	holder.Parent = folder
-	local function mk(thick: number): Part
+	local rng = Random.new(math.floor(math.abs(at.X) * 7 + math.abs(at.Z) * 13) % 1000003)
+	-- 마디가 공간 안인가: 둥근 몸통 (위로 갈수록 좁다) · 마디마다 둘레가 들쭉날쭉
+	local bound: { [string]: number } = {}
+	local function inside(x: number, y: number, z: number): boolean
+		local k = x .. "," .. y .. "," .. z
+		local b = bound[k]
+		if not b then
+			b = 0.62 + 0.38 * rng:NextNumber()
+			bound[k] = b
+		end
+		local yy = (y - TOP * 0.45) / (TOP * 0.75)
+		return (x * x + z * z) / (R * R) + yy * yy * 0.5 <= b
+	end
+	local segs: { Seg } = {}
+	local function addSeg(a: Vector3, b: Vector3, axis: string, edge: boolean)
 		local p = Instance.new("Part")
 		p.Anchored = true
 		p.CanCollide = false
@@ -805,106 +1346,125 @@ function Null.domain(data: any)
 		p.CastShadow = false
 		p.Material = Enum.Material.Neon
 		p.Color = WHITE
-		p.Size = Vector3.new(thick, thick, thick)
+		p.Size = Vector3.one * 0.12
 		p.Transparency = 1
 		p.Parent = holder
-		return p
+		table.insert(segs, {
+			p = p,
+			a = a,
+			b = b,
+			axis = axis,
+			d = math.sqrt(a.X * a.X + a.Z * a.Z + (a.Y * 1.2) ^ 2),
+			len = (b - a).Magnitude,
+			frac = edge and (0.3 + rng:NextNumber() * 0.35) or 1,
+			base = edge and 0.8 or 0.55,
+			edge = edge,
+		})
 	end
-	local xs: { number } = {}
-	local v = -H
-	while v <= H + 0.01 do
-		table.insert(xs, v)
-		v += STEP
-	end
-	local ys: { number } = {}
-	v = 0
-	while v <= TOP + 0.01 do
-		table.insert(ys, v)
-		v += LEVEL
-	end
-	local lines: { Line } = {}
-	local function addLine(axis: string, a: number, b: number, dist: number, shell: boolean)
-		local thick = shell and 0.24 or 0.14
-		table.insert(lines, { p = mk(thick), axis = axis, a = a, b = b, dist = dist, shell = shell, base = shell and 0.12 or 0.5 })
-	end
-	-- x축 선 (높이 y, 깊이 z) · z축 선 (높이 y, 가로 x) · 세로 선 (가로 x, 깊이 z)
-	for _, y in ipairs(ys) do
-		for _, z in ipairs(xs) do
-			addLine("x", y, z, math.max(math.abs(z), y * H / TOP), math.abs(z) >= H - 0.01 or y == 0 or y >= TOP - 0.01)
-			addLine("z", y, z, math.max(math.abs(z), y * H / TOP), math.abs(z) >= H - 0.01 or y == 0 or y >= TOP - 0.01)
+	local n = math.floor(R / STEP) + 1
+	for li, y in ipairs(LEVELS) do
+		for i = -n, n do
+			for k = -n, n do
+				local x, z = i * STEP, k * STEP
+				if inside(x, y, z) then
+					local here = Vector3.new(x, y, z)
+					local nb: { { Vector3 | string } } = {
+						{ Vector3.new(x + STEP, y, z), "x" },
+						{ Vector3.new(x - STEP, y, z), "x" },
+						{ Vector3.new(x, y, z + STEP), "z" },
+						{ Vector3.new(x, y, z - STEP), "z" },
+					}
+					if LEVELS[li + 1] then
+						table.insert(nb, { Vector3.new(x, LEVELS[li + 1], z), "y" })
+					else
+						table.insert(nb, { Vector3.new(x, y + (LEVELS[2] - LEVELS[1]), z), "y" })
+					end
+					if LEVELS[li - 1] then
+						table.insert(nb, { Vector3.new(x, LEVELS[li - 1], z), "y" })
+					end
+					for _, e in ipairs(nb) do
+						local o = e[1] :: Vector3
+						local axis = e[2] :: string
+						local oIn = (o.Y <= LEVELS[#LEVELS]) and inside(o.X, o.Y, o.Z)
+						if not oIn then
+							-- 둘레: 반쯤 뻗다가 허공에서 끊긴다 (아래로는 땅에 박히니 뻗지 않는다)
+							if o.Y >= y then
+								addSeg(here, o, axis, true)
+							end
+						elseif (o - here):Dot(Vector3.new(1, 1, 1)) > 0 and rng:NextNumber() > 0.22 then
+							-- 안쪽 선 (한 쌍에 한 번만, 다섯에 하나쯤은 빠져 있다). 가운데에 가까운 마디에서 자란다
+							local d0 = here.X * here.X + here.Z * here.Z + here.Y * here.Y
+							local d1 = o.X * o.X + o.Z * o.Z + o.Y * o.Y
+							if d0 <= d1 then
+								addSeg(here, o, axis, false)
+							else
+								addSeg(o, here, axis, false)
+							end
+						end
+					end
+				end
+			end
 		end
 	end
-	for _, x in ipairs(xs) do
-		for _, z in ipairs(xs) do
-			addLine("y", x, z, math.max(math.abs(x), math.abs(z)), math.abs(x) >= H - 0.01 or math.abs(z) >= H - 0.01)
-		end
+	local maxD = 0
+	for _, S in ipairs(segs) do
+		maxD = math.max(maxD, S.d + S.len)
 	end
-	-- 바닥: 검은 유리판 (격자와 함께 넓어진다)
-	local floor = mk(0.2)
-	floor.Material = Enum.Material.Glass
-	floor.Color = BLACK
 	-- 씨앗: 한가운데 흰 테의 검은 상자
 	local seedAt = at + Vector3.new(0, 4, 0)
-	local seed = boxEdges(CFrame.new(seedAt), Vector3.one * 2.4, WHITE, 0.16)
+	local seed = cage(Vector3.one * 2.4, WHITE, 0.16, holder)
+	placeCage(seed, CFrame.new(seedAt), 1)
 	local core = part(Vector3.one * 2, BLACK, Enum.Material.SmoothPlastic, 0)
+	core.Parent = holder
 	core.CFrame = CFrame.new(seedAt)
 	-- 떠다니는 빈칸 상자
 	type Drifter = { list: { BasePart }, rel: { CFrame }, base: Vector3, ph: number }
 	local drifters: { Drifter } = {}
-	local function place(L: Line, h: number, top: number, alphaMul: number)
-		local p = L.p
-		if L.axis == "y" then
-			local vis = math.max(math.abs(L.a), math.abs(L.b)) <= h + 0.01 and top > 0.2
-			if not vis then
-				p.Transparency = 1
-				return
-			end
-			p.Size = Vector3.new(p.Size.X, top, p.Size.Z)
-			p.CFrame = CFrame.new(at + Vector3.new(L.a, top / 2, L.b))
+	local function place(S: Seg, reach: number, alphaMul: number)
+		local grow = math.clamp((reach - S.d) / S.len, 0, 1) * S.frac
+		local p = S.p
+		if grow <= 0.01 then
+			p.Transparency = 1
+			return
+		end
+		local L = S.len * grow
+		local w = S.edge and 0.1 or 0.13
+		if S.axis == "x" then
+			p.Size = Vector3.new(L, w, w)
+		elseif S.axis == "z" then
+			p.Size = Vector3.new(w, w, L)
 		else
-			local y, off = L.a, L.b
-			local vis = math.abs(off) <= h + 0.01 and y <= top + 0.01 and h > 0.2
-			if not vis then
-				p.Transparency = 1
-				return
-			end
-			if L.axis == "x" then
-				p.Size = Vector3.new(h * 2, p.Size.Y, p.Size.Z)
-				p.CFrame = CFrame.new(at + Vector3.new(0, y, off))
-			else
-				p.Size = Vector3.new(p.Size.X, p.Size.Y, h * 2)
-				p.CFrame = CFrame.new(at + Vector3.new(off, y, 0))
-			end
+			p.Size = Vector3.new(w, L, w)
 		end
-		-- 펼쳐지는 앞머리에 가까운 선은 밝게, 막 켜진 선은 서서히
-		local fresh = math.clamp((h - L.dist) / STEP, 0, 1)
-		local front = math.clamp(1 - math.abs(h - L.dist) / (STEP * 0.8), 0, 1)
-		p.Transparency = 1 - (1 - L.base) * fresh * alphaMul
-		if front > 0 then
-			p.Transparency = math.min(p.Transparency, 0.05 + (1 - front) * 0.6)
+		p.CFrame = CFrame.new(at + S.a + (S.b - S.a).Unit * (L / 2))
+		local alpha = 1 - (1 - S.base) * alphaMul
+		if grow < S.frac - 0.01 then
+			-- 자라는 중인 선 끝은 밝다
+			alpha = math.min(alpha, 0.2)
 		end
+		p.Transparency = alpha
 	end
-	-- 내 화면: 격자 안에 들어오면 빛깔이 빠진다
+	-- 내 화면: 격자 안에 들어오면 빛깔이 조금 빠진다 (어지럽지 않게 약하게)
 	local cc: ColorCorrectionEffect? = nil
-	local inside = false
-	local function gradeFor(h: number, top: number)
+	local inside_ = false
+	local function gradeFor(reachFrac: number)
 		local r = rootOf(player and player.Character)
 		local now = false
 		if r then
 			local d = r.Position - at
-			now = math.abs(d.X) <= h and math.abs(d.Z) <= h and d.Y > -8 and d.Y <= top + 4
+			now = Vector3.new(d.X, 0, d.Z).Magnitude <= R * 0.85 * reachFrac and d.Y > -8 and d.Y <= TOP * reachFrac + 6
 		end
-		if now ~= inside then
-			inside = now
+		if now ~= inside_ then
+			inside_ = now
 			if now then
-				cc = gradeTo(cc, 0.6, { Saturation = -0.85, Contrast = 0.25, Brightness = 0.02, TintColor = Color3.fromRGB(236, 236, 255) })
+				cc = gradeTo(cc, 0.8, { Saturation = -0.5, Contrast = 0.1, Brightness = 0.02, TintColor = Color3.fromRGB(240, 240, 255) })
 			elseif cc then
-				tween(cc, 0.6, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = Color3.new(1, 1, 1) })
+				tween(cc, 0.8, { Saturation = 0, Contrast = 0, Brightness = 0, TintColor = Color3.new(1, 1, 1) })
 			end
 		end
 	end
-	-- 1) 컷 동안: 씨앗이 맥박치고 화면이 지직거린다
-	glitchNear(at, H * 2, cut * 0.8, 0.8)
+	-- 1) 컷 동안: 씨앗이 맥박치고 화면이 살짝 지직거린다
+	glitchNear(at, 120, cut * 0.6, 0.5)
 	Fx.sound("deflect", 0.8, 0.4, at)
 	shakeNear(at, 1, 200)
 	local t0 = os.clock()
@@ -912,116 +1472,148 @@ function Null.domain(data: any)
 	local tEnd = tStart + dur
 	local nextGlitch = 0
 	local nextGrade = 0
+	local nextWave = 0
 	local collapsing = false
-	local conn: RBXScriptConnection
-	conn = RunService.RenderStepped:Connect(function()
+	local collapseFrom = 0
+	local finished = false
+	local conn: RBXScriptConnection? = nil
+	local function finish()
+		if finished then
+			return
+		end
+		finished = true
+		if conn then
+			conn:Disconnect()
+		end
+		if domains[key] == finish then
+			domains[key] = nil
+		end
+		gradeEnd(cc, 0.6)
+		holder:Destroy()
+	end
+	domains[key] = finish
+	local function step()
 		local now = os.clock()
 		local t = now - t0
 		if now < tStart then
 			local pulse = 1 + 0.25 * math.sin(t * 14)
-			moveCube(seed, CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0), 2.4 * pulse)
-			core.CFrame = CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0)
+			local cf = CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0)
+			placeCage(seed, cf, pulse)
+			core.CFrame = cf
 			return
+		end
+		-- 쓴 사람이 쓰러지거나 사라지면 바로 접힌다
+		if not collapsing and now > tStart + 1.5 and now < tEnd then
+			if owner and (not owner.Parent or owner:GetAttribute("Twilight") ~= true) then
+				tEnd = now
+			end
 		end
 		local u = math.clamp((now - tStart) / unfold, 0, 1)
 		local s = 1 - (1 - u) ^ 3
 		local alphaMul = 1
 		if now >= tEnd then
-			-- 3) 접힘: 0.7초 동안 한 점으로
+			-- 3) 접힘: 1초 동안 가운데로
 			if not collapsing then
 				collapsing = true
+				collapseFrom = s
 				Fx.sound("shatter", 0.9, 0.6, at)
 			end
-			local k = math.clamp((now - tEnd) / 0.7, 0, 1)
-			s = (1 - k) ^ 2
+			local k = math.clamp((now - tEnd) / 1.0, 0, 1)
+			s = collapseFrom * (1 - k) ^ 2
 			alphaMul = 1 - k * 0.4
 			if k >= 1 then
-				conn:Disconnect()
 				pixels(seedAt, 40, 1.6, 30)
 				Fx.flash(seedAt, WHITE, 90, 8, 0.6)
-				Fx.ring(at + Vector3.new(0, 0.5, 0), WHITE, 4, H * 2.4, 0.6)
+				Fx.ring(at + Vector3.new(0, 0.5, 0), WHITE, 4, math.min(R * 2, 160), 0.6)
 				shakeNear(at, 2, 200)
-				if cc then
-					gradeEnd(cc, 0.6)
-				end
-				holder:Destroy()
-				for _, q in ipairs(seed) do
-					q:Destroy()
-				end
-				core:Destroy()
-				for _, d in ipairs(drifters) do
-					for _, q in ipairs(d.list) do
-						q:Destroy()
-					end
-				end
+				finish()
 				return
 			end
 		end
-		local h, top = H * s, TOP * s
+		local reach = maxD * s
 		-- 씨앗은 펼쳐질수록 작아져 사라진다
-		local seedS = 2.4 * (1 - s)
-		moveCube(seed, CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0), math.max(0.05, seedS))
+		local cf = CFrame.new(seedAt) * CFrame.Angles(t * 2, t * 3, 0)
+		placeCage(seed, cf, math.max(0.02, 1 - s))
 		core.Size = Vector3.one * math.max(0.05, 2 * (1 - s))
-		core.CFrame = CFrame.new(seedAt)
-		for _, L in ipairs(lines) do
-			place(L, h, top, alphaMul)
-		end
-		floor.Size = Vector3.new(h * 2, 0.2, h * 2)
-		floor.CFrame = CFrame.new(at + Vector3.new(0, 0.12, 0))
-		floor.Transparency = 1 - 0.55 * s
-		-- 2) 머무는 동안: 빛의 물결이 바깥으로 흐르고, 가끔 몇 줄이 붉게 지직거린다
-		if u >= 1 and not collapsing then
-			local wave = (t * 30) % (H * 1.4)
-			for _, L in ipairs(lines) do
-				local w = math.clamp(1 - math.abs(L.dist - wave) / 6, 0, 1)
-				if w > 0 then
-					L.p.Transparency = math.min(L.p.Transparency, 0.1 + (1 - w) * 0.5)
+		core.CFrame = cf
+		-- 펼쳐지는 동안·접히는 동안에만 선을 다시 놓는다 (머무는 동안은 빛깔만)
+		local settled = u >= 1 and not collapsing
+		if not settled then
+			for _, S in ipairs(segs) do
+				place(S, reach, alphaMul)
+			end
+		else
+			-- 2) 머무는 동안: 빛의 물결이 천천히 바깥으로 흐른다 (약하게)
+			if now >= nextWave then
+				nextWave = now + 0.05
+				local wave = (t * 22) % (maxD * 1.3)
+				for _, S in ipairs(segs) do
+					local w = math.clamp(1 - math.abs(S.d - wave) / 10, 0, 1)
+					S.p.Transparency = S.base - (S.base - 0.25) * w
 				end
 			end
+			-- 가끔 끊긴 선 끝 하나가 붉게 지직거린다
 			if now >= nextGlitch then
-				nextGlitch = now + 0.15 + math.random() * 0.35
-				for _ = 1, 4 do
-					local L = lines[math.random(1, #lines)]
-					L.p.Color = RED
-					task.delay(0.12, function()
-						if L.p.Parent then
-							L.p.Color = WHITE
+				nextGlitch = now + 0.6 + math.random() * 0.8
+				local S = segs[math.random(1, #segs)]
+				if S then
+					S.p.Color = RED
+					local tip = at + S.a + (S.b - S.a) * S.frac
+					if S.edge and near(tip, 160) then
+						pixels(tip, 3, 0.6, 3)
+					end
+					task.delay(0.15, function()
+						if S.p.Parent then
+							S.p.Color = WHITE
 						end
 					end)
 				end
 			end
 			if #drifters == 0 then
-				for k = 1, 10 do
-					local base = at + Vector3.new(math.random(-H + 10, H - 10), math.random(8, math.floor(TOP * 0.7)), math.random(-H + 10, H - 10))
-					local sz = 2 + math.random() * 3
+				for k = 1, 6 do
+					local a, rr = rng:NextNumber() * math.pi * 2, rng:NextNumber() * R * 0.6
+					local base = at + Vector3.new(math.cos(a) * rr, 10 + rng:NextNumber() * TOP * 0.55, math.sin(a) * rr)
+					local sz = 2 + rng:NextNumber() * 3
 					local list = boxEdges(CFrame.new(base), Vector3.one * sz, k % 3 == 0 and RED or WHITE, 0.12)
 					local rel: { CFrame } = {}
 					for i, q in ipairs(list) do
+						q.Parent = holder
+						q.Transparency = 0.35
 						rel[i] = CFrame.new(base):ToObjectSpace(q.CFrame)
 					end
-					table.insert(drifters, { list = list, rel = rel, base = base, ph = math.random() * 6 })
+					table.insert(drifters, { list = list, rel = rel, base = base, ph = rng:NextNumber() * 6 })
 				end
 			end
 			for _, d in ipairs(drifters) do
-				local cf = CFrame.new(d.base + Vector3.new(0, math.sin(t * 0.8 + d.ph) * 3, 0)) * CFrame.Angles(t * 0.5 + d.ph, t * 0.7, 0)
-				-- 테두리 상자는 통째로 옮긴다
+				local dcf = CFrame.new(d.base + Vector3.new(0, math.sin(t * 0.6 + d.ph) * 3, 0)) * CFrame.Angles(t * 0.4 + d.ph, t * 0.5, 0)
 				for i, q in ipairs(d.list) do
-					q.CFrame = cf * d.rel[i]
+					q.CFrame = dcf * d.rel[i]
 				end
 			end
 		end
 		if now >= nextGrade then
-			nextGrade = now + 0.2
-			gradeFor(h, top)
+			nextGrade = now + 0.25
+			gradeFor(s)
+		end
+	end
+	conn = RunService.RenderStepped:Connect(function()
+		local ok, err = pcall(step)
+		if not ok then
+			warn("[권왕] 격자 전개: " .. tostring(err))
+			finish()
 		end
 	end)
-	-- 펼쳐지기 시작: 세 축으로 빛이 뻗는다
+	-- 늦어도 끝 시각 3초 뒤에는 반드시 지운다
+	task.delay(cut + dur + 4, finish)
+	-- 펼쳐지기 시작: 한 점에서 빛이 터진다
 	task.delay(cut, function()
+		if finished then
+			return
+		end
 		Fx.sound("shatter", 0.7, 0.35, at)
 		Fx.flash(seedAt, WHITE, 70, 6, 0.4)
 		pixels(seedAt, 24, 1.2, 12)
-		shakeNear(at, 1.6, 220)
-		glitchNear(at, H * 2, 0.5, 0.5)
+		shakeNear(at, 1.4, 220)
 	end)
 end
 
