@@ -1144,8 +1144,10 @@ UI.mobile({
 		if not hum or dead then
 			return
 		end
-		if hum.FloorMaterial ~= Enum.Material.Air then
-			hum.Jump = true
+		-- 3.14.1판: hum.Jump는 로블록스 조작 스크립트가 매 프레임 덮어써 씹혔다 → 상태를 바로 점프로 바꾼다
+		local s = hum:GetState()
+		if hum.FloorMaterial ~= Enum.Material.Air and s ~= Enum.HumanoidStateType.Jumping and s ~= Enum.HumanoidStateType.Freefall then
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
 		else
 			doubleJump()
 		end

@@ -3465,19 +3465,23 @@ function UI.mobile(actions: { [string]: any })
 		round(nil, "🧪", 236, -10, 44, Color3.fromRGB(46, 120, 80), actions.potion)
 		round(nil, "🐎", 236, -60, 44, dark, actions.mount)
 	end
-	-- 로블록스 기본 점프 단추 숨기기 (다시 켜지면 또 끈다)
+	-- 로블록스 기본 점프 단추 숨기기: 우리 묶음 (점프 단추 포함)이 보일 때만 끈다.
+	-- 3.14.1판: 묶음이 숨겨진 때도 기본 점프 단추를 꺼 둬서 점프를 아예 못 했다
+	local jumpBtn: GuiObject? = nil
+	local function syncJump()
+		local jb = jumpBtn
+		if jb and pad.Visible and jb.Visible then
+			jb.Visible = false
+		end
+	end
 	task.spawn(function()
 		local tg = player:WaitForChild("PlayerGui"):WaitForChild("TouchGui", 30)
 		local frame = tg and tg:WaitForChild("TouchControlFrame", 10)
 		local jb = frame and frame:WaitForChild("JumpButton", 10)
 		if jb and jb:IsA("GuiObject") then
-			local jbo = jb :: GuiObject
-			jbo.Visible = false
-			jbo:GetPropertyChangedSignal("Visible"):Connect(function()
-				if jbo.Visible then
-					jbo.Visible = false
-				end
-			end)
+			jumpBtn = jb
+			syncJump()
+			jb:GetPropertyChangedSignal("Visible"):Connect(syncJump)
 		end
 	end)
 	-- 터치 화면이 달린 컴퓨터: 마우스·자판을 쓰면 단추 묶음을 감추고, 화면을 만지면 다시 보인다
@@ -3494,6 +3498,12 @@ function UI.mobile(actions: { [string]: any })
 	pad.Visible = touchMode()
 	UserInputService.LastInputTypeChanged:Connect(function()
 		pad.Visible = touchMode()
+		local jb = jumpBtn
+		if jb and not pad.Visible then
+			-- 묶음을 감출 때는 기본 점프 단추를 돌려준다 (로블록스가 알아서 보이고 감춘다)
+			jb.Visible = true
+		end
+		syncJump()
 	end)
 	-- 수련: 할 때만 공격 단추 자리에
 	V.trainPad = round(nil, "지금!", CX, CY, 108, C.chi, actions.train, nil, 28)
