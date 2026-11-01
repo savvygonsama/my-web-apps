@@ -2797,7 +2797,8 @@ function Geuk.trigger(f: any, st: any)
 		task.spawn(function()
 			local t0 = now + G.cut
 			local nextTick = t0
-			while f.twilightUntil == token and f.model.Parent and not f.dead do
+			-- 3.17.3판 고침: 끝 시각이 지나면 멈춘다 (예전엔 끝 시각이 그대로면 영원히 돌아 공간이 끝나도 계속 베었다)
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
 				local tn = os.clock()
 				if tn >= t0 then
 					local u = math.clamp((tn - t0) / D.unfold, 0, 1)
@@ -2821,6 +2822,10 @@ function Geuk.trigger(f: any, st: any)
 					end
 				end
 				task.wait(0.25)
+			end
+			-- 끝난 공간의 자리는 잊는다 (새 공간이 이미 펼쳐졌으면 그대로)
+			if f.twilightUntil == token or (f.twilightUntil or 0) <= os.clock() then
+				f.domainAt = nil
 			end
 			-- 3.16.2판: 쓰러지면 격자 공간도 바로 끝난다 (화면의 격자는 Twilight가 꺼지는 걸 보고 접힌다)
 			if f.twilightUntil == token and f.dead then
