@@ -188,8 +188,10 @@ function World.setupLighting()
 			local night = (h < 6.5 or h > 18.5) and 1 or 0
 			local dusk = math.clamp(1 - math.abs(h - 18.5) / 1.5, 0, 1) + math.clamp(1 - math.abs(h - 6.5) / 1.5, 0, 1)
 			local k = math.max(night, dusk * 0.6)
-			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(95, 105, 150), k)
-			Lighting.Brightness = 2.3 - k * 0.9
+			-- 3.16.1판: 밤을 조금 밝게 (바깥 빛 95,105,150 → 125,135,175 · 밝기 1.4 → 1.75 · 안쪽 빛도 조금)
+			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(125, 135, 175), k)
+			Lighting.Ambient = Color3.fromRGB(110, 100, 95):Lerp(Color3.fromRGB(118, 116, 132), k)
+			Lighting.Brightness = 2.3 - k * 0.55
 			task.wait(1)
 		end
 	end)

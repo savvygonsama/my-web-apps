@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.16.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.16.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -22668,8 +22668,10 @@ function World.setupLighting()
 			local night = (h < 6.5 or h > 18.5) and 1 or 0
 			local dusk = math.clamp(1 - math.abs(h - 18.5) / 1.5, 0, 1) + math.clamp(1 - math.abs(h - 6.5) / 1.5, 0, 1)
 			local k = math.max(night, dusk * 0.6)
-			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(95, 105, 150), k)
-			Lighting.Brightness = 2.3 - k * 0.9
+			-- 3.16.1판: 밤을 조금 밝게 (바깥 빛 95,105,150 → 125,135,175 · 밝기 1.4 → 1.75 · 안쪽 빛도 조금)
+			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(125, 135, 175), k)
+			Lighting.Ambient = Color3.fromRGB(110, 100, 95):Lerp(Color3.fromRGB(118, 116, 132), k)
+			Lighting.Brightness = 2.3 - k * 0.55
 			task.wait(1)
 		end
 	end)
