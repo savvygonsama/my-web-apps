@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3284,7 +3284,7 @@ Config.Story = {
 	{ title = "특급에 오르다", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 특급부터 운기조식이 열린다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 800, stats = 100 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
 	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
-	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
+	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 1200, stats = 200 } },
@@ -31612,11 +31612,11 @@ function handlers.ach(data: any)
 	end
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
-		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (🐎 탈것 창에서 고르기)")
+		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
 	end
 	local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
 	if kf then
-		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (💥 처치 연출 창에서 끼우기)")
+		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (만물상 → 💥 처치 연출에서 끼우기)")
 		task.delay(0.6, function()
 			KillFx.preview(kf.id)
 		end)
@@ -59181,6 +59181,9 @@ local function buildHud()
 		-- 위의 빛깔 띠 (쓰는 권법의 빛)
 		local stripe = new("Frame", { Size = UDim2.new(1, -8, 0, 3), Position = UDim2.new(0, 4, 0, 2), BackgroundColor3 = C.gold, BorderSizePixel = 0, ZIndex = 3, Parent = cell }, { corner(2) })
 		local name = text({ Size = UDim2.new(1, -4, 0.62, 0), Position = UDim2.new(0, 2, 0, 2), TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Parent = cell })
+		name.TextWrapped = false
+		name.TextScaled = true
+		new("UITextSizeConstraint", { MaxTextSize = 14, MinTextSize = 8, Parent = name })
 		local key = text({ Position = UDim2.new(0, 0, 0.6, 0), Size = UDim2.new(1, 0, 0.4, 0), Text = s[2], TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, Parent = cell })
 		local cd = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, ZIndex = 4, Parent = cell }, { corner(8) })
 		local _ = key
@@ -59385,7 +59388,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", killfx = "💥 처치 연출" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -60074,17 +60077,141 @@ local function buildAch()
 	end
 end
 
+-- 3.17.4판 만물상: 탭 다섯 (물건 · 탈것 · 처치 연출 · 꾸미기 · 로벅스). 처치 연출 탭의 내용은 buildKillFx가 채운다
+local shopTabFrames: { [string]: Frame } = {}
+local SHOP_TABS = { { "goods", "🧪 물건" }, { "manuals", "📜 심법" }, { "mount", "🐎 탈것" }, { "killfx", "💥 처치 연출" }, { "look", "🎨 꾸미기" }, { "premium", "💎 로벅스" } }
+local shopTabBtns: { [string]: TextButton } = {}
+local function setShopTab(id: string)
+	if not shopTabFrames[id] then
+		return
+	end
+	for tid, f in pairs(shopTabFrames) do
+		f.Visible = tid == id
+	end
+	for tid, b in pairs(shopTabBtns) do
+		local on = tid == id
+		b.BackgroundColor3 = on and Color3.fromRGB(150, 100, 40) or C.panel2
+		b.TextColor3 = on and Color3.new(1, 1, 1) or C.dim
+	end
+end
+UI.setShopTab = setShopTab
 local function buildShop()
 	local page = makePage("shop")
-	local list = scroller(page, UDim2.fromScale(1, 1))
-	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local head = text({ Size = UDim2.new(1, -12, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
+	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = page }, {
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	for i, t in ipairs(SHOP_TABS) do
+		local id = t[1]
+		shopTabBtns[id] = button({ Size = UDim2.new(1 / #SHOP_TABS, -6, 1, 0), Text = t[2], TextSize = 15, LayoutOrder = i, BackgroundColor3 = C.panel2, Parent = tabRow }, function()
+			setShopTab(id)
+			local r = refreshers.shop
+			if r then
+				r()
+			end
+		end)
+		local f = new("Frame", { Position = UDim2.new(0, 0, 0, 78), Size = UDim2.new(1, 0, 1, -80), BackgroundTransparency = 1, Visible = false, Parent = page })
+		shopTabFrames[id] = f
+	end
+	local function listIn(tab: string): ScrollingFrame
+		local l = scroller(shopTabFrames[tab], UDim2.fromScale(1, 1))
+		new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = l })
+		return l
+	end
+	local function header(parent: Instance, t: string, order: number, col: Color3?)
+		text({ Size = UDim2.new(1, -12, 0, 26), Text = t, TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = col or C.gold, LayoutOrder = order, Parent = parent })
+	end
+
+	-- 🧪 물건 (은자)
+	local goods = listIn("goods")
+	local labels = {}
+	for k, item in ipairs(Config.Shop) do
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = k, Parent = goods }, { corner(10), stroke(C.line, 1) })
+		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = item.icon .. " " .. item.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
+		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = item.desc, TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = row })
+		labels[item.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💰 " .. Config.formatNumber(item.cost), TextSize = 18, BackgroundColor3 = C.red, Parent = row }, function()
+			Request:FireServer("buy", item.id)
+		end)
+	end
+
+	-- 🐎 탈것: 얻는 길마다 묶는다 (V로 타고 내린다)
+	local mounts = listIn("mount")
+	local mountBtns: { [string]: TextButton } = {}
+	local groups = {
+		{ "💰 은자로 산다  ·  V로 타기·내리기", function(m: any) return not m.premium and not m.gemsOnly and not m.achOnly end },
+		{ "💠 천정으로 (천궁 천상 상점)", function(m: any) return m.gemsOnly end },
+		{ "🏆 신화 업적 보상", function(m: any) return m.achOnly end },
+		{ "💎 로벅스", function(m: any) return m.premium ~= nil end },
+	}
+	local order = 0
+	for _, g in ipairs(groups) do
+		local any = false
+		for _, m in ipairs(Config.MOUNTS) do
+			if g[2](m) then
+				any = true
+			end
+		end
+		if any then
+			order += 1
+			header(mounts, g[1], order)
+			for _, m in ipairs(Config.MOUNTS) do
+				if g[2](m) then
+					order += 1
+					local row = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = m.mythic and Color3.fromRGB(52, 20, 26) or C.panel2, LayoutOrder = order, Parent = mounts }, { corner(10), stroke(m.mythic and Color3.fromRGB(255, 200, 90) or C.line, 1) })
+					text({ Position = UDim2.new(0, 14, 0, 4), Size = UDim2.new(1, -200, 0, 28), Text = string.format("%s %s  ·  빠르기 ×%.2f", m.icon, m.name, m.speed), TextSize = 19, Font = Enum.Font.GothamBlack, Parent = row })
+					text({ Position = UDim2.new(0, 14, 0, 34), Size = UDim2.new(1, -200, 0, 24), Text = m.desc, TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = row })
+					mountBtns[m.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 44), Text = "", TextSize = 17, Parent = row }, function()
+						local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
+						Request:FireServer(owned and "mountSelect" or "mountBuy", m.id)
+					end)
+				end
+			end
+		end
+	end
+
+	-- 🎨 꾸미기: 지금 끼운 것을 한눈에, 바로 바꾸기
+	local look = listIn("look")
+	local lookRows: { [string]: { value: TextLabel, btn: TextButton, btn2: TextButton? } } = {}
+	local function lookRow(id: string, ord: number, icon: string, title: string, btnText: string, onBtn: () -> (), btn2Text: string?, onBtn2: (() -> ())?)
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 72), BackgroundColor3 = C.panel2, LayoutOrder = ord, Parent = look }, { corner(10), stroke(C.line, 1) })
+		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -360, 0, 26), Text = icon .. " " .. title, TextSize = 18, Font = Enum.Font.GothamBlack, Parent = row })
+		local value = text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -360, 0, 28), Text = "", TextSize = 16, TextColor3 = C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = row })
+		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 44), Text = btnText, TextSize = 16, BackgroundColor3 = Color3.fromRGB(70, 90, 140), Parent = row }, onBtn)
+		local btn2: TextButton? = nil
+		if btn2Text and onBtn2 then
+			btn2 = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -180, 0.5, 0), Size = UDim2.new(0, 150, 0, 44), Text = btn2Text, TextSize = 15, BackgroundColor3 = C.panel, Parent = row }, onBtn2)
+		end
+		lookRows[id] = { value = value, btn = btn, btn2 = btn2 }
+	end
+	header(look, "🎨 지금 꾸민 것", 0)
+	lookRow("title", 1, "🏷", "머리 위 칭호", "🏆 칭호 고르기", function()
+		UI.openPage("ach")
+	end, "칭호 떼기", function()
+		Request:FireServer("title", "")
+	end)
+	lookRow("mount", 2, "🐎", "탈것", "🐎 탈것 고르기", function()
+		setShopTab("mount")
+		refreshers.shop()
+	end)
+	lookRow("killfx", 3, "💥", "처치 연출", "💥 연출 고르기", function()
+		setShopTab("killfx")
+		refreshers.shop()
+	end, "연출 빼기", function()
+		Request:FireServer("killFxEquip", "")
+	end)
+	lookRow("tint", 4, "🌌", "천상 빛깔 (시그니처 장신구)", "켜기·끄기", function()
+		Request:FireServer("skyTintToggle")
+	end)
+	lookRow("aura", 5, "💫", "천상 오라", "천궁 천상 상점", function()
+		UI.toast("💫 천상 오라는 천궁 (천상계)의 천상 상점에서 천정으로 산다")
+	end)
+
 	-- 💎 로벅스 상품: 금빛 카드 (큰 그림, 이름표, 좋은 점 세 줄, 값)
+	local prem = listIn("premium")
 	local premiumBtns: { [string]: TextButton } = {}
-	-- 자동 수련 카드: 켜기·끄기 + 올릴 능력치 고르기 (가진 카드에만 보인다)
 	local autoBtns: { [string]: { toggle: TextButton, stat: TextButton } } = {}
-	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💎 로벅스 상품", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 0, Parent = list })
 	for i, it in ipairs(Config.Premium) do
-		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.best and Color3.fromRGB(50, 26, 80) or (it.toggle and Color3.fromRGB(20, 50, 70) or Color3.fromRGB(70, 24, 14)), LayoutOrder = i, Parent = list }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.best and Color3.fromRGB(50, 26, 80) or (it.toggle and Color3.fromRGB(20, 50, 70) or Color3.fromRGB(70, 24, 14)), LayoutOrder = i, Parent = prem }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
 		new("UIGradient", { Rotation = 20, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 90)), Parent = card })
 		local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
 		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
@@ -60106,36 +60233,23 @@ local function buildShop()
 			autoBtns[it.id] = { toggle = tg, stat = sb }
 		end
 	end
-	-- 🐎 탈것: V로 타고 내린다
-	text({ Size = UDim2.new(1, -12, 0, 26), Text = "🐎 탈것 (V로 타기·내리기)", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 10, Parent = list })
-	local mountBtns: { [string]: TextButton } = {}
-	for k, m in ipairs(Config.MOUNTS) do
-		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 64), BackgroundColor3 = C.panel2, LayoutOrder = 10 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
-		text({ Position = UDim2.new(0, 14, 0, 4), Size = UDim2.new(1, -200, 0, 28), Text = string.format("%s %s  ·  빠르기 ×%.2f", m.icon, m.name, m.speed), TextSize = 19, Font = Enum.Font.GothamBlack, Parent = row })
-		text({ Position = UDim2.new(0, 14, 0, 34), Size = UDim2.new(1, -200, 0, 24), Text = m.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
-		mountBtns[m.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 44), Text = "", TextSize = 17, Parent = row }, function()
-			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
-			Request:FireServer(owned and "mountSelect" or "mountBuy", m.id)
-		end)
-	end
-	text({ Size = UDim2.new(1, -12, 0, 26), Text = "💰 은자로 사는 것", TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, LayoutOrder = 20, Parent = list })
-	local labels = {}
-	for k, item in ipairs(Config.Shop) do
-		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 70), BackgroundColor3 = C.panel2, LayoutOrder = 20 + k, Parent = list }, { corner(10), stroke(C.line, 1) })
-		text({ Position = UDim2.new(0, 14, 0, 6), Size = UDim2.new(1, -200, 0, 28), Text = item.icon .. " " .. item.name, TextSize = 20, Font = Enum.Font.GothamBlack, Parent = row })
-		text({ Position = UDim2.new(0, 14, 0, 36), Size = UDim2.new(1, -200, 0, 26), Text = item.desc, TextSize = 14, TextColor3 = C.dim, Parent = row })
-		labels[item.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 160, 0, 46), Text = "💰 " .. Config.formatNumber(item.cost), TextSize = 18, BackgroundColor3 = C.red, Parent = row }, function()
-			Request:FireServer("buy", item.id)
-		end)
-	end
-	refreshers.shop = function()
+
+	setShopTab("goods")
+	refreshers.shop = function(first: boolean?)
+		-- 다른 곳에서 특정 탭으로 열 때 (UI.openPage("shop", { tab = "killfx" }))
+		if first and pageOpt and pageOpt.tab then
+			setShopTab(pageOpt.tab)
+		end
+		head.Text = string.format("💰 은자 %s   ·   💠 천정 %s", Config.formatNumber(state and state.coins or 0), Config.formatNumber(state and state.skyGems or 0))
 		for _, m in ipairs(Config.MOUNTS) do
 			local b = mountBtns[m.id]
-			local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
-			local sel = state and state.mountSel == m.id
-			local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.achOnly and "🏆 신화 업적" or (m.gemsOnly and "💠 천정 전용" or ("💰 " .. Config.formatNumber(m.cost))))
-			b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
-			b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and C.panel or ((state and state.coins >= m.cost and not m.gemsOnly and not m.achOnly) and C.red or C.panel))
+			if b then
+				local owned = state and ((state.mounts and state.mounts[m.id]) or (m.premium and state.premium and state.premium[m.premium]))
+				local sel = state and state.mountSel == m.id
+				local price = m.premium and ("R$ " .. tostring(Config.PREMIUM_BY_ID[m.premium].price)) or (m.achOnly and "🔒 업적 보상" or (m.gemsOnly and "💠 천궁에서" or ("💰 " .. Config.formatNumber(m.cost))))
+				b.Text = sel and "✅ 고름" or (owned and "고르기" or price)
+				b.BackgroundColor3 = sel and Color3.fromRGB(60, 120, 70) or (owned and Color3.fromRGB(70, 90, 140) or ((state and state.coins >= m.cost and not m.gemsOnly and not m.achOnly and not m.premium) and C.red or C.panel))
+			end
 		end
 		for _, item in ipairs(Config.Shop) do
 			local can = state and state.coins >= item.cost
@@ -60157,6 +60271,39 @@ local function buildShop()
 			ab.toggle.Text = on and "🟢 켜짐" or "⚪ 꺼짐"
 			ab.toggle.BackgroundColor3 = on and Color3.fromRGB(40, 140, 70) or C.panel2
 			ab.stat.Text = statLabel[state and state.autoStat or "all"] or "골고루"
+		end
+		-- 꾸미기 요약
+		if state then
+			local t = state.title and Config.ACH_BY_ID[state.title]
+			lookRows.title.value.Text = (t and t.title) and ("「" .. t.title .. "」") or "없음"
+			local mt = state.mountSel and Config.MOUNT_BY_ID[state.mountSel]
+			lookRows.mount.value.Text = mt and (mt.icon .. " " .. mt.name) or "없음"
+			local kf = state.killFxOn and Config.KILL_FX_BY_ID[state.killFxOn]
+			lookRows.killfx.value.Text = kf and (kf.icon .. " " .. kf.name) or "없음"
+			local b2 = lookRows.killfx.btn2
+			if b2 then
+				b2.Visible = kf ~= nil
+			end
+			local anyTint = false
+			for _ in pairs(state.skyTint or {}) do
+				anyTint = true
+			end
+			lookRows.tint.value.Text = not anyTint and "없음 (천궁 천상 상점에서 권법마다 산다)" or (state.skyTintOff and "꺼짐" or "켜짐")
+			lookRows.tint.btn.Visible = anyTint
+			lookRows.aura.value.Text = state.skyAura and "가짐 (늘 켜져 있다)" or "없음"
+			lookRows.aura.btn.Visible = not state.skyAura
+			local tb2 = lookRows.title.btn2
+			if tb2 then
+				tb2.Visible = t ~= nil
+			end
+		end
+		local kr = refreshers.killfx
+		if kr then
+			kr()
+		end
+		local mr = refreshers.manuals
+		if mr then
+			mr()
 		end
 	end
 end
@@ -60241,9 +60388,14 @@ function UI.manualAutoResult(data: any)
 	end
 end
 local function buildManuals()
-	local page = makePage("manuals")
+	-- 3.17.4판: 따로 창 대신 만물상의 심법 탭에
+	local page = shopTabFrames.manuals
+	if not page then
+		return
+	end
 	local D = Config.MANUAL_DRAW
-	local head = text({ Size = UDim2.new(1, -440, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
+	local head = text({ Size = UDim2.new(1, -440, 0, 52), TextSize = 16, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, TextScaled = true, Parent = page })
+	new("UITextSizeConstraint", { MaxTextSize = 16, MinTextSize = 9, Parent = head })
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -292, 0, 0), Size = UDim2.new(0, 136, 0, 48), Text = "📜 1번 뽑기", TextSize = 17, BackgroundColor3 = Color3.fromRGB(150, 100, 40) }, function()
 		Request:FireServer("manualDraw", 1)
 	end).Parent = page
@@ -60337,7 +60489,7 @@ function UI.manualReveal(results: { any })
 	Gacha = Gacha or require(script.Parent:WaitForChild("Gacha"))
 	window.Visible = false
 	Gacha.play(results, function()
-		UI.openPage("manuals")
+		UI.openPage("shop", { tab = "manuals" })
 	end)
 end
 
@@ -60400,7 +60552,10 @@ end
 -- 3.17판 처치 연출 (킬 이펙트): 어디서나 천정으로 산다. 신화 업적 전용은 업적으로만. 하나만 끼운다
 ------------------------------------------------------------------------
 local function buildKillFx()
-	local page = makePage("killfx")
+	local page = shopTabFrames.killfx
+	if not page then
+		return
+	end
 	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 17, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 150), Parent = page })
 	local offBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 180, 0, 32), Text = "✖ 연출 빼기", TextSize = 14, BackgroundColor3 = C.panel2, Parent = page }, function()
 		Request:FireServer("killFxEquip", "")
@@ -60663,7 +60818,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
 		add("  단추가 흐리면 아직 쓸 수 없다 (대기 중이거나 🔒 잠김). 수련할 때는 가운데에 지금! 단추가 뜬다")
 		add("")
-		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·수련 안내·심법·만물상·도움말")
+		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·수련 안내·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
 	elseif tab == "fight" then
 		add("<b>⚔ 연타는 박자</b>")
@@ -60719,7 +60874,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
 		add("")
 		add("<b>심법 · 천층탑</b>")
-		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 심법)")
+		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 만물상 → 📜 심법)")
 		add("• 마을 안 천층탑: 층마다 세기가 정해져 있고 열 층마다 보스. 처음 넘는 보스 층엔 두루마리와 큰 몫")
 		add("")
 		add("<b>이야기</b>")
@@ -60751,7 +60906,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
-		add("• 💥 처치 연출 (메뉴): 내가 쓰러뜨린 자리에 터지는 연출. 권법 테마 스물넷은 천정으로, 신화 업적 아홉은 전용 연출. 👁로 미리보기, 하나만 끼운다")
+		add("• 💥 처치 연출 (만물상 → 💥 탭): 내가 쓰러뜨린 자리에 터지는 연출. 권법 테마 스물넷은 천정으로, 신화 업적 아홉은 전용 연출. 👁로 미리보기, 하나만 끼운다")
 		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
@@ -60999,7 +61154,7 @@ local function buildTest()
 					UI.previewKillFx(k.id)
 				end
 			end }, { "💥 처치 연출 창 열기", "", client = function()
-				UI.openPage("killfx")
+				UI.openPage("shop", { tab = "killfx" })
 			end },
 		})
 	end
@@ -63036,7 +63191,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "killfx", "💥 처치 연출" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then

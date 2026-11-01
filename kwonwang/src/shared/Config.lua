@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3264,7 +3264,7 @@ Config.Story = {
 	{ title = "특급에 오르다", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 특급부터 운기조식이 열린다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 800, stats = 100 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
 	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
-	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 심법 창(메뉴)에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
+	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 1200, stats = 200 } },

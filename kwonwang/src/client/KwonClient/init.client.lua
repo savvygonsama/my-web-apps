@@ -2387,11 +2387,11 @@ function handlers.ach(data: any)
 	end
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
-		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (🐎 탈것 창에서 고르기)")
+		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
 	end
 	local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
 	if kf then
-		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (💥 처치 연출 창에서 끼우기)")
+		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (만물상 → 💥 처치 연출에서 끼우기)")
 		task.delay(0.6, function()
 			KillFx.preview(kf.id)
 		end)
