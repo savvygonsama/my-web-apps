@@ -547,6 +547,24 @@ local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
 end
 
+-- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고, 한 번만 다시 해 본다 (일시 오류일 때)
+local tpRetried: { [Player]: boolean? } = {}
+game:GetService("TeleportService").TeleportInitFailed:Connect(function(player: Player, result: Enum.TeleportResult, err: string)
+	local t = Battle.lastTry[player]
+	if result == Enum.TeleportResult.Failure and t and not tpRetried[player] then
+		tpRetried[player] = true
+		task.delay(2, function()
+			if player.Parent then
+				Battle.teleport(player, t.toBattle)
+			end
+		end)
+		return
+	end
+	tpRetried[player] = nil
+	warn("[권왕] 장소 이동 실패", player.Name, result, err, t and t.id)
+	toast(player, Battle.failText(player, result, err))
+end)
+
 -- 컷씬: 그 장면을 처음 맞을 때만 (보았다고 적어 둔다). data = { at = 비출 자리, m = 비출 모델 }
 local function cutscene(player: Player, id: string, data: any?): boolean
 	local p, st = profiles[player], states[player]
@@ -5750,6 +5768,10 @@ end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
+Players.PlayerRemoving:Connect(function(pl: Player)
+	tpRetried[pl] = nil
+	Battle.lastTry[pl] = nil
+end)
 for _, player in ipairs(Players:GetPlayers()) do
 	task.spawn(onPlayerAdded, player)
 end

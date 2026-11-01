@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7560,6 +7560,24 @@ local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
 end
 
+-- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고, 한 번만 다시 해 본다 (일시 오류일 때)
+local tpRetried: { [Player]: boolean? } = {}
+game:GetService("TeleportService").TeleportInitFailed:Connect(function(player: Player, result: Enum.TeleportResult, err: string)
+	local t = Battle.lastTry[player]
+	if result == Enum.TeleportResult.Failure and t and not tpRetried[player] then
+		tpRetried[player] = true
+		task.delay(2, function()
+			if player.Parent then
+				Battle.teleport(player, t.toBattle)
+			end
+		end)
+		return
+	end
+	tpRetried[player] = nil
+	warn("[권왕] 장소 이동 실패", player.Name, result, err, t and t.id)
+	toast(player, Battle.failText(player, result, err))
+end)
+
 -- 컷씬: 그 장면을 처음 맞을 때만 (보았다고 적어 둔다). data = { at = 비출 자리, m = 비출 모델 }
 local function cutscene(player: Player, id: string, data: any?): boolean
 	local p, st = profiles[player], states[player]
@@ -12763,6 +12781,10 @@ end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
+Players.PlayerRemoving:Connect(function(pl: Player)
+	tpRetried[pl] = nil
+	Battle.lastTry[pl] = nil
+end)
 for _, player in ipairs(Players:GetPlayers()) do
 	task.spawn(onPlayerAdded, player)
 end
@@ -13020,6 +13042,9 @@ local B = Config.BATTLE
 -- 장소 찾기 (같은 체험 안)
 ------------------------------------------------------------------------
 local placeCache: { battle: number?, main: number? } = {}
+local placeNames: { [number]: string } = {}
+-- 마지막으로 보내려 한 장소 (실패 알림에 쓴다)
+Battle.lastTry = {} :: { [Player]: { id: number, name: string, toBattle: boolean } }
 local function findPlaces()
 	if placeCache.battle and placeCache.main then
 		return
@@ -13033,6 +13058,7 @@ local function findPlaces()
 	while true do
 		for _, item in ipairs(pages:GetCurrentPage()) do
 			local name = tostring(item.Name or "")
+			placeNames[item.PlaceId] = name
 			if string.find(name, B.placeName, 1, true) or string.find(string.lower(name), "battle", 1, true) then
 				placeCache.battle = placeCache.battle or item.PlaceId
 			else
@@ -13049,6 +13075,22 @@ local function findPlaces()
 			break
 		end
 	end
+end
+
+-- TeleportInitFailed 결과를 쉬운 말로 (773 = Unauthorized: 들어갈 수 없는 장소)
+function Battle.failText(player: Player, result: Enum.TeleportResult, err: string): string
+	local t = Battle.lastTry[player]
+	local where = t and string.format("'%s' (%d)", t.name, t.id) or "?"
+	if result == Enum.TeleportResult.Unauthorized then
+		return "⚠ " .. where .. " 장소에 들어갈 수 없어요 (773). Creator Hub에서 그 장소가 이 체험 안에 있는지, 체험이 공개인지 확인해 주세요"
+	elseif result == Enum.TeleportResult.GameNotFound then
+		return "⚠ " .. where .. " 장소를 찾지 못했어요. 그 장소를 한 번 게시해 주세요"
+	elseif result == Enum.TeleportResult.GameFull then
+		return "⚠ " .. where .. " 서버가 가득 찼어요. 잠시 뒤 다시"
+	elseif result == Enum.TeleportResult.Flooded then
+		return "⚠ 너무 자주 눌렀어요. 잠시 뒤 다시"
+	end
+	return "⚠ " .. where .. " 로 가지 못했어요: " .. tostring(err)
 end
 
 -- toBattle = true: 메인 → 배틀그라운드, false: 배틀그라운드 → 메인. 실패하면 까닭을 돌려준다
@@ -13075,13 +13117,15 @@ function Battle.teleport(player: Player, toBattle: boolean): (boolean, string?)
 	if not target then
 		return false, toBattle and ("'" .. B.placeName .. "' 장소를 찾지 못했어요 (체험에 그 이름의 장소가 있어야 해요)") or "메인 월드를 찾지 못했어요"
 	end
+	findPlaces()
+	Battle.lastTry[player] = { id = target :: number, name = placeNames[target :: number] or "?", toBattle = toBattle }
 	local opts = Instance.new("TeleportOptions")
 	opts:SetTeleportData({ from = game.PlaceId })
 	local ok, err = pcall(function()
 		TeleportService:TeleportAsync(target :: number, { player }, opts)
 	end)
 	if not ok then
-		return false, "이동하지 못했어요: " .. tostring(err)
+		return false, string.format("이동하지 못했어요 (장소 '%s' %d): %s", placeNames[target :: number] or "?", target :: number, tostring(err))
 	end
 	return true, nil
 end

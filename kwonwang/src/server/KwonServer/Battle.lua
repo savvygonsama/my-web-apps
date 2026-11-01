@@ -16,6 +16,9 @@ local B = Config.BATTLE
 -- 장소 찾기 (같은 체험 안)
 ------------------------------------------------------------------------
 local placeCache: { battle: number?, main: number? } = {}
+local placeNames: { [number]: string } = {}
+-- 마지막으로 보내려 한 장소 (실패 알림에 쓴다)
+Battle.lastTry = {} :: { [Player]: { id: number, name: string, toBattle: boolean } }
 local function findPlaces()
 	if placeCache.battle and placeCache.main then
 		return
@@ -29,6 +32,7 @@ local function findPlaces()
 	while true do
 		for _, item in ipairs(pages:GetCurrentPage()) do
 			local name = tostring(item.Name or "")
+			placeNames[item.PlaceId] = name
 			if string.find(name, B.placeName, 1, true) or string.find(string.lower(name), "battle", 1, true) then
 				placeCache.battle = placeCache.battle or item.PlaceId
 			else
@@ -45,6 +49,22 @@ local function findPlaces()
 			break
 		end
 	end
+end
+
+-- TeleportInitFailed 결과를 쉬운 말로 (773 = Unauthorized: 들어갈 수 없는 장소)
+function Battle.failText(player: Player, result: Enum.TeleportResult, err: string): string
+	local t = Battle.lastTry[player]
+	local where = t and string.format("'%s' (%d)", t.name, t.id) or "?"
+	if result == Enum.TeleportResult.Unauthorized then
+		return "⚠ " .. where .. " 장소에 들어갈 수 없어요 (773). Creator Hub에서 그 장소가 이 체험 안에 있는지, 체험이 공개인지 확인해 주세요"
+	elseif result == Enum.TeleportResult.GameNotFound then
+		return "⚠ " .. where .. " 장소를 찾지 못했어요. 그 장소를 한 번 게시해 주세요"
+	elseif result == Enum.TeleportResult.GameFull then
+		return "⚠ " .. where .. " 서버가 가득 찼어요. 잠시 뒤 다시"
+	elseif result == Enum.TeleportResult.Flooded then
+		return "⚠ 너무 자주 눌렀어요. 잠시 뒤 다시"
+	end
+	return "⚠ " .. where .. " 로 가지 못했어요: " .. tostring(err)
 end
 
 -- toBattle = true: 메인 → 배틀그라운드, false: 배틀그라운드 → 메인. 실패하면 까닭을 돌려준다
@@ -71,13 +91,15 @@ function Battle.teleport(player: Player, toBattle: boolean): (boolean, string?)
 	if not target then
 		return false, toBattle and ("'" .. B.placeName .. "' 장소를 찾지 못했어요 (체험에 그 이름의 장소가 있어야 해요)") or "메인 월드를 찾지 못했어요"
 	end
+	findPlaces()
+	Battle.lastTry[player] = { id = target :: number, name = placeNames[target :: number] or "?", toBattle = toBattle }
 	local opts = Instance.new("TeleportOptions")
 	opts:SetTeleportData({ from = game.PlaceId })
 	local ok, err = pcall(function()
 		TeleportService:TeleportAsync(target :: number, { player }, opts)
 	end)
 	if not ok then
-		return false, "이동하지 못했어요: " .. tostring(err)
+		return false, string.format("이동하지 못했어요 (장소 '%s' %d): %s", placeNames[target :: number] or "?", target :: number, tostring(err))
 	end
 	return true, nil
 end
