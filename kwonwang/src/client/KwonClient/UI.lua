@@ -29,6 +29,7 @@ local C = {
 UI.C = C
 -- 3.11.2판: 대기실 미리보기 인형에 장신구를 입히는 함수 (init.client가 Sakura.preview를 넣는다)
 UI.previewGear = (nil :: any)
+UI.previewKillFx = (nil :: any) -- 3.17판: 처치 연출 미리보기 (init에서 KillFx.preview를 넣는다)
 
 local function new(class: string, props: { [string]: any }?, children: { Instance }?): any
 	local inst = Instance.new(class)
@@ -503,7 +504,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", killfx = "💥 처치 연출" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -1100,6 +1101,10 @@ local function buildAch()
 		if mt then
 			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
 		end
+		local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
+		if kf then
+			table.insert(rewards, kf.icon .. " 처치 연출 「" .. kf.name .. "」")
+		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
@@ -1511,6 +1516,92 @@ local function buildSkyShop()
 end
 
 ------------------------------------------------------------------------
+-- 3.17판 처치 연출 (킬 이펙트): 어디서나 천정으로 산다. 신화 업적 전용은 업적으로만. 하나만 끼운다
+------------------------------------------------------------------------
+local function buildKillFx()
+	local page = makePage("killfx")
+	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 17, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 150), Parent = page })
+	local offBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 180, 0, 32), Text = "✖ 연출 빼기", TextSize = 14, BackgroundColor3 = C.panel2, Parent = page }, function()
+		Request:FireServer("killFxEquip", "")
+	end)
+	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
+	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	local btns: { [string]: TextButton } = {}
+	local order = 0
+	local function header(t: string, col: Color3)
+		order += 1
+		text({ Size = UDim2.new(1, -12, 0, 26), Text = t, TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = col, LayoutOrder = order, Parent = list })
+	end
+	local function row(k: any)
+		order += 1
+		local mythic = k.mythic
+		local r = new("Frame", { Size = UDim2.new(1, -12, 0, 66), BackgroundColor3 = mythic and Color3.fromRGB(52, 20, 26) or Color3.fromRGB(34, 30, 40), LayoutOrder = order, Parent = list }, { corner(10), stroke(mythic and Color3.fromRGB(255, 200, 90) or k.c1, mythic and 2 or 1) })
+		-- 빛깔 두 점
+		new("Frame", { Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(0, 16, 0, 16), BackgroundColor3 = k.c1, Parent = r }, { corner(99) })
+		new("Frame", { Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(0, 16, 0, 16), BackgroundColor3 = k.c2, Parent = r }, { corner(99) })
+		text({ Position = UDim2.new(0, 38, 0, 5), Size = UDim2.new(1, -290, 0, 28), Text = k.icon .. " " .. k.name, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = mythic and Color3.fromRGB(255, 215, 120) or Color3.new(1, 1, 1), Parent = r })
+		local st = k.style and Config.STYLE_BY_ID[k.style]
+		local a = k.ach and Config.ACH_BY_ID[k.ach]
+		local sub = k.desc .. (st and ("   ·   " .. st.icon .. " " .. st.name) or "") .. (a and ("   ·   🏆 신화 업적 「" .. a.name .. "」") or "")
+		text({ Position = UDim2.new(0, 38, 0, 34), Size = UDim2.new(1, -290, 0, 24), Text = sub, TextSize = 13, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = r })
+		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -184, 0.5, 0), Size = UDim2.new(0, 56, 0, 42), Text = "👁", TextSize = 18, BackgroundColor3 = C.panel2, Parent = r }, function()
+			if UI.previewKillFx then
+				window.Visible = false
+				UI.previewKillFx(k.id)
+			end
+		end)
+		btns[k.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 164, 0, 44), Text = "", TextSize = 16, Parent = r }, function()
+			local owned = state and state.killFx and state.killFx[k.id]
+			if owned then
+				Request:FireServer("killFxEquip", k.id)
+			elseif not k.ach then
+				Request:FireServer("killFxBuy", k.id)
+			end
+		end)
+	end
+	header("🔴 신화 업적 전용 (업적을 이루면 받는다)", Color3.fromRGB(255, 120, 110))
+	for _, k in ipairs(Config.KILL_FX) do
+		if k.mythic then
+			row(k)
+		end
+	end
+	header("💠 권법 테마 (천정으로 산다)", Color3.fromRGB(150, 230, 255))
+	for _, k in ipairs(Config.KILL_FX) do
+		if not k.mythic then
+			row(k)
+		end
+	end
+	refreshers.killfx = function()
+		local g = state and state.skyGems or 0
+		local on = state and state.killFxOn
+		local cur = on and Config.KILL_FX_BY_ID[on]
+		local nOwned = 0
+		for _ in pairs(state and state.killFx or {}) do
+			nOwned += 1
+		end
+		head.Text = string.format("💠 천정 %s  ·  가진 연출 %d/%d  ·  끼움: %s", Config.formatNumber(g), nOwned, #Config.KILL_FX, cur and (cur.icon .. " " .. cur.name) or "없음")
+		offBtn.Visible = cur ~= nil
+		for _, k in ipairs(Config.KILL_FX) do
+			local b = btns[k.id]
+			local owned = state and state.killFx and state.killFx[k.id]
+			if owned and on == k.id then
+				b.Text = "✔ 끼움"
+				b.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
+			elseif owned then
+				b.Text = "끼우기"
+				b.BackgroundColor3 = Color3.fromRGB(70, 90, 140)
+			elseif k.ach then
+				b.Text = "🔒 업적 보상"
+				b.BackgroundColor3 = C.panel
+			else
+				b.Text = "💠 " .. k.cost
+				b.BackgroundColor3 = g >= k.cost and Color3.fromRGB(60, 120, 200) or C.panel
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
 -- 천층탑: 지금 층과 나가기
 ------------------------------------------------------------------------
 local towerFrame: Frame? = nil
@@ -1779,6 +1870,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
+		add("• 💥 처치 연출 (메뉴): 내가 쓰러뜨린 자리에 터지는 연출. 권법 테마 스물넷은 천정으로, 신화 업적 아홉은 전용 연출. 👁로 미리보기, 하나만 끼운다")
 		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
@@ -1984,7 +2076,11 @@ local function buildTest()
 		new("UIGridLayout", { CellSize = UDim2.new(1 / n, -8, 0, 42), CellPadding = UDim2.new(0, 8, 0, 8), Parent = grid })
 		for _, item in ipairs(items) do
 			local b = button({ Text = item[1], TextSize = 15, BackgroundColor3 = item.color or C.panel2 }, function()
-				Request:FireServer(item[2], item[3])
+				if item.client then
+					item.client()
+				else
+					Request:FireServer(item[2], item[3])
+				end
 				if item.close then
 					window.Visible = false
 				end
@@ -2002,6 +2098,30 @@ local function buildTest()
 		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적·목인 치우기", "testClear" },
 		{ "🎬 컷씬 다시 보기", "testSeen" }, { "🗼 탑: 다음 보스 층", "testTower" }, { "🗼 탑: 이 층 쓸기", "testTower", "clear" },
 	})
+	-- 3.17판: 업적 · 처치 연출 테스트
+	section("🏆 업적 테스트", {
+		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
+		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
+		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·연출)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
+			UI.openPage("ach")
+		end },
+	})
+	do
+		local kfIdx = 0
+		section("💥 처치 연출 테스트", {
+			{ "💥 모두 얻기", "testKillFxAll" }, { "💥 다음 연출 끼우기", "testKillFxNext" }, { "🗑 모두 지우기", "testKillFxReset", color = C.red },
+			{ "🥷 앞에 한 대 무뢰배 넷", "testKillTargets", close = true }, { "👁 미리보기 (다음)", "", client = function()
+				kfIdx = kfIdx % #Config.KILL_FX + 1
+				local k = Config.KILL_FX[kfIdx]
+				UI.toast(string.format("👁 [%d/%d] %s %s", kfIdx, #Config.KILL_FX, k.icon, k.name))
+				if UI.previewKillFx then
+					UI.previewKillFx(k.id)
+				end
+			end }, { "💥 처치 연출 창 열기", "", client = function()
+				UI.openPage("killfx")
+			end },
+		})
+	end
 	section("📜 이야기·사부", {
 		{ "📜 이야기 다음 장", "testStory" }, { "📜 사부의 부탁 한 단계", "testQuestSkip" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "🌫 세상 끝 벼랑으로", "testEdgeTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
@@ -4035,7 +4155,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "manuals", "📜 심법" }, { "shop", "🧪 만물상" }, { "killfx", "💥 처치 연출" }, { "help", "📜 도움말" }, { "tower", "🗼 천층탑으로" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -4133,6 +4253,7 @@ function UI.init(req: RemoteEvent)
 	buildShop()
 	buildManuals()
 	buildSkyShop()
+	buildKillFx()
 	buildHelp()
 	buildTrainGuide()
 	buildTest()

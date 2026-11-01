@@ -40,6 +40,8 @@ local Geuk = require(script:WaitForChild("Geuk"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
+local KillFx = require(script:WaitForChild("KillFx"))
+UI.previewKillFx = KillFx.preview
 
 local player = Players.LocalPlayer
 -- 판 표시: 화면 오른쪽 아래 구석의 작은 글씨 (게시한 판이 맞는지, 게임패스 번호가 들어갔는지 보려고)
@@ -1813,12 +1815,17 @@ function handlers.broken(m: Model, secs: number)
 	end
 end
 
-function handlers.ko(m: Model, _by: Model?)
+function handlers.ko(m: Model, by: Model?)
 	Anim.play(m, "knockdown", 1.2)
 	local p = modelPos(m)
 	if p then
 		Fx.dust(p - Vector3.new(0, 2, 0), 3)
 		Fx.sound("fall", 0.6, 0.8, p)
+		-- 3.17판 처치 연출: 쓰러뜨린 사람이 끼운 연출이 이 자리에 터진다
+		local kf = by and by:GetAttribute("KillFx")
+		if type(kf) == "string" then
+			KillFx.play(kf, p)
+		end
 	end
 	if m == myChar() then
 		dead = true
@@ -2377,6 +2384,13 @@ function handlers.ach(data: any)
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
 		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (🐎 탈것 창에서 고르기)")
+	end
+	local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
+	if kf then
+		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (💥 처치 연출 창에서 끼우기)")
+		task.delay(0.6, function()
+			KillFx.preview(kf.id)
+		end)
 	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1
