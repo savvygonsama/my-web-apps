@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.17.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -60757,6 +60757,7 @@ HELP.TABS = {
 	{ id = "controls", label = "🎮 조작" },
 	{ id = "fight", label = "⚔ 싸움" },
 	{ id = "grow", label = "📈 강해지기" },
+	{ id = "train", label = "🧘 수련" },
 	{ id = "styles", label = "🥋 권법·사부" },
 	{ id = "ground", label = "🏔 지상" },
 	{ id = "sky", label = "☁ 천상계" },
@@ -60804,6 +60805,10 @@ function HELP.helpBossName(id: string?): string?
 	return b and b.name or nil
 end
 function HELP.helpText(tab: string): { string }
+	-- 3.17.5판: 수련 안내 (예전엔 따로 창)
+	if tab == "train" and HELP.trainLines then
+		return HELP.trainLines()
+	end
 	local L: { string } = {}
 	local function add(s: string)
 		table.insert(L, s)
@@ -60818,7 +60823,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
 		add("  단추가 흐리면 아직 쓸 수 없다 (대기 중이거나 🔒 잠김). 수련할 때는 가운데에 지금! 단추가 뜬다")
 		add("")
-		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·수련 안내·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말")
+		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말 (수련 안내도 여기)")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
 	elseif tab == "fight" then
 		add("<b>⚔ 연타는 박자</b>")
@@ -60845,7 +60850,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>📈 능력치는 싸움과 수련으로</b>")
 		add("• 적을 쓰러뜨리면 그 적의 전투력만큼 네 능력치가 고루 오른다. <b>내 수준의 땅</b>에서 잡을 때 가장 알차다")
 		add(string.format("• 보스는 %d배, 정예는 %.1f배. 나보다 훨씬 센 적도 내 경지 몫의 %.1f배까지만", Config.KILL_GAIN.boss, Config.KILL_GAIN.elite, Config.KILL_GAIN.overCap))
-		add(string.format("• 수련: 박자를 맞추면 두 배. 이류부터 바위의 🔥 강화 수련 (%d배). 경지마다 새 수련이 열린다 (메뉴 → 수련 안내)", Config.HARD_TRAIN.mult))
+		add(string.format("• 수련: 박자를 맞추면 두 배. 이류부터 바위의 🔥 강화 수련 (%d배). 경지마다 새 수련이 열린다 (도움말 → 🧘 수련)", Config.HARD_TRAIN.mult))
 		add("")
 		add("<b>경지</b> (능력치 합으로 오른다. 오를 때마다 피해·체력이 크게 오른다)")
 		local names = {}
@@ -60995,9 +61000,9 @@ end
 
 local function buildHelp()
 	local page = makePage("help")
-	-- 갈래 단추 (두 줄에 넷씩)
+	-- 갈래 단추 (두 줄에 다섯씩)
 	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, Parent = page })
-	new("UIGridLayout", { CellSize = UDim2.new(0.25, -6, 0, 34), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = bar })
+	new("UIGridLayout", { CellSize = UDim2.new(0.2, -6, 0, 34), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = bar })
 	local scroll = scroller(page, UDim2.new(1, 0, 1, -86), UDim2.new(0, 0, 0, 86))
 	local body = text({
 		Size = UDim2.new(1, -14, 0, 0),
@@ -61045,7 +61050,7 @@ local function buildHelp()
 	end)
 end
 
--- 수련마다 하는 법 (수련 창 아래와 수련 안내 창에 나온다)
+-- 수련마다 하는 법 (수련 창 아래와 도움말의 수련 갈래에 나온다)
 local TRAIN_GUIDE: { [string]: string } = {
 	rock = "① 금빛 고리가 줄어든다  ② 고리가 가운데 흰 원에 겹칠 때 Space  ③ 딱 맞으면 완벽 (두 배)",
 	waterfall = "① 파란 원이 커졌다 작아졌다 한다  ② 가장 커졌을 때 Space  ③ 숨 쉬듯 천천히",
@@ -61057,10 +61062,8 @@ local TRAIN_GUIDE: { [string]: string } = {
 	simma = "마음속 마귀와 싸운다. 마구 치지 말고 F로 흘린 뒤 받아치자",
 }
 
--- 수련 안내: 무엇을, 어디서, 어떻게
-local function buildTrainGuide()
-	local page = makePage("train")
-	local scroll = scroller(page, UDim2.fromScale(1, 1))
+-- 수련 안내: 무엇을, 어디서, 어떻게 (3.17.5판: 도움말의 🧘 수련 갈래)
+function HELP.trainLines(): { string }
 	local statName = {}
 	for _, s in ipairs(Config.Stats) do
 		statName[s.id] = s.icon .. " " .. s.name
@@ -61093,7 +61096,7 @@ local function buildTrainGuide()
 			table.insert(lines, "")
 		end
 	end
-	text({ Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextSize = 17, RichText = true, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = scroll, Text = table.concat(lines, "\n") })
+	return lines
 end
 
 local function buildTest()
@@ -63191,7 +63194,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "train", "🧘 수련 안내" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -63291,7 +63294,6 @@ function UI.init(req: RemoteEvent)
 	buildSkyShop()
 	buildKillFx()
 	buildHelp()
-	buildTrainGuide()
 	buildTest()
 	buildMap()
 	buildSpeedLines()
