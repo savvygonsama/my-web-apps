@@ -6061,6 +6061,366 @@ function World.mazeGate(gate: BasePart, closed: boolean)
 	gate.Transparency = closed and 0.2 or 1
 end
 
+------------------------------------------------------------------------
+-- 3.19.1판: 새 권법 사부 열하나의 자리. 사부가 선 자리 (반지름 6)는 비우고, 그 권법에 맞는 꾸밈을 둘레에 놓는다
+-- (등 뒤 = 지도 가운데에서 먼 쪽. 다가오는 사람에게 사부와 꾸밈이 함께 보인다)
+------------------------------------------------------------------------
+local ART_SITES: { [string]: (Vector3, Vector3, Folder) -> () } = {}
+-- 얼음 벽을 상자처럼 보이지 않게: 위와 앞에 크고 작은 얼음 덩이를 비스듬히 얹고, 꼭대기에 눈을 덮는다
+local function jag(f: Instance, center: Vector3, back: Vector3, w: number, top: number, n: number)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	for k = 1, n do
+		local u = (k - 0.5) / n - 0.5
+		local s = rng:NextNumber(4, 8)
+		local at = center + side * (u * w) + Vector3.new(0, top + rng:NextNumber(-2, 1.5), 0) - back * rng:NextNumber(-1, 2.5)
+		part({ Name = "IceJag", Size = Vector3.new(s, s * rng:NextNumber(0.8, 1.6), s), CFrame = CFrame.new(at) * CFrame.Angles(rng:NextNumber(-0.5, 0.5), rng:NextNumber(0, 6), rng:NextNumber(-0.5, 0.5)), Color = Color3.fromRGB(195, 222, 242):Lerp(Color3.fromRGB(150, 195, 230), rng:NextNumber()), Material = Enum.Material.Glacier, Parent = f })
+		if k % 2 == 0 then
+			part({ Name = "SnowCap", Size = Vector3.new(s * 0.9, 0.8, s * 0.9), CFrame = CFrame.new(at + Vector3.new(0, s * 0.55, 0)) * CFrame.Angles(0, rng:NextNumber(0, 6), 0), Color = Color3.fromRGB(245, 250, 255), Material = Enum.Material.Snow, CanCollide = false, Parent = f })
+		end
+		-- 앞쪽 아래 무너진 얼음 조각
+		local d = rng:NextNumber(1.4, 3)
+		part({ Name = "IceRubble", Size = Vector3.new(d * 1.3, d, d), CFrame = CFrame.new(center + side * (u * w * 1.1) - back * rng:NextNumber(5, 9) + Vector3.new(0, d * 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, 6), 0), Color = Color3.fromRGB(205, 230, 248), Material = Enum.Material.Glacier, Parent = f })
+	end
+end
+local function P(f: Instance, name: string, size: Vector3, cf: CFrame, color: Color3, mat: Enum.Material, collide: boolean?): Part
+	return part({ Name = name, Size = size, CFrame = cf, Color = color, Material = mat, CanCollide = collide ~= false, Parent = f })
+end
+-- 세운 원기둥 (높이 h, 바닥이 g)
+local function pillar(f: Instance, name: string, at: Vector3, r: number, h: number, color: Color3, mat: Enum.Material, collide: boolean?): Part
+	return disc(name, at + Vector3.new(0, h / 2, 0), r, h, color, mat, f, collide)
+end
+-- 철쇄노인: 모래 씨름판, 둘레의 말뚝과 쇠사슬, 등 뒤 나무 틀에 늘어진 사슬, 쇳덩이
+ART_SITES.cheolsae = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	disc("WrestleRing", g + Vector3.new(0, 0.12, 0), 15, 0.25, Color3.fromRGB(214, 190, 140), Enum.Material.Sand, f, false)
+	disc("WrestleEdge", g + Vector3.new(0, 0.1, 0), 16.2, 0.2, Color3.fromRGB(120, 95, 70), Enum.Material.WoodPlanks, f, false)
+	local posts = {}
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * 16.5
+		pillar(f, "RingPost", at, 0.45, 3.2, Color3.fromRGB(90, 62, 42), Enum.Material.Wood)
+		table.insert(posts, at + Vector3.new(0, 2.6, 0))
+	end
+	-- 말뚝 사이 쇠사슬 (조금 처진다)
+	for k = 1, #posts do
+		local a, b = posts[k], posts[k % #posts + 1]
+		local mid = (a + b) / 2 - Vector3.new(0, 0.5, 0)
+		for _, seg in ipairs({ { a, mid }, { mid, b } }) do
+			local len = (seg[2] - seg[1]).Magnitude
+			P(f, "RingChain", Vector3.new(0.25, 0.25, len), CFrame.lookAt((seg[1] + seg[2]) / 2, seg[2]), Color3.fromRGB(80, 84, 92), Enum.Material.Metal, false)
+		end
+	end
+	-- 등 뒤 나무 틀과 늘어진 사슬 셋
+	local frame = g + back * 22
+	for _, s in ipairs({ -1, 1 }) do
+		pillar(f, "ChainFramePost", frame + side * 6 * s, 0.7, 11, Color3.fromRGB(85, 58, 40), Enum.Material.Wood)
+	end
+	P(f, "ChainFrameBeam", Vector3.new(14, 1.2, 1.2), CFrame.lookAt(frame + Vector3.new(0, 11, 0), frame + Vector3.new(0, 11, 0) + side) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(85, 58, 40), Enum.Material.Wood)
+	for k = -1, 1 do
+		local top = frame + side * (k * 3.5) + Vector3.new(0, 10.4, 0)
+		for i = 0, 9 do
+			P(f, "HangingLink", Vector3.new(0.5, 0.9, 0.2), CFrame.new(top - Vector3.new(0, i * 0.8, 0)) * CFrame.Angles(0, (i % 2) * math.rad(90), 0), Color3.fromRGB(70, 74, 82), Enum.Material.Metal, false)
+		end
+		P(f, "ChainWeight", Vector3.new(1.8, 1.8, 1.8), CFrame.new(top - Vector3.new(0, 8.8, 0)), Color3.fromRGB(55, 58, 64), Enum.Material.Metal, false).Shape = Enum.PartType.Ball
+	end
+	-- 쇳덩이 넷 (돌 받침 위)
+	for k, a in ipairs({ -0.9, -0.5, 0.5, 0.9 }) do
+		local at = g + (back * math.cos(a) + side * math.sin(a)) * 12.5
+		local w = P(f, "IronWeight", Vector3.new(2.2, 2.2, 2.2) * (0.8 + k * 0.08), CFrame.new(at + Vector3.new(0, 1.1, 0)), Color3.fromRGB(60, 62, 68), Enum.Material.Metal)
+		w.Shape = Enum.PartType.Ball
+	end
+end
+-- 역류객: 작은 못 (물줄기가 거꾸로 솟는다), 못 가운데 평평한 바위 (사부 자리), 징검돌, 둘레 돌
+ART_SITES.yeokryu = function(g: Vector3, back: Vector3, f: Folder)
+	local water = disc("CounterPond", g + Vector3.new(0, 0.08, 0), 15, 0.2, Color3.fromRGB(70, 150, 175), Enum.Material.Glass, f, false)
+	water.Transparency = 0.25
+	disc("CounterRock", g + Vector3.new(0, 0.18, 0), 5.5, 0.35, Color3.fromRGB(150, 150, 145), Enum.Material.Slate, f, true)
+	for k = 0, 17 do
+		local a = k / 18 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * (15.5 + rng:NextNumber(-0.6, 0.6))
+		local s = rng:NextNumber(1.2, 2.2)
+		P(f, "PondStone", Vector3.new(s * 1.4, s * 0.8, s), CFrame.new(at + Vector3.new(0, s * 0.3, 0)) * CFrame.Angles(0, a, rng:NextNumber(-0.2, 0.2)), Color3.fromRGB(125, 125, 120), Enum.Material.Rock)
+	end
+	-- 징검돌 (바깥쪽에서 바위까지)
+	for i = 1, 3 do
+		disc("SteppingStone", g - back * (5.5 + i * 3) + Vector3.new(0, 0.2, 0), 1.3, 0.4, Color3.fromRGB(140, 138, 130), Enum.Material.Slate, f, true)
+	end
+	-- 거꾸로 솟는 물기둥 셋 (등 뒤)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	for k = -1, 1 do
+		local at = g + back * 10 + side * (k * 5)
+		local col = pillar(f, "ReverseStream", at, 0.6 + math.abs(k) * 0.1, 7 - math.abs(k) * 2, Color3.fromRGB(150, 225, 240), Enum.Material.Glass, false)
+		col.Transparency = 0.35
+		local cap = P(f, "StreamCrest", Vector3.new(2.4, 2.4, 2.4), CFrame.new(at + Vector3.new(0, 7 - math.abs(k) * 2, 0)), Color3.fromRGB(220, 250, 255), Enum.Material.Glass, false)
+		cap.Shape = Enum.PartType.Ball
+		cap.Transparency = 0.45
+	end
+	light(water, Color3.fromRGB(120, 220, 235), 24, 1)
+end
+-- 질풍랑: 높은 깃대 여덟 (바람에 날리는 깃발), 둘레의 목인 셋, 바람에 눕은 풀 고리
+ART_SITES.jilpung = function(g: Vector3, back: Vector3, f: Folder)
+	local wind = (back + Vector3.new(-back.Z, 0, back.X) * 0.6).Unit
+	disc("GaleCourt", g + Vector3.new(0, 0.08, 0), 13, 0.15, Color3.fromRGB(170, 150, 110), Enum.Material.Ground, f, false)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * 17
+		local h = 12 + (k % 2) * 3
+		pillar(f, "GalePole", at, 0.3, h, Color3.fromRGB(110, 80, 55), Enum.Material.Wood)
+		-- 깃발: 바람 쪽으로 길게 (두 조각이 조금 꺾인다)
+		local top = at + Vector3.new(0, h - 1.4, 0)
+		local c = k % 2 == 0 and Color3.fromRGB(255, 170, 90) or Color3.fromRGB(255, 235, 200)
+		P(f, "GaleFlag", Vector3.new(0.1, 2.4, 4), CFrame.lookAt(top + wind * 2, top + wind * 4) * CFrame.Angles(0, 0, math.rad(8)), c, Enum.Material.Fabric, false)
+		P(f, "GaleFlagTail", Vector3.new(0.1, 1.8, 3), CFrame.lookAt(top + wind * 5.4 - Vector3.new(0, 0.4, 0), top + wind * 8) * CFrame.Angles(0, 0, math.rad(-10)), c, Enum.Material.Fabric, false)
+	end
+	-- 목인 셋 (팔 막대 셋)
+	for k = -1, 1 do
+		local at = g + back * 9 + Vector3.new(-back.Z, 0, back.X) * (k * 6)
+		pillar(f, "SpeedDummy", at, 0.9, 6, Color3.fromRGB(140, 100, 65), Enum.Material.Wood)
+		for i = 0, 2 do
+			local y = 2.6 + i * 1.1
+			local a = i * 2.1 + k
+			P(f, "DummyArm", Vector3.new(0.35, 0.35, 2.6), CFrame.new(at + Vector3.new(0, y, 0)) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -1.3), Color3.fromRGB(120, 85, 55), Enum.Material.Wood)
+		end
+	end
+	-- 바람에 눕은 풀
+	for k = 0, 23 do
+		local a = k / 24 * math.pi * 2
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(13, 15)
+		P(f, "Tuft", Vector3.new(0.4, 1.4, 0.4), CFrame.new(at + Vector3.new(0, 0.5, 0)) * CFrame.fromAxisAngle(Vector3.new(-wind.Z, 0, wind.X), math.rad(35)), Color3.fromRGB(150, 170, 90), Enum.Material.Grass, false)
+	end
+end
+-- 붕산노조: 등 뒤에 가운데가 쩍 갈라진 집채만 한 바위, 둘레에 떨어져 나간 바위 조각, 땅의 금
+ART_SITES.sanak = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local c0 = g + back * 16
+	for _, s in ipairs({ -1, 1 }) do
+		local at = c0 + side * (5.2 * s)
+		P(f, "SplitBoulder", Vector3.new(9, 15, 12), CFrame.lookAt(at + Vector3.new(0, 7, 0), at + Vector3.new(0, 7, 0) + back) * CFrame.Angles(0, 0, math.rad(-7 * s)), Color3.fromRGB(150, 110, 80), Enum.Material.Rock)
+		P(f, "SplitBoulderTop", Vector3.new(7, 4, 10), CFrame.lookAt(at + Vector3.new(-s * 0.6, 15.5, 0), at + Vector3.new(-s * 0.6, 15.5, 0) + back) * CFrame.Angles(math.rad(10), 0, math.rad(-12 * s)), Color3.fromRGB(165, 125, 90), Enum.Material.Rock)
+	end
+	-- 갈라진 틈에서 새어 나오는 빛
+	local glow = P(f, "SplitGlow", Vector3.new(0.6, 13, 8), CFrame.lookAt(c0 + Vector3.new(0, 6.5, 0), c0 + Vector3.new(0, 6.5, 0) + back), Color3.fromRGB(255, 200, 120), Enum.Material.Neon, false)
+	light(glow, Color3.fromRGB(255, 190, 110), 22, 1.4)
+	-- 땅의 금 (사부 발치에서 바위까지 뻗는다)
+	for k = 0, 6 do
+		local a = (k - 3) * 0.32
+		local dir = (back * math.cos(a) + side * math.sin(a)).Unit
+		local len = rng:NextNumber(9, 15)
+		P(f, "GroundCrack", Vector3.new(0.5, 0.12, len), CFrame.lookAt(g + dir * (3 + len / 2) + Vector3.new(0, 0.12, 0), g + dir * (3 + len)), Color3.fromRGB(40, 28, 22), Enum.Material.Slate, false)
+	end
+	-- 떨어져 나간 바위 조각
+	for k = 1, 9 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local at = g + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(9, 20)
+		local s = rng:NextNumber(1.5, 3.4)
+		P(f, "BoulderChip", Vector3.new(s * 1.3, s, s * 1.1), CFrame.new(at + Vector3.new(0, s * 0.35, 0)) * CFrame.Angles(rng:NextNumber(-0.5, 0.5), a, rng:NextNumber(-0.5, 0.5)), Color3.fromRGB(140, 105, 78), Enum.Material.Rock)
+	end
+end
+-- 빙혼노니: 등 뒤 얼음 벼랑과 얼어붙은 폭포 (고드름), 얼음 바닥, 차가운 빛
+ART_SITES.binghon = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local wall = g + back * 18
+	P(f, "IceCliff", Vector3.new(34, 26, 8), CFrame.lookAt(wall + Vector3.new(0, 12, 0), wall + Vector3.new(0, 12, 0) - back), Color3.fromRGB(200, 225, 240), Enum.Material.Glacier)
+	for _, s in ipairs({ -1, 1 }) do
+		P(f, "IceCliffSide", Vector3.new(12, 20, 8), CFrame.lookAt(wall + side * 18 * s - back * 3 + Vector3.new(0, 9, 0), wall + side * 18 * s + Vector3.new(0, 9, 0) - back * 4) * CFrame.Angles(0, math.rad(25 * s), 0), Color3.fromRGB(190, 215, 235), Enum.Material.Glacier)
+	end
+	jag(f, wall, back, 40, 25, 9)
+	-- 얼어붙은 폭포: 벼랑 앞을 흘러내리다 굳은 얼음 기둥들
+	for k = -3, 3 do
+		local at = wall - back * 4.4 + side * (k * 2.1)
+		local h = 22 - math.abs(k) * 2.5
+		local col = pillar(f, "FrozenFall", at, 1.1 - math.abs(k) * 0.08, h, Color3.fromRGB(170, 225, 255), Enum.Material.Glass, false)
+		col.Transparency = 0.3
+	end
+	-- 벼랑 끝의 고드름
+	for k = -7, 7 do
+		local at = wall - back * 4.3 + side * (k * 2) + Vector3.new(0, 24.5, 0)
+		local L = rng:NextNumber(2, 5)
+		P(f, "Icicle", Vector3.new(0.8, L, 0.8), CFrame.new(at - Vector3.new(0, L / 2, 0)) * CFrame.Angles(0, math.rad(45), 0), Color3.fromRGB(220, 245, 255), Enum.Material.Ice, false)
+	end
+	local floor = disc("IceFloor", g + Vector3.new(0, 0.1, 0), 16, 0.2, Color3.fromRGB(205, 232, 248), Enum.Material.Ice, f, false)
+	light(floor, Color3.fromRGB(160, 215, 255), 30, 1.2)
+	for k = 1, 6 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		crystal(g + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(10, 15) + Vector3.new(0, 1.2, 0), rng:NextNumber(0.9, 1.6), Color3.fromRGB(170, 225, 255), f)
+	end
+end
+-- 옥진인: 높낮이가 다른 옥 기둥 일곱이 반원으로, 옥빛 바닥, 떠 있는 옥 결정
+ART_SITES.cheonok = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	disc("JadeFloor", g + Vector3.new(0, 0.12, 0), 14, 0.25, Color3.fromRGB(150, 215, 185), Enum.Material.Marble, f, false)
+	disc("JadeFloorRim", g + Vector3.new(0, 0.1, 0), 15, 0.2, Color3.fromRGB(70, 160, 120), Enum.Material.Marble, f, false)
+	for k = 0, 6 do
+		local a = (k / 6 - 0.5) * math.pi * 1.1
+		local dir = (back * math.cos(a) + side * math.sin(a)).Unit
+		local at = g + dir * 13
+		local h = 8 + (3 - math.abs(k - 3)) * 3.5
+		local col = P(f, "JadePillar", Vector3.new(2.6, h, 2.6), CFrame.new(at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, a + math.rad(45), 0), Color3.fromRGB(90, 200, 150), Enum.Material.Glass)
+		col.Transparency = 0.15
+		P(f, "JadePillarCore", Vector3.new(1.2, h - 1, 1.2), col.CFrame, Color3.fromRGB(170, 255, 215), Enum.Material.Neon, false)
+		P(f, "JadePillarCap", Vector3.new(3.2, 0.8, 3.2), CFrame.new(at + Vector3.new(0, h + 0.4, 0)) * CFrame.Angles(0, a, 0), Color3.fromRGB(230, 250, 240), Enum.Material.Marble)
+	end
+	for k = 1, 5 do
+		local a = (k / 5 - 0.6) * 2.2
+		crystal(g + (back * math.cos(a) + side * math.sin(a)) * 7 + Vector3.new(0, 7 + (k % 2) * 2, 0), 1.2, Color3.fromRGB(120, 255, 190), f)
+	end
+end
+-- 종지기: 돌 받침 위 종각 (기둥 넷, 지붕), 매달린 큰 청동 종, 줄에 매단 당목
+ART_SITES.cheonjong = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local c0 = g + back * 12
+	P(f, "BellBase", Vector3.new(14, 1, 14), CFrame.lookAt(c0 + Vector3.new(0, 0.5, 0), c0 + Vector3.new(0, 0.5, 0) + back), Color3.fromRGB(150, 140, 125), Enum.Material.Cobblestone)
+	for _, sx in ipairs({ -1, 1 }) do
+		for _, sz in ipairs({ -1, 1 }) do
+			pillar(f, "BellPost", c0 + side * 5.5 * sx + back * 5.5 * sz + Vector3.new(0, 1, 0), 0.6, 13, Color3.fromRGB(140, 40, 35), Enum.Material.Wood)
+		end
+	end
+	local roofY = c0 + Vector3.new(0, 14.5, 0)
+	P(f, "BellRoof", Vector3.new(16, 1, 16), CFrame.lookAt(roofY, roofY + back), Color3.fromRGB(55, 65, 90), Enum.Material.Slate)
+	P(f, "BellRoofTop", Vector3.new(10, 1.2, 10), CFrame.lookAt(roofY + Vector3.new(0, 1.1, 0), roofY + Vector3.new(0, 1.1, 0) + back), Color3.fromRGB(65, 75, 100), Enum.Material.Slate)
+	P(f, "BellBeam", Vector3.new(12, 0.8, 0.8), CFrame.lookAt(roofY - Vector3.new(0, 1, 0), roofY - Vector3.new(0, 1, 0) + back) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(110, 75, 50), Enum.Material.Wood)
+	-- 종: 몸통 (원기둥) + 위 둥근 머리 + 아래 테
+	local bellC = c0 + Vector3.new(0, 8.6, 0)
+	pillar(f, "BigBell", bellC - Vector3.new(0, 3, 0), 2.6, 6, Color3.fromRGB(150, 115, 55), Enum.Material.Metal, false)
+	local head = P(f, "BigBellHead", Vector3.new(5.2, 3.2, 5.2), CFrame.new(bellC + Vector3.new(0, 3, 0)), Color3.fromRGB(150, 115, 55), Enum.Material.Metal, false)
+	head.Shape = Enum.PartType.Ball
+	disc("BigBellLip", bellC - Vector3.new(0, 3, 0), 2.9, 0.5, Color3.fromRGB(200, 160, 80), Enum.Material.Metal, f, false)
+	P(f, "BellRope", Vector3.new(0.3, 1.6, 0.3), CFrame.new(bellC + Vector3.new(0, 5.2, 0)), Color3.fromRGB(200, 180, 140), Enum.Material.Fabric, false)
+	-- 당목 (종을 치는 통나무)
+	local logAt = bellC - side * 5 - Vector3.new(0, 1, 0)
+	P(f, "BellRam", Vector3.new(5, 1, 1), CFrame.lookAt(logAt, logAt + side) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(110, 80, 55), Enum.Material.Wood, false)
+	for _, k in ipairs({ -1.6, 1.6 }) do
+		P(f, "RamRope", Vector3.new(0.15, 6, 0.15), CFrame.new(logAt + side * k + Vector3.new(0, 3.4, 0)), Color3.fromRGB(200, 180, 140), Enum.Material.Fabric, false)
+	end
+	light(head, Color3.fromRGB(255, 210, 130), 20, 1)
+end
+-- 명경선: 돌 테를 두른 거울 연못, 둘레에 선 거울 넷, 등롱
+ART_SITES.myeonggyeong = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local pond = disc("MirrorPond", g + back * 11 + Vector3.new(0, 0.6, 0), 7, 0.2, Color3.fromRGB(200, 225, 245), Enum.Material.Glass, f, false)
+	pond.Reflectance = 0.6
+	disc("MirrorPondRim", g + back * 11 + Vector3.new(0, 0.4, 0), 7.8, 0.6, Color3.fromRGB(170, 170, 165), Enum.Material.Marble, f, true)
+	for k = 0, 3 do
+		local a = (k / 3 - 0.5) * math.pi * 1.2
+		local dir = (back * math.cos(a) + side * math.sin(a)).Unit
+		local at = g + dir * 15
+		local frame = P(f, "StandingMirrorFrame", Vector3.new(5, 9, 0.6), CFrame.lookAt(at + Vector3.new(0, 4.5, 0), g + Vector3.new(0, 4.5, 0)), Color3.fromRGB(210, 200, 170), Enum.Material.Marble)
+		local glass = P(f, "StandingMirror", Vector3.new(4.2, 8.2, 0.2), frame.CFrame * CFrame.new(0, 0, -0.35), Color3.fromRGB(220, 235, 250), Enum.Material.Glass, false)
+		glass.Reflectance = 0.75
+		glass.Transparency = 0.1
+	end
+	for _, s in ipairs({ -1, 1 }) do
+		local at = g + side * 8 * s + back * 3
+		pillar(f, "LanternPost", at, 0.25, 4, Color3.fromRGB(90, 70, 55), Enum.Material.Wood)
+		local lamp = P(f, "Lantern", Vector3.new(1.2, 1.6, 1.2), CFrame.new(at + Vector3.new(0, 4.6, 0)), Color3.fromRGB(255, 240, 210), Enum.Material.Neon, false)
+		light(lamp, Color3.fromRGB(230, 240, 255), 18, 1.2)
+	end
+end
+-- 천룡진인: 용의 등뼈처럼 휘어 오르는 바위 비늘 줄 (반원), 금빛 수염 깃발, 빛나는 구슬
+ART_SITES.chocheonryong = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	for k = 0, 13 do
+		local u = k / 13
+		local a = (u - 0.5) * math.pi * 1.3
+		local dir = (back * math.cos(a) + side * math.sin(a)).Unit
+		local at = g + dir * (14 + math.sin(u * math.pi * 2) * 2)
+		local h = 4 + math.sin(u * math.pi) * 9
+		P(f, "DragonSpine", Vector3.new(2.4, h, 4), CFrame.lookAt(at + Vector3.new(0, h / 2, 0), at + Vector3.new(0, h / 2, 0) + side:Lerp(dir, 0.3)) * CFrame.Angles(math.rad(-18), 0, 0), Color3.fromRGB(95, 85, 70), Enum.Material.Slate)
+		if k % 3 == 1 then
+			P(f, "DragonScaleGlow", Vector3.new(0.4, h * 0.6, 2.4), CFrame.lookAt(at + Vector3.new(0, h * 0.55, 0), at + Vector3.new(0, h * 0.55, 0) + side:Lerp(dir, 0.3)) * CFrame.Angles(math.rad(-18), 0, 0) * CFrame.new(1.25, 0, 0), Color3.fromRGB(255, 210, 90), Enum.Material.Neon, false)
+		end
+	end
+	-- 용의 구슬 (등 뒤 높이)
+	local orb = P(f, "DragonPearl", Vector3.new(3, 3, 3), CFrame.new(g + back * 9 + Vector3.new(0, 9, 0)), Color3.fromRGB(255, 225, 120), Enum.Material.Neon, false)
+	orb.Shape = Enum.PartType.Ball
+	light(orb, Color3.fromRGB(255, 210, 110), 30, 1.6)
+	-- 금빛 수염 깃발 둘
+	for _, s in ipairs({ -1, 1 }) do
+		local at = g + side * 9 * s + back * 4
+		pillar(f, "WhiskerPole", at, 0.3, 11, Color3.fromRGB(60, 50, 40), Enum.Material.Wood)
+		for i = 0, 2 do
+			P(f, "WhiskerBanner", Vector3.new(0.1, 6, 1.2), CFrame.new(at + side * s * (0.8 + i * 0.9) + Vector3.new(0, 7.5 - i * 0.6, 0)) * CFrame.Angles(0, 0, math.rad(8 * s)), i == 1 and Color3.fromRGB(120, 255, 220) or Color3.fromRGB(255, 210, 80), Enum.Material.Fabric, false)
+		end
+	end
+end
+-- 패왕: 무너진 돌 왕좌 (등 뒤), 쓰러진 돌기둥, 찢긴 붉은 깃발
+ART_SITES.cheonha = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local c0 = g + back * 10
+	local face = CFrame.lookAt(c0, c0 - back)
+	P(f, "ThroneDais", Vector3.new(16, 1.2, 10), face * CFrame.new(0, 0.6, 0), Color3.fromRGB(150, 120, 95), Enum.Material.Slate)
+	P(f, "ThroneDais2", Vector3.new(12, 1.2, 7), face * CFrame.new(0, 1.8, 1), Color3.fromRGB(160, 130, 100), Enum.Material.Slate)
+	P(f, "ThroneSeat", Vector3.new(6, 2.4, 4.5), face * CFrame.new(0, 3.6, 1.5), Color3.fromRGB(120, 95, 75), Enum.Material.Granite)
+	P(f, "ThroneBack", Vector3.new(6.4, 10, 1.6), face * CFrame.new(0, 8, 3.6) * CFrame.Angles(math.rad(-6), 0, math.rad(4)), Color3.fromRGB(110, 88, 70), Enum.Material.Granite)
+	P(f, "ThroneBackCrack", Vector3.new(0.3, 7, 1.7), face * CFrame.new(1.2, 8.5, 3.6) * CFrame.Angles(math.rad(-6), 0, math.rad(18)), Color3.fromRGB(40, 30, 25), Enum.Material.Slate, false)
+	for _, s in ipairs({ -1, 1 }) do
+		P(f, "ThroneArm", Vector3.new(1.2, 2.2, 4.5), face * CFrame.new(3.5 * s, 4.8, 1.5), Color3.fromRGB(120, 95, 75), Enum.Material.Granite)
+		P(f, "ThroneGold", Vector3.new(1.4, 0.4, 4.7), face * CFrame.new(3.5 * s, 6, 1.5), Color3.fromRGB(230, 180, 80), Enum.Material.Metal, false)
+	end
+	-- 쓰러진 기둥과 선 기둥
+	for k, a in ipairs({ -1.1, -0.6, 0.6, 1.1 }) do
+		local dir = (back * math.cos(a) + side * math.sin(a)).Unit
+		local at = g + dir * 16
+		if k % 2 == 0 then
+			pillar(f, "BrokenPillar", at, 1.4, 9 + k, Color3.fromRGB(165, 140, 115), Enum.Material.Granite)
+		else
+			local fallen = disc("FallenPillar", at + Vector3.new(0, 1.3, 0), 1.3, 12, Color3.fromRGB(160, 135, 110), Enum.Material.Granite, f, true)
+			fallen.CFrame = CFrame.lookAt(at + Vector3.new(0, 1.3, 0), at + Vector3.new(0, 1.3, 0) + side) * CFrame.Angles(0, math.rad(90), 0)
+		end
+	end
+	-- 찢긴 붉은 깃발 둘 (왕좌 양옆)
+	for _, s in ipairs({ -1, 1 }) do
+		local at = c0 + side * 9 * s
+		pillar(f, "OverlordPole", at, 0.35, 14, Color3.fromRGB(60, 45, 35), Enum.Material.Wood)
+		P(f, "OverlordBanner", Vector3.new(3, 7, 0.1), CFrame.lookAt(at + Vector3.new(0, 10, 0) - back * 0.4, at + Vector3.new(0, 10, 0) - back * 2) * CFrame.Angles(0, 0, math.rad(5 * s)), Color3.fromRGB(170, 35, 30), Enum.Material.Fabric, false)
+		P(f, "OverlordBannerTorn", Vector3.new(2, 2.4, 0.1), CFrame.lookAt(at + Vector3.new(0.3 * s, 5.4, 0) - back * 0.4, at + Vector3.new(0.3 * s, 5.4, 0) - back * 2) * CFrame.Angles(0, 0, math.rad(-12 * s)), Color3.fromRGB(150, 30, 25), Enum.Material.Fabric, false)
+	end
+end
+-- 빙극선: 등 뒤 얼음 동굴 입구 (큰 얼음 덩이로 아치), 안쪽의 푸른 빛, 얼어붙은 바닥과 고드름
+ART_SITES.geukbinghon = function(g: Vector3, back: Vector3, f: Folder)
+	local side = Vector3.new(-back.Z, 0, back.X)
+	local c0 = g + back * 16
+	for _, s in ipairs({ -1, 1 }) do
+		P(f, "CaveWall", Vector3.new(8, 18, 14), CFrame.lookAt(c0 + side * 8 * s + Vector3.new(0, 9, 0), c0 + side * 8 * s + Vector3.new(0, 9, 0) + back) * CFrame.Angles(0, 0, math.rad(-6 * s)), Color3.fromRGB(180, 215, 240), Enum.Material.Glacier)
+	end
+	P(f, "CaveLintel", Vector3.new(24, 7, 14), CFrame.lookAt(c0 + Vector3.new(0, 19, 0), c0 + Vector3.new(0, 19, 0) + back), Color3.fromRGB(190, 222, 245), Enum.Material.Glacier)
+	jag(f, c0, back, 30, 22, 8)
+	P(f, "CaveBack", Vector3.new(10, 16, 2), CFrame.lookAt(c0 + back * 7 + Vector3.new(0, 8, 0), c0 + back * 8 + Vector3.new(0, 8, 0)), Color3.fromRGB(60, 110, 170), Enum.Material.Glacier)
+	local inner = P(f, "CaveGlow", Vector3.new(8, 14, 0.5), CFrame.lookAt(c0 + back * 5.8 + Vector3.new(0, 7, 0), c0 + back * 7 + Vector3.new(0, 7, 0)), Color3.fromRGB(120, 200, 255), Enum.Material.Neon, false)
+	inner.Transparency = 0.5
+	light(inner, Color3.fromRGB(120, 200, 255), 34, 2)
+	for k = -5, 5 do
+		local at = c0 - back * 6.5 + side * (k * 2.2) + Vector3.new(0, 15.6, 0)
+		local L = rng:NextNumber(2.5, 6)
+		P(f, "Icicle", Vector3.new(0.9, L, 0.9), CFrame.new(at - Vector3.new(0, L / 2, 0)) * CFrame.Angles(0, math.rad(45), 0), Color3.fromRGB(225, 245, 255), Enum.Material.Ice, false)
+	end
+	disc("FrozenGround", g + Vector3.new(0, 0.1, 0), 18, 0.2, Color3.fromRGB(215, 235, 250), Enum.Material.Ice, f, false)
+	-- 얼어붙은 사람 그림자 둘 (얼음 속에 갇힌 옛 도전자)
+	for _, s in ipairs({ -1, 1 }) do
+		local at = g + side * 11 * s + back * 4
+		local block = P(f, "FrozenChallenger", Vector3.new(3.4, 6.4, 3.4), CFrame.new(at + Vector3.new(0, 3.2, 0)) * CFrame.Angles(0, s * 0.4, math.rad(3 * s)), Color3.fromRGB(170, 220, 250), Enum.Material.Glass)
+		block.Transparency = 0.35
+		P(f, "FrozenShadow", Vector3.new(1.8, 5, 1.2), block.CFrame, Color3.fromRGB(60, 80, 110), Enum.Material.SmoothPlastic, false)
+	end
+end
+local function artSites()
+	for id, build in pairs(ART_SITES) do
+		local m = Config.MASTERS[id]
+		if m then
+			local f = Instance.new("Folder")
+			f.Name = "ArtSite_" .. id
+			f.Parent = folder
+			local g = Vector3.new(m.at.X, m.at.Y - 1.6, m.at.Z)
+			local flatG = Vector3.new(g.X, 0, g.Z)
+			local back = flatG.Magnitude > 1 and flatG.Unit or Vector3.new(0, 0, 1)
+			local ok, err = pcall(build, g, back, f)
+			if not ok then
+				warn("[권왕] 새 사부 자리 오류:", id, err)
+			end
+		end
+	end
+end
+
 -- 3.18판: 맵 가볍게 (생김새는 그대로). 부품이 5만 개가 넘어 휴대폰·낮은 PC에서 끊긴다
 -- · 그림자: 작은 것 (8 미만) · 빛나는 것 · 반투명한 것 · 안 부딪히는 장식 (24 미만)은 그림자를 드리우지 않는다
 --   (그림자 계산이 가장 무겁고, 이런 것의 그림자는 거의 보이지 않는다. 집·바위·나무 둥치 같은 큰 것은 그대로)
@@ -6145,6 +6505,7 @@ function World.build(): any
 		{ "각성선인", function()
 			awakenAltar(out)
 		end },
+		{ "새 사부의 자리", artSites },
 		{ "천상계", function()
 			skyWorld(out)
 		end },

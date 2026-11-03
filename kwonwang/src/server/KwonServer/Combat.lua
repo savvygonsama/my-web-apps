@@ -587,7 +587,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		if ch then
 			Push:FireAllClients("act", { m = tgt.model, style = tgt.style, pose = ch.pose, dur = 0.5, seq = -1 })
 			-- 상대 앞으로 미끄러져 (tp) 친다
-			if ch.tp and att.root.Parent then
+			-- 너무 먼 상대 (장풍을 쏜 상대)에게는 되받아치지 않는다 (흘리기와 역류만)
+			local close = att.root.Parent ~= nil and (att.root.Position - tgt.root.Position).Magnitude <= 30
+			if ch.tp and close then
 				local dir = flat(tgt.root.Position - att.root.Position)
 				local at = att.root.Position + dir * 3.2
 				local cf = CFrame.lookAt(at, Vector3.new(att.root.Position.X, at.Y, att.root.Position.Z))
@@ -598,7 +600,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 				end
 				Push:FireAllClients("skillfx", { kind = "counterFlash", m = tgt.model, t = att.model, style = tgt.style })
 			end
-			for k = 0, (ch.strikes or 1) - 1 do
+			for k = 0, (close and (ch.strikes or 1) or 0) - 1 do
 				task.delay(0.12 + k * 0.14, function()
 					if not tgt.dead and not att.dead then
 						Combat.applyHit(tgt, att, ch.hit, { move = { name = "되받아치기" }, isSkill = true, chain = true })
@@ -666,7 +668,8 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			end
 			-- 3.19판 역류반격권: 흘려 내면 저절로 되받아친다
 			local dc = tStyle and tStyle.deflectCounter
-			if dc then
+			-- 가까이 들어온 상대에게만 (멀리서 쏜 장풍은 흘리기만)
+			if dc and not opt.proj and (att.root.Position - tgt.root.Position).Magnitude <= 12 then
 				Push:FireAllClients("act", { m = tgt.model, style = tgt.style, pose = dc.pose, dur = 0.45, seq = -1 })
 				task.delay(0.1, function()
 					if not tgt.dead and not att.dead then

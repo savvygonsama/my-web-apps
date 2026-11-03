@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2673,7 +2673,6 @@ table.insert(Config.Styles, {
 	grade = "윤회",
 	hidden = true,
 	rebirthReq = 1,
-	realmReq = 9,
 	trialHp = 10,
 	unlockHint = "한 번 환생한 몸으로, 서북쪽 끝 운무 차밭 한가운데 거울 연못 앞의 명경선을 찾아가라",
 	desc = "맑은 거울과 같은 주먹. 거울 속의 내가 함께 싸운다. 네 번 맞히면 거울 분신이 같은 자리를 되받아 치고, 받아칠 자세에서 맞으면 그 힘을 거울처럼 되돌린다.",
