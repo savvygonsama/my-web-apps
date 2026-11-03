@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.18.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -488,23 +488,23 @@ Config.Styles = {
 		charge = 1.5,
 		stance = "stance_cheonryong",
 		combo = {
-			{ id = "cr1", name = "용조장", pose = "dragon_claw_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
-			{ id = "cr2", name = "용미장", pose = "dragon_claw_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
-			{ id = "cr3", name = "잠룡장", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4, 7, 8, 0.35, 8) } },
-			{ id = "cr4", name = "현룡파", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 10, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
+			{ id = "cr1", name = "용조장", pose = "dragon_claw_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 8, 6, 0.3, 6) } },
+			{ id = "cr2", name = "용미장", pose = "dragon_claw_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 8, 6, 0.3, 6) } },
+			{ id = "cr3", name = "잠룡장", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4, 9, 8, 0.35, 8) } },
+			{ id = "cr4", name = "현룡파", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 13, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
 		},
-		heavy = { id = "crH", name = "항룡장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 12, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
+		heavy = { id = "crH", name = "항룡장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 15, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
 		skills = {
 			E = { id = "crE", name = "항룡유회", desc = "꿰뚫고 나아가는 용의 기운 (맞은 적 모두)", pose = "dragon_coil", dur = 0.6, cd = 7, chi = 20,
-				proj = { speed = 80, life = 0.7, radius = 6, dmg = 16, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
+				proj = { speed = 80, life = 0.7, radius = 6, dmg = 21, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
 			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "dragon_rise", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
-				hits = { hit(0.2, 5, 5, 14, 18, 0.9, 6, 55) } },
+				hits = { hit(0.2, 5, 5, 18, 18, 0.9, 6, 55) } },
 			G = { id = "crG", name = "진룡강림", desc = "땅을 뚫고 진짜 용이 솟아올라 적에게 세 번 내리꽂히고, 마지막에 앞으로 용의 숨을 뿜는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
 				mech = { kind = "avatar", look = "dragon", dur = 2.6, strikes = {
-					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 1.7, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 2.2, at = "front", dist = 14, radius = 16, hit = hit(0, 0, 0, 60, 80, 1.2, 60) },
+					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 1.7, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 2.2, at = "front", dist = 14, radius = 16, hit = hit(0, 0, 0, 78, 80, 1.2, 60) },
 				} } },
 		},
 	},
@@ -7347,6 +7347,8 @@ end
 
 type State = {
 	canSave: boolean,
+	loadedAt: number?, -- 기록을 연 때 (os.time)
+	savedAt: number?, -- 마지막으로 저장한 때 (os.clock)
 	dirty: boolean,
 	tester: boolean,
 	reqWindow: number,
@@ -7376,40 +7378,86 @@ do
 	end
 end
 
+-- 3.18판 세션 표시: 서버를 옮겨 다닐 때 (다시 들어오기 · 배틀그라운드 다녀오기) 앞 서버가 아직 저장 중이면
+-- 새 서버가 옛 기록을 읽어 진행이 사라질 수 있다. 그래서 기록에 "어느 서버가 열고 있는지"를 적어 두고,
+-- 다른 서버가 연 채 (LOCK_SEC 안)면 그 서버가 마지막 저장을 끝낼 때까지 잠깐 기다린다
+local LOCK_SEC = 180
+local JOB = game.JobId ~= "" and game.JobId or "studio"
 local function loadProfile(player: Player): (Profile, boolean)
 	local ds = store
 	if not ds then
 		return defaultProfile(), false
 	end
-	for attempt = 1, 3 do
-		local ok, result = pcall(function()
-			return ds:GetAsync("p_" .. player.UserId)
-		end)
-		if ok then
-			return sanitize(result), true
+	local key = "p_" .. player.UserId
+	if BATTLE then
+		-- 배틀그라운드는 메인 기록을 읽기만 한다 (세션 표시를 건드리지 않는다)
+		for attempt = 1, 3 do
+			local ok, result = pcall(function()
+				return ds:GetAsync(key)
+			end)
+			if ok then
+				return sanitize(result), true
+			end
+			task.wait(attempt)
 		end
-		task.wait(attempt)
+		return defaultProfile(), false
+	end
+	for attempt = 1, 12 do
+		local busy = false
+		local ok, result = pcall(function()
+			return ds:UpdateAsync(key, function(old: any)
+				if type(old) == "table" and old._open and old._job ~= JOB and os.time() - (tonumber(old._t) or 0) < LOCK_SEC and attempt < 12 then
+					busy = true
+					return nil -- 바꾸지 않는다 (앞 서버가 아직 열고 있다)
+				end
+				if type(old) ~= "table" then
+					return nil -- 새 사람: 첫 저장 때 만든다
+				end
+				old._job, old._open, old._t = JOB, true, os.time()
+				return old
+			end)
+		end)
+		if not player.Parent then
+			return defaultProfile(), false
+		end
+		if ok and not busy then
+			return sanitize(result), true
+		elseif ok and busy then
+			if attempt == 1 then
+				Push:FireClient(player, "toast", "📜 앞 서버의 기록 저장을 기다리는 중... (잠시만요)")
+			end
+			task.wait(2.5) -- 앞 서버의 마지막 저장을 기다린다 (최대 약 30초, 그 뒤에는 그냥 연다)
+		else
+			task.wait(math.min(attempt, 4))
+		end
 	end
 	return defaultProfile(), false
 end
 
--- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도)
+-- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도). final = 나갈 때 (세션 표시를 푼다)
 local saving = 0
-local function saveProfile(player: Player)
+local function saveProfile(player: Player, final: boolean?)
 	local p, st = profiles[player], states[player]
 	local ds = store
 	if not p or not st or not st.canSave or not ds then
 		return
 	end
 	saving += 1
+	local out = table.clone(p) :: any
+	out._job, out._open, out._t = JOB, not final, os.time()
 	for attempt = 1, 3 do
 		local ok = pcall(function()
-			ds:UpdateAsync("p_" .. player.UserId, function()
-				return p
+			ds:UpdateAsync("p_" .. player.UserId, function(old: any)
+				-- 다른 서버가 이 사람을 새로 열었다면 (내가 늦게 저장하는 옛 서버) 덮어쓰지 않는다
+				if type(old) == "table" and old._open and old._job ~= JOB and (tonumber(old._t) or 0) > (st.loadedAt or 0) then
+					return nil
+				end
+				return out
 			end)
 		end)
 		if ok then
 			st.dirty = false
+			st.savedAt = os.clock()
 			break
 		end
 		task.wait(attempt)
@@ -12692,6 +12740,8 @@ local function onPlayerAdded(player: Player)
 		st.tester = true
 	else
 		profile, ok = loadProfile(player)
+		st.loadedAt = os.time()
+		st.savedAt = os.clock()
 	end
 	if not player.Parent then
 		return
@@ -12757,10 +12807,14 @@ local function onPlayerRemoving(player: Player)
 	Maze.ended(player, "left")
 	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
 	pcall(Trial.ended, player, false)
-	saveProfile(player)
+	-- 관문·윤회의 시련 중에 나가면 수호자를 거둔다 (주인 없는 보스가 남지 않게)
+	pcall(Gate.ended, player, false)
+	saveProfile(player, true)
 	profiles[player] = nil
 	states[player] = nil
 	TEST_INF[player] = nil
+	riteBusy[player] = nil
+	mazeRewardAt[player] = nil
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
@@ -12777,7 +12831,8 @@ task.spawn(function()
 	while true do
 		task.wait(SAVE_INTERVAL)
 		for player, st in pairs(states) do
-			if st.dirty then
+			-- 바뀐 게 있거나, 오래 저장하지 않았으면 (세션 표시가 낡지 않게) 저장
+			if st.dirty or os.clock() - (st.savedAt or 0) > LOCK_SEC * 0.6 then
 				task.spawn(saveProfile, player)
 			end
 		end
@@ -12790,7 +12845,7 @@ game:BindToClose(function()
 		Battle.saveAll()
 	end
 	for player in pairs(profiles) do
-		task.spawn(saveProfile, player)
+		task.spawn(saveProfile, player, true)
 	end
 	local t0 = os.clock()
 	task.wait(0.5)
@@ -29201,6 +29256,32 @@ function World.mazeGate(gate: BasePart, closed: boolean)
 	gate.Transparency = closed and 0.2 or 1
 end
 
+-- 3.18판: 맵 가볍게 (생김새는 그대로). 부품이 5만 개가 넘어 휴대폰·낮은 PC에서 끊긴다
+-- · 그림자: 작은 것 (8 미만) · 빛나는 것 · 반투명한 것 · 안 부딪히는 장식 (24 미만)은 그림자를 드리우지 않는다
+--   (그림자 계산이 가장 무겁고, 이런 것의 그림자는 거의 보이지 않는다. 집·바위·나무 둥치 같은 큰 것은 그대로)
+-- · 닿음 검사: 밟으면 무너지는 돌길 (EdgeStep)만 쓴다. 나머지는 끈다 (부딪힘·밟기는 그대로)
+-- 나무 지붕 (잎)은 크고 그림자가 땅에 드리워야 나무답다: 안 부딪혀도 그림자는 남긴다
+local CANOPY = { Leaves = true, LLeaves = true, PineLayer = true, PineSnow = true, GroveLeaves = true }
+local function lighten()
+	local shadowOff, touchOff, n = 0, 0, 0
+	for _, d in ipairs(folder:GetDescendants()) do
+		if d:IsA("BasePart") then
+			n += 1
+			local sz = d.Size
+			local m = math.max(sz.X, sz.Y, sz.Z)
+			if d.CastShadow and (m < 8 or d.Material == Enum.Material.Neon or d.Transparency >= 0.4 or (not d.CanCollide and m < 24 and not CANOPY[d.Name])) then
+				d.CastShadow = false
+				shadowOff += 1
+			end
+			if d.CanTouch and d.Name ~= "EdgeStep" then
+				d.CanTouch = false
+				touchOff += 1
+			end
+		end
+	end
+	print(string.format("[권왕] 맵 가볍게: 부품 %d · 그림자 끔 %d · 닿음 끔 %d", n, shadowOff, touchOff))
+end
+
 function World.build(): any
 	folder = Instance.new("Folder")
 	folder.Name = "Gangho"
@@ -29268,6 +29349,7 @@ function World.build(): any
 			warn("[권왕] 맵 만들기 오류 (" .. step[1] .. "):", err)
 		end
 	end
+	pcall(lighten)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "VillageSpawn"
 	spawn.Anchored = true
@@ -29343,6 +29425,14 @@ local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 local KillFx = require(script:WaitForChild("KillFx"))
 UI.previewKillFx = KillFx.preview
+-- 3.18판: 가벼운 그래픽 (휴대폰은 처음부터 켠다. 메뉴에서 바꾼다)
+local Perf = require(script:WaitForChild("Perf"))
+UI.setLowGfx = function(on: boolean)
+	Perf.set(on)
+end
+UI.isLowGfx = function(): boolean
+	return Perf.low
+end
 
 local player = Players.LocalPlayer
 -- 판 표시: 화면 오른쪽 아래 구석의 작은 글씨 (게시한 판이 맞는지, 게임패스 번호가 들어갔는지 보려고)
@@ -29380,6 +29470,20 @@ local Request = remotes:WaitForChild("Request") :: RemoteEvent
 local Push = remotes:WaitForChild("Push") :: RemoteEvent
 
 UI.init(Request)
+-- 3.18판: 휴대폰은 처음부터 가벼운 그래픽 (맵이 다 내려온 뒤에)
+if UI.device() == "phone" and not Config.BATTLE_MODE then
+	task.spawn(function()
+		if not game:IsLoaded() then
+			game.Loaded:Wait()
+		end
+		local g = workspace:WaitForChild("Gangho", 60)
+		if g then
+			task.wait(3)
+			Perf.set(true)
+			UI.refreshGfxButton()
+		end
+	end)
+end
 Fx.bindAnim(Anim)
 Anim.start()
 
@@ -32367,8 +32471,15 @@ end
 local IDLE_HAND = { { "idle_shadow", 1.0 }, { "idle_stretch", 1.6 }, { "idle_crack", 1.4 }, { "idle_shift", 0.9 }, { "idle_look", 1.6 } }
 local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
 
-local function step(dt: number)
+-- 3.18판: 멀리 있는 몸은 덜 자주 움직인다 (맵의 적 수백이 매 장면 관절을 다 계산해 휴대폰이 끊겼다)
+-- 카메라에서 LOD_NEAR 안: 매 장면 · LOD_FAR 안: 세 장면에 한 번 · 그 너머: 멈춘 채 (보이지도 않을 만큼 작다)
+-- 내 몸과 기술을 쓰는 중인 몸은 늘 매 장면
+local LOD_NEAR, LOD_FAR = 120, 280
+local function step(dt0: number)
 	local t = os.clock()
+	local cam = workspace.CurrentCamera
+	local camPos = cam and cam.CFrame.Position
+	local myChar = Players.LocalPlayer and Players.LocalPlayer.Character
 	for model, rec in pairs(recs) do
 		if not model.Parent then
 			recs[model] = nil
@@ -32377,6 +32488,23 @@ local function step(dt: number)
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if not root or not root:IsA("BasePart") then
 			continue
+		end
+		local dt = dt0
+		if camPos and model ~= myChar and not rec.track then
+			local lr = rec :: any
+			local dist = (root.Position - camPos).Magnitude
+			if dist > LOD_FAR then
+				lr.lodDt = 0
+				continue
+			elseif dist > LOD_NEAR then
+				lr.lodDt = (lr.lodDt or 0) + dt0
+				lr.lodN = ((lr.lodN or 0) + 1) % 3
+				if lr.lodN ~= 0 then
+					continue
+				end
+				dt = math.min(lr.lodDt, 0.2)
+				lr.lodDt = 0
+			end
 		end
 		local motors = rec.motors
 		local stance = stanceOf(model)
@@ -50345,6 +50473,65 @@ return Null
         </Item>
         <Item class="ModuleScript" referent="36">
           <Properties>
+            <string name="Name">Perf</string>
+            <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
+-- 서버와 다른 사람의 화면은 그대로. 부딪히는 것 (바위·나무 둥치·집)은 건드리지 않는다
+local Perf = {}
+
+local CLUTTER = {
+	Tuft = true, WildFlower = true, Moss = true, Flower = true, FlowerStem = true,
+	Bush = true, Reed = true, DeadBranch = true, Puddle = true,
+}
+
+Perf.low = false
+local hidden: { { any } } = {}
+
+local function collect(): { BasePart }
+	local g = workspace:FindFirstChild("Gangho")
+	local out: { BasePart } = {}
+	if not g then
+		return out
+	end
+	for _, d in ipairs(g:GetDescendants()) do
+		-- 안내 (ProximityPrompt)나 글씨가 붙은 것은 남긴다
+		if d:IsA("BasePart") and CLUTTER[d.Name] and not d.CanCollide and not d:FindFirstChildWhichIsA("ProximityPrompt") and not d:FindFirstChildWhichIsA("SurfaceGui") then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
+function Perf.set(on: boolean)
+	if on == Perf.low then
+		return
+	end
+	Perf.low = on
+	if on then
+		for _, p in ipairs(collect()) do
+			table.insert(hidden, { p, p.Parent })
+			p.Parent = nil
+		end
+	else
+		for _, h in ipairs(hidden) do
+			local par = h[2]
+			if par and par.Parent then
+				h[1].Parent = par
+			end
+		end
+		table.clear(hidden)
+	end
+end
+
+function Perf.count(): number
+	return #hidden
+end
+
+return Perf
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="37">
+          <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
 -- 매화는 둥근 꽃잎 다섯 (가운데로 오목하게 겹친다), 노란 꽃술, 흰 꽃눈으로 짓는다. 가지는 짙은 밤빛으로 꺾이며 가늘어진다
@@ -50748,7 +50935,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -51089,7 +51276,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -52038,7 +52225,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -52672,7 +52859,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -53959,7 +54146,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -56988,7 +57175,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -57595,7 +57782,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -58735,7 +58922,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -58952,7 +59139,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -58987,6 +59174,8 @@ UI.C = C
 -- 3.11.2판: 대기실 미리보기 인형에 장신구를 입히는 함수 (init.client가 Sakura.preview를 넣는다)
 UI.previewGear = (nil :: any)
 UI.previewKillFx = (nil :: any) -- 3.17판: 처치 연출 미리보기 (init에서 KillFx.preview를 넣는다)
+UI.setLowGfx = (nil :: any) -- 3.18판: 가벼운 그래픽 켜고 끄기 (init에서 넣는다)
+UI.isLowGfx = (nil :: any)
 
 local function new(class: string, props: { [string]: any }?, children: { Instance }?): any
 	local inst = Instance.new(class)
@@ -60149,7 +60338,7 @@ local function buildAch()
 		end
 		local t = state.title and Config.ACH_BY_ID[state.title]
 		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
-		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 (칭호가 붙은 업적을 이루면 달 수 있다 · 등급이 높을수록 머리 위 칭호가 화려하다)")
+		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
 	end
 end
 
@@ -60901,6 +61090,7 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말 (수련 안내도 여기)")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
+		add("• 메뉴의 🌿 그래픽 단추: 가볍게로 바꾸면 작은 풀·꽃·덤불을 내 화면에서 걷어 덜 끊긴다 (휴대폰은 처음부터 가볍게)")
 	elseif tab == "fight" then
 		add("<b>⚔ 연타는 박자</b>")
 		add("• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)")
@@ -61844,6 +62034,23 @@ local function setMapWorld(sky: boolean)
 	showMark(mapGuide, guideAt)
 	showMark(storyMark, storyMarkAt)
 	placeMap()
+end
+
+-- 3.18판: 가벼운 그래픽 단추
+function UI.refreshGfxButton()
+	local b = V.gfxButton
+	if b and UI.isLowGfx then
+		b.Text = UI.isLowGfx() and "⚡ 그래픽: 가볍게" or "🌿 그래픽: 보통"
+	end
+end
+function UI.toggleLowGfx()
+	if not UI.setLowGfx or not UI.isLowGfx then
+		return
+	end
+	local on = not UI.isLowGfx()
+	UI.setLowGfx(on)
+	UI.refreshGfxButton()
+	UI.toast(on and "⚡ 가벼운 그래픽: 작은 풀·꽃·덤불을 내 화면에서 걷었어요 (끊길 때 좋아요)" or "🌿 보통 그래픽으로 돌아왔어요")
 end
 
 function UI.toggleMap()
@@ -63270,7 +63477,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -63291,6 +63498,8 @@ function UI.init(req: RemoteEvent)
 				Request:FireServer("towerTp")
 			elseif item[1] == "map" then
 				UI.toggleMap()
+			elseif item[1] == "gfx" then
+				UI.toggleLowGfx()
 			else
 				UI.openPage(item[1])
 			end
@@ -63305,6 +63514,9 @@ function UI.init(req: RemoteEvent)
 		elseif item[1] == "battle" or item[1] == "back" then
 			b.Name = "BattleButton"
 			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)
+		elseif item[1] == "gfx" then
+			b.Name = "GfxButton"
+			V.gfxButton = b
 		end
 	end
 	buildStory(topLeft)
@@ -63469,7 +63681,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -64747,7 +64959,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -67430,7 +67642,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -68539,7 +68751,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="49">
+  <Item class="Workspace" referent="50">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

@@ -350,6 +350,8 @@ end
 
 type State = {
 	canSave: boolean,
+	loadedAt: number?, -- 기록을 연 때 (os.time)
+	savedAt: number?, -- 마지막으로 저장한 때 (os.clock)
 	dirty: boolean,
 	tester: boolean,
 	reqWindow: number,
@@ -379,40 +381,86 @@ do
 	end
 end
 
+-- 3.18판 세션 표시: 서버를 옮겨 다닐 때 (다시 들어오기 · 배틀그라운드 다녀오기) 앞 서버가 아직 저장 중이면
+-- 새 서버가 옛 기록을 읽어 진행이 사라질 수 있다. 그래서 기록에 "어느 서버가 열고 있는지"를 적어 두고,
+-- 다른 서버가 연 채 (LOCK_SEC 안)면 그 서버가 마지막 저장을 끝낼 때까지 잠깐 기다린다
+local LOCK_SEC = 180
+local JOB = game.JobId ~= "" and game.JobId or "studio"
 local function loadProfile(player: Player): (Profile, boolean)
 	local ds = store
 	if not ds then
 		return defaultProfile(), false
 	end
-	for attempt = 1, 3 do
-		local ok, result = pcall(function()
-			return ds:GetAsync("p_" .. player.UserId)
-		end)
-		if ok then
-			return sanitize(result), true
+	local key = "p_" .. player.UserId
+	if BATTLE then
+		-- 배틀그라운드는 메인 기록을 읽기만 한다 (세션 표시를 건드리지 않는다)
+		for attempt = 1, 3 do
+			local ok, result = pcall(function()
+				return ds:GetAsync(key)
+			end)
+			if ok then
+				return sanitize(result), true
+			end
+			task.wait(attempt)
 		end
-		task.wait(attempt)
+		return defaultProfile(), false
+	end
+	for attempt = 1, 12 do
+		local busy = false
+		local ok, result = pcall(function()
+			return ds:UpdateAsync(key, function(old: any)
+				if type(old) == "table" and old._open and old._job ~= JOB and os.time() - (tonumber(old._t) or 0) < LOCK_SEC and attempt < 12 then
+					busy = true
+					return nil -- 바꾸지 않는다 (앞 서버가 아직 열고 있다)
+				end
+				if type(old) ~= "table" then
+					return nil -- 새 사람: 첫 저장 때 만든다
+				end
+				old._job, old._open, old._t = JOB, true, os.time()
+				return old
+			end)
+		end)
+		if not player.Parent then
+			return defaultProfile(), false
+		end
+		if ok and not busy then
+			return sanitize(result), true
+		elseif ok and busy then
+			if attempt == 1 then
+				Push:FireClient(player, "toast", "📜 앞 서버의 기록 저장을 기다리는 중... (잠시만요)")
+			end
+			task.wait(2.5) -- 앞 서버의 마지막 저장을 기다린다 (최대 약 30초, 그 뒤에는 그냥 연다)
+		else
+			task.wait(math.min(attempt, 4))
+		end
 	end
 	return defaultProfile(), false
 end
 
--- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도)
+-- 저장: 세 번까지 다시 시도한다 (실패하면 다음 자동 저장 때 또 시도). final = 나갈 때 (세션 표시를 푼다)
 local saving = 0
-local function saveProfile(player: Player)
+local function saveProfile(player: Player, final: boolean?)
 	local p, st = profiles[player], states[player]
 	local ds = store
 	if not p or not st or not st.canSave or not ds then
 		return
 	end
 	saving += 1
+	local out = table.clone(p) :: any
+	out._job, out._open, out._t = JOB, not final, os.time()
 	for attempt = 1, 3 do
 		local ok = pcall(function()
-			ds:UpdateAsync("p_" .. player.UserId, function()
-				return p
+			ds:UpdateAsync("p_" .. player.UserId, function(old: any)
+				-- 다른 서버가 이 사람을 새로 열었다면 (내가 늦게 저장하는 옛 서버) 덮어쓰지 않는다
+				if type(old) == "table" and old._open and old._job ~= JOB and (tonumber(old._t) or 0) > (st.loadedAt or 0) then
+					return nil
+				end
+				return out
 			end)
 		end)
 		if ok then
 			st.dirty = false
+			st.savedAt = os.clock()
 			break
 		end
 		task.wait(attempt)
@@ -5695,6 +5743,8 @@ local function onPlayerAdded(player: Player)
 		st.tester = true
 	else
 		profile, ok = loadProfile(player)
+		st.loadedAt = os.time()
+		st.savedAt = os.clock()
 	end
 	if not player.Parent then
 		return
@@ -5760,10 +5810,14 @@ local function onPlayerRemoving(player: Player)
 	Maze.ended(player, "left")
 	-- 시험 중에 나가면 시험의 상대를 거둔다 (쓰러지지 않는 사부가 남지 않게)
 	pcall(Trial.ended, player, false)
-	saveProfile(player)
+	-- 관문·윤회의 시련 중에 나가면 수호자를 거둔다 (주인 없는 보스가 남지 않게)
+	pcall(Gate.ended, player, false)
+	saveProfile(player, true)
 	profiles[player] = nil
 	states[player] = nil
 	TEST_INF[player] = nil
+	riteBusy[player] = nil
+	mazeRewardAt[player] = nil
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)
@@ -5780,7 +5834,8 @@ task.spawn(function()
 	while true do
 		task.wait(SAVE_INTERVAL)
 		for player, st in pairs(states) do
-			if st.dirty then
+			-- 바뀐 게 있거나, 오래 저장하지 않았으면 (세션 표시가 낡지 않게) 저장
+			if st.dirty or os.clock() - (st.savedAt or 0) > LOCK_SEC * 0.6 then
 				task.spawn(saveProfile, player)
 			end
 		end
@@ -5793,7 +5848,7 @@ game:BindToClose(function()
 		Battle.saveAll()
 	end
 	for player in pairs(profiles) do
-		task.spawn(saveProfile, player)
+		task.spawn(saveProfile, player, true)
 	end
 	local t0 = os.clock()
 	task.wait(0.5)

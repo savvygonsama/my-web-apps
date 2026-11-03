@@ -42,6 +42,14 @@ local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
 local KillFx = require(script:WaitForChild("KillFx"))
 UI.previewKillFx = KillFx.preview
+-- 3.18판: 가벼운 그래픽 (휴대폰은 처음부터 켠다. 메뉴에서 바꾼다)
+local Perf = require(script:WaitForChild("Perf"))
+UI.setLowGfx = function(on: boolean)
+	Perf.set(on)
+end
+UI.isLowGfx = function(): boolean
+	return Perf.low
+end
 
 local player = Players.LocalPlayer
 -- 판 표시: 화면 오른쪽 아래 구석의 작은 글씨 (게시한 판이 맞는지, 게임패스 번호가 들어갔는지 보려고)
@@ -79,6 +87,20 @@ local Request = remotes:WaitForChild("Request") :: RemoteEvent
 local Push = remotes:WaitForChild("Push") :: RemoteEvent
 
 UI.init(Request)
+-- 3.18판: 휴대폰은 처음부터 가벼운 그래픽 (맵이 다 내려온 뒤에)
+if UI.device() == "phone" and not Config.BATTLE_MODE then
+	task.spawn(function()
+		if not game:IsLoaded() then
+			game.Loaded:Wait()
+		end
+		local g = workspace:WaitForChild("Gangho", 60)
+		if g then
+			task.wait(3)
+			Perf.set(true)
+			UI.refreshGfxButton()
+		end
+	end)
+end
 Fx.bindAnim(Anim)
 Anim.start()
 

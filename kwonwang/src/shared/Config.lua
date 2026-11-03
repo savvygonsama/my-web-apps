@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.17.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.18.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -468,23 +468,23 @@ Config.Styles = {
 		charge = 1.5,
 		stance = "stance_cheonryong",
 		combo = {
-			{ id = "cr1", name = "용조장", pose = "dragon_claw_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
-			{ id = "cr2", name = "용미장", pose = "dragon_claw_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 6, 6, 0.3, 6) } },
-			{ id = "cr3", name = "잠룡장", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4, 7, 8, 0.35, 8) } },
-			{ id = "cr4", name = "현룡파", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 10, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
+			{ id = "cr1", name = "용조장", pose = "dragon_claw_r", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 8, 6, 0.3, 6) } },
+			{ id = "cr2", name = "용미장", pose = "dragon_claw_l", dur = 0.34, lunge = 2, hits = { hit(0.14, 5, 3.5, 8, 6, 0.3, 6) } },
+			{ id = "cr3", name = "잠룡장", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4, 9, 8, 0.35, 8) } },
+			{ id = "cr4", name = "현룡파", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 90, life = 0.35, radius = 4, dmg = 13, posture = 14, stun = 0.5, kb = 28, size = 3 }, hits = {} },
 		},
-		heavy = { id = "crH", name = "항룡장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 12, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
+		heavy = { id = "crH", name = "항룡장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 110, life = 0.6, radius = 4, dmg = 15, posture = 16, stun = 0.5, kb = 30, size = 3 }, hits = {}, chargeMult = 2.2 },
 		skills = {
 			E = { id = "crE", name = "항룡유회", desc = "꿰뚫고 나아가는 용의 기운 (맞은 적 모두)", pose = "dragon_coil", dur = 0.6, cd = 7, chi = 20,
-				proj = { speed = 80, life = 0.7, radius = 6, dmg = 16, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
+				proj = { speed = 80, life = 0.7, radius = 6, dmg = 21, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
 			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "dragon_rise", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
-				hits = { hit(0.2, 5, 5, 14, 18, 0.9, 6, 55) } },
+				hits = { hit(0.2, 5, 5, 18, 18, 0.9, 6, 55) } },
 			G = { id = "crG", name = "진룡강림", desc = "땅을 뚫고 진짜 용이 솟아올라 적에게 세 번 내리꽂히고, 마지막에 앞으로 용의 숨을 뿜는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
 				mech = { kind = "avatar", look = "dragon", dur = 2.6, strikes = {
-					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 1.7, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 38, 40, 0.8, 20, 30) },
-					{ t = 2.2, at = "front", dist = 14, radius = 16, hit = hit(0, 0, 0, 60, 80, 1.2, 60) },
+					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 1.7, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
+					{ t = 2.2, at = "front", dist = 14, radius = 16, hit = hit(0, 0, 0, 78, 80, 1.2, 60) },
 				} } },
 		},
 	},

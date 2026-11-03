@@ -6061,6 +6061,32 @@ function World.mazeGate(gate: BasePart, closed: boolean)
 	gate.Transparency = closed and 0.2 or 1
 end
 
+-- 3.18판: 맵 가볍게 (생김새는 그대로). 부품이 5만 개가 넘어 휴대폰·낮은 PC에서 끊긴다
+-- · 그림자: 작은 것 (8 미만) · 빛나는 것 · 반투명한 것 · 안 부딪히는 장식 (24 미만)은 그림자를 드리우지 않는다
+--   (그림자 계산이 가장 무겁고, 이런 것의 그림자는 거의 보이지 않는다. 집·바위·나무 둥치 같은 큰 것은 그대로)
+-- · 닿음 검사: 밟으면 무너지는 돌길 (EdgeStep)만 쓴다. 나머지는 끈다 (부딪힘·밟기는 그대로)
+-- 나무 지붕 (잎)은 크고 그림자가 땅에 드리워야 나무답다: 안 부딪혀도 그림자는 남긴다
+local CANOPY = { Leaves = true, LLeaves = true, PineLayer = true, PineSnow = true, GroveLeaves = true }
+local function lighten()
+	local shadowOff, touchOff, n = 0, 0, 0
+	for _, d in ipairs(folder:GetDescendants()) do
+		if d:IsA("BasePart") then
+			n += 1
+			local sz = d.Size
+			local m = math.max(sz.X, sz.Y, sz.Z)
+			if d.CastShadow and (m < 8 or d.Material == Enum.Material.Neon or d.Transparency >= 0.4 or (not d.CanCollide and m < 24 and not CANOPY[d.Name])) then
+				d.CastShadow = false
+				shadowOff += 1
+			end
+			if d.CanTouch and d.Name ~= "EdgeStep" then
+				d.CanTouch = false
+				touchOff += 1
+			end
+		end
+	end
+	print(string.format("[권왕] 맵 가볍게: 부품 %d · 그림자 끔 %d · 닿음 끔 %d", n, shadowOff, touchOff))
+end
+
 function World.build(): any
 	folder = Instance.new("Folder")
 	folder.Name = "Gangho"
@@ -6128,6 +6154,7 @@ function World.build(): any
 			warn("[권왕] 맵 만들기 오류 (" .. step[1] .. "):", err)
 		end
 	end
+	pcall(lighten)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "VillageSpawn"
 	spawn.Anchored = true

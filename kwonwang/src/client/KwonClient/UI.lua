@@ -30,6 +30,8 @@ UI.C = C
 -- 3.11.2판: 대기실 미리보기 인형에 장신구를 입히는 함수 (init.client가 Sakura.preview를 넣는다)
 UI.previewGear = (nil :: any)
 UI.previewKillFx = (nil :: any) -- 3.17판: 처치 연출 미리보기 (init에서 KillFx.preview를 넣는다)
+UI.setLowGfx = (nil :: any) -- 3.18판: 가벼운 그래픽 켜고 끄기 (init에서 넣는다)
+UI.isLowGfx = (nil :: any)
 
 local function new(class: string, props: { [string]: any }?, children: { Instance }?): any
 	local inst = Instance.new(class)
@@ -1192,7 +1194,7 @@ local function buildAch()
 		end
 		local t = state.title and Config.ACH_BY_ID[state.title]
 		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
-		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 (칭호가 붙은 업적을 이루면 달 수 있다 · 등급이 높을수록 머리 위 칭호가 화려하다)")
+		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
 	end
 end
 
@@ -1944,6 +1946,7 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말 (수련 안내도 여기)")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
+		add("• 메뉴의 🌿 그래픽 단추: 가볍게로 바꾸면 작은 풀·꽃·덤불을 내 화면에서 걷어 덜 끊긴다 (휴대폰은 처음부터 가볍게)")
 	elseif tab == "fight" then
 		add("<b>⚔ 연타는 박자</b>")
 		add("• 앞 동작이 끝나 갈 즈음 눌러야 이어진다. 딱 맞으면 <b>정타</b> (피해 +15%, 세 번 이으면 연속 정타 +30%)")
@@ -2887,6 +2890,23 @@ local function setMapWorld(sky: boolean)
 	showMark(mapGuide, guideAt)
 	showMark(storyMark, storyMarkAt)
 	placeMap()
+end
+
+-- 3.18판: 가벼운 그래픽 단추
+function UI.refreshGfxButton()
+	local b = V.gfxButton
+	if b and UI.isLowGfx then
+		b.Text = UI.isLowGfx() and "⚡ 그래픽: 가볍게" or "🌿 그래픽: 보통"
+	end
+end
+function UI.toggleLowGfx()
+	if not UI.setLowGfx or not UI.isLowGfx then
+		return
+	end
+	local on = not UI.isLowGfx()
+	UI.setLowGfx(on)
+	UI.refreshGfxButton()
+	UI.toast(on and "⚡ 가벼운 그래픽: 작은 풀·꽃·덤불을 내 화면에서 걷었어요 (끊길 때 좋아요)" or "🌿 보통 그래픽으로 돌아왔어요")
 end
 
 function UI.toggleMap()
@@ -4313,7 +4333,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -4334,6 +4354,8 @@ function UI.init(req: RemoteEvent)
 				Request:FireServer("towerTp")
 			elseif item[1] == "map" then
 				UI.toggleMap()
+			elseif item[1] == "gfx" then
+				UI.toggleLowGfx()
 			else
 				UI.openPage(item[1])
 			end
@@ -4348,6 +4370,9 @@ function UI.init(req: RemoteEvent)
 		elseif item[1] == "battle" or item[1] == "back" then
 			b.Name = "BattleButton"
 			b.BackgroundColor3 = Color3.fromRGB(140, 40, 35)
+		elseif item[1] == "gfx" then
+			b.Name = "GfxButton"
+			V.gfxButton = b
 		end
 	end
 	buildStory(topLeft)

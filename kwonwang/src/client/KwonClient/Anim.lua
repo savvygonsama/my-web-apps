@@ -439,8 +439,15 @@ end
 local IDLE_HAND = { { "idle_shadow", 1.0 }, { "idle_stretch", 1.6 }, { "idle_crack", 1.4 }, { "idle_shift", 0.9 }, { "idle_look", 1.6 } }
 local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
 
-local function step(dt: number)
+-- 3.18판: 멀리 있는 몸은 덜 자주 움직인다 (맵의 적 수백이 매 장면 관절을 다 계산해 휴대폰이 끊겼다)
+-- 카메라에서 LOD_NEAR 안: 매 장면 · LOD_FAR 안: 세 장면에 한 번 · 그 너머: 멈춘 채 (보이지도 않을 만큼 작다)
+-- 내 몸과 기술을 쓰는 중인 몸은 늘 매 장면
+local LOD_NEAR, LOD_FAR = 120, 280
+local function step(dt0: number)
 	local t = os.clock()
+	local cam = workspace.CurrentCamera
+	local camPos = cam and cam.CFrame.Position
+	local myChar = Players.LocalPlayer and Players.LocalPlayer.Character
 	for model, rec in pairs(recs) do
 		if not model.Parent then
 			recs[model] = nil
@@ -449,6 +456,23 @@ local function step(dt: number)
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if not root or not root:IsA("BasePart") then
 			continue
+		end
+		local dt = dt0
+		if camPos and model ~= myChar and not rec.track then
+			local lr = rec :: any
+			local dist = (root.Position - camPos).Magnitude
+			if dist > LOD_FAR then
+				lr.lodDt = 0
+				continue
+			elseif dist > LOD_NEAR then
+				lr.lodDt = (lr.lodDt or 0) + dt0
+				lr.lodN = ((lr.lodN or 0) + 1) % 3
+				if lr.lodN ~= 0 then
+					continue
+				end
+				dt = math.min(lr.lodDt, 0.2)
+				lr.lodDt = 0
+			end
 		end
 		local motors = rec.motors
 		local stance = stanceOf(model)
