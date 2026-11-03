@@ -1883,6 +1883,10 @@ function handlers.knock(vel: Vector3, stun: number)
 end
 
 function handlers.proj(data: any)
+	if Arts.ownsProjectile(data) then
+		Arts.projectile(data)
+		return
+	end
 	Fx.projectile(data)
 end
 

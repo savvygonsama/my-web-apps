@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2768,7 +2768,7 @@ table.insert(Config.Styles, {
 	gimmick = "패기: 여섯 번 맞힐 때마다 둘레로 패기가 터져 적이 무릎을 꿇는다 (오래 굳는다). 앞의 권왕신권처럼 공격의 10%를 비켜 간다",
 	deflect = 0.3,
 	dodgeChance = 0.1,
-	pulse = { every = 6, kind = "king", radius = 14, delay = 0.4, name = "패기", dmg = 51, posture = 90, stun = 1.6, kb = 0, up = -10 },
+	pulse = { every = 6, kind = "overlord", radius = 14, delay = 0.4, name = "패기", dmg = 51, posture = 90, stun = 1.6, kb = 0, up = -10 },
 	stance = "stance_overlord",
 	combo = {
 		{ id = "chp1", name = "패권", pose = "ch_jab", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
@@ -2810,7 +2810,7 @@ table.insert(Config.Styles, {
 	deflect = 0.3,
 	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.4, dur = 30 },
 	geukFrost = { radius = 34, every = 1.0, slow = 0.5, freezeEvery = 3, freeze = 1.0, tick = hit(0, 0, 0, 28, 30, 0.2, 0) },
-	pulse = { every = 3, kind = "frost", radius = 12, delay = 0.25, name = "극 빙결", dmg = 42, posture = 54, stun = 1.2, kb = 0, up = 0 },
+	pulse = { every = 3, kind = "frostNova", radius = 12, delay = 0.25, name = "극 빙결", dmg = 42, posture = 54, stun = 1.2, kb = 0, up = 0 },
 	stance = "stance_frostclaw",
 	combo = {
 		{ id = "gb1", name = "극빙장", pose = "gb_claw_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
