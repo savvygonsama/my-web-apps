@@ -359,7 +359,11 @@ task.spawn(function()
 						Sakura.cast(style.id, slot, m :: Model, mv.dur)
 						Drunk.cast(style.id, slot, m :: Model, mv.dur)
 						Reaper.cast(style.id, slot, m :: Model, mv.dur)
-						SkillFx.cast(style.id, slot, m :: Model, mv.dur)
+						if Arts.ownsCast(style.id) then
+							Arts.cast(style.id, slot, m :: Model, mv.dur)
+						else
+							SkillFx.cast(style.id, slot, m :: Model, mv.dur)
+						end
 						for _, h in ipairs(mv.hits or {}) do
 							task.delay(h.t, function()
 								Fx.swing(style.id, m :: Model, (h.kb or 0) >= 20)
@@ -661,7 +665,11 @@ startMove = function(slot: any, charge: number?)
 	Sakura.cast(style.id, slot, char, dur)
 	Drunk.cast(style.id, slot, char, dur)
 	Reaper.cast(style.id, slot, char, dur)
-	SkillFx.cast(style.id, slot, char, dur)
+	if Arts.ownsCast(style.id) then
+		Arts.cast(style.id, slot, char, dur)
+	else
+		SkillFx.cast(style.id, slot, char, dur)
+	end
 	local perfect = nextPerfect
 	nextPerfect = false
 	Request:FireServer("act", slot, mySeq, charge, perfect)
@@ -1586,7 +1594,11 @@ function handlers.act(data: any)
 		Sakura.cast(style.id, data.slot, m, data.dur)
 		Drunk.cast(style.id, data.slot, m, data.dur)
 		Reaper.cast(style.id, data.slot, m, data.dur)
-		SkillFx.cast(style.id, data.slot, m, data.dur)
+		if Arts.ownsCast(style.id) then
+			Arts.cast(style.id, data.slot, m, data.dur)
+		else
+			SkillFx.cast(style.id, data.slot, m, data.dur)
+		end
 		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
