@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.18.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2353,6 +2353,7 @@ table.insert(Config.Styles, {
 -- 3.16판: 극 공백권. 공백권의 끝. 세상 끝 벼랑 너머 망각의 정원에서만 (격자지기에게)
 -- 극 패시브 · 격자 전개: 극이 차면 선 자리에서 흰 3차원 격자 공간이 한 점에서 천천히 펼쳐져 30초 동안 머문다
 Config.GEUK_REQ.geuknull = { base = "gongbaek", lv = 20, rebirth = 3 }
+Config.GEUK_REQ.geukbinghon = { base = "binghon", lv = 20, rebirth = 3 }
 table.insert(Config.Styles, {
 	id = "geuknull",
 	name = "극 공백권",
@@ -2420,13 +2421,424 @@ table.insert(Config.Styles, {
 	},
 })
 
+------------------------------------------------------------------------
+-- 3.19판: 등급마다 새 권법 하나 (상급은 셋). 권법 소개창은 등급 순으로 늘어선다
+------------------------------------------------------------------------
+-- 상급 1 · 철쇄금나수: 붙잡아 메치고 던진다. 던진 적에 부딪힌 적도 다친다
+table.insert(Config.Styles, {
+	id = "cheolsae",
+	name = "철쇄금나수",
+	hanja = "鐵鎖擒拿手",
+	icon = "⛓",
+	color = Color3.fromRGB(165, 175, 190),
+	color2 = Color3.fromRGB(255, 205, 130),
+	fx = "basic",
+	grade = "상급",
+	desc = "쇠사슬처럼 붙잡는 손. 치고 받기보다 붙잡아 메치고 집어 던진다. 던진 적이 다른 적과 부딪혀 함께 쓰러진다.",
+	gimmick = "금나: 기술이 적을 붙잡아 메치거나 던진다 (던진 적에 부딪힌 적도 다친다). 모든 타격이 균형을 1.3배 깎는다",
+	deflect = 0.22,
+	postureMult = 1.3,
+	stance = "stance_grapple",
+	combo = {
+		{ id = "cs1", name = "쇄수", pose = "jab_r", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 9, 10, 0.35, 6) } },
+		{ id = "cs2", name = "견비", pose = "elbow_r", dur = 0.36, lunge = 2, hits = { hit(0.16, 5, 4, 10, 12, 0.4, 8) } },
+		{ id = "cs3", name = "금나수", pose = "hook_r", dur = 0.4, lunge = 1, hits = { hit(0.2, 5, 4, 11, 16, 0.45, 8) } },
+		{ id = "cs4", name = "업어치기", pose = "karma_throw", dur = 0.55, lunge = 1, hits = { hit(0.3, 5, 4.5, 17, 26, 0.7, 26, 22) } },
+	},
+	heavy = { id = "csH", name = "철산고", pose = "palm_strike", dur = 0.6, lunge = 8, hits = { hit(0.28, 6, 5, 22, 36, 0.7, 45) } },
+	skills = {
+		E = { id = "csE", name = "금나 메치기", desc = "앞의 적을 붙잡아 끌어당긴 뒤 땅에 내리꽂는다. 둘레의 적도 흔들린다", pose = "karma_throw", dur = 0.8, cd = 7, chi = 15,
+			mech = { kind = "grabThrow", mode = "slam", range = 14, angle = 80, n = 1, reel = 0.22, hold = 0.3, hit = hit(0, 0, 0, 28, 44, 1.0, 6, 0), splashRadius = 8, splash = hit(0, 0, 0, 12, 16, 0.5, 18, 8) } },
+		R = { id = "csR", name = "철쇄 던지기", desc = "적을 붙잡아 앞으로 멀리 집어 던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적도 다친다", pose = "rinne_throw", dur = 0.8, cd = 10, chi = 25,
+			mech = { kind = "grabThrow", mode = "throw", range = 14, angle = 80, n = 1, reel = 0.2, hold = 0.25, dist = 44, flight = 0.6, hit = hit(0, 0, 0, 26, 36, 1.0, 0, 0), splashRadius = 8, splash = hit(0, 0, 0, 18, 24, 0.7, 30, 12) } },
+		G = { id = "csG", name = "천근 대회전", desc = "둘레의 적 셋을 한꺼번에 붙잡아 크게 휘돌린다. 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던진다", pose = "ult_spin", dur = 2.2, cd = 28, chi = 100, armor = true,
+			mech = { kind = "grabThrow", mode = "spin", range = 20, angle = 360, n = 3, reel = 0.25, spin = 1.4, every = 0.2, orbit = 7, radius = 11, tick = hit(0, 0, 0, 8, 10, 0.3, 14), dist = 36, flight = 0.6, hit = hit(0, 0, 0, 46, 60, 1.0, 0, 0), splashRadius = 9, splash = hit(0, 0, 0, 24, 30, 0.7, 36, 14) } },
+	},
+})
+-- 상급 2 · 역류반격권: 자세를 잡고 기다렸다가, 맞는 순간 거슬러 받아친다
+table.insert(Config.Styles, {
+	id = "yeokryu",
+	name = "역류반격권",
+	hanja = "逆流反擊拳",
+	icon = "🔄",
+	color = Color3.fromRGB(110, 215, 225),
+	color2 = Color3.fromRGB(235, 255, 255),
+	fx = "water",
+	grade = "상급",
+	desc = "흐름을 거스르는 주먹. 먼저 치지 않는다. 받아칠 자세를 잡고 기다렸다가, 상대가 들어오는 순간 그 힘을 그대로 되돌려 준다.",
+	gimmick = "역류: 흘리기 판정이 넓고 (0.34초), 흘리기에 성공하면 저절로 되받아친다. 받아칠 자세 (E·G) 동안 맞으면 피해 없이 되받아친다",
+	deflect = 0.34,
+	deflectCounter = { pose = "stop_palm", hit = hit(0, 6, 5, 14, 20, 0.5, 26) },
+	stance = "stance_counter",
+	combo = {
+		{ id = "yr1", name = "역수", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
+		{ id = "yr2", name = "류수", pose = "palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
+		{ id = "yr3", name = "회선장", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5, 12, 14, 0.45, 14) } },
+		{ id = "yr4", name = "역류장", pose = "wave_palm_r", dur = 0.46, lunge = 3, hits = { hit(0.24, 7, 5, 16, 20, 0.55, 32) } },
+	},
+	heavy = { id = "yrH", name = "반탄장", pose = "stop_palm", dur = 0.55, lunge = 3, hits = { hit(0.26, 7, 5.5, 22, 32, 0.7, 42) } },
+	skills = {
+		E = { id = "yrE", name = "역류세", desc = "0.9초 동안 받아칠 자세. 그 사이 맞으면 피해 없이 상대 앞으로 미끄러져 크게 되받아친다", pose = "parry_r", dur = 0.9, cd = 7, chi = 15, counter = 0.9,
+			counterHit = { pose = "push_palm", tp = true, hit = hit(0, 7, 5, 30, 40, 0.9, 40) } },
+		R = { id = "yrR", name = "회류파", desc = "두 손을 돌려 앞으로 거센 물결을 밀어낸다. 앞의 적을 모두 밀어내며 균형을 크게 깎는다", pose = "tide_push", dur = 0.6, cd = 9, chi = 20,
+			mech = { kind = "cone", range = 16, angle = 80, delay = 0.18, dur = 0.4, every = 0.2, hit = hit(0, 0, 0, 12, 20, 0.5, 36), fx = "water" } },
+		G = { id = "yrG", name = "역천반격", desc = "1.6초 동안 받아칠 자세 (무적은 아니다). 맞으면 상대 앞으로 미끄러져 세 번 몰아치고 둘레로 역류가 터진다. 아무도 치지 않으면 끝에 역류만 터진다", pose = "deflect", dur = 1.6, cd = 28, chi = 100, armor = true, counter = 1.6,
+			counterHit = { pose = "wave_palm_r", tp = true, strikes = 3, hit = hit(0, 7, 6, 26, 28, 0.6, 10), burstRadius = 16, burst = hit(0, 0, 0, 44, 54, 1.0, 50, 16), fallback = hit(0, 0, 0, 26, 30, 0.6, 30, 10) } },
+	},
+})
+-- 상급 3 · 질풍연권: 파고들어 띄우고, 공중에서 이어 친다
+table.insert(Config.Styles, {
+	id = "jilpung",
+	name = "질풍연권",
+	hanja = "疾風連拳",
+	icon = "💨",
+	color = Color3.fromRGB(255, 175, 95),
+	color2 = Color3.fromRGB(255, 245, 210),
+	fx = "wind",
+	grade = "상급",
+	desc = "거센 바람처럼 이어지는 주먹. 짧게 파고들어 적을 띄우고, 떠오른 적을 공중에서 몇 번이고 이어 친다. 빠르고 가볍다.",
+	gimmick = "연타: 몸이 빠르고 (1.1배) 대시 대기가 짧다 (0.8초). 기술이 적에게 파고들어 띄우고, 공중에서 이어 친다",
+	deflect = 0.2,
+	speed = 1.1,
+	dashCd = 0.8,
+	stance = "stance_rush",
+	combo = {
+		{ id = "jp1", name = "질권", pose = "jab_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
+		{ id = "jp2", name = "풍권", pose = "jab_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
+		{ id = "jp3", name = "연환권", pose = "flurry", dur = 0.42, lunge = 2, hits = { hit(0.12, 5, 4, 4, 4, 0.2, 2), hit(0.22, 5, 4, 4, 4, 0.2, 2), hit(0.32, 5, 4, 5, 6, 0.3, 4) } },
+		{ id = "jp4", name = "승풍권", pose = "uppercut", dur = 0.45, lunge = 2, hits = { hit(0.2, 5, 4, 13, 16, 0.6, 6, 28) } },
+	},
+	heavy = { id = "jpH", name = "질풍각", pose = "flying_kick", dur = 0.55, lunge = 14, hits = { hit(0.25, 6, 4.5, 18, 20, 0.6, 30) } },
+	skills = {
+		E = { id = "jpE", name = "섬전돌", desc = "가장 가까운 적에게 번개처럼 파고들어 두 번 치고 띄운다 (무적)", pose = "dash_punch", dur = 0.55, cd = 6, chi = 15,
+			mech = { kind = "rushChain", n = 1, range = 26, delay = 0.08, every = 0.2, hitsEach = 2, hit = hit(0, 0, 0, 10, 12, 0.5, 4, 26) } },
+		R = { id = "jpR", name = "연환비격", desc = "파고들어 띄운 적을 따라 뛰어올라 공중에서 세 번 치고 땅에 내리꽂는다", pose = "air_spin", dur = 1.3, cd = 10, chi = 25,
+			mech = { kind = "rushChain", n = 1, range = 24, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 10, 12, 0.5, 2, 34), air = 3, airEvery = 0.13, airHit = hit(0, 0, 0, 7, 8, 0.3, 2, 6), slam = hit(0, 0, 0, 20, 26, 0.9, 16, -30), slamRadius = 8 } },
+		G = { id = "jpG", name = "질풍백렬", desc = "둘레의 적 여섯 사이를 바람처럼 오가며 둘씩 치고 띄운다. 마지막에 한가운데서 바람이 터진다 (무적)", pose = "flurry", dur = 2.2, cd = 28, chi = 100, armor = true,
+			mech = { kind = "rushChain", n = 6, range = 34, delay = 0.1, every = 0.22, hitsEach = 2, hit = hit(0, 0, 0, 11, 12, 0.4, 6, 14), finalRadius = 14, final = hit(0, 0, 0, 34, 44, 0.9, 40, 18) } },
+	},
+})
+-- 전설 · 산악붕권: 느리지만 모아 친 한 방이 산을 무너뜨린다
+table.insert(Config.Styles, {
+	id = "sanak",
+	name = "산악붕권",
+	hanja = "山岳崩拳",
+	icon = "⛰",
+	color = Color3.fromRGB(200, 150, 95),
+	color2 = Color3.fromRGB(255, 225, 160),
+	fx = "sand",
+	grade = "전설",
+	desc = "산을 무너뜨리는 주먹. 느리고 무겁다. Z를 눌러 모았다가 놓으면 땅이 갈라지며 적이 멀리 날아간다. 한 방 한 방이 균형을 크게 깎는다.",
+	gimmick = "붕산: Z를 길게 누르면 (최대 1.6초) 강타가 2.6배까지 세진다. 몸이 느리지만 (0.92배) 모든 타격이 균형을 1.4배, 밀어냄을 1.2배",
+	deflect = 0.18,
+	charge = 1.6,
+	speed = 0.92,
+	postureMult = 1.4,
+	kbMult = 1.2,
+	stance = "stance_mountain",
+	combo = {
+		{ id = "sa1", name = "붕권", pose = "punch_r_heavy", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
+		{ id = "sa2", name = "산권", pose = "punch_l_heavy", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
+		{ id = "sa3", name = "추산", pose = "hammer_down", dur = 0.5, lunge = 1, hits = { hit(0.26, 5, 6, 14, 20, 0.5, 10, nil, true) } },
+		{ id = "sa4", name = "지진각", pose = "grav_stomp", dur = 0.6, lunge = 1, hits = { hit(0.3, 5, 8, 18, 26, 0.6, 22, 10, true) } },
+	},
+	heavy = { id = "saH", name = "붕산일권", pose = "one_punch", dur = 0.7, lunge = 3, hits = { hit(0.32, 7, 6, 26, 42, 0.8, 60) }, chargeMult = 2.6 },
+	skills = {
+		E = { id = "saE", name = "지열각", desc = "발을 굴러 앞으로 땅을 가른다. 갈라진 금을 따라 바위가 차례로 솟는다", pose = "grav_stomp", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "line", count = 5, start = 5, spacing = 5, step = 0.07, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 17, 22, 0.6, 14, 18), fx = "rock" } },
+		R = { id = "saR", name = "낙석추", desc = "가장 가까운 적 머리 위에 집채만 한 바위를 떨어뜨린다", pose = "grav_drop", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "drop", range = 26, delay = 0.5, radius = 10, hit = hit(0, 0, 0, 43, 50, 1.0, 20, -10), fx = "rock" } },
+		G = { id = "saG", name = "천붕지열", desc = "1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고, 떨어질 때 한 번 더 친다", pose = "ult_slam", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "launch", delay = 1.0, radius = 20, stun = 1.6, up = 60, hitAt = 0.8, hit = hit(0, 0, 0, 130, 140, 1.4, 40, -20) } },
+	},
+})
+-- 신화 · 빙혼신장: 얼음의 넋을 담은 손바닥. 맞은 자리가 얼어붙는다
+table.insert(Config.Styles, {
+	id = "binghon",
+	name = "빙혼신장",
+	hanja = "氷魂神掌",
+	icon = "🧊",
+	color = Color3.fromRGB(140, 215, 255),
+	color2 = Color3.fromRGB(240, 252, 255),
+	fx = "ice",
+	grade = "신화",
+	hidden = true,
+	realmReq = 9,
+	unlockHint = "사경의 경지에 오른 자만이, 북방 설산 얼음 벼랑 아래 얼어붙은 폭포 앞의 빙혼노니를 만난다",
+	desc = "얼음의 넋을 담은 손바닥. 닿는 곳마다 서리가 내리고, 네 번 맞히면 상대가 얼어붙는다. 오의는 둘레를 만년 빙하로 덮는다.",
+	gimmick = "빙결: 네 번 맞힐 때마다 상대 자리에 서리가 터지며 1초 동안 얼어붙는다 (움직이지 못함)",
+	deflect = 0.26,
+	pulse = { every = 4, kind = "frost", radius = 9, delay = 0.25, name = "빙결", dmg = 26, posture = 28, stun = 1.0, kb = 0, up = 0 },
+	stance = "stance_ice",
+	combo = {
+		{ id = "bh1", name = "빙장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
+		{ id = "bh2", name = "설장", pose = "palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
+		{ id = "bh3", name = "한풍장", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5.5, 16, 16, 0.45, 14) } },
+		{ id = "bh4", name = "빙혼장", pose = "push_palm", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5, 22, 24, 0.8, 24) } },
+	},
+	heavy = { id = "bhH", name = "빙벽장", pose = "double_palm", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 5.5, 32, 38, 0.8, 44) } },
+	skills = {
+		E = { id = "bhE", name = "빙창진", desc = "앞으로 얼음 창이 줄지어 솟는다", pose = "wave_palm_r", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "line", count = 6, start = 4, spacing = 4.5, step = 0.06, delay = 0.15, radius = 4.5, hit = hit(0, 0, 0, 24, 24, 0.7, 6, 14), fx = "ice" } },
+		R = { id = "bhR", name = "한빙결", desc = "둘레를 얼려 적을 1.6초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "void_gather", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "freeze", delay = 0.25, radius = 15, dur = 1.6, hitAt = 1.2, hit = hit(0, 0, 0, 60, 60, 0.8, 24, 10) } },
+		G = { id = "bhG", name = "만년빙하", desc = "하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고, 마지막에 발밑에서 빙하가 솟는다", pose = "ult_raise", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "targets", n = 8, range = 32, delay = 0.35, stagger = 0.12, radius = 7, hit = hit(0, 0, 0, 52, 52, 1.0, 10, 10), fx = "ice" } },
+	},
+})
+-- 태초 · 천옥신권: 하늘의 옥을 깎아 만든 주먹. 맞은 자리에 옥 결정이 피어 터진다
+table.insert(Config.Styles, {
+	id = "cheonok",
+	name = "천옥신권",
+	hanja = "天玉神拳",
+	icon = "💎",
+	color = Color3.fromRGB(90, 230, 170),
+	color2 = Color3.fromRGB(235, 255, 245),
+	fx = "celestial",
+	grade = "태초",
+	hidden = true,
+	secret = true,
+	realmReq = 13,
+	trialHp = 10,
+	unlockHint = "무극의 경지에 오른 자만이, 서쪽 끝 석림의 옥 기둥 사이에 앉은 옥진인을 만난다",
+	desc = "하늘의 옥을 깎아 만든 주먹. 맞을 때마다 옥 결정이 피어나 쌓이고, 오의를 펼치면 둘레가 옥의 숲이 되어 모두 꿰뚫는다.",
+	gimmick = "옥결: 네 번 맞힐 때마다 상대 자리에 옥 결정이 피어 터진다. 몸이 단단해 받는 피해 10% 덜",
+	deflect = 0.28,
+	hurtTaken = 0.9,
+	pulse = { every = 4, kind = "jade", radius = 10, delay = 0.3, name = "옥결", dmg = 29, posture = 44, stun = 0.6, kb = 18, up = 12 },
+	stance = "stance_jade",
+	combo = {
+		{ id = "co1", name = "옥수", pose = "origin_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
+		{ id = "co2", name = "벽옥", pose = "origin_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
+		{ id = "co3", name = "옥광장", pose = "galaxy_palm", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 20, 30, 0.45, 14) } },
+		{ id = "co4", name = "천옥권", pose = "star_punch_r", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 28, 44, 0.6, 30) } },
+	},
+	heavy = { id = "coH", name = "옥쇄일권", pose = "origin_punch", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 40, 70, 0.8, 50) } },
+	skills = {
+		E = { id = "coE", name = "옥창림", desc = "앞으로 옥 기둥이 줄지어 솟아 꿰뚫는다", pose = "origin_strike", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "line", count = 7, start = 4, spacing = 4.5, step = 0.05, delay = 0.12, radius = 5, hit = hit(0, 0, 0, 26, 40, 0.6, 10, 18), fx = "crystal" } },
+		R = { id = "coR", name = "옥우", desc = "둘레의 적 다섯 머리 위로 옥 덩이가 떨어진다", pose = "point_sky", dur = 0.8, cd = 10, chi = 25,
+			mech = { kind = "targets", n = 5, range = 30, delay = 0.4, stagger = 0.1, radius = 7, hit = hit(0, 0, 0, 42, 64, 0.8, 14, 10), fx = "crystal" } },
+		G = { id = "coG", name = "천옥결계", desc = "발밑에서 옥의 숲이 넓게 자라나 2.4초 동안 둘레의 적을 모두 꿰뚫는다", pose = "ult_origin", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "zone", at = "self", radius = 22, dur = 2.4, every = 0.2, delay = 0.3, hit = hit(0, 0, 0, 20, 30, 0.35, 6, 6), fx = "crystal" } },
+	},
+})
+-- 지존 · 천종신권: 하늘의 종을 울리는 주먹. 울림이 쌓여 터진다 (지존 등급 그대로)
+table.insert(Config.Styles, {
+	id = "cheonjong",
+	name = "천종신권",
+	hanja = "天鐘神拳",
+	icon = "🔔",
+	color = Color3.fromRGB(240, 195, 95),
+	color2 = Color3.fromRGB(255, 250, 225),
+	fx = "gold",
+	grade = "지존",
+	keepGrade = true,
+	hidden = true,
+	secret = true,
+	realmReq = 14,
+	trialHp = 10,
+	unlockHint = "반선의 경지에 오른 자만이, 동북쪽 끝 단풍산 꼭대기의 낡은 종 아래 선 종지기를 만난다",
+	desc = "하늘의 종을 울리는 주먹. 칠 때마다 울림이 쌓이고, 다섯 번째에 종소리가 둘레로 퍼져 모두 흔든다. 오의는 하늘에 거대한 종을 건다.",
+	gimmick = "울림: 다섯 번 맞힐 때마다 종소리 파동이 둘레로 퍼진다 (둘레 모두 맞는다). 막기가 단단하다 (막을 때 받는 피해 절반)",
+	deflect = 0.28,
+	weakBlock = 0.5,
+	pulse = { every = 5, kind = "bell", radius = 14, delay = 0.2, name = "종소리", dmg = 46, posture = 60, stun = 0.8, kb = 30, up = 8 },
+	stance = "stance_bell",
+	combo = {
+		{ id = "cj1", name = "종타", pose = "king_jab_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
+		{ id = "cj2", name = "명타", pose = "king_jab_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
+		{ id = "cj3", name = "범종장", pose = "palm_strike", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 26, 36, 0.45, 16) } },
+		{ id = "cj4", name = "대종권", pose = "buddha_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 36, 50, 0.6, 32, nil, true) } },
+	},
+	heavy = { id = "cjH", name = "천종일격", pose = "vajra_r", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 50, 80, 0.8, 54) } },
+	skills = {
+		E = { id = "cjE", name = "종명파", desc = "앞으로 종소리를 내질러 부채꼴 안의 적을 모두 흔들고 막기를 깨뜨린다", pose = "roar", dur = 0.6, cd = 7, chi = 20,
+			mech = { kind = "cone", range = 20, angle = 80, delay = 0.15, dur = 0.45, every = 0.15, hit = hit(0, 0, 0, 20, 40, 0.5, 26), guardBreak = true, fx = "bell" } },
+		R = { id = "cjR", name = "금종조", desc = "몸을 금빛 종으로 덮고 1.2초 동안 둘레를 울린다. 그동안 오는 공격은 모두 되받아친다", pose = "vajra_l", dur = 0.6, cd = 11, chi = 25,
+			mech = { kind = "reflect", dur = 1.2, radius = 12, hit = hit(0, 0, 0, 26, 40, 0.6, 20), wave = hit(0, 0, 0, 46, 70, 0.8, 34, 10) } },
+		G = { id = "cjG", name = "천종만향", desc = "하늘에 거대한 종이 걸리고 열 번 울린다. 울릴 때마다 둘레로 파동이 퍼져 모두 친다", pose = "ult_buddha", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "zone", at = "self", radius = 24, dur = 2.0, every = 0.2, delay = 0.25, hit = hit(0, 0, 0, 26, 36, 0.4, 12, 4), fx = "bell" } },
+	},
+})
+-- 윤회 · 명경권: 맑은 거울의 주먹. 거울 속 내가 되받아 친다 (한 번 환생한 몸)
+table.insert(Config.Styles, {
+	id = "myeonggyeong",
+	name = "명경권",
+	hanja = "明鏡拳",
+	icon = "🪞",
+	color = Color3.fromRGB(190, 225, 255),
+	color2 = Color3.fromRGB(255, 255, 255),
+	fx = "mist",
+	grade = "윤회",
+	hidden = true,
+	rebirthReq = 1,
+	realmReq = 9,
+	trialHp = 10,
+	unlockHint = "한 번 환생한 몸으로, 서북쪽 끝 운무 차밭 한가운데 거울 연못 앞의 명경선을 찾아가라",
+	desc = "맑은 거울과 같은 주먹. 거울 속의 내가 함께 싸운다. 네 번 맞히면 거울 분신이 같은 자리를 되받아 치고, 받아칠 자세에서 맞으면 그 힘을 거울처럼 되돌린다.",
+	gimmick = "거울: 네 번 맞힐 때마다 거울 속 분신이 나타나 같은 자리를 되받아 친다. E는 받아칠 자세 (맞으면 피해 없이 되받아친다)",
+	deflect = 0.3,
+	speed = 1.1,
+	pulse = { every = 4, kind = "mirror", radius = 9, delay = 0.35, name = "거울 분신", dmg = 29, posture = 30, stun = 0.5, kb = 12, up = 6 },
+	stance = "stance_mirror",
+	combo = {
+		{ id = "mg1", name = "경수", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "mg2", name = "명수", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "mg3", name = "쌍경각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 7, 7, 8, 0.3, 8, nil, true), hit(0.3, 5, 7, 7, 8, 0.3, 8, nil, true) } },
+		{ id = "mg4", name = "파경권", pose = "ghost_split", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 24, 0.6, 28) } },
+	},
+	heavy = { id = "mgH", name = "명경일장", pose = "ghost_flash", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 28, 0.6, 22, nil, true) } },
+	skills = {
+		E = { id = "mgE", name = "명경지수", desc = "0.8초 동안 거울처럼 고요한 자세. 맞으면 피해 없이 상대 앞에 나타나 그 힘을 되돌려 친다", pose = "parry_l", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
+			counterHit = { pose = "ghost_split", tp = true, hit = hit(0, 7, 5, 39, 44, 0.8, 30) } },
+		R = { id = "mgR", name = "경중분신", desc = "둘레의 적 넷 앞에 거울 속의 내가 하나씩 나타나 두 번씩 친다", pose = "ghost_flash", dur = 0.8, cd = 10, chi = 25,
+			mech = { kind = "clones", n = 4, range = 28, delay = 0.3, every = 0.1, hitsEach = 2, hit = hit(0, 0, 0, 26, 26, 0.5, 10, 6) } },
+		G = { id = "mgG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "ult_mist", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "targets", n = 10, range = 34, delay = 0.35, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 42, 46, 0.7, 12, 8), fx = "mirror" } },
+		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고, 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "ult_mist_x", dur = 3.0, cd = 50, chi = 140, armor = true,
+			mech = { kind = "clones", n = 8, range = 40, delay = 0.6, every = 0.12, hitsEach = 3, hit = hit(0, 0, 0, 48, 50, 0.6, 10, 6) } },
+	},
+})
+-- 초월 · 초·천룡파천장: 천룡파천장의 끝. 황금 천룡을 부린다
+table.insert(Config.Styles, {
+	id = "chocheonryong",
+	name = "초·천룡파천장",
+	hanja = "超天龍破天掌",
+	icon = "🐉",
+	grade = "초월",
+	transcend = true,
+	color = Color3.fromRGB(255, 210, 80),
+	color2 = Color3.fromRGB(120, 255, 220),
+	fx = "dragon",
+	hidden = true,
+	secret = true,
+	realmReq = 16,
+	styleReq = "cheonryong",
+	trialHp = 10,
+	unlockHint = "천룡파천장을 익히고 천외천에 오른 자만이, 천룡봉 동쪽 구름 위 용의 등뼈 바위에 선 천룡진인을 만난다",
+	desc = "천룡파천장의 끝. 장풍 하나하나가 용이 되어 날아가고, 오의를 펼치면 황금 천룡이 하늘을 덮는다. 멀리서도, 가까이서도 무섭다.",
+	gimmick = "천룡기: Z를 0.8초만 눌러도 장풍이 가득 모인다. 연격 네 번째와 강타가 용의 장풍. 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다",
+	deflect = 0.24,
+	charge = 0.8,
+	pulse = { every = 4, kind = "dragonBite", radius = 9, delay = 0.3, name = "용의 이빨", dmg = 24, posture = 36, stun = 0.6, kb = 20, up = 14 },
+	stance = "stance_cheonryong",
+	combo = {
+		{ id = "ccr1", name = "천룡조", pose = "dragon_claw_r", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
+		{ id = "ccr2", name = "천룡미", pose = "dragon_claw_l", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
+		{ id = "ccr3", name = "잠룡승천", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4.5, 14, 22, 0.35, 8, 14) } },
+		{ id = "ccr4", name = "현룡파천", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 100, life = 0.4, radius = 5, dmg = 20, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
+	},
+	heavy = { id = "ccrH", name = "항룡파천장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 120, life = 0.6, radius = 6, dmg = 28, posture = 40, stun = 0.6, kb = 36, size = 5, pierce = true }, hits = {}, chargeMult = 2.4 },
+	skills = {
+		E = { id = "ccrE", name = "황룡유회", desc = "금빛 용의 기운이 앞의 적을 모두 꿰뚫고 나아간다", pose = "dragon_coil", dur = 0.6, cd = 7, chi = 20,
+			proj = { speed = 90, life = 0.8, radius = 8, dmg = 38, posture = 50, stun = 0.7, kb = 40, size = 8, pierce = true }, hits = {} },
+		R = { id = "ccrR", name = "비룡천", desc = "용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다", pose = "dragon_rise", dur = 0.8, cd = 10, chi = 25, jump = 40,
+			mech = { kind = "launch", delay = 0.15, radius = 14, stun = 1.2, up = 55, hitAt = 0.45, hit = hit(0, 0, 0, 42, 70, 0.8, 10, 20) } },
+		G = { id = "ccrG", name = "구룡천강", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다", pose = "ult_dragon", dur = 2.4, cd = 30, chi = 100, armor = true,
+			mech = { kind = "nineDragons", n = 9, ringRadius = 15, rise = 1.0, riseHit = hit(0, 0, 0, 20, 30, 0.6, 10, 30), range = 44, dives = 9, every = 0.12, diveRadius = 9, hit = hit(0, 0, 0, 26, 40, 0.7, 20, -6), finalRadius = 24, final = hit(0, 0, 0, 90, 160, 1.4, 60, 20) } },
+		X = { id = "ccrX", name = "천룡멸세", desc = "초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다", pose = "ult_dragon", dur = 3.4, cd = 50, chi = 140, armor = true,
+			mech = { kind = "avatar", look = "dragon", dur = 4.0, scale = 2.2, strikes = {
+				{ t = 0.9, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
+				{ t = 1.2, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
+				{ t = 1.5, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
+				{ t = 1.8, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
+				{ t = 2.9, at = "front", dist = 20, radius = 26, hit = hit(0, 0, 0, 156, 280, 1.6, 90) },
+			} } },
+	},
+})
+-- 권왕 · 천하패권: 권왕을 넘어선 패자의 주먹 (권왕 등급 그대로). 네 번 환생하고 권왕신권을 익힌 자만이
+table.insert(Config.Styles, {
+	id = "cheonha",
+	name = "천하패권",
+	hanja = "天下霸拳",
+	icon = "🔱",
+	color = Color3.fromRGB(255, 110, 60),
+	color2 = Color3.fromRGB(255, 225, 140),
+	fx = "king",
+	grade = "권왕",
+	keepGrade = true,
+	hidden = true,
+	secret = true,
+	rebirthReq = 4,
+	realmReq = 12,
+	styleReq = "kwonwangsin",
+	trialHp = 12,
+	unlockHint = "네 번 환생해 권왕신권을 익힌 자만이, 동쪽 끝 황사 협곡의 무너진 왕좌에 앉은 패왕을 만난다",
+	desc = "권왕을 넘어선 패자의 주먹. 꾸밈이 없다. 파고들고, 붙잡아 내던지고, 단 한 주먹으로 앞을 모두 지운다. 여섯 번 맞히면 패기에 눌려 둘레의 적이 무릎을 꿇는다.",
+	gimmick = "패기: 여섯 번 맞힐 때마다 둘레로 패기가 터져 적이 무릎을 꿇는다 (오래 굳는다). 앞의 권왕신권처럼 공격의 10%를 비켜 간다",
+	deflect = 0.3,
+	dodgeChance = 0.1,
+	pulse = { every = 6, kind = "king", radius = 14, delay = 0.4, name = "패기", dmg = 51, posture = 90, stun = 1.6, kb = 0, up = -10 },
+	stance = "stance_overlord",
+	combo = {
+		{ id = "chp1", name = "패권", pose = "king_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "chp2", name = "왕권", pose = "king_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "chp3", name = "패왕승천", pose = "king_uppercut", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
+		{ id = "chp4", name = "천하일격", pose = "king_hammer", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 7, 18, 34, 0.7, 36, nil, true) } },
+	},
+	heavy = { id = "chpH", name = "패왕추", pose = "king_cannon", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
+	skills = {
+		E = { id = "chpE", name = "패왕돌진", desc = "가장 가까운 적 셋 사이를 차례로 파고들어 한 주먹씩 꽂는다 (무적)", pose = "king_dash", dur = 0.9, cd = 7, chi = 20,
+			mech = { kind = "rushChain", n = 3, range = 30, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 34, 60, 0.7, 24, 10) } },
+		R = { id = "chpR", name = "패왕투", desc = "앞의 적을 붙잡아 머리 위로 들어 앞으로 내던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적이 모두 다친다", pose = "karma_throw", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "grabThrow", mode = "throw", range = 16, angle = 90, n = 1, reel = 0.18, hold = 0.3, dist = 50, flight = 0.6, hit = hit(0, 0, 0, 51, 90, 1.2, 0, 0), splashRadius = 10, splash = hit(0, 0, 0, 34, 60, 0.8, 34, 14) } },
+		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ult_king", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 217, 460, 1.6, 140, 14) } },
+		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고, 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ult_king_x", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
+	},
+})
+-- 극 · 극 빙혼신장: 빙혼신장의 극. 극을 채우면 둘레가 얼어붙은 세상이 된다
+table.insert(Config.Styles, {
+	id = "geukbinghon",
+	name = "극 빙혼신장",
+	hanja = "極氷魂神掌",
+	icon = "❄",
+	grade = "극",
+	geuk = true,
+	color = Color3.fromRGB(150, 225, 255),
+	color2 = Color3.fromRGB(255, 255, 255),
+	fx = "ice",
+	hidden = true,
+	secret = true,
+	realmReq = 12,
+	styleReq = "binghon",
+	trialHp = 12,
+	unlockHint = "빙혼신장을 숙련 20까지 쌓고 세 번 환생한 자만이, 북방 설산 가장 깊은 얼음 동굴 앞의 빙극선을 만난다",
+	desc = "빙혼신장의 끝. 숨결마저 얼어붙는다. 맞히고 맞으며 극을 채우면 둘레가 얼어붙은 세상이 되어, 그 안의 적은 느려지고 쉬지 않고 얼어붙는다.",
+	gimmick = "극 패시브 · 빙결 세계: 맞히고 맞으며 극을 채우면 30초 동안 내 둘레 (반지름 34)가 얼어붙은 세상이 된다. 그 안의 적은 절반으로 느려지고, 1초마다 서리에 베이며, 3초마다 얼어붙는다",
+	deflect = 0.3,
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.4, dur = 30 },
+	geukFrost = { radius = 34, every = 1.0, slow = 0.5, freezeEvery = 3, freeze = 1.0, tick = hit(0, 0, 0, 28, 30, 0.2, 0) },
+	pulse = { every = 3, kind = "frost", radius = 12, delay = 0.25, name = "극 빙결", dmg = 42, posture = 54, stun = 1.2, kb = 0, up = 0 },
+	stance = "stance_ice",
+	combo = {
+		{ id = "gb1", name = "극빙장", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
+		{ id = "gb2", name = "극설장", pose = "palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
+		{ id = "gb3", name = "한설난무", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 6, 6, 14, 18, 0.3, 8, nil, true), hit(0.3, 6, 6, 14, 18, 0.3, 8, nil, true) } },
+		{ id = "gb4", name = "절빙장", pose = "push_palm", dur = 0.48, lunge = 3, hits = { hit(0.24, 8, 6, 36, 50, 0.9, 30) } },
+	},
+	heavy = { id = "gbH", name = "빙혼파천", pose = "double_palm", dur = 0.6, lunge = 5, hits = { hit(0.28, 8, 7, 52, 76, 0.9, 50, nil, true) } },
+	skills = {
+		E = { id = "gbE", name = "빙룡창", desc = "앞으로 얼음 창이 두 줄로 솟아 꿰뚫는다", pose = "wave_palm_r", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "line", count = 8, start = 4, spacing = 4.5, step = 0.05, delay = 0.12, radius = 6, hit = hit(0, 0, 0, 49, 60, 0.8, 8, 16), fx = "ice" } },
+		R = { id = "gbR", name = "빙옥감", desc = "둘레를 얼려 적을 2초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "void_gather", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "freeze", delay = 0.2, radius = 20, dur = 2.0, hitAt = 1.5, hit = hit(0, 0, 0, 126, 160, 1.0, 30, 12) } },
+		G = { id = "gbG", name = "만년설붕", desc = "하늘에서 얼음 기둥이 둘레의 적 열둘에게 차례로 내리꽂힌다", pose = "ult_raise", dur = 2.0, cd = 30, chi = 100, armor = true,
+			mech = { kind = "targets", n = 12, range = 40, delay = 0.35, stagger = 0.09, radius = 8, hit = hit(0, 0, 0, 91, 120, 1.0, 12, 10), fx = "ice" } },
+		X = { id = "gbX", name = "절대영도", desc = "초 오의. 세상이 멈춘다. 둘레 30칸이 모두 얼어 3초 동안 갇히고, 얼음이 깨지는 순간 안의 모든 것이 부서진다", pose = "ult_eclipse", dur = 3.0, cd = 50, chi = 140, armor = true,
+			mech = { kind = "freeze", delay = 0.4, radius = 30, dur = 3.0, hitAt = 2.4, hit = hit(0, 0, 0, 630, 800, 1.6, 60, 30) } },
+	},
+})
+
 -- 3.5판: 모든 권법이 들어온 뒤 등급을 다섯 단계로 다시 매긴다
 for _, st in ipairs(Config.Styles) do
 	local g = ({ taeheo = "상급", geumgang = "상급", cheonryong = "최상급", maehwa = "중급", muyeong = "상급", byeokryeok = "중급", chwi = "중급", hyeolma = "전설", mugeuk = "신화", pungsin = "최상급" })[st.id]
 	local old = g or st.grade or "중급"
 	st.rank = OLD_RANK[old] or 2
-	if st.awakenOf or st.transcend or st.geuk or st.id == "kwonwangsin" then
-		st.grade = old -- 진·초·극과 권왕신권 (권왕 ×3.4): 예전 그대로
+	if st.awakenOf or st.transcend or st.geuk or st.keepGrade or st.id == "kwonwangsin" then
+		st.grade = old -- 진·초·극과 권왕신권 (권왕 ×3.4), 3.19판 지존·권왕 새 권법 (keepGrade): 예전 그대로
 	else
 		st.grade = GRADE_REMAP[old] or "상급"
 	end
@@ -2469,6 +2881,17 @@ function Config.awakenTier(lv: number): number
 end
 -- 각성 마무리 (연타 다섯 번째): 상대를 하늘로 띄운다 → 공중 연격으로 이어진다
 local FINISHERS = {
+	cheolsae = { name = "철쇄승천투", pose = "karma_throw" },
+	yeokryu = { name = "역류승천장", pose = "wave_palm_r" },
+	jilpung = { name = "질풍승천권", pose = "uppercut" },
+	sanak = { name = "산악승천권", pose = "king_uppercut" },
+	binghon = { name = "빙혼승천장", pose = "double_palm" },
+	cheonok = { name = "천옥승천권", pose = "origin_rise" },
+	cheonjong = { name = "천종승천권", pose = "uppercut" },
+	myeonggyeong = { name = "명경승천각", pose = "crescent_kick" },
+	chocheonryong = { name = "초 승룡파천", pose = "dragon_rise" },
+	cheonha = { name = "패왕승천권", pose = "king_uppercut" },
+	geukbinghon = { name = "극빙승천장", pose = "double_palm" },
 	taeheo = { name = "만류회류장", pose = "double_palm" },
 	geumgang = { name = "금강파산추", pose = "elbow_r" },
 	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
@@ -2521,7 +2944,7 @@ local FINISHERS = {
 }
 for id, fin in pairs(FINISHERS) do
 	local s = Config.STYLE_BY_ID[id]
-	s.finisher = { id = id .. "F", name = fin.name, pose = fin.pose, dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 16, 24, 0.7, 6, 62) } }
+	s.finisher = { id = id .. "F", name = fin.name, pose = fin.pose, dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } }
 end
 
 -- 연타 박자: 앞 동작이 이만큼 지났을 때 누르면 '딱 맞음(連)', 너무 일찍 두 번 누르면 흐트러진다
@@ -2552,11 +2975,11 @@ Config.SUPER_ULT_MULT = 1.6
 -- 모든 권법이 함께 쓰는 몸놀림 기술
 -- D = 대시 직후 클릭 (돌진 일격), A = 공중에서 클릭 (낙하격), C = 흘리기 직후 클릭 (반격)
 Config.ACTION_MOVES = {
-	D = { id = "actD", name = "돌진 일격", pose = "dash_punch", dur = 0.42, lunge = 12, hits = { hit(0.16, 6, 4.5, 11, 14, 0.45, 26) } },
-	A = { id = "actA", name = "낙하격", pose = "dive_slam", dur = 0.6, dive = 85, hits = { hit(0.32, 0, 9, 13, 20, 0.6, 22, 14, true) } },
-	C = { id = "actC", name = "반격", pose = "punch_r_heavy", dur = 0.42, lunge = 5, hits = { hit(0.14, 6, 4.5, 18, 40, 0.8, 34) } },
+	D = { id = "actD", name = "돌진 일격", pose = "dash_punch", dur = 0.42, lunge = 12, hits = { hit(0.16, 6, 4.5, 8, 14, 0.45, 26) } },
+	A = { id = "actA", name = "낙하격", pose = "dive_slam", dur = 0.6, dive = 85, hits = { hit(0.32, 0, 9, 9, 20, 0.6, 22, 14, true) } },
+	C = { id = "actC", name = "반격", pose = "punch_r_heavy", dur = 0.42, lunge = 5, hits = { hit(0.14, 6, 4.5, 13, 40, 0.8, 34) } },
 	-- J = 띄운 상대를 공중에서 잇는 연격 (나도 상대도 공중에 머문다, 세 번까지)
-	J = { id = "actJ", name = "공중 연격", pose = "air_spin", dur = 0.34, hover = 30, hits = { hit(0.12, 7, 5, 8, 8, 0.6, 4, 32) } },
+	J = { id = "actJ", name = "공중 연격", pose = "air_spin", dur = 0.34, hover = 30, hits = { hit(0.12, 7, 5, 6, 8, 0.6, 4, 32) } },
 }
 Config.ACTION_WINDOW = { D = 0.6, C = 0.8 } -- 대시·흘리기 뒤 이만큼 안에 눌러야 나간다
 -- 권법마다 몸놀림 자세만 다르게
@@ -2617,18 +3040,18 @@ Config.Enemies = {
 		name = "철갑 무사", weapon = "greatsword", hp = 240, posture = 200, speed = 13, aggro = 50, keep = 6, shirt = Color3.fromRGB(70, 72, 82), pants = Color3.fromRGB(40, 40, 48), scale = 1.3,
 		coins = 45, xp = 30,
 		moves = {
-			{ id = "ig1", name = "대검 베기", pose = "w_slash", windup = 0.55, dur = 1.0, range = 8, hits = { hit(0.55, 8, 5.5, 16, 24, 0.5, 18) } },
-			{ id = "ig2", name = "회전 베기", pose = "w_sweep", windup = 0.7, dur = 1.2, range = 9, hits = { hit(0.7, 0, 10, 18, 28, 0.6, 28, nil, true) } },
-			{ id = "ig3", name = "분쇄", pose = "w_overhead", windup = 0.9, dur = 1.4, range = 8, unblockable = true, hits = { hit(0.9, 7, 6, 30, 45, 1.0, 35, 15, true) } },
+			{ id = "ig1", name = "대검 베기", pose = "w_slash", windup = 0.55, dur = 1.0, range = 8, hits = { hit(0.55, 8, 5.5, 11, 24, 0.5, 18) } },
+			{ id = "ig2", name = "회전 베기", pose = "w_sweep", windup = 0.7, dur = 1.2, range = 9, hits = { hit(0.7, 0, 10, 13, 28, 0.6, 28, nil, true) } },
+			{ id = "ig3", name = "분쇄", pose = "w_overhead", windup = 0.9, dur = 1.4, range = 8, unblockable = true, hits = { hit(0.9, 7, 6, 21, 45, 1.0, 35, 15, true) } },
 		},
 	},
 	shadowblade = {
 		name = "흑영 자객", weapon = "dual", hp = 150, posture = 110, speed = 22, aggro = 60, keep = 4, shirt = Color3.fromRGB(25, 20, 35), pants = Color3.fromRGB(15, 12, 22),
 		coins = 40, xp = 26,
 		moves = {
-			{ id = "sb1", name = "그림자 연격", pose = "w_dual", windup = 0.25, dur = 1.0, range = 6, lunge = 6, hits = { hit(0.25, 6, 4, 8, 10, 0.3, 4), hit(0.42, 6, 4, 8, 10, 0.3, 4), hit(0.6, 6, 4.5, 12, 16, 0.4, 14) } },
-			{ id = "sb2", name = "그림자 습격", pose = "w_thrust", windup = 0.35, dur = 0.85, range = 28, teleport = true, hits = { hit(0.35, 6, 4, 16, 20, 0.5, 15) } },
-			{ id = "sb3", name = "암살", pose = "w_overhead", windup = 0.55, dur = 1.0, range = 6, unblockable = true, hits = { hit(0.55, 6, 4.5, 26, 30, 0.8, 25) } },
+			{ id = "sb1", name = "그림자 연격", pose = "w_dual", windup = 0.25, dur = 1.0, range = 6, lunge = 6, hits = { hit(0.25, 6, 4, 6, 10, 0.3, 4), hit(0.42, 6, 4, 6, 10, 0.3, 4), hit(0.6, 6, 4.5, 8, 16, 0.4, 14) } },
+			{ id = "sb2", name = "그림자 습격", pose = "w_thrust", windup = 0.35, dur = 0.85, range = 28, teleport = true, hits = { hit(0.35, 6, 4, 11, 20, 0.5, 15) } },
+			{ id = "sb3", name = "암살", pose = "w_overhead", windup = 0.55, dur = 1.0, range = 6, unblockable = true, hits = { hit(0.55, 6, 4.5, 18, 30, 0.8, 25) } },
 		},
 	},
 	-- 심마 대련에서만 나타난다 (마음속의 마귀)
@@ -2636,9 +3059,9 @@ Config.Enemies = {
 		name = "심마", weapon = "dual", hp = 700, posture = 300, speed = 22, aggro = 90, keep = 4, shirt = Color3.fromRGB(35, 10, 45), pants = Color3.fromRGB(20, 5, 25), scale = 1.15,
 		coins = 300, xp = 120,
 		moves = {
-			{ id = "sm1", name = "마영 연격", pose = "w_dual", windup = 0.25, dur = 1.1, range = 6, lunge = 6, hits = { hit(0.25, 6, 4.5, 14, 16, 0.3, 4), hit(0.45, 6, 4.5, 14, 16, 0.3, 4), hit(0.7, 6, 5, 22, 26, 0.5, 18) } },
-			{ id = "sm2", name = "마영 습격", pose = "w_thrust", windup = 0.3, dur = 0.85, range = 30, teleport = true, hits = { hit(0.3, 6, 4, 24, 26, 0.5, 15) } },
-			{ id = "sm3", name = "심마 참", pose = "w_sweep", windup = 0.6, dur = 1.2, range = 10, unblockable = true, hits = { hit(0.6, 0, 11, 40, 50, 0.9, 35, nil, true) } },
+			{ id = "sm1", name = "마영 연격", pose = "w_dual", windup = 0.25, dur = 1.1, range = 6, lunge = 6, hits = { hit(0.25, 6, 4.5, 10, 16, 0.3, 4), hit(0.45, 6, 4.5, 10, 16, 0.3, 4), hit(0.7, 6, 5, 15, 26, 0.5, 18) } },
+			{ id = "sm2", name = "마영 습격", pose = "w_thrust", windup = 0.3, dur = 0.85, range = 30, teleport = true, hits = { hit(0.3, 6, 4, 17, 26, 0.5, 15) } },
+			{ id = "sm3", name = "심마 참", pose = "w_sweep", windup = 0.6, dur = 1.2, range = 10, unblockable = true, hits = { hit(0.6, 0, 11, 28, 50, 0.9, 35, nil, true) } },
 		},
 	},
 	-- 수련 목인: 테스트용 허수아비. 움직이지도 치지도 않고, 맞은 피해를 초당으로 보여 준다
@@ -2656,42 +3079,42 @@ Config.Enemies = {
 		name = "무뢰배", weapon = "staff", hp = 34, posture = 36, speed = 12, aggro = 24, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
 		coins = 6, xp = 5,
 		moves = {
-			{ id = "t1", name = "몽둥이질", pose = "w_slash", windup = 0.75, dur = 1.05, range = 6, hits = { hit(0.75, 6, 4, 4, 6, 0.3, 8) } },
-			{ id = "t2", name = "내려치기", pose = "w_overhead", windup = 1.0, dur = 1.4, range = 6, unblockable = true, hits = { hit(1.0, 6, 4.5, 7, 12, 0.5, 16) } },
+			{ id = "t1", name = "몽둥이질", pose = "w_slash", windup = 0.75, dur = 1.05, range = 6, hits = { hit(0.75, 6, 4, 3, 6, 0.3, 8) } },
+			{ id = "t2", name = "내려치기", pose = "w_overhead", windup = 1.0, dur = 1.4, range = 6, unblockable = true, hits = { hit(1.0, 6, 4.5, 5, 12, 0.5, 16) } },
 		},
 	},
 	bandit = {
 		name = "산적 도객", weapon = "saber", hp = 72, posture = 60, speed = 14, aggro = 36, keep = 5, shirt = Color3.fromRGB(120, 90, 60), pants = Color3.fromRGB(60, 50, 40),
 		coins = 12, xp = 8,
 		moves = {
-			{ id = "b1", name = "베기", pose = "w_slash", windup = 0.55, dur = 0.9, range = 6, hits = { hit(0.55, 6, 4, 7, 10, 0.35, 10) } },
-			{ id = "b2", name = "연속 베기", pose = "w_slash2", windup = 0.5, dur = 1.2, range = 6, hits = { hit(0.5, 6, 4, 5, 8, 0.3, 6), hit(0.8, 6, 4, 6, 9, 0.35, 12) } },
-			{ id = "b3", name = "내려찍기", pose = "w_overhead", windup = 0.85, dur = 1.3, range = 6, unblockable = true, hits = { hit(0.85, 6, 4.5, 13, 22, 0.6, 25) } },
+			{ id = "b1", name = "베기", pose = "w_slash", windup = 0.55, dur = 0.9, range = 6, hits = { hit(0.55, 6, 4, 5, 10, 0.35, 10) } },
+			{ id = "b2", name = "연속 베기", pose = "w_slash2", windup = 0.5, dur = 1.2, range = 6, hits = { hit(0.5, 6, 4, 4, 8, 0.3, 6), hit(0.8, 6, 4, 4, 9, 0.35, 12) } },
+			{ id = "b3", name = "내려찍기", pose = "w_overhead", windup = 0.85, dur = 1.3, range = 6, unblockable = true, hits = { hit(0.85, 6, 4.5, 9, 22, 0.6, 25) } },
 		},
 	},
 	spearman = {
 		name = "창병", weapon = "spear", hp = 100, posture = 80, speed = 14, aggro = 50, keep = 8, shirt = Color3.fromRGB(70, 90, 120), pants = Color3.fromRGB(40, 50, 70),
 		coins = 15, xp = 10,
 		moves = {
-			{ id = "s1", name = "찌르기", pose = "w_thrust", windup = 0.5, dur = 0.85, range = 10, lunge = 4, hits = { hit(0.5, 10, 3, 10, 14, 0.45, 18) } },
-			{ id = "s2", name = "휘두르기", pose = "w_sweep", windup = 0.55, dur = 1.0, range = 8, hits = { hit(0.55, 3, 9, 9, 14, 0.45, 14, nil, true) } },
-			{ id = "s3", name = "돌진 찌르기", pose = "w_thrust", windup = 0.7, dur = 1.1, range = 14, lunge = 12, unblockable = true, hits = { hit(0.7, 10, 3.5, 17, 28, 0.7, 30) } },
+			{ id = "s1", name = "찌르기", pose = "w_thrust", windup = 0.5, dur = 0.85, range = 10, lunge = 4, hits = { hit(0.5, 10, 3, 7, 14, 0.45, 18) } },
+			{ id = "s2", name = "휘두르기", pose = "w_sweep", windup = 0.55, dur = 1.0, range = 8, hits = { hit(0.55, 3, 9, 6, 14, 0.45, 14, nil, true) } },
+			{ id = "s3", name = "돌진 찌르기", pose = "w_thrust", windup = 0.7, dur = 1.1, range = 14, lunge = 12, unblockable = true, hits = { hit(0.7, 10, 3.5, 12, 28, 0.7, 30) } },
 		},
 	},
 	brute = {
 		name = "곤봉 산적", weapon = "club", hp = 150, posture = 110, speed = 13, aggro = 40, keep = 6, shirt = Color3.fromRGB(110, 60, 50), pants = Color3.fromRGB(50, 35, 30), scale = 1.25,
 		coins = 20, xp = 14,
 		moves = {
-			{ id = "c1", name = "후려치기", pose = "w_slash", windup = 0.6, dur = 1.0, range = 7, hits = { hit(0.6, 7, 5.5, 12, 20, 0.5, 22) } },
-			{ id = "c2", name = "땅 내려치기", pose = "w_overhead", windup = 0.85, dur = 1.4, range = 7, unblockable = true, hits = { hit(0.85, 5, 8, 20, 35, 0.9, 30, 20, true) } },
+			{ id = "c1", name = "후려치기", pose = "w_slash", windup = 0.6, dur = 1.0, range = 7, hits = { hit(0.6, 7, 5.5, 8, 20, 0.5, 22) } },
+			{ id = "c2", name = "땅 내려치기", pose = "w_overhead", windup = 0.85, dur = 1.4, range = 7, unblockable = true, hits = { hit(0.85, 5, 8, 14, 35, 0.9, 30, 20, true) } },
 		},
 	},
 	assassin = {
 		name = "쌍도 자객", weapon = "dual", hp = 75, posture = 60, speed = 19, aggro = 55, keep = 4, shirt = Color3.fromRGB(30, 30, 40), pants = Color3.fromRGB(20, 20, 28),
 		coins = 18, xp = 12,
 		moves = {
-			{ id = "a1", name = "쌍도 연격", pose = "w_dual", windup = 0.28, dur = 0.9, range = 5, lunge = 4, hits = { hit(0.28, 5, 4, 5, 7, 0.3, 4), hit(0.45, 5, 4, 5, 7, 0.3, 4), hit(0.62, 5, 4, 7, 10, 0.35, 10) } },
-			{ id = "a2", name = "기습 찌르기", pose = "w_thrust", windup = 0.35, dur = 0.8, range = 9, lunge = 10, hits = { hit(0.35, 6, 3.5, 10, 12, 0.4, 12) } },
+			{ id = "a1", name = "쌍도 연격", pose = "w_dual", windup = 0.28, dur = 0.9, range = 5, lunge = 4, hits = { hit(0.28, 5, 4, 4, 7, 0.3, 4), hit(0.45, 5, 4, 4, 7, 0.3, 4), hit(0.62, 5, 4, 5, 10, 0.35, 10) } },
+			{ id = "a2", name = "기습 찌르기", pose = "w_thrust", windup = 0.35, dur = 0.8, range = 9, lunge = 10, hits = { hit(0.35, 6, 3.5, 7, 12, 0.4, 12) } },
 		},
 	},
 }
@@ -2702,21 +3125,21 @@ Config.Bosses = {
 		name = "흑호 · 산적 두목", weapon = "greatsword", hp = 1100, posture = 260, speed = 15, aggro = 60, keep = 7, scale = 1.45,
 		shirt = Color3.fromRGB(30, 25, 25), pants = Color3.fromRGB(70, 20, 20), coins = 400, xp = 120, respawn = 120,
 		moves = {
-			{ id = "h1", name = "대도 삼연참", pose = "w_slash2", windup = 0.5, dur = 1.5, range = 9, hits = { hit(0.5, 9, 5, 12, 18, 0.45, 10), hit(0.85, 9, 5, 12, 18, 0.45, 10), hit(1.2, 9, 6, 18, 26, 0.6, 30) } },
-			{ id = "h2", name = "회전 베기", pose = "w_sweep", windup = 0.7, dur = 1.3, range = 10, hits = { hit(0.7, 0, 12, 16, 24, 0.5, 25, nil, true) } },
-			{ id = "h3", name = "뛰어 내려찍기", pose = "w_overhead", windup = 0.9, dur = 1.5, range = 20, lunge = 16, unblockable = true, hits = { hit(0.9, 6, 9, 28, 45, 1.0, 35, 20, true) } },
+			{ id = "h1", name = "대도 삼연참", pose = "w_slash2", windup = 0.5, dur = 1.5, range = 9, hits = { hit(0.5, 9, 5, 8, 18, 0.45, 10), hit(0.85, 9, 5, 8, 18, 0.45, 10), hit(1.2, 9, 6, 13, 26, 0.6, 30) } },
+			{ id = "h2", name = "회전 베기", pose = "w_sweep", windup = 0.7, dur = 1.3, range = 10, hits = { hit(0.7, 0, 12, 11, 24, 0.5, 25, nil, true) } },
+			{ id = "h3", name = "뛰어 내려찍기", pose = "w_overhead", windup = 0.9, dur = 1.5, range = 20, lunge = 16, unblockable = true, hits = { hit(0.9, 6, 9, 20, 45, 1.0, 35, 20, true) } },
 		},
-		phase2 = { speed = 1.25, extra = { id = "h4", name = "흑호 돌진", pose = "w_thrust", windup = 0.6, dur = 1.1, range = 24, lunge = 24, hits = { hit(0.6, 9, 5, 22, 35, 0.8, 45) } } },
+		phase2 = { speed = 1.25, extra = { id = "h4", name = "흑호 돌진", pose = "w_thrust", windup = 0.6, dur = 1.1, range = 24, lunge = 24, hits = { hit(0.6, 9, 5, 15, 35, 0.8, 45) } } },
 	},
 	hyeolrang = {
 		name = "혈랑 · 자객 우두머리", weapon = "dual", hp = 850, posture = 200, speed = 21, aggro = 60, keep = 5, scale = 1.15,
 		shirt = Color3.fromRGB(110, 10, 20), pants = Color3.fromRGB(25, 10, 15), coins = 450, xp = 140, respawn = 120,
 		moves = {
-			{ id = "r1", name = "혈랑 오연격", pose = "w_dual", windup = 0.3, dur = 1.3, range = 6, lunge = 6, hits = { hit(0.3, 6, 4.5, 6, 9, 0.3, 3), hit(0.5, 6, 4.5, 6, 9, 0.3, 3), hit(0.7, 6, 4.5, 6, 9, 0.3, 3), hit(0.9, 6, 4.5, 6, 9, 0.3, 3), hit(1.1, 6, 5, 12, 18, 0.5, 20) } },
-			{ id = "r2", name = "그림자 습격", pose = "w_thrust", windup = 0.4, dur = 0.9, range = 30, teleport = true, hits = { hit(0.4, 6, 4, 14, 18, 0.5, 15) } },
-			{ id = "r3", name = "혈류참", pose = "w_overhead", windup = 0.7, dur = 1.2, range = 7, unblockable = true, hits = { hit(0.7, 7, 5, 24, 35, 0.8, 30) } },
+			{ id = "r1", name = "혈랑 오연격", pose = "w_dual", windup = 0.3, dur = 1.3, range = 6, lunge = 6, hits = { hit(0.3, 6, 4.5, 4, 9, 0.3, 3), hit(0.5, 6, 4.5, 4, 9, 0.3, 3), hit(0.7, 6, 4.5, 4, 9, 0.3, 3), hit(0.9, 6, 4.5, 4, 9, 0.3, 3), hit(1.1, 6, 5, 8, 18, 0.5, 20) } },
+			{ id = "r2", name = "그림자 습격", pose = "w_thrust", windup = 0.4, dur = 0.9, range = 30, teleport = true, hits = { hit(0.4, 6, 4, 10, 18, 0.5, 15) } },
+			{ id = "r3", name = "혈류참", pose = "w_overhead", windup = 0.7, dur = 1.2, range = 7, unblockable = true, hits = { hit(0.7, 7, 5, 17, 35, 0.8, 30) } },
 		},
-		phase2 = { speed = 1.3, extra = { id = "r4", name = "혈랑 회오리", pose = "w_sweep", windup = 0.5, dur = 1.2, range = 10, hits = { hit(0.5, 0, 11, 10, 15, 0.4, 5, nil, true), hit(0.8, 0, 11, 14, 20, 0.6, 30, nil, true) } } },
+		phase2 = { speed = 1.3, extra = { id = "r4", name = "혈랑 회오리", pose = "w_sweep", windup = 0.5, dur = 1.2, range = 10, hits = { hit(0.5, 0, 11, 7, 15, 0.4, 5, nil, true), hit(0.8, 0, 11, 10, 20, 0.6, 30, nil, true) } } },
 	},
 }
 
@@ -2817,62 +3240,62 @@ local P = function(kind: string, name: string, phase: number, opt: { [string]: a
 	return t
 end
 boss("heukho", { hp = 2200, scale = 2.4, reach = 1.5, patterns = {
-	P("quake", "흑호 지진", 1, { radius = 16, warn = 1.1, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 30, 40, 0.9, 40, 18) }),
-	P("leap", "호랑이 도약", 1, { radius = 13, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 36, 50, 1.0, 35, 15) }),
-	P("charge", "흑호 돌진", 2, { length = 46, width = 9, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 30, 40, 0.8, 50) }),
+	P("quake", "흑호 지진", 1, { radius = 16, warn = 1.1, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 21, 40, 0.9, 40, 18) }),
+	P("leap", "호랑이 도약", 1, { radius = 13, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 25, 50, 1.0, 35, 15) }),
+	P("charge", "흑호 돌진", 2, { length = 46, width = 9, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 21, 40, 0.8, 50) }),
 	P("summon", "부하들아!", 2, { enemy = "bandit", count = 3, max = 5, warn = 0.9, cd = 14, pose = "w_overhead" }),
-	P("donut", "대도 회오리", 3, { inner = 7, outer = 24, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 45) }),
+	P("donut", "대도 회오리", 3, { inner = 7, outer = 24, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 28, 50, 1.0, 45) }),
 } })
 boss("hyeolrang", { hp = 2400, scale = 2.0, reach = 1.4, patterns = {
-	P("charge", "혈랑 질주", 1, { length = 40, width = 7, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 22, 28, 0.6, 30) }),
-	P("rain", "핏빛 비", 1, { count = 4, radius = 7, spread = 16, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 26, 30, 0.7, 20) }),
+	P("charge", "혈랑 질주", 1, { length = 40, width = 7, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 15, 28, 0.6, 30) }),
+	P("rain", "핏빛 비", 1, { count = 4, radius = 7, spread = 16, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 18, 30, 0.7, 20) }),
 	P("summon", "그림자 무리", 2, { enemy = "assassin", count = 3, max = 6, warn = 0.8, cd = 13, pose = "w_dual" }),
-	P("quake", "혈류 폭발", 3, { radius = 15, warn = 0.9, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 30, 36, 0.8, 40) }),
+	P("quake", "혈류 폭발", 3, { radius = 15, warn = 0.9, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 21, 36, 0.8, 40) }),
 } })
 boss("bingma", { hp = 4600, scale = 2.8, reach = 1.6, patterns = {
-	P("rain", "얼음 창비", 1, { count = 6, radius = 7, spread = 20, warn = 1.1, cd = 8, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 32, 40, 1.2, 20) }),
-	P("quake", "빙결 진동", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 34, 50, 1.4, 30) }),
-	P("donut", "설풍 고리", 2, { inner = 8, outer = 28, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.2, 40) }),
-	P("leap", "빙산 낙하", 2, { radius = 15, warn = 1.2, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 44, 60, 1.2, 40, 20) }),
+	P("rain", "얼음 창비", 1, { count = 6, radius = 7, spread = 20, warn = 1.1, cd = 8, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 22, 40, 1.2, 20) }),
+	P("quake", "빙결 진동", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 24, 50, 1.4, 30) }),
+	P("donut", "설풍 고리", 2, { inner = 8, outer = 28, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 28, 50, 1.2, 40) }),
+	P("leap", "빙산 낙하", 2, { radius = 15, warn = 1.2, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 31, 60, 1.2, 40, 20) }),
 	P("summon", "설원의 자객들", 3, { enemy = "snowblade", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
 } })
 boss("hyeolma", { hp = 6200, scale = 2.6, reach = 1.6, patterns = {
-	P("donut", "혈해 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 40, 50, 1.0, 40) }),
-	P("rain", "혈우", 1, { count = 6, radius = 7, spread = 20, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 30, 36, 0.8, 20) }),
-	P("charge", "혈마 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 50) }),
+	P("donut", "혈해 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 28, 50, 1.0, 40) }),
+	P("rain", "혈우", 1, { count = 6, radius = 7, spread = 20, warn = 1.0, cd = 8, pose = "w_dual", fx = "blood", color = Color3.fromRGB(220, 30, 45), hit = hit(0, 0, 0, 21, 36, 0.8, 20) }),
+	P("charge", "혈마 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 24, 40, 0.8, 50) }),
 	P("summon", "혈교도들아!", 2, { enemy = "cultist", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
-	P("quake", "혈마 강림", 3, { radius = 22, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 55, 80, 1.4, 60, 20) }),
+	P("quake", "혈마 강림", 3, { radius = 22, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 38, 80, 1.4, 60, 20) }),
 } })
 boss("cheonma", { hp = 4600, scale = 3.2, reach = 1.8, patterns = {
-	P("rain", "천마 낙성", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 110, 255), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
-	P("donut", "허공 고리", 1, { inner = 9, outer = 30, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 60, 1.0, 45) }),
-	P("leap", "하늘 짓밟기", 1, { radius = 16, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 50, 70, 1.2, 45, 20) }),
-	P("charge", "천마 돌격", 2, { length = 56, width = 10, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 60) }),
+	P("rain", "천마 낙성", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 110, 255), hit = hit(0, 0, 0, 24, 40, 0.8, 20) }),
+	P("donut", "허공 고리", 1, { inner = 9, outer = 30, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 31, 60, 1.0, 45) }),
+	P("leap", "하늘 짓밟기", 1, { radius = 16, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 35, 70, 1.2, 45, 20) }),
+	P("charge", "천마 돌격", 2, { length = 56, width = 10, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 28, 50, 0.9, 60) }),
 	P("summon", "허공의 마인들", 2, { enemy = "voidwalker", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
-	P("quake", "천마멸세", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.5, 70, 25) }),
+	P("quake", "천마멸세", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 49, 100, 1.5, 70, 25) }),
 } })
 
 boss("yeomje", { hp = 5500, scale = 3.0, reach = 1.7, patterns = {
-	P("rain", "화산탄", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 120, 30), hit = hit(0, 0, 0, 36, 40, 0.8, 25) }),
-	P("donut", "불꽃 고리", 1, { inner = 9, outer = 28, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
-	P("charge", "용암 돌진", 2, { length = 52, width = 10, warn = 0.8, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
+	P("rain", "화산탄", 1, { count = 7, radius = 8, spread = 24, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 120, 30), hit = hit(0, 0, 0, 25, 40, 0.8, 25) }),
+	P("donut", "불꽃 고리", 1, { inner = 9, outer = 28, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 31, 55, 1.0, 45) }),
+	P("charge", "용암 돌진", 2, { length = 52, width = 10, warn = 0.8, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 28, 50, 0.9, 55) }),
 	P("summon", "불의 귀졸들", 2, { enemy = "flameimp", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
-	P("quake", "화산 폭발", 3, { radius = 24, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 90, 1.4, 60, 22) }),
+	P("quake", "화산 폭발", 3, { radius = 24, warn = 1.3, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 46, 90, 1.4, 60, 22) }),
 } })
 boss("sawang", { hp = 5800, scale = 2.8, reach = 1.6, patterns = {
-	P("charge", "모래 질주", 1, { length = 46, width = 8, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 34, 40, 0.8, 40) }),
-	P("rain", "모래 창", 1, { count = 6, radius = 7, spread = 22, warn = 1.0, cd = 8, pose = "w_dual", fx = "sand", color = Color3.fromRGB(230, 195, 120), hit = hit(0, 0, 0, 34, 40, 0.8, 20, 14) }),
-	P("donut", "모래 회오리", 2, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 44, 55, 1.0, 45) }),
+	P("charge", "모래 질주", 1, { length = 46, width = 8, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 24, 40, 0.8, 40) }),
+	P("rain", "모래 창", 1, { count = 6, radius = 7, spread = 22, warn = 1.0, cd = 8, pose = "w_dual", fx = "sand", color = Color3.fromRGB(230, 195, 120), hit = hit(0, 0, 0, 24, 40, 0.8, 20, 14) }),
+	P("donut", "모래 회오리", 2, { inner = 8, outer = 26, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 31, 55, 1.0, 45) }),
 	P("summon", "무덤의 망령들", 2, { enemy = "sandwraith", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
-	P("leap", "왕의 낙하", 3, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.3, 50, 20) }),
+	P("leap", "왕의 낙하", 3, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 42, 80, 1.3, 50, 20) }),
 } })
 boss("cheonmun", { hp = 6700, scale = 3.4, reach = 1.9, patterns = {
-	P("rain", "천벌", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 40, 46, 0.8, 25) }),
-	P("leap", "하늘 문 내려닫기", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.2, 50, 20) }),
-	P("donut", "천문 고리", 2, { inner = 10, outer = 32, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 50, 66, 1.0, 50) }),
+	P("rain", "천벌", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 28, 46, 0.8, 25) }),
+	P("leap", "하늘 문 내려닫기", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 42, 80, 1.2, 50, 20) }),
+	P("donut", "천문 고리", 2, { inner = 10, outer = 32, warn = 1.1, cd = 7, pose = "w_sweep", hit = hit(0, 0, 0, 35, 66, 1.0, 50) }),
 	P("summon", "천병들아!", 2, { enemy = "skyguard", count = 2, max = 4, warn = 0.9, cd = 15, pose = "w_overhead" }),
-	P("charge", "천문 돌파", 3, { length = 60, width = 11, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 46, 60, 1.0, 60) }),
-	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 70, 25) }),
+	P("charge", "천문 돌파", 3, { length = 60, width = 11, warn = 0.75, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 32, 60, 1.0, 60) }),
+	P("quake", "하늘이 무너진다", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 56, 110, 1.5, 70, 25) }),
 } })
 
 -- 초월의 시련: 천앵선이 직접, 보스처럼 세 단계로 싸운다 (벚꽃비 → 화륜 → 만개)
@@ -2881,12 +3304,12 @@ for _, st in ipairs(Config.Styles) do
 		local pink = Color3.fromRGB(255, 150, 200)
 		st.trialIntro = { title = "초월의 시련", text = "매화를 넘어서겠다고? 그럼 꽃이 지는 모습을 끝까지 보아라. 세 번 피고 세 번 질 때까지 서 있다면 이 부채를 넘겨주지." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
-			P("rain", "벚꽃비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "fan_dance", fx = "star", color = pink, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
-			P("donut", "화륜", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "fan_twirl", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
-			P("charge", "앵선돌진", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "fan_dash", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
-			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
-			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
-			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+			P("rain", "벚꽃비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "fan_dance", fx = "star", color = pink, hit = hit(0, 0, 0, 22, 36, 0.7, 20) }),
+			P("donut", "화륜", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "fan_twirl", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
+			P("charge", "앵선돌진", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "fan_dash", hit = hit(0, 0, 0, 25, 44, 0.8, 50) }),
+			P("rain", "낙화난무", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "fan_dance", fx = "star", color = Color3.fromRGB(255, 235, 245), hit = hit(0, 0, 0, 20, 34, 0.7, 20) }),
+			P("leap", "천앵낙하", 3, { radius = 18, warn = 0.9, cd = 7, pose = "ult_sakura", hit = hit(0, 0, 0, 36, 72, 1.1, 45, 20) }),
+			P("quake", "만개", 3, { radius = 27, warn = 1.3, cd = 9, pose = "ult_sever", hit = hit(0, 0, 0, 52, 104, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2897,12 +3320,12 @@ for _, st in ipairs(Config.Styles) do
 		local sun, moon = Color3.fromRGB(255, 170, 60), Color3.fromRGB(190, 210, 255)
 		st.trialIntro = { title = "극의 시련", text = "세 번을 죽고 세 번을 살았구나. 그래도 해와 달은 아직 너를 모른다. 내 황혼을 끝까지 버텨 보아라. 해가 지고 달이 뜨는 그 사이에 서 있을 수 있다면, 극을 넘겨주마." }
 		st.trialBoss = { hp = 5200, posture = 900, scale = 1.7, reach = 1.5, speed = 26, patterns = {
-			P("rain", "해의 비", 1, { count = 9, radius = 8, spread = 26, warn = 0.9, cd = 6, pose = "sun_call", fx = "star", color = sun, hit = hit(0, 0, 0, 40, 44, 0.8, 22) }),
-			P("donut", "달의 고리", 1, { inner = 8, outer = 28, warn = 1.0, cd = 7, pose = "moon_seal", hit = hit(0, 0, 0, 48, 58, 0.9, 40) }),
-			P("charge", "일월환보", 2, { length = 56, width = 9, warn = 0.65, cd = 6, times = 3, pose = "sun_wheel", hit = hit(0, 0, 0, 44, 52, 0.9, 50) }),
-			P("rain", "월광우", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "moon_throw", fx = "star", color = moon, hit = hit(0, 0, 0, 34, 40, 0.7, 20) }),
-			P("leap", "대일낙하", 3, { radius = 20, warn = 0.9, cd = 7, pose = "eclipse_push", hit = hit(0, 0, 0, 64, 84, 1.2, 50, 22) }),
-			P("quake", "황혼", 3, { radius = 30, warn = 1.2, cd = 8, pose = "ult_eclipse", hit = hit(0, 0, 0, 90, 120, 1.5, 60, 26) }),
+			P("rain", "해의 비", 1, { count = 9, radius = 8, spread = 26, warn = 0.9, cd = 6, pose = "sun_call", fx = "star", color = sun, hit = hit(0, 0, 0, 28, 44, 0.8, 22) }),
+			P("donut", "달의 고리", 1, { inner = 8, outer = 28, warn = 1.0, cd = 7, pose = "moon_seal", hit = hit(0, 0, 0, 34, 58, 0.9, 40) }),
+			P("charge", "일월환보", 2, { length = 56, width = 9, warn = 0.65, cd = 6, times = 3, pose = "sun_wheel", hit = hit(0, 0, 0, 31, 52, 0.9, 50) }),
+			P("rain", "월광우", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "moon_throw", fx = "star", color = moon, hit = hit(0, 0, 0, 24, 40, 0.7, 20) }),
+			P("leap", "대일낙하", 3, { radius = 20, warn = 0.9, cd = 7, pose = "eclipse_push", hit = hit(0, 0, 0, 45, 84, 1.2, 50, 22) }),
+			P("quake", "황혼", 3, { radius = 30, warn = 1.2, cd = 8, pose = "ult_eclipse", hit = hit(0, 0, 0, 63, 120, 1.5, 60, 26) }),
 		} }
 	end
 end
@@ -2913,12 +3336,12 @@ for _, st in ipairs(Config.Styles) do
 		local green = Color3.fromRGB(90, 220, 120)
 		st.trialIntro = { title = "초월의 시련", text = "어이, 거기. 한 잔 받을 텐가? 싫으면 덤벼 보게. 내가 쓰러지는 걸 보면 이 병을 넘겨주지. 근데 난 안 쓰러져. 끄억." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.6, reach = 1.4, speed = 24, patterns = {
-			P("rain", "술비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "soju_throw", fx = "fire", color = green, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
-			P("donut", "취선 회오리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "soju_fallkick", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
-			P("charge", "굴렁쇠", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "drunk_roll", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
-			P("rain", "취화", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "soju_spray", fx = "fire", color = Color3.fromRGB(180, 255, 200), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
-			P("leap", "술병 내려찍기", 3, { radius = 18, warn = 0.9, cd = 7, pose = "soju_smash", hit = hit(0, 0, 0, 52, 72, 1.1, 45, 20) }),
-			P("quake", "만취", 3, { radius = 27, warn = 1.3, cd = 9, pose = "soju_rolls", hit = hit(0, 0, 0, 74, 104, 1.4, 60, 24) }),
+			P("rain", "술비", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "soju_throw", fx = "fire", color = green, hit = hit(0, 0, 0, 22, 36, 0.7, 20) }),
+			P("donut", "취선 회오리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "soju_fallkick", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
+			P("charge", "굴렁쇠", 2, { length = 52, width = 8, warn = 0.7, cd = 6, times = 3, pose = "drunk_roll", hit = hit(0, 0, 0, 25, 44, 0.8, 50) }),
+			P("rain", "취화", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "soju_spray", fx = "fire", color = Color3.fromRGB(180, 255, 200), hit = hit(0, 0, 0, 20, 34, 0.7, 20) }),
+			P("leap", "술병 내려찍기", 3, { radius = 18, warn = 0.9, cd = 7, pose = "soju_smash", hit = hit(0, 0, 0, 36, 72, 1.1, 45, 20) }),
+			P("quake", "만취", 3, { radius = 27, warn = 1.3, cd = 9, pose = "soju_rolls", hit = hit(0, 0, 0, 52, 104, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2929,12 +3352,12 @@ for _, st in ipairs(Config.Styles) do
 		local red = Color3.fromRGB(230, 30, 45)
 		st.trialIntro = { title = "초월의 시련", text = "혈마의 손을 쥐었다고? 그 손톱은 아직 짧다. 내 낫 앞에서 피를 흘려 보아라. 끝까지 서 있으면, 이 낫이 너를 주인으로 고를 것이다." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.6, speed = 24, patterns = {
-			P("rain", "핏빛 초승달", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "reap_hook", fx = "fire", color = red, hit = hit(0, 0, 0, 32, 36, 0.7, 20) }),
-			P("donut", "혈륜", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "reap_spin", hit = hit(0, 0, 0, 42, 52, 0.9, 40) }),
-			P("charge", "혈겸 돌진", 2, { length = 54, width = 9, warn = 0.7, cd = 6, times = 3, pose = "reap_wave", hit = hit(0, 0, 0, 38, 46, 0.8, 50) }),
-			P("rain", "피의 비", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "ult_reap", fx = "fire", color = Color3.fromRGB(255, 120, 120), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
-			P("leap", "참수", 3, { radius = 18, warn = 0.9, cd = 7, pose = "reap_leap", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
-			P("quake", "혈월", 3, { radius = 28, warn = 1.3, cd = 9, pose = "reap_moon", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+			P("rain", "핏빛 초승달", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "reap_hook", fx = "fire", color = red, hit = hit(0, 0, 0, 22, 36, 0.7, 20) }),
+			P("donut", "혈륜", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "reap_spin", hit = hit(0, 0, 0, 29, 52, 0.9, 40) }),
+			P("charge", "혈겸 돌진", 2, { length = 54, width = 9, warn = 0.7, cd = 6, times = 3, pose = "reap_wave", hit = hit(0, 0, 0, 27, 46, 0.8, 50) }),
+			P("rain", "피의 비", 2, { count = 10, radius = 6, spread = 26, warn = 0.8, cd = 6, pose = "ult_reap", fx = "fire", color = Color3.fromRGB(255, 120, 120), hit = hit(0, 0, 0, 20, 34, 0.7, 20) }),
+			P("leap", "참수", 3, { radius = 18, warn = 0.9, cd = 7, pose = "reap_leap", hit = hit(0, 0, 0, 38, 74, 1.1, 45, 20) }),
+			P("quake", "혈월", 3, { radius = 28, warn = 1.3, cd = 9, pose = "reap_moon", hit = hit(0, 0, 0, 53, 106, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -2945,11 +3368,11 @@ for _, st in ipairs(Config.Styles) do
 		local green = Color3.fromRGB(120, 220, 110)
 		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 대숲의 창과 잎 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
 		st.trialBoss = { hp = 3400, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
-			P("rain", "죽창 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
-			P("donut", "대숲 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 40, 50, 1.0, 30) }),
-			P("leap", "고목 내리치기", 2, { radius = 16, warn = 1.0, cd = 7, pose = "grav_hammer", hit = hit(0, 0, 0, 50, 70, 1.1, 40, 18) }),
-			P("rain", "은행잎 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 26, 30, 0.7, 14) }),
-			P("quake", "숲의 분노", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_origin", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+			P("rain", "죽창 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 21, 34, 0.8, 16) }),
+			P("donut", "대숲 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 28, 50, 1.0, 30) }),
+			P("leap", "고목 내리치기", 2, { radius = 16, warn = 1.0, cd = 7, pose = "grav_hammer", hit = hit(0, 0, 0, 35, 70, 1.1, 40, 18) }),
+			P("rain", "은행잎 폭풍", 2, { count = 12, radius = 6, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 240, 150), hit = hit(0, 0, 0, 18, 30, 0.7, 14) }),
+			P("quake", "숲의 분노", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_origin", hit = hit(0, 0, 0, 52, 100, 1.4, 50, 24) }),
 		} }
 	end
 end
@@ -2960,69 +3383,69 @@ for _, st in ipairs(Config.Styles) do
 		local sea = Color3.fromRGB(90, 200, 240)
 		st.trialIntro = { title = "초월의 시련", text = "파도를 일으킬 줄 안다고 바다가 되는 건 아니다. 내 바다 한가운데서 끝까지 숨을 쉬거든, 고래의 노래를 가르쳐 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
-			P("rain", "물방울 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = sea, hit = hit(0, 0, 0, 30, 34, 0.8, 18) }),
-			P("donut", "소용돌이 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "wall_raise", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
-			P("charge", "파도타기", 2, { length = 54, width = 9, warn = 0.6, cd = 6, times = 3, pose = "surf_dash", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
-			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 28, 32, 0.7, 20) }),
-			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
-			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+			P("rain", "물방울 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = sea, hit = hit(0, 0, 0, 21, 34, 0.8, 18) }),
+			P("donut", "소용돌이 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "wall_raise", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
+			P("charge", "파도타기", 2, { length = 54, width = 9, warn = 0.6, cd = 6, times = 3, pose = "surf_dash", hit = hit(0, 0, 0, 25, 44, 0.8, 50) }),
+			P("rain", "해일 비", 2, { count = 12, radius = 6, spread = 27, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(215, 250, 255), hit = hit(0, 0, 0, 20, 32, 0.7, 20) }),
+			P("leap", "거경격", 3, { radius = 18, warn = 0.9, cd = 7, pose = "billow_strike", hit = hit(0, 0, 0, 38, 74, 1.1, 45, 20) }),
+			P("quake", "고경승천", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_tsunami", hit = hit(0, 0, 0, 53, 106, 1.4, 60, 24) }),
 		} }
 	end
 	if st.id == "gongbaek" then
 		local red = Color3.fromRGB(230, 40, 60)
 		st.trialIntro = { title = "???", text = "..." }
 		st.trialBoss = { hp = 3700, posture = 780, scale = 1.5, reach = 1.5, speed = 26, patterns = {
-			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 30, 34, 0.8, 16) }),
-			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 40, 50, 0.9, 30) }),
-			P("charge", "끊김", 2, { length = 52, width = 8, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 34, 42, 0.8, 30) }),
-			P("rain", "ERROR", 2, { count = 8, radius = 8, spread = 26, warn = 0.8, cd = 7, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 36, 40, 0.8, 20) }),
-			P("quake", "존재소거", 3, { radius = 28, warn = 1.2, cd = 9, pose = "ult_void", hit = hit(0, 0, 0, 76, 106, 1.4, 50, 24) }),
+			P("rain", "빈칸 비", 1, { count = 10, radius = 6, spread = 24, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(20, 20, 24), hit = hit(0, 0, 0, 21, 34, 0.8, 16) }),
+			P("donut", "격자 고리", 1, { inner = 7, outer = 24, warn = 0.9, cd = 8, pose = "void_circle", hit = hit(0, 0, 0, 28, 50, 0.9, 30) }),
+			P("charge", "끊김", 2, { length = 52, width = 8, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 24, 42, 0.8, 30) }),
+			P("rain", "ERROR", 2, { count = 8, radius = 8, spread = 26, warn = 0.8, cd = 7, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 25, 40, 0.8, 20) }),
+			P("quake", "존재소거", 3, { radius = 28, warn = 1.2, cd = 9, pose = "ult_void", hit = hit(0, 0, 0, 53, 106, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "geuknull" then
 		local red = Color3.fromRGB(230, 40, 60)
 		st.trialIntro = { title = "격자의 시련", text = "빈칸을 지우는 법은 알겠지. 그럼 빈칸에 좌표를 긋는 법은? 내 격자 안에서 끝까지 서 있어 봐라. 무너지는 돌을 건너온 다리라면, 버틸 수 있을 거다." }
 		st.trialBoss = { hp = 5600, posture = 980, scale = 1.7, reach = 1.6, speed = 28, patterns = {
-			P("rain", "좌표 낙하", 1, { count = 11, radius = 7, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(240, 240, 245), hit = hit(0, 0, 0, 40, 46, 0.8, 18) }),
-			P("donut", "격자 고리", 1, { inner = 8, outer = 30, warn = 0.9, cd = 7, pose = "void_circle", hit = hit(0, 0, 0, 50, 60, 0.9, 34) }),
-			P("charge", "좌표 도약", 2, { length = 60, width = 9, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 44, 52, 0.9, 34) }),
-			P("rain", "ERROR", 2, { count = 10, radius = 8, spread = 30, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 44, 50, 0.8, 22) }),
-			P("quake", "공간 삭제", 3, { radius = 32, warn = 1.2, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 90, 124, 1.5, 60, 26) }),
+			P("rain", "좌표 낙하", 1, { count = 11, radius = 7, spread = 28, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(240, 240, 245), hit = hit(0, 0, 0, 28, 46, 0.8, 18) }),
+			P("donut", "격자 고리", 1, { inner = 8, outer = 30, warn = 0.9, cd = 7, pose = "void_circle", hit = hit(0, 0, 0, 35, 60, 0.9, 34) }),
+			P("charge", "좌표 도약", 2, { length = 60, width = 9, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 31, 52, 0.9, 34) }),
+			P("rain", "ERROR", 2, { count = 10, radius = 8, spread = 30, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 31, 50, 0.8, 22) }),
+			P("quake", "공간 삭제", 3, { radius = 32, warn = 1.2, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 63, 124, 1.5, 60, 26) }),
 		} }
 	end
 	if st.id == "hojeop" then
 		local pink = Color3.fromRGB(255, 180, 220)
 		st.trialIntro = { title = "꿈의 시련", text = "흐아암... 내 꿈속에서 끝까지 깨어 있거든, 꿈길 걷는 법을 가르쳐 주지. 졸지 마라. 꿈은 생각보다 아프다." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
-			P("rain", "잠의 별비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 28, 32, 0.8, 16) }),
-			P("donut", "꿈문 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 40, 48, 0.9, 30) }),
-			P("charge", "몽유 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 34, 42, 0.8, 40) }),
-			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 34, 38, 0.8, 20) }),
-			P("quake", "월하몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 74, 100, 1.4, 50, 24) }),
+			P("rain", "잠의 별비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 20, 32, 0.8, 16) }),
+			P("donut", "꿈문 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 28, 48, 0.9, 30) }),
+			P("charge", "몽유 돌진", 2, { length = 50, width = 8, warn = 0.6, cd = 6, times = 3, pose = "dash_strike", hit = hit(0, 0, 0, 24, 42, 0.8, 40) }),
+			P("rain", "달 조각", 2, { count = 7, radius = 8, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(180, 220, 255), hit = hit(0, 0, 0, 24, 38, 0.8, 20) }),
+			P("quake", "월하몽", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_bloom", hit = hit(0, 0, 0, 52, 100, 1.4, 50, 24) }),
 		} }
 	end
 	if st.id == "chosengha" then
 		local star = Color3.fromRGB(255, 226, 120)
 		st.trialIntro = { title = "초월의 시련", text = "별을 쥐었다고 별을 부리는 건 아니다. 내 별의 돔 아래서 끝까지 서 있거든, 이 지팡이 끝의 별을 네게 걸어 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
-			P("rain", "별똥비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = star, hit = hit(0, 0, 0, 30, 34, 0.8, 18) }),
-			P("donut", "성좌 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "staff_sigil", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
-			P("charge", "유성장", 2, { length = 52, width = 8, warn = 0.6, cd = 6, times = 3, pose = "staff_thrust", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
-			P("rain", "메테오", 2, { count = 6, radius = 9, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(150, 120, 255), hit = hit(0, 0, 0, 36, 40, 0.8, 24) }),
-			P("leap", "낙성추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "staff_slam", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
-			P("quake", "성천궁", 3, { radius = 28, warn = 1.3, cd = 9, pose = "staff_dome", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+			P("rain", "별똥비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = star, hit = hit(0, 0, 0, 21, 34, 0.8, 18) }),
+			P("donut", "성좌 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "staff_sigil", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
+			P("charge", "유성장", 2, { length = 52, width = 8, warn = 0.6, cd = 6, times = 3, pose = "staff_thrust", hit = hit(0, 0, 0, 25, 44, 0.8, 50) }),
+			P("rain", "메테오", 2, { count = 6, radius = 9, spread = 26, warn = 0.9, cd = 7, pose = "point_sky", fx = "star", color = Color3.fromRGB(150, 120, 255), hit = hit(0, 0, 0, 25, 40, 0.8, 24) }),
+			P("leap", "낙성추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "staff_slam", hit = hit(0, 0, 0, 38, 74, 1.1, 45, 20) }),
+			P("quake", "성천궁", 3, { radius = 28, warn = 1.3, cd = 9, pose = "staff_dome", hit = hit(0, 0, 0, 53, 106, 1.4, 60, 24) }),
 		} }
 	end
 	if st.id == "chobyeok" then
 		local violet = Color3.fromRGB(170, 130, 255)
 		st.trialIntro = { title = "초월의 시련", text = "번개를 쥐었다고 번개가 되는 건 아니다. 내 벼락을 세 번 맞고도 서 있거든, 이 토시를 네 팔에 채워 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 26, patterns = {
-			P("rain", "벼락 비", 1, { count = 8, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = violet, hit = hit(0, 0, 0, 32, 36, 0.8, 20) }),
-			P("donut", "뇌전 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "thunder_hammer", hit = hit(0, 0, 0, 42, 52, 0.9, 40) }),
-			P("charge", "뇌광 돌진", 2, { length = 56, width = 8, warn = 0.6, cd = 6, times = 3, pose = "lightning_dash", hit = hit(0, 0, 0, 38, 46, 0.8, 50) }),
-			P("rain", "천뢰", 2, { count = 11, radius = 6, spread = 26, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 245, 170), hit = hit(0, 0, 0, 28, 34, 0.7, 20) }),
-			P("leap", "벽력천추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "thunder_hammer", hit = hit(0, 0, 0, 54, 74, 1.1, 45, 20) }),
-			P("quake", "구천뇌정", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_thunder", hit = hit(0, 0, 0, 76, 106, 1.4, 60, 24) }),
+			P("rain", "벼락 비", 1, { count = 8, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = violet, hit = hit(0, 0, 0, 22, 36, 0.8, 20) }),
+			P("donut", "뇌전 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "thunder_hammer", hit = hit(0, 0, 0, 29, 52, 0.9, 40) }),
+			P("charge", "뇌광 돌진", 2, { length = 56, width = 8, warn = 0.6, cd = 6, times = 3, pose = "lightning_dash", hit = hit(0, 0, 0, 27, 46, 0.8, 50) }),
+			P("rain", "천뢰", 2, { count = 11, radius = 6, spread = 26, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = Color3.fromRGB(255, 245, 170), hit = hit(0, 0, 0, 20, 34, 0.7, 20) }),
+			P("leap", "벽력천추", 3, { radius = 18, warn = 0.9, cd = 7, pose = "thunder_hammer", hit = hit(0, 0, 0, 38, 74, 1.1, 45, 20) }),
+			P("quake", "구천뇌정", 3, { radius = 28, warn = 1.3, cd = 9, pose = "ult_thunder", hit = hit(0, 0, 0, 53, 106, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -3031,12 +3454,12 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "ilwol" then
 		st.trialBoss = { hp = 3200, posture = 720, scale = 1.9, reach = 1.5, speed = 21, patterns = {
-			P("rain", "대일낙하", 1, { count = 6, radius = 8, spread = 22, warn = 1.0, cd = 7, pose = "sun_call", fx = "fire", color = Color3.fromRGB(255, 185, 60), hit = hit(0, 0, 0, 34, 40, 0.8, 20) }),
-			P("donut", "만월 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "moon_throw", hit = hit(0, 0, 0, 40, 50, 0.9, 40) }),
-			P("charge", "월광 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "moon_seal", hit = hit(0, 0, 0, 36, 44, 0.8, 50) }),
-			P("rain", "월하 낙성", 2, { count = 8, radius = 7, spread = 24, warn = 0.9, cd = 7, pose = "sun_call", fx = "star", color = Color3.fromRGB(205, 220, 255), hit = hit(0, 0, 0, 30, 36, 0.7, 20) }),
-			P("leap", "일륜 낙하", 3, { radius = 17, warn = 1.0, cd = 7, pose = "sun_wheel", hit = hit(0, 0, 0, 50, 70, 1.1, 45, 20) }),
-			P("quake", "일식", 3, { radius = 26, warn = 1.4, cd = 9, pose = "ult_eclipse", hit = hit(0, 0, 0, 70, 100, 1.4, 60, 24) }),
+			P("rain", "대일낙하", 1, { count = 6, radius = 8, spread = 22, warn = 1.0, cd = 7, pose = "sun_call", fx = "fire", color = Color3.fromRGB(255, 185, 60), hit = hit(0, 0, 0, 24, 40, 0.8, 20) }),
+			P("donut", "만월 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "moon_throw", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
+			P("charge", "월광 돌진", 2, { length = 50, width = 9, warn = 0.8, cd = 7, times = 3, pose = "moon_seal", hit = hit(0, 0, 0, 25, 44, 0.8, 50) }),
+			P("rain", "월하 낙성", 2, { count = 8, radius = 7, spread = 24, warn = 0.9, cd = 7, pose = "sun_call", fx = "star", color = Color3.fromRGB(205, 220, 255), hit = hit(0, 0, 0, 21, 36, 0.7, 20) }),
+			P("leap", "일륜 낙하", 3, { radius = 17, warn = 1.0, cd = 7, pose = "sun_wheel", hit = hit(0, 0, 0, 35, 70, 1.1, 45, 20) }),
+			P("quake", "일식", 3, { radius = 26, warn = 1.4, cd = 9, pose = "ult_eclipse", hit = hit(0, 0, 0, 49, 100, 1.4, 60, 24) }),
 		} }
 	end
 end
@@ -3425,6 +3848,8 @@ Config.TRIAL_KIND = {
 	taeheo = "survive", geumgang = "survive", maehwa = "disciples", cheonryong = "disciples", muyeong = "disciples", byeokryeok = "survive",
 	chwi = "deflect", changhae = "disciples", yeolhwa = "disciples", pungsin = "disciples", gaecheon = "survive", taecho = "survive",
 	yeonggeop = "survive", agong = "survive", unryu = "disciples", seongha = "disciples",
+	-- 3.19판 새 권법
+	cheolsae = "disciples", yeokryu = "deflect", jilpung = "disciples", sanak = "survive", binghon = "disciples", cheonok = "survive", cheonjong = "survive", myeonggyeong = "deflect",
 }
 -- need = 해내야 할 수 (버티기는 초), time = 제한 시간 (초). 궁극의 권법(trialHp가 있는 권법)은 1.5배
 Config.TRIAL_KINDS = {
@@ -3439,7 +3864,7 @@ Config.TRIAL_KINDS = {
 --   need: 흘리기 6 → 4번 · 버티기 45 → 30초 · 제자 연무 세 번 → 두 번 (제자 둘 → 수제자)
 --   power: 사부·제자의 세기 배율 (내 전투력 기준, 보통 0.85 → 0.6), hit: 사부·제자가 주는 피해 배율
 Config.EASY_TRIAL = {
-	styles = { taeheo = true, geumgang = true, maehwa = true, muyeong = true, byeokryeok = true, chwi = true, unryu = true },
+	styles = { taeheo = true, geumgang = true, maehwa = true, muyeong = true, byeokryeok = true, chwi = true, unryu = true, cheolsae = true, yeokryu = true, jilpung = true },
 	need = { deflect = 4, survive = 30, disciples = 2 },
 	power = 0.7,
 	hit = 0.65,
@@ -4006,6 +4431,29 @@ Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 
 	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
+-- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)
+Config.MASTERS.cheolsae = { name = "철쇄노인", at = Vector3.new(150, 1.6, 420), region = "청운 들판 동쪽", regionId = "field",
+	quote = "주먹은 빗나가도, 붙잡은 손은 빗나가지 않는다.", rumor = "청운 마을 남쪽 들판 동쪽에 쇠사슬을 허리에 감은 노인이 있다더라" }
+Config.MASTERS.yeokryu = { name = "역류객", at = Vector3.new(-150, 1.6, 420), region = "청운 들판 서쪽", regionId = "field",
+	quote = "먼저 치는 자가 먼저 진다.", rumor = "청운 마을 남쪽 들판 서쪽에 늘 눈을 감고 서 있는 사람이 있다더라" }
+Config.MASTERS.jilpung = { name = "질풍랑", at = Vector3.new(300, 1.6, 270), region = "청운 마을 동남쪽 들판", regionId = "wilds",
+	quote = "바람은 멈추면 바람이 아니다.", rumor = "청운 마을 동남쪽 들판에 잠시도 가만히 있지 않는 젊은이가 있다더라" }
+Config.MASTERS.sanak = { name = "붕산노조", at = Vector3.new(1600, 1.6, 420), region = "붉은 황야", regionId = "badlands",
+	quote = "산은 한 번에 무너진다. 그 한 번을 위해 천 년을 쌓는다.", rumor = "붉은 황야 남쪽, 갈라진 바위 언덕 위에 산처럼 앉은 노인이 있다더라" }
+Config.MASTERS.binghon = { name = "빙혼노니", at = Vector3.new(260, 1.6, -1980), region = "북방 설산 얼음 벼랑", regionId = "snow", secret = true,
+	quote = "얼음은 차갑지 않다. 다만 움직이지 않을 뿐.", rumor = "북방 설산 동쪽 얼음 벼랑 아래, 얼어붙은 폭포 앞에 숨결이 하얀 노니가 있다더라" }
+Config.MASTERS.cheonok = { name = "옥진인", at = Vector3.new(-3050, 1.6, 1050), region = "석림 옥 기둥", regionId = "stoneforest", secret = true,
+	quote = "옥은 깎을수록 빛난다. 사람도 그렇다.", rumor = "서쪽 끝 석림, 옥처럼 푸른 기둥 사이에 앉아 돌을 다듬는 이가 있다더라" }
+Config.MASTERS.cheonjong = { name = "종지기", at = Vector3.new(3000, 1.6, -2900), region = "단풍산 꼭대기", regionId = "maple", secret = true,
+	quote = "종은 스스로 울지 않는다. 치는 자가 있어야 운다.", rumor = "동북쪽 끝 단풍산 꼭대기, 낡은 종 아래 하루에 한 번 종을 치는 이가 있다더라" }
+Config.MASTERS.myeonggyeong = { name = "명경선", at = Vector3.new(-3300, 1.6, -3025), region = "운무 차밭 거울 연못", regionId = "teafield", secret = true,
+	quote = "거울은 무엇이든 비춘다. 그래서 무엇도 붙잡지 않는다.", rumor = "서북쪽 끝 운무 차밭 한가운데, 거울처럼 맑은 연못가에 앉은 신선이 있다더라" }
+Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1.6, -120), region = "천룡봉 동쪽 용의 등뼈", regionId = "peak", secret = true,
+	quote = "용은 하늘을 날지 않는다. 하늘이 용을 태울 뿐.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
+Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
+	quote = "왕은 많았다. 천하는 하나다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
+Config.MASTERS.geukbinghon = { name = "빙극선", at = Vector3.new(-320, 1.6, -2020), region = "북방 설산 얼음 동굴", regionId = "snow", secret = true,
+	quote = "멈춘 것은 늙지 않는다.", rumor = "북방 설산 가장 깊은 곳, 얼음 동굴 앞에 얼음보다 흰 이가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
@@ -4096,6 +4544,8 @@ Config.TRANSCEND_REQ = {
 	chochanghae = { base = "changhae", awakened = "changhae2", lv = 20, challenge = { tidepearl = 10 }, learn = { tidepearl = 20 } },
 	-- 3.4판: 성하신권에는 각성 권법(진)이 없어 원래 권법만 (재료를 더 많이)
 	chosengha = { base = "seongha", lv = 20, challenge = { stardust = 12 }, learn = { stardust = 24 } },
+	-- 3.19판 초·천룡파천장: 진 천룡파천장까지, 뇌석 (용은 뇌운 속에서 자란다)
+	chocheonryong = { base = "cheonryong", awakened = "cheonryong2", lv = 20, challenge = { thunderstone = 10 }, learn = { thunderstone = 20 } },
 }
 for sid, R in pairs(Config.TRANSCEND_REQ) do
 	for _, st in ipairs(Config.Styles) do
@@ -4161,127 +4611,127 @@ Config.METEOR = { every = 300, first = 90, warn = 6, life = 150 }
 -- 천상계의 보스 셋: 체력은 아주 많고 공격은 덜 아프다 (전투력은 땅의 마지막 보스보다 조금 위)
 Config.Bosses.noeje = variant(Config.Bosses.cheonmun, { name = "뇌제 · 뇌정봉의 주인", shirt = Color3.fromRGB(60, 70, 150), pants = Color3.fromRGB(25, 30, 70), hp = 450000, posture = 1200, scale = 3.0, speed = 15, coins = 120000, xp = 15000, respawn = 300, mult = 2.5,
 	patterns = {
-		P("rain", "천뢰", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 190, 255), hit = hit(0, 0, 0, 40, 50, 0.9, 25) }),
-		P("charge", "뇌광 돌진", 1, { length = 56, width = 10, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 44, 55, 0.9, 55) }),
-		P("donut", "뇌운 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 50, 60, 1.0, 45) }),
+		P("rain", "천뢰", 1, { count = 8, radius = 8, spread = 26, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 190, 255), hit = hit(0, 0, 0, 28, 50, 0.9, 25) }),
+		P("charge", "뇌광 돌진", 1, { length = 56, width = 10, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 31, 55, 0.9, 55) }),
+		P("donut", "뇌운 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 35, 60, 1.0, 45) }),
 		P("summon", "뇌령들아!", 2, { enemy = "thunderimp", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
-		P("quake", "만뢰 강림", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.4, 70, 25) }),
+		P("quake", "만뢰 강림", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 49, 100, 1.4, 70, 25) }),
 	} })
 Config.Bosses.seonggun = variant(Config.Bosses.hyeolrang, { name = "성군 · 성운원의 주인", shirt = Color3.fromRGB(110, 70, 200), pants = Color3.fromRGB(35, 20, 70), hp = 480000, posture = 1200, scale = 2.8, speed = 17, coins = 130000, xp = 16000, respawn = 300, mult = 2.5,
 	patterns = {
-		P("rain", "유성우", 1, { count = 9, radius = 8, spread = 28, warn = 1.0, cd = 7, pose = "w_dual", fx = "star", color = Color3.fromRGB(200, 140, 255), hit = hit(0, 0, 0, 40, 50, 0.9, 25) }),
-		P("leap", "성운 낙하", 1, { radius = 16, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 55, 70, 1.2, 45, 20) }),
+		P("rain", "유성우", 1, { count = 9, radius = 8, spread = 28, warn = 1.0, cd = 7, pose = "w_dual", fx = "star", color = Color3.fromRGB(200, 140, 255), hit = hit(0, 0, 0, 28, 50, 0.9, 25) }),
+		P("leap", "성운 낙하", 1, { radius = 16, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 38, 70, 1.2, 45, 20) }),
 		P("summon", "별의 영들", 2, { enemy = "starspirit", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_dual" }),
-		P("donut", "은하 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 50, 60, 1.0, 45) }),
-		P("quake", "성운 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 100, 1.4, 70, 25) }),
+		P("donut", "은하 고리", 2, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 35, 60, 1.0, 45) }),
+		P("quake", "성운 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 49, 100, 1.4, 70, 25) }),
 	} })
 Config.Bosses.cheonjon = variant(Config.Bosses.cheonmun, { name = "천존 · 천궁 옥좌의 주인", shirt = Color3.fromRGB(255, 245, 215), pants = Color3.fromRGB(200, 160, 70), hp = 650000, posture = 1600, scale = 3.4, speed = 15, coins = 250000, xp = 30000, respawn = 300, mult = 3,
 	patterns = {
-		P("rain", "천벌", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 230, 150), hit = hit(0, 0, 0, 44, 55, 0.9, 25) }),
-		P("donut", "옥좌의 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 54, 65, 1.0, 45) }),
-		P("leap", "하늘 내려찍기", 2, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 80, 1.3, 50, 20) }),
-		P("charge", "천존 돌격", 2, { length = 60, width = 11, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 50, 60, 1.0, 60) }),
+		P("rain", "천벌", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 230, 150), hit = hit(0, 0, 0, 31, 55, 0.9, 25) }),
+		P("donut", "옥좌의 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 38, 65, 1.0, 45) }),
+		P("leap", "하늘 내려찍기", 2, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 42, 80, 1.3, 50, 20) }),
+		P("charge", "천존 돌격", 2, { length = 60, width = 11, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 35, 60, 1.0, 60) }),
 		P("summon", "천위대!", 2, { enemy = "throneguard", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("quake", "천지개벽", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 120, 1.5, 80, 30) }),
+		P("quake", "천지개벽", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 56, 120, 1.5, 80, 30) }),
 	} })
 
 -- 1.8판: 세상 끝 네 땅의 주인 (천문보다 위, 천상계 보스보다 아래)
 Config.Bosses.pungyeop = variant(Config.Bosses.cheonmun, { name = "풍엽 · 단풍산의 주인", shirt = Color3.fromRGB(220, 80, 30), pants = Color3.fromRGB(110, 35, 20), hp = 560000, posture = 900, scale = 3.2, speed = 15, coins = 60000, xp = 8000, respawn = 300, mult = 1.9,
 	patterns = {
-		P("rain", "낙엽비", 1, { count = 10, radius = 8, spread = 28, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 140, 50), hit = hit(0, 0, 0, 40, 50, 0.9, 25) }),
-		P("donut", "단풍 회오리", 1, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 50, 60, 1.0, 45) }),
-		P("charge", "가을바람", 2, { length = 58, width = 11, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 46, 56, 0.9, 55) }),
-		P("quake", "만산홍엽", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 76, 106, 1.4, 70, 25) }),
+		P("rain", "낙엽비", 1, { count = 10, radius = 8, spread = 28, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 140, 50), hit = hit(0, 0, 0, 28, 50, 0.9, 25) }),
+		P("donut", "단풍 회오리", 1, { inner = 9, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 35, 60, 1.0, 45) }),
+		P("charge", "가을바람", 2, { length = 58, width = 11, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 32, 56, 0.9, 55) }),
+		P("quake", "만산홍엽", 3, { radius = 28, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 53, 106, 1.4, 70, 25) }),
 	} })
 Config.Bosses.seokwang = variant(Config.Bosses.cheonmun, { name = "석왕 · 석림의 주인", shirt = Color3.fromRGB(140, 140, 130), pants = Color3.fromRGB(80, 80, 75), hp = 640000, posture = 1100, scale = 3.8, speed = 13, coins = 65000, xp = 8500, respawn = 300, mult = 2.0,
 	patterns = {
-		P("leap", "바위 낙하", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 58, 76, 1.2, 50, 20) }),
-		P("donut", "돌기둥 고리", 1, { inner = 10, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 52, 62, 1.0, 45) }),
+		P("leap", "바위 낙하", 1, { radius = 18, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 41, 76, 1.2, 50, 20) }),
+		P("donut", "돌기둥 고리", 1, { inner = 10, outer = 30, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 36, 62, 1.0, 45) }),
 		P("summon", "석림 정령들아", 2, { enemy = "karstsprite", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("quake", "만석붕괴", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 80, 110, 1.5, 75, 28) }),
+		P("quake", "만석붕괴", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 56, 110, 1.5, 75, 28) }),
 	} })
 Config.Bosses.gyunwang = variant(Config.Bosses.cheonmun, { name = "균왕 · 거균림의 주인", shirt = Color3.fromRGB(200, 50, 60), pants = Color3.fromRGB(240, 230, 210), hp = 720000, posture = 1100, scale = 3.6, speed = 14, coins = 70000, xp = 9000, respawn = 300, mult = 2.1,
 	patterns = {
-		P("rain", "포자비", 1, { count = 12, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 120, 255), hit = hit(0, 0, 0, 42, 52, 0.9, 25) }),
+		P("rain", "포자비", 1, { count = 12, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 120, 255), hit = hit(0, 0, 0, 29, 52, 0.9, 25) }),
 		P("summon", "포자 귀졸들", 2, { enemy = "sporeimp", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
-		P("charge", "버섯 돌진", 2, { length = 56, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 48, 58, 1.0, 60) }),
-		P("quake", "독포자 폭발", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 82, 112, 1.5, 75, 28) }),
+		P("charge", "버섯 돌진", 2, { length = 56, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 34, 58, 1.0, 60) }),
+		P("quake", "독포자 폭발", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 57, 112, 1.5, 75, 28) }),
 	} })
 Config.Bosses.dason = variant(Config.Bosses.cheonmun, { name = "다선 · 운무 차밭의 주인", shirt = Color3.fromRGB(230, 240, 220), pants = Color3.fromRGB(100, 140, 90), hp = 800000, posture = 1200, scale = 3.0, speed = 17, coins = 80000, xp = 10000, respawn = 300, mult = 2.2,
 	patterns = {
-		P("rain", "찻잎비", 1, { count = 11, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 230, 140), hit = hit(0, 0, 0, 44, 54, 0.9, 25) }),
-		P("leap", "운무 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 60, 78, 1.2, 50, 20) }),
-		P("donut", "찻물 고리", 2, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 54, 64, 1.0, 45) }),
-		P("quake", "운무 만개", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 84, 116, 1.5, 78, 28) }),
+		P("rain", "찻잎비", 1, { count = 11, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 230, 140), hit = hit(0, 0, 0, 31, 54, 0.9, 25) }),
+		P("leap", "운무 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 42, 78, 1.2, 50, 20) }),
+		P("donut", "찻물 고리", 2, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 38, 64, 1.0, 45) }),
+		P("quake", "운무 만개", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 59, 116, 1.5, 78, 28) }),
 	} })
 
 -- 1.7판: 새 섬의 주인 둘과, 천공 투기장에 정해진 때마다 내려오는 레이드 보스
 Config.Bosses.bingje = variant(Config.Bosses.cheonmun, { name = "빙제 · 빙정궁의 주인", shirt = Color3.fromRGB(190, 225, 255), pants = Color3.fromRGB(60, 100, 160), hp = 820000, posture = 1800, scale = 3.3, speed = 15, coins = 320000, xp = 36000, respawn = 300, mult = 3.4,
 	patterns = {
-		P("rain", "빙우", 1, { count = 10, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 235, 255), hit = hit(0, 0, 0, 46, 58, 1.0, 25) }),
-		P("donut", "설한 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 66, 1.1, 45) }),
+		P("rain", "빙우", 1, { count = 10, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 235, 255), hit = hit(0, 0, 0, 32, 58, 1.0, 25) }),
+		P("donut", "설한 고리", 1, { inner = 10, outer = 32, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 39, 66, 1.1, 45) }),
 		P("summon", "얼음 정령들아", 2, { enemy = "icespirit", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("charge", "빙하 돌진", 2, { length = 62, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 60) }),
-		P("quake", "만년빙 붕괴", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 84, 124, 1.6, 80, 30) }),
+		P("charge", "빙하 돌진", 2, { length = 62, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 36, 62, 1.0, 60) }),
+		P("quake", "만년빙 붕괴", 3, { radius = 30, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 59, 124, 1.6, 80, 30) }),
 	} })
 Config.Bosses.yeombong = variant(Config.Bosses.cheonmun, { name = "염봉 · 봉황대의 주인", shirt = Color3.fromRGB(255, 110, 40), pants = Color3.fromRGB(140, 30, 15), hp = 1000000, posture = 2000, scale = 3.5, speed = 16, coins = 420000, xp = 45000, respawn = 300, mult = 3.9,
 	patterns = {
-		P("rain", "불새비", 1, { count = 11, radius = 9, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 150, 60), hit = hit(0, 0, 0, 48, 60, 1.0, 25) }),
-		P("leap", "봉황 낙하", 1, { radius = 19, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 62, 82, 1.3, 50, 20) }),
-		P("donut", "불꽃 날개", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
+		P("rain", "불새비", 1, { count = 11, radius = 9, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 150, 60), hit = hit(0, 0, 0, 34, 60, 1.0, 25) }),
+		P("leap", "봉황 낙하", 1, { radius = 19, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 43, 82, 1.3, 50, 20) }),
+		P("donut", "불꽃 날개", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 41, 70, 1.1, 50) }),
 		P("summon", "불새 술사들", 2, { enemy = "flamesage", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("charge", "열화 돌격", 3, { length = 64, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 54, 64, 1.0, 60) }),
-		P("quake", "봉황 재생", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 90, 130, 1.6, 80, 30) }),
+		P("charge", "열화 돌격", 3, { length = 64, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 38, 64, 1.0, 60) }),
+		P("quake", "봉황 재생", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 63, 130, 1.6, 80, 30) }),
 	} })
 Config.Bosses.cheongeop = variant(Config.Bosses.cheonmun, { name = "천겁 · 하늘의 재앙", shirt = Color3.fromRGB(40, 30, 60), pants = Color3.fromRGB(15, 10, 25), hp = 1400000, posture = 3200, scale = 5.2, speed = 15, coins = 600000, xp = 60000, respawn = 99999, mult = 4.2, raid = true,
 	patterns = {
-		P("rain", "겁화", 1, { count = 14, radius = 9, spread = 40, warn = 1.0, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(190, 80, 255), hit = hit(0, 0, 0, 46, 58, 1.0, 25) }),
-		P("donut", "재앙의 고리", 1, { inner = 12, outer = 40, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 68, 1.1, 50) }),
+		P("rain", "겁화", 1, { count = 14, radius = 9, spread = 40, warn = 1.0, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(190, 80, 255), hit = hit(0, 0, 0, 32, 58, 1.0, 25) }),
+		P("donut", "재앙의 고리", 1, { inner = 12, outer = 40, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 39, 68, 1.1, 50) }),
 		P("summon", "겁병들아!", 2, { enemy = "throneblade", count = 4, max = 8, warn = 0.9, cd = 18, pose = "w_overhead" }),
-		P("charge", "하늘 가르기", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 54, 66, 1.0, 60) }),
-		P("leap", "천붕", 2, { radius = 22, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 66, 86, 1.3, 55, 22) }),
-		P("quake", "천겁", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 96, 140, 1.7, 90, 32) }),
+		P("charge", "하늘 가르기", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 38, 66, 1.0, 60) }),
+		P("leap", "천붕", 2, { radius = 22, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 46, 86, 1.3, 55, 22) }),
+		P("quake", "천겁", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 67, 140, 1.7, 90, 32) }),
 	} })
 Config.Bosses.pokryong = variant(Config.Bosses.cheonmun, { name = "비천 · 비천폭의 주인", shirt = Color3.fromRGB(90, 160, 220), pants = Color3.fromRGB(30, 70, 110), hp = 900000, posture = 1900, scale = 3.4, speed = 16, coins = 360000, xp = 40000, respawn = 300, mult = 3.6,
 	patterns = {
-		P("rain", "폭포비", 1, { count = 11, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 46, 58, 1.0, 25) }),
-		P("charge", "급류 돌진", 1, { length = 62, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 60) }),
+		P("rain", "폭포비", 1, { count = 11, radius = 8, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 210, 255), hit = hit(0, 0, 0, 32, 58, 1.0, 25) }),
+		P("charge", "급류 돌진", 1, { length = 62, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 36, 62, 1.0, 60) }),
 		P("summon", "물보라 정령들", 2, { enemy = "waterspirit", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("quake", "천폭 낙하", 3, { radius = 31, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 86, 126, 1.6, 80, 30) }),
+		P("quake", "천폭 낙하", 3, { radius = 31, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 60, 126, 1.6, 80, 30) }),
 	} })
 Config.Bosses.seonhak = variant(Config.Bosses.cheonmun, { name = "선학 · 청학봉의 주인", shirt = Color3.fromRGB(250, 250, 250), pants = Color3.fromRGB(40, 110, 90), hp = 1150000, posture = 2100, scale = 3.3, speed = 18, coins = 480000, xp = 50000, respawn = 300, mult = 4.1,
 	patterns = {
-		P("rain", "깃털비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(230, 255, 240), hit = hit(0, 0, 0, 48, 60, 1.0, 25) }),
-		P("leap", "학 내리꽂기", 1, { radius = 19, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 64, 84, 1.3, 50, 22) }),
-		P("donut", "날개 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
-		P("charge", "청학 비상", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 56, 66, 1.0, 60) }),
-		P("quake", "학명", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 92, 132, 1.6, 80, 30) }),
+		P("rain", "깃털비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(230, 255, 240), hit = hit(0, 0, 0, 34, 60, 1.0, 25) }),
+		P("leap", "학 내리꽂기", 1, { radius = 19, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 45, 84, 1.3, 50, 22) }),
+		P("donut", "날개 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 41, 70, 1.1, 50) }),
+		P("charge", "청학 비상", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 39, 66, 1.0, 60) }),
+		P("quake", "학명", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 64, 132, 1.6, 80, 30) }),
 	} })
 -- 2.7판: 새 섬의 주인 셋
 Config.Bosses.jukwang = variant(Config.Bosses.cheonmun, { name = "죽왕 · 운무 죽림의 주인", shirt = Color3.fromRGB(110, 150, 90), pants = Color3.fromRGB(50, 70, 40), hp = 1250000, posture = 2200, scale = 3.2, speed = 19, coins = 520000, xp = 54000, respawn = 300, mult = 4.3,
 	patterns = {
-		P("rain", "죽창 비", 1, { count = 12, radius = 7, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 210, 110), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
-		P("charge", "대숲 질주", 1, { length = 66, width = 11, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 56, 66, 1.0, 60) }),
+		P("rain", "죽창 비", 1, { count = 12, radius = 7, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(150, 210, 110), hit = hit(0, 0, 0, 35, 62, 1.0, 25) }),
+		P("charge", "대숲 질주", 1, { length = 66, width = 11, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 39, 66, 1.0, 60) }),
 		P("summon", "죽림 검객들", 2, { enemy = "jukgeom", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("donut", "대숲 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 60, 72, 1.1, 50) }),
-		P("quake", "만죽 낙하", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 94, 136, 1.6, 80, 30) }),
+		P("donut", "대숲 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 42, 72, 1.1, 50) }),
+		P("quake", "만죽 낙하", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 136, 1.6, 80, 30) }),
 	} })
 Config.Bosses.wolyeong = variant(Config.Bosses.cheonmun, { name = "월영 · 월광 호수의 주인", shirt = Color3.fromRGB(225, 232, 250), pants = Color3.fromRGB(90, 100, 150), hp = 1300000, posture = 2250, scale = 3.2, speed = 18, coins = 540000, xp = 56000, respawn = 300, mult = 4.4,
 	patterns = {
-		P("rain", "달빛 비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(220, 230, 255), hit = hit(0, 0, 0, 52, 64, 1.0, 25) }),
-		P("leap", "월하 낙영", 1, { radius = 19, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 66, 86, 1.3, 50, 22) }),
+		P("rain", "달빛 비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(220, 230, 255), hit = hit(0, 0, 0, 36, 64, 1.0, 25) }),
+		P("leap", "월하 낙영", 1, { radius = 19, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 46, 86, 1.3, 50, 22) }),
 		P("summon", "월광 정령들", 2, { enemy = "moonspirit", count = 3, max = 6, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("charge", "호수 위 달그림자", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58, 68, 1.0, 60) }),
-		P("quake", "만월", 3, { radius = 33, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 96, 138, 1.6, 80, 30) }),
+		P("charge", "호수 위 달그림자", 3, { length = 66, width = 12, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 41, 68, 1.0, 60) }),
+		P("quake", "만월", 3, { radius = 33, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 67, 138, 1.6, 80, 30) }),
 	} })
 Config.Bosses.geumgang = variant(Config.Bosses.cheonmun, { name = "금강천왕 · 금운사의 주인", shirt = Color3.fromRGB(235, 175, 60), pants = Color3.fromRGB(140, 80, 30), hp = 1400000, posture = 2400, scale = 3.6, speed = 16, coins = 580000, xp = 60000, respawn = 300, mult = 4.6,
 	patterns = {
-		P("quake", "금강 진각", 1, { radius = 24, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 70, 96, 1.4, 60, 20) }),
-		P("rain", "금빛 법륜", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 220, 120), hit = hit(0, 0, 0, 54, 66, 1.0, 25) }),
+		P("quake", "금강 진각", 1, { radius = 24, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 49, 96, 1.4, 60, 20) }),
+		P("rain", "금빛 법륜", 1, { count = 10, radius = 9, spread = 30, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 220, 120), hit = hit(0, 0, 0, 38, 66, 1.0, 25) }),
 		P("summon", "사자 수호수들", 2, { enemy = "guardlion", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("donut", "금강 고리", 2, { inner = 10, outer = 36, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 62, 76, 1.1, 50) }),
-		P("leap", "천왕 낙하", 3, { radius = 22, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 76, 100, 1.4, 60, 24) }),
-		P("quake", "금강불괴", 3, { radius = 34, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 100, 144, 1.6, 80, 30) }),
+		P("donut", "금강 고리", 2, { inner = 10, outer = 36, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 43, 76, 1.1, 50) }),
+		P("leap", "천왕 낙하", 3, { radius = 22, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 53, 100, 1.4, 60, 24) }),
+		P("quake", "금강불괴", 3, { radius = 34, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 70, 144, 1.6, 80, 30) }),
 	} })
 -- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
 Config.RAID = {
@@ -4303,40 +4753,40 @@ Config.RAID = {
 -- 앞 방을 넘어야 다음 다리의 구름 문이 걷힌다. 적의 세기는 들어간 사람의 전투력에 맞춘다
 Config.Bosses.unmugun = variant(Config.Bosses.cheonmun, { name = "운무군 · 미궁의 주인", shirt = Color3.fromRGB(200, 215, 240), pants = Color3.fromRGB(80, 95, 140), hp = 6000, posture = 900, scale = 2.6, speed = 17, coins = 0, xp = 2000, respawn = 99999,
 	patterns = {
-		P("rain", "운무우", 1, { count = 8, radius = 7, spread = 22, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 36, 44, 0.8, 25) }),
-		P("donut", "구름 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 44, 54, 1.0, 45) }),
+		P("rain", "운무우", 1, { count = 8, radius = 7, spread = 22, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(200, 225, 255), hit = hit(0, 0, 0, 25, 44, 0.8, 25) }),
+		P("donut", "구름 고리", 1, { inner = 8, outer = 26, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 31, 54, 1.0, 45) }),
 		P("summon", "운병들아", 2, { enemy = "cloudguard", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
-		P("charge", "안개 돌진", 2, { length = 50, width = 10, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 40, 50, 0.9, 55) }),
-		P("quake", "운해 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 66, 96, 1.4, 70, 25) }),
+		P("charge", "안개 돌진", 2, { length = 50, width = 10, warn = 0.85, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 28, 50, 0.9, 55) }),
+		P("quake", "운해 붕괴", 3, { radius = 26, warn = 1.4, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 46, 96, 1.4, 70, 25) }),
 	} })
 -- 3.15판: 새 땅·새 섬의 주인 넷
 Config.Bosses.mumyeong = variant(Config.Bosses.cheonmun, { name = "무명 · 세상 끝의 파수꾼", shirt = Color3.fromRGB(150, 156, 168), pants = Color3.fromRGB(58, 62, 72), hp = 900000, posture = 1400, scale = 3.4, speed = 16, coins = 95000, xp = 12000, respawn = 300, mult = 2.4,
 	patterns = {
-		P("rain", "끝의 안개비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 200, 220), hit = hit(0, 0, 0, 46, 56, 0.9, 25) }),
-		P("charge", "벼랑 가르기", 1, { length = 70, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 52, 62, 1.0, 55) }),
-		P("donut", "망각의 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 56, 66, 1.0, 45) }),
-		P("quake", "세상 끝", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 88, 120, 1.5, 80, 28) }),
+		P("rain", "끝의 안개비", 1, { count = 12, radius = 8, spread = 32, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 200, 220), hit = hit(0, 0, 0, 32, 56, 0.9, 25) }),
+		P("charge", "벼랑 가르기", 1, { length = 70, width = 12, warn = 0.9, cd = 7, times = 2, pose = "w_thrust", hit = hit(0, 0, 0, 36, 62, 1.0, 55) }),
+		P("donut", "망각의 고리", 2, { inner = 10, outer = 34, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 39, 66, 1.0, 45) }),
+		P("quake", "세상 끝", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 62, 120, 1.5, 80, 28) }),
 	} })
 Config.Bosses.hwangsa = variant(Config.Bosses.cheonmun, { name = "황사 · 협곡의 주인", shirt = Color3.fromRGB(206, 130, 64), pants = Color3.fromRGB(110, 62, 30), hp = 860000, posture = 1300, scale = 3.3, speed = 17, coins = 90000, xp = 11500, respawn = 300, mult = 2.3,
 	patterns = {
-		P("rain", "모래 화살비", 1, { count = 12, radius = 8, spread = 34, warn = 1.0, cd = 7, pose = "w_overhead", fx = "sand", color = Color3.fromRGB(230, 180, 110), hit = hit(0, 0, 0, 44, 54, 0.9, 25) }),
-		P("leap", "협곡 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 62, 80, 1.2, 50, 20) }),
+		P("rain", "모래 화살비", 1, { count = 12, radius = 8, spread = 34, warn = 1.0, cd = 7, pose = "w_overhead", fx = "sand", color = Color3.fromRGB(230, 180, 110), hit = hit(0, 0, 0, 31, 54, 0.9, 25) }),
+		P("leap", "협곡 낙하", 1, { radius = 18, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 43, 80, 1.2, 50, 20) }),
 		P("summon", "모래 도적들아!", 2, { enemy = "marauder", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
-		P("quake", "황사 폭풍", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 86, 118, 1.5, 80, 28) }),
+		P("quake", "황사 폭풍", 3, { radius = 32, warn = 1.5, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 60, 118, 1.5, 80, 28) }),
 	} })
 Config.Bosses.geukgwang = variant(Config.Bosses.cheonmun, { name = "극광 · 극광대의 주인", shirt = Color3.fromRGB(150, 240, 220), pants = Color3.fromRGB(40, 80, 110), hp = 1500000, posture = 2500, scale = 3.4, speed = 17, coins = 620000, xp = 64000, respawn = 300, mult = 4.8,
 	patterns = {
-		P("rain", "극광 낙하", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(140, 255, 220), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
-		P("donut", "빛의 장막", 1, { inner = 12, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 58, 70, 1.1, 50) }),
-		P("charge", "오로라 질주", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 56, 68, 1.0, 60) }),
-		P("quake", "극야", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+		P("rain", "극광 낙하", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "ice", color = Color3.fromRGB(140, 255, 220), hit = hit(0, 0, 0, 35, 62, 1.0, 25) }),
+		P("donut", "빛의 장막", 1, { inner = 12, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 41, 70, 1.1, 50) }),
+		P("charge", "오로라 질주", 2, { length = 80, width = 14, warn = 0.9, cd = 7, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 39, 68, 1.0, 60) }),
+		P("quake", "극야", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 70, 146, 1.7, 90, 32) }),
 	} })
 Config.Bosses.doseon = variant(Config.Bosses.cheonmun, { name = "도선 · 선계 정원의 주인", shirt = Color3.fromRGB(255, 222, 232), pants = Color3.fromRGB(120, 84, 116), hp = 1550000, posture = 2500, scale = 3.2, speed = 18, coins = 640000, xp = 66000, respawn = 300, mult = 4.9,
 	patterns = {
-		P("rain", "복사꽃 비", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 170, 200), hit = hit(0, 0, 0, 50, 62, 1.0, 25) }),
-		P("leap", "선녀 강림", 1, { radius = 20, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 68, 88, 1.3, 55, 22) }),
+		P("rain", "복사꽃 비", 1, { count = 14, radius = 9, spread = 38, warn = 1.0, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(255, 170, 200), hit = hit(0, 0, 0, 35, 62, 1.0, 25) }),
+		P("leap", "선녀 강림", 1, { radius = 20, warn = 1.1, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 48, 88, 1.3, 55, 22) }),
 		P("summon", "동자들아!", 2, { enemy = "jukseon", count = 3, max = 6, warn = 0.9, cd = 18, pose = "w_overhead" }),
-		P("quake", "무릉도원", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 100, 146, 1.7, 90, 32) }),
+		P("quake", "무릉도원", 3, { radius = 40, warn = 1.7, cd = 10, pose = "w_overhead", hit = hit(0, 0, 0, 70, 146, 1.7, 90, 32) }),
 	} })
 Config.MAZE = {
 	arena = Vector3.new(1700, 1800, -1700), -- 첫 미궁 자리 (사람마다 옆으로 비켜 놓는다)

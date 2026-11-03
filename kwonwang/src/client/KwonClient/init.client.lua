@@ -33,6 +33,7 @@ local Royal = require(script:WaitForChild("Royal"))
 local Dream = require(script:WaitForChild("Dream"))
 local Null = require(script:WaitForChild("Null"))
 local Ink = require(script:WaitForChild("Ink"))
+local Arts = require(script:WaitForChild("Arts")) -- 3.19판 새 권법 열하나의 연출
 local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
@@ -2052,6 +2053,12 @@ function handlers.skillfx(data: any)
 		Gourd.init({ shake = shake, tint = tint })
 		Samsara.init({ shake = shake, tint = tint })
 		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+		Arts.init({ shake = shake, flash = UI.flash })
+	end
+	-- 3.19판 새 권법 (붙잡기·되받아치기·돌진·얼음 가두기·새 연타 장치)
+	if Arts.handles(data) then
+		Arts.run(data)
+		return
 	end
 	-- 3.1판 극 권법의 기술 (평소·황혼)
 	if Geuk.handles(data) then
@@ -2480,6 +2487,12 @@ function handlers.geukTwilight(data: any)
 	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
 	Geuk.twilight(data)
 end
+-- 3.19판: 극 빙혼신장 · 빙결 세계 (모두에게 알림, 가까우면 눈보라가 보인다)
+function handlers.geukFrost(data: any)
+	Arts.init({ shake = shake, flash = UI.flash })
+	UI.banner(string.format("❄ 빙결 세계 · %s", data.name or ""), "둘레가 얼어붙은 세상이 된다. 그 안의 적은 느려지고, 서리에 베이고, 3초마다 얼어붙는다", Color3.fromRGB(170, 225, 255))
+	Arts.frost(data)
+end
 -- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
 function handlers.geukDomain(data: any)
 	Null.init({ shake = shake, flash = UI.flash })
@@ -2578,7 +2591,7 @@ RunService.RenderStepped:Connect(function()
 	if style.geukGauge then
 		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
 		if twilightNow then
-			stacks = style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+			stacks = style.geukFrost and "❄ 빙결 세계 (둘레의 적이 느려지고 얼어붙는다)" or (style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)")
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)

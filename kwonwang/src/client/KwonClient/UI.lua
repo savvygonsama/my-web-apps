@@ -576,7 +576,8 @@ end
 local function buildStyles()
 	local page = makePage("styles")
 	local list = scroller(page, UDim2.new(0.4, -8, 1, 0))
-	new("UIListLayout", { Padding = UDim.new(0, 6), Parent = list })
+	-- 3.19판: 등급 순으로 (상급 → 전설 → 신화 → 태초 → 지존 → 윤회 → 초월 → 권왕 → 극), 등급마다 머리글
+	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
 	local detail = new("Frame", { Position = UDim2.new(0.4, 4, 0, 0), Size = UDim2.new(0.6, -4, 1, 0), BackgroundColor3 = C.panel, Parent = page }, { corner(12), stroke(C.line, 1.5) })
 	local dTitle = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -28, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, Parent = detail })
 	local dHanja = text({ Position = UDim2.new(0, 14, 0, 44), Size = UDim2.new(1, -28, 0, 22), TextSize = 17, TextColor3 = C.dim, Parent = detail })
@@ -850,8 +851,17 @@ local function buildStyles()
 			action = "guide"
 		end
 	end
-	for _, s in ipairs(Config.Styles) do
-		local card = button({ Size = UDim2.new(1, -10, 0, 64), BackgroundColor3 = C.panel2, Text = "", Parent = list }, function()
+	local headed: { [string]: boolean } = {}
+	for i, s in ipairs(Config.Styles) do
+		local gi = Config.gradeIndex(s.grade)
+		if not headed[s.grade] then
+			headed[s.grade] = true
+			local gc = Config.GRADE_COLOR[s.grade] or C.dim
+			local head = new("Frame", { Size = UDim2.new(1, -10, 0, 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
+			new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = gc, BackgroundTransparency = 0.5, BorderSizePixel = 0, Parent = head })
+			text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 120, 1, 0), Text = "◆ " .. s.grade .. " ◆", TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+		end
+		local card = button({ Size = UDim2.new(1, -10, 0, 64), BackgroundColor3 = C.panel2, Text = "", LayoutOrder = gi * 1000 + i, Parent = list }, function()
 			show(s.id)
 		end)
 		new("UIStroke", { Color = s.color, Thickness = 1, Parent = card })

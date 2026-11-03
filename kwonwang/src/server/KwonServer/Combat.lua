@@ -580,14 +580,46 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = "deflect", pos = pos, counter = true, side = side })
 		;(tgt :: any).deflectAt = now()
 		local style = Combat.styleOf(tgt)
-		local ch = style and style.skills.E.counterHit
+		-- 3.19판: 받아칠 자세를 연 기술 (E·G 어느 것이든)의 되받아치기. 없으면 예전처럼 E의 것
+		local cm = (tgt :: any).counterMove
+		local ch = (cm and cm.counterHit) or (style and style.skills.E.counterHit)
+		;(tgt :: any).counterMove = nil
 		if ch then
 			Push:FireAllClients("act", { m = tgt.model, style = tgt.style, pose = ch.pose, dur = 0.5, seq = -1 })
-			task.delay(0.12, function()
-				if not tgt.dead and not att.dead then
-					Combat.applyHit(tgt, att, ch.hit, { move = { name = "되받아치기" }, isSkill = true, chain = true })
+			-- 상대 앞으로 미끄러져 (tp) 친다
+			if ch.tp and att.root.Parent then
+				local dir = flat(tgt.root.Position - att.root.Position)
+				local at = att.root.Position + dir * 3.2
+				local cf = CFrame.lookAt(at, Vector3.new(att.root.Position.X, at.Y, att.root.Position.Z))
+				if tgt.player and tgt.player.Character then
+					tgt.player.Character:PivotTo(cf)
+				else
+					tgt.root.CFrame = cf
 				end
-			end)
+				Push:FireAllClients("skillfx", { kind = "counterFlash", m = tgt.model, t = att.model, style = tgt.style })
+			end
+			for k = 0, (ch.strikes or 1) - 1 do
+				task.delay(0.12 + k * 0.14, function()
+					if not tgt.dead and not att.dead then
+						Combat.applyHit(tgt, att, ch.hit, { move = { name = "되받아치기" }, isSkill = true, chain = true })
+					end
+				end)
+			end
+			-- 역류가 둘레로 터진다
+			if ch.burst then
+				task.delay(0.12 + (ch.strikes or 1) * 0.14, function()
+					if tgt.dead then
+						return
+					end
+					local at = tgt.root.Position
+					Push:FireAllClients("skillfx", { kind = "counterBurst", at = at, radius = ch.burstRadius or 14, style = tgt.style })
+					for _, other in pairs(Combat.fighters) do
+						if Combat.hostile(tgt, other) and not other.dead and (other.root.Position - at).Magnitude <= (ch.burstRadius or 14) then
+							Combat.applyHit(tgt, other, ch.burst, { move = { name = "역류" }, isSkill = true, chain = true })
+						end
+					end
+				end)
+			end
 		end
 		Combat.sync(tgt)
 		return "counter"
@@ -629,6 +661,16 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 						if Combat.hostile(tgt, other) and not other.dead and (other.root.Position - at).Magnitude <= dw.radius then
 							Combat.applyHit(tgt, other, { dmg = dw.dmg, posture = dw.posture, stun = dw.stun, kb = dw.kb, up = dw.up }, { chain = true, isSkill = true, move = { name = "역류" } })
 						end
+					end
+				end)
+			end
+			-- 3.19판 역류반격권: 흘려 내면 저절로 되받아친다
+			local dc = tStyle and tStyle.deflectCounter
+			if dc then
+				Push:FireAllClients("act", { m = tgt.model, style = tgt.style, pose = dc.pose, dur = 0.45, seq = -1 })
+				task.delay(0.1, function()
+					if not tgt.dead and not att.dead then
+						Combat.applyHit(tgt, att, dc.hit, { move = { name = "역류" }, chain = true })
 					end
 				end)
 			end

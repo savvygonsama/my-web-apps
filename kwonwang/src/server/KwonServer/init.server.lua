@@ -2280,6 +2280,26 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	end
 	if move.counter then
 		f.counterUntil = t + move.counter
+		;(f :: any).counterMove = move
+		-- 3.19판 역천반격: 아무도 치지 않으면 자세가 풀릴 때 역류만 터진다
+		local fb = move.counterHit and move.counterHit.fallback
+		if fb then
+			local token = f.counterUntil
+			task.delay(move.counter, function()
+				if f.counterUntil == token and not f.dead and f.model.Parent then
+					f.counterUntil = 0
+					;(f :: any).counterMove = nil
+					local at = f.root.Position
+					local r = move.counterHit.burstRadius or 14
+					Push:FireAllClients("skillfx", { kind = "counterBurst", at = at, radius = r, style = style.id })
+					for _, o in pairs(Combat.fighters) do
+						if Combat.hostile(f, o) and not o.dead and (o.root.Position - at).Magnitude <= r then
+							Combat.applyHit(f, o, fb, { move = move, isSkill = true, chain = true })
+						end
+					end
+				end
+			end)
+		end
 	end
 	-- 장풍: 손을 내뻗는 순간 서버가 날린다
 	if move.proj then
@@ -2867,6 +2887,70 @@ function Geuk.trigger(f: any, st: any)
 		end
 	end)
 	local name = f.player and f.player.DisplayName or f.name
+	-- 3.19판 극 빙혼신장 · 빙결 세계: 내 둘레가 얼어붙은 세상이 된다 (나를 따라다닌다). 그 안의 적은 느려지고,
+	-- every초마다 서리에 베이고, freezeEvery초마다 얼어붙는다
+	local FR = st.geukFrost
+	if FR then
+		Push:FireAllClients("geukFrost", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur, radius = FR.radius })
+		task.spawn(function()
+			local t0 = now + G.cut
+			local nextTick, nextFreeze = t0, t0 + FR.freezeEvery
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
+				local tn = os.clock()
+				if tn >= t0 then
+					local at = f.root.Position
+					local doTick = tn >= nextTick
+					if doTick then
+						nextTick = tn + FR.every
+					end
+					local doFreeze = tn >= nextFreeze
+					if doFreeze then
+						nextFreeze = tn + FR.freezeEvery
+					end
+					local frozen = {}
+					for _, o in pairs(Combat.fighters) do
+						if o ~= f and not o.dead and Combat.hostile(f, o) then
+							local d = o.root.Position - at
+							if Vector3.new(d.X, 0, d.Z).Magnitude <= FR.radius and math.abs(d.Y) < 30 then
+								o.slowUntil = tn + 0.6
+								o.slowMul = FR.slow
+								if doTick then
+									Combat.applyHit(f, o, FR.tick, { move = { name = "서리" }, unblockable = true })
+								end
+								if doFreeze and not o.dead then
+									Combat.stun(o, FR.freeze)
+									o.model:SetAttribute("Frozen", true)
+									table.insert(frozen, o)
+								end
+							end
+						end
+					end
+					if #frozen > 0 then
+						local models = {}
+						for _, o in ipairs(frozen) do
+							table.insert(models, o.model)
+						end
+						Push:FireAllClients("skillfx", { kind = "frostLock", targets = models, dur = FR.freeze, style = st.id })
+						task.delay(FR.freeze, function()
+							for _, o in ipairs(frozen) do
+								if o.model.Parent then
+									o.model:SetAttribute("Frozen", nil)
+								end
+							end
+						end)
+					end
+				end
+				task.wait(0.25)
+			end
+			if f.twilightUntil == token and f.dead then
+				f.twilightUntil = os.clock()
+				if f.model.Parent then
+					f.model:SetAttribute("Twilight", nil)
+				end
+			end
+		end)
+		return
+	end
 	local D = st.geukDomain
 	if D then
 		-- 3.16판 극 공백권 · 격자 전개: 선 자리에서 흰 3차원 격자가 한 점에서 천천히 펼쳐져 머문다 (세상은 그대로)

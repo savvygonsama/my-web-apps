@@ -509,6 +509,231 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	elseif kind == "grabThrow" then
+		-- 3.19판 철쇄금나수·천하패권: 앞의 적을 붙잡아 끌어당긴 뒤 메치거나 (slam), 앞으로 던지거나 (throw),
+		-- 여럿을 붙잡아 휘돌리다 사방으로 내던진다 (spin). 던진 적에 부딪힌 적과 떨어진 자리의 적도 다친다.
+		-- 보스는 너무 커서 들 수 없다: 붙잡지 않고 그 자리에서 맞는다
+		local cosA = math.cos(math.rad(math.min(359, m.angle or 90) / 2))
+		local cands = {}
+		for _, o in ipairs(hostilesNear(f, f.root.Position, m.range)) do
+			local to = flat(o.root.Position - f.root.Position)
+			if (m.angle or 90) >= 360 or look:Dot(to) >= cosA then
+				table.insert(cands, o)
+			end
+		end
+		table.sort(cands, function(a, b)
+			return (a.root.Position - f.root.Position).Magnitude < (b.root.Position - f.root.Position).Magnitude
+		end)
+		local grabbed = {}
+		for i = 1, math.min(m.n or 1, #cands) do
+			table.insert(grabbed, cands[i])
+		end
+		if #grabbed == 0 then
+			Push:FireAllClients("skillfx", { kind = "grabMiss", m = f.model, at = f.root.Position + look * 6, style = style })
+			return
+		end
+		local function heavyOf(o: any): boolean
+			return o.model:GetAttribute("Boss") == true or o.root.Anchored
+		end
+		local function pin(o: any, cf: CFrame)
+			if heavyOf(o) then
+				return
+			end
+			if o.player and o.player.Character then
+				o.player.Character:PivotTo(cf)
+			else
+				o.root.AssemblyLinearVelocity = Vector3.zero
+				o.root.CFrame = cf
+			end
+		end
+		local reelT = (m.reel or 0.2) / sp
+		local holdT = (m.mode == "spin" and (m.spin or 1.2) or (m.hold or 0.3)) / sp
+		for _, o in ipairs(grabbed) do
+			Combat.stun(o, reelT + holdT + 0.6)
+		end
+		Push:FireAllClients("skillfx", { kind = "grab", m = f.model, targets = modelsOf(grabbed), mode = m.mode, reel = reelT, hold = holdT, orbit = m.orbit, style = style })
+		local splash = m.splash and scaled(m.splash, sc) or nil
+		local tick = m.tick and scaled(m.tick, sc) or nil
+		-- 떨어진 자리 (또는 메친 자리) 둘레를 친다
+		local function crash(o: any, at: Vector3)
+			Push:FireAllClients("skillfx", { kind = "grabSlam", at = at, radius = m.splashRadius or 8, style = style })
+			strike(f, o, hit, move)
+			if splash then
+				for _, other in ipairs(hostilesNear(f, at, m.splashRadius or 8)) do
+					if other ~= o then
+						strike(f, other, splash, move)
+					end
+				end
+			end
+		end
+		task.spawn(function()
+			local t0 = os.clock()
+			local nextTick = t0 + reelT
+			-- 1) 끌어당겨 붙잡는다 (spin이면 둘레를 휘돌린다)
+			while alive() do
+				local el = os.clock() - t0
+				if el >= reelT + holdT then
+					break
+				end
+				local fwd = flat(f.root.CFrame.LookVector)
+				for idx, o in ipairs(grabbed) do
+					if not o.dead and o.root.Parent then
+						local spot
+						if m.mode == "spin" then
+							local a = math.max(0, el - reelT) * 11 + idx * (math.pi * 2 / #grabbed)
+							spot = f.root.Position + Vector3.new(math.cos(a), 0, math.sin(a)) * (m.orbit or 7) + Vector3.new(0, 1.5, 0)
+						else
+							-- 앞에 붙잡았다가, 던지기는 머리 위로 들어 올린다
+							local lift = (m.mode == "throw" and el > reelT) and 3.5 or 0.5
+							spot = f.root.Position + fwd * 3.2 + Vector3.new(0, lift, 0)
+						end
+						local p = el < reelT and o.root.Position:Lerp(spot, 0.35) or spot
+						pin(o, CFrame.lookAt(p, Vector3.new(f.root.Position.X, p.Y, f.root.Position.Z)))
+					end
+				end
+				-- 휘돌리는 동안 닿는 적 (붙잡힌 적 말고)
+				if tick and os.clock() >= nextTick then
+					nextTick = os.clock() + (m.every or 0.2) / sp
+					for _, other in ipairs(hostilesNear(f, f.root.Position, m.radius or 10)) do
+						if not table.find(grabbed, other) then
+							strike(f, other, tick, move)
+						end
+					end
+				end
+				task.wait(0.03)
+			end
+			if not alive() then
+				return
+			end
+			-- 2) 메치기: 바로 앞 땅에 내리꽂는다
+			if m.mode == "slam" then
+				for _, o in ipairs(grabbed) do
+					if not o.dead and o.root.Parent then
+						local at = f.root.Position + flat(f.root.CFrame.LookVector) * 3.5
+						pin(o, CFrame.new(Vector3.new(at.X, f.root.Position.Y - 1.2, at.Z)))
+						crash(o, Vector3.new(at.X, f.root.Position.Y, at.Z))
+					end
+				end
+				return
+			end
+			-- 3) 던지기: 앞으로 (spin은 바깥으로) 날린다. 날아가는 길에 부딪힌 적도 맞는다
+			local flight = (m.flight or 0.6) / sp
+			for _, o in ipairs(grabbed) do
+				if not o.dead and o.root.Parent then
+					local dir = m.mode == "spin" and flat(o.root.Position - f.root.Position) or flat(f.root.CFrame.LookVector)
+					local vel = dir * ((m.dist or 40) / math.max(0.2, flight)) + Vector3.new(0, 26, 0)
+					if heavyOf(o) then
+						crash(o, o.root.Position)
+					else
+						if o.player then
+							Push:FireClient(o.player, "knock", vel, flight + 0.3)
+						else
+							o.root.AssemblyLinearVelocity = vel
+						end
+						Push:FireAllClients("skillfx", { kind = "grabFly", t = o.model, dur = flight, style = style })
+						task.spawn(function()
+							local hitSet = {}
+							local f0 = os.clock()
+							while os.clock() - f0 < flight and o.root.Parent and alive() do
+								if splash then
+									for _, other in ipairs(hostilesNear(f, o.root.Position, (m.splashRadius or 8) * 0.6)) do
+										if other ~= o and not hitSet[other] then
+											hitSet[other] = true
+											strike(f, other, splash, move)
+										end
+									end
+								end
+								task.wait(0.05)
+							end
+							if o.root.Parent and alive() then
+								crash(o, o.root.Position)
+							end
+						end)
+					end
+				end
+			end
+		end)
+	elseif kind == "rushChain" then
+		-- 3.19판 질풍연권·천하패권: 가까운 적 사이를 차례로 파고들어 친다 (무적). air가 있으면 첫 적을 따라 올라
+		-- 공중에서 이어 치고 내리꽂는다. final이 있으면 마지막에 한가운데서 터진다
+		local list = nearestList(f, m.range, m.n or 1)
+		if #list == 0 then
+			local to = f.root.Position + look * 10
+			Push:FireAllClients("skillfx", { kind = "rushDash", m = f.model, from = f.root.Position, to = to, style = style, i = 1 })
+			moveTo(f, CFrame.lookAt(to, to + look))
+			return
+		end
+		local per = m.every or 0.2
+		local airN = m.air or 0
+		local airEvery = m.airEvery or 0.13
+		local airT = airN > 0 and (0.3 + (airN + 1) * airEvery + 0.3) or 0
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + ((m.delay or 0) + #list * per + airT + 0.3) / sp)
+		for i, tgt in ipairs(list) do
+			after((m.delay or 0) + (i - 1) * per, function()
+				if tgt.dead or not tgt.root.Parent then
+					return
+				end
+				local from = f.root.Position
+				local dir = flat(tgt.root.Position - from)
+				local at = tgt.root.Position - dir * 3
+				moveTo(f, CFrame.lookAt(at, Vector3.new(tgt.root.Position.X, at.Y, tgt.root.Position.Z)))
+				Push:FireAllClients("skillfx", { kind = "rushDash", m = f.model, from = from, to = at, t = tgt.model, style = style, i = i })
+				for k = 0, (m.hitsEach or 1) - 1 do
+					after(k * 0.08, function()
+						strike(f, tgt, hit, move)
+					end)
+				end
+			end)
+		end
+		if airN > 0 then
+			local tgt = list[1]
+			local t1 = (m.delay or 0) + 0.3
+			local airHit = scaled(m.airHit, sc)
+			for k = 1, airN do
+				after(t1 + k * airEvery, function()
+					if tgt.dead or not tgt.root.Parent then
+						return
+					end
+					-- 떠 있는 적 곁에 붙어 친다 (적은 잠깐 떠 있게)
+					if not tgt.player and not tgt.root.Anchored then
+						tgt.root.AssemblyLinearVelocity = Vector3.new(0, 8, 0)
+					end
+					local p = tgt.root.Position
+					local side = rightOf(look) * (k % 2 == 0 and 2.5 or -2.5)
+					local eye = p - look * 2.5 + side
+					moveTo(f, CFrame.lookAt(eye, p))
+					Push:FireAllClients("skillfx", { kind = "rushAir", m = f.model, t = tgt.model, style = style, k = k })
+					strike(f, tgt, airHit, move)
+				end)
+			end
+			after(t1 + (airN + 1) * airEvery, function()
+				if tgt.dead or not tgt.root.Parent then
+					return
+				end
+				if not tgt.player and not tgt.root.Anchored then
+					tgt.root.AssemblyLinearVelocity = Vector3.new(0, -140, 0)
+				end
+				strike(f, tgt, scaled(m.slam, sc), move)
+				after(0.18, function()
+					local at = tgt.root.Parent and tgt.root.Position or f.root.Position
+					Push:FireAllClients("skillfx", { kind = "rushSlam", at = at, radius = m.slamRadius or 8, style = style })
+					for _, o in ipairs(hostilesNear(f, at, m.slamRadius or 8)) do
+						if o ~= tgt then
+							strike(f, o, scaled(m.slam, sc * 0.6), move)
+						end
+					end
+				end)
+			end)
+		end
+		if m.final then
+			after((m.delay or 0) + #list * per + 0.2, function()
+				local at = f.root.Position
+				Push:FireAllClients("skillfx", { kind = "rushBurst", at = at, radius = m.finalRadius, style = style })
+				for _, o in ipairs(hostilesNear(f, at, m.finalRadius)) do
+					strike(f, o, scaled(m.final, sc), move)
+				end
+			end)
+		end
 	elseif kind == "shock" then
 		after(m.delay or 0.2, function()
 			local at = f.root.Position + flat(Combat.look(f)) * (m.dist or 4)
