@@ -6376,33 +6376,6 @@ ART_SITES.cheonha = function(g: Vector3, back: Vector3, f: Folder)
 		P(f, "OverlordBannerTorn", Vector3.new(2, 2.4, 0.1), CFrame.lookAt(at + Vector3.new(0.3 * s, 5.4, 0) - back * 0.4, at + Vector3.new(0.3 * s, 5.4, 0) - back * 2) * CFrame.Angles(0, 0, math.rad(-12 * s)), Color3.fromRGB(150, 30, 25), Enum.Material.Fabric, false)
 	end
 end
--- 빙극선: 등 뒤 얼음 동굴 입구 (큰 얼음 덩이로 아치), 안쪽의 푸른 빛, 얼어붙은 바닥과 고드름
-ART_SITES.geukbinghon = function(g: Vector3, back: Vector3, f: Folder)
-	local side = Vector3.new(-back.Z, 0, back.X)
-	local c0 = g + back * 16
-	for _, s in ipairs({ -1, 1 }) do
-		P(f, "CaveWall", Vector3.new(8, 18, 14), CFrame.lookAt(c0 + side * 8 * s + Vector3.new(0, 9, 0), c0 + side * 8 * s + Vector3.new(0, 9, 0) + back) * CFrame.Angles(0, 0, math.rad(-6 * s)), Color3.fromRGB(180, 215, 240), Enum.Material.Glacier)
-	end
-	P(f, "CaveLintel", Vector3.new(24, 7, 14), CFrame.lookAt(c0 + Vector3.new(0, 19, 0), c0 + Vector3.new(0, 19, 0) + back), Color3.fromRGB(190, 222, 245), Enum.Material.Glacier)
-	jag(f, c0, back, 30, 22, 8)
-	P(f, "CaveBack", Vector3.new(10, 16, 2), CFrame.lookAt(c0 + back * 7 + Vector3.new(0, 8, 0), c0 + back * 8 + Vector3.new(0, 8, 0)), Color3.fromRGB(60, 110, 170), Enum.Material.Glacier)
-	local inner = P(f, "CaveGlow", Vector3.new(8, 14, 0.5), CFrame.lookAt(c0 + back * 5.8 + Vector3.new(0, 7, 0), c0 + back * 7 + Vector3.new(0, 7, 0)), Color3.fromRGB(120, 200, 255), Enum.Material.Neon, false)
-	inner.Transparency = 0.5
-	light(inner, Color3.fromRGB(120, 200, 255), 34, 2)
-	for k = -5, 5 do
-		local at = c0 - back * 6.5 + side * (k * 2.2) + Vector3.new(0, 15.6, 0)
-		local L = rng:NextNumber(2.5, 6)
-		P(f, "Icicle", Vector3.new(0.9, L, 0.9), CFrame.new(at - Vector3.new(0, L / 2, 0)) * CFrame.Angles(0, math.rad(45), 0), Color3.fromRGB(225, 245, 255), Enum.Material.Ice, false)
-	end
-	disc("FrozenGround", g + Vector3.new(0, 0.1, 0), 18, 0.2, Color3.fromRGB(215, 235, 250), Enum.Material.Ice, f, false)
-	-- 얼어붙은 사람 그림자 둘 (얼음 속에 갇힌 옛 도전자)
-	for _, s in ipairs({ -1, 1 }) do
-		local at = g + side * 11 * s + back * 4
-		local block = P(f, "FrozenChallenger", Vector3.new(3.4, 6.4, 3.4), CFrame.new(at + Vector3.new(0, 3.2, 0)) * CFrame.Angles(0, s * 0.4, math.rad(3 * s)), Color3.fromRGB(170, 220, 250), Enum.Material.Glass)
-		block.Transparency = 0.35
-		P(f, "FrozenShadow", Vector3.new(1.8, 5, 1.2), block.CFrame, Color3.fromRGB(60, 80, 110), Enum.Material.SmoothPlastic, false)
-	end
-end
 local function artSites()
 	for id, build in pairs(ART_SITES) do
 		local m = Config.MASTERS[id]

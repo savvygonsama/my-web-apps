@@ -99,8 +99,6 @@ Poses.stances = {
 	stance_overlord = { W = { -8, -10, 0 }, N = { -12, 10, 0 }, RS = { 10, 0, 25 }, RE = { 100, 0, 0 }, LS = { 0, 0, -12 }, LE = { 10, 0, 0 } },
 	-- 3.19.2판 초·천룡파천장: 두 손을 용의 발톱처럼 굽혀 위아래로 벌린다 (천룡파천장과 다른 자세)
 	stance_skydragon = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 130, 0, 35 }, RE = { 70, 0, 0 }, LS = { 50, 0, -35 }, LE = { 70, 0, 0 } },
-	-- 극 빙혼신장: 몸을 낮춰 두 손을 갈퀴처럼 펴고 앞뒤로 벌린다 (빙혼신장보다 사납게)
-	stance_frostclaw = { W = { -15, -30, 0 }, N = { 12, 30, 0 }, RS = { 85, 0, 40 }, RE = { 60, 0, 0 }, LS = { 40, 0, -50 }, LE = { 70, 0, 0 } },
 	-- 성하: 한 주먹은 하늘을 가리키듯 높이, 한 주먹은 허리에 (별을 끌어내리는 자세)
 	stance_galaxy = { W = { 0, -25, 0 }, N = { -5, 25, 0 }, RS = { 150, 0, 20 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 110, 0, 0 } },
 	-- 초·매화: 오른 부채는 머리 위로 높이 펼쳐 들고, 왼 부채는 허리 앞에서 비스듬히 아래로 겨눈다 (벚꽃이 흩날리는 춤의 첫 자세)
@@ -155,7 +153,6 @@ Poses.stanceLegs = {
 	stance_mirror = { RH = { -20, 0, 10 }, LH = { 25, 0, -10 }, RK = { -30, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } },
 	stance_overlord = { RH = { 0, 0, 10 }, LH = { 0, 0, -10 }, RK = { 0, 0, 0 }, LK = { 0, 0, 0 }, R = { 4, 0, 0, 0, 0, 0 } },
 	stance_skydragon = { RH = { -25, 0, 14 }, LH = { 40, 0, -10 }, RK = { -30, 0, 0 }, LK = { -65, 0, 0 }, R = { -5, 0, 0, 0, -1.0, 0 } },
-	stance_frostclaw = { RH = { -20, 0, 22 }, LH = { 30, 0, -18 }, RK = { -55, 0, 0 }, LK = { -60, 0, 0 }, R = { -8, 0, 0, 0, -1.2, 0 } },
 	stance_galaxy = { RH = { -12, 0, 10 }, LH = { 24, 0, -8 }, RK = { -30, 0, 0 }, LK = { -26, 0, 0 }, R = { 0, 0, 0, 0, -0.45, 0 } },
 	-- 초·매화: 한 발을 앞으로 엇갈려 내딛고 무릎을 살짝 굽힌 춤의 자세
 	stance_sakura = { RH = { 12, 0, -14 }, LH = { -6, 0, -6 }, RK = { -26, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, -10, 0, 0, -0.3, 0 } },
@@ -2806,71 +2803,12 @@ A.ch_fin = { -- 패왕승천권: 등 뒤의 왼손은 그대로, 오른 주먹 �
 	{ t = 1, j = CH },
 }
 
--- ── 극 빙혼신장: 빙혼신장보다 날카롭고 사납다. 얼음 갈퀴 · 눈보라 회전 · 찌르기 ──
-local GB = stanceEnd("stance_frostclaw")
-A.gb_claw_r = { -- 극빙장: 오른 얼음 갈퀴로 아래에서 위로 찢어 올린다
-	{ t = 0, j = { W = { 10, -30, 0 }, RS = { 20, 0, 30 }, RE = { 80, 0, 0 }, LS = { 70, 0, -40 }, LE = { 90, 0, 0 }, R = { 5, -15, 0, 0, -0.9, 0 } } },
-	{ t = 0.38, e = "snap", j = { W = { -10, 30, 0 }, N = { 15, 0, 0 }, RS = { 150, 0, 40 }, RE = { 30, 0, 0 }, LS = { 70, 0, -40 }, LE = { 90, 0, 0 }, R = { -5, 20, 0, 0, -0.6, -0.5 } } },
-	{ t = 1, j = GB },
-}
-A.gb_claw_l = { -- 극설장: 왼 얼음 갈퀴로 비스듬히 찍어 내린다
-	{ t = 0, j = { W = { 5, 30, 0 }, LS = { 160, 0, -60 }, LE = { 50, 0, 0 }, RS = { 60, 0, 40 }, RE = { 90, 0, 0 }, R = { 0, 10, 0, 0, -0.7, 0 } } },
-	{ t = 0.38, e = "snap", j = { W = { -20, -35, 0 }, LS = { 40, 0, 0 }, LE = { 20, 0, 0 }, RS = { 60, 0, 40 }, RE = { 90, 0, 0 }, R = { -10, -25, 0, 0, -0.9, -0.6 } } },
-	{ t = 1, j = GB },
-}
-A.gb_storm = { -- 한설난무: 두 팔을 펴고 한 바퀴 돌며 두 번 벤다
-	{ t = 0, j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
-	{ t = 0.38, e = "snap", j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 180, 0, 0, -0.9, -0.2 } } },
-	{ t = 0.55, j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 280, 0, 0, -0.9, -0.3 } } },
-	{ t = 0.71, e = "snap", j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 360, 0, 0, -0.9, -0.4 } } },
-	{ t = 1, j = GB },
-}
-A.gb_zero = { -- 절빙장: 굳힌 손끝으로 깊이 찔러 들어간다
-	{ t = 0, j = { RS = { 60, 0, 20 }, RE = { 130, 0, 0 }, LS = { 60, 0, -20 }, LE = { 130, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0.3 } } },
-	{ t = 0.5, e = "snap", j = { W = { -15, 40, 0 }, RS = { 95, 0, -5 }, RE = { 0, 0, 0 }, LS = { 60, 0, -30 }, LE = { 130, 0, 0 }, RH = { -35, 0, 0 }, LH = { 45, 0, 0 }, LK = { -70, 0, 0 }, R = { -15, 35, 0, 0, -1.1, -1.2 } } },
-	{ t = 1, j = GB },
-}
-A.gb_heaven = { -- 빙혼파천: 뛰어올라 두 손바닥으로 땅을 내리찍는다
-	{ t = 0, j = { RS = { 170, 0, 30 }, LS = { 170, 0, -30 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { 0, 0, 0, 0, 0.8, 0 } } },
-	{ t = 0.47, e = "snap", j = { W = { -45, 0, 0 }, RS = { 60, 0, 20 }, RE = { 0, 0, 0 }, LS = { 60, 0, -20 }, LE = { 0, 0, 0 }, RH = { 70, 0, 0 }, RK = { -100, 0, 0 }, LH = { 70, 0, 0 }, LK = { -100, 0, 0 }, R = { -25, 0, 0, 0, -1.9, -0.8 } } },
-	{ t = 1, j = GB },
-}
-A.gb_dragon = { -- 빙룡창: 두 팔을 뒤로 젖혔다가 낮게 함께 내뻗는다 (얼음 창 두 줄)
-	{ t = 0, j = { W = { 15, 0, 0 }, RS = { -20, 0, 30 }, RE = { 60, 0, 0 }, LS = { -20, 0, -30 }, LE = { 60, 0, 0 }, R = { 5, 0, 0, 0, -1.0, 0.5 } } },
-	{ t = 0.25, e = "snap", j = { W = { -40, 0, 0 }, RS = { 70, 0, 10 }, RE = { 0, 0, 0 }, LS = { 70, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 0 }, LH = { 60, 0, 0 }, LK = { -100, 0, 0 }, R = { -25, 0, 0, 0, -1.6, -1.2 } } },
-	{ t = 1, j = GB },
-}
-A.gb_prison = { -- 빙옥감: 땅에서 두 주먹을 움켜쥔 채 끌어올린다 (얼음 감옥이 솟는다)
-	{ t = 0, j = { W = { -40, 0, 0 }, RS = { 40, 0, 30 }, RE = { 0, 0, 0 }, LS = { 40, 0, -30 }, LE = { 0, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { -20, 0, 0, 0, -2.0, 0 } } },
-	{ t = 0.4, e = "snap", j = { W = { 10, 0, 0 }, N = { 20, 0, 0 }, RS = { 150, 0, 40 }, RE = { 100, 0, 0 }, LS = { 150, 0, -40 }, LE = { 100, 0, 0 }, RK = { -20, 0, 0 }, LK = { -20, 0, 0 }, R = { 5, 0, 0, 0, -0.4, 0 } } },
-	{ t = 0.8, j = { W = { 10, 0, 0 }, N = { 20, 0, 0 }, RS = { 150, 0, 40 }, RE = { 102, 0, 0 }, LS = { 150, 0, -40 }, LE = { 102, 0, 0 }, RK = { -22, 0, 0 }, LK = { -22, 0, 0 }, R = { 5, 0, 0, 0, -0.42, 0 } } },
-	{ t = 1, j = GB },
-}
-A.gb_avalanche = { -- 만년설붕: 한 손은 머리 위에서 손가락을 돌려 눈사태를 부르고, 한 손은 앞을 가리킨다
-	{ t = 0, j = GB },
-	{ t = 0.3, j = { N = { 25, 0, 0 }, RS = { 178, 0, 0 }, RE = { 30, 0, 0 }, LS = { 90, 0, -20 }, LE = { 0, 0, 0 }, R = { 0, -20, 0, 0, -0.7, 0 } } },
-	{ t = 0.5, e = "snap", j = { N = { 25, 0, 0 }, RS = { 178, 0, 30 }, RE = { 60, 0, 0 }, LS = { 100, 0, -40 }, LE = { 0, 0, 0 }, R = { 0, 20, 0, 0, -0.7, 0 } } },
-	{ t = 0.75, j = { N = { 25, 0, 0 }, RS = { 178, 0, -10 }, RE = { 40, 0, 0 }, LS = { 100, 0, -40 }, LE = { 0, 0, 0 }, R = { 0, -10, 0, 0, -0.7, 0 } } },
-	{ t = 1, j = GB },
-}
-A.gb_absolute = { -- 절대영도: 두 손을 천천히 모아 앞의 세상을 움켜쥔다
-	{ t = 0, j = { RS = { 90, 0, 70 }, RE = { 0, 0, 0 }, LS = { 90, 0, -70 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
-	{ t = 0.4, j = { RS = { 90, 0, 10 }, RE = { 40, 0, 0 }, LS = { 90, 0, -10 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } } },
-	{ t = 0.75, e = "snap", j = { W = { -15, 0, 0 }, N = { -15, 0, 0 }, RS = { 90, 0, -15 }, RE = { 90, 0, 0 }, LS = { 90, 0, 15 }, LE = { 90, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 0, 0, 0, -1.3, 0 } } },
-	{ t = 1, j = GB },
-}
-A.gb_fin = { -- 극빙승천장: 무릎을 차올리며 펼친 두 손바닥을 하늘로 (얼음 기둥이 솟는다)
-	{ t = 0, j = { RS = { 30, 0, 40 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 0, 0, 0 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { 0, 0, 0, 0, -1.8, 0 } } },
-	{ t = 0.42, e = "snap", j = { W = { 15, 0, 0 }, N = { 25, 0, 0 }, RS = { 150, 0, 60 }, RE = { 0, 0, 0 }, LS = { 150, 0, -60 }, LE = { 0, 0, 0 }, RH = { 80, 0, 0 }, RK = { -100, 0, 0 }, R = { 5, 0, 0, 0, 0.3, 0 } } },
-	{ t = 1, j = GB },
-}
-
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
 Poses.limbs = {
 	-- 3.19.2판 새 권법 열하나
-	cs_snatch = { "RightHand" }, cs_forearm = { "LeftHand" }, cs_collar = { "RightHand", "LeftHand" }, cs_hipthrow = { "RightHand", "LeftHand" }, cs_ram = { "RightHand" }, cs_slam = { "RightHand", "LeftHand" }, cs_heave = { "RightHand", "LeftHand" }, cs_swing = { "RightHand", "LeftHand" }, cs_fin = { "RightHand", "LeftHand" }, yr_redirect = { "RightHand" }, yr_sweep = { "LeftHand" }, yr_whirl = { "RightHand", "LeftHand" }, yr_tide = { "RightHand", "LeftHand" }, yr_rebound = { "RightHand", "LeftHand" }, yr_wait = {}, yr_counter = { "RightHand" }, yr_wave = { "RightHand", "LeftHand" }, yr_reverse = {}, yr_counter3 = { "RightHand", "LeftHand" }, yr_deflect = { "RightHand" }, yr_fin = { "RightHand", "LeftHand" }, jp_jab = { "LeftHand" }, jp_cross = { "RightHand" }, jp_burst = { "RightHand", "LeftHand" }, jp_liftup = { "RightHand" }, jp_knee = { "RightFoot" }, jp_dash = { "RightHand", "LeftHand" }, jp_aerial = { "RightHand", "LeftHand", "LeftFoot" }, jp_gale = { "RightHand", "LeftHand" }, jp_fin = { "RightHand", "LeftHand" }, sa_rock = { "RightHand" }, sa_hook = { "LeftHand" }, sa_hammer = { "RightHand", "LeftHand" }, sa_quake = { "RightHand", "LeftHand", "RightFoot" }, sa_crush = { "RightHand" }, sa_fissure = { "RightHand" }, sa_boulder = { "RightHand", "LeftHand" }, sa_collapse = { "RightHand", "LeftHand" }, sa_fin = { "RightHand" }, bh_slice = { "RightHand" }, bh_heel = { "LeftHand" }, bh_turn = { "RightHand" }, bh_soul = { "RightHand", "LeftHand" }, bh_wall = { "RightHand", "LeftHand" }, bh_spear = { "RightHand" }, bh_gather = { "RightHand", "LeftHand" }, bh_glacier = { "RightHand", "LeftHand" }, bh_fin = { "RightHand" }, co_finger = { "RightHand" }, co_chop = { "LeftHand" }, co_prism = { "RightHand", "LeftHand" }, co_backfist = { "RightHand" }, co_shatter = { "RightHand", "LeftHand" }, co_lance = { "RightHand" }, co_rain = { "RightHand" }, co_forest = { "RightHand", "LeftHand" }, co_fin = { "RightHand", "RightFoot" }, cj_ram = { "RightHand" }, cj_toll = { "LeftHand" }, cj_gong = { "RightHand", "LeftHand" }, cj_swing = { "RightHand" }, cj_bellram = { "RightHand", "LeftHand" }, cj_shout = {}, cj_dome = { "RightHand", "LeftHand" }, cj_heavenbell = { "RightHand" }, cj_fin = { "RightHand", "LeftHand" }, mg_shard_r = { "RightHand" }, mg_shard_l = { "LeftHand" }, mg_twinkick = { "RightFoot", "LeftFoot" }, mg_break = { "RightHand", "LeftHand" }, mg_flash = { "RightHand", "LeftHand" }, mg_still = {}, mg_counter = { "RightHand", "LeftHand" }, mg_summon = { "RightHand", "LeftHand" }, mg_gallery = { "RightHand", "LeftHand" }, mg_shatter = { "RightHand", "LeftHand" }, mg_fin = { "RightFoot" }, ccr_rake = { "RightHand" }, ccr_tail = { "RightFoot" }, ccr_ascend = { "RightHand" }, ccr_breath = { "RightHand", "LeftHand" }, ccr_cannon = { "RightHand" }, ccr_coil = { "RightHand", "LeftHand" }, ccr_soar = { "RightHand", "LeftHand" }, ccr_nine = { "RightHand", "LeftHand" }, ccr_heaven = { "RightHand", "LeftHand" }, ccr_fin = { "RightHand", "LeftHand" }, ch_jab = { "RightHand" }, ch_backhand = { "RightHand" }, ch_lift = { "RightHand" }, ch_stomp = { "RightHand" }, ch_bash = { "RightHand" }, ch_charge = { "RightHand" }, ch_throw = { "RightHand" }, ch_onefist = { "RightHand" }, ch_crush = { "RightHand" }, ch_fin = { "RightHand" }, gb_claw_r = { "RightHand" }, gb_claw_l = { "LeftHand" }, gb_storm = { "RightHand", "LeftHand" }, gb_zero = { "RightHand" }, gb_heaven = { "RightHand", "LeftHand" }, gb_dragon = { "RightHand", "LeftHand" }, gb_prison = { "RightHand", "LeftHand" }, gb_avalanche = { "RightHand" }, gb_absolute = { "RightHand", "LeftHand" }, gb_fin = { "RightHand", "LeftHand" },
+	cs_snatch = { "RightHand" }, cs_forearm = { "LeftHand" }, cs_collar = { "RightHand", "LeftHand" }, cs_hipthrow = { "RightHand", "LeftHand" }, cs_ram = { "RightHand" }, cs_slam = { "RightHand", "LeftHand" }, cs_heave = { "RightHand", "LeftHand" }, cs_swing = { "RightHand", "LeftHand" }, cs_fin = { "RightHand", "LeftHand" }, yr_redirect = { "RightHand" }, yr_sweep = { "LeftHand" }, yr_whirl = { "RightHand", "LeftHand" }, yr_tide = { "RightHand", "LeftHand" }, yr_rebound = { "RightHand", "LeftHand" }, yr_wait = {}, yr_counter = { "RightHand" }, yr_wave = { "RightHand", "LeftHand" }, yr_reverse = {}, yr_counter3 = { "RightHand", "LeftHand" }, yr_deflect = { "RightHand" }, yr_fin = { "RightHand", "LeftHand" }, jp_jab = { "LeftHand" }, jp_cross = { "RightHand" }, jp_burst = { "RightHand", "LeftHand" }, jp_liftup = { "RightHand" }, jp_knee = { "RightFoot" }, jp_dash = { "RightHand", "LeftHand" }, jp_aerial = { "RightHand", "LeftHand", "LeftFoot" }, jp_gale = { "RightHand", "LeftHand" }, jp_fin = { "RightHand", "LeftHand" }, sa_rock = { "RightHand" }, sa_hook = { "LeftHand" }, sa_hammer = { "RightHand", "LeftHand" }, sa_quake = { "RightHand", "LeftHand", "RightFoot" }, sa_crush = { "RightHand" }, sa_fissure = { "RightHand" }, sa_boulder = { "RightHand", "LeftHand" }, sa_collapse = { "RightHand", "LeftHand" }, sa_fin = { "RightHand" }, bh_slice = { "RightHand" }, bh_heel = { "LeftHand" }, bh_turn = { "RightHand" }, bh_soul = { "RightHand", "LeftHand" }, bh_wall = { "RightHand", "LeftHand" }, bh_spear = { "RightHand" }, bh_gather = { "RightHand", "LeftHand" }, bh_glacier = { "RightHand", "LeftHand" }, bh_fin = { "RightHand" }, co_finger = { "RightHand" }, co_chop = { "LeftHand" }, co_prism = { "RightHand", "LeftHand" }, co_backfist = { "RightHand" }, co_shatter = { "RightHand", "LeftHand" }, co_lance = { "RightHand" }, co_rain = { "RightHand" }, co_forest = { "RightHand", "LeftHand" }, co_fin = { "RightHand", "RightFoot" }, cj_ram = { "RightHand" }, cj_toll = { "LeftHand" }, cj_gong = { "RightHand", "LeftHand" }, cj_swing = { "RightHand" }, cj_bellram = { "RightHand", "LeftHand" }, cj_shout = {}, cj_dome = { "RightHand", "LeftHand" }, cj_heavenbell = { "RightHand" }, cj_fin = { "RightHand", "LeftHand" }, mg_shard_r = { "RightHand" }, mg_shard_l = { "LeftHand" }, mg_twinkick = { "RightFoot", "LeftFoot" }, mg_break = { "RightHand", "LeftHand" }, mg_flash = { "RightHand", "LeftHand" }, mg_still = {}, mg_counter = { "RightHand", "LeftHand" }, mg_summon = { "RightHand", "LeftHand" }, mg_gallery = { "RightHand", "LeftHand" }, mg_shatter = { "RightHand", "LeftHand" }, mg_fin = { "RightFoot" }, ccr_rake = { "RightHand" }, ccr_tail = { "RightFoot" }, ccr_ascend = { "RightHand" }, ccr_breath = { "RightHand", "LeftHand" }, ccr_cannon = { "RightHand" }, ccr_coil = { "RightHand", "LeftHand" }, ccr_soar = { "RightHand", "LeftHand" }, ccr_nine = { "RightHand", "LeftHand" }, ccr_heaven = { "RightHand", "LeftHand" }, ccr_fin = { "RightHand", "LeftHand" }, ch_jab = { "RightHand" }, ch_backhand = { "RightHand" }, ch_lift = { "RightHand" }, ch_stomp = { "RightHand" }, ch_bash = { "RightHand" }, ch_charge = { "RightHand" }, ch_throw = { "RightHand" }, ch_onefist = { "RightHand" }, ch_crush = { "RightHand" }, ch_fin = { "RightHand" },
 	rinne_palm_r = { "RightHand" }, rinne_palm_l = { "LeftHand" }, rinne_wheel_kick = { "RightFoot", "LeftFoot" }, rinne_thrust = { "RightHand", "LeftHand" }, rinne_seal = { "RightHand" }, rinne_throw = { "RightHand", "LeftHand" }, rinne_dash = { "RightHand" }, ult_rinne = { "RightHand", "LeftHand" }, ult_rinne_x = { "RightHand", "LeftHand" },
 	karma_jab_r = { "RightHand" }, karma_jab_l = { "LeftHand" }, karma_chain = { "RightHand", "LeftHand" }, karma_smash = { "RightHand", "LeftHand" }, karma_charge = { "RightHand" }, karma_throw = { "RightHand", "LeftHand" }, karma_dash = { "RightHand" }, ult_karma = { "RightHand" }, ult_karma_x = { "RightHand", "LeftHand" },
 	ghost_palm_r = { "RightHand" }, ghost_palm_l = { "LeftHand" }, ghost_sweep = { "RightFoot" }, ghost_flash = { "RightHand" }, ghost_split = { "RightHand", "LeftHand" }, ult_mist = { "RightHand" }, ult_mist_x = { "RightHand" },

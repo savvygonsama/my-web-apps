@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2353,7 +2353,6 @@ table.insert(Config.Styles, {
 -- 3.16판: 극 공백권. 공백권의 끝. 세상 끝 벼랑 너머 망각의 정원에서만 (격자지기에게)
 -- 극 패시브 · 격자 전개: 극이 차면 선 자리에서 흰 3차원 격자 공간이 한 점에서 천천히 펼쳐져 30초 동안 머문다
 Config.GEUK_REQ.geuknull = { base = "gongbaek", lv = 20, rebirth = 3 }
-Config.GEUK_REQ.geukbinghon = { base = "binghon", lv = 20, rebirth = 3 }
 table.insert(Config.Styles, {
 	id = "geuknull",
 	name = "극 공백권",
@@ -2788,48 +2787,6 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
 	},
 })
--- 극 · 극 빙혼신장: 빙혼신장의 극. 극을 채우면 둘레가 얼어붙은 세상이 된다
-table.insert(Config.Styles, {
-	id = "geukbinghon",
-	name = "극 빙혼신장",
-	hanja = "極氷魂神掌",
-	icon = "❄",
-	grade = "극",
-	geuk = true,
-	color = Color3.fromRGB(150, 225, 255),
-	color2 = Color3.fromRGB(255, 255, 255),
-	fx = "ice",
-	hidden = true,
-	secret = true,
-	realmReq = 12,
-	styleReq = "binghon",
-	trialHp = 12,
-	unlockHint = "빙혼신장을 숙련 20까지 쌓고 세 번 환생한 자만이, 북방 설산 가장 깊은 얼음 동굴 앞의 빙극선을 만난다",
-	desc = "빙혼신장의 끝. 숨결마저 얼어붙는다. 맞히고 맞으며 극을 채우면 둘레가 얼어붙은 세상이 되어, 그 안의 적은 느려지고 쉬지 않고 얼어붙는다.",
-	gimmick = "극 패시브 · 빙결 세계: 맞히고 맞으며 극을 채우면 30초 동안 내 둘레 (반지름 34)가 얼어붙은 세상이 된다. 그 안의 적은 절반으로 느려지고, 1초마다 서리에 베이며, 3초마다 얼어붙는다",
-	deflect = 0.3,
-	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.4, dur = 30 },
-	geukFrost = { radius = 34, every = 1.0, slow = 0.5, freezeEvery = 3, freeze = 1.0, tick = hit(0, 0, 0, 28, 30, 0.2, 0) },
-	pulse = { every = 3, kind = "frostNova", radius = 12, delay = 0.25, name = "극 빙결", dmg = 42, posture = 54, stun = 1.2, kb = 0, up = 0 },
-	stance = "stance_frostclaw",
-	combo = {
-		{ id = "gb1", name = "극빙장", pose = "gb_claw_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
-		{ id = "gb2", name = "극설장", pose = "gb_claw_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
-		{ id = "gb3", name = "한설난무", pose = "gb_storm", dur = 0.42, lunge = 2, hits = { hit(0.16, 6, 6, 14, 18, 0.3, 8, nil, true), hit(0.3, 6, 6, 14, 18, 0.3, 8, nil, true) } },
-		{ id = "gb4", name = "절빙장", pose = "gb_zero", dur = 0.48, lunge = 3, hits = { hit(0.24, 8, 6, 36, 50, 0.9, 30) } },
-	},
-	heavy = { id = "gbH", name = "빙혼파천", pose = "gb_heaven", dur = 0.6, lunge = 5, hits = { hit(0.28, 8, 7, 52, 76, 0.9, 50, nil, true) } },
-	skills = {
-		E = { id = "gbE", name = "빙룡창", desc = "앞으로 얼음 창이 두 줄로 솟아 꿰뚫는다", pose = "gb_dragon", dur = 0.55, cd = 7, chi = 20,
-			mech = { kind = "line", count = 8, start = 4, spacing = 4.5, step = 0.05, delay = 0.12, radius = 6, hit = hit(0, 0, 0, 49, 60, 0.8, 8, 16), fx = "ice" } },
-		R = { id = "gbR", name = "빙옥감", desc = "둘레를 얼려 적을 2초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "gb_prison", dur = 0.7, cd = 10, chi = 25,
-			mech = { kind = "freeze", delay = 0.2, radius = 20, dur = 2.0, hitAt = 1.5, hit = hit(0, 0, 0, 126, 160, 1.0, 30, 12) } },
-		G = { id = "gbG", name = "만년설붕", desc = "하늘에서 얼음 기둥이 둘레의 적 열둘에게 차례로 내리꽂힌다", pose = "gb_avalanche", dur = 2.0, cd = 30, chi = 100, armor = true,
-			mech = { kind = "targets", n = 12, range = 40, delay = 0.35, stagger = 0.09, radius = 8, hit = hit(0, 0, 0, 91, 120, 1.0, 12, 10), fx = "ice" } },
-		X = { id = "gbX", name = "절대영도", desc = "초 오의. 세상이 멈춘다. 둘레 30칸이 모두 얼어 3초 동안 갇히고, 얼음이 깨지는 순간 안의 모든 것이 부서진다", pose = "gb_absolute", dur = 3.0, cd = 50, chi = 140, armor = true,
-			mech = { kind = "freeze", delay = 0.4, radius = 30, dur = 3.0, hitAt = 2.4, hit = hit(0, 0, 0, 630, 800, 1.6, 60, 30) } },
-	},
-})
 
 -- 3.5판: 모든 권법이 들어온 뒤 등급을 다섯 단계로 다시 매긴다
 for _, st in ipairs(Config.Styles) do
@@ -2890,7 +2847,6 @@ local FINISHERS = {
 	myeonggyeong = { name = "명경승천각", pose = "mg_fin" },
 	chocheonryong = { name = "초 승룡파천", pose = "ccr_fin" },
 	cheonha = { name = "패왕승천권", pose = "ch_fin" },
-	geukbinghon = { name = "극빙승천장", pose = "gb_fin" },
 	taeheo = { name = "만류회류장", pose = "double_palm" },
 	geumgang = { name = "금강파산추", pose = "elbow_r" },
 	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
@@ -4451,8 +4407,6 @@ Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1
 	quote = "용은 하늘을 날지 않는다. 하늘이 용을 태울 뿐.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
 Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
 	quote = "왕은 많았다. 천하는 하나다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
-Config.MASTERS.geukbinghon = { name = "빙극선", at = Vector3.new(-320, 1.6, -2020), region = "북방 설산 얼음 동굴", regionId = "snow", secret = true,
-	quote = "멈춘 것은 늙지 않는다.", rumor = "북방 설산 가장 깊은 곳, 얼음 동굴 앞에 얼음보다 흰 이가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
