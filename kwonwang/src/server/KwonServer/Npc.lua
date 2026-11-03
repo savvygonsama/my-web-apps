@@ -252,6 +252,13 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 	if def.dummy then
 		model:SetAttribute("Dummy", true)
 	end
+	-- 3.19.6판 권법 시험장: 흘리기 사범 (피해 없는 공격) · 데미지 챌린지 목인
+	if def.practice then
+		model:SetAttribute("Practice", true)
+	end
+	if def.challenge then
+		model:SetAttribute("Challenge", true)
+	end
 	return model
 end
 
@@ -964,9 +971,11 @@ end
 local function nearestPlayer(e: Enemy, radius: number): any?
 	local best, bestD = nil, radius
 	local pos = e.f.root.Position
+	-- 겨루기 상대 (관문 수호자·흘리기 사범)는 안전한 곳 안의 사람과도 겨룬다
+	local anywhere = e.def.duel == true
 	for _, player in ipairs(Players:GetPlayers()) do
 		local pf = Combat.fighterOfPlayer(player)
-		if pf and not pf.dead and not inSafe(pf.root.Position) then
+		if pf and not pf.dead and (anywhere or not inSafe(pf.root.Position)) then
 			local d = flatDist(pf.root.Position, pos)
 			if d < bestD then
 				best, bestD = pf, d

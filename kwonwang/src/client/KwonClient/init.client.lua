@@ -1320,6 +1320,102 @@ function handlers.cutscene(data: any)
 end
 
 -- 천층탑
+-- 3.19.6판 데미지 챌린지: 3초 세고, 10초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
+local chLabel: TextLabel? = nil
+local chState: any = nil
+local function chEnsure(): TextLabel
+	if chLabel and chLabel.Parent then
+		return chLabel
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonDmgChallenge"
+	g.ResetOnSpawn = false
+	g.IgnoreGuiInset = true
+	g.DisplayOrder = 20
+	g.Parent = player:WaitForChild("PlayerGui")
+	local l = Instance.new("TextLabel")
+	l.AnchorPoint = Vector2.new(0.5, 0)
+	l.Position = UDim2.new(0.5, 0, 0, 92)
+	l.Size = UDim2.new(0, 520, 0, 64)
+	l.BackgroundColor3 = Color3.fromRGB(30, 20, 18)
+	l.BackgroundTransparency = 0.25
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.TextColor3 = Color3.fromRGB(255, 225, 170)
+	l.TextStrokeTransparency = 0.4
+	l.Text = ""
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = l
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 12)
+	pad.PaddingRight = UDim.new(0, 12)
+	pad.Parent = l
+	local sz = Instance.new("UISizeConstraint")
+	sz.MaxSize = Vector2.new(520, 64)
+	sz.Parent = l
+	l.Parent = g
+	chLabel = l
+	return l
+end
+function handlers.dmgChallenge(data: any)
+	local l = chEnsure()
+	if data.phase == "count" then
+		local t0 = os.clock() + (data.countdown or 3)
+		local dur = data.dur or 10
+		chState = { start = t0, ends = t0 + dur, total = 0, hits = 0, best = data.best or 0 }
+		local st = chState
+		l.Visible = true
+		UI.banner("🎯 데미지 챌린지", string.format("%d초 뒤 시작 · %d초 동안 붉은 원판의 목인을 쳐라 · 내 최고 %s", data.countdown or 3, dur, Config.formatNumber(data.best or 0)), Color3.fromRGB(255, 170, 120))
+		local conn: RBXScriptConnection
+		local lastSec = -1
+		conn = RunService.RenderStepped:Connect(function()
+			if chState ~= st then
+				conn:Disconnect()
+				return
+			end
+			local now = os.clock()
+			if now < st.start then
+				local sec = math.ceil(st.start - now)
+				l.Text = string.format("⏳ %d", sec)
+				if sec ~= lastSec then
+					lastSec = sec
+					Fx.sound("ping", 0.6, 0.8 + (3 - sec) * 0.1)
+				end
+			elseif now <= st.ends then
+				if lastSec ~= 0 then
+					lastSec = 0
+					Fx.sound("ping", 0.9, 1.4)
+					UI.flash(Color3.fromRGB(255, 200, 140), 0.15)
+				end
+				l.Text = string.format("⏱ %.1f초 · 피해 %s", st.ends - now, Config.formatNumber(st.total))
+			else
+				l.Text = string.format("⌛ 끝! 피해 %s · 세는 중", Config.formatNumber(st.total))
+			end
+		end)
+	elseif data.phase == "tick" then
+		if chState then
+			chState.total = data.total or chState.total
+			chState.hits = data.hits or chState.hits
+		end
+	elseif data.phase == "done" then
+		chState = nil
+		local total = data.total or 0
+		l.Visible = true
+		l.Text = string.format("🎯 %s (초당 %s)%s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.newBest and " · 🏆 새 기록!" or "")
+		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("10초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
+		if data.newBest then
+			UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
+			Fx.sound("ping", 1, 1.6)
+		end
+		task.delay(6, function()
+			if chState == nil and chLabel then
+				chLabel.Visible = false
+			end
+		end)
+	end
+end
+
 function handlers.tower(data: any?)
 	UI.setTower(data)
 	if data then
@@ -1759,6 +1855,18 @@ function handlers.hit(data: any)
 			UI.flash(Color3.fromRGB(255, 40, 30), data.heavy and 0.3 or 0.12)
 		elseif mine and data.heavy and not predicted then
 			shake(0.9)
+		end
+	elseif kind == "practice" then
+		-- 3.19.6판 반격 코너: 흘리기 사범에게 맞았다 (피해 없음). 가볍게 움찔하고 "맞음"만 보인다
+		Fx.hitstop({ a, t }, 0.04)
+		Fx.spark(pos, Color3.fromRGB(255, 200, 150), 0.8, 5)
+		Fx.sound("hit", 0.35, 1.1, if hurt then nil else pos)
+		if t then
+			Anim.play(t, "block_hit", 0.25)
+		end
+		if hurt then
+			Fx.text(pos + Vector3.new(0, 3, 0), data.red and "맞음 · 붉은 공격은 피하세요" or "맞음 (피해 없음)", Color3.fromRGB(255, 190, 120), 22, 0.8)
+			shake(0.2)
 		end
 	elseif kind == "aura" then
 		-- 호신강기: 전투력 차이가 너무 커서 약한 적의 공격이 몸에 닿기도 전에 튕겨 나간다

@@ -429,6 +429,12 @@ function UI.enemyTag(model: Model)
 	-- 전투력 견주기: 차이가 크면 그 적의 공격은 나에게 통하지 않는다
 	local powerLabel = text({ Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
 	local function refreshPower()
+		-- 3.19.6판 반격 코너의 흘리기 사범
+		if model:GetAttribute("Practice") == true then
+			powerLabel.Text = "🛡 흘리기 연습 · 피해 없음 · 흘린 횟수 " .. Config.formatNumber(tonumber(model:GetAttribute("Parries")) or 0)
+			powerLabel.TextColor3 = Color3.fromRGB(170, 210, 255)
+			return
+		end
 		if model:GetAttribute("Dummy") == true then
 			local dps = tonumber(model:GetAttribute("Dps")) or 0
 			local best = tonumber(model:GetAttribute("Best")) or 0
@@ -447,7 +453,7 @@ function UI.enemyTag(model: Model)
 		if type(mp) == "number" then
 			local r = mp / math.max(1, ep)
 			local G = Config.POWER_GAP
-			if r >= G.immune then
+			if r >= G.immune and model:GetAttribute("Boss") ~= true then
 				tagText, col = " · 호신강기 (통하지 않음)", Color3.fromRGB(150, 150, 150)
 			elseif r >= G.steady then
 				tagText, col = " · 한참 약함", Color3.fromRGB(170, 200, 170)
@@ -467,6 +473,7 @@ function UI.enemyTag(model: Model)
 	refreshPower()
 	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
 	model:GetAttributeChangedSignal("Dps"):Connect(refreshPower)
+	model:GetAttributeChangedSignal("Parries"):Connect(refreshPower)
 	-- 내 전투력이 바뀌면 다시 견준다 (적이 사라지면 그만)
 	task.spawn(function()
 		while true do
@@ -1976,7 +1983,7 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("<b>전투력</b>")
 		add("• 머리 위 숫자. 체력·피해·기술 세기를 함께 센다. 내 전투력은 능력치 창에 있다")
-		add(string.format("• 내가 상대보다 %.1f배 넘게 세면 덜 아프고, %.1f배 넘으면 휘청이지 않고, %d배 넘으면 호신강기에 튕겨 나간다", Config.POWER_GAP.soft, Config.POWER_GAP.steady, Config.POWER_GAP.immune))
+		add(string.format("• 내가 상대보다 %.1f배 넘게 세면 덜 아프고, %.1f배 넘으면 휘청이지 않고, %d배 넘으면 호신강기에 튕겨 나간다 (졸병만, 보스는 튕겨 내지 못한다)", Config.POWER_GAP.soft, Config.POWER_GAP.steady, Config.POWER_GAP.immune))
 		add("• 지도의 권장 전투력: 빨강 위험 · 주황 버거움 · 초록 알맞음 · 회색 여유")
 	elseif tab == "grow" then
 		add("<b>📈 능력치는 싸움과 수련으로</b>")
@@ -2009,6 +2016,8 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("<b>🎯 권법 시험장</b>")
 		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
+		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
+		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 만물상 → 📜 심법)")

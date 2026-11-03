@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3029,6 +3029,23 @@ Config.Enemies = {
 		name = "큰 수련 목인", dummy = true, hp = 1000000000, posture = 100000000, speed = 0, aggro = 0, keep = 0, scale = 3.2,
 		shirt = Color3.fromRGB(130, 96, 62), pants = Color3.fromRGB(96, 70, 46), coins = 0, xp = 0, moves = {},
 	},
+	-- 3.19.6판 흘리기 사범: 권법 시험장 반격 코너. 박자를 읽기 쉽게 천천히 치지만, 맞아도 피해·경직·균형은 없다 (흘리기·막기·반격 연습).
+	-- 흘리면 사범이 휘청이고, 균형이 다 깎이면 무너져 반격할 틈이 난다. 붉은 공격은 막을 수 없으니 피하는 연습
+	practice = {
+		name = "흘리기 사범", practice = true, duel = true, weapon = "staff", hp = 1000000000, posture = 140, speed = 8, aggro = 18, keep = 5,
+		shirt = Color3.fromRGB(70, 92, 120), pants = Color3.fromRGB(40, 48, 62), coins = 0, xp = 0,
+		moves = {
+			{ id = "pr1", name = "곧은 치기", pose = "w_slash", windup = 0.85, dur = 1.25, range = 7, hits = { hit(0.85, 7, 4.5, 1, 8, 0.3, 8) } },
+			{ id = "pr2", name = "빠른 치기", pose = "w_slash2", windup = 0.55, dur = 0.95, range = 7, hits = { hit(0.55, 7, 4.5, 1, 8, 0.3, 8) } },
+			{ id = "pr3", name = "찌르기", pose = "w_thrust", windup = 0.7, dur = 1.1, range = 8, hits = { hit(0.7, 8, 4, 1, 8, 0.3, 8) } },
+			{ id = "pr4", name = "내려치기 (붉은 공격 · 피하세요)", pose = "w_overhead", windup = 1.1, dur = 1.5, range = 7, unblockable = true, hits = { hit(1.1, 7, 5, 1, 10, 0.4, 10) } },
+		},
+	},
+	-- 3.19.6판 데미지 챌린지 목인: 10초 동안 준 피해를 모두 센다
+	cdummy = {
+		name = "데미지 챌린지 목인", dummy = true, challenge = true, hp = 1000000000000, posture = 1000000000, speed = 0, aggro = 0, keep = 0, scale = 1.8,
+		shirt = Color3.fromRGB(150, 60, 50), pants = Color3.fromRGB(100, 40, 34), coins = 0, xp = 0, moves = {},
+	},
 	thug = {
 		-- 3.9판: 처음 싸우는 적이라 훨씬 순하게 (체력 55 → 34, 피해 거의 반, 덤비는 거리 38 → 24, 휘두르기 전 틈이 길다)
 		name = "무뢰배", weapon = "staff", hp = 34, posture = 36, speed = 12, aggro = 24, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
@@ -3731,6 +3748,9 @@ end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 전투방 (사람끼리는 싸우지 않는다). 작은 목인과 큰 목인, 초당 피해가 보인다
 Config.TEST_ROOM = { at = Vector3.new(0, 1200, 0), half = 170 }
+-- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다
+Config.TEST_CORNERS = { parry = Vector3.new(-110, 0, 40), challenge = Vector3.new(110, 0, 40) }
+Config.DMG_CHALLENGE = { countdown = 3, dur = 10 }
 
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {
@@ -3918,10 +3938,11 @@ function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / (120 * Config.ENEMY_HP)) * (boss and 1.5 or 1))
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
-Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
-function Config.powerGap(ratio: number): (number, boolean, boolean)
+-- 3.19.6판: 호신강기는 4배 → 6배, 그리고 졸병에게만 (보스의 공격은 아무리 약해도 튕겨 내지 못한다)
+Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 6 }
+function Config.powerGap(ratio: number, boss: boolean?): (number, boolean, boolean)
 	local G = Config.POWER_GAP
-	if ratio >= G.immune then
+	if ratio >= G.immune and not boss then
 		return 0, true, true
 	elseif ratio >= G.steady then
 		return 0.2, true, false

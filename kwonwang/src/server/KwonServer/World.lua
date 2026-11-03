@@ -4319,6 +4319,67 @@ local function testRoom(out: any)
 		part({ Name = "RowPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(-H + 30, 2, row[1]), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		part({ Name = "RowStrip", Size = Vector3.new(H * 1.6, 0.08, 6), Position = at + Vector3.new(0, 0.05, row[1]), Color = Color3.fromRGB(120, 106, 90), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
 	end
+	-- 3.19.6판 반격 코너 (서쪽): 흘리기 사범 셋. 맞아도 피해가 없으니 흘리기·막기·반격을 마음껏 연습한다
+	local TC = Config.TEST_CORNERS
+	if TC then
+		local pc = at + TC.parry
+		local blue = Color3.fromRGB(70, 96, 130)
+		disc("ParryFloor", pc + Vector3.new(0, 0.06, 0), 32, 0.12, Color3.fromRGB(58, 66, 82), Enum.Material.Slate, f, false)
+		disc("ParryRing", pc + Vector3.new(0, 0.08, 0), 31, 0.12, blue, Enum.Material.SmoothPlastic, f, false)
+		disc("ParryInner", pc + Vector3.new(0, 0.1, 0), 30, 0.12, Color3.fromRGB(58, 66, 82), Enum.Material.Slate, f, false)
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			local post = pc + Vector3.new(math.cos(a) * 33, 0, math.sin(a) * 33)
+			part({ Name = "ParryPost", Size = Vector3.new(0.8, 4, 0.8), Position = post + Vector3.new(0, 2, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "ParryPostCap", Size = Vector3.new(1.2, 0.5, 1.2), Position = post + Vector3.new(0, 4.25, 0), Color = blue, Material = Enum.Material.Slate, Parent = f })
+		end
+		local pb = part({ Name = "ParrySign", Size = Vector3.new(22, 5, 0.4), CFrame = CFrame.lookAt(pc + Vector3.new(0, 7, 36), pc + Vector3.new(0, 7, 46)), Color = Color3.fromRGB(40, 46, 60), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(pb, Enum.NormalId.Front, { { "🛡 반격 코너", Color3.fromRGB(170, 210, 255), 0.5 }, { "맞아도 피해 없음 · 칠 때 막기를 막 잡으면 흘리기 · 붉은 공격은 피하기", Color3.fromRGB(230, 230, 240), 0.32 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ParrySignPost", Size = Vector3.new(0.6, 7, 0.6), Position = pc + Vector3.new(sx * 10, 3.5, 36), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		-- 3.19.6판 데미지 챌린지 (동쪽): 붉은 원판 위의 챌린지 목인, 시작 기둥, 이 서버의 기록판
+		local cc = at + TC.challenge
+		local red = Color3.fromRGB(170, 52, 44)
+		disc("ChallengeFloor", cc + Vector3.new(0, 0.06, 0), 30, 0.12, Color3.fromRGB(70, 50, 46), Enum.Material.Slate, f, false)
+		disc("ChallengeRing", cc + Vector3.new(0, 0.08, 0), 29, 0.12, red, Enum.Material.SmoothPlastic, f, false)
+		disc("ChallengeInner", cc + Vector3.new(0, 0.1, 0), 28, 0.12, Color3.fromRGB(70, 50, 46), Enum.Material.Slate, f, false)
+		disc("ChallengeTarget", cc + Vector3.new(0, 0.12, -14), 7, 0.12, red, Enum.Material.SmoothPlastic, f, false)
+		local pillarAt = cc + Vector3.new(0, 0, 8)
+		part({ Name = "ChallengeBase", Size = Vector3.new(4, 1, 4), Position = pillarAt + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(120, 112, 104), Material = Enum.Material.Granite, Parent = f })
+		local pil = part({ Name = "ChallengePillar", Size = Vector3.new(2, 5, 2), Position = pillarAt + Vector3.new(0, 3.5, 0), Color = red, Material = Enum.Material.Slate, Parent = f })
+		local gem = part({ Name = "ChallengeGem", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = pillarAt + Vector3.new(0, 6.8, 0), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(gem, Color3.fromRGB(255, 190, 120), 14, 1.5)
+		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (10초)", "데미지 챌린지", "ChallengeStart")
+		local board = part({ Name = "ChallengeBoard", Size = Vector3.new(20, 12, 0.5), CFrame = CFrame.lookAt(cc + Vector3.new(18, 8, 18), cc + Vector3.new(18, 8, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 14, 0.7), Position = cc + Vector3.new(18 + sx * 9, 7, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 20
+		gui.LightInfluence = 0.3
+		gui.Parent = board
+		local lab = Instance.new("TextLabel")
+		lab.BackgroundTransparency = 1
+		lab.Size = UDim2.fromScale(0.92, 0.9)
+		lab.Position = UDim2.fromScale(0.04, 0.05)
+		lab.Font = Enum.Font.GothamBold
+		lab.TextScaled = true
+		lab.TextColor3 = Color3.fromRGB(255, 226, 170)
+		lab.TextStrokeTransparency = 0.5
+		lab.TextXAlignment = Enum.TextXAlignment.Left
+		lab.TextYAlignment = Enum.TextYAlignment.Top
+		lab.Text = "🏆 이 서버 데미지 챌린지 (10초)\n아직 기록이 없어요"
+		lab.Parent = gui
+		out.challengeBoard = lab
+		local cb = part({ Name = "ChallengeSign", Size = Vector3.new(18, 4, 0.4), CFrame = CFrame.lookAt(cc + Vector3.new(-14, 6, 18), cc + Vector3.new(-14, 6, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 10초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 6, 0.6), Position = cc + Vector3.new(-14 + sx * 8, 3, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
 	-- 들어오는 자리와 돌아가는 문
 	disc("TestSpawnPad", at + Vector3.new(0, 0.1, H - 50), 8, 0.2, GOLD, Enum.Material.Marble, f, false)
 	local gate = at + Vector3.new(0, 0, H - 22)

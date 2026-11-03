@@ -397,6 +397,73 @@ end
 ------------------------------------------------------------------------
 -- 사람이 아닌 적의 몸
 ------------------------------------------------------------------------
+-- 3.19.6판: 둥글게 빚은 몸. 지금까지 사람이 아닌 졸병 (학·봉황 무사, 정령, 소악귀, 버섯, 늪 거한, 뱀, 늑대·사자)은
+-- 네모난 사람 몸에 빛깔만 칠하고 부리·뿔을 붙였다 (보스만 새로 빚었다). 그래서 네모 몸통에 원통 머리가 얹힌
+-- 이상한 모습이었다. 네모 조각은 감추고 (관절은 그대로 움직인다) 몸통·팔다리·손발·머리를 둥근 조각으로 다시 빚는다.
+-- o = { torso, arms, legs, hands, feet, head (false면 머리는 둔다), mat, alpha, noLegs, limb (팔다리 굵기), shin (정강이 굵기) }
+local function organic(model: Model, o: any)
+	local mat = o.mat or M.SmoothPlastic
+	local function piece(partName: string, name: string, size: Vector3, cf: CFrame, color: Color3, alpha: number?)
+		local p = wear(model, partName, name, size, cf, color, mat, Ball)
+		if p and (alpha or o.alpha) then
+			p.Transparency = alpha or o.alpha
+		end
+		return p
+	end
+	local hideList = { "UpperTorso", "LowerTorso" }
+	for _, n in ipairs(ARMS) do
+		table.insert(hideList, n)
+	end
+	for _, n in ipairs(LEGS) do
+		table.insert(hideList, n)
+	end
+	if o.head ~= false then
+		table.insert(hideList, "Head")
+	end
+	hide(model, hideList)
+	local ut, lt = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso")
+	-- 캡슐 (원기둥 + 두 끝의 공): 팔다리 마디가 구슬처럼 불룩하지 않고 매끈하게 이어진다
+	local function capsule(partName: string, name: string, len: number, d: number, cf: CFrame, color: Color3)
+		local body = wear(model, partName, name, Vector3.new(math.max(0.05, len - d), d, d), cf * UPRIGHT, color, mat, Cyl)
+		if body and o.alpha then
+			body.Transparency = o.alpha
+		end
+		piece(partName, name .. "Cap", Vector3.new(d, d, d), cf * CFrame.new(0, (len - d) / 2, 0), color)
+		piece(partName, name .. "Cap", Vector3.new(d, d, d), cf * CFrame.new(0, -(len - d) / 2, 0), color)
+	end
+	-- 몸통: 가슴은 둥근 타원 (앞뒤는 얇게), 허리는 납작한 타원. 목은 짧은 원기둥
+	piece("UpperTorso", "BodyChest", Vector3.new(ut.X * 1.0, ut.Y * 1.14, ut.Z * 1.02), CFrame.new(0, ut.Y * 0.03, 0), o.torso)
+	piece("LowerTorso", "BodyHips", Vector3.new(lt.X * 0.88, lt.Y * 1.8, lt.Z * 0.96), CFrame.new(0, lt.Y * 0.15, 0), o.belly or o.torso)
+	if o.head ~= false then
+		local hs = sizeOf(model, "Head")
+		local hk = o.headScale or 1
+		local neckL = hs.Y * (o.neck or 0.5)
+		wear(model, "Head", "BodyNeck", Vector3.new(neckL, hs.X * 0.48 * hk, hs.X * 0.48 * hk), CFrame.new(0, -hs.Y * 0.5 + neckL * 0.3, 0.04 * hs.Z) * UPRIGHT, o.head or o.torso, mat, Cyl)
+		piece("Head", "BodyHead", Vector3.new(hs.X * 0.98, hs.Y * 1.04, hs.Z * 1.06) * hk, CFrame.new(0, hs.Y * (0.02 + (1 - hk) * 0.3), 0), o.head or o.torso)
+	end
+	local limb = o.limb or 0.82
+	-- 어깨: 몸통과 팔 사이를 잇는 둥근 어깨 (팔이 몸통에서 떨어져 떠 보이지 않게)
+	for _, x in ipairs({ -1, 1 }) do
+		local ua = sizeOf(model, x < 0 and "LeftUpperArm" or "RightUpperArm")
+		local d = math.min(ua.X, ua.Z) * limb * 1.08
+		piece("UpperTorso", "BodyDeltoid", Vector3.new(d * 1.15, d, d), CFrame.new(x * (ut.X * 0.5 + d * 0.08), ut.Y * 0.3, 0), o.arms)
+	end
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
+		local dA = math.min(ua.X, ua.Z) * limb
+		capsule(side .. "UpperArm", "BodyArm", ua.Y + dA * 0.5, dA, CFrame.new(0, dA * 0.1, 0), o.arms)
+		capsule(side .. "LowerArm", "BodyFore", la.Y + dA * 0.4, dA * 0.88, CFrame.new(0, 0, 0), o.fore or o.arms)
+		piece(side .. "Hand", "BodyHand", Vector3.new(hd.X * 0.78, math.max(hd.Y * 2.0, dA), hd.Z * 0.74), CFrame.new(0, -hd.Y * 0.25, 0), o.hands or o.fore or o.arms)
+		if not o.noLegs then
+			local ul, ll, ft = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg"), sizeOf(model, side .. "Foot")
+			local dL = math.min(ul.X, ul.Z) * limb * 1.04
+			local dS = math.min(ll.X, ll.Z) * (o.shin or limb) * 0.9
+			capsule(side .. "UpperLeg", "BodyThigh", ul.Y + dL * 0.4, dL, CFrame.new(0, 0, 0), o.thigh or o.legs)
+			capsule(side .. "LowerLeg", "BodyShin", ll.Y + dS * 0.6, dS, CFrame.new(0, ll.Y * 0.1, 0), o.legs)
+			piece(side .. "Foot", "BodyFoot", Vector3.new(ft.X * 0.82, ft.Y * 1.8, ft.Z * 1.05), CFrame.new(0, ft.Y * 0.15, -ft.Z * 0.1), o.feet or o.legs)
+		end
+	end
+end
 local FORMS: { [string]: (Model, any, number, boolean) -> () } = {}
 
 -- 정령: 다리 없이 흘러내리는 몸, 같은 빛깔의 둥근 머리와 고요한 눈, 속의 은은한 빛
@@ -405,10 +472,8 @@ FORMS.spirit = function(model, look, k, boss)
 	local solid = look.solid
 	local mat = solid and M.Slate or M.Glass
 	local alpha = solid and 0 or 0.2
-	hide(model, LEGS)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, c, mat, alpha)
-	paint(model, ARMS, light(c, 0.08), mat, solid and 0 or 0.28)
+	organic(model, { torso = c, arms = light(c, 0.08), mat = mat, alpha = alpha, noLegs = true, limb = 0.72 })
 	local hs = sizeOf(model, "Head")
 	-- 흘러내리는 꼬리: 위가 굵고 아래로 가늘어지며 살짝 뒤로 휜다.
 	-- 2.8판: 공 다섯이 줄줄이 달려 덩어리져 보였다. 길쭉한 조각을 촘촘히 겹쳐 한 줄기로 매끈하게 흐르게
@@ -457,9 +522,8 @@ FORMS.imp = function(model, look, k, boss)
 	local skin = look.skin or C3(170, 70, 50)
 	local hornC = look.hornColor or dark(skin, 0.6)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, skin, M.SmoothPlastic)
-	paint(model, ARMS, skin, M.SmoothPlastic)
-	paint(model, LEGS, dark(skin, 0.2), M.SmoothPlastic)
+	-- 마른 팔다리, 굽은 정강이 (네모 몸 대신 빚은 몸)
+	organic(model, { torso = skin, belly = light(skin, 0.1), arms = skin, legs = dark(skin, 0.2), feet = dark(skin, 0.3), limb = 0.7, shin = 0.62 })
 	local hs = sizeOf(model, "Head")
 	for _, x in ipairs({ -1, 1 }) do
 		horn(model, x, hs, k, hornC, 0.8, 30)
@@ -597,22 +661,28 @@ FORMS.bird = function(model, look, k, boss)
 	local beak = look.beak or C3(225, 185, 90)
 	local tip = look.tip or dark(feather, 0.75)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, feather, M.SmoothPlastic)
-	paint(model, ARMS, feather, M.SmoothPlastic)
-	paint(model, { "LeftUpperLeg", "RightUpperLeg" }, look.thigh or dark(feather, 0.08), M.SmoothPlastic)
-	paint(model, { "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot" }, dark(beak, 0.1), M.SmoothPlastic)
+	-- 3.19.6판: 네모 몸통에 원통 머리 → 둥근 새 몸 (달걀꼴 머리, 깃 몸, 가는 새 다리)
+	organic(model, { torso = feather, belly = light(feather, 0.06), arms = feather, hands = dark(feather, 0.06), thigh = look.thigh or dark(feather, 0.08), legs = dark(beak, 0.1), feet = dark(beak, 0.18), limb = 0.7, shin = 0.42, headScale = 0.78, neck = 0.9 })
 	local hs = sizeOf(model, "Head")
-	wear(model, "Head", "Beak", Vector3.new(0.2, 0.18, 1.0) * k, CFrame.new(0, -hs.Y * 0.02, -hs.Z * 0.9) * CFrame.Angles(math.rad(-8), 0, 0), beak, M.SmoothPlastic)
-	wear(model, "Head", "BeakLow", Vector3.new(0.16, 0.09, 0.72) * k, CFrame.new(0, -hs.Y * 0.15, -hs.Z * 0.76) * CFrame.Angles(math.rad(4), 0, 0), dark(beak, 0.2), M.SmoothPlastic)
+	-- 3.19.6판: 길고 뾰족한 부리 (위아래 두 쐐기), 머리는 작게 (긴 목 위)
+	local bY = hs.Y * 0.1
+	local up = wear(model, "Head", "Beak", Vector3.new(0.2 * k, 0.16 * k, 1.15 * k), CFrame.new(0, bY + 0.03 * k, -hs.Z * 0.85), beak, M.SmoothPlastic)
+	if up then
+		local wg = Instance.new("SpecialMesh")
+		wg.MeshType = Enum.MeshType.Wedge
+		wg.Parent = up
+	end
+	wear(model, "Head", "BeakLow", Vector3.new(0.15 * k, 0.07 * k, 0.85 * k), CFrame.new(0, bY - 0.07 * k, -hs.Z * 0.76), dark(beak, 0.2), M.SmoothPlastic)
 	for _, x in ipairs({ -1, 1 }) do
-		wear(model, "Head", "Eye", Vector3.new(0.12, 0.12, 0.12) * k, CFrame.new(x * hs.X * 0.34, hs.Y * 0.12, -hs.Z * 0.4), look.eyes or C3(20, 20, 20), M.SmoothPlastic, Ball)
+		wear(model, "Head", "Eye", Vector3.new(0.1, 0.1, 0.1) * k, CFrame.new(x * hs.X * 0.3, bY + hs.Y * 0.12, -hs.Z * 0.3), look.eyes or C3(20, 20, 20), M.SmoothPlastic, Ball)
 	end
 	-- 가슴 깃 (몸보다 옅은 둥근 판)과 목둘레 깃
 	local ut = sizeOf(model, "UpperTorso")
-	-- 2.8판: 가슴에 공이 붙은 것처럼 보여, 몸에 붙은 얇은 깃 판 셋으로 (위가 넓고 아래로 겹친다)
-	for j = 0, 2 do
-		wear(model, "UpperTorso", "Breast", Vector3.new(ut.X * (0.7 - j * 0.14), ut.Y * 0.32, 0.08 * k), CFrame.new(0, ut.Y * (0.22 - j * 0.24), -ut.Z * 0.5 - 0.01), j == 0 and (look.breast or light(feather, 0.18)) or light(feather, 0.1 - j * 0.04), M.SmoothPlastic, Ball)
-	end
+	-- 3.19.6판: 가슴의 깃 판 셋이 덩어리처럼 보였다. 둥근 가슴에 붙은 옅은 깃 한 장으로, 허리엔 무사의 띠
+	wear(model, "UpperTorso", "Breast", Vector3.new(ut.X * 0.72, ut.Y * 0.95, ut.Z * 0.5), CFrame.new(0, -ut.Y * 0.02, -ut.Z * 0.36), look.breast or light(feather, 0.16), M.SmoothPlastic, Ball)
+	local ltS = sizeOf(model, "LowerTorso")
+	wear(model, "LowerTorso", "Sash", Vector3.new(ltS.X * 0.98, 0.3 * k, ltS.Z * 1.2), CFrame.new(0, ltS.Y * 0.55, 0), dark(tip, 0.1):Lerp(crest, 0.35), M.Fabric)
+	wear(model, "LowerTorso", "SashTail", Vector3.new(0.3 * k, 0.9 * k, 0.06 * k), CFrame.new(ltS.X * 0.3, -ltS.Y * 0.2, -ltS.Z * 0.62) * CFrame.Angles(0, 0, math.rad(8)), dark(tip, 0.1):Lerp(crest, 0.35), M.Fabric)
 	wear(model, "UpperTorso", "NeckRuff", Vector3.new(ut.X * 0.6, 0.35 * k, ut.Z * 1.1), CFrame.new(0, ut.Y * 0.48, 0), look.neck or feather, M.SmoothPlastic, Ball)
 	-- 볏: 정수리의 붉은 점 (학) 또는 뒤로 넘어가는 깃 (봉황)
 	if look.longCrest then
@@ -763,12 +833,8 @@ FORMS.shroom = function(model, look, k, boss)
 	local cap = look.capColor or C3(170, 40, 50)
 	local stem = look.skin or C3(232, 222, 198)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso" }, stem, M.SmoothPlastic)
-	paint(model, ARMS, stem, M.SmoothPlastic)
-	paint(model, { "LowerTorso" }, dark(stem, 0.08), M.SmoothPlastic)
-	-- 아래로 갈수록 흙 빛깔 (뿌리 쪽)
-	paint(model, { "LeftUpperLeg", "RightUpperLeg" }, dark(stem, 0.12), M.SmoothPlastic)
-	paint(model, { "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot" }, C3(110, 85, 60), M.SmoothPlastic)
+	-- 3.19.6판: 버섯 자루처럼 둥근 몸, 아래로 갈수록 흙 빛깔 (뿌리 쪽)
+	organic(model, { torso = stem, belly = dark(stem, 0.08), arms = stem, thigh = dark(stem, 0.12), legs = C3(110, 85, 60), feet = C3(92, 70, 50), limb = 0.92 })
 	local hs = sizeOf(model, "Head")
 	local R = (look.capSize or 3.0) * k * 0.5
 	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4), look.spot or C3(245, 240, 228), look.spotGlow and M.Neon or nil, look.spotGlow and 0.3 or nil)
@@ -809,9 +875,7 @@ end
 FORMS.troll = function(model, look, k, boss)
 	local skin = look.skin or C3(105, 125, 80)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, skin, M.SmoothPlastic)
-	paint(model, ARMS, skin, M.SmoothPlastic)
-	paint(model, LEGS, dark(skin, 0.1), M.SmoothPlastic)
+	organic(model, { torso = skin, arms = skin, fore = light(skin, 0.04), legs = dark(skin, 0.1), limb = 1.0 })
 	-- 2.8판: 배와 등의 혹을 몸에 붙게 납작하게 (공이 툭 튀어나온 것처럼 보였다)
 	wear(model, "UpperTorso", "Belly", Vector3.new(1.75, 1.2, 0.5) * k, CFrame.new(0, -0.3 * k, -0.4 * k), light(skin, 0.1), M.SmoothPlastic, Ball)
 	wear(model, "UpperTorso", "Hump", Vector3.new(1.9, 1.1, 0.7) * k, CFrame.new(0, 0.6 * k, 0.35 * k), dark(skin, 0.1), M.SmoothPlastic, Ball)
@@ -836,9 +900,7 @@ FORMS.naga = function(model, look, k, boss)
 	local scale = look.skin or C3(60, 105, 60)
 	local belly = look.belly or C3(196, 190, 125)
 	clearFace(model)
-	hide(model, LEGS)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, scale, M.SmoothPlastic)
-	paint(model, ARMS, scale, M.SmoothPlastic)
+	organic(model, { torso = scale, belly = dark(scale, 0.05), arms = scale, noLegs = true, limb = 0.76 })
 	wear(model, "Head", "Hood", Vector3.new(2.1, 1.7, 0.14) * k, CFrame.new(0, 0.05 * k, 0.42 * k), dark(scale, 0.2), M.SmoothPlastic, Ball)
 	wear(model, "Head", "HoodMark", Vector3.new(0.7, 0.5, 0.05) * k, CFrame.new(0, 0.1 * k, 0.5 * k), belly, M.SmoothPlastic, Ball)
 	for _, x in ipairs({ -1, 1 }) do
@@ -867,9 +929,7 @@ FORMS.wolf = function(model, look, k, boss)
 	local fur = look.fur or C3(80, 70, 65)
 	local pale = look.pale or light(fur, 0.35)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, fur, M.Fabric)
-	paint(model, ARMS, fur, M.Fabric)
-	paint(model, LEGS, dark(fur, 0.12), M.Fabric)
+	organic(model, { torso = fur, arms = fur, hands = dark(fur, 0.1), legs = dark(fur, 0.12), feet = dark(fur, 0.22), mat = M.Fabric, limb = 0.92 })
 	wear(model, "Head", "Snout", Vector3.new(0.58, 0.48, 0.9) * k, CFrame.new(0, -0.15 * k, -0.74 * k), fur, M.Fabric)
 	wear(model, "Head", "Muzzle", Vector3.new(0.5, 0.22, 0.85) * k, CFrame.new(0, -0.34 * k, -0.72 * k), pale, M.Fabric)
 	wear(model, "Head", "Nose", Vector3.new(0.24, 0.16, 0.12) * k, CFrame.new(0, -0.02 * k, -1.18 * k), C3(15, 10, 10), M.SmoothPlastic)

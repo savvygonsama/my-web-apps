@@ -502,10 +502,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 
 	-- 전투력 차이: 훨씬 약한 적의 공격은 덜 아프거나, 끄떡없거나, 호신강기에 튕겨 나간다 (붉은 공격도)
 	local gapMul, steady = 1, false
-	if att.npc and tgt.player then
+	-- 3.19.6판 흘리기 사범의 공격: 호신강기로 튕기지 않는다 (흘리기 연습이 되게)
+	local practice = att.npc and att.model:GetAttribute("Practice") == true
+	if att.npc and tgt.player and not practice then
 		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
 		local immune
-		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa))
+		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa), att.model:GetAttribute("Boss") == true)
 		if immune then
 			att.stunUntil = math.max(att.stunUntil, t + 0.45)
 			interrupt(att)
@@ -683,6 +685,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return "deflect"
 		end
 		-- 그냥 막기 (만취한 권법은 막지 못하고 그대로 맞는다)
+	end
+	-- 3.19.6판 흘리기 사범 (반격 코너): 흘리기 말고는 아무 일도 없다. 막으면 막힌 것만, 맞으면 "맞음"만 보인다 (피해·경직·균형·밀림 없음)
+	if practice then
+		local blocked = tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain
+		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = blocked and "block" or "practice", pos = pos, dmg = 0, red = opt.unblockable == true })
+		return blocked and "block" or "practice"
 	end
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul

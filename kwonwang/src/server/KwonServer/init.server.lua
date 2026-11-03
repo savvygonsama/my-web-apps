@@ -60,6 +60,7 @@ type Profile = {
 	scrolls: number, -- 심법 두루마리
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
+	dmgBest: number?, -- 3.19.6판: 데미지 챌린지 (10초) 최고 기록
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
@@ -223,6 +224,7 @@ local function sanitize(data: any): Profile
 	p.scrolls = math.floor(num(data.scrolls, 1e6)) + (p.scrolls or 0)
 	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
 	p.towerBest = math.floor(num(data.towerBest, 100000))
+	p.dmgBest = math.floor(num(data.dmgBest, 1e15))
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
@@ -595,6 +597,109 @@ local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
 end
 
+------------------------------------------------------------------------
+-- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
+------------------------------------------------------------------------
+local DmgCh = { runs = {} :: { [Player]: any }, board = {} :: { [Player]: number }, label = nil :: TextLabel?, parries = {} :: { [Player]: number } }
+function DmgCh.refresh()
+	local lab = DmgCh.label
+	if not lab then
+		return
+	end
+	local list = {}
+	for pl, v in pairs(DmgCh.board) do
+		if pl.Parent then
+			table.insert(list, { pl.DisplayName, v })
+		end
+	end
+	table.sort(list, function(a, b)
+		return a[2] > b[2]
+	end)
+	local lines = { "🏆 이 서버 데미지 챌린지 (10초)" }
+	for i = 1, math.min(5, #list) do
+		table.insert(lines, string.format("%d. %s  %s", i, list[i][1], Config.formatNumber(list[i][2])))
+	end
+	if #list == 0 then
+		table.insert(lines, "아직 기록이 없어요")
+	end
+	lab.Text = table.concat(lines, "\n")
+end
+function DmgCh.start(player: Player)
+	if BATTLE then
+		return
+	end
+	local p = profiles[player]
+	if not p then
+		return
+	end
+	if DmgCh.runs[player] then
+		toast(player, "🎯 이미 챌린지 중이에요")
+		return
+	end
+	local C = Config.DMG_CHALLENGE
+	local t0 = os.clock() + C.countdown
+	local run = { at = t0, ends = t0 + C.dur, total = 0, hits = 0, maxHit = 0, pushAt = 0 }
+	DmgCh.runs[player] = run
+	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest or 0 })
+	task.delay(C.countdown + C.dur + 0.15, function()
+		if DmgCh.runs[player] ~= run then
+			return
+		end
+		DmgCh.runs[player] = nil
+		if not player.Parent then
+			return
+		end
+		local pp = profiles[player]
+		local total = math.floor(run.total)
+		local newBest = false
+		if pp and total > (pp.dmgBest or 0) then
+			pp.dmgBest = total
+			newBest = true
+		end
+		DmgCh.board[player] = math.max(DmgCh.board[player] or 0, total)
+		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest or total, newBest = newBest })
+		DmgCh.refresh()
+	end)
+end
+-- 맞힐 때마다 (Combat 의 onHit): 챌린지 목인에게 준 피해만 센다
+function DmgCh.onHit(att: any, tgt: any, dmg: number)
+	if not att.player or not tgt.model or tgt.model:GetAttribute("Challenge") ~= true then
+		return
+	end
+	local run = DmgCh.runs[att.player]
+	local t = os.clock()
+	if not run or t < run.at or t > run.ends then
+		return
+	end
+	run.total += dmg
+	run.hits += 1
+	run.maxHit = math.max(run.maxHit, dmg)
+	if t - run.pushAt > 0.12 then
+		run.pushAt = t
+		Push:FireClient(att.player, "dmgChallenge", { phase = "tick", total = math.floor(run.total), hits = run.hits })
+	end
+end
+-- 흘리기 사범의 공격을 흘렸다
+function DmgCh.onParry(tgt: any, att: any)
+	if not tgt.player or not att.npc or att.model:GetAttribute("Practice") ~= true then
+		return
+	end
+	local n = (DmgCh.parries[tgt.player] or 0) + 1
+	DmgCh.parries[tgt.player] = n
+	att.model:SetAttribute("Parries", (tonumber(att.model:GetAttribute("Parries")) or 0) + 1)
+	if n % 10 == 0 then
+		toast(tgt.player, string.format("🛡 흘리기 %d번! 흘린 뒤 바로 치면 반격이 들어가요", n))
+	end
+end
+Players.PlayerRemoving:Connect(function(pl: Player)
+	DmgCh.runs[pl] = nil
+	DmgCh.parries[pl] = nil
+	if DmgCh.board[pl] then
+		DmgCh.board[pl] = nil
+		DmgCh.refresh()
+	end
+end)
+
 -- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고, 한 번만 다시 해 본다 (일시 오류일 때)
 local tpRetried: { [Player]: boolean? } = {}
 game:GetService("TeleportService").TeleportInitFailed:Connect(function(player: Player, result: Enum.TeleportResult, err: string)
@@ -818,6 +923,7 @@ local function pushState(player: Player)
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
+		dmgBest = p.dmgBest or 0,
 		manualCd = Calc.manualBonus(p).cd,
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
@@ -1992,6 +2098,7 @@ Combat.init(Push, {
 		end
 	end,
 	onHit = function(att: any, _tgt: any, dmg: number, opt: any)
+		DmgCh.onHit(att, _tgt, dmg)
 		if _tgt.raid and att.player then
 			Raid.onHit(att.player, _tgt, dmg)
 		end
@@ -2017,6 +2124,7 @@ Combat.init(Push, {
 	end,
 	onDeflect = function(tgt: any, att: any)
 		Trial.onDeflect(tgt, att)
+		DmgCh.onParry(tgt, att)
 		if tgt.player then
 			local p = profiles[tgt.player]
 			if p then
@@ -4363,7 +4471,7 @@ local function toggleTestRoom(player: Player)
 		end
 		sst.roomBack = char:GetPivot()
 		char:PivotTo(CFrame.lookAt(TR.at + Vector3.new(0, 4, TR.half - 50), TR.at + Vector3.new(0, 4, 0)))
-		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 목인 머리 위에 초당 피해가 보여요")
+		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (10초)")
 	end
 end
 Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2: any, a3: any)
@@ -5359,6 +5467,14 @@ if W.testExit then
 		toggleTestRoom(player)
 	end)
 end
+-- 3.19.6판 데미지 챌린지 기둥
+if W.challengeStart then
+	W.challengeStart.Triggered:Connect(function(player: Player)
+		DmgCh.start(player)
+	end)
+	DmgCh.label = W.challengeBoard
+	DmgCh.refresh()
+end
 -- 3.7판 사부의 부탁: 들판에 놓인 것 (찾기·차례), 1초마다 가야 할 곳 확인
 if W.mq then
 	for _, it in ipairs(W.mq) do
@@ -6042,6 +6158,14 @@ if not BATTLE then
 			end
 			for k = -1, 1 do
 				place("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
+			end
+			-- 3.19.6판 반격 코너의 흘리기 사범 셋, 데미지 챌린지 목인 하나
+			local TC = Config.TEST_CORNERS
+			if TC then
+				for k = -1, 1 do
+					place("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
+				end
+				place("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
 			end
 		end
 	end)

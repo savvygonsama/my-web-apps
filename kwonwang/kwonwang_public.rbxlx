@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3049,6 +3049,23 @@ Config.Enemies = {
 		name = "큰 수련 목인", dummy = true, hp = 1000000000, posture = 100000000, speed = 0, aggro = 0, keep = 0, scale = 3.2,
 		shirt = Color3.fromRGB(130, 96, 62), pants = Color3.fromRGB(96, 70, 46), coins = 0, xp = 0, moves = {},
 	},
+	-- 3.19.6판 흘리기 사범: 권법 시험장 반격 코너. 박자를 읽기 쉽게 천천히 치지만, 맞아도 피해·경직·균형은 없다 (흘리기·막기·반격 연습).
+	-- 흘리면 사범이 휘청이고, 균형이 다 깎이면 무너져 반격할 틈이 난다. 붉은 공격은 막을 수 없으니 피하는 연습
+	practice = {
+		name = "흘리기 사범", practice = true, duel = true, weapon = "staff", hp = 1000000000, posture = 140, speed = 8, aggro = 18, keep = 5,
+		shirt = Color3.fromRGB(70, 92, 120), pants = Color3.fromRGB(40, 48, 62), coins = 0, xp = 0,
+		moves = {
+			{ id = "pr1", name = "곧은 치기", pose = "w_slash", windup = 0.85, dur = 1.25, range = 7, hits = { hit(0.85, 7, 4.5, 1, 8, 0.3, 8) } },
+			{ id = "pr2", name = "빠른 치기", pose = "w_slash2", windup = 0.55, dur = 0.95, range = 7, hits = { hit(0.55, 7, 4.5, 1, 8, 0.3, 8) } },
+			{ id = "pr3", name = "찌르기", pose = "w_thrust", windup = 0.7, dur = 1.1, range = 8, hits = { hit(0.7, 8, 4, 1, 8, 0.3, 8) } },
+			{ id = "pr4", name = "내려치기 (붉은 공격 · 피하세요)", pose = "w_overhead", windup = 1.1, dur = 1.5, range = 7, unblockable = true, hits = { hit(1.1, 7, 5, 1, 10, 0.4, 10) } },
+		},
+	},
+	-- 3.19.6판 데미지 챌린지 목인: 10초 동안 준 피해를 모두 센다
+	cdummy = {
+		name = "데미지 챌린지 목인", dummy = true, challenge = true, hp = 1000000000000, posture = 1000000000, speed = 0, aggro = 0, keep = 0, scale = 1.8,
+		shirt = Color3.fromRGB(150, 60, 50), pants = Color3.fromRGB(100, 40, 34), coins = 0, xp = 0, moves = {},
+	},
 	thug = {
 		-- 3.9판: 처음 싸우는 적이라 훨씬 순하게 (체력 55 → 34, 피해 거의 반, 덤비는 거리 38 → 24, 휘두르기 전 틈이 길다)
 		name = "무뢰배", weapon = "staff", hp = 34, posture = 36, speed = 12, aggro = 24, keep = 5, shirt = Color3.fromRGB(150, 130, 100), pants = Color3.fromRGB(80, 70, 55),
@@ -3751,6 +3768,9 @@ end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 전투방 (사람끼리는 싸우지 않는다). 작은 목인과 큰 목인, 초당 피해가 보인다
 Config.TEST_ROOM = { at = Vector3.new(0, 1200, 0), half = 170 }
+-- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다
+Config.TEST_CORNERS = { parry = Vector3.new(-110, 0, 40), challenge = Vector3.new(110, 0, 40) }
+Config.DMG_CHALLENGE = { countdown = 3, dur = 10 }
 
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {
@@ -3938,10 +3958,11 @@ function Config.enemyPower(dmgMult: number, hp: number, boss: boolean?): number
 	return math.floor(100 * math.sqrt((dmgMult / Config.ENEMY_DMG) * math.max(1, hp) / (120 * Config.ENEMY_HP)) * (boss and 1.5 or 1))
 end
 -- 내 전투력 ÷ 적 전투력: soft 넘으면 덜 아프고, steady 넘으면 끄떡없고 (경직·균형 없음), immune 넘으면 호신강기에 튕겨 나간다
-Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 4 }
-function Config.powerGap(ratio: number): (number, boolean, boolean)
+-- 3.19.6판: 호신강기는 4배 → 6배, 그리고 졸병에게만 (보스의 공격은 아무리 약해도 튕겨 내지 못한다)
+Config.POWER_GAP = { soft = 1.6, steady = 2.5, immune = 6 }
+function Config.powerGap(ratio: number, boss: boolean?): (number, boolean, boolean)
 	local G = Config.POWER_GAP
-	if ratio >= G.immune then
+	if ratio >= G.immune and not boss then
 		return 0, true, true
 	elseif ratio >= G.steady then
 		return 0.2, true, false
@@ -8085,6 +8106,7 @@ type Profile = {
 	scrolls: number, -- 심법 두루마리
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
+	dmgBest: number?, -- 3.19.6판: 데미지 챌린지 (10초) 최고 기록
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
@@ -8248,6 +8270,7 @@ local function sanitize(data: any): Profile
 	p.scrolls = math.floor(num(data.scrolls, 1e6)) + (p.scrolls or 0)
 	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
 	p.towerBest = math.floor(num(data.towerBest, 100000))
+	p.dmgBest = math.floor(num(data.dmgBest, 1e15))
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
@@ -8620,6 +8643,109 @@ local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
 end
 
+------------------------------------------------------------------------
+-- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
+------------------------------------------------------------------------
+local DmgCh = { runs = {} :: { [Player]: any }, board = {} :: { [Player]: number }, label = nil :: TextLabel?, parries = {} :: { [Player]: number } }
+function DmgCh.refresh()
+	local lab = DmgCh.label
+	if not lab then
+		return
+	end
+	local list = {}
+	for pl, v in pairs(DmgCh.board) do
+		if pl.Parent then
+			table.insert(list, { pl.DisplayName, v })
+		end
+	end
+	table.sort(list, function(a, b)
+		return a[2] > b[2]
+	end)
+	local lines = { "🏆 이 서버 데미지 챌린지 (10초)" }
+	for i = 1, math.min(5, #list) do
+		table.insert(lines, string.format("%d. %s  %s", i, list[i][1], Config.formatNumber(list[i][2])))
+	end
+	if #list == 0 then
+		table.insert(lines, "아직 기록이 없어요")
+	end
+	lab.Text = table.concat(lines, "\n")
+end
+function DmgCh.start(player: Player)
+	if BATTLE then
+		return
+	end
+	local p = profiles[player]
+	if not p then
+		return
+	end
+	if DmgCh.runs[player] then
+		toast(player, "🎯 이미 챌린지 중이에요")
+		return
+	end
+	local C = Config.DMG_CHALLENGE
+	local t0 = os.clock() + C.countdown
+	local run = { at = t0, ends = t0 + C.dur, total = 0, hits = 0, maxHit = 0, pushAt = 0 }
+	DmgCh.runs[player] = run
+	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest or 0 })
+	task.delay(C.countdown + C.dur + 0.15, function()
+		if DmgCh.runs[player] ~= run then
+			return
+		end
+		DmgCh.runs[player] = nil
+		if not player.Parent then
+			return
+		end
+		local pp = profiles[player]
+		local total = math.floor(run.total)
+		local newBest = false
+		if pp and total > (pp.dmgBest or 0) then
+			pp.dmgBest = total
+			newBest = true
+		end
+		DmgCh.board[player] = math.max(DmgCh.board[player] or 0, total)
+		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest or total, newBest = newBest })
+		DmgCh.refresh()
+	end)
+end
+-- 맞힐 때마다 (Combat 의 onHit): 챌린지 목인에게 준 피해만 센다
+function DmgCh.onHit(att: any, tgt: any, dmg: number)
+	if not att.player or not tgt.model or tgt.model:GetAttribute("Challenge") ~= true then
+		return
+	end
+	local run = DmgCh.runs[att.player]
+	local t = os.clock()
+	if not run or t < run.at or t > run.ends then
+		return
+	end
+	run.total += dmg
+	run.hits += 1
+	run.maxHit = math.max(run.maxHit, dmg)
+	if t - run.pushAt > 0.12 then
+		run.pushAt = t
+		Push:FireClient(att.player, "dmgChallenge", { phase = "tick", total = math.floor(run.total), hits = run.hits })
+	end
+end
+-- 흘리기 사범의 공격을 흘렸다
+function DmgCh.onParry(tgt: any, att: any)
+	if not tgt.player or not att.npc or att.model:GetAttribute("Practice") ~= true then
+		return
+	end
+	local n = (DmgCh.parries[tgt.player] or 0) + 1
+	DmgCh.parries[tgt.player] = n
+	att.model:SetAttribute("Parries", (tonumber(att.model:GetAttribute("Parries")) or 0) + 1)
+	if n % 10 == 0 then
+		toast(tgt.player, string.format("🛡 흘리기 %d번! 흘린 뒤 바로 치면 반격이 들어가요", n))
+	end
+end
+Players.PlayerRemoving:Connect(function(pl: Player)
+	DmgCh.runs[pl] = nil
+	DmgCh.parries[pl] = nil
+	if DmgCh.board[pl] then
+		DmgCh.board[pl] = nil
+		DmgCh.refresh()
+	end
+end)
+
 -- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고, 한 번만 다시 해 본다 (일시 오류일 때)
 local tpRetried: { [Player]: boolean? } = {}
 game:GetService("TeleportService").TeleportInitFailed:Connect(function(player: Player, result: Enum.TeleportResult, err: string)
@@ -8843,6 +8969,7 @@ local function pushState(player: Player)
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
+		dmgBest = p.dmgBest or 0,
 		manualCd = Calc.manualBonus(p).cd,
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
@@ -10017,6 +10144,7 @@ Combat.init(Push, {
 		end
 	end,
 	onHit = function(att: any, _tgt: any, dmg: number, opt: any)
+		DmgCh.onHit(att, _tgt, dmg)
 		if _tgt.raid and att.player then
 			Raid.onHit(att.player, _tgt, dmg)
 		end
@@ -10042,6 +10170,7 @@ Combat.init(Push, {
 	end,
 	onDeflect = function(tgt: any, att: any)
 		Trial.onDeflect(tgt, att)
+		DmgCh.onParry(tgt, att)
 		if tgt.player then
 			local p = profiles[tgt.player]
 			if p then
@@ -12388,7 +12517,7 @@ local function toggleTestRoom(player: Player)
 		end
 		sst.roomBack = char:GetPivot()
 		char:PivotTo(CFrame.lookAt(TR.at + Vector3.new(0, 4, TR.half - 50), TR.at + Vector3.new(0, 4, 0)))
-		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 목인 머리 위에 초당 피해가 보여요")
+		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (10초)")
 	end
 end
 Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2: any, a3: any)
@@ -13384,6 +13513,14 @@ if W.testExit then
 		toggleTestRoom(player)
 	end)
 end
+-- 3.19.6판 데미지 챌린지 기둥
+if W.challengeStart then
+	W.challengeStart.Triggered:Connect(function(player: Player)
+		DmgCh.start(player)
+	end)
+	DmgCh.label = W.challengeBoard
+	DmgCh.refresh()
+end
 -- 3.7판 사부의 부탁: 들판에 놓인 것 (찾기·차례), 1초마다 가야 할 곳 확인
 if W.mq then
 	for _, it in ipairs(W.mq) do
@@ -14067,6 +14204,14 @@ if not BATTLE then
 			end
 			for k = -1, 1 do
 				place("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
+			end
+			-- 3.19.6판 반격 코너의 흘리기 사범 셋, 데미지 챌린지 목인 하나
+			local TC = Config.TEST_CORNERS
+			if TC then
+				for k = -1, 1 do
+					place("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
+				end
+				place("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
 			end
 		end
 	end)
@@ -15742,10 +15887,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 
 	-- 전투력 차이: 훨씬 약한 적의 공격은 덜 아프거나, 끄떡없거나, 호신강기에 튕겨 나간다 (붉은 공격도)
 	local gapMul, steady = 1, false
-	if att.npc and tgt.player then
+	-- 3.19.6판 흘리기 사범의 공격: 호신강기로 튕기지 않는다 (흘리기 연습이 되게)
+	local practice = att.npc and att.model:GetAttribute("Practice") == true
+	if att.npc and tgt.player and not practice then
 		local pa, pt = (att :: any).power or 100, (tgt :: any).power or 100
 		local immune
-		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa))
+		gapMul, steady, immune = Config.powerGap(pt / math.max(1, pa), att.model:GetAttribute("Boss") == true)
 		if immune then
 			att.stunUntil = math.max(att.stunUntil, t + 0.45)
 			interrupt(att)
@@ -15923,6 +16070,12 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			return "deflect"
 		end
 		-- 그냥 막기 (만취한 권법은 막지 못하고 그대로 맞는다)
+	end
+	-- 3.19.6판 흘리기 사범 (반격 코너): 흘리기 말고는 아무 일도 없다. 막으면 막힌 것만, 맞으면 "맞음"만 보인다 (피해·경직·균형·밀림 없음)
+	if practice then
+		local blocked = tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain
+		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = blocked and "block" or "practice", pos = pos, dmg = 0, red = opt.unblockable == true })
+		return blocked and "block" or "practice"
 	end
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
@@ -16853,6 +17006,73 @@ end
 ------------------------------------------------------------------------
 -- 사람이 아닌 적의 몸
 ------------------------------------------------------------------------
+-- 3.19.6판: 둥글게 빚은 몸. 지금까지 사람이 아닌 졸병 (학·봉황 무사, 정령, 소악귀, 버섯, 늪 거한, 뱀, 늑대·사자)은
+-- 네모난 사람 몸에 빛깔만 칠하고 부리·뿔을 붙였다 (보스만 새로 빚었다). 그래서 네모 몸통에 원통 머리가 얹힌
+-- 이상한 모습이었다. 네모 조각은 감추고 (관절은 그대로 움직인다) 몸통·팔다리·손발·머리를 둥근 조각으로 다시 빚는다.
+-- o = { torso, arms, legs, hands, feet, head (false면 머리는 둔다), mat, alpha, noLegs, limb (팔다리 굵기), shin (정강이 굵기) }
+local function organic(model: Model, o: any)
+	local mat = o.mat or M.SmoothPlastic
+	local function piece(partName: string, name: string, size: Vector3, cf: CFrame, color: Color3, alpha: number?)
+		local p = wear(model, partName, name, size, cf, color, mat, Ball)
+		if p and (alpha or o.alpha) then
+			p.Transparency = alpha or o.alpha
+		end
+		return p
+	end
+	local hideList = { "UpperTorso", "LowerTorso" }
+	for _, n in ipairs(ARMS) do
+		table.insert(hideList, n)
+	end
+	for _, n in ipairs(LEGS) do
+		table.insert(hideList, n)
+	end
+	if o.head ~= false then
+		table.insert(hideList, "Head")
+	end
+	hide(model, hideList)
+	local ut, lt = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso")
+	-- 캡슐 (원기둥 + 두 끝의 공): 팔다리 마디가 구슬처럼 불룩하지 않고 매끈하게 이어진다
+	local function capsule(partName: string, name: string, len: number, d: number, cf: CFrame, color: Color3)
+		local body = wear(model, partName, name, Vector3.new(math.max(0.05, len - d), d, d), cf * UPRIGHT, color, mat, Cyl)
+		if body and o.alpha then
+			body.Transparency = o.alpha
+		end
+		piece(partName, name .. "Cap", Vector3.new(d, d, d), cf * CFrame.new(0, (len - d) / 2, 0), color)
+		piece(partName, name .. "Cap", Vector3.new(d, d, d), cf * CFrame.new(0, -(len - d) / 2, 0), color)
+	end
+	-- 몸통: 가슴은 둥근 타원 (앞뒤는 얇게), 허리는 납작한 타원. 목은 짧은 원기둥
+	piece("UpperTorso", "BodyChest", Vector3.new(ut.X * 1.0, ut.Y * 1.14, ut.Z * 1.02), CFrame.new(0, ut.Y * 0.03, 0), o.torso)
+	piece("LowerTorso", "BodyHips", Vector3.new(lt.X * 0.88, lt.Y * 1.8, lt.Z * 0.96), CFrame.new(0, lt.Y * 0.15, 0), o.belly or o.torso)
+	if o.head ~= false then
+		local hs = sizeOf(model, "Head")
+		local hk = o.headScale or 1
+		local neckL = hs.Y * (o.neck or 0.5)
+		wear(model, "Head", "BodyNeck", Vector3.new(neckL, hs.X * 0.48 * hk, hs.X * 0.48 * hk), CFrame.new(0, -hs.Y * 0.5 + neckL * 0.3, 0.04 * hs.Z) * UPRIGHT, o.head or o.torso, mat, Cyl)
+		piece("Head", "BodyHead", Vector3.new(hs.X * 0.98, hs.Y * 1.04, hs.Z * 1.06) * hk, CFrame.new(0, hs.Y * (0.02 + (1 - hk) * 0.3), 0), o.head or o.torso)
+	end
+	local limb = o.limb or 0.82
+	-- 어깨: 몸통과 팔 사이를 잇는 둥근 어깨 (팔이 몸통에서 떨어져 떠 보이지 않게)
+	for _, x in ipairs({ -1, 1 }) do
+		local ua = sizeOf(model, x < 0 and "LeftUpperArm" or "RightUpperArm")
+		local d = math.min(ua.X, ua.Z) * limb * 1.08
+		piece("UpperTorso", "BodyDeltoid", Vector3.new(d * 1.15, d, d), CFrame.new(x * (ut.X * 0.5 + d * 0.08), ut.Y * 0.3, 0), o.arms)
+	end
+	for _, side in ipairs({ "Left", "Right" }) do
+		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
+		local dA = math.min(ua.X, ua.Z) * limb
+		capsule(side .. "UpperArm", "BodyArm", ua.Y + dA * 0.5, dA, CFrame.new(0, dA * 0.1, 0), o.arms)
+		capsule(side .. "LowerArm", "BodyFore", la.Y + dA * 0.4, dA * 0.88, CFrame.new(0, 0, 0), o.fore or o.arms)
+		piece(side .. "Hand", "BodyHand", Vector3.new(hd.X * 0.78, math.max(hd.Y * 2.0, dA), hd.Z * 0.74), CFrame.new(0, -hd.Y * 0.25, 0), o.hands or o.fore or o.arms)
+		if not o.noLegs then
+			local ul, ll, ft = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg"), sizeOf(model, side .. "Foot")
+			local dL = math.min(ul.X, ul.Z) * limb * 1.04
+			local dS = math.min(ll.X, ll.Z) * (o.shin or limb) * 0.9
+			capsule(side .. "UpperLeg", "BodyThigh", ul.Y + dL * 0.4, dL, CFrame.new(0, 0, 0), o.thigh or o.legs)
+			capsule(side .. "LowerLeg", "BodyShin", ll.Y + dS * 0.6, dS, CFrame.new(0, ll.Y * 0.1, 0), o.legs)
+			piece(side .. "Foot", "BodyFoot", Vector3.new(ft.X * 0.82, ft.Y * 1.8, ft.Z * 1.05), CFrame.new(0, ft.Y * 0.15, -ft.Z * 0.1), o.feet or o.legs)
+		end
+	end
+end
 local FORMS: { [string]: (Model, any, number, boolean) -> () } = {}
 
 -- 정령: 다리 없이 흘러내리는 몸, 같은 빛깔의 둥근 머리와 고요한 눈, 속의 은은한 빛
@@ -16861,10 +17081,8 @@ FORMS.spirit = function(model, look, k, boss)
 	local solid = look.solid
 	local mat = solid and M.Slate or M.Glass
 	local alpha = solid and 0 or 0.2
-	hide(model, LEGS)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, c, mat, alpha)
-	paint(model, ARMS, light(c, 0.08), mat, solid and 0 or 0.28)
+	organic(model, { torso = c, arms = light(c, 0.08), mat = mat, alpha = alpha, noLegs = true, limb = 0.72 })
 	local hs = sizeOf(model, "Head")
 	-- 흘러내리는 꼬리: 위가 굵고 아래로 가늘어지며 살짝 뒤로 휜다.
 	-- 2.8판: 공 다섯이 줄줄이 달려 덩어리져 보였다. 길쭉한 조각을 촘촘히 겹쳐 한 줄기로 매끈하게 흐르게
@@ -16913,9 +17131,8 @@ FORMS.imp = function(model, look, k, boss)
 	local skin = look.skin or C3(170, 70, 50)
 	local hornC = look.hornColor or dark(skin, 0.6)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, skin, M.SmoothPlastic)
-	paint(model, ARMS, skin, M.SmoothPlastic)
-	paint(model, LEGS, dark(skin, 0.2), M.SmoothPlastic)
+	-- 마른 팔다리, 굽은 정강이 (네모 몸 대신 빚은 몸)
+	organic(model, { torso = skin, belly = light(skin, 0.1), arms = skin, legs = dark(skin, 0.2), feet = dark(skin, 0.3), limb = 0.7, shin = 0.62 })
 	local hs = sizeOf(model, "Head")
 	for _, x in ipairs({ -1, 1 }) do
 		horn(model, x, hs, k, hornC, 0.8, 30)
@@ -17053,22 +17270,28 @@ FORMS.bird = function(model, look, k, boss)
 	local beak = look.beak or C3(225, 185, 90)
 	local tip = look.tip or dark(feather, 0.75)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, feather, M.SmoothPlastic)
-	paint(model, ARMS, feather, M.SmoothPlastic)
-	paint(model, { "LeftUpperLeg", "RightUpperLeg" }, look.thigh or dark(feather, 0.08), M.SmoothPlastic)
-	paint(model, { "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot" }, dark(beak, 0.1), M.SmoothPlastic)
+	-- 3.19.6판: 네모 몸통에 원통 머리 → 둥근 새 몸 (달걀꼴 머리, 깃 몸, 가는 새 다리)
+	organic(model, { torso = feather, belly = light(feather, 0.06), arms = feather, hands = dark(feather, 0.06), thigh = look.thigh or dark(feather, 0.08), legs = dark(beak, 0.1), feet = dark(beak, 0.18), limb = 0.7, shin = 0.42, headScale = 0.78, neck = 0.9 })
 	local hs = sizeOf(model, "Head")
-	wear(model, "Head", "Beak", Vector3.new(0.2, 0.18, 1.0) * k, CFrame.new(0, -hs.Y * 0.02, -hs.Z * 0.9) * CFrame.Angles(math.rad(-8), 0, 0), beak, M.SmoothPlastic)
-	wear(model, "Head", "BeakLow", Vector3.new(0.16, 0.09, 0.72) * k, CFrame.new(0, -hs.Y * 0.15, -hs.Z * 0.76) * CFrame.Angles(math.rad(4), 0, 0), dark(beak, 0.2), M.SmoothPlastic)
+	-- 3.19.6판: 길고 뾰족한 부리 (위아래 두 쐐기), 머리는 작게 (긴 목 위)
+	local bY = hs.Y * 0.1
+	local up = wear(model, "Head", "Beak", Vector3.new(0.2 * k, 0.16 * k, 1.15 * k), CFrame.new(0, bY + 0.03 * k, -hs.Z * 0.85), beak, M.SmoothPlastic)
+	if up then
+		local wg = Instance.new("SpecialMesh")
+		wg.MeshType = Enum.MeshType.Wedge
+		wg.Parent = up
+	end
+	wear(model, "Head", "BeakLow", Vector3.new(0.15 * k, 0.07 * k, 0.85 * k), CFrame.new(0, bY - 0.07 * k, -hs.Z * 0.76), dark(beak, 0.2), M.SmoothPlastic)
 	for _, x in ipairs({ -1, 1 }) do
-		wear(model, "Head", "Eye", Vector3.new(0.12, 0.12, 0.12) * k, CFrame.new(x * hs.X * 0.34, hs.Y * 0.12, -hs.Z * 0.4), look.eyes or C3(20, 20, 20), M.SmoothPlastic, Ball)
+		wear(model, "Head", "Eye", Vector3.new(0.1, 0.1, 0.1) * k, CFrame.new(x * hs.X * 0.3, bY + hs.Y * 0.12, -hs.Z * 0.3), look.eyes or C3(20, 20, 20), M.SmoothPlastic, Ball)
 	end
 	-- 가슴 깃 (몸보다 옅은 둥근 판)과 목둘레 깃
 	local ut = sizeOf(model, "UpperTorso")
-	-- 2.8판: 가슴에 공이 붙은 것처럼 보여, 몸에 붙은 얇은 깃 판 셋으로 (위가 넓고 아래로 겹친다)
-	for j = 0, 2 do
-		wear(model, "UpperTorso", "Breast", Vector3.new(ut.X * (0.7 - j * 0.14), ut.Y * 0.32, 0.08 * k), CFrame.new(0, ut.Y * (0.22 - j * 0.24), -ut.Z * 0.5 - 0.01), j == 0 and (look.breast or light(feather, 0.18)) or light(feather, 0.1 - j * 0.04), M.SmoothPlastic, Ball)
-	end
+	-- 3.19.6판: 가슴의 깃 판 셋이 덩어리처럼 보였다. 둥근 가슴에 붙은 옅은 깃 한 장으로, 허리엔 무사의 띠
+	wear(model, "UpperTorso", "Breast", Vector3.new(ut.X * 0.72, ut.Y * 0.95, ut.Z * 0.5), CFrame.new(0, -ut.Y * 0.02, -ut.Z * 0.36), look.breast or light(feather, 0.16), M.SmoothPlastic, Ball)
+	local ltS = sizeOf(model, "LowerTorso")
+	wear(model, "LowerTorso", "Sash", Vector3.new(ltS.X * 0.98, 0.3 * k, ltS.Z * 1.2), CFrame.new(0, ltS.Y * 0.55, 0), dark(tip, 0.1):Lerp(crest, 0.35), M.Fabric)
+	wear(model, "LowerTorso", "SashTail", Vector3.new(0.3 * k, 0.9 * k, 0.06 * k), CFrame.new(ltS.X * 0.3, -ltS.Y * 0.2, -ltS.Z * 0.62) * CFrame.Angles(0, 0, math.rad(8)), dark(tip, 0.1):Lerp(crest, 0.35), M.Fabric)
 	wear(model, "UpperTorso", "NeckRuff", Vector3.new(ut.X * 0.6, 0.35 * k, ut.Z * 1.1), CFrame.new(0, ut.Y * 0.48, 0), look.neck or feather, M.SmoothPlastic, Ball)
 	-- 볏: 정수리의 붉은 점 (학) 또는 뒤로 넘어가는 깃 (봉황)
 	if look.longCrest then
@@ -17219,12 +17442,8 @@ FORMS.shroom = function(model, look, k, boss)
 	local cap = look.capColor or C3(170, 40, 50)
 	local stem = look.skin or C3(232, 222, 198)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso" }, stem, M.SmoothPlastic)
-	paint(model, ARMS, stem, M.SmoothPlastic)
-	paint(model, { "LowerTorso" }, dark(stem, 0.08), M.SmoothPlastic)
-	-- 아래로 갈수록 흙 빛깔 (뿌리 쪽)
-	paint(model, { "LeftUpperLeg", "RightUpperLeg" }, dark(stem, 0.12), M.SmoothPlastic)
-	paint(model, { "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot" }, C3(110, 85, 60), M.SmoothPlastic)
+	-- 3.19.6판: 버섯 자루처럼 둥근 몸, 아래로 갈수록 흙 빛깔 (뿌리 쪽)
+	organic(model, { torso = stem, belly = dark(stem, 0.08), arms = stem, thigh = dark(stem, 0.12), legs = C3(110, 85, 60), feet = C3(92, 70, 50), limb = 0.92 })
 	local hs = sizeOf(model, "Head")
 	local R = (look.capSize or 3.0) * k * 0.5
 	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4), look.spot or C3(245, 240, 228), look.spotGlow and M.Neon or nil, look.spotGlow and 0.3 or nil)
@@ -17265,9 +17484,7 @@ end
 FORMS.troll = function(model, look, k, boss)
 	local skin = look.skin or C3(105, 125, 80)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, skin, M.SmoothPlastic)
-	paint(model, ARMS, skin, M.SmoothPlastic)
-	paint(model, LEGS, dark(skin, 0.1), M.SmoothPlastic)
+	organic(model, { torso = skin, arms = skin, fore = light(skin, 0.04), legs = dark(skin, 0.1), limb = 1.0 })
 	-- 2.8판: 배와 등의 혹을 몸에 붙게 납작하게 (공이 툭 튀어나온 것처럼 보였다)
 	wear(model, "UpperTorso", "Belly", Vector3.new(1.75, 1.2, 0.5) * k, CFrame.new(0, -0.3 * k, -0.4 * k), light(skin, 0.1), M.SmoothPlastic, Ball)
 	wear(model, "UpperTorso", "Hump", Vector3.new(1.9, 1.1, 0.7) * k, CFrame.new(0, 0.6 * k, 0.35 * k), dark(skin, 0.1), M.SmoothPlastic, Ball)
@@ -17292,9 +17509,7 @@ FORMS.naga = function(model, look, k, boss)
 	local scale = look.skin or C3(60, 105, 60)
 	local belly = look.belly or C3(196, 190, 125)
 	clearFace(model)
-	hide(model, LEGS)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, scale, M.SmoothPlastic)
-	paint(model, ARMS, scale, M.SmoothPlastic)
+	organic(model, { torso = scale, belly = dark(scale, 0.05), arms = scale, noLegs = true, limb = 0.76 })
 	wear(model, "Head", "Hood", Vector3.new(2.1, 1.7, 0.14) * k, CFrame.new(0, 0.05 * k, 0.42 * k), dark(scale, 0.2), M.SmoothPlastic, Ball)
 	wear(model, "Head", "HoodMark", Vector3.new(0.7, 0.5, 0.05) * k, CFrame.new(0, 0.1 * k, 0.5 * k), belly, M.SmoothPlastic, Ball)
 	for _, x in ipairs({ -1, 1 }) do
@@ -17323,9 +17538,7 @@ FORMS.wolf = function(model, look, k, boss)
 	local fur = look.fur or C3(80, 70, 65)
 	local pale = look.pale or light(fur, 0.35)
 	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, fur, M.Fabric)
-	paint(model, ARMS, fur, M.Fabric)
-	paint(model, LEGS, dark(fur, 0.12), M.Fabric)
+	organic(model, { torso = fur, arms = fur, hands = dark(fur, 0.1), legs = dark(fur, 0.12), feet = dark(fur, 0.22), mat = M.Fabric, limb = 0.92 })
 	wear(model, "Head", "Snout", Vector3.new(0.58, 0.48, 0.9) * k, CFrame.new(0, -0.15 * k, -0.74 * k), fur, M.Fabric)
 	wear(model, "Head", "Muzzle", Vector3.new(0.5, 0.22, 0.85) * k, CFrame.new(0, -0.34 * k, -0.72 * k), pale, M.Fabric)
 	wear(model, "Head", "Nose", Vector3.new(0.24, 0.16, 0.12) * k, CFrame.new(0, -0.02 * k, -1.18 * k), C3(15, 10, 10), M.SmoothPlastic)
@@ -18599,6 +18812,13 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 	if def.dummy then
 		model:SetAttribute("Dummy", true)
 	end
+	-- 3.19.6판 권법 시험장: 흘리기 사범 (피해 없는 공격) · 데미지 챌린지 목인
+	if def.practice then
+		model:SetAttribute("Practice", true)
+	end
+	if def.challenge then
+		model:SetAttribute("Challenge", true)
+	end
 	return model
 end
 
@@ -19311,9 +19531,11 @@ end
 local function nearestPlayer(e: Enemy, radius: number): any?
 	local best, bestD = nil, radius
 	local pos = e.f.root.Position
+	-- 겨루기 상대 (관문 수호자·흘리기 사범)는 안전한 곳 안의 사람과도 겨룬다
+	local anywhere = e.def.duel == true
 	for _, player in ipairs(Players:GetPlayers()) do
 		local pf = Combat.fighterOfPlayer(player)
-		if pf and not pf.dead and not inSafe(pf.root.Position) then
+		if pf and not pf.dead and (anywhere or not inSafe(pf.root.Position)) then
 			local d = flatDist(pf.root.Position, pos)
 			if d < bestD then
 				best, bestD = pf, d
@@ -28832,6 +29054,67 @@ local function testRoom(out: any)
 		part({ Name = "RowPost", Size = Vector3.new(0.6, 4, 0.6), Position = at + Vector3.new(-H + 30, 2, row[1]), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		part({ Name = "RowStrip", Size = Vector3.new(H * 1.6, 0.08, 6), Position = at + Vector3.new(0, 0.05, row[1]), Color = Color3.fromRGB(120, 106, 90), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
 	end
+	-- 3.19.6판 반격 코너 (서쪽): 흘리기 사범 셋. 맞아도 피해가 없으니 흘리기·막기·반격을 마음껏 연습한다
+	local TC = Config.TEST_CORNERS
+	if TC then
+		local pc = at + TC.parry
+		local blue = Color3.fromRGB(70, 96, 130)
+		disc("ParryFloor", pc + Vector3.new(0, 0.06, 0), 32, 0.12, Color3.fromRGB(58, 66, 82), Enum.Material.Slate, f, false)
+		disc("ParryRing", pc + Vector3.new(0, 0.08, 0), 31, 0.12, blue, Enum.Material.SmoothPlastic, f, false)
+		disc("ParryInner", pc + Vector3.new(0, 0.1, 0), 30, 0.12, Color3.fromRGB(58, 66, 82), Enum.Material.Slate, f, false)
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			local post = pc + Vector3.new(math.cos(a) * 33, 0, math.sin(a) * 33)
+			part({ Name = "ParryPost", Size = Vector3.new(0.8, 4, 0.8), Position = post + Vector3.new(0, 2, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "ParryPostCap", Size = Vector3.new(1.2, 0.5, 1.2), Position = post + Vector3.new(0, 4.25, 0), Color = blue, Material = Enum.Material.Slate, Parent = f })
+		end
+		local pb = part({ Name = "ParrySign", Size = Vector3.new(22, 5, 0.4), CFrame = CFrame.lookAt(pc + Vector3.new(0, 7, 36), pc + Vector3.new(0, 7, 46)), Color = Color3.fromRGB(40, 46, 60), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(pb, Enum.NormalId.Front, { { "🛡 반격 코너", Color3.fromRGB(170, 210, 255), 0.5 }, { "맞아도 피해 없음 · 칠 때 막기를 막 잡으면 흘리기 · 붉은 공격은 피하기", Color3.fromRGB(230, 230, 240), 0.32 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ParrySignPost", Size = Vector3.new(0.6, 7, 0.6), Position = pc + Vector3.new(sx * 10, 3.5, 36), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		-- 3.19.6판 데미지 챌린지 (동쪽): 붉은 원판 위의 챌린지 목인, 시작 기둥, 이 서버의 기록판
+		local cc = at + TC.challenge
+		local red = Color3.fromRGB(170, 52, 44)
+		disc("ChallengeFloor", cc + Vector3.new(0, 0.06, 0), 30, 0.12, Color3.fromRGB(70, 50, 46), Enum.Material.Slate, f, false)
+		disc("ChallengeRing", cc + Vector3.new(0, 0.08, 0), 29, 0.12, red, Enum.Material.SmoothPlastic, f, false)
+		disc("ChallengeInner", cc + Vector3.new(0, 0.1, 0), 28, 0.12, Color3.fromRGB(70, 50, 46), Enum.Material.Slate, f, false)
+		disc("ChallengeTarget", cc + Vector3.new(0, 0.12, -14), 7, 0.12, red, Enum.Material.SmoothPlastic, f, false)
+		local pillarAt = cc + Vector3.new(0, 0, 8)
+		part({ Name = "ChallengeBase", Size = Vector3.new(4, 1, 4), Position = pillarAt + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(120, 112, 104), Material = Enum.Material.Granite, Parent = f })
+		local pil = part({ Name = "ChallengePillar", Size = Vector3.new(2, 5, 2), Position = pillarAt + Vector3.new(0, 3.5, 0), Color = red, Material = Enum.Material.Slate, Parent = f })
+		local gem = part({ Name = "ChallengeGem", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = pillarAt + Vector3.new(0, 6.8, 0), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(gem, Color3.fromRGB(255, 190, 120), 14, 1.5)
+		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (10초)", "데미지 챌린지", "ChallengeStart")
+		local board = part({ Name = "ChallengeBoard", Size = Vector3.new(20, 12, 0.5), CFrame = CFrame.lookAt(cc + Vector3.new(18, 8, 18), cc + Vector3.new(18, 8, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 14, 0.7), Position = cc + Vector3.new(18 + sx * 9, 7, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 20
+		gui.LightInfluence = 0.3
+		gui.Parent = board
+		local lab = Instance.new("TextLabel")
+		lab.BackgroundTransparency = 1
+		lab.Size = UDim2.fromScale(0.92, 0.9)
+		lab.Position = UDim2.fromScale(0.04, 0.05)
+		lab.Font = Enum.Font.GothamBold
+		lab.TextScaled = true
+		lab.TextColor3 = Color3.fromRGB(255, 226, 170)
+		lab.TextStrokeTransparency = 0.5
+		lab.TextXAlignment = Enum.TextXAlignment.Left
+		lab.TextYAlignment = Enum.TextYAlignment.Top
+		lab.Text = "🏆 이 서버 데미지 챌린지 (10초)\n아직 기록이 없어요"
+		lab.Parent = gui
+		out.challengeBoard = lab
+		local cb = part({ Name = "ChallengeSign", Size = Vector3.new(18, 4, 0.4), CFrame = CFrame.lookAt(cc + Vector3.new(-14, 6, 18), cc + Vector3.new(-14, 6, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 10초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 6, 0.6), Position = cc + Vector3.new(-14 + sx * 8, 3, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+		end
+	end
 	-- 들어오는 자리와 돌아가는 문
 	disc("TestSpawnPad", at + Vector3.new(0, 0.1, H - 50), 8, 0.2, GOLD, Enum.Material.Marble, f, false)
 	local gate = at + Vector3.new(0, 0, H - 22)
@@ -32355,6 +32638,102 @@ function handlers.cutscene(data: any)
 end
 
 -- 천층탑
+-- 3.19.6판 데미지 챌린지: 3초 세고, 10초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
+local chLabel: TextLabel? = nil
+local chState: any = nil
+local function chEnsure(): TextLabel
+	if chLabel and chLabel.Parent then
+		return chLabel
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonDmgChallenge"
+	g.ResetOnSpawn = false
+	g.IgnoreGuiInset = true
+	g.DisplayOrder = 20
+	g.Parent = player:WaitForChild("PlayerGui")
+	local l = Instance.new("TextLabel")
+	l.AnchorPoint = Vector2.new(0.5, 0)
+	l.Position = UDim2.new(0.5, 0, 0, 92)
+	l.Size = UDim2.new(0, 520, 0, 64)
+	l.BackgroundColor3 = Color3.fromRGB(30, 20, 18)
+	l.BackgroundTransparency = 0.25
+	l.Font = Enum.Font.GothamBlack
+	l.TextScaled = true
+	l.TextColor3 = Color3.fromRGB(255, 225, 170)
+	l.TextStrokeTransparency = 0.4
+	l.Text = ""
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 12)
+	c.Parent = l
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 12)
+	pad.PaddingRight = UDim.new(0, 12)
+	pad.Parent = l
+	local sz = Instance.new("UISizeConstraint")
+	sz.MaxSize = Vector2.new(520, 64)
+	sz.Parent = l
+	l.Parent = g
+	chLabel = l
+	return l
+end
+function handlers.dmgChallenge(data: any)
+	local l = chEnsure()
+	if data.phase == "count" then
+		local t0 = os.clock() + (data.countdown or 3)
+		local dur = data.dur or 10
+		chState = { start = t0, ends = t0 + dur, total = 0, hits = 0, best = data.best or 0 }
+		local st = chState
+		l.Visible = true
+		UI.banner("🎯 데미지 챌린지", string.format("%d초 뒤 시작 · %d초 동안 붉은 원판의 목인을 쳐라 · 내 최고 %s", data.countdown or 3, dur, Config.formatNumber(data.best or 0)), Color3.fromRGB(255, 170, 120))
+		local conn: RBXScriptConnection
+		local lastSec = -1
+		conn = RunService.RenderStepped:Connect(function()
+			if chState ~= st then
+				conn:Disconnect()
+				return
+			end
+			local now = os.clock()
+			if now < st.start then
+				local sec = math.ceil(st.start - now)
+				l.Text = string.format("⏳ %d", sec)
+				if sec ~= lastSec then
+					lastSec = sec
+					Fx.sound("ping", 0.6, 0.8 + (3 - sec) * 0.1)
+				end
+			elseif now <= st.ends then
+				if lastSec ~= 0 then
+					lastSec = 0
+					Fx.sound("ping", 0.9, 1.4)
+					UI.flash(Color3.fromRGB(255, 200, 140), 0.15)
+				end
+				l.Text = string.format("⏱ %.1f초 · 피해 %s", st.ends - now, Config.formatNumber(st.total))
+			else
+				l.Text = string.format("⌛ 끝! 피해 %s · 세는 중", Config.formatNumber(st.total))
+			end
+		end)
+	elseif data.phase == "tick" then
+		if chState then
+			chState.total = data.total or chState.total
+			chState.hits = data.hits or chState.hits
+		end
+	elseif data.phase == "done" then
+		chState = nil
+		local total = data.total or 0
+		l.Visible = true
+		l.Text = string.format("🎯 %s (초당 %s)%s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.newBest and " · 🏆 새 기록!" or "")
+		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("10초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
+		if data.newBest then
+			UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
+			Fx.sound("ping", 1, 1.6)
+		end
+		task.delay(6, function()
+			if chState == nil and chLabel then
+				chLabel.Visible = false
+			end
+		end)
+	end
+end
+
 function handlers.tower(data: any?)
 	UI.setTower(data)
 	if data then
@@ -32794,6 +33173,18 @@ function handlers.hit(data: any)
 			UI.flash(Color3.fromRGB(255, 40, 30), data.heavy and 0.3 or 0.12)
 		elseif mine and data.heavy and not predicted then
 			shake(0.9)
+		end
+	elseif kind == "practice" then
+		-- 3.19.6판 반격 코너: 흘리기 사범에게 맞았다 (피해 없음). 가볍게 움찔하고 "맞음"만 보인다
+		Fx.hitstop({ a, t }, 0.04)
+		Fx.spark(pos, Color3.fromRGB(255, 200, 150), 0.8, 5)
+		Fx.sound("hit", 0.35, 1.1, if hurt then nil else pos)
+		if t then
+			Anim.play(t, "block_hit", 0.25)
+		end
+		if hurt then
+			Fx.text(pos + Vector3.new(0, 3, 0), data.red and "맞음 · 붉은 공격은 피하세요" or "맞음 (피해 없음)", Color3.fromRGB(255, 190, 120), 22, 0.8)
+			shake(0.2)
 		end
 	elseif kind == "aura" then
 		-- 호신강기: 전투력 차이가 너무 커서 약한 적의 공격이 몸에 닿기도 전에 튕겨 나간다
@@ -63534,6 +63925,12 @@ function UI.enemyTag(model: Model)
 	-- 전투력 견주기: 차이가 크면 그 적의 공격은 나에게 통하지 않는다
 	local powerLabel = text({ Position = UDim2.new(0, 0, 0, 55), Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, Parent = bb })
 	local function refreshPower()
+		-- 3.19.6판 반격 코너의 흘리기 사범
+		if model:GetAttribute("Practice") == true then
+			powerLabel.Text = "🛡 흘리기 연습 · 피해 없음 · 흘린 횟수 " .. Config.formatNumber(tonumber(model:GetAttribute("Parries")) or 0)
+			powerLabel.TextColor3 = Color3.fromRGB(170, 210, 255)
+			return
+		end
 		if model:GetAttribute("Dummy") == true then
 			local dps = tonumber(model:GetAttribute("Dps")) or 0
 			local best = tonumber(model:GetAttribute("Best")) or 0
@@ -63552,7 +63949,7 @@ function UI.enemyTag(model: Model)
 		if type(mp) == "number" then
 			local r = mp / math.max(1, ep)
 			local G = Config.POWER_GAP
-			if r >= G.immune then
+			if r >= G.immune and model:GetAttribute("Boss") ~= true then
 				tagText, col = " · 호신강기 (통하지 않음)", Color3.fromRGB(150, 150, 150)
 			elseif r >= G.steady then
 				tagText, col = " · 한참 약함", Color3.fromRGB(170, 200, 170)
@@ -63572,6 +63969,7 @@ function UI.enemyTag(model: Model)
 	refreshPower()
 	model:GetAttributeChangedSignal("Power"):Connect(refreshPower)
 	model:GetAttributeChangedSignal("Dps"):Connect(refreshPower)
+	model:GetAttributeChangedSignal("Parries"):Connect(refreshPower)
 	-- 내 전투력이 바뀌면 다시 견준다 (적이 사라지면 그만)
 	task.spawn(function()
 		while true do
@@ -65081,7 +65479,7 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("<b>전투력</b>")
 		add("• 머리 위 숫자. 체력·피해·기술 세기를 함께 센다. 내 전투력은 능력치 창에 있다")
-		add(string.format("• 내가 상대보다 %.1f배 넘게 세면 덜 아프고, %.1f배 넘으면 휘청이지 않고, %d배 넘으면 호신강기에 튕겨 나간다", Config.POWER_GAP.soft, Config.POWER_GAP.steady, Config.POWER_GAP.immune))
+		add(string.format("• 내가 상대보다 %.1f배 넘게 세면 덜 아프고, %.1f배 넘으면 휘청이지 않고, %d배 넘으면 호신강기에 튕겨 나간다 (졸병만, 보스는 튕겨 내지 못한다)", Config.POWER_GAP.soft, Config.POWER_GAP.steady, Config.POWER_GAP.immune))
 		add("• 지도의 권장 전투력: 빨강 위험 · 주황 버거움 · 초록 알맞음 · 회색 여유")
 	elseif tab == "grow" then
 		add("<b>📈 능력치는 싸움과 수련으로</b>")
@@ -65114,6 +65512,8 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("<b>🎯 권법 시험장</b>")
 		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
+		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
+		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 만물상 → 📜 심법)")
