@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2460,18 +2460,18 @@ table.insert(Config.Styles, {
 	postureMult = 1.3,
 	stance = "stance_grapple",
 	combo = {
-		{ id = "cs1", name = "쇄수", pose = "jab_r", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 9, 10, 0.35, 6) } },
-		{ id = "cs2", name = "견비", pose = "elbow_r", dur = 0.36, lunge = 2, hits = { hit(0.16, 5, 4, 10, 12, 0.4, 8) } },
-		{ id = "cs3", name = "금나수", pose = "hook_r", dur = 0.4, lunge = 1, hits = { hit(0.2, 5, 4, 11, 16, 0.45, 8) } },
-		{ id = "cs4", name = "업어치기", pose = "karma_throw", dur = 0.55, lunge = 1, hits = { hit(0.3, 5, 4.5, 17, 26, 0.7, 26, 22) } },
+		{ id = "cs1", name = "쇄수", pose = "cs_snatch", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 9, 10, 0.35, 6) } },
+		{ id = "cs2", name = "견비", pose = "cs_forearm", dur = 0.36, lunge = 2, hits = { hit(0.16, 5, 4, 10, 12, 0.4, 8) } },
+		{ id = "cs3", name = "금나수", pose = "cs_collar", dur = 0.4, lunge = 1, hits = { hit(0.2, 5, 4, 11, 16, 0.45, 8) } },
+		{ id = "cs4", name = "업어치기", pose = "cs_hipthrow", dur = 0.55, lunge = 1, hits = { hit(0.3, 5, 4.5, 17, 26, 0.7, 26, 22) } },
 	},
-	heavy = { id = "csH", name = "철산고", pose = "palm_strike", dur = 0.6, lunge = 8, hits = { hit(0.28, 6, 5, 22, 36, 0.7, 45) } },
+	heavy = { id = "csH", name = "철산고", pose = "cs_ram", dur = 0.6, lunge = 8, hits = { hit(0.28, 6, 5, 22, 36, 0.7, 45) } },
 	skills = {
-		E = { id = "csE", name = "금나 메치기", desc = "앞의 적을 붙잡아 끌어당긴 뒤 땅에 내리꽂는다. 둘레의 적도 흔들린다", pose = "karma_throw", dur = 0.8, cd = 7, chi = 15,
+		E = { id = "csE", name = "금나 메치기", desc = "앞의 적을 붙잡아 끌어당긴 뒤 땅에 내리꽂는다. 둘레의 적도 흔들린다", pose = "cs_slam", dur = 0.8, cd = 7, chi = 15,
 			mech = { kind = "grabThrow", mode = "slam", range = 14, angle = 80, n = 1, reel = 0.22, hold = 0.3, hit = hit(0, 0, 0, 28, 44, 1.0, 6, 0), splashRadius = 8, splash = hit(0, 0, 0, 12, 16, 0.5, 18, 8) } },
-		R = { id = "csR", name = "철쇄 던지기", desc = "적을 붙잡아 앞으로 멀리 집어 던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적도 다친다", pose = "rinne_throw", dur = 0.8, cd = 10, chi = 25,
+		R = { id = "csR", name = "철쇄 던지기", desc = "적을 붙잡아 앞으로 멀리 집어 던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적도 다친다", pose = "cs_heave", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "grabThrow", mode = "throw", range = 14, angle = 80, n = 1, reel = 0.2, hold = 0.25, dist = 44, flight = 0.6, hit = hit(0, 0, 0, 26, 36, 1.0, 0, 0), splashRadius = 8, splash = hit(0, 0, 0, 18, 24, 0.7, 30, 12) } },
-		G = { id = "csG", name = "천근 대회전", desc = "둘레의 적 셋을 한꺼번에 붙잡아 크게 휘돌린다. 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던진다", pose = "ult_spin", dur = 2.2, cd = 28, chi = 100, armor = true,
+		G = { id = "csG", name = "천근 대회전", desc = "둘레의 적 셋을 한꺼번에 붙잡아 크게 휘돌린다. 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던진다", pose = "cs_swing", dur = 2.2, cd = 28, chi = 100, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 20, angle = 360, n = 3, reel = 0.25, spin = 1.4, every = 0.2, orbit = 7, radius = 11, tick = hit(0, 0, 0, 8, 10, 0.3, 14), dist = 36, flight = 0.6, hit = hit(0, 0, 0, 46, 60, 1.0, 0, 0), splashRadius = 9, splash = hit(0, 0, 0, 24, 30, 0.7, 36, 14) } },
 	},
 })
@@ -2488,22 +2488,22 @@ table.insert(Config.Styles, {
 	desc = "흐름을 거스르는 주먹. 먼저 치지 않는다. 받아칠 자세를 잡고 기다렸다가, 상대가 들어오는 순간 그 힘을 그대로 되돌려 준다.",
 	gimmick = "역류: 흘리기 판정이 넓고 (0.34초), 흘리기에 성공하면 저절로 되받아친다. 받아칠 자세 (E·G) 동안 맞으면 피해 없이 되받아친다",
 	deflect = 0.34,
-	deflectCounter = { pose = "stop_palm", hit = hit(0, 6, 5, 14, 20, 0.5, 26) },
+	deflectCounter = { pose = "yr_deflect", hit = hit(0, 6, 5, 14, 20, 0.5, 26) },
 	stance = "stance_counter",
 	combo = {
-		{ id = "yr1", name = "역수", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
-		{ id = "yr2", name = "류수", pose = "palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
-		{ id = "yr3", name = "회선장", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5, 12, 14, 0.45, 14) } },
-		{ id = "yr4", name = "역류장", pose = "wave_palm_r", dur = 0.46, lunge = 3, hits = { hit(0.24, 7, 5, 16, 20, 0.55, 32) } },
+		{ id = "yr1", name = "역수", pose = "yr_redirect", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
+		{ id = "yr2", name = "류수", pose = "yr_sweep", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 9, 9, 0.35, 8) } },
+		{ id = "yr3", name = "회선장", pose = "yr_whirl", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5, 12, 14, 0.45, 14) } },
+		{ id = "yr4", name = "역류장", pose = "yr_tide", dur = 0.46, lunge = 3, hits = { hit(0.24, 7, 5, 16, 20, 0.55, 32) } },
 	},
-	heavy = { id = "yrH", name = "반탄장", pose = "stop_palm", dur = 0.55, lunge = 3, hits = { hit(0.26, 7, 5.5, 22, 32, 0.7, 42) } },
+	heavy = { id = "yrH", name = "반탄장", pose = "yr_rebound", dur = 0.55, lunge = 3, hits = { hit(0.26, 7, 5.5, 22, 32, 0.7, 42) } },
 	skills = {
-		E = { id = "yrE", name = "역류세", desc = "0.9초 동안 받아칠 자세. 그 사이 맞으면 피해 없이 상대 앞으로 미끄러져 크게 되받아친다", pose = "parry_r", dur = 0.9, cd = 7, chi = 15, counter = 0.9,
-			counterHit = { pose = "push_palm", tp = true, hit = hit(0, 7, 5, 30, 40, 0.9, 40) } },
-		R = { id = "yrR", name = "회류파", desc = "두 손을 돌려 앞으로 거센 물결을 밀어낸다. 앞의 적을 모두 밀어내며 균형을 크게 깎는다", pose = "tide_push", dur = 0.6, cd = 9, chi = 20,
+		E = { id = "yrE", name = "역류세", desc = "0.9초 동안 받아칠 자세. 그 사이 맞으면 피해 없이 상대 앞으로 미끄러져 크게 되받아친다", pose = "yr_wait", dur = 0.9, cd = 7, chi = 15, counter = 0.9,
+			counterHit = { pose = "yr_counter", tp = true, hit = hit(0, 7, 5, 30, 40, 0.9, 40) } },
+		R = { id = "yrR", name = "회류파", desc = "두 손을 돌려 앞으로 거센 물결을 밀어낸다. 앞의 적을 모두 밀어내며 균형을 크게 깎는다", pose = "yr_wave", dur = 0.6, cd = 9, chi = 20,
 			mech = { kind = "cone", range = 16, angle = 80, delay = 0.18, dur = 0.4, every = 0.2, hit = hit(0, 0, 0, 12, 20, 0.5, 36), fx = "water" } },
-		G = { id = "yrG", name = "역천반격", desc = "1.6초 동안 받아칠 자세 (무적은 아니다). 맞으면 상대 앞으로 미끄러져 세 번 몰아치고 둘레로 역류가 터진다. 아무도 치지 않으면 끝에 역류만 터진다", pose = "deflect", dur = 1.6, cd = 28, chi = 100, armor = true, counter = 1.6,
-			counterHit = { pose = "wave_palm_r", tp = true, strikes = 3, hit = hit(0, 7, 6, 26, 28, 0.6, 10), burstRadius = 16, burst = hit(0, 0, 0, 44, 54, 1.0, 50, 16), fallback = hit(0, 0, 0, 26, 30, 0.6, 30, 10) } },
+		G = { id = "yrG", name = "역천반격", desc = "1.6초 동안 받아칠 자세 (무적은 아니다). 맞으면 상대 앞으로 미끄러져 세 번 몰아치고 둘레로 역류가 터진다. 아무도 치지 않으면 끝에 역류만 터진다", pose = "yr_reverse", dur = 1.6, cd = 28, chi = 100, armor = true, counter = 1.6,
+			counterHit = { pose = "yr_counter3", tp = true, strikes = 3, hit = hit(0, 7, 6, 26, 28, 0.6, 10), burstRadius = 16, burst = hit(0, 0, 0, 44, 54, 1.0, 50, 16), fallback = hit(0, 0, 0, 26, 30, 0.6, 30, 10) } },
 	},
 })
 -- 상급 3 · 질풍연권: 파고들어 띄우고, 공중에서 이어 친다
@@ -2523,18 +2523,18 @@ table.insert(Config.Styles, {
 	dashCd = 0.8,
 	stance = "stance_rush",
 	combo = {
-		{ id = "jp1", name = "질권", pose = "jab_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
-		{ id = "jp2", name = "풍권", pose = "jab_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
-		{ id = "jp3", name = "연환권", pose = "flurry", dur = 0.42, lunge = 2, hits = { hit(0.12, 5, 4, 4, 4, 0.2, 2), hit(0.22, 5, 4, 4, 4, 0.2, 2), hit(0.32, 5, 4, 5, 6, 0.3, 4) } },
-		{ id = "jp4", name = "승풍권", pose = "uppercut", dur = 0.45, lunge = 2, hits = { hit(0.2, 5, 4, 13, 16, 0.6, 6, 28) } },
+		{ id = "jp1", name = "질권", pose = "jp_jab", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
+		{ id = "jp2", name = "풍권", pose = "jp_cross", dur = 0.26, lunge = 3, hits = { hit(0.1, 5, 4, 7, 6, 0.3, 4) } },
+		{ id = "jp3", name = "연환권", pose = "jp_burst", dur = 0.42, lunge = 2, hits = { hit(0.12, 5, 4, 4, 4, 0.2, 2), hit(0.22, 5, 4, 4, 4, 0.2, 2), hit(0.32, 5, 4, 5, 6, 0.3, 4) } },
+		{ id = "jp4", name = "승풍권", pose = "jp_liftup", dur = 0.45, lunge = 2, hits = { hit(0.2, 5, 4, 13, 16, 0.6, 6, 28) } },
 	},
-	heavy = { id = "jpH", name = "질풍각", pose = "flying_kick", dur = 0.55, lunge = 14, hits = { hit(0.25, 6, 4.5, 18, 20, 0.6, 30) } },
+	heavy = { id = "jpH", name = "질풍각", pose = "jp_knee", dur = 0.55, lunge = 14, hits = { hit(0.25, 6, 4.5, 18, 20, 0.6, 30) } },
 	skills = {
-		E = { id = "jpE", name = "섬전돌", desc = "가장 가까운 적에게 번개처럼 파고들어 두 번 치고 띄운다 (무적)", pose = "dash_punch", dur = 0.55, cd = 6, chi = 15,
+		E = { id = "jpE", name = "섬전돌", desc = "가장 가까운 적에게 번개처럼 파고들어 두 번 치고 띄운다 (무적)", pose = "jp_dash", dur = 0.55, cd = 6, chi = 15,
 			mech = { kind = "rushChain", n = 1, range = 26, delay = 0.08, every = 0.2, hitsEach = 2, hit = hit(0, 0, 0, 10, 12, 0.5, 4, 26) } },
-		R = { id = "jpR", name = "연환비격", desc = "파고들어 띄운 적을 따라 뛰어올라 공중에서 세 번 치고 땅에 내리꽂는다", pose = "air_spin", dur = 1.3, cd = 10, chi = 25,
+		R = { id = "jpR", name = "연환비격", desc = "파고들어 띄운 적을 따라 뛰어올라 공중에서 세 번 치고 땅에 내리꽂는다", pose = "jp_aerial", dur = 1.3, cd = 10, chi = 25,
 			mech = { kind = "rushChain", n = 1, range = 24, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 10, 12, 0.5, 2, 34), air = 3, airEvery = 0.13, airHit = hit(0, 0, 0, 7, 8, 0.3, 2, 6), slam = hit(0, 0, 0, 20, 26, 0.9, 16, -30), slamRadius = 8 } },
-		G = { id = "jpG", name = "질풍백렬", desc = "둘레의 적 여섯 사이를 바람처럼 오가며 둘씩 치고 띄운다. 마지막에 한가운데서 바람이 터진다 (무적)", pose = "flurry", dur = 2.2, cd = 28, chi = 100, armor = true,
+		G = { id = "jpG", name = "질풍백렬", desc = "둘레의 적 여섯 사이를 바람처럼 오가며 둘씩 치고 띄운다. 마지막에 한가운데서 바람이 터진다 (무적)", pose = "jp_gale", dur = 2.2, cd = 28, chi = 100, armor = true,
 			mech = { kind = "rushChain", n = 6, range = 34, delay = 0.1, every = 0.22, hitsEach = 2, hit = hit(0, 0, 0, 11, 12, 0.4, 6, 14), finalRadius = 14, final = hit(0, 0, 0, 34, 44, 0.9, 40, 18) } },
 	},
 })
@@ -2557,18 +2557,18 @@ table.insert(Config.Styles, {
 	kbMult = 1.2,
 	stance = "stance_mountain",
 	combo = {
-		{ id = "sa1", name = "붕권", pose = "punch_r_heavy", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
-		{ id = "sa2", name = "산권", pose = "punch_l_heavy", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
-		{ id = "sa3", name = "추산", pose = "hammer_down", dur = 0.5, lunge = 1, hits = { hit(0.26, 5, 6, 14, 20, 0.5, 10, nil, true) } },
-		{ id = "sa4", name = "지진각", pose = "grav_stomp", dur = 0.6, lunge = 1, hits = { hit(0.3, 5, 8, 18, 26, 0.6, 22, 10, true) } },
+		{ id = "sa1", name = "붕권", pose = "sa_rock", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
+		{ id = "sa2", name = "산권", pose = "sa_hook", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 4.5, 11, 14, 0.4, 12) } },
+		{ id = "sa3", name = "추산", pose = "sa_hammer", dur = 0.5, lunge = 1, hits = { hit(0.26, 5, 6, 14, 20, 0.5, 10, nil, true) } },
+		{ id = "sa4", name = "지진각", pose = "sa_quake", dur = 0.6, lunge = 1, hits = { hit(0.3, 5, 8, 18, 26, 0.6, 22, 10, true) } },
 	},
-	heavy = { id = "saH", name = "붕산일권", pose = "one_punch", dur = 0.7, lunge = 3, hits = { hit(0.32, 7, 6, 26, 42, 0.8, 60) }, chargeMult = 2.6 },
+	heavy = { id = "saH", name = "붕산일권", pose = "sa_crush", dur = 0.7, lunge = 3, hits = { hit(0.32, 7, 6, 26, 42, 0.8, 60) }, chargeMult = 2.6 },
 	skills = {
-		E = { id = "saE", name = "지열각", desc = "발을 굴러 앞으로 땅을 가른다. 갈라진 금을 따라 바위가 차례로 솟는다", pose = "grav_stomp", dur = 0.6, cd = 8, chi = 20,
+		E = { id = "saE", name = "지열각", desc = "발을 굴러 앞으로 땅을 가른다. 갈라진 금을 따라 바위가 차례로 솟는다", pose = "sa_fissure", dur = 0.6, cd = 8, chi = 20,
 			mech = { kind = "line", count = 5, start = 5, spacing = 5, step = 0.07, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 17, 22, 0.6, 14, 18), fx = "rock" } },
-		R = { id = "saR", name = "낙석추", desc = "가장 가까운 적 머리 위에 집채만 한 바위를 떨어뜨린다", pose = "grav_drop", dur = 0.7, cd = 10, chi = 25,
+		R = { id = "saR", name = "낙석추", desc = "가장 가까운 적 머리 위에 집채만 한 바위를 떨어뜨린다", pose = "sa_boulder", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "drop", range = 26, delay = 0.5, radius = 10, hit = hit(0, 0, 0, 43, 50, 1.0, 20, -10), fx = "rock" } },
-		G = { id = "saG", name = "천붕지열", desc = "1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고, 떨어질 때 한 번 더 친다", pose = "ult_slam", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "saG", name = "천붕지열", desc = "1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고, 떨어질 때 한 번 더 친다", pose = "sa_collapse", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "launch", delay = 1.0, radius = 20, stun = 1.6, up = 60, hitAt = 0.8, hit = hit(0, 0, 0, 130, 140, 1.4, 40, -20) } },
 	},
 })
@@ -2591,18 +2591,18 @@ table.insert(Config.Styles, {
 	pulse = { every = 4, kind = "frost", radius = 9, delay = 0.25, name = "빙결", dmg = 26, posture = 28, stun = 1.0, kb = 0, up = 0 },
 	stance = "stance_ice",
 	combo = {
-		{ id = "bh1", name = "빙장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
-		{ id = "bh2", name = "설장", pose = "palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
-		{ id = "bh3", name = "한풍장", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5.5, 16, 16, 0.45, 14) } },
-		{ id = "bh4", name = "빙혼장", pose = "push_palm", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5, 22, 24, 0.8, 24) } },
+		{ id = "bh1", name = "빙장", pose = "bh_slice", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
+		{ id = "bh2", name = "설장", pose = "bh_heel", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 11, 0.35, 8) } },
+		{ id = "bh3", name = "한풍장", pose = "bh_turn", dur = 0.42, lunge = 2, hits = { hit(0.22, 6, 5.5, 16, 16, 0.45, 14) } },
+		{ id = "bh4", name = "빙혼장", pose = "bh_soul", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5, 22, 24, 0.8, 24) } },
 	},
-	heavy = { id = "bhH", name = "빙벽장", pose = "double_palm", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 5.5, 32, 38, 0.8, 44) } },
+	heavy = { id = "bhH", name = "빙벽장", pose = "bh_wall", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 5.5, 32, 38, 0.8, 44) } },
 	skills = {
-		E = { id = "bhE", name = "빙창진", desc = "앞으로 얼음 창이 줄지어 솟는다", pose = "wave_palm_r", dur = 0.55, cd = 7, chi = 20,
+		E = { id = "bhE", name = "빙창진", desc = "앞으로 얼음 창이 줄지어 솟는다", pose = "bh_spear", dur = 0.55, cd = 7, chi = 20,
 			mech = { kind = "line", count = 6, start = 4, spacing = 4.5, step = 0.06, delay = 0.15, radius = 4.5, hit = hit(0, 0, 0, 24, 24, 0.7, 6, 14), fx = "ice" } },
-		R = { id = "bhR", name = "한빙결", desc = "둘레를 얼려 적을 1.6초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "void_gather", dur = 0.7, cd = 10, chi = 25,
+		R = { id = "bhR", name = "한빙결", desc = "둘레를 얼려 적을 1.6초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "bh_gather", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "freeze", delay = 0.25, radius = 15, dur = 1.6, hitAt = 1.2, hit = hit(0, 0, 0, 60, 60, 0.8, 24, 10) } },
-		G = { id = "bhG", name = "만년빙하", desc = "하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고, 마지막에 발밑에서 빙하가 솟는다", pose = "ult_raise", dur = 1.9, cd = 30, chi = 100, armor = true,
+		G = { id = "bhG", name = "만년빙하", desc = "하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고, 마지막에 발밑에서 빙하가 솟는다", pose = "bh_glacier", dur = 1.9, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 8, range = 32, delay = 0.35, stagger = 0.12, radius = 7, hit = hit(0, 0, 0, 52, 52, 1.0, 10, 10), fx = "ice" } },
 	},
 })
@@ -2628,18 +2628,18 @@ table.insert(Config.Styles, {
 	pulse = { every = 4, kind = "jade", radius = 10, delay = 0.3, name = "옥결", dmg = 29, posture = 44, stun = 0.6, kb = 18, up = 12 },
 	stance = "stance_jade",
 	combo = {
-		{ id = "co1", name = "옥수", pose = "origin_palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
-		{ id = "co2", name = "벽옥", pose = "origin_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
-		{ id = "co3", name = "옥광장", pose = "galaxy_palm", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 20, 30, 0.45, 14) } },
-		{ id = "co4", name = "천옥권", pose = "star_punch_r", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 28, 44, 0.6, 30) } },
+		{ id = "co1", name = "옥수", pose = "co_finger", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
+		{ id = "co2", name = "벽옥", pose = "co_chop", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 16, 22, 0.35, 8) } },
+		{ id = "co3", name = "옥광장", pose = "co_prism", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 20, 30, 0.45, 14) } },
+		{ id = "co4", name = "천옥권", pose = "co_backfist", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 28, 44, 0.6, 30) } },
 	},
-	heavy = { id = "coH", name = "옥쇄일권", pose = "origin_punch", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 40, 70, 0.8, 50) } },
+	heavy = { id = "coH", name = "옥쇄일권", pose = "co_shatter", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 40, 70, 0.8, 50) } },
 	skills = {
-		E = { id = "coE", name = "옥창림", desc = "앞으로 옥 기둥이 줄지어 솟아 꿰뚫는다", pose = "origin_strike", dur = 0.55, cd = 7, chi = 20,
+		E = { id = "coE", name = "옥창림", desc = "앞으로 옥 기둥이 줄지어 솟아 꿰뚫는다", pose = "co_lance", dur = 0.55, cd = 7, chi = 20,
 			mech = { kind = "line", count = 7, start = 4, spacing = 4.5, step = 0.05, delay = 0.12, radius = 5, hit = hit(0, 0, 0, 26, 40, 0.6, 10, 18), fx = "crystal" } },
-		R = { id = "coR", name = "옥우", desc = "둘레의 적 다섯 머리 위로 옥 덩이가 떨어진다", pose = "point_sky", dur = 0.8, cd = 10, chi = 25,
+		R = { id = "coR", name = "옥우", desc = "둘레의 적 다섯 머리 위로 옥 덩이가 떨어진다", pose = "co_rain", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "targets", n = 5, range = 30, delay = 0.4, stagger = 0.1, radius = 7, hit = hit(0, 0, 0, 42, 64, 0.8, 14, 10), fx = "crystal" } },
-		G = { id = "coG", name = "천옥결계", desc = "발밑에서 옥의 숲이 넓게 자라나 2.4초 동안 둘레의 적을 모두 꿰뚫는다", pose = "ult_origin", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "coG", name = "천옥결계", desc = "발밑에서 옥의 숲이 넓게 자라나 2.4초 동안 둘레의 적을 모두 꿰뚫는다", pose = "co_forest", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "zone", at = "self", radius = 22, dur = 2.4, every = 0.2, delay = 0.3, hit = hit(0, 0, 0, 20, 30, 0.35, 6, 6), fx = "crystal" } },
 	},
 })
@@ -2666,18 +2666,18 @@ table.insert(Config.Styles, {
 	pulse = { every = 5, kind = "bell", radius = 14, delay = 0.2, name = "종소리", dmg = 46, posture = 60, stun = 0.8, kb = 30, up = 8 },
 	stance = "stance_bell",
 	combo = {
-		{ id = "cj1", name = "종타", pose = "king_jab_r", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
-		{ id = "cj2", name = "명타", pose = "king_jab_l", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
-		{ id = "cj3", name = "범종장", pose = "palm_strike", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 26, 36, 0.45, 16) } },
-		{ id = "cj4", name = "대종권", pose = "buddha_palm", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 36, 50, 0.6, 32, nil, true) } },
+		{ id = "cj1", name = "종타", pose = "cj_ram", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
+		{ id = "cj2", name = "명타", pose = "cj_toll", dur = 0.32, lunge = 3, hits = { hit(0.13, 6, 5, 20, 26, 0.35, 10) } },
+		{ id = "cj3", name = "범종장", pose = "cj_gong", dur = 0.42, lunge = 2, hits = { hit(0.2, 6, 6, 26, 36, 0.45, 16) } },
+		{ id = "cj4", name = "대종권", pose = "cj_swing", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 36, 50, 0.6, 32, nil, true) } },
 	},
-	heavy = { id = "cjH", name = "천종일격", pose = "vajra_r", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 50, 80, 0.8, 54) } },
+	heavy = { id = "cjH", name = "천종일격", pose = "cj_bellram", dur = 0.6, lunge = 4, hits = { hit(0.28, 7.5, 6, 50, 80, 0.8, 54) } },
 	skills = {
-		E = { id = "cjE", name = "종명파", desc = "앞으로 종소리를 내질러 부채꼴 안의 적을 모두 흔들고 막기를 깨뜨린다", pose = "roar", dur = 0.6, cd = 7, chi = 20,
+		E = { id = "cjE", name = "종명파", desc = "앞으로 종소리를 내질러 부채꼴 안의 적을 모두 흔들고 막기를 깨뜨린다", pose = "cj_shout", dur = 0.6, cd = 7, chi = 20,
 			mech = { kind = "cone", range = 20, angle = 80, delay = 0.15, dur = 0.45, every = 0.15, hit = hit(0, 0, 0, 20, 40, 0.5, 26), guardBreak = true, fx = "bell" } },
-		R = { id = "cjR", name = "금종조", desc = "몸을 금빛 종으로 덮고 1.2초 동안 둘레를 울린다. 그동안 오는 공격은 모두 되받아친다", pose = "vajra_l", dur = 0.6, cd = 11, chi = 25,
+		R = { id = "cjR", name = "금종조", desc = "몸을 금빛 종으로 덮고 1.2초 동안 둘레를 울린다. 그동안 오는 공격은 모두 되받아친다", pose = "cj_dome", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "reflect", dur = 1.2, radius = 12, hit = hit(0, 0, 0, 26, 40, 0.6, 20), wave = hit(0, 0, 0, 46, 70, 0.8, 34, 10) } },
-		G = { id = "cjG", name = "천종만향", desc = "하늘에 거대한 종이 걸리고 열 번 울린다. 울릴 때마다 둘레로 파동이 퍼져 모두 친다", pose = "ult_buddha", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "cjG", name = "천종만향", desc = "하늘에 거대한 종이 걸리고 열 번 울린다. 울릴 때마다 둘레로 파동이 퍼져 모두 친다", pose = "cj_heavenbell", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "zone", at = "self", radius = 24, dur = 2.0, every = 0.2, delay = 0.25, hit = hit(0, 0, 0, 26, 36, 0.4, 12, 4), fx = "bell" } },
 	},
 })
@@ -2702,20 +2702,20 @@ table.insert(Config.Styles, {
 	pulse = { every = 4, kind = "mirror", radius = 9, delay = 0.35, name = "거울 분신", dmg = 29, posture = 30, stun = 0.5, kb = 12, up = 6 },
 	stance = "stance_mirror",
 	combo = {
-		{ id = "mg1", name = "경수", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
-		{ id = "mg2", name = "명수", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
-		{ id = "mg3", name = "쌍경각", pose = "crescent_kick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 7, 7, 8, 0.3, 8, nil, true), hit(0.3, 5, 7, 7, 8, 0.3, 8, nil, true) } },
-		{ id = "mg4", name = "파경권", pose = "ghost_split", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 24, 0.6, 28) } },
+		{ id = "mg1", name = "경수", pose = "mg_shard_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "mg2", name = "명수", pose = "mg_shard_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 9, 10, 0.3, 6) } },
+		{ id = "mg3", name = "쌍경각", pose = "mg_twinkick", dur = 0.42, lunge = 2, hits = { hit(0.14, 5, 7, 7, 8, 0.3, 8, nil, true), hit(0.3, 5, 7, 7, 8, 0.3, 8, nil, true) } },
+		{ id = "mg4", name = "파경권", pose = "mg_break", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 6, 20, 24, 0.6, 28) } },
 	},
-	heavy = { id = "mgH", name = "명경일장", pose = "ghost_flash", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 28, 0.6, 22, nil, true) } },
+	heavy = { id = "mgH", name = "명경일장", pose = "mg_flash", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 28, 0.6, 22, nil, true) } },
 	skills = {
-		E = { id = "mgE", name = "명경지수", desc = "0.8초 동안 거울처럼 고요한 자세. 맞으면 피해 없이 상대 앞에 나타나 그 힘을 되돌려 친다", pose = "parry_l", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
-			counterHit = { pose = "ghost_split", tp = true, hit = hit(0, 7, 5, 39, 44, 0.8, 30) } },
-		R = { id = "mgR", name = "경중분신", desc = "둘레의 적 넷 앞에 거울 속의 내가 하나씩 나타나 두 번씩 친다", pose = "ghost_flash", dur = 0.8, cd = 10, chi = 25,
+		E = { id = "mgE", name = "명경지수", desc = "0.8초 동안 거울처럼 고요한 자세. 맞으면 피해 없이 상대 앞에 나타나 그 힘을 되돌려 친다", pose = "mg_still", dur = 0.8, cd = 7, chi = 15, counter = 0.8,
+			counterHit = { pose = "mg_counter", tp = true, hit = hit(0, 7, 5, 39, 44, 0.8, 30) } },
+		R = { id = "mgR", name = "경중분신", desc = "둘레의 적 넷 앞에 거울 속의 내가 하나씩 나타나 두 번씩 친다", pose = "mg_summon", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "clones", n = 4, range = 28, delay = 0.3, every = 0.1, hitsEach = 2, hit = hit(0, 0, 0, 26, 26, 0.5, 10, 6) } },
-		G = { id = "mgG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "ult_mist", dur = 1.9, cd = 30, chi = 100, armor = true,
+		G = { id = "mgG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "mg_gallery", dur = 1.9, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 10, range = 34, delay = 0.35, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 42, 46, 0.7, 12, 8), fx = "mirror" } },
-		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고, 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "ult_mist_x", dur = 3.0, cd = 50, chi = 140, armor = true,
+		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고, 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "mg_shatter", dur = 3.0, cd = 50, chi = 140, armor = true,
 			mech = { kind = "clones", n = 8, range = 40, delay = 0.6, every = 0.12, hitsEach = 3, hit = hit(0, 0, 0, 48, 50, 0.6, 10, 6) } },
 	},
 })
@@ -2741,22 +2741,22 @@ table.insert(Config.Styles, {
 	deflect = 0.24,
 	charge = 0.8,
 	pulse = { every = 4, kind = "dragonBite", radius = 9, delay = 0.3, name = "용의 이빨", dmg = 24, posture = 36, stun = 0.6, kb = 20, up = 14 },
-	stance = "stance_cheonryong",
+	stance = "stance_skydragon",
 	combo = {
-		{ id = "ccr1", name = "천룡조", pose = "dragon_claw_r", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
-		{ id = "ccr2", name = "천룡미", pose = "dragon_claw_l", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
-		{ id = "ccr3", name = "잠룡승천", pose = "low_palm", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4.5, 14, 22, 0.35, 8, 14) } },
-		{ id = "ccr4", name = "현룡파천", pose = "dragon_wave", dur = 0.5, lunge = 1, proj = { speed = 100, life = 0.4, radius = 5, dmg = 20, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
+		{ id = "ccr1", name = "천룡조", pose = "ccr_rake", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
+		{ id = "ccr2", name = "천룡미", pose = "ccr_tail", dur = 0.32, lunge = 2, hits = { hit(0.13, 5, 4, 12, 16, 0.3, 6) } },
+		{ id = "ccr3", name = "잠룡승천", pose = "ccr_ascend", dur = 0.4, lunge = 1, hits = { hit(0.18, 5, 4.5, 14, 22, 0.35, 8, 14) } },
+		{ id = "ccr4", name = "현룡파천", pose = "ccr_breath", dur = 0.5, lunge = 1, proj = { speed = 100, life = 0.4, radius = 5, dmg = 20, posture = 30, stun = 0.5, kb = 30, size = 4, pierce = true }, hits = {} },
 	},
-	heavy = { id = "ccrH", name = "항룡파천장", pose = "dragon_cannon", dur = 0.55, lunge = 0, proj = { speed = 120, life = 0.6, radius = 6, dmg = 28, posture = 40, stun = 0.6, kb = 36, size = 5, pierce = true }, hits = {}, chargeMult = 2.4 },
+	heavy = { id = "ccrH", name = "항룡파천장", pose = "ccr_cannon", dur = 0.55, lunge = 0, proj = { speed = 120, life = 0.6, radius = 6, dmg = 28, posture = 40, stun = 0.6, kb = 36, size = 5, pierce = true }, hits = {}, chargeMult = 2.4 },
 	skills = {
-		E = { id = "ccrE", name = "황룡유회", desc = "금빛 용의 기운이 앞의 적을 모두 꿰뚫고 나아간다", pose = "dragon_coil", dur = 0.6, cd = 7, chi = 20,
+		E = { id = "ccrE", name = "황룡유회", desc = "금빛 용의 기운이 앞의 적을 모두 꿰뚫고 나아간다", pose = "ccr_coil", dur = 0.6, cd = 7, chi = 20,
 			proj = { speed = 90, life = 0.8, radius = 8, dmg = 38, posture = 50, stun = 0.7, kb = 40, size = 8, pierce = true }, hits = {} },
-		R = { id = "ccrR", name = "비룡천", desc = "용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다", pose = "dragon_rise", dur = 0.8, cd = 10, chi = 25, jump = 40,
+		R = { id = "ccrR", name = "비룡천", desc = "용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다", pose = "ccr_soar", dur = 0.8, cd = 10, chi = 25, jump = 40,
 			mech = { kind = "launch", delay = 0.15, radius = 14, stun = 1.2, up = 55, hitAt = 0.45, hit = hit(0, 0, 0, 42, 70, 0.8, 10, 20) } },
-		G = { id = "ccrG", name = "구룡천강", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다", pose = "ult_dragon", dur = 2.4, cd = 30, chi = 100, armor = true,
+		G = { id = "ccrG", name = "구룡천강", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다", pose = "ccr_nine", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "nineDragons", n = 9, ringRadius = 15, rise = 1.0, riseHit = hit(0, 0, 0, 20, 30, 0.6, 10, 30), range = 44, dives = 9, every = 0.12, diveRadius = 9, hit = hit(0, 0, 0, 26, 40, 0.7, 20, -6), finalRadius = 24, final = hit(0, 0, 0, 90, 160, 1.4, 60, 20) } },
-		X = { id = "ccrX", name = "천룡멸세", desc = "초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다", pose = "ult_dragon", dur = 3.4, cd = 50, chi = 140, armor = true,
+		X = { id = "ccrX", name = "천룡멸세", desc = "초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다", pose = "ccr_heaven", dur = 3.4, cd = 50, chi = 140, armor = true,
 			mech = { kind = "avatar", look = "dragon", dur = 4.0, scale = 2.2, strikes = {
 				{ t = 0.9, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
 				{ t = 1.2, at = "targets", n = 2, radius = 12, hit = hit(0, 0, 0, 42, 60, 0.8, 20, 30) },
@@ -2791,20 +2791,20 @@ table.insert(Config.Styles, {
 	pulse = { every = 6, kind = "king", radius = 14, delay = 0.4, name = "패기", dmg = 51, posture = 90, stun = 1.6, kb = 0, up = -10 },
 	stance = "stance_overlord",
 	combo = {
-		{ id = "chp1", name = "패권", pose = "king_jab_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
-		{ id = "chp2", name = "왕권", pose = "king_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
-		{ id = "chp3", name = "패왕승천", pose = "king_uppercut", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
-		{ id = "chp4", name = "천하일격", pose = "king_hammer", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 7, 18, 34, 0.7, 36, nil, true) } },
+		{ id = "chp1", name = "패권", pose = "ch_jab", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "chp2", name = "왕권", pose = "ch_backhand", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "chp3", name = "패왕승천", pose = "ch_lift", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
+		{ id = "chp4", name = "천하일격", pose = "ch_stomp", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 7, 18, 34, 0.7, 36, nil, true) } },
 	},
-	heavy = { id = "chpH", name = "패왕추", pose = "king_cannon", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
+	heavy = { id = "chpH", name = "패왕추", pose = "ch_bash", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
 	skills = {
-		E = { id = "chpE", name = "패왕돌진", desc = "가장 가까운 적 셋 사이를 차례로 파고들어 한 주먹씩 꽂는다 (무적)", pose = "king_dash", dur = 0.9, cd = 7, chi = 20,
+		E = { id = "chpE", name = "패왕돌진", desc = "가장 가까운 적 셋 사이를 차례로 파고들어 한 주먹씩 꽂는다 (무적)", pose = "ch_charge", dur = 0.9, cd = 7, chi = 20,
 			mech = { kind = "rushChain", n = 3, range = 30, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 34, 60, 0.7, 24, 10) } },
-		R = { id = "chpR", name = "패왕투", desc = "앞의 적을 붙잡아 머리 위로 들어 앞으로 내던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적이 모두 다친다", pose = "karma_throw", dur = 0.9, cd = 10, chi = 25,
+		R = { id = "chpR", name = "패왕투", desc = "앞의 적을 붙잡아 머리 위로 들어 앞으로 내던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적이 모두 다친다", pose = "ch_throw", dur = 0.9, cd = 10, chi = 25,
 			mech = { kind = "grabThrow", mode = "throw", range = 16, angle = 90, n = 1, reel = 0.18, hold = 0.3, dist = 50, flight = 0.6, hit = hit(0, 0, 0, 51, 90, 1.2, 0, 0), splashRadius = 10, splash = hit(0, 0, 0, 34, 60, 0.8, 34, 14) } },
-		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ult_king", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 217, 460, 1.6, 140, 14) } },
-		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고, 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ult_king_x", dur = 3.2, cd = 50, chi = 140, armor = true,
+		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고, 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
 	},
 })
@@ -2831,22 +2831,22 @@ table.insert(Config.Styles, {
 	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.4, dur = 30 },
 	geukFrost = { radius = 34, every = 1.0, slow = 0.5, freezeEvery = 3, freeze = 1.0, tick = hit(0, 0, 0, 28, 30, 0.2, 0) },
 	pulse = { every = 3, kind = "frost", radius = 12, delay = 0.25, name = "극 빙결", dmg = 42, posture = 54, stun = 1.2, kb = 0, up = 0 },
-	stance = "stance_ice",
+	stance = "stance_frostclaw",
 	combo = {
-		{ id = "gb1", name = "극빙장", pose = "palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
-		{ id = "gb2", name = "극설장", pose = "palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
-		{ id = "gb3", name = "한설난무", pose = "circle_palm", dur = 0.42, lunge = 2, hits = { hit(0.16, 6, 6, 14, 18, 0.3, 8, nil, true), hit(0.3, 6, 6, 14, 18, 0.3, 8, nil, true) } },
-		{ id = "gb4", name = "절빙장", pose = "push_palm", dur = 0.48, lunge = 3, hits = { hit(0.24, 8, 6, 36, 50, 0.9, 30) } },
+		{ id = "gb1", name = "극빙장", pose = "gb_claw_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
+		{ id = "gb2", name = "극설장", pose = "gb_claw_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 5, 20, 26, 0.35, 8) } },
+		{ id = "gb3", name = "한설난무", pose = "gb_storm", dur = 0.42, lunge = 2, hits = { hit(0.16, 6, 6, 14, 18, 0.3, 8, nil, true), hit(0.3, 6, 6, 14, 18, 0.3, 8, nil, true) } },
+		{ id = "gb4", name = "절빙장", pose = "gb_zero", dur = 0.48, lunge = 3, hits = { hit(0.24, 8, 6, 36, 50, 0.9, 30) } },
 	},
-	heavy = { id = "gbH", name = "빙혼파천", pose = "double_palm", dur = 0.6, lunge = 5, hits = { hit(0.28, 8, 7, 52, 76, 0.9, 50, nil, true) } },
+	heavy = { id = "gbH", name = "빙혼파천", pose = "gb_heaven", dur = 0.6, lunge = 5, hits = { hit(0.28, 8, 7, 52, 76, 0.9, 50, nil, true) } },
 	skills = {
-		E = { id = "gbE", name = "빙룡창", desc = "앞으로 얼음 창이 두 줄로 솟아 꿰뚫는다", pose = "wave_palm_r", dur = 0.55, cd = 7, chi = 20,
+		E = { id = "gbE", name = "빙룡창", desc = "앞으로 얼음 창이 두 줄로 솟아 꿰뚫는다", pose = "gb_dragon", dur = 0.55, cd = 7, chi = 20,
 			mech = { kind = "line", count = 8, start = 4, spacing = 4.5, step = 0.05, delay = 0.12, radius = 6, hit = hit(0, 0, 0, 49, 60, 0.8, 8, 16), fx = "ice" } },
-		R = { id = "gbR", name = "빙옥감", desc = "둘레를 얼려 적을 2초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "void_gather", dur = 0.7, cd = 10, chi = 25,
+		R = { id = "gbR", name = "빙옥감", desc = "둘레를 얼려 적을 2초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "gb_prison", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "freeze", delay = 0.2, radius = 20, dur = 2.0, hitAt = 1.5, hit = hit(0, 0, 0, 126, 160, 1.0, 30, 12) } },
-		G = { id = "gbG", name = "만년설붕", desc = "하늘에서 얼음 기둥이 둘레의 적 열둘에게 차례로 내리꽂힌다", pose = "ult_raise", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "gbG", name = "만년설붕", desc = "하늘에서 얼음 기둥이 둘레의 적 열둘에게 차례로 내리꽂힌다", pose = "gb_avalanche", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 12, range = 40, delay = 0.35, stagger = 0.09, radius = 8, hit = hit(0, 0, 0, 91, 120, 1.0, 12, 10), fx = "ice" } },
-		X = { id = "gbX", name = "절대영도", desc = "초 오의. 세상이 멈춘다. 둘레 30칸이 모두 얼어 3초 동안 갇히고, 얼음이 깨지는 순간 안의 모든 것이 부서진다", pose = "ult_eclipse", dur = 3.0, cd = 50, chi = 140, armor = true,
+		X = { id = "gbX", name = "절대영도", desc = "초 오의. 세상이 멈춘다. 둘레 30칸이 모두 얼어 3초 동안 갇히고, 얼음이 깨지는 순간 안의 모든 것이 부서진다", pose = "gb_absolute", dur = 3.0, cd = 50, chi = 140, armor = true,
 			mech = { kind = "freeze", delay = 0.4, radius = 30, dur = 3.0, hitAt = 2.4, hit = hit(0, 0, 0, 630, 800, 1.6, 60, 30) } },
 	},
 })
@@ -2900,17 +2900,17 @@ function Config.awakenTier(lv: number): number
 end
 -- 각성 마무리 (연타 다섯 번째): 상대를 하늘로 띄운다 → 공중 연격으로 이어진다
 local FINISHERS = {
-	cheolsae = { name = "철쇄승천투", pose = "karma_throw" },
-	yeokryu = { name = "역류승천장", pose = "wave_palm_r" },
-	jilpung = { name = "질풍승천권", pose = "uppercut" },
-	sanak = { name = "산악승천권", pose = "king_uppercut" },
-	binghon = { name = "빙혼승천장", pose = "double_palm" },
-	cheonok = { name = "천옥승천권", pose = "origin_rise" },
-	cheonjong = { name = "천종승천권", pose = "uppercut" },
-	myeonggyeong = { name = "명경승천각", pose = "crescent_kick" },
-	chocheonryong = { name = "초 승룡파천", pose = "dragon_rise" },
-	cheonha = { name = "패왕승천권", pose = "king_uppercut" },
-	geukbinghon = { name = "극빙승천장", pose = "double_palm" },
+	cheolsae = { name = "철쇄승천투", pose = "cs_fin" },
+	yeokryu = { name = "역류승천장", pose = "yr_fin" },
+	jilpung = { name = "질풍승천권", pose = "jp_fin" },
+	sanak = { name = "산악승천권", pose = "sa_fin" },
+	binghon = { name = "빙혼승천장", pose = "bh_fin" },
+	cheonok = { name = "천옥승천권", pose = "co_fin" },
+	cheonjong = { name = "천종승천권", pose = "cj_fin" },
+	myeonggyeong = { name = "명경승천각", pose = "mg_fin" },
+	chocheonryong = { name = "초 승룡파천", pose = "ccr_fin" },
+	cheonha = { name = "패왕승천권", pose = "ch_fin" },
+	geukbinghon = { name = "극빙승천장", pose = "gb_fin" },
 	taeheo = { name = "만류회류장", pose = "double_palm" },
 	geumgang = { name = "금강파산추", pose = "elbow_r" },
 	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
@@ -5270,6 +5270,10 @@ Poses.stances = {
 	stance_mirror = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 120, 0, 25 }, RE = { 30, 0, 0 }, LS = { 120, 0, -25 }, LE = { 30, 0, 0 } },
 	-- 천하패권: 고개를 들고 한 주먹은 허리에, 한 팔은 아래로 늘어뜨린 오만한 자세
 	stance_overlord = { W = { -8, -10, 0 }, N = { -12, 10, 0 }, RS = { 10, 0, 25 }, RE = { 100, 0, 0 }, LS = { 0, 0, -12 }, LE = { 10, 0, 0 } },
+	-- 3.19.2판 초·천룡파천장: 두 손을 용의 발톱처럼 굽혀 위아래로 벌린다 (천룡파천장과 다른 자세)
+	stance_skydragon = { W = { 0, -35, 0 }, N = { 0, 35, 0 }, RS = { 130, 0, 35 }, RE = { 70, 0, 0 }, LS = { 50, 0, -35 }, LE = { 70, 0, 0 } },
+	-- 극 빙혼신장: 몸을 낮춰 두 손을 갈퀴처럼 펴고 앞뒤로 벌린다 (빙혼신장보다 사납게)
+	stance_frostclaw = { W = { -15, -30, 0 }, N = { 12, 30, 0 }, RS = { 85, 0, 40 }, RE = { 60, 0, 0 }, LS = { 40, 0, -50 }, LE = { 70, 0, 0 } },
 	-- 성하: 한 주먹은 하늘을 가리키듯 높이, 한 주먹은 허리에 (별을 끌어내리는 자세)
 	stance_galaxy = { W = { 0, -25, 0 }, N = { -5, 25, 0 }, RS = { 150, 0, 20 }, RE = { 30, 0, 0 }, LS = { 30, 0, -15 }, LE = { 110, 0, 0 } },
 	-- 초·매화: 오른 부채는 머리 위로 높이 펼쳐 들고, 왼 부채는 허리 앞에서 비스듬히 아래로 겨눈다 (벚꽃이 흩날리는 춤의 첫 자세)
@@ -5323,6 +5327,8 @@ Poses.stanceLegs = {
 	stance_bell = { RH = { -10, 0, 20 }, LH = { -10, 0, -20 }, RK = { -40, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } },
 	stance_mirror = { RH = { -20, 0, 10 }, LH = { 25, 0, -10 }, RK = { -30, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } },
 	stance_overlord = { RH = { 0, 0, 10 }, LH = { 0, 0, -10 }, RK = { 0, 0, 0 }, LK = { 0, 0, 0 }, R = { 4, 0, 0, 0, 0, 0 } },
+	stance_skydragon = { RH = { -25, 0, 14 }, LH = { 40, 0, -10 }, RK = { -30, 0, 0 }, LK = { -65, 0, 0 }, R = { -5, 0, 0, 0, -1.0, 0 } },
+	stance_frostclaw = { RH = { -20, 0, 22 }, LH = { 30, 0, -18 }, RK = { -55, 0, 0 }, LK = { -60, 0, 0 }, R = { -8, 0, 0, 0, -1.2, 0 } },
 	stance_galaxy = { RH = { -12, 0, 10 }, LH = { 24, 0, -8 }, RK = { -30, 0, 0 }, LK = { -26, 0, 0 }, R = { 0, 0, 0, 0, -0.45, 0 } },
 	-- 초·매화: 한 발을 앞으로 엇갈려 내딛고 무릎을 살짝 굽힌 춤의 자세
 	stance_sakura = { RH = { 12, 0, -14 }, LH = { -6, 0, -6 }, RK = { -26, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, -10, 0, 0, -0.3, 0 } },
@@ -7389,10 +7395,655 @@ A.staff_rise = {
 	{ t = 1, j = staffEnd(-360) },
 }
 
+------------------------------------------------------------------------
+-- 3.19.2판: 새 권법 열하나의 동작 (다른 권법의 동작을 하나도 빌리지 않는다). 끝은 그 권법의 자세로 돌아간다
+------------------------------------------------------------------------
+local function stanceEnd(name: string): Joints
+	local j: Joints = {}
+	for k, v in pairs(Poses.stances[name] or {}) do
+		j[k] = v
+	end
+	for k, v in pairs(Poses.stanceLegs[name] or {}) do
+		j[k] = v
+	end
+	return j
+end
+local BEHIND = { -30, 0, -22 } -- 천하패권: 왼손은 늘 등 뒤에
+local BEHIND_E = { 110, 0, 0 }
+
+-- ── 철쇄금나수: 낮게 파고들어 붙잡고, 끌어당기고, 메친다 ──
+local CS = stanceEnd("stance_grapple")
+A.cs_snatch = { -- 쇄수: 오른손이 번쩍 뻗어 멱살을 낚아채 가슴으로 끌어당긴다
+	{ t = 0, j = { W = { -10, -25, 0 }, RS = { 60, 0, 40 }, RE = { 70, 0, 0 }, LS = { 60, 0, -35 }, LE = { 60, 0, 0 }, R = { -10, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -15, 30, 0 }, N = { 5, -20, 0 }, RS = { 95, 0, 10 }, RE = { 10, 0, 0 }, LS = { 70, 0, -30 }, LE = { 80, 0, 0 }, R = { -15, 15, 0, 0, -1.1, -0.8 } } },
+	{ t = 0.7, j = { W = { -10, 10, 0 }, RS = { 70, 0, 25 }, RE = { 125, 0, 0 }, LS = { 65, 0, -30 }, LE = { 70, 0, 0 }, R = { -10, 5, 0, 0, -1.05, -0.2 } } },
+	{ t = 1, j = CS },
+}
+A.cs_forearm = { -- 견비: 왼 팔뚝을 빗장처럼 가로질러 후려친다
+	{ t = 0, j = { W = { -10, 40, 0 }, LS = { 100, 0, -70 }, LE = { 120, 0, 0 }, RS = { 60, 0, 30 }, RE = { 90, 0, 0 }, R = { -10, -10, 0, 0, -1.0, 0 } } },
+	{ t = 0.45, e = "snap", j = { W = { -20, -40, 0 }, N = { 0, 30, 0 }, LS = { 95, 0, -5 }, LE = { 100, 0, 0 }, RS = { 50, 0, 40 }, RE = { 60, 0, 0 }, R = { -18, -25, 0, 0, -1.1, -0.7 } } },
+	{ t = 1, j = CS },
+}
+A.cs_collar = { -- 금나수: 두 손이 높이 깃을 움켜쥐고 무릎을 꺾으며 아래로 잡아챈다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 150, 0, 30 }, RE = { 40, 0, 0 }, LS = { 150, 0, -30 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -35, 0, 0 }, N = { -15, 0, 0 }, RS = { 40, 0, 15 }, RE = { 90, 0, 0 }, LS = { 40, 0, -15 }, LE = { 90, 0, 0 }, RH = { 50, 0, 10 }, RK = { -90, 0, 0 }, LH = { -20, 0, -10 }, LK = { -60, 0, 0 }, R = { -20, 0, 0, 0, -1.6, -0.6 } } },
+	{ t = 1, j = CS },
+}
+A.cs_hipthrow = { -- 업어치기: 등을 돌려 엉덩이에 싣고 어깨 너머로 메친다
+	{ t = 0, j = { W = { 0, -20, 0 }, RS = { 80, 0, 20 }, RE = { 60, 0, 0 }, LS = { 80, 0, -20 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.35, j = { W = { -20, -80, 0 }, RS = { 120, 0, 50 }, RE = { 90, 0, 0 }, LS = { 90, 0, -10 }, LE = { 110, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { -15, -90, 0, 0, -1.5, -0.3 } } },
+	{ t = 0.55, e = "snap", j = { W = { -50, -60, 0 }, N = { -20, 0, 0 }, RS = { 30, 0, 20 }, RE = { 20, 0, 0 }, LS = { 30, 0, -30 }, LE = { 40, 0, 0 }, RH = { -30, 0, 0 }, RK = { -20, 0, 0 }, LH = { 40, 0, 0 }, LK = { -80, 0, 0 }, R = { -40, -60, 0, 0, -1.3, -0.8 } } },
+	{ t = 1, j = CS },
+}
+A.cs_ram = { -- 철산고: 웅크렸다가 어깨부터 부딪쳐 들어간다
+	{ t = 0, j = { W = { -20, -60, 0 }, N = { 0, 50, 0 }, RS = { 30, 0, 10 }, RE = { 100, 0, 0 }, LS = { 50, 0, -20 }, LE = { 110, 0, 0 }, RK = { -90, 0, 0 }, LK = { -70, 0, 0 }, R = { -20, -30, 0, 0, -1.6, 0.4 } } },
+	{ t = 0.45, e = "snap", j = { W = { -10, -90, 0 }, N = { 0, 70, 0 }, RS = { 10, 0, -10 }, RE = { 90, 0, 0 }, LS = { 20, 0, -50 }, LE = { 60, 0, 0 }, RH = { 30, 0, 0 }, RK = { -30, 0, 0 }, LH = { -40, 0, 0 }, LK = { -20, 0, 0 }, R = { -10, -80, 0, 0, -0.9, -1.4 } } },
+	{ t = 1, j = CS },
+}
+A.cs_slam = { -- 금나 메치기: 붙잡아 머리 위로 들었다가 앞 땅에 내리꽂는다
+	{ t = 0, j = { W = { -15, 0, 0 }, RS = { 90, 0, 25 }, RE = { 20, 0, 0 }, LS = { 90, 0, -25 }, LE = { 20, 0, 0 }, R = { -15, 0, 0, 0, -1.1, -0.4 } } },
+	{ t = 0.3, j = { W = { 25, 0, 0 }, N = { 20, 0, 0 }, RS = { 170, 0, 15 }, RE = { 50, 0, 0 }, LS = { 170, 0, -15 }, LE = { 50, 0, 0 }, R = { 10, 0, 0, 0, -0.6, 0.2 } } },
+	{ t = 0.6, e = "snap", j = { W = { -55, 0, 0 }, N = { -25, 0, 0 }, RS = { 40, 0, 10 }, RE = { 10, 0, 0 }, LS = { 40, 0, -10 }, LE = { 10, 0, 0 }, RH = { 60, 0, 15 }, RK = { -100, 0, 0 }, LH = { -10, 0, -15 }, LK = { -80, 0, 0 }, R = { -30, 0, 0, 0, -2.0, -0.9 } } },
+	{ t = 1, j = CS },
+}
+A.cs_heave = { -- 철쇄 던지기: 웅크려 들어 올려 등을 젖혔다가 앞으로 내던진다
+	{ t = 0, j = { W = { -30, 0, 0 }, RS = { 70, 0, 30 }, RE = { 40, 0, 0 }, LS = { 70, 0, -30 }, LE = { 40, 0, 0 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { -15, 0, 0, 0, -1.8, -0.3 } } },
+	{ t = 0.35, j = { W = { 30, 0, 0 }, N = { 25, 0, 0 }, RS = { 180, 0, 20 }, RE = { 60, 0, 0 }, LS = { 180, 0, -20 }, LE = { 60, 0, 0 }, RK = { -20, 0, 0 }, LK = { -20, 0, 0 }, R = { 15, 0, 0, 0, -0.4, 0.5 } } },
+	{ t = 0.6, e = "snap", j = { W = { -30, 0, 0 }, N = { -10, 0, 0 }, RS = { 110, 0, 10 }, RE = { 0, 0, 0 }, LS = { 110, 0, -10 }, LE = { 0, 0, 0 }, RH = { -20, 0, 0 }, LH = { 50, 0, 0 }, LK = { -60, 0, 0 }, R = { -25, 0, 0, 0, -0.9, -1.0 } } },
+	{ t = 1, j = CS },
+}
+A.cs_swing = { -- 천근 대회전: 붙잡은 채 등을 젖혀 크게 세 바퀴 돌고 내던진다
+	{ t = 0, j = { W = { 15, 0, 0 }, RS = { 100, 0, 40 }, RE = { 30, 0, 0 }, LS = { 100, 0, -40 }, LE = { 30, 0, 0 }, R = { 10, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.25, j = { W = { 25, 0, 0 }, RS = { 90, 0, 60 }, RE = { 10, 0, 0 }, LS = { 90, 0, -60 }, LE = { 10, 0, 0 }, R = { 20, 120, 0, 0, -1.0, 0 } } },
+	{ t = 0.45, j = { W = { 25, 0, 0 }, RS = { 90, 0, 60 }, RE = { 10, 0, 0 }, LS = { 90, 0, -60 }, LE = { 10, 0, 0 }, R = { 20, 240, 0, 0, -1.0, 0 } } },
+	{ t = 0.65, j = { W = { 25, 0, 0 }, RS = { 90, 0, 60 }, RE = { 10, 0, 0 }, LS = { 90, 0, -60 }, LE = { 10, 0, 0 }, R = { 20, 360, 0, 0, -1.0, 0 } } },
+	{ t = 0.82, e = "snap", j = { W = { -25, 0, 0 }, RS = { 120, 0, 90 }, RE = { 0, 0, 0 }, LS = { 120, 0, -90 }, LE = { 0, 0, 0 }, R = { -15, 420, 0, 0, -1.1, -0.6 } } },
+	{ t = 1, j = CS },
+}
+A.cs_fin = { -- 철쇄승천투: 허리를 끌어안아 등 뒤로 젖혀 던진다
+	{ t = 0, j = { RS = { 80, 0, -20 }, RE = { 110, 0, 0 }, LS = { 80, 0, 20 }, LE = { 110, 0, 0 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { -10, 0, 0, 0, -1.6, -0.3 } } },
+	{ t = 0.42, e = "snap", j = { W = { 35, 0, 0 }, N = { 30, 0, 0 }, RS = { 170, 0, 10 }, RE = { 30, 0, 0 }, LS = { 170, 0, -10 }, LE = { 30, 0, 0 }, RK = { -10, 0, 0 }, LK = { -10, 0, 0 }, R = { 20, 0, 0, 0, 0.2, 0.3 } } },
+	{ t = 1, j = CS },
+}
+
+-- ── 역류반격권: 기다리고, 흘려 넘기고, 그 힘으로 되민다 ──
+local YR = stanceEnd("stance_counter")
+A.yr_redirect = { -- 역수: 오른 손바닥이 안으로 감겼다가 밖으로 민다
+	{ t = 0, j = { W = { 0, -35, 0 }, RS = { 70, 0, 40 }, RE = { 70, 0, 0 }, LS = { 40, 0, -20 }, LE = { 90, 0, 0 }, R = { 0, -10, 0, 0, -0.7, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 25, 0 }, N = { 0, -20, 0 }, RS = { 88, 0, -5 }, RE = { 15, 0, 0 }, LS = { 35, 0, -25 }, LE = { 100, 0, 0 }, R = { -5, 15, 0, 0, -0.75, -0.6 } } },
+	{ t = 1, j = YR },
+}
+A.yr_sweep = { -- 류수: 왼손으로 밖에서 안으로 쓸어 막으며 친다
+	{ t = 0, j = { W = { 0, 30, 0 }, LS = { 100, 0, -60 }, LE = { 40, 0, 0 }, RS = { 60, 0, 20 }, RE = { 90, 0, 0 }, R = { 0, 10, 0, 0, -0.7, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, -30, 0 }, N = { 0, 20, 0 }, LS = { 80, 0, 10 }, LE = { 10, 0, 0 }, RS = { 45, 0, 30 }, RE = { 100, 0, 0 }, R = { -5, -15, 0, 0, -0.8, -0.6 } } },
+	{ t = 1, j = YR },
+}
+A.yr_whirl = { -- 회선장: 두 손이 큰 원을 그리며 몸을 틀어 함께 민다
+	{ t = 0, j = { W = { 0, -30, 0 }, RS = { 150, 0, 30 }, RE = { 20, 0, 0 }, LS = { 30, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, -20, 0, 0, -0.6, 0 } } },
+	{ t = 0.3, j = { W = { 0, 20, 0 }, RS = { 100, 0, 80 }, RE = { 20, 0, 0 }, LS = { 120, 0, -60 }, LE = { 20, 0, 0 }, R = { 0, 10, 0, 0, -0.8, -0.2 } } },
+	{ t = 0.55, e = "snap", j = { W = { -10, 40, 0 }, RS = { 80, 0, 5 }, RE = { 5, 0, 0 }, LS = { 80, 0, -5 }, LE = { 5, 0, 0 }, R = { -8, 30, 0, 0, -0.9, -0.7 } } },
+	{ t = 1, j = YR },
+}
+A.yr_tide = { -- 역류장: 뒷발로 땅을 밀며 포갠 두 손바닥을 내민다
+	{ t = 0, j = { W = { 10, -45, 0 }, RS = { 40, 0, 20 }, RE = { 120, 0, 0 }, LS = { 60, 0, -10 }, LE = { 120, 0, 0 }, RK = { -60, 0, 0 }, R = { 10, -30, 0, 0, -1.0, 0.6 } } },
+	{ t = 0.5, e = "snap", j = { W = { -15, 20, 0 }, N = { -5, -10, 0 }, RS = { 92, 0, -8 }, RE = { 0, 0, 0 }, LS = { 85, 0, 10 }, LE = { 30, 0, 0 }, RH = { -35, 0, 0 }, RK = { -10, 0, 0 }, LH = { 45, 0, 0 }, LK = { -60, 0, 0 }, R = { -15, 15, 0, 0, -1.1, -1.2 } } },
+	{ t = 1, j = YR },
+}
+A.yr_rebound = { -- 반탄장: 뒤로 젖혀 받아 낸 힘을 그대로 되민다
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { 15, 0, 0 }, RS = { 100, 0, 20 }, RE = { 100, 0, 0 }, LS = { 100, 0, -20 }, LE = { 100, 0, 0 }, R = { 15, 0, 0, 0, -0.7, 0.8 } } },
+	{ t = 0.47, e = "snap", j = { W = { -25, 0, 0 }, N = { -10, 0, 0 }, RS = { 95, 0, 10 }, RE = { 0, 0, 0 }, LS = { 95, 0, -10 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -70, 0, 0 }, R = { -20, 0, 0, 0, -1.2, -1.3 } } },
+	{ t = 1, j = YR },
+}
+A.yr_wait = { -- 역류세: 몸을 반쯤 틀어 앞 손바닥을 세운 채 숨을 죽이고 기다린다
+	{ t = 0, j = { W = { 0, -40, 0 }, N = { 0, 40, 0 }, RS = { 60, 0, 10 }, RE = { 100, 0, 0 }, LS = { 90, 0, -5 }, LE = { 30, 0, 0 }, R = { 0, -30, 0, 0, -1.0, 0.2 } } },
+	{ t = 0.15, j = { W = { 0, -40, 0 }, N = { 0, 40, 0 }, RS = { 60, 0, 10 }, RE = { 105, 0, 0 }, LS = { 100, 0, 0 }, LE = { 20, 0, 0 }, R = { 0, -35, 0, 0, -1.15, 0.3 } } },
+	{ t = 0.85, j = { W = { 0, -40, 0 }, N = { 0, 40, 0 }, RS = { 60, 0, 10 }, RE = { 105, 0, 0 }, LS = { 100, 0, 0 }, LE = { 20, 0, 0 }, R = { 0, -35, 0, 0, -1.12, 0.3 } } },
+	{ t = 1, j = YR },
+}
+A.yr_counter = { -- 역류세 되받아치기: 기다린 손바닥이 단숨에 가슴을 꿰뚫는다
+	{ t = 0, j = { W = { 0, -40, 0 }, RS = { 40, 0, 20 }, RE = { 110, 0, 0 }, LS = { 100, 0, 0 }, LE = { 20, 0, 0 }, R = { 0, -30, 0, 0, -1.1, 0.3 } } },
+	{ t = 0.4, e = "snap", j = { W = { -10, 35, 0 }, N = { 0, -30, 0 }, RS = { 90, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 80, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 25, 0, 0, -0.9, -1.1 } } },
+	{ t = 1, j = YR },
+}
+A.yr_wave = { -- 회류파: 두 손을 굴렸다가 물결을 밀어낸다
+	{ t = 0, j = { RS = { 60, 0, 60 }, RE = { 90, 0, 0 }, LS = { 60, 0, -60 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0.3 } } },
+	{ t = 0.3, e = "snap", j = { W = { -15, 0, 0 }, N = { -10, 0, 0 }, RS = { 110, 0, 0 }, RE = { 10, 0, 0 }, LS = { 110, 0, 0 }, LE = { 10, 0, 0 }, RH = { -20, 0, 0 }, LH = { 35, 0, 0 }, LK = { -50, 0, 0 }, R = { -12, 0, 0, 0, -1.1, -0.9 } } },
+	{ t = 0.6, j = { RS = { 100, 0, 30 }, RE = { 30, 0, 0 }, LS = { 100, 0, -30 }, LE = { 30, 0, 0 }, R = { -8, 0, 0, 0, -1.0, -0.6 } } },
+	{ t = 1, j = YR },
+}
+A.yr_reverse = { -- 역천반격: 깊이 앉아 두 손을 가슴 앞에 엇갈려 둔 채 눈을 감는다
+	{ t = 0, j = { N = { 10, 0, 0 }, RS = { 80, 0, -20 }, RE = { 110, 0, 0 }, LS = { 80, 0, 20 }, LE = { 110, 0, 0 }, RH = { -15, 0, 20 }, LH = { -15, 0, -20 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 0, 0, 0, -1.4, 0 } } },
+	{ t = 0.5, j = { N = { 12, 0, 0 }, RS = { 80, 0, -20 }, RE = { 112, 0, 0 }, LS = { 80, 0, 20 }, LE = { 112, 0, 0 }, RH = { -15, 0, 20 }, LH = { -15, 0, -20 }, RK = { -62, 0, 0 }, LK = { -62, 0, 0 }, R = { 0, 0, 0, 0, -1.45, 0 } } },
+	{ t = 0.9, j = { N = { 10, 0, 0 }, RS = { 80, 0, -20 }, RE = { 110, 0, 0 }, LS = { 80, 0, 20 }, LE = { 110, 0, 0 }, RH = { -15, 0, 20 }, LH = { -15, 0, -20 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 0, 0, 0, -1.4, 0 } } },
+	{ t = 1, j = YR },
+}
+A.yr_counter3 = { -- 역천반격 되받아치기: 오른손 · 왼손 · 두 손 세 번 몰아친다
+	{ t = 0, j = { RS = { 80, 0, -20 }, RE = { 110, 0, 0 }, LS = { 80, 0, 20 }, LE = { 110, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.25, e = "snap", j = { W = { 0, 30, 0 }, RS = { 90, 0, 0 }, RE = { 0, 0, 0 }, LS = { 60, 0, -20 }, LE = { 110, 0, 0 }, R = { -8, 20, 0, 0, -1.0, -0.6 } } },
+	{ t = 0.5, e = "snap", j = { W = { 0, -30, 0 }, LS = { 90, 0, 0 }, LE = { 0, 0, 0 }, RS = { 60, 0, 20 }, RE = { 110, 0, 0 }, R = { -8, -20, 0, 0, -1.0, -0.8 } } },
+	{ t = 0.75, e = "snap", j = { W = { -15, 0, 0 }, RS = { 92, 0, 8 }, RE = { 0, 0, 0 }, LS = { 92, 0, -8 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -15, 0, 0, 0, -1.1, -1.2 } } },
+	{ t = 1, j = YR },
+}
+A.yr_deflect = { -- 흘린 뒤 되받아치기: 짧게 한 발 들어가며 가슴을 민다
+	{ t = 0, j = { RS = { 70, 0, 30 }, RE = { 80, 0, 0 }, LS = { 60, 0, -20 }, LE = { 90, 0, 0 }, W = { 0, -20, 0 }, R = { 0, -10, 0, 0, -0.8, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 30, 0 }, RS = { 85, 0, 0 }, RE = { 5, 0, 0 }, LS = { 50, 0, -30 }, LE = { 100, 0, 0 }, R = { -5, 20, 0, 0, -0.8, -0.5 } } },
+	{ t = 1, j = YR },
+}
+A.yr_fin = { -- 역류승천장: 낮게 앉았다가 두 손바닥을 하늘로 밀어 올린다
+	{ t = 0, j = { RS = { 30, 0, 30 }, RE = { 100, 0, 0 }, LS = { 30, 0, -30 }, LE = { 100, 0, 0 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { 10, 0, 0 }, N = { 20, 0, 0 }, RS = { 165, 0, 10 }, RE = { 10, 0, 0 }, LS = { 165, 0, -10 }, LE = { 10, 0, 0 }, R = { -5, 0, 0, 0, 0.1, -0.4 } } },
+	{ t = 1, j = YR },
+}
+
+-- ── 질풍연권: 가볍게 튀고, 짧게 꽂고, 띄워서 따라 오른다 ──
+local JP = stanceEnd("stance_rush")
+A.jp_jab = { -- 질권: 군더더기 없는 왼 잽
+	{ t = 0, j = JP },
+	{ t = 0.38, e = "snap", j = { W = { 0, -25, 0 }, N = { 0, 20, 0 }, LS = { 92, 0, -5 }, LE = { 5, 0, 0 }, RS = { 80, 0, 15 }, RE = { 120, 0, 0 }, R = { -5, -15, 0, 0, -0.6, -0.6 } } },
+	{ t = 1, j = JP },
+}
+A.jp_cross = { -- 풍권: 허리를 크게 돌린 오른 직선
+	{ t = 0, j = JP },
+	{ t = 0.38, e = "snap", j = { W = { -5, 40, 0 }, N = { 0, -35, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = { 80, 0, -15 }, LE = { 125, 0, 0 }, RH = { -10, 0, 0 }, LK = { -30, 0, 0 }, R = { -8, 30, 0, 0, -0.7, -0.8 } } },
+	{ t = 1, j = JP },
+}
+A.jp_burst = { -- 연환권: 오른·왼·오른 세 번 빠르게
+	{ t = 0, j = JP },
+	{ t = 0.28, e = "snap", j = { W = { 0, 30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 85, 0, -15 }, LE = { 120, 0, 0 }, R = { -6, 20, 0, 0, -0.65, -0.5 } } },
+	{ t = 0.4, j = { W = { 0, 0, 0 }, RS = { 80, 0, 15 }, RE = { 110, 0, 0 }, LS = { 80, 0, -10 }, LE = { 100, 0, 0 }, R = { -6, 0, 0, 0, -0.65, -0.55 } } },
+	{ t = 0.52, e = "snap", j = { W = { 0, -30, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RS = { 85, 0, 15 }, RE = { 120, 0, 0 }, R = { -6, -20, 0, 0, -0.65, -0.65 } } },
+	{ t = 0.64, j = { W = { 0, 0, 0 }, RS = { 80, 0, 15 }, RE = { 110, 0, 0 }, LS = { 80, 0, -10 }, LE = { 100, 0, 0 }, R = { -6, 0, 0, 0, -0.65, -0.7 } } },
+	{ t = 0.76, e = "snap", j = { W = { -5, 35, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = { 85, 0, -15 }, LE = { 120, 0, 0 }, R = { -8, 25, 0, 0, -0.7, -0.85 } } },
+	{ t = 1, j = JP },
+}
+A.jp_liftup = { -- 승풍권: 바닥까지 웅크렸다가 몸째 솟구치는 올려치기
+	{ t = 0, j = { W = { 30, -30, 0 }, RS = { 0, 0, 20 }, RE = { 110, 0, 0 }, LS = { 70, 0, -10 }, LE = { 120, 0, 0 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { 20, -20, 0, 0, -1.8, 0 } } },
+	{ t = 0.44, e = "snap", j = { W = { -25, 35, 0 }, N = { 30, 0, 0 }, RS = { 178, 0, -5 }, RE = { 0, 0, 0 }, LS = { 20, 0, -40 }, LE = { 60, 0, 0 }, RH = { -10, 0, 0 }, RK = { -5, 0, 0 }, LH = { 60, 0, 0 }, LK = { -90, 0, 0 }, R = { -15, 20, 0, 0, 0.6, -0.5 } } },
+	{ t = 1, j = JP },
+}
+A.jp_knee = { -- 질풍각: 날아올라 두 손으로 머리를 끌어내리며 무릎을 꽂는다
+	{ t = 0, j = { RS = { -20, 0, 30 }, LS = { -20, 0, -30 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { -10, 0, 0, 0, -1.3, 0.3 } } },
+	{ t = 0.45, e = "snap", j = { W = { -15, 0, 0 }, RS = { 100, 0, 30 }, RE = { 110, 0, 0 }, LS = { 100, 0, -30 }, LE = { 110, 0, 0 }, RH = { 100, 0, 0 }, RK = { -140, 0, 0 }, LH = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { -10, 0, 0, 0, 1.2, -1.0 } } },
+	{ t = 1, j = JP },
+}
+A.jp_dash = { -- 섬전돌: 낮게 내달려 팔꿈치, 이어 왼 훅으로 올려 친다
+	{ t = 0, j = { RS = { -30, 0, 20 }, LS = { -30, 0, -20 }, RK = { -80, 0, 0 }, LK = { -50, 0, 0 }, R = { -35, 0, 0, 0, -1.5, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { -10, 50, 0 }, RS = { 90, 0, 70 }, RE = { 150, 0, 0 }, LS = { 60, 0, -20 }, LE = { 110, 0, 0 }, R = { -25, 40, 0, 0, -1.2, -1.0 } } },
+	{ t = 0.65, e = "snap", j = { W = { -15, -30, 0 }, N = { 20, 0, 0 }, LS = { 150, 0, -30 }, LE = { 40, 0, 0 }, RS = { 60, 0, 30 }, RE = { 110, 0, 0 }, R = { -10, -20, 0, 0, -0.6, -0.6 } } },
+	{ t = 1, j = JP },
+}
+A.jp_aerial = { -- 연환비격: 무릎으로 튀어 올라 공중에서 주먹·발·팔꿈치, 두 주먹으로 내리꽂는다
+	{ t = 0, j = { RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, RS = { 30, 0, 30 }, LS = { 30, 0, -30 }, R = { 0, 0, 0, 0, -1.5, 0 } } },
+	{ t = 0.2, j = { RH = { 90, 0, 0 }, RK = { -120, 0, 0 }, RS = { 140, 0, 30 }, LS = { 140, 0, -30 }, R = { 0, 0, 0, 0, 1.0, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { 0, 40, 0 }, RS = { 90, 0, 0 }, RE = { 0, 0, 0 }, LS = { 70, 0, -30 }, LE = { 100, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 40, 0, 0, 1.5, -0.5 } } },
+	{ t = 0.5, e = "snap", j = { LH = { 90, 0, 20 }, LK = { 0, 0, 0 }, RK = { -90, 0, 0 }, RS = { 60, 0, 40 }, LS = { 60, 0, -40 }, R = { 0, -60, -10, 0, 1.6, -0.4 } } },
+	{ t = 0.65, e = "snap", j = { W = { 0, -40, 0 }, RS = { 100, 0, 80 }, RE = { 150, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 0, 30, 0, 0, 1.6, -0.4 } } },
+	{ t = 0.85, e = "snap", j = { W = { -50, 0, 0 }, RS = { 40, 0, 10 }, RE = { 0, 0, 0 }, LS = { 40, 0, -10 }, LE = { 0, 0, 0 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { -30, 0, 0, 0, -1.6, -0.6 } } },
+	{ t = 1, j = JP },
+}
+A.jp_gale = { -- 질풍백렬: 몸을 숙인 채 좌우로 번갈아 여섯 번, 끝에 두 팔을 활짝 벌려 바람을 터뜨린다
+	{ t = 0, j = { W = { -15, 0, 0 }, RS = { 80, 0, 15 }, RE = { 110, 0, 0 }, LS = { 80, 0, -15 }, LE = { 110, 0, 0 }, R = { -15, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.15, e = "snap", j = { W = { -15, 30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 80, 0, -15 }, LE = { 120, 0, 0 }, R = { -15, 25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.27, e = "snap", j = { W = { -15, -30, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RS = { 80, 0, 15 }, RE = { 120, 0, 0 }, R = { -15, -25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.39, e = "snap", j = { W = { -15, 30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 80, 0, -15 }, LE = { 120, 0, 0 }, R = { -15, 25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.51, e = "snap", j = { W = { -15, -30, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RS = { 80, 0, 15 }, RE = { 120, 0, 0 }, R = { -15, -25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.63, e = "snap", j = { W = { -15, 30, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 80, 0, -15 }, LE = { 120, 0, 0 }, R = { -15, 25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.75, e = "snap", j = { W = { -15, -30, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RS = { 80, 0, 15 }, RE = { 120, 0, 0 }, R = { -15, -25, 0, 0, -0.9, -0.7 } } },
+	{ t = 0.9, e = "snap", j = { W = { 15, 0, 0 }, N = { 20, 0, 0 }, RS = { 120, 0, 80 }, RE = { 0, 0, 0 }, LS = { 120, 0, -80 }, LE = { 0, 0, 0 }, R = { 5, 0, 0, 0, -0.6, 0 } } },
+	{ t = 1, j = JP },
+}
+A.jp_fin = { -- 질풍승천권: 웅크렸다 두 주먹을 함께 올려 치며 뛰어오른다
+	{ t = 0, j = { RS = { 0, 0, 25 }, RE = { 120, 0, 0 }, LS = { 0, 0, -25 }, LE = { 120, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { 15, 0, 0, 0, -1.9, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { -10, 0, 0 }, N = { 30, 0, 0 }, RS = { 175, 0, 5 }, RE = { 0, 0, 0 }, LS = { 175, 0, -5 }, LE = { 0, 0, 0 }, RH = { 40, 0, 0 }, RK = { -80, 0, 0 }, R = { -5, 0, 0, 0, 1.2, -0.4 } } },
+	{ t = 1, j = JP },
+}
+
+-- ── 산악붕권: 느리고 무겁다. 크게 빼고, 땅째 친다 ──
+local SA = stanceEnd("stance_mountain")
+A.sa_rock = { -- 붕권: 몸을 크게 비틀었다가 내딛으며 지르는 무거운 직선
+	{ t = 0, j = { W = { 5, -50, 0 }, RS = { 30, 0, 30 }, RE = { 120, 0, 0 }, LS = { 70, 0, -10 }, LE = { 90, 0, 0 }, R = { 5, -25, 0, 0, -1.2, 0.6 } } },
+	{ t = 0.48, e = "snap", j = { W = { -15, 45, 0 }, N = { 0, -35, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 40, 0, -30 }, LE = { 110, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -70, 0, 0 }, R = { -15, 35, 0, 0, -1.4, -1.2 } } },
+	{ t = 1, j = SA },
+}
+A.sa_hook = { -- 산권: 아래에서 비스듬히 치켜올리는 왼 훅
+	{ t = 0, j = { W = { 10, 40, 0 }, LS = { 20, 0, -50 }, LE = { 100, 0, 0 }, RS = { 60, 0, 20 }, RE = { 100, 0, 0 }, R = { 10, 20, 0, 0, -1.3, 0.3 } } },
+	{ t = 0.48, e = "snap", j = { W = { -15, -45, 0 }, N = { 10, 30, 0 }, LS = { 110, 0, -50 }, LE = { 80, 0, 0 }, RS = { 50, 0, 30 }, RE = { 110, 0, 0 }, R = { -10, -35, 0, 0, -1.2, -0.8 } } },
+	{ t = 1, j = SA },
+}
+A.sa_hammer = { -- 추산: 두 주먹을 어깨 너머로 들었다가 비스듬히 내리찍는다
+	{ t = 0, j = { W = { 30, -30, 0 }, N = { 20, 0, 0 }, RS = { 170, 0, 40 }, RE = { 60, 0, 0 }, LS = { 170, 0, 10 }, LE = { 60, 0, 0 }, R = { 10, -30, 0, 0, -0.9, 0.4 } } },
+	{ t = 0.52, e = "snap", j = { W = { -45, 15, 0 }, N = { -20, 0, 0 }, RS = { 30, 0, 0 }, RE = { 20, 0, 0 }, LS = { 30, 0, 0 }, LE = { 20, 0, 0 }, RH = { 40, 0, 0 }, RK = { -100, 0, 0 }, LH = { -10, 0, 0 }, LK = { -60, 0, 0 }, R = { -30, 15, 0, 0, -2.0, -0.8 } } },
+	{ t = 1, j = SA },
+}
+A.sa_quake = { -- 지진각: 무릎을 가슴까지 들어 올렸다가 두 주먹과 함께 내리밟는다
+	{ t = 0, j = SA },
+	{ t = 0.3, j = { W = { 10, 0, 0 }, RS = { 120, 0, 40 }, RE = { 90, 0, 0 }, LS = { 120, 0, -40 }, LE = { 90, 0, 0 }, RH = { 110, 0, 10 }, RK = { -110, 0, 0 }, R = { 10, 0, 0, 0, 0.0, 0.2 } } },
+	{ t = 0.5, e = "snap", j = { W = { -35, 0, 0 }, RS = { 50, 0, 15 }, RE = { 0, 0, 0 }, LS = { 50, 0, -15 }, LE = { 0, 0, 0 }, RH = { 40, 0, 15 }, RK = { -50, 0, 0 }, LH = { -10, 0, -15 }, LK = { -60, 0, 0 }, R = { -20, 0, 0, 0, -1.8, -0.6 } } },
+	{ t = 1, j = SA },
+}
+A.sa_crush = { -- 붕산일권: 주먹을 등 뒤 끝까지 빼 모았다가 산을 무너뜨리듯 내지른다
+	{ t = 0, j = { W = { 20, -80, 0 }, N = { 0, 60, 0 }, RS = { -20, 0, 40 }, RE = { 100, 0, 0 }, LS = { 90, 0, -10 }, LE = { 20, 0, 0 }, RH = { 20, 0, 20 }, RK = { -70, 0, 0 }, LK = { -60, 0, 0 }, R = { 15, -50, 0, 0, -1.5, 0.9 } } },
+	{ t = 0.46, e = "snap", j = { W = { -20, 60, 0 }, N = { 0, -50, 0 }, RS = { 90, 0, 0 }, RE = { 0, 0, 0 }, LS = { 20, 0, -50 }, LE = { 120, 0, 0 }, RH = { -45, 0, 0 }, LH = { 55, 0, 0 }, LK = { -80, 0, 0 }, R = { -25, 45, 0, 0, -1.7, -1.6 } } },
+	{ t = 0.72, j = { W = { -18, 55, 0 }, N = { 0, -45, 0 }, RS = { 88, 0, 0 }, RE = { 5, 0, 0 }, LS = { 20, 0, -50 }, LE = { 120, 0, 0 }, RH = { -45, 0, 0 }, LH = { 55, 0, 0 }, LK = { -80, 0, 0 }, R = { -22, 42, 0, 0, -1.65, -1.5 } } },
+	{ t = 1, j = SA },
+}
+A.sa_fissure = { -- 지열각: 주먹을 높이 들었다가 무릎을 꿇으며 앞 땅에 내리꽂는다
+	{ t = 0, j = { W = { 20, 0, 0 }, RS = { 170, 0, 20 }, RE = { 30, 0, 0 }, LS = { 60, 0, -30 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0.3 } } },
+	{ t = 0.33, e = "snap", j = { W = { -70, 0, 0 }, N = { -30, 0, 0 }, RS = { 20, 0, 0 }, RE = { 0, 0, 0 }, LS = { 40, 0, -40 }, LE = { 60, 0, 0 }, RH = { 70, 0, 0 }, RK = { -110, 0, 0 }, LH = { 30, 0, 0 }, LK = { -110, 0, 0 }, R = { -35, 0, 0, 0, -2.3, -1.2 } } },
+	{ t = 1, j = SA },
+}
+A.sa_boulder = { -- 낙석추: 깊이 앉아 바위를 들어 올리고, 머리 위에서 앞으로 내던진다
+	{ t = 0, j = { W = { -30, 0, 0 }, RS = { 40, 0, 30 }, RE = { 60, 0, 0 }, LS = { 40, 0, -30 }, LE = { 60, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { -15, 0, 0, 0, -2.0, 0 } } },
+	{ t = 0.4, j = { W = { 20, 0, 0 }, N = { 20, 0, 0 }, RS = { 175, 0, 30 }, RE = { 70, 0, 0 }, LS = { 175, 0, -30 }, LE = { 70, 0, 0 }, R = { 10, 0, 0, 0, -0.3, 0.3 } } },
+	{ t = 0.7, e = "snap", j = { W = { -40, 0, 0 }, RS = { 80, 0, 10 }, RE = { 0, 0, 0 }, LS = { 80, 0, -10 }, LE = { 0, 0, 0 }, RH = { -20, 0, 0 }, LH = { 50, 0, 0 }, LK = { -70, 0, 0 }, R = { -30, 0, 0, 0, -1.2, -1.0 } } },
+	{ t = 1, j = SA },
+}
+A.sa_collapse = { -- 천붕지열: 두 팔을 머리 위로 모아 발끝으로 섰다가 무릎을 꿇으며 땅을 내리친다
+	{ t = 0, j = { RS = { 30, 0, 80 }, LS = { 30, 0, -80 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.4, j = { W = { 15, 0, 0 }, N = { 25, 0, 0 }, RS = { 178, 0, -10 }, RE = { 20, 0, 0 }, LS = { 178, 0, 10 }, LE = { 20, 0, 0 }, R = { 5, 0, 0, 0, 0.3, 0 } } },
+	{ t = 0.56, e = "snap", j = { W = { -75, 0, 0 }, N = { -30, 0, 0 }, RS = { 20, 0, 10 }, RE = { 0, 0, 0 }, LS = { 20, 0, -10 }, LE = { 0, 0, 0 }, RH = { 90, 0, 0 }, RK = { -120, 0, 0 }, LH = { -30, 0, 0 }, LK = { -130, 0, 0 }, R = { -30, 0, 0, 0, -2.6, -1.0 } } },
+	{ t = 0.82, j = { W = { -70, 0, 0 }, N = { -25, 0, 0 }, RS = { 22, 0, 10 }, RE = { 0, 0, 0 }, LS = { 22, 0, -10 }, LE = { 0, 0, 0 }, RH = { 90, 0, 0 }, RK = { -120, 0, 0 }, LH = { -30, 0, 0 }, LK = { -130, 0, 0 }, R = { -28, 0, 0, 0, -2.55, -1.0 } } },
+	{ t = 1, j = SA },
+}
+A.sa_fin = { -- 산악승천권: 한 무릎을 꿇은 채 일어서며 하늘로 치켜올린다
+	{ t = 0, j = { RS = { 10, 0, 30 }, RE = { 100, 0, 0 }, RK = { -120, 0, 0 }, LK = { -120, 0, 0 }, R = { 10, -20, 0, 0, -2.0, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { -20, 40, 0 }, N = { 30, 0, 0 }, RS = { 178, 0, 0 }, RE = { 20, 0, 0 }, LS = { 30, 0, -40 }, LE = { 90, 0, 0 }, RK = { -10, 0, 0 }, LK = { -40, 0, 0 }, R = { -10, 30, 0, 0, 0.0, -0.6 } } },
+	{ t = 1, j = SA },
+}
+
+-- ── 빙혼신장: 흐르듯 느린 손바닥. 손날로 베고, 손바닥으로 얼린다 ──
+local BH = stanceEnd("stance_ice")
+A.bh_slice = { -- 빙장: 높이 든 손날로 비스듬히 베어 내린다
+	{ t = 0, j = { W = { 0, -30, 0 }, RS = { 150, 0, 50 }, RE = { 60, 0, 0 }, LS = { 40, 0, -40 }, LE = { 40, 0, 0 }, R = { 0, -15, 0, 0, -0.6, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -10, 30, 0 }, RS = { 60, 0, -10 }, RE = { 10, 0, 0 }, LS = { 30, 0, -50 }, LE = { 30, 0, 0 }, R = { -8, 20, 0, 0, -0.8, -0.6 } } },
+	{ t = 1, j = BH },
+}
+A.bh_heel = { -- 설장: 왼 손바닥 뿌리로 턱을 쳐 올린다
+	{ t = 0, j = { W = { 0, 25, 0 }, LS = { 20, 0, -20 }, LE = { 100, 0, 0 }, RS = { 90, 0, 10 }, RE = { 20, 0, 0 }, R = { 0, 10, 0, 0, -0.9, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -5, -30, 0 }, N = { 15, 0, 0 }, LS = { 140, 0, -10 }, LE = { 30, 0, 0 }, RS = { 50, 0, 30 }, RE = { 60, 0, 0 }, R = { -5, -20, 0, 0, -0.5, -0.6 } } },
+	{ t = 1, j = BH },
+}
+A.bh_turn = { -- 한풍장: 반 바퀴 돌며 찬바람을 끌고 와 손바닥으로 민다
+	{ t = 0, j = BH },
+	{ t = 0.25, j = { RS = { 100, 0, 80 }, RE = { 20, 0, 0 }, LS = { 40, 0, -60 }, LE = { 30, 0, 0 }, R = { 0, 90, 0, 0, -0.8, 0 } } },
+	{ t = 0.52, e = "snap", j = { W = { -10, 30, 0 }, RS = { 90, 0, 30 }, RE = { 10, 0, 0 }, LS = { 40, 0, -60 }, LE = { 20, 0, 0 }, R = { -5, 10, 0, 0, -0.9, -0.6 } } },
+	{ t = 1, j = BH },
+}
+A.bh_soul = { -- 빙혼장: 하늘 손 · 땅 손을 위아래로 포개어 민다
+	{ t = 0, j = { W = { 10, -20, 0 }, RS = { 30, 0, 30 }, RE = { 110, 0, 0 }, LS = { 140, 0, -20 }, LE = { 80, 0, 0 }, R = { 5, -10, 0, 0, -0.8, 0.4 } } },
+	{ t = 0.5, e = "snap", j = { W = { -12, 15, 0 }, RS = { 80, 0, 5 }, RE = { 5, 0, 0 }, LS = { 110, 0, -5 }, LE = { 10, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -12, 10, 0, 0, -1.0, -1.0 } } },
+	{ t = 1, j = BH },
+}
+A.bh_wall = { -- 빙벽장: 두 팔을 엇갈려 모았다가 바깥으로 활짝 밀어낸다
+	{ t = 0, j = { W = { 15, 0, 0 }, RS = { 90, 0, -40 }, RE = { 100, 0, 0 }, LS = { 90, 0, 40 }, LE = { 100, 0, 0 }, R = { 10, 0, 0, 0, -0.8, 0.5 } } },
+	{ t = 0.47, e = "snap", j = { W = { -15, 0, 0 }, RS = { 90, 0, 30 }, RE = { 0, 0, 0 }, LS = { 90, 0, -30 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -70, 0, 0 }, R = { -15, 0, 0, 0, -1.2, -1.0 } } },
+	{ t = 1, j = BH },
+}
+A.bh_spear = { -- 빙창진: 한쪽 무릎을 꿇으며 손바닥으로 앞 땅을 짚는다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 140, 0, 30 }, RE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { -50, 0, 0 }, N = { -20, 0, 0 }, RS = { 50, 0, 0 }, RE = { 0, 0, 0 }, LS = { 60, 0, -60 }, LE = { 40, 0, 0 }, RH = { 80, 0, 0 }, RK = { -120, 0, 0 }, LH = { 30, 0, 0 }, LK = { -90, 0, 0 }, R = { -30, 0, 0, 0, -2.1, -1.0 } } },
+	{ t = 1, j = BH },
+}
+A.bh_gather = { -- 한빙결: 두 팔을 활짝 벌렸다가 찬 기운을 가슴 앞으로 끌어 모은다
+	{ t = 0, j = { W = { 10, 0, 0 }, N = { 15, 0, 0 }, RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { -15, 0, 0 }, N = { -10, 0, 0 }, RS = { 80, 0, -30 }, RE = { 90, 0, 0 }, LS = { 80, 0, 30 }, LE = { 90, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -8, 0, 0, 0, -1.2, 0 } } },
+	{ t = 0.8, j = { W = { -15, 0, 0 }, N = { -10, 0, 0 }, RS = { 80, 0, -32 }, RE = { 92, 0, 0 }, LS = { 80, 0, 32 }, LE = { 92, 0, 0 }, RK = { -62, 0, 0 }, LK = { -62, 0, 0 }, R = { -8, 0, 0, 0, -1.22, 0 } } },
+	{ t = 1, j = BH },
+}
+A.bh_glacier = { -- 만년빙하: 두 손바닥을 천천히 하늘로 올렸다가 땅을 누르듯 내린다
+	{ t = 0, j = { RS = { 20, 0, 20 }, RE = { 60, 0, 0 }, LS = { 20, 0, -20 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.35, j = { W = { 15, 0, 0 }, N = { 30, 0, 0 }, RS = { 178, 0, 20 }, RE = { 10, 0, 0 }, LS = { 178, 0, -20 }, LE = { 10, 0, 0 }, R = { 0, 0, 0, 0, 0.0, 0 } } },
+	{ t = 0.55, e = "snap", j = { W = { -20, 0, 0 }, N = { -10, 0, 0 }, RS = { 60, 0, 40 }, RE = { 0, 0, 0 }, LS = { 60, 0, -40 }, LE = { 0, 0, 0 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { -10, 0, 0, 0, -1.6, 0 } } },
+	{ t = 1, j = BH },
+}
+A.bh_fin = { -- 빙혼승천장: 낮게 돌며 서리 손바닥을 하늘로 올려 친다
+	{ t = 0, j = { RS = { 40, 0, 40 }, RE = { 60, 0, 0 }, R = { 0, -60, 0, 0, -1.2, 0 } } },
+	{ t = 0.42, e = "snap", j = { N = { 20, 0, 0 }, RS = { 170, 0, 30 }, RE = { 0, 0, 0 }, LS = { 60, 0, -60 }, LE = { 20, 0, 0 }, R = { 0, 30, 0, 0, -0.2, -0.4 } } },
+	{ t = 1, j = BH },
+}
+
+-- ── 천옥신권: 곧고 정확하다. 손가락 · 손날 · 다이아몬드 모양 손 ──
+local CO = stanceEnd("stance_jade")
+A.co_finger = { -- 옥수: 두 손가락으로 곧게 찌른다 (몸은 흔들리지 않는다)
+	{ t = 0, j = CO },
+	{ t = 0.4, e = "snap", j = { W = { 0, 20, 0 }, N = { 0, -15, 0 }, RS = { 95, 0, -5 }, RE = { 0, 0, 0 }, LS = { 75, 0, -25 }, LE = { 75, 0, 0 }, R = { -3, 10, 0, 0, -0.65, -0.5 } } },
+	{ t = 1, j = CO },
+}
+A.co_chop = { -- 벽옥: 왼 손날로 수평으로 벤다
+	{ t = 0, j = { W = { 0, 30, 0 }, LS = { 90, 0, -90 }, LE = { 40, 0, 0 }, RS = { 70, 0, 20 }, RE = { 80, 0, 0 }, R = { 0, 10, 0, 0, -0.65, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, -40, 0 }, N = { 0, 25, 0 }, LS = { 90, 0, 10 }, LE = { 0, 0, 0 }, RS = { 70, 0, 20 }, RE = { 80, 0, 0 }, R = { -5, -25, 0, 0, -0.7, -0.5 } } },
+	{ t = 1, j = CO },
+}
+A.co_prism = { -- 옥광장: 두 손으로 마름모를 지었다가 그대로 내지른다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 100, 0, -15 }, RE = { 70, 0, 0 }, LS = { 100, 0, 15 }, LE = { 70, 0, 0 }, R = { 5, 0, 0, 0, -0.6, 0.4 } } },
+	{ t = 0.48, e = "snap", j = { W = { -10, 0, 0 }, RS = { 92, 0, -5 }, RE = { 0, 0, 0 }, LS = { 92, 0, 5 }, LE = { 0, 0, 0 }, RH = { -25, 0, 0 }, LH = { 35, 0, 0 }, LK = { -50, 0, 0 }, R = { -10, 0, 0, 0, -0.9, -1.0 } } },
+	{ t = 1, j = CO },
+}
+A.co_backfist = { -- 천옥권: 몸을 돌리며 주먹 등으로 후려친다
+	{ t = 0, j = { W = { 0, -60, 0 }, RS = { 80, 0, -60 }, RE = { 120, 0, 0 }, LS = { 70, 0, -20 }, LE = { 80, 0, 0 }, R = { 0, -30, 0, 0, -0.7, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { 0, 40, 0 }, N = { 0, -30, 0 }, RS = { 90, 0, 70 }, RE = { 10, 0, 0 }, LS = { 60, 0, -30 }, LE = { 90, 0, 0 }, R = { -5, 60, 0, 0, -0.8, -0.6 } } },
+	{ t = 1, j = CO },
+}
+A.co_shatter = { -- 옥쇄일권: 가슴 앞에 붙인 두 주먹을 뿌리박은 채 곧게 내쏜다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 60, 0, 10 }, RE = { 140, 0, 0 }, LS = { 60, 0, -10 }, LE = { 140, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { 5, 0, 0, 0, -1.2, 0.4 } } },
+	{ t = 0.47, e = "snap", j = { W = { -15, 0, 0 }, N = { -5, 0, 0 }, RS = { 92, 0, -3 }, RE = { 0, 0, 0 }, LS = { 92, 0, 3 }, LE = { 0, 0, 0 }, RH = { -35, 0, 0 }, LH = { 45, 0, 0 }, LK = { -75, 0, 0 }, R = { -15, 0, 0, 0, -1.3, -1.4 } } },
+	{ t = 1, j = CO },
+}
+A.co_lance = { -- 옥창림: 낮고 길게 내디디며 손바닥을 땅을 스치듯 앞으로 뻗는다
+	{ t = 0, j = { W = { 10, -40, 0 }, RS = { 60, 0, 40 }, RE = { 120, 0, 0 }, R = { 5, -20, 0, 0, -0.9, 0.6 } } },
+	{ t = 0.25, e = "snap", j = { W = { -35, 30, 0 }, RS = { 70, 0, -5 }, RE = { 0, 0, 0 }, LS = { 30, 0, -60 }, LE = { 20, 0, 0 }, RH = { -50, 0, 0 }, RK = { -10, 0, 0 }, LH = { 70, 0, 0 }, LK = { -110, 0, 0 }, R = { -25, 25, 0, 0, -1.8, -1.4 } } },
+	{ t = 1, j = CO },
+}
+A.co_rain = { -- 옥우: 두 손가락으로 하늘을 가리켰다가 앞으로 내려 긋는다
+	{ t = 0, j = { RS = { 40, 0, 20 }, RE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -0.65, 0 } } },
+	{ t = 0.3, j = { W = { 10, 0, 0 }, N = { 30, 0, 0 }, RS = { 178, 0, 0 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -10, 0, 0 }, N = { -10, 0, 0 }, RS = { 100, 0, 30 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 90, 0, 0 }, R = { -5, 0, 0, 0, -0.8, -0.4 } } },
+	{ t = 1, j = CO },
+}
+A.co_forest = { -- 천옥결계: 두 손바닥을 땅에 짚었다가 결정이 자라듯 팔을 펼치며 일어선다
+	{ t = 0, j = { RS = { 90, 0, 30 }, RE = { 90, 0, 0 }, LS = { 90, 0, -30 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.25, e = "snap", j = { W = { -60, 0, 0 }, N = { -20, 0, 0 }, RS = { 40, 0, 20 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 0, 0, 0 }, RH = { 70, 0, 0 }, RK = { -120, 0, 0 }, LH = { 70, 0, 0 }, LK = { -120, 0, 0 }, R = { -30, 0, 0, 0, -2.3, -0.6 } } },
+	{ t = 0.6, j = { W = { 15, 0, 0 }, N = { 25, 0, 0 }, RS = { 150, 0, 60 }, RE = { 10, 0, 0 }, LS = { 150, 0, -60 }, LE = { 10, 0, 0 }, R = { 0, 0, 0, 0, 0, 0 } } },
+	{ t = 1, j = CO },
+}
+A.co_fin = { -- 천옥승천권: 무릎을 차올리며 곧은 손바닥을 하늘로
+	{ t = 0, j = { RS = { 60, 0, 20 }, RE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.42, e = "snap", j = { RS = { 150, 0, -10 }, RE = { 10, 0, 0 }, LS = { 40, 0, -40 }, LE = { 70, 0, 0 }, RH = { 100, 0, 0 }, RK = { -120, 0, 0 }, R = { -5, 0, 0, 0, 0.6, -0.4 } } },
+	{ t = 1, j = CO },
+}
+
+-- ── 천종신권: 종을 치듯 크게 후리고, 두 손으로 울린다 ──
+local CJ = stanceEnd("stance_bell")
+A.cj_ram = { -- 종타: 당목을 밀듯 멀리 뺀 손바닥 뿌리로 수평으로 친다
+	{ t = 0, j = { W = { 0, -50, 0 }, RS = { 60, 0, 60 }, RE = { 110, 0, 0 }, LS = { 70, 0, -10 }, LE = { 90, 0, 0 }, R = { 0, -20, 0, 0, -0.9, 0.5 } } },
+	{ t = 0.42, e = "snap", j = { W = { -10, 30, 0 }, RS = { 90, 0, -5 }, RE = { 0, 0, 0 }, LS = { 50, 0, -30 }, LE = { 100, 0, 0 }, RH = { -25, 0, 0 }, LH = { 35, 0, 0 }, LK = { -50, 0, 0 }, R = { -10, 20, 0, 0, -1.0, -1.0 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_toll = { -- 명타: 왼 주먹 밑동으로 종 머리를 내려친다
+	{ t = 0, j = { W = { 10, 30, 0 }, LS = { 170, 0, -30 }, LE = { 60, 0, 0 }, RS = { 50, 0, 20 }, RE = { 90, 0, 0 }, R = { 5, 10, 0, 0, -0.8, 0.2 } } },
+	{ t = 0.42, e = "snap", j = { W = { -30, -20, 0 }, N = { -15, 0, 0 }, LS = { 70, 0, -10 }, LE = { 10, 0, 0 }, RS = { 40, 0, 30 }, RE = { 100, 0, 0 }, R = { -15, -10, 0, 0, -1.1, -0.6 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_gong = { -- 범종장: 활짝 벌린 두 손바닥을 앞에서 맞부딪친다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 90, 0, 80 }, RE = { 10, 0, 0 }, LS = { 90, 0, -80 }, LE = { 10, 0, 0 }, R = { 5, 0, 0, 0, -0.9, 0.3 } } },
+	{ t = 0.48, e = "snap", j = { W = { -15, 0, 0 }, N = { -10, 0, 0 }, RS = { 90, 0, -10 }, RE = { 20, 0, 0 }, LS = { 90, 0, 10 }, LE = { 20, 0, 0 }, RH = { -25, 0, 0 }, LH = { 35, 0, 0 }, LK = { -55, 0, 0 }, R = { -12, 0, 0, 0, -1.1, -0.9 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_swing = { -- 대종권: 몸 전체로 팔을 수평으로 크게 휘두른다 (당목이 흔들리듯)
+	{ t = 0, j = { W = { 0, -90, 0 }, RS = { 90, 0, -80 }, RE = { 20, 0, 0 }, LS = { 60, 0, -30 }, LE = { 100, 0, 0 }, R = { 0, -60, 0, 0, -1.0, 0.3 } } },
+	{ t = 0.48, e = "snap", j = { W = { 0, 70, 0 }, N = { 0, -50, 0 }, RS = { 90, 0, 80 }, RE = { 0, 0, 0 }, LS = { 40, 0, -50 }, LE = { 90, 0, 0 }, R = { -5, 70, 0, 0, -1.1, -0.6 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_bellram = { -- 천종일격: 두 손으로 당목을 쥔 듯 뒤로 끌었다가 온몸으로 들이받는다
+	{ t = 0, j = { W = { 20, -20, 0 }, RS = { 70, 0, -10 }, RE = { 110, 0, 0 }, LS = { 70, 0, 10 }, LE = { 110, 0, 0 }, R = { 15, -10, 0, 0, -1.1, 1.0 } } },
+	{ t = 0.47, e = "snap", j = { W = { -25, 10, 0 }, N = { -10, 0, 0 }, RS = { 92, 0, -5 }, RE = { 10, 0, 0 }, LS = { 92, 0, 5 }, LE = { 10, 0, 0 }, RH = { -40, 0, 0 }, LH = { 50, 0, 0 }, LK = { -80, 0, 0 }, R = { -25, 10, 0, 0, -1.4, -1.6 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_shout = { -- 종명파: 숨을 크게 들이켰다가 두 팔을 뒤로 젖히며 소리를 내지른다
+	{ t = 0, j = { W = { 20, 0, 0 }, N = { 25, 0, 0 }, RS = { 60, 0, 30 }, RE = { 90, 0, 0 }, LS = { 60, 0, -30 }, LE = { 90, 0, 0 }, R = { 10, 0, 0, 0, -0.8, 0.3 } } },
+	{ t = 0.3, e = "snap", j = { W = { -20, 0, 0 }, N = { -20, 0, 0 }, RS = { -30, 0, 40 }, RE = { 20, 0, 0 }, LS = { -30, 0, -40 }, LE = { 20, 0, 0 }, RH = { -20, 0, 0 }, LH = { 30, 0, 0 }, LK = { -50, 0, 0 }, R = { -15, 0, 0, 0, -1.0, -0.6 } } },
+	{ t = 0.8, j = { W = { -18, 0, 0 }, N = { -18, 0, 0 }, RS = { -28, 0, 40 }, RE = { 20, 0, 0 }, LS = { -28, 0, -40 }, LE = { 20, 0, 0 }, RH = { -20, 0, 0 }, LH = { 30, 0, 0 }, LK = { -50, 0, 0 }, R = { -14, 0, 0, 0, -1.0, -0.6 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_dome = { -- 금종조: 두 팔로 머리 위에 종 모양을 짓고 낮게 앉는다
+	{ t = 0, j = CJ },
+	{ t = 0.3, e = "snap", j = { N = { -10, 0, 0 }, RS = { 160, 0, 40 }, RE = { 70, 0, 0 }, LS = { 160, 0, -40 }, LE = { 70, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 0, 0, 0, 0, -1.4, 0 } } },
+	{ t = 0.85, j = { N = { -10, 0, 0 }, RS = { 160, 0, 40 }, RE = { 72, 0, 0 }, LS = { 160, 0, -40 }, LE = { 72, 0, 0 }, RK = { -72, 0, 0 }, LK = { -72, 0, 0 }, R = { 0, 0, 0, 0, -1.42, 0 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_heavenbell = { -- 천종만향: 주먹을 높이 들어 펼친 손바닥을 두 번 내리친다 (종을 치듯)
+	{ t = 0, j = { N = { 25, 0, 0 }, RS = { 178, 0, 20 }, RE = { 40, 0, 0 }, LS = { 90, 0, -10 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { -15, 0, 0 }, RS = { 80, 0, -20 }, RE = { 80, 0, 0 }, LS = { 80, 0, 10 }, LE = { 90, 0, 0 }, R = { -10, 0, 0, 0, -1.2, 0 } } },
+	{ t = 0.55, j = { N = { 25, 0, 0 }, RS = { 178, 0, 20 }, RE = { 40, 0, 0 }, LS = { 90, 0, -10 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.75, e = "snap", j = { W = { -20, 0, 0 }, RS = { 80, 0, -20 }, RE = { 80, 0, 0 }, LS = { 80, 0, 10 }, LE = { 90, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -12, 0, 0, 0, -1.4, 0 } } },
+	{ t = 1, j = CJ },
+}
+A.cj_fin = { -- 천종승천권: 포갠 두 주먹으로 종을 아래에서 쳐 올린다
+	{ t = 0, j = { RS = { 40, 0, 0 }, RE = { 110, 0, 0 }, LS = { 40, 0, 0 }, LE = { 110, 0, 0 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 0, 0, 0, 0, -1.4, 0 } } },
+	{ t = 0.42, e = "snap", j = { N = { 25, 0, 0 }, RS = { 170, 0, -5 }, RE = { 40, 0, 0 }, LS = { 170, 0, 5 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, 0.1, -0.3 } } },
+	{ t = 1, j = CJ },
+}
+
+-- ── 명경권: 좌우가 거울처럼 맞선다. 한 손이 나가면 다른 손이 거꾸로 따른다 ──
+local MG = stanceEnd("stance_mirror")
+A.mg_shard_r = { -- 경수: 오른 손바닥이 나가고 왼손이 거울처럼 뒤로 뻗는다
+	{ t = 0, j = MG },
+	{ t = 0.36, e = "snap", j = { W = { 0, 25, 0 }, RS = { 92, 0, 0 }, RE = { 5, 0, 0 }, LS = { -40, 0, -30 }, LE = { 5, 0, 0 }, R = { -5, 15, 0, 0, -0.7, -0.6 } } },
+	{ t = 1, j = MG },
+}
+A.mg_shard_l = mirror(A.mg_shard_r) -- 명수: 그 거울
+A.mg_shard_l[1] = { t = 0, j = MG }
+A.mg_shard_l[#A.mg_shard_l] = { t = 1, j = MG }
+A.mg_twinkick = { -- 쌍경각: 뛰어올라 두 다리를 좌우로 동시에 찬다 (두 번)
+	{ t = 0, j = { RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.33, e = "snap", j = { RS = { 150, 0, 60 }, LS = { 150, 0, -60 }, RH = { 80, 0, 60 }, RK = { 0, 0, 0 }, LH = { 80, 0, -60 }, LK = { 0, 0, 0 }, R = { -10, 0, 0, 0, 1.0, 0 } } },
+	{ t = 0.5, j = { RS = { 120, 0, 40 }, LS = { 120, 0, -40 }, RH = { 40, 0, 20 }, RK = { -80, 0, 0 }, LH = { 40, 0, -20 }, LK = { -80, 0, 0 }, R = { -5, 0, 0, 0, 1.2, 0 } } },
+	{ t = 0.7, e = "snap", j = { RS = { 150, 0, 60 }, LS = { 150, 0, -60 }, RH = { 80, 0, 60 }, RK = { 0, 0, 0 }, LH = { 80, 0, -60 }, LK = { 0, 0, 0 }, R = { -10, 0, 0, 0, 0.9, 0 } } },
+	{ t = 1, j = MG },
+}
+A.mg_break = { -- 파경권: 가슴 앞에 X자로 엇갈린 두 주먹을 함께 내질러 거울을 깬다
+	{ t = 0, j = { W = { 10, 0, 0 }, RS = { 90, 0, -40 }, RE = { 120, 0, 0 }, LS = { 90, 0, 40 }, LE = { 120, 0, 0 }, R = { 5, 0, 0, 0, -0.8, 0.3 } } },
+	{ t = 0.48, e = "snap", j = { W = { -12, 0, 0 }, RS = { 92, 0, 15 }, RE = { 0, 0, 0 }, LS = { 92, 0, -15 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 0, 0, 0, -0.9, -1.1 } } },
+	{ t = 1, j = MG },
+}
+A.mg_flash = { -- 명경일장: 거울 문을 열듯 두 손바닥을 좌우로 열어젖히며 스쳐 지나간다
+	{ t = 0, j = { RS = { 90, 0, -20 }, RE = { 100, 0, 0 }, LS = { 90, 0, 20 }, LE = { 100, 0, 0 }, R = { -10, 0, 0, 0, -1.0, 0.2 } } },
+	{ t = 0.47, e = "snap", j = { W = { -10, 0, 0 }, N = { -5, 0, 0 }, RS = { 90, 0, 60 }, RE = { 0, 0, 0 }, LS = { 90, 0, -60 }, LE = { 0, 0, 0 }, R = { -15, 0, 0, 0, -0.9, -1.4 } } },
+	{ t = 1, j = MG },
+}
+A.mg_still = { -- 명경지수: 두 손바닥을 가슴 앞에 모으고 거울 같은 물처럼 고요히 선다
+	{ t = 0, j = MG },
+	{ t = 0.2, j = { N = { 10, 0, 0 }, RS = { 70, 0, -25 }, RE = { 100, 0, 0 }, LS = { 70, 0, 25 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.8, j = { N = { 10, 0, 0 }, RS = { 70, 0, -25 }, RE = { 100, 0, 0 }, LS = { 70, 0, 25 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, -0.82, 0 } } },
+	{ t = 1, j = MG },
+}
+A.mg_counter = { -- 명경지수 되받아치기: 모았던 두 손바닥을 그대로 내뻗는다
+	{ t = 0, j = { N = { 10, 0, 0 }, RS = { 70, 0, -25 }, RE = { 100, 0, 0 }, LS = { 70, 0, 25 }, LE = { 100, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { -10, 0, 0 }, RS = { 90, 0, 15 }, RE = { 0, 0, 0 }, LS = { 90, 0, -15 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -12, 0, 0, 0, -0.9, -1.0 } } },
+	{ t = 1, j = MG },
+}
+A.mg_summon = { -- 경중분신: 두 팔을 좌우 똑같이 크게 그어 둘레에 거울을 세운다
+	{ t = 0, j = { RS = { 90, 0, -30 }, RE = { 40, 0, 0 }, LS = { 90, 0, 30 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.35, e = "snap", j = { N = { 15, 0, 0 }, RS = { 100, 0, 110 }, RE = { 0, 0, 0 }, LS = { 100, 0, -110 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.7, j = { N = { 15, 0, 0 }, RS = { 100, 0, 112 }, RE = { 0, 0, 0 }, LS = { 100, 0, -112 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.72, 0 } } },
+	{ t = 1, j = MG },
+}
+A.mg_gallery = { -- 만경회랑: 한 손은 하늘, 한 손은 땅을 가리키며 천천히 돌다가 두 손으로 가리킨다
+	{ t = 0, j = { RS = { 178, 0, 10 }, RE = { 0, 0, 0 }, LS = { 0, 0, -20 }, LE = { 0, 0, 0 }, R = { 0, -30, 0, 0, -0.6, 0 } } },
+	{ t = 0.4, j = { RS = { 178, 0, 10 }, RE = { 0, 0, 0 }, LS = { 0, 0, -20 }, LE = { 0, 0, 0 }, R = { 0, 30, 0, 0, -0.6, 0 } } },
+	{ t = 0.6, e = "snap", j = { RS = { 100, 0, 40 }, RE = { 0, 0, 0 }, LS = { 100, 0, -40 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.8, -0.3 } } },
+	{ t = 1, j = MG },
+}
+A.mg_shatter = { -- 천경파쇄: 머리 위에 엇갈린 두 팔을 뛰어오르며 단숨에 찢어 벌린다
+	{ t = 0, j = { RS = { 170, 0, -30 }, RE = { 60, 0, 0 }, LS = { 170, 0, 30 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { 15, 0, 0 }, N = { 25, 0, 0 }, RS = { 120, 0, 120 }, RE = { 0, 0, 0 }, LS = { 120, 0, -120 }, LE = { 0, 0, 0 }, RH = { 20, 0, 30 }, LH = { 20, 0, -30 }, R = { 5, 0, 0, 0, 0.6, 0 } } },
+	{ t = 0.8, j = { W = { 12, 0, 0 }, N = { 20, 0, 0 }, RS = { 118, 0, 118 }, RE = { 0, 0, 0 }, LS = { 118, 0, -118 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.4, 0 } } },
+	{ t = 1, j = MG },
+}
+A.mg_fin = { -- 명경승천각: 두 팔을 좌우로 벌린 채 반달을 그리며 높이 차올린다
+	{ t = 0, j = MG },
+	{ t = 0.42, e = "snap", j = { W = { 25, 0, 0 }, RS = { 60, 0, 90 }, LS = { 60, 0, -90 }, RH = { 150, 0, 20 }, RK = { 0, 0, 0 }, LK = { -20, 0, 0 }, R = { 25, 0, 0, 0, 0.4, 0 } } },
+	{ t = 1, j = MG },
+}
+
+-- ── 초·천룡파천장: 용처럼 감기고, 할퀴고, 꼬리로 쓸고, 솟는다 (천룡파천장의 동작과 다르다) ──
+local CC = stanceEnd("stance_skydragon")
+A.ccr_rake = { -- 천룡조: 높이 든 갈퀴손으로 비스듬히 할퀴어 내린다
+	{ t = 0, j = { W = { 10, -30, 0 }, RS = { 160, 0, 50 }, RE = { 70, 0, 0 }, LS = { 70, 0, -30 }, LE = { 100, 0, 0 }, R = { 0, -20, 0, 0, -0.8, 0.2 } } },
+	{ t = 0.4, e = "snap", j = { W = { -25, 35, 0 }, N = { -10, -20, 0 }, RS = { 60, 0, -20 }, RE = { 40, 0, 0 }, LS = { 70, 0, -30 }, LE = { 100, 0, 0 }, R = { -15, 25, 0, 0, -1.1, -0.7 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_tail = { -- 천룡미: 낮게 앉아 한 바퀴 반을 돌며 다리로 꼬리처럼 쓴다
+	{ t = 0, j = { RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { 0, 0, 0, 0, -1.6, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 60, 0 }, RS = { 60, 0, 60 }, LS = { 90, 0, -60 }, RH = { 40, 0, 80 }, RK = { -5, 0, 0 }, LH = { 60, 0, 0 }, LK = { -130, 0, 0 }, R = { -10, -90, 0, 0, -2.0, -0.3 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_ascend = { -- 잠룡승천: 몸을 나사처럼 비틀며 손바닥을 하늘로 감아올린다
+	{ t = 0, j = { W = { 20, -60, 0 }, RS = { 20, 0, 40 }, RE = { 60, 0, 0 }, R = { 10, -40, 0, 0, -1.6, 0 } } },
+	{ t = 0.45, e = "snap", j = { W = { -15, 50, 0 }, N = { 25, 0, 0 }, RS = { 170, 0, 10 }, RE = { 10, 0, 0 }, LS = { 40, 0, -50 }, LE = { 60, 0, 0 }, RH = { 30, 0, 0 }, RK = { -60, 0, 0 }, R = { -10, 60, 0, 0, 0.0, -0.4 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_breath = { -- 현룡파천: 손목을 맞댄 두 손 (용의 입)을 허리에서 앞으로 내민다
+	{ t = 0, j = { W = { 10, -50, 0 }, RS = { 20, 0, 30 }, RE = { 120, 0, 0 }, LS = { 20, 0, -30 }, LE = { 120, 0, 0 }, R = { 5, -30, 0, 0, -1.0, 0.4 } } },
+	{ t = 0.42, e = "snap", j = { W = { -10, 10, 0 }, RS = { 92, 0, -8 }, RE = { 0, 0, 0 }, LS = { 92, 0, 8 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -12, 10, 0, 0, -1.1, -1.0 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_cannon = { -- 항룡파천장: 깊은 마보에서 허리의 한 손을 용처럼 내지른다
+	{ t = 0, j = { W = { 0, -70, 0 }, RS = { 40, 0, 50 }, RE = { 130, 0, 0 }, LS = { 90, 0, -10 }, LE = { 10, 0, 0 }, RH = { -10, 0, 30 }, LH = { -10, 0, -30 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { 0, -50, 0, 0, -1.6, 0.3 } } },
+	{ t = 0.42, e = "snap", j = { W = { 0, 50, 0 }, N = { 0, -40, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 20, 0, -50 }, LE = { 120, 0, 0 }, RH = { -10, 0, 30 }, LH = { -10, 0, -30 }, RK = { -80, 0, 0 }, LK = { -80, 0, 0 }, R = { -5, 40, 0, 0, -1.6, -0.8 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_coil = { -- 황룡유회: 몸을 감았다가 헤엄치는 용처럼 두 손을 비스듬히 휘몰아 낸다
+	{ t = 0, j = { W = { 0, 80, 0 }, RS = { 40, 0, -40 }, RE = { 100, 0, 0 }, LS = { 100, 0, -60 }, LE = { 20, 0, 0 }, R = { 0, 60, 0, 0, -1.0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, -30, 0 }, RS = { 95, 0, 30 }, RE = { 0, 0, 0 }, LS = { 90, 0, -20 }, LE = { 60, 0, 0 }, R = { -10, -20, 0, 0, -1.0, -1.0 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_soar = { -- 비룡천: 웅크렸다가 두 팔을 날개처럼 펼치며 솟구친다
+	{ t = 0, j = { RS = { -20, 0, 40 }, LS = { -20, 0, -40 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { -15, 0, 0, 0, -1.6, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { 15, 0, 0 }, N = { 30, 0, 0 }, RS = { 170, 0, 30 }, RE = { 0, 0, 0 }, LS = { 170, 0, -30 }, LE = { 0, 0, 0 }, RH = { -10, 0, 0 }, LH = { 60, 0, 0 }, LK = { -90, 0, 0 }, R = { -5, 0, 0, 0, 1.0, -0.3 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_nine = { -- 구룡천강: 넓게 서서 두 팔로 용이 오르듯 원을 그리다 하늘로 뻗는다
+	{ t = 0, j = { RS = { 20, 0, 80 }, LS = { 20, 0, -80 }, RH = { -10, 0, 25 }, LH = { -10, 0, -25 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } } },
+	{ t = 0.35, j = { RS = { 120, 0, 90 }, LS = { 120, 0, -90 }, RH = { -10, 0, 25 }, LH = { -10, 0, -25 }, RK = { -55, 0, 0 }, LK = { -55, 0, 0 }, R = { 0, 30, 0, 0, -1.1, 0 } } },
+	{ t = 0.55, e = "snap", j = { W = { 10, 0, 0 }, N = { 30, 0, 0 }, RS = { 178, 0, 15 }, RE = { 0, 0, 0 }, LS = { 178, 0, -15 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_heaven = { -- 천룡멸세: 한 무릎을 꿇고 한 손은 땅, 한 손은 하늘. 일어서며 앞을 가리킨다
+	{ t = 0, j = { W = { -40, 0, 0 }, RS = { 178, 0, 20 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 0, 0, 0 }, RH = { 60, 0, 0 }, RK = { -120, 0, 0 }, LK = { -100, 0, 0 }, R = { -20, 0, 0, 0, -2.2, 0 } } },
+	{ t = 0.5, j = { W = { -40, 0, 0 }, RS = { 178, 0, 20 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 0, 0, 0 }, RH = { 60, 0, 0 }, RK = { -120, 0, 0 }, LK = { -100, 0, 0 }, R = { -20, 0, 0, 0, -2.15, 0 } } },
+	{ t = 0.75, e = "snap", j = { W = { -10, 20, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -60 }, LE = { 60, 0, 0 }, R = { -10, 15, 0, 0, -0.9, -0.6 } } },
+	{ t = 1, j = CC },
+}
+A.ccr_fin = { -- 초 승룡파천: 낮게 감았다가 두 손을 나사처럼 감아 하늘로 솟는다
+	{ t = 0, j = { RS = { 30, 0, 60 }, LS = { 30, 0, -60 }, R = { 0, -80, 0, 0, -1.6, 0 } } },
+	{ t = 0.42, e = "snap", j = { N = { 30, 0, 0 }, RS = { 178, 0, 20 }, RE = { 30, 0, 0 }, LS = { 178, 0, -20 }, LE = { 30, 0, 0 }, R = { 0, 40, 0, 0, 0.6, -0.3 } } },
+	{ t = 1, j = CC },
+}
+
+-- ── 천하패권: 왼손은 늘 등 뒤에. 오른손 하나로 오만하게 ──
+local CH = stanceEnd("stance_overlord")
+A.ch_jab = { -- 패권: 거만하게 짧은 오른 주먹
+	{ t = 0, j = CH },
+	{ t = 0.4, e = "snap", j = { W = { 0, 30, 0 }, N = { 0, -20, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -3, 20, 0, 0, -0.3, -0.5 } } },
+	{ t = 1, j = CH },
+}
+A.ch_backhand = { -- 왕권: 손등으로 후려갈긴다
+	{ t = 0, j = { W = { 0, -40, 0 }, RS = { 90, 0, -70 }, RE = { 90, 0, 0 }, LS = BEHIND, LE = BEHIND_E } },
+	{ t = 0.4, e = "snap", j = { W = { 0, 40, 0 }, N = { 0, -30, 0 }, RS = { 90, 0, 60 }, RE = { 10, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -3, 30, 0, 0, -0.3, -0.4 } } },
+	{ t = 1, j = CH },
+}
+A.ch_lift = { -- 패왕승천: 멱살을 잡듯 한 손으로 들어 올린다
+	{ t = 0, j = { RS = { 80, 0, 10 }, RE = { 40, 0, 0 }, LS = BEHIND, LE = BEHIND_E } },
+	{ t = 0.45, e = "snap", j = { W = { 10, 20, 0 }, N = { 20, 0, 0 }, RS = { 160, 0, 0 }, RE = { 20, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 5, 10, 0, 0, 0.0, -0.3 } } },
+	{ t = 1, j = CH },
+}
+A.ch_stomp = { -- 천하일격: 머리 위로 든 주먹을 한 발 내딛으며 내리친다
+	{ t = 0, j = { W = { 15, -20, 0 }, RS = { 178, 0, 30 }, RE = { 60, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 5, 0, 0, 0, -0.2, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -40, 20, 0 }, N = { -20, 0, 0 }, RS = { 40, 0, 10 }, RE = { 0, 0, 0 }, LS = { -30, 0, -30 }, LE = { 100, 0, 0 }, RH = { 60, 0, 0 }, RK = { -90, 0, 0 }, LK = { -50, 0, 0 }, R = { -25, 15, 0, 0, -1.4, -0.6 } } },
+	{ t = 1, j = CH },
+}
+A.ch_bash = { -- 패왕추: 걸어 들어가 어깨로 밀치고 팔꿈치를 꽂는다
+	{ t = 0, j = { W = { 0, -60, 0 }, RS = { 60, 0, -40 }, RE = { 140, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 0, -40, 0, 0, -0.7, 0.4 } } },
+	{ t = 0.47, e = "snap", j = { W = { -10, 40, 0 }, N = { 0, -40, 0 }, RS = { 95, 0, 90 }, RE = { 160, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -10, 40, 0, 0, -0.8, -1.2 } } },
+	{ t = 1, j = CH },
+}
+A.ch_charge = { -- 패왕돌진: 몸을 숙여 파고들며 한 주먹씩 꽂는다
+	{ t = 0, j = { RS = { 30, 0, 30 }, RE = { 90, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -25, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { -10, 35, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -20, 30, 0, 0, -0.9, -1.0 } } },
+	{ t = 0.55, j = { RS = { 60, 0, 20 }, RE = { 90, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -25, 0, 0, 0, -0.9, -0.4 } } },
+	{ t = 0.75, e = "snap", j = { W = { -10, 35, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -20, 30, 0, 0, -0.9, -1.0 } } },
+	{ t = 1, j = CH },
+}
+A.ch_throw = { -- 패왕투: 한 손으로 머리 위까지 들어 올려 내던진다
+	{ t = 0, j = { RS = { 90, 0, 0 }, RE = { 20, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 0, 0, 0, 0, -0.7, 0 } } },
+	{ t = 0.35, j = { W = { 20, 0, 0 }, N = { 25, 0, 0 }, RS = { 178, 0, 0 }, RE = { 10, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 10, 0, 0, 0, -0.2, 0.3 } } },
+	{ t = 0.6, e = "snap", j = { W = { -35, 0, 0 }, N = { -10, 0, 0 }, RS = { 80, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, RH = { -20, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -25, 0, 0, 0, -0.9, -0.9 } } },
+	{ t = 1, j = CH },
+}
+A.ch_onefist = { -- 천하무쌍권: 이 기술에서만 왼손이 나와 거리를 잰다. 오른 주먹을 끝까지 빼 모았다가 지른다
+	{ t = 0, j = { W = { 0, -60, 0 }, RS = { 20, 0, 40 }, RE = { 140, 0, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RH = { -10, 0, 20 }, LH = { -10, 0, -20 }, RK = { -70, 0, 0 }, LK = { -70, 0, 0 }, R = { 0, -40, 0, 0, -1.4, 0.3 } } },
+	{ t = 0.5, j = { W = { 0, -62, 0 }, RS = { 18, 0, 40 }, RE = { 142, 0, 0 }, LS = { 92, 0, 0 }, LE = { 0, 0, 0 }, RH = { -10, 0, 20 }, LH = { -10, 0, -20 }, RK = { -74, 0, 0 }, LK = { -74, 0, 0 }, R = { 0, -42, 0, 0, -1.45, 0.35 } } },
+	{ t = 0.62, e = "snap", j = { W = { -10, 60, 0 }, N = { 0, -40, 0 }, RS = { 92, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -60 }, LE = { 100, 0, 0 }, RH = { -45, 0, 0 }, LH = { 55, 0, 0 }, LK = { -80, 0, 0 }, R = { -20, 50, 0, 0, -1.6, -1.6 } } },
+	{ t = 1, j = CH },
+}
+A.ch_crush = { -- 패천멸지: 주먹을 하늘로 들어 세운 채 버티다 무릎을 꿇으며 땅에 내리꽂는다
+	{ t = 0, j = { N = { 30, 0, 0 }, RS = { 178, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 0, 0, 0, 0, -0.2, 0 } } },
+	{ t = 0.6, j = { N = { 32, 0, 0 }, RS = { 178, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 0, 0, 0, 0, -0.25, 0 } } },
+	{ t = 0.78, e = "snap", j = { W = { -70, 0, 0 }, N = { -30, 0, 0 }, RS = { 20, 0, 0 }, RE = { 0, 0, 0 }, LS = { -30, 0, -30 }, LE = { 100, 0, 0 }, RH = { 90, 0, 0 }, RK = { -120, 0, 0 }, LH = { -30, 0, 0 }, LK = { -130, 0, 0 }, R = { -30, 0, 0, 0, -2.6, -1.0 } } },
+	{ t = 1, j = CH },
+}
+A.ch_fin = { -- 패왕승천권: 등 뒤의 왼손은 그대로, 오른 주먹 하나로 하늘로 쳐 올린다
+	{ t = 0, j = { RS = { 10, 0, 20 }, RE = { 110, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { 10, 0, 0, 0, -1.1, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { -15, 30, 0 }, N = { 25, 0, 0 }, RS = { 178, 0, 0 }, RE = { 0, 0, 0 }, LS = BEHIND, LE = BEHIND_E, R = { -5, 20, 0, 0, 0.0, -0.4 } } },
+	{ t = 1, j = CH },
+}
+
+-- ── 극 빙혼신장: 빙혼신장보다 날카롭고 사납다. 얼음 갈퀴 · 눈보라 회전 · 찌르기 ──
+local GB = stanceEnd("stance_frostclaw")
+A.gb_claw_r = { -- 극빙장: 오른 얼음 갈퀴로 아래에서 위로 찢어 올린다
+	{ t = 0, j = { W = { 10, -30, 0 }, RS = { 20, 0, 30 }, RE = { 80, 0, 0 }, LS = { 70, 0, -40 }, LE = { 90, 0, 0 }, R = { 5, -15, 0, 0, -0.9, 0 } } },
+	{ t = 0.38, e = "snap", j = { W = { -10, 30, 0 }, N = { 15, 0, 0 }, RS = { 150, 0, 40 }, RE = { 30, 0, 0 }, LS = { 70, 0, -40 }, LE = { 90, 0, 0 }, R = { -5, 20, 0, 0, -0.6, -0.5 } } },
+	{ t = 1, j = GB },
+}
+A.gb_claw_l = { -- 극설장: 왼 얼음 갈퀴로 비스듬히 찍어 내린다
+	{ t = 0, j = { W = { 5, 30, 0 }, LS = { 160, 0, -60 }, LE = { 50, 0, 0 }, RS = { 60, 0, 40 }, RE = { 90, 0, 0 }, R = { 0, 10, 0, 0, -0.7, 0 } } },
+	{ t = 0.38, e = "snap", j = { W = { -20, -35, 0 }, LS = { 40, 0, 0 }, LE = { 20, 0, 0 }, RS = { 60, 0, 40 }, RE = { 90, 0, 0 }, R = { -10, -25, 0, 0, -0.9, -0.6 } } },
+	{ t = 1, j = GB },
+}
+A.gb_storm = { -- 한설난무: 두 팔을 펴고 한 바퀴 돌며 두 번 벤다
+	{ t = 0, j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.38, e = "snap", j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 180, 0, 0, -0.9, -0.2 } } },
+	{ t = 0.55, j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 280, 0, 0, -0.9, -0.3 } } },
+	{ t = 0.71, e = "snap", j = { RS = { 90, 0, 90 }, RE = { 0, 0, 0 }, LS = { 90, 0, -90 }, LE = { 0, 0, 0 }, R = { 0, 360, 0, 0, -0.9, -0.4 } } },
+	{ t = 1, j = GB },
+}
+A.gb_zero = { -- 절빙장: 굳힌 손끝으로 깊이 찔러 들어간다
+	{ t = 0, j = { RS = { 60, 0, 20 }, RE = { 130, 0, 0 }, LS = { 60, 0, -20 }, LE = { 130, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0.3 } } },
+	{ t = 0.5, e = "snap", j = { W = { -15, 40, 0 }, RS = { 95, 0, -5 }, RE = { 0, 0, 0 }, LS = { 60, 0, -30 }, LE = { 130, 0, 0 }, RH = { -35, 0, 0 }, LH = { 45, 0, 0 }, LK = { -70, 0, 0 }, R = { -15, 35, 0, 0, -1.1, -1.2 } } },
+	{ t = 1, j = GB },
+}
+A.gb_heaven = { -- 빙혼파천: 뛰어올라 두 손바닥으로 땅을 내리찍는다
+	{ t = 0, j = { RS = { 170, 0, 30 }, LS = { 170, 0, -30 }, RK = { -90, 0, 0 }, LK = { -90, 0, 0 }, R = { 0, 0, 0, 0, 0.8, 0 } } },
+	{ t = 0.47, e = "snap", j = { W = { -45, 0, 0 }, RS = { 60, 0, 20 }, RE = { 0, 0, 0 }, LS = { 60, 0, -20 }, LE = { 0, 0, 0 }, RH = { 70, 0, 0 }, RK = { -100, 0, 0 }, LH = { 70, 0, 0 }, LK = { -100, 0, 0 }, R = { -25, 0, 0, 0, -1.9, -0.8 } } },
+	{ t = 1, j = GB },
+}
+A.gb_dragon = { -- 빙룡창: 두 팔을 뒤로 젖혔다가 낮게 함께 내뻗는다 (얼음 창 두 줄)
+	{ t = 0, j = { W = { 15, 0, 0 }, RS = { -20, 0, 30 }, RE = { 60, 0, 0 }, LS = { -20, 0, -30 }, LE = { 60, 0, 0 }, R = { 5, 0, 0, 0, -1.0, 0.5 } } },
+	{ t = 0.25, e = "snap", j = { W = { -40, 0, 0 }, RS = { 70, 0, 10 }, RE = { 0, 0, 0 }, LS = { 70, 0, -10 }, LE = { 0, 0, 0 }, RH = { -40, 0, 0 }, LH = { 60, 0, 0 }, LK = { -100, 0, 0 }, R = { -25, 0, 0, 0, -1.6, -1.2 } } },
+	{ t = 1, j = GB },
+}
+A.gb_prison = { -- 빙옥감: 땅에서 두 주먹을 움켜쥔 채 끌어올린다 (얼음 감옥이 솟는다)
+	{ t = 0, j = { W = { -40, 0, 0 }, RS = { 40, 0, 30 }, RE = { 0, 0, 0 }, LS = { 40, 0, -30 }, LE = { 0, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { -20, 0, 0, 0, -2.0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 10, 0, 0 }, N = { 20, 0, 0 }, RS = { 150, 0, 40 }, RE = { 100, 0, 0 }, LS = { 150, 0, -40 }, LE = { 100, 0, 0 }, RK = { -20, 0, 0 }, LK = { -20, 0, 0 }, R = { 5, 0, 0, 0, -0.4, 0 } } },
+	{ t = 0.8, j = { W = { 10, 0, 0 }, N = { 20, 0, 0 }, RS = { 150, 0, 40 }, RE = { 102, 0, 0 }, LS = { 150, 0, -40 }, LE = { 102, 0, 0 }, RK = { -22, 0, 0 }, LK = { -22, 0, 0 }, R = { 5, 0, 0, 0, -0.42, 0 } } },
+	{ t = 1, j = GB },
+}
+A.gb_avalanche = { -- 만년설붕: 한 손은 머리 위에서 손가락을 돌려 눈사태를 부르고, 한 손은 앞을 가리킨다
+	{ t = 0, j = GB },
+	{ t = 0.3, j = { N = { 25, 0, 0 }, RS = { 178, 0, 0 }, RE = { 30, 0, 0 }, LS = { 90, 0, -20 }, LE = { 0, 0, 0 }, R = { 0, -20, 0, 0, -0.7, 0 } } },
+	{ t = 0.5, e = "snap", j = { N = { 25, 0, 0 }, RS = { 178, 0, 30 }, RE = { 60, 0, 0 }, LS = { 100, 0, -40 }, LE = { 0, 0, 0 }, R = { 0, 20, 0, 0, -0.7, 0 } } },
+	{ t = 0.75, j = { N = { 25, 0, 0 }, RS = { 178, 0, -10 }, RE = { 40, 0, 0 }, LS = { 100, 0, -40 }, LE = { 0, 0, 0 }, R = { 0, -10, 0, 0, -0.7, 0 } } },
+	{ t = 1, j = GB },
+}
+A.gb_absolute = { -- 절대영도: 두 손을 천천히 모아 앞의 세상을 움켜쥔다
+	{ t = 0, j = { RS = { 90, 0, 70 }, RE = { 0, 0, 0 }, LS = { 90, 0, -70 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.4, j = { RS = { 90, 0, 10 }, RE = { 40, 0, 0 }, LS = { 90, 0, -10 }, LE = { 40, 0, 0 }, R = { 0, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.75, e = "snap", j = { W = { -15, 0, 0 }, N = { -15, 0, 0 }, RS = { 90, 0, -15 }, RE = { 90, 0, 0 }, LS = { 90, 0, 15 }, LE = { 90, 0, 0 }, RK = { -60, 0, 0 }, LK = { -60, 0, 0 }, R = { -10, 0, 0, 0, -1.3, 0 } } },
+	{ t = 1, j = GB },
+}
+A.gb_fin = { -- 극빙승천장: 무릎을 차올리며 펼친 두 손바닥을 하늘로 (얼음 기둥이 솟는다)
+	{ t = 0, j = { RS = { 30, 0, 40 }, RE = { 0, 0, 0 }, LS = { 30, 0, -40 }, LE = { 0, 0, 0 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { 0, 0, 0, 0, -1.8, 0 } } },
+	{ t = 0.42, e = "snap", j = { W = { 15, 0, 0 }, N = { 25, 0, 0 }, RS = { 150, 0, 60 }, RE = { 0, 0, 0 }, LS = { 150, 0, -60 }, LE = { 0, 0, 0 }, RH = { 80, 0, 0 }, RK = { -100, 0, 0 }, R = { 5, 0, 0, 0, 0.3, 0 } } },
+	{ t = 1, j = GB },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
 Poses.limbs = {
+	-- 3.19.2판 새 권법 열하나
+	cs_snatch = { "RightHand" }, cs_forearm = { "LeftHand" }, cs_collar = { "RightHand", "LeftHand" }, cs_hipthrow = { "RightHand", "LeftHand" }, cs_ram = { "RightHand" }, cs_slam = { "RightHand", "LeftHand" }, cs_heave = { "RightHand", "LeftHand" }, cs_swing = { "RightHand", "LeftHand" }, cs_fin = { "RightHand", "LeftHand" }, yr_redirect = { "RightHand" }, yr_sweep = { "LeftHand" }, yr_whirl = { "RightHand", "LeftHand" }, yr_tide = { "RightHand", "LeftHand" }, yr_rebound = { "RightHand", "LeftHand" }, yr_wait = {}, yr_counter = { "RightHand" }, yr_wave = { "RightHand", "LeftHand" }, yr_reverse = {}, yr_counter3 = { "RightHand", "LeftHand" }, yr_deflect = { "RightHand" }, yr_fin = { "RightHand", "LeftHand" }, jp_jab = { "LeftHand" }, jp_cross = { "RightHand" }, jp_burst = { "RightHand", "LeftHand" }, jp_liftup = { "RightHand" }, jp_knee = { "RightFoot" }, jp_dash = { "RightHand", "LeftHand" }, jp_aerial = { "RightHand", "LeftHand", "LeftFoot" }, jp_gale = { "RightHand", "LeftHand" }, jp_fin = { "RightHand", "LeftHand" }, sa_rock = { "RightHand" }, sa_hook = { "LeftHand" }, sa_hammer = { "RightHand", "LeftHand" }, sa_quake = { "RightHand", "LeftHand", "RightFoot" }, sa_crush = { "RightHand" }, sa_fissure = { "RightHand" }, sa_boulder = { "RightHand", "LeftHand" }, sa_collapse = { "RightHand", "LeftHand" }, sa_fin = { "RightHand" }, bh_slice = { "RightHand" }, bh_heel = { "LeftHand" }, bh_turn = { "RightHand" }, bh_soul = { "RightHand", "LeftHand" }, bh_wall = { "RightHand", "LeftHand" }, bh_spear = { "RightHand" }, bh_gather = { "RightHand", "LeftHand" }, bh_glacier = { "RightHand", "LeftHand" }, bh_fin = { "RightHand" }, co_finger = { "RightHand" }, co_chop = { "LeftHand" }, co_prism = { "RightHand", "LeftHand" }, co_backfist = { "RightHand" }, co_shatter = { "RightHand", "LeftHand" }, co_lance = { "RightHand" }, co_rain = { "RightHand" }, co_forest = { "RightHand", "LeftHand" }, co_fin = { "RightHand", "RightFoot" }, cj_ram = { "RightHand" }, cj_toll = { "LeftHand" }, cj_gong = { "RightHand", "LeftHand" }, cj_swing = { "RightHand" }, cj_bellram = { "RightHand", "LeftHand" }, cj_shout = {}, cj_dome = { "RightHand", "LeftHand" }, cj_heavenbell = { "RightHand" }, cj_fin = { "RightHand", "LeftHand" }, mg_shard_r = { "RightHand" }, mg_shard_l = { "LeftHand" }, mg_twinkick = { "RightFoot", "LeftFoot" }, mg_break = { "RightHand", "LeftHand" }, mg_flash = { "RightHand", "LeftHand" }, mg_still = {}, mg_counter = { "RightHand", "LeftHand" }, mg_summon = { "RightHand", "LeftHand" }, mg_gallery = { "RightHand", "LeftHand" }, mg_shatter = { "RightHand", "LeftHand" }, mg_fin = { "RightFoot" }, ccr_rake = { "RightHand" }, ccr_tail = { "RightFoot" }, ccr_ascend = { "RightHand" }, ccr_breath = { "RightHand", "LeftHand" }, ccr_cannon = { "RightHand" }, ccr_coil = { "RightHand", "LeftHand" }, ccr_soar = { "RightHand", "LeftHand" }, ccr_nine = { "RightHand", "LeftHand" }, ccr_heaven = { "RightHand", "LeftHand" }, ccr_fin = { "RightHand", "LeftHand" }, ch_jab = { "RightHand" }, ch_backhand = { "RightHand" }, ch_lift = { "RightHand" }, ch_stomp = { "RightHand" }, ch_bash = { "RightHand" }, ch_charge = { "RightHand" }, ch_throw = { "RightHand" }, ch_onefist = { "RightHand" }, ch_crush = { "RightHand" }, ch_fin = { "RightHand" }, gb_claw_r = { "RightHand" }, gb_claw_l = { "LeftHand" }, gb_storm = { "RightHand", "LeftHand" }, gb_zero = { "RightHand" }, gb_heaven = { "RightHand", "LeftHand" }, gb_dragon = { "RightHand", "LeftHand" }, gb_prison = { "RightHand", "LeftHand" }, gb_avalanche = { "RightHand" }, gb_absolute = { "RightHand", "LeftHand" }, gb_fin = { "RightHand", "LeftHand" },
 	rinne_palm_r = { "RightHand" }, rinne_palm_l = { "LeftHand" }, rinne_wheel_kick = { "RightFoot", "LeftFoot" }, rinne_thrust = { "RightHand", "LeftHand" }, rinne_seal = { "RightHand" }, rinne_throw = { "RightHand", "LeftHand" }, rinne_dash = { "RightHand" }, ult_rinne = { "RightHand", "LeftHand" }, ult_rinne_x = { "RightHand", "LeftHand" },
 	karma_jab_r = { "RightHand" }, karma_jab_l = { "LeftHand" }, karma_chain = { "RightHand", "LeftHand" }, karma_smash = { "RightHand", "LeftHand" }, karma_charge = { "RightHand" }, karma_throw = { "RightHand", "LeftHand" }, karma_dash = { "RightHand" }, ult_karma = { "RightHand" }, ult_karma_x = { "RightHand", "LeftHand" },
 	ghost_palm_r = { "RightHand" }, ghost_palm_l = { "LeftHand" }, ghost_sweep = { "RightFoot" }, ghost_flash = { "RightHand" }, ghost_split = { "RightHand", "LeftHand" }, ult_mist = { "RightHand" }, ult_mist_x = { "RightHand" },
