@@ -8,6 +8,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Drunk = {}
 local player = Players.LocalPlayer
@@ -726,7 +727,7 @@ function Drunk.superCut(model: Model, dur: number, name: string, shake: ((number
 		focus = focus:Lerp(r.Position, math.min(1, dt * 14))
 		-- 처음엔 옆에서, 끝으로 갈수록 앞쪽으로 돌아 들어간다
 		local orbit = side * (10 - 3 * u) + look * (-2 + 6 * u) + Vector3.new(0, 1.6 - 0.6 * u, 0)
-		cam.CFrame = CFrame.lookAt(focus + orbit, focus + look * (2 + 3 * u) + Vector3.new(0, -0.3, 0))
+		cam.CFrame = CamGuard.frame(focus + orbit, focus + look * (2 + 3 * u) + Vector3.new(0, -0.3, 0), focus)
 		cam.FieldOfView = oldFov - 18 + 10 * u * u
 		-- 속도선이 점점 빨라진다
 		local speed = 1.2 + 6 * u * u

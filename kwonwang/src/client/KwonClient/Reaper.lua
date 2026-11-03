@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Reaper = {}
@@ -912,7 +913,7 @@ function Reaper.superCut(model: Model, dur: number, name: string, shake: ((numbe
 		-- 처음엔 앞쪽 낮은 곳에서 얼굴을 올려다보고, 끝으로 갈수록 뒤로 크게 빠지며 달까지 담는다
 		local pos = focus + look * (5 - 15 * e) + side * (2 + 4 * e) + Vector3.new(0, -1.2 + 5 * e, 0)
 		local target = focus + Vector3.new(0, 1.2 + 6 * e, 0) - look * (40 * e)
-		cam.CFrame = CFrame.lookAt(pos, target)
+		cam.CFrame = CamGuard.frame(pos, target, focus)
 		cam.FieldOfView = oldFov - 22 + 26 * e
 		if shake and u > 0.6 then
 			shake(0.1 + (u - 0.6) * 0.8)

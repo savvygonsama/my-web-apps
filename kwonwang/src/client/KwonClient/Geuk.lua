@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Geuk = {}
 
@@ -1602,10 +1603,10 @@ function Geuk.superCut(model: Model, dur: number, name: string, shake: ((number)
 		if dusk then
 			local a = e * math.rad(150) - math.rad(40)
 			local eye = focus + (look * math.cos(a) + side * math.sin(a)) * (13 + e * 5) + UP * (1.5 + e * 6)
-			cam.CFrame = CFrame.lookAt(eye, focus + UP * (3 + e * 8))
+			cam.CFrame = CamGuard.frame(eye, focus + UP * (3 + e * 8), focus)
 		else
 			local eye = focus + look * (9 + e * 6) + side * math.sin(e * 0.8) * 6 + UP * (0.6 + e * 2.5)
-			cam.CFrame = CFrame.lookAt(eye, focus - look * 60 + UP * (14 + e * 14))
+			cam.CFrame = CamGuard.frame(eye, focus - look * 60 + UP * (14 + e * 14), focus)
 		end
 		cam.FieldOfView = oldFov + e * 12
 		if t >= dur then

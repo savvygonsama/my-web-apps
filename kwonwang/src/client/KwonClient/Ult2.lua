@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Ult2 = {}
@@ -1202,7 +1203,7 @@ function Ult2.superCut(model: Model, dur: number, name: string, shake: ((number)
 		-- 앞쪽 낮은 곳에서 올려다보다가, 끝으로 갈수록 뒤로 빠지며 등 뒤 하늘에 뜬 뇌고 여덟을 함께 잡는다 (2.3판)
 		local pos = focus + look * (6 + 8 * e) + side * (3 + 3 * e) + Vector3.new(0, -1.5 + 3 * e, 0)
 		local target = focus + Vector3.new(0, 2 + 12 * e, 0) - look * (6 * e)
-		cam.CFrame = CFrame.lookAt(pos, target)
+		cam.CFrame = CamGuard.frame(pos, target, focus)
 		cam.FieldOfView = oldFov - 18 + 30 * e
 		if shake and u > 0.5 then
 			shake(0.1 + (u - 0.5) * 0.8)

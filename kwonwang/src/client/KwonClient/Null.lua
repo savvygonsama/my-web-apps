@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Null = {}
 
@@ -758,7 +759,7 @@ function Null.superCut(model: Model, dur: number, name: string, shake: ((number)
 		else
 			eye = focus + look * 14 + Vector3.new(0, 9, 0)
 		end
-		cam.CFrame = CFrame.lookAt(eye, focus + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, (shot % 2 == 0) and 0.04 or -0.04)
+		cam.CFrame = CamGuard.frame(eye, focus + Vector3.new(0, 1.5, 0), focus) * CFrame.Angles(0, 0, (shot % 2 == 0) and 0.04 or -0.04)
 		cam.FieldOfView = oldFov + (k == 2 and 20 or 4)
 		if t >= dur then
 			restore()
@@ -1813,7 +1814,7 @@ function Null.gridCut(model: Model, dur: number, name: string, shake: ((number) 
 		local a = a0 + u * math.pi * 0.9
 		local dist = 11 - u * 3
 		local eye = focus + Vector3.new(math.cos(a) * dist, -1.2 + u * 1.5, math.sin(a) * dist)
-		cam.CFrame = CFrame.lookAt(eye, focus + Vector3.new(0, 3 + u * 10, 0))
+		cam.CFrame = CamGuard.frame(eye, focus + Vector3.new(0, 3 + u * 10, 0), focus)
 		cam.FieldOfView = oldFov + 12 - u * 6
 		if t >= dur then
 			restore()

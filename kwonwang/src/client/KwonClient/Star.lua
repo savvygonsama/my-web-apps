@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Star = {}
 local player = Players.LocalPlayer
@@ -1094,7 +1095,7 @@ function Star.superCut(model: Model, dur: number, name: string, shake: ((number)
 		local a = k * math.rad(50)
 		local eye = focus + look * (7 + k * 6) * math.cos(a) + side * 6 * math.sin(a) + Vector3.new(0, 0.6 + k * 2, 0)
 		local target = focus:Lerp(focus + Vector3.new(0, 40, 0) - look * 10, k * 0.8)
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + k * 14
 		if t >= dur then
 			restore()

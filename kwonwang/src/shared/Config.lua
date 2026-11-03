@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.18.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.18.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1424,14 +1424,14 @@ awakened("maehwa", 1.5, {
 	desc = "다시 태어난 몸에서 한겨울의 매화가 피었다. 눈이 쌓일수록 붉게 피는 설중매처럼, 손끝이 지나간 자리마다 매화 가지가 뻗고 눈 속에서 꽃이 터진다.",
 	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고, 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
 	deflect = 0.24, speed = 1.2,
-	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 26, posture = 28, stun = 0.6, kb = 8, up = 8 },
+	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 31, posture = 28, stun = 0.6, kb = 8, up = 8 },
 	skills = {
 		E = { id = "mxE", name = "설중매", desc = "앞으로 손을 뻗으면 땅을 따라 매화 가지가 24칸 뻗는다. 마디마다 차례로 꽃이 피며 베고, 잠시 뒤 가지 전체의 꽃이 한꺼번에 터진다", pose = "plum_flash", dur = 0.55, cd = 7, chi = 18, lunge = 4,
-			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 18, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 16, 18, 0.4, 0, 10) } },
+			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 22, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 19, 18, 0.4, 0, 10) } },
 		R = { id = "mxR", name = "한매오판", desc = "둘레 다섯 곳에 커다란 매화가 핀다. 꽃이 둘레의 적을 꽃술로 끌어당긴 뒤 눈보라와 함께 터진다 (맞은 적은 1초 굼뜨다)", pose = "petal_spin", dur = 0.8, cd = 11, chi = 25,
-			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 10, 12, 0.3, 0), burst = hit(0, 0, 0, 30, 34, 0.7, 30, 14), slow = 1 } },
+			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 12, 12, 0.3, 0), burst = hit(0, 0, 0, 36, 34, 0.7, 30, 14), slow = 1 } },
 		G = { id = "mxG", name = "설중매화", desc = "둘레에 2초 동안 함박눈이 내리며 붉은 꽃잎이 휘몰아쳐 계속 벤다. 마지막에 하늘에 거대한 매화가 피어 꽃잎이 비처럼 쏟아진다", pose = "ult_bloom", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "plumSnow", radius = 24, dur = 2.0, every = 0.25, delay = 0.3, hit = hit(0, 0, 0, 9, 10, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 110, 140, 1.3, 40, 30) } },
+			mech = { kind = "plumSnow", radius = 24, dur = 2.0, every = 0.25, delay = 0.3, hit = hit(0, 0, 0, 11, 10, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 132, 140, 1.3, 40, 30) } },
 	},
 })
 -- 2.9판 진 취팔선권 (각성): 술 취한 신선. 달빛 아래 호리병을 든 취선. 초·취(소주병 난타)와 달리 술의 강과 여덟 신선
@@ -1842,13 +1842,13 @@ table.insert(Config.Styles, {
 	heavy = { id = "cbH", name = "뇌광일섬", pose = "lightning_dash", dur = 0.5, lunge = 22, iframes = 0.25, hits = { hit(0.2, 7, 6, 26, 26, 0.6, 36, nil, true) } },
 	skills = {
 		E = { id = "cbE", name = "뇌전쇄", desc = "손을 뻗어 둘레의 적 여섯에게 차례로 벼락을 꽂는다 (마비)", pose = "point_sky", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 24, 20, 1.0, 6), fx = "lightning" } },
+			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 20, 20, 1.0, 6), fx = "lightning" } },
 		R = { id = "cbR", name = "뇌운", desc = "머리 위로 먹구름을 부른다. 2.4초 동안 둘레의 적에게 번개가 떨어지고, 마지막에 큰 벼락이 내리친다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
-			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 12, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 50, 60, 1.0, 30, 12) } },
+			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 10, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 41, 60, 1.0, 30, 12) } },
 		G = { id = "cbG", name = "뇌룡승천", desc = "몸에서 번개의 용이 솟아 하늘을 감아 돌고, 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
-			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 22, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 36, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 100, 120, 1.4, 50, 22) } },
+			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 18, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 30, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 82, 120, 1.4, 50, 22) } },
 		X = { id = "cbX", name = "구천뇌정", desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고, 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다", pose = "ult_thunder", dur = 3.0, cd = 60, chi = 150, armor = true,
-			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 8, 7, 0.3, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 24 } },
+			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 7, 0.3, 4), final = hit(0, 0, 0, 156, 210, 1.8, 80, 26), finalRadius = 24 } },
 	},
 })
 
@@ -1986,11 +1986,11 @@ table.insert(Config.Styles, {
 	skills = {
 		-- 2.7판: 만목신권 기술을 모두 새로 (대숲 · 잎 · 은행나무)
 		E = { id = "mmE", name = "죽림창", desc = "손바닥으로 땅을 누른다. 앞으로 곧게 대나무 일곱 그루가 차례로 창처럼 솟구쳐 위의 적을 띄우고, 잠시 대숲으로 서 있다가 잎을 날리며 가라앉는다", pose = "wood_slam", dur = 0.5, cd = 8, chi = 20,
-			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 40, 40, 0.7, 8, 24) } },
+			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 33, 40, 0.7, 8, 24) } },
 		R = { id = "mmR", name = "천엽비수", desc = "두 손을 돌리면 둘레에 푸른 잎 수십 장이 소용돌이친다. 잎은 가까운 적 여덟을 골라 세 줄기로 날아가 베고, 나는 체력 6%를 되찾는다", pose = "wood_bloom", dur = 0.8, cd = 11, chi = 28,
-			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 20, 18, 0.35, 6) } },
+			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 16, 18, 0.35, 6) } },
 		G = { id = "mmG", name = "신목강림", desc = "무릎을 꿇고 땅에 손을 대면 등 뒤에서 천 년 은행나무가 하늘 높이 솟는다. 2.4초 동안 금빛 잎이 둘레 24칸에 쏟아져 적을 베고, 나는 그 숲의 기운으로 체력 12%를 되찾는다. 끝에 나무가 빛나며 금빛 잎이 사방으로 휘몰아친다", pose = "ult_wood", dur = 2.2, cd = 32, chi = 100, armor = true,
-			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 18, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 120, 140, 1.4, 70, 18) } },
+			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 15, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 98, 140, 1.4, 70, 18) } },
 	},
 })
 
@@ -1999,10 +1999,10 @@ do
 	local NEW: { [string]: { [string]: any } } = {
 		chobyeok = {
 			R = { id = "cbR2", name = "뇌신낙", desc = "하늘로 솟았다가 벼락이 되어 가까운 적에게 내리꽂힌다. 떨어진 자리에서 네 갈래로 땅이 갈라지며 번개가 달린다", pose = "thunder_hammer", dur = 0.85, cd = 11, chi = 25, jump = 30,
-				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 44, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 26, 24, 0.6, 16, 10) } },
+				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 36, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 21, 24, 0.6, 16, 10) } },
 			-- 2.6판: 천뢰구 → 뇌성강림
 			G = { id = "cbG2", name = "뇌성강림", desc = "두 팔을 들어 머리 위에 고리 둘이 도는 천둥별을 띄운다. 별에서 작은 별 여섯이 떨어져 나와 둘레를 돌며 2.4초 동안 저마다 가까운 적에게 번개 줄기를 쏜다. 끝에 여섯이 다시 하나로 모여 천둥별이 땅에 떨어진다", pose = "ult_star", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "thunderStar", dist = 4, delay = 0.45, spread = 0.4, n = 6, orbit = 13, height = 11, spin = 1.1, dur = 2.4, every = 0.35, beamRange = 16, hit = hit(0, 0, 0, 18, 14, 0.35, 0), converge = 0.4, finalRadius = 20, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+				mech = { kind = "thunderStar", dist = 4, delay = 0.45, spread = 0.4, n = 6, orbit = 13, height = 11, spin = 1.1, dur = 2.4, every = 0.35, beamRange = 16, hit = hit(0, 0, 0, 15, 14, 0.35, 0), converge = 0.4, finalRadius = 20, final = hit(0, 0, 0, 98, 140, 1.4, 60, 22) } },
 		},
 	}
 	for _, st in ipairs(Config.Styles) do
@@ -2019,7 +2019,7 @@ do
 		elseif st.id == "chobyeok" then
 			-- 2.3판: 구천뇌정 → 뇌고천무 (하늘의 뇌고 여덟을 두드리는 춤)
 			st.skills.X = { id = "cbX2", name = "뇌고천무", desc = "초 오의. 등 뒤 하늘에 뇌고(천둥 북) 여덟이 둥글게 뜬다 (그동안 무적). 북을 열여섯 번 두드릴 때마다 그 북에서 적에게 벼락이 꽂히고, 박자는 점점 빨라진다. 네 번째마다 둘레로 천둥이 울린다. 마지막에 북이 모두 모여 하나의 뇌구가 되어 땅에 내리꽂힌다", pose = "ult_thunder", dur = 4.8, cd = 60, chi = 150, armor = true,
-				mech = { kind = "thunderDrums", cut = 1.3, drums = 8, beats = 16, first = 0.3, last = 0.1, range = 40, n = 10, radius = 7, hit = hit(0, 0, 0, 30, 24, 0.5, 10), shockRadius = 13, shock = hit(0, 0, 0, 24, 30, 0.5, 30, 8), finaleDelay = 0.35, finaleDist = 8, finalRadius = 26, final = hit(0, 0, 0, 200, 220, 1.8, 80, 26) } }
+				mech = { kind = "thunderDrums", cut = 1.3, drums = 8, beats = 16, first = 0.3, last = 0.1, range = 40, n = 10, radius = 7, hit = hit(0, 0, 0, 25, 24, 0.5, 10), shockRadius = 13, shock = hit(0, 0, 0, 20, 30, 0.5, 30, 8), finaleDelay = 0.35, finaleDist = 8, finalRadius = 26, final = hit(0, 0, 0, 164, 220, 1.8, 80, 26) } }
 		end
 	end
 end
@@ -2308,26 +2308,26 @@ table.insert(Config.Styles, {
 	speed = 1.15,
 	cdMult = 0.7,
 	sunMoon = { day = 1.2, night = 0.8 },
-	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 48, posture = 46, stun = 0.6, kb = 20, up = 8 },
+	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 55, posture = 46, stun = 0.6, kb = 20, up = 8 },
 	-- 극: 맞힐 때 2 (기술은 1), 맞을 때 4. 100이면 일월극변 (컷씬 3초 뒤 황혼 40초)
 	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 3, dur = 40 },
 	stance = "stance_sunmoon",
 	combo = {
-		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
-		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
-		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 28, 26, 0.45, 18, 6, true) } },
-		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 38, 42, 0.6, 36) } },
+		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 28, 18, 0.35, 9) } },
+		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 28, 18, 0.35, 9) } },
+		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 32, 26, 0.45, 18, 6, true) } },
+		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 44, 42, 0.6, 36) } },
 	},
-	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 74, 110, 1.0, 64, 10, true) } },
+	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 85, 110, 1.0, 64, 10, true) } },
 	skills = {
 		E = { id = "gwE", name = "일월쌍륜", desc = "해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 20,
-			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 30, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 50, 56, 0.8, 30, 10) } },
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 34, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 57, 56, 0.8, 30, 10) } },
 		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
-			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 40, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 40, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 50, 56, 0.8, 30, 12) } },
+			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 46, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 46, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 57, 56, 0.8, 30, 12) } },
 		G = { id = "gwG", name = "대일월천", desc = "등 뒤에 해와 달이 떠오른다. 해는 불의 빛줄기로 앞의 땅을 앞뒤로 쓸어 태우고, 달은 거대한 초승달 셋을 차례로 내리꽂는다. 둘이 적 위에서 부딪쳐 일식이 되고 땅이 갈라지며, 일식이 땅에 박혀 빛의 돔으로 터진다", pose = "sun_moon_call", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "sunMoonFall", dist = 14, summon = 0.7, beam = 1.2, every = 0.15, sweep = 9, width = 5, hit = hit(0, 0, 0, 16, 14, 0.3, 0), slams = 3, slamEvery = 0.36, travel = 0.22, slamRadius = 10, slam = hit(0, 0, 0, 50, 50, 0.7, 16, 12), merge = 0.5, finalRadius = 26, final = hit(0, 0, 0, 250, 290, 1.6, 70, 28) } },
+			mech = { kind = "sunMoonFall", dist = 14, summon = 0.7, beam = 1.2, every = 0.15, sweep = 9, width = 5, hit = hit(0, 0, 0, 18, 14, 0.3, 0), slams = 3, slamEvery = 0.36, travel = 0.22, slamRadius = 10, slam = hit(0, 0, 0, 57, 50, 0.7, 16, 12), merge = 0.5, finalRadius = 26, final = hit(0, 0, 0, 288, 290, 1.6, 70, 28) } },
 		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 컷씬: 세상이 어두워지고 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (그동안 무적). 해와 달이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 (해는 불기둥, 달은 초승달). 둘이 머리 위에서 부딪쳐 하늘에 거대한 일식이 걸리면 세상의 빛깔이 빠지고, 일식의 빛살이 쏟아진다. 하늘로 주먹을 내지르면 일식이 금 가고 깨지며 새벽빛으로 터진다", pose = "ult_genesis", dur = 5.2, cd = 60, chi = 150, armor = true,
-			mech = { kind = "eclipseGenesis", cut = 1.5, orbit = 1.4, orbitEvery = 0.2, orbitN = 3, orbitR = 30, orbitHit = hit(0, 0, 0, 24, 20, 0.35, 4), collide = 0.4, rays = 1.4, every = 0.1, range = 55, n = 5, radius = 6, hit = hit(0, 0, 0, 20, 16, 0.35, 4), finalAt = 0.4, finalRadius = 40, final = hit(0, 0, 0, 330, 370, 1.8, 80, 32) } },
+			mech = { kind = "eclipseGenesis", cut = 1.5, orbit = 1.4, orbitEvery = 0.2, orbitN = 3, orbitR = 30, orbitHit = hit(0, 0, 0, 28, 20, 0.35, 4), collide = 0.4, rays = 1.4, every = 0.1, range = 55, n = 5, radius = 6, hit = hit(0, 0, 0, 23, 16, 0.35, 4), finalAt = 0.4, finalRadius = 40, final = hit(0, 0, 0, 379, 370, 1.8, 80, 32) } },
 	},
 	-- 황혼 (일월극변 동안): 기술이 모두 바뀐다. 해와 달이 하나로 겹친 노을빛
 	twilight = {
@@ -2335,17 +2335,17 @@ table.insert(Config.Styles, {
 		color = Color3.fromRGB(255, 120, 60),
 		color2 = Color3.fromRGB(165, 95, 235),
 		dmg = 1.3,
-		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 64, posture = 60, stun = 0.7, kb = 24, up = 10 },
-		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 100, 140, 1.1, 70, 12, true) } },
+		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 74, posture = 60, stun = 0.7, kb = 24, up = 10 },
+		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 115, 140, 1.1, 70, 12, true) } },
 		skills = {
 			E = { id = "gtE", name = "황혼참", desc = "노을빛 초승달 다섯을 부채꼴로 던진다. 초승달은 28칸 날아갔다가 되돌아오며 오갈 때 한 번씩 벤다", pose = "moon_throw", dur = 0.55, cd = 6, chi = 18,
-				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 34, 30, 0.45, 10) } },
+				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 39, 30, 0.45, 10) } },
 			R = { id = "gtR", name = "석양보", desc = "노을이 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 벤다 (무적). 지나간 노을빛 줄이 모두 한꺼번에 터진다", pose = "sun_wheel", dur = 0.8, cd = 9, chi = 22,
-				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 40, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 46, 50, 0.7, 20, 10) } },
+				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 46, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 53, 50, 0.7, 20, 10) } },
 			G = { id = "gtG", name = "황혼낙일", desc = "하늘 저편에서 거대한 석양이 내려와 앞의 땅에 닿고, 땅이 노을빛 바다가 된다. 석양이 가라앉는 동안 바다 위의 적은 타며 굼뜨고, 노을빛 물결 넷이 퍼지고, 달빛 기둥이 솟는다. 다 잠기면 바다가 잠깐 식어 고요해졌다가 노을 불꽃의 왕관으로 솟구친다", pose = "sun_moon_call", dur = 2.6, cd = 26, chi = 100, armor = true,
-				mech = { kind = "sunsetSea", dist = 12, descend = 0.7, sink = 1.6, every = 0.2, radius = 24, hit = hit(0, 0, 0, 12, 10, 0.3, 0), waves = 4, wave = hit(0, 0, 0, 38, 36, 0.6, 24, 8), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 36, 32, 0.6, 4, 20), dark = 0.3, finalRadius = 28, final = hit(0, 0, 0, 290, 330, 1.6, 70, 30) } },
+				mech = { kind = "sunsetSea", dist = 12, descend = 0.7, sink = 1.6, every = 0.2, radius = 24, hit = hit(0, 0, 0, 14, 10, 0.3, 0), waves = 4, wave = hit(0, 0, 0, 44, 36, 0.6, 24, 8), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 41, 32, 0.6, 4, 20), dark = 0.3, finalRadius = 28, final = hit(0, 0, 0, 334, 330, 1.6, 70, 30) } },
 			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 컷씬: 하늘이 노을로 물들고 양쪽에서 거대한 석양과 달이 내려온다 (그동안 무적). 둘은 빨려 들며 작아져 두 손에 맺히고, 손을 떠나 발밑 진의 테두리를 서로 반대로 내달려 불의 원을 그린다. 앞에서 만난 둘은 황혼의 구슬이 되어 머리 위로 떠올라 둘레를 빨아들이다가 한 점으로 줄어들고, 세상이 노을빛으로 하얗게 터진다", pose = "ult_dusk", dur = 4.4, cd = 50, chi = 150, armor = true,
-				mech = { kind = "twilightCollapse", cut = 1.3, gather = 0.8, circle = 1.2, every = 0.15, rim = 26, rimHit = hit(0, 0, 0, 28, 22, 0.4, 4), fuse = 0.6, pull = 40, collapse = 0.35, finalRadius = 50, final = hit(0, 0, 0, 430, 470, 2.0, 90, 34) } },
+				mech = { kind = "twilightCollapse", cut = 1.3, gather = 0.8, circle = 1.2, every = 0.15, rim = 26, rimHit = hit(0, 0, 0, 32, 22, 0.4, 4), fuse = 0.6, pull = 40, collapse = 0.35, finalRadius = 50, final = hit(0, 0, 0, 494, 470, 2.0, 90, 34) } },
 		},
 	},
 })

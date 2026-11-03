@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.18.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.18.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1444,14 +1444,14 @@ awakened("maehwa", 1.5, {
 	desc = "다시 태어난 몸에서 한겨울의 매화가 피었다. 눈이 쌓일수록 붉게 피는 설중매처럼, 손끝이 지나간 자리마다 매화 가지가 뻗고 눈 속에서 꽃이 터진다.",
 	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고, 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
 	deflect = 0.24, speed = 1.2,
-	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 26, posture = 28, stun = 0.6, kb = 8, up = 8 },
+	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 31, posture = 28, stun = 0.6, kb = 8, up = 8 },
 	skills = {
 		E = { id = "mxE", name = "설중매", desc = "앞으로 손을 뻗으면 땅을 따라 매화 가지가 24칸 뻗는다. 마디마다 차례로 꽃이 피며 베고, 잠시 뒤 가지 전체의 꽃이 한꺼번에 터진다", pose = "plum_flash", dur = 0.55, cd = 7, chi = 18, lunge = 4,
-			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 18, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 16, 18, 0.4, 0, 10) } },
+			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 22, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 19, 18, 0.4, 0, 10) } },
 		R = { id = "mxR", name = "한매오판", desc = "둘레 다섯 곳에 커다란 매화가 핀다. 꽃이 둘레의 적을 꽃술로 끌어당긴 뒤 눈보라와 함께 터진다 (맞은 적은 1초 굼뜨다)", pose = "petal_spin", dur = 0.8, cd = 11, chi = 25,
-			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 10, 12, 0.3, 0), burst = hit(0, 0, 0, 30, 34, 0.7, 30, 14), slow = 1 } },
+			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 12, 12, 0.3, 0), burst = hit(0, 0, 0, 36, 34, 0.7, 30, 14), slow = 1 } },
 		G = { id = "mxG", name = "설중매화", desc = "둘레에 2초 동안 함박눈이 내리며 붉은 꽃잎이 휘몰아쳐 계속 벤다. 마지막에 하늘에 거대한 매화가 피어 꽃잎이 비처럼 쏟아진다", pose = "ult_bloom", dur = 2.4, cd = 30, chi = 100, armor = true,
-			mech = { kind = "plumSnow", radius = 24, dur = 2.0, every = 0.25, delay = 0.3, hit = hit(0, 0, 0, 9, 10, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 110, 140, 1.3, 40, 30) } },
+			mech = { kind = "plumSnow", radius = 24, dur = 2.0, every = 0.25, delay = 0.3, hit = hit(0, 0, 0, 11, 10, 0.3, 0), finalRadius = 26, final = hit(0, 0, 0, 132, 140, 1.3, 40, 30) } },
 	},
 })
 -- 2.9판 진 취팔선권 (각성): 술 취한 신선. 달빛 아래 호리병을 든 취선. 초·취(소주병 난타)와 달리 술의 강과 여덟 신선
@@ -1862,13 +1862,13 @@ table.insert(Config.Styles, {
 	heavy = { id = "cbH", name = "뇌광일섬", pose = "lightning_dash", dur = 0.5, lunge = 22, iframes = 0.25, hits = { hit(0.2, 7, 6, 26, 26, 0.6, 36, nil, true) } },
 	skills = {
 		E = { id = "cbE", name = "뇌전쇄", desc = "손을 뻗어 둘레의 적 여섯에게 차례로 벼락을 꽂는다 (마비)", pose = "point_sky", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 24, 20, 1.0, 6), fx = "lightning" } },
+			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 20, 20, 1.0, 6), fx = "lightning" } },
 		R = { id = "cbR", name = "뇌운", desc = "머리 위로 먹구름을 부른다. 2.4초 동안 둘레의 적에게 번개가 떨어지고, 마지막에 큰 벼락이 내리친다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
-			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 12, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 50, 60, 1.0, 30, 12) } },
+			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 10, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 41, 60, 1.0, 30, 12) } },
 		G = { id = "cbG", name = "뇌룡승천", desc = "몸에서 번개의 용이 솟아 하늘을 감아 돌고, 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
-			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 22, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 36, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 100, 120, 1.4, 50, 22) } },
+			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 18, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 30, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 82, 120, 1.4, 50, 22) } },
 		X = { id = "cbX", name = "구천뇌정", desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고, 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다", pose = "ult_thunder", dur = 3.0, cd = 60, chi = 150, armor = true,
-			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 8, 7, 0.3, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 24 } },
+			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 7, 0.3, 4), final = hit(0, 0, 0, 156, 210, 1.8, 80, 26), finalRadius = 24 } },
 	},
 })
 
@@ -2006,11 +2006,11 @@ table.insert(Config.Styles, {
 	skills = {
 		-- 2.7판: 만목신권 기술을 모두 새로 (대숲 · 잎 · 은행나무)
 		E = { id = "mmE", name = "죽림창", desc = "손바닥으로 땅을 누른다. 앞으로 곧게 대나무 일곱 그루가 차례로 창처럼 솟구쳐 위의 적을 띄우고, 잠시 대숲으로 서 있다가 잎을 날리며 가라앉는다", pose = "wood_slam", dur = 0.5, cd = 8, chi = 20,
-			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 40, 40, 0.7, 8, 24) } },
+			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 33, 40, 0.7, 8, 24) } },
 		R = { id = "mmR", name = "천엽비수", desc = "두 손을 돌리면 둘레에 푸른 잎 수십 장이 소용돌이친다. 잎은 가까운 적 여덟을 골라 세 줄기로 날아가 베고, 나는 체력 6%를 되찾는다", pose = "wood_bloom", dur = 0.8, cd = 11, chi = 28,
-			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 20, 18, 0.35, 6) } },
+			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 16, 18, 0.35, 6) } },
 		G = { id = "mmG", name = "신목강림", desc = "무릎을 꿇고 땅에 손을 대면 등 뒤에서 천 년 은행나무가 하늘 높이 솟는다. 2.4초 동안 금빛 잎이 둘레 24칸에 쏟아져 적을 베고, 나는 그 숲의 기운으로 체력 12%를 되찾는다. 끝에 나무가 빛나며 금빛 잎이 사방으로 휘몰아친다", pose = "ult_wood", dur = 2.2, cd = 32, chi = 100, armor = true,
-			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 18, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 120, 140, 1.4, 70, 18) } },
+			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 15, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 98, 140, 1.4, 70, 18) } },
 	},
 })
 
@@ -2019,10 +2019,10 @@ do
 	local NEW: { [string]: { [string]: any } } = {
 		chobyeok = {
 			R = { id = "cbR2", name = "뇌신낙", desc = "하늘로 솟았다가 벼락이 되어 가까운 적에게 내리꽂힌다. 떨어진 자리에서 네 갈래로 땅이 갈라지며 번개가 달린다", pose = "thunder_hammer", dur = 0.85, cd = 11, chi = 25, jump = 30,
-				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 44, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 26, 24, 0.6, 16, 10) } },
+				mech = { kind = "thunderDive", range = 26, delay = 0.45, radius = 8, hit = hit(0, 0, 0, 36, 44, 0.9, 20, 14), crackDelay = 0.2, length = 18, width = 3.5, crack = hit(0, 0, 0, 21, 24, 0.6, 16, 10) } },
 			-- 2.6판: 천뢰구 → 뇌성강림
 			G = { id = "cbG2", name = "뇌성강림", desc = "두 팔을 들어 머리 위에 고리 둘이 도는 천둥별을 띄운다. 별에서 작은 별 여섯이 떨어져 나와 둘레를 돌며 2.4초 동안 저마다 가까운 적에게 번개 줄기를 쏜다. 끝에 여섯이 다시 하나로 모여 천둥별이 땅에 떨어진다", pose = "ult_star", dur = 1.8, cd = 30, chi = 100, armor = true,
-				mech = { kind = "thunderStar", dist = 4, delay = 0.45, spread = 0.4, n = 6, orbit = 13, height = 11, spin = 1.1, dur = 2.4, every = 0.35, beamRange = 16, hit = hit(0, 0, 0, 18, 14, 0.35, 0), converge = 0.4, finalRadius = 20, final = hit(0, 0, 0, 120, 140, 1.4, 60, 22) } },
+				mech = { kind = "thunderStar", dist = 4, delay = 0.45, spread = 0.4, n = 6, orbit = 13, height = 11, spin = 1.1, dur = 2.4, every = 0.35, beamRange = 16, hit = hit(0, 0, 0, 15, 14, 0.35, 0), converge = 0.4, finalRadius = 20, final = hit(0, 0, 0, 98, 140, 1.4, 60, 22) } },
 		},
 	}
 	for _, st in ipairs(Config.Styles) do
@@ -2039,7 +2039,7 @@ do
 		elseif st.id == "chobyeok" then
 			-- 2.3판: 구천뇌정 → 뇌고천무 (하늘의 뇌고 여덟을 두드리는 춤)
 			st.skills.X = { id = "cbX2", name = "뇌고천무", desc = "초 오의. 등 뒤 하늘에 뇌고(천둥 북) 여덟이 둥글게 뜬다 (그동안 무적). 북을 열여섯 번 두드릴 때마다 그 북에서 적에게 벼락이 꽂히고, 박자는 점점 빨라진다. 네 번째마다 둘레로 천둥이 울린다. 마지막에 북이 모두 모여 하나의 뇌구가 되어 땅에 내리꽂힌다", pose = "ult_thunder", dur = 4.8, cd = 60, chi = 150, armor = true,
-				mech = { kind = "thunderDrums", cut = 1.3, drums = 8, beats = 16, first = 0.3, last = 0.1, range = 40, n = 10, radius = 7, hit = hit(0, 0, 0, 30, 24, 0.5, 10), shockRadius = 13, shock = hit(0, 0, 0, 24, 30, 0.5, 30, 8), finaleDelay = 0.35, finaleDist = 8, finalRadius = 26, final = hit(0, 0, 0, 200, 220, 1.8, 80, 26) } }
+				mech = { kind = "thunderDrums", cut = 1.3, drums = 8, beats = 16, first = 0.3, last = 0.1, range = 40, n = 10, radius = 7, hit = hit(0, 0, 0, 25, 24, 0.5, 10), shockRadius = 13, shock = hit(0, 0, 0, 20, 30, 0.5, 30, 8), finaleDelay = 0.35, finaleDist = 8, finalRadius = 26, final = hit(0, 0, 0, 164, 220, 1.8, 80, 26) } }
 		end
 	end
 end
@@ -2328,26 +2328,26 @@ table.insert(Config.Styles, {
 	speed = 1.15,
 	cdMult = 0.7,
 	sunMoon = { day = 1.2, night = 0.8 },
-	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 48, posture = 46, stun = 0.6, kb = 20, up = 8 },
+	pulse = { every = 3, kind = "eclipse", radius = 13, delay = 0.3, name = "일월", dmg = 55, posture = 46, stun = 0.6, kb = 20, up = 8 },
 	-- 극: 맞힐 때 2 (기술은 1), 맞을 때 4. 100이면 일월극변 (컷씬 3초 뒤 황혼 40초)
 	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 3, dur = 40 },
 	stance = "stance_sunmoon",
 	combo = {
-		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
-		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 24, 18, 0.35, 9) } },
-		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 28, 26, 0.45, 18, 6, true) } },
-		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 38, 42, 0.6, 36) } },
+		{ id = "gw1", name = "극 일출장", pose = "sun_palm_r", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 28, 18, 0.35, 9) } },
+		{ id = "gw2", name = "극 월하장", pose = "moon_palm_l", dur = 0.26, lunge = 3, hits = { hit(0.1, 6, 5, 28, 18, 0.35, 9) } },
+		{ id = "gw3", name = "극 일륜각", pose = "sun_wheel", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 7, 32, 26, 0.45, 18, 6, true) } },
+		{ id = "gw4", name = "극 월인권", pose = "moon_seal", dur = 0.46, lunge = 3, hits = { hit(0.22, 9, 6, 44, 42, 0.6, 36) } },
 	},
-	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 74, 110, 1.0, 64, 10, true) } },
+	heavy = { id = "gwH", name = "일월극벽", pose = "eclipse_push", dur = 0.72, lunge = 5, hits = { hit(0.4, 15, 8, 85, 110, 1.0, 64, 10, true) } },
 	skills = {
 		E = { id = "gwE", name = "일월쌍륜", desc = "해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 20,
-			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 30, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 50, 56, 0.8, 30, 10) } },
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 34, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 57, 56, 0.8, 30, 10) } },
 		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
-			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 40, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 40, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 50, 56, 0.8, 30, 12) } },
+			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 46, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 46, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 57, 56, 0.8, 30, 12) } },
 		G = { id = "gwG", name = "대일월천", desc = "등 뒤에 해와 달이 떠오른다. 해는 불의 빛줄기로 앞의 땅을 앞뒤로 쓸어 태우고, 달은 거대한 초승달 셋을 차례로 내리꽂는다. 둘이 적 위에서 부딪쳐 일식이 되고 땅이 갈라지며, 일식이 땅에 박혀 빛의 돔으로 터진다", pose = "sun_moon_call", dur = 2.6, cd = 30, chi = 100, armor = true,
-			mech = { kind = "sunMoonFall", dist = 14, summon = 0.7, beam = 1.2, every = 0.15, sweep = 9, width = 5, hit = hit(0, 0, 0, 16, 14, 0.3, 0), slams = 3, slamEvery = 0.36, travel = 0.22, slamRadius = 10, slam = hit(0, 0, 0, 50, 50, 0.7, 16, 12), merge = 0.5, finalRadius = 26, final = hit(0, 0, 0, 250, 290, 1.6, 70, 28) } },
+			mech = { kind = "sunMoonFall", dist = 14, summon = 0.7, beam = 1.2, every = 0.15, sweep = 9, width = 5, hit = hit(0, 0, 0, 18, 14, 0.3, 0), slams = 3, slamEvery = 0.36, travel = 0.22, slamRadius = 10, slam = hit(0, 0, 0, 57, 50, 0.7, 16, 12), merge = 0.5, finalRadius = 26, final = hit(0, 0, 0, 288, 290, 1.6, 70, 28) } },
 		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 컷씬: 세상이 어두워지고 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (그동안 무적). 해와 달이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 (해는 불기둥, 달은 초승달). 둘이 머리 위에서 부딪쳐 하늘에 거대한 일식이 걸리면 세상의 빛깔이 빠지고, 일식의 빛살이 쏟아진다. 하늘로 주먹을 내지르면 일식이 금 가고 깨지며 새벽빛으로 터진다", pose = "ult_genesis", dur = 5.2, cd = 60, chi = 150, armor = true,
-			mech = { kind = "eclipseGenesis", cut = 1.5, orbit = 1.4, orbitEvery = 0.2, orbitN = 3, orbitR = 30, orbitHit = hit(0, 0, 0, 24, 20, 0.35, 4), collide = 0.4, rays = 1.4, every = 0.1, range = 55, n = 5, radius = 6, hit = hit(0, 0, 0, 20, 16, 0.35, 4), finalAt = 0.4, finalRadius = 40, final = hit(0, 0, 0, 330, 370, 1.8, 80, 32) } },
+			mech = { kind = "eclipseGenesis", cut = 1.5, orbit = 1.4, orbitEvery = 0.2, orbitN = 3, orbitR = 30, orbitHit = hit(0, 0, 0, 28, 20, 0.35, 4), collide = 0.4, rays = 1.4, every = 0.1, range = 55, n = 5, radius = 6, hit = hit(0, 0, 0, 23, 16, 0.35, 4), finalAt = 0.4, finalRadius = 40, final = hit(0, 0, 0, 379, 370, 1.8, 80, 32) } },
 	},
 	-- 황혼 (일월극변 동안): 기술이 모두 바뀐다. 해와 달이 하나로 겹친 노을빛
 	twilight = {
@@ -2355,17 +2355,17 @@ table.insert(Config.Styles, {
 		color = Color3.fromRGB(255, 120, 60),
 		color2 = Color3.fromRGB(165, 95, 235),
 		dmg = 1.3,
-		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 64, posture = 60, stun = 0.7, kb = 24, up = 10 },
-		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 100, 140, 1.1, 70, 12, true) } },
+		pulse = { every = 3, kind = "dusk", radius = 15, delay = 0.3, name = "황혼", dmg = 74, posture = 60, stun = 0.7, kb = 24, up = 10 },
+		heavy = { id = "gtH", name = "황혼일권", pose = "eclipse_push", dur = 0.72, lunge = 6, hits = { hit(0.4, 18, 10, 115, 140, 1.1, 70, 12, true) } },
 		skills = {
 			E = { id = "gtE", name = "황혼참", desc = "노을빛 초승달 다섯을 부채꼴로 던진다. 초승달은 28칸 날아갔다가 되돌아오며 오갈 때 한 번씩 벤다", pose = "moon_throw", dur = 0.55, cd = 6, chi = 18,
-				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 34, 30, 0.45, 10) } },
+				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 39, 30, 0.45, 10) } },
 			R = { id = "gtR", name = "석양보", desc = "노을이 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 벤다 (무적). 지나간 노을빛 줄이 모두 한꺼번에 터진다", pose = "sun_wheel", dur = 0.8, cd = 9, chi = 22,
-				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 40, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 46, 50, 0.7, 20, 10) } },
+				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 46, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 53, 50, 0.7, 20, 10) } },
 			G = { id = "gtG", name = "황혼낙일", desc = "하늘 저편에서 거대한 석양이 내려와 앞의 땅에 닿고, 땅이 노을빛 바다가 된다. 석양이 가라앉는 동안 바다 위의 적은 타며 굼뜨고, 노을빛 물결 넷이 퍼지고, 달빛 기둥이 솟는다. 다 잠기면 바다가 잠깐 식어 고요해졌다가 노을 불꽃의 왕관으로 솟구친다", pose = "sun_moon_call", dur = 2.6, cd = 26, chi = 100, armor = true,
-				mech = { kind = "sunsetSea", dist = 12, descend = 0.7, sink = 1.6, every = 0.2, radius = 24, hit = hit(0, 0, 0, 12, 10, 0.3, 0), waves = 4, wave = hit(0, 0, 0, 38, 36, 0.6, 24, 8), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 36, 32, 0.6, 4, 20), dark = 0.3, finalRadius = 28, final = hit(0, 0, 0, 290, 330, 1.6, 70, 30) } },
+				mech = { kind = "sunsetSea", dist = 12, descend = 0.7, sink = 1.6, every = 0.2, radius = 24, hit = hit(0, 0, 0, 14, 10, 0.3, 0), waves = 4, wave = hit(0, 0, 0, 44, 36, 0.6, 24, 8), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 41, 32, 0.6, 4, 20), dark = 0.3, finalRadius = 28, final = hit(0, 0, 0, 334, 330, 1.6, 70, 30) } },
 			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 컷씬: 하늘이 노을로 물들고 양쪽에서 거대한 석양과 달이 내려온다 (그동안 무적). 둘은 빨려 들며 작아져 두 손에 맺히고, 손을 떠나 발밑 진의 테두리를 서로 반대로 내달려 불의 원을 그린다. 앞에서 만난 둘은 황혼의 구슬이 되어 머리 위로 떠올라 둘레를 빨아들이다가 한 점으로 줄어들고, 세상이 노을빛으로 하얗게 터진다", pose = "ult_dusk", dur = 4.4, cd = 50, chi = 150, armor = true,
-				mech = { kind = "twilightCollapse", cut = 1.3, gather = 0.8, circle = 1.2, every = 0.15, rim = 26, rimHit = hit(0, 0, 0, 28, 22, 0.4, 4), fuse = 0.6, pull = 40, collapse = 0.35, finalRadius = 50, final = hit(0, 0, 0, 430, 470, 2.0, 90, 34) } },
+				mech = { kind = "twilightCollapse", cut = 1.3, gather = 0.8, circle = 1.2, every = 0.15, rim = 26, rimHit = hit(0, 0, 0, 32, 22, 0.4, 4), fuse = 0.6, pull = 40, collapse = 0.35, finalRadius = 50, final = hit(0, 0, 0, 494, 470, 2.0, 90, 34) } },
 		},
 	},
 })
@@ -36483,6 +36483,81 @@ return Blossom
         </Item>
         <Item class="ModuleScript" referent="21">
           <Properties>
+            <string name="Name">CamGuard</string>
+            <string name="Source"><![CDATA[-- 3.18.1판: 오의 컷씬 카메라 지킴이. 컷씬마다 카메라를 너무 낮게 (땅에 붙거나 땅속) 두고 올려다봐서
+-- 땅에서 터지는 기술이 화면에서 잘렸다. 어느 컷씬이든 마지막에 이것을 거쳐:
+-- · 눈 높이: 몸 (가슴) 높이 + 2.5 아래로, 발밑 땅 + 5 아래로는 내려가지 않는다
+-- · 거리: 몸에서 옆으로 MIN_DIST 안쪽이면 같은 방향으로 물러난다 (기술 전체가 화면에 들어오게)
+-- · 각도: 위로 MAX_UP도보다 더 올려다보지 않는다 (하늘도 조금은 보인다)
+local CamGuard = {}
+
+local MIN_LIFT = 2.5 -- 몸 (HumanoidRootPart) 높이보다 이만큼은 위에서
+local MIN_GROUND = 5 -- 땅보다 이만큼은 위에서
+local MIN_DIST = 11
+local MAX_UP = math.rad(15)
+
+local params = RaycastParams.new()
+params.FilterType = Enum.RaycastFilterType.Include
+local lastFilter = 0
+local function refreshFilter()
+	if os.clock() - lastFilter < 2 then
+		return
+	end
+	lastFilter = os.clock()
+	local list: { Instance } = { workspace.Terrain }
+	local g = workspace:FindFirstChild("Gangho")
+	if g then
+		table.insert(list, g)
+	end
+	params.FilterDescendantsInstances = list
+end
+
+local function groundY(at: Vector3): number?
+	refreshFilter()
+	local hit = workspace:Raycast(at + Vector3.new(0, 40, 0), Vector3.new(0, -140, 0), params)
+	return hit and hit.Position.Y or nil
+end
+
+-- eye에서 target을 보는 카메라를, focus (몸 자리) 둘레에서 위의 규칙에 맞게 고친다
+function CamGuard.frame(eye: Vector3, target: Vector3, focus: Vector3): CFrame
+	-- 1) 거리: 옆으로 너무 붙었으면 물러난다
+	local off = Vector3.new(eye.X - focus.X, 0, eye.Z - focus.Z)
+	local d = off.Magnitude
+	if d < MIN_DIST then
+		local dir = d > 0.1 and off.Unit or Vector3.new(0, 0, 1)
+		eye = Vector3.new(focus.X, eye.Y, focus.Z) + dir * MIN_DIST
+	end
+	-- 2) 높이: 몸보다 낮거나 땅에 붙으면 올린다
+	local minY = focus.Y + MIN_LIFT
+	local gy = groundY(eye)
+	if gy then
+		minY = math.max(minY, gy + MIN_GROUND)
+	end
+	if eye.Y < minY then
+		eye = Vector3.new(eye.X, minY, eye.Z)
+	end
+	-- 3) 각도: 너무 올려다보면 보는 곳을 낮춘다
+	local to = target - eye
+	local flat = Vector3.new(to.X, 0, to.Z).Magnitude
+	if flat < 0.5 then
+		-- 거의 바로 위·아래를 보면 몸 쪽을 본다
+		target = focus + Vector3.new(0, 2, 0)
+		to = target - eye
+		flat = math.max(0.5, Vector3.new(to.X, 0, to.Z).Magnitude)
+	end
+	local maxRise = flat * math.tan(MAX_UP)
+	if to.Y > maxRise then
+		target = Vector3.new(target.X, eye.Y + maxRise, target.Z)
+	end
+	return CFrame.lookAt(eye, target)
+end
+
+return CamGuard
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="22">
+          <Properties>
             <string name="Name">Cutscene</string>
             <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
 local Players = game:GetService("Players")
@@ -36793,7 +36868,7 @@ return Cutscene
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Demon</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 피의 악마 (화면에만 보이는 연출). 처음부터 다시 짰다
@@ -37129,7 +37204,7 @@ return Demon
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Dream</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
@@ -37909,7 +37984,7 @@ return Dream
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
@@ -37922,6 +37997,7 @@ local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Drunk = {}
 local player = Players.LocalPlayer
@@ -38640,7 +38716,7 @@ function Drunk.superCut(model: Model, dur: number, name: string, shake: ((number
 		focus = focus:Lerp(r.Position, math.min(1, dt * 14))
 		-- 처음엔 옆에서, 끝으로 갈수록 앞쪽으로 돌아 들어간다
 		local orbit = side * (10 - 3 * u) + look * (-2 + 6 * u) + Vector3.new(0, 1.6 - 0.6 * u, 0)
-		cam.CFrame = CFrame.lookAt(focus + orbit, focus + look * (2 + 3 * u) + Vector3.new(0, -0.3, 0))
+		cam.CFrame = CamGuard.frame(focus + orbit, focus + look * (2 + 3 * u) + Vector3.new(0, -0.3, 0), focus)
 		cam.FieldOfView = oldFov - 18 + 10 * u * u
 		-- 속도선이 점점 빨라진다
 		local speed = 1.2 + 6 * u * u
@@ -38681,7 +38757,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Forest</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 만목신권의 숲 (화면). 대나무 창 · 소용돌이치는 잎 · 천 년 은행나무
@@ -39290,7 +39366,7 @@ return Forest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -42173,7 +42249,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -42354,7 +42430,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
@@ -42363,6 +42439,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Geuk = {}
 
@@ -43961,10 +44038,10 @@ function Geuk.superCut(model: Model, dur: number, name: string, shake: ((number)
 		if dusk then
 			local a = e * math.rad(150) - math.rad(40)
 			local eye = focus + (look * math.cos(a) + side * math.sin(a)) * (13 + e * 5) + UP * (1.5 + e * 6)
-			cam.CFrame = CFrame.lookAt(eye, focus + UP * (3 + e * 8))
+			cam.CFrame = CamGuard.frame(eye, focus + UP * (3 + e * 8), focus)
 		else
 			local eye = focus + look * (9 + e * 6) + side * math.sin(e * 0.8) * 6 + UP * (0.6 + e * 2.5)
-			cam.CFrame = CFrame.lookAt(eye, focus - look * 60 + UP * (14 + e * 14))
+			cam.CFrame = CamGuard.frame(eye, focus - look * 60 + UP * (14 + e * 14), focus)
 		end
 		cam.FieldOfView = oldFov + e * 12
 		if t >= dur then
@@ -43997,7 +44074,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -44412,7 +44489,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -44880,7 +44957,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">KillFx</string>
             <string name="Source"><![CDATA[-- 권왕 3.17판: 처치 연출 (킬 이펙트). 쓰러뜨린 사람이 끼운 연출이 쓰러진 자리에 터진다 (둘레 사람 모두의 화면에)
@@ -45707,7 +45784,7 @@ return KillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -46955,7 +47032,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
@@ -47783,7 +47860,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -47849,7 +47926,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Null</string>
             <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
@@ -47859,6 +47936,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Null = {}
 
@@ -48612,7 +48690,7 @@ function Null.superCut(model: Model, dur: number, name: string, shake: ((number)
 		else
 			eye = focus + look * 14 + Vector3.new(0, 9, 0)
 		end
-		cam.CFrame = CFrame.lookAt(eye, focus + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, (shot % 2 == 0) and 0.04 or -0.04)
+		cam.CFrame = CamGuard.frame(eye, focus + Vector3.new(0, 1.5, 0), focus) * CFrame.Angles(0, 0, (shot % 2 == 0) and 0.04 or -0.04)
 		cam.FieldOfView = oldFov + (k == 2 and 20 or 4)
 		if t >= dur then
 			restore()
@@ -49667,7 +49745,7 @@ function Null.gridCut(model: Model, dur: number, name: string, shake: ((number) 
 		local a = a0 + u * math.pi * 0.9
 		local dist = 11 - u * 3
 		local eye = focus + Vector3.new(math.cos(a) * dist, -1.2 + u * 1.5, math.sin(a) * dist)
-		cam.CFrame = CFrame.lookAt(eye, focus + Vector3.new(0, 3 + u * 10, 0))
+		cam.CFrame = CamGuard.frame(eye, focus + Vector3.new(0, 3 + u * 10, 0), focus)
 		cam.FieldOfView = oldFov + 12 - u * 6
 		if t >= dur then
 			restore()
@@ -50471,7 +50549,7 @@ return Null
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
@@ -50530,7 +50608,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -50935,7 +51013,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -51276,7 +51354,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -51290,6 +51368,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Reaper = {}
@@ -52193,7 +52272,7 @@ function Reaper.superCut(model: Model, dur: number, name: string, shake: ((numbe
 		-- 처음엔 앞쪽 낮은 곳에서 얼굴을 올려다보고, 끝으로 갈수록 뒤로 크게 빠지며 달까지 담는다
 		local pos = focus + look * (5 - 15 * e) + side * (2 + 4 * e) + Vector3.new(0, -1.2 + 5 * e, 0)
 		local target = focus + Vector3.new(0, 1.2 + 6 * e, 0) - look * (40 * e)
-		cam.CFrame = CFrame.lookAt(pos, target)
+		cam.CFrame = CamGuard.frame(pos, target, focus)
 		cam.FieldOfView = oldFov - 22 + 26 * e
 		if shake and u > 0.6 then
 			shake(0.1 + (u - 0.6) * 0.8)
@@ -52225,7 +52304,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -52859,7 +52938,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -54146,7 +54225,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -54158,6 +54237,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Samsara = {}
 
@@ -57001,7 +57081,7 @@ function Samsara.superCut(model: Model, dur: number, name: string, shake: ((numb
 			eye = focus + look * (9 + e * 6) + side * math.sin(e * 0.8) * 6 + UP * (0.6 + e * 2.5)
 			target = focus - look * 40 + UP * (16 + e * 20)
 		end
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + e * 12
 		if t >= dur then
 			restore()
@@ -57175,7 +57255,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -57782,7 +57862,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -57793,6 +57873,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Star = {}
 local player = Players.LocalPlayer
@@ -58881,7 +58962,7 @@ function Star.superCut(model: Model, dur: number, name: string, shake: ((number)
 		local a = k * math.rad(50)
 		local eye = focus + look * (7 + k * 6) * math.cos(a) + side * 6 * math.sin(a) + Vector3.new(0, 0.6 + k * 2, 0)
 		local target = focus:Lerp(focus + Vector3.new(0, 40, 0) - look * 10, k * 0.8)
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + k * 14
 		if t >= dur then
 			restore()
@@ -58922,7 +59003,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -59139,7 +59220,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -63681,7 +63762,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -63695,6 +63776,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local Demon = require(script.Parent:WaitForChild("Demon"))
 
 local Ult2 = {}
@@ -64888,7 +64970,7 @@ function Ult2.superCut(model: Model, dur: number, name: string, shake: ((number)
 		-- 앞쪽 낮은 곳에서 올려다보다가, 끝으로 갈수록 뒤로 빠지며 등 뒤 하늘에 뜬 뇌고 여덟을 함께 잡는다 (2.3판)
 		local pos = focus + look * (6 + 8 * e) + side * (3 + 3 * e) + Vector3.new(0, -1.5 + 3 * e, 0)
 		local target = focus + Vector3.new(0, 2 + 12 * e, 0) - look * (6 * e)
-		cam.CFrame = CFrame.lookAt(pos, target)
+		cam.CFrame = CamGuard.frame(pos, target, focus)
 		cam.FieldOfView = oldFov - 18 + 30 * e
 		if shake and u > 0.5 then
 			shake(0.1 + (u - 0.5) * 0.8)
@@ -64959,7 +65041,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -67642,7 +67724,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -68010,6 +68092,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local player = Players.LocalPlayer
 local opts: any = {}
 function Whale.init(o: any)
@@ -68629,7 +68712,7 @@ function Whale.superCut(model: Model, dur: number, name: string, shake: ((number
 		local a = k * math.rad(70)
 		local eye = focus + look * (10 - k * 4) * math.cos(a) + side * 10 * math.sin(a) + Vector3.new(0, 1.2 + k * 1.5, 0)
 		local target = focus:Lerp(focus - look * 40 + Vector3.new(0, -4, 0), k * 0.85)
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + k * 12
 		if t >= dur then
 			restore()
@@ -68751,7 +68834,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="50">
+  <Item class="Workspace" referent="51">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

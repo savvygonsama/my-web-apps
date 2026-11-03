@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 
 local Samsara = {}
 
@@ -2850,7 +2851,7 @@ function Samsara.superCut(model: Model, dur: number, name: string, shake: ((numb
 			eye = focus + look * (9 + e * 6) + side * math.sin(e * 0.8) * 6 + UP * (0.6 + e * 2.5)
 			target = focus - look * 40 + UP * (16 + e * 20)
 		end
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + e * 12
 		if t >= dur then
 			restore()

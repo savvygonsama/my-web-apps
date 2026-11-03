@@ -363,6 +363,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
 local player = Players.LocalPlayer
 local opts: any = {}
 function Whale.init(o: any)
@@ -982,7 +983,7 @@ function Whale.superCut(model: Model, dur: number, name: string, shake: ((number
 		local a = k * math.rad(70)
 		local eye = focus + look * (10 - k * 4) * math.cos(a) + side * 10 * math.sin(a) + Vector3.new(0, 1.2 + k * 1.5, 0)
 		local target = focus:Lerp(focus - look * 40 + Vector3.new(0, -4, 0), k * 0.85)
-		cam.CFrame = CFrame.lookAt(eye, target)
+		cam.CFrame = CamGuard.frame(eye, target, focus)
 		cam.FieldOfView = oldFov + k * 12
 		if t >= dur then
 			restore()
