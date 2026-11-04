@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4920,6 +4920,26 @@ for i, a in ipairs(Config.ACHIEVEMENTS) do
 	a.index = i
 	Config.ACH_BY_ID[a.id] = a
 end
+-- 3.19.9판 업적 오라 (무협 기운): 신화 업적 아홉마다 그 업적만의 기운. 이루면 얻고, 🎨 꾸미기에서 하나를 고른다 (그리는 것은 AchAura.lua)
+Config.ACH_AURAS = {
+	{ id = "blooddragon", ach = "k1m", name = "혈룡 기운", icon = "🐉", desc = "핏빛 불길이 온몸에서 타오르고 불티가 튄다" },
+	{ id = "pacheon", ach = "b5000", name = "파천 기운", icon = "👹", desc = "검보랏빛 연기가 몸을 휘감고 흰 번갯불이 잘게 튄다" },
+	{ id = "meteor", ach = "raid100", name = "운석 기운", icon = "☄", desc = "두 손과 두 발에서 주황 불꽃이 일고 재가 날린다" },
+	{ id = "rainbow", ach = "maze100", name = "무지개 구름", icon = "🌈", desc = "발밑에 흰 구름이 피어오르고 무지갯빛 가루가 올라간다" },
+	{ id = "samsara", ach = "sm3", name = "윤회 기운", icon = "🔱", desc = "보랏빛 영기가 느릿하게 타오르고 금빛 별가루가 가라앉는다" },
+	{ id = "crown", ach = "sAll", name = "만권 기운", icon = "🥋", desc = "청백의 맑은 기운이 몸을 감싸고 정수리에서 흰·금빛 반짝임이 흩어진다" },
+	{ id = "petals", ach = "gearAll", name = "천상 꽃잎", icon = "🌸", desc = "연분홍·하늘빛 꽃잎이 몸 둘레에서 나풀나풀 떨어진다" },
+	{ id = "scripture", ach = "manTop", name = "천서 기운", icon = "📜", desc = "푸른 안개가 깔리고 빛의 글자가 천천히 떠오른다" },
+	{ id = "golddragon", ach = "pvp500", name = "금룡 기운", icon = "🏆", desc = "발끝부터 머리 위까지 금빛 화염이 치솟고 흰 불씨가 흩날린다" },
+}
+Config.ACH_AURA_BY_ID = {}
+for _, au in ipairs(Config.ACH_AURAS) do
+	Config.ACH_AURA_BY_ID[au.id] = au
+	local a = Config.ACH_BY_ID[au.ach]
+	if a then
+		a.aura = au.id
+	end
+end
 -- 칭호 빛깔: 칭호가 붙은 업적의 차례(어려울수록 뒤)로 정하지 않고, 업적 갈래로 정한다
 Config.ACH_COLOR = {
 	kills = Color3.fromRGB(255, 140, 120), bossSum = Color3.fromRGB(255, 110, 80), boss = Color3.fromRGB(255, 90, 90), raid = Color3.fromRGB(255, 170, 70),
@@ -8074,6 +8094,7 @@ type Profile = {
 	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
 	skyAura: boolean?, -- 3.12판: 천상 오라
 	spawnAt: string?, -- 3.16.4판: 깨어날 주막 (없으면 청운 마을)
+	achAura: string?, -- 3.19.9판: 고른 업적 오라 (무협 기운). 가진 것은 이룬 신화 업적에서 바로 센다
 	kfRefund: number?, -- 3.19.8판: 없앤 처치 연출을 돌려준 천정 (알림을 띄우고 지운다)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
@@ -8248,6 +8269,10 @@ local function sanitize(data: any): Profile
 	end
 	p.skyTintOff = data.skyTintOff == true or nil
 	p.skyAura = data.skyAura == true or nil
+	do
+		local au = type(data.achAura) == "string" and Config.ACH_AURA_BY_ID[data.achAura]
+		p.achAura = (au and p.ach[au.ach]) and au.id or nil
+	end
 	-- 3.19.8판: 처치 연출을 없앴다. 천정으로 산 연출은 산 값만큼 천정으로 돌려준다 (저장하면 killFx 칸이 사라지니 한 번만 돌려준다)
 	if type(data.killFx) == "table" then
 		local back = 0
@@ -8850,6 +8875,14 @@ function Ach.check(player: Player, p: Profile)
 			if a.mount then
 				p.mounts[a.mount] = true
 			end
+			-- 3.19.9판: 신화 업적의 오라. 두른 것이 없으면 바로 두른다
+			if a.aura and not p.achAura then
+				p.achAura = a.aura
+				local fa = Combat.fighterOfPlayer(player)
+				if fa then
+					fa.model:SetAttribute("AchAura", a.aura)
+				end
+			end
 			local st = states[player]
 			if st then
 				st.dirty = true
@@ -8934,6 +8967,7 @@ local function pushState(player: Player)
 		skyTintOff = p.skyTintOff == true,
 		skyAura = p.skyAura == true,
 		spawnAt = p.spawnAt or "village",
+		achAura = p.achAura,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -9087,6 +9121,9 @@ local function refreshFighter(player: Player)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
+	-- 3.19.9판 업적 오라 (이룬 업적의 것만)
+	local achAu = p.achAura and Config.ACH_AURA_BY_ID[p.achAura]
+	f.model:SetAttribute("AchAura", (achAu and p.ach[achAu.ach]) and achAu.id or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -12379,6 +12416,27 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 		end
 		toast(player, n == 0 and "🏆 이룰 업적이 더 없어요 (업적 지우기로 처음부터)" or (action == "testAchAll" and string.format("🏆 업적 %d개를 한꺼번에 이뤘어요", n) or "🏆 업적 하나를 이뤘어요"))
+	elseif action == "testAchAura" then
+		-- 3.19.9판 업적 오라 테스트: 업적 없이 아홉을 차례로 둘러 본다 (저장하지 않는다)
+		local f2 = Combat.fighterOfPlayer(player)
+		if not f2 then
+			return
+		end
+		if arg == "off" then
+			f2.model:SetAttribute("AchAura", nil)
+			toast(player, "✨ 업적 오라를 껐어요 (테스트)")
+			return
+		end
+		local cur = f2.model:GetAttribute("AchAura")
+		local idx = 0
+		for i, au in ipairs(Config.ACH_AURAS) do
+			if au.id == cur then
+				idx = i
+			end
+		end
+		local au = Config.ACH_AURAS[idx % #Config.ACH_AURAS + 1]
+		f2.model:SetAttribute("AchAura", au.id)
+		toast(player, string.format("✨ [%d/%d] %s %s · %s", idx % #Config.ACH_AURAS + 1, #Config.ACH_AURAS, au.icon, au.name, au.desc))
 	elseif action == "testAchReset" then
 		p.ach = {}
 		p.title = nil
@@ -12571,6 +12629,23 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Rebirth.perkReset(player)
 	elseif action == "samsara" then
 		Rebirth.samsara(player)
+	elseif action == "achAura" then
+		-- 3.19.9판 업적 오라 고르기 (빈 글이면 끈다)
+		local id = tostring(a1 or "")
+		if id == "" then
+			p.achAura = nil
+			toast(player, "✨ 업적 오라를 껐어요")
+		else
+			local au = Config.ACH_AURA_BY_ID[id]
+			if not au or not p.ach[au.ach] then
+				return
+			end
+			p.achAura = id
+			toast(player, string.format("✨ %s %s을(를) 둘렀어요", au.icon, au.name))
+		end
+		st.dirty = true
+		refreshFighter(player)
+		pushState(player)
 	elseif action == "title" then
 		-- 칭호 달기 (이룬 업적 중 칭호가 있는 것), 빈 글이면 뗀다
 		local id = tostring(a1 or "")
@@ -31206,6 +31281,7 @@ local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
+local AchAura = require(script:WaitForChild("AchAura"))
 UI.previewGear = Sakura.preview
 local Titles = require(script:WaitForChild("Titles"))
 Titles.init()
@@ -31322,6 +31398,8 @@ local function watchChar(char: Model)
 	end)
 	-- 초월 권법의 벚꽃 부채
 	Sakura.watch(char)
+	-- 3.19.9판 업적 오라 (무협 기운)
+	AchAura.watch(char)
 	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
 	Mount.watch(char)
 	char:GetAttributeChangedSignal("Mount"):Connect(function()
@@ -33724,6 +33802,10 @@ function handlers.ach(data: any)
 	if mt then
 		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
 	end
+	local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
+	if au then
+		table.insert(parts, "✨ 업적 오라 「" .. au.name .. "」 (만물상 → 🎨 꾸미기에서 바꾸기)")
+	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1
 	local T = Config.ACH_TIERS[tier]
@@ -33951,6 +34033,276 @@ Request:FireServer("hello")
 ]]></string>
         </Properties>
         <Item class="ModuleScript" referent="17">
+          <Properties>
+            <string name="Name">AchAura</string>
+            <string name="Source"><![CDATA[-- 권왕 3.19.9판: 업적 오라 (무협 기운). 신화 업적 아홉을 이루면 그 업적만의 기운을 얻는다 (🎨 꾸미기에서 하나 고른다)
+-- 딱딱한 물체 없이, 몸 전체 (가슴 · 허리 · 두 팔 · 두 다리) 에서 피어오르는 입자로만 그린다. 업적마다 빛깔 · 결 · 흐름이 다르다:
+--   혈룡 기운   핏빛 불길이 온몸에서 타오르고 불티가 튄다
+--   파천 기운   검보랏빛 연기가 몸을 휘감고 흰 번갯불이 잘게 튄다
+--   운석 기운   두 손과 두 발에서 주황 불꽃이 일고, 재가 날린다
+--   무지개 구름 발밑에 흰 구름이 피어오르고 무지갯빛 가루가 올라간다
+--   윤회 기운   보랏빛 영기가 느릿하게 타오르고 금빛 별가루가 천천히 가라앉는다
+--   만권 기운   청백의 맑은 기운이 몸을 감싸고 희고 금빛인 반짝임이 정수리에서 흩어진다
+--   천상 꽃잎   연분홍 · 하늘빛 꽃잎이 몸 둘레에서 나풀나풀 떨어진다
+--   천서 기운   푸른 안개가 깔리고 빛의 글자 같은 작은 빛이 천천히 곧게 떠오른다
+--   금룡 기운   발끝부터 머리 위까지 금빛 화염이 크게 치솟고 흰 불씨가 흩날린다
+-- 사라지는 기술 (Vanish) 동안은 끈다. 가벼운 그래픽이면 입자를 줄인다
+local AchAura = {}
+
+local Perf: any = nil
+pcall(function()
+	Perf = require(script.Parent:WaitForChild("Perf", 2) :: any)
+end)
+
+local TEX = {
+	fire = "rbxasset://textures/particles/fire_main.dds",
+	smoke = "rbxasset://textures/particles/smoke_main.dds",
+	spark = "rbxasset://textures/particles/sparkles_main.dds",
+}
+local C3 = Color3.fromRGB
+local function cs(list: { Color3 }): ColorSequence
+	if #list == 1 then
+		return ColorSequence.new(list[1])
+	end
+	local kp = {}
+	for i, c in ipairs(list) do
+		table.insert(kp, ColorSequenceKeypoint.new((i - 1) / (#list - 1), c))
+	end
+	return ColorSequence.new(kp)
+end
+local function ns(pts: { { number } }): NumberSequence
+	local kp = {}
+	for _, p in ipairs(pts) do
+		table.insert(kp, NumberSequenceKeypoint.new(p[1], p[2], p[3] or 0))
+	end
+	return NumberSequence.new(kp)
+end
+local function nr(a: number, b: number): NumberRange
+	return NumberRange.new(a, b)
+end
+
+local BODY = { "UpperTorso", "LowerTorso", "LeftUpperArm", "RightUpperArm", "LeftLowerLeg", "RightLowerLeg" }
+local CORE = { "UpperTorso", "LowerTorso" }
+local HANDS_FEET = { "LeftHand", "RightHand", "LeftFoot", "RightFoot" }
+local FEET = { "LeftFoot", "RightFoot" }
+
+-- 한 겹: on = 뿜는 몸 부위, rate = 부위 하나의 초당 입자 수
+type Layer = {
+	on: { string },
+	tex: string,
+	color: ColorSequence,
+	size: NumberSequence,
+	alpha: NumberSequence,
+	life: NumberRange,
+	rate: number,
+	speed: NumberRange,
+	accel: Vector3?,
+	spread: Vector2?,
+	light: number?,
+	bright: number?,
+	rot: NumberRange?,
+	spin: NumberRange?,
+	drag: number?,
+	z: number?,
+	dir: Enum.NormalId?,
+}
+local DEFS: { [string]: { Layer } } = {}
+
+DEFS.blooddragon = {
+	-- 핏빛 불길: 온몸에서 위로 타오른다 (아래는 진홍, 끝은 검붉게 사그라든다)
+	{ on = BODY, tex = TEX.fire, color = cs({ C3(255, 90, 60), C3(220, 20, 30), C3(90, 0, 10) }), size = ns({ { 0, 1.1 }, { 0.5, 0.8 }, { 1, 0.1 } }), alpha = ns({ { 0, 0.55 }, { 0.3, 0.25 }, { 1, 1 } }),
+		life = nr(0.5, 0.8), rate = 14, speed = nr(1.5, 3), accel = Vector3.new(0, 7, 0), spread = Vector2.new(25, 25), light = 0.9, bright = 2, rot = nr(-30, 30), spin = nr(-60, 60), z = 0.4 },
+	-- 불티: 금빛·붉은 작은 점이 빠르게 튀어 오른다
+	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 220, 120), C3(255, 80, 50) }), size = ns({ { 0, 0.22 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(0.6, 1.1), rate = 8, speed = nr(4, 7), accel = Vector3.new(0, 4, 0), spread = Vector2.new(60, 60), light = 1, bright = 3, drag = 1.5, z = 0.6 },
+}
+DEFS.pacheon = {
+	-- 검보랏빛 연기가 몸을 휘감는다 (느리게 부풀며 흩어진다)
+	{ on = BODY, tex = TEX.smoke, color = cs({ C3(120, 50, 200), C3(50, 15, 80), C3(20, 5, 30) }), size = ns({ { 0, 0.6 }, { 1, 2.0 } }), alpha = ns({ { 0, 0.85 }, { 0.3, 0.55 }, { 1, 1 } }),
+		life = nr(0.9, 1.4), rate = 8, speed = nr(0.6, 1.4), accel = Vector3.new(0, 2.5, 0), spread = Vector2.new(180, 180), light = 0.2, rot = nr(0, 360), spin = nr(-90, 90), drag = 1 },
+	-- 번갯불: 흰·보랏빛 반짝임이 아주 짧게 사방으로 튄다
+	{ on = BODY, tex = TEX.spark, color = cs({ C3(255, 255, 255), C3(200, 150, 255) }), size = ns({ { 0, 0.5 }, { 0.2, 0.25 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(0.12, 0.25), rate = 5, speed = nr(6, 10), spread = Vector2.new(180, 180), light = 1, bright = 5, z = 0.8 },
+	-- 속의 붉은 기운 (가슴에서 은은하게)
+	{ on = { "UpperTorso" }, tex = TEX.fire, color = cs({ C3(255, 60, 80), C3(120, 20, 60) }), size = ns({ { 0, 1.4 }, { 1, 0.4 } }), alpha = ns({ { 0, 0.8 }, { 1, 1 } }),
+		life = nr(0.4, 0.6), rate = 6, speed = nr(0.5, 1), accel = Vector3.new(0, 3, 0), light = 0.8, bright = 1.5 },
+}
+DEFS.meteor = {
+	-- 두 손 두 발의 불꽃
+	{ on = HANDS_FEET, tex = TEX.fire, color = cs({ C3(255, 230, 140), C3(255, 130, 40), C3(160, 40, 10) }), size = ns({ { 0, 0.9 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.4 }, { 1, 1 } }),
+		life = nr(0.35, 0.6), rate = 16, speed = nr(1, 2.5), accel = Vector3.new(0, 8, 0), spread = Vector2.new(20, 20), light = 1, bright = 2.5, spin = nr(-90, 90), z = 0.5 },
+	-- 재: 잿빛 조각이 천천히 날린다
+	{ on = CORE, tex = TEX.smoke, color = cs({ C3(90, 70, 60), C3(40, 34, 30) }), size = ns({ { 0, 0.25 }, { 1, 0.6 } }), alpha = ns({ { 0, 0.4 }, { 1, 1 } }),
+		life = nr(1.2, 1.8), rate = 5, speed = nr(1, 2), accel = Vector3.new(0.8, 1.5, 0), spread = Vector2.new(80, 80), rot = nr(0, 360), spin = nr(-120, 120), drag = 0.8 },
+	-- 불씨
+	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 200, 90) }), size = ns({ { 0, 0.18 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(0.8, 1.3), rate = 6, speed = nr(3, 5), accel = Vector3.new(0, 3, 0), spread = Vector2.new(70, 70), light = 1, bright = 3, drag = 1 },
+}
+DEFS.rainbow = {
+	-- 발밑의 흰 구름: 낮게 퍼지며 둥실 피어오른다
+	{ on = FEET, tex = TEX.smoke, color = cs({ C3(255, 255, 255), C3(235, 240, 255) }), size = ns({ { 0, 1.0 }, { 1, 2.6 } }), alpha = ns({ { 0, 0.5 }, { 0.4, 0.35 }, { 1, 1 } }),
+		life = nr(1.2, 1.8), rate = 7, speed = nr(0.8, 1.6), accel = Vector3.new(0, 0.6, 0), spread = Vector2.new(85, 85), light = 0.3, rot = nr(0, 360), spin = nr(-20, 20), drag = 1.2 },
+	-- 무지갯빛 가루: 몸에서 천천히 올라가며 빛깔이 여섯 번 바뀐다
+	{ on = BODY, tex = TEX.spark, color = cs({ C3(255, 90, 110), C3(255, 180, 70), C3(255, 245, 110), C3(110, 235, 140), C3(100, 180, 255), C3(180, 120, 255) }), size = ns({ { 0, 0.3 }, { 0.5, 0.35 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(1, 1.6), rate = 4, speed = nr(1, 2), accel = Vector3.new(0, 1.5, 0), spread = Vector2.new(50, 50), light = 1, bright = 2.5, drag = 0.6 },
+}
+DEFS.samsara = {
+	-- 보랏빛 영기: 느릿하게 타오른다 (불보다 부드럽고 길다)
+	{ on = BODY, tex = TEX.fire, color = cs({ C3(200, 170, 255), C3(140, 90, 255), C3(60, 30, 140) }), size = ns({ { 0, 0.9 }, { 0.6, 1.0 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.7 }, { 0.4, 0.45 }, { 1, 1 } }),
+		life = nr(0.9, 1.3), rate = 9, speed = nr(0.6, 1.2), accel = Vector3.new(0, 3, 0), spread = Vector2.new(30, 30), light = 0.8, bright = 1.6, rot = nr(-20, 20), spin = nr(-30, 30), z = 0.3 },
+	-- 금빛 별가루: 몸 둘레로 퍼졌다가 천천히 가라앉는다
+	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 230, 150), C3(255, 200, 90) }), size = ns({ { 0, 0 }, { 0.3, 0.3 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(1.6, 2.2), rate = 5, speed = nr(2, 3), accel = Vector3.new(0, -0.6, 0), spread = Vector2.new(180, 180), light = 1, bright = 3, drag = 2 },
+}
+DEFS.crown = {
+	-- 청백의 맑은 기운: 몸을 얇게 감싼다
+	{ on = BODY, tex = TEX.fire, color = cs({ C3(240, 250, 255), C3(170, 215, 255), C3(110, 160, 230) }), size = ns({ { 0, 0.8 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.65 }, { 0.3, 0.45 }, { 1, 1 } }),
+		life = nr(0.5, 0.8), rate = 10, speed = nr(1, 2), accel = Vector3.new(0, 6, 0), spread = Vector2.new(20, 20), light = 1, bright = 2, z = 0.3 },
+	-- 정수리에서 흩어지는 흰·금빛 반짝임 (왕관처럼)
+	{ on = { "Head" }, tex = TEX.spark, color = cs({ C3(255, 255, 255), C3(255, 215, 110) }), size = ns({ { 0, 0.4 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(0.7, 1.1), rate = 10, speed = nr(3, 5), accel = Vector3.new(0, -2, 0), spread = Vector2.new(35, 35), light = 1, bright = 4, drag = 1.5, dir = Enum.NormalId.Top },
+}
+DEFS.petals = {
+	-- 꽃잎: 몸 둘레에서 나풀나풀 돌며 떨어진다 (뒤집히듯 크기를 출렁인다)
+	{ on = BODY, tex = TEX.spark, color = cs({ C3(255, 185, 220), C3(255, 215, 235) }), size = ns({ { 0, 0.35 }, { 0.25, 0.2 }, { 0.5, 0.38 }, { 0.75, 0.2 }, { 1, 0.3 } }), alpha = ns({ { 0, 0.1 }, { 0.8, 0.2 }, { 1, 1 } }),
+		life = nr(1.6, 2.4), rate = 3, speed = nr(1.5, 2.5), accel = Vector3.new(0.6, -1.4, 0.3), spread = Vector2.new(180, 180), light = 0.6, bright = 1.5, rot = nr(0, 360), spin = nr(-200, 200), drag = 1.4 },
+	{ on = BODY, tex = TEX.spark, color = cs({ C3(170, 230, 255), C3(220, 245, 255) }), size = ns({ { 0, 0.3 }, { 0.3, 0.18 }, { 0.6, 0.34 }, { 1, 0.25 } }), alpha = ns({ { 0, 0.1 }, { 0.8, 0.2 }, { 1, 1 } }),
+		life = nr(1.6, 2.4), rate = 2, speed = nr(1.5, 2.5), accel = Vector3.new(-0.5, -1.2, 0.4), spread = Vector2.new(180, 180), light = 0.6, bright = 1.5, rot = nr(0, 360), spin = nr(-200, 200), drag = 1.4 },
+	-- 은은한 분홍빛 (가슴 둘레)
+	{ on = { "UpperTorso" }, tex = TEX.smoke, color = cs({ C3(255, 200, 230) }), size = ns({ { 0, 1.5 }, { 1, 3 } }), alpha = ns({ { 0, 0.88 }, { 1, 1 } }),
+		life = nr(0.8, 1.2), rate = 3, speed = nr(0.3, 0.6), light = 0.5 },
+}
+DEFS.scripture = {
+	-- 푸른 안개: 허리 아래로 얕게 깔린다
+	{ on = { "LowerTorso", "LeftLowerLeg", "RightLowerLeg" }, tex = TEX.smoke, color = cs({ C3(170, 230, 255), C3(110, 180, 240) }), size = ns({ { 0, 1.0 }, { 1, 2.4 } }), alpha = ns({ { 0, 0.8 }, { 0.4, 0.65 }, { 1, 1 } }),
+		life = nr(1.2, 1.8), rate = 5, speed = nr(0.5, 1), accel = Vector3.new(0, 0.5, 0), spread = Vector2.new(90, 90), light = 0.5, rot = nr(0, 360), spin = nr(-15, 15), drag = 1 },
+	-- 빛의 글자: 작은 푸른·흰 빛이 천천히 곧게 떠오른다 (흔들림 없이 또박또박)
+	{ on = BODY, tex = TEX.spark, color = cs({ C3(220, 250, 255), C3(120, 210, 255) }), size = ns({ { 0, 0 }, { 0.2, 0.32 }, { 0.8, 0.28 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(1.4, 2), rate = 4, speed = nr(0.8, 1.3), accel = Vector3.new(0, 0.8, 0), spread = Vector2.new(15, 15), light = 1, bright = 3, z = 0.5 },
+}
+DEFS.golddragon = {
+	-- 금빛 화염: 크고 높게 치솟는다 (흰 속불 → 금빛 → 주황 끝)
+	{ on = BODY, tex = TEX.fire, color = cs({ C3(255, 250, 220), C3(255, 205, 70), C3(240, 120, 20) }), size = ns({ { 0, 1.4 }, { 0.5, 1.1 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.5 }, { 0.3, 0.2 }, { 1, 1 } }),
+		life = nr(0.6, 0.95), rate = 16, speed = nr(2, 4), accel = Vector3.new(0, 11, 0), spread = Vector2.new(15, 15), light = 1, bright = 2.5, rot = nr(-20, 20), spin = nr(-45, 45), z = 0.5 },
+	-- 발끝에서도 불길이 솟는다 (몸 전체가 불기둥 속에 선 것처럼)
+	{ on = FEET, tex = TEX.fire, color = cs({ C3(255, 230, 140), C3(255, 170, 40) }), size = ns({ { 0, 1.6 }, { 1, 0.3 } }), alpha = ns({ { 0, 0.55 }, { 1, 1 } }),
+		life = nr(0.7, 1), rate = 10, speed = nr(3, 5), accel = Vector3.new(0, 12, 0), spread = Vector2.new(10, 10), light = 1, bright = 2 },
+	-- 흰 불씨
+	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 255, 240), C3(255, 220, 130) }), size = ns({ { 0, 0.25 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(0.8, 1.4), rate = 8, speed = nr(5, 8), accel = Vector3.new(0, 5, 0), spread = Vector2.new(45, 45), light = 1, bright = 4, drag = 1.2 },
+}
+
+------------------------------------------------------------------------
+-- 몸마다 붙이고 떼기
+------------------------------------------------------------------------
+local active: { [Model]: { id: string, emitters: { ParticleEmitter } } } = {}
+local ALT = { UpperTorso = "Torso", LowerTorso = "Torso", LeftUpperArm = "Left Arm", RightUpperArm = "Right Arm", LeftLowerLeg = "Left Leg", RightLowerLeg = "Right Leg", LeftHand = "Left Arm", RightHand = "Right Arm", LeftFoot = "Left Leg", RightFoot = "Right Leg" }
+local function partOf(model: Model, name: string): BasePart?
+	local p = model:FindFirstChild(name)
+	if p and p:IsA("BasePart") then
+		return p
+	end
+	-- 옛 몸 (R6) 이름
+	local alt = ALT[name]
+	local q = alt and model:FindFirstChild(alt)
+	return (q and q:IsA("BasePart")) and q or nil
+end
+local function clear(model: Model)
+	local a = active[model]
+	if a then
+		for _, e in ipairs(a.emitters) do
+			e:Destroy()
+		end
+		active[model] = nil
+	end
+end
+local function build(model: Model, id: string): { ParticleEmitter }
+	local out = {}
+	local k = (Perf and Perf.low) and 0.4 or 1
+	for _, L in ipairs(DEFS[id] or {}) do
+		for _, pn in ipairs(L.on) do
+			local p = partOf(model, pn)
+			if p then
+				local e = Instance.new("ParticleEmitter")
+				e.Name = "AchAura"
+				e.Texture = L.tex
+				e.Color = L.color
+				e.Size = L.size
+				e.Transparency = L.alpha
+				e.Lifetime = L.life
+				e.Rate = math.max(1, L.rate * k)
+				e.Speed = L.speed
+				e.Acceleration = L.accel or Vector3.zero
+				e.SpreadAngle = L.spread or Vector2.new(30, 30)
+				e.LightEmission = L.light or 0
+				e.Brightness = L.bright or 1
+				e.Rotation = L.rot or nr(0, 0)
+				e.RotSpeed = L.spin or nr(0, 0)
+				e.Drag = L.drag or 0
+				e.ZOffset = L.z or 0
+				e.EmissionDirection = L.dir or Enum.NormalId.Top
+				e.LockedToPart = false
+				e.Parent = p
+				table.insert(out, e)
+			end
+		end
+	end
+	return out
+end
+local function setOn(model: Model, on: boolean)
+	local a = active[model]
+	if a then
+		for _, e in ipairs(a.emitters) do
+			e.Enabled = on
+		end
+	end
+end
+local function apply(model: Model, force: boolean?)
+	local id = model:GetAttribute("AchAura")
+	local cur = active[model]
+	if cur and cur.id == id and not force then
+		return
+	end
+	clear(model)
+	if type(id) == "string" and DEFS[id] and model.Parent then
+		active[model] = { id = id, emitters = build(model, id) }
+		setOn(model, model:GetAttribute("Vanish") ~= true)
+	end
+end
+local watched: { [Model]: boolean } = {}
+function AchAura.watch(model: Model)
+	if watched[model] then
+		return
+	end
+	watched[model] = true
+	model:GetAttributeChangedSignal("AchAura"):Connect(function()
+		apply(model)
+	end)
+	model:GetAttributeChangedSignal("Vanish"):Connect(function()
+		setOn(model, model:GetAttribute("Vanish") ~= true)
+	end)
+	model.AncestryChanged:Connect(function()
+		if not model.Parent then
+			clear(model)
+			watched[model] = nil
+		end
+	end)
+	apply(model)
+	-- 몸 부위가 늦게 들어오면 한 번 더 붙인다
+	task.delay(1.5, function()
+		if model.Parent and active[model] then
+			apply(model, true)
+		end
+	end)
+end
+function AchAura.has(id: any): boolean
+	return type(id) == "string" and DEFS[id] ~= nil
+end
+return AchAura
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">Anim</string>
             <string name="Source"><![CDATA[-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
@@ -34632,7 +34984,7 @@ return Anim
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">Arts</string>
             <string name="Source"><![CDATA[-- 권왕 3.19판: 새 권법 열하나의 화면 연출
@@ -36837,7 +37189,7 @@ return Arts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">Awake</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 새 각성 권법 셋의 화면 (진 금강불괴신공 · 진 무영귀각 · 진 태허유수장)
@@ -37443,7 +37795,7 @@ return Awake
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Awake3</string>
             <string name="Source"><![CDATA[-- 권왕 2.2판: 각성 권법 아홉의 새 E·R, 진 열화 화산천붕 · 진 창해 고래강림, 초·벽력신권의 뇌신낙 · 천뢰구 · 심판의 벼락 (화면)
@@ -40206,7 +40558,7 @@ return Awake3
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Blossom</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 초·매화난무권의 새 기술 (화면). 날아가는 부채, 꽃 그림자, 하늘의 큰 부채
@@ -40609,7 +40961,7 @@ return Blossom
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">CamGuard</string>
             <string name="Source"><![CDATA[-- 3.18.1판: 오의 컷씬 카메라 지킴이. 컷씬마다 카메라를 너무 낮게 (땅에 붙거나 땅속) 두고 올려다봐서
@@ -40684,7 +41036,7 @@ return CamGuard
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Cutscene</string>
             <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
@@ -40996,7 +41348,7 @@ return Cutscene
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Demon</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 피의 악마 (화면에만 보이는 연출). 처음부터 다시 짰다
@@ -41332,7 +41684,7 @@ return Demon
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Dream</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
@@ -42112,7 +42464,7 @@ return Dream
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
@@ -42885,7 +43237,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Forest</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 만목신권의 숲 (화면). 대나무 창 · 소용돌이치는 잎 · 천 년 은행나무
@@ -43494,7 +43846,7 @@ return Forest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -46377,7 +46729,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -46558,7 +46910,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
@@ -48202,7 +48554,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -48617,7 +48969,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -49085,7 +49437,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -50333,7 +50685,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
@@ -51161,7 +51513,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -51227,7 +51579,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Null</string>
             <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
@@ -53850,7 +54202,7 @@ return Null
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
@@ -53909,7 +54261,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -54314,7 +54666,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -54655,7 +55007,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -55605,7 +55957,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -56239,7 +56591,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -57526,7 +57878,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -60556,7 +60908,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -61163,7 +61515,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -62304,7 +62656,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -62521,7 +62873,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -63648,6 +64000,10 @@ local function buildAch()
 		if mt then
 			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
 		end
+		local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
+		if au then
+			table.insert(rewards, "✨ 오라 「" .. au.name .. "」")
+		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
@@ -63852,6 +64208,29 @@ local function buildShop()
 		setShopTab("mount")
 		refreshers.shop()
 	end)
+	-- 3.19.9판 업적 오라: 가진 것 (이룬 신화 업적) 을 차례로 바꿔 두른다
+	lookRow("achaura", 3, "✨", "업적 오라 (신화 업적의 무협 기운)", "✨ 다음 오라", function()
+		local owned = {}
+		for _, au in ipairs(Config.ACH_AURAS) do
+			if state and state.ach and state.ach[au.ach] then
+				table.insert(owned, au.id)
+			end
+		end
+		if #owned == 0 then
+			UI.toast("✨ 신화 업적을 이루면 그 업적의 오라를 얻어요 (🏆 업적에서 🔴 신화 업적 보기)")
+			return
+		end
+		local cur = state and state.achAura
+		local nextId = owned[1]
+		for i, id in ipairs(owned) do
+			if id == cur then
+				nextId = owned[i % #owned + 1]
+			end
+		end
+		Request:FireServer("achAura", nextId)
+	end, "오라 끄기", function()
+		Request:FireServer("achAura", "")
+	end)
 	lookRow("tint", 4, "🌌", "천상 빛깔 (시그니처 장신구)", "켜기·끄기", function()
 		Request:FireServer("skyTintToggle")
 	end)
@@ -63931,6 +64310,18 @@ local function buildShop()
 			lookRows.title.value.Text = (t and t.title) and ("「" .. t.title .. "」") or "없음"
 			local mt = state.mountSel and Config.MOUNT_BY_ID[state.mountSel]
 			lookRows.mount.value.Text = mt and (mt.icon .. " " .. mt.name) or "없음"
+			local au = state.achAura and Config.ACH_AURA_BY_ID[state.achAura]
+			local nAura = 0
+			for _, a2 in ipairs(Config.ACH_AURAS) do
+				if state.ach and state.ach[a2.ach] then
+					nAura += 1
+				end
+			end
+			lookRows.achaura.value.Text = (au and (au.icon .. " " .. au.name .. " · " .. au.desc) or "없음") .. string.format("  (가짐 %d/%d)", nAura, #Config.ACH_AURAS)
+			local ab2 = lookRows.achaura.btn2
+			if ab2 then
+				ab2.Visible = au ~= nil
+			end
 			local anyTint = false
 			for _ in pairs(state.skyTint or {}) do
 				anyTint = true
@@ -64697,7 +65088,8 @@ local function buildTest()
 	section("🏆 업적 테스트", {
 		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
 		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
-		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·연출)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
+		{ "✨ 업적 오라 다음 (업적 없이 보기)", "testAchAura" }, { "✨ 업적 오라 끄기", "testAchAura", "off" },
+		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·오라)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
 			UI.openPage("ach")
 		end },
 	})
@@ -66954,7 +67346,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -68233,7 +68625,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -70916,7 +71308,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -72026,7 +72418,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="51">
+  <Item class="Workspace" referent="52">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

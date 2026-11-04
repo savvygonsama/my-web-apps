@@ -77,6 +77,7 @@ type Profile = {
 	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
 	skyAura: boolean?, -- 3.12판: 천상 오라
 	spawnAt: string?, -- 3.16.4판: 깨어날 주막 (없으면 청운 마을)
+	achAura: string?, -- 3.19.9판: 고른 업적 오라 (무협 기운). 가진 것은 이룬 신화 업적에서 바로 센다
 	kfRefund: number?, -- 3.19.8판: 없앤 처치 연출을 돌려준 천정 (알림을 띄우고 지운다)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
@@ -251,6 +252,10 @@ local function sanitize(data: any): Profile
 	end
 	p.skyTintOff = data.skyTintOff == true or nil
 	p.skyAura = data.skyAura == true or nil
+	do
+		local au = type(data.achAura) == "string" and Config.ACH_AURA_BY_ID[data.achAura]
+		p.achAura = (au and p.ach[au.ach]) and au.id or nil
+	end
 	-- 3.19.8판: 처치 연출을 없앴다. 천정으로 산 연출은 산 값만큼 천정으로 돌려준다 (저장하면 killFx 칸이 사라지니 한 번만 돌려준다)
 	if type(data.killFx) == "table" then
 		local back = 0
@@ -853,6 +858,14 @@ function Ach.check(player: Player, p: Profile)
 			if a.mount then
 				p.mounts[a.mount] = true
 			end
+			-- 3.19.9판: 신화 업적의 오라. 두른 것이 없으면 바로 두른다
+			if a.aura and not p.achAura then
+				p.achAura = a.aura
+				local fa = Combat.fighterOfPlayer(player)
+				if fa then
+					fa.model:SetAttribute("AchAura", a.aura)
+				end
+			end
 			local st = states[player]
 			if st then
 				st.dirty = true
@@ -937,6 +950,7 @@ local function pushState(player: Player)
 		skyTintOff = p.skyTintOff == true,
 		skyAura = p.skyAura == true,
 		spawnAt = p.spawnAt or "village",
+		achAura = p.achAura,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -1090,6 +1104,9 @@ local function refreshFighter(player: Player)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
+	-- 3.19.9판 업적 오라 (이룬 업적의 것만)
+	local achAu = p.achAura and Config.ACH_AURA_BY_ID[p.achAura]
+	f.model:SetAttribute("AchAura", (achAu and p.ach[achAu.ach]) and achAu.id or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -4382,6 +4399,27 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 		end
 		toast(player, n == 0 and "🏆 이룰 업적이 더 없어요 (업적 지우기로 처음부터)" or (action == "testAchAll" and string.format("🏆 업적 %d개를 한꺼번에 이뤘어요", n) or "🏆 업적 하나를 이뤘어요"))
+	elseif action == "testAchAura" then
+		-- 3.19.9판 업적 오라 테스트: 업적 없이 아홉을 차례로 둘러 본다 (저장하지 않는다)
+		local f2 = Combat.fighterOfPlayer(player)
+		if not f2 then
+			return
+		end
+		if arg == "off" then
+			f2.model:SetAttribute("AchAura", nil)
+			toast(player, "✨ 업적 오라를 껐어요 (테스트)")
+			return
+		end
+		local cur = f2.model:GetAttribute("AchAura")
+		local idx = 0
+		for i, au in ipairs(Config.ACH_AURAS) do
+			if au.id == cur then
+				idx = i
+			end
+		end
+		local au = Config.ACH_AURAS[idx % #Config.ACH_AURAS + 1]
+		f2.model:SetAttribute("AchAura", au.id)
+		toast(player, string.format("✨ [%d/%d] %s %s · %s", idx % #Config.ACH_AURAS + 1, #Config.ACH_AURAS, au.icon, au.name, au.desc))
 	elseif action == "testAchReset" then
 		p.ach = {}
 		p.title = nil
@@ -4574,6 +4612,23 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Rebirth.perkReset(player)
 	elseif action == "samsara" then
 		Rebirth.samsara(player)
+	elseif action == "achAura" then
+		-- 3.19.9판 업적 오라 고르기 (빈 글이면 끈다)
+		local id = tostring(a1 or "")
+		if id == "" then
+			p.achAura = nil
+			toast(player, "✨ 업적 오라를 껐어요")
+		else
+			local au = Config.ACH_AURA_BY_ID[id]
+			if not au or not p.ach[au.ach] then
+				return
+			end
+			p.achAura = id
+			toast(player, string.format("✨ %s %s을(를) 둘렀어요", au.icon, au.name))
+		end
+		st.dirty = true
+		refreshFighter(player)
+		pushState(player)
 	elseif action == "title" then
 		-- 칭호 달기 (이룬 업적 중 칭호가 있는 것), 빈 글이면 뗀다
 		local id = tostring(a1 or "")

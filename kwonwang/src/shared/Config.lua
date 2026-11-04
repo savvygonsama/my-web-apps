@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4899,6 +4899,26 @@ Config.ACH_BY_ID = {}
 for i, a in ipairs(Config.ACHIEVEMENTS) do
 	a.index = i
 	Config.ACH_BY_ID[a.id] = a
+end
+-- 3.19.9판 업적 오라 (무협 기운): 신화 업적 아홉마다 그 업적만의 기운. 이루면 얻고, 🎨 꾸미기에서 하나를 고른다 (그리는 것은 AchAura.lua)
+Config.ACH_AURAS = {
+	{ id = "blooddragon", ach = "k1m", name = "혈룡 기운", icon = "🐉", desc = "핏빛 불길이 온몸에서 타오르고 불티가 튄다" },
+	{ id = "pacheon", ach = "b5000", name = "파천 기운", icon = "👹", desc = "검보랏빛 연기가 몸을 휘감고 흰 번갯불이 잘게 튄다" },
+	{ id = "meteor", ach = "raid100", name = "운석 기운", icon = "☄", desc = "두 손과 두 발에서 주황 불꽃이 일고 재가 날린다" },
+	{ id = "rainbow", ach = "maze100", name = "무지개 구름", icon = "🌈", desc = "발밑에 흰 구름이 피어오르고 무지갯빛 가루가 올라간다" },
+	{ id = "samsara", ach = "sm3", name = "윤회 기운", icon = "🔱", desc = "보랏빛 영기가 느릿하게 타오르고 금빛 별가루가 가라앉는다" },
+	{ id = "crown", ach = "sAll", name = "만권 기운", icon = "🥋", desc = "청백의 맑은 기운이 몸을 감싸고 정수리에서 흰·금빛 반짝임이 흩어진다" },
+	{ id = "petals", ach = "gearAll", name = "천상 꽃잎", icon = "🌸", desc = "연분홍·하늘빛 꽃잎이 몸 둘레에서 나풀나풀 떨어진다" },
+	{ id = "scripture", ach = "manTop", name = "천서 기운", icon = "📜", desc = "푸른 안개가 깔리고 빛의 글자가 천천히 떠오른다" },
+	{ id = "golddragon", ach = "pvp500", name = "금룡 기운", icon = "🏆", desc = "발끝부터 머리 위까지 금빛 화염이 치솟고 흰 불씨가 흩날린다" },
+}
+Config.ACH_AURA_BY_ID = {}
+for _, au in ipairs(Config.ACH_AURAS) do
+	Config.ACH_AURA_BY_ID[au.id] = au
+	local a = Config.ACH_BY_ID[au.ach]
+	if a then
+		a.aura = au.id
+	end
 end
 -- 칭호 빛깔: 칭호가 붙은 업적의 차례(어려울수록 뒤)로 정하지 않고, 업적 갈래로 정한다
 Config.ACH_COLOR = {

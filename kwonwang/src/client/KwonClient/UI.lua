@@ -1122,6 +1122,10 @@ local function buildAch()
 		if mt then
 			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
 		end
+		local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
+		if au then
+			table.insert(rewards, "✨ 오라 「" .. au.name .. "」")
+		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
@@ -1326,6 +1330,29 @@ local function buildShop()
 		setShopTab("mount")
 		refreshers.shop()
 	end)
+	-- 3.19.9판 업적 오라: 가진 것 (이룬 신화 업적) 을 차례로 바꿔 두른다
+	lookRow("achaura", 3, "✨", "업적 오라 (신화 업적의 무협 기운)", "✨ 다음 오라", function()
+		local owned = {}
+		for _, au in ipairs(Config.ACH_AURAS) do
+			if state and state.ach and state.ach[au.ach] then
+				table.insert(owned, au.id)
+			end
+		end
+		if #owned == 0 then
+			UI.toast("✨ 신화 업적을 이루면 그 업적의 오라를 얻어요 (🏆 업적에서 🔴 신화 업적 보기)")
+			return
+		end
+		local cur = state and state.achAura
+		local nextId = owned[1]
+		for i, id in ipairs(owned) do
+			if id == cur then
+				nextId = owned[i % #owned + 1]
+			end
+		end
+		Request:FireServer("achAura", nextId)
+	end, "오라 끄기", function()
+		Request:FireServer("achAura", "")
+	end)
 	lookRow("tint", 4, "🌌", "천상 빛깔 (시그니처 장신구)", "켜기·끄기", function()
 		Request:FireServer("skyTintToggle")
 	end)
@@ -1405,6 +1432,18 @@ local function buildShop()
 			lookRows.title.value.Text = (t and t.title) and ("「" .. t.title .. "」") or "없음"
 			local mt = state.mountSel and Config.MOUNT_BY_ID[state.mountSel]
 			lookRows.mount.value.Text = mt and (mt.icon .. " " .. mt.name) or "없음"
+			local au = state.achAura and Config.ACH_AURA_BY_ID[state.achAura]
+			local nAura = 0
+			for _, a2 in ipairs(Config.ACH_AURAS) do
+				if state.ach and state.ach[a2.ach] then
+					nAura += 1
+				end
+			end
+			lookRows.achaura.value.Text = (au and (au.icon .. " " .. au.name .. " · " .. au.desc) or "없음") .. string.format("  (가짐 %d/%d)", nAura, #Config.ACH_AURAS)
+			local ab2 = lookRows.achaura.btn2
+			if ab2 then
+				ab2.Visible = au ~= nil
+			end
 			local anyTint = false
 			for _ in pairs(state.skyTint or {}) do
 				anyTint = true
@@ -2171,7 +2210,8 @@ local function buildTest()
 	section("🏆 업적 테스트", {
 		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
 		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
-		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·연출)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
+		{ "✨ 업적 오라 다음 (업적 없이 보기)", "testAchAura" }, { "✨ 업적 오라 끄기", "testAchAura", "off" },
+		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·오라)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
 			UI.openPage("ach")
 		end },
 	})

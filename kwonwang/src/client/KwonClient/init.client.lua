@@ -17,6 +17,7 @@ local Music = require(script:WaitForChild("Music"))
 local Gacha = require(script:WaitForChild("Gacha"))
 local Mount = require(script:WaitForChild("Mount"))
 local Sakura = require(script:WaitForChild("Sakura"))
+local AchAura = require(script:WaitForChild("AchAura"))
 UI.previewGear = Sakura.preview
 local Titles = require(script:WaitForChild("Titles"))
 Titles.init()
@@ -133,6 +134,8 @@ local function watchChar(char: Model)
 	end)
 	-- 초월 권법의 벚꽃 부채
 	Sakura.watch(char)
+	-- 3.19.9판 업적 오라 (무협 기운)
+	AchAura.watch(char)
 	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
 	Mount.watch(char)
 	char:GetAttributeChangedSignal("Mount"):Connect(function()
@@ -2534,6 +2537,10 @@ function handlers.ach(data: any)
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
 		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
+	end
+	local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
+	if au then
+		table.insert(parts, "✨ 업적 오라 「" .. au.name .. "」 (만물상 → 🎨 꾸미기에서 바꾸기)")
 	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1
