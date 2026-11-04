@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4533,53 +4533,12 @@ for _, it in ipairs(Config.SKY_SHOP) do
 	Config.SKY_SHOP_BY_ID[it.id] = it
 end
 
--- 3.17판 처치 연출 (킬 이펙트): 내가 적이나 상대를 쓰러뜨리면 쓰러진 자리에 터진다 (둘레 사람 모두에게 보인다). 하나만 끼운다
---   권법 테마 스물넷은 천정으로 산다 (메뉴 → 💥 처치 연출, 어디서나). 신화 업적 아홉은 전용 연출을 준다 (ach = 업적 id, 상점에 없다)
---   kinds: 그리는 틀 (KillFx.lua) · c1·c2: 빛깔 · style: 바탕이 된 권법
-local function kfx(id: string, name: string, icon: string, style: string?, kinds: { string }, c1: Color3, c2: Color3, cost: number?, desc: string, ach: string?)
-	return { id = id, name = name, icon = icon, style = style, kinds = kinds, c1 = c1, c2 = c2, cost = cost, desc = desc, ach = ach, mythic = ach ~= nil }
-end
-local rgb = Color3.fromRGB
-Config.KILL_FX = {
-	kfx("plum", "매화 흩날림", "🌸", "maehwa", { "petals" }, rgb(255, 120, 180), rgb(255, 240, 245), 200, "붉은 매화 꽃잎이 터져 흩날린다"),
-	kfx("sakura", "벚꽃 회오리", "🌸", "chomaehwa", { "vortex", "petals" }, rgb(255, 170, 210), rgb(255, 255, 255), 600, "벚꽃잎이 회오리로 솟았다가 하늘로 흩어진다"),
-	kfx("fire", "열화 불기둥", "🔥", "yeolhwa", { "flamePillar" }, rgb(255, 110, 30), rgb(255, 220, 90), 400, "발밑에서 불기둥이 솟고 불티가 날린다"),
-	kfx("karma", "업화 연꽃", "🪷", "eophwa", { "lotus", "flamePillar" }, rgb(235, 40, 30), rgb(255, 170, 60), 800, "붉은 불의 연꽃이 피어나고 한가운데서 불길이 솟는다"),
-	kfx("thunder", "벽력 낙뢰", "⚡", "byeokryeok", { "bolt" }, rgb(255, 235, 90), rgb(255, 255, 255), 400, "하늘에서 노란 벼락이 꽂힌다"),
-	kfx("skythunder", "천뢰 삼연격", "🌩", "chobyeok", { "bolt3" }, rgb(170, 120, 255), rgb(235, 225, 255), 900, "보랏빛 벼락 셋이 차례로 내리꽂힌다"),
-	kfx("sea", "창해 물기둥", "🌊", "changhae", { "waterSpout" }, rgb(40, 130, 230), rgb(210, 240, 255), 450, "물기둥이 솟았다가 물보라로 쏟아진다"),
-	kfx("wind", "풍신 회오리", "🌪", "pungsin", { "vortex" }, rgb(140, 235, 200), rgb(240, 255, 250), 350, "푸른 바람이 회오리치며 솟구친다"),
-	kfx("ripple", "태허 물결", "💧", "taeheo", { "ripple" }, rgb(110, 190, 255), rgb(220, 245, 255), 250, "고요한 물결 고리가 겹겹이 퍼진다"),
-	kfx("vajra", "금강 법륜", "☸", "geumgang", { "sigil" }, rgb(255, 200, 80), rgb(255, 245, 200), 400, "금빛 법륜이 바닥에 새겨져 돌다가 빛기둥으로 터진다"),
-	kfx("shadow", "무영 그림자 베기", "🌑", "muyeong", { "slashX" }, rgb(150, 100, 255), rgb(40, 25, 70), 350, "보이지 않던 칼자국 둘이 엇갈려 나타난다"),
-	kfx("blood", "혈마 핏빛 참", "🩸", "hyeolma", { "slashX", "bloodDrops" }, rgb(210, 30, 45), rgb(90, 0, 12), 450, "핏빛 참격이 엇갈리고 붉은 방울이 튄다"),
-	kfx("sunmoon", "일월 쌍구", "🌗", "ilwol", { "orbits" }, rgb(255, 185, 60), rgb(200, 220, 255), 800, "해와 달이 서로 돌다가 한 점에서 부딪혀 터진다"),
-	kfx("null", "공백 소거", "⬛", "gongbaek", { "pixels" }, rgb(20, 20, 24), rgb(255, 0, 220), 700, "쓰러진 자리가 검은 화소로 지워진다"),
-	kfx("cloud", "운류 구름", "☁", "unryu", { "clouds" }, rgb(235, 242, 255), rgb(190, 220, 255), 250, "몽실한 구름이 피어올라 흩어진다"),
-	kfx("galaxy", "성하 별무리", "✨", "seongha", { "stars" }, rgb(90, 110, 230), rgb(255, 240, 170), 900, "별빛 고리가 퍼지고 별들이 하늘로 오른다"),
-	kfx("clock", "영겁 시계", "⏳", "yeonggeop", { "clock" }, rgb(110, 200, 255), rgb(255, 230, 150), 900, "빛의 시계판이 떠올라 바늘이 거꾸로 돌다가 깨진다"),
-	kfx("vine", "만목 덩굴", "🌿", "manmok", { "leaves" }, rgb(80, 190, 80), rgb(200, 255, 150), 500, "덩굴이 솟아 감았다가 잎사귀로 흩어진다"),
-	kfx("dream", "몽유 나비", "🦋", "hojeop", { "butterflies" }, rgb(130, 130, 240), rgb(255, 225, 255), 700, "푸른 나비 떼가 날아올라 꿈처럼 사라진다"),
-	kfx("jar", "취선 술독", "🍶", "chwi", { "jar" }, rgb(240, 150, 60), rgb(255, 240, 200), 300, "술독이 떨어져 깨지고 술방울이 튄다"),
-	kfx("taiji", "무극 태극", "☯", "mugeuk", { "taiji" }, rgb(245, 245, 250), rgb(22, 22, 28), 800, "바닥에 태극이 돌다가 한 점으로 오그라든다"),
-	kfx("wheel", "윤회 바퀴", "☸", "rinne", { "wheel" }, rgb(130, 100, 255), rgb(255, 220, 140), 800, "보랏빛 수레바퀴가 서서 돌다가 흩어진다"),
-	kfx("mirror", "무상 거울 조각", "🪞", "musangkwon", { "shards" }, rgb(205, 212, 228), rgb(255, 255, 255), 600, "거울이 깨져 조각이 반짝이며 흩어진다"),
-	kfx("void", "아공 소멸", "🕳", "agong", { "void" }, rgb(80, 40, 160), rgb(10, 5, 20), 700, "검보랏빛 구멍이 열려 빨아들이고 닫힌다"),
-	-- 신화 업적 전용
-	kfx("m_bloodDragon", "혈룡승천", "🐉", nil, { "dragon", "flamePillar" }, rgb(220, 30, 40), rgb(255, 200, 80), nil, "붉은 용이 불기둥을 감고 하늘로 오른다", "k1m"),
-	kfx("m_pacheon", "파천멸", "👹", nil, { "void", "bolt3" }, rgb(150, 40, 255), rgb(255, 60, 70), nil, "하늘이 갈라져 검붉은 벼락이 구멍 속으로 꽂힌다", "b5000"),
-	kfx("m_meteor", "재앙의 운석", "☄", nil, { "meteor" }, rgb(255, 120, 40), rgb(255, 230, 150), nil, "하늘에서 불붙은 운석이 떨어져 땅이 패인다", "raid100"),
-	kfx("m_rainbow", "무지개 구름", "🌈", nil, { "clouds", "rainbow" }, rgb(255, 255, 255), rgb(200, 230, 255), nil, "구름이 피어오르고 무지개 고리가 겹겹이 퍼진다", "maze100"),
-	kfx("m_samsara", "윤회륜", "🔱", nil, { "wheel", "sigil" }, rgb(140, 100, 255), rgb(255, 215, 120), nil, "바닥의 법륜 위로 윤회의 수레바퀴가 솟아 돈다", "sm3"),
-	kfx("m_allFists", "만권귀일", "🥋", nil, { "crown", "stars" }, rgb(255, 205, 70), rgb(255, 250, 225), nil, "금빛 주먹 왕관이 떠오르고 별이 쏟아진다", "sAll"),
-	kfx("m_gear", "천상 장신구", "🎐", nil, { "petals", "rainbow" }, rgb(255, 190, 230), rgb(190, 240, 255), nil, "무지갯빛 꽃잎과 고리가 함께 퍼진다", "gearAll"),
-	kfx("m_scripture", "천서", "📜", nil, { "pages", "sigil" }, rgb(150, 230, 255), rgb(255, 240, 190), nil, "빛나는 책장이 펼쳐져 날아오르고 법진이 새겨진다", "manTop"),
-	kfx("m_goldDragon", "금룡승천", "🏆", nil, { "dragon", "crown" }, rgb(255, 200, 60), rgb(255, 250, 220), nil, "금빛 용이 왕관을 휘감아 하늘로 오른다", "pvp500"),
+-- 3.19.8판: 처치 연출 (킬 이펙트) 을 없앴다. 천정으로 산 연출은 다음에 들어올 때 산 값만큼 천정으로 돌려준다 (업적 전용 연출은 값이 없다)
+Config.KILL_FX_REFUND = {
+	plum = 200, sakura = 600, fire = 400, karma = 800, thunder = 400, skythunder = 900, sea = 450, wind = 350, ripple = 250, vajra = 400,
+	shadow = 350, blood = 450, sunmoon = 800, null = 700, cloud = 250, galaxy = 900, clock = 900, vine = 500, dream = 700, jar = 300,
+	taiji = 800, wheel = 800, mirror = 600, void = 700,
 }
-Config.KILL_FX_BY_ID = {}
-for _, k in ipairs(Config.KILL_FX) do
-	Config.KILL_FX_BY_ID[k.id] = k
-end
 -- 운석 낙하: 천상계에 사람이 있으면 몇 분마다 섬 어딘가에 운석이 떨어지고, 운석 수호수가 나타난다
 Config.METEOR = { every = 300, first = 90, warn = 6, life = 150 }
 -- 천상계의 보스 셋: 체력은 아주 많고 공격은 덜 아프다 (전투력은 땅의 마지막 보스보다 조금 위)
@@ -4861,27 +4820,27 @@ Config.ACHIEVEMENTS = {
 	{ id = "mnt4", icon = "🐎", name = "말 부자", desc = "탈것 넷을 가진다", kind = "mounts", n = 4, gems = 200 },
 	{ id = "man10", icon = "📜", name = "심법 수집가", desc = "심법 열을 가진다", kind = "manuals", n = 10, coins = 200000 },
 	-- 3.13판: 업적 확장 (tier: 1 일반 · 2 희귀 · 3 영웅 · 4 전설 · 5 신화. 높을수록 머리 위 칭호가 화려하다)
-	{ id = "k1m", icon = "💀", name = "천하무적", desc = "적 1,000,000을 쓰러뜨린다", kind = "kills", n = 1000000, coins = 30000000, scrolls = 30, title = "천하무적", tier = 5, mount = "hyeolyeom", killfx = "m_bloodDragon" },
-	{ id = "b5000", icon = "👹", name = "보스의 악몽", desc = "보스를 5,000번 쓰러뜨린다", kind = "bossSum", n = 5000, coins = 20000000, scrolls = 30, title = "보스의 악몽", tier = 5, mount = "hyeolyeom", killfx = "m_pacheon" },
+	{ id = "k1m", icon = "💀", name = "천하무적", desc = "적 1,000,000을 쓰러뜨린다", kind = "kills", n = 1000000, coins = 30000000, scrolls = 30, title = "천하무적", tier = 5, mount = "hyeolyeom" },
+	{ id = "b5000", icon = "👹", name = "보스의 악몽", desc = "보스를 5,000번 쓰러뜨린다", kind = "bossSum", n = 5000, coins = 20000000, scrolls = 30, title = "보스의 악몽", tier = 5, mount = "hyeolyeom" },
 	{ id = "seokwang", icon = "🪨", name = "돌을 깨다", desc = "석왕을 쓰러뜨린다", kind = "boss", arg = "seokwang", n = 1, coins = 60000, title = "돌을 깬 주먹", tier = 2 },
 	{ id = "gyunwang", icon = "🍄", name = "버섯 숲의 끝", desc = "균왕을 쓰러뜨린다", kind = "boss", arg = "gyunwang", n = 1, coins = 60000, tier = 2 },
 	{ id = "noeje", icon = "⚡", name = "벼락을 꺾다", desc = "뇌제를 쓰러뜨린다", kind = "boss", arg = "noeje", n = 1, gems = 400, title = "벼락을 꺾은 자", tier = 3 },
 	{ id = "yeombong", icon = "🔥", name = "불새를 떨구다", desc = "염봉을 쓰러뜨린다", kind = "boss", arg = "yeombong", n = 1, gems = 400, title = "불새를 떨군 자", tier = 3 },
-	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud", killfx = "m_meteor" },
-	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud", killfx = "m_rainbow" },
+	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
+	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
-	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5, mount = "geumryong", killfx = "m_samsara" },
+	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5, mount = "geumryong" },
 	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
-	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho", killfx = "m_allFists" },
+	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho" },
 	{ id = "rbs1", icon = "♾", name = "윤회의 권", desc = "환생 권법 하나를 익힌다", kind = "rebirthStyles", n = 1, coins = 5000000, title = "윤회의 권", tier = 3 },
 	{ id = "m25", icon = "✦", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
 	{ id = "gear5", icon = "🎐", name = "장신구 수집가", desc = "시그니처 장신구가 있는 권법 다섯을 익힌다", kind = "gear", n = 5, gems = 800, title = "장신구 수집가", tier = 3 },
-	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5, mount = "cheonho", killfx = "m_gear" },
+	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5, mount = "cheonho" },
 	{ id = "tint3", icon = "🌌", name = "천상의 빛깔", desc = "장신구 셋을 천상 빛깔로 물들인다", kind = "tint", n = 3, gems = 600, title = "천상의 빛깔", tier = 3 },
 	{ id = "aura1", icon = "💫", name = "별을 두르다", desc = "천상 오라를 얻는다", kind = "aura", n = 1, gems = 300, title = "별을 두른 자", tier = 4 },
 	{ id = "manLeg", icon = "📜", name = "심법의 대가", desc = "전설 등급 심법을 가진다", kind = "manualTop", n = 4, coins = 1000000, title = "심법의 대가", tier = 3 },
-	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5, mount = "cheonho", killfx = "m_scripture" },
+	{ id = "manTop", icon = "📜", name = "천상 심법", desc = "천상 등급 심법을 가진다", kind = "manualTop", n = 6, gems = 2000, title = "천상 심법", tier = 5, mount = "cheonho" },
 	{ id = "egg1", icon = "🔍", name = "호기심", desc = "강호에 숨은 것 하나를 찾는다", kind = "eggs", n = 1, coins = 77777, tier = 2 },
 	{ id = "egg4", icon = "🔍", name = "숨은 것을 찾는 자", desc = "강호에 숨은 것 넷을 모두 찾는다 (돌탑 일곱·고양이·오리 가족·바위의 검)", kind = "eggs", n = 4, coins = 7777777, scrolls = 7, title = "숨은 것을 찾는 자", tier = 4 },
 	{ id = "edge", icon = "🌫", name = "세상 끝 너머", desc = "세상 끝 벼랑의 무너지는 돌길을 건너 숨은 정원의 상자를 연다", kind = "seen", arg = "egg_edge", n = 1, gems = 300, coins = 1000000, title = "세상 끝을 넘은 자", tier = 4 },
@@ -4889,7 +4848,7 @@ Config.ACHIEVEMENTS = {
 	{ id = "hwangsa", icon = "🏜", name = "모래를 가르다", desc = "황사를 쓰러뜨린다", kind = "boss", arg = "hwangsa", n = 1, coins = 120000, tier = 2 },
 	{ id = "geukgwang", icon = "🌌", name = "극광을 꺾다", desc = "극광을 쓰러뜨린다", kind = "boss", arg = "geukgwang", n = 1, gems = 500, title = "극광을 꺾은 자", tier = 3 },
 	{ id = "doseon", icon = "🍑", name = "무릉도원", desc = "도선을 쓰러뜨린다", kind = "boss", arg = "doseon", n = 1, gems = 500, title = "무릉의 객", tier = 3 },
-	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5, mount = "rainbowcloud", killfx = "m_goldDragon" },
+	{ id = "pvp500", icon = "🏆", name = "강호 제일권", desc = "다른 무인을 오백 번 이긴다 (배틀그라운드 포함)", kind = "pvp", n = 500, coins = 30000000, scrolls = 30, title = "강호 제일권", tier = 5, mount = "rainbowcloud" },
 }
 -- 3.13판: 업적 등급 (칭호의 화려함) · 갈래
 Config.ACH_TIERS = {

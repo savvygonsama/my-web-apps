@@ -29,7 +29,6 @@ local C = {
 UI.C = C
 -- 3.11.2판: 대기실 미리보기 인형에 장신구를 입히는 함수 (init.client가 Sakura.preview를 넣는다)
 UI.previewGear = (nil :: any)
-UI.previewKillFx = (nil :: any) -- 3.17판: 처치 연출 미리보기 (init에서 KillFx.preview를 넣는다)
 UI.setLowGfx = (nil :: any) -- 3.18판: 가벼운 그래픽 켜고 끄기 (init에서 넣는다)
 UI.isLowGfx = (nil :: any)
 
@@ -1123,10 +1122,6 @@ local function buildAch()
 		if mt then
 			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
 		end
-		local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
-		if kf then
-			table.insert(rewards, kf.icon .. " 처치 연출 「" .. kf.name .. "」")
-		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
@@ -1215,9 +1210,9 @@ local function buildAch()
 	end
 end
 
--- 3.17.4판 만물상: 탭 다섯 (물건 · 탈것 · 처치 연출 · 꾸미기 · 로벅스). 처치 연출 탭의 내용은 buildKillFx가 채운다
+-- 3.17.4판 만물상: 탭 (물건 · 심법 · 탈것 · 꾸미기 · 로벅스). 3.19.8판: 처치 연출 탭은 없앴다
 local shopTabFrames: { [string]: Frame } = {}
-local SHOP_TABS = { { "goods", "🧪 물건" }, { "manuals", "📜 심법" }, { "mount", "🐎 탈것" }, { "killfx", "💥 처치 연출" }, { "look", "🎨 꾸미기" }, { "premium", "💎 로벅스" } }
+local SHOP_TABS = { { "goods", "🧪 물건" }, { "manuals", "📜 심법" }, { "mount", "🐎 탈것" }, { "look", "🎨 꾸미기" }, { "premium", "💎 로벅스" } }
 local shopTabBtns: { [string]: TextButton } = {}
 local function setShopTab(id: string)
 	if not shopTabFrames[id] then
@@ -1331,12 +1326,6 @@ local function buildShop()
 		setShopTab("mount")
 		refreshers.shop()
 	end)
-	lookRow("killfx", 3, "💥", "처치 연출", "💥 연출 고르기", function()
-		setShopTab("killfx")
-		refreshers.shop()
-	end, "연출 빼기", function()
-		Request:FireServer("killFxEquip", "")
-	end)
 	lookRow("tint", 4, "🌌", "천상 빛깔 (시그니처 장신구)", "켜기·끄기", function()
 		Request:FireServer("skyTintToggle")
 	end)
@@ -1374,7 +1363,7 @@ local function buildShop()
 
 	setShopTab("goods")
 	refreshers.shop = function(first: boolean?)
-		-- 다른 곳에서 특정 탭으로 열 때 (UI.openPage("shop", { tab = "killfx" }))
+		-- 다른 곳에서 특정 탭으로 열 때 (UI.openPage("shop", { tab = "mount" }))
 		if first and pageOpt and pageOpt.tab then
 			setShopTab(pageOpt.tab)
 		end
@@ -1416,12 +1405,6 @@ local function buildShop()
 			lookRows.title.value.Text = (t and t.title) and ("「" .. t.title .. "」") or "없음"
 			local mt = state.mountSel and Config.MOUNT_BY_ID[state.mountSel]
 			lookRows.mount.value.Text = mt and (mt.icon .. " " .. mt.name) or "없음"
-			local kf = state.killFxOn and Config.KILL_FX_BY_ID[state.killFxOn]
-			lookRows.killfx.value.Text = kf and (kf.icon .. " " .. kf.name) or "없음"
-			local b2 = lookRows.killfx.btn2
-			if b2 then
-				b2.Visible = kf ~= nil
-			end
 			local anyTint = false
 			for _ in pairs(state.skyTint or {}) do
 				anyTint = true
@@ -1434,10 +1417,6 @@ local function buildShop()
 			if tb2 then
 				tb2.Visible = t ~= nil
 			end
-		end
-		local kr = refreshers.killfx
-		if kr then
-			kr()
 		end
 		local mr = refreshers.manuals
 		if mr then
@@ -1687,95 +1666,6 @@ local function buildSkyShop()
 end
 
 ------------------------------------------------------------------------
--- 3.17판 처치 연출 (킬 이펙트): 어디서나 천정으로 산다. 신화 업적 전용은 업적으로만. 하나만 끼운다
-------------------------------------------------------------------------
-local function buildKillFx()
-	local page = shopTabFrames.killfx
-	if not page then
-		return
-	end
-	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 17, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 150), Parent = page })
-	local offBtn = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 0), Size = UDim2.new(0, 180, 0, 32), Text = "✖ 연출 빼기", TextSize = 14, BackgroundColor3 = C.panel2, Parent = page }, function()
-		Request:FireServer("killFxEquip", "")
-	end)
-	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
-	new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
-	local btns: { [string]: TextButton } = {}
-	local order = 0
-	local function header(t: string, col: Color3)
-		order += 1
-		text({ Size = UDim2.new(1, -12, 0, 26), Text = t, TextSize = 18, Font = Enum.Font.GothamBlack, TextColor3 = col, LayoutOrder = order, Parent = list })
-	end
-	local function row(k: any)
-		order += 1
-		local mythic = k.mythic
-		local r = new("Frame", { Size = UDim2.new(1, -12, 0, 66), BackgroundColor3 = mythic and Color3.fromRGB(52, 20, 26) or Color3.fromRGB(34, 30, 40), LayoutOrder = order, Parent = list }, { corner(10), stroke(mythic and Color3.fromRGB(255, 200, 90) or k.c1, mythic and 2 or 1) })
-		-- 빛깔 두 점
-		new("Frame", { Position = UDim2.new(0, 12, 0, 12), Size = UDim2.new(0, 16, 0, 16), BackgroundColor3 = k.c1, Parent = r }, { corner(99) })
-		new("Frame", { Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(0, 16, 0, 16), BackgroundColor3 = k.c2, Parent = r }, { corner(99) })
-		text({ Position = UDim2.new(0, 38, 0, 5), Size = UDim2.new(1, -290, 0, 28), Text = k.icon .. " " .. k.name, TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = mythic and Color3.fromRGB(255, 215, 120) or Color3.new(1, 1, 1), Parent = r })
-		local st = k.style and Config.STYLE_BY_ID[k.style]
-		local a = k.ach and Config.ACH_BY_ID[k.ach]
-		local sub = k.desc .. (st and ("   ·   " .. st.icon .. " " .. st.name) or "") .. (a and ("   ·   🏆 신화 업적 「" .. a.name .. "」") or "")
-		text({ Position = UDim2.new(0, 38, 0, 34), Size = UDim2.new(1, -290, 0, 24), Text = sub, TextSize = 13, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = r })
-		button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -184, 0.5, 0), Size = UDim2.new(0, 56, 0, 42), Text = "👁", TextSize = 18, BackgroundColor3 = C.panel2, Parent = r }, function()
-			if UI.previewKillFx then
-				window.Visible = false
-				UI.previewKillFx(k.id)
-			end
-		end)
-		btns[k.id] = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 164, 0, 44), Text = "", TextSize = 16, Parent = r }, function()
-			local owned = state and state.killFx and state.killFx[k.id]
-			if owned then
-				Request:FireServer("killFxEquip", k.id)
-			elseif not k.ach then
-				Request:FireServer("killFxBuy", k.id)
-			end
-		end)
-	end
-	header("🔴 신화 업적 전용 (업적을 이루면 받는다)", Color3.fromRGB(255, 120, 110))
-	for _, k in ipairs(Config.KILL_FX) do
-		if k.mythic then
-			row(k)
-		end
-	end
-	header("💠 권법 테마 (천정으로 산다)", Color3.fromRGB(150, 230, 255))
-	for _, k in ipairs(Config.KILL_FX) do
-		if not k.mythic then
-			row(k)
-		end
-	end
-	refreshers.killfx = function()
-		local g = state and state.skyGems or 0
-		local on = state and state.killFxOn
-		local cur = on and Config.KILL_FX_BY_ID[on]
-		local nOwned = 0
-		for _ in pairs(state and state.killFx or {}) do
-			nOwned += 1
-		end
-		head.Text = string.format("💠 천정 %s  ·  가진 연출 %d/%d  ·  끼움: %s", Config.formatNumber(g), nOwned, #Config.KILL_FX, cur and (cur.icon .. " " .. cur.name) or "없음")
-		offBtn.Visible = cur ~= nil
-		for _, k in ipairs(Config.KILL_FX) do
-			local b = btns[k.id]
-			local owned = state and state.killFx and state.killFx[k.id]
-			if owned and on == k.id then
-				b.Text = "✔ 끼움"
-				b.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
-			elseif owned then
-				b.Text = "끼우기"
-				b.BackgroundColor3 = Color3.fromRGB(70, 90, 140)
-			elseif k.ach then
-				b.Text = "🔒 업적 보상"
-				b.BackgroundColor3 = C.panel
-			else
-				b.Text = "💠 " .. k.cost
-				b.BackgroundColor3 = g >= k.cost and Color3.fromRGB(60, 120, 200) or C.panel
-			end
-		end
-	end
-end
-
-------------------------------------------------------------------------
 -- 천층탑: 지금 층과 나가기
 ------------------------------------------------------------------------
 local towerFrame: Frame? = nil
@@ -1961,7 +1851,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
 		add("  단추가 흐리면 아직 쓸 수 없다 (대기 중이거나 🔒 잠김). 수련할 때는 가운데에 지금! 단추가 뜬다")
 		add("")
-		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·만물상 (물건·심법·탈것·처치 연출·꾸미기·로벅스)·도움말 (수련 안내도 여기)")
+		add("• 왼쪽 위 ☰ 단추로 메뉴를 펴고 접는다: 권법·지도·능력치·업적·만물상 (물건·심법·탈것·꾸미기·로벅스)·도움말 (수련 안내도 여기)")
 		add("• 오른쪽 아래 구석의 작은 글자는 게임 판 번호다 (업데이트가 들어왔는지 볼 때)")
 		add("• 메뉴의 🌿 그래픽 단추: 가볍게로 바꾸면 작은 풀·꽃·덤불을 내 화면에서 걷어 덜 끊긴다 (휴대폰은 처음부터 가볍게)")
 	elseif tab == "fight" then
@@ -2052,7 +1942,6 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
-		add("• 💥 처치 연출 (만물상 → 💥 탭): 내가 쓰러뜨린 자리에 터지는 연출. 권법 테마 스물넷은 천정으로, 신화 업적 아홉은 전용 연출. 👁로 미리보기, 하나만 끼운다")
 		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
@@ -2278,7 +2167,7 @@ local function buildTest()
 		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적·목인 치우기", "testClear" },
 		{ "🎬 컷씬 다시 보기", "testSeen" }, { "🗼 탑: 다음 보스 층", "testTower" }, { "🗼 탑: 이 층 쓸기", "testTower", "clear" },
 	})
-	-- 3.17판: 업적 · 처치 연출 테스트
+	-- 3.17판: 업적 테스트
 	section("🏆 업적 테스트", {
 		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
 		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
@@ -2286,22 +2175,6 @@ local function buildTest()
 			UI.openPage("ach")
 		end },
 	})
-	do
-		local kfIdx = 0
-		section("💥 처치 연출 테스트", {
-			{ "💥 모두 얻기", "testKillFxAll" }, { "💥 다음 연출 끼우기", "testKillFxNext" }, { "🗑 모두 지우기", "testKillFxReset", color = C.red },
-			{ "🥷 앞에 한 대 무뢰배 넷", "testKillTargets", close = true }, { "👁 미리보기 (다음)", "", client = function()
-				kfIdx = kfIdx % #Config.KILL_FX + 1
-				local k = Config.KILL_FX[kfIdx]
-				UI.toast(string.format("👁 [%d/%d] %s %s", kfIdx, #Config.KILL_FX, k.icon, k.name))
-				if UI.previewKillFx then
-					UI.previewKillFx(k.id)
-				end
-			end }, { "💥 처치 연출 창 열기", "", client = function()
-				UI.openPage("shop", { tab = "killfx" })
-			end },
-		})
-	end
 	section("📜 이야기·사부", {
 		{ "📜 이야기 다음 장", "testStory" }, { "📜 사부의 부탁 한 단계", "testQuestSkip" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
 		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "🌫 세상 끝 벼랑으로", "testEdgeTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
@@ -4455,7 +4328,6 @@ function UI.init(req: RemoteEvent)
 	buildShop()
 	buildManuals()
 	buildSkyShop()
-	buildKillFx()
 	buildHelp()
 	buildTest()
 	buildMap()

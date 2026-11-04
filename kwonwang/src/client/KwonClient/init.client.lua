@@ -41,8 +41,6 @@ local Geuk = require(script:WaitForChild("Geuk"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
-local KillFx = require(script:WaitForChild("KillFx"))
-UI.previewKillFx = KillFx.preview
 -- 3.18판: 가벼운 그래픽 (휴대폰은 처음부터 켠다. 메뉴에서 바꾼다)
 local Perf = require(script:WaitForChild("Perf"))
 UI.setLowGfx = function(on: boolean)
@@ -1968,11 +1966,6 @@ function handlers.ko(m: Model, by: Model?)
 	if p then
 		Fx.dust(p - Vector3.new(0, 2, 0), 3)
 		Fx.sound("fall", 0.6, 0.8, p)
-		-- 3.17판 처치 연출: 쓰러뜨린 사람이 끼운 연출이 이 자리에 터진다
-		local kf = by and by:GetAttribute("KillFx")
-		if type(kf) == "string" then
-			KillFx.play(kf, p)
-		end
 	end
 	if m == myChar() then
 		dead = true
@@ -2541,13 +2534,6 @@ function handlers.ach(data: any)
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
 		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
-	end
-	local kf = a.killfx and Config.KILL_FX_BY_ID[a.killfx]
-	if kf then
-		table.insert(parts, kf.icon .. " 처치 연출 「" .. kf.name .. "」 (만물상 → 💥 처치 연출에서 끼우기)")
-		task.delay(0.6, function()
-			KillFx.preview(kf.id)
-		end)
 	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1

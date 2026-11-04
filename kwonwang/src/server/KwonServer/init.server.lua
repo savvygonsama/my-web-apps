@@ -77,8 +77,7 @@ type Profile = {
 	skyTintOff: boolean?, -- 3.12판: 천상 빛깔을 잠시 끔
 	skyAura: boolean?, -- 3.12판: 천상 오라
 	spawnAt: string?, -- 3.16.4판: 깨어날 주막 (없으면 청운 마을)
-	killFx: { [string]: boolean }, -- 3.17판: 가진 처치 연출
-	killFxOn: string?, -- 3.17판: 끼운 처치 연출
+	kfRefund: number?, -- 3.19.8판: 없앤 처치 연출을 돌려준 천정 (알림을 띄우고 지운다)
 	rebirth: number, -- 환생 횟수 (1.9판)
 	perks: { [string]: number }, -- 2.9판: 산 환생 특전 (단계)
 	samsara: number, -- 2.9판: 넘은 윤회의 시련 수
@@ -123,7 +122,6 @@ local function defaultProfile(): Profile
 		mats = {},
 		skyBuffUntil = 0,
 		skyTint = {},
-		killFx = {},
 		rebirth = 0,
 		perks = {},
 		samsara = 0,
@@ -253,14 +251,20 @@ local function sanitize(data: any): Profile
 	end
 	p.skyTintOff = data.skyTintOff == true or nil
 	p.skyAura = data.skyAura == true or nil
+	-- 3.19.8판: 처치 연출을 없앴다. 천정으로 산 연출은 산 값만큼 천정으로 돌려준다 (저장하면 killFx 칸이 사라지니 한 번만 돌려준다)
 	if type(data.killFx) == "table" then
+		local back = 0
 		for id, on in pairs(data.killFx) do
-			if type(id) == "string" and Config.KILL_FX_BY_ID[id] and on == true then
-				p.killFx[id] = true
+			local cost = type(id) == "string" and Config.KILL_FX_REFUND[id]
+			if cost and on == true then
+				back += cost
 			end
 		end
+		if back > 0 then
+			p.skyGems += back
+			p.kfRefund = back
+		end
 	end
-	p.killFxOn = (type(data.killFxOn) == "string" and p.killFx[data.killFxOn]) and data.killFxOn or nil
 	p.spawnAt = (type(data.spawnAt) == "string" and Config.JUMAK_BY_ID[data.spawnAt] and not Config.JUMAK_BY_ID[data.spawnAt].village) and data.spawnAt or nil
 	p.swordPulls = math.floor(num(data.swordPulls, 100000))
 	for _, key in ipairs({ "mq", "mqn" }) do
@@ -841,14 +845,6 @@ function Ach.check(player: Player, p: Profile)
 				st0.dirty = true
 			end
 		end
-		-- 3.17판: 이미 이룬 신화 업적의 전용 처치 연출도 받는다
-		if p.ach[a.id] and a.killfx and not p.killFx[a.killfx] then
-			p.killFx[a.killfx] = true
-			local st0 = states[player]
-			if st0 then
-				st0.dirty = true
-			end
-		end
 		if not p.ach[a.id] and Ach.value(p, a) >= a.n then
 			p.ach[a.id] = true
 			p.coins += a.coins or 0
@@ -856,9 +852,6 @@ function Ach.check(player: Player, p: Profile)
 			p.scrolls += a.scrolls or 0
 			if a.mount then
 				p.mounts[a.mount] = true
-			end
-			if a.killfx then
-				p.killFx[a.killfx] = true
 			end
 			local st = states[player]
 			if st then
@@ -882,6 +875,11 @@ local function pushState(player: Player)
 		return
 	end
 	Ach.check(player, p)
+	if p.kfRefund then
+		toast(player, string.format("💥 처치 연출이 없어져, 산 값 💠 천정 %s을(를) 돌려드렸어요", Config.formatNumber(p.kfRefund)))
+		p.kfRefund = nil
+		st.dirty = true
+	end
 	local idx, realm = Calc.realm(p)
 	local mastery = {}
 	for id in pairs(p.styles) do
@@ -939,8 +937,6 @@ local function pushState(player: Player)
 		skyTintOff = p.skyTintOff == true,
 		skyAura = p.skyAura == true,
 		spawnAt = p.spawnAt or "village",
-		killFx = p.killFx,
-		killFxOn = p.killFxOn,
 		autoOn = p.autoOn == true,
 		autoStat = p.autoStat or "all",
 		gradeUp = p.gradeUp,
@@ -1094,8 +1090,6 @@ local function refreshFighter(player: Player)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
-	-- 3.17판 처치 연출: 내가 쓰러뜨리면 모두의 화면에 이 연출이 터진다
-	f.model:SetAttribute("KillFx", p.killFxOn or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -4125,20 +4119,6 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f then
 			Npc.spawn("dummy", false, f.root.Position + Combat.look(f) * 12, "test")
 		end
-	elseif action == "testKillTargets" then
-		-- 3.17판 처치 연출 테스트: 앞에 한 대에 쓰러지는 무뢰배 넷 (체력 1)
-		if f then
-			local look = Combat.look(f)
-			local side = Vector3.new(-look.Z, 0, look.X)
-			for i = 1, 4 do
-				local e = Npc.spawn("thug", false, f.root.Position + look * 10 + side * ((i - 2.5) * 5), "test")
-				if e then
-					e.f.hp = 1
-					e.f.maxHp = 1
-					Combat.sync(e.f)
-				end
-			end
-		end
 	elseif action == "testClear" then
 		-- 테스트로 부른 적·목인을 모두 치운다
 		for i = #Npc.list, 1, -1 do
@@ -4394,9 +4374,6 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				if a.mount then
 					p.mounts[a.mount] = true
 				end
-				if a.killfx then
-					p.killFx[a.killfx] = true
-				end
 				n += 1
 				if action ~= "testAchAll" then
 					Push:FireClient(player, "ach", { id = a.id })
@@ -4409,28 +4386,6 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		p.ach = {}
 		p.title = nil
 		toast(player, "🏆 업적 기록을 지웠어요 (이미 조건을 채운 업적은 바로 다시 이뤄진다)")
-	elseif action == "testKillFxAll" then
-		-- 3.17판 처치 연출 테스트: 모두 갖기 · 다음 연출 끼우기 (목인을 쓰러뜨려 본다) · 모두 지우기
-		for _, k in ipairs(Config.KILL_FX) do
-			p.killFx[k.id] = true
-		end
-		p.killFxOn = p.killFxOn or Config.KILL_FX[1].id
-		toast(player, string.format("💥 처치 연출 %d가지를 모두 얻었어요", #Config.KILL_FX))
-	elseif action == "testKillFxNext" then
-		local cur = 0
-		for i, k in ipairs(Config.KILL_FX) do
-			if k.id == p.killFxOn then
-				cur = i
-			end
-		end
-		local k = Config.KILL_FX[cur % #Config.KILL_FX + 1]
-		p.killFx[k.id] = true
-		p.killFxOn = k.id
-		toast(player, string.format("💥 [%d/%d] %s %s 끼움 · 목인을 쓰러뜨려 보세요", cur % #Config.KILL_FX + 1, #Config.KILL_FX, k.icon, k.name))
-	elseif action == "testKillFxReset" then
-		p.killFx = {}
-		p.killFxOn = nil
-		toast(player, "💥 처치 연출을 모두 지웠어요 (신화 업적 전용은 업적이 있으면 다시 들어온다)")
 	elseif action == "testReset" then
 		profiles[player] = defaultProfile()
 	else
@@ -4693,41 +4648,6 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if f and f.model:GetAttribute("Mount") then
 			Combat.mount(f, m.id)
 		end
-		pushState(player)
-	elseif action == "killFxBuy" then
-		-- 3.17판 처치 연출 사기 (천정, 어디서나). 사면 바로 끼운다
-		local def = type(a1) == "string" and Config.KILL_FX_BY_ID[a1]
-		if not def or def.ach or not def.cost then
-			return
-		end
-		if p.killFx[def.id] then
-			toast(player, "💥 이미 가진 연출이에요")
-			return
-		end
-		if p.skyGems < def.cost then
-			toast(player, string.format("💠 천정이 모자라요 (%d 필요)", def.cost))
-			return
-		end
-		p.skyGems -= def.cost
-		p.killFx[def.id] = true
-		p.killFxOn = def.id
-		st.dirty = true
-		refreshFighter(player)
-		toast(player, string.format("💥 처치 연출 「%s」을(를) 얻어 끼웠어요", def.name))
-		pushState(player)
-	elseif action == "killFxEquip" then
-		local id = type(a1) == "string" and a1 or ""
-		if id == "" then
-			p.killFxOn = nil
-			toast(player, "💥 처치 연출을 뺐어요")
-		elseif p.killFx[id] and Config.KILL_FX_BY_ID[id] then
-			p.killFxOn = id
-			toast(player, "💥 처치 연출 「" .. Config.KILL_FX_BY_ID[id].name .. "」을(를) 끼웠어요")
-		else
-			return
-		end
-		st.dirty = true
-		refreshFighter(player)
 		pushState(player)
 	elseif action == "skyBuy" then
 		-- 천상 상점 (천정으로)
