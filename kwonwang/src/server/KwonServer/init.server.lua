@@ -60,7 +60,7 @@ type Profile = {
 	scrolls: number, -- 심법 두루마리
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
-	dmgBest: number?, -- 3.19.6판: 데미지 챌린지 (10초) 최고 기록
+	dmgBest20: number?, -- 데미지 챌린지 (20초) 최고 기록. 3.19.7판: 10초 → 20초로 바뀌어 이름을 바꿨다 (10초 기록은 견줄 수 없어 새로 센다)
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
@@ -224,7 +224,7 @@ local function sanitize(data: any): Profile
 	p.scrolls = math.floor(num(data.scrolls, 1e6)) + (p.scrolls or 0)
 	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
 	p.towerBest = math.floor(num(data.towerBest, 100000))
-	p.dmgBest = math.floor(num(data.dmgBest, 1e15))
+	p.dmgBest20 = math.floor(num(data.dmgBest20, 1e15))
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
@@ -598,7 +598,7 @@ local function toast(player: Player, text: string)
 end
 
 ------------------------------------------------------------------------
--- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
+-- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
 ------------------------------------------------------------------------
 local DmgCh = { runs = {} :: { [Player]: any }, board = {} :: { [Player]: number }, label = nil :: TextLabel?, parries = {} :: { [Player]: number } }
 function DmgCh.refresh()
@@ -615,7 +615,7 @@ function DmgCh.refresh()
 	table.sort(list, function(a, b)
 		return a[2] > b[2]
 	end)
-	local lines = { "🏆 이 서버 데미지 챌린지 (10초)" }
+	local lines = { "🏆 이 서버 데미지 챌린지 (20초)" }
 	for i = 1, math.min(5, #list) do
 		table.insert(lines, string.format("%d. %s  %s", i, list[i][1], Config.formatNumber(list[i][2])))
 	end
@@ -640,7 +640,7 @@ function DmgCh.start(player: Player)
 	local t0 = os.clock() + C.countdown
 	local run = { at = t0, ends = t0 + C.dur, total = 0, hits = 0, maxHit = 0, pushAt = 0 }
 	DmgCh.runs[player] = run
-	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest or 0 })
+	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest20 or 0 })
 	task.delay(C.countdown + C.dur + 0.15, function()
 		if DmgCh.runs[player] ~= run then
 			return
@@ -652,12 +652,12 @@ function DmgCh.start(player: Player)
 		local pp = profiles[player]
 		local total = math.floor(run.total)
 		local newBest = false
-		if pp and total > (pp.dmgBest or 0) then
-			pp.dmgBest = total
+		if pp and total > (pp.dmgBest20 or 0) then
+			pp.dmgBest20 = total
 			newBest = true
 		end
 		DmgCh.board[player] = math.max(DmgCh.board[player] or 0, total)
-		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest or total, newBest = newBest })
+		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest20 or total, newBest = newBest })
 		DmgCh.refresh()
 	end)
 end
@@ -923,7 +923,7 @@ local function pushState(player: Player)
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
-		dmgBest = p.dmgBest or 0,
+		dmgBest = p.dmgBest20 or 0,
 		manualCd = Calc.manualBonus(p).cd,
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
@@ -4471,7 +4471,7 @@ local function toggleTestRoom(player: Player)
 		end
 		sst.roomBack = char:GetPivot()
 		char:PivotTo(CFrame.lookAt(TR.at + Vector3.new(0, 4, TR.half - 50), TR.at + Vector3.new(0, 4, 0)))
-		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (10초)")
+		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (20초)")
 	end
 end
 Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2: any, a3: any)

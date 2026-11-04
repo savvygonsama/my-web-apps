@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3061,7 +3061,7 @@ Config.Enemies = {
 			{ id = "pr4", name = "내려치기 (붉은 공격 · 피하세요)", pose = "w_overhead", windup = 1.1, dur = 1.5, range = 7, unblockable = true, hits = { hit(1.1, 7, 5, 1, 10, 0.4, 10) } },
 		},
 	},
-	-- 3.19.6판 데미지 챌린지 목인: 10초 동안 준 피해를 모두 센다
+	-- 3.19.6판 데미지 챌린지 목인: 20초 동안 준 피해를 모두 센다
 	cdummy = {
 		name = "데미지 챌린지 목인", dummy = true, challenge = true, hp = 1000000000000, posture = 1000000000, speed = 0, aggro = 0, keep = 0, scale = 1.8,
 		shirt = Color3.fromRGB(150, 60, 50), pants = Color3.fromRGB(100, 40, 34), coins = 0, xp = 0, moves = {},
@@ -3768,9 +3768,9 @@ end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 전투방 (사람끼리는 싸우지 않는다). 작은 목인과 큰 목인, 초당 피해가 보인다
 Config.TEST_ROOM = { at = Vector3.new(0, 1200, 0), half = 170 }
--- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다
+-- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다
 Config.TEST_CORNERS = { parry = Vector3.new(-110, 0, 40), challenge = Vector3.new(110, 0, 40) }
-Config.DMG_CHALLENGE = { countdown = 3, dur = 10 }
+Config.DMG_CHALLENGE = { countdown = 3, dur = 20 } -- 3.19.7판: 10초 → 20초
 
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {
@@ -8098,7 +8098,7 @@ type Profile = {
 	scrolls: number, -- 심법 두루마리
 	pity: number, -- 전설 이상이 안 나온 뽑기 수
 	towerBest: number, -- 천층탑 최고 층
-	dmgBest: number?, -- 3.19.6판: 데미지 챌린지 (10초) 최고 기록
+	dmgBest20: number?, -- 데미지 챌린지 (20초) 최고 기록. 3.19.7판: 10초 → 20초로 바뀌어 이름을 바꿨다 (10초 기록은 견줄 수 없어 새로 센다)
 	seen: { [string]: boolean }, -- 본 장면 (컷씬). 3.6판: 찾은 숨은 것도 (egg_...)
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
@@ -8262,7 +8262,7 @@ local function sanitize(data: any): Profile
 	p.scrolls = math.floor(num(data.scrolls, 1e6)) + (p.scrolls or 0)
 	p.pity = math.floor(num(data.pity, Config.MANUAL_DRAW.pity))
 	p.towerBest = math.floor(num(data.towerBest, 100000))
-	p.dmgBest = math.floor(num(data.dmgBest, 1e15))
+	p.dmgBest20 = math.floor(num(data.dmgBest20, 1e15))
 	p.seen = flags(data.seen, function(k)
 		return #k < 40
 	end)
@@ -8636,7 +8636,7 @@ local function toast(player: Player, text: string)
 end
 
 ------------------------------------------------------------------------
--- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
+-- 3.19.6판 권법 시험장: 데미지 챌린지 (3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다) · 반격 코너 (흘린 횟수)
 ------------------------------------------------------------------------
 local DmgCh = { runs = {} :: { [Player]: any }, board = {} :: { [Player]: number }, label = nil :: TextLabel?, parries = {} :: { [Player]: number } }
 function DmgCh.refresh()
@@ -8653,7 +8653,7 @@ function DmgCh.refresh()
 	table.sort(list, function(a, b)
 		return a[2] > b[2]
 	end)
-	local lines = { "🏆 이 서버 데미지 챌린지 (10초)" }
+	local lines = { "🏆 이 서버 데미지 챌린지 (20초)" }
 	for i = 1, math.min(5, #list) do
 		table.insert(lines, string.format("%d. %s  %s", i, list[i][1], Config.formatNumber(list[i][2])))
 	end
@@ -8678,7 +8678,7 @@ function DmgCh.start(player: Player)
 	local t0 = os.clock() + C.countdown
 	local run = { at = t0, ends = t0 + C.dur, total = 0, hits = 0, maxHit = 0, pushAt = 0 }
 	DmgCh.runs[player] = run
-	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest or 0 })
+	Push:FireClient(player, "dmgChallenge", { phase = "count", countdown = C.countdown, dur = C.dur, best = p.dmgBest20 or 0 })
 	task.delay(C.countdown + C.dur + 0.15, function()
 		if DmgCh.runs[player] ~= run then
 			return
@@ -8690,12 +8690,12 @@ function DmgCh.start(player: Player)
 		local pp = profiles[player]
 		local total = math.floor(run.total)
 		local newBest = false
-		if pp and total > (pp.dmgBest or 0) then
-			pp.dmgBest = total
+		if pp and total > (pp.dmgBest20 or 0) then
+			pp.dmgBest20 = total
 			newBest = true
 		end
 		DmgCh.board[player] = math.max(DmgCh.board[player] or 0, total)
-		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest or total, newBest = newBest })
+		Push:FireClient(player, "dmgChallenge", { phase = "done", total = total, hits = run.hits, maxHit = math.floor(run.maxHit), dps = math.floor(total / C.dur), best = pp and pp.dmgBest20 or total, newBest = newBest })
 		DmgCh.refresh()
 	end)
 end
@@ -8961,7 +8961,7 @@ local function pushState(player: Player)
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
-		dmgBest = p.dmgBest or 0,
+		dmgBest = p.dmgBest20 or 0,
 		manualCd = Calc.manualBonus(p).cd,
 		seen = p.seen,
 		pvpUnlocked = p.pvpUnlocked == true,
@@ -12509,7 +12509,7 @@ local function toggleTestRoom(player: Player)
 		end
 		sst.roomBack = char:GetPivot()
 		char:PivotTo(CFrame.lookAt(TR.at + Vector3.new(0, 4, TR.half - 50), TR.at + Vector3.new(0, 4, 0)))
-		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (10초)")
+		toast(player, "🎯 권법 시험장 · 사람끼리는 싸우지 않아요 · 서쪽 🛡 반격 코너 (피해 없이 흘리기 연습) · 동쪽 🎯 데미지 챌린지 (20초)")
 	end
 end
 Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2: any, a3: any)
@@ -29077,7 +29077,7 @@ local function testRoom(out: any)
 		local pil = part({ Name = "ChallengePillar", Size = Vector3.new(2, 5, 2), Position = pillarAt + Vector3.new(0, 3.5, 0), Color = red, Material = Enum.Material.Slate, Parent = f })
 		local gem = part({ Name = "ChallengeGem", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = pillarAt + Vector3.new(0, 6.8, 0), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 		light(gem, Color3.fromRGB(255, 190, 120), 14, 1.5)
-		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (10초)", "데미지 챌린지", "ChallengeStart")
+		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (20초)", "데미지 챌린지", "ChallengeStart")
 		local board = part({ Name = "ChallengeBoard", Size = Vector3.new(20, 12, 0.5), CFrame = CFrame.lookAt(cc + Vector3.new(18, 8, 18), cc + Vector3.new(18, 8, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 		for _, sx in ipairs({ -1, 1 }) do
 			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 14, 0.7), Position = cc + Vector3.new(18 + sx * 9, 7, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
@@ -29098,11 +29098,11 @@ local function testRoom(out: any)
 		lab.TextStrokeTransparency = 0.5
 		lab.TextXAlignment = Enum.TextXAlignment.Left
 		lab.TextYAlignment = Enum.TextYAlignment.Top
-		lab.Text = "🏆 이 서버 데미지 챌린지 (10초)\n아직 기록이 없어요"
+		lab.Text = "🏆 이 서버 데미지 챌린지 (20초)\n아직 기록이 없어요"
 		lab.Parent = gui
 		out.challengeBoard = lab
 		local cb = part({ Name = "ChallengeSign", Size = Vector3.new(18, 4, 0.4), CFrame = CFrame.lookAt(cc + Vector3.new(-14, 6, 18), cc + Vector3.new(-14, 6, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 10초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
+		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 20초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
 		for _, sx in ipairs({ -1, 1 }) do
 			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 6, 0.6), Position = cc + Vector3.new(-14 + sx * 8, 3, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		end
@@ -32630,7 +32630,7 @@ function handlers.cutscene(data: any)
 end
 
 -- 천층탑
--- 3.19.6판 데미지 챌린지: 3초 세고, 10초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
+-- 3.19.6판 데미지 챌린지: 3초 세고, 20초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
 local chLabel: TextLabel? = nil
 local chState: any = nil
 local function chEnsure(): TextLabel
@@ -32713,7 +32713,7 @@ function handlers.dmgChallenge(data: any)
 		local total = data.total or 0
 		l.Visible = true
 		l.Text = string.format("🎯 %s (초당 %s)%s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.newBest and " · 🏆 새 기록!" or "")
-		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("10초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
+		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("20초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
 		if data.newBest then
 			UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
 			Fx.sound("ping", 1, 1.6)
@@ -65505,7 +65505,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🎯 권법 시험장</b>")
 		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
 		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
-		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
+		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 만물상 → 📜 심법)")

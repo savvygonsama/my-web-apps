@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.19.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3041,7 +3041,7 @@ Config.Enemies = {
 			{ id = "pr4", name = "내려치기 (붉은 공격 · 피하세요)", pose = "w_overhead", windup = 1.1, dur = 1.5, range = 7, unblockable = true, hits = { hit(1.1, 7, 5, 1, 10, 0.4, 10) } },
 		},
 	},
-	-- 3.19.6판 데미지 챌린지 목인: 10초 동안 준 피해를 모두 센다
+	-- 3.19.6판 데미지 챌린지 목인: 20초 동안 준 피해를 모두 센다
 	cdummy = {
 		name = "데미지 챌린지 목인", dummy = true, challenge = true, hp = 1000000000000, posture = 1000000000, speed = 0, aggro = 0, keep = 0, scale = 1.8,
 		shirt = Color3.fromRGB(150, 60, 50), pants = Color3.fromRGB(100, 40, 34), coins = 0, xp = 0, moves = {},
@@ -3748,9 +3748,9 @@ end
 
 -- 3.9판 권법 시험장: 하늘 높이 떠 있는 큰 전투방 (사람끼리는 싸우지 않는다). 작은 목인과 큰 목인, 초당 피해가 보인다
 Config.TEST_ROOM = { at = Vector3.new(0, 1200, 0), half = 170 }
--- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 10초 동안 챌린지 목인에게 준 피해를 모두 센다
+-- 3.19.6판: 시험장 안의 반격 코너 (서쪽) 와 데미지 챌린지 (동쪽). 챌린지는 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다
 Config.TEST_CORNERS = { parry = Vector3.new(-110, 0, 40), challenge = Vector3.new(110, 0, 40) }
-Config.DMG_CHALLENGE = { countdown = 3, dur = 10 }
+Config.DMG_CHALLENGE = { countdown = 3, dur = 20 } -- 3.19.7판: 10초 → 20초
 
 -- 큰 볼거리 (지도에도 나온다)
 Config.Landmarks = {

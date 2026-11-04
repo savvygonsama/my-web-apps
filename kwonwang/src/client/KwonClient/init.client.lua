@@ -1320,7 +1320,7 @@ function handlers.cutscene(data: any)
 end
 
 -- 천층탑
--- 3.19.6판 데미지 챌린지: 3초 세고, 10초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
+-- 3.19.6판 데미지 챌린지: 3초 세고, 20초 동안 화면 위에 남은 시간과 준 피해, 끝나면 결과
 local chLabel: TextLabel? = nil
 local chState: any = nil
 local function chEnsure(): TextLabel
@@ -1403,7 +1403,7 @@ function handlers.dmgChallenge(data: any)
 		local total = data.total or 0
 		l.Visible = true
 		l.Text = string.format("🎯 %s (초당 %s)%s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.newBest and " · 🏆 새 기록!" or "")
-		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("10초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
+		UI.banner(data.newBest and "🏆 새 기록!" or "🎯 데미지 챌린지 끝", string.format("20초 피해 %s · 초당 %s · %d대 · 가장 센 한 방 %s · 내 최고 %s", Config.formatNumber(total), Config.formatNumber(data.dps or 0), data.hits or 0, Config.formatNumber(data.maxHit or 0), Config.formatNumber(data.best or total)), data.newBest and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 190, 150))
 		if data.newBest then
 			UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
 			Fx.sound("ping", 1, 1.6)

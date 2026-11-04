@@ -4350,7 +4350,7 @@ local function testRoom(out: any)
 		local pil = part({ Name = "ChallengePillar", Size = Vector3.new(2, 5, 2), Position = pillarAt + Vector3.new(0, 3.5, 0), Color = red, Material = Enum.Material.Slate, Parent = f })
 		local gem = part({ Name = "ChallengeGem", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = pillarAt + Vector3.new(0, 6.8, 0), Color = Color3.fromRGB(255, 200, 120), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
 		light(gem, Color3.fromRGB(255, 190, 120), 14, 1.5)
-		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (10초)", "데미지 챌린지", "ChallengeStart")
+		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (20초)", "데미지 챌린지", "ChallengeStart")
 		local board = part({ Name = "ChallengeBoard", Size = Vector3.new(20, 12, 0.5), CFrame = CFrame.lookAt(cc + Vector3.new(18, 8, 18), cc + Vector3.new(18, 8, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 		for _, sx in ipairs({ -1, 1 }) do
 			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 14, 0.7), Position = cc + Vector3.new(18 + sx * 9, 7, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
@@ -4371,11 +4371,11 @@ local function testRoom(out: any)
 		lab.TextStrokeTransparency = 0.5
 		lab.TextXAlignment = Enum.TextXAlignment.Left
 		lab.TextYAlignment = Enum.TextYAlignment.Top
-		lab.Text = "🏆 이 서버 데미지 챌린지 (10초)\n아직 기록이 없어요"
+		lab.Text = "🏆 이 서버 데미지 챌린지 (20초)\n아직 기록이 없어요"
 		lab.Parent = gui
 		out.challengeBoard = lab
 		local cb = part({ Name = "ChallengeSign", Size = Vector3.new(18, 4, 0.4), CFrame = CFrame.lookAt(cc + Vector3.new(-14, 6, 18), cc + Vector3.new(-14, 6, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 10초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
+		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 20초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
 		for _, sx in ipairs({ -1, 1 }) do
 			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 6, 0.6), Position = cc + Vector3.new(-14 + sx * 8, 3, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		end
