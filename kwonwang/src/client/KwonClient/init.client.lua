@@ -1417,6 +1417,20 @@ function handlers.dmgChallenge(data: any)
 	end
 end
 
+-- 3.20판 도감: 처음 만난 적·보스 · 25/50/75/100% 보상
+function handlers.dexNew(data: any)
+	local cat = data.cat == "bosses" and "보스" or "적"
+	UI.toast(string.format("📖 %s 도감에 새로 올랐어요 · %s (%d/%d)", cat, tostring(data.name), data.have or 0, data.total or 0))
+	Fx.sound("ping", 0.5, 1.5)
+end
+function handlers.dexReward(data: any)
+	UI.banner(string.format("📖 %s %s 도감 %d%%", data.icon or "", data.name or "", data.pct or 0), "보상: " .. tostring(data.got or ""), data.pct == 100 and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 225, 160))
+	Fx.sound("ping", 0.9, data.pct == 100 and 1.6 or 1.3)
+	if data.pct == 100 then
+		UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
+	end
+end
+
 function handlers.tower(data: any?)
 	UI.setTower(data)
 	if data then

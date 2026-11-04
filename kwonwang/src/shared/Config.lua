@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.20.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5089,5 +5089,107 @@ Config.MINIQUEST = {
 		{ kind = "return", text = "???에게 말을 걸어라" },
 	} },
 }
+
+------------------------------------------------------------------------
+-- 3.20판 도감: 권법 · 적 · 보스 · 사부. 만나거나 익히면 칸이 채워지고, 갈래마다 25 · 50 · 75 · 100%에 보상.
+-- 적과 보스는 처치 수에 따라 별 (⭐ 셋까지). 아직 못 본 칸도 어디서 만나는지는 보인다 (이름은 ???)
+------------------------------------------------------------------------
+Config.DEX_CATS = {
+	{ id = "styles", name = "권법", icon = "🥋" },
+	{ id = "enemies", name = "적", icon = "👹" },
+	{ id = "bosses", name = "보스", icon = "👑" },
+	{ id = "masters", name = "사부", icon = "🧙" },
+}
+Config.DEX_MILESTONES = {
+	{ at = 0.25, coins = 50000, scrolls = 5 },
+	{ at = 0.5, coins = 300000, scrolls = 10, gems = 300 },
+	{ at = 0.75, coins = 2000000, scrolls = 20, gems = 800 },
+	{ at = 1, coins = 10000000, scrolls = 40, gems = 2000 },
+}
+-- 별: 이만큼 쓰러뜨리면 ⭐ 하나씩
+Config.DEX_STARS = { enemies = { 1, 100, 1000 }, bosses = { 1, 10, 50 } }
+do
+	local regionName: { [string]: string } = {}
+	for _, r in ipairs(Config.Regions) do
+		regionName[r.id] = r.name
+	end
+	local function skyName(at: Vector3): string?
+		local isl = Config.skyIslandAt and Config.skyIslandAt(at)
+		return isl and ("천상 " .. isl.name) or nil
+	end
+	-- 적: 들판·천상의 진영에 나오는 적 (목인·시험의 상대는 뺀다) + 운석 수호수
+	local where: { [string]: { string } } = {}
+	local function addWhere(id: string, w: string)
+		where[id] = where[id] or {}
+		if not table.find(where[id], w) then
+			table.insert(where[id], w)
+		end
+	end
+	local bossWhere: { [string]: string } = {}
+	for _, r in ipairs(Config.Regions) do
+		for _, c in ipairs(r.camps or {}) do
+			addWhere(c.enemy, (c.at and skyName(c.at)) or r.name)
+		end
+		if r.boss then
+			bossWhere[r.boss.id] = (r.boss.at and skyName(r.boss.at)) or r.name
+		end
+	end
+	for _, isl in ipairs(Config.SKY and Config.SKY.islands or {}) do
+		for _, c in ipairs(isl.camps or {}) do
+			addWhere(c.enemy, "천상 " .. isl.name)
+		end
+		if isl.boss and isl.boss.id then
+			bossWhere[isl.boss.id] = "천상 " .. isl.name
+		end
+	end
+	addWhere("meteorguard", "천상 (운석이 떨어진 자리)")
+	local enemies = {}
+	for id, d in pairs(Config.Enemies) do
+		if where[id] and not d.dummy and not d.duel then
+			table.insert(enemies, { id = id, name = d.name, where = table.concat(where[id], " · "), rank = (d.mult or 1) * 1000 + (d.hp or 0), elite = d.elite == true })
+		end
+	end
+	table.sort(enemies, function(a, b)
+		return a.rank < b.rank
+	end)
+	local bosses = {}
+	for id, d in pairs(Config.Bosses) do
+		table.insert(bosses, { id = id, name = d.name, where = bossWhere[id] or "천층탑 · 레이드 · 시련", rank = (d.mult or 1) * 1000000 + (d.hp or 0) })
+	end
+	table.sort(bosses, function(a, b)
+		return a.rank < b.rank
+	end)
+	local styles = {}
+	for i, st in ipairs(Config.Styles) do
+		table.insert(styles, { id = st.id, name = st.name, icon = st.icon, grade = st.grade, secret = st.secret == true or st.hidden == true, rank = Config.gradeIndex(st.grade) * 1000 + i })
+	end
+	table.sort(styles, function(a, b)
+		return a.rank < b.rank
+	end)
+	local masters = {}
+	for id, m in pairs(Config.MASTERS) do
+		local st = Config.STYLE_BY_ID[id]
+		table.insert(masters, { id = id, name = m.name, where = m.region or "", secret = m.secret == true, style = st and st.name or "", rank = (st and Config.gradeIndex(st.grade) or 1) * 1000 + (st and (table.find(Config.Styles, st) or 0) or 0) })
+	end
+	table.sort(masters, function(a, b)
+		return a.rank < b.rank
+	end)
+	Config.DEX = { styles = styles, enemies = enemies, bosses = bosses, masters = masters }
+	Config.DEX_ENEMY = {}
+	for _, e in ipairs(enemies) do
+		Config.DEX_ENEMY[e.id] = e
+	end
+	-- 도감을 다 채우면 칭호 (업적)
+	local extra = {
+		{ id = "dexE", icon = "📖", name = "강호 견문록", desc = "적 도감을 모두 채운다", kind = "dexEnemy", n = #enemies, coins = 20000000, scrolls = 30, gems = 3000, title = "강호 견문록", tier = 4, cat = "combat" },
+		{ id = "dexB", icon = "📕", name = "보스 사냥꾼의 책", desc = "보스 도감을 모두 채운다", kind = "dexBoss", n = #bosses, coins = 30000000, scrolls = 30, gems = 4000, title = "보스 사냥꾼", tier = 4, cat = "combat" },
+		{ id = "dexS", icon = "📚", name = "백가쟁명", desc = "적·보스 도감에서 별 셋을 모두 채운다", kind = "dexStars", n = #enemies + #bosses, coins = 80000000, scrolls = 50, gems = 8000, title = "백가쟁명", tier = 5 , cat = "combat" },
+	}
+	for _, a in ipairs(extra) do
+		table.insert(Config.ACHIEVEMENTS, a)
+		a.index = #Config.ACHIEVEMENTS
+		Config.ACH_BY_ID[a.id] = a
+	end
+end
 
 return Config

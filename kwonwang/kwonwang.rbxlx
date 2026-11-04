@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.19.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.20.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5110,6 +5110,108 @@ Config.MINIQUEST = {
 	} },
 }
 
+------------------------------------------------------------------------
+-- 3.20판 도감: 권법 · 적 · 보스 · 사부. 만나거나 익히면 칸이 채워지고, 갈래마다 25 · 50 · 75 · 100%에 보상.
+-- 적과 보스는 처치 수에 따라 별 (⭐ 셋까지). 아직 못 본 칸도 어디서 만나는지는 보인다 (이름은 ???)
+------------------------------------------------------------------------
+Config.DEX_CATS = {
+	{ id = "styles", name = "권법", icon = "🥋" },
+	{ id = "enemies", name = "적", icon = "👹" },
+	{ id = "bosses", name = "보스", icon = "👑" },
+	{ id = "masters", name = "사부", icon = "🧙" },
+}
+Config.DEX_MILESTONES = {
+	{ at = 0.25, coins = 50000, scrolls = 5 },
+	{ at = 0.5, coins = 300000, scrolls = 10, gems = 300 },
+	{ at = 0.75, coins = 2000000, scrolls = 20, gems = 800 },
+	{ at = 1, coins = 10000000, scrolls = 40, gems = 2000 },
+}
+-- 별: 이만큼 쓰러뜨리면 ⭐ 하나씩
+Config.DEX_STARS = { enemies = { 1, 100, 1000 }, bosses = { 1, 10, 50 } }
+do
+	local regionName: { [string]: string } = {}
+	for _, r in ipairs(Config.Regions) do
+		regionName[r.id] = r.name
+	end
+	local function skyName(at: Vector3): string?
+		local isl = Config.skyIslandAt and Config.skyIslandAt(at)
+		return isl and ("천상 " .. isl.name) or nil
+	end
+	-- 적: 들판·천상의 진영에 나오는 적 (목인·시험의 상대는 뺀다) + 운석 수호수
+	local where: { [string]: { string } } = {}
+	local function addWhere(id: string, w: string)
+		where[id] = where[id] or {}
+		if not table.find(where[id], w) then
+			table.insert(where[id], w)
+		end
+	end
+	local bossWhere: { [string]: string } = {}
+	for _, r in ipairs(Config.Regions) do
+		for _, c in ipairs(r.camps or {}) do
+			addWhere(c.enemy, (c.at and skyName(c.at)) or r.name)
+		end
+		if r.boss then
+			bossWhere[r.boss.id] = (r.boss.at and skyName(r.boss.at)) or r.name
+		end
+	end
+	for _, isl in ipairs(Config.SKY and Config.SKY.islands or {}) do
+		for _, c in ipairs(isl.camps or {}) do
+			addWhere(c.enemy, "천상 " .. isl.name)
+		end
+		if isl.boss and isl.boss.id then
+			bossWhere[isl.boss.id] = "천상 " .. isl.name
+		end
+	end
+	addWhere("meteorguard", "천상 (운석이 떨어진 자리)")
+	local enemies = {}
+	for id, d in pairs(Config.Enemies) do
+		if where[id] and not d.dummy and not d.duel then
+			table.insert(enemies, { id = id, name = d.name, where = table.concat(where[id], " · "), rank = (d.mult or 1) * 1000 + (d.hp or 0), elite = d.elite == true })
+		end
+	end
+	table.sort(enemies, function(a, b)
+		return a.rank < b.rank
+	end)
+	local bosses = {}
+	for id, d in pairs(Config.Bosses) do
+		table.insert(bosses, { id = id, name = d.name, where = bossWhere[id] or "천층탑 · 레이드 · 시련", rank = (d.mult or 1) * 1000000 + (d.hp or 0) })
+	end
+	table.sort(bosses, function(a, b)
+		return a.rank < b.rank
+	end)
+	local styles = {}
+	for i, st in ipairs(Config.Styles) do
+		table.insert(styles, { id = st.id, name = st.name, icon = st.icon, grade = st.grade, secret = st.secret == true or st.hidden == true, rank = Config.gradeIndex(st.grade) * 1000 + i })
+	end
+	table.sort(styles, function(a, b)
+		return a.rank < b.rank
+	end)
+	local masters = {}
+	for id, m in pairs(Config.MASTERS) do
+		local st = Config.STYLE_BY_ID[id]
+		table.insert(masters, { id = id, name = m.name, where = m.region or "", secret = m.secret == true, style = st and st.name or "", rank = (st and Config.gradeIndex(st.grade) or 1) * 1000 + (st and (table.find(Config.Styles, st) or 0) or 0) })
+	end
+	table.sort(masters, function(a, b)
+		return a.rank < b.rank
+	end)
+	Config.DEX = { styles = styles, enemies = enemies, bosses = bosses, masters = masters }
+	Config.DEX_ENEMY = {}
+	for _, e in ipairs(enemies) do
+		Config.DEX_ENEMY[e.id] = e
+	end
+	-- 도감을 다 채우면 칭호 (업적)
+	local extra = {
+		{ id = "dexE", icon = "📖", name = "강호 견문록", desc = "적 도감을 모두 채운다", kind = "dexEnemy", n = #enemies, coins = 20000000, scrolls = 30, gems = 3000, title = "강호 견문록", tier = 4, cat = "combat" },
+		{ id = "dexB", icon = "📕", name = "보스 사냥꾼의 책", desc = "보스 도감을 모두 채운다", kind = "dexBoss", n = #bosses, coins = 30000000, scrolls = 30, gems = 4000, title = "보스 사냥꾼", tier = 4, cat = "combat" },
+		{ id = "dexS", icon = "📚", name = "백가쟁명", desc = "적·보스 도감에서 별 셋을 모두 채운다", kind = "dexStars", n = #enemies + #bosses, coins = 80000000, scrolls = 50, gems = 8000, title = "백가쟁명", tier = 5 , cat = "combat" },
+	}
+	for _, a in ipairs(extra) do
+		table.insert(Config.ACHIEVEMENTS, a)
+		a.index = #Config.ACHIEVEMENTS
+		Config.ACH_BY_ID[a.id] = a
+	end
+end
+
 return Config
 ]]></string>
       </Properties>
@@ -8061,6 +8163,8 @@ type Profile = {
 	elixirUntil: number,
 	kills: number,
 	bosses: { [string]: number },
+	dex: { [string]: number }, -- 3.20판 도감: 적 종류마다 쓰러뜨린 수
+	dexRw: { [string]: boolean }, -- 3.20판 도감: 받은 보상 ("enemies_2" = 적 도감 50%)
 	pvpWins: number,
 	found: { [string]: boolean }, -- 찾아낸 사부
 	trials: { [string]: boolean }, -- 넘은 사부의 시험
@@ -8133,6 +8237,8 @@ local function defaultProfile(): Profile
 		scrolls = 0,
 		pity = 0,
 		towerBest = 0,
+		dex = {},
+		dexRw = {},
 		seen = {},
 		mounts = { horse = true },
 		mountSel = "horse",
@@ -8203,6 +8309,23 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.pvpWins = math.floor(num(data.pvpWins, 1e9))
+	-- 3.20판 도감
+	p.dex = {}
+	if type(data.dex) == "table" then
+		for id, n in pairs(data.dex) do
+			if type(id) == "string" and Config.DEX_ENEMY[id] then
+				p.dex[id] = math.floor(num(n, 1e9))
+			end
+		end
+	end
+	p.dexRw = {}
+	if type(data.dexRw) == "table" then
+		for k, v in pairs(data.dexRw) do
+			if type(k) == "string" and v == true and #k < 20 then
+				p.dexRw[k] = true
+			end
+		end
+	end
 	local function flags(src: any, valid: (string) -> boolean): { [string]: boolean }
 		local out = {}
 		if type(src) == "table" then
@@ -8769,6 +8892,118 @@ local function keyCount(t: { [any]: any }?): number
 	end
 	return n
 end
+------------------------------------------------------------------------
+-- 3.20판 도감: 갈래마다 가진 수, 25 · 50 · 75 · 100% 보상, 처음 만난 적 알림
+------------------------------------------------------------------------
+local Dex = {}
+function Dex.has(p: Profile, cat: string, id: string): boolean
+	if cat == "styles" then
+		return p.styles[id] == true
+	elseif cat == "enemies" then
+		return (p.dex[id] or 0) > 0
+	elseif cat == "bosses" then
+		return (p.bosses[id] or 0) > 0
+	elseif cat == "masters" then
+		return p.found[id] == true
+	end
+	return false
+end
+function Dex.count(p: Profile, cat: string): (number, number)
+	local n = 0
+	for _, e in ipairs(Config.DEX[cat]) do
+		if Dex.has(p, cat, e.id) then
+			n += 1
+		end
+	end
+	return n, #Config.DEX[cat]
+end
+function Dex.value(p: Profile, kind: string): number
+	if kind == "dexEnemy" then
+		return (Dex.count(p, "enemies"))
+	elseif kind == "dexBoss" then
+		return (Dex.count(p, "bosses"))
+	end
+	-- 별 셋을 채운 적·보스 수
+	local n = 0
+	local SE, SB = Config.DEX_STARS.enemies, Config.DEX_STARS.bosses
+	for _, e in ipairs(Config.DEX.enemies) do
+		if (p.dex[e.id] or 0) >= SE[#SE] then
+			n += 1
+		end
+	end
+	for _, e in ipairs(Config.DEX.bosses) do
+		if (p.bosses[e.id] or 0) >= SB[#SB] then
+			n += 1
+		end
+	end
+	return n
+end
+function Dex.check(player: Player, p: Profile)
+	p.dexRw = p.dexRw or {}
+	for _, cat in ipairs(Config.DEX_CATS) do
+		local have, total = Dex.count(p, cat.id)
+		for i, M in ipairs(Config.DEX_MILESTONES) do
+			local key = cat.id .. "_" .. i
+			if not p.dexRw[key] and total > 0 and have >= math.ceil(total * M.at) then
+				p.dexRw[key] = true
+				p.coins += M.coins or 0
+				p.scrolls += M.scrolls or 0
+				p.skyGems += M.gems or 0
+				local got = { "💰 " .. Config.formatNumber(M.coins or 0) }
+				if M.scrolls then
+					table.insert(got, "📜 " .. M.scrolls)
+				end
+				if M.gems then
+					table.insert(got, "💠 " .. Config.formatNumber(M.gems))
+				end
+				Push:FireClient(player, "dexReward", { cat = cat.id, name = cat.name, icon = cat.icon, pct = math.floor(M.at * 100), got = table.concat(got, "  ") })
+				local st = states[player]
+				if st then
+					st.dirty = true
+				end
+			end
+		end
+	end
+end
+-- 쓰러뜨릴 때: 적 종류의 수를 세고, 처음 만난 적·보스와 별이 오를 때 알린다
+function Dex.onKill(player: Player, p: Profile, rawId: string?, isBoss: boolean)
+	if type(rawId) ~= "string" then
+		return
+	end
+	local typeId = rawId :: string
+	local cat, n, entry
+	if isBoss then
+		for _, e in ipairs(Config.DEX.bosses) do
+			if e.id == typeId then
+				entry = e
+			end
+		end
+		cat, n = "bosses", p.bosses[typeId] or 0
+	else
+		entry = Config.DEX_ENEMY[typeId]
+		if not entry then
+			return
+		end
+		p.dex = p.dex or {}
+		p.dex[typeId] = (p.dex[typeId] or 0) + 1
+		cat, n = "enemies", p.dex[typeId]
+	end
+	if not entry then
+		return
+	end
+	local stars = Config.DEX_STARS[cat]
+	for k, need in ipairs(stars) do
+		if n == need then
+			local have, total = Dex.count(p, cat)
+			if k == 1 then
+				Push:FireClient(player, "dexNew", { cat = cat, name = entry.name, have = have, total = total })
+			else
+				toast(player, string.format("📖 도감 · %s %s (%s 쓰러뜨림)", entry.name, string.rep("⭐", k), Config.formatNumber(need)))
+			end
+		end
+	end
+end
+
 function Ach.value(p: Profile, a: any): number
 	local k = a.kind
 	if k == "kills" then
@@ -8812,6 +9047,8 @@ function Ach.value(p: Profile, a: any): number
 		return p.counts[k] or 0
 	elseif k == "masters" then
 		return keyCount(p.found)
+	elseif k == "dexEnemy" or k == "dexBoss" or k == "dexStars" then
+		return Dex.value(p, k)
 	elseif k == "mounts" then
 		return keyCount(p.mounts)
 	elseif k == "manuals" then
@@ -8905,6 +9142,7 @@ local function pushState(player: Player)
 		return
 	end
 	Ach.check(player, p)
+	Dex.check(player, p)
 	if p.kfRefund then
 		toast(player, string.format("💥 처치 연출이 없어져, 산 값 💠 천정 %s을(를) 돌려드렸어요", Config.formatNumber(p.kfRefund)))
 		p.kfRefund = nil
@@ -8933,6 +9171,8 @@ local function pushState(player: Player)
 		elixirLeft = math.max(0, p.elixirUntil - os.time()),
 		kills = p.kills,
 		bosses = p.bosses,
+		dex = p.dex,
+		dexRw = p.dexRw,
 		pvpWins = p.pvpWins,
 		learnCost = Config.LEARN_COST[math.min(#owned + 1, #Config.LEARN_COST)],
 		training = st.training and st.training.kind or nil,
@@ -10040,6 +10280,8 @@ Combat.init(Push, {
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
 					end
 				end
+				-- 3.20판 도감 (보스 수를 센 뒤에)
+				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
 				addMastery(killer, p, xp)
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
@@ -12416,6 +12658,36 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 		end
 		toast(player, n == 0 and "🏆 이룰 업적이 더 없어요 (업적 지우기로 처음부터)" or (action == "testAchAll" and string.format("🏆 업적 %d개를 한꺼번에 이뤘어요", n) or "🏆 업적 하나를 이뤘어요"))
+	elseif action == "testDex" then
+		-- 3.20판 도감 테스트: 하나씩 · 모두 (별 셋까지) · 지우기
+		p.dex = p.dex or {}
+		if arg == "reset" then
+			p.dex = {}
+			p.dexRw = {}
+			toast(player, "📖 적 도감을 지웠어요 (보스·권법·사부는 기록 그대로라 그 칸은 남아요)")
+		elseif arg == "all" then
+			for _, e in ipairs(Config.DEX.enemies) do
+				p.dex[e.id] = math.max(p.dex[e.id] or 0, Config.DEX_STARS.enemies[#Config.DEX_STARS.enemies])
+			end
+			for _, e in ipairs(Config.DEX.bosses) do
+				p.bosses[e.id] = math.max(p.bosses[e.id] or 0, Config.DEX_STARS.bosses[#Config.DEX_STARS.bosses])
+			end
+			toast(player, "📖 적·보스 도감을 별 셋까지 모두 채웠어요")
+		else
+			for _, e in ipairs(Config.DEX.enemies) do
+				if (p.dex[e.id] or 0) == 0 then
+					Dex.onKill(player, p, e.id, false)
+					break
+				end
+			end
+			for _, e in ipairs(Config.DEX.bosses) do
+				if (p.bosses[e.id] or 0) == 0 then
+					p.bosses[e.id] = 1
+					Dex.onKill(player, p, e.id, true)
+					break
+				end
+			end
+		end
 	elseif action == "testAchAura" then
 		-- 3.19.9판 업적 오라 테스트: 업적 없이 아홉을 차례로 둘러 본다 (저장하지 않는다)
 		local f2 = Combat.fighterOfPlayer(player)
@@ -32678,6 +32950,20 @@ function handlers.dmgChallenge(data: any)
 				chLabel.Visible = false
 			end
 		end)
+	end
+end
+
+-- 3.20판 도감: 처음 만난 적·보스 · 25/50/75/100% 보상
+function handlers.dexNew(data: any)
+	local cat = data.cat == "bosses" and "보스" or "적"
+	UI.toast(string.format("📖 %s 도감에 새로 올랐어요 · %s (%d/%d)", cat, tostring(data.name), data.have or 0, data.total or 0))
+	Fx.sound("ping", 0.5, 1.5)
+end
+function handlers.dexReward(data: any)
+	UI.banner(string.format("📖 %s %s 도감 %d%%", data.icon or "", data.name or "", data.pct or 0), "보상: " .. tostring(data.got or ""), data.pct == 100 and Color3.fromRGB(255, 215, 90) or Color3.fromRGB(255, 225, 160))
+	Fx.sound("ping", 0.9, data.pct == 100 and 1.6 or 1.3)
+	if data.pct == 100 then
+		UI.flash(Color3.fromRGB(255, 220, 120), 0.3)
 	end
 end
 
@@ -63393,7 +63679,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -64089,6 +64375,167 @@ local function buildAch()
 		local t = state.title and Config.ACH_BY_ID[state.title]
 		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
 		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.20판 도감: 권법 · 적 · 보스 · 사부. 갈래 칸, 채운 수와 다음 보상 막대, 칸마다 카드 (못 본 것은 ??? 와 만나는 곳)
+------------------------------------------------------------------------
+local function buildDex()
+	local page = makePage("dex")
+	local head = text({ Size = UDim2.new(1, -8, 0, 26), TextSize = 17, Font = Enum.Font.GothamBlack, RichText = true, Parent = page })
+	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, Parent = page }, {
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	-- 다음 보상 막대 (25 · 50 · 75 · 100% 눈금)
+	local barBack = new("Frame", { Position = UDim2.new(0, 0, 0, 74), Size = UDim2.new(1, -8, 0, 22), BackgroundColor3 = Color3.fromRGB(25, 18, 16), Parent = page }, { corner(8) })
+	local barFill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.gold, Parent = barBack }, { corner(8) })
+	for i, M in ipairs(Config.DEX_MILESTONES) do
+		if i < #Config.DEX_MILESTONES then
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(M.at, 0, 0, 0), Size = UDim2.new(0, 2, 1, 0), BackgroundColor3 = Color3.fromRGB(255, 240, 200), BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 2, Parent = barBack })
+		end
+	end
+	local barText = text({ Size = UDim2.fromScale(1, 1), TextSize = 13, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, TextStrokeTransparency = 0.3, Parent = barBack })
+	local list = scroller(page, UDim2.new(1, 0, 1, -106), UDim2.new(0, 0, 0, 104))
+	new("UIGridLayout", { CellSize = UDim2.new(0.2, -8, 0, 118), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	new("UIPadding", { PaddingTop = UDim.new(0, 2), PaddingLeft = UDim.new(0, 2), Parent = list })
+	local cat = "styles"
+	local tabBtns: { [string]: TextButton } = {}
+	local cards: { [string]: { any } } = {}
+	local CAT_ICON = { enemies = "⚔", bosses = "👑", masters = "🧙" }
+	for _, c in ipairs(Config.DEX_CATS) do
+		cards[c.id] = {}
+		for i, e in ipairs(Config.DEX[c.id]) do
+			local card = new("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = C.panel, LayoutOrder = i, Visible = false, Parent = list }, { corner(10) })
+			local st = stroke(C.line, 1.2)
+			st.Parent = card
+			local stripe = new("Frame", { Size = UDim2.new(1, 0, 0, 4), BackgroundColor3 = C.line, BorderSizePixel = 0, Parent = card })
+			local icon = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 34), TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+			local name = text({ Position = UDim2.new(0, 6, 0, 44), Size = UDim2.new(1, -12, 0, 22), TextSize = 15, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
+			local sub = text({ Position = UDim2.new(0, 6, 0, 66), Size = UDim2.new(1, -12, 0, 30), TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true, Parent = card })
+			local stars = text({ Position = UDim2.new(0, 6, 1, -22), Size = UDim2.new(1, -12, 0, 18), TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, RichText = true, Parent = card })
+			table.insert(cards[c.id], { e = e, card = card, st = st, stripe = stripe, icon = icon, name = name, sub = sub, stars = stars })
+		end
+	end
+	local function ownedSet(): { [string]: boolean }
+		local set = {}
+		for _, id in ipairs(state and state.styles or {}) do
+			set[id] = true
+		end
+		return set
+	end
+	local function has(c: string, id: string, owned: { [string]: boolean }): (boolean, number)
+		if c == "styles" then
+			return owned[id] == true, 0
+		elseif c == "enemies" then
+			local n = (state and state.dex or {})[id] or 0
+			return n > 0, n
+		elseif c == "bosses" then
+			local n = (state and state.bosses or {})[id] or 0
+			return n > 0, n
+		end
+		return (state and state.found or {})[id] == true, 0
+	end
+	local function starText(c: string, n: number): string
+		local S = Config.DEX_STARS[c]
+		if not S then
+			return ""
+		end
+		local k = 0
+		for _, need in ipairs(S) do
+			if n >= need then
+				k += 1
+			end
+		end
+		local nextNeed = S[k + 1]
+		return string.rep("⭐", k) .. '<font transparency="0.78">' .. string.rep("⭐", #S - k) .. "</font>" .. (nextNeed and string.format("  %s/%s", Config.formatNumber(n), Config.formatNumber(nextNeed)) or "  완성")
+	end
+	local function render()
+		local owned = ownedSet()
+		local rw = state and state.dexRw or {}
+		local allHave, allTotal = 0, 0
+		for _, c in ipairs(Config.DEX_CATS) do
+			local have = 0
+			for _, r in ipairs(cards[c.id]) do
+				local ok, n = has(c.id, r.e.id, owned)
+				if ok then
+					have += 1
+				end
+				r.card.Visible = c.id == cat
+				if c.id == cat then
+					local e = r.e
+					local accent = C.gold
+					if c.id == "styles" then
+						accent = Config.GRADE_COLOR[e.grade] or C.gold
+						r.icon.Text = ok and (e.icon or "🥋") or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = e.grade .. (ok and "" or (e.secret and " · 숨은 권법" or " · 아직 못 익힘"))
+						r.stars.Text = ok and "✔ 익힘" or ""
+					elseif c.id == "masters" then
+						accent = Color3.fromRGB(170, 220, 255)
+						r.icon.Text = ok and CAT_ICON.masters or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = ok and (e.where .. "\n" .. e.style) or (e.secret and "숨은 사부 · 어딘가에" or e.where)
+						r.stars.Text = ok and "✔ 찾음" or ""
+					else
+						accent = c.id == "bosses" and Color3.fromRGB(255, 110, 90) or (e.elite and Color3.fromRGB(255, 200, 90) or Color3.fromRGB(200, 190, 175))
+						r.icon.Text = ok and CAT_ICON[c.id] or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = e.where
+						r.stars.Text = ok and starText(c.id, n) or ""
+						r.stars.TextColor3 = Color3.fromRGB(255, 215, 110)
+					end
+					r.stripe.BackgroundColor3 = ok and accent or C.line
+					r.st.Color = ok and accent or C.line
+					r.card.BackgroundColor3 = ok and Color3.fromRGB(48, 38, 30) or Color3.fromRGB(26, 22, 22)
+					r.name.TextColor3 = ok and accent:Lerp(Color3.new(1, 1, 1), 0.35) or C.dim
+					r.icon.TextTransparency = ok and 0 or 0.4
+				end
+			end
+			local total = #cards[c.id]
+			allHave += have
+			allTotal += total
+			local b = tabBtns[c.id]
+			if b then
+				b.Text = string.format("%s %s %d/%d", c.icon, c.name, have, total)
+				b.BackgroundColor3 = c.id == cat and Color3.fromRGB(150, 110, 40) or C.panel2
+			end
+			if c.id == cat then
+				barFill.Size = UDim2.fromScale(total > 0 and have / total or 0, 1)
+				local nextM, nextI = nil, 0
+				for i, M in ipairs(Config.DEX_MILESTONES) do
+					if not rw[c.id .. "_" .. i] then
+						nextM, nextI = M, i
+						break
+					end
+				end
+				if nextM then
+					local need = math.ceil(total * nextM.at)
+					local parts = { "💰 " .. Config.formatNumber(nextM.coins or 0) }
+					if nextM.scrolls then
+						table.insert(parts, "📜 " .. nextM.scrolls)
+					end
+					if nextM.gems then
+						table.insert(parts, "💠 " .. Config.formatNumber(nextM.gems))
+					end
+					barText.Text = string.format("%d / %d  ·  다음 보상 %d%% (%d칸): %s", have, total, math.floor(nextM.at * 100), need, table.concat(parts, " "))
+				else
+					barText.Text = string.format("%d / %d  ·  ✔ 이 도감의 보상을 모두 받았어요", have, total)
+				end
+				local _ = nextI
+			end
+		end
+		head.Text = string.format("📖 도감  <font color=\"#FFD27A\">%d / %d</font>  <font size=\"13\" color=\"#BBB2A6\">· 못 본 칸도 어디서 만나는지 보여요 · 적·보스는 쓰러뜨린 수로 별 셋</font>", allHave, allTotal)
+	end
+	for i, c in ipairs(Config.DEX_CATS) do
+		tabBtns[c.id] = button({ LayoutOrder = i, Size = UDim2.new(0, 132, 1, 0), Text = c.icon .. " " .. c.name, TextSize = 14, Parent = tabRow }, function()
+			cat = c.id
+			render()
+			list.CanvasPosition = Vector2.zero
+		end)
+	end
+	refreshers.dex = function()
+		render()
 	end
 end
 
@@ -65088,6 +65535,7 @@ local function buildTest()
 	section("🏆 업적 테스트", {
 		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
 		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
+		{ "📖 도감: 적·보스 하나씩 채우기", "testDex", 1 }, { "📖 도감: 모두 채우기 (별 셋)", "testDex", "all" }, { "📖 도감 지우기", "testDex", "reset", color = C.red },
 		{ "✨ 업적 오라 다음 (업적 없이 보기)", "testAchAura" }, { "✨ 업적 오라 끄기", "testAchAura", "off" },
 		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·오라)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
 			UI.openPage("ach")
@@ -67143,7 +67591,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -67243,6 +67691,7 @@ function UI.init(req: RemoteEvent)
 	buildStyles()
 	buildStats()
 	buildAch()
+	buildDex()
 	buildShop()
 	buildManuals()
 	buildSkyShop()

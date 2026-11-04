@@ -44,6 +44,8 @@ type Profile = {
 	elixirUntil: number,
 	kills: number,
 	bosses: { [string]: number },
+	dex: { [string]: number }, -- 3.20판 도감: 적 종류마다 쓰러뜨린 수
+	dexRw: { [string]: boolean }, -- 3.20판 도감: 받은 보상 ("enemies_2" = 적 도감 50%)
 	pvpWins: number,
 	found: { [string]: boolean }, -- 찾아낸 사부
 	trials: { [string]: boolean }, -- 넘은 사부의 시험
@@ -116,6 +118,8 @@ local function defaultProfile(): Profile
 		scrolls = 0,
 		pity = 0,
 		towerBest = 0,
+		dex = {},
+		dexRw = {},
 		seen = {},
 		mounts = { horse = true },
 		mountSel = "horse",
@@ -186,6 +190,23 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.pvpWins = math.floor(num(data.pvpWins, 1e9))
+	-- 3.20판 도감
+	p.dex = {}
+	if type(data.dex) == "table" then
+		for id, n in pairs(data.dex) do
+			if type(id) == "string" and Config.DEX_ENEMY[id] then
+				p.dex[id] = math.floor(num(n, 1e9))
+			end
+		end
+	end
+	p.dexRw = {}
+	if type(data.dexRw) == "table" then
+		for k, v in pairs(data.dexRw) do
+			if type(k) == "string" and v == true and #k < 20 then
+				p.dexRw[k] = true
+			end
+		end
+	end
 	local function flags(src: any, valid: (string) -> boolean): { [string]: boolean }
 		local out = {}
 		if type(src) == "table" then
@@ -752,6 +773,118 @@ local function keyCount(t: { [any]: any }?): number
 	end
 	return n
 end
+------------------------------------------------------------------------
+-- 3.20판 도감: 갈래마다 가진 수, 25 · 50 · 75 · 100% 보상, 처음 만난 적 알림
+------------------------------------------------------------------------
+local Dex = {}
+function Dex.has(p: Profile, cat: string, id: string): boolean
+	if cat == "styles" then
+		return p.styles[id] == true
+	elseif cat == "enemies" then
+		return (p.dex[id] or 0) > 0
+	elseif cat == "bosses" then
+		return (p.bosses[id] or 0) > 0
+	elseif cat == "masters" then
+		return p.found[id] == true
+	end
+	return false
+end
+function Dex.count(p: Profile, cat: string): (number, number)
+	local n = 0
+	for _, e in ipairs(Config.DEX[cat]) do
+		if Dex.has(p, cat, e.id) then
+			n += 1
+		end
+	end
+	return n, #Config.DEX[cat]
+end
+function Dex.value(p: Profile, kind: string): number
+	if kind == "dexEnemy" then
+		return (Dex.count(p, "enemies"))
+	elseif kind == "dexBoss" then
+		return (Dex.count(p, "bosses"))
+	end
+	-- 별 셋을 채운 적·보스 수
+	local n = 0
+	local SE, SB = Config.DEX_STARS.enemies, Config.DEX_STARS.bosses
+	for _, e in ipairs(Config.DEX.enemies) do
+		if (p.dex[e.id] or 0) >= SE[#SE] then
+			n += 1
+		end
+	end
+	for _, e in ipairs(Config.DEX.bosses) do
+		if (p.bosses[e.id] or 0) >= SB[#SB] then
+			n += 1
+		end
+	end
+	return n
+end
+function Dex.check(player: Player, p: Profile)
+	p.dexRw = p.dexRw or {}
+	for _, cat in ipairs(Config.DEX_CATS) do
+		local have, total = Dex.count(p, cat.id)
+		for i, M in ipairs(Config.DEX_MILESTONES) do
+			local key = cat.id .. "_" .. i
+			if not p.dexRw[key] and total > 0 and have >= math.ceil(total * M.at) then
+				p.dexRw[key] = true
+				p.coins += M.coins or 0
+				p.scrolls += M.scrolls or 0
+				p.skyGems += M.gems or 0
+				local got = { "💰 " .. Config.formatNumber(M.coins or 0) }
+				if M.scrolls then
+					table.insert(got, "📜 " .. M.scrolls)
+				end
+				if M.gems then
+					table.insert(got, "💠 " .. Config.formatNumber(M.gems))
+				end
+				Push:FireClient(player, "dexReward", { cat = cat.id, name = cat.name, icon = cat.icon, pct = math.floor(M.at * 100), got = table.concat(got, "  ") })
+				local st = states[player]
+				if st then
+					st.dirty = true
+				end
+			end
+		end
+	end
+end
+-- 쓰러뜨릴 때: 적 종류의 수를 세고, 처음 만난 적·보스와 별이 오를 때 알린다
+function Dex.onKill(player: Player, p: Profile, rawId: string?, isBoss: boolean)
+	if type(rawId) ~= "string" then
+		return
+	end
+	local typeId = rawId :: string
+	local cat, n, entry
+	if isBoss then
+		for _, e in ipairs(Config.DEX.bosses) do
+			if e.id == typeId then
+				entry = e
+			end
+		end
+		cat, n = "bosses", p.bosses[typeId] or 0
+	else
+		entry = Config.DEX_ENEMY[typeId]
+		if not entry then
+			return
+		end
+		p.dex = p.dex or {}
+		p.dex[typeId] = (p.dex[typeId] or 0) + 1
+		cat, n = "enemies", p.dex[typeId]
+	end
+	if not entry then
+		return
+	end
+	local stars = Config.DEX_STARS[cat]
+	for k, need in ipairs(stars) do
+		if n == need then
+			local have, total = Dex.count(p, cat)
+			if k == 1 then
+				Push:FireClient(player, "dexNew", { cat = cat, name = entry.name, have = have, total = total })
+			else
+				toast(player, string.format("📖 도감 · %s %s (%s 쓰러뜨림)", entry.name, string.rep("⭐", k), Config.formatNumber(need)))
+			end
+		end
+	end
+end
+
 function Ach.value(p: Profile, a: any): number
 	local k = a.kind
 	if k == "kills" then
@@ -795,6 +928,8 @@ function Ach.value(p: Profile, a: any): number
 		return p.counts[k] or 0
 	elseif k == "masters" then
 		return keyCount(p.found)
+	elseif k == "dexEnemy" or k == "dexBoss" or k == "dexStars" then
+		return Dex.value(p, k)
 	elseif k == "mounts" then
 		return keyCount(p.mounts)
 	elseif k == "manuals" then
@@ -888,6 +1023,7 @@ local function pushState(player: Player)
 		return
 	end
 	Ach.check(player, p)
+	Dex.check(player, p)
 	if p.kfRefund then
 		toast(player, string.format("💥 처치 연출이 없어져, 산 값 💠 천정 %s을(를) 돌려드렸어요", Config.formatNumber(p.kfRefund)))
 		p.kfRefund = nil
@@ -916,6 +1052,8 @@ local function pushState(player: Player)
 		elixirLeft = math.max(0, p.elixirUntil - os.time()),
 		kills = p.kills,
 		bosses = p.bosses,
+		dex = p.dex,
+		dexRw = p.dexRw,
 		pvpWins = p.pvpWins,
 		learnCost = Config.LEARN_COST[math.min(#owned + 1, #Config.LEARN_COST)],
 		training = st.training and st.training.kind or nil,
@@ -2023,6 +2161,8 @@ Combat.init(Push, {
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
 					end
 				end
+				-- 3.20판 도감 (보스 수를 센 뒤에)
+				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
 				addMastery(killer, p, xp)
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
@@ -4399,6 +4539,36 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 		end
 		toast(player, n == 0 and "🏆 이룰 업적이 더 없어요 (업적 지우기로 처음부터)" or (action == "testAchAll" and string.format("🏆 업적 %d개를 한꺼번에 이뤘어요", n) or "🏆 업적 하나를 이뤘어요"))
+	elseif action == "testDex" then
+		-- 3.20판 도감 테스트: 하나씩 · 모두 (별 셋까지) · 지우기
+		p.dex = p.dex or {}
+		if arg == "reset" then
+			p.dex = {}
+			p.dexRw = {}
+			toast(player, "📖 적 도감을 지웠어요 (보스·권법·사부는 기록 그대로라 그 칸은 남아요)")
+		elseif arg == "all" then
+			for _, e in ipairs(Config.DEX.enemies) do
+				p.dex[e.id] = math.max(p.dex[e.id] or 0, Config.DEX_STARS.enemies[#Config.DEX_STARS.enemies])
+			end
+			for _, e in ipairs(Config.DEX.bosses) do
+				p.bosses[e.id] = math.max(p.bosses[e.id] or 0, Config.DEX_STARS.bosses[#Config.DEX_STARS.bosses])
+			end
+			toast(player, "📖 적·보스 도감을 별 셋까지 모두 채웠어요")
+		else
+			for _, e in ipairs(Config.DEX.enemies) do
+				if (p.dex[e.id] or 0) == 0 then
+					Dex.onKill(player, p, e.id, false)
+					break
+				end
+			end
+			for _, e in ipairs(Config.DEX.bosses) do
+				if (p.bosses[e.id] or 0) == 0 then
+					p.bosses[e.id] = 1
+					Dex.onKill(player, p, e.id, true)
+					break
+				end
+			end
+		end
 	elseif action == "testAchAura" then
 		-- 3.19.9판 업적 오라 테스트: 업적 없이 아홉을 차례로 둘러 본다 (저장하지 않는다)
 		local f2 = Combat.fighterOfPlayer(player)

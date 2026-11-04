@@ -515,7 +515,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -1211,6 +1211,167 @@ local function buildAch()
 		local t = state.title and Config.ACH_BY_ID[state.title]
 		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
 		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.20판 도감: 권법 · 적 · 보스 · 사부. 갈래 칸, 채운 수와 다음 보상 막대, 칸마다 카드 (못 본 것은 ??? 와 만나는 곳)
+------------------------------------------------------------------------
+local function buildDex()
+	local page = makePage("dex")
+	local head = text({ Size = UDim2.new(1, -8, 0, 26), TextSize = 17, Font = Enum.Font.GothamBlack, RichText = true, Parent = page })
+	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, Parent = page }, {
+		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	-- 다음 보상 막대 (25 · 50 · 75 · 100% 눈금)
+	local barBack = new("Frame", { Position = UDim2.new(0, 0, 0, 74), Size = UDim2.new(1, -8, 0, 22), BackgroundColor3 = Color3.fromRGB(25, 18, 16), Parent = page }, { corner(8) })
+	local barFill = new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = C.gold, Parent = barBack }, { corner(8) })
+	for i, M in ipairs(Config.DEX_MILESTONES) do
+		if i < #Config.DEX_MILESTONES then
+			new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(M.at, 0, 0, 0), Size = UDim2.new(0, 2, 1, 0), BackgroundColor3 = Color3.fromRGB(255, 240, 200), BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 2, Parent = barBack })
+		end
+	end
+	local barText = text({ Size = UDim2.fromScale(1, 1), TextSize = 13, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 3, TextStrokeTransparency = 0.3, Parent = barBack })
+	local list = scroller(page, UDim2.new(1, 0, 1, -106), UDim2.new(0, 0, 0, 104))
+	new("UIGridLayout", { CellSize = UDim2.new(0.2, -8, 0, 118), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+	new("UIPadding", { PaddingTop = UDim.new(0, 2), PaddingLeft = UDim.new(0, 2), Parent = list })
+	local cat = "styles"
+	local tabBtns: { [string]: TextButton } = {}
+	local cards: { [string]: { any } } = {}
+	local CAT_ICON = { enemies = "⚔", bosses = "👑", masters = "🧙" }
+	for _, c in ipairs(Config.DEX_CATS) do
+		cards[c.id] = {}
+		for i, e in ipairs(Config.DEX[c.id]) do
+			local card = new("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = C.panel, LayoutOrder = i, Visible = false, Parent = list }, { corner(10) })
+			local st = stroke(C.line, 1.2)
+			st.Parent = card
+			local stripe = new("Frame", { Size = UDim2.new(1, 0, 0, 4), BackgroundColor3 = C.line, BorderSizePixel = 0, Parent = card })
+			local icon = text({ Position = UDim2.new(0, 0, 0, 8), Size = UDim2.new(1, 0, 0, 34), TextSize = 30, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+			local name = text({ Position = UDim2.new(0, 6, 0, 44), Size = UDim2.new(1, -12, 0, 22), TextSize = 15, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
+			local sub = text({ Position = UDim2.new(0, 6, 0, 66), Size = UDim2.new(1, -12, 0, 30), TextSize = 12, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true, Parent = card })
+			local stars = text({ Position = UDim2.new(0, 6, 1, -22), Size = UDim2.new(1, -12, 0, 18), TextSize = 14, Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Center, RichText = true, Parent = card })
+			table.insert(cards[c.id], { e = e, card = card, st = st, stripe = stripe, icon = icon, name = name, sub = sub, stars = stars })
+		end
+	end
+	local function ownedSet(): { [string]: boolean }
+		local set = {}
+		for _, id in ipairs(state and state.styles or {}) do
+			set[id] = true
+		end
+		return set
+	end
+	local function has(c: string, id: string, owned: { [string]: boolean }): (boolean, number)
+		if c == "styles" then
+			return owned[id] == true, 0
+		elseif c == "enemies" then
+			local n = (state and state.dex or {})[id] or 0
+			return n > 0, n
+		elseif c == "bosses" then
+			local n = (state and state.bosses or {})[id] or 0
+			return n > 0, n
+		end
+		return (state and state.found or {})[id] == true, 0
+	end
+	local function starText(c: string, n: number): string
+		local S = Config.DEX_STARS[c]
+		if not S then
+			return ""
+		end
+		local k = 0
+		for _, need in ipairs(S) do
+			if n >= need then
+				k += 1
+			end
+		end
+		local nextNeed = S[k + 1]
+		return string.rep("⭐", k) .. '<font transparency="0.78">' .. string.rep("⭐", #S - k) .. "</font>" .. (nextNeed and string.format("  %s/%s", Config.formatNumber(n), Config.formatNumber(nextNeed)) or "  완성")
+	end
+	local function render()
+		local owned = ownedSet()
+		local rw = state and state.dexRw or {}
+		local allHave, allTotal = 0, 0
+		for _, c in ipairs(Config.DEX_CATS) do
+			local have = 0
+			for _, r in ipairs(cards[c.id]) do
+				local ok, n = has(c.id, r.e.id, owned)
+				if ok then
+					have += 1
+				end
+				r.card.Visible = c.id == cat
+				if c.id == cat then
+					local e = r.e
+					local accent = C.gold
+					if c.id == "styles" then
+						accent = Config.GRADE_COLOR[e.grade] or C.gold
+						r.icon.Text = ok and (e.icon or "🥋") or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = e.grade .. (ok and "" or (e.secret and " · 숨은 권법" or " · 아직 못 익힘"))
+						r.stars.Text = ok and "✔ 익힘" or ""
+					elseif c.id == "masters" then
+						accent = Color3.fromRGB(170, 220, 255)
+						r.icon.Text = ok and CAT_ICON.masters or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = ok and (e.where .. "\n" .. e.style) or (e.secret and "숨은 사부 · 어딘가에" or e.where)
+						r.stars.Text = ok and "✔ 찾음" or ""
+					else
+						accent = c.id == "bosses" and Color3.fromRGB(255, 110, 90) or (e.elite and Color3.fromRGB(255, 200, 90) or Color3.fromRGB(200, 190, 175))
+						r.icon.Text = ok and CAT_ICON[c.id] or "❔"
+						r.name.Text = ok and e.name or "？？？"
+						r.sub.Text = e.where
+						r.stars.Text = ok and starText(c.id, n) or ""
+						r.stars.TextColor3 = Color3.fromRGB(255, 215, 110)
+					end
+					r.stripe.BackgroundColor3 = ok and accent or C.line
+					r.st.Color = ok and accent or C.line
+					r.card.BackgroundColor3 = ok and Color3.fromRGB(48, 38, 30) or Color3.fromRGB(26, 22, 22)
+					r.name.TextColor3 = ok and accent:Lerp(Color3.new(1, 1, 1), 0.35) or C.dim
+					r.icon.TextTransparency = ok and 0 or 0.4
+				end
+			end
+			local total = #cards[c.id]
+			allHave += have
+			allTotal += total
+			local b = tabBtns[c.id]
+			if b then
+				b.Text = string.format("%s %s %d/%d", c.icon, c.name, have, total)
+				b.BackgroundColor3 = c.id == cat and Color3.fromRGB(150, 110, 40) or C.panel2
+			end
+			if c.id == cat then
+				barFill.Size = UDim2.fromScale(total > 0 and have / total or 0, 1)
+				local nextM, nextI = nil, 0
+				for i, M in ipairs(Config.DEX_MILESTONES) do
+					if not rw[c.id .. "_" .. i] then
+						nextM, nextI = M, i
+						break
+					end
+				end
+				if nextM then
+					local need = math.ceil(total * nextM.at)
+					local parts = { "💰 " .. Config.formatNumber(nextM.coins or 0) }
+					if nextM.scrolls then
+						table.insert(parts, "📜 " .. nextM.scrolls)
+					end
+					if nextM.gems then
+						table.insert(parts, "💠 " .. Config.formatNumber(nextM.gems))
+					end
+					barText.Text = string.format("%d / %d  ·  다음 보상 %d%% (%d칸): %s", have, total, math.floor(nextM.at * 100), need, table.concat(parts, " "))
+				else
+					barText.Text = string.format("%d / %d  ·  ✔ 이 도감의 보상을 모두 받았어요", have, total)
+				end
+				local _ = nextI
+			end
+		end
+		head.Text = string.format("📖 도감  <font color=\"#FFD27A\">%d / %d</font>  <font size=\"13\" color=\"#BBB2A6\">· 못 본 칸도 어디서 만나는지 보여요 · 적·보스는 쓰러뜨린 수로 별 셋</font>", allHave, allTotal)
+	end
+	for i, c in ipairs(Config.DEX_CATS) do
+		tabBtns[c.id] = button({ LayoutOrder = i, Size = UDim2.new(0, 132, 1, 0), Text = c.icon .. " " .. c.name, TextSize = 14, Parent = tabRow }, function()
+			cat = c.id
+			render()
+			list.CanvasPosition = Vector2.zero
+		end)
+	end
+	refreshers.dex = function()
+		render()
 	end
 end
 
@@ -2210,6 +2371,7 @@ local function buildTest()
 	section("🏆 업적 테스트", {
 		{ "🏆 다음 업적 하나 이루기", "testAchNext" }, { "🏆 업적 모두 이루기", "testAchAll" }, { "🗑 업적 지우기", "testAchReset", color = C.red },
 		{ "⚪ 일반 하나", "testAchTier", 1 }, { "🔵 희귀 하나", "testAchTier", 2 }, { "🟣 영웅 하나", "testAchTier", 3 },
+		{ "📖 도감: 적·보스 하나씩 채우기", "testDex", 1 }, { "📖 도감: 모두 채우기 (별 셋)", "testDex", "all" }, { "📖 도감 지우기", "testDex", "reset", color = C.red },
 		{ "✨ 업적 오라 다음 (업적 없이 보기)", "testAchAura" }, { "✨ 업적 오라 끄기", "testAchAura", "off" },
 		{ "🟡 전설 하나", "testAchTier", 4 }, { "🔴 신화 하나 (탈것·오라)", "testAchTier", 5 }, { "🏆 업적 창 열기", "", client = function()
 			UI.openPage("ach")
@@ -4265,7 +4427,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -4365,6 +4527,7 @@ function UI.init(req: RemoteEvent)
 	buildStyles()
 	buildStats()
 	buildAch()
+	buildDex()
 	buildShop()
 	buildManuals()
 	buildSkyShop()
