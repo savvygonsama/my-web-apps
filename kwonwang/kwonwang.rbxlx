@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2920,8 +2920,8 @@ end
 --       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
 ------------------------------------------------------------------------
 Config.AWAKEN = {
-	{ lv = 6, name = "각성", mark = "✦", dmg = 1.25, cd = 0.85 },
-	{ lv = 10, name = "완전 각성", mark = "✦✦", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+	{ lv = 6, name = "각성", mark = "⭐", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "🌟", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
 }
 function Config.awakenTier(lv: number): number
 	if lv >= Config.AWAKEN[2].lv then
@@ -5071,8 +5071,8 @@ Config.ACHIEVEMENTS = {
 	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },
 	{ id = "t1", icon = "🌸", name = "초월", desc = "초월 권법 하나를 익힌다", kind = "transcend", n = 1, coins = 3000000, title = "초월자" },
 	{ id = "t3", icon = "🌸", name = "삼초", desc = "초월 권법 셋을 모두 익힌다", kind = "transcend", n = 3, coins = 20000000, scrolls = 20, title = "삼초" },
-	{ id = "m1", icon = "✦", name = "완전 각성", desc = "권법 하나의 숙련을 끝까지 올린다", kind = "mastery", n = 1, coins = 20000 },
-	{ id = "m10", icon = "✦", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
+	{ id = "m1", icon = "⭐", name = "완전 각성", desc = "권법 하나의 숙련을 끝까지 올린다", kind = "mastery", n = 1, coins = 20000 },
+	{ id = "m10", icon = "⭐", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
 	{ id = "tw30", icon = "🗼", name = "탑의 문턱", desc = "천층탑 30층에 오른다", kind = "tower", n = 30, coins = 20000 },
 	{ id = "tw100", icon = "🗼", name = "백층", desc = "천층탑 100층에 오른다", kind = "tower", n = 100, coins = 1000000, scrolls = 5, title = "백층 돌파" },
 	{ id = "tw150", icon = "🗼", name = "구름 위의 층", desc = "천층탑 150층에 오른다", kind = "tower", n = 150, coins = 10000000, scrolls = 15, title = "탑의 주인", mount = "rainbowcloud" },
@@ -5101,7 +5101,7 @@ Config.ACHIEVEMENTS = {
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
 	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho" },
 	{ id = "rbs1", icon = "♾", name = "윤회의 권", desc = "환생 권법 하나를 익힌다", kind = "rebirthStyles", n = 1, coins = 5000000, title = "윤회의 권", tier = 3 },
-	{ id = "m25", icon = "✦", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
+	{ id = "m25", icon = "⭐", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
 	{ id = "gear5", icon = "🎐", name = "장신구 수집가", desc = "시그니처 장신구가 있는 권법 다섯을 익힌다", kind = "gear", n = 5, gems = 800, title = "장신구 수집가", tier = 3 },
 	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5, mount = "cheonho" },
 	{ id = "tint3", icon = "🌌", name = "천상의 빛깔", desc = "장신구 셋을 천상 빛깔로 물들인다", kind = "tint", n = 3, gems = 600, title = "천상의 빛깔", tier = 3 },
@@ -18381,7 +18381,9 @@ FORMS.shroom = function(model, look, k, boss)
 	-- 3.19.6판: 버섯 자루처럼 둥근 몸, 아래로 갈수록 흙 빛깔 (뿌리 쪽)
 	organic(model, { torso = stem, belly = dark(stem, 0.08), arms = stem, thigh = dark(stem, 0.12), legs = C3(110, 85, 60), feet = C3(92, 70, 50), limb = 0.92 })
 	local hs = sizeOf(model, "Head")
-	local R = (look.capSize or 3.0) * k * 0.5
+	-- 3.23.7판: 갓은 몸통 폭에 맞춘다 (큰 몸은 키보다 폭을 덜 키우는데, 키를 따라 키우면 갓이 몸보다 몇 배나 커졌다)
+	local utw = sizeOf(model, "UpperTorso").X / 2
+	local R = (look.capSize or 3.0) * math.min(k, utw * 1.05) * 0.5
 	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4), look.spot or C3(245, 240, 228), look.spotGlow and M.Neon or nil, look.spotGlow and 0.3 or nil)
 	for _, x in ipairs({ -1, 1 }) do
 		wear(model, "Head", "Eye", Vector3.new(0.17, 0.2, 0.08) * k, CFrame.new(x * hs.X * 0.2, -hs.Y * 0.08, -hs.Z * 0.48), C3(18, 14, 12), M.SmoothPlastic, Ball)
@@ -34165,7 +34167,7 @@ startMove = function(slot: any, charge: number?)
 		-- 각성 마무리: 크게 휘둘러 하늘로 띄운다
 		UI.flash(style.color, 0.25)
 		fovPunch(-6, 0.4)
-		Fx.text(root.Position + Vector3.new(0, 6, 0), "✦ " .. move.name, style.color, 34, 1.2)
+		Fx.text(root.Position + Vector3.new(0, 6, 0), "⭐ " .. move.name, style.color, 34, 1.2)
 	end
 	if move.hover then
 		-- 공중 연격: 나도 공중에 머문다
@@ -36271,7 +36273,7 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "✦"
+		local mark = ({ gravity = "◆", prism = "◇", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "◇"
 		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 ", bloom = "생장 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))
@@ -47773,7 +47775,7 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 		local glow = tier >= 2 and Color3.fromRGB(255, 250, 235) or Color3.fromRGB(255, 210, 90)
 		Fx.ring(feet + Vector3.new(0, 0.3, 0), glow, 3, slot == "H" and 18 or 24, 0.55)
 		flare(pos + Vector3.new(0, 1, 0), c2, 2.5)
-		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "✦✦" or "✦", glow, 22, 0.6)
+		Fx.text(pos + Vector3.new(0, 4.2, 0), tier >= 2 and "⭐⭐" or "⭐", glow, 22, 0.6)
 	end
 	-- 각성 마무리: 땅에서 솟는 기둥과 하늘로 치솟는 고리
 	if slot == "F" then
@@ -65850,7 +65852,7 @@ return Star
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
 --   1 일반: 갈래 빛깔 글씨 · 2 희귀: 푸른 빛 테두리와 ◆ · 3 영웅: 보랏빛 판과 흐르는 빛깔 글씨 ◈
 --   4 전설: 금빛 판, 금빛이 흐르는 글씨, ❖ 날개, 머리 둘레 금빛 반짝임
---   5 신화: 붉은 먹빛 판에 무지갯빛 테가 돌고, 무지갯빛이 흐르는 글씨, ✦ 신화 ✦ 머리띠, 금빛·붉은 별이 흩날린다
+--   5 신화: 붉은 먹빛 판에 무지갯빛 테가 돌고, 무지갯빛이 흐르는 글씨, ⭐ 신화 ⭐ 머리띠, 금빛·붉은 별이 흩날린다
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -65937,7 +65939,7 @@ local function build(model: Model)
 		end
 	end
 	-- 장식 (양옆)
-	local orn = ({ nil, "◆", "◈", "❖", "✦" } :: { any })[tier]
+	local orn = ({ nil, "◆", "◈", "❖", "⭐" } :: { any })[tier]
 	local function ornament(order: number)
 		if not orn then
 			return
@@ -65974,7 +65976,7 @@ local function build(model: Model)
 	ornament(3)
 	-- 신화: 위에 작은 머리띠
 	if tier == 5 then
-		local band = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 160, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, Text = "✦ 신 화 ✦", TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4 }, gui)
+		local band = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 160, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, Text = "⭐ 신 화 ⭐", TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4 }, gui)
 		local g = new("UIGradient", { Color = seq(RAINBOW) }, band)
 		table.insert(L.grads, g)
 	elseif tier == 4 then
@@ -67694,7 +67696,7 @@ local function buildShop()
 		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
 		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.best and Color3.fromRGB(150, 90, 230) or (it.toggle and Color3.fromRGB(40, 140, 200) or Color3.fromRGB(200, 70, 40)), Parent = card }, { corner(11) })
 		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
-		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "✦ " .. table.concat(it.lines, "\n✦ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "⭐ " .. table.concat(it.lines, "\n⭐ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
 		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
 			Request:FireServer("premiumBuy", it.id)
 		end)
@@ -69672,10 +69674,10 @@ local function refreshStory(s: any)
 	end
 	if accepted then
 		storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
-		storyGoal.Text = "▸ " .. goalText(s, ch.goal)
+		storyGoal.Text = "▶ " .. goalText(s, ch.goal)
 	else
 		storyTitle.Text = string.format("📜 새 이야기 · %s", ch.title)
-		storyGoal.Text = "▸ 받으면 목표가 표시돼요"
+		storyGoal.Text = "▶ 받으면 목표가 표시돼요"
 	end
 	-- 장로에게 말 걸기는 장로 이름표가 있으니 따로 띄우지 않는다
 	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and goalTarget(s, ch.goal) or nil
@@ -70269,7 +70271,7 @@ local function buildLobbyPanel()
 	local cam = new("Camera", { FieldOfView = 34, CFrame = CFrame.lookAt(Vector3.new(0, 1.2, -13), Vector3.new(0, 0.6, 0)), Parent = vp })
 	vp.CurrentCamera = cam
 	local capBg = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = INK, BackgroundTransparency = 0.25, Parent = vp }, { corner(12) })
-	text({ Position = UDim2.new(0, 8, 0, 2), Size = UDim2.new(1, -16, 0, 14), TextSize = 11, TextColor3 = C.dim, Text = "✦ 시그니처 장신구", Parent = capBg })
+	text({ Position = UDim2.new(0, 8, 0, 2), Size = UDim2.new(1, -16, 0, 14), TextSize = 11, TextColor3 = C.dim, Text = "⭐ 시그니처 장신구", Parent = capBg })
 	BH.gearCap = text({ Position = UDim2.new(0, 8, 0, 16), Size = UDim2.new(1, -16, 0, 20), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = capBg })
 	BH.yaw = 0
 	RunService.RenderStepped:Connect(function(dt)
@@ -70501,7 +70503,7 @@ local function buildLobbyPanel()
 		end
 		local gn = BH.gearName(s)
 		if gn then
-			text({ Position = UDim2.new(0, 14, 1, -24), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = s.color2 or C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "✦ " .. gn, Parent = card })
+			text({ Position = UDim2.new(0, 14, 1, -24), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = s.color2 or C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "⭐ " .. gn, Parent = card })
 		end
 		card.MouseEnter:Connect(function()
 			if BH.sel ~= id then
@@ -70531,7 +70533,7 @@ local function buildLobbyPanel()
 			return a < b
 		end)
 		-- 등급 칸: 전체 + 가진 등급들 (높은 등급부터)
-		local grades = { "전체", "✦ 장신구" }
+		local grades = { "전체", "⭐ 장신구" }
 		for _, id in ipairs(ids) do
 			local g = gradeOf(id)
 			if not table.find(grades, g) then
@@ -70551,7 +70553,7 @@ local function buildLobbyPanel()
 		for i, g in ipairs(grades) do
 			local on = BH.filter == g
 			local gc = Config.GRADE_COLOR[g] or C.gold
-			local b = button({ LayoutOrder = i, Size = UDim2.new(0, g == "전체" and 56 or (g == "✦ 장신구" and 84 or 50), 1, 0), Text = g, TextSize = 13, BackgroundColor3 = on and gc or Color3.fromRGB(36, 28, 24), TextColor3 = on and INK or gc, Parent = BH.tabs }, function()
+			local b = button({ LayoutOrder = i, Size = UDim2.new(0, g == "전체" and 56 or (g == "⭐ 장신구" and 84 or 50), 1, 0), Text = g, TextSize = 13, BackgroundColor3 = on and gc or Color3.fromRGB(36, 28, 24), TextColor3 = on and INK or gc, Parent = BH.tabs }, function()
 				BH.filter = g
 				BH.refreshCards()
 			end)
@@ -70563,7 +70565,7 @@ local function buildLobbyPanel()
 		BH.cards = {}
 		local shown = 0
 		for i, id in ipairs(ids) do
-			local sOk = BH.filter == "전체" or gradeOf(id) == BH.filter or (BH.filter == "✦ 장신구" and BH.gearName(Config.STYLE_BY_ID[id]) ~= nil)
+			local sOk = BH.filter == "전체" or gradeOf(id) == BH.filter or (BH.filter == "⭐ 장신구" and BH.gearName(Config.STYLE_BY_ID[id]) ~= nil)
 			if Config.STYLE_BY_ID[id] and sOk then
 				makeCard(id, i)
 				shown += 1

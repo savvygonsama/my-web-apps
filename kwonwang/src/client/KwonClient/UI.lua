@@ -1628,7 +1628,7 @@ local function buildShop()
 		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
 		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.best and Color3.fromRGB(150, 90, 230) or (it.toggle and Color3.fromRGB(40, 140, 200) or Color3.fromRGB(200, 70, 40)), Parent = card }, { corner(11) })
 		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
-		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "✦ " .. table.concat(it.lines, "\n✦ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "⭐ " .. table.concat(it.lines, "\n⭐ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
 		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
 			Request:FireServer("premiumBuy", it.id)
 		end)
@@ -3606,10 +3606,10 @@ local function refreshStory(s: any)
 	end
 	if accepted then
 		storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
-		storyGoal.Text = "▸ " .. goalText(s, ch.goal)
+		storyGoal.Text = "▶ " .. goalText(s, ch.goal)
 	else
 		storyTitle.Text = string.format("📜 새 이야기 · %s", ch.title)
-		storyGoal.Text = "▸ 받으면 목표가 표시돼요"
+		storyGoal.Text = "▶ 받으면 목표가 표시돼요"
 	end
 	-- 장로에게 말 걸기는 장로 이름표가 있으니 따로 띄우지 않는다
 	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and goalTarget(s, ch.goal) or nil
@@ -4203,7 +4203,7 @@ local function buildLobbyPanel()
 	local cam = new("Camera", { FieldOfView = 34, CFrame = CFrame.lookAt(Vector3.new(0, 1.2, -13), Vector3.new(0, 0.6, 0)), Parent = vp })
 	vp.CurrentCamera = cam
 	local capBg = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = INK, BackgroundTransparency = 0.25, Parent = vp }, { corner(12) })
-	text({ Position = UDim2.new(0, 8, 0, 2), Size = UDim2.new(1, -16, 0, 14), TextSize = 11, TextColor3 = C.dim, Text = "✦ 시그니처 장신구", Parent = capBg })
+	text({ Position = UDim2.new(0, 8, 0, 2), Size = UDim2.new(1, -16, 0, 14), TextSize = 11, TextColor3 = C.dim, Text = "⭐ 시그니처 장신구", Parent = capBg })
 	BH.gearCap = text({ Position = UDim2.new(0, 8, 0, 16), Size = UDim2.new(1, -16, 0, 20), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = capBg })
 	BH.yaw = 0
 	RunService.RenderStepped:Connect(function(dt)
@@ -4435,7 +4435,7 @@ local function buildLobbyPanel()
 		end
 		local gn = BH.gearName(s)
 		if gn then
-			text({ Position = UDim2.new(0, 14, 1, -24), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = s.color2 or C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "✦ " .. gn, Parent = card })
+			text({ Position = UDim2.new(0, 14, 1, -24), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = s.color2 or C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "⭐ " .. gn, Parent = card })
 		end
 		card.MouseEnter:Connect(function()
 			if BH.sel ~= id then
@@ -4465,7 +4465,7 @@ local function buildLobbyPanel()
 			return a < b
 		end)
 		-- 등급 칸: 전체 + 가진 등급들 (높은 등급부터)
-		local grades = { "전체", "✦ 장신구" }
+		local grades = { "전체", "⭐ 장신구" }
 		for _, id in ipairs(ids) do
 			local g = gradeOf(id)
 			if not table.find(grades, g) then
@@ -4485,7 +4485,7 @@ local function buildLobbyPanel()
 		for i, g in ipairs(grades) do
 			local on = BH.filter == g
 			local gc = Config.GRADE_COLOR[g] or C.gold
-			local b = button({ LayoutOrder = i, Size = UDim2.new(0, g == "전체" and 56 or (g == "✦ 장신구" and 84 or 50), 1, 0), Text = g, TextSize = 13, BackgroundColor3 = on and gc or Color3.fromRGB(36, 28, 24), TextColor3 = on and INK or gc, Parent = BH.tabs }, function()
+			local b = button({ LayoutOrder = i, Size = UDim2.new(0, g == "전체" and 56 or (g == "⭐ 장신구" and 84 or 50), 1, 0), Text = g, TextSize = 13, BackgroundColor3 = on and gc or Color3.fromRGB(36, 28, 24), TextColor3 = on and INK or gc, Parent = BH.tabs }, function()
 				BH.filter = g
 				BH.refreshCards()
 			end)
@@ -4497,7 +4497,7 @@ local function buildLobbyPanel()
 		BH.cards = {}
 		local shown = 0
 		for i, id in ipairs(ids) do
-			local sOk = BH.filter == "전체" or gradeOf(id) == BH.filter or (BH.filter == "✦ 장신구" and BH.gearName(Config.STYLE_BY_ID[id]) ~= nil)
+			local sOk = BH.filter == "전체" or gradeOf(id) == BH.filter or (BH.filter == "⭐ 장신구" and BH.gearName(Config.STYLE_BY_ID[id]) ~= nil)
 			if Config.STYLE_BY_ID[id] and sOk then
 				makeCard(id, i)
 				shown += 1

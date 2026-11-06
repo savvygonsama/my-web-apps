@@ -692,7 +692,7 @@ startMove = function(slot: any, charge: number?)
 		-- 각성 마무리: 크게 휘둘러 하늘로 띄운다
 		UI.flash(style.color, 0.25)
 		fovPunch(-6, 0.4)
-		Fx.text(root.Position + Vector3.new(0, 6, 0), "✦ " .. move.name, style.color, 34, 1.2)
+		Fx.text(root.Position + Vector3.new(0, 6, 0), "⭐ " .. move.name, style.color, 34, 1.2)
 	end
 	if move.hover then
 		-- 공중 연격: 나도 공중에 머문다
@@ -2798,7 +2798,7 @@ RunService.RenderStepped:Connect(function()
 		stacks = "전하 " .. string.rep("⚡", n) .. string.rep("·", style.chargeEvery - n)
 	elseif style.pulse then
 		local n = math.clamp(tonumber(char:GetAttribute("Pulse")) or 0, 0, style.pulse.every)
-		local mark = ({ gravity = "◆", prism = "✦", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "✦"
+		local mark = ({ gravity = "◆", prism = "◇", eclipse = "☀", tide = "≈", time = "◷", bloom = "❀" })[style.pulse.kind] or "◇"
 		stacks = (({ gravity = "중압 ", prism = "창세 ", eclipse = "일월 ", tide = "파도 ", time = "정지 ", bloom = "생장 " })[style.pulse.kind] or "") .. string.rep(mark, n) .. string.rep("·", style.pulse.every - n)
 	elseif style.charge and chargeStart then
 		stacks = string.format("용기 모으는 중 %d%%", math.floor(math.clamp((now - chargeStart) / (style.charge or 1.5), 0, 1) * 100))

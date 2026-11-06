@@ -836,7 +836,9 @@ FORMS.shroom = function(model, look, k, boss)
 	-- 3.19.6판: 버섯 자루처럼 둥근 몸, 아래로 갈수록 흙 빛깔 (뿌리 쪽)
 	organic(model, { torso = stem, belly = dark(stem, 0.08), arms = stem, thigh = dark(stem, 0.12), legs = C3(110, 85, 60), feet = C3(92, 70, 50), limb = 0.92 })
 	local hs = sizeOf(model, "Head")
-	local R = (look.capSize or 3.0) * k * 0.5
+	-- 3.23.7판: 갓은 몸통 폭에 맞춘다 (큰 몸은 키보다 폭을 덜 키우는데, 키를 따라 키우면 갓이 몸보다 몇 배나 커졌다)
+	local utw = sizeOf(model, "UpperTorso").X / 2
+	local R = (look.capSize or 3.0) * math.min(k, utw * 1.05) * 0.5
 	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4), look.spot or C3(245, 240, 228), look.spotGlow and M.Neon or nil, look.spotGlow and 0.3 or nil)
 	for _, x in ipairs({ -1, 1 }) do
 		wear(model, "Head", "Eye", Vector3.new(0.17, 0.2, 0.08) * k, CFrame.new(x * hs.X * 0.2, -hs.Y * 0.08, -hs.Z * 0.48), C3(18, 14, 12), M.SmoothPlastic, Ball)

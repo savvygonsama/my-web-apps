@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2900,8 +2900,8 @@ end
 --       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
 ------------------------------------------------------------------------
 Config.AWAKEN = {
-	{ lv = 6, name = "각성", mark = "✦", dmg = 1.25, cd = 0.85 },
-	{ lv = 10, name = "완전 각성", mark = "✦✦", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
+	{ lv = 6, name = "각성", mark = "⭐", dmg = 1.25, cd = 0.85 },
+	{ lv = 10, name = "완전 각성", mark = "🌟", dmg = 1.55, cd = 0.7, echo = 0.5, echoDelay = 0.3 },
 }
 function Config.awakenTier(lv: number): number
 	if lv >= Config.AWAKEN[2].lv then
@@ -5051,8 +5051,8 @@ Config.ACHIEVEMENTS = {
 	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },
 	{ id = "t1", icon = "🌸", name = "초월", desc = "초월 권법 하나를 익힌다", kind = "transcend", n = 1, coins = 3000000, title = "초월자" },
 	{ id = "t3", icon = "🌸", name = "삼초", desc = "초월 권법 셋을 모두 익힌다", kind = "transcend", n = 3, coins = 20000000, scrolls = 20, title = "삼초" },
-	{ id = "m1", icon = "✦", name = "완전 각성", desc = "권법 하나의 숙련을 끝까지 올린다", kind = "mastery", n = 1, coins = 20000 },
-	{ id = "m10", icon = "✦", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
+	{ id = "m1", icon = "⭐", name = "완전 각성", desc = "권법 하나의 숙련을 끝까지 올린다", kind = "mastery", n = 1, coins = 20000 },
+	{ id = "m10", icon = "⭐", name = "열 손의 달인", desc = "권법 열의 숙련을 끝까지 올린다", kind = "mastery", n = 10, coins = 2000000, title = "열 손의 달인" },
 	{ id = "tw30", icon = "🗼", name = "탑의 문턱", desc = "천층탑 30층에 오른다", kind = "tower", n = 30, coins = 20000 },
 	{ id = "tw100", icon = "🗼", name = "백층", desc = "천층탑 100층에 오른다", kind = "tower", n = 100, coins = 1000000, scrolls = 5, title = "백층 돌파" },
 	{ id = "tw150", icon = "🗼", name = "구름 위의 층", desc = "천층탑 150층에 오른다", kind = "tower", n = 150, coins = 10000000, scrolls = 15, title = "탑의 주인", mount = "rainbowcloud" },
@@ -5081,7 +5081,7 @@ Config.ACHIEVEMENTS = {
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
 	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho" },
 	{ id = "rbs1", icon = "♾", name = "윤회의 권", desc = "환생 권법 하나를 익힌다", kind = "rebirthStyles", n = 1, coins = 5000000, title = "윤회의 권", tier = 3 },
-	{ id = "m25", icon = "✦", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
+	{ id = "m25", icon = "⭐", name = "백련의 손", desc = "권법 스물다섯의 숙련을 끝까지 올린다", kind = "mastery", n = 25, coins = 30000000, scrolls = 20, title = "백련의 손", tier = 4 },
 	{ id = "gear5", icon = "🎐", name = "장신구 수집가", desc = "시그니처 장신구가 있는 권법 다섯을 익힌다", kind = "gear", n = 5, gems = 800, title = "장신구 수집가", tier = 3 },
 	{ id = "gearAll", icon = "🎐", name = "시그니처의 주인", desc = "시그니처 장신구가 있는 모든 권법을 익힌다", kind = "gear", n = 99, gems = 5000, scrolls = 20, title = "시그니처의 주인", tier = 5, mount = "cheonho" },
 	{ id = "tint3", icon = "🌌", name = "천상의 빛깔", desc = "장신구 셋을 천상 빛깔로 물들인다", kind = "tint", n = 3, gems = 600, title = "천상의 빛깔", tier = 3 },
