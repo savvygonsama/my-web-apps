@@ -368,6 +368,23 @@ function Npc.populate()
 			end
 		end
 	end
+	-- 3.22판 지옥의 구역들
+	for _, z in ipairs(Config.HELL.zones or {}) do
+		for _, camp in ipairs(z.camps or {}) do
+			for _ = 1, camp.count do
+				local ok, err = pcall(Npc.spawn, camp.enemy, false, camp.at, "sky")
+				if not ok then
+					warn("[권왕] 지옥 적 만들기 오류:", camp.enemy, err)
+				end
+			end
+		end
+		if z.boss then
+			local ok, err = pcall(Npc.spawn, z.boss.id, true, z.boss.at, "sky")
+			if not ok then
+				warn("[권왕] 지옥 보스 만들기 오류:", z.boss.id, err)
+			end
+		end
+	end
 	pcall(Npc.publishPower)
 end
 

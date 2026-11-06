@@ -1040,6 +1040,23 @@ local LOOKS: { [string]: any } = {
 	flamesage = { form = "bird", feather = C3(220, 84, 44), crest = C3(255, 196, 80), beak = C3(240, 190, 70), tip = C3(140, 30, 20), longCrest = true, fire = C3(255, 130, 40) },
 	shroombrute = { form = "shroom", capColor = C3(176, 36, 40), capSize = 3.6, build = { w = 1.2 } },
 	sporeimp = { form = "shroom", capColor = C3(116, 66, 156), skin = C3(214, 204, 222), capSize = 2.6, spot = C3(210, 180, 255), spotGlow = true, spore = C3(200, 160, 255) },
+	-- 3.22판 지옥의 적
+	wongwi = { form = "wraith", cloth = C3(176, 186, 204), eyes = C3(120, 230, 255), bone = C3(210, 214, 226), build = { w = 0.9, h = 1.08, head = 0.86 } },
+	agwi = { form = "troll", skin = C3(150, 140, 120), build = { w = 1.1, h = 1.12, head = 0.84 } },
+	okjol = { form = "skeleton", eyes = C3(255, 90, 60), armor = true, metal = C3(60, 26, 26), cloth = C3(110, 20, 20), build = { w = 1.15, h = 1.08, head = 0.9 } },
+	hwamagwi = { form = "imp", skin = C3(210, 70, 30), eyes = C3(255, 230, 100), hornColor = C3(40, 16, 12), fire = C3(255, 120, 30), build = { w = 0.9, h = 1.0, head = 0.92 } },
+	dosangeom = { form = "skeleton", eyes = C3(200, 220, 255), armor = true, metal = C3(170, 180, 196), cloth = C3(50, 56, 72), build = { w = 1.0, h = 1.08, head = 0.88 } },
+	swordwarden = { form = "skeleton", eyes = C3(230, 240, 255), armor = true, metal = C3(130, 134, 148), cloth = C3(40, 42, 54), build = { w = 1.2, h = 1.1, head = 0.9 } },
+	hungerwraith = { form = "wraith", cloth = C3(110, 134, 112), eyes = C3(190, 255, 150), bone = C3(60, 76, 60), build = { w = 0.9, h = 1.08, head = 0.88 } },
+	agwigun = { form = "troll", skin = C3(124, 150, 104), build = { w = 1.35, h = 1.1, head = 0.84 } },
+	okjoljang = { form = "skeleton", eyes = C3(255, 60, 60), armor = true, metal = C3(30, 14, 18), cloth = C3(70, 10, 14), build = { w = 1.2, h = 1.12, head = 0.9 } },
+	jeoseungmusa = { form = "wraith", cloth = C3(28, 26, 40), eyes = C3(255, 70, 70), bone = C3(210, 210, 220), build = { w = 0.9, h = 1.1, head = 0.86 } },
+	-- 지옥의 주인들
+	talui = { head = "hood", hoodColor = C3(150, 164, 188), eyes = C3(150, 220, 255), top = C3(176, 186, 204), bottom = C3(56, 66, 94), trim = C3(220, 235, 255), robe = C3(130, 146, 176), build = { h = 1.08, head = 1.06 } },
+	hwatang = { head = "horns", hair = C3(60, 20, 10), hornColor = C3(40, 20, 14), hornLen = 1.3, eyes = C3(255, 200, 80), armor = true, metal = C3(70, 30, 22), armorTrim = C3(255, 140, 40), top = C3(210, 70, 26), bottom = C3(80, 20, 10), trim = C3(255, 150, 50), build = { w = 1.1, head = 1.06 } },
+	dosan = { head = "helmet", metal = C3(150, 160, 176), plume = C3(190, 40, 40), armor = true, armorTrim = C3(220, 228, 240), eyes = C3(210, 225, 255), top = C3(140, 150, 168), bottom = C3(40, 44, 58), trim = C3(220, 228, 240), build = { w = 1.08, h = 1.08, head = 1.06 } },
+	agwiwang = { form = "troll", skin = C3(118, 136, 92), build = { w = 1.5, h = 1.1, head = 0.86 } },
+	yeomra = { head = "topknot", hair = C3(14, 8, 12), beard = "full", crown = C3(220, 40, 50), gem = C3(255, 220, 120), armor = true, metal = C3(40, 14, 20), armorTrim = C3(210, 40, 50), eyes = C3(255, 70, 60), top = C3(60, 14, 22), bottom = C3(20, 6, 10), trim = C3(220, 50, 56), robe = C3(36, 10, 16), build = { w = 1.1, h = 1.08, head = 1.06 } },
 	-- 보스
 	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(52, 48, 46), top = C3(36, 30, 30), bottom = C3(70, 24, 22), trim = C3(150, 40, 30), build = { w = 1.08, head = 1.06 } },
 	bingma = { head = "helmet", metal = C3(186, 220, 244), beard = "white", eyes = C3(160, 220, 255), top = C3(200, 228, 252), bottom = C3(80, 110, 150), trim = C3(240, 248, 255), robe = C3(110, 140, 180), build = { w = 1.08, head = 1.06 } },

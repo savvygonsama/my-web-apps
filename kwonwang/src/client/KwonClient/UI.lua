@@ -2786,6 +2786,10 @@ local regionTags: { [string]: { label: TextLabel, name: string } } = {}
 local mapCanvas: Frame
 local skyCanvas: Frame? = nil
 local mapSky = false -- 2.7.1판: 지금 보이는 지도가 천상 지도인가
+local mapHell = false -- 3.22판: 천상 지도 자리에 지옥 지도를 보이는가
+local skyObjs: { GuiObject } = {}
+local hellObjs: { GuiObject } = {}
+local hellTexts: { any } = {}
 type MapText = { label: TextLabel, prio: number, small: number, big: number, base: UDim2? }
 local mapTexts: { MapText } = {}
 local skyTexts: { MapText } = {}
@@ -2872,7 +2876,7 @@ local function declutter()
 	local ox = canvas.Position.X.Scale * inner.X
 	local oy = canvas.Position.Y.Scale * inner.Y
 	local placed: { { number } } = {}
-	for _, t in ipairs(mapSky and skyTexts or mapTexts) do
+	for _, t in ipairs(mapSky and (mapHell and hellTexts or skyTexts) or mapTexts) do
 		local l = t.label
 		local size = mapBig and t.big or t.small
 		t.base = t.base or UDim2.fromScale(l.Position.X.Scale, l.Position.Y.Scale)
@@ -2925,7 +2929,7 @@ local function placeMap()
 	end
 	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
 	mapFrame.Visible = (mapBig or V.device ~= "phone") and not Config.BATTLE_MODE
-	for _, list in ipairs({ mapTexts, skyTexts }) do
+	for _, list in ipairs({ mapTexts, skyTexts, hellTexts }) do
 		for _, t in ipairs(list) do
 			t.label.TextSize = mapBig and t.big or t.small
 		end
@@ -2954,6 +2958,33 @@ end
 local skyBtn: TextButton? = nil
 local skyTitle: TextLabel? = nil
 local inSkyNow = false
+local inHellNow = false
+-- 3.22판: 천상 지도 판에서 천상 섬들과 지옥 구역들 중 하나만 보인다
+local function setMapLayer(hell: boolean)
+	mapHell = hell
+	for _, o in ipairs(skyObjs) do
+		o.Visible = not hell
+	end
+	for _, o in ipairs(hellObjs) do
+		o.Visible = hell
+	end
+	for _, t in ipairs(skyTexts) do
+		if hell then
+			t.label.Visible = false
+		end
+	end
+	for _, t in ipairs(hellTexts) do
+		if not hell then
+			t.label.Visible = false
+		end
+	end
+	if skyCanvas then
+		skyCanvas.BackgroundColor3 = hell and Color3.fromRGB(46, 22, 26) or Color3.fromRGB(196, 214, 238)
+	end
+	if skyTitle then
+		skyTitle.Text = hell and "🔥 지옥" or "☁ 천상계"
+	end
+end
 -- 지도를 땅 또는 하늘로 바꾼다 (나·적 점·길잡이를 그 판으로 옮긴다)
 local function setMapWorld(sky: boolean)
 	local sc = skyCanvas
@@ -2972,7 +3003,7 @@ local function setMapWorld(sky: boolean)
 	if storyMark then
 		storyMark.Parent = cv
 	end
-	mapInner.BackgroundColor3 = sky and Color3.fromRGB(150, 185, 225) or Color3.fromRGB(70, 95, 120)
+	mapInner.BackgroundColor3 = sky and (mapHell and Color3.fromRGB(90, 40, 44) or Color3.fromRGB(150, 185, 225)) or Color3.fromRGB(70, 95, 120)
 	if skyBtn then
 		skyBtn.Text = sky and "⛰" or "☁"
 	end
@@ -3025,6 +3056,40 @@ local function zoomBy(k: number)
 	bigZoom = math.clamp(bigZoom * k, 1, 6)
 	applyView(nil)
 	declutter()
+end
+
+-- 3.22판 지옥 지도 층: 천상 지도 판 위에 얹어 두었다가 지옥에 있을 때만 보인다
+local function buildHellLayer(cv: Frame)
+	local H = Config.HELL
+	if not H or not H.zones then
+		return
+	end
+	local before = #cv:GetChildren()
+	local list = cv:GetChildren()
+	local function label(at: Vector3, t: string, small: number, big: number, color: Color3, z: number, prio: number): TextLabel
+		local l = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(at, true), Size = UDim2.new(0, 10, 0, 10), AutomaticSize = Enum.AutomaticSize.XY, Text = t, TextSize = small, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.15, TextWrapped = false, RichText = true, ZIndex = z, Visible = false, Parent = cv })
+		table.insert(hellTexts, { label = l, prio = prio, small = small, big = big })
+		return l
+	end
+	local mapH = 1700
+	-- 동굴 바닥 (붉은 어둠)
+	local floor = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(Vector3.zero, true), Size = UDim2.fromScale(2 * H.radius / (2 * mapH), 2 * H.radius / (2 * mapH)), BackgroundColor3 = Color3.fromRGB(70, 36, 40), BorderSizePixel = 0, ZIndex = 5, Visible = false, Parent = cv }, { corner(9999), stroke(Color3.fromRGB(255, 110, 60), 2) })
+	table.insert(hellObjs, floor)
+	for _, z in ipairs(H.zones) do
+		local d = 2 * z.radius / (2 * mapH)
+		local disc = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(z.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = z.ground:Lerp(Color3.fromRGB(255, 90, 50), 0.18), BorderSizePixel = 0, ZIndex = 7, Visible = false, Parent = cv }, { corner(9999), stroke(Color3.fromRGB(255, 180, 120), 2) })
+		table.insert(hellObjs, disc)
+		if z.boss then
+			label(z.boss.at, "👹", 13, 16, C.red, 9, 3)
+		end
+		local tag = label(z.at + Vector3.new(0, 0, z.safe and z.radius * 0.72 or 0), z.name, 11, 13, Color3.new(1, 1, 1), 9, z.safe and 2.5 or 2)
+		if not z.safe then
+			regionTags["sky_" .. z.id] = { label = tag, name = z.name }
+		end
+	end
+	label(H.zones[1].at + Vector3.new(-120, 0, 70), "⬆", 12, 15, Color3.new(1, 1, 1), 8, 1.5)
+	local _ = before
+	local _l = list
 end
 
 -- 천상 지도: 구름 바다 위의 섬과 다리, 섬 이름과 권장 전투력, 보스, 천궁의 문과 가게, 천상의 사부
@@ -3097,6 +3162,15 @@ local function buildSkyMap()
 		end
 	end
 	table.sort(skyTexts, function(x, y)
+		return x.prio > y.prio
+	end)
+	for _, ch in ipairs(cv:GetChildren()) do
+		if ch:IsA("GuiObject") and not ch:IsA("TextLabel") then
+			table.insert(skyObjs, ch)
+		end
+	end
+	buildHellLayer(cv)
+	table.sort(hellTexts, function(x, y)
 		return x.prio > y.prio
 	end)
 	skyTitle = text({ Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(0, 160, 0, 20), Text = "☁ 천상계", TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.1, Visible = false, ZIndex = 12, Parent = mapFrame })
@@ -3677,7 +3751,54 @@ local function skyTick(pos: Vector3)
 		skySea = f
 	end
 end
+-- 3.22판 지옥: 어둡고 붉은 빛깔, 짙은 연기 (이 화면에서만 입힌다. 서버의 낮밤과 겹치지 않게 색보정과 노출로)
+local hellCC: ColorCorrectionEffect? = nil
+local hellExposure: number? = nil
+local function hellTick(pos: Vector3)
+	local z = Config.hellZoneAt(pos)
+	local id = z and ("sky_" .. z.id) or "hell"
+	if id ~= regionNow then
+		regionNow = id
+		if z then
+			local rec = regionPower("sky_" .. z.id)
+			UI.toast(string.format("📍 지옥 · %s%s%s", z.name, z.safe and "  · 안전한 곳" or string.format("  · 적 수준 %d", Config.enemyLevel(pos)), (rec and not z.safe) and ("  · " .. powerAdvice(rec)) or ""))
+		end
+	end
+	local L = game:GetService("Lighting")
+	if not hellCC then
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "KwonHellTint"
+		cc.TintColor = Color3.fromRGB(255, 160, 140)
+		cc.Saturation = -0.1
+		cc.Contrast = 0.12
+		cc.Brightness = -0.08
+		cc.Parent = L
+		hellCC = cc
+		hellExposure = L.ExposureCompensation
+	end
+	L.ExposureCompensation += (-0.9 - L.ExposureCompensation) * 0.1
+	local atmo = L:FindFirstChildOfClass("Atmosphere")
+	if atmo then
+		atmo.Density += (0.46 - atmo.Density) * 0.08
+		atmo.Haze += (2.6 - atmo.Haze) * 0.08
+		atmo.Color = atmo.Color:Lerp(Color3.fromRGB(150, 48, 40), 0.08)
+	end
+end
+local function hellLeave()
+	if hellCC then
+		hellCC:Destroy()
+		hellCC = nil
+		local L = game:GetService("Lighting")
+		L.ExposureCompensation = hellExposure or 0
+		hellExposure = nil
+	end
+end
 local function ambientTick(pos: Vector3)
+	if Config.inHell(pos) then
+		hellTick(pos)
+		return
+	end
+	hellLeave()
 	if pos.Y > Config.SKY.y - 300 then
 		skyTick(pos)
 		return
@@ -3714,6 +3835,15 @@ local function updateMap(dt: number)
 	local pos = myPos()
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
+	if pos and Config.inHell(pos) ~= inHellNow then
+		inHellNow = Config.inHell(pos)
+		if skyCanvas then
+			setMapLayer(inHellNow)
+			if mapSky then
+				placeMap()
+			end
+		end
+	end
 	if pos and isSkyPos(pos) ~= inSkyNow then
 		-- 천상계에 오르내리면 지도도 따라 바뀐다
 		inSkyNow = isSkyPos(pos)

@@ -6034,6 +6034,7 @@ local function hellGate(out: any)
 	for _ = 1, 14 do
 		part({ Name = "FaintBlade", Size = Vector3.new(0.18, rng:NextNumber(1.2, 2.4), 0.18), Position = G + Vector3.new(rng:NextNumber(-6, 6), 1.2, rng:NextNumber(-6, 6)), Color = Color3.fromRGB(190, 220, 180), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
 	end
+	out.hellGrass = grass -- 방이 덜 지어져도 입구는 작동하게 먼저 알린다
 	local mist = Instance.new("ParticleEmitter")
 	mist.Rate = 2
 	mist.Lifetime = NumberRange.new(3, 5)
@@ -6044,196 +6045,568 @@ local function hellGate(out: any)
 	mist.LightEmission = 0.3
 	mist.Parent = grass
 
-	-- 땅 밑 방: 가운데 R (바닥 높이), 안쪽 한 변 120, 높이 80
-	local R = H.room
-	local HALF, TALL = 60, 80
-	local function slab(name: string, size: Vector3, pos: Vector3, color: Color3, mat: Enum.Material?): Part
-		return part({ Name = name, Size = size, Position = pos, Color = color, Material = mat or Enum.Material.Granite, Parent = f })
-	end
-	slab("HellFloor", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R - Vector3.new(0, 2, 0), Color3.fromRGB(58, 54, 60), Enum.Material.Slate)
-	slab("HellCeiling", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R + Vector3.new(0, TALL + 2, 0), Color3.fromRGB(40, 38, 44))
-	slab("HellWallN", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
-	slab("HellWallS", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, HALF + 2), Color3.fromRGB(52, 48, 56))
-	slab("HellWallW", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(-HALF - 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
-	slab("HellWallE", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(HALF + 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
-	-- 바닥의 붉은 균열 무늬 (가운데에서 포탈까지 길)
-	for k = 0, 9 do
-		part({ Name = "HellCrack", Size = Vector3.new(1.4, 0.15, 6), CFrame = CFrame.new(R + Vector3.new(math.sin(k * 1.3) * 3, 0.1, -k * 5.2)) * CFrame.Angles(0, math.sin(k * 0.9) * 0.2, 0), Color = Color3.fromRGB(150, 30, 30), Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.35, Parent = f })
-	end
-	-- 둘레 기둥 (위로 갈수록 좁은 돌기둥) + 푸른 귀화 등불
-	for k = 0, 9 do
-		local side = k < 5 and -1 or 1
-		local zz = -48 + (k % 5) * 24
-		local pil = slab("HellPillar", Vector3.new(5, TALL - 6, 5), R + Vector3.new(side * 54, (TALL - 6) / 2, zz), Color3.fromRGB(70, 66, 74))
-		local flame = part({ Name = "HellFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 4, 3), Position = R + Vector3.new(side * 50, 12, zz), Color = Color3.fromRGB(90, 230, 190), Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
-		light(flame, Color3.fromRGB(90, 230, 190), 30, 1.6)
-		local _ = pil
-	end
+	local okRoom, errRoom = pcall(function()
+		-- 땅 밑 방: 가운데 R (바닥 높이), 안쪽 한 변 120, 높이 80
+		local R = H.room
+		local HALF, TALL = 60, 80
+		local function slab(name: string, size: Vector3, pos: Vector3, color: Color3, mat: Enum.Material?): Part
+			return part({ Name = name, Size = size, Position = pos, Color = color, Material = mat or Enum.Material.Granite, Parent = f })
+		end
+		slab("HellFloor", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R - Vector3.new(0, 2, 0), Color3.fromRGB(58, 54, 60), Enum.Material.Slate)
+		slab("HellCeiling", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R + Vector3.new(0, TALL + 2, 0), Color3.fromRGB(40, 38, 44))
+		slab("HellWallN", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
+		slab("HellWallS", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, HALF + 2), Color3.fromRGB(52, 48, 56))
+		slab("HellWallW", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(-HALF - 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
+		slab("HellWallE", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(HALF + 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
+		-- 바닥의 붉은 균열 무늬 (가운데에서 포탈까지 길)
+		for k = 0, 9 do
+			part({ Name = "HellCrack", Size = Vector3.new(1.4, 0.15, 6), CFrame = CFrame.new(R + Vector3.new(math.sin(k * 1.3) * 3, 0.1, -k * 5.2)) * CFrame.Angles(0, math.sin(k * 0.9) * 0.2, 0), Color = Color3.fromRGB(150, 30, 30), Material = Enum.Material.Neon, CanCollide = false, Transparency = 0.35, Parent = f })
+		end
+		-- 둘레 기둥 (위로 갈수록 좁은 돌기둥) + 푸른 귀화 등불
+		for k = 0, 9 do
+			local side = k < 5 and -1 or 1
+			local zz = -48 + (k % 5) * 24
+			local pil = slab("HellPillar", Vector3.new(5, TALL - 6, 5), R + Vector3.new(side * 54, (TALL - 6) / 2, zz), Color3.fromRGB(70, 66, 74))
+			local flame = part({ Name = "HellFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 4, 3), Position = R + Vector3.new(side * 50, 12, zz), Color = Color3.fromRGB(90, 230, 190), Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+			light(flame, Color3.fromRGB(90, 230, 190), 30, 1.6)
+			local _ = pil
+		end
 
-	-- 엄청 큰 포탈: 북쪽 벽 가운데. 돌 고리 · 안쪽 불길 · 사슬 · 자물쇠
-	local C = R + Vector3.new(0, 30, -HALF + 4)
-	local RING = 26
-	for k = 0, 31 do
-		local a = k / 32 * math.pi * 2
-		part({ Name = "PortalRing", Size = Vector3.new(7, 7, 6), CFrame = CFrame.new(C + Vector3.new(math.cos(a) * RING, math.sin(a) * RING, 0)) * CFrame.Angles(0, 0, a + math.pi / 4), Color = k % 2 == 0 and Color3.fromRGB(46, 42, 50) or Color3.fromRGB(62, 56, 64), Material = Enum.Material.Basalt, Parent = f })
-	end
-	for k = 0, 7 do
-		local a = k / 8 * math.pi * 2
-		part({ Name = "PortalRune", Size = Vector3.new(2.2, 2.2, 0.6), CFrame = CFrame.new(C + Vector3.new(math.cos(a) * (RING + 0.2), math.sin(a) * (RING + 0.2), -3.2)) * CFrame.Angles(0, 0, a + math.pi / 4), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	end
-	local fill = part({ Name = "PortalFill", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, RING * 2 - 6, RING * 2 - 6), CFrame = CFrame.new(C + Vector3.new(0, 0, 1)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(70, 8, 12), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false, Parent = f })
-	local glow = Instance.new("PointLight")
-	glow.Color = RED
-	glow.Range = 40
-	glow.Brightness = 1.4
-	glow.Parent = fill
-	-- 붉은 오라: 평소엔 가늘게, 열리면 거세게
-	local aura = Instance.new("ParticleEmitter")
-	aura.Rate = 12
-	aura.Lifetime = NumberRange.new(2.5, 4)
-	aura.Speed = NumberRange.new(3, 7)
-	aura.SpreadAngle = Vector2.new(70, 70)
-	aura.EmissionDirection = Enum.NormalId.Left -- 원기둥 축 (방 안쪽으로)
-	aura.Color = ColorSequence.new(Color3.fromRGB(255, 70, 50), Color3.fromRGB(120, 10, 20))
-	aura.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 9) })
-	aura.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
-	aura.LightEmission = 0.8
-	aura.Parent = fill
-	local embers = Instance.new("ParticleEmitter")
-	embers.Rate = 6
-	embers.Lifetime = NumberRange.new(3, 6)
-	embers.Speed = NumberRange.new(4, 10)
-	embers.SpreadAngle = Vector2.new(180, 180)
-	embers.Color = ColorSequence.new(Color3.fromRGB(255, 160, 80))
-	embers.Size = NumberSequence.new(0.5, 0.1)
-	embers.LightEmission = 1
-	embers.Acceleration = Vector3.new(0, 4, 0)
-	embers.Parent = fill
-	-- 사슬 여섯 가닥 (고리를 가로지른다) + 가운데 자물쇠
-	local chains: { BasePart } = {}
-	local function chain(a: Vector3, b: Vector3)
-		local len = (b - a).Magnitude
-		local n = math.floor(len / 2.2)
-		for i = 0, n do
-			local pos = a:Lerp(b, i / n)
-			local link = part({ Name = "ChainLink", Size = i % 2 == 0 and Vector3.new(1.6, 0.5, 2.6) or Vector3.new(0.5, 1.6, 2.6), CFrame = CFrame.lookAt(pos, b), Color = Color3.fromRGB(60, 60, 68), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
-			table.insert(chains, link)
+		-- 엄청 큰 포탈: 북쪽 벽 가운데. 돌 고리 · 안쪽 불길 · 사슬 · 자물쇠
+		local C = R + Vector3.new(0, 30, -HALF + 4)
+		local RING = 26
+		for k = 0, 31 do
+			local a = k / 32 * math.pi * 2
+			part({ Name = "PortalRing", Size = Vector3.new(7, 7, 6), CFrame = CFrame.new(C + Vector3.new(math.cos(a) * RING, math.sin(a) * RING, 0)) * CFrame.Angles(0, 0, a + math.pi / 4), Color = k % 2 == 0 and Color3.fromRGB(46, 42, 50) or Color3.fromRGB(62, 56, 64), Material = Enum.Material.Basalt, Parent = f })
 		end
-	end
-	for k = 0, 5 do
-		local a = k / 6 * math.pi
-		local d = Vector3.new(math.cos(a), math.sin(a), 0) * (RING - 1)
-		chain(C - d + Vector3.new(0, 0, -3.6), C + d + Vector3.new(0, 0, -3.6))
-	end
-	local lock = part({ Name = "PortalLock", Size = Vector3.new(7, 8, 3), Position = C + Vector3.new(0, 0, -4.6), Color = Color3.fromRGB(70, 62, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
-	local keyhole = part({ Name = "LockKeyhole", Size = Vector3.new(1.4, 2.4, 0.4), Position = C + Vector3.new(0, 0, -6.2), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	table.insert(chains, lock)
-	table.insert(chains, keyhole)
-	-- 포탈 앞 제단 (밟고 서는 곳)
-	slab("PortalDais", Vector3.new(40, 2, 22), R + Vector3.new(0, 1, -HALF + 14), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
-	slab("PortalStep", Vector3.new(30, 1, 6), R + Vector3.new(0, 0.5, -HALF + 29), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
-	local plinth = part({ Name = "PortalPlinth", Size = Vector3.new(6, 4, 3), Position = R + Vector3.new(0, 4, -HALF + 20), Color = Color3.fromRGB(40, 36, 44), Material = Enum.Material.Basalt, Parent = f })
-	local portalPrompt = prompt(plinth, "큰 문 앞에 서기", "사슬 잠긴 포탈", "HellPortal")
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			part({ Name = "PortalRune", Size = Vector3.new(2.2, 2.2, 0.6), CFrame = CFrame.new(C + Vector3.new(math.cos(a) * (RING + 0.2), math.sin(a) * (RING + 0.2), -3.2)) * CFrame.Angles(0, 0, a + math.pi / 4), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		local fill = part({ Name = "PortalFill", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, RING * 2 - 6, RING * 2 - 6), CFrame = CFrame.new(C + Vector3.new(0, 0, 1)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(70, 8, 12), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false, Parent = f })
+		local glow = Instance.new("PointLight")
+		glow.Color = RED
+		glow.Range = 40
+		glow.Brightness = 1.4
+		glow.Parent = fill
+		-- 붉은 오라: 평소엔 가늘게, 열리면 거세게
+		local aura = Instance.new("ParticleEmitter")
+		aura.Rate = 12
+		aura.Lifetime = NumberRange.new(2.5, 4)
+		aura.Speed = NumberRange.new(3, 7)
+		aura.SpreadAngle = Vector2.new(70, 70)
+		aura.EmissionDirection = Enum.NormalId.Left -- 원기둥 축 (방 안쪽으로)
+		aura.Color = ColorSequence.new(Color3.fromRGB(255, 70, 50), Color3.fromRGB(120, 10, 20))
+		aura.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 9) })
+		aura.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+		aura.LightEmission = 0.8
+		aura.Parent = fill
+		local embers = Instance.new("ParticleEmitter")
+		embers.Rate = 6
+		embers.Lifetime = NumberRange.new(3, 6)
+		embers.Speed = NumberRange.new(4, 10)
+		embers.SpreadAngle = Vector2.new(180, 180)
+		embers.Color = ColorSequence.new(Color3.fromRGB(255, 160, 80))
+		embers.Size = NumberSequence.new(0.5, 0.1)
+		embers.LightEmission = 1
+		embers.Acceleration = Vector3.new(0, 4, 0)
+		embers.Parent = fill
+		-- 사슬 여섯 가닥 (고리를 가로지른다) + 가운데 자물쇠
+		local chains: { BasePart } = {}
+		local function chain(a: Vector3, b: Vector3)
+			local len = (b - a).Magnitude
+			local n = math.floor(len / 2.2)
+			for i = 0, n do
+				local pos = a:Lerp(b, i / n)
+				local link = part({ Name = "ChainLink", Size = i % 2 == 0 and Vector3.new(1.6, 0.5, 2.6) or Vector3.new(0.5, 1.6, 2.6), CFrame = CFrame.lookAt(pos, b), Color = Color3.fromRGB(60, 60, 68), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				table.insert(chains, link)
+			end
+		end
+		for k = 0, 5 do
+			local a = k / 6 * math.pi
+			local d = Vector3.new(math.cos(a), math.sin(a), 0) * (RING - 1)
+			chain(C - d + Vector3.new(0, 0, -3.6), C + d + Vector3.new(0, 0, -3.6))
+		end
+		local lock = part({ Name = "PortalLock", Size = Vector3.new(7, 8, 3), Position = C + Vector3.new(0, 0, -4.6), Color = Color3.fromRGB(70, 62, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+		local keyhole = part({ Name = "LockKeyhole", Size = Vector3.new(1.4, 2.4, 0.4), Position = C + Vector3.new(0, 0, -6.2), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		table.insert(chains, lock)
+		table.insert(chains, keyhole)
+		-- 포탈 앞 제단 (밟고 서는 곳)
+		slab("PortalDais", Vector3.new(40, 2, 22), R + Vector3.new(0, 1, -HALF + 14), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
+		slab("PortalStep", Vector3.new(30, 1, 6), R + Vector3.new(0, 0.5, -HALF + 29), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
+		local plinth = part({ Name = "PortalPlinth", Size = Vector3.new(6, 4, 3), Position = R + Vector3.new(0, 4, -HALF + 20), Color = Color3.fromRGB(40, 36, 44), Material = Enum.Material.Basalt, Parent = f })
+		local portalPrompt = prompt(plinth, "큰 문 앞에 서기", "사슬 잠긴 포탈", "HellPortal")
 
-	-- 열림: 사슬이 끊겨 떨어지고 붉은 오라가 거세게 뿜는다 (모두에게 보인다, 잠시 뒤 도로 닫힌다)
-	local flaring = false
-	local function flare(sec: number)
-		if flaring then
-			return
-		end
-		flaring = true
-		for _, c in ipairs(chains) do
-			c.Transparency = 1
-		end
-		fill.Color = Color3.fromRGB(255, 50, 40)
-		fill.Transparency = 0.05
-		glow.Brightness = 6
-		glow.Range = 120
-		aura.Rate = 90
-		embers.Rate = 60
-		aura.Speed = NumberRange.new(10, 24)
-		task.delay(sec, function()
+		-- 열림: 사슬이 끊겨 떨어지고 붉은 오라가 거세게 뿜는다 (모두에게 보인다, 잠시 뒤 도로 닫힌다)
+		local flaring = false
+		local function flare(sec: number)
+			if flaring then
+				return
+			end
+			flaring = true
 			for _, c in ipairs(chains) do
-				c.Transparency = 0
+				c.Transparency = 1
 			end
-			TweenService:Create(fill, TweenInfo.new(2), { Color = Color3.fromRGB(70, 8, 12), Transparency = 0.15 }):Play()
-			glow.Brightness = 1.4
-			glow.Range = 40
-			aura.Rate = 12
-			embers.Rate = 6
-			aura.Speed = NumberRange.new(3, 7)
-			flaring = false
-		end)
+			fill.Color = Color3.fromRGB(255, 50, 40)
+			fill.Transparency = 0.05
+			glow.Brightness = 6
+			glow.Range = 120
+			aura.Rate = 90
+			embers.Rate = 60
+			aura.Speed = NumberRange.new(10, 24)
+			task.delay(sec, function()
+				for _, c in ipairs(chains) do
+					c.Transparency = 0
+				end
+				TweenService:Create(fill, TweenInfo.new(2), { Color = Color3.fromRGB(70, 8, 12), Transparency = 0.15 }):Play()
+				glow.Brightness = 1.4
+				glow.Range = 40
+				aura.Rate = 12
+				embers.Rate = 6
+				aura.Speed = NumberRange.new(3, 7)
+				flaring = false
+			end)
+		end
+
+		-- 저승사자: 검은 도포와 검은 갓, 창백한 얼굴, 푸른 등불 든 지팡이
+		local P = R + Vector3.new(-16, 0, -22)
+		local function rp(name: string, size: Vector3, off: Vector3, color: Color3, mat: Enum.Material?, shape: Enum.PartType?): Part
+			return part({ Name = name, Size = size, Position = P + off, Color = color, Material = mat or Enum.Material.Fabric, Shape = shape or Enum.PartType.Block, Parent = f })
+		end
+		rp("ReaperRobe", Vector3.new(4.6, 5.2, 3.6), Vector3.new(0, 2.6, 0), BLACK)
+		rp("ReaperHem", Vector3.new(5.4, 1.2, 4.2), Vector3.new(0, 0.6, 0), Color3.fromRGB(14, 12, 18))
+		local torso = rp("ReaperTorso", Vector3.new(3.8, 3.4, 2.4), Vector3.new(0, 6.7, 0), BLACK)
+		rp("ReaperSash", Vector3.new(3.9, 0.7, 2.5), Vector3.new(0, 5.4, 0), Color3.fromRGB(150, 30, 30))
+		rp("ReaperCollar", Vector3.new(2.4, 0.5, 2.6), Vector3.new(0, 8.5, 0), BONE)
+		rp("ReaperHead", Vector3.new(2.4, 2.6, 2.4), Vector3.new(0, 9.7, 0), BONE, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		rp("ReaperEyeL", Vector3.new(0.6, 0.18, 0.2), Vector3.new(-0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
+		rp("ReaperEyeR", Vector3.new(0.6, 0.18, 0.2), Vector3.new(0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
+		rp("ReaperBrim", Vector3.new(0.3, 5.6, 5.6), Vector3.new(0, 11.2, 0), BLACK, Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 11.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		rp("ReaperCrown", Vector3.new(2.6, 2.4, 2.4), Vector3.new(0, 12.4, 0), Color3.fromRGB(14, 12, 18), Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 12.4, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		rp("ReaperSleeveL", Vector3.new(1.4, 4, 1.6), Vector3.new(-2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(-2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(8))
+		rp("ReaperSleeveR", Vector3.new(1.4, 4, 1.6), Vector3.new(2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(-8))
+		rp("ReaperStaff", Vector3.new(0.35, 13, 0.35), Vector3.new(3.4, 6.5, 2.2), Color3.fromRGB(70, 54, 40), Enum.Material.Wood)
+		local lamp = rp("ReaperLamp", Vector3.new(2, 2.4, 2), Vector3.new(3.4, 13.4, 2.2), Color3.fromRGB(110, 240, 220), Enum.Material.Neon, Enum.PartType.Ball)
+		lamp.Transparency = 0.15
+		light(lamp, Color3.fromRGB(110, 240, 220), 36, 1.8)
+		local fog = Instance.new("ParticleEmitter")
+		fog.Rate = 10
+		fog.Lifetime = NumberRange.new(2, 3.5)
+		fog.Speed = NumberRange.new(0.5, 1.5)
+		fog.SpreadAngle = Vector2.new(180, 20)
+		fog.Color = ColorSequence.new(Color3.fromRGB(30, 28, 40))
+		fog.Size = NumberSequence.new(3, 5)
+		fog.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 1) })
+		fog.Parent = torso
+		local reaperPrompt = prompt(torso, "말 걸기", "저승사자", "HellReaper")
+		reaperPrompt.MaxActivationDistance = 16
+
+		-- 원혼 셋: 방 안쪽을 떠도는 푸른 불. 다가가 달래 준다
+		local wisps: { ProximityPrompt } = {}
+		local spots = { Vector3.new(-46, 6, 8), Vector3.new(47, 6, -6), Vector3.new(6, 6, 46) }
+		for i = 1, math.min(H.wisps, #spots) do
+			local w = part({ Name = "Wisp" .. i, Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.8, 3.4), Position = R + spots[i], Color = Color3.fromRGB(150, 220, 255), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+			light(w, Color3.fromRGB(150, 220, 255), 24, 1.5)
+			local tail = Instance.new("ParticleEmitter")
+			tail.Rate = 14
+			tail.Lifetime = NumberRange.new(1.5, 2.5)
+			tail.Speed = NumberRange.new(0.5, 1.5)
+			tail.Acceleration = Vector3.new(0, 2, 0)
+			tail.Color = ColorSequence.new(Color3.fromRGB(170, 230, 255))
+			tail.Size = NumberSequence.new(1.6, 0)
+			tail.Transparency = NumberSequence.new(0.3, 1)
+			tail.LightEmission = 1
+			tail.Parent = w
+			local hover = w.Position
+			task.spawn(function()
+				local t0 = os.clock() + i * 1.7
+				while w.Parent do
+					w.Position = hover + Vector3.new(math.sin((os.clock() - t0) * 0.6) * 2, math.sin((os.clock() - t0) * 1.1) * 1.2, math.cos((os.clock() - t0) * 0.6) * 2)
+					task.wait(0.1)
+				end
+			end)
+			wisps[i] = prompt(w, "달래기", "원혼", "HellWisp" .. i)
+		end
+
+		-- 올라가는 문 (이승으로) — 떨어진 자리 옆, 남쪽 벽 가까이
+		local exitStone = part({ Name = "HellExit", Size = Vector3.new(7, 10, 2), Position = R + Vector3.new(-40, 5, HALF - 4), Color = Color3.fromRGB(190, 200, 190), Material = Enum.Material.Marble, Parent = f })
+		light(exitStone, Color3.fromRGB(200, 240, 210), 28, 1.2)
+		local exitSign = part({ Name = "HellExitSign", Size = Vector3.new(6, 2, 0.4), Position = R + Vector3.new(-40, 11.5, HALF - 4.6), Color = Color3.fromRGB(90, 80, 70), Material = Enum.Material.Wood, Parent = f })
+		sign(exitSign, Enum.NormalId.Front, { { "이승으로", Color3.fromRGB(235, 245, 230), 0.6 } })
+		local exitPrompt = prompt(exitStone, "올라가기", "이승으로 가는 돌문", "HellExit")
+
+		out.hell = { grass = grass, reaper = reaperPrompt, wisps = wisps, portal = portalPrompt, exit = exitPrompt, flare = flare }
+	end)
+	if not okRoom then
+		warn("[권왕] 저승 방 만들기 오류:", errRoom)
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.22판 지옥: 하늘이 막힌 거대한 동굴 (천상계만 한 넓이). 바닥 높이 Config.HELL.y
+--   가운데 황천 나루 (안전한 곳, 이승으로 가는 문) · 남쪽 삼도천 · 동쪽 화탕지옥 · 서쪽 도산지옥 · 북쪽 아귀도 · 맨 북쪽 염라전
+-- 돌려주는 것: out.hellBack = 이승으로 돌아가는 문의 프롬프트
+------------------------------------------------------------------------
+local function hellWorld(out: any)
+	local H = Config.HELL
+	if not H or not H.zones then
+		return
+	end
+	local HY = H.y
+	local R = H.radius
+	local CEIL = H.ceiling
+	local f = Instance.new("Folder")
+	f.Name = "HellWorld"
+	f.Parent = folder
+	local center = Vector3.new(0, HY, 0)
+	local function rgb(r: number, g: number, b: number): Color3
+		return Color3.fromRGB(r, g, b)
+	end
+	local BASALT = rgb(38, 32, 40)
+	local EMBER = rgb(255, 90, 30)
+	local BLOOD = rgb(170, 20, 28)
+	local BONE = rgb(222, 214, 196)
+	local function glow(at: Vector3, color: Color3, range: number, br: number?)
+		local p = part({ Name = "HellGlow", Size = Vector3.new(1, 1, 1), Position = at, Transparency = 1, CanCollide = false, Parent = f })
+		light(p, color, math.min(range, 60), br or 1.6)
 	end
 
-	-- 저승사자: 검은 도포와 검은 갓, 창백한 얼굴, 푸른 등불 든 지팡이
-	local P = R + Vector3.new(-16, 0, -22)
-	local function rp(name: string, size: Vector3, off: Vector3, color: Color3, mat: Enum.Material?, shape: Enum.PartType?): Part
-		return part({ Name = name, Size = size, Position = P + off, Color = color, Material = mat or Enum.Material.Fabric, Shape = shape or Enum.PartType.Block, Parent = f })
-	end
-	rp("ReaperRobe", Vector3.new(4.6, 5.2, 3.6), Vector3.new(0, 2.6, 0), BLACK)
-	rp("ReaperHem", Vector3.new(5.4, 1.2, 4.2), Vector3.new(0, 0.6, 0), Color3.fromRGB(14, 12, 18))
-	local torso = rp("ReaperTorso", Vector3.new(3.8, 3.4, 2.4), Vector3.new(0, 6.7, 0), BLACK)
-	rp("ReaperSash", Vector3.new(3.9, 0.7, 2.5), Vector3.new(0, 5.4, 0), Color3.fromRGB(150, 30, 30))
-	rp("ReaperCollar", Vector3.new(2.4, 0.5, 2.6), Vector3.new(0, 8.5, 0), BONE)
-	rp("ReaperHead", Vector3.new(2.4, 2.6, 2.4), Vector3.new(0, 9.7, 0), BONE, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-	rp("ReaperEyeL", Vector3.new(0.6, 0.18, 0.2), Vector3.new(-0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
-	rp("ReaperEyeR", Vector3.new(0.6, 0.18, 0.2), Vector3.new(0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
-	rp("ReaperBrim", Vector3.new(0.3, 5.6, 5.6), Vector3.new(0, 11.2, 0), BLACK, Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 11.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	rp("ReaperCrown", Vector3.new(2.6, 2.4, 2.4), Vector3.new(0, 12.4, 0), Color3.fromRGB(14, 12, 18), Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 12.4, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	rp("ReaperSleeveL", Vector3.new(1.4, 4, 1.6), Vector3.new(-2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(-2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(8))
-	rp("ReaperSleeveR", Vector3.new(1.4, 4, 1.6), Vector3.new(2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(-8))
-	rp("ReaperStaff", Vector3.new(0.35, 13, 0.35), Vector3.new(3.4, 6.5, 2.2), Color3.fromRGB(70, 54, 40), Enum.Material.Wood)
-	local lamp = rp("ReaperLamp", Vector3.new(2, 2.4, 2), Vector3.new(3.4, 13.4, 2.2), Color3.fromRGB(110, 240, 220), Enum.Material.Neon, Enum.PartType.Ball)
-	lamp.Transparency = 0.15
-	light(lamp, Color3.fromRGB(110, 240, 220), 36, 1.8)
-	local fog = Instance.new("ParticleEmitter")
-	fog.Rate = 10
-	fog.Lifetime = NumberRange.new(2, 3.5)
-	fog.Speed = NumberRange.new(0.5, 1.5)
-	fog.SpreadAngle = Vector2.new(180, 20)
-	fog.Color = ColorSequence.new(Color3.fromRGB(30, 28, 40))
-	fog.Size = NumberSequence.new(3, 5)
-	fog.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 1) })
-	fog.Parent = torso
-	local reaperPrompt = prompt(torso, "말 걸기", "저승사자", "HellReaper")
-	reaperPrompt.MaxActivationDistance = 16
-
-	-- 원혼 셋: 방 안쪽을 떠도는 푸른 불. 다가가 달래 준다
-	local wisps: { ProximityPrompt } = {}
-	local spots = { Vector3.new(-46, 6, 8), Vector3.new(47, 6, -6), Vector3.new(6, 6, 46) }
-	for i = 1, math.min(H.wisps, #spots) do
-		local w = part({ Name = "Wisp" .. i, Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3.8, 3.4), Position = R + spots[i], Color = Color3.fromRGB(150, 220, 255), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
-		light(w, Color3.fromRGB(150, 220, 255), 24, 1.5)
-		local tail = Instance.new("ParticleEmitter")
-		tail.Rate = 14
-		tail.Lifetime = NumberRange.new(1.5, 2.5)
-		tail.Speed = NumberRange.new(0.5, 1.5)
-		tail.Acceleration = Vector3.new(0, 2, 0)
-		tail.Color = ColorSequence.new(Color3.fromRGB(170, 230, 255))
-		tail.Size = NumberSequence.new(1.6, 0)
-		tail.Transparency = NumberSequence.new(0.3, 1)
-		tail.LightEmission = 1
-		tail.Parent = w
-		local hover = w.Position
-		task.spawn(function()
-			local t0 = os.clock() + i * 1.7
-			while w.Parent do
-				w.Position = hover + Vector3.new(math.sin((os.clock() - t0) * 0.6) * 2, math.sin((os.clock() - t0) * 1.1) * 1.2, math.cos((os.clock() - t0) * 0.6) * 2)
-				task.wait(0.1)
+	------------------------------------------------ 바닥과 구역 바닥
+	disc("HellGround", center - Vector3.new(0, 20, 0), R, 40, rgb(46, 40, 48), Enum.Material.Basalt, f)
+	for _, z in ipairs(H.zones) do
+		disc("HellZone_" .. z.id, z.at + Vector3.new(0, 0.12, 0), z.radius, 0.3, z.ground, z.material, f, false)
+		-- 구역 테두리: 낮은 돌 띠 (이름 없는 곳과 가른다)
+		local n = math.floor(2 * math.pi * z.radius / 14)
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2
+			if k % 5 ~= 0 then
+				local p = z.at + Vector3.new(math.cos(a) * z.radius, 0.6, math.sin(a) * z.radius)
+				part({ Name = "ZoneRim", Size = Vector3.new(2 * math.pi * z.radius / n + 0.3, 1.2, 1.4), CFrame = CFrame.lookAt(p, Vector3.new(z.at.X, p.Y, z.at.Z)), Color = BASALT, Material = Enum.Material.Basalt, CanCollide = false, Parent = f })
 			end
-		end)
-		wisps[i] = prompt(w, "달래기", "원혼", "HellWisp" .. i)
+		end
+	end
+	-- 구역을 잇는 길: 가운데 나루에서 각 땅으로 (검붉은 돌길)
+	for _, z in ipairs(H.zones) do
+		if not z.safe then
+			local d = z.at - center
+			local len = Vector3.new(d.X, 0, d.Z).Magnitude - 170 - z.radius * 0.5
+			if len > 10 then
+				local dir = Vector3.new(d.X, 0, d.Z).Unit
+				local mid = center + dir * (170 + len / 2)
+				part({ Name = "HellRoad", Size = Vector3.new(22, 0.4, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.2, 0), mid + dir + Vector3.new(0, 0.2, 0)), Color = rgb(62, 44, 52), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
+			end
+		end
+	end
+	-- 바닥의 용암 균열 (밟아도 된다. 빛만 낸다)
+	for k = 1, 70 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local rr = rng:NextNumber(60, R - 80)
+		local p = center + Vector3.new(math.cos(a) * rr, 0.32, math.sin(a) * rr)
+		if not Config.hellZoneAt(p + Vector3.new(0, 1, 0)) or rng:NextNumber() < 0.5 then
+			part({ Name = "MagmaVein", Size = Vector3.new(rng:NextNumber(1, 2.4), 0.12, rng:NextNumber(14, 44)), CFrame = CFrame.new(p) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Color = EMBER, Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false, Parent = f })
+			if k % 4 == 0 then
+				glow(p + Vector3.new(0, 4, 0), EMBER, 34, 1.1)
+			end
+		end
 	end
 
-	-- 올라가는 문 (이승으로) — 떨어진 자리 옆, 남쪽 벽 가까이
-	local exitStone = part({ Name = "HellExit", Size = Vector3.new(7, 10, 2), Position = R + Vector3.new(-40, 5, HALF - 4), Color = Color3.fromRGB(190, 200, 190), Material = Enum.Material.Marble, Parent = f })
-	light(exitStone, Color3.fromRGB(200, 240, 210), 28, 1.2)
-	local exitSign = part({ Name = "HellExitSign", Size = Vector3.new(6, 2, 0.4), Position = R + Vector3.new(-40, 11.5, HALF - 4.6), Color = Color3.fromRGB(90, 80, 70), Material = Enum.Material.Wood, Parent = f })
-	sign(exitSign, Enum.NormalId.Front, { { "이승으로", Color3.fromRGB(235, 245, 230), 0.6 } })
-	local exitPrompt = prompt(exitStone, "올라가기", "이승으로 가는 돌문", "HellExit")
+	------------------------------------------------ 닫힌 하늘: 둘레 벽과 층층이 내려앉은 천장
+	local nWall = 72
+	for k = 0, nWall - 1 do
+		local a = k / nWall * math.pi * 2
+		local h = CEIL + 60
+		local w = 2 * math.pi * R / nWall + 6
+		local p = center + Vector3.new(math.cos(a) * (R + 14), h / 2 - 20 + rng:NextNumber(-8, 8), math.sin(a) * (R + 14))
+		part({ Name = "HellWall", Size = Vector3.new(w, h + rng:NextNumber(0, 40), rng:NextNumber(30, 50)), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, rng:NextNumber(-0.06, 0.06), 0), Color = BASALT:Lerp(rgb(70, 40, 40), rng:NextNumber()), Material = Enum.Material.Basalt, Parent = f })
+		if k % 3 == 0 then
+			part({ Name = "WallLava", Size = Vector3.new(1.6, rng:NextNumber(40, 120), 0.6), CFrame = CFrame.lookAt(center + Vector3.new(math.cos(a) * (R - 8), rng:NextNumber(20, CEIL - 20), math.sin(a) * (R - 8)), center + Vector3.new(0, 0, 0)) * CFrame.Angles(0, 0, rng:NextNumber(-0.3, 0.3)), Color = EMBER, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+	end
+	-- 천장: 가운데로 갈수록 낮은 세 겹 (하늘이 보이지 않는다)
+	disc("HellCeiling1", center + Vector3.new(0, CEIL + 20, 0), R + 80, 50, rgb(28, 22, 30), Enum.Material.Basalt, f)
+	disc("HellCeiling2", center + Vector3.new(0, CEIL - 16, 0), R * 0.78, 28, rgb(34, 26, 34), Enum.Material.Basalt, f)
+	disc("HellCeiling3", center + Vector3.new(0, CEIL - 40, 0), R * 0.42, 22, rgb(42, 28, 32), Enum.Material.Basalt, f)
+	-- 천장의 붉은 균열 (용암이 스며 나온다)
+	for _ = 1, 40 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local rr = rng:NextNumber(0, R * 0.9)
+		local y = rr < R * 0.42 and CEIL - 51.5 or (rr < R * 0.78 and CEIL - 30.5 or CEIL - 4.5)
+		part({ Name = "CeilingVein", Size = Vector3.new(rng:NextNumber(2, 4), 0.5, rng:NextNumber(30, 90)), CFrame = CFrame.new(center + Vector3.new(math.cos(a) * rr, y, math.sin(a) * rr)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Color = EMBER, Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+	end
+	-- 고드름 같은 종유석 (층마다 내려온다)
+	for k = 1, 100 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local rr = rng:NextNumber(0, R * 0.98)
+		local top = rr < R * 0.42 and CEIL - 51 or (rr < R * 0.78 and CEIL - 30 or CEIL - 4)
+		local w = rng:NextNumber(10, 26)
+		local h = rng:NextNumber(40, 110)
+		local at = center + Vector3.new(math.cos(a) * rr, top, math.sin(a) * rr)
+		local col = rgb(48, 40, 50):Lerp(rgb(90, 50, 46), rng:NextNumber())
+		part({ Name = "Stalactite", Size = Vector3.new(w, h * 0.4, w), Position = at - Vector3.new(0, h * 0.2, 0), Color = col, Material = Enum.Material.Basalt, CanCollide = false, Parent = f })
+		part({ Name = "Stalactite", Size = Vector3.new(w * 0.62, h * 0.35, w * 0.62), Position = at - Vector3.new(0, h * 0.4 + h * 0.175, 0), Color = col, Material = Enum.Material.Basalt, CanCollide = false, Parent = f })
+		local tip = part({ Name = "StalactiteTip", Size = Vector3.new(w * 0.3, h * 0.25, w * 0.3), Position = at - Vector3.new(0, h * 0.75 + h * 0.125, 0), Color = k % 4 == 0 and EMBER or col, Material = k % 4 == 0 and Enum.Material.Neon or Enum.Material.Basalt, CanCollide = false, Parent = f })
+		if k % 12 == 0 then
+			light(tip, EMBER, 40, 1.4)
+		end
+	end
+	-- 흩날리는 재와 불씨 (구역마다)
+	for _, z in ipairs(H.zones) do
+		drift(z.at + Vector3.new(0, 36, 0), Vector3.new(z.radius * 1.7, 44, z.radius * 1.7), { rgb(255, 150, 70), rgb(255, 80, 40), rgb(200, 190, 190) }, z.safe and 14 or 22, 0.7, 9, -1.2, f, 0.6)
+	end
 
-	out.hell = { grass = grass, reaper = reaperPrompt, wisps = wisps, portal = portalPrompt, exit = exitPrompt, flare = flare }
+	------------------------------------------------ 황천 나루 (안전한 곳)
+	do
+		local z = H.zones[1]
+		local c = z.at
+		-- 뼈빛 대리석 광장과 붉은 둥근 무늬
+		disc("HubPlaza", c + Vector3.new(0, 0.3, 0), 95, 0.5, rgb(190, 184, 176), Enum.Material.Marble, f, false)
+		disc("HubRing", c + Vector3.new(0, 0.6, 0), 74, 0.2, BLOOD, Enum.Material.Neon, f, false).Transparency = 0.3
+		disc("HubInner", c + Vector3.new(0, 0.7, 0), 70, 0.2, rgb(190, 184, 176), Enum.Material.Marble, f, false)
+		-- 귀화 화로 열둘
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			brazier(c + Vector3.new(math.cos(a) * 88, 0.5, math.sin(a) * 88), 1.4, f)
+		end
+		-- 명부전: 검은 기와 지붕을 인 붉은 기둥 전각 (북쪽)
+		local hall = c + Vector3.new(0, 0, -92)
+		part({ Name = "HallPlatform", Size = Vector3.new(86, 3, 40), Position = hall + Vector3.new(0, 1.5, 0), Color = rgb(60, 54, 62), Material = Enum.Material.Slate, Parent = f })
+		part({ Name = "HallSteps", Size = Vector3.new(30, 1.5, 6), Position = hall + Vector3.new(0, 0.75, 22), Color = rgb(60, 54, 62), Material = Enum.Material.Slate, Parent = f })
+		for i = -3, 3 do
+			for _, zz in ipairs({ -13, 13 }) do
+				part({ Name = "HallPillar", Size = Vector3.new(3.4, 22, 3.4), Position = hall + Vector3.new(i * 12, 14, zz), Color = rgb(120, 22, 26), Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		part({ Name = "HallBackWall", Size = Vector3.new(82, 22, 2), Position = hall + Vector3.new(0, 14, -17), Color = rgb(26, 20, 26), Material = Enum.Material.Slate, Parent = f })
+		roof(CFrame.new(hall + Vector3.new(0, 25, 0)), 84, 38, rgb(30, 26, 34), rgb(40, 30, 36), f)
+		local hs = part({ Name = "HallSign", Size = Vector3.new(26, 5, 0.6), Position = hall + Vector3.new(0, 20, 14.6), Color = rgb(20, 14, 16), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(hs, Enum.NormalId.Front, { { "명부전", rgb(255, 120, 90), 1 } })
+		-- 업경대 (죄를 비추는 큰 거울) — 전각 앞 가운데
+		local mirror = c + Vector3.new(0, 0, -50)
+		part({ Name = "MirrorStand", Size = Vector3.new(8, 3, 3), Position = mirror + Vector3.new(0, 1.5, 0), Color = rgb(40, 30, 36), Material = Enum.Material.Basalt, Parent = f })
+		local glass = part({ Name = "MirrorGlass", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 16, 16), CFrame = CFrame.new(mirror + Vector3.new(0, 13, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = rgb(190, 60, 70), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
+		light(glass, rgb(255, 80, 80), 40, 1.6)
+		for k = 0, 15 do
+			local a = k / 16 * math.pi * 2
+			part({ Name = "MirrorFrame", Size = Vector3.new(1.4, 3, 1.4), CFrame = CFrame.new(mirror + Vector3.new(math.cos(a) * 8.4, 13 + math.sin(a) * 8.4, 0)) * CFrame.Angles(0, 0, a), Color = rgb(30, 22, 26), Material = Enum.Material.Metal, Parent = f })
+		end
+		-- 이승으로 돌아가는 문
+		local gate = portalGate(c + Vector3.new(-120, 0.5, 70), math.rad(135), rgb(110, 240, 200), f, "⬆ 이승으로")
+		out.hellBack = prompt(gate, "이승으로 돌아가기", "저승 문", "HellBack")
+		-- 도착하는 자리의 돌 표지
+		local ps = part({ Name = "HubSign", Size = Vector3.new(14, 4, 0.5), Position = c + Vector3.new(0, 8, 60), Color = rgb(20, 14, 16), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		sign(ps, Enum.NormalId.Back, { { "황천 나루", rgb(255, 130, 100), 0.6 }, { "산 자는 오래 머물지 말라", rgb(220, 210, 200), 0.36 } })
+		part({ Name = "HubSignPost", Size = Vector3.new(1, 8, 1), Position = c + Vector3.new(-5, 4, 60), Color = rgb(40, 30, 30), Material = Enum.Material.Wood, Parent = f })
+		part({ Name = "HubSignPost", Size = Vector3.new(1, 8, 1), Position = c + Vector3.new(5, 4, 60), Color = rgb(40, 30, 30), Material = Enum.Material.Wood, Parent = f })
+	end
+
+	------------------------------------------------ 삼도천: 붉은 강과 돌다리, 말라 죽은 나무
+	do
+		local z = H.zones[2]
+		local c = z.at
+		for k = -1, 1 do
+			part({ Name = "BloodRiver", Size = Vector3.new(330, 1, 70), Position = c + Vector3.new(k * 330 + (k == 0 and 0 or 0), 0.5, 0), Color = rgb(150, 14, 22), Material = Enum.Material.Glass, Transparency = 0.1, CanCollide = false, Parent = f })
+		end
+		part({ Name = "RiverGlow", Size = Vector3.new(420, 0.4, 62), Position = c + Vector3.new(0, 1.05, 0), Color = rgb(255, 60, 50), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
+		-- 돌다리: 남북으로 강을 건넌다
+		part({ Name = "RiverBridge", Size = Vector3.new(16, 1.4, 96), Position = c + Vector3.new(0, 2.6, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		wedge({ Name = "BridgeRampN", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, -57)) * CFrame.Angles(0, math.pi, 0), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		wedge({ Name = "BridgeRampS", Size = Vector3.new(16, 2.6, 18), CFrame = CFrame.new(c + Vector3.new(0, 1.3, 57)), Color = rgb(110, 100, 104), Material = Enum.Material.Cobblestone, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			for i = -4, 4 do
+				part({ Name = "BridgePost", Size = Vector3.new(1.4, 4.4, 1.4), Position = c + Vector3.new(sx * 7.4, 5.5, i * 11), Color = rgb(70, 62, 68), Material = Enum.Material.Granite, Parent = f })
+			end
+			part({ Name = "BridgeRail", Size = Vector3.new(0.8, 0.8, 96), Position = c + Vector3.new(sx * 7.4, 7.5, 0), Color = rgb(70, 62, 68), Material = Enum.Material.Granite, Parent = f })
+		end
+		for i = -2, 2 do
+			part({ Name = "BridgePier", Size = Vector3.new(10, 6, 6), Position = c + Vector3.new(0, 0, i * 22), Color = rgb(80, 72, 76), Material = Enum.Material.Granite, Parent = f })
+		end
+		-- 강가의 말라 죽은 나무와 뼈 무더기
+		for k = 1, 16 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local rr = rng:NextNumber(70, z.radius - 14)
+			local p = c + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+			if math.abs(p.Z - c.Z) > 44 then
+				local h = rng:NextNumber(14, 26)
+				part({ Name = "DeadTrunk", Size = Vector3.new(2.2, h, 2.2), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(rng:NextNumber(-0.1, 0.1), rng:NextNumber(0, 6), rng:NextNumber(-0.1, 0.1)), Color = rgb(48, 38, 40), Material = Enum.Material.Wood, Parent = f })
+				for b = 1, 3 do
+					local ba = rng:NextNumber(0, math.pi * 2)
+					part({ Name = "DeadBranch", Size = Vector3.new(0.9, rng:NextNumber(7, 12), 0.9), CFrame = CFrame.new(p + Vector3.new(0, h - 3 - b * 2, 0)) * CFrame.Angles(0, ba, math.rad(55)) * CFrame.new(0, 4, 0), Color = rgb(48, 38, 40), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+				end
+				if k % 3 == 0 then
+					local wisp = part({ Name = "GhostFire", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 3, 2.4), Position = p + Vector3.new(2, 4, 2), Color = rgb(120, 240, 210), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+					light(wisp, rgb(120, 240, 210), 24, 1.4)
+				end
+			end
+		end
+		-- 나룻배
+		part({ Name = "FerryHull", Size = Vector3.new(7, 2, 18), CFrame = CFrame.new(c + Vector3.new(-110, 1.6, 8)) * CFrame.Angles(0, 0.4, 0), Color = rgb(70, 50, 40), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+		local lan = part({ Name = "FerryLantern", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2.4, 2), Position = c + Vector3.new(-110, 5, 14), Color = rgb(120, 240, 210), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(lan, rgb(120, 240, 210), 30, 1.6)
+	end
+
+	------------------------------------------------ 화탕지옥: 펄펄 끓는 가마솥과 불기둥
+	do
+		local z = H.zones[3]
+		local c = z.at
+		for k = 1, 7 do
+			local a = k / 7 * math.pi * 2 + 0.3
+			local rr = k == 7 and 0 or rng:NextNumber(70, 150)
+			local p = c + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+			local bigR = k == 7 and 26 or rng:NextNumber(13, 19)
+			disc("CauldronLeg", p + Vector3.new(0, 3, 0), bigR * 0.8, 6, rgb(30, 24, 26), Enum.Material.Basalt, f)
+			disc("Cauldron", p + Vector3.new(0, 10, 0), bigR, 12, rgb(28, 24, 28), Enum.Material.Metal, f)
+			disc("CauldronRim", p + Vector3.new(0, 16.1, 0), bigR + 0.8, 1.2, rgb(60, 44, 40), Enum.Material.Metal, f)
+			local brew = disc("CauldronBrew", p + Vector3.new(0, 16.4, 0), bigR - 1, 0.6, rgb(255, 110, 30), Enum.Material.Neon, f, false)
+			light(brew, EMBER, 60, 2)
+			local fire = Instance.new("Fire")
+			fire.Size = bigR * 0.9
+			fire.Heat = 12
+			fire.Color = rgb(255, 130, 40)
+			fire.SecondaryColor = rgb(200, 30, 20)
+			fire.Parent = brew
+			drift(p + Vector3.new(0, 22, 0), Vector3.new(bigR, 6, bigR), { rgb(255, 160, 60), rgb(255, 90, 30) }, 20, 1.2, 4, -4, f, 0.9)
+			-- 솥 밑의 장작 불
+			for q = 0, 3 do
+				local qa = q * math.pi / 2
+				local fp = part({ Name = "FireLog", Size = Vector3.new(2, 1.4, 8), CFrame = CFrame.new(p + Vector3.new(math.cos(qa) * bigR * 0.9, 1, math.sin(qa) * bigR * 0.9)) * CFrame.Angles(0, qa, 0), Color = rgb(40, 24, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+				local fr = Instance.new("Fire")
+				fr.Size = 7
+				fr.Heat = 9
+				fr.Parent = fp
+			end
+		end
+		-- 화염 기둥 (가장자리)
+		for k = 1, 10 do
+			local a = k / 10 * math.pi * 2 + 0.1
+			local p = c + Vector3.new(math.cos(a) * (z.radius - 18), 0, math.sin(a) * (z.radius - 18))
+			local pil = part({ Name = "FirePillar", Size = Vector3.new(5, 20, 5), Position = p + Vector3.new(0, 10, 0), Color = rgb(52, 30, 28), Material = Enum.Material.Basalt, Parent = f })
+			local fr = Instance.new("Fire")
+			fr.Size = 16
+			fr.Heat = 14
+			fr.Parent = pil
+			light(pil, EMBER, 40, 1.6)
+		end
+	end
+
+	------------------------------------------------ 도산지옥: 칼이 솟은 산
+	do
+		local z = H.zones[4]
+		local c = z.at
+		local STEEL = rgb(176, 184, 198)
+		local function sword(at: Vector3, h: number, lean: number)
+			local cf = CFrame.new(at) * CFrame.Angles(lean, rng:NextNumber(0, 6.28), rng:NextNumber(-0.12, 0.12))
+			part({ Name = "SwordBlade", Size = Vector3.new(h * 0.07 + 1.2, h, 0.6), CFrame = cf * CFrame.new(0, h / 2, 0), Color = STEEL, Material = Enum.Material.Metal, Parent = f })
+			wedge({ Name = "SwordTip", Size = Vector3.new(0.6, h * 0.12, h * 0.07 + 1.2), CFrame = cf * CFrame.new(0, h + h * 0.06, 0) * CFrame.Angles(0, math.rad(90), 0), Color = STEEL, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			part({ Name = "SwordEdge", Size = Vector3.new(0.3, h * 0.9, 0.7), CFrame = cf * CFrame.new(h * 0.035 + 0.6, h * 0.5, 0), Color = rgb(235, 240, 255), Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+			part({ Name = "SwordGuard", Size = Vector3.new(h * 0.2 + 3, 1.2, 1.4), CFrame = cf * CFrame.new(0, 2, 0), Color = rgb(60, 46, 40), Material = Enum.Material.Metal, Parent = f })
+		end
+		-- 검산 (가운데 큰 산: 층층이 쌓은 바위에 칼이 솟는다)
+		for i = 0, 5 do
+			local w = z.radius * 0.7 * (1 - i * 0.15)
+			part({ Name = "SwordMountain", Size = Vector3.new(w, 12, w * 0.9), CFrame = CFrame.new(c + Vector3.new(20, 6 + i * 11, 40)) * CFrame.Angles(0, i * 0.5, 0), Color = rgb(62, 64, 74):Lerp(rgb(110, 112, 124), i / 5), Material = Enum.Material.Slate, Parent = f })
+		end
+		for k = 1, 46 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local rr = rng:NextNumber(10, z.radius - 14)
+			local p = c + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+			sword(p, rng:NextNumber(22, 70), rng:NextNumber(-0.14, 0.14))
+		end
+		for k = 1, 18 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local rr = rng:NextNumber(0, 40)
+			sword(c + Vector3.new(20 + math.cos(a) * rr, 66, 40 + math.sin(a) * rr), rng:NextNumber(30, 60), rng:NextNumber(-0.2, 0.2))
+		end
+		glow(c + Vector3.new(20, 90, 40), rgb(200, 220, 255), 60, 1.4)
+	end
+
+	------------------------------------------------ 아귀도: 뼈 무더기와 굶주린 입
+	do
+		local z = H.zones[5]
+		local c = z.at
+		for k = 1, 22 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local rr = rng:NextNumber(20, z.radius - 14)
+			local p = c + Vector3.new(math.cos(a) * rr, 0, math.sin(a) * rr)
+			for b = 1, rng:NextInteger(4, 7) do
+				local s = rng:NextNumber(2, 5)
+				part({ Name = "BonePile", Shape = Enum.PartType.Ball, Size = Vector3.new(s, s * 0.8, s), Position = p + Vector3.new(rng:NextNumber(-5, 5), s * 0.3, rng:NextNumber(-5, 5)), Color = BONE:Lerp(rgb(150, 140, 120), rng:NextNumber()), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+			end
+		end
+		-- 거대한 갈비뼈 (반쯤 묻힌 짐승의 흉곽)
+		for r = 1, 3 do
+			local base = c + Vector3.new(rng:NextNumber(-120, 120), 0, rng:NextNumber(-60, 100))
+			local yaw = rng:NextNumber(0, 6.28)
+			for i = -3, 3 do
+				local cf = CFrame.new(base) * CFrame.Angles(0, yaw, 0) * CFrame.new(0, 0, i * 7)
+				for seg = 0, 5 do
+					local t = seg / 5
+					local ang = t * math.pi * 0.9
+					part({ Name = "Rib", Size = Vector3.new(1.4, 6, 1.4), CFrame = cf * CFrame.new(math.cos(ang) * 14 - 14, math.sin(ang) * 16, 0) * CFrame.Angles(0, 0, ang), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+				end
+			end
+			part({ Name = "Spine", Size = Vector3.new(2.4, 2.4, 52), CFrame = CFrame.new(base + Vector3.new(-14, 15, 0)) * CFrame.Angles(0, yaw, 0), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		-- 아귀 석상: 벌린 입 (밥그릇 앞)
+		for k = 1, 5 do
+			local p = c + Vector3.new(-120 + k * 50, 0, 120)
+			part({ Name = "HungerStatue", Size = Vector3.new(10, 14, 8), Position = p + Vector3.new(0, 7, 0), Color = rgb(88, 92, 80), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "HungerMouth", Size = Vector3.new(6, 3.4, 1), Position = p + Vector3.new(0, 4.4, -4.2), Color = rgb(12, 8, 8), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+			part({ Name = "HungerBelly", Shape = Enum.PartType.Ball, Size = Vector3.new(14, 12, 12), Position = p + Vector3.new(0, 3, 2), Color = rgb(88, 92, 80), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+			local eye = part({ Name = "HungerEye", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.6, 1.6), Position = p + Vector3.new(2.2, 9.6, -4), Color = rgb(190, 255, 150), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			light(eye, rgb(190, 255, 150), 18, 1)
+		end
+		for k = 1, 8 do
+			local wisp = part({ Name = "GreenWisp", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 3.2, 2.6), Position = c + Vector3.new(rng:NextNumber(-150, 150), rng:NextNumber(5, 14), rng:NextNumber(-150, 150)), Color = rgb(150, 255, 150), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = f })
+			light(wisp, rgb(150, 255, 150), 26, 1.4)
+		end
+	end
+
+	------------------------------------------------ 염라전: 검은 궁궐, 업경대, 옥좌
+	do
+		local z = H.zones[6]
+		local c = z.at
+		local BLK = rgb(24, 16, 20)
+		local RED = rgb(150, 26, 34)
+		-- 층층 기단과 계단
+		for i = 0, 3 do
+			part({ Name = "PalaceTier", Size = Vector3.new(190 - i * 28, 3, 220 - i * 26), Position = c + Vector3.new(0, 1.5 + i * 3, -30), Color = rgb(40, 28, 34):Lerp(rgb(70, 38, 44), i / 3), Material = Enum.Material.Granite, Parent = f })
+		end
+		wedge({ Name = "PalaceStairs", Size = Vector3.new(34, 12, 40), CFrame = CFrame.new(c + Vector3.new(0, 6, 98)) * CFrame.Angles(0, math.pi, 0), Color = rgb(60, 36, 42), Material = Enum.Material.Granite, Parent = f })
+		-- 늘어선 붉은 기둥
+		for _, sx in ipairs({ -1, 1 }) do
+			for i = 0, 6 do
+				local p = c + Vector3.new(sx * 36, 12, 60 - i * 26)
+				part({ Name = "PalacePillar", Size = Vector3.new(5, 34, 5), Position = p + Vector3.new(0, 5, 0), Color = RED, Material = Enum.Material.Wood, Parent = f })
+				brazier(p + Vector3.new(sx * -9, -5, 0), 1.3, f)
+			end
+		end
+		roof(CFrame.new(c + Vector3.new(0, 49, -34)), 96, 190, rgb(26, 20, 28), rgb(34, 24, 30), f)
+		-- 업경대: 앞마당의 큰 거울
+		local mp = c + Vector3.new(0, 12, 80)
+		local mg = part({ Name = "KarmaMirror", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 28, 28), CFrame = CFrame.new(mp + Vector3.new(0, 14, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = rgb(220, 50, 60), Material = Enum.Material.Glass, Transparency = 0.35, CanCollide = false, Parent = f })
+		light(mg, rgb(255, 60, 60), 60, 2)
+		for k = 0, 23 do
+			local a = k / 24 * math.pi * 2
+			part({ Name = "KarmaFrame", Size = Vector3.new(2, 4, 2), CFrame = CFrame.new(mp + Vector3.new(math.cos(a) * 14.6, 14 + math.sin(a) * 14.6, 0)) * CFrame.Angles(0, 0, a), Color = BLK, Material = Enum.Material.Metal, Parent = f })
+		end
+		part({ Name = "KarmaBase", Size = Vector3.new(18, 4, 6), Position = mp + Vector3.new(0, 2, 0), Color = BLK, Material = Enum.Material.Basalt, Parent = f })
+		-- 옥좌: 보스 뒤
+		local tp = c + Vector3.new(0, 12, -150)
+		part({ Name = "ThroneSeat", Size = Vector3.new(18, 6, 14), Position = tp + Vector3.new(0, 3, 0), Color = BLK, Material = Enum.Material.Basalt, Parent = f })
+		part({ Name = "ThroneBack", Size = Vector3.new(20, 40, 4), Position = tp + Vector3.new(0, 24, -6), Color = BLK, Material = Enum.Material.Basalt, Parent = f })
+		for _, sx in ipairs({ -1, 1 }) do
+			part({ Name = "ThroneHorn", Size = Vector3.new(3, 26, 3), CFrame = CFrame.new(tp + Vector3.new(sx * 11, 40, -6)) * CFrame.Angles(0, 0, sx * -0.3), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			part({ Name = "ThroneArm", Size = Vector3.new(3, 5, 12), Position = tp + Vector3.new(sx * 9, 8, 0), Color = BLK, Material = Enum.Material.Basalt, Parent = f })
+		end
+		local rr = part({ Name = "ThroneEmblem", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 12, 12), CFrame = CFrame.new(tp + Vector3.new(0, 26, -3.6)) * CFrame.Angles(0, math.rad(90), 0), Color = RED, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		light(rr, rgb(255, 50, 50), 50, 2)
+		-- 해골 깃발
+		for _, sx in ipairs({ -1, 1 }) do
+			for i = 0, 2 do
+				banner(c + Vector3.new(sx * 78, 12, 50 - i * 60), 28, rgb(110, 14, 22), f)
+			end
+		end
+	end
 end
 
 local arenas: { [number]: Vector3 } = {}
@@ -6756,6 +7129,9 @@ function World.build(): any
 		end },
 		{ "지옥 입구", function()
 			hellGate(out)
+		end },
+		{ "지옥", function()
+			hellWorld(out)
 		end },
 		{ "빈칸", nullSpot },
 		{ "권법 시험장", function()
