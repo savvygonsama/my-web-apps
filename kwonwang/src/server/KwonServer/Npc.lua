@@ -275,7 +275,31 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		return nil
 	end
 	local model = buildRig(def, def.name, isBoss, typeId)
+	-- 3.23.3판: 같은 진영의 적끼리 뭉치지 않게 (이름표가 겹쳤다). 몇 번 뽑아 가장 한가한 자리에 놓는다
 	local pos = at + Vector3.new(math.random(-8, 8), 4 * (def.scale or 1), math.random(-8, 8))
+	do
+		local bestGap = -1
+		for _ = 1, 10 do
+			local cand = at + Vector3.new(math.random(-16, 16), 4 * (def.scale or 1), math.random(-16, 16))
+			local gap = 1e9
+			for _, e in ipairs(Npc.list) do
+				local rp = e.f.root.Position
+				if (rp.Y - cand.Y) < 60 and (rp.Y - cand.Y) > -60 then
+					local dd = Vector3.new(rp.X - cand.X, 0, rp.Z - cand.Z).Magnitude
+					if dd < gap then
+						gap = dd
+					end
+				end
+			end
+			if gap > bestGap then
+				bestGap = gap
+				pos = cand
+			end
+			if gap >= 13 then
+				break
+			end
+		end
+	end
 	model:PivotTo(CFrame.new(pos))
 	model.Parent = folder
 	local root = model:FindFirstChild("HumanoidRootPart")

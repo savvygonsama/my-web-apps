@@ -436,6 +436,64 @@ end
 ------------------------------------------------------------------------
 -- 적 머리 위 이름표 (이름, 체력, 균형)
 ------------------------------------------------------------------------
+-- 3.23.3판: 이름표가 서로 겹치면 (몹이 뭉쳐 있을 때) 가까운 것부터 두고, 겹치는 먼 것은 한 칸씩 위로 올린다
+local enemyTags: { { bb: BillboardGui, head: BasePart } } = {}
+local tagLoop = false
+local function startTagLoop()
+	if tagLoop then
+		return
+	end
+	tagLoop = true
+	task.spawn(function()
+		while true do
+			task.wait(0.1)
+			local cam = workspace.CurrentCamera
+			if cam and #enemyTags > 0 then
+				local list: { { bb: BillboardGui, x: number, y: number, d: number } } = {}
+				for i = #enemyTags, 1, -1 do
+					local t = enemyTags[i]
+					if not t.bb.Parent or not t.head.Parent then
+						table.remove(enemyTags, i)
+					else
+						local v, on = cam:WorldToViewportPoint(t.head.Position + Vector3.new(0, 3.2, 0))
+						if on then
+							table.insert(list, { bb = t.bb, x = v.X, y = v.Y, d = v.Z })
+						elseif t.bb.SizeOffset.Y ~= 0 then
+							t.bb.SizeOffset = Vector2.zero
+						end
+					end
+				end
+				table.sort(list, function(a, b)
+					return a.d < b.d
+				end)
+				local placed: { { number } } = {}
+				for _, t in ipairs(list) do
+					local w = t.bb.Size.X.Offset * 0.8
+					local h = 70
+					local shift = 0
+					for _ = 1, 4 do
+						local yy = t.y - shift * h
+						local hit = false
+						for _, q in ipairs(placed) do
+							if math.abs(t.x - q[1]) < (w + q[3]) / 2 and math.abs(yy - q[2]) < h then
+								hit = true
+								break
+							end
+						end
+						if not hit then
+							break
+						end
+						shift += 1
+					end
+					if t.bb.SizeOffset.Y ~= -shift then
+						t.bb.SizeOffset = Vector2.new(0, -shift)
+					end
+					table.insert(placed, { t.x, t.y - shift * h, w })
+				end
+			end
+		end
+	end)
+end
 function UI.enemyTag(model: Model)
 	local head = model:WaitForChild("Head", 5)
 	if not head or not head:IsA("BasePart") or head:FindFirstChild("EnemyTag") then
@@ -444,6 +502,8 @@ function UI.enemyTag(model: Model)
 	local isBoss = model:GetAttribute("Boss") == true
 	local w = isBoss and 300 or 230
 	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 76), StudsOffset = Vector3.new(0, 3.2, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
+	table.insert(enemyTags, { bb = bb, head = head })
+	startTagLoop()
 	local label = model:GetAttribute("Label")
 	local lv = model:GetAttribute("Level")
 	local lvText = type(lv) == "number" and string.format("Lv.%d ", lv) or ""

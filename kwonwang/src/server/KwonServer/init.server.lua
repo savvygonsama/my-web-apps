@@ -5892,7 +5892,7 @@ if W.eggs then
 		end)
 	end
 end
--- 3.21판 지옥 입구: 환생 3 이후 희미한 풀 → 저승 방. 저승사자에게 은자 → 원혼 셋 달래기 → 사슬이 풀리고 큰 포탈이 붉은 오라를 뿜는다
+-- 3.21판 지옥 입구: 환생 3 이후 희미한 풀 → 저승 방. 사신에게 은자 → 원혼 셋 달래기 → 사슬이 풀리고 큰 포탈이 붉은 오라를 뿜는다
 if W.hell or W.hellGrass then
 	local H = Config.HELL
 	local HW: any = W.hell
@@ -5958,28 +5958,28 @@ if W.hell or W.hellGrass then
 			if not p or not est then
 				return
 			end
-			local who = "💀 저승사자"
+			local who = "💀 사신"
 			if p.seen.hell_open then
 				Push:FireClient(player, "dialog", { who = who, title = "열린 문",
-					text = "사슬은 이미 네 손에 끊어졌다. 문 앞에 서 보아라. 다만 저 너머는 이승의 법이 닿지 않는다. 돌아올 수 있을 때 가거라." })
+					text = "...사슬은 이미 끊어졌다. 복도 끝, 문이 숨을 쉬는 소리가 들리느냐. 가거라. 저 너머엔 이승의 법이 닿지 않는다. 돌아올 수 있을지는... 문이 정할 일이다." })
 			elseif not p.seen.hell_paid then
 				if p.coins < H.cost then
-					Push:FireClient(player, "dialog", { who = who, title = "산 자가 어찌 여기까지",
-						text = string.format("...길을 보고 싶으냐. 길을 열려면 삯이 든다. 💰 %s 은자. 지금 가진 것으로는 어림도 없다. 채워서 오너라.", Config.formatNumber(H.cost)) })
+					Push:FireClient(player, "dialog", { who = who, title = "산 자의 냄새가 난다",
+						text = string.format("......산 것이. 내 앞에서 아직도 숨을 쉬는구나. 복도 끝 문을 열고 싶으냐. 삯은 💰 %s 은자. 지금 가진 것으로는 네 혼 하나 값도 안 된다. 채워서 오너라. 기다려 주마. 나는 영원히 기다릴 수 있으니.", Config.formatNumber(H.cost)) })
 					return
 				end
 				p.coins -= H.cost
 				p.seen.hell_paid = true
 				Push:FireClient(player, "dialog", { who = who, title = "삯을 받았다",
-					text = string.format("💰 %s 은자. 좋다. 저 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 사슬을 쥐고 있지. 가서 달래 주어라. 모두 달래면 사슬이 풀릴 것이다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
+					text = string.format("💰 %s 은자. ...좋다. 삯은 받았다. 복도 끝 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 그 사슬을 쥐고 놓지 않는다. 가서 달래라. 달래지 못하면... 네가 넷째가 될 뿐이다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
 			elseif wispCount(p) < H.wisps then
 				Push:FireClient(player, "dialog", { who = who, title = "아직이다",
-					text = string.format("원혼은 방 가장자리를 떠돈다. 푸른 불을 찾아라. 달랜 혼 %d / %d.", wispCount(p), H.wisps) })
+					text = string.format("...아직이냐. 원혼은 방 가장자리를 떠돈다. 푸른 불을 따라가라. 울음소리가 들릴 것이다. 달랜 혼 %d / %d.", wispCount(p), H.wisps) })
 			else
 				p.seen.hell_open = true
 				HW.flare(18)
 				Push:FireClient(player, "dialog", { who = who, title = "사슬이 끊어졌다",
-					text = "...혼들이 가벼워졌구나. 보아라. 사슬이 풀린다. 문 너머에서 붉은 기운이 올라온다. 저것이 지옥의 숨이다.\n\n문 앞에 서 보아라." })
+					text = "......혼들이 가벼워졌구나. 들리느냐. 복도 끝에서 사슬이 끊어지는 소리가. 저 문 너머에서 올라오는 것이 지옥의 숨이다.\n\n복도를 걸어가 문 앞에 서라. 뒤는 돌아보지 말고." })
 			end
 			est.dirty = true
 			pushState(player)
@@ -5992,7 +5992,7 @@ if W.hell or W.hellGrass then
 				end
 				local key = "hell_wisp" .. i
 				if not p.seen.hell_paid then
-					toast(player, "💙 원혼이 너를 힐끗 보고 멀어진다. 먼저 저승사자와 이야기하자")
+					toast(player, "💙 원혼이 너를 힐끗 보고 멀어진다. 먼저 사신과 이야기하자")
 				elseif p.seen[key] then
 					toast(player, "💙 이미 달랜 혼이다. 편안히 흔들린다")
 				else
@@ -6021,7 +6021,7 @@ if W.hell or W.hellGrass then
 			end
 			HW.flare(10)
 			Push:FireClient(player, "dialog", { who = "🔥 지옥문", title = "붉은 숨",
-				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n저승사자가 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
+				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n사신가 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
 			task.delay(1.4, function()
 				local ch = player.Character
 				local f2 = Combat.fighterOfPlayer(player)

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3896,12 +3896,12 @@ Config.EGGS = {
 	edge = { cliff = Vector3.new(0, 0, 4780), garden = Vector3.new(0, 128, 5080), coins = 3000000, gems = 500, scrolls = 7 },
 }
 -- 3.21판 지옥 입구: 환생 3 이후, 세상 남동쪽 맨 끝의 희미한 풀을 밟으면 땅 밑 저승 방으로 떨어진다.
---   저승사자에게 은자를 내고, 방 안의 원혼 셋을 달래면 사슬이 풀려 큰 포탈이 붉은 오라를 뿜는다 (지옥 맵은 다음 판)
+--   사신에게 은자를 내고, 방 안의 원혼 셋을 달래면 사슬이 풀려 큰 포탈이 붉은 오라를 뿜는다 (지옥 맵은 다음 판)
 Config.HELL = {
 	rebirth = 3, -- 이 환생부터 풀이 밟힌다
 	grass = Vector3.new(4880, 0, 4880), -- 희미한 풀 (지상)
 	room = Vector3.new(4880, -320, 4880), -- 땅 밑 저승 방 가운데 (바닥 높이)
-	cost = 5000000, -- 저승사자에게 낼 은자 (한 번)
+	cost = 5000000, -- 사신에게 낼 은자 (한 번)
 	wisps = 3, -- 달래야 할 원혼
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
@@ -4528,7 +4528,7 @@ Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 
 	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 -- 3.22판 극 광속권의 사부: 지옥 황천 나루의 질주귀
 Config.MASTERS.geukspeed = { name = "질주귀", at = Vector3.new(96, 8000 + 1.6, 34), region = "지옥 (황천 나루)", regionId = "hwangcheon", secret = true,
-	quote = "빨리 달리면 저승사자도 못 따라온다. 그래서 내가 여기 있지.", rumor = "저승 너머 황천 나루에, 저승사자보다 빠르다는 귀신이 서 있다더라" }
+	quote = "빨리 달리면 사신도 못 따라온다. 그래서 내가 여기 있지.", rumor = "저승 너머 황천 나루에, 사신보다 빠르다는 귀신이 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 -- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)

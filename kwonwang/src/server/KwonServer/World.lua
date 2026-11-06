@@ -6012,7 +6012,7 @@ end
 
 ------------------------------------------------------------------------
 -- 3.21판 지옥 입구: 세상 남동쪽 맨 끝의 희미한 풀 (환생 3 이후에만 밟힌다) → 땅 밑 저승 방.
--- 돌로 된 방 한가운데 저승사자 한 명, 원혼 셋, 사슬로 잠긴 엄청 큰 포탈 (열리면 붉은 오라를 뿜는다)
+-- 돌로 된 방 한가운데 사신 한 명, 원혼 셋, 사슬로 잠긴 엄청 큰 포탈 (열리면 붉은 오라를 뿜는다)
 -- 돌려주는 것: out.hell = { grass, reaper, wisps = {}, portal, exit, flare(초) }
 ------------------------------------------------------------------------
 local function hellGate(out: any)
@@ -6025,7 +6025,6 @@ local function hellGate(out: any)
 	f.Name = "HellGate"
 	f.Parent = folder
 	local RED = Color3.fromRGB(235, 40, 40)
-	local BLACK = Color3.fromRGB(24, 22, 28)
 	local BONE = Color3.fromRGB(214, 214, 222)
 
 	-- 지상: 희미한 풀 한 뙈기 (거의 보이지 않는다)
@@ -6049,12 +6048,19 @@ local function hellGate(out: any)
 		-- 땅 밑 방: 가운데 R (바닥 높이), 안쪽 한 변 120, 높이 80
 		local R = H.room
 		local HALF, TALL = 60, 80
+		local CW, CH = 36, 56 -- 복도 폭 · 높이
+		local CORR = 150 -- 복도 길이
+		local HALLD, HALLW, HALLH = 70, 96, 84 -- 문 앞 큰 방 (깊이 · 폭 · 높이)
+		local PZ = -HALF - CORR - HALLD -- 포탈이 선 벽의 z
 		local function slab(name: string, size: Vector3, pos: Vector3, color: Color3, mat: Enum.Material?): Part
 			return part({ Name = name, Size = size, Position = pos, Color = color, Material = mat or Enum.Material.Granite, Parent = f })
 		end
 		slab("HellFloor", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R - Vector3.new(0, 2, 0), Color3.fromRGB(58, 54, 60), Enum.Material.Slate)
 		slab("HellCeiling", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R + Vector3.new(0, TALL + 2, 0), Color3.fromRGB(40, 38, 44))
-		slab("HellWallN", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
+		-- 북쪽 벽에는 복도로 이어지는 문이 뚫려 있다 (폭 CW, 높이 CH)
+		slab("HellWallN1", Vector3.new((HALF * 2 + 8 - CW) / 2, TALL, 4), R + Vector3.new(-(CW / 2 + (HALF * 2 + 8 - CW) / 4), TALL / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
+		slab("HellWallN2", Vector3.new((HALF * 2 + 8 - CW) / 2, TALL, 4), R + Vector3.new(CW / 2 + (HALF * 2 + 8 - CW) / 4, TALL / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
+		slab("HellWallNLintel", Vector3.new(CW, TALL - CH, 4), R + Vector3.new(0, CH + (TALL - CH) / 2, -HALF - 2), Color3.fromRGB(52, 48, 56))
 		slab("HellWallS", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, HALF + 2), Color3.fromRGB(52, 48, 56))
 		slab("HellWallW", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(-HALF - 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
 		slab("HellWallE", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(HALF + 2, TALL / 2, 0), Color3.fromRGB(52, 48, 56))
@@ -6072,8 +6078,101 @@ local function hellGate(out: any)
 			local _ = pil
 		end
 
+		-- 지옥 문으로 가는 복도: 저승 방 북쪽 문에서 곧게 150칸. 붉은 융단, 늘어선 기둥과 귀화, 벽감의 해골, 천장에서 늘어진 사슬
+		do
+			local zs, ze = -HALF - 4, -HALF - CORR
+			local mid = (zs + ze) / 2
+			local len = math.abs(ze - zs) + 8
+			slab("CorrFloor", Vector3.new(CW + 8, 4, len), R + Vector3.new(0, -2, mid), Color3.fromRGB(50, 46, 54), Enum.Material.Slate)
+			slab("CorrCeiling", Vector3.new(CW + 8, 4, len), R + Vector3.new(0, CH + 2, mid), Color3.fromRGB(34, 30, 38))
+			slab("CorrWallW", Vector3.new(4, CH, len), R + Vector3.new(-CW / 2 - 2, CH / 2, mid), Color3.fromRGB(46, 42, 50))
+			slab("CorrWallE", Vector3.new(4, CH, len), R + Vector3.new(CW / 2 + 2, CH / 2, mid), Color3.fromRGB(46, 42, 50))
+			-- 붉은 융단과 금빛 가장자리
+			part({ Name = "CorrCarpet", Size = Vector3.new(11, 0.15, len - 8), Position = R + Vector3.new(0, 0.1, mid), Color = Color3.fromRGB(120, 14, 22), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+			for _, sx in ipairs({ -1, 1 }) do
+				part({ Name = "CorrCarpetEdge", Size = Vector3.new(0.8, 0.18, len - 8), Position = R + Vector3.new(sx * 5.8, 0.12, mid), Color = Color3.fromRGB(190, 150, 60), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			local nPair = math.floor(CORR / 24)
+			for k = 0, nPair do
+				local z = zs - 8 - k * 24
+				for _, sx in ipairs({ -1, 1 }) do
+					-- 기둥 (벽에 붙은 붉은 기둥) + 귀화 불꽃
+					slab("CorrPillar", Vector3.new(4, CH - 4, 4), R + Vector3.new(sx * (CW / 2 - 2), (CH - 4) / 2, z), Color3.fromRGB(110, 22, 26), Enum.Material.Wood)
+					local bowl = disc("CorrBowl", R + Vector3.new(sx * (CW / 2 - 6.5), 10, z), 1.8, 1, Color3.fromRGB(40, 36, 44), Enum.Material.Metal, f)
+					local fr = Instance.new("Fire")
+					fr.Size = 9
+					fr.Heat = 10
+					fr.Color = Color3.fromRGB(90, 240, 200)
+					fr.SecondaryColor = Color3.fromRGB(20, 90, 110)
+					fr.Parent = bowl
+					light(bowl, Color3.fromRGB(90, 240, 200), 36, 1.5)
+					-- 벽감 속 해골 (기둥 사이)
+					local nz = z - 12
+					part({ Name = "CorrNiche", Size = Vector3.new(1.2, 9, 6), Position = R + Vector3.new(sx * (CW / 2 - 0.2), 8, nz), Color = Color3.fromRGB(14, 10, 14), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+					for q = 0, 2 do
+						part({ Name = "CorrSkull", Shape = Enum.PartType.Ball, Size = Vector3.new(2, 2.2, 2), Position = R + Vector3.new(sx * (CW / 2 - 1.2), 5.4 + q * 2.6, nz + (q % 2 == 0 and -1 or 1)), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+						part({ Name = "CorrSkullEye", Size = Vector3.new(0.3, 0.5, 0.5), Position = R + Vector3.new(sx * (CW / 2 - 2.1), 5.6 + q * 2.6, nz + (q % 2 == 0 and -1 or 1)), Color = Color3.fromRGB(255, 50, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					end
+					-- 벽에서 뻗어 나온 뼈 손
+					for fgr = -1, 1 do
+						part({ Name = "CorrBoneHand", Size = Vector3.new(0.35, 2.6, 0.35), CFrame = CFrame.new(R + Vector3.new(sx * (CW / 2 - 2.4), 21 + math.abs(fgr), z + 8 + fgr * 0.7)) * CFrame.Angles(fgr * 0.25, 0, sx * math.rad(35)), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+					end
+				end
+				-- 천장에서 늘어진 사슬 (끝에 창백한 혼불)
+				if k % 2 == 0 then
+					for _, cx in ipairs({ -9, 9 }) do
+						local top = R + Vector3.new(cx, CH, z - 12)
+						local hang = rng:NextNumber(14, 26)
+						part({ Name = "CorrChain", Size = Vector3.new(0.5, hang, 0.5), Position = top - Vector3.new(0, hang / 2, 0), Color = Color3.fromRGB(70, 70, 78), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+						local orb = part({ Name = "CorrSoul", Shape = Enum.PartType.Ball, Size = Vector3.new(2.4, 3, 2.4), Position = top - Vector3.new(0, hang + 1, 0), Color = Color3.fromRGB(170, 230, 255), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = f })
+						light(orb, Color3.fromRGB(150, 220, 255), 22, 1.2)
+					end
+				end
+				-- 바닥의 붉은 룬
+				if k % 3 == 1 then
+					part({ Name = "CorrRune", Size = Vector3.new(7, 0.1, 7), CFrame = CFrame.new(R + Vector3.new(0, 0.22, z - 8)) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(255, 50, 40), Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = f })
+				end
+			end
+			-- 복도 중간의 문턱 (낮은 아치 셋: 지나갈수록 좁아 보인다)
+			for a = 1, 3 do
+				local z = zs - a * (CORR / 4)
+				slab("CorrArchTop", Vector3.new(CW, 8, 4), R + Vector3.new(0, CH - 4, z), Color3.fromRGB(70, 22, 26), Enum.Material.Granite)
+				for _, sx in ipairs({ -1, 1 }) do
+					slab("CorrArchSide", Vector3.new(5, CH - 8, 4), R + Vector3.new(sx * (CW / 2 - 2.5), (CH - 8) / 2, z), Color3.fromRGB(70, 22, 26), Enum.Material.Granite)
+				end
+			end
+			-- 문 앞 큰 방 (포탈이 서 있다)
+			local hz = ze - HALLD / 2
+			slab("HallFloor", Vector3.new(HALLW + 8, 4, HALLD + 8), R + Vector3.new(0, -2, hz), Color3.fromRGB(44, 40, 48), Enum.Material.Slate)
+			slab("HallCeiling", Vector3.new(HALLW + 8, 4, HALLD + 8), R + Vector3.new(0, HALLH + 2, hz), Color3.fromRGB(30, 26, 34))
+			slab("HallWallW", Vector3.new(4, HALLH, HALLD + 8), R + Vector3.new(-HALLW / 2 - 2, HALLH / 2, hz), Color3.fromRGB(46, 42, 50))
+			slab("HallWallE", Vector3.new(4, HALLH, HALLD + 8), R + Vector3.new(HALLW / 2 + 2, HALLH / 2, hz), Color3.fromRGB(46, 42, 50))
+			slab("HallWallEndW", Vector3.new(HALLW + 8, HALLH, 4), R + Vector3.new(0, HALLH / 2, PZ - 2), Color3.fromRGB(40, 34, 40))
+			-- 복도 끝 어귀: 복도와 큰 방 사이의 좁은 문 양옆 벽
+			slab("HallWallInW", Vector3.new((HALLW - CW) / 2, HALLH, 4), R + Vector3.new(-(CW / 2 + (HALLW - CW) / 4), HALLH / 2, ze - 2), Color3.fromRGB(46, 42, 50))
+			slab("HallWallInE", Vector3.new((HALLW - CW) / 2, HALLH, 4), R + Vector3.new(CW / 2 + (HALLW - CW) / 4, HALLH / 2, ze - 2), Color3.fromRGB(46, 42, 50))
+			slab("HallWallInTop", Vector3.new(CW, HALLH - CH, 4), R + Vector3.new(0, CH + (HALLH - CH) / 2, ze - 2), Color3.fromRGB(46, 42, 50))
+			-- 큰 방 양옆의 거대한 해골 석상과 귀화
+			for _, sx in ipairs({ -1, 1 }) do
+				for q = 0, 1 do
+					local bz = ze - 20 - q * 26
+					slab("HallStatue", Vector3.new(8, 30, 8), R + Vector3.new(sx * (HALLW / 2 - 6), 15, bz), Color3.fromRGB(66, 60, 70), Enum.Material.Granite)
+					part({ Name = "HallStatueHead", Shape = Enum.PartType.Ball, Size = Vector3.new(9, 10, 9), Position = R + Vector3.new(sx * (HALLW / 2 - 6), 35, bz), Color = BONE, Material = Enum.Material.Slate, Parent = f })
+					for _, ex in ipairs({ -1.6, 1.6 }) do
+						local eye = part({ Name = "HallStatueEye", Shape = Enum.PartType.Ball, Size = Vector3.new(1.6, 1.8, 1.6), Position = R + Vector3.new(sx * (HALLW / 2 - 6) + ex * -sx, 35.6, bz - 4), Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+						light(eye, Color3.fromRGB(255, 60, 50), 26, 1.4)
+					end
+				end
+			end
+			for k = 0, 11 do
+				local a2 = k / 12 * math.pi
+				local xx = -HALLW / 2 + 6 + (HALLW - 12) * k / 11
+				brazier(R + Vector3.new(xx, 0.5, ze - HALLD + 5), 1.2, f)
+				local _ = a2
+			end
+		end
 		-- 엄청 큰 포탈: 북쪽 벽 가운데. 돌 고리 · 안쪽 불길 · 사슬 · 자물쇠
-		local C = R + Vector3.new(0, 30, -HALF + 4)
+		local C = R + Vector3.new(0, 30, PZ + 4)
 		local RING = 26
 		for k = 0, 31 do
 			local a = k / 32 * math.pi * 2
@@ -6132,9 +6231,9 @@ local function hellGate(out: any)
 		table.insert(chains, lock)
 		table.insert(chains, keyhole)
 		-- 포탈 앞 제단 (밟고 서는 곳)
-		slab("PortalDais", Vector3.new(40, 2, 22), R + Vector3.new(0, 1, -HALF + 14), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
-		slab("PortalStep", Vector3.new(30, 1, 6), R + Vector3.new(0, 0.5, -HALF + 29), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
-		local plinth = part({ Name = "PortalPlinth", Size = Vector3.new(6, 4, 3), Position = R + Vector3.new(0, 4, -HALF + 20), Color = Color3.fromRGB(40, 36, 44), Material = Enum.Material.Basalt, Parent = f })
+		slab("PortalDais", Vector3.new(40, 2, 22), R + Vector3.new(0, 1, PZ + 14), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
+		slab("PortalStep", Vector3.new(30, 1, 6), R + Vector3.new(0, 0.5, PZ + 29), Color3.fromRGB(66, 60, 68), Enum.Material.Slate)
+		local plinth = part({ Name = "PortalPlinth", Size = Vector3.new(6, 4, 3), Position = R + Vector3.new(0, 4, PZ + 20), Color = Color3.fromRGB(40, 36, 44), Material = Enum.Material.Basalt, Parent = f })
 		local portalPrompt = prompt(plinth, "큰 문 앞에 서기", "사슬 잠긴 포탈", "HellPortal")
 
 		-- 열림: 사슬이 끊겨 떨어지고 붉은 오라가 거세게 뿜는다 (모두에게 보인다, 잠시 뒤 도로 닫힌다)
@@ -6168,38 +6267,125 @@ local function hellGate(out: any)
 			end)
 		end
 
-		-- 저승사자: 검은 도포와 검은 갓, 창백한 얼굴, 푸른 등불 든 지팡이
-		local P = R + Vector3.new(-16, 0, -22)
+		-- 사신: 허공에 떠 있는 커다란 검은 형체. 누더기 망토, 속이 빈 두건 안의 해골 얼굴과 붉은 불꽃 눈, 앙상한 뼈 손, 사슬 감긴 거대한 낫
+		local P = R + Vector3.new(-9, 3, -78)
+		local K = 1.5 -- 모든 것을 이만큼 키운다
+		local BLK = Color3.fromRGB(10, 8, 14)
 		local function rp(name: string, size: Vector3, off: Vector3, color: Color3, mat: Enum.Material?, shape: Enum.PartType?): Part
-			return part({ Name = name, Size = size, Position = P + off, Color = color, Material = mat or Enum.Material.Fabric, Shape = shape or Enum.PartType.Block, Parent = f })
+			return part({ Name = name, Size = size * K, Position = P + off * K, Color = color, Material = mat or Enum.Material.Fabric, Shape = shape or Enum.PartType.Block, CanCollide = false, Parent = f })
 		end
-		rp("ReaperRobe", Vector3.new(4.6, 5.2, 3.6), Vector3.new(0, 2.6, 0), BLACK)
-		rp("ReaperHem", Vector3.new(5.4, 1.2, 4.2), Vector3.new(0, 0.6, 0), Color3.fromRGB(14, 12, 18))
-		local torso = rp("ReaperTorso", Vector3.new(3.8, 3.4, 2.4), Vector3.new(0, 6.7, 0), BLACK)
-		rp("ReaperSash", Vector3.new(3.9, 0.7, 2.5), Vector3.new(0, 5.4, 0), Color3.fromRGB(150, 30, 30))
-		rp("ReaperCollar", Vector3.new(2.4, 0.5, 2.6), Vector3.new(0, 8.5, 0), BONE)
-		rp("ReaperHead", Vector3.new(2.4, 2.6, 2.4), Vector3.new(0, 9.7, 0), BONE, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		rp("ReaperEyeL", Vector3.new(0.6, 0.18, 0.2), Vector3.new(-0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
-		rp("ReaperEyeR", Vector3.new(0.6, 0.18, 0.2), Vector3.new(0.55, 9.9, 1.12), Color3.fromRGB(20, 0, 0), Enum.Material.Neon)
-		rp("ReaperBrim", Vector3.new(0.3, 5.6, 5.6), Vector3.new(0, 11.2, 0), BLACK, Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 11.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
-		rp("ReaperCrown", Vector3.new(2.6, 2.4, 2.4), Vector3.new(0, 12.4, 0), Color3.fromRGB(14, 12, 18), Enum.Material.Fabric, Enum.PartType.Cylinder).CFrame = CFrame.new(P + Vector3.new(0, 12.4, 0)) * CFrame.Angles(0, 0, math.rad(90))
-		rp("ReaperSleeveL", Vector3.new(1.4, 4, 1.6), Vector3.new(-2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(-2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(8))
-		rp("ReaperSleeveR", Vector3.new(1.4, 4, 1.6), Vector3.new(2.6, 6.2, 0.8), BLACK).CFrame = CFrame.new(P + Vector3.new(2.6, 6.2, 0.8)) * CFrame.Angles(math.rad(-30), 0, math.rad(-8))
-		rp("ReaperStaff", Vector3.new(0.35, 13, 0.35), Vector3.new(3.4, 6.5, 2.2), Color3.fromRGB(70, 54, 40), Enum.Material.Wood)
-		local lamp = rp("ReaperLamp", Vector3.new(2, 2.4, 2), Vector3.new(3.4, 13.4, 2.2), Color3.fromRGB(110, 240, 220), Enum.Material.Neon, Enum.PartType.Ball)
-		lamp.Transparency = 0.15
-		light(lamp, Color3.fromRGB(110, 240, 220), 36, 1.8)
+		-- 누더기 망토: 길이가 제각각인 검은 천 조각이 둘러 늘어진다 (끝은 안개 속으로 사라진다)
+		for q = 0, 13 do
+			local ang = q / 14 * math.pi * 2
+			local h = rng:NextNumber(5, 9.5)
+			local strip = rp("ReaperCloak", Vector3.new(1.7, h, 0.35), Vector3.new(math.cos(ang) * 2.1, 5.5 - h / 2 + 3, math.sin(ang) * 1.7), BLK)
+			strip.CFrame = CFrame.new(strip.Position) * CFrame.Angles(math.sin(ang) * 0.16, -ang + math.pi / 2, math.cos(ang) * 0.16)
+		end
+		local torso = rp("ReaperTorso", Vector3.new(3.6, 4.6, 2.4), Vector3.new(0, 7.2, 0), BLK)
+		-- 벌어진 가슴 사이로 보이는 갈비뼈
+		for q = 0, 4 do
+			rp("ReaperRib", Vector3.new(2.6 - q * 0.15, 0.22, 0.4), Vector3.new(0, 8.8 - q * 0.62, 1.25), BONE, Enum.Material.Slate)
+		end
+		rp("ReaperSpine", Vector3.new(0.3, 3.2, 0.3), Vector3.new(0, 7.4, 1.0), BONE, Enum.Material.Slate)
+		local core = rp("ReaperSoulCore", Vector3.new(0.9, 0.9, 0.9), Vector3.new(0, 7.2, 1.05), Color3.fromRGB(255, 40, 40), Enum.Material.Neon, Enum.PartType.Ball)
+		light(core, Color3.fromRGB(255, 50, 40), 26, 2)
+		-- 어깨 위로 솟은 헝클어진 두건
+		rp("ReaperHood", Vector3.new(4.6, 5.2, 4.4), Vector3.new(0, 11.1, -0.2), BLK, Enum.Material.Fabric, Enum.PartType.Ball)
+		rp("ReaperHoodPeak", Vector3.new(2.4, 3.2, 2.4), Vector3.new(0, 13.6, -0.9), BLK, Enum.Material.Fabric, Enum.PartType.Ball).CFrame = CFrame.new(P + Vector3.new(0, 13.6, -0.9) * K) * CFrame.Angles(math.rad(-25), 0, 0)
+		rp("ReaperHoodVoid", Vector3.new(3.1, 3.5, 1.2), Vector3.new(0, 11.0, 1.7), Color3.fromRGB(2, 2, 4), Enum.Material.SmoothPlastic)
+		-- 두건 속 해골: 깊이 꺼진 눈구멍, 안쪽에서 타는 붉은 불꽃, 드러난 이빨
+		rp("ReaperSkull", Vector3.new(2.3, 2.5, 2.1), Vector3.new(0, 10.8, 1.5), BONE, Enum.Material.Slate, Enum.PartType.Ball)
+		for _, x in ipairs({ -0.55, 0.55 }) do
+			rp("ReaperSocket", Vector3.new(0.7, 0.8, 0.4), Vector3.new(x, 11.1, 2.45), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+			local eye = rp("ReaperEye", Vector3.new(0.34, 0.34, 0.3), Vector3.new(x, 11.1, 2.6), Color3.fromRGB(255, 30, 20), Enum.Material.Neon, Enum.PartType.Ball)
+			light(eye, Color3.fromRGB(255, 40, 30), 30, 2.2)
+		end
+		rp("ReaperNose", Vector3.new(0.35, 0.5, 0.2), Vector3.new(0, 10.6, 2.55), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic)
+		for q = -3, 3 do
+			rp("ReaperTooth", Vector3.new(0.22, 0.5, 0.2), Vector3.new(q * 0.27, 9.85, 2.4), BONE, Enum.Material.Slate)
+		end
+		rp("ReaperJaw", Vector3.new(1.6, 0.3, 0.5), Vector3.new(0, 9.6, 2.3), BONE, Enum.Material.Slate)
+		-- 앙상한 팔: 한 손은 낫을 쥐고, 한 손은 사람을 가리키듯 뻗는다
+		local function bonyArm(sx: number, reach: number)
+			local up = rp("ReaperArm", Vector3.new(0.55, 3.2, 0.55), Vector3.new(sx * 2.5, 7.6, 0.6), BONE, Enum.Material.Slate)
+			up.CFrame = CFrame.new(up.Position) * CFrame.Angles(math.rad(-30 * reach), 0, sx * math.rad(-12))
+			local lo = rp("ReaperForearm", Vector3.new(0.5, 3.4, 0.5), Vector3.new(sx * 2.9, 6.1, 2.1 + reach * 0.8), BONE, Enum.Material.Slate)
+			lo.CFrame = CFrame.new(lo.Position) * CFrame.Angles(math.rad(-75 + reach * -10), 0, 0)
+			rp("ReaperSleeve", Vector3.new(1.6, 3.4, 1.6), Vector3.new(sx * 2.6, 7.7, 0.4), BLK).CFrame = CFrame.new(P + Vector3.new(sx * 2.6, 7.7, 0.4) * K) * CFrame.Angles(math.rad(-20), 0, sx * math.rad(-10))
+			local handAt = Vector3.new(sx * 3.0, 5.2, 3.7 + reach * 1.2)
+			rp("ReaperPalm", Vector3.new(0.9, 0.2, 1.1), handAt, BONE, Enum.Material.Slate)
+			for fg = -2, 2 do
+				local fing = rp("ReaperFinger", Vector3.new(0.14, 0.14, 1.5 + reach * 0.4), handAt + Vector3.new(fg * 0.22, -0.05, 1.1), BONE, Enum.Material.Slate)
+				fing.CFrame = CFrame.new(fing.Position) * CFrame.Angles(math.rad(-8 + math.abs(fg) * 6 * reach), math.rad(fg * 4), 0)
+			end
+		end
+		bonyArm(-1, 1)
+		bonyArm(1, 0)
+		-- 거대한 낫: 오른손에 쥔 검은 자루 끝에 휘어진 날, 날 가장자리가 붉게 달아 있다
+		local sx0 = Vector3.new(4.9, 0, 3.5)
+		rp("ReaperScytheShaft", Vector3.new(0.5, 24, 0.5), sx0 + Vector3.new(0, 12, 0), Color3.fromRGB(30, 22, 18), Enum.Material.Wood)
+		rp("ReaperScytheCap", Vector3.new(0.9, 0.9, 0.9), sx0 + Vector3.new(0, 0.2, 0), Color3.fromRGB(150, 140, 120), Enum.Material.Metal, Enum.PartType.Ball)
+		for q = 0, 6 do
+			local u = q / 6
+			local ang = math.rad(95 - u * 150)
+			local bx = -math.cos(ang) * 8.5 + 0
+			local by = 24 + math.sin(ang) * 3.2 - u * 3
+			local blade = rp("ReaperBlade", Vector3.new(0.35, 1.2 - u * 0.5, 3.4 - u * 1.4), sx0 + Vector3.new(0, by, bx * 0.5 - 4.5 + u * -1.5), Color3.fromRGB(150, 155, 170), Enum.Material.Metal)
+			blade.CFrame = CFrame.new(blade.Position) * CFrame.Angles(math.rad(-20 - u * 60), 0, 0)
+			local edge = rp("ReaperBladeEdge", Vector3.new(0.12, 0.2, 3.4 - u * 1.4), sx0 + Vector3.new(0, by - 0.5 + u * 0.3, bx * 0.5 - 4.5 + u * -1.5), Color3.fromRGB(255, 50, 40), Enum.Material.Neon)
+			edge.CFrame = blade.CFrame * CFrame.new(0, -0.55 + u * 0.2, 0)
+		end
+		-- 낫에서 늘어진 사슬과 사슬 끝의 창백한 영혼
+		for q = 0, 2 do
+			local ch = rp("ReaperChain", Vector3.new(0.18, 5 + q, 0.18), sx0 + Vector3.new(-0.6, 21 - q * 1.2, -2 - q * 1.2), Color3.fromRGB(80, 80, 90), Enum.Material.Metal)
+			local soul = rp("ReaperSoul", Vector3.new(1.3, 1.7, 1.3), sx0 + Vector3.new(-0.6, 17 - q * 1.6, -2 - q * 1.2), Color3.fromRGB(175, 230, 255), Enum.Material.Neon, Enum.PartType.Ball)
+			soul.Transparency = 0.35
+			light(soul, Color3.fromRGB(160, 220, 255), 16, 0.9)
+			local _ = ch
+		end
+		-- 둘레를 감싸는 검은 안개와 붉은 불씨, 발밑의 흐릿한 붉은 원
 		local fog = Instance.new("ParticleEmitter")
-		fog.Rate = 10
-		fog.Lifetime = NumberRange.new(2, 3.5)
-		fog.Speed = NumberRange.new(0.5, 1.5)
-		fog.SpreadAngle = Vector2.new(180, 20)
-		fog.Color = ColorSequence.new(Color3.fromRGB(30, 28, 40))
-		fog.Size = NumberSequence.new(3, 5)
-		fog.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 1) })
+		fog.Rate = 22
+		fog.Lifetime = NumberRange.new(2.5, 4)
+		fog.Speed = NumberRange.new(0.8, 2)
+		fog.SpreadAngle = Vector2.new(180, 40)
+		fog.Color = ColorSequence.new(Color3.fromRGB(14, 10, 18))
+		fog.Size = NumberSequence.new(4, 7)
+		fog.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
 		fog.Parent = torso
-		local reaperPrompt = prompt(torso, "말 걸기", "저승사자", "HellReaper")
-		reaperPrompt.MaxActivationDistance = 16
+		local embers2 = Instance.new("ParticleEmitter")
+		embers2.Rate = 8
+		embers2.Lifetime = NumberRange.new(2, 4)
+		embers2.Speed = NumberRange.new(1, 3)
+		embers2.Acceleration = Vector3.new(0, 3, 0)
+		embers2.SpreadAngle = Vector2.new(180, 180)
+		embers2.Color = ColorSequence.new(Color3.fromRGB(255, 70, 40))
+		embers2.Size = NumberSequence.new(0.35, 0)
+		embers2.LightEmission = 1
+		embers2.Parent = torso
+		local reaperAura = disc("ReaperAura", Vector3.new(P.X, R.Y + 0.25, P.Z), 9, 0.15, Color3.fromRGB(150, 14, 20), Enum.Material.Neon, f, false)
+		reaperAura.Transparency = 0.65
+		-- 천천히 위아래로 떠다닌다
+		task.spawn(function()
+			local parts: { { BasePart | any } } = {}
+			for _, ch in ipairs(f:GetChildren()) do
+				if ch:IsA("BasePart") and string.sub(ch.Name, 1, 6) == "Reaper" and ch.Name ~= "ReaperAura" then
+					table.insert(parts, { ch, ch.CFrame })
+				end
+			end
+			while f.Parent do
+				local dy = math.sin(os.clock() * 0.9) * 0.9
+				for _, pr in ipairs(parts) do
+					local pp = pr[1] :: BasePart
+					if pp.Parent then
+						pp.CFrame = (pr[2] :: CFrame) + Vector3.new(0, dy, 0)
+					end
+				end
+				task.wait(0.1)
+			end
+		end)
+		local reaperPrompt = prompt(torso, "말 걸기", "사신", "HellReaper")
+		reaperPrompt.MaxActivationDistance = 20
 
 		-- 원혼 셋: 방 안쪽을 떠도는 푸른 불. 다가가 달래 준다
 		local wisps: { ProximityPrompt } = {}
