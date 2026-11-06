@@ -168,8 +168,32 @@ function UI.toast(msg: string)
 	end
 end
 
+-- 알림 띠는 겹치지 않게 칸마다 아래로 쌓는다 (칸이 다 차면 가장 오래된 것을 치우고 그 칸을 쓴다)
+local bannerSlots: { { frame: Frame, born: number }? } = {}
+local BANNER_SLOTS = 3
 function UI.banner(title: string, sub: string?, color: Color3?)
-	local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.3, 0), Size = UDim2.new(0, 760, 0, 110), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
+	local slot = 0
+	for i = 1, BANNER_SLOTS do
+		if not bannerSlots[i] then
+			slot = i
+			break
+		end
+	end
+	if slot == 0 then
+		slot = 1
+		for i = 2, BANNER_SLOTS do
+			local a, b = bannerSlots[i], bannerSlots[slot]
+			if a and b and a.born < b.born then
+				slot = i
+			end
+		end
+		local old = bannerSlots[slot]
+		if old then
+			old.frame:Destroy()
+		end
+	end
+	local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.2, (slot - 1) * 128 * uiScale), Size = UDim2.new(0, 760, 0, 110), BackgroundTransparency = 1, ZIndex = 20, Parent = gui })
+	bannerSlots[slot] = { frame = f, born = os.clock() }
 	local sc = new("UIScale", { Scale = uiScale * 1.6, Parent = f })
 	local t = text({ Size = UDim2.new(1, 0, 0, 64), Text = title, TextSize = 50, Font = Enum.Font.GothamBlack, TextColor3 = color or C.gold, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, Parent = f })
 	local s = text({ Position = UDim2.new(0, 0, 0, 66), Size = UDim2.new(1, 0, 0, 34), Text = sub or "", TextSize = 22, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.3, Parent = f })
@@ -178,6 +202,10 @@ function UI.banner(title: string, sub: string?, color: Color3?)
 		TweenService:Create(t, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		TweenService:Create(s, TweenInfo.new(0.4), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 		task.delay(0.45, function()
+			local cur = bannerSlots[slot]
+			if cur and cur.frame == f then
+				bannerSlots[slot] = nil
+			end
 			f:Destroy()
 		end)
 	end)
