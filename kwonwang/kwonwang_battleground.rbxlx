@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.24.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.24.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4893,17 +4893,51 @@ do
 			P("leap", "대왕 낙하", 3, { radius = 26, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 70, 130, 1.4, 60, 24) }),
 			P("quake", "천지 심판", 3, { radius = 42, warn = 1.7, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 110, 230, 1.7, 80, 34) }),
 		} })
-	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
+	-- 3.24.1판 지옥 확장: 독사지옥 · 발설지옥 · 무간지옥 (염라전보다 한 단계씩 위)
+	E2.dokssagwi = variant(E2.shadowblade, { name = "독사귀", shirt = Color3.fromRGB(70, 130, 70), pants = Color3.fromRGB(30, 60, 36), hp = 760, mult = 70, elite = true })
+	E2.dokchunggwi = variant(E2.assassin, { name = "독충귀", shirt = Color3.fromRGB(120, 150, 50), pants = Color3.fromRGB(50, 66, 24), hp = 700, mult = 70, elite = true })
+	E2.seolgwi = variant(E2.shadowblade, { name = "설귀", shirt = Color3.fromRGB(170, 60, 70), pants = Color3.fromRGB(70, 20, 28), hp = 820, mult = 76, elite = true })
+	E2.jipgeseolkkun = variant(E2.ironguard, { name = "집게 옥졸", shirt = Color3.fromRGB(70, 60, 64), pants = Color3.fromRGB(30, 26, 30), hp = 980, mult = 76, elite = true, scale = 1.4 })
+	E2.mugansu = variant(E2.ironguard, { name = "무간 수문장", shirt = Color3.fromRGB(26, 22, 34), pants = Color3.fromRGB(10, 8, 16), hp = 1100, mult = 84, elite = true, scale = 1.5 })
+	E2.muganbul = variant(E2.assassin, { name = "무간 불꽃귀", shirt = Color3.fromRGB(80, 40, 120), pants = Color3.fromRGB(24, 12, 40), hp = 900, mult = 84, elite = true })
+	B2.dokssawang = variant(base, { name = "독사대왕 · 독사지옥의 주인", shirt = Color3.fromRGB(70, 140, 70), pants = Color3.fromRGB(28, 56, 34), hp = 2900000, posture = 3500, scale = 4.0, speed = 17, coins = 1200000, xp = 110000, respawn = 300, mult = 7.6,
+		patterns = {
+			P("rain", "독액비", 1, { count = 15, radius = 9, spread = 42, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(120, 255, 100), hit = hit(0, 0, 0, 60, 104, 1.0, 25) }),
+			P("charge", "독사 돌진", 1, { length = 70, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58, 100, 1.0, 60) }),
+			P("summon", "독사귀들아", 2, { enemy = "dokssagwi", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("donut", "독무 고리", 2, { inner = 12, outer = 42, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 64, 112, 1.1, 50) }),
+			P("leap", "독사 낙하", 3, { radius = 24, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 70, 124, 1.4, 60, 24) }),
+			P("quake", "만독 폭발", 3, { radius = 40, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 104, 214, 1.6, 80, 30) }),
+		} })
+	B2.balseolwang = variant(base, { name = "발설대왕 · 발설지옥의 주인", shirt = Color3.fromRGB(180, 50, 66), pants = Color3.fromRGB(70, 18, 28), hp = 3300000, posture = 3800, scale = 4.2, speed = 16, coins = 1350000, xp = 124000, respawn = 300, mult = 8.0,
+		patterns = {
+			P("rain", "핏빛 혀", 1, { count = 15, radius = 9, spread = 44, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 60, 80), hit = hit(0, 0, 0, 64, 112, 1.0, 25) }),
+			P("donut", "혀 휘감기", 1, { inner = 12, outer = 44, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 68, 120, 1.1, 50) }),
+			P("summon", "설귀들아", 2, { enemy = "seolgwi", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("charge", "집게 돌진", 2, { length = 72, width = 13, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 64, 112, 1.0, 60) }),
+			P("leap", "대왕 낙하", 3, { radius = 25, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 76, 136, 1.4, 60, 24) }),
+			P("quake", "혀 뽑는 소리", 3, { radius = 42, warn = 1.7, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 112, 232, 1.6, 80, 32) }),
+		} })
+	B2.mugunwang = variant(base, { name = "무간의 군주 · 끝없는 낙하", shirt = Color3.fromRGB(24, 18, 34), pants = Color3.fromRGB(8, 6, 14), hp = 4200000, posture = 4600, scale = 4.6, speed = 17, coins = 2000000, xp = 170000, respawn = 600, mult = 8.8,
+		patterns = {
+			P("rain", "무간의 불", 1, { count = 17, radius = 9, spread = 46, warn = 0.8, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(160, 90, 255), hit = hit(0, 0, 0, 72, 126, 1.0, 25) }),
+			P("charge", "추락의 질주", 1, { length = 74, width = 14, warn = 0.75, cd = 6, times = 4, pose = "w_thrust", hit = hit(0, 0, 0, 70, 124, 1.0, 60) }),
+			P("summon", "수문장들아", 2, { enemy = "mugansu", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
+			P("donut", "끝없는 고리", 2, { inner = 14, outer = 46, warn = 1.0, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 76, 134, 1.1, 50) }),
+			P("leap", "군주 낙하", 3, { radius = 27, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 84, 150, 1.4, 60, 26) }),
+			P("quake", "무간", 3, { radius = 46, warn = 1.8, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 126, 260, 1.7, 80, 36) }),
+		} })
+	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra", "dokssawang", "balseolwang", "mugunwang" }) do
 		B2[id].late = true
 	end
 	-- 3.23.8판: 지옥의 세기를 한 단계 낮춘다 (졸병 전투력 8.7만~22만 → 5.4만~13.6만, 주인 31만~88만 → 19만~54만). 체력과 피해를 함께 ×0.62
 	local HELL_EASE = 0.62
-	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa" }) do
+	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa", "dokssagwi", "dokchunggwi", "seolgwi", "jipgeseolkkun", "mugansu", "muganbul" }) do
 		local d = E2[id]
 		d.hp = math.floor(d.hp * HELL_EASE)
 		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
 	end
-	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
+	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra", "dokssawang", "balseolwang", "mugunwang" }) do
 		local d = B2[id]
 		d.hp = math.floor(d.hp * HELL_EASE)
 		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
@@ -4927,6 +4961,16 @@ do
 			camps = { { enemy = "okjoljang", count = 3, at = Vector3.new(-80, HY, -1140) }, { enemy = "jeoseungmusa", count = 3, at = Vector3.new(80, HY, -1140) }, { enemy = "okjoljang", count = 2, at = Vector3.new(0, HY, -1060) } },
 			boss = { id = "yeomra", at = Vector3.new(0, HY, -1300) } },
 	}
+	-- 3.24.1판 확장 셋: 동쪽 독사지옥, 서쪽 발설지옥, 삼도천 너머 무간지옥
+	table.insert(Config.HELL.zones, { id = "dokssa", name = "독사지옥", at = Vector3.new(1000, HY, 400), radius = 190, ground = Color3.fromRGB(40, 64, 44), material = Enum.Material.Mud, level = 6,
+		camps = { { enemy = "dokssagwi", count = 3, at = Vector3.new(950, HY, 350) }, { enemy = "dokchunggwi", count = 3, at = Vector3.new(1060, HY, 450) }, { enemy = "dokssagwi", count = 2, at = Vector3.new(1080, HY, 330) } },
+		boss = { id = "dokssawang", at = Vector3.new(1100, HY, 410) } })
+	table.insert(Config.HELL.zones, { id = "balseol", name = "발설지옥", at = Vector3.new(-1000, HY, 400), radius = 190, ground = Color3.fromRGB(78, 36, 44), material = Enum.Material.Slate, level = 7,
+		camps = { { enemy = "seolgwi", count = 3, at = Vector3.new(-950, HY, 350) }, { enemy = "jipgeseolkkun", count = 3, at = Vector3.new(-1060, HY, 450) }, { enemy = "seolgwi", count = 2, at = Vector3.new(-1080, HY, 330) } },
+		boss = { id = "balseolwang", at = Vector3.new(-1100, HY, 410) } })
+	table.insert(Config.HELL.zones, { id = "mugan", name = "무간지옥", at = Vector3.new(0, HY, 1080), radius = 200, ground = Color3.fromRGB(20, 16, 28), material = Enum.Material.Basalt, level = 8,
+		camps = { { enemy = "mugansu", count = 3, at = Vector3.new(-80, HY, 1020) }, { enemy = "muganbul", count = 3, at = Vector3.new(80, HY, 1020) }, { enemy = "mugansu", count = 2, at = Vector3.new(0, HY, 960) } },
+		boss = { id = "mugunwang", at = Vector3.new(0, HY, 1190) } })
 	Config.HELL_BY_ID = {}
 	for _, z in ipairs(Config.HELL.zones) do
 		Config.HELL_BY_ID[z.id] = z
@@ -4945,6 +4989,65 @@ do
 	end
 	function Config.inHell(pos: Vector3): boolean
 		return pos.Y > HY - 300
+	end
+end
+------------------------------------------------------------------------
+-- 3.24.1판 천상 확장: 비룡령 (동남) · 유리해 (서남) · 천뢰옥 (금운사 동북). 금운사보다 한 단계 위
+------------------------------------------------------------------------
+do
+	local SY2 = Config.SKY.y
+	local E3, B3 = Config.Enemies, Config.Bosses
+	E3.dragonguard = variant(E3.ironguard, { name = "용린 무사", shirt = Color3.fromRGB(60, 150, 170), pants = Color3.fromRGB(24, 70, 90), hp = 640, mult = 38, elite = true, scale = 1.3 })
+	E3.windwyrm = variant(E3.assassin, { name = "풍룡", shirt = Color3.fromRGB(110, 200, 220), pants = Color3.fromRGB(40, 100, 130), hp = 520, mult = 38, elite = true })
+	E3.crystalspirit = variant(E3.shadowblade, { name = "수정 정령", shirt = Color3.fromRGB(190, 220, 255), pants = Color3.fromRGB(110, 150, 220), hp = 560, mult = 40, elite = true })
+	E3.glassgolem = variant(E3.stonegolem, { name = "유리 거수", shirt = Color3.fromRGB(170, 210, 240), pants = Color3.fromRGB(100, 140, 190), hp = 900, mult = 40, elite = true, scale = 1.8 })
+	E3.prisonguard = variant(E3.ironguard, { name = "뇌옥 수문병", shirt = Color3.fromRGB(70, 74, 104), pants = Color3.fromRGB(32, 34, 52), hp = 700, mult = 42, elite = true, scale = 1.3 })
+	E3.thunderjailer = variant(E3.cultelder, { name = "뇌옥사", shirt = Color3.fromRGB(150, 170, 255), pants = Color3.fromRGB(50, 60, 120), hp = 620, mult = 42, elite = true })
+	local base2 = B3.cheonmun
+	B3.biryong = variant(base2, { name = "비룡 · 용척령의 주인", shirt = Color3.fromRGB(60, 160, 180), pants = Color3.fromRGB(24, 70, 100), hp = 1500000, posture = 2600, scale = 3.8, speed = 18, coins = 640000, xp = 66000, respawn = 300, mult = 4.9,
+		patterns = {
+			P("rain", "용의 비늘비", 1, { count = 12, radius = 9, spread = 36, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(120, 230, 255), hit = hit(0, 0, 0, 40, 72, 1.0, 25) }),
+			P("charge", "비룡 돌진", 1, { length = 68, width = 13, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 42, 74, 1.0, 60) }),
+			P("summon", "용린 무사들아", 2, { enemy = "dragonguard", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+			P("donut", "용 꼬리 휘두르기", 2, { inner = 11, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 46, 80, 1.1, 50) }),
+			P("leap", "승천 낙하", 3, { radius = 23, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 56, 104, 1.4, 60, 24) }),
+			P("quake", "용포", 3, { radius = 36, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 74, 150, 1.6, 80, 30) }),
+		} })
+	B3.yuriwang = variant(base2, { name = "유리 군주 · 유리해의 주인", shirt = Color3.fromRGB(180, 215, 245), pants = Color3.fromRGB(100, 140, 190), hp = 1600000, posture = 2700, scale = 4.0, speed = 15, coins = 680000, xp = 70000, respawn = 300, mult = 5.0,
+		patterns = {
+			P("quake", "유리 진각", 1, { radius = 26, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 52, 98, 1.4, 60, 20) }),
+			P("rain", "수정 파편", 1, { count = 13, radius = 9, spread = 38, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 225, 255), hit = hit(0, 0, 0, 42, 76, 1.0, 25) }),
+			P("summon", "유리 거수들아", 2, { enemy = "glassgolem", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+			P("donut", "깨진 거울 고리", 2, { inner = 11, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 48, 84, 1.1, 50) }),
+			P("leap", "군주 낙하", 3, { radius = 24, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 58, 108, 1.4, 60, 24) }),
+			P("quake", "유리 붕괴", 3, { radius = 38, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 78, 156, 1.6, 80, 30) }),
+		} })
+	B3.cheonroeok = variant(base2, { name = "천뢰 · 하늘 감옥의 주인", shirt = Color3.fromRGB(70, 76, 120), pants = Color3.fromRGB(28, 30, 52), hp = 1800000, posture = 2900, scale = 4.0, speed = 17, coins = 760000, xp = 78000, respawn = 300, mult = 5.2,
+		patterns = {
+			P("rain", "옥중 벼락", 1, { count = 14, radius = 8, spread = 40, warn = 0.9, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 190, 255), hit = hit(0, 0, 0, 46, 82, 1.0, 25) }),
+			P("charge", "쇠사슬 돌진", 1, { length = 70, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 48, 84, 1.0, 60) }),
+			P("summon", "뇌옥 수문병들아", 2, { enemy = "prisonguard", count = 2, max = 4, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("donut", "뇌옥 고리", 2, { inner = 12, outer = 40, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 52, 90, 1.1, 50) }),
+			P("leap", "감옥지기 낙하", 3, { radius = 25, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 62, 116, 1.4, 60, 24) }),
+			P("quake", "천뢰옥", 3, { radius = 40, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 84, 168, 1.6, 80, 32) }),
+		} })
+	for _, id in ipairs({ "biryong", "yuriwang", "cheonroeok" }) do
+		B3[id].late = true
+	end
+	table.insert(Config.SKY.islands, { id = "dragonridge", name = "비룡령", at = Vector3.new(1240, SY2, 640), radius = 190, ground = Color3.fromRGB(70, 130, 140), material = Enum.Material.Slate,
+		camps = { { enemy = "dragonguard", count = 3, at = Vector3.new(1180, SY2, 580) }, { enemy = "windwyrm", count = 3, at = Vector3.new(1280, SY2, 700) }, { enemy = "dragonguard", count = 2, at = Vector3.new(1330, SY2, 600) } },
+		boss = { id = "biryong", at = Vector3.new(1330, SY2, 650) } })
+	table.insert(Config.SKY.islands, { id = "glasssea", name = "유리해", at = Vector3.new(-1240, SY2, 640), radius = 190, ground = Color3.fromRGB(170, 205, 235), material = Enum.Material.Glass,
+		camps = { { enemy = "crystalspirit", count = 3, at = Vector3.new(-1180, SY2, 580) }, { enemy = "glassgolem", count = 3, at = Vector3.new(-1280, SY2, 700) }, { enemy = "crystalspirit", count = 2, at = Vector3.new(-1330, SY2, 600) } },
+		boss = { id = "yuriwang", at = Vector3.new(-1330, SY2, 650) } })
+	table.insert(Config.SKY.islands, { id = "thunderjail", name = "천뢰옥", at = Vector3.new(720, SY2, -1700), radius = 190, ground = Color3.fromRGB(60, 64, 90), material = Enum.Material.Slate,
+		camps = { { enemy = "prisonguard", count = 3, at = Vector3.new(660, SY2, -1640) }, { enemy = "thunderjailer", count = 3, at = Vector3.new(760, SY2, -1760) }, { enemy = "prisonguard", count = 2, at = Vector3.new(810, SY2, -1660) } },
+		boss = { id = "cheonroeok", at = Vector3.new(810, SY2, -1710) } })
+	table.insert(Config.SKY.bridges, { 7, 18 })
+	table.insert(Config.SKY.bridges, { 12, 19 })
+	table.insert(Config.SKY.bridges, { 14, 20 })
+	for _, isl in ipairs({ Config.SKY.islands[18], Config.SKY.islands[19], Config.SKY.islands[20] }) do
+		Config.SKY_BY_ID[isl.id] = isl
 	end
 end
 -- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
@@ -5119,6 +5222,12 @@ Config.ACHIEVEMENTS = {
 	{ id = "dosan", icon = "🗡", name = "검산을 넘다", desc = "도산군주를 쓰러뜨린다", kind = "boss", arg = "dosan", n = 1, gems = 800, title = "검산을 넘은 자", tier = 4 },
 	{ id = "agwiwang", icon = "👺", name = "허기를 채우다", desc = "아귀왕을 쓰러뜨린다", kind = "boss", arg = "agwiwang", n = 1, gems = 900, title = "아귀를 잠재운 자", tier = 4 },
 	{ id = "yeomra", icon = "⚖", name = "심판을 뒤집다", desc = "염라대왕을 쓰러뜨린다", kind = "boss", arg = "yeomra", n = 1, gems = 2000, scrolls = 30, title = "심판을 뒤집은 자", tier = 5, mount = "geumryong" },
+	{ id = "biryong", icon = "🐲", name = "비룡을 꺾다", desc = "비룡을 쓰러뜨린다", kind = "boss", arg = "biryong", n = 1, gems = 1200, scrolls = 10, title = "비룡을 꺾은 자", tier = 4 },
+	{ id = "yuriwang", icon = "💠", name = "유리를 깨다", desc = "유리 군주를 쓰러뜨린다", kind = "boss", arg = "yuriwang", n = 1, gems = 1200, scrolls = 10, title = "유리를 깬 자", tier = 4 },
+	{ id = "cheonroeok", icon = "⛓", name = "감옥을 열다", desc = "천뢰를 쓰러뜨린다", kind = "boss", arg = "cheonroeok", n = 1, gems = 1200, scrolls = 10, title = "하늘 감옥을 연 자", tier = 4 },
+	{ id = "dokssawang", icon = "🐍", name = "독을 삼키다", desc = "독사대왕을 쓰러뜨린다", kind = "boss", arg = "dokssawang", n = 1, gems = 1200, scrolls = 10, title = "독을 삼킨 자", tier = 4 },
+	{ id = "balseolwang", icon = "👅", name = "혀를 지키다", desc = "발설대왕을 쓰러뜨린다", kind = "boss", arg = "balseolwang", n = 1, gems = 1200, scrolls = 10, title = "혀를 지킨 자", tier = 4 },
+	{ id = "mugunwang", icon = "🕳", name = "끝없는 낙하의 끝", desc = "무간의 군주를 쓰러뜨린다", kind = "boss", arg = "mugunwang", n = 1, gems = 1200, scrolls = 10, title = "무간을 넘은 자", tier = 4 },
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
@@ -18647,6 +18756,26 @@ local LOOKS: { [string]: any } = {
 	agwigun = { form = "skeleton", bone = C3(140, 160, 112), eyes = C3(190, 255, 120), build = { w = 1.0, h = 1.12, head = 1.05 } },
 	okjoljang = { form = "skeleton", eyes = C3(255, 60, 60), armor = true, metal = C3(30, 14, 18), cloth = C3(70, 10, 14), build = { w = 1.2, h = 1.12, head = 0.9 } },
 	jeoseungmusa = { form = "wraith", cloth = C3(28, 26, 40), eyes = C3(255, 70, 70), bone = C3(210, 210, 220), build = { w = 0.9, h = 1.1, head = 0.86 } },
+	-- 3.24.1판 지옥 확장 · 천상 확장의 적
+	dokssagwi = { form = "naga", skin = C3(70, 130, 70), eyes = C3(255, 230, 80), build = { w = 0.95, h = 1.05, head = 0.9 } },
+	dokchunggwi = { form = "imp", skin = C3(120, 150, 50), eyes = C3(230, 255, 90), hornColor = C3(40, 56, 20), spark = C3(160, 255, 90), build = { w = 0.9, h = 1.0, head = 0.95 } },
+	seolgwi = { form = "wraith", cloth = C3(150, 50, 62), eyes = C3(255, 200, 200), bone = C3(210, 150, 150), build = { w = 0.92, h = 1.08, head = 0.88 } },
+	jipgeseolkkun = { form = "skeleton", eyes = C3(255, 120, 90), armor = true, metal = C3(70, 60, 64), cloth = C3(120, 24, 30), build = { w = 1.18, h = 1.1, head = 0.92 } },
+	mugansu = { form = "skeleton", eyes = C3(190, 120, 255), armor = true, metal = C3(24, 20, 34), cloth = C3(60, 24, 100), bone = C3(120, 110, 140), build = { w = 1.2, h = 1.12, head = 0.92 } },
+	muganbul = { form = "imp", skin = C3(60, 30, 110), eyes = C3(230, 190, 255), hornColor = C3(20, 10, 36), fire = C3(170, 100, 255), build = { w = 0.9, h = 1.0, head = 0.95 } },
+	dragonguard = { form = "naga", skin = C3(60, 150, 170), eyes = C3(255, 240, 140), build = { w = 1.1, h = 1.1, head = 0.9 } },
+	windwyrm = { form = "bird", feather = C3(110, 200, 220), crest = C3(255, 220, 120), beak = C3(230, 200, 120), tip = C3(30, 90, 120), longTail = C3(80, 180, 210), build = { w = 0.9, h = 1.06, head = 0.9 } },
+	crystalspirit = { form = "spirit", skin = C3(190, 220, 255), eyes = C3(255, 255, 255), crest = "ice" },
+	glassgolem = { form = "golem", skin = C3(170, 210, 240), eyes = C3(255, 255, 255), carved = true, build = { w = 1.35, h = 1.12, head = 0.82 } },
+	prisonguard = { head = "helmet", metal = C3(70, 74, 104), armor = true, armorTrim = C3(180, 190, 255), eyes = C3(170, 190, 255), top = C3(60, 66, 100), bottom = C3(28, 30, 52), trim = C3(180, 190, 255), build = { w = 1.1, head = 0.95 } },
+	thunderjailer = { head = "hood", hoodColor = C3(60, 66, 110), eyes = C3(190, 210, 255), top = C3(80, 90, 150), bottom = C3(30, 34, 70), trim = C3(200, 210, 255), robe = C3(54, 60, 100), build = { h = 1.05, head = 0.95 } },
+	-- 새 주인들
+	dokssawang = { head = "topknot", hair = C3(30, 60, 30), eyes = C3(255, 230, 80), armor = true, metal = C3(40, 80, 44), armorTrim = C3(170, 255, 110), top = C3(60, 120, 64), bottom = C3(24, 48, 30), trim = C3(170, 255, 110), robe = C3(40, 90, 48), build = { w = 1.08, head = 1.06 } },
+	balseolwang = { head = "horns", hair = C3(40, 10, 20), hornColor = C3(60, 20, 30), hornLen = 1.2, eyes = C3(255, 190, 190), armor = true, metal = C3(90, 30, 40), armorTrim = C3(255, 110, 130), top = C3(160, 40, 56), bottom = C3(60, 14, 24), trim = C3(255, 110, 130), build = { w = 1.1, head = 1.06 } },
+	mugunwang = { head = "hood", hoodColor = C3(14, 10, 22), eyes = C3(190, 120, 255), top = C3(30, 22, 44), bottom = C3(10, 8, 18), trim = C3(160, 90, 255), robe = C3(18, 12, 30), build = { h = 1.1, head = 1.06 } },
+	biryong = { head = "horns", hair = C3(20, 70, 90), hornColor = C3(220, 235, 245), hornLen = 1.6, eyes = C3(255, 230, 120), armor = true, metal = C3(50, 130, 150), armorTrim = C3(160, 235, 255), top = C3(60, 160, 180), bottom = C3(24, 70, 100), trim = C3(160, 235, 255), build = { w = 1.08, head = 1.06 } },
+	yuriwang = { form = "golem", skin = C3(180, 215, 245), eyes = C3(255, 255, 255), carved = true },
+	cheonroeok = { head = "helmet", metal = C3(60, 66, 110), plume = C3(170, 190, 255), armor = true, armorTrim = C3(190, 200, 255), eyes = C3(190, 210, 255), top = C3(60, 66, 110), bottom = C3(24, 26, 46), trim = C3(190, 200, 255), build = { w = 1.1, h = 1.06, head = 1.06 } },
 	-- 지옥의 주인들
 	talui = { head = "hood", hoodColor = C3(150, 164, 188), eyes = C3(150, 220, 255), top = C3(176, 186, 204), bottom = C3(56, 66, 94), trim = C3(220, 235, 255), robe = C3(130, 146, 176), build = { h = 1.08, head = 1.06 } },
 	hwatang = { head = "horns", hair = C3(60, 20, 10), hornColor = C3(40, 20, 14), hornLen = 1.3, eyes = C3(255, 200, 80), armor = true, metal = C3(70, 30, 22), armorTrim = C3(255, 140, 40), top = C3(210, 70, 26), bottom = C3(80, 20, 10), trim = C3(255, 150, 50), build = { w = 1.1, head = 1.06 } },
@@ -19331,6 +19460,38 @@ HELLX.agwi = function(model, look, k)
 end
 HELLX.agwigun = HELLX.agwi
 
+
+HELLX.dokssagwi = function(model, look, k)
+	hairCurtain(model, C3(30, 70, 34), k, 7, 1.6)
+	headGlow(model, C3(120, 255, 100), 14)
+end
+HELLX.dokchunggwi = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "InsectWing", Vector3.new(0.05 * k, 1.9 * k, 0.9 * k), CFrame.new(x * 0.5 * k, 0.3 * k, 0.6 * k) * CFrame.Angles(math.rad(10), 0, x * math.rad(30)), C3(170, 220, 90), M.Neon)
+	end
+	headGlow(model, C3(200, 255, 90), 14)
+end
+HELLX.seolgwi = function(model, look, k)
+	wear(model, "Head", "LongTongue", Vector3.new(0.22 * k, 1.6 * k, 0.07 * k), CFrame.new(0, -0.9 * k, -0.6 * k), C3(200, 40, 70), M.SmoothPlastic)
+	headGlow(model, C3(255, 100, 120), 14)
+end
+HELLX.jipgeseolkkun = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, x < 0 and "LeftHand" or "RightHand", "TongsArm", Vector3.new(0.12 * k, 0.12 * k, 3.0 * k), CFrame.new(0, 0, -1.7 * k), C3(80, 76, 84), M.Metal)
+		wear(model, x < 0 and "LeftHand" or "RightHand", "TongsJaw", Vector3.new(0.6 * k, 0.12 * k, 0.9 * k), CFrame.new(0, 0, -3.3 * k), C3(80, 76, 84), M.Metal)
+	end
+	headGlow(model, C3(255, 120, 90), 14)
+end
+HELLX.mugansu = function(model, look, k)
+	hornPair(model, C3(20, 16, 28), k, 1.3, 25)
+	wear(model, "RightHand", "AbyssSpear", Vector3.new(0.18 * k, 0.18 * k, 5 * k), CFrame.new(0, 0, -2.4 * k), C3(40, 34, 56), M.Metal)
+	wear(model, "RightHand", "AbyssSpearTip", Vector3.new(0.4 * k, 0.1 * k, 1.1 * k), CFrame.new(0, 0, -5.3 * k), C3(190, 130, 255), M.Neon)
+	headGlow(model, C3(190, 130, 255), 14)
+end
+HELLX.muganbul = function(model, look, k)
+	headGlow(model, C3(190, 130, 255), 14)
+end
+
 -- 탈의파: 땅에 끌리는 백발, 어깨에 걸친 해진 회색 옷, 죄인의 옷을 걸어 둔 가지 지팡이
 SIG.talui = function(model, look, k, P)
 	hairCurtain(model, C3(235, 235, 240), k, 13, 4.2)
@@ -19411,6 +19572,60 @@ SIG.yeomra = function(model, look, k, P)
 	wear(model, "RightHand", "HolTablet", Vector3.new(0.3 * k, 2.6 * k, 0.12 * k), CFrame.new(0, 0.3 * k, -0.5 * k), C3(230, 214, 170), M.Wood)
 	mantle(model, C3(36, 10, 16), C3(210, 40, 50), k, 3.8)
 	headGlow(model, C3(255, 60, 50), 34)
+	local _ = P
+end
+
+-- 3.24.1판 새 주인들의 표식
+SIG.dokssawang = function(model, look, k, P)
+	-- 머리에서 뻗은 독사 여덟 마리, 목에 두른 독사 고리
+	for q = 0, 7 do
+		local a = math.rad(-75 + q * 21)
+		wear(model, "Head", "HeadSnake", Vector3.new(0.16 * k, 1.8 * k, 0.16 * k), CFrame.new(math.sin(a) * 0.6 * k, 0.85 * k, math.cos(a) * 0.3 * k) * CFrame.Angles(math.rad(-20), 0, -math.sin(a) * 0.8), C3(70, 150, 70), M.SmoothPlastic)
+		wear(model, "Head", "SnakeHead", Vector3.new(0.3 * k, 0.3 * k, 0.4 * k), CFrame.new(math.sin(a) * 1.15 * k, 1.7 * k, math.cos(a) * 0.4 * k), C3(110, 200, 90), M.SmoothPlastic, Ball)
+	end
+	mantle(model, C3(40, 90, 48), C3(170, 255, 110), k, 3.2)
+	headGlow(model, C3(120, 255, 100), 26)
+	local _ = P
+end
+SIG.balseolwang = function(model, look, k, P)
+	-- 가슴까지 늘어진 붉은 혀, 허리에 찬 집게
+	wear(model, "Head", "LongTongue", Vector3.new(0.45 * k, 3.2 * k, 0.12 * k), CFrame.new(0, -1.8 * k, -0.62 * k), C3(200, 40, 70), M.SmoothPlastic)
+	wear(model, "Head", "TongueTip", Vector3.new(0.5 * k, 0.5 * k, 0.14 * k), CFrame.new(0, -3.4 * k, -0.62 * k), C3(200, 40, 70), M.SmoothPlastic, Ball)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "Tongs", Vector3.new(0.14 * k, 2.6 * k, 0.14 * k), CFrame.new(x * 1.0 * k, -0.6 * k, -0.2 * k) * CFrame.Angles(0, 0, x * math.rad(12)), C3(70, 66, 74), M.Metal)
+	end
+	headGlow(model, C3(255, 90, 110), 26)
+	local _ = P
+end
+SIG.mugunwang = function(model, look, k, P)
+	-- 깊은 두건 속 보랏빛 불꽃, 몸을 휘감은 끊어진 사슬 여섯
+	wear(model, "Head", "VoidFlame", Vector3.new(0.9 * k, 1.1 * k, 0.3 * k), CFrame.new(0, 0, -0.55 * k), C3(170, 100, 255), M.Neon, Ball)
+	for q = 0, 5 do
+		local a = q / 6 * math.pi * 2
+		wear(model, "UpperTorso", "BrokenChain", Vector3.new(0.14 * k, 2.4 * k, 0.14 * k), CFrame.new(math.cos(a) * 1.3 * k, -0.4 * k, math.sin(a) * 0.9 * k) * CFrame.Angles(math.rad(14), a, math.cos(a) * 0.3), C3(90, 80, 110), M.Metal)
+	end
+	mantle(model, C3(18, 12, 30), C3(160, 90, 255), k, 4.0)
+	headGlow(model, C3(170, 100, 255), 28)
+	local _ = P
+end
+SIG.biryong = function(model, look, k, P)
+	-- 등 뒤로 펼친 용 날개 한 쌍, 긴 용 수염
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "WingBone", Vector3.new(0.18 * k, 2.8 * k, 0.18 * k), CFrame.new(x * 1.0 * k, 1.1 * k, 0.8 * k) * CFrame.Angles(0, 0, -x * math.rad(55)), C3(50, 130, 150), M.Metal)
+		wear(model, "UpperTorso", "WingSail", Vector3.new(0.08 * k, 2.4 * k, 2.2 * k), CFrame.new(x * 2.0 * k, 1.5 * k, 0.9 * k) * CFrame.Angles(0, 0, -x * math.rad(20)), C3(100, 210, 235), M.Neon)
+		wear(model, "Head", "DragonWhisker", Vector3.new(0.06 * k, 1.8 * k, 0.06 * k), CFrame.new(x * 0.4 * k, -0.7 * k, -0.6 * k) * CFrame.Angles(math.rad(20), 0, x * math.rad(25)), C3(220, 240, 250), M.SmoothPlastic)
+	end
+	headGlow(model, C3(120, 230, 255), 24)
+	local _ = P
+end
+SIG.cheonroeok = function(model, look, k, P)
+	-- 허리와 어깨의 쇠고랑, 손에 든 감옥 열쇠 (큰 쇠고리)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, x < 0 and "LeftLowerArm" or "RightLowerArm", "Shackle", Vector3.new(0.9 * k, 0.28 * k, 0.9 * k), CFrame.new(0, -0.2 * k, 0), C3(90, 96, 130), M.Metal)
+		wear(model, "UpperTorso", "ChainDrape", Vector3.new(0.12 * k, 2.4 * k, 0.12 * k), CFrame.new(x * 0.7 * k, 0, -0.5 * k) * CFrame.Angles(0, 0, x * math.rad(35)), C3(110, 116, 150), M.Metal)
+	end
+	wear(model, "RightHand", "JailKey", Vector3.new(0.9 * k, 0.2 * k, 3.2 * k), CFrame.new(0, 0, -1.8 * k), C3(190, 200, 255), M.Neon)
+	headGlow(model, C3(170, 190, 255), 26)
 	local _ = P
 end
 
@@ -26287,9 +26502,10 @@ function World.setupLighting()
 	atmo.Decay = Color3.fromRGB(150, 110, 90)
 	atmo.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.8
-	bloom.Size = 32
-	bloom.Threshold = 1.12
+	-- 3.24.1판: 번쩍임이 너무 심했다 (네온이 번져 모델을 가렸다). 세기 0.8 → 0.35, 문턱 1.12 → 1.4
+	bloom.Intensity = 0.35
+	bloom.Size = 24
+	bloom.Threshold = 1.4
 	bloom.Parent = Lighting
 	-- 햇살 줄기 (빛이 구름·나무 사이로 새어 든다)
 	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
@@ -31070,6 +31286,9 @@ local function skyWorld(out: any)
 		rinnedae = { depth = 0.36, bands = true, rim = "gold", under = { rgb(196, 186, 226), Enum.Material.Marble }, drip = "crystal", dripColor = rgb(180, 150, 255), cloud = { rgb(235, 230, 255), 0.2, 1.1 }, islet = "crystal" },
 		aurora = { depth = 0.3, rim = "ice", under = { rgb(120, 170, 190), Enum.Material.Glacier }, drip = "icicle", dripColor = rgb(170, 250, 230), cloud = { rgb(190, 250, 236), 0.35, 1.1 }, islet = "ice", ledges = 4 },
 		peachgarden = { depth = 0.32, rim = "fence", under = { rgb(120, 96, 72), Enum.Material.Ground }, drip = "root", dripColor = rgb(100, 78, 56), cloud = { rgb(255, 236, 244), 0.3, 1 }, islet = "pine", ledges = 4 },
+		dragonridge = { depth = 0.4, blocky = true, rim = "crag", rimColor = rgb(40, 90, 104), under = { rgb(36, 74, 90), Enum.Material.Slate }, vein = rgb(120, 230, 255), drip = "spike", dripColor = rgb(30, 60, 76), cloud = { rgb(120, 170, 190), 0.25, 1.1 }, islet = "rod", ledges = 5 },
+		glasssea = { depth = 0.2, core = "crystal", rim = "star", rimColor = rgb(190, 225, 255), under = { rgb(150, 190, 230), Enum.Material.Glass }, drip = "crystal", dripColor = rgb(200, 230, 255), cloud = { rgb(225, 240, 255), 0.3, 1 }, islet = "crystal" },
+		thunderjail = { depth = 0.45, blocky = true, rim = "crag", rimColor = rgb(46, 50, 74), under = { rgb(40, 42, 62), Enum.Material.Slate }, vein = rgb(170, 190, 255), drip = "spike", dripColor = rgb(34, 36, 52), cloud = { rgb(80, 84, 110), 0.2, 1.25 }, islet = "rod", ledges = 6 },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -32932,6 +33151,78 @@ local function hellWorld(out: any)
 			for i = 0, 2 do
 				banner(c + Vector3.new(sx * 78, 12, 50 - i * 60), 28, rgb(110, 14, 22), f)
 			end
+		end
+	end
+
+	------------------------------------------------ 3.24.1판 확장: 독사지옥 · 발설지옥 · 무간지옥
+	do
+		local zd, zb, zm = H.zones[7], H.zones[8], H.zones[9]
+		if zd then
+			local c = zd.at
+			-- 독 웅덩이 (밟아도 된다. 연둣빛으로 부글댄다), 늘어진 거대한 뱀 뼈 아치
+			for k = 1, 9 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(30, zd.radius - 20)
+				local p = c + Vector3.new(math.cos(a) * rr, 0.4, math.sin(a) * rr)
+				local pool = disc("VenomPool", p, rng:NextNumber(10, 18), 0.4, rgb(110, 255, 90), Enum.Material.Neon, f, false)
+				pool.Transparency = 0.45
+				light(pool, rgb(120, 255, 100), 26, 1.1)
+			end
+			drift(c + Vector3.new(0, 18, 0), Vector3.new(zd.radius * 1.5, 24, zd.radius * 1.5), { rgb(150, 255, 110), rgb(90, 200, 90) }, 22, 1.4, 6, -0.4, f, 0.7)
+			for r = 1, 3 do
+				local base = c + Vector3.new(rng:NextNumber(-90, 90), 0, rng:NextNumber(-90, 90))
+				local yaw = rng:NextNumber(0, 6.28)
+				for i = 0, 11 do
+					local u = i / 11
+					local ang = u * math.pi
+					part({ Name = "SnakeRib", Size = Vector3.new(2.4, 14, 2.4), CFrame = CFrame.new(base) * CFrame.Angles(0, yaw, 0) * CFrame.new(math.cos(ang) * 22, math.sin(ang) * 22 + 3, 0) * CFrame.Angles(0, 0, ang), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+				end
+				part({ Name = "SnakeSkull", Shape = Enum.PartType.Ball, Size = Vector3.new(12, 9, 14), Position = base + Vector3.new(-26, 5, 0), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+			end
+		end
+		if zb then
+			local c = zb.at
+			-- 쇠 기둥에 매달린 쇠집게와 갈고리, 핏물 웅덩이
+			for k = 1, 12 do
+				local a = k / 12 * math.pi * 2
+				local p = c + Vector3.new(math.cos(a) * (zb.radius - 36), 0, math.sin(a) * (zb.radius - 36))
+				part({ Name = "HookPost", Size = Vector3.new(3, 30, 3), Position = p + Vector3.new(0, 15, 0), Color = rgb(60, 56, 64), Material = Enum.Material.Metal, Parent = f })
+				part({ Name = "HookArm", Size = Vector3.new(14, 2, 2), Position = p + Vector3.new(-math.cos(a) * 6, 29, -math.sin(a) * 6), Color = rgb(60, 56, 64), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				part({ Name = "Hook", Size = Vector3.new(1.4, 9, 1.4), Position = p + Vector3.new(-math.cos(a) * 12, 24, -math.sin(a) * 12), Color = rgb(120, 120, 130), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			for k = 1, 8 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(30, zb.radius - 30)
+				local pool = disc("BloodPool", c + Vector3.new(math.cos(a) * rr, 0.4, math.sin(a) * rr), rng:NextNumber(8, 15), 0.4, rgb(150, 14, 28), Enum.Material.Neon, f, false)
+				pool.Transparency = 0.5
+			end
+			-- 가운데: 거대한 돌 혀 (비탈)
+			wedge({ Name = "StoneTongue", Size = Vector3.new(40, 14, 70), CFrame = CFrame.new(c + Vector3.new(0, 7, 20)), Color = rgb(150, 50, 70), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "StoneTongueBase", Size = Vector3.new(44, 4, 30), Position = c + Vector3.new(0, 2, 70), Color = rgb(120, 40, 56), Material = Enum.Material.Slate, Parent = f })
+			drift(c + Vector3.new(0, 20, 0), Vector3.new(zb.radius * 1.5, 26, zb.radius * 1.5), { rgb(255, 90, 110), rgb(200, 40, 60) }, 18, 1.2, 6, -0.6, f, 0.7)
+		end
+		if zm then
+			local c = zm.at
+			-- 끝을 알 수 없는 구덩이 고리: 검은 구멍 둘레의 흑요석 난간과 보랏빛 불, 천장에서 내려오는 사슬 숲
+			disc("AbyssRim", c + Vector3.new(0, 0.5, 0), 70, 1, rgb(20, 16, 28), Enum.Material.Basalt, f, false)
+			disc("AbyssHole", c + Vector3.new(0, 0.7, 0), 56, 0.3, rgb(0, 0, 0), Enum.Material.SmoothPlastic, f, false)
+			disc("AbyssGlow", c + Vector3.new(0, 0.9, 0), 58, 0.2, rgb(130, 70, 230), Enum.Material.Neon, f, false).Transparency = 0.78
+			for k = 0, 23 do
+				local a = k / 24 * math.pi * 2
+				local p = c + Vector3.new(math.cos(a) * 72, 0, math.sin(a) * 72)
+				part({ Name = "AbyssPillar", Size = Vector3.new(4, 16, 4), Position = p + Vector3.new(0, 8, 0), Color = rgb(24, 20, 34), Material = Enum.Material.Basalt, Parent = f })
+				local fl = part({ Name = "AbyssFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 4, 3), Position = p + Vector3.new(0, 18, 0), Color = rgb(170, 110, 255), Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+				if k % 3 == 0 then
+					light(fl, rgb(170, 110, 255), 30, 1.4)
+				end
+			end
+			for k = 1, 30 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(90, zm.radius - 10)
+				local hang = rng:NextNumber(60, 140)
+				part({ Name = "VoidChain", Size = Vector3.new(0.8, hang, 0.8), Position = c + Vector3.new(math.cos(a) * rr, H.ceiling - 40 - hang / 2, math.sin(a) * rr), Color = rgb(60, 54, 76), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			drift(c + Vector3.new(0, 30, 0), Vector3.new(zm.radius * 1.6, 40, zm.radius * 1.6), { rgb(170, 110, 255), rgb(90, 60, 160) }, 18, 1.4, 8, 0.8, f, 0.6)
 		end
 	end
 end
@@ -48877,8 +49168,8 @@ function Fx.flash(pos: Vector3, color: Color3, range: number, brightness: number
 	local holder = l.Parent :: BasePart
 	holder.CFrame = CFrame.new(pos)
 	l.Color = color
-	l.Range = math.min(60, range)
-	l.Brightness = brightness
+	l.Range = math.min(45, range)
+	l.Brightness = math.min(2.2, brightness * 0.7) -- 3.24.1판: 번쩍임 완화
 	TweenService:Create(l, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Brightness = 0 }):Play()
 end
 
@@ -48965,13 +49256,13 @@ function Fx.skillAura(model: Model, color: Color3, color2: Color3, dur: number, 
 	flame.Texture = TEX_FIRE_AURA
 	flame.LightEmission = 1
 	flame.Color = ColorSequence.new(color2, color)
-	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, strong and 2.4 or 1.6), NumberSequenceKeypoint.new(1, 0) })
+	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, strong and 1.7 or 1.1), NumberSequenceKeypoint.new(1, 0) })
 	flame.Transparency = NumberSequence.new(0.2, 1)
 	flame.Lifetime = NumberRange.new(0.35, 0.7)
 	flame.Speed = NumberRange.new(2, 5)
 	flame.SpreadAngle = Vector2.new(40, 40)
 	flame.Acceleration = Vector3.new(0, 14, 0)
-	flame.Rate = strong and 90 or 55
+	flame.Rate = strong and 60 or 36
 	flame.Rotation = NumberRange.new(0, 360)
 	flame.RotSpeed = NumberRange.new(-90, 90)
 	flame.Parent = att
@@ -48983,7 +49274,7 @@ function Fx.skillAura(model: Model, color: Color3, color2: Color3, dur: number, 
 	dust.Lifetime = NumberRange.new(0.6, 1)
 	dust.Speed = NumberRange.new(3, 7)
 	dust.SpreadAngle = Vector2.new(180, 180)
-	dust.Rate = strong and 40 or 20
+	dust.Rate = strong and 28 or 14
 	dust.Parent = att
 	local glow = Instance.new("PointLight")
 	glow.Color = color

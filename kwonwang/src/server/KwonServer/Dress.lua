@@ -1053,6 +1053,26 @@ local LOOKS: { [string]: any } = {
 	agwigun = { form = "skeleton", bone = C3(140, 160, 112), eyes = C3(190, 255, 120), build = { w = 1.0, h = 1.12, head = 1.05 } },
 	okjoljang = { form = "skeleton", eyes = C3(255, 60, 60), armor = true, metal = C3(30, 14, 18), cloth = C3(70, 10, 14), build = { w = 1.2, h = 1.12, head = 0.9 } },
 	jeoseungmusa = { form = "wraith", cloth = C3(28, 26, 40), eyes = C3(255, 70, 70), bone = C3(210, 210, 220), build = { w = 0.9, h = 1.1, head = 0.86 } },
+	-- 3.24.1판 지옥 확장 · 천상 확장의 적
+	dokssagwi = { form = "naga", skin = C3(70, 130, 70), eyes = C3(255, 230, 80), build = { w = 0.95, h = 1.05, head = 0.9 } },
+	dokchunggwi = { form = "imp", skin = C3(120, 150, 50), eyes = C3(230, 255, 90), hornColor = C3(40, 56, 20), spark = C3(160, 255, 90), build = { w = 0.9, h = 1.0, head = 0.95 } },
+	seolgwi = { form = "wraith", cloth = C3(150, 50, 62), eyes = C3(255, 200, 200), bone = C3(210, 150, 150), build = { w = 0.92, h = 1.08, head = 0.88 } },
+	jipgeseolkkun = { form = "skeleton", eyes = C3(255, 120, 90), armor = true, metal = C3(70, 60, 64), cloth = C3(120, 24, 30), build = { w = 1.18, h = 1.1, head = 0.92 } },
+	mugansu = { form = "skeleton", eyes = C3(190, 120, 255), armor = true, metal = C3(24, 20, 34), cloth = C3(60, 24, 100), bone = C3(120, 110, 140), build = { w = 1.2, h = 1.12, head = 0.92 } },
+	muganbul = { form = "imp", skin = C3(60, 30, 110), eyes = C3(230, 190, 255), hornColor = C3(20, 10, 36), fire = C3(170, 100, 255), build = { w = 0.9, h = 1.0, head = 0.95 } },
+	dragonguard = { form = "naga", skin = C3(60, 150, 170), eyes = C3(255, 240, 140), build = { w = 1.1, h = 1.1, head = 0.9 } },
+	windwyrm = { form = "bird", feather = C3(110, 200, 220), crest = C3(255, 220, 120), beak = C3(230, 200, 120), tip = C3(30, 90, 120), longTail = C3(80, 180, 210), build = { w = 0.9, h = 1.06, head = 0.9 } },
+	crystalspirit = { form = "spirit", skin = C3(190, 220, 255), eyes = C3(255, 255, 255), crest = "ice" },
+	glassgolem = { form = "golem", skin = C3(170, 210, 240), eyes = C3(255, 255, 255), carved = true, build = { w = 1.35, h = 1.12, head = 0.82 } },
+	prisonguard = { head = "helmet", metal = C3(70, 74, 104), armor = true, armorTrim = C3(180, 190, 255), eyes = C3(170, 190, 255), top = C3(60, 66, 100), bottom = C3(28, 30, 52), trim = C3(180, 190, 255), build = { w = 1.1, head = 0.95 } },
+	thunderjailer = { head = "hood", hoodColor = C3(60, 66, 110), eyes = C3(190, 210, 255), top = C3(80, 90, 150), bottom = C3(30, 34, 70), trim = C3(200, 210, 255), robe = C3(54, 60, 100), build = { h = 1.05, head = 0.95 } },
+	-- 새 주인들
+	dokssawang = { head = "topknot", hair = C3(30, 60, 30), eyes = C3(255, 230, 80), armor = true, metal = C3(40, 80, 44), armorTrim = C3(170, 255, 110), top = C3(60, 120, 64), bottom = C3(24, 48, 30), trim = C3(170, 255, 110), robe = C3(40, 90, 48), build = { w = 1.08, head = 1.06 } },
+	balseolwang = { head = "horns", hair = C3(40, 10, 20), hornColor = C3(60, 20, 30), hornLen = 1.2, eyes = C3(255, 190, 190), armor = true, metal = C3(90, 30, 40), armorTrim = C3(255, 110, 130), top = C3(160, 40, 56), bottom = C3(60, 14, 24), trim = C3(255, 110, 130), build = { w = 1.1, head = 1.06 } },
+	mugunwang = { head = "hood", hoodColor = C3(14, 10, 22), eyes = C3(190, 120, 255), top = C3(30, 22, 44), bottom = C3(10, 8, 18), trim = C3(160, 90, 255), robe = C3(18, 12, 30), build = { h = 1.1, head = 1.06 } },
+	biryong = { head = "horns", hair = C3(20, 70, 90), hornColor = C3(220, 235, 245), hornLen = 1.6, eyes = C3(255, 230, 120), armor = true, metal = C3(50, 130, 150), armorTrim = C3(160, 235, 255), top = C3(60, 160, 180), bottom = C3(24, 70, 100), trim = C3(160, 235, 255), build = { w = 1.08, head = 1.06 } },
+	yuriwang = { form = "golem", skin = C3(180, 215, 245), eyes = C3(255, 255, 255), carved = true },
+	cheonroeok = { head = "helmet", metal = C3(60, 66, 110), plume = C3(170, 190, 255), armor = true, armorTrim = C3(190, 200, 255), eyes = C3(190, 210, 255), top = C3(60, 66, 110), bottom = C3(24, 26, 46), trim = C3(190, 200, 255), build = { w = 1.1, h = 1.06, head = 1.06 } },
 	-- 지옥의 주인들
 	talui = { head = "hood", hoodColor = C3(150, 164, 188), eyes = C3(150, 220, 255), top = C3(176, 186, 204), bottom = C3(56, 66, 94), trim = C3(220, 235, 255), robe = C3(130, 146, 176), build = { h = 1.08, head = 1.06 } },
 	hwatang = { head = "horns", hair = C3(60, 20, 10), hornColor = C3(40, 20, 14), hornLen = 1.3, eyes = C3(255, 200, 80), armor = true, metal = C3(70, 30, 22), armorTrim = C3(255, 140, 40), top = C3(210, 70, 26), bottom = C3(80, 20, 10), trim = C3(255, 150, 50), build = { w = 1.1, head = 1.06 } },
@@ -1737,6 +1757,38 @@ HELLX.agwi = function(model, look, k)
 end
 HELLX.agwigun = HELLX.agwi
 
+
+HELLX.dokssagwi = function(model, look, k)
+	hairCurtain(model, C3(30, 70, 34), k, 7, 1.6)
+	headGlow(model, C3(120, 255, 100), 14)
+end
+HELLX.dokchunggwi = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "InsectWing", Vector3.new(0.05 * k, 1.9 * k, 0.9 * k), CFrame.new(x * 0.5 * k, 0.3 * k, 0.6 * k) * CFrame.Angles(math.rad(10), 0, x * math.rad(30)), C3(170, 220, 90), M.Neon)
+	end
+	headGlow(model, C3(200, 255, 90), 14)
+end
+HELLX.seolgwi = function(model, look, k)
+	wear(model, "Head", "LongTongue", Vector3.new(0.22 * k, 1.6 * k, 0.07 * k), CFrame.new(0, -0.9 * k, -0.6 * k), C3(200, 40, 70), M.SmoothPlastic)
+	headGlow(model, C3(255, 100, 120), 14)
+end
+HELLX.jipgeseolkkun = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, x < 0 and "LeftHand" or "RightHand", "TongsArm", Vector3.new(0.12 * k, 0.12 * k, 3.0 * k), CFrame.new(0, 0, -1.7 * k), C3(80, 76, 84), M.Metal)
+		wear(model, x < 0 and "LeftHand" or "RightHand", "TongsJaw", Vector3.new(0.6 * k, 0.12 * k, 0.9 * k), CFrame.new(0, 0, -3.3 * k), C3(80, 76, 84), M.Metal)
+	end
+	headGlow(model, C3(255, 120, 90), 14)
+end
+HELLX.mugansu = function(model, look, k)
+	hornPair(model, C3(20, 16, 28), k, 1.3, 25)
+	wear(model, "RightHand", "AbyssSpear", Vector3.new(0.18 * k, 0.18 * k, 5 * k), CFrame.new(0, 0, -2.4 * k), C3(40, 34, 56), M.Metal)
+	wear(model, "RightHand", "AbyssSpearTip", Vector3.new(0.4 * k, 0.1 * k, 1.1 * k), CFrame.new(0, 0, -5.3 * k), C3(190, 130, 255), M.Neon)
+	headGlow(model, C3(190, 130, 255), 14)
+end
+HELLX.muganbul = function(model, look, k)
+	headGlow(model, C3(190, 130, 255), 14)
+end
+
 -- 탈의파: 땅에 끌리는 백발, 어깨에 걸친 해진 회색 옷, 죄인의 옷을 걸어 둔 가지 지팡이
 SIG.talui = function(model, look, k, P)
 	hairCurtain(model, C3(235, 235, 240), k, 13, 4.2)
@@ -1817,6 +1869,60 @@ SIG.yeomra = function(model, look, k, P)
 	wear(model, "RightHand", "HolTablet", Vector3.new(0.3 * k, 2.6 * k, 0.12 * k), CFrame.new(0, 0.3 * k, -0.5 * k), C3(230, 214, 170), M.Wood)
 	mantle(model, C3(36, 10, 16), C3(210, 40, 50), k, 3.8)
 	headGlow(model, C3(255, 60, 50), 34)
+	local _ = P
+end
+
+-- 3.24.1판 새 주인들의 표식
+SIG.dokssawang = function(model, look, k, P)
+	-- 머리에서 뻗은 독사 여덟 마리, 목에 두른 독사 고리
+	for q = 0, 7 do
+		local a = math.rad(-75 + q * 21)
+		wear(model, "Head", "HeadSnake", Vector3.new(0.16 * k, 1.8 * k, 0.16 * k), CFrame.new(math.sin(a) * 0.6 * k, 0.85 * k, math.cos(a) * 0.3 * k) * CFrame.Angles(math.rad(-20), 0, -math.sin(a) * 0.8), C3(70, 150, 70), M.SmoothPlastic)
+		wear(model, "Head", "SnakeHead", Vector3.new(0.3 * k, 0.3 * k, 0.4 * k), CFrame.new(math.sin(a) * 1.15 * k, 1.7 * k, math.cos(a) * 0.4 * k), C3(110, 200, 90), M.SmoothPlastic, Ball)
+	end
+	mantle(model, C3(40, 90, 48), C3(170, 255, 110), k, 3.2)
+	headGlow(model, C3(120, 255, 100), 26)
+	local _ = P
+end
+SIG.balseolwang = function(model, look, k, P)
+	-- 가슴까지 늘어진 붉은 혀, 허리에 찬 집게
+	wear(model, "Head", "LongTongue", Vector3.new(0.45 * k, 3.2 * k, 0.12 * k), CFrame.new(0, -1.8 * k, -0.62 * k), C3(200, 40, 70), M.SmoothPlastic)
+	wear(model, "Head", "TongueTip", Vector3.new(0.5 * k, 0.5 * k, 0.14 * k), CFrame.new(0, -3.4 * k, -0.62 * k), C3(200, 40, 70), M.SmoothPlastic, Ball)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "Tongs", Vector3.new(0.14 * k, 2.6 * k, 0.14 * k), CFrame.new(x * 1.0 * k, -0.6 * k, -0.2 * k) * CFrame.Angles(0, 0, x * math.rad(12)), C3(70, 66, 74), M.Metal)
+	end
+	headGlow(model, C3(255, 90, 110), 26)
+	local _ = P
+end
+SIG.mugunwang = function(model, look, k, P)
+	-- 깊은 두건 속 보랏빛 불꽃, 몸을 휘감은 끊어진 사슬 여섯
+	wear(model, "Head", "VoidFlame", Vector3.new(0.9 * k, 1.1 * k, 0.3 * k), CFrame.new(0, 0, -0.55 * k), C3(170, 100, 255), M.Neon, Ball)
+	for q = 0, 5 do
+		local a = q / 6 * math.pi * 2
+		wear(model, "UpperTorso", "BrokenChain", Vector3.new(0.14 * k, 2.4 * k, 0.14 * k), CFrame.new(math.cos(a) * 1.3 * k, -0.4 * k, math.sin(a) * 0.9 * k) * CFrame.Angles(math.rad(14), a, math.cos(a) * 0.3), C3(90, 80, 110), M.Metal)
+	end
+	mantle(model, C3(18, 12, 30), C3(160, 90, 255), k, 4.0)
+	headGlow(model, C3(170, 100, 255), 28)
+	local _ = P
+end
+SIG.biryong = function(model, look, k, P)
+	-- 등 뒤로 펼친 용 날개 한 쌍, 긴 용 수염
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "WingBone", Vector3.new(0.18 * k, 2.8 * k, 0.18 * k), CFrame.new(x * 1.0 * k, 1.1 * k, 0.8 * k) * CFrame.Angles(0, 0, -x * math.rad(55)), C3(50, 130, 150), M.Metal)
+		wear(model, "UpperTorso", "WingSail", Vector3.new(0.08 * k, 2.4 * k, 2.2 * k), CFrame.new(x * 2.0 * k, 1.5 * k, 0.9 * k) * CFrame.Angles(0, 0, -x * math.rad(20)), C3(100, 210, 235), M.Neon)
+		wear(model, "Head", "DragonWhisker", Vector3.new(0.06 * k, 1.8 * k, 0.06 * k), CFrame.new(x * 0.4 * k, -0.7 * k, -0.6 * k) * CFrame.Angles(math.rad(20), 0, x * math.rad(25)), C3(220, 240, 250), M.SmoothPlastic)
+	end
+	headGlow(model, C3(120, 230, 255), 24)
+	local _ = P
+end
+SIG.cheonroeok = function(model, look, k, P)
+	-- 허리와 어깨의 쇠고랑, 손에 든 감옥 열쇠 (큰 쇠고리)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, x < 0 and "LeftLowerArm" or "RightLowerArm", "Shackle", Vector3.new(0.9 * k, 0.28 * k, 0.9 * k), CFrame.new(0, -0.2 * k, 0), C3(90, 96, 130), M.Metal)
+		wear(model, "UpperTorso", "ChainDrape", Vector3.new(0.12 * k, 2.4 * k, 0.12 * k), CFrame.new(x * 0.7 * k, 0, -0.5 * k) * CFrame.Angles(0, 0, x * math.rad(35)), C3(110, 116, 150), M.Metal)
+	end
+	wear(model, "RightHand", "JailKey", Vector3.new(0.9 * k, 0.2 * k, 3.2 * k), CFrame.new(0, 0, -1.8 * k), C3(190, 200, 255), M.Neon)
+	headGlow(model, C3(170, 190, 255), 26)
 	local _ = P
 end
 

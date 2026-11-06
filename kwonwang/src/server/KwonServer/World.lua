@@ -135,9 +135,10 @@ function World.setupLighting()
 	atmo.Decay = Color3.fromRGB(150, 110, 90)
 	atmo.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.8
-	bloom.Size = 32
-	bloom.Threshold = 1.12
+	-- 3.24.1판: 번쩍임이 너무 심했다 (네온이 번져 모델을 가렸다). 세기 0.8 → 0.35, 문턱 1.12 → 1.4
+	bloom.Intensity = 0.35
+	bloom.Size = 24
+	bloom.Threshold = 1.4
 	bloom.Parent = Lighting
 	-- 햇살 줄기 (빛이 구름·나무 사이로 새어 든다)
 	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
@@ -4918,6 +4919,9 @@ local function skyWorld(out: any)
 		rinnedae = { depth = 0.36, bands = true, rim = "gold", under = { rgb(196, 186, 226), Enum.Material.Marble }, drip = "crystal", dripColor = rgb(180, 150, 255), cloud = { rgb(235, 230, 255), 0.2, 1.1 }, islet = "crystal" },
 		aurora = { depth = 0.3, rim = "ice", under = { rgb(120, 170, 190), Enum.Material.Glacier }, drip = "icicle", dripColor = rgb(170, 250, 230), cloud = { rgb(190, 250, 236), 0.35, 1.1 }, islet = "ice", ledges = 4 },
 		peachgarden = { depth = 0.32, rim = "fence", under = { rgb(120, 96, 72), Enum.Material.Ground }, drip = "root", dripColor = rgb(100, 78, 56), cloud = { rgb(255, 236, 244), 0.3, 1 }, islet = "pine", ledges = 4 },
+		dragonridge = { depth = 0.4, blocky = true, rim = "crag", rimColor = rgb(40, 90, 104), under = { rgb(36, 74, 90), Enum.Material.Slate }, vein = rgb(120, 230, 255), drip = "spike", dripColor = rgb(30, 60, 76), cloud = { rgb(120, 170, 190), 0.25, 1.1 }, islet = "rod", ledges = 5 },
+		glasssea = { depth = 0.2, core = "crystal", rim = "star", rimColor = rgb(190, 225, 255), under = { rgb(150, 190, 230), Enum.Material.Glass }, drip = "crystal", dripColor = rgb(200, 230, 255), cloud = { rgb(225, 240, 255), 0.3, 1 }, islet = "crystal" },
+		thunderjail = { depth = 0.45, blocky = true, rim = "crag", rimColor = rgb(46, 50, 74), under = { rgb(40, 42, 62), Enum.Material.Slate }, vein = rgb(170, 190, 255), drip = "spike", dripColor = rgb(34, 36, 52), cloud = { rgb(80, 84, 110), 0.2, 1.25 }, islet = "rod", ledges = 6 },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -6780,6 +6784,78 @@ local function hellWorld(out: any)
 			for i = 0, 2 do
 				banner(c + Vector3.new(sx * 78, 12, 50 - i * 60), 28, rgb(110, 14, 22), f)
 			end
+		end
+	end
+
+	------------------------------------------------ 3.24.1판 확장: 독사지옥 · 발설지옥 · 무간지옥
+	do
+		local zd, zb, zm = H.zones[7], H.zones[8], H.zones[9]
+		if zd then
+			local c = zd.at
+			-- 독 웅덩이 (밟아도 된다. 연둣빛으로 부글댄다), 늘어진 거대한 뱀 뼈 아치
+			for k = 1, 9 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(30, zd.radius - 20)
+				local p = c + Vector3.new(math.cos(a) * rr, 0.4, math.sin(a) * rr)
+				local pool = disc("VenomPool", p, rng:NextNumber(10, 18), 0.4, rgb(110, 255, 90), Enum.Material.Neon, f, false)
+				pool.Transparency = 0.45
+				light(pool, rgb(120, 255, 100), 26, 1.1)
+			end
+			drift(c + Vector3.new(0, 18, 0), Vector3.new(zd.radius * 1.5, 24, zd.radius * 1.5), { rgb(150, 255, 110), rgb(90, 200, 90) }, 22, 1.4, 6, -0.4, f, 0.7)
+			for r = 1, 3 do
+				local base = c + Vector3.new(rng:NextNumber(-90, 90), 0, rng:NextNumber(-90, 90))
+				local yaw = rng:NextNumber(0, 6.28)
+				for i = 0, 11 do
+					local u = i / 11
+					local ang = u * math.pi
+					part({ Name = "SnakeRib", Size = Vector3.new(2.4, 14, 2.4), CFrame = CFrame.new(base) * CFrame.Angles(0, yaw, 0) * CFrame.new(math.cos(ang) * 22, math.sin(ang) * 22 + 3, 0) * CFrame.Angles(0, 0, ang), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+				end
+				part({ Name = "SnakeSkull", Shape = Enum.PartType.Ball, Size = Vector3.new(12, 9, 14), Position = base + Vector3.new(-26, 5, 0), Color = BONE, Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+			end
+		end
+		if zb then
+			local c = zb.at
+			-- 쇠 기둥에 매달린 쇠집게와 갈고리, 핏물 웅덩이
+			for k = 1, 12 do
+				local a = k / 12 * math.pi * 2
+				local p = c + Vector3.new(math.cos(a) * (zb.radius - 36), 0, math.sin(a) * (zb.radius - 36))
+				part({ Name = "HookPost", Size = Vector3.new(3, 30, 3), Position = p + Vector3.new(0, 15, 0), Color = rgb(60, 56, 64), Material = Enum.Material.Metal, Parent = f })
+				part({ Name = "HookArm", Size = Vector3.new(14, 2, 2), Position = p + Vector3.new(-math.cos(a) * 6, 29, -math.sin(a) * 6), Color = rgb(60, 56, 64), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+				part({ Name = "Hook", Size = Vector3.new(1.4, 9, 1.4), Position = p + Vector3.new(-math.cos(a) * 12, 24, -math.sin(a) * 12), Color = rgb(120, 120, 130), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			for k = 1, 8 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(30, zb.radius - 30)
+				local pool = disc("BloodPool", c + Vector3.new(math.cos(a) * rr, 0.4, math.sin(a) * rr), rng:NextNumber(8, 15), 0.4, rgb(150, 14, 28), Enum.Material.Neon, f, false)
+				pool.Transparency = 0.5
+			end
+			-- 가운데: 거대한 돌 혀 (비탈)
+			wedge({ Name = "StoneTongue", Size = Vector3.new(40, 14, 70), CFrame = CFrame.new(c + Vector3.new(0, 7, 20)), Color = rgb(150, 50, 70), Material = Enum.Material.Slate, Parent = f })
+			part({ Name = "StoneTongueBase", Size = Vector3.new(44, 4, 30), Position = c + Vector3.new(0, 2, 70), Color = rgb(120, 40, 56), Material = Enum.Material.Slate, Parent = f })
+			drift(c + Vector3.new(0, 20, 0), Vector3.new(zb.radius * 1.5, 26, zb.radius * 1.5), { rgb(255, 90, 110), rgb(200, 40, 60) }, 18, 1.2, 6, -0.6, f, 0.7)
+		end
+		if zm then
+			local c = zm.at
+			-- 끝을 알 수 없는 구덩이 고리: 검은 구멍 둘레의 흑요석 난간과 보랏빛 불, 천장에서 내려오는 사슬 숲
+			disc("AbyssRim", c + Vector3.new(0, 0.5, 0), 70, 1, rgb(20, 16, 28), Enum.Material.Basalt, f, false)
+			disc("AbyssHole", c + Vector3.new(0, 0.7, 0), 56, 0.3, rgb(0, 0, 0), Enum.Material.SmoothPlastic, f, false)
+			disc("AbyssGlow", c + Vector3.new(0, 0.9, 0), 58, 0.2, rgb(130, 70, 230), Enum.Material.Neon, f, false).Transparency = 0.78
+			for k = 0, 23 do
+				local a = k / 24 * math.pi * 2
+				local p = c + Vector3.new(math.cos(a) * 72, 0, math.sin(a) * 72)
+				part({ Name = "AbyssPillar", Size = Vector3.new(4, 16, 4), Position = p + Vector3.new(0, 8, 0), Color = rgb(24, 20, 34), Material = Enum.Material.Basalt, Parent = f })
+				local fl = part({ Name = "AbyssFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 4, 3), Position = p + Vector3.new(0, 18, 0), Color = rgb(170, 110, 255), Material = Enum.Material.Neon, Transparency = 0.2, CanCollide = false, Parent = f })
+				if k % 3 == 0 then
+					light(fl, rgb(170, 110, 255), 30, 1.4)
+				end
+			end
+			for k = 1, 30 do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local rr = rng:NextNumber(90, zm.radius - 10)
+				local hang = rng:NextNumber(60, 140)
+				part({ Name = "VoidChain", Size = Vector3.new(0.8, hang, 0.8), Position = c + Vector3.new(math.cos(a) * rr, H.ceiling - 40 - hang / 2, math.sin(a) * rr), Color = rgb(60, 54, 76), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+			end
+			drift(c + Vector3.new(0, 30, 0), Vector3.new(zm.radius * 1.6, 40, zm.radius * 1.6), { rgb(170, 110, 255), rgb(90, 60, 160) }, 18, 1.4, 8, 0.8, f, 0.6)
 		end
 	end
 end

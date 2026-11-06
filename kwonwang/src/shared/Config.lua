@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.24.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.24.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4873,17 +4873,51 @@ do
 			P("leap", "대왕 낙하", 3, { radius = 26, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 70, 130, 1.4, 60, 24) }),
 			P("quake", "천지 심판", 3, { radius = 42, warn = 1.7, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 110, 230, 1.7, 80, 34) }),
 		} })
-	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
+	-- 3.24.1판 지옥 확장: 독사지옥 · 발설지옥 · 무간지옥 (염라전보다 한 단계씩 위)
+	E2.dokssagwi = variant(E2.shadowblade, { name = "독사귀", shirt = Color3.fromRGB(70, 130, 70), pants = Color3.fromRGB(30, 60, 36), hp = 760, mult = 70, elite = true })
+	E2.dokchunggwi = variant(E2.assassin, { name = "독충귀", shirt = Color3.fromRGB(120, 150, 50), pants = Color3.fromRGB(50, 66, 24), hp = 700, mult = 70, elite = true })
+	E2.seolgwi = variant(E2.shadowblade, { name = "설귀", shirt = Color3.fromRGB(170, 60, 70), pants = Color3.fromRGB(70, 20, 28), hp = 820, mult = 76, elite = true })
+	E2.jipgeseolkkun = variant(E2.ironguard, { name = "집게 옥졸", shirt = Color3.fromRGB(70, 60, 64), pants = Color3.fromRGB(30, 26, 30), hp = 980, mult = 76, elite = true, scale = 1.4 })
+	E2.mugansu = variant(E2.ironguard, { name = "무간 수문장", shirt = Color3.fromRGB(26, 22, 34), pants = Color3.fromRGB(10, 8, 16), hp = 1100, mult = 84, elite = true, scale = 1.5 })
+	E2.muganbul = variant(E2.assassin, { name = "무간 불꽃귀", shirt = Color3.fromRGB(80, 40, 120), pants = Color3.fromRGB(24, 12, 40), hp = 900, mult = 84, elite = true })
+	B2.dokssawang = variant(base, { name = "독사대왕 · 독사지옥의 주인", shirt = Color3.fromRGB(70, 140, 70), pants = Color3.fromRGB(28, 56, 34), hp = 2900000, posture = 3500, scale = 4.0, speed = 17, coins = 1200000, xp = 110000, respawn = 300, mult = 7.6,
+		patterns = {
+			P("rain", "독액비", 1, { count = 15, radius = 9, spread = 42, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(120, 255, 100), hit = hit(0, 0, 0, 60, 104, 1.0, 25) }),
+			P("charge", "독사 돌진", 1, { length = 70, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58, 100, 1.0, 60) }),
+			P("summon", "독사귀들아", 2, { enemy = "dokssagwi", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("donut", "독무 고리", 2, { inner = 12, outer = 42, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 64, 112, 1.1, 50) }),
+			P("leap", "독사 낙하", 3, { radius = 24, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 70, 124, 1.4, 60, 24) }),
+			P("quake", "만독 폭발", 3, { radius = 40, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 104, 214, 1.6, 80, 30) }),
+		} })
+	B2.balseolwang = variant(base, { name = "발설대왕 · 발설지옥의 주인", shirt = Color3.fromRGB(180, 50, 66), pants = Color3.fromRGB(70, 18, 28), hp = 3300000, posture = 3800, scale = 4.2, speed = 16, coins = 1350000, xp = 124000, respawn = 300, mult = 8.0,
+		patterns = {
+			P("rain", "핏빛 혀", 1, { count = 15, radius = 9, spread = 44, warn = 0.9, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(255, 60, 80), hit = hit(0, 0, 0, 64, 112, 1.0, 25) }),
+			P("donut", "혀 휘감기", 1, { inner = 12, outer = 44, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 68, 120, 1.1, 50) }),
+			P("summon", "설귀들아", 2, { enemy = "seolgwi", count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("charge", "집게 돌진", 2, { length = 72, width = 13, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 64, 112, 1.0, 60) }),
+			P("leap", "대왕 낙하", 3, { radius = 25, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 76, 136, 1.4, 60, 24) }),
+			P("quake", "혀 뽑는 소리", 3, { radius = 42, warn = 1.7, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 112, 232, 1.6, 80, 32) }),
+		} })
+	B2.mugunwang = variant(base, { name = "무간의 군주 · 끝없는 낙하", shirt = Color3.fromRGB(24, 18, 34), pants = Color3.fromRGB(8, 6, 14), hp = 4200000, posture = 4600, scale = 4.6, speed = 17, coins = 2000000, xp = 170000, respawn = 600, mult = 8.8,
+		patterns = {
+			P("rain", "무간의 불", 1, { count = 17, radius = 9, spread = 46, warn = 0.8, cd = 6, pose = "w_overhead", fx = "fire", color = Color3.fromRGB(160, 90, 255), hit = hit(0, 0, 0, 72, 126, 1.0, 25) }),
+			P("charge", "추락의 질주", 1, { length = 74, width = 14, warn = 0.75, cd = 6, times = 4, pose = "w_thrust", hit = hit(0, 0, 0, 70, 124, 1.0, 60) }),
+			P("summon", "수문장들아", 2, { enemy = "mugansu", count = 3, max = 6, warn = 0.9, cd = 14, pose = "w_overhead" }),
+			P("donut", "끝없는 고리", 2, { inner = 14, outer = 46, warn = 1.0, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 76, 134, 1.1, 50) }),
+			P("leap", "군주 낙하", 3, { radius = 27, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 84, 150, 1.4, 60, 26) }),
+			P("quake", "무간", 3, { radius = 46, warn = 1.8, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 126, 260, 1.7, 80, 36) }),
+		} })
+	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra", "dokssawang", "balseolwang", "mugunwang" }) do
 		B2[id].late = true
 	end
 	-- 3.23.8판: 지옥의 세기를 한 단계 낮춘다 (졸병 전투력 8.7만~22만 → 5.4만~13.6만, 주인 31만~88만 → 19만~54만). 체력과 피해를 함께 ×0.62
 	local HELL_EASE = 0.62
-	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa" }) do
+	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa", "dokssagwi", "dokchunggwi", "seolgwi", "jipgeseolkkun", "mugansu", "muganbul" }) do
 		local d = E2[id]
 		d.hp = math.floor(d.hp * HELL_EASE)
 		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
 	end
-	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
+	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra", "dokssawang", "balseolwang", "mugunwang" }) do
 		local d = B2[id]
 		d.hp = math.floor(d.hp * HELL_EASE)
 		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
@@ -4907,6 +4941,16 @@ do
 			camps = { { enemy = "okjoljang", count = 3, at = Vector3.new(-80, HY, -1140) }, { enemy = "jeoseungmusa", count = 3, at = Vector3.new(80, HY, -1140) }, { enemy = "okjoljang", count = 2, at = Vector3.new(0, HY, -1060) } },
 			boss = { id = "yeomra", at = Vector3.new(0, HY, -1300) } },
 	}
+	-- 3.24.1판 확장 셋: 동쪽 독사지옥, 서쪽 발설지옥, 삼도천 너머 무간지옥
+	table.insert(Config.HELL.zones, { id = "dokssa", name = "독사지옥", at = Vector3.new(1000, HY, 400), radius = 190, ground = Color3.fromRGB(40, 64, 44), material = Enum.Material.Mud, level = 6,
+		camps = { { enemy = "dokssagwi", count = 3, at = Vector3.new(950, HY, 350) }, { enemy = "dokchunggwi", count = 3, at = Vector3.new(1060, HY, 450) }, { enemy = "dokssagwi", count = 2, at = Vector3.new(1080, HY, 330) } },
+		boss = { id = "dokssawang", at = Vector3.new(1100, HY, 410) } })
+	table.insert(Config.HELL.zones, { id = "balseol", name = "발설지옥", at = Vector3.new(-1000, HY, 400), radius = 190, ground = Color3.fromRGB(78, 36, 44), material = Enum.Material.Slate, level = 7,
+		camps = { { enemy = "seolgwi", count = 3, at = Vector3.new(-950, HY, 350) }, { enemy = "jipgeseolkkun", count = 3, at = Vector3.new(-1060, HY, 450) }, { enemy = "seolgwi", count = 2, at = Vector3.new(-1080, HY, 330) } },
+		boss = { id = "balseolwang", at = Vector3.new(-1100, HY, 410) } })
+	table.insert(Config.HELL.zones, { id = "mugan", name = "무간지옥", at = Vector3.new(0, HY, 1080), radius = 200, ground = Color3.fromRGB(20, 16, 28), material = Enum.Material.Basalt, level = 8,
+		camps = { { enemy = "mugansu", count = 3, at = Vector3.new(-80, HY, 1020) }, { enemy = "muganbul", count = 3, at = Vector3.new(80, HY, 1020) }, { enemy = "mugansu", count = 2, at = Vector3.new(0, HY, 960) } },
+		boss = { id = "mugunwang", at = Vector3.new(0, HY, 1190) } })
 	Config.HELL_BY_ID = {}
 	for _, z in ipairs(Config.HELL.zones) do
 		Config.HELL_BY_ID[z.id] = z
@@ -4925,6 +4969,65 @@ do
 	end
 	function Config.inHell(pos: Vector3): boolean
 		return pos.Y > HY - 300
+	end
+end
+------------------------------------------------------------------------
+-- 3.24.1판 천상 확장: 비룡령 (동남) · 유리해 (서남) · 천뢰옥 (금운사 동북). 금운사보다 한 단계 위
+------------------------------------------------------------------------
+do
+	local SY2 = Config.SKY.y
+	local E3, B3 = Config.Enemies, Config.Bosses
+	E3.dragonguard = variant(E3.ironguard, { name = "용린 무사", shirt = Color3.fromRGB(60, 150, 170), pants = Color3.fromRGB(24, 70, 90), hp = 640, mult = 38, elite = true, scale = 1.3 })
+	E3.windwyrm = variant(E3.assassin, { name = "풍룡", shirt = Color3.fromRGB(110, 200, 220), pants = Color3.fromRGB(40, 100, 130), hp = 520, mult = 38, elite = true })
+	E3.crystalspirit = variant(E3.shadowblade, { name = "수정 정령", shirt = Color3.fromRGB(190, 220, 255), pants = Color3.fromRGB(110, 150, 220), hp = 560, mult = 40, elite = true })
+	E3.glassgolem = variant(E3.stonegolem, { name = "유리 거수", shirt = Color3.fromRGB(170, 210, 240), pants = Color3.fromRGB(100, 140, 190), hp = 900, mult = 40, elite = true, scale = 1.8 })
+	E3.prisonguard = variant(E3.ironguard, { name = "뇌옥 수문병", shirt = Color3.fromRGB(70, 74, 104), pants = Color3.fromRGB(32, 34, 52), hp = 700, mult = 42, elite = true, scale = 1.3 })
+	E3.thunderjailer = variant(E3.cultelder, { name = "뇌옥사", shirt = Color3.fromRGB(150, 170, 255), pants = Color3.fromRGB(50, 60, 120), hp = 620, mult = 42, elite = true })
+	local base2 = B3.cheonmun
+	B3.biryong = variant(base2, { name = "비룡 · 용척령의 주인", shirt = Color3.fromRGB(60, 160, 180), pants = Color3.fromRGB(24, 70, 100), hp = 1500000, posture = 2600, scale = 3.8, speed = 18, coins = 640000, xp = 66000, respawn = 300, mult = 4.9,
+		patterns = {
+			P("rain", "용의 비늘비", 1, { count = 12, radius = 9, spread = 36, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(120, 230, 255), hit = hit(0, 0, 0, 40, 72, 1.0, 25) }),
+			P("charge", "비룡 돌진", 1, { length = 68, width = 13, warn = 0.85, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 42, 74, 1.0, 60) }),
+			P("summon", "용린 무사들아", 2, { enemy = "dragonguard", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+			P("donut", "용 꼬리 휘두르기", 2, { inner = 11, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 46, 80, 1.1, 50) }),
+			P("leap", "승천 낙하", 3, { radius = 23, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 56, 104, 1.4, 60, 24) }),
+			P("quake", "용포", 3, { radius = 36, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 74, 150, 1.6, 80, 30) }),
+		} })
+	B3.yuriwang = variant(base2, { name = "유리 군주 · 유리해의 주인", shirt = Color3.fromRGB(180, 215, 245), pants = Color3.fromRGB(100, 140, 190), hp = 1600000, posture = 2700, scale = 4.0, speed = 15, coins = 680000, xp = 70000, respawn = 300, mult = 5.0,
+		patterns = {
+			P("quake", "유리 진각", 1, { radius = 26, warn = 1.2, cd = 8, pose = "w_overhead", hit = hit(0, 0, 0, 52, 98, 1.4, 60, 20) }),
+			P("rain", "수정 파편", 1, { count = 13, radius = 9, spread = 38, warn = 1.0, cd = 7, pose = "w_overhead", fx = "star", color = Color3.fromRGB(190, 225, 255), hit = hit(0, 0, 0, 42, 76, 1.0, 25) }),
+			P("summon", "유리 거수들아", 2, { enemy = "glassgolem", count = 2, max = 4, warn = 0.9, cd = 16, pose = "w_overhead" }),
+			P("donut", "깨진 거울 고리", 2, { inner = 11, outer = 38, warn = 1.2, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 48, 84, 1.1, 50) }),
+			P("leap", "군주 낙하", 3, { radius = 24, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 58, 108, 1.4, 60, 24) }),
+			P("quake", "유리 붕괴", 3, { radius = 38, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 78, 156, 1.6, 80, 30) }),
+		} })
+	B3.cheonroeok = variant(base2, { name = "천뢰 · 하늘 감옥의 주인", shirt = Color3.fromRGB(70, 76, 120), pants = Color3.fromRGB(28, 30, 52), hp = 1800000, posture = 2900, scale = 4.0, speed = 17, coins = 760000, xp = 78000, respawn = 300, mult = 5.2,
+		patterns = {
+			P("rain", "옥중 벼락", 1, { count = 14, radius = 8, spread = 40, warn = 0.9, cd = 6, pose = "w_overhead", fx = "star", color = Color3.fromRGB(170, 190, 255), hit = hit(0, 0, 0, 46, 82, 1.0, 25) }),
+			P("charge", "쇠사슬 돌진", 1, { length = 70, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 48, 84, 1.0, 60) }),
+			P("summon", "뇌옥 수문병들아", 2, { enemy = "prisonguard", count = 2, max = 4, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("donut", "뇌옥 고리", 2, { inner = 12, outer = 40, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 52, 90, 1.1, 50) }),
+			P("leap", "감옥지기 낙하", 3, { radius = 25, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 62, 116, 1.4, 60, 24) }),
+			P("quake", "천뢰옥", 3, { radius = 40, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 84, 168, 1.6, 80, 32) }),
+		} })
+	for _, id in ipairs({ "biryong", "yuriwang", "cheonroeok" }) do
+		B3[id].late = true
+	end
+	table.insert(Config.SKY.islands, { id = "dragonridge", name = "비룡령", at = Vector3.new(1240, SY2, 640), radius = 190, ground = Color3.fromRGB(70, 130, 140), material = Enum.Material.Slate,
+		camps = { { enemy = "dragonguard", count = 3, at = Vector3.new(1180, SY2, 580) }, { enemy = "windwyrm", count = 3, at = Vector3.new(1280, SY2, 700) }, { enemy = "dragonguard", count = 2, at = Vector3.new(1330, SY2, 600) } },
+		boss = { id = "biryong", at = Vector3.new(1330, SY2, 650) } })
+	table.insert(Config.SKY.islands, { id = "glasssea", name = "유리해", at = Vector3.new(-1240, SY2, 640), radius = 190, ground = Color3.fromRGB(170, 205, 235), material = Enum.Material.Glass,
+		camps = { { enemy = "crystalspirit", count = 3, at = Vector3.new(-1180, SY2, 580) }, { enemy = "glassgolem", count = 3, at = Vector3.new(-1280, SY2, 700) }, { enemy = "crystalspirit", count = 2, at = Vector3.new(-1330, SY2, 600) } },
+		boss = { id = "yuriwang", at = Vector3.new(-1330, SY2, 650) } })
+	table.insert(Config.SKY.islands, { id = "thunderjail", name = "천뢰옥", at = Vector3.new(720, SY2, -1700), radius = 190, ground = Color3.fromRGB(60, 64, 90), material = Enum.Material.Slate,
+		camps = { { enemy = "prisonguard", count = 3, at = Vector3.new(660, SY2, -1640) }, { enemy = "thunderjailer", count = 3, at = Vector3.new(760, SY2, -1760) }, { enemy = "prisonguard", count = 2, at = Vector3.new(810, SY2, -1660) } },
+		boss = { id = "cheonroeok", at = Vector3.new(810, SY2, -1710) } })
+	table.insert(Config.SKY.bridges, { 7, 18 })
+	table.insert(Config.SKY.bridges, { 12, 19 })
+	table.insert(Config.SKY.bridges, { 14, 20 })
+	for _, isl in ipairs({ Config.SKY.islands[18], Config.SKY.islands[19], Config.SKY.islands[20] }) do
+		Config.SKY_BY_ID[isl.id] = isl
 	end
 end
 -- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
@@ -5099,6 +5202,12 @@ Config.ACHIEVEMENTS = {
 	{ id = "dosan", icon = "🗡", name = "검산을 넘다", desc = "도산군주를 쓰러뜨린다", kind = "boss", arg = "dosan", n = 1, gems = 800, title = "검산을 넘은 자", tier = 4 },
 	{ id = "agwiwang", icon = "👺", name = "허기를 채우다", desc = "아귀왕을 쓰러뜨린다", kind = "boss", arg = "agwiwang", n = 1, gems = 900, title = "아귀를 잠재운 자", tier = 4 },
 	{ id = "yeomra", icon = "⚖", name = "심판을 뒤집다", desc = "염라대왕을 쓰러뜨린다", kind = "boss", arg = "yeomra", n = 1, gems = 2000, scrolls = 30, title = "심판을 뒤집은 자", tier = 5, mount = "geumryong" },
+	{ id = "biryong", icon = "🐲", name = "비룡을 꺾다", desc = "비룡을 쓰러뜨린다", kind = "boss", arg = "biryong", n = 1, gems = 1200, scrolls = 10, title = "비룡을 꺾은 자", tier = 4 },
+	{ id = "yuriwang", icon = "💠", name = "유리를 깨다", desc = "유리 군주를 쓰러뜨린다", kind = "boss", arg = "yuriwang", n = 1, gems = 1200, scrolls = 10, title = "유리를 깬 자", tier = 4 },
+	{ id = "cheonroeok", icon = "⛓", name = "감옥을 열다", desc = "천뢰를 쓰러뜨린다", kind = "boss", arg = "cheonroeok", n = 1, gems = 1200, scrolls = 10, title = "하늘 감옥을 연 자", tier = 4 },
+	{ id = "dokssawang", icon = "🐍", name = "독을 삼키다", desc = "독사대왕을 쓰러뜨린다", kind = "boss", arg = "dokssawang", n = 1, gems = 1200, scrolls = 10, title = "독을 삼킨 자", tier = 4 },
+	{ id = "balseolwang", icon = "👅", name = "혀를 지키다", desc = "발설대왕을 쓰러뜨린다", kind = "boss", arg = "balseolwang", n = 1, gems = 1200, scrolls = 10, title = "혀를 지킨 자", tier = 4 },
+	{ id = "mugunwang", icon = "🕳", name = "끝없는 낙하의 끝", desc = "무간의 군주를 쓰러뜨린다", kind = "boss", arg = "mugunwang", n = 1, gems = 1200, scrolls = 10, title = "무간을 넘은 자", tier = 4 },
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },

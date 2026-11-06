@@ -2709,8 +2709,8 @@ function Fx.flash(pos: Vector3, color: Color3, range: number, brightness: number
 	local holder = l.Parent :: BasePart
 	holder.CFrame = CFrame.new(pos)
 	l.Color = color
-	l.Range = math.min(60, range)
-	l.Brightness = brightness
+	l.Range = math.min(45, range)
+	l.Brightness = math.min(2.2, brightness * 0.7) -- 3.24.1판: 번쩍임 완화
 	TweenService:Create(l, TweenInfo.new(life, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Brightness = 0 }):Play()
 end
 
@@ -2797,13 +2797,13 @@ function Fx.skillAura(model: Model, color: Color3, color2: Color3, dur: number, 
 	flame.Texture = TEX_FIRE_AURA
 	flame.LightEmission = 1
 	flame.Color = ColorSequence.new(color2, color)
-	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, strong and 2.4 or 1.6), NumberSequenceKeypoint.new(1, 0) })
+	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, strong and 1.7 or 1.1), NumberSequenceKeypoint.new(1, 0) })
 	flame.Transparency = NumberSequence.new(0.2, 1)
 	flame.Lifetime = NumberRange.new(0.35, 0.7)
 	flame.Speed = NumberRange.new(2, 5)
 	flame.SpreadAngle = Vector2.new(40, 40)
 	flame.Acceleration = Vector3.new(0, 14, 0)
-	flame.Rate = strong and 90 or 55
+	flame.Rate = strong and 60 or 36
 	flame.Rotation = NumberRange.new(0, 360)
 	flame.RotSpeed = NumberRange.new(-90, 90)
 	flame.Parent = att
@@ -2815,7 +2815,7 @@ function Fx.skillAura(model: Model, color: Color3, color2: Color3, dur: number, 
 	dust.Lifetime = NumberRange.new(0.6, 1)
 	dust.Speed = NumberRange.new(3, 7)
 	dust.SpreadAngle = Vector2.new(180, 180)
-	dust.Rate = strong and 40 or 20
+	dust.Rate = strong and 28 or 14
 	dust.Parent = att
 	local glow = Instance.new("PointLight")
 	glow.Color = color
