@@ -2768,10 +2768,10 @@ RunService.RenderStepped:Connect(function()
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)
-			stacks = string.format("극 %s%s %d", string.rep("▰", k), string.rep("▱", 10 - k), g)
+			stacks = string.format("극 %s%s %d", string.rep("●", k), string.rep("○", 10 - k), g)
 			if style.haste then
 				local hn = math.clamp(tonumber(char:GetAttribute("Haste")) or 0, 0, style.haste.max)
-				stacks ..= string.format("  ⚡ 가속 %s%s", string.rep("▮", hn), string.rep("▯", style.haste.max - hn))
+				stacks ..= string.format("  ⚡ 가속 %s%s", string.rep("●", hn), string.rep("○", style.haste.max - hn))
 			end
 		end
 	elseif style.id == "taeheo" then

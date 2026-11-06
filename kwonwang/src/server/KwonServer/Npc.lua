@@ -1406,7 +1406,8 @@ local function think(e: Enemy, t: number)
 		local fa = f :: any
 		local want = ((tgt :: any).power or 0) * Config.LATE_BOSS_MATCH
 		if e.def.late and want > (fa.power or 0) then
-			local k = want / math.max(1, fa.power or 1)
+			local k = math.min(want / math.max(1, fa.power or 1), Config.LATE_BOSS_MAXK)
+			want = (fa.power or 1) * k
 			fa.basePower = fa.basePower or fa.power
 			local frac = f.hp / math.max(1, f.maxHp)
 			f.maxHp = math.floor(f.maxHp * k)

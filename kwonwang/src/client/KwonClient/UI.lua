@@ -422,6 +422,12 @@ function UI.setBoss(model: Model?)
 		local label = model:GetAttribute("Label")
 		bossName.Text = "👹 " .. (type(label) == "string" and label or "보스")
 		UI.bossPhase(tonumber(model:GetAttribute("BossPhase")) or 1)
+		-- 힘을 끌어올리면 막대의 전투력도 바뀐다
+		model:GetAttributeChangedSignal("Power"):Connect(function()
+			if bossModel == model then
+				UI.bossPhase(tonumber(model:GetAttribute("BossPhase")) or 1)
+			end
+		end)
 	end
 end
 function UI.bossPhase(ph: number)
