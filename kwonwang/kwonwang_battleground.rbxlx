@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4884,6 +4884,18 @@ do
 	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
 		B2[id].late = true
 	end
+	-- 3.23.8판: 지옥의 세기를 한 단계 낮춘다 (졸병 전투력 8.7만~22만 → 5.4만~13.6만, 주인 31만~88만 → 19만~54만). 체력과 피해를 함께 ×0.62
+	local HELL_EASE = 0.62
+	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa" }) do
+		local d = E2[id]
+		d.hp = math.floor(d.hp * HELL_EASE)
+		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
+	end
+	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra" }) do
+		local d = B2[id]
+		d.hp = math.floor(d.hp * HELL_EASE)
+		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
+	end
 	-- 구역: 황천 나루 (안전한 곳) 가운데, 둘레에 다섯 땅
 	Config.HELL.zones = {
 		{ id = "hwangcheon", name = "황천 나루", at = Vector3.new(0, HY, 0), radius = 170, safe = true, ground = Color3.fromRGB(70, 66, 76), material = Enum.Material.Basalt },
@@ -5007,6 +5019,8 @@ Config.MAZE = {
 -- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
 ------------------------------------------------------------------------
 Config.BOSS_DMG = 0.7 -- 모든 보스의 공격력 배율 (1.0판: 0.6 → 0.7)
+-- 3.23.8판: 내 체력이 적고 공격이 너무 세다는 느낌을 덜기 위해, 전투력 (= 공격 × 체력의 제곱근)은 그대로 두고 체력 ×1.5 · 공격 ÷1.5
+Config.PLAYER_HP_SHIFT = 1.5
 Config.LATE_BOSS_MAXK = 3 -- 3.23.6판: 후반 보스가 힘을 끌어올려도 제 원래 전투력의 이만큼까지만 (한참 센 사람에게는 여전히 약하다)
 Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에게 그 전투력의 이만큼까지 힘을 끌어올린다 (보상은 원래 몫)
 Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
@@ -9744,6 +9758,12 @@ local function refreshFighter(player: Player)
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
 	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
+	-- 3.23.8판: 체력 쪽으로 옮긴다 (전투력은 그대로: 공격 ÷S, 체력 ×S)
+	do
+		local S = Config.PLAYER_HP_SHIFT
+		f.dmgMult /= S
+		f.maxHp = math.floor(f.maxHp * S)
+	end
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
@@ -19387,7 +19407,9 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		return
 	end
 	slimBody(model)
-	local K = sizeOf(model, "UpperTorso").Y / 1.6
+	-- 3.23.8판: 장식의 크기 배율은 키와 몸통 폭의 기하평균 (큰 몸은 폭을 덜 키우는데 (3.20.3판) 키만 따르면 갓·어깨받이·망토가 몸보다 터무니없이 커졌다)
+	local utz = sizeOf(model, "UpperTorso")
+	local K = math.sqrt((utz.Y / 1.6) * math.max(0.3, utz.X / 2))
 	local P = {
 		top = look.top or (def and def.shirt) or C3(110, 90, 70),
 		bottom = look.bottom or (def and def.pants) or C3(60, 50, 40),

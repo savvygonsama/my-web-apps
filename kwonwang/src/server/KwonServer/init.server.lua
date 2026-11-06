@@ -1238,6 +1238,12 @@ local function refreshFighter(player: Player)
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
 	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
+	-- 3.23.8판: 체력 쪽으로 옮긴다 (전투력은 그대로: 공격 ÷S, 체력 ×S)
+	do
+		local S = Config.PLAYER_HP_SHIFT
+		f.dmgMult /= S
+		f.maxHp = math.floor(f.maxHp * S)
+	end
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)

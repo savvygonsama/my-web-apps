@@ -1826,7 +1826,9 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		return
 	end
 	slimBody(model)
-	local K = sizeOf(model, "UpperTorso").Y / 1.6
+	-- 3.23.8판: 장식의 크기 배율은 키와 몸통 폭의 기하평균 (큰 몸은 폭을 덜 키우는데 (3.20.3판) 키만 따르면 갓·어깨받이·망토가 몸보다 터무니없이 커졌다)
+	local utz = sizeOf(model, "UpperTorso")
+	local K = math.sqrt((utz.Y / 1.6) * math.max(0.3, utz.X / 2))
 	local P = {
 		top = look.top or (def and def.shirt) or C3(110, 90, 70),
 		bottom = look.bottom or (def and def.pants) or C3(60, 50, 40),
