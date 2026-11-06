@@ -1042,20 +1042,20 @@ local LOOKS: { [string]: any } = {
 	sporeimp = { form = "shroom", capColor = C3(116, 66, 156), skin = C3(214, 204, 222), capSize = 2.6, spot = C3(210, 180, 255), spotGlow = true, spore = C3(200, 160, 255) },
 	-- 3.22판 지옥의 적
 	wongwi = { form = "wraith", cloth = C3(176, 186, 204), eyes = C3(120, 230, 255), bone = C3(210, 214, 226), build = { w = 0.9, h = 1.08, head = 0.86 } },
-	agwi = { form = "troll", skin = C3(150, 140, 120), build = { w = 1.1, h = 1.12, head = 0.84 } },
+	agwi = { form = "skeleton", bone = C3(158, 156, 124), eyes = C3(255, 220, 90), build = { w = 0.95, h = 1.12, head = 1.05 } },
 	okjol = { form = "skeleton", eyes = C3(255, 90, 60), armor = true, metal = C3(60, 26, 26), cloth = C3(110, 20, 20), build = { w = 1.15, h = 1.08, head = 0.9 } },
 	hwamagwi = { form = "imp", skin = C3(210, 70, 30), eyes = C3(255, 230, 100), hornColor = C3(40, 16, 12), fire = C3(255, 120, 30), build = { w = 0.9, h = 1.0, head = 0.92 } },
 	dosangeom = { form = "skeleton", eyes = C3(200, 220, 255), armor = true, metal = C3(170, 180, 196), cloth = C3(50, 56, 72), build = { w = 1.0, h = 1.08, head = 0.88 } },
 	swordwarden = { form = "skeleton", eyes = C3(230, 240, 255), armor = true, metal = C3(130, 134, 148), cloth = C3(40, 42, 54), build = { w = 1.2, h = 1.1, head = 0.9 } },
 	hungerwraith = { form = "wraith", cloth = C3(110, 134, 112), eyes = C3(190, 255, 150), bone = C3(60, 76, 60), build = { w = 0.9, h = 1.08, head = 0.88 } },
-	agwigun = { form = "troll", skin = C3(124, 150, 104), build = { w = 1.35, h = 1.1, head = 0.84 } },
+	agwigun = { form = "skeleton", bone = C3(140, 160, 112), eyes = C3(190, 255, 120), build = { w = 1.0, h = 1.12, head = 1.05 } },
 	okjoljang = { form = "skeleton", eyes = C3(255, 60, 60), armor = true, metal = C3(30, 14, 18), cloth = C3(70, 10, 14), build = { w = 1.2, h = 1.12, head = 0.9 } },
 	jeoseungmusa = { form = "wraith", cloth = C3(28, 26, 40), eyes = C3(255, 70, 70), bone = C3(210, 210, 220), build = { w = 0.9, h = 1.1, head = 0.86 } },
 	-- 지옥의 주인들
 	talui = { head = "hood", hoodColor = C3(150, 164, 188), eyes = C3(150, 220, 255), top = C3(176, 186, 204), bottom = C3(56, 66, 94), trim = C3(220, 235, 255), robe = C3(130, 146, 176), build = { h = 1.08, head = 1.06 } },
 	hwatang = { head = "horns", hair = C3(60, 20, 10), hornColor = C3(40, 20, 14), hornLen = 1.3, eyes = C3(255, 200, 80), armor = true, metal = C3(70, 30, 22), armorTrim = C3(255, 140, 40), top = C3(210, 70, 26), bottom = C3(80, 20, 10), trim = C3(255, 150, 50), build = { w = 1.1, head = 1.06 } },
 	dosan = { head = "helmet", metal = C3(150, 160, 176), plume = C3(190, 40, 40), armor = true, armorTrim = C3(220, 228, 240), eyes = C3(210, 225, 255), top = C3(140, 150, 168), bottom = C3(40, 44, 58), trim = C3(220, 228, 240), build = { w = 1.08, h = 1.08, head = 1.06 } },
-	agwiwang = { form = "troll", skin = C3(118, 136, 92), build = { w = 1.5, h = 1.1, head = 0.86 } },
+	agwiwang = { form = "skeleton", bone = C3(128, 148, 100), eyes = C3(220, 255, 100), build = { w = 1.0, h = 1.1, head = 1.1 } },
 	yeomra = { head = "topknot", hair = C3(14, 8, 12), beard = "full", crown = C3(220, 40, 50), gem = C3(255, 220, 120), armor = true, metal = C3(40, 14, 20), armorTrim = C3(210, 40, 50), eyes = C3(255, 70, 60), top = C3(60, 14, 22), bottom = C3(20, 6, 10), trim = C3(220, 50, 56), robe = C3(36, 10, 16), build = { w = 1.1, h = 1.08, head = 1.06 } },
 	-- 보스
 	heukho = { head = "topknot", hair = DARK_HAIR, beard = "full", scar = true, armor = true, metal = C3(52, 48, 46), top = C3(36, 30, 30), bottom = C3(70, 24, 22), trim = C3(150, 40, 30), build = { w = 1.08, head = 1.06 } },
@@ -1627,6 +1627,197 @@ local function shadeLimbs(model: Model)
 	end
 end
 
+
+------------------------------------------------------------------------
+-- 3.23.4판 지옥의 적과 주인: 실루엣을 서로 다르게, 어둠 속에서도 보이게 (눈과 몸에 작은 빛)
+------------------------------------------------------------------------
+local HELLX: { [string]: (Model, any, number) -> () } = {}
+local function headGlow(model: Model, color: Color3, range: number?)
+	local h = partOf(model, "Head")
+	if h then
+		local l = Instance.new("PointLight")
+		l.Color = color
+		l.Range = range or 14
+		l.Brightness = 0.9
+		l.Parent = h
+	end
+end
+-- 머리 앞으로 늘어뜨린 긴 머리카락 가닥
+local function hairCurtain(model: Model, color: Color3, k: number, n: number, len: number)
+	for i = 0, n - 1 do
+		local u = (i / math.max(1, n - 1) - 0.5) * 2
+		wear(model, "Head", "HairStrand", Vector3.new(0.07 * k, len * k, 0.05 * k), CFrame.new(u * 0.55 * k, -len * 0.5 * k + 0.35 * k, -0.64 * k) * CFrame.Angles(0, 0, u * 0.08), color, M.Fabric)
+	end
+end
+local function hornPair(model: Model, color: Color3, k: number, len: number, spread: number)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "HornBase", Vector3.new(0.22 * k, len * 0.5 * k, 0.22 * k), CFrame.new(x * 0.5 * k, 0.55 * k, 0) * CFrame.Angles(0, 0, -x * math.rad(spread)), color, M.SmoothPlastic)
+		wear(model, "Head", "HornTip", Vector3.new(0.14 * k, len * 0.5 * k, 0.14 * k), CFrame.new(x * (0.5 + len * 0.28) * k, (0.55 + len * 0.42) * k, 0) * CFrame.Angles(0, 0, -x * math.rad(spread + 35)), dark(color, 0.1), M.SmoothPlastic)
+	end
+end
+-- 원귀: 흐트러진 긴 머리가 얼굴을 덮고, 손목에 끊어진 쇠사슬
+HELLX.wongwi = function(model, look, k)
+	hairCurtain(model, C3(10, 8, 14), k, 9, 2.6)
+	for _, hn in ipairs({ "LeftHand", "RightHand" }) do
+		wear(model, hn, "ShackleRing", Vector3.new(0.5, 0.18, 0.5) * k, CFrame.new(0, 0.25 * k, 0), C3(80, 80, 90), M.Metal)
+		wear(model, hn, "ShackleChain", Vector3.new(0.08, 1.1, 0.08) * k, CFrame.new(0, 0.9 * k, 0.1 * k), C3(80, 80, 90), M.Metal)
+	end
+	headGlow(model, C3(120, 230, 255), 16)
+end
+-- 굶주린 망령: 쩍 벌어진 새까만 입, 길게 뻗은 손
+HELLX.hungerwraith = function(model, look, k)
+	wear(model, "Head", "HungerMouth", Vector3.new(0.7, 0.9, 0.12) * k, CFrame.new(0, -0.2 * k, -0.62 * k), C3(0, 0, 0), M.SmoothPlastic)
+	for q = -2, 2 do
+		wear(model, "Head", "HungerTooth", Vector3.new(0.06, 0.18, 0.05) * k, CFrame.new(q * 0.12 * k, 0.2 * k, -0.64 * k), C3(220, 214, 190), M.SmoothPlastic)
+	end
+	for _, hn in ipairs({ "LeftHand", "RightHand" }) do
+		for j = -2, 2 do
+			wear(model, hn, "LongFinger", Vector3.new(0.07, 0.07, 0.9) * k, CFrame.new(j * 0.14 * k, 0, -0.7 * k) * CFrame.Angles(math.rad(-10), j * 0.06, 0), C3(60, 76, 60), M.SmoothPlastic)
+		end
+	end
+	headGlow(model, C3(180, 255, 140), 14)
+end
+-- 저승 무사: 붉은 띠를 맨 검은 갑옷귀, 휜 도, 투구 뿔
+HELLX.jeoseungmusa = function(model, look, k)
+	hornPair(model, C3(30, 24, 34), k, 1.0, 20)
+	wear(model, "UpperTorso", "RedSash", Vector3.new(2.1, 0.28, 1.1) * k, CFrame.new(0, -0.15 * k, 0), C3(190, 30, 36), M.Fabric)
+	wear(model, "RightHand", "BladeGrip", Vector3.new(0.14, 0.14, 0.7) * k, CFrame.new(0, 0, -0.2 * k), C3(40, 30, 30), M.Wood)
+	wear(model, "RightHand", "Blade", Vector3.new(0.1, 0.38, 3.2) * k, CFrame.new(0, 0.05 * k, -2.2 * k) * CFrame.Angles(math.rad(8), 0, 0), C3(170, 176, 190), M.Metal)
+	wear(model, "RightHand", "BladeEdge", Vector3.new(0.05, 0.08, 3.1) * k, CFrame.new(0, 0.26 * k, -2.2 * k) * CFrame.Angles(math.rad(8), 0, 0), C3(255, 60, 50), M.Neon)
+	headGlow(model, C3(255, 70, 60), 14)
+end
+-- 옥졸: 소머리 뿔과 코뚜레, 가시 방망이
+HELLX.okjol = function(model, look, k)
+	hornPair(model, C3(226, 214, 190), k, 1.5, 28)
+	wear(model, "Head", "NoseRing", Vector3.new(0.3, 0.3, 0.06) * k, CFrame.new(0, -0.18 * k, -0.62 * k), C3(200, 170, 70), M.Metal, Ball)
+	wear(model, "RightHand", "ClubShaft", Vector3.new(0.3, 0.3, 3.4) * k, CFrame.new(0, 0, -1.6 * k), C3(70, 44, 34), M.Wood)
+	wear(model, "RightHand", "ClubHead", Vector3.new(0.9, 0.9, 1.5) * k, CFrame.new(0, 0, -3.5 * k), C3(52, 40, 40), M.Metal)
+	for q = 0, 5 do
+		local a = q / 6 * math.pi * 2
+		wear(model, "RightHand", "ClubSpike", Vector3.new(0.14, 0.14, 0.5) * k, CFrame.new(math.cos(a) * 0.5 * k, math.sin(a) * 0.5 * k, -3.5 * k) * CFrame.Angles(0, 0, a), C3(190, 190, 200), M.Metal)
+	end
+	headGlow(model, C3(255, 90, 60), 14)
+end
+HELLX.okjoljang = function(model, look, k)
+	HELLX.okjol(model, look, k)
+	wear(model, "Head", "IronMask", Vector3.new(1.1, 0.5, 0.14) * k, CFrame.new(0, -0.15 * k, -0.64 * k), C3(40, 36, 40), M.Metal)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "ShoulderSpike", Vector3.new(0.22, 0.9, 0.22) * k, CFrame.new(x * 1.2 * k, 0.9 * k, 0) * CFrame.Angles(0, 0, -x * math.rad(25)), C3(200, 200, 210), M.Metal)
+	end
+	wear(model, "LeftHand", "WhipChain", Vector3.new(0.1, 0.1, 4) * k, CFrame.new(0, 0, -2.2 * k), C3(80, 80, 92), M.Metal)
+end
+-- 도산 검귀 · 검산 수문장: 팔과 어깨에서 칼날이 솟는다
+HELLX.dosangeom = function(model, look, k)
+	for _, x in ipairs({ -1, 1 }) do
+		for j = 0, 2 do
+			wear(model, x < 0 and "LeftLowerArm" or "RightLowerArm", "ForearmBlade", Vector3.new(0.06, 0.7 + j * 0.2, 0.3) * k, CFrame.new(x * 0.15 * k, -0.1 * k - j * 0.3 * k, 0.28 * k) * CFrame.Angles(0, 0, 0), C3(190, 198, 215), M.Metal)
+		end
+		wear(model, "UpperTorso", "BackBlade", Vector3.new(0.1, 1.9, 0.5) * k, CFrame.new(x * 0.5 * k, 0.6 * k, 0.6 * k) * CFrame.Angles(math.rad(14), 0, x * math.rad(16)), C3(190, 198, 215), M.Metal)
+	end
+	wear(model, "RightHand", "Sword", Vector3.new(0.1, 0.4, 3.4) * k, CFrame.new(0, 0, -2 * k), C3(205, 212, 228), M.Metal)
+	headGlow(model, C3(190, 210, 255), 14)
+end
+HELLX.swordwarden = function(model, look, k)
+	HELLX.dosangeom(model, look, k)
+	-- 칼날로 짠 방패
+	for q = 0, 6 do
+		wear(model, "LeftLowerArm", "SwordShield", Vector3.new(0.1, 2.4 - math.abs(q - 3) * 0.25, 0.28) * k, CFrame.new(-0.4 * k, 0, (q - 3) * 0.32 * k), C3(160, 168, 186), M.Metal)
+	end
+end
+-- 아귀 · 아귀군: 불룩 튀어나온 배 (뼈만 남은 몸에 이 배만 부풀었다), 늘어진 혀
+HELLX.agwi = function(model, look, k)
+	local skin = look.bone or C3(150, 150, 120)
+	wear(model, "UpperTorso", "BloatBelly", Vector3.new(1.55, 1.7, 1.0) * k, CFrame.new(0, -0.75 * k, -0.3 * k), dark(skin, 0.05), M.SmoothPlastic, Ball)
+	wear(model, "UpperTorso", "BellyVein", Vector3.new(0.06, 1.1, 0.06) * k, CFrame.new(0.25 * k, -0.7 * k, -0.78 * k), C3(110, 40, 50), M.SmoothPlastic)
+	wear(model, "Head", "HungerMouth", Vector3.new(0.6, 0.7, 0.1) * k, CFrame.new(0, -0.22 * k, -0.62 * k), C3(0, 0, 0), M.SmoothPlastic)
+	wear(model, "Head", "Tongue", Vector3.new(0.18, 0.9, 0.06) * k, CFrame.new(0.05 * k, -0.7 * k, -0.64 * k), C3(160, 60, 70), M.SmoothPlastic)
+	headGlow(model, look.eyes or C3(255, 220, 90), 14)
+end
+HELLX.agwigun = HELLX.agwi
+
+-- 탈의파: 땅에 끌리는 백발, 어깨에 걸친 해진 회색 옷, 죄인의 옷을 걸어 둔 가지 지팡이
+SIG.talui = function(model, look, k, P)
+	hairCurtain(model, C3(235, 235, 240), k, 13, 4.2)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "HairSide", Vector3.new(0.12 * k, 3.6 * k, 0.5 * k), CFrame.new(x * 0.62 * k, -1.7 * k, 0.1 * k), C3(235, 235, 240), M.Fabric)
+	end
+	mantle(model, C3(120, 130, 150), C3(200, 210, 230), k, 3.4)
+	wear(model, "RightHand", "BranchStaff", Vector3.new(0.3, 0.3, 7) * k, CFrame.new(0, 0, -3 * k), C3(52, 42, 44), M.Wood)
+	for q = 0, 3 do
+		wear(model, "RightHand", "BranchTwig", Vector3.new(0.14, 0.14, 1.8) * k, CFrame.new(0.2 * k * (q % 2 == 0 and 1 or -1), 0.2 * k, (-5 - q * 0.5) * k) * CFrame.Angles(math.rad(20), math.rad(q * 40), 0), C3(52, 42, 44), M.Wood)
+		wear(model, "RightHand", "HangedCloth", Vector3.new(0.7, 1.3, 0.05) * k, CFrame.new(0.2 * k * (q % 2 == 0 and 1 or -1), -0.6 * k, (-5 - q * 0.5) * k), C3(170 - q * 20, 180 - q * 10, 200), M.Fabric)
+	end
+	headGlow(model, C3(150, 220, 255), 24)
+	local _ = P
+end
+-- 화탕대왕: 등에 짊어진 끓는 가마솥, 갑옷에 번지는 용암 균열
+SIG.hwatang = function(model, look, k, P)
+	wear(model, "UpperTorso", "CauldronBody", Vector3.new(2.6, 1.9, 2.6) * k, CFrame.new(0, 0.5 * k, 1.9 * k), C3(26, 22, 26), M.Metal, Ball)
+	wear(model, "UpperTorso", "CauldronRim", Vector3.new(2.8, 0.25, 2.8) * k, CFrame.new(0, 1.35 * k, 1.9 * k), C3(70, 52, 46), M.Metal)
+	local brew = wear(model, "UpperTorso", "CauldronBrew", Vector3.new(2.4, 0.2, 2.4) * k, CFrame.new(0, 1.42 * k, 1.9 * k), C3(255, 120, 30), M.Neon)
+	if brew then
+		local fire = Instance.new("Fire")
+		fire.Size = 9 * k
+		fire.Heat = 12
+		fire.Color = C3(255, 130, 40)
+		fire.SecondaryColor = C3(200, 30, 20)
+		fire.Parent = brew
+		local l = Instance.new("PointLight")
+		l.Color = C3(255, 120, 40)
+		l.Range = 30
+		l.Brightness = 1.6
+		l.Parent = brew
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "LavaCrack", Vector3.new(0.08 * k, 1.1 * k, 0.05 * k), CFrame.new(x * 0.5 * k, 0, -0.52 * k) * CFrame.Angles(0, 0, x * math.rad(18)), C3(255, 120, 40), M.Neon)
+	end
+	wear(model, "RightHand", "Ladle", Vector3.new(0.22, 0.22, 5) * k, CFrame.new(0, 0, -2.4 * k), C3(60, 44, 36), M.Wood)
+	wear(model, "RightHand", "LadleBowl", Vector3.new(1.4, 0.7, 1.4) * k, CFrame.new(0, 0.1 * k, -5 * k), C3(40, 34, 36), M.Metal, Ball)
+	headGlow(model, C3(255, 180, 60), 26)
+	local _ = P
+end
+-- 도산군주: 등 뒤로 부채처럼 펼쳐진 일곱 자루 칼, 칼날 가시 어깨
+SIG.dosan = function(model, look, k, P)
+	for i = 0, 8 do
+		local a = math.rad(-80 + i * 20)
+		wear(model, "UpperTorso", "BackSword", Vector3.new(0.18 * k, 4.2 * k, 0.45 * k), CFrame.new(math.sin(a) * 1.7 * k, (0.9 + math.cos(a) * 1.9) * k, 0.9 * k) * CFrame.Angles(0, 0, -a), C3(196, 204, 222), M.Metal)
+		wear(model, "UpperTorso", "BackSwordEdge", Vector3.new(0.06 * k, 4.0 * k, 0.12 * k), CFrame.new(math.sin(a) * 1.7 * k, (0.9 + math.cos(a) * 1.9) * k, 0.62 * k) * CFrame.Angles(0, 0, -a), C3(210, 230, 255), M.Neon)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		for j = 0, 2 do
+			wear(model, "UpperTorso", "PauldronBlade", Vector3.new(0.12 * k, 0.9 * k, 0.3 * k), CFrame.new(x * (1.35 + j * 0.18) * k, (0.9 + j * 0.15) * k, 0) * CFrame.Angles(0, 0, -x * math.rad(40 + j * 15)), C3(196, 204, 222), M.Metal)
+		end
+	end
+	wear(model, "RightHand", "GreatSword", Vector3.new(0.3 * k, 0.9 * k, 6 * k), CFrame.new(0, 0, -3.2 * k), C3(206, 214, 230), M.Metal)
+	headGlow(model, C3(200, 220, 255), 26)
+	local _ = P
+end
+-- 아귀왕: 뼈로 엮은 왕관, 끝없이 벌어지는 입, 가슴 위에 얹힌 거대한 배
+SIG.agwiwang = function(model, look, k, P)
+	HELLX.agwi(model, look, k)
+	for q = 0, 6 do
+		local a = math.rad(-70 + q * 23)
+		wear(model, "Head", "BoneCrown", Vector3.new(0.14 * k, (0.9 + (q % 2) * 0.5) * k, 0.14 * k), CFrame.new(math.sin(a) * 0.62 * k, (0.7 + math.cos(a) * 0.1) * k, math.cos(a) * -0.4 * k) * CFrame.Angles(0, 0, math.sin(a) * 0.3), C3(230, 220, 190), M.SmoothPlastic)
+	end
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "UpperTorso", "FeastPlate", Vector3.new(0.8, 0.12, 0.8) * k, CFrame.new(x * 1.6 * k, -0.4 * k, -0.9 * k), C3(120, 110, 100), M.Metal)
+	end
+	local _ = P
+end
+-- 염라대왕: 양옆으로 뻗은 판관관(널빤지 날개), 긴 수염, 붉은 판결의 고리, 홀
+SIG.yeomra = function(model, look, k, P)
+	for _, x in ipairs({ -1, 1 }) do
+		wear(model, "Head", "JudgeWing", Vector3.new(1.6, 0.12, 0.5) * k, CFrame.new(x * 1.3 * k, 0.78 * k, 0.05 * k) * CFrame.Angles(0, 0, x * math.rad(8)), C3(14, 10, 14), M.Fabric)
+		wear(model, "Head", "JudgeWingTrim", Vector3.new(1.6, 0.05, 0.54) * k, CFrame.new(x * 1.3 * k, 0.85 * k, 0.05 * k) * CFrame.Angles(0, 0, x * math.rad(8)), C3(210, 40, 50), M.Neon)
+	end
+	wear(model, "Head", "LongBeard", Vector3.new(0.9 * k, 2.4 * k, 0.25 * k), CFrame.new(0, -1.4 * k, -0.5 * k), C3(14, 10, 14), M.Fabric)
+	halo(model, C3(230, 40, 50), k, 2.3, M.Neon)
+	wear(model, "RightHand", "HolTablet", Vector3.new(0.3 * k, 2.6 * k, 0.12 * k), CFrame.new(0, 0.3 * k, -0.5 * k), C3(230, 214, 170), M.Wood)
+	mantle(model, C3(36, 10, 16), C3(210, 40, 50), k, 3.8)
+	headGlow(model, C3(255, 60, 50), 34)
+	local _ = P
+end
+
 function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 	local look = Dress.lookOf(typeId, isBoss)
 	if not partOf(model, "Head") then
@@ -1654,6 +1845,13 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		headgear(model, look, P)
 		face(model, look)
 		outfit(model, look, P, K)
+	end
+	local hx = HELLX[typeId]
+	if hx and not isBoss then
+		local ok, err = pcall(hx, model, look, K)
+		if not ok then
+			warn("[권왕] 지옥 몸 표식 오류:", typeId, err)
+		end
 	end
 	if isBoss and not bossBody then
 		local sig = SIG[typeId]
