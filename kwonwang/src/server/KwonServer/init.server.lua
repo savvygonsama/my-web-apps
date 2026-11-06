@@ -6280,38 +6280,69 @@ end)
 -- 3.9판 목인 세우기: 마을 입구의 튜토리얼 목인 셋, 권법 시험장의 작은 목인 다섯 · 큰 목인 셋 (자리를 정확히 맞춘다)
 ------------------------------------------------------------------------
 if not BATTLE then
+	-- 3.20.2판: 목인 관리자. 목인이 사라지거나 (지워짐 · 허공으로 떨어짐) 쓰러지면 5초 안에 제자리에 다시 세운다
+	-- (예전엔 서버가 시작할 때 한 번만 세워서, 무슨 까닭으로든 없어지면 영영 안 보였다)
 	task.spawn(function()
 		task.wait(3)
-		local function place(typeId: string, at: Vector3, region: string)
-			local ok, e = pcall(Npc.spawn, typeId, false, at, region)
-			if ok and e and e.f and e.f.model then
-				local def = Config.Enemies[typeId]
-				local face = Vector3.new(at.X, at.Y, at.Z + 10)
-				pcall(function()
-					e.f.model:PivotTo(CFrame.lookAt(at + Vector3.new(0, 3 * (def and def.scale or 1), 0), face + Vector3.new(0, 3 * (def and def.scale or 1), 0)))
-				end)
-				e.home = at
-			end
+		local spots: { { typeId: string, at: Vector3, region: string, e: any } } = {}
+		local function add(typeId: string, at: Vector3, region: string)
+			table.insert(spots, { typeId = typeId, at = at, region = region, e = nil })
 		end
 		for _, x in ipairs({ -12, 0, 12 }) do
-			place("dummy", Vector3.new(x, 0, -48 - (x == 0 and 3 or 0)), "tutorial")
+			add("dummy", Vector3.new(x, 0, -48 - (x == 0 and 3 or 0)), "tutorial")
 		end
 		local TR = Config.TEST_ROOM
 		if TR then
 			for k = -2, 2 do
-				place("dummy", TR.at + Vector3.new(k * 22, 0, -40), "testroom")
+				add("dummy", TR.at + Vector3.new(k * 22, 0, -40), "testroom")
 			end
 			for k = -1, 1 do
-				place("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
+				add("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
 			end
-			-- 3.19.6판 반격 코너의 흘리기 사범 셋, 데미지 챌린지 목인 하나
 			local TC = Config.TEST_CORNERS
 			if TC then
 				for k = -1, 1 do
-					place("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
+					add("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
 				end
-				place("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
+				add("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
 			end
+		end
+		local function stand(sp: any)
+			local ok, e = pcall(Npc.spawn, sp.typeId, false, sp.at, sp.region)
+			if not ok then
+				warn("[권왕] 목인 세우기 오류:", sp.typeId, e)
+				return
+			end
+			if e and e.f and e.f.model then
+				local def = Config.Enemies[sp.typeId]
+				local h = 3 * (def and def.scale or 1)
+				local face = Vector3.new(sp.at.X, sp.at.Y, sp.at.Z + 10)
+				pcall(function()
+					e.f.model:PivotTo(CFrame.lookAt(sp.at + Vector3.new(0, h, 0), face + Vector3.new(0, h, 0)))
+				end)
+				e.home = sp.at
+				e.spot = sp.at + Vector3.new(0, h, 0)
+				sp.e = e
+			end
+		end
+		while true do
+			for _, sp in ipairs(spots) do
+				local e = sp.e
+				local f = e and e.f
+				local gone = not f or f.dead or not f.model.Parent or not f.root.Parent or f.root.Position.Y < sp.at.Y - 15 or (f.root.Position - sp.at).Magnitude > 120
+				if gone then
+					if f then
+						pcall(Npc.despawn, f)
+						for i = #Npc.list, 1, -1 do
+							if Npc.list[i] == e then
+								table.remove(Npc.list, i)
+							end
+						end
+					end
+					stand(sp)
+				end
+			end
+			task.wait(5)
 		end
 	end)
 end

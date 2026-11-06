@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.20.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.20.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -14403,38 +14403,69 @@ end)
 -- 3.9판 목인 세우기: 마을 입구의 튜토리얼 목인 셋, 권법 시험장의 작은 목인 다섯 · 큰 목인 셋 (자리를 정확히 맞춘다)
 ------------------------------------------------------------------------
 if not BATTLE then
+	-- 3.20.2판: 목인 관리자. 목인이 사라지거나 (지워짐 · 허공으로 떨어짐) 쓰러지면 5초 안에 제자리에 다시 세운다
+	-- (예전엔 서버가 시작할 때 한 번만 세워서, 무슨 까닭으로든 없어지면 영영 안 보였다)
 	task.spawn(function()
 		task.wait(3)
-		local function place(typeId: string, at: Vector3, region: string)
-			local ok, e = pcall(Npc.spawn, typeId, false, at, region)
-			if ok and e and e.f and e.f.model then
-				local def = Config.Enemies[typeId]
-				local face = Vector3.new(at.X, at.Y, at.Z + 10)
-				pcall(function()
-					e.f.model:PivotTo(CFrame.lookAt(at + Vector3.new(0, 3 * (def and def.scale or 1), 0), face + Vector3.new(0, 3 * (def and def.scale or 1), 0)))
-				end)
-				e.home = at
-			end
+		local spots: { { typeId: string, at: Vector3, region: string, e: any } } = {}
+		local function add(typeId: string, at: Vector3, region: string)
+			table.insert(spots, { typeId = typeId, at = at, region = region, e = nil })
 		end
 		for _, x in ipairs({ -12, 0, 12 }) do
-			place("dummy", Vector3.new(x, 0, -48 - (x == 0 and 3 or 0)), "tutorial")
+			add("dummy", Vector3.new(x, 0, -48 - (x == 0 and 3 or 0)), "tutorial")
 		end
 		local TR = Config.TEST_ROOM
 		if TR then
 			for k = -2, 2 do
-				place("dummy", TR.at + Vector3.new(k * 22, 0, -40), "testroom")
+				add("dummy", TR.at + Vector3.new(k * 22, 0, -40), "testroom")
 			end
 			for k = -1, 1 do
-				place("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
+				add("bigdummy", TR.at + Vector3.new(k * 50, 0, -110), "testroom")
 			end
-			-- 3.19.6판 반격 코너의 흘리기 사범 셋, 데미지 챌린지 목인 하나
 			local TC = Config.TEST_CORNERS
 			if TC then
 				for k = -1, 1 do
-					place("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
+					add("practice", TR.at + TC.parry + Vector3.new(k * 18, 0, 0), "testroom")
 				end
-				place("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
+				add("cdummy", TR.at + TC.challenge + Vector3.new(0, 0, -14), "testroom")
 			end
+		end
+		local function stand(sp: any)
+			local ok, e = pcall(Npc.spawn, sp.typeId, false, sp.at, sp.region)
+			if not ok then
+				warn("[권왕] 목인 세우기 오류:", sp.typeId, e)
+				return
+			end
+			if e and e.f and e.f.model then
+				local def = Config.Enemies[sp.typeId]
+				local h = 3 * (def and def.scale or 1)
+				local face = Vector3.new(sp.at.X, sp.at.Y, sp.at.Z + 10)
+				pcall(function()
+					e.f.model:PivotTo(CFrame.lookAt(sp.at + Vector3.new(0, h, 0), face + Vector3.new(0, h, 0)))
+				end)
+				e.home = sp.at
+				e.spot = sp.at + Vector3.new(0, h, 0)
+				sp.e = e
+			end
+		end
+		while true do
+			for _, sp in ipairs(spots) do
+				local e = sp.e
+				local f = e and e.f
+				local gone = not f or f.dead or not f.model.Parent or not f.root.Parent or f.root.Position.Y < sp.at.Y - 15 or (f.root.Position - sp.at).Magnitude > 120
+				if gone then
+					if f then
+						pcall(Npc.despawn, f)
+						for i = #Npc.list, 1, -1 do
+							if Npc.list[i] == e then
+								table.remove(Npc.list, i)
+							end
+						end
+					end
+					stand(sp)
+				end
+			end
+			task.wait(5)
 		end
 	end)
 end
@@ -18392,63 +18423,7 @@ end
 
 -- 균왕: 아래가 불룩한 자루 몸, 늘어진 턱받이, 큰 갓 (몸과 따로 읽히게 목을 가늘게), 가는 자루 팔과 작은 갓 주먹,
 -- 땅으로 퍼지는 뿌리 다리, 어깨와 등에서 돋은 작은 버섯
-BOSS_BODY.gyunwang = function(model: Model, look: any, k: number)
-	local cap = look.capColor or C3(160, 26, 36)
-	local stem = look.skin or C3(232, 222, 198)
-	local gill = light(stem, 0.1):Lerp(C3(200, 180, 150), 0.4)
-	local rootC = C3(110, 85, 60)
-	hideBody(model)
-	local ut, lt, hs = sizeOf(model, "UpperTorso"), sizeOf(model, "LowerTorso"), sizeOf(model, "Head")
-	rod(model, "UpperTorso", "Stem", ut.Y * 1.35, ut.X * 0.6, CFrame.new(0, ut.Y * 0.05, 0), stem)
-	ell(model, "LowerTorso", "Bulb", Vector3.new(ut.X * 0.85, lt.Y * 4.6, ut.X * 0.85), CFrame.new(0, -lt.Y * 0.7, 0), dark(stem, 0.06))
-	for i = -2, 2 do
-		wear(model, "UpperTorso", "StemGrain", Vector3.new(0.05 * k, ut.Y * 1.1, 0.04 * k), CFrame.new(i * ut.X * 0.07, 0, -ut.X * 0.3) * CFrame.Angles(0, i * 0.22, 0), dark(stem, 0.1))
-	end
-	-- 턱받이: 자루 위의 고리와 늘어진 주름 열둘
-	disc(model, "UpperTorso", "Ring", ut.X * 0.95, 0.14 * k, CFrame.new(0, ut.Y * 0.38, 0), light(stem, 0.1))
-	for i = 0, 11 do
-		local a = i / 12 * math.pi * 2
-		local r = ut.X * 0.42
-		wear(model, "UpperTorso", "RingFrill", Vector3.new(ut.X * 0.24, 0.55 * k, 0.06 * k), CFrame.new(math.cos(a) * r, ut.Y * 0.2, math.sin(a) * r) * CFrame.Angles(0, -a + math.pi / 2, 0) * CFrame.Angles(math.rad(-12), 0, 0), i % 2 == 0 and light(stem, 0.1) or stem)
-	end
-	-- 머리: 가는 목 위의 얼굴 (자루 빛깔), 그 위에 큰 갓
-	rod(model, "Head", "NeckStalk", hs.Y * 0.6, hs.X * 0.45, CFrame.new(0, -hs.Y * 0.35, 0), stem)
-	ell(model, "Head", "Face", Vector3.new(hs.X * 0.72, hs.Y * 0.8, hs.Z * 0.72), CFrame.new(0, 0, 0), stem)
-	for _, x in ipairs({ -1, 1 }) do
-		ell(model, "Head", "Eye", Vector3.new(0.17 * k, 0.24 * k, 0.08 * k), CFrame.new(x * hs.X * 0.16, -hs.Y * 0.02, -hs.Z * 0.35), C3(18, 14, 12))
-	end
-	local R = (look.capSize or 3.8) * k * 0.5
-	mushroomCap(model, "Head", CFrame.new(0, hs.Y * 0.34, 0), R, R * 0.62, cap, gill, look.spot or C3(245, 240, 228))
-	-- 팔: 가는 자루 두 마디와 작은 갓 주먹
-	for _, side in ipairs({ "Left", "Right" }) do
-		local ua, la, hd = sizeOf(model, side .. "UpperArm"), sizeOf(model, side .. "LowerArm"), sizeOf(model, side .. "Hand")
-		rod(model, side .. "UpperArm", "ArmStalk", ua.Y * 1.05, ua.X * 0.48, CFrame.new(0, 0, 0), stem)
-		rod(model, side .. "LowerArm", "ArmStalk2", la.Y * 1.1, la.X * 0.42, CFrame.new(0, 0, 0), dark(stem, 0.05))
-		ell(model, side .. "Hand", "FistCap", Vector3.new(hd.X * 1.5, hd.Y * 2.6, hd.Z * 1.5), CFrame.new(0, -hd.Y * 0.3, 0), cap)
-		disc(model, side .. "Hand", "FistGill", hd.X * 1.35, 0.05 * k, CFrame.new(0, -hd.Y * 0.9, 0), gill)
-	end
-	-- 다리: 자루 두 마디, 발목에서 땅으로 퍼지는 뿌리 다섯
-	for _, side in ipairs({ "Left", "Right" }) do
-		local ul, ll = sizeOf(model, side .. "UpperLeg"), sizeOf(model, side .. "LowerLeg")
-		rod(model, side .. "UpperLeg", "LegStalk", ul.Y * 1.0, ul.X * 0.55, CFrame.new(0, 0, 0), dark(stem, 0.1))
-		rod(model, side .. "LowerLeg", "LegStalk2", ll.Y * 1.1, ll.X * 0.6, CFrame.new(0, 0, 0), dark(stem, 0.18):Lerp(rootC, 0.4))
-		for j = 0, 4 do
-			local a = j / 5 * math.pi * 2
-			wear(model, side .. "Foot", "Root", Vector3.new(1.2 * k, 0.2 * k, 0.2 * k), CFrame.new(math.cos(a) * 0.45 * k, -0.05 * k, math.sin(a) * 0.45 * k) * CFrame.Angles(0, -a, -0.25), rootC, M.Wood, Cyl)
-		end
-	end
-	-- 어깨와 등에서 돋은 작은 버섯
-	local sprouts = { { -0.3, 0.45, 0.1, 1.0, -0.6 }, { -0.22, 0.42, 0.3, 0.7, -0.3 }, { 0.3, 0.45, 0.15, 0.85, 0.6 }, { 0.24, 0.3, -0.2, 0.6, 0.9 }, { -0.1, 0.1, 0.34, 0.75, -0.1 }, { 0.12, -0.2, 0.34, 0.6, 0.15 } }
-	for _, s in ipairs(sprouts) do
-		local x, y, z, sc, tilt = s[1], s[2], s[3], s[4] * 1.15, s[5]
-		local at = CFrame.new(x * ut.X, ut.Y * y, z * ut.X) * CFrame.Angles(z > 0.25 and math.rad(60) or 0, 0, -tilt * 0.6)
-		rod(model, "UpperTorso", "SproutStem", 0.55 * sc * k, 0.2 * sc * k, at * CFrame.new(0, 0.27 * sc * k, 0), stem)
-		ell(model, "UpperTorso", "SproutCap", Vector3.new(0.8 * sc * k, 0.42 * sc * k, 0.8 * sc * k), at * CFrame.new(0, 0.56 * sc * k, 0), cap)
-	end
-	if look.spore then
-		glow(model, "Head", look.spore, 8 * k, 0.8)
-	end
-end
+-- 3.20.2판: 균왕은 막대 팔다리에 공 손이 떠 있어 이상했다 → 옛 몸틀을 지우고, 둥글게 빚은 버섯 몸 (FORMS.shroom, 보스) 을 쓴다
 
 ------------------------------------------------------------------------
 -- 입히기
