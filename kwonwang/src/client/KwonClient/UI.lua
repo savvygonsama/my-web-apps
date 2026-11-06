@@ -510,6 +510,17 @@ function UI.enemyTag(model: Model)
 	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 76), StudsOffset = Vector3.new(0, 3.2, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	table.insert(enemyTags, { bb = bb, head = head })
 	startTagLoop()
+	-- 3.24판: 어두운 지옥에서 형체가 뭉개지지 않게, 지옥의 주인에게는 밝은 윤곽선을 두른다
+	if isBoss and Config.inHell(head.Position) and not model:FindFirstChild("KwonOutline") then
+		local hl = Instance.new("Highlight")
+		hl.Name = "KwonOutline"
+		hl.FillTransparency = 1
+		hl.OutlineColor = Color3.fromRGB(255, 120, 90)
+		hl.OutlineTransparency = 0.25
+		hl.DepthMode = Enum.HighlightDepthMode.Occluded
+		hl.Adornee = model
+		hl.Parent = model
+	end
 	local label = model:GetAttribute("Label")
 	local lv = model:GetAttribute("Level")
 	local lvText = type(lv) == "number" and string.format("Lv.%d ", lv) or ""
@@ -882,7 +893,7 @@ local function buildStyles()
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
-				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → 피해 ×%.2f → ×%.2f", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.gradeMult(s, ups), Config.gradeMult(s, ups + 1)))
+				table.insert(lines, string.format("<b>⬆ 권법 승급 (%s)</b>  숙련 %d · %s 이상 · 💰 %s → 피해 ×%.2f → ×%.2f", step.name, Config.MASTERY_FULL, Config.Realms[step.realm].name, Config.formatNumber(step.coins), Config.gradeDmg(s, ups), Config.gradeDmg(s, ups + 1)))
 			else
 				table.insert(lines, string.format("<b>⬆ 권법 승급</b>  모든 깨달음을 얻었다 [%s]", gradeNow))
 			end

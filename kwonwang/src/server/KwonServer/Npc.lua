@@ -536,7 +536,7 @@ local function dressMaster(model: Model, style: any)
 		-- 물빛 도인: 흰 수염과 상투
 		beard(WHITE_HAIR)
 		wear(model, "Head", "Topknot", Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, hs.Y * 0.62, 0.05), WHITE_HAIR, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		wear(model, "Head", "Hairband", Vector3.new(hs.X * 1.03, 0.18, hs.Z * 1.03), CFrame.new(0, hs.Y * 0.28, 0), trim, Enum.Material.Neon)
+		wear(model, "Head", "Hairband", Vector3.new(hs.X * 1.03, 0.16, hs.Z * 1.03), CFrame.new(0, hs.Y * 0.4, 0), trim, Enum.Material.Neon)
 	elseif id == "geumgang" then
 		-- 금강 대사: 염주와 비스듬한 가사
 		for k = 0, 13 do
@@ -571,9 +571,9 @@ local function dressMaster(model: Model, style: any)
 	elseif id == "byeokryeok" then
 		-- 뇌정진군: 곤두선 머리, 번개 팔찌
 		for k = -2, 2 do
-			wear(model, "Head", "SpikeHair", Vector3.new(0.25, 0.8, 0.25), CFrame.new(k * hs.X * 0.18, hs.Y * 0.65, 0.1) * CFrame.Angles(math.rad(-15), 0, k * math.rad(-12)), Color3.fromRGB(255, 245, 200), Enum.Material.Neon)
+			wear(model, "Head", "SpikeHair", Vector3.new(0.22, 0.8, 0.22), CFrame.new(k * hs.X * 0.18, hs.Y * 0.78, 0.1) * CFrame.Angles(math.rad(-15), 0, k * math.rad(-12)), Color3.fromRGB(255, 245, 200), Enum.Material.Neon)
 		end
-		wear(model, "Head", "Headband", Vector3.new(hs.X * 1.04, 0.2, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color, Enum.Material.Neon)
+		wear(model, "Head", "Headband", Vector3.new(hs.X * 1.04, 0.16, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.4, 0), style.color, Enum.Material.Neon)
 		for _, side in ipairs({ "Right", "Left" }) do
 			wear(model, side .. "LowerArm", "Bracer", Vector3.new(1.12, 0.5, 1.12), CFrame.new(0, -0.2, 0), style.color, Enum.Material.Neon)
 			local hand = model:FindFirstChild(side .. "Hand")
@@ -614,7 +614,7 @@ local function dressMaster(model: Model, style: any)
 		end
 	elseif id == "yeolhwa" then
 		-- 염백: 불꽃 갈기 같은 붉은 머리띠, 어깨에서 타오르는 불, 팔목의 용암 띠
-		wear(model, "Head", "FlameBand", Vector3.new(hs.X * 1.05, 0.35, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.25, 0), style.color, Enum.Material.Neon)
+		wear(model, "Head", "FlameBand", Vector3.new(hs.X * 1.05, 0.26, hs.Z * 1.05), CFrame.new(0, hs.Y * 0.4, 0), style.color, Enum.Material.Neon)
 		for _, side in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
 			wear(model, side, "LavaBand", Vector3.new(1.05, 0.3, 1.05), CFrame.new(0, -0.3, 0), style.color2, Enum.Material.Neon)
 		end
@@ -638,7 +638,7 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "Head", "SilverBeard", Vector3.new(hs.X * 0.5, hs.Y * 1.4, 0.3), CFrame.new(0, -hs.Y * 0.9, -hs.Z * 0.45), Color3.fromRGB(225, 230, 240))
 	elseif id == "changhae" then
 		-- 창해옹: 파도빛 머리띠, 어깨에 걸친 조개 장식, 손목의 물빛 띠
-		wear(model, "Head", "WaveBand", Vector3.new(hs.X * 1.04, 0.3, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.25, 0), style.color2, Enum.Material.Neon)
+		wear(model, "Head", "WaveBand", Vector3.new(hs.X * 1.04, 0.24, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.4, 0), style.color2, Enum.Material.Neon)
 		wear(model, "UpperTorso", "ShellPad", Vector3.new(1.4, 0.5, 1.2), CFrame.new(1.1, 0.95, 0) * CFrame.Angles(0, 0, math.rad(-20)), Color3.fromRGB(250, 235, 225), Enum.Material.SmoothPlastic)
 		wear(model, "UpperTorso", "ShellPad2", Vector3.new(1.4, 0.5, 1.2), CFrame.new(-1.1, 0.95, 0) * CFrame.Angles(0, 0, math.rad(20)), Color3.fromRGB(250, 235, 225), Enum.Material.SmoothPlastic)
 		for _, side in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
@@ -701,7 +701,7 @@ local function dressMaster(model: Model, style: any)
 			wear(model, "UpperTorso", "WindScarf", Vector3.new(0.4, 0.15, 5), CFrame.new(x * 0.6, 0.7, 2.6) * CFrame.Angles(math.rad(-15), x * math.rad(12), 0), style.color2)
 			wear(model, "Head", "Feather", Vector3.new(0.15, 1.6, 0.5), CFrame.new(x * hs.X * 0.4, hs.Y * 0.8, 0.2) * CFrame.Angles(0, 0, x * math.rad(-20)), style.color, Enum.Material.Neon)
 		end
-		wear(model, "Head", "WindBand", Vector3.new(hs.X * 1.04, 0.2, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.28, 0), style.color, Enum.Material.Neon)
+		wear(model, "Head", "WindBand", Vector3.new(hs.X * 1.04, 0.16, hs.Z * 1.04), CFrame.new(0, hs.Y * 0.4, 0), style.color, Enum.Material.Neon)
 	elseif id == "chwi" then
 		-- 취선옹: 넓은 삿갓, 허리의 술 호리병, 붉은 뺨
 		beard(Color3.fromRGB(170, 170, 165))

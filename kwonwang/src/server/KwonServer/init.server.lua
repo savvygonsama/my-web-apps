@@ -1229,7 +1229,8 @@ local function refreshFighter(player: Player)
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
-	local grade = styleDef and Config.gradeMult(styleDef, p.gradeUp[p.style]) or 1
+	local grade = styleDef and Config.gradeDmg(styleDef, p.gradeUp[p.style]) or 1
+	local gradeHp = styleDef and Config.gradeHp(styleDef, p.gradeUp[p.style]) or 1
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
 	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
@@ -1237,7 +1238,7 @@ local function refreshFighter(player: Player)
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * gradeHp * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
 	-- 3.23.8판: 체력 쪽으로 옮긴다 (전투력은 그대로: 공격 ÷S, 체력 ×S)
 	do
 		local S = Config.PLAYER_HP_SHIFT
@@ -5198,7 +5199,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		p.coins -= step.coins
 		p.gradeUp[sd.id] = ups + 1
 		st.dirty = true
-		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), mult = Config.gradeMult(sd, ups + 1), step = step.name })
+		Push:FireClient(player, "breakthrough", { style = sd.id, grade = Config.styleGrade(sd, ups + 1), mult = Config.gradeDmg(sd, ups + 1), step = step.name })
 		refreshFighter(player)
 		Story.check(player)
 		pushState(player)

@@ -6267,7 +6267,7 @@ local function hellGate(out: any)
 			end)
 		end
 
-		-- 사신: 허공에 떠 있는 커다란 검은 형체. 누더기 망토, 속이 빈 두건 안의 해골 얼굴과 붉은 불꽃 눈, 앙상한 뼈 손, 사슬 감긴 거대한 낫
+		-- 사신: 허공에 떠 있는 커다란 검은 형체. 누더기 망토, 얼굴이 없는 텅 빈 두건, 앙상한 뼈 손, 사슬 감긴 거대한 낫
 		local P = R + Vector3.new(-9, 3, -78)
 		local K = 1.5 -- 모든 것을 이만큼 키운다
 		local BLK = Color3.fromRGB(10, 8, 14)
@@ -6292,19 +6292,8 @@ local function hellGate(out: any)
 		-- 어깨 위로 솟은 헝클어진 두건
 		rp("ReaperHood", Vector3.new(4.6, 5.2, 4.4), Vector3.new(0, 11.1, -0.2), BLK, Enum.Material.Fabric, Enum.PartType.Ball)
 		rp("ReaperHoodPeak", Vector3.new(2.4, 3.2, 2.4), Vector3.new(0, 13.6, -0.9), BLK, Enum.Material.Fabric, Enum.PartType.Ball).CFrame = CFrame.new(P + Vector3.new(0, 13.6, -0.9) * K) * CFrame.Angles(math.rad(-25), 0, 0)
-		rp("ReaperHoodVoid", Vector3.new(3.1, 3.5, 1.2), Vector3.new(0, 11.0, 1.7), Color3.fromRGB(2, 2, 4), Enum.Material.SmoothPlastic)
-		-- 두건 속 해골: 깊이 꺼진 눈구멍, 안쪽에서 타는 붉은 불꽃, 드러난 이빨
-		rp("ReaperSkull", Vector3.new(2.3, 2.5, 2.1), Vector3.new(0, 10.8, 1.5), BONE, Enum.Material.Slate, Enum.PartType.Ball)
-		for _, x in ipairs({ -0.55, 0.55 }) do
-			rp("ReaperSocket", Vector3.new(0.7, 0.8, 0.4), Vector3.new(x, 11.1, 2.45), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-			local eye = rp("ReaperEye", Vector3.new(0.34, 0.34, 0.3), Vector3.new(x, 11.1, 2.6), Color3.fromRGB(255, 30, 20), Enum.Material.Neon, Enum.PartType.Ball)
-			light(eye, Color3.fromRGB(255, 40, 30), 30, 2.2)
-		end
-		rp("ReaperNose", Vector3.new(0.35, 0.5, 0.2), Vector3.new(0, 10.6, 2.55), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic)
-		for q = -3, 3 do
-			rp("ReaperTooth", Vector3.new(0.22, 0.5, 0.2), Vector3.new(q * 0.27, 9.85, 2.4), BONE, Enum.Material.Slate)
-		end
-		rp("ReaperJaw", Vector3.new(1.6, 0.3, 0.5), Vector3.new(0, 9.6, 2.3), BONE, Enum.Material.Slate)
+				-- 얼굴은 없다: 두건 속은 빛이 닿지 않는 텅 빈 어둠뿐
+		rp("ReaperFaceVoid", Vector3.new(3.4, 3.8, 2.4), Vector3.new(0, 10.9, 1.2), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 		-- 앙상한 팔: 한 손은 낫을 쥐고, 한 손은 사람을 가리키듯 뻗는다
 		local function bonyArm(sx: number, reach: number)
 			local up = rp("ReaperArm", Vector3.new(0.55, 3.2, 0.55), Vector3.new(sx * 2.5, 7.6, 0.6), BONE, Enum.Material.Slate)

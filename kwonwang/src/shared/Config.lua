@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.24.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -161,11 +161,14 @@ function Config.realmPower(idx: number): number
 end
 -- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
 -- 2.8판: 체력의 경지 배율은 피해보다 완만하게 (경지 배율의 0.75제곱). 후반에 적이 스무 대를 때려야 쓰러질 만큼 단단했다
+-- 3.24판: 경지에 따른 공격은 덜 가파르게, 체력은 더 가파르게 (공격 ^1 → ^0.9, 체력 ^0.75 → ^0.85: 곱은 그대로라 전투력은 같고, 후반 주먹이 한 방에 너무 세지 않게)
+Config.REALM_DMG_EXP = 0.9
+Config.REALM_HP_EXP = 0.85
 function Config.realmHp(idx: number): number
-	return Config.realmPower(idx) ^ 0.75
+	return Config.realmPower(idx) ^ Config.REALM_HP_EXP
 end
 function Config.realmDmg(idx: number): number
-	return Config.realmPower(math.min(idx, 16)) * 1.1 ^ math.max(0, idx - 16)
+	return Config.realmPower(math.min(idx, 16)) ^ Config.REALM_DMG_EXP * 1.1 ^ math.max(0, idx - 16)
 end
 -- 1.8판: 후반 경지의 공격력 (피해에만 곱한다). 능력치가 로그로 자라 후반에 주먹이 너무 가벼웠다
 -- 생사경 ×1.5 · 신화경 ×2.2 · 천인합일 ×3 · 무극 ×4 · 반선 ×5.5 · 등선 ×7 · 천외천 ×9
@@ -1642,6 +1645,15 @@ function Config.styleGrade(style: any, _up: number?): string
 end
 -- 깨달음 한 번에 오르는 피해 (예전 등급 두 칸과 비슷하게). 신화는 예전처럼 한 칸만, 태초 이상과 초·극은 오르지 않는다
 local BREAK_BONUS = { ["상급"] = { 0.13, 0.26 }, ["전설"] = { 0.13, 0.26 }, ["신화"] = { 0.17, 0.17 } }
+-- 3.24판: 후반 권법이 지나치게 셌다. 권법 등급 배율은 공격에 g^0.55, 체력에 g^0.15만 (예전엔 공격에 g^1 전부) — 극 ×3.8 → 전투력 ×1.95에서 ×1.6
+Config.GRADE_DMG_EXP = 0.55
+Config.GRADE_HP_EXP = 0.15
+function Config.gradeDmg(style: any, up: number?): number
+	return Config.gradeMult(style, up) ^ Config.GRADE_DMG_EXP
+end
+function Config.gradeHp(style: any, up: number?): number
+	return Config.gradeMult(style, up) ^ Config.GRADE_HP_EXP
+end
 function Config.gradeMult(style: any, up: number?): number
 	local base = Config.GRADES[style.grade] or 1
 	local b = BREAK_BONUS[style.grade]
@@ -4999,8 +5011,8 @@ Config.MAZE = {
 -- 베타 14: 보스는 덜 아프게 (오래 겨루는 싸움), 후반 보스는 아주 질기게, 조금 느리게
 ------------------------------------------------------------------------
 Config.BOSS_DMG = 0.7 -- 모든 보스의 공격력 배율 (1.0판: 0.6 → 0.7)
--- 3.23.8판: 내 체력이 적고 공격이 너무 세다는 느낌을 덜기 위해, 전투력 (= 공격 × 체력의 제곱근)은 그대로 두고 체력 ×1.5 · 공격 ÷1.5
-Config.PLAYER_HP_SHIFT = 1.5
+-- 3.23.8판: 내 체력이 적고 공격이 너무 세다는 느낌을 덜기 위해, 전투력 (= 공격 × 체력의 제곱근)은 그대로 두고 체력 ×1.2 · 공격 ÷1.2 (3.24판: 1.5 → 1.2, 경지·등급 쪽으로 따로 옮겼다)
+Config.PLAYER_HP_SHIFT = 1.2
 Config.LATE_BOSS_MAXK = 3 -- 3.23.6판: 후반 보스가 힘을 끌어올려도 제 원래 전투력의 이만큼까지만 (한참 센 사람에게는 여전히 약하다)
 Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에게 그 전투력의 이만큼까지 힘을 끌어올린다 (보상은 원래 몫)
 Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
