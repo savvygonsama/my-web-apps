@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.20.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.21.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -118,9 +118,12 @@ Config.Realms = {
 	{ name = "무량경", need = 12500000000, color = Color3.fromRGB(130, 255, 170), rebirth = 2 },
 	{ name = "태허경", need = 62500000000, color = Color3.fromRGB(150, 170, 255), rebirth = 3 },
 	{ name = "권왕", need = 312500000000, color = Color3.fromRGB(255, 70, 70), rebirth = 4 },
+	-- 3.21판: 환생 둘 더 (지옥으로 가는 길). 환생 한 번에 한 경지
+	{ name = "대라경", need = 1562500000000, color = Color3.fromRGB(190, 110, 255), rebirth = 5 },
+	{ name = "허무경", need = 7812500000000, color = Color3.fromRGB(235, 40, 60), rebirth = 6 },
 }
 -- 예전 (1.9판까지) 문턱. 능력치의 효과는 이 숫자로 되돌려 셈한다 (경지마다 세기가 예전과 같게)
-local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000 }
+local OLD_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 218000, 791000, 2874000, 10438000, 37908000, 137674000, 500000000, 2500000000, 12500000000, 62500000000, 312500000000, 1562500000000, 7812500000000 }
 -- 2.0판의 문턱 (2.0판 기록을 2.1판 숫자로 옮길 때 쓴다)
 local V2_NEED = { 0, 150, 600, 2000, 5000, 10000, 20000, 36000, 60000, 90000, 130000, 180000, 240000, 310000, 400000, 500000, 650000, 850000, 1100000, 1500000 }
 -- 능력치 합 total(문턱표 N의 숫자)을 예전 숫자로 (문턱 사이는 로그로 잇는다)
@@ -191,13 +194,13 @@ end
 -- 환생할 때마다: 체력 영구 +25% · 주는 피해 +10% (2.4.1판), 적을 쓰러뜨려 얻는 능력치·수련 배수 +1 (2.1판), 천외천 너머의 경지가 하나 열린다
 ------------------------------------------------------------------------
 Config.REBIRTH = {
-	max = 4,
+	max = 6, -- 3.21판: 4 → 6 (오환 · 육환)
 	base = 16, -- 환생 전 끝 경지 (천외천)
 	power = 0.25,
 	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
-	names = { "일환", "이환", "삼환", "사환" },
-	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70) },
+	names = { "일환", "이환", "삼환", "사환", "오환", "육환" },
+	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60) },
 }
 function Config.realmCap(rebirth: number): number
 	return math.min(#Config.Realms, Config.REBIRTH.base + math.clamp(rebirth, 0, Config.REBIRTH.max))
@@ -245,18 +248,20 @@ end
 -- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
 Config.SAMSARA = {
 	realm = 10, -- 생사경
-	power = { 1.15, 1.25, 1.35, 1.5 },
-	hp = { 4, 5, 6, 8 },
+	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8 },
+	hp = { 4, 5, 6, 8, 10, 12 },
 	time = 180,
 	cooldown = 20,
-	gems = { 80, 150, 250, 400 },
-	scrolls = { 5, 8, 12, 20 },
-	coins = { 2000000, 5000000, 12000000, 30000000 },
+	gems = { 80, 150, 250, 400, 600, 900 },
+	scrolls = { 5, 8, 12, 20, 28, 40 },
+	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000 },
 	lines = {
 		"삼류에서 다시 시작한 너를 비웃는 것은 다름 아닌 지난 삶의 너다. 그 그림자를 넘어라.",
 		"두 번 살았으면 두 번 졌던 기억도 있다. 그 기억이 형체를 얻었다.",
 		"세 번째 삶의 그림자는 네 버릇을 모두 안다. 버릇을 버려라.",
-		"마지막 그림자. 이것을 넘으면 윤회의 바퀴가 너를 놓아준다. 권왕의 자리가 보인다.",
+		"네 번째 그림자. 이것을 넘으면 권왕의 자리가 보인다. 그러나 길은 거기서 끝나지 않는다.",
+		"다섯 번째 그림자는 네가 버린 것들로 만들어졌다. 그것은 지금의 너보다 오래 서 있었다.",
+		"마지막 그림자. 이것을 넘으면 윤회의 바퀴가 너를 놓아준다. 그 너머에서 지옥이 기다린다.",
 	},
 }
 
@@ -3715,7 +3720,7 @@ Config.Story = {
 	{ title = "세 번째 삶", text = "무량경에 올라 세 번째로 환생하라. 특전을 다시 고를 때다. 싸움에 쓸 것인가, 오르는 빠르기에 쓸 것인가.", goal = { kind = "rebirth", n = 3 }, reward = { coins = 5000000 } },
 	{ title = "세 번째 그림자", text = "세 번째 그림자는 네 버릇을 안다. 늘 쓰던 기술만 쓰면 막힌다.", goal = { kind = "samsara", n = 3 }, reward = { coins = 8000000, stats = 2000000 } },
 	{ title = "태허경", text = "텅 빈 하늘의 경지, 태허경에 올라라. 마지막 환생이 기다린다.", goal = { kind = "realm", n = 19 }, reward = { coins = 9000000, stats = 1500000 } },
-	{ title = "네 번째 삶", text = "태허경에 올라 마지막으로 환생하라. 더는 환생이 없다. 이제부터는 끝까지 오르는 일만 남는다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
+	{ title = "네 번째 삶", text = "태허경에 올라 네 번째로 환생하라. 권왕의 자리가 가깝다. 그러나 환생은 아직 둘이 더 남았다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
 	{ title = "마지막 그림자", text = "윤회의 바퀴가 마지막 그림자를 내보낸다. 네 삶을 모두 넘어선 너만이 권왕의 자리에 앉는다.", goal = { kind = "samsara", n = 4 }, reward = { coins = 20000000, stats = 20000000 } },
 	{ title = "권왕", text = "네 삶을 넘었다. 이제 마지막 경지, 권왕에 올라라. 맨손의 강호에 왕은 하나다.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법과 숨은 사부, 완전 각성과 승급. 그리고 너는 이제 권왕이다. 길은 끝이 없다.", goal = { kind = "done" }, reward = {} },
@@ -3805,6 +3810,15 @@ Config.EGGS = {
 	ducks = { at = Vector3.new(1100, 0, 2500) + Vector3.new(40, 0, 30), scrolls = 1 }, -- 거울 호수의 오리 가족
 	-- 3.15판: 세상 끝 벼랑 너머 숨은 정원 (무너지는 돌길로만 닿는다). 처음 상자를 열 때 한 번
 	edge = { cliff = Vector3.new(0, 0, 4780), garden = Vector3.new(0, 128, 5080), coins = 3000000, gems = 500, scrolls = 7 },
+}
+-- 3.21판 지옥 입구: 환생 3 이후, 세상 남동쪽 맨 끝의 희미한 풀을 밟으면 땅 밑 저승 방으로 떨어진다.
+--   저승사자에게 은자를 내고, 방 안의 원혼 셋을 달래면 사슬이 풀려 큰 포탈이 붉은 오라를 뿜는다 (지옥 맵은 다음 판)
+Config.HELL = {
+	rebirth = 3, -- 이 환생부터 풀이 밟힌다
+	grass = Vector3.new(4880, 0, 4880), -- 희미한 풀 (지상)
+	room = Vector3.new(4880, -320, 4880), -- 땅 밑 저승 방 가운데 (바닥 높이)
+	cost = 5000000, -- 저승사자에게 낼 은자 (한 번)
+	wisps = 3, -- 달래야 할 원혼
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -4808,6 +4822,10 @@ Config.ACHIEVEMENTS = {
 	{ id = "rb2", icon = "♻", name = "두 번째 삶", desc = "두 번 환생한다", kind = "rebirth", n = 2, coins = 5000000, scrolls = 10 },
 	{ id = "rb3", icon = "♻", name = "윤회의 바퀴", desc = "세 번 환생한다", kind = "rebirth", n = 3, coins = 12000000, scrolls = 15, title = "윤회자" },
 	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존", mount = "geumryong" },
+	{ id = "rb5", icon = "♻", name = "오환", desc = "다섯 번 환생한다", kind = "rebirth", n = 5, coins = 60000000, scrolls = 35, title = "오환의 주인" },
+	{ id = "rb6", icon = "♻", name = "육환 · 끝에 선 자", desc = "여섯 번 환생한다", kind = "rebirth", n = 6, coins = 150000000, scrolls = 60, title = "육환 · 끝에 선 자", tier = 5, mount = "geumryong" },
+	{ id = "r21", icon = "🔮", name = "대라경", desc = "권왕 너머, 대라경에 오른다", kind = "realm", n = 21, coins = 200000000, scrolls = 60, title = "대라의 주인" },
+	{ id = "r22", icon = "🕳", name = "허무경", desc = "모든 경지의 진짜 끝, 허무경에 오른다", kind = "realm", n = 22, coins = 500000000, scrolls = 100, title = "허무를 걷는 자", tier = 5 },
 	{ id = "s5", icon = "🥋", name = "다섯 갈래", desc = "권법 다섯을 익힌다", kind = "styles", n = 5, coins = 20000 },
 	{ id = "s15", icon = "🥋", name = "백가쟁명", desc = "권법 열다섯을 익힌다", kind = "styles", n = 15, coins = 1000000, title = "백가의 주인" },
 	{ id = "s25", icon = "🥋", name = "만권귀종", desc = "권법 스물다섯을 익힌다", kind = "styles", n = 25, coins = 10000000, scrolls = 20, title = "만권귀종" },

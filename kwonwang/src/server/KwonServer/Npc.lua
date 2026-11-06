@@ -198,10 +198,14 @@ local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: C
 		desc.TorsoColor = colors.torso
 		desc.LeftLegColor = colors.legs
 		desc.RightLegColor = colors.legs
+		-- 3.20.3판: 큰 몸 (보스는 키가 3~5배) 은 폭을 키만큼 키우면 팔·몸통이 거대한 네모 덩어리가 된다. 키는 그대로 키우고
+		-- 폭·깊이는 덜 키워 (키의 0.7제곱) 키 큰 거인 체형으로, 머리도 조금 덜 키운다
+		local wide = s > 1 and s ^ 0.7 or s
+		local headS = s > 1 and s ^ 0.85 or s
 		desc.HeightScale = s * (bd.h or 1)
-		desc.WidthScale = s * (bd.w or 1)
-		desc.DepthScale = s * (bd.w or 1)
-		desc.HeadScale = s * (bd.head or 1)
+		desc.WidthScale = wide * (bd.w or 1)
+		desc.DepthScale = wide * (bd.w or 1)
+		desc.HeadScale = headS * (bd.head or 1)
 		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
 	end)
 	if ok and typeof(model) == "Instance" and model:IsA("Model") and model:FindFirstChild("HumanoidRootPart") and model:FindFirstChild("LowerTorso") then

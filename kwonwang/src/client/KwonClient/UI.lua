@@ -2379,7 +2379,7 @@ local function buildTest()
 	})
 	section("📜 이야기·사부", {
 		{ "📜 이야기 다음 장", "testStory" }, { "📜 사부의 부탁 한 단계", "testQuestSkip" }, { "⚔ 사부 시험 모두 통과", "testTrial" },
-		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "🌫 세상 끝 벼랑으로", "testEdgeTp", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
+		{ "🧭 다음 사부에게", "testTp", close = true }, { "🔥 각성선인에게", "testAwakenTp", close = true }, { "🌫 세상 끝 벼랑으로", "testEdgeTp", close = true }, { "🕳 지옥 입구로", "testHell", close = true }, { "📖 비급 조각 +1", "testSecret", "fragment" },
 	})
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },

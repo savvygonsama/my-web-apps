@@ -4415,6 +4415,15 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				toast(player, "🌀 " .. m.region .. " · " .. m.name)
 			end
 		end
+	elseif action == "testHell" then
+		-- 3.21판: 지옥 입구 테스트 — 환생 3으로 맞추고 지상 희미한 풀 곁으로 (은자도 채워 준다)
+		if f then
+			local H = Config.HELL
+			p.rebirth = math.max(p.rebirth or 0, H.rebirth)
+			p.coins = math.max(p.coins, H.cost)
+			f.root.CFrame = CFrame.new(H.grass + Vector3.new(0, 6, -22))
+			toast(player, "🕳 남동쪽 세상 끝 · 희미한 풀을 밟아 보세요 (환생 3 이상)")
+		end
 	elseif action == "testEdgeTp" then
 		-- 3.15판: 세상 끝 벼랑 위 (무너지는 돌길 앞)
 		if f then
@@ -5756,6 +5765,122 @@ if W.eggs then
 			pushState(player)
 		end)
 	end
+end
+-- 3.21판 지옥 입구: 환생 3 이후 희미한 풀 → 저승 방. 저승사자에게 은자 → 원혼 셋 달래기 → 사슬이 풀리고 큰 포탈이 붉은 오라를 뿜는다
+if W.hell then
+	local H = Config.HELL
+	local HW = W.hell
+	local lastFall: { [Player]: number } = {}
+	Players.PlayerRemoving:Connect(function(pl: Player)
+		lastFall[pl] = nil
+	end)
+	local function wispCount(p: any): number
+		local n = 0
+		for i = 1, H.wisps do
+			if p.seen["hell_wisp" .. i] then
+				n += 1
+			end
+		end
+		return n
+	end
+	HW.grass.Touched:Connect(function(hit: BasePart)
+		local ch = hit.Parent
+		local player = ch and Players:GetPlayerFromCharacter(ch)
+		if not player or BATTLE then
+			return
+		end
+		local p = profiles[player]
+		if not p or (p.rebirth or 0) < H.rebirth then
+			return
+		end
+		local now = os.clock()
+		if now - (lastFall[player] or -99) < 4 then
+			return
+		end
+		lastFall[player] = now
+		local model = ch :: Model
+		model:PivotTo(CFrame.new(H.room + Vector3.new(0, 56, 34)))
+		toast(player, "🕳 희미한 풀이 꺼지며 발밑이 사라졌다")
+		if not p.seen.hell_fell then
+			p.seen.hell_fell = true
+			local est = states[player]
+			if est then
+				est.dirty = true
+			end
+			Push:FireClient(player, "dialog", { who = "🕳 땅 밑", title = "떨어졌다",
+				text = "세상의 끝자락, 아무도 밟지 않던 풀이었다. 어둠 속으로 한참을 떨어져 차가운 돌바닥에 닿았다. 붉은 빛이 번지는 큰 문과, 검은 갓을 쓴 그림자가 보인다." })
+		end
+	end)
+	HW.reaper.Triggered:Connect(function(player: Player)
+		local p, est = profiles[player], states[player]
+		if not p or not est then
+			return
+		end
+		local who = "💀 저승사자"
+		if p.seen.hell_open then
+			Push:FireClient(player, "dialog", { who = who, title = "열린 문",
+				text = "사슬은 이미 네 손에 끊어졌다. 문 앞에 서 보아라. 다만 저 너머는 이승의 법이 닿지 않는다. 돌아올 수 있을 때 가거라." })
+		elseif not p.seen.hell_paid then
+			if p.coins < H.cost then
+				Push:FireClient(player, "dialog", { who = who, title = "산 자가 어찌 여기까지",
+					text = string.format("...길을 보고 싶으냐. 길을 열려면 삯이 든다. 💰 %s 은자. 지금 가진 것으로는 어림도 없다. 채워서 오너라.", Config.formatNumber(H.cost)) })
+				return
+			end
+			p.coins -= H.cost
+			p.seen.hell_paid = true
+			Push:FireClient(player, "dialog", { who = who, title = "삯을 받았다",
+				text = string.format("💰 %s 은자. 좋다. 저 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 사슬을 쥐고 있지. 가서 달래 주어라. 모두 달래면 사슬이 풀릴 것이다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
+		elseif wispCount(p) < H.wisps then
+			Push:FireClient(player, "dialog", { who = who, title = "아직이다",
+				text = string.format("원혼은 방 가장자리를 떠돈다. 푸른 불을 찾아라. 달랜 혼 %d / %d.", wispCount(p), H.wisps) })
+		else
+			p.seen.hell_open = true
+			HW.flare(18)
+			Push:FireClient(player, "dialog", { who = who, title = "사슬이 끊어졌다",
+				text = "...혼들이 가벼워졌구나. 보아라. 사슬이 풀린다. 문 너머에서 붉은 기운이 올라온다. 저것이 지옥의 숨이다.\n\n문 앞에 서 보아라." })
+		end
+		est.dirty = true
+		pushState(player)
+	end)
+	for i, pp in ipairs(HW.wisps) do
+		pp.Triggered:Connect(function(player: Player)
+			local p, est = profiles[player], states[player]
+			if not p or not est then
+				return
+			end
+			local key = "hell_wisp" .. i
+			if not p.seen.hell_paid then
+				toast(player, "💙 원혼이 너를 힐끗 보고 멀어진다. 먼저 저승사자와 이야기하자")
+			elseif p.seen[key] then
+				toast(player, "💙 이미 달랜 혼이다. 편안히 흔들린다")
+			else
+				p.seen[key] = true
+				est.dirty = true
+				toast(player, string.format("💙 원혼을 달랬다 (%d/%d)", wispCount(p), H.wisps))
+			end
+		end)
+	end
+	HW.portal.Triggered:Connect(function(player: Player)
+		local p = profiles[player]
+		if not p then
+			return
+		end
+		if not p.seen.hell_open then
+			toast(player, "⛓ 사슬이 문을 휘감고 있다. 꿈쩍도 않는다")
+			return
+		end
+		HW.flare(14)
+		Push:FireClient(player, "dialog", { who = "🔥 지옥문", title = "붉은 숨",
+			text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 그 너머는 아직 길이 이어지지 않았다 — 지옥의 문턱까지만 와 있다.\n\n(지옥 맵은 다음 소식을 기다려 주세요)" })
+	end)
+	HW.exit.Triggered:Connect(function(player: Player)
+		local ch = player.Character
+		if ch then
+			ch:PivotTo(CFrame.new(H.grass + Vector3.new(0, 6, -18)))
+			lastFall[player] = os.clock() + 6
+			toast(player, "🌿 이승으로 올라왔다")
+		end
+	end)
 end
 if W.inn then
 	W.inn.Triggered:Connect(function(player: Player)
