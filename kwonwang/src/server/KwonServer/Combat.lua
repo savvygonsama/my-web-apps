@@ -878,6 +878,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		steady = steady,
 	})
 	if hooks.onHit then
+		opt.hitDef = hit
 		hooks.onHit(att, tgt, d, opt)
 	end
 	-- 열화 연소: 맞은 적에게 불이 붙는다 (계속 타며 피해)
@@ -1172,6 +1173,10 @@ function Combat.tick(dt: number)
 				speed = f.walk * (f :: any).mountMult
 			elseif (f :: any).sprint then
 				speed = f.walk * 1.45
+			end
+			-- 3.22판 극 광속권: 가속 단계·초가속이 걸음을 빠르게 (굼뜬 때는 그대로)
+			if (f :: any).hasteMul and t >= ((f :: any).slowUntil or 0) and t >= f.stunUntil and not f.guarding then
+				speed *= (f :: any).hasteMul
 			end
 			if f.hum and math.abs(f.hum.WalkSpeed - speed) > 0.1 then
 				f.hum.WalkSpeed = speed

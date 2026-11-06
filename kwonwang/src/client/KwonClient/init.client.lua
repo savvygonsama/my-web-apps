@@ -39,6 +39,7 @@ local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
 local Geuk = require(script:WaitForChild("Geuk"))
+local Speed = require(script:WaitForChild("Speed"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -762,6 +763,10 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.speedTrail then
+		-- 3.22판 극 광속권 초 오의: 출발선 컷씬 (시간 정지 일격은 하늘의 시계를 올려 본다, 무적)
+		Speed.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "chronoStrike")
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.id == "geuknull" then
 		-- 3.17.1판 극 공백권 초 오의: 낮게 돌며 올려다보는 컷씬 (격자선이 하늘로 뻗는다, 무적)
@@ -2187,11 +2192,17 @@ function handlers.skillfx(data: any)
 		Gourd.init({ shake = shake, tint = tint })
 		Samsara.init({ shake = shake, tint = tint })
 		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+		Speed.init({ shake = shake, flash = UI.flash })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
 	end
 	-- 3.19판 새 권법 (붙잡기·되받아치기·돌진·얼음 가두기·새 연타 장치)
 	if Arts.handles(data) then
 		Arts.run(data)
+		return
+	end
+	-- 3.22판 극 광속권
+	if Speed.handles(data) then
+		Speed.run(data)
 		return
 	end
 	-- 3.1판 극 권법의 기술 (평소·황혼)
@@ -2618,6 +2629,12 @@ function handlers.geukTwilight(data: any)
 	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
 	Geuk.twilight(data)
 end
+-- 3.22판: 극 광속권 · 초가속 (모두에게 알림, 가까우면 시간이 느려지는 연출)
+function handlers.geukHaste(data: any)
+	Speed.init({ shake = shake, flash = UI.flash })
+	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "시간이 멎듯 느려진다. 둘레의 적은 굼뜨고, 그의 걸음은 눈에 보이지 않으며, 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
+	Speed.haste(data)
+end
 -- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
 function handlers.geukDomain(data: any)
 	Null.init({ shake = shake, flash = UI.flash })
@@ -2716,11 +2733,15 @@ RunService.RenderStepped:Connect(function()
 	if style.geukGauge then
 		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
 		if twilightNow then
-			stacks = style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+			stacks = style.geukHaste and "🌠 초가속 · 시간이 느려진다 (기술이 모두 바뀌었다)" or (style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)")
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)
 			stacks = string.format("극 %s%s %d", string.rep("▰", k), string.rep("▱", 10 - k), g)
+			if style.haste then
+				local hn = math.clamp(tonumber(char:GetAttribute("Haste")) or 0, 0, style.haste.max)
+				stacks ..= string.format("  ⚡ 가속 %s%s", string.rep("▮", hn), string.rep("▯", style.haste.max - hn))
+			end
 		end
 	elseif style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))

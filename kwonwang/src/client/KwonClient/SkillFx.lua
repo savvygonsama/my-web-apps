@@ -558,6 +558,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	hojeop = {},
 	gongbaek = {},
 	geuknull = {},
+	geukspeed = {},
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.22.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2445,6 +2445,77 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.22판: 극 광속권. 진 풍신각의 끝. 지옥 황천 나루의 질주귀에게 (세 번 환생한 몸만)
+-- 극 패시브 · 초가속: 극이 차면 시간이 멎듯 느려지고 (둘레의 적이 굼뜨다), 30초 동안 모든 기술이 바뀌고 모든 타격이 잔상으로 한 번 더 친다
+-- 평소 패시브 · 가속: 맞힐수록 걸음이 빨라지고 (최대 5단계), 맞으면 풀린다. 네 번 맞힐 때마다 음속 충격
+Config.GEUK_REQ.geukspeed = { base = "pungsin2", lv = 20, rebirth = 3 }
+table.insert(Config.Styles, {
+	id = "geukspeed",
+	name = "극 광속권",
+	hanja = "極光速拳",
+	icon = "🌠",
+	grade = "극",
+	geuk = true,
+	color = Color3.fromRGB(120, 225, 255),
+	color2 = Color3.fromRGB(255, 215, 110),
+	fx = "wind",
+	speedTrail = true, -- 달릴 때 잔상이 늘어선다 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 17,
+	styleReq = "pungsin2",
+	trialHp = 13,
+	unlockHint = "진 풍신각을 숙련 20까지 쌓고 세 번 환생한 자만이, 지옥 황천 나루에서 질주귀를 만난다",
+	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고, 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고, 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 멈춘 듯 느려지고, 느려진 세상 속에서 그만 홀로 달린다.",
+	gimmick = "극 패시브 · 초가속: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 30초 동안 초가속에 든다. 둘레 90칸의 적은 굼뜨고 (이동 ×0.35), 내 걸음은 ×1.6, 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다. 그동안 기술이 모두 초가속의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 가속: 맞힐 때마다 걸음이 5%씩 빨라진다 (최대 5단계, 3초 안 맞히면 풀리고, 맞으면 반으로). 네 번 맞힐 때마다 음속 충격. 모든 기술 대기 28% 짧음. 초 오의(X)가 있다",
+	deflect = 0.3,
+	postureMult = 1.5,
+	speed = 1.4,
+	dashCd = 0.45,
+	cdMult = 0.72,
+	haste = { max = 5, move = 0.05, decay = 3 },
+	pulse = { every = 4, kind = "sonic", radius = 11, delay = 0.12, name = "음속 충격", dmg = 50, posture = 42, stun = 0.5, kb = 26, up = 4 },
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.3, dur = 30 },
+	geukHaste = { radius = 90, every = 0.25, slow = 0.35, walk = 1.6, echo = 0.5, echoDelay = 0.2 },
+	stance = "stance_light",
+	combo = {
+		{ id = "gs1", name = "극 광권", pose = "lt_flick", dur = 0.2, lunge = 4, hits = { hit(0.07, 6, 5, 26, 16, 0.3, 6) } },
+		{ id = "gs2", name = "극 섬권", pose = "lt_flick2", dur = 0.2, lunge = 4, hits = { hit(0.07, 6, 5, 26, 16, 0.3, 6) } },
+		{ id = "gs3", name = "극 쾌타", pose = "lt_blitz", dur = 0.4, lunge = 3, hits = { hit(0.08, 6, 5, 10, 8, 0.2, 2), hit(0.16, 6, 5, 10, 8, 0.2, 2), hit(0.24, 6, 5, 10, 8, 0.2, 2), hit(0.32, 6, 5, 14, 12, 0.3, 6) } },
+		{ id = "gs4", name = "극 음속각", pose = "lt_sonic", dur = 0.46, lunge = 4, hits = { hit(0.2, 7, 6, 46, 44, 0.6, 34, 6, true) } },
+	},
+	heavy = { id = "gsH", name = "극 관통", pose = "lt_pierce", dur = 0.6, lunge = 18, iframes = 0.25, hits = { hit(0.28, 16, 7, 80, 100, 0.9, 56, 8, true) } },
+	skills = {
+		E = { id = "gsE", name = "광속 관통", desc = "몸을 빛으로 쏘아 앞의 적들을 34칸 꿰뚫고 나타난다 (무적). 지나간 자리에 빛의 줄이 남고, 잠시 뒤 줄 전체가 한꺼번에 터지며 한 번 더 벤다", pose = "lt_lance", dur = 0.55, cd = 7, chi = 20, lunge = 34, iframes = 0.35,
+			mech = { kind = "lightLance", dist = 34, width = 5, hit = hit(0, 0, 0, 62, 52, 0.7, 10, 6), delay = 0.5, det = hit(0, 0, 0, 40, 34, 0.5, 18, 12) } },
+		R = { id = "gsR", name = "음속 돌파", desc = "소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며, 닿은 적이 크게 튕겨 나간다", pose = "lt_boom", dur = 0.6, cd = 10, chi = 25, lunge = 26, iframes = 0.5,
+			mech = { kind = "sonicBoom", dist = 26, width = 6, hit = hit(0, 0, 0, 48, 40, 0.6, 14, 4), coneAt = 0.3, coneLen = 22, coneWidth = 16, cone = hit(0, 0, 0, 78, 76, 1.0, 46, 12) } },
+		G = { id = "gsG", name = "시간 가속", desc = "발밑에 거대한 시계가 그려지고 시침과 분침이 점점 빨리 돈다. 시계 안의 적은 1.5초 동안 열다섯 번 난타당하고, 바늘이 12시에 모이는 순간 시계째 터진다", pose = "lt_clock", dur = 2.2, cd = 28, chi = 100, armor = true,
+			mech = { kind = "clockBarrage", radius = 24, dur = 1.5, every = 0.1, tick = hit(0, 0, 0, 14, 11, 0.25, 0), finalAt = 0.4, finalRadius = 26, final = hit(0, 0, 0, 250, 260, 1.5, 60, 24) } },
+		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 컷씬 (그동안 무적): 세상의 소리가 사라지고 몸이 출발선에 선다. 한 걸음에 74칸을 빛으로 가르고 나타나면, 지나간 길 위의 모든 적에게 그제야 베임이 닿는다. 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 5.0, cd = 55, chi = 150, armor = true,
+			mech = { kind = "lightDash", cut = 1.5, charge = 0.9, length = 74, width = 9, hit = hit(0, 0, 0, 340, 330, 1.6, 70, 26), boomAt = 0.7, boomRadius = 36, boom = hit(0, 0, 0, 220, 230, 1.5, 70, 30) } },
+	},
+	-- 초가속 (극 패시브 동안): 기술이 모두 바뀐다. 빛과 소리가 아닌 '시간'을 다룬다
+	twilight = {
+		name = "초가속",
+		color = Color3.fromRGB(255, 215, 110),
+		color2 = Color3.fromRGB(120, 225, 255),
+		dmg = 1.3,
+		pulse = { every = 3, kind = "sonicx", radius = 14, delay = 0.1, name = "초가속", dmg = 68, posture = 56, stun = 0.6, kb = 32, up = 6 },
+		heavy = { id = "gtsH", name = "초 관통", pose = "lt_pierce", dur = 0.55, lunge = 22, iframes = 0.3, hits = { hit(0.26, 18, 8, 112, 140, 1.1, 66, 10, true) } },
+		skills = {
+			E = { id = "gtsE", name = "광침", desc = "손목을 튕겨 빛의 바늘 아홉을 부채꼴로 쏜다. 바늘은 34칸을 순식간에 꿰뚫고 사라지며, 지나간 줄이 번쩍인다", pose = "lt_needle", dur = 0.4, cd = 5, chi = 16,
+				mech = { kind = "lightNeedles", n = 9, spread = 100, length = 34, width = 2.8, delay = 0.12, hit = hit(0, 0, 0, 46, 38, 0.5, 8, 4) } },
+			R = { id = "gtsR", name = "지그재그 질주", desc = "직각으로 꺾으며 앞으로 다섯 번 번개처럼 도약한다 (무적). 내려서는 자리마다 사방이 터지고, 지나간 길이 번개 줄로 남는다", pose = "lt_zig", dur = 0.7, cd = 8, chi = 22, iframes = 0.6,
+				mech = { kind = "zigzagStep", steps = 5, forward = 11, side = 9, every = 0.09, radius = 8, hit = hit(0, 0, 0, 54, 46, 0.6, 12, 6) } },
+			G = { id = "gtsG", name = "초가속 폭주", desc = "몸이 보이지 않을 만큼 빨라져 제자리를 맴돈다. 둘레 22칸이 회오리로 변해 적을 끌어당기며 쓸어 올리고, 회오리가 멎는 순간 빛의 기둥이 하늘까지 솟는다", pose = "lt_over", dur = 2.6, cd = 24, chi = 100, armor = true,
+				mech = { kind = "overclock", radius = 22, orbit = 14, dur = 2.0, every = 0.12, pull = 34, tick = hit(0, 0, 0, 17, 13, 0.3, 0), finalAt = 0.35, finalRadius = 28, final = hit(0, 0, 0, 320, 320, 1.6, 60, 28) } },
+			X = { id = "gtsX", name = "시간 정지 일격", desc = "초가속의 초 오의 (그동안 무적). 한 손을 하늘로 들면 세상의 빛깔이 빠지고 모든 것이 멈춘다. 멈춘 적 일곱의 몸마다 순식간에 빛의 선이 그어지고, 시간이 되돌아오는 순간 모든 선이 한꺼번에 베인다. 마지막에 하늘의 시계가 깨진다", pose = "lt_chrono", dur = 4.8, cd = 50, chi = 140, armor = true,
+				mech = { kind = "chronoStrike", cut = 1.4, n = 7, range = 56, every = 0.12, resumeAt = 0.8, hit = hit(0, 0, 0, 130, 120, 1.0, 30, 20), finalRadius = 44, final = hit(0, 0, 0, 340, 340, 1.8, 70, 30) } },
+		},
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.19판: 등급마다 새 권법 하나 (상급은 셋). 권법 소개창은 등급 순으로 늘어선다
 ------------------------------------------------------------------------
@@ -2918,6 +2989,7 @@ local FINISHERS = {
 	hojeop = { name = "몽유승천", pose = "petal_spin" },
 	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	geuknull = { name = "격자승천", pose = "void_point" },
+	geukspeed = { name = "광속승천권", pose = "lt_fin" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -3408,6 +3480,18 @@ for _, st in ipairs(Config.Styles) do
 			P("charge", "좌표 도약", 2, { length = 60, width = 9, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 31, 52, 0.9, 34) }),
 			P("rain", "ERROR", 2, { count = 10, radius = 8, spread = 30, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 31, 50, 0.8, 22) }),
 			P("quake", "공간 삭제", 3, { radius = 32, warn = 1.2, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 63, 124, 1.5, 60, 26) }),
+		} }
+	end
+	if st.id == "geukspeed" then
+		local gold, cyan = Color3.fromRGB(255, 215, 110), Color3.fromRGB(120, 225, 255)
+		st.trialIntro = { title = "속도의 시련", text = "저승길은 급할수록 멀다더라. 그런데 나는 급하다. 내 속도를 눈으로 따라올 수 있거든 따라와 봐라. 못 따라오면, 맞고 나서 알게 될 거다." }
+		st.trialBoss = { hp = 5400, posture = 940, scale = 1.7, reach = 1.6, speed = 34, patterns = {
+			P("charge", "섬전", 1, { length = 58, width = 8, warn = 0.45, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 27, 44, 0.8, 28) }),
+			P("rain", "광침비", 1, { count = 11, radius = 7, spread = 28, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = cyan, hit = hit(0, 0, 0, 28, 44, 0.8, 18) }),
+			P("donut", "음속 고리", 1, { inner = 8, outer = 28, warn = 0.85, cd = 7, pose = "void_circle", hit = hit(0, 0, 0, 33, 56, 0.9, 32) }),
+			P("charge", "잔상 돌격", 2, { length = 64, width = 9, warn = 0.4, cd = 4, times = 5, pose = "void_sink", hit = hit(0, 0, 0, 30, 50, 0.9, 34) }),
+			P("rain", "초가속", 2, { count = 12, radius = 8, spread = 30, warn = 0.6, cd = 6, pose = "point_sky", fx = "star", color = gold, hit = hit(0, 0, 0, 31, 50, 0.8, 22) }),
+			P("quake", "광속 일섬", 3, { radius = 30, warn = 1.0, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 60, 118, 1.5, 60, 26) }),
 		} }
 	end
 	if st.id == "hojeop" then
@@ -4462,6 +4546,9 @@ Config.MASTERS.geuknull = { name = "격자지기", at = Config.EGGS.edge.garden 
 	quote = "펼쳐 보면 알게 된다. 빈칸에도 좌표가 있다는 것을.", rumor = "세상 끝 벼랑 너머, 무너지는 돌길 끝에 떠 있는 정원에서 허공에 격자를 긋는 자가 있다더라" }
 Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
 	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
+-- 3.22판 극 광속권의 사부: 지옥 황천 나루의 질주귀
+Config.MASTERS.geukspeed = { name = "질주귀", at = Vector3.new(96, 8000 + 1.6, 34), region = "지옥 (황천 나루)", regionId = "hwangcheon", secret = true,
+	quote = "빨리 달리면 저승사자도 못 따라온다. 그래서 내가 여기 있지.", rumor = "저승 너머 황천 나루에, 저승사자보다 빠르다는 귀신이 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 -- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)
@@ -5484,6 +5571,8 @@ Poses.stances = {
 	stance_counter = { W = { 0, -30, 0 }, N = { 0, 30, 0 }, RS = { 95, 0, 10 }, RE = { 20, 0, 0 }, LS = { 40, 0, -20 }, LE = { 90, 0, 0 } },
 	-- 질풍연권: 두 주먹을 턱 앞에 붙인 가벼운 자세
 	stance_rush = { W = { -12, -20, 0 }, N = { 10, 20, 0 }, RS = { 80, 0, 15 }, RE = { 110, 0, 0 }, LS = { 90, 0, -10 }, LE = { 120, 0, 0 } },
+	-- 광속: 출발선의 달리기꾼. 몸을 앞으로 던질 듯 숙이고, 뒷발에 힘을 모은다 (한 손은 앞을 겨누고 한 손은 뒤로 젖힌다)
+	stance_light = { W = { -22, -25, 0 }, N = { 16, 25, 0 }, RS = { 105, 0, 12 }, RE = { 60, 0, 0 }, LS = { -25, 0, -18 }, LE = { 95, 0, 0 } },
 	-- 산악붕권: 두 주먹을 허리 옆에 무겁게 내린다
 	stance_mountain = { W = { -5, -10, 0 }, N = { 0, 10, 0 }, RS = { 20, 0, 40 }, RE = { 100, 0, 0 }, LS = { 20, 0, -40 }, LE = { 100, 0, 0 } },
 	-- 빙혼신장: 한 손바닥을 앞으로 세우고 한 손은 허리 뒤로 (서리를 머금은 자세)
@@ -5545,6 +5634,7 @@ Poses.stanceLegs = {
 	stance_grapple = { RH = { -20, 0, 18 }, LH = { 25, 0, -18 }, RK = { -50, 0, 0 }, LK = { -46, 0, 0 }, R = { 0, 0, 0, 0, -1.1, 0 } },
 	stance_counter = { RH = { -10, 0, 8 }, LH = { 30, 0, -6 }, RK = { -25, 0, 0 }, LK = { -45, 0, 0 }, R = { 0, 0, 0, 0, -0.7, 0 } },
 	stance_rush = { RH = { -25, 0, 6 }, LH = { 30, 0, -6 }, RK = { -30, 0, 0 }, LK = { -40, 0, 0 }, R = { -6, 0, 0, 0, -0.7, 0 } },
+	stance_light = { RH = { -38, 0, 6 }, LH = { 28, 0, -6 }, RK = { -62, 0, 0 }, LK = { -22, 0, 0 }, R = { -14, -10, 0, 0, -0.9, 0.2 } },
 	stance_mountain = { RH = { -15, 0, 25 }, LH = { -15, 0, -25 }, RK = { -55, 0, 0 }, LK = { -55, 0, 0 }, R = { 0, 0, 0, 0, -1.3, 0 } },
 	stance_ice = { RH = { -15, 0, 10 }, LH = { 20, 0, -10 }, RK = { -30, 0, 0 }, LK = { -35, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } },
 	stance_jade = { RH = { -10, 0, 12 }, LH = { 15, 0, -12 }, RK = { -30, 0, 0 }, LK = { -30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } },
@@ -8202,6 +8292,101 @@ A.ch_fin = { -- 패왕승천권: 등 뒤의 왼손은 그대로, 오른 주먹 �
 	{ t = 1, j = CH },
 }
 
+-- ── 극 광속권: 보이기 전에 맞는다. 가장 짧은 동작, 가장 큰 몸통 비틀림, 늘 앞으로 쏠린 몸 ──
+local LT = stanceEnd("stance_light")
+A.lt_flick = { -- 광권: 눈에 안 보이는 오른 잽. 어깨만 튕기고 곧바로 제자리
+	{ t = 0, j = LT },
+	{ t = 0.26, e = "snap", j = { W = { -22, 10, 0 }, N = { 12, -5, 0 }, RS = { 97, 0, 0 }, RE = { 0, 0, 0 }, LS = { -20, 0, -20 }, LE = { 100, 0, 0 }, RK = { -50, 0, 0 }, R = { -14, 6, 0, 0, -0.85, -0.7 } } },
+	{ t = 0.42, j = { W = { -22, -5, 0 }, RS = { 92, 0, 10 }, RE = { 70, 0, 0 }, R = { -14, -4, 0, 0, -0.85, -0.5 } } },
+	{ t = 1, j = LT },
+}
+A.lt_flick2 = { -- 섬권: 왼 어깨가 번쩍. 앞발을 끌어 붙이며 지른다
+	{ t = 0, j = LT },
+	{ t = 0.26, e = "snap", j = { W = { -24, -40, 0 }, N = { 14, 35, 0 }, LS = { 98, 0, -4 }, LE = { 0, 0, 0 }, RS = { 70, 0, 20 }, RE = { 120, 0, 0 }, RH = { -20, 0, 0 }, R = { -16, -35, 0, 0, -0.9, -0.9 } } },
+	{ t = 0.44, j = { W = { -22, -10, 0 }, LS = { 80, 0, -10 }, LE = { 80, 0, 0 }, R = { -14, -8, 0, 0, -0.85, -0.6 } } },
+	{ t = 1, j = LT },
+}
+A.lt_blitz = { -- 쾌타: 두 주먹이 번갈아 다섯 번. 팔이 여러 개처럼 보인다
+	{ t = 0, j = LT },
+	{ t = 0.12, e = "snap", j = { W = { -22, 25, 0 }, RS = { 98, 0, 0 }, RE = { 0, 0, 0 }, LS = { 70, 0, -15 }, LE = { 120, 0, 0 }, R = { -14, 20, 0, 0, -0.85, -0.7 } } },
+	{ t = 0.22, e = "snap", j = { W = { -22, -30, 0 }, LS = { 98, 0, 0 }, LE = { 0, 0, 0 }, RS = { 70, 0, 15 }, RE = { 125, 0, 0 }, R = { -14, -25, 0, 0, -0.85, -0.75 } } },
+	{ t = 0.32, e = "snap", j = { W = { -22, 28, 0 }, RS = { 98, 0, 0 }, RE = { 0, 0, 0 }, LS = { 70, 0, -15 }, LE = { 125, 0, 0 }, R = { -14, 22, 0, 0, -0.85, -0.8 } } },
+	{ t = 0.42, e = "snap", j = { W = { -22, -32, 0 }, LS = { 98, 0, 0 }, LE = { 0, 0, 0 }, RS = { 70, 0, 15 }, RE = { 125, 0, 0 }, R = { -14, -28, 0, 0, -0.85, -0.85 } } },
+	{ t = 0.55, e = "snap", j = { W = { -26, 40, 0 }, N = { 18, -30, 0 }, RS = { 100, 0, 0 }, RE = { 0, 0, 0 }, LS = { 30, 0, -30 }, LE = { 100, 0, 0 }, LK = { -60, 0, 0 }, R = { -18, 34, 0, 0, -0.9, -1.1 } } },
+	{ t = 1, j = LT },
+}
+A.lt_sonic = { -- 음속각: 몸을 한 바퀴 틀며 머리 높이를 가르는 돌려차기. 발끝이 소리보다 먼저 닿는다
+	{ t = 0, j = { W = { 0, 40, 0 }, RS = { 60, 0, 40 }, LS = { 40, 0, -40 }, RK = { -30, 0, 0 }, LK = { -60, 0, 0 }, R = { 0, 50, 0, 0, -0.6, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { 0, -70, 0 }, N = { 0, 60, 0 }, RS = { 40, 0, 70 }, RE = { 30, 0, 0 }, LS = { 40, 0, -70 }, LE = { 30, 0, 0 }, RH = { 100, 0, 15 }, RK = { 0, 0, 0 }, LH = { -20, 0, 0 }, LK = { -40, 0, 0 }, R = { 0, -150, -15, 0, -0.2, 0 } } },
+	{ t = 0.6, j = { W = { 0, -30, 0 }, RH = { 40, 0, 5 }, RK = { -60, 0, 0 }, R = { 0, -230, 0, 0, -0.5, 0 } } },
+	{ t = 1, j = LT },
+}
+A.lt_pierce = { -- 관통: 한 발을 박차고 몸 전체를 창처럼 뻗는다. 팔 끝, 어깨, 허리, 뒷발이 일직선
+	{ t = 0, j = { W = { -30, -35, 0 }, N = { 20, 35, 0 }, RS = { 30, 0, 25 }, RE = { 120, 0, 0 }, LS = { -40, 0, -20 }, LE = { 80, 0, 0 }, RK = { -90, 0, 0 }, LK = { -20, 0, 0 }, R = { -30, -30, 0, 0, -1.4, 0.5 } } },
+	{ t = 0.38, e = "snap", j = { W = { -55, 0, 0 }, N = { 40, 0, 0 }, RS = { 120, 0, 0 }, RE = { 0, 0, 0 }, LS = { 140, 0, -10 }, LE = { 0, 0, 0 }, RH = { 15, 0, 0 }, RK = { -5, 0, 0 }, LH = { -45, 0, 0 }, LK = { 0, 0, 0 }, R = { -75, 0, 0, 0, 0, -1.6 } } },
+	{ t = 0.7, j = { W = { -25, 0, 0 }, RS = { 100, 0, 5 }, RE = { 30, 0, 0 }, R = { -30, 0, 0, 0, -0.7, -0.6 } } },
+	{ t = 1, j = LT },
+}
+A.lt_lance = { -- 광속 관통(E): 낮게 웅크렸다 몸을 쏘아 낸다. 손끝을 모은 수도
+	{ t = 0, j = { W = { -35, -30, 0 }, N = { 25, 30, 0 }, RS = { 20, 0, 20 }, RE = { 130, 0, 0 }, LS = { -50, 0, -15 }, LE = { 70, 0, 0 }, RK = { -100, 0, 0 }, LK = { -30, 0, 0 }, R = { -35, -25, 0, 0, -1.6, 0.4 } } },
+	{ t = 0.3, e = "snap", j = { W = { -60, 0, 0 }, N = { 45, 0, 0 }, RS = { 150, 0, 0 }, RE = { 0, 0, 0 }, LS = { 150, 0, -5 }, LE = { 0, 0, 0 }, RH = { 10, 0, 0 }, RK = { -5, 0, 0 }, LH = { -50, 0, 0 }, LK = { 0, 0, 0 }, R = { -85, 0, 0, 0, 0.3, -1.8 } } },
+	{ t = 0.7, j = { W = { -20, 0, 0 }, RS = { 100, 0, 10 }, RE = { 40, 0, 0 }, R = { -25, 0, 0, 0, -0.8, -0.3 } } },
+	{ t = 1, j = LT },
+}
+A.lt_boom = { -- 음속 돌파(R): 두 팔을 뒤로 쭉 젖혀 바람을 가르는 자세에서 한 번에 몸을 던진다
+	{ t = 0, j = { W = { -45, 0, 0 }, N = { 30, 0, 0 }, RS = { -60, 0, 25 }, RE = { 10, 0, 0 }, LS = { -60, 0, -25 }, LE = { 10, 0, 0 }, RH = { -30, 0, 0 }, RK = { -60, 0, 0 }, LH = { 20, 0, 0 }, LK = { -30, 0, 0 }, R = { -50, 0, 0, 0, -1.0, 0 } } },
+	{ t = 0.34, e = "snap", j = { W = { -70, 0, 0 }, N = { 50, 0, 0 }, RS = { -80, 0, 20 }, RE = { 0, 0, 0 }, LS = { -80, 0, -20 }, LE = { 0, 0, 0 }, RH = { -40, 0, 0 }, RK = { -10, 0, 0 }, LH = { 30, 0, 0 }, LK = { -10, 0, 0 }, R = { -80, 0, 0, 0, 0.2, -2.2 } } },
+	{ t = 0.62, e = "snap", j = { W = { 5, 0, 0 }, N = { -10, 0, 0 }, RS = { 120, 0, 60 }, RE = { 20, 0, 0 }, LS = { 120, 0, -60 }, LE = { 20, 0, 0 }, R = { 5, 0, 0, 0, -0.4, -0.2 } } },
+	{ t = 1, j = LT },
+}
+A.lt_clock = { -- 시간 가속(G): 한 팔은 시침처럼 느리게, 한 팔은 분침처럼 빠르게 돌린다. 마지막엔 두 주먹을 하나로
+	{ t = 0, j = { W = { -5, 0, 0 }, RS = { 170, 0, 10 }, RE = { 0, 0, 0 }, LS = { 40, 0, -40 }, LE = { 30, 0, 0 }, R = { 0, 0, 0, 0, -0.6, 0 } } },
+	{ t = 0.2, j = { W = { -5, 25, 0 }, RS = { 90, 0, 80 }, RE = { 0, 0, 0 }, LS = { 175, 0, -10 }, LE = { 0, 0, 0 }, R = { 0, 40, 0, 0, -0.6, 0 } } },
+	{ t = 0.4, j = { W = { -5, -25, 0 }, RS = { -20, 0, 20 }, RE = { 90, 0, 0 }, LS = { 90, 0, -80 }, LE = { 0, 0, 0 }, R = { 0, -40, 0, 0, -0.6, 0 } } },
+	{ t = 0.6, j = { W = { -5, 25, 0 }, RS = { 90, 0, 80 }, RE = { 0, 0, 0 }, LS = { -20, 0, -20 }, LE = { 90, 0, 0 }, R = { 0, 40, 0, 0, -0.6, 0 } } },
+	{ t = 0.8, j = { W = { -5, -25, 0 }, RS = { 175, 0, 10 }, RE = { 0, 0, 0 }, LS = { 90, 0, -80 }, LE = { 0, 0, 0 }, R = { 0, -40, 0, 0, -0.6, 0 } } },
+	{ t = 0.92, e = "snap", j = { W = { -30, 0, 0 }, N = { 25, 0, 0 }, RS = { 120, 0, 0 }, RE = { 0, 0, 0 }, LS = { 120, 0, 0 }, LE = { 0, 0, 0 }, R = { -25, 0, 0, 0, -0.9, -0.8 } } },
+	{ t = 1, j = LT },
+}
+A.lt_ult = { -- 광속 일섬(X): 육상 출발선. 손끝으로 땅을 짚고 엉덩이를 들었다가 한 걸음에 사라진다
+	{ t = 0, j = { W = { -55, -15, 0 }, N = { 40, 15, 0 }, RS = { 20, 0, 18 }, RE = { 10, 0, 0 }, LS = { 20, 0, -18 }, LE = { 10, 0, 0 }, RH = { -60, 0, 0 }, RK = { -110, 0, 0 }, LH = { 40, 0, 0 }, LK = { -60, 0, 0 }, R = { -40, -10, 0, 0, -1.7, 0.3 } } },
+	{ t = 0.5, j = { W = { -60, -15, 0 }, N = { 45, 15, 0 }, RS = { 20, 0, 18 }, RE = { 10, 0, 0 }, LS = { 20, 0, -18 }, LE = { 10, 0, 0 }, RH = { -40, 0, 0 }, RK = { -60, 0, 0 }, LH = { 30, 0, 0 }, LK = { -20, 0, 0 }, R = { -45, -10, 0, 0, -1.2, 0.3 } } },
+	{ t = 0.62, e = "snap", j = { W = { -75, 0, 0 }, N = { 55, 0, 0 }, RS = { 150, 0, 0 }, RE = { 0, 0, 0 }, LS = { 150, 0, 0 }, LE = { 0, 0, 0 }, RH = { 20, 0, 0 }, RK = { 0, 0, 0 }, LH = { -55, 0, 0 }, LK = { 0, 0, 0 }, R = { -90, 0, 0, 0, 0.3, -2.4 } } },
+	{ t = 0.85, j = { W = { 0, 0, 0 }, N = { 0, 0, 0 }, RS = { 40, 0, 20 }, RE = { 60, 0, 0 }, LS = { 40, 0, -20 }, LE = { 60, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 1, j = LT },
+}
+A.lt_needle = { -- 광침(황혼 E): 두 손목을 튕겨 바늘을 부채꼴로 흩뿌린다
+	{ t = 0, j = { W = { -5, -20, 0 }, RS = { 60, 0, 40 }, RE = { 110, 0, 0 }, LS = { 60, 0, -40 }, LE = { 110, 0, 0 } } },
+	{ t = 0.4, e = "snap", j = { W = { -12, 30, 0 }, RS = { 90, 0, 80 }, RE = { 5, 0, 0 }, LS = { 90, 0, -80 }, LE = { 5, 0, 0 }, R = { -8, 20, 0, 0, -0.7, -0.5 } } },
+	{ t = 1, j = LT },
+}
+A.lt_zig = { -- 지그재그 질주(황혼 R): 한 번 오른쪽으로, 한 번 왼쪽으로 몸을 던지며 꺾는다
+	{ t = 0, j = { W = { -30, 30, 0 }, N = { 20, -30, 0 }, RS = { 110, 0, 20 }, RE = { 30, 0, 0 }, LS = { -40, 0, -20 }, LE = { 80, 0, 0 }, RK = { -70, 0, 0 }, R = { -30, 30, 15, 0, -1.0, -0.5 } } },
+	{ t = 0.25, e = "snap", j = { W = { -30, -30, 0 }, N = { 20, 30, 0 }, LS = { 110, 0, -20 }, LE = { 30, 0, 0 }, RS = { -40, 0, 20 }, RE = { 80, 0, 0 }, LK = { -70, 0, 0 }, R = { -30, -30, -15, 0, -1.0, -0.6 } } },
+	{ t = 0.5, e = "snap", j = { W = { -30, 30, 0 }, N = { 20, -30, 0 }, RS = { 110, 0, 20 }, RE = { 30, 0, 0 }, LS = { -40, 0, -20 }, LE = { 80, 0, 0 }, RK = { -70, 0, 0 }, R = { -30, 30, 15, 0, -1.0, -0.6 } } },
+	{ t = 0.78, e = "snap", j = { W = { -35, 0, 0 }, N = { 25, 0, 0 }, RS = { 130, 0, 0 }, RE = { 0, 0, 0 }, LS = { 130, 0, 0 }, LE = { 0, 0, 0 }, R = { -60, 0, 0, 0, -0.2, -1.4 } } },
+	{ t = 1, j = LT },
+}
+A.lt_over = { -- 초가속 폭주(황혼 G): 팔을 풍차처럼, 몸을 팽이처럼 돌리며 달린다
+	{ t = 0, j = { W = { -25, 0, 0 }, RS = { 100, 0, 10 }, RE = { 30, 0, 0 }, LS = { 100, 0, -10 }, LE = { 30, 0, 0 }, R = { -25, 0, 0, 0, -0.8, 0 } } },
+	{ t = 0.3, j = { W = { -25, 90, 0 }, RS = { 170, 0, 30 }, RE = { 0, 0, 0 }, LS = { -40, 0, -30 }, LE = { 20, 0, 0 }, R = { -25, 120, 0, 0, -0.8, 0 } } },
+	{ t = 0.6, j = { W = { -25, -90, 0 }, RS = { -40, 0, 30 }, RE = { 20, 0, 0 }, LS = { 170, 0, -30 }, LE = { 0, 0, 0 }, R = { -25, 240, 0, 0, -0.8, 0 } } },
+	{ t = 0.85, e = "snap", j = { W = { 0, 0, 0 }, RS = { 175, 0, 5 }, RE = { 0, 0, 0 }, LS = { 175, 0, -5 }, LE = { 0, 0, 0 }, R = { 5, 360, 0, 0, 0.4, 0 } } },
+	{ t = 1, j = LT },
+}
+A.lt_chrono = { -- 시간 정지 일격(황혼 X): 한 손을 하늘로 곧게 들어 시간을 멈추고, 한 손은 가슴에 모은다. 내려치며 되감는다
+	{ t = 0, j = { W = { 0, -10, 0 }, RS = { 40, 0, 20 }, RE = { 90, 0, 0 }, LS = { 40, 0, -20 }, LE = { 90, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } } },
+	{ t = 0.35, e = "snap", j = { W = { 8, 0, 0 }, N = { -15, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 70, 0, -5 }, LE = { 120, 0, 0 }, R = { 5, 0, 0, 0, -0.2, 0 } } },
+	{ t = 0.65, j = { W = { 8, 0, 0 }, N = { -15, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 70, 0, -5 }, LE = { 120, 0, 0 } } },
+	{ t = 0.82, e = "snap", j = { W = { -40, 0, 0 }, N = { 30, 0, 0 }, RS = { 40, 0, 10 }, RE = { 10, 0, 0 }, LS = { 130, 0, 0 }, LE = { 0, 0, 0 }, R = { -40, 0, 0, 0, -1.0, -0.8 } } },
+	{ t = 1, j = LT },
+}
+A.lt_fin = { -- 광속승천권: 웅크린 채 빛처럼 솟으며 두 주먹을 하늘로
+	{ t = 0, j = { RS = { 0, 0, 25 }, RE = { 120, 0, 0 }, LS = { 0, 0, -25 }, LE = { 120, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { 20, 0, 0, 0, -1.9, 0 } } },
+	{ t = 0.34, e = "snap", j = { W = { -15, 0, 0 }, N = { 35, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 178, 0, -5 }, LE = { 0, 0, 0 }, RH = { 30, 0, 0 }, RK = { -60, 0, 0 }, R = { -10, 0, 0, 0, 1.6, -0.5 } } },
+	{ t = 1, j = LT },
+}
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
@@ -8262,6 +8447,7 @@ Poses.limbs = {
 	soju_spray = { "RightHand" }, soju_stagger = { "RightFoot", "LeftFoot" }, soju_throw = { "RightHand" }, soju_rolls = { "RightHand", "LeftHand" }, soju_rise = { "RightHand" },
 	reap_slash_r = { "RightHand" }, reap_slash_l = { "RightHand" }, reap_spin = { "RightHand" }, reap_overhead = { "RightHand" }, reap_wave = { "RightHand" },
 	reap_hook = { "RightHand" }, reap_leap = { "RightHand" }, ult_reap = { "RightHand" }, reap_moon = { "RightHand" }, reap_rise = { "RightHand" },
+	lt_flick = { "RightHand" }, lt_flick2 = { "LeftHand" }, lt_blitz = { "RightHand", "LeftHand" }, lt_sonic = { "RightFoot", "LeftFoot" }, lt_pierce = { "RightHand", "LeftHand" }, lt_lance = { "RightHand", "LeftHand" }, lt_boom = { "RightHand", "LeftHand" }, lt_clock = { "RightHand", "LeftHand" }, lt_ult = { "RightHand", "LeftHand" }, lt_needle = { "RightHand", "LeftHand" }, lt_zig = { "RightHand", "LeftHand" }, lt_over = { "RightHand", "LeftHand" }, lt_chrono = { "RightHand", "LeftHand" }, lt_fin = { "RightHand", "LeftHand" },
 	staff_swing_r = { "RightHand" }, staff_swing_l = { "RightHand" }, staff_spin = { "RightHand" }, staff_slam = { "RightHand" }, staff_thrust = { "RightHand" },
 	staff_point = { "RightHand" }, staff_sigil = { "RightHand" }, staff_plant = { "RightHand", "LeftHand" }, staff_dome = { "RightHand" }, staff_rise = { "RightHand" },
 }
@@ -11431,6 +11617,53 @@ local function geukStyle(f: any): any
 	local st = Combat.styleOf(f)
 	return (st and st.geukGauge) and st or nil
 end
+-- 3.22판 극 광속권 · 가속: 맞힐수록 걸음이 빨라지고 (단계마다 +5%), 3초 안 맞히면 풀리고, 맞으면 반으로 줄어든다
+local Haste = {}
+function Haste.refresh(f: any)
+	local st = Combat.styleOf(f)
+	local n = f.hasteN or 0
+	local mul = 1
+	if st and st.haste then
+		mul = 1 + st.haste.move * n
+	end
+	if f.hasteTwilight and st and st.geukHaste then
+		mul *= st.geukHaste.walk
+	end
+	f.hasteMul = mul > 1.001 and mul or nil
+	f.model:SetAttribute("Haste", n)
+end
+function Haste.add(f: any, st: any)
+	local H = st.haste
+	local now = os.clock()
+	if now - (f.hasteAt or 0) > H.decay then
+		f.hasteN = 0
+	end
+	f.hasteAt = now
+	local n = math.min(H.max, (f.hasteN or 0) + 1)
+	if n ~= f.hasteN then
+		f.hasteN = n
+		Haste.refresh(f)
+	end
+end
+function Haste.hurt(f: any)
+	if (f.hasteN or 0) > 0 then
+		f.hasteN = math.floor(f.hasteN / 2)
+		f.hasteAt = os.clock()
+		Haste.refresh(f)
+	end
+end
+-- 오래 안 맞히면 풀린다
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		for _, f in pairs(Combat.fighters) do
+			if (f.hasteN or 0) > 0 and os.clock() - (f.hasteAt or 0) > 3 then
+				f.hasteN = 0
+				Haste.refresh(f)
+			end
+		end
+	end
+end)
 function Geuk.trigger(f: any, st: any)
 	local G = st.geukGauge
 	local now = os.clock()
@@ -11498,6 +11731,39 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
+	local HS = st.geukHaste
+	if HS then
+		-- 3.22판 극 광속권 · 초가속: 둘레의 적이 굼떠지고, 내 걸음이 빨라지며, 모든 타격이 잔상으로 한 번 더 친다
+		f.hasteTwilight = true
+		Haste.refresh(f)
+		Push:FireAllClients("geukHaste", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+		task.spawn(function()
+			local t0 = now + G.cut
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
+				if os.clock() >= t0 then
+					local at = f.root.Position
+					for _, o in pairs(Combat.fighters) do
+						if o ~= f and not o.dead and Combat.hostile(f, o) and (o.root.Position - at).Magnitude <= HS.radius then
+							o.slowUntil = os.clock() + 0.6
+							o.slowMul = HS.slow
+						end
+					end
+				end
+				task.wait(HS.every)
+			end
+			if f.twilightUntil == token or f.dead then
+				f.hasteTwilight = nil
+				Haste.refresh(f)
+			end
+			if f.twilightUntil == token and f.dead then
+				f.twilightUntil = os.clock()
+				if f.model.Parent then
+					f.model:SetAttribute("Twilight", nil)
+				end
+			end
+		end)
+		return
+	end
 	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
 	World.twilight(G.cut, G.dur)
 end
@@ -11513,6 +11779,29 @@ function Geuk.add(f: any, amount: number)
 	end
 end
 function Geuk.onHit(att: any, tgt: any, opt: any)
+	do
+		local hs = Combat.styleOf(att)
+		if hs and hs.haste then
+			Haste.add(att, hs)
+			-- 초가속: 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다 (잔상의 타격은 다시 잔상을 만들지 않는다)
+			if att.hasteTwilight and hs.geukHaste and not (opt and opt.echo) and not tgt.dead then
+				local E = hs.geukHaste
+				local def = opt and opt.hitDef
+				if def and (def.dmg or 0) > 0 then
+					local echoHit = { dmg = def.dmg * E.echo, posture = 0, stun = 0, kb = 0 }
+					task.delay(E.echoDelay, function()
+						if not att.dead and not tgt.dead and att.root.Parent and tgt.root.Parent then
+							Combat.applyHit(att, tgt, echoHit, { move = { name = "잔상" }, chain = true, echo = true, unblockable = true })
+						end
+					end)
+				end
+			end
+		end
+		local ts = tgt.player and Combat.styleOf(tgt)
+		if ts and ts.haste then
+			Haste.hurt(tgt)
+		end
+	end
 	if att.player then
 		local st = geukStyle(att)
 		if st then
@@ -12723,6 +13012,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.coins = math.max(p.coins, H.cost)
 			f.root.CFrame = CFrame.new(H.grass + Vector3.new(0, 6, -22))
 			toast(player, "🕳 남동쪽 세상 끝 · 희미한 풀을 밟아 보세요 (환생 3 이상)")
+		end
+	elseif action == "testHellWorld" then
+		-- 3.22판: 지옥 황천 나루로 바로 (환생 3으로 맞춘다)
+		if f then
+			p.rebirth = math.max(p.rebirth or 0, Config.HELL.rebirth)
+			f.root.CFrame = CFrame.new(Config.HELL.zones[1].at + Vector3.new(0, 5, 70))
+			toast(player, "🔥 지옥 · 황천 나루")
 		end
 	elseif action == "testEdgeTp" then
 		-- 3.15판: 세상 끝 벼랑 위 (무너지는 돌길 앞)
@@ -16881,6 +17177,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		steady = steady,
 	})
 	if hooks.onHit then
+		opt.hitDef = hit
 		hooks.onHit(att, tgt, d, opt)
 	end
 	-- 열화 연소: 맞은 적에게 불이 붙는다 (계속 타며 피해)
@@ -17175,6 +17472,10 @@ function Combat.tick(dt: number)
 				speed = f.walk * (f :: any).mountMult
 			elseif (f :: any).sprint then
 				speed = f.walk * 1.45
+			end
+			-- 3.22판 극 광속권: 가속 단계·초가속이 걸음을 빠르게 (굼뜬 때는 그대로)
+			if (f :: any).hasteMul and t >= ((f :: any).slowUntil or 0) and t >= f.stunUntil and not f.guarding then
+				speed *= (f :: any).hasteMul
 			end
 			if f.hum and math.abs(f.hum.WalkSpeed - speed) > 0.1 then
 				f.hum.WalkSpeed = speed
@@ -19838,6 +20139,19 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "geukspeed" then
+		-- 질주귀: 창백한 얼굴에 푸른 눈, 어깨에서 길게 뒤로 끌리는 금빛 목도리, 등 뒤로 번득이는 속도선 날개, 발목의 빛 고리
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "SpeedEye", Vector3.new(0.2, 0.08, 0.05), CFrame.new(x * hs.X * 0.2, hs.Y * 0.06, -hs.Z * 0.54), Color3.fromRGB(120, 225, 255), Enum.Material.Neon)
+		end
+		wear(model, "UpperTorso", "SpeedScarf", Vector3.new(1.4, 0.35, 1.2), CFrame.new(0, 0.62, 0), Color3.fromRGB(255, 215, 110), Enum.Material.Neon)
+		wear(model, "UpperTorso", "SpeedScarfTail", Vector3.new(0.5, 0.12, 4.2), CFrame.new(0.3, 0.5, 2.4) * CFrame.Angles(math.rad(-8), 0, math.rad(6)), Color3.fromRGB(255, 215, 110), Enum.Material.Neon)
+		for k = -2, 2 do
+			wear(model, "UpperTorso", "SpeedBlade", Vector3.new(0.1, 0.1, 3.2 - math.abs(k) * 0.5), CFrame.new(k * 0.35, 0.4 - math.abs(k) * 0.12, 2.0) * CFrame.Angles(0, math.rad(k * 7), 0), Color3.fromRGB(180, 240, 255), Enum.Material.Neon)
+		end
+		for _, side in ipairs({ "RightFoot", "LeftFoot" }) do
+			wear(model, side, "SpeedAnklet", Vector3.new(0.9, 0.12, 0.9), CFrame.new(0, 0.3, 0), Color3.fromRGB(120, 225, 255), Enum.Material.Neon)
+		end
 	elseif id == "geuknull" then
 		-- 격자지기: 공백권 사부와 같은 지워진 얼굴이지만 하얗게 뒤집혔다. 검은 점 둘, 등 뒤의 흰 격자 틀, 붉은 잡음 줄
 		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(240, 240, 245), Enum.Material.SmoothPlastic)
@@ -24132,6 +24446,159 @@ function Skills.run(f: any, move: any, ctx: any)
 		end
 		after(T5, function()
 			for _, o in ipairs(hostilesNear(f, center, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	-- 3.22판 극 광속권 ------------------------------------------------
+	elseif kind == "lightLance" then
+		-- 광속 관통 (E): 앞으로 쏘아 지나는 적을 베고, 지나간 줄이 잠시 뒤 한꺼번에 터진다 (움직임은 기술의 lunge가 한다)
+		local from = f.root.Position
+		local to = from + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "lightLance", m = f.model, from = from, to = to, delay = m.delay / sp, style = style })
+		after(0.12, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local det = scaled(m.det, sc)
+		after(m.delay, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width + 2)) do
+				strike(f, o, det, move)
+			end
+		end)
+	elseif kind == "sonicBoom" then
+		-- 음속 돌파 (R): 앞으로 내달려 벽을 뚫는 순간 몸 뒤로 증기 원뿔이 터진다
+		local from = f.root.Position
+		local to = from + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "sonicBoom", m = f.model, from = from, to = to, coneAt = m.coneAt / sp, coneLen = m.coneLen, coneWidth = m.coneWidth, style = style })
+		after(0.1, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local cone = scaled(m.cone, sc)
+		after(m.coneAt, function()
+			local tip = f.root.Position
+			for _, o in ipairs(hostilesOnSeg(f, tip - look * m.coneLen, tip, m.coneWidth)) do
+				strike(f, o, cone, move)
+			end
+		end)
+	elseif kind == "clockBarrage" then
+		-- 시간 가속 (G): 발밑의 시계 안 적을 열다섯 번 난타하고, 바늘이 모이는 순간 시계째 터진다
+		local C = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "clockBarrage", m = f.model, at = C, radius = m.radius, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
+					o.slowUntil = os.clock() + 0.4
+					o.slowMul = 0.3
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.dur + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "lightDash" then
+		-- 광속 일섬 (초 오의): 컷씬 동안 무적 → 한 걸음에 길을 지나 나타나면 → 지나간 길 위의 모든 적에게 그제야 베임이 닿는다 → 소리가 따라붙어 충격파
+		local from = f.root.Position
+		local T1 = m.cut
+		local T2 = T1 + m.charge
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + m.boomAt + 0.4) / sp)
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "lightDash", m = f.model, from = from, to = to, cut = T1 / sp, charge = m.charge / sp, boomAt = m.boomAt / sp, boomRadius = m.boomRadius, width = m.width, style = style })
+		after(T2, function()
+			moveTo(f, CFrame.lookAt(to, to + look))
+		end)
+		after(T2 + 0.35, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(T2 + m.boomAt, function()
+			for _, o in ipairs(hostilesNear(f, to, m.boomRadius)) do
+				strike(f, o, scaled(m.boom, sc), move)
+			end
+		end)
+	elseif kind == "lightNeedles" then
+		-- 광침 (초가속 E): 빛의 바늘 아홉이 부채꼴로 순식간에 꿰뚫는다
+		local from = f.root.Position
+		local dirs = {}
+		for i = 1, m.n do
+			local ang = math.rad(-m.spread / 2 + (i - 1) * m.spread / math.max(1, m.n - 1))
+			local d = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), ang) * look
+			table.insert(dirs, Vector3.new(d.X, 0, d.Z).Unit)
+		end
+		Push:FireAllClients("skillfx", { kind = "lightNeedles", m = f.model, from = from, dirs = dirs, length = m.length, delay = m.delay / sp, style = style })
+		after(m.delay + 0.04, function()
+			for _, d in ipairs(dirs) do
+				for _, o in ipairs(hostilesOnSeg(f, from, from + d * m.length, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end
+		end)
+	elseif kind == "zigzagStep" then
+		-- 지그재그 질주 (초가속 R): 직각으로 꺾으며 다섯 번 도약, 내려서는 자리마다 터진다
+		local pos = f.root.Position
+		local right = rightOf(look)
+		local pts = { pos }
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.steps * m.every + 0.25) / sp)
+		for i = 1, m.steps do
+			local sgn = (i % 2 == 1) and 1 or -1
+			pos = pos + look * m.forward + right * sgn * m.side
+			table.insert(pts, pos)
+		end
+		Push:FireAllClients("skillfx", { kind = "zigzagStep", m = f.model, pts = pts, every = m.every / sp, style = style })
+		for i = 1, m.steps do
+			after(i * m.every, function()
+				local p = pts[i + 1]
+				moveTo(f, CFrame.lookAt(p, p + look))
+				for _, o in ipairs(hostilesNear(f, p, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "overclock" then
+		-- 초가속 폭주 (초가속 G): 제자리를 맴도는 회오리가 둘레의 적을 끌어당겨 쓸고, 멎는 순간 빛의 기둥이 솟는다
+		local C = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "overclock", m = f.model, at = C, radius = m.radius, orbit = m.orbit, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
+					pullTo(o, C, m.pull)
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.dur + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "chronoStrike" then
+		-- 시간 정지 일격 (초가속 X): 세상이 멈추고, 멈춘 적마다 빛의 선이 그어지고, 시간이 되돌아오는 순간 선이 모두 한꺼번에 베인다
+		local C = f.root.Position
+		local list = nearestList(f, m.range, m.n)
+		local T1 = m.cut
+		local T2 = T1 + math.max(1, #list) * m.every + m.resumeAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + 0.6) / sp)
+		for _, o in ipairs(list) do
+			o.slowUntil = os.clock() + (T2 + 0.2) / sp
+			o.slowMul = 0.02
+		end
+		Push:FireAllClients("skillfx", { kind = "chronoStrike", m = f.model, at = C, targets = modelsOf(list), cut = T1 / sp, every = m.every / sp, resume = m.resumeAt / sp, radius = m.finalRadius, style = style })
+		local h = scaled(m.hit, sc)
+		after(T2, function()
+			for _, o in ipairs(list) do
+				strike(f, o, h, move)
+			end
+		end)
+		after(T2 + 0.25, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
@@ -32562,6 +33029,7 @@ local Blossom = require(script:WaitForChild("Blossom"))
 local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
 local Geuk = require(script:WaitForChild("Geuk"))
+local Speed = require(script:WaitForChild("Speed"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -33285,6 +33753,10 @@ startMove = function(slot: any, charge: number?)
 	elseif slot == "X" and style.soju then
 		-- 취선만권: 1초 컷씬 (대사 없이) 동안 점점 빨라지는 앞구르기, 컷씬이 걷히면 와다다다
 		Drunk.superCut(char, ((move.mech and move.mech.cut) or 1) / speed, move.name, shake)
+		Fx.skillAura(char, style.color, style.color2, dur, true)
+	elseif slot == "X" and style.speedTrail then
+		-- 3.22판 극 광속권 초 오의: 출발선 컷씬 (시간 정지 일격은 하늘의 시계를 올려 본다, 무적)
+		Speed.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "chronoStrike")
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.id == "geuknull" then
 		-- 3.17.1판 극 공백권 초 오의: 낮게 돌며 올려다보는 컷씬 (격자선이 하늘로 뻗는다, 무적)
@@ -34710,11 +35182,17 @@ function handlers.skillfx(data: any)
 		Gourd.init({ shake = shake, tint = tint })
 		Samsara.init({ shake = shake, tint = tint })
 		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
+		Speed.init({ shake = shake, flash = UI.flash })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
 	end
 	-- 3.19판 새 권법 (붙잡기·되받아치기·돌진·얼음 가두기·새 연타 장치)
 	if Arts.handles(data) then
 		Arts.run(data)
+		return
+	end
+	-- 3.22판 극 광속권
+	if Speed.handles(data) then
+		Speed.run(data)
 		return
 	end
 	-- 3.1판 극 권법의 기술 (평소·황혼)
@@ -35141,6 +35619,12 @@ function handlers.geukTwilight(data: any)
 	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
 	Geuk.twilight(data)
 end
+-- 3.22판: 극 광속권 · 초가속 (모두에게 알림, 가까우면 시간이 느려지는 연출)
+function handlers.geukHaste(data: any)
+	Speed.init({ shake = shake, flash = UI.flash })
+	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "시간이 멎듯 느려진다. 둘레의 적은 굼뜨고, 그의 걸음은 눈에 보이지 않으며, 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
+	Speed.haste(data)
+end
 -- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
 function handlers.geukDomain(data: any)
 	Null.init({ shake = shake, flash = UI.flash })
@@ -35239,11 +35723,15 @@ RunService.RenderStepped:Connect(function()
 	if style.geukGauge then
 		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
 		if twilightNow then
-			stacks = style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)"
+			stacks = style.geukHaste and "🌠 초가속 · 시간이 느려진다 (기술이 모두 바뀌었다)" or (style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)")
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)
 			stacks = string.format("극 %s%s %d", string.rep("▰", k), string.rep("▱", 10 - k), g)
+			if style.haste then
+				local hn = math.clamp(tonumber(char:GetAttribute("Haste")) or 0, 0, style.haste.max)
+				stacks ..= string.format("  ⚡ 가속 %s%s", string.rep("▮", hn), string.rep("▯", style.haste.max - hn))
+			end
 		end
 	elseif style.id == "taeheo" then
 		stacks = "기류 " .. string.rep("●", tonumber(char:GetAttribute("Flow")) or 0) .. string.rep("○", 3 - (tonumber(char:GetAttribute("Flow")) or 0))
@@ -62744,6 +63232,7 @@ local PLAN_STYLE: { [string]: { [string]: string } } = {
 	hojeop = {},
 	gongbaek = {},
 	geuknull = {},
+	geukspeed = {},
 	manmok = { H = "crack" },
 }
 local MAT: { [string]: Enum.Material } = {
@@ -62789,6 +63278,920 @@ return SkillFx
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="47">
+          <Properties>
+            <string name="Name">Speed</string>
+            <string name="Source"><![CDATA[-- 권왕 3.22판: 극 광속권의 화면. 빛 (하늘색 + 흰색) 과 시간 (금빛 시계)
+-- 광속 관통 · 음속 돌파 · 시간 가속 · 광속 일섬 (초 오의) / 광침 · 지그재그 질주 · 초가속 폭주 · 시간 정지 일격 (초가속)
+-- 극 패시브 초가속의 컷씬과 달리는 동안의 잔상, 연타 장치 음속 충격
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+
+local Fx = require(script.Parent:WaitForChild("Fx"))
+local CamGuard = require(script.Parent:WaitForChild("CamGuard"))
+
+local Speed = {}
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonSpeed"
+folder.Parent = workspace
+
+local opts: any = {}
+local started = false
+
+local CYAN = Color3.fromRGB(120, 225, 255)
+local ICE = Color3.fromRGB(200, 245, 255)
+local GOLD = Color3.fromRGB(255, 215, 110)
+local WHITE = Color3.new(1, 1, 1)
+local UP = Vector3.new(0, 1, 0)
+
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+	local q = Instance.new("Part")
+	if shape == "ball" then
+		q.Shape = Enum.PartType.Ball
+	elseif shape == "cyl" then
+		q.Shape = Enum.PartType.Cylinder
+	end
+	q.Anchored = true
+	q.CanCollide = false
+	q.CanQuery = false
+	q.CanTouch = false
+	q.CastShadow = false
+	q.Size = size
+	q.Color = color
+	q.Material = material or Enum.Material.Neon
+	q.Transparency = alpha or 0
+	q.Parent = folder
+	return q
+end
+local function fadeOut(p: BasePart, time: number, goal: { [string]: any }?)
+	local g = goal or {}
+	g.Transparency = 1
+	tween(p, time, g)
+	task.delay(time + 0.05, function()
+		p:Destroy()
+	end)
+end
+local function shakeNear(pos: Vector3, amount: number, range: number)
+	if opts.shake and near(pos, range) then
+		opts.shake(amount)
+	end
+end
+local function anim(life: number, fn: (number) -> ())
+	local t0 = os.clock()
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local u = math.clamp((os.clock() - t0) / life, 0, 1)
+		fn(u)
+		if u >= 1 then
+			conn:Disconnect()
+		end
+	end)
+end
+local function rootOf(m: any): BasePart?
+	local r = typeof(m) == "Instance" and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function flat(v: Vector3): Vector3
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 1e-3 and f.Unit or Vector3.new(0, 0, -1)
+end
+local function safeLook(from: Vector3, to: Vector3): CFrame
+	if (to - from).Magnitude < 1e-3 then
+		return CFrame.new(from)
+	end
+	return CFrame.lookAt(from, to)
+end
+local function ground(at: Vector3): Vector3
+	return Vector3.new(at.X, at.Y - 2.7, at.Z)
+end
+-- a에서 b로 뻗는 빛줄기 (원기둥, 길이는 X)
+local function setBeam(p: BasePart, a: Vector3, b: Vector3, w: number)
+	local len = math.max(0.2, (b - a).Magnitude)
+	p.Size = Vector3.new(len, w, w)
+	p.CFrame = safeLook((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0)
+end
+local function beamTo(a: Vector3, b: Vector3, w: number, color: Color3, alpha: number?): BasePart
+	local p = part(Vector3.new(1, w, w), color, Enum.Material.Neon, alpha, "cyl")
+	setBeam(p, a, b, w)
+	return p
+end
+-- 지면 위의 고리 (얇은 원판) — 축이 위
+local function flatDisc(at: Vector3, r: number, thick: number, color: Color3, alpha: number?, mat: Enum.Material?): BasePart
+	local p = part(Vector3.new(thick, r * 2, r * 2), color, mat or Enum.Material.Neon, alpha, "cyl")
+	p.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90))
+	return p
+end
+
+-- 화면 빛깔
+local grade = Instance.new("ColorCorrectionEffect")
+grade.Name = "KwonSpeedGrade"
+grade.Parent = Lighting
+local function gradeTo(time: number, sat: number, bright: number, contrast: number, tintC: Color3?)
+	tween(grade, time, { Saturation = sat, Brightness = bright, Contrast = contrast, TintColor = tintC or WHITE })
+end
+local function gradeReset(time: number)
+	gradeTo(time, 0, 0, 0, WHITE)
+end
+
+function Speed.init(o: any)
+	opts = o or {}
+	if started then
+		return
+	end
+	started = true
+	-- 달리는 동안의 잔상: 가속 단계가 높거나 초가속인 사람 (내 화면 근처만)
+	task.spawn(function()
+		local lastPos: { [Model]: Vector3 } = {}
+		local flip = false
+		while true do
+			task.wait(0.07)
+			local cam = workspace.CurrentCamera
+			if cam then
+				for _, pl in ipairs(Players:GetPlayers()) do
+					local ch = pl.Character
+					local r = ch and rootOf(ch)
+					if ch and r and (r.Position - cam.CFrame.Position).Magnitude < 140 then
+						local n = tonumber(ch:GetAttribute("Haste")) or 0
+						local tw = ch:GetAttribute("Twilight") == true and ch:GetAttribute("Geuk") ~= nil
+						local prev = lastPos[ch]
+						lastPos[ch] = r.Position
+						if prev and (n >= 2 or tw) then
+							local sp = (r.Position - prev).Magnitude / 0.07
+							if sp > 24 then
+								flip = not flip
+								Fx.afterimage(ch, flip and CYAN or GOLD, 0.28 + math.min(0.3, n * 0.05))
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+end
+
+local H: { [string]: (any) -> () } = {}
+
+------------------------------------------------------------------------
+-- 광속 관통 (E): 쏘아 지나간 자리에 빛의 줄이 남고, 잠시 뒤 줄 전체가 터진다
+------------------------------------------------------------------------
+function H.lightLance(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 300) then
+		return
+	end
+	local m = d.m
+	for i = 0, 7 do
+		task.delay(i * 0.03, function()
+			if m and m.Parent then
+				Fx.afterimage(m, i % 2 == 0 and CYAN or ICE, 0.5)
+			end
+		end)
+	end
+	local mid = Vector3.new(0, 1.2, 0)
+	local outer = beamTo(a + mid, b + mid, 3.4, CYAN, 0.55)
+	local core = beamTo(a + mid, b + mid, 0.7, WHITE, 0)
+	Fx.breakSound("whoosh", 0.9, 1.5, a)
+	Fx.burst("spark", a, ICE, 14, 1.4)
+	-- 줄이 가느다랗게 숨 쉰다 (곧 터진다는 신호)
+	local wait = d.delay or 0.5
+	anim(wait, function(u)
+		local w = 0.7 + math.sin(u * 40) * 0.3 + u * 0.6
+		setBeam(core, a + mid, b + mid, w)
+		outer.Transparency = 0.55 + u * 0.25
+	end)
+	task.delay(wait, function()
+		core.Color = GOLD
+		for k = 0, 8 do
+			local p = a:Lerp(b, k / 8) + mid
+			local boom = part(Vector3.new(2, 2, 2), k % 2 == 0 and GOLD or ICE, Enum.Material.Neon, 0.1, "ball")
+			boom.Position = p
+			fadeOut(boom, 0.4, { Size = Vector3.new(11, 11, 11) })
+			if k % 3 == 0 then
+				Fx.ring(ground(p), GOLD, 3, 16, 0.4)
+			end
+		end
+		fadeOut(core, 0.35, { Size = Vector3.new((b - a).Magnitude, 4, 4) })
+		fadeOut(outer, 0.3)
+		Fx.breakSound("boom", 0.8, 1.3, b)
+		shakeNear(b, 0.7, 120)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 음속 돌파 (R): 벽을 뚫는 순간 몸 뒤로 하얀 증기 원뿔이 터진다
+------------------------------------------------------------------------
+function H.sonicBoom(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 300) then
+		return
+	end
+	local m = d.m
+	local dir = flat(b - a)
+	for i = 0, 5 do
+		task.delay(i * 0.04, function()
+			if m and m.Parent then
+				Fx.afterimage(m, ICE, 0.45)
+			end
+		end)
+	end
+	Fx.breakSound("whoosh", 0.9, 1.1, a)
+	Fx.ring(ground(a), WHITE, 3, 20, 0.35)
+	task.delay(d.coneAt or 0.3, function()
+		local r = m and rootOf(m)
+		local tip = r and r.Position or b
+		local len, wid = d.coneLen or 22, d.coneWidth or 16
+		-- 증기 원뿔: 꼭짓점에서 뒤로 벌어지는 하얀 고리들
+		for k = 1, 9 do
+			local u = k / 9
+			local p = tip - dir * (u * len) + Vector3.new(0, 0.5, 0)
+			local ring = part(Vector3.new(0.6, 1, 1), WHITE, Enum.Material.Neon, 0.35, "cyl")
+			ring.CFrame = safeLook(p, p + dir) * CFrame.Angles(0, math.rad(90), 0)
+			local goal = wid * u + 3
+			task.delay(u * 0.12, function()
+				ring.Size = Vector3.new(0.6, goal * 0.5, goal * 0.5)
+				tween(ring, 0.5, { Size = Vector3.new(0.5, goal * 2, goal * 2), Transparency = 1 })
+			end)
+			task.delay(0.8, function()
+				ring:Destroy()
+			end)
+		end
+		local vapor = part(Vector3.new(2, 2, 2), WHITE, Enum.Material.Neon, 0.6, "ball")
+		vapor.Position = tip - dir * 4
+		fadeOut(vapor, 0.5, { Size = Vector3.new(wid * 2, wid * 1.4, wid * 2) })
+		Fx.ring(ground(tip), CYAN, 4, 34, 0.5)
+		Fx.flash(tip + Vector3.new(0, 3, 0), ICE, 30, 3, 0.3)
+		Fx.breakSound("boom", 1, 0.8, tip)
+		shakeNear(tip, 1.0, 140)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 시간 가속 (G): 발밑에 시계 → 바늘이 점점 빨리 돌며 안의 적이 난타당한다 → 바늘이 12시에 모이며 시계째 터진다
+------------------------------------------------------------------------
+function H.clockBarrage(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 400) then
+		return
+	end
+	local R = d.radius or 24
+	local dur, finalAt = d.dur or 1.5, d.finalAt or 0.4
+	local g = ground(c) + Vector3.new(0, 0.25, 0)
+	local face = flatDisc(g, R, 0.2, CYAN, 0.8)
+	local rim = flatDisc(g + Vector3.new(0, 0.1, 0), R + 0.8, 0.3, GOLD, 0.2)
+	local inner = flatDisc(g + Vector3.new(0, 0.12, 0), R - 0.8, 0.3, Color3.fromRGB(20, 30, 50), 0.3, Enum.Material.SmoothPlastic)
+	local ticks: { BasePart } = {}
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local big = k % 3 == 0
+		local t = part(Vector3.new(big and 1.6 or 0.8, 0.3, big and 4 or 2.4), big and GOLD or ICE, Enum.Material.Neon, 0.1)
+		t.CFrame = CFrame.new(g + Vector3.new(math.sin(a) * (R - 3), 0.3, -math.cos(a) * (R - 3))) * CFrame.Angles(0, -a, 0)
+		table.insert(ticks, t)
+	end
+	local hour = part(Vector3.new(1.4, 0.3, R * 0.5), GOLD, Enum.Material.Neon, 0)
+	local minute = part(Vector3.new(0.9, 0.3, R * 0.85), WHITE, Enum.Material.Neon, 0)
+	Fx.breakSound("whoosh", 0.7, 0.7, c)
+	Fx.ring(g, GOLD, 4, R * 2, 0.5)
+	-- 바늘: 점점 빨라진다 (분침은 열 바퀴, 시침은 한 바퀴)
+	anim(dur, function(u)
+		local acc = u * u
+		local am = acc * math.pi * 2 * 10
+		local ah = acc * math.pi * 2
+		hour.CFrame = CFrame.new(g + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, -ah, 0) * CFrame.new(0, 0, -R * 0.25)
+		minute.CFrame = CFrame.new(g + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, -am, 0) * CFrame.new(0, 0, -R * 0.425)
+		face.Transparency = 0.8 - u * 0.4
+	end)
+	-- 난타의 빛줄기: 안의 아무 곳에서나 가늘게 번쩍인다
+	local nStreak = math.floor(dur / 0.04)
+	for i = 1, nStreak do
+		task.delay(i * 0.04, function()
+			local a = math.random() * math.pi * 2
+			local rr = math.random() * R * 0.9
+			local p = g + Vector3.new(math.cos(a) * rr, 1 + math.random() * 5, math.sin(a) * rr)
+			local dir = Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5).Unit
+			local ln = beamTo(p - dir * 5, p + dir * 5, 0.35, i % 2 == 0 and CYAN or GOLD, 0)
+			fadeOut(ln, 0.2)
+			if i % 4 == 0 then
+				Fx.burst("spark", p, ICE, 3, 0.8)
+				Fx.sound("swing", 0.4, 1.4 + math.random() * 0.5, p)
+			end
+		end)
+	end
+	-- 12시에 모인다 → 터진다
+	task.delay(dur, function()
+		hour.CFrame = CFrame.new(g + Vector3.new(0, 0.5, 0)) * CFrame.new(0, 0, -R * 0.25)
+		minute.CFrame = CFrame.new(g + Vector3.new(0, 0.6, 0)) * CFrame.new(0, 0, -R * 0.425)
+	end)
+	task.delay(dur + finalAt, function()
+		Fx.ring(g, GOLD, 4, R * 2.3, 0.5)
+		Fx.ring(g, WHITE, 2, R * 1.6, 0.4)
+		Fx.flash(c + Vector3.new(0, 4, 0), GOLD, 50, 3.5, 0.5)
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local sh = part(Vector3.new(2.5, 1, 4), k % 2 == 0 and GOLD or CYAN, Enum.Material.Neon, 0)
+			sh.CFrame = CFrame.new(g + Vector3.new(math.sin(a) * (R - 3), 1, -math.cos(a) * (R - 3))) * CFrame.Angles(0, -a, 0)
+			local goal = g + Vector3.new(math.sin(a) * (R + 14), 12 + math.random() * 10, -math.cos(a) * (R + 14))
+			tween(sh, 0.6, { CFrame = CFrame.new(goal) * CFrame.Angles(math.random(), -a + math.random(), math.random()), Transparency = 1 })
+			task.delay(0.7, function()
+				sh:Destroy()
+			end)
+		end
+		for _, p in ipairs({ face, rim, inner, hour, minute }) do
+			fadeOut(p, 0.35)
+		end
+		for _, t in ipairs(ticks) do
+			fadeOut(t, 0.3)
+		end
+		local pillar = part(Vector3.new(60, 8, 8), WHITE, Enum.Material.Neon, 0.1, "cyl")
+		pillar.CFrame = CFrame.new(g + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(pillar, 0.5, { Size = Vector3.new(90, 3, 3) })
+		Fx.breakSound("boom", 1, 0.7, c)
+		shakeNear(c, 1.3, 180)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 광속 일섬 (초 오의): 길 전체에 빛이 그어지고 → 지나간 자리에 베임의 흔적이 뒤늦게 → 소리가 따라붙어 충격파
+------------------------------------------------------------------------
+function H.lightDash(d: any)
+	local a: Vector3, b: Vector3 = d.from, d.to
+	if not near(a, 500) and not near(b, 500) then
+		return
+	end
+	local m = d.m
+	local t0 = (d.cut or 1.5) + (d.charge or 0.9)
+	local dir = flat(b - a)
+	local side = Vector3.new(-dir.Z, 0, dir.X)
+	local mid = Vector3.new(0, 1.5, 0)
+	-- 출발 직전 몸에 빛이 모인다
+	task.delay((d.cut or 1.5) * 0.6, function()
+		local r = m and rootOf(m)
+		if r then
+			Fx.ring(ground(r.Position), ICE, 18, 3, (d.charge or 0.9) + (d.cut or 1.5) * 0.4)
+		end
+	end)
+	task.delay(t0, function()
+		Fx.sound("ping", 1, 2, a)
+		-- 한 줄의 빛: 시작은 눈부시게 굵고, 곧 가늘어진다
+		local core = beamTo(a + mid, b + mid, 7, WHITE, 0)
+		local halo = beamTo(a + mid, b + mid, 18, CYAN, 0.7)
+		tween(core, 0.7, { Size = Vector3.new((b - a).Magnitude, 0.5, 0.5) })
+		fadeOut(halo, 0.5, { Size = Vector3.new((b - a).Magnitude, 40, 40) })
+		task.delay(1.1, function()
+			fadeOut(core, 0.4)
+		end)
+		for i = 0, 10 do
+			task.delay(i * 0.02, function()
+				if m and m.Parent then
+					Fx.afterimage(m, i % 2 == 0 and CYAN or GOLD, 0.8)
+				end
+			end)
+		end
+		Fx.flash(a + Vector3.new(0, 4, 0), WHITE, 60, 4, 0.2)
+		Fx.flash(b + Vector3.new(0, 4, 0), WHITE, 60, 4, 0.3)
+		if opts.flash then
+			opts.flash(Color3.new(1, 1, 1), 0.35)
+		end
+		shakeNear(a, 1.0, 200)
+	end)
+	-- 뒤늦은 베임: 길 위에 짧은 사선들이 하나씩 그어진다
+	local n = math.floor((b - a).Magnitude / 4)
+	for k = 1, n do
+		task.delay(t0 + 0.35 + (k / n) * 0.3, function()
+			local p = a:Lerp(b, k / n) + mid
+			local off = side * (math.random() - 0.5) * (d.width or 9)
+			local up = Vector3.new(0, 2 + math.random() * 4, 0)
+			local ln = beamTo(p + off - up - dir * 2, p + off + up + dir * 2, 0.35, k % 2 == 0 and GOLD or WHITE, 0)
+			fadeOut(ln, 0.35)
+			if k % 3 == 0 then
+				Fx.burst("spark", p + off, ICE, 4, 1)
+			end
+		end)
+	end
+	-- 소리가 따라붙는다
+	task.delay(t0 + (d.boomAt or 0.7), function()
+		local R = d.boomRadius or 36
+		Fx.ring(ground(b), WHITE, 6, R * 2, 0.7)
+		Fx.ring(ground(b), CYAN, 3, R * 1.5, 0.55)
+		local dome = part(Vector3.new(2, 2, 2), ICE, Enum.Material.Neon, 0.55, "ball")
+		dome.Position = b
+		fadeOut(dome, 0.7, { Size = Vector3.new(R * 1.6, R * 1.2, R * 1.6) })
+		Fx.flash(b + Vector3.new(0, 4, 0), WHITE, 90, 4, 0.5)
+		Fx.breakSound("boom", 1, 0.55, b)
+		shakeNear(b, 1.6, 240)
+		if opts.flash then
+			opts.flash(Color3.new(1, 1, 1), 0.5)
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- 광침 (초가속 E)
+------------------------------------------------------------------------
+function H.lightNeedles(d: any)
+	local a: Vector3 = d.from
+	if not near(a, 300) then
+		return
+	end
+	local len = d.length or 34
+	Fx.breakSound("whoosh", 0.7, 2, a)
+	task.delay(d.delay or 0.12, function()
+		for i, dir in ipairs(d.dirs or {}) do
+			local from = a + Vector3.new(0, 1.8, 0)
+			local to = from + dir * len
+			local core = beamTo(from, to, 0.3, WHITE, 0)
+			local glow = beamTo(from, to, 1.4, i % 2 == 0 and CYAN or GOLD, 0.6)
+			fadeOut(core, 0.28, { Size = Vector3.new(len, 0.05, 0.05) })
+			fadeOut(glow, 0.22)
+			Fx.burst("spark", to, ICE, 3, 0.7)
+		end
+		Fx.ring(ground(a), CYAN, 2, 12, 0.3)
+		shakeNear(a, 0.4, 100)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 지그재그 질주 (초가속 R)
+------------------------------------------------------------------------
+function H.zigzagStep(d: any)
+	local pts: { Vector3 } = d.pts or {}
+	if #pts < 2 or not near(pts[1], 300) then
+		return
+	end
+	local m = d.m
+	local every = d.every or 0.09
+	for i = 1, #pts - 1 do
+		task.delay(i * every, function()
+			local a, b = pts[i] + Vector3.new(0, 1.5, 0), pts[i + 1] + Vector3.new(0, 1.5, 0)
+			-- 번개처럼 꺾인 줄
+			local midp = (a + b) / 2 + Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 4
+			local l1 = beamTo(a, midp, 0.9, GOLD, 0.05)
+			local l2 = beamTo(midp, b, 0.9, GOLD, 0.05)
+			local c1 = beamTo(a, midp, 0.3, WHITE, 0)
+			local c2 = beamTo(midp, b, 0.3, WHITE, 0)
+			for _, p in ipairs({ l1, l2, c1, c2 }) do
+				fadeOut(p, 0.6)
+			end
+			if m and m.Parent then
+				Fx.afterimage(m, i % 2 == 0 and CYAN or GOLD, 0.4)
+			end
+			Fx.ring(ground(pts[i + 1]), GOLD, 2, 16, 0.35)
+			Fx.burst("spark", pts[i + 1], ICE, 8, 1.3)
+			Fx.sound("swing", 0.7, 1.2 + i * 0.12, pts[i + 1])
+			shakeNear(pts[i + 1], 0.35, 100)
+		end)
+	end
+end
+
+------------------------------------------------------------------------
+-- 초가속 폭주 (초가속 G): 맴도는 잔상의 회오리 → 멎으면 빛의 기둥
+------------------------------------------------------------------------
+function H.overclock(d: any)
+	local c: Vector3 = d.at
+	if not near(c, 400) then
+		return
+	end
+	local m = d.m
+	local R, orbit = d.radius or 22, d.orbit or 14
+	local dur, finalAt = d.dur or 2, d.finalAt or 0.35
+	local g = ground(c)
+	local winds: { BasePart } = {}
+	for k = 1, 4 do
+		local w = part(Vector3.new(26 + k * 4, 2, 2), k % 2 == 0 and CYAN or ICE, Enum.Material.Neon, 0.65, "cyl")
+		w.Size = Vector3.new(26 + k * 4, 2, 2)
+		table.insert(winds, w)
+	end
+	local ringGround = flatDisc(g + Vector3.new(0, 0.2, 0), R, 0.2, CYAN, 0.7)
+	Fx.breakSound("whoosh", 0.9, 0.6, c)
+	local lastSpawn = 0
+	anim(dur, function(u)
+		local sp = 2 + u * 22 -- 점점 빨라지는 회전
+		local t = os.clock()
+		for k, w in ipairs(winds) do
+			local h = (k / #winds) * 18 * (0.4 + u)
+			local rr = R * (0.35 + 0.65 * (k / #winds)) * (0.6 + u * 0.4)
+			-- 회오리 띠: 원기둥 대신 얇은 고리 (축이 위)
+			w.Shape = Enum.PartType.Cylinder
+			w.Size = Vector3.new(1.2, rr * 2, rr * 2)
+			w.CFrame = CFrame.new(g + Vector3.new(0, h, 0)) * CFrame.Angles(0, t * sp * (k % 2 == 0 and 1 or -1), math.rad(90))
+			w.Transparency = 0.75 - u * 0.25
+		end
+		ringGround.Transparency = 0.7 - u * 0.3
+		-- 맴도는 잔상
+		if m and m.Parent and t - lastSpawn > 0.06 then
+			lastSpawn = t
+			Fx.afterimage(m, (math.floor(t * 20) % 2 == 0) and CYAN or GOLD, 0.35)
+		end
+	end)
+	for i = 1, math.floor(dur / 0.15) do
+		task.delay(i * 0.15, function()
+			local a = math.random() * math.pi * 2
+			local p = g + Vector3.new(math.cos(a) * orbit, 1.5, math.sin(a) * orbit)
+			Fx.burst("spark", p, ICE, 3, 0.8)
+			Fx.sound("swing", 0.35, 1.3 + math.random() * 0.6, p)
+		end)
+	end
+	task.delay(dur + finalAt, function()
+		for _, w in ipairs(winds) do
+			fadeOut(w, 0.3)
+		end
+		fadeOut(ringGround, 0.3)
+		local pillar = part(Vector3.new(160, 10, 10), WHITE, Enum.Material.Neon, 0.05, "cyl")
+		pillar.CFrame = CFrame.new(g + Vector3.new(0, 80, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		local halo = part(Vector3.new(160, 26, 26), CYAN, Enum.Material.Neon, 0.6, "cyl")
+		halo.CFrame = pillar.CFrame
+		tween(pillar, 0.7, { Size = Vector3.new(160, 2, 2), Transparency = 0.5 })
+		fadeOut(pillar, 0.9)
+		fadeOut(halo, 0.7, { Size = Vector3.new(160, 60, 60) })
+		Fx.ring(g, WHITE, 4, R * 2.4, 0.6)
+		Fx.ring(g, GOLD, 2, R * 1.8, 0.5)
+		Fx.flash(c + Vector3.new(0, 6, 0), WHITE, 90, 4, 0.5)
+		Fx.breakSound("boom", 1, 0.7, c)
+		shakeNear(c, 1.4, 220)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 시간 정지 일격 (초가속 X): 빛깔이 빠지고 멈춘다 → 멈춘 적마다 선이 그어진다 → 되돌아오는 순간 모든 선이 베인다 → 하늘의 시계가 깨진다
+------------------------------------------------------------------------
+function H.chronoStrike(d: any)
+	local c: Vector3 = d.at
+	local cut = d.cut or 1.4
+	local every = d.every or 0.12
+	local resume = d.resume or 0.8
+	local targets: { any } = d.targets or {}
+	if not near(c, 500) then
+		return
+	end
+	-- 하늘에 큰 시계 (바늘이 멎어 있다)
+	local sky = c + Vector3.new(0, 46, 0)
+	local clockRim = part(Vector3.new(1.2, 60, 60), GOLD, Enum.Material.Neon, 0.3, "cyl")
+	clockRim.CFrame = CFrame.new(sky) * CFrame.Angles(0, 0, 0) * CFrame.Angles(0, 0, 0)
+	clockRim.CFrame = CFrame.new(sky) * CFrame.Angles(0, math.rad(0), math.rad(90)) * CFrame.Angles(math.rad(90), 0, 0)
+	local hands = part(Vector3.new(0.8, 2, 22), WHITE, Enum.Material.Neon, 0.1)
+	hands.CFrame = CFrame.new(sky) * CFrame.new(0, 11, 0) * CFrame.Angles(math.rad(90), 0, 0)
+	clockRim.Transparency = 1
+	hands.Transparency = 1
+	task.delay(cut * 0.4, function()
+		gradeTo(0.35, -1, -0.05, 0.25, Color3.fromRGB(200, 215, 235))
+		tween(clockRim, 0.4, { Transparency = 0.3 })
+		tween(hands, 0.4, { Transparency = 0.1 })
+		Fx.ring(ground(c), WHITE, 4, 60, 0.6)
+		Fx.sound("ping", 1, 0.5, c)
+		shakeNear(c, 0.7, 200)
+	end)
+	local lines: { BasePart } = {}
+	for i, t in ipairs(targets) do
+		task.delay(cut + (i - 1) * every, function()
+			local tr = rootOf(t)
+			if not tr then
+				return
+			end
+			local p = tr.Position
+			local dir = Vector3.new(math.random() - 0.5, 0.1 + math.random() * 0.5, math.random() - 0.5).Unit
+			local ln = beamTo(p - dir * 12, p + dir * 12, 0.3, GOLD, 0)
+			table.insert(lines, ln)
+			Fx.burst("spark", p, GOLD, 5, 1)
+			Fx.sound("ping", 0.4, 1.4 + i * 0.1, p)
+		end)
+	end
+	local tEnd = cut + math.max(1, #targets) * every + resume
+	task.delay(tEnd, function()
+		gradeReset(0.15)
+		if opts.flash then
+			opts.flash(Color3.new(1, 1, 1), 0.4)
+		end
+		for _, ln in ipairs(lines) do
+			ln.Color = WHITE
+			tween(ln, 0.2, { Size = Vector3.new(ln.Size.X, 3.2, 3.2) })
+			fadeOut(ln, 0.45)
+		end
+		for _, t in ipairs(targets) do
+			local tr = rootOf(t)
+			if tr then
+				Fx.burst("spark", tr.Position, WHITE, 10, 1.6)
+				Fx.flash(tr.Position, WHITE, 30, 3, 0.25)
+			end
+		end
+		Fx.breakSound("boom", 1, 1.0, c)
+		shakeNear(c, 1.2, 200)
+	end)
+	-- 시계가 깨진다
+	task.delay(tEnd + 0.25, function()
+		fadeOut(clockRim, 0.4)
+		fadeOut(hands, 0.3)
+		for k = 0, 15 do
+			local a = k / 16 * math.pi * 2
+			local sh = part(Vector3.new(3, 0.5, 8), k % 2 == 0 and GOLD or CYAN, Enum.Material.Neon, 0)
+			sh.CFrame = CFrame.new(sky + Vector3.new(math.cos(a) * 28, math.sin(a) * 28, 0))
+			local goal = c + Vector3.new(math.cos(a) * (d.radius or 44), 3, math.sin(a) * (d.radius or 44))
+			tween(sh, 0.7, { CFrame = CFrame.new(goal) * CFrame.Angles(math.random(), math.random(), math.random()), Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.8, function()
+				sh:Destroy()
+			end)
+		end
+		Fx.ring(ground(c), GOLD, 6, (d.radius or 44) * 2, 0.7)
+		Fx.ring(ground(c), CYAN, 3, (d.radius or 44) * 1.4, 0.5)
+		Fx.flash(c + Vector3.new(0, 6, 0), GOLD, 100, 4, 0.6)
+		shakeNear(c, 1.5, 240)
+	end)
+end
+
+------------------------------------------------------------------------
+-- 연타 장치: 음속 충격 (평소: sonic · 초가속: sonicx)
+------------------------------------------------------------------------
+function H.sonic(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local R = d.radius or 11
+	task.delay(d.delay or 0.12, function()
+		Fx.ring(ground(at), WHITE, 2, R * 2, 0.35)
+		Fx.ring(ground(at) + Vector3.new(0, 1.5, 0), CYAN, 1, R * 1.4, 0.3)
+		local dome = part(Vector3.new(2, 2, 2), ICE, Enum.Material.Neon, 0.6, "ball")
+		dome.Position = at
+		fadeOut(dome, 0.3, { Size = Vector3.new(R * 1.6, R * 0.9, R * 1.6) })
+		Fx.breakSound("boom", 0.6, 1.4, at)
+		shakeNear(at, 0.4, 100)
+	end)
+end
+function H.sonicx(d: any)
+	local at: Vector3 = d.at
+	if not near(at, 250) then
+		return
+	end
+	local R = d.radius or 14
+	task.delay(d.delay or 0.1, function()
+		Fx.ring(ground(at), GOLD, 2, R * 2.2, 0.4)
+		Fx.ring(ground(at), WHITE, 1, R * 1.6, 0.3)
+		Fx.ring(ground(at) + Vector3.new(0, 2, 0), CYAN, 1, R * 1.2, 0.25)
+		local dome = part(Vector3.new(2, 2, 2), GOLD, Enum.Material.Neon, 0.55, "ball")
+		dome.Position = at
+		fadeOut(dome, 0.35, { Size = Vector3.new(R * 1.8, R * 1.1, R * 1.8) })
+		Fx.burst("spark", at, GOLD, 10, 1.4)
+		Fx.breakSound("boom", 0.8, 1.2, at)
+		shakeNear(at, 0.6, 120)
+	end)
+end
+
+local PULSE: { [string]: string } = { sonic = "sonic", sonicx = "sonicx" }
+function Speed.handles(data: any): boolean
+	if data.kind == "pulse" then
+		return PULSE[data.fx or ""] ~= nil
+	end
+	return H[data.kind] ~= nil
+end
+function Speed.run(data: any)
+	local fn = data.kind == "pulse" and H[PULSE[data.fx or ""] or ""] or H[data.kind]
+	if fn then
+		fn(data)
+	end
+end
+
+------------------------------------------------------------------------
+-- 극 패시브 · 초가속: 서버 전체 컷씬 (시간이 멎듯 느려지는 연출) + 그동안 화면 가장자리의 속도선
+------------------------------------------------------------------------
+local lineGui: ScreenGui? = nil
+function Speed.haste(d: any)
+	local m = d.m
+	local r = rootOf(m)
+	if not r then
+		return
+	end
+	local mine = m == Players.LocalPlayer.Character
+	local cut, dur = d.cut or 1.3, d.dur or 30
+	Fx.ring(ground(r.Position), GOLD, 3, 60, cut)
+	Fx.ring(ground(r.Position), CYAN, 2, 40, cut * 0.8)
+	Fx.breakSound("whoosh", 1, 0.5, r.Position)
+	if near(r.Position, 300) then
+		-- 세상이 푸르게 가라앉았다가 (느려진 세상), 그동안 나만 또렷하다
+		gradeTo(cut * 0.4, -0.45, -0.04, 0.15, Color3.fromRGB(190, 215, 255))
+		task.delay(cut, function()
+			if mine then
+				gradeTo(0.5, -0.2, 0, 0.1, Color3.fromRGB(215, 235, 255))
+			else
+				gradeReset(0.5)
+			end
+		end)
+		task.delay(cut + dur, function()
+			gradeReset(0.8)
+		end)
+		shakeNear(r.Position, 0.8, 300)
+	end
+	if mine then
+		-- 속도선: 가운데에서 바깥으로 흩어지는 가는 흰 선들 (초가속이 끝날 때까지)
+		local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+		if pg then
+			if lineGui then
+				lineGui:Destroy()
+			end
+			local g = Instance.new("ScreenGui")
+			g.Name = "KwonSpeedLines"
+			g.IgnoreGuiInset = true
+			g.ResetOnSpawn = false
+			g.DisplayOrder = 40
+			g.Parent = pg
+			lineGui = g
+			local alive = true
+			task.delay(cut + dur, function()
+				alive = false
+				g:Destroy()
+				if lineGui == g then
+					lineGui = nil
+				end
+			end)
+			task.spawn(function()
+				task.wait(cut)
+				while alive and g.Parent do
+					for _ = 1, 3 do
+						local a = math.random() * math.pi * 2
+						local line = Instance.new("Frame")
+						line.AnchorPoint = Vector2.new(0.5, 0.5)
+						line.BackgroundColor3 = math.random() < 0.3 and GOLD or ICE
+						line.BorderSizePixel = 0
+						line.BackgroundTransparency = 0.45
+						line.Rotation = math.deg(a)
+						local r0 = 0.28 + math.random() * 0.1
+						line.Position = UDim2.fromScale(0.5 + math.cos(a) * r0, 0.5 + math.sin(a) * r0)
+						line.Size = UDim2.fromOffset(40, 2)
+						line.Parent = g
+						local r1 = 0.65 + math.random() * 0.2
+						tween(line, 0.35, { Position = UDim2.fromScale(0.5 + math.cos(a) * r1, 0.5 + math.sin(a) * r1), Size = UDim2.fromOffset(220, 2), BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+						task.delay(0.4, function()
+							line:Destroy()
+						end)
+					end
+					task.wait(0.07)
+				end
+			end)
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 초 오의 컷씬: 가로 검은 띠와 속도선, 카메라가 출발선 뒤에서 땅에 붙어 길 끝을 본다 (twilight = 시간 정지 일격: 하늘의 시계를 올려 본다)
+------------------------------------------------------------------------
+local cutActive = false
+function Speed.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, chrono: boolean?)
+	local cam = workspace.CurrentCamera
+	local r = rootOf(model)
+	local player = Players.LocalPlayer
+	if not cam or not r or cutActive or not player then
+		return
+	end
+	cutActive = true
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonSpeedCut"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 85
+	g.Parent = player:WaitForChild("PlayerGui")
+	local tintF = Instance.new("Frame")
+	tintF.Size = UDim2.fromScale(1, 1)
+	tintF.BackgroundColor3 = chrono and Color3.fromRGB(30, 34, 46) or Color3.fromRGB(10, 22, 40)
+	tintF.BackgroundTransparency = 1
+	tintF.BorderSizePixel = 0
+	tintF.Parent = g
+	tween(tintF, 0.25, { BackgroundTransparency = 0.45 })
+	local bars: { Frame } = {}
+	for i, y in ipairs({ 0, 1 }) do
+		local b = Instance.new("Frame")
+		b.AnchorPoint = Vector2.new(0, y)
+		b.Position = UDim2.fromScale(0, y)
+		b.Size = UDim2.new(1, 0, 0, 0)
+		b.BackgroundColor3 = Color3.new(0, 0, 0)
+		b.BorderSizePixel = 0
+		b.ZIndex = 5
+		b.Parent = g
+		tween(b, 0.15, { Size = UDim2.new(1, 0, 0.14, 0) })
+		bars[i] = b
+	end
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.AnchorPoint = Vector2.new(1, 0.5)
+	label.Position = UDim2.new(1, -30, 0.5, 0)
+	label.Size = UDim2.new(0.5, 0, 0.45, 0)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextXAlignment = Enum.TextXAlignment.Right
+	label.Text = "초 오의 · " .. name
+	label.TextColor3 = chrono and GOLD or ICE
+	label.TextStrokeColor3 = chrono and Color3.fromRGB(120, 90, 20) or Color3.fromRGB(20, 90, 140)
+	label.TextStrokeTransparency = 0.2
+	label.TextTransparency = 1
+	label.ZIndex = 6
+	label.Parent = bars[2]
+	tween(label, 0.25, { TextTransparency = 0 })
+	-- 속도선 (컷씬 내내 가운데에서 바깥으로)
+	local running = true
+	task.spawn(function()
+		while running and g.Parent do
+			for _ = 1, 4 do
+				local a = math.random() * math.pi * 2
+				local line = Instance.new("Frame")
+				line.AnchorPoint = Vector2.new(0.5, 0.5)
+				line.BackgroundColor3 = chrono and GOLD or ICE
+				line.BorderSizePixel = 0
+				line.BackgroundTransparency = 0.35
+				line.Rotation = math.deg(a)
+				line.Position = UDim2.fromScale(0.5 + math.cos(a) * 0.22, 0.5 + math.sin(a) * 0.22)
+				line.Size = UDim2.fromOffset(30, 2)
+				line.ZIndex = 4
+				line.Parent = g
+				tween(line, 0.3, { Position = UDim2.fromScale(0.5 + math.cos(a) * 0.8, 0.5 + math.sin(a) * 0.8), Size = UDim2.fromOffset(300, 3), BackgroundTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				task.delay(0.35, function()
+					line:Destroy()
+				end)
+			end
+			task.wait(0.05)
+		end
+	end)
+	local oldType = cam.CameraType
+	local oldFov = cam.FieldOfView
+	local look = flat(r.CFrame.LookVector)
+	local side = Vector3.new(-look.Z, 0, look.X)
+	cam.CameraType = Enum.CameraType.Scriptable
+	local t0 = os.clock()
+	local focus = r.Position
+	local finished = false
+	local function restore()
+		if finished then
+			return
+		end
+		finished = true
+		running = false
+		RunService:UnbindFromRenderStep("KwonSpeedCut")
+		cam.CameraType = oldType == Enum.CameraType.Scriptable and Enum.CameraType.Custom or oldType
+		cam.FieldOfView = oldFov
+		cutActive = false
+		local function behind()
+			if r.Parent then
+				local lk = flat(r.CFrame.LookVector)
+				cam.CFrame = CFrame.lookAt(r.Position - lk * 20 + UP * 9, r.Position + lk * 6 + UP * 4)
+			end
+		end
+		behind()
+		task.defer(behind)
+		for _, b in ipairs(bars) do
+			tween(b, 0.2, { Size = UDim2.new(1, 0, 0, 0) })
+		end
+		tween(tintF, 0.25, { BackgroundTransparency = 1 })
+		tween(label, 0.2, { TextTransparency = 1 })
+		task.delay(0.3, function()
+			g:Destroy()
+		end)
+	end
+	RunService:BindToRenderStep("KwonSpeedCut", Enum.RenderPriority.Camera.Value + 2, function(dt: number)
+		if finished then
+			return
+		end
+		if not r.Parent then
+			restore()
+			return
+		end
+		local t = os.clock() - t0
+		local k = math.clamp(t / dur, 0, 1)
+		focus = focus:Lerp(r.Position, math.min(1, dt * 10))
+		local e = 1 - (1 - k) ^ 2
+		if chrono then
+			-- 올려다본다: 하늘의 시계 쪽으로 천천히
+			local eye = focus - look * (16 - e * 6) + side * 4 + UP * (3 + e * 2)
+			cam.CFrame = CamGuard.frame(eye, focus + UP * (10 + e * 38), focus)
+			cam.FieldOfView = oldFov + e * 6
+		else
+			-- 출발선: 등 뒤 낮은 곳에서 길 끝을 본다. 점점 다가가며 시야가 좁아졌다가 (집중) 한 순간 활짝 열린다
+			local eye = focus - look * (11 - e * 5) + side * (3 - e * 2) + UP * (1.2 + e * 0.6)
+			cam.CFrame = CamGuard.frame(eye, focus + look * 40 + UP * 2, focus)
+			cam.FieldOfView = oldFov - e * 10
+		end
+		if t >= dur then
+			restore()
+		end
+	end)
+	if shake then
+		task.delay(dur * 0.7, function()
+			shake(0.7)
+		end)
+	end
+	task.delay(dur + 1, restore)
+end
+
+return Speed
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -63929,7 +65332,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -64146,7 +65549,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -66534,7 +67937,7 @@ local function buildTest()
 	})
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
-		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" },
+		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true },
 		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
 	})
 	section("🌍 이동·이벤트", {
@@ -66625,6 +68028,7 @@ local function buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
+		geukspeed = "진 풍신각 숙련 20 + 세 번 환생한 몸으로 지옥 황천 나루의 질주귀를 찾아가 속도의 시련을 넘는다",
 		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}
 	for _, st in ipairs(Config.Styles) do
@@ -68912,7 +70316,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -70191,7 +71595,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -72874,7 +74278,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -73984,7 +75388,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="53">
+  <Item class="Workspace" referent="54">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

@@ -3474,6 +3474,159 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
+	-- 3.22판 극 광속권 ------------------------------------------------
+	elseif kind == "lightLance" then
+		-- 광속 관통 (E): 앞으로 쏘아 지나는 적을 베고, 지나간 줄이 잠시 뒤 한꺼번에 터진다 (움직임은 기술의 lunge가 한다)
+		local from = f.root.Position
+		local to = from + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "lightLance", m = f.model, from = from, to = to, delay = m.delay / sp, style = style })
+		after(0.12, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local det = scaled(m.det, sc)
+		after(m.delay, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width + 2)) do
+				strike(f, o, det, move)
+			end
+		end)
+	elseif kind == "sonicBoom" then
+		-- 음속 돌파 (R): 앞으로 내달려 벽을 뚫는 순간 몸 뒤로 증기 원뿔이 터진다
+		local from = f.root.Position
+		local to = from + look * m.dist
+		Push:FireAllClients("skillfx", { kind = "sonicBoom", m = f.model, from = from, to = to, coneAt = m.coneAt / sp, coneLen = m.coneLen, coneWidth = m.coneWidth, style = style })
+		after(0.1, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		local cone = scaled(m.cone, sc)
+		after(m.coneAt, function()
+			local tip = f.root.Position
+			for _, o in ipairs(hostilesOnSeg(f, tip - look * m.coneLen, tip, m.coneWidth)) do
+				strike(f, o, cone, move)
+			end
+		end)
+	elseif kind == "clockBarrage" then
+		-- 시간 가속 (G): 발밑의 시계 안 적을 열다섯 번 난타하고, 바늘이 모이는 순간 시계째 터진다
+		local C = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "clockBarrage", m = f.model, at = C, radius = m.radius, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
+					o.slowUntil = os.clock() + 0.4
+					o.slowMul = 0.3
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.dur + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "lightDash" then
+		-- 광속 일섬 (초 오의): 컷씬 동안 무적 → 한 걸음에 길을 지나 나타나면 → 지나간 길 위의 모든 적에게 그제야 베임이 닿는다 → 소리가 따라붙어 충격파
+		local from = f.root.Position
+		local T1 = m.cut
+		local T2 = T1 + m.charge
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + m.boomAt + 0.4) / sp)
+		local to = from + look * m.length
+		Push:FireAllClients("skillfx", { kind = "lightDash", m = f.model, from = from, to = to, cut = T1 / sp, charge = m.charge / sp, boomAt = m.boomAt / sp, boomRadius = m.boomRadius, width = m.width, style = style })
+		after(T2, function()
+			moveTo(f, CFrame.lookAt(to, to + look))
+		end)
+		after(T2 + 0.35, function()
+			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		after(T2 + m.boomAt, function()
+			for _, o in ipairs(hostilesNear(f, to, m.boomRadius)) do
+				strike(f, o, scaled(m.boom, sc), move)
+			end
+		end)
+	elseif kind == "lightNeedles" then
+		-- 광침 (초가속 E): 빛의 바늘 아홉이 부채꼴로 순식간에 꿰뚫는다
+		local from = f.root.Position
+		local dirs = {}
+		for i = 1, m.n do
+			local ang = math.rad(-m.spread / 2 + (i - 1) * m.spread / math.max(1, m.n - 1))
+			local d = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), ang) * look
+			table.insert(dirs, Vector3.new(d.X, 0, d.Z).Unit)
+		end
+		Push:FireAllClients("skillfx", { kind = "lightNeedles", m = f.model, from = from, dirs = dirs, length = m.length, delay = m.delay / sp, style = style })
+		after(m.delay + 0.04, function()
+			for _, d in ipairs(dirs) do
+				for _, o in ipairs(hostilesOnSeg(f, from, from + d * m.length, m.width)) do
+					strike(f, o, hit, move)
+				end
+			end
+		end)
+	elseif kind == "zigzagStep" then
+		-- 지그재그 질주 (초가속 R): 직각으로 꺾으며 다섯 번 도약, 내려서는 자리마다 터진다
+		local pos = f.root.Position
+		local right = rightOf(look)
+		local pts = { pos }
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.steps * m.every + 0.25) / sp)
+		for i = 1, m.steps do
+			local sgn = (i % 2 == 1) and 1 or -1
+			pos = pos + look * m.forward + right * sgn * m.side
+			table.insert(pts, pos)
+		end
+		Push:FireAllClients("skillfx", { kind = "zigzagStep", m = f.model, pts = pts, every = m.every / sp, style = style })
+		for i = 1, m.steps do
+			after(i * m.every, function()
+				local p = pts[i + 1]
+				moveTo(f, CFrame.lookAt(p, p + look))
+				for _, o in ipairs(hostilesNear(f, p, m.radius)) do
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+	elseif kind == "overclock" then
+		-- 초가속 폭주 (초가속 G): 제자리를 맴도는 회오리가 둘레의 적을 끌어당겨 쓸고, 멎는 순간 빛의 기둥이 솟는다
+		local C = f.root.Position
+		Push:FireAllClients("skillfx", { kind = "overclock", m = f.model, at = C, radius = m.radius, orbit = m.orbit, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
+		local n = math.floor(m.dur / m.every)
+		for i = 1, n do
+			after(i * m.every, function()
+				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
+					pullTo(o, C, m.pull)
+					strike(f, o, hit, move)
+				end
+			end)
+		end
+		after(m.dur + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
+	elseif kind == "chronoStrike" then
+		-- 시간 정지 일격 (초가속 X): 세상이 멈추고, 멈춘 적마다 빛의 선이 그어지고, 시간이 되돌아오는 순간 선이 모두 한꺼번에 베인다
+		local C = f.root.Position
+		local list = nearestList(f, m.range, m.n)
+		local T1 = m.cut
+		local T2 = T1 + math.max(1, #list) * m.every + m.resumeAt
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + 0.6) / sp)
+		for _, o in ipairs(list) do
+			o.slowUntil = os.clock() + (T2 + 0.2) / sp
+			o.slowMul = 0.02
+		end
+		Push:FireAllClients("skillfx", { kind = "chronoStrike", m = f.model, at = C, targets = modelsOf(list), cut = T1 / sp, every = m.every / sp, resume = m.resumeAt / sp, radius = m.finalRadius, style = style })
+		local h = scaled(m.hit, sc)
+		after(T2, function()
+			for _, o in ipairs(list) do
+				strike(f, o, h, move)
+			end
+		end)
+		after(T2 + 0.25, function()
+			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+				strike(f, o, scaled(m.final, sc), move)
+			end
+		end)
 	elseif kind == "duskFan" then
 		-- 황혼참 (황혼 E): 노을빛 초승달 다섯이 부채꼴로 날아갔다가 되돌아온다. 오갈 때 한 번씩 벤다
 		local from = f.root.Position

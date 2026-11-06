@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.22.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2425,6 +2425,77 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.22판: 극 광속권. 진 풍신각의 끝. 지옥 황천 나루의 질주귀에게 (세 번 환생한 몸만)
+-- 극 패시브 · 초가속: 극이 차면 시간이 멎듯 느려지고 (둘레의 적이 굼뜨다), 30초 동안 모든 기술이 바뀌고 모든 타격이 잔상으로 한 번 더 친다
+-- 평소 패시브 · 가속: 맞힐수록 걸음이 빨라지고 (최대 5단계), 맞으면 풀린다. 네 번 맞힐 때마다 음속 충격
+Config.GEUK_REQ.geukspeed = { base = "pungsin2", lv = 20, rebirth = 3 }
+table.insert(Config.Styles, {
+	id = "geukspeed",
+	name = "극 광속권",
+	hanja = "極光速拳",
+	icon = "🌠",
+	grade = "극",
+	geuk = true,
+	color = Color3.fromRGB(120, 225, 255),
+	color2 = Color3.fromRGB(255, 215, 110),
+	fx = "wind",
+	speedTrail = true, -- 달릴 때 잔상이 늘어선다 (화면이 그린다)
+	hidden = true,
+	secret = true,
+	realmReq = 17,
+	styleReq = "pungsin2",
+	trialHp = 13,
+	unlockHint = "진 풍신각을 숙련 20까지 쌓고 세 번 환생한 자만이, 지옥 황천 나루에서 질주귀를 만난다",
+	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고, 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고, 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 멈춘 듯 느려지고, 느려진 세상 속에서 그만 홀로 달린다.",
+	gimmick = "극 패시브 · 초가속: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 30초 동안 초가속에 든다. 둘레 90칸의 적은 굼뜨고 (이동 ×0.35), 내 걸음은 ×1.6, 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다. 그동안 기술이 모두 초가속의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 가속: 맞힐 때마다 걸음이 5%씩 빨라진다 (최대 5단계, 3초 안 맞히면 풀리고, 맞으면 반으로). 네 번 맞힐 때마다 음속 충격. 모든 기술 대기 28% 짧음. 초 오의(X)가 있다",
+	deflect = 0.3,
+	postureMult = 1.5,
+	speed = 1.4,
+	dashCd = 0.45,
+	cdMult = 0.72,
+	haste = { max = 5, move = 0.05, decay = 3 },
+	pulse = { every = 4, kind = "sonic", radius = 11, delay = 0.12, name = "음속 충격", dmg = 50, posture = 42, stun = 0.5, kb = 26, up = 4 },
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 1.3, dur = 30 },
+	geukHaste = { radius = 90, every = 0.25, slow = 0.35, walk = 1.6, echo = 0.5, echoDelay = 0.2 },
+	stance = "stance_light",
+	combo = {
+		{ id = "gs1", name = "극 광권", pose = "lt_flick", dur = 0.2, lunge = 4, hits = { hit(0.07, 6, 5, 26, 16, 0.3, 6) } },
+		{ id = "gs2", name = "극 섬권", pose = "lt_flick2", dur = 0.2, lunge = 4, hits = { hit(0.07, 6, 5, 26, 16, 0.3, 6) } },
+		{ id = "gs3", name = "극 쾌타", pose = "lt_blitz", dur = 0.4, lunge = 3, hits = { hit(0.08, 6, 5, 10, 8, 0.2, 2), hit(0.16, 6, 5, 10, 8, 0.2, 2), hit(0.24, 6, 5, 10, 8, 0.2, 2), hit(0.32, 6, 5, 14, 12, 0.3, 6) } },
+		{ id = "gs4", name = "극 음속각", pose = "lt_sonic", dur = 0.46, lunge = 4, hits = { hit(0.2, 7, 6, 46, 44, 0.6, 34, 6, true) } },
+	},
+	heavy = { id = "gsH", name = "극 관통", pose = "lt_pierce", dur = 0.6, lunge = 18, iframes = 0.25, hits = { hit(0.28, 16, 7, 80, 100, 0.9, 56, 8, true) } },
+	skills = {
+		E = { id = "gsE", name = "광속 관통", desc = "몸을 빛으로 쏘아 앞의 적들을 34칸 꿰뚫고 나타난다 (무적). 지나간 자리에 빛의 줄이 남고, 잠시 뒤 줄 전체가 한꺼번에 터지며 한 번 더 벤다", pose = "lt_lance", dur = 0.55, cd = 7, chi = 20, lunge = 34, iframes = 0.35,
+			mech = { kind = "lightLance", dist = 34, width = 5, hit = hit(0, 0, 0, 62, 52, 0.7, 10, 6), delay = 0.5, det = hit(0, 0, 0, 40, 34, 0.5, 18, 12) } },
+		R = { id = "gsR", name = "음속 돌파", desc = "소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며, 닿은 적이 크게 튕겨 나간다", pose = "lt_boom", dur = 0.6, cd = 10, chi = 25, lunge = 26, iframes = 0.5,
+			mech = { kind = "sonicBoom", dist = 26, width = 6, hit = hit(0, 0, 0, 48, 40, 0.6, 14, 4), coneAt = 0.3, coneLen = 22, coneWidth = 16, cone = hit(0, 0, 0, 78, 76, 1.0, 46, 12) } },
+		G = { id = "gsG", name = "시간 가속", desc = "발밑에 거대한 시계가 그려지고 시침과 분침이 점점 빨리 돈다. 시계 안의 적은 1.5초 동안 열다섯 번 난타당하고, 바늘이 12시에 모이는 순간 시계째 터진다", pose = "lt_clock", dur = 2.2, cd = 28, chi = 100, armor = true,
+			mech = { kind = "clockBarrage", radius = 24, dur = 1.5, every = 0.1, tick = hit(0, 0, 0, 14, 11, 0.25, 0), finalAt = 0.4, finalRadius = 26, final = hit(0, 0, 0, 250, 260, 1.5, 60, 24) } },
+		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 컷씬 (그동안 무적): 세상의 소리가 사라지고 몸이 출발선에 선다. 한 걸음에 74칸을 빛으로 가르고 나타나면, 지나간 길 위의 모든 적에게 그제야 베임이 닿는다. 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 5.0, cd = 55, chi = 150, armor = true,
+			mech = { kind = "lightDash", cut = 1.5, charge = 0.9, length = 74, width = 9, hit = hit(0, 0, 0, 340, 330, 1.6, 70, 26), boomAt = 0.7, boomRadius = 36, boom = hit(0, 0, 0, 220, 230, 1.5, 70, 30) } },
+	},
+	-- 초가속 (극 패시브 동안): 기술이 모두 바뀐다. 빛과 소리가 아닌 '시간'을 다룬다
+	twilight = {
+		name = "초가속",
+		color = Color3.fromRGB(255, 215, 110),
+		color2 = Color3.fromRGB(120, 225, 255),
+		dmg = 1.3,
+		pulse = { every = 3, kind = "sonicx", radius = 14, delay = 0.1, name = "초가속", dmg = 68, posture = 56, stun = 0.6, kb = 32, up = 6 },
+		heavy = { id = "gtsH", name = "초 관통", pose = "lt_pierce", dur = 0.55, lunge = 22, iframes = 0.3, hits = { hit(0.26, 18, 8, 112, 140, 1.1, 66, 10, true) } },
+		skills = {
+			E = { id = "gtsE", name = "광침", desc = "손목을 튕겨 빛의 바늘 아홉을 부채꼴로 쏜다. 바늘은 34칸을 순식간에 꿰뚫고 사라지며, 지나간 줄이 번쩍인다", pose = "lt_needle", dur = 0.4, cd = 5, chi = 16,
+				mech = { kind = "lightNeedles", n = 9, spread = 100, length = 34, width = 2.8, delay = 0.12, hit = hit(0, 0, 0, 46, 38, 0.5, 8, 4) } },
+			R = { id = "gtsR", name = "지그재그 질주", desc = "직각으로 꺾으며 앞으로 다섯 번 번개처럼 도약한다 (무적). 내려서는 자리마다 사방이 터지고, 지나간 길이 번개 줄로 남는다", pose = "lt_zig", dur = 0.7, cd = 8, chi = 22, iframes = 0.6,
+				mech = { kind = "zigzagStep", steps = 5, forward = 11, side = 9, every = 0.09, radius = 8, hit = hit(0, 0, 0, 54, 46, 0.6, 12, 6) } },
+			G = { id = "gtsG", name = "초가속 폭주", desc = "몸이 보이지 않을 만큼 빨라져 제자리를 맴돈다. 둘레 22칸이 회오리로 변해 적을 끌어당기며 쓸어 올리고, 회오리가 멎는 순간 빛의 기둥이 하늘까지 솟는다", pose = "lt_over", dur = 2.6, cd = 24, chi = 100, armor = true,
+				mech = { kind = "overclock", radius = 22, orbit = 14, dur = 2.0, every = 0.12, pull = 34, tick = hit(0, 0, 0, 17, 13, 0.3, 0), finalAt = 0.35, finalRadius = 28, final = hit(0, 0, 0, 320, 320, 1.6, 60, 28) } },
+			X = { id = "gtsX", name = "시간 정지 일격", desc = "초가속의 초 오의 (그동안 무적). 한 손을 하늘로 들면 세상의 빛깔이 빠지고 모든 것이 멈춘다. 멈춘 적 일곱의 몸마다 순식간에 빛의 선이 그어지고, 시간이 되돌아오는 순간 모든 선이 한꺼번에 베인다. 마지막에 하늘의 시계가 깨진다", pose = "lt_chrono", dur = 4.8, cd = 50, chi = 140, armor = true,
+				mech = { kind = "chronoStrike", cut = 1.4, n = 7, range = 56, every = 0.12, resumeAt = 0.8, hit = hit(0, 0, 0, 130, 120, 1.0, 30, 20), finalRadius = 44, final = hit(0, 0, 0, 340, 340, 1.8, 70, 30) } },
+		},
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.19판: 등급마다 새 권법 하나 (상급은 셋). 권법 소개창은 등급 순으로 늘어선다
 ------------------------------------------------------------------------
@@ -2898,6 +2969,7 @@ local FINISHERS = {
 	hojeop = { name = "몽유승천", pose = "petal_spin" },
 	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	geuknull = { name = "격자승천", pose = "void_point" },
+	geukspeed = { name = "광속승천권", pose = "lt_fin" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },
@@ -3388,6 +3460,18 @@ for _, st in ipairs(Config.Styles) do
 			P("charge", "좌표 도약", 2, { length = 60, width = 9, warn = 0.5, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 31, 52, 0.9, 34) }),
 			P("rain", "ERROR", 2, { count = 10, radius = 8, spread = 30, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = red, hit = hit(0, 0, 0, 31, 50, 0.8, 22) }),
 			P("quake", "공간 삭제", 3, { radius = 32, warn = 1.2, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 63, 124, 1.5, 60, 26) }),
+		} }
+	end
+	if st.id == "geukspeed" then
+		local gold, cyan = Color3.fromRGB(255, 215, 110), Color3.fromRGB(120, 225, 255)
+		st.trialIntro = { title = "속도의 시련", text = "저승길은 급할수록 멀다더라. 그런데 나는 급하다. 내 속도를 눈으로 따라올 수 있거든 따라와 봐라. 못 따라오면, 맞고 나서 알게 될 거다." }
+		st.trialBoss = { hp = 5400, posture = 940, scale = 1.7, reach = 1.6, speed = 34, patterns = {
+			P("charge", "섬전", 1, { length = 58, width = 8, warn = 0.45, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 27, 44, 0.8, 28) }),
+			P("rain", "광침비", 1, { count = 11, radius = 7, spread = 28, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = cyan, hit = hit(0, 0, 0, 28, 44, 0.8, 18) }),
+			P("donut", "음속 고리", 1, { inner = 8, outer = 28, warn = 0.85, cd = 7, pose = "void_circle", hit = hit(0, 0, 0, 33, 56, 0.9, 32) }),
+			P("charge", "잔상 돌격", 2, { length = 64, width = 9, warn = 0.4, cd = 4, times = 5, pose = "void_sink", hit = hit(0, 0, 0, 30, 50, 0.9, 34) }),
+			P("rain", "초가속", 2, { count = 12, radius = 8, spread = 30, warn = 0.6, cd = 6, pose = "point_sky", fx = "star", color = gold, hit = hit(0, 0, 0, 31, 50, 0.8, 22) }),
+			P("quake", "광속 일섬", 3, { radius = 30, warn = 1.0, cd = 8, pose = "ult_void", hit = hit(0, 0, 0, 60, 118, 1.5, 60, 26) }),
 		} }
 	end
 	if st.id == "hojeop" then
@@ -4442,6 +4526,9 @@ Config.MASTERS.geuknull = { name = "격자지기", at = Config.EGGS.edge.garden 
 	quote = "펼쳐 보면 알게 된다. 빈칸에도 좌표가 있다는 것을.", rumor = "세상 끝 벼랑 너머, 무너지는 돌길 끝에 떠 있는 정원에서 허공에 격자를 긋는 자가 있다더라" }
 Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
 	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
+-- 3.22판 극 광속권의 사부: 지옥 황천 나루의 질주귀
+Config.MASTERS.geukspeed = { name = "질주귀", at = Vector3.new(96, 8000 + 1.6, 34), region = "지옥 (황천 나루)", regionId = "hwangcheon", secret = true,
+	quote = "빨리 달리면 저승사자도 못 따라온다. 그래서 내가 여기 있지.", rumor = "저승 너머 황천 나루에, 저승사자보다 빠르다는 귀신이 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 -- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)

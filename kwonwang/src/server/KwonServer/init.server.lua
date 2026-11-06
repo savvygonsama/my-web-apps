@@ -3134,6 +3134,53 @@ local function geukStyle(f: any): any
 	local st = Combat.styleOf(f)
 	return (st and st.geukGauge) and st or nil
 end
+-- 3.22판 극 광속권 · 가속: 맞힐수록 걸음이 빨라지고 (단계마다 +5%), 3초 안 맞히면 풀리고, 맞으면 반으로 줄어든다
+local Haste = {}
+function Haste.refresh(f: any)
+	local st = Combat.styleOf(f)
+	local n = f.hasteN or 0
+	local mul = 1
+	if st and st.haste then
+		mul = 1 + st.haste.move * n
+	end
+	if f.hasteTwilight and st and st.geukHaste then
+		mul *= st.geukHaste.walk
+	end
+	f.hasteMul = mul > 1.001 and mul or nil
+	f.model:SetAttribute("Haste", n)
+end
+function Haste.add(f: any, st: any)
+	local H = st.haste
+	local now = os.clock()
+	if now - (f.hasteAt or 0) > H.decay then
+		f.hasteN = 0
+	end
+	f.hasteAt = now
+	local n = math.min(H.max, (f.hasteN or 0) + 1)
+	if n ~= f.hasteN then
+		f.hasteN = n
+		Haste.refresh(f)
+	end
+end
+function Haste.hurt(f: any)
+	if (f.hasteN or 0) > 0 then
+		f.hasteN = math.floor(f.hasteN / 2)
+		f.hasteAt = os.clock()
+		Haste.refresh(f)
+	end
+end
+-- 오래 안 맞히면 풀린다
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		for _, f in pairs(Combat.fighters) do
+			if (f.hasteN or 0) > 0 and os.clock() - (f.hasteAt or 0) > 3 then
+				f.hasteN = 0
+				Haste.refresh(f)
+			end
+		end
+	end
+end)
 function Geuk.trigger(f: any, st: any)
 	local G = st.geukGauge
 	local now = os.clock()
@@ -3201,6 +3248,39 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
+	local HS = st.geukHaste
+	if HS then
+		-- 3.22판 극 광속권 · 초가속: 둘레의 적이 굼떠지고, 내 걸음이 빨라지며, 모든 타격이 잔상으로 한 번 더 친다
+		f.hasteTwilight = true
+		Haste.refresh(f)
+		Push:FireAllClients("geukHaste", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
+		task.spawn(function()
+			local t0 = now + G.cut
+			while f.twilightUntil == token and os.clock() < token and f.model.Parent and not f.dead do
+				if os.clock() >= t0 then
+					local at = f.root.Position
+					for _, o in pairs(Combat.fighters) do
+						if o ~= f and not o.dead and Combat.hostile(f, o) and (o.root.Position - at).Magnitude <= HS.radius then
+							o.slowUntil = os.clock() + 0.6
+							o.slowMul = HS.slow
+						end
+					end
+				end
+				task.wait(HS.every)
+			end
+			if f.twilightUntil == token or f.dead then
+				f.hasteTwilight = nil
+				Haste.refresh(f)
+			end
+			if f.twilightUntil == token and f.dead then
+				f.twilightUntil = os.clock()
+				if f.model.Parent then
+					f.model:SetAttribute("Twilight", nil)
+				end
+			end
+		end)
+		return
+	end
 	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
 	World.twilight(G.cut, G.dur)
 end
@@ -3216,6 +3296,29 @@ function Geuk.add(f: any, amount: number)
 	end
 end
 function Geuk.onHit(att: any, tgt: any, opt: any)
+	do
+		local hs = Combat.styleOf(att)
+		if hs and hs.haste then
+			Haste.add(att, hs)
+			-- 초가속: 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다 (잔상의 타격은 다시 잔상을 만들지 않는다)
+			if att.hasteTwilight and hs.geukHaste and not (opt and opt.echo) and not tgt.dead then
+				local E = hs.geukHaste
+				local def = opt and opt.hitDef
+				if def and (def.dmg or 0) > 0 then
+					local echoHit = { dmg = def.dmg * E.echo, posture = 0, stun = 0, kb = 0 }
+					task.delay(E.echoDelay, function()
+						if not att.dead and not tgt.dead and att.root.Parent and tgt.root.Parent then
+							Combat.applyHit(att, tgt, echoHit, { move = { name = "잔상" }, chain = true, echo = true, unblockable = true })
+						end
+					end)
+				end
+			end
+		end
+		local ts = tgt.player and Combat.styleOf(tgt)
+		if ts and ts.haste then
+			Haste.hurt(tgt)
+		end
+	end
 	if att.player then
 		local st = geukStyle(att)
 		if st then
@@ -4426,6 +4529,13 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.coins = math.max(p.coins, H.cost)
 			f.root.CFrame = CFrame.new(H.grass + Vector3.new(0, 6, -22))
 			toast(player, "🕳 남동쪽 세상 끝 · 희미한 풀을 밟아 보세요 (환생 3 이상)")
+		end
+	elseif action == "testHellWorld" then
+		-- 3.22판: 지옥 황천 나루로 바로 (환생 3으로 맞춘다)
+		if f then
+			p.rebirth = math.max(p.rebirth or 0, Config.HELL.rebirth)
+			f.root.CFrame = CFrame.new(Config.HELL.zones[1].at + Vector3.new(0, 5, 70))
+			toast(player, "🔥 지옥 · 황천 나루")
 		end
 	elseif action == "testEdgeTp" then
 		-- 3.15판: 세상 끝 벼랑 위 (무너지는 돌길 앞)

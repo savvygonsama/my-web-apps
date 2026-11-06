@@ -699,6 +699,19 @@ local function dressMaster(model: Model, style: any)
 		wear(model, "RightHand", "BoneStaff", Vector3.new(0.35, 6.8, 0.35), CFrame.new(0, 1.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "BoneStaffHook", Vector3.new(0.3, 1.4, 0.3), CFrame.new(0.4, 4.7, 0) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(222, 214, 196), Enum.Material.Limestone)
 		wear(model, "RightHand", "StaffPearl", Vector3.new(0.7, 0.7, 0.7), CFrame.new(0.9, 5.2, 0), Color3.fromRGB(200, 240, 255), Enum.Material.Glass, Enum.PartType.Ball)
+	elseif id == "geukspeed" then
+		-- 질주귀: 창백한 얼굴에 푸른 눈, 어깨에서 길게 뒤로 끌리는 금빛 목도리, 등 뒤로 번득이는 속도선 날개, 발목의 빛 고리
+		for _, x in ipairs({ -1, 1 }) do
+			wear(model, "Head", "SpeedEye", Vector3.new(0.2, 0.08, 0.05), CFrame.new(x * hs.X * 0.2, hs.Y * 0.06, -hs.Z * 0.54), Color3.fromRGB(120, 225, 255), Enum.Material.Neon)
+		end
+		wear(model, "UpperTorso", "SpeedScarf", Vector3.new(1.4, 0.35, 1.2), CFrame.new(0, 0.62, 0), Color3.fromRGB(255, 215, 110), Enum.Material.Neon)
+		wear(model, "UpperTorso", "SpeedScarfTail", Vector3.new(0.5, 0.12, 4.2), CFrame.new(0.3, 0.5, 2.4) * CFrame.Angles(math.rad(-8), 0, math.rad(6)), Color3.fromRGB(255, 215, 110), Enum.Material.Neon)
+		for k = -2, 2 do
+			wear(model, "UpperTorso", "SpeedBlade", Vector3.new(0.1, 0.1, 3.2 - math.abs(k) * 0.5), CFrame.new(k * 0.35, 0.4 - math.abs(k) * 0.12, 2.0) * CFrame.Angles(0, math.rad(k * 7), 0), Color3.fromRGB(180, 240, 255), Enum.Material.Neon)
+		end
+		for _, side in ipairs({ "RightFoot", "LeftFoot" }) do
+			wear(model, side, "SpeedAnklet", Vector3.new(0.9, 0.12, 0.9), CFrame.new(0, 0.3, 0), Color3.fromRGB(120, 225, 255), Enum.Material.Neon)
+		end
 	elseif id == "geuknull" then
 		-- 격자지기: 공백권 사부와 같은 지워진 얼굴이지만 하얗게 뒤집혔다. 검은 점 둘, 등 뒤의 흰 격자 틀, 붉은 잡음 줄
 		wear(model, "Head", "VoidMask", Vector3.new(hs.X * 1.08, hs.Y * 1.08, hs.Z * 1.08), CFrame.new(0, 0, 0), Color3.fromRGB(240, 240, 245), Enum.Material.SmoothPlastic)
