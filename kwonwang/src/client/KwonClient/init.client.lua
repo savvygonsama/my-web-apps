@@ -766,7 +766,7 @@ startMove = function(slot: any, charge: number?)
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.speedTrail then
 		-- 3.22판 극 광속권 초 오의: 출발선 컷씬 (시간 정지 일격은 하늘의 시계를 올려 본다, 무적)
-		Speed.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "chronoStrike")
+		Speed.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "ricochet")
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "X" and style.id == "geuknull" then
 		-- 3.17.1판 극 공백권 초 오의: 낮게 돌며 올려다보는 컷씬 (격자선이 하늘로 뻗는다, 무적)
@@ -2632,7 +2632,7 @@ end
 -- 3.22판: 극 광속권 · 초가속 (모두에게 알림, 가까우면 시간이 느려지는 연출)
 function handlers.geukHaste(data: any)
 	Speed.init({ shake = shake, flash = UI.flash })
-	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "시간이 멎듯 느려진다. 둘레의 적은 굼뜨고, 그의 걸음은 눈에 보이지 않으며, 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
+	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "세상이 느려 보일 만큼 빨라진다. 둘레의 적은 굼뜨고, 그의 걸음은 눈에 보이지 않으며, 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
 	Speed.haste(data)
 end
 -- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
@@ -2733,7 +2733,7 @@ RunService.RenderStepped:Connect(function()
 	if style.geukGauge then
 		-- 3.1판 극 패시브: 극 게이지 (가득 차면 일월극변), 황혼 동안은 표시가 바뀐다
 		if twilightNow then
-			stacks = style.geukHaste and "🌠 초가속 · 시간이 느려진다 (기술이 모두 바뀌었다)" or (style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)")
+			stacks = style.geukHaste and "🌠 초가속 · 걸음 ×1.6 · 잔상 타격 (기술이 모두 바뀌었다)" or (style.geukDomain and "⬜ 격자 공간 · 격자 전개 (기술이 모두 바뀌었다)" or "🌇 황혼 · 일월극변 (기술이 모두 바뀌었다)")
 		else
 			local g = math.clamp(tonumber(char:GetAttribute("Geuk")) or 0, 0, style.geukGauge.max)
 			local k = math.floor(g / style.geukGauge.max * 10)

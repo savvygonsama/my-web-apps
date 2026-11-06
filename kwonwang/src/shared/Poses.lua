@@ -2895,6 +2895,20 @@ A.lt_chrono = { -- 시간 정지 일격(황혼 X): 한 손을 하늘로 곧게 �
 	{ t = 0.82, e = "snap", j = { W = { -40, 0, 0 }, N = { 30, 0, 0 }, RS = { 40, 0, 10 }, RE = { 10, 0, 0 }, LS = { 130, 0, 0 }, LE = { 0, 0, 0 }, R = { -40, 0, 0, 0, -1.0, -0.8 } } },
 	{ t = 1, j = LT },
 }
+A.lt_run = { -- 질주: 상체를 눕히고 두 팔을 번갈아 크게 휘두르며 달리는 전력 질주
+	{ t = 0, j = { W = { -35, 0, 0 }, N = { 25, 0, 0 }, RS = { 120, 0, 10 }, RE = { 70, 0, 0 }, LS = { -50, 0, -10 }, LE = { 70, 0, 0 }, RH = { -50, 0, 0 }, RK = { -90, 0, 0 }, LH = { 40, 0, 0 }, LK = { -20, 0, 0 }, R = { -35, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.25, j = { W = { -35, 0, 0 }, N = { 25, 0, 0 }, RS = { -50, 0, 10 }, RE = { 70, 0, 0 }, LS = { 120, 0, -10 }, LE = { 70, 0, 0 }, RH = { 40, 0, 0 }, RK = { -20, 0, 0 }, LH = { -50, 0, 0 }, LK = { -90, 0, 0 }, R = { -35, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.5, j = { W = { -35, 0, 0 }, N = { 25, 0, 0 }, RS = { 120, 0, 10 }, RE = { 70, 0, 0 }, LS = { -50, 0, -10 }, LE = { 70, 0, 0 }, RH = { -50, 0, 0 }, RK = { -90, 0, 0 }, LH = { 40, 0, 0 }, LK = { -20, 0, 0 }, R = { -35, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.75, j = { W = { -35, 0, 0 }, N = { 25, 0, 0 }, RS = { -50, 0, 10 }, RE = { 70, 0, 0 }, LS = { 120, 0, -10 }, LE = { 70, 0, 0 }, RH = { 40, 0, 0 }, RK = { -20, 0, 0 }, LH = { -50, 0, 0 }, LK = { -90, 0, 0 }, R = { -35, 0, 0, 0, -0.9, 0 } } },
+	{ t = 0.92, e = "snap", j = { W = { -10, 0, 0 }, RS = { 110, 0, 40 }, RE = { 10, 0, 0 }, LS = { 110, 0, -40 }, LE = { 10, 0, 0 }, R = { -10, 0, 0, 0, -0.5, 0 } } },
+	{ t = 1, j = LT },
+}
+A.lt_comet = { -- 혜성: 웅크렸다 튀어 올라 몸을 일직선으로 펴고, 머리부터 내리꽂힌다
+	{ t = 0, j = { W = { -35, -20, 0 }, N = { 25, 20, 0 }, RS = { 20, 0, 20 }, RE = { 120, 0, 0 }, LS = { 20, 0, -20 }, LE = { 120, 0, 0 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { -30, 0, 0, 0, -1.6, 0 } } },
+	{ t = 0.3, e = "snap", j = { W = { 10, 0, 0 }, N = { -10, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 178, 0, -5 }, LE = { 0, 0, 0 }, RH = { 30, 0, 0 }, RK = { -40, 0, 0 }, R = { 10, 0, 0, 0, 1.4, 0 } } },
+	{ t = 0.6, e = "snap", j = { W = { -70, 0, 0 }, N = { 55, 0, 0 }, RS = { 150, 0, 0 }, RE = { 0, 0, 0 }, LS = { 150, 0, 0 }, LE = { 0, 0, 0 }, RH = { -30, 0, 0 }, RK = { 0, 0, 0 }, LH = { -30, 0, 0 }, LK = { 0, 0, 0 }, R = { -100, 0, 0, 0, 0.3, 0 } } },
+	{ t = 1, j = LT },
+}
 A.lt_fin = { -- 광속승천권: 웅크린 채 빛처럼 솟으며 두 주먹을 하늘로
 	{ t = 0, j = { RS = { 0, 0, 25 }, RE = { 120, 0, 0 }, LS = { 0, 0, -25 }, LE = { 120, 0, 0 }, RK = { -110, 0, 0 }, LK = { -110, 0, 0 }, R = { 20, 0, 0, 0, -1.9, 0 } } },
 	{ t = 0.34, e = "snap", j = { W = { -15, 0, 0 }, N = { 35, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 178, 0, -5 }, LE = { 0, 0, 0 }, RH = { 30, 0, 0 }, RK = { -60, 0, 0 }, R = { -10, 0, 0, 0, 1.6, -0.5 } } },
@@ -2961,7 +2975,7 @@ Poses.limbs = {
 	soju_spray = { "RightHand" }, soju_stagger = { "RightFoot", "LeftFoot" }, soju_throw = { "RightHand" }, soju_rolls = { "RightHand", "LeftHand" }, soju_rise = { "RightHand" },
 	reap_slash_r = { "RightHand" }, reap_slash_l = { "RightHand" }, reap_spin = { "RightHand" }, reap_overhead = { "RightHand" }, reap_wave = { "RightHand" },
 	reap_hook = { "RightHand" }, reap_leap = { "RightHand" }, ult_reap = { "RightHand" }, reap_moon = { "RightHand" }, reap_rise = { "RightHand" },
-	lt_flick = { "RightHand" }, lt_flick2 = { "LeftHand" }, lt_blitz = { "RightHand", "LeftHand" }, lt_sonic = { "RightFoot", "LeftFoot" }, lt_pierce = { "RightHand", "LeftHand" }, lt_lance = { "RightHand", "LeftHand" }, lt_boom = { "RightHand", "LeftHand" }, lt_clock = { "RightHand", "LeftHand" }, lt_ult = { "RightHand", "LeftHand" }, lt_needle = { "RightHand", "LeftHand" }, lt_zig = { "RightHand", "LeftHand" }, lt_over = { "RightHand", "LeftHand" }, lt_chrono = { "RightHand", "LeftHand" }, lt_fin = { "RightHand", "LeftHand" },
+	lt_flick = { "RightHand" }, lt_flick2 = { "LeftHand" }, lt_blitz = { "RightHand", "LeftHand" }, lt_sonic = { "RightFoot", "LeftFoot" }, lt_pierce = { "RightHand", "LeftHand" }, lt_lance = { "RightHand", "LeftHand" }, lt_boom = { "RightHand", "LeftHand" }, lt_clock = { "RightHand", "LeftHand" }, lt_ult = { "RightHand", "LeftHand" }, lt_needle = { "RightHand", "LeftHand" }, lt_run = { "RightHand", "LeftHand" }, lt_comet = { "RightHand", "LeftHand" }, lt_zig = { "RightHand", "LeftHand" }, lt_over = { "RightHand", "LeftHand" }, lt_chrono = { "RightHand", "LeftHand" }, lt_fin = { "RightHand", "LeftHand" },
 	staff_swing_r = { "RightHand" }, staff_swing_l = { "RightHand" }, staff_spin = { "RightHand" }, staff_slam = { "RightHand" }, staff_thrust = { "RightHand" },
 	staff_point = { "RightHand" }, staff_sigil = { "RightHand" }, staff_plant = { "RightHand", "LeftHand" }, staff_dome = { "RightHand" }, staff_rise = { "RightHand" },
 }

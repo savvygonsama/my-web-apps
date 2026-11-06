@@ -1,5 +1,5 @@
--- 권왕 3.22판: 극 광속권의 화면. 빛 (하늘색 + 흰색) 과 시간 (금빛 시계)
--- 광속 관통 · 음속 돌파 · 시간 가속 · 광속 일섬 (초 오의) / 광침 · 지그재그 질주 · 초가속 폭주 · 시간 정지 일격 (초가속)
+-- 권왕 3.22판: 극 광속권의 화면. 빛과 소리 (하늘색 · 흰색 · 금빛 줄)
+-- 광속 관통 · 음속 돌파 · 유성 질주 · 광속 일섬 (초 오의) / 광침 · 지그재그 질주 · 마하 폭풍 · 유성 연쇄 (초가속)
 -- 극 패시브 초가속의 컷씬과 달리는 동안의 잔상, 연타 장치 음속 충격
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -104,13 +104,6 @@ local function beamTo(a: Vector3, b: Vector3, w: number, color: Color3, alpha: n
 	setBeam(p, a, b, w)
 	return p
 end
--- 지면 위의 고리 (얇은 원판) — 축이 위
-local function flatDisc(at: Vector3, r: number, thick: number, color: Color3, alpha: number?, mat: Enum.Material?): BasePart
-	local p = part(Vector3.new(thick, r * 2, r * 2), color, mat or Enum.Material.Neon, alpha, "cyl")
-	p.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90))
-	return p
-end
-
 -- 화면 빛깔
 local grade = Instance.new("ColorCorrectionEffect")
 grade.Name = "KwonSpeedGrade"
@@ -159,6 +152,24 @@ function Speed.init(o: any)
 end
 
 local H: { [string]: (any) -> () } = {}
+
+-- 증기 원뿔: tip에서 뒤(dir 반대)로 벌어지는 하얀 고리들
+local function vaporCone(tip: Vector3, dir: Vector3, len: number, wid: number, color: Color3?)
+	for k = 1, 9 do
+		local u = k / 9
+		local p = tip - dir * (u * len) + Vector3.new(0, 0.5, 0)
+		local ring = part(Vector3.new(0.6, 1, 1), color or WHITE, Enum.Material.Neon, 0.35, "cyl")
+		ring.CFrame = safeLook(p, p + dir) * CFrame.Angles(0, math.rad(90), 0)
+		local goal = wid * u + 3
+		task.delay(u * 0.12, function()
+			ring.Size = Vector3.new(0.6, goal * 0.5, goal * 0.5)
+			tween(ring, 0.5, { Size = Vector3.new(0.5, goal * 2, goal * 2), Transparency = 1 })
+		end)
+		task.delay(0.8, function()
+			ring:Destroy()
+		end)
+	end
+end
 
 ------------------------------------------------------------------------
 -- 광속 관통 (E): 쏘아 지나간 자리에 빛의 줄이 남고, 잠시 뒤 줄 전체가 터진다
@@ -254,159 +265,144 @@ function H.sonicBoom(d: any)
 	end)
 end
 
+-- 유성 질주 (G): 둘레를 별 모양으로 열 번 가로지른다. 달린 길마다 빛의 선이 남고, 마지막에 모든 선이 한꺼번에 번쩍인다
 ------------------------------------------------------------------------
--- 시간 가속 (G): 발밑에 시계 → 바늘이 점점 빨리 돌며 안의 적이 난타당한다 → 바늘이 12시에 모이며 시계째 터진다
-------------------------------------------------------------------------
-function H.clockBarrage(d: any)
-	local c: Vector3 = d.at
-	if not near(c, 400) then
+function H.meteorRun(d: any)
+	local C: Vector3 = d.at
+	if not near(C, 400) then
 		return
 	end
-	local R = d.radius or 24
-	local dur, finalAt = d.dur or 1.5, d.finalAt or 0.4
-	local g = ground(c) + Vector3.new(0, 0.25, 0)
-	local face = flatDisc(g, R, 0.2, CYAN, 0.8)
-	local rim = flatDisc(g + Vector3.new(0, 0.1, 0), R + 0.8, 0.3, GOLD, 0.2)
-	local inner = flatDisc(g + Vector3.new(0, 0.12, 0), R - 0.8, 0.3, Color3.fromRGB(20, 30, 50), 0.3, Enum.Material.SmoothPlastic)
-	local ticks: { BasePart } = {}
-	for k = 0, 11 do
-		local a = k / 12 * math.pi * 2
-		local big = k % 3 == 0
-		local t = part(Vector3.new(big and 1.6 or 0.8, 0.3, big and 4 or 2.4), big and GOLD or ICE, Enum.Material.Neon, 0.1)
-		t.CFrame = CFrame.new(g + Vector3.new(math.sin(a) * (R - 3), 0.3, -math.cos(a) * (R - 3))) * CFrame.Angles(0, -a, 0)
-		table.insert(ticks, t)
+	local m = d.m
+	local V: { Vector3 } = d.pts or {}
+	local every, finalAt = d.every or 0.14, d.finalAt or 0.3
+	local rails: { BasePart } = {}
+	local up = Vector3.new(0, 1.4, 0)
+	Fx.breakSound("whoosh", 0.9, 1.6, C)
+	local function seg(a: Vector3, b: Vector3, i: number)
+		local col = (i % 2 == 0) and CYAN or GOLD
+		local rail = beamTo(a + up, b + up, 1.5, col, 0.35)
+		local core = beamTo(a + up, b + up, 0.4, WHITE, 0)
+		table.insert(rails, rail)
+		table.insert(rails, core)
+		if m and m.Parent then
+			Fx.afterimage(m, col, 0.45)
+		end
+		Fx.ring(ground(a), ICE, 2, 12, 0.3)
+		Fx.burst("spark", b, col, 6, 1.1)
+		Fx.sound("swing", 0.5, 1.3 + (i % 5) * 0.15, b)
+		shakeNear(b, 0.25, 90)
+		-- 땅에 그은 그을음 줄
+		local scorch = part(Vector3.new((b - a).Magnitude, 0.12, 1.6), Color3.fromRGB(30, 60, 80), Enum.Material.Neon, 0.4)
+		scorch.CFrame = safeLook((a + b) / 2, b) * CFrame.Angles(0, 0, 0)
+		scorch.Position = Vector3.new((a.X + b.X) / 2, ground((a + b) / 2).Y + 0.15, (a.Z + b.Z) / 2)
+		fadeOut(scorch, 1.1)
 	end
-	local hour = part(Vector3.new(1.4, 0.3, R * 0.5), GOLD, Enum.Material.Neon, 0)
-	local minute = part(Vector3.new(0.9, 0.3, R * 0.85), WHITE, Enum.Material.Neon, 0)
-	Fx.breakSound("whoosh", 0.7, 0.7, c)
-	Fx.ring(g, GOLD, 4, R * 2, 0.5)
-	-- 바늘: 점점 빨라진다 (분침은 열 바퀴, 시침은 한 바퀴)
-	anim(dur, function(u)
-		local acc = u * u
-		local am = acc * math.pi * 2 * 10
-		local ah = acc * math.pi * 2
-		hour.CFrame = CFrame.new(g + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, -ah, 0) * CFrame.new(0, 0, -R * 0.25)
-		minute.CFrame = CFrame.new(g + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, -am, 0) * CFrame.new(0, 0, -R * 0.425)
-		face.Transparency = 0.8 - u * 0.4
+	task.delay(0.04, function()
+		seg(C, V[1], 0)
 	end)
-	-- 난타의 빛줄기: 안의 아무 곳에서나 가늘게 번쩍인다
-	local nStreak = math.floor(dur / 0.04)
-	for i = 1, nStreak do
-		task.delay(i * 0.04, function()
-			local a = math.random() * math.pi * 2
-			local rr = math.random() * R * 0.9
-			local p = g + Vector3.new(math.cos(a) * rr, 1 + math.random() * 5, math.sin(a) * rr)
-			local dir = Vector3.new(math.random() - 0.5, math.random() * 0.8, math.random() - 0.5).Unit
-			local ln = beamTo(p - dir * 5, p + dir * 5, 0.35, i % 2 == 0 and CYAN or GOLD, 0)
-			fadeOut(ln, 0.2)
-			if i % 4 == 0 then
-				Fx.burst("spark", p, ICE, 3, 0.8)
-				Fx.sound("swing", 0.4, 1.4 + math.random() * 0.5, p)
-			end
+	for i = 1, #V - 1 do
+		task.delay(i * every, function()
+			seg(V[i], V[i + 1], i)
 		end)
 	end
-	-- 12시에 모인다 → 터진다
-	task.delay(dur, function()
-		hour.CFrame = CFrame.new(g + Vector3.new(0, 0.5, 0)) * CFrame.new(0, 0, -R * 0.25)
-		minute.CFrame = CFrame.new(g + Vector3.new(0, 0.6, 0)) * CFrame.new(0, 0, -R * 0.425)
-	end)
-	task.delay(dur + finalAt, function()
-		Fx.ring(g, GOLD, 4, R * 2.3, 0.5)
-		Fx.ring(g, WHITE, 2, R * 1.6, 0.4)
-		Fx.flash(c + Vector3.new(0, 4, 0), GOLD, 50, 3.5, 0.5)
-		for k = 0, 11 do
-			local a = k / 12 * math.pi * 2
-			local sh = part(Vector3.new(2.5, 1, 4), k % 2 == 0 and GOLD or CYAN, Enum.Material.Neon, 0)
-			sh.CFrame = CFrame.new(g + Vector3.new(math.sin(a) * (R - 3), 1, -math.cos(a) * (R - 3))) * CFrame.Angles(0, -a, 0)
-			local goal = g + Vector3.new(math.sin(a) * (R + 14), 12 + math.random() * 10, -math.cos(a) * (R + 14))
-			tween(sh, 0.6, { CFrame = CFrame.new(goal) * CFrame.Angles(math.random(), -a + math.random(), math.random()), Transparency = 1 })
-			task.delay(0.7, function()
-				sh:Destroy()
-			end)
+	task.delay((#V - 1) * every + finalAt, function()
+		-- 모든 선이 한꺼번에 번쩍인다
+		for _, rl in ipairs(rails) do
+			rl.Color = WHITE
+			tween(rl, 0.18, { Size = Vector3.new(rl.Size.X, 4.5, 4.5) })
+			fadeOut(rl, 0.55)
 		end
-		for _, p in ipairs({ face, rim, inner, hour, minute }) do
-			fadeOut(p, 0.35)
+		for _, v in ipairs(V) do
+			local boom = part(Vector3.new(2, 2, 2), GOLD, Enum.Material.Neon, 0.15, "ball")
+			boom.Position = v + up
+			fadeOut(boom, 0.45, { Size = Vector3.new(10, 10, 10) })
 		end
-		for _, t in ipairs(ticks) do
-			fadeOut(t, 0.3)
-		end
-		local pillar = part(Vector3.new(60, 8, 8), WHITE, Enum.Material.Neon, 0.1, "cyl")
-		pillar.CFrame = CFrame.new(g + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
-		fadeOut(pillar, 0.5, { Size = Vector3.new(90, 3, 3) })
-		Fx.breakSound("boom", 1, 0.7, c)
-		shakeNear(c, 1.3, 180)
+		local pillar = part(Vector3.new(120, 8, 8), WHITE, Enum.Material.Neon, 0.1, "cyl")
+		pillar.CFrame = CFrame.new(ground(C) + Vector3.new(0, 55, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(pillar, 0.6, { Size = Vector3.new(120, 2, 2) })
+		Fx.ring(ground(C), GOLD, 4, (d.radius or 26) * 2.2, 0.55)
+		Fx.ring(ground(C), WHITE, 2, (d.radius or 26) * 1.5, 0.4)
+		Fx.flash(C + Vector3.new(0, 5, 0), WHITE, 80, 4, 0.4)
+		Fx.breakSound("boom", 1, 0.8, C)
+		shakeNear(C, 1.2, 200)
 	end)
 end
 
 ------------------------------------------------------------------------
--- 광속 일섬 (초 오의): 길 전체에 빛이 그어지고 → 지나간 자리에 베임의 흔적이 뒤늦게 → 소리가 따라붙어 충격파
+-- 광속 일섬 (초 오의): 음속 · 광속 · 초광속, 세 걸음. 걸음마다 더 길고, 더 환하고, 더 굵다
 ------------------------------------------------------------------------
 function H.lightDash(d: any)
-	local a: Vector3, b: Vector3 = d.from, d.to
-	if not near(a, 500) and not near(b, 500) then
+	local P: { Vector3 } = d.pts or {}
+	if #P < 2 or (not near(P[1], 500) and not near(P[#P], 500)) then
 		return
 	end
 	local m = d.m
-	local t0 = (d.cut or 1.5) + (d.charge or 0.9)
-	local dir = flat(b - a)
-	local side = Vector3.new(-dir.Z, 0, dir.X)
+	local T0 = (d.cut or 1) + (d.charge or 0.5)
+	local gap = d.gap or 0.3
 	local mid = Vector3.new(0, 1.5, 0)
-	-- 출발 직전 몸에 빛이 모인다
-	task.delay((d.cut or 1.5) * 0.6, function()
+	-- 출발 전: 땅에 발을 박고 빛이 발끝에 모인다
+	task.delay((d.cut or 1) * 0.5, function()
 		local r = m and rootOf(m)
 		if r then
-			Fx.ring(ground(r.Position), ICE, 18, 3, (d.charge or 0.9) + (d.cut or 1.5) * 0.4)
+			Fx.ring(ground(r.Position), ICE, 14, 2, T0 - (d.cut or 1) * 0.5)
+			Fx.sound("ping", 0.6, 0.8, r.Position)
 		end
 	end)
-	task.delay(t0, function()
-		Fx.sound("ping", 1, 2, a)
-		-- 한 줄의 빛: 시작은 눈부시게 굵고, 곧 가늘어진다
-		local core = beamTo(a + mid, b + mid, 7, WHITE, 0)
-		local halo = beamTo(a + mid, b + mid, 18, CYAN, 0.7)
-		tween(core, 0.7, { Size = Vector3.new((b - a).Magnitude, 0.5, 0.5) })
-		fadeOut(halo, 0.5, { Size = Vector3.new((b - a).Magnitude, 40, 40) })
-		task.delay(1.1, function()
-			fadeOut(core, 0.4)
-		end)
-		for i = 0, 10 do
-			task.delay(i * 0.02, function()
-				if m and m.Parent then
-					Fx.afterimage(m, i % 2 == 0 and CYAN or GOLD, 0.8)
-				end
+	local cols = { WHITE, CYAN, GOLD }
+	for i = 1, #P - 1 do
+		local a, b = P[i], P[i + 1]
+		local dir = flat(b - a)
+		local col = cols[i] or GOLD
+		task.delay(T0 + (i - 1) * gap, function()
+			local w = 3 + i * 2.5
+			local halo = beamTo(a + mid, b + mid, w * 2.4, col, 0.7)
+			local core = beamTo(a + mid, b + mid, w, WHITE, 0)
+			tween(core, 0.5, { Size = Vector3.new((b - a).Magnitude, 0.4, 0.4) })
+			fadeOut(halo, 0.45, { Size = Vector3.new((b - a).Magnitude, w * 6, w * 6) })
+			task.delay(0.8, function()
+				fadeOut(core, 0.35)
 			end)
-		end
-		Fx.flash(a + Vector3.new(0, 4, 0), WHITE, 60, 4, 0.2)
-		Fx.flash(b + Vector3.new(0, 4, 0), WHITE, 60, 4, 0.3)
-		if opts.flash then
-			opts.flash(Color3.new(1, 1, 1), 0.35)
-		end
-		shakeNear(a, 1.0, 200)
-	end)
-	-- 뒤늦은 베임: 길 위에 짧은 사선들이 하나씩 그어진다
-	local n = math.floor((b - a).Magnitude / 4)
-	for k = 1, n do
-		task.delay(t0 + 0.35 + (k / n) * 0.3, function()
-			local p = a:Lerp(b, k / n) + mid
-			local off = side * (math.random() - 0.5) * (d.width or 9)
-			local up = Vector3.new(0, 2 + math.random() * 4, 0)
-			local ln = beamTo(p + off - up - dir * 2, p + off + up + dir * 2, 0.35, k % 2 == 0 and GOLD or WHITE, 0)
-			fadeOut(ln, 0.35)
-			if k % 3 == 0 then
-				Fx.burst("spark", p + off, ICE, 4, 1)
+			for k = 0, 7 do
+				task.delay(k * 0.025, function()
+					if m and m.Parent then
+						Fx.afterimage(m, k % 2 == 0 and col or ICE, 0.6)
+					end
+				end)
+			end
+			-- 출발점의 충격: 걸음마다 커진다 (소리 → 빛 → 그 너머)
+			Fx.ring(ground(a), col, 4, 18 + i * 14, 0.5)
+			vaporCone(a, dir, 10 + i * 6, 10 + i * 6, col)
+			Fx.flash(a + Vector3.new(0, 4, 0), col, 40 + i * 20, 3, 0.25)
+			Fx.breakSound("boom", 0.7 + i * 0.1, 1.2 - i * 0.2, a)
+			if opts.flash then
+				opts.flash(col, 0.15 + i * 0.1)
+			end
+			shakeNear(a, 0.5 + i * 0.3, 220)
+			-- 길 위에 짧은 사선들이 뒤늦게 그어진다
+			local n = math.floor((b - a).Magnitude / 5)
+			local side = Vector3.new(-dir.Z, 0, dir.X)
+			for q = 1, n do
+				task.delay(0.08 + (q / n) * 0.2, function()
+					local p = a:Lerp(b, q / n) + mid + side * (math.random() - 0.5) * (d.width or 9)
+					local up = Vector3.new(0, 2 + math.random() * 3, 0)
+					local ln = beamTo(p - up - dir * 2, p + up + dir * 2, 0.3, q % 2 == 0 and col or WHITE, 0)
+					fadeOut(ln, 0.3)
+				end)
 			end
 		end)
 	end
-	-- 소리가 따라붙는다
-	task.delay(t0 + (d.boomAt or 0.7), function()
+	-- 끝에서 소리가 따라붙는다
+	local last = P[#P]
+	task.delay(T0 + (#P - 2) * gap + (d.boomAt or 0.45), function()
 		local R = d.boomRadius or 36
-		Fx.ring(ground(b), WHITE, 6, R * 2, 0.7)
-		Fx.ring(ground(b), CYAN, 3, R * 1.5, 0.55)
+		Fx.ring(ground(last), WHITE, 6, R * 2, 0.7)
+		Fx.ring(ground(last), GOLD, 3, R * 1.5, 0.55)
 		local dome = part(Vector3.new(2, 2, 2), ICE, Enum.Material.Neon, 0.55, "ball")
-		dome.Position = b
+		dome.Position = last
 		fadeOut(dome, 0.7, { Size = Vector3.new(R * 1.6, R * 1.2, R * 1.6) })
-		Fx.flash(b + Vector3.new(0, 4, 0), WHITE, 90, 4, 0.5)
-		Fx.breakSound("boom", 1, 0.55, b)
-		shakeNear(b, 1.6, 240)
+		Fx.flash(last + Vector3.new(0, 4, 0), WHITE, 90, 4, 0.5)
+		Fx.breakSound("boom", 1, 0.55, last)
+		shakeNear(last, 1.6, 240)
 		if opts.flash then
 			opts.flash(Color3.new(1, 1, 1), 0.5)
 		end
@@ -471,157 +467,159 @@ function H.zigzagStep(d: any)
 	end
 end
 
+-- 마하 폭풍 (초가속 G): 한 줄기 길을 네 번 왕복한다. 지날 때마다 소리의 벽이 깨진다
 ------------------------------------------------------------------------
--- 초가속 폭주 (초가속 G): 맴도는 잔상의 회오리 → 멎으면 빛의 기둥
-------------------------------------------------------------------------
-function H.overclock(d: any)
-	local c: Vector3 = d.at
-	if not near(c, 400) then
+function H.machStorm(d: any)
+	local A: Vector3, B: Vector3 = d.from, d.to
+	if not near(A, 450) and not near(B, 450) then
 		return
 	end
 	local m = d.m
-	local R, orbit = d.radius or 22, d.orbit or 14
-	local dur, finalAt = d.dur or 2, d.finalAt or 0.35
-	local g = ground(c)
-	local winds: { BasePart } = {}
-	for k = 1, 4 do
-		local w = part(Vector3.new(26 + k * 4, 2, 2), k % 2 == 0 and CYAN or ICE, Enum.Material.Neon, 0.65, "cyl")
-		w.Size = Vector3.new(26 + k * 4, 2, 2)
-		table.insert(winds, w)
-	end
-	local ringGround = flatDisc(g + Vector3.new(0, 0.2, 0), R, 0.2, CYAN, 0.7)
-	Fx.breakSound("whoosh", 0.9, 0.6, c)
-	local lastSpawn = 0
-	anim(dur, function(u)
-		local sp = 2 + u * 22 -- 점점 빨라지는 회전
-		local t = os.clock()
-		for k, w in ipairs(winds) do
-			local h = (k / #winds) * 18 * (0.4 + u)
-			local rr = R * (0.35 + 0.65 * (k / #winds)) * (0.6 + u * 0.4)
-			-- 회오리 띠: 원기둥 대신 얇은 고리 (축이 위)
-			w.Shape = Enum.PartType.Cylinder
-			w.Size = Vector3.new(1.2, rr * 2, rr * 2)
-			w.CFrame = CFrame.new(g + Vector3.new(0, h, 0)) * CFrame.Angles(0, t * sp * (k % 2 == 0 and 1 or -1), math.rad(90))
-			w.Transparency = 0.75 - u * 0.25
-		end
-		ringGround.Transparency = 0.7 - u * 0.3
-		-- 맴도는 잔상
-		if m and m.Parent and t - lastSpawn > 0.06 then
-			lastSpawn = t
-			Fx.afterimage(m, (math.floor(t * 20) % 2 == 0) and CYAN or GOLD, 0.35)
-		end
-	end)
-	for i = 1, math.floor(dur / 0.15) do
-		task.delay(i * 0.15, function()
-			local a = math.random() * math.pi * 2
-			local p = g + Vector3.new(math.cos(a) * orbit, 1.5, math.sin(a) * orbit)
-			Fx.burst("spark", p, ICE, 3, 0.8)
-			Fx.sound("swing", 0.35, 1.3 + math.random() * 0.6, p)
+	local every = d.every or 0.28
+	local M = (A + B) / 2
+	local W = d.width or 14
+	local up = Vector3.new(0, 1.4, 0)
+	Fx.breakSound("whoosh", 0.9, 0.7, A)
+	-- 길 바닥: 하얗게 달아오른 띠
+	local lane = part(Vector3.new((B - A).Magnitude, 0.12, W * 1.2), ICE, Enum.Material.Neon, 0.85)
+	lane.CFrame = safeLook(M, B)
+	lane.Position = Vector3.new(M.X, ground(M).Y + 0.15, M.Z)
+	for i = 1, (d.passes or 4) do
+		local a, b = (i % 2 == 1) and A or B, (i % 2 == 1) and B or A
+		local dir = flat(b - a)
+		task.delay(i * every, function()
+			lane.Transparency = math.max(0.35, 0.85 - i * 0.12)
+			local col = (i % 2 == 0) and GOLD or CYAN
+			local core = beamTo(a + up, b + up, 2.2, WHITE, 0)
+			local halo = beamTo(a + up, b + up, 7, col, 0.55)
+			fadeOut(core, 0.35, { Size = Vector3.new((b - a).Magnitude, 0.3, 0.3) })
+			fadeOut(halo, 0.4)
+			for k = 0, 7 do
+				task.delay(k * 0.03, function()
+					if m and m.Parent then
+						Fx.afterimage(m, k % 2 == 0 and col or ICE, 0.4)
+					end
+				end)
+			end
+			-- 소리의 벽: 지나간 자리를 따라 증기 원뿔이 여러 개 터진다
+			for q = 1, 4 do
+				task.delay(q * 0.035, function()
+					local tip = a:Lerp(b, q / 4)
+					vaporCone(tip, dir, 14, W, WHITE)
+				end)
+			end
+			Fx.ring(ground(b), col, 3, W * 2.4, 0.45)
+			Fx.burst("spark", b, ICE, 10, 1.4)
+			Fx.breakSound("boom", 0.6, 1.2 + i * 0.1, b)
+			shakeNear(b, 0.6, 160)
 		end)
 	end
-	task.delay(dur + finalAt, function()
-		for _, w in ipairs(winds) do
-			fadeOut(w, 0.3)
+	task.delay((d.passes or 4) * every + (d.finalAt or 0.3), function()
+		local R = d.radius or 34
+		fadeOut(lane, 0.5)
+		Fx.ring(ground(M), WHITE, 6, R * 2.2, 0.7)
+		Fx.ring(ground(M), CYAN, 3, R * 1.6, 0.55)
+		Fx.ring(ground(M), GOLD, 2, R * 1.1, 0.45)
+		local dome = part(Vector3.new(2, 2, 2), WHITE, Enum.Material.Neon, 0.5, "ball")
+		dome.Position = M
+		fadeOut(dome, 0.7, { Size = Vector3.new(R * 1.8, R * 1.3, R * 1.8) })
+		Fx.flash(M + Vector3.new(0, 5, 0), WHITE, 100, 4, 0.5)
+		Fx.breakSound("boom", 1, 0.6, M)
+		shakeNear(M, 1.5, 240)
+		if opts.flash then
+			opts.flash(Color3.new(1, 1, 1), 0.4)
 		end
-		fadeOut(ringGround, 0.3)
-		local pillar = part(Vector3.new(160, 10, 10), WHITE, Enum.Material.Neon, 0.05, "cyl")
-		pillar.CFrame = CFrame.new(g + Vector3.new(0, 80, 0)) * CFrame.Angles(0, 0, math.rad(90))
-		local halo = part(Vector3.new(160, 26, 26), CYAN, Enum.Material.Neon, 0.6, "cyl")
-		halo.CFrame = pillar.CFrame
-		tween(pillar, 0.7, { Size = Vector3.new(160, 2, 2), Transparency = 0.5 })
-		fadeOut(pillar, 0.9)
-		fadeOut(halo, 0.7, { Size = Vector3.new(160, 60, 60) })
-		Fx.ring(g, WHITE, 4, R * 2.4, 0.6)
-		Fx.ring(g, GOLD, 2, R * 1.8, 0.5)
-		Fx.flash(c + Vector3.new(0, 6, 0), WHITE, 90, 4, 0.5)
-		Fx.breakSound("boom", 1, 0.7, c)
-		shakeNear(c, 1.4, 220)
 	end)
 end
 
 ------------------------------------------------------------------------
--- 시간 정지 일격 (초가속 X): 빛깔이 빠지고 멈춘다 → 멈춘 적마다 선이 그어진다 → 되돌아오는 순간 모든 선이 베인다 → 하늘의 시계가 깨진다
+-- 유성 연쇄 (초가속 X): 적들 사이를 튕겨 다니며 빛의 거미줄을 치고, 하늘로 솟았다가 혜성처럼 내리꽂는다
 ------------------------------------------------------------------------
-function H.chronoStrike(d: any)
-	local c: Vector3 = d.at
-	local cut = d.cut or 1.4
-	local every = d.every or 0.12
-	local resume = d.resume or 0.8
-	local targets: { any } = d.targets or {}
-	if not near(c, 500) then
+function H.ricochet(d: any)
+	local C: Vector3 = d.at
+	local cen: Vector3 = d.center or C
+	if not near(C, 500) and not near(cen, 500) then
 		return
 	end
-	-- 하늘에 큰 시계 (바늘이 멎어 있다)
-	local sky = c + Vector3.new(0, 46, 0)
-	local clockRim = part(Vector3.new(1.2, 60, 60), GOLD, Enum.Material.Neon, 0.3, "cyl")
-	clockRim.CFrame = CFrame.new(sky) * CFrame.Angles(0, 0, 0) * CFrame.Angles(0, 0, 0)
-	clockRim.CFrame = CFrame.new(sky) * CFrame.Angles(0, math.rad(0), math.rad(90)) * CFrame.Angles(math.rad(90), 0, 0)
-	local hands = part(Vector3.new(0.8, 2, 22), WHITE, Enum.Material.Neon, 0.1)
-	hands.CFrame = CFrame.new(sky) * CFrame.new(0, 11, 0) * CFrame.Angles(math.rad(90), 0, 0)
-	clockRim.Transparency = 1
-	hands.Transparency = 1
-	task.delay(cut * 0.4, function()
-		gradeTo(0.35, -1, -0.05, 0.25, Color3.fromRGB(200, 215, 235))
-		tween(clockRim, 0.4, { Transparency = 0.3 })
-		tween(hands, 0.4, { Transparency = 0.1 })
-		Fx.ring(ground(c), WHITE, 4, 60, 0.6)
-		Fx.sound("ping", 1, 0.5, c)
-		shakeNear(c, 0.7, 200)
+	local m = d.m
+	local seq: { any } = d.seq or {}
+	local cut, every, diveAt = d.cut or 1.2, d.every or 0.11, d.diveAt or 0.45
+	local up = Vector3.new(0, 1.5, 0)
+	local web: { BasePart } = {}
+	-- 컷씬 동안 몸에 빛이 모인다
+	task.delay(cut * 0.5, function()
+		local r = m and rootOf(m)
+		if r then
+			Fx.ring(ground(r.Position), GOLD, 14, 2, cut * 0.5)
+			Fx.sound("ping", 0.7, 1.4, r.Position)
+		end
 	end)
-	local lines: { BasePart } = {}
-	for i, t in ipairs(targets) do
-		task.delay(cut + (i - 1) * every, function()
+	local prev = C
+	for j, t in ipairs(seq) do
+		task.delay(cut + (j - 1) * every, function()
 			local tr = rootOf(t)
 			if not tr then
 				return
 			end
 			local p = tr.Position
-			local dir = Vector3.new(math.random() - 0.5, 0.1 + math.random() * 0.5, math.random() - 0.5).Unit
-			local ln = beamTo(p - dir * 12, p + dir * 12, 0.3, GOLD, 0)
-			table.insert(lines, ln)
-			Fx.burst("spark", p, GOLD, 5, 1)
-			Fx.sound("ping", 0.4, 1.4 + i * 0.1, p)
+			local col = (j % 2 == 0) and CYAN or GOLD
+			local ln = beamTo(prev + up, p + up, 0.9, col, 0.15)
+			local core = beamTo(prev + up, p + up, 0.25, WHITE, 0)
+			table.insert(web, ln)
+			table.insert(web, core)
+			if m and m.Parent then
+				Fx.afterimage(m, col, 0.3)
+			end
+			Fx.burst("spark", p, ICE, 6, 1.2)
+			Fx.flash(p + up, col, 24, 2.5, 0.15)
+			Fx.sound("swing", 0.6, 1.2 + (j % 6) * 0.15, p)
+			shakeNear(p, 0.3, 100)
+			prev = p
 		end)
 	end
-	local tEnd = cut + math.max(1, #targets) * every + resume
-	task.delay(tEnd, function()
-		gradeReset(0.15)
-		if opts.flash then
-			opts.flash(Color3.new(1, 1, 1), 0.4)
+	local T2 = cut + math.max(1, #seq) * every
+	-- 솟구친다
+	task.delay(T2 + diveAt - 0.12, function()
+		local hi = cen + Vector3.new(0, 34, 0)
+		local trail = beamTo(prev + up, hi, 1.4, GOLD, 0.2)
+		fadeOut(trail, 0.3)
+		if m and m.Parent then
+			Fx.afterimage(m, GOLD, 0.5)
 		end
-		for _, ln in ipairs(lines) do
-			ln.Color = WHITE
-			tween(ln, 0.2, { Size = Vector3.new(ln.Size.X, 3.2, 3.2) })
-			fadeOut(ln, 0.45)
-		end
-		for _, t in ipairs(targets) do
-			local tr = rootOf(t)
-			if tr then
-				Fx.burst("spark", tr.Position, WHITE, 10, 1.6)
-				Fx.flash(tr.Position, WHITE, 30, 3, 0.25)
-			end
-		end
-		Fx.breakSound("boom", 1, 1.0, c)
-		shakeNear(c, 1.2, 200)
+		Fx.breakSound("whoosh", 0.9, 1.6, cen)
 	end)
-	-- 시계가 깨진다
-	task.delay(tEnd + 0.25, function()
-		fadeOut(clockRim, 0.4)
-		fadeOut(hands, 0.3)
-		for k = 0, 15 do
-			local a = k / 16 * math.pi * 2
-			local sh = part(Vector3.new(3, 0.5, 8), k % 2 == 0 and GOLD or CYAN, Enum.Material.Neon, 0)
-			sh.CFrame = CFrame.new(sky + Vector3.new(math.cos(a) * 28, math.sin(a) * 28, 0))
-			local goal = c + Vector3.new(math.cos(a) * (d.radius or 44), 3, math.sin(a) * (d.radius or 44))
-			tween(sh, 0.7, { CFrame = CFrame.new(goal) * CFrame.Angles(math.random(), math.random(), math.random()), Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-			task.delay(0.8, function()
+	-- 혜성: 하늘에서 한가운데로
+	task.delay(T2 + diveAt + 0.15, function()
+		local hi = cen + Vector3.new(0, 70, 0)
+		local comet = beamTo(hi, cen, 8, WHITE, 0)
+		local halo = beamTo(hi, cen, 22, GOLD, 0.6)
+		fadeOut(comet, 0.4, { Size = Vector3.new(75, 1, 1) })
+		fadeOut(halo, 0.5, { Size = Vector3.new(75, 40, 40) })
+		-- 거미줄이 한꺼번에 번쩍인다
+		for _, wl in ipairs(web) do
+			wl.Color = WHITE
+			tween(wl, 0.15, { Size = Vector3.new(wl.Size.X, 4, 4) })
+			fadeOut(wl, 0.5)
+		end
+		local R = d.radius or 44
+		Fx.ring(ground(cen), WHITE, 6, R * 2.2, 0.7)
+		Fx.ring(ground(cen), GOLD, 3, R * 1.6, 0.55)
+		Fx.ring(ground(cen), CYAN, 2, R * 1.1, 0.45)
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local sh = part(Vector3.new(2, 1, 6), k % 2 == 0 and GOLD or CYAN, Enum.Material.Neon, 0)
+			sh.CFrame = safeLook(cen + Vector3.new(0, 2, 0), cen + Vector3.new(math.cos(a), 0.3, math.sin(a)))
+			tween(sh, 0.55, { CFrame = CFrame.new(cen + Vector3.new(math.cos(a) * R, 8, math.sin(a) * R)) * CFrame.Angles(math.random(), math.random(), math.random()), Transparency = 1 })
+			task.delay(0.65, function()
 				sh:Destroy()
 			end)
 		end
-		Fx.ring(ground(c), GOLD, 6, (d.radius or 44) * 2, 0.7)
-		Fx.ring(ground(c), CYAN, 3, (d.radius or 44) * 1.4, 0.5)
-		Fx.flash(c + Vector3.new(0, 6, 0), GOLD, 100, 4, 0.6)
-		shakeNear(c, 1.5, 240)
+		Fx.flash(cen + Vector3.new(0, 6, 0), WHITE, 110, 4, 0.6)
+		Fx.breakSound("boom", 1, 0.55, cen)
+		shakeNear(cen, 1.7, 260)
+		if opts.flash then
+			opts.flash(Color3.new(1, 1, 1), 0.55)
+		end
 	end)
 end
 
@@ -694,10 +692,10 @@ function Speed.haste(d: any)
 	Fx.breakSound("whoosh", 1, 0.5, r.Position)
 	if near(r.Position, 300) then
 		-- 세상이 푸르게 가라앉았다가 (느려진 세상), 그동안 나만 또렷하다
-		gradeTo(cut * 0.4, -0.45, -0.04, 0.15, Color3.fromRGB(190, 215, 255))
+		gradeTo(cut * 0.4, -0.1, 0.03, 0.2, Color3.fromRGB(215, 240, 255))
 		task.delay(cut, function()
 			if mine then
-				gradeTo(0.5, -0.2, 0, 0.1, Color3.fromRGB(215, 235, 255))
+				gradeTo(0.5, 0.05, 0.02, 0.12, Color3.fromRGB(230, 245, 255))
 			else
 				gradeReset(0.5)
 			end
@@ -758,7 +756,7 @@ function Speed.haste(d: any)
 end
 
 ------------------------------------------------------------------------
--- 초 오의 컷씬: 가로 검은 띠와 속도선, 카메라가 출발선 뒤에서 땅에 붙어 길 끝을 본다 (twilight = 시간 정지 일격: 하늘의 시계를 올려 본다)
+-- 초 오의 컷씬: 가로 검은 띠와 속도선, 카메라가 출발선 뒤에서 땅에 붙어 길 끝을 본다 (chrono = 유성 연쇄: 높은 곳에서 내려다본다)
 ------------------------------------------------------------------------
 local cutActive = false
 function Speed.superCut(model: Model, dur: number, name: string, shake: ((number) -> ())?, chrono: boolean?)
@@ -777,11 +775,11 @@ function Speed.superCut(model: Model, dur: number, name: string, shake: ((number
 	g.Parent = player:WaitForChild("PlayerGui")
 	local tintF = Instance.new("Frame")
 	tintF.Size = UDim2.fromScale(1, 1)
-	tintF.BackgroundColor3 = chrono and Color3.fromRGB(30, 34, 46) or Color3.fromRGB(10, 22, 40)
+	tintF.BackgroundColor3 = Color3.fromRGB(10, 22, 40)
 	tintF.BackgroundTransparency = 1
 	tintF.BorderSizePixel = 0
 	tintF.Parent = g
-	tween(tintF, 0.25, { BackgroundTransparency = 0.45 })
+	tween(tintF, 0.25, { BackgroundTransparency = 0.7 })
 	local bars: { Frame } = {}
 	for i, y in ipairs({ 0, 1 }) do
 		local b = Instance.new("Frame")
@@ -883,10 +881,10 @@ function Speed.superCut(model: Model, dur: number, name: string, shake: ((number
 		focus = focus:Lerp(r.Position, math.min(1, dt * 10))
 		local e = 1 - (1 - k) ^ 2
 		if chrono then
-			-- 올려다본다: 하늘의 시계 쪽으로 천천히
-			local eye = focus - look * (16 - e * 6) + side * 4 + UP * (3 + e * 2)
-			cam.CFrame = CamGuard.frame(eye, focus + UP * (10 + e * 38), focus)
-			cam.FieldOfView = oldFov + e * 6
+			-- 위에서 내려다본다: 높고 멀리서, 점점 가까이
+			local eye = focus - look * (18 - e * 6) + side * 5 + UP * (9 + e * 5)
+			cam.CFrame = CamGuard.frame(eye, focus + look * 6 + UP * 1, focus)
+			cam.FieldOfView = oldFov + e * 10
 		else
 			-- 출발선: 등 뒤 낮은 곳에서 길 끝을 본다. 점점 다가가며 시야가 좁아졌다가 (집중) 한 순간 활짝 열린다
 			local eye = focus - look * (11 - e * 5) + side * (3 - e * 2) + UP * (1.2 + e * 0.6)

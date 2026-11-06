@@ -3508,43 +3508,66 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, cone, move)
 			end
 		end)
-	elseif kind == "clockBarrage" then
-		-- 시간 가속 (G): 발밑의 시계 안 적을 열다섯 번 난타하고, 바늘이 모이는 순간 시계째 터진다
+	elseif kind == "meteorRun" then
+		-- 유성 질주 (G): 둘레를 별 모양으로 열 번 가로지른다. 달린 길마다 빛의 선이 남고, 마지막에 모든 선이 한꺼번에 터진다
 		local C = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "clockBarrage", m = f.model, at = C, radius = m.radius, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
-		local n = math.floor(m.dur / m.every)
-		for i = 1, n do
+		local R = m.radius
+		local base = math.atan2(look.Z, look.X)
+		local V = {}
+		-- 오각별 ({5/2}) 두 겹을 36도 어긋나게 겹친다: 열 번의 질주가 한 붓으로 이어진다
+		for i = 0, m.n do
+			local k = i % 5
+			local ring = math.floor(i / 5)
+			local a = base + math.rad(ring * 36) + k * math.pi * 4 / 5
+			table.insert(V, C + Vector3.new(math.cos(a) * R, 0, math.sin(a) * R))
+		end
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.n * m.every + m.finalAt + 0.5) / sp)
+		Push:FireAllClients("skillfx", { kind = "meteorRun", m = f.model, at = C, pts = V, every = m.every / sp, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		after(0.04, function()
+			moveTo(f, CFrame.lookAt(V[1], V[2]))
+			for _, o in ipairs(hostilesOnSeg(f, C, V[1], m.width)) do
+				strike(f, o, hit, move)
+			end
+		end)
+		for i = 1, m.n do
 			after(i * m.every, function()
-				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
-					o.slowUntil = os.clock() + 0.4
-					o.slowMul = 0.3
+				local a, b = V[i], V[i + 1]
+				moveTo(f, CFrame.lookAt(b, b + (b - a)))
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
 					strike(f, o, hit, move)
 				end
 			end)
 		end
-		after(m.dur + m.finalAt, function()
+		after(m.n * m.every + m.finalAt, function()
+			moveTo(f, CFrame.lookAt(C, C + look))
 			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
 	elseif kind == "lightDash" then
-		-- 광속 일섬 (초 오의): 컷씬 동안 무적 → 한 걸음에 길을 지나 나타나면 → 지나간 길 위의 모든 적에게 그제야 베임이 닿는다 → 소리가 따라붙어 충격파
+		-- 광속 일섬 (초 오의): 음속 · 광속 · 초광속, 세 걸음으로 점점 길게. 달린 길의 모든 적을 베고 끝에서 소리가 따라붙어 터진다
 		local from = f.root.Position
-		local T1 = m.cut
-		local T2 = T1 + m.charge
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + m.boomAt + 0.4) / sp)
-		local to = from + look * m.length
-		Push:FireAllClients("skillfx", { kind = "lightDash", m = f.model, from = from, to = to, cut = T1 / sp, charge = m.charge / sp, boomAt = m.boomAt / sp, boomRadius = m.boomRadius, width = m.width, style = style })
-		after(T2, function()
-			moveTo(f, CFrame.lookAt(to, to + look))
-		end)
-		after(T2 + 0.35, function()
-			for _, o in ipairs(hostilesOnSeg(f, from, to, m.width)) do
-				strike(f, o, hit, move)
-			end
-		end)
-		after(T2 + m.boomAt, function()
-			for _, o in ipairs(hostilesNear(f, to, m.boomRadius)) do
+		local T0 = m.cut + m.charge
+		local pts = { from }
+		for i, L in ipairs(m.lens) do
+			table.insert(pts, pts[i] + look * L)
+		end
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T0 + #m.lens * m.gap + m.boomAt + 0.4) / sp)
+		Push:FireAllClients("skillfx", { kind = "lightDash", m = f.model, pts = pts, cut = m.cut / sp, charge = m.charge / sp, gap = m.gap / sp, boomAt = m.boomAt / sp, boomRadius = m.boomRadius, width = m.width, style = style })
+		for i = 1, #m.lens do
+			local a, b = pts[i], pts[i + 1]
+			local tt = T0 + (i - 1) * m.gap
+			after(tt, function()
+				moveTo(f, CFrame.lookAt(b, b + look))
+			end)
+			after(tt + 0.08, function()
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					strike(f, o, scaled(m.hit, sc * m.mul[i]), move)
+				end
+			end)
+		end
+		after(T0 + (#m.lens - 1) * m.gap + m.boomAt, function()
+			for _, o in ipairs(hostilesNear(f, pts[#pts], m.boomRadius)) do
 				strike(f, o, scaled(m.boom, sc), move)
 			end
 		end)
@@ -3586,44 +3609,78 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		end
-	elseif kind == "overclock" then
-		-- 초가속 폭주 (초가속 G): 제자리를 맴도는 회오리가 둘레의 적을 끌어당겨 쓸고, 멎는 순간 빛의 기둥이 솟는다
-		local C = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "overclock", m = f.model, at = C, radius = m.radius, orbit = m.orbit, dur = m.dur / sp, finalAt = m.finalAt / sp, style = style })
-		local n = math.floor(m.dur / m.every)
-		for i = 1, n do
+	elseif kind == "machStorm" then
+		-- 마하 폭풍 (초가속 G): 한 줄기 길을 네 번 왕복한다. 지날 때마다 소리의 벽이 깨져 양옆의 적을 한가운데로 쓸어 모으고, 마지막에 한복판에서 터진다
+		local A = f.root.Position
+		local B = A + look * m.length
+		local M = (A + B) / 2
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.passes * m.every + m.finalAt + 0.5) / sp)
+		Push:FireAllClients("skillfx", { kind = "machStorm", m = f.model, from = A, to = B, passes = m.passes, every = m.every / sp, width = m.width, finalAt = m.finalAt / sp, radius = m.finalRadius, style = style })
+		for i = 1, m.passes do
+			local a, b = (i % 2 == 1) and A or B, (i % 2 == 1) and B or A
 			after(i * m.every, function()
-				for _, o in ipairs(hostilesNear(f, C, m.radius)) do
-					pullTo(o, C, m.pull)
+				moveTo(f, CFrame.lookAt(b, b + (b - a)))
+				for _, o in ipairs(hostilesOnSeg(f, a, b, m.width)) do
+					pullTo(o, M, m.pull)
 					strike(f, o, hit, move)
 				end
 			end)
 		end
-		after(m.dur + m.finalAt, function()
-			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+		after(m.passes * m.every + m.finalAt, function()
+			for _, o in ipairs(hostilesNear(f, M, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)
-	elseif kind == "chronoStrike" then
-		-- 시간 정지 일격 (초가속 X): 세상이 멈추고, 멈춘 적마다 빛의 선이 그어지고, 시간이 되돌아오는 순간 선이 모두 한꺼번에 베인다
+	elseif kind == "ricochet" then
+		-- 유성 연쇄 (초가속 X): 빛의 구슬이 되어 적들 사이를 튕겨 다니고, 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다
 		local C = f.root.Position
 		local list = nearestList(f, m.range, m.n)
-		local T1 = m.cut
-		local T2 = T1 + math.max(1, #list) * m.every + m.resumeAt
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + 0.6) / sp)
-		for _, o in ipairs(list) do
-			o.slowUntil = os.clock() + (T2 + 0.2) / sp
-			o.slowMul = 0.02
-		end
-		Push:FireAllClients("skillfx", { kind = "chronoStrike", m = f.model, at = C, targets = modelsOf(list), cut = T1 / sp, every = m.every / sp, resume = m.resumeAt / sp, radius = m.finalRadius, style = style })
-		local h = scaled(m.hit, sc)
-		after(T2, function()
-			for _, o in ipairs(list) do
-				strike(f, o, h, move)
+		local seq = {}
+		local last
+		for _ = 1, m.bounces do
+			if #list > 0 then
+				local pick = list[math.random(1, #list)]
+				if #list > 1 then
+					local guard = 0
+					while pick == last and guard < 8 do
+						pick = list[math.random(1, #list)]
+						guard += 1
+					end
+				end
+				last = pick
+				table.insert(seq, pick)
 			end
+		end
+		local cen = C + look * 10
+		if #list > 0 then
+			local sum = Vector3.zero
+			for _, o in ipairs(list) do
+				sum += o.root.Position
+			end
+			cen = Vector3.new(sum.X / #list, C.Y, sum.Z / #list)
+		end
+		local T1 = m.cut
+		local T2 = T1 + math.max(1, #seq) * m.every
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (T2 + m.diveAt + 0.7) / sp)
+		Push:FireAllClients("skillfx", { kind = "ricochet", m = f.model, at = C, seq = modelsOf(seq), center = cen, cut = T1 / sp, every = m.every / sp, diveAt = m.diveAt / sp, radius = m.finalRadius, style = style })
+		for i, t in ipairs(seq) do
+			after(T1 + (i - 1) * m.every, function()
+				if t.dead or not t.root.Parent then
+					return
+				end
+				local tp = t.root.Position
+				local d = flat(tp - f.root.Position)
+				local p = Vector3.new(tp.X, f.root.Position.Y, tp.Z) - d * 3.2
+				moveTo(f, CFrame.lookAt(p, Vector3.new(tp.X, p.Y, tp.Z)))
+				strike(f, t, hit, move)
+			end)
+		end
+		after(T2 + m.diveAt - 0.12, function()
+			moveTo(f, CFrame.lookAt(cen + Vector3.new(0, 34, 0), cen))
 		end)
-		after(T2 + 0.25, function()
-			for _, o in ipairs(hostilesNear(f, C, m.finalRadius)) do
+		after(T2 + m.diveAt + 0.15, function()
+			moveTo(f, CFrame.lookAt(cen, cen + look))
+			for _, o in ipairs(hostilesNear(f, cen, m.finalRadius)) do
 				strike(f, o, scaled(m.final, sc), move)
 			end
 		end)

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2426,7 +2426,7 @@ table.insert(Config.Styles, {
 })
 
 -- 3.22판: 극 광속권. 진 풍신각의 끝. 지옥 황천 나루의 질주귀에게 (세 번 환생한 몸만)
--- 극 패시브 · 초가속: 극이 차면 시간이 멎듯 느려지고 (둘레의 적이 굼뜨다), 30초 동안 모든 기술이 바뀌고 모든 타격이 잔상으로 한 번 더 친다
+-- 극 패시브 · 초가속: 극이 차면 세상이 느려 보일 만큼 빨라지고 (둘레의 적이 굼뜨다), 30초 동안 모든 기술이 바뀌고 모든 타격이 잔상으로 한 번 더 친다
 -- 평소 패시브 · 가속: 맞힐수록 걸음이 빨라지고 (최대 5단계), 맞으면 풀린다. 네 번 맞힐 때마다 음속 충격
 Config.GEUK_REQ.geukspeed = { base = "pungsin2", lv = 20, rebirth = 3 }
 table.insert(Config.Styles, {
@@ -2446,7 +2446,7 @@ table.insert(Config.Styles, {
 	styleReq = "pungsin2",
 	trialHp = 13,
 	unlockHint = "진 풍신각을 숙련 20까지 쌓고 세 번 환생한 자만이, 지옥 황천 나루에서 질주귀를 만난다",
-	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고, 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고, 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 멈춘 듯 느려지고, 느려진 세상 속에서 그만 홀로 달린다.",
+	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고, 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고, 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 느려 보일 만큼 빨라지고, 그 속에서 그만 홀로 번개처럼 달린다.",
 	gimmick = "극 패시브 · 초가속: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 30초 동안 초가속에 든다. 둘레 90칸의 적은 굼뜨고 (이동 ×0.35), 내 걸음은 ×1.6, 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다. 그동안 기술이 모두 초가속의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 가속: 맞힐 때마다 걸음이 5%씩 빨라진다 (최대 5단계, 3초 안 맞히면 풀리고, 맞으면 반으로). 네 번 맞힐 때마다 음속 충격. 모든 기술 대기 28% 짧음. 초 오의(X)가 있다",
 	deflect = 0.3,
 	postureMult = 1.5,
@@ -2470,10 +2470,10 @@ table.insert(Config.Styles, {
 			mech = { kind = "lightLance", dist = 34, width = 5, hit = hit(0, 0, 0, 62, 52, 0.7, 10, 6), delay = 0.5, det = hit(0, 0, 0, 40, 34, 0.5, 18, 12) } },
 		R = { id = "gsR", name = "음속 돌파", desc = "소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며, 닿은 적이 크게 튕겨 나간다", pose = "lt_boom", dur = 0.6, cd = 10, chi = 25, lunge = 26, iframes = 0.5,
 			mech = { kind = "sonicBoom", dist = 26, width = 6, hit = hit(0, 0, 0, 48, 40, 0.6, 14, 4), coneAt = 0.3, coneLen = 22, coneWidth = 16, cone = hit(0, 0, 0, 78, 76, 1.0, 46, 12) } },
-		G = { id = "gsG", name = "시간 가속", desc = "발밑에 거대한 시계가 그려지고 시침과 분침이 점점 빨리 돈다. 시계 안의 적은 1.5초 동안 열다섯 번 난타당하고, 바늘이 12시에 모이는 순간 시계째 터진다", pose = "lt_clock", dur = 2.2, cd = 28, chi = 100, armor = true,
-			mech = { kind = "clockBarrage", radius = 24, dur = 1.5, every = 0.1, tick = hit(0, 0, 0, 14, 11, 0.25, 0), finalAt = 0.4, finalRadius = 26, final = hit(0, 0, 0, 250, 260, 1.5, 60, 24) } },
-		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 컷씬 (그동안 무적): 세상의 소리가 사라지고 몸이 출발선에 선다. 한 걸음에 74칸을 빛으로 가르고 나타나면, 지나간 길 위의 모든 적에게 그제야 베임이 닿는다. 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 5.0, cd = 55, chi = 150, armor = true,
-			mech = { kind = "lightDash", cut = 1.5, charge = 0.9, length = 74, width = 9, hit = hit(0, 0, 0, 340, 330, 1.6, 70, 26), boomAt = 0.7, boomRadius = 36, boom = hit(0, 0, 0, 220, 230, 1.5, 70, 30) } },
+		G = { id = "gsG", name = "유성 질주", desc = "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고, 마지막에 모든 선이 한꺼번에 번쩍이며 터진다", pose = "lt_run", dur = 2.0, cd = 28, chi = 100, armor = true,
+			mech = { kind = "meteorRun", radius = 22, n = 10, every = 0.14, width = 5, hit = hit(0, 0, 0, 26, 22, 0.35, 6, 6), finalAt = 0.3, finalRadius = 26, final = hit(0, 0, 0, 250, 260, 1.5, 60, 24) } },
+		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 짧은 컷씬 (그동안 무적): 출발선에서 몸을 낮춘다. 음속, 광속, 초광속, 세 걸음으로 점점 더 길게 내달린다. 첫 걸음은 소리를 넘고, 둘째는 빛이 되고, 셋째는 지나간 자리마저 남기지 않는다. 달린 길 위의 모든 적을 베고, 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 4.2, cd = 55, chi = 150, armor = true,
+			mech = { kind = "lightDash", cut = 1.0, charge = 0.5, gap = 0.3, lens = { 24, 38, 56 }, mul = { 0.25, 0.3, 0.45 }, width = 9, hit = hit(0, 0, 0, 340, 330, 1.6, 70, 26), boomAt = 0.45, boomRadius = 36, boom = hit(0, 0, 0, 220, 230, 1.5, 70, 30) } },
 	},
 	-- 초가속 (극 패시브 동안): 기술이 모두 바뀐다. 빛과 소리가 아닌 '시간'을 다룬다
 	twilight = {
@@ -2488,10 +2488,10 @@ table.insert(Config.Styles, {
 				mech = { kind = "lightNeedles", n = 9, spread = 100, length = 34, width = 2.8, delay = 0.12, hit = hit(0, 0, 0, 46, 38, 0.5, 8, 4) } },
 			R = { id = "gtsR", name = "지그재그 질주", desc = "직각으로 꺾으며 앞으로 다섯 번 번개처럼 도약한다 (무적). 내려서는 자리마다 사방이 터지고, 지나간 길이 번개 줄로 남는다", pose = "lt_zig", dur = 0.7, cd = 8, chi = 22, iframes = 0.6,
 				mech = { kind = "zigzagStep", steps = 5, forward = 11, side = 9, every = 0.09, radius = 8, hit = hit(0, 0, 0, 54, 46, 0.6, 12, 6) } },
-			G = { id = "gtsG", name = "초가속 폭주", desc = "몸이 보이지 않을 만큼 빨라져 제자리를 맴돈다. 둘레 22칸이 회오리로 변해 적을 끌어당기며 쓸어 올리고, 회오리가 멎는 순간 빛의 기둥이 하늘까지 솟는다", pose = "lt_over", dur = 2.6, cd = 24, chi = 100, armor = true,
-				mech = { kind = "overclock", radius = 22, orbit = 14, dur = 2.0, every = 0.12, pull = 34, tick = hit(0, 0, 0, 17, 13, 0.3, 0), finalAt = 0.35, finalRadius = 28, final = hit(0, 0, 0, 320, 320, 1.6, 60, 28) } },
-			X = { id = "gtsX", name = "시간 정지 일격", desc = "초가속의 초 오의 (그동안 무적). 한 손을 하늘로 들면 세상의 빛깔이 빠지고 모든 것이 멈춘다. 멈춘 적 일곱의 몸마다 순식간에 빛의 선이 그어지고, 시간이 되돌아오는 순간 모든 선이 한꺼번에 베인다. 마지막에 하늘의 시계가 깨진다", pose = "lt_chrono", dur = 4.8, cd = 50, chi = 140, armor = true,
-				mech = { kind = "chronoStrike", cut = 1.4, n = 7, range = 56, every = 0.12, resumeAt = 0.8, hit = hit(0, 0, 0, 130, 120, 1.0, 30, 20), finalRadius = 44, final = hit(0, 0, 0, 340, 340, 1.8, 70, 30) } },
+			G = { id = "gtsG", name = "마하 폭풍", desc = "앞으로 뻗은 한 줄기 길을 64칸씩 네 번 왕복한다 (무적). 지날 때마다 소리의 벽이 깨지며 길 양옆의 적을 한가운데로 쓸어 모으고, 마지막에 길 한복판에서 충격파가 터진다", pose = "lt_run", dur = 2.2, cd = 24, chi = 100, armor = true,
+				mech = { kind = "machStorm", length = 64, passes = 4, every = 0.28, width = 14, pull = 38, hit = hit(0, 0, 0, 56, 46, 0.6, 10, 8), finalAt = 0.3, finalRadius = 34, final = hit(0, 0, 0, 330, 330, 1.6, 60, 28) } },
+			X = { id = "gtsX", name = "유성 연쇄", desc = "초가속의 초 오의 (그동안 무적). 몸이 빛의 구슬이 되어 눈에 보이지 않는 속도로 적들 사이를 열 번 튕겨 다닌다. 지나간 자리마다 빛의 줄이 거미줄처럼 남고, 마지막에 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다. 거미줄이 한꺼번에 번쩍인다", pose = "lt_comet", dur = 4.4, cd = 50, chi = 140, armor = true,
+				mech = { kind = "ricochet", cut = 1.2, n = 6, range = 56, bounces = 10, every = 0.11, hit = hit(0, 0, 0, 72, 64, 0.7, 16, 10), diveAt = 0.45, finalRadius = 44, final = hit(0, 0, 0, 380, 380, 1.8, 70, 32) } },
 		},
 	},
 })
