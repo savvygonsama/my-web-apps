@@ -2395,7 +2395,7 @@ local function buildTest()
 		{ "🌙 0시", "testTime", 0 }, { "⏩ +3시간", "testTime", "+3" },
 	}, 3)
 	section("💎 상품 (테스트로 켜기)", {
-		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" },
+		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" }, { "💰 은자 두 배", "testPremium", "coin2x" }, { "🎒 가방 확장", "testPremium", "bag" },
 		{ "🐉 청룡 탈것", "testPremium", "dragon" },
 	})
 	do

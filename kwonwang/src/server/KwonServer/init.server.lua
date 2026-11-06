@@ -2111,7 +2111,7 @@ Combat.init(Push, {
 					refreshFighter(killer)
 					Story.check(killer)
 				end
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin"))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -2813,8 +2813,8 @@ function Actions.buy(player: Player, id: any)
 	if not p or not st or not item then
 		return
 	end
-	if item.id == "potion" and p.potions >= item.max then
-		toast(player, "금창약은 5개까지 들 수 있어요")
+	if item.id == "potion" and p.potions >= (Premium.owns(player, "bag") and item.max * 2 or item.max) then
+		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
 	end
 	if p.coins < item.cost then
@@ -3490,7 +3490,7 @@ function Tower.killed(player: Player, ef: any)
 	local T = Config.TOWER
 	local floor = run.floor
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
-	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50))
+	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1)
 	p.coins += coins
 	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
