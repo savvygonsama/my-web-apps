@@ -5931,8 +5931,18 @@ if W.hell or W.hellGrass then
 									Combat.dismount(fighter)
 								end
 								local model = ch :: Model
-								model:PivotTo(CFrame.new(H.room + Vector3.new(0, 56, 34)))
+								-- 풀이 꺼지며 화면이 어두워지고, 암전 사이에 저승 방 높은 곳으로 옮겨져 바닥까지 떨어진다
+								Push:FireClient(player, "hellFall", { from = hrp.Position })
 								toast(player, "🕳 희미한 풀이 꺼지며 발밑이 사라졌다")
+								task.delay(0.55, function()
+									if model.Parent and player.Parent then
+										model:PivotTo(CFrame.new(H.room + Vector3.new(0, 66, 34)))
+										local root2 = model:FindFirstChild("HumanoidRootPart")
+										if root2 and root2:IsA("BasePart") then
+											root2.AssemblyLinearVelocity = Vector3.new(0, -30, 0)
+										end
+									end
+								end)
 								if not p.seen.hell_fell then
 									p.seen.hell_fell = true
 									local est = states[player]

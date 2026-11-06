@@ -2629,6 +2629,37 @@ function handlers.geukTwilight(data: any)
 	UI.banner(string.format("🌗 일월극변 · %s", data.name or ""), "해와 달이 미쳐 날뛰다가 세상이 황혼에 멈춘다. 황혼 동안 그의 기술이 모두 바뀐다", Color3.fromRGB(255, 140, 80))
 	Geuk.twilight(data)
 end
+-- 3.23.5판: 지옥 입구 낙하. 풀이 꺼지며 화면이 어두워졌다가 (그 사이 저승 방으로 옮겨진다), 떨어지는 동안 서서히 밝아진다
+function handlers.hellFall(data: any)
+	local pg = player:FindFirstChildOfClass("PlayerGui")
+	if not pg then
+		return
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonHellFall"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 95
+	g.Parent = pg
+	local f = Instance.new("Frame")
+	f.Size = UDim2.fromScale(1, 1)
+	f.BackgroundColor3 = Color3.new(0, 0, 0)
+	f.BackgroundTransparency = 1
+	f.BorderSizePixel = 0
+	f.Parent = g
+	local TS = game:GetService("TweenService")
+	TS:Create(f, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { BackgroundTransparency = 0 }):Play()
+	shake(0.8)
+	Fx.sound("whoosh", 0.8, 0.5)
+	task.delay(0.9, function()
+		-- 떨어지는 동안 바람 소리와 흔들림, 어둠이 걷힌다
+		shake(0.5)
+		TS:Create(f, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play()
+		task.delay(1.7, function()
+			g:Destroy()
+		end)
+	end)
+end
 -- 3.22판: 극 광속권 · 초가속 (모두에게 알림, 가까우면 시간이 느려지는 연출)
 function handlers.geukHaste(data: any)
 	Speed.init({ shake = shake, flash = UI.flash })
