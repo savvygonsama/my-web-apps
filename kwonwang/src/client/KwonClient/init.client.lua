@@ -202,7 +202,7 @@ task.spawn(function()
 		for _, m in ipairs(list) do
 			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 			local tier = tonumber(m:GetAttribute("Awaken")) or 0
-			pcall(Fx.awakenAura, m, style and tier or 0, style and style.color or Color3.new(1, 1, 1))
+			pcall(Fx.awakenAura, m, style and math.min(tier, m:GetAttribute("Master") == true and 1 or tier) or 0, style and style.color or Color3.new(1, 1, 1))
 		end
 		-- 권법마다 손에 맺힌 기운 (사부의 분신도)
 		local ef = workspace:FindFirstChild("Enemies")
@@ -215,7 +215,7 @@ task.spawn(function()
 			local key = tostring(m:GetAttribute("Style") or "") .. ":" .. tostring(tonumber(m:GetAttribute("Awaken")) or 0)
 			if handKey[m] ~= key then
 				handKey[m] = key
-				pcall(Fx.styleHands, m, m:GetAttribute("Style"), tonumber(m:GetAttribute("Awaken")) or 0)
+				pcall(Fx.styleHands, m, m:GetAttribute("Style"), m:GetAttribute("Master") == true and 0 or (tonumber(m:GetAttribute("Awaken")) or 0), m:GetAttribute("Master") == true)
 			end
 		end
 	end

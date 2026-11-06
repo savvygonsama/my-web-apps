@@ -3865,13 +3865,23 @@ local function hellTick(pos: Vector3)
 		cc.Name = "KwonHellTint"
 		cc.TintColor = Color3.fromRGB(255, 160, 140)
 		cc.Saturation = -0.1
-		cc.Contrast = 0.12
-		cc.Brightness = -0.08
+		cc.Contrast = 0.08
+		cc.Brightness = 0.02
 		cc.Parent = L
 		hellCC = cc
 		hellExposure = L.ExposureCompensation
 	end
-	L.ExposureCompensation += (-0.9 - L.ExposureCompensation) * 0.1
+	L.ExposureCompensation += (-0.35 - L.ExposureCompensation) * 0.1
+	-- 내 몸 둘레의 은은한 빛 (어둠 속에서 모델과 적이 형체를 잃지 않게)
+	local rootP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if rootP and rootP:IsA("BasePart") and not rootP:FindFirstChild("KwonHellLight") then
+		local l = Instance.new("PointLight")
+		l.Name = "KwonHellLight"
+		l.Color = Color3.fromRGB(255, 225, 205)
+		l.Range = 48
+		l.Brightness = 1.1
+		l.Parent = rootP
+	end
 	local atmo = L:FindFirstChildOfClass("Atmosphere")
 	if atmo then
 		atmo.Density += (0.46 - atmo.Density) * 0.08
@@ -3880,6 +3890,11 @@ local function hellTick(pos: Vector3)
 	end
 end
 local function hellLeave()
+	local rp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	local hl = rp and rp:FindFirstChild("KwonHellLight")
+	if hl then
+		hl:Destroy()
+	end
 	if hellCC then
 		hellCC:Destroy()
 		hellCC = nil

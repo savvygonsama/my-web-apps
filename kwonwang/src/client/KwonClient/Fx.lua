@@ -1495,7 +1495,8 @@ local HAND_FX = {
 	cloud = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.8, size = 0.5 },
 	galaxy = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.6, life = 1.0, size = 0.4 },
 }
-function Fx.styleHands(model: Model, styleId: any, tier: number)
+function Fx.styleHands(model: Model, styleId: any, tier: number, soft: boolean?)
+	local sk = soft and 0.35 or 1 -- 사부는 가까이서 보므로 기운을 훨씬 작게 (크게 번진 빛에 모델이 가려졌다)
 	for _, d in ipairs(model:GetDescendants()) do
 		if d.Name == "KwonStyleHand" then
 			d:Destroy()
@@ -1515,13 +1516,13 @@ function Fx.styleHands(model: Model, styleId: any, tier: number)
 			e.Color = ColorSequence.new(style.color, style.color2)
 			e.LightEmission = style.fx == "shadow" and 0 or 1
 			e.Transparency = NumberSequence.new(0.3, 1)
-			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4), 0)
+			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4) * sk, 0)
 			e.Lifetime = NumberRange.new(h.life * 0.7, h.life)
 			e.Speed = NumberRange.new(h.speed * 0.5, h.speed)
 			e.SpreadAngle = Vector2.new(180, 180)
-			e.Rate = (6 + tier * 10) * (style.awakenOf and 2 or 1)
+			e.Rate = (6 + tier * 10) * (style.awakenOf and 2 or 1) * (soft and 0.5 or 1)
 			if style.awakenOf then
-				e.Size = NumberSequence.new(h.size * (1.8 + tier * 0.4), 0)
+				e.Size = NumberSequence.new(h.size * (1.8 + tier * 0.4) * sk, 0)
 			end
 			e.Parent = hand
 		end

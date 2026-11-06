@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.23.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.23.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -33707,7 +33707,7 @@ task.spawn(function()
 		for _, m in ipairs(list) do
 			local style = Config.STYLE_BY_ID[tostring(m:GetAttribute("Style") or "")]
 			local tier = tonumber(m:GetAttribute("Awaken")) or 0
-			pcall(Fx.awakenAura, m, style and tier or 0, style and style.color or Color3.new(1, 1, 1))
+			pcall(Fx.awakenAura, m, style and math.min(tier, m:GetAttribute("Master") == true and 1 or tier) or 0, style and style.color or Color3.new(1, 1, 1))
 		end
 		-- 권법마다 손에 맺힌 기운 (사부의 분신도)
 		local ef = workspace:FindFirstChild("Enemies")
@@ -33720,7 +33720,7 @@ task.spawn(function()
 			local key = tostring(m:GetAttribute("Style") or "") .. ":" .. tostring(tonumber(m:GetAttribute("Awaken")) or 0)
 			if handKey[m] ~= key then
 				handKey[m] = key
-				pcall(Fx.styleHands, m, m:GetAttribute("Style"), tonumber(m:GetAttribute("Awaken")) or 0)
+				pcall(Fx.styleHands, m, m:GetAttribute("Style"), m:GetAttribute("Master") == true and 0 or (tonumber(m:GetAttribute("Awaken")) or 0), m:GetAttribute("Master") == true)
 			end
 		end
 	end
@@ -47653,7 +47653,8 @@ local HAND_FX = {
 	cloud = { tex = "rbxasset://textures/particles/smoke_main.dds", speed = 1.2, life = 0.8, size = 0.5 },
 	galaxy = { tex = "rbxasset://textures/particles/sparkles_main.dds", speed = 1.6, life = 1.0, size = 0.4 },
 }
-function Fx.styleHands(model: Model, styleId: any, tier: number)
+function Fx.styleHands(model: Model, styleId: any, tier: number, soft: boolean?)
+	local sk = soft and 0.35 or 1 -- 사부는 가까이서 보므로 기운을 훨씬 작게 (크게 번진 빛에 모델이 가려졌다)
 	for _, d in ipairs(model:GetDescendants()) do
 		if d.Name == "KwonStyleHand" then
 			d:Destroy()
@@ -47673,13 +47674,13 @@ function Fx.styleHands(model: Model, styleId: any, tier: number)
 			e.Color = ColorSequence.new(style.color, style.color2)
 			e.LightEmission = style.fx == "shadow" and 0 or 1
 			e.Transparency = NumberSequence.new(0.3, 1)
-			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4), 0)
+			e.Size = NumberSequence.new(h.size * (1 + tier * 0.4) * sk, 0)
 			e.Lifetime = NumberRange.new(h.life * 0.7, h.life)
 			e.Speed = NumberRange.new(h.speed * 0.5, h.speed)
 			e.SpreadAngle = Vector2.new(180, 180)
-			e.Rate = (6 + tier * 10) * (style.awakenOf and 2 or 1)
+			e.Rate = (6 + tier * 10) * (style.awakenOf and 2 or 1) * (soft and 0.5 or 1)
 			if style.awakenOf then
-				e.Size = NumberSequence.new(h.size * (1.8 + tier * 0.4), 0)
+				e.Size = NumberSequence.new(h.size * (1.8 + tier * 0.4) * sk, 0)
 			end
 			e.Parent = hand
 		end
@@ -69963,13 +69964,23 @@ local function hellTick(pos: Vector3)
 		cc.Name = "KwonHellTint"
 		cc.TintColor = Color3.fromRGB(255, 160, 140)
 		cc.Saturation = -0.1
-		cc.Contrast = 0.12
-		cc.Brightness = -0.08
+		cc.Contrast = 0.08
+		cc.Brightness = 0.02
 		cc.Parent = L
 		hellCC = cc
 		hellExposure = L.ExposureCompensation
 	end
-	L.ExposureCompensation += (-0.9 - L.ExposureCompensation) * 0.1
+	L.ExposureCompensation += (-0.35 - L.ExposureCompensation) * 0.1
+	-- 내 몸 둘레의 은은한 빛 (어둠 속에서 모델과 적이 형체를 잃지 않게)
+	local rootP = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if rootP and rootP:IsA("BasePart") and not rootP:FindFirstChild("KwonHellLight") then
+		local l = Instance.new("PointLight")
+		l.Name = "KwonHellLight"
+		l.Color = Color3.fromRGB(255, 225, 205)
+		l.Range = 48
+		l.Brightness = 1.1
+		l.Parent = rootP
+	end
 	local atmo = L:FindFirstChildOfClass("Atmosphere")
 	if atmo then
 		atmo.Density += (0.46 - atmo.Density) * 0.08
@@ -69978,6 +69989,11 @@ local function hellTick(pos: Vector3)
 	end
 end
 local function hellLeave()
+	local rp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	local hl = rp and rp:FindFirstChild("KwonHellLight")
+	if hl then
+		hl:Destroy()
+	end
 	if hellCC then
 		hellCC:Destroy()
 		hellCC = nil
