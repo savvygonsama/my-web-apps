@@ -1512,12 +1512,9 @@ function Story.advance(player: Player)
 		end
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
-		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = Config.Story[p.story].title })
-		-- 다음 장은 받아야 시작된다 (받기 전에는 목표 표시도 없다)
+		-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 장로에게 가서 선택해 받아야 이어진다
 		local nxt = Config.Story[p.story]
-		if nxt.goal.kind ~= "done" then
-			Push:FireClient(player, "storyOffer", { chapter = p.story, title = nxt.title, text = nxt.text })
-		end
+		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = nxt.goal.kind ~= "done" and "장로에게 가서 다음 이야기를 받으세요" or nil })
 		break
 	end
 	states[player].dirty = true
@@ -1632,15 +1629,15 @@ function Story.talk(player: Player)
 	if not ch then
 		return
 	end
-	Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
-	-- 장로에게 들으면 그 이야기를 받은 것
-	if p.accepted ~= p.story then
-		Story.accept(player)
+	if ch.goal.kind == "done" then
+		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+		return
 	end
-	if ch.goal.kind == "talk" then
-		Story.advance(player)
-		-- 장로가 다음 할 일까지 일러 줬으니 다음 장도 받은 것
-		Story.accept(player)
+	-- 3.30판: 이야기는 장로에게서 선택해 받아야 한다 (받기 / 나중에). 받은 뒤에만 목표가 보이고 세어진다
+	if p.accepted ~= p.story then
+		Push:FireClient(player, "dialog", { who = "📜 청운 장로 · " .. tostring(p.story) .. "장", title = ch.title, text = ch.text, accept = true })
+	else
+		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
 	end
 end
 
@@ -1656,6 +1653,12 @@ function Story.accept(player: Player)
 	p.accepted = p.story
 	states[player].dirty = true
 	pushState(player)
+	local ch = Config.Story[p.story]
+	if ch and ch.goal.kind == "talk" then
+		-- 장로에게 듣는 것이 목표인 이야기는 받는 순간 마친 것 (다음 이야기는 다시 받아야 한다)
+		Story.advance(player)
+		return
+	end
 	Story.check(player)
 end
 
@@ -4597,7 +4600,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testStory" then
 		Story.advance(player)
-		Story.accept(player)
+		Story.accept(player) -- 테스트는 바로 받는다
 	elseif action == "testTrial" then
 		if activeTrial[player] then
 			Trial.ended(player, true)

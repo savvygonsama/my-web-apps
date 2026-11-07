@@ -2376,10 +2376,8 @@ function handlers.storyDone(data: any)
 end
 
 -- 다음 이야기가 왔다: 받으면 목표가 보인다
-function handlers.storyOffer(data: any)
-	task.delay(1.2, function()
-		UI.dialog({ who = "📜 새 이야기 · " .. tostring(data.chapter) .. "장", title = data.title, text = data.text, accept = true })
-	end)
+function handlers.storyOffer(_data: any)
+	-- 3.30판: 이야기는 저절로 뜨지 않는다. 장로에게 말을 걸어 받는다
 end
 
 -- 로벅스 상품을 샀다

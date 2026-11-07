@@ -3670,12 +3670,17 @@ local function refreshStory(s: any)
 		return
 	end
 	lastStoryState = s
-	storyBox.Visible = not storyHidden
+	-- 3.30판: 받지 않은 이야기는 화면에 아무것도 띄우지 않는다 (장로에게 가서 받는다). 받은 뒤에만 목표 칸이 보인다
+	local accepted = s.accepted ~= false and ch.goal.kind ~= "done"
+	storyBox.Visible = accepted and not storyHidden
 	if storyChip then
-		storyChip.Visible = storyHidden
+		storyChip.Visible = accepted and storyHidden
 	end
-	-- 받지 않은 이야기는 제목만 (목표 표시도, 길잡이도 없다)
-	local accepted = s.accepted ~= false or ch.goal.kind == "talk"
+	if not accepted then
+		clearStoryPart()
+		storyAt = nil
+		return
+	end
 	if storyAcceptBtn then
 		storyAcceptBtn.Visible = not accepted
 	end

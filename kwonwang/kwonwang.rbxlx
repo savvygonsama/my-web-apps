@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.29.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.30.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -10339,12 +10339,9 @@ function Story.advance(player: Player)
 		end
 		p.story = math.min(#Config.Story, p.story + 1)
 		p.prog = 0
-		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = Config.Story[p.story].title })
-		-- 다음 장은 받아야 시작된다 (받기 전에는 목표 표시도 없다)
+		-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 장로에게 가서 선택해 받아야 이어진다
 		local nxt = Config.Story[p.story]
-		if nxt.goal.kind ~= "done" then
-			Push:FireClient(player, "storyOffer", { chapter = p.story, title = nxt.title, text = nxt.text })
-		end
+		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = nxt.goal.kind ~= "done" and "장로에게 가서 다음 이야기를 받으세요" or nil })
 		break
 	end
 	states[player].dirty = true
@@ -10459,15 +10456,15 @@ function Story.talk(player: Player)
 	if not ch then
 		return
 	end
-	Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
-	-- 장로에게 들으면 그 이야기를 받은 것
-	if p.accepted ~= p.story then
-		Story.accept(player)
+	if ch.goal.kind == "done" then
+		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+		return
 	end
-	if ch.goal.kind == "talk" then
-		Story.advance(player)
-		-- 장로가 다음 할 일까지 일러 줬으니 다음 장도 받은 것
-		Story.accept(player)
+	-- 3.30판: 이야기는 장로에게서 선택해 받아야 한다 (받기 / 나중에). 받은 뒤에만 목표가 보이고 세어진다
+	if p.accepted ~= p.story then
+		Push:FireClient(player, "dialog", { who = "📜 청운 장로 · " .. tostring(p.story) .. "장", title = ch.title, text = ch.text, accept = true })
+	else
+		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
 	end
 end
 
@@ -10483,6 +10480,12 @@ function Story.accept(player: Player)
 	p.accepted = p.story
 	states[player].dirty = true
 	pushState(player)
+	local ch = Config.Story[p.story]
+	if ch and ch.goal.kind == "talk" then
+		-- 장로에게 듣는 것이 목표인 이야기는 받는 순간 마친 것 (다음 이야기는 다시 받아야 한다)
+		Story.advance(player)
+		return
+	end
 	Story.check(player)
 end
 
@@ -13424,7 +13427,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testStory" then
 		Story.advance(player)
-		Story.accept(player)
+		Story.accept(player) -- 테스트는 바로 받는다
 	elseif action == "testTrial" then
 		if activeTrial[player] then
 			Trial.ended(player, true)
@@ -36901,10 +36904,8 @@ function handlers.storyDone(data: any)
 end
 
 -- 다음 이야기가 왔다: 받으면 목표가 보인다
-function handlers.storyOffer(data: any)
-	task.delay(1.2, function()
-		UI.dialog({ who = "📜 새 이야기 · " .. tostring(data.chapter) .. "장", title = data.title, text = data.text, accept = true })
-	end)
+function handlers.storyOffer(_data: any)
+	-- 3.30판: 이야기는 저절로 뜨지 않는다. 장로에게 말을 걸어 받는다
 end
 
 -- 로벅스 상품을 샀다
@@ -72295,12 +72296,17 @@ local function refreshStory(s: any)
 		return
 	end
 	lastStoryState = s
-	storyBox.Visible = not storyHidden
+	-- 3.30판: 받지 않은 이야기는 화면에 아무것도 띄우지 않는다 (장로에게 가서 받는다). 받은 뒤에만 목표 칸이 보인다
+	local accepted = s.accepted ~= false and ch.goal.kind ~= "done"
+	storyBox.Visible = accepted and not storyHidden
 	if storyChip then
-		storyChip.Visible = storyHidden
+		storyChip.Visible = accepted and storyHidden
 	end
-	-- 받지 않은 이야기는 제목만 (목표 표시도, 길잡이도 없다)
-	local accepted = s.accepted ~= false or ch.goal.kind == "talk"
+	if not accepted then
+		clearStoryPart()
+		storyAt = nil
+		return
+	end
 	if storyAcceptBtn then
 		storyAcceptBtn.Visible = not accepted
 	end
