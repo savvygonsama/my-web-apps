@@ -1112,8 +1112,77 @@ local function impact(at: Vector3, R: number, power: number)
 	shake(0.8 + power)
 end
 
+-- 각성 기술 (sinSeq)의 한 타격: 모양마다 다르게 그린다 (원 · 바깥으로 퍼지는 고리 · 길게 꿰뚫는 줄 · 부채꼴)
+local function seqStep(d: any)
+	local at: Vector3 = d.at
+	local col = d.big and HUMAN or GOLD
+	local g0 = groundAt(at, nil)
+	local g = Vector3.new(at.X, g0.Y, at.Z)
+	if d.shape == "line" then
+		local dir: Vector3 = d.dir
+		local from: Vector3 = at - Vector3.new(0, 2.2, 0)
+		local len = d.length or 20
+		local w = d.width or 6
+		local mid = from + dir * (len / 2)
+		local beam = part(Vector3.new(len, w * 0.5, w * 0.5), col, Enum.Material.Neon, 0.15, "cyl")
+		beam.CFrame = CFrame.lookAt(mid + Vector3.new(0, 1.6, 0), mid + Vector3.new(0, 1.6, 0) + dir) * CFrame.Angles(0, math.rad(90), 0)
+		tween(beam, 0.35, { Size = Vector3.new(len, w * 1.3, w * 1.3) })
+		fadeOut(beam, 0.4)
+		for k = 0, 5 do
+			task.delay(k * 0.04, function()
+				Fx.ring(from + dir * (len * k / 5), k % 2 == 0 and GOLD or SKY, 3, w * 3, 0.4)
+			end)
+		end
+		Fx.breakSound("boom", 0.9, 0.7, from)
+		shake(d.big and 1.6 or 0.8)
+	elseif d.shape == "cone" then
+		local dir: Vector3 = d.dir
+		local from: Vector3 = (d.from :: Vector3) - Vector3.new(0, 2.2, 0)
+		local len = d.length or 30
+		local half = math.rad((d.angle or 90) / 2)
+		for k = -3, 3 do
+			local a = half * k / 3
+			local dd = (CFrame.Angles(0, a, 0) * CFrame.lookAt(Vector3.zero, dir)).LookVector
+			local mid = from + dd * (len / 2)
+			local sl = part(Vector3.new(len, 0.5, 0.5), k % 2 == 0 and GOLD or HUMAN, Enum.Material.Neon, 0.2, "cyl")
+			sl.CFrame = CFrame.lookAt(mid + Vector3.new(0, 1.5, 0), mid + Vector3.new(0, 1.5, 0) + dd) * CFrame.Angles(0, math.rad(90), 0)
+			tween(sl, 0.4, { Size = Vector3.new(len, 2.2, 2.2) })
+			fadeOut(sl, 0.45)
+		end
+		Fx.ring(from, GOLD, 3, len * 1.2, 0.5)
+		Fx.breakSound("whoosh", 1, 0.5, from)
+		shake(0.9)
+	elseif d.shape == "ring" then
+		local R = d.radius or 20
+		local inner = d.inner or 0
+		Fx.ring(g + Vector3.new(0, 0.3, 0), HUMAN, inner * 2, R * 2, 0.7)
+		task.delay(0.08, function()
+			Fx.ring(g + Vector3.new(0, 0.3, 0), col, inner * 2 + 2, R * 2 - 4, 0.8)
+		end)
+		Fx.debris(g, 10, R * 0.8)
+		Fx.breakSound("boom", 0.9, 0.55 + (R / 100), g)
+		shake(d.big and 2 or 1.1)
+	else
+		impact(at, math.clamp(d.radius or 10, 6, 30), d.big and 1.6 or 0.9)
+	end
+	if d.label then
+		Fx.text(at + Vector3.new(0, 6, 0), tostring(d.label), GOLD, 40, 0.8)
+	end
+end
+
 function Sin.extra(data: any)
 	local k = data.kind
+	if k == "sinStep" and typeof(data.at) == "Vector3" then
+		seqStep(data)
+		return
+	elseif k == "sinStart" and typeof(data.m) == "Instance" then
+		local r = rootOf(data.m)
+		if r then
+			Fx.afterimage(data.m :: Model, GOLD, 0.5)
+			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), SKY, 4, 24, 0.5)
+		end
+		return
+	end
 	if k == "grabSlam" and typeof(data.at) == "Vector3" then
 		impact(data.at, math.clamp(data.radius or 10, 6, 20), 0.9)
 	elseif k == "shock" and typeof(data.at) == "Vector3" then

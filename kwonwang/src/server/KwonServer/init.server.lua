@@ -1246,6 +1246,7 @@ local function refreshFighter(player: Player)
 		f.maxHp = math.floor(f.maxHp * S)
 	end
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
+	f.model:SetAttribute("Awk", (m >= Config.AWAKEN[1].lv) or nil) -- 각성 (기술이 바뀐다)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
@@ -2458,7 +2459,8 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local seq = math.floor(tonumber(seqArg) or 0)
 	-- 3.1판: 극 권법의 황혼 (일월극변) 동안이면 기술이 바뀐다
 	local twilight = (((f :: any).twilightUntil or 0) > os.clock()) and style.twilight ~= nil
-	local move = Config.move(p.style, slot, twilight)
+	local awk = p.style ~= "" and Calc.mastery(p, p.style).lv >= Config.AWAKEN[1].lv
+	local move = Config.move(p.style, slot, twilight, awk)
 	if not move then
 		return
 	end

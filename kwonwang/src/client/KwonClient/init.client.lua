@@ -615,7 +615,7 @@ startMove = function(slot: any, charge: number?)
 		return
 	end
 	-- 3.1판: 극 권법의 황혼 동안은 바뀐 기술
-	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true)
+	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true, char:GetAttribute("Awk") == true)
 	if not move then
 		return
 	end
@@ -1718,7 +1718,7 @@ function handlers.act(data: any)
 		else
 			SkillFx.cast(style.id, data.slot, m, data.dur)
 		end
-		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true)
+		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true, m:GetAttribute("Awk") == true)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
 				if m.Parent then
@@ -2794,7 +2794,7 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
-		local sk = Config.move(style.id, slot, twilightNow)
+		local sk = Config.move(style.id, slot, twilightNow, char:GetAttribute("Awk") == true)
 		if sk then
 			local left = (cds[slot] or 0) - now
 			local need = sk.chi or 100

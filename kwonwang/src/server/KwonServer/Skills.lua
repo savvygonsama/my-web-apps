@@ -742,6 +742,60 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, hit, move)
 			end
 		end)
+	elseif kind == "sinSeq" then
+		-- 3.33판 신 삼재권 각성: 때와 자리를 정한 타격의 연쇄. steps = { t(초), shape(circle · ring · line · cone), at(self · front · target), dash, dist, radius, inner, length, width, angle, hit }
+		local total = 0
+		for _, st in ipairs(m.steps) do
+			total = math.max(total, st.t)
+		end
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.4) / sp)
+		Push:FireAllClients("skillfx", { kind = "sinStart", m = f.model, dur = total / sp, style = style })
+		for _, st in ipairs(m.steps) do
+			after(st.t, function()
+				local base = f.root.Position
+				local fwd = flat(Combat.look(f))
+				if st.dash then
+					local np = base + fwd * st.dash
+					moveTo(f, CFrame.lookAt(np, np + fwd))
+					base = f.root.Position
+				end
+				local origin = base
+				if st.at == "front" then
+					origin = base + fwd * (st.dist or 8)
+				elseif st.at == "target" then
+					local near = nearestList(f, st.range or 30, 1)
+					origin = near[1] and near[1].root.Position or (base + fwd * 8)
+				end
+				local h = scaled(st.hit, sc)
+				local victims: { any } = {}
+				if st.shape == "line" then
+					victims = hostilesOnSeg(f, origin, origin + fwd * st.length, st.width)
+				elseif st.shape == "cone" then
+					local cosA = math.cos(math.rad((st.angle or 90) / 2))
+					for _, o in ipairs(hostilesNear(f, base, st.length)) do
+						if fwd:Dot(flat(o.root.Position - base)) >= cosA then
+							table.insert(victims, o)
+						end
+					end
+				elseif st.shape == "ring" then
+					for _, o in ipairs(hostilesNear(f, origin, st.radius)) do
+						local d = o.root.Position - origin
+						if Vector3.new(d.X, 0, d.Z).Magnitude >= (st.inner or 0) then
+							table.insert(victims, o)
+						end
+					end
+				else
+					victims = hostilesNear(f, origin, st.radius)
+				end
+				Push:FireAllClients("skillfx", { kind = "sinStep", shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
+				for _, o in ipairs(victims) do
+					if st.pull then
+						pullTo(o, origin, st.pull)
+					end
+					strike(f, o, h, move)
+				end
+			end)
+		end
 	elseif kind == "tsunami" then
 		-- 창해일소: 너비 width의 물의 벽이 앞으로 speed로 밀려간다. 벽 안의 적은 함께 끌려가며 계속 맞는다
 		local origin = f.root.Position

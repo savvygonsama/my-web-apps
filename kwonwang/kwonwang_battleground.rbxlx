@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.32.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.33.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2592,6 +2592,41 @@ table.insert(Config.Styles, {
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
 	},
+	-- 각성 (숙련 6 이상): E · R · G · X가 모두 새 기술로 바뀐다. 하늘 · 땅 · 사람의 연속 타격 (장치 sinSeq: 때와 자리를 정한 타격의 연쇄)
+	awaken = {
+		skills = {
+			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고, 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "天" },
+					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "地" },
+					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "人" },
+				} } },
+			R = { id = "snaR", name = "지축 진동", desc = "각성. 땅을 찍으면 충격이 안에서 바깥으로 세 겹의 물결이 되어 퍼져 나간다. 마지막에 발밑이 크게 솟는다", pose = "sn_stomp", dur = 1.7, cd = 10, chi = 28,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.38, shape = "circle", at = "self", radius = 11, hit = hit(0, 0, 0, 64, 52, 0.5, 26, 8) },
+					{ t = 0.72, shape = "ring", at = "self", inner = 9, radius = 19, hit = hit(0, 0, 0, 84, 66, 0.6, 34, 10) },
+					{ t = 1.06, shape = "ring", at = "self", inner = 17, radius = 27, hit = hit(0, 0, 0, 104, 80, 0.7, 40, 12) },
+					{ t = 1.45, shape = "circle", at = "self", radius = 16, hit = hit(0, 0, 0, 170, 130, 1.2, 70, 28), big = true },
+				} } },
+			G = { id = "snaG", name = "천지인 일권", desc = "각성. 하늘·땅·사람의 기를 1초 모았다가 단 한 번 지른다. 주먹이 앞으로 길게 꿰뚫고 (무적), 뒤따르는 충격이 부채꼴로 퍼지고, 먼 땅이 터진다", pose = "one_punch", dur = 2.0, cd = 28, chi = 100, armor = true,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 1.0, shape = "line", at = "self", length = 72, width = 11, hit = hit(0, 0, 0, 340, 420, 1.6, 150, 14), big = true },
+					{ t = 1.35, shape = "cone", at = "self", length = 38, angle = 110, hit = hit(0, 0, 0, 200, 220, 1.2, 70, 10) },
+					{ t = 1.65, shape = "circle", at = "front", dist = 34, radius = 15, hit = hit(0, 0, 0, 170, 160, 1.0, 50, 18) },
+				} } },
+			X = { id = "snaX", name = "천지개벽 · 각", desc = "각성 초 오의. 컷씬 동작 그대로 (그동안 무적): 팔을 여섯 번 휘두를 때마다 몸 둘레로 큰 물결이 터져 나간다 (점점 커진다). 무릎을 들어 땅을 찍는 순간 천지가 갈라져 둘레 48칸이 터지고, 바깥 70칸까지 충격이 퍼진다", pose = "sn_get", dur = 5.4, cd = 55, chi = 150, armor = true,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.75, shape = "circle", at = "self", radius = 22, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
+					{ t = 1.2, shape = "circle", at = "self", radius = 25, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
+					{ t = 1.65, shape = "circle", at = "self", radius = 28, hit = hit(0, 0, 0, 70, 70, 0.5, 20, 10) },
+					{ t = 2.1, shape = "circle", at = "self", radius = 31, hit = hit(0, 0, 0, 70, 70, 0.5, 20, 10) },
+					{ t = 2.55, shape = "circle", at = "self", radius = 34, hit = hit(0, 0, 0, 80, 80, 0.6, 20, 12) },
+					{ t = 3.0, shape = "circle", at = "self", radius = 37, hit = hit(0, 0, 0, 80, 80, 0.6, 20, 12) },
+					{ t = 4.3, shape = "circle", at = "self", radius = 48, hit = hit(0, 0, 0, 720, 760, 2.0, 80, 30), big = true },
+					{ t = 4.6, shape = "ring", at = "self", inner = 40, radius = 70, hit = hit(0, 0, 0, 280, 300, 1.2, 70, 20), big = true },
+				} } },
+		},
+	},
 	-- 신의 모습: 기술이 모두 바뀐다 (영역 없음, 날며 싸운다)
 	twilight = {
 		name = "신강림",
@@ -3151,7 +3186,7 @@ local actionCache: { [string]: any } = {}
 
 -- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G", "D", "A", "C"
 -- alt: 극 권법의 황혼 (일월극변) 동안이면 바뀐 기술을 돌려준다
-function Config.move(styleId: string, slot: any, alt: boolean?): any
+function Config.move(styleId: string, slot: any, alt: boolean?, awk: boolean?): any
 	local s = Config.STYLE_BY_ID[styleId]
 	if not s then
 		return nil
@@ -3175,7 +3210,8 @@ function Config.move(styleId: string, slot: any, alt: boolean?): any
 		end
 		return actionCache[key]
 	end
-	return tw and tw.skills[slot] or s.skills[slot]
+	-- 3.33판: 각성 (숙련 6 이상)하면 기술이 바뀐다 (s.awaken.skills). 신의 모습 (twilight)이 있으면 그쪽이 먼저
+	return tw and tw.skills[slot] or (awk and s.awaken and s.awaken.skills and s.awaken.skills[slot]) or s.skills[slot]
 end
 
 ------------------------------------------------------------------------
@@ -10125,6 +10161,7 @@ local function refreshFighter(player: Player)
 		f.maxHp = math.floor(f.maxHp * S)
 	end
 	f.model:SetAttribute("Rebirth", p.rebirth > 0 and p.rebirth or nil)
+	f.model:SetAttribute("Awk", (m >= Config.AWAKEN[1].lv) or nil) -- 각성 (기술이 바뀐다)
 	-- 3.12판 천상 빛깔 (지금 권법의 장신구) · 천상 오라
 	f.model:SetAttribute("SkyTint", (p.skyTint[p.style] and not p.skyTintOff) or nil)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
@@ -11337,7 +11374,8 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	local seq = math.floor(tonumber(seqArg) or 0)
 	-- 3.1판: 극 권법의 황혼 (일월극변) 동안이면 기술이 바뀐다
 	local twilight = (((f :: any).twilightUntil or 0) > os.clock()) and style.twilight ~= nil
-	local move = Config.move(p.style, slot, twilight)
+	local awk = p.style ~= "" and Calc.mastery(p, p.style).lv >= Config.AWAKEN[1].lv
+	local move = Config.move(p.style, slot, twilight, awk)
 	if not move then
 		return
 	end
@@ -22868,6 +22906,60 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, hit, move)
 			end
 		end)
+	elseif kind == "sinSeq" then
+		-- 3.33판 신 삼재권 각성: 때와 자리를 정한 타격의 연쇄. steps = { t(초), shape(circle · ring · line · cone), at(self · front · target), dash, dist, radius, inner, length, width, angle, hit }
+		local total = 0
+		for _, st in ipairs(m.steps) do
+			total = math.max(total, st.t)
+		end
+		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.4) / sp)
+		Push:FireAllClients("skillfx", { kind = "sinStart", m = f.model, dur = total / sp, style = style })
+		for _, st in ipairs(m.steps) do
+			after(st.t, function()
+				local base = f.root.Position
+				local fwd = flat(Combat.look(f))
+				if st.dash then
+					local np = base + fwd * st.dash
+					moveTo(f, CFrame.lookAt(np, np + fwd))
+					base = f.root.Position
+				end
+				local origin = base
+				if st.at == "front" then
+					origin = base + fwd * (st.dist or 8)
+				elseif st.at == "target" then
+					local near = nearestList(f, st.range or 30, 1)
+					origin = near[1] and near[1].root.Position or (base + fwd * 8)
+				end
+				local h = scaled(st.hit, sc)
+				local victims: { any } = {}
+				if st.shape == "line" then
+					victims = hostilesOnSeg(f, origin, origin + fwd * st.length, st.width)
+				elseif st.shape == "cone" then
+					local cosA = math.cos(math.rad((st.angle or 90) / 2))
+					for _, o in ipairs(hostilesNear(f, base, st.length)) do
+						if fwd:Dot(flat(o.root.Position - base)) >= cosA then
+							table.insert(victims, o)
+						end
+					end
+				elseif st.shape == "ring" then
+					for _, o in ipairs(hostilesNear(f, origin, st.radius)) do
+						local d = o.root.Position - origin
+						if Vector3.new(d.X, 0, d.Z).Magnitude >= (st.inner or 0) then
+							table.insert(victims, o)
+						end
+					end
+				else
+					victims = hostilesNear(f, origin, st.radius)
+				end
+				Push:FireAllClients("skillfx", { kind = "sinStep", shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
+				for _, o in ipairs(victims) do
+					if st.pull then
+						pullTo(o, origin, st.pull)
+					end
+					strike(f, o, h, move)
+				end
+			end)
+		end
 	elseif kind == "tsunami" then
 		-- 창해일소: 너비 width의 물의 벽이 앞으로 speed로 밀려간다. 벽 안의 적은 함께 끌려가며 계속 맞는다
 		local origin = f.root.Position
@@ -35296,7 +35388,7 @@ startMove = function(slot: any, charge: number?)
 		return
 	end
 	-- 3.1판: 극 권법의 황혼 동안은 바뀐 기술
-	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true)
+	local move = Config.move(style.id, slot, char:GetAttribute("Twilight") == true, char:GetAttribute("Awk") == true)
 	if not move then
 		return
 	end
@@ -36399,7 +36491,7 @@ function handlers.act(data: any)
 		else
 			SkillFx.cast(style.id, data.slot, m, data.dur)
 		end
-		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true)
+		local mv = Config.move(style.id, data.slot, m:GetAttribute("Twilight") == true, m:GetAttribute("Awk") == true)
 		for _, h in ipairs(mv and mv.hits or {}) do
 			task.delay(h.t * (data.dur / math.max(0.05, mv.dur)), function()
 				if m.Parent then
@@ -37475,7 +37567,7 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
-		local sk = Config.move(style.id, slot, twilightNow)
+		local sk = Config.move(style.id, slot, twilightNow, char:GetAttribute("Awk") == true)
 		if sk then
 			local left = (cds[slot] or 0) - now
 			local need = sk.chi or 100
@@ -65789,8 +65881,77 @@ local function impact(at: Vector3, R: number, power: number)
 	shake(0.8 + power)
 end
 
+-- 각성 기술 (sinSeq)의 한 타격: 모양마다 다르게 그린다 (원 · 바깥으로 퍼지는 고리 · 길게 꿰뚫는 줄 · 부채꼴)
+local function seqStep(d: any)
+	local at: Vector3 = d.at
+	local col = d.big and HUMAN or GOLD
+	local g0 = groundAt(at, nil)
+	local g = Vector3.new(at.X, g0.Y, at.Z)
+	if d.shape == "line" then
+		local dir: Vector3 = d.dir
+		local from: Vector3 = at - Vector3.new(0, 2.2, 0)
+		local len = d.length or 20
+		local w = d.width or 6
+		local mid = from + dir * (len / 2)
+		local beam = part(Vector3.new(len, w * 0.5, w * 0.5), col, Enum.Material.Neon, 0.15, "cyl")
+		beam.CFrame = CFrame.lookAt(mid + Vector3.new(0, 1.6, 0), mid + Vector3.new(0, 1.6, 0) + dir) * CFrame.Angles(0, math.rad(90), 0)
+		tween(beam, 0.35, { Size = Vector3.new(len, w * 1.3, w * 1.3) })
+		fadeOut(beam, 0.4)
+		for k = 0, 5 do
+			task.delay(k * 0.04, function()
+				Fx.ring(from + dir * (len * k / 5), k % 2 == 0 and GOLD or SKY, 3, w * 3, 0.4)
+			end)
+		end
+		Fx.breakSound("boom", 0.9, 0.7, from)
+		shake(d.big and 1.6 or 0.8)
+	elseif d.shape == "cone" then
+		local dir: Vector3 = d.dir
+		local from: Vector3 = (d.from :: Vector3) - Vector3.new(0, 2.2, 0)
+		local len = d.length or 30
+		local half = math.rad((d.angle or 90) / 2)
+		for k = -3, 3 do
+			local a = half * k / 3
+			local dd = (CFrame.Angles(0, a, 0) * CFrame.lookAt(Vector3.zero, dir)).LookVector
+			local mid = from + dd * (len / 2)
+			local sl = part(Vector3.new(len, 0.5, 0.5), k % 2 == 0 and GOLD or HUMAN, Enum.Material.Neon, 0.2, "cyl")
+			sl.CFrame = CFrame.lookAt(mid + Vector3.new(0, 1.5, 0), mid + Vector3.new(0, 1.5, 0) + dd) * CFrame.Angles(0, math.rad(90), 0)
+			tween(sl, 0.4, { Size = Vector3.new(len, 2.2, 2.2) })
+			fadeOut(sl, 0.45)
+		end
+		Fx.ring(from, GOLD, 3, len * 1.2, 0.5)
+		Fx.breakSound("whoosh", 1, 0.5, from)
+		shake(0.9)
+	elseif d.shape == "ring" then
+		local R = d.radius or 20
+		local inner = d.inner or 0
+		Fx.ring(g + Vector3.new(0, 0.3, 0), HUMAN, inner * 2, R * 2, 0.7)
+		task.delay(0.08, function()
+			Fx.ring(g + Vector3.new(0, 0.3, 0), col, inner * 2 + 2, R * 2 - 4, 0.8)
+		end)
+		Fx.debris(g, 10, R * 0.8)
+		Fx.breakSound("boom", 0.9, 0.55 + (R / 100), g)
+		shake(d.big and 2 or 1.1)
+	else
+		impact(at, math.clamp(d.radius or 10, 6, 30), d.big and 1.6 or 0.9)
+	end
+	if d.label then
+		Fx.text(at + Vector3.new(0, 6, 0), tostring(d.label), GOLD, 40, 0.8)
+	end
+end
+
 function Sin.extra(data: any)
 	local k = data.kind
+	if k == "sinStep" and typeof(data.at) == "Vector3" then
+		seqStep(data)
+		return
+	elseif k == "sinStart" and typeof(data.m) == "Instance" then
+		local r = rootOf(data.m)
+		if r then
+			Fx.afterimage(data.m :: Model, GOLD, 0.5)
+			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), SKY, 4, 24, 0.5)
+		end
+		return
+	end
 	if k == "grabSlam" and typeof(data.at) == "Vector3" then
 		impact(data.at, math.clamp(data.radius or 10, 6, 20), 0.9)
 	elseif k == "shock" and typeof(data.at) == "Vector3" then

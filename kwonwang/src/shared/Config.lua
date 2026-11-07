@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.32.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.33.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2572,6 +2572,41 @@ table.insert(Config.Styles, {
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
 	},
+	-- 각성 (숙련 6 이상): E · R · G · X가 모두 새 기술로 바뀐다. 하늘 · 땅 · 사람의 연속 타격 (장치 sinSeq: 때와 자리를 정한 타격의 연쇄)
+	awaken = {
+		skills = {
+			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고, 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "天" },
+					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "地" },
+					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "人" },
+				} } },
+			R = { id = "snaR", name = "지축 진동", desc = "각성. 땅을 찍으면 충격이 안에서 바깥으로 세 겹의 물결이 되어 퍼져 나간다. 마지막에 발밑이 크게 솟는다", pose = "sn_stomp", dur = 1.7, cd = 10, chi = 28,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.38, shape = "circle", at = "self", radius = 11, hit = hit(0, 0, 0, 64, 52, 0.5, 26, 8) },
+					{ t = 0.72, shape = "ring", at = "self", inner = 9, radius = 19, hit = hit(0, 0, 0, 84, 66, 0.6, 34, 10) },
+					{ t = 1.06, shape = "ring", at = "self", inner = 17, radius = 27, hit = hit(0, 0, 0, 104, 80, 0.7, 40, 12) },
+					{ t = 1.45, shape = "circle", at = "self", radius = 16, hit = hit(0, 0, 0, 170, 130, 1.2, 70, 28), big = true },
+				} } },
+			G = { id = "snaG", name = "천지인 일권", desc = "각성. 하늘·땅·사람의 기를 1초 모았다가 단 한 번 지른다. 주먹이 앞으로 길게 꿰뚫고 (무적), 뒤따르는 충격이 부채꼴로 퍼지고, 먼 땅이 터진다", pose = "one_punch", dur = 2.0, cd = 28, chi = 100, armor = true,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 1.0, shape = "line", at = "self", length = 72, width = 11, hit = hit(0, 0, 0, 340, 420, 1.6, 150, 14), big = true },
+					{ t = 1.35, shape = "cone", at = "self", length = 38, angle = 110, hit = hit(0, 0, 0, 200, 220, 1.2, 70, 10) },
+					{ t = 1.65, shape = "circle", at = "front", dist = 34, radius = 15, hit = hit(0, 0, 0, 170, 160, 1.0, 50, 18) },
+				} } },
+			X = { id = "snaX", name = "천지개벽 · 각", desc = "각성 초 오의. 컷씬 동작 그대로 (그동안 무적): 팔을 여섯 번 휘두를 때마다 몸 둘레로 큰 물결이 터져 나간다 (점점 커진다). 무릎을 들어 땅을 찍는 순간 천지가 갈라져 둘레 48칸이 터지고, 바깥 70칸까지 충격이 퍼진다", pose = "sn_get", dur = 5.4, cd = 55, chi = 150, armor = true,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.75, shape = "circle", at = "self", radius = 22, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
+					{ t = 1.2, shape = "circle", at = "self", radius = 25, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
+					{ t = 1.65, shape = "circle", at = "self", radius = 28, hit = hit(0, 0, 0, 70, 70, 0.5, 20, 10) },
+					{ t = 2.1, shape = "circle", at = "self", radius = 31, hit = hit(0, 0, 0, 70, 70, 0.5, 20, 10) },
+					{ t = 2.55, shape = "circle", at = "self", radius = 34, hit = hit(0, 0, 0, 80, 80, 0.6, 20, 12) },
+					{ t = 3.0, shape = "circle", at = "self", radius = 37, hit = hit(0, 0, 0, 80, 80, 0.6, 20, 12) },
+					{ t = 4.3, shape = "circle", at = "self", radius = 48, hit = hit(0, 0, 0, 720, 760, 2.0, 80, 30), big = true },
+					{ t = 4.6, shape = "ring", at = "self", inner = 40, radius = 70, hit = hit(0, 0, 0, 280, 300, 1.2, 70, 20), big = true },
+				} } },
+		},
+	},
 	-- 신의 모습: 기술이 모두 바뀐다 (영역 없음, 날며 싸운다)
 	twilight = {
 		name = "신강림",
@@ -3131,7 +3166,7 @@ local actionCache: { [string]: any } = {}
 
 -- 기술 하나 찾기 (서버·화면이 같은 표를 본다). slot = 1~4(연타), "H", "E", "R", "G", "D", "A", "C"
 -- alt: 극 권법의 황혼 (일월극변) 동안이면 바뀐 기술을 돌려준다
-function Config.move(styleId: string, slot: any, alt: boolean?): any
+function Config.move(styleId: string, slot: any, alt: boolean?, awk: boolean?): any
 	local s = Config.STYLE_BY_ID[styleId]
 	if not s then
 		return nil
@@ -3155,7 +3190,8 @@ function Config.move(styleId: string, slot: any, alt: boolean?): any
 		end
 		return actionCache[key]
 	end
-	return tw and tw.skills[slot] or s.skills[slot]
+	-- 3.33판: 각성 (숙련 6 이상)하면 기술이 바뀐다 (s.awaken.skills). 신의 모습 (twilight)이 있으면 그쪽이 먼저
+	return tw and tw.skills[slot] or (awk and s.awaken and s.awaken.skills and s.awaken.skills[slot]) or s.skills[slot]
 end
 
 ------------------------------------------------------------------------
