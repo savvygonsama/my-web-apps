@@ -6740,19 +6740,27 @@ if not BATTLE then
 		end
 		while true do
 			for _, sp in ipairs(spots) do
-				local e = sp.e
-				local f = e and e.f
-				local gone = not f or f.dead or not f.model.Parent or not f.root.Parent or f.root.Position.Y < sp.at.Y - 15 or (f.root.Position - sp.at).Magnitude > 120
-				if gone then
-					if f then
-						pcall(Npc.despawn, f)
-						for i = #Npc.list, 1, -1 do
-							if Npc.list[i] == e then
-								table.remove(Npc.list, i)
+				-- 3.27.10판: 한 자리에서 오류가 나도 관리자가 멈추지 않게 (멈추면 목인이 영영 안 돌아왔다)
+				local ok, err = pcall(function()
+					local e = sp.e
+					local f = e and e.f
+					local gone = not f or f.dead or not f.model.Parent or not f.root.Parent or f.root.Position.Y < sp.at.Y - 15 or (f.root.Position - sp.at).Magnitude > 120
+					if gone then
+						if f then
+							pcall(Npc.despawn, f)
+							for i = #Npc.list, 1, -1 do
+								if Npc.list[i] == e then
+									table.remove(Npc.list, i)
+								end
 							end
 						end
+						sp.e = nil
+						stand(sp)
 					end
-					stand(sp)
+				end)
+				if not ok then
+					warn("[권왕] 목인 관리 오류:", sp.typeId, err)
+					sp.e = nil
 				end
 			end
 			task.wait(2)
