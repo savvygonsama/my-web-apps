@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2571,6 +2571,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
+	},
 	-- 신의 모습: 기술이 모두 바뀐다 (영역 없음, 날며 싸운다)
 	twilight = {
 		name = "신강림",
@@ -2589,7 +2590,6 @@ table.insert(Config.Styles, {
 			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 둘레의 적 열을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌리다, 무릎을 들어 땅을 찍는 순간 모두를 내던져 떨어진 자리마다 천지가 갈라진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
 				mech = { kind = "grabThrow", mode = "spin", range = 44, angle = 360, n = 10, reel = 0.5, spin = 3.4, every = 0.16, orbit = 11, radius = 17, tick = hit(0, 0, 0, 44, 50, 0.3, 18), dist = 44, flight = 0.5, hit = hit(0, 0, 0, 560, 620, 1.6, 0, 0), splashRadius = 17, splash = hit(0, 0, 0, 300, 340, 1.2, 70, 28) } },
 		},
-	},
 	},
 })
 
