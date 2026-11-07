@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.24.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.25.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4031,7 +4031,7 @@ Config.Roads = {
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 베타 8: 적은 훨씬 질기고 (체력 ×2.2, 멀수록 더), 후반 적의 피해는 크게 줄였다 (오래 겨루는 싸움)
 Config.ENEMY_HP = 2.2
-Config.ENEMY_BOSS_HP = 0.54 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤). 2.7.1판: 모든 보스 체력 60% 줄임 (1.35 → 0.54)
+Config.ENEMY_BOSS_HP = 1.08 -- 3.25판: 0.54 → 1.08 (보스에 존재감이 없었다: 체력 ×2). 아래 BOSS_POWER_RATIO도 같이 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤). 2.7.1판: 모든 보스 체력 60% 줄임 (1.35 → 0.54)
 Config.ENEMY_HP_LEVEL = 0.35 -- 단계마다 체력 +35%
 Config.ENEMY_DMG_LEVEL = 0.12 -- 단계마다 피해 +12%
 Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 이만큼의 거듭제곱으로만 (×14 → ×4.9)
@@ -5135,7 +5135,9 @@ Config.PLAYER_HP_SHIFT = 1.2
 Config.LATE_BOSS_MAXK = 3 -- 3.23.6판: 후반 보스가 힘을 끌어올려도 제 원래 전투력의 이만큼까지만 (한참 센 사람에게는 여전히 약하다)
 Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에게 그 전투력의 이만큼까지 힘을 끌어올린다 (보상은 원래 몫)
 Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
-Config.BOSS_LEASH = 340 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
+Config.BOSS_LEASH = 480 -- 3.25판: 340 → 480 (보스의 영역을 넓혔다)
+Config.BOSS_PATTERN = { warn = 1.4, cd = 1.3, area = 1.3, length = 1.2, width = 1.25, hit = 1.1 }
+Config.BOSS_ZONE = { arena = 78, clear = 120 } -- 보스 마당 (바닥에 그려진다) 반지름 · 이 안쪽 +40칸에는 보통 적을 두지 않는다 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
 Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 그만둔다
 -- 흡혈 한도: 거대한 체력의 보스를 치면 한 대에 다 차던 것을 막는다
 Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
@@ -5147,7 +5149,7 @@ for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheon
 		b.late = true
 	end
 end
-Config.BOSS_SPEED = 0.85 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
+Config.BOSS_SPEED = 0.72 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
 Config.BOSS_PHASE_SPEED = 0.05 -- 단계마다 걸음이 빨라지는 양
 for id, k in pairs({ bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 6, cheonmun = 7 }) do
 	local b = Config.Bosses[id]
@@ -5332,7 +5334,7 @@ Config.ACH_COLOR = {
 -- 2.8판: 보스와 그 땅 졸병의 전투력 차이. 보스의 체력이 너무 커서 (졸병의 9~21배) 같은 땅의 보스가 딴 세상처럼 셌다.
 -- 이제 보스는 그 땅 졸병 (가운데) 전투력의 BOSS_POWER_RATIO배까지만 (넘으면 체력을 깎는다). 한 대는 졸병 한 대의 BOSS_HIT_RATIO배
 ------------------------------------------------------------------------
-Config.BOSS_POWER_RATIO = 4
+Config.BOSS_POWER_RATIO = 5.7 -- 3.25판: 4 → 5.7 (체력 ×2에 해당: 전투력은 체력의 제곱근에 비례)
 Config.BOSS_HIT_RATIO = 2 -- 보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
 -- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
 function Config.npcStats(def: any, at: Vector3, isBoss: boolean): (number, number, number)
@@ -5391,6 +5393,36 @@ do
 		local target = ep * Config.BOSS_POWER_RATIO
 		if bp > target then
 			b.hp = math.max(1, math.floor(b.hp * (target / bp) ^ 2))
+		end
+	end
+	-- 3.25판 보스 싸움: 패턴을 더 크고 느리게 (경고 시간 ×1.4 · 대기 ×1.3 · 범위 ×1.3 · 한 방 ×1.1). 여러 보스가 같은 패턴 표를 나눠 쓰니 한 번씩만
+	do
+		local seenPat: { [any]: boolean } = {}
+		local K = Config.BOSS_PATTERN
+		for _, b in pairs(Config.Bosses) do
+			for _, pt in ipairs(b.patterns or {}) do
+				if not seenPat[pt] then
+					seenPat[pt] = true
+					pt.warn = (pt.warn or 1) * K.warn
+					pt.cd = (pt.cd or 7) * K.cd
+					for _, key in ipairs({ "radius", "inner", "outer" }) do
+						if pt[key] then
+							pt[key] = pt[key] * K.area
+						end
+					end
+					if pt.length then
+						pt.length = pt.length * K.length
+					end
+					if pt.width then
+						pt.width = pt.width * K.width
+					end
+					if pt.hit then
+						pt.hit = table.clone(pt.hit)
+						pt.hit.dmg = (pt.hit.dmg or 0) * K.hit
+						pt.hit.posture = (pt.hit.posture or 0) * K.hit
+					end
+				end
+			end
 		end
 	end
 	for _, r in ipairs(Config.Regions) do

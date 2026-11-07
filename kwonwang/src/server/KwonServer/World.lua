@@ -6860,6 +6860,54 @@ local function hellWorld(out: any)
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.25판 보스 마당: 보스가 선 자리마다 바닥에 큰 마당을 그린다 (어둡게 깔린 돌판, 붉은 테두리, 네 귀퉁이 기둥과 불).
+-- 보통 적은 이 둘레에 두지 않으니, 마당에 들어서는 순간 보스의 영역임을 알 수 있다
+------------------------------------------------------------------------
+local function bossArenas(_out: any)
+	local f = Instance.new("Folder")
+	f.Name = "BossArenas"
+	f.Parent = folder
+	local Z = Config.BOSS_ZONE
+	local R = Z.arena
+	local spots: { Vector3 } = {}
+	for _, r in ipairs(Config.Regions) do
+		if r.boss then
+			table.insert(spots, r.boss.at)
+		end
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		if isl.boss then
+			table.insert(spots, isl.boss.at)
+		end
+	end
+	for _, zz in ipairs(Config.HELL.zones or {}) do
+		if zz.boss then
+			table.insert(spots, zz.boss.at)
+		end
+	end
+	for _, at in ipairs(spots) do
+		local c = Vector3.new(at.X, at.Y + 0.3, at.Z)
+		local floor = part({ Name = "BossFloor", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, R * 2, R * 2), CFrame = CFrame.new(c) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(46, 36, 40), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		floor.Transparency = 0.12
+		local rune = part({ Name = "BossRune", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, R * 1.1, R * 1.1), CFrame = CFrame.new(c + Vector3.new(0, 0.08, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(170, 40, 36), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		rune.Transparency = 0.82
+		local n = 16
+		for k = 0, n - 1 do
+			local a = k / n * math.pi * 2
+			local p = c + Vector3.new(math.cos(a) * R, 0.2, math.sin(a) * R)
+			part({ Name = "BossRim", Size = Vector3.new(2 * math.pi * R / n + 0.4, 0.7, 1.6), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Color = Color3.fromRGB(120, 30, 30), Material = Enum.Material.Basalt, CanCollide = false, Parent = f })
+		end
+		for k = 0, 3 do
+			local a = k / 4 * math.pi * 2 + math.pi / 4
+			local p = c + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
+			part({ Name = "BossPillar", Size = Vector3.new(3.4, 15, 3.4), Position = p + Vector3.new(0, 7.5, 0), Color = Color3.fromRGB(58, 48, 54), Material = Enum.Material.Granite, Parent = f })
+			local flame = part({ Name = "BossFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 4.4, 3.4), Position = p + Vector3.new(0, 17, 0), Color = Color3.fromRGB(255, 90, 50), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+			light(flame, Color3.fromRGB(255, 110, 60), 28, 1.1)
+		end
+	end
+end
+
 local arenas: { [number]: Vector3 } = {}
 function World.towerArena(slot: number): Vector3
 	local T = Config.TOWER
@@ -7383,6 +7431,9 @@ function World.build(): any
 		end },
 		{ "지옥", function()
 			hellWorld(out)
+		end },
+		{ "보스 마당", function()
+			bossArenas(out)
 		end },
 		{ "빈칸", nullSpot },
 		{ "권법 시험장", function()

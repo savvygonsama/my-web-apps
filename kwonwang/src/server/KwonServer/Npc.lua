@@ -269,6 +269,8 @@ end
 ------------------------------------------------------------------------
 -- 나타나기
 ------------------------------------------------------------------------
+-- 3.25판: 보스가 서는 자리들 (보통 적을 이 둘레에서 비켜 놓는다)
+Npc.bossHomes = {} :: { Vector3 }
 function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string): Enemy?
 	local def = isBoss and Config.Bosses[typeId] or Config.Enemies[typeId]
 	if not def then
@@ -297,6 +299,25 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 			end
 			if gap >= 13 then
 				break
+			end
+		end
+	end
+	-- 3.25판: 보스 마당 둘레 (clear 칸) 안쪽에는 보통 적을 두지 않는다 — 보스는 따로 서 있게
+	if not isBoss then
+		local Z = Config.BOSS_ZONE
+		for _, bh in ipairs(Npc.bossHomes) do
+			local dx, dz = pos.X - bh.X, pos.Z - bh.Z
+			local d = math.sqrt(dx * dx + dz * dz)
+			if math.abs(pos.Y - bh.Y) < 120 and d < Z.clear then
+				local ux, uz = 1, 0
+				if d > 1 then
+					ux, uz = dx / d, dz / d
+				else
+					local a = math.random() * math.pi * 2
+					ux, uz = math.cos(a), math.sin(a)
+				end
+				local want = Z.clear + math.random(0, 30)
+				pos = Vector3.new(bh.X + ux * want, pos.Y, bh.Z + uz * want)
 			end
 		end
 	end
@@ -367,6 +388,22 @@ end
 
 -- 지역마다 적과 보스를 놓는다
 function Npc.populate()
+	-- 보스 자리를 먼저 모은다
+	for _, region in ipairs(Config.Regions) do
+		if region.boss then
+			table.insert(Npc.bossHomes, region.boss.at)
+		end
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		if isl.boss then
+			table.insert(Npc.bossHomes, isl.boss.at)
+		end
+	end
+	for _, z in ipairs(Config.HELL.zones or {}) do
+		if z.boss then
+			table.insert(Npc.bossHomes, z.boss.at)
+		end
+	end
 	for _, region in ipairs(Config.Regions) do
 		for _, camp in ipairs(region.camps or {}) do
 			for _ = 1, camp.count do
