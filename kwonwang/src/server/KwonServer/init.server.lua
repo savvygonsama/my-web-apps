@@ -4458,7 +4458,27 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		end
 	elseif action == "testDummy" then
 		if f then
-			Npc.spawn("dummy", false, f.root.Position + Combat.look(f) * 12, "test")
+			-- 3.27.7판: 앞에 목인 셋을 땅 위에 나란히 세운다 (예전엔 한 개, 허공이면 떨어졌다)
+			local look = Combat.look(f)
+			local right = Vector3.new(-look.Z, 0, look.X)
+			local rp = RaycastParams.new()
+			rp.FilterType = Enum.RaycastFilterType.Exclude
+			rp.FilterDescendantsInstances = { f.model }
+			local made = 0
+			for _, off in ipairs({ -8, 0, 8 }) do
+				local at = f.root.Position + look * 12 + right * off
+				local hit = workspace:Raycast(at + Vector3.new(0, 6, 0), Vector3.new(0, -60, 0), rp)
+				if hit then
+					at = hit.Position
+				else
+					at = Vector3.new(at.X, f.root.Position.Y - 3, at.Z)
+				end
+				local ok, e = pcall(Npc.spawn, "dummy", false, at + Vector3.new(0, 3, 0), "test")
+				if ok and e then
+					made += 1
+				end
+			end
+			toast(player, made > 0 and ("🪵 목인 " .. made .. "개를 세웠어요") or "목인을 세우지 못했어요")
 		end
 	elseif action == "testClear" then
 		-- 테스트로 부른 적·목인을 모두 치운다
@@ -6734,7 +6754,7 @@ if not BATTLE then
 					stand(sp)
 				end
 			end
-			task.wait(5)
+			task.wait(2)
 		end
 	end)
 end
