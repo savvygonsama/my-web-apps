@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5472,6 +5472,12 @@ do
 		local target = ep * Config.BOSS_POWER_RATIO
 		if bp > target then
 			b.hp = math.max(1, math.floor(b.hp * (target / bp) ^ 2))
+		end
+	end
+	-- 3.31.5판: 보스가 너무 커서 가까이서 보면 몸이 큰 검은 상자 덩어리로 보였다 (사람이 아닌 것처럼). 보스 몸집을 3.4배까지로 줄인다 (사람 모양으로 읽히는 크기)
+	for _, b in pairs(Config.Bosses) do
+		if (b.scale or 1) > 3.4 then
+			b.scale = 3.4
 		end
 	end
 	-- 3.25판 보스 싸움: 패턴을 더 크고 느리게 (경고 시간 ×1.4 · 대기 ×1.3 · 범위 ×1.3 · 한 방 ×1.1). 여러 보스가 같은 패턴 표를 나눠 쓰니 한 번씩만

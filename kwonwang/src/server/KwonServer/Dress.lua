@@ -1935,6 +1935,10 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 	-- 3.23.8판: 장식의 크기 배율은 키와 몸통 폭의 기하평균 (큰 몸은 폭을 덜 키우는데 (3.20.3판) 키만 따르면 갓·어깨받이·망토가 몸보다 터무니없이 커졌다)
 	local utz = sizeOf(model, "UpperTorso")
 	local K = math.sqrt((utz.Y / 1.6) * math.max(0.3, utz.X / 2))
+	-- 3.31.5판: 큰 몸일수록 장식을 덜 키운다 (갓 · 어깨받이 · 망토가 몸보다 커져 덩어리로 보였다)
+	if K > 1.5 then
+		K = 1.5 + (K - 1.5) * 0.45
+	end
 	local P = {
 		top = look.top or (def and def.shirt) or C3(110, 90, 70),
 		bottom = look.bottom or (def and def.pants) or C3(60, 50, 40),
@@ -1956,14 +1960,17 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		face(model, look)
 		outfit(model, look, P, K)
 	end
-	local hx = HELLX[typeId]
+	-- 3.31.5판: 지옥 몹의 몸 표식 (뿔 · 사슬 · 불꽃 따위)은 모습이 덩어리져 보여 뺀다 (지옥 몹도 옷 · 머리 · 얼굴만 입는다)
+	local hx = nil
 	if hx and not isBoss then
 		local ok, err = pcall(hx, model, look, K)
 		if not ok then
 			warn("[권왕] 지옥 몸 표식 오류:", typeId, err)
 		end
 	end
-	if isBoss and not bossBody then
+	-- 지옥 보스 여덟의 서명 장식 · 망토도 뺀다 (형체가 또렷하도록 몸 + 옷 + 얼굴만)
+	local PLAIN_BOSS: { [string]: boolean } = { talui = true, hwatang = true, dosan = true, agwiwang = true, yeomra = true, dokssawang = true, balseolwang = true, mugunwang = true }
+	if isBoss and not bossBody and not PLAIN_BOSS[typeId] then
 		local sig = SIG[typeId]
 		if sig then
 			local ok, err = pcall(sig, model, look, K, P)
