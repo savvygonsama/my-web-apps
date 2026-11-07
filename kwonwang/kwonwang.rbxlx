@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.24.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.24.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -68,7 +68,7 @@ Config.DASH_SPEED_MAX = 1.7
 -- 강타(Z)는 쉬지 않고 연달아 쓸 수 없다
 Config.HEAVY_CD = 1.4
 -- 오의(G)는 모두 이만큼 더 세다
-Config.ULT_MULT = 1.4
+Config.ULT_MULT = 1.0 -- 3.24.2판: 1.4 → 1.0 (오의 피해가 너무 높았다: 한 방이 연타 수십 대와 맞먹었다)
 -- 사람이 받는 균형 피해 비율 (쉽게 무너지지 않게)
 Config.PLAYER_POSTURE_TAKEN = 0.6
 Config.DASH_TIME = 0.18
@@ -1666,8 +1666,8 @@ end
 -- 깨달음 한 번에 오르는 피해 (예전 등급 두 칸과 비슷하게). 신화는 예전처럼 한 칸만, 태초 이상과 초·극은 오르지 않는다
 local BREAK_BONUS = { ["상급"] = { 0.13, 0.26 }, ["전설"] = { 0.13, 0.26 }, ["신화"] = { 0.17, 0.17 } }
 -- 3.24판: 후반 권법이 지나치게 셌다. 권법 등급 배율은 공격에 g^0.55, 체력에 g^0.15만 (예전엔 공격에 g^1 전부) — 극 ×3.8 → 전투력 ×1.95에서 ×1.6
-Config.GRADE_DMG_EXP = 0.55
-Config.GRADE_HP_EXP = 0.15
+Config.GRADE_DMG_EXP = 1 -- 3.24.2판: 원인은 권법 등급이 아니라 오의였다. 되돌린다
+Config.GRADE_HP_EXP = 0
 function Config.gradeDmg(style: any, up: number?): number
 	return Config.gradeMult(style, up) ^ Config.GRADE_DMG_EXP
 end
@@ -3034,7 +3034,7 @@ Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 Config.PETAL_KEEP = 6
 Config.PETAL_KEEP_FULL = 15
 Config.PETAL_DRAIN = 3
-Config.SUPER_ULT_MULT = 1.6
+Config.SUPER_ULT_MULT = 1.25 -- 3.24.2판: 1.6 → 1.25 (초 오의: 예전 ×2.24 → ×1.25)
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
 -- D = 대시 직후 클릭 (돌진 일격), A = 공중에서 클릭 (낙하격), C = 흘리기 직후 클릭 (반격)
