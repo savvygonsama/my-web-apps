@@ -201,8 +201,12 @@ end
 
 -- 사람 몸 하나 (로블록스 기본 몸, 안 되면 직접 짠 몸)
 -- build = { h = 키, w = 품, head = 머리 } 배율 (적마다 체격이 다르다. 머리를 조금 작게 해 어른 몸으로)
-local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number, build: any?): Model
+local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number, build: any?, direct: boolean?): Model
 	local bd = build or {}
+	-- 3.31.7판: 보스는 늘 직접 짠 몸으로 (기본 몸을 크게 키우면 팔·몸통이 굵은 상자 덩어리로 보였다. 직접 짠 몸은 체격을 정확히 정한다)
+	if direct then
+		return manualRig(colors, s, bd)
+	end
 	local ok, model = pcall(function()
 		local desc = Instance.new("HumanoidDescription")
 		desc.HeadColor = colors.head
@@ -243,7 +247,7 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 	local s = def.scale or 1
 	local look = lookOf(typeId or "", isBoss)
 	local skin = look.skin or SKIN_TONES[math.random(#SKIN_TONES)]
-	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 })
+	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 }, isBoss and s > 1.6)
 	model.Name = label
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if hum then
