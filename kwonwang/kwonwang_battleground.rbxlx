@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -12233,6 +12233,7 @@ function Geuk.trigger(f: any, st: any)
 		if f.hum then
 			f.hum.HipHeight = base + GF.lift
 		end
+		f.model:SetAttribute("Float", true)
 		Push:FireAllClients("sinForm", { m = f.model, name = name, cut = G.cut })
 		task.spawn(function()
 			while f.twilightUntil == token and not f.dead and f.model.Parent do
@@ -12247,6 +12248,7 @@ function Geuk.trigger(f: any, st: any)
 			end
 			if f.model.Parent then
 				f.model:SetAttribute("Twilight", nil)
+				f.model:SetAttribute("Float", nil)
 			end
 		end)
 		return
@@ -27447,8 +27449,14 @@ local function roads()
 				local y = -0.08 + k * 0.02
 				local mid = (a + b) / 2 + Vector3.new(0, y, 0)
 				local cf = CFrame.lookAt(mid, mid + (b - a))
-				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len + 22), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
-				part({ Name = "Road", Size = Vector3.new(14, 1, len + 14), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				-- 3.31.1판: 조각 끝을 늘이지 않고 (늘이면 모퉁이마다 네모 귀가 겹쳐 튀어나왔다), 꼭짓점마다 둥근 이음을 둔다
+				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+				part({ Name = "Road", Size = Vector3.new(14, 1, len), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				for _, v in ipairs({ a, b }) do
+					local jp = Vector3.new(v.X, y, v.Z)
+					part({ Name = "RoadJointEdge", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 22, 22), CFrame = CFrame.new(jp) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+					part({ Name = "RoadJoint", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 14, 14), CFrame = CFrame.new(jp + Vector3.new(0, 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				end
 			end
 		end
 	end
@@ -38185,6 +38193,35 @@ local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
 -- 카메라에서 LOD_NEAR 안: 매 장면 · LOD_FAR 안: 세 장면에 한 번 · 그 너머: 멈춘 채 (보이지도 않을 만큼 작다)
 -- 내 몸과 기술을 쓰는 중인 몸은 늘 매 장면
 local LOD_NEAR, LOD_FAR = 120, 280
+-- 3.31.1판 신의 모습: 공중에 떠서 날아다니는 자세. 가만히 있으면 두 팔을 벌려 내려놓고 다리를 모아 천천히 떠돌고,
+-- 움직이면 몸을 앞으로 눕히고 팔을 뒤로 젖히며 다리를 뒤로 끌며 난다
+local function floatJ(name: string, t: number, mw: number, side: number): { number }
+	local sw = math.sin(t * 1.8)
+	local sw2 = math.sin(t * 1.8 + 1.2)
+	if name == "R" then
+		return { -26 * mw + sw * 2, 0, side * -10 * mw, 0, sw * 0.18, 0 }
+	elseif name == "W" then
+		return { -8 * mw + sw2 * 2, 0, 0 }
+	elseif name == "N" then
+		return { 14 * mw + sw2 * 2, 0, 0 }
+	elseif name == "RS" then
+		return { 18 - 78 * mw + sw2 * 4, 0, 38 - 22 * mw + sw * 3 }
+	elseif name == "LS" then
+		return { 18 - 78 * mw + sw * 4, 0, -38 + 22 * mw - sw2 * 3 }
+	elseif name == "RE" or name == "LE" then
+		return { 20 + 14 * mw, 0, 0 }
+	elseif name == "RH" then
+		return { -14 - 26 * mw + sw * 3, 0, 4 }
+	elseif name == "LH" then
+		return { -6 - 30 * mw + sw2 * 3, 0, -4 }
+	elseif name == "RK" then
+		return { -30 - 22 * mw + sw2 * 4, 0, 0 }
+	elseif name == "LK" then
+		return { -42 - 18 * mw + sw * 4, 0, 0 }
+	end
+	return { 0, 0, 0 }
+end
+
 local function step(dt0: number)
 	local t = os.clock()
 	local cam = workspace.CurrentCamera
@@ -38340,6 +38377,10 @@ local function step(dt0: number)
 			swN = math.sin(wt * 1.5 - 0.9)
 			wob = (1 - (actPose and actW or 0)) * (1 - 0.35 * rec.moveW) * (1 - rec.airW)
 		end
+		local fr = rec :: any
+		local fTarget = (model:GetAttribute("Float") == true and not dead and not ride) and 1 or 0
+		fr.floatW = (fr.floatW or 0) + (fTarget - (fr.floatW or 0)) * math.min(1, dt * 6)
+		fr.floatM = (fr.floatM or 0) + (math.clamp(flatSpeed / 18, 0, 1) - (fr.floatM or 0)) * math.min(1, dt * 5)
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
 			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
@@ -38390,6 +38431,10 @@ local function step(dt0: number)
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))
+			end
+			if fr.floatW > 0.01 then
+				local fj = floatJ(name, t, fr.floatM, 1)
+				out = out:Lerp(toCF(name, fj), fr.floatW)
 			end
 			if rec.guardW > 0.01 and blockPose and (Poses.UPPER[name] or (name == "R" and not moving)) then
 				out = out:Lerp(toCF(name, blockPose[name]), rec.guardW)
@@ -49882,8 +49927,8 @@ function Fx.mech(data: any)
 	elseif kind == "telegraph" or kind == "mark" then
 		-- 바닥의 원이 가운데부터 차오른다: 다 차면 떨어진다
 		local at, r, time = data.at, data.radius, data.time or 1
-		local rim = groundDisc(at, r, kind == "telegraph" and c or c2, 0.25, 0.3)
-		local fill = groundDisc(at, 0.5, c, 0.55, 0.25)
+		local rim = groundDisc(at, r, kind == "telegraph" and c or c2, 0.72, 0.3)
+		local fill = groundDisc(at, 0.5, c, 0.8, 0.25)
 		tween(fill, time, { Size = Vector3.new(0.25, r * 2, r * 2) }, Enum.EasingStyle.Linear)
 		fadeAfter(rim, time, 0.15)
 		fadeAfter(fill, time, 0.15)
@@ -49893,9 +49938,9 @@ function Fx.mech(data: any)
 		local mid = (from + to) / 2
 		local len = (to - from).Magnitude
 		local cf = CFrame.lookAt(Vector3.new(mid.X, from.Y - 2.35, mid.Z), Vector3.new(to.X, from.Y - 2.35, to.Z))
-		local rim = piece(Vector3.new(w, 0.25, len), c, Enum.Material.Neon, nil, 0.6)
+		local rim = piece(Vector3.new(w, 0.25, len), c, Enum.Material.Neon, nil, 0.82)
 		rim.CFrame = cf
-		local fill = piece(Vector3.new(w, 0.3, 0.5), c, Enum.Material.Neon, nil, 0.35)
+		local fill = piece(Vector3.new(w, 0.3, 0.5), c, Enum.Material.Neon, nil, 0.68)
 		fill.CFrame = cf * CFrame.new(0, 0, len / 2)
 		tween(fill, time, { Size = Vector3.new(w, 0.3, len), CFrame = cf }, Enum.EasingStyle.Linear)
 		fadeAfter(rim, time, 0.15)
@@ -49903,10 +49948,10 @@ function Fx.mech(data: any)
 	elseif kind == "donut" then
 		-- 보스에서 떨어진 고리: 안쪽은 안전 (보스 품으로 파고들어라)
 		local at, r0, r1, time = data.at, data.inner, data.outer, data.time or 1
-		local outer = groundDisc(at, r1, c, 0.55, 0.25)
-		local safe = groundDisc(at, r0, Color3.fromRGB(120, 255, 160), 0.5, 0.3)
-		local fill = groundDisc(at, r1, c, 0.8, 0.28)
-		tween(fill, time, { Transparency = 0.3 }, Enum.EasingStyle.Linear)
+		local outer = groundDisc(at, r1, c, 0.8, 0.25)
+		local safe = groundDisc(at, r0, Color3.fromRGB(120, 255, 160), 0.7, 0.3)
+		local fill = groundDisc(at, r1, c, 0.9, 0.28)
+		tween(fill, time, { Transparency = 0.62 }, Enum.EasingStyle.Linear)
 		fadeAfter(outer, time, 0.15)
 		fadeAfter(safe, time, 0.15)
 		fadeAfter(fill, time, 0.15)

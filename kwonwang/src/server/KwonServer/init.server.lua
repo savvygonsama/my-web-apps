@@ -3367,6 +3367,7 @@ function Geuk.trigger(f: any, st: any)
 		if f.hum then
 			f.hum.HipHeight = base + GF.lift
 		end
+		f.model:SetAttribute("Float", true)
 		Push:FireAllClients("sinForm", { m = f.model, name = name, cut = G.cut })
 		task.spawn(function()
 			while f.twilightUntil == token and not f.dead and f.model.Parent do
@@ -3381,6 +3382,7 @@ function Geuk.trigger(f: any, st: any)
 			end
 			if f.model.Parent then
 				f.model:SetAttribute("Twilight", nil)
+				f.model:SetAttribute("Float", nil)
 			end
 		end)
 		return

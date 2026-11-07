@@ -443,6 +443,35 @@ local IDLE_WEAPON = { { "idle_weapon", 1.6 }, { "idle_look", 1.6 } }
 -- 카메라에서 LOD_NEAR 안: 매 장면 · LOD_FAR 안: 세 장면에 한 번 · 그 너머: 멈춘 채 (보이지도 않을 만큼 작다)
 -- 내 몸과 기술을 쓰는 중인 몸은 늘 매 장면
 local LOD_NEAR, LOD_FAR = 120, 280
+-- 3.31.1판 신의 모습: 공중에 떠서 날아다니는 자세. 가만히 있으면 두 팔을 벌려 내려놓고 다리를 모아 천천히 떠돌고,
+-- 움직이면 몸을 앞으로 눕히고 팔을 뒤로 젖히며 다리를 뒤로 끌며 난다
+local function floatJ(name: string, t: number, mw: number, side: number): { number }
+	local sw = math.sin(t * 1.8)
+	local sw2 = math.sin(t * 1.8 + 1.2)
+	if name == "R" then
+		return { -26 * mw + sw * 2, 0, side * -10 * mw, 0, sw * 0.18, 0 }
+	elseif name == "W" then
+		return { -8 * mw + sw2 * 2, 0, 0 }
+	elseif name == "N" then
+		return { 14 * mw + sw2 * 2, 0, 0 }
+	elseif name == "RS" then
+		return { 18 - 78 * mw + sw2 * 4, 0, 38 - 22 * mw + sw * 3 }
+	elseif name == "LS" then
+		return { 18 - 78 * mw + sw * 4, 0, -38 + 22 * mw - sw2 * 3 }
+	elseif name == "RE" or name == "LE" then
+		return { 20 + 14 * mw, 0, 0 }
+	elseif name == "RH" then
+		return { -14 - 26 * mw + sw * 3, 0, 4 }
+	elseif name == "LH" then
+		return { -6 - 30 * mw + sw2 * 3, 0, -4 }
+	elseif name == "RK" then
+		return { -30 - 22 * mw + sw2 * 4, 0, 0 }
+	elseif name == "LK" then
+		return { -42 - 18 * mw + sw * 4, 0, 0 }
+	end
+	return { 0, 0, 0 }
+end
+
 local function step(dt0: number)
 	local t = os.clock()
 	local cam = workspace.CurrentCamera
@@ -598,6 +627,10 @@ local function step(dt0: number)
 			swN = math.sin(wt * 1.5 - 0.9)
 			wob = (1 - (actPose and actW or 0)) * (1 - 0.35 * rec.moveW) * (1 - rec.airW)
 		end
+		local fr = rec :: any
+		local fTarget = (model:GetAttribute("Float") == true and not dead and not ride) and 1 or 0
+		fr.floatW = (fr.floatW or 0) + (fTarget - (fr.floatW or 0)) * math.min(1, dt * 6)
+		fr.floatM = (fr.floatM or 0) + (math.clamp(flatSpeed / 18, 0, 1) - (fr.floatM or 0)) * math.min(1, dt * 5)
 		for name, motor in pairs(motors) do
 			-- 기본 몸놀림 층: 가만히 → 걷기 → 공중
 			local out = toCF(name, IDLE[name] or (name == "R" and ZERO6 or ZERO3))
@@ -648,6 +681,10 @@ local function step(dt0: number)
 			end
 			if rec.sprintW > 0.01 and sprintJ and sprintJ[name] and (Poses.UPPER[name] or name == "R") then
 				out = out:Lerp(toCF(name, sprintJ[name]), rec.sprintW * (name == "R" and 0.6 or 1))
+			end
+			if fr.floatW > 0.01 then
+				local fj = floatJ(name, t, fr.floatM, 1)
+				out = out:Lerp(toCF(name, fj), fr.floatW)
 			end
 			if rec.guardW > 0.01 and blockPose and (Poses.UPPER[name] or (name == "R" and not moving)) then
 				out = out:Lerp(toCF(name, blockPose[name]), rec.guardW)

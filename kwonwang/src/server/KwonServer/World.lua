@@ -519,8 +519,14 @@ local function roads()
 				local y = -0.08 + k * 0.02
 				local mid = (a + b) / 2 + Vector3.new(0, y, 0)
 				local cf = CFrame.lookAt(mid, mid + (b - a))
-				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len + 22), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
-				part({ Name = "Road", Size = Vector3.new(14, 1, len + 14), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				-- 3.31.1판: 조각 끝을 늘이지 않고 (늘이면 모퉁이마다 네모 귀가 겹쳐 튀어나왔다), 꼭짓점마다 둥근 이음을 둔다
+				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+				part({ Name = "Road", Size = Vector3.new(14, 1, len), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				for _, v in ipairs({ a, b }) do
+					local jp = Vector3.new(v.X, y, v.Z)
+					part({ Name = "RoadJointEdge", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 22, 22), CFrame = CFrame.new(jp) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+					part({ Name = "RoadJoint", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 14, 14), CFrame = CFrame.new(jp + Vector3.new(0, 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				end
 			end
 		end
 	end

@@ -2399,8 +2399,8 @@ function Fx.mech(data: any)
 	elseif kind == "telegraph" or kind == "mark" then
 		-- 바닥의 원이 가운데부터 차오른다: 다 차면 떨어진다
 		local at, r, time = data.at, data.radius, data.time or 1
-		local rim = groundDisc(at, r, kind == "telegraph" and c or c2, 0.25, 0.3)
-		local fill = groundDisc(at, 0.5, c, 0.55, 0.25)
+		local rim = groundDisc(at, r, kind == "telegraph" and c or c2, 0.72, 0.3)
+		local fill = groundDisc(at, 0.5, c, 0.8, 0.25)
 		tween(fill, time, { Size = Vector3.new(0.25, r * 2, r * 2) }, Enum.EasingStyle.Linear)
 		fadeAfter(rim, time, 0.15)
 		fadeAfter(fill, time, 0.15)
@@ -2410,9 +2410,9 @@ function Fx.mech(data: any)
 		local mid = (from + to) / 2
 		local len = (to - from).Magnitude
 		local cf = CFrame.lookAt(Vector3.new(mid.X, from.Y - 2.35, mid.Z), Vector3.new(to.X, from.Y - 2.35, to.Z))
-		local rim = piece(Vector3.new(w, 0.25, len), c, Enum.Material.Neon, nil, 0.6)
+		local rim = piece(Vector3.new(w, 0.25, len), c, Enum.Material.Neon, nil, 0.82)
 		rim.CFrame = cf
-		local fill = piece(Vector3.new(w, 0.3, 0.5), c, Enum.Material.Neon, nil, 0.35)
+		local fill = piece(Vector3.new(w, 0.3, 0.5), c, Enum.Material.Neon, nil, 0.68)
 		fill.CFrame = cf * CFrame.new(0, 0, len / 2)
 		tween(fill, time, { Size = Vector3.new(w, 0.3, len), CFrame = cf }, Enum.EasingStyle.Linear)
 		fadeAfter(rim, time, 0.15)
@@ -2420,10 +2420,10 @@ function Fx.mech(data: any)
 	elseif kind == "donut" then
 		-- 보스에서 떨어진 고리: 안쪽은 안전 (보스 품으로 파고들어라)
 		local at, r0, r1, time = data.at, data.inner, data.outer, data.time or 1
-		local outer = groundDisc(at, r1, c, 0.55, 0.25)
-		local safe = groundDisc(at, r0, Color3.fromRGB(120, 255, 160), 0.5, 0.3)
-		local fill = groundDisc(at, r1, c, 0.8, 0.28)
-		tween(fill, time, { Transparency = 0.3 }, Enum.EasingStyle.Linear)
+		local outer = groundDisc(at, r1, c, 0.8, 0.25)
+		local safe = groundDisc(at, r0, Color3.fromRGB(120, 255, 160), 0.7, 0.3)
+		local fill = groundDisc(at, r1, c, 0.9, 0.28)
+		tween(fill, time, { Transparency = 0.62 }, Enum.EasingStyle.Linear)
 		fadeAfter(outer, time, 0.15)
 		fadeAfter(safe, time, 0.15)
 		fadeAfter(fill, time, 0.15)
