@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.24.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.24.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -287,6 +287,22 @@ local GAIN_TABLE: { { number } } = {
 -- 그 경지 적의 전투력 (경지 번호로 위 표를 읽는다)
 function Config.realmRefPower(idx: number): number
 	return GAIN_TABLE[math.clamp(idx, 1, #GAIN_TABLE)][1]
+end
+-- 3.24.3판 적 밸런스: 내 쪽을 바꾼 만큼 (경지의 공격 지수 ↓ · 체력 지수 ↑, 체력 쪽 이동 ×1.2) 적도 따라간다.
+-- 내 공격이 줄었으니 적 체력도 그만큼, 내 체력이 늘었으니 적 피해도 그만큼 (곱은 같아 전투력 숫자는 그대로, 싸움 길이도 그대로)
+function Config.enemyShift(power: number): (number, number)
+	local idx = 1
+	for i = 1, #GAIN_TABLE do
+		if power >= GAIN_TABLE[i][1] then
+			idx = i
+		end
+	end
+	local P1 = Config.realmPower(math.min(idx, 16))
+	local P2 = Config.realmPower(idx)
+	local S = Config.PLAYER_HP_SHIFT or 1
+	local fd = (P1 ^ Config.REALM_DMG_EXP / P1) / S
+	local fh = (P2 ^ Config.REALM_HP_EXP / P2 ^ 0.75) * S
+	return math.clamp(fd, 0.3, 1), math.clamp(fh, 1, 4)
 end
 function Config.killGain(power: number): number
 	local p = math.max(1, power)

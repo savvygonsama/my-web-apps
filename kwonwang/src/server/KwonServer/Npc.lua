@@ -323,6 +323,14 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		style = def.style or "",
 		dmgMult = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and (def.late and Config.LATE_BOSS_DMG or Config.BOSS_DMG) or 1) * (def.dmgScale or 1),
 	})
+	-- 3.24.3판: 내 공격 ↓ 체력 ↑ 조정을 따라 적 체력은 낮추고 적 피해는 올린다 (전투력은 그대로)
+	if not def.dummy then
+		local cp0 = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
+		local fd, fh = Config.enemyShift(cp0)
+		f.maxHp = math.max(1, math.floor(f.maxHp * fd))
+		f.hp = f.maxHp
+		f.dmgMult *= fh
+	end
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
 	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
 	if not isBoss and not def.elite and not def.duel and lv <= 4 then
