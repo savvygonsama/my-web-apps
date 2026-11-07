@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.10" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.28.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2543,7 +2543,7 @@ table.insert(Config.Styles, {
 	secret = true,
 	unlockHint = "극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻은 몸으로, 처음 삼재권을 준 청운 장로를 다시 찾아간다",
 	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고, 땅을 딛고, 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고, 땅을 한 번 찍으면 천지가 갈라진다.",
-	gimmick = "삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+	gimmick = "체술: 팔꿈치 · 쓸어차기 · 무릎 · 진각 · 메치기로 싸우는 몸의 권법. 붙잡아 휘돌리고 내리꽂는다. 삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
 	deflect = 0.38,
 	postureMult = 1.5,
 	speed = 1.25,
@@ -2552,21 +2552,21 @@ table.insert(Config.Styles, {
 	pulse = { every = 3, kind = "gravity", radius = 11, delay = 0.12, name = "삼재 진동", dmg = 60, posture = 48, stun = 0.45, kb = 20, up = 3 },
 	stance = "stance_sin",
 	combo = {
-		{ id = "sn1", name = "천권", pose = "sn_sweep_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
-		{ id = "sn2", name = "지권", pose = "sn_sweep_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
-		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.2, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.32, 7, 8, 30, 22, 0.4, 14, nil, true) } },
-		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.27, 8, 8, 52, 48, 0.6, 30, 8, true) } },
+		{ id = "sn1", name = "승천 팔꿈치", pose = "sn_elbow", dur = 0.34, lunge = 4, hits = { hit(0.16, 6, 5, 34, 24, 0.4, 14, 10, true) } },
+		{ id = "sn2", name = "쓸어차기", pose = "sn_lowkick", dur = 0.38, lunge = 3, hits = { hit(0.18, 7, 7, 34, 26, 0.5, 18, nil, true) } },
+		{ id = "sn3", name = "목 잡고 무릎", pose = "sn_knee", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 5, 46, 34, 0.6, 22, 12, true), hit(0.28, 6, 5, 30, 20, 0.4, 14, nil, true) } },
+		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.52, lunge = 2, hits = { hit(0.28, 8, 9, 78, 70, 0.8, 40, 12, true) } },
 	},
-	heavy = { id = "snH", name = "천지인 정권", pose = "punch_r_heavy", dur = 0.6, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 6, 86, 100, 0.9, 52, 8, true) } },
+	heavy = { id = "snH", name = "철산고", pose = "sn_tackle", dur = 0.62, lunge = 16, iframes = 0.3, hits = { hit(0.3, 14, 7, 130, 140, 1.1, 70, 10, true) } },
 	skills = {
-		E = { id = "snE", name = "삼재 연환", desc = "가까운 적 사이를 하늘·땅·사람의 세 걸음으로 파고들며 차례로 친다 (무적). 마지막 걸음이 땅을 울린다", pose = "sn_palm", dur = 0.7, cd = 6, chi = 20, iframes = 0.6,
-			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 58, 52, 0.7, 24, 10), finalRadius = 14, final = hit(0, 0, 0, 78, 70, 0.9, 40, 14) } },
-		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 흔들리고 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 25,
-			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
-		G = { id = "snG", name = "신 천지인 일권", desc = "하늘·땅·사람의 기를 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 지워진다 (그동안 무적)", pose = "one_punch", dur = 1.8, cd = 28, chi = 100, armor = true,
-			mech = { kind = "onepunch", delay = 1.0, range = 64, angle = 50, hit = hit(0, 0, 0, 280, 500, 1.6, 170, 14) } },
-		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작: 팔을 몸 둘레로 여섯 번 휘두르며 하늘이 갈라져 벼락이 쉬지 않고 떨어진다 (그동안 무적). 무릎을 들어 땅을 찍는 순간 천지가 갈라지며 둘레가 모두 무너진다", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
-			mech = { kind = "storm", dur = 3.5, every = 0.18, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 36, 56, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 290, 480, 1.8, 90, 30) } },
+		E = { id = "snE", name = "삼재 메치기", desc = "앞의 적 셋을 한꺼번에 붙잡아 끌어당긴 뒤 땅에 내리꽂는다. 내리꽂힌 자리마다 땅이 터지며 둘레의 적도 크게 다친다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "cs_slam", dur = 0.9, cd = 7, chi = 22,
+			mech = { kind = "grabThrow", mode = "slam", range = 18, angle = 120, n = 3, reel = 0.2, hold = 0.35, hit = hit(0, 0, 0, 120, 120, 1.2, 8, 0), splashRadius = 12, splash = hit(0, 0, 0, 56, 60, 0.7, 30, 14) } },
+		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 26,
+			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 17, hit = hit(0, 0, 0, 120, 120, 1.1, 50, 18) } },
+		G = { id = "snG", name = "천근 대회전", desc = "둘레의 적 다섯을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던지면 떨어진 자리마다 땅이 터진다", pose = "cs_swing", dur = 2.6, cd = 28, chi = 100, armor = true,
+			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
+		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
+			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
 	},
 })
 

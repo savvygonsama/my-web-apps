@@ -788,6 +788,15 @@ function UIB.buildStyles()
 		end
 		dTitle.Text = s.icon .. " " .. s.name
 		dTitle.TextColor3 = s.color
+		local tg = dTitle:FindFirstChildOfClass("UIGradient")
+		if s.grade == "신" then
+			dTitle.TextColor3 = Color3.new(1, 1, 1)
+			if not tg then
+				UI.shimmer(dTitle, 1.8)
+			end
+		elseif tg then
+			tg:Destroy()
+		end
 		dHanja.Text = s.hanja
 		local master = Config.MASTERS[id]
 		local pos = myPos()
@@ -1026,6 +1035,9 @@ function UIB.buildStyles()
 		if godCard then
 			card.BackgroundColor3 = Color3.fromRGB(58, 48, 26)
 			UI.shimmer(cardStroke, 2.2)
+			TweenService:Create(cardStroke, TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Thickness = 4.4 }):Play()
+			local wm = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 90, 1, 0), Text = "神", TextSize = 56, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 226, 140), TextTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+			UI.shimmer(wm, 2.6)
 		end
 		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })

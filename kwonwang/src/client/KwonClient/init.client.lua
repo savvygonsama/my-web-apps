@@ -2151,6 +2151,16 @@ function handlers.learned(data: any)
 				UI.flash(Color3.new(1, 1, 1), 0.6)
 				UI.banner("🌅 神 · 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
 				shake(2)
+				local ch = myChar()
+				local rr = ch and ch:FindFirstChild("HumanoidRootPart")
+				if rr and rr:IsA("BasePart") then
+					for i = 0, 4 do
+						task.delay(i * 0.18, function()
+							Fx.ring(rr.Position - Vector3.new(0, 2.5, 0), i % 2 == 0 and Color3.fromRGB(255, 226, 140) or Color3.new(1, 1, 1), 4, 36 + i * 14, 0.9)
+						end)
+					end
+					Fx.burst("glitter", rr.Position, Color3.fromRGB(255, 226, 140), 40, 2.6)
+				end
 			end
 		else
 			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)

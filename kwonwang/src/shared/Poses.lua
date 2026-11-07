@@ -2960,6 +2960,27 @@ A.sn_fin = { -- 삼재승천권: 땅을 박차며 한 주먹을 하늘로
 	{ t = 0.34, e = "snap", j = snWith({ W = { -15, 0, 0 }, N = { -25, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 30, 0, -20 }, LE = { 80, 0, 0 }, RH = { 25, 0, 0 }, RK = { -50, 0, 0 }, R = { -8, 0, 0, 0, 1.4, 0 } }) },
 	{ t = 1, j = SN },
 }
+A.sn_elbow = { -- 천권: 몸을 낮춰 파고들며 팔꿈치를 위로 찍어 올린다 (승천 팔꿈치)
+	{ t = 0, j = snWith({ W = { 10, -40, 0 }, RS = { 20, 0, 25 }, RE = { 130, 0, 0 }, LS = { 50, 0, -15 }, LE = { 100, 0, 0 }, RK = { -40, 0, 0 }, R = { 12, 0, 0, 0, -0.8, 0 } }) },
+	{ t = 0.5, e = "snap", j = snWith({ W = { -20, 35, 0 }, N = { -10, 0, 0 }, RS = { 150, 0, 10 }, RE = { 140, 0, 0 }, LS = { 60, 0, -15 }, LE = { 100, 0, 0 }, RH = { 20, 0, 0 }, R = { -10, 0, 0, 0, 0.5, -0.9 } }) },
+	{ t = 1, j = SN },
+}
+A.sn_lowkick = { -- 지권: 한 발로 땅을 쓸듯 낮게 돌려 차 다리를 건다 (쓸어차기)
+	{ t = 0, j = snWith({ W = { 15, 30, 0 }, RS = { 70, 0, 50 }, LS = { 70, 0, -50 }, RH = { 0, 0, 0 }, RK = { -50, 0, 0 }, LK = { -70, 0, 0 }, R = { 20, 0, 0, 0, -1.2, 0 } }) },
+	{ t = 0.5, e = "snap", j = snWith({ W = { 20, -30, 0 }, RS = { 60, 0, 70 }, LS = { 60, 0, -70 }, RH = { 85, 0, 0 }, RK = { 0, 0, 0 }, LK = { -90, 0, 0 }, R = { 25, 200, 0, 0, -1.3, -0.4 } }) },
+	{ t = 1, j = snWith({ R = { 0, 360, 0, 0, 0, 0 } }) },
+}
+A.sn_knee = { -- 인권: 두 손으로 상대를 끌어당기며 무릎을 치솟게 박는다 (목 잡고 무릎)
+	{ t = 0, j = snWith({ W = { -10, 0, 0 }, RS = { 70, 0, 5 }, RE = { 90, 0, 0 }, LS = { 70, 0, -5 }, LE = { 90, 0, 0 }, R = { -5, 0, 0, 0, -0.3, -0.4 } }) },
+	{ t = 0.45, e = "snap", j = snWith({ W = { 25, 0, 0 }, N = { 20, 0, 0 }, RS = { 20, 0, 5 }, RE = { 110, 0, 0 }, LS = { 20, 0, -5 }, LE = { 110, 0, 0 }, RH = { 110, 0, 0 }, RK = { -95, 0, 0 }, LK = { -10, 0, 0 }, R = { 8, 0, 0, 0, 0.5, -0.8 } }) },
+	{ t = 1, j = SN },
+}
+A.sn_tackle = { -- 천지인 정권: 어깨를 앞세워 온몸으로 들이받는다 (철산고)
+	{ t = 0, j = snWith({ W = { -25, 60, 0 }, N = { 20, -40, 0 }, RS = { 40, 0, 50 }, RE = { 110, 0, 0 }, LS = { 60, 0, -30 }, LE = { 100, 0, 0 }, RK = { -60, 0, 0 }, R = { -20, 0, 0, 0, -0.8, 0 } }) },
+	{ t = 0.5, e = "snap", j = snWith({ W = { -35, -50, 0 }, N = { 30, 40, 0 }, RS = { 60, 0, 30 }, RE = { 100, 0, 0 }, LS = { 120, 0, -20 }, LE = { 60, 0, 0 }, RH = { 40, 0, 0 }, RK = { -20, 0, 0 }, LK = { -50, 0, 0 }, R = { -40, 0, 0, 0, -0.5, -2.2 } }) },
+	{ t = 1, j = SN },
+}
+
 -- 얻는 컷씬 · 초 오의 천지개벽: 팔을 몸 둘레로 여섯 번 휘두르고 (둘은 허리만 틀고, 넷은 몸째 돈다), 무릎을 들어 땅을 찍는다
 -- 도는 각도(1800도)는 끝까지 남아 있어야 거꾸로 풀리지 않는다
 do
@@ -3051,7 +3072,7 @@ Poses.limbs = {
 	soju_spray = { "RightHand" }, soju_stagger = { "RightFoot", "LeftFoot" }, soju_throw = { "RightHand" }, soju_rolls = { "RightHand", "LeftHand" }, soju_rise = { "RightHand" },
 	reap_slash_r = { "RightHand" }, reap_slash_l = { "RightHand" }, reap_spin = { "RightHand" }, reap_overhead = { "RightHand" }, reap_wave = { "RightHand" },
 	reap_hook = { "RightHand" }, reap_leap = { "RightHand" }, ult_reap = { "RightHand" }, reap_moon = { "RightHand" }, reap_rise = { "RightHand" },
-	sn_sweep_r = { "RightHand" }, sn_sweep_l = { "LeftHand" }, sn_spin = { "RightHand", "LeftHand" }, sn_stomp = { "RightFoot" }, sn_palm = { "RightHand", "LeftHand" }, sn_fin = { "RightHand" }, sn_get = { "RightHand", "LeftHand", "RightFoot" },
+	sn_sweep_r = { "RightHand" }, sn_sweep_l = { "LeftHand" }, sn_spin = { "RightHand", "LeftHand" }, sn_stomp = { "RightFoot" }, sn_palm = { "RightHand", "LeftHand" }, sn_fin = { "RightHand" }, sn_get = { "RightHand", "LeftHand", "RightFoot" }, sn_elbow = { "RightHand" }, sn_lowkick = { "RightFoot" }, sn_knee = { "RightFoot" }, sn_tackle = { "RightHand", "LeftHand" },
 	lt_flick = { "RightHand" }, lt_flick2 = { "LeftHand" }, lt_blitz = { "RightHand", "LeftHand" }, lt_sonic = { "RightFoot", "LeftFoot" }, lt_pierce = { "RightHand", "LeftHand" }, lt_lance = { "RightHand", "LeftHand" }, lt_boom = { "RightHand", "LeftHand" }, lt_clock = { "RightHand", "LeftHand" }, lt_ult = { "RightHand", "LeftHand" }, lt_needle = { "RightHand", "LeftHand" }, lt_run = { "RightHand", "LeftHand" }, lt_comet = { "RightHand", "LeftHand" }, lt_zig = { "RightHand", "LeftHand" }, lt_over = { "RightHand", "LeftHand" }, lt_chrono = { "RightHand", "LeftHand" }, lt_fin = { "RightHand", "LeftHand" },
 	staff_swing_r = { "RightHand" }, staff_swing_l = { "RightHand" }, staff_spin = { "RightHand" }, staff_slam = { "RightHand" }, staff_thrust = { "RightHand" },
 	staff_point = { "RightHand" }, staff_sigil = { "RightHand" }, staff_plant = { "RightHand", "LeftHand" }, staff_dome = { "RightHand" }, staff_rise = { "RightHand" },

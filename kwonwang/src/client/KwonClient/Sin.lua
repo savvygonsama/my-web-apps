@@ -123,6 +123,7 @@ local function swing(m: Model, k: number, color: Color3, big: boolean)
 		arc:Destroy()
 	end)
 	Fx.breakSound("whoosh", 0.7 + k * 0.05, 0.7 + k * 0.12, c)
+	Fx.afterimage(m, color, 0.5)
 	shake(0.25 + k * 0.08)
 end
 
@@ -525,6 +526,24 @@ function Sin.rite(d: any)
 		opts.tint(Color3.fromRGB(125, 135, 185), 0.42, stomp)
 	end
 	local slam = buildUp(m, stomp)
+	-- 몸에서 번지는 금빛: 휘두를수록 짙어지고, 찍는 순간 하얗게 터졌다가 가라앉는다
+	local aura = Instance.new("Highlight")
+	aura.Adornee = m
+	aura.FillColor = GOLD
+	aura.OutlineColor = HUMAN
+	aura.FillTransparency = 0.95
+	aura.OutlineTransparency = 0.4
+	aura.DepthMode = Enum.HighlightDepthMode.Occluded
+	aura.Parent = folder
+	tween(aura, stomp, { FillTransparency = 0.55 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	task.delay(stomp, function()
+		aura.FillColor = HUMAN
+		aura.FillTransparency = 0.1
+		tween(aura, 1.6, { FillTransparency = 1, OutlineTransparency = 1 })
+		task.delay(1.7, function()
+			aura:Destroy()
+		end)
+	end)
 	for i = 0, 2 do
 		task.delay(i * 0.28, function()
 			local rr = rootOf(m)
@@ -751,6 +770,20 @@ function Sin.rite(d: any)
 			tween(big, 0.5, { TextTransparency = 1, TextStrokeTransparency = 1 })
 		end)
 	end)
+	for i, sec in ipairs(sw) do
+		task.delay(sec, function()
+			if done then
+				return
+			end
+			pcall(function()
+				cam.FieldOfView += 5
+				tween(cam, 0.25, { FieldOfView = cam.FieldOfView - 5 })
+			end)
+			if i % 3 == 0 and opts.flash then
+				opts.flash(i % 2 == 0 and SKY or GOLD, 0.25)
+			end
+		end)
+	end
 	-- 안전망
 	task.delay(total + 2, finish)
 end
