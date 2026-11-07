@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.26.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1628,8 +1628,8 @@ end
 -- 3.5판 권법 등급: 다섯 단계 (상급 · 전설 · 신화 · 태초 · 윤회). 지존은 나중에 새 권법이 나오면 쓰려고 비워 둔다.
 -- 진 (각성) · 초 · 극은 등급이 아니라 권법이 변한 모습이라 예전 그대로 둔다 (진 = 신화, 초 = 초월, 극 = 극).
 -- 모습의 한계: 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다 (FORM_LIMIT)
-Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "권왕", "극" }
-Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8 }
+Config.GRADE_ORDER = { "상급", "전설", "신화", "태초", "지존", "윤회", "초월", "권왕", "극", "신" }
+Config.GRADES = { ["상급"] = 1.0, ["전설"] = 1.5, ["신화"] = 1.8, ["태초"] = 2.5, ["지존"] = 2.75, ["윤회"] = 3.0, ["초월"] = 3.1, ["권왕"] = 3.4, ["극"] = 3.8, ["신"] = 4.3 }
 Config.GRADE_COLOR = {
 	["상급"] = Color3.fromRGB(120, 190, 255),
 	["전설"] = Color3.fromRGB(255, 200, 80),
@@ -1640,12 +1640,13 @@ Config.GRADE_COLOR = {
 	["초월"] = Color3.fromRGB(255, 160, 210),
 	["권왕"] = Color3.fromRGB(255, 70, 70),
 	["극"] = Color3.fromRGB(255, 140, 90),
+	["신"] = Color3.fromRGB(255, 238, 170),
 }
 Config.FORM_LIMIT = { ["상급"] = "초", ["전설"] = "초", ["신화"] = "극", ["태초"] = "극", ["지존"] = "극", ["윤회"] = "극" }
 -- 예전 열네 등급 → 다섯 등급 (진·초·극은 그대로)
 local GRADE_REMAP = { ["하급"] = "상급", ["중급"] = "상급", ["상급"] = "상급", ["최상급"] = "전설", ["절세"] = "전설", ["전설"] = "전설", ["신화"] = "신화", ["천외천"] = "신화", ["태초"] = "태초", ["지존"] = "태초", ["윤회"] = "윤회", ["권왕"] = "윤회" }
 -- 예전 등급 순위 (동작 빠르기·배틀그라운드 몫은 예전 열네 칸 그대로 센다)
-local OLD_RANK = { ["하급"] = 1, ["중급"] = 2, ["상급"] = 3, ["최상급"] = 4, ["절세"] = 5, ["전설"] = 6, ["신화"] = 7, ["천외천"] = 8, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 11, ["초월"] = 12, ["권왕"] = 13, ["극"] = 14 }
+local OLD_RANK = { ["하급"] = 1, ["중급"] = 2, ["상급"] = 3, ["최상급"] = 4, ["절세"] = 5, ["전설"] = 6, ["신화"] = 7, ["천외천"] = 8, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 11, ["초월"] = 12, ["권왕"] = 13, ["극"] = 14, ["신"] = 15 }
 -- (등급 다시 매기기는 모든 권법이 들어온 뒤, STYLE_BY_ID 바로 앞에서 한다)
 function Config.gradeIndex(name: string): number
 	return table.find(Config.GRADE_ORDER, name) or 1
@@ -2524,6 +2525,51 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.27판: 신 삼재권. 극을 넘어선 궁극의 권법 (등급 신). 처음의 주먹으로 돌아온다
+-- 세 극 권법 (극 일월 · 극 공백 · 극 광속)을 모두 얻은 몸으로 청운 장로에게 말을 걸면, 장로가 마지막 가르침을 내린다 (컷씬)
+-- 하늘·땅·사람: 연타는 팔을 몸 둘레로 휘두르고, 세 번 맞힐 때마다 땅이 울린다. 초 오의는 얻을 때의 그 동작 그대로
+Config.SIN_NEED = { "geukilwol", "geuknull", "geukspeed" }
+table.insert(Config.Styles, {
+	id = "sinsamjae",
+	name = "신 삼재권",
+	hanja = "神三才拳",
+	icon = "🌅",
+	grade = "신",
+	keepGrade = true,
+	color = Color3.fromRGB(255, 238, 170),
+	color2 = Color3.fromRGB(190, 225, 255),
+	fx = "basic",
+	hidden = true,
+	secret = true,
+	unlockHint = "극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻은 몸으로, 처음 삼재권을 준 청운 장로를 다시 찾아간다",
+	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고, 땅을 딛고, 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고, 땅을 한 번 찍으면 천지가 갈라진다.",
+	gimmick = "삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+	deflect = 0.38,
+	postureMult = 1.5,
+	speed = 1.25,
+	dashCd = 0.5,
+	cdMult = 0.75,
+	pulse = { every = 3, kind = "gravity", radius = 11, delay = 0.12, name = "삼재 진동", dmg = 60, posture = 48, stun = 0.45, kb = 20, up = 3 },
+	stance = "stance_sin",
+	combo = {
+		{ id = "sn1", name = "천권", pose = "sn_sweep_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
+		{ id = "sn2", name = "지권", pose = "sn_sweep_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
+		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.18, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.3, 7, 8, 30, 22, 0.4, 14, nil, true) } },
+		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.24, 8, 8, 52, 48, 0.6, 30, 8, true) } },
+	},
+	heavy = { id = "snH", name = "천지인 정권", pose = "punch_r_heavy", dur = 0.6, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 6, 86, 100, 0.9, 52, 8, true) } },
+	skills = {
+		E = { id = "snE", name = "삼재 연환", desc = "가까운 적 사이를 하늘·땅·사람의 세 걸음으로 파고들며 차례로 친다 (무적). 마지막 걸음이 땅을 울린다", pose = "sn_palm", dur = 0.7, cd = 6, chi = 20, iframes = 0.6,
+			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 64, 56, 0.7, 24, 10) } },
+		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 흔들리고 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 25,
+			mech = { kind = "shock", delay = 0.32, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
+		G = { id = "snG", name = "신 천지인 일권", desc = "하늘·땅·사람의 기를 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 지워진다 (그동안 무적)", pose = "one_punch", dur = 1.8, cd = 28, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 64, angle = 50, hit = hit(0, 0, 0, 280, 500, 1.6, 170, 14) } },
+		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작: 팔을 몸 둘레로 여섯 번 휘두르며 하늘이 갈라져 벼락이 쉬지 않고 떨어진다 (그동안 무적). 무릎을 들어 땅을 찍는 순간 천지가 갈라지며 둘레가 모두 무너진다", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
+			mech = { kind = "storm", dur = 3.4, every = 0.14, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 60, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 300, 480, 1.8, 90, 30) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.19판: 등급마다 새 권법 하나 (상급은 셋). 권법 소개창은 등급 순으로 늘어선다
 ------------------------------------------------------------------------
@@ -2998,6 +3044,7 @@ local FINISHERS = {
 	gongbaek = { name = "빈칸승천", pose = "void_point" },
 	geuknull = { name = "격자승천", pose = "void_point" },
 	geukspeed = { name = "광속승천권", pose = "lt_fin" },
+	sinsamjae = { name = "삼재승천권", pose = "sn_fin" },
 	kwonwangsin = { name = "천하승천권", pose = "king_uppercut" },
 	geukilwol = { name = "일월극승천각", pose = "sun_wheel" },
 	manmok = { name = "만목귀원", pose = "double_palm" },

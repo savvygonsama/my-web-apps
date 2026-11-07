@@ -1554,12 +1554,83 @@ function Story.check(player: Player)
 	Story.event(player, "check")
 end
 
+-- 3.27판 신 삼재권: 극 권법 셋을 얻은 몸으로 청운 장로를 찾으면 마지막 가르침(컷씬)을 받는다
+local Sin = {}
+function Sin.missing(p: Profile): { string }
+	local out = {}
+	for _, id in ipairs(Config.SIN_NEED) do
+		if not p.styles[id] then
+			local sd = Config.STYLE_BY_ID[id]
+			table.insert(out, sd and sd.name or id)
+		end
+	end
+	return out
+end
+-- 컷씬: 팔을 몸 둘레로 여섯 번 휘두르고 → 무릎을 들어 땅을 찍는다 (6.1초) → 땅이 깨진다. 찍는 순간 권법을 얻는다
+Sin.STOMP = 6.1
+Sin.TOTAL = 8.6
+function Sin.rite(player: Player, forced: boolean?)
+	local p = profiles[player]
+	local f = Combat.fighterOfPlayer(player)
+	if not p or not f or f.dead or not f.root.Parent then
+		return
+	end
+	local now = os.clock()
+	if ((p :: any).sinBusy or 0) > now then
+		return
+	end
+	if p.styles.sinsamjae and not forced then
+		return
+	end
+	;(p :: any).sinBusy = now + Sin.TOTAL + 0.5
+	f.iframeUntil = math.max(f.iframeUntil, now + Sin.TOTAL + 0.5)
+	f.hum:MoveTo(f.root.Position)
+	f.root.AssemblyLinearVelocity = Vector3.zero
+	f.root.Anchored = true
+	local sd = Config.STYLE_BY_ID.sinsamjae
+	Push:FireAllClients("sinRite", { m = f.model, at = f.root.Position, name = player.DisplayName, stomp = Sin.STOMP, total = Sin.TOTAL, who = player })
+	task.delay(Sin.STOMP, function()
+		if profiles[player] == p and not p.styles.sinsamjae then
+			p.styles.sinsamjae = true
+			Calc.mastery(p, "sinsamjae")
+			local st = states[player]
+			if st then
+				st.dirty = true
+			end
+		end
+	end)
+	task.delay(Sin.TOTAL, function()
+		if f.root.Parent then
+			f.root.Anchored = false
+		end
+		if profiles[player] == p and player.Parent then
+			Push:FireClient(player, "learned", { style = "sinsamjae", hidden = true })
+			pushState(player)
+		end
+	end)
+	local _ = sd
+end
+
 -- 청운 장로와 이야기
 function Story.talk(player: Player)
 	if BATTLE then
 		return -- 배틀그라운드에는 이야기가 없다
 	end
 	local p = profiles[player]
+	if p and not p.styles.sinsamjae then
+		local miss = Sin.missing(p)
+		if #miss == 0 then
+			-- 극을 셋 이룬 자: 마지막 가르침
+			Push:FireClient(player, "dialog", { who = "청운 장로", title = "처음의 주먹", text = "...여기까지 왔구먼. 극을 셋이나 이루고도 다시 이 늙은이를 찾아오다니. 그래, 극 위에는 새것이 없네. 처음 내가 자네 손에 쥐여 준 삼재권, 하늘과 땅과 사람. 이제 그걸 제대로 가르쳐 주겠네. 서 있게. 눈을 뜨고 보게." })
+			task.delay(1.2, function()
+				Sin.rite(player)
+			end)
+			return
+		elseif #miss < #Config.SIN_NEED and not Config.Story[p.story] then
+			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = "극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고 오면, 마지막으로 가르칠 것이 하나 있네. 아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼." })
+			return
+		end
+	end
 	local ch = p and Config.Story[p.story]
 	if not ch then
 		return
@@ -4551,6 +4622,9 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			f.root.CFrame = CFrame.new(E.cliff + Vector3.new(0, 44, 60))
 			toast(player, "🌫 세상 끝 벼랑 · 앞의 무너지는 돌길을 건너 숨은 정원으로")
 		end
+	elseif action == "testSinRite" then
+		-- 신 삼재권 얻는 컷씬 보기 (이미 얻었어도 다시 본다)
+		Sin.rite(player, true)
 	elseif action == "testStyle" then
 		-- 권법 테스트: 어떤 권법이든 (숨은 것도) 바로 익혀 숙련 최대로 쓴다
 		local sd = type(arg) == "string" and Config.STYLE_BY_ID[arg]

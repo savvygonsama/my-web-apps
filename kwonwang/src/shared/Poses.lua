@@ -38,6 +38,8 @@ end
 Poses.stances = {
 	-- 삼재: 힘을 뺀 바른 자세 (두 주먹을 가슴 높이에 가볍게)
 	stance_base = { W = { 0, -20, 0 }, N = { 0, 20, 0 }, RS = { 25, 0, 14 }, RE = { 80, 0, 0 }, LS = { 42, 0, -8 }, LE = { 75, 0, 0 } },
+	-- 신 삼재: 천지인. 한 손은 하늘을 받치듯 높이, 한 손은 땅을 누르듯 낮게, 두 발은 땅을 단단히 딛는다
+	stance_sin = { W = { 0, -15, 0 }, N = { 0, 15, 0 }, RS = { 150, 0, 15 }, RE = { 20, 0, 0 }, LS = { 15, 0, -20 }, LE = { 15, 0, 0 } },
 	-- 태허: 낮게 깔린 물의 자세. 한 손은 가슴 앞을 흐르듯 가로지르고, 한 손은 낮게 물결을 누른다
 	stance_taeheo = { W = { 0, -30, 0 }, N = { 0, 30, 0 }, RS = { 65, 0, -5 }, RE = { 75, 0, 0 }, LS = { 40, 0, -25 }, LE = { 25, 0, 0 } },
 	-- 금강: 깊은 마보, 두 주먹을 허리에 붙이고 가슴을 편다
@@ -2915,6 +2917,80 @@ A.lt_fin = { -- 광속승천권: 웅크린 채 빛처럼 솟으며 두 주먹을
 	{ t = 1, j = LT },
 }
 
+
+------------------------------------------------------------------------
+-- 3.27판 신 삼재권: 하늘·땅·사람
+------------------------------------------------------------------------
+local SN = stanceEnd("stance_sin")
+local function snWith(extra: Joints): Joints
+	local j: Joints = {}
+	for k, v in pairs(SN) do
+		j[k] = v
+	end
+	for k, v in pairs(extra) do
+		j[k] = v
+	end
+	return j
+end
+A.sn_sweep_r = { -- 천권: 오른팔이 몸 둘레를 크게 휘돌아 후려친다
+	{ t = 0, j = { W = { 0, -65, 0 }, RS = { 90, 0, 85 }, RE = { 0, 0, 0 }, LS = { 50, 0, -25 }, LE = { 70, 0, 0 }, R = { 0, 0, 0, 0, -0.3, 0 } } },
+	{ t = 0.5, e = "snap", j = { W = { -5, 55, 0 }, N = { 0, -25, 0 }, RS = { 95, 0, -5 }, RE = { 0, 0, 0 }, LS = { 30, 0, -30 }, LE = { 80, 0, 0 }, R = { 0, 15, 0, 0, -0.3, -0.4 } } },
+	{ t = 1, j = SN },
+}
+A.sn_sweep_l = mirror(A.sn_sweep_r) -- 지권: 왼팔이 반대로
+A.sn_sweep_l[#A.sn_sweep_l] = { t = 1, j = SN }
+A.sn_spin = { -- 인권: 두 팔을 활짝 펴고 한 바퀴 돌며 둘레를 쓸어 친다
+	{ t = 0, j = snWith({ W = { -10, 0, 0 }, RS = { 90, 0, 80 }, LS = { 90, 0, -80 }, RE = { 0, 0, 0 }, LE = { 0, 0, 0 }, R = { 0, 0, 0, 0, -0.5, 0 } }) },
+	{ t = 0.7, e = "snap", j = snWith({ W = { -5, 0, 0 }, RS = { 90, 0, 80 }, LS = { 90, 0, -80 }, RE = { 0, 0, 0 }, LE = { 0, 0, 0 }, R = { 0, 360, 0, 0, -0.2, 0 } }) },
+	{ t = 1, j = snWith({ R = { 0, 360, 0, 0, 0, 0 } }) },
+}
+A.sn_stomp = { -- 삼재 진각: 무릎을 높이 들었다가 땅을 찍는다
+	{ t = 0, j = snWith({ W = { 5, 0, 0 }, RS = { 160, 0, 10 }, LS = { 60, 0, -10 }, RH = { 105, 0, 0 }, RK = { -105, 0, 0 }, LK = { -10, 0, 0 }, R = { 0, 0, 0, 0, 0.1, 0 } }) },
+	{ t = 0.55, e = "snap", j = snWith({ W = { -30, 0, 0 }, N = { 20, 0, 0 }, RS = { 30, 0, 12 }, LS = { 30, 0, -12 }, RH = { 15, 0, 0 }, RK = { 0, 0, 0 }, LH = { 0, 0, 0 }, LK = { -35, 0, 0 }, R = { -15, 0, 0, 0, -0.9, -0.5 } }) },
+	{ t = 1, j = SN },
+}
+A.sn_palm = { -- 삼재 연환: 두 손바닥을 번갈아 곧게 뻗으며 파고든다
+	{ t = 0, j = snWith({ W = { 0, -25, 0 }, RS = { 40, 0, 20 }, RE = { 110, 0, 0 }, LS = { 40, 0, -20 }, LE = { 110, 0, 0 }, R = { -12, 0, 0, 0, -0.4, 0 } }) },
+	{ t = 0.4, e = "snap", j = snWith({ W = { -15, 30, 0 }, RS = { 95, 0, 0 }, RE = { 0, 0, 0 }, LS = { 40, 0, -20 }, LE = { 110, 0, 0 }, R = { -20, 0, 0, 0, -0.4, -1.0 } }) },
+	{ t = 0.7, e = "snap", j = snWith({ W = { -15, -30, 0 }, LS = { 95, 0, 0 }, LE = { 0, 0, 0 }, RS = { 40, 0, 20 }, RE = { 110, 0, 0 }, R = { -20, 0, 0, 0, -0.4, -1.8 } }) },
+	{ t = 1, j = SN },
+}
+A.sn_fin = { -- 삼재승천권: 땅을 박차며 한 주먹을 하늘로
+	{ t = 0, j = snWith({ RS = { 0, 0, 25 }, RE = { 120, 0, 0 }, LS = { 0, 0, -25 }, LE = { 120, 0, 0 }, RK = { -100, 0, 0 }, LK = { -100, 0, 0 }, R = { 15, 0, 0, 0, -1.6, 0 } }) },
+	{ t = 0.34, e = "snap", j = snWith({ W = { -15, 0, 0 }, N = { -25, 0, 0 }, RS = { 178, 0, 5 }, RE = { 0, 0, 0 }, LS = { 30, 0, -20 }, LE = { 80, 0, 0 }, RH = { 25, 0, 0 }, RK = { -50, 0, 0 }, R = { -8, 0, 0, 0, 1.4, 0 } }) },
+	{ t = 1, j = SN },
+}
+-- 얻는 컷씬 · 초 오의 천지개벽: 팔을 몸 둘레로 여섯 번 휘두르고 (둘은 허리만 틀고, 넷은 몸째 돈다), 무릎을 들어 땅을 찍는다
+-- 도는 각도(1800도)는 끝까지 남아 있어야 거꾸로 풀리지 않는다
+do
+	local D = 7.4
+	local function tt(sec: number): number
+		return sec / D
+	end
+	local SP = { RE = { 0, 0, 0 }, LE = { 0, 0, 0 } }
+	local function spread(hi: number, lo: number, y: number, up: number): Joints
+		return snWith({ W = { 0, 0, 0 }, RS = { hi, 0, 80 }, LS = { lo, 0, -80 }, RE = SP.RE, LE = SP.LE, R = { 0, y, 0, 0, up, 0 } })
+	end
+	A.sn_get = {
+		{ t = 0, j = SN },
+		{ t = tt(0.8), j = snWith({ W = { -8, 0, 0 }, RS = { 55, 0, 25 }, RE = { 100, 0, 0 }, LS = { 55, 0, -25 }, LE = { 100, 0, 0 }, RK = { -25, 0, 0 }, LK = { -25, 0, 0 }, R = { 0, 0, 0, 0, -0.8, 0 } }) },
+		{ t = tt(1.05), e = "snap", j = snWith({ W = { 0, -70, 0 }, RS = { 90, 0, 85 }, LS = { 90, 0, -85 }, RE = SP.RE, LE = SP.LE, R = { 0, 0, 0, 0, -0.6, 0 } }) },
+		{ t = tt(1.4), e = "snap", j = snWith({ W = { 0, 70, 0 }, RS = { 90, 0, 85 }, LS = { 90, 0, -85 }, RE = SP.RE, LE = SP.LE, R = { 0, 0, 0, 0, -0.6, 0 } }) },
+		{ t = tt(1.75), e = "snap", j = snWith({ W = { 0, -70, 0 }, RS = { 90, 0, 85 }, LS = { 90, 0, -85 }, RE = SP.RE, LE = SP.LE, R = { 0, 0, 0, 0, -0.5, 0 } }) },
+		{ t = tt(2.1), e = "snap", j = snWith({ W = { 0, 70, 0 }, RS = { 90, 0, 85 }, LS = { 90, 0, -85 }, RE = SP.RE, LE = SP.LE, R = { 0, 0, 0, 0, -0.5, 0 } }) },
+		{ t = tt(2.8), j = spread(150, 150, 360, -0.2) },
+		{ t = tt(3.35), j = spread(40, 40, 720, -0.1) },
+		{ t = tt(3.85), j = spread(150, 150, 1080, 0.1) },
+		{ t = tt(4.3), j = spread(90, 90, 1440, 0.4) },
+		{ t = tt(4.7), j = spread(90, 90, 1800, 0.9) },
+		{ t = tt(5.35), j = snWith({ W = { -12, 0, 0 }, N = { -15, 0, 0 }, RS = { 178, 0, 8 }, RE = { 0, 0, 0 }, LS = { 178, 0, -8 }, LE = { 0, 0, 0 }, RH = { 110, 0, 0 }, RK = { -110, 0, 0 }, LK = { -12, 0, 0 }, R = { 0, 1800, 0, 0, 0.3, 0 } }) },
+		{ t = tt(5.95), j = snWith({ W = { -14, 0, 0 }, N = { -18, 0, 0 }, RS = { 178, 0, 8 }, RE = { 0, 0, 0 }, LS = { 178, 0, -8 }, LE = { 0, 0, 0 }, RH = { 115, 0, 0 }, RK = { -115, 0, 0 }, LK = { -14, 0, 0 }, R = { 0, 1800, 0, 0, 0.35, 0 } }) },
+		{ t = tt(6.1), e = "snap", j = snWith({ W = { -35, 0, 0 }, N = { 28, 0, 0 }, RS = { 20, 0, 14 }, RE = { 10, 0, 0 }, LS = { 20, 0, -14 }, LE = { 10, 0, 0 }, RH = { 12, 0, 0 }, RK = { 0, 0, 0 }, LH = { 0, 0, 0 }, LK = { -40, 0, 0 }, R = { -14, 1800, 0, 0, -1.1, -0.4 } }) },
+		{ t = tt(6.7), j = snWith({ W = { -30, 0, 0 }, N = { 24, 0, 0 }, RS = { 20, 0, 14 }, RE = { 10, 0, 0 }, LS = { 20, 0, -14 }, LE = { 10, 0, 0 }, RH = { 12, 0, 0 }, RK = { 0, 0, 0 }, LH = { 0, 0, 0 }, LK = { -38, 0, 0 }, R = { -12, 1800, 0, 0, -1.0, -0.4 } }) },
+		{ t = 1, j = snWith({ R = { 0, 1800, 0, 0, 0, 0 } }) },
+	}
+end
+
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
@@ -2975,6 +3051,7 @@ Poses.limbs = {
 	soju_spray = { "RightHand" }, soju_stagger = { "RightFoot", "LeftFoot" }, soju_throw = { "RightHand" }, soju_rolls = { "RightHand", "LeftHand" }, soju_rise = { "RightHand" },
 	reap_slash_r = { "RightHand" }, reap_slash_l = { "RightHand" }, reap_spin = { "RightHand" }, reap_overhead = { "RightHand" }, reap_wave = { "RightHand" },
 	reap_hook = { "RightHand" }, reap_leap = { "RightHand" }, ult_reap = { "RightHand" }, reap_moon = { "RightHand" }, reap_rise = { "RightHand" },
+	sn_sweep_r = { "RightHand" }, sn_sweep_l = { "LeftHand" }, sn_spin = { "RightHand", "LeftHand" }, sn_stomp = { "RightFoot" }, sn_palm = { "RightHand", "LeftHand" }, sn_fin = { "RightHand" }, sn_get = { "RightHand", "LeftHand", "RightFoot" },
 	lt_flick = { "RightHand" }, lt_flick2 = { "LeftHand" }, lt_blitz = { "RightHand", "LeftHand" }, lt_sonic = { "RightFoot", "LeftFoot" }, lt_pierce = { "RightHand", "LeftHand" }, lt_lance = { "RightHand", "LeftHand" }, lt_boom = { "RightHand", "LeftHand" }, lt_clock = { "RightHand", "LeftHand" }, lt_ult = { "RightHand", "LeftHand" }, lt_needle = { "RightHand", "LeftHand" }, lt_run = { "RightHand", "LeftHand" }, lt_comet = { "RightHand", "LeftHand" }, lt_zig = { "RightHand", "LeftHand" }, lt_over = { "RightHand", "LeftHand" }, lt_chrono = { "RightHand", "LeftHand" }, lt_fin = { "RightHand", "LeftHand" },
 	staff_swing_r = { "RightHand" }, staff_swing_l = { "RightHand" }, staff_spin = { "RightHand" }, staff_slam = { "RightHand" }, staff_thrust = { "RightHand" },
 	staff_point = { "RightHand" }, staff_sigil = { "RightHand" }, staff_plant = { "RightHand", "LeftHand" }, staff_dome = { "RightHand" }, staff_rise = { "RightHand" },
