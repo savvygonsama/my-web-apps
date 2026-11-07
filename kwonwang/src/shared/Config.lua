@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.25.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.25.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4031,7 +4031,7 @@ Config.Roads = {
 Config.ENEMY_DMG = 1.35 -- 적의 공격이 아프다 (막고 흘리지 않으면 버티기 어렵다)
 -- 베타 8: 적은 훨씬 질기고 (체력 ×2.2, 멀수록 더), 후반 적의 피해는 크게 줄였다 (오래 겨루는 싸움)
 Config.ENEMY_HP = 2.2
-Config.ENEMY_BOSS_HP = 1.08 -- 3.25판: 0.54 → 1.08 (보스에 존재감이 없었다: 체력 ×2). 아래 BOSS_POWER_RATIO도 같이 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤). 2.7.1판: 모든 보스 체력 60% 줄임 (1.35 → 0.54)
+Config.ENEMY_BOSS_HP = 1.9 -- 3.25판: 0.54 → 1.08, 3.25.2판: → 1.9 (보스에 존재감이 없었다: 처음의 3.5배). 아래 BOSS_POWER_RATIO도 같이 -- 1.0판: 1.6 → 1.35 (보스 체력 조금 낮춤). 2.7.1판: 모든 보스 체력 60% 줄임 (1.35 → 0.54)
 Config.ENEMY_HP_LEVEL = 0.35 -- 단계마다 체력 +35%
 Config.ENEMY_DMG_LEVEL = 0.12 -- 단계마다 피해 +12%
 Config.ENEMY_DMG_MULT_POW = 0.6 -- 후반 땅의 겹 배율(mult)은 피해에 이만큼의 거듭제곱으로만 (×14 → ×4.9)
@@ -4927,11 +4927,12 @@ do
 		B2[id].late = true
 	end
 	-- 3.23.8판: 지옥의 세기를 한 단계 낮춘다 (졸병 전투력 8.7만~22만 → 5.4만~13.6만, 주인 31만~88만 → 19만~54만). 체력과 피해를 함께 ×0.62
-	local HELL_EASE = 0.62
+	local HELL_EASE = 0.62 -- 주인에게만 (3.25.2판: 졸병은 되돌리고 +20%: 아래 HELL_MOB)
+	local HELL_MOB = 1.2
 	for _, id in ipairs({ "wongwi", "agwi", "okjol", "hwamagwi", "dosangeom", "swordwarden", "hungerwraith", "agwigun", "okjoljang", "jeoseungmusa", "dokssagwi", "dokchunggwi", "seolgwi", "jipgeseolkkun", "mugansu", "muganbul" }) do
 		local d = E2[id]
-		d.hp = math.floor(d.hp * HELL_EASE)
-		d.dmgScale = (d.dmgScale or 1) * HELL_EASE
+		d.hp = math.floor(d.hp * HELL_MOB)
+		d.dmgScale = (d.dmgScale or 1) * HELL_MOB
 	end
 	for _, id in ipairs({ "talui", "hwatang", "dosan", "agwiwang", "yeomra", "dokssawang", "balseolwang", "mugunwang" }) do
 		local d = B2[id]
@@ -5334,7 +5335,7 @@ Config.ACH_COLOR = {
 -- 2.8판: 보스와 그 땅 졸병의 전투력 차이. 보스의 체력이 너무 커서 (졸병의 9~21배) 같은 땅의 보스가 딴 세상처럼 셌다.
 -- 이제 보스는 그 땅 졸병 (가운데) 전투력의 BOSS_POWER_RATIO배까지만 (넘으면 체력을 깎는다). 한 대는 졸병 한 대의 BOSS_HIT_RATIO배
 ------------------------------------------------------------------------
-Config.BOSS_POWER_RATIO = 5.7 -- 3.25판: 4 → 5.7 (체력 ×2에 해당: 전투력은 체력의 제곱근에 비례)
+Config.BOSS_POWER_RATIO = 7.6 -- 3.25판: 4 → 5.7, 3.25.2판: → 7.6 (체력 ×3.5에 해당: 전투력은 체력의 제곱근에 비례)
 Config.BOSS_HIT_RATIO = 2 -- 보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
 -- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
 function Config.npcStats(def: any, at: Vector3, isBoss: boolean): (number, number, number)
