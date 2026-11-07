@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -67714,6 +67714,7 @@ return Titles
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
+local UIB: any = {} -- 한 번만 부르는 큰 함수들 (맨 위 지역 변수 한도 200개 때문에 표에 담는다)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -67794,7 +67795,7 @@ local windowScale = 1
 -- (바깥 지역 변수가 200개 한도에 가까워 기기·터치 단추·메뉴 것은 한 표에) device: "pc" | "phone" | "tablet"
 local V: any = { device = "pc", padScale = 1, mapScale = 1, hooks = {}, padBtns = {}, trainPad = nil, menuFrame = nil, menuToggle = nil, menuOpen = true }
 -- 3.2.9판: 기기마다 다른 크기와 배치. 터치 기기는 화면 짧은 쪽이 600 미만이면 휴대폰, 아니면 태블릿 (아이패드)
-local function isTouch(): boolean
+function UIB.isTouch(): boolean
 	return UserInputService.TouchEnabled and not (UserInputService.KeyboardEnabled and UserInputService.MouseEnabled)
 end
 function UI.device(): string
@@ -67828,7 +67829,7 @@ local function measure()
 	if vp.X < 320 or vp.Y < 240 then
 		vp = Vector2.new(1280, 720) -- 아직 화면이 안 잡혔다
 	end
-	V.device = isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
+	V.device = UIB.isTouch() and (math.min(vp.X, vp.Y) < 600 and "phone" or "tablet") or "pc"
 	if V.device == "phone" then
 		-- 휴대폰: 글자·막대는 작게, 누르는 단추는 손가락 크기 (약 48pt)
 		uiScale = math.clamp(vp.Y / 560, 0.6, 0.9)
@@ -68052,7 +68053,7 @@ local function trailTo(fill: Frame, r: number)
 	end
 end
 
-local function buildHud()
+function UIB.buildHud()
 	local hud = new("Frame", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(0, 660, 0, 176), BackgroundTransparency = 1, Parent = gui })
 	scaled(hud)
 	HUD.root = hud
@@ -68196,7 +68197,7 @@ end
 -- 3.23.3판: 이름표가 서로 겹치면 (몹이 뭉쳐 있을 때) 가까운 것부터 두고, 겹치는 먼 것은 한 칸씩 위로 올린다
 local enemyTags: { { bb: BillboardGui, head: BasePart } } = {}
 local tagLoop = false
-local function startTagLoop()
+function UIB.startTagLoop()
 	if tagLoop then
 		return
 	end
@@ -68260,7 +68261,7 @@ function UI.enemyTag(model: Model)
 	local w = isBoss and 300 or 230
 	local bb = new("BillboardGui", { Name = "EnemyTag", Size = UDim2.new(0, w, 0, 76), StudsOffset = Vector3.new(0, 3.2, 0), AlwaysOnTop = true, LightInfluence = 0, MaxDistance = isBoss and 200 or 130, Parent = head })
 	table.insert(enemyTags, { bb = bb, head = head })
-	startTagLoop()
+	UIB.startTagLoop()
 	-- 3.24판: 어두운 지옥에서 형체가 뭉개지지 않게, 지옥의 주인에게는 밝은 윤곽선을 두른다
 	if isBoss and Config.inHell(head.Position) and not model:FindFirstChild("KwonOutline") then
 		local hl = Instance.new("Highlight")
@@ -68435,7 +68436,7 @@ local function nearMaster(id: string): boolean
 	return Vector3.new(pos.X - m.at.X, 0, pos.Z - m.at.Z).Magnitude <= Config.MASTER_RANGE
 end
 
-local function buildStyles()
+function UIB.buildStyles()
 	local page = makePage("styles")
 	local list = scroller(page, UDim2.new(0.4, -8, 1, 0))
 	-- 3.19판: 등급 순으로 (상급 → 전설 → 신화 → 태초 → 지존 → 윤회 → 초월 → 권왕 → 극), 등급마다 머리글
@@ -68780,7 +68781,7 @@ local function buildStyles()
 	end
 end
 
-local function buildStats()
+function UIB.buildStats()
 	local page = makePage("stats")
 	local info = text({ Size = UDim2.new(1, 0, 1, 0), TextSize = 18, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = page })
 	-- 경지의 관문: 능력치가 닿으면 열린다 (수호자를 꺾어야 경지가 오른다)
@@ -68928,7 +68929,7 @@ end
 ------------------------------------------------------------------------
 -- 1.9판: 업적과 칭호
 ------------------------------------------------------------------------
-local function buildAch()
+function UIB.buildAch()
 	-- 3.13판: 갈래 칸 (전체 · 전투 · 경지 · 권법 · 도전 · 강호 · 비무), 등급 딱지, 칭호 미리보기 (등급 빛깔), 갈래마다 이룬 수
 	local page = makePage("ach")
 	local head = text({ Size = UDim2.new(1, -330, 0, 52), TextSize = 17, RichText = true, Parent = page })
@@ -69087,7 +69088,7 @@ end
 ------------------------------------------------------------------------
 -- 3.20판 도감: 권법 · 적 · 보스 · 사부. 갈래 칸, 채운 수와 다음 보상 막대, 칸마다 카드 (못 본 것은 ??? 와 만나는 곳)
 ------------------------------------------------------------------------
-local function buildDex()
+function UIB.buildDex()
 	local page = makePage("dex")
 	local head = text({ Size = UDim2.new(1, -8, 0, 26), TextSize = 17, Font = Enum.Font.GothamBlack, RichText = true, Parent = page })
 	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1, Parent = page }, {
@@ -69263,7 +69264,7 @@ local function setShopTab(id: string)
 	end
 end
 UI.setShopTab = setShopTab
-local function buildShop()
+function UIB.buildShop()
 	local page = makePage("shop")
 	local head = text({ Size = UDim2.new(1, -12, 0, 26), TextSize = 16, Font = Enum.Font.GothamBold, TextColor3 = C.gold, Parent = page })
 	local tabRow = new("Frame", { Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1, Parent = page }, {
@@ -69574,7 +69575,7 @@ function UI.manualAutoResult(data: any)
 		UI.toast(string.format("🔁 자동 뽑기: [%s] 등장! (새로 얻거나 오른 심법 %d)", R.name, data.ups or 0))
 	end
 end
-local function buildManuals()
+function UIB.buildManuals()
 	-- 3.17.4판: 따로 창 대신 만물상의 심법 탭에
 	local page = shopTabFrames.manuals
 	if not page then
@@ -69683,7 +69684,7 @@ end
 ------------------------------------------------------------------------
 -- 천상 상점: 천궁에서만 열린다 (천정으로 산다)
 ------------------------------------------------------------------------
-local function buildSkyShop()
+function UIB.buildSkyShop()
 	local page = makePage("skyshop")
 	local head = text({ Size = UDim2.new(1, -190, 0, 30), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(150, 230, 255), Parent = page })
 	-- 3.12판: 천상 빛깔 켜기·끄기
@@ -70098,7 +70099,7 @@ function HELP.helpText(tab: string): { string }
 	return L
 end
 
-local function buildHelp()
+function UIB.buildHelp()
 	local page = makePage("help")
 	-- 갈래 단추 (두 줄에 다섯씩)
 	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1, Parent = page })
@@ -70199,7 +70200,7 @@ function HELP.trainLines(): { string }
 	return lines
 end
 
-local function buildTest()
+function UIB.buildTest()
 	-- 3.9판: 갈래별로 다시 정리 (판마다 쌓이던 버튼을 걷어 냈다). 사부·보스·적·권법은 Config에서 저절로 만든다
 	local page = makePage("test")
 	local list = scroller(page, UDim2.fromScale(1, 1))
@@ -70422,7 +70423,7 @@ function UI.trainStop()
 end
 
 -- 박자 놀이: getPhase()가 0~1, 1이 '지금!' 순간
-local function rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: number?)
+function UIB.rhythm(onGrade: (string) -> (), hard: boolean?, basePeriod: number?)
 	local circle = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 60, 0, 60), BackgroundColor3 = C.gold, BackgroundTransparency = 0.2, Parent = trainArea }, { corner(999) })
 	local target = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 70, 0, 70), BackgroundTransparency = 1, Parent = trainArea }, { corner(999), stroke(Color3.new(1, 1, 1), 3) })
 	local _ = target
@@ -70506,7 +70507,7 @@ function UI.trainStart(kind: string, rings: { Vector3 }?, send: (string, number?
 		end)
 		return
 	end
-	local circle, phase, press = rhythm(function(grade)
+	local circle, phase, press = UIB.rhythm(function(grade)
 		send(grade)
 	end, hard, info.period)
 	trainPress = press
@@ -70832,7 +70833,7 @@ local skyTitle: TextLabel? = nil
 local inSkyNow = false
 local inHellNow = false
 -- 3.22판: 천상 지도 판에서 천상 섬들과 지옥 구역들 중 하나만 보인다
-local function setMapLayer(hell: boolean)
+function UIB.setMapLayer(hell: boolean)
 	mapHell = hell
 	for _, o in ipairs(skyObjs) do
 		o.Visible = not hell
@@ -70931,7 +70932,7 @@ local function zoomBy(k: number)
 end
 
 -- 3.22판 지옥 지도 층: 천상 지도 판 위에 얹어 두었다가 지옥에 있을 때만 보인다
-local function buildHellLayer(cv: Frame)
+function UIB.buildHellLayer(cv: Frame)
 	local H = Config.HELL
 	if not H or not H.zones then
 		return
@@ -70965,7 +70966,7 @@ local function buildHellLayer(cv: Frame)
 end
 
 -- 천상 지도: 구름 바다 위의 섬과 다리, 섬 이름과 권장 전투력, 보스, 천궁의 문과 가게, 천상의 사부
-local function buildSkyMap()
+function UIB.buildSkyMap()
 	local SKY = Config.SKY
 	if not SKY then
 		return
@@ -71041,7 +71042,7 @@ local function buildSkyMap()
 			table.insert(skyObjs, ch)
 		end
 	end
-	buildHellLayer(cv)
+	UIB.buildHellLayer(cv)
 	table.sort(hellTexts, function(x, y)
 		return x.prio > y.prio
 	end)
@@ -71049,7 +71050,7 @@ local function buildSkyMap()
 	refreshRec()
 end
 
-local function buildMap()
+function UIB.buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
 	scaled(mapFrame, "map")
 	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(70, 95, 120), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
@@ -71181,7 +71182,7 @@ local function buildMap()
 			end
 		end)
 	end)
-	buildSkyMap()
+	UIB.buildSkyMap()
 	placeMap()
 end
 
@@ -71254,7 +71255,7 @@ local function nameOf(id: string?): string
 end
 
 -- 목표 자리: 정해진 곳이 없으면 (시험·배우기) 가장 가까운 알맞은 사부
-local function goalTarget(s: any, g: any): Vector3?
+function UIB.goalTarget(s: any, g: any): Vector3?
 	if g.kind == "talk" then
 		return Config.ELDER_AT
 	end
@@ -71281,7 +71282,7 @@ local function goalTarget(s: any, g: any): Vector3?
 	return nil
 end
 
-local function goalText(s: any, g: any): string
+function UIB.goalText(s: any, g: any): string
 	local k = g.kind
 	local prog = s.prog or 0
 	if k == "talk" then
@@ -71383,13 +71384,13 @@ local function refreshStory(s: any)
 	end
 	if accepted then
 		storyTitle.Text = string.format("📜 %d장 · %s", s.story or 1, ch.title)
-		storyGoal.Text = "▶ " .. goalText(s, ch.goal)
+		storyGoal.Text = "▶ " .. UIB.goalText(s, ch.goal)
 	else
 		storyTitle.Text = string.format("📜 새 이야기 · %s", ch.title)
 		storyGoal.Text = "▶ 받으면 목표가 표시돼요"
 	end
 	-- 장로에게 말 걸기는 장로 이름표가 있으니 따로 띄우지 않는다
-	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and goalTarget(s, ch.goal) or nil
+	local at = (accepted and not storyHidden and ch.goal.kind ~= "talk") and UIB.goalTarget(s, ch.goal) or nil
 	if at ~= storyAt then
 		storyAt = at
 		clearStoryPart()
@@ -71413,7 +71414,7 @@ local function refreshStory(s: any)
 	showMark(storyMark, at)
 end
 
-local function storyTick(pos: Vector3)
+function UIB.storyTick(pos: Vector3)
 	if storyAt and storyLabel and storyPart then
 		local dir, dist = bearing(pos, storyAt)
 		storyLabel.Text = string.format("📜 목표\n%s쪽 · %d칸", dir, math.floor(dist))
@@ -71422,7 +71423,7 @@ local function storyTick(pos: Vector3)
 end
 
 -- 찾은 사부만 지도에 나오고, 하늘로 빛기둥이 솟는다
-local function refreshFound(s: any)
+function UIB.refreshFound(s: any)
 	for id, mk in pairs(masterMarks) do
 		local found = (s.found and s.found[id]) or table.find(s.styles, id) ~= nil
 		mk.stroke.Enabled = found
@@ -71457,7 +71458,7 @@ function UI.setStoryHidden(on: boolean)
 end
 
 function UI.refreshWorld(s: any)
-	refreshFound(s)
+	UIB.refreshFound(s)
 	refreshRec()
 	refreshStory(s)
 end
@@ -71515,7 +71516,7 @@ function UI.dialogOpen(): boolean
 	return dialogFrame ~= nil and dialogFrame.Visible
 end
 
-local function buildStory(topLeft: Frame)
+function UIB.buildStory(topLeft: Frame)
 	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 424), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
@@ -71585,7 +71586,7 @@ UI.regionAt = regionAt
 -- 천상계: 섬 이름, 맑고 밝은 하늘빛, 발아래 구름 바다 (이 화면에서만 만든다. 땅에서는 보이지 않는다)
 local skySea: Folder? = nil
 local SKY_AMBIENT = { d = 0.16, h = 0.35, c = Color3.fromRGB(225, 238, 255) }
-local function skyTick(pos: Vector3)
+function UIB.skyTick(pos: Vector3)
 	local isl = Config.skyIslandAt(pos)
 	local id = isl and ("sky_" .. isl.id) or "sky"
 	if id ~= regionNow then
@@ -71626,7 +71627,7 @@ end
 -- 3.22판 지옥: 어둡고 붉은 빛깔, 짙은 연기 (이 화면에서만 입힌다. 서버의 낮밤과 겹치지 않게 색보정과 노출로)
 local hellCC: ColorCorrectionEffect? = nil
 local hellExposure: number? = nil
-local function hellTick(pos: Vector3)
+function UIB.hellTick(pos: Vector3)
 	local z = Config.hellZoneAt(pos)
 	local id = z and ("sky_" .. z.id) or "hell"
 	if id ~= regionNow then
@@ -71666,7 +71667,7 @@ local function hellTick(pos: Vector3)
 		atmo.Color = atmo.Color:Lerp(Color3.fromRGB(150, 48, 40), 0.08)
 	end
 end
-local function hellLeave()
+function UIB.hellLeave()
 	local rp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	local hl = rp and rp:FindFirstChild("KwonHellLight")
 	if hl then
@@ -71680,14 +71681,14 @@ local function hellLeave()
 		hellExposure = nil
 	end
 end
-local function ambientTick(pos: Vector3)
+function UIB.ambientTick(pos: Vector3)
 	if Config.inHell(pos) then
-		hellTick(pos)
+		UIB.hellTick(pos)
 		return
 	end
-	hellLeave()
+	UIB.hellLeave()
 	if pos.Y > Config.SKY.y - 300 then
-		skyTick(pos)
+		UIB.skyTick(pos)
 		return
 	end
 	if skySea then
@@ -71718,14 +71719,14 @@ local function ambientTick(pos: Vector3)
 end
 
 local mapAcc = 0
-local function updateMap(dt: number)
+function UIB.updateMap(dt: number)
 	local pos = myPos()
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart")
 	if pos and Config.inHell(pos) ~= inHellNow then
 		inHellNow = Config.inHell(pos)
 		if skyCanvas then
-			setMapLayer(inHellNow)
+			UIB.setMapLayer(inHellNow)
 			if mapSky then
 				placeMap()
 			end
@@ -71756,7 +71757,7 @@ local function updateMap(dt: number)
 		end
 	end
 	if pos then
-		storyTick(pos)
+		UIB.storyTick(pos)
 	end
 	mapAcc += dt
 	if mapAcc < 0.25 then
@@ -71764,7 +71765,7 @@ local function updateMap(dt: number)
 	end
 	mapAcc = 0
 	if pos then
-		ambientTick(pos)
+		UIB.ambientTick(pos)
 	end
 	declutter()
 	local n = 0
@@ -71812,7 +71813,7 @@ function UI.setSpeed(amount: number)
 		local _ = i
 	end
 end
-local function buildSpeedLines()
+function UIB.buildSpeedLines()
 	for i = 1, 22 do
 		local a = (i / 22) * math.pi * 2 + math.random() * 0.2
 		local f = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 160, 0, 2), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, BackgroundTransparency = 1, Visible = false, ZIndex = 2, Parent = gui })
@@ -71935,7 +71936,7 @@ end
 local BH: any = { rows = {}, votes = {}, myVote = 0 }
 -- 3.11.1판 대기실 창 (比武堂): 익힌 권법이 등급 빛깔의 카드로 늘어선다 (권법 빛깔로 물든 바탕, 큰 한자 그림자, 등급 띠).
 -- 위쪽 등급 칸으로 거르고, 고르면 오른쪽 큰 판이 그 권법 빛깔로 물들며 기술이 뜬다. ✕로 닫고 둘러볼 수 있다
-local function buildLobbyPanel()
+function UIB.buildLobbyPanel()
 	local INK = Color3.fromRGB(14, 10, 9)
 	local function tw(inst: Instance, t: number, goal: { [string]: any }, style: Enum.EasingStyle?)
 		TweenService:Create(inst, TweenInfo.new(t, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
@@ -72302,7 +72303,7 @@ local function buildLobbyPanel()
 		BH.showSel()
 	end
 end
-local function buildBattleHud()
+function UIB.buildBattleHud()
 	local top = new("Frame", { Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 360, 0, 62), BackgroundColor3 = C.bg, BackgroundTransparency = 0.2, Parent = gui }, { corner(12), stroke(Color3.fromRGB(200, 80, 60), 1.5) })
 	scaled(top)
 	BH.map = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
@@ -72319,7 +72320,7 @@ local function buildBattleHud()
 		table.insert(BH.rows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
 	end
 	BH.board = board
-	buildLobbyPanel()
+	UIB.buildLobbyPanel()
 end
 
 function UI.battleState(data: any, myId: number)
@@ -72425,7 +72426,7 @@ function UI.init(req: RemoteEvent)
 	end
 	toastBox = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 120), Size = UDim2.new(0, 760, 0, 230), BackgroundTransparency = 1, Parent = gui }, { new("UIListLayout", { VerticalAlignment = Enum.VerticalAlignment.Top }) })
 	scaled(toastBox)
-	buildHud()
+	UIB.buildHud()
 	-- 위 왼쪽: 경지·은자·능력치, 메뉴
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 500), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
@@ -72486,7 +72487,7 @@ function UI.init(req: RemoteEvent)
 			V.gfxButton = b
 		end
 	end
-	buildStory(topLeft)
+	UIB.buildStory(topLeft)
 	-- 보스 막대
 	-- 보스 막대: 어두운 판, 금빛 테, 이름·단계·전투력, 체력 (흰 띠가 따라온다), 단계 눈금, 균형
 	bossFrame = new("Frame", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 34), Size = UDim2.new(0, 760, 0, 92), BackgroundColor3 = Color3.fromRGB(14, 8, 8), BackgroundTransparency = 0.25, Visible = false, Parent = gui }, { corner(12), stroke(Color3.fromRGB(190, 60, 40), 2) })
@@ -72541,19 +72542,19 @@ function UI.init(req: RemoteEvent)
 	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
 	end)
-	buildStyles()
-	buildStats()
-	buildAch()
-	buildDex()
-	buildShop()
-	buildManuals()
-	buildSkyShop()
-	buildHelp()
-	buildTest()
-	buildMap()
-	buildSpeedLines()
+	UIB.buildStyles()
+	UIB.buildStats()
+	UIB.buildAch()
+	UIB.buildDex()
+	UIB.buildShop()
+	UIB.buildManuals()
+	UIB.buildSkyShop()
+	UIB.buildHelp()
+	UIB.buildTest()
+	UIB.buildMap()
+	UIB.buildSpeedLines()
 	RunService.RenderStepped:Connect(function(dt: number)
-		local ok, err = pcall(updateMap, dt)
+		local ok, err = pcall(UIB.updateMap, dt)
 		if not ok then
 			warn("[권왕] 지도 오류:", err)
 		end
@@ -72573,7 +72574,7 @@ function UI.init(req: RemoteEvent)
 	koFrame = new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(30, 0, 0), BackgroundTransparency = 0.55, Visible = false, ZIndex = 35, Parent = gui })
 	koText = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, 0, 0, 60), TextSize = 30, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0.2, ZIndex = 36, Parent = koFrame })
 	if Config.BATTLE_MODE then
-		buildBattleHud()
+		UIB.buildBattleHud()
 	end
 	-- 3.2.9판: 기기마다 배치 (화면 크기가 바뀔 때마다 다시)
 	local lastDevice = ""
