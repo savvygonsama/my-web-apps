@@ -1581,6 +1581,43 @@ local function think(e: Enemy, t: number)
 end
 
 function Npc.start()
+	-- 3.31.4판: 한가해진 적이 한 곳에 몰려 있으면 흩어 놓는다 (무슨 까닭이든 뭉친 채로 두지 않는다).
+	-- 2초마다 6칸 칸에 둘 이상 겹친 적을 골라, 가장 가까운 동료의 반대쪽으로 열 칸쯤 옮긴 자리를 새 집으로 삼는다 (진영에서 45칸 안에서만)
+	task.spawn(function()
+		while true do
+			task.wait(2)
+			local cells: { [string]: { any } } = {}
+			for _, e in ipairs(Npc.list) do
+				if e.kind == "enemy" and not e.target and not e.f.dead and not (e.def :: any).dummy and e.f.root.Parent then
+					local p = e.f.root.Position
+					local key = string.format("%d,%d,%d", math.floor(p.X / 6), math.floor(p.Z / 6), math.floor(p.Y / 60))
+					local c = cells[key]
+					if not c then
+						c = {}
+						cells[key] = c
+					end
+					table.insert(c, e)
+				end
+			end
+			for _, group in pairs(cells) do
+				if #group >= 2 then
+					for i = 2, #group do
+						local e = group[i]
+						local first = group[1]
+						local p = e.f.root.Position
+						local off = Vector3.new(p.X - first.f.root.Position.X, 0, p.Z - first.f.root.Position.Z)
+						local dir = off.Magnitude > 0.5 and off.Unit or Vector3.new(math.cos(i * 2.4), 0, math.sin(i * 2.4))
+						local nh = Vector3.new(p.X, e.home.Y, p.Z) + dir * 10
+						local camp = (e :: any).camp or e.home
+						if Vector3.new(nh.X - camp.X, 0, nh.Z - camp.Z).Magnitude <= 45 then
+							e.home = nh
+							e.f.hum:MoveTo(nh)
+						end
+					end
+				end
+			end
+		end
+	end)
 	task.spawn(function()
 		while true do
 			task.wait(0.1)
