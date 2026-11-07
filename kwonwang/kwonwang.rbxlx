@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -20734,6 +20734,10 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 			end
 		end
 	end
+	-- 3.31.2판: 보스는 마당 한가운데에 선다 (예전엔 둘레 16칸 안 아무 데나 섰다)
+	if isBoss then
+		pos = at + Vector3.new(0, 4 * (def.scale or 1), 0)
+	end
 	-- 3.25판: 보스 마당 둘레 (clear 칸) 안쪽에는 보통 적을 두지 않는다 — 보스는 따로 서 있게
 	if not isBoss then
 		local Z = Config.BOSS_ZONE
@@ -20802,7 +20806,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		def = def,
 		kind = isBoss and "boss" or "enemy",
 		typeId = typeId,
-		home = at,
+		-- 3.31.2판: 집은 이 적이 선 자리 (진영 한가운데가 아니다). 싸운 뒤 모두 한가운데 한 점으로 돌아와 한 덩어리로 뭉치던 것을 고친다
+		home = Vector3.new(pos.X, at.Y, pos.Z),
 		target = nil,
 		nextAttack = os.clock() + 1,
 		guardUntil = 0,
@@ -20814,6 +20819,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		level = lv,
 		attackingUntil = 0,
 	}
+	;(e :: any).camp = at -- 진영의 가운데 (다시 나타날 때 이 둘레에서 새로 자리를 잡는다)
 	table.insert(Npc.list, e)
 	return e
 end
@@ -21469,7 +21475,7 @@ function Npc.onDeath(f: any)
 				return -- 심마는 다시 나타나지 않는다
 			end
 			task.delay(wait, function()
-				local ok, err = pcall(Npc.spawn, e.typeId, e.kind == "boss", e.home, e.region)
+				local ok, err = pcall(Npc.spawn, e.typeId, e.kind == "boss", (e :: any).camp or e.home, e.region)
 				if not ok then
 					warn("[권왕] 적 다시 만들기 오류:", e.typeId, err)
 				end
