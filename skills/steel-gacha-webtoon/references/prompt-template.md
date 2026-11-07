@@ -1,7 +1,55 @@
 # ChatGPT 프롬프트 틀
 
-매 화 이 순서로 준다: 콘티 표 → 사용 순서 → [0] → [1]~[N] → 다시 그리기 → 빈 말풍선 → 미리 알아 둘 점.
-실례: 3화 「반반 식구」, 4화 「볼트 하나」(`episodes.md`).
+**기본 형식은 '한 번에 요청'이다**(사용자가 4화부터 요청). 매 화 이 순서로 준다:
+콘티 표(+앱 각주) → 사용 순서(첨부할 것) → **전체 장면을 담은 프롬프트 한 덩어리** → 보조 문장(next scene / 합쳐졌을 때 / 한 장 다시 / 빈 말풍선 + 직접 넣을 대사) → 받은 뒤 확인할 곳.
+실례: 4화 「우산」, 5화 「실눈」(`episodes.md`).
+
+## 한 번에 요청 (기본)
+```
+I am making a vertical-scroll Korean webtoon. Create {K} SEPARATE images for this episode, one per scene, in order from scene 1 to scene {K}. Each scene must be its own single full-bleed portrait image (2:3, 1024x1536). NEVER combine scenes into one image, never draw a comic page with multiple panels, no panel borders. If you can only make one image per reply, make scene 1 and wait; I will type "next" for each following scene.
+
+ATTACHED: the STYLE ANCHOR image (copy its art style) and the character sheets for {영문명들}.
+
+STYLE LOCK (never change between scenes):
+{style-lock.md의 STYLE LOCK 항목 그대로 + "- Do NOT redesign any character. When unsure, copy the attached sheet exactly."}
+
+{필요할 때만: RAIN RULE / FLASHBACK RULE / BLACKOUT RULE / {사물}-FORM LOCKED / BABY {캐릭터} — 아래 '특수 장면 규칙'}
+
+CHARACTERS (DO NOT MIX CHARACTERS, follow the attached sheets):
+{아래 '캐릭터 문장'에서 이 화에 나오는 캐릭터만}
+All are genderless.
+
+SET(S): {무대 문장. 무대가 둘 이상이면 이름을 붙이고 장면마다 어느 무대인지 적는다}. NO readable text anywhere.
+
+SCENES:
+Scene 1 of {K}. {누가 어디서 무엇을 — 한 동작, 카메라, 표정}
+Speech bubble from {NAME}: "{대사}"
+Only {인물}. No other text.
+...
+```
+보조 문장:
+```
+next scene. Same style as the style anchor and the previous scenes, same characters{, and the SAME {사물}-FORM as scene N}.
+```
+```
+Stop. Make ONLY scene {n} as ONE single full-bleed image, no panels, no borders, no multiple frames. Then wait.
+```
+```
+Redraw scene {n}. Same style as the style anchor and the previous scenes, same characters. Fix: {고칠 점}
+```
+```
+Create the same image again with the speech bubbles left EMPTY (white, no text).
+```
+
+## 특수 장면 규칙 (필요한 화에만 넣는다)
+- **RAIN RULE**: `light rain. Soft light grey sky. Rain is only thin light-grey straight lines and small splashes. Characters keep EXACTLY the same colors as in the style anchor: no blue, grey or dark tint over the characters.`
+- **FLASHBACK RULE**: `mark the flashback only with a soft cream rounded vignette around the image edges. {빛·불 색} may glow, but the characters keep their own flat colors; do not tint them.`
+- **BLACKOUT RULE**: `the room becomes dark, a deep navy blue background. Characters are still readable as simple dark shapes with faint outlines. Only what the scene says glows.`
+- **{사물}-FORM — LOCKED**: 번호 매긴 구성(손잡이 1, 살 정확히 4개 …), "Scene N DEFINES this form", 이후 장면은 "copy it exactly from scene N", 그리기 전 체크리스트 한 줄. (4화 우산)
+- **BABY {캐릭터}**: 같은 디자인을 더 작고 둥글게(약 1.6등신), 같은 볏·조끼·엠블럼. 눈 모양 등 그 장면에서 달라야 할 점만 따로 적는다. (5화 아기 포오)
+
+## (예전 방식) 한 장씩 보내기
+한 번에 요청이 잘 안 될 때만 쓴다.
 
 ## 사용 순서 (사용자에게 그대로 안내)
 1. ChatGPT 프로젝트 「스틸가챠s 작화」 안에서 새 채팅을 연다(없으면 새 채팅).
