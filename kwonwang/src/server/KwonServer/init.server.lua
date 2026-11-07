@@ -4484,7 +4484,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		-- 테스트로 부른 적·목인을 모두 치운다
 		for i = #Npc.list, 1, -1 do
 			local e = Npc.list[i]
-			if e.region == "test" then
+			-- 3.27.8판: 목인은 치우지 않는다 (적만 치운다)
+			if e.region == "test" and not (e.def :: any).dummy then
 				Npc.despawn(e.f)
 			end
 		end

@@ -2520,7 +2520,7 @@ function UIB.buildTest()
 		{ "💠 천정 +1000", "testGems" }, { "⚔ PvP 끄기 열기", "testPvpUnlock" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🎯 시험·전투", {
-		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적·목인 치우기", "testClear" },
+		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적 치우기 (목인은 그대로)", "testClear" },
 		{ "🎬 컷씬 다시 보기", "testSeen" }, { "🗼 탑: 다음 보스 층", "testTower" }, { "🗼 탑: 이 층 쓸기", "testTower", "clear" },
 	})
 	-- 3.17판: 업적 테스트

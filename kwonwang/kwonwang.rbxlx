@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -13282,7 +13282,8 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		-- 테스트로 부른 적·목인을 모두 치운다
 		for i = #Npc.list, 1, -1 do
 			local e = Npc.list[i]
-			if e.region == "test" then
+			-- 3.27.8판: 목인은 치우지 않는다 (적만 치운다)
+			if e.region == "test" and not (e.def :: any).dummy then
 				Npc.despawn(e.f)
 			end
 		end
@@ -70282,7 +70283,7 @@ function UIB.buildTest()
 		{ "💠 천정 +1000", "testGems" }, { "⚔ PvP 끄기 열기", "testPvpUnlock" }, { "↺ 처음으로", "testReset", color = C.red },
 	})
 	section("🎯 시험·전투", {
-		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적·목인 치우기", "testClear" },
+		{ "🎯 권법 시험장 (오가기)", "testRoom", close = true }, { "🪵 앞에 목인 세우기", "testDummy" }, { "🧹 부른 적 치우기 (목인은 그대로)", "testClear" },
 		{ "🎬 컷씬 다시 보기", "testSeen" }, { "🗼 탑: 다음 보스 층", "testTower" }, { "🗼 탑: 이 층 쓸기", "testTower", "clear" },
 	})
 	-- 3.17판: 업적 테스트
