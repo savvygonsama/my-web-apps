@@ -3359,6 +3359,32 @@ function Geuk.trigger(f: any, st: any)
 		end)
 		return
 	end
+	local GF = st.godForm
+	if GF then
+		-- 3.31판 신 삼재권 · 신의 모습: 영역은 없다. 쓰러질 때까지 몸이 떠올라 날아다닌다 (걸음 빨라짐), 기술이 모두 바뀐다
+		local base = f.hum and f.hum.HipHeight or 2
+		f.hasteMul = GF.walk
+		if f.hum then
+			f.hum.HipHeight = base + GF.lift
+		end
+		Push:FireAllClients("sinForm", { m = f.model, name = name, cut = G.cut })
+		task.spawn(function()
+			while f.twilightUntil == token and not f.dead and f.model.Parent do
+				task.wait(0.4)
+			end
+			f.hasteMul = nil
+			if f.hum and f.hum.Parent then
+				f.hum.HipHeight = base
+			end
+			if f.twilightUntil == token then
+				f.twilightUntil = os.clock()
+			end
+			if f.model.Parent then
+				f.model:SetAttribute("Twilight", nil)
+			end
+		end)
+		return
+	end
 	Push:FireAllClients("geukTwilight", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
 	World.twilight(G.cut, G.dur)
 end

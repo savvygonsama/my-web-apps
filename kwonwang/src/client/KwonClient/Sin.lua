@@ -1257,7 +1257,151 @@ do
 	end)
 end
 
+------------------------------------------------------------------------
+-- 신의 모습 (신 채우기): 몸을 감싼 금빛 갑옷 · 뒤따르는 거대한 신의 잔상 · 떠 있는 神 글자 · 발밑에서 흩날리는 금빛
+-- 서버의 Twilight 표시를 보고 켜고 끈다 (쓰러지면 꺼진다)
+------------------------------------------------------------------------
+function Sin.form(d: any)
+	local m0: Model? = d.m
+	local r = rootOf(m0)
+	if not m0 or not r then
+		return
+	end
+	local m = m0 :: Model
+	local c = r.Position
+	local dd = (workspace.CurrentCamera.CFrame.Position - c).Magnitude
+	if dd > 260 then
+		return
+	end
+	Fx.afterimage(m, GOLD, 0.8)
+	Fx.sound("ping", 1, 0.35, c)
+	for i = 0, 5 do
+		task.delay(i * 0.16, function()
+			local rr = rootOf(m)
+			if rr then
+				Fx.ring(rr.Position - Vector3.new(0, 2.5, 0), TRIO[i % 3 + 1], 4, 40 + i * 14, 0.9)
+			end
+		end)
+	end
+	task.delay(d.cut or 2, function()
+		local rr = rootOf(m)
+		if rr then
+			impact(rr.Position - Vector3.new(0, 2.8, 0), 14, 1.4)
+			Fx.flash(rr.Position, HUMAN, 70, 4, 0.6)
+			if m == player.Character and opts.flash then
+				opts.flash(Color3.new(1, 1, 1), 0.6)
+			end
+		end
+	end)
+end
+
+local shells: { [Model]: { alive: boolean, parts: { BasePart } } } = {}
+local function buildShell(m: Model)
+	local r = rootOf(m)
+	if not r then
+		return
+	end
+	local sh = { alive = true, parts = {} :: { BasePart } }
+	shells[m] = sh
+	local pairsList: { { src: BasePart, armor: BasePart, ghost: BasePart } } = {}
+	for _, ch in ipairs(m:GetChildren()) do
+		if ch:IsA("BasePart") and ch.Name ~= "HumanoidRootPart" and ch.Transparency < 0.9 then
+			local armor = part(ch.Size * 1.22, GOLD, Enum.Material.Neon, 0.5)
+			local ghost = part(ch.Size * 2.6, Color3.fromRGB(255, 244, 200), Enum.Material.Neon, 0.72)
+			table.insert(pairsList, { src = ch, armor = armor, ghost = ghost })
+			table.insert(sh.parts, armor)
+			table.insert(sh.parts, ghost)
+		end
+	end
+	-- 떠 있는 神 글자 (등 뒤, 화면을 향한다)
+	local gp = part(Vector3.new(0.4, 0.4, 0.4), GOLD, Enum.Material.Neon, 1)
+	table.insert(sh.parts, gp)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.fromOffset(240, 240)
+	bb.AlwaysOnTop = false
+	bb.LightInfluence = 0
+	bb.MaxDistance = 220
+	bb.Parent = gp
+	local tl = Instance.new("TextLabel")
+	tl.Size = UDim2.fromScale(1, 1)
+	tl.BackgroundTransparency = 1
+	tl.Text = "神"
+	tl.TextScaled = true
+	tl.Font = Enum.Font.GothamBlack
+	tl.TextColor3 = Color3.fromRGB(255, 226, 140)
+	tl.TextStrokeColor3 = Color3.new(1, 1, 1)
+	tl.TextStrokeTransparency = 0.35
+	tl.TextTransparency = 0.25
+	tl.Parent = bb
+	local g2 = Instance.new("UIGradient")
+	g2.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 205, 90)), ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 215, 255)) })
+	g2.Parent = tl
+	local ghostCF = r.CFrame
+	local t0 = os.clock()
+	local lastMote = 0
+	local conn: RBXScriptConnection
+	conn = RunService.Heartbeat:Connect(function()
+		local rr = rootOf(m)
+		if not sh.alive or not rr or not m.Parent then
+			conn:Disconnect()
+			for _, q in ipairs(sh.parts) do
+				q:Destroy()
+			end
+			shells[m] = nil
+			return
+		end
+		local cam = workspace.CurrentCamera
+		if (cam.CFrame.Position - rr.Position).Magnitude > 200 then
+			return
+		end
+		local e = os.clock() - t0
+		local rcf = rr.CFrame
+		local look = Vector3.new(rcf.LookVector.X, 0, rcf.LookVector.Z)
+		look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
+		-- 거대한 잔상은 한 박자 늦게, 뒤에서 따라온다
+		local target = CFrame.new(rr.Position - look * 10 + Vector3.new(0, 7 + math.sin(e * 1.6) * 0.8, 0)) * (rcf - rcf.Position)
+		ghostCF = ghostCF:Lerp(target, 0.09)
+		local pulse = 0.48 + math.sin(e * 3) * 0.08
+		for _, it in ipairs(pairsList) do
+			if it.src.Parent then
+				it.armor.CFrame = it.src.CFrame
+				it.armor.Transparency = pulse
+				local rel = rcf:ToObjectSpace(it.src.CFrame)
+				it.ghost.CFrame = ghostCF * CFrame.new(rel.Position * 2.6) * (rel - rel.Position)
+			end
+		end
+		gp.CFrame = CFrame.new(ghostCF.Position + Vector3.new(0, 18, 0))
+		-- 발밑에서 금빛이 흩날린다
+		if os.clock() - lastMote > 0.12 then
+			lastMote = os.clock()
+			local mote = part(Vector3.new(0.35, 0.35, 0.35), math.random() < 0.5 and GOLD or HUMAN, Enum.Material.Neon, 0.1, "ball")
+			mote.Position = rr.Position + Vector3.new((math.random() - 0.5) * 3, -2.4, (math.random() - 0.5) * 3)
+			tween(mote, 0.9, { Position = mote.Position + Vector3.new((math.random() - 0.5) * 4, 3 + math.random() * 3, (math.random() - 0.5) * 4), Transparency = 1 })
+			task.delay(0.95, function()
+				mote:Destroy()
+			end)
+		end
+	end)
+end
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		for _, pl in ipairs(Players:GetPlayers()) do
+			local ch = pl.Character
+			if ch then
+				local on = ch:GetAttribute("Twilight") == true and ch:GetAttribute("Style") == "sinsamjae"
+				local sh = shells[ch]
+				if on and not sh then
+					buildShell(ch)
+				elseif not on and sh then
+					sh.alive = false
+				end
+			end
+		end
+	end
+end)
+
 -- 겹치는 순환을 피해 Fx가 부를 수 있게 달아 둔다
-(Fx :: any).sinCast = Sin.cast
+; (Fx :: any).sinCast = Sin.cast
 
 return Sin

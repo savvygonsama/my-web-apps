@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.30.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2543,13 +2543,17 @@ table.insert(Config.Styles, {
 	secret = true,
 	unlockHint = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 얻고, 세상 북서쪽 끝의 사람 모양 돌에게 은자 9,990,000을 바쳐 땅 밑 동굴의 제단에서 얻는다",
 	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고, 땅을 딛고, 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고, 땅을 한 번 찍으면 천지가 갈라진다.",
-	gimmick = "체술: 팔꿈치 · 쓸어차기 · 무릎 · 진각 · 메치기로 싸우는 몸의 권법. 붙잡아 휘돌리고 내리꽂는다. 삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+	gimmick = "신 채우기: 싸우며 신(100)을 채우면 신의 모습으로 바뀐다 (쓰러질 때까지). 몸이 떠올라 날아다니고 금빛 갑옷과 거대한 신의 잔상이 따르며 기술이 모두 바뀐다 (더 세다, 영역은 없다). 체술: 팔꿈치 · 쓸어차기 · 무릎 · 진각 · 메치기로 싸우는 몸의 권법. 붙잡아 휘돌리고 내리꽂는다. 삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
 	deflect = 0.38,
 	postureMult = 1.5,
 	speed = 1.25,
 	dashCd = 0.5,
 	cdMult = 0.75,
 	pulse = { every = 3, kind = "gravity", radius = 11, delay = 0.12, name = "삼재 진동", dmg = 60, posture = 48, stun = 0.45, kb = 20, up = 3 },
+	-- 신 채우기: 싸우며 신(100)을 채우면 신의 모습으로 바뀐다 (쓰러질 때까지). 영역은 없다. 몸이 조금 떠올라 날아다니고,
+	-- 몸을 감싼 금빛 갑옷과 뒤따르는 거대한 신의 잔상이 생기며, 기술이 모두 바뀐다 (더 세다)
+	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 2.2, dur = 99999 },
+	godForm = { lift = 2.6, walk = 1.3 },
 	stance = "stance_sin",
 	combo = {
 		{ id = "sn1", name = "승천 팔꿈치", pose = "sn_elbow", dur = 0.34, lunge = 4, hits = { hit(0.16, 6, 5, 34, 24, 0.4, 14, 10, true) } },
@@ -2567,6 +2571,25 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
+	-- 신의 모습: 기술이 모두 바뀐다 (영역 없음, 날며 싸운다)
+	twilight = {
+		name = "신강림",
+		color = Color3.fromRGB(255, 236, 160),
+		color2 = Color3.fromRGB(190, 225, 255),
+		dmg = 1.35,
+		pulse = { every = 3, kind = "gravity", radius = 15, delay = 0.1, name = "신벌", dmg = 90, posture = 70, stun = 0.6, kb = 28, up = 6 },
+		heavy = { id = "snsH", name = "신 천벌권", pose = "sn_tackle", dur = 0.55, lunge = 24, iframes = 0.3, hits = { hit(0.26, 16, 8, 190, 200, 1.1, 90, 12, true) } },
+		skills = {
+			E = { id = "snsE", name = "비천 신각", desc = "하늘을 날며 가까운 적 다섯 사이를 번개처럼 오가며 두 번씩 걷어찬다 (무적). 마지막에 내려서며 둘레가 터진다", pose = "flying_kick", dur = 0.95, cd = 5, chi = 22, iframes = 0.9,
+				mech = { kind = "rushChain", n = 5, range = 44, delay = 0.06, every = 0.16, hitsEach = 2, hit = hit(0, 0, 0, 76, 64, 0.6, 26, 12), finalRadius = 18, final = hit(0, 0, 0, 150, 130, 1.0, 50, 18) } },
+			R = { id = "snsR", name = "천강 내리찍기", desc = "하늘 높이 솟았다가 온몸으로 땅을 내리찍는다. 충격이 크게 퍼져 둘레의 적이 높이 튕겨 오른다", pose = "dive_slam", dur = 0.95, cd = 8, chi = 26,
+				mech = { kind = "shock", delay = 0.45, dist = 0, radius = 24, hit = hit(0, 0, 0, 170, 160, 1.2, 70, 24) } },
+			G = { id = "snsG", name = "만상 대회전", desc = "둘레의 적 여덟을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고, 사방으로 내던지면 떨어진 자리마다 땅이 크게 터진다", pose = "cs_swing", dur = 2.8, cd = 24, chi = 100, armor = true,
+				mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 8, reel = 0.25, spin = 1.8, every = 0.2, orbit = 10, radius = 15, tick = hit(0, 0, 0, 34, 38, 0.3, 18), dist = 48, flight = 0.6, hit = hit(0, 0, 0, 340, 380, 1.2, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 150, 160, 0.8, 50, 20) } },
+			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 둘레의 적 열을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌리다, 무릎을 들어 땅을 찍는 순간 모두를 내던져 떨어진 자리마다 천지가 갈라진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
+				mech = { kind = "grabThrow", mode = "spin", range = 44, angle = 360, n = 10, reel = 0.5, spin = 3.4, every = 0.16, orbit = 11, radius = 17, tick = hit(0, 0, 0, 44, 50, 0.3, 18), dist = 44, flight = 0.5, hit = hit(0, 0, 0, 560, 620, 1.6, 0, 0), splashRadius = 17, splash = hit(0, 0, 0, 300, 340, 1.2, 70, 28) } },
+		},
+	},
 	},
 })
 

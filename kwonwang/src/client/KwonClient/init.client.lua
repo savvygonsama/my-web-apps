@@ -2686,6 +2686,11 @@ function handlers.hellFall(data: any)
 		end)
 	end)
 end
+-- 3.31판: 신의 모습 (신 채우기). 누군가 신으로 바뀐다 (모두에게 보인다)
+function handlers.sinForm(data: any)
+	Sin.form(data)
+	UI.banner(string.format("🌅 神降臨 · %s", data.name or ""), "신의 모습이 되었다. 몸이 떠오르고 거대한 신의 잔상이 따른다. 기술이 모두 바뀐다 (쓰러질 때까지)", Color3.fromRGB(255, 226, 140))
+end
 -- 3.29판 신의 동굴: 대좌에 극 권법의 기운을 보낸다 (모두에게 보인다)
 function handlers.sinOffer(data: any)
 	Sin.offer(data)
