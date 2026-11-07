@@ -1569,7 +1569,7 @@ end
 -- 컷씬: 팔을 몸 둘레로 여섯 번 휘두르고 → 무릎을 들어 땅을 찍는다 (6.1초) → 땅이 깨진다. 찍는 순간 권법을 얻는다
 Sin.STOMP = 6.1
 Sin.TOTAL = 8.6
-function Sin.rite(player: Player, forced: boolean?)
+function Sin.rite(player: Player, forced: boolean?, onDone: (() -> ())?)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not f or f.dead or not f.root.Parent then
@@ -1607,6 +1607,9 @@ function Sin.rite(player: Player, forced: boolean?)
 			Push:FireClient(player, "learned", { style = "sinsamjae", hidden = true })
 			pushState(player)
 		end
+		if onDone then
+			onDone()
+		end
 	end)
 	local _ = sd
 end
@@ -1619,15 +1622,9 @@ function Story.talk(player: Player)
 	local p = profiles[player]
 	if p and not p.styles.sinsamjae then
 		local miss = Sin.missing(p)
-		if #miss == 0 then
-			-- 극을 셋 이룬 자: 마지막 가르침
-			Push:FireClient(player, "dialog", { who = "청운 장로", title = "처음의 주먹", text = "...여기까지 왔구먼. 극을 셋이나 이루고도 다시 이 늙은이를 찾아오다니. 그래, 극 위에는 새것이 없네. 처음 내가 자네 손에 쥐여 준 삼재권, 하늘과 땅과 사람. 이제 그걸 제대로 가르쳐 주겠네. 서 있게. 눈을 뜨고 보게." })
-			task.delay(1.2, function()
-				Sin.rite(player)
-			end)
-			return
-		elseif #miss < #Config.SIN_NEED and not Config.Story[p.story] then
-			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = "극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고 오면, 마지막으로 가르칠 것이 하나 있네. 아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼." })
+		if #miss < #Config.SIN_NEED and not Config.Story[p.story] then
+			local S = Config.SINROAD
+			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = string.format("극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고, 환생을 %d번 거친 몸이면... 세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양 돌이 하나 서 있네. 그 앞에 💰 %s 은자를 바치면 길이 열린다더군. %s", S.rebirth, Config.formatNumber(S.cost), #miss > 0 and ("아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼.") or "자네는 이미 다 갖췄구먼.") })
 			return
 		end
 	end
@@ -4643,6 +4640,20 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			f.root.CFrame = CFrame.new(E.cliff + Vector3.new(0, 44, 60))
 			toast(player, "🌫 세상 끝 벼랑 · 앞의 무너지는 돌길을 건너 숨은 정원으로")
 		end
+	elseif action == "testSinCave" then
+		-- 신의 동굴로 (은자·환생 조건 없이)
+		if W.sin and f then
+			p.seen["sin_paid"] = true
+			f.root.CFrame = CFrame.lookAt(Config.SINROAD.room + Vector3.new(0, 5, 52), Config.SINROAD.room + Vector3.new(0, 5, 0))
+			for _, id in ipairs(Config.SIN_NEED) do
+				p.seen["sin_off_" .. id] = nil
+			end
+			for i = 1, 3 do
+				p.seen["sin_slot" .. i] = nil
+			end
+			W.sin.reset()
+			toast(player, "🌑 신의 동굴 (극 권법 셋을 얻고 하나씩 장착해 대좌에 기운을 보내세요)")
+		end
 	elseif action == "testSinRite" then
 		-- 신 삼재권 얻는 컷씬 보기 (이미 얻었어도 다시 본다)
 		Sin.rite(player, true)
@@ -6688,6 +6699,161 @@ task.spawn(function()
 		end
 	end
 end)
+
+------------------------------------------------------------------------
+-- 3.29판 신의 동굴: 북서쪽 끝의 사람 모양 돌 (환생 다섯 번 + 은자) → 땅 밑 어두운 동굴 → 대좌 셋에 극 권법을 하나씩 장착해 기운을 보낸다 → 컷씬
+------------------------------------------------------------------------
+if W.sin and not BATTLE then
+	local S = Config.SINROAD
+	local SW = W.sin
+	local function fadeTo(player: Player, pos: CFrame)
+		local ch = player.Character
+		if not ch then
+			return
+		end
+		Push:FireClient(player, "hellFall", {})
+		task.delay(0.55, function()
+			if ch.Parent and player.Parent then
+				ch:PivotTo(pos)
+				local r2 = ch:FindFirstChild("HumanoidRootPart")
+				if r2 and r2:IsA("BasePart") then
+					r2.AssemblyLinearVelocity = Vector3.zero
+					r2.Anchored = false
+				end
+			end
+		end)
+	end
+	local function clearOffers(p: any)
+		for _, id in ipairs(Config.SIN_NEED) do
+			p.seen["sin_off_" .. id] = nil
+		end
+		for i = 1, 3 do
+			p.seen["sin_slot" .. i] = nil
+		end
+	end
+	local function toCave(player: Player)
+		local p = profiles[player]
+		if p then
+			clearOffers(p)
+		end
+		SW.reset()
+		local fighter = Combat.fighterOfPlayer(player)
+		if fighter and not fighter.dead then
+			Train.stop(player)
+			Combat.dismount(fighter)
+		end
+		fadeTo(player, CFrame.lookAt(S.room + Vector3.new(0, 5, 52), S.room + Vector3.new(0, 5, 0)))
+	end
+	local function toSurface(player: Player)
+		fadeTo(player, CFrame.lookAt(S.statue + Vector3.new(0, 5, 18), S.statue + Vector3.new(0, 5, 0)))
+	end
+	local function inCave(player: Player): boolean
+		local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		return r ~= nil and r:IsA("BasePart") and (r.Position - S.room).Magnitude < 130
+	end
+	local who = "🗿 사람 모양 돌"
+	SW.statue.Triggered:Connect(function(player: Player)
+		local p, est = profiles[player], states[player]
+		if not p or not est then
+			return
+		end
+		if p.styles.sinsamjae then
+			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 다만 네 안에서 하늘과 땅과 사람이 하나로 울리는 소리가, 이 돌에도 닿는다. 궁극을 얻은 자에게 더 줄 것은 없다." })
+			return
+		end
+		if (p.rebirth or 0) < S.rebirth then
+			Push:FireClient(player, "dialog", { who = who, title = "아직 이르다", text = string.format("...돌은 말이 없다. 다만 손바닥을 대면 차가운 울림이 전해진다. 이 길은 환생을 %d번 거친 혼에게만 열린다 (지금 %d번).", S.rebirth, p.rebirth or 0) })
+			return
+		end
+		local miss = Sin.missing(p)
+		if #miss > 0 then
+			Push:FireClient(player, "dialog", { who = who, title = "기운이 모자라다", text = "...돌 속에서 셋의 빈자리가 느껴진다. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 익히고 오너라. 아직 " .. table.concat(miss, ", ") .. "." })
+			return
+		end
+		if not p.seen.sin_paid then
+			if p.coins < S.cost then
+				Push:FireClient(player, "dialog", { who = who, title = "바칠 것이 모자라다", text = string.format("...돌 앞에 은자를 바쳐야 길이 열린다. 💰 %s 은자. 지금 가진 것으로는 닿지 않는다.", Config.formatNumber(S.cost)) })
+				return
+			end
+			p.coins -= S.cost
+			p.seen.sin_paid = true
+			Push:FireClient(player, "dialog", { who = who, title = "길이 열린다", text = string.format("💰 %s 은자를 바쳤다. 돌이 낮게 울리며 발밑이 꺼진다. 어두운 동굴 속 제단에서, 극 권법을 하나씩 장착해 세 대좌에 기운을 보내라.", Config.formatNumber(S.cost)) })
+		else
+			toast(player, "🗿 돌이 다시 길을 연다")
+		end
+		est.dirty = true
+		pushState(player)
+		task.delay(0.8, function()
+			toCave(player)
+		end)
+	end)
+	SW.exit.Triggered:Connect(function(player: Player)
+		if inCave(player) then
+			toSurface(player)
+		end
+	end)
+	for i, pr in ipairs(SW.pads) do
+		pr.Triggered:Connect(function(player: Player)
+			local p, est = profiles[player], states[player]
+			if not p or not est or not inCave(player) then
+				return
+			end
+			if p.styles.sinsamjae then
+				toast(player, "이미 궁극을 얻었어요")
+				return
+			end
+			local cur = p.style
+			local sd = type(cur) == "string" and Config.STYLE_BY_ID[cur] or nil
+			if not sd or not table.find(Config.SIN_NEED, sd.id) then
+				toast(player, "🌑 극 권법 (극 일월 · 극 공백 · 극 광속) 하나를 장착하고 오세요" .. (sd and (" · 지금: " .. sd.name) or ""))
+				return
+			end
+			if p.seen["sin_off_" .. sd.id] then
+				toast(player, "🌑 " .. sd.name .. "의 기운은 이미 보냈어요. 다른 극 권법을 장착하세요")
+				return
+			end
+			if p.seen["sin_slot" .. i] then
+				toast(player, "🌑 이 대좌에는 이미 기운이 들어 있어요")
+				return
+			end
+			p.seen["sin_off_" .. sd.id] = true
+			p.seen["sin_slot" .. i] = true
+			local n = 0
+			for k = 1, 3 do
+				if p.seen["sin_slot" .. k] then
+					n += 1
+				end
+			end
+			SW.light(i, sd.color)
+			SW.coreLevel(n)
+			local ch = player.Character
+			local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+			Push:FireAllClients("sinOffer", { from = hrp and hrp.Position or SW.sockets[i].Position, at = SW.sockets[i].Position, core = SW.core.Position, color = sd.color, n = n })
+			toast(player, string.format("🌠 %s의 기운을 보냈다 (%d / 3)", sd.name, n))
+			if n >= 3 then
+				-- 셋이 모이면: 핵이 터질 듯 빛나고, 제단 앞에서 컷씬이 시작된다
+				task.delay(2.2, function()
+					if not inCave(player) or p.styles.sinsamjae then
+						return
+					end
+					local ch2 = player.Character
+					if ch2 then
+						ch2:PivotTo(CFrame.lookAt(S.room + Vector3.new(0, 4, 16), S.room + Vector3.new(0, 4, 0)))
+					end
+					task.delay(0.3, function()
+						Sin.rite(player, true, function()
+							clearOffers(p)
+							SW.reset()
+							if inCave(player) then
+								toSurface(player)
+							end
+						end)
+					end)
+				end)
+			end
+		end)
+	end
+end
 
 ------------------------------------------------------------------------
 -- 3.9판 목인 세우기: 마을 입구의 튜토리얼 목인 셋, 권법 시험장의 작은 목인 다섯 · 큰 목인 셋 (자리를 정확히 맞춘다)

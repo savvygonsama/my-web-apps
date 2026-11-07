@@ -2551,7 +2551,7 @@ function UIB.buildTest()
 	})
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
-		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true },
+		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true }, { "🌑 신의 동굴로", "testSinCave", close = true },
 		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
 	})
 	section("🌍 이동·이벤트", {
@@ -2642,7 +2642,7 @@ function UIB.buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
-		sinsamjae = "극 일월 · 극 공백 · 극 광속, 극 권법 셋을 모두 얻은 몸으로 청운 마을의 청운 장로에게 말을 건다 (T). 장로가 마지막 가르침을 내리는 컷씬이 흐른다",
+		sinsamjae = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻고, 세상 북서쪽 맨 끝 (지옥 입구의 정반대)의 사람 모양 돌에게 💰 9,990,000 은자를 바친다 → 땅 밑 어두운 동굴의 대좌 셋에 극 권법을 하나씩 장착해 기운을 보내면 컷씬과 함께 얻는다",
 		geukspeed = "진 풍신각 숙련 20 + 세 번 환생한 몸으로 지옥 황천 나루의 질주귀를 찾아가 속도의 시련을 넘는다",
 		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}

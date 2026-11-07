@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.28.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.29.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2561,7 +2561,7 @@ table.insert(Config.Styles, {
 	fx = "basic",
 	hidden = true,
 	secret = true,
-	unlockHint = "극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻은 몸으로, 처음 삼재권을 준 청운 장로를 다시 찾아간다",
+	unlockHint = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 얻고, 세상 북서쪽 끝의 사람 모양 돌에게 은자 9,990,000을 바쳐 땅 밑 동굴의 제단에서 얻는다",
 	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고, 땅을 딛고, 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고, 땅을 한 번 찍으면 천지가 갈라진다.",
 	gimmick = "체술: 팔꿈치 · 쓸어차기 · 무릎 · 진각 · 메치기로 싸우는 몸의 권법. 붙잡아 휘돌리고 내리꽂는다. 삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
 	deflect = 0.38,
@@ -3998,6 +3998,14 @@ Config.HELL = {
 	room = Vector3.new(4880, -320, 4880), -- 땅 밑 저승 방 가운데 (바닥 높이)
 	cost = 5000000, -- 사신에게 낼 은자 (한 번)
 	wisps = 3, -- 달래야 할 원혼
+}
+-- 3.29판 신 삼재권의 길: 세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양 돌이 서 있다. 환생 다섯 번 + 은자를 바치면 땅 밑 어두운 동굴로 간다.
+-- 동굴의 제단 대좌 셋에 극 권법을 하나씩 장착해 기운을 보내면 (셋 모두) 컷씬과 함께 신 삼재권을 얻는다
+Config.SINROAD = {
+	rebirth = 5,
+	cost = 9990000,
+	statue = Vector3.new(-4880, 0, -4880), -- 사람 모양 돌 (지상)
+	room = Vector3.new(-4880, -320, -4880), -- 땅 밑 어두운 동굴 가운데 (바닥 높이)
 }
 -- 적은 마을에서 멀수록 세다: 250칸 넘으면 100칸마다 한 단계
 function Config.enemyLevel(home: Vector3): number
@@ -10388,7 +10396,7 @@ end
 -- 컷씬: 팔을 몸 둘레로 여섯 번 휘두르고 → 무릎을 들어 땅을 찍는다 (6.1초) → 땅이 깨진다. 찍는 순간 권법을 얻는다
 Sin.STOMP = 6.1
 Sin.TOTAL = 8.6
-function Sin.rite(player: Player, forced: boolean?)
+function Sin.rite(player: Player, forced: boolean?, onDone: (() -> ())?)
 	local p = profiles[player]
 	local f = Combat.fighterOfPlayer(player)
 	if not p or not f or f.dead or not f.root.Parent then
@@ -10426,6 +10434,9 @@ function Sin.rite(player: Player, forced: boolean?)
 			Push:FireClient(player, "learned", { style = "sinsamjae", hidden = true })
 			pushState(player)
 		end
+		if onDone then
+			onDone()
+		end
 	end)
 	local _ = sd
 end
@@ -10438,15 +10449,9 @@ function Story.talk(player: Player)
 	local p = profiles[player]
 	if p and not p.styles.sinsamjae then
 		local miss = Sin.missing(p)
-		if #miss == 0 then
-			-- 극을 셋 이룬 자: 마지막 가르침
-			Push:FireClient(player, "dialog", { who = "청운 장로", title = "처음의 주먹", text = "...여기까지 왔구먼. 극을 셋이나 이루고도 다시 이 늙은이를 찾아오다니. 그래, 극 위에는 새것이 없네. 처음 내가 자네 손에 쥐여 준 삼재권, 하늘과 땅과 사람. 이제 그걸 제대로 가르쳐 주겠네. 서 있게. 눈을 뜨고 보게." })
-			task.delay(1.2, function()
-				Sin.rite(player)
-			end)
-			return
-		elseif #miss < #Config.SIN_NEED and not Config.Story[p.story] then
-			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = "극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고 오면, 마지막으로 가르칠 것이 하나 있네. 아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼." })
+		if #miss < #Config.SIN_NEED and not Config.Story[p.story] then
+			local S = Config.SINROAD
+			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = string.format("극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고, 환생을 %d번 거친 몸이면... 세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양 돌이 하나 서 있네. 그 앞에 💰 %s 은자를 바치면 길이 열린다더군. %s", S.rebirth, Config.formatNumber(S.cost), #miss > 0 and ("아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼.") or "자네는 이미 다 갖췄구먼.") })
 			return
 		end
 	end
@@ -13462,6 +13467,20 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			f.root.CFrame = CFrame.new(E.cliff + Vector3.new(0, 44, 60))
 			toast(player, "🌫 세상 끝 벼랑 · 앞의 무너지는 돌길을 건너 숨은 정원으로")
 		end
+	elseif action == "testSinCave" then
+		-- 신의 동굴로 (은자·환생 조건 없이)
+		if W.sin and f then
+			p.seen["sin_paid"] = true
+			f.root.CFrame = CFrame.lookAt(Config.SINROAD.room + Vector3.new(0, 5, 52), Config.SINROAD.room + Vector3.new(0, 5, 0))
+			for _, id in ipairs(Config.SIN_NEED) do
+				p.seen["sin_off_" .. id] = nil
+			end
+			for i = 1, 3 do
+				p.seen["sin_slot" .. i] = nil
+			end
+			W.sin.reset()
+			toast(player, "🌑 신의 동굴 (극 권법 셋을 얻고 하나씩 장착해 대좌에 기운을 보내세요)")
+		end
 	elseif action == "testSinRite" then
 		-- 신 삼재권 얻는 컷씬 보기 (이미 얻었어도 다시 본다)
 		Sin.rite(player, true)
@@ -15507,6 +15526,161 @@ task.spawn(function()
 		end
 	end
 end)
+
+------------------------------------------------------------------------
+-- 3.29판 신의 동굴: 북서쪽 끝의 사람 모양 돌 (환생 다섯 번 + 은자) → 땅 밑 어두운 동굴 → 대좌 셋에 극 권법을 하나씩 장착해 기운을 보낸다 → 컷씬
+------------------------------------------------------------------------
+if W.sin and not BATTLE then
+	local S = Config.SINROAD
+	local SW = W.sin
+	local function fadeTo(player: Player, pos: CFrame)
+		local ch = player.Character
+		if not ch then
+			return
+		end
+		Push:FireClient(player, "hellFall", {})
+		task.delay(0.55, function()
+			if ch.Parent and player.Parent then
+				ch:PivotTo(pos)
+				local r2 = ch:FindFirstChild("HumanoidRootPart")
+				if r2 and r2:IsA("BasePart") then
+					r2.AssemblyLinearVelocity = Vector3.zero
+					r2.Anchored = false
+				end
+			end
+		end)
+	end
+	local function clearOffers(p: any)
+		for _, id in ipairs(Config.SIN_NEED) do
+			p.seen["sin_off_" .. id] = nil
+		end
+		for i = 1, 3 do
+			p.seen["sin_slot" .. i] = nil
+		end
+	end
+	local function toCave(player: Player)
+		local p = profiles[player]
+		if p then
+			clearOffers(p)
+		end
+		SW.reset()
+		local fighter = Combat.fighterOfPlayer(player)
+		if fighter and not fighter.dead then
+			Train.stop(player)
+			Combat.dismount(fighter)
+		end
+		fadeTo(player, CFrame.lookAt(S.room + Vector3.new(0, 5, 52), S.room + Vector3.new(0, 5, 0)))
+	end
+	local function toSurface(player: Player)
+		fadeTo(player, CFrame.lookAt(S.statue + Vector3.new(0, 5, 18), S.statue + Vector3.new(0, 5, 0)))
+	end
+	local function inCave(player: Player): boolean
+		local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		return r ~= nil and r:IsA("BasePart") and (r.Position - S.room).Magnitude < 130
+	end
+	local who = "🗿 사람 모양 돌"
+	SW.statue.Triggered:Connect(function(player: Player)
+		local p, est = profiles[player], states[player]
+		if not p or not est then
+			return
+		end
+		if p.styles.sinsamjae then
+			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 다만 네 안에서 하늘과 땅과 사람이 하나로 울리는 소리가, 이 돌에도 닿는다. 궁극을 얻은 자에게 더 줄 것은 없다." })
+			return
+		end
+		if (p.rebirth or 0) < S.rebirth then
+			Push:FireClient(player, "dialog", { who = who, title = "아직 이르다", text = string.format("...돌은 말이 없다. 다만 손바닥을 대면 차가운 울림이 전해진다. 이 길은 환생을 %d번 거친 혼에게만 열린다 (지금 %d번).", S.rebirth, p.rebirth or 0) })
+			return
+		end
+		local miss = Sin.missing(p)
+		if #miss > 0 then
+			Push:FireClient(player, "dialog", { who = who, title = "기운이 모자라다", text = "...돌 속에서 셋의 빈자리가 느껴진다. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 익히고 오너라. 아직 " .. table.concat(miss, ", ") .. "." })
+			return
+		end
+		if not p.seen.sin_paid then
+			if p.coins < S.cost then
+				Push:FireClient(player, "dialog", { who = who, title = "바칠 것이 모자라다", text = string.format("...돌 앞에 은자를 바쳐야 길이 열린다. 💰 %s 은자. 지금 가진 것으로는 닿지 않는다.", Config.formatNumber(S.cost)) })
+				return
+			end
+			p.coins -= S.cost
+			p.seen.sin_paid = true
+			Push:FireClient(player, "dialog", { who = who, title = "길이 열린다", text = string.format("💰 %s 은자를 바쳤다. 돌이 낮게 울리며 발밑이 꺼진다. 어두운 동굴 속 제단에서, 극 권법을 하나씩 장착해 세 대좌에 기운을 보내라.", Config.formatNumber(S.cost)) })
+		else
+			toast(player, "🗿 돌이 다시 길을 연다")
+		end
+		est.dirty = true
+		pushState(player)
+		task.delay(0.8, function()
+			toCave(player)
+		end)
+	end)
+	SW.exit.Triggered:Connect(function(player: Player)
+		if inCave(player) then
+			toSurface(player)
+		end
+	end)
+	for i, pr in ipairs(SW.pads) do
+		pr.Triggered:Connect(function(player: Player)
+			local p, est = profiles[player], states[player]
+			if not p or not est or not inCave(player) then
+				return
+			end
+			if p.styles.sinsamjae then
+				toast(player, "이미 궁극을 얻었어요")
+				return
+			end
+			local cur = p.style
+			local sd = type(cur) == "string" and Config.STYLE_BY_ID[cur] or nil
+			if not sd or not table.find(Config.SIN_NEED, sd.id) then
+				toast(player, "🌑 극 권법 (극 일월 · 극 공백 · 극 광속) 하나를 장착하고 오세요" .. (sd and (" · 지금: " .. sd.name) or ""))
+				return
+			end
+			if p.seen["sin_off_" .. sd.id] then
+				toast(player, "🌑 " .. sd.name .. "의 기운은 이미 보냈어요. 다른 극 권법을 장착하세요")
+				return
+			end
+			if p.seen["sin_slot" .. i] then
+				toast(player, "🌑 이 대좌에는 이미 기운이 들어 있어요")
+				return
+			end
+			p.seen["sin_off_" .. sd.id] = true
+			p.seen["sin_slot" .. i] = true
+			local n = 0
+			for k = 1, 3 do
+				if p.seen["sin_slot" .. k] then
+					n += 1
+				end
+			end
+			SW.light(i, sd.color)
+			SW.coreLevel(n)
+			local ch = player.Character
+			local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+			Push:FireAllClients("sinOffer", { from = hrp and hrp.Position or SW.sockets[i].Position, at = SW.sockets[i].Position, core = SW.core.Position, color = sd.color, n = n })
+			toast(player, string.format("🌠 %s의 기운을 보냈다 (%d / 3)", sd.name, n))
+			if n >= 3 then
+				-- 셋이 모이면: 핵이 터질 듯 빛나고, 제단 앞에서 컷씬이 시작된다
+				task.delay(2.2, function()
+					if not inCave(player) or p.styles.sinsamjae then
+						return
+					end
+					local ch2 = player.Character
+					if ch2 then
+						ch2:PivotTo(CFrame.lookAt(S.room + Vector3.new(0, 4, 16), S.room + Vector3.new(0, 4, 0)))
+					end
+					task.delay(0.3, function()
+						Sin.rite(player, true, function()
+							clearOffers(p)
+							SW.reset()
+							if inCave(player) then
+								toSurface(player)
+							end
+						end)
+					end)
+				end)
+			end
+		end)
+	end
+end
 
 ------------------------------------------------------------------------
 -- 3.9판 목인 세우기: 마을 입구의 튜토리얼 목인 셋, 권법 시험장의 작은 목인 다섯 · 큰 목인 셋 (자리를 정확히 맞춘다)
@@ -33112,6 +33286,178 @@ end
 --   가운데 황천 나루 (안전한 곳, 이승으로 가는 문) · 남쪽 삼도천 · 동쪽 화탕지옥 · 서쪽 도산지옥 · 북쪽 아귀도 · 맨 북쪽 염라전
 -- 돌려주는 것: out.hellBack = 이승으로 돌아가는 문의 프롬프트
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
+-- 3.29판 신 삼재권의 길: 지옥 입구의 정반대 (북서쪽 맨 끝)의 사람 모양 돌 → 땅 밑 어두운 동굴의 제단 (대좌 셋)
+-- 돌려주는 것: out.sin = { statue, pads = {prompt}, sockets = {part}, exit, core, light(i, color), flare(sec) }
+------------------------------------------------------------------------
+local function sinCave(out: any)
+	local S = Config.SINROAD
+	if not S then
+		return
+	end
+	local TweenService = game:GetService("TweenService")
+	local f = Instance.new("Folder")
+	f.Name = "SinRoad"
+	f.Parent = folder
+	local STONE = Color3.fromRGB(128, 126, 122)
+	local GOLDC = Color3.fromRGB(255, 226, 140)
+	-- 지상: 사람 모양 돌 (하늘로 두 팔을 든 석상)
+	do
+		local G = S.statue
+		local K = 1.8
+		local function sp(name: string, size: Vector3, off: Vector3, color: Color3?, mat: Enum.Material?, shape: Enum.PartType?, rot: CFrame?): Part
+			return part({ Name = name, Size = size * K, CFrame = CFrame.new(G + off * K) * (rot or CFrame.new()), Color = color or STONE, Material = mat or Enum.Material.Slate, Shape = shape or Enum.PartType.Block, Parent = f })
+		end
+		local base = sp("StatueBase", Vector3.new(9, 1.4, 9), Vector3.new(0, 0.7, 0), Color3.fromRGB(96, 94, 92), Enum.Material.Granite)
+		sp("StatueBase2", Vector3.new(6.4, 1.2, 6.4), Vector3.new(0, 2, 0), Color3.fromRGB(110, 108, 104), Enum.Material.Granite)
+		sp("StatueLegL", Vector3.new(1.3, 4, 1.4), Vector3.new(-0.9, 4.6, 0))
+		sp("StatueLegR", Vector3.new(1.3, 4, 1.4), Vector3.new(0.9, 4.6, 0))
+		sp("StatueTorso", Vector3.new(3.2, 3.6, 1.8), Vector3.new(0, 8.4, 0))
+		sp("StatueArmL", Vector3.new(1.1, 4.4, 1.1), Vector3.new(-2.7, 10.6, 0), nil, nil, nil, CFrame.Angles(0, 0, math.rad(-28)))
+		sp("StatueArmR", Vector3.new(1.1, 4.4, 1.1), Vector3.new(2.7, 10.6, 0), nil, nil, nil, CFrame.Angles(0, 0, math.rad(28)))
+		sp("StatueHandL", Vector3.new(1.4, 1.4, 1.4), Vector3.new(-3.6, 13, 0), nil, nil, Enum.PartType.Ball)
+		sp("StatueHandR", Vector3.new(1.4, 1.4, 1.4), Vector3.new(3.6, 13, 0), nil, nil, Enum.PartType.Ball)
+		sp("StatueNeck", Vector3.new(0.9, 0.8, 0.9), Vector3.new(0, 10.6, 0))
+		local head = sp("StatueHead", Vector3.new(2.2, 2.4, 2.2), Vector3.new(0, 12, 0), nil, nil, Enum.PartType.Ball)
+		for _, x in ipairs({ -0.5, 0.5 }) do
+			part({ Name = "StatueEye", Size = Vector3.new(0.35, 0.18, 0.2) * K, Position = G + Vector3.new(x * K, 12.2 * K, -1.05 * K), Color = Color3.fromRGB(150, 210, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		for _ = 1, 8 do
+			part({ Name = "StatueMoss", Size = Vector3.new(rng:NextNumber(0.6, 1.4), 0.25, rng:NextNumber(0.6, 1.4)) * K, Position = G + Vector3.new(rng:NextNumber(-3, 3) * K, rng:NextNumber(0.9, 9) * K, -0.95 * K), Color = Color3.fromRGB(78, 112, 66), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+		local mist = Instance.new("ParticleEmitter")
+		mist.Rate = 3
+		mist.Lifetime = NumberRange.new(3, 5)
+		mist.Speed = NumberRange.new(0.5, 1.2)
+		mist.Color = ColorSequence.new(Color3.fromRGB(170, 210, 255))
+		mist.Size = NumberSequence.new(1.6, 0.2)
+		mist.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.8), NumberSequenceKeypoint.new(1, 1) })
+		mist.LightEmission = 0.4
+		mist.Parent = head
+		light(head, Color3.fromRGB(150, 210, 255), 24, 0.8)
+		out.sinStatue = prompt(base, "사람 모양 돌에게 말 걸기", "말없는 석상", "SinStatue")
+		out.sinStatue.MaxActivationDistance = 18
+	end
+
+	-- 땅 밑 어두운 동굴: 둥글게 파낸 큰 방, 가운데 제단과 대좌 셋, 천장의 고드름, 바닥의 푸른 수정
+	local okRoom, errRoom = pcall(function()
+		local R = S.room
+		local HALF, TALL = 70, 80
+		local ROCK = Color3.fromRGB(30, 30, 40)
+		local function slab(name: string, size: Vector3, pos: Vector3, color: Color3, mat: Enum.Material?): Part
+			return part({ Name = name, Size = size, Position = pos, Color = color, Material = mat or Enum.Material.Basalt, Parent = f })
+		end
+		slab("SinFloor", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R - Vector3.new(0, 2, 0), Color3.fromRGB(26, 26, 34), Enum.Material.Slate)
+		slab("SinCeiling", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R + Vector3.new(0, TALL + 2, 0), Color3.fromRGB(20, 20, 28))
+		slab("SinWallN", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, -HALF - 2), ROCK)
+		slab("SinWallS", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, HALF + 2), ROCK)
+		slab("SinWallW", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(-HALF - 2, TALL / 2, 0), ROCK)
+		slab("SinWallE", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(HALF + 2, TALL / 2, 0), ROCK)
+		-- 바위 기둥 (둘레) 과 천장의 고드름
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			slab("SinColumn", Vector3.new(8, TALL - 4, 8), R + Vector3.new(math.cos(a) * 58, (TALL - 4) / 2, math.sin(a) * 58), Color3.fromRGB(38, 38, 50), Enum.Material.Basalt)
+		end
+		for _ = 1, 46 do
+			local len = rng:NextNumber(6, 26)
+			local x, z = rng:NextNumber(-HALF + 4, HALF - 4), rng:NextNumber(-HALF + 4, HALF - 4)
+			part({ Name = "SinStalactite", Size = Vector3.new(rng:NextNumber(1.4, 3.2), len, rng:NextNumber(1.4, 3.2)), CFrame = CFrame.new(R + Vector3.new(x, TALL - len / 2, z)) * CFrame.Angles(rng:NextNumber(-0.06, 0.06), rng:NextNumber(0, 3), rng:NextNumber(-0.06, 0.06)), Color = Color3.fromRGB(34, 34, 46), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		-- 바닥의 푸른 수정 (은은한 빛)
+		for k = 1, 22 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local d = rng:NextNumber(26, 64)
+			local h = rng:NextNumber(2.5, 7)
+			local cr = part({ Name = "SinCrystal", Size = Vector3.new(1.4, h, 1.4), CFrame = CFrame.new(R + Vector3.new(math.cos(a) * d, h / 2, math.sin(a) * d)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 3), rng:NextNumber(-0.3, 0.3)), Color = k % 2 == 0 and Color3.fromRGB(70, 100, 190) or Color3.fromRGB(120, 80, 190), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+			cr.Transparency = 0.45
+			if k % 6 == 0 then
+				light(cr, cr.Color, 14, 0.5)
+			end
+		end
+		-- 가운데 제단: 둥근 단 · 새겨진 고리 · 검은 비석 · 허공의 핵
+		disc("SinAltar", R + Vector3.new(0, 0.6, 0), 20, 1.2, Color3.fromRGB(44, 44, 56), Enum.Material.Granite, f)
+		for i = 1, 3 do
+			local ring = disc("SinAltarRing", R + Vector3.new(0, 1.25 + i * 0.02, 0), 20 - i * 4.5, 0.12, i == 1 and Color3.fromRGB(150, 205, 255) or (i == 2 and Color3.fromRGB(255, 190, 90) or Color3.fromRGB(255, 250, 235)), Enum.Material.Neon, f, false)
+			ring.Transparency = 0.35
+		end
+		local obelisk = slab("SinObelisk", Vector3.new(5, 24, 5), R + Vector3.new(0, 13, 0), Color3.fromRGB(14, 14, 20), Enum.Material.Glass)
+		obelisk.CFrame = CFrame.new(obelisk.Position) * CFrame.Angles(0, math.rad(45), 0)
+		local core = part({ Name = "SinCore", Shape = Enum.PartType.Ball, Size = Vector3.new(6, 6, 6), Position = R + Vector3.new(0, 30, 0), Color = Color3.fromRGB(120, 120, 140), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = f })
+		local coreLight = Instance.new("PointLight")
+		coreLight.Color = Color3.fromRGB(180, 190, 255)
+		coreLight.Range = 28
+		coreLight.Brightness = 0.35
+		coreLight.Parent = core
+		-- 대좌 셋 (하늘 · 땅 · 사람): 각각 받침 하나 + 소켓 + 말 걸기
+		local pads: { ProximityPrompt } = {}
+		local sockets: { Part } = {}
+		local names = { "하늘의 대좌", "땅의 대좌", "사람의 대좌" }
+		local cols = { Color3.fromRGB(150, 205, 255), Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 250, 235) }
+		for i = 1, 3 do
+			local a = math.rad(90 + (i - 1) * 120)
+			local pp = R + Vector3.new(math.cos(a) * 12.5, 0, math.sin(a) * 12.5)
+			local post = slab("SinPedestal", Vector3.new(4.2, 7, 4.2), pp + Vector3.new(0, 4.1, 0), Color3.fromRGB(52, 52, 66), Enum.Material.Granite)
+			slab("SinPedestalCap", Vector3.new(5.6, 0.8, 5.6), pp + Vector3.new(0, 7.9, 0), Color3.fromRGB(70, 70, 88), Enum.Material.Granite)
+			local sk = part({ Name = "SinSocket", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), Position = pp + Vector3.new(0, 9.6, 0), Color = Color3.fromRGB(80, 80, 92), Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = f })
+			local sl = Instance.new("PointLight")
+			sl.Color = cols[i]
+			sl.Range = 10
+			sl.Brightness = 0.15
+			sl.Parent = sk
+			part({ Name = "SinSocketMark", Size = Vector3.new(0.2, 3.2, 3.2), CFrame = CFrame.new(pp + Vector3.new(0, 9.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Shape = Enum.PartType.Cylinder, Color = cols[i], Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = f })
+			local pr = prompt(post, "극 권법의 기운 보내기", names[i], "SinPad" .. i)
+			pr.MaxActivationDistance = 14
+			pads[i] = pr
+			sockets[i] = sk
+		end
+		-- 나가는 문 (남쪽 벽): 돌 아치와 말 걸기
+		local arch = slab("SinExitArch", Vector3.new(14, 18, 3), R + Vector3.new(0, 9, HALF - 1), Color3.fromRGB(60, 60, 76), Enum.Material.Granite)
+		part({ Name = "SinExitLight", Size = Vector3.new(8, 14, 0.3), Position = R + Vector3.new(0, 7, HALF - 2.8), Color = Color3.fromRGB(110, 150, 200), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
+		local exitPrompt = prompt(arch, "동굴 밖으로 나가기", "위로 이어지는 길", "SinExit")
+		exitPrompt.MaxActivationDistance = 16
+		-- 켜기: i번 소켓이 그 극 권법의 빛깔로 밝아진다
+		local function lightSocket(i: number, color: Color3)
+			local sk = sockets[i]
+			if not sk then
+				return
+			end
+			sk.Color = color
+			sk.Transparency = 0.05
+			local sl = sk:FindFirstChildOfClass("PointLight")
+			if sl then
+				sl.Color = color
+				sl.Brightness = 2.4
+				sl.Range = 34
+			end
+		end
+		local function allLit(n: number)
+			-- 핵이 점점 밝아진다 (n = 켜진 대좌 수)
+			TweenService:Create(core, TweenInfo.new(1), { Color = Color3.fromRGB(120, 120, 140):Lerp(GOLDC, n / 3), Transparency = 0.3 - 0.25 * n / 3, Size = Vector3.new(6 + n * 1.5, 6 + n * 1.5, 6 + n * 1.5) }):Play()
+			coreLight.Brightness = 0.8 + n * 1.2
+		end
+		local function resetSockets()
+			for i = 1, 3 do
+				local sk = sockets[i]
+				sk.Color = Color3.fromRGB(80, 80, 92)
+				sk.Transparency = 0.45
+				local sl = sk:FindFirstChildOfClass("PointLight")
+				if sl then
+					sl.Brightness = 0.15
+					sl.Range = 10
+				end
+			end
+			core.Color = Color3.fromRGB(120, 120, 140)
+			core.Transparency = 0.3
+			core.Size = Vector3.new(6, 6, 6)
+			coreLight.Brightness = 0.35
+		end
+		out.sin = { reset = resetSockets, statue = out.sinStatue, pads = pads, sockets = sockets, exit = exitPrompt, core = core, light = lightSocket, coreLevel = allLit, room = R }
+	end)
+	if not okRoom then
+		warn("[권왕] 신의 동굴 짓기 오류:", errRoom)
+	end
+end
+
 local function hellWorld(out: any)
 	local H = Config.HELL
 	if not H or not H.zones then
@@ -34117,6 +34463,9 @@ function World.build(): any
 		end },
 		{ "지옥", function()
 			hellWorld(out)
+		end },
+		{ "신의 동굴", function()
+			sinCave(out)
 		end },
 		{ "보스 마당", function()
 			bossArenas(out)
@@ -36863,6 +37212,10 @@ function handlers.hellFall(data: any)
 			g:Destroy()
 		end)
 	end)
+end
+-- 3.29판 신의 동굴: 대좌에 극 권법의 기운을 보낸다 (모두에게 보인다)
+function handlers.sinOffer(data: any)
+	Sin.offer(data)
 end
 -- 3.27판: 신 삼재권을 얻는 컷씬 (모두에게 보인다. 얻는 이는 카메라가 따라간다)
 function handlers.sinRite(data: any)
@@ -64131,6 +64484,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Anim = require(script.Parent:WaitForChild("Anim"))
 local Cutscene = require(script.Parent:WaitForChild("Cutscene"))
@@ -65076,12 +65432,19 @@ function Sin.rite(d: any)
 		end
 		ang += dt * spd
 		local dd, h, fh = 24, 5, 2
-		if e < 1 then
-			dd = 26 - e * 4
+		if e < 1.3 then
+			-- 클로즈업: 얼굴 가까이에서 시작한다 (천천히 파고든다)
+			dd = 6.5 - e * 0.5
+			h = 1.1
+			fh = 2.7
 		elseif e < 5.1 then
 			local u = (e - 1) / 4.1
-			dd = 22 - u * 9
-			h = 4 + u * 3
+			local ddN, hN, fhN = 22 - u * 9, 4 + u * 3, 2
+			local wgt = math.clamp((e - 1.3) / 1.3, 0, 1)
+			wgt = wgt * wgt * (3 - 2 * wgt)
+			dd = (5.85) + (ddN - 5.85) * wgt
+			h = 1.1 + (hN - 1.1) * wgt
+			fh = 2.7 + (fhN - 2.7) * wgt
 		elseif e < stomp then
 			local u = (e - 5.1) / (stomp - 5.1)
 			dd = 13 - u * 3
@@ -65293,6 +65656,83 @@ function Sin.cast(slot: string, model: Model, dur: number)
 	end)
 	Fx.breakSound("whoosh", 0.8, 0.6, r.Position)
 	shake(slot == "G" and 0.6 or 0.3)
+end
+
+
+------------------------------------------------------------------------
+-- 신의 동굴: 기운 보내기 (내 몸에서 대좌로, 대좌에서 핵으로 빛이 흐른다) · 동굴 안은 어둡게
+------------------------------------------------------------------------
+function Sin.offer(d: any)
+	local from: Vector3, at: Vector3, core: Vector3 = d.from, d.at, d.core
+	local col: Color3 = d.color or GOLD
+	local function stream(a: Vector3, b: Vector3, n: number, delay: number, c: Color3)
+		for k = 1, n do
+			task.delay(delay + k * 0.05, function()
+				local mote = part(Vector3.new(0.8, 0.8, 0.8), c, Enum.Material.Neon, 0.05, "ball")
+				mote.Position = a + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2
+				local mid = (a + b) / 2 + Vector3.new(0, 4 + math.random() * 5, 0)
+				tween(mote, 0.4, { Position = mid }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+				task.delay(0.4, function()
+					tween(mote, 0.4, { Position = b, Size = Vector3.new(0.2, 0.2, 0.2) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				end)
+				task.delay(0.85, function()
+					mote:Destroy()
+				end)
+			end)
+		end
+	end
+	Fx.sound("ping", 1, 0.5 + (d.n or 1) * 0.15, at)
+	Fx.ring(from - Vector3.new(0, 2.5, 0), col, 3, 26, 0.6)
+	stream(from, at, 22, 0, col)
+	task.delay(0.9, function()
+		Fx.ring(at, col, 2, 16, 0.6)
+		Fx.flash(at, col, 26, 2, 0.5)
+		local beam = part(Vector3.new(60, 1.2, 1.2), col, Enum.Material.Neon, 0.2, "cyl")
+		beam.CFrame = CFrame.new(at + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(beam, 0.7, { Size = Vector3.new(60, 3, 3) })
+		stream(at, core, 26, 0, col)
+		shake(0.5 + (d.n or 1) * 0.15)
+	end)
+	task.delay(1.8, function()
+		Fx.ring(core, col, 3, 40, 0.8)
+		Fx.flash(core, col, 50, 3, 0.6)
+		Fx.sound("deflect", 1, 0.5, core)
+		shake(0.7)
+	end)
+end
+
+-- 동굴 안에서는 화면이 어둡고 푸르게 가라앉는다
+do
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "KwonSinDark"
+	cc.Parent = Lighting
+	local inside = 0
+	local lastExp = Lighting.ExposureCompensation
+	local ticks = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		ticks += dt
+		if ticks < 0.2 then
+			return
+		end
+		ticks = 0
+		local cam = workspace.CurrentCamera
+		local R = Config.SINROAD and Config.SINROAD.room
+		local ins = 0
+		if cam and R then
+			local d = cam.CFrame.Position - R
+			if math.abs(d.X) < 76 and math.abs(d.Z) < 76 and d.Y > -10 and d.Y < 90 then
+				ins = 1
+			end
+		end
+		if ins ~= inside then
+			if inside == 0 then
+				lastExp = Lighting.ExposureCompensation
+			end
+			inside = ins
+			TweenService:Create(cc, TweenInfo.new(1.2), { Brightness = ins == 1 and -0.28 or 0, Contrast = ins == 1 and 0.18 or 0, TintColor = ins == 1 and Color3.fromRGB(150, 160, 215) or Color3.new(1, 1, 1), Saturation = ins == 1 and -0.15 or 0 }):Play()
+			TweenService:Create(Lighting, TweenInfo.new(1.2), { ExposureCompensation = ins == 1 and -0.9 or lastExp }):Play()
+		end
+	end)
 end
 
 -- 겹치는 순환을 피해 Fx가 부를 수 있게 달아 둔다
@@ -70736,7 +71176,7 @@ function UIB.buildTest()
 	})
 	section("♻ 환생·극", {
 		{ "♻ 환생 조건 채우기", "testRebirthReady" }, { "☸ 바로 환생 (의식)", "testRebirthRite" }, { "♻ 공덕 모두 채우기", "testPerkPoints" },
-		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true },
+		{ "☯ 윤회의 시련 준비", "testSamsaraReady" }, { "☯ 윤회의 시련 도전", "samsara" }, { "🌇 극 가득 채우기", "testGeuk" }, { "🌠 극 광속권 바로 익히기", "testStyle", "geukspeed" }, { "🔥 지옥 황천 나루로", "testHellWorld", close = true }, { "🌅 신 삼재권 얻는 컷씬", "testSinRite", close = true }, { "🌑 신의 동굴로", "testSinCave", close = true },
 		{ "♻ 환생 기록 지우기", "testRebirthReset", color = C.red },
 	})
 	section("🌍 이동·이벤트", {
@@ -70827,7 +71267,7 @@ function UIB.buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
-		sinsamjae = "극 일월 · 극 공백 · 극 광속, 극 권법 셋을 모두 얻은 몸으로 청운 마을의 청운 장로에게 말을 건다 (T). 장로가 마지막 가르침을 내리는 컷씬이 흐른다",
+		sinsamjae = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻고, 세상 북서쪽 맨 끝 (지옥 입구의 정반대)의 사람 모양 돌에게 💰 9,990,000 은자를 바친다 → 땅 밑 어두운 동굴의 대좌 셋에 극 권법을 하나씩 장착해 기운을 보내면 컷씬과 함께 얻는다",
 		geukspeed = "진 풍신각 숙련 20 + 세 번 환생한 몸으로 지옥 황천 나루의 질주귀를 찾아가 속도의 시련을 넘는다",
 		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}

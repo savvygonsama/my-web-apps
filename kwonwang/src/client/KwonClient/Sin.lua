@@ -6,6 +6,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Anim = require(script.Parent:WaitForChild("Anim"))
 local Cutscene = require(script.Parent:WaitForChild("Cutscene"))
@@ -951,12 +954,19 @@ function Sin.rite(d: any)
 		end
 		ang += dt * spd
 		local dd, h, fh = 24, 5, 2
-		if e < 1 then
-			dd = 26 - e * 4
+		if e < 1.3 then
+			-- 클로즈업: 얼굴 가까이에서 시작한다 (천천히 파고든다)
+			dd = 6.5 - e * 0.5
+			h = 1.1
+			fh = 2.7
 		elseif e < 5.1 then
 			local u = (e - 1) / 4.1
-			dd = 22 - u * 9
-			h = 4 + u * 3
+			local ddN, hN, fhN = 22 - u * 9, 4 + u * 3, 2
+			local wgt = math.clamp((e - 1.3) / 1.3, 0, 1)
+			wgt = wgt * wgt * (3 - 2 * wgt)
+			dd = (5.85) + (ddN - 5.85) * wgt
+			h = 1.1 + (hN - 1.1) * wgt
+			fh = 2.7 + (fhN - 2.7) * wgt
 		elseif e < stomp then
 			local u = (e - 5.1) / (stomp - 5.1)
 			dd = 13 - u * 3
@@ -1168,6 +1178,83 @@ function Sin.cast(slot: string, model: Model, dur: number)
 	end)
 	Fx.breakSound("whoosh", 0.8, 0.6, r.Position)
 	shake(slot == "G" and 0.6 or 0.3)
+end
+
+
+------------------------------------------------------------------------
+-- 신의 동굴: 기운 보내기 (내 몸에서 대좌로, 대좌에서 핵으로 빛이 흐른다) · 동굴 안은 어둡게
+------------------------------------------------------------------------
+function Sin.offer(d: any)
+	local from: Vector3, at: Vector3, core: Vector3 = d.from, d.at, d.core
+	local col: Color3 = d.color or GOLD
+	local function stream(a: Vector3, b: Vector3, n: number, delay: number, c: Color3)
+		for k = 1, n do
+			task.delay(delay + k * 0.05, function()
+				local mote = part(Vector3.new(0.8, 0.8, 0.8), c, Enum.Material.Neon, 0.05, "ball")
+				mote.Position = a + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * 2
+				local mid = (a + b) / 2 + Vector3.new(0, 4 + math.random() * 5, 0)
+				tween(mote, 0.4, { Position = mid }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+				task.delay(0.4, function()
+					tween(mote, 0.4, { Position = b, Size = Vector3.new(0.2, 0.2, 0.2) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				end)
+				task.delay(0.85, function()
+					mote:Destroy()
+				end)
+			end)
+		end
+	end
+	Fx.sound("ping", 1, 0.5 + (d.n or 1) * 0.15, at)
+	Fx.ring(from - Vector3.new(0, 2.5, 0), col, 3, 26, 0.6)
+	stream(from, at, 22, 0, col)
+	task.delay(0.9, function()
+		Fx.ring(at, col, 2, 16, 0.6)
+		Fx.flash(at, col, 26, 2, 0.5)
+		local beam = part(Vector3.new(60, 1.2, 1.2), col, Enum.Material.Neon, 0.2, "cyl")
+		beam.CFrame = CFrame.new(at + Vector3.new(0, 30, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		fadeOut(beam, 0.7, { Size = Vector3.new(60, 3, 3) })
+		stream(at, core, 26, 0, col)
+		shake(0.5 + (d.n or 1) * 0.15)
+	end)
+	task.delay(1.8, function()
+		Fx.ring(core, col, 3, 40, 0.8)
+		Fx.flash(core, col, 50, 3, 0.6)
+		Fx.sound("deflect", 1, 0.5, core)
+		shake(0.7)
+	end)
+end
+
+-- 동굴 안에서는 화면이 어둡고 푸르게 가라앉는다
+do
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Name = "KwonSinDark"
+	cc.Parent = Lighting
+	local inside = 0
+	local lastExp = Lighting.ExposureCompensation
+	local ticks = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		ticks += dt
+		if ticks < 0.2 then
+			return
+		end
+		ticks = 0
+		local cam = workspace.CurrentCamera
+		local R = Config.SINROAD and Config.SINROAD.room
+		local ins = 0
+		if cam and R then
+			local d = cam.CFrame.Position - R
+			if math.abs(d.X) < 76 and math.abs(d.Z) < 76 and d.Y > -10 and d.Y < 90 then
+				ins = 1
+			end
+		end
+		if ins ~= inside then
+			if inside == 0 then
+				lastExp = Lighting.ExposureCompensation
+			end
+			inside = ins
+			TweenService:Create(cc, TweenInfo.new(1.2), { Brightness = ins == 1 and -0.28 or 0, Contrast = ins == 1 and 0.18 or 0, TintColor = ins == 1 and Color3.fromRGB(150, 160, 215) or Color3.new(1, 1, 1), Saturation = ins == 1 and -0.15 or 0 }):Play()
+			TweenService:Create(Lighting, TweenInfo.new(1.2), { ExposureCompensation = ins == 1 and -0.9 or lastExp }):Play()
+		end
+	end)
 end
 
 -- 겹치는 순환을 피해 Fx가 부를 수 있게 달아 둔다

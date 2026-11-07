@@ -6426,6 +6426,178 @@ end
 --   가운데 황천 나루 (안전한 곳, 이승으로 가는 문) · 남쪽 삼도천 · 동쪽 화탕지옥 · 서쪽 도산지옥 · 북쪽 아귀도 · 맨 북쪽 염라전
 -- 돌려주는 것: out.hellBack = 이승으로 돌아가는 문의 프롬프트
 ------------------------------------------------------------------------
+------------------------------------------------------------------------
+-- 3.29판 신 삼재권의 길: 지옥 입구의 정반대 (북서쪽 맨 끝)의 사람 모양 돌 → 땅 밑 어두운 동굴의 제단 (대좌 셋)
+-- 돌려주는 것: out.sin = { statue, pads = {prompt}, sockets = {part}, exit, core, light(i, color), flare(sec) }
+------------------------------------------------------------------------
+local function sinCave(out: any)
+	local S = Config.SINROAD
+	if not S then
+		return
+	end
+	local TweenService = game:GetService("TweenService")
+	local f = Instance.new("Folder")
+	f.Name = "SinRoad"
+	f.Parent = folder
+	local STONE = Color3.fromRGB(128, 126, 122)
+	local GOLDC = Color3.fromRGB(255, 226, 140)
+	-- 지상: 사람 모양 돌 (하늘로 두 팔을 든 석상)
+	do
+		local G = S.statue
+		local K = 1.8
+		local function sp(name: string, size: Vector3, off: Vector3, color: Color3?, mat: Enum.Material?, shape: Enum.PartType?, rot: CFrame?): Part
+			return part({ Name = name, Size = size * K, CFrame = CFrame.new(G + off * K) * (rot or CFrame.new()), Color = color or STONE, Material = mat or Enum.Material.Slate, Shape = shape or Enum.PartType.Block, Parent = f })
+		end
+		local base = sp("StatueBase", Vector3.new(9, 1.4, 9), Vector3.new(0, 0.7, 0), Color3.fromRGB(96, 94, 92), Enum.Material.Granite)
+		sp("StatueBase2", Vector3.new(6.4, 1.2, 6.4), Vector3.new(0, 2, 0), Color3.fromRGB(110, 108, 104), Enum.Material.Granite)
+		sp("StatueLegL", Vector3.new(1.3, 4, 1.4), Vector3.new(-0.9, 4.6, 0))
+		sp("StatueLegR", Vector3.new(1.3, 4, 1.4), Vector3.new(0.9, 4.6, 0))
+		sp("StatueTorso", Vector3.new(3.2, 3.6, 1.8), Vector3.new(0, 8.4, 0))
+		sp("StatueArmL", Vector3.new(1.1, 4.4, 1.1), Vector3.new(-2.7, 10.6, 0), nil, nil, nil, CFrame.Angles(0, 0, math.rad(-28)))
+		sp("StatueArmR", Vector3.new(1.1, 4.4, 1.1), Vector3.new(2.7, 10.6, 0), nil, nil, nil, CFrame.Angles(0, 0, math.rad(28)))
+		sp("StatueHandL", Vector3.new(1.4, 1.4, 1.4), Vector3.new(-3.6, 13, 0), nil, nil, Enum.PartType.Ball)
+		sp("StatueHandR", Vector3.new(1.4, 1.4, 1.4), Vector3.new(3.6, 13, 0), nil, nil, Enum.PartType.Ball)
+		sp("StatueNeck", Vector3.new(0.9, 0.8, 0.9), Vector3.new(0, 10.6, 0))
+		local head = sp("StatueHead", Vector3.new(2.2, 2.4, 2.2), Vector3.new(0, 12, 0), nil, nil, Enum.PartType.Ball)
+		for _, x in ipairs({ -0.5, 0.5 }) do
+			part({ Name = "StatueEye", Size = Vector3.new(0.35, 0.18, 0.2) * K, Position = G + Vector3.new(x * K, 12.2 * K, -1.05 * K), Color = Color3.fromRGB(150, 210, 255), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		end
+		for _ = 1, 8 do
+			part({ Name = "StatueMoss", Size = Vector3.new(rng:NextNumber(0.6, 1.4), 0.25, rng:NextNumber(0.6, 1.4)) * K, Position = G + Vector3.new(rng:NextNumber(-3, 3) * K, rng:NextNumber(0.9, 9) * K, -0.95 * K), Color = Color3.fromRGB(78, 112, 66), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
+		end
+		local mist = Instance.new("ParticleEmitter")
+		mist.Rate = 3
+		mist.Lifetime = NumberRange.new(3, 5)
+		mist.Speed = NumberRange.new(0.5, 1.2)
+		mist.Color = ColorSequence.new(Color3.fromRGB(170, 210, 255))
+		mist.Size = NumberSequence.new(1.6, 0.2)
+		mist.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.8), NumberSequenceKeypoint.new(1, 1) })
+		mist.LightEmission = 0.4
+		mist.Parent = head
+		light(head, Color3.fromRGB(150, 210, 255), 24, 0.8)
+		out.sinStatue = prompt(base, "사람 모양 돌에게 말 걸기", "말없는 석상", "SinStatue")
+		out.sinStatue.MaxActivationDistance = 18
+	end
+
+	-- 땅 밑 어두운 동굴: 둥글게 파낸 큰 방, 가운데 제단과 대좌 셋, 천장의 고드름, 바닥의 푸른 수정
+	local okRoom, errRoom = pcall(function()
+		local R = S.room
+		local HALF, TALL = 70, 80
+		local ROCK = Color3.fromRGB(30, 30, 40)
+		local function slab(name: string, size: Vector3, pos: Vector3, color: Color3, mat: Enum.Material?): Part
+			return part({ Name = name, Size = size, Position = pos, Color = color, Material = mat or Enum.Material.Basalt, Parent = f })
+		end
+		slab("SinFloor", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R - Vector3.new(0, 2, 0), Color3.fromRGB(26, 26, 34), Enum.Material.Slate)
+		slab("SinCeiling", Vector3.new(HALF * 2 + 8, 4, HALF * 2 + 8), R + Vector3.new(0, TALL + 2, 0), Color3.fromRGB(20, 20, 28))
+		slab("SinWallN", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, -HALF - 2), ROCK)
+		slab("SinWallS", Vector3.new(HALF * 2 + 8, TALL, 4), R + Vector3.new(0, TALL / 2, HALF + 2), ROCK)
+		slab("SinWallW", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(-HALF - 2, TALL / 2, 0), ROCK)
+		slab("SinWallE", Vector3.new(4, TALL, HALF * 2 + 8), R + Vector3.new(HALF + 2, TALL / 2, 0), ROCK)
+		-- 바위 기둥 (둘레) 과 천장의 고드름
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			slab("SinColumn", Vector3.new(8, TALL - 4, 8), R + Vector3.new(math.cos(a) * 58, (TALL - 4) / 2, math.sin(a) * 58), Color3.fromRGB(38, 38, 50), Enum.Material.Basalt)
+		end
+		for _ = 1, 46 do
+			local len = rng:NextNumber(6, 26)
+			local x, z = rng:NextNumber(-HALF + 4, HALF - 4), rng:NextNumber(-HALF + 4, HALF - 4)
+			part({ Name = "SinStalactite", Size = Vector3.new(rng:NextNumber(1.4, 3.2), len, rng:NextNumber(1.4, 3.2)), CFrame = CFrame.new(R + Vector3.new(x, TALL - len / 2, z)) * CFrame.Angles(rng:NextNumber(-0.06, 0.06), rng:NextNumber(0, 3), rng:NextNumber(-0.06, 0.06)), Color = Color3.fromRGB(34, 34, 46), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		-- 바닥의 푸른 수정 (은은한 빛)
+		for k = 1, 22 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local d = rng:NextNumber(26, 64)
+			local h = rng:NextNumber(2.5, 7)
+			local cr = part({ Name = "SinCrystal", Size = Vector3.new(1.4, h, 1.4), CFrame = CFrame.new(R + Vector3.new(math.cos(a) * d, h / 2, math.sin(a) * d)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, 3), rng:NextNumber(-0.3, 0.3)), Color = k % 2 == 0 and Color3.fromRGB(70, 100, 190) or Color3.fromRGB(120, 80, 190), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+			cr.Transparency = 0.45
+			if k % 6 == 0 then
+				light(cr, cr.Color, 14, 0.5)
+			end
+		end
+		-- 가운데 제단: 둥근 단 · 새겨진 고리 · 검은 비석 · 허공의 핵
+		disc("SinAltar", R + Vector3.new(0, 0.6, 0), 20, 1.2, Color3.fromRGB(44, 44, 56), Enum.Material.Granite, f)
+		for i = 1, 3 do
+			local ring = disc("SinAltarRing", R + Vector3.new(0, 1.25 + i * 0.02, 0), 20 - i * 4.5, 0.12, i == 1 and Color3.fromRGB(150, 205, 255) or (i == 2 and Color3.fromRGB(255, 190, 90) or Color3.fromRGB(255, 250, 235)), Enum.Material.Neon, f, false)
+			ring.Transparency = 0.35
+		end
+		local obelisk = slab("SinObelisk", Vector3.new(5, 24, 5), R + Vector3.new(0, 13, 0), Color3.fromRGB(14, 14, 20), Enum.Material.Glass)
+		obelisk.CFrame = CFrame.new(obelisk.Position) * CFrame.Angles(0, math.rad(45), 0)
+		local core = part({ Name = "SinCore", Shape = Enum.PartType.Ball, Size = Vector3.new(6, 6, 6), Position = R + Vector3.new(0, 30, 0), Color = Color3.fromRGB(120, 120, 140), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = f })
+		local coreLight = Instance.new("PointLight")
+		coreLight.Color = Color3.fromRGB(180, 190, 255)
+		coreLight.Range = 28
+		coreLight.Brightness = 0.35
+		coreLight.Parent = core
+		-- 대좌 셋 (하늘 · 땅 · 사람): 각각 받침 하나 + 소켓 + 말 걸기
+		local pads: { ProximityPrompt } = {}
+		local sockets: { Part } = {}
+		local names = { "하늘의 대좌", "땅의 대좌", "사람의 대좌" }
+		local cols = { Color3.fromRGB(150, 205, 255), Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 250, 235) }
+		for i = 1, 3 do
+			local a = math.rad(90 + (i - 1) * 120)
+			local pp = R + Vector3.new(math.cos(a) * 12.5, 0, math.sin(a) * 12.5)
+			local post = slab("SinPedestal", Vector3.new(4.2, 7, 4.2), pp + Vector3.new(0, 4.1, 0), Color3.fromRGB(52, 52, 66), Enum.Material.Granite)
+			slab("SinPedestalCap", Vector3.new(5.6, 0.8, 5.6), pp + Vector3.new(0, 7.9, 0), Color3.fromRGB(70, 70, 88), Enum.Material.Granite)
+			local sk = part({ Name = "SinSocket", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), Position = pp + Vector3.new(0, 9.6, 0), Color = Color3.fromRGB(80, 80, 92), Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = f })
+			local sl = Instance.new("PointLight")
+			sl.Color = cols[i]
+			sl.Range = 10
+			sl.Brightness = 0.15
+			sl.Parent = sk
+			part({ Name = "SinSocketMark", Size = Vector3.new(0.2, 3.2, 3.2), CFrame = CFrame.new(pp + Vector3.new(0, 9.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Shape = Enum.PartType.Cylinder, Color = cols[i], Material = Enum.Material.Neon, Transparency = 0.6, CanCollide = false, Parent = f })
+			local pr = prompt(post, "극 권법의 기운 보내기", names[i], "SinPad" .. i)
+			pr.MaxActivationDistance = 14
+			pads[i] = pr
+			sockets[i] = sk
+		end
+		-- 나가는 문 (남쪽 벽): 돌 아치와 말 걸기
+		local arch = slab("SinExitArch", Vector3.new(14, 18, 3), R + Vector3.new(0, 9, HALF - 1), Color3.fromRGB(60, 60, 76), Enum.Material.Granite)
+		part({ Name = "SinExitLight", Size = Vector3.new(8, 14, 0.3), Position = R + Vector3.new(0, 7, HALF - 2.8), Color = Color3.fromRGB(110, 150, 200), Material = Enum.Material.Neon, Transparency = 0.7, CanCollide = false, Parent = f })
+		local exitPrompt = prompt(arch, "동굴 밖으로 나가기", "위로 이어지는 길", "SinExit")
+		exitPrompt.MaxActivationDistance = 16
+		-- 켜기: i번 소켓이 그 극 권법의 빛깔로 밝아진다
+		local function lightSocket(i: number, color: Color3)
+			local sk = sockets[i]
+			if not sk then
+				return
+			end
+			sk.Color = color
+			sk.Transparency = 0.05
+			local sl = sk:FindFirstChildOfClass("PointLight")
+			if sl then
+				sl.Color = color
+				sl.Brightness = 2.4
+				sl.Range = 34
+			end
+		end
+		local function allLit(n: number)
+			-- 핵이 점점 밝아진다 (n = 켜진 대좌 수)
+			TweenService:Create(core, TweenInfo.new(1), { Color = Color3.fromRGB(120, 120, 140):Lerp(GOLDC, n / 3), Transparency = 0.3 - 0.25 * n / 3, Size = Vector3.new(6 + n * 1.5, 6 + n * 1.5, 6 + n * 1.5) }):Play()
+			coreLight.Brightness = 0.8 + n * 1.2
+		end
+		local function resetSockets()
+			for i = 1, 3 do
+				local sk = sockets[i]
+				sk.Color = Color3.fromRGB(80, 80, 92)
+				sk.Transparency = 0.45
+				local sl = sk:FindFirstChildOfClass("PointLight")
+				if sl then
+					sl.Brightness = 0.15
+					sl.Range = 10
+				end
+			end
+			core.Color = Color3.fromRGB(120, 120, 140)
+			core.Transparency = 0.3
+			core.Size = Vector3.new(6, 6, 6)
+			coreLight.Brightness = 0.35
+		end
+		out.sin = { reset = resetSockets, statue = out.sinStatue, pads = pads, sockets = sockets, exit = exitPrompt, core = core, light = lightSocket, coreLevel = allLit, room = R }
+	end)
+	if not okRoom then
+		warn("[권왕] 신의 동굴 짓기 오류:", errRoom)
+	end
+end
+
 local function hellWorld(out: any)
 	local H = Config.HELL
 	if not H or not H.zones then
@@ -7431,6 +7603,9 @@ function World.build(): any
 		end },
 		{ "지옥", function()
 			hellWorld(out)
+		end },
+		{ "신의 동굴", function()
+			sinCave(out)
 		end },
 		{ "보스 마당", function()
 			bossArenas(out)

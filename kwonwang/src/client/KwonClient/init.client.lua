@@ -2688,6 +2688,10 @@ function handlers.hellFall(data: any)
 		end)
 	end)
 end
+-- 3.29판 신의 동굴: 대좌에 극 권법의 기운을 보낸다 (모두에게 보인다)
+function handlers.sinOffer(data: any)
+	Sin.offer(data)
+end
 -- 3.27판: 신 삼재권을 얻는 컷씬 (모두에게 보인다. 얻는 이는 카메라가 따라간다)
 function handlers.sinRite(data: any)
 	Sin.init({ shake = shake, tint = tint, flash = UI.flash })
