@@ -40,6 +40,7 @@ local Plum = require(script:WaitForChild("Plum"))
 local Samsara = require(script:WaitForChild("Samsara"))
 local Geuk = require(script:WaitForChild("Geuk"))
 local Speed = require(script:WaitForChild("Speed"))
+local BossFx = require(script:WaitForChild("BossFx"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -2193,7 +2194,13 @@ function handlers.skillfx(data: any)
 		Samsara.init({ shake = shake, tint = tint })
 		Geuk.init({ shake = shake, tint = tint, flash = UI.flash })
 		Speed.init({ shake = shake, flash = UI.flash })
+		BossFx.init({ shake = shake })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
+	end
+	-- 3.26판 보스 패턴 연출
+	if BossFx.handles(data) then
+		BossFx.run(data)
+		return
 	end
 	-- 3.19판 새 권법 (붙잡기·되받아치기·돌진·얼음 가두기·새 연타 장치)
 	if Arts.handles(data) then
