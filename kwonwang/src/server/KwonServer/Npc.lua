@@ -1447,23 +1447,7 @@ local function think(e: Enemy, t: number)
 	if e.kind == "boss" and tgt.player and not e.engaged[tgt.player] then
 		e.engaged[tgt.player] = true
 		Push:FireClient(tgt.player, "boss", f.model)
-		-- 2.3판: 후반 보스는 훨씬 센 상대를 만나면 힘을 끌어올린다 (상대 전투력의 LATE_BOSS_MATCH배까지). 한 방에 쓰러지지도, 손도 못 대는 일도 없게
-		local fa = f :: any
-		local want = ((tgt :: any).power or 0) * Config.LATE_BOSS_MATCH
-		if e.def.late and want > (fa.power or 0) then
-			local k = math.min(want / math.max(1, fa.power or 1), Config.LATE_BOSS_MAXK)
-			want = (fa.power or 1) * k
-			fa.basePower = fa.basePower or fa.power
-			local frac = f.hp / math.max(1, f.maxHp)
-			f.maxHp = math.floor(f.maxHp * k)
-			f.hp = math.floor(f.maxHp * frac)
-			f.dmgMult *= k
-			f.postureMax = math.floor(f.postureMax * math.sqrt(k))
-			fa.power = math.floor(want)
-			f.model:SetAttribute("Power", fa.power)
-			Combat.sync(f)
-			Push:FireAllClients("bossCall", { m = f.model, name = "힘을 끌어올린다!" })
-		end
+		-- 3.25.1판: 센 상대를 만나면 힘을 끌어올리던 규칙은 없앴다 (보스는 제 세기 그대로)
 	end
 	local d = flatDist(tgt.root.Position, pos)
 	-- 보스 패턴 (단계마다 쓸 수 있는 것이 늘어난다)
