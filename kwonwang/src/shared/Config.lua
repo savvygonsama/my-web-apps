@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2583,12 +2583,12 @@ table.insert(Config.Styles, {
 		skills = {
 			E = { id = "snsE", name = "비천 신각", desc = "하늘을 날며 가까운 적 다섯 사이를 번개처럼 오가며 두 번씩 걷어찬다 (무적). 마지막에 내려서며 둘레가 터진다", pose = "flying_kick", dur = 0.95, cd = 5, chi = 22, iframes = 0.9,
 				mech = { kind = "rushChain", n = 5, range = 44, delay = 0.06, every = 0.16, hitsEach = 2, hit = hit(0, 0, 0, 76, 64, 0.6, 26, 12), finalRadius = 18, final = hit(0, 0, 0, 150, 130, 1.0, 50, 18) } },
-			R = { id = "snsR", name = "천강 내리찍기", desc = "하늘 높이 솟았다가 온몸으로 땅을 내리찍는다. 충격이 크게 퍼져 둘레의 적이 높이 튕겨 오른다", pose = "dive_slam", dur = 0.95, cd = 8, chi = 26,
-				mech = { kind = "shock", delay = 0.45, dist = 0, radius = 24, hit = hit(0, 0, 0, 170, 160, 1.2, 70, 24) } },
-			G = { id = "snsG", name = "만상 대회전", desc = "둘레의 적 여덟을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고, 사방으로 내던지면 떨어진 자리마다 땅이 크게 터진다", pose = "cs_swing", dur = 2.8, cd = 24, chi = 100, armor = true,
-				mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 8, reel = 0.25, spin = 1.8, every = 0.2, orbit = 10, radius = 15, tick = hit(0, 0, 0, 34, 38, 0.3, 18), dist = 48, flight = 0.6, hit = hit(0, 0, 0, 340, 380, 1.2, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 150, 160, 0.8, 50, 20) } },
-			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 둘레의 적 열을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌리다, 무릎을 들어 땅을 찍는 순간 모두를 내던져 떨어진 자리마다 천지가 갈라진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
-				mech = { kind = "grabThrow", mode = "spin", range = 44, angle = 360, n = 10, reel = 0.5, spin = 3.4, every = 0.16, orbit = 11, radius = 17, tick = hit(0, 0, 0, 44, 50, 0.3, 18), dist = 44, flight = 0.5, hit = hit(0, 0, 0, 560, 620, 1.6, 0, 0), splashRadius = 17, splash = hit(0, 0, 0, 300, 340, 1.2, 70, 28) } },
+			R = { id = "snsR", name = "천강 낙하", desc = "하늘 높이 솟았다가 가장 가까운 적을 향해 벼락처럼 내리꽂힌다 (무적). 떨어진 자리에서 땅이 네 갈래로 갈라지며 금빛 균열이 멀리 달린다", pose = "dive_slam", dur = 1.0, cd = 8, chi = 26,
+				mech = { kind = "thunderDive", range = 40, delay = 0.5, radius = 13, hit = hit(0, 0, 0, 180, 170, 1.2, 70, 24), crackDelay = 0.25, length = 32, width = 5, crack = hit(0, 0, 0, 100, 100, 0.8, 50, 14) } },
+			G = { id = "snsG", name = "만상 천수", desc = "등 뒤로 거대한 신의 형상이 솟아 천 개의 팔로 둘레의 적을 차례로 열두 번 내리친다 (무적). 마지막에 하늘의 손바닥이 땅을 눌러 모두 짓뭉갠다", pose = "air_spin", dur = 3.2, cd = 24, chi = 100, armor = true,
+				mech = { kind = "thousandArms", range = 40, count = 12, delay = 0.7, every = 0.16, armRadius = 9, hit = hit(0, 0, 0, 80, 80, 0.7, 30, -8), radius = 30, palmDelay = 0.9, final = hit(0, 0, 0, 360, 420, 1.8, 20, -10) } },
+			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 얻을 때의 그 동작: 팔을 여섯 번 휘두르는 동안 둘레 70칸의 시간이 멈춰 모두 묶이고 세상에 금이 간다. 무릎을 들어 땅을 찍는 순간 하늘과 땅이 갈라지며 모두 부서진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
+				mech = { kind = "genesis", radius = 70, freeze = 4.6, crackAt = 3.0, breakAt = 4.3, final = hit(0, 0, 0, 720, 760, 2.0, 80, 30) } },
 		},
 	},
 })
