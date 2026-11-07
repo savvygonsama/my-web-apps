@@ -259,7 +259,7 @@ function UI.ultFrame(color: Color3, color2: Color3)
 end
 
 -- 3.27.2판 신 등급: 금빛 · 흰빛 · 하늘빛이 흘러가는 빛 띠 (글자·테두리·줄에 입힌다)
-local GOD_SEQ = ColorSequence.new({
+UI.godSeq = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 205, 90)),
 	ColorSequenceKeypoint.new(0.35, Color3.new(1, 1, 1)),
 	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(160, 215, 255)),
@@ -267,7 +267,7 @@ local GOD_SEQ = ColorSequence.new({
 })
 function UI.shimmer(inst: Instance, period: number?)
 	local g = Instance.new("UIGradient")
-	g.Color = GOD_SEQ
+	g.Color = UI.godSeq
 	g.Offset = Vector2.new(-1, 0)
 	g.Parent = inst
 	TweenService:Create(g, TweenInfo.new(period or 2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false), { Offset = Vector2.new(1, 0) }):Play()
@@ -282,9 +282,9 @@ function UI.godText(str: string): string
 	local n = #chars
 	for i, ch in ipairs(chars) do
 		local u = (i - 1) / math.max(1, n - 1)
-		local c = GOD_SEQ.Keypoints[1].Value
-		for k = 1, #GOD_SEQ.Keypoints - 1 do
-			local a, b = GOD_SEQ.Keypoints[k], GOD_SEQ.Keypoints[k + 1]
+		local c = UI.godSeq.Keypoints[1].Value
+		for k = 1, #UI.godSeq.Keypoints - 1 do
+			local a, b = UI.godSeq.Keypoints[k], UI.godSeq.Keypoints[k + 1]
 			if u >= a.Time and u <= b.Time then
 				c = a.Value:Lerp(b.Value, (u - a.Time) / math.max(1e-4, b.Time - a.Time))
 			end
