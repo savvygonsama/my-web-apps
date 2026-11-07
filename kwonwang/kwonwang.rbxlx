@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -20573,11 +20573,18 @@ local RIG: { { any } } = {
 	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
 }
 
-local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number): Model
+local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number, build: any?): Model
 	local model = Instance.new("Model")
+	-- 3.31.6판: 직접 짠 몸도 기본 몸과 같은 체격으로 (예전엔 모든 곳을 같은 배율로 키워, 큰 적이 거대한 네모 덩어리가 됐다):
+	-- 키는 그대로 키우고 폭은 덜 (키의 0.7제곱), 머리는 0.85제곱, 적마다 build(키 · 품 · 머리)를 따른다
+	local bd = build or {}
+	local wide = (s > 1 and s ^ 0.7 or s) * (bd.w or 1)
+	local tall = s * (bd.h or 1)
+	local headS = (s > 1 and s ^ 0.85 or s) * (bd.head or 1)
+	local V = Vector3.new(wide, tall, wide)
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
-	root.Size = Vector3.new(2, 2, 1) * s
+	root.Size = Vector3.new(2, 2, 1) * V
 	root.Transparency = 1
 	root.CanCollide = false
 	root.Parent = model
@@ -20587,8 +20594,15 @@ local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, le
 		local name, size, center, parentName, jointName, joint = r[1], r[2], r[3], r[4], r[5], r[6]
 		local p = Instance.new("Part")
 		p.Name = name
-		p.Size = size * s
-		p.CFrame = CFrame.new(center * s)
+		local isHead = name == "Head"
+		local sz: Vector3 = isHead and (size * headS) or Vector3.new(size.X * V.X, size.Y * V.Y, size.Z * V.Z)
+		local jv: Vector3 = Vector3.new(joint.X * V.X, joint.Y * V.Y, joint.Z * V.Z)
+		local cen: Vector3 = Vector3.new(center.X * V.X, center.Y * V.Y, center.Z * V.Z)
+		if isHead then
+			cen = Vector3.new(0, jv.Y + sz.Y / 2, 0)
+		end
+		p.Size = sz
+		p.CFrame = CFrame.new(cen)
 		p.TopSurface = Enum.SurfaceType.Smooth
 		p.BottomSurface = Enum.SurfaceType.Smooth
 		p.CanCollide = name == "UpperTorso" or name == "LowerTorso" or name == "Head"
@@ -20618,14 +20632,13 @@ local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, le
 		m.Name = jointName
 		m.Part0 = parent
 		m.Part1 = p
-		local j = joint * s
-		m.C0 = CFrame.new(j - parent.Position)
-		m.C1 = CFrame.new(j - center * s)
+		m.C0 = CFrame.new(jv - parent.Position)
+		m.C1 = CFrame.new(jv - cen)
 		m.Parent = p
 	end
 	local hum = Instance.new("Humanoid")
 	hum.RigType = Enum.HumanoidRigType.R15
-	hum.HipHeight = 2 * s
+	hum.HipHeight = 2 * tall
 	hum.AutomaticScalingEnabled = false
 	hum.Parent = model
 	return model
@@ -20664,7 +20677,7 @@ local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: C
 	if not ok then
 		warn("[권왕] 기본 몸 만들기 실패, 직접 짠 몸을 씁니다:", model)
 	end
-	return manualRig(colors, s)
+	return manualRig(colors, s, bd)
 end
 Npc.body = body
 
