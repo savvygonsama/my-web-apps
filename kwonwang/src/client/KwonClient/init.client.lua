@@ -2789,6 +2789,9 @@ RunService.RenderStepped:Connect(function()
 	local twilightNow = char:GetAttribute("Twilight") == true
 	if twilightNow and style.twilight then
 		info.H.name = style.twilight.heavy.name
+		if style.twilight.combo and style.twilight.combo[1] then
+			info.M1.name = style.twilight.combo[1].name
+		end
 	end
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
 		local sk = Config.move(style.id, slot, twilightNow)

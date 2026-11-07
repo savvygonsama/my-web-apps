@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.32.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2579,6 +2579,13 @@ table.insert(Config.Styles, {
 		color2 = Color3.fromRGB(190, 225, 255),
 		dmg = 1.35,
 		pulse = { every = 3, kind = "gravity", radius = 15, delay = 0.1, name = "신벌", dmg = 90, posture = 70, stun = 0.6, kb = 28, up = 6 },
+		-- 연타도 모두 바뀐다: 공중에서 이어지는 발차기 (날며 싸운다)
+		combo = {
+			{ id = "sns1", name = "천룡각", pose = "heaven_kick", dur = 0.3, lunge = 6, hits = { hit(0.12, 8, 6, 44, 28, 0.4, 16, 12, true) } },
+			{ id = "sns2", name = "회천각", pose = "tornado_kick", dur = 0.36, lunge = 4, hits = { hit(0.14, 8, 10, 40, 28, 0.4, 20, nil, true), hit(0.24, 8, 10, 40, 28, 0.4, 20, nil, true) } },
+			{ id = "sns3", name = "낙성슬", pose = "knee_strike", dur = 0.34, lunge = 6, hits = { hit(0.16, 8, 6, 62, 40, 0.6, 24, 14, true) } },
+			{ id = "sns4", name = "신 강하각", pose = "axe_kick", dur = 0.5, lunge = 4, hits = { hit(0.26, 9, 10, 110, 90, 0.9, 50, 10, true) } },
+		},
 		heavy = { id = "snsH", name = "신 천벌권", pose = "sn_tackle", dur = 0.55, lunge = 24, iframes = 0.3, hits = { hit(0.26, 16, 8, 190, 200, 1.1, 90, 12, true) } },
 		skills = {
 			E = { id = "snsE", name = "비천 신각", desc = "하늘을 날며 가까운 적 다섯 사이를 번개처럼 오가며 두 번씩 걷어찬다 (무적). 마지막에 내려서며 둘레가 터진다", pose = "flying_kick", dur = 0.95, cd = 5, chi = 22, iframes = 0.9,
@@ -3131,7 +3138,7 @@ function Config.move(styleId: string, slot: any, alt: boolean?): any
 	end
 	local tw = alt and s.twilight
 	if type(slot) == "number" then
-		return s.combo[slot]
+		return (tw and tw.combo and tw.combo[slot]) or s.combo[slot]
 	elseif slot == "H" then
 		return tw and tw.heavy or s.heavy
 	elseif slot == "F" then
