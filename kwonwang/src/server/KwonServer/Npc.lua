@@ -281,8 +281,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local pos = at + Vector3.new(math.random(-8, 8), 4 * (def.scale or 1), math.random(-8, 8))
 	do
 		local bestGap = -1
-		for _ = 1, 10 do
-			local cand = at + Vector3.new(math.random(-16, 16), 4 * (def.scale or 1), math.random(-16, 16))
+		for _ = 1, 24 do
+			local cand = at + Vector3.new(math.random(-20, 20), 4 * (def.scale or 1), math.random(-20, 20))
 			local gap = 1e9
 			for _, e in ipairs(Npc.list) do
 				local rp = e.f.root.Position

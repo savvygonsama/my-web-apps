@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.31.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.31.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -20721,8 +20721,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local pos = at + Vector3.new(math.random(-8, 8), 4 * (def.scale or 1), math.random(-8, 8))
 	do
 		local bestGap = -1
-		for _ = 1, 10 do
-			local cand = at + Vector3.new(math.random(-16, 16), 4 * (def.scale or 1), math.random(-16, 16))
+		for _ = 1, 24 do
+			local cand = at + Vector3.new(math.random(-20, 20), 4 * (def.scale or 1), math.random(-20, 20))
 			local gap = 1e9
 			for _, e in ipairs(Npc.list) do
 				local rp = e.f.root.Position
