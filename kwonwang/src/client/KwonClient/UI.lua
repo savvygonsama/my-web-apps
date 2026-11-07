@@ -258,6 +258,42 @@ function UI.ultFrame(color: Color3, color2: Color3)
 	end)
 end
 
+-- 3.27.2판 신 등급: 금빛 · 흰빛 · 하늘빛이 흘러가는 빛 띠 (글자·테두리·줄에 입힌다)
+local GOD_SEQ = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 205, 90)),
+	ColorSequenceKeypoint.new(0.35, Color3.new(1, 1, 1)),
+	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(160, 215, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 205, 90)),
+})
+function UI.shimmer(inst: Instance, period: number?)
+	local g = Instance.new("UIGradient")
+	g.Color = GOD_SEQ
+	g.Offset = Vector2.new(-1, 0)
+	g.Parent = inst
+	TweenService:Create(g, TweenInfo.new(period or 2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false), { Offset = Vector2.new(1, 0) }):Play()
+end
+-- 글자마다 빛깔이 다른 글 (RichText): 금 → 흰 → 하늘 → 금
+function UI.godText(str: string): string
+	local out = {}
+	local chars = {}
+	for _, cp in utf8.codes(str) do
+		table.insert(chars, utf8.char(cp))
+	end
+	local n = #chars
+	for i, ch in ipairs(chars) do
+		local u = (i - 1) / math.max(1, n - 1)
+		local c = GOD_SEQ.Keypoints[1].Value
+		for k = 1, #GOD_SEQ.Keypoints - 1 do
+			local a, b = GOD_SEQ.Keypoints[k], GOD_SEQ.Keypoints[k + 1]
+			if u >= a.Time and u <= b.Time then
+				c = a.Value:Lerp(b.Value, (u - a.Time) / math.max(1e-4, b.Time - a.Time))
+			end
+		end
+		table.insert(out, string.format('<font color="#%02X%02X%02X">%s</font>', math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255), ch))
+	end
+	return table.concat(out)
+end
+
 function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()
@@ -727,6 +763,9 @@ local function buildStyles()
 		local gradeNow = Config.styleGrade(s, ups)
 		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
 		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
+		if gradeNow == "신" then
+			gradeTag = "<b>" .. UI.godText("🌅 神 · 신 등급 🌅") .. "</b>"
+		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
 			if st then
@@ -968,14 +1007,25 @@ local function buildStyles()
 		if not headed[s.grade] then
 			headed[s.grade] = true
 			local gc = Config.GRADE_COLOR[s.grade] or C.dim
-			local head = new("Frame", { Size = UDim2.new(1, -10, 0, 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
-			new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = gc, BackgroundTransparency = 0.5, BorderSizePixel = 0, Parent = head })
-			text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 120, 1, 0), Text = "◆ " .. s.grade .. " ◆", TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			local god = s.grade == "신"
+			local head = new("Frame", { Size = UDim2.new(1, -10, 0, god and 40 or 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
+			local rule = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, god and 4 or 2), BackgroundColor3 = god and Color3.new(1, 1, 1) or gc, BackgroundTransparency = god and 0.1 or 0.5, BorderSizePixel = 0, Parent = head })
+			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 神 · 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			if god then
+				UI.shimmer(rule, 2.4)
+				UI.shimmer(tag, 1.8)
+				new("UIStroke", { Color = Color3.fromRGB(255, 214, 110), Thickness = 1.6, Parent = tag })
+			end
 		end
 		local card = button({ Size = UDim2.new(1, -10, 0, 64), BackgroundColor3 = C.panel2, Text = "", LayoutOrder = gi * 1000 + i, Parent = list }, function()
 			show(s.id)
 		end)
-		new("UIStroke", { Color = s.color, Thickness = 1, Parent = card })
+		local godCard = s.grade == "신"
+		local cardStroke = new("UIStroke", { Color = s.color, Thickness = godCard and 2.6 or 1, Parent = card })
+		if godCard then
+			card.BackgroundColor3 = Color3.fromRGB(58, 48, 26)
+			UI.shimmer(cardStroke, 2.2)
+		end
 		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
 		sub.Text = s.hidden and "???" or s.hanja

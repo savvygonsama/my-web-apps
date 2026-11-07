@@ -2147,6 +2147,11 @@ function handlers.learned(data: any)
 			end
 			shake(1.4)
 			Fx.sound("ping", 1, 0.6)
+			if s.grade == "신" then
+				UI.flash(Color3.new(1, 1, 1), 0.6)
+				UI.banner("🌅 神 · 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
+				shake(2)
+			end
 		else
 			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)
 		end

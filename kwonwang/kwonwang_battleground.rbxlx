@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2551,7 +2551,6 @@ table.insert(Config.Styles, {
 Config.SIN_NEED = { "geukilwol", "geuknull", "geukspeed" }
 table.insert(Config.Styles, {
 	id = "sinsamjae",
-	triRings = true, -- 등 뒤의 금빛 광륜과 몸을 도는 하늘·땅·사람의 세 구슬 (화면이 그린다)
 	name = "신 삼재권",
 	hanja = "神三才拳",
 	icon = "🌅",
@@ -2575,19 +2574,19 @@ table.insert(Config.Styles, {
 	combo = {
 		{ id = "sn1", name = "천권", pose = "sn_sweep_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
 		{ id = "sn2", name = "지권", pose = "sn_sweep_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
-		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.18, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.3, 7, 8, 30, 22, 0.4, 14, nil, true) } },
-		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.24, 8, 8, 52, 48, 0.6, 30, 8, true) } },
+		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.2, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.32, 7, 8, 30, 22, 0.4, 14, nil, true) } },
+		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.27, 8, 8, 52, 48, 0.6, 30, 8, true) } },
 	},
 	heavy = { id = "snH", name = "천지인 정권", pose = "punch_r_heavy", dur = 0.6, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 6, 86, 100, 0.9, 52, 8, true) } },
 	skills = {
 		E = { id = "snE", name = "삼재 연환", desc = "가까운 적 사이를 하늘·땅·사람의 세 걸음으로 파고들며 차례로 친다 (무적). 마지막 걸음이 땅을 울린다", pose = "sn_palm", dur = 0.7, cd = 6, chi = 20, iframes = 0.6,
-			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 64, 56, 0.7, 24, 10) } },
+			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 58, 52, 0.7, 24, 10), finalRadius = 14, final = hit(0, 0, 0, 78, 70, 0.9, 40, 14) } },
 		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 흔들리고 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 25,
-			mech = { kind = "shock", delay = 0.32, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
+			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
 		G = { id = "snG", name = "신 천지인 일권", desc = "하늘·땅·사람의 기를 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 지워진다 (그동안 무적)", pose = "one_punch", dur = 1.8, cd = 28, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 64, angle = 50, hit = hit(0, 0, 0, 280, 500, 1.6, 170, 14) } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작: 팔을 몸 둘레로 여섯 번 휘두르며 하늘이 갈라져 벼락이 쉬지 않고 떨어진다 (그동안 무적). 무릎을 들어 땅을 찍는 순간 천지가 갈라지며 둘레가 모두 무너진다", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
-			mech = { kind = "storm", dur = 3.4, every = 0.14, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 60, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 300, 480, 1.8, 90, 30) } },
+			mech = { kind = "storm", dur = 3.5, every = 0.18, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 36, 56, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 290, 480, 1.8, 90, 30) } },
 	},
 })
 
@@ -4709,7 +4708,7 @@ Config.SKY_SHOP = {
 Config.SKY_REFINE = { 80, 200, 500, 1400, 3600 }
 -- 시그니처 장신구가 있는 권법인가 (천상 빛깔을 입힐 수 있는가)
 function Config.hasGear(st: any): boolean
-	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings) == true
+	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
 end
 -- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
 --   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
@@ -5352,7 +5351,7 @@ do
 	-- 장신구 권법의 수 (모두 모으기 업적의 목표)
 	local gearN = 0
 	for _, st in ipairs(Config.Styles) do
-		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings then
+		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs then
 			gearN += 1
 		end
 	end
@@ -36290,6 +36289,11 @@ function handlers.learned(data: any)
 			end
 			shake(1.4)
 			Fx.sound("ping", 1, 0.6)
+			if s.grade == "신" then
+				UI.flash(Color3.new(1, 1, 1), 0.6)
+				UI.banner("🌅 神 · 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
+				shake(2)
+			end
 		else
 			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)
 		end
@@ -61444,57 +61448,8 @@ local function buildSunMoon(model: Model, holder: Instance, list: { Instance })
 	end
 end
 
--- 3.27판 신 삼재권: 등 뒤에서 천천히 도는 금빛 광륜 (바깥 테 · 안쪽 테 · 여덟 빛살)과, 몸 둘레를 도는 하늘·땅·사람 세 구슬
-local function buildTri(model: Model, holder: Instance, list: { Instance })
-	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
-	if not (torso and torso:IsA("BasePart")) then
-		return
-	end
-	local HALO = Color3.fromRGB(255, 238, 170)
-	local base = CFrame.new(0, 1.7, torso.Size.Z / 2 + 0.9)
-	local hub = part(Vector3.new(0.2, 0.2, 0.2), HALO, Enum.Material.Neon, 1)
-	hub.CFrame = torso.CFrame * base
-	attach(hub, torso, base, holder, list, model, "spin", 0)
-	local items = {}
-	local R = 2.6
-	local n = 28
-	for i = 0, n - 1 do
-		local a = (i + 0.5) / n * math.pi * 2
-		local seg = part(Vector3.new(2 * math.pi * R / n * 1.1, 0.14, 0.14), HALO, Enum.Material.Neon, 0.1)
-		table.insert(items, { seg, CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0) })
-		if i % 2 == 0 then
-			local seg2 = part(Vector3.new(2 * math.pi * R * 0.78 / n * 2.1, 0.07, 0.07), Color3.fromRGB(190, 225, 255), Enum.Material.Neon, 0.25)
-			table.insert(items, { seg2, CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.78, 0) })
-		end
-	end
-	for k = 0, 7 do
-		local a = k / 8 * math.pi * 2
-		local ray = part(Vector3.new(0.09, 0.9, 0.09), GOLD, Enum.Material.Neon, 0.1)
-		table.insert(items, { ray, CFrame.Angles(0, 0, a) * CFrame.new(0, R + 0.7, 0) })
-	end
-	hubbed(hub, items, holder, list)
-	local glow = Instance.new("PointLight")
-	glow.Color = HALO
-	glow.Range = 8
-	glow.Brightness = 0.9
-	glow.Parent = hub
-	-- 하늘 · 땅 · 사람
-	local cols = { Color3.fromRGB(150, 205, 255), Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 250, 235) }
-	for i = 1, 3 do
-		local ob = part(Vector3.new(0.55, 0.55, 0.55), cols[i], Enum.Material.Neon, 0.05, "ball")
-		local base2 = CFrame.new(2.2, 0, 0)
-		ob.CFrame = torso.CFrame * base2
-		attach(ob, torso, base2, holder, list, model, "orbit", (i - 1) * 2.094)
-		local lt = Instance.new("PointLight")
-		lt.Color = cols[i]
-		lt.Range = 5
-		lt.Brightness = 0.7
-		lt.Parent = ob
-	end
-end
-
 function Samsara.hasGear(st: any): boolean
-	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings) == true
+	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
 end
 function Samsara.buildGear(model: Model, st: any): { Instance }
 	local out: { Instance } = {}
@@ -61512,8 +61467,6 @@ function Samsara.buildGear(model: Model, st: any): { Instance }
 		buildCrown(model, holder, out)
 	elseif st.sunMoonOrbs then
 		buildSunMoon(model, holder, out)
-	elseif st.triRings then
-		buildTri(model, holder, out)
 	end
 	return out
 end
@@ -67748,6 +67701,42 @@ function UI.ultFrame(color: Color3, color2: Color3)
 	end)
 end
 
+-- 3.27.2판 신 등급: 금빛 · 흰빛 · 하늘빛이 흘러가는 빛 띠 (글자·테두리·줄에 입힌다)
+local GOD_SEQ = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 205, 90)),
+	ColorSequenceKeypoint.new(0.35, Color3.new(1, 1, 1)),
+	ColorSequenceKeypoint.new(0.65, Color3.fromRGB(160, 215, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 205, 90)),
+})
+function UI.shimmer(inst: Instance, period: number?)
+	local g = Instance.new("UIGradient")
+	g.Color = GOD_SEQ
+	g.Offset = Vector2.new(-1, 0)
+	g.Parent = inst
+	TweenService:Create(g, TweenInfo.new(period or 2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, false), { Offset = Vector2.new(1, 0) }):Play()
+end
+-- 글자마다 빛깔이 다른 글 (RichText): 금 → 흰 → 하늘 → 금
+function UI.godText(str: string): string
+	local out = {}
+	local chars = {}
+	for _, cp in utf8.codes(str) do
+		table.insert(chars, utf8.char(cp))
+	end
+	local n = #chars
+	for i, ch in ipairs(chars) do
+		local u = (i - 1) / math.max(1, n - 1)
+		local c = GOD_SEQ.Keypoints[1].Value
+		for k = 1, #GOD_SEQ.Keypoints - 1 do
+			local a, b = GOD_SEQ.Keypoints[k], GOD_SEQ.Keypoints[k + 1]
+			if u >= a.Time and u <= b.Time then
+				c = a.Value:Lerp(b.Value, (u - a.Time) / math.max(1e-4, b.Time - a.Time))
+			end
+		end
+		table.insert(out, string.format('<font color="#%02X%02X%02X">%s</font>', math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255), ch))
+	end
+	return table.concat(out)
+end
+
 function UI.cinematic(name: string, color: Color3, dur: number)
 	for _, b in ipairs(bars) do
 		TweenService:Create(b, TweenInfo.new(0.2), { Size = UDim2.new(1, 0, 0.1, 0) }):Play()
@@ -68217,6 +68206,9 @@ local function buildStyles()
 		local gradeNow = Config.styleGrade(s, ups)
 		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
 		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
+		if gradeNow == "신" then
+			gradeTag = "<b>" .. UI.godText("🌅 神 · 신 등급 🌅") .. "</b>"
+		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
 			if st then
@@ -68458,14 +68450,25 @@ local function buildStyles()
 		if not headed[s.grade] then
 			headed[s.grade] = true
 			local gc = Config.GRADE_COLOR[s.grade] or C.dim
-			local head = new("Frame", { Size = UDim2.new(1, -10, 0, 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
-			new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, 2), BackgroundColor3 = gc, BackgroundTransparency = 0.5, BorderSizePixel = 0, Parent = head })
-			text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, 120, 1, 0), Text = "◆ " .. s.grade .. " ◆", TextSize = 16, Font = Enum.Font.GothamBlack, TextColor3 = gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			local god = s.grade == "신"
+			local head = new("Frame", { Size = UDim2.new(1, -10, 0, god and 40 or 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
+			local rule = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, god and 4 or 2), BackgroundColor3 = god and Color3.new(1, 1, 1) or gc, BackgroundTransparency = god and 0.1 or 0.5, BorderSizePixel = 0, Parent = head })
+			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 神 · 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			if god then
+				UI.shimmer(rule, 2.4)
+				UI.shimmer(tag, 1.8)
+				new("UIStroke", { Color = Color3.fromRGB(255, 214, 110), Thickness = 1.6, Parent = tag })
+			end
 		end
 		local card = button({ Size = UDim2.new(1, -10, 0, 64), BackgroundColor3 = C.panel2, Text = "", LayoutOrder = gi * 1000 + i, Parent = list }, function()
 			show(s.id)
 		end)
-		new("UIStroke", { Color = s.color, Thickness = 1, Parent = card })
+		local godCard = s.grade == "신"
+		local cardStroke = new("UIStroke", { Color = s.color, Thickness = godCard and 2.6 or 1, Parent = card })
+		if godCard then
+			card.BackgroundColor3 = Color3.fromRGB(58, 48, 26)
+			UI.shimmer(cardStroke, 2.2)
+		end
 		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
 		sub.Text = s.hidden and "???" or s.hanja

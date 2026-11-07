@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2531,7 +2531,6 @@ table.insert(Config.Styles, {
 Config.SIN_NEED = { "geukilwol", "geuknull", "geukspeed" }
 table.insert(Config.Styles, {
 	id = "sinsamjae",
-	triRings = true, -- 등 뒤의 금빛 광륜과 몸을 도는 하늘·땅·사람의 세 구슬 (화면이 그린다)
 	name = "신 삼재권",
 	hanja = "神三才拳",
 	icon = "🌅",
@@ -2555,19 +2554,19 @@ table.insert(Config.Styles, {
 	combo = {
 		{ id = "sn1", name = "천권", pose = "sn_sweep_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
 		{ id = "sn2", name = "지권", pose = "sn_sweep_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 28, 18, 0.3, 8, nil, true) } },
-		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.18, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.3, 7, 8, 30, 22, 0.4, 14, nil, true) } },
-		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.24, 8, 8, 52, 48, 0.6, 30, 8, true) } },
+		{ id = "sn3", name = "인권", pose = "sn_spin", dur = 0.46, lunge = 2, hits = { hit(0.2, 7, 8, 24, 20, 0.35, 10, nil, true), hit(0.32, 7, 8, 30, 22, 0.4, 14, nil, true) } },
+		{ id = "sn4", name = "삼재 진각", pose = "sn_stomp", dur = 0.5, lunge = 2, hits = { hit(0.27, 8, 8, 52, 48, 0.6, 30, 8, true) } },
 	},
 	heavy = { id = "snH", name = "천지인 정권", pose = "punch_r_heavy", dur = 0.6, lunge = 10, iframes = 0.2, hits = { hit(0.28, 12, 6, 86, 100, 0.9, 52, 8, true) } },
 	skills = {
 		E = { id = "snE", name = "삼재 연환", desc = "가까운 적 사이를 하늘·땅·사람의 세 걸음으로 파고들며 차례로 친다 (무적). 마지막 걸음이 땅을 울린다", pose = "sn_palm", dur = 0.7, cd = 6, chi = 20, iframes = 0.6,
-			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 64, 56, 0.7, 24, 10) } },
+			mech = { kind = "rushChain", n = 3, range = 32, delay = 0.08, every = 0.2, hitsEach = 1, hit = hit(0, 0, 0, 58, 52, 0.7, 24, 10), finalRadius = 14, final = hit(0, 0, 0, 78, 70, 0.9, 40, 14) } },
 		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 흔들리고 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 25,
-			mech = { kind = "shock", delay = 0.32, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
+			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 15, hit = hit(0, 0, 0, 86, 92, 1.0, 44, 16) } },
 		G = { id = "snG", name = "신 천지인 일권", desc = "하늘·땅·사람의 기를 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 지워진다 (그동안 무적)", pose = "one_punch", dur = 1.8, cd = 28, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 64, angle = 50, hit = hit(0, 0, 0, 280, 500, 1.6, 170, 14) } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작: 팔을 몸 둘레로 여섯 번 휘두르며 하늘이 갈라져 벼락이 쉬지 않고 떨어진다 (그동안 무적). 무릎을 들어 땅을 찍는 순간 천지가 갈라지며 둘레가 모두 무너진다", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
-			mech = { kind = "storm", dur = 3.4, every = 0.14, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 60, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 300, 480, 1.8, 90, 30) } },
+			mech = { kind = "storm", dur = 3.5, every = 0.18, delay = 0.7, range = 42, radius = 8, hit = hit(0, 0, 0, 36, 56, 0.5, 10, 8), finalRadius = 34, final = hit(0, 0, 0, 290, 480, 1.8, 90, 30) } },
 	},
 })
 
@@ -4689,7 +4688,7 @@ Config.SKY_SHOP = {
 Config.SKY_REFINE = { 80, 200, 500, 1400, 3600 }
 -- 시그니처 장신구가 있는 권법인가 (천상 빛깔을 입힐 수 있는가)
 function Config.hasGear(st: any): boolean
-	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings) == true
+	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
 end
 -- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
 --   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
@@ -5332,7 +5331,7 @@ do
 	-- 장신구 권법의 수 (모두 모으기 업적의 목표)
 	local gearN = 0
 	for _, st in ipairs(Config.Styles) do
-		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings then
+		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs then
 			gearN += 1
 		end
 	end
