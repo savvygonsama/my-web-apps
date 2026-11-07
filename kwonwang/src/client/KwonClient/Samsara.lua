@@ -405,8 +405,57 @@ local function buildSunMoon(model: Model, holder: Instance, list: { Instance })
 	end
 end
 
+-- 3.27판 신 삼재권: 등 뒤에서 천천히 도는 금빛 광륜 (바깥 테 · 안쪽 테 · 여덟 빛살)과, 몸 둘레를 도는 하늘·땅·사람 세 구슬
+local function buildTri(model: Model, holder: Instance, list: { Instance })
+	local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not (torso and torso:IsA("BasePart")) then
+		return
+	end
+	local HALO = Color3.fromRGB(255, 238, 170)
+	local base = CFrame.new(0, 1.7, torso.Size.Z / 2 + 0.9)
+	local hub = part(Vector3.new(0.2, 0.2, 0.2), HALO, Enum.Material.Neon, 1)
+	hub.CFrame = torso.CFrame * base
+	attach(hub, torso, base, holder, list, model, "spin", 0)
+	local items = {}
+	local R = 2.6
+	local n = 28
+	for i = 0, n - 1 do
+		local a = (i + 0.5) / n * math.pi * 2
+		local seg = part(Vector3.new(2 * math.pi * R / n * 1.1, 0.14, 0.14), HALO, Enum.Material.Neon, 0.1)
+		table.insert(items, { seg, CFrame.Angles(0, 0, a) * CFrame.new(0, R, 0) })
+		if i % 2 == 0 then
+			local seg2 = part(Vector3.new(2 * math.pi * R * 0.78 / n * 2.1, 0.07, 0.07), Color3.fromRGB(190, 225, 255), Enum.Material.Neon, 0.25)
+			table.insert(items, { seg2, CFrame.Angles(0, 0, a) * CFrame.new(0, R * 0.78, 0) })
+		end
+	end
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		local ray = part(Vector3.new(0.09, 0.9, 0.09), GOLD, Enum.Material.Neon, 0.1)
+		table.insert(items, { ray, CFrame.Angles(0, 0, a) * CFrame.new(0, R + 0.7, 0) })
+	end
+	hubbed(hub, items, holder, list)
+	local glow = Instance.new("PointLight")
+	glow.Color = HALO
+	glow.Range = 8
+	glow.Brightness = 0.9
+	glow.Parent = hub
+	-- 하늘 · 땅 · 사람
+	local cols = { Color3.fromRGB(150, 205, 255), Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 250, 235) }
+	for i = 1, 3 do
+		local ob = part(Vector3.new(0.55, 0.55, 0.55), cols[i], Enum.Material.Neon, 0.05, "ball")
+		local base2 = CFrame.new(2.2, 0, 0)
+		ob.CFrame = torso.CFrame * base2
+		attach(ob, torso, base2, holder, list, model, "orbit", (i - 1) * 2.094)
+		local lt = Instance.new("PointLight")
+		lt.Color = cols[i]
+		lt.Range = 5
+		lt.Brightness = 0.7
+		lt.Parent = ob
+	end
+end
+
 function Samsara.hasGear(st: any): boolean
-	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
+	return st ~= nil and (st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings) == true
 end
 function Samsara.buildGear(model: Model, st: any): { Instance }
 	local out: { Instance } = {}
@@ -424,6 +473,8 @@ function Samsara.buildGear(model: Model, st: any): { Instance }
 		buildCrown(model, holder, out)
 	elseif st.sunMoonOrbs then
 		buildSunMoon(model, holder, out)
+	elseif st.triRings then
+		buildTri(model, holder, out)
 	end
 	return out
 end

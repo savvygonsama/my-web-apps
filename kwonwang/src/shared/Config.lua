@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2531,6 +2531,7 @@ table.insert(Config.Styles, {
 Config.SIN_NEED = { "geukilwol", "geuknull", "geukspeed" }
 table.insert(Config.Styles, {
 	id = "sinsamjae",
+	triRings = true, -- 등 뒤의 금빛 광륜과 몸을 도는 하늘·땅·사람의 세 구슬 (화면이 그린다)
 	name = "신 삼재권",
 	hanja = "神三才拳",
 	icon = "🌅",
@@ -4688,7 +4689,7 @@ Config.SKY_SHOP = {
 Config.SKY_REFINE = { 80, 200, 500, 1400, 3600 }
 -- 시그니처 장신구가 있는 권법인가 (천상 빛깔을 입힐 수 있는가)
 function Config.hasGear(st: any): boolean
-	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs) == true
+	return st ~= nil and (st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings) == true
 end
 -- 2.5판: 초월 권법의 재료 (천상계에서만 얻는다). 넷 모두 얻는 길이 다르다
 --   천앵 꽃잎: 청학봉 섬의 적이 떨어뜨린다 (선학은 한 무더기)
@@ -5331,7 +5332,7 @@ do
 	-- 장신구 권법의 수 (모두 모으기 업적의 목표)
 	local gearN = 0
 	for _, st in ipairs(Config.Styles) do
-		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs then
+		if st.fans or st.soju or st.scythe or st.gauntlets or st.pearls or st.staff or st.ashHalo or st.dreamMoon or st.nullCubes or st.wheel or st.chains or st.wisps or st.crown or st.sunMoonOrbs or st.triRings then
 			gearN += 1
 		end
 	end
