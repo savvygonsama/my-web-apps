@@ -124,6 +124,46 @@ local function swing(m: Model, k: number, color: Color3, big: boolean)
 	end)
 	Fx.breakSound("whoosh", 0.7 + k * 0.05, 0.7 + k * 0.12, c)
 	Fx.afterimage(m, color, 0.5)
+	-- 거대한 금빛 팔: 몸 둘레를 한 바퀴 크게 휩쓴다
+	local hub = part(Vector3.new(0.2, 0.2, 0.2), color, Enum.Material.Neon, 1)
+	hub.CFrame = CFrame.new(c + Vector3.new(0, 1 + (k % 3), 0))
+	local kids: { BasePart } = {}
+	for side = -1, 1, 2 do
+		local arm = part(Vector3.new(R * 0.7, 3.2, 3.2), color, Enum.Material.Neon, 0.45, "cyl")
+		arm.CFrame = hub.CFrame * CFrame.new(side * R * 0.38, 0, 0) * CFrame.Angles(0, 0, math.rad(0))
+		local fist = part(Vector3.new(6.5, 6.5, 6.5), HUMAN, Enum.Material.Neon, 0.35, "ball")
+		fist.CFrame = hub.CFrame * CFrame.new(side * R * 0.74, 0, 0)
+		for _, q in ipairs({ arm, fist }) do
+			q.Anchored = false
+			q.Massless = true
+			local w = Instance.new("WeldConstraint")
+			w.Part0 = hub
+			w.Part1 = q
+			w.Parent = q
+			table.insert(kids, q)
+		end
+	end
+	local t1 = os.clock()
+	local spinC: RBXScriptConnection
+	spinC = RunService.Heartbeat:Connect(function()
+		local u = (os.clock() - t1) / 0.42
+		if u >= 1 or not hub.Parent then
+			spinC:Disconnect()
+			return
+		end
+		hub.CFrame = CFrame.new(c + Vector3.new(0, 1 + (k % 3), 0)) * CFrame.Angles(0, u * math.pi * 2 * (k % 2 == 0 and 1 or -1), 0)
+	end)
+	task.delay(0.3, function()
+		for _, q in ipairs(kids) do
+			tween(q, 0.15, { Transparency = 1 })
+		end
+	end)
+	task.delay(0.5, function()
+		hub:Destroy()
+		for _, q in ipairs(kids) do
+			q:Destroy()
+		end
+	end)
 	shake(0.25 + k * 0.08)
 end
 
@@ -177,6 +217,20 @@ local function breakGround(m: Model, at: Vector3, slam: (() -> ())?)
 	Fx.burst("spark", g + Vector3.new(0, 1, 0), GOLD, 40, 2.4)
 	Fx.debris(g, 20, 34)
 
+	-- 금빛 비: 하늘에서 빛 가루가 한참 쏟아진다
+	for k = 1, 90 do
+		task.delay(math.random() * 2.2, function()
+			local a = math.random() * math.pi * 2
+			local d = math.random() * 55
+			local from = g + Vector3.new(math.cos(a) * d, 50 + math.random() * 30, math.sin(a) * d)
+			local bit = part(Vector3.new(0.5, 1.8, 0.5), k % 3 == 0 and HUMAN or GOLD, Enum.Material.Neon, 0.1)
+			bit.Position = from
+			tween(bit, 1.3, { Position = Vector3.new(from.X, g.Y + 0.5, from.Z), Transparency = 0.8 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(1.35, function()
+				bit:Destroy()
+			end)
+		end)
+	end
 	-- 가라앉은 자리: 어두운 원판과 금빛 테
 	local pit = part(Vector3.new(0.3, 4, 4), Color3.fromRGB(14, 12, 10), Enum.Material.Slate, 0, "cyl")
 	pit.CFrame = CFrame.new(g + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.rad(90))
@@ -203,7 +257,7 @@ local function breakGround(m: Model, at: Vector3, slam: (() -> ())?)
 	local n = 26
 	for k = 1, n do
 		local a = k / n * math.pi * 2 + math.random() * 0.25
-		local len = 30 + math.random() * 52
+		local len = 50 + math.random() * 90
 		task.delay(math.random() * 0.12, function()
 			local dir = Vector3.new(math.cos(a), 0, math.sin(a))
 			local mid = g + dir * (len * 0.5 + 6) + Vector3.new(0, 0.15, 0)
@@ -307,7 +361,7 @@ local function appear(all: { BasePart }, from: number, alpha: number, time: numb
 	end
 end
 
-local function buildUp(m: Model, stomp: number): () -> ()
+local function buildUp(m: Model, stomp: number, K: number): () -> ()
 	local r0 = rootOf(m)
 	if not r0 then
 		return function() end
@@ -361,7 +415,7 @@ local function buildUp(m: Model, stomp: number): () -> ()
 	-- 몸을 도는 세 겹의 큰 고리 (짐벌)
 	local center = c0 + Vector3.new(0, 0.5, 0)
 	local gyros: { { hub: BasePart, tilt: CFrame, sp: number, born: number, all: { BasePart }, shown: boolean } } = {}
-	local specs = { { 9, SKY, 1.05, CFrame.Angles(math.rad(90), 0, 0), 1.6 }, { 12.5, EARTH, 2.1, CFrame.Angles(math.rad(35), math.rad(60), 0), -1.9 }, { 16, HUMAN, 2.8, CFrame.Angles(math.rad(-40), math.rad(-60), 0), 2.3 } }
+	local specs = { { 9, SKY, 1.05 * K, CFrame.Angles(math.rad(90), 0, 0), 1.6 }, { 12.5, EARTH, 2.1 * K, CFrame.Angles(math.rad(35), math.rad(60), 0), -1.9 }, { 16, HUMAN, 2.8 * K, CFrame.Angles(math.rad(-40), math.rad(-60), 0), 2.3 } }
 	for _, sp in ipairs(specs) do
 		local hub = hubAt(CFrame.new(center))
 		local list: { BasePart } = {}
@@ -403,6 +457,76 @@ local function buildUp(m: Model, stomp: number): () -> ()
 	pil.CFrame = pilCF
 	pil2.CFrame = pilCF
 
+	-- 등 뒤의 거대한 광배: 몸 뒤 하늘에 금빛 고리 둘과 열두 빛살이 천천히 돈다 (위압)
+	local lookV = Vector3.new(r0.CFrame.LookVector.X, 0, r0.CFrame.LookVector.Z)
+	lookV = lookV.Magnitude > 0.01 and lookV.Unit or Vector3.new(0, 0, -1)
+	local haloC = c0 - lookV * 16 + Vector3.new(0, 15, 0)
+	local halo = hubAt(CFrame.lookAt(haloC, haloC + lookV))
+	local hAll: { BasePart } = {}
+	ringGroup(halo, 24, GOLD, 0.8, hAll)
+	ringGroup(halo, 20, HUMAN, 0.35, hAll)
+	for k2 = 0, 11 do
+		local a = k2 / 12 * math.pi * 2
+		local ray = part(Vector3.new(0.35, 7, 0.35), GOLD, Enum.Material.Neon, 1)
+		weldTo(halo, ray, CFrame.Angles(0, 0, a) * CFrame.new(0, 28.5, 0), hAll)
+	end
+	for _, q in ipairs(hAll) do
+		table.insert(all, q)
+	end
+	task.delay(1.4 * K, function()
+		for _, q in ipairs(hAll) do
+			if q.Parent then
+				tween(q, 0.9, { Transparency = 0.1 })
+			end
+		end
+		Fx.sound("ping", 1, 0.4, c0)
+		shake(0.6)
+	end)
+	-- 둘레에 솟는 돌기둥 열둘 (삼재진의 테두리). 찍는 순간 무너진다
+	local pillars: { BasePart } = {}
+	for k2 = 1, 12 do
+		local a = k2 / 12 * math.pi * 2
+		local pp = g + Vector3.new(math.cos(a) * 46, 0, math.sin(a) * 46)
+		local gp3, gc3 = groundAt(pp, m)
+		local h = 30 + (k2 % 3) * 8
+		local pil3 = Instance.new("Part")
+		pil3.Anchored = true
+		pil3.CanCollide = false
+		pil3.CanQuery = false
+		pil3.CanTouch = false
+		pil3.Size = Vector3.new(5, 0.5, 5)
+		pil3.Color = gc3:Lerp(Color3.fromRGB(60, 56, 52), 0.6)
+		pil3.Material = Enum.Material.Slate
+		pil3.CFrame = CFrame.new(gp3)
+		pil3.Parent = folder
+		table.insert(pillars, pil3)
+		task.delay((0.4 + k2 * 0.09) * K, function()
+			tween(pil3, 0.7, { Size = Vector3.new(5, h, 5), CFrame = CFrame.new(gp3 + Vector3.new(0, h / 2, 0)) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			Fx.burst("dust", gp3, Color3.fromRGB(175, 160, 140), 6, 1.4)
+			Fx.breakSound("boom", 0.35, 0.8, gp3)
+			local cap = part(Vector3.new(2.6, 2.6, 2.6), TRIO[k2 % 3 + 1], Enum.Material.Neon, 0.1, "ball")
+			cap.Position = gp3 + Vector3.new(0, 0.5, 0)
+			tween(cap, 0.7, { Position = gp3 + Vector3.new(0, h + 2, 0) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			table.insert(pillars, cap)
+			local line = part(Vector3.new(0.5, h, 0.5), GOLD, Enum.Material.Neon, 0.2)
+			line.CFrame = CFrame.new(gp3 + Vector3.new(math.cos(a) * -2.6, h / 2, math.sin(a) * -2.6))
+			table.insert(pillars, line)
+		end)
+	end
+	-- 하늘이 갈라진다: 후반에 하늘 높이 금빛 십자가 커진다
+	local rift: { BasePart } = {}
+	task.delay(4.4 * K, function()
+		for i2 = 1, 2 do
+			local bar = part(Vector3.new(500, 3, 3), i2 == 1 and GOLD or HUMAN, Enum.Material.Neon, 0.1)
+			bar.CFrame = CFrame.new(g + Vector3.new(0, 210, 0)) * CFrame.Angles(0, math.rad(i2 * 90), math.rad(i2 == 1 and 0 or 0))
+			bar.Size = Vector3.new(8, 3, 3)
+			tween(bar, 0.9, { Size = Vector3.new(500, 5, 5) })
+			table.insert(rift, bar)
+		end
+		Fx.sound("whoosh", 1, 0.3, c0)
+		shake(0.8)
+	end)
+
 	local lastBolt = 0
 	local conn: RBXScriptConnection
 	conn = RunService.Heartbeat:Connect(function()
@@ -414,6 +538,7 @@ local function buildUp(m: Model, stomp: number): () -> ()
 		local rr = rootOf(m)
 		local ctr = (rr and rr.Position or c0) + Vector3.new(0, 0.5, 0)
 		circle.CFrame = CFrame.new(g) * CFrame.Angles(0, e * (0.25 + e * 0.12), 0)
+		halo.CFrame = CFrame.lookAt(haloC, haloC + lookV) * CFrame.Angles(0, 0, e * 0.5)
 		-- 고리: 시간이 갈수록 빨리 돈다
 		for _, gy in ipairs(gyros) do
 			if e >= gy.born then
@@ -441,7 +566,7 @@ local function buildUp(m: Model, stomp: number): () -> ()
 		pil2.Size = Vector3.new(700, w * 2.4, w * 2.4)
 		pil.Transparency = 0.45 - 0.35 * (e / stomp)
 		-- 후반: 하늘에서 벼락이 땅을 때린다
-		if e > 3.6 and e - lastBolt > 0.2 then
+		if e > 3.6 * K and e - lastBolt > 0.2 then
 			lastBolt = e
 			local a = math.random() * math.pi * 2
 			local d = 26 + math.random() * 22
@@ -472,6 +597,21 @@ local function buildUp(m: Model, stomp: number): () -> ()
 				end)
 			end)
 		end
+		for _, pl in ipairs(pillars) do
+			if pl.Parent then
+				tween(pl, 0.9, { Transparency = 1, Position = pl.Position - Vector3.new(0, 14, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				task.delay(1, function()
+					pl:Destroy()
+				end)
+			end
+		end
+		for _, bar in ipairs(rift) do
+			tween(bar, 0.6, { Transparency = 1 })
+			task.delay(0.7, function()
+				bar:Destroy()
+			end)
+		end
+		halo:Destroy()
 		pil.Size = Vector3.new(700, 3, 3)
 		tween(pil, 1.4, { Transparency = 1 })
 		tween(pil2, 1.8, { Transparency = 1, Size = Vector3.new(700, 80, 80) })
@@ -508,7 +648,8 @@ function Sin.rite(d: any)
 		return
 	end
 	local m = m0 :: Model
-	local mine = (m == player.Character)
+	local skill = d.skill == true
+	local mine = (not skill) and (m == player.Character)
 	local at: Vector3 = d.at or r.Position
 	local total: number = d.total or 8.6
 	local stomp: number = d.stomp or 6.1
@@ -519,13 +660,16 @@ function Sin.rite(d: any)
 	end
 	local t0 = os.clock()
 	-- 동작은 모두에게 (Poses.sn_get은 7.4초 길이의 동작이라 컷씬 길이에 맞춰 편다)
-	Anim.play(m, "sn_get", stomp * (7.4 / 6.1), {})
+	local K = stomp / 6.1
+	if not skill then
+		Anim.play(m, "sn_get", stomp * (7.4 / 6.1), {})
+	end
 
 	-- 모으기: 하늘 · 땅 · 사람, 세 빛깔의 고리가 몸으로 모여든다
-	if opts.tint and mine then
+	if opts.tint and (mine or skill) and not skill then
 		opts.tint(Color3.fromRGB(125, 135, 185), 0.42, stomp)
 	end
-	local slam = buildUp(m, stomp)
+	local slam = buildUp(m, stomp, K)
 	-- 몸에서 번지는 금빛: 휘두를수록 짙어지고, 찍는 순간 하얗게 터졌다가 가라앉는다
 	local aura = Instance.new("Highlight")
 	aura.Adornee = m
@@ -545,7 +689,7 @@ function Sin.rite(d: any)
 		end)
 	end)
 	for i = 0, 2 do
-		task.delay(i * 0.28, function()
+		task.delay(i * 0.28 * K, function()
 			local rr = rootOf(m)
 			if rr then
 				Fx.ring(rr.Position - Vector3.new(0, 2.5, 0) + Vector3.new(0, i * 1.4, 0), TRIO[i + 1], 40, 3, 0.8)
@@ -554,7 +698,7 @@ function Sin.rite(d: any)
 		end)
 	end
 	-- 휘두름 여섯: 앞의 둘은 허리만 틀고, 뒤의 넷은 몸째 돈다 (점점 커지고 빨라진다)
-	local sw = { 1.05, 1.4, 1.75, 2.1, 2.8, 3.35, 3.85, 4.3, 4.7 }
+	local sw = { 1.05 * K, 1.4 * K, 1.75 * K, 2.1 * K, 2.8 * K, 3.35 * K, 3.85 * K, 4.3 * K, 4.7 * K }
 	for i, sec in ipairs(sw) do
 		task.delay(sec, function()
 			swing(m, i, TRIO[(i - 1) % 3 + 1], i > 4)
@@ -582,7 +726,7 @@ function Sin.rite(d: any)
 		end
 	end)
 	-- 무릎을 들어 올릴 때 땅 위로 기운이 솟는다
-	task.delay(5.3, function()
+	task.delay(5.3 * K, function()
 		local rr = rootOf(m)
 		if not rr then
 			return
@@ -787,5 +931,144 @@ function Sin.rite(d: any)
 	-- 안전망
 	task.delay(total + 2, finish)
 end
+
+------------------------------------------------------------------------
+-- 신 삼재권 기술 연출 (기존 붙잡기·충격 연출 위에 얹는다): 금빛 기둥 · 세 빛깔 고리 · 땅에 찍히는 神 도장
+------------------------------------------------------------------------
+local function stamp(at: Vector3, R: number)
+	local g0 = groundAt(at, nil)
+	local pad = part(Vector3.new(R * 1.5, 0.2, R * 1.5), GOLD, Enum.Material.Neon, 1)
+	pad.CFrame = CFrame.new(Vector3.new(at.X, g0.Y + 0.25, at.Z))
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Top
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.PixelsPerStud = 16
+	sg.AlwaysOnTop = false
+	sg.LightInfluence = 0
+	sg.Parent = pad
+	local tl = Instance.new("TextLabel")
+	tl.Size = UDim2.fromScale(1, 1)
+	tl.BackgroundTransparency = 1
+	tl.Text = "神"
+	tl.TextScaled = true
+	tl.Font = Enum.Font.GothamBlack
+	tl.TextColor3 = Color3.fromRGB(255, 226, 140)
+	tl.TextStrokeColor3 = Color3.new(1, 1, 1)
+	tl.TextStrokeTransparency = 0.2
+	tl.Parent = sg
+	task.delay(0.9, function()
+		TweenService:Create(tl, TweenInfo.new(1.6), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+	end)
+	task.delay(2.6, function()
+		pad:Destroy()
+	end)
+end
+
+local function impact(at: Vector3, R: number, power: number)
+	local g0 = groundAt(at, nil)
+	local g = Vector3.new(at.X, g0.Y, at.Z)
+	Fx.ring(g + Vector3.new(0, 0.3, 0), HUMAN, 3, R * 3.2, 0.6)
+	task.delay(0.07, function()
+		Fx.ring(g + Vector3.new(0, 0.3, 0), GOLD, 3, R * 2.4, 0.7)
+	end)
+	task.delay(0.14, function()
+		Fx.ring(g + Vector3.new(0, 0.3, 0), SKY, 3, R * 1.7, 0.8)
+	end)
+	local col = part(Vector3.new(160, R * 0.5, R * 0.5), HUMAN, Enum.Material.Neon, 0.1, "cyl")
+	col.CFrame = CFrame.new(g + Vector3.new(0, 78, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(col, 0.5, { Size = Vector3.new(160, 1.5, 1.5) })
+	fadeOut(col, 0.55)
+	local halo = part(Vector3.new(160, R * 1.1, R * 1.1), GOLD, Enum.Material.Neon, 0.55, "cyl")
+	halo.CFrame = col.CFrame
+	fadeOut(halo, 0.8, { Size = Vector3.new(160, R * 2.2, R * 2.2) })
+	stamp(g, R)
+	for k = 1, 8 do
+		local a = k / 8 * math.pi * 2 + math.random() * 0.3
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local len = R * (1.2 + math.random() * 1.2)
+		local mid = g + dir * (len * 0.5) + Vector3.new(0, 0.15, 0)
+		local crack = part(Vector3.new(len, 0.12, 0.9), GOLD, Enum.Material.Neon, 0.1)
+		crack.CFrame = CFrame.lookAt(mid, mid + dir) * CFrame.Angles(0, math.rad(90), 0)
+		task.delay(1.0, function()
+			fadeOut(crack, 1.2)
+		end)
+	end
+	Fx.debris(g, math.floor(8 + R), R * 1.6)
+	Fx.burst("spark", g + Vector3.new(0, 1, 0), GOLD, 24, 2)
+	Fx.flash(g + Vector3.new(0, 4, 0), HUMAN, R * 5, 3, 0.4)
+	Fx.breakSound("boom", 1, 0.5, g)
+	shake(0.8 + power)
+end
+
+function Sin.extra(data: any)
+	local k = data.kind
+	if k == "grabSlam" and typeof(data.at) == "Vector3" then
+		impact(data.at, math.clamp(data.radius or 10, 6, 20), 0.9)
+	elseif k == "shock" and typeof(data.at) == "Vector3" then
+		impact(data.at, math.clamp(data.radius or 14, 8, 24), 1.4)
+	elseif k == "grab" and type(data.targets) == "table" then
+		local life = (data.reel or 0.2) + (data.hold or 0.4) + 0.3
+		for _, t in ipairs(data.targets) do
+			if typeof(t) == "Instance" and t:IsA("Model") then
+				local hl = Instance.new("Highlight")
+				hl.Adornee = t
+				hl.FillColor = GOLD
+				hl.OutlineColor = HUMAN
+				hl.FillTransparency = 0.35
+				hl.Parent = folder
+				task.delay(life, function()
+					hl:Destroy()
+				end)
+			end
+		end
+	elseif k == "grabFly" and typeof(data.t) == "Instance" then
+		for i = 0, 4 do
+			task.delay(i * 0.1, function()
+				if data.t and data.t.Parent then
+					Fx.afterimage(data.t :: Model, GOLD, 0.35)
+				end
+			end)
+		end
+	elseif k == "pulse" and typeof(data.at) == "Vector3" then
+		Fx.ring(data.at - Vector3.new(0, 2.5, 0), GOLD, 3, (data.radius or 10) * 2.4, 0.5)
+	end
+end
+
+-- 기술을 쓰는 순간: 발밑 세 빛깔 고리 + 몸의 금빛. 초 오의는 컷씬의 모든 연출 (삼재진 · 큰 고리 · 돌기둥 · 광배 · 하늘 갈라짐)을 그대로 쓴다
+function Sin.cast(slot: string, model: Model, dur: number)
+	local r = rootOf(model)
+	if not r then
+		return
+	end
+	if opts.shake == nil then
+		return
+	end
+	local base = r.Position - Vector3.new(0, 2.6, 0)
+	if slot == "X" then
+		Sin.rite({ m = model, at = r.Position, stomp = dur * 0.824, total = dur, skill = true })
+		return
+	end
+	local n = slot == "G" and 3 or 2
+	for i = 0, n - 1 do
+		task.delay(i * 0.1, function()
+			Fx.ring(base, TRIO[i % 3 + 1], 4, 20 + i * 8 + (slot == "G" and 14 or 0), 0.5)
+		end)
+	end
+	local hl = Instance.new("Highlight")
+	hl.Adornee = model
+	hl.FillColor = GOLD
+	hl.OutlineColor = HUMAN
+	hl.FillTransparency = 0.7
+	hl.Parent = folder
+	TweenService:Create(hl, TweenInfo.new(math.max(0.3, dur * 0.8)), { FillTransparency = 1, OutlineTransparency = 1 }):Play()
+	task.delay(dur + 0.2, function()
+		hl:Destroy()
+	end)
+	Fx.breakSound("whoosh", 0.8, 0.6, r.Position)
+	shake(slot == "G" and 0.6 or 0.3)
+end
+
+-- 겹치는 순환을 피해 Fx가 부를 수 있게 달아 둔다
+(Fx :: any).sinCast = Sin.cast
 
 return Sin

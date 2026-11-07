@@ -473,6 +473,7 @@ local function tint(color: Color3, strength: number, time: number)
 		cc.Contrast = 0
 	end)
 end
+Sin.init({ shake = shake, tint = tint, flash = UI.flash })
 
 ------------------------------------------------------------------------
 -- 맞힐 상대 찾기 (서버와 같은 상자)
@@ -2189,6 +2190,10 @@ end
 -- 권법마다 다른 기술 장치의 연출
 local ultsReady = false
 function handlers.skillfx(data: any)
+	if data.style == "sinsamjae" then
+		Sin.init({ shake = shake, tint = tint, flash = UI.flash })
+		pcall(Sin.extra, data)
+	end
 	if not ultsReady then
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
