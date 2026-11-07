@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.27.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.27.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -19068,10 +19068,6 @@ local LOOKS: { [string]: any } = {
 	seokwang = { form = "golem", skin = C3(96, 98, 92), eyes = C3(255, 196, 110), moss = C3(70, 104, 50) },
 	gyunwang = { form = "shroom", capColor = C3(160, 26, 36), capSize = 3.8, spore = C3(255, 200, 200) },
 	yeombong = { form = "bird", feather = C3(240, 110, 40), crest = C3(255, 220, 90), beak = C3(240, 196, 70), tip = C3(170, 36, 24), longCrest = true, longTail = C3(255, 210, 80), fire = C3(255, 150, 50) },
-	-- 3.27.6판 수련 목인: 맨몸 인형이 아니라 통나무 인형 (가슴의 과녁 · 머리띠 · 새끼줄)
-	dummy = { form = "dummy" },
-	bigdummy = { form = "dummy", wood = C3(122, 84, 52) },
-	cdummy = { form = "dummy", wood = C3(150, 106, 64), ring1 = C3(30, 30, 34), ring2 = C3(226, 56, 44), band = C3(30, 30, 34) },
 	seonhak = { form = "bird", feather = C3(250, 250, 248), crest = C3(204, 34, 34), beak = C3(214, 196, 150), tip = C3(28, 28, 32), longTail = C3(30, 30, 34) },
 }
 local DEFAULT_LOOK = { head = "topknot", hair = DARK_HAIR, build = { head = 0.9 } }
@@ -19891,45 +19887,6 @@ SIG.cheonroeok = function(model, look, k, P)
 	wear(model, "RightHand", "JailKey", Vector3.new(0.9 * k, 0.2 * k, 3.2 * k), CFrame.new(0, 0, -1.8 * k), C3(190, 200, 255), M.Neon)
 	headGlow(model, C3(170, 190, 255), 26)
 	local _ = P
-end
-
--- 수련 목인: 나뭇결 몸, 얼굴 없는 둥근 머리에 머리띠, 가슴에 과녁, 허리와 손목에 새끼줄
-FORMS.dummy = function(model, look, k, _boss)
-	local wood = look.wood or C3(166, 118, 70)
-	local deep = dark(wood, 0.22)
-	clearFace(model)
-	paint(model, { "Head", "UpperTorso", "LowerTorso" }, wood, Enum.Material.Wood)
-	paint(model, { "RightUpperArm", "LeftUpperArm", "RightLowerArm", "LeftLowerArm", "RightHand", "LeftHand" }, deep, Enum.Material.Wood)
-	paint(model, { "RightUpperLeg", "LeftUpperLeg", "RightLowerLeg", "LeftLowerLeg", "RightFoot", "LeftFoot" }, dark(wood, 0.1), Enum.Material.Wood)
-	local hs = sizeOf(model, "Head")
-	local ut = sizeOf(model, "UpperTorso")
-	local lt = sizeOf(model, "LowerTorso")
-	local rope = C3(206, 184, 130)
-	-- 머리띠와 새긴 눈금
-	wear(model, "Head", "DummyBand", Vector3.new(hs.X * 1.06, hs.Y * 0.2, hs.Z * 1.06), CFrame.new(0, hs.Y * 0.12, 0), look.band or C3(196, 40, 36), Enum.Material.Fabric)
-	for _, x in ipairs({ -1, 1 }) do
-		wear(model, "Head", "DummyEye", Vector3.new(hs.X * 0.2, 0.06, 0.05), CFrame.new(x * hs.X * 0.2, -hs.Y * 0.08, -hs.Z * 0.51), dark(wood, 0.6), Enum.Material.Wood)
-	end
-	-- 가슴의 과녁 (바깥부터 흰 · 붉은 · 흰 · 붉은 점)
-	local r1 = look.ring1 or C3(240, 232, 214)
-	local r2 = look.ring2 or C3(196, 40, 36)
-	local rings = { { ut.X * 0.82, r1 }, { ut.X * 0.6, r2 }, { ut.X * 0.38, r1 }, { ut.X * 0.16, r2 } }
-	for i, rg in ipairs(rings) do
-		wear(model, "UpperTorso", "DummyTarget" .. i, Vector3.new(0.05, rg[1] :: number, rg[1] :: number), CFrame.new(0, 0.1, -ut.Z / 2 - 0.02 - i * 0.012) * CFrame.Angles(0, math.rad(90), 0), rg[2] :: Color3, Enum.Material.SmoothPlastic, Cyl)
-	end
-	-- 새끼줄: 허리와 두 손목, 어깨를 가로지르는 줄
-	wear(model, "LowerTorso", "DummyBelt", Vector3.new(lt.X * 1.08, 0.2, lt.Z * 1.12), CFrame.new(0, 0.2, 0), rope, Enum.Material.Fabric)
-	for _, n in ipairs({ "RightLowerArm", "LeftLowerArm" }) do
-		local ar = sizeOf(model, n)
-		wear(model, n, "DummyWrap", Vector3.new(ar.X * 1.12, 0.18, ar.Z * 1.12), CFrame.new(0, ar.Y * 0.18, 0), rope, Enum.Material.Fabric)
-	end
-	wear(model, "UpperTorso", "DummyStrap", Vector3.new(ut.X * 1.06, 0.14, ut.Z * 1.08), CFrame.new(0, ut.Y * 0.36, 0), rope, Enum.Material.Fabric)
-	-- 팔이 통나무 마디처럼 보이게 팔꿈치에 마디 하나
-	for _, n in ipairs({ "RightUpperArm", "LeftUpperArm" }) do
-		local ar = sizeOf(model, n)
-		wear(model, n, "DummyKnot", Vector3.new(ar.X * 1.15, 0.22, ar.Z * 1.15), CFrame.new(0, -ar.Y * 0.4, 0), deep, Enum.Material.Wood)
-	end
-	local _ = k
 end
 
 function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
