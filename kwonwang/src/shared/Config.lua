@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.38.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.38.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4568,18 +4568,18 @@ Config.Premium = {
 		lines = { "보스의 심법 두루마리 확률 두 배 (15% → 30%)", "천상 재료가 떨어질 확률 두 배 (한 번에 둘까지는 그대로)", "천상계 적의 천정 1.5배" } },
 	{ id = "vip", gamepass = 0, price = 249, icon = "👑", name = "VIP", tag = "VIP",
 		lines = { "머리 위 이름 앞에 금빛 👑", "권법 숙련이 두 배로 빨리 오른다", "적·보스의 은자 +25% (은자 두 배와 겹친다)" } },
-	-- 3.38판 게임패스 넷 (몸의 힘 셋 + 천정)
-	{ id = "power", gamepass = 0, price = 299, icon = "💪", name = "무쇠 주먹", tag = "영구",
-		lines = { "모든 공격의 피해가 영원히 +20%", "기본기·기술·오의 모두", "배틀그라운드는 모두 같은 힘이라 빠진다" } },
-	{ id = "iron", gamepass = 0, price = 299, icon = "🛡", name = "금강불괴", tag = "영구",
-		lines = { "최대 체력이 영원히 +25%", "보스·레이드에서 훨씬 오래 버틴다", "배틀그라운드는 모두 같은 힘이라 빠진다" } },
-	{ id = "swift", gamepass = 0, price = 99, icon = "💨", name = "신속", tag = "영구",
-		lines = { "걸음이 영원히 +20% 빨라진다", "탈것을 타지 않아도 빠르다", "배틀그라운드는 모두 같은 걸음이라 빠진다" } },
+	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' · '열매 알리미' 같은 것)
+	{ id = "slot4", gamepass = 0, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
+		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
+	{ id = "bossBell", gamepass = 0, price = 149, icon = "🔔", name = "보스 알리미", tag = "영구",
+		lines = { "보스가 다시 나타나면 이름과 장소를 바로 알려 준다", "지상·천상·지옥 모든 보스", "레이드·업적 보스를 놓치지 않는다" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
--- 3.38판: 게임패스가 주는 특전 배율 (서버 Calc.perk에 곱한다. 특전 id: dmg 피해 · hp 체력 · spd 걸음)
-Config.PASS_PERK = { power = { dmg = 1.2 }, iron = { hp = 1.25 }, swift = { spd = 1.2 } }
+-- 3.38판: 심법 칸 (넷째 칸 게임패스가 있으면 하나 더)
+function Config.manualSlots(hasSlot4: boolean?): number
+	return Config.MANUAL_DRAW.slots + (hasSlot4 and 1 or 0)
+end
 -- 3.37판: 게임패스 효과 숫자 (서버가 이 표를 쓴다)
 Config.PASS = { killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련

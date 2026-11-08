@@ -1898,9 +1898,10 @@ function UIB.buildManuals()
 	manualAutoBtn = autoBtn
 	-- 끼운 세 칸
 	local slotRow = new("Frame", { Position = UDim2.new(0, 0, 0, 58), Size = UDim2.new(1, 0, 0, 74), BackgroundTransparency = 1, Parent = page })
-	new("UIGridLayout", { CellSize = UDim2.new(0.333, -8, 1, 0), CellPadding = UDim2.new(0, 8, 0, 0), Parent = slotRow })
+	new("UIGridLayout", { CellSize = UDim2.new(1 / (D.slots + 1), -8, 1, 0), CellPadding = UDim2.new(0, 8, 0, 0), Parent = slotRow })
 	local slots = {}
-	for i = 1, D.slots do
+	-- 3.38판: 넷째 칸 (게임패스). 없으면 잠긴 칸으로 보인다
+	for i = 1, D.slots + 1 do
 		local card = new("Frame", { BackgroundColor3 = C.panel2, Parent = slotRow }, { corner(10), stroke(C.line, 1.5) })
 		local l = text({ Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 1, -8), TextSize = 15, RichText = true, Text = "", Parent = card })
 		local b = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -6, 1, -6), Size = UDim2.new(0, 60, 0, 26), Text = "빼기", TextSize = 13, BackgroundColor3 = C.panel, Parent = card }, function()
@@ -1945,8 +1946,14 @@ function UIB.buildManuals()
 		for i, sl in ipairs(slots) do
 			local id = equip[i]
 			local r = id and state.manuals and state.manuals[id]
-			sl.label.Text = (id and r) and (string.format("<b>%d칸</b>\n", i) .. manualLine(id, r)) or string.format('<b>%d칸</b>\n<font color="#9A8C7A">비어 있음 (아래에서 끼우기)</font>', i)
-			sl.btn.Visible = id ~= nil
+			local locked = i > Config.manualSlots(state.premium and state.premium.slot4 == true)
+			if locked then
+				sl.label.Text = string.format('<b>%d칸</b>\n<font color="#FFD25A">🔒 📜 심법 넷째 칸 게임패스</font>', i)
+				sl.btn.Visible = false
+			else
+				sl.label.Text = (id and r) and (string.format("<b>%d칸</b>\n", i) .. manualLine(id, r)) or string.format('<b>%d칸</b>\n<font color="#9A8C7A">비어 있음 (아래에서 끼우기)</font>', i)
+				sl.btn.Visible = id ~= nil
+			end
 		end
 		for _, m in ipairs(Config.MANUALS) do
 			local row = rows[m.id]

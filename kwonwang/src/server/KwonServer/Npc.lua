@@ -27,6 +27,7 @@ type Enemy = {
 }
 
 Npc.list = {} :: { Enemy }
+Npc.onBossSpawn = nil :: ((any, Vector3, string) -> ())?
 local folder: Folder
 local Push: RemoteEvent
 local SKIN = Color3.fromRGB(234, 184, 146)
@@ -415,6 +416,10 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	}
 	;(e :: any).camp = at -- 진영의 가운데 (다시 나타날 때 이 둘레에서 새로 자리를 잡는다)
 	table.insert(Npc.list, e)
+	-- 3.38판 보스 알리미 게임패스: 들판의 보스가 나타나면 알린다 (시험·소환·시험장 보스는 빼고)
+	if isBoss and Npc.onBossSpawn and region ~= "trial" and region ~= "test" and region ~= "summon" and region ~= "simma" then
+		task.spawn(pcall, Npc.onBossSpawn, def, at, region)
+	end
 	return e
 end
 

@@ -236,7 +236,8 @@ local function sanitize(data: any): Profile
 	end
 	if type(data.equip) == "table" then
 		for _, id in ipairs(data.equip) do
-			if type(id) == "string" and p.manuals[id] and not table.find(p.equip, id) and #p.equip < Config.MANUAL_DRAW.slots then
+			-- 3.38판: 넷째 칸 게임패스는 들어온 뒤에 확인되므로, 불러올 때는 넷까지 남겨 둔다 (효과는 가진 칸만큼만 센다)
+			if type(id) == "string" and p.manuals[id] and not table.find(p.equip, id) and #p.equip < Config.manualSlots(true) then
 				table.insert(p.equip, id)
 			end
 		end
@@ -576,34 +577,29 @@ function Calc.perkUsed(p: Profile): number
 	end
 	return n
 end
--- 3.38판 게임패스의 능력 배율 (Config.PASS_PERK: 패스 → { 특전 id = 배율 }). 환생 특전과 같은 자리에 곱한다
--- (보상 잣대 rewardPower는 hp·dmg 특전을 빼고 세므로, 패스로 오른 체력·공격력은 보상을 부풀리지 않는다)
-local function passPerk(p: Profile, id: string): number
-	local k = 1
+-- 3.38판: 이 기록의 주인이 그 게임패스를 가졌나 (기록만 받는 곳에서 쓴다)
+local function profileOwns(p: Profile, pass: string): boolean
 	for player, pp in pairs(profiles) do
 		if pp == p then
 			local st = states[player]
 			local owned = st and (st :: any).owned
-			if owned then
-				for pass, perks in pairs(Config.PASS_PERK) do
-					if owned[pass] and perks[id] then
-						k *= perks[id]
-					end
-				end
-			end
-			break
+			return owned ~= nil and owned[pass] == true
 		end
 	end
-	return k
+	return false
 end
 function Calc.perk(p: Profile, id: string): number
-	return Config.perkMult(p.perks, id) * passPerk(p, id)
+	return Config.perkMult(p.perks, id)
 end
 
 -- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
 function Calc.manualBonus(p: Profile): { [string]: number }
 	local b = { hp = 0, dmg = 0, def = 0, steal = 0, speed = 0, chi = 0, cd = 0, ult = 0 }
-	for _, id in ipairs(p.equip or {}) do
+	local cap = Config.manualSlots(profileOwns(p, "slot4"))
+	for i, id in ipairs(p.equip or {}) do
+		if i > cap then
+			break
+		end
 		local m = Config.MANUAL_BY_ID[id]
 		local r = p.manuals and p.manuals[id]
 		if m and r then
@@ -4209,7 +4205,7 @@ function Manual.draw(player: Player, nArg: any, quiet: any)
 			res.up = had ~= nil
 			p.manuals[m.id] = r
 			-- 빈 칸이 있으면 바로 끼운다
-			if not table.find(p.equip, m.id) and #p.equip < D.slots then
+			if not table.find(p.equip, m.id) and #p.equip < Config.manualSlots(Premium.owns(player, "slot4")) then
 				table.insert(p.equip, m.id)
 			end
 		end
@@ -4243,8 +4239,8 @@ function Manual.equip(player: Player, id: any, on: boolean)
 	end
 	local i = table.find(p.equip, id)
 	if on and not i then
-		if #p.equip >= Config.MANUAL_DRAW.slots then
-			toast(player, "심법 칸이 가득 찼어요. 하나를 빼고 끼우세요")
+		if #p.equip >= Config.manualSlots(Premium.owns(player, "slot4")) then
+			toast(player, Premium.owns(player, "slot4") and "심법 칸이 가득 찼어요. 하나를 빼고 끼우세요" or "심법 칸이 가득 찼어요. 하나를 빼고 끼우세요 (📜 넷째 칸 게임패스로 한 칸 더)")
 			return
 		end
 		table.insert(p.equip, id)
@@ -4634,7 +4630,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			p.manuals[m.id] = r
 		end
 		for _, m in ipairs(Config.MANUALS) do
-			if #p.equip >= Config.MANUAL_DRAW.slots then
+			if #p.equip >= Config.manualSlots(Premium.owns(player, "slot4")) then
 				break
 			end
 			if not table.find(p.equip, m.id) then
@@ -6425,8 +6421,8 @@ function Premium.grant(player: Player, id: string)
 	if id == "vip" then
 		updateTag(player)
 	end
-	-- 3.38판: 체력·공격·걸음 패스는 바로 몸에 반영
-	if Config.PASS_PERK[id] then
+	-- 3.38판 심법 넷째 칸: 바로 효과를 다시 센다
+	if id == "slot4" then
 		refreshFighter(player)
 	end
 	-- 청룡을 사면 바로 고른다
@@ -6438,6 +6434,36 @@ function Premium.grant(player: Player, id: string)
 end
 
 -- 들어올 때 가진 게임패스를 확인한다
+-- 3.38판 보스 알리미: 보스가 나타난 곳의 이름 (지상 땅 · 천상 섬 · 지옥 구역)
+Npc.onBossSpawn = function(def: any, at: Vector3, region: string)
+	local place = ""
+	for _, r in ipairs(Config.Regions) do
+		if r.id == region then
+			place = r.name
+		end
+	end
+	if place == "" then
+		local isl = Config.skyIslandAt(at)
+		if isl and isl.name then
+			place = isl.name
+		else
+			local best = math.huge
+			for _, z in ipairs(Config.HELL.zones or {}) do
+				local d = (z.at - at).Magnitude
+				if d < best then
+					best = d
+					place = "지옥 · " .. z.name
+				end
+			end
+		end
+	end
+	for player in pairs(profiles) do
+		if Premium.owns(player, "bossBell") then
+			toast(player, string.format("🔔 %s 이(가) 나타났다%s", def.name or "보스", place ~= "" and (" · " .. place) or ""))
+		end
+	end
+end
+
 function Premium.load(player: Player)
 	if not Marketplace then
 		return
