@@ -4486,6 +4486,63 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			Premium.grant(player, arg)
 			toast(player, "💎 테스트로 켰어요: " .. Config.PREMIUM_BY_ID[arg].name)
 		end
+	elseif action == "testRigCheck" then
+		-- 3.33.1판 몸 점검: 가장 가까운 적의 몸 구조를 검사해 출력창에 자세히 적고 화면에 요약한다
+		-- (관절 Part0·Part1 · C0·C1 정합 · 같은 이름 부위 중복 · PrimaryPart · 용접 · 겹친 모델)
+		if f then
+			local best: any, bd = nil, 1e9
+			for _, e in ipairs(Npc.list) do
+				local d = (e.f.root.Position - f.root.Position).Magnitude
+				if d < bd and e.f.root.Parent then
+					best, bd = e, d
+				end
+			end
+			if not best then
+				toast(player, "🔍 가까운 적이 없어요")
+			else
+				local m: Model = best.f.model
+				local names: { [string]: number } = {}
+				local joints, bad, welds, missing = 0, 0, 0, 0
+				local report = { string.format("[몸 점검] %s (%s) 몸집 %s 거리 %.0f", best.def.name, tostring(best.typeId), tostring(best.def.scale or 1), bd) }
+				for _, d in ipairs(m:GetDescendants()) do
+					if d:IsA("BasePart") and d.Parent == m then
+						names[d.Name] = (names[d.Name] or 0) + 1
+					elseif d:IsA("WeldConstraint") then
+						welds += 1
+					elseif d:IsA("Motor6D") then
+						joints += 1
+						local p0, p1 = d.Part0, d.Part1
+						if not p0 or not p1 then
+							missing += 1
+							table.insert(report, "  관절 끊김: " .. d.Name)
+						else
+							local want = p0.CFrame * d.C0 * d.Transform * d.C1:Inverse()
+							local err = (want.Position - p1.Position).Magnitude
+							if err > 0.2 then
+								bad += 1
+								table.insert(report, string.format("  어긋난 관절 %s: %.2f칸 (%s → %s)", d.Name, err, p0.Name, p1.Name))
+							end
+						end
+					end
+				end
+				local dups = {}
+				for n, c in pairs(names) do
+					if c > 1 then
+						table.insert(dups, n .. "×" .. c)
+					end
+				end
+				local nested = 0
+				for _, d in ipairs(m:GetChildren()) do
+					if d:IsA("Model") and d.Name ~= "Weapon" then
+						nested += 1
+						table.insert(report, "  안에 든 모델: " .. d.Name)
+					end
+				end
+				table.insert(report, string.format("  관절 %d (어긋남 %d · 끊김 %d) · 용접 %d · 겹친 이름 %s · PrimaryPart %s · 안의 모델 %d", joints, bad, missing, welds, #dups > 0 and table.concat(dups, ",") or "없음", m.PrimaryPart and m.PrimaryPart.Name or "없음", nested))
+				print(table.concat(report, "\n"))
+				toast(player, string.format("🔍 %s: 관절 %d · 어긋남 %d · 끊김 %d · 겹친 이름 %d (출력창에 자세히)", best.def.name, joints, bad, missing, #dups))
+			end
+		end
 	elseif action == "testDummy" then
 		if f then
 			-- 3.27.7판: 앞에 목인 셋을 땅 위에 나란히 세운다 (예전엔 한 개, 허공이면 떨어졌다)
