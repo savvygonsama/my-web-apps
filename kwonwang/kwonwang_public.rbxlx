@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.41.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5566,7 +5566,8 @@ for _, id in ipairs({ "bingma", "hyeolma", "cheonma", "yeomje", "sawang", "cheon
 end
 Config.BOSS_SPEED = 0.65 -- 모든 보스의 걸음 배율 (순간이동하듯 붙지 않게)
 Config.BOSS_PHASE_SPEED = 0.05 -- 단계마다 걸음이 빨라지는 양
-for id, k in pairs({ bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 6, cheonmun = 7 }) do
+-- 3.41.4판: 흑호가 너무 오래 걸렸다 (그 땅 권장 경지로 약 1분 반) → ×0.6 (빙마 · 염제 같은 보스는 아래 전투력 맞춤 뒤 BOSS_HP_ADJ에서)
+for id, k in pairs({ heukho = 0.6, bingma = 4, hyeolma = 5, cheonma = 6, yeomje = 6, sawang = 6, cheonmun = 7 }) do
 	local b = Config.Bosses[id]
 	if b then
 		b.hp = math.floor(b.hp * k)
@@ -5759,7 +5760,8 @@ Config.ACH_COLOR = {
 -- 이제 보스는 그 땅 졸병 (가운데) 전투력의 BOSS_POWER_RATIO배까지만 (넘으면 체력을 깎는다). 한 대는 졸병 한 대의 BOSS_HIT_RATIO배
 ------------------------------------------------------------------------
 Config.BOSS_POWER_RATIO = 7.6 -- 3.25판: 4 → 5.7, 3.25.2판: → 7.6 (체력 ×3.5에 해당: 전투력은 체력의 제곱근에 비례)
-Config.BOSS_HP_POW_MAX = 42 -- 3.37판: 보스 체력은 전투력의 이만큼까지 (넘으면 체력을 덜고 한 대를 키운다. 전투력은 그대로)
+Config.BOSS_HP_POW_MAX = 32 -- 3.41.4판: 42 → 32 (한 대는 넘은 몫의 제곱근만큼만 키운다: 싸움이 약 1/4 짧아지고 보스 전투력은 약 7% 낮아진다). 3.37판: 보스 체력은 전투력의 이만큼까지 (넘으면 체력을 덜고 한 대를 키운다. 전투력은 그대로)
+Config.BOSS_HP_ADJ = { bingma = 0.45, yeomje = 0.6, gyunwang = 0.75, noeje = 0.75, dongguckgun = 0.75, unryongwang = 0.75 } -- 3.41.4판 (아래 전투력 맞춤 뒤에 곱한다)
 Config.BOSS_HP_FIX_CAP = 2.5 -- 한 번에 고치는 몫의 한도 (한 대가 너무 갑자기 세지지 않게)
 Config.BOSS_HIT_RATIO = 2 --보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
 -- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
@@ -5891,7 +5893,7 @@ do
 		if ratio > Config.BOSS_HP_POW_MAX then
 			local k = math.min(Config.BOSS_HP_FIX_CAP, ratio / Config.BOSS_HP_POW_MAX)
 			b.hp = math.max(1, math.floor(b.hp / k))
-			b.dmgScale = (b.dmgScale or 1) * k
+			b.dmgScale = (b.dmgScale or 1) * math.sqrt(k)
 		end
 	end
 	for _, r in ipairs(Config.Regions) do
@@ -5902,6 +5904,14 @@ do
 	end
 	for _, z in ipairs(Config.HELL.zones or {}) do
 		evenOut(z.boss)
+	end
+	-- 3.41.4판: 그 땅 권장 경지의 보통 플레이어로 어림해 싸움이 지나치게 긴 보스 (약 1분 40초 넘게) 만 체력을 덜어 낸다
+	-- (빙마는 특급이 혼자 약 2분 50초 · 염제 약 2분 · 거균왕 · 뇌제 · 동극군 · 운룡왕 약 1분 50초)
+	for id, k in pairs(Config.BOSS_HP_ADJ) do
+		local b = Config.Bosses[id]
+		if b then
+			b.hp = math.max(1, math.floor(b.hp * k))
+		end
 	end
 end
 
