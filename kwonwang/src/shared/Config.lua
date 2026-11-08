@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.41.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3095,9 +3095,13 @@ table.insert(Config.Styles, {
 -- 3.41.1판: 초반에 산 사람도 바로 키우게. 앞 단계는 싸고 (은자 5천부터), 조각은 초반 보스 · 정예도 떨어뜨린다. +10부터는 크게 늘어 후반을 계속 돈다
 Config.ENH = {
 	max = 15,
-	shards = { 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 8, 10, 12, 15, 20 },
+	-- 3.41.2판: +11부터 (후반) 조각과 은자를 크게 늘렸다
+	shards = { 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 10, 14, 18, 24, 32 },
 	coins = function(lv: number): number
-		return math.floor(5000 * 1.6 ^ (lv - 1))
+		if lv <= 10 then
+			return math.floor(5000 * 1.6 ^ (lv - 1))
+		end
+		return math.floor(5000 * 1.6 ^ 9 * 3 ^ (lv - 10))
 	end,
 	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 모든 보스 절반 · 지옥 보스 70% (가끔 둘) · 정예 졸병 3%
 	drop = { boss = 0.5, late = 0.5, hell = 0.7, extra = 0.3, elite = 0.03 },
