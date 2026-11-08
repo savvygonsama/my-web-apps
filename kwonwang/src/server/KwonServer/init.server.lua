@@ -5108,11 +5108,6 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Actions.dash(player, a1)
 	elseif action == "emote" then
 		local f = Combat.fighterOfPlayer(player)
-		-- 3.40판: 무림 몸짓 묶음의 몸짓은 게임패스가 있어야
-		if type(a1) == "string" and Config.PREMIUM_EMOTE_BY_ID[a1] and not Premium.owns(player, "emotes") then
-			toast(player, "🙇 '무림 몸짓 묶음' 게임패스의 몸짓이에요 (만물상 💎)")
-			return
-		end
 		if f and not f.dead and not Combat.busy(f) and type(a1) == "string" and #a1 < 20 then
 			Push:FireAllClients("emote", f.model, a1)
 		end
@@ -6566,9 +6561,6 @@ function Premium.grant(player: Player, id: string)
 	if p and id == "heukryong" and (states[player] :: any).premiumLoaded then
 		p.mountSel = "heukryong"
 		toast(player, "🐲 흑룡을 얻었어요! V로 타기")
-	end
-	if id == "emotes" and (states[player] :: any).premiumLoaded then
-		toast(player, "🙇 무림 몸짓 묶음! 5 · 6 · 7 · 8번 (폰은 상점의 이 칸 단추)")
 	end
 	pushState(player)
 end

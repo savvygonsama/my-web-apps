@@ -9,9 +9,152 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local UI = {}
-UI.emoteBtns = {} :: { TextButton } -- 3.40판 상점의 몸짓 묶음 단추
 UI.productRows = {} :: { any } -- 3.40판 개발자 상품 줄
-UI.doEmote = nil :: ((string) -> ())?
+UI.passArts = nil :: any -- 3.42판 상점 미리보기 (init.client가 넣는다)
+-- 3.42판 상점의 권법 게임패스 미리보기: 내 몸을 본뜬 모형에 그 권법 · 강화 단계의 꾸밈을 입혀 천천히 돌린다
+UIB.showcases = {} :: { any }
+function UIB.renderShowcase(sc: any, lv: number)
+	sc.lv = lv
+	for k, b in ipairs(sc.btns) do
+		b.BackgroundColor3 = (({ 0, 5, 10, 15 })[k] == lv) and sc.sdef.color2:Lerp(Color3.new(0, 0, 0), 0.35) or Color3.fromRGB(40, 34, 50)
+	end
+	if sc.model then
+		sc.model:Destroy()
+		sc.model = nil
+	end
+	local char = game:GetService("Players").LocalPlayer.Character
+	if not char or not char:FindFirstChild("HumanoidRootPart") then
+		sc.note.Text = "캐릭터가 나오면 보여요"
+		return
+	end
+	sc.note.Text = ""
+	local was = char.Archivable
+	char.Archivable = true
+	local ok, m = pcall(function()
+		return char:Clone()
+	end)
+	char.Archivable = was
+	if not ok or not m then
+		return
+	end
+	for _, d in ipairs(m:GetDescendants()) do
+		if d:IsA("LuaSourceContainer") or d:IsA("BillboardGui") or d:IsA("Sound") or d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("ForceField") then
+			d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.Anchored = true
+		end
+	end
+	local hum = m:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
+	m:PivotTo(CFrame.new())
+	if UI.passArts then
+		UI.passArts.preview(m, sc.sdef.id, lv)
+	end
+	m.Parent = sc.vp
+	sc.model = m
+	sc.base = m:GetPivot()
+	sc.char = char
+end
+function UIB.styleShowcase(card: Frame, sdef: any, left: number)
+	local vp = Instance.new("ViewportFrame")
+	vp.Position = UDim2.new(0, 14, 0, 12)
+	vp.Size = UDim2.new(0, left - 28, 0, 270)
+	vp.BackgroundColor3 = Color3.fromRGB(14, 10, 22)
+	vp.Ambient = Color3.fromRGB(160, 160, 180)
+	vp.LightColor = Color3.new(1, 1, 1)
+	vp.LightDirection = Vector3.new(-0.5, -1, -0.7)
+	vp.Parent = card
+	local cr = Instance.new("UICorner")
+	cr.CornerRadius = UDim.new(0, 12)
+	cr.Parent = vp
+	local st = Instance.new("UIStroke")
+	st.Color = sdef.color2
+	st.Thickness = 1.5
+	st.Parent = vp
+	local cam = Instance.new("Camera")
+	cam.FieldOfView = 42
+	cam.CFrame = CFrame.lookAt(Vector3.new(0, 1.2, 11.5), Vector3.new(0, 0.2, 0))
+	cam.Parent = vp
+	vp.CurrentCamera = cam
+	local note = Instance.new("TextLabel")
+	note.BackgroundTransparency = 1
+	note.Size = UDim2.fromScale(1, 1)
+	note.Text = "캐릭터가 나오면 보여요"
+	note.TextColor3 = Color3.fromRGB(200, 190, 210)
+	note.Font = Enum.Font.GothamBold
+	note.TextSize = 14
+	note.Parent = vp
+	local sc: any = { vp = vp, note = note, sdef = sdef, btns = {}, lv = 15 }
+	local w = math.floor((left - 28 - 12) / 4)
+	for k, lv in ipairs({ 0, 5, 10, 15 }) do
+		local b = Instance.new("TextButton")
+		b.Position = UDim2.new(0, 14 + (k - 1) * (w + 4), 0, 290)
+		b.Size = UDim2.new(0, w, 0, 38)
+		b.Text = "+" .. lv
+		b.Font = Enum.Font.GothamBlack
+		b.TextSize = 16
+		b.TextColor3 = Color3.new(1, 1, 1)
+		b.BackgroundColor3 = Color3.fromRGB(40, 34, 50)
+		b.AutoButtonColor = true
+		b.Parent = card
+		local bc = Instance.new("UICorner")
+		bc.CornerRadius = UDim.new(0, 8)
+		bc.Parent = b
+		b.MouseButton1Click:Connect(function()
+			UIB.renderShowcase(sc, lv)
+		end)
+		table.insert(sc.btns, b)
+	end
+	-- 오른쪽 아래: 기술 · 강화 세기 · 장치
+	local sk = {}
+	for _, slot in ipairs({ "E", "R", "G", "X" }) do
+		local m = sdef.skills and sdef.skills[slot]
+		if m then
+			table.insert(sk, string.format("<b>%s</b> %s — %s", slot, m.name, m.desc))
+		end
+	end
+	local info = Instance.new("TextLabel")
+	info.BackgroundTransparency = 1
+	info.Position = UDim2.new(0, left, 0, 150)
+	info.Size = UDim2.new(1, -left - 14, 0, 182)
+	info.RichText = true
+	info.TextWrapped = true
+	info.TextXAlignment = Enum.TextXAlignment.Left
+	info.TextYAlignment = Enum.TextYAlignment.Top
+	info.Font = Enum.Font.Gotham
+	info.TextSize = 13
+	info.TextColor3 = Color3.fromRGB(230, 220, 205)
+	info.Text = string.format('<font color="#FFD25A"><b>🔺 강화 +0 ×%.2f → +%d ×%.2f</b></font>  %s\n', Config.enhMult(sdef, 0), Config.ENH.max, Config.enhMult(sdef, Config.ENH.max), sdef.gimmick or "") .. table.concat(sk, "\n")
+	info.Parent = card
+	table.insert(UIB.showcases, sc)
+	-- 천천히 돈다 (상점이 보일 때만)
+	game:GetService("RunService").RenderStepped:Connect(function()
+		if not sc.model or not card.Parent then
+			return
+		end
+		-- 상점 창 · 탭이 실제로 보일 때만 (조상 가운데 하나라도 감춰져 있으면 돌리지 않는다)
+		local x: Instance? = vp
+		while x and not x:IsA("ScreenGui") do
+			if x:IsA("GuiObject") and not x.Visible then
+				return
+			end
+			x = x.Parent
+		end
+		if x and (x :: ScreenGui).Enabled then
+			sc.model:PivotTo(sc.base * CFrame.Angles(0, os.clock() * 0.7, 0))
+		end
+	end)
+end
+function UIB.refreshShowcase()
+	local char = game:GetService("Players").LocalPlayer.Character
+	for _, sc in ipairs(UIB.showcases) do
+		if not sc.model or sc.char ~= char then
+			UIB.renderShowcase(sc, sc.lv)
+		end
+	end
+end
 
 local player = Players.LocalPlayer
 local Request: RemoteEvent
@@ -841,7 +984,8 @@ function UIB.buildStyles()
 		-- 3.1판: 극 권법의 황혼 (일월극변) 동안 바뀌는 기술
 		if s.twilight then
 			table.insert(lines, "")
-			table.insert(lines, string.format('<font color="#FF9A5A"><b>🌇 황혼 (일월극변)</b></font>  극을 채우면 40초 동안 세상이 황혼에 멈추고 기술이 바뀐다. 연타·강타 ×%.1f', s.twilight.dmg or 1))
+			local fname, fdesc = Config.geukForm(s)
+			table.insert(lines, string.format('<font color="#FF9A5A"><b>%s</b></font>  %s. 연타·강타 ×%.1f', fname, fdesc, s.twilight.dmg or 1))
 			table.insert(lines, string.format('<font color="#FF9A5A"><b>Z 강타</b></font>  %s', s.twilight.heavy.name))
 			for _, slot in ipairs({ "E", "R", "G", "X" }) do
 				local sk = s.twilight.skills[slot]
@@ -1726,15 +1870,22 @@ function UIB.buildShop()
 	local premiumBtns: { [string]: TextButton } = {}
 	local autoBtns: { [string]: { toggle: TextButton, stat: TextButton } } = {}
 	for i, it in ipairs(Config.Premium) do
-		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 150), BackgroundColor3 = it.best and Color3.fromRGB(50, 26, 80) or (it.toggle and Color3.fromRGB(20, 50, 70) or Color3.fromRGB(70, 24, 14)), LayoutOrder = i, Parent = prem }, { corner(14), stroke(Color3.fromRGB(255, 200, 90), 2) })
+		-- 3.42판: 권법 게임패스는 맨 위에 크게 (실제 모습 미리보기 · 강화 단계 · 기술)
+		local sdef = it.style and Config.STYLE_BY_ID[it.style]
+		local L = sdef and 262 or 138
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, sdef and 340 or 150), BackgroundColor3 = it.best and Color3.fromRGB(50, 26, 80) or (it.toggle and Color3.fromRGB(20, 50, 70) or Color3.fromRGB(70, 24, 14)), LayoutOrder = sdef and (i - 100) or i, Parent = prem }, { corner(14), stroke(sdef and sdef.color2 or Color3.fromRGB(255, 200, 90), 2) })
 		new("UIGradient", { Rotation = 20, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 120, 90)), Parent = card })
-		local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
-		new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
-		text({ Size = UDim2.fromScale(1, 1), Text = it.icon, TextSize = 64, TextXAlignment = Enum.TextXAlignment.Center, Parent = badge })
-		text({ Position = UDim2.new(0, 138, 0, 10), Size = UDim2.new(1, -330, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
-		local chip = new("Frame", { Position = UDim2.new(0, 138, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.best and Color3.fromRGB(150, 90, 230) or (it.toggle and Color3.fromRGB(40, 140, 200) or Color3.fromRGB(200, 70, 40)), Parent = card }, { corner(11) })
+		if sdef then
+			UIB.styleShowcase(card, sdef, L)
+		else
+			local badge = new("Frame", { Position = UDim2.new(0, 14, 0.5, -55), Size = UDim2.new(0, 110, 0, 110), BackgroundColor3 = Color3.fromRGB(30, 20, 10), Parent = card }, { corner(16), stroke(Color3.fromRGB(255, 220, 120), 2) })
+			new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 220, 120), Color3.fromRGB(120, 70, 20)), Transparency = NumberSequence.new(0.55, 0.85), Parent = badge })
+			text({ Size = UDim2.fromScale(1, 1), Text = it.icon, TextSize = 64, TextXAlignment = Enum.TextXAlignment.Center, Parent = badge })
+		end
+		text({ Position = UDim2.new(0, L, 0, 10), Size = UDim2.new(1, -L - 192, 0, 32), Text = it.name, TextSize = 26, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
+		local chip = new("Frame", { Position = UDim2.new(0, L, 0, 44), Size = UDim2.new(0, 70, 0, 22), BackgroundColor3 = it.best and Color3.fromRGB(150, 90, 230) or (it.toggle and Color3.fromRGB(40, 140, 200) or Color3.fromRGB(200, 70, 40)), Parent = card }, { corner(11) })
 		text({ Size = UDim2.fromScale(1, 1), Text = it.tag, TextSize = 13, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, Parent = chip })
-		text({ Position = UDim2.new(0, 138, 0, 72), Size = UDim2.new(1, -330, 0, 72), Text = "⭐ " .. table.concat(it.lines, "\n⭐ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		text({ Position = UDim2.new(0, L, 0, 72), Size = UDim2.new(1, -L - 192, 0, 72), Text = "⭐ " .. table.concat(it.lines, "\n⭐ "), TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
 		premiumBtns[it.id] = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 20), Size = UDim2.new(0, 170, 0, 52), Text = "R$ " .. tostring(it.price) .. "  구매", TextSize = 20, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
 			Request:FireServer("premiumBuy", it.id)
 		end)
@@ -1746,17 +1897,6 @@ function UIB.buildShop()
 				Request:FireServer("autoStat")
 			end)
 			autoBtns[it.id] = { toggle = tg, stat = sb }
-		end
-		-- 3.40판 무림 몸짓 묶음: 가지면 몸짓 넷 단추 (폰에서도 할 수 있게)
-		if it.id == "emotes" then
-			for k, pe in ipairs(Config.PREMIUM_EMOTES) do
-				local eb = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14 - (4 - k) * 44, 0, 84), Size = UDim2.new(0, 40, 0, 40), Text = pe.icon, TextSize = 20, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
-					if UI.doEmote then
-						UI.doEmote(pe.id)
-					end
-				end)
-				table.insert(UI.emoteBtns, eb)
-			end
 		end
 	end
 	-- 3.40판 개발자 상품 (여러 번 살 수 있다)
@@ -1802,10 +1942,9 @@ function UIB.buildShop()
 			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or (ready and Color3.fromRGB(40, 170, 80) or Color3.fromRGB(80, 80, 90))
 			b.AutoButtonColor = not has and ready
 		end
-		-- 3.40판 몸짓 묶음 단추 · 상품 줄
-		for _, eb in ipairs(UI.emoteBtns) do
-			eb.Visible = owned.emotes == true
-		end
+		-- 3.42판 권법 미리보기 (처음 열 때 · 몸이 바뀌었을 때)
+		UIB.refreshShowcase()
+		-- 3.40판 상품 줄
 		for _, row in ipairs(UI.productRows) do
 			local ready = row.it.productId > 0
 			row.line.Text = Config.productLine(row.it, state and state.realm or 1)
@@ -2640,7 +2779,7 @@ function UIB.buildTest()
 	section("💎 상품 (테스트로 켜기)", {
 		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" }, { "💰 은자 두 배", "testPremium", "coin2x" }, { "🎒 가방 확장", "testPremium", "bag" },
 		{ "🐉 청룡 탈것", "testPremium", "dragon" }, { "🦊 구미호권", "testPremium", "gumiho" }, { "🗡 흑염마검장", "testPremium", "heukyeom" },
-		{ "🐲 흑룡", "testPremium", "heukryong" }, { "🙇 몸짓 묶음", "testPremium", "emotes" }, { "📜 심법 넷째 칸", "testPremium", "slot4" },
+		{ "🐲 흑룡", "testPremium", "heukryong" }, { "📜 심법 넷째 칸", "testPremium", "slot4" },
 	})
 	-- 3.41판 게임패스 권법 강화 (지금 든 권법)
 	section("🔺 게임패스 권법 강화", {

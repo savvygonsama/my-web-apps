@@ -151,14 +151,21 @@ local function clearRig(m: Model)
 end
 
 -- 몸에 붙인 조각 (용접): 몸을 따라 움직인다
+-- 3.42판: 상점 미리보기는 같은 꾸밈을 미리보기 모형 안에 (용접 없이 그 자리에 고정해) 짓는다
+local buildParent: Instance = folder
+local previewMode = false
 local function weldTo(base: BasePart, p: BasePart, offset: CFrame): BasePart
-	p.Anchored = false
 	p.CFrame = base.CFrame * offset
-	local w = Instance.new("WeldConstraint")
-	w.Part0 = base
-	w.Part1 = p
-	w.Parent = p
-	p.Parent = folder
+	if previewMode then
+		p.Anchored = true
+	else
+		p.Anchored = false
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = base
+		w.Part1 = p
+		w.Parent = p
+	end
+	p.Parent = buildParent
 	return p
 end
 
@@ -174,7 +181,7 @@ local function buildFox(m: Model, lv: number): Rig
 			local w = 1.0 - 0.62 * k
 			local tip = i >= SEG - 1
 			local p = part(Vector3.new(w, w, 1.35), tip and FOX or FOX_FUR:Lerp(FOX_PALE, k), tip and Enum.Material.Neon or Enum.Material.SmoothPlastic, tip and 0.05 or 0.08, "ball")
-			p.Parent = folder
+			p.Parent = buildParent
 			table.insert(segs, p)
 			table.insert(rig.parts, p)
 			if i == SEG then
@@ -201,7 +208,7 @@ local function buildFox(m: Model, lv: number): Rig
 				local k = (i - 1) / (SEG - 1)
 				local w = 2.4 - 1.5 * k
 				local p = part(Vector3.new(w, w, 2.6), FOX, Enum.Material.Neon, 0.82, "ball")
-				p.Parent = folder
+				p.Parent = buildParent
 				table.insert(segs, p)
 				table.insert(rig.parts, p)
 			end
@@ -328,6 +335,21 @@ local function poseTails(rig: Rig, t: number)
 	end
 	if rig.ghost then
 		lay(rig.ghost, 2.3, 120, 1.7)
+	end
+end
+
+-- 3.42판 상점 미리보기: 모형 (상점의 ViewportFrame 안) 에 그 권법 · 강화 단계의 꾸밈을 입힌다. 꼬리는 한 장면으로 고정
+function PassArts.preview(model: Model, style: string, lv: number)
+	buildParent = model
+	previewMode = true
+	local ok, rig = pcall(style == "gumiho" and buildFox or buildFlame, model, lv)
+	if ok and rig and rig.tails then
+		pcall(poseTails, rig, 0.6)
+	end
+	previewMode = false
+	buildParent = folder
+	if not ok then
+		warn("[권왕] 상점 미리보기 오류:", rig)
 	end
 end
 

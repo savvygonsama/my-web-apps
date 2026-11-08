@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.41.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.42.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2634,8 +2634,22 @@ table.insert(Config.Styles, {
 				mech = { kind = "rushChain", n = 5, range = 44, delay = 0.06, every = 0.16, hitsEach = 2, hit = hit(0, 0, 0, 76, 64, 0.6, 26, 12), finalRadius = 18, final = hit(0, 0, 0, 150, 130, 1.0, 50, 18) } },
 			R = { id = "snsR", name = "천강 낙하", desc = "하늘 높이 솟았다가 가장 가까운 적을 향해 벼락처럼 내리꽂힌다 (무적). 떨어진 자리에서 땅이 네 갈래로 갈라지며 금빛 균열이 멀리 달린다", pose = "dive_slam", dur = 1.0, cd = 8, chi = 26,
 				mech = { kind = "thunderDive", range = 40, delay = 0.5, radius = 13, hit = hit(0, 0, 0, 180, 170, 1.2, 70, 24), crackDelay = 0.25, length = 32, width = 5, crack = hit(0, 0, 0, 100, 100, 0.8, 50, 14) } },
-			G = { id = "snsG", name = "만상 천수", desc = "등 뒤로 거대한 신의 형상이 솟아 천 개의 팔로 둘레의 적을 차례로 열두 번 내리친다 (무적). 마지막에 하늘의 손바닥이 땅을 눌러 모두 짓뭉갠다", pose = "air_spin", dur = 3.2, cd = 24, chi = 100, armor = true,
-				mech = { kind = "thousandArms", range = 40, count = 12, delay = 0.7, every = 0.16, armRadius = 9, hit = hit(0, 0, 0, 80, 80, 0.7, 30, -8), radius = 30, palmDelay = 0.9, final = hit(0, 0, 0, 360, 420, 1.8, 20, -10) } },
+			-- 3.42판: 예전 '만상 천수' 는 진 금강불괴신공의 천수여래 (팔 여럿 달린 형상 + 하늘 손바닥) 와 장치 · 연출이 똑같았다. 신 삼재권만의 체술로 바꾼다
+			G = { id = "snsG", name = "신행 십이각", desc = "신의 걸음으로 둘레의 적들 사이를 오가며 열 번 걷어차고 (무적), 앞을 부채꼴로 쓸어 찬 뒤, 하늘에서 내리찍는 발꿈치로 둘레 30칸의 땅을 가른다", pose = "air_spin", dur = 3.0, cd = 24, chi = 100, armor = true,
+				mech = { kind = "sinSeq", steps = {
+					{ t = 0.3, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "一" },
+					{ t = 0.46, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 0.62, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 0.78, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 0.94, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "五" },
+					{ t = 1.1, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 1.26, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 1.42, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 1.58, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
+					{ t = 1.74, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "十" },
+					{ t = 2.1, shape = "cone", at = "self", length = 30, angle = 120, hit = hit(0, 0, 0, 180, 180, 1.0, 60, 10) },
+					{ t = 2.6, shape = "circle", at = "self", radius = 30, hit = hit(0, 0, 0, 360, 420, 1.8, 40, 20), big = true, name = "神" },
+				} } },
 			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 얻을 때의 그 동작: 팔을 여섯 번 휘두르는 동안 둘레 70칸의 시간이 멈춰 모두 묶이고 세상에 금이 간다. 무릎을 들어 땅을 찍는 순간 하늘과 땅이 갈라지며 모두 부서진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
 				mech = { kind = "genesis", radius = 70, freeze = 4.6, crackAt = 3.0, breakAt = 4.3, final = hit(0, 0, 0, 720, 760, 2.0, 80, 30) } },
 		},
@@ -4682,7 +4696,7 @@ Config.Premium = {
 	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' 같은 것)
 	{ id = "slot4", gamepass = 0, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
-	-- 3.40판 꾸미기 게임패스: 생김새만 특별한 탈것 · 몸짓 묶음 (힘은 오르지 않는다)
+	-- 3.40판 꾸미기 게임패스: 생김새만 특별한 탈것 (힘은 오르지 않는다)
 	{ id = "heukryong", gamepass = 0, price = 999, icon = "🐲", name = "흑룡 탈것", tag = "탈것",
 		lines = { "검은 비늘에 붉은 불길이 타오르는 흑룡", "청룡 다음으로 빠르다 (×3.0, 가장 빠른 건 그대로 청룡)", "흑룡만의 불꽃 기운이 몸을 따라 흐른다" } },
 	-- 3.41판 게임패스 권법 둘 (강화로 키운다)
@@ -4690,8 +4704,6 @@ Config.Premium = {
 		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
 	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
 		lines = { "권왕 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화해도 극 · 신 권법 아래 (배틀그라운드는 전설과 같은 세기)" } },
-	{ id = "emotes", gamepass = 0, price = 499, icon = "🙇", name = "무림 몸짓 묶음", tag = "몸짓",
-		lines = { "몸짓 넷: 큰절 · 부처 좌선 · 승룡 자세 · 천하제일 (5 · 6 · 7 · 8번)", "몸짓마다 권법 빛깔의 기운이 터진다", "상점 이 칸의 단추로도 할 수 있다 (폰)" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
@@ -4709,17 +4721,6 @@ Config.AUTO_TRAIN = {
 	kinds = { str = "rock", vit = "dummy", agi = "dummy", chi = "waterfall" },
 	advKinds = { str = "ironpalm", vit = "mabo", agi = "mabo", chi = "breathing" },
 }
--- 3.40판 무림 몸짓 묶음 (게임패스 emotes): 키 · 자세 · 길이
-Config.PREMIUM_EMOTES = {
-	{ id = "grandbow", key = 5, name = "큰절", icon = "🙇", pose = "bow", dur = 2.2 },
-	{ id = "buddha", key = 6, name = "부처 좌선", icon = "🧘", pose = "ult_buddha", dur = 2.6 },
-	{ id = "dragonpose", key = 7, name = "승룡 자세", icon = "🐉", pose = "ult_dragon", dur = 2.2 },
-	{ id = "kingpose", key = 8, name = "천하제일", icon = "👑", pose = "ult_king", dur = 2.4 },
-}
-Config.PREMIUM_EMOTE_BY_ID = {}
-for _, e in ipairs(Config.PREMIUM_EMOTES) do
-	Config.PREMIUM_EMOTE_BY_ID[e.id] = e
-end
 -- 3.40판 개발자 상품 (여러 번 살 수 있다). productId = 로블록스 사이트에서 만든 개발자 상품 번호 (0이면 아직 없음)
 -- give: coins = 은자 (내 경지에 맞춰 커진다: Config.productCoins × n) · elixir = 두 배 수련 초 · scrolls = 심법 두루마리
 Config.PRODUCTS = {
@@ -4748,6 +4749,17 @@ function Config.productLine(it: any, realmIdx: number): string
 		return "📜 심법 두루마리 " .. g.scrolls .. "장 (심법 뽑기)"
 	end
 	return ""
+end
+-- 3.42판: 극 · 신 권법이 게이지를 채웠을 때의 모습 이름 (예전엔 극 일월신권의 '황혼 · 일월극변' 이 모든 극 · 신 권법에 떴다)
+function Config.geukForm(style: any): (string, string, string)
+	if style.godForm then
+		return "✨ 신의 모습", "신을 채우면 쓰러질 때까지 몸이 떠올라 신의 모습이 되고 기술이 모두 바뀐다", "신"
+	elseif style.geukHaste then
+		return "🌠 초가속", "극을 채우면 잠시 초가속 (걸음 ×1.6 · 잔상 타격) 이 되고 기술이 모두 바뀐다", "극"
+	elseif style.geukDomain then
+		return "⬜ 격자 전개", "극을 채우면 3D 격자 공간이 펼쳐지고 기술이 모두 바뀐다", "극"
+	end
+	return "🌇 황혼 (일월극변)", "극을 채우면 40초 동안 세상이 황혼에 멈추고 기술이 바뀐다", "극"
 end
 Config.PREMIUM_BY_ID = {}
 for _, it in ipairs(Config.Premium) do
