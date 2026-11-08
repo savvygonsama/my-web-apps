@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.33.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.33.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -20802,7 +20802,7 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 	local s = def.scale or 1
 	local look = lookOf(typeId or "", isBoss)
 	local skin = look.skin or SKIN_TONES[math.random(#SKIN_TONES)]
-	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 }, isBoss and s > 1.6)
+	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 }, true) -- 3.33.3판: 모든 적이 직접 짠 몸 (기본 몸은 크기를 바꾸면 관절이 어긋나고 체격이 들쭉날쭉했다)
 	model.Name = label
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if hum then

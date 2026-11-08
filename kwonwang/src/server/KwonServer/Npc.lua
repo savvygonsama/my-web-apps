@@ -247,7 +247,7 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 	local s = def.scale or 1
 	local look = lookOf(typeId or "", isBoss)
 	local skin = look.skin or SKIN_TONES[math.random(#SKIN_TONES)]
-	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 }, isBoss and s > 1.6)
+	local model = body({ head = skin, torso = def.shirt, arms = look.bareArms == false and def.shirt or skin, legs = def.pants }, s, look.build or { head = 0.9 }, true) -- 3.33.3판: 모든 적이 직접 짠 몸 (기본 몸은 크기를 바꾸면 관절이 어긋나고 체격이 들쭉날쭉했다)
 	model.Name = label
 	local hum = model:FindFirstChildOfClass("Humanoid")
 	if hum then
