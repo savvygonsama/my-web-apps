@@ -41,6 +41,7 @@ local Samsara = require(script:WaitForChild("Samsara"))
 local Geuk = require(script:WaitForChild("Geuk"))
 local Speed = require(script:WaitForChild("Speed"))
 local BossFx = require(script:WaitForChild("BossFx"))
+local Ambience = require(script:WaitForChild("Ambience"))
 local Sin = require(script:WaitForChild("Sin"))
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
@@ -474,6 +475,12 @@ local function tint(color: Color3, strength: number, time: number)
 	end)
 end
 Sin.init({ shake = shake, tint = tint, flash = UI.flash })
+task.spawn(function()
+	local ok, err = pcall(Ambience.start)
+	if not ok then
+		warn("[권왕] 공기 입자 오류:", err)
+	end
+end)
 
 ------------------------------------------------------------------------
 -- 맞힐 상대 찾기 (서버와 같은 상자)
