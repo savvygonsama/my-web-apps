@@ -742,6 +742,11 @@ function UIB.buildStyles()
 			Request:FireServer("learn", selected)
 		elseif action == "break" then
 			Request:FireServer("breakthrough", selected)
+		elseif action == "enhance" then
+			Request:FireServer("enhance", selected)
+		elseif action == "passShop" then
+			window.Visible = false
+			UI.openPage("shop", { tab = "premium" })
 		elseif action == "awaken" then
 			Request:FireServer("awaken", selected)
 			window.Visible = false
@@ -940,8 +945,22 @@ function UIB.buildStyles()
 				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, stp.night and " 🌙" or ""))
 			end
 		end
+		-- 3.41판 게임패스 권법: 깨달음 대신 강화
+		local enhLv = (s.enh and state and state.enh and state.enh[id]) or 0
+		if s.enh then
+			table.insert(lines, "")
+			local E = Config.ENH
+			if not owned then
+				table.insert(lines, string.format('<font color="#FFD25A"><b>💎 게임패스 권법</b>  상점에서 얻는다 · 강화 +0 ×%.2f → +%d ×%.2f</font>', Config.enhMult(s, 0), E.max, Config.enhMult(s, E.max)))
+			elseif enhLv < E.max then
+				table.insert(lines, string.format("<b>🔺 강화 +%d → +%d</b>  🧩 비급 조각 %d (가진 것 %d) · 💰 %s → 등급 배율 ×%.2f → ×%.2f", enhLv, enhLv + 1, E.shards[enhLv + 1], state and state.shards or 0, Config.formatNumber(E.coins(enhLv + 1)), Config.enhMult(s, enhLv), Config.enhMult(s, enhLv + 1)))
+				table.insert(lines, '<font color="#C8B9A5">🧩 비급 조각은 보스가 떨어뜨린다 (지옥 보스가 가장 잘). 실패는 없다</font>')
+			else
+				table.insert(lines, string.format("<b>🔺 강화 +%d (끝)</b>  등급 배율 ×%.2f", E.max, Config.enhMult(s, E.max)))
+			end
+		end
 		-- 승급 (깨달음)
-		if owned then
+		if owned and not s.enh then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
@@ -960,7 +979,8 @@ function UIB.buildStyles()
 		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
-		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
+		local canBreak = owned and not s.enh and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
+		local canEnh = owned and s.enh ~= nil and enhLv < Config.ENH.max
 		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
 		local v2 = nil
 		for _, sd in ipairs(Config.Styles) do
@@ -978,6 +998,15 @@ function UIB.buildStyles()
 			dBtn.Text = "🔥 원래 권법에서 각성한다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
+		elseif s.enh and not owned then
+			dBtn.Text = "💎 상점에서 게임패스로 얻기"
+			dBtn.BackgroundColor3 = Color3.fromRGB(150, 110, 40)
+			action = "passShop"
+		elseif canEnh and state and state.style == id then
+			local needS, needC = Config.ENH.shards[enhLv + 1], Config.ENH.coins(enhLv + 1)
+			dBtn.Text = string.format("🔺 강화 +%d  🧩 %d · 💰 %s", enhLv + 1, needS, Config.formatNumber(needC))
+			dBtn.BackgroundColor3 = ((state.shards or 0) >= needS and state.coins >= needC) and Color3.fromRGB(170, 60, 220) or C.panel
+			action = "enhance"
 		elseif canBreak then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			dBtn.Text = string.format("⬆ 승급  💰 %s", Config.formatNumber(step.coins))
@@ -2610,7 +2639,12 @@ function UIB.buildTest()
 	}, 3)
 	section("💎 상품 (테스트로 켜기)", {
 		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" }, { "💰 은자 두 배", "testPremium", "coin2x" }, { "🎒 가방 확장", "testPremium", "bag" },
-		{ "🐉 청룡 탈것", "testPremium", "dragon" },
+		{ "🐉 청룡 탈것", "testPremium", "dragon" }, { "🦊 구미호권", "testPremium", "gumiho" }, { "🗡 흑염마검장", "testPremium", "heukyeom" },
+		{ "🐲 흑룡", "testPremium", "heukryong" }, { "🙇 몸짓 묶음", "testPremium", "emotes" }, { "📜 심법 넷째 칸", "testPremium", "slot4" },
+	})
+	-- 3.41판 게임패스 권법 강화 (지금 든 권법)
+	section("🔺 게임패스 권법 강화", {
+		{ "+0", "testEnh", 0 }, { "+5 (모습)", "testEnh", 5 }, { "+10 (모습)", "testEnh", 10 }, { "+15 (끝)", "testEnh", 15 }, { "🧩 비급 조각 +100", "testShards" },
 	})
 	do
 		local items: { any } = {}

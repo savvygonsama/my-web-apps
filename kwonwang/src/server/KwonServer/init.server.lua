@@ -68,6 +68,8 @@ type Profile = {
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
 	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
+	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
@@ -125,6 +127,8 @@ local function defaultProfile(): Profile
 		mounts = { horse = true },
 		mountSel = "horse",
 		receipts = {},
+		enh = {},
+		shards = 0,
 		skyGems = 0,
 		mats = {},
 		skyBuffUntil = 0,
@@ -253,6 +257,17 @@ local function sanitize(data: any): Profile
 	end)
 	-- 3.4.1판: 예전 (아무에게나 한 번 쓰러지면 열림) 규칙으로 열린 PvP 끄기는 다시 잠근다
 	p.pvpUnlocked = (data.pvpRule == 2 and data.pvpUnlocked == true) or nil
+	-- 3.41판 게임패스 권법 강화 · 비급 조각
+	p.enh = {}
+	if type(data.enh) == "table" then
+		for id, v in pairs(data.enh) do
+			local sd = type(id) == "string" and Config.STYLE_BY_ID[id]
+			if sd and sd.enh and type(v) == "number" then
+				(p.enh :: any)[id] = math.clamp(math.floor(v), 0, Config.ENH.max)
+			end
+		end
+	end
+	p.shards = math.floor(num(data.shards, 1e6))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -1111,6 +1126,8 @@ local function pushState(player: Player)
 		gateNext = Calc.gateNext(p),
 		manuals = p.manuals,
 		equip = p.equip,
+		enh = p.enh,
+		shards = p.shards or 0,
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
@@ -1273,8 +1290,11 @@ local function refreshFighter(player: Player)
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
-	local grade = styleDef and Config.gradeDmg(styleDef, p.gradeUp[p.style]) or 1
-	local gradeHp = styleDef and Config.gradeHp(styleDef, p.gradeUp[p.style]) or 1
+	-- 3.41판: 게임패스 권법은 깨달음 대신 강화 단계로 센다
+	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or p.gradeUp[p.style]
+	local grade = styleDef and Config.gradeDmg(styleDef, upArg) or 1
+	local gradeHp = styleDef and Config.gradeHp(styleDef, upArg) or 1
+	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
 	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
@@ -1348,6 +1368,10 @@ local function refreshFighter(player: Player)
 	-- 3.3판 배틀그라운드: 모두 체력 200, 공격력은 권법 등급만 아주 조금 (능력치·경지·숙련·심법·특전은 보지 않는다)
 	if BATTLE then
 		local gi = styleDef and Config.gradeRank(styleDef, p.gradeUp[p.style]) or 1
+		-- 3.41판: 게임패스 권법은 배틀그라운드에서 전설 권법과 같은 세기
+		if styleDef and styleDef.enh then
+			gi = Config.STYLE_BY_ID.gumiho.rank or gi
+		end
 		f.dmgMult = 1 + Config.BATTLE.gradeStep * (gi - 1)
 		f.skillMult = 1
 		fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = 0, 0, 0, 0, 0
@@ -2295,6 +2319,17 @@ Combat.init(Push, {
 					if math.random() < (lucky and PS.luckScroll or PS.scrollBase) then
 						p.scrolls += 1
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
+					end
+					-- 3.41판 비급 조각 (게임패스 권법 강화 재료): 지옥 > 후반 > 보통 보스
+					do
+						local D = Config.ENH.drop
+						local inHell = Config.inHell(f.root.Position)
+						local chance = inHell and D.hell or (((f.npc :: any).late) and D.late or D.boss)
+						if math.random() < chance then
+							local n = 1 + ((inHell and math.random() < D.extra) and 1 or 0)
+							p.shards = (p.shards or 0) + n
+							toast(killer, string.format("🧩 비급 조각 +%d (게임패스 권법 강화 재료)", n))
+						end
 					end
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
@@ -4537,6 +4572,20 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f then
 			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
 		end
+	elseif action == "testEnh" then
+		-- 3.41판 테스트: 지금 권법 (게임패스 권법) 의 강화 단계를 바로 정한다
+		local sd = Config.STYLE_BY_ID[p.style]
+		if sd and sd.enh then
+			local enhT: any = p.enh
+			enhT[sd.id] = math.clamp(math.floor(tonumber(arg) or 0), 0, Config.ENH.max)
+			refreshFighter(player)
+			toast(player, string.format("🧪 %s +%d (테스트)", sd.name, (p.enh :: any)[sd.id]))
+		else
+			toast(player, "게임패스 권법 (구미호권 · 흑염마검장) 을 든 채로 쓰세요")
+		end
+	elseif action == "testShards" then
+		p.shards = (p.shards or 0) + 100
+		toast(player, "🧩 비급 조각 +100 (테스트)")
 	elseif action == "testPremium" then
 		-- 테스트: 로벅스 상품을 써 보기 (진짜 구매 아님)
 		if type(arg) == "string" and Config.PREMIUM_BY_ID[arg] then
@@ -5444,10 +5493,42 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		else
 			Trial.start(player, v2.id)
 		end
+	elseif action == "enhance" then
+		-- 3.41판 게임패스 권법 강화: 비급 조각과 은자. 실패는 없다
+		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
+		if not sd or not sd.enh or not p.styles[sd.id] then
+			return
+		end
+		local lv = (p.enh :: any)[sd.id] or 0
+		if lv >= Config.ENH.max then
+			toast(player, string.format("%s은(는) 이미 +%d (끝)이에요", sd.name, Config.ENH.max))
+			return
+		end
+		local needS, needC = Config.ENH.shards[lv + 1], Config.ENH.coins(lv + 1)
+		if (p.shards or 0) < needS then
+			toast(player, string.format("🧩 비급 조각이 모자라요 (%d / %d) · 보스를 쓰러뜨리면 떨어진다 (지옥 보스가 가장 잘)", p.shards or 0, needS))
+			return
+		elseif p.coins < needC then
+			toast(player, string.format("💰 은자가 모자라요 (%s 필요)", Config.formatNumber(needC)))
+			return
+		end
+		p.shards = (p.shards or 0) - needS
+		p.coins -= needC
+		local enhT: any = p.enh
+		enhT[sd.id] = lv + 1
+		st.dirty = true
+		refreshFighter(player)
+		Push:FireClient(player, "enhanced", { style = sd.id, lv = lv + 1, mult = Config.enhMult(sd, lv + 1) })
+		toast(player, string.format("%s %s +%d! 등급 배율 ×%.2f", sd.icon, sd.name, lv + 1, Config.enhMult(sd, lv + 1)))
+		pushState(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
 		if not sd or not p.styles[sd.id] then
+			return
+		end
+		if sd.enh then
+			toast(player, "💎 이 권법은 깨달음 대신 강화로 세진다 (권법 창의 강화)")
 			return
 		end
 		local ups = p.gradeUp[sd.id] or 0
@@ -6450,6 +6531,18 @@ function Premium.grant(player: Player, id: string)
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
+	end
+	-- 3.41판 게임패스 권법: 패스가 있으면 그 권법을 익힌다. 방금 샀으면 바로 든다
+	local pdef = Config.PREMIUM_BY_ID[id]
+	if p and pdef and pdef.style and Config.STYLE_BY_ID[pdef.style] then
+		local had = p.styles[pdef.style] == true
+		grantStyle(player, pdef.style, not had)
+		if (states[player] :: any).premiumLoaded and not had then
+			p.style = pdef.style
+			toast(player, string.format("%s %s을(를) 익혔어요! 권법 창에서 강화할 수 있어요", Config.STYLE_BY_ID[pdef.style].icon, Config.STYLE_BY_ID[pdef.style].name))
+			refreshFighter(player)
+			updateTag(player)
+		end
 	end
 	-- VIP: 머리 위 왕관을 바로 단다
 	if id == "vip" then

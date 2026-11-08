@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.40.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1692,6 +1692,10 @@ function Config.gradeHp(style: any, up: number?): number
 	return Config.gradeMult(style, up) ^ Config.GRADE_HP_EXP
 end
 function Config.gradeMult(style: any, up: number?): number
+	-- 3.41판 게임패스 권법: up 은 강화 단계 (깨달음 대신)
+	if style.enh then
+		return Config.enhMult(style, up)
+	end
 	local base = Config.GRADES[style.grade] or 1
 	local b = BREAK_BONUS[style.grade]
 	local u = math.clamp(math.floor(up or 0), 0, 2)
@@ -1700,6 +1704,9 @@ end
 -- 빠르기 순위: 예전 열네 칸 순위 + 깨달음 (예전처럼 천외천 칸까지, 태초 이상과 초·극은 그대로)
 function Config.gradeRank(style: any, up: number?): number
 	local r = style.rank or 1
+	if style.enh then
+		return r
+	end
 	if r >= OLD_RANK["태초"] then
 		return r
 	end
@@ -3022,6 +3029,104 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
 	},
 })
+
+------------------------------------------------------------------------
+-- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고, 강화할수록 생김새가 바뀐다
+-- enh = { base = +0 의 등급 배율, top = +15 의 등급 배율 } (사이는 고르게). 극 (3.8) · 신 (4.3) 은 넘지 않는다
+-- 깨달음 (승급) 대신 강화. 배틀그라운드에서는 전설 등급과 같은 세기
+------------------------------------------------------------------------
+-- 전설 · 구미호권: 푸른 여우불과 꼬리. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)
+table.insert(Config.Styles, {
+	id = "gumiho",
+	name = "구미호권",
+	hanja = "九尾狐拳",
+	icon = "🦊",
+	color = Color3.fromRGB(90, 175, 255),
+	color2 = Color3.fromRGB(225, 245, 255),
+	fx = "basic",
+	grade = "전설",
+	keepGrade = true,
+	hidden = true,
+	premium = "gumiho",
+	enh = { base = 1.5, top = 2.75 },
+	unlockHint = "💎 상점의 '구미호권' 게임패스로 얻는다. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)",
+	desc = "푸른 여우불을 두른 요호의 권법. 빠르고 가볍게 스치며, 맞힐 때마다 여우불이 쌓인다. 강화할수록 등 뒤의 꼬리가 늘어난다.",
+	gimmick = "여우불: 다섯 번 맞힐 때마다 상대 자리에서 푸른 여우불이 터진다. 몸이 가벼워 (1.06배) 공격의 12%를 흘려 보낸다",
+	deflect = 0.24,
+	dodgeChance = 0.12,
+	speed = 1.06,
+	pulse = { every = 5, kind = "foxfire", radius = 10, delay = 0.2, name = "여우불", dmg = 22, posture = 16, stun = 0.4, kb = 6, up = 6 },
+	stance = "stance_mist",
+	combo = {
+		{ id = "gm1", name = "호미장", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
+		{ id = "gm2", name = "여우발톱", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
+		{ id = "gm3", name = "월하선각", pose = "crescent_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5.5, 14, 15, 0.45, 12) } },
+		{ id = "gm4", name = "구미선풍", pose = "tornado_kick", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 19, 22, 0.7, 22, 10) } },
+	},
+	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 28, 34, 0.8, 40) } },
+	skills = {
+		E = { id = "gmE", name = "호화연탄", desc = "손끝에서 푸른 여우불 셋이 날아가 가장 가까운 적 셋에게 차례로 터진다", pose = "plum_finger_r", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "targets", n = 3, range = 30, delay = 0.3, stagger = 0.12, radius = 5, hit = hit(0, 0, 0, 22, 20, 0.6, 10, 6), fx = "foxfire" } },
+		R = { id = "gmR", name = "미혹보", desc = "여우 잔상을 남기며 둘레의 적 셋 사이를 스치듯 지나가 한 번씩 할퀸다 (무적)", pose = "ghost_flash", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "rushChain", n = 3, range = 28, delay = 0.06, every = 0.18, hitsEach = 1, hit = hit(0, 0, 0, 26, 24, 0.6, 14, 8) } },
+		G = { id = "gmG", name = "구미난무", desc = "꼬리를 펼쳐 맴돈다. 1.6초 동안 둘레에 여우불 회오리가 몰아치고, 강화할수록 꼬리 그림자가 많아진다", pose = "gale_cyclone", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "zone", at = "self", radius = 18, dur = 1.6, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 16, 12, 0.3, 4, 0), fx = "foxfire" } },
+	},
+})
+-- 권왕 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+table.insert(Config.Styles, {
+	id = "heukyeom",
+	name = "흑염마검장",
+	hanja = "黑炎魔劍掌",
+	icon = "🗡",
+	color = Color3.fromRGB(40, 16, 56),
+	color2 = Color3.fromRGB(196, 70, 255),
+	fx = "shadow",
+	grade = "권왕",
+	keepGrade = true,
+	hidden = true,
+	premium = "heukyeom",
+	enh = { base = 2.75, top = 3.7 },
+	unlockHint = "💎 상점의 '흑염마검장' 게임패스로 얻는다. 강화할수록 검은 불꽃 검이 둘로 늘고 화려해진다",
+	desc = "검은 불꽃으로 손에 검을 빚어 베는 마검의 권법. 처음엔 한 손, +5부터 두 손에 검이 선다. 강화할수록 불꽃이 짙어지고 보랏빛 · 핏빛으로 타오른다.",
+	gimmick = "흑염 각인: 여섯 번 맞힐 때마다 상대 자리에서 검은 불꽃이 터진다. 마지막 오의 흑염멸천은 하늘에서 불꽃 검이 쏟아진다",
+	deflect = 0.3,
+	pulse = { every = 6, kind = "blackflame", radius = 12, delay = 0.3, name = "흑염 폭발", dmg = 48, posture = 70, stun = 1.0, kb = 20, up = 8 },
+	stance = "stance_reaper",
+	combo = {
+		{ id = "hy1", name = "흑염참", pose = "reap_slash_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
+		{ id = "hy2", name = "역염참", pose = "reap_slash_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
+		{ id = "hy3", name = "염륜", pose = "reap_spin", dur = 0.44, lunge = 2, hits = { hit(0.2, 6.5, 6, 13, 22, 0.5, 12) } },
+		{ id = "hy4", name = "마검낙", pose = "reap_overhead", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 6, 18, 32, 0.7, 30, nil, true) } },
+	},
+	heavy = { id = "hyH", name = "흑염일섬", pose = "reap_hook", dur = 0.6, lunge = 7, hits = { hit(0.28, 8.5, 6, 25, 46, 0.8, 56) } },
+	skills = {
+		E = { id = "hyE", name = "흑염월참", desc = "검을 크게 휘둘러 앞으로 검은 초승달 검기를 날린다", pose = "reap_wave", dur = 0.6, cd = 7, chi = 20,
+			mech = { kind = "cone", range = 24, angle = 80, delay = 0.15, hit = hit(0, 0, 0, 40, 60, 0.7, 24, 6), fx = "blackflame" } },
+		R = { id = "hyR", name = "마염천주", desc = "뛰어올라 검을 땅에 꽂는다. 앞으로 검은 불기둥이 줄지어 치솟는다", pose = "reap_leap", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "line", count = 6, start = 4, spacing = 5, step = 0.06, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 30, 44, 0.6, 10, 16), fx = "blackflame" } },
+		G = { id = "hyG", name = "쌍염십자참", desc = "1초 동안 두 검에 불꽃을 모았다가 교차해 거대한 X자 검기를 앞으로 날린다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘이 검게 타오르며 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 두 검을 내리꽂아 둘레를 불태운다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
+	},
+})
+-- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다. +10부터 조각이 크게 늘어 후반 보스를 계속 돌게 한다
+Config.ENH = {
+	max = 15,
+	shards = { 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20 },
+	coins = function(lv: number): number
+		return math.floor(100000 * 1.5 ^ (lv - 1))
+	end,
+	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 보스 · 후반 보스 · 지옥 보스
+	drop = { boss = 0.2, late = 0.35, hell = 0.6, extra = 0.3 },
+}
+-- 강화 단계의 등급 배율 (enh가 있는 권법만)
+function Config.enhMult(style: any, lv: number?): number
+	local E = style.enh
+	local l = math.clamp(math.floor(lv or 0), 0, Config.ENH.max)
+	return E.base + (E.top - E.base) * l / Config.ENH.max
+end
 
 -- 3.5판: 모든 권법이 들어온 뒤 등급을 다섯 단계로 다시 매긴다
 for _, st in ipairs(Config.Styles) do
@@ -4595,6 +4700,11 @@ Config.Premium = {
 	-- 3.40판 꾸미기 게임패스: 생김새만 특별한 탈것 · 몸짓 묶음 (힘은 오르지 않는다)
 	{ id = "heukryong", gamepass = 0, price = 999, icon = "🐲", name = "흑룡 탈것", tag = "탈것",
 		lines = { "검은 비늘에 붉은 불길이 타오르는 흑룡", "청룡 다음으로 빠르다 (×3.0, 가장 빠른 건 그대로 청룡)", "흑룡만의 불꽃 기운이 몸을 따라 흐른다" } },
+	-- 3.41판 게임패스 권법 둘 (강화로 키운다)
+	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
+		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
+	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
+		lines = { "권왕 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화해도 극 · 신 권법 아래 (배틀그라운드는 전설과 같은 세기)" } },
 	{ id = "emotes", gamepass = 0, price = 499, icon = "🙇", name = "무림 몸짓 묶음", tag = "몸짓",
 		lines = { "몸짓 넷: 큰절 · 부처 좌선 · 승룡 자세 · 천하제일 (5 · 6 · 7 · 8번)", "몸짓마다 권법 빛깔의 기운이 터진다", "상점 이 칸의 단추로도 할 수 있다 (폰)" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
@@ -9184,6 +9294,8 @@ type Profile = {
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
 	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
+	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
+	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
 	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
@@ -9241,6 +9353,8 @@ local function defaultProfile(): Profile
 		mounts = { horse = true },
 		mountSel = "horse",
 		receipts = {},
+		enh = {},
+		shards = 0,
 		skyGems = 0,
 		mats = {},
 		skyBuffUntil = 0,
@@ -9369,6 +9483,17 @@ local function sanitize(data: any): Profile
 	end)
 	-- 3.4.1판: 예전 (아무에게나 한 번 쓰러지면 열림) 규칙으로 열린 PvP 끄기는 다시 잠근다
 	p.pvpUnlocked = (data.pvpRule == 2 and data.pvpUnlocked == true) or nil
+	-- 3.41판 게임패스 권법 강화 · 비급 조각
+	p.enh = {}
+	if type(data.enh) == "table" then
+		for id, v in pairs(data.enh) do
+			local sd = type(id) == "string" and Config.STYLE_BY_ID[id]
+			if sd and sd.enh and type(v) == "number" then
+				(p.enh :: any)[id] = math.clamp(math.floor(v), 0, Config.ENH.max)
+			end
+		end
+	end
+	p.shards = math.floor(num(data.shards, 1e6))
 	-- 3.40판 개발자 상품 영수증
 	p.receipts = {}
 	if type(data.receipts) == "table" then
@@ -10227,6 +10352,8 @@ local function pushState(player: Player)
 		gateNext = Calc.gateNext(p),
 		manuals = p.manuals,
 		equip = p.equip,
+		enh = p.enh,
+		shards = p.shards or 0,
 		scrolls = p.scrolls,
 		pity = p.pity,
 		towerBest = p.towerBest,
@@ -10389,8 +10516,11 @@ local function refreshFighter(player: Player)
 	f.style = p.style
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
-	local grade = styleDef and Config.gradeDmg(styleDef, p.gradeUp[p.style]) or 1
-	local gradeHp = styleDef and Config.gradeHp(styleDef, p.gradeUp[p.style]) or 1
+	-- 3.41판: 게임패스 권법은 깨달음 대신 강화 단계로 센다
+	local upArg = (styleDef and styleDef.enh) and ((p.enh :: any)[p.style] or 0) or p.gradeUp[p.style]
+	local grade = styleDef and Config.gradeDmg(styleDef, upArg) or 1
+	local gradeHp = styleDef and Config.gradeHp(styleDef, upArg) or 1
+	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
 	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
@@ -10464,6 +10594,10 @@ local function refreshFighter(player: Player)
 	-- 3.3판 배틀그라운드: 모두 체력 200, 공격력은 권법 등급만 아주 조금 (능력치·경지·숙련·심법·특전은 보지 않는다)
 	if BATTLE then
 		local gi = styleDef and Config.gradeRank(styleDef, p.gradeUp[p.style]) or 1
+		-- 3.41판: 게임패스 권법은 배틀그라운드에서 전설 권법과 같은 세기
+		if styleDef and styleDef.enh then
+			gi = Config.STYLE_BY_ID.gumiho.rank or gi
+		end
 		f.dmgMult = 1 + Config.BATTLE.gradeStep * (gi - 1)
 		f.skillMult = 1
 		fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = 0, 0, 0, 0, 0
@@ -11411,6 +11545,17 @@ Combat.init(Push, {
 					if math.random() < (lucky and PS.luckScroll or PS.scrollBase) then
 						p.scrolls += 1
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
+					end
+					-- 3.41판 비급 조각 (게임패스 권법 강화 재료): 지옥 > 후반 > 보통 보스
+					do
+						local D = Config.ENH.drop
+						local inHell = Config.inHell(f.root.Position)
+						local chance = inHell and D.hell or (((f.npc :: any).late) and D.late or D.boss)
+						if math.random() < chance then
+							local n = 1 + ((inHell and math.random() < D.extra) and 1 or 0)
+							p.shards = (p.shards or 0) + n
+							toast(killer, string.format("🧩 비급 조각 +%d (게임패스 권법 강화 재료)", n))
+						end
 					end
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
@@ -13653,6 +13798,20 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 		if f then
 			Npc.spawn(type(arg) == "string" and Config.Bosses[arg] and arg or "heukho", true, f.root.Position + Combat.look(f) * 30, "test")
 		end
+	elseif action == "testEnh" then
+		-- 3.41판 테스트: 지금 권법 (게임패스 권법) 의 강화 단계를 바로 정한다
+		local sd = Config.STYLE_BY_ID[p.style]
+		if sd and sd.enh then
+			local enhT: any = p.enh
+			enhT[sd.id] = math.clamp(math.floor(tonumber(arg) or 0), 0, Config.ENH.max)
+			refreshFighter(player)
+			toast(player, string.format("🧪 %s +%d (테스트)", sd.name, (p.enh :: any)[sd.id]))
+		else
+			toast(player, "게임패스 권법 (구미호권 · 흑염마검장) 을 든 채로 쓰세요")
+		end
+	elseif action == "testShards" then
+		p.shards = (p.shards or 0) + 100
+		toast(player, "🧩 비급 조각 +100 (테스트)")
 	elseif action == "testPremium" then
 		-- 테스트: 로벅스 상품을 써 보기 (진짜 구매 아님)
 		if type(arg) == "string" and Config.PREMIUM_BY_ID[arg] then
@@ -14560,10 +14719,42 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		else
 			Trial.start(player, v2.id)
 		end
+	elseif action == "enhance" then
+		-- 3.41판 게임패스 권법 강화: 비급 조각과 은자. 실패는 없다
+		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
+		if not sd or not sd.enh or not p.styles[sd.id] then
+			return
+		end
+		local lv = (p.enh :: any)[sd.id] or 0
+		if lv >= Config.ENH.max then
+			toast(player, string.format("%s은(는) 이미 +%d (끝)이에요", sd.name, Config.ENH.max))
+			return
+		end
+		local needS, needC = Config.ENH.shards[lv + 1], Config.ENH.coins(lv + 1)
+		if (p.shards or 0) < needS then
+			toast(player, string.format("🧩 비급 조각이 모자라요 (%d / %d) · 보스를 쓰러뜨리면 떨어진다 (지옥 보스가 가장 잘)", p.shards or 0, needS))
+			return
+		elseif p.coins < needC then
+			toast(player, string.format("💰 은자가 모자라요 (%s 필요)", Config.formatNumber(needC)))
+			return
+		end
+		p.shards = (p.shards or 0) - needS
+		p.coins -= needC
+		local enhT: any = p.enh
+		enhT[sd.id] = lv + 1
+		st.dirty = true
+		refreshFighter(player)
+		Push:FireClient(player, "enhanced", { style = sd.id, lv = lv + 1, mult = Config.enhMult(sd, lv + 1) })
+		toast(player, string.format("%s %s +%d! 등급 배율 ×%.2f", sd.icon, sd.name, lv + 1, Config.enhMult(sd, lv + 1)))
+		pushState(player)
 	elseif action == "breakthrough" then
 		-- 권법 승급 (깨달음): 숙련 10, 경지, 은자
 		local sd = type(a1) == "string" and Config.STYLE_BY_ID[a1]
 		if not sd or not p.styles[sd.id] then
+			return
+		end
+		if sd.enh then
+			toast(player, "💎 이 권법은 깨달음 대신 강화로 세진다 (권법 창의 강화)")
 			return
 		end
 		local ups = p.gradeUp[sd.id] or 0
@@ -15566,6 +15757,18 @@ function Premium.grant(player: Player, id: string)
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
+	end
+	-- 3.41판 게임패스 권법: 패스가 있으면 그 권법을 익힌다. 방금 샀으면 바로 든다
+	local pdef = Config.PREMIUM_BY_ID[id]
+	if p and pdef and pdef.style and Config.STYLE_BY_ID[pdef.style] then
+		local had = p.styles[pdef.style] == true
+		grantStyle(player, pdef.style, not had)
+		if (states[player] :: any).premiumLoaded and not had then
+			p.style = pdef.style
+			toast(player, string.format("%s %s을(를) 익혔어요! 권법 창에서 강화할 수 있어요", Config.STYLE_BY_ID[pdef.style].icon, Config.STYLE_BY_ID[pdef.style].name))
+			refreshFighter(player)
+			updateTag(player)
+		end
 	end
 	-- VIP: 머리 위 왕관을 바로 단다
 	if id == "vip" then
@@ -35291,6 +35494,8 @@ local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
+local PassArts = require(script:WaitForChild("PassArts")) -- 3.41판 게임패스 권법 (구미호권 · 흑염마검장)
+PassArts.start()
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
 local Dream = require(script:WaitForChild("Dream"))
@@ -36835,6 +37040,26 @@ function handlers.manualAuto(data: any)
 	end
 end
 
+-- 3.41판 게임패스 권법 강화 성공: 몸에서 빛이 솟고 큰 글자
+function handlers.enhanced(data: any)
+	local char = myChar()
+	local r = char and rootOf(char)
+	local style = Config.STYLE_BY_ID[tostring(data.style)]
+	if not r or not style then
+		return
+	end
+	local big = data.lv == 5 or data.lv == 10 or data.lv == 15
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color2, 2, big and 26 or 14, 0.7)
+	Fx.ring(r.Position, style.color2, 1, big and 18 or 10, 0.5)
+	Fx.flash(r.Position, style.color2, big and 50 or 25, big and 5 or 3, 0.5)
+	Fx.text(r.Position + Vector3.new(0, 5, 0), string.format("🔺 +%d", data.lv), style.color2, big and 40 or 28, 1.2)
+	Fx.sound(big and "heavy" or "ping", 0.8, big and 0.7 or 1.4)
+	if big then
+		shake(0.6)
+		UI.toast(string.format("✨ %s +%d · 모습이 바뀌었어요!", style.name, data.lv))
+	end
+end
+
 function handlers.toast(msg: string)
 	UI.toast(msg)
 end
@@ -37514,6 +37739,12 @@ function handlers.skillfx(data: any)
 		Speed.init({ shake = shake, flash = UI.flash })
 		BossFx.init({ shake = shake })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
+	end
+	-- 3.41판 게임패스 권법의 기술 연출
+	if PassArts.handles(data) then
+		PassArts.init({ shake = shake, tint = tint })
+		PassArts.run(data)
+		return
 	end
 	-- 3.26판 보스 패턴 연출
 	if BossFx.handles(data) then
@@ -58747,6 +58978,670 @@ return Null
         </Item>
         <Item class="ModuleScript" referent="40">
           <Properties>
+            <string name="Name">PassArts</string>
+            <string name="Source"><![CDATA[-- 권왕 3.41판: 게임패스 권법 둘의 화면
+--   구미호권: 등 뒤의 여우 꼬리 (강화 단계만큼 1 → 9개), +10 금빛 눈, +15 거대한 꼬리 그림자. 기술은 푸른 여우불
+--   흑염마검장: 손에 빚은 검은 불꽃 검 (+5부터 두 손). 강화할수록 길고 짙어지며 보랏빛 → 핏빛으로 타오른다. 기술은 검은 불꽃
+-- 꾸밈은 모두 이 화면에서만 그린다 (서버는 Style · Enh 속성만 붙인다)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local Fx = require(script.Parent:WaitForChild("Fx"))
+local Perf = require(script.Parent:WaitForChild("Perf"))
+
+local PassArts = {}
+
+local FOX = Color3.fromRGB(90, 175, 255)
+local FOX_PALE = Color3.fromRGB(225, 245, 255)
+local FOX_FUR = Color3.fromRGB(238, 242, 250)
+local GOLD = Color3.fromRGB(255, 214, 90)
+local INK = Color3.fromRGB(18, 8, 26)
+local PURPLE = Color3.fromRGB(196, 70, 255)
+local CRIMSON = Color3.fromRGB(255, 40, 70)
+local WHITE_HOT = Color3.fromRGB(255, 225, 235)
+local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+
+local folder = Instance.new("Folder")
+folder.Name = "KwonPassArts"
+folder.Parent = workspace
+
+local opts: any = {}
+function PassArts.init(o: any)
+	opts = o or {}
+end
+local function shake(a: number, t: number)
+	if opts.shake then
+		pcall(opts.shake, a, t)
+	end
+end
+
+------------------------------------------------------------------------
+-- 조각 만들기
+------------------------------------------------------------------------
+local function part(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?, shape: string?): BasePart
+	local p: BasePart
+	if shape == "wedge" then
+		p = Instance.new("WedgePart")
+	else
+		local q = Instance.new("Part")
+		if shape == "ball" then
+			q.Shape = Enum.PartType.Ball
+		elseif shape == "cyl" then
+			q.Shape = Enum.PartType.Cylinder
+		end
+		p = q
+	end
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Massless = true
+	p.Size = size
+	p.Color = color
+	p.Material = material or Enum.Material.Neon
+	p.Transparency = alpha or 0
+	return p
+end
+local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
+	tw:Play()
+	return tw
+end
+local function temp(p: BasePart, life: number)
+	p.Parent = folder
+	Debris:AddItem(p, life + 0.1)
+	return p
+end
+local function cs(a: Color3, b: Color3?, c: Color3?): ColorSequence
+	if c then
+		return ColorSequence.new({ ColorSequenceKeypoint.new(0, a), ColorSequenceKeypoint.new(0.5, b :: Color3), ColorSequenceKeypoint.new(1, c) })
+	end
+	return ColorSequence.new(a, b or a)
+end
+local function ns(a: number, b: number): NumberSequence
+	return NumberSequence.new({ NumberSequenceKeypoint.new(0, a), NumberSequenceKeypoint.new(1, b) })
+end
+local function emitter(parent: Instance, tex: string, color: ColorSequence, size: NumberSequence, rate: number, life: number, speed: number, opt: any?): ParticleEmitter
+	local o = opt or {}
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = tex
+	e.Color = color
+	e.Size = size
+	e.Transparency = o.alpha or ns(0.2, 1)
+	e.Rate = (Perf.low and 0.4 or 1) * rate
+	e.Lifetime = NumberRange.new(life * 0.7, life)
+	e.Speed = NumberRange.new(speed * 0.6, speed)
+	e.SpreadAngle = o.spread or Vector2.new(20, 20)
+	e.Acceleration = o.accel or Vector3.new(0, 4, 0)
+	e.LightEmission = o.light or 1
+	e.Rotation = NumberRange.new(-180, 180)
+	e.RotSpeed = NumberRange.new(-60, 60)
+	e.LockedToPart = o.locked == true
+	e.ZOffset = o.z or 0
+	e.Parent = parent
+	return e
+end
+local function rootOf(m: Instance?): BasePart?
+	local r = m and m:FindFirstChild("HumanoidRootPart")
+	return (r and r:IsA("BasePart")) and r or nil
+end
+local function bodyPart(m: Model, name: string, alt: string?): BasePart?
+	local p = m:FindFirstChild(name) or (alt and m:FindFirstChild(alt))
+	return (p and p:IsA("BasePart")) and p or nil
+end
+local function near(pos: Vector3, d: number): boolean
+	local cam = workspace.CurrentCamera
+	return cam ~= nil and (cam.CFrame.Position - pos).Magnitude < d
+end
+
+------------------------------------------------------------------------
+-- 강화 단계 → 모습
+------------------------------------------------------------------------
+-- 구미호: 꼬리 수 (+0 하나 · +5 넷 · +10 일곱 · +15 아홉)
+local TAILS = { [0] = 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 8, 9, 9 }
+function PassArts.tails(lv: number): number
+	return TAILS[math.clamp(math.floor(lv), 0, 15)] or 1
+end
+-- 흑염: 검 단계 (0 한 손 · 1 길게 · 2 두 손 · 3 불꽃 자취 · 4 핏빛 날 · 5 끝 (흰 불심, 붉은 눈))
+function PassArts.bladeTier(lv: number): number
+	local l = math.clamp(math.floor(lv), 0, 15)
+	return l >= 15 and 5 or (l >= 10 and 4 or (l >= 8 and 3 or (l >= 5 and 2 or (l >= 3 and 1 or 0))))
+end
+
+------------------------------------------------------------------------
+-- 몸에 붙는 꾸밈 (사람마다 하나)
+------------------------------------------------------------------------
+type Rig = { model: Model, style: string, lv: number, parts: { BasePart }, tails: { { BasePart } }?, ghost: { { BasePart } }?, extra: { Instance } }
+local rigs: { [Model]: Rig } = {}
+
+local function clearRig(m: Model)
+	local r = rigs[m]
+	if r then
+		for _, p in ipairs(r.parts) do
+			p:Destroy()
+		end
+		for _, x in ipairs(r.extra) do
+			x:Destroy()
+		end
+		rigs[m] = nil
+	end
+end
+
+-- 몸에 붙인 조각 (용접): 몸을 따라 움직인다
+local function weldTo(base: BasePart, p: BasePart, offset: CFrame): BasePart
+	p.Anchored = false
+	p.CFrame = base.CFrame * offset
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = base
+	w.Part1 = p
+	w.Parent = p
+	p.Parent = folder
+	return p
+end
+
+local SEG = 6
+local function buildFox(m: Model, lv: number): Rig
+	local rig: Rig = { model = m, style = "gumiho", lv = lv, parts = {}, extra = {} }
+	local n = PassArts.tails(lv)
+	local tails = {}
+	for t = 1, n do
+		local segs = {}
+		for i = 1, SEG do
+			local k = (i - 1) / (SEG - 1)
+			local w = 1.0 - 0.62 * k
+			local tip = i >= SEG - 1
+			local p = part(Vector3.new(w, w, 1.35), tip and FOX or FOX_FUR:Lerp(FOX_PALE, k), tip and Enum.Material.Neon or Enum.Material.SmoothPlastic, tip and 0.05 or 0.08, "ball")
+			p.Parent = folder
+			table.insert(segs, p)
+			table.insert(rig.parts, p)
+			if i == SEG then
+				emitter(p, TEX_FIRE, cs(FOX_PALE, FOX), ns(0.9, 0.1), 8, 0.6, 2, { accel = Vector3.new(0, 5, 0) })
+			end
+		end
+		table.insert(tails, segs)
+	end
+	rig.tails = tails
+	-- +10: 금빛 눈 (머리 앞에 작은 빛 두 점)
+	local head = bodyPart(m, "Head")
+	if head and lv >= 10 then
+		for sx = -1, 1, 2 do
+			local eye = part(Vector3.new(0.16, 0.08, 0.05), GOLD, Enum.Material.Neon, 0, nil)
+			table.insert(rig.parts, weldTo(head, eye, CFrame.new(0.17 * sx, 0.12, -head.Size.Z / 2 - 0.01)))
+		end
+	end
+	-- +15: 거대한 꼬리 그림자 (흐릿하게 크게)
+	if lv >= 15 then
+		local ghost = {}
+		for t = 1, 3 do
+			local segs = {}
+			for i = 1, SEG do
+				local k = (i - 1) / (SEG - 1)
+				local w = 2.4 - 1.5 * k
+				local p = part(Vector3.new(w, w, 2.6), FOX, Enum.Material.Neon, 0.82, "ball")
+				p.Parent = folder
+				table.insert(segs, p)
+				table.insert(rig.parts, p)
+			end
+			table.insert(ghost, segs)
+		end
+		rig.ghost = ghost
+	end
+	-- 몸에 감도는 여우불 (단계가 오를수록 짙게)
+	local torso = bodyPart(m, "UpperTorso", "Torso")
+	if torso then
+		local a = Instance.new("Attachment")
+		a.Parent = torso
+		table.insert(rig.extra, a)
+		emitter(a, TEX_FIRE, cs(FOX_PALE, FOX), ns(0.6, 0), 2 + lv * 0.6, 0.8, 1.5, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 3, 0), alpha = ns(0.5, 1) })
+	end
+	return rig
+end
+
+-- 검 하나: 손에서 팔이 뻗은 방향으로 이어지는 불꽃 날
+local function blade(rig: Rig, hand: BasePart, tier: number)
+	local L = ({ [0] = 3.2, 3.8, 3.9, 4.1, 4.6, 4.9 })[tier] or 3.2
+	local edgeCol = tier >= 4 and CRIMSON:Lerp(PURPLE, 0.35) or PURPLE
+	local down = CFrame.new(0, -hand.Size.Y / 2 - L / 2 - 0.05, 0)
+	-- 몸날: 검은 불꽃 (넓적하고 얇다)
+	local core = part(Vector3.new(0.12, L, 0.42), INK, Enum.Material.Neon, 0, nil)
+	table.insert(rig.parts, weldTo(hand, core, down))
+	-- 날끝 (쐐기)
+	local tipP = part(Vector3.new(0.12, 0.7, 0.42), INK, Enum.Material.Neon, 0, "wedge")
+	table.insert(rig.parts, weldTo(hand, tipP, down * CFrame.new(0, -L / 2 - 0.35, 0) * CFrame.Angles(math.pi, 0, 0)))
+	-- 날의 빛 (양쪽 가장자리)
+	for sz = -1, 1, 2 do
+		local edge = part(Vector3.new(0.14, L, 0.06), edgeCol, Enum.Material.Neon, tier >= 1 and 0 or 0.25, nil)
+		table.insert(rig.parts, weldTo(hand, edge, down * CFrame.new(0, 0, sz * 0.22)))
+	end
+	-- +15: 흰 불심
+	if tier >= 5 then
+		local heart = part(Vector3.new(0.15, L * 0.8, 0.07), WHITE_HOT, Enum.Material.Neon, 0, nil)
+		table.insert(rig.parts, weldTo(hand, heart, down))
+	end
+	-- 검의 불꽃 (검은 연기 + 보랏빛 / 핏빛 불)
+	emitter(core, TEX_SMOKE, cs(INK, Color3.fromRGB(50, 20, 60)), ns(0.9, 0.2), 10 + tier * 4, 0.55, 1.5, { accel = Vector3.new(0, 6, 0), light = 0, alpha = ns(0.35, 1) })
+	emitter(core, TEX_FIRE, cs(tier >= 4 and CRIMSON or PURPLE, edgeCol, INK), ns(0.7, 0.05), 8 + tier * 4, 0.45, 2, { accel = Vector3.new(0, 7, 0) })
+	-- +8: 휘두르면 불꽃 자취
+	if tier >= 3 then
+		local a0 = Instance.new("Attachment")
+		a0.Position = Vector3.new(0, L / 2, 0)
+		a0.Parent = core
+		local a1 = Instance.new("Attachment")
+		a1.Position = Vector3.new(0, -L / 2, 0)
+		a1.Parent = core
+		local tr = Instance.new("Trail")
+		tr.Attachment0 = a0
+		tr.Attachment1 = a1
+		tr.Color = cs(edgeCol, INK)
+		tr.Transparency = ns(0.2, 1)
+		tr.LightEmission = 1
+		tr.Lifetime = 0.22
+		tr.MinLength = 0.05
+		tr.Parent = core
+	end
+	-- +10: 손목의 불꽃 고리
+	if tier >= 4 then
+		local ring = part(Vector3.new(0.12, 1.1, 1.1), edgeCol, Enum.Material.Neon, 0.15, "cyl")
+		table.insert(rig.parts, weldTo(hand, ring, CFrame.new(0, -hand.Size.Y / 2 + 0.05, 0) * CFrame.Angles(0, 0, math.pi / 2)))
+	end
+end
+
+local function buildFlame(m: Model, lv: number): Rig
+	local rig: Rig = { model = m, style = "heukyeom", lv = lv, parts = {}, extra = {} }
+	local tier = PassArts.bladeTier(lv)
+	local rh = bodyPart(m, "RightHand", "Right Arm")
+	local lh = bodyPart(m, "LeftHand", "Left Arm")
+	if rh then
+		blade(rig, rh, tier)
+	end
+	if lh and tier >= 2 then
+		blade(rig, lh, tier)
+	end
+	-- +10: 몸을 감싸는 검은 불꽃 · +15: 붉은 눈과 더 큰 불꽃
+	local torso = bodyPart(m, "UpperTorso", "Torso")
+	if torso and tier >= 4 then
+		local a = Instance.new("Attachment")
+		a.Parent = torso
+		table.insert(rig.extra, a)
+		emitter(a, TEX_SMOKE, cs(INK, Color3.fromRGB(40, 12, 50)), ns(1.6, 0.4), tier >= 5 and 18 or 10, 0.9, 2, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 7, 0), light = 0, alpha = ns(0.45, 1) })
+		emitter(a, TEX_FIRE, cs(tier >= 5 and CRIMSON or PURPLE, INK), ns(1.1, 0.1), tier >= 5 and 14 or 6, 0.6, 2, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 8, 0) })
+	end
+	local head = bodyPart(m, "Head")
+	if head and tier >= 5 then
+		for sx = -1, 1, 2 do
+			local eye = part(Vector3.new(0.16, 0.07, 0.05), CRIMSON, Enum.Material.Neon, 0, nil)
+			table.insert(rig.parts, weldTo(head, eye, CFrame.new(0.17 * sx, 0.12, -head.Size.Z / 2 - 0.01)))
+		end
+	end
+	return rig
+end
+
+-- 꼬리를 매 장면 흔든다 (허리 뒤에서 부채꼴로 솟아 끝이 휘어진다)
+local function poseTails(rig: Rig, t: number)
+	local m = rig.model
+	local base = bodyPart(m, "LowerTorso", "Torso")
+	if not base then
+		return
+	end
+	local cf = base.CFrame * CFrame.new(0, -0.1, base.Size.Z / 2 + 0.1)
+	local function lay(list: { { BasePart } }, scale: number, spreadDeg: number, phase: number)
+		local n = #list
+		for ti, segs in ipairs(list) do
+			local u = n > 1 and ((ti - 1) / (n - 1) - 0.5) or 0
+			-- 등 뒤 축 (Z) 으로 기울여 부채꼴로 펼친다
+			local roll = math.rad(u * spreadDeg)
+			local sway = math.sin(t * 2.2 + ti * 0.9 + phase) * 0.35
+			local cur = cf * CFrame.Angles(0, sway * 0.25, roll + sway * 0.15) * CFrame.Angles(math.rad(-22), 0, 0)
+			for i, p in ipairs(segs) do
+				local k = (i - 1) / (#segs - 1)
+				-- 뒤로 뻗다가 위로 감겨 오른다 (끝으로 갈수록 더 휘고 더 흔들린다)
+				cur = cur * CFrame.Angles(math.rad(-7 - 6 * k) + sway * 0.12 * k, sway * 0.1, 0) * CFrame.new(0, 0, 0.75 * scale)
+				p.CFrame = cur * CFrame.new(0, 0, 0.35 * scale)
+			end
+		end
+	end
+	if rig.tails then
+		lay(rig.tails, 1, math.min(140, 30 * #rig.tails), 0)
+	end
+	if rig.ghost then
+		lay(rig.ghost, 2.3, 120, 1.7)
+	end
+end
+
+local function styleOf(m: Model): (string?, number)
+	local s = m:GetAttribute("Style")
+	local lv = tonumber(m:GetAttribute("Enh")) or 0
+	if s == "gumiho" or s == "heukyeom" then
+		return s, lv
+	end
+	return nil, 0
+end
+
+-- 사람들의 몸을 둘러보고 꾸밈을 맞춘다 (권법 · 강화 단계가 바뀌면 다시 짓는다)
+local function sweep()
+	local seen: { [Model]: boolean } = {}
+	for _, pl in ipairs(Players:GetPlayers()) do
+		local m = pl.Character
+		if m and m.Parent then
+			local s, lv = styleOf(m)
+			local r = rigs[m]
+			if s and m:GetAttribute("Vanish") ~= true then
+				seen[m] = true
+				if not r or r.style ~= s or r.lv ~= lv then
+					clearRig(m)
+					local ok, rig = pcall(s == "gumiho" and buildFox or buildFlame, m, lv)
+					if ok and rig then
+						rigs[m] = rig
+					end
+				end
+			end
+		end
+	end
+	for m in pairs(rigs) do
+		if not seen[m] then
+			clearRig(m)
+		end
+	end
+end
+
+local started = false
+function PassArts.start()
+	if started then
+		return
+	end
+	started = true
+	task.spawn(function()
+		while true do
+			pcall(sweep)
+			task.wait(0.5)
+		end
+	end)
+	RunService.RenderStepped:Connect(function()
+		local t = os.clock()
+		for m, rig in pairs(rigs) do
+			if rig.tails and m.Parent then
+				local r = rootOf(m)
+				if r and near(r.Position, Perf.low and 90 or 180) then
+					poseTails(rig, t)
+				end
+			end
+		end
+	end)
+end
+
+------------------------------------------------------------------------
+-- 기술 연출
+------------------------------------------------------------------------
+local function fireBall(at: Vector3, color: Color3, size: number, life: number)
+	local b = temp(part(Vector3.one * size, color, Enum.Material.Neon, 0.1, "ball"), life)
+	b.Position = at
+	tween(b, life, { Size = Vector3.one * size * 2.4, Transparency = 1 })
+	return b
+end
+local function flameBurst(at: Vector3, c1: Color3, c2: Color3, radius: number, dark: boolean?)
+	local holder = temp(part(Vector3.one * 0.2, c1, Enum.Material.Neon, 1, nil), 1.4)
+	holder.Position = at
+	local e = emitter(holder, TEX_FIRE, cs(c1, c2), ns(radius * 0.5, 0.2), 0, 0.6, radius * 1.4, { spread = Vector2.new(180, 180), accel = Vector3.new(0, radius, 0) })
+	e:Emit(Perf.low and 12 or 28)
+	if dark then
+		local s = emitter(holder, TEX_SMOKE, cs(INK, Color3.fromRGB(40, 14, 54)), ns(radius * 0.6, radius * 0.2), 0, 0.9, radius, { spread = Vector2.new(180, 180), accel = Vector3.new(0, radius * 0.6, 0), light = 0, alpha = ns(0.3, 1) })
+		s:Emit(Perf.low and 8 or 18)
+	end
+	Fx.ring(at - Vector3.new(0, 2.4, 0), c1, 1, radius * 2, 0.45)
+end
+
+-- 검은 초승달 검기 (앞으로 퍼진다)
+local function crescent(from: Vector3, dir: Vector3, range: number, width: number, col: Color3, life: number)
+	local n = Perf.low and 7 or 13
+	local half = math.rad(width / 2)
+	for i = 0, n - 1 do
+		local a = -half + (2 * half) * i / (n - 1)
+		local d = (CFrame.Angles(0, a, 0) * CFrame.lookAt(Vector3.zero, dir)).LookVector
+		local p = temp(part(Vector3.new(1.4, 0.3, 2.6), i % 2 == 0 and INK or col, Enum.Material.Neon, 0.05, nil), life)
+		p.CFrame = CFrame.lookAt(from + d * 3, from + d * 4)
+		tween(p, life, { CFrame = CFrame.lookAt(from + d * range, from + d * (range + 1)), Transparency = 1, Size = Vector3.new(3, 0.2, 4.5) }, Enum.EasingStyle.Quart)
+	end
+end
+
+local H: { [string]: { [string]: (any) -> () } } = { gumiho = {}, heukyeom = {} }
+
+-- 구미호 ---------------------------------------------------------------
+H.gumiho.mark = function(d)
+	Fx.ring(d.at - Vector3.new(0, 2.4, 0), FOX, 1, (d.radius or 5) * 2, d.time or 0.3)
+end
+H.gumiho.strike = function(d)
+	flameBurst(d.at, FOX_PALE, FOX, d.radius or 5, false)
+	fireBall(d.at, FOX, 2.2, 0.35)
+	Fx.sound("ping", 0.45, 1.5, d.at)
+end
+H.gumiho.pulse = function(d)
+	task.delay(d.delay or 0, function()
+		flameBurst(d.at, FOX_PALE, FOX, d.radius or 8, false)
+		Fx.sound("ping", 0.4, 1.7, d.at)
+	end)
+end
+H.gumiho.rushDash = function(d)
+	local from, to = d.from, d.to
+	if not from or not to then
+		return
+	end
+	-- 여우 잔상: 지나간 자리에 푸른 그림자가 남아 흐려진다
+	local n = Perf.low and 3 or 6
+	for i = 0, n - 1 do
+		local u = i / math.max(1, n - 1)
+		local p = temp(part(Vector3.new(1.6, 4.4, 0.9), FOX, Enum.Material.Neon, 0.55, nil), 0.5)
+		p.CFrame = CFrame.lookAt(from:Lerp(to, u), to)
+		tween(p, 0.45, { Transparency = 1, Size = Vector3.new(0.4, 4.6, 0.4) })
+	end
+	if d.t then
+		local r = rootOf(d.t)
+		if r then
+			flameBurst(r.Position, FOX_PALE, FOX, 4, false)
+		end
+	end
+	Fx.sound("swing", 0.5, 1.6, to)
+end
+H.gumiho.zone = function(d)
+	-- 구미난무: 둘레를 도는 여우불 고리와 커다란 꼬리 그림자 아홉
+	local at, R, dur = d.at, d.radius or 18, d.dur or 1.6
+	local orbs = {}
+	local n = Perf.low and 6 or 12
+	for i = 1, n do
+		local o = temp(part(Vector3.one * 1.6, FOX_PALE, Enum.Material.Neon, 0.05, "ball"), dur + 0.4)
+		emitter(o, TEX_FIRE, cs(FOX_PALE, FOX), ns(1.6, 0.1), 30, 0.4, 1)
+		table.insert(orbs, o)
+	end
+	local tails = {}
+	for i = 1, 9 do
+		local tp = temp(part(Vector3.new(2.2, 0.6, R * 0.7), FOX, Enum.Material.Neon, 0.6, "ball"), dur + 0.4)
+		table.insert(tails, tp)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > dur then
+			conn:Disconnect()
+			for _, o in ipairs(orbs) do
+				tween(o, 0.3, { Transparency = 1, Size = Vector3.one * 4 })
+			end
+			for _, tp in ipairs(tails) do
+				tween(tp, 0.3, { Transparency = 1 })
+			end
+			flameBurst(at, FOX_PALE, FOX, R * 0.6, false)
+			return
+		end
+		for i, o in ipairs(orbs) do
+			local a = t * 5 + i / #orbs * math.pi * 2
+			local rr = R * (0.45 + 0.4 * ((i % 2 == 0) and 1 or 0.6))
+			o.Position = at + Vector3.new(math.cos(a) * rr, 0.5 + math.sin(t * 6 + i) * 1.2, math.sin(a) * rr)
+		end
+		for i, tp in ipairs(tails) do
+			local a = -t * 3 + i / 9 * math.pi * 2
+			tp.CFrame = CFrame.new(at + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, a, 0) * CFrame.Angles(math.rad(-25), 0, 0) * CFrame.new(0, 0, -R * 0.35)
+		end
+	end)
+	shake(0.4, dur)
+	Fx.sound("whoosh", 0.6, 0.9, at)
+end
+
+-- 흑염 ---------------------------------------------------------------
+H.heukyeom.cone = function(d)
+	local m = d.m
+	local r = rootOf(m)
+	if not r then
+		return
+	end
+	task.delay(d.delay or 0, function()
+		local dir = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z).Unit
+		crescent(r.Position, dir, d.range or 24, d.angle or 80, PURPLE, 0.4)
+		Fx.sound("swing", 0.7, 0.6, r.Position)
+		shake(0.25, 0.2)
+	end)
+end
+H.heukyeom.pillar = function(d)
+	local at = d.at - Vector3.new(0, 2.6, 0)
+	local R = d.radius or 5
+	local col = temp(part(Vector3.new(R * 0.9, 1, R * 0.9), INK, Enum.Material.Neon, 0.05, "cyl"), 0.7)
+	col.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.pi / 2)
+	tween(col, 0.18, { Size = Vector3.new(16, R * 0.7, R * 0.7), CFrame = CFrame.new(at + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.pi / 2) })
+	task.delay(0.2, function()
+		tween(col, 0.4, { Transparency = 1, Size = Vector3.new(18, R * 0.2, R * 0.2) })
+	end)
+	flameBurst(d.at, PURPLE, INK, R, true)
+	if (d.i or 1) == 1 then
+		Fx.sound("heavy", 0.6, 0.7, at)
+	end
+end
+H.heukyeom.charge = function(d)
+	local r = rootOf(d.m)
+	if not r then
+		return
+	end
+	-- 두 검에 불꽃이 모인다
+	local time = d.time or 1
+	local holder = temp(part(Vector3.one * 0.2, INK, Enum.Material.Neon, 1, nil), time + 0.3)
+	holder.Position = r.Position
+	local e = emitter(holder, TEX_FIRE, cs(PURPLE, INK), ns(1.4, 0.1), 60, 0.5, -8, { spread = Vector2.new(180, 180), accel = Vector3.zero })
+	task.delay(time, function()
+		e.Enabled = false
+	end)
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), PURPLE, 14, 2, time)
+end
+H.heukyeom.onepunch = function(d)
+	-- 쌍염십자참: X자 검기 두 줄기가 앞으로 날아간다
+	local from, dir, range = d.from, d.dir, d.range or 54
+	if not from or not dir then
+		return
+	end
+	local flat = Vector3.new(dir.X, 0, dir.Z).Unit
+	for k = -1, 1, 2 do
+		local slash = temp(part(Vector3.new(0.6, 14, 3), INK, Enum.Material.Neon, 0, nil), 0.7)
+		local edge = temp(part(Vector3.new(0.7, 14.5, 0.8), CRIMSON:Lerp(PURPLE, 0.4), Enum.Material.Neon, 0, nil), 0.7)
+		local function cfAt(dist: number): CFrame
+			return CFrame.lookAt(from + flat * dist + Vector3.new(0, 1.5, 0), from + flat * (dist + 1) + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(45 * k))
+		end
+		slash.CFrame = cfAt(3)
+		edge.CFrame = cfAt(3)
+		tween(slash, 0.5, { CFrame = cfAt(range), Size = Vector3.new(0.6, 22, 4), Transparency = 0.6 }, Enum.EasingStyle.Quart)
+		tween(edge, 0.5, { CFrame = cfAt(range), Size = Vector3.new(0.7, 22.5, 0.8), Transparency = 0.5 }, Enum.EasingStyle.Quart)
+		task.delay(0.5, function()
+			tween(slash, 0.2, { Transparency = 1 })
+			tween(edge, 0.2, { Transparency = 1 })
+		end)
+	end
+	for i = 1, 5 do
+		task.delay(i * 0.08, function()
+			flameBurst(from + flat * (range * i / 5), PURPLE, INK, 5, true)
+		end)
+	end
+	shake(0.8, 0.4)
+	if Fx.flash then
+		Fx.flash(from, PURPLE, 60, 4, 0.4)
+	end
+	Fx.sound("heavy", 0.9, 0.5, from)
+end
+-- 흑염멸천: 하늘에 검은 불꽃 소용돌이, 불꽃 검이 쏟아진다
+H.heukyeom.stormcloud = function(d)
+	local r = rootOf(d.m)
+	if not r then
+		return
+	end
+	local dur, R = d.dur or 2.4, d.radius or 40
+	local sky = temp(part(Vector3.new(1, R * 1.6, R * 1.6), INK, Enum.Material.Neon, 0.35, "cyl"), dur + 0.8)
+	sky.CFrame = CFrame.new(r.Position + Vector3.new(0, 34, 0)) * CFrame.Angles(0, 0, math.pi / 2)
+	local ring = temp(part(Vector3.new(1.2, R * 1.7, R * 1.7), PURPLE, Enum.Material.Neon, 0.7, "cyl"), dur + 0.8)
+	ring.CFrame = sky.CFrame
+	emitter(sky, TEX_SMOKE, cs(INK, Color3.fromRGB(50, 16, 60)), ns(8, 4), 20, 1.4, 2, { spread = Vector2.new(180, 180), light = 0, alpha = ns(0.3, 1) })
+	task.delay(dur, function()
+		tween(sky, 0.6, { Transparency = 1 })
+		tween(ring, 0.6, { Transparency = 1 })
+	end)
+	if opts.tint then
+		pcall(opts.tint, Color3.fromRGB(60, 20, 70), 0.35, dur)
+	end
+	shake(0.5, dur)
+end
+H.heukyeom.strike = function(d)
+	local at = d.at
+	if d.small then
+		-- 하늘에서 떨어지는 불꽃 검
+		local sw = temp(part(Vector3.new(0.3, 7, 1), INK, Enum.Material.Neon, 0, nil), 0.6)
+		local ed = temp(part(Vector3.new(0.34, 7.2, 0.25), PURPLE, Enum.Material.Neon, 0, nil), 0.6)
+		local top = CFrame.new(at + Vector3.new(0, 30, 0))
+		sw.CFrame = top
+		ed.CFrame = top
+		tween(sw, 0.16, { CFrame = CFrame.new(at + Vector3.new(0, 1, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		tween(ed, 0.16, { CFrame = CFrame.new(at + Vector3.new(0, 1, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(0.17, function()
+			flameBurst(at, PURPLE, INK, d.radius or 8, true)
+			tween(sw, 0.35, { Transparency = 1 })
+			tween(ed, 0.35, { Transparency = 1 })
+		end)
+	else
+		-- 마지막: 두 검을 내리꽂아 둘레가 불탄다
+		flameBurst(at, CRIMSON, INK, (d.radius or 30) * 0.5, true)
+		Fx.ring(at - Vector3.new(0, 2.4, 0), PURPLE, 4, (d.radius or 30) * 2.2, 0.7)
+		Fx.ring(at - Vector3.new(0, 2.2, 0), CRIMSON, 2, (d.radius or 30) * 1.6, 0.55)
+		if Fx.flash then
+			Fx.flash(at, CRIMSON, 80, 5, 0.5)
+		end
+		shake(1.2, 0.6)
+		Fx.sound("heavy", 1, 0.45, at)
+	end
+end
+H.heukyeom.pulse = function(d)
+	task.delay(d.delay or 0, function()
+		flameBurst(d.at, PURPLE, INK, d.radius or 10, true)
+		Fx.sound("heavy", 0.5, 0.8, d.at)
+	end)
+end
+
+function PassArts.handles(data: any): boolean
+	local h = H[data.style]
+	return h ~= nil and h[data.kind] ~= nil
+end
+function PassArts.run(data: any)
+	local h = H[data.style]
+	local fn = h and h[data.kind]
+	if fn then
+		local ok, err = pcall(fn, data)
+		if not ok then
+			warn("[권왕] 게임패스 권법 연출 오류:", data.style, data.kind, err)
+		end
+	end
+end
+
+return PassArts
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="41">
+          <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
 -- 서버와 다른 사람의 화면은 그대로. 부딪히는 것 (바위·나무 둥치·집)은 건드리지 않는다
@@ -58804,7 +59699,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -59209,7 +60104,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -59550,7 +60445,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -60500,7 +61395,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -61134,7 +62029,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -62421,7 +63316,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -65451,7 +66346,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Sin</string>
             <string name="Source"><![CDATA[-- 권왕 3.27판: 신 삼재권을 얻는 컷씬.
@@ -66945,7 +67840,7 @@ return Sin
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -67553,7 +68448,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Speed</string>
             <string name="Source"><![CDATA[-- 권왕 3.22판: 극 광속권의 화면. 빛과 소리 (하늘색 · 흰색 · 금빛 줄)
@@ -68465,7 +69360,7 @@ return Speed
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -69606,7 +70501,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -69823,7 +70718,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -70570,6 +71465,11 @@ function UIB.buildStyles()
 			Request:FireServer("learn", selected)
 		elseif action == "break" then
 			Request:FireServer("breakthrough", selected)
+		elseif action == "enhance" then
+			Request:FireServer("enhance", selected)
+		elseif action == "passShop" then
+			window.Visible = false
+			UI.openPage("shop", { tab = "premium" })
 		elseif action == "awaken" then
 			Request:FireServer("awaken", selected)
 			window.Visible = false
@@ -70768,8 +71668,22 @@ function UIB.buildStyles()
 				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, stp.night and " 🌙" or ""))
 			end
 		end
+		-- 3.41판 게임패스 권법: 깨달음 대신 강화
+		local enhLv = (s.enh and state and state.enh and state.enh[id]) or 0
+		if s.enh then
+			table.insert(lines, "")
+			local E = Config.ENH
+			if not owned then
+				table.insert(lines, string.format('<font color="#FFD25A"><b>💎 게임패스 권법</b>  상점에서 얻는다 · 강화 +0 ×%.2f → +%d ×%.2f</font>', Config.enhMult(s, 0), E.max, Config.enhMult(s, E.max)))
+			elseif enhLv < E.max then
+				table.insert(lines, string.format("<b>🔺 강화 +%d → +%d</b>  🧩 비급 조각 %d (가진 것 %d) · 💰 %s → 등급 배율 ×%.2f → ×%.2f", enhLv, enhLv + 1, E.shards[enhLv + 1], state and state.shards or 0, Config.formatNumber(E.coins(enhLv + 1)), Config.enhMult(s, enhLv), Config.enhMult(s, enhLv + 1)))
+				table.insert(lines, '<font color="#C8B9A5">🧩 비급 조각은 보스가 떨어뜨린다 (지옥 보스가 가장 잘). 실패는 없다</font>')
+			else
+				table.insert(lines, string.format("<b>🔺 강화 +%d (끝)</b>  등급 배율 ×%.2f", E.max, Config.enhMult(s, E.max)))
+			end
+		end
 		-- 승급 (깨달음)
-		if owned then
+		if owned and not s.enh then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			table.insert(lines, "")
 			if step then
@@ -70788,7 +71702,8 @@ function UIB.buildStyles()
 		end
 		dBody.Text = table.concat(lines, "\n")
 		local cost = state and state.learnCost or 0
-		local canBreak = owned and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
+		local canBreak = owned and not s.enh and Config.BREAKTHROUGH[ups + 1] ~= nil and lv >= Config.MASTERY_FULL
+		local canEnh = owned and s.enh ~= nil and enhLv < Config.ENH.max
 		-- 각성 (진 권법): 깨달음을 모두 얻은 원래 권법에서
 		local v2 = nil
 		for _, sd in ipairs(Config.Styles) do
@@ -70806,6 +71721,15 @@ function UIB.buildStyles()
 			dBtn.Text = "🔥 원래 권법에서 각성한다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
+		elseif s.enh and not owned then
+			dBtn.Text = "💎 상점에서 게임패스로 얻기"
+			dBtn.BackgroundColor3 = Color3.fromRGB(150, 110, 40)
+			action = "passShop"
+		elseif canEnh and state and state.style == id then
+			local needS, needC = Config.ENH.shards[enhLv + 1], Config.ENH.coins(enhLv + 1)
+			dBtn.Text = string.format("🔺 강화 +%d  🧩 %d · 💰 %s", enhLv + 1, needS, Config.formatNumber(needC))
+			dBtn.BackgroundColor3 = ((state.shards or 0) >= needS and state.coins >= needC) and Color3.fromRGB(170, 60, 220) or C.panel
+			action = "enhance"
 		elseif canBreak then
 			local step = Config.BREAKTHROUGH[ups + 1]
 			dBtn.Text = string.format("⬆ 승급  💰 %s", Config.formatNumber(step.coins))
@@ -72438,7 +73362,12 @@ function UIB.buildTest()
 	}, 3)
 	section("💎 상품 (테스트로 켜기)", {
 		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" }, { "💰 은자 두 배", "testPremium", "coin2x" }, { "🎒 가방 확장", "testPremium", "bag" },
-		{ "🐉 청룡 탈것", "testPremium", "dragon" },
+		{ "🐉 청룡 탈것", "testPremium", "dragon" }, { "🦊 구미호권", "testPremium", "gumiho" }, { "🗡 흑염마검장", "testPremium", "heukyeom" },
+		{ "🐲 흑룡", "testPremium", "heukryong" }, { "🙇 몸짓 묶음", "testPremium", "emotes" }, { "📜 심법 넷째 칸", "testPremium", "slot4" },
+	})
+	-- 3.41판 게임패스 권법 강화 (지금 든 권법)
+	section("🔺 게임패스 권법 강화", {
+		{ "+0", "testEnh", 0 }, { "+5 (모습)", "testEnh", 5 }, { "+10 (모습)", "testEnh", 10 }, { "+15 (끝)", "testEnh", 15 }, { "🧩 비급 조각 +100", "testShards" },
 	})
 	do
 		local items: { any } = {}
@@ -74825,7 +75754,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -76104,7 +77033,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -78787,7 +79716,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -79897,7 +80826,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="56">
+  <Item class="Workspace" referent="57">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

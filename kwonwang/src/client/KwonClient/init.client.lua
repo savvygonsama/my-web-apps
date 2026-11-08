@@ -29,6 +29,8 @@ local Awake3 = require(script:WaitForChild("Awake3"))
 local Forest = require(script:WaitForChild("Forest"))
 local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
+local PassArts = require(script:WaitForChild("PassArts")) -- 3.41판 게임패스 권법 (구미호권 · 흑염마검장)
+PassArts.start()
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
 local Dream = require(script:WaitForChild("Dream"))
@@ -1573,6 +1575,26 @@ function handlers.manualAuto(data: any)
 	end
 end
 
+-- 3.41판 게임패스 권법 강화 성공: 몸에서 빛이 솟고 큰 글자
+function handlers.enhanced(data: any)
+	local char = myChar()
+	local r = char and rootOf(char)
+	local style = Config.STYLE_BY_ID[tostring(data.style)]
+	if not r or not style then
+		return
+	end
+	local big = data.lv == 5 or data.lv == 10 or data.lv == 15
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color2, 2, big and 26 or 14, 0.7)
+	Fx.ring(r.Position, style.color2, 1, big and 18 or 10, 0.5)
+	Fx.flash(r.Position, style.color2, big and 50 or 25, big and 5 or 3, 0.5)
+	Fx.text(r.Position + Vector3.new(0, 5, 0), string.format("🔺 +%d", data.lv), style.color2, big and 40 or 28, 1.2)
+	Fx.sound(big and "heavy" or "ping", 0.8, big and 0.7 or 1.4)
+	if big then
+		shake(0.6)
+		UI.toast(string.format("✨ %s +%d · 모습이 바뀌었어요!", style.name, data.lv))
+	end
+end
+
 function handlers.toast(msg: string)
 	UI.toast(msg)
 end
@@ -2252,6 +2274,12 @@ function handlers.skillfx(data: any)
 		Speed.init({ shake = shake, flash = UI.flash })
 		BossFx.init({ shake = shake })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
+	end
+	-- 3.41판 게임패스 권법의 기술 연출
+	if PassArts.handles(data) then
+		PassArts.init({ shake = shake, tint = tint })
+		PassArts.run(data)
+		return
 	end
 	-- 3.26판 보스 패턴 연출
 	if BossFx.handles(data) then

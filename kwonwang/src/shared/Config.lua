@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.40.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1672,6 +1672,10 @@ function Config.gradeHp(style: any, up: number?): number
 	return Config.gradeMult(style, up) ^ Config.GRADE_HP_EXP
 end
 function Config.gradeMult(style: any, up: number?): number
+	-- 3.41판 게임패스 권법: up 은 강화 단계 (깨달음 대신)
+	if style.enh then
+		return Config.enhMult(style, up)
+	end
 	local base = Config.GRADES[style.grade] or 1
 	local b = BREAK_BONUS[style.grade]
 	local u = math.clamp(math.floor(up or 0), 0, 2)
@@ -1680,6 +1684,9 @@ end
 -- 빠르기 순위: 예전 열네 칸 순위 + 깨달음 (예전처럼 천외천 칸까지, 태초 이상과 초·극은 그대로)
 function Config.gradeRank(style: any, up: number?): number
 	local r = style.rank or 1
+	if style.enh then
+		return r
+	end
 	if r >= OLD_RANK["태초"] then
 		return r
 	end
@@ -3002,6 +3009,104 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
 	},
 })
+
+------------------------------------------------------------------------
+-- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고, 강화할수록 생김새가 바뀐다
+-- enh = { base = +0 의 등급 배율, top = +15 의 등급 배율 } (사이는 고르게). 극 (3.8) · 신 (4.3) 은 넘지 않는다
+-- 깨달음 (승급) 대신 강화. 배틀그라운드에서는 전설 등급과 같은 세기
+------------------------------------------------------------------------
+-- 전설 · 구미호권: 푸른 여우불과 꼬리. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)
+table.insert(Config.Styles, {
+	id = "gumiho",
+	name = "구미호권",
+	hanja = "九尾狐拳",
+	icon = "🦊",
+	color = Color3.fromRGB(90, 175, 255),
+	color2 = Color3.fromRGB(225, 245, 255),
+	fx = "basic",
+	grade = "전설",
+	keepGrade = true,
+	hidden = true,
+	premium = "gumiho",
+	enh = { base = 1.5, top = 2.75 },
+	unlockHint = "💎 상점의 '구미호권' 게임패스로 얻는다. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)",
+	desc = "푸른 여우불을 두른 요호의 권법. 빠르고 가볍게 스치며, 맞힐 때마다 여우불이 쌓인다. 강화할수록 등 뒤의 꼬리가 늘어난다.",
+	gimmick = "여우불: 다섯 번 맞힐 때마다 상대 자리에서 푸른 여우불이 터진다. 몸이 가벼워 (1.06배) 공격의 12%를 흘려 보낸다",
+	deflect = 0.24,
+	dodgeChance = 0.12,
+	speed = 1.06,
+	pulse = { every = 5, kind = "foxfire", radius = 10, delay = 0.2, name = "여우불", dmg = 22, posture = 16, stun = 0.4, kb = 6, up = 6 },
+	stance = "stance_mist",
+	combo = {
+		{ id = "gm1", name = "호미장", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
+		{ id = "gm2", name = "여우발톱", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
+		{ id = "gm3", name = "월하선각", pose = "crescent_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5.5, 14, 15, 0.45, 12) } },
+		{ id = "gm4", name = "구미선풍", pose = "tornado_kick", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 19, 22, 0.7, 22, 10) } },
+	},
+	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 28, 34, 0.8, 40) } },
+	skills = {
+		E = { id = "gmE", name = "호화연탄", desc = "손끝에서 푸른 여우불 셋이 날아가 가장 가까운 적 셋에게 차례로 터진다", pose = "plum_finger_r", dur = 0.55, cd = 7, chi = 20,
+			mech = { kind = "targets", n = 3, range = 30, delay = 0.3, stagger = 0.12, radius = 5, hit = hit(0, 0, 0, 22, 20, 0.6, 10, 6), fx = "foxfire" } },
+		R = { id = "gmR", name = "미혹보", desc = "여우 잔상을 남기며 둘레의 적 셋 사이를 스치듯 지나가 한 번씩 할퀸다 (무적)", pose = "ghost_flash", dur = 0.9, cd = 10, chi = 25,
+			mech = { kind = "rushChain", n = 3, range = 28, delay = 0.06, every = 0.18, hitsEach = 1, hit = hit(0, 0, 0, 26, 24, 0.6, 14, 8) } },
+		G = { id = "gmG", name = "구미난무", desc = "꼬리를 펼쳐 맴돈다. 1.6초 동안 둘레에 여우불 회오리가 몰아치고, 강화할수록 꼬리 그림자가 많아진다", pose = "gale_cyclone", dur = 1.9, cd = 30, chi = 100, armor = true,
+			mech = { kind = "zone", at = "self", radius = 18, dur = 1.6, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 16, 12, 0.3, 4, 0), fx = "foxfire" } },
+	},
+})
+-- 권왕 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+table.insert(Config.Styles, {
+	id = "heukyeom",
+	name = "흑염마검장",
+	hanja = "黑炎魔劍掌",
+	icon = "🗡",
+	color = Color3.fromRGB(40, 16, 56),
+	color2 = Color3.fromRGB(196, 70, 255),
+	fx = "shadow",
+	grade = "권왕",
+	keepGrade = true,
+	hidden = true,
+	premium = "heukyeom",
+	enh = { base = 2.75, top = 3.7 },
+	unlockHint = "💎 상점의 '흑염마검장' 게임패스로 얻는다. 강화할수록 검은 불꽃 검이 둘로 늘고 화려해진다",
+	desc = "검은 불꽃으로 손에 검을 빚어 베는 마검의 권법. 처음엔 한 손, +5부터 두 손에 검이 선다. 강화할수록 불꽃이 짙어지고 보랏빛 · 핏빛으로 타오른다.",
+	gimmick = "흑염 각인: 여섯 번 맞힐 때마다 상대 자리에서 검은 불꽃이 터진다. 마지막 오의 흑염멸천은 하늘에서 불꽃 검이 쏟아진다",
+	deflect = 0.3,
+	pulse = { every = 6, kind = "blackflame", radius = 12, delay = 0.3, name = "흑염 폭발", dmg = 48, posture = 70, stun = 1.0, kb = 20, up = 8 },
+	stance = "stance_reaper",
+	combo = {
+		{ id = "hy1", name = "흑염참", pose = "reap_slash_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
+		{ id = "hy2", name = "역염참", pose = "reap_slash_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
+		{ id = "hy3", name = "염륜", pose = "reap_spin", dur = 0.44, lunge = 2, hits = { hit(0.2, 6.5, 6, 13, 22, 0.5, 12) } },
+		{ id = "hy4", name = "마검낙", pose = "reap_overhead", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 6, 18, 32, 0.7, 30, nil, true) } },
+	},
+	heavy = { id = "hyH", name = "흑염일섬", pose = "reap_hook", dur = 0.6, lunge = 7, hits = { hit(0.28, 8.5, 6, 25, 46, 0.8, 56) } },
+	skills = {
+		E = { id = "hyE", name = "흑염월참", desc = "검을 크게 휘둘러 앞으로 검은 초승달 검기를 날린다", pose = "reap_wave", dur = 0.6, cd = 7, chi = 20,
+			mech = { kind = "cone", range = 24, angle = 80, delay = 0.15, hit = hit(0, 0, 0, 40, 60, 0.7, 24, 6), fx = "blackflame" } },
+		R = { id = "hyR", name = "마염천주", desc = "뛰어올라 검을 땅에 꽂는다. 앞으로 검은 불기둥이 줄지어 치솟는다", pose = "reap_leap", dur = 0.7, cd = 10, chi = 25,
+			mech = { kind = "line", count = 6, start = 4, spacing = 5, step = 0.06, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 30, 44, 0.6, 10, 16), fx = "blackflame" } },
+		G = { id = "hyG", name = "쌍염십자참", desc = "1초 동안 두 검에 불꽃을 모았다가 교차해 거대한 X자 검기를 앞으로 날린다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘이 검게 타오르며 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 두 검을 내리꽂아 둘레를 불태운다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
+	},
+})
+-- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다. +10부터 조각이 크게 늘어 후반 보스를 계속 돌게 한다
+Config.ENH = {
+	max = 15,
+	shards = { 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20 },
+	coins = function(lv: number): number
+		return math.floor(100000 * 1.5 ^ (lv - 1))
+	end,
+	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 보스 · 후반 보스 · 지옥 보스
+	drop = { boss = 0.2, late = 0.35, hell = 0.6, extra = 0.3 },
+}
+-- 강화 단계의 등급 배율 (enh가 있는 권법만)
+function Config.enhMult(style: any, lv: number?): number
+	local E = style.enh
+	local l = math.clamp(math.floor(lv or 0), 0, Config.ENH.max)
+	return E.base + (E.top - E.base) * l / Config.ENH.max
+end
 
 -- 3.5판: 모든 권법이 들어온 뒤 등급을 다섯 단계로 다시 매긴다
 for _, st in ipairs(Config.Styles) do
@@ -4575,6 +4680,11 @@ Config.Premium = {
 	-- 3.40판 꾸미기 게임패스: 생김새만 특별한 탈것 · 몸짓 묶음 (힘은 오르지 않는다)
 	{ id = "heukryong", gamepass = 0, price = 999, icon = "🐲", name = "흑룡 탈것", tag = "탈것",
 		lines = { "검은 비늘에 붉은 불길이 타오르는 흑룡", "청룡 다음으로 빠르다 (×3.0, 가장 빠른 건 그대로 청룡)", "흑룡만의 불꽃 기운이 몸을 따라 흐른다" } },
+	-- 3.41판 게임패스 권법 둘 (강화로 키운다)
+	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
+		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
+	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
+		lines = { "권왕 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화해도 극 · 신 권법 아래 (배틀그라운드는 전설과 같은 세기)" } },
 	{ id = "emotes", gamepass = 0, price = 499, icon = "🙇", name = "무림 몸짓 묶음", tag = "몸짓",
 		lines = { "몸짓 넷: 큰절 · 부처 좌선 · 승룡 자세 · 천하제일 (5 · 6 · 7 · 8번)", "몸짓마다 권법 빛깔의 기운이 터진다", "상점 이 칸의 단추로도 할 수 있다 (폰)" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
