@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.38.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.38.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4485,10 +4485,7 @@ Config.MOUNTS = {
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
 	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
 	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
-	-- 3.14판: 신화 업적 전용 탈것 (살 수 없다. 그 갈래의 신화 업적을 이루면 저절로 얻는다). 모두 날개구름보다 빠르다
-	{ id = "geumryong", name = "금룡", icon = "🐲", kind = "dragon", speed = 3.3, cost = 0, achOnly = true, mythic = true, fx = "gold",
-		color = Color3.fromRGB(236, 180, 50), mane = Color3.fromRGB(200, 34, 40), deep = Color3.fromRGB(150, 84, 18), belly = Color3.fromRGB(255, 242, 205), sheen = Color3.fromRGB(255, 232, 150), spirit = Color3.fromRGB(255, 200, 90), glow = Color3.fromRGB(255, 214, 110),
-		desc = "황금 비늘에 붉은 지느러미. 금빛 기운이 흘러내리는 황제의 용 (경지 신화 업적: 권왕 · 사환지존 · 윤회를 끊은 자)" },
+	-- 3.14판: 신화 업적 전용 탈것 (살 수 없다. 그 갈래의 신화 업적을 이루면 저절로 얻는다). 모두 날개구름보다 빠르다 (3.38.2판: 금룡을 없앴다. 가장 빠른 탈것은 청룡)
 	{ id = "hyeolyeom", name = "혈염마", icon = "🐎", kind = "horse", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "flame",
 		color = Color3.fromRGB(22, 14, 16), mane = Color3.fromRGB(255, 70, 36), glow = Color3.fromRGB(255, 80, 40),
 		desc = "칠흑의 몸에 불타는 갈기. 발굽마다 핏빛 불꽃이 인다 (전투 신화 업적: 천하무적 · 보스의 악몽)" },
@@ -4588,11 +4585,9 @@ Config.Premium = {
 		lines = { "보스의 심법 두루마리 확률 두 배 (15% → 30%)", "천상 재료가 떨어질 확률 두 배 (한 번에 둘까지는 그대로)", "천상계 적의 천정 1.5배" } },
 	{ id = "vip", gamepass = 0, price = 249, icon = "👑", name = "VIP", tag = "VIP",
 		lines = { "머리 위 이름 앞에 금빛 👑", "권법 숙련이 두 배로 빨리 오른다", "적·보스의 은자 +25% (은자 두 배와 겹친다)" } },
-	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' · '열매 알리미' 같은 것)
+	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' 같은 것)
 	{ id = "slot4", gamepass = 0, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
-	{ id = "bossBell", gamepass = 0, price = 149, icon = "🔔", name = "보스 알리미", tag = "영구",
-		lines = { "보스가 다시 나타나면 이름과 장소를 바로 알려 준다", "지상·천상·지옥 모든 보스", "레이드·업적 보스를 놓치지 않는다" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
@@ -5440,13 +5435,13 @@ Config.ACHIEVEMENTS = {
 	{ id = "r9", icon = "⛰", name = "사경을 넘어", desc = "사경의 경지에 오른다", kind = "realm", n = 9, coins = 100000, title = "사경 고수" },
 	{ id = "r13", icon = "⛰", name = "무극", desc = "무극의 경지에 오른다", kind = "realm", n = 13, coins = 1000000, title = "무극" },
 	{ id = "r16", icon = "✴", name = "하늘 밖의 하늘", desc = "천외천의 경지에 오른다", kind = "realm", n = 16, coins = 5000000, scrolls = 10, title = "천외천" },
-	{ id = "r20", icon = "👑", name = "권왕", desc = "모든 경지의 끝, 권왕에 오른다", kind = "realm", n = 20, coins = 100000000, scrolls = 50, title = "권왕", mount = "geumryong" },
+	{ id = "r20", icon = "👑", name = "권왕", desc = "모든 경지의 끝, 권왕에 오른다", kind = "realm", n = 20, coins = 100000000, scrolls = 50, title = "권왕" },
 	{ id = "rb1", icon = "♻", name = "다시 태어나다", desc = "처음 환생한다", kind = "rebirth", n = 1, coins = 2000000, title = "환생자" },
 	{ id = "rb2", icon = "♻", name = "두 번째 삶", desc = "두 번 환생한다", kind = "rebirth", n = 2, coins = 5000000, scrolls = 10 },
 	{ id = "rb3", icon = "♻", name = "윤회의 바퀴", desc = "세 번 환생한다", kind = "rebirth", n = 3, coins = 12000000, scrolls = 15, title = "윤회자" },
-	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존", mount = "geumryong" },
+	{ id = "rb4", icon = "♻", name = "사환지존", desc = "네 번 환생한다", kind = "rebirth", n = 4, coins = 30000000, scrolls = 25, title = "사환지존" },
 	{ id = "rb5", icon = "♻", name = "오환", desc = "다섯 번 환생한다", kind = "rebirth", n = 5, coins = 60000000, scrolls = 35, title = "오환의 주인" },
-	{ id = "rb6", icon = "♻", name = "육환 · 끝에 선 자", desc = "여섯 번 환생한다", kind = "rebirth", n = 6, coins = 150000000, scrolls = 60, title = "육환 · 끝에 선 자", tier = 5, mount = "geumryong" },
+	{ id = "rb6", icon = "♻", name = "육환 · 끝에 선 자", desc = "여섯 번 환생한다", kind = "rebirth", n = 6, coins = 150000000, scrolls = 60, title = "육환 · 끝에 선 자", tier = 5 },
 	{ id = "r21", icon = "🔮", name = "대라경", desc = "권왕 너머, 대라경에 오른다", kind = "realm", n = 21, coins = 200000000, scrolls = 60, title = "대라의 주인" },
 	{ id = "r22", icon = "🕳", name = "허무경", desc = "모든 경지의 진짜 끝, 허무경에 오른다", kind = "realm", n = 22, coins = 500000000, scrolls = 100, title = "허무를 걷는 자", tier = 5 },
 	{ id = "s5", icon = "🥋", name = "다섯 갈래", desc = "권법 다섯을 익힌다", kind = "styles", n = 5, coins = 20000 },
@@ -5475,7 +5470,7 @@ Config.ACHIEVEMENTS = {
 	{ id = "hwatang", icon = "🍲", name = "화탕을 식히다", desc = "화탕대왕을 쓰러뜨린다", kind = "boss", arg = "hwatang", n = 1, gems = 700, title = "화탕을 식힌 자", tier = 4 },
 	{ id = "dosan", icon = "🗡", name = "검산을 넘다", desc = "도산군주를 쓰러뜨린다", kind = "boss", arg = "dosan", n = 1, gems = 800, title = "검산을 넘은 자", tier = 4 },
 	{ id = "agwiwang", icon = "👺", name = "허기를 채우다", desc = "아귀왕을 쓰러뜨린다", kind = "boss", arg = "agwiwang", n = 1, gems = 900, title = "아귀를 잠재운 자", tier = 4 },
-	{ id = "yeomra", icon = "⚖", name = "심판을 뒤집다", desc = "염라대왕을 쓰러뜨린다", kind = "boss", arg = "yeomra", n = 1, gems = 2000, scrolls = 30, title = "심판을 뒤집은 자", tier = 5, mount = "geumryong" },
+	{ id = "yeomra", icon = "⚖", name = "심판을 뒤집다", desc = "염라대왕을 쓰러뜨린다", kind = "boss", arg = "yeomra", n = 1, gems = 2000, scrolls = 30, title = "심판을 뒤집은 자", tier = 5 },
 	{ id = "biryong", icon = "🐲", name = "비룡을 꺾다", desc = "비룡을 쓰러뜨린다", kind = "boss", arg = "biryong", n = 1, gems = 1200, scrolls = 10, title = "비룡을 꺾은 자", tier = 4 },
 	{ id = "yuriwang", icon = "💠", name = "유리를 깨다", desc = "유리 군주를 쓰러뜨린다", kind = "boss", arg = "yuriwang", n = 1, gems = 1200, scrolls = 10, title = "유리를 깬 자", tier = 4 },
 	{ id = "cheonroeok", icon = "⛓", name = "감옥을 열다", desc = "천뢰를 쓰러뜨린다", kind = "boss", arg = "cheonroeok", n = 1, gems = 1200, scrolls = 10, title = "하늘 감옥을 연 자", tier = 4 },
@@ -5494,7 +5489,7 @@ Config.ACHIEVEMENTS = {
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
-	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5, mount = "geumryong" },
+	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5 },
 	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
 	{ id = "sAll", icon = "🥋", name = "천하의 모든 권", desc = "모든 권법을 익힌다", kind = "styles", n = #Config.Styles, coins = 100000000, scrolls = 50, title = "천하의 모든 권", tier = 5, mount = "cheonho" },
@@ -9373,7 +9368,13 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
+	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고, 골라 둔 것이 없어졌으면 말로
+	for id in pairs(p.mounts) do
+		if not Config.MOUNT_BY_ID[id] then
+			p.mounts[id] = nil
+		end
+	end
+	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel] and Config.MOUNT_BY_ID[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
@@ -15503,36 +15504,6 @@ function Premium.grant(player: Player, id: string)
 end
 
 -- 들어올 때 가진 게임패스를 확인한다
--- 3.38판 보스 알리미: 보스가 나타난 곳의 이름 (지상 땅 · 천상 섬 · 지옥 구역)
-Npc.onBossSpawn = function(def: any, at: Vector3, region: string)
-	local place = ""
-	for _, r in ipairs(Config.Regions) do
-		if r.id == region then
-			place = r.name
-		end
-	end
-	if place == "" then
-		local isl = Config.skyIslandAt(at)
-		if isl and isl.name then
-			place = isl.name
-		else
-			local best = math.huge
-			for _, z in ipairs(Config.HELL.zones or {}) do
-				local d = (z.at - at).Magnitude
-				if d < best then
-					best = d
-					place = "지옥 · " .. z.name
-				end
-			end
-		end
-	end
-	for player in pairs(profiles) do
-		if Premium.owns(player, "bossBell") then
-			toast(player, string.format("🔔 %s 이(가) 나타났다%s", def.name or "보스", place ~= "" and (" · " .. place) or ""))
-		end
-	end
-end
-
 function Premium.load(player: Player)
 	if not Marketplace then
 		return
@@ -20843,7 +20814,6 @@ type Enemy = {
 }
 
 Npc.list = {} :: { Enemy }
-Npc.onBossSpawn = nil :: ((any, Vector3, string) -> ())?
 local folder: Folder
 local Push: RemoteEvent
 local SKIN = Color3.fromRGB(234, 184, 146)
@@ -21232,10 +21202,6 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	}
 	;(e :: any).camp = at -- 진영의 가운데 (다시 나타날 때 이 둘레에서 새로 자리를 잡는다)
 	table.insert(Npc.list, e)
-	-- 3.38판 보스 알리미 게임패스: 들판의 보스가 나타나면 알린다 (시험·소환·시험장 보스는 빼고)
-	if isBoss and Npc.onBossSpawn and region ~= "trial" and region ~= "test" and region ~= "summon" and region ~= "simma" then
-		task.spawn(pcall, Npc.onBossSpawn, def, at, region)
-	end
 	return e
 end
 

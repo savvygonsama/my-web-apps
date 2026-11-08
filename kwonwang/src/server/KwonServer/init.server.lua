@@ -304,7 +304,13 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel]) and data.mountSel or "horse"
+	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고, 골라 둔 것이 없어졌으면 말로
+	for id in pairs(p.mounts) do
+		if not Config.MOUNT_BY_ID[id] then
+			p.mounts[id] = nil
+		end
+	end
+	p.mountSel = (type(data.mountSel) == "string" and p.mounts[data.mountSel] and Config.MOUNT_BY_ID[data.mountSel]) and data.mountSel or "horse"
 	p.pvpOff = (p.pvpUnlocked and data.pvpOff == true) or nil
 	p.gates = flags(data.gates, function(k)
 		local i = tonumber(k)
@@ -6434,36 +6440,6 @@ function Premium.grant(player: Player, id: string)
 end
 
 -- 들어올 때 가진 게임패스를 확인한다
--- 3.38판 보스 알리미: 보스가 나타난 곳의 이름 (지상 땅 · 천상 섬 · 지옥 구역)
-Npc.onBossSpawn = function(def: any, at: Vector3, region: string)
-	local place = ""
-	for _, r in ipairs(Config.Regions) do
-		if r.id == region then
-			place = r.name
-		end
-	end
-	if place == "" then
-		local isl = Config.skyIslandAt(at)
-		if isl and isl.name then
-			place = isl.name
-		else
-			local best = math.huge
-			for _, z in ipairs(Config.HELL.zones or {}) do
-				local d = (z.at - at).Magnitude
-				if d < best then
-					best = d
-					place = "지옥 · " .. z.name
-				end
-			end
-		end
-	end
-	for player in pairs(profiles) do
-		if Premium.owns(player, "bossBell") then
-			toast(player, string.format("🔔 %s 이(가) 나타났다%s", def.name or "보스", place ~= "" and (" · " .. place) or ""))
-		end
-	end
-end
-
 function Premium.load(player: Player)
 	if not Marketplace then
 		return
