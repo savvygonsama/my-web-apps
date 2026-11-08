@@ -256,6 +256,14 @@ local function buildRig(def: any, label: string, isBoss: boolean, typeId: string
 		hum.MaxHealth = 1e9
 		hum.Health = 1e9
 		hum.WalkSpeed = def.speed
+		-- 3.36.2판: 적은 맞아 날아가도 넘어져 굴러다니지 않는다. 휴머노이드의 넘어짐 · 래그돌 · 앉기 상태를 끈다
+		-- (켜져 있으면 띄우기 · 밀어내기 · 돌진에 맞은 적이 옆으로 쓰러져 바닥을 구르며 서로 겹쳐 덩어리처럼 보였다)
+		for _, st in ipairs({ Enum.HumanoidStateType.FallingDown, Enum.HumanoidStateType.Ragdoll, Enum.HumanoidStateType.Seated, Enum.HumanoidStateType.PlatformStanding }) do
+			pcall(function()
+				hum:SetStateEnabled(st, false)
+			end)
+		end
+		hum.RequiresNeck = false
 	end
 	-- 적마다 다른 차림 (머리쓰개, 얼굴, 옷). 실패해도 몸은 그대로 쓴다
 	if not def.dummy then
