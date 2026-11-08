@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.39.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.39.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4570,23 +4570,20 @@ Config.Premium = {
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
-	-- 3.39판 큰 게임패스 (묶음 둘 + 전설 하나). includes = 함께 열리는 패스 (사면 그 패스들을 모두 가진 것으로 친다)
-	{ id = "packTrain", gamepass = 0, price = 999, icon = "🎁", name = "무인 꾸러미", tag = "묶음",
-		includes = { "train2x", "kill2x", "autoTrain", "autoTrain2", "luck", "bag" },
-		lines = { "두 배 수련 · 두 배 처치 · 자동 수련 · 고급 자동 수련 · 행운의 부적 · 가방 확장", "따로 사면 R$ 1,044 → 한 번에", "성장이 가장 빨라지는 여섯 가지" } },
-	{ id = "packSky", gamepass = 0, price = 1499, icon = "💎", name = "천상 꾸러미", tag = "묶음",
-		includes = { "dragon", "vip", "slot4", "gems2x", "coin2x", "luck" },
-		lines = { "청룡 탈것 · VIP · 심법 넷째 칸 · 천정 두 배 · 은자 두 배 · 행운의 부적", "따로 사면 R$ 1,594 → 한 번에", "가장 빠른 탈것과 왕관, 넷째 심법까지" } },
+	-- 3.39.1판 비싼 게임패스 셋 (묶음이 아니라 하나하나가 비싸고 센 것)
+	{ id = "train3x", gamepass = 0, price = 999, icon = "☄", name = "세 배 수련", tag = "영구",
+		lines = { "모든 수련의 능력치가 영원히 세 배", "두 배 수련보다 위 (둘 다 있으면 세 배)", "소환단·강화 수련·자동 수련과 겹친다" } },
+	{ id = "kill3x", gamepass = 0, price = 1499, icon = "⚔", name = "세 배 처치", tag = "영구",
+		lines = { "적을 쓰러뜨려 오르는 능력치가 영원히 세 배", "두 배 처치보다 위 (둘 다 있으면 세 배)", "졸병·정예·보스·천층탑·구름 미궁 모두" } },
 	{ id = "seal", gamepass = 0, price = 2999, icon = "🏯", name = "권왕의 증표", tag = "전설", best = true,
-		includes = { "train2x", "autoTrain", "autoTrain2", "coin2x", "bag", "dragon", "kill2x", "luck", "vip", "gems2x", "slot4" },
-		lines = { "모든 게임패스 열한 가지가 한 번에 (따로 사면 R$ 2,489)", "증표 전용: 금빛 🏯 이름표 · 증표 전용 오라 '황제의 기운'", "이 증표가 있는 사람만 두를 수 있다" } },
+		lines = { "모든 보상 1.5배: 수련·처치 능력치·은자·숙련·천정 (다른 패스와 겹친다)", "머리 위 금빛 🏯 이름표 · 전용 오라 '황제의 기운'", "이 증표가 있는 사람만 가질 수 있다" } },
 }
 -- 3.38판: 심법 칸 (넷째 칸 게임패스가 있으면 하나 더)
 function Config.manualSlots(hasSlot4: boolean?): number
 	return Config.MANUAL_DRAW.slots + (hasSlot4 and 1 or 0)
 end
 -- 3.37판: 게임패스 효과 숫자 (서버가 이 표를 쓴다)
-Config.PASS = { killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
+Config.PASS = { seal = 1.5, killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {
 	every = 3,

@@ -645,6 +645,17 @@ end
 local TEST_INF: { [Player]: boolean? } = {}
 -- 로벅스 상품 (아래에서 채운다)
 local Premium: any
+-- 3.39.1판 게임패스 배율 한곳에 (세 배가 두 배보다 위, 권왕의 증표는 모든 보상 ×1.5)
+local PassMult = {}
+function PassMult.seal(player: Player): number
+	return Premium.owns(player, "seal") and Config.PASS.seal or 1
+end
+function PassMult.train(player: Player): number
+	return (Premium.owns(player, "train3x") and 3 or (Premium.owns(player, "train2x") and 2 or 1)) * PassMult.seal(player)
+end
+function PassMult.kill(player: Player): number
+	return (Premium.owns(player, "kill3x") and 3 or (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)) * PassMult.seal(player)
+end
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
@@ -2211,7 +2222,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, shareGain(killer) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
+					local gain = math.floor(math.max(Config.Training.simma.reward, shareGain(killer) * 3 / 4) * PassMult.train(killer) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						addStat(p, st.id, gain)
 					end
@@ -2223,7 +2234,7 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1) * PassMult.seal(killer))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -2237,6 +2248,7 @@ Combat.init(Push, {
 					if Premium.owns(killer, "gems2x") then
 						gems *= 2
 					end
+					gems = math.floor(gems * PassMult.seal(killer))
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -2281,7 +2293,7 @@ Combat.init(Push, {
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
+				addMastery(killer, p, xp * (vip and PS.vipMastery or 1) * PassMult.seal(killer))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
@@ -2299,10 +2311,8 @@ Combat.init(Push, {
 						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
 						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
 					end
-					-- 3.37판 게임패스 두 배 처치 (보스 상한을 맞춘 뒤에 곱한다)
-					if Premium.owns(killer, "kill2x") then
-						g *= PS.killMult
-					end
+					-- 게임패스 두 배·세 배 처치 · 권왕의 증표 (보스 상한을 맞춘 뒤에 곱한다)
+					g *= PassMult.kill(killer)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					statGain = 0
 					for _, sd in ipairs(Config.Stats) do
@@ -3745,7 +3755,7 @@ function Tower.killed(player: Player, ef: any)
 	local T = Config.TOWER
 	local floor = run.floor
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
-	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1)
+	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1) * PassMult.seal(player))
 	p.coins += coins
 	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
@@ -3764,6 +3774,7 @@ function Tower.killed(player: Player, ef: any)
 			end
 			stats = each * #Config.Stats
 			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor) * (Premium.owns(player, "gems2x") and 2 or 1)
+			gems = math.floor(gems * PassMult.seal(player))
 			p.skyGems += gems
 			refreshFighter(player)
 		end
@@ -3985,7 +3996,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p) * (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)
+		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p) * PassMult.kill(player)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			addStat(p, sd.id, each)
@@ -4370,7 +4381,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Calc.realm(p)
-	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p) * Calc.perk(p, "train")
+	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * PassMult.train(player) * gainMult(p) * Calc.perk(p, "train")
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -6425,15 +6436,6 @@ function Premium.grant(player: Player, id: string)
 	end
 	st.owned = st.owned or {}
 	st.owned[id] = true
-	-- 3.39판 묶음 게임패스: 함께 열리는 패스도 모두 가진 것으로 (자동 수련 켜기 · 청룡 고르기 같은 처음 효과도 그대로 탄다)
-	local def = Config.PREMIUM_BY_ID[id]
-	if def and def.includes then
-		for _, sub in ipairs(def.includes) do
-			if not st.owned[sub] then
-				Premium.grant(player, sub)
-			end
-		end
-	end
 	-- 자동 수련을 처음 얻으면 바로 켠다
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
@@ -6448,7 +6450,7 @@ function Premium.grant(player: Player, id: string)
 		if not p.achAura then
 			p.achAura = "emperor"
 		end
-		toast(player, "🏯 권왕의 증표! 모든 게임패스와 '황제의 기운' 오라를 얻었어요")
+		toast(player, "🏯 권왕의 증표! 모든 보상 1.5배 · 금빛 이름표 · '황제의 기운' 오라를 얻었어요")
 		refreshFighter(player)
 	end
 	-- 3.38판 심법 넷째 칸: 바로 효과를 다시 센다

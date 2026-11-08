@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.39.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.39.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4590,23 +4590,20 @@ Config.Premium = {
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
-	-- 3.39판 큰 게임패스 (묶음 둘 + 전설 하나). includes = 함께 열리는 패스 (사면 그 패스들을 모두 가진 것으로 친다)
-	{ id = "packTrain", gamepass = 0, price = 999, icon = "🎁", name = "무인 꾸러미", tag = "묶음",
-		includes = { "train2x", "kill2x", "autoTrain", "autoTrain2", "luck", "bag" },
-		lines = { "두 배 수련 · 두 배 처치 · 자동 수련 · 고급 자동 수련 · 행운의 부적 · 가방 확장", "따로 사면 R$ 1,044 → 한 번에", "성장이 가장 빨라지는 여섯 가지" } },
-	{ id = "packSky", gamepass = 0, price = 1499, icon = "💎", name = "천상 꾸러미", tag = "묶음",
-		includes = { "dragon", "vip", "slot4", "gems2x", "coin2x", "luck" },
-		lines = { "청룡 탈것 · VIP · 심법 넷째 칸 · 천정 두 배 · 은자 두 배 · 행운의 부적", "따로 사면 R$ 1,594 → 한 번에", "가장 빠른 탈것과 왕관, 넷째 심법까지" } },
+	-- 3.39.1판 비싼 게임패스 셋 (묶음이 아니라 하나하나가 비싸고 센 것)
+	{ id = "train3x", gamepass = 0, price = 999, icon = "☄", name = "세 배 수련", tag = "영구",
+		lines = { "모든 수련의 능력치가 영원히 세 배", "두 배 수련보다 위 (둘 다 있으면 세 배)", "소환단·강화 수련·자동 수련과 겹친다" } },
+	{ id = "kill3x", gamepass = 0, price = 1499, icon = "⚔", name = "세 배 처치", tag = "영구",
+		lines = { "적을 쓰러뜨려 오르는 능력치가 영원히 세 배", "두 배 처치보다 위 (둘 다 있으면 세 배)", "졸병·정예·보스·천층탑·구름 미궁 모두" } },
 	{ id = "seal", gamepass = 0, price = 2999, icon = "🏯", name = "권왕의 증표", tag = "전설", best = true,
-		includes = { "train2x", "autoTrain", "autoTrain2", "coin2x", "bag", "dragon", "kill2x", "luck", "vip", "gems2x", "slot4" },
-		lines = { "모든 게임패스 열한 가지가 한 번에 (따로 사면 R$ 2,489)", "증표 전용: 금빛 🏯 이름표 · 증표 전용 오라 '황제의 기운'", "이 증표가 있는 사람만 두를 수 있다" } },
+		lines = { "모든 보상 1.5배: 수련·처치 능력치·은자·숙련·천정 (다른 패스와 겹친다)", "머리 위 금빛 🏯 이름표 · 전용 오라 '황제의 기운'", "이 증표가 있는 사람만 가질 수 있다" } },
 }
 -- 3.38판: 심법 칸 (넷째 칸 게임패스가 있으면 하나 더)
 function Config.manualSlots(hasSlot4: boolean?): number
 	return Config.MANUAL_DRAW.slots + (hasSlot4 and 1 or 0)
 end
 -- 3.37판: 게임패스 효과 숫자 (서버가 이 표를 쓴다)
-Config.PASS = { killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
+Config.PASS = { seal = 1.5, killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {
 	every = 3,
@@ -9740,6 +9737,17 @@ end
 local TEST_INF: { [Player]: boolean? } = {}
 -- 로벅스 상품 (아래에서 채운다)
 local Premium: any
+-- 3.39.1판 게임패스 배율 한곳에 (세 배가 두 배보다 위, 권왕의 증표는 모든 보상 ×1.5)
+local PassMult = {}
+function PassMult.seal(player: Player): number
+	return Premium.owns(player, "seal") and Config.PASS.seal or 1
+end
+function PassMult.train(player: Player): number
+	return (Premium.owns(player, "train3x") and 3 or (Premium.owns(player, "train2x") and 2 or 1)) * PassMult.seal(player)
+end
+function PassMult.kill(player: Player): number
+	return (Premium.owns(player, "kill3x") and 3 or (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)) * PassMult.seal(player)
+end
 
 local function toast(player: Player, text: string)
 	Push:FireClient(player, "toast", text)
@@ -11306,7 +11314,7 @@ Combat.init(Push, {
 				-- 심마를 이긴 주인: 모든 능력치가 크게 오른다
 				if f.simmaOwner == killer then
 					-- (1.5판: 심마도 싸움이라 적을 쓰러뜨린 만큼 크게. 내 전투력의 적 세 마리 몫)
-					local gain = math.floor(math.max(Config.Training.simma.reward, shareGain(killer) * 3 / 4) * (Premium.owns(killer, "train2x") and 2 or 1) * gainMult(p))
+					local gain = math.floor(math.max(Config.Training.simma.reward, shareGain(killer) * 3 / 4) * PassMult.train(killer) * gainMult(p))
 					for _, st in ipairs(Config.Stats) do
 						addStat(p, st.id, gain)
 					end
@@ -11318,7 +11326,7 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1) * PassMult.seal(killer))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -11332,6 +11340,7 @@ Combat.init(Push, {
 					if Premium.owns(killer, "gems2x") then
 						gems *= 2
 					end
+					gems = math.floor(gems * PassMult.seal(killer))
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -11376,7 +11385,7 @@ Combat.init(Push, {
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
+				addMastery(killer, p, xp * (vip and PS.vipMastery or 1) * PassMult.seal(killer))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
@@ -11394,10 +11403,8 @@ Combat.init(Push, {
 						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
 						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
 					end
-					-- 3.37판 게임패스 두 배 처치 (보스 상한을 맞춘 뒤에 곱한다)
-					if Premium.owns(killer, "kill2x") then
-						g *= PS.killMult
-					end
+					-- 게임패스 두 배·세 배 처치 · 권왕의 증표 (보스 상한을 맞춘 뒤에 곱한다)
+					g *= PassMult.kill(killer)
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					statGain = 0
 					for _, sd in ipairs(Config.Stats) do
@@ -12840,7 +12847,7 @@ function Tower.killed(player: Player, ef: any)
 	local T = Config.TOWER
 	local floor = run.floor
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
-	local coins = math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1)
+	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1) * PassMult.seal(player))
 	p.coins += coins
 	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
@@ -12859,6 +12866,7 @@ function Tower.killed(player: Player, ef: any)
 			end
 			stats = each * #Config.Stats
 			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor) * (Premium.owns(player, "gems2x") and 2 or 1)
+			gems = math.floor(gems * PassMult.seal(player))
 			p.skyGems += gems
 			refreshFighter(player)
 		end
@@ -13080,7 +13088,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p) * (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)
+		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p) * PassMult.kill(player)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			addStat(p, sd.id, each)
@@ -13465,7 +13473,7 @@ function Train.hit(player: Player, grade: any, ringArg: any)
 	end
 	-- 경지가 오를수록, 소환단을 먹었으면 더 많이
 	local idx = Calc.realm(p)
-	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * (Premium.owns(player, "train2x") and 2 or 1) * gainMult(p) * Calc.perk(p, "train")
+	local mult = Config.trainMult(idx) * (p.elixirUntil > os.time() and 2 or 1) * (st.training.hard and Config.HARD_TRAIN.mult or 1) * PassMult.train(player) * gainMult(p) * Calc.perk(p, "train")
 	local amount = math.max(1, math.floor(gain * mult + 0.5))
 	local beforeIdx = idx
 	if info.gains then
@@ -15520,15 +15528,6 @@ function Premium.grant(player: Player, id: string)
 	end
 	st.owned = st.owned or {}
 	st.owned[id] = true
-	-- 3.39판 묶음 게임패스: 함께 열리는 패스도 모두 가진 것으로 (자동 수련 켜기 · 청룡 고르기 같은 처음 효과도 그대로 탄다)
-	local def = Config.PREMIUM_BY_ID[id]
-	if def and def.includes then
-		for _, sub in ipairs(def.includes) do
-			if not st.owned[sub] then
-				Premium.grant(player, sub)
-			end
-		end
-	end
 	-- 자동 수련을 처음 얻으면 바로 켠다
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
@@ -15543,7 +15542,7 @@ function Premium.grant(player: Player, id: string)
 		if not p.achAura then
 			p.achAura = "emperor"
 		end
-		toast(player, "🏯 권왕의 증표! 모든 게임패스와 '황제의 기운' 오라를 얻었어요")
+		toast(player, "🏯 권왕의 증표! 모든 보상 1.5배 · 금빛 이름표 · '황제의 기운' 오라를 얻었어요")
 		refreshFighter(player)
 	end
 	-- 3.38판 심법 넷째 칸: 바로 효과를 다시 센다
