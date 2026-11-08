@@ -154,18 +154,6 @@ DEFS.golddragon = {
 	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 255, 240), C3(255, 220, 130) }), size = ns({ { 0, 0.25 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
 		life = nr(0.8, 1.4), rate = 8, speed = nr(5, 8), accel = Vector3.new(0, 5, 0), spread = Vector2.new(45, 45), light = 1, bright = 4, drag = 1.2 },
 }
--- 3.39판 황제의 기운 (권왕의 증표 전용): 자줏빛 속불 위로 금빛 화염이 겹으로 치솟고, 머리 위로 금가루가 왕관처럼 흩날린다
-DEFS.emperor = {
-	{ on = BODY, tex = TEX.fire, color = cs({ C3(255, 240, 255), C3(190, 90, 255), C3(90, 20, 160) }), size = ns({ { 0, 1.5 }, { 0.5, 1.15 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.5 }, { 0.3, 0.2 }, { 1, 1 } }),
-		life = nr(0.6, 0.95), rate = 14, speed = nr(2, 4), accel = Vector3.new(0, 11, 0), spread = Vector2.new(15, 15), light = 1, bright = 2.5, rot = nr(-20, 20), spin = nr(-45, 45), z = 0.4 },
-	{ on = CORE, tex = TEX.fire, color = cs({ C3(255, 250, 220), C3(255, 205, 70), C3(240, 140, 20) }), size = ns({ { 0, 1.8 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.45 }, { 1, 1 } }),
-		life = nr(0.8, 1.1), rate = 10, speed = nr(3, 5), accel = Vector3.new(0, 13, 0), spread = Vector2.new(12, 12), light = 1, bright = 2.5, z = 0.6 },
-	{ on = FEET, tex = TEX.fire, color = cs({ C3(230, 160, 255), C3(255, 200, 80) }), size = ns({ { 0, 1.6 }, { 1, 0.3 } }), alpha = ns({ { 0, 0.55 }, { 1, 1 } }),
-		life = nr(0.7, 1), rate = 9, speed = nr(3, 5), accel = Vector3.new(0, 12, 0), spread = Vector2.new(10, 10), light = 1, bright = 2 },
-	{ on = { "Head" }, tex = TEX.spark, color = cs({ C3(255, 250, 220), C3(255, 210, 90) }), size = ns({ { 0, 0.3 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
-		life = nr(1, 1.6), rate = 14, speed = nr(2, 4), accel = Vector3.new(0, 3, 0), spread = Vector2.new(80, 80), light = 1, bright = 4, drag = 1.5 },
-}
-
 ------------------------------------------------------------------------
 -- 몸마다 붙이고 떼기
 ------------------------------------------------------------------------

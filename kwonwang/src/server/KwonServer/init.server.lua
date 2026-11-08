@@ -645,16 +645,13 @@ end
 local TEST_INF: { [Player]: boolean? } = {}
 -- 로벅스 상품 (아래에서 채운다)
 local Premium: any
--- 3.39.1판 게임패스 배율 한곳에 (세 배가 두 배보다 위, 권왕의 증표는 모든 보상 ×1.5)
+-- 게임패스 배율 한곳에 (두 배 수련 · 두 배 처치)
 local PassMult = {}
-function PassMult.seal(player: Player): number
-	return Premium.owns(player, "seal") and Config.PASS.seal or 1
-end
 function PassMult.train(player: Player): number
-	return (Premium.owns(player, "train3x") and 3 or (Premium.owns(player, "train2x") and 2 or 1)) * PassMult.seal(player)
+	return Premium.owns(player, "train2x") and 2 or 1
 end
 function PassMult.kill(player: Player): number
-	return (Premium.owns(player, "kill3x") and 3 or (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)) * PassMult.seal(player)
+	return Premium.owns(player, "kill2x") and Config.PASS.killMult or 1
 end
 
 local function toast(player: Player, text: string)
@@ -1195,10 +1192,9 @@ local function updateTag(player: Player)
 	local bottom = g:FindFirstChild("Bottom") :: TextLabel
 	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
-	-- 3.39판 권왕의 증표: 🏯 와 금빛 이름 (VIP의 👑 대신)
-	local seal = Premium.owns(player, "seal")
-	top.Text = string.format("%s[%s%s] %s", seal and "🏯 " or (Premium.owns(player, "vip") and "👑 " or ""), rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
-	top.TextColor3 = seal and Color3.fromRGB(255, 214, 90) or realm.color
+	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
+	top.Text = string.format("%s[%s%s] %s", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
+	top.TextColor3 = realm.color
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
 	if tl then
@@ -2234,7 +2230,7 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1) * PassMult.seal(killer))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -2248,7 +2244,6 @@ Combat.init(Push, {
 					if Premium.owns(killer, "gems2x") then
 						gems *= 2
 					end
-					gems = math.floor(gems * PassMult.seal(killer))
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -2293,7 +2288,7 @@ Combat.init(Push, {
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp * (vip and PS.vipMastery or 1) * PassMult.seal(killer))
+				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
@@ -3755,7 +3750,7 @@ function Tower.killed(player: Player, ef: any)
 	local T = Config.TOWER
 	local floor = run.floor
 	-- 2.7.6판: 높은 층은 은자도 가파르게 (50층 3천 · 100층 약 4만 · 120층 약 11만 · 150층 약 45만)
-	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1) * PassMult.seal(player))
+	local coins = math.floor(math.floor(T.coins * floor * T.coinGrowth ^ math.max(0, floor - 50)) * (Premium.owns(player, "coin2x") and 2 or 1))
 	p.coins += coins
 	local scrolls, gems, stats = 0, 0, 0
 	if floor > p.towerBest then
@@ -3774,7 +3769,6 @@ function Tower.killed(player: Player, ef: any)
 			end
 			stats = each * #Config.Stats
 			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor) * (Premium.owns(player, "gems2x") and 2 or 1)
-			gems = math.floor(gems * PassMult.seal(player))
 			p.skyGems += gems
 			refreshFighter(player)
 		end
@@ -5176,9 +5170,6 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		else
 			local au = Config.ACH_AURA_BY_ID[id]
 			if not au or not Config.auraOwned(au, p.ach, (st :: any).owned) then
-				if au and au.pass then
-					toast(player, "🏯 '권왕의 증표' 게임패스 전용 오라예요")
-				end
 				return
 			end
 			p.achAura = id
@@ -6441,17 +6432,9 @@ function Premium.grant(player: Player, id: string)
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
 	end
-	-- VIP · 권왕의 증표: 머리 위 이름표를 바로 바꾼다
-	if id == "vip" or id == "seal" then
+	-- VIP: 머리 위 왕관을 바로 단다
+	if id == "vip" then
 		updateTag(player)
-	end
-	-- 권왕의 증표: 증표 전용 오라를 (두른 오라가 없으면) 바로 두른다
-	if p and id == "seal" then
-		if not p.achAura then
-			p.achAura = "emperor"
-		end
-		toast(player, "🏯 권왕의 증표! 모든 보상 1.5배 · 금빛 이름표 · '황제의 기운' 오라를 얻었어요")
-		refreshFighter(player)
 	end
 	-- 3.38판 심법 넷째 칸: 바로 효과를 다시 센다
 	if id == "slot4" then
