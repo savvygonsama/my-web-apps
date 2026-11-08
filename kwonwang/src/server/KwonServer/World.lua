@@ -128,6 +128,9 @@ function World.setupLighting()
 	Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130)
 	Lighting.EnvironmentDiffuseScale = 0.5
 	Lighting.EnvironmentSpecularScale = 0.5
+	-- 3.34판: 그림자 가장자리를 조금 부드럽게 (딱딱한 톱니가 줄어든다)
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = 0.3
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmo.Density = 0.24
 	atmo.Haze = 1.1

@@ -10,6 +10,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Fx = require(script.Parent:WaitForChild("Fx"))
+local Perf = require(script.Parent:WaitForChild("Perf"))
+local UserInputService = game:GetService("UserInputService")
+-- 3.34판: 약한 기기 (폰 · 가벼운 그래픽을 켠 사람)에서는 컷씬 · 신의 모습의 부품 수를 크게 줄인다
+local function low(): boolean
+	return Perf.low or (UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled)
+end
 local Anim = require(script.Parent:WaitForChild("Anim"))
 local Cutscene = require(script.Parent:WaitForChild("Cutscene"))
 
@@ -221,7 +227,7 @@ local function breakGround(m: Model, at: Vector3, slam: (() -> ())?)
 	Fx.debris(g, 20, 34)
 
 	-- 금빛 비: 하늘에서 빛 가루가 한참 쏟아진다
-	for k = 1, 90 do
+	for k = 1, (low() and 28 or 90) do
 		task.delay(math.random() * 2.2, function()
 			local a = math.random() * math.pi * 2
 			local d = math.random() * 55
@@ -257,7 +263,7 @@ local function breakGround(m: Model, at: Vector3, slam: (() -> ())?)
 	end)
 
 	-- 갈라지는 틈: 가운데에서 바깥으로 뻗는다. 어두운 틈 위에 금빛이 번득인다
-	local n = 26
+	local n = low() and 14 or 26
 	for k = 1, n do
 		local a = k / n * math.pi * 2 + math.random() * 0.25
 		local len = 50 + math.random() * 90
@@ -287,7 +293,7 @@ local function breakGround(m: Model, at: Vector3, slam: (() -> ())?)
 	end
 
 	-- 바닥 조각: 같은 땅의 판이 솟구쳤다가 기울어져 떨어진다
-	for k = 1, 46 do
+	for k = 1, (low() and 20 or 46) do
 		local a = math.random() * math.pi * 2
 		local d = 7 + math.random() * 40
 		local p0 = g + Vector3.new(math.cos(a) * d, 0, math.sin(a) * d)
@@ -351,7 +357,7 @@ local function weldTo(hub: BasePart, p: BasePart, off: CFrame, all: { BasePart }
 end
 -- 속이 빈 고리 (hub의 XY 면, 굴대는 Z)
 local function ringGroup(hub: BasePart, R: number, color: Color3, thick: number, all: { BasePart })
-	local n = math.max(24, math.floor(R * 4))
+	local n = math.max(low() and 14 or 24, math.floor(R * (low() and 1.8 or 4)))
 	for i = 0, n - 1 do
 		local a = (i + 0.5) / n * math.pi * 2
 		local seg = part(Vector3.new(2 * math.pi * R / n * 1.12, thick, thick), color, Enum.Material.Neon, 1)
@@ -487,8 +493,9 @@ local function buildUp(m: Model, stomp: number, K: number): () -> ()
 	end)
 	-- 둘레에 솟는 돌기둥 열둘 (삼재진의 테두리). 찍는 순간 무너진다
 	local pillars: { BasePart } = {}
-	for k2 = 1, 12 do
-		local a = k2 / 12 * math.pi * 2
+	local nPil = low() and 6 or 12
+	for k2 = 1, nPil do
+		local a = k2 / nPil * math.pi * 2
 		local pp = g + Vector3.new(math.cos(a) * 46, 0, math.sin(a) * 46)
 		local gp3, gc3 = groundAt(pp, m)
 		local h = 30 + (k2 % 3) * 8
@@ -1372,14 +1379,17 @@ local function buildShell(m: Model)
 	end
 	local sh = { alive = true, parts = {} :: { BasePart } }
 	shells[m] = sh
-	local pairsList: { { src: BasePart, armor: BasePart, ghost: BasePart } } = {}
+	local pairsList: { { src: BasePart, armor: BasePart, ghost: BasePart? } } = {}
 	for _, ch in ipairs(m:GetChildren()) do
 		if ch:IsA("BasePart") and ch.Name ~= "HumanoidRootPart" and ch.Transparency < 0.9 then
 			local armor = part(ch.Size * 1.22, GOLD, Enum.Material.Neon, 0.5)
-			local ghost = part(ch.Size * 2.6, Color3.fromRGB(255, 244, 200), Enum.Material.Neon, 0.72)
+			local ghost: BasePart? = nil
+			if not low() then
+				ghost = part(ch.Size * 2.6, Color3.fromRGB(255, 244, 200), Enum.Material.Neon, 0.72)
+				table.insert(sh.parts, ghost :: BasePart)
+			end
 			table.insert(pairsList, { src = ch, armor = armor, ghost = ghost })
 			table.insert(sh.parts, armor)
-			table.insert(sh.parts, ghost)
 		end
 	end
 	-- 떠 있는 神 글자 (등 뒤, 화면을 향한다)
@@ -1436,7 +1446,9 @@ local function buildShell(m: Model)
 				it.armor.CFrame = it.src.CFrame
 				it.armor.Transparency = pulse
 				local rel = rcf:ToObjectSpace(it.src.CFrame)
-				it.ghost.CFrame = ghostCF * CFrame.new(rel.Position * 2.6) * (rel - rel.Position)
+				if it.ghost then
+					it.ghost.CFrame = ghostCF * CFrame.new(rel.Position * 2.6) * (rel - rel.Position)
+				end
 			end
 		end
 		gp.CFrame = CFrame.new(ghostCF.Position + Vector3.new(0, 18, 0))
