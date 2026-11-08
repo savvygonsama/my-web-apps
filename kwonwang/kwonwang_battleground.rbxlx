@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.41.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3111,15 +3111,16 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
 	},
 })
--- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다. +10부터 조각이 크게 늘어 후반 보스를 계속 돌게 한다
+-- 3.41판 강화: 단계마다 드는 비급 조각과 은자 (+1 ~ +15). 실패는 없다
+-- 3.41.1판: 초반에 산 사람도 바로 키우게. 앞 단계는 싸고 (은자 5천부터), 조각은 초반 보스 · 정예도 떨어뜨린다. +10부터는 크게 늘어 후반을 계속 돈다
 Config.ENH = {
 	max = 15,
-	shards = { 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 8, 10, 12, 15, 20 },
+	shards = { 1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 8, 10, 12, 15, 20 },
 	coins = function(lv: number): number
-		return math.floor(100000 * 1.5 ^ (lv - 1))
+		return math.floor(5000 * 1.6 ^ (lv - 1))
 	end,
-	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 보스 · 후반 보스 · 지옥 보스
-	drop = { boss = 0.2, late = 0.35, hell = 0.6, extra = 0.3 },
+	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 모든 보스 절반 · 지옥 보스 70% (가끔 둘) · 정예 졸병 3%
+	drop = { boss = 0.5, late = 0.5, hell = 0.7, extra = 0.3, elite = 0.03 },
 }
 -- 강화 단계의 등급 배율 (enh가 있는 권법만)
 function Config.enhMult(style: any, lv: number?): number
@@ -11550,6 +11551,11 @@ Combat.init(Push, {
 					end
 				end
 				p.kills += 1
+				-- 3.41.1판 비급 조각: 정예 졸병도 가끔 (천층탑 · 시험 · 관문 · 심마 · 레이드는 빼고)
+				if not isBossKill and f.npc.elite and not f.towerOwner and not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and math.random() < Config.ENH.drop.elite then
+					p.shards = (p.shards or 0) + 1
+					toast(killer, "🧩 비급 조각 +1 (게임패스 권법 강화 재료)")
+				end
 				MiniQuest.onKill(killer, (f :: any).typeId)
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do

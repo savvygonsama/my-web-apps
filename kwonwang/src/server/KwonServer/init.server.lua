@@ -2308,6 +2308,11 @@ Combat.init(Push, {
 					end
 				end
 				p.kills += 1
+				-- 3.41.1판 비급 조각: 정예 졸병도 가끔 (천층탑 · 시험 · 관문 · 심마 · 레이드는 빼고)
+				if not isBossKill and f.npc.elite and not f.towerOwner and not f.trialOwner and not f.gateOwner and not f.simmaOwner and not f.raid and math.random() < Config.ENH.drop.elite then
+					p.shards = (p.shards or 0) + 1
+					toast(killer, "🧩 비급 조각 +1 (게임패스 권법 강화 재료)")
+				end
 				MiniQuest.onKill(killer, (f :: any).typeId)
 				if isBossKill then
 					for id, def in pairs(Config.Bosses) do
