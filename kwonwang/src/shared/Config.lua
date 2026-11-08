@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.41.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.41.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3031,19 +3031,19 @@ table.insert(Config.Styles, {
 	enh = { base = 1.5, top = 2.75 },
 	unlockHint = "💎 상점의 '구미호권' 게임패스로 얻는다. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)",
 	desc = "푸른 여우불을 두른 요호의 권법. 빠르고 가볍게 스치며, 맞힐 때마다 여우불이 쌓인다. 강화할수록 등 뒤의 꼬리가 늘어난다.",
-	gimmick = "여우불: 다섯 번 맞힐 때마다 상대 자리에서 푸른 여우불이 터진다. 몸이 가벼워 (1.06배) 공격의 12%를 흘려 보낸다",
+	gimmick = "여우불: 다섯 번 맞힐 때마다 상대 자리에서 푸른 여우불이 터진다. 몸이 가벼워 (1.06배) 공격의 8%를 흘려 보낸다",
 	deflect = 0.24,
-	dodgeChance = 0.12,
+	dodgeChance = 0.08, -- 3.41.3판: 0.12 → 0.08 (전설인데 권왕 권법 (0.1) 보다 많이 흘렸다)
 	speed = 1.06,
 	pulse = { every = 5, kind = "foxfire", radius = 10, delay = 0.2, name = "여우불", dmg = 22, posture = 16, stun = 0.4, kb = 6, up = 6 },
 	stance = "stance_mist",
 	combo = {
-		{ id = "gm1", name = "호미장", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
-		{ id = "gm2", name = "여우발톱", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 10, 10, 0.35, 8) } },
-		{ id = "gm3", name = "월하선각", pose = "crescent_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5.5, 14, 15, 0.45, 12) } },
-		{ id = "gm4", name = "구미선풍", pose = "tornado_kick", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 19, 22, 0.7, 22, 10) } },
+		{ id = "gm1", name = "호미장", pose = "ghost_palm_r", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 9, 10, 0.35, 8) } },
+		{ id = "gm2", name = "여우발톱", pose = "ghost_palm_l", dur = 0.28, lunge = 3, hits = { hit(0.11, 6, 4.5, 9, 10, 0.35, 8) } },
+		{ id = "gm3", name = "월하선각", pose = "crescent_kick", dur = 0.4, lunge = 2, hits = { hit(0.2, 6, 5.5, 12, 15, 0.45, 12) } },
+		{ id = "gm4", name = "구미선풍", pose = "tornado_kick", dur = 0.48, lunge = 3, hits = { hit(0.24, 7, 5.5, 17, 22, 0.7, 22, 10) } },
 	},
-	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 28, 34, 0.8, 40) } },
+	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 25, 34, 0.8, 40) } },
 	skills = {
 		E = { id = "gmE", name = "호화연탄", desc = "손끝에서 푸른 여우불 셋이 날아가 가장 가까운 적 셋에게 차례로 터진다", pose = "plum_finger_r", dur = 0.55, cd = 7, chi = 20,
 			mech = { kind = "targets", n = 3, range = 30, delay = 0.3, stagger = 0.12, radius = 5, hit = hit(0, 0, 0, 22, 20, 0.6, 10, 6), fx = "foxfire" } },
