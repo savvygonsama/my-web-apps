@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.42.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.43.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3079,12 +3079,12 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 25, 34, 0.8, 40) } },
 	skills = {
-		E = { id = "gmE", name = "호화연탄", desc = "손끝에서 푸른 여우불 셋이 날아가 가장 가까운 적 셋에게 차례로 터진다", pose = "plum_finger_r", dur = 0.55, cd = 7, chi = 20,
-			mech = { kind = "targets", n = 3, range = 30, delay = 0.3, stagger = 0.12, radius = 5, hit = hit(0, 0, 0, 22, 20, 0.6, 10, 6), fx = "foxfire" } },
-		R = { id = "gmR", name = "미혹보", desc = "여우 잔상을 남기며 둘레의 적 셋 사이를 스치듯 지나가 한 번씩 할퀸다 (무적)", pose = "ghost_flash", dur = 0.9, cd = 10, chi = 25,
-			mech = { kind = "rushChain", n = 3, range = 28, delay = 0.06, every = 0.18, hitsEach = 1, hit = hit(0, 0, 0, 26, 24, 0.6, 14, 8) } },
-		G = { id = "gmG", name = "구미난무", desc = "꼬리를 펼쳐 맴돈다. 1.6초 동안 둘레에 여우불 회오리가 몰아치고, 강화할수록 꼬리 그림자가 많아진다", pose = "gale_cyclone", dur = 1.9, cd = 30, chi = 100, armor = true,
-			mech = { kind = "zone", at = "self", radius = 18, dur = 1.6, every = 0.2, delay = 0.2, hit = hit(0, 0, 0, 16, 12, 0.3, 4, 0), fx = "foxfire" } },
+		E = { id = "gmE", name = "호화연무", desc = "하늘에 여우불 다섯이 피어 소용돌이치며 내려와, 가까운 적 다섯에게 차례로 꽂혀 푸른 불기둥으로 터진다", pose = "plum_finger_r", dur = 0.6, cd = 8, chi = 20,
+			mech = { kind = "targets", n = 5, range = 32, delay = 0.45, stagger = 0.09, radius = 5, hit = hit(0, 0, 0, 16, 16, 0.5, 8, 6), fx = "foxfire" } },
+		R = { id = "gmR", name = "환영분신", desc = "푸른 여우 혼령 분신을 남기며 둘레의 적 넷 사이를 스쳐 지나가 할퀸다 (무적). 마지막에 내려서며 여우불이 터진다", pose = "ghost_flash", dur = 1.0, cd = 10, chi = 25,
+			mech = { kind = "rushChain", n = 4, range = 30, delay = 0.06, every = 0.17, hitsEach = 1, hit = hit(0, 0, 0, 22, 22, 0.5, 12, 8), slam = hit(0, 0, 0, 30, 30, 0.7, 20, 10), slamRadius = 10 } },
+		G = { id = "gmG", name = "구미천화", desc = "땅에서 거대한 꼬리 혼령 아홉이 솟아 일렁이는 동안 여우불 유성이 둘레의 적에게 쏟아지고, 마지막에 아홉 꼬리가 한가운데로 내리치며 푸른 불이 터진다", pose = "gale_cyclone", dur = 2.2, cd = 30, chi = 100, armor = true,
+			mech = { kind = "storm", dur = 1.8, every = 0.15, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.3, 6, 4), finalRadius = 20, final = hit(0, 0, 0, 90, 90, 1.2, 40, 20) } },
 	},
 })
 -- 권왕 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
@@ -3106,7 +3106,7 @@ table.insert(Config.Styles, {
 	gimmick = "흑염 각인: 여섯 번 맞힐 때마다 상대 자리에서 검은 불꽃이 터진다. 마지막 오의 흑염멸천은 하늘에서 불꽃 검이 쏟아진다",
 	deflect = 0.3,
 	pulse = { every = 6, kind = "blackflame", radius = 12, delay = 0.3, name = "흑염 폭발", dmg = 48, posture = 70, stun = 1.0, kb = 20, up = 8 },
-	stance = "stance_reaper",
+	stance = "stance_blade",
 	combo = {
 		{ id = "hy1", name = "흑염참", pose = "reap_slash_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
 		{ id = "hy2", name = "역염참", pose = "reap_slash_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6.5, 5, 9, 14, 0.35, 8) } },
@@ -3117,11 +3117,11 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "hyE", name = "흑염월참", desc = "검을 크게 휘둘러 앞으로 검은 초승달 검기를 날린다", pose = "reap_wave", dur = 0.6, cd = 7, chi = 20,
 			mech = { kind = "cone", range = 24, angle = 80, delay = 0.15, hit = hit(0, 0, 0, 40, 60, 0.7, 24, 6), fx = "blackflame" } },
-		R = { id = "hyR", name = "마염천주", desc = "뛰어올라 검을 땅에 꽂는다. 앞으로 검은 불기둥이 줄지어 치솟는다", pose = "reap_leap", dur = 0.7, cd = 10, chi = 25,
+		R = { id = "hyR", name = "마염천주", desc = "뛰어올라 검을 땅에 꽂는다. 앞으로 검은 마검이 칼끝부터 땅을 뚫고 줄지어 솟는다", pose = "reap_leap", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "line", count = 6, start = 4, spacing = 5, step = 0.06, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 30, 44, 0.6, 10, 16), fx = "blackflame" } },
 		G = { id = "hyG", name = "쌍염십자참", desc = "1초 동안 두 검에 불꽃을 모았다가 교차해 거대한 X자 검기를 앞으로 날린다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
-		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘이 검게 타오르며 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 두 검을 내리꽂아 둘레를 불태운다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
 	},
 })
@@ -6262,6 +6262,8 @@ Poses.stances = {
 	-- 초·취: 오른손 술병을 머리 옆까지 치켜들고, 왼팔은 축 늘어뜨린 채 몸이 한쪽으로 쏠린다 (화면이 크게 비틀거리게 한다)
 	stance_soju = { W = { 5, 15, -16 }, N = { 12, -10, 24 }, RS = { 128, 0, 8 }, RE = { 78, 0, 0 }, LS = { 18, 0, -28 }, LE = { 38, 0, 0 } },
 	-- 초·혈마: 짐승처럼 웅크려 오른손의 큰 낫을 머리 위로 치켜들고 (날이 앞으로 드리운다), 왼손 손톱을 낮게 벌린다
+	-- 3.43판 흑염마검장: 두 팔꿈치를 굽혀 주먹을 가슴 앞에. 쥔 마검이 손에서 위로 곧게 서고 칼끝이 조금 몸 쪽으로 기운다
+	stance_blade = { W = { -6, -15, 0 }, N = { -8, 15, 0 }, RS = { 18, 0, 22 }, RE = { 98, 0, 0 }, LS = { 14, 0, -22 }, LE = { 92, 0, 0 } },
 	stance_reaper = { W = { -20, -25, 0 }, N = { 18, 25, 0 }, RS = { 150, 0, 35 }, RE = { 70, 0, 0 }, LS = { 55, 0, -40 }, LE = { 50, 0, 0 } },
 	-- 3.4판 초·성하: 오른손의 별 지팡이를 몸 앞에 곧게 세워 쥐고, 왼손은 손바닥을 펴 앞으로 (별을 가리키는 자세)
 	stance_staff = { W = { 0, -20, 0 }, N = { -4, 20, 0 }, RS = { 40, 0, 15 }, RE = { 70, 0, 0 }, LS = { 55, 0, -28 }, LE = { 35, 0, 0 } },
@@ -58986,9 +58988,11 @@ return Null
         <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">PassArts</string>
-            <string name="Source"><![CDATA[-- 권왕 3.41판: 게임패스 권법 둘의 화면
---   구미호권: 등 뒤의 여우 꼬리 (강화 단계만큼 1 → 9개), +10 금빛 눈, +15 거대한 꼬리 그림자. 기술은 푸른 여우불
---   흑염마검장: 손에 빚은 검은 불꽃 검 (+5부터 두 손). 강화할수록 길고 짙어지며 보랏빛 → 핏빛으로 타오른다. 기술은 검은 불꽃
+            <string name="Source"><![CDATA[-- 권왕 3.43판: 게임패스 권법 둘의 화면 (모습 · 기술 연출 다시)
+--   구미호권: 등 뒤의 복슬한 여우 꼬리 (길쭉한 타원을 촘촘히 겹쳐 매끈하게, 굵다가 끝이 뾰족한 흰 꼬리 끝에 여우불).
+--            강화만큼 1 → 9개. +5 여우 귀 · +10 금빛 눈 · +15 거대한 꼬리 혼령. 기술은 여우불 · 환영 분신 · 꼬리 혼령
+--   흑염마검장: 손에 빚은 마검. 자루 · 코등이 · 칼날 (흑요석 몸, 날, 홈의 문자) 을 갖춘 검이 정자세에서 손에서 가슴 앞으로 곧게 선다.
+--            +5부터 두 손. 강화할수록 길고 화려해지고, +15에는 칼에서 오라가 솟는다. 기술은 검은 불꽃 검기 · 땅에서 솟는 마검 · 하늘의 검
 -- 꾸밈은 모두 이 화면에서만 그린다 (서버는 Style · Enh 속성만 붙인다)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -58997,19 +59001,26 @@ local Debris = game:GetService("Debris")
 
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Perf = require(script.Parent:WaitForChild("Perf"))
+local Anim = require(script.Parent:WaitForChild("Anim"))
 
 local PassArts = {}
 
-local FOX = Color3.fromRGB(90, 175, 255)
-local FOX_PALE = Color3.fromRGB(225, 245, 255)
-local FOX_FUR = Color3.fromRGB(238, 242, 250)
+local FOX = Color3.fromRGB(80, 170, 255)
+local FOX_DEEP = Color3.fromRGB(40, 110, 230)
+local FOX_PALE = Color3.fromRGB(220, 242, 255)
+local FUR = Color3.fromRGB(244, 246, 252)
+local FUR_ROOT = Color3.fromRGB(206, 220, 246)
 local GOLD = Color3.fromRGB(255, 214, 90)
 local INK = Color3.fromRGB(18, 8, 26)
+local OBSIDIAN = Color3.fromRGB(28, 20, 38)
+local STEEL = Color3.fromRGB(54, 44, 66)
 local PURPLE = Color3.fromRGB(196, 70, 255)
+local VIOLET = Color3.fromRGB(130, 40, 220)
 local CRIMSON = Color3.fromRGB(255, 40, 70)
 local WHITE_HOT = Color3.fromRGB(255, 225, 235)
 local TEX_FIRE = "rbxasset://textures/particles/fire_main.dds"
 local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local TEX_SPARK = "rbxasset://textures/particles/sparkles_main.dds"
 
 local folder = Instance.new("Folder")
 folder.Name = "KwonPassArts"
@@ -59019,9 +59030,9 @@ local opts: any = {}
 function PassArts.init(o: any)
 	opts = o or {}
 end
-local function shake(a: number, t: number)
+local function shake(a: number)
 	if opts.shake then
-		pcall(opts.shake, a, t)
+		pcall(opts.shake, a)
 	end
 end
 
@@ -59053,12 +59064,25 @@ local function part(size: Vector3, color: Color3, material: Enum.Material?, alph
 	p.Transparency = alpha or 0
 	return p
 end
+-- 타원체 (공 모양 조각은 크기가 한 가지로 묶여 길쭉해지지 않는다: 네모 조각에 구 모양 덧씌우기)
+local function oval(size: Vector3, color: Color3, material: Enum.Material?, alpha: number?): BasePart
+	local p = part(size, color, material, alpha, nil)
+	local m = Instance.new("SpecialMesh")
+	m.MeshType = Enum.MeshType.Sphere
+	m.Parent = p
+	return p
+end
 local function tween(inst: Instance, time: number, goal: { [string]: any }, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
 	local tw = TweenService:Create(inst, TweenInfo.new(math.max(0.01, time), style or Enum.EasingStyle.Quad, dir or Enum.EasingDirection.Out), goal)
 	tw:Play()
 	return tw
 end
-local function temp(p: BasePart, life: number)
+local function pulse(inst: Instance, time: number, goal: { [string]: any })
+	local tw = TweenService:Create(inst, TweenInfo.new(time, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), goal)
+	tw:Play()
+	return tw
+end
+local function temp(p: BasePart, life: number): BasePart
 	p.Parent = folder
 	Debris:AddItem(p, life + 0.1)
 	return p
@@ -59089,8 +59113,19 @@ local function emitter(parent: Instance, tex: string, color: ColorSequence, size
 	e.RotSpeed = NumberRange.new(-60, 60)
 	e.LockedToPart = o.locked == true
 	e.ZOffset = o.z or 0
+	if o.shape then
+		e.Shape = o.shape
+	end
 	e.Parent = parent
 	return e
+end
+local function light(parent: Instance, color: Color3, range: number, brightness: number): PointLight
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Range = range
+	l.Brightness = brightness
+	l.Parent = parent
+	return l
 end
 local function rootOf(m: Instance?): BasePart?
 	local r = m and m:FindFirstChild("HumanoidRootPart")
@@ -59113,7 +59148,7 @@ local TAILS = { [0] = 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 7, 7, 8, 8, 9, 9 }
 function PassArts.tails(lv: number): number
 	return TAILS[math.clamp(math.floor(lv), 0, 15)] or 1
 end
--- 흑염: 검 단계 (0 한 손 · 1 길게 · 2 두 손 · 3 불꽃 자취 · 4 핏빛 날 · 5 끝 (흰 불심, 붉은 눈))
+-- 흑염: 검 단계 (0 한 손 · 1 홈의 문자 · 2 두 손 · 3 불꽃 자취 · 코등이 날개 · 4 핏빛 날 · 5 칼의 오라)
 function PassArts.bladeTier(lv: number): number
 	local l = math.clamp(math.floor(lv), 0, 15)
 	return l >= 15 and 5 or (l >= 10 and 4 or (l >= 8 and 3 or (l >= 5 and 2 or (l >= 3 and 1 or 0))))
@@ -59122,7 +59157,8 @@ end
 ------------------------------------------------------------------------
 -- 몸에 붙는 꾸밈 (사람마다 하나)
 ------------------------------------------------------------------------
-type Rig = { model: Model, style: string, lv: number, parts: { BasePart }, tails: { { BasePart } }?, ghost: { { BasePart } }?, extra: { Instance } }
+type Sword = { hand: BasePart, side: number, items: { { BasePart | CFrame } }, frame: CFrame? }
+type Rig = { model: Model, style: string, lv: number, parts: { BasePart }, tails: { { BasePart } }?, ghost: { { BasePart } }?, swords: { Sword }?, extra: { Instance } }
 local rigs: { [Model]: Rig } = {}
 
 local function clearRig(m: Model)
@@ -59138,8 +59174,7 @@ local function clearRig(m: Model)
 	end
 end
 
--- 몸에 붙인 조각 (용접): 몸을 따라 움직인다
--- 3.42판: 상점 미리보기는 같은 꾸밈을 미리보기 모형 안에 (용접 없이 그 자리에 고정해) 짓는다
+-- 상점 미리보기는 같은 꾸밈을 미리보기 모형 안에 (용접 없이 그 자리에 고정해) 짓는다
 local buildParent: Instance = folder
 local previewMode = false
 local function weldTo(base: BasePart, p: BasePart, offset: CFrame): BasePart
@@ -59157,110 +59192,240 @@ local function weldTo(base: BasePart, p: BasePart, offset: CFrame): BasePart
 	return p
 end
 
-local SEG = 6
+-- 구미호 꼬리 ---------------------------------------------------------
+local function segCount(): number
+	return Perf.low and 9 or 14
+end
+-- 꼬리 굵기: 뿌리는 가늘고, 가운데가 복슬하게 굵고, 끝은 뾰족하다
+local function tailWidth(k: number): number
+	local w = 0.26 + 1.0 * math.sin(math.pi * (0.06 + 0.88 * k))
+	if k > 0.74 then
+		w *= 1 - 0.62 * (k - 0.74) / 0.26
+	end
+	return w
+end
+local function buildTail(rig: Rig, scale: number, ghost: boolean): { BasePart }
+	local segs = {}
+	local n = segCount()
+	for i = 1, n do
+		local k = (i - 1) / (n - 1)
+		local w = tailWidth(k) * scale
+		local p: BasePart
+		if ghost then
+			p = oval(Vector3.new(w, w * 0.94, 1.7 * scale), FOX, Enum.Material.Neon, 0.86)
+		elseif k >= 0.86 then
+			-- 끝: 흰빛에서 푸른 여우불로
+			p = oval(Vector3.new(w, w * 0.94, 1.5 * scale), FOX_PALE:Lerp(FOX, (k - 0.86) / 0.14), Enum.Material.Neon, 0)
+		else
+			local col = k < 0.3 and FUR_ROOT:Lerp(FUR, k / 0.3) or FUR
+			p = oval(Vector3.new(w, w * 0.94, 1.5 * scale), col, Enum.Material.SmoothPlastic, 0)
+		end
+		p.Parent = buildParent
+		table.insert(segs, p)
+		table.insert(rig.parts, p)
+		if not ghost and not previewMode then
+			if i == n then
+				emitter(p, TEX_FIRE, cs(FOX_PALE, FOX, FOX_DEEP), ns(1.1, 0.1), 10, 0.6, 1.5, { accel = Vector3.new(0, 4, 0) })
+				light(p, FOX, 8, 1.2)
+			elseif i == math.floor(n * 0.55) then
+				-- 복슬한 털빛 (흐릿한 흰 안개)
+				emitter(p, TEX_SMOKE, cs(FUR, FOX_PALE), ns(1.3 * scale, 1.8 * scale), 4, 0.9, 0.3, { alpha = ns(0.82, 1), accel = Vector3.zero, light = 0.3 })
+			end
+		end
+	end
+	return segs
+end
+
 local function buildFox(m: Model, lv: number): Rig
 	local rig: Rig = { model = m, style = "gumiho", lv = lv, parts = {}, extra = {} }
 	local n = PassArts.tails(lv)
 	local tails = {}
-	for t = 1, n do
-		local segs = {}
-		for i = 1, SEG do
-			local k = (i - 1) / (SEG - 1)
-			local w = 1.0 - 0.62 * k
-			local tip = i >= SEG - 1
-			local p = part(Vector3.new(w, w, 1.35), tip and FOX or FOX_FUR:Lerp(FOX_PALE, k), tip and Enum.Material.Neon or Enum.Material.SmoothPlastic, tip and 0.05 or 0.08, "ball")
-			p.Parent = buildParent
-			table.insert(segs, p)
-			table.insert(rig.parts, p)
-			if i == SEG then
-				emitter(p, TEX_FIRE, cs(FOX_PALE, FOX), ns(0.9, 0.1), 8, 0.6, 2, { accel = Vector3.new(0, 5, 0) })
-			end
-		end
-		table.insert(tails, segs)
+	for _ = 1, n do
+		table.insert(tails, buildTail(rig, 1, false))
 	end
 	rig.tails = tails
-	-- +10: 금빛 눈 (머리 앞에 작은 빛 두 점)
 	local head = bodyPart(m, "Head")
+	-- +5: 여우 귀 (흰 털에 속이 푸르다)
+	if head and lv >= 5 then
+		for sx = -1, 1, 2 do
+			local tilt = CFrame.new(0.32 * sx, head.Size.Y / 2 + 0.12, 0.05) * CFrame.Angles(0, 0, math.rad(-14 * sx))
+			local ear = oval(Vector3.new(0.34, 0.62, 0.16), FUR, Enum.Material.SmoothPlastic, 0)
+			table.insert(rig.parts, weldTo(head, ear, tilt))
+			local inner = oval(Vector3.new(0.18, 0.42, 0.1), FOX, Enum.Material.Neon, 0.1)
+			table.insert(rig.parts, weldTo(head, inner, tilt * CFrame.new(0, -0.04, -0.05)))
+		end
+	end
+	-- +10: 금빛 눈
 	if head and lv >= 10 then
 		for sx = -1, 1, 2 do
-			local eye = part(Vector3.new(0.16, 0.08, 0.05), GOLD, Enum.Material.Neon, 0, nil)
+			local eye = part(Vector3.new(0.16, 0.07, 0.05), GOLD, Enum.Material.Neon, 0, nil)
 			table.insert(rig.parts, weldTo(head, eye, CFrame.new(0.17 * sx, 0.12, -head.Size.Z / 2 - 0.01)))
 		end
 	end
-	-- +15: 거대한 꼬리 그림자 (흐릿하게 크게)
+	-- +15: 거대한 꼬리 혼령 셋 (흐릿하게 크게)
 	if lv >= 15 then
 		local ghost = {}
-		for t = 1, 3 do
-			local segs = {}
-			for i = 1, SEG do
-				local k = (i - 1) / (SEG - 1)
-				local w = 2.4 - 1.5 * k
-				local p = part(Vector3.new(w, w, 2.6), FOX, Enum.Material.Neon, 0.82, "ball")
-				p.Parent = buildParent
-				table.insert(segs, p)
-				table.insert(rig.parts, p)
-			end
-			table.insert(ghost, segs)
+		for _ = 1, 3 do
+			table.insert(ghost, buildTail(rig, 2.3, true))
 		end
 		rig.ghost = ghost
 	end
 	-- 몸에 감도는 여우불 (단계가 오를수록 짙게)
 	local torso = bodyPart(m, "UpperTorso", "Torso")
-	if torso then
+	if torso and not previewMode then
 		local a = Instance.new("Attachment")
 		a.Parent = torso
 		table.insert(rig.extra, a)
-		emitter(a, TEX_FIRE, cs(FOX_PALE, FOX), ns(0.6, 0), 2 + lv * 0.6, 0.8, 1.5, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 3, 0), alpha = ns(0.5, 1) })
+		emitter(a, TEX_FIRE, cs(FOX_PALE, FOX), ns(0.5, 0), 1 + lv * 0.5, 0.7, 1.2, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 3, 0), alpha = ns(0.55, 1) })
 	end
 	return rig
 end
 
--- 검 하나: 손에서 팔이 뻗은 방향으로 이어지는 불꽃 날
-local function blade(rig: Rig, hand: BasePart, tier: number)
-	local L = ({ [0] = 3.2, 3.8, 3.9, 4.1, 4.6, 4.9 })[tier] or 3.2
-	local edgeCol = tier >= 4 and CRIMSON:Lerp(PURPLE, 0.35) or PURPLE
-	local down = CFrame.new(0, -hand.Size.Y / 2 - L / 2 - 0.05, 0)
-	-- 몸날: 검은 불꽃 (넓적하고 얇다)
-	local core = part(Vector3.new(0.12, L, 0.42), INK, Enum.Material.Neon, 0, nil)
-	table.insert(rig.parts, weldTo(hand, core, down))
-	-- 날끝 (쐐기)
-	local tipP = part(Vector3.new(0.12, 0.7, 0.42), INK, Enum.Material.Neon, 0, "wedge")
-	table.insert(rig.parts, weldTo(hand, tipP, down * CFrame.new(0, -L / 2 - 0.35, 0) * CFrame.Angles(math.pi, 0, 0)))
-	-- 날의 빛 (양쪽 가장자리)
-	for sz = -1, 1, 2 do
-		local edge = part(Vector3.new(0.14, L, 0.06), edgeCol, Enum.Material.Neon, tier >= 1 and 0 or 0.25, nil)
-		table.insert(rig.parts, weldTo(hand, edge, down * CFrame.new(0, 0, sz * 0.22)))
+-- 꼬리를 흔든다: 허리 뒤에서 부채꼴로 솟아 끝으로 갈수록 위로 감기고, 물결이 뿌리에서 끝으로 흐른다
+local function poseTails(rig: Rig, t: number)
+	local base = bodyPart(rig.model, "LowerTorso", "Torso")
+	if not base then
+		return
 	end
-	-- +15: 흰 불심
-	if tier >= 5 then
-		local heart = part(Vector3.new(0.15, L * 0.8, 0.07), WHITE_HOT, Enum.Material.Neon, 0, nil)
-		table.insert(rig.parts, weldTo(hand, heart, down))
+	local cf = base.CFrame * CFrame.new(0, -0.15, base.Size.Z / 2 + 0.05)
+	local function lay(list: { { BasePart } }, scale: number, spreadDeg: number, phase: number)
+		local n = #list
+		for ti, segs in ipairs(list) do
+			local u = n > 1 and ((ti - 1) / (n - 1) - 0.5) or 0
+			local roll = math.rad(u * spreadDeg)
+			local cur = cf * CFrame.Angles(0, 0, roll) * CFrame.Angles(math.rad(-16), 0, 0)
+			local m = #segs
+			local step = (m > 10 and 0.4 or 0.6) * scale
+			for i, p in ipairs(segs) do
+				local k = (i - 1) / (m - 1)
+				local wave = math.sin(t * 2.3 - i * 0.45 + ti * 1.3 + phase) * math.rad(4.5) * (0.3 + k)
+				cur = cur * CFrame.Angles(math.rad(-4.6 - 3 * k) + wave * 0.4, wave, 0) * CFrame.new(0, 0, step)
+				p.CFrame = cur
+			end
+		end
 	end
-	-- 검의 불꽃 (검은 연기 + 보랏빛 / 핏빛 불)
-	emitter(core, TEX_SMOKE, cs(INK, Color3.fromRGB(50, 20, 60)), ns(0.9, 0.2), 10 + tier * 4, 0.55, 1.5, { accel = Vector3.new(0, 6, 0), light = 0, alpha = ns(0.35, 1) })
-	emitter(core, TEX_FIRE, cs(tier >= 4 and CRIMSON or PURPLE, edgeCol, INK), ns(0.7, 0.05), 8 + tier * 4, 0.45, 2, { accel = Vector3.new(0, 7, 0) })
-	-- +8: 휘두르면 불꽃 자취
-	if tier >= 3 then
-		local a0 = Instance.new("Attachment")
-		a0.Position = Vector3.new(0, L / 2, 0)
-		a0.Parent = core
-		local a1 = Instance.new("Attachment")
-		a1.Position = Vector3.new(0, -L / 2, 0)
-		a1.Parent = core
-		local tr = Instance.new("Trail")
-		tr.Attachment0 = a0
-		tr.Attachment1 = a1
-		tr.Color = cs(edgeCol, INK)
-		tr.Transparency = ns(0.2, 1)
-		tr.LightEmission = 1
-		tr.Lifetime = 0.22
-		tr.MinLength = 0.05
-		tr.Parent = core
+	if rig.tails then
+		lay(rig.tails, 1, math.min(140, 30 * #rig.tails), 0)
 	end
-	-- +10: 손목의 불꽃 고리
+	if rig.ghost then
+		lay(rig.ghost, 2.3, 110, 1.7)
+	end
+end
+
+-- 흑염 마검 ----------------------------------------------------------
+-- 검의 틀: 손을 기준으로 칼날이 손의 -Z (주먹을 쥔 엄지 쪽) 로 뻗는다. 팔꿈치를 굽힌 정자세에서는 위로 곧게 서고,
+-- 칼끝은 조금 몸 (가슴) 쪽으로 기운다. 휘두르면 손목을 따라 돈다
+local function sword(rig: Rig, hand: BasePart, tier: number, side: number)
+	local L = ({ [0] = 4.0, 4.3, 4.4, 4.6, 5.0, 5.3 })[tier] or 4.0
+	local W = ({ [0] = 0.56, 0.58, 0.6, 0.63, 0.68, 0.72 })[tier] or 0.56
+	local edgeCol = tier >= 4 and CRIMSON:Lerp(PURPLE, 0.3) or PURPLE
+	-- 검은 '검의 틀' (자루 한가운데, 칼날이 -Z) 에 맞춰 놓고, 매 장면 poseSwords가 틀을 정한다
+	local sw: Sword = { hand = hand, side = side, items = {} }
+	rig.swords = rig.swords or {}
+	table.insert(rig.swords :: { Sword }, sw)
+	local function at(z: number): CFrame
+		return CFrame.new(0, 0, z)
+	end
+	local function put(_base: BasePart, p: BasePart, off: CFrame): BasePart
+		p.Anchored = true
+		p.Parent = buildParent
+		table.insert(sw.items, { p, off })
+		return p
+	end
+	local base = -0.62 -- 칼날이 시작하는 자리 (코등이 바로 위)
+	-- 자루 (손을 꿰뚫어 아래로 조금 나온다) · 자루 끝
+	local grip = part(Vector3.new(1.15, 0.3, 0.3), Color3.fromRGB(22, 16, 28), Enum.Material.Fabric, 0, "cyl")
+	table.insert(rig.parts, put(hand, grip, at(0.05) * CFrame.Angles(0, math.rad(90), 0)))
+	for k = 0, 3 do
+		local wrap = part(Vector3.new(0.06, 0.33, 0.33), STEEL, Enum.Material.Metal, 0, "cyl")
+		table.insert(rig.parts, put(hand, wrap, at(-0.35 + k * 0.25) * CFrame.Angles(0, math.rad(90), 0)))
+	end
+	local pommel = oval(Vector3.new(0.34, 0.34, 0.3), STEEL, Enum.Material.Metal, 0)
+	table.insert(rig.parts, put(hand, pommel, at(0.66)))
+	local pgem = oval(Vector3.new(0.16, 0.16, 0.16), edgeCol, Enum.Material.Neon, 0)
+	table.insert(rig.parts, put(hand, pgem, at(0.82)))
+	-- 코등이: 가로대 · 양 끝의 빛 · 가운데 보석
+	local guard = part(Vector3.new(0.26, 1.5, 0.24), STEEL, Enum.Material.Metal, 0, nil)
+	table.insert(rig.parts, put(hand, guard, at(base + 0.12)))
+	for sy = -1, 1, 2 do
+		local tip = oval(Vector3.new(0.28, 0.34, 0.28), edgeCol, Enum.Material.Neon, 0.05)
+		table.insert(rig.parts, put(hand, tip, at(base + 0.12) * CFrame.new(0, 0.78 * sy, 0)))
+		if tier >= 3 then
+			-- 코등이 날개: 칼날 쪽으로 휜 두 갈래
+			local wing = part(Vector3.new(0.14, 0.2, 0.9), STEEL, Enum.Material.Metal, 0, "wedge")
+			table.insert(rig.parts, put(hand, wing, at(base - 0.25) * CFrame.new(0, 0.62 * sy, 0) * CFrame.Angles(math.rad(sy > 0 and 25 or -25), 0, 0) * CFrame.Angles(0, 0, sy > 0 and 0 or math.pi)))
+		end
+	end
+	local gem = oval(Vector3.new(0.34, 0.36, 0.36), edgeCol, Enum.Material.Neon, 0)
+	table.insert(rig.parts, put(hand, gem, at(base + 0.12)))
+	-- 칼날: 흑요석 몸 · 양날의 빛 · 가운데 홈
+	local mid = base - L / 2
+	local core = part(Vector3.new(0.11, W, L), OBSIDIAN, Enum.Material.Metal, 0, nil)
+	core.Reflectance = 0.18
+	table.insert(rig.parts, put(hand, core, at(mid)))
+	for sy = -1, 1, 2 do
+		local edge = part(Vector3.new(0.13, 0.07, L), edgeCol, Enum.Material.Neon, tier >= 1 and 0 or 0.2, nil)
+		table.insert(rig.parts, put(hand, edge, at(mid) * CFrame.new(0, sy * (W / 2 - 0.02), 0)))
+	end
+	-- 홈: 낮은 단계는 희미한 줄, +3부터 빛나는 문자가 줄지어 박힌다
+	if tier >= 1 then
+		local runes = 6
+		for r = 1, runes do
+			local rz = base - 0.4 - (r - 1) * (L * 0.72) / (runes - 1)
+			local rune = part(Vector3.new(0.13, 0.12, 0.22), tier >= 4 and CRIMSON or PURPLE, Enum.Material.Neon, 0, nil)
+			table.insert(rig.parts, put(hand, rune, at(rz) * CFrame.Angles(math.rad(r % 2 == 0 and 45 or 0), 0, 0)))
+		end
+	else
+		local fuller = part(Vector3.new(0.12, 0.08, L * 0.75), VIOLET, Enum.Material.Neon, 0.45, nil)
+		table.insert(rig.parts, put(hand, fuller, at(base - L * 0.4)))
+	end
+	-- 칼끝: 마름모로 뾰족하게 (빛 테두리 한 겹)
+	local tipZ = base - L
+	local point = part(Vector3.new(0.11, W * 0.72, W * 0.72), OBSIDIAN, Enum.Material.Metal, 0, nil)
+	point.Reflectance = 0.18
+	table.insert(rig.parts, put(hand, point, at(tipZ) * CFrame.Angles(math.rad(45), 0, 0)))
+	local pointGlow = part(Vector3.new(0.12, W * 0.8, W * 0.8), edgeCol, Enum.Material.Neon, 0.25, nil)
+	table.insert(rig.parts, put(hand, pointGlow, at(tipZ + 0.03) * CFrame.Angles(math.rad(45), 0, 0)))
+	-- +5 이상: 흰 불심 (칼날 한가운데로 가는 빛줄)
 	if tier >= 4 then
-		local ring = part(Vector3.new(0.12, 1.1, 1.1), edgeCol, Enum.Material.Neon, 0.15, "cyl")
-		table.insert(rig.parts, weldTo(hand, ring, CFrame.new(0, -hand.Size.Y / 2 + 0.05, 0) * CFrame.Angles(0, 0, math.pi / 2)))
+		local heart = part(Vector3.new(0.13, 0.05, L * 0.85), WHITE_HOT, Enum.Material.Neon, 0.1, nil)
+		table.insert(rig.parts, put(hand, heart, at(base - L * 0.45)))
+	end
+	-- +15: 칼에서 솟는 오라 (두 겹의 빛 칼날이 숨 쉬듯 일렁이고, 불꽃이 칼을 타고 솟는다)
+	if tier >= 5 then
+		local aura = oval(Vector3.new(0.45, W * 2.2, L * 1.22), PURPLE, Enum.Material.Neon, 0.74)
+		table.insert(rig.parts, put(hand, aura, at(mid - 0.15)))
+		pulse(aura, 0.9, { Transparency = 0.86 })
+		local aura2 = oval(Vector3.new(0.6, W * 3.2, L * 1.36), CRIMSON, Enum.Material.Neon, 0.86)
+		table.insert(rig.parts, put(hand, aura2, at(mid - 0.25)))
+		pulse(aura2, 1.3, { Transparency = 0.94 })
+		if not previewMode then
+			light(core, PURPLE, 14, 2.2)
+			emitter(core, TEX_FIRE, cs(CRIMSON, PURPLE, INK), ns(1.8, 0.2), 28, 0.7, 3, { accel = Vector3.new(0, 10, 0), shape = Enum.ParticleEmitterShape.Box })
+			emitter(core, TEX_SPARK, cs(WHITE_HOT, PURPLE), ns(0.35, 0), 14, 1.1, 4, { spread = Vector2.new(180, 180), accel = Vector3.new(0, 6, 0) })
+		end
+	end
+	-- 칼의 불꽃 (검은 연기 + 보랏빛 · 핏빛 불), 휘두르면 자취
+	if not previewMode then
+		emitter(core, TEX_SMOKE, cs(INK, Color3.fromRGB(50, 20, 60)), ns(0.8, 0.2), 8 + tier * 4, 0.55, 1.4, { accel = Vector3.new(0, 6, 0), light = 0, alpha = ns(0.35, 1), shape = Enum.ParticleEmitterShape.Box })
+		emitter(core, TEX_FIRE, cs(tier >= 4 and CRIMSON or PURPLE, edgeCol, INK), ns(0.6, 0.05), 6 + tier * 4, 0.45, 2, { accel = Vector3.new(0, 7, 0), shape = Enum.ParticleEmitterShape.Box })
+		if tier >= 3 then
+			local a0 = Instance.new("Attachment")
+			a0.Position = Vector3.new(0, 0, L / 2)
+			a0.Parent = core
+			local a1 = Instance.new("Attachment")
+			a1.Position = Vector3.new(0, 0, -L / 2)
+			a1.Parent = core
+			local tr = Instance.new("Trail")
+			tr.Attachment0 = a0
+			tr.Attachment1 = a1
+			tr.Color = cs(edgeCol, INK)
+			tr.Transparency = ns(0.15, 1)
+			tr.LightEmission = 1
+			tr.Lifetime = 0.25
+			tr.MinLength = 0.05
+			tr.Parent = core
+		end
 	end
 end
 
@@ -59270,14 +59435,13 @@ local function buildFlame(m: Model, lv: number): Rig
 	local rh = bodyPart(m, "RightHand", "Right Arm")
 	local lh = bodyPart(m, "LeftHand", "Left Arm")
 	if rh then
-		blade(rig, rh, tier)
+		sword(rig, rh, tier, 1)
 	end
 	if lh and tier >= 2 then
-		blade(rig, lh, tier)
+		sword(rig, lh, tier, -1)
 	end
-	-- +10: 몸을 감싸는 검은 불꽃 · +15: 붉은 눈과 더 큰 불꽃
 	local torso = bodyPart(m, "UpperTorso", "Torso")
-	if torso and tier >= 4 then
+	if torso and tier >= 4 and not previewMode then
 		local a = Instance.new("Attachment")
 		a.Parent = torso
 		table.insert(rig.extra, a)
@@ -59294,45 +59458,52 @@ local function buildFlame(m: Model, lv: number): Rig
 	return rig
 end
 
--- 꼬리를 매 장면 흔든다 (허리 뒤에서 부채꼴로 솟아 끝이 휘어진다)
-local function poseTails(rig: Rig, t: number)
+-- 검의 틀: 가만히 서 있을 때 (몸짓 · 기술이 없을 때) 는 쥔 손에서 칼이 위로 곧게 서고 칼끝이 조금 가슴 쪽으로 기운다.
+-- 기술 · 연타 동작 중에는 손목을 따라 (주먹을 쥔 엄지 쪽, 손의 -Z) 휘두른다. 둘 사이는 부드럽게 옮겨 간다
+local function poseSwords(rig: Rig, still: boolean?)
 	local m = rig.model
-	local base = bodyPart(m, "LowerTorso", "Torso")
-	if not base then
+	local torso = bodyPart(m, "UpperTorso", "Torso")
+	if not torso or not rig.swords then
 		return
 	end
-	local cf = base.CFrame * CFrame.new(0, -0.1, base.Size.Z / 2 + 0.1)
-	local function lay(list: { { BasePart } }, scale: number, spreadDeg: number, phase: number)
-		local n = #list
-		for ti, segs in ipairs(list) do
-			local u = n > 1 and ((ti - 1) / (n - 1) - 0.5) or 0
-			-- 등 뒤 축 (Z) 으로 기울여 부채꼴로 펼친다
-			local roll = math.rad(u * spreadDeg)
-			local sway = math.sin(t * 2.2 + ti * 0.9 + phase) * 0.35
-			local cur = cf * CFrame.Angles(0, sway * 0.25, roll + sway * 0.15) * CFrame.Angles(math.rad(-22), 0, 0)
-			for i, p in ipairs(segs) do
-				local k = (i - 1) / (#segs - 1)
-				-- 뒤로 뻗다가 위로 감겨 오른다 (끝으로 갈수록 더 휘고 더 흔들린다)
-				cur = cur * CFrame.Angles(math.rad(-7 - 6 * k) + sway * 0.12 * k, sway * 0.1, 0) * CFrame.new(0, 0, 0.75 * scale)
-				p.CFrame = cur * CFrame.new(0, 0, 0.35 * scale)
-			end
+	local acting = (not still) and Anim.playing(m) ~= nil
+	local look = torso.CFrame.LookVector
+	for _, sw in ipairs(rig.swords) do
+		local hp = sw.hand.CFrame.Position
+		local target: CFrame
+		if acting then
+			target = sw.hand.CFrame * CFrame.Angles(math.rad(-20), 0, 0)
+		else
+			-- 위 (칼끝) 는 조금 몸 쪽으로, 칼의 넓은 면은 앞을 본다
+			local f = (Vector3.yAxis * math.cos(math.rad(9)) - look * math.sin(math.rad(9))).Unit -- 칼끝 방향
+			local right = torso.CFrame.RightVector
+			local y = (right - f * right:Dot(f)).Unit -- 칼날의 너비는 좌우로 (넓은 면이 앞뒤를 본다: 앞에서 칼날 · 문자가 보인다)
+			local z = -f -- 칼날이 -Z
+			target = CFrame.fromMatrix(hp, y:Cross(z), y, z)
 		end
-	end
-	if rig.tails then
-		lay(rig.tails, 1, math.min(140, 30 * #rig.tails), 0)
-	end
-	if rig.ghost then
-		lay(rig.ghost, 2.3, 120, 1.7)
+		local cf = (sw.frame and not still) and (sw.frame :: CFrame):Lerp(target, acting and 0.6 or 0.25) or target
+		cf = cf - cf.Position + hp
+		sw.frame = cf
+		for _, it in ipairs(sw.items) do
+			local p = it[1] :: BasePart
+			p.CFrame = cf * (it[2] :: CFrame)
+		end
 	end
 end
 
--- 3.42판 상점 미리보기: 모형 (상점의 ViewportFrame 안) 에 그 권법 · 강화 단계의 꾸밈을 입힌다. 꼬리는 한 장면으로 고정
+-- 상점 미리보기: 모형 (상점의 ViewportFrame 안) 에 그 권법 · 강화 단계의 꾸밈을 입힌다. 꼬리는 한 장면으로 고정
 function PassArts.preview(model: Model, style: string, lv: number)
 	buildParent = model
 	previewMode = true
 	local ok, rig = pcall(style == "gumiho" and buildFox or buildFlame, model, lv)
 	if ok and rig and rig.tails then
 		pcall(poseTails, rig, 0.6)
+	end
+	if ok and rig and rig.swords then
+		local ok2, err2 = pcall(poseSwords, rig, true)
+		if not ok2 then
+			warn("[권왕] 상점 미리보기 (검) 오류:", err2)
+		end
 	end
 	previewMode = false
 	buildParent = folder
@@ -59389,13 +59560,21 @@ function PassArts.start()
 			task.wait(0.5)
 		end
 	end)
+	-- 가까운 사람은 매 장면, 먼 사람은 여섯 장면에 한 번 (멀리 있어도 꼬리 · 검이 제자리에 남지 않게)
+	local frame = 0
 	RunService.RenderStepped:Connect(function()
+		frame += 1
 		local t = os.clock()
 		for m, rig in pairs(rigs) do
-			if rig.tails and m.Parent then
+			if m.Parent then
 				local r = rootOf(m)
-				if r and near(r.Position, Perf.low and 90 or 180) then
-					poseTails(rig, t)
+				if r and (frame % 6 == 0 or near(r.Position, Perf.low and 90 or 180)) then
+					if rig.tails then
+						poseTails(rig, t)
+					end
+					if rig.swords then
+						poseSwords(rig)
+					end
 				end
 			end
 		end
@@ -59403,49 +59582,119 @@ function PassArts.start()
 end
 
 ------------------------------------------------------------------------
--- 기술 연출
+-- 기술 연출: 공통
 ------------------------------------------------------------------------
-local function fireBall(at: Vector3, color: Color3, size: number, life: number)
-	local b = temp(part(Vector3.one * size, color, Enum.Material.Neon, 0.1, "ball"), life)
-	b.Position = at
-	tween(b, life, { Size = Vector3.one * size * 2.4, Transparency = 1 })
-	return b
-end
 local function flameBurst(at: Vector3, c1: Color3, c2: Color3, radius: number, dark: boolean?)
-	local holder = temp(part(Vector3.one * 0.2, c1, Enum.Material.Neon, 1, nil), 1.4)
+	local holder = temp(part(Vector3.one * 0.2, c1, Enum.Material.Neon, 1, nil), 1.6)
 	holder.Position = at
 	local e = emitter(holder, TEX_FIRE, cs(c1, c2), ns(radius * 0.5, 0.2), 0, 0.6, radius * 1.4, { spread = Vector2.new(180, 180), accel = Vector3.new(0, radius, 0) })
-	e:Emit(Perf.low and 12 or 28)
+	e:Emit(Perf.low and 12 or 30)
 	if dark then
 		local s = emitter(holder, TEX_SMOKE, cs(INK, Color3.fromRGB(40, 14, 54)), ns(radius * 0.6, radius * 0.2), 0, 0.9, radius, { spread = Vector2.new(180, 180), accel = Vector3.new(0, radius * 0.6, 0), light = 0, alpha = ns(0.3, 1) })
 		s:Emit(Perf.low and 8 or 18)
 	end
+	local fl = light(holder, c1, radius * 2.2, 3)
+	tween(fl, 0.6, { Brightness = 0 })
 	Fx.ring(at - Vector3.new(0, 2.4, 0), c1, 1, radius * 2, 0.45)
 end
-
--- 검은 초승달 검기 (앞으로 퍼진다)
-local function crescent(from: Vector3, dir: Vector3, range: number, width: number, col: Color3, life: number)
-	local n = Perf.low and 7 or 13
-	local half = math.rad(width / 2)
-	for i = 0, n - 1 do
-		local a = -half + (2 * half) * i / (n - 1)
-		local d = (CFrame.Angles(0, a, 0) * CFrame.lookAt(Vector3.zero, dir)).LookVector
-		local p = temp(part(Vector3.new(1.4, 0.3, 2.6), i % 2 == 0 and INK or col, Enum.Material.Neon, 0.05, nil), life)
-		p.CFrame = CFrame.lookAt(from + d * 3, from + d * 4)
-		tween(p, life, { CFrame = CFrame.lookAt(from + d * range, from + d * (range + 1)), Transparency = 1, Size = Vector3.new(3, 0.2, 4.5) }, Enum.EasingStyle.Quart)
+-- 빛 구슬 (가운데 흰빛 + 바깥 빛무리 + 불꽃 + 빛)
+local function orb(at: Vector3, core: Color3, glow: Color3, size: number, life: number): BasePart
+	local o = temp(part(Vector3.one * size, core, Enum.Material.Neon, 0, "ball"), life)
+	o.Position = at
+	local halo = part(Vector3.one * size * 2, glow, Enum.Material.Neon, 0.72, "ball")
+	halo.Position = at
+	halo.Parent = o
+	local w = Instance.new("WeldConstraint")
+	w.Part0 = o
+	w.Part1 = halo
+	w.Parent = halo
+	emitter(o, TEX_FIRE, cs(core, glow), ns(size * 1.3, 0.1), 40, 0.35, 1, { accel = Vector3.new(0, 2, 0) })
+	light(o, glow, size * 6, 2)
+	return o
+end
+-- 곡선으로 날아가기
+local function flyCurve(p: BasePart, from: Vector3, to: Vector3, lift: number, time: number, onArrive: (() -> ())?)
+	local mid = (from + to) / 2 + Vector3.new(0, lift, 0)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local u = math.clamp((os.clock() - t0) / time, 0, 1)
+		local pos = (1 - u) ^ 2 * from + 2 * (1 - u) * u * mid + u ^ 2 * to
+		if p.Parent then
+			p.Position = pos
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			if onArrive then
+				onArrive()
+			end
+		end
+	end)
+end
+-- 커다란 꼬리 하나 (기술용): 뿌리에서 끝까지 타원을 이어 휘어진 꼬리를 그린다
+local function bigTail(root: CFrame, len: number, width: number, bend: number, color: Color3, alpha: number, life: number): { BasePart }
+	local segs = {}
+	local n = Perf.low and 7 or 12
+	local cur = root
+	for i = 1, n do
+		local k = (i - 1) / (n - 1)
+		local w = tailWidth(k) * width
+		cur = cur * CFrame.Angles(math.rad(-bend * (0.5 + k)), 0, 0) * CFrame.new(0, 0, len / n)
+		local p = temp(oval(Vector3.new(w, w, len / n * 3.2), k > 0.85 and FOX_PALE or color, Enum.Material.Neon, alpha), life)
+		p.CFrame = cur
+		table.insert(segs, p)
 	end
+	return segs
 end
 
+------------------------------------------------------------------------
+-- 구미호권 기술
+------------------------------------------------------------------------
 local H: { [string]: { [string]: (any) -> () } } = { gumiho = {}, heukyeom = {} }
 
--- 구미호 ---------------------------------------------------------------
+-- E 호화연무: 하늘에서 여우불이 소용돌이치며 내려와 적마다 꽂힌다
 H.gumiho.mark = function(d)
-	Fx.ring(d.at - Vector3.new(0, 2.4, 0), FOX, 1, (d.radius or 5) * 2, d.time or 0.3)
+	local at = d.at
+	local time = math.max(0.15, d.time or 0.4)
+	Fx.ring(at - Vector3.new(0, 2.4, 0), FOX, (d.radius or 5) * 2.2, 1, time)
+	local o = orb(at + Vector3.new(math.random(-6, 6), 16, math.random(-6, 6)), FOX_PALE, FOX, 1.2, time + 0.2)
+	local tr0 = Instance.new("Attachment")
+	tr0.Position = Vector3.new(0, 0.5, 0)
+	tr0.Parent = o
+	local tr1 = Instance.new("Attachment")
+	tr1.Position = Vector3.new(0, -0.5, 0)
+	tr1.Parent = o
+	local tr = Instance.new("Trail")
+	tr.Attachment0 = tr0
+	tr.Attachment1 = tr1
+	tr.Color = cs(FOX_PALE, FOX)
+	tr.Transparency = ns(0, 1)
+	tr.LightEmission = 1
+	tr.Lifetime = 0.3
+	tr.WidthScale = ns(1, 0)
+	tr.Parent = o
+	flyCurve(o, o.Position, at, 4, time)
 end
 H.gumiho.strike = function(d)
-	flameBurst(d.at, FOX_PALE, FOX, d.radius or 5, false)
-	fireBall(d.at, FOX, 2.2, 0.35)
-	Fx.sound("ping", 0.45, 1.5, d.at)
+	local at = d.at
+	if d.small then
+		-- G의 여우불 유성
+		local o = orb(at + Vector3.new(0, 26, 0), FOX_PALE, FOX, 1.8, 0.45)
+		flyCurve(o, o.Position, at, 0, 0.22, function()
+			flameBurst(at, FOX_PALE, FOX, d.radius or 6, false)
+			o:Destroy()
+		end)
+		return
+	end
+	-- 여우불이 터지며 푸른 불기둥
+	flameBurst(at, FOX_PALE, FOX, d.radius or 5, false)
+	local col = temp(part(Vector3.new(1, 2, 2), FOX, Enum.Material.Neon, 0.2, "cyl"), 0.6)
+	col.CFrame = CFrame.new(at - Vector3.new(0, 2.4, 0)) * CFrame.Angles(0, 0, math.pi / 2)
+	tween(col, 0.25, { Size = Vector3.new(14, 3, 3), CFrame = CFrame.new(at + Vector3.new(0, 4.6, 0)) * CFrame.Angles(0, 0, math.pi / 2) })
+	task.delay(0.25, function()
+		tween(col, 0.3, { Transparency = 1, Size = Vector3.new(16, 0.5, 0.5) })
+	end)
+	Fx.sound("ping", 0.45, 1.5, at)
 end
 H.gumiho.pulse = function(d)
 	task.delay(d.delay or 0, function()
@@ -59453,193 +59702,346 @@ H.gumiho.pulse = function(d)
 		Fx.sound("ping", 0.4, 1.7, d.at)
 	end)
 end
+-- R 환영분신: 지나간 자리마다 푸른 여우 혼령 분신이 남아 적을 할퀴고 흩어진다
+local function ghostFigure(cf: CFrame, alpha: number, life: number)
+	local parts = {
+		{ Vector3.new(1.7, 1.9, 0.9), CFrame.new(0, 0.6, 0) },
+		{ Vector3.new(1.1, 1.1, 1.1), CFrame.new(0, 2.15, 0) },
+		{ Vector3.new(0.6, 1.8, 0.6), CFrame.new(1.2, 0.5, -0.5) * CFrame.Angles(math.rad(70), 0, 0) },
+		{ Vector3.new(0.6, 1.8, 0.6), CFrame.new(-1.2, 0.7, 0) },
+		{ Vector3.new(0.7, 2, 0.7), CFrame.new(0.5, -1.4, 0) },
+		{ Vector3.new(0.7, 2, 0.7), CFrame.new(-0.5, -1.4, 0.3) },
+	}
+	for _, d in ipairs(parts) do
+		local p = temp(oval(d[1], FOX, Enum.Material.Neon, alpha), life)
+		p.CFrame = cf * d[2]
+		tween(p, life, { Transparency = 1, Size = d[1] * 1.3 })
+	end
+	-- 분신의 꼬리 셋
+	for k = -1, 1 do
+		bigTail(cf * CFrame.new(0, -0.3, 0.5) * CFrame.Angles(0, 0, math.rad(k * 35)) * CFrame.Angles(math.rad(-20), 0, 0), 4, 0.9, 6, FOX, alpha + 0.1, life)
+	end
+end
 H.gumiho.rushDash = function(d)
 	local from, to = d.from, d.to
 	if not from or not to then
 		return
 	end
-	-- 여우 잔상: 지나간 자리에 푸른 그림자가 남아 흐려진다
-	local n = Perf.low and 3 or 6
-	for i = 0, n - 1 do
-		local u = i / math.max(1, n - 1)
-		local p = temp(part(Vector3.new(1.6, 4.4, 0.9), FOX, Enum.Material.Neon, 0.55, nil), 0.5)
-		p.CFrame = CFrame.lookAt(from:Lerp(to, u), to)
-		tween(p, 0.45, { Transparency = 1, Size = Vector3.new(0.4, 4.6, 0.4) })
+	ghostFigure(CFrame.lookAt(from, Vector3.new(to.X, from.Y, to.Z)), 0.45, 0.55)
+	-- 지나간 길: 푸른 불꽃 띠
+	local len = (to - from).Magnitude
+	if len > 0.5 then
+		local streak = temp(part(Vector3.new(0.5, 0.5, len), FOX_PALE, Enum.Material.Neon, 0.2, nil), 0.4)
+		streak.CFrame = CFrame.lookAt((from + to) / 2, to)
+		tween(streak, 0.35, { Transparency = 1, Size = Vector3.new(0.05, 0.05, len) })
 	end
 	if d.t then
 		local r = rootOf(d.t)
 		if r then
+			-- 세 줄 할퀸 자국
+			for k = -1, 1 do
+				local cl = temp(part(Vector3.new(0.18, 3.4, 0.18), FOX_PALE, Enum.Material.Neon, 0, nil), 0.35)
+				cl.CFrame = CFrame.lookAt(r.Position, r.Position + (to - from)) * CFrame.new(k * 0.5, 0, -1) * CFrame.Angles(0, 0, math.rad(35))
+				tween(cl, 0.3, { Transparency = 1, Size = Vector3.new(0.05, 4.2, 0.05) })
+			end
 			flameBurst(r.Position, FOX_PALE, FOX, 4, false)
 		end
 	end
 	Fx.sound("swing", 0.5, 1.6, to)
 end
-H.gumiho.zone = function(d)
-	-- 구미난무: 둘레를 도는 여우불 고리와 커다란 꼬리 그림자 아홉
-	local at, R, dur = d.at, d.radius or 18, d.dur or 1.6
-	local orbs = {}
-	local n = Perf.low and 6 or 12
-	for i = 1, n do
-		local o = temp(part(Vector3.one * 1.6, FOX_PALE, Enum.Material.Neon, 0.05, "ball"), dur + 0.4)
-		emitter(o, TEX_FIRE, cs(FOX_PALE, FOX), ns(1.6, 0.1), 30, 0.4, 1)
-		table.insert(orbs, o)
+H.gumiho.rushSlam = function(d)
+	flameBurst(d.at, FOX_PALE, FOX, d.radius or 10, false)
+	Fx.ring(d.at - Vector3.new(0, 2.4, 0), FOX_PALE, 2, (d.radius or 10) * 2.4, 0.5)
+	shake(0.5)
+end
+-- G 구미천화: 땅에서 거대한 꼬리 혼령 아홉이 둘레로 솟아 일렁이고, 여우불 유성이 적에게 떨어지다가, 꼬리가 한가운데로 내리치며 푸른 불이 터진다
+H.gumiho.stormcloud = function(d)
+	local r = rootOf(d.m)
+	if not r then
+		return
 	end
+	local center = r.Position
+	local dur = d.dur or 1.8
+	local R = math.min(d.radius or 26, 22)
 	local tails = {}
 	for i = 1, 9 do
-		local tp = temp(part(Vector3.new(2.2, 0.6, R * 0.7), FOX, Enum.Material.Neon, 0.6, "ball"), dur + 0.4)
-		table.insert(tails, tp)
+		local a = i / 9 * math.pi * 2
+		local root = CFrame.new(center + Vector3.new(math.cos(a) * R * 0.7, -2.6, math.sin(a) * R * 0.7)) * CFrame.Angles(0, -a + math.pi / 2, 0) * CFrame.Angles(math.rad(-80), 0, 0)
+		table.insert(tails, { root = root, segs = bigTail(root, 16, 2.4, 3, FOX, 0.35, dur + 0.7) })
 	end
+	local ring = temp(part(Vector3.new(0.4, R * 2, R * 2), FOX, Enum.Material.Neon, 0.6, "cyl"), dur + 0.7)
+	ring.CFrame = CFrame.new(center - Vector3.new(0, 2.7, 0)) * CFrame.Angles(0, 0, math.pi / 2)
+	-- 꼬리가 일렁인다
 	local t0 = os.clock()
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
-		if t > dur then
+		if t > dur + 0.6 then
 			conn:Disconnect()
-			for _, o in ipairs(orbs) do
-				tween(o, 0.3, { Transparency = 1, Size = Vector3.one * 4 })
-			end
-			for _, tp in ipairs(tails) do
-				tween(tp, 0.3, { Transparency = 1 })
-			end
-			flameBurst(at, FOX_PALE, FOX, R * 0.6, false)
 			return
 		end
-		for i, o in ipairs(orbs) do
-			local a = t * 5 + i / #orbs * math.pi * 2
-			local rr = R * (0.45 + 0.4 * ((i % 2 == 0) and 1 or 0.6))
-			o.Position = at + Vector3.new(math.cos(a) * rr, 0.5 + math.sin(t * 6 + i) * 1.2, math.sin(a) * rr)
-		end
-		for i, tp in ipairs(tails) do
-			local a = -t * 3 + i / 9 * math.pi * 2
-			tp.CFrame = CFrame.new(at + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, a, 0) * CFrame.Angles(math.rad(-25), 0, 0) * CFrame.new(0, 0, -R * 0.35)
+		for ti, tl in ipairs(tails) do
+			local cur = tl.root
+			local slam = math.clamp((t - dur) / 0.25, 0, 1) -- 마지막: 한가운데로 내리친다
+			for i, p in ipairs(tl.segs) do
+				local k = (i - 1) / (#tl.segs - 1)
+				local wave = math.sin(t * 4 - i * 0.5 + ti) * math.rad(5)
+				cur = cur * CFrame.Angles(math.rad(-3 * (0.5 + k)) - slam * math.rad(7), wave, 0) * CFrame.new(0, 0, 16 / #tl.segs)
+				p.CFrame = cur
+			end
 		end
 	end)
-	shake(0.4, dur)
-	Fx.sound("whoosh", 0.6, 0.9, at)
+	if opts.tint then
+		pcall(opts.tint, Color3.fromRGB(60, 120, 255), 0.25, dur)
+	end
+	shake(0.4)
+	Fx.sound("whoosh", 0.7, 0.8, center)
+end
+H.gumiho.zone = H.gumiho.stormcloud
+H.gumiho.strikeFinal = function(d)
+	local at = d.at
+	flameBurst(at, FOX_PALE, FOX, (d.radius or 20) * 0.6, false)
+	Fx.ring(at - Vector3.new(0, 2.4, 0), FOX_PALE, 4, (d.radius or 20) * 2.4, 0.6)
+	Fx.ring(at - Vector3.new(0, 2.2, 0), FOX, 2, (d.radius or 20) * 1.7, 0.45)
+	if Fx.flash then
+		Fx.flash(at, FOX, 70, 5, 0.5)
+	end
+	shake(1)
+	Fx.sound("heavy", 0.9, 1.1, at)
 end
 
--- 흑염 ---------------------------------------------------------------
+------------------------------------------------------------------------
+-- 흑염마검장 기술
+------------------------------------------------------------------------
+-- 검은 초승달 검기: 몸날 (검은) 위에 날 (보랏빛 · 핏빛) 이 겹친 큰 호가 앞으로 퍼진다
+local function crescent(from: Vector3, dir: Vector3, range: number, width: number, life: number, scale: number?)
+	local sc = scale or 1
+	local n = Perf.low and 9 or 17
+	local half = math.rad(width / 2)
+	local look = CFrame.lookAt(Vector3.zero, dir)
+	for layer = 1, 2 do
+		for i = 0, n - 1 do
+			local a = -half + (2 * half) * i / (n - 1)
+			local mid = 1 - math.abs(i / (n - 1) - 0.5) * 2 -- 가운데가 두껍다
+			local d = (CFrame.Angles(0, a, 0) * look).LookVector
+			local col = layer == 1 and INK or (mid > 0.5 and CRIMSON:Lerp(PURPLE, 0.5) or PURPLE)
+			local thick = (layer == 1 and 1.2 or 0.45) * (0.4 + mid) * sc
+			local p = temp(part(Vector3.new(2.2 * sc, thick, 1.6 * sc), col, Enum.Material.Neon, layer == 1 and 0.05 or 0, nil), life)
+			p.CFrame = CFrame.lookAt(from + d * 3 + Vector3.new(0, layer == 2 and 0.35 or 0, 0), from + d * 4) * CFrame.Angles(0, 0, math.rad(90))
+			tween(p, life, { CFrame = CFrame.lookAt(from + d * range, from + d * (range + 1)) * CFrame.Angles(0, 0, math.rad(90)), Transparency = 1, Size = Vector3.new(4 * sc, thick * 0.6, 2.4 * sc) }, Enum.EasingStyle.Quart)
+		end
+	end
+end
+-- 기술용 마검 한 자루: 틀 (cf) 의 +Y 쪽으로 칼끝. 칼날 (흑요석 몸 · 양날의 빛 · 홈의 문자) · 마름모 칼끝 · 코등이 · 자루.
+-- 틀을 옮기면 (moveSword) 모든 조각이 함께 간다
+local function skillSword(cf: CFrame, L: number, W: number, life: number): { { BasePart | CFrame } }
+	local items: { { BasePart | CFrame } } = {}
+	local function add(p: BasePart, off: CFrame)
+		temp(p, life)
+		p.CFrame = cf * off
+		table.insert(items, { p, off })
+	end
+	local core = part(Vector3.new(W, L, 0.3 * W), OBSIDIAN, Enum.Material.Metal, 0, nil)
+	core.Reflectance = 0.2
+	add(core, CFrame.new(0, L / 2, 0))
+	for sx = -1, 1, 2 do
+		add(part(Vector3.new(0.14 * W, L, 0.34 * W), PURPLE, Enum.Material.Neon, 0, nil), CFrame.new(sx * W / 2, L / 2, 0))
+	end
+	for r = 1, 5 do
+		add(part(Vector3.new(0.2 * W, 0.34 * W, 0.34 * W), CRIMSON, Enum.Material.Neon, 0, nil), CFrame.new(0, L * (0.15 + r * 0.13), 0) * CFrame.Angles(0, 0, r % 2 == 0 and math.rad(45) or 0))
+	end
+	add(part(Vector3.new(W * 0.72, W * 0.72, 0.3 * W), OBSIDIAN, Enum.Material.Metal, 0, nil), CFrame.new(0, L, 0) * CFrame.Angles(0, 0, math.rad(45)))
+	add(part(Vector3.new(W * 0.8, W * 0.8, 0.32 * W), PURPLE, Enum.Material.Neon, 0.3, nil), CFrame.new(0, L - 0.03, 0) * CFrame.Angles(0, 0, math.rad(45)))
+	add(part(Vector3.new(W * 2.6, 0.4 * W, 0.5 * W), STEEL, Enum.Material.Metal, 0, nil), CFrame.new(0, -0.2 * W, 0))
+	add(oval(Vector3.new(0.6 * W, 0.6 * W, 0.6 * W), PURPLE, Enum.Material.Neon, 0), CFrame.new(0, -0.2 * W, 0))
+	add(part(Vector3.new(0.45 * W, 1.6 * W, 0.45 * W), Color3.fromRGB(22, 16, 28), Enum.Material.Fabric, 0, nil), CFrame.new(0, -1.1 * W, 0))
+	add(oval(Vector3.new(0.6 * W, 0.6 * W, 0.6 * W), STEEL, Enum.Material.Metal, 0), CFrame.new(0, -2 * W, 0))
+	emitter(core, TEX_FIRE, cs(PURPLE, CRIMSON, INK), ns(0.9 * W, 0.1), 30, 0.5, 3, { accel = Vector3.new(0, 10, 0), shape = Enum.ParticleEmitterShape.Box })
+	return items
+end
+local function moveSword(items: { { BasePart | CFrame } }, cf: CFrame, time: number, style: Enum.EasingStyle?, dir: Enum.EasingDirection?)
+	for _, it in ipairs(items) do
+		tween(it[1] :: BasePart, time, { CFrame = cf * (it[2] :: CFrame) }, style, dir)
+	end
+end
+local function fadeSword(items: { { BasePart | CFrame } }, time: number)
+	for _, it in ipairs(items) do
+		tween(it[1] :: BasePart, time, { Transparency = 1 })
+	end
+end
+-- 땅에서 솟는 마검 (R): 칼끝부터 땅을 뚫고 솟았다가 불꽃으로 흩어진다
+local function risingSword(at: Vector3, scale: number, life: number)
+	local L, W = 6.5 * scale, 1.1 * scale
+	local ground = at - Vector3.new(0, 2.6, 0)
+	local yaw = CFrame.Angles(0, math.random() * math.pi, 0)
+	local items = skillSword(CFrame.new(ground - Vector3.new(0, L, 0)) * yaw, L, W, life)
+	moveSword(items, CFrame.new(ground - Vector3.new(0, L * 0.12, 0)) * yaw * CFrame.Angles(math.rad(math.random(-8, 8)), 0, math.rad(math.random(-8, 8))), 0.16, Enum.EasingStyle.Back)
+	task.delay(life * 0.55, function()
+		fadeSword(items, life * 0.4)
+	end)
+end
+
 H.heukyeom.cone = function(d)
-	local m = d.m
-	local r = rootOf(m)
+	local r = rootOf(d.m)
 	if not r then
 		return
 	end
 	task.delay(d.delay or 0, function()
 		local dir = Vector3.new(r.CFrame.LookVector.X, 0, r.CFrame.LookVector.Z).Unit
-		crescent(r.Position, dir, d.range or 24, d.angle or 80, PURPLE, 0.4)
-		Fx.sound("swing", 0.7, 0.6, r.Position)
-		shake(0.25, 0.2)
+		crescent(r.Position, dir, d.range or 24, d.angle or 80, 0.42, 1)
+		task.delay(0.07, function()
+			crescent(r.Position + Vector3.new(0, 0.6, 0), dir, (d.range or 24) * 0.8, (d.angle or 80) * 0.8, 0.36, 0.7)
+		end)
+		Fx.sound("swing", 0.8, 0.55, r.Position)
+		shake(0.3)
 	end)
 end
 H.heukyeom.pillar = function(d)
-	local at = d.at - Vector3.new(0, 2.6, 0)
-	local R = d.radius or 5
-	local col = temp(part(Vector3.new(R * 0.9, 1, R * 0.9), INK, Enum.Material.Neon, 0.05, "cyl"), 0.7)
-	col.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.pi / 2)
-	tween(col, 0.18, { Size = Vector3.new(16, R * 0.7, R * 0.7), CFrame = CFrame.new(at + Vector3.new(0, 8, 0)) * CFrame.Angles(0, 0, math.pi / 2) })
-	task.delay(0.2, function()
-		tween(col, 0.4, { Transparency = 1, Size = Vector3.new(18, R * 0.2, R * 0.2) })
-	end)
-	flameBurst(d.at, PURPLE, INK, R, true)
+	risingSword(d.at, 1, 0.75)
+	flameBurst(d.at, PURPLE, INK, d.radius or 5, true)
 	if (d.i or 1) == 1 then
-		Fx.sound("heavy", 0.6, 0.7, at)
+		Fx.sound("heavy", 0.6, 0.7, d.at)
 	end
+	shake(0.25)
 end
 H.heukyeom.charge = function(d)
 	local r = rootOf(d.m)
 	if not r then
 		return
 	end
-	-- 두 검에 불꽃이 모인다
+	-- 두 검에 불꽃이 빨려 들어간다 (둘레에서 한가운데로)
 	local time = d.time or 1
 	local holder = temp(part(Vector3.one * 0.2, INK, Enum.Material.Neon, 1, nil), time + 0.3)
 	holder.Position = r.Position
-	local e = emitter(holder, TEX_FIRE, cs(PURPLE, INK), ns(1.4, 0.1), 60, 0.5, -8, { spread = Vector2.new(180, 180), accel = Vector3.zero })
+	local e = emitter(holder, TEX_FIRE, cs(PURPLE, CRIMSON, INK), ns(1.4, 0.1), 70, 0.5, -10, { spread = Vector2.new(180, 180), accel = Vector3.zero })
+	local fl = light(holder, PURPLE, 4, 1)
+	tween(fl, time, { Range = 24, Brightness = 4 })
 	task.delay(time, function()
 		e.Enabled = false
 	end)
-	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), PURPLE, 14, 2, time)
+	Fx.ring(r.Position - Vector3.new(0, 2.5, 0), PURPLE, 16, 2, time)
+	Fx.ring(r.Position - Vector3.new(0, 2.4, 0), CRIMSON, 12, 1, time * 0.9)
 end
 H.heukyeom.onepunch = function(d)
-	-- 쌍염십자참: X자 검기 두 줄기가 앞으로 날아간다
+	-- 쌍염십자참: 거대한 X자 검기 두 줄기 (검은 몸날 + 핏빛 날 + 흰 불심) 가 앞으로 날아가고, 지나간 땅이 갈라져 불꽃이 솟는다
 	local from, dir, range = d.from, d.dir, d.range or 54
 	if not from or not dir then
 		return
 	end
 	local flat = Vector3.new(dir.X, 0, dir.Z).Unit
 	for k = -1, 1, 2 do
-		local slash = temp(part(Vector3.new(0.6, 14, 3), INK, Enum.Material.Neon, 0, nil), 0.7)
-		local edge = temp(part(Vector3.new(0.7, 14.5, 0.8), CRIMSON:Lerp(PURPLE, 0.4), Enum.Material.Neon, 0, nil), 0.7)
 		local function cfAt(dist: number): CFrame
 			return CFrame.lookAt(from + flat * dist + Vector3.new(0, 1.5, 0), from + flat * (dist + 1) + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(45 * k))
 		end
-		slash.CFrame = cfAt(3)
-		edge.CFrame = cfAt(3)
-		tween(slash, 0.5, { CFrame = cfAt(range), Size = Vector3.new(0.6, 22, 4), Transparency = 0.6 }, Enum.EasingStyle.Quart)
-		tween(edge, 0.5, { CFrame = cfAt(range), Size = Vector3.new(0.7, 22.5, 0.8), Transparency = 0.5 }, Enum.EasingStyle.Quart)
-		task.delay(0.5, function()
-			tween(slash, 0.2, { Transparency = 1 })
-			tween(edge, 0.2, { Transparency = 1 })
+		local layers = {
+			{ Vector3.new(0.7, 15, 3.4), INK, 0 },
+			{ Vector3.new(0.8, 15.5, 1.0), CRIMSON:Lerp(PURPLE, 0.35), 0 },
+			{ Vector3.new(0.85, 14, 0.3), WHITE_HOT, 0.1 },
+		}
+		for _, L in ipairs(layers) do
+			local p = temp(part(L[1], L[2], Enum.Material.Neon, L[3], nil), 0.75)
+			p.CFrame = cfAt(3)
+			tween(p, 0.5, { CFrame = cfAt(range), Size = Vector3.new(L[1].X, L[1].Y * 1.5, L[1].Z * 1.2), Transparency = 0.55 }, Enum.EasingStyle.Quart)
+			task.delay(0.5, function()
+				tween(p, 0.2, { Transparency = 1 })
+			end)
+		end
+	end
+	for i = 1, 6 do
+		task.delay(i * 0.07, function()
+			local at = from + flat * (range * i / 6)
+			flameBurst(at, PURPLE, INK, 5, true)
+			local crack = temp(part(Vector3.new(1.2, 0.2, range / 6), CRIMSON, Enum.Material.Neon, 0.1, nil), 0.9)
+			crack.CFrame = CFrame.lookAt(at - Vector3.new(0, 2.5, 0), at - Vector3.new(0, 2.5, 0) + flat)
+			tween(crack, 0.8, { Transparency = 1 })
 		end)
 	end
-	for i = 1, 5 do
-		task.delay(i * 0.08, function()
-			flameBurst(from + flat * (range * i / 5), PURPLE, INK, 5, true)
-		end)
-	end
-	shake(0.8, 0.4)
+	shake(0.9)
 	if Fx.flash then
 		Fx.flash(from, PURPLE, 60, 4, 0.4)
 	end
 	Fx.sound("heavy", 0.9, 0.5, from)
 end
--- 흑염멸천: 하늘에 검은 불꽃 소용돌이, 불꽃 검이 쏟아진다
+-- 흑염멸천: 하늘에 검은 불의 소용돌이가 열리고, 불꽃 검이 비처럼 쏟아지다가, 마지막에 거대한 마검이 한가운데로 내리꽂힌다
 H.heukyeom.stormcloud = function(d)
 	local r = rootOf(d.m)
 	if not r then
 		return
 	end
 	local dur, R = d.dur or 2.4, d.radius or 40
-	local sky = temp(part(Vector3.new(1, R * 1.6, R * 1.6), INK, Enum.Material.Neon, 0.35, "cyl"), dur + 0.8)
-	sky.CFrame = CFrame.new(r.Position + Vector3.new(0, 34, 0)) * CFrame.Angles(0, 0, math.pi / 2)
-	local ring = temp(part(Vector3.new(1.2, R * 1.7, R * 1.7), PURPLE, Enum.Material.Neon, 0.7, "cyl"), dur + 0.8)
+	local sky = temp(part(Vector3.new(1, R * 1.6, R * 1.6), INK, Enum.Material.Neon, 0.3, "cyl"), dur + 1.2)
+	sky.CFrame = CFrame.new(r.Position + Vector3.new(0, 36, 0)) * CFrame.Angles(0, 0, math.pi / 2)
+	local ring = temp(part(Vector3.new(1.2, R * 1.7, R * 1.7), PURPLE, Enum.Material.Neon, 0.65, "cyl"), dur + 1.2)
 	ring.CFrame = sky.CFrame
+	local ring2 = temp(part(Vector3.new(1.3, R * 0.8, R * 0.8), CRIMSON, Enum.Material.Neon, 0.5, "cyl"), dur + 1.2)
+	ring2.CFrame = sky.CFrame
 	emitter(sky, TEX_SMOKE, cs(INK, Color3.fromRGB(50, 16, 60)), ns(8, 4), 20, 1.4, 2, { spread = Vector2.new(180, 180), light = 0, alpha = ns(0.3, 1) })
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > dur + 1 or not sky.Parent then
+			conn:Disconnect()
+			return
+		end
+		ring.CFrame = sky.CFrame * CFrame.Angles(t * 0.8, 0, 0)
+		ring2.CFrame = sky.CFrame * CFrame.Angles(-t * 1.4, 0, 0)
+	end)
+	-- 마지막의 거대한 마검이 하늘에서 칼끝을 아래로 내리꽂힌다
+	task.delay(math.max(0, dur - 0.45), function()
+		local center = r.Position
+		local flip = CFrame.Angles(math.pi, 0, 0) -- 칼끝 (+Y) 이 아래로
+		local items = skillSword(CFrame.new(center + Vector3.new(0, 70, 0)) * flip, 24, 4.2, 1.6)
+		moveSword(items, CFrame.new(center + Vector3.new(0, 19, 0)) * flip, 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(1, function()
+			fadeSword(items, 0.5)
+		end)
+	end)
 	task.delay(dur, function()
-		tween(sky, 0.6, { Transparency = 1 })
-		tween(ring, 0.6, { Transparency = 1 })
+		tween(sky, 0.8, { Transparency = 1 })
+		tween(ring, 0.8, { Transparency = 1 })
+		tween(ring2, 0.8, { Transparency = 1 })
 	end)
 	if opts.tint then
 		pcall(opts.tint, Color3.fromRGB(60, 20, 70), 0.35, dur)
 	end
-	shake(0.5, dur)
+	shake(0.5)
 end
 H.heukyeom.strike = function(d)
 	local at = d.at
 	if d.small then
-		-- 하늘에서 떨어지는 불꽃 검
-		local sw = temp(part(Vector3.new(0.3, 7, 1), INK, Enum.Material.Neon, 0, nil), 0.6)
-		local ed = temp(part(Vector3.new(0.34, 7.2, 0.25), PURPLE, Enum.Material.Neon, 0, nil), 0.6)
-		local top = CFrame.new(at + Vector3.new(0, 30, 0))
-		sw.CFrame = top
-		ed.CFrame = top
-		tween(sw, 0.16, { CFrame = CFrame.new(at + Vector3.new(0, 1, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		tween(ed, 0.16, { CFrame = CFrame.new(at + Vector3.new(0, 1, 0)) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		task.delay(0.17, function()
+		-- 하늘에서 떨어지는 불꽃 검 (자루 · 코등이 · 칼날)
+		local top = CFrame.new(at + Vector3.new(math.random(-3, 3), 32, math.random(-3, 3))) * CFrame.Angles(math.rad(-90), 0, 0)
+		local land = CFrame.new(at + Vector3.new(0, 1.5, 0)) * CFrame.Angles(math.rad(-90), 0, 0)
+		local blade = temp(part(Vector3.new(0.3, 0.9, 6), OBSIDIAN, Enum.Material.Metal, 0, nil), 0.7)
+		local edge = temp(part(Vector3.new(0.34, 1.05, 6.1), PURPLE, Enum.Material.Neon, 0.35, nil), 0.7)
+		local guard = temp(part(Vector3.new(0.4, 2.2, 0.35), STEEL, Enum.Material.Metal, 0, nil), 0.7)
+		local parts = { { blade, CFrame.new() }, { edge, CFrame.new() }, { guard, CFrame.new(0, 0, 3.1) } }
+		for _, pr in ipairs(parts) do
+			pr[1].CFrame = top * pr[2]
+			tween(pr[1], 0.17, { CFrame = land * pr[2] }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end
+		task.delay(0.18, function()
 			flameBurst(at, PURPLE, INK, d.radius or 8, true)
-			tween(sw, 0.35, { Transparency = 1 })
-			tween(ed, 0.35, { Transparency = 1 })
+			for _, pr in ipairs(parts) do
+				tween(pr[1], 0.4, { Transparency = 1 })
+			end
 		end)
 	else
-		-- 마지막: 두 검을 내리꽂아 둘레가 불탄다
+		-- 마지막: 마검이 꽂히며 둘레가 불탄다
 		flameBurst(at, CRIMSON, INK, (d.radius or 30) * 0.5, true)
 		Fx.ring(at - Vector3.new(0, 2.4, 0), PURPLE, 4, (d.radius or 30) * 2.2, 0.7)
 		Fx.ring(at - Vector3.new(0, 2.2, 0), CRIMSON, 2, (d.radius or 30) * 1.6, 0.55)
+		for k = 1, 8 do
+			local a = k / 8 * math.pi * 2
+			task.delay(0.05 * k, function()
+				risingSword(at + Vector3.new(math.cos(a) * 12, 0, math.sin(a) * 12), 0.8, 0.7)
+			end)
+		end
 		if Fx.flash then
 			Fx.flash(at, CRIMSON, 80, 5, 0.5)
 		end
-		shake(1.2, 0.6)
+		shake(1.2)
 		Fx.sound("heavy", 1, 0.45, at)
 	end
 end
@@ -59652,11 +60054,21 @@ end
 
 function PassArts.handles(data: any): boolean
 	local h = H[data.style]
-	return h ~= nil and h[data.kind] ~= nil
+	if not h then
+		return false
+	end
+	-- 구미호권 G의 마지막 (작은 유성이 아닌 큰 터짐) 은 따로
+	if data.style == "gumiho" and data.kind == "strike" and not data.small and data.fx == "lightning" then
+		return true
+	end
+	return h[data.kind] ~= nil
 end
 function PassArts.run(data: any)
 	local h = H[data.style]
 	local fn = h and h[data.kind]
+	if data.style == "gumiho" and data.kind == "strike" and not data.small and data.fx == "lightning" then
+		fn = H.gumiho.strikeFinal
+	end
 	if fn then
 		local ok, err = pcall(fn, data)
 		if not ok then
