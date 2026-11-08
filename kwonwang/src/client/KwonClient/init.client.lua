@@ -1173,6 +1173,16 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		UI.toggleMap()
 	elseif k == Enum.KeyCode.V then
 		Request:FireServer("mount")
+	elseif k == Enum.KeyCode.Five or k == Enum.KeyCode.Six or k == Enum.KeyCode.Seven or k == Enum.KeyCode.Eight then
+		-- 3.40판 무림 몸짓 묶음 (게임패스): 5 · 6 · 7 · 8
+		if not busy() and not dead and not guarding and not training then
+			local n = ({ [Enum.KeyCode.Five] = 5, [Enum.KeyCode.Six] = 6, [Enum.KeyCode.Seven] = 7, [Enum.KeyCode.Eight] = 8 })[k]
+			for _, e in ipairs(Config.PREMIUM_EMOTES) do
+				if e.key == n then
+					doEmote(e.id)
+				end
+			end
+		end
 	elseif k == Enum.KeyCode.One or k == Enum.KeyCode.Two or k == Enum.KeyCode.Three or k == Enum.KeyCode.Four then
 		-- 몸짓: 서서 할 수 있는 동작
 		if not busy() and not dead and not guarding and not training then
@@ -1573,6 +1583,10 @@ end
 
 -- 몸짓 (1 포권, 2 도발, 3 권법 시연, 4 명상)
 local EMOTES = { salute = { "salute", 1.2 }, taunt = { "taunt", 1.4 }, kata = { "kata", 2.0 }, meditate = { "meditate", 3.0 } }
+-- 3.40판 무림 몸짓 묶음 (게임패스)
+for _, pe in ipairs(Config.PREMIUM_EMOTES) do
+	EMOTES[pe.id] = { pe.pose, pe.dur }
+end
 function handlers.emote(m: Model, id: any, isLocal: boolean?)
 	local e = EMOTES[tostring(id)]
 	if not e or not m or not m.Parent or (m == myChar() and not isLocal) then
@@ -1593,17 +1607,31 @@ function handlers.emote(m: Model, id: any, isLocal: boolean?)
 			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color, 2, 12, 1.2)
 		elseif id == "salute" then
 			Fx.ring(r.Position + r.CFrame.LookVector * 1.5, style.color2, 1, 5, 0.4, r.CFrame.LookVector)
+		elseif Config.PREMIUM_EMOTE_BY_ID[tostring(id)] then
+			-- 무림 몸짓 묶음: 권법 빛깔의 기운이 두 번 퍼진다 (바닥 고리 → 몸 둘레 고리)
+			Fx.ring(r.Position - Vector3.new(0, 2.5, 0), style.color, 2, 16, 1.0)
+			task.delay(e[2] * 0.6, function()
+				if r.Parent then
+					Fx.ring(r.Position, style.color2, 1.5, 11, 0.6)
+				end
+			end)
 		end
 	end
 end
 
 doEmote = function(id: string)
 	local char = myChar()
+	-- 몸짓 묶음은 게임패스가 있어야 (없으면 서버가 알려 준다)
+	if Config.PREMIUM_EMOTE_BY_ID[id] and not (state and state.premium and state.premium.emotes) then
+		Request:FireServer("emote", id)
+		return
+	end
 	if char then
 		handlers.emote(char, id, true)
 		Request:FireServer("emote", id)
 	end
 end
+UI.doEmote = doEmote -- 3.40판: 상점의 몸짓 묶음 단추 (폰)
 
 -- 심마 대련
 function handlers.simma(m: Model)

@@ -68,6 +68,7 @@ type Profile = {
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
 	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
+	receipts: { string }?, -- 3.40판: 이미 준 개발자 상품 영수증 (최근 50개. 같은 구매를 두 번 주지 않게)
 	pvpRule: number?, -- 3.4.1판: 2 = 사람에게 쓰러져야 끌 수 있는 규칙 (예전 규칙으로 열린 것은 다시 잠근다)
 	pvpOff: boolean?, -- 들판 PvP 끔
 	mounts: { [string]: boolean }, -- 가진 탈것
@@ -123,6 +124,7 @@ local function defaultProfile(): Profile
 		seen = {},
 		mounts = { horse = true },
 		mountSel = "horse",
+		receipts = {},
 		skyGems = 0,
 		mats = {},
 		skyBuffUntil = 0,
@@ -251,6 +253,15 @@ local function sanitize(data: any): Profile
 	end)
 	-- 3.4.1판: 예전 (아무에게나 한 번 쓰러지면 열림) 규칙으로 열린 PvP 끄기는 다시 잠근다
 	p.pvpUnlocked = (data.pvpRule == 2 and data.pvpUnlocked == true) or nil
+	-- 3.40판 개발자 상품 영수증
+	p.receipts = {}
+	if type(data.receipts) == "table" then
+		for _, r in ipairs(data.receipts) do
+			if type(r) == "string" and #r < 64 and #(p.receipts :: { string }) < 50 then
+				table.insert(p.receipts :: { string }, r)
+			end
+		end
+	end
 	p.pvpRule = 2
 	p.mounts = flags(data.mounts, function(k)
 		return Config.MOUNT_BY_ID[k] ~= nil
@@ -5043,6 +5054,11 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Actions.dash(player, a1)
 	elseif action == "emote" then
 		local f = Combat.fighterOfPlayer(player)
+		-- 3.40판: 무림 몸짓 묶음의 몸짓은 게임패스가 있어야
+		if type(a1) == "string" and Config.PREMIUM_EMOTE_BY_ID[a1] and not Premium.owns(player, "emotes") then
+			toast(player, "🙇 '무림 몸짓 묶음' 게임패스의 몸짓이에요 (만물상 💎)")
+			return
+		end
 		if f and not f.dead and not Combat.busy(f) and type(a1) == "string" and #a1 < 20 then
 			Push:FireAllClients("emote", f.model, a1)
 		end
@@ -5117,6 +5133,9 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		Story.accept(player)
 	elseif action == "premiumBuy" then
 		Premium.prompt(player, tostring(a1))
+	elseif action == "productBuy" then
+		-- 3.40판 개발자 상품 (은자 · 소환단 · 두루마리)
+		Premium.promptProduct(player, tostring(a1))
 	elseif action == "autoToggle" then
 		-- 자동 수련 켜기·끄기 (게임패스가 있어야)
 		if not (Premium.owns(player, "autoTrain") or Premium.owns(player, "autoTrain2")) then
@@ -6445,12 +6464,24 @@ function Premium.grant(player: Player, id: string)
 		p.mountSel = "dragon"
 		toast(player, "🐉 청룡을 얻었어요! V로 타기")
 	end
+	-- 3.40판 흑룡: 사면 바로 고른다 (들어올 때 다시 확인될 때는 고른 것을 바꾸지 않는다)
+	if p and id == "heukryong" and (states[player] :: any).premiumLoaded then
+		p.mountSel = "heukryong"
+		toast(player, "🐲 흑룡을 얻었어요! V로 타기")
+	end
+	if id == "emotes" and (states[player] :: any).premiumLoaded then
+		toast(player, "🙇 무림 몸짓 묶음! 5 · 6 · 7 · 8번 (폰은 상점의 이 칸 단추)")
+	end
 	pushState(player)
 end
 
 -- 들어올 때 가진 게임패스를 확인한다
 function Premium.load(player: Player)
 	if not Marketplace then
+		local st0 = states[player]
+		if st0 then
+			(st0 :: any).premiumLoaded = true
+		end
 		return
 	end
 	for _, it in ipairs(Config.Premium) do
@@ -6462,6 +6493,11 @@ function Premium.load(player: Player)
 				Premium.grant(player, it.id)
 			end
 		end
+	end
+	-- 3.40판: 여기까지는 들어올 때의 확인 (이 뒤에 얻는 것은 방금 산 것)
+	local st = states[player]
+	if st then
+		(st :: any).premiumLoaded = true
 	end
 end
 
@@ -6480,6 +6516,75 @@ function Premium.prompt(player: Player, id: string)
 	end
 	pcall(function()
 		Marketplace:PromptGamePassPurchase(player, it.gamepass)
+	end)
+end
+
+-- 3.40판 개발자 상품: 영수증을 기록에 남기고 저장된 뒤에야 '받았다'고 알린다 (같은 구매를 두 번 주지 않는다)
+function Premium.promptProduct(player: Player, id: string)
+	local it = Config.PRODUCT_BY_ID[id]
+	if not it then
+		return
+	end
+	if it.productId <= 0 or not Marketplace then
+		toast(player, "아직 판매 준비 중이에요")
+		return
+	end
+	pcall(function()
+		Marketplace:PromptProductPurchase(player, it.productId)
+	end)
+end
+local Product = {}
+function Product.give(player: Player, p: Profile, it: any)
+	local g = it.give
+	if g.coins then
+		local n = Config.productCoins((Calc.realm(p))) * g.coins
+		p.coins += n
+		toast(player, string.format("💰 은자 %s을(를) 받았어요", Config.formatNumber(n)))
+	elseif g.elixir then
+		p.elixirUntil = math.max(os.time(), p.elixirUntil) + g.elixir
+		toast(player, "🧪 소환단 한 시간! 수련이 두 배")
+	elseif g.scrolls then
+		p.scrolls += g.scrolls
+		toast(player, string.format("📜 심법 두루마리 %d장을 받았어요", g.scrolls))
+	end
+	updateTag(player)
+	pushState(player)
+end
+if Marketplace then
+	pcall(function()
+		Marketplace.ProcessReceipt = function(info: any)
+			local player = Players:GetPlayerByUserId(info.PlayerId)
+			local p, st = player and profiles[player], player and states[player]
+			if not player or not p or not st or not st.canSave then
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			end
+			local key = tostring(info.PurchaseId)
+			local list = p.receipts :: { string }
+			if table.find(list, key) then
+				return Enum.ProductPurchaseDecision.PurchaseGranted
+			end
+			local it: any = nil
+			for _, x in ipairs(Config.PRODUCTS) do
+				if x.productId > 0 and x.productId == info.ProductId then
+					it = x
+				end
+			end
+			if not it then
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			end
+			Product.give(player, p, it)
+			table.insert(list, key)
+			while #list > 50 do
+				table.remove(list, 1)
+			end
+			st.dirty = true
+			saveProfile(player)
+			-- 저장이 안 됐으면 다음에 다시 묻는다 (영수증이 이미 기록에 있어 두 번 주지 않는다)
+			if st.dirty then
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			end
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		end
 	end)
 end
 

@@ -9,6 +9,9 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local UI = {}
+UI.emoteBtns = {} :: { TextButton } -- 3.40판 상점의 몸짓 묶음 단추
+UI.productRows = {} :: { any } -- 3.40판 개발자 상품 줄
+UI.doEmote = nil :: ((string) -> ())?
 
 local player = Players.LocalPlayer
 local Request: RemoteEvent
@@ -1715,6 +1718,29 @@ function UIB.buildShop()
 			end)
 			autoBtns[it.id] = { toggle = tg, stat = sb }
 		end
+		-- 3.40판 무림 몸짓 묶음: 가지면 몸짓 넷 단추 (폰에서도 할 수 있게)
+		if it.id == "emotes" then
+			for k, pe in ipairs(Config.PREMIUM_EMOTES) do
+				local eb = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14 - (4 - k) * 44, 0, 84), Size = UDim2.new(0, 40, 0, 40), Text = pe.icon, TextSize = 20, BackgroundColor3 = C.panel2, Visible = false, Parent = card }, function()
+					if UI.doEmote then
+						UI.doEmote(pe.id)
+					end
+				end)
+				table.insert(UI.emoteBtns, eb)
+			end
+		end
+	end
+	-- 3.40판 개발자 상품 (여러 번 살 수 있다)
+	header(prem, "🛒 여러 번 살 수 있는 상품", 100)
+	for i, it in ipairs(Config.PRODUCTS) do
+		local card = new("Frame", { Size = UDim2.new(1, -12, 0, 84), BackgroundColor3 = Color3.fromRGB(46, 36, 20), LayoutOrder = 100 + i, Parent = prem }, { corner(12), stroke(Color3.fromRGB(220, 180, 90), 1.5) })
+		text({ Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(0, 64, 1, 0), Text = it.icon, TextSize = 40, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+		text({ Position = UDim2.new(0, 84, 0, 8), Size = UDim2.new(1, -290, 0, 28), Text = it.name .. (it.tag and ("  <font color=\"#7CFF8A\">" .. it.tag .. "</font>") or ""), RichText = true, TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 225, 140), Parent = card })
+		local line = text({ Position = UDim2.new(0, 84, 0, 40), Size = UDim2.new(1, -290, 0, 36), Text = "", TextSize = 14, TextColor3 = Color3.fromRGB(240, 225, 200), TextYAlignment = Enum.TextYAlignment.Top, Parent = card })
+		local b = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.new(0, 170, 0, 48), Text = "", TextSize = 19, BackgroundColor3 = Color3.fromRGB(40, 170, 80), Parent = card }, function()
+			Request:FireServer("productBuy", it.id)
+		end)
+		table.insert(UI.productRows, { it = it, line = line, btn = b })
 	end
 
 	setShopTab("goods")
@@ -1746,6 +1772,17 @@ function UIB.buildShop()
 			b.Text = has and "✅ 가지고 있음" or (ready and ("R$ " .. tostring(Config.PREMIUM_BY_ID[id].price) .. "  구매") or "🔒 준비 중")
 			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or (ready and Color3.fromRGB(40, 170, 80) or Color3.fromRGB(80, 80, 90))
 			b.AutoButtonColor = not has and ready
+		end
+		-- 3.40판 몸짓 묶음 단추 · 상품 줄
+		for _, eb in ipairs(UI.emoteBtns) do
+			eb.Visible = owned.emotes == true
+		end
+		for _, row in ipairs(UI.productRows) do
+			local ready = row.it.productId > 0
+			row.line.Text = Config.productLine(row.it, state and state.realm or 1)
+			row.btn.Text = ready and ("R$ " .. tostring(row.it.price) .. "  구매") or "🔒 준비 중"
+			row.btn.BackgroundColor3 = ready and Color3.fromRGB(40, 170, 80) or Color3.fromRGB(80, 80, 90)
+			row.btn.AutoButtonColor = ready
 		end
 		local statLabel = { all = "골고루", str = "💪 근골", vit = "❤ 체력", agi = "🍃 경공", chi = "🌀 내공" }
 		for id, ab in pairs(autoBtns) do
