@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.37.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.38.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4588,7 +4588,18 @@ Config.Premium = {
 		lines = { "보스의 심법 두루마리 확률 두 배 (15% → 30%)", "천상 재료가 떨어질 확률 두 배 (한 번에 둘까지는 그대로)", "천상계 적의 천정 1.5배" } },
 	{ id = "vip", gamepass = 0, price = 249, icon = "👑", name = "VIP", tag = "VIP",
 		lines = { "머리 위 이름 앞에 금빛 👑", "권법 숙련이 두 배로 빨리 오른다", "적·보스의 은자 +25% (은자 두 배와 겹친다)" } },
+	-- 3.38판 게임패스 넷 (몸의 힘 셋 + 천정)
+	{ id = "power", gamepass = 0, price = 299, icon = "💪", name = "무쇠 주먹", tag = "영구",
+		lines = { "모든 공격의 피해가 영원히 +20%", "기본기·기술·오의 모두", "배틀그라운드는 모두 같은 힘이라 빠진다" } },
+	{ id = "iron", gamepass = 0, price = 299, icon = "🛡", name = "금강불괴", tag = "영구",
+		lines = { "최대 체력이 영원히 +25%", "보스·레이드에서 훨씬 오래 버틴다", "배틀그라운드는 모두 같은 힘이라 빠진다" } },
+	{ id = "swift", gamepass = 0, price = 99, icon = "💨", name = "신속", tag = "영구",
+		lines = { "걸음이 영원히 +20% 빨라진다", "탈것을 타지 않아도 빠르다", "배틀그라운드는 모두 같은 걸음이라 빠진다" } },
+	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
+		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
+-- 3.38판: 게임패스가 주는 특전 배율 (서버 Calc.perk에 곱한다. 특전 id: dmg 피해 · hp 체력 · spd 걸음)
+Config.PASS_PERK = { power = { dmg = 1.2 }, iron = { hp = 1.25 }, swift = { spd = 1.2 } }
 -- 3.37판: 게임패스 효과 숫자 (서버가 이 표를 쓴다)
 Config.PASS = { killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
@@ -9634,8 +9645,28 @@ function Calc.perkUsed(p: Profile): number
 	end
 	return n
 end
+-- 3.38판 게임패스의 능력 배율 (Config.PASS_PERK: 패스 → { 특전 id = 배율 }). 환생 특전과 같은 자리에 곱한다
+-- (보상 잣대 rewardPower는 hp·dmg 특전을 빼고 세므로, 패스로 오른 체력·공격력은 보상을 부풀리지 않는다)
+local function passPerk(p: Profile, id: string): number
+	local k = 1
+	for player, pp in pairs(profiles) do
+		if pp == p then
+			local st = states[player]
+			local owned = st and (st :: any).owned
+			if owned then
+				for pass, perks in pairs(Config.PASS_PERK) do
+					if owned[pass] and perks[id] then
+						k *= perks[id]
+					end
+				end
+			end
+			break
+		end
+	end
+	return k
+end
 function Calc.perk(p: Profile, id: string): number
-	return Config.perkMult(p.perks, id)
+	return Config.perkMult(p.perks, id) * passPerk(p, id)
 end
 
 -- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
@@ -11266,6 +11297,9 @@ Combat.init(Push, {
 					if lucky then
 						gems = math.floor(gems * PS.luckGems)
 					end
+					if Premium.owns(killer, "gems2x") then
+						gems *= 2
+					end
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -12792,7 +12826,7 @@ function Tower.killed(player: Player, ef: any)
 				addStat(p, sd.id, each)
 			end
 			stats = each * #Config.Stats
-			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
+			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor) * (Premium.owns(player, "gems2x") and 2 or 1)
 			p.skyGems += gems
 			refreshFighter(player)
 		end
@@ -15459,6 +15493,10 @@ function Premium.grant(player: Player, id: string)
 	-- VIP: 머리 위 왕관을 바로 단다
 	if id == "vip" then
 		updateTag(player)
+	end
+	-- 3.38판: 체력·공격·걸음 패스는 바로 몸에 반영
+	if Config.PASS_PERK[id] then
+		refreshFighter(player)
 	end
 	-- 청룡을 사면 바로 고른다
 	if p and id == "dragon" then

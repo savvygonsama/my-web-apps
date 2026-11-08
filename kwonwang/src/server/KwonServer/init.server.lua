@@ -576,8 +576,28 @@ function Calc.perkUsed(p: Profile): number
 	end
 	return n
 end
+-- 3.38판 게임패스의 능력 배율 (Config.PASS_PERK: 패스 → { 특전 id = 배율 }). 환생 특전과 같은 자리에 곱한다
+-- (보상 잣대 rewardPower는 hp·dmg 특전을 빼고 세므로, 패스로 오른 체력·공격력은 보상을 부풀리지 않는다)
+local function passPerk(p: Profile, id: string): number
+	local k = 1
+	for player, pp in pairs(profiles) do
+		if pp == p then
+			local st = states[player]
+			local owned = st and (st :: any).owned
+			if owned then
+				for pass, perks in pairs(Config.PASS_PERK) do
+					if owned[pass] and perks[id] then
+						k *= perks[id]
+					end
+				end
+			end
+			break
+		end
+	end
+	return k
+end
 function Calc.perk(p: Profile, id: string): number
-	return Config.perkMult(p.perks, id)
+	return Config.perkMult(p.perks, id) * passPerk(p, id)
 end
 
 -- 끼운 심법의 효과 합 { hp, dmg, def, steal, speed, chi, cd, ult }
@@ -2208,6 +2228,9 @@ Combat.init(Push, {
 					if lucky then
 						gems = math.floor(gems * PS.luckGems)
 					end
+					if Premium.owns(killer, "gems2x") then
+						gems *= 2
+					end
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -3734,7 +3757,7 @@ function Tower.killed(player: Player, ef: any)
 				addStat(p, sd.id, each)
 			end
 			stats = each * #Config.Stats
-			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor)
+			gems = math.floor(T.bestGems + floor * T.bestGemsPerFloor) * (Premium.owns(player, "gems2x") and 2 or 1)
 			p.skyGems += gems
 			refreshFighter(player)
 		end
@@ -6401,6 +6424,10 @@ function Premium.grant(player: Player, id: string)
 	-- VIP: 머리 위 왕관을 바로 단다
 	if id == "vip" then
 		updateTag(player)
+	end
+	-- 3.38판: 체력·공격·걸음 패스는 바로 몸에 반영
+	if Config.PASS_PERK[id] then
+		refreshFighter(player)
 	end
 	-- 청룡을 사면 바로 고른다
 	if p and id == "dragon" then
