@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.38.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.39.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4590,6 +4590,16 @@ Config.Premium = {
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
+	-- 3.39판 큰 게임패스 (묶음 둘 + 전설 하나). includes = 함께 열리는 패스 (사면 그 패스들을 모두 가진 것으로 친다)
+	{ id = "packTrain", gamepass = 0, price = 999, icon = "🎁", name = "무인 꾸러미", tag = "묶음",
+		includes = { "train2x", "kill2x", "autoTrain", "autoTrain2", "luck", "bag" },
+		lines = { "두 배 수련 · 두 배 처치 · 자동 수련 · 고급 자동 수련 · 행운의 부적 · 가방 확장", "따로 사면 R$ 1,044 → 한 번에", "성장이 가장 빨라지는 여섯 가지" } },
+	{ id = "packSky", gamepass = 0, price = 1499, icon = "💎", name = "천상 꾸러미", tag = "묶음",
+		includes = { "dragon", "vip", "slot4", "gems2x", "coin2x", "luck" },
+		lines = { "청룡 탈것 · VIP · 심법 넷째 칸 · 천정 두 배 · 은자 두 배 · 행운의 부적", "따로 사면 R$ 1,594 → 한 번에", "가장 빠른 탈것과 왕관, 넷째 심법까지" } },
+	{ id = "seal", gamepass = 0, price = 2999, icon = "🏯", name = "권왕의 증표", tag = "전설", best = true,
+		includes = { "train2x", "autoTrain", "autoTrain2", "coin2x", "bag", "dragon", "kill2x", "luck", "vip", "gems2x", "slot4" },
+		lines = { "모든 게임패스 열한 가지가 한 번에 (따로 사면 R$ 2,489)", "증표 전용: 금빛 🏯 이름표 · 증표 전용 오라 '황제의 기운'", "이 증표가 있는 사람만 두를 수 있다" } },
 }
 -- 3.38판: 심법 칸 (넷째 칸 게임패스가 있으면 하나 더)
 function Config.manualSlots(hasSlot4: boolean?): number
@@ -5570,12 +5580,14 @@ Config.ACH_AURAS = {
 	{ id = "crown", ach = "sAll", name = "만권 기운", icon = "🥋", desc = "청백의 맑은 기운이 몸을 감싸고 정수리에서 흰·금빛 반짝임이 흩어진다" },
 	{ id = "petals", ach = "gearAll", name = "천상 꽃잎", icon = "🌸", desc = "연분홍·하늘빛 꽃잎이 몸 둘레에서 나풀나풀 떨어진다" },
 	{ id = "scripture", ach = "manTop", name = "천서 기운", icon = "📜", desc = "푸른 안개가 깔리고 빛의 글자가 천천히 떠오른다" },
+	-- 3.39판: 게임패스 '권왕의 증표' 전용 오라 (pass = 그 패스를 가지면 두른다)
+	{ id = "emperor", pass = "seal", name = "황제의 기운", icon = "🏯", desc = "자줏빛 · 금빛 화염이 겹으로 치솟고 금가루가 왕관처럼 머리 위에 흩날린다 (권왕의 증표 전용)" },
 	{ id = "golddragon", ach = "pvp500", name = "금룡 기운", icon = "🏆", desc = "발끝부터 머리 위까지 금빛 화염이 치솟고 흰 불씨가 흩날린다" },
 }
 Config.ACH_AURA_BY_ID = {}
 for _, au in ipairs(Config.ACH_AURAS) do
 	Config.ACH_AURA_BY_ID[au.id] = au
-	local a = Config.ACH_BY_ID[au.ach]
+	local a = au.ach and Config.ACH_BY_ID[au.ach]
 	if a then
 		a.aura = au.id
 	end
@@ -5936,6 +5948,17 @@ do
 		a.index = #Config.ACHIEVEMENTS
 		Config.ACH_BY_ID[a.id] = a
 	end
+end
+
+-- 3.39판: 이 오라를 가졌나 (업적 오라는 그 업적, 증표 오라는 그 게임패스). ach = 이룬 업적 표, premium = 가진 게임패스 표
+function Config.auraOwned(au: any, ach: any, premium: any): boolean
+	if not au then
+		return false
+	end
+	if au.pass then
+		return premium ~= nil and premium[au.pass] == true
+	end
+	return ach ~= nil and ach[au.ach] == true
 end
 
 return Config
@@ -9348,7 +9371,8 @@ local function sanitize(data: any): Profile
 	p.skyAura = data.skyAura == true or nil
 	do
 		local au = type(data.achAura) == "string" and Config.ACH_AURA_BY_ID[data.achAura]
-		p.achAura = (au and p.ach[au.ach]) and au.id or nil
+		-- 증표 오라는 게임패스 확인이 들어온 뒤라 일단 남겨 둔다 (두르는 것은 refreshFighter가 가진 것만)
+		p.achAura = (au and (au.pass or p.ach[au.ach])) and au.id or nil
 	end
 	-- 3.19.8판: 처치 연출을 없앴다. 천정으로 산 연출은 산 값만큼 천정으로 돌려준다 (저장하면 killFx 칸이 사라지니 한 번만 돌려준다)
 	if type(data.killFx) == "table" then
@@ -10255,8 +10279,10 @@ local function updateTag(player: Player)
 	local bottom = g:FindFirstChild("Bottom") :: TextLabel
 	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
 	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
-	top.Text = string.format("%s[%s%s] %s", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
-	top.TextColor3 = realm.color
+	-- 3.39판 권왕의 증표: 🏯 와 금빛 이름 (VIP의 👑 대신)
+	local seal = Premium.owns(player, "seal")
+	top.Text = string.format("%s[%s%s] %s", seal and "🏯 " or (Premium.owns(player, "vip") and "👑 " or ""), rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
+	top.TextColor3 = seal and Color3.fromRGB(255, 214, 90) or realm.color
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
 	if tl then
@@ -10347,7 +10373,8 @@ local function refreshFighter(player: Player)
 	f.model:SetAttribute("SkyAura", p.skyAura or nil)
 	-- 3.19.9판 업적 오라 (이룬 업적의 것만)
 	local achAu = p.achAura and Config.ACH_AURA_BY_ID[p.achAura]
-	f.model:SetAttribute("AchAura", (achAu and p.ach[achAu.ach]) and achAu.id or nil)
+	local stF = states[player]
+	f.model:SetAttribute("AchAura", Config.auraOwned(achAu, p.ach, stF and (stF :: any).owned) and achAu.id or nil)
 	-- 환생한 무인: 발밑에서 환생 빛깔의 기운이 피어오른다 (횟수만큼 짙게)
 	local rootPart = f.model:FindFirstChild("HumanoidRootPart")
 	local aura = rootPart and rootPart:FindFirstChild("RebirthAura")
@@ -14232,7 +14259,10 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			toast(player, "✨ 업적 오라를 껐어요")
 		else
 			local au = Config.ACH_AURA_BY_ID[id]
-			if not au or not p.ach[au.ach] then
+			if not au or not Config.auraOwned(au, p.ach, (st :: any).owned) then
+				if au and au.pass then
+					toast(player, "🏯 '권왕의 증표' 게임패스 전용 오라예요")
+				end
 				return
 			end
 			p.achAura = id
@@ -15490,14 +15520,31 @@ function Premium.grant(player: Player, id: string)
 	end
 	st.owned = st.owned or {}
 	st.owned[id] = true
+	-- 3.39판 묶음 게임패스: 함께 열리는 패스도 모두 가진 것으로 (자동 수련 켜기 · 청룡 고르기 같은 처음 효과도 그대로 탄다)
+	local def = Config.PREMIUM_BY_ID[id]
+	if def and def.includes then
+		for _, sub in ipairs(def.includes) do
+			if not st.owned[sub] then
+				Premium.grant(player, sub)
+			end
+		end
+	end
 	-- 자동 수련을 처음 얻으면 바로 켠다
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
 	end
-	-- VIP: 머리 위 왕관을 바로 단다
-	if id == "vip" then
+	-- VIP · 권왕의 증표: 머리 위 이름표를 바로 바꾼다
+	if id == "vip" or id == "seal" then
 		updateTag(player)
+	end
+	-- 권왕의 증표: 증표 전용 오라를 (두른 오라가 없으면) 바로 두른다
+	if p and id == "seal" then
+		if not p.achAura then
+			p.achAura = "emperor"
+		end
+		toast(player, "🏯 권왕의 증표! 모든 게임패스와 '황제의 기운' 오라를 얻었어요")
+		refreshFighter(player)
 	end
 	-- 3.38판 심법 넷째 칸: 바로 효과를 다시 센다
 	if id == "slot4" then
@@ -38146,6 +38193,17 @@ DEFS.golddragon = {
 	-- 흰 불씨
 	{ on = CORE, tex = TEX.spark, color = cs({ C3(255, 255, 240), C3(255, 220, 130) }), size = ns({ { 0, 0.25 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
 		life = nr(0.8, 1.4), rate = 8, speed = nr(5, 8), accel = Vector3.new(0, 5, 0), spread = Vector2.new(45, 45), light = 1, bright = 4, drag = 1.2 },
+}
+-- 3.39판 황제의 기운 (권왕의 증표 전용): 자줏빛 속불 위로 금빛 화염이 겹으로 치솟고, 머리 위로 금가루가 왕관처럼 흩날린다
+DEFS.emperor = {
+	{ on = BODY, tex = TEX.fire, color = cs({ C3(255, 240, 255), C3(190, 90, 255), C3(90, 20, 160) }), size = ns({ { 0, 1.5 }, { 0.5, 1.15 }, { 1, 0.15 } }), alpha = ns({ { 0, 0.5 }, { 0.3, 0.2 }, { 1, 1 } }),
+		life = nr(0.6, 0.95), rate = 14, speed = nr(2, 4), accel = Vector3.new(0, 11, 0), spread = Vector2.new(15, 15), light = 1, bright = 2.5, rot = nr(-20, 20), spin = nr(-45, 45), z = 0.4 },
+	{ on = CORE, tex = TEX.fire, color = cs({ C3(255, 250, 220), C3(255, 205, 70), C3(240, 140, 20) }), size = ns({ { 0, 1.8 }, { 1, 0.2 } }), alpha = ns({ { 0, 0.45 }, { 1, 1 } }),
+		life = nr(0.8, 1.1), rate = 10, speed = nr(3, 5), accel = Vector3.new(0, 13, 0), spread = Vector2.new(12, 12), light = 1, bright = 2.5, z = 0.6 },
+	{ on = FEET, tex = TEX.fire, color = cs({ C3(230, 160, 255), C3(255, 200, 80) }), size = ns({ { 0, 1.6 }, { 1, 0.3 } }), alpha = ns({ { 0, 0.55 }, { 1, 1 } }),
+		life = nr(0.7, 1), rate = 9, speed = nr(3, 5), accel = Vector3.new(0, 12, 0), spread = Vector2.new(10, 10), light = 1, bright = 2 },
+	{ on = { "Head" }, tex = TEX.spark, color = cs({ C3(255, 250, 220), C3(255, 210, 90) }), size = ns({ { 0, 0.3 }, { 1, 0 } }), alpha = ns({ { 0, 0 }, { 1, 1 } }),
+		life = nr(1, 1.6), rate = 14, speed = nr(2, 4), accel = Vector3.new(0, 3, 0), spread = Vector2.new(80, 80), light = 1, bright = 4, drag = 1.5 },
 }
 
 ------------------------------------------------------------------------
@@ -71306,7 +71364,7 @@ function UIB.buildShop()
 	lookRow("achaura", 3, "✨", "업적 오라 (신화 업적의 무협 기운)", "✨ 다음 오라", function()
 		local owned = {}
 		for _, au in ipairs(Config.ACH_AURAS) do
-			if state and state.ach and state.ach[au.ach] then
+			if state and Config.auraOwned(au, state.ach, state.premium) then
 				table.insert(owned, au.id)
 			end
 		end
@@ -71409,7 +71467,7 @@ function UIB.buildShop()
 			local au = state.achAura and Config.ACH_AURA_BY_ID[state.achAura]
 			local nAura = 0
 			for _, a2 in ipairs(Config.ACH_AURAS) do
-				if state.ach and state.ach[a2.ach] then
+				if Config.auraOwned(a2, state.ach, state.premium) then
 					nAura += 1
 				end
 			end

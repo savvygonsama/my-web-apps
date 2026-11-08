@@ -1663,7 +1663,7 @@ function UIB.buildShop()
 	lookRow("achaura", 3, "✨", "업적 오라 (신화 업적의 무협 기운)", "✨ 다음 오라", function()
 		local owned = {}
 		for _, au in ipairs(Config.ACH_AURAS) do
-			if state and state.ach and state.ach[au.ach] then
+			if state and Config.auraOwned(au, state.ach, state.premium) then
 				table.insert(owned, au.id)
 			end
 		end
@@ -1766,7 +1766,7 @@ function UIB.buildShop()
 			local au = state.achAura and Config.ACH_AURA_BY_ID[state.achAura]
 			local nAura = 0
 			for _, a2 in ipairs(Config.ACH_AURAS) do
-				if state.ach and state.ach[a2.ach] then
+				if Config.auraOwned(a2, state.ach, state.premium) then
 					nAura += 1
 				end
 			end
