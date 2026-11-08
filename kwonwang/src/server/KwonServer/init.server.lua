@@ -4541,6 +4541,14 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 				table.insert(report, string.format("  관절 %d (어긋남 %d · 끊김 %d) · 용접 %d · 겹친 이름 %s · PrimaryPart %s · 안의 모델 %d", joints, bad, missing, welds, #dups > 0 and table.concat(dups, ",") or "없음", m.PrimaryPart and m.PrimaryPart.Name or "없음", nested))
 				print(table.concat(report, "\n"))
 				toast(player, string.format("🔍 %s: 관절 %d · 어긋남 %d · 끊김 %d · 겹친 이름 %d (출력창에 자세히)", best.def.name, joints, bad, missing, #dups))
+				-- 3.33.2판: 출력창을 안 열어도 화면에서 바로 읽을 수 있게 대화창으로도 보여 준다 (어긋난 관절 이름과 칸 수 · 몸에 든 부위 · 크기)
+				local show = {}
+				for i = 1, math.min(#report, 5) do
+					table.insert(show, report[i])
+				end
+				local hum = m:FindFirstChildOfClass("Humanoid")
+				table.insert(show, string.format("HipHeight %.2f · 뿌리 높이 %.2f", hum and hum.HipHeight or -1, best.f.root.Position.Y))
+				Push:FireClient(player, "dialog", { who = "🔍 몸 점검", title = tostring(best.typeId), text = table.concat(show, "\n") })
 			end
 		end
 	elseif action == "testDummy" then
