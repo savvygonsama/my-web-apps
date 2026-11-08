@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.35.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.36.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3823,6 +3823,16 @@ Config.Regions = {
 		camps = { { enemy = "marauder", count = 3, at = Vector3.new(4400, 0, -700) }, { enemy = "lancer", count = 3, at = Vector3.new(4600, 0, -300) }, { enemy = "magmabrute", count = 2, at = Vector3.new(4450, 0, 150) }, { enemy = "marauder", count = 3, at = Vector3.new(4650, 0, 350) } },
 		boss = { id = "hwangsa", at = Vector3.new(4600, 0, -850) } },
 }
+-- 3.36판 지상 확장: 세상을 사방으로 더 넓혔다 (WORLD_HALF 5200 → 6200). 북쪽 끝 북명 빙원 · 서쪽 끝 서역 사구 · 동쪽 끝 동극 불길 평원
+table.insert(Config.Regions, { id = "northice", name = "북명 빙원", center = Vector3.new(-1600, 0, -5750), size = Vector3.new(3000, 0, 900), ground = Color3.fromRGB(226, 236, 248), material = Enum.Material.Glacier, ambient = "snow",
+	camps = { { enemy = "snowblade", count = 3, at = Vector3.new(-2500, 0, -5900) }, { enemy = "iceguard", count = 3, at = Vector3.new(-2000, 0, -5600) }, { enemy = "snowblade", count = 3, at = Vector3.new(-1200, 0, -5900) }, { enemy = "iceguard", count = 2, at = Vector3.new(-700, 0, -5600) } },
+	boss = { id = "bukmyeongje", at = Vector3.new(-1600, 0, -5850) } })
+table.insert(Config.Regions, { id = "westdune", name = "서역 사구", center = Vector3.new(-5750, 0, -1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(226, 196, 138), material = Enum.Material.Sand, ambient = "desert",
+	camps = { { enemy = "sandwraith", count = 3, at = Vector3.new(-5700, 0, -2600) }, { enemy = "tombguard", count = 3, at = Vector3.new(-5800, 0, -2000) }, { enemy = "sandwraith", count = 3, at = Vector3.new(-5700, 0, -1000) }, { enemy = "starblade", count = 2, at = Vector3.new(-5800, 0, -450) } },
+	boss = { id = "seoyeoksawang", at = Vector3.new(-5750, 0, -2950) } })
+table.insert(Config.Regions, { id = "eastember", name = "동극 불길 평원", center = Vector3.new(5750, 0, 1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(70, 46, 40), material = Enum.Material.Basalt, ambient = "volcano",
+	camps = { { enemy = "flameimp", count = 3, at = Vector3.new(5700, 0, 650) }, { enemy = "magmabrute", count = 3, at = Vector3.new(5800, 0, 1250) }, { enemy = "flameimp", count = 3, at = Vector3.new(5700, 0, 1850) }, { enemy = "magmabrute", count = 2, at = Vector3.new(5800, 0, 2400) } },
+	boss = { id = "dongguckgun", at = Vector3.new(5750, 0, 2900) } })
 -- 권법 id → 사부 { name, at, region }
 Config.MASTERS = {}
 for _, r in ipairs(Config.Regions) do
@@ -4112,7 +4122,7 @@ function Config.trialNeed(styleId: string): (string, number)
 	local mul = (st and st.trialHp) and 1.5 or 1
 	return kind, math.floor(K.need * mul + 0.5)
 end
-Config.WORLD_HALF = 5200 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지. 3.15판: 4400 → 5200 (남쪽 세상 끝 벼랑 · 동쪽 끝 협곡)
+Config.WORLD_HALF = 6200 -- 세상 끝 (가운데에서). 1.8판: 바깥 네 귀퉁이의 새 땅까지. 3.15판: 4400 → 5200 (남쪽 세상 끝 벼랑 · 동쪽 끝 협곡)
 -- 마을에서 각 곳으로 가는 흙길 (꺾이는 점들)
 Config.Roads = {
 	-- 1.8판: 세상 끝 네 땅으로
@@ -5165,6 +5175,90 @@ do
 	table.insert(Config.SKY.bridges, { 12, 19 })
 	table.insert(Config.SKY.bridges, { 14, 20 })
 	for _, isl in ipairs({ Config.SKY.islands[18], Config.SKY.islands[19], Config.SKY.islands[20] }) do
+		Config.SKY_BY_ID[isl.id] = isl
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.36판 확장: 지상 (북명 빙원 · 서역 사구 · 동극 불길 평원) · 지옥 (혈지옥 · 한빙지옥 · 철환지옥) · 천상 (운룡대 · 신선호 · 비상문)
+------------------------------------------------------------------------
+do
+	local E4, B4 = Config.Enemies, Config.Bosses
+	local HY4, SY4 = Config.HELL.y, Config.SKY.y
+	local function pats(tag: string, col: Color3, fxk: string, summon: string, d: number)
+		return {
+			P("rain", tag .. " 비", 1, { count = 15, radius = 9, spread = 42, warn = 0.9, cd = 6, pose = "w_overhead", fx = fxk, color = col, hit = hit(0, 0, 0, 60 * d, 104 * d, 1.0, 25) }),
+			P("charge", tag .. " 돌진", 1, { length = 72, width = 12, warn = 0.8, cd = 6, times = 3, pose = "w_thrust", hit = hit(0, 0, 0, 58 * d, 100 * d, 1.0, 60) }),
+			P("summon", tag .. "의 부하들아", 2, { enemy = summon, count = 3, max = 6, warn = 0.9, cd = 15, pose = "w_overhead" }),
+			P("donut", tag .. " 고리", 2, { inner = 12, outer = 44, warn = 1.1, cd = 8, pose = "w_sweep", hit = hit(0, 0, 0, 64 * d, 112 * d, 1.1, 50) }),
+			P("leap", tag .. " 낙하", 3, { radius = 25, warn = 1.0, cd = 7, pose = "w_overhead", hit = hit(0, 0, 0, 72 * d, 128 * d, 1.4, 60, 24) }),
+			P("quake", tag .. " 대폭발", 3, { radius = 42, warn = 1.6, cd = 9, pose = "w_overhead", hit = hit(0, 0, 0, 108 * d, 222 * d, 1.6, 80, 30) }),
+		}
+	end
+	-- 지상 보스 셋 (그 땅의 옛 보스를 바탕으로 더 세게)
+	B4.bukmyeongje = variant(B4.bingma, { name = "북명제 · 얼어붙은 끝", hp = B4.bingma.hp * 1.8, posture = (B4.bingma.posture or 2000) * 1.5, mult = (B4.bingma.mult or 4) * 1.6, coins = (B4.bingma.coins or 100000) * 2, xp = (B4.bingma.xp or 10000) * 2, respawn = 300 })
+	B4.seoyeoksawang = variant(B4.sawang, { name = "서역사왕 · 모래의 끝", hp = B4.sawang.hp * 1.8, posture = (B4.sawang.posture or 2000) * 1.5, mult = (B4.sawang.mult or 4) * 1.6, coins = (B4.sawang.coins or 100000) * 2, xp = (B4.sawang.xp or 10000) * 2, respawn = 300 })
+	B4.dongguckgun = variant(B4.yeomje, { name = "동극군 · 불길의 끝", hp = B4.yeomje.hp * 1.8, posture = (B4.yeomje.posture or 2000) * 1.5, mult = (B4.yeomje.mult or 4) * 1.6, coins = (B4.yeomje.coins or 100000) * 2, xp = (B4.yeomje.xp or 10000) * 2, respawn = 300 })
+	for _, id in ipairs({ "bukmyeongje", "seoyeoksawang", "dongguckgun" }) do
+		B4[id].late = true
+	end
+	table.insert(Config.Roads, { Vector3.new(-1750, 0, -2100), Vector3.new(-1650, 0, -3500), Vector3.new(-1550, 0, -4900), Vector3.new(-1600, 0, -5450) })
+	table.insert(Config.Roads, { Vector3.new(-3500, 0, 900), Vector3.new(-4400, 0, 300), Vector3.new(-5300, 0, -250), Vector3.new(-5700, 0, -450) })
+	table.insert(Config.Roads, { Vector3.new(4880, 0, 200), Vector3.new(5300, 0, 700), Vector3.new(5700, 0, 1000) })
+
+	-- 지옥 확장 셋
+	E4.hyeolgwi = variant(E4.shadowblade, { name = "혈귀", shirt = Color3.fromRGB(150, 24, 34), pants = Color3.fromRGB(60, 10, 16), hp = 1200, mult = 92, elite = true })
+	E4.hyeolsu = variant(E4.ironguard, { name = "피 옥졸", shirt = Color3.fromRGB(110, 30, 36), pants = Color3.fromRGB(44, 12, 16), hp = 1380, mult = 92, elite = true, scale = 1.5 })
+	E4.binggwi = variant(E4.shadowblade, { name = "빙귀", shirt = Color3.fromRGB(150, 200, 235), pants = Color3.fromRGB(60, 96, 140), hp = 1320, mult = 100, elite = true })
+	E4.bingok = variant(E4.ironguard, { name = "얼음 옥졸", shirt = Color3.fromRGB(190, 220, 240), pants = Color3.fromRGB(90, 120, 160), hp = 1500, mult = 100, elite = true, scale = 1.5 })
+	E4.cheolgwi = variant(E4.assassin, { name = "철귀", shirt = Color3.fromRGB(86, 86, 96), pants = Color3.fromRGB(34, 34, 40), hp = 1440, mult = 108, elite = true })
+	E4.hwangsu = variant(E4.ironguard, { name = "쇠고리 옥졸", shirt = Color3.fromRGB(70, 70, 80), pants = Color3.fromRGB(26, 26, 32), hp = 1620, mult = 108, elite = true, scale = 1.6 })
+	local hb = B4.mugunwang
+	B4.hyeolwang = variant(hb, { name = "혈지대왕 · 피의 못의 주인", shirt = Color3.fromRGB(160, 24, 34), pants = Color3.fromRGB(64, 10, 16), hp = 4800000, posture = 5000, scale = 4.4, speed = 17, coins = 2300000, xp = 190000, respawn = 600, mult = 9.4, patterns = pats("피의", Color3.fromRGB(255, 50, 60), "fire", "hyeolgwi", 1.1) })
+	B4.hanbingwang = variant(hb, { name = "한빙대왕 · 얼어붙은 비명", shirt = Color3.fromRGB(160, 205, 240), pants = Color3.fromRGB(70, 104, 150), hp = 5500000, posture = 5400, scale = 4.6, speed = 16, coins = 2700000, xp = 215000, respawn = 600, mult = 10, patterns = pats("얼음", Color3.fromRGB(160, 225, 255), "star", "binggwi", 1.2) })
+	B4.cheolhwanwang = variant(hb, { name = "철환대왕 · 끝없는 사슬", shirt = Color3.fromRGB(90, 90, 100), pants = Color3.fromRGB(30, 30, 38), hp = 6300000, posture = 5900, scale = 4.8, speed = 17, coins = 3200000, xp = 250000, respawn = 600, mult = 10.8, patterns = pats("쇠사슬", Color3.fromRGB(200, 200, 215), "star", "cheolgwi", 1.3) })
+	for _, id in ipairs({ "hyeolwang", "hanbingwang", "cheolhwanwang" }) do
+		B4[id].late = true
+	end
+	table.insert(Config.HELL.zones, { id = "hyeolji", name = "혈지옥", at = Vector3.new(-1000, HY4, -650), radius = 190, ground = Color3.fromRGB(86, 20, 28), material = Enum.Material.Slate, level = 9, decor = true,
+		camps = { { enemy = "hyeolgwi", count = 3, at = Vector3.new(-950, HY4, -700) }, { enemy = "hyeolsu", count = 3, at = Vector3.new(-1060, HY4, -600) }, { enemy = "hyeolgwi", count = 2, at = Vector3.new(-1090, HY4, -720) } },
+		boss = { id = "hyeolwang", at = Vector3.new(-1100, HY4, -650) } })
+	table.insert(Config.HELL.zones, { id = "hanbing", name = "한빙지옥", at = Vector3.new(1000, HY4, -650), radius = 190, ground = Color3.fromRGB(80, 110, 140), material = Enum.Material.Glacier, level = 10, decor = true,
+		camps = { { enemy = "binggwi", count = 3, at = Vector3.new(950, HY4, -700) }, { enemy = "bingok", count = 3, at = Vector3.new(1060, HY4, -600) }, { enemy = "binggwi", count = 2, at = Vector3.new(1090, HY4, -720) } },
+		boss = { id = "hanbingwang", at = Vector3.new(1100, HY4, -650) } })
+	table.insert(Config.HELL.zones, { id = "cheolhwan", name = "철환지옥", at = Vector3.new(-1050, HY4, 1000), radius = 190, ground = Color3.fromRGB(46, 46, 56), material = Enum.Material.Metal, level = 11, decor = true,
+		camps = { { enemy = "cheolgwi", count = 3, at = Vector3.new(-1000, HY4, 950) }, { enemy = "hwangsu", count = 3, at = Vector3.new(-1110, HY4, 1050) }, { enemy = "cheolgwi", count = 2, at = Vector3.new(-1140, HY4, 930) } },
+		boss = { id = "cheolhwanwang", at = Vector3.new(-1150, HY4, 1000) } })
+
+	-- 천상 확장 셋
+	E4.dragonmonk = variant(E4.ironguard, { name = "운룡 승려", shirt = Color3.fromRGB(90, 190, 170), pants = Color3.fromRGB(34, 90, 90), hp = 1100, mult = 52, elite = true, scale = 1.3 })
+	E4.cloudwyrm = variant(E4.assassin, { name = "구름 이무기", shirt = Color3.fromRGB(190, 240, 235), pants = Color3.fromRGB(80, 140, 150), hp = 960, mult = 52, elite = true })
+	E4.immortalsage = variant(E4.cultelder, { name = "선호 신선", shirt = Color3.fromRGB(230, 240, 255), pants = Color3.fromRGB(120, 150, 200), hp = 1000, mult = 56, elite = true })
+	E4.lakecrane = variant(E4.shadowblade, { name = "호수 학무사", shirt = Color3.fromRGB(250, 250, 255), pants = Color3.fromRGB(150, 170, 210), hp = 1040, mult = 56, elite = true })
+	E4.skygate = variant(E4.ironguard, { name = "비상문 수호병", shirt = Color3.fromRGB(240, 220, 150), pants = Color3.fromRGB(150, 120, 60), hp = 1240, mult = 60, elite = true, scale = 1.4 })
+	E4.sunblade = variant(E4.assassin, { name = "일광 검사", shirt = Color3.fromRGB(255, 200, 90), pants = Color3.fromRGB(170, 100, 40), hp = 1100, mult = 60, elite = true })
+	local sb = B4.biryong
+	B4.unryongwang = variant(sb, { name = "운룡왕 · 구름 위의 용", shirt = Color3.fromRGB(100, 210, 190), pants = Color3.fromRGB(36, 100, 100), hp = 2200000, posture = 3200, scale = 4.0, speed = 18, coins = 900000, xp = 92000, respawn = 300, mult = 5.8, patterns = pats("구름", Color3.fromRGB(150, 255, 230), "star", "dragonmonk", 0.8) })
+	B4.sinsunwang = variant(sb, { name = "신선왕 · 호수의 주인", shirt = Color3.fromRGB(235, 242, 255), pants = Color3.fromRGB(130, 160, 210), hp = 2400000, posture = 3400, scale = 4.0, speed = 16, coins = 980000, xp = 100000, respawn = 300, mult = 6.2, patterns = pats("선계", Color3.fromRGB(210, 235, 255), "star", "immortalsage", 0.86) })
+	B4.bisangwang = variant(sb, { name = "비상왕 · 하늘 문의 군주", shirt = Color3.fromRGB(250, 226, 150), pants = Color3.fromRGB(160, 124, 60), hp = 2700000, posture = 3700, scale = 4.2, speed = 17, coins = 1100000, xp = 112000, respawn = 300, mult = 6.6, patterns = pats("하늘 문", Color3.fromRGB(255, 230, 150), "star", "skygate", 0.92) })
+	for _, id in ipairs({ "unryongwang", "sinsunwang", "bisangwang" }) do
+		B4[id].late = true
+	end
+	local n0 = #Config.SKY.islands
+	table.insert(Config.SKY.islands, { id = "unryongdae", name = "운룡대", at = Vector3.new(1900, SY4, -700), radius = 190, ground = Color3.fromRGB(110, 180, 170), material = Enum.Material.Slate,
+		camps = { { enemy = "dragonmonk", count = 3, at = Vector3.new(1840, SY4, -760) }, { enemy = "cloudwyrm", count = 3, at = Vector3.new(1950, SY4, -640) }, { enemy = "dragonmonk", count = 2, at = Vector3.new(2000, SY4, -760) } },
+		boss = { id = "unryongwang", at = Vector3.new(2000, SY4, -700) } })
+	table.insert(Config.SKY.islands, { id = "sinsunho", name = "신선호", at = Vector3.new(-1900, SY4, -700), radius = 190, ground = Color3.fromRGB(205, 225, 245), material = Enum.Material.Marble,
+		camps = { { enemy = "immortalsage", count = 3, at = Vector3.new(-1840, SY4, -760) }, { enemy = "lakecrane", count = 3, at = Vector3.new(-1950, SY4, -640) }, { enemy = "immortalsage", count = 2, at = Vector3.new(-2000, SY4, -760) } },
+		boss = { id = "sinsunwang", at = Vector3.new(-2000, SY4, -700) } })
+	table.insert(Config.SKY.islands, { id = "bisangmun", name = "비상문", at = Vector3.new(0, SY4, 1900), radius = 200, ground = Color3.fromRGB(245, 232, 190), material = Enum.Material.Marble,
+		camps = { { enemy = "skygate", count = 3, at = Vector3.new(-80, SY4, 1840) }, { enemy = "sunblade", count = 3, at = Vector3.new(80, SY4, 1840) }, { enemy = "skygate", count = 2, at = Vector3.new(0, SY4, 1780) } },
+		boss = { id = "bisangwang", at = Vector3.new(0, SY4, 2010) } })
+	table.insert(Config.SKY.bridges, { 16, n0 + 1 })
+	table.insert(Config.SKY.bridges, { 17, n0 + 2 })
+	table.insert(Config.SKY.bridges, { 11, n0 + 3 })
+	for k = 1, 3 do
+		local isl = Config.SKY.islands[n0 + k]
 		Config.SKY_BY_ID[isl.id] = isl
 	end
 end

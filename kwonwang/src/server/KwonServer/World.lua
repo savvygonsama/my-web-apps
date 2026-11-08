@@ -4931,6 +4931,9 @@ local function skyWorld(out: any)
 		dragonridge = { depth = 0.4, blocky = true, rim = "crag", rimColor = rgb(40, 90, 104), under = { rgb(36, 74, 90), Enum.Material.Slate }, vein = rgb(120, 230, 255), drip = "spike", dripColor = rgb(30, 60, 76), cloud = { rgb(120, 170, 190), 0.25, 1.1 }, islet = "rod", ledges = 5 },
 		glasssea = { depth = 0.2, core = "crystal", rim = "star", rimColor = rgb(190, 225, 255), under = { rgb(150, 190, 230), Enum.Material.Glass }, drip = "crystal", dripColor = rgb(200, 230, 255), cloud = { rgb(225, 240, 255), 0.3, 1 }, islet = "crystal" },
 		thunderjail = { depth = 0.45, blocky = true, rim = "crag", rimColor = rgb(46, 50, 74), under = { rgb(40, 42, 62), Enum.Material.Slate }, vein = rgb(170, 190, 255), drip = "spike", dripColor = rgb(34, 36, 52), cloud = { rgb(80, 84, 110), 0.2, 1.25 }, islet = "rod", ledges = 6 },
+		unryongdae = { depth = 0.4, blocky = true, rim = "crag", rimColor = rgb(60, 130, 120), under = { rgb(44, 96, 92), Enum.Material.Slate }, vein = rgb(150, 255, 230), drip = "spike", dripColor = rgb(36, 80, 76), cloud = { rgb(170, 230, 220), 0.25, 1.1 }, islet = "rod", ledges = 5 },
+		sinsunho = { depth = 0.16, rim = "silver", under = { rgb(196, 214, 240), Enum.Material.Marble }, drip = "water", cloud = { rgb(225, 238, 255), 0.25, 1 }, islet = "lotus" },
+		bisangmun = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(226, 196, 130), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(214, 180, 112), cloud = { rgb(255, 240, 200), 0.2, 1 }, islet = "bell" },
 		goldtemple = { depth = 0.3, bands = true, rim = "goldbell", under = { rgb(200, 168, 118), Enum.Material.Sandstone }, drip = "gold", dripColor = rgb(190, 158, 108), cloud = { rgb(255, 236, 196), 0.2, 1 }, islet = "bell" },
 	}
 	-- 다리가 닿는 방향 (테두리 꾸밈은 그 자리를 비운다)
@@ -6712,6 +6715,33 @@ local function hellWorld(out: any)
 	-- 흩날리는 재와 불씨 (구역마다)
 	for _, z in ipairs(H.zones) do
 		drift(z.at + Vector3.new(0, 36, 0), Vector3.new(z.radius * 1.7, 44, z.radius * 1.7), { rgb(255, 150, 70), rgb(255, 80, 40), rgb(200, 190, 190) }, z.safe and 14 or 22, 0.7, 9, -1.2, f, 0.6)
+	end
+
+	-- 3.36판 지옥 확장 셋의 장식: 둘레에 솟은 뾰족한 돌기둥 열 (끝에 빛 구슬), 가운데 땅의 둥근 룬 셋
+	for _, z in ipairs(H.zones) do
+		if (z :: any).decor then
+			local theme = ({
+				hyeolji = { rgb(150, 24, 34), Enum.Material.Slate, rgb(255, 60, 60) },
+				hanbing = { rgb(160, 205, 240), Enum.Material.Glacier, rgb(150, 220, 255) },
+				cheolhwan = { rgb(70, 70, 80), Enum.Material.Metal, rgb(255, 160, 70) },
+			} :: { [string]: any })[z.id]
+			if theme then
+				for k = 0, 9 do
+					local a = k / 10 * math.pi * 2 + 0.2
+					local base = z.at + Vector3.new(math.cos(a) * z.radius * 0.82, 0, math.sin(a) * z.radius * 0.82)
+					local h = rng:NextNumber(22, 46)
+					part({ Name = "HellSpire", Size = Vector3.new(7, h, 7), CFrame = CFrame.new(base + Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, a, rng:NextNumber(-0.12, 0.12)), Color = theme[1], Material = theme[2], Parent = f })
+					local tip = part({ Name = "HellSpireTip", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 3, 3), Position = base + Vector3.new(0, h + 1.5, 0), Color = theme[3], Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+					if k % 3 == 0 then
+						glow(tip.Position, theme[3], 40, 1.2)
+					end
+				end
+				for q = 1, 3 do
+					local rune = disc("HellRune_" .. z.id .. q, z.at + Vector3.new(0, 0.4 + q * 0.02, 0), 44 - q * 11, 0.15, theme[3], Enum.Material.Neon, f, false)
+					rune.Transparency = 0.55
+				end
+			end
+		end
 	end
 
 	------------------------------------------------ 황천 나루 (안전한 곳)
