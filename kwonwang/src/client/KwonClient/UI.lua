@@ -1741,9 +1741,11 @@ function UIB.buildShop()
 		local owned = state and state.premium or {}
 		for id, b in pairs(premiumBtns) do
 			local has = owned[id] == true
-			b.Text = has and "✅ 가지고 있음" or ("R$ " .. tostring(Config.PREMIUM_BY_ID[id].price) .. "  구매")
-			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or Color3.fromRGB(40, 170, 80)
-			b.AutoButtonColor = not has
+			-- 3.37판: 게임패스 번호가 아직 없으면 (gamepass = 0) 사지 못하니 '준비 중'으로
+			local ready = (Config.PREMIUM_BY_ID[id].gamepass or 0) > 0
+			b.Text = has and "✅ 가지고 있음" or (ready and ("R$ " .. tostring(Config.PREMIUM_BY_ID[id].price) .. "  구매") or "🔒 준비 중")
+			b.BackgroundColor3 = has and Color3.fromRGB(60, 70, 60) or (ready and Color3.fromRGB(40, 170, 80) or Color3.fromRGB(80, 80, 90))
+			b.AutoButtonColor = not has and ready
 		end
 		local statLabel = { all = "골고루", str = "💪 근골", vit = "❤ 체력", agi = "🍃 경공", chi = "🌀 내공" }
 		for id, ab in pairs(autoBtns) do

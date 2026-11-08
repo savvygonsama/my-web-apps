@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.36.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.37.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3819,18 +3819,18 @@ Config.Regions = {
 	{ id = "edge", name = "세상 끝 벼랑", center = Vector3.new(0, 0, 4450), size = Vector3.new(1500, 0, 760), ground = Color3.fromRGB(150, 160, 150), material = Enum.Material.Grass, ambient = "rift",
 		camps = { { enemy = "voidwalker", count = 3, at = Vector3.new(-450, 0, 4300) }, { enemy = "stonewarden", count = 2, at = Vector3.new(450, 0, 4300) }, { enemy = "riftyaksha", count = 3, at = Vector3.new(-300, 0, 4600) }, { enemy = "apostle", count = 2, at = Vector3.new(350, 0, 4620) } },
 		boss = { id = "mumyeong", at = Vector3.new(-520, 0, 4600) } },
-	{ id = "canyon", name = "황사 협곡", center = Vector3.new(4520, 0, -250), size = Vector3.new(760, 0, 1500), ground = Color3.fromRGB(206, 150, 96), material = Enum.Material.Sandstone, ambient = "badlands",
-		camps = { { enemy = "marauder", count = 3, at = Vector3.new(4400, 0, -700) }, { enemy = "lancer", count = 3, at = Vector3.new(4600, 0, -300) }, { enemy = "magmabrute", count = 2, at = Vector3.new(4450, 0, 150) }, { enemy = "marauder", count = 3, at = Vector3.new(4650, 0, 350) } },
+	{ id = "canyon", name = "황사 협곡", center = Vector3.new(4520, 0, -250), size = Vector3.new(760, 0, 1500), ground = Color3.fromRGB(206, 150, 96), material = Enum.Material.Sandstone, ambient = "badlands", mult = 20,
+		camps = { { enemy = "marauder", count = 3, at = Vector3.new(4400, 0, -700) }, { enemy = "lancer", count = 3, at = Vector3.new(4600, 0, -300) }, { enemy = "lancer", count = 2, at = Vector3.new(4450, 0, 150) }, { enemy = "marauder", count = 3, at = Vector3.new(4650, 0, 350) } },
 		boss = { id = "hwangsa", at = Vector3.new(4600, 0, -850) } },
 }
 -- 3.36판 지상 확장: 세상을 사방으로 더 넓혔다 (WORLD_HALF 5200 → 6200). 북쪽 끝 북명 빙원 · 서쪽 끝 서역 사구 · 동쪽 끝 동극 불길 평원
-table.insert(Config.Regions, { id = "northice", name = "북명 빙원", center = Vector3.new(-1600, 0, -5750), size = Vector3.new(3000, 0, 900), ground = Color3.fromRGB(226, 236, 248), material = Enum.Material.Glacier, ambient = "snow",
+table.insert(Config.Regions, { id = "northice", name = "북명 빙원", center = Vector3.new(-1600, 0, -5750), size = Vector3.new(3000, 0, 900), ground = Color3.fromRGB(226, 236, 248), material = Enum.Material.Glacier, ambient = "snow", mult = 19,
 	camps = { { enemy = "snowblade", count = 3, at = Vector3.new(-2500, 0, -5900) }, { enemy = "iceguard", count = 3, at = Vector3.new(-2000, 0, -5600) }, { enemy = "snowblade", count = 3, at = Vector3.new(-1200, 0, -5900) }, { enemy = "iceguard", count = 2, at = Vector3.new(-700, 0, -5600) } },
 	boss = { id = "bukmyeongje", at = Vector3.new(-1600, 0, -5850) } })
-table.insert(Config.Regions, { id = "westdune", name = "서역 사구", center = Vector3.new(-5750, 0, -1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(226, 196, 138), material = Enum.Material.Sand, ambient = "desert",
+table.insert(Config.Regions, { id = "westdune", name = "서역 사구", center = Vector3.new(-5750, 0, -1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(226, 196, 138), material = Enum.Material.Sand, ambient = "desert", mult = 1.7,
 	camps = { { enemy = "sandwraith", count = 3, at = Vector3.new(-5700, 0, -2600) }, { enemy = "tombguard", count = 3, at = Vector3.new(-5800, 0, -2000) }, { enemy = "sandwraith", count = 3, at = Vector3.new(-5700, 0, -1000) }, { enemy = "starblade", count = 2, at = Vector3.new(-5800, 0, -450) } },
 	boss = { id = "seoyeoksawang", at = Vector3.new(-5750, 0, -2950) } })
-table.insert(Config.Regions, { id = "eastember", name = "동극 불길 평원", center = Vector3.new(5750, 0, 1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(70, 46, 40), material = Enum.Material.Basalt, ambient = "volcano",
+table.insert(Config.Regions, { id = "eastember", name = "동극 불길 평원", center = Vector3.new(5750, 0, 1500), size = Vector3.new(900, 0, 3000), ground = Color3.fromRGB(70, 46, 40), material = Enum.Material.Basalt, ambient = "volcano", mult = 2.5,
 	camps = { { enemy = "flameimp", count = 3, at = Vector3.new(5700, 0, 650) }, { enemy = "magmabrute", count = 3, at = Vector3.new(5800, 0, 1250) }, { enemy = "flameimp", count = 3, at = Vector3.new(5700, 0, 1850) }, { enemy = "magmabrute", count = 2, at = Vector3.new(5800, 0, 2400) } },
 	boss = { id = "dongguckgun", at = Vector3.new(5750, 0, 2900) } })
 -- 권법 id → 사부 { name, at, region }
@@ -4561,7 +4561,16 @@ Config.Premium = {
 		lines = { "금창약을 5개 → 10개까지 들 수 있다", "마을 상점에서 한 번에 채우기가 편해진다", "큰 싸움 (보스·레이드) 에서 버틸 수 있는 횟수가 두 배" } },
 	{ id = "dragon", gamepass = 2058382534, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
 		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
+	-- 3.37판 출시 게임패스 셋 (gamepass 번호는 로블록스 사이트에서 만든 뒤 채운다. 0이면 상점에 '준비 중'으로 뜬다)
+	{ id = "kill2x", gamepass = 0, price = 199, icon = "🗡", name = "두 배 처치", tag = "영구",
+		lines = { "적을 쓰러뜨려 오르는 능력치가 영원히 두 배", "졸병·정예·보스·천층탑 모두", "두 배 수련과 겹친다 (수련은 수련, 처치는 처치)" } },
+	{ id = "luck", gamepass = 0, price = 149, icon = "🍀", name = "행운의 부적", tag = "영구",
+		lines = { "보스의 심법 두루마리 확률 두 배 (15% → 30%)", "천상 재료가 떨어질 확률 두 배 (한 번에 둘까지는 그대로)", "천상계 적의 천정 1.5배" } },
+	{ id = "vip", gamepass = 0, price = 249, icon = "👑", name = "VIP", tag = "VIP",
+		lines = { "머리 위 이름 앞에 금빛 👑", "권법 숙련이 두 배로 빨리 오른다", "적·보스의 은자 +25% (은자 두 배와 겹친다)" } },
 }
+-- 3.37판: 게임패스 효과 숫자 (서버가 이 표를 쓴다)
+Config.PASS = { killMult = 2, luckScroll = 0.30, scrollBase = 0.15, luckMat = 2, luckGems = 1.5, vipMastery = 2, vipCoins = 1.25 }
 -- 자동 수련: every = 간격(초). kinds = 능력치마다 보통 수련, advKinds = 고급이 쓰는 경지 수련
 Config.AUTO_TRAIN = {
 	every = 3,
@@ -5560,11 +5569,24 @@ Config.ACH_COLOR = {
 -- 이제 보스는 그 땅 졸병 (가운데) 전투력의 BOSS_POWER_RATIO배까지만 (넘으면 체력을 깎는다). 한 대는 졸병 한 대의 BOSS_HIT_RATIO배
 ------------------------------------------------------------------------
 Config.BOSS_POWER_RATIO = 7.6 -- 3.25판: 4 → 5.7, 3.25.2판: → 7.6 (체력 ×3.5에 해당: 전투력은 체력의 제곱근에 비례)
-Config.BOSS_HIT_RATIO = 2 -- 보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
+Config.BOSS_HP_POW_MAX = 42 -- 3.37판: 보스 체력은 전투력의 이만큼까지 (넘으면 체력을 덜고 한 대를 키운다. 전투력은 그대로)
+Config.BOSS_HP_FIX_CAP = 2.5 -- 한 번에 고치는 몫의 한도 (한 대가 너무 갑자기 세지지 않게)
+Config.BOSS_HIT_RATIO = 2 --보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
 -- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
+-- 3.37판 출시 전 밸런스: 세상 끝 땅 (북명 빙원 · 서역 사구 · 동극 불길 평원 · 황사 협곡) 은 초반 적을 그대로 써서
+-- 거리 단계 (lv 43~62) 에 비해 전투력이 단풍산·차밭의 1/10 수준이었다. 땅에 mult를 두어 그 땅의 적 (보스 포함) 에 겹으로 곱한다
+function Config.regionMultAt(at: Vector3): number
+	for _, r in ipairs(Config.Regions) do
+		local m = r.mult
+		if m and r.center and r.size and math.abs(at.X - r.center.X) <= r.size.X / 2 and math.abs(at.Z - r.center.Z) <= r.size.Z / 2 and math.abs(at.Y) < 200 then
+			return m
+		end
+	end
+	return 1
+end
 function Config.npcStats(def: any, at: Vector3, isBoss: boolean): (number, number, number)
 	local lv = Config.enemyLevel(at)
-	local mult = def.mult or 1
+	local mult = (def.mult or 1) * (def.dummy and 1 or Config.regionMultAt(at))
 	local hp = math.floor(def.hp * (isBoss and Config.ENEMY_BOSS_HP or Config.ENEMY_HP) * (1 + Config.ENEMY_HP_LEVEL * (lv - 1)) * mult)
 	local dm = Config.ENEMY_DMG * (1 + Config.ENEMY_DMG_LEVEL * (lv - 1)) * mult ^ Config.ENEMY_DMG_MULT_POW * (isBoss and (def.late and Config.LATE_BOSS_DMG or Config.BOSS_DMG) or 1) * (def.dmgScale or 1)
 	return hp, dm, Config.enemyPower(dm, hp, isBoss)
@@ -5664,6 +5686,32 @@ do
 	end
 	for _, z in ipairs(Config.HELL.zones or {}) do
 		norm(z.boss, z.camps)
+	end
+	-- 3.37판 출시 전 밸런스: 졸병의 한 대가 약한 땅 (철환지옥·죽림 등) 의 보스는 한 대가 약해진 만큼 체력이 부풀어 (전투력의 100배) 싸움이 몇 배 길었다.
+	-- 체력이 전투력의 BOSS_HP_POW_MAX배를 넘으면, 넘은 만큼 체력을 덜고 같은 몫만큼 한 대를 키운다 (전투력·권장 전투력은 그대로, 싸움 길이만 고르게)
+	local seenFix: { [any]: boolean } = {}
+	local function evenOut(boss: any)
+		local b = boss and Config.Bosses[boss.id]
+		if not b or seenFix[b] then
+			return
+		end
+		seenFix[b] = true
+		local hp, _, pw = Config.npcStats(b, boss.at, true)
+		local ratio = hp / math.max(1, pw)
+		if ratio > Config.BOSS_HP_POW_MAX then
+			local k = math.min(Config.BOSS_HP_FIX_CAP, ratio / Config.BOSS_HP_POW_MAX)
+			b.hp = math.max(1, math.floor(b.hp / k))
+			b.dmgScale = (b.dmgScale or 1) * k
+		end
+	end
+	for _, r in ipairs(Config.Regions) do
+		evenOut(r.boss)
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		evenOut(isl.boss)
+	end
+	for _, z in ipairs(Config.HELL.zones or {}) do
+		evenOut(z.boss)
 	end
 end
 

@@ -362,7 +362,8 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	local lv = Config.enemyLevel(at)
 	model:SetAttribute("Level", lv)
 	-- mult: 허공 균열 같은 후반 땅의 적은 체력·피해가 겹으로 세다
-	local mult = def.mult or 1
+	-- 3.37판: 세상 끝 땅은 그 땅의 겹 배율을 더 곱한다 (Config.regionMultAt. 보상 rewardMult도 함께 오른다)
+	local mult = (def.mult or 1) * ((def.dummy or region == "trial" or region == "simma") and 1 or Config.regionMultAt(at))
 	local f = Combat.register(model, {
 		npc = def,
 		name = def.name,

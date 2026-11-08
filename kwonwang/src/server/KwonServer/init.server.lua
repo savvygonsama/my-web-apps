@@ -1160,7 +1160,8 @@ local function updateTag(player: Player)
 	local top = g:FindFirstChild("Top") :: TextLabel
 	local bottom = g:FindFirstChild("Bottom") :: TextLabel
 	local rbName = p.rebirth > 0 and Config.REBIRTH.names[p.rebirth] or nil
-	top.Text = string.format("[%s%s] %s", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
+	-- 3.37판 VIP 게임패스: 이름 앞에 금빛 왕관
+	top.Text = string.format("%s[%s%s] %s", Premium.owns(player, "vip") and "👑 " or "", rbName and (rbName .. " · ") or "", realm.name, player.DisplayName)
 	top.TextColor3 = realm.color
 	local tl = g:FindFirstChild("Title") :: TextLabel?
 	local ta = p.title and Config.ACH_BY_ID[p.title]
@@ -2192,7 +2193,11 @@ Combat.init(Push, {
 					refreshFighter(killer)
 					Story.check(killer)
 				end
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1))
+				-- 3.37판 게임패스: 행운의 부적 (두루마리·천상 재료·천정) · VIP (은자 +25%, 숙련 두 배)
+				local PS = Config.PASS
+				local lucky = Premium.owns(killer, "luck")
+				local vip = Premium.owns(killer, "vip")
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -2200,6 +2205,9 @@ Combat.init(Push, {
 				if f.root.Position.Y > Config.SKY.y - 300 then
 					local G = Config.SKY_GEMS
 					gems = f.meteor and G.meteor or (isBoss and G.boss or (f.npc.elite and G.elite or G.enemy))
+					if lucky then
+						gems = math.floor(gems * PS.luckGems)
+					end
 					p.skyGems += gems
 					-- 2.5판: 천상 재료 (초월 권법). 섬마다·밤에만·보스만, 얻는 길이 다르다
 					local got = {}
@@ -2208,11 +2216,11 @@ Combat.init(Push, {
 						local n = 0
 						if M.island then
 							if isl and isl.id == M.island then
-								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+								n = isBoss and M.boss or (math.random() < M.chance * (lucky and PS.luckMat or 1) and 1 or 0)
 							end
 						elseif M.night then
 							if not Combat.isDay() then
-								n = isBoss and M.boss or (math.random() < M.chance and 1 or 0)
+								n = isBoss and M.boss or (math.random() < M.chance * (lucky and PS.luckMat or 1) and 1 or 0)
 							end
 						elseif M.bossOnly and isBoss then
 							n = (M.bossBonus and M.bossBonus[(f :: any).typeId]) or M.bossOnly
@@ -2237,14 +2245,14 @@ Combat.init(Push, {
 						end
 					end
 					-- 보스는 가끔 심법 두루마리를 떨어뜨린다
-					if math.random() < 0.15 then
+					if math.random() < (lucky and PS.luckScroll or PS.scrollBase) then
 						p.scrolls += 1
 						toast(killer, "📜 심법 두루마리를 얻었어요!")
 					end
 				end
 				-- 3.20판 도감 (보스 수를 센 뒤에)
 				Dex.onKill(killer, p, (f :: any).typeId, isBossKill)
-				addMastery(killer, p, xp)
+				addMastery(killer, p, xp * (vip and PS.vipMastery or 1))
 				-- 1.5판: 쓰러뜨린 적의 전투력만큼 능력치가 오른다 (네 능력치에 고루). 시험·관문·심마의 상대는 빼고
 				local statGain = 0
 				-- 2.7.6판: 천층탑의 적도 능력치를 준다 (시련 표시가 붙어 있어 지금까지 하나도 오르지 않았다. 몫은 KILL_GAIN.tower)
@@ -2261,6 +2269,10 @@ Combat.init(Push, {
 						local rec = rp and key and rp:GetAttribute(key)
 						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
 						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
+					end
+					-- 3.37판 게임패스 두 배 처치 (보스 상한을 맞춘 뒤에 곱한다)
+					if Premium.owns(killer, "kill2x") then
+						g *= PS.killMult
 					end
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					statGain = 0
@@ -3944,7 +3956,7 @@ function Maze.killed(player: Player, ef: any)
 	-- 미궁의 적: 보통 처치 몫의 절반만큼 능력치
 	local p = profiles[player]
 	if p then
-		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p)
+		local g = math.min(Config.killGain(ef.power or 100), shareGain(player) * Config.KILL_GAIN.overCap) * Config.MAZE.killGain * (ef.model:GetAttribute("Boss") == true and Config.KILL_GAIN.boss or 1) * gainMult(p) * (Premium.owns(player, "kill2x") and Config.PASS.killMult or 1)
 		local each = math.max(1, math.floor(g / #Config.Stats))
 		for _, sd in ipairs(Config.Stats) do
 			addStat(p, sd.id, each)
@@ -6385,6 +6397,10 @@ function Premium.grant(player: Player, id: string)
 	local p = profiles[player]
 	if p and (id == "autoTrain" or id == "autoTrain2") and p.autoOn == nil then
 		p.autoOn = true
+	end
+	-- VIP: 머리 위 왕관을 바로 단다
+	if id == "vip" then
+		updateTag(player)
 	end
 	-- 청룡을 사면 바로 고른다
 	if p and id == "dragon" then
