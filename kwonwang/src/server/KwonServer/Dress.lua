@@ -1070,6 +1070,28 @@ local LOOKS: { [string]: any } = {
 	dokssawang = { head = "topknot", hair = C3(30, 60, 30), eyes = C3(255, 230, 80), armor = true, metal = C3(40, 80, 44), armorTrim = C3(170, 255, 110), top = C3(60, 120, 64), bottom = C3(24, 48, 30), trim = C3(170, 255, 110), robe = C3(40, 90, 48), build = { w = 1.08, head = 1.06 } },
 	balseolwang = { head = "horns", hair = C3(40, 10, 20), hornColor = C3(60, 20, 30), hornLen = 1.2, eyes = C3(255, 190, 190), armor = true, metal = C3(90, 30, 40), armorTrim = C3(255, 110, 130), top = C3(160, 40, 56), bottom = C3(60, 14, 24), trim = C3(255, 110, 130), build = { w = 1.1, head = 1.06 } },
 	mugunwang = { head = "hood", hoodColor = C3(14, 10, 22), eyes = C3(190, 120, 255), top = C3(30, 22, 44), bottom = C3(10, 8, 18), trim = C3(160, 90, 255), robe = C3(18, 12, 30), build = { h = 1.1, head = 1.06 } },
+	-- 3.36.1판: 확장 땅 · 지옥 · 천상의 새 적과 보스 (옛 모양을 베끼지 않고 각자 따로 빚는다)
+	hyeolgwi = { form = "imp", skin = C3(150, 24, 34), eyes = C3(255, 220, 70), hornColor = C3(30, 8, 10), spark = C3(255, 70, 60), build = { w = 0.92, h = 1.02, head = 0.96 } },
+	hyeolsu = { form = "skeleton", eyes = C3(255, 60, 60), armor = true, metal = C3(90, 18, 24), cloth = C3(60, 10, 16), bone = C3(210, 190, 180), build = { w = 1.2, h = 1.1, head = 0.92 } },
+	binggwi = { form = "spirit", skin = C3(170, 215, 245), eyes = C3(255, 255, 255), crest = "ice" },
+	bingok = { form = "golem", skin = C3(190, 222, 242), eyes = C3(200, 240, 255), carved = true, build = { w = 1.3, h = 1.1, head = 0.84 } },
+	cheolgwi = { form = "skeleton", eyes = C3(255, 160, 70), armor = true, metal = C3(70, 70, 80), cloth = C3(34, 34, 42), bone = C3(150, 150, 160), build = { w = 1.05, h = 1.05, head = 0.95 } },
+	hwangsu = { form = "golem", skin = C3(84, 84, 94), eyes = C3(255, 150, 60), carved = true, build = { w = 1.4, h = 1.14, head = 0.8 } },
+	dragonmonk = { form = "naga", skin = C3(90, 190, 170), eyes = C3(255, 245, 160), build = { w = 1.12, h = 1.1, head = 0.9 } },
+	cloudwyrm = { form = "naga", skin = C3(190, 240, 235), eyes = C3(120, 220, 255), build = { w = 0.95, h = 1.0, head = 0.92 } },
+	immortalsage = { head = "topknot", hair = C3(240, 244, 250), eyes = C3(150, 200, 255), top = C3(230, 240, 255), bottom = C3(120, 150, 210), trim = C3(190, 220, 255), robe = C3(220, 232, 250), build = { w = 0.96, head = 1.0 } },
+	lakecrane = { form = "bird", feather = C3(250, 252, 255), crest = C3(120, 170, 240), beak = C3(220, 200, 160), tip = C3(60, 90, 150), longTail = C3(150, 180, 230) },
+	skygate = { form = "skeleton", eyes = C3(255, 230, 130), armor = true, metal = C3(226, 196, 110), cloth = C3(160, 124, 60), bone = C3(245, 238, 210), build = { w = 1.18, h = 1.12, head = 0.92 } },
+	sunblade = { head = "topknot", hair = C3(60, 30, 14), eyes = C3(255, 220, 100), armor = true, metal = C3(220, 170, 70), armorTrim = C3(255, 235, 150), top = C3(255, 200, 90), bottom = C3(170, 100, 40), trim = C3(255, 235, 150), build = { w = 1.0, head = 1.0 } },
+	bukmyeongje = { head = "hood", hoodColor = C3(150, 190, 225), eyes = C3(220, 245, 255), top = C3(200, 225, 245), bottom = C3(80, 120, 170), trim = C3(240, 250, 255), robe = C3(170, 205, 235), build = { h = 1.1, head = 1.04 } },
+	seoyeoksawang = { head = "hood", hoodColor = C3(200, 170, 110), eyes = C3(255, 220, 100), top = C3(226, 196, 138), bottom = C3(140, 100, 56), trim = C3(255, 230, 150), robe = C3(190, 156, 96), build = { h = 1.1, head = 1.04 } },
+	dongguckgun = { head = "horns", hair = C3(50, 14, 10), hornColor = C3(30, 20, 20), hornLen = 1.7, eyes = C3(255, 140, 50), armor = true, metal = C3(70, 40, 36), armorTrim = C3(255, 140, 50), top = C3(120, 50, 36), bottom = C3(50, 20, 16), trim = C3(255, 140, 50), build = { w = 1.1, head = 1.06 } },
+	hyeolwang = { head = "horns", hair = C3(30, 6, 10), hornColor = C3(20, 6, 8), hornLen = 1.9, eyes = C3(255, 60, 60), armor = true, metal = C3(100, 16, 24), armorTrim = C3(255, 90, 90), top = C3(150, 24, 34), bottom = C3(60, 10, 16), trim = C3(255, 90, 90), build = { w = 1.1, head = 1.06 } },
+	hanbingwang = { head = "hood", hoodColor = C3(120, 170, 220), eyes = C3(255, 255, 255), top = C3(160, 205, 240), bottom = C3(70, 104, 150), trim = C3(230, 248, 255), robe = C3(140, 185, 230), build = { h = 1.1, head = 1.05 } },
+	cheolhwanwang = { head = "topknot", hair = C3(30, 30, 36), eyes = C3(255, 150, 60), armor = true, metal = C3(70, 70, 80), armorTrim = C3(255, 150, 60), top = C3(90, 90, 100), bottom = C3(30, 30, 38), trim = C3(255, 150, 60), build = { w = 1.12, head = 1.06 } },
+	unryongwang = { head = "horns", hair = C3(20, 80, 80), hornColor = C3(220, 245, 240), hornLen = 1.7, eyes = C3(255, 240, 130), armor = true, metal = C3(60, 150, 140), armorTrim = C3(170, 255, 235), top = C3(100, 210, 190), bottom = C3(36, 100, 100), trim = C3(170, 255, 235), build = { w = 1.08, head = 1.06 } },
+	sinsunwang = { head = "topknot", hair = C3(245, 248, 255), eyes = C3(150, 200, 255), top = C3(235, 242, 255), bottom = C3(130, 160, 210), trim = C3(200, 225, 255), robe = C3(225, 236, 252), build = { w = 1.04, head = 1.05 } },
+	bisangwang = { head = "horns", hair = C3(70, 40, 16), hornColor = C3(250, 226, 150), hornLen = 1.5, eyes = C3(255, 235, 140), armor = true, metal = C3(226, 190, 100), armorTrim = C3(255, 245, 190), top = C3(250, 226, 150), bottom = C3(160, 124, 60), trim = C3(255, 245, 190), build = { w = 1.1, head = 1.06 } },
 	biryong = { head = "horns", hair = C3(20, 70, 90), hornColor = C3(220, 235, 245), hornLen = 1.6, eyes = C3(255, 230, 120), armor = true, metal = C3(50, 130, 150), armorTrim = C3(160, 235, 255), top = C3(60, 160, 180), bottom = C3(24, 70, 100), trim = C3(160, 235, 255), build = { w = 1.08, head = 1.06 } },
 	yuriwang = { form = "golem", skin = C3(180, 215, 245), eyes = C3(255, 255, 255), carved = true },
 	cheonroeok = { head = "helmet", metal = C3(60, 66, 110), plume = C3(170, 190, 255), armor = true, armorTrim = C3(190, 200, 255), eyes = C3(190, 210, 255), top = C3(60, 66, 110), bottom = C3(24, 26, 46), trim = C3(190, 200, 255), build = { w = 1.1, h = 1.06, head = 1.06 } },
@@ -1969,7 +1991,7 @@ function Dress.enemy(model: Model, typeId: string, def: any, isBoss: boolean)
 		end
 	end
 	-- 지옥 보스 여덟의 서명 장식 · 망토도 뺀다 (형체가 또렷하도록 몸 + 옷 + 얼굴만)
-	local PLAIN_BOSS: { [string]: boolean } = { talui = true, hwatang = true, dosan = true, agwiwang = true, yeomra = true, dokssawang = true, balseolwang = true, mugunwang = true }
+	local PLAIN_BOSS: { [string]: boolean } = { talui = true, hwatang = true, dosan = true, agwiwang = true, yeomra = true, dokssawang = true, balseolwang = true, mugunwang = true, hyeolwang = true, hanbingwang = true, cheolhwanwang = true }
 	if isBoss and not bossBody and not PLAIN_BOSS[typeId] then
 		local sig = SIG[typeId]
 		if sig then

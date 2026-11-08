@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.36.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.36.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5442,6 +5442,15 @@ Config.ACHIEVEMENTS = {
 	{ id = "dokssawang", icon = "🐍", name = "독을 삼키다", desc = "독사대왕을 쓰러뜨린다", kind = "boss", arg = "dokssawang", n = 1, gems = 1200, scrolls = 10, title = "독을 삼킨 자", tier = 4 },
 	{ id = "balseolwang", icon = "👅", name = "혀를 지키다", desc = "발설대왕을 쓰러뜨린다", kind = "boss", arg = "balseolwang", n = 1, gems = 1200, scrolls = 10, title = "혀를 지킨 자", tier = 4 },
 	{ id = "mugunwang", icon = "🕳", name = "끝없는 낙하의 끝", desc = "무간의 군주를 쓰러뜨린다", kind = "boss", arg = "mugunwang", n = 1, gems = 1200, scrolls = 10, title = "무간을 넘은 자", tier = 4 },
+	{ id = "bukmyeongje", icon = "🧊", name = "북명을 얼리다", desc = "북명제를 쓰러뜨린다", kind = "boss", arg = "bukmyeongje", n = 1, gems = 1500, scrolls = 12, title = "북명을 꺾은 자", tier = 4 },
+	{ id = "seoyeoksawang", icon = "🏜", name = "사구를 건너다", desc = "서역사왕을 쓰러뜨린다", kind = "boss", arg = "seoyeoksawang", n = 1, gems = 1500, scrolls = 12, title = "서역을 평정한 자", tier = 4 },
+	{ id = "dongguckgun", icon = "🌋", name = "불길의 끝에 서다", desc = "동극군을 쓰러뜨린다", kind = "boss", arg = "dongguckgun", n = 1, gems = 1500, scrolls = 12, title = "동극의 불을 끈 자", tier = 4 },
+	{ id = "hyeolwang", icon = "🩸", name = "피의 못을 말리다", desc = "혈지대왕을 쓰러뜨린다", kind = "boss", arg = "hyeolwang", n = 1, gems = 1500, scrolls = 12, title = "혈지옥을 넘은 자", tier = 4 },
+	{ id = "hanbingwang", icon = "❄", name = "비명을 녹이다", desc = "한빙대왕을 쓰러뜨린다", kind = "boss", arg = "hanbingwang", n = 1, gems = 1500, scrolls = 12, title = "한빙을 녹인 자", tier = 4 },
+	{ id = "cheolhwanwang", icon = "⛓", name = "사슬을 끊다", desc = "철환대왕을 쓰러뜨린다", kind = "boss", arg = "cheolhwanwang", n = 1, gems = 1500, scrolls = 12, title = "철환을 끊은 자", tier = 4 },
+	{ id = "unryongwang", icon = "🐉", name = "구름 위의 용을 꺾다", desc = "운룡왕을 쓰러뜨린다", kind = "boss", arg = "unryongwang", n = 1, gems = 1500, scrolls = 12, title = "운룡을 꺾은 자", tier = 4 },
+	{ id = "sinsunwang", icon = "🪷", name = "선계의 호수를 건너다", desc = "신선왕을 쓰러뜨린다", kind = "boss", arg = "sinsunwang", n = 1, gems = 1500, scrolls = 12, title = "선호를 건넌 자", tier = 4 },
+	{ id = "bisangwang", icon = "🚪", name = "하늘 문을 열다", desc = "비상왕을 쓰러뜨린다", kind = "boss", arg = "bisangwang", n = 1, gems = 1500, scrolls = 12, title = "하늘 문을 연 자", tier = 4 },
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
