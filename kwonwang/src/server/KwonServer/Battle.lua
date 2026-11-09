@@ -588,6 +588,63 @@ BUILD.cloud = function(c: Vector3, f: Folder)
 	return { spawns = sp, floorY = c.Y, R = OR + DR, fall = true }
 end
 
+
+-- 3.60판: 대기실의 실물 화면 (화면 창 대신 마당에 세운 전광판). 얇은 검은 판 + 빛나는 테 + 앞면의 SurfaceGui
+local SCREEN_BG = Color3.fromRGB(16, 18, 24)
+local SCREEN_ACCENT = Color3.fromRGB(255, 92, 70)
+local function screen(cf: CFrame, w: number, h: number, parent: Instance, accent: Color3?): Frame
+	local ac = accent or SCREEN_ACCENT
+	local body = part({ Name = "Screen", Size = Vector3.new(w, h, 0.4), CFrame = cf, Color = SCREEN_BG, Material = Enum.Material.SmoothPlastic, Parent = parent })
+	for _, e in ipairs({ { 0, h / 2 + 0.12, w + 0.4, 0.24 }, { 0, -h / 2 - 0.12, w + 0.4, 0.24 } }) do
+		part({ Name = "ScreenEdge", Size = Vector3.new(e[3], e[4], 0.5), CFrame = cf * CFrame.new(e[1], e[2], 0), Color = ac, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+	end
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front
+	sg.PixelsPerStud = 50
+	sg.LightInfluence = 0
+	sg.Brightness = 1.4
+	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sg.Parent = body
+	local root = Instance.new("Frame")
+	root.Size = UDim2.fromScale(1, 1)
+	root.BackgroundColor3 = SCREEN_BG
+	root.BorderSizePixel = 0
+	root.Parent = sg
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 28)
+	pad.PaddingRight = UDim.new(0, 28)
+	pad.PaddingTop = UDim.new(0, 20)
+	pad.PaddingBottom = UDim.new(0, 20)
+	pad.Parent = root
+	return root
+end
+local function label(parent: Instance, pos: UDim2, size: UDim2, text: string, ts: number, color: Color3?, font: Enum.Font?, align: Enum.TextXAlignment?): TextLabel
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Position = pos
+	t.Size = size
+	t.Text = text
+	t.TextSize = ts
+	t.Font = font or Enum.Font.GothamBold
+	t.TextColor3 = color or Color3.fromRGB(235, 238, 245)
+	t.TextXAlignment = align or Enum.TextXAlignment.Left
+	t.TextYAlignment = Enum.TextYAlignment.Center
+	t.TextWrapped = true
+	t.Parent = parent
+	return t
+end
+local function prompt(target: Instance, action: string, object: string, name: string): ProximityPrompt
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = name
+	pp.ActionText = action
+	pp.ObjectText = object
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 12
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.T
+	pp.Parent = target
+	return pp
+end
 ------------------------------------------------------------------------
 -- 3.11판 대기실: 산기슭의 무관 뜰. 흰 담장 (기와 갓)으로 두른 박석 마당, 북쪽 큰 전각과 돌계단 (싸움터 문은 전각 앞),
 -- 남쪽 솟을대문, 동쪽 연못과 돌다리, 서쪽 수련 마당 (목인 둘), 담 밖의 소나무 숲. 권법은 화면에서 골라 들어간다
@@ -736,7 +793,61 @@ local function buildLobby(c: Vector3, f: Folder): any
 	if #spots == 0 then
 		table.insert(spots, c + Vector3.new(0, 4, 20))
 	end
-	return { center = c, spots = spots, gate = pp, dummies = { yard + Vector3.new(-6, 3, 0), yard + Vector3.new(6, 3, 0) } }
+	-- 3.60판 실물 화면 셋: 다음 맵 투표대 넷 · 판 현황 전광판 · 권법 고르는 자리
+	local MAPC = { Color3.fromRGB(110, 190, 90), Color3.fromRGB(120, 200, 255), Color3.fromRGB(255, 120, 60), Color3.fromRGB(235, 225, 255) }
+	local vote = {}
+	for i, m in ipairs(B.maps) do
+		local x = -42 + (i - 1) * 28
+		local at = c + Vector3.new(x, 0, 36)
+		local col = MAPC[i] or SCREEN_ACCENT
+		local pad = disc("VotePad", at + Vector3.new(0, 0.75, 0), 5, 0.3, col, Enum.Material.Neon, f, false)
+		pad.Transparency = 0.55
+		disc("VotePadBase", at + Vector3.new(0, 0.6, 0), 5.6, 0.3, Color3.fromRGB(40, 42, 50), Enum.Material.Slate, f)
+		part({ Name = "VotePost", Size = Vector3.new(0.6, 5.4, 0.6), Position = at + Vector3.new(0, 3.3, 5.4), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal, Parent = f })
+		local root = screen(CFrame.lookAt(at + Vector3.new(0, 7.2, 5.4), at + Vector3.new(0, 7.2, -10)), 12, 5.6, f, col)
+		local name = label(root, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.36, 0), m.name, 54, Color3.new(1, 1, 1), Enum.Font.GothamBlack)
+		local desc = label(root, UDim2.new(0, 0, 0.36, 0), UDim2.new(1, 0, 0.34, 0), m.desc or "", 24, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham)
+		local count = label(root, UDim2.new(0, 0, 0.72, 0), UDim2.new(0.6, 0, 0.28, 0), "0표", 40, col, Enum.Font.GothamBlack)
+		local tag = label(root, UDim2.new(0.6, 0, 0.72, 0), UDim2.new(0.4, 0, 0.28, 0), "", 30, Color3.fromRGB(255, 210, 120), Enum.Font.GothamBlack, Enum.TextXAlignment.Right)
+		vote[i] = { count = count, tag = tag, name = name, desc = desc, prompt = prompt(pad, "투표", m.name, "VoteMap" .. i) }
+	end
+	-- 판 현황 전광판: 전각 계단 왼쪽, 마당을 본다
+	local bAt = c + Vector3.new(-40, 0, -D + 30)
+	part({ Name = "BoardLeg", Size = Vector3.new(0.8, 8, 0.8), Position = bAt + Vector3.new(-8, 4, 0), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal, Parent = f })
+	part({ Name = "BoardLeg", Size = Vector3.new(0.8, 8, 0.8), Position = bAt + Vector3.new(8, 4, 0), Color = Color3.fromRGB(40, 42, 50), Material = Enum.Material.Metal, Parent = f })
+	local broot = screen(CFrame.lookAt(bAt + Vector3.new(0, 12.5, 0), bAt + Vector3.new(0, 12.5, 30)), 20, 10, f)
+	local board = {}
+	label(broot, UDim2.new(0, 0, 0, 0), UDim2.new(0.5, 0, 0.1, 0), "지금 싸움터", 30, Color3.fromRGB(150, 156, 170), Enum.Font.GothamBold)
+	board.map = label(broot, UDim2.new(0, 0, 0.1, 0), UDim2.new(0.62, 0, 0.18, 0), "", 72, Color3.new(1, 1, 1), Enum.Font.GothamBlack)
+	board.time = label(broot, UDim2.new(0.62, 0, 0.04, 0), UDim2.new(0.38, 0, 0.24, 0), "", 96, SCREEN_ACCENT, Enum.Font.GothamBlack, Enum.TextXAlignment.Right)
+	board.people = label(broot, UDim2.new(0, 0, 0.29, 0), UDim2.new(1, 0, 0.08, 0), "", 28, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham)
+	local line = Instance.new("Frame")
+	line.Position = UDim2.new(0, 0, 0.395, 0)
+	line.Size = UDim2.new(1, 0, 0, 3)
+	line.BackgroundColor3 = Color3.fromRGB(60, 64, 76)
+	line.BorderSizePixel = 0
+	line.Parent = broot
+	label(broot, UDim2.new(0, 0, 0.42, 0), UDim2.new(0.7, 0, 0.08, 0), "이번 판 순위", 30, Color3.fromRGB(150, 156, 170), Enum.Font.GothamBold)
+	label(broot, UDim2.new(0.7, 0, 0.42, 0), UDim2.new(0.3, 0, 0.08, 0), "처치 / 쓰러짐", 26, Color3.fromRGB(150, 156, 170), Enum.Font.GothamBold, Enum.TextXAlignment.Right)
+	board.rows = {}
+	for r = 1, 5 do
+		local ry = 0.51 + (r - 1) * 0.098
+		local nm = label(broot, UDim2.new(0, 0, ry, 0), UDim2.new(0.7, 0, 0.09, 0), "", 40, Color3.new(1, 1, 1), Enum.Font.GothamBold)
+		local kd = label(broot, UDim2.new(0.7, 0, ry, 0), UDim2.new(0.3, 0, 0.09, 0), "", 40, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Right)
+		nm.TextWrapped = false
+		nm.TextTruncate = Enum.TextTruncate.AtEnd
+		board.rows[r] = { nm, kd }
+	end
+	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
+	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
+	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 고르기", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "고른 권법으로 싸움터에 들어간다", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	local rack = f:FindFirstChild("Rack")
+	local stylePrompt = prompt(rack or sroot, "권법 고르기", "무기 걸이", "PickStyle")
+	-- 입장 문 위의 작은 화면
+	local groot = screen(CFrame.lookAt(hall + Vector3.new(0, floorY + 11.2, 7.8), hall + Vector3.new(0, floorY + 11.2, 30)), 9, 1.8, f)
+	label(groot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 1, 0), "싸움터 입장 · T", 44, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+	return { center = c, spots = spots, gate = pp, dummies = { yard + Vector3.new(-6, 3, 0), yard + Vector3.new(6, 3, 0) }, vote = vote, board = board, stylePrompt = stylePrompt }
 end
 
 function Battle.build(): any
@@ -1003,6 +1114,31 @@ local function nextMap(): number
 	return best
 end
 
+-- 3.60판: 대기실 실물 화면 고치기 (1초마다)
+function Battle.paintLobby(m: any, left: number, st: { any }, arenaN: number)
+	if not lobby or not lobby.board then
+		return
+	end
+	local bd = lobby.board
+	bd.map.Text = m.name
+	local l = math.max(0, math.floor(left))
+	bd.time.Text = string.format("%d:%02d", l // 60, l % 60)
+	bd.time.TextColor3 = l <= B.warnAt and Color3.fromRGB(255, 92, 70) or Color3.fromRGB(255, 210, 120)
+	bd.people.Text = string.format("싸움터 %d명 · 모두 %d명", arenaN, #Players:GetPlayers())
+	for r, row in ipairs(bd.rows) do
+		local e = st[r]
+		row[1].Text = e and string.format("%d   %s", r, e.name) or ""
+		row[2].Text = e and string.format("%d / %d", e.k, e.d) or ""
+		row[1].TextColor3 = r == 1 and Color3.fromRGB(255, 210, 120) or Color3.new(1, 1, 1)
+	end
+	local vc = voteCounts()
+	local nx = nextMap()
+	for i, v in ipairs(lobby.vote or {}) do
+		v.count.Text = string.format("%d표", vc[i] or 0)
+		v.tag.Text = i == nx and "다음 맵" or ""
+	end
+end
+
 -- 대기실 ↔ 싸움터, 투표. 안 되면 까닭을 돌려준다
 function Battle.request(player: Player, action: string, arg: any): string?
 	if not ctx then
@@ -1105,6 +1241,7 @@ function Battle.start(c: any)
 				end
 			end
 			ctx.push:FireAllClients("battle", { map = m.name, desc = m.desc, left = math.floor(left), list = st, votes = voteCounts(), next = maps[nextMap()].name, arena = arenaN, total = #Players:GetPlayers() })
+			pcall(Battle.paintLobby, m, left, st, arenaN)
 			if t >= saveAt then
 				saveAt = t + 60
 				Battle.saveAll()

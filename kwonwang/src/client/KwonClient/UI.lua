@@ -3099,8 +3099,9 @@ function UI.setState(s: any)
 	local realm = Config.Realms[s.realm]
 	if Config.BATTLE_MODE then
 		local st = Config.STYLE_BY_ID[s.style or ""]
-		topInfo.Text = string.format("⚔ 배틀그라운드 · ❤ %d · %s", Config.BATTLE.hp, st and (st.icon .. " " .. st.name) or "")
-		topInfo.TextColor3 = Color3.fromRGB(255, 200, 120)
+		-- 3.60판: 위 왼쪽은 지금 권법만 짧게
+		topInfo.Text = st and (st.icon .. " " .. st.name) or ""
+		topInfo.TextColor3 = Color3.fromRGB(236, 239, 245)
 	elseif V.device == "phone" then
 		-- 휴대폰: 경지·전투력·은자만 (능력치는 능력치 창에)
 		topInfo.Text = string.format("[%s] ⚔ %s  💰 %s", realm.name, Config.formatNumber(s.power or 0), Config.formatNumber(s.coins))
@@ -4482,393 +4483,95 @@ end
 ------------------------------------------------------------------------
 -- (화면 파일의 바깥 지역 변수가 200개 한도에 닿아, 배틀 화면 것은 한 표에 모은다)
 local BH: any = { rows = {}, votes = {}, myVote = 0 }
--- 3.11.1판 대기실 창 (比武堂): 익힌 권법이 등급 빛깔의 카드로 늘어선다 (권법 빛깔로 물든 바탕, 큰 한자 그림자, 등급 띠).
--- 위쪽 등급 칸으로 거르고, 고르면 오른쪽 큰 판이 그 권법 빛깔로 물들며 기술이 뜬다. ✕로 닫고 둘러볼 수 있다
-function UIB.buildLobbyPanel()
-	local INK = Color3.fromRGB(14, 10, 9)
-	local function tw(inst: Instance, t: number, goal: { [string]: any }, style: Enum.EasingStyle?)
-		TweenService:Create(inst, TweenInfo.new(t, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
-	end
-	local function dim(c: Color3, k: number): Color3
-		return c:Lerp(INK, k)
-	end
-	local panel = new("Frame", { Name = "LobbyPanel", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 10), Size = UDim2.new(0, 1120, 0, 640), BackgroundColor3 = INK, BackgroundTransparency = 0.04, ClipsDescendants = true, Parent = gui }, { corner(18), stroke(C.line, 2) })
-	scaled(panel)
-	-- 머리: 붉은 먹빛 띠와 금빛 제목
-	local head = new("Frame", { Size = UDim2.new(1, 0, 0, 72), BackgroundColor3 = Color3.fromRGB(120, 30, 26), BorderSizePixel = 0, Parent = panel }, {
-		new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(150, 36, 30), INK), Rotation = 0 }),
-	})
-	local title = text({ Position = UDim2.new(0, 22, 0, 6), Size = UDim2.new(0, 220, 0, 46), TextSize = 40, Font = Enum.Font.Antique, TextColor3 = Color3.new(1, 1, 1), Text = "比武堂", TextStrokeTransparency = 0.5, Parent = head })
-	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(255, 236, 170), Color3.fromRGB(230, 150, 60)), Rotation = 90, Parent = title })
-	text({ Position = UDim2.new(0, 24, 0, 48), Size = UDim2.new(0, 400, 0, 20), TextSize = 15, TextColor3 = Color3.fromRGB(240, 210, 180), Text = "⚔ 권법을 골라 싸움터로 · 모두 체력 200, 같은 힘", Parent = head })
-	BH.info = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -66, 0, 14), Size = UDim2.new(0, 420, 0, 44), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Right, Text = "", Parent = head })
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 16), Size = UDim2.new(0, 40, 0, 40), Text = "✕", TextSize = 20, BackgroundColor3 = Color3.fromRGB(60, 30, 26), Parent = head }, function()
-		BH.closed = true
-		panel.Visible = false
-		if BH.reopen then
-			BH.reopen.Visible = true
-		end
-	end)
-	-- 등급 칸 (거르기)
-	local tabs = new("Frame", { Position = UDim2.new(0, 16, 0, 82), Size = UDim2.new(0.54, -24, 0, 30), BackgroundTransparency = 1, Parent = panel }, {
-		new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	BH.tabs = tabs
-	BH.filter = "전체"
-	BH.count = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(0.54, -10, 0, 86), Size = UDim2.new(0, 140, 0, 22), TextSize = 13, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Right, Text = "", Parent = panel })
-	-- 왼쪽: 권법 카드 (세 줄)
-	local list = scroller(panel, UDim2.new(0.54, -24, 1, -134), UDim2.new(0, 16, 0, 120))
-	new("UIGridLayout", { CellSize = UDim2.new(1 / 3, -8, 0, 128), CellPadding = UDim2.new(0, 8, 0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
-	new("UIPadding", { PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4), PaddingBottom = UDim.new(0, 8), Parent = list })
-	BH.list = list
-	-- 오른쪽: 고른 권법 (빛깔로 물든 큰 판)
-	local side = new("Frame", { Position = UDim2.new(0.54, 0, 0, 82), Size = UDim2.new(0.46, -16, 1, -96), BackgroundColor3 = Color3.new(1, 1, 1), ClipsDescendants = true, Parent = panel }, { corner(14) })
-	BH.sideGrad = new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(60, 40, 30), INK), Rotation = 90, Parent = side })
-	BH.sideStroke = new("UIStroke", { Color = C.line, Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = side })
-	BH.dMark = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 20, 0, -10), Size = UDim2.new(0, 260, 0, 260), TextScaled = true, Font = Enum.Font.Antique, TextColor3 = Color3.new(1, 1, 1), TextTransparency = 0.88, TextXAlignment = Enum.TextXAlignment.Right, Text = "", Parent = side })
-	BH.dIcon = text({ Position = UDim2.new(0, 16, 0, 12), Size = UDim2.new(0, 64, 0, 64), TextSize = 54, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = side })
-	BH.dIconScale = new("UIScale", { Parent = BH.dIcon })
-	BH.dName = text({ Position = UDim2.new(0, 88, 0, 14), Size = UDim2.new(1, -316, 0, 38), TextSize = 30, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.35, TextColor3 = Color3.new(1, 1, 1), TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = side })
-	BH.dSub = text({ Position = UDim2.new(0, 88, 0, 52), Size = UDim2.new(1, -316, 0, 20), TextSize = 15, TextColor3 = C.dim, Text = "", Parent = side })
-	BH.dBadge = new("Frame", { Position = UDim2.new(0, 16, 0, 84), Size = UDim2.new(0, 70, 0, 24), Parent = side }, { corner(12) })
-	BH.dBadgeT = text({ Size = UDim2.fromScale(1, 1), TextSize = 14, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = INK, Text = "", Parent = BH.dBadge })
-	BH.dUse = text({ Position = UDim2.new(0, 96, 0, 86), Size = UDim2.new(1, -326, 0, 20), TextSize = 14, TextColor3 = C.gold, Text = "", Parent = side })
-	BH.dDesc = text({ Position = UDim2.new(0, 16, 0, 116), Size = UDim2.new(1, -248, 0, 136), TextSize = 14, TextColor3 = Color3.fromRGB(235, 225, 210), TextYAlignment = Enum.TextYAlignment.Top, Text = "", Parent = side })
-	BH.dSkills = new("Frame", { Position = UDim2.new(0, 16, 0, 268), Size = UDim2.new(1, -32, 0, 150), BackgroundTransparency = 1, Parent = side }, {
-		new("UIListLayout", { Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	-- 3.11.2판: 시그니처 장신구 미리보기 (내 몸을 본뜬 인형이 그 권법의 장신구를 걸고 천천히 돈다)
-	local vp = new("ViewportFrame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 14), Size = UDim2.new(0, 216, 0, 244), BackgroundColor3 = INK, BackgroundTransparency = 0.35, Ambient = Color3.fromRGB(160, 150, 140), LightColor = Color3.fromRGB(255, 240, 220), LightDirection = Vector3.new(-0.6, -1, -0.8), Parent = side }, { corner(12) })
-	BH.vpStroke = new("UIStroke", { Color = C.line, Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = vp })
-	BH.wm = new("WorldModel", { Parent = vp })
-	local cam = new("Camera", { FieldOfView = 34, CFrame = CFrame.lookAt(Vector3.new(0, 1.2, -13), Vector3.new(0, 0.6, 0)), Parent = vp })
-	vp.CurrentCamera = cam
-	local capBg = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 0, 1, 0), Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = INK, BackgroundTransparency = 0.25, Parent = vp }, { corner(12) })
-	text({ Position = UDim2.new(0, 8, 0, 2), Size = UDim2.new(1, -16, 0, 14), TextSize = 11, TextColor3 = C.dim, Text = "⭐ 시그니처 장신구", Parent = capBg })
-	BH.gearCap = text({ Position = UDim2.new(0, 8, 0, 16), Size = UDim2.new(1, -16, 0, 20), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = capBg })
-	BH.yaw = 0
-	RunService.RenderStepped:Connect(function(dt)
-		local d = BH.doll
-		if d and d.Parent and panel.Visible then
-			BH.yaw += dt * 0.7
-			d:PivotTo(CFrame.Angles(0, BH.yaw, 0))
-		end
-	end)
-	-- 인형: 내 몸을 본뜬다 (스크립트·이름표·지금 걸친 장신구는 뺀다)
-	local BODY = { HumanoidRootPart = true, Head = true, UpperTorso = true, LowerTorso = true, LeftUpperArm = true, LeftLowerArm = true, LeftHand = true, RightUpperArm = true, RightLowerArm = true, RightHand = true, LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true, RightUpperLeg = true, RightLowerLeg = true, RightFoot = true, Torso = true, ["Left Arm"] = true, ["Right Arm"] = true, ["Left Leg"] = true, ["Right Leg"] = true }
-	local KEEP = { Accessory = true, Humanoid = true, Shirt = true, Pants = true, ShirtGraphic = true, BodyColors = true, CharacterMesh = true }
-	BH.makeDoll = function(): Model?
-		local char = player.Character
-		if not char then
-			return nil
-		end
-		local old = char.Archivable
-		char.Archivable = true
-		local ok, cl = pcall(function()
-			return char:Clone()
-		end)
-		char.Archivable = old
-		if not ok or not cl then
-			return nil
-		end
-		local doll = cl :: Model
-		for _, ch in ipairs(doll:GetChildren()) do
-			local keep = (ch:IsA("BasePart") and BODY[ch.Name]) or KEEP[ch.ClassName]
-			if not keep then
-				ch:Destroy()
-			end
-		end
-		for _, d in ipairs(doll:GetDescendants()) do
-			if d:IsA("LuaSourceContainer") or d:IsA("BillboardGui") or d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
-				d:Destroy()
-			elseif d:IsA("BasePart") then
-				d.Anchored = d.Name == "HumanoidRootPart"
-				d.CanCollide = false
-			end
-		end
-		local hum = doll:FindFirstChildOfClass("Humanoid")
-		if hum then
-			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		end
-		doll.Name = "LobbyDoll"
-		doll.Parent = BH.wm
-		doll:PivotTo(CFrame.new())
-		return doll
-	end
-	BH.preview = function(st: any)
-		if not st then
-			return
-		end
-		local doll = BH.doll
-		if not doll or not doll.Parent then
-			doll = BH.makeDoll()
-			BH.doll = doll
-		end
-		if not doll or not UI.previewGear then
-			return
-		end
-		BH.yaw = 0
-		doll:PivotTo(CFrame.new())
-		doll:SetAttribute("SkyTint", (state and state.skyTint and state.skyTint[st.id] and not state.skyTintOff) or nil)
-		local ok, list = pcall(UI.previewGear, doll, st.id)
-		if ok and type(list) == "table" then
-			for _, inst in ipairs(list) do
-				if typeof(inst) == "Instance" and inst.Parent and not inst:IsDescendantOf(doll) then
-					inst.Parent = doll
-				end
-			end
-		end
-	end
-	-- 다음 맵 투표 (작은 칸 넷)
-	text({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 16, 1, -142), Size = UDim2.new(1, -32, 0, 18), TextSize = 13, TextColor3 = C.dim, Text = "🗳 다음 맵", Parent = side })
-	local grid = new("Frame", { AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 16, 1, -80), Size = UDim2.new(1, -32, 0, 60), BackgroundTransparency = 1, Parent = side }, {
-		new("UIGridLayout", { CellSize = UDim2.new(0.5, -4, 0, 27), CellPadding = UDim2.new(0, 8, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	for i, m in ipairs(Config.BATTLE.maps) do
-		BH.votes[i] = button({ Text = m.name, TextSize = 13, LayoutOrder = i, BackgroundColor3 = Color3.fromRGB(40, 30, 26), Parent = grid }, function()
-			BH.myVote = i
-			Request:FireServer("battleVote", i)
-		end)
-	end
-	-- 입장 단추: 붉은 바탕에 금빛 테가 숨 쉬듯 굵어졌다 가늘어진다
-	BH.enter = button({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 16, 1, -14), Size = UDim2.new(1, -32, 0, 56), Text = "⚔  입 장", TextSize = 24, BackgroundColor3 = Color3.new(1, 1, 1), TextColor3 = Color3.new(1, 1, 1), Parent = side }, function()
-		Request:FireServer("battleEnter", BH.sel)
-	end)
-	new("UIGradient", { Color = ColorSequence.new(Color3.fromRGB(200, 50, 36), Color3.fromRGB(150, 30, 24)), Rotation = 90, Parent = BH.enter })
-	local es = new("UIStroke", { Color = Color3.fromRGB(255, 210, 120), Thickness = 1.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = BH.enter })
-	TweenService:Create(es, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Thickness = 3.5 }):Play()
-	BH.lobby = panel
-	-- 닫은 뒤 다시 여는 단추
-	local re = button({ Name = "LobbyReopen", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -200), Size = UDim2.new(0, 300, 0, 50), Text = "🥋 권법 고르기 · 입장", TextSize = 19, BackgroundColor3 = Color3.fromRGB(150, 40, 32), Visible = false, Parent = gui }, function()
-		BH.closed = false
-		panel.Visible = true
-		BH.reopen.Visible = false
-	end)
-	new("UIStroke", { Color = Color3.fromRGB(255, 210, 120), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = re })
-	scaled(re)
-	BH.reopen = re
-	BH.cards = {}
-	-- 권법마다 시그니처 장신구 이름 (화면이 입히는 차례와 같다)
-	BH.gearName = function(st: any): string?
-		if not st then
-			return nil
-		end
-		if st.soju then
-			return "호리병과 넥타이"
-		elseif st.pearls then
-			return "진주 고리와 물의 띠"
-		elseif st.nullCubes then
-			return "빈칸 상자 셋"
-		elseif st.dreamMoon then
-			return "초승달과 반짝이는 별"
-		elseif st.ashHalo then
-			return "이 빠진 은빛 후광"
-		elseif st.staff then
-			return "별 지팡이"
-		elseif st.gauntlets then
-			return "뇌전 토시"
-		elseif st.wheel then
-			return "등 뒤의 윤회륜"
-		elseif st.chains then
-			return "사슬과 검은 불꽃"
-		elseif st.wisps then
-			return "넋불과 안개 띠"
-		elseif st.crown then
-			return "금관과 붉은 망토"
-		elseif st.sunMoonOrbs then
-			return "해와 달 구슬"
-		elseif st.scythe then
-			return "붉은 큰 낫과 손톱"
-		elseif st.fans then
-			return "매화 쥘부채 한 쌍"
-		end
-		return nil
-	end
-	local function gradeOf(id: string): string
-		local s = Config.STYLE_BY_ID[id]
-		local ups = (state and state.gradeUp and state.gradeUp[id]) or 0
-		return s and Config.styleGrade(s, ups) or "상급"
-	end
-	BH.showSel = function()
-		local st = Config.STYLE_BY_ID[BH.sel or ""]
-		for id, card in pairs(BH.cards) do
-			local on = id == BH.sel
-			local sk = card:FindFirstChild("Edge") :: UIStroke?
-			if sk then
-				sk.Color = on and C.gold or dim(Config.STYLE_BY_ID[id].color, 0.4)
-				sk.Thickness = on and 3 or 1
-			end
-			local sc = card:FindFirstChild("Pop") :: UIScale?
-			if sc then
-				tw(sc, 0.18, { Scale = on and 1.04 or 1 }, Enum.EasingStyle.Back)
-			end
-		end
-		for _, ch in ipairs(BH.dSkills:GetChildren()) do
-			if ch:IsA("Frame") then
-				ch:Destroy()
-			end
-		end
-		if not st then
-			BH.dName.Text = "권법을 고르세요"
-			BH.dSub.Text, BH.dDesc.Text, BH.dIcon.Text, BH.dMark.Text, BH.dUse.Text, BH.dBadgeT.Text = "", "", "", "", "", ""
-			return
-		end
-		local g = gradeOf(st.id)
-		local gc = Config.GRADE_COLOR[g] or C.gold
-		BH.sideGrad.Color = ColorSequence.new(dim(st.color, 0.45), INK)
-		BH.sideStroke.Color = st.color
-		BH.dMark.Text = st.hanja or ""
-		BH.dMark.TextColor3 = st.color2 or st.color
-		BH.dIcon.Text = st.icon
-		BH.dIconScale.Scale = 0.6
-		tw(BH.dIconScale, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
-		BH.dName.Text = st.name
-		BH.dName.TextStrokeColor3 = dim(st.color, 0.6)
-		BH.dSub.Text = st.hanja or ""
-		BH.dBadge.BackgroundColor3 = gc
-		BH.dBadgeT.Text = g
-		BH.dUse.Text = (state and state.style == st.id) and "✔ 지금 쓰는 권법" or ""
-		BH.dDesc.Text = st.desc or ""
-		local gn = BH.gearName(st)
-		BH.gearCap.Text = gn or "없음 (맨손)"
-		BH.gearCap.TextColor3 = gn and (st.color2 or C.gold) or C.dim
-		BH.vpStroke.Color = st.color
-		BH.preview(st)
-		local rows = {}
-		for _, slot in ipairs({ "E", "R", "G", "X" }) do
-			local s = st.skills and st.skills[slot]
-			if s then
-				table.insert(rows, { slot, s.name })
-			end
-		end
-		if st.heavy then
-			table.insert(rows, { "강", st.heavy.name })
-		end
-		for i, r in ipairs(rows) do
-			local row = new("Frame", { Size = UDim2.new(1, 0, 0, 25), BackgroundColor3 = INK, BackgroundTransparency = 0.45, LayoutOrder = i, Parent = BH.dSkills }, { corner(6) })
-			local chip = new("Frame", { Size = UDim2.new(0, 34, 1, 0), BackgroundColor3 = r[1] == "X" and gc or st.color, Parent = row }, { corner(6) })
-			text({ Size = UDim2.fromScale(1, 1), TextSize = 15, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = INK, Text = r[1], Parent = chip })
-			text({ Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -50, 1, 0), TextSize = 15, Font = Enum.Font.GothamBold, Text = (r[1] == "X" and "초 오의 · " or "") .. r[2], Parent = row })
-		end
-	end
-	local function makeCard(id: string, order: number)
-		local s = Config.STYLE_BY_ID[id]
-		local g = gradeOf(id)
-		local gc = Config.GRADE_COLOR[g] or C.gold
-		local card = button({ LayoutOrder = order, BackgroundColor3 = Color3.new(1, 1, 1), AutoButtonColor = false, ClipsDescendants = true, Parent = BH.list }, function()
-			BH.sel = id
-			BH.showSel()
-		end)
-		new("UIGradient", { Color = ColorSequence.new(dim(s.color, 0.35), INK), Rotation = 115, Parent = card })
-		new("UIStroke", { Name = "Edge", Color = dim(s.color, 0.4), Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = card })
-		local pop = new("UIScale", { Name = "Pop", Parent = card })
-		-- 큰 한자 그림자 (오른쪽 아래로 비스듬히)
-		text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, 14, 1, 16), Size = UDim2.new(0, 120, 0, 120), TextScaled = true, Font = Enum.Font.Antique, TextColor3 = s.color2 or s.color, TextTransparency = 0.8, TextXAlignment = Enum.TextXAlignment.Right, Rotation = -8, Text = utf8.char(utf8.codepoint(s.hanja or "拳", 1)), Parent = card })
-		-- 왼쪽 등급 띠
-		new("Frame", { Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = gc, BorderSizePixel = 0, Parent = card })
-		text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(0, 44, 0, 44), TextSize = 36, TextXAlignment = Enum.TextXAlignment.Center, Text = s.icon, Parent = card })
-		local badge = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 8), Size = UDim2.new(0, 46, 0, 20), BackgroundColor3 = gc, Parent = card }, { corner(10) })
-		text({ Size = UDim2.fromScale(1, 1), TextSize = 12, Font = Enum.Font.GothamBlack, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = INK, Text = g, Parent = badge })
-		text({ Position = UDim2.new(0, 14, 0, 58), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.new(1, 1, 1), TextStrokeColor3 = dim(s.color, 0.6), TextStrokeTransparency = 0.3, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = s.name, Parent = card })
-		text({ Position = UDim2.new(0, 14, 0, 86), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, TextColor3 = Color3.fromRGB(220, 205, 185), TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = s.hanja or "", Parent = card })
-		if state and state.style == id then
-			text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -58, 0, 9), Size = UDim2.new(0, 60, 0, 18), TextSize = 12, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Right, Text = "✔ 사용 중", Parent = card })
-		end
-		local gn = BH.gearName(s)
-		if gn then
-			text({ Position = UDim2.new(0, 14, 1, -24), Size = UDim2.new(1, -20, 0, 18), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = s.color2 or C.gold, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "⭐ " .. gn, Parent = card })
-		end
-		card.MouseEnter:Connect(function()
-			if BH.sel ~= id then
-				tw(pop, 0.12, { Scale = 1.025 })
-			end
-		end)
-		card.MouseLeave:Connect(function()
-			if BH.sel ~= id then
-				tw(pop, 0.12, { Scale = 1 })
-			end
-		end)
-		BH.cards[id] = card
-	end
-	BH.refreshCards = function()
-		if not state or not state.styles then
-			return
-		end
-		local ids = table.clone(state.styles)
-		local function rank(id: string): number
-			return table.find(Config.GRADE_ORDER, gradeOf(id)) or 0
-		end
-		table.sort(ids, function(a, b)
-			local ra, rb = rank(a), rank(b)
-			if ra ~= rb then
-				return ra > rb
-			end
-			return a < b
-		end)
-		-- 등급 칸: 전체 + 가진 등급들 (높은 등급부터)
-		local grades = { "전체", "⭐ 장신구" }
-		for _, id in ipairs(ids) do
-			local g = gradeOf(id)
-			if not table.find(grades, g) then
-				table.insert(grades, g)
-			end
-		end
-		local key = table.concat(ids, ",") .. "|" .. tostring(state.style) .. "|" .. BH.filter
-		if key == BH.cardKey then
-			return
-		end
-		BH.cardKey = key
-		for _, ch in ipairs(BH.tabs:GetChildren()) do
-			if ch:IsA("GuiButton") then
-				ch:Destroy()
-			end
-		end
-		for i, g in ipairs(grades) do
-			local on = BH.filter == g
-			local gc = Config.GRADE_COLOR[g] or C.gold
-			local b = button({ LayoutOrder = i, Size = UDim2.new(0, g == "전체" and 56 or (g == "⭐ 장신구" and 84 or 50), 1, 0), Text = g, TextSize = 13, BackgroundColor3 = on and gc or Color3.fromRGB(36, 28, 24), TextColor3 = on and INK or gc, Parent = BH.tabs }, function()
-				BH.filter = g
-				BH.refreshCards()
-			end)
-			new("UIStroke", { Color = gc, Thickness = 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = b })
-		end
-		for _, card in pairs(BH.cards) do
-			card:Destroy()
-		end
-		BH.cards = {}
-		local shown = 0
-		for i, id in ipairs(ids) do
-			local sOk = BH.filter == "전체" or gradeOf(id) == BH.filter or (BH.filter == "⭐ 장신구" and BH.gearName(Config.STYLE_BY_ID[id]) ~= nil)
-			if Config.STYLE_BY_ID[id] and sOk then
-				makeCard(id, i)
-				shown += 1
-			end
-		end
-		BH.count.Text = string.format("익힌 권법 %d · 보이는 %d", #ids, shown)
-		if not BH.sel or not table.find(ids, BH.sel) then
-			BH.sel = (state.style ~= "" and table.find(ids, state.style)) and state.style or ids[1]
-		end
-		BH.showSel()
-	end
-end
+-- 3.60판 배틀그라운드 화면 (다시): 대기실 창은 없앴다 (마당의 실물 화면으로). 싸움 화면은 납작하고 깔끔하게
+--   위 가운데: 맵 이름 · 남은 시간 알약, 오른쪽 위: 이번 판 순위 카드 (내 줄은 빛나는 띠), 내 처치 / 쓰러짐은 순위 카드 아래 한 줄
+local BG_INK = Color3.fromRGB(14, 15, 20)
+local BG_LINE = Color3.fromRGB(58, 62, 74)
+local BG_TEXT = Color3.fromRGB(236, 239, 245)
+local BG_DIM = Color3.fromRGB(150, 156, 170)
+local BG_ACCENT = Color3.fromRGB(255, 92, 70)
+local BG_GOLD = Color3.fromRGB(255, 208, 110)
 function UIB.buildBattleHud()
-	local top = new("Frame", { Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 8), Size = UDim2.new(0, 360, 0, 62), BackgroundColor3 = C.bg, BackgroundTransparency = 0.2, Parent = gui }, { corner(12), stroke(Color3.fromRGB(200, 80, 60), 1.5) })
-	scaled(top)
-	BH.map = text({ Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(1, -24, 0, 26), TextSize = 21, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 205, 130), TextXAlignment = Enum.TextXAlignment.Center, Text = "⚔ 배틀그라운드", Parent = top })
-	BH.time = text({ Position = UDim2.new(0, 12, 0, 34), Size = UDim2.new(1, -24, 0, 20), TextSize = 15, TextColor3 = C.dim, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = top })
-	BH.top = top
-	local board = new("Frame", { Name = "BattleBoard", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 60), Size = UDim2.new(0, 230, 0, 40), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = gui }, {
-		corner(10), stroke(C.line, 1),
-		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }),
-		new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder }),
-	})
-	scaled(board)
-	text({ Size = UDim2.new(1, 0, 0, 22), TextSize = 15, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Text = "🏆 이번 판   처치 / 쓰러짐", LayoutOrder = 0, Parent = board })
-	for i = 1, 6 do
-		table.insert(BH.rows, text({ Size = UDim2.new(1, 0, 0, 20), TextSize = 15, Text = "", LayoutOrder = i, Visible = false, Parent = board }))
+	local function flat(props: { [string]: any }, kids: { Instance }?): Frame
+		props.BackgroundColor3 = props.BackgroundColor3 or BG_INK
+		props.BackgroundTransparency = props.BackgroundTransparency or 0.18
+		props.BorderSizePixel = 0
+		return new("Frame", props, kids)
 	end
-	BH.board = board
-	UIB.buildLobbyPanel()
+	-- 위 가운데 알약: [ 맵 이름 | 3:42 ]
+	local top = flat({ Name = "BattleTop", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 10), Size = UDim2.new(0, 330, 0, 46), Parent = gui }, { corner(23), new("UIStroke", { Color = BG_LINE, Thickness = 1 }) })
+	scaled(top)
+	BH.map = text({ Position = UDim2.new(0, 22, 0, 0), Size = UDim2.new(1, -130, 1, 0), TextSize = 18, Font = Enum.Font.GothamBold, TextColor3 = BG_TEXT, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = top })
+	local chip = flat({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -6, 0.5, 0), Size = UDim2.new(0, 96, 0, 34), BackgroundColor3 = Color3.fromRGB(34, 36, 46), BackgroundTransparency = 0, Parent = top }, { corner(17) })
+	BH.time = text({ Size = UDim2.fromScale(1, 1), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = BG_GOLD, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = chip })
+	BH.timeChip = chip
+	BH.top = top
+	-- 오른쪽 위 순위 카드
+	local card = flat({ Name = "BattleBoard", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 66), Size = UDim2.new(0, 250, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, Parent = gui }, {
+		corner(12), new("UIStroke", { Color = BG_LINE, Thickness = 1 }),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) }),
+		new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
+	scaled(card)
+	local head = new("Frame", { Size = UDim2.new(1, 0, 0, 18), BackgroundTransparency = 1, LayoutOrder = 0, Parent = card })
+	text({ Size = UDim2.new(0.6, 0, 1, 0), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = BG_DIM, Text = "이번 판", Parent = head })
+	text({ Position = UDim2.new(0.6, 0, 0, 0), Size = UDim2.new(0.4, 0, 1, 0), TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = BG_DIM, TextXAlignment = Enum.TextXAlignment.Right, Text = "K / D", Parent = head })
+	for i = 1, 6 do
+		local row = new("Frame", { Size = UDim2.new(1, 0, 0, 26), BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 1, LayoutOrder = i, Visible = false, Parent = card }, { corner(6) })
+		local bar = new("Frame", { Size = UDim2.new(0, 3, 1, -8), Position = UDim2.new(0, 0, 0, 4), BackgroundColor3 = BG_ACCENT, BorderSizePixel = 0, Visible = false, Parent = row }, { corner(2) })
+		local rank = text({ Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 22, 1, 0), TextSize = 14, Font = Enum.Font.GothamBlack, TextColor3 = BG_DIM, Text = "", Parent = row })
+		local nm = text({ Position = UDim2.new(0, 32, 0, 0), Size = UDim2.new(1, -96, 1, 0), TextSize = 15, Font = Enum.Font.GothamMedium, TextColor3 = BG_TEXT, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Text = "", Parent = row })
+		local kd = text({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 0), Size = UDim2.new(0, 60, 1, 0), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = BG_TEXT, TextXAlignment = Enum.TextXAlignment.Right, Text = "", Parent = row })
+		table.insert(BH.rows, { row = row, bar = bar, rank = rank, nm = nm, kd = kd })
+	end
+	-- 내 기록 한 줄 (카드 아래)
+	local me = flat({ Name = "BattleMe", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = Color3.fromRGB(34, 36, 46), BackgroundTransparency = 0, LayoutOrder = 10, Parent = card }, { corner(8) })
+	BH.me = text({ Size = UDim2.fromScale(1, 1), TextSize = 14, Font = Enum.Font.GothamBold, TextColor3 = BG_GOLD, TextXAlignment = Enum.TextXAlignment.Center, Text = "", Parent = me })
+	BH.board = card
+end
+
+-- 3.60판: 오른쪽 처치 소식 (작은 알약이 쌓였다가 4초 뒤 사라진다. 큰 알림 창은 쓰지 않는다)
+function UI.battleFeed(msg: string, accent: Color3?, mine: boolean?)
+	if not BH.feed then
+		BH.feed = new("Frame", { Name = "BattleFeed", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 330), Size = UDim2.new(0, 300, 0, 200), BackgroundTransparency = 1, Parent = gui }, {
+			new("UIListLayout", { Padding = UDim.new(0, 4), HorizontalAlignment = Enum.HorizontalAlignment.Right, SortOrder = Enum.SortOrder.LayoutOrder }),
+		})
+		scaled(BH.feed)
+		BH.feedN = 0
+	end
+	BH.feedN += 1
+	local pill = new("Frame", { Size = UDim2.new(0, 0, 0, 28), AutomaticSize = Enum.AutomaticSize.X, BackgroundColor3 = mine and Color3.fromRGB(46, 40, 30) or BG_INK, BackgroundTransparency = 0.15, BorderSizePixel = 0, LayoutOrder = BH.feedN, Parent = BH.feed }, {
+		corner(14), new("UIStroke", { Color = accent or BG_LINE, Thickness = 1 }),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }),
+	})
+	local t = text({ Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, TextSize = 14, Font = Enum.Font.GothamBold, TextColor3 = mine and BG_GOLD or BG_TEXT, TextWrapped = false, Text = msg, Parent = pill })
+	local kids = BH.feed:GetChildren()
+	local count = 0
+	for _, k in ipairs(kids) do
+		if k:IsA("Frame") then
+			count += 1
+		end
+	end
+	if count > 5 then
+		local oldest, on = nil, math.huge
+		for _, k in ipairs(kids) do
+			if k:IsA("Frame") and k.LayoutOrder < on then
+				oldest, on = k, k.LayoutOrder
+			end
+		end
+		if oldest then
+			oldest:Destroy()
+		end
+	end
+	task.delay(4, function()
+		if pill.Parent then
+			TweenService:Create(pill, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+			TweenService:Create(t, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
+			task.delay(0.45, function()
+				pill:Destroy()
+			end)
+		end
+	end)
 end
 
 function UI.battleState(data: any, myId: number)
@@ -4876,10 +4579,16 @@ function UI.battleState(data: any, myId: number)
 	if not BH.top or not bm or not bt then
 		return
 	end
-	bm.Text = "⚔ " .. tostring(data.map or "")
+	local ch = player.Character
+	local here = ch and ch:GetAttribute("InArena") == true
+	bm.Text = (here and "" or "대기실 · 다음 ") .. tostring(data.map or "")
 	local left = math.max(0, math.floor(data.left or 0))
-	bt.Text = string.format("⏳ %d:%02d  ·  %s", left // 60, left % 60, tostring(data.desc or ""))
-	bt.TextColor3 = left <= Config.BATTLE.warnAt and Color3.fromRGB(255, 140, 110) or C.dim
+	bt.Text = string.format("%d:%02d", left // 60, left % 60)
+	local warn = left <= Config.BATTLE.warnAt
+	bt.TextColor3 = warn and Color3.new(1, 1, 1) or BG_GOLD
+	if BH.timeChip then
+		BH.timeChip.BackgroundColor3 = warn and BG_ACCENT or Color3.fromRGB(34, 36, 46)
+	end
 	local list = data.list or {}
 	local mine = nil
 	local mineRank = 0
@@ -4889,52 +4598,31 @@ function UI.battleState(data: any, myId: number)
 			mineRank = i
 		end
 	end
-	for i, row in ipairs(BH.rows) do
+	for i, r in ipairs(BH.rows) do
 		local e = list[i]
-		-- 다섯째까지, 여섯째 칸은 내 자리 (다섯 안에 없을 때)
 		if i == 6 and mine and mineRank > 5 then
 			e = mine
 		elseif i == 6 then
 			e = nil
 		end
-		row.Visible = e ~= nil
+		r.row.Visible = e ~= nil
 		if e then
-			local rank = (i == 6) and mineRank or i
-			row.Text = string.format("%d. %s   %d / %d", rank, e.name, e.k, e.d)
-			row.TextColor3 = e.id == myId and Color3.fromRGB(255, 220, 120) or C.text
+			local isMe = e.id == myId
+			r.rank.Text = tostring((i == 6) and mineRank or i)
+			r.rank.TextColor3 = (i == 1 and BG_GOLD) or BG_DIM
+			r.nm.Text = e.name
+			r.kd.Text = string.format("%d / %d", e.k, e.d)
+			r.bar.Visible = isMe
+			r.row.BackgroundTransparency = isMe and 0.92 or 1
+			r.nm.TextColor3 = isMe and BG_GOLD or BG_TEXT
 		end
 	end
-	-- 대기실 패널: 내가 싸움터 밖에 있을 때만
-	local ch = player.Character
-	local here = ch and ch:GetAttribute("InArena") == true
-	if BH.lobby then
-		-- 싸움터에서 대기실로 돌아오면 다시 연다
-		if here then
-			BH.closed = false
-		end
-		BH.lobby.Visible = not here and not BH.closed
-		if BH.reopen then
-			BH.reopen.Visible = not here and BH.closed == true
-		end
-		if BH.refreshCards and not here then
-			BH.refreshCards()
-		end
-	end
-	if BH.info then
-		BH.info.Text = string.format("지금 싸움터: %s · ⏳ %d:%02d · 싸움터 %d명 / 모두 %d명", tostring(data.map or ""), left // 60, left % 60, data.arena or 0, data.total or 0)
-	end
-	local vc = data.votes or {}
-	for i, b in ipairs(BH.votes) do
-		local m = Config.BATTLE.maps[i]
-		b.Text = string.format("%s  (%d)%s", m.name, vc[i] or 0, data.next == m.name and " ▶" or "")
-		b.BackgroundColor3 = BH.myVote == i and Color3.fromRGB(150, 110, 40) or C.panel2
-	end
-	if mine and topInfo then
-		local streak = (mine.streak or 0) >= 2 and string.format(" · 🔥%d연속", mine.streak) or ""
-		if V.device == "phone" then
-			topInfo.Text = string.format("⚔ %d / %d%s · 모두 %d", mine.k, mine.d, streak, mine.total or 0)
+	if BH.me then
+		if mine then
+			local streak = (mine.streak or 0) >= 2 and string.format("  ·  %d연속", mine.streak) or ""
+			BH.me.Text = string.format("나  %d / %d%s  ·  누적 %d", mine.k, mine.d, streak, mine.total or 0)
 		else
-			topInfo.Text = string.format("⚔ 배틀그라운드 · 이번 판 %d / %d%s · 모두 %d명 쓰러뜨림", mine.k, mine.d, streak, mine.total or 0)
+			BH.me.Text = here and "" or "전각 문에서 T로 입장"
 		end
 	end
 end
@@ -5177,14 +4865,9 @@ function UI.init(req: RemoteEvent)
 		if storyChip then
 			storyChip.Position = touch and UDim2.new(0, 44, 0, 40) or UDim2.new(0, 154, 0, 40)
 		end
-		-- 대기실 패널: 휴대폰은 가운데 왼쪽 (터치 단추를 가리지 않게)
-		if BH.lobby then
-			BH.lobby.AnchorPoint = phone and Vector2.new(0.5, 0.5) or Vector2.new(0.5, 1)
-			BH.lobby.Position = phone and UDim2.new(0.5, -90, 0.5, 6) or UDim2.new(0.5, 0, 1, -210)
-		end
 		-- 배틀그라운드 순위: 휴대폰은 맨 위 오른쪽 (터치 단추 고리 위)
 		if BH.board then
-			BH.board.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -14, 0, 60)
+			BH.board.Position = phone and UDim2.new(1, -10, 0, 8) or UDim2.new(1, -16, 0, 66)
 		end
 		-- 보스 막대: 휴대폰은 맨 위에 좁게
 		bossFrame.Size = phone and UDim2.new(0, 600, 0, 92) or UDim2.new(0, 760, 0, 92)

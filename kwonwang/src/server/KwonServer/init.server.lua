@@ -5199,7 +5199,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		end
 		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
 		if BATTLE then
-			Push:FireClient(player, "dialog", { who = "⚔ 배틀그라운드", title = "대기실", text = string.format("여기는 대기실이라 싸움이 없다. 권법 창에서 쓸 권법을 고르고, 다음 맵에 투표하고, 준비되면 '⚔ 싸움터로 들어가기'. 모두 체력 %d, 같은 힘으로 겨룬다.", Config.BATTLE.hp) })
+			-- 3.60판: 화면 창 대신 마당의 실물 화면 (투표대 · 전광판 · 무기 걸이 · 입장 문). 짧은 알림만
+			toast(player, "⚔ 대기실 · 무기 걸이에서 권법 고르기 · 투표대에서 다음 맵 · 전각 문으로 입장")
 		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
@@ -7330,6 +7331,20 @@ if BATTLE then
 				toast(player, msg)
 			end
 		end)
+		-- 3.60판 투표대 · 권법 고르는 자리
+		for i, v in ipairs(L.vote or {}) do
+			v.prompt.Triggered:Connect(function(player: Player)
+				local msg = Battle.request(player, "battleVote", i)
+				if msg then
+					toast(player, msg)
+				end
+			end)
+		end
+		if L.stylePrompt then
+			L.stylePrompt.Triggered:Connect(function(player: Player)
+				Push:FireClient(player, "openPage", "styles")
+			end)
+		end
 		task.spawn(function()
 			for _, at in ipairs(L.dummies) do
 				pcall(Npc.spawn, "dummy", false, at, "test")
