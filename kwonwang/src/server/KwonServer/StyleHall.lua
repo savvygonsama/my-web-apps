@@ -6,8 +6,9 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local StyleHall = {}
 
-local PER_ROW = 16
-local DX, DZ = 14.5, 25
+local PER_ROW = 11 -- 3.67판: 16 → 11 (간격을 넓혀 여섯 줄)
+local DX, DZ = 24, 34 -- 3.67판: 14.5 · 25 → 24 · 34
+local MARGIN = 30 -- 플랫폼 가장자리 여유
 local S = 1.5 -- 마네킹 키 배율
 local INK = Color3.fromRGB(16, 18, 24)
 local WOOD = Color3.fromRGB(120, 82, 52)
@@ -442,7 +443,7 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 	for _, st in ipairs(Config.Styles) do
 		table.insert(list, st) -- 모든 권법 (숨은 것 · 게임패스 것까지)
 	end
-	-- 등급 높은 것부터 (같은 등급은 처음 실린 차례)
+	-- 등급 낮은 것부터 (같은 등급은 처음 실린 차례)
 	local order = {}
 	for i, st in ipairs(list) do
 		order[st] = i
@@ -451,13 +452,13 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local ra = table.find(Config.GRADE_ORDER, Config.styleGrade(a, 0)) or 0
 		local rb = table.find(Config.GRADE_ORDER, Config.styleGrade(b, 0)) or 0
 		if ra ~= rb then
-			return ra > rb
+			return ra < rb -- 3.67판: 약한 등급부터 (문 가까운 첫 줄이 가장 약하다)
 		end
 		return order[a] < order[b]
 	end)
 	local rows = math.ceil(#list / PER_ROW)
-	local W = PER_ROW * DX + 16
-	local Dp = rows * DZ + 22
+	local W = PER_ROW * DX + MARGIN * 2
+	local Dp = rows * DZ + MARGIN * 2
 	-- 바닥: 어두운 돌 마당과 빛나는 테
 	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
 	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
@@ -468,7 +469,7 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local col = (i - 1) % PER_ROW
 		local n = math.min(PER_ROW, #list - row * PER_ROW)
 		local x = (col - (n - 1) / 2) * DX
-		local z0 = 22 + row * DZ
+		local z0 = MARGIN + 14 + row * DZ
 		local at = c + Vector3.new(x, 0.6, z0)
 		local u = Instance.new("Model")
 		u.Name = "Unit"
@@ -517,10 +518,10 @@ end
 -- 전시장의 크기 (대기실이 둘레 울타리를 넓힐 때)
 function StyleHall.depth(): number
 	local n = #Config.Styles
-	return math.ceil(n / PER_ROW) * DZ + 22
+	return math.ceil(n / PER_ROW) * DZ + MARGIN * 2
 end
 function StyleHall.width(): number
-	return PER_ROW * DX + 16
+	return PER_ROW * DX + MARGIN * 2
 end
 
 return StyleHall

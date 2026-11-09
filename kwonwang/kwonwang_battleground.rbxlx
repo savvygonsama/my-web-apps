@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.66.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.67.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -17737,7 +17737,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local WALL = Color3.fromRGB(236, 230, 214)
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
-	disc("LobbyGround", c + Vector3.new(0, -2, 0), 250, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), 410, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
 	-- 박석 마당 (줄눈이 보이게 판을 깐다)
 	part({ Name = "CourtBed", Size = Vector3.new(W * 2, 0.5, D * 2), Position = c + Vector3.new(0, 0.2, 0), Color = STONE:Lerp(Color3.new(0, 0, 0), 0.25), Material = Enum.Material.Slate, Parent = f })
 	for x = -W + 5, W - 5, 10 do
@@ -17857,13 +17857,13 @@ local function buildLobby(c: Vector3, f: Folder): any
 			part({ Name = "PineTop", Shape = Enum.PartType.Ball, Size = Vector3.new(s * 1.4, s * 0.55, s * 1.4), Position = at + Vector3.new((G() - 0.5) * 2, h * (0.55 + k * 0.17), (G() - 0.5) * 2), Color = Color3.fromRGB(46 + k * 8, 92 + k * 8, 58), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 		end
 	end
-	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 75), 142 } }
-	for _, v in ipairs(scatter(G, 34, 100, 235, 22, avoidL)) do
+	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 14 + 136), 215 } }
+	for _, v in ipairs(scatter(G, 46, 100, 360, 22, avoidL)) do
 		if math.abs(v.X) > W + 10 or math.abs(v.Z) > D + 10 then
 			pine(c + v, 18 + G() * 12)
 		end
 	end
-	fence(c, 242, 40, f)
+	fence(c, 400, 40, f)
 	-- 3.66판: 남쪽 문 밖의 권법 전시장 (모든 권법이 한 칸씩, 발판을 밟으면 그 권법으로 입장)
 	pcall(function()
 		require(script.Parent:WaitForChild("StyleHall")).build(c + Vector3.new(0, 0, D + 14), f)
@@ -28828,8 +28828,9 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local StyleHall = {}
 
-local PER_ROW = 16
-local DX, DZ = 14.5, 25
+local PER_ROW = 11 -- 3.67판: 16 → 11 (간격을 넓혀 여섯 줄)
+local DX, DZ = 24, 34 -- 3.67판: 14.5 · 25 → 24 · 34
+local MARGIN = 30 -- 플랫폼 가장자리 여유
 local S = 1.5 -- 마네킹 키 배율
 local INK = Color3.fromRGB(16, 18, 24)
 local WOOD = Color3.fromRGB(120, 82, 52)
@@ -29264,7 +29265,7 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 	for _, st in ipairs(Config.Styles) do
 		table.insert(list, st) -- 모든 권법 (숨은 것 · 게임패스 것까지)
 	end
-	-- 등급 높은 것부터 (같은 등급은 처음 실린 차례)
+	-- 등급 낮은 것부터 (같은 등급은 처음 실린 차례)
 	local order = {}
 	for i, st in ipairs(list) do
 		order[st] = i
@@ -29273,13 +29274,13 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local ra = table.find(Config.GRADE_ORDER, Config.styleGrade(a, 0)) or 0
 		local rb = table.find(Config.GRADE_ORDER, Config.styleGrade(b, 0)) or 0
 		if ra ~= rb then
-			return ra > rb
+			return ra < rb -- 3.67판: 약한 등급부터 (문 가까운 첫 줄이 가장 약하다)
 		end
 		return order[a] < order[b]
 	end)
 	local rows = math.ceil(#list / PER_ROW)
-	local W = PER_ROW * DX + 16
-	local Dp = rows * DZ + 22
+	local W = PER_ROW * DX + MARGIN * 2
+	local Dp = rows * DZ + MARGIN * 2
 	-- 바닥: 어두운 돌 마당과 빛나는 테
 	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
 	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
@@ -29290,7 +29291,7 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local col = (i - 1) % PER_ROW
 		local n = math.min(PER_ROW, #list - row * PER_ROW)
 		local x = (col - (n - 1) / 2) * DX
-		local z0 = 22 + row * DZ
+		local z0 = MARGIN + 14 + row * DZ
 		local at = c + Vector3.new(x, 0.6, z0)
 		local u = Instance.new("Model")
 		u.Name = "Unit"
@@ -29339,10 +29340,10 @@ end
 -- 전시장의 크기 (대기실이 둘레 울타리를 넓힐 때)
 function StyleHall.depth(): number
 	local n = #Config.Styles
-	return math.ceil(n / PER_ROW) * DZ + 22
+	return math.ceil(n / PER_ROW) * DZ + MARGIN * 2
 end
 function StyleHall.width(): number
-	return PER_ROW * DX + 16
+	return PER_ROW * DX + MARGIN * 2
 end
 
 return StyleHall
