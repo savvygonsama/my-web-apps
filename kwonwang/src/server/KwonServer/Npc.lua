@@ -128,6 +128,7 @@ local RIG: { { any } } = {
 	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
 }
 
+local HEAD_K = 0.92
 local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, legs: Color3 }, s: number, build: any?): Model
 	local model = Instance.new("Model")
 	-- 3.31.6판: 직접 짠 몸도 기본 몸과 같은 체격으로 (예전엔 모든 곳을 같은 배율로 키워, 큰 적이 거대한 네모 덩어리가 됐다):
@@ -135,7 +136,8 @@ local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, le
 	local bd = build or {}
 	local wide = (s > 1 and s ^ 0.7 or s) * (bd.w or 1)
 	local tall = s * (bd.h or 1)
-	local headS = (s > 1 and s ^ 0.85 or s) * (bd.head or 1)
+	-- 3.53판: 머리가 커 보였다. 머리는 몸통 폭과 같은 비율로만 키우고 (키 큰 몸이라고 머리가 더 커지지 않게), 전체를 0.92배로
+	local headS = wide / (bd.w or 1) * (bd.head or 1) * HEAD_K
 	local V = Vector3.new(wide, tall, wide)
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
@@ -166,7 +168,7 @@ local function manualRig(colors: { head: Color3, torso: Color3, arms: Color3, le
 			p.Color = colors.head
 			local mesh = Instance.new("SpecialMesh")
 			mesh.MeshType = Enum.MeshType.Head
-			mesh.Scale = Vector3.new(1.25, 1.25, 1.25)
+			mesh.Scale = Vector3.new(1, 1, 1) -- 3.53판: 1.25배 그물이 머리 조각보다 커서 얼굴 · 머리 장식이 머리 속에 묻히고 머리가 커 보였다
 			mesh.Parent = p
 			local face = Instance.new("Decal")
 			face.Name = "face"
@@ -218,7 +220,7 @@ local function body(colors: { head: Color3, torso: Color3, arms: Color3, legs: C
 		-- 3.20.3판: 큰 몸 (보스는 키가 3~5배) 은 폭을 키만큼 키우면 팔·몸통이 거대한 네모 덩어리가 된다. 키는 그대로 키우고
 		-- 폭·깊이는 덜 키워 (키의 0.7제곱) 키 큰 거인 체형으로, 머리도 조금 덜 키운다
 		local wide = s > 1 and s ^ 0.7 or s
-		local headS = s > 1 and s ^ 0.85 or s
+		local headS = (s > 1 and s ^ 0.7 or s) * HEAD_K
 		desc.HeightScale = s * (bd.h or 1)
 		desc.WidthScale = wide * (bd.w or 1)
 		desc.DepthScale = wide * (bd.w or 1)
