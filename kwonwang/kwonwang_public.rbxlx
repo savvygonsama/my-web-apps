@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.61.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.62.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -14749,7 +14749,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
 		if BATTLE then
 			-- 3.60판: 화면 창 대신 마당의 실물 화면 (투표대 · 전광판 · 무기 걸이 · 입장 문). 짧은 알림만
-			toast(player, "⚔ 대기실 · 무기 걸이에서 권법 고르기 · 투표대에서 다음 맵 · 전각 문으로 입장")
+			toast(player, "⚔ 대기실 · 동쪽 권법 회랑의 마네킹 앞에서 T로 그 권법 입장 · 투표대에서 다음 맵")
 		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
@@ -17912,10 +17912,10 @@ local function buildLobby(c: Vector3, f: Folder): any
 	end
 	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
 	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
-	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 고르기", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "고른 권법으로 싸움터에 들어간다", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 회랑 →", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 마네킹 앞에서 T · 그 권법으로 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
 	local rack = f:FindFirstChild("Rack")
-	local stylePrompt = prompt(rack or sroot, "권법 고르기", "무기 걸이", "PickStyle")
+	local stylePrompt = prompt(rack or sroot, "권법 창 열기", "무기 걸이", "PickStyle")
 	-- 입장 문 위의 작은 화면
 	local groot = screen(CFrame.lookAt(hall + Vector3.new(0, floorY + 11.2, 7.8), hall + Vector3.new(0, floorY + 11.2, 30)), 9, 1.8, f)
 	label(groot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 1, 0), "싸움터 입장 · T", 44, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
@@ -37923,9 +37923,17 @@ task.spawn(function()
 	end
 end)
 local firstState = true
+-- 3.62판: 배틀그라운드 대기실의 권법 회랑 (마네킹이 권법을 시범한다)
+local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) or nil
+if Gallery then
+	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview })
+end
 function handlers.state(data: any)
 	state = data
 	UI.setState(data)
+	if Gallery then
+		pcall(Gallery.update, data)
+	end
 	if firstState then
 		firstState = false
 		task.delay(2.5, function()
@@ -53052,6 +53060,350 @@ return Gacha
         </Item>
         <Item class="ModuleScript" referent="34">
           <Properties>
+            <string name="Name">Gallery</string>
+            <string name="Source"><![CDATA[-- 권왕 3.62판: 배틀그라운드 대기실의 권법 회랑 (권법 고르는 창 대신)
+--   익힌 권법마다 마네킹 하나 (내 생김새 + 그 권법의 시그니처 장신구) 가 받침대 위에서 그 권법 자세로 서 있다가,
+--   가까이 가면 차례로 연타 · 강타 · 기술을 시범한다. 받침대 앞에서 T = 그 권법으로 싸움터에 들어간다
+--   한 번에 15개 (등급 높은 차례). 더 있으면 '다음 ▶' 받침대로 넘긴다. 마네킹은 내 화면에만 있다
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+local Anim = require(script.Parent:WaitForChild("Anim"))
+local Fx = require(script.Parent:WaitForChild("Fx"))
+
+local Gallery = {}
+local player = Players.LocalPlayer
+
+local opts: any = {}
+local folder: Folder? = nil
+local center: Vector3? = nil
+local page = 1
+local builtKey = ""
+local slots: { any } = {}
+local lastState: any = nil
+
+local COLS, ROWS = 5, 3
+local PER = COLS * ROWS
+local INK = Color3.fromRGB(16, 18, 24)
+
+local BODY = { HumanoidRootPart = true, Head = true, UpperTorso = true, LowerTorso = true, LeftUpperArm = true, LeftLowerArm = true, LeftHand = true, RightUpperArm = true, RightLowerArm = true, RightHand = true, LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true, RightUpperLeg = true, RightLowerLeg = true, RightFoot = true }
+local KEEP = { Accessory = true, Humanoid = true, Shirt = true, Pants = true, ShirtGraphic = true, BodyColors = true }
+
+local function gradeOf(id: string): string
+	local s = Config.STYLE_BY_ID[id]
+	local ups = (lastState and lastState.gradeUp and lastState.gradeUp[id]) or 0
+	return s and Config.styleGrade(s, ups) or "상급"
+end
+
+local function makeDoll(): Model?
+	local char = player.Character
+	if not char then
+		return nil
+	end
+	local old = char.Archivable
+	char.Archivable = true
+	local ok, cl = pcall(function()
+		return char:Clone()
+	end)
+	char.Archivable = old
+	if not ok or not cl then
+		return nil
+	end
+	local doll = cl :: Model
+	for _, ch in ipairs(doll:GetChildren()) do
+		local keep = (ch:IsA("BasePart") and BODY[ch.Name]) or KEEP[ch.ClassName]
+		if not keep then
+			ch:Destroy()
+		end
+	end
+	for _, d in ipairs(doll:GetDescendants()) do
+		if d:IsA("LuaSourceContainer") or d:IsA("BillboardGui") or d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
+			d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.Anchored = d.Name == "HumanoidRootPart"
+			d.CanCollide = false
+			d.CanQuery = false
+			d.CanTouch = false
+		end
+	end
+	local hum = doll:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.PlatformStand = true
+	end
+	return doll
+end
+
+local function newPart(props: { [string]: any }): BasePart
+	local p = Instance.new(props.Class or "Part") :: BasePart
+	p.Anchored = true
+	p.CanCollide = props.CanCollide == true
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	for k, v in pairs(props) do
+		if k ~= "Class" and k ~= "Parent" and k ~= "CanCollide" then
+			(p :: any)[k] = v
+		end
+	end
+	p.Parent = props.Parent
+	return p
+end
+
+-- 이름표 (위에 뜨는 납작한 판: 이름 · 등급 띠)
+local function nameTag(target: BasePart, st: any, grade: string, using: boolean)
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(0, 190, 0, 54)
+	bb.StudsOffset = Vector3.new(0, 4.6, 0)
+	bb.MaxDistance = 80
+	bb.AlwaysOnTop = false
+	bb.LightInfluence = 0
+	bb.Parent = target
+	local fr = Instance.new("Frame")
+	fr.Size = UDim2.fromScale(1, 1)
+	fr.BackgroundColor3 = INK
+	fr.BackgroundTransparency = 0.2
+	fr.BorderSizePixel = 0
+	fr.Parent = bb
+	local cr = Instance.new("UICorner")
+	cr.CornerRadius = UDim.new(0, 10)
+	cr.Parent = fr
+	local sk = Instance.new("UIStroke")
+	sk.Color = using and Color3.fromRGB(255, 208, 110) or st.color
+	sk.Thickness = using and 2 or 1
+	sk.Parent = fr
+	local nm = Instance.new("TextLabel")
+	nm.BackgroundTransparency = 1
+	nm.Position = UDim2.new(0, 10, 0, 4)
+	nm.Size = UDim2.new(1, -20, 0, 26)
+	nm.Font = Enum.Font.GothamBlack
+	nm.TextSize = 18
+	nm.TextColor3 = Color3.new(1, 1, 1)
+	nm.TextXAlignment = Enum.TextXAlignment.Left
+	nm.TextTruncate = Enum.TextTruncate.AtEnd
+	nm.Text = (st.icon or "") .. " " .. st.name
+	nm.Parent = fr
+	local gc = Config.GRADE_COLOR[grade] or Color3.fromRGB(255, 208, 110)
+	local chip = Instance.new("TextLabel")
+	chip.Position = UDim2.new(0, 10, 0, 30)
+	chip.Size = UDim2.new(0, 56, 0, 18)
+	chip.BackgroundColor3 = gc
+	chip.Font = Enum.Font.GothamBlack
+	chip.TextSize = 12
+	chip.TextColor3 = INK
+	chip.Text = grade
+	chip.Parent = fr
+	local cc = Instance.new("UICorner")
+	cc.CornerRadius = UDim.new(0, 9)
+	cc.Parent = chip
+	if using then
+		local u = Instance.new("TextLabel")
+		u.BackgroundTransparency = 1
+		u.Position = UDim2.new(0, 72, 0, 30)
+		u.Size = UDim2.new(1, -82, 0, 18)
+		u.Font = Enum.Font.GothamBold
+		u.TextSize = 12
+		u.TextColor3 = Color3.fromRGB(255, 208, 110)
+		u.TextXAlignment = Enum.TextXAlignment.Left
+		u.Text = "지금 쓰는 권법"
+		u.Parent = fr
+	end
+end
+
+local function clear()
+	for _, s in ipairs(slots) do
+		if s.doll then
+			s.doll:Destroy()
+		end
+	end
+	slots = {}
+	if folder then
+		folder:ClearAllChildren()
+	end
+end
+
+-- 받침대 자리 (마당 동쪽 절반, 5 × 3)
+local function spotAt(i: number): Vector3
+	local c = center :: Vector3
+	local col = (i - 1) % COLS
+	local row = (i - 1) // COLS
+	return c + Vector3.new(30 + col * 9, 0.6, -16 + row * 14)
+end
+
+local function build()
+	if not center or not lastState or not lastState.styles then
+		return
+	end
+	local ids = table.clone(lastState.styles)
+	local function rank(id: string): number
+		return table.find(Config.GRADE_ORDER, gradeOf(id)) or 0
+	end
+	table.sort(ids, function(a, b)
+		local ra, rb = rank(a), rank(b)
+		if ra ~= rb then
+			return ra > rb
+		end
+		return a < b
+	end)
+	local pages = math.max(1, math.ceil(#ids / PER))
+	page = math.clamp(page, 1, pages)
+	local key = table.concat(ids, ",") .. "|" .. tostring(lastState.style) .. "|" .. page
+	if key == builtKey then
+		return
+	end
+	builtKey = key
+	clear()
+	local f = folder :: Folder
+	for k = 1, PER do
+		local id = ids[(page - 1) * PER + k]
+		local st = id and Config.STYLE_BY_ID[id]
+		if st then
+			local at = spotAt(k)
+			local using = lastState.style == id
+			-- 받침대: 어두운 둥근 단 + 권법 빛깔의 빛나는 테
+			local base = newPart({ Name = "GalleryBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 6, 6), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = INK, Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
+			newPart({ Name = "GalleryRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 6.4, 6.4), CFrame = CFrame.new(at + Vector3.new(0, 0.82, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
+			local doll = makeDoll()
+			local slot: any = { id = id, at = at, base = base, next = os.clock() + 1 + k * 0.4 }
+			if doll then
+				doll.Name = "GalleryDoll"
+				doll:SetAttribute("Style", id)
+				doll.Parent = f
+				-- 받침대 위에 서서 마당 가운데 (서쪽) 를 본다
+				local hrp = doll:FindFirstChild("HumanoidRootPart") :: BasePart?
+				local hip = 3
+				local hum = doll:FindFirstChildOfClass("Humanoid")
+				if hum and hrp then
+					hip = hum.HipHeight + hrp.Size.Y / 2
+				end
+				doll:PivotTo(CFrame.lookAt(at + Vector3.new(0, 0.8 + hip, 0), Vector3.new((center :: Vector3).X, at.Y + 0.8 + hip, at.Z)))
+				if opts.previewGear then
+					local ok, list = pcall(opts.previewGear, doll, id)
+					if ok and type(list) == "table" then
+						for _, inst in ipairs(list) do
+							if typeof(inst) == "Instance" and inst.Parent and not inst:IsDescendantOf(doll) then
+								inst.Parent = doll
+							end
+						end
+					end
+				end
+				-- 게임패스 권법은 꼬리 · 마검을 강화 단계대로
+				local st0 = Config.STYLE_BY_ID[id]
+				if st0 and st0.premium and opts.passPreview then
+					local lv = (lastState.enh and lastState.enh[id]) or 0
+					pcall(opts.passPreview, doll, id, lv)
+				end
+				pcall(Anim.watch, doll)
+				slot.doll = doll
+				if hrp then
+					nameTag(hrp, st, gradeOf(id), using)
+				end
+			end
+			local pp = Instance.new("ProximityPrompt")
+			pp.ActionText = "이 권법으로 싸움터에"
+			pp.ObjectText = st.name
+			pp.HoldDuration = 0
+			pp.MaxActivationDistance = 9
+			pp.RequiresLineOfSight = false
+			pp.KeyboardKeyCode = Enum.KeyCode.T
+			pp.Parent = base
+			pp.Triggered:Connect(function()
+				if opts.request then
+					opts.request:FireServer("battleEnter", id)
+				end
+			end)
+			table.insert(slots, slot)
+		end
+	end
+	-- 더 있으면 '다음 ▶' 받침대 (회랑 서쪽 끝)
+	if pages > 1 then
+		local at = (center :: Vector3) + Vector3.new(22, 0.6, -2)
+		local nb = newPart({ Name = "GalleryNext", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 208, 110), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = true, Parent = f })
+		local pp = Instance.new("ProximityPrompt")
+		pp.ActionText = string.format("다음 권법 (%d / %d)", page, pages)
+		pp.ObjectText = "권법 회랑"
+		pp.HoldDuration = 0
+		pp.MaxActivationDistance = 9
+		pp.KeyboardKeyCode = Enum.KeyCode.T
+		pp.Parent = nb
+		pp.Triggered:Connect(function()
+			page = page % pages + 1
+			build()
+		end)
+	end
+end
+
+function Gallery.update(state: any)
+	lastState = state
+	if center then
+		pcall(build)
+	end
+end
+
+function Gallery.start(o: any)
+	opts = o or {}
+	task.spawn(function()
+		local maps = workspace:WaitForChild("BattleMaps", 60)
+		local bed = maps and maps:WaitForChild("CourtBed", 60)
+		if not bed or not bed:IsA("BasePart") then
+			return
+		end
+		center = bed.Position - Vector3.new(0, 0.2, 0)
+		local f = Instance.new("Folder")
+		f.Name = "KwonGallery"
+		f.Parent = workspace
+		folder = f
+		player.CharacterAppearanceLoaded:Connect(function()
+			builtKey = ""
+			pcall(build)
+		end)
+		pcall(build)
+		-- 가까이 있으면 차례로 시범 (한 번에 둘까지)
+		while true do
+			task.wait(0.25)
+			local char = player.Character
+			local me = char and char:FindFirstChild("HumanoidRootPart")
+			local inArena = char and char:GetAttribute("InArena") == true
+			if me and me:IsA("BasePart") and not inArena then
+				local busy = 0
+				local now = os.clock()
+				for _, s in ipairs(slots) do
+					if s.doll and s.doll.Parent and Anim.playing(s.doll) then
+						busy += 1
+					end
+				end
+				for _, s in ipairs(slots) do
+					local d = s.doll
+					if d and d.Parent and busy < 2 and now >= s.next and (s.at - me.Position).Magnitude < 45 and not Anim.playing(d) then
+						local st = Config.STYLE_BY_ID[s.id]
+						local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
+						local slot = picks[math.random(1, #picks)]
+						local mv = st and Config.move(s.id, slot)
+						if mv then
+							pcall(Anim.play, d, mv.pose, mv.dur)
+							pcall(Fx.limbTrails, d, mv.pose, mv.dur, st.color, st.color2)
+							if slot == "E" or slot == "R" or slot == "G" then
+								local hrp = d:FindFirstChild("HumanoidRootPart") :: BasePart?
+								if hrp then
+									pcall(Fx.ring, hrp.Position - Vector3.new(0, 2.6, 0), st.color2 or st.color, 1, 9, 0.4)
+								end
+							end
+							busy += 1
+						end
+						s.next = now + 2.2 + math.random() * 1.6
+					end
+				end
+			end
+		end
+	end)
+end
+
+return Gallery
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="35">
+          <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
 -- 해: 주홍빛 심과 금빛 빛살 · 달: 푸른 흰빛 초승달 · 황혼: 노을빛 주홍과 보랏빛이 겹친다
@@ -54694,7 +55046,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -55109,7 +55461,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Grand</string>
             <string name="Source"><![CDATA[-- 권왕 3.48판: 모든 권법에 함께 얹는 연출 한 겹 (권법마다의 연출은 그대로 두고 그 위에)
@@ -55332,7 +55684,7 @@ return Grand
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -55800,7 +56152,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Lang</string>
             <string name="Source"><![CDATA[-- 권왕 3.53판: 영어 화면 (내 화면에서만 글자를 바꾼다. 서버 · 다른 사람은 그대로)
@@ -56092,7 +56444,7 @@ return Lang
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">LangEN</string>
             <string name="Source"><![CDATA[-- 권왕 영어 사전 (코드 안의 한국어 글자 → 영어). tools: tools/lang/gen.py 로 만든다
@@ -56245,7 +56597,7 @@ return {
 	["공중으로 솟아 회오리처럼 여섯 번 찬다"] = "Leap up and kick six times like a whirlwind",
 	["무영분신"] = "Shadowless Clones",
 	["그림자 분신이 둘레의 적마다 하나씩 나타나 동시에 세 번씩 걷어찬다 (나는 그 자리에서 지휘한다)"] = "A shadow clone appears by each nearby enemy and kicks it three times (you direct from where you stand)",
-	["벽력신권"] = "Thunderclap Divine Fist",
+	["벽력신권"] = "Thunderclap Fist",
 	["벼락처럼 빠르고 곧은 주먹. 맞힐 때마다 전하가 차오르고, 다 차면 다음 공격에서 번개가 주변으로 튀어 모두 마비시킨다."] = "A straight fist as fast as lightning. Each hit builds charge; at full, your next attack chains lightning that paralyzes everyone around.",
 	["전하: 맞힐 때마다 1 (최대 5). 5가 되면 다음 공격이 연쇄 번개 (주변 적 마비)"] = "Charge: +1 per hit (max 5). At 5, your next attack is chain lightning (paralyzes nearby enemies)",
 	["섬전권"] = "Flash Fist",
@@ -56288,7 +56640,7 @@ return {
 	["세 번 이어 치는 연환권"] = "A chain of three punches",
 	["천지인 일권"] = "Heaven-Earth-Man Strike",
 	["하늘·땅·사람의 기를 1초 동안 한 주먹에 모았다가, 앞으로 단 한 번 지른다. 앞의 모든 것이 날아간다"] = "Gather the ki of Heaven, Earth and Man into one fist for 1s, then strike once. Everything ahead goes flying",
-	["무극신권"] = "Limitless Divine Fist",
+	["무극신권"] = "Limitless Fist",
 	["전설"] = "Legendary",
 	["강호 곳곳에 흩어진 비급 조각 다섯을 모두 모은 자만이 익힌다"] = "Only those who collect all five scattered manual fragments can learn it",
 	["끝도 시작도 없는 권. 모든 권법이 하나로 돌아가는 자리. 손이 닿기도 전에 상대의 균형이 무너진다."] = "A fist with no end and no beginning, where all styles return to one. Your foe's balance breaks before your hand lands.",
@@ -56333,9 +56685,9 @@ return {
 	["둘레의 적 셋 위로 하늘에서 빛의 검을 꽂는다"] = "Drive swords of light down onto three nearby enemies",
 	["천제의 창"] = "Emperor's Spear",
 	["등 뒤에 하늘의 문이 열리고, 빛의 창이 앞으로 한 줄 쏟아져 꿰뚫는다"] = "The gate of heaven opens behind you and a spear of light pours forward in a line",
-	["만검천벌"] = "Ten Thousand Swords Judgment",
-	["하늘이 열려 천 자루의 빛의 검이 내려다본다. 적마다 검이 꽂히고, 마지막에 거대한 하늘의 검이 내리꽂혀 터진다"] = "The sky opens and a thousand swords of light look down. A sword pierces each enemy, then a giant heavenly sword slams down and explodes",
-	["파천신권"] = "Sky-Breaking Divine Fist",
+	["만검천벌"] = "Rain of Swords",
+	["하늘이 열려 천 자루의 빛의 검이 내려다본다. 적마다 검이 꽂히고, 마지막에 거대한 하늘의 검이 내리꽂혀 터진다"] = "The sky opens and countless swords of light appear. A sword pierces each enemy, then a giant heavenly sword slams down and explodes",
+	["파천신권"] = "Sky-Breaking Fist",
 	["강호의 마지막 적, 천마를 쓰러뜨려야 그 마공을 거꾸로 익힐 수 있다"] = "Defeat the Heavenly Demon, the last foe of the martial world, to learn his art in reverse",
 	["천마의 마공을 꺾어 거꾸로 익힌 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다."] = "A fist that turned the Heavenly Demon's art against itself. Where it lands, weight becomes tenfold, and at the end a black sun rises to crush everything it pulls in.",
 	["중압: 여섯 번 맞힐 때마다 상대 자리에 중력 우물이 열려 둘레의 적을 끌어당겨 바닥에 짓누른다. 맞힌 적은 잠깐 느려진다"] = "Pressure: every six hits a gravity well opens at the target, pulling nearby enemies in and pinning them down. Enemies hit are briefly slowed",
@@ -56351,10 +56703,10 @@ return {
 	["가장 가까운 적 위로 몸이 천 근 무게가 되어 떨어진다. 떨어진 자리가 움푹 꺼진다"] = "Become a thousand-pound weight and drop onto the nearest enemy. The ground caves in where you land",
 	["흑일강림"] = "Black Sun Descends",
 	["주먹으로 하늘을 찢어 검은 해를 띄운다. 검은 해가 둘레의 모든 적을 하늘로 끌어올려 짓이기고, 마지막에 안으로 무너지며 터진다"] = "Tear the sky with your fist and raise a black sun. It lifts every nearby enemy into the sky, grinds them, then collapses inward and explodes",
-	["태초신권"] = "Genesis Divine Fist",
+	["태초신권"] = "Genesis Fist",
 	["태초"] = "Genesis",
 	["무극의 경지에 오른 자만이 하늘 끝 봉우리, 천외봉의 시원자를 만난다"] = "Only those at Limitless meet the Origin Sage of the Beyond Peak, at the edge of the sky",
-	["하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며, 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다."] = "A fist that holds the single moment the world first opened, before heaven and earth parted. Its wielder floats above the ground, and the final blow shatters the world like glass before it reassembles.",
+	["하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며, 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다."] = "A fist from the moment the world began. Its wielder floats above the ground, and the final blow shatters the world like glass before it reassembles.",
 	["창세: 네 번 맞힐 때마다 상대 자리에 빛의 결정이 피어나 터진다. 모든 기술 대기 20% 짧음, 몸이 땅에서 떠 있다"] = "Creation: every four hits a crystal of light blooms and bursts at the target. All skill cooldowns 20% shorter, and you float above the ground",
 	["창세 결정"] = "Creation Crystal",
 	["일원장"] = "One Origin Palm",
@@ -56366,8 +56718,8 @@ return {
 	["창세주"] = "Creation Pillar",
 	["둘레의 적 다섯 아래에서 빛의 결정 기둥이 솟아 하늘로 띄운다"] = "Crystal pillars of light rise under five nearby enemies and launch them skyward",
 	["천지개벽"] = "Heaven and Earth Split",
-	["세상이 멈추고 하늘과 땅이 별바다로 바뀐다. 주먹을 쥐면 세상에 금이 가고, 내지르면 세상이 유리처럼 깨지며 모든 적이 함께 부서진다"] = "The world stops and sky and earth turn into a sea of stars. Clench your fist and the world cracks; strike and it shatters like glass, breaking every enemy with it",
-	["일월신권"] = "Sun-Moon Divine Fist",
+	["세상이 멈추고 하늘과 땅이 별바다로 바뀐다. 주먹을 쥐면 세상에 금이 가고, 내지르면 세상이 유리처럼 깨지며 모든 적이 함께 부서진다"] = "The world stops and sky and earth turn into a sea of stars. Clench your fist and the world cracks; strike and it shatters, breaking every enemy with it",
+	["일월신권"] = "Sun-Moon Fist",
 	["지존"] = "Supreme",
 	["태초신권을 익힌 무극의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다"] = "Only a Limitless master who knows the Genesis Fist meets the Fist Sovereign on the Sun-Moon Altar at the far southeast",
 	["권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다."] = "The summit of all styles. The sun in the right hand, the moon in the left. Burns like the sun by day, cuts like the moon by night, and in the final move the two overlap into an eclipse.",
@@ -56384,7 +56736,7 @@ return {
 	["둘레의 적 여섯 머리 위로 작은 해가 떨어져 불기둥이 되어 터진다"] = "Small suns fall on six nearby enemies and burst into pillars of fire",
 	["일월동천"] = "Sun and Moon Together",
 	["하늘이 밤이 되고 해와 달이 함께 떠오른다. 달빛이 둘레를 베고, 해와 달이 겹쳐 일식이 되면 검은 해의 빛살이 모든 적을 꿰뚫은 뒤, 새벽처럼 터진다"] = "The sky turns to night and the sun and moon rise together. Moonlight cuts the area, the two overlap into an eclipse, rays of the black sun pierce every enemy, then it bursts like dawn",
-	["창해신권"] = "Azure Sea Divine Fist",
+	["창해신권"] = "Azure Sea Fist",
 	["끝없는 바다를 두 손에 담은 권법. 태허유수권이 받아 흘리는 물이라면, 창해신권은 밀려와 모든 것을 삼키는 파도다. 한 번 밀리기 시작하면 끝까지 쓸려 간다."] = "A style that holds the endless sea in two hands. If Flowing Water receives and redirects, Azure Sea is the wave that rolls in and swallows everything. Once pushed, you're swept to the end.",
 	["파도: 네 번 맞힐 때마다 상대 자리에서 물기둥이 솟아 둘레를 쓸어 낸다. 모든 공격의 밀어냄 1.3배"] = "Waves: every four hits a water pillar rises at the target and sweeps the area. All knockback x1.3",
 	["파도"] = "Waves",
@@ -56398,8 +56750,8 @@ return {
 	["해일벽"] = "Tsunami Wall",
 	["앞으로 물의 벽이 차례로 솟아 한 줄을 휩쓸고, 맞은 적을 멀리 밀어낸다"] = "Walls of water rise ahead one after another, sweeping a line and pushing enemies far away",
 	["창해일소"] = "Azure Sea Sweep",
-	["등 뒤의 바다가 일어선다. 하늘을 가리는 해일이 앞으로 밀려가며 모든 적을 휩쓸어 끌고 가고, 마지막에 부서지며 거대한 소용돌이가 된다"] = "The sea behind you stands up. A sky-high tsunami rolls forward dragging every enemy, then breaks into a giant whirlpool",
-	["영겁신권"] = "Eternity Divine Fist",
+	["등 뒤의 바다가 일어선다. 하늘을 가리는 해일이 앞으로 밀려가며 모든 적을 휩쓸어 끌고 가고, 마지막에 부서지며 거대한 소용돌이가 된다"] = "The sea behind you stands up. A towering tsunami rolls forward dragging every enemy, then breaks into a giant whirlpool",
+	["영겁신권"] = "Eternity Fist",
 	["태초신권을 익힌 무극의 고수만이 북서쪽 끝 천 개의 계단 위, 떠 있는 문 앞에서 영겁노인을 만난다"] = "Only a Limitless master who knows the Genesis Fist meets the Eternal Elder before the floating gate atop the thousand stairs in the far northwest",
 	["시간을 쥔 주먹. 맞은 자의 시간이 멎고, 지나간 주먹이 메아리처럼 되돌아와 다시 친다. 마지막 한 수에 하늘에 거대한 해시계가 열리고 열두 번의 종이 울린다."] = "A fist that holds time. Time stops for those it hits, and past blows echo back to strike again. The final move opens a giant sundial in the sky and a bell tolls twelve times.",
 	["정지: 다섯 번 맞힐 때마다 상대 둘레의 시간이 1.4초 멎고 메아리가 친다. 모든 기술 대기 30% 짧음, 동작 +10%"] = "Stop: every five hits time stops around the target for 1.4s and an echo strikes. All skill cooldowns 30% shorter, action speed +10%",
@@ -56415,7 +56767,7 @@ return {
 	["앞에 시간이 멎은 구역을 2초 연다. 안의 적은 꼼짝 못 하고 째깍일 때마다 베인다"] = "Open a zone of stopped time ahead for 2s. Enemies inside can't move and are cut with every tick",
 	["만겁귀환"] = "Return of Ages",
 	["하늘에 거대한 해시계가 열리고 시곗바늘이 거꾸로 돈다. 둘레의 모든 적의 시간이 멎고, 열두 번의 종이 울릴 때마다 베이며, 자정에 시간이 깨진다"] = "A giant sundial opens in the sky and its hand turns backward. Time stops for every nearby enemy, they're cut each time the bell tolls twelve, and at midnight time shatters",
-	["열화신권"] = "Blazing Fire Divine Fist",
+	["열화신권"] = "Blazing Fire Fist",
 	["타오르는 불꽃을 주먹에 담았다. 맞은 자는 불이 붙어 계속 타고, 불붙은 적에게 꽂는 강타는 터진다."] = "A fist that holds a burning flame. Those it hits keep burning, and a heavy strike on a burning enemy explodes.",
 	["연소: 맞힌 적이 3초 동안 불탄다 (0.5초마다 피해). 불타는 적에게 강타(Z)를 꽂으면 폭발해 둘레까지 태운다"] = "Burn: enemies hit burn for 3s (damage every 0.5s). A heavy strike (Z) on a burning enemy explodes and burns the area",
 	["화염장"] = "Flame Palm",
@@ -56427,9 +56779,9 @@ return {
 	["불길이 되어 앞으로 꿰뚫고 지나간다 (무적). 지나간 길에 불기둥이 솟는다"] = "Become flame and pierce forward (invincible). Fire pillars rise along your path",
 	["염화폭풍"] = "Flame Storm",
 	["앞쪽 부채꼴로 불길을 1.2초 동안 내뿜는다 (맞은 적은 불탄다)"] = "Breathe fire in a cone ahead for 1.2s (enemies hit burn)",
-	["열화천멸"] = "Blazing Annihilation",
+	["열화천멸"] = "Blazing Inferno",
 	["땅이 갈라져 용암이 둘레의 모든 적 발밑으로 흐르고, 적마다 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다"] = "The ground splits and lava flows under every nearby enemy, raising a fire pillar on each. At the end a volcano erupts where you stand",
-	["무쌍신권"] = "Peerless Divine Fist",
+	["무쌍신권"] = "Peerless Fist",
 	["신화"] = "Mythic",
 	["배틀그라운드에서 백 명을 쓰러뜨린 자만이 강호 제일의 비무 권법을 얻는다"] = "Only those who defeat one hundred players in the Battleground gain the martial world's finest dueling style",
 	["배틀그라운드에서 백 명을 쓰러뜨린 자의 주먹. 화려함 없이 오직 상대를 꺾는 데만 다듬어졌다. 적을 쓰러뜨릴 때마다 숨이 돌아온다."] = "The fist of one who has defeated a hundred in the Battleground. No flourish, honed only to beat opponents. Each takedown restores your breath.",
@@ -56443,9 +56795,9 @@ return {
 	["번개처럼 파고들며 앞의 적을 모두 베고 지나간다 (무적)"] = "Dart in like lightning and cut through every enemy ahead (invincible)",
 	["무쌍난무"] = "Peerless Flurry",
 	["제자리에서 사방으로 주먹과 발을 퍼붓는다 (1.2초)"] = "Unleash fists and kicks in every direction (1.2s)",
-	["천하무쌍"] = "Unrivaled Under Heaven",
+	["천하무쌍"] = "Unrivaled",
 	["빛의 울타리가 둘레를 가두고 모든 적을 한가운데로 끌어당긴다. 여덟 번 몰아친 뒤 마지막 한 주먹으로 하늘 높이 쳐올린다"] = "A fence of light traps the area and pulls every enemy to the center. Eight blows, then a final fist launches them high into the sky",
-	["아공신권"] = "Subspace Divine Fist",
+	["아공신권"] = "Subspace Fist",
 	["천상계 어딘가, 허공에 금이 간 작은 섬. 보이지 않는 다리를 건넌 반선의 고수만이 아공선인을 만난다"] = "Somewhere in the Heavenly Realm lies a small island where the air is cracked. Only a Half-Immortal master who crosses the invisible bridge meets the Subspace Sage",
 	["공간의 틈에 사는 노인의 주먹. 주먹이 닿는 곳마다 공간이 접히고, 오의를 펼치면 그 자리에 바깥과 끊긴 공간이 열린다."] = "The fist of an old man who lives in the cracks of space. Space folds wherever it lands, and its secret art opens a space cut off from the outside.",
 	["틈새: 뒤에서 치면 1.4배. 기술 대기 15% 짧고, 회피를 두 번 이어 쓴다"] = "Rift: 1.4x from behind. Skill cooldowns 15% shorter, and you can dodge twice in a row",
@@ -56475,7 +56827,7 @@ return {
 	["앞에 구름 소용돌이를 펼쳐 1초 동안 둘레의 적을 친다"] = "Spread a cloud vortex ahead, hitting nearby enemies for 1s",
 	["만리운해"] = "Endless Sea of Clouds",
 	["발밑에서 구름 바다가 넓게 퍼져 2초 동안 둘레의 모든 적을 친다"] = "A sea of clouds spreads wide underfoot, hitting every nearby enemy for 2s",
-	["성하신권"] = "Starry River Divine Fist",
+	["성하신권"] = "Starry River Fist",
 	["천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에서 별을 헤아리는 노인. 등선에 오른 자에게만 별의 길을 보여 준다"] = "In the deepest part of the Nebula Garden, behind the Star Lord, an old man counts the stars. He shows the path of stars only to those at Ascension",
 	["별의 강을 주먹에 담았다. 주먹이 닿는 곳마다 별빛이 흩어지고, 오의를 펼치면 머리 위에 은하가 열려 별이 쏟아진다."] = "A fist that holds the river of stars. Starlight scatters wherever it lands, and its secret art opens a galaxy overhead that rains stars.",
 	["성하: 균형을 1.5배로 깎고, 기술 대기 20% 짧다"] = "Starry River: balance damage x1.5, skill cooldowns 20% shorter",
@@ -56509,17 +56861,17 @@ return {
 	["혈마신수를 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 피에 물든 자기 그림자를 넘어라"] = "Fully awaken the Blood Demon Hand and gain two insights, then beat your blood-soaked shadow in the Awakening Trial",
 	["혈마의 손이 주인을 알아보고 깨어났다. 손톱 끝의 피가 금빛으로 끓는다. 혈마신수의 모든 기술이 그대로, 그러나 한층 더 깊고 붉다."] = "The Blood Demon's hand has recognized its master and awakened. The blood at your nails boils gold. Every skill of the Blood Demon Hand, only deeper and redder.",
 	["진 흡혈: 준 피해의 3%를 되찾는다 (광란 중엔 1.5배, 1초에 최대 체력의 5%까지). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초"] = "True Lifesteal: heal 3% of damage dealt (1.5x during frenzy, per 1s up to 5% of max HP). All skills x1.5. True Blood Demon Descends: a bigger Blood Demon tears six times, frenzy 10s",
-	["등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 1.5배)"] = "A sky-blotting Blood Demon rises behind you, tears enemies six times with its claws and roars. Then 10s of frenzy (speed x1.2, lifesteal x1.5)",
+	["등 뒤로 하늘을 가릴 만큼 거대한 혈마가 솟아 손톱으로 적들을 여섯 번 찢고 포효한다. 그 뒤 10초 광란 (동작 ×1.2, 흡혈 1.5배)"] = "A giant Blood Demon rises behind you, tears enemies six times with its claws and roars. Then 10s of frenzy (speed x1.2, lifesteal x1.5)",
 	["진 천룡파천장"] = "True Heavenly Dragon Sky-Breaker Palm",
 	["천룡파천장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 용을 두른 자기 그림자를 넘어라"] = "Fully awaken the Heavenly Dragon Palm and gain two insights, then beat your gold-dragon-clad shadow in the Awakening Trial",
 	["푸른 용이 허물을 벗고 금빛 진룡이 되었다. 장풍은 더 빨리 모이고, 땅을 뚫고 나오는 용은 하늘을 다 덮는다."] = "The blue dragon shed its skin and became a golden true dragon. Blasts charge faster, and the dragon from the ground covers the whole sky.",
 	["진 용기: 1초면 장풍이 가득 모인다. 모든 기술 1.5배. 진 진룡강림: 거대한 금룡이 다섯 번 내리꽂히고 더 큰 숨을 뿜는다"] = "True Dragon Charge: a full blast in 1s. All skills x1.5. True Dragon Descends: a giant gold dragon slams five times and breathes bigger",
-	["땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고, 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"] = "A giant gold dragon bursts from the ground, slams the enemy five times, then breathes a sky-splitting blast forward",
-	["진 벽력신권"] = "True Thunderclap Divine Fist",
+	["땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고, 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"] = "A giant gold dragon bursts from the ground, slams the enemy five times, then breathes a huge blast forward",
+	["진 벽력신권"] = "True Thunderclap Fist",
 	["벽력신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 보랏빛 벼락이 된 자기 그림자를 넘어라"] = "Fully awaken the Thunderclap Fist and gain two insights, then beat your shadow of purple lightning in the Awakening Trial",
 	["노란 벼락이 보랏빛 천뢰가 되었다. 주먹이 닿기 전에 소리가 먼저 터지고, 연쇄 번개가 더 멀리 더 세게 튄다."] = "Yellow lightning has become purple heavenly thunder. The sound bursts before the fist lands, and chain lightning jumps farther and harder.",
-	["진 전하: 네 번 맞히면 연쇄 천뢰 (더 넓고 더 세다). 모든 기술 1.5배. 진 뇌신화: 열한 번 튀고 하늘이 크게 갈라진다"] = "True Charge: four hits for chain heavenly thunder (wider and stronger). All skills x1.5. True Thunder God Form: eleven jumps and the sky splits wide",
-	["몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고, 마지막에 하늘이 크게 갈라진다"] = "Your body becomes purple heavenly thunder and jumps between enemies eleven times. Lightning falls at each touch, and at the end the sky splits wide",
+	["진 전하: 네 번 맞히면 연쇄 천뢰 (더 넓고 더 세다). 모든 기술 1.5배. 진 뇌신화: 열한 번 튀고 하늘이 크게 갈라진다"] = "True Charge: four hits for chain heavenly thunder (wider and stronger). All skills x1.5. True Thunder God Form: eleven jumps and the sky cracks open",
+	["몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고, 마지막에 하늘이 크게 갈라진다"] = "Your body becomes purple heavenly thunder and jumps between enemies eleven times. Lightning falls at each touch, and at the end the sky cracks open",
 	["진 금강불괴신공"] = "True Indestructible Diamond Art",
 	["불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라"] = "Fully awaken the Diamond Fist and gain two insights, then, after one rebirth, beat your golden-Buddha shadow in the Awakening Trial",
 	["다시 태어난 몸에서 금강이 깨어났다. 이제 주먹이 아니라 몸 자체가 무기다. 맞을수록 단단해지고, 쌓인 충격은 땅을 울리는 진동이 되어 되돌아간다."] = "Diamond has awakened in your reborn body. Your body itself is now the weapon. The more you're hit, the harder you get, and stored impact returns as ground-shaking tremors.",
@@ -56534,7 +56886,7 @@ return {
 	["항마금강저"] = "Demon-Subduing Vajra",
 	["땅을 내리찍으면 앞으로 금강저 일곱 개가 차례로 솟아 길을 가르고 적을 띄운다"] = "Slam the ground and seven vajras rise ahead one by one, splitting the path and launching enemies",
 	["만불조종"] = "Ten Thousand Buddhas",
-	["하늘이 갈라지며 산만 한 금빛 손바닥이 내려와 둘레의 땅을 누른다. 눌린 적은 오래 묶이고, 땅이 세 번 울린다"] = "The sky splits and a mountain-sized golden palm presses down on the area. Pinned enemies are held long while the ground shakes three times",
+	["하늘이 갈라지며 산만 한 금빛 손바닥이 내려와 둘레의 땅을 누른다. 눌린 적은 오래 묶이고, 땅이 세 번 울린다"] = "The sky splits and a huge golden palm presses down on the area. Pinned enemies are held long while the ground shakes three times",
 	["진 무영귀각"] = "True Shadowless Ghost Kick",
 	["무영귀각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 그림자뿐인 자기 그림자를 넘어라"] = "Fully awaken the Ghost Kick and gain two insights, then, after one rebirth, beat your shadow-only shadow in the Awakening Trial",
 	["다시 태어난 몸에서 그림자가 따로 걷기 시작했다. 내 발이 닿은 곳에 한 박자 늦게 그림자의 발이 또 닿는다. 상대는 두 번 맞고도 한 번 본다."] = "In your reborn body, your shadow walks on its own. A beat after your foot lands, the shadow's foot lands there too. Foes get hit twice but see it once.",
@@ -56564,10 +56916,10 @@ return {
 	["발밑에서 물기둥이 솟아 둘레의 적을 하늘로 띄운다. 떠오른 적에게 물줄기가 내리꽂힌다"] = "A water pillar rises underfoot, launching nearby enemies; jets of water slam down on them",
 	["천하수류"] = "Flowing Under Heaven",
 	["물의 용 셋이 몸을 감고 솟아올라 2.6초 동안 둘레를 휘감아 돌며 휩쓴다. 마지막에 셋이 하나로 엉겨 앞으로 거대한 물결이 되어 덮친다"] = "Three water dragons coil around you and rise, sweeping the area for 2.6s. At the end they merge into one giant wave and crash forward",
-	["진 열화신권"] = "True Blazing Fire Divine Fist",
+	["진 열화신권"] = "True Blazing Fire Fist",
 	["열화신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라"] = "Fully awaken the Blazing Fire Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your fire shadow",
 	["다시 태어난 몸에서 꺼지지 않는 업화가 깨어났다. 불은 맞은 자를 태우는 것으로 끝나지 않는다. 쓰러지는 순간 터져 곁의 모두를 삼킨다."] = "An undying karmic fire has awakened in your reborn body. The fire doesn't stop at burning its target. When they fall, it bursts and engulfs everyone nearby.",
-	["업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고, 떨어진 자리가 용암이 되어 터진다"] = "Karmic Fire: enemies hit burn harder for 4s. When a burning enemy falls, it explodes and burns the area. Secret Art Fire Dragon Annihilation: a fire dragon circles the sky and slams into enemies; where it lands turns to lava and bursts",
+	["업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고, 떨어진 자리가 용암이 되어 터진다"] = "Karmic Fire: enemies hit burn harder for 4s. When a burning enemy falls, it explodes and burns the area. Secret Art Fire Dragon Inferno: a fire dragon circles the sky and slams into enemies; where it lands turns to lava and bursts",
 	["업화장"] = "Karmic Fire Palm",
 	["화염쌍조"] = "Twin Flame Claws",
 	["염륜선풍"] = "Flame Wheel Whirlwind",
@@ -56577,9 +56929,9 @@ return {
 	["불길이 되어 앞으로 꿰뚫고 지나간다 (무적). 지나간 길이 한 박자 뒤 불기둥으로 터진다"] = "Become flame and pierce forward (invincible). Your path bursts into fire pillars a beat later",
 	["화산주"] = "Volcano Pillar",
 	["땅을 내리쳐 앞으로 불기둥 여덟을 차례로 세운다"] = "Strike the ground to raise eight fire pillars ahead one by one",
-	["화룡천멸"] = "Fire Dragon Annihilation",
+	["화룡천멸"] = "Fire Dragon Inferno",
 	["몸에서 불의 용이 솟아 하늘을 한 바퀴 돌고, 적들에게 네 번 내리꽂힌다. 마지막에 떨어진 자리가 용암이 되어 세 번 터진다"] = "A fire dragon rises from you, circles the sky and slams into enemies four times. At the end the impact points turn to lava and burst three times",
-	["진 창해신권"] = "True Azure Sea Divine Fist",
+	["진 창해신권"] = "True Azure Sea Fist",
 	["창해신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라"] = "Fully awaken the Azure Sea Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your sea shadow",
 	["다시 태어난 몸에서 깊은 바다가 깨어났다. 파도는 더 자주, 더 깊이 밀려온다. 바다의 바닥은 아무도 본 적이 없다."] = "The deep sea has awakened in your reborn body. Waves come more often and deeper. No one has ever seen the bottom of the sea.",
 	["심해: 세 번 맞힐 때마다 상대 자리에서 큰 물기둥이 솟는다 (더 넓고 세다). 밀어냄 1.4배. 오의 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고, 거대한 물기둥이 하늘로 쳐올린다"] = "Deep Sea: every three hits a big water pillar rises at the target (wider and stronger). Knockback x1.4. Secret Art Deep Sea Descends: the ground becomes deep sea, enemies sink, and a giant water pillar launches them skyward",
@@ -56608,8 +56960,8 @@ return {
 	["칼바람 회오리"] = "Blade Wind Tornado",
 	["앞에 칼바람 회오리를 2.5초 세운다. 둘레의 적을 빨아들이며 계속 벤다"] = "Raise a blade-wind tornado ahead for 2.5s. It pulls in and keeps cutting nearby enemies",
 	["천풍만검"] = "Heavenly Wind Myriad Blades",
-	["바람의 칼날 열둘이 몸을 감아 돌며 둘레를 베고, 사방으로 쏘아진다. 마지막에 앞에서 하늘까지 닿는 회오리가 모두 들어 올려 내던진다"] = "Twelve wind blades coil around you cutting the area, then shoot out in all directions. At the end a sky-high tornado ahead lifts and hurls everyone",
-	["진 무극신권"] = "True Limitless Divine Fist",
+	["바람의 칼날 열둘이 몸을 감아 돌며 둘레를 베고, 사방으로 쏘아진다. 마지막에 앞에서 하늘까지 닿는 회오리가 모두 들어 올려 내던진다"] = "Twelve wind blades coil around you cutting the area, then shoot out in all directions. At the end a towering tornado ahead lifts and hurls everyone",
+	["진 무극신권"] = "True Limitless Fist",
 	["무극신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라"] = "Fully awaken the Limitless Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your ink-painted shadow",
 	["다시 태어난 몸에서 무극이 붓을 들었다. 흑과 백을 넘어, 먹 한 방울에서 모든 것이 그려지고 지워진다. 손끝이 지나간 자리에 먹이 번지고, 먹은 금빛으로 타오른다."] = "In your reborn body, the Limitless has taken up the brush. Beyond black and white, everything is drawn and erased from a single drop of ink. Ink spreads where your fingers pass and burns gold.",
 	["먹 번짐: 네 번 맞힐 때마다 상대 발밑에 먹이 번졌다가 금빛으로 터진다. 모든 타격이 균형을 두 배로 깎는다. 오의 무극필: 하늘의 큰 붓이 땅에 먹의 꽃을 그리고, 그림이 금빛으로 타오르며 터진다"] = "Ink Bleed: every four hits ink spreads under the target and bursts gold. Every hit wears balance twice as fast. Secret Art Limitless Brush: a great brush in the sky paints an ink flower on the ground, and the painting burns gold and explodes",
@@ -56653,7 +57005,7 @@ return {
 	["뇌정천망"] = "Thunder Heaven Net",
 	["둘레의 적 열을 보랏빛 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고, 마지막에 적마다 천뢰가 떨어진다"] = "Link ten nearby enemies with a net of purple lightning. The net pulses five times frying them, then heavenly thunder falls on each",
 	["천수여래"] = "Thousand-Armed Tathagata",
-	["등 뒤로 팔이 여럿 달린 거대한 금빛 여래가 솟아 적들을 차례로 여덟 번 내리친다. 마지막에 하늘이 갈라지며 산만 한 손바닥이 땅을 누른다"] = "A giant many-armed golden Tathagata rises behind you and strikes enemies eight times in turn. At the end the sky splits and a mountain-sized palm presses the ground",
+	["등 뒤로 팔이 여럿 달린 거대한 금빛 여래가 솟아 적들을 차례로 여덟 번 내리친다. 마지막에 하늘이 갈라지며 산만 한 손바닥이 땅을 누른다"] = "A giant many-armed golden Tathagata rises behind you and strikes enemies eight times in turn. At the end the sky splits and a huge palm presses the ground",
 	["무영천살"] = "Shadowless Heaven Kill",
 	["세상이 어두워지고 몸이 사라진다. 적들의 몸에 붉은 표식이 하나씩 새겨지고, 빛이 돌아오는 순간 모두 한꺼번에 터진다. 마지막에 하늘에서 그림자의 발이 짓밟는다 (그동안 무적)"] = "The world darkens and you vanish. A red mark is carved on each enemy, and the moment light returns they all burst at once. Finally a shadow foot stomps from the sky (invincible meanwhile)",
 	["창해만류"] = "Azure Sea Ten Thousand Currents",
@@ -56709,7 +57061,7 @@ return {
 	["작은 회오리를 풀어 놓는다. 3초 동안 가까운 적을 쫓아다니며 들어 올리고, 끝에 흩어지며 친다"] = "Release a small whirlwind. For 3s it chases nearby enemies lifting them up, then scatters and strikes",
 	["풍압"] = "Wind Pressure",
 	["솟구친 뒤 하늘의 바람을 끌어내린다. 둘레의 적을 가운데로 빨아들여 땅에 짓누른다 (1.2초 기절)"] = "Leap up and pull down the sky's wind. Nearby enemies are sucked to the center and pinned to the ground (1.2s stun)",
-	["오의 화룡천멸: .*$"] = "Secret Art Fire Dragon Annihilation: .*$",
+	["오의 화룡천멸: .*$"] = "Secret Art Fire Dragon Inferno: .*$",
 	["오의 화산천붕: 적의 발밑마다 용암이 뿜어지고, 화산이 터져 불덩이가 쏟아진다"] = "Secret Art Volcano Collapse: lava spurts under each enemy and a volcano rains fireballs",
 	["오의 심해강림: .*$"] = "Secret Art Deep Sea Descends: .*$",
 	["오의 고래강림: 거대한 물의 고래가 솟구쳤다가 땅을 덮친다"] = "Secret Art Whale Descends: a giant water whale bursts up and crashes down",
@@ -56770,10 +57122,10 @@ return {
 	["혈월낙참"] = "Blood Moon Falling Cut",
 	["하늘로 솟아 낫을 거꾸로 쥐고 내리꽂는다. 앞의 땅에 핏빛 초승달 자국이 새겨지고, 한 박자 뒤 자국이 터진다"] = "Leap into the sky and drive the scythe down upside-down. A crimson crescent is carved into the ground ahead and bursts a beat later",
 	["혈마수확"] = "Blood Demon Harvest",
-	["등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고, 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다"] = "A sky-sized blood scythe rises behind you and sweeps the area twice. Each enemy cut is branded crimson, and the brands burst at once when the scythe hits the ground. Heals you for what you cut",
+	["등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고, 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다"] = "A giant blood scythe rises behind you and sweeps the area twice. Each enemy cut is branded crimson, and the brands burst at once when the scythe hits the ground. Heals you for what you cut",
 	["혈월만겸"] = "Blood Moon Ten Thousand Scythes",
 	["초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 달빛을 받은 낫이 수백 개의 핏빛 초승달이 되어 둘레에 쏟아지고, 마지막에 달까지 닿는 한 줄기 낫질이 하늘과 땅을, 화면까지 가른다"] = "Ultimate Art. The sky turns crimson and a giant red moon rises (invincible meanwhile). The moonlit scythe becomes hundreds of crimson crescents raining on the area, and a final stroke reaching the moon splits sky, earth and the screen",
-	["초·벽력신권"] = "Ultimate Thunderclap Divine Fist",
+	["초·벽력신권"] = "Ultimate Thunderclap Fist",
 	["벽력신권을 익히고 천외천에 오른 자만이, 뇌운 고원 동쪽 벼랑 끝 쇠기둥 봉우리의 뇌천선을 만난다"] = "Only those who know the Thunderclap Fist and reach Beyond Heaven meet the Thunder Heaven Immortal on the iron-pillar peak at the east cliff of the Storm Plateau",
 	["벽력신권을 넘어선 권법. 두 팔에 두른 토시에 하늘의 번개가 깃들었다. 주먹은 소리보다 빠르고, 세 번째 주먹마다 하늘이 대답한다."] = "A style beyond the Thunderclap Fist. Heaven's lightning dwells in the bracers on both arms. Fists faster than sound, and every third punch the sky answers.",
 	["천뢰: 세 번 맞힐 때마다 둘레로 연쇄 천뢰가 튄다 (더 넓고 세다). 몸이 가볍다 (동작 ×1.25). 오의 위에 초 오의(X)가 있다"] = "Heavenly Thunder: every three hits chain heavenly thunder jumps around (wider and stronger). Light body (speed x1.25). An Ultimate Art (X) above the Secret Art",
@@ -56790,7 +57142,7 @@ return {
 	["몸에서 번개의 용이 솟아 하늘을 감아 돌고, 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다"] = "A lightning dragon rises from you, circles the sky and slams into enemies six times. At the end it falls on your spot and thunder bursts",
 	["구천뇌정"] = "Nine Heavens Thunder",
 	["초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고, 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다"] = "Ultimate Art. The sky splits and a giant eye of thunder opens between the clouds (invincible meanwhile). Lightning pours on the area, ending with a pillar of lightning from sky to ground",
-	["초·창해신권"] = "Ultimate Azure Sea Divine Fist",
+	["초·창해신권"] = "Ultimate Azure Sea Fist",
 	["창해신권을 익히고 천외천에 오른 자만이, 서해 바닷가 고래 뼈 바위에 앉은 고경선을 만난다"] = "Only those who know the Azure Sea Fist and reach Beyond Heaven meet the Ancient Whale Immortal on the whale-bone rock on the west sea shore",
 	["창해신권을 넘어선 권법. 손목의 진주가 바다의 숨결을 머금었다. 밀물처럼 다가와 썰물처럼 끌고 간다. 바다 가장 깊은 곳에는 아직 고래가 산다."] = "A style beyond the Azure Sea Fist. The pearls at the wrists hold the sea's breath. It comes like the flood tide and drags away like the ebb. Whales still live in the deepest sea.",
 	["조수: 세 번 맞힐 때마다 상대 자리에 소용돌이가 생겨 둘레를 끌어들였다가 물기둥으로 터진다. 밀어냄 1.4배, 물살을 타 빠르다 (동작 ×1.15). 오의 위에 초 오의(X)가 있다"] = "Tide: every three hits a whirlpool forms at the target, pulling in the area before bursting into a water pillar. Knockback x1.4, faster on the current (speed x1.15). An Ultimate Art (X) above the Secret Art",
@@ -56808,7 +57160,7 @@ return {
 	["둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고, 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다"] = "The ground in a 26-stud radius becomes sea. Four great waves roll to the center from all sides sweeping enemies together, then a giant whirlpool rises at the center and swallows them all",
 	["고경승천"] = "Ancient Whale Ascends",
 	["초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고, 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다"] = "Ultimate Art. The sky darkens and the ground becomes deep sea (invincible meanwhile). An ancient whale bursts from below, passes overhead and leaps high. Enemies under its shadow are swept up by the current, and as it falls into the sea ahead a giant tsunami covers the area",
-	["초·성하신권"] = "Ultimate Starry River Divine Fist",
+	["초·성하신권"] = "Ultimate Starry River Fist",
 	["성하신권을 익히고 천외천에 오른 자만이, 천상계 성운원 남쪽 끝 관성대에서 별을 헤아리는 천성선을 만난다"] = "Only those who know the Starry River Fist and reach Beyond Heaven meet the Star Counting Immortal at the observatory on the south end of the Nebula Garden",
 	["성하신권을 넘어선 권법. 주먹에 담던 별을 이제 지팡이 끝에 매달았다. 휘두를 때마다 마법진이 열리고, 별이 쏟아지고, 하늘에 별자리가 그려진다."] = "A style beyond the Starry River Fist. The stars once held in the fist now hang from the staff tip. Every swing opens a magic circle, rains stars and draws constellations in the sky.",
 	["별진: 맞힐 때마다 25% (네 번째는 반드시) 상대 둘레에 마법진이 열리고 별이 튀어나와 찌른다. 균형을 1.3배로 깎고, 기술 대기 15% 짧다. 오의 위에 초 오의(X)가 있다"] = "Star Circle: each hit has a 25% chance (guaranteed on the fourth) to open a magic circle around the target that shoots stars. Balance damage x1.3, skill cooldowns 15% shorter. An Ultimate Art (X) above the Secret Art",
@@ -56826,7 +57178,7 @@ return {
 	["지팡이가 커다랗게 자라 땅에 꽂힌다. 둘레 24칸에 보라·남색·노란 안개가 피어오르고, 그 안에서 별들이 소용돌이치며 은하수가 된다. 소용돌이는 적을 끌어들이며 계속 치고, 마지막에 은하가 한가운데로 모여 터진다"] = "The staff grows huge and plants itself in the ground. Purple, indigo and yellow mist rises in a 24-stud radius, and stars swirl inside into a galaxy. The swirl keeps pulling in and hitting enemies, then the galaxy collapses to the center and bursts",
 	["성천궁"] = "Star Heaven Dome",
 	["초 오의. 하늘이 밤이 되고 (그동안 무적) 둘레 34칸을 덮는 커다란 남색 돔이 내려앉는다. 돔 안 곳곳에 마법진이 열려 별이 쏟아지고 메테오가 떨어진다. 마지막에 돔 표면에 별자리들이 빛으로 그려지고, 모두 한꺼번에 터진다"] = "Ultimate Art. The sky turns to night (invincible meanwhile) and a big indigo dome covering 34 studs settles down. Magic circles open all over inside, raining stars and meteors. At the end constellations light up on the dome's surface and everything bursts at once",
-	["만목신권"] = "Myriad Trees Divine Fist",
+	["만목신권"] = "Myriad Trees Fist",
 	["반선의 경지에 오른 자만이, 남서쪽 들판 깊은 숲 만목원의 이끼 좌대에 앉은 목선을 만난다"] = "Only those at Half-Immortal meet the Tree Sage seated on the mossy dais of the Myriad Tree Grove deep in the southwest woods",
 	["나무는 서두르지 않는다. 그러나 멈추지도 않는다. 대숲의 바람처럼 부드럽게 흘러, 천 년 은행나무처럼 무겁게 내려앉는 권. 끝에는 숲 전체가 일어선다."] = "A tree doesn't hurry. But it doesn't stop either. A fist that flows softly like wind in bamboo and lands heavy like a thousand-year ginkgo. At the end the whole forest stands up.",
 	["죽순: 네 번 맞힐 때마다 상대 발밑에서 죽순이 창처럼 솟아 띄운다. 몸이 단단하다 (균형 1.4배). 오의 신목강림: 천 년 은행나무가 솟아 금빛 잎을 쏟는다"] = "Bamboo Shoots: every four hits bamboo shoots spear up under the target and launch them. Sturdy body (balance x1.4). Secret Art Sacred Tree Descends: a thousand-year ginkgo rises and rains golden leaves",
@@ -56903,7 +57255,7 @@ return {
 	["둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고, 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다"] = "A big hourglass descends over a 26-stud radius. While the sand runs, enemies inside are slowed under a rain of ash. When the sand runs out, the hourglass cracks and shatters, scattering everything in a sandstorm",
 	["경화수월"] = "Flowers in a Mirror, Moon in Water",
 	["초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고, 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다"] = "Ultimate Art. The world loses its color (invincible meanwhile). Twelve mirrors three times a person's height rise in a 36-stud circle. Glass shadows of you leap from the mirrors to strike enemies and return to other mirrors again and again. Cracks spread across every mirror, they all shatter toward the center, and everything turns to ash",
-	["권왕신권"] = "Fist King Divine Fist",
+	["권왕신권"] = "Fist King Fist",
 	["네 번 환생한 몸으로 마지막 윤회의 시련을 넘으면, 네 삶의 그림자가 하나가 되어 이 권을 남기고 간다"] = "After four rebirths, pass the final Rebirth Trial and the shadows of four lives merge to leave this fist behind",
 	["네 번의 삶을 모두 넘은 자의 권. 맨손의 강호에 왕은 하나다. 주먹을 들면 하늘에서 금빛 주먹이 함께 내려오고, 마지막에는 금빛 왕이 일어선다."] = "The fist of one who has passed all four lives. In the bare-handed martial world there is only one king. Raise your fist and a golden fist descends from the sky with it; at the end, a golden king rises.",
 	["왕의 주먹: 네 번 맞힐 때마다 하늘에서 거대한 금빛 주먹이 상대를 내리찍는다. 앞의 세 권을 품었다: 공격의 10%를 비켜 가고, 준 피해의 1.5%를 되찾는다"] = "King's Fist: every four hits a giant golden fist from the sky slams the target. It holds the three fists before it: 10% of attacks miss you, and you heal 1.5% of damage dealt",
@@ -56920,7 +57272,7 @@ return {
 	["패왕난무"] = "Overlord Flurry",
 	["둘레에 금빛 기둥 여덟이 솟아 왕의 투기장이 되고 적을 안으로 끌어들인다. 기둥마다 붉은 소매의 거대한 금빛 주먹이 나타나 차례로 한가운데를 내지르고, 마지막에 땅속에서 솟은 주먹이 모두를 하늘로 올려친다"] = "Eight golden pillars rise around you forming a king's arena and pull enemies in. A giant red-sleeved golden fist appears at each pillar and punches the center in turn, and finally a fist from the ground launches everyone skyward",
 	["천하제일권"] = "First Fist Under Heaven",
-	["초 오의. 컷씬: 하늘이 금빛으로 갈라진다 (그동안 무적). 몸에서 금빛이 솟아 등 뒤에 관과 망토를 두른 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 왕이 주먹을 당겨 하늘의 금빛을 모으고 가장 강한 적에게 내리꽂는다. 땅이 꺼지며 충격파 세 겹, 금빛 빛기둥 넷이 십자로 내달린 뒤, 하늘에서 빛의 왕관이 내려와 터진다"] = "Ultimate Art. Cutscene: the sky splits gold (invincible meanwhile). Gold rises from your body and a sky-sized golden king (your form) wearing a crown and cape stands behind you. The king draws back its fist, gathers the sky's gold and drives it into the strongest enemy. The ground caves in with three shockwaves, four golden pillars race out in a cross, and a crown of light descends from the sky and bursts",
+	["초 오의. 컷씬: 하늘이 금빛으로 갈라진다 (그동안 무적). 몸에서 금빛이 솟아 등 뒤에 관과 망토를 두른 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 왕이 주먹을 당겨 하늘의 금빛을 모으고 가장 강한 적에게 내리꽂는다. 땅이 꺼지며 충격파 세 겹, 금빛 빛기둥 넷이 십자로 내달린 뒤, 하늘에서 빛의 왕관이 내려와 터진다"] = "Ultimate Art. Cutscene: the sky splits gold (invincible meanwhile). Gold rises from your body and a giant golden king (your form) wearing a crown and cape stands behind you. The king draws back its fist, gathers the sky's gold and drives it into the strongest enemy. The ground caves in with three shockwaves, four golden pillars race out in a cross, and a crown of light descends from the sky and bursts",
 	["몽유권"] = "Dreamwalk Fist",
 	["두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라"] = "After two rebirths, listen to the dream stories of the Dream Sage dozing at the Lotus Pavilion",
 	["두 번째 삶의 꿈속을 걷는 권. 반쯤 잠든 채 싸운다. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고, 달이 손에 닿는다."] = "A fist that walks through the dream of a second life. You fight half asleep. In dreams, doors open in midair, earth and sky flip, and the moon is within reach.",
@@ -56955,7 +57307,7 @@ return {
 	["둘레 26칸의 빛깔이 빠지고 땅이 흰 격자의 검은 허공이 된다. 허공 위로 붉은 null 글자가 떠다니며 적을 가운데로 끌어 지우다가, 허공이 한 점으로 오그라든 뒤 흰 잡음으로 터진다"] = "A 26-stud radius loses its color and the ground becomes a black void with a white grid. Red null text drifts over it, pulling enemies to the center to erase them, then the void shrinks to a point and bursts into white noise",
 	["존재소거"] = "Existence Erasure",
 	["초 오의. 화면이 깨진다 (그동안 무적). 둘레 40칸에 검은 화면 균열이 미끄러지고, 하늘에서 빈칸 상자들이 적에게 떨어진다. 모든 것이 멈추고 빛깔이 뒤집힌 뒤, 삑 소리 한 번에 둘레가 화소 조각으로 무너진다"] = "Ultimate Art. The screen breaks (invincible meanwhile). Black screen cracks slide across a 40-stud radius and blank boxes fall on enemies from the sky. Everything stops, colors invert, and with one beep the area collapses into pixel shards",
-	["극 일월신권"] = "Apex Sun-Moon Divine Fist",
+	["극 일월신권"] = "Apex Sun-Moon Fist",
 	["일월신권을 숙련 20까지 쌓고 세 번 환생한 자만이, 천상 윤회대의 황혼권존을 만난다"] = "Only those who build Sun-Moon Fist mastery to 20 and are reborn three times meet the Twilight Fist Sovereign on the Heavenly Rebirth Terrace",
 	["일월신권의 끝. 해와 달을 쥐는 것을 넘어, 해와 달을 부린다. 싸움이 무르익으면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈추고, 그 황혼 속에서 모든 수가 다른 것이 된다."] = "The end of the Sun-Moon Fist. Beyond holding the sun and moon, you command them. As the fight ripens they rise in turn ever faster until the world halts at twilight, and in that twilight every move becomes something else.",
 	["극 패시브 · 일월극변: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 40초 동안 세상이 황혼이 된다. 그동안 모든 기술이 황혼의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 낮에는 주는 피해 +20%, 밤에는 받는 피해 -20%. 모든 기술 대기 30% 짧음. 초 오의(X)가 있다"] = "Apex Passive · Sun-Moon Apex Shift: fill Apex (100) by landing and taking hits and a cutscene plays server-wide as the world turns to twilight for 40s. Meanwhile all skills become twilight skills (stronger), light and heavy damage x1.3. By day damage dealt +20%, by night damage taken -20%. All skill cooldowns 30% shorter. Has an Ultimate Art (X)",
@@ -57128,7 +57480,7 @@ return {
 	["가장 가까운 적 머리 위에 집채만 한 바위를 떨어뜨린다"] = "Drop a house-sized boulder on the nearest enemy's head",
 	["천붕지열"] = "Sky Falls, Earth Splits",
 	["1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고, 떨어질 때 한 번 더 친다"] = "Gather strength for 1s and strike the ground. The ground around you rises like a mountain and collapses, launching everyone and hitting again as they fall",
-	["빙혼신장"] = "Ice Soul Divine Palm",
+	["빙혼신장"] = "Ice Soul Palm",
 	["사경의 경지에 오른 자만이, 북방 설산 얼음 벼랑 아래 얼어붙은 폭포 앞의 빙혼노니를 만난다"] = "Only those at Brink meet the Ice Soul Nun before the frozen waterfall under the ice cliffs of the northern snow mountains",
 	["얼음의 넋을 담은 손바닥. 닿는 곳마다 서리가 내리고, 네 번 맞히면 상대가 얼어붙는다. 오의는 둘레를 만년 빙하로 덮는다."] = "A palm that holds the soul of ice. Frost falls wherever it touches, and four hits freeze the foe. Its secret art covers the area in an eternal glacier.",
 	["빙결: 네 번 맞힐 때마다 상대 자리에 서리가 터지며 1초 동안 얼어붙는다 (움직이지 못함)"] = "Freeze: every four hits frost bursts at the target, freezing them for 1s (can't move)",
@@ -57144,7 +57496,7 @@ return {
 	["둘레를 얼려 적을 1.6초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다"] = "Freeze the area, trapping enemies in ice for 1.6s, then shatter it with them inside",
 	["만년빙하"] = "Eternal Glacier",
 	["하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고, 마지막에 발밑에서 빙하가 솟는다"] = "Ice pillars fall from the sky onto eight nearby enemies in turn, then a glacier rises underfoot",
-	["천옥신권"] = "Heavenly Jade Divine Fist",
+	["천옥신권"] = "Heavenly Jade Fist",
 	["무극의 경지에 오른 자만이, 서쪽 끝 석림의 옥 기둥 사이에 앉은 옥진인을 만난다"] = "Only those at Limitless meet the Jade Sage seated among the jade pillars of the far-west stone forest",
 	["하늘의 옥을 깎아 만든 주먹. 맞을 때마다 옥 결정이 피어나 쌓이고, 오의를 펼치면 둘레가 옥의 숲이 되어 모두 꿰뚫는다."] = "A fist carved from heaven's jade. Jade crystals bloom and stack with each hit, and its secret art turns the area into a jade forest that pierces everything.",
 	["옥결: 네 번 맞힐 때마다 상대 자리에 옥 결정이 피어 터진다. 몸이 단단해 받는 피해 10% 덜"] = "Jade Crystal: every four hits a jade crystal blooms and bursts at the target. A sturdy body takes 10% less damage",
@@ -57160,7 +57512,7 @@ return {
 	["둘레의 적 다섯 머리 위로 옥 덩이가 떨어진다"] = "Chunks of jade fall on five nearby enemies",
 	["천옥결계"] = "Heavenly Jade Barrier",
 	["발밑에서 옥의 숲이 넓게 자라나 2.4초 동안 둘레의 적을 모두 꿰뚫는다"] = "A jade forest grows wide underfoot, piercing every nearby enemy for 2.4s",
-	["천종신권"] = "Heavenly Bell Divine Fist",
+	["천종신권"] = "Heavenly Bell Fist",
 	["반선의 경지에 오른 자만이, 동북쪽 끝 단풍산 꼭대기의 낡은 종 아래 선 종지기를 만난다"] = "Only those at Half-Immortal meet the Bell Keeper under the old bell atop the maple mountain in the far northeast",
 	["하늘의 종을 울리는 주먹. 칠 때마다 울림이 쌓이고, 다섯 번째에 종소리가 둘레로 퍼져 모두 흔든다. 오의는 하늘에 거대한 종을 건다."] = "A fist that rings heaven's bell. Each blow builds resonance, and on the fifth the bell's toll spreads and shakes everyone around. Its secret art hangs a giant bell in the sky.",
 	["울림: 다섯 번 맞힐 때마다 종소리 파동이 둘레로 퍼진다 (둘레 모두 맞는다). 막기가 단단하다 (막을 때 받는 피해 절반)"] = "Resonance: every five hits a bell wave spreads around you (everyone nearby is hit). Sturdy guard (half damage when blocking)",
@@ -57210,8 +57562,8 @@ return {
 	["용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다"] = "Rise like a dragon, launching every nearby enemy skyward",
 	["구룡천강"] = "Nine Dragons Descend",
 	["땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다"] = "Nine gold dragons burst from the ground and coil into the sky, then slam into enemies one by one and burst at the center",
-	["천룡멸세"] = "Heavenly Dragon World Ender",
-	["초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다"] = "Ultimate Art. The sky splits and a mountain-sized golden dragon descends. It slams down eight times, then breathes a sky-burning blast forward",
+	["천룡멸세"] = "Heavenly Dragon Cataclysm",
+	["초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다"] = "Ultimate Art. The sky splits and a huge golden dragon descends. It slams down eight times, then breathes a searing blast forward",
 	["천하패권"] = "Overlord's Supremacy",
 	["네 번 환생해 권왕신권을 익힌 자만이, 동쪽 끝 황사 협곡의 무너진 왕좌에 앉은 패왕을 만난다"] = "Only those reborn four times who know the Fist King Fist meet the Overlord seated on the fallen throne in the yellow-dust canyon in the far east",
 	["권왕을 넘어선 패자의 주먹. 꾸밈이 없다. 파고들고, 붙잡아 내던지고, 단 한 주먹으로 앞을 모두 지운다. 여섯 번 맞히면 패기에 눌려 둘레의 적이 무릎을 꿇는다."] = "An overlord's fist beyond the Fist King. No flourish. Dart in, grab and hurl, erase everything ahead with a single punch. Every six hits, nearby enemies are forced to their knees by sheer presence.",
@@ -57465,7 +57817,7 @@ return {
 	["하늘 짓밟기"] = "Sky Stomp",
 	["천마 돌격"] = "Heavenly Demon Assault",
 	["허공의 마인들"] = "Demons of the Void",
-	["천마멸세"] = "Heavenly Demon World Ender",
+	["천마멸세"] = "Heavenly Demon Cataclysm",
 	["화산탄"] = "Volcanic Bomb",
 	["불꽃 고리"] = "Fire Ring",
 	["용암 돌진"] = "Lava Charge",
@@ -57630,7 +57982,7 @@ return {
 	["시원자"] = "Origin Sage",
 	["천외봉"] = "Beyond Peak",
 	["처음에는 아무것도 없었다. 그래서 무엇이든 될 수 있었다."] = "At first there was nothing. So anything could be.",
-	["북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라"] = "They say one who knows the beginning of the world stands beneath a sky-high peak above the northern cloud sea",
+	["북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라"] = "They say one who knows the beginning of the world stands beneath a towering peak above the northern cloud sea",
 	["권존"] = "Fist Sovereign",
 	["해는 지고 달은 뜬다. 나는 늘 그 사이에 서 있었다."] = "The sun sets and the moon rises. I have always stood between them.",
 	["동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라"] = "They say one who reached the summit with a single fist stands on an altar at the southeast end of the world, where sun and moon rise together",
@@ -57768,8 +58120,8 @@ return {
 	["경지의 끝, 천외천에 올라라. 하늘 밖에 하늘이 있다."] = "Reach the end of the realms, Beyond Heaven. There is a sky beyond the sky.",
 	["천궁 광장의 투기장 문 너머, 하늘의 재앙 천겁이 기다린다. 여럿이 함께 들어가 천겁을 쓰러뜨려라."] = "Beyond the arena gate in the Sky Palace plaza waits Cheongeop, the calamity of the heavens. Go in together and bring it down.",
 	["천층탑 쉰 층에 올라라. 위로 갈수록 몫이 가파르게 붙는다."] = "Climb to floor fifty of the Thousand-Floor Tower. Rewards climb steeply the higher you go.",
-	["천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다."] = "Find the Origin Sage beneath the Beyond Peak, pass the test, and gain the Genesis Divine Fist. The single fist from the moment the world first opened.",
-	["태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다."] = "If you hold even the Genesis Fist, listen. At the Sun-Moon Altar at the southeast end of the world is the Fist Sovereign, sun and moon in hand. Surpass him and gain the Sun-Moon Divine Fist. That is the summit of all styles.",
+	["천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다."] = "Find the Origin Sage beneath the Beyond Peak, pass the test, and gain the Genesis Fist. The single fist from the moment the world first opened.",
+	["태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다."] = "If you hold even the Genesis Fist, listen. At the Sun-Moon Altar at the southeast end of the world is the Fist Sovereign, sun and moon in hand. Surpass him and gain the Sun-Moon Fist. That is the summit of all styles.",
 	["천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라."] = "Beyond Heaven is not the end. If you're reborn, your realm starts over but your body grows stronger (double stat gains), and realms beyond Beyond Heaven open one by one. Rebirth from the menu.",
 	["환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고, 언제든 되돌려 다시 고를 수 있다."] = "Each rebirth earns two merits. In the stats window, under '♻ Rebirth Perks', spend merits on a perk (HP, damage, Absorption, Inner Heart, Fortune, Insight, Gale). Perks stay through rebirths, and you can refund and pick again anytime.",
 	["삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고, 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권)."] = "Climbing again from Third-Rate, when you reach Life & Death your past self appears as a shadow. Summon and defeat it with '☯ Rebirth Trial' in the stats window. Each one you pass gives a merit, sky gems and scrolls, and the shadow leaves behind a rebirth style (Rebirth Fist · Karmic Fire Fist · Impermanence Fist · Fist King Fist).",
@@ -57933,7 +58285,7 @@ return {
 	["쓰러지거나 떨어지면 처음부터다. 열 층마다 주인이 기다린다."] = "Fall down or fall off and you start over. A master waits every ten floors.",
 	["강호"] = "Martial World",
 	["배틀그라운드에서 백 명을 쓰러뜨렸다. 강호에 네 이름이 돌기 시작했다."] = "You've defeated a hundred in the Battleground. Your name has started to spread across the martial world.",
-	["무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다."] = "Peerless Divine Fist. A fist honed to beat people is yours.",
+	["무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다."] = "Peerless Fist. A fist honed to beat people is yours.",
 	["흑호"] = "Black Tiger",
 	["내 산채에 발을 들인 놈은 살아서 나간 적이 없다."] = "No one who's set foot in my fort has ever left alive.",
 	["혈랑"] = "Blood Wolf",
@@ -60218,11 +60570,19 @@ return {
 	["대기실 · 다음 "] = "Lobby · Next",
 	["전각 문에서 T로 입장"] = "Press T at the hall gate to enter",
 	["⚔ 대기실 · 무기 걸이에서 권법 고르기 · 투표대에서 다음 맵 · 전각 문으로 입장"] = "⚔ Lobby · choose a style at the weapon rack · vote at the map stands · enter through the hall gate",
+	["지금 쓰는 권법"] = "Current style",
+	["이 권법으로 싸움터에"] = "Enter with this style",
+	["권법 회랑"] = "Style Gallery",
+	["권법 회랑 →"] = "Style Gallery →",
+	["마당 동쪽 마네킹 앞에서 T · 그 권법으로 입장"] = "Press T at a mannequin (east side) to enter with that style",
+	["권법 창 열기"] = "Open Styles",
+	["⚔ 대기실 · 동쪽 권법 회랑의 마네킹 앞에서 T로 그 권법 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · press T at a mannequin in the east Style Gallery to enter with that style · vote for the next map at the stands",
+	["다음 권법 (%d / %d)"] = "More styles (%d / %d)",
 }
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -61470,7 +61830,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
@@ -62298,7 +62658,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -62364,7 +62724,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Null</string>
             <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
@@ -64987,7 +65347,7 @@ return Null
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">PassArts</string>
             <string name="Source"><![CDATA[-- 권왕 3.43판: 게임패스 권법 둘의 화면 (모습 · 기술 연출 다시)
@@ -66342,7 +66702,7 @@ return PassArts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
@@ -66401,7 +66761,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -66806,7 +67166,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -67147,7 +67507,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -68097,7 +68457,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -68731,7 +69091,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -70018,7 +70378,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -73048,7 +73408,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Sin</string>
             <string name="Source"><![CDATA[-- 권왕 3.27판: 신 삼재권을 얻는 컷씬.
@@ -74542,7 +74902,7 @@ return Sin
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -75150,7 +75510,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Speed</string>
             <string name="Source"><![CDATA[-- 권왕 3.22판: 극 광속권의 화면. 빛과 소리 (하늘색 · 흰색 · 금빛 줄)
@@ -76062,7 +76422,7 @@ return Speed
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -77203,7 +77563,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -77420,7 +77780,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="57">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -82322,7 +82682,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -83601,7 +83961,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="60">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -86284,7 +86644,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -87394,7 +87754,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="61">
+  <Item class="Workspace" referent="62">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

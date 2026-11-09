@@ -7,8 +7,8 @@
 266	Creation Pillar
 267	Crystal pillars of light rise under five nearby enemies and launch them skyward
 268	Heaven and Earth Split
-269	The world stops and sky and earth turn into a sea of stars. Clench your fist and the world cracks; strike and it shatters like glass, breaking every enemy with it
-270	Sun-Moon Divine Fist
+269	The world stops and sky and earth turn into a sea of stars. Clench your fist and the world cracks; strike and it shatters, breaking every enemy with it
+270	Sun-Moon Fist
 271	Supreme
 272	Only a Limitless master who knows the Genesis Fist meets the Fist Sovereign on the Sun-Moon Altar at the far southeast
 273	The summit of all styles. The sun in the right hand, the moon in the left. Burns like the sun by day, cuts like the moon by night, and in the final move the two overlap into an eclipse.
@@ -25,7 +25,7 @@
 284	Small suns fall on six nearby enemies and burst into pillars of fire
 285	Sun and Moon Together
 286	The sky turns to night and the sun and moon rise together. Moonlight cuts the area, the two overlap into an eclipse, rays of the black sun pierce every enemy, then it bursts like dawn
-287	Azure Sea Divine Fist
+287	Azure Sea Fist
 288	A style that holds the endless sea in two hands. If Flowing Water receives and redirects, Azure Sea is the wave that rolls in and swallows everything. Once pushed, you're swept to the end.
 289	Waves: every four hits a water pillar rises at the target and sweeps the area. All knockback x1.3
 290	Waves
@@ -39,8 +39,8 @@
 298	Tsunami Wall
 299	Walls of water rise ahead one after another, sweeping a line and pushing enemies far away
 300	Azure Sea Sweep
-301	The sea behind you stands up. A sky-high tsunami rolls forward dragging every enemy, then breaks into a giant whirlpool
-302	Eternity Divine Fist
+301	The sea behind you stands up. A towering tsunami rolls forward dragging every enemy, then breaks into a giant whirlpool
+302	Eternity Fist
 303	Only a Limitless master who knows the Genesis Fist meets the Eternal Elder before the floating gate atop the thousand stairs in the far northwest
 304	A fist that holds time. Time stops for those it hits, and past blows echo back to strike again. The final move opens a giant sundial in the sky and a bell tolls twelve times.
 305	Stop: every five hits time stops around the target for 1.4s and an echo strikes. All skill cooldowns 30% shorter, action speed +10%
@@ -56,7 +56,7 @@
 315	Open a zone of stopped time ahead for 2s. Enemies inside can't move and are cut with every tick
 316	Return of Ages
 317	A giant sundial opens in the sky and its hand turns backward. Time stops for every nearby enemy, they're cut each time the bell tolls twelve, and at midnight time shatters
-318	Blazing Fire Divine Fist
+318	Blazing Fire Fist
 319	A fist that holds a burning flame. Those it hits keep burning, and a heavy strike on a burning enemy explodes.
 320	Burn: enemies hit burn for 3s (damage every 0.5s). A heavy strike (Z) on a burning enemy explodes and burns the area
 321	Flame Palm
@@ -68,9 +68,9 @@
 327	Become flame and pierce forward (invincible). Fire pillars rise along your path
 328	Flame Storm
 329	Breathe fire in a cone ahead for 1.2s (enemies hit burn)
-330	Blazing Annihilation
+330	Blazing Inferno
 331	The ground splits and lava flows under every nearby enemy, raising a fire pillar on each. At the end a volcano erupts where you stand
-332	Peerless Divine Fist
+332	Peerless Fist
 333	Mythic
 334	Only those who defeat one hundred players in the Battleground gain the martial world's finest dueling style
 335	The fist of one who has defeated a hundred in the Battleground. No flourish, honed only to beat opponents. Each takedown restores your breath.
@@ -84,9 +84,9 @@
 343	Dart in like lightning and cut through every enemy ahead (invincible)
 344	Peerless Flurry
 345	Unleash fists and kicks in every direction (1.2s)
-346	Unrivaled Under Heaven
+346	Unrivaled
 347	A fence of light traps the area and pulls every enemy to the center. Eight blows, then a final fist launches them high into the sky
-348	Subspace Divine Fist
+348	Subspace Fist
 349	Somewhere in the Heavenly Realm lies a small island where the air is cracked. Only a Half-Immortal master who crosses the invisible bridge meets the Subspace Sage
 350	The fist of an old man who lives in the cracks of space. Space folds wherever it lands, and its secret art opens a space cut off from the outside.
 351	Rift: 1.4x from behind. Skill cooldowns 15% shorter, and you can dodge twice in a row
@@ -116,7 +116,7 @@
 375	Spread a cloud vortex ahead, hitting nearby enemies for 1s
 376	Endless Sea of Clouds
 377	A sea of clouds spreads wide underfoot, hitting every nearby enemy for 2s
-378	Starry River Divine Fist
+378	Starry River Fist
 379	In the deepest part of the Nebula Garden, behind the Star Lord, an old man counts the stars. He shows the path of stars only to those at Ascension
 380	A fist that holds the river of stars. Starlight scatters wherever it lands, and its secret art opens a galaxy overhead that rains stars.
 381	Starry River: balance damage x1.5, skill cooldowns 20% shorter
@@ -150,17 +150,17 @@
 409	Fully awaken the Blood Demon Hand and gain two insights, then beat your blood-soaked shadow in the Awakening Trial
 410	The Blood Demon's hand has recognized its master and awakened. The blood at your nails boils gold. Every skill of the Blood Demon Hand, only deeper and redder.
 411	True Lifesteal: heal 3% of damage dealt (1.5x during frenzy, per 1s up to 5% of max HP). All skills x1.5. True Blood Demon Descends: a bigger Blood Demon tears six times, frenzy 10s
-412	A sky-blotting Blood Demon rises behind you, tears enemies six times with its claws and roars. Then 10s of frenzy (speed x1.2, lifesteal x1.5)
+412	A giant Blood Demon rises behind you, tears enemies six times with its claws and roars. Then 10s of frenzy (speed x1.2, lifesteal x1.5)
 413	True Heavenly Dragon Sky-Breaker Palm
 414	Fully awaken the Heavenly Dragon Palm and gain two insights, then beat your gold-dragon-clad shadow in the Awakening Trial
 415	The blue dragon shed its skin and became a golden true dragon. Blasts charge faster, and the dragon from the ground covers the whole sky.
 416	True Dragon Charge: a full blast in 1s. All skills x1.5. True Dragon Descends: a giant gold dragon slams five times and breathes bigger
-417	A giant gold dragon bursts from the ground, slams the enemy five times, then breathes a sky-splitting blast forward
-418	True Thunderclap Divine Fist
+417	A giant gold dragon bursts from the ground, slams the enemy five times, then breathes a huge blast forward
+418	True Thunderclap Fist
 419	Fully awaken the Thunderclap Fist and gain two insights, then beat your shadow of purple lightning in the Awakening Trial
 420	Yellow lightning has become purple heavenly thunder. The sound bursts before the fist lands, and chain lightning jumps farther and harder.
-421	True Charge: four hits for chain heavenly thunder (wider and stronger). All skills x1.5. True Thunder God Form: eleven jumps and the sky splits wide
-422	Your body becomes purple heavenly thunder and jumps between enemies eleven times. Lightning falls at each touch, and at the end the sky splits wide
+421	True Charge: four hits for chain heavenly thunder (wider and stronger). All skills x1.5. True Thunder God Form: eleven jumps and the sky cracks open
+422	Your body becomes purple heavenly thunder and jumps between enemies eleven times. Lightning falls at each touch, and at the end the sky cracks open
 423	True Indestructible Diamond Art
 424	Fully awaken the Diamond Fist and gain two insights, then, after one rebirth, beat your golden-Buddha shadow in the Awakening Trial
 425	Diamond has awakened in your reborn body. Your body itself is now the weapon. The more you're hit, the harder you get, and stored impact returns as ground-shaking tremors.
@@ -175,7 +175,7 @@
 434	Demon-Subduing Vajra
 435	Slam the ground and seven vajras rise ahead one by one, splitting the path and launching enemies
 436	Ten Thousand Buddhas
-437	The sky splits and a mountain-sized golden palm presses down on the area. Pinned enemies are held long while the ground shakes three times
+437	The sky splits and a huge golden palm presses down on the area. Pinned enemies are held long while the ground shakes three times
 438	True Shadowless Ghost Kick
 439	Fully awaken the Ghost Kick and gain two insights, then, after one rebirth, beat your shadow-only shadow in the Awakening Trial
 440	In your reborn body, your shadow walks on its own. A beat after your foot lands, the shadow's foot lands there too. Foes get hit twice but see it once.
@@ -205,10 +205,10 @@
 464	A water pillar rises underfoot, launching nearby enemies; jets of water slam down on them
 465	Flowing Under Heaven
 466	Three water dragons coil around you and rise, sweeping the area for 2.6s. At the end they merge into one giant wave and crash forward
-467	True Blazing Fire Divine Fist
+467	True Blazing Fire Fist
 468	Fully awaken the Blazing Fire Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your fire shadow
 469	An undying karmic fire has awakened in your reborn body. The fire doesn't stop at burning its target. When they fall, it bursts and engulfs everyone nearby.
-470	Karmic Fire: enemies hit burn harder for 4s. When a burning enemy falls, it explodes and burns the area. Secret Art Fire Dragon Annihilation: a fire dragon circles the sky and slams into enemies; where it lands turns to lava and bursts
+470	Karmic Fire: enemies hit burn harder for 4s. When a burning enemy falls, it explodes and burns the area. Secret Art Fire Dragon Inferno: a fire dragon circles the sky and slams into enemies; where it lands turns to lava and bursts
 471	Karmic Fire Palm
 472	Twin Flame Claws
 473	Flame Wheel Whirlwind
@@ -218,9 +218,9 @@
 477	Become flame and pierce forward (invincible). Your path bursts into fire pillars a beat later
 478	Volcano Pillar
 479	Strike the ground to raise eight fire pillars ahead one by one
-480	Fire Dragon Annihilation
+480	Fire Dragon Inferno
 481	A fire dragon rises from you, circles the sky and slams into enemies four times. At the end the impact points turn to lava and burst three times
-482	True Azure Sea Divine Fist
+482	True Azure Sea Fist
 483	Fully awaken the Azure Sea Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your sea shadow
 484	The deep sea has awakened in your reborn body. Waves come more often and deeper. No one has ever seen the bottom of the sea.
 485	Deep Sea: every three hits a big water pillar rises at the target (wider and stronger). Knockback x1.4. Secret Art Deep Sea Descends: the ground becomes deep sea, enemies sink, and a giant water pillar launches them skyward
@@ -249,8 +249,8 @@
 508	Blade Wind Tornado
 509	Raise a blade-wind tornado ahead for 2.5s. It pulls in and keeps cutting nearby enemies
 510	Heavenly Wind Myriad Blades
-511	Twelve wind blades coil around you cutting the area, then shoot out in all directions. At the end a sky-high tornado ahead lifts and hurls everyone
-512	True Limitless Divine Fist
+511	Twelve wind blades coil around you cutting the area, then shoot out in all directions. At the end a towering tornado ahead lifts and hurls everyone
+512	True Limitless Fist
 513	Fully awaken the Limitless Fist and gain two insights, then, after one rebirth, find the Awakening Master and beat your ink-painted shadow
 514	In your reborn body, the Limitless has taken up the brush. Beyond black and white, everything is drawn and erased from a single drop of ink. Ink spreads where your fingers pass and burns gold.
 515	Ink Bleed: every four hits ink spreads under the target and bursts gold. Every hit wears balance twice as fast. Secret Art Limitless Brush: a great brush in the sky paints an ink flower on the ground, and the painting burns gold and explodes
@@ -294,7 +294,7 @@
 553	Thunder Heaven Net
 554	Link ten nearby enemies with a net of purple lightning. The net pulses five times frying them, then heavenly thunder falls on each
 555	Thousand-Armed Tathagata
-556	A giant many-armed golden Tathagata rises behind you and strikes enemies eight times in turn. At the end the sky splits and a mountain-sized palm presses the ground
+556	A giant many-armed golden Tathagata rises behind you and strikes enemies eight times in turn. At the end the sky splits and a huge palm presses the ground
 557	Shadowless Heaven Kill
 558	The world darkens and you vanish. A red mark is carved on each enemy, and the moment light returns they all burst at once. Finally a shadow foot stomps from the sky (invincible meanwhile)
 559	Azure Sea Ten Thousand Currents

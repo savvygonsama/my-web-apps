@@ -1324,9 +1324,17 @@ task.spawn(function()
 	end
 end)
 local firstState = true
+-- 3.62판: 배틀그라운드 대기실의 권법 회랑 (마네킹이 권법을 시범한다)
+local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) or nil
+if Gallery then
+	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview })
+end
 function handlers.state(data: any)
 	state = data
 	UI.setState(data)
+	if Gallery then
+		pcall(Gallery.update, data)
+	end
 	if firstState then
 		firstState = false
 		task.delay(2.5, function()

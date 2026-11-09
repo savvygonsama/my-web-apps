@@ -50,7 +50,7 @@
 609	Release a small whirlwind. For 3s it chases nearby enemies lifting them up, then scatters and strikes
 610	Wind Pressure
 611	Leap up and pull down the sky's wind. Nearby enemies are sucked to the center and pinned to the ground (1.2s stun)
-612	Secret Art Fire Dragon Annihilation: .*$
+612	Secret Art Fire Dragon Inferno: .*$
 613	Secret Art Volcano Collapse: lava spurts under each enemy and a volcano rains fireballs
 614	Secret Art Deep Sea Descends: .*$
 615	Secret Art Whale Descends: a giant water whale bursts up and crashes down
@@ -111,10 +111,10 @@
 670	Blood Moon Falling Cut
 671	Leap into the sky and drive the scythe down upside-down. A crimson crescent is carved into the ground ahead and bursts a beat later
 672	Blood Demon Harvest
-673	A sky-sized blood scythe rises behind you and sweeps the area twice. Each enemy cut is branded crimson, and the brands burst at once when the scythe hits the ground. Heals you for what you cut
+673	A giant blood scythe rises behind you and sweeps the area twice. Each enemy cut is branded crimson, and the brands burst at once when the scythe hits the ground. Heals you for what you cut
 674	Blood Moon Ten Thousand Scythes
 675	Ultimate Art. The sky turns crimson and a giant red moon rises (invincible meanwhile). The moonlit scythe becomes hundreds of crimson crescents raining on the area, and a final stroke reaching the moon splits sky, earth and the screen
-676	Ultimate Thunderclap Divine Fist
+676	Ultimate Thunderclap Fist
 677	Only those who know the Thunderclap Fist and reach Beyond Heaven meet the Thunder Heaven Immortal on the iron-pillar peak at the east cliff of the Storm Plateau
 678	A style beyond the Thunderclap Fist. Heaven's lightning dwells in the bracers on both arms. Fists faster than sound, and every third punch the sky answers.
 679	Heavenly Thunder: every three hits chain heavenly thunder jumps around (wider and stronger). Light body (speed x1.25). An Ultimate Art (X) above the Secret Art
@@ -131,7 +131,7 @@
 690	A lightning dragon rises from you, circles the sky and slams into enemies six times. At the end it falls on your spot and thunder bursts
 691	Nine Heavens Thunder
 692	Ultimate Art. The sky splits and a giant eye of thunder opens between the clouds (invincible meanwhile). Lightning pours on the area, ending with a pillar of lightning from sky to ground
-693	Ultimate Azure Sea Divine Fist
+693	Ultimate Azure Sea Fist
 694	Only those who know the Azure Sea Fist and reach Beyond Heaven meet the Ancient Whale Immortal on the whale-bone rock on the west sea shore
 695	A style beyond the Azure Sea Fist. The pearls at the wrists hold the sea's breath. It comes like the flood tide and drags away like the ebb. Whales still live in the deepest sea.
 696	Tide: every three hits a whirlpool forms at the target, pulling in the area before bursting into a water pillar. Knockback x1.4, faster on the current (speed x1.15). An Ultimate Art (X) above the Secret Art
@@ -149,7 +149,7 @@
 708	The ground in a 26-stud radius becomes sea. Four great waves roll to the center from all sides sweeping enemies together, then a giant whirlpool rises at the center and swallows them all
 709	Ancient Whale Ascends
 710	Ultimate Art. The sky darkens and the ground becomes deep sea (invincible meanwhile). An ancient whale bursts from below, passes overhead and leaps high. Enemies under its shadow are swept up by the current, and as it falls into the sea ahead a giant tsunami covers the area
-711	Ultimate Starry River Divine Fist
+711	Ultimate Starry River Fist
 712	Only those who know the Starry River Fist and reach Beyond Heaven meet the Star Counting Immortal at the observatory on the south end of the Nebula Garden
 713	A style beyond the Starry River Fist. The stars once held in the fist now hang from the staff tip. Every swing opens a magic circle, rains stars and draws constellations in the sky.
 714	Star Circle: each hit has a 25% chance (guaranteed on the fourth) to open a magic circle around the target that shoots stars. Balance damage x1.3, skill cooldowns 15% shorter. An Ultimate Art (X) above the Secret Art
@@ -167,7 +167,7 @@
 726	The staff grows huge and plants itself in the ground. Purple, indigo and yellow mist rises in a 24-stud radius, and stars swirl inside into a galaxy. The swirl keeps pulling in and hitting enemies, then the galaxy collapses to the center and bursts
 727	Star Heaven Dome
 728	Ultimate Art. The sky turns to night (invincible meanwhile) and a big indigo dome covering 34 studs settles down. Magic circles open all over inside, raining stars and meteors. At the end constellations light up on the dome's surface and everything bursts at once
-729	Myriad Trees Divine Fist
+729	Myriad Trees Fist
 730	Only those at Half-Immortal meet the Tree Sage seated on the mossy dais of the Myriad Tree Grove deep in the southwest woods
 731	A tree doesn't hurry. But it doesn't stop either. A fist that flows softly like wind in bamboo and lands heavy like a thousand-year ginkgo. At the end the whole forest stands up.
 732	Bamboo Shoots: every four hits bamboo shoots spear up under the target and launch them. Sturdy body (balance x1.4). Secret Art Sacred Tree Descends: a thousand-year ginkgo rises and rains golden leaves
@@ -244,7 +244,7 @@
 803	A big hourglass descends over a 26-stud radius. While the sand runs, enemies inside are slowed under a rain of ash. When the sand runs out, the hourglass cracks and shatters, scattering everything in a sandstorm
 804	Flowers in a Mirror, Moon in Water
 805	Ultimate Art. The world loses its color (invincible meanwhile). Twelve mirrors three times a person's height rise in a 36-stud circle. Glass shadows of you leap from the mirrors to strike enemies and return to other mirrors again and again. Cracks spread across every mirror, they all shatter toward the center, and everything turns to ash
-806	Fist King Divine Fist
+806	Fist King Fist
 807	After four rebirths, pass the final Rebirth Trial and the shadows of four lives merge to leave this fist behind
 808	The fist of one who has passed all four lives. In the bare-handed martial world there is only one king. Raise your fist and a golden fist descends from the sky with it; at the end, a golden king rises.
 809	King's Fist: every four hits a giant golden fist from the sky slams the target. It holds the three fists before it: 10% of attacks miss you, and you heal 1.5% of damage dealt
@@ -261,7 +261,7 @@
 820	Overlord Flurry
 821	Eight golden pillars rise around you forming a king's arena and pull enemies in. A giant red-sleeved golden fist appears at each pillar and punches the center in turn, and finally a fist from the ground launches everyone skyward
 822	First Fist Under Heaven
-823	Ultimate Art. Cutscene: the sky splits gold (invincible meanwhile). Gold rises from your body and a sky-sized golden king (your form) wearing a crown and cape stands behind you. The king draws back its fist, gathers the sky's gold and drives it into the strongest enemy. The ground caves in with three shockwaves, four golden pillars race out in a cross, and a crown of light descends from the sky and bursts
+823	Ultimate Art. Cutscene: the sky splits gold (invincible meanwhile). Gold rises from your body and a giant golden king (your form) wearing a crown and cape stands behind you. The king draws back its fist, gathers the sky's gold and drives it into the strongest enemy. The ground caves in with three shockwaves, four golden pillars race out in a cross, and a crown of light descends from the sky and bursts
 824	Dreamwalk Fist
 825	After two rebirths, listen to the dream stories of the Dream Sage dozing at the Lotus Pavilion
 826	A fist that walks through the dream of a second life. You fight half asleep. In dreams, doors open in midair, earth and sky flip, and the moon is within reach.
@@ -296,5 +296,5 @@
 855	A 26-stud radius loses its color and the ground becomes a black void with a white grid. Red null text drifts over it, pulling enemies to the center to erase them, then the void shrinks to a point and bursts into white noise
 856	Existence Erasure
 857	Ultimate Art. The screen breaks (invincible meanwhile). Black screen cracks slide across a 40-stud radius and blank boxes fall on enemies from the sky. Everything stops, colors invert, and with one beep the area collapses into pixel shards
-858	Apex Sun-Moon Divine Fist
+858	Apex Sun-Moon Fist
 859	Only those who build Sun-Moon Fist mastery to 20 and are reborn three times meet the Twilight Fist Sovereign on the Heavenly Rebirth Terrace
