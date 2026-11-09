@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.64.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.65.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -53258,11 +53258,9 @@ local slots: { any } = {}
 local spinners: { BasePart } = {} -- 3.64판 상징 구슬의 도는 고리
 local lastState: any = nil
 
-local PER = 12
+local PER = 8
 local INK = Color3.fromRGB(16, 18, 24)
 
-local BODY = { HumanoidRootPart = true, Head = true, UpperTorso = true, LowerTorso = true, LeftUpperArm = true, LeftLowerArm = true, LeftHand = true, RightUpperArm = true, RightLowerArm = true, RightHand = true, LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true, RightUpperLeg = true, RightLowerLeg = true, RightFoot = true }
-local KEEP = { Accessory = true, Humanoid = true, Shirt = true, Pants = true, ShirtGraphic = true, BodyColors = true }
 
 local function gradeOf(id: string): string
 	local s = Config.STYLE_BY_ID[id]
@@ -53270,43 +53268,89 @@ local function gradeOf(id: string): string
 	return s and Config.styleGrade(s, ups) or "상급"
 end
 
-local function makeDoll(): Model?
-	local char = player.Character
-	if not char then
-		return nil
-	end
-	local old = char.Archivable
-	char.Archivable = true
-	local ok, cl = pcall(function()
-		return char:Clone()
-	end)
-	char.Archivable = old
-	if not ok or not cl then
-		return nil
-	end
-	local doll = cl :: Model
-	for _, ch in ipairs(doll:GetChildren()) do
-		local keep = (ch:IsA("BasePart") and BODY[ch.Name]) or KEEP[ch.ClassName]
-		if not keep then
-			ch:Destroy()
+-- 3.65판: 마네킹은 내 캐릭터를 복사하지 않고 직접 짠다 (캐릭터가 아직 없을 때 비어 있었다). 권법 빛깔로 칠한 R15 몸
+local RIG: { { any } } = {
+	{ "LowerTorso", Vector3.new(2, 0.4, 1), Vector3.new(0, -0.8, 0), "HumanoidRootPart", "Root", Vector3.new(0, -0.8, 0) },
+	{ "UpperTorso", Vector3.new(2, 1.6, 1), Vector3.new(0, 0.2, 0), "LowerTorso", "Waist", Vector3.new(0, -0.6, 0) },
+	{ "Head", Vector3.new(1.1, 1.1, 1.1), Vector3.new(0, 1.55, 0), "UpperTorso", "Neck", Vector3.new(0, 1.0, 0) },
+	{ "RightUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(1.5, 0.4, 0), "UpperTorso", "RightShoulder", Vector3.new(1.5, 0.8, 0) },
+	{ "RightLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(1.5, -0.675, 0), "RightUpperArm", "RightElbow", Vector3.new(1.5, -0.2, 0) },
+	{ "RightHand", Vector3.new(1, 0.3, 1), Vector3.new(1.5, -1.3, 0), "RightLowerArm", "RightWrist", Vector3.new(1.5, -1.15, 0) },
+	{ "LeftUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(-1.5, 0.4, 0), "UpperTorso", "LeftShoulder", Vector3.new(-1.5, 0.8, 0) },
+	{ "LeftLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(-1.5, -0.675, 0), "LeftUpperArm", "LeftElbow", Vector3.new(-1.5, -0.2, 0) },
+	{ "LeftHand", Vector3.new(1, 0.3, 1), Vector3.new(-1.5, -1.3, 0), "LeftLowerArm", "LeftWrist", Vector3.new(-1.5, -1.15, 0) },
+	{ "RightUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(0.5, -1.55, 0), "LowerTorso", "RightHip", Vector3.new(0.5, -1.0, 0) },
+	{ "RightLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(0.5, -2.45, 0), "RightUpperLeg", "RightKnee", Vector3.new(0.5, -2.1, 0) },
+	{ "RightFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(0.5, -2.9, -0.05), "RightLowerLeg", "RightAnkle", Vector3.new(0.5, -2.8, 0) },
+	{ "LeftUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(-0.5, -1.55, 0), "LowerTorso", "LeftHip", Vector3.new(-0.5, -1.0, 0) },
+	{ "LeftLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(-0.5, -2.45, 0), "LeftUpperLeg", "LeftKnee", Vector3.new(-0.5, -2.1, 0) },
+	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
+}
+local DOLL_S = 1.5 -- 마네킹 키 배율
+local function makeDoll(st: any): Model
+	local S = DOLL_S
+	local model = Instance.new("Model")
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1) * S
+	root.Transparency = 1
+	root.Anchored = true
+	root.CanCollide = false
+	root.Parent = model
+	model.PrimaryPart = root
+	local c1, c2 = st.color, st.color2 or st.color
+	local dark = c1:Lerp(Color3.new(0, 0, 0), 0.35)
+	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
+	for _, r in ipairs(RIG) do
+		local name, size, cen, parentName, jointName, joint = r[1], r[2] * S, r[3] * S, r[4], r[5], r[6] * S
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.CFrame = CFrame.new(cen)
+		p.Anchored = false
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Material = Enum.Material.SmoothPlastic
+		p.TopSurface = Enum.SurfaceType.Smooth
+		p.BottomSurface = Enum.SurfaceType.Smooth
+		if name == "Head" then
+			p.Color = c2
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Head
+			mesh.Parent = p
+		elseif string.find(name, "Torso") then
+			p.Color = c1
+		elseif string.find(name, "Hand") or string.find(name, "Foot") then
+			p.Color = c2
+		else
+			p.Color = dark
 		end
+		p.Parent = model
+		parts[name] = p
+		local parent = parts[parentName]
+		local m = Instance.new("Motor6D")
+		m.Name = jointName
+		m.Part0 = parent
+		m.Part1 = p
+		m.C0 = CFrame.new(joint - parent.CFrame.Position)
+		m.C1 = CFrame.new(joint - cen)
+		m.Parent = p
 	end
-	for _, d in ipairs(doll:GetDescendants()) do
-		if d:IsA("LuaSourceContainer") or d:IsA("BillboardGui") or d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
-			d:Destroy()
-		elseif d:IsA("BasePart") then
-			d.Anchored = d.Name == "HumanoidRootPart"
-			d.CanCollide = false
-			d.CanQuery = false
-			d.CanTouch = false
-		end
-	end
-	local hum = doll:FindFirstChildOfClass("Humanoid")
-	if hum then
-		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		hum.PlatformStand = true
-	end
-	return doll
+	-- 몸에서 은은한 빛 (마네킹이 권법 빛깔로 빛난다)
+	local glow = Instance.new("PointLight")
+	glow.Color = c1
+	glow.Range = 12
+	glow.Brightness = 0.8
+	glow.Parent = parts.UpperTorso
+	local hum = Instance.new("Humanoid")
+	hum.RigType = Enum.HumanoidRigType.R15
+	hum.HipHeight = 2 * S
+	hum.AutomaticScalingEnabled = false
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum.PlatformStand = true
+	hum.Parent = model
+	return model
 end
 
 local function newPart(props: { [string]: any }): BasePart
@@ -53316,7 +53360,9 @@ local function newPart(props: { [string]: any }): BasePart
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
 	for k, v in pairs(props) do
-		if k ~= "Class" and k ~= "Parent" and k ~= "CanCollide" then
+		if k == "Position" then
+			p.CFrame = CFrame.new(v)
+		elseif k ~= "Class" and k ~= "Parent" and k ~= "CanCollide" then
 			(p :: any)[k] = v
 		end
 	end
@@ -53340,15 +53386,15 @@ end
 -- 받침대 자리 (마당 동쪽 절반, 5 × 3)
 local function spotAt(i: number): Vector3
 	local c = center :: Vector3
-	local col = (i - 1) // 6
-	local row = (i - 1) % 6
-	return c + Vector3.new(38 + col * 20, 0.6, -25 + row * 10)
+	local col = (i - 1) // 4
+	local row = (i - 1) % 4
+	return c + Vector3.new(38 + col * 24, 0.6, -22 + row * 15)
 end
 -- 나무 푯말 (마네킹 옆): 기둥 + 판, 판 앞면에 이름 · 등급
 local function signpost(at: Vector3, st: any, grade: string, using: boolean, f: Instance)
 	local WOOD = Color3.fromRGB(120, 82, 52)
-	newPart({ Name = "SignPost", Size = Vector3.new(0.5, 5.2, 0.5), Position = at + Vector3.new(0, 2.6, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
-	local board = newPart({ Name = "SignBoard", Size = Vector3.new(0.3, 2.4, 4.4), CFrame = CFrame.new(at + Vector3.new(0, 4.9, 0)), Color = Color3.fromRGB(150, 104, 66), Material = Enum.Material.Wood, Parent = f })
+	newPart({ Name = "SignPost", Size = Vector3.new(0.7, 7.5, 0.7), Position = at + Vector3.new(0, 3.75, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+	local board = newPart({ Name = "SignBoard", Size = Vector3.new(0.4, 3.8, 7.4), CFrame = CFrame.new(at + Vector3.new(0, 7.2, 0)), Color = Color3.fromRGB(150, 104, 66), Material = Enum.Material.Wood, Parent = f })
 	local sg = Instance.new("SurfaceGui")
 	sg.Face = Enum.NormalId.Left -- 서쪽 (마당) 을 본다
 	sg.PixelsPerStud = 60
@@ -53378,28 +53424,28 @@ end
 -- 떠 있는 상징 구슬: 권법 빛깔의 빛나는 구슬 · 바깥 빛무리 · 비스듬히 도는 고리 · 빛 가루 · 가운데 한자
 local function emblem(at: Vector3, st: any, f: Instance)
 	local c1, c2 = st.color, st.color2 or st.color
-	local core = newPart({ Name = "EmblemCore", Shape = Enum.PartType.Ball, Size = Vector3.one * 3.4, Position = at, Color = c1, Material = Enum.Material.Neon, Transparency = 0.1, Parent = f })
-	newPart({ Name = "EmblemHalo", Shape = Enum.PartType.Ball, Size = Vector3.one * 5.6, Position = at, Color = c2, Material = Enum.Material.Neon, Transparency = 0.82, Parent = f })
-	local ring = newPart({ Name = "EmblemRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.25, 7.4, 7.4), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0, math.rad(90)), Color = c2, Material = Enum.Material.Neon, Transparency = 0.45, Parent = f })
+	local core = newPart({ Name = "EmblemCore", Shape = Enum.PartType.Ball, Size = Vector3.one * 6, Position = at, Color = c1, Material = Enum.Material.Neon, Transparency = 0.1, Parent = f })
+	newPart({ Name = "EmblemHalo", Shape = Enum.PartType.Ball, Size = Vector3.one * 10, Position = at, Color = c2, Material = Enum.Material.Neon, Transparency = 0.82, Parent = f })
+	local ring = newPart({ Name = "EmblemRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 13, 13), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0, math.rad(90)), Color = c2, Material = Enum.Material.Neon, Transparency = 0.45, Parent = f })
 	table.insert(spinners, ring)
 	local e = Instance.new("ParticleEmitter")
 	e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
 	e.Color = ColorSequence.new(Color3.new(1, 1, 1), c2)
-	e.Size = NumberSequence.new(0.5, 0)
+	e.Size = NumberSequence.new(0.9, 0)
 	e.Transparency = NumberSequence.new(0, 1)
 	e.Lifetime = NumberRange.new(0.8, 1.4)
 	e.Speed = NumberRange.new(2, 5)
 	e.SpreadAngle = Vector2.new(180, 180)
 	e.LightEmission = 1
-	e.Rate = 10
+	e.Rate = 16
 	e.Parent = core
 	local l = Instance.new("PointLight")
 	l.Color = c1
-	l.Range = 16
-	l.Brightness = 1.6
+	l.Range = 26
+	l.Brightness = 2
 	l.Parent = core
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(0, 70, 0, 70)
+	bb.Size = UDim2.new(0, 110, 0, 110)
 	bb.MaxDistance = 90
 	bb.LightInfluence = 0
 	bb.Parent = core
@@ -53416,8 +53462,8 @@ local function emblem(at: Vector3, st: any, f: Instance)
 end
 -- 밟는 발판 (마당 쪽)
 local function pad(at: Vector3, st: any, using: boolean, f: Instance): BasePart
-	newPart({ Name = "PadEdge", Size = Vector3.new(5.6, 0.3, 7.6), Position = at + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
-	local p = newPart({ Name = "Pad", Size = Vector3.new(5, 0.32, 7), Position = at + Vector3.new(0, 0.2, 0), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
+	newPart({ Name = "PadEdge", Size = Vector3.new(8.8, 0.3, 10.8), Position = at + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
+	local p = newPart({ Name = "Pad", Size = Vector3.new(8, 0.32, 10), Position = at + Vector3.new(0, 0.2, 0), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
 	local sg = Instance.new("SurfaceGui")
 	sg.Face = Enum.NormalId.Top
 	sg.PixelsPerStud = 40
@@ -53467,25 +53513,21 @@ local function build()
 			local at = spotAt(k)
 			local using = lastState.style == id
 			-- 받침대: 어두운 둥근 단 + 권법 빛깔의 빛나는 테
-			local base = newPart({ Name = "GalleryBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 6, 6), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = INK, Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
-			newPart({ Name = "GalleryRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 6.4, 6.4), CFrame = CFrame.new(at + Vector3.new(0, 0.82, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
-			emblem(at + Vector3.new(0, 10.5, 0), st, f)
-			signpost(at + Vector3.new(-2, 0.6, 4.2), st, gradeOf(id), using, f)
-			local padAt = at + Vector3.new(-7, -0.6, 0)
+			local base = newPart({ Name = "GalleryBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 9, 9), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = INK, Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
+			newPart({ Name = "GalleryRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 9.6, 9.6), CFrame = CFrame.new(at + Vector3.new(0, 0.82, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
+			emblem(at + Vector3.new(0, 17, 0), st, f)
+			signpost(at + Vector3.new(-4, 0.6, 6.6), st, gradeOf(id), using, f)
+			local padAt = at + Vector3.new(-11, -0.6, 0)
 			pad(padAt, st, using, f)
-			local doll = makeDoll()
+			local doll = makeDoll(st)
 			local slot: any = { id = id, at = at, base = base, padAt = padAt, next = os.clock() + 1 + k * 0.4 }
-			if doll then
+			do
 				doll.Name = "GalleryDoll"
 				doll:SetAttribute("Style", id)
 				doll.Parent = f
 				-- 받침대 위에 서서 마당 가운데 (서쪽) 를 본다
-				local hrp = doll:FindFirstChild("HumanoidRootPart") :: BasePart?
-				local hip = 3
-				local hum = doll:FindFirstChildOfClass("Humanoid")
-				if hum and hrp then
-					hip = hum.HipHeight + hrp.Size.Y / 2
-				end
+				-- 받침대 윗면에 발이 닿게 (뿌리에서 발바닥까지 3 × 배율)
+				local hip = 3 * DOLL_S
 				doll:PivotTo(CFrame.lookAt(at + Vector3.new(0, 0.8 + hip, 0), Vector3.new((center :: Vector3).X, at.Y + 0.8 + hip, at.Z)))
 				if opts.previewGear then
 					local ok, list = pcall(opts.previewGear, doll, id)
@@ -53575,7 +53617,7 @@ function Gallery.start(o: any)
 					local pa = s.padAt :: Vector3?
 					if pa then
 						local d = me.Position - pa
-						local on = math.abs(d.X) < 2.8 and math.abs(d.Z) < 3.8 and d.Y > -1 and d.Y < 6
+						local on = math.abs(d.X) < 4.2 and math.abs(d.Z) < 5.2 and d.Y > -1 and d.Y < 6
 						if on and onPad[s] == false and os.clock() - sentAt > 2 and opts.request then
 							sentAt = os.clock()
 							opts.request:FireServer("battleEnter", s.id)
