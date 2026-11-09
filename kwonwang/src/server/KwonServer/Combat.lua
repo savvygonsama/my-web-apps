@@ -818,7 +818,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
 		end
 	end
-	addChi(att, d * Config.CHI_ON_HIT)
+	addChi(att, math.max(Config.CHI_HIT_MIN, d * Config.CHI_ON_HIT))
 	addChi(tgt, d * Config.CHI_ON_HURT)
 
 	-- 공격한 쪽 권법 장치: 꽃잎, 전하
