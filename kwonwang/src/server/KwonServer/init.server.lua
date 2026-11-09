@@ -6590,7 +6590,7 @@ function Premium.grant(player: Player, id: string)
 		refreshFighter(player)
 	end
 	-- 청룡을 사면 바로 고른다
-	if p and id == "dragon" then
+	if p and id == "dragon" and (states[player] :: any).premiumLoaded then
 		p.mountSel = "dragon"
 		toast(player, "🐉 청룡을 얻었어요! V로 타기")
 	end
@@ -6605,6 +6605,16 @@ end
 -- 들어올 때 가진 게임패스를 확인한다
 function Premium.load(player: Player)
 	if not Marketplace then
+		local st0 = states[player]
+		if st0 then
+			(st0 :: any).premiumLoaded = true
+		end
+		return
+	end
+	-- 3.70판: 게임을 만든 계정은 로블록스가 모든 게임패스의 주인으로 친다 (사지 않아도 청룡 · 자동 수련이 켜졌다).
+	-- 만든 사람 · 스튜디오는 들어올 때 저절로 켜지 않는다 (테스트 창의 💎 상품으로 켜 본다)
+	local creator = RunService:IsStudio() or (game.CreatorType == Enum.CreatorType.User and player.UserId == game.CreatorId)
+	if creator and not Config.CREATOR_GETS_PASSES then
 		local st0 = states[player]
 		if st0 then
 			(st0 :: any).premiumLoaded = true
