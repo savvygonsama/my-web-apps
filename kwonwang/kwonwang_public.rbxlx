@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.49.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.50.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -279,12 +279,12 @@ Config.SAMSARA = {
 	scrolls = { 5, 8, 12, 20, 28, 40 },
 	coins = { 2000000, 5000000, 12000000, 30000000, 60000000, 120000000 },
 	lines = {
-		"삼류에서 다시 시작한 너를 비웃는 것은 다름 아닌 지난 삶의 너다. 그 그림자를 넘어라.",
-		"두 번 살았으면 두 번 졌던 기억도 있다. 그 기억이 형체를 얻었다.",
+		"다시 삼류부터다. 앞을 막는 건 지난 삶의 네 그림자다. 넘어서라.",
+		"두 번째 그림자. 지난번보다 조금 더 단단하다.",
 		"세 번째 삶의 그림자는 네 버릇을 모두 안다. 버릇을 버려라.",
 		"네 번째 그림자. 이것을 넘으면 권왕의 자리가 보인다. 그러나 길은 거기서 끝나지 않는다.",
-		"다섯 번째 그림자는 네가 버린 것들로 만들어졌다. 그것은 지금의 너보다 오래 서 있었다.",
-		"마지막 그림자. 이것을 넘으면 윤회의 바퀴가 너를 놓아준다. 그 너머에서 지옥이 기다린다.",
+		"다섯 번째 그림자. 이쯤 되면 그림자도 끈질기다. 오래 버틸 각오를 해라.",
+		"마지막 그림자. 이것을 넘으면 윤회가 끝난다. 그다음은 지옥으로 가는 길이다.",
 	},
 }
 
@@ -771,8 +771,8 @@ table.insert(Config.Styles, {
 	fx = "gravity",
 	grade = "천외천",
 	hidden = true,
-	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨린 자만이 하늘을 삼킨 그 힘을 거꾸로 쥔다",
-	desc = "천마가 하늘을 삼킨 힘을 꺾어 거꾸로 쥔 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
+	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨려야 그 마공을 거꾸로 익힐 수 있다",
+	desc = "천마의 마공을 꺾어 거꾸로 익힌 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
 	gimmick = "중압: 여섯 번 맞힐 때마다 상대 자리에 중력 우물이 열려 둘레의 적을 끌어당겨 바닥에 짓누른다. 맞힌 적은 잠깐 느려진다",
 	deflect = 0.25,
 	postureMult = 1.45,
@@ -3555,7 +3555,7 @@ E.flamesage = variant(E.cultelder, { name = "불새 술사", shirt = Color3.from
 local B = Config.Bosses
 B.bingma = variant(B.heukho, { name = "빙마 · 설산의 주인", shirt = Color3.fromRGB(200, 230, 255), pants = Color3.fromRGB(80, 110, 150), hp = 1600, posture = 320, scale = 1.6, coins = 900, xp = 300 })
 B.hyeolma = variant(B.hyeolrang, { name = "혈마 · 혈교의 주인", shirt = Color3.fromRGB(150, 0, 20), pants = Color3.fromRGB(20, 0, 5), hp = 2400, posture = 420, scale = 1.5, speed = 23, coins = 3000, xp = 800, respawn = 300 })
-B.cheonma = variant(B.hyeolrang, { name = "천마 · 하늘을 삼킨 마귀", shirt = Color3.fromRGB(25, 10, 50), pants = Color3.fromRGB(10, 0, 20), hp = 2400, posture = 520, scale = 1.75, speed = 24, coins = 12000, xp = 2000, respawn = 300, mult = 6 })
+B.cheonma = variant(B.hyeolrang, { name = "천마 · 마교의 교주", shirt = Color3.fromRGB(25, 10, 50), pants = Color3.fromRGB(10, 0, 20), hp = 2400, posture = 520, scale = 1.75, speed = 24, coins = 12000, xp = 2000, respawn = 300, mult = 6 })
 B.yeomje = variant(B.heukho, { name = "염제 · 화염산의 주인", shirt = Color3.fromRGB(235, 95, 25), pants = Color3.fromRGB(80, 20, 10), hp = 2600, posture = 560, scale = 1.7, coins = 20000, xp = 3000, respawn = 300, mult = 8 })
 B.sawang = variant(B.hyeolrang, { name = "사왕 · 모래 왕릉의 주인", shirt = Color3.fromRGB(215, 175, 70), pants = Color3.fromRGB(90, 60, 30), hp = 2600, posture = 560, scale = 1.6, speed = 22, coins = 24000, xp = 3500, respawn = 300, mult = 10 })
 B.cheonmun = variant(B.heukho, { name = "천문장 · 하늘 문지기", shirt = Color3.fromRGB(240, 245, 255), pants = Color3.fromRGB(120, 150, 210), hp = 3000, posture = 700, scale = 1.8, coins = 40000, xp = 6000, respawn = 300, mult = 16 })
@@ -3652,7 +3652,7 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "geukilwol" then
 		local sun, moon = Color3.fromRGB(255, 170, 60), Color3.fromRGB(190, 210, 255)
-		st.trialIntro = { title = "극의 시련", text = "세 번을 죽고 세 번을 살았구나. 그래도 해와 달은 아직 너를 모른다. 내 황혼을 끝까지 버텨 보아라. 해가 지고 달이 뜨는 그 사이에 서 있을 수 있다면, 극을 넘겨주마." }
+		st.trialIntro = { title = "극의 시련", text = "세 번을 죽고 세 번을 살았구나. 그래도 아직 부족하다. 내 황혼을 끝까지 버텨 보아라. 해가 지고 달이 뜨는 그 사이에 서 있을 수 있다면, 극을 넘겨주마." }
 		st.trialBoss = { hp = 5200, posture = 900, scale = 1.7, reach = 1.5, speed = 26, patterns = {
 			P("rain", "해의 비", 1, { count = 9, radius = 8, spread = 26, warn = 0.9, cd = 6, pose = "sun_call", fx = "star", color = sun, hit = hit(0, 0, 0, 28, 44, 0.8, 22) }),
 			P("donut", "달의 고리", 1, { inner = 8, outer = 28, warn = 1.0, cd = 7, pose = "moon_seal", hit = hit(0, 0, 0, 34, 58, 0.9, 40) }),
@@ -3684,7 +3684,7 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "chohyeolma" then
 		local red = Color3.fromRGB(230, 30, 45)
-		st.trialIntro = { title = "초월의 시련", text = "혈마의 손을 쥐었다고? 그 손톱은 아직 짧다. 내 낫 앞에서 피를 흘려 보아라. 끝까지 서 있으면, 이 낫이 너를 주인으로 고를 것이다." }
+		st.trialIntro = { title = "초월의 시련", text = "혈마의 손을 쥐었다고? 그 손톱은 아직 짧다. 내 낫 앞에서 끝까지 서 있어 보아라. 그러면 이 낫을 넘겨주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.6, speed = 24, patterns = {
 			P("rain", "핏빛 초승달", 1, { count = 7, radius = 7, spread = 22, warn = 0.9, cd = 6, pose = "reap_hook", fx = "fire", color = red, hit = hit(0, 0, 0, 22, 36, 0.7, 20) }),
 			P("donut", "혈륜", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "reap_spin", hit = hit(0, 0, 0, 29, 52, 0.9, 40) }),
@@ -3749,7 +3749,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "geukspeed" then
 		local gold, cyan = Color3.fromRGB(255, 215, 110), Color3.fromRGB(120, 225, 255)
-		st.trialIntro = { title = "속도의 시련", text = "저승길은 급할수록 멀다 했다. 나는 그 길을 누구보다 빨리 걸었다. 내 빠르기를 눈으로 따라잡거든, 빛보다 먼저 닿는 법을 가르쳐 주마." }
+		st.trialIntro = { title = "속도의 시련", text = "저승길은 급할수록 멀다 했다. 나는 그 길을 누구보다 빨리 걸었다. 내 빠르기를 눈으로 따라잡거든, 그 걸음을 가르쳐 주마." }
 		st.trialBoss = { hp = 5400, posture = 940, scale = 1.7, reach = 1.6, speed = 34, patterns = {
 			P("charge", "섬전", 1, { length = 58, width = 8, warn = 0.45, cd = 5, times = 4, pose = "void_sink", hit = hit(0, 0, 0, 27, 44, 0.8, 28) }),
 			P("rain", "광침비", 1, { count = 11, radius = 7, spread = 28, warn = 0.7, cd = 6, pose = "point_sky", fx = "star", color = cyan, hit = hit(0, 0, 0, 28, 44, 0.8, 18) }),
@@ -3761,7 +3761,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "hojeop" then
 		local pink = Color3.fromRGB(255, 180, 220)
-		st.trialIntro = { title = "꿈의 시련", text = "꿈속에서 깨어 있는 자만이 꿈을 부린다. 내 꿈길 끝까지 정신을 놓지 않거든, 그 걸음을 가르쳐 주마. 꿈에서 입은 상처도 아프다." }
+		st.trialIntro = { title = "꿈의 시련", text = "꿈속에서도 정신을 붙들어야 한다. 내 꿈길 끝까지 정신을 놓지 않거든, 그 걸음을 가르쳐 주마. 꿈에서 입은 상처도 아프다." }
 		st.trialBoss = { hp = 3600, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
 			P("rain", "잠의 별비", 1, { count = 10, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = pink, hit = hit(0, 0, 0, 20, 32, 0.8, 16) }),
 			P("donut", "꿈문 고리", 1, { inner = 7, outer = 24, warn = 1.0, cd = 8, pose = "circle_palm", hit = hit(0, 0, 0, 28, 48, 0.9, 30) }),
@@ -3943,7 +3943,7 @@ Config.Regions = {
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
 		master = "muyeong", rumor = "서쪽 끝 검은 골짜기에 발소리 없는 그림자가 산다더라", quote = "보이는 발은 이미 늦은 발이다.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", rumor = "남동쪽 쇠기둥 고원에 번개가 떨어지지 않는 날이 없다더라", quote = "생각보다 빠르게. 번개보다 먼저.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", rumor = "남동쪽 쇠기둥 고원에 번개가 떨어지지 않는 날이 없다더라", quote = "생각하는 동안 이미 늦는다. 몸이 먼저 나가야 한다.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
 		master = "chwi", rumor = "남쪽 주막에 늘 취해 있는 노인이 있는데, 넘어지는 걸 본 사람이 없다더라", quote = "취한 자는 넘어지지 않는다. 넘어지는 척할 뿐이지.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
 	-- 1.8판: 세상 끝 네 귀퉁이의 새 땅 (천외봉보다 한층 위, 천상계 바로 아래의 세기)
@@ -3985,7 +3985,7 @@ for _, r in ipairs(Config.Regions) do
 	end
 end
 -- 숨은 사부 (지도에도, 지역 목록에도 없다): 무극에 오른 자에게만 시험을 허락한다
-Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector3.new(-2100, 1.6, 2100), region = "운해 끝자락", quote = "하늘은 닫힌 적이 없다. 네가 열지 않았을 뿐.",
+Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector3.new(-2100, 1.6, 2100), region = "운해 끝자락", quote = "길은 늘 열려 있었다. 걸어온 사람이 드물었을 뿐.",
 	rumor = "남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 앉아 있다더라", secret = true }
 Config.MASTERS.gaecheon = { name = Config.SECRET_MASTER.name, at = Config.SECRET_MASTER.at, region = Config.SECRET_MASTER.region, regionId = "secret",
 	quote = Config.SECRET_MASTER.quote, rumor = Config.SECRET_MASTER.rumor, secret = true }
@@ -3997,7 +3997,7 @@ Config.MASTERS.ilwol = { name = "권존", at = Vector3.new(2500, 6.2, 2500), reg
 	quote = "해는 지고 달은 뜬다. 나는 늘 그 사이에 서 있었다.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
 -- 정점 둘째의 사부: 천 개의 계단 꼭대기, 떠 있는 문 앞의 영겁노인 (지도에 나오지 않는다)
 Config.MASTERS.yeonggeop = { name = "영겁노인", at = Vector3.new(-2804, 62.6, -2804), region = "천 개의 계단", regionId = "steps", secret = true,
-	quote = "흘러간 것은 돌아오지 않는다. 내가 돌려놓기 전까지는.", rumor = "북서쪽 끝, 구름까지 닿은 천 개의 계단 위에 시간을 멈춘 노인이 서 있다더라" }
+	quote = "흘러간 시간은 돌아오지 않는다. 그래서 한 수 한 수를 아껴 쓴다.", rumor = "북서쪽 끝, 구름까지 닿은 천 개의 계단 위에 시간을 멈춘 노인이 서 있다더라" }
 -- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
 Config.Fragments = {
 	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
@@ -4066,18 +4066,18 @@ Config.Story = {
 	{ title = "두 번째 깨달음", text = "한 권법을 두 번 깨달으면 피해가 크게 오르고, 각성의 문이 열린다. 숙련 10인 권법을 골라 두 번째 깨달음을 얻어라.", goal = { kind = "enlight", n = 2 }, reward = { coins = 15000, stats = 2000 } },
 	{ title = "사경의 문", text = "죽음의 문턱, 사경에 올라라. 사경부터 마음속 마귀와 겨루는 심마 대련과 허공답보가 열린다. 심마를 꺾으면 능력치가 크게 오른다.", goal = { kind = "realm", n = 9 }, reward = { coins = 15000, stats = 2500 } },
 	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 5000 } },
-	{ title = "신화경에 들다", text = "생사의 경계를 넘으면 몸이 전설이 된다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
+	{ title = "신화경에 들다", text = "생사경 다음은 신화경이다. 여기까지 온 사람은 손에 꼽는다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 각성 권법(진) 하나를 익혀라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
 	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고, 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
 	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고, 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
-	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그러나 북서쪽 끝 허공 균열에서 더 깊은 어둠이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
+	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그런데 북서쪽 끝 허공 균열에서 이상한 기운이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
 	{ title = "구름 미궁", text = "천궁 광장의 구름 미궁 문으로 들어가 방들을 넘고 미궁의 주인을 꺾어라. 들어간 사람의 세기에 맞춰 적이 선다.", goal = { kind = "maze", n = 1, at = Vector3.new(72, 4000, -34) }, reward = { coins = 150000, stats = 15000 } },
 	{ title = "천층탑 서른 층", text = "마을의 천층탑 서른 층에 올라라. 보스 층마다 두루마리가 기다린다.", goal = { kind = "tower", n = 30, at = Vector3.new(-185, 0, -185) }, reward = { coins = 20000, stats = 1500 } },
 	{ title = "허공 균열", text = "허공 균열의 천마 사도 여섯을 꺾고 길을 열어라.", goal = { kind = "kill", id = "apostle", n = 6, at = Vector3.new(-1800, 0, -1850) }, reward = { coins = 20000, stats = 1000 } },
 	{ title = "다섯 번째 권법", text = "적마다 잘 듣는 권법이 다르다. 사부를 하나 더 찾아 다섯 번째 권법을 익혀라.", goal = { kind = "learn", n = 5 }, reward = { coins = 25000, stats = 1500 } },
-	{ title = "천마", text = "하늘을 삼킨 마귀, 천마. 혈교의 뒤에서 강호를 움직이던 자다. 그를 꺾어야 땅의 싸움이 끝난다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
+	{ title = "천마", text = "마교의 교주, 천마. 혈교의 뒤에서 강호를 움직이던 자다. 그를 꺾어야 땅의 싸움이 끝난다.", goal = { kind = "boss", id = "cheonma", at = Vector3.new(-1950, 0, -1950) }, reward = { coins = 50000, stats = 3000 } },
 	{ title = "깨어난 화염산", text = "천마가 쓰러지자 동쪽 끝 화염산이 깨어났다. 불의 산 아래 염제를 꺾어라.", goal = { kind = "boss", id = "yeomje", at = Vector3.new(2950, 0, -1150) }, reward = { coins = 60000, stats = 3500 } },
 	{ title = "모래 왕릉", text = "남쪽 끝 모래 왕릉에서 사왕이 무덤을 박차고 일어났다. 왕릉으로 가 사왕을 다시 눕혀라.", goal = { kind = "boss", id = "sawang", at = Vector3.new(-900, 0, 2930) }, reward = { coins = 70000, stats = 4000 } },
 	{ title = "하늘 문지기", text = "북쪽 끝 구름바다 위, 천외봉으로 가는 길을 천문장이 막고 있다.", goal = { kind = "boss", id = "cheonmun", at = Vector3.new(0, 0, -2760) }, reward = { coins = 90000, stats = 5000 } },
@@ -4696,7 +4696,7 @@ do
 			{ title = "지옥의 깊은 곳", text = "지옥은 아래로 갈수록 깊다. 독사지옥의 독사대왕, 발설지옥의 발설대왕, 끝없이 떨어지는 무간의 군주를 꺾어라.", goal = { kind = "bosses", ids = { "dokssawang", "balseolwang", "mugunwang" }, n = 3 }, reward = rw(22, 4) },
 			{ title = "세 개의 극", text = "극 권법 셋을 모두 익혀라. 셋이 하나로 모일 때 그 너머가 열린다.", goal = { kind = "geuk", n = 3 }, reward = rw(22, 4) },
 			{ title = "신의 동굴", text = "세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양의 돌이 서 있다. 다섯 번 환생한 몸으로 은자 999만을 바치면 땅 밑 동굴이 열린다. 세 대좌에 극 권법의 기운을 차례로 보내 신 삼재권을 얻어라.", goal = { kind = "learn", id = "sinsamjae" }, reward = rw(22, 5) },
-			{ title = "지옥의 끝", text = "지옥의 가장 아래, 피의 못과 얼어붙은 비명과 끝없는 사슬. 혈지대왕 · 한빙대왕 · 철환대왕을 꺾으면 이승과 저승에 너를 막을 자가 없다.", goal = { kind = "bosses", ids = { "hyeolwang", "hanbingwang", "cheolhwanwang" }, n = 3 }, reward = rw(22, 6) },
+			{ title = "지옥의 끝", text = "지옥의 가장 아래, 피의 못, 얼음 감옥, 쇠사슬 골짜기. 혈지대왕 · 한빙대왕 · 철환대왕을 꺾으면 지옥의 큰 싸움은 끝난다.", goal = { kind = "bosses", ids = { "hyeolwang", "hanbingwang", "cheolhwanwang" }, n = 3 }, reward = rw(22, 6) },
 		},
 	}
 	local i = 1
@@ -4719,36 +4719,36 @@ Config.CUTSCENES = {
 	intro = { who = "청운 장로", lines = { "강호에 온 것을 환영하네. 맨손 하나로 이름을 떨치겠다는 젊은이가 또 왔구먼.", "먼저 내게 와서 말을 걸게. 노란 길잡이를 따라오면 되네." } },
 	gate_first = { who = "관문 수호자", lines = { "몸이 경지에 닿았다고 경지에 오르는 것은 아니다.", "나를 넘어라. 그래야 다음 경지다." } },
 	tower_first = { who = "천층탑", lines = { "천층탑. 한 층 오를 때마다 적이 강해진다.", "쓰러지거나 떨어지면 처음부터다. 열 층마다 주인이 기다린다." } },
-	pvp100 = { who = "강호", lines = { "배틀그라운드에서 백 명을 쓰러뜨렸다. 이제 강호에 너를 모르는 자가 없다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
+	pvp100 = { who = "강호", lines = { "배틀그라운드에서 백 명을 쓰러뜨렸다. 강호에 네 이름이 돌기 시작했다.", "무쌍신권. 사람을 꺾기 위해 다듬어진 주먹이 네 것이다." } },
 	boss_heukho = { who = "흑호", lines = { "내 산채에 발을 들인 놈은 살아서 나간 적이 없다." } },
-	boss_hyeolrang = { who = "혈랑", lines = { "피 냄새가 나는군. 네 피다." } },
-	boss_bingma = { who = "빙마", lines = { "이 설산에서 숨 쉬는 건 나 하나로 족하다." } },
-	boss_hyeolma = { who = "혈마", lines = { "혈교의 주인 앞이다. 무릎을 꿇어라." } },
-	boss_cheonma = { who = "천마", lines = { "하늘을 삼킨 내 앞에서, 고작 맨손이냐." } },
+	boss_hyeolrang = { who = "혈랑", lines = { "피 냄새를 맡고 왔나. 잘못 찾아왔다." } },
+	boss_bingma = { who = "빙마", lines = { "이 설산은 내 집이다. 길을 잃었다면 지금 돌아가라." } },
+	boss_hyeolma = { who = "혈마", lines = { "혈교 본산까지 걸어 들어온 놈은 오랜만이군." } },
+	boss_cheonma = { who = "천마", lines = { "혈교를 부린 것도 나다. 맨손으로 여기까지 온 건 칭찬해 주지." } },
 	boss_yeomje = { who = "염제", lines = { "불의 산은 들어온 자를 돌려보내지 않는다." } },
-	boss_sawang = { who = "사왕", lines = { "왕의 잠을 깨운 죄, 목숨으로 갚아라." } },
+	boss_sawang = { who = "사왕", lines = { "천 년을 잤다. 깨운 값은 받아야겠다." } },
 	boss_cheonmun = { who = "천문장", lines = { "하늘의 문은 아무에게나 열리지 않는다." } },
-	sky_first = { who = "천궁 수문장", lines = { "여기는 천상계. 땅에서 쌓은 이름은 이곳에 닿지 않는다.", "옥좌의 주인을 꺾는 날, 하늘도 너를 기억할 것이다." } },
+	sky_first = { who = "천궁 수문장", lines = { "여기는 천상계. 땅에서 쌓은 이름은 이곳에 닿지 않는다.", "천존은 옥좌에서 내려온 적이 없다. 가 보면 알 것이다." } },
 	boss_noeje = { who = "뇌제", lines = { "하늘의 벼락은 두 번 묻지 않는다." } },
-	boss_seonggun = { who = "성군", lines = { "별이 지는 자리에 네 이름도 묻어 주마." } },
+	boss_seonggun = { who = "성군", lines = { "별을 헤아리는 데 방해가 되는군. 빨리 끝내자." } },
 	boss_cheonjon = { who = "천존", lines = { "땅에서 올라온 주먹이 어디까지 닿는지 보자." } },
-	boss_bingje = { who = "빙제", lines = { "만 년을 얼어 있던 궁이다. 네 숨도 여기서 멎는다." } },
+	boss_bingje = { who = "빙제", lines = { "이 궁에 들어온 자는 다들 발부터 얼었다. 너도 곧 그렇게 된다." } },
 	boss_yeombong = { who = "염봉", lines = { "봉황은 죽지 않는다. 타고 남은 재에서 다시 날 뿐." } },
-	boss_pungyeop = { who = "풍엽", lines = { "잎은 떨어질 때가 가장 붉다. 너도 그렇게 지거라." } },
+	boss_pungyeop = { who = "풍엽", lines = { "잎이 다 지기 전에 돌아가라. 그게 마지막 충고다." } },
 	boss_seokwang = { who = "석왕", lines = { "천 년을 서 있었다. 너 하나에 무너질 돌이 아니다." } },
-	boss_gyunwang = { who = "균왕", lines = { "숨을 들이쉬어라. 이 숲의 포자가 너를 먹을 것이다." } },
+	boss_gyunwang = { who = "균왕", lines = { "이 숲에서는 숨을 아껴 쉬어라. 포자가 폐에 박힌다." } },
 	boss_dason = { who = "다선", lines = { "찻잎이 가라앉기 전에 끝내 주마." } },
 	boss_pokryong = { who = "비천", lines = { "하늘에서 떨어지는 물은 바위도 뚫는다." } },
 	boss_seonhak = { who = "선학", lines = { "학은 한 번 날개를 펴면 구름 위로만 난다." } },
 	boss_jukwang = { who = "죽왕", lines = { "대나무는 꺾이지 않는다. 휘었다가 너를 친다." } },
 	boss_wolyeong = { who = "월영", lines = { "호수에 비친 달을 베어 본 적이 있느냐." } },
-	boss_geumgang = { who = "금강천왕", lines = { "이 몸은 금강이다. 부서지는 것은 네 주먹이다." } },
+	boss_geumgang = { who = "금강천왕", lines = { "이 절의 문을 지킨 지 오래다. 주먹이 버틸지 보자." } },
 	boss_talui = { who = "탈의파", lines = { "삼도천을 건너려면 이승의 것을 모두 내려놓아라. 네 죄의 무게는 이 나무가 잰다." } },
 	boss_hwatang = { who = "화탕대왕", lines = { "이 솥은 한 번도 식은 적이 없다. 이번엔 네 차례다." } },
 	boss_dosan = { who = "도산군주", lines = { "이 산의 칼날은 모두 죄인의 것이었다. 네 것도 하나 더하마." } },
-	boss_agwiwang = { who = "아귀왕", lines = { "굶주림은 끝나지 않는다. 네 혼으로 이 허기를 달래 보마." } },
-	boss_yeomra = { who = "염라대왕", lines = { "산 몸으로 내 앞에 서다니. 업경대에 비친 네 죄를 읽어 주마." } },
-	boss_cheongeop = { who = "천겁", lines = { "하늘이 내린 재앙이다. 혼자라면 도망쳐라. 함께라면, 덤벼라." } },
+	boss_agwiwang = { who = "아귀왕", lines = { "배가 고프다. 얼마나 먹어도 늘 고프다. 너는 좀 오래 씹어야겠군." } },
+	boss_yeomra = { who = "염라대왕", lines = { "산 사람이 여기까지 온 건 오랜만이다. 업경대가 너를 어떻게 비추는지 보자." } },
+	boss_cheongeop = { who = "천겁", lines = { "천겁이다. 혼자서는 버티기 어렵다. 동료를 모아서 와라." } },
 }
 
 ------------------------------------------------------------------------
@@ -4976,10 +4976,10 @@ Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6,
 Config.MASTERS.geuknull = { name = "격자지기", at = Config.EGGS.edge.garden + Vector3.new(12, 2.6, -8), region = "세상 끝 너머 (망각의 정원)", regionId = "edge", secret = true,
 	quote = "펼쳐 보면 알게 된다. 빈칸에도 좌표가 있다는 것을.", rumor = "세상 끝 벼랑 너머, 무너지는 돌길 끝에 떠 있는 정원에서 허공에 격자를 긋는 자가 있다더라" }
 Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
-	quote = "해가 지는 것도, 달이 뜨는 것도 아니다. 그 사이가 극이다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
+	quote = "해도 달도 한쪽만 고집하지 않는다. 극은 그 균형에 있다.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 -- 3.22판 극 광속권의 사부: 지옥 황천 나루의 질주귀
 Config.MASTERS.geukspeed = { name = "질주귀", at = Vector3.new(96, 8000 + 1.6, 34), region = "지옥 (황천 나루)", regionId = "hwangcheon", secret = true,
-	quote = "빛보다 빠른 주먹은 없다. 빛보다 먼저 닿는 주먹이 있을 뿐.", rumor = "저승 너머 황천 나루에, 사신보다 빠르다는 귀신이 서 있다더라" }
+	quote = "빠르다는 건 서두르는 게 아니다. 군더더기가 없는 것이다.", rumor = "저승 너머 황천 나루에, 사신보다 빠르다는 귀신이 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
 	quote = "구름은 밀어도 흩어지지 않는다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 -- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)
@@ -5000,30 +5000,30 @@ Config.MASTERS.cheonjong = { name = "종지기", at = Vector3.new(3000, 1.6, -29
 Config.MASTERS.myeonggyeong = { name = "명경선", at = Vector3.new(-3300, 1.6, -3025), region = "운무 차밭 거울 연못", regionId = "teafield", secret = true,
 	quote = "거울은 무엇이든 비춘다. 그래서 무엇도 붙잡지 않는다.", rumor = "서북쪽 끝 운무 차밭 한가운데, 거울처럼 맑은 연못가에 앉은 신선이 있다더라" }
 Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1.6, -120), region = "천룡봉 동쪽 용의 등뼈", regionId = "peak", secret = true,
-	quote = "용은 하늘을 날지 않는다. 하늘이 용을 태울 뿐.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
+	quote = "힘을 빼야 멀리 친다. 용도 바람을 거스르지 않는다.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
 Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
-	quote = "왕은 많았다. 천하는 하나다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
+	quote = "왕좌는 금방 무너진다. 남는 건 몸에 익힌 것뿐이다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
 Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
 Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
-	quote = "꽃은 지는 순간이 가장 아름답다. 그 순간을 베어라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
+	quote = "꽃잎은 바람을 따라 움직인다. 부채도 그렇게 써라.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
 
 -- 초·취팔선권의 사부: 취선 주막 남쪽 길가, 술독이 쌓인 마루의 만취선 (지도에 나오지 않는다)
 Config.SOJU_HILL = Vector3.new(-170, 0, 980)
 Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.new(0, 3.2, 0), region = "취선 주막 남쪽 (술독 마루)", regionId = "tavern", secret = true,
-	quote = "비틀거림도 초식이다. 쓰러질 듯 서는 자가 가장 오래 선다.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 넥타이를 머리에 맨 노인이 코를 곤다더라" }
+	quote = "비틀거림도 초식이다. 쓰러질 듯 서는 자가 가장 오래 선다.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 수건을 머리에 동여맨 노인이 코를 곤다더라" }
 
 -- 1.9판 초·혈마신수의 사부: 혈교 본산 성벽 밖 북동쪽 끝, 혈월 제단의 혈월선 (지도에 나오지 않는다)
 Config.REAPER_ALTAR = Vector3.new(2080, 0, -2080)
 Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vector3.new(0, 3.3, 0), region = "혈교 본산 밖 (혈월 제단)", regionId = "cult", secret = true,
-	quote = "피는 흘리라고 있는 것이다. 남의 것이든, 내 것이든.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
+	quote = "피를 보고 흔들리면 그 순간 진다. 낫은 늘 같은 궤를 그린다.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
 
 -- 2.0판 초·벽력신권의 사부: 뇌운 고원 동쪽 벼랑 끝, 쇠기둥 봉우리의 뇌천선 (지도에 나오지 않는다)
 Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
 Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
-	quote = "벼락은 길을 묻지 않는다. 먼저 떨어질 뿐.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+	quote = "벼락은 망설이지 않는다. 한 번 정했으면 끝까지 쳐라.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
 -- 2.7판 초·창해신권의 사부: 서해 바닷가, 반쯤 모래에 묻힌 옛 고래 뼈 위의 고경선 (지도에 나오지 않는다)
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
@@ -5037,17 +5037,17 @@ Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0,
 	quote = "...", rumor = "...세상 남동쪽 끝, 큰 바위 옆에 누가 서 있다는데, 말을 들은 사람은 없다더라" }
 -- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
-	quote = "꿈과 생시의 경계에 선 자만이 이 주먹을 쥔다.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
+	quote = "꿈속에서도 발은 땅을 딛고 있어야 한다.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
 Config.STAR_TERRACE = Vector3.new(-600, SY, -20)
 Config.MASTERS.chosengha = { name = "천성선", at = Config.STAR_TERRACE + Vector3.new(0, 4.4, 0), region = "성운원 남쪽 끝 관성대 (천상계)", regionId = "nebula", secret = true,
-	quote = "별을 쥔 주먹은 많았다. 별의 길을 바꾼 주먹은 하나였다.", rumor = "성운원 남쪽 끝, 구리 고리가 저절로 도는 둥근 관측대 위에서 지팡이로 별을 헤아리는 노인이 있다더라" }
+	quote = "별은 매일 같은 길을 돈다. 꾸준함만 한 무공은 없다.", rumor = "성운원 남쪽 끝, 구리 고리가 저절로 도는 둥근 관측대 위에서 지팡이로 별을 헤아리는 노인이 있다더라" }
 -- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
 Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
 Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
 	quote = "나무는 서두르지 않는다. 그런데도 늘 이긴다.", rumor = "남서쪽 들판의 비틀린 고목들이 둥글게 선 숲 한가운데, 이끼 덮인 돌에 앉은 노인이 있다더라" }
 -- 2.0판 각성 사부: 모든 각성 권법(진)은 상급 수련장의 각성선인에게서만 각성할 수 있다 (가까이 가야 한다)
-Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "깨어나는 것은 네 권법이 아니다. 너다." }
+Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "권법이 바뀌려면 먼저 몸에 완전히 익어야 한다." }
 
 -- 천정 (天晶): 천상계에서만 나오는 빛나는 돌. 천상 상점에서 쓴다
 -- 3.12판: 은자는 운 (뽑기·소모품), 천정은 확정 (골라서 올리기·천상 꾸미기). 은자로는 살 수 없는 것만 판다
@@ -6219,16 +6219,16 @@ Config.MINIQUEST = {
 	} },
 	yeonggeop = { title = "멈춘 시계", steps = {
 		{ kind = "find", name = "시계 톱니", icon = "⚙", items = { Vector3.new(40, 0, 2290), Vector3.new(-46, 0, 2210), Vector3.new(3236, 0, 3336), Vector3.new(3166, 0, 3262) }, text = "버려진 마을과 해시계 광장에 흩어진 멈춘 시계의 톱니 넷을 모아라 (T)" },
-		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리가 몇 번 울리는지 들어라", say = "종이 한 번 울렸다. 그런데 소리는 천 년째 울리고 있다." },
+		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리가 몇 번 울리는지 들어라", say = "종이 한 번 울렸다. 소리가 한참 동안 산을 돈다." },
 		{ kind = "return", text = "톱니를 영겁노인에게 가져가라" },
 	} },
 	agong = { title = "허공의 틈", steps = {
 		{ kind = "kill", enemy = "voidwalker", n = 5, text = "허공 균열의 허공 마인 다섯을 쓰러뜨려 틈을 닫아라" },
-		{ kind = "visit", at = Vector3.new(1400, 0, 1400), r = 24, text = "끊어진 하늘다리 끝에 서서, 다리 너머의 허공을 들여다보아라", say = "허공도 너를 들여다본다." },
+		{ kind = "visit", at = Vector3.new(1400, 0, 1400), r = 24, text = "끊어진 하늘다리 끝에 서서, 다리 너머의 허공을 들여다보아라", say = "발밑이 아득하다. 한 걸음만 더 나가면 떨어진다." },
 		{ kind = "return", text = "아공선인에게 돌아가라" },
 	} },
 	seongha = { title = "별을 헤아리는 밤", steps = {
-		{ kind = "visit", at = Vector3.new(-1900, 0, -800), r = 22, night = true, text = "밤에 별바위 고리 한가운데에서 별을 헤아려라", say = "별을 헤아리다 보니 별도 너를 헤아린다." },
+		{ kind = "visit", at = Vector3.new(-1900, 0, -800), r = 22, night = true, text = "밤에 별바위 고리 한가운데에서 별을 헤아려라", say = "별을 다 헤아렸을 즈음, 손끝이 차갑게 맑아졌다." },
 		{ kind = "find", name = "떨어진 별 조각", icon = "⭐", items = ring(Vector3.new(-620, SY, -160), 70, 5, 0), text = "천상계 성운원에 떨어진 별 조각 다섯을 주워라 (T)" },
 		{ kind = "return", text = "별 조각을 성하노군에게 가져가라" },
 	} },
@@ -6250,7 +6250,7 @@ Config.MINIQUEST = {
 		{ kind = "return", text = "혈월선에게 돌아가라" },
 	} },
 	chobyeok = { title = "번개를 기다리다", steps = {
-		{ kind = "visit", at = Vector3.new(1300, 0, -1000), r = 26, text = "만검총 한가운데, 가장 높은 검 아래에서 번개를 기다려라", say = "검 끝에서 파란 불꽃이 튄다. 번개가 너를 알아보았다." },
+		{ kind = "visit", at = Vector3.new(1300, 0, -1000), r = 26, text = "만검총 한가운데, 가장 높은 검 아래에서 번개를 기다려라", say = "검 끝에서 파란 불꽃이 튄다. 팔의 털이 곤두선다." },
 		{ kind = "return", text = "뇌천선에게 돌아가라" },
 	} },
 	chochanghae = { title = "고래 뼈 조각", steps = {
@@ -6264,7 +6264,7 @@ Config.MINIQUEST = {
 	} },
 	hojeop = { title = "몽선의 꿈", steps = {
 		{ kind = "find", name = "잠든 별", icon = "⭐", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에 떨어져 잠든 별 다섯을 깨워라 (T)" },
-		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 꿈이 깨어나는 소리다." },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 졸음이 한꺼번에 밀려온다." },
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
 		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
@@ -11692,7 +11692,7 @@ function Trial.start(player: Player, styleId: string)
 			end
 		end)
 	else
-		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
+		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "네 권법을 그대로 쓰는 그림자가 앞을 막는다. 이 그림자를 넘으면 권법이 한 단계 올라선다." })
 	end
 	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId, kind = "duel" })
 	-- 너무 오래 끌면 사부가 거둔다
@@ -15750,7 +15750,7 @@ if W.eggs then
 					p.coins += E.cairnAll.coins
 					p.scrolls += E.cairnAll.scrolls
 					Push:FireClient(player, "dialog", { who = "🪨 일곱 돌탑", title = "길이 답했다",
-						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
+						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 마지막 돌탑 밑에 누군가 묻어 둔 꾸러미가 있다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
 				end
 			elseif id == "cat" then
 				if not p.seen.egg_cat then
@@ -15900,17 +15900,17 @@ if W.hell or W.hellGrass then
 			local who = "💀 사신"
 			if p.seen.hell_open then
 				Push:FireClient(player, "dialog", { who = who, title = "열린 문",
-					text = "...사슬은 이미 끊어졌다. 복도 끝, 문이 숨을 쉬는 소리가 들리느냐. 가거라. 저 너머엔 이승의 법이 닿지 않는다. 돌아올 수 있을지는... 문이 정할 일이다." })
+					text = "...사슬은 이미 끊어졌다. 복도 끝, 문이 숨을 쉬는 소리가 들리느냐. 가거라. 저 너머는 이승과 다르다. 몸조심해라." })
 			elseif not p.seen.hell_paid then
 				if p.coins < H.cost then
 					Push:FireClient(player, "dialog", { who = who, title = "산 자의 냄새가 난다",
-						text = string.format("......산 것이. 내 앞에서 아직도 숨을 쉬는구나. 복도 끝 문을 열고 싶으냐. 삯은 💰 %s 은자. 지금 가진 것으로는 네 혼 하나 값도 안 된다. 채워서 오너라. 기다려 주마. 나는 영원히 기다릴 수 있으니.", Config.formatNumber(H.cost)) })
+						text = string.format("...산 사람이 여기까지 왔군. 복도 끝 문을 열고 싶으냐. 삯은 💰 %s 은자다. 지금 가진 것으로는 모자라다. 채워서 오너라. 나는 여기서 기다리고 있으마.", Config.formatNumber(H.cost)) })
 					return
 				end
 				p.coins -= H.cost
 				p.seen.hell_paid = true
 				Push:FireClient(player, "dialog", { who = who, title = "삯을 받았다",
-					text = string.format("💰 %s 은자. ...좋다. 삯은 받았다. 복도 끝 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 그 사슬을 쥐고 놓지 않는다. 가서 달래라. 달래지 못하면... 네가 넷째가 될 뿐이다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
+					text = string.format("💰 %s 은자. ...좋다. 삯은 받았다. 복도 끝 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 그 사슬을 쥐고 놓지 않는다. 가서 달래라. 달래지 못하면 문도 열리지 않는다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
 			elseif wispCount(p) < H.wisps then
 				Push:FireClient(player, "dialog", { who = who, title = "아직이다",
 					text = string.format("...아직이냐. 원혼은 방 가장자리를 떠돈다. 푸른 불을 따라가라. 울음소리가 들릴 것이다. 달랜 혼 %d / %d.", wispCount(p), H.wisps) })
@@ -15918,7 +15918,7 @@ if W.hell or W.hellGrass then
 				p.seen.hell_open = true
 				HW.flare(18)
 				Push:FireClient(player, "dialog", { who = who, title = "사슬이 끊어졌다",
-					text = "......혼들이 가벼워졌구나. 들리느냐. 복도 끝에서 사슬이 끊어지는 소리가. 저 문 너머에서 올라오는 것이 지옥의 숨이다.\n\n복도를 걸어가 문 앞에 서라. 뒤는 돌아보지 말고." })
+					text = "......혼들이 가벼워졌구나. 들리느냐. 복도 끝에서 사슬이 끊어지는 소리가. 문 너머에서 뜨거운 바람이 올라온다.\n\n복도를 걸어가 문 앞에 서라." })
 			end
 			est.dirty = true
 			pushState(player)
@@ -15960,7 +15960,7 @@ if W.hell or W.hellGrass then
 			end
 			HW.flare(10)
 			Push:FireClient(player, "dialog", { who = "🔥 지옥문", title = "붉은 숨",
-				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n사신가 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
+				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n사신이 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
 			task.delay(1.4, function()
 				local ch = player.Character
 				local f2 = Combat.fighterOfPlayer(player)
@@ -16500,7 +16500,7 @@ task.spawn(function()
 		local m = Config.MASTERS[styleId]
 		local sdef = Config.STYLE_BY_ID[styleId]
 		if sdef and sdef.realmReq and not p.styles[styleId] and Calc.realm(p) < sdef.realmReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. 네 안의 하늘이 열리지 않았다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
 			return
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
@@ -16677,7 +16677,7 @@ if W.sin and not BATTLE then
 			return
 		end
 		if p.styles.sinsamjae then
-			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 다만 네 안에서 하늘과 땅과 사람이 하나로 울리는 소리가, 이 돌에도 닿는다. 궁극을 얻은 자에게 더 줄 것은 없다." })
+			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 이미 궁극을 이룬 사람에게 이 돌이 더 줄 것은 없다." })
 			return
 		end
 		if (p.rebirth or 0) < S.rebirth then

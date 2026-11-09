@@ -2147,7 +2147,7 @@ function Trial.start(player: Player, styleId: string)
 			end
 		end)
 	else
-		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "깨어난 힘이 그림자가 되어 앞을 막는다. 네 권법의 다음 모습을 넘어서라." })
+		Push:FireClient(player, "dialog", { who = "각성 시련", title = style.name, text = "네 권법을 그대로 쓰는 그림자가 앞을 막는다. 이 그림자를 넘으면 권법이 한 단계 올라선다." })
 	end
 	Push:FireClient(player, "trial", { m = ef.model, name = master.name, style = styleId, kind = "duel" })
 	-- 너무 오래 끌면 사부가 거둔다
@@ -6205,7 +6205,7 @@ if W.eggs then
 					p.coins += E.cairnAll.coins
 					p.scrolls += E.cairnAll.scrolls
 					Push:FireClient(player, "dialog", { who = "🪨 일곱 돌탑", title = "길이 답했다",
-						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 바람 속에서 누군가 웃는다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
+						text = string.format("강호 곳곳의 돌탑 일곱에 모두 돌을 올렸다. 마지막 돌탑 밑에 누군가 묻어 둔 꾸러미가 있다. 💰 %s 은자와 심법 두루마리 %d개를 얻었다.\n\n...그런데 바람 소리 사이로 무언가 지직거린다. 세상의 남동쪽 맨 끝, 지도에 그려지지 않은 곳에서.", Config.formatNumber(E.cairnAll.coins), E.cairnAll.scrolls) })
 				end
 			elseif id == "cat" then
 				if not p.seen.egg_cat then
@@ -6355,17 +6355,17 @@ if W.hell or W.hellGrass then
 			local who = "💀 사신"
 			if p.seen.hell_open then
 				Push:FireClient(player, "dialog", { who = who, title = "열린 문",
-					text = "...사슬은 이미 끊어졌다. 복도 끝, 문이 숨을 쉬는 소리가 들리느냐. 가거라. 저 너머엔 이승의 법이 닿지 않는다. 돌아올 수 있을지는... 문이 정할 일이다." })
+					text = "...사슬은 이미 끊어졌다. 복도 끝, 문이 숨을 쉬는 소리가 들리느냐. 가거라. 저 너머는 이승과 다르다. 몸조심해라." })
 			elseif not p.seen.hell_paid then
 				if p.coins < H.cost then
 					Push:FireClient(player, "dialog", { who = who, title = "산 자의 냄새가 난다",
-						text = string.format("......산 것이. 내 앞에서 아직도 숨을 쉬는구나. 복도 끝 문을 열고 싶으냐. 삯은 💰 %s 은자. 지금 가진 것으로는 네 혼 하나 값도 안 된다. 채워서 오너라. 기다려 주마. 나는 영원히 기다릴 수 있으니.", Config.formatNumber(H.cost)) })
+						text = string.format("...산 사람이 여기까지 왔군. 복도 끝 문을 열고 싶으냐. 삯은 💰 %s 은자다. 지금 가진 것으로는 모자라다. 채워서 오너라. 나는 여기서 기다리고 있으마.", Config.formatNumber(H.cost)) })
 					return
 				end
 				p.coins -= H.cost
 				p.seen.hell_paid = true
 				Push:FireClient(player, "dialog", { who = who, title = "삯을 받았다",
-					text = string.format("💰 %s 은자. ...좋다. 삯은 받았다. 복도 끝 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 그 사슬을 쥐고 놓지 않는다. 가서 달래라. 달래지 못하면... 네가 넷째가 될 뿐이다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
+					text = string.format("💰 %s 은자. ...좋다. 삯은 받았다. 복도 끝 문은 사슬 셋으로 잠겨 있다. 이 방을 떠도는 원혼 셋이 그 사슬을 쥐고 놓지 않는다. 가서 달래라. 달래지 못하면 문도 열리지 않는다. (원혼 %d)", Config.formatNumber(H.cost), H.wisps) })
 			elseif wispCount(p) < H.wisps then
 				Push:FireClient(player, "dialog", { who = who, title = "아직이다",
 					text = string.format("...아직이냐. 원혼은 방 가장자리를 떠돈다. 푸른 불을 따라가라. 울음소리가 들릴 것이다. 달랜 혼 %d / %d.", wispCount(p), H.wisps) })
@@ -6373,7 +6373,7 @@ if W.hell or W.hellGrass then
 				p.seen.hell_open = true
 				HW.flare(18)
 				Push:FireClient(player, "dialog", { who = who, title = "사슬이 끊어졌다",
-					text = "......혼들이 가벼워졌구나. 들리느냐. 복도 끝에서 사슬이 끊어지는 소리가. 저 문 너머에서 올라오는 것이 지옥의 숨이다.\n\n복도를 걸어가 문 앞에 서라. 뒤는 돌아보지 말고." })
+					text = "......혼들이 가벼워졌구나. 들리느냐. 복도 끝에서 사슬이 끊어지는 소리가. 문 너머에서 뜨거운 바람이 올라온다.\n\n복도를 걸어가 문 앞에 서라." })
 			end
 			est.dirty = true
 			pushState(player)
@@ -6415,7 +6415,7 @@ if W.hell or W.hellGrass then
 			end
 			HW.flare(10)
 			Push:FireClient(player, "dialog", { who = "🔥 지옥문", title = "붉은 숨",
-				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n사신가 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
+				text = "문이 열린다. 뜨거운 붉은 기운이 얼굴을 때린다. 사슬이 풀린 문턱 너머로, 끝이 보이지 않는 어둠과 불빛이 펼쳐져 있다.\n\n사신이 뒤에서 중얼거린다. \"...돌아올 수 있을 때 돌아와라.\"" })
 			task.delay(1.4, function()
 				local ch = player.Character
 				local f2 = Combat.fighterOfPlayer(player)
@@ -6955,7 +6955,7 @@ task.spawn(function()
 		local m = Config.MASTERS[styleId]
 		local sdef = Config.STYLE_BY_ID[styleId]
 		if sdef and sdef.realmReq and not p.styles[styleId] and Calc.realm(p) < sdef.realmReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. 네 안의 하늘이 열리지 않았다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
 			return
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
@@ -7132,7 +7132,7 @@ if W.sin and not BATTLE then
 			return
 		end
 		if p.styles.sinsamjae then
-			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 다만 네 안에서 하늘과 땅과 사람이 하나로 울리는 소리가, 이 돌에도 닿는다. 궁극을 얻은 자에게 더 줄 것은 없다." })
+			Push:FireClient(player, "dialog", { who = who, title = "이미 이룬 자", text = "...돌은 말이 없다. 이미 궁극을 이룬 사람에게 이 돌이 더 줄 것은 없다." })
 			return
 		end
 		if (p.rebirth or 0) < S.rebirth then
