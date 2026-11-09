@@ -20,7 +20,10 @@ local function normKey(s: string): string
 	s = s:gsub("%%%%", "\2")
 	s = s:gsub("%%[%-+#0]*%d*%.?%d*[dfiuxXg]", NUM)
 	s = s:gsub("%%%-?%d*s", SLOT)
-	s = s:gsub("%d[%d,%.]*", NUM)
+	s = s:gsub("%d[%d,%.]*", function(d)
+		local _, t = d:match("^(.-)([,%.]*)$")
+		return NUM .. t
+	end)
 	s = s:gsub("\2", "%%")
 	return s
 end
@@ -67,6 +70,8 @@ end)
 
 -- 영어 낱말 바로 뒤에 남은 토씨를 걷는다 (예: "Black Tiger를" → "Black Tiger")
 local PARTICLES = { "에서는", "에서", "으로", "까지", "부터", "에게", "이다", "이고", "이며", "와", "과", "을", "를", "이", "가", "은", "는", "의", "에", "로", "도", "만" }
+
+local COUNTERS = { { "단계", "" }, { "장", "" }, { "번", "x" }, { "개", "" }, { "명", "" }, { "칸", " studs" }, { "초", "s" }, { "분", " min" }, { "층", "F" } }
 
 local translateNorm: (string, number) -> string
 
@@ -135,6 +140,10 @@ translateNorm = function(n: string, depth: number): string
 		end
 	end
 	if s:find(HANGUL) then
+		-- 숫자 뒤의 세는 말 (12장 · 3번 · 5개 · 10칸 · 3초)
+		for _, c in ipairs(COUNTERS) do
+			s = s:gsub(NUM .. c[1], NUM .. c[2])
+		end
 		for _, p in ipairs(PARTICLES) do
 			s = s:gsub("([%w%)%]'\"!%.])" .. p .. "([%s%p])", "%1%2")
 			s = s:gsub("([%w%)%]'\"!%.])" .. p .. "$", "%1")
@@ -152,8 +161,9 @@ function Lang.translate(s: string): string
 	end
 	local nums = {}
 	local n = s:gsub("%d[%d,%.]*", function(d)
-		table.insert(nums, d)
-		return NUM
+		local core, t = d:match("^(.-)([,%.]*)$")
+		table.insert(nums, core)
+		return NUM .. t
 	end)
 	local out = cache[n]
 	if not out then
