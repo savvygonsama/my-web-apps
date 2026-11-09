@@ -4139,4 +4139,10 @@ return {
 	["권법 전시장 ↓ 남쪽 문 밖"] = "Style Hall ↓ outside the south gate",
 	["권법마다 발판을 밟으면 그 권법으로 입장"] = "Step on a style's pad to enter with it",
 	["⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the Style Hall outside the south gate to enter · vote for the next map at the stands",
+	["＋－: 확대 · 끌기: 이동 · ✕: 닫기"] = "＋－: zoom · drag: move · ✕: close",
+	["청운 장로에게 말 걸기 (말풍선 누르기)"] = "Talk to Elder Cheongun (tap the speech bubble)",
+	["목인 치기 (👊 단추)  %d / %d"] = "Hit the dummy (👊 button)  %d / %d",
+	["강타 맞히기 (💥 단추)  %d / %d"] = "Land a heavy strike (💥 button)  %d / %d",
+	["기술 쓰기 (E 단추)  %d / %d"] = "Use a skill (E button)  %d / %d",
+	["🗺 지도"] = "🗺 Map",
 }

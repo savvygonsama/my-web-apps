@@ -3645,7 +3645,7 @@ function UIB.buildMap()
 	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = canvas }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
 	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = canvas }, { stroke(Color3.new(0, 0, 0), 1.5) })
 	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = canvas })
-	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = UIB.isTouch() and "＋－: 확대 · 끌기: 이동 · ✕: 닫기" or "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
 	-- 큰 지도: 확대·축소·내 자리 단추, 휠과 끌기
 	for i, spec in ipairs({ { "＋", 1.4 }, { "－", 1 / 1.4 }, { "◎", 0 } }) do
 		local b = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10 + (i - 1) * 46), Size = UDim2.new(0, 40, 0, 40), Text = spec[1], TextSize = 22, BackgroundColor3 = C.panel2, ZIndex = 13, Visible = false, Parent = mapFrame }, function()
@@ -3665,6 +3665,13 @@ function UIB.buildMap()
 		setMapWorld(not mapSky)
 	end)
 	table.insert(zoomBtns, (skyBtn :: any) :: GuiObject)
+	-- 3.71판: 큰 지도 닫기 (휴대폰은 M 키가 없어 닫을 길이 없었다). 왼쪽 위, 손가락 크기
+	local closeBtn = button({ AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 10), Size = UDim2.new(0, 48, 0, 48), Text = "✕", TextSize = 26, BackgroundColor3 = Color3.fromRGB(170, 50, 45), ZIndex = 14, Visible = false, Parent = mapFrame }, function()
+		if mapBig then
+			UI.toggleMap()
+		end
+	end)
+	table.insert(zoomBtns, closeBtn)
 	local dragging = false
 	local dragLast = Vector3.zero
 	-- (입력 연결이 실패해도 지도는 그대로 쓰이게)
@@ -3673,6 +3680,9 @@ function UIB.buildMap()
 			if mapBig and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 				dragging = true
 				dragLast = input.Position
+			elseif not mapBig and input.UserInputType == Enum.UserInputType.Touch then
+				-- 태블릿: 작은 지도를 누르면 크게
+				UI.toggleMap()
 			end
 		end)
 		UserInputService.InputEnded:Connect(function(input: InputObject)
@@ -3820,18 +3830,18 @@ function UIB.goalText(s: any, g: any): string
 	local k = g.kind
 	local prog = s.prog or 0
 	if k == "talk" then
-		return "청운 장로에게 말 걸기 (T)"
+		return V.device ~= "pc" and "청운 장로에게 말 걸기 (말풍선 누르기)" or "청운 장로에게 말 걸기 (T)"
 	elseif k == "kill" then
 		return string.format("%s 쓰러뜨리기  %d / %d", nameOf(g.id), prog, g.n or 1)
 	elseif k == "train" then
 		return string.format("수련터에서 수련하기  %d / %d", prog, g.n or 1)
 	-- 3.9판 튜토리얼
 	elseif k == "hit" then
-		return string.format("목인 치기 (클릭 · 👊)  %d / %d", prog, g.n or 1)
+		return string.format(V.device ~= "pc" and "목인 치기 (👊 단추)  %d / %d" or "목인 치기 (클릭 · 👊)  %d / %d", prog, g.n or 1)
 	elseif k == "heavy" then
-		return string.format("강타 맞히기 (오른쪽 클릭 · 💥)  %d / %d", prog, g.n or 1)
+		return string.format(V.device ~= "pc" and "강타 맞히기 (💥 단추)  %d / %d" or "강타 맞히기 (오른쪽 클릭 · 💥)  %d / %d", prog, g.n or 1)
 	elseif k == "skill" then
-		return string.format("기술 쓰기 (E)  %d / %d", prog, g.n or 1)
+		return string.format(V.device ~= "pc" and "기술 쓰기 (E 단추)  %d / %d" or "기술 쓰기 (E)  %d / %d", prog, g.n or 1)
 	elseif k == "found" then
 		return string.format("소문을 따라 사부 찾기  %d / %d", countKeys(s.found), g.n or 1)
 	elseif k == "bosses" then
@@ -4681,7 +4691,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", UIB.isTouch() and "🗺 지도" or "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
