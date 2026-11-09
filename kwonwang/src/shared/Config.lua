@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.44.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.45.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5849,6 +5849,87 @@ do
 	for _, b in pairs(Config.Bosses) do
 		if (b.scale or 1) > 3.4 then
 			b.scale = 3.4
+		end
+	end
+	-- 3.45판 보스 패턴 다양하게: 예전엔 보스 마흔여덟이 모두 같은 여섯 가지 (낙뢰 · 돌진 · 부하 · 고리 · 도약 · 지진) 만 섞어 썼고, 열한 보스는 조합까지 똑같았다.
+	-- 새 패턴 아홉 가운데 보스마다 다른 둘 (후반 보스는 셋) 을 더한다. 한 방은 그 보스 지진 (없으면 첫 패턴) 의 몫에 견준다. 아래 '더 크고 느리게' 를 함께 받는다
+	do
+		local NEW: { [string]: any } = {
+			cross = { name = "십자 참격", phase = 1, warn = 1.0, cd = 8, length = 34, width = 6, k = 1.0, pose = "w_sweep" },
+			chase = { name = "추격의 낙인", phase = 1, warn = 0.9, cd = 9, count = 5, every = 0.32, radius = 6, k = 0.7, pose = "w_thrust" },
+			meteor = { name = "거대 운석", phase = 1, warn = 1.0, cd = 12, radius = 17, k = 2.0, pose = "w_overhead" },
+			spiral = { name = "나선 낙뢰", phase = 1, warn = 0.8, cd = 9, count = 12, turns = 1.6, spread = 26, radius = 5, k = 0.75, pose = "w_overhead" },
+			blink = { name = "그림자 습격", phase = 1, warn = 0.8, cd = 8, radius = 7, k = 1.1, pose = "w_sweep" },
+			beam = { name = "휩쓰는 광선", phase = 2, warn = 1.0, cd = 10, length = 38, width = 6, sweep = 150, steps = 9, k = 0.8, pose = "w_thrust" },
+			rings = { name = "파문", phase = 2, warn = 0.9, cd = 9, ringWidth = 6, count = 3, k = 1.0, pose = "w_overhead" },
+			safezone = { name = "단 하나의 피난처", phase = 2, warn = 1.1, cd = 14, radius = 32, safe = 3, safeRadius = 7, k = 1.6, pose = "w_overhead" },
+			grid = { name = "격자 폭발", phase = 3, warn = 0.9, cd = 11, cell = 8, size = 3, k = 1.0, pose = "w_overhead" },
+		}
+		local ORDER = { "cross", "chase", "meteor", "spiral", "blink", "beam", "rings", "safezone", "grid" }
+		local ids = {}
+		for id, b in pairs(Config.Bosses) do
+			if b.patterns and #b.patterns > 0 then
+				table.insert(ids, id)
+			end
+		end
+		table.sort(ids)
+		local usedSig: { [string]: boolean } = {}
+		for i, id in ipairs(ids) do
+			local b = Config.Bosses[id]
+			local ref, col, fxk = nil, nil, nil
+			for _, pt in ipairs(b.patterns) do
+				if pt.hit and (pt.kind == "quake" or not ref) then
+					ref = pt.hit
+				end
+				col = col or pt.color
+				fxk = fxk or pt.fx
+			end
+			if ref then
+				local list = table.clone(b.patterns)
+				local cnt = b.late and 3 or 2
+				-- 다른 보스와 조합이 겹치지 않을 때까지 고른다 (원래 패턴 + 새 패턴, 순서 없이)
+				local base = {}
+				for _, pt in ipairs(b.patterns) do
+					table.insert(base, pt.kind)
+				end
+				local picks: { string } = {}
+				for attempt = 0, 80 do
+					picks = {}
+					for j = 0, cnt - 1 do
+						local kk = ORDER[((i - 1) * 2 + attempt + j * (4 + attempt // 9)) % #ORDER + 1]
+						if not table.find(picks, kk) then
+							table.insert(picks, kk)
+						end
+					end
+					local sig = table.clone(base)
+					for _, kk in ipairs(picks) do
+						table.insert(sig, kk)
+					end
+					table.sort(sig)
+					local key = table.concat(sig, ",")
+					if #picks == cnt and not usedSig[key] then
+						usedSig[key] = true
+						break
+					end
+				end
+				for _, kind in ipairs(picks) do
+					local T = NEW[kind]
+					local opt: { [string]: any } = {}
+					for key, v in pairs(T) do
+						if key ~= "name" and key ~= "phase" and key ~= "k" then
+							opt[key] = v
+						end
+					end
+					opt.color = col
+					opt.fx = fxk
+					local hh = table.clone(ref)
+					hh.dmg = (hh.dmg or 0) * T.k
+					hh.posture = (hh.posture or 0) * T.k
+					opt.hit = hh
+					table.insert(list, P(kind, T.name, T.phase, opt))
+				end
+				b.patterns = list
+			end
 		end
 	end
 	-- 3.25판 보스 싸움: 패턴을 더 크고 느리게 (경고 시간 ×1.4 · 대기 ×1.3 · 범위 ×1.3 · 한 방 ×1.1). 여러 보스가 같은 패턴 표를 나눠 쓰니 한 번씩만

@@ -177,6 +177,39 @@ function H.bossDash(d: any)
 	shakeBy(a, 0.9)
 end
 
+-- 3.45판 피난처 (safezone): 초록 원이 숨 쉬듯 빛나고 '여기로!'
+H.safeMark = function(d)
+	local g = ground(d.at)
+	local r, time = d.radius or 8, d.time or 1.5
+	local disc = part(Vector3.new(0.3, r * 2, r * 2), Color3.fromRGB(110, 255, 150), Enum.Material.Neon, 0.55, "cyl")
+	disc.CFrame = CFrame.new(g + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local col = part(Vector3.new(14, r * 0.5, r * 0.5), Color3.fromRGB(150, 255, 180), Enum.Material.Neon, 0.75, "cyl")
+	col.CFrame = CFrame.new(g + Vector3.new(0, 7, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(disc, time, { Transparency = 0.3 })
+	task.delay(time, function()
+		fadeOut(disc, 0.3)
+		fadeOut(col, 0.3)
+	end)
+	Fx.text(g + Vector3.new(0, 5, 0), "여기로!", Color3.fromRGB(150, 255, 170), 30, time)
+end
+-- 3.45판 빛줄기 (cross · beam): 땅에서 솟는 얇은 빛의 벽이 줄을 따라 번쩍인다
+H.bossBeam = function(d)
+	local a, b = ground(d.from), ground(d.to)
+	local len = (b - a).Magnitude
+	if len < 0.5 or not near(a, 260) then
+		return
+	end
+	local w = d.width or 7
+	local color = d.color or Color3.fromRGB(255, 60, 40)
+	local wall = part(Vector3.new(w * 0.5, 7, len), color, Enum.Material.Neon, 0.25, nil)
+	wall.CFrame = CFrame.lookAt((a + b) / 2 + Vector3.new(0, 3.5, 0), b + Vector3.new(0, 3.5, 0))
+	local core = part(Vector3.new(w * 0.15, 9, len), Color3.new(1, 1, 1), Enum.Material.Neon, 0.1, nil)
+	core.CFrame = wall.CFrame
+	fadeOut(wall, 0.35, { Size = Vector3.new(0.2, 12, len) })
+	fadeOut(core, 0.25, { Size = Vector3.new(0.1, 14, len) })
+	Fx.ring(a + Vector3.new(0, 0.3, 0), color, 2, w * 2, 0.3)
+end
+
 function BossFx.handles(data: any): boolean
 	return H[data.kind] ~= nil
 end

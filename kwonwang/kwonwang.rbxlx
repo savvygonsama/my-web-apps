@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.44.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.45.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5869,6 +5869,87 @@ do
 	for _, b in pairs(Config.Bosses) do
 		if (b.scale or 1) > 3.4 then
 			b.scale = 3.4
+		end
+	end
+	-- 3.45판 보스 패턴 다양하게: 예전엔 보스 마흔여덟이 모두 같은 여섯 가지 (낙뢰 · 돌진 · 부하 · 고리 · 도약 · 지진) 만 섞어 썼고, 열한 보스는 조합까지 똑같았다.
+	-- 새 패턴 아홉 가운데 보스마다 다른 둘 (후반 보스는 셋) 을 더한다. 한 방은 그 보스 지진 (없으면 첫 패턴) 의 몫에 견준다. 아래 '더 크고 느리게' 를 함께 받는다
+	do
+		local NEW: { [string]: any } = {
+			cross = { name = "십자 참격", phase = 1, warn = 1.0, cd = 8, length = 34, width = 6, k = 1.0, pose = "w_sweep" },
+			chase = { name = "추격의 낙인", phase = 1, warn = 0.9, cd = 9, count = 5, every = 0.32, radius = 6, k = 0.7, pose = "w_thrust" },
+			meteor = { name = "거대 운석", phase = 1, warn = 1.0, cd = 12, radius = 17, k = 2.0, pose = "w_overhead" },
+			spiral = { name = "나선 낙뢰", phase = 1, warn = 0.8, cd = 9, count = 12, turns = 1.6, spread = 26, radius = 5, k = 0.75, pose = "w_overhead" },
+			blink = { name = "그림자 습격", phase = 1, warn = 0.8, cd = 8, radius = 7, k = 1.1, pose = "w_sweep" },
+			beam = { name = "휩쓰는 광선", phase = 2, warn = 1.0, cd = 10, length = 38, width = 6, sweep = 150, steps = 9, k = 0.8, pose = "w_thrust" },
+			rings = { name = "파문", phase = 2, warn = 0.9, cd = 9, ringWidth = 6, count = 3, k = 1.0, pose = "w_overhead" },
+			safezone = { name = "단 하나의 피난처", phase = 2, warn = 1.1, cd = 14, radius = 32, safe = 3, safeRadius = 7, k = 1.6, pose = "w_overhead" },
+			grid = { name = "격자 폭발", phase = 3, warn = 0.9, cd = 11, cell = 8, size = 3, k = 1.0, pose = "w_overhead" },
+		}
+		local ORDER = { "cross", "chase", "meteor", "spiral", "blink", "beam", "rings", "safezone", "grid" }
+		local ids = {}
+		for id, b in pairs(Config.Bosses) do
+			if b.patterns and #b.patterns > 0 then
+				table.insert(ids, id)
+			end
+		end
+		table.sort(ids)
+		local usedSig: { [string]: boolean } = {}
+		for i, id in ipairs(ids) do
+			local b = Config.Bosses[id]
+			local ref, col, fxk = nil, nil, nil
+			for _, pt in ipairs(b.patterns) do
+				if pt.hit and (pt.kind == "quake" or not ref) then
+					ref = pt.hit
+				end
+				col = col or pt.color
+				fxk = fxk or pt.fx
+			end
+			if ref then
+				local list = table.clone(b.patterns)
+				local cnt = b.late and 3 or 2
+				-- 다른 보스와 조합이 겹치지 않을 때까지 고른다 (원래 패턴 + 새 패턴, 순서 없이)
+				local base = {}
+				for _, pt in ipairs(b.patterns) do
+					table.insert(base, pt.kind)
+				end
+				local picks: { string } = {}
+				for attempt = 0, 80 do
+					picks = {}
+					for j = 0, cnt - 1 do
+						local kk = ORDER[((i - 1) * 2 + attempt + j * (4 + attempt // 9)) % #ORDER + 1]
+						if not table.find(picks, kk) then
+							table.insert(picks, kk)
+						end
+					end
+					local sig = table.clone(base)
+					for _, kk in ipairs(picks) do
+						table.insert(sig, kk)
+					end
+					table.sort(sig)
+					local key = table.concat(sig, ",")
+					if #picks == cnt and not usedSig[key] then
+						usedSig[key] = true
+						break
+					end
+				end
+				for _, kind in ipairs(picks) do
+					local T = NEW[kind]
+					local opt: { [string]: any } = {}
+					for key, v in pairs(T) do
+						if key ~= "name" and key ~= "phase" and key ~= "k" then
+							opt[key] = v
+						end
+					end
+					opt.color = col
+					opt.fx = fxk
+					local hh = table.clone(ref)
+					hh.dmg = (hh.dmg or 0) * T.k
+					hh.posture = (hh.posture or 0) * T.k
+					opt.hit = hh
+					table.insert(list, P(kind, T.name, T.phase, opt))
+				end
+				b.patterns = list
+			end
 		end
 	end
 	-- 3.25판 보스 싸움: 패턴을 더 크고 느리게 (경고 시간 ×1.4 · 대기 ×1.3 · 범위 ×1.3 · 한 방 ×1.1). 여러 보스가 같은 패턴 표를 나눠 쓰니 한 번씩만
@@ -22450,6 +22531,25 @@ end
 local function telegraph(at: Vector3, radius: number, time: number, color: Color3?)
 	Push:FireAllClients("skillfx", { kind = "telegraph", at = at, radius = radius, time = time, color = color or BOSS_RED })
 end
+-- 3.45판: 한 줄 (선분) 위의 사람
+local function playersOnSeg(f: any, a: Vector3, b: Vector3, width: number): { any }
+	local out = {}
+	local ab = Vector3.new(b.X - a.X, 0, b.Z - a.Z)
+	local L2 = ab:Dot(ab)
+	for _, o in pairs(Combat.fighters) do
+		if Combat.hostile(f, o) and not o.dead then
+			local ap = Vector3.new(o.root.Position.X - a.X, 0, o.root.Position.Z - a.Z)
+			local t = L2 > 0 and math.clamp(ap:Dot(ab) / L2, 0, 1) or 0
+			if (ap - ab * t).Magnitude <= width / 2 + 1 then
+				table.insert(out, o)
+			end
+		end
+	end
+	return out
+end
+local function flatDir(a: number): Vector3
+	return Vector3.new(math.cos(a), 0, math.sin(a))
+end
 
 local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 	local f = e.f
@@ -22552,6 +22652,189 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 			Push:FireAllClients("skillfx", { kind = "bossImpact", at = at, radius = pat.outer, pkind = "quake", color = pat.color or BOSS_RED })
 			bossHit(e, playersNear(f, at, pat.inner, pat.outer), h, pat.name)
 		end)
+	-- 3.45판 새 패턴 아홉 -------------------------------------------------
+	elseif kind == "cross" then
+		-- 십자 참격: 보스에서 네 갈래 (3단계는 여덟 갈래) 줄이 뻗어 터지고, 2단계부터 45도 돌려 한 번 더
+		local at = f.root.Position
+		local L, W = pat.length or 46, pat.width or 8
+		local waves = phase >= 2 and 2 or 1
+		for wv = 0, waves - 1 do
+			later(wv * (warn * 0.8 + 0.25), function()
+				local base = f.root.Position
+				local arms = phase >= 3 and 8 or 4
+				local off = wv * math.pi / 4 + math.random() * 0.3
+				local segs = {}
+				for k = 0, arms - 1 do
+					local d = flatDir(off + k / arms * math.pi * 2)
+					table.insert(segs, base + d * L)
+					Push:FireAllClients("skillfx", { kind = "lineTele", from = base, to = base + d * L, width = W, time = warn, color = pat.color or BOSS_RED })
+				end
+				later(warn, function()
+					local hitSet = {}
+					for _, to in ipairs(segs) do
+						Push:FireAllClients("skillfx", { kind = "bossBeam", from = base, to = to, width = W, color = pat.color or BOSS_RED })
+						for _, o in ipairs(playersOnSeg(f, base, to, W)) do
+							if not hitSet[o] then
+								hitSet[o] = true
+								bossHit(e, { o }, h, pat.name)
+							end
+						end
+					end
+				end)
+			end)
+		end
+		local _ = at
+	elseif kind == "spiral" then
+		-- 나선: 보스에서 바깥으로 소용돌이치며 차례로 터진다 (멈추지 말고 돌아 나가라)
+		local base = f.root.Position
+		local n = (pat.count or 14) + (phase - 1) * 4
+		local turns = pat.turns or 1.6
+		local R = pat.spread or 36
+		local a0 = math.random() * math.pi * 2
+		for i = 1, n do
+			local u = i / n
+			local at = base + flatDir(a0 + u * turns * math.pi * 2) * (6 + u * R)
+			later((i - 1) * 0.09, function()
+				telegraph(at, pat.radius or 6, warn, pat.color)
+				later(warn, function()
+					Push:FireAllClients("skillfx", { kind = "strike", at = at, radius = pat.radius or 6, fx = pat.fx or "lightning", color = pat.color or BOSS_RED })
+					bossHit(e, playersNear(f, at, 0, pat.radius or 6), h, pat.name)
+				end)
+			end)
+		end
+	elseif kind == "rings" then
+		-- 파문: 보스에서 고리 셋이 차례로 바깥으로 퍼진다 (고리 사이 틈으로 피하거나 안으로 파고들기)
+		local at = f.root.Position
+		local w = pat.ringWidth or 7
+		local n = (pat.count or 3) + (phase >= 3 and 1 or 0)
+		for k = 0, n - 1 do
+			local r0 = 6 + k * (w + 6)
+			later(k * 0.45, function()
+				Push:FireAllClients("skillfx", { kind = "donut", at = at, inner = r0, outer = r0 + w, time = warn, color = pat.color or BOSS_RED })
+				later(warn, function()
+					Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = r0 + w, color = pat.color or BOSS_RED })
+					bossHit(e, playersNear(f, at, r0, r0 + w), h, pat.name)
+				end)
+			end)
+		end
+	elseif kind == "chase" then
+		-- 추격의 낙인: 표적의 발밑에 연달아 낙인이 찍혀 쫓아온다 (계속 움직여라)
+		local n = (pat.count or 6) + (phase - 1) * 2
+		for i = 1, n do
+			later((i - 1) * (pat.every or 0.32), function()
+				if tgt.dead or not tgt.root.Parent then
+					return
+				end
+				local at = tgt.root.Position
+				telegraph(at, pat.radius or 7, warn * 0.75, pat.color)
+				later(warn * 0.75, function()
+					Push:FireAllClients("skillfx", { kind = "strike", at = at, radius = pat.radius or 7, fx = pat.fx or "lightning", color = pat.color or BOSS_RED })
+					bossHit(e, playersNear(f, at, 0, pat.radius or 7), h, pat.name)
+				end)
+			end)
+		end
+	elseif kind == "safezone" then
+		-- 단 하나의 피난처: 둘레 전부가 터진다. 초록 원 (피난처) 안만 안전하다 (단계가 오를수록 피난처가 줄고 좁다)
+		local at = f.root.Position
+		local R = pat.radius or 40
+		local nSafe = math.max(1, (pat.safe or 3) - (phase - 1))
+		local safeR = math.max(5, (pat.safeRadius or 8) - (phase - 1))
+		local safes = {}
+		local a0 = math.random() * math.pi * 2
+		for k = 1, nSafe do
+			local sp2 = at + flatDir(a0 + k / nSafe * math.pi * 2) * (R * (0.45 + math.random() * 0.3))
+			table.insert(safes, sp2)
+			Push:FireAllClients("skillfx", { kind = "safeMark", at = sp2, radius = safeR, time = warn * 1.4 })
+		end
+		telegraph(at, R, warn * 1.4, pat.color)
+		later(warn * 1.4, function()
+			Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = R, color = pat.color or BOSS_RED })
+			Push:FireAllClients("skillfx", { kind = "bossImpact", at = at, radius = R, pkind = "quake", color = pat.color or BOSS_RED })
+			local victims = {}
+			for _, o in ipairs(playersNear(f, at, 0, R)) do
+				local safe = false
+				for _, sp2 in ipairs(safes) do
+					if Vector3.new(o.root.Position.X - sp2.X, 0, o.root.Position.Z - sp2.Z).Magnitude <= safeR + 1 then
+						safe = true
+					end
+				end
+				if not safe then
+					table.insert(victims, o)
+				end
+			end
+			bossHit(e, victims, h, pat.name)
+		end)
+	elseif kind == "beam" then
+		-- 휩쓰는 광선: 보스 앞에서 시작한 긴 빛줄기가 부채꼴로 휩쓴다 (줄이 지나가는 쪽 반대로, 또는 보스 뒤로)
+		local base = f.root.Position
+		local L, W = pat.length or 50, pat.width or 7
+		local d0 = Vector3.new(tgt.root.Position.X - base.X, 0, tgt.root.Position.Z - base.Z)
+		local a0 = math.atan2(d0.Z, d0.X)
+		local sweep = math.rad(pat.sweep or 150) * (math.random() < 0.5 and 1 or -1)
+		local steps = pat.steps or 9
+		a0 -= sweep / 2
+		Push:FireAllClients("skillfx", { kind = "lineTele", from = base, to = base + flatDir(a0) * L, width = W, time = warn, color = pat.color or BOSS_RED })
+		for k = 0, steps do
+			later(warn + k * 0.12, function()
+				local d = flatDir(a0 + sweep * k / steps)
+				local p0 = f.root.Position
+				Push:FireAllClients("skillfx", { kind = "bossBeam", from = p0, to = p0 + d * L, width = W, color = pat.color or BOSS_RED })
+				bossHit(e, playersOnSeg(f, p0, p0 + d * L, W), h, pat.name)
+			end)
+		end
+	elseif kind == "meteor" then
+		-- 거대 운석: 표적 자리에 아주 큰 원. 오래 기다렸다가 크게 터진다 (원 밖으로 멀리)
+		local at = tgt.root.Position
+		local R = pat.radius or 22
+		telegraph(at, R, warn * 1.7, pat.color)
+		Push:FireAllClients("skillfx", { kind = "mark", at = at, radius = R * 0.35, time = warn * 1.7, color = pat.color or BOSS_RED })
+		later(warn * 1.7, function()
+			Push:FireAllClients("skillfx", { kind = "drop", at = at, radius = R, color = pat.color or BOSS_RED })
+			Push:FireAllClients("skillfx", { kind = "bossImpact", at = at, radius = R, pkind = "leap", color = pat.color or BOSS_RED })
+			bossHit(e, playersNear(f, at, 0, R), h, pat.name)
+		end)
+	elseif kind == "grid" then
+		-- 격자 폭발: 보스 둘레가 바둑판처럼 나뉘어 한 칸 건너 한 칸씩, 두 번 엇갈려 터진다 (방금 터진 칸으로 옮겨라)
+		local base = f.root.Position
+		local cell = pat.cell or 10
+		local n = pat.size or 3
+		for wv = 0, 1 do
+			later(wv * (warn + 0.2), function()
+				for gx = -n, n do
+					for gz = -n, n do
+						if (gx + gz + wv) % 2 == 0 then
+							local at = base + Vector3.new(gx * cell, 0, gz * cell)
+							telegraph(at, cell * 0.55, warn, pat.color)
+							later(warn, function()
+								Push:FireAllClients("skillfx", { kind = "strike", at = at, radius = cell * 0.55, fx = pat.fx or "lightning", color = pat.color or BOSS_RED, small = true })
+								bossHit(e, playersNear(f, at, 0, cell * 0.55), h, pat.name)
+							end)
+						end
+					end
+				end
+			end)
+		end
+	elseif kind == "blink" then
+		-- 그림자 습격: 보스가 사라졌다가 표적 등 뒤에 나타나 베고, 2단계부터 한 번 더
+		local times = 1 + (phase >= 2 and 1 or 0)
+		for k = 0, times - 1 do
+			later(k * (warn + 0.3), function()
+				if tgt.dead or not tgt.root.Parent then
+					return
+				end
+				local tp = tgt.root.Position
+				local back = -Vector3.new(tgt.root.CFrame.LookVector.X, 0, tgt.root.CFrame.LookVector.Z)
+				back = back.Magnitude > 0.1 and back.Unit or Vector3.new(0, 0, 1)
+				local at = tp + back * 5
+				telegraph(tp, pat.radius or 9, warn * 0.7, pat.color)
+				later(warn * 0.7, function()
+					Push:FireAllClients("afterimage", f.model)
+					f.root.CFrame = CFrame.lookAt(at + Vector3.new(0, 2 * (e.def.scale or 1), 0), Vector3.new(tp.X, at.Y + 2 * (e.def.scale or 1), tp.Z))
+					Push:FireAllClients("skillfx", { kind = "bossImpact", at = tp, radius = pat.radius or 9, pkind = "rain", color = pat.color or BOSS_RED })
+					bossHit(e, playersNear(f, tp, 0, pat.radius or 9), h, pat.name)
+				end)
+			end)
+		end
 	elseif kind == "summon" then
 		local alive = 0
 		for _, o in ipairs(Npc.list) do
@@ -45771,6 +46054,39 @@ function H.bossDash(d: any)
 	fadeOut(streak, 0.45)
 	Fx.breakSound("whoosh", 1, 0.5, a)
 	shakeBy(a, 0.9)
+end
+
+-- 3.45판 피난처 (safezone): 초록 원이 숨 쉬듯 빛나고 '여기로!'
+H.safeMark = function(d)
+	local g = ground(d.at)
+	local r, time = d.radius or 8, d.time or 1.5
+	local disc = part(Vector3.new(0.3, r * 2, r * 2), Color3.fromRGB(110, 255, 150), Enum.Material.Neon, 0.55, "cyl")
+	disc.CFrame = CFrame.new(g + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local col = part(Vector3.new(14, r * 0.5, r * 0.5), Color3.fromRGB(150, 255, 180), Enum.Material.Neon, 0.75, "cyl")
+	col.CFrame = CFrame.new(g + Vector3.new(0, 7, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	tween(disc, time, { Transparency = 0.3 })
+	task.delay(time, function()
+		fadeOut(disc, 0.3)
+		fadeOut(col, 0.3)
+	end)
+	Fx.text(g + Vector3.new(0, 5, 0), "여기로!", Color3.fromRGB(150, 255, 170), 30, time)
+end
+-- 3.45판 빛줄기 (cross · beam): 땅에서 솟는 얇은 빛의 벽이 줄을 따라 번쩍인다
+H.bossBeam = function(d)
+	local a, b = ground(d.from), ground(d.to)
+	local len = (b - a).Magnitude
+	if len < 0.5 or not near(a, 260) then
+		return
+	end
+	local w = d.width or 7
+	local color = d.color or Color3.fromRGB(255, 60, 40)
+	local wall = part(Vector3.new(w * 0.5, 7, len), color, Enum.Material.Neon, 0.25, nil)
+	wall.CFrame = CFrame.lookAt((a + b) / 2 + Vector3.new(0, 3.5, 0), b + Vector3.new(0, 3.5, 0))
+	local core = part(Vector3.new(w * 0.15, 9, len), Color3.new(1, 1, 1), Enum.Material.Neon, 0.1, nil)
+	core.CFrame = wall.CFrame
+	fadeOut(wall, 0.35, { Size = Vector3.new(0.2, 12, len) })
+	fadeOut(core, 0.25, { Size = Vector3.new(0.1, 14, len) })
+	Fx.ring(a + Vector3.new(0, 0.3, 0), color, 2, w * 2, 0.3)
 end
 
 function BossFx.handles(data: any): boolean
