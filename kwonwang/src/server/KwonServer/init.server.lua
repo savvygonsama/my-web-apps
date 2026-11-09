@@ -363,12 +363,15 @@ local function sanitize(data: any): Profile
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
 		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local titles = data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title
 		end
 		title = Config.STORY_REMAP_V3[title] or title
+		if data.storyVer == 5 then
+			title = Config.STORY_REMAP_V5[title] or title
+		end
 		for i, ch in ipairs(Config.Story) do
 			if ch.title == title then
 				local wasAccepted = p.accepted == p.story or data.accepted == nil
@@ -1548,6 +1551,26 @@ function Story.done(p: Profile, g: any): boolean
 		return Calc.perkUsed(p) >= (g.n or 1)
 	elseif k == "samsara" then
 		return (p.samsara or 0) >= (g.n or 1)
+	-- 3.49판: 보스 여럿 (예전에 쓰러뜨린 것도 친다) · 극 권법 수
+	elseif k == "bosses" then
+		local n = 0
+		for _, id in ipairs(g.ids or {}) do
+			if (p.bosses[id] or 0) > 0 then
+				n += 1
+			end
+		end
+		p.prog = n
+		return n >= #(g.ids or {})
+	elseif k == "geuk" then
+		local n = 0
+		for id in pairs(p.styles) do
+			local st = Config.STYLE_BY_ID[id]
+			if st and st.geuk then
+				n += 1
+			end
+		end
+		p.prog = n
+		return n >= (g.n or 1)
 	elseif k == "awaken" or k == "transcend" then
 		local n = 0
 		for id in pairs(p.styles) do
@@ -6956,7 +6979,7 @@ task.spawn(function()
 		end
 		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...드르렁. (깨지 않는다. 환생을 %d번 한 몸이라야 이 꿈에 들어올 수 있을 것 같다)", sdef.rebirthReq) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) })
 			return
 		end
 		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다

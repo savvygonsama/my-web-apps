@@ -3780,6 +3780,21 @@ function UIB.goalTarget(s: any, g: any): Vector3?
 	if g.at then
 		return g.at
 	end
+	-- 3.49판 보스 여럿: 아직 쓰러뜨리지 않은 보스 가운데 가장 가까운 곳
+	if g.kind == "bosses" then
+		local pos = myPos() or Vector3.zero
+		local best, bestD = nil, math.huge
+		for _, id in ipairs(g.ids or {}) do
+			local at = Config.BOSS_AT[id]
+			if at and not (s.bosses and (s.bosses[id] or 0) > 0) then
+				local d = (at - pos).Magnitude
+				if d < bestD then
+					best, bestD = at, d
+				end
+			end
+		end
+		return best
+	end
 	if g.kind == "trial" or g.kind == "learn" then
 		local pos = myPos() or Vector3.zero
 		local best, bestD = nil, math.huge
@@ -3818,6 +3833,16 @@ function UIB.goalText(s: any, g: any): string
 		return string.format("기술 쓰기 (E)  %d / %d", prog, g.n or 1)
 	elseif k == "found" then
 		return string.format("소문을 따라 사부 찾기  %d / %d", countKeys(s.found), g.n or 1)
+	elseif k == "bosses" then
+		local names = {}
+		for _, id in ipairs(g.ids or {}) do
+			local b = Config.Bosses[id]
+			local nm = b and (string.split(b.name, " · ")[1]) or id
+			table.insert(names, (s.bosses and (s.bosses[id] or 0) > 0) and ("✔" .. nm) or nm)
+		end
+		return string.format("보스 쓰러뜨리기 (%s)  %d / %d", table.concat(names, " · "), prog, #(g.ids or {}))
+	elseif k == "geuk" then
+		return string.format("극 권법 익히기 (숨은 사부)  %d / %d", prog, g.n or 1)
 	elseif k == "trial" then
 		return "사부 곁에서 T · 사부의 시험 통과하기"
 	elseif k == "learn" then
