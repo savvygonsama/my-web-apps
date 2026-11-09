@@ -4133,4 +4133,10 @@ return {
 	[" · 지금 쓰는 권법"] = "· current style",
 	["⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the east Style Gallery to enter · vote for the next map at the stands",
 	["마당 동쪽 · 권법의 발판을 밟으면 입장"] = "East side · step on a style's pad to enter",
+	["지금 쓰는 권법 · 밟으면 입장"] = "Current style · step to enter",
+	["🔒 익히지 않음"] = "🔒 Not learned",
+	[" · 메인 월드에서 익혀야 고를 수 있어요"] = "· learn it in the main world to choose it",
+	["권법 전시장 ↓ 남쪽 문 밖"] = "Style Hall ↓ outside the south gate",
+	["권법마다 발판을 밟으면 그 권법으로 입장"] = "Step on a style's pad to enter with it",
+	["⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the Style Hall outside the south gate to enter · vote for the next map at the stands",
 }

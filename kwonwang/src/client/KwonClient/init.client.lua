@@ -1324,10 +1324,10 @@ task.spawn(function()
 	end
 end)
 local firstState = true
--- 3.62판: 배틀그라운드 대기실의 권법 회랑 (마네킹이 권법을 시범한다)
+-- 3.62판 · 3.66판: 배틀그라운드 권법 전시장 (서버가 지은 전시장에 내 잠금 · 발판 · 시범 · 장신구)
 local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) or nil
 if Gallery then
-	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview })
+	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, toast = UI.toast })
 end
 function handlers.state(data: any)
 	state = data

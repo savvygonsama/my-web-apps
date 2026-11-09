@@ -807,7 +807,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local WALL = Color3.fromRGB(236, 230, 214)
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
-	disc("LobbyGround", c + Vector3.new(0, -2, 0), 170, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), 250, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
 	-- 박석 마당 (줄눈이 보이게 판을 깐다)
 	part({ Name = "CourtBed", Size = Vector3.new(W * 2, 0.5, D * 2), Position = c + Vector3.new(0, 0.2, 0), Color = STONE:Lerp(Color3.new(0, 0, 0), 0.25), Material = Enum.Material.Slate, Parent = f })
 	for x = -W + 5, W - 5, 10 do
@@ -927,13 +927,17 @@ local function buildLobby(c: Vector3, f: Folder): any
 			part({ Name = "PineTop", Shape = Enum.PartType.Ball, Size = Vector3.new(s * 1.4, s * 0.55, s * 1.4), Position = at + Vector3.new((G() - 0.5) * 2, h * (0.55 + k * 0.17), (G() - 0.5) * 2), Color = Color3.fromRGB(46 + k * 8, 92 + k * 8, 58), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 		end
 	end
-	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 } }
-	for _, v in ipairs(scatter(G, 22, 100, 160, 22, avoidL)) do
+	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 75), 142 } }
+	for _, v in ipairs(scatter(G, 34, 100, 235, 22, avoidL)) do
 		if math.abs(v.X) > W + 10 or math.abs(v.Z) > D + 10 then
 			pine(c + v, 18 + G() * 12)
 		end
 	end
-	fence(c, 165, 40, f)
+	fence(c, 242, 40, f)
+	-- 3.66판: 남쪽 문 밖의 권법 전시장 (모든 권법이 한 칸씩, 발판을 밟으면 그 권법으로 입장)
+	pcall(function()
+		require(script.Parent:WaitForChild("StyleHall")).build(c + Vector3.new(0, 0, D + 14), f)
+	end)
 	local spots = {}
 	for _, v in ipairs(scatter(G, 10, 12, 40, 8)) do
 		if math.abs(v.X) < W - 8 and v.Z > -D + 30 and v.Z < D - 6 then
@@ -990,8 +994,8 @@ local function buildLobby(c: Vector3, f: Folder): any
 	end
 	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
 	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
-	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 회랑 →", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 · 권법의 발판을 밟으면 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 전시장 ↓ 남쪽 문 밖", 50, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "권법마다 발판을 밟으면 그 권법으로 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
 	local rack = f:FindFirstChild("Rack")
 	local stylePrompt = prompt(rack or sroot, "권법 창 열기", "무기 걸이", "PickStyle")
 	-- 입장 문 위의 작은 화면

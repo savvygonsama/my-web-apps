@@ -5200,7 +5200,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
 		if BATTLE then
 			-- 3.60판: 화면 창 대신 마당의 실물 화면 (투표대 · 전광판 · 무기 걸이 · 입장 문). 짧은 알림만
-			toast(player, "⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵")
+			toast(player, "⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵")
 		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end

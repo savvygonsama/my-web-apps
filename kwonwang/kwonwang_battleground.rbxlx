@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.65.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.66.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -14757,7 +14757,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
 		if BATTLE then
 			-- 3.60판: 화면 창 대신 마당의 실물 화면 (투표대 · 전광판 · 무기 걸이 · 입장 문). 짧은 알림만
-			toast(player, "⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵")
+			toast(player, "⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵")
 		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
@@ -17737,7 +17737,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local WALL = Color3.fromRGB(236, 230, 214)
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
-	disc("LobbyGround", c + Vector3.new(0, -2, 0), 170, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), 250, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
 	-- 박석 마당 (줄눈이 보이게 판을 깐다)
 	part({ Name = "CourtBed", Size = Vector3.new(W * 2, 0.5, D * 2), Position = c + Vector3.new(0, 0.2, 0), Color = STONE:Lerp(Color3.new(0, 0, 0), 0.25), Material = Enum.Material.Slate, Parent = f })
 	for x = -W + 5, W - 5, 10 do
@@ -17857,13 +17857,17 @@ local function buildLobby(c: Vector3, f: Folder): any
 			part({ Name = "PineTop", Shape = Enum.PartType.Ball, Size = Vector3.new(s * 1.4, s * 0.55, s * 1.4), Position = at + Vector3.new((G() - 0.5) * 2, h * (0.55 + k * 0.17), (G() - 0.5) * 2), Color = Color3.fromRGB(46 + k * 8, 92 + k * 8, 58), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 		end
 	end
-	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 } }
-	for _, v in ipairs(scatter(G, 22, 100, 160, 22, avoidL)) do
+	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 75), 142 } }
+	for _, v in ipairs(scatter(G, 34, 100, 235, 22, avoidL)) do
 		if math.abs(v.X) > W + 10 or math.abs(v.Z) > D + 10 then
 			pine(c + v, 18 + G() * 12)
 		end
 	end
-	fence(c, 165, 40, f)
+	fence(c, 242, 40, f)
+	-- 3.66판: 남쪽 문 밖의 권법 전시장 (모든 권법이 한 칸씩, 발판을 밟으면 그 권법으로 입장)
+	pcall(function()
+		require(script.Parent:WaitForChild("StyleHall")).build(c + Vector3.new(0, 0, D + 14), f)
+	end)
 	local spots = {}
 	for _, v in ipairs(scatter(G, 10, 12, 40, 8)) do
 		if math.abs(v.X) < W - 8 and v.Z > -D + 30 and v.Z < D - 6 then
@@ -17920,8 +17924,8 @@ local function buildLobby(c: Vector3, f: Folder): any
 	end
 	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
 	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
-	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 회랑 →", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 · 권법의 발판을 밟으면 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 전시장 ↓ 남쪽 문 밖", 50, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "권법마다 발판을 밟으면 그 권법으로 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
 	local rack = f:FindFirstChild("Rack")
 	local stylePrompt = prompt(rack or sroot, "권법 창 열기", "무기 걸이", "PickStyle")
 	-- 입장 문 위의 작은 화면
@@ -28815,6 +28819,538 @@ return Skills
       </Item>
       <Item class="ModuleScript" referent="15">
         <Properties>
+          <string name="Name">StyleHall</string>
+          <string name="Source"><![CDATA[-- 권왕 3.66판: 배틀그라운드 대기실의 권법 전시장 (엘리멘탈 아레나처럼). 대기실 남쪽 문 밖의 넓은 돌 마당
+--   모든 권법 (익히지 않은 것까지) 이 한 칸씩: 권법 빛깔 마네킹 (그 권법 자세) · 권법마다 다른 상징물 · 나무 푯말 · 밟는 발판
+--   누구에게나 같은 전시장 (서버가 짓는다). 잠금 표시 · 밟아서 들어가기 · 시범 동작 · 장신구는 저마다의 화면이 한다 (Gallery.lua)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage:WaitForChild("Config"))
+
+local StyleHall = {}
+
+local PER_ROW = 16
+local DX, DZ = 14.5, 25
+local S = 1.5 -- 마네킹 키 배율
+local INK = Color3.fromRGB(16, 18, 24)
+local WOOD = Color3.fromRGB(120, 82, 52)
+
+local function part(props: { [string]: any }): BasePart
+	local p = Instance.new(props.Class or "Part") :: BasePart
+	p.Anchored = props.Anchored ~= false
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.CanTouch = false
+	p.CastShadow = props.CastShadow == true
+	for k, v in pairs(props) do
+		if k == "Position" then
+			p.CFrame = CFrame.new(v)
+		elseif k ~= "Class" and k ~= "Parent" and k ~= "Anchored" and k ~= "CastShadow" then
+			(p :: any)[k] = v
+		end
+	end
+	p.Parent = props.Parent
+	return p
+end
+local function disc(name: string, at: Vector3, r: number, h: number, color: Color3, mat: Enum.Material, parent: Instance, alpha: number?, collide: boolean?): BasePart
+	return part({ Name = name, Shape = Enum.PartType.Cylinder, Size = Vector3.new(h, r * 2, r * 2), CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90)), Color = color, Material = mat, Transparency = alpha or 0, CanCollide = collide == true, Parent = parent })
+end
+local function ball(name: string, at: Vector3, d: number, color: Color3, mat: Enum.Material, parent: Instance, alpha: number?): BasePart
+	return part({ Name = name, Shape = Enum.PartType.Ball, Size = Vector3.one * d, Position = at, Color = color, Material = mat, Transparency = alpha or 0, CanCollide = false, Parent = parent })
+end
+-- 도는 조각 (이름이 Spin으로 시작하면 화면이 돌린다. SpinRate 속성 = 초당 바퀴)
+local function spin(p: BasePart, rate: number): BasePart
+	p.Name = "Spin" .. p.Name
+	p:SetAttribute("SpinRate", rate)
+	return p
+end
+local function light(p: BasePart, color: Color3, range: number, br: number)
+	local l = Instance.new("PointLight")
+	l.Color = color
+	l.Range = range
+	l.Brightness = br
+	l.Parent = p
+end
+local function particles(p: BasePart, tex: string, c1: Color3, c2: Color3, size: number, rate: number, speed: number, life: number, up: number?)
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = tex
+	e.Color = ColorSequence.new(c1, c2)
+	e.Size = NumberSequence.new(size, 0)
+	e.Transparency = NumberSequence.new(0.1, 1)
+	e.Lifetime = NumberRange.new(life * 0.7, life)
+	e.Speed = NumberRange.new(speed * 0.6, speed)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Acceleration = Vector3.new(0, up or 0, 0)
+	e.LightEmission = 1
+	e.Rate = rate
+	e.Parent = p
+end
+local SPARK = "rbxasset://textures/particles/sparkles_main.dds"
+local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+
+-- 권법마다 다른 상징물 (fx 갈래마다 모양이 다르다). at = 상징물 가운데
+local EMBLEM: { [string]: (Vector3, Color3, Color3, Instance) -> () } = {}
+EMBLEM.fire = function(at, c1, c2, f)
+	-- 불기둥: 아래가 넓은 불꽃 셋이 겹쳐 타오른다
+	for k = 0, 2 do
+		local p = part({ Name = "Flame", Size = Vector3.new(4.6 - k * 1.3, 4 + k * 1.6, 4.6 - k * 1.3), CFrame = CFrame.new(at + Vector3.new(0, -2 + k * 2.2, 0)) * CFrame.Angles(0, k * 0.7, math.rad(45)), Color = k == 2 and c2 or c1, Material = Enum.Material.Neon, Transparency = 0.15 + k * 0.1, CanCollide = false, Parent = f })
+		if k == 0 then
+			local fire = Instance.new("Fire")
+			fire.Size = 9
+			fire.Heat = 14
+			fire.Color = c1
+			fire.SecondaryColor = c2
+			fire.Parent = p
+			light(p, c1, 26, 2.4)
+		end
+	end
+end
+EMBLEM.karma = EMBLEM.fire
+EMBLEM.water = function(at, c1, c2, f)
+	-- 물방울 구: 맑은 물 구슬과 엇갈려 도는 물결 고리 둘
+	local core = ball("WaterOrb", at, 6, c2, Enum.Material.Glass, f, 0.35)
+	ball("WaterCore", at, 3, c1, Enum.Material.Neon, f, 0.3)
+	for k = 0, 1 do
+		spin(disc("Ripple", at, 5.4 + k * 1.4, 0.3, c1, Enum.Material.Neon, f, 0.4), k == 0 and 0.4 or -0.3).CFrame = CFrame.new(at) * CFrame.Angles(k == 0 and 0.6 or -0.6, 0, math.rad(90))
+	end
+	particles(core, SPARK, Color3.new(1, 1, 1), c2, 0.6, 10, 3, 1.2, -2)
+	light(core, c1, 24, 1.8)
+end
+EMBLEM.ocean = EMBLEM.water
+EMBLEM.lightning = function(at, c1, c2, f)
+	-- 번개 수정: 세운 마름모 수정과 둘레를 도는 번개 조각
+	local cr = part({ Name = "BoltCrystal", Size = Vector3.new(3.6, 3.6, 3.6), CFrame = CFrame.new(at) * CFrame.Angles(math.rad(45), 0, math.rad(45)), Color = c2, Material = Enum.Material.Neon, Transparency = 0.1, CanCollide = false, Parent = f })
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		spin(part({ Name = "Bolt", Size = Vector3.new(0.4, 3.4, 0.4), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 5, math.sin(k) * 1.5, math.sin(a) * 5)) * CFrame.Angles(0.3 * k, a, 0.6), Color = c1, Material = Enum.Material.Neon, CanCollide = false, Parent = f }), 0)
+	end
+	particles(cr, SPARK, Color3.new(1, 1, 1), c1, 0.8, 18, 8, 0.5)
+	light(cr, c1, 26, 2.6)
+end
+EMBLEM.wind = function(at, c1, c2, f)
+	-- 회오리: 위로 갈수록 넓어지는 고리가 저마다 다른 빠르기로 돈다
+	for k = 0, 4 do
+		spin(disc("Gust", at + Vector3.new(0, -3 + k * 1.6, 0), 1.6 + k * 1.1, 0.25, k % 2 == 0 and c1 or c2, Enum.Material.Neon, f, 0.35 + k * 0.08), 1.2 - k * 0.15).CFrame = CFrame.new(at + Vector3.new(0, -3 + k * 1.6, 0)) * CFrame.Angles(0.15, 0, math.rad(90))
+	end
+	local top = ball("GustEye", at + Vector3.new(0, 4, 0), 1.4, c2, Enum.Material.Neon, f)
+	particles(top, SMOKE, c2, c1, 2, 6, 3, 1.5, 2)
+	light(top, c1, 20, 1.4)
+end
+EMBLEM.cloud = EMBLEM.wind
+EMBLEM.mist = function(at, c1, c2, f)
+	-- 안개 구름: 뭉게구름 덩이 다섯과 그 사이의 은은한 빛
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2
+		ball("Mist", at + Vector3.new(math.cos(a) * 2.6, math.sin(a * 2) * 0.8, math.sin(a) * 2.6), 4 + (k % 2), c2, Enum.Material.SmoothPlastic, f, 0.35)
+	end
+	local core = ball("MistCore", at, 2.4, c1, Enum.Material.Neon, f, 0.2)
+	particles(core, SMOKE, c2, c1, 3, 5, 1.5, 3, 0.5)
+	light(core, c1, 22, 1.4)
+end
+EMBLEM.gold = function(at, c1, c2, f)
+	-- 금빛 연꽃: 꽃잎 여덟이 둘러 핀 가운데 빛나는 구슬
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		part({ Name = "Petal", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.2, 3.6), CFrame = CFrame.new(at) * CFrame.Angles(0, a, 0) * CFrame.new(0, -0.6, -2.4) * CFrame.Angles(math.rad(-30), 0, 0), Color = k % 2 == 0 and c1 or c2, Material = Enum.Material.Neon, Transparency = 0.1, CanCollide = false, Parent = f })
+	end
+	local core = ball("LotusCore", at + Vector3.new(0, 0.8, 0), 2.6, Color3.fromRGB(255, 240, 200), Enum.Material.Neon, f)
+	spin(disc("Halo", at + Vector3.new(0, 1, 0), 4.6, 0.2, c1, Enum.Material.Neon, f, 0.5), 0.25)
+	particles(core, SPARK, Color3.new(1, 1, 1), c1, 0.7, 10, 3, 1.2, 2)
+	light(core, c1, 26, 2.2)
+end
+EMBLEM.king = function(at, c1, c2, f)
+	-- 왕관: 금빛 띠와 뾰족한 끝 여섯, 끝마다 보석
+	disc("CrownBand", at, 3, 1.4, c1, Enum.Material.Metal, f)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi * 2
+		local p = at + Vector3.new(math.cos(a) * 2.6, 1.8, math.sin(a) * 2.6)
+		part({ Name = "CrownSpike", Size = Vector3.new(0.8, 2.6, 0.8), CFrame = CFrame.new(p) * CFrame.Angles(0, a, math.rad(-8)), Color = c1, Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+		ball("CrownGem", p + Vector3.new(0, 1.5, 0), 0.9, c2, Enum.Material.Neon, f)
+	end
+	local core = ball("CrownGlow", at + Vector3.new(0, 1, 0), 2, c2, Enum.Material.Neon, f, 0.3)
+	spin(core, 0)
+	light(core, c1, 24, 2)
+end
+EMBLEM.shadow = function(at, c1, c2, f)
+	-- 그림자 구슬: 검은 구슬에서 연기가 피고 둘레를 날 셋이 돈다
+	local core = ball("ShadowOrb", at, 4.6, Color3.fromRGB(14, 10, 20), Enum.Material.SmoothPlastic, f)
+	ball("ShadowRim", at, 5.4, c1, Enum.Material.Neon, f, 0.75)
+	for k = 0, 2 do
+		local a = k / 3 * math.pi * 2
+		spin(part({ Name = "ShadowBlade", Size = Vector3.new(0.3, 0.8, 3.4), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 4.2, 0, math.sin(a) * 4.2)) * CFrame.Angles(0, -a, 0.4), Color = c2, Material = Enum.Material.Neon, CanCollide = false, Parent = f }), 0)
+	end
+	particles(core, SMOKE, c1, Color3.fromRGB(20, 10, 30), 3, 8, 2, 2, 1)
+	light(core, c1, 20, 1.6)
+end
+EMBLEM.void = function(at, c1, c2, f)
+	-- 빈칸: 흰 테두리의 검은 정육면체와 흩어진 작은 네모 조각
+	part({ Name = "NullCube", Size = Vector3.new(4, 4, 4), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0.6, 0.3), Color = Color3.fromRGB(8, 8, 10), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	local frame = part({ Name = "NullFrame", Size = Vector3.new(4.4, 4.4, 4.4), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0.6, 0.3), Color = c2, Material = Enum.Material.ForceField, Transparency = 0.3, CanCollide = false, Parent = f })
+	for k = 0, 5 do
+		spin(part({ Name = "Pixel", Size = Vector3.new(0.9, 0.9, 0.9), Position = at + Vector3.new(math.cos(k) * 4.4, math.sin(k * 2) * 2, math.sin(k) * 4.4), Color = k % 2 == 0 and Color3.new(1, 1, 1) or c1, Material = Enum.Material.Neon, CanCollide = false, Parent = f }), 0)
+	end
+	light(frame, c2, 20, 1.4)
+end
+EMBLEM.subspace = EMBLEM.void
+EMBLEM.blood = function(at, c1, c2, f)
+	-- 핏빛 초승달: 굽은 조각을 이어 큰 초승달 낫
+	for k = 0, 10 do
+		local a = math.rad(-80 + k * 16)
+		local w = 1.6 * math.sin(math.rad(k / 10 * 180)) + 0.3
+		part({ Name = "Crescent", Size = Vector3.new(0.6, w, 1.6), CFrame = CFrame.new(at) * CFrame.Angles(0, 0, a) * CFrame.new(0, 4, 0), Color = k % 3 == 0 and c2 or c1, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local core = ball("BloodDrop", at, 1.6, c1, Enum.Material.Neon, f)
+	particles(core, SPARK, c2, c1, 0.6, 8, 2, 1.5, -4)
+	light(core, c1, 22, 2)
+end
+EMBLEM.celestial = function(at, c1, c2, f)
+	-- 하늘의 문: 빛나는 둥근 문틀과 가운데 흰빛, 위로 빛살
+	spin(disc("SkyGate", at, 4.4, 0.6, c1, Enum.Material.Neon, f, 0.2), 0.15).CFrame = CFrame.new(at) * CFrame.Angles(0, 0, 0)
+	local core = ball("SkyLight", at, 3.6, Color3.fromRGB(255, 250, 230), Enum.Material.Neon, f, 0.15)
+	part({ Name = "SkyRay", Size = Vector3.new(0.6, 12, 0.6), Position = at + Vector3.new(0, 7, 0), Color = c2, Material = Enum.Material.Neon, Transparency = 0.5, CanCollide = false, Parent = f })
+	particles(core, SPARK, Color3.new(1, 1, 1), c2, 0.8, 14, 4, 1.2, 3)
+	light(core, c2, 28, 2.4)
+end
+EMBLEM.galaxy = function(at, c1, c2, f)
+	-- 은하: 빛나는 별 가운데와 기울어진 두 겹 별 고리, 둘레를 도는 작은 별
+	local core = ball("StarCore", at, 2.6, Color3.fromRGB(255, 250, 230), Enum.Material.Neon, f)
+	for k = 0, 1 do
+		spin(disc("StarRing", at, 4 + k * 1.6, 0.2, k == 0 and c1 or c2, Enum.Material.Neon, f, 0.35), 0.3 - k * 0.5).CFrame = CFrame.new(at) * CFrame.Angles(0.5, k * 0.6, math.rad(90))
+	end
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2
+		ball("Moon", at + Vector3.new(math.cos(a) * 5.4, math.sin(a) * 1.2, math.sin(a) * 5.4), 0.9, c2, Enum.Material.Neon, f)
+	end
+	particles(core, SPARK, Color3.new(1, 1, 1), c1, 0.6, 12, 2, 2)
+	light(core, c1, 26, 2)
+end
+EMBLEM.origin = EMBLEM.galaxy
+EMBLEM.eclipse = function(at, c1, c2, f)
+	-- 일식: 검은 해와 그 뒤의 금빛 코로나
+	ball("Corona", at, 6.4, c1, Enum.Material.Neon, f, 0.35)
+	spin(disc("CoronaRing", at, 4.2, 0.3, c2, Enum.Material.Neon, f, 0.2), 0.2).CFrame = CFrame.new(at) * CFrame.Angles(0, 0, 0)
+	local core = ball("BlackSun", at + Vector3.new(0, 0, -0.6), 5, Color3.fromRGB(10, 8, 12), Enum.Material.SmoothPlastic, f)
+	light(core, c1, 26, 2.4)
+end
+EMBLEM.gravity = function(at, c1, c2, f)
+	-- 블랙홀: 검은 알맹이와 눕혀 도는 빛의 원반
+	local core = ball("Hole", at, 3.4, Color3.fromRGB(6, 4, 10), Enum.Material.SmoothPlastic, f)
+	spin(disc("Accretion", at, 5, 0.25, c1, Enum.Material.Neon, f, 0.25), 0.6)
+	spin(disc("Accretion2", at, 6.4, 0.2, c2, Enum.Material.Neon, f, 0.55), -0.4)
+	particles(core, SPARK, c2, c1, 0.5, 12, -5, 1)
+	light(core, c1, 22, 1.8)
+end
+EMBLEM.time = function(at, c1, c2, f)
+	-- 시계 바퀴: 세운 둥근 판 · 눈금 열둘 · 도는 바늘
+	disc("ClockFace", at, 4.2, 0.4, Color3.fromRGB(30, 26, 36), Enum.Material.SmoothPlastic, f).CFrame = CFrame.new(at) * CFrame.Angles(0, math.rad(90), 0)
+	disc("ClockRim", at, 4.6, 0.3, c1, Enum.Material.Neon, f, 0.1).CFrame = CFrame.new(at) * CFrame.Angles(0, math.rad(90), 0)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		part({ Name = "Tick", Size = Vector3.new(0.3, 0.9, 0.3), CFrame = CFrame.new(at + Vector3.new(math.sin(a) * 3.6, math.cos(a) * 3.6, -0.3)) * CFrame.Angles(0, 0, -a), Color = c2, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	local hand = spin(part({ Name = "Hand", Size = Vector3.new(0.4, 3.4, 0.3), CFrame = CFrame.new(at + Vector3.new(0, 1.5, -0.5)), Color = c2, Material = Enum.Material.Neon, CanCollide = false, Parent = f }), 0)
+	light(hand, c1, 22, 1.8)
+end
+EMBLEM.rinne = function(at, c1, c2, f)
+	-- 윤회륜: 바퀴살 여섯의 금빛 바퀴가 돈다
+	local wheel = spin(disc("Wheel", at, 4.4, 0.6, c1, Enum.Material.Neon, f, 0.2), 0.2)
+	wheel.CFrame = CFrame.new(at) * CFrame.Angles(0, math.rad(90), 0)
+	for k = 0, 5 do
+		local a = k / 6 * math.pi
+		part({ Name = "Spoke", Size = Vector3.new(0.4, 8.4, 0.4), CFrame = CFrame.new(at + Vector3.new(0, 0, -0.4)) * CFrame.Angles(0, 0, a), Color = c2, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	end
+	light(wheel, c1, 24, 2)
+end
+EMBLEM.dragon = function(at, c1, c2, f)
+	-- 여의주와 휘감아 오르는 용의 몸 (구슬을 나선으로 잇는다)
+	local pearl = ball("Pearl", at + Vector3.new(0, 3, 0), 2.4, Color3.fromRGB(255, 245, 210), Enum.Material.Neon, f)
+	for k = 0, 13 do
+		local a = k / 14 * math.pi * 3.2
+		local r = 3.6 - k * 0.12
+		ball("DragonBody", at + Vector3.new(math.cos(a) * r, -4 + k * 0.6, math.sin(a) * r), 1.8 - k * 0.07, k % 2 == 0 and c1 or c1:Lerp(c2, 0.3), Enum.Material.Neon, f, 0.1)
+	end
+	particles(pearl, SPARK, Color3.new(1, 1, 1), c2, 0.6, 10, 2, 1.2, 2)
+	light(pearl, c1, 26, 2.2)
+end
+EMBLEM.petal = function(at, c1, c2, f)
+	-- 큰 꽃: 꽃잎 다섯과 가운데 꽃술, 흩날리는 꽃잎
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2
+		part({ Name = "FlowerPetal", Shape = Enum.PartType.Ball, Size = Vector3.new(3, 0.6, 4.4), CFrame = CFrame.new(at) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, -2.6) * CFrame.Angles(math.rad(-20), 0, 0), Color = c1, Material = Enum.Material.Neon, Transparency = 0.1, CanCollide = false, Parent = f })
+	end
+	local core = ball("Pistil", at + Vector3.new(0, 0.3, 0), 1.8, c2, Enum.Material.Neon, f)
+	particles(core, SPARK, c1, c2, 0.8, 8, 3, 2.5, -1)
+	light(core, c1, 22, 1.8)
+end
+EMBLEM.nature = function(at, c1, c2, f)
+	-- 어린 나무: 줄기와 둥근 잎 덩이 셋
+	part({ Name = "Sapling", Size = Vector3.new(0.8, 6, 0.8), Position = at + Vector3.new(0, -2, 0), Color = Color3.fromRGB(110, 76, 48), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	for k = 0, 2 do
+		local a = k / 3 * math.pi * 2
+		ball("Leaf", at + Vector3.new(math.cos(a) * 1.6, 1.6 + k * 0.4, math.sin(a) * 1.6), 3.6, k == 1 and c2 or c1, Enum.Material.Grass, f)
+	end
+	local glow = ball("LeafGlow", at + Vector3.new(0, 2, 0), 2, c2, Enum.Material.Neon, f, 0.4)
+	particles(glow, SPARK, c2, c1, 0.6, 8, 2, 2, -1)
+	light(glow, c1, 20, 1.4)
+end
+EMBLEM.ice = function(at, c1, c2, f)
+	-- 얼음 결정: 세운 얼음 기둥 다섯이 별처럼 뻗는다
+	for k = 0, 4 do
+		local a = k / 5 * math.pi * 2
+		part({ Name = "IceSpike", Size = Vector3.new(1.4, 6 - (k % 2) * 1.6, 1.4), CFrame = CFrame.new(at) * CFrame.Angles(math.cos(a) * 0.6, 0, math.sin(a) * 0.6), Color = c2, Material = Enum.Material.Glass, Transparency = 0.2, CanCollide = false, Parent = f })
+	end
+	local core = ball("IceCore", at, 2, Color3.fromRGB(230, 250, 255), Enum.Material.Neon, f)
+	particles(core, SPARK, Color3.new(1, 1, 1), c2, 0.5, 10, 2, 1.6, -1)
+	light(core, c2, 22, 1.8)
+end
+EMBLEM.drunk = function(at, c1, c2, f)
+	-- 호리병: 두 구슬을 포갠 병과 마개, 흔들리는 술 방울
+	ball("GourdBottom", at + Vector3.new(0, -1.4, 0), 4.4, c1, Enum.Material.SmoothPlastic, f)
+	ball("GourdTop", at + Vector3.new(0, 1.6, 0), 3, c1, Enum.Material.SmoothPlastic, f)
+	part({ Name = "GourdCord", Size = Vector3.new(3.2, 0.4, 3.2), Position = at + Vector3.new(0, 0.2, 0), Color = Color3.fromRGB(190, 40, 40), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+	local cork = part({ Name = "Cork", Size = Vector3.new(0.9, 1, 0.9), Position = at + Vector3.new(0, 3.4, 0), Color = Color3.fromRGB(160, 120, 80), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	particles(cork, SPARK, c2, c1, 0.6, 6, 2, 1.5, -3)
+	light(cork, c2, 18, 1.2)
+end
+EMBLEM.sand = function(at, c1, c2, f)
+	-- 모래시계
+	for _, sy in ipairs({ -1, 1 }) do
+		disc("HourCap", at + Vector3.new(0, sy * 3.2, 0), 2.4, 0.5, Color3.fromRGB(110, 80, 50), Enum.Material.Wood, f)
+		part({ Name = "HourGlass", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 3, 3.4), Position = at + Vector3.new(0, sy * 1.5, 0), Color = Color3.fromRGB(220, 235, 245), Material = Enum.Material.Glass, Transparency = 0.5, CanCollide = false, Parent = f })
+	end
+	local sand = ball("Sand", at + Vector3.new(0, -1.8, 0), 2, c1, Enum.Material.Sand, f)
+	light(sand, c1, 18, 1.2)
+end
+EMBLEM.duel = function(at, c1, c2, f)
+	-- 맞부딪친 두 주먹 (엇갈린 두 막대와 가운데 불꽃)
+	for _, k in ipairs({ -1, 1 }) do
+		part({ Name = "Fist", Size = Vector3.new(1.8, 1.8, 4.4), CFrame = CFrame.new(at + Vector3.new(k * 2, 0, 0)) * CFrame.Angles(0, k * math.rad(60), 0), Color = c1, Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+	local spark = ball("Clash", at, 2.4, c2, Enum.Material.Neon, f, 0.1)
+	particles(spark, SPARK, Color3.new(1, 1, 1), c2, 0.8, 16, 6, 0.6)
+	light(spark, c2, 22, 2)
+end
+EMBLEM.basic = function(at, c1, c2, f)
+	-- 삼재: 하늘 · 사람 · 땅의 세 원판이 위아래로 겹쳐 돈다
+	for k = 0, 2 do
+		spin(disc("ThreePowers", at + Vector3.new(0, (k - 1) * 2.2, 0), 3.4 - math.abs(k - 1) * 0.8, 0.5, k == 1 and c2 or c1, Enum.Material.Neon, f, 0.2), (k - 1) * 0.4 + 0.1)
+	end
+	local core = ball("PowersCore", at, 1.6, Color3.fromRGB(255, 245, 220), Enum.Material.Neon, f)
+	light(core, c1, 20, 1.6)
+end
+local function emblemFallback(at: Vector3, c1: Color3, c2: Color3, f: Instance)
+	local core = ball("Orb", at, 5, c1, Enum.Material.Neon, f, 0.1)
+	spin(disc("OrbRing", at, 5.6, 0.3, c2, Enum.Material.Neon, f, 0.4), 0.3).CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0, math.rad(90))
+	particles(core, SPARK, Color3.new(1, 1, 1), c2, 0.7, 10, 3, 1.2)
+	light(core, c1, 22, 2)
+end
+
+-- 마네킹: 권법 빛깔의 R15 몸 (서버가 짓고, 몸동작 · 장신구는 저마다의 화면이)
+local RIG: { { any } } = {
+	{ "LowerTorso", Vector3.new(2, 0.4, 1), Vector3.new(0, -0.8, 0), "HumanoidRootPart", "Root", Vector3.new(0, -0.8, 0) },
+	{ "UpperTorso", Vector3.new(2, 1.6, 1), Vector3.new(0, 0.2, 0), "LowerTorso", "Waist", Vector3.new(0, -0.6, 0) },
+	{ "Head", Vector3.new(1.1, 1.1, 1.1), Vector3.new(0, 1.55, 0), "UpperTorso", "Neck", Vector3.new(0, 1.0, 0) },
+	{ "RightUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(1.5, 0.4, 0), "UpperTorso", "RightShoulder", Vector3.new(1.5, 0.8, 0) },
+	{ "RightLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(1.5, -0.675, 0), "RightUpperArm", "RightElbow", Vector3.new(1.5, -0.2, 0) },
+	{ "RightHand", Vector3.new(1, 0.3, 1), Vector3.new(1.5, -1.3, 0), "RightLowerArm", "RightWrist", Vector3.new(1.5, -1.15, 0) },
+	{ "LeftUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(-1.5, 0.4, 0), "UpperTorso", "LeftShoulder", Vector3.new(-1.5, 0.8, 0) },
+	{ "LeftLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(-1.5, -0.675, 0), "LeftUpperArm", "LeftElbow", Vector3.new(-1.5, -0.2, 0) },
+	{ "LeftHand", Vector3.new(1, 0.3, 1), Vector3.new(-1.5, -1.3, 0), "LeftLowerArm", "LeftWrist", Vector3.new(-1.5, -1.15, 0) },
+	{ "RightUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(0.5, -1.55, 0), "LowerTorso", "RightHip", Vector3.new(0.5, -1.0, 0) },
+	{ "RightLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(0.5, -2.45, 0), "RightUpperLeg", "RightKnee", Vector3.new(0.5, -2.1, 0) },
+	{ "RightFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(0.5, -2.9, -0.05), "RightLowerLeg", "RightAnkle", Vector3.new(0.5, -2.8, 0) },
+	{ "LeftUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(-0.5, -1.55, 0), "LowerTorso", "LeftHip", Vector3.new(-0.5, -1.0, 0) },
+	{ "LeftLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(-0.5, -2.45, 0), "LeftUpperLeg", "LeftKnee", Vector3.new(-0.5, -2.1, 0) },
+	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
+}
+local function mannequin(st: any, cf: CFrame, parent: Instance): Model
+	local model = Instance.new("Model")
+	model.Name = "Doll"
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1) * S
+	root.Transparency = 1
+	root.Anchored = true
+	root.CanCollide = false
+	root.CFrame = CFrame.new()
+	root.Parent = model
+	model.PrimaryPart = root
+	local c1, c2 = st.color, st.color2 or st.color
+	local dark = c1:Lerp(Color3.new(0, 0, 0), 0.35)
+	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
+	for _, r in ipairs(RIG) do
+		local name, size, cen, parentName, jointName, joint = r[1], r[2] * S, r[3] * S, r[4], r[5], r[6] * S
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.CFrame = CFrame.new(cen)
+		p.Anchored = false
+		p.CanCollide = false
+		p.CanTouch = false
+		p.Massless = true
+		p.Material = Enum.Material.SmoothPlastic
+		if name == "Head" then
+			p.Color = c2
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Head
+			mesh.Parent = p
+		elseif string.find(name, "Torso") then
+			p.Color = c1
+		elseif string.find(name, "Hand") or string.find(name, "Foot") then
+			p.Color = c2
+		else
+			p.Color = dark
+		end
+		p.Parent = model
+		parts[name] = p
+		local par = parts[parentName]
+		local m = Instance.new("Motor6D")
+		m.Name = jointName
+		m.Part0 = par
+		m.Part1 = p
+		m.C0 = CFrame.new(joint - par.CFrame.Position)
+		m.C1 = CFrame.new(joint - cen)
+		m.Parent = p
+	end
+	local hum = Instance.new("Humanoid")
+	hum.RigType = Enum.HumanoidRigType.R15
+	hum.HipHeight = 2 * S
+	hum.AutomaticScalingEnabled = false
+	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	hum.Parent = model
+	model:SetAttribute("Style", st.id)
+	model:PivotTo(cf)
+	model.Parent = parent
+	return model
+end
+
+local function signpost(at: Vector3, st: any, parent: Instance)
+	part({ Name = "SignPost", Size = Vector3.new(0.7, 6.4, 0.7), Position = at + Vector3.new(0, 3.2, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = parent })
+	local board = part({ Name = "SignBoard", Size = Vector3.new(6.4, 3.4, 0.4), Position = at + Vector3.new(0, 6.2, 0), Color = Color3.fromRGB(150, 104, 66), Material = Enum.Material.Wood, Parent = parent })
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Front -- 북쪽 (대기실 문) 을 본다
+	sg.PixelsPerStud = 60
+	sg.LightInfluence = 0.2
+	sg.Parent = board
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.new(1, -16, 0.6, 0)
+	t.Position = UDim2.new(0, 8, 0, 6)
+	t.Font = Enum.Font.GothamBlack
+	t.TextScaled = true
+	t.TextColor3 = Color3.fromRGB(255, 246, 228)
+	t.TextStrokeTransparency = 0.4
+	t.Text = st.name
+	t.Parent = sg
+	local g = Instance.new("TextLabel")
+	g.Name = "Grade"
+	g.BackgroundTransparency = 1
+	g.Size = UDim2.new(1, -16, 0.3, 0)
+	g.Position = UDim2.new(0, 8, 0.64, 0)
+	g.Font = Enum.Font.GothamBold
+	g.TextScaled = true
+	local grade = Config.styleGrade(st, 0)
+	g.TextColor3 = Config.GRADE_COLOR[grade] or Color3.fromRGB(255, 220, 120)
+	g.TextStrokeTransparency = 0.5
+	g.Text = grade
+	g.Parent = sg
+end
+
+-- c = 전시장 북쪽 가운데 (대기실 남쪽 문 앞) 바닥. 북쪽 (-Z) 을 본다
+function StyleHall.build(c: Vector3, parent: Instance): { any }
+	local f = Instance.new("Folder")
+	f.Name = "StyleHall"
+	f.Parent = parent
+	local list = {}
+	for _, st in ipairs(Config.Styles) do
+		table.insert(list, st) -- 모든 권법 (숨은 것 · 게임패스 것까지)
+	end
+	-- 등급 높은 것부터 (같은 등급은 처음 실린 차례)
+	local order = {}
+	for i, st in ipairs(list) do
+		order[st] = i
+	end
+	table.sort(list, function(a, b)
+		local ra = table.find(Config.GRADE_ORDER, Config.styleGrade(a, 0)) or 0
+		local rb = table.find(Config.GRADE_ORDER, Config.styleGrade(b, 0)) or 0
+		if ra ~= rb then
+			return ra > rb
+		end
+		return order[a] < order[b]
+	end)
+	local rows = math.ceil(#list / PER_ROW)
+	local W = PER_ROW * DX + 16
+	local Dp = rows * DZ + 22
+	-- 바닥: 어두운 돌 마당과 빛나는 테
+	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	local units = {}
+	for i, st in ipairs(list) do
+		local row = (i - 1) // PER_ROW
+		local col = (i - 1) % PER_ROW
+		local n = math.min(PER_ROW, #list - row * PER_ROW)
+		local x = (col - (n - 1) / 2) * DX
+		local z0 = 22 + row * DZ
+		local at = c + Vector3.new(x, 0.6, z0)
+		local u = Instance.new("Model")
+		u.Name = "Unit"
+		u:SetAttribute("Style", st.id)
+		u.Parent = f
+		local c1, c2 = st.color, st.color2 or st.color
+		-- 받침대
+		disc("Base", at + Vector3.new(0, 0.4, 0), 4.4, 0.8, INK, Enum.Material.SmoothPlastic, u, 0, true)
+		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1, Enum.Material.Neon, u, 0.25)
+		-- 상징물
+		local fn = EMBLEM[st.fx or ""] or emblemFallback
+		local ef = Instance.new("Folder")
+		ef.Name = "Emblem"
+		ef.Parent = u
+		pcall(fn, at + Vector3.new(0, 17, 0), c1, c2, ef)
+		-- 푯말 (앞 왼쪽)
+		signpost(at + Vector3.new(-4.6, 0, -6.4), st, u)
+		-- 발판 (앞)
+		local padAt = at + Vector3.new(0, 0, -12)
+		part({ Name = "PadEdge", Size = Vector3.new(8.8, 0.3, 8.8), Position = padAt + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = u })
+		local pad = part({ Name = "Pad", Size = Vector3.new(8, 0.32, 8), Position = padAt + Vector3.new(0, 0.2, 0), Color = c1, Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = u })
+		local sg = Instance.new("SurfaceGui")
+		sg.Name = "PadText"
+		sg.Face = Enum.NormalId.Top
+		sg.PixelsPerStud = 40
+		sg.LightInfluence = 0
+		sg.Parent = pad
+		local t = Instance.new("TextLabel")
+		t.Name = "Label"
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(1, 1)
+		t.Rotation = 180
+		t.Font = Enum.Font.GothamBlack
+		t.TextScaled = true
+		t.TextColor3 = Color3.new(1, 1, 1)
+		t.Text = "밟으면 입장"
+		t.Parent = sg
+		-- 마네킹 (받침대 위, 북쪽을 본다)
+		local hip = 3 * S
+		pcall(mannequin, st, CFrame.lookAt(at + Vector3.new(0, 0.8 + hip, 0), at + Vector3.new(0, 0.8 + hip, -10)), u)
+		table.insert(units, { id = st.id, pad = pad, padAt = padAt })
+	end
+	return units
+end
+
+-- 전시장의 크기 (대기실이 둘레 울타리를 넓힐 때)
+function StyleHall.depth(): number
+	local n = #Config.Styles
+	return math.ceil(n / PER_ROW) * DZ + 22
+end
+function StyleHall.width(): number
+	return PER_ROW * DX + 16
+end
+
+return StyleHall
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
           <string name="Name">World</string>
           <string name="Source"><![CDATA[-- 권왕: 강호 (오픈 월드). 가운데 청운 마을, 서쪽 대나무 숲, 북쪽 흑호채, 동쪽 비류 폭포 계곡, 남쪽 들판
 -- 그리고 강호 곳곳에 흩어진 일곱 사부의 자리
@@ -36601,7 +37137,7 @@ return World
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">ZFix</string>
           <string name="Source"><![CDATA[-- 권왕 3.63판: 겹친 바닥 깜빡임 (z-fighting) 바로잡기
@@ -36757,16 +37293,16 @@ return ZFix
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="17">
+  <Item class="StarterPlayer" referent="18">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMaxZoomDistance">120</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="18">
+    <Item class="StarterPlayerScripts" referent="19">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="19">
+      <Item class="LocalScript" referent="20">
         <Properties>
           <string name="Name">KwonClient</string>
           <string name="Source"><![CDATA[-- 권왕(拳王): 맨손의 강호 — 화면
@@ -38095,10 +38631,10 @@ task.spawn(function()
 	end
 end)
 local firstState = true
--- 3.62판: 배틀그라운드 대기실의 권법 회랑 (마네킹이 권법을 시범한다)
+-- 3.62판 · 3.66판: 배틀그라운드 권법 전시장 (서버가 지은 전시장에 내 잠금 · 발판 · 시범 · 장신구)
 local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) or nil
 if Gallery then
-	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview })
+	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, toast = UI.toast })
 end
 function handlers.state(data: any)
 	state = data
@@ -39721,7 +40257,7 @@ end)
 Request:FireServer("hello")
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">AchAura</string>
             <string name="Source"><![CDATA[-- 권왕 3.19.9판: 업적 오라 (무협 기운). 신화 업적 아홉을 이루면 그 업적만의 기운을 얻는다 (🎨 꾸미기에서 하나 고른다)
@@ -39990,7 +40526,7 @@ return AchAura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Ambience</string>
             <string name="Source"><![CDATA[-- 권왕 3.35판: 땅마다 다른 공기. 카메라 머리 위에 떠서 따라다니는 입자 하나로 눈 · 먼지 · 불씨 · 꽃가루 · 반딧불 · 낙엽을 흩날린다
@@ -40154,7 +40690,7 @@ return Ambience
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Anim</string>
             <string name="Source"><![CDATA[-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
@@ -40873,7 +41409,7 @@ return Anim
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Arts</string>
             <string name="Source"><![CDATA[-- 권왕 3.19판: 새 권법 열하나의 화면 연출
@@ -43078,7 +43614,7 @@ return Arts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Awake</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 새 각성 권법 셋의 화면 (진 금강불괴신공 · 진 무영귀각 · 진 태허유수장)
@@ -43684,7 +44220,7 @@ return Awake
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Awake3</string>
             <string name="Source"><![CDATA[-- 권왕 2.2판: 각성 권법 아홉의 새 E·R, 진 열화 화산천붕 · 진 창해 고래강림, 초·벽력신권의 뇌신낙 · 천뢰구 · 심판의 벼락 (화면)
@@ -46447,7 +46983,7 @@ return Awake3
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Blossom</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 초·매화난무권의 새 기술 (화면). 날아가는 부채, 꽃 그림자, 하늘의 큰 부채
@@ -46850,7 +47386,7 @@ return Blossom
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">BossFx</string>
             <string name="Source"><![CDATA[-- 권왕 3.26판: 보스 패턴의 웅장함. 패턴이 시작될 때 보스가 기를 모아 땅이 울리고 (모이는 고리와 빛기둥),
@@ -47273,7 +47809,7 @@ return BossFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">CamGuard</string>
             <string name="Source"><![CDATA[-- 3.18.1판: 오의 컷씬 카메라 지킴이. 컷씬마다 카메라를 너무 낮게 (땅에 붙거나 땅속) 두고 올려다봐서
@@ -47348,7 +47884,7 @@ return CamGuard
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Cutscene</string>
             <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
@@ -47660,7 +48196,7 @@ return Cutscene
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Demon</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 피의 악마 (화면에만 보이는 연출). 처음부터 다시 짰다
@@ -47996,7 +48532,7 @@ return Demon
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Dream</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
@@ -48776,7 +49312,7 @@ return Dream
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
@@ -49549,7 +50085,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Forest</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 만목신권의 숲 (화면). 대나무 창 · 소용돌이치는 잎 · 천 년 은행나무
@@ -50158,7 +50694,7 @@ return Forest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -53049,7 +53585,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -53230,17 +53766,17 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Gallery</string>
-            <string name="Source"><![CDATA[-- 권왕 3.62판: 배틀그라운드 대기실의 권법 회랑 (권법 고르는 창 대신)
---   3.64판: 엘리멘탈 아레나처럼. 권법마다 떠 있는 큰 상징 구슬 · 나무 푯말 (이름 · 등급) · 빛나는 발판. 발판을 밟으면 그 권법으로 싸움터에 들어간다
---   (두 줄 × 여섯, 마당 동쪽. 발판은 서쪽 (마당 가운데) 을 향한다)
---   익힌 권법마다 마네킹 하나 (내 생김새 + 그 권법의 시그니처 장신구) 가 받침대 위에서 그 권법 자세로 서 있다가,
---   가까이 가면 차례로 연타 · 강타 · 기술을 시범한다. 받침대 앞에서 T = 그 권법으로 싸움터에 들어간다
---   한 번에 15개 (등급 높은 차례). 더 있으면 '다음 ▶' 받침대로 넘긴다. 마네킹은 내 화면에만 있다
+            <string name="Source"><![CDATA[-- 권왕 3.66판: 배틀그라운드 권법 전시장의 내 화면 몫 (전시장 자체는 서버가 짓는다: StyleHall.lua)
+--   · 모든 마네킹이 그 권법 자세로 선다 (Anim이 Style 속성으로 자세를 잡는다). 가까운 것은 차례로 시범 (한 번에 셋까지)
+--   · 마네킹에 그 권법의 시그니처 장신구 · 게임패스 꼬리 · 마검을 내 화면에서 입힌다
+--   · 내가 익힌 권법만 고를 수 있다: 익히지 않은 칸은 발판이 어둡고 '🔒 익히지 않음'. 익힌 칸의 발판을 밟으면 그 권법으로 입장
+--   · 상징물의 도는 조각 (Spin…) 을 돌린다 (SpinRate 0 = 상징물 가운데를 축으로 공전)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Config"))
 local Anim = require(script.Parent:WaitForChild("Anim"))
@@ -53250,414 +53786,178 @@ local Gallery = {}
 local player = Players.LocalPlayer
 
 local opts: any = {}
-local folder: Folder? = nil
-local center: Vector3? = nil
-local page = 1
-local builtKey = ""
-local slots: { any } = {}
-local spinners: { BasePart } = {} -- 3.64판 상징 구슬의 도는 고리
 local lastState: any = nil
+local units: { any } = {}
+local spinners: { { any } } = {}
+local LOCKED = Color3.fromRGB(46, 48, 56)
+local GOLD = Color3.fromRGB(255, 208, 110)
 
-local PER = 8
-local INK = Color3.fromRGB(16, 18, 24)
-
-
-local function gradeOf(id: string): string
-	local s = Config.STYLE_BY_ID[id]
-	local ups = (lastState and lastState.gradeUp and lastState.gradeUp[id]) or 0
-	return s and Config.styleGrade(s, ups) or "상급"
+local function owned(id: string): boolean
+	return lastState ~= nil and type(lastState.styles) == "table" and table.find(lastState.styles, id) ~= nil
 end
 
--- 3.65판: 마네킹은 내 캐릭터를 복사하지 않고 직접 짠다 (캐릭터가 아직 없을 때 비어 있었다). 권법 빛깔로 칠한 R15 몸
-local RIG: { { any } } = {
-	{ "LowerTorso", Vector3.new(2, 0.4, 1), Vector3.new(0, -0.8, 0), "HumanoidRootPart", "Root", Vector3.new(0, -0.8, 0) },
-	{ "UpperTorso", Vector3.new(2, 1.6, 1), Vector3.new(0, 0.2, 0), "LowerTorso", "Waist", Vector3.new(0, -0.6, 0) },
-	{ "Head", Vector3.new(1.1, 1.1, 1.1), Vector3.new(0, 1.55, 0), "UpperTorso", "Neck", Vector3.new(0, 1.0, 0) },
-	{ "RightUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(1.5, 0.4, 0), "UpperTorso", "RightShoulder", Vector3.new(1.5, 0.8, 0) },
-	{ "RightLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(1.5, -0.675, 0), "RightUpperArm", "RightElbow", Vector3.new(1.5, -0.2, 0) },
-	{ "RightHand", Vector3.new(1, 0.3, 1), Vector3.new(1.5, -1.3, 0), "RightLowerArm", "RightWrist", Vector3.new(1.5, -1.15, 0) },
-	{ "LeftUpperArm", Vector3.new(1, 1.2, 1), Vector3.new(-1.5, 0.4, 0), "UpperTorso", "LeftShoulder", Vector3.new(-1.5, 0.8, 0) },
-	{ "LeftLowerArm", Vector3.new(1, 0.95, 1), Vector3.new(-1.5, -0.675, 0), "LeftUpperArm", "LeftElbow", Vector3.new(-1.5, -0.2, 0) },
-	{ "LeftHand", Vector3.new(1, 0.3, 1), Vector3.new(-1.5, -1.3, 0), "LeftLowerArm", "LeftWrist", Vector3.new(-1.5, -1.15, 0) },
-	{ "RightUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(0.5, -1.55, 0), "LowerTorso", "RightHip", Vector3.new(0.5, -1.0, 0) },
-	{ "RightLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(0.5, -2.45, 0), "RightUpperLeg", "RightKnee", Vector3.new(0.5, -2.1, 0) },
-	{ "RightFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(0.5, -2.9, -0.05), "RightLowerLeg", "RightAnkle", Vector3.new(0.5, -2.8, 0) },
-	{ "LeftUpperLeg", Vector3.new(1, 1.1, 1), Vector3.new(-0.5, -1.55, 0), "LowerTorso", "LeftHip", Vector3.new(-0.5, -1.0, 0) },
-	{ "LeftLowerLeg", Vector3.new(1, 0.7, 1), Vector3.new(-0.5, -2.45, 0), "LeftUpperLeg", "LeftKnee", Vector3.new(-0.5, -2.1, 0) },
-	{ "LeftFoot", Vector3.new(1, 0.2, 1.1), Vector3.new(-0.5, -2.9, -0.05), "LeftLowerLeg", "LeftAnkle", Vector3.new(-0.5, -2.8, 0) },
-}
-local DOLL_S = 1.5 -- 마네킹 키 배율
-local function makeDoll(st: any): Model
-	local S = DOLL_S
-	local model = Instance.new("Model")
-	local root = Instance.new("Part")
-	root.Name = "HumanoidRootPart"
-	root.Size = Vector3.new(2, 2, 1) * S
-	root.Transparency = 1
-	root.Anchored = true
-	root.CanCollide = false
-	root.Parent = model
-	model.PrimaryPart = root
-	local c1, c2 = st.color, st.color2 or st.color
-	local dark = c1:Lerp(Color3.new(0, 0, 0), 0.35)
-	local parts: { [string]: BasePart } = { HumanoidRootPart = root }
-	for _, r in ipairs(RIG) do
-		local name, size, cen, parentName, jointName, joint = r[1], r[2] * S, r[3] * S, r[4], r[5], r[6] * S
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Size = size
-		p.CFrame = CFrame.new(cen)
-		p.Anchored = false
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.Material = Enum.Material.SmoothPlastic
-		p.TopSurface = Enum.SurfaceType.Smooth
-		p.BottomSurface = Enum.SurfaceType.Smooth
-		if name == "Head" then
-			p.Color = c2
-			local mesh = Instance.new("SpecialMesh")
-			mesh.MeshType = Enum.MeshType.Head
-			mesh.Parent = p
-		elseif string.find(name, "Torso") then
-			p.Color = c1
-		elseif string.find(name, "Hand") or string.find(name, "Foot") then
-			p.Color = c2
-		else
-			p.Color = dark
-		end
-		p.Parent = model
-		parts[name] = p
-		local parent = parts[parentName]
-		local m = Instance.new("Motor6D")
-		m.Name = jointName
-		m.Part0 = parent
-		m.Part1 = p
-		m.C0 = CFrame.new(joint - parent.CFrame.Position)
-		m.C1 = CFrame.new(joint - cen)
-		m.Parent = p
-	end
-	-- 몸에서 은은한 빛 (마네킹이 권법 빛깔로 빛난다)
-	local glow = Instance.new("PointLight")
-	glow.Color = c1
-	glow.Range = 12
-	glow.Brightness = 0.8
-	glow.Parent = parts.UpperTorso
-	local hum = Instance.new("Humanoid")
-	hum.RigType = Enum.HumanoidRigType.R15
-	hum.HipHeight = 2 * S
-	hum.AutomaticScalingEnabled = false
-	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	hum.PlatformStand = true
-	hum.Parent = model
-	return model
-end
-
-local function newPart(props: { [string]: any }): BasePart
-	local p = Instance.new(props.Class or "Part") :: BasePart
-	p.Anchored = true
-	p.CanCollide = props.CanCollide == true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	for k, v in pairs(props) do
-		if k == "Position" then
-			p.CFrame = CFrame.new(v)
-		elseif k ~= "Class" and k ~= "Parent" and k ~= "CanCollide" then
-			(p :: any)[k] = v
-		end
-	end
-	p.Parent = props.Parent
-	return p
-end
-
-local function clear()
-	for _, s in ipairs(slots) do
-		if s.doll then
-			s.doll:Destroy()
-		end
-	end
-	slots = {}
-	spinners = {}
-	if folder then
-		folder:ClearAllChildren()
-	end
-end
-
--- 받침대 자리 (마당 동쪽 절반, 5 × 3)
-local function spotAt(i: number): Vector3
-	local c = center :: Vector3
-	local col = (i - 1) // 4
-	local row = (i - 1) % 4
-	return c + Vector3.new(38 + col * 24, 0.6, -22 + row * 15)
-end
--- 나무 푯말 (마네킹 옆): 기둥 + 판, 판 앞면에 이름 · 등급
-local function signpost(at: Vector3, st: any, grade: string, using: boolean, f: Instance)
-	local WOOD = Color3.fromRGB(120, 82, 52)
-	newPart({ Name = "SignPost", Size = Vector3.new(0.7, 7.5, 0.7), Position = at + Vector3.new(0, 3.75, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
-	local board = newPart({ Name = "SignBoard", Size = Vector3.new(0.4, 3.8, 7.4), CFrame = CFrame.new(at + Vector3.new(0, 7.2, 0)), Color = Color3.fromRGB(150, 104, 66), Material = Enum.Material.Wood, Parent = f })
-	local sg = Instance.new("SurfaceGui")
-	sg.Face = Enum.NormalId.Left -- 서쪽 (마당) 을 본다
-	sg.PixelsPerStud = 60
-	sg.LightInfluence = 0.2
-	sg.Parent = board
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.Size = UDim2.new(1, -16, 0.62, 0)
-	t.Position = UDim2.new(0, 8, 0, 4)
-	t.Font = Enum.Font.GothamBlack
-	t.TextScaled = true
-	t.TextColor3 = Color3.fromRGB(255, 246, 228)
-	t.TextStrokeTransparency = 0.4
-	t.Text = st.name
-	t.Parent = sg
-	local g = Instance.new("TextLabel")
-	g.BackgroundTransparency = 1
-	g.Size = UDim2.new(1, -16, 0.32, 0)
-	g.Position = UDim2.new(0, 8, 0.64, 0)
-	g.Font = Enum.Font.GothamBold
-	g.TextScaled = true
-	g.TextColor3 = using and Color3.fromRGB(255, 220, 120) or (Config.GRADE_COLOR[grade] or Color3.fromRGB(255, 220, 120))
-	g.TextStrokeTransparency = 0.5
-	g.Text = using and (grade .. " · 지금 쓰는 권법") or grade
-	g.Parent = sg
-end
--- 떠 있는 상징 구슬: 권법 빛깔의 빛나는 구슬 · 바깥 빛무리 · 비스듬히 도는 고리 · 빛 가루 · 가운데 한자
-local function emblem(at: Vector3, st: any, f: Instance)
-	local c1, c2 = st.color, st.color2 or st.color
-	local core = newPart({ Name = "EmblemCore", Shape = Enum.PartType.Ball, Size = Vector3.one * 6, Position = at, Color = c1, Material = Enum.Material.Neon, Transparency = 0.1, Parent = f })
-	newPart({ Name = "EmblemHalo", Shape = Enum.PartType.Ball, Size = Vector3.one * 10, Position = at, Color = c2, Material = Enum.Material.Neon, Transparency = 0.82, Parent = f })
-	local ring = newPart({ Name = "EmblemRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 13, 13), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0, math.rad(90)), Color = c2, Material = Enum.Material.Neon, Transparency = 0.45, Parent = f })
-	table.insert(spinners, ring)
-	local e = Instance.new("ParticleEmitter")
-	e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-	e.Color = ColorSequence.new(Color3.new(1, 1, 1), c2)
-	e.Size = NumberSequence.new(0.9, 0)
-	e.Transparency = NumberSequence.new(0, 1)
-	e.Lifetime = NumberRange.new(0.8, 1.4)
-	e.Speed = NumberRange.new(2, 5)
-	e.SpreadAngle = Vector2.new(180, 180)
-	e.LightEmission = 1
-	e.Rate = 16
-	e.Parent = core
-	local l = Instance.new("PointLight")
-	l.Color = c1
-	l.Range = 26
-	l.Brightness = 2
-	l.Parent = core
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(0, 110, 0, 110)
-	bb.MaxDistance = 90
-	bb.LightInfluence = 0
-	bb.Parent = core
-	local h = Instance.new("TextLabel")
-	h.BackgroundTransparency = 1
-	h.Size = UDim2.fromScale(1, 1)
-	h.Font = Enum.Font.Antique
-	h.TextScaled = true
-	h.TextColor3 = Color3.new(1, 1, 1)
-	h.TextStrokeTransparency = 0.3
-	h.TextStrokeColor3 = c1:Lerp(Color3.new(0, 0, 0), 0.5)
-	h.Text = st.icon or ""
-	h.Parent = bb
-end
--- 밟는 발판 (마당 쪽)
-local function pad(at: Vector3, st: any, using: boolean, f: Instance): BasePart
-	newPart({ Name = "PadEdge", Size = Vector3.new(8.8, 0.3, 10.8), Position = at + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
-	local p = newPart({ Name = "Pad", Size = Vector3.new(8, 0.32, 10), Position = at + Vector3.new(0, 0.2, 0), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
-	local sg = Instance.new("SurfaceGui")
-	sg.Face = Enum.NormalId.Top
-	sg.PixelsPerStud = 40
-	sg.LightInfluence = 0
-	sg.Parent = p
-	local t = Instance.new("TextLabel")
-	t.BackgroundTransparency = 1
-	t.Size = UDim2.fromScale(1, 1)
-	t.Rotation = 90
-	t.Font = Enum.Font.GothamBlack
-	t.TextScaled = true
-	t.TextColor3 = Color3.new(1, 1, 1)
-	t.TextTransparency = 0.15
-	t.Text = "밟으면 입장"
-	t.Parent = sg
-	return p
-end
-
-local function build()
-	if not center or not lastState or not lastState.styles then
-		return
-	end
-	local ids = table.clone(lastState.styles)
-	local function rank(id: string): number
-		return table.find(Config.GRADE_ORDER, gradeOf(id)) or 0
-	end
-	table.sort(ids, function(a, b)
-		local ra, rb = rank(a), rank(b)
-		if ra ~= rb then
-			return ra > rb
-		end
-		return a < b
-	end)
-	local pages = math.max(1, math.ceil(#ids / PER))
-	page = math.clamp(page, 1, pages)
-	local key = table.concat(ids, ",") .. "|" .. tostring(lastState.style) .. "|" .. page
-	if key == builtKey then
-		return
-	end
-	builtKey = key
-	clear()
-	local f = folder :: Folder
-	for k = 1, PER do
-		local id = ids[(page - 1) * PER + k]
-		local st = id and Config.STYLE_BY_ID[id]
-		if st then
-			local at = spotAt(k)
-			local using = lastState.style == id
-			-- 받침대: 어두운 둥근 단 + 권법 빛깔의 빛나는 테
-			local base = newPart({ Name = "GalleryBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 9, 9), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = INK, Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
-			newPart({ Name = "GalleryRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 9.6, 9.6), CFrame = CFrame.new(at + Vector3.new(0, 0.82, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
-			emblem(at + Vector3.new(0, 17, 0), st, f)
-			signpost(at + Vector3.new(-4, 0.6, 6.6), st, gradeOf(id), using, f)
-			local padAt = at + Vector3.new(-11, -0.6, 0)
-			pad(padAt, st, using, f)
-			local doll = makeDoll(st)
-			local slot: any = { id = id, at = at, base = base, padAt = padAt, next = os.clock() + 1 + k * 0.4 }
-			do
-				doll.Name = "GalleryDoll"
-				doll:SetAttribute("Style", id)
-				doll.Parent = f
-				-- 받침대 위에 서서 마당 가운데 (서쪽) 를 본다
-				-- 받침대 윗면에 발이 닿게 (뿌리에서 발바닥까지 3 × 배율)
-				local hip = 3 * DOLL_S
-				doll:PivotTo(CFrame.lookAt(at + Vector3.new(0, 0.8 + hip, 0), Vector3.new((center :: Vector3).X, at.Y + 0.8 + hip, at.Z)))
-				if opts.previewGear then
-					local ok, list = pcall(opts.previewGear, doll, id)
-					if ok and type(list) == "table" then
-						for _, inst in ipairs(list) do
-							if typeof(inst) == "Instance" and inst.Parent and not inst:IsDescendantOf(doll) then
-								inst.Parent = doll
-							end
-						end
-					end
-				end
-				-- 게임패스 권법은 꼬리 · 마검을 강화 단계대로
-				local st0 = Config.STYLE_BY_ID[id]
-				if st0 and st0.premium and opts.passPreview then
-					local lv = (lastState.enh and lastState.enh[id]) or 0
-					pcall(opts.passPreview, doll, id, lv)
-				end
-				pcall(Anim.watch, doll)
-				slot.doll = doll
+-- 발판 · 푯말을 내 상태에 맞게 (익힌 것 / 지금 쓰는 것 / 잠긴 것)
+local function paint()
+	for _, u in ipairs(units) do
+		local st = Config.STYLE_BY_ID[u.id]
+		if st and u.pad and u.pad.Parent then
+			local have = owned(u.id)
+			local using = lastState and lastState.style == u.id
+			u.pad.Color = using and GOLD or (have and st.color or LOCKED)
+			u.pad.Transparency = have and 0.3 or 0.05
+			u.pad.Material = have and Enum.Material.Neon or Enum.Material.SmoothPlastic
+			if u.label then
+				u.label.Text = using and "지금 쓰는 권법 · 밟으면 입장" or (have and "밟으면 입장" or "🔒 익히지 않음")
+				u.label.TextColor3 = have and Color3.new(1, 1, 1) or Color3.fromRGB(150, 156, 170)
 			end
-			table.insert(slots, slot)
+			if u.grade then
+				local ups = (lastState and lastState.gradeUp and lastState.gradeUp[u.id]) or 0
+				u.grade.Text = Config.styleGrade(st, ups) .. (have and "" or "  🔒")
+			end
 		end
 	end
-	-- 더 있으면 '다음 ▶' 받침대 (회랑 서쪽 끝)
-	if pages > 1 then
-		local at = (center :: Vector3) + Vector3.new(48, 0.6, -36)
-		local nb = newPart({ Name = "GalleryNext", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 208, 110), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = true, Parent = f })
-		local pp = Instance.new("ProximityPrompt")
-		pp.ActionText = string.format("다음 권법 (%d / %d)", page, pages)
-		pp.ObjectText = "권법 회랑"
-		pp.HoldDuration = 0
-		pp.MaxActivationDistance = 9
-		pp.KeyboardKeyCode = Enum.KeyCode.T
-		pp.Parent = nb
-		pp.Triggered:Connect(function()
-			page = page % pages + 1
-			build()
-		end)
+end
+
+-- 마네킹에 장신구 (한 번만)
+local function dress(u: any)
+	if u.dressed or not u.doll then
+		return
 	end
+	u.dressed = true
+	local doll = u.doll
+	if opts.previewGear then
+		local ok, list = pcall(opts.previewGear, doll, u.id)
+		if ok and type(list) == "table" then
+			for _, inst in ipairs(list) do
+				if typeof(inst) == "Instance" and inst.Parent and not inst:IsDescendantOf(doll) then
+					inst.Parent = doll
+				end
+			end
+		end
+	end
+	local st = Config.STYLE_BY_ID[u.id]
+	if st and st.premium and opts.passPreview then
+		local lv = (lastState and lastState.enh and lastState.enh[u.id]) or 15
+		pcall(opts.passPreview, doll, u.id, lv)
+	end
+end
+
+local function collect(hall: Instance)
+	units = {}
+	spinners = {}
+	for _, u in ipairs(hall:GetChildren()) do
+		local id = u:GetAttribute("Style")
+		if type(id) == "string" then
+			local pad = u:FindFirstChild("Pad") :: BasePart?
+			local sg = pad and pad:FindFirstChild("PadText")
+			local label = sg and sg:FindFirstChild("Label")
+			local board = u:FindFirstChild("SignBoard")
+			local bsg = board and board:FindFirstChildOfClass("SurfaceGui")
+			local grade = bsg and bsg:FindFirstChild("Grade")
+			local doll = u:FindFirstChild("Doll") :: Model?
+			local padAt = pad and pad.Position
+			table.insert(units, { id = id, pad = pad, padAt = padAt, label = label, grade = grade, doll = doll, next = os.clock() + math.random() * 4 })
+			if doll then
+				pcall(Anim.watch, doll)
+			end
+			-- 상징물 가운데 = 발판 뒤 12칸, 위 16.8칸 (StyleHall과 같은 자리)
+			local center = padAt and (padAt + Vector3.new(0, 16.8, 12)) or nil
+			for _, d in ipairs(u:GetDescendants()) do
+				if d:IsA("BasePart") and string.sub(d.Name, 1, 4) == "Spin" and center then
+					table.insert(spinners, { d, d.CFrame, tonumber(d:GetAttribute("SpinRate")) or 0.3, center })
+				end
+			end
+		end
+	end
+	paint()
 end
 
 function Gallery.update(state: any)
 	lastState = state
-	if center then
-		pcall(build)
-	end
+	pcall(paint)
 end
 
 function Gallery.start(o: any)
 	opts = o or {}
 	task.spawn(function()
 		local maps = workspace:WaitForChild("BattleMaps", 60)
-		local bed = maps and maps:WaitForChild("CourtBed", 60)
-		if not bed or not bed:IsA("BasePart") then
+		local hall = maps and maps:WaitForChild("StyleHall", 60)
+		if not hall then
 			return
 		end
-		center = bed.Position - Vector3.new(0, 0.2, 0)
-		local f = Instance.new("Folder")
-		f.Name = "KwonGallery"
-		f.Parent = workspace
-		folder = f
-		player.CharacterAppearanceLoaded:Connect(function()
-			builtKey = ""
-			pcall(build)
-		end)
-		pcall(build)
-		-- 가까이 있으면 차례로 시범 (한 번에 둘까지)
-		-- 고리 돌리기 (화면마다)
-		local RunService = game:GetService("RunService")
-		RunService.RenderStepped:Connect(function(dt)
-			for i, r in ipairs(spinners) do
-				if r.Parent then
-					r.CFrame = r.CFrame * CFrame.Angles(dt * (1 + (i % 3) * 0.3), 0, 0)
+		task.wait(1) -- 서버가 다 넘겨줄 때까지
+		collect(hall)
+		local t0 = os.clock()
+		RunService.RenderStepped:Connect(function()
+			local t = os.clock() - t0
+			for _, s in ipairs(spinners) do
+				local p, base, rate, center = s[1], s[2], s[3], s[4]
+				if p.Parent then
+					if rate == 0 then
+						p.CFrame = CFrame.new(center) * CFrame.Angles(0, t * 0.8, 0) * (CFrame.new(-center) * base)
+					else
+						p.CFrame = CFrame.new(base.Position) * CFrame.Angles(0, t * rate * math.pi * 2, 0) * base.Rotation
+					end
 				end
 			end
 		end)
 		local onPad: { [any]: boolean } = {}
-		local sentAt = 0
+		local sentAt, toldAt = 0, 0
 		while true do
 			task.wait(0.12)
 			local char = player.Character
 			local me = char and char:FindFirstChild("HumanoidRootPart")
 			local inArena = char and char:GetAttribute("InArena") == true
-			-- 발판 밟기: 밖에서 발판 위로 올라선 순간 그 권법으로 입장 (발판 위에서 태어난 것은 치지 않는다)
 			if me and me:IsA("BasePart") and not inArena then
-				for _, s in ipairs(slots) do
-					local pa = s.padAt :: Vector3?
+				local now = os.clock()
+				-- 발판 밟기 (밖에서 올라선 순간만)
+				for _, u in ipairs(units) do
+					local pa = u.padAt :: Vector3?
 					if pa then
 						local d = me.Position - pa
-						local on = math.abs(d.X) < 4.2 and math.abs(d.Z) < 5.2 and d.Y > -1 and d.Y < 6
-						if on and onPad[s] == false and os.clock() - sentAt > 2 and opts.request then
-							sentAt = os.clock()
-							opts.request:FireServer("battleEnter", s.id)
-							pcall(Fx.ring, pa + Vector3.new(0, 0.5, 0), Color3.new(1, 1, 1), 1, 10, 0.4)
+						local on = math.abs(d.X) < 4.2 and math.abs(d.Z) < 4.2 and d.Y > -1 and d.Y < 7
+						if on and onPad[u] == false then
+							if owned(u.id) then
+								if now - sentAt > 2 and opts.request then
+									sentAt = now
+									opts.request:FireServer("battleEnter", u.id)
+									pcall(Fx.ring, pa + Vector3.new(0, 0.6, 0), Color3.new(1, 1, 1), 1, 12, 0.4)
+								end
+							elseif now - toldAt > 2 and opts.toast then
+								toldAt = now
+								local st = Config.STYLE_BY_ID[u.id]
+								pcall(opts.toast, "🔒 " .. (st and st.name or "") .. " · 메인 월드에서 익혀야 고를 수 있어요")
+							end
 						end
-						onPad[s] = on
+						onPad[u] = on
+					end
+				end
+				-- 가까운 마네킹: 장신구 입히고, 차례로 시범 (한 번에 셋까지)
+				local busy = 0
+				for _, u in ipairs(units) do
+					if u.doll and Anim.playing(u.doll) then
+						busy += 1
+					end
+				end
+				for _, u in ipairs(units) do
+					local d = u.doll
+					if d and d.Parent and u.padAt and (u.padAt - me.Position).Magnitude < 60 then
+						dress(u)
+						if busy < 3 and now >= u.next and not Anim.playing(d) then
+							local st = Config.STYLE_BY_ID[u.id]
+							local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
+							local mv = st and Config.move(u.id, picks[math.random(1, #picks)])
+							if mv then
+								pcall(Anim.play, d, mv.pose, mv.dur)
+								pcall(Fx.limbTrails, d, mv.pose, mv.dur, st.color, st.color2)
+								busy += 1
+							end
+							u.next = now + 2.5 + math.random() * 2.5
+						end
 					end
 				end
 			else
 				table.clear(onPad)
-			end
-			if me and me:IsA("BasePart") and not inArena then
-				local busy = 0
-				local now = os.clock()
-				for _, s in ipairs(slots) do
-					if s.doll and s.doll.Parent and Anim.playing(s.doll) then
-						busy += 1
-					end
-				end
-				for _, s in ipairs(slots) do
-					local d = s.doll
-					if d and d.Parent and busy < 2 and now >= s.next and (s.at - me.Position).Magnitude < 45 and not Anim.playing(d) then
-						local st = Config.STYLE_BY_ID[s.id]
-						local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
-						local slot = picks[math.random(1, #picks)]
-						local mv = st and Config.move(s.id, slot)
-						if mv then
-							pcall(Anim.play, d, mv.pose, mv.dur)
-							pcall(Fx.limbTrails, d, mv.pose, mv.dur, st.color, st.color2)
-							if slot == "E" or slot == "R" or slot == "G" then
-								local hrp = d:FindFirstChild("HumanoidRootPart") :: BasePart?
-								if hrp then
-									pcall(Fx.ring, hrp.Position - Vector3.new(0, 2.6, 0), st.color2 or st.color, 1, 9, 0.4)
-								end
-							end
-							busy += 1
-						end
-						s.next = now + 2.2 + math.random() * 1.6
-					end
-				end
 			end
 		end
 	end)
@@ -53667,7 +53967,7 @@ return Gallery
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
@@ -55311,7 +55611,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -55726,7 +56026,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Grand</string>
             <string name="Source"><![CDATA[-- 권왕 3.48판: 모든 권법에 함께 얹는 연출 한 겹 (권법마다의 연출은 그대로 두고 그 위에)
@@ -55949,7 +56249,7 @@ return Grand
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -56417,7 +56717,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Lang</string>
             <string name="Source"><![CDATA[-- 권왕 3.53판: 영어 화면 (내 화면에서만 글자를 바꾼다. 서버 · 다른 사람은 그대로)
@@ -56709,7 +57009,7 @@ return Lang
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">LangEN</string>
             <string name="Source"><![CDATA[-- 권왕 영어 사전 (코드 안의 한국어 글자 → 영어). tools: tools/lang/gen.py 로 만든다
@@ -60847,11 +61147,17 @@ return {
 	[" · 지금 쓰는 권법"] = "· current style",
 	["⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the east Style Gallery to enter · vote for the next map at the stands",
 	["마당 동쪽 · 권법의 발판을 밟으면 입장"] = "East side · step on a style's pad to enter",
+	["지금 쓰는 권법 · 밟으면 입장"] = "Current style · step to enter",
+	["🔒 익히지 않음"] = "🔒 Not learned",
+	[" · 메인 월드에서 익혀야 고를 수 있어요"] = "· learn it in the main world to choose it",
+	["권법 전시장 ↓ 남쪽 문 밖"] = "Style Hall ↓ outside the south gate",
+	["권법마다 발판을 밟으면 그 권법으로 입장"] = "Step on a style's pad to enter with it",
+	["⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the Style Hall outside the south gate to enter · vote for the next map at the stands",
 }
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -62099,7 +62405,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
@@ -62927,7 +63233,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -62993,7 +63299,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Null</string>
             <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
@@ -65616,7 +65922,7 @@ return Null
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">PassArts</string>
             <string name="Source"><![CDATA[-- 권왕 3.43판: 게임패스 권법 둘의 화면 (모습 · 기술 연출 다시)
@@ -66971,7 +67277,7 @@ return PassArts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
@@ -67030,7 +67336,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -67435,7 +67741,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -67776,7 +68082,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -68726,7 +69032,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -69360,7 +69666,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -70647,7 +70953,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -73677,7 +73983,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Sin</string>
             <string name="Source"><![CDATA[-- 권왕 3.27판: 신 삼재권을 얻는 컷씬.
@@ -75171,7 +75477,7 @@ return Sin
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -75779,7 +76085,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="57">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">Speed</string>
             <string name="Source"><![CDATA[-- 권왕 3.22판: 극 광속권의 화면. 빛과 소리 (하늘색 · 흰색 · 금빛 줄)
@@ -76691,7 +76997,7 @@ return Speed
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -77832,7 +78138,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="60">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -78049,7 +78355,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -82951,7 +83257,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -84230,7 +84536,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="63">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -86913,7 +87219,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="63">
+        <Item class="ModuleScript" referent="64">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -88023,7 +88329,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="64">
+  <Item class="Workspace" referent="65">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>
