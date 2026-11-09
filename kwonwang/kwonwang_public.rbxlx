@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.50.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.51.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -29214,28 +29214,44 @@ local function village(out: any)
 	sign(board, Enum.NormalId.Front, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
 	sign(board, Enum.NormalId.Back, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
 
-	-- 강호 안내판: 일곱 사부가 어디 있는지 (양옆에 일곱 권법의 깃발)
-	local boardAt = Vector3.new(0, 0, -110)
-	for i, style in ipairs(Config.Styles) do
-		local sx = i % 2 == 0 and 1 or -1
-		banner(boardAt + Vector3.new(sx * (22 + math.floor((i - 1) / 2) * 5), 0, 0), 14, style.color, f)
-	end
-	for _, x in ipairs({ -1, 1 }) do
-		part({ Name = "BoardPost", Size = Vector3.new(1.4, 16, 1.4), Position = boardAt + Vector3.new(x * 17, 8, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
-	end
-	part({ Name = "BoardRoof", Size = Vector3.new(40, 1, 5), Position = boardAt + Vector3.new(0, 16.5, 0), Color = ROOF, Material = Enum.Material.Slate, Parent = f })
-	local mboard = part({ Name = "MasterBoard", Size = Vector3.new(32, 13, 0.6), Position = boardAt + Vector3.new(0, 9, 0), Color = Color3.fromRGB(35, 25, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	-- 사부의 자리는 알려 주지 않는다. 떠도는 소문만
-	local lines: { { any } } = { { "강호에 떠도는 소문", Color3.fromRGB(255, 215, 120), 0.16 } }
-	for _, style in ipairs(Config.Styles) do
-		local m = Config.MASTERS[style.id]
-		if m then
-			table.insert(lines, { "· " .. m.rumor, Color3.fromRGB(235, 225, 205), 0.11 })
+	-- 3.51판: 장로 옆 소문 게시판을 걷어 내고, 큰길 양옆을 작은 정원으로 (서쪽은 장로 뒤 소나무 뜰, 동쪽은 연못)
+	do
+		local garden = Instance.new("Folder")
+		garden.Name = "ElderGarden"
+		garden.Parent = f
+		local EDGE = Color3.fromRGB(150, 145, 135)
+		local SOIL = Color3.fromRGB(95, 125, 70)
+		for _, sx in ipairs({ -1, 1 }) do
+			local cx = sx * 34
+			-- 낮은 돌 테두리에 둘러싸인 풀밭 (큰길과 장로 자리는 비운다)
+			part({ Name = "GardenBed", Size = Vector3.new(30, 0.5, 22), Position = Vector3.new(cx, 0.25, -120), Color = SOIL, Material = Enum.Material.Grass, Parent = garden })
+			for _, ed in ipairs({ { 0, -131, 30.8, 0.8 }, { sx * -15, -120, 0.8, 22 }, { sx * 15, -120, 0.8, 22 } }) do
+				part({ Name = "GardenEdge", Size = Vector3.new(ed[3], 0.9, ed[4]), Position = Vector3.new(cx + ed[1], 0.45, ed[2]), Color = EDGE, Material = Enum.Material.Granite, Parent = garden })
+			end
+			stoneLantern(Vector3.new(sx * 21, 0.5, -112), garden, true)
 		end
+		-- 서쪽 (장로 뒤): 큰 소나무 둘, 이끼 바위, 디딤돌
+		tree(Vector3.new(-40, 0.5, -124), 1.25, garden)
+		tree(Vector3.new(-27, 0.5, -127), 0.9, garden, true)
+		rock(Vector3.new(-44, 0.5, -113), 3.2, garden)
+		rock(Vector3.new(-33, 0.5, -116), 1.8, garden)
+		for k = 0, 3 do
+			part({ Name = "SteppingStone", Size = Vector3.new(2.6, 0.3, 2.2), CFrame = CFrame.new(-20 - k * 4, 0.6, -110 - k * 2.5) * CFrame.Angles(0, k * 0.4, 0), Color = Color3.fromRGB(170, 165, 155), Material = Enum.Material.Slate, Parent = garden })
+		end
+		-- 동쪽: 연못 (돌 테두리 · 물 · 연잎), 매화 한 그루, 바위
+		local pc = Vector3.new(36, 0, -121)
+		disc("PondRim", pc + Vector3.new(0, 0.7, 0), 8.5, 0.9, STONE, Enum.Material.Granite, garden)
+		local water = disc("PondWater", pc + Vector3.new(0, 1.0, 0), 7.6, 0.4, Color3.fromRGB(70, 150, 190), Enum.Material.Glass, garden, false)
+		water.Transparency = 0.25
+		for k = 0, 4 do
+			local a = k / 5 * math.pi * 2 + 0.4
+			disc("LilyPad", pc + Vector3.new(math.cos(a) * (2.5 + k % 2 * 2.5), 1.25, math.sin(a) * (2.5 + k % 2 * 2.5)), 0.9 + (k % 3) * 0.2, 0.1, Color3.fromRGB(80, 150, 70), Enum.Material.Grass, garden, false)
+		end
+		part({ Name = "LotusFlower", Shape = Enum.PartType.Ball, Size = Vector3.new(0.9, 0.6, 0.9), Position = pc + Vector3.new(math.cos(0.4) * 2.5, 1.5, math.sin(0.4) * 2.5), Color = Color3.fromRGB(255, 170, 200), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = garden })
+		tree(Vector3.new(46, 0.5, -127), 1.0, garden, true)
+		rock(Vector3.new(25, 0.5, -127), 2.6, garden)
+		rock(Vector3.new(47, 0.5, -112), 2, garden)
 	end
-	table.insert(lines, { "찾아낸 사부만 지도에 나온다", Color3.fromRGB(200, 190, 170), 0.1 })
-	sign(mboard, Enum.NormalId.Front, lines)
-	sign(mboard, Enum.NormalId.Back, lines)
 
 	-- 상점 (객잔 앞 좌판)
 	local stall = part({ Name = "Shop", Size = Vector3.new(14, 4, 7), Position = Vector3.new(-75, 2, 25), Color = Color3.fromRGB(130, 85, 50), Material = Enum.Material.Wood, Parent = f })
