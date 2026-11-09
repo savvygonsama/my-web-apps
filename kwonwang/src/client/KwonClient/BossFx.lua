@@ -210,6 +210,44 @@ H.bossBeam = function(d)
 	Fx.ring(a + Vector3.new(0, 0.3, 0), color, 2, w * 2, 0.3)
 end
 
+-- 3.46판 회전 칼날 (orbit): 보스 둘레를 빛의 칼날이 돈다
+H.bossOrbit = function(d)
+	local m = d.m
+	local r0 = rootOf(m)
+	if not r0 or not near(r0.Position, 260) then
+		return
+	end
+	local color = d.color or Color3.fromRGB(255, 60, 40)
+	local blades = {}
+	for _ = 1, d.n or 3 do
+		local b = part(Vector3.new(0.6, 2.2, d.size or 4), color, Enum.Material.Neon, 0.1, nil)
+		local core = part(Vector3.new(0.3, 2.6, (d.size or 4) * 0.6), Color3.new(1, 1, 1), Enum.Material.Neon, 0, nil)
+		table.insert(blades, { b, core })
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		local r = rootOf(m)
+		if t > (d.dur or 3) or not r then
+			conn:Disconnect()
+			for _, bl in ipairs(blades) do
+				fadeOut(bl[1], 0.2)
+				fadeOut(bl[2], 0.2)
+			end
+			return
+		end
+		local c = ground(r.Position) + Vector3.new(0, 1.4, 0)
+		for i, bl in ipairs(blades) do
+			local a = (d.a0 or 0) + (d.speed or 2) * t + (i - 1) / #blades * math.pi * 2
+			local p = c + Vector3.new(math.cos(a), 0, math.sin(a)) * (d.radius or 12)
+			local cf = CFrame.lookAt(p, p + Vector3.new(-math.sin(a), 0, math.cos(a))) * CFrame.Angles(0, 0, t * 12)
+			bl[1].CFrame = cf
+			bl[2].CFrame = cf
+		end
+	end)
+end
+
 function BossFx.handles(data: any): boolean
 	return H[data.kind] ~= nil
 end

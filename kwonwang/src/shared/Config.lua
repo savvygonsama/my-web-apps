@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.45.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.46.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5864,8 +5864,17 @@ do
 			rings = { name = "파문", phase = 2, warn = 0.9, cd = 9, ringWidth = 6, count = 3, k = 1.0, pose = "w_overhead" },
 			safezone = { name = "단 하나의 피난처", phase = 2, warn = 1.1, cd = 14, radius = 32, safe = 3, safeRadius = 7, k = 1.6, pose = "w_overhead" },
 			grid = { name = "격자 폭발", phase = 3, warn = 0.9, cd = 11, cell = 8, size = 3, k = 1.0, pose = "w_overhead" },
+			-- 3.46판 여덟 더
+			orbit = { name = "회전 칼날", phase = 1, warn = 0.9, cd = 10, count = 3, orbit = 10, dur = 3.2, speed = 2.2, blade = 4, k = 0.7, pose = "w_sweep" },
+			lanes = { name = "줄 폭격", phase = 2, warn = 0.9, cd = 11, width = 6, length = 50, count = 7, k = 1.0, pose = "w_overhead" },
+			half = { name = "반쪽 베기", phase = 1, warn = 1.0, cd = 10, radius = 28, k = 1.2, pose = "w_sweep" },
+			shockline = { name = "지면 균열", phase = 1, warn = 0.8, cd = 8, length = 40, width = 5, k = 0.9, pose = "w_overhead" },
+			pull = { name = "흡인", phase = 2, warn = 0.8, cd = 12, range = 28, radius = 9, dur = 1.6, force = 16, k = 1.5, pose = "w_overhead" },
+			shower = { name = "유성우", phase = 1, warn = 0.9, cd = 10, count = 16, spread = 24, radius = 4, k = 0.8, pose = "w_overhead" },
+			fan = { name = "세 번 부채 베기", phase = 1, warn = 0.9, cd = 9, length = 22, angle = 70, k = 1.0, pose = "w_sweep" },
+			crisscross = { name = "분신 교차 돌진", phase = 2, warn = 0.9, cd = 10, count = 3, length = 40, width = 5, k = 1.0, pose = "w_thrust" },
 		}
-		local ORDER = { "cross", "chase", "meteor", "spiral", "blink", "beam", "rings", "safezone", "grid" }
+		local ORDER = { "cross", "orbit", "chase", "lanes", "meteor", "half", "spiral", "shockline", "blink", "pull", "beam", "shower", "rings", "fan", "safezone", "crisscross", "grid" }
 		local ids = {}
 		for id, b in pairs(Config.Bosses) do
 			if b.patterns and #b.patterns > 0 then
@@ -5886,7 +5895,7 @@ do
 			end
 			if ref then
 				local list = table.clone(b.patterns)
-				local cnt = b.late and 3 or 2
+				local cnt = b.late and 4 or 3 -- 3.46판: 둘 → 셋 (후반 셋 → 넷)
 				-- 다른 보스와 조합이 겹치지 않을 때까지 고른다 (원래 패턴 + 새 패턴, 순서 없이)
 				local base = {}
 				for _, pt in ipairs(b.patterns) do
@@ -5896,7 +5905,7 @@ do
 				for attempt = 0, 80 do
 					picks = {}
 					for j = 0, cnt - 1 do
-						local kk = ORDER[((i - 1) * 2 + attempt + j * (4 + attempt // 9)) % #ORDER + 1]
+						local kk = ORDER[((i - 1) * 3 + attempt + j * (5 + attempt // 17)) % #ORDER + 1]
 						if not table.find(picks, kk) then
 							table.insert(picks, kk)
 						end
