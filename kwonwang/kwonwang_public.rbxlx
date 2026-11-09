@@ -9970,6 +9970,8 @@ type State = {
 	savedAt: number?, -- 마지막으로 저장한 때 (os.clock)
 	dirty: boolean,
 	tester: boolean,
+	owner: boolean?, -- 3.56판: 게임 주인 (공개판에서 처음부터 단추)
+	resetArm: number?,
 	reqWindow: number,
 	reqCount: number,
 	training: any?,
