@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.46.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.47.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5562,7 +5562,7 @@ Config.LATE_BOSS_MATCH = 0.75 -- 2.3판: 후반 보스는 훨씬 센 상대에�
 Config.LATE_BOSS_DMG = 1.56 -- 후반 보스 (빙마부터 천상계까지)의 공격력 배율 (1.0판: 0.45 → 0.52). 2.7.1판: 3배 (0.52 → 1.56)
 Config.BOSS_LEASH = 480 -- 3.25판: 340 → 480 (보스의 영역을 넓혔다)
 Config.BOSS_PATTERN = { warn = 1.9, cd = 1.6, area = 1.3, length = 1.2, width = 1.25, hit = 1.15 } -- 3.25.3판: 경고 ×1.4 → ×1.9 · 대기 ×1.3 → ×1.6 · 한 방 ×1.1 → ×1.15
-Config.BOSS_ZONE = { arena = 78, clear = 120 } -- 보스 마당 (바닥에 그려진다) 반지름 · 이 안쪽 +40칸에는 보통 적을 두지 않는다 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
+Config.BOSS_ZONE = { arena = 92, clear = 135 } -- 3.47판: 78 · 120 → 92 · 135 (보스전 마당을 넓혔다). -- 보스 마당 (바닥에 그려진다) 반지름 · 이 안쪽 +40칸에는 보통 적을 두지 않는다 -- 보스가 자기 자리에서 이만큼 끌려 나와야 돌아간다 (보통 적은 150)
 Config.BOSS_CHASE = 200 -- 상대가 이만큼 멀어져야 보스가 쫓기를 그만둔다
 -- 흡혈 한도: 거대한 체력의 보스를 치면 한 대에 다 차던 것을 막는다
 Config.LIFESTEAL_HIT_CAP = 0.015 -- 한 대에 최대 체력의 이만큼까지
@@ -5772,6 +5772,44 @@ Config.ACH_COLOR = {
 Config.BOSS_POWER_RATIO = 7.6 -- 3.25판: 4 → 5.7, 3.25.2판: → 7.6 (체력 ×3.5에 해당: 전투력은 체력의 제곱근에 비례)
 Config.BOSS_HP_POW_MAX = 32 -- 3.41.4판: 42 → 32 (한 대는 넘은 몫의 제곱근만큼만 키운다: 싸움이 약 1/4 짧아지고 보스 전투력은 약 7% 낮아진다). 3.37판: 보스 체력은 전투력의 이만큼까지 (넘으면 체력을 덜고 한 대를 키운다. 전투력은 그대로)
 Config.BOSS_HP_ADJ = { bingma = 0.45, yeomje = 0.6, gyunwang = 0.75, noeje = 0.75, dongguckgun = 0.75, unryongwang = 0.75 } -- 3.41.4판 (아래 전투력 맞춤 뒤에 곱한다)
+Config.BOSS_DODGE_MAX = 0.9 -- 3.47판: 1이면 딱 피할 수 있는 끝 (어렵게: 0.9까지 둔다)
+-- 패턴마다 가장 나쁜 자리에서 가야 할 거리 · 경고 시간에 곱할 몫 · 걸음이 느려지는 몫 (흡인)
+function Config.patternEscape(pt: any): (number, number, number)
+	local k, r = pt.kind, pt.radius or 0
+	if k == "donut" then
+		return ((pt.outer or 20) - (pt.inner or 0)) / 2, 1, 0
+	elseif k == "charge" or k == "cross" or k == "lanes" or k == "shockline" or k == "crisscross" then
+		return (pt.width or 8) / 2 + 1, 1, 0
+	elseif k == "rings" then
+		return (pt.ringWidth or 6) / 2 + 1, 1, 0
+	elseif k == "chase" then
+		return r, 0.75, 0
+	elseif k == "safezone" then
+		local R = pt.radius or 40
+		local nSafe = math.max(1, (pt.safe or 3) - 2)
+		local sr = math.max(5, (pt.safeRadius or 8) - 2)
+		return (nSafe == 1 and R * 1.6 or R) - sr, 1.4, 0
+	elseif k == "beam" then
+		return 12, 1, 0
+	elseif k == "meteor" then
+		return r, 1.7, 0
+	elseif k == "grid" then
+		return (pt.cell or 10) * 0.55, 1, 0
+	elseif k == "blink" then
+		return r, 0.7, 0
+	elseif k == "orbit" then
+		return 3.5, 1, 0
+	elseif k == "half" then
+		return r, 1, 0
+	elseif k == "pull" then
+		return r, 1 + (pt.dur or 1.6) / math.max(0.3, pt.warn or 1), 10
+	elseif k == "shower" then
+		return r * 1.2, 1, 0
+	elseif k == "fan" then
+		return 10, 0.7, 0
+	end
+	return r, 1, 0 -- quake · leap · rain · spiral
+end
 Config.BOSS_COIN_MOBS = 30 -- 3.44판: 보스 한 마리 은자 = 그 땅 졸병 서른 마리 몫
 Config.BOSS_HP_FIX_CAP = 2.5 -- 한 번에 고치는 몫의 한도 (한 대가 너무 갑자기 세지지 않게)
 Config.BOSS_HIT_RATIO = 2 --보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
@@ -5870,7 +5908,7 @@ do
 			half = { name = "반쪽 베기", phase = 1, warn = 1.0, cd = 10, radius = 28, k = 1.2, pose = "w_sweep" },
 			shockline = { name = "지면 균열", phase = 1, warn = 0.8, cd = 8, length = 40, width = 5, k = 0.9, pose = "w_overhead" },
 			pull = { name = "흡인", phase = 2, warn = 0.8, cd = 12, range = 28, radius = 9, dur = 1.6, force = 16, k = 1.5, pose = "w_overhead" },
-			shower = { name = "유성우", phase = 1, warn = 0.9, cd = 10, count = 16, spread = 24, radius = 4, k = 0.8, pose = "w_overhead" },
+			shower = { name = "유성우", phase = 1, warn = 0.9, cd = 10, count = 13, spread = 34, radius = 4, k = 0.8, pose = "w_overhead" }, -- 3.47판: 3단계에 바닥을 다 덮어 (빈자리 없음) 넓게 · 적게
 			fan = { name = "세 번 부채 베기", phase = 1, warn = 0.9, cd = 9, length = 22, angle = 70, k = 1.0, pose = "w_sweep" },
 			crisscross = { name = "분신 교차 돌진", phase = 2, warn = 0.9, cd = 10, count = 3, length = 40, width = 5, k = 1.0, pose = "w_thrust" },
 		}
@@ -5966,6 +6004,27 @@ do
 						pt.hit = table.clone(pt.hit)
 						pt.hit.dmg = (pt.hit.dmg or 0) * K.hit
 						pt.hit.posture = (pt.hit.posture or 0) * K.hit
+					end
+				end
+			end
+		end
+	end
+	-- 3.47판 피할 수 있나 보장: 3단계 (가장 빠름) 에 가장 나쁜 자리에서 시작해도, 경고 시간 안에 걸음 + 대시 한 번으로 갈 수 있는 거리의
+	-- BOSS_DODGE_MAX 이하만 가면 되게. 넘으면 크기는 그대로 두고 경고 시간만 늘린다 (어렵게 두되, 못 피하는 것만 없앤다)
+	do
+		local fixed: { [any]: boolean } = {}
+		local walk, dash = Config.WALK_SPEED, Config.DASH_SPEED * Config.DASH_TIME
+		for _, b in pairs(Config.Bosses) do
+			for _, pt in ipairs(b.patterns or {}) do
+				if not fixed[pt] and pt.kind ~= "summon" then
+					fixed[pt] = true
+					local d, tf, slow = Config.patternEscape(pt)
+					local function ratio(w: number): number
+						return d / ((walk - slow) * w / 1.3 * tf + dash)
+					end
+					if ratio(pt.warn or 1) > Config.BOSS_DODGE_MAX then
+						local wNeed = ((d / Config.BOSS_DODGE_MAX) - dash) / ((walk - slow) * tf) * 1.3
+						pt.warn = math.max(pt.warn or 1, wNeed)
 					end
 				end
 			end

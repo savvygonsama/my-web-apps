@@ -1210,7 +1210,7 @@ local function bossHit(e: Enemy, victims: { any }, h: any, name: string)
 end
 
 local function telegraph(at: Vector3, radius: number, time: number, color: Color3?)
-	Push:FireAllClients("skillfx", { kind = "telegraph", at = at, radius = radius, time = time, color = color or BOSS_RED })
+	Push:FireAllClients("skillfx", { kind = "bossTele", at = at, radius = radius, time = time, color = color or BOSS_RED })
 end
 -- 3.45판: 한 줄 (선분) 위의 사람
 local function playersOnSeg(f: any, a: Vector3, b: Vector3, width: number): { any }
@@ -1289,7 +1289,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 					local d2 = Vector3.new(e.target.root.Position.X - start.X, 0, e.target.root.Position.Z - start.Z)
 					dir = d2.Magnitude > 0.1 and d2.Unit or dir
 				end
-				Push:FireAllClients("skillfx", { kind = "lineTele", from = start, to = start + dir * len, width = pat.width or 8, time = warn, color = BOSS_RED })
+				Push:FireAllClients("skillfx", { kind = "bossLineTele", from = start, to = start + dir * len, width = pat.width or 8, time = warn, color = BOSS_RED })
 				later(warn, function()
 					local p0 = f.root.Position
 					f.root.CFrame = CFrame.lookAt(p0, p0 + dir)
@@ -1327,7 +1327,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		end
 	elseif kind == "donut" then
 		local at = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "donut", at = at, inner = pat.inner, outer = pat.outer, time = warn, color = BOSS_RED })
+		Push:FireAllClients("skillfx", { kind = "bossDonut", at = at, inner = pat.inner, outer = pat.outer, time = warn, color = BOSS_RED })
 		later(warn, function()
 			Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = pat.outer, color = BOSS_RED })
 			Push:FireAllClients("skillfx", { kind = "bossImpact", at = at, radius = pat.outer, pkind = "quake", color = pat.color or BOSS_RED })
@@ -1348,7 +1348,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 				for k = 0, arms - 1 do
 					local d = flatDir(off + k / arms * math.pi * 2)
 					table.insert(segs, base + d * L)
-					Push:FireAllClients("skillfx", { kind = "lineTele", from = base, to = base + d * L, width = W, time = warn, color = pat.color or BOSS_RED })
+					Push:FireAllClients("skillfx", { kind = "bossLineTele", from = base, to = base + d * L, width = W, time = warn, color = pat.color or BOSS_RED })
 				end
 				later(warn, function()
 					local hitSet = {}
@@ -1391,7 +1391,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		for k = 0, n - 1 do
 			local r0 = 6 + k * (w + 6)
 			later(k * 0.45, function()
-				Push:FireAllClients("skillfx", { kind = "donut", at = at, inner = r0, outer = r0 + w, time = warn, color = pat.color or BOSS_RED })
+				Push:FireAllClients("skillfx", { kind = "bossDonut", at = at, inner = r0, outer = r0 + w, time = warn, color = pat.color or BOSS_RED })
 				later(warn, function()
 					Push:FireAllClients("skillfx", { kind = "wave", at = at, radius = r0 + w, color = pat.color or BOSS_RED })
 					bossHit(e, playersNear(f, at, r0, r0 + w), h, pat.name)
@@ -1454,7 +1454,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		local sweep = math.rad(pat.sweep or 150) * (math.random() < 0.5 and 1 or -1)
 		local steps = pat.steps or 9
 		a0 -= sweep / 2
-		Push:FireAllClients("skillfx", { kind = "lineTele", from = base, to = base + flatDir(a0) * L, width = W, time = warn, color = pat.color or BOSS_RED })
+		Push:FireAllClients("skillfx", { kind = "bossLineTele", from = base, to = base + flatDir(a0) * L, width = W, time = warn, color = pat.color or BOSS_RED })
 		for k = 0, steps do
 			later(warn + k * 0.12, function()
 				local d = flatDir(a0 + sweep * k / steps)
@@ -1524,7 +1524,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		local spd = (pat.speed or 2.2) * (math.random() < 0.5 and 1 or -1)
 		local a0 = math.random() * math.pi * 2
 		local at0 = f.root.Position
-		Push:FireAllClients("skillfx", { kind = "donut", at = at0, inner = R - 3, outer = R + 3, time = warn, color = pat.color or BOSS_RED })
+		Push:FireAllClients("skillfx", { kind = "bossDonut", at = at0, inner = R - 3, outer = R + 3, time = warn, color = pat.color or BOSS_RED })
 		later(warn, function()
 			Push:FireAllClients("skillfx", { kind = "bossOrbit", m = f.model, radius = R, n = n, speed = spd, dur = dur, a0 = a0, size = pat.blade or 4, color = pat.color or BOSS_RED })
 			local hitAt: { [any]: number } = {}
@@ -1559,7 +1559,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 					if (k + wv) % 2 == 0 then
 						local mid = c + fwd * ((k - (n - 1) / 2) * W)
 						local a, b = mid - side * L / 2, mid + side * L / 2
-						Push:FireAllClients("skillfx", { kind = "lineTele", from = a, to = b, width = W, time = warn, color = pat.color or BOSS_RED })
+						Push:FireAllClients("skillfx", { kind = "bossLineTele", from = a, to = b, width = W, time = warn, color = pat.color or BOSS_RED })
 						later(warn, function()
 							Push:FireAllClients("skillfx", { kind = "bossBeam", from = a, to = b, width = W, color = pat.color or BOSS_RED })
 							for _, o in ipairs(playersOnSeg(f, a, b, W)) do
@@ -1586,7 +1586,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 				local sd = k == 0 and side or -side
 				local cc = f.root.Position
 				local a, b = cc + sd * 1.5, cc + sd * R
-				Push:FireAllClients("skillfx", { kind = "lineTele", from = a, to = b, width = R * 2, time = warn, color = pat.color or BOSS_RED })
+				Push:FireAllClients("skillfx", { kind = "bossLineTele", from = a, to = b, width = R * 2, time = warn, color = pat.color or BOSS_RED })
 				later(warn, function()
 					Push:FireAllClients("skillfx", { kind = "bossImpact", at = cc + sd * R * 0.5, radius = R * 0.6, pkind = "quake", color = pat.color or BOSS_RED })
 					bossHit(e, playersOnSeg(f, a, b, R * 2), h, pat.name)
@@ -1603,7 +1603,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		for ln = 0, lines - 1 do
 			local a = a0 + (ln - (lines - 1) / 2) * math.rad(28)
 			local dir = flatDir(a)
-			Push:FireAllClients("skillfx", { kind = "lineTele", from = c, to = c + dir * L, width = pat.width or 6, time = warn, color = pat.color or BOSS_RED })
+			Push:FireAllClients("skillfx", { kind = "bossLineTele", from = c, to = c + dir * L, width = pat.width or 6, time = warn, color = pat.color or BOSS_RED })
 			for k = 1, math.floor(L / step) do
 				later(warn + k * 0.05, function()
 					local at = c + dir * (k * step)
@@ -1617,7 +1617,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 		local c = f.root.Position
 		local R, inner = pat.range or 34, pat.radius or 11
 		telegraph(c, inner, warn + (pat.dur or 1.6), pat.color)
-		Push:FireAllClients("skillfx", { kind = "donut", at = c, inner = inner, outer = R, time = warn, color = Color3.fromRGB(150, 120, 255) })
+		Push:FireAllClients("skillfx", { kind = "bossDonut", at = c, inner = inner, outer = R, time = warn, color = Color3.fromRGB(150, 120, 255) })
 		for k = 0, math.floor((pat.dur or 1.6) / 0.2) do
 			later(warn + k * 0.2, function()
 				for _, o in ipairs(playersNear(f, f.root.Position, inner * 0.6, R)) do
@@ -1638,7 +1638,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 	elseif kind == "shower" then
 		-- 유성우: 보스 둘레 넓게 작은 원이 비처럼 흩뿌려진다 (빈자리를 찾아라)
 		local c = f.root.Position
-		local n = (pat.count or 16) + (phase - 1) * 5
+		local n = (pat.count or 13) + (phase - 1) * 3
 		local R = pat.spread or 30
 		for i = 1, n do
 			local at = c + flatDir(math.random() * math.pi * 2) * (math.sqrt(math.random()) * R)
@@ -1661,7 +1661,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 				local ac = math.atan2(d0.Z, d0.X) + sgn * math.rad(ang * 0.75)
 				for r = -2, 2 do
 					local d = flatDir(ac + math.rad(ang / 2) * r / 2)
-					Push:FireAllClients("skillfx", { kind = "lineTele", from = c, to = c + d * L, width = 3.5, time = warn * 0.7, color = pat.color or BOSS_RED })
+					Push:FireAllClients("skillfx", { kind = "bossLineTele", from = c, to = c + d * L, width = 3.5, time = warn * 0.7, color = pat.color or BOSS_RED })
 				end
 				later(warn * 0.7, function()
 					local cc = f.root.Position
@@ -1691,7 +1691,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 				local mid = tgt.root.Position
 				local d = flatDir(a0 + k * math.pi / n + (math.random() - 0.5) * 0.3)
 				local a, b = mid - d * L / 2, mid + d * L / 2
-				Push:FireAllClients("skillfx", { kind = "lineTele", from = a, to = b, width = W, time = warn, color = pat.color or BOSS_RED })
+				Push:FireAllClients("skillfx", { kind = "bossLineTele", from = a, to = b, width = W, time = warn, color = pat.color or BOSS_RED })
 				later(warn, function()
 					Push:FireAllClients("skillfx", { kind = "bossDash", from = a, to = b, width = W, color = pat.color or BOSS_RED })
 					bossHit(e, playersOnSeg(f, a, b, W), h, pat.name)

@@ -69,6 +69,7 @@ local function shakeBy(at: Vector3, power: number)
 end
 
 local H: { [string]: (any) -> () } = {}
+local WHITE = Color3.new(1, 1, 1)
 
 -- 패턴이 시작될 때: 보스 둘레로 큰 고리가 모여들고, 빛기둥이 솟아 기를 모은다
 function H.bossStart(d: any)
@@ -143,6 +144,21 @@ function H.bossImpact(d: any)
 	end
 	Fx.debris(at, math.floor(10 + R * 0.5), R * 0.8)
 	Fx.burst("spark", at, color, 16, 2.2)
+	-- 3.47판: 그을린 땅 (천천히 식는다) · 하늘로 튀는 불티 고리
+	local scorch = part(Vector3.new(0.2, R * 1.7, R * 1.7), Color3.fromRGB(30, 18, 16), Enum.Material.Slate, 0.25, "cyl")
+	scorch.CFrame = CFrame.new(g + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	local glow = part(Vector3.new(0.22, R * 1.3, R * 1.3), color, Enum.Material.Neon, 0.35, "cyl")
+	glow.CFrame = scorch.CFrame * CFrame.new(0.02, 0, 0)
+	task.delay(0.4, function()
+		fadeOut(glow, 1.4)
+		fadeOut(scorch, 2.2)
+	end)
+	for k = 1, 10 do
+		local a = k / 10 * math.pi * 2
+		local ember = part(Vector3.new(0.6, 0.6, 0.6), color:Lerp(WHITE, 0.3), Enum.Material.Neon, 0, "ball")
+		ember.Position = g + Vector3.new(math.cos(a) * R * 0.3, 1, math.sin(a) * R * 0.3)
+		fadeOut(ember, 0.7, { Position = ember.Position + Vector3.new(math.cos(a) * R * 0.5, 10 + math.random() * 8, math.sin(a) * R * 0.5), Size = Vector3.new(0.15, 0.15, 0.15) })
+	end
 	Fx.flash(at + Vector3.new(0, 4, 0), color, 55, 2.4, 0.4)
 	Fx.breakSound("boom", 1, 0.6, at)
 	shakeBy(at, 0.7 + R / 35)
@@ -175,6 +191,145 @@ function H.bossDash(d: any)
 	fadeOut(streak, 0.45)
 	Fx.breakSound("whoosh", 1, 0.5, a)
 	shakeBy(a, 0.9)
+end
+
+------------------------------------------------------------------------
+-- 3.47판 보스 전용 경고 표시: 테두리 (빛 조각을 이어 또렷한 고리) · 가운데서 차오르는 바닥 · 도는 문양 · 터지기 직전 하얗게 번쩍
+------------------------------------------------------------------------
+local function flatDisc(at: Vector3, r: number, color: Color3, alpha: number, lift: number): BasePart
+	local d = part(Vector3.new(0.2, r * 2, r * 2), color, Enum.Material.Neon, alpha, "cyl")
+	d.CFrame = CFrame.new(at + Vector3.new(0, lift, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	return d
+end
+local function rimRing(g: Vector3, r: number, color: Color3, lift: number): { BasePart }
+	local n = math.clamp(math.floor(r * 1.4), 14, 48)
+	local out = {}
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2
+		local p = g + Vector3.new(math.cos(a) * r, lift, math.sin(a) * r)
+		local seg = part(Vector3.new(2 * math.pi * r / n + 0.15, 0.25, math.clamp(r * 0.06, 0.35, 1.2)), color, Enum.Material.Neon, 0.15, nil)
+		seg.CFrame = CFrame.lookAt(p, Vector3.new(g.X, p.Y, g.Z))
+		table.insert(out, seg)
+	end
+	return out
+end
+local function finish(list: { BasePart }, time: number)
+	task.delay(time, function()
+		for _, p in ipairs(list) do
+			if p.Parent then
+				p.Color = WHITE
+				fadeOut(p, 0.18)
+			end
+		end
+	end)
+end
+H.bossTele = function(d)
+	local at, r, time = d.at, math.max(1, d.radius or 6), math.max(0.15, d.time or 1)
+	if not near(at, 320) then
+		return
+	end
+	local color: Color3 = d.color or Color3.fromRGB(255, 60, 40)
+	local g = ground(at)
+	local all: { BasePart } = {}
+	local base = flatDisc(g, r, color, 0.86, 0.12)
+	table.insert(all, base)
+	for _, sgm in ipairs(rimRing(g, r, color, 0.2)) do
+		table.insert(all, sgm)
+	end
+	local fill = flatDisc(g, 0.4, color, 0.55, 0.16)
+	tween(fill, time, { Size = Vector3.new(0.2, r * 2, r * 2) }, Enum.EasingStyle.Linear)
+	table.insert(all, fill)
+	-- 도는 문양 (큰 원만): 안쪽 고리 위로 마름모 여섯이 천천히 돈다
+	if r >= 7 then
+		local tiles = {}
+		for k = 1, 6 do
+			local t = part(Vector3.new(r * 0.12, 0.22, r * 0.12), color:Lerp(WHITE, 0.35), Enum.Material.Neon, 0.25, nil)
+			table.insert(tiles, t)
+			table.insert(all, t)
+		end
+		local t0 = os.clock()
+		local conn
+		conn = RunService.Heartbeat:Connect(function()
+			local t = os.clock() - t0
+			if t > time or not tiles[1].Parent then
+				conn:Disconnect()
+				return
+			end
+			for k, tl in ipairs(tiles) do
+				local a = k / 6 * math.pi * 2 + t * 1.6
+				tl.CFrame = CFrame.new(g + Vector3.new(math.cos(a) * r * 0.72, 0.24, math.sin(a) * r * 0.72)) * CFrame.Angles(0, -a + math.rad(45), 0)
+			end
+		end)
+	end
+	-- 큰 원: 한가운데 희미한 경고 빛기둥
+	if r >= 14 then
+		local col = part(Vector3.new(30, r * 0.25, r * 0.25), color, Enum.Material.Neon, 0.88, "cyl")
+		col.CFrame = CFrame.new(g + Vector3.new(0, 15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		tween(col, time, { Transparency = 0.7 })
+		table.insert(all, col)
+	end
+	finish(all, time)
+end
+H.bossLineTele = function(d)
+	local from, to, w, time = d.from, d.to, d.width or 8, math.max(0.15, d.time or 1)
+	if not near(from, 320) then
+		return
+	end
+	local color: Color3 = d.color or Color3.fromRGB(255, 60, 40)
+	local a, b = ground(from), ground(to)
+	local len = (b - a).Magnitude
+	if len < 0.5 then
+		return
+	end
+	local cf = CFrame.lookAt((a + b) / 2 + Vector3.new(0, 0.15, 0), b + Vector3.new(0, 0.15, 0))
+	local all: { BasePart } = {}
+	local base = part(Vector3.new(w, 0.2, len), color, Enum.Material.Neon, 0.86, nil)
+	base.CFrame = cf
+	table.insert(all, base)
+	for sx = -1, 1, 2 do
+		local edge = part(Vector3.new(math.clamp(w * 0.08, 0.3, 1), 0.25, len), color, Enum.Material.Neon, 0.1, nil)
+		edge.CFrame = cf * CFrame.new(sx * w / 2, 0.05, 0)
+		table.insert(all, edge)
+	end
+	local fill = part(Vector3.new(w, 0.22, 0.3), color, Enum.Material.Neon, 0.55, nil)
+	fill.CFrame = cf * CFrame.new(0, 0.03, len / 2)
+	tween(fill, time, { Size = Vector3.new(w, 0.22, len), CFrame = cf * CFrame.new(0, 0.03, 0) }, Enum.EasingStyle.Linear)
+	table.insert(all, fill)
+	-- 쏠리는 화살표 (갈 쪽으로 흐른다)
+	local n = math.clamp(math.floor(len / 10), 1, 6)
+	for k = 0, n - 1 do
+		local chev = part(Vector3.new(w * 0.5, 0.24, w * 0.18), color:Lerp(WHITE, 0.4), Enum.Material.Neon, 0.35, nil)
+		local z0 = len / 2 - (k / n) * len
+		chev.CFrame = cf * CFrame.new(0, 0.06, z0)
+		tween(chev, time, { CFrame = cf * CFrame.new(0, 0.06, z0 - len / n) }, Enum.EasingStyle.Linear)
+		table.insert(all, chev)
+	end
+	finish(all, time)
+end
+H.bossDonut = function(d)
+	local at, r0, r1, time = d.at, d.inner or 6, d.outer or 20, math.max(0.15, d.time or 1)
+	if not near(at, 320) then
+		return
+	end
+	local color: Color3 = d.color or Color3.fromRGB(255, 60, 40)
+	local g = ground(at)
+	local all: { BasePart } = {}
+	table.insert(all, flatDisc(g, r1, color, 0.8, 0.12))
+	local safe = flatDisc(g, r0, Color3.fromRGB(110, 255, 150), 0.6, 0.18)
+	table.insert(all, safe)
+	for _, sgm in ipairs(rimRing(g, r1, color, 0.2)) do
+		table.insert(all, sgm)
+	end
+	for _, sgm in ipairs(rimRing(g, r0, Color3.fromRGB(150, 255, 180), 0.22)) do
+		table.insert(all, sgm)
+	end
+	local fill = flatDisc(g, r1, color, 0.95, 0.15)
+	tween(fill, time, { Transparency = 0.6 }, Enum.EasingStyle.Linear)
+	table.insert(all, fill)
+	if r0 >= 5 then
+		Fx.text(g + Vector3.new(0, 4, 0), "안으로!", Color3.fromRGB(150, 255, 170), 28, time)
+	end
+	finish(all, time)
 end
 
 -- 3.45판 피난처 (safezone): 초록 원이 숨 쉬듯 빛나고 '여기로!'

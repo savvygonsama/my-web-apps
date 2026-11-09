@@ -7109,12 +7109,28 @@ local function bossArenas(_out: any)
 			local p = c + Vector3.new(math.cos(a) * R, 0.2, math.sin(a) * R)
 			part({ Name = "BossRim", Size = Vector3.new(2 * math.pi * R / n + 0.4, 0.7, 1.6), CFrame = CFrame.lookAt(p, Vector3.new(c.X, p.Y, c.Z)), Color = Color3.fromRGB(120, 30, 30), Material = Enum.Material.Basalt, CanCollide = false, Parent = f })
 		end
-		for k = 0, 3 do
-			local a = k / 4 * math.pi * 2 + math.pi / 4
-			local p = c + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
-			part({ Name = "BossPillar", Size = Vector3.new(3.4, 15, 3.4), Position = p + Vector3.new(0, 7.5, 0), Color = Color3.fromRGB(58, 48, 54), Material = Enum.Material.Granite, Parent = f })
-			local flame = part({ Name = "BossFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3.4, 4.4, 3.4), Position = p + Vector3.new(0, 17, 0), Color = Color3.fromRGB(255, 90, 50), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
-			light(flame, Color3.fromRGB(255, 110, 60), 28, 1.1)
+		-- 3.47판 보스전 마당: 기둥 넷 → 여덟 (높고 굵게, 받침 · 머리돌 · 불), 안쪽 문양 고리 한 겹 더, 테두리 안쪽에 낮게 깔린 붉은 빛
+		local rune2 = part({ Name = "BossRune2", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, R * 1.75, R * 1.75), CFrame = CFrame.new(c + Vector3.new(0, 0.04, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(140, 30, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+		rune2.Transparency = 0.9
+		for k = 0, 11 do
+			local a = k / 12 * math.pi * 2
+			local p = c + Vector3.new(math.cos(a) * R * 0.55, 0.12, math.sin(a) * R * 0.55)
+			local tile = part({ Name = "BossGlyph", Size = Vector3.new(2.2, 0.2, 2.2), CFrame = CFrame.new(p) * CFrame.Angles(0, -a + math.rad(45), 0), Color = Color3.fromRGB(220, 60, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			tile.Transparency = 0.55
+		end
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2 + math.pi / 8
+			local p = c + Vector3.new(math.cos(a) * (R + 3), 0, math.sin(a) * (R + 3))
+			part({ Name = "BossPillarBase", Size = Vector3.new(6, 1.6, 6), Position = p + Vector3.new(0, 0.8, 0), Color = Color3.fromRGB(44, 36, 42), Material = Enum.Material.Basalt, Parent = f })
+			part({ Name = "BossPillar", Size = Vector3.new(3.8, 20, 3.8), Position = p + Vector3.new(0, 11.6, 0), Color = Color3.fromRGB(58, 48, 54), Material = Enum.Material.Granite, Parent = f })
+			part({ Name = "BossPillarCap", Size = Vector3.new(5.4, 1.4, 5.4), Position = p + Vector3.new(0, 22.3, 0), Color = Color3.fromRGB(44, 36, 42), Material = Enum.Material.Basalt, Parent = f })
+			local flame = part({ Name = "BossFlame", Shape = Enum.PartType.Ball, Size = Vector3.new(3.6, 4.8, 3.6), Position = p + Vector3.new(0, 25, 0), Color = Color3.fromRGB(255, 90, 50), Material = Enum.Material.Neon, Transparency = 0.25, CanCollide = false, Parent = f })
+			light(flame, Color3.fromRGB(255, 110, 60), 34, 1.2)
+			-- 기둥 사이 바닥에 깔린 붉은 빛줄기 (마당의 경계)
+			local a2 = a + math.pi / 8
+			local q = c + Vector3.new(math.cos(a2) * (R - 1.5), 0.15, math.sin(a2) * (R - 1.5))
+			local edge = part({ Name = "BossEdgeGlow", Size = Vector3.new(2 * math.pi * R / 8 * 0.9, 0.2, 1.2), CFrame = CFrame.lookAt(q, Vector3.new(c.X, q.Y, c.Z)), Color = Color3.fromRGB(255, 70, 50), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+			edge.Transparency = 0.5
 		end
 	end
 end
