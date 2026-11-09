@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.57.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.58.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -14652,7 +14652,7 @@ local function toggleTestRoom(player: Player)
 		local back = sst.roomBack or CFrame.new(Config.SPAWN)
 		sst.roomBack = nil
 		char:PivotTo(back)
-		toast(player, "🏯 마을로 돌아왔어요")
+		toast(player, "🏯 들어왔던 문으로 돌아왔어요")
 	else
 		if f.combatUntil > os.clock() then
 			toast(player, "싸우는 중에는 갈 수 없어요")
@@ -15679,6 +15679,15 @@ if W.battle then
 			end
 		end)
 	end)
+end
+-- 3.58판 마을 · 천궁의 권법 시험장 문
+for _, key in ipairs({ "testRoomGateLand", "testRoomGateSky" }) do
+	local gate = (W :: any)[key]
+	if gate then
+		gate.Triggered:Connect(function(player: Player)
+			toggleTestRoom(player)
+		end)
+	end
 end
 -- 3.9판 권법 시험장의 돌아가는 문
 if W.testExit then
@@ -33420,6 +33429,9 @@ local function skyWorld(out: any)
 	-- 땅 마을의 천상 문
 	local vf = folder:FindFirstChild("Village") or f
 	out.skyUp = prompt(portalGate(SKY.portal, math.rad(45), Color3.fromRGB(150, 220, 255), vf, "☁ 천상 문"), "천상계로 오르기", "천상 문", "SkyUp")
+	-- 3.58판: 권법 시험장으로 가는 문 (메뉴 바로가기 대신). 마을에 하나 (천상 문 맞은편), 천궁에 하나
+	local TRC = Color3.fromRGB(255, 150, 90)
+	out.testRoomGateLand = prompt(portalGate(Vector3.new(-SKY.portal.X, 0, SKY.portal.Z), math.rad(-45), TRC, vf, "🎯 권법 시험장"), "시험장으로", "권법 시험장 문", "TestRoomGate")
 	local CLOUD = Color3.fromRGB(250, 250, 255)
 	-- 2.9판: 섬마다 다른 몸. 테두리·밑동·매달린 것·둘레 구름·떠도는 작은 섬을 섬마다 따로 짓는다
 	-- (예전엔 모든 섬이 같은 금 테두리 원판이라 그 금빛이 섬 바닥 전체를 덮었다)
@@ -33887,6 +33899,12 @@ local function skyWorld(out: any)
 	part({ Name = "PavilionRoof2", Size = Vector3.new(16, 1.2, 16), Position = pav + Vector3.new(0, 15, 0), Color = Color3.fromRGB(80, 125, 190), Material = Enum.Material.Slate, Parent = f })
 	-- 남서: 땅으로 내려가는 문
 	out.skyDown = prompt(portalGate(town + Vector3.new(-100, 0, 100), math.rad(45), Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	-- 3.58판: 천궁의 권법 시험장 문 (서쪽 큰길 옆)
+	do
+		local at = town + Vector3.new(-125, 0, 58)
+		local yaw = math.atan2(at.X - town.X, at.Z - town.Z)
+		out.testRoomGateSky = prompt(portalGate(at, yaw, Color3.fromRGB(255, 150, 90), f, "🎯 권법 시험장"), "시험장으로", "권법 시험장 문", "TestRoomGateSky")
+	end
 	-- 1.7판: 광장 둘레의 세 문 (천층탑 · 구름 미궁 · 천공 투기장). 받침은 광장 쪽에
 	local function plazaGate(off: Vector3, color: Color3, label: string, action: string, title: string, name: string): ProximityPrompt
 		local yaw = math.atan2(off.X, off.Z)
@@ -59872,6 +59890,10 @@ return {
 	["손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다"] = "Throw both demon swords. Spinning flat above the ground, they fly in crossing arcs cutting enemies they pass, then clash in a cross ahead and explode",
 	["마왕참"] = "Demon King's Cleave",
 	["1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다"] = "For 1s, gather black flame in the sky behind you to forge a house-sized demon sword, then bring it crashing down ahead. The ground splits in a line and black fire erupts all the way to the end",
+	["시험장으로"] = "To the Testing Ground",
+	["권법 시험장 문"] = "Testing Ground Gate",
+	["🏯 들어왔던 문으로 돌아왔어요"] = "🏯 Returned to the gate you came from",
+	["• 청운 마을 (천상 문 맞은편) 이나 천궁 (서쪽 큰길 옆) 의 🎯 권법 시험장 문으로 간다. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문으로 들어왔던 문 앞에 돌아온다"] = "• Go through the 🎯 Style Testing Ground gate in Cheongun Village (across from the Heaven Gate) or the Sky Palace (beside the west road). Five small dummies and three big dummies stand on a big stone yard floating in the sky. DPS and biggest hit show above each dummy. Players don't fight here. The red gate to the south returns you to the gate you came from",
 }
 ]]></string>
           </Properties>
@@ -79568,7 +79590,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다")
 		add("")
 		add("<b>🎯 권법 시험장</b>")
-		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
+		add("• 청운 마을 (천상 문 맞은편) 이나 천궁 (서쪽 큰길 옆) 의 🎯 권법 시험장 문으로 간다. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문으로 들어왔던 문 앞에 돌아온다")
 		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
 		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
 		add("")
@@ -82072,7 +82094,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then

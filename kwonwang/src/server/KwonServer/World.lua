@@ -4920,6 +4920,9 @@ local function skyWorld(out: any)
 	-- 땅 마을의 천상 문
 	local vf = folder:FindFirstChild("Village") or f
 	out.skyUp = prompt(portalGate(SKY.portal, math.rad(45), Color3.fromRGB(150, 220, 255), vf, "☁ 천상 문"), "천상계로 오르기", "천상 문", "SkyUp")
+	-- 3.58판: 권법 시험장으로 가는 문 (메뉴 바로가기 대신). 마을에 하나 (천상 문 맞은편), 천궁에 하나
+	local TRC = Color3.fromRGB(255, 150, 90)
+	out.testRoomGateLand = prompt(portalGate(Vector3.new(-SKY.portal.X, 0, SKY.portal.Z), math.rad(-45), TRC, vf, "🎯 권법 시험장"), "시험장으로", "권법 시험장 문", "TestRoomGate")
 	local CLOUD = Color3.fromRGB(250, 250, 255)
 	-- 2.9판: 섬마다 다른 몸. 테두리·밑동·매달린 것·둘레 구름·떠도는 작은 섬을 섬마다 따로 짓는다
 	-- (예전엔 모든 섬이 같은 금 테두리 원판이라 그 금빛이 섬 바닥 전체를 덮었다)
@@ -5387,6 +5390,12 @@ local function skyWorld(out: any)
 	part({ Name = "PavilionRoof2", Size = Vector3.new(16, 1.2, 16), Position = pav + Vector3.new(0, 15, 0), Color = Color3.fromRGB(80, 125, 190), Material = Enum.Material.Slate, Parent = f })
 	-- 남서: 땅으로 내려가는 문
 	out.skyDown = prompt(portalGate(town + Vector3.new(-100, 0, 100), math.rad(45), Color3.fromRGB(255, 220, 140), f, "⬇ 땅으로"), "땅으로 내려가기", "천궁 문", "SkyDown")
+	-- 3.58판: 천궁의 권법 시험장 문 (서쪽 큰길 옆)
+	do
+		local at = town + Vector3.new(-125, 0, 58)
+		local yaw = math.atan2(at.X - town.X, at.Z - town.Z)
+		out.testRoomGateSky = prompt(portalGate(at, yaw, Color3.fromRGB(255, 150, 90), f, "🎯 권법 시험장"), "시험장으로", "권법 시험장 문", "TestRoomGateSky")
+	end
 	-- 1.7판: 광장 둘레의 세 문 (천층탑 · 구름 미궁 · 천공 투기장). 받침은 광장 쪽에
 	local function plazaGate(off: Vector3, color: Color3, label: string, action: string, title: string, name: string): ProximityPrompt
 		local yaw = math.atan2(off.X, off.Z)

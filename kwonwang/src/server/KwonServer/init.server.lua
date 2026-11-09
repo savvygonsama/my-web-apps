@@ -5097,7 +5097,7 @@ local function toggleTestRoom(player: Player)
 		local back = sst.roomBack or CFrame.new(Config.SPAWN)
 		sst.roomBack = nil
 		char:PivotTo(back)
-		toast(player, "🏯 마을로 돌아왔어요")
+		toast(player, "🏯 들어왔던 문으로 돌아왔어요")
 	else
 		if f.combatUntil > os.clock() then
 			toast(player, "싸우는 중에는 갈 수 없어요")
@@ -6124,6 +6124,15 @@ if W.battle then
 			end
 		end)
 	end)
+end
+-- 3.58판 마을 · 천궁의 권법 시험장 문
+for _, key in ipairs({ "testRoomGateLand", "testRoomGateSky" }) do
+	local gate = (W :: any)[key]
+	if gate then
+		gate.Triggered:Connect(function(player: Player)
+			toggleTestRoom(player)
+		end)
+	end
 end
 -- 3.9판 권법 시험장의 돌아가는 문
 if W.testExit then

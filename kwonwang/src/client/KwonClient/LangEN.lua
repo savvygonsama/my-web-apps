@@ -4099,4 +4099,8 @@ return {
 	["손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다"] = "Throw both demon swords. Spinning flat above the ground, they fly in crossing arcs cutting enemies they pass, then clash in a cross ahead and explode",
 	["마왕참"] = "Demon King's Cleave",
 	["1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다"] = "For 1s, gather black flame in the sky behind you to forge a house-sized demon sword, then bring it crashing down ahead. The ground splits in a line and black fire erupts all the way to the end",
+	["시험장으로"] = "To the Testing Ground",
+	["권법 시험장 문"] = "Testing Ground Gate",
+	["🏯 들어왔던 문으로 돌아왔어요"] = "🏯 Returned to the gate you came from",
+	["• 청운 마을 (천상 문 맞은편) 이나 천궁 (서쪽 큰길 옆) 의 🎯 권법 시험장 문으로 간다. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문으로 들어왔던 문 앞에 돌아온다"] = "• Go through the 🎯 Style Testing Ground gate in Cheongun Village (across from the Heaven Gate) or the Sky Palace (beside the west road). Five small dummies and three big dummies stand on a big stone yard floating in the sky. DPS and biggest hit show above each dummy. Players don't fight here. The red gate to the south returns you to the gate you came from",
 }

@@ -2489,7 +2489,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 상급·전설 권법은 초 신권까지, 신화 이상 권법은 초와 극까지 변할 수 있다")
 		add("")
 		add("<b>🎯 권법 시험장</b>")
-		add("• 메뉴 → 🎯 권법 시험장. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문이나 같은 메뉴로 돌아온다")
+		add("• 청운 마을 (천상 문 맞은편) 이나 천궁 (서쪽 큰길 옆) 의 🎯 권법 시험장 문으로 간다. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문으로 들어왔던 문 앞에 돌아온다")
 		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
 		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
 		add("")
@@ -4993,7 +4993,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
