@@ -31,6 +31,13 @@ local Whale = require(script:WaitForChild("Whale"))
 local Star = require(script:WaitForChild("Star"))
 local PassArts = require(script:WaitForChild("PassArts")) -- 3.41판 게임패스 권법 (구미호권 · 흑염마검장)
 PassArts.start()
+do
+	-- 3.48판: 모든 권법에 함께 얹는 연출 (지역 변수 한도 때문에 Fx에 걸어 둔다)
+	local Grand = require(script:WaitForChild("Grand"))
+	;(Fx :: any).grandCast = Grand.cast
+	;(Fx :: any).grandHit = Grand.hit
+	;(Fx :: any).grandInit = Grand.init
+end
 UI.passArts = PassArts -- 3.42판 상점 미리보기
 local Mujo = require(script:WaitForChild("Mujo"))
 local Royal = require(script:WaitForChild("Royal"))
@@ -1852,6 +1859,9 @@ function handlers.hit(data: any)
 	local kind = data.kind
 	if kind == "hit" then
 		Polish.hit(data.style, pos, data.heavy == true, data.skill == true, dir)
+		if (Fx :: any).grandHit then
+			pcall((Fx :: any).grandHit, data.style, pos, data.heavy == true, data.skill == true)
+		end
 		local predicted = mine and predictedAt[t] and os.clock() - predictedAt[t] < 0.6
 		if not predicted then
 			local hs = data.broken and 0.16 or (data.heavy and 0.1 or 0.055)
@@ -2227,6 +2237,9 @@ function handlers.skillfx(data: any)
 	if not ultsReady then
 		ultsReady = true
 		Ults.init({ shake = shake, flash = UI.flash, tint = tint })
+		if (Fx :: any).grandInit then
+			(Fx :: any).grandInit({ shake = shake, tint = tint })
+		end
 		Awake.init({ shake = shake, tint = tint })
 		Reaper.init({ shake = shake, tint = tint })
 		Ult2.init({ shake = shake, tint = tint, flash = UI.flash })

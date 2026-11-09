@@ -1629,6 +1629,10 @@ function Fx.sigil(at: Vector3, radius: number, c: Color3, c2: Color3, life: numb
 end
 
 function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
+	-- 3.48판: 모든 권법에 함께 얹는 연출 (Grand: 빛 · 모으기 · 터짐)
+	if (Fx :: any).grandCast then
+		pcall((Fx :: any).grandCast, styleId, slot, model, dur)
+	end
 	if styleId == "sinsamjae" and (Fx :: any).sinCast and type(slot) == "string" then
 		pcall((Fx :: any).sinCast, slot, model, dur)
 	end
