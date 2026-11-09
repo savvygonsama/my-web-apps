@@ -4099,7 +4099,4 @@ return {
 	["손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다"] = "Throw both demon swords. Spinning flat above the ground, they fly in crossing arcs cutting enemies they pass, then clash in a cross ahead and explode",
 	["마왕참"] = "Demon King's Cleave",
 	["1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다"] = "For 1s, gather black flame in the sky behind you to forge a house-sized demon sword, then bring it crashing down ahead. The ground splits in a line and black fire erupts all the way to the end",
-	["↺ 처음부터 (주인만)"] = "↺ Start Over (owner only)",
-	["⚠ 6초 안에 한 번 더 누르면 기록을 모두 지우고 처음부터 시작해요 (되돌릴 수 없어요)"] = "⚠ Press again within 6 seconds to erase all progress and start over (cannot be undone)",
-	["↺ 기록을 지웠어요. 처음부터 시작해요"] = "↺ Progress erased. Starting over",
 }

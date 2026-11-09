@@ -423,8 +423,6 @@ type State = {
 	savedAt: number?, -- 마지막으로 저장한 때 (os.clock)
 	dirty: boolean,
 	tester: boolean,
-	owner: boolean?, -- 3.56판: 게임 주인 (공개판에서 처음부터 단추)
-	resetArm: number?,
 	reqWindow: number,
 	reqCount: number,
 	training: any?,
@@ -1120,7 +1118,6 @@ local function pushState(player: Player)
 		learnCost = Config.LEARN_COST[math.min(#owned + 1, #Config.LEARN_COST)],
 		training = st.training and st.training.kind or nil,
 		tester = st.tester,
-		owner = st.owner == true and not BATTLE,
 		canSave = st.canSave,
 		found = p.found,
 		trials = p.trials,
@@ -5585,37 +5582,6 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif string.sub(action, 1, 4) == "test" and st.tester then
 		testAction(player, p, action, a1)
-	elseif action == "ownerReset" and st.owner and not BATTLE then
-		-- 3.56판: 두 번 눌러야 지운다 (6초 안에). 게임패스는 로블록스가 기억하고, 산 상품 영수증은 남겨 두 번 받지 않게 한다
-		if not st.resetArm or os.clock() - st.resetArm > 6 then
-			st.resetArm = os.clock()
-			toast(player, "⚠ 6초 안에 한 번 더 누르면 기록을 모두 지우고 처음부터 시작해요 (되돌릴 수 없어요)")
-			return
-		end
-		st.resetArm = nil
-		local fresh = defaultProfile()
-		fresh.receipts = p.receipts
-		fresh.style = "samjae"
-		fresh.styles.samjae = true
-		profiles[player] = fresh
-		st.dirty = true
-		local fr = Combat.fighterOfPlayer(player)
-		refreshFighter(player)
-		if fr then
-			Combat.sync(fr)
-		end
-		updateTag(player)
-		pushState(player)
-		pcall(saveProfile, player)
-		toast(player, "↺ 기록을 지웠어요. 처음부터 시작해요")
-		pcall(function()
-			player:LoadCharacter()
-		end)
-		task.delay(2, function()
-			if player.Parent then
-				Story.check(player)
-			end
-		end)
 	end
 end)
 
@@ -6858,8 +6824,6 @@ local function onPlayerAdded(player: Player)
 		profile, ok = loadProfile(player)
 		st.loadedAt = os.time()
 		st.savedAt = os.clock()
-		-- 3.56판: 게임 주인 (공개판) 은 메뉴에서 자기 기록을 처음부터 다시 시작할 수 있다
-		st.owner = game.CreatorType == Enum.CreatorType.User and player.UserId == game.CreatorId
 	end
 	if not player.Parent then
 		return
