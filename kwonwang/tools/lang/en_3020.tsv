@@ -1,0 +1,340 @@
+3020	Floor %d · %s
+3021	🗼 Climbed to floor %d of the Tower (best: floor %d)
+3022	You can't travel during a trial
+3023	You can't travel mid-fight
+3024	🗼 Arrived at the Tower entrance (T at the tower gate)
+3025	❄ Hit by a frost spear!
+3026	⚡ Struck by lightning!
+3027	🌀 Stopped at room %d of the Cloud Maze
+3028	🌀 The Cloud Maze opens at the %s realm
+3029	You can't enter during another trial
+3030	You can't enter mid-fight
+3031	🌀 The maze is busy. Come back shortly
+3032	[Fist King] Cloud Maze creation error:
+3033	🎁 Treasure chest: 💎 %d  💰 %s
+3034	Not enough silver (without scrolls, 💰 %s per draw)
+3035	Manual slots are full. Remove one first
+3036	Manual slots are full. Remove one first (📜 one more slot with the Fourth Slot game pass)
+3037	You can't train mid-fight
+3038	%s %s is available from the %s realm
+3039	👁 Your inner demon hasn't settled yet (%d s)
+3040	👁 Your inner demon has taken form! Win to raise all stats a lot
+3041	🔥 Enhanced training is available from the %s realm
+3042	⛩ Pass the gate to raise stats further (stats window → Gate Challenge)
+3043	\32(Advanced Training Grounds)
+3044	♻ Ready for rebirth (
+3045	☯ Rebirth Trial ready (rebirth
+3046	\32· trials passed
+3047	♻ Merit
+3048	♻ Rebirth and achievement records cleared
+3049	⛩ Gate records cleared
+3050	🧪 Heavenly materials +50 each
+3051	🌀 Infinite Ki · no cooldown: on
+3052	🌀 Infinite Ki · no cooldown: off
+3053	🧪 %s +%d (test)
+3054	Use this while holding a game pass style (Nine-Tailed Fox Fist · Black Flame Demon Sword Palm)
+3055	🧩 Manual Fragments +100 (test)
+3056	💎 Enabled for testing:
+3057	🔍 No enemy nearby
+3058	[Body check] %s (%s) size %s distance %.0f
+3059	\32 Broken joints:
+3060	\32 Misaligned joint %s: %.2f studs (%s → %s)
+3061	\32 Models inside:
+3062	\32 joints %d (misaligned %d · broken %d) · welds %d · duplicate names %s · PrimaryPart %s · inner models %d
+3063	None
+3064	🔍 %s: joints %d · misaligned %d · broken %d · duplicate names %d (details in output)
+3065	HipHeight %.2f · root height %.2f
+3066	🔍 Body Check
+3067	🪵 Dummies
+3068	\32placed
+3069	Couldn't place dummies
+3070	📜 Scrolls +
+3071	📜 All manuals set to [%s] grade
+3072	⚔ %d duel wins (one more win for the Peerless Fist)
+3073	Use this inside the Tower
+3074	⚔ PvP toggle unlocked
+3075	💠 Sky gems +1000
+3076	⚔ Cheongeop descends soon (you must be in the Heavenly Realm)
+3077	☁ Heavenly Realm · Sky Palace
+3078	🎬 Cutscene records cleared
+3079	⏸ Time stopped
+3080	▶ Time flows again
+3081	🕳 Southeast end of the world · try stepping on the faint grass (3+ rebirths)
+3082	🔥 Hell · Hwangcheon Ferry
+3083	🌫 World's End Cliffs · cross the crumbling stone path ahead to the hidden garden
+3084	🌑 Cave of the Divine (get all three Apex styles, equip each, and send energy to the pedestals)
+3085	📖 Manual Fragments:
+3086	🏆 No more achievements to earn (clear achievements to start over)
+3087	🏆 Earned %d achievements at once
+3088	🏆 Earned an achievement
+3089	📖 Enemy codex cleared (bosses, styles and masters keep their records, so those slots remain)
+3090	📖 Enemy and boss codex filled to three stars
+3091	✨ Achievement aura turned off (test)
+3092	🏆 Achievement records cleared (achievements already met are earned again right away)
+3093	🏯 Returned to the village
+3094	You can't go mid-fight
+3095	🎯 Style Testing Ground · players don't fight here · west 🛡 Counter Corner (practice deflecting, no damage) · east 🎯 Damage Challenge (20s)
+3096	⚔ You can't use Wound Salves in the Battleground
+3097	You can't leave mid-fight
+3098	⚔ Heading to the Battleground...
+3099	🏠 Heading to the main world...
+3100	🧪 Test account. Progress isn't saved
+3101	Saving is off. This session won't be saved
+3102	Lobby
+3103	This is the lobby, so there's no fighting. Pick a style in the Styles window, vote for the next map, and when ready press '⚔ Enter the arena'. Everyone fights with %d HP and equal strength.
+3104	Fist King: The Bare-Handed Martial World
+3105	Conquer the martial world with your bare hands. First, find Elder Cheongun in the village and talk to him. (Follow the yellow guide and press T)
+3106	🤖 Requires the Auto Training game pass (General Store)
+3107	🤖 Auto training on
+3108	🤖 Auto training off
+3109	☸ You've arrived at the Rebirth Terrace. Hold T at the altar in the middle to be reborn
+3110	✨ Achievement aura off
+3111	✨ Wearing %s %s
+3112	You can't ride mid-fight
+3113	You can't ride right now
+3114	\32is only obtainable with sky gems (Heavenly Shop in the Sky Palace)
+3115	\32is earned by completing mythic achievements
+3116	\32obtained! (V to ride)
+3117	☁ You already have the Winged Cloud
+3118	🌌 Your current style has no signature accessory (buy while using a style that has one)
+3119	's accessory is already in the heavenly hue
+3120	💫 You already have the Heavenly Aura
+3121	💠 Not enough sky gems (%d needed)
+3122	🔒 You must be defeated by a player once to turn off PvP
+3123	You can't change PvP mid-fight
+3124	⚔ You can change it again in %d seconds
+3125	🕊 Field PvP off
+3126	⚔ Field PvP on
+3127	💠 Already at the highest grade (Heavenly)
+3128	🌌 Heavenly hue off
+3129	🌌 Heavenly hue on
+3130	🔥 Awakening can only be done beside %s at the Advanced Training Grounds
+3131	Awakening requires %s mastery %d
+3132	To awaken, first gain every insight (upgrade)
+3133	Awakening is available from the %s realm
+3134	%s awakens only after %d rebirths
+3135	You can't awaken mid-fight
+3136	%s is already +%d (max)
+3137	🧩 Not enough manual fragments (%d / %d) · dropped by bosses (hell bosses drop the most)
+3138	💰 Not enough silver (%s needed)
+3139	%s %s +%d! Grade multiplier ×%.2f
+3140	💎 This style grows through enhancement instead of insight (Enhance in the Styles window)
+3141	No more insights to gain
+3142	Upgrading requires %s mastery %d
+3143	%s is available from the %s realm
+3144	If you have a style with every insight and maxed mastery, choose '🔥 Awakening Trial' in the Styles window. Beat your awakened shadow and the style is reborn.
+3145	☁ The Heavenly Realm opens at the %s realm
+3146	You can't ascend mid-fight
+3147	⬇ Returned to the martial world
+3148	☁ Fell below the clouds and returned to the Sky Palace
+3149	🔥 Fell into the darkness and returned to the Hwangcheon Ferry
+3150	🌊 Fell into the sea and climbed back up the cliff · the stone path starts over
+3151	[Fist King] Leaderboard error:
+3152	🛏 Rested on a cloud blanket. HP and Ki fully restored
+3153	☄ Meteor Guardian Beast
+3154	[Fist King] Raid boss creation error:
+3155	⚔ Raid ·
+3156	⚔ Sky Arena · fighting Cheongeop!
+3157	⚔ Sky Arena · you'll be notified when Cheongeop descends
+3158	The cat purrs
+3159	The cat opens one eye and looks at you
+3160	The cat stretches and goes back to sleep
+3161	The cat flicks your hand with its tail
+3162	The cat yawns
+3163	It won't budge
+3164	Only your palm stings
+3165	The rock seems to be laughing
+3166	The sword seems to be testing you
+3167	It doesn't move at all
+3168	Only the sound of water
+3169	You hear the silver hit bottom after a long while
+3170	It sounded like someone in the well said thank you
+3171	Your face reflects on the water. You look a little tired
+3172	Nothing happened. Probably
+3173	Quack!
+3174	Quack quack!
+3175	The ducklings quack in a row
+3176	The mother duck glares at you
+3177	Quack? Quack!
+3178	🪨 You've already added a stone to this cairn
+3179	🪨 Added a stone to the cairn (%d/%d) · 💰 %s
+3180	🪨 Seven Cairns
+3181	The Road Answered
+3182	You've added stones to all seven cairns across the martial world. Under the last cairn, someone buried a bundle. You got 💰 %s silver and %d manual scrolls.\n\n...But something crackles between the sounds of the wind. At the southeast end of the world, somewhere not on the map.
+3183	🐈 The cat gave you %d Wound Salves it was sleeping on
+3184	🗡 You put the sword back in. For the next person
+3185	🗡 Sword in the Stone
+3186	The Sword Came Out
+3187	On the hundredth pull, the sword slid out. Small letters on the hilt read: 'It wasn't strength. It was persistence.' The blade is rusted, but 💰 %s silver poured out of the hilt.
+3188	🗡 The sword seemed to move just a little (%d/%d)
+3189	💰 Not enough silver to toss
+3190	🪙 The well sparkled! 💰 %s silver came up
+3191	🪙 Your wish was heard. Damage dealt +15% for 5 minutes
+3192	🌫 The chest is empty. Only the wind remains
+3193	🌫 Garden of Oblivion
+3194	Beyond the End of the World
+3195	You crossed the crumbling stone path and reached a garden no one visits. In an old chest is a note someone left: 'What we call the end is usually just a place no one has crossed yet.' You got 💰 %s silver · 💠 %d sky gems · 📜 %d scrolls.
+3196	🦆 Quack! The mother duck brought you a manual scroll
+3197	🕳 The faint grass gave way and the ground vanished beneath you
+3198	🕳 Underground
+3199	You Fell
+3200	It was grass at the edge of the world that no one had stepped on. You fell through the darkness for a long time and landed on cold stone. You see a great door glowing red and a shadow in a black hat.
+3201	🌿 Only this grass feels oddly cool... (someone reborn three times might sense something)
+3202	💀 Reaper
+3203	The Open Gate
+3204	...The chains are already broken. Hear the door breathing at the end of the hall? Go. It's different from the living world over there. Take care.
+3205	I Smell the Living
+3206	...So a living person came this far. Want to open the door at the end of the hall? The fare is 💰 %s silver. What you have isn't enough. Come back with it. I'll be waiting here.
+3207	Fare Received
+3208	💰 %s silver. ...Good. Fare received. The door at the end of the hall is locked with three chains. Three restless spirits wandering this room hold them and won't let go. Go calm them. If you can't, the door won't open. (spirits %d)
+3209	Not Yet
+3210	...Not yet? The spirits wander the edges of the room. Follow the blue fire. You'll hear crying. Spirits calmed %d / %d.
+3211	The Chains Broke
+3212	......The spirits feel lighter. Hear that? The chains breaking at the end of the hall. A hot wind rises from beyond the door.\n\nWalk down the hall and stand before the door.
+3213	💙 The spirit glances at you and drifts away. Talk to the reaper first
+3214	💙 Already calmed. It sways peacefully
+3215	💙 Calmed a spirit (%d/%d)
+3216	⛓ Chains wrap the door. It won't budge
+3217	You can't cross the Hell Gate mid-fight
+3218	🔥 Hell Gate
+3219	Red Breath
+3220	The door opens. Hot red air hits your face. Beyond the unchained threshold stretch endless darkness and firelight.\n\nThe reaper mutters behind you. \"...Come back while you still can.\"
+3221	You can't cross the gate mid-fight
+3222	⬆ Returned to the underworld room
+3223	🌿 Climbed back to the living world
+3224	🛏 Rested well. HP and Ki fully restored · if you fall now, you'll wake in Cheongun Village
+3225	🛏 Rested well. HP and Ki fully restored
+3226	: rested well. HP and Ki fully restored
+3227	: rested · if you fall now, you'll wake here
+3228	%s %s learned! You can enhance it in the Styles window
+3229	🐉 Got the Azure Dragon! V to ride
+3230	🐲 Got the Black Dragon! V to ride
+3231	You already own this
+3232	Not on sale yet (this server's version has no game pass ID)
+3233	Not on sale yet
+3234	💰 Received %s silver
+3235	🧪 One hour of Summoning Pill! Training doubled
+3236	📜 Received %d manual scrolls
+3237	\32obtained! Thank you
+3238	⚔ Received 💰 %s silver as your Battleground share
+3239	⚔ In the Battleground, defeated
+3240	\32players!
+3241	...Too early. Come back when you reach %s.
+3242	...To hold the sun and moon, you must first know the beginning of the world. Learn %s and come back.
+3243	...The Apex isn't reached in a single life.
+3244	...Transcendence doesn't open to just anyone.
+3245	. To request the trial, bring
+3246	; to learn it,
+3247	.
+3248	...The old man in deep sleep won't wake. It seems only a soul reborn %d times can enter this dream.
+3249	First defeat my clone.
+3250	If you want to be my disciple, pass the test.
+3251	\32Talk to me again when you're ready. (Press T again to start the test)
+3252	[Fist King] Elder creation error:
+3253	🗿 Man-Shaped Stone
+3254	Already Achieved
+3255	...The stone is silent. It has nothing more to give one who has achieved the ultimate.
+3256	Too Early
+3257	...The stone is silent. But when you lay your palm on it, a cold resonance comes through. This path opens only to a soul reborn %d times (now %d).
+3258	Not Enough Energy
+3259	...You feel three empty places in the stone. Learn all three Apex styles (Apex Sun-Moon · Apex Null · Apex Lightspeed) and come back. Still missing:
+3260	Not Enough to Offer
+3261	...Silver must be offered before the stone to open the way. 💰 %s silver. What you have isn't enough.
+3262	The Way Opens
+3263	You offered 💰 %s silver. The stone hums low and the ground gives way. At the altar in the dark cave, equip the Apex styles one at a time and send their energy to the three pedestals.
+3264	🗿 The stone opens the way again
+3265	You've already gained the ultimate
+3266	🌑 Equip an Apex style (Apex Sun-Moon · Apex Null · Apex Lightspeed) and come back
+3267	\32· now:
+3268	's energy has already been sent. Equip another Apex style
+3269	🌑 This pedestal already holds energy
+3270	🌠 Sent the energy of %s (%d / 3)
+3271	[Fist King] Dummy placement error:
+3272	[Fist King] Dummy management error:
+3273	[Fist King] Animation error:
+3274	[Fist King] Secret Art effect error:
+3275	[Fist King] New style effect error:
+3276	Inside!
+3277	Over here!
+3278	Tap for next ▶
+3279	Skip ▶▶
+3280	[Fist King] Cutscene error:
+3281	🥋 Controls
+3282	Left side of screen
+3283	Move
+3284	👊 button
+3285	Combo (four in a row for a finisher)
+3286	Heavy button
+3287	Hold and release to charge
+3288	E · R · G buttons
+3289	Skills · Secret Art
+3290	🛡 button
+3291	Block. Press right before a hit to deflect
+3292	Dodge button
+3293	Roll to dodge (briefly invincible)
+3294	🐎 button
+3295	Mount / dismount
+3296	Button that appears near people, training spots and shops
+3297	Left mouse
+3298	Z (press and release)
+3299	Heavy strike · charge
+3300	Skills / Secret Art
+3301	Dodge / run (C or Ctrl)
+3302	Space twice
+3303	Double jump
+3304	Talk · train · shop
+3305	Stats / map / potion
+3306	Right mouse drag
+3307	Rotate camera
+3308	Got it
+3309	Hic!
+3310	Hic
+3311	Rat-a-tat-tat!
+3312	Ultimate Art ·
+3313	Echo
+3314	Scorch!
+3315	⬆ Grade Up
+3316	✨ New
+3317	Unrolling the manual...
+3318	The sky opens!
+3319	A light beyond legend!
+3320	Golden light spreads!
+3321	OK
+3322	[Fist King] Mount error:
+3323	[Fist King] Grid deployment:
+3324	[Fist King] Shop preview (sword) error:
+3325	[Fist King] Shop preview error:
+3326	[Fist King] Game pass style effect error:
+3327	Holding up heaven
+3328	Standing on earth
+3329	Man swings
+3330	Heaven and earth as one
+3331	The ultimate beyond Apex · the final style
+3332	⭐ M Y T H I C ⭐
+3333	· L E G E N D ·
+3334	Shown once your character appears
+3335	<font color="#FFD25A"><b>🔺 Enhance +0 ×%.2f → +%d ×%.2f</b></font>  %s\n
+3336	Secret Art ·
+3337	Click
+3338	Z Heavy
+3339	G Secret Art
+3340	X Ultimate Art
+3341	Q Dash
+3342	F Block
+3343	H Potion
+3344	🌀 Ki %d / %d
+3345	Lv.%s  ·  Stage %d / 3  ·  ⚔ Power %s
+3346	🛡 Deflect practice · no damage · deflects
+3347	🎯 DPS
+3348	\32· biggest hit
+3349	\32· Protective Aura (immune)
+3350	\32· much weaker
+3351	\32· weaker
+3352	\32· even
+3353	\32· stronger
+3354	\32· much stronger
+3355	⚔ Power
+3356	🥋 Styles
+3357	📊 Stats & Realm
+3358	📜 Help
+3359	🧪 Test

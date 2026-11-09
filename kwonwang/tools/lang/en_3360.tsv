@@ -1,0 +1,360 @@
+3360	📜 Manuals (inner art books)
+3361	💠 Heavenly Shop
+3362	🏆 Achievements & Titles
+3363	📖 Codex
+3364	N
+3365	NE
+3366	E
+3367	SE
+3368	S
+3369	SW
+3370	W
+3371	NW
+3372	📍 Guide
+3373	🌅 神 · Divine Grade 🌅
+3374	❓ Hidden Style
+3375	\32 Only stories of it remain
+3376	\n\nThere's a hidden master who doesn't appear on the map.
+3377	\n\nThis style can't be learned from a master. Roam the martial world to find the way.
+3378	🔒 Meet the conditions to learn
+3379	\32 <font color="#C8B8A0">❓ Master's whereabouts unknown · Rumor:
+3380	\32 ·  <b>right here</b>
+3381	\32 ·  %s %d studs
+3382	%s  📍 Master %s · %s%s
+3383	\32 Basic style from Elder Cheongun
+3384	<b>Unique Mechanic</b>
+3385	<b>Combo (click)</b>
+3386	<b>Z Heavy</b>
+3387	\32<font color="#AA9988">(mastery %d)</font>
+3388	Secret Art G
+3389	<font color="#FF9AC8">Ultimate Art X</font>
+3390	<font color="#FF9A5A"><b>%s</b></font>  %s. Light and heavy ×%.1f
+3391	<font color="#FF9A5A"><b>Z Heavy</b></font>  %s
+3392	Ultimate Art X
+3393	\32<font color="#FFD25A">(unlocked)</font>
+3394	<b>%s %s</b>%s  Skill (Z·E·R·G) damage ×%.2f, cooldown -%d%%, fifth combo hit <b>%s</b> (launches the target)
+3395	<b>%s %s</b>%s  All skills ×%.2f, cooldown -%d%%, a shadow echo repeats skills (half power), awakening aura on your body
+3396	Mastery %d / %d  (%d / %d)
+3397	<font color="#FFB070"><b>Master's Test · %s %s</b>  %s</font>
+3398	<font color="#FFB070"><b>Master's Test</b>  Beat the master in a match to be taken as a disciple. Flail and you'll be blocked and countered.</font>
+3399	<font color="#FFE8A0"><b>Realm Requirement</b>  The master allows the test once you reach %s</font>
+3400	<font color="#FFE8A0"><b>Learn First</b>  %s</font>
+3401	<font color="#FFB6E6"><b>Transcendence Requirements</b></font>
+3402	%s %s mastery %d (now %d)
+3403	%s one awakened (True) style at mastery %d (highest %d)
+3404	To request the trial
+3405	To learn
+3406	<font color="#C8B8A0">%s found at: %s (Heavenly Realm only)</font>
+3407	<font color="#B8E0FF"><b>📜 Master's Request 「%s」</b></font>
+3408	<font color="#C8C8C8">Find the master and talk to them; they'll ask a favor before the test</font>
+3409	<font color="#FFD25A"><b>💎 Game Pass Style</b>  Get it in the shop · Enhance +0 ×%.2f → +%d ×%.2f</font>
+3410	<b>🔺 Enhance +%d → +%d</b>  🧩 Manual Fragments %d (owned %d) · 💰 %s → grade multiplier ×%.2f → ×%.2f
+3411	<font color="#C8B9A5">🧩 Manual fragments drop from bosses (hell bosses drop the most). Enhancement never fails</font>
+3412	<b>🔺 Enhance +%d (max)</b>  Grade multiplier ×%.2f
+3413	<b>⬆ Style Upgrade (%s)</b>  Mastery %d · %s or higher · 💰 %s → damage ×%.2f → ×%.2f
+3414	<b>⬆ Style Upgrade</b>  All insights gained [%s]
+3415	<font color="#FF8A9A"><b>🔥 Awaken: %s</b>  Mastery %d · insights %d · %s or higher%s · 💰 %s → Awakening Trial (beside the Awakening Sage)</font>
+3416	\32· ♻ %d rebirths
+3417	🔥 Awakening Trial → %s  💰 %s
+3418	🔥 Awaken from the original style
+3419	💎 Get it with a game pass in the shop
+3420	🔺 Enhance +%d  🧩 %d · 💰 %s
+3421	⬆ Upgrade  💰 %s
+3422	✔ In use
+3423	Switch to this style
+3424	Given by Elder Cheongun
+3425	❓ Find the master first
+3426	⚔ Take the Test
+3427	Go to the master for the test
+3428	Learn  💰 %s
+3429	Go to the master (💰 %s)
+3430	🌅 神 · Divine 🌅
+3431	\32 · Test passed
+3432	\32 · Master found
+3433	\32 ·  Mastery %d
+3434	⛩ Gate Challenge
+3435	☸ Go to the Rebirth Terrace
+3436	☯ Rebirth Trial
+3437	↩ Refund All
+3438	Close
+3439	+ 1 Level
+3440	♻ Rebirth Perks
+3441	♻ Rebirth Perks (%d merit left)
+3442	<b>♻ Rebirth Perks</b>  Merit <b>%d</b> / %d left\n<font color=\"#BBAACC\">%d merit per rebirth · 1 merit per Rebirth Trial. %d levels per perk. Refunding returns all merit</font>
+3443	\32<font color="#BBAACC">(next +%d%%)</font>
+3444	☯ Rebirth Trial %d (shadow of %s)
+3445	☸ Go to the Rebirth Terrace (%s · rebirth #%d)
+3446	\32Gate Challenge
+3447	<b>Realm: %s%s</b>  (stat total %s%s)
+3448	\32/ next %s at %s%s
+3449	\32<font color="#FF9AD8">(opens after rebirth)</font>
+3450	Realm multiplier ×%.2f (×1.22 per realm up to Brink, ×1.38 compounding above that, training effect +%d%%, from Life & Death scaled heavily against one enemy of that realm) · twenty realms in all (the four beyond Beyond Heaven open through rebirth)
+3451	<font color="#FF9AD8">♻ Rebirth %d: HP ×%.2f · damage dealt ×%.2f · stat gains ×%.1f · up to %s unlocked</font>
+3452	<font color="#FF9AD8"><b>♻ You can be reborn!</b> Hold T at the altar on the Heavenly Rebirth Terrace. You give up all stats and return to Third-Rate (styles, mastery, manuals, silver and gates stay). HP ×%.2f · damage dealt ×%.2f, stat gains ×%.1f, and the %s realm opens</font>
+3453	♻ Rebirth: available on reaching %s (now %d / %d)
+3454	<font color="#C9A0FF">☯ Rebirth Trial %d / %d%s · Perks: %s</font>
+3455	\32(you can challenge now)
+3456	\32(next trial on reaching %s in this life)
+3457	\32(next trial after rebirth)
+3458	None yet
+3459	⛩ From %s, even with enough stats you must defeat the <b>gate guardian</b> to rise a realm%s
+3460	\32<font color="#FFD25A">(the %s gate is open now · stats won't rise until you pass it)</font>
+3461	<b>Where to Train</b>
+3462	\32<font color="#FFD25A">[from %s]</font>
+3463	All stats
+3464	💰 Silver %s   ⚔ Enemies defeated %d   ⚔ Battle kills %d   🧪 Wound Salves %d
+3465	💊 Summoning Pill: %d s left (training x2)
+3466	Remove Title
+3467	All
+3468	\32Exclusive mount 「
+3469	✨ Aura 「
+3470	Title 「
+3471	✔ Wearing
+3472	Wear Title
+3473	✔ Done
+3474	📋 All %d/%d
+3475	<b>Achievements %d / %d</b>\nTitle: %s
+3476	None · earn an achievement with a title to wear it (higher grades are flashier)
+3477	\32 Complete
+3478	\32· Hidden style
+3479	\32· Not learned yet
+3480	✔ Learned
+3481	Hidden master · somewhere
+3482	✔ Found
+3483	%d / %d  ·  next reward %d%% (%d slots): %s
+3484	%d / %d  ·  ✔ All rewards for this codex claimed
+3485	📖 Codex  <font color=\"#FFD27A\">%d / %d</font>  <font size=\"13\" color=\"#BBB2A6\">· even unseen entries show where to find them · enemies and bosses earn up to three stars by kill count</font>
+3486	🧪 Items
+3487	📜 Manuals
+3488	🐎 Mounts
+3489	🎨 Cosmetics
+3490	💎 Robux
+3491	💰 Bought with silver  ·  V to mount and dismount
+3492	💠 With sky gems (Heavenly Shop in the Sky Palace)
+3493	🏆 Mythic achievement rewards
+3494	%s %s  ·  speed ×%.2f
+3495	🎨 Currently equipped
+3496	Title overhead
+3497	🏆 Choose a Title
+3498	🐎 Choose a Mount
+3499	Achievement aura (martial aura from mythic achievements)
+3500	✨ Next Aura
+3501	✨ Earn a mythic achievement to get its aura (see 🔴 mythic achievements in 🏆 Achievements)
+3502	Aura Off
+3503	Heavenly hue (signature accessory)
+3504	On / Off
+3505	Sky Palace Heavenly Shop
+3506	💫 The Heavenly Aura is bought with sky gems at the Heavenly Shop in the Sky Palace (Heavenly Realm)
+3507	\32 Buy
+3508	On
+3509	Balanced
+3510	🛒 Items you can buy repeatedly
+3511	💰 Silver %s   ·   💠 Sky gems %s
+3512	🔒 Achievement reward
+3513	💠 At the Sky Palace
+3514	✅ Selected
+3515	Select
+3516	✅ Owned
+3517	🔒 Coming soon
+3518	💪 Might
+3519	❤ HP
+3520	🍃 Agility
+3521	🌀 Ki
+3522	🟢 On
+3523	⚪ Off
+3524	\32 (owned %d/%d)
+3525	None (buy per style at the Heavenly Shop in the Sky Palace)
+3526	Off
+3527	On
+3528	Owned (always on)
+3529	Auto draw: not enough scrolls or silver
+3530	🔁 Auto: on
+3531	🔁 Auto: off
+3532	🔁 Auto draw finished:
+3533	🔁 Auto draw: [%s] appeared! (%d manuals new or upgraded)
+3534	📜 Draw 1
+3535	📜 Draw 10
+3536	Remove
+3537	Equip
+3538	💠 Upgrade
+3539	Odds:
+3540	\32 ·  Legendary or better guaranteed within %d draws
+3541	📜 Scrolls <b>%d</b> · <font color=\"#96E6FF\">💠 Sky gems %s (💠 Upgrade: raise the selected manual one grade, guaranteed)</font>\n<font color=\"#FFD25A\">%d draws until guaranteed Legendary</font>  <font color=\"#C8B9A5\">(without scrolls, 💰 %s per draw)</font>
+3542	<b>Slot %d</b>\n<font color="#FFD25A">🔒 📜 Fourth Manual Slot game pass</font>
+3543	<b>Slot %d</b>\n
+3544	<b>Slot %d</b>\n<font color="#9A8C7A">Empty (equip from below)</font>
+3545	✅ Remove
+3546	Heavenly (max)
+3547	<font color="#8A7C6A">%s %s · %s (not owned)</font>
+3548	🌌 Hue: on
+3549	💠 Sky gems %s  ·  dropped by heavenly enemies, bosses and meteor guardians%s  ·  transcendence materials %s
+3550	\32 ·  ✨ Elixir %d s
+3551	✔ Done for this style
+3552	✔ Owned
+3553	Accessory styles only
+3554	🌌 Hue: off
+3555	🚪 Leave
+3556	🗼 Tower floor %d%s  ·  best floor %d
+3557	🌀 Cloud Maze %d / %d  ·  %s %s%s
+3558	\32 ✓ To the next room
+3559	HP %d%%  ·  %d:%02d left  ·  my contribution %.1f%%%s
+3560	\32(#%d)
+3561	No one has hit it yet
+3562	%d / %d s
+3563	%s  ·  %s  ·  %s  ·  ⏱ %d s
+3564	🎮 Controls
+3565	⚔ Combat
+3566	📈 Getting Stronger
+3567	🧘 Training
+3568	🥋 Styles & Masters
+3569	🏔 The Land
+3570	☁ Heavenly Realm
+3571	♻ Rebirth & Endgame
+3572	💰 Shop & Misc
+3573	Recommended
+3574	Boss
+3575	<b>🎮 Controls</b>
+3576	• Click: combo (chains up to four) · Z: heavy strike (one strong blow; for the Dragon Palm, hold and release)
+3577	• E: skill · R: skill (mastery %d) · G: Secret Art (mastery %d, full Ki) · X: Ultimate Art (Transcendent and rebirth styles)
+3578	• F: block. <b>Press right before a hit to deflect</b> — take no damage and stagger the attacker
+3579	• Q: dash (briefly invincible) · Space in the air: double jump · C (or Ctrl): run
+3580	• T (nearby): masters, training, shops, gates · H: Wound Salve · Tab: stats · M: map
+3581	• Phone/tablet: round buttons at the bottom right. Center 👊 attack, inner ring 💥 heavy · 💨 dash · 🛡 block, outer ring E · R · G · X
+3582	\32 A dimmed button can't be used yet (cooling down or 🔒 locked). While training, a Now! button appears in the center
+3583	• Open and close the menu with the ☰ button at the top left: Styles, Map, Stats, Achievements, General Store (items, manuals, mounts, cosmetics, Robux), Help (training guide is here too)
+3584	• The small text in the bottom right corner is the game version (to check whether an update has arrived)
+3585	• 🌿 Graphics button in the menu: switch to Light to remove small grass, flowers and bushes from your screen for less lag (phones start on Light)
+3586	<b>⚔ Combos are about rhythm</b>
+3587	• Press as the previous move is finishing to chain. Hit it exactly for a <b>clean hit</b> (damage +15%, three in a row for chain clean hits +30%)
+3588	• Mash too early and you'll <b>falter</b>: the combo breaks and enemies read and deflect it
+3589	• Mastery 6 awakening: the combo finisher launches the target → double jump and click in the air = air combo
+3590	<b>Movement</b>
+3591	• Click right after a dash: <b>Rushing Strike</b> · click in the air: <b>Falling Strike</b>
+3592	• Click right after a deflect: <b>Counter</b> (heavy damage and big balance damage)
+3593	• Dodge with a dash right before a hit for a <b>Read</b>: the attacker freezes; click right away to counter
+3594	<b>How to Trade Blows</b>
+3595	• 🟧 Balance bar: fills each time you block. When full, <b>Guard Break</b> — your knees buckle and you take heavy damage
+3596	• When an enemy's weapon glints, it's about to swing — time to deflect
+3597	• <b>Attacks glowing red</b> can't be blocked. Dodge with a dash
+3598	• Strike at the same moment and you <b>clash</b>: fists collide and both of you bounce back
+3599	<b>Power</b>
+3600	• The number overhead. It counts HP, damage and skill strength together. Your power is in the stats window
+3601	• If you're over %.1fx stronger than a foe you take less damage, over %.1fx you don't stagger, and over %dx they bounce off your Protective Aura (grunts only; bosses can't be repelled)
+3602	• Recommended power on the map: red dangerous · orange tough · green right · gray easy
+3603	<b>📈 Stats come from fighting and training</b>
+3604	• Defeating an enemy raises all your stats according to its power. Hunting in <b>lands at your level</b> is most rewarding
+3605	• Bosses give %dx, elites %.1fx. Even much stronger enemies give at most %.1fx your realm's share
+3606	• Training: hit the beat for double. From Second-Rate, 🔥 enhanced training at the boulder (%dx). Each realm opens new training (Help → 🧘 Training)
+3607	<b>Realms</b> (rise with your stat total. Damage and HP jump each time you rise)
+3608	• Beyond Beyond Heaven (one opens per rebirth): Primordial → Boundless → Great Void → Fist King
+3609	<b>Mastery · Awakening · Insight</b>
+3610	• Mastery rises the more you hit with a style. R at mastery %d, Secret Art (G) at %d, awakening at 6 (stronger skills, combo finisher launches)
+3611	%s (from %s · 💰 %s)
+3612	• Styles at mastery %d gain damage through insight (Advanced and Legendary twice, Mythic once, Genesis and above not at all): %s
+3613	<b>Style Grades</b>
+3614	• Five grades: Advanced → Legendary → Mythic → Genesis → Rebirth (Supreme is reserved for new styles)
+3615	• A style's evolved forms are separate from grade: True (awakened) · Ultimate · Apex
+3616	• Advanced and Legendary styles can evolve up to Ultimate; Mythic and above up to Ultimate and Apex
+3617	<b>🎯 Style Testing Ground</b>
+3618	• Menu → 🎯 Style Testing Ground. Five small dummies and three big dummies stand on a big stone yard floating in the sky. DPS and biggest hit show above each dummy. Players don't fight here. Return through the red gate to the south or the same menu
+3619	• West 🛡 Counter Corner: three deflect instructors strike slowly on a beat. No damage, stagger or balance loss. Block right as they strike to deflect; wear their balance down by deflecting and they collapse, opening a counter. Dodge red attacks
+3620	• East 🎯 Damage Challenge: start at the pillar, a 3-second count, then all damage to the challenge dummy for 20 seconds is counted. Your best is saved, and up to five names appear on this server's board
+3621	<b>Manuals · Thousand-Floor Tower</b>
+3622	• Open manual scrolls dropped by enemies and bosses to get manuals. Equip them in three slots to support your whole style (Menu → General Store → 📜 Manuals)
+3623	• The Tower in the village: each floor has a set strength with a boss every ten floors. Scrolls and big rewards the first time you clear a boss floor
+3624	<b>Story</b>
+3625	• Follow the story goals on the left of the screen to learn the whole game in order. Talk to Elder Cheongun for the next chapter
+3626	<b>🥋 Getting Styles</b>
+3627	• You start with the Three Powers Fist. For other styles, <b>find their master</b>, request a test with T, pass it, then pay silver to learn
+3628	• Learning cost (from the second): 💰
+3629	• Tests differ by master: deflecting · enduring · sparring with disciples
+3630	• Press 📍 Guide in the Styles window for a guide on screen and map. The pillar of light rising into the sky marks the master's spot
+3631	<b>Masters of the Land</b>
+3632	• %s %s — %s at %s
+3633	<b>Hidden Styles</b>
+3634	• Many styles come from masters not on the map or from special conditions. Click a locked style in the Styles window for a hint
+3635	• Awakened (True) styles: max an original style's mastery, gain two insights, then pass the Awakening Trial
+3636	• Transcendent (Ultimate) styles: an original style and its True style at mastery 20 + heavenly materials → hidden master of transcendence
+3637	<b>🏔 The Martial World</b> (stronger the farther from the village. Start with lands of lower recommended power)
+3638	• Cheongun Village (safe): Elder Cheongun · master notice board · General Store · Battleground gate · training spots · Thousand-Floor Tower · Heaven Gate
+3639	• Advanced Training Grounds (safe, northeast of the village): Golden Bell, Thousand-Pound, Grand Circulation and Sky Walk training
+3640	• 🏮 Taverns (ten across the world, lanterns on the map): press T at the table to rest; that tavern becomes your respawn point. Rest at the village inn to respawn in the village again
+3641	\32— boss
+3642	• On the way to masters (Martial World Fields): spearmen · club bandits · twin-saber assassins. Far away: black shadow assassins · armored warriors
+3643	• Five manual fragments are hidden across the world (not on the map)
+3644	• Day and night cycle (day 10 min · night 2 min). The Sun-Moon Fist's strength changes with day and night
+3645	<b>☁ Heavenly Realm</b>
+3646	• Reach %s and the <b>Heaven Gate</b> in the village opens. The map switches to the heavenly map when you go up
+3647	• Sky Palace (safe): Heavenly Inn · sky gem shop · Drifting Cloud Master (Drifting Cloud Palm) · Cloud Maze gate 🌀 · Sky Arena gate ⚔
+3648	• Sky gems 💠: dropped by heavenly enemies and bosses. Buy scrolls, elixirs, gem pills and mounts at the sky gem shop
+3649	<b>Islands</b> (start with islands of lower recommended power)
+3650	<b>Heavenly Materials</b> (for Transcendent styles. At most two at once)
+3651	• Cloud Maze: clear rooms and defeat the maze's master. Enemies scale to whoever enters
+3652	• Sky Arena: team up to defeat Cheongeop, the calamity of the heavens
+3653	<b>♻ Rebirth</b>
+3654	• Once at Beyond Heaven, be reborn at the altar on the Heavenly Rebirth Terrace (%d times in all). Your realm restarts at Third-Rate but stat gains grow
+3655	• Styles, mastery, insights, manuals, mounts and silver stay. Each rebirth opens one more realm beyond Beyond Heaven
+3656	• Two merits per rebirth. Buy perks in the stats window → ♻ Rebirth Perks (refund and re-pick anytime)
+3657	<b>☯ Rebirth Trials</b>
+3658	• After your nth rebirth, reach %s again and the nth trial opens. Defeat your past-life shadow for one merit and one rebirth style
+3659	• Rebirth styles: Rebirth Fist → Karmic Fire Fist → Impermanence Fist → Fist King Fist (all have an Ultimate Art X)
+3660	<b>To the End</b>
+3661	• Transcendent (Ultimate) styles · Apex Sun-Moon Fist (Sun-Moon Fist mastery 20, three rebirths) · the final realm, Fist King
+3662	• Achievements and titles (Menu → Achievements): earn silver and titles as you complete them
+3663	<b>💰 Bought with Silver</b>
+3664	• General Store (village): Wound Salve (H) · Summoning Pill (training x2) · Great Restoration Pill (stats)
+3665	\32(🏆 mythic achievement only)
+3666	\32(💠 sky gems only · Sky Palace shop)
+3667	\32(from the start)
+3668	• Mounts:
+3669	<b>💎 Game Passes</b> (Robux. Buy once, keep forever)
+3670	<b>⚔ Field PvP</b>
+3671	• Outside safe places like villages, shrines and master seats, players fight each other too
+3672	• You can't turn it off at first (🔒). Once defeated by a player, you can toggle it with the ⚔ PvP button in the menu (not mid-fight, with a short wait after each change)
+3673	<b>⚔ Battleground</b> (everyone fights with equal strength)
+3674	• Go through the village's Battleground gate (the old dueling stage) or Menu → ⚔ Battleground. To return, Menu → 🏠 Main World
+3675	• Everyone has %d HP and the same attack. Only styles learned in the main world can be used (all skills unlocked). Better styles are very slightly stronger
+3676	• You start in the lobby (no fighting): pick a style, test on training dummies, vote for the next map, then '⚔ Enter the arena'. Menu → 🏯 Lobby to come back out (not right after fighting)
+3677	• Max %d per hit; per 1s at most %d damage: at least %d seconds to go down. %d seconds of protection when entering or getting up. Brief resistance if held too long
+3678	• The map changes every %d minutes: %s. Most takedowns in a round wins
+3679	• Silver for each takedown (more at higher realms), more for winning a round. Collected on returning to the main world. Defeat %d players in total for the Peerless Fist
+3680	<b>Other</b>
+3681	• When a shooting star falls from the sky, go check it out (Heavenly)
+3682	🎮 View Controls Again
+3683	① The golden ring shrinks  ② Press Space when it overlaps the white circle in the middle  ③ A perfect hit is Perfect (double)
+3684	① The blue circle grows and shrinks  ② Press Space when it's biggest  ③ Slowly, like breathing
+3685	① Follow the arrow and run to the glowing ring  ② Passing the ring raises stats automatically  ③ Run with C (or Ctrl) to go faster
+3686	① The circle brightens as the wooden arm comes in  ② Press Space when it flashes brightest  ③ Same timing as deflecting in real fights
+3687	① Keep the white needle inside the green zone  ② Press to tip right, release to tip left  ③ The trick is short taps
+3688	① Press Space when the iron sand flashes  ② A bit faster than Boulder Lift  ③ Raises Might a lot
+3689	① Ki circles your body and grows  ② Press Space when it's biggest  ③ Raises Ki and HP together
+3690	Fight the demon in your heart. Don't flail; deflect with F and counter
+3691	<b>🧘 Training Guide</b>
+3692	• Go to a training spot and press T to start. Moving ends it
+3693	• Hit the beat for <b>Good</b>, exactly for <b>Perfect</b> (double). Missing costs nothing
+3694	• There's no stamina. Train as much as you like
+3695	• From Second-Rate, <b>🔥 enhanced training</b> (at the boulder): faster beat, but %dx stats
+3696	• The higher your realm, the more stats each rep gives
+3697	\32 ·  from %s
+3698	⚡ Quick Tools
+3699	💰 Silver +1 ten-thousand
+3700	💰 Silver +100 ten-thousand
+3701	📊 Stats +5000
+3702	⭐ Max current style mastery
+3703	⬆ Max current style upgrade
+3704	🌀 Infinite Ki · no cooldown
+3705	❤ Heal
+3706	📜 Scrolls +100
+3707	🎒 Heavenly materials +50 each
+3708	⚔ Unlock PvP toggle
+3709	↺ Reset
+3710	🎯 Testing · Combat
+3711	🎯 Style Testing Ground (go/return)
+3712	🪵 Place a dummy ahead
+3713	🔍 Body check nearest enemy
+3714	🧹 Clear summoned enemies (dummies stay)
+3715	🎬 Replay cutscene
+3716	🗼 Tower: next boss floor
+3717	🗼 Tower: clear this floor
+3718	🏆 Achievement Test
+3719	🏆 Earn the next achievement

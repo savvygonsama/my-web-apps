@@ -1,0 +1,369 @@
+3720	🏆 Earn all achievements
+3721	🗑 Clear achievements
+3722	⚪ One common
+3723	🔵 One rare
+3724	🟣 One heroic
+3725	📖 Codex: fill one enemy and boss each
+3726	📖 Codex: fill all (three stars)
+3727	📖 Clear codex
+3728	✨ Next achievement aura (preview without achievements)
+3729	✨ Turn off achievement aura
+3730	🟡 One legendary
+3731	🔴 One mythic (mount and aura)
+3732	🏆 Open achievements window
+3733	📜 Story · Masters
+3734	📜 Next story chapter
+3735	📜 Advance master's request one step
+3736	⚔ Pass all master tests
+3737	🧭 To the next master
+3738	🔥 To the Awakening Sage
+3739	🌫 To the World's End Cliffs
+3740	🕳 To the hell entrance
+3741	📖 Manual fragment +1
+3742	♻ Rebirth · Apex
+3743	♻ Meet rebirth conditions
+3744	☸ Rebirth now (ritual)
+3745	♻ Fill all merit
+3746	☯ Prepare Rebirth Trial
+3747	☯ Challenge Rebirth Trial
+3748	🌇 Fill Apex gauge
+3749	🌠 Learn Apex Lightspeed Fist now
+3750	🔥 To the Hwangcheon Ferry in hell
+3751	🌅 Divine Three Powers Fist cutscene
+3752	🌑 To the Cave of the Divine
+3753	♻ Clear rebirth records
+3754	🌍 Travel · Events
+3755	☁ To the Heavenly Realm
+3756	☸ To the Rebirth Terrace
+3757	🌀 Cloud Maze now
+3758	⚔ Cheongeop raid now
+3759	☄ Meteor now
+3760	🕐 Time
+3761	⏸ Pause / resume
+3762	🌅 6 o'clock
+3763	☀ 12 o'clock
+3764	🌇 18 o'clock
+3765	🌙 0 o'clock
+3766	⏩ +3 hours
+3767	💎 Products (enable for testing)
+3768	💎 Double Training
+3769	🤖 Auto Training
+3770	⚙ Advanced Auto Training
+3771	💰 Double Silver
+3772	🎒 Bag Expansion
+3773	🐉 Azure Dragon Mount
+3774	🦊 Nine-Tailed Fox Fist
+3775	🗡 Black Flame Demon Sword Palm
+3776	🐲 Black Dragon
+3777	📜 Fourth Manual Slot
+3778	🔺 Game pass style enhancement
+3779	+5 (look)
+3780	+10 (look)
+3781	+15 (max)
+3782	🧩 Manual fragments +100
+3783	📜 All [%s]
+3784	📜 Manual grade
+3785	🏋 To a training spot
+3786	🥋 Use a style now (by grade)
+3787	🧭 To a hidden master
+3788	👹 Summon boss
+3789	🗡 Summon enemy
+3790	📖 How to get every style
+3791	Pick up all five manual fragments across the martial world (not on the map). Locations:
+3792	Obtained instantly by defeating the boss 'Blood Demon' at the Blood Cult HQ in the far northeast
+3793	Obtained instantly by defeating the boss 'Heavenly Demon' in the Void Rift in the far northwest
+3794	Obtained when returning to the main world after defeating a hundred players in total in the Battleground (battle kills show in the stats window and leaderboard)
+3795	Rebirth once, reach Life & Death again and pass the first Rebirth Trial (stats window → ☯ Rebirth Trial)
+3796	Rebirth twice and pass the second Rebirth Trial
+3797	Rebirth three times and pass the third Rebirth Trial
+3798	Rebirth four times and pass the final Rebirth Trial
+3799	After 5 rebirths and all three Apex styles (Apex Sun-Moon · Apex Null · Apex Lightspeed), offer 💰 9,990,000 silver to the man-shaped stone at the far northwest of the world (opposite the hell entrance) → in the dark cave below, equip each Apex style in turn and send its energy to the three pedestals to gain it with a cutscene
+3800	With True Wind God Kick at mastery 20 and three rebirths, find the Racing Ghost at the Hwangcheon Ferry in hell and pass the Trial of Speed
+3801	With Sun-Moon Fist at mastery 20 and three rebirths, find the Twilight Fist Sovereign on the Heavenly Rebirth Terrace and pass the Trial of the Apex
+3802	You start with it (given by Elder Cheongun)
+3803	Awakened style: %s mastery %d + %d insights (upgrades) + %s realm%s + 💰 %s → beside the Awakening Sage at the Advanced Training Grounds, choose '🔥 Awakening Trial' in the Styles window → beat the awakened shadow (%dx HP) to gain it instantly
+3804	\32+ ♻ %d rebirths
+3805	\32realm
+3806	\32learned first, then
+3807	%s%s: go to %s and press T → pass %s → offer silver to learn%s%s
+3808	the test
+3809	\32(hidden master: not on the map)
+3810	\32· Ultimate test (1.5x)
+3811	🔥 Enhanced Training ·
+3812	\32 (screen button)
+3813	\32 (Space or click; moving ends it)
+3814	Now! button
+3815	🎋 Ring %d / %d  ·  %d studs
+3816	Perfect!
+3817	Good
+3818	Pass!
+3819	Miss
+3820	You fell…  getting up in the village in %d seconds
+3821	⚔ Battleground · ❤ %d · %s
+3822	[%s] ⚔ Power %s   💰 %s   🧪 %d   💪%s ❤%s 🍃%s 🌀%s
+3823	\32  ⛩ Gate open
+3824	\32  ⚙ Advanced Auto Training
+3825	\32  🤖 Auto Training
+3826	🕊 PvP off
+3827	\32PvP on
+3828	⚔ Recommended power %s
+3829	⚠ Dangerous
+3830	A bit tough
+3831	Just right
+3832	Easy
+3833	⚔ Recommended %s (mine %s · %s)
+3834	🔥 Hell
+3835	⚡ Graphics: Light
+3836	🌿 Graphics: Normal
+3837	⚡ Light graphics: removed small grass, flowers and bushes from your screen (helps with lag)
+3838	🌿 Back to normal graphics
+3839	To the ground
+3840	Arena Gate
+3841	M: big map · wheel: zoom
+3842	📍 %s · go to %s (the pillar of light rising into the sky)
+3843	Talk to Elder Cheongun (T)
+3844	Defeat %s  %d / %d
+3845	Train at a training spot  %d / %d
+3846	Hit the dummy (click · 👊)  %d / %d
+3847	Land heavy strikes (right-click · 💥)  %d / %d
+3848	Use a skill (E)  %d / %d
+3849	Follow rumors to find masters  %d / %d
+3850	Defeat bosses (%s)  %d / %d
+3851	Learn an Apex style (hidden master)  %d / %d
+3852	T beside the master · pass the master's test
+3853	\32learn it (hidden master)
+3854	Learn styles from masters  %d / %d
+3855	Reach the %s realm (now %s)
+3856	\32defeat
+3857	Find manual fragments  %d / %d (not on the map)
+3858	Ascend to the Heavenly Realm through the Heaven Gate (in the village)
+3859	Open manual scrolls to get manuals  %d / %d (Menu → Manuals)
+3860	Clear Tower floor %d (best floor %d)
+3861	Raise %s to mastery %d (now %d)
+3862	current style
+3863	Gain insight in a mastery-%d style (Menu → Styles → Insight)
+3864	Clear the Cloud Maze (🌀 gate in the Sky Palace plaza)
+3865	Defeat Cheongeop in the Sky Arena (⚔ gate in the Sky Palace plaza)
+3866	Rebirth  %d / %d (at Beyond Heaven, Menu → Rebirth)
+3867	Buy rebirth perks  %d / %d (stats window → ♻ Rebirth Perks)
+3868	Pass Rebirth Trials  %d / %d (after reaching %s in this life, stats window → ☯)
+3869	Learn an awakened (True) style (Awakening Trial with its original master)
+3870	Learn a Transcendent (Ultimate) style (hidden master of transcendence)
+3871	Roam the martial world freely
+3872	📜 Chapter %d · %s
+3873	📜 New story · %s
+3874	▶ Accept to show the goal
+3875	📜 Goal\n%s · %d studs
+3876	📜 Accept
+3877	📜 View Story
+3878	Understood
+3879	📍 Heavenly Realm · %s%s%s
+3880	\32 · Safe zone
+3881	\32 · Enemy level %d
+3882	📍 Hell · %s%s%s
+3883	📍 %s\n%s · %d studs
+3884	\32You've arrived. Press T to learn the style
+3885	Now!
+3886	⚔ Pick a style and enter the arena · everyone HP 200, equal strength
+3887	⭐ Signature Accessory
+3888	🗳 Next Map
+3889	⚔  E N T E R
+3890	🥋 Choose Style · Enter
+3891	Gourd and necktie
+3892	Pearl rings and a water sash
+3893	Three blank boxes
+3894	Crescent moon and twinkling stars
+3895	Chipped silver halo
+3896	Star staff
+3897	Lightning bracers
+3898	Rebirth wheel on the back
+3899	Chains and black flame
+3900	Soul fire and mist sash
+3901	Golden crown and red cape
+3902	Sun and moon orbs
+3903	Great red scythe and claws
+3904	A pair of plum folding fans
+3905	Choose a style
+3906	✔ Current style
+3907	None (bare hands)
+3908	Heavy
+3909	✔ In use
+3910	⭐ Accessory
+3911	Styles learned %d · visible %d
+3912	🏆 This Round   Kills / Deaths
+3913	Current arena: %s · ⏳ %d:%02d · arena %d / total %d
+3914	\32· 🔥%d streak
+3915	⚔ %d / %d%s · total %d
+3916	⚔ Battleground · this round %d / %d%s · %d defeated in total
+3917	🏯 To the Lobby
+3918	📊 Stats
+3919	🏠 To the Main World
+3920	🗺 Map (M)
+3921	🏆 Achievements
+3922	🎯 Style Testing Ground
+3923	⚔ PvP On
+3924	[Fist King] Map error:
+3925	Stop
+3926	True Dragon Descends
+3927	Diamond Dharma Body
+3928	Pressure
+3929	Fist King %s · game passes %d/%d
+3930	[Fist King] Air particle error:
+3931	Clean Hit Chain ×%d
+3932	Clean Hit!
+3933	Counter!
+3934	Faltered
+3935	🌙 Night has fallen. The Sun-Moon Fist turns to the power of the moon (damage taken -15%)
+3936	☀ The sun has risen. The Sun-Moon Fist turns to the power of the sun (damage dealt +15%)
+3937	Starts in %d s · hit the dummies on the red disc for %d s · my best %s
+3938	⏱ %.1f s · damage %s
+3939	⌛ Done! Damage %s · counting
+3940	🎯 %s (DPS %s)%s
+3941	\32· 🏆 New record!
+3942	🏆 New record!
+3943	🎯 Damage Challenge Over
+3944	20s damage %s · DPS %s · %d hits · biggest hit %s · my best %s
+3945	📖 New in the %s codex · %s (%d/%d)
+3946	📖 %s %s codex %d%%
+3947	Reward:
+3948	🗼 Floor %d
+3949	👹 The master of this floor awaits
+3950	Defeat all enemies
+3951	🗼 Floor %d cleared!
+3952	💰 +%s%s  ·  best floor %d
+3953	Defeat the enemies while dodging the filling circles
+3954	Strong guardians stand watch
+3955	Open the treasure chest (T)
+3956	The master of the maze awaits
+3957	🌀 Room %d · %s
+3958	\32cleared
+3959	The cloud gate lifts · cross the bridge to the next room
+3960	🏆 Cloud Maze cleared!
+3961	💎 %s  💰 %s  📜 %d  📈 Stats +%s
+3962	Completion rewards can be claimed again in %d minutes
+3963	⚔ The sky splits!
+3964	In %d seconds %s descends on the Sky Arena · via the ⚔ gate in the Sky Palace
+3965	Bring it down together (HP ×%.1f · within %d minutes)
+3966	🏆 Cheongeop defeated!
+3967	\32returned to the sky… it will descend again
+3968	⚔ Raid reward (#%d · contribution %.1f%%): 💎 %s  💰 %s  📜 %d  📈 Stats +%s
+3969	☄ A meteor is falling!
+3970	: a meteor guardian beast appears
+3971	✨ %s +%d · appearance changed!
+3972	👁 Inner Demon
+3973	👁 Inner Demon Duel
+3974	Defeat the demon in your heart
+3975	⚔ Clone
+3976	's
+3977	Defeat them · deflect (F) and counter
+3978	👁 Inner demon defeated!
+3979	All stats +%d
+3980	Counter!
+3981	Critical
+3982	Guard Break!
+3983	Unshaken
+3984	Hit · dodge red attacks
+3985	Hit (no damage)
+3986	Protective Aura
+3987	Guard broken!
+3988	Counterstrike!
+3989	Deflect!
+3990	Click now → Counter
+3991	Clash!
+3992	Drunken Step!
+3993	Dodge
+3994	Endure!
+3995	⚡ Chain Lightning!
+3996	🌸 Full Bloom!
+3997	+ Heal
+3998	🔓 Hidden style
+3999	🌅 神 · Divine Grade
+4000	The ultimate beyond Apex. Heaven, earth and man gathered as one
+4001	\32learned!
+4002	[%s] %s · switch to it in the Styles window
+4003	%s [%s] damage raised to ×%.2f
+4004	\32complete
+4005	\32 ·  Next:
+4006	Thank you! It applies right away
+4007	🏯 Master found:
+4008	\32master ·
+4009	\32· a pillar of light rose into the sky
+4010	📖 Manual fragments %d / %d
+4011	The fragments came together...
+4012	An old master's writing glows faintly
+4013	⚔ Test passed
+4014	's test passed!
+4015	Press T beside the master to learn
+4016	\32
+4017	Skills grow stronger, and the fifth combo hit '
+4018	' is unlocked
+4019	All skills grow stronger, and a shadow echo repeats your skills once more
+4020	%s mastery %d
+4021	New skill:
+4022	Read!
+4023	\32 📈 Stats +
+4024	%s defeated  💰 +%d  mastery +%d%s%s
+4025	\32defeated!
+4026	Phase
+4027	Last stand! It uses every pattern
+4028	Enraged! It's faster and new patterns open
+4029	\32 🔥 %d streak
+4030	⚔ Defeated
+4031	💀 %s fell
+4032	🏆 %s (%d)
+4033	No winner
+4034	\32over
+4035	⚔ %s: %s wins, %s loses
+4036	Field PvP
+4037	Dueling Stage
+4038	」 (wear it in 🏆 Achievements)
+4039	」 (choose in General Store → 🐎 Mounts)
+4040	✨ Achievement aura 「
+4041	」 (change in General Store → 🎨 Cosmetics)
+4042	♻ %s: rebirth %s!
+4043	🌗 Sun-Moon Apex Shift · %s
+4044	The sun and moon run wild until the world halts at twilight. During twilight all of their skills change
+4045	Took Divine Form. The body floats, followed by a giant divine afterimage. All skills change (until they fall)
+4046	🌠 Hyper Speed · %s
+4047	So fast the world seems slow. Nearby enemies are sluggish, their steps can't be seen, and every hit strikes again as an afterimage
+4048	⬜ Grid Deployment · %s
+4049	A white grid slowly unfolds from a single point. Enemies inside are slowed and cut by the grid, and all of their skills change
+4050	♻ %s Rebirth
+4051	Reborn at Third-Rate · damage and HP +%d%% · stat gains +%d%% · the %s realm opened · 💰 +%s · merit +%d (%d left)
+4052	☯ Rebirth Trial %d passed
+4053	Past life overcome · merit +1 (%d left) · 💎 +%d · 📜 +%d · 💰 +%s%s
+4054	\32· the shadow left
+4055	\32behind
+4056	✨ %s reached the %s realm
+4057	[Fist King] Screen update error:
+4058	🥋 No style
+4059	Dash
+4060	Blocking
+4061	Block · Deflect
+4062	Wound Salve %d
+4063	\32(all skills changed)
+4064	\32 ⚡ Acceleration %s%s
+4065	Current
+4066	🌸 Thousand Cherry Bloom ready! (Z)
+4067	🌸 Full Bloom ready! (Z)
+4068	Cherry Blossoms
+4069	Petals
+4070	🍾 Dead Drunk · block ✕ · deflect only ○
+4071	🩸 Blood Pact · damage ×%.2f
+4072	🗿 Indestructible %d / %d (stacks when hit)
+4073	👤 Shadow Kick · your shadow kicks once more
+4074	🌊 Backflow · deflects burst into waves
+4075	Charge
+4076	Pressure
+4077	Creation
+4078	Sun-Moon
+4079	Waves
+4080	Stop
+4081	Growth
+4082	Charging dragon ki %d%%
+4083	\32 🔔 Iron Shirt
+4084	\32 🍶 Drunken Step
+4085	\32 Clean hit ×%d
+4086	\32 (faltered)
+4087	[Fist King] Animation joints %d / 11 connected
+4088	⚠ Only %d animation joints found. Animations may not display correctly

@@ -1,0 +1,260 @@
+0	Fist King
+1	Might
+2	Damage dealt
+3	HP
+4	Max HP
+5	Agility
+6	Move speed and dash
+7	Ki
+8	Ki regen and skill power
+9	Third-Rate
+10	Second-Rate
+11	First-Rate
+12	Elite
+13	Peak
+14	Supreme Peak
+15	Transformation
+16	Mystic
+17	Brink
+18	Life & Death
+19	Mythic
+20	Heaven-Human Unity
+21	Limitless
+22	Half-Immortal
+23	Ascension
+24	Beyond Heaven
+25	Primordial
+26	Boundless
+27	Great Void
+28	Grand Luo
+29	Nothingness
+30	Ring I
+31	Ring II
+32	Ring III
+33	Ring IV
+34	Ring V
+35	Ring VI
+36	Diamond Body
+37	Sky-Breaking Power
+38	Absorption
+39	Stats gained (kills and training)
+40	Inner Heart
+41	Stats from training (on top of Absorption)
+42	Fortune
+43	Silver dropped by enemies
+44	Insight
+45	Style mastery
+46	Gale
+47	Walk speed
+48	Back to Third-Rate. Your shadow from your last life blocks the way. Get past it.
+49	The second shadow. A little tougher than last time.
+50	The shadow of your third life knows all your habits. Drop them.
+51	The fourth shadow. Beat it and the Fist King's seat comes into view. But the road doesn't end there.
+52	The fifth shadow. By now even shadows are stubborn. Be ready for a long fight.
+53	The last shadow. Beat it and the cycle of rebirth ends. After that, the road leads to the Underworld.
+54	Boulder Lift
+55	Press when the ring shrinks. Raises Might and HP
+56	Waterfall Meditation
+57	Press when your breath is fullest. Raises Ki and HP
+58	Wooden Dummy
+59	Deflect (F) the moment the wooden arm comes in. Raises HP and Agility
+60	Horse Stance
+61	Keep balance on the post. Each press tips you right; leave it and you tip left
+62	Iron Palm Training
+63	Strike when the heated iron sand jumps (fast)
+64	Ki Circulation
+65	Press when the ki has circled your body and is full
+66	Inner Demon Duel
+67	The demon in your heart takes form. Win to raise all stats a lot
+68	Golden Bell Training
+69	Hold out under the great bell (keep it centered, like Horse Stance)
+70	Thousand-Pound Training
+71	Lift the thousand-pound iron when the ring is smallest
+72	Grand Circulation
+73	Press when the ki has made a full circuit of your body
+74	Sky Walk
+75	Step on the floating stone the moment it flashes (fast)
+76	Heavenly Training
+77	Steady your breath on the cloud lotus of the Sky Palace (all stats)
+78	Great Void Flowing Water Fist
+79	Take blows like water, let them flow, and strike back. Wide deflect window; each deflect stores a current that powers Rebound Palm.
+80	Current: +1 per deflect (max 3). Z Rebound Palm grows with Current
+81	Flowing Palm
+82	Returning Palm
+83	Cloud Water
+84	Twin Palm Strike
+85	Rebound Palm
+86	Whirling Current
+87	A 0.8s parry stance. If hit, you deflect and counter automatically
+88	Whirlwind Current
+89	Leaves a water vortex ahead for 3s. Keeps pulling nearby enemies and wears down their balance
+90	Ten Thousand Streams
+91	The ground becomes a lake. For 3s a vortex drags every nearby enemy to the center, then a water pillar launches them skyward
+92	Indestructible Diamond Fist
+93	An unbreakable diamond body. While attacking you can't be staggered and take less damage. Slow, but every blow is heavy.
+94	Diamond Body: no stagger while attacking, 30% less damage taken. Dash is a bit slower
+95	Diamond Fist
+96	Arhat Fist
+97	Tiger-Taming Fist
+98	Diamond Hammer
+99	Great Diamond Palm
+100	Iron Shirt
+101	For 6s nothing can push you, and damage taken is halved
+102	Lion's Roar
+103	Roar in a cone ahead. Enemies hit have their guard broken and are stunned for a long time
+104	Diamond Dharma Body
+105	For 6s you become a golden giant: no stagger, half damage taken, fists deal 1.6x and shake the area around the target. You stomp as you grow
+106	Plum Blossom Storm Fist
+107	A fast flurry like scattered petals. Keep the combo going to stack petals; at full they burst into bloom.
+108	Petals: +1 per hit within 1.2s (max 20). At 20, your next Z heavy blooms into an explosion
+109	Plum Strike I
+110	Plum Strike II
+111	Falling Blossom Fist
+112	Plum Spin Kick
+113	Plum Flash
+114	Falling Blossom Barrage
+115	Eight unseen blows in a row
+116	Hidden Fragrance
+117	Dash through enemies leaving only a scent (invincible). 0.7s later your path bursts into petals
+118	Instant Heaven Cut
+119	As if time stopped, you pierce through up to eight nearby enemies unseen. A beat later they're all cut at once (invincible meanwhile)
+120	Heavenly Dragon Sky-Breaker Palm
+121	A palm wind like a dragon breaking the sky. Hold Z and release to fire a blast sized by the charge. A long-range poking style.
+122	Dragon Charge: the longer you hold Z, the bigger the blast (up to 1.5s)
+123	Dragon Claw Palm
+124	Dragon Tail Palm
+125	Hidden Dragon Palm
+126	Manifest Dragon Wave
+127	Subduing Dragon Palm
+128	Proud Dragon's Regret
+129	Dragon energy that pierces forward (hits every enemy)
+130	Flying Dragon Ascends
+131	Rise like a dragon with an uppercut (launches enemies)
+132	True Dragon Descends
+133	A real dragon bursts from the ground, slams the enemy three times, then breathes forward
+134	Shadowless Ghost Kick
+135	Ghostly feet that leave no shadow. Two dashes, chained air kicks, and critical hits from behind.
+136	Ghost Shadow: 2 dashes, air combos, 1.6x damage when kicking from behind
+137	Ghost Kick
+138	Whirlwind Kick
+139	Sweeping Kick
+140	Falling Shadow Kick
+141	Ghost Drop Kick
+142	Shadow Step
+143	Teleport behind the nearest enemy and kick (critical)
+144	Ghost Storm Kick
+145	Leap up and kick six times like a whirlwind
+146	Shadowless Clones
+147	A shadow clone appears by each nearby enemy and kicks it three times (you direct from where you stand)
+148	Thunderclap Divine Fist
+149	A straight fist as fast as lightning. Each hit builds charge; at full, your next attack chains lightning that paralyzes everyone around.
+150	Charge: +1 per hit (max 5). At 5, your next attack is chain lightning (paralyzes nearby enemies)
+151	Flash Fist
+152	Thunder Fist
+153	Thunder Kick
+154	Thunderclap Hammer
+155	Thunderclap Strike
+156	Lightning Step
+157	Zigzag like lightning (invincible, paralyzes enemies you pass)
+158	Thunderstrike
+159	Pick five nearby enemies and drop lightning on their heads (paralyze)
+160	Thunder God Form
+161	Your body turns into lightning and jumps between enemies seven times. Lightning falls at each touch, and at the end the sky splits
+162	Drunken Eight Immortals Fist
+163	The fist of eight drunken immortals. Your stagger dodges blows on its own and punches come from odd angles. Weak guard.
+164	Drunken Step: 25% chance to dodge attacks while moving or attacking. You take more damage when blocking
+165	Drunken Fist
+166	Drunken Immortal
+167	Iron Crutch Li
+168	Lü Dongbin
+169	Drunken Immortal Path
+170	Drunken Step
+171	Stagger wildly for 3s, dodging 60% of attacks and countering each dodge
+172	Eight Immortals Cross the Sea
+173	Roll forward, kicking up every enemy you pass
+174	Drunken Wheel
+175	Curl up like a burning wine jar and bounce between enemies six times, exploding each time. Ends with a big burst of wine fire (invincible meanwhile)
+176	Three Powers Fist
+177	Basic
+178	The basic style everyone learns first. Three straight fists of Heaven, Earth and Man. Not flashy, but never sloppy.
+179	Basic: no special mechanic, but steady blocks and deflects. Given by Elder Cheongun
+180	Heaven Fist
+181	Earth Fist
+182	Man Fist
+183	Three Powers Kick
+184	Straight Punch
+185	Three Powers Step
+186	Step in and drive a punch
+187	Triple Chain Strike
+188	A chain of three punches
+189	Heaven-Earth-Man Strike
+190	Gather the ki of Heaven, Earth and Man into one fist for 1s, then strike once. Everything ahead goes flying
+191	Limitless Divine Fist
+192	Legendary
+193	Only those who collect all five scattered manual fragments can learn it
+194	A fist with no end and no beginning, where all styles return to one. Your foe's balance breaks before your hand lands.
+195	Limitless: every hit wears balance twice as fast, and the deflect window is wide
+196	Void Hand
+197	Reverse Current Hand
+198	Return Palm
+199	Unity Palm
+200	Limitless Palm
+201	Yin-Yang Orbs
+202	Press your palms together and push. A black orb and a white orb spiral forward, hit enemies on the way, then collide at the end, pulling in nearby enemies as they burst
+203	Taiji Whirl
+204	Draw a circle in place. Black and white orbs swirl around you out to 16 studs and back, dragging nearby enemies in front of you for one more hit
+205	Taiji Seal
+206	The world loses its color and a 30-stud Taiji forms underfoot. Enemies on it freeze. It spins, rises, flips and stamps down like a seal, then a wave of black and white passes once more
+207	Blood Demon Hand
+208	Peerless
+209	Defeat the Blood Demon, master of the Blood Cult, and his hand is yours
+210	The demonic art of the Blood Cult's master. Blood ki gathers at your nails. What you cut heals you.
+211	Lifesteal: heal 2% of damage dealt (max 1.5% of max HP per hit; per 1s up to 4%)
+212	Blood Claw
+213	Reverse Claw
+214	Blood Shadow Hand
+215	Blood Demon Claw
+216	Blood Hand Descends
+217	Blood Shadow Step
+218	Become a blood shadow and pass through enemies (invincible)
+219	Sea of Blood
+220	Spread a sea of blood underfoot for 4s. It keeps cutting enemies inside, and each cut heals you
+221	Blood Demon Descends
+222	A giant Blood Demon rises behind you, tears enemies four times with its claws and roars. Then 8s of frenzy (speed x1.2, lifesteal x1.5)
+223	Heavenly Emperor Fist
+224	Only those at Life & Death meet the nameless old man, in a corner at the end of the world nobody visits
+225	The fist the Emperor of Heaven left on earth. Wherever it lands, heavenly swords follow. Above its wielder, the gate of heaven is always open.
+226	Heavenly Might: every five hits a sword of light falls and strikes the area. Wide deflect window, balance damage x1.5
+227	Emperor Fist
+228	Defy Heaven Fist
+229	Heaven Moon Kick
+230	Heaven Light Palm
+231	Heaven Sword Flash
+232	Heaven Sword Descends
+233	Drive swords of light down onto three nearby enemies
+234	Emperor's Spear
+235	The gate of heaven opens behind you and a spear of light pours forward in a line
+236	Ten Thousand Swords Judgment
+237	The sky opens and a thousand swords of light look down. A sword pierces each enemy, then a giant heavenly sword slams down and explodes
+238	Sky-Breaking Divine Fist
+239	Defeat the Heavenly Demon, the last foe of the martial world, to learn his art in reverse
+240	A fist that turned the Heavenly Demon's art against itself. Where it lands, weight becomes tenfold, and at the end a black sun rises to crush everything it pulls in.
+241	Pressure: every six hits a gravity well opens at the target, pulling nearby enemies in and pinning them down. Enemies hit are briefly slowed
+242	Gravity Well
+243	Gravity Fist
+244	Reverse Gravity Fist
+245	Thousand-Pound Kick
+246	Falling Star Palm
+247	Black Star Hammer
+248	Pull Palm
+249	Open a gravity well ahead. For 1.2s it sucks nearby enemies to the center and crushes them
+250	Thousand-Pound Drop
+251	Become a thousand-pound weight and drop onto the nearest enemy. The ground caves in where you land
+252	Black Sun Descends
+253	Tear the sky with your fist and raise a black sun. It lifts every nearby enemy into the sky, grinds them, then collapses inward and explodes
+254	Genesis Divine Fist
+255	Genesis
+256	Only those at Limitless meet the Origin Sage of the Beyond Peak, at the edge of the sky
+257	A fist that holds the single moment the world first opened, before heaven and earth parted. Its wielder floats above the ground, and the final blow shatters the world like glass before it reassembles.
+258	Creation: every four hits a crystal of light blooms and bursts at the target. All skill cooldowns 20% shorter, and you float above the ground
+259	Creation Crystal

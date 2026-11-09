@@ -1,0 +1,320 @@
+2700	Earn all three stars in the enemy and boss codex
+2701	 Can't enter the place (773). In Creator Hub, check that the place is in this experience and the experience is public
+2702	 Couldn't find the place. Please publish it once
+2703	 The server is full. Try again shortly
+2704	⚠ Pressed too often. Try again shortly
+2705	\32: couldn't go there:
+2706	You can't change places in Studio (works in the published game)
+2707	' place not found (the experience needs a place with that name)
+2708	Couldn't find the main world
+2709	Couldn't travel (place '%s' %d): %s
+2710	Enter the arena (with your current style)
+2711	⚔ Dueling Hall
+2712	[Fist King] Battle map error
+2713	You're already in the arena
+2714	Try again in a moment
+2715	\32entered the arena! (protected for 5 seconds)
+2716	You're already in the lobby
+2717	You can't leave mid-fight (%d seconds after you last hit or were hit)
+2718	🏯 Returned to the lobby
+2719	🗳 Voted for '
+2720	' as the next map
+2721	⏳ Next map in %d seconds: %s
+2722	Karmic Burst
+2723	Re-deflect
+2724	Counterstrike
+2725	Backflow
+2726	Scorch
+2727	Aftershock
+2728	Falling Star
+2729	Burn
+2730	[Fist King] Hell body mark error:
+2731	[Fist King] Boss mark error:
+2732	's request ·
+2733	📜 All requests fulfilled
+2734	Before you ask for a test, I have a favor to ask. 「
+2735	...You're back. You did what I asked, so now it's your turn. I'll give you the test. (Press T again to start the test)
+2736	There's still a request left.
+2737	…It just looks pretty for now
+2738	You've already found this
+2739	Found
+2740	Order
+2741	💨 Wrong order. Start over
+2742	🌙 Looks like I should come here at night
+2743	No request in progress (talk to a master first)
+2744	[Fist King] Default body creation failed, using a hand-built body:
+2745	[Fist King] Enemy outfit error:
+2746	[Fist King] Enemy creation error:
+2747	[Fist King] Boss creation error:
+2748	[Fist King] Heavenly enemy creation error:
+2749	[Fist King] Heavenly boss creation error:
+2750	[Fist King] Hell enemy creation error:
+2751	[Fist King] Hell boss creation error:
+2752	Master ·
+2753	Talk (T)
+2754	Talk
+2755	Learn Style
+2756	[Fist King] Master creation error:
+2757	[Fist King] Enemy respawn error:
+2758	[Fist King] Enemy AI error:
+2759	Enter
+2760	⚔ Battleground (players fight each other)
+2761	⚔ Battleground
+2762	HP 200 · everyone equal strength
+2763	🧪 General Store
+2764	Browse
+2765	General Store
+2766	Inn
+2767	Rest
+2768	Inn · restore HP and Ki
+2769	🗼 Thousand-Floor Tower
+2770	Climb the Tower
+2771	🏯 Top Martial Artists
+2772	Total Stats
+2773	⚔ Battle Kills
+2774	Players defeated in the Battleground
+2775	Highest floor reached
+2776	🎋 Agility Training
+2777	Enhanced Training (from Second-Rate)
+2778	Summon Inner Demon
+2779	Train
+2780	\32and up)
+2781	🏯 Advanced Training Grounds
+2782	Tavern
+2783	[Fist King] Master site creation error:
+2784	[Fist King] Master site gate error:
+2785	Snake King's Tomb
+2786	[Fist King] Landmark error:
+2787	[Fist King] Blood Moon Valley error:
+2788	[Fist King] Outer lands error:
+2789	Pick up
+2790	Manual Fragment
+2791	Maple Leaf Pavilion
+2792	Misty Tea House
+2793	One Sword
+2794	Cut once, never cut again
+2795	Thousand Lantern Temple
+2796	The names of those who passed through the martial world
+2797	are remembered by the wind
+2798	To the one who stacks seven cairns
+2799	the road answers
+2800	Add a stone
+2801	Cairn
+2802	Pet
+2803	Napping Cat
+2804	Try pulling it
+2805	Sword in the Stone
+2806	Silver
+2807	\32Toss
+2808	Wishing Well
+2809	Quack
+2810	Duck Family
+2811	Inspect
+2812	Something Shiny
+2813	Touch
+2814	Box
+2815	Stone
+2816	Tavern
+2817	Rest and wake up here
+2818	Small Dummy
+2819	Big Dummy
+2820	🛡 Counter Corner
+2821	No damage when hit · block right as it strikes to deflect · dodge red attacks
+2822	Start Damage Challenge (20s)
+2823	Damage Challenge
+2824	🏆 This Server's Damage Challenge (20s)\nNo records yet
+2825	🎯 Damage Challenge
+2826	Start at the pillar · after 3 seconds, all damage to dummies for 20 seconds is counted
+2827	Style Testing Ground
+2828	Return to the village
+2829	Wine-Jar Porch
+2830	Blood Moon Altar
+2831	Iron Pillar Peak
+2832	Observatory
+2833	Whale Bone Rock
+2834	☁ Heaven Gate
+2835	Ascend to the Heavenly Realm
+2836	Heaven Gate
+2837	Heavenly Inn
+2838	Heavenly Inn · restore HP and Ki
+2839	Heavenly Shop
+2840	Heavenly Shop (sky gems)
+2841	⬇ To the Ground
+2842	Descend to the ground
+2843	Sky Palace Gate
+2844	Tower Gate
+2845	🌀 Cloud Maze
+2846	Enter the Maze
+2847	Cloud Maze Gate
+2848	⚔ Sky Arena
+2849	To the Arena
+2850	Sky Arena Gate
+2851	Rebirth (hold)
+2852	Rebirth Terrace · Rebirth Altar
+2853	World's End
+2854	...Those who step on the stones, hurry
+2855	Garden of Oblivion
+2856	There's only one way down. Jump
+2857	Open
+2858	Chest of the Garden of Oblivion
+2859	Stand before the great gate
+2860	Chained Portal
+2861	Talk
+2862	Reaper
+2863	Calm
+2864	Restless Spirit
+2865	To the Living World
+2866	Climb
+2867	Stone Gate to the Living World
+2868	[Fist King] Underworld room creation error:
+2869	Talk to the man-shaped stone
+2870	Silent Statue
+2871	Pedestal of Heaven
+2872	Pedestal of Earth
+2873	Pedestal of Man
+2874	Send Apex style energy
+2875	Leave the cave
+2876	The path leading up
+2877	[Fist King] Divine cave build error:
+2878	Hall of Judgment
+2879	⬆ To the Living World
+2880	Return to the living world
+2881	Underworld Gate
+2882	The living should not linger
+2883	Treasure Chest
+2884	[Fist King] New master site error:
+2885	[Fist King] Map optimize: parts %d · shadows off %d · touch off %d
+2886	Ground
+2887	Village
+2888	Training Spot
+2889	Region
+2890	Master's Seat
+2891	Landmark
+2892	Outer Lands
+2893	Enemy Camp
+2894	Manual Fragment
+2895	Hidden Spot
+2896	Terrain
+2897	Region Border
+2898	Roadside
+2899	Signs
+2900	Cherry Hill
+2901	Fill empty fields
+2902	Hidden Things
+2903	Hell Entrance
+2904	Hell
+2905	Boss Yard
+2906	Master's Request
+2907	Fill the fields
+2908	New Master Seat
+2909	Heavenly Realm
+2910	[Fist King] Map build error (
+2911	📜 Waiting for the previous server to save your data... (one moment)
+2912	🏆 This Server's Damage Challenge (20s)
+2913	No records yet
+2914	🎯 Already in a challenge
+2915	🛡 %d deflects! Strike right after a deflect to land a counter
+2916	[Fist King] Place teleport failed
+2917	📖 Codex · %s %s (%s defeated)
+2918	💥 The kill effect was removed, so 💠 %s sky gems you paid have been refunded
+2919	No style
+2920	Silver
+2921	📜 Manual scrolls +%d
+2922	Go to the Elder for the next story
+2923	Beyond the Apex
+2924	Don't get cocky just because you've reached one Apex. Once you've mastered all three Apex styles (Apex Sun-Moon · Apex Null · Apex Lightspeed) and been reborn %d times... at the far northwest of the world, directly opposite the entrance to hell, stands a man-shaped stone. They say if you offer 💰 %s silver before it, the way opens. %s
+2925	Still need:
+2926	.
+2927	You already have it all.
+2928	📜 Elder Cheongun · Ch.
+2929	\32
+2930	You must be reborn three times (now %d)
+2931	%s needs mastery %d (now %d)
+2932	You must raise an awakened (True) style to mastery %d
+2933	%s needs mastery %d
+2934	Need %s %s x%d (now %d) · %s
+2935	's Clone
+2936	's Top Disciple
+2937	's Disciple
+2938	👤 The top disciple steps forward!
+2939	👥 Disciples are coming (%d / %d)
+2940	Awakened Shadow
+2941	Already in a test
+2942	You can't request a test inside the Tower
+2943	🙏 Offered materials:
+2944	⌛ Test time is up. Ask again
+2945	Trial of Sun and Moon
+2946	No clones. I'll face you myself. Stand until the sun sets, the moon rises and the sun rises again, and these two hands are yours.
+2947	🌙 The sun has set. Time of the moon
+2948	🌅 Dawn breaks. The final hour
+2949	Awakening Trial
+2950	A shadow using your own style blocks the way. Get past it and your style rises a level.
+2951	🔥 Awakened! You gained %s
+2952	🥋 Test passed! You can now learn %s (T beside the master)
+2953	🧩 Manual Fragment +1 (enhancement material for game pass styles)
+2954	📜 You got a manual scroll!
+2955	🧩 Manual Fragment +%d (enhancement material for game pass styles)
+2956	\32defeated!
+2957	\32defeated you
+2958	⚔ Field PvP
+2959	You can now turn off PvP
+2960	Outside safe places like villages and shrines, players fight each other too. You've been defeated by a player once, so you can now turn PvP off if you want. (⚔ PvP button in the menu)
+2961	⚔ Duel
+2962	\32wins!
+2963	\32obtained
+2964	[Fist King] Map build error:
+2965	[Fist King] Combat tick error:
+2966	🔒 %s: unlocks at mastery %d
+2967	Not enough Ki (🌀 %d needed)
+2968	No target nearby
+2969	No Wound Salves (village General Store)
+2970	Get the Three Powers Fist from Elder Cheongun
+2971	Hidden Style
+2972	🔒 %s requires reaching the %s realm
+2973	🔒 %s requires learning %s first
+2974	❓ You haven't found this style's master yet. Rumor:
+2975	📍 To learn %s, find them at %s: %s
+2976	🔒 %s requires %d rebirths
+2977	📜 First fulfill the master's request ·
+2978	Not enough silver (💰 %s needed)
+2979	You can't change styles mid-fight
+2980	You can carry up to %d Wound Salves
+2981	🔮 All stats +%s
+2982	\32purchased
+2983	♻ You've already been reborn four times (no more rebirths)
+2984	♻ You must reach %s to be reborn
+2985	You can't be reborn right now (do it outside the Tower, Maze or Gates)
+2986	You can't be reborn mid-fight
+2987	\32is already at max level
+2988	♻ Not enough merit (earn it by rebirth or passing Rebirth Trials)
+2989	%s %s Lv %d · %s +%d%%
+2990	You can't refund perks mid-fight
+2991	♻ All perks refunded (merit
+2992	☯ You've passed every Rebirth Trial
+2993	☯ Be reborn to open the next Rebirth Trial
+2994	☯ Reach %s in this life to open the trial
+2995	Already in a trial
+2996	You can't open a trial inside the Tower or Maze
+2997	You can't open a trial mid-fight
+2998	☯ Catch your breath (%d s)
+2999	's Shadow
+3000	Rebirth Trial
+3001	⌛ The shadow withdrew. Try again
+3002	Afterimage
+3003	⛩ Realm Gate
+3004	\32Gate has opened
+3005	Your body has already reached the next realm. But a realm isn't climbed with the body alone. Defeat the gate guardian. Your stats won't rise further until you pass the gate. ('⛩ Gate Challenge' in the stats window)
+3006	No gate open yet (your stats must reach the next realm)
+3007	Already in a gate trial
+3008	You can't challenge a gate inside the Tower
+3009	You can't challenge a gate mid-fight
+3010	⛩ Catch your breath (%d s)
+3011	\32Gate Guardian
+3012	\32Gate
+3013	Show me you deserve this realm.
+3014	⌛ The gate closed. Try again
+3015	⛩ Gate passed! Realm
+3016	You can't climb the Tower during another trial
+3017	You can't climb the Tower mid-fight
+3018	🗼 The Tower is busy. Come back shortly
+3019	[Fist King] Tower trial arena error:
