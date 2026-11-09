@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.55.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.56.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -10673,6 +10673,7 @@ local function pushState(player: Player)
 		learnCost = Config.LEARN_COST[math.min(#owned + 1, #Config.LEARN_COST)],
 		training = st.training and st.training.kind or nil,
 		tester = st.tester,
+		owner = st.owner == true and not BATTLE,
 		canSave = st.canSave,
 		found = p.found,
 		trials = p.trials,
@@ -15137,6 +15138,37 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		pushState(player)
 	elseif string.sub(action, 1, 4) == "test" and st.tester then
 		testAction(player, p, action, a1)
+	elseif action == "ownerReset" and st.owner and not BATTLE then
+		-- 3.56판: 두 번 눌러야 지운다 (6초 안에). 게임패스는 로블록스가 기억하고, 산 상품 영수증은 남겨 두 번 받지 않게 한다
+		if not st.resetArm or os.clock() - st.resetArm > 6 then
+			st.resetArm = os.clock()
+			toast(player, "⚠ 6초 안에 한 번 더 누르면 기록을 모두 지우고 처음부터 시작해요 (되돌릴 수 없어요)")
+			return
+		end
+		st.resetArm = nil
+		local fresh = defaultProfile()
+		fresh.receipts = p.receipts
+		fresh.style = "samjae"
+		fresh.styles.samjae = true
+		profiles[player] = fresh
+		st.dirty = true
+		local fr = Combat.fighterOfPlayer(player)
+		refreshFighter(player)
+		if fr then
+			Combat.sync(fr)
+		end
+		updateTag(player)
+		pushState(player)
+		pcall(saveProfile, player)
+		toast(player, "↺ 기록을 지웠어요. 처음부터 시작해요")
+		pcall(function()
+			player:LoadCharacter()
+		end)
+		task.delay(2, function()
+			if player.Parent then
+				Story.check(player)
+			end
+		end)
 	end
 end)
 
@@ -16379,6 +16411,8 @@ local function onPlayerAdded(player: Player)
 		profile, ok = loadProfile(player)
 		st.loadedAt = os.time()
 		st.savedAt = os.clock()
+		-- 3.56판: 게임 주인 (공개판) 은 메뉴에서 자기 기록을 처음부터 다시 시작할 수 있다
+		st.owner = game.CreatorType == Enum.CreatorType.User and player.UserId == game.CreatorId
 	end
 	if not player.Parent then
 		return
@@ -59872,6 +59906,9 @@ return {
 	["손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다"] = "Throw both demon swords. Spinning flat above the ground, they fly in crossing arcs cutting enemies they pass, then clash in a cross ahead and explode",
 	["마왕참"] = "Demon King's Cleave",
 	["1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다"] = "For 1s, gather black flame in the sky behind you to forge a house-sized demon sword, then bring it crashing down ahead. The ground splits in a line and black fire erupts all the way to the end",
+	["↺ 처음부터 (주인만)"] = "↺ Start Over (owner only)",
+	["⚠ 6초 안에 한 번 더 누르면 기록을 모두 지우고 처음부터 시작해요 (되돌릴 수 없어요)"] = "⚠ Press again within 6 seconds to erase all progress and start over (cannot be undone)",
+	["↺ 기록을 지웠어요. 처음부터 시작해요"] = "↺ Progress erased. Starting over",
 }
 ]]></string>
           </Properties>
@@ -80200,6 +80237,10 @@ function UI.setState(s: any)
 	if testBtn then
 		testBtn.Visible = s.tester == true
 	end
+	local resetBtn = menu and menu:FindFirstChild("OwnerResetButton")
+	if resetBtn then
+		resetBtn.Visible = s.owner == true
+	end
 	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 사람에게 쓰러지기 전에는 끌 수 없다 (자물쇠)
 	local pvpBtn = menu and menu:FindFirstChild("PvpButton")
 	if pvpBtn and pvpBtn:IsA("TextButton") then
@@ -82072,7 +82113,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "reset", "↺ 처음부터 (주인만)" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -82095,6 +82136,8 @@ function UI.init(req: RemoteEvent)
 				UI.toggleMap()
 			elseif item[1] == "gfx" then
 				UI.toggleLowGfx()
+			elseif item[1] == "reset" then
+				Request:FireServer("ownerReset")
 			elseif item[1] == "lang" then
 				pcall(function()
 					local Lang = require(script.Parent:WaitForChild("Lang"))
@@ -82117,6 +82160,10 @@ function UI.init(req: RemoteEvent)
 		elseif item[1] == "gfx" then
 			b.Name = "GfxButton"
 			V.gfxButton = b
+		elseif item[1] == "reset" then
+			b.Name = "OwnerResetButton"
+			b.Visible = false
+			b.BackgroundColor3 = Color3.fromRGB(110, 40, 40)
 		elseif item[1] == "lang" then
 			-- 3.53판: 언어 단추 (이 단추 글자는 번역하지 않는다)
 			b.Name = "LangButton"

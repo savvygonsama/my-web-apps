@@ -3121,6 +3121,10 @@ function UI.setState(s: any)
 	if testBtn then
 		testBtn.Visible = s.tester == true
 	end
+	local resetBtn = menu and menu:FindFirstChild("OwnerResetButton")
+	if resetBtn then
+		resetBtn.Visible = s.owner == true
+	end
 	-- 들판 PvP: 켜짐(붉은) / 꺼짐(푸른). 사람에게 쓰러지기 전에는 끌 수 없다 (자물쇠)
 	local pvpBtn = menu and menu:FindFirstChild("PvpButton")
 	if pvpBtn and pvpBtn:IsA("TextButton") then
@@ -4993,7 +4997,7 @@ function UI.init(req: RemoteEvent)
 	end
 	-- 3.3판: 들판 PvP 단추 대신 배틀그라운드. 배틀그라운드 안에서는 권법·능력치·도움말과 돌아가기만
 	local menuItems = Config.BATTLE_MODE and { { "styles", "🥋 권법" }, { "lobby", "🏯 대기실로" }, { "stats", "📊 능력치" }, { "help", "📜 도움말" }, { "back", "🏠 메인 월드로" }, { "test", "🧪 테스트" } }
-		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "test", "🧪 테스트" } }
+		or { { "styles", "🥋 권법" }, { "map", "🗺 지도 (M)" }, { "stats", "📊 능력치" }, { "ach", "🏆 업적" }, { "dex", "📖 도감" }, { "shop", "🧪 만물상" }, { "help", "📜 도움말" }, { "testroom", "🎯 권법 시험장" }, { "pvp", "⚔ PvP 켜짐" }, { "battle", "⚔ 배틀그라운드" }, { "gfx", "🌿 그래픽: 보통" }, { "lang", "🌐 English" }, { "reset", "↺ 처음부터 (주인만)" }, { "test", "🧪 테스트" } }
 	for _, item in ipairs(menuItems) do
 		local b = button({ Size = UDim2.new(1, 0, 0, 32), Text = item[2], TextSize = 16, BackgroundTransparency = 0.08, ZIndex = 5, Parent = menu }, function()
 			if V.device ~= "pc" then
@@ -5016,6 +5020,8 @@ function UI.init(req: RemoteEvent)
 				UI.toggleMap()
 			elseif item[1] == "gfx" then
 				UI.toggleLowGfx()
+			elseif item[1] == "reset" then
+				Request:FireServer("ownerReset")
 			elseif item[1] == "lang" then
 				pcall(function()
 					local Lang = require(script.Parent:WaitForChild("Lang"))
@@ -5038,6 +5044,10 @@ function UI.init(req: RemoteEvent)
 		elseif item[1] == "gfx" then
 			b.Name = "GfxButton"
 			V.gfxButton = b
+		elseif item[1] == "reset" then
+			b.Name = "OwnerResetButton"
+			b.Visible = false
+			b.BackgroundColor3 = Color3.fromRGB(110, 40, 40)
 		elseif item[1] == "lang" then
 			-- 3.53판: 언어 단추 (이 단추 글자는 번역하지 않는다)
 			b.Name = "LangButton"
