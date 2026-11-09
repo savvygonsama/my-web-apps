@@ -5353,7 +5353,7 @@ local function skyWorld(out: any)
 		local d = Vector3.new(math.cos(a), 0, math.sin(a))
 		local mid = town + d * (TR / 2 + 10)
 		part({ Name = "SkyRoad", Size = Vector3.new(14, 0.3, TR - 20), CFrame = CFrame.lookAt(mid, mid + d) * CFrame.new(0, 0.1, 0), Color = ROAD, Material = Enum.Material.Marble, Parent = f })
-		for j = 1, 4 do
+		for j = 1, math.floor((TR - 50) / 38) do
 			for _, side in ipairs({ -1, 1 }) do
 				local p = town + d * (30 + j * 38) + Vector3.new(-d.Z, 0, d.X) * side * 10
 				stoneLantern(p, f, true)
@@ -5400,15 +5400,29 @@ local function skyWorld(out: any)
 		local base = k * math.pi / 2
 		for _, off in ipairs({ -0.38, 0.38 }) do
 			local a = base + off
-			local p = town + Vector3.new(math.cos(a) * 165, 0, math.sin(a) * 165)
+			local p = town + Vector3.new(math.cos(a) * TR * 0.825, 0, math.sin(a) * TR * 0.825)
 			local yaw = math.atan2(-(town.X - p.X), -(town.Z - p.Z))
 			building(p, rng:NextNumber(18, 24), rng:NextNumber(14, 18), yaw, f, { tiers = rng:NextNumber() < 0.5 and 2 or 1, wall = Color3.fromRGB(245, 240, 230), roof = Color3.fromRGB(70, 110, 170):Lerp(Color3.fromRGB(150, 90, 200), rng:NextNumber()) })
+		end
+	end
+	-- 3.52판: 넓어진 천궁의 안쪽 둘레 (큰길 사이 네 모퉁이마다 정자 하나와 매화 넷, 석등 둘)
+	for k = 0, 3 do
+		local a = math.pi / 4 + k * math.pi / 2
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local gc = town + dir * TR * 0.68
+		pavilion(gc, 9, 6, 11, Color3.fromRGB(70, 110, 170), f, Color3.fromRGB(150, 220, 255))
+		for q = 0, 3 do
+			local b = a + (q - 1.5) * 0.16
+			tree(town + Vector3.new(math.cos(b), 0, math.sin(b)) * TR * (q % 2 == 0 and 0.78 or 0.92), 0.95, f, true)
+		end
+		for _, side in ipairs({ -1, 1 }) do
+			stoneLantern(gc + Vector3.new(-dir.Z, 0, dir.X) * side * 16, f, true)
 		end
 	end
 	-- 바깥 네 모퉁이의 첨탑
 	for k = 0, 3 do
 		local a = math.pi / 4 + k * math.pi / 2
-		spire(town + Vector3.new(math.cos(a) * 178, 0, math.sin(a) * 178), 4, 6, Color3.fromRGB(150, 220, 255), f)
+		spire(town + Vector3.new(math.cos(a) * TR * 0.89, 0, math.sin(a) * TR * 0.89), 4, 6, Color3.fromRGB(150, 220, 255), f)
 	end
 	-- 운해 평원: 구름 덤불과 정자
 	local cp = I.cloudplain.at
@@ -6668,10 +6682,11 @@ local function hellWorld(out: any)
 	for _, z in ipairs(H.zones) do
 		if not z.safe then
 			local d = z.at - center
-			local len = Vector3.new(d.X, 0, d.Z).Magnitude - 170 - z.radius * 0.5
+			local HUB = H.zones[1].radius -- 3.52판: 나루가 넓어져 길은 나루 가장자리에서 시작한다
+			local len = Vector3.new(d.X, 0, d.Z).Magnitude - HUB - z.radius * 0.5
 			if len > 10 then
 				local dir = Vector3.new(d.X, 0, d.Z).Unit
-				local mid = center + dir * (170 + len / 2)
+				local mid = center + dir * (HUB + len / 2)
 				part({ Name = "HellRoad", Size = Vector3.new(22, 0.4, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.2, 0), mid + dir + Vector3.new(0, 0.2, 0)), Color = rgb(62, 44, 52), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
 			end
 		end
@@ -6772,6 +6787,40 @@ local function hellWorld(out: any)
 		for k = 0, 11 do
 			local a = k / 12 * math.pi * 2
 			brazier(c + Vector3.new(math.cos(a) * 88, 0.5, math.sin(a) * 88), 1.4, f)
+		end
+		-- 3.52판: 넓어진 나루의 바깥 둘레. 길이 나가는 쪽은 비우고 귀화 화로 · 뼈빛 석등 · 마른 나무를 번갈아 세운다
+		local roadsOut = {}
+		for _, oz in ipairs(H.zones) do
+			if not oz.safe then
+				table.insert(roadsOut, math.atan2(oz.at.Z - c.Z, oz.at.X - c.X))
+			end
+		end
+		local OR = z.radius - 34
+		for k = 0, 27 do
+			local a = k / 28 * math.pi * 2
+			local clear = true
+			for _, ra in ipairs(roadsOut) do
+				if math.abs((a - ra + math.pi) % (2 * math.pi) - math.pi) < 0.14 then
+					clear = false
+				end
+			end
+			local p = c + Vector3.new(math.cos(a) * OR, 0.5, math.sin(a) * OR)
+			if clear and k % 3 == 0 then
+				brazier(p, 1.2, f)
+			elseif clear and k % 3 == 1 then
+				stoneLantern(p, f, true)
+			elseif clear then
+				local h = rng:NextNumber(14, 22)
+				part({ Name = "DeadTrunk", Size = Vector3.new(2, h, 2), CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)) * CFrame.Angles(rng:NextNumber(-0.1, 0.1), rng:NextNumber(0, 6), 0), Color = rgb(46, 38, 40), Material = Enum.Material.Wood, Parent = f })
+			end
+		end
+		-- 광장에서 바깥 둘레까지 이어지는 뼈빛 돌길 넷 (동 · 서 · 남 · 북)
+		for q = 0, 3 do
+			local a = q * math.pi / 2
+			local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+			local len = z.radius - 95
+			local mid = c + dir * (95 + len / 2)
+			part({ Name = "HubPath", Size = Vector3.new(14, 0.3, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.32, 0), mid + dir + Vector3.new(0, 0.32, 0)), Color = rgb(150, 144, 138), Material = Enum.Material.Cobblestone, CanCollide = false, Parent = f })
 		end
 		-- 명부전: 검은 기와 지붕을 인 붉은 기둥 전각 (북쪽)
 		local hall = c + Vector3.new(0, 0, -92)

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.51.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.52.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4876,7 +4876,7 @@ Config.SKY = {
 	realm = 12, -- 천인합일부터 오를 수 있다
 	portal = Vector3.new(-90, 0, -205), -- 마을 안 천상 문
 	islands = {
-		{ id = "skytown", name = "천궁", at = Vector3.new(0, SY, 0), radius = 200, safe = true, ground = Color3.fromRGB(235, 232, 220), material = Enum.Material.Marble },
+		{ id = "skytown", name = "천궁", at = Vector3.new(0, SY, 0), radius = 260, safe = true, ground = Color3.fromRGB(235, 232, 220), material = Enum.Material.Marble },
 		{ id = "cloudplain", name = "운해 평원", at = Vector3.new(0, SY, 560), radius = 210, ground = Color3.fromRGB(220, 235, 225), material = Enum.Material.Grass,
 			camps = { { enemy = "cloudguard", count = 3, at = Vector3.new(-90, SY, 520) }, { enemy = "cranesword", count = 3, at = Vector3.new(90, SY, 600) }, { enemy = "cloudguard", count = 2, at = Vector3.new(0, SY, 700) } } },
 		{ id = "thunder", name = "뇌정봉", at = Vector3.new(620, SY, -160), radius = 190, ground = Color3.fromRGB(70, 78, 100), material = Enum.Material.Slate,
@@ -5344,7 +5344,7 @@ do
 	end
 	-- 구역: 황천 나루 (안전한 곳) 가운데, 둘레에 다섯 땅
 	Config.HELL.zones = {
-		{ id = "hwangcheon", name = "황천 나루", at = Vector3.new(0, HY, 0), radius = 170, safe = true, ground = Color3.fromRGB(70, 66, 76), material = Enum.Material.Basalt },
+		{ id = "hwangcheon", name = "황천 나루", at = Vector3.new(0, HY, 0), radius = 260, safe = true, ground = Color3.fromRGB(70, 66, 76), material = Enum.Material.Basalt },
 		{ id = "samdocheon", name = "삼도천", at = Vector3.new(0, HY, 520), radius = 210, ground = Color3.fromRGB(80, 64, 70), material = Enum.Material.Slate, level = 1,
 			camps = { { enemy = "wongwi", count = 3, at = Vector3.new(-90, HY, 470) }, { enemy = "agwi", count = 3, at = Vector3.new(90, HY, 560) }, { enemy = "wongwi", count = 2, at = Vector3.new(0, HY, 620) } },
 			boss = { id = "talui", at = Vector3.new(0, HY, 650) } },
