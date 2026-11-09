@@ -991,7 +991,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
 	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
 	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 회랑 →", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 마네킹 앞에서 T · 그 권법으로 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 · 권법의 발판을 밟으면 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
 	local rack = f:FindFirstChild("Rack")
 	local stylePrompt = prompt(rack or sroot, "권법 창 열기", "무기 걸이", "PickStyle")
 	-- 입장 문 위의 작은 화면

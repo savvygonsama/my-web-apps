@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.63.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.64.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -14749,7 +14749,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		-- 이야기 첫 장이면 장로를 찾아가라고 (배틀그라운드는 대기실 안내)
 		if BATTLE then
 			-- 3.60판: 화면 창 대신 마당의 실물 화면 (투표대 · 전광판 · 무기 걸이 · 입장 문). 짧은 알림만
-			toast(player, "⚔ 대기실 · 동쪽 권법 회랑의 마네킹 앞에서 T로 그 권법 입장 · 투표대에서 다음 맵")
+			toast(player, "⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵")
 		elseif p.story == 1 and not cutscene(player, "intro", { at = Config.ELDER_AT }) then
 			Push:FireClient(player, "dialog", { who = "강호", title = "권왕: 맨손의 강호", text = "맨손 하나로 강호를 꺾어라. 먼저 마을의 청운 장로를 찾아가 말을 걸어 보자. (노란 길잡이를 따라가서 T)" })
 		end
@@ -17913,7 +17913,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	-- 권법 고르는 자리: 서쪽 수련 마당의 무기 걸이 위 화면 (T로 권법 창을 연다)
 	local sroot = screen(CFrame.lookAt(yard + Vector3.new(0, 9.4, -15), yard + Vector3.new(0, 9.4, 10)), 10, 3.4, f, Color3.fromRGB(255, 200, 110))
 	label(sroot, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0.55, 0), "권법 회랑 →", 60, Color3.new(1, 1, 1), Enum.Font.GothamBlack, Enum.TextXAlignment.Center)
-	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 마네킹 앞에서 T · 그 권법으로 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
+	label(sroot, UDim2.new(0, 0, 0.55, 0), UDim2.new(1, 0, 0.45, 0), "마당 동쪽 · 권법의 발판을 밟으면 입장", 26, Color3.fromRGB(170, 176, 190), Enum.Font.Gotham, Enum.TextXAlignment.Center)
 	local rack = f:FindFirstChild("Rack")
 	local stylePrompt = prompt(rack or sroot, "권법 창 열기", "무기 걸이", "PickStyle")
 	-- 입장 문 위의 작은 화면
@@ -53226,6 +53226,8 @@ return Gacha
           <Properties>
             <string name="Name">Gallery</string>
             <string name="Source"><![CDATA[-- 권왕 3.62판: 배틀그라운드 대기실의 권법 회랑 (권법 고르는 창 대신)
+--   3.64판: 엘리멘탈 아레나처럼. 권법마다 떠 있는 큰 상징 구슬 · 나무 푯말 (이름 · 등급) · 빛나는 발판. 발판을 밟으면 그 권법으로 싸움터에 들어간다
+--   (두 줄 × 여섯, 마당 동쪽. 발판은 서쪽 (마당 가운데) 을 향한다)
 --   익힌 권법마다 마네킹 하나 (내 생김새 + 그 권법의 시그니처 장신구) 가 받침대 위에서 그 권법 자세로 서 있다가,
 --   가까이 가면 차례로 연타 · 강타 · 기술을 시범한다. 받침대 앞에서 T = 그 권법으로 싸움터에 들어간다
 --   한 번에 15개 (등급 높은 차례). 더 있으면 '다음 ▶' 받침대로 넘긴다. 마네킹은 내 화면에만 있다
@@ -53245,10 +53247,10 @@ local center: Vector3? = nil
 local page = 1
 local builtKey = ""
 local slots: { any } = {}
+local spinners: { BasePart } = {} -- 3.64판 상징 구슬의 도는 고리
 local lastState: any = nil
 
-local COLS, ROWS = 5, 3
-local PER = COLS * ROWS
+local PER = 12
 local INK = Color3.fromRGB(16, 18, 24)
 
 local BODY = { HumanoidRootPart = true, Head = true, UpperTorso = true, LowerTorso = true, LeftUpperArm = true, LeftLowerArm = true, LeftHand = true, RightUpperArm = true, RightLowerArm = true, RightHand = true, LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true, RightUpperLeg = true, RightLowerLeg = true, RightFoot = true }
@@ -53314,66 +53316,6 @@ local function newPart(props: { [string]: any }): BasePart
 	return p
 end
 
--- 이름표 (위에 뜨는 납작한 판: 이름 · 등급 띠)
-local function nameTag(target: BasePart, st: any, grade: string, using: boolean)
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(0, 190, 0, 54)
-	bb.StudsOffset = Vector3.new(0, 4.6, 0)
-	bb.MaxDistance = 80
-	bb.AlwaysOnTop = false
-	bb.LightInfluence = 0
-	bb.Parent = target
-	local fr = Instance.new("Frame")
-	fr.Size = UDim2.fromScale(1, 1)
-	fr.BackgroundColor3 = INK
-	fr.BackgroundTransparency = 0.2
-	fr.BorderSizePixel = 0
-	fr.Parent = bb
-	local cr = Instance.new("UICorner")
-	cr.CornerRadius = UDim.new(0, 10)
-	cr.Parent = fr
-	local sk = Instance.new("UIStroke")
-	sk.Color = using and Color3.fromRGB(255, 208, 110) or st.color
-	sk.Thickness = using and 2 or 1
-	sk.Parent = fr
-	local nm = Instance.new("TextLabel")
-	nm.BackgroundTransparency = 1
-	nm.Position = UDim2.new(0, 10, 0, 4)
-	nm.Size = UDim2.new(1, -20, 0, 26)
-	nm.Font = Enum.Font.GothamBlack
-	nm.TextSize = 18
-	nm.TextColor3 = Color3.new(1, 1, 1)
-	nm.TextXAlignment = Enum.TextXAlignment.Left
-	nm.TextTruncate = Enum.TextTruncate.AtEnd
-	nm.Text = (st.icon or "") .. " " .. st.name
-	nm.Parent = fr
-	local gc = Config.GRADE_COLOR[grade] or Color3.fromRGB(255, 208, 110)
-	local chip = Instance.new("TextLabel")
-	chip.Position = UDim2.new(0, 10, 0, 30)
-	chip.Size = UDim2.new(0, 56, 0, 18)
-	chip.BackgroundColor3 = gc
-	chip.Font = Enum.Font.GothamBlack
-	chip.TextSize = 12
-	chip.TextColor3 = INK
-	chip.Text = grade
-	chip.Parent = fr
-	local cc = Instance.new("UICorner")
-	cc.CornerRadius = UDim.new(0, 9)
-	cc.Parent = chip
-	if using then
-		local u = Instance.new("TextLabel")
-		u.BackgroundTransparency = 1
-		u.Position = UDim2.new(0, 72, 0, 30)
-		u.Size = UDim2.new(1, -82, 0, 18)
-		u.Font = Enum.Font.GothamBold
-		u.TextSize = 12
-		u.TextColor3 = Color3.fromRGB(255, 208, 110)
-		u.TextXAlignment = Enum.TextXAlignment.Left
-		u.Text = "지금 쓰는 권법"
-		u.Parent = fr
-	end
-end
-
 local function clear()
 	for _, s in ipairs(slots) do
 		if s.doll then
@@ -53381,6 +53323,7 @@ local function clear()
 		end
 	end
 	slots = {}
+	spinners = {}
 	if folder then
 		folder:ClearAllChildren()
 	end
@@ -53389,9 +53332,100 @@ end
 -- 받침대 자리 (마당 동쪽 절반, 5 × 3)
 local function spotAt(i: number): Vector3
 	local c = center :: Vector3
-	local col = (i - 1) % COLS
-	local row = (i - 1) // COLS
-	return c + Vector3.new(30 + col * 9, 0.6, -16 + row * 14)
+	local col = (i - 1) // 6
+	local row = (i - 1) % 6
+	return c + Vector3.new(38 + col * 20, 0.6, -25 + row * 10)
+end
+-- 나무 푯말 (마네킹 옆): 기둥 + 판, 판 앞면에 이름 · 등급
+local function signpost(at: Vector3, st: any, grade: string, using: boolean, f: Instance)
+	local WOOD = Color3.fromRGB(120, 82, 52)
+	newPart({ Name = "SignPost", Size = Vector3.new(0.5, 5.2, 0.5), Position = at + Vector3.new(0, 2.6, 0), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+	local board = newPart({ Name = "SignBoard", Size = Vector3.new(0.3, 2.4, 4.4), CFrame = CFrame.new(at + Vector3.new(0, 4.9, 0)), Color = Color3.fromRGB(150, 104, 66), Material = Enum.Material.Wood, Parent = f })
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Left -- 서쪽 (마당) 을 본다
+	sg.PixelsPerStud = 60
+	sg.LightInfluence = 0.2
+	sg.Parent = board
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.new(1, -16, 0.62, 0)
+	t.Position = UDim2.new(0, 8, 0, 4)
+	t.Font = Enum.Font.GothamBlack
+	t.TextScaled = true
+	t.TextColor3 = Color3.fromRGB(255, 246, 228)
+	t.TextStrokeTransparency = 0.4
+	t.Text = st.name
+	t.Parent = sg
+	local g = Instance.new("TextLabel")
+	g.BackgroundTransparency = 1
+	g.Size = UDim2.new(1, -16, 0.32, 0)
+	g.Position = UDim2.new(0, 8, 0.64, 0)
+	g.Font = Enum.Font.GothamBold
+	g.TextScaled = true
+	g.TextColor3 = using and Color3.fromRGB(255, 220, 120) or (Config.GRADE_COLOR[grade] or Color3.fromRGB(255, 220, 120))
+	g.TextStrokeTransparency = 0.5
+	g.Text = using and (grade .. " · 지금 쓰는 권법") or grade
+	g.Parent = sg
+end
+-- 떠 있는 상징 구슬: 권법 빛깔의 빛나는 구슬 · 바깥 빛무리 · 비스듬히 도는 고리 · 빛 가루 · 가운데 한자
+local function emblem(at: Vector3, st: any, f: Instance)
+	local c1, c2 = st.color, st.color2 or st.color
+	local core = newPart({ Name = "EmblemCore", Shape = Enum.PartType.Ball, Size = Vector3.one * 3.4, Position = at, Color = c1, Material = Enum.Material.Neon, Transparency = 0.1, Parent = f })
+	newPart({ Name = "EmblemHalo", Shape = Enum.PartType.Ball, Size = Vector3.one * 5.6, Position = at, Color = c2, Material = Enum.Material.Neon, Transparency = 0.82, Parent = f })
+	local ring = newPart({ Name = "EmblemRing", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.25, 7.4, 7.4), CFrame = CFrame.new(at) * CFrame.Angles(0.5, 0, math.rad(90)), Color = c2, Material = Enum.Material.Neon, Transparency = 0.45, Parent = f })
+	table.insert(spinners, ring)
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	e.Color = ColorSequence.new(Color3.new(1, 1, 1), c2)
+	e.Size = NumberSequence.new(0.5, 0)
+	e.Transparency = NumberSequence.new(0, 1)
+	e.Lifetime = NumberRange.new(0.8, 1.4)
+	e.Speed = NumberRange.new(2, 5)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.LightEmission = 1
+	e.Rate = 10
+	e.Parent = core
+	local l = Instance.new("PointLight")
+	l.Color = c1
+	l.Range = 16
+	l.Brightness = 1.6
+	l.Parent = core
+	local bb = Instance.new("BillboardGui")
+	bb.Size = UDim2.new(0, 70, 0, 70)
+	bb.MaxDistance = 90
+	bb.LightInfluence = 0
+	bb.Parent = core
+	local h = Instance.new("TextLabel")
+	h.BackgroundTransparency = 1
+	h.Size = UDim2.fromScale(1, 1)
+	h.Font = Enum.Font.Antique
+	h.TextScaled = true
+	h.TextColor3 = Color3.new(1, 1, 1)
+	h.TextStrokeTransparency = 0.3
+	h.TextStrokeColor3 = c1:Lerp(Color3.new(0, 0, 0), 0.5)
+	h.Text = st.icon or ""
+	h.Parent = bb
+end
+-- 밟는 발판 (마당 쪽)
+local function pad(at: Vector3, st: any, using: boolean, f: Instance): BasePart
+	newPart({ Name = "PadEdge", Size = Vector3.new(5.6, 0.3, 7.6), Position = at + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
+	local p = newPart({ Name = "Pad", Size = Vector3.new(5, 0.32, 7), Position = at + Vector3.new(0, 0.2, 0), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
+	local sg = Instance.new("SurfaceGui")
+	sg.Face = Enum.NormalId.Top
+	sg.PixelsPerStud = 40
+	sg.LightInfluence = 0
+	sg.Parent = p
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Rotation = 90
+	t.Font = Enum.Font.GothamBlack
+	t.TextScaled = true
+	t.TextColor3 = Color3.new(1, 1, 1)
+	t.TextTransparency = 0.15
+	t.Text = "밟으면 입장"
+	t.Parent = sg
+	return p
 end
 
 local function build()
@@ -53427,8 +53461,12 @@ local function build()
 			-- 받침대: 어두운 둥근 단 + 권법 빛깔의 빛나는 테
 			local base = newPart({ Name = "GalleryBase", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 6, 6), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = INK, Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = f })
 			newPart({ Name = "GalleryRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 6.4, 6.4), CFrame = CFrame.new(at + Vector3.new(0, 0.82, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = using and Color3.fromRGB(255, 208, 110) or st.color, Material = Enum.Material.Neon, Transparency = 0.25, Parent = f })
+			emblem(at + Vector3.new(0, 10.5, 0), st, f)
+			signpost(at + Vector3.new(-2, 0.6, 4.2), st, gradeOf(id), using, f)
+			local padAt = at + Vector3.new(-7, -0.6, 0)
+			pad(padAt, st, using, f)
 			local doll = makeDoll()
-			local slot: any = { id = id, at = at, base = base, next = os.clock() + 1 + k * 0.4 }
+			local slot: any = { id = id, at = at, base = base, padAt = padAt, next = os.clock() + 1 + k * 0.4 }
 			if doll then
 				doll.Name = "GalleryDoll"
 				doll:SetAttribute("Style", id)
@@ -53459,29 +53497,13 @@ local function build()
 				end
 				pcall(Anim.watch, doll)
 				slot.doll = doll
-				if hrp then
-					nameTag(hrp, st, gradeOf(id), using)
-				end
 			end
-			local pp = Instance.new("ProximityPrompt")
-			pp.ActionText = "이 권법으로 싸움터에"
-			pp.ObjectText = st.name
-			pp.HoldDuration = 0
-			pp.MaxActivationDistance = 9
-			pp.RequiresLineOfSight = false
-			pp.KeyboardKeyCode = Enum.KeyCode.T
-			pp.Parent = base
-			pp.Triggered:Connect(function()
-				if opts.request then
-					opts.request:FireServer("battleEnter", id)
-				end
-			end)
 			table.insert(slots, slot)
 		end
 	end
 	-- 더 있으면 '다음 ▶' 받침대 (회랑 서쪽 끝)
 	if pages > 1 then
-		local at = (center :: Vector3) + Vector3.new(22, 0.6, -2)
+		local at = (center :: Vector3) + Vector3.new(48, 0.6, -36)
 		local nb = newPart({ Name = "GalleryNext", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 4, 4), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(255, 208, 110), Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = true, Parent = f })
 		local pp = Instance.new("ProximityPrompt")
 		pp.ActionText = string.format("다음 권법 (%d / %d)", page, pages)
@@ -53523,11 +53545,40 @@ function Gallery.start(o: any)
 		end)
 		pcall(build)
 		-- 가까이 있으면 차례로 시범 (한 번에 둘까지)
+		-- 고리 돌리기 (화면마다)
+		local RunService = game:GetService("RunService")
+		RunService.RenderStepped:Connect(function(dt)
+			for i, r in ipairs(spinners) do
+				if r.Parent then
+					r.CFrame = r.CFrame * CFrame.Angles(dt * (1 + (i % 3) * 0.3), 0, 0)
+				end
+			end
+		end)
+		local onPad: { [any]: boolean } = {}
+		local sentAt = 0
 		while true do
-			task.wait(0.25)
+			task.wait(0.12)
 			local char = player.Character
 			local me = char and char:FindFirstChild("HumanoidRootPart")
 			local inArena = char and char:GetAttribute("InArena") == true
+			-- 발판 밟기: 밖에서 발판 위로 올라선 순간 그 권법으로 입장 (발판 위에서 태어난 것은 치지 않는다)
+			if me and me:IsA("BasePart") and not inArena then
+				for _, s in ipairs(slots) do
+					local pa = s.padAt :: Vector3?
+					if pa then
+						local d = me.Position - pa
+						local on = math.abs(d.X) < 2.8 and math.abs(d.Z) < 3.8 and d.Y > -1 and d.Y < 6
+						if on and onPad[s] == false and os.clock() - sentAt > 2 and opts.request then
+							sentAt = os.clock()
+							opts.request:FireServer("battleEnter", s.id)
+							pcall(Fx.ring, pa + Vector3.new(0, 0.5, 0), Color3.new(1, 1, 1), 1, 10, 0.4)
+						end
+						onPad[s] = on
+					end
+				end
+			else
+				table.clear(onPad)
+			end
 			if me and me:IsA("BasePart") and not inArena then
 				local busy = 0
 				local now = os.clock()
@@ -60742,6 +60793,10 @@ return {
 	["권법 창 열기"] = "Open Styles",
 	["⚔ 대기실 · 동쪽 권법 회랑의 마네킹 앞에서 T로 그 권법 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · press T at a mannequin in the east Style Gallery to enter with that style · vote for the next map at the stands",
 	["다음 권법 (%d / %d)"] = "More styles (%d / %d)",
+	["밟으면 입장"] = "Step to enter",
+	[" · 지금 쓰는 권법"] = "· current style",
+	["⚔ 대기실 · 동쪽 권법 회랑에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the east Style Gallery to enter · vote for the next map at the stands",
+	["마당 동쪽 · 권법의 발판을 밟으면 입장"] = "East side · step on a style's pad to enter",
 }
 ]]></string>
           </Properties>
