@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.58.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.59.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4739,7 +4739,9 @@ Config.CUTSCENES = {
 ------------------------------------------------------------------------
 Config.MUSIC = {
 	volume = 0.35,
-	default = 0, -- 들판 (지정이 없는 곳 · 비어 있는 칸도 이 곡). 3.57.1판: 배경 음악은 틀지 않는다
+	-- 3.59판: 땅은 평온한 곡 (APM · Irish Flute 30 Instrumental, 가벼운 피리), 지옥은 무서운 곡 (APM · Demon Dimension). 천상계 · 보스 · 탑은 비워 두어 있는 곳의 곡을 그대로
+	default = 1836448915, -- 들판 (지정이 없는 곳 · 비어 있는 칸도 이 곡)
+	hell = 1835356065, -- 지옥 · 저승 방
 	village = 0, -- 청운 마을
 	boss = 0, -- 보스와 싸울 때
 	tower = 0, -- 천층탑

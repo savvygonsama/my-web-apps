@@ -2547,16 +2547,22 @@ task.spawn(function()
 		task.wait(1)
 		pcall(function()
 			local r = rootOfChar()
+			local MU = Config.MUSIC :: any
+			-- 3.59판: 있는 곳 먼저 (지옥 · 저승 방 · 천상계 · 땅의 지역), 보스 · 탑 곡이 비어 있으면 있는 곳의 곡을 그대로
 			local key = "default"
-			if UI.towerActive then
-				key = bossNow and bossNow.Parent and "boss" or "tower"
-			elseif bossNow and bossNow.Parent and bossNow:GetAttribute("Dead") ~= true then
-				key = "boss"
+			local HY = Config.HELL and Config.HELL.y
+			if r and ((HY and r.Position.Y > HY - 300) or r.Position.Y < -150) then
+				key = "hell"
 			elseif r and r.Position.Y > Config.SKY.y - 300 then
 				key = "skyworld"
 			elseif r then
 				local reg = UI.regionAt(r.Position)
 				key = reg and reg.id or "default"
+			end
+			if UI.towerActive and (tonumber(MU.tower) or 0) ~= 0 then
+				key = bossNow and bossNow.Parent and (tonumber(MU.boss) or 0) ~= 0 and "boss" or "tower"
+			elseif bossNow and bossNow.Parent and bossNow:GetAttribute("Dead") ~= true and (tonumber(MU.boss) or 0) ~= 0 then
+				key = "boss"
 			end
 			Music.set(key)
 		end)
