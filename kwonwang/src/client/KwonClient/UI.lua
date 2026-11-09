@@ -1930,7 +1930,9 @@ function UIB.buildShop()
 			end
 		end
 		for _, item in ipairs(Config.Shop) do
-			local can = state and state.coins >= item.cost
+			local cost = Config.shopCost(item, state and state.realm or 1)
+			local can = state and state.coins >= cost
+			labels[item.id].Text = "💰 " .. Config.formatNumber(cost)
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
 		end
 		local owned = state and state.premium or {}
@@ -2022,7 +2024,7 @@ local function canDraw10(): boolean
 		return false
 	end
 	local sc = state.scrolls or 0
-	return sc >= 10 or (state.coins or 0) >= (10 - sc) * Config.MANUAL_DRAW.coins
+	return sc >= 10 or (state.coins or 0) >= (10 - sc) * Config.manualCoins(state.realm or 1)
 end
 function UI.setManualAuto(on: boolean)
 	if on and not canDraw10() then
@@ -2146,7 +2148,7 @@ function UIB.buildManuals()
 		if not state then
 			return
 		end
-		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
+		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(Config.manualCoins(state.realm or 1)))
 		local equip = state.equip or {}
 		for i, sl in ipairs(slots) do
 			local id = equip[i]

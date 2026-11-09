@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.43.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.44.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3135,7 +3135,7 @@ Config.ENH = {
 		if lv <= 10 then
 			return math.floor(5000 * 1.6 ^ (lv - 1))
 		end
-		return math.floor(5000 * 1.6 ^ 9 * 3 ^ (lv - 10))
+		return math.floor(5000 * 1.6 ^ 9 * 1.8 ^ (lv - 10)) -- 3.44판: 보스 은자를 줄인 만큼 ×3 → ×1.8
 	end,
 	-- 비급 조각이 떨어지는 확률 (천층탑 · 시험 보스는 빼고): 모든 보스 절반 · 지옥 보스 70% (가끔 둘) · 정예 졸병 3%
 	drop = { boss = 0.5, late = 0.5, hell = 0.7, extra = 0.3, elite = 0.03 },
@@ -4427,10 +4427,23 @@ end
 -- 상점 (마을)
 ------------------------------------------------------------------------
 Config.Shop = {
-	{ id = "potion", name = "금창약", icon = "🧪", desc = "체력 40% 회복 (H키, 최대 5개)", cost = 40, max = 5 },
-	{ id = "elixir", name = "소환단", icon = "💊", desc = "5분 동안 수련 효과 2배", cost = 250 },
-	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치 +10 (영구)", cost = 1500 },
+	-- 3.44판: 값은 경지에 맞춰 오른다 (scale). 후반에도 은자를 쓸 곳이 되게
+	{ id = "potion", name = "금창약", icon = "🧪", desc = "체력 40% 회복 (H키, 최대 5개)", cost = 40, max = 5, scale = true },
+	{ id = "elixir", name = "소환단", icon = "💊", desc = "5분 동안 수련 효과 2배", cost = 250, scale = true },
+	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치가 오른다 (영구, 경지에 맞춰 커진다)", cost = 1500, scale = true },
 }
+-- 3.44판 은자의 잣대: 그 경지에서 졸병을 사냥해 버는 은자가 이만큼씩 커진다 (삼류 1 → 허무경 약 744). 경지에 맞춰 오르는 값은 모두 이것으로
+function Config.coinScale(realmIdx: number): number
+	return 1.37 ^ (math.clamp(math.floor(realmIdx or 1), 1, 22) - 1)
+end
+function Config.shopCost(item: any, realmIdx: number): number
+	return item.scale and math.floor(item.cost * Config.coinScale(realmIdx)) or item.cost
+end
+-- 대환단 한 알: 그 경지 기준 적 스무 마리를 쓰러뜨린 만큼의 능력치 (넷으로 나눠). 값 (약 13분 사냥한 은자) 에 비해 사냥 시간의 약 1/4을 더 얻는다
+function Config.pillStats(realmIdx: number): number
+	local i = math.clamp(math.floor(realmIdx or 1), 1, #Config.Realms)
+	return math.max(10, math.floor(Config.killGain(Config.realmRefPower(i)) * 20 / 4))
+end
 Config.SHOP_BY_ID = {}
 for _, it in ipairs(Config.Shop) do
 	Config.SHOP_BY_ID[it.id] = it
@@ -4466,6 +4479,10 @@ Config.MANUAL_RARITY = {
 -- 뽑기: 두루마리 하나 또는 은자. 60번 안에 전설 이상이 한 번은 나온다 (천장)
 -- 천장에서는 전설 88% · 신화 10% · 천상 2%
 Config.MANUAL_DRAW = { coins = 30000, pity = 60, slots = 3, refund = 4000 }
+-- 3.44판: 은자로 뽑는 값도 경지에 맞춰 (생사경까지는 3만 그대로, 그 뒤로 은자 잣대만큼)
+function Config.manualCoins(realmIdx: number): number
+	return math.floor(Config.MANUAL_DRAW.coins * math.max(1, Config.coinScale(realmIdx) / Config.coinScale(12)))
+end
 function Config.manualValue(id: string, rarity: number): number
 	local m = Config.MANUAL_BY_ID[id]
 	local r = Config.MANUAL_RARITY[rarity]
@@ -4756,7 +4773,8 @@ for _, it in ipairs(Config.PRODUCTS) do
 end
 -- 은자 상품 한 몫: 경지가 오를수록 커진다 (1경지 2만 → 22경지 약 490만)
 function Config.productCoins(realmIdx: number): number
-	return math.floor(20000 * 1.3 ^ math.max(0, (realmIdx or 1) - 1))
+	-- 3.44판: 은자 잣대에 맞춘다 (한 몫 ≈ 그 경지에서 졸병 사냥 약 13분)
+	return math.floor(1500 * Config.coinScale(realmIdx))
 end
 -- 상품 설명 한 줄 (상점 카드)
 function Config.productLine(it: any, realmIdx: number): string
@@ -5774,6 +5792,7 @@ Config.ACH_COLOR = {
 Config.BOSS_POWER_RATIO = 7.6 -- 3.25판: 4 → 5.7, 3.25.2판: → 7.6 (체력 ×3.5에 해당: 전투력은 체력의 제곱근에 비례)
 Config.BOSS_HP_POW_MAX = 32 -- 3.41.4판: 42 → 32 (한 대는 넘은 몫의 제곱근만큼만 키운다: 싸움이 약 1/4 짧아지고 보스 전투력은 약 7% 낮아진다). 3.37판: 보스 체력은 전투력의 이만큼까지 (넘으면 체력을 덜고 한 대를 키운다. 전투력은 그대로)
 Config.BOSS_HP_ADJ = { bingma = 0.45, yeomje = 0.6, gyunwang = 0.75, noeje = 0.75, dongguckgun = 0.75, unryongwang = 0.75 } -- 3.41.4판 (아래 전투력 맞춤 뒤에 곱한다)
+Config.BOSS_COIN_MOBS = 30 -- 3.44판: 보스 한 마리 은자 = 그 땅 졸병 서른 마리 몫
 Config.BOSS_HP_FIX_CAP = 2.5 -- 한 번에 고치는 몫의 한도 (한 대가 너무 갑자기 세지지 않게)
 Config.BOSS_HIT_RATIO = 2 --보스의 한 대는 그 땅 졸병 한 대의 이만큼 (늘 이 몫에 맞춘다: 너무 약하거나 한 방에 죽지 않게)
 -- 적 한 명의 체력·피해 배율·전투력 (Npc.spawn과 같은 셈)
@@ -5916,6 +5935,39 @@ do
 	end
 	for _, z in ipairs(Config.HELL.zones or {}) do
 		evenOut(z.boss)
+	end
+	-- 3.44판: 보스 은자 = 그 땅 졸병 한 마리 은자의 BOSS_COIN_MOBS배 (예전엔 졸병 사냥 몇 시간 몫이라 보스만 돌면 은자가 넘쳐 쓸 곳이 없었다)
+	local function rewardMultAt(def: any, at: Vector3): number
+		local lv = Config.enemyLevel(at)
+		return (1 + 0.25 * (lv - 1)) * math.sqrt((def.mult or 1) * Config.regionMultAt(at))
+	end
+	local function coinFix(boss: any, camps: any)
+		local b = boss and Config.Bosses[boss.id]
+		if not b or not camps or #camps == 0 then
+			return
+		end
+		local list = {}
+		for _, c in ipairs(camps) do
+			local e = Config.Enemies[c.enemy]
+			if e and e.coins then
+				table.insert(list, e.coins * rewardMultAt(e, c.at))
+			end
+		end
+		if #list == 0 then
+			return
+		end
+		table.sort(list)
+		local mob = list[math.ceil(#list / 2)]
+		b.coins = math.max(1, math.floor(mob * Config.BOSS_COIN_MOBS / rewardMultAt(b, boss.at)))
+	end
+	for _, r in ipairs(Config.Regions) do
+		coinFix(r.boss, r.camps)
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		coinFix(isl.boss, isl.camps)
+	end
+	for _, z in ipairs(Config.HELL.zones or {}) do
+		coinFix(z.boss, z.camps)
 	end
 	-- 3.41.4판: 그 땅 권장 경지의 보통 플레이어로 어림해 싸움이 지나치게 긴 보스 (약 1분 40초 넘게) 만 체력을 덜어 낸다
 	-- (빙마는 특급이 혼자 약 2분 50초 · 염제 약 2분 · 거균왕 · 뇌제 · 동극군 · 운룡왕 약 1분 50초)
@@ -12252,19 +12304,22 @@ function Actions.buy(player: Player, id: any)
 		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
 	end
-	if p.coins < item.cost then
-		toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(item.cost)))
+	local cost = Config.shopCost(item, (Calc.realm(p)))
+	if p.coins < cost then
+		toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
 		return
 	end
-	p.coins -= item.cost
+	p.coins -= cost
 	if item.id == "potion" then
 		p.potions += 1
 	elseif item.id == "elixir" then
 		p.elixirUntil = math.max(os.time(), p.elixirUntil) + 300
 	elseif item.id == "pill" then
+		local n = Config.pillStats((Calc.realm(p)))
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] += 10
+			p.stats[s.id] += n
 		end
+		toast(player, string.format("🔮 모든 능력치 +%s", Config.formatNumber(n)))
 		refreshFighter(player)
 	end
 	st.dirty = true
@@ -13502,9 +13557,10 @@ function Manual.draw(player: Player, nArg: any, quiet: any)
 	local D = Config.MANUAL_DRAW
 	local n = tonumber(nArg) == 10 and 10 or 1
 	local useScroll = math.min(p.scrolls, n)
-	local coinCost = (n - useScroll) * D.coins
+	local each = Config.manualCoins((Calc.realm(p)))
+	local coinCost = (n - useScroll) * each
 	if p.coins < coinCost then
-		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(D.coins)))
+		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(each)))
 		if quiet then
 			Push:FireClient(player, "manualAuto", { stop = true })
 		end
@@ -73086,7 +73142,9 @@ function UIB.buildShop()
 			end
 		end
 		for _, item in ipairs(Config.Shop) do
-			local can = state and state.coins >= item.cost
+			local cost = Config.shopCost(item, state and state.realm or 1)
+			local can = state and state.coins >= cost
+			labels[item.id].Text = "💰 " .. Config.formatNumber(cost)
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
 		end
 		local owned = state and state.premium or {}
@@ -73178,7 +73236,7 @@ local function canDraw10(): boolean
 		return false
 	end
 	local sc = state.scrolls or 0
-	return sc >= 10 or (state.coins or 0) >= (10 - sc) * Config.MANUAL_DRAW.coins
+	return sc >= 10 or (state.coins or 0) >= (10 - sc) * Config.manualCoins(state.realm or 1)
 end
 function UI.setManualAuto(on: boolean)
 	if on and not canDraw10() then
@@ -73302,7 +73360,7 @@ function UIB.buildManuals()
 		if not state then
 			return
 		end
-		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(D.coins))
+		head.Text = string.format("📜 두루마리 <b>%d</b>개 · <font color=\"#96E6FF\">💠 천정 %s (💠 올리기: 고른 심법을 확정으로 한 등급 위로)</font>\n<font color=\"#FFD25A\">전설 보장까지 %d번</font>  <font color=\"#C8B9A5\">(두루마리가 없으면 한 번에 💰 %s)</font>", state.scrolls or 0, Config.formatNumber(state.skyGems or 0), math.max(1, D.pity - (state.pity or 0)), Config.formatNumber(Config.manualCoins(state.realm or 1)))
 		local equip = state.equip or {}
 		for i, sl in ipairs(slots) do
 			local id = equip[i]

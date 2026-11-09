@@ -2997,19 +2997,22 @@ function Actions.buy(player: Player, id: any)
 		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
 	end
-	if p.coins < item.cost then
-		toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(item.cost)))
+	local cost = Config.shopCost(item, (Calc.realm(p)))
+	if p.coins < cost then
+		toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
 		return
 	end
-	p.coins -= item.cost
+	p.coins -= cost
 	if item.id == "potion" then
 		p.potions += 1
 	elseif item.id == "elixir" then
 		p.elixirUntil = math.max(os.time(), p.elixirUntil) + 300
 	elseif item.id == "pill" then
+		local n = Config.pillStats((Calc.realm(p)))
 		for _, s in ipairs(Config.Stats) do
-			p.stats[s.id] += 10
+			p.stats[s.id] += n
 		end
+		toast(player, string.format("🔮 모든 능력치 +%s", Config.formatNumber(n)))
 		refreshFighter(player)
 	end
 	st.dirty = true
@@ -4247,9 +4250,10 @@ function Manual.draw(player: Player, nArg: any, quiet: any)
 	local D = Config.MANUAL_DRAW
 	local n = tonumber(nArg) == 10 and 10 or 1
 	local useScroll = math.min(p.scrolls, n)
-	local coinCost = (n - useScroll) * D.coins
+	local each = Config.manualCoins((Calc.realm(p)))
+	local coinCost = (n - useScroll) * each
 	if p.coins < coinCost then
-		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(D.coins)))
+		toast(player, string.format("은자가 부족해요 (두루마리가 없으면 한 번에 💰 %s)", Config.formatNumber(each)))
 		if quiet then
 			Push:FireClient(player, "manualAuto", { stop = true })
 		end
