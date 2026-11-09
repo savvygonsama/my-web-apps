@@ -1218,8 +1218,14 @@ function Battle.onDeath(victim: Player, killer: Player?)
 	if ctx then
 		ctx.push:FireAllClients("battleKill", { killer = killer and killer.DisplayName or nil, victim = victim.DisplayName, streak = streak })
 	end
+	-- 3.69판: 쓰러지면 대기실로 (대기실로 단추를 없앴다. 전시장에서 다시 권법을 골라 들어간다)
 	task.delay(B.respawn, function()
 		if victim.Parent and ctx then
+			inArena[victim] = nil
+			local vf = ctx.fighter(victim)
+			if vf then
+				vf.model:SetAttribute("InArena", nil)
+			end
 			ctx.respawn(victim)
 		end
 	end)
