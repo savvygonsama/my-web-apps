@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.54.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.55.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3059,10 +3059,11 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 25, 34, 0.8, 40) } },
 	skills = {
-		E = { id = "gmE", name = "호화연무", desc = "하늘에 여우불 다섯이 피어 소용돌이치며 내려와, 가까운 적 다섯에게 차례로 꽂혀 푸른 불기둥으로 터진다", pose = "plum_finger_r", dur = 0.6, cd = 8, chi = 20,
-			mech = { kind = "targets", n = 5, range = 32, delay = 0.45, stagger = 0.09, radius = 5, hit = hit(0, 0, 0, 16, 16, 0.5, 8, 6), fx = "foxfire" } },
-		R = { id = "gmR", name = "환영분신", desc = "푸른 여우 혼령 분신을 남기며 둘레의 적 넷 사이를 스쳐 지나가 할퀸다 (무적). 마지막에 내려서며 여우불이 터진다", pose = "ghost_flash", dur = 1.0, cd = 10, chi = 25,
-			mech = { kind = "rushChain", n = 4, range = 30, delay = 0.06, every = 0.17, hitsEach = 1, hit = hit(0, 0, 0, 22, 22, 0.5, 12, 8), slam = hit(0, 0, 0, 30, 30, 0.7, 20, 10), slamRadius = 10 } },
+		-- 3.55판: E · R 새로 (G는 그대로)
+		E = { id = "gmE", name = "여우구슬", desc = "푸른 여우구슬 둘을 던진다. 구슬은 불씨를 꼬리처럼 끌며 엇갈리는 활을 그려 날아가 지나는 적을 태우고, 앞에서 만나 여우불 꽃으로 터진다", pose = "eclipse_push", dur = 0.55, cd = 8, chi = 20,
+			mech = { kind = "twinDiscs", dist = 26, swing = 7, time = 0.55, every = 0.055, radius = 4.5, hit = hit(0, 0, 0, 14, 14, 0.4, 8), burstRadius = 9, burst = hit(0, 0, 0, 24, 24, 0.6, 16, 6) } },
+		R = { id = "gmR", name = "호혼도약", desc = "몸이 푸른 여우 혼령이 되어 둘레의 적 사이를 활을 그리며 네 번 뛰어 할퀸다 (무적). 마지막에 하늘에서 큰 여우 혼령이 한가운데로 내리 덮친다", pose = "ghost_flash", dur = 1.0, cd = 10, chi = 25,
+			mech = { kind = "ricochet", cut = 0.2, n = 4, range = 30, bounces = 4, every = 0.14, hit = hit(0, 0, 0, 10, 12, 0.4, 8, 4), diveAt = 0.3, finalRadius = 12, final = hit(0, 0, 0, 24, 26, 0.7, 20, 10) } },
 		G = { id = "gmG", name = "구미천화", desc = "땅에서 거대한 꼬리 혼령 아홉이 솟아 일렁이는 동안 여우불 유성이 둘레의 적에게 쏟아지고, 마지막에 아홉 꼬리가 한가운데로 내리치며 푸른 불이 터진다", pose = "gale_cyclone", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "storm", dur = 1.8, every = 0.15, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.3, 6, 4), finalRadius = 20, final = hit(0, 0, 0, 90, 90, 1.2, 40, 20) } },
 	},
@@ -3095,11 +3096,12 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "hyH", name = "흑염일섬", pose = "reap_hook", dur = 0.6, lunge = 7, hits = { hit(0.28, 8.5, 6, 25, 46, 0.8, 56) } },
 	skills = {
-		E = { id = "hyE", name = "흑염월참", desc = "검을 크게 휘둘러 앞으로 검은 초승달 검기를 날린다", pose = "reap_wave", dur = 0.6, cd = 7, chi = 20,
-			mech = { kind = "cone", range = 24, angle = 80, delay = 0.15, hit = hit(0, 0, 0, 40, 60, 0.7, 24, 6), fx = "blackflame" } },
-		R = { id = "hyR", name = "마염천주", desc = "뛰어올라 검을 땅에 꽂는다. 앞으로 검은 마검이 칼끝부터 땅을 뚫고 줄지어 솟는다", pose = "reap_leap", dur = 0.7, cd = 10, chi = 25,
-			mech = { kind = "line", count = 6, start = 4, spacing = 5, step = 0.06, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 30, 44, 0.6, 10, 16), fx = "blackflame" } },
-		G = { id = "hyG", name = "쌍염십자참", desc = "1초 동안 두 검에 불꽃을 모았다가 교차해 거대한 X자 검기를 앞으로 날린다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+		-- 3.55판: E · R · G 새로 (X는 그대로)
+		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가, 눈에 보이지 않게 앞으로 18칸을 지나며 벤다 (무적). 한 박자 늦게 지나온 길에 베인 자국이 줄줄이 그어지며 검은 불꽃이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
+			mech = { kind = "lightDash", cut = 0.05, charge = 0.3, gap = 0.2, lens = { 18 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 52, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 14, 20, 0.5, 14, 8) } },
+		R = { id = "hyR", name = "쌍마비검", desc = "손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다", pose = "reap_wave", dur = 0.6, cd = 10, chi = 25,
+			mech = { kind = "twinDiscs", dist = 28, swing = 8, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 10, burst = hit(0, 0, 0, 30, 44, 0.7, 24, 8) } },
+		G = { id = "hyG", name = "마왕참", desc = "1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
 		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },

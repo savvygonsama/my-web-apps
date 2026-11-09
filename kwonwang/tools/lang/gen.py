@@ -18,6 +18,14 @@ for f in sorted(glob.glob('en_*.tsv')):
         if k[:1]==' ': t=' '+t
         if k[-1:]==' ': t=t+' '
         en[i]=t
+# 3.55판: 뒤에 더한 글은 번호 대신 한국어 그대로 짝지어 둔다 (extra_*.tsv: 한국어<TAB>영어)
+for f in sorted(glob.glob('extra_*.tsv')):
+    for line in open(f,encoding='utf-8'):
+        line=line.rstrip('\n')
+        if not line.strip(): continue
+        k,_,t=line.partition('\t')
+        if k not in keys: keys.append(k)
+        en[keys.index(k)]=t.strip()
 bad=[]
 for i,t in en.items():
     if toks(keys[i])!=toks(t): bad.append(i)
