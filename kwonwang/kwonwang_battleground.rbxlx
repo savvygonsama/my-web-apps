@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.62.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.63.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -17962,6 +17962,11 @@ function Battle.build(): any
 	sl.CFrame = CFrame.new(lobby.spots[1] - Vector3.new(0, 3, 0))
 	sl.Parent = f
 	Battle.spawnLoc = sl
+	-- 3.63판: 같은 높이로 겹친 바닥의 깜빡임 바로잡기
+	pcall(function()
+		local n = require(script.Parent:WaitForChild("ZFix")).run(f)
+		print(string.format("[권왕] 배틀 맵 겹친 바닥 깜빡임 %d곳 바로잡음", n))
+	end)
 	return { train = {}, rings = {} }
 end
 
@@ -36574,6 +36579,11 @@ function World.build(): any
 		end
 	end
 	pcall(lighten)
+	-- 3.63판: 같은 높이로 겹친 바닥의 깜빡임 바로잡기
+	pcall(function()
+		local n = require(script.Parent:WaitForChild("ZFix")).run(folder)
+		print(string.format("[권왕] 겹친 바닥 깜빡임 %d곳 바로잡음", n))
+	end)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "VillageSpawn"
 	spawn.Anchored = true
@@ -36591,18 +36601,172 @@ return World
 ]]></string>
         </Properties>
       </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
+          <string name="Name">ZFix</string>
+          <string name="Source"><![CDATA[-- 권왕 3.63판: 겹친 바닥 깜빡임 (z-fighting) 바로잡기
+-- 같은 높이에 윗면이 있는 납작한 조각 둘이 겹치면, 시점을 돌릴 때마다 두 면이 번갈아 보여 '움직이는' 것처럼 깜빡인다.
+-- 맵을 다 지은 뒤 한 번: 위를 보는 면 (세운 상자 · 눕힌 원판) 의 윗면 높이와 바닥 넓이를 모아,
+-- 높이 차가 GAP 안이고 바닥이 겹치는 둘 중 나중 것 (대개 위에 얹은 장식) 을 STEP만큼 올린다. 생김새는 그대로 (눈에 안 띄는 높이)
+local ZFix = {}
+
+local GAP = 0.045 -- 이보다 가까우면 깜빡인다 (멀리서 볼수록 심하다)
+local STEP = 0.06
+local CELL = 48
+
+type Item = { p: BasePart, top: number, x0: number, x1: number, z0: number, z1: number }
+
+-- 위를 보는 면이 있는 조각이면 그 윗면 높이와 바닥 넓이 (아니면 nil)
+local function flatTop(p: BasePart): Item?
+	if not p.Anchored or p.Transparency >= 0.95 or p:IsA("WedgePart") or p:IsA("CornerWedgePart") or p:IsA("MeshPart") then
+		return nil
+	end
+	if p:FindFirstChildOfClass("SpecialMesh") then
+		return nil
+	end
+	local cf, sz = p.CFrame, p.Size
+	local shape = p:IsA("Part") and (p :: Part).Shape or Enum.PartType.Block
+	local hx, hz
+	local top
+	if shape == Enum.PartType.Block then
+		local up = cf.UpVector
+		if math.abs(up.Y) < 0.999 then
+			return nil
+		end
+		top = cf.Position.Y + sz.Y / 2
+		-- 땅에 눕힌 상자: 돌린 만큼 바닥 넓이를 넉넉히
+		local r = cf.RightVector
+		local l = cf.LookVector
+		hx = math.abs(r.X) * sz.X / 2 + math.abs(l.X) * sz.Z / 2
+		hz = math.abs(r.Z) * sz.X / 2 + math.abs(l.Z) * sz.Z / 2
+	elseif shape == Enum.PartType.Cylinder then
+		-- 눕힌 원판: 원기둥의 축 (오른쪽) 이 위를 본다
+		local axis = cf.RightVector
+		if math.abs(axis.Y) < 0.999 then
+			return nil
+		end
+		top = cf.Position.Y + sz.X / 2
+		local rad = math.min(sz.Y, sz.Z) / 2
+		hx, hz = rad, rad
+	else
+		return nil
+	end
+	-- 아주 작은 것은 깜빡여도 눈에 안 띈다
+	if hx < 0.4 or hz < 0.4 then
+		return nil
+	end
+	local x, z = cf.Position.X, cf.Position.Z
+	return { p = p, top = top, x0 = x - hx, x1 = x + hx, z0 = z - hz, z1 = z + hz }
+end
+
+local function overlaps(a: Item, b: Item): boolean
+	-- 가장자리만 맞닿은 것은 겹친 게 아니다 (0.05 안쪽만)
+	return a.x0 < b.x1 - 0.05 and b.x0 < a.x1 - 0.05 and a.z0 < b.z1 - 0.05 and b.z0 < a.z1 - 0.05
+end
+
+function ZFix.run(root: Instance): number
+	local grid: { [string]: { Item } } = {}
+	local bigs: { Item } = {}
+	local smalls: { Item } = {}
+	local moved = 0
+	local count = 0
+	for _, d in ipairs(root:GetDescendants()) do
+		if d:IsA("BasePart") then
+			count += 1
+			if count % 6000 == 0 then
+				task.wait()
+			end
+			local it = flatTop(d)
+			if it then
+				local cells = (math.floor(it.x1 / CELL) - math.floor(it.x0 / CELL) + 1) * (math.floor(it.z1 / CELL) - math.floor(it.z0 / CELL) + 1)
+				table.insert(cells > 64 and bigs or smalls, it)
+			end
+		end
+	end
+	local function lift(it: Item, clash: (Item) -> boolean)
+		local tries = 0
+		while tries < 6 and clash(it) do
+			it.p.CFrame += Vector3.new(0, STEP, 0)
+			it.top += STEP
+			tries += 1
+			if tries == 1 then
+				moved += 1
+			end
+		end
+	end
+	local function clashBig(it: Item, upto: number?): boolean
+		for i, o in ipairs(bigs) do
+			if upto and i >= upto then
+				break
+			end
+			if o.p ~= it.p and math.abs(o.top - it.top) < GAP and overlaps(o, it) then
+				return true
+			end
+		end
+		return false
+	end
+	-- ① 큰 바닥끼리 (먼저 지은 것은 그대로)
+	for i, it in ipairs(bigs) do
+		lift(it, function(x)
+			return clashBig(x, i)
+		end)
+	end
+	-- ② 작은 것: 큰 바닥 · 먼저 넣은 작은 것과 겹치면 올린다
+	for n, it in ipairs(smalls) do
+		if n % 4000 == 0 then
+			task.wait()
+		end
+		local cx0, cx1 = math.floor(it.x0 / CELL), math.floor(it.x1 / CELL)
+		local cz0, cz1 = math.floor(it.z0 / CELL), math.floor(it.z1 / CELL)
+		lift(it, function(x)
+			if clashBig(x) then
+				return true
+			end
+			for cx = cx0, cx1 do
+				for cz = cz0, cz1 do
+					local list = grid[cx .. ":" .. cz]
+					if list then
+						for _, o in ipairs(list) do
+							if math.abs(o.top - x.top) < GAP and overlaps(o, x) then
+								return true
+							end
+						end
+					end
+				end
+			end
+			return false
+		end)
+		for cx = cx0, cx1 do
+			for cz = cz0, cz1 do
+				local k = cx .. ":" .. cz
+				local list = grid[k]
+				if not list then
+					list = {}
+					grid[k] = list
+				end
+				table.insert(list, it)
+			end
+		end
+	end
+	return moved
+end
+
+return ZFix
+]]></string>
+        </Properties>
+      </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="16">
+  <Item class="StarterPlayer" referent="17">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMaxZoomDistance">120</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="17">
+    <Item class="StarterPlayerScripts" referent="18">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="18">
+      <Item class="LocalScript" referent="19">
         <Properties>
           <string name="Name">KwonClient</string>
           <string name="Source"><![CDATA[-- 권왕(拳王): 맨손의 강호 — 화면
@@ -39557,7 +39721,7 @@ end)
 Request:FireServer("hello")
 ]]></string>
         </Properties>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">AchAura</string>
             <string name="Source"><![CDATA[-- 권왕 3.19.9판: 업적 오라 (무협 기운). 신화 업적 아홉을 이루면 그 업적만의 기운을 얻는다 (🎨 꾸미기에서 하나 고른다)
@@ -39826,7 +39990,7 @@ return AchAura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Ambience</string>
             <string name="Source"><![CDATA[-- 권왕 3.35판: 땅마다 다른 공기. 카메라 머리 위에 떠서 따라다니는 입자 하나로 눈 · 먼지 · 불씨 · 꽃가루 · 반딧불 · 낙엽을 흩날린다
@@ -39990,7 +40154,7 @@ return Ambience
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Anim</string>
             <string name="Source"><![CDATA[-- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
@@ -40709,7 +40873,7 @@ return Anim
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Arts</string>
             <string name="Source"><![CDATA[-- 권왕 3.19판: 새 권법 열하나의 화면 연출
@@ -42914,7 +43078,7 @@ return Arts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Awake</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 새 각성 권법 셋의 화면 (진 금강불괴신공 · 진 무영귀각 · 진 태허유수장)
@@ -43520,7 +43684,7 @@ return Awake
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Awake3</string>
             <string name="Source"><![CDATA[-- 권왕 2.2판: 각성 권법 아홉의 새 E·R, 진 열화 화산천붕 · 진 창해 고래강림, 초·벽력신권의 뇌신낙 · 천뢰구 · 심판의 벼락 (화면)
@@ -46283,7 +46447,7 @@ return Awake3
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Blossom</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 초·매화난무권의 새 기술 (화면). 날아가는 부채, 꽃 그림자, 하늘의 큰 부채
@@ -46686,7 +46850,7 @@ return Blossom
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">BossFx</string>
             <string name="Source"><![CDATA[-- 권왕 3.26판: 보스 패턴의 웅장함. 패턴이 시작될 때 보스가 기를 모아 땅이 울리고 (모이는 고리와 빛기둥),
@@ -47109,7 +47273,7 @@ return BossFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">CamGuard</string>
             <string name="Source"><![CDATA[-- 3.18.1판: 오의 컷씬 카메라 지킴이. 컷씬마다 카메라를 너무 낮게 (땅에 붙거나 땅속) 두고 올려다봐서
@@ -47184,7 +47348,7 @@ return CamGuard
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Cutscene</string>
             <string name="Source"><![CDATA[-- 권왕: 컷씬 (위아래 검은 띠, 말하는 이와 대사, 천천히 도는 카메라) 과 처음 들어온 사람의 조작 안내
@@ -47496,7 +47660,7 @@ return Cutscene
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Demon</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 피의 악마 (화면에만 보이는 연출). 처음부터 다시 짰다
@@ -47832,7 +47996,7 @@ return Demon
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Dream</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 몽유권 (화면). 반쯤 잠든 채 꿈속을 걷는 권
@@ -48612,7 +48776,7 @@ return Dream
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Drunk</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·취팔선권의 화면 (초록 술병, 머리에 동여맨 넥타이, 기술 연출, 초 오의 취선만권의 컷씬)
@@ -49385,7 +49549,7 @@ return Drunk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Forest</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 만목신권의 숲 (화면). 대나무 창 · 소용돌이치는 잎 · 천 년 은행나무
@@ -49994,7 +50158,7 @@ return Forest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Fx</string>
             <string name="Source"><![CDATA[-- 권왕: 타격감 (불꽃, 충격파, 잔상, 숫자, 권법마다 다른 빛)
@@ -52885,7 +53049,7 @@ return Fx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Gacha</string>
             <string name="Source"><![CDATA[-- 권왕: 심법 뽑기 연출. 두루마리가 떨리며 빛나고 (가장 높은 등급의 빛깔), 터진 뒤 카드가 한 장씩 뒤집힌다
@@ -53066,7 +53230,7 @@ return Gacha
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Gallery</string>
             <string name="Source"><![CDATA[-- 권왕 3.62판: 배틀그라운드 대기실의 권법 회랑 (권법 고르는 창 대신)
@@ -53410,7 +53574,7 @@ return Gallery
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">Geuk</string>
             <string name="Source"><![CDATA[-- 권왕 3.1판: 극 권법 (극 일월신권) 의 기술과 일월극변 (화면)
@@ -55054,7 +55218,7 @@ return Geuk
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Gourd</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 취팔선권 (취선) 의 기술 (화면). 호리병, 술의 강, 여덟 신선의 그림자
@@ -55469,7 +55633,7 @@ return Gourd
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Grand</string>
             <string name="Source"><![CDATA[-- 권왕 3.48판: 모든 권법에 함께 얹는 연출 한 겹 (권법마다의 연출은 그대로 두고 그 위에)
@@ -55692,7 +55856,7 @@ return Grand
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Ink</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
@@ -56160,7 +56324,7 @@ return Ink
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Lang</string>
             <string name="Source"><![CDATA[-- 권왕 3.53판: 영어 화면 (내 화면에서만 글자를 바꾼다. 서버 · 다른 사람은 그대로)
@@ -56452,7 +56616,7 @@ return Lang
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">LangEN</string>
             <string name="Source"><![CDATA[-- 권왕 영어 사전 (코드 안의 한국어 글자 → 영어). tools: tools/lang/gen.py 로 만든다
@@ -60590,7 +60754,7 @@ return {
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Mount</string>
             <string name="Source"><![CDATA[-- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
@@ -61838,7 +62002,7 @@ return Mount
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Mujo</string>
             <string name="Source"><![CDATA[-- 권왕 3.6판: 무상권 (화면). 모든 것은 지나간다: 금 간 사기, 재로 빚은 나, 시드는 꽃, 다 흐르는 모래시계, 깨지는 거울
@@ -62666,7 +62830,7 @@ return Mujo
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Music</string>
             <string name="Source"><![CDATA[-- 권왕: 배경 음악. 있는 곳에 따라 바꾸고, 바뀔 때 천천히 겹쳐 넘긴다 (Config.MUSIC의 번호가 0이면 조용하다)
@@ -62732,7 +62896,7 @@ return Music
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Null</string>
             <string name="Source"><![CDATA[-- 권왕 3.8판: 공백권 (화면). 지워진 것, 있어서는 안 되는 빈칸
@@ -65355,7 +65519,7 @@ return Null
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">PassArts</string>
             <string name="Source"><![CDATA[-- 권왕 3.43판: 게임패스 권법 둘의 화면 (모습 · 기술 연출 다시)
@@ -66710,7 +66874,7 @@ return PassArts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Perf</string>
             <string name="Source"><![CDATA[-- 3.18판: 가벼운 그래픽. 맵의 작은 장식 (풀 포기·들꽃·이끼·덤불·갈대·마른 가지·물웅덩이)을 내 화면에서만 걷는다
@@ -66769,7 +66933,7 @@ return Perf
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Plum</string>
             <string name="Source"><![CDATA[-- 권왕 2.9판: 진 매화난무권 (설중매) 의 기술 (화면). 눈 속에 피는 붉은 매화
@@ -67174,7 +67338,7 @@ return Plum
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Polish</string>
             <string name="Source"><![CDATA[-- 권왕 1.7: 모든 권법의 기술 연출 보완 (수치는 그대로, 보이는 것만)
@@ -67515,7 +67679,7 @@ return Polish
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Reaper</string>
             <string name="Source"><![CDATA[-- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
@@ -68465,7 +68629,7 @@ return Reaper
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Royal</string>
             <string name="Source"><![CDATA[-- 권왕 3.10판: 권왕신권의 오의 · 초 오의 (화면)
@@ -69099,7 +69263,7 @@ return Royal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Sakura</string>
             <string name="Source"><![CDATA[-- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
@@ -70386,7 +70550,7 @@ return Sakura
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Samsara</string>
             <string name="Source"><![CDATA[-- 권왕 3.0판: 환생 권법 넷 (윤회권 · 업화권 · 무상권 · 권왕신권) 의 몸에 두르는 것과 기술 (화면)
@@ -73416,7 +73580,7 @@ return Samsara
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Sin</string>
             <string name="Source"><![CDATA[-- 권왕 3.27판: 신 삼재권을 얻는 컷씬.
@@ -74910,7 +75074,7 @@ return Sin
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">SkillFx</string>
             <string name="Source"><![CDATA[-- 권왕 1.8: 기술마다 다른 이펙트 (수치·연출은 그대로, 보이는 모양만)
@@ -75518,7 +75682,7 @@ return SkillFx
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">Speed</string>
             <string name="Source"><![CDATA[-- 권왕 3.22판: 극 광속권의 화면. 빛과 소리 (하늘색 · 흰색 · 금빛 줄)
@@ -76430,7 +76594,7 @@ return Speed
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="57">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">Star</string>
             <string name="Source"><![CDATA[-- 권왕 3.4판: 초·성하신권 (화면). 오른손의 별 지팡이, 마법진, 별, 은하수, 성천궁 (남색 돔과 별자리)
@@ -77571,7 +77735,7 @@ return Star
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">Titles</string>
             <string name="Source"><![CDATA[-- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
@@ -77788,7 +77952,7 @@ return Titles
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="60">
           <Properties>
             <string name="Name">UI</string>
             <string name="Source"><![CDATA[-- 권왕: 화면 (체력·균형·내공 막대, 기술 칸, 창, 수련 놀이, 알림)
@@ -82690,7 +82854,7 @@ return UI
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">Ult2</string>
             <string name="Source"><![CDATA[-- 권왕 2.0판: 새 오의들의 화면
@@ -83969,7 +84133,7 @@ return Ult2
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">Ults</string>
             <string name="Source"><![CDATA[-- 권왕: 오의 연출 (권법마다 전혀 다른 종류)
@@ -86652,7 +86816,7 @@ return Ults
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="63">
           <Properties>
             <string name="Name">Whale</string>
             <string name="Source"><![CDATA[-- 권왕 2.7판: 고대의 고래 (화면). 초·창해신권의 초 오의와 진 창해신권 고래강림이 함께 쓴다
@@ -87762,7 +87926,7 @@ return Whale
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="63">
+  <Item class="Workspace" referent="64">
     <Properties>
       <string name="Name">Workspace</string>
       <float name="Gravity">196.2</float>

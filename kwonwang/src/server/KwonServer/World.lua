@@ -7761,6 +7761,11 @@ function World.build(): any
 		end
 	end
 	pcall(lighten)
+	-- 3.63판: 같은 높이로 겹친 바닥의 깜빡임 바로잡기
+	pcall(function()
+		local n = require(script.Parent:WaitForChild("ZFix")).run(folder)
+		print(string.format("[권왕] 겹친 바닥 깜빡임 %d곳 바로잡음", n))
+	end)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "VillageSpawn"
 	spawn.Anchored = true

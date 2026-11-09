@@ -1032,6 +1032,11 @@ function Battle.build(): any
 	sl.CFrame = CFrame.new(lobby.spots[1] - Vector3.new(0, 3, 0))
 	sl.Parent = f
 	Battle.spawnLoc = sl
+	-- 3.63판: 같은 높이로 겹친 바닥의 깜빡임 바로잡기
+	pcall(function()
+		local n = require(script.Parent:WaitForChild("ZFix")).run(f)
+		print(string.format("[권왕] 배틀 맵 겹친 바닥 깜빡임 %d곳 바로잡음", n))
+	end)
 	return { train = {}, rings = {} }
 end
 
