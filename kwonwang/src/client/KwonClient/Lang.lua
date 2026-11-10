@@ -183,6 +183,36 @@ function Lang.translate(s: string): string
 end
 
 ------------------------------------------------------------------------
+-- 3.72판: 터치 기기는 PC 키 글자를 단추로 (F 막기 → 🛡, Z 강타 → 💥, T 말 걸기 → 말풍선)
+-- 원문은 그대로 두고 화면에 붙일 때만 바꾼다. 'M Y T H I C' 같이 띄어 쓴 큰 글자는 건드리지 않는다
+------------------------------------------------------------------------
+Lang.touch = false
+local function touchify(s: string): string
+	if not Lang.touch or type(s) ~= "string" or not s:find("%f[%w][FTZ]%f[%W]") or s:find("%u %u %u") then
+		return s
+	end
+	-- 각성기 (F) 는 연타 끝에 저절로 나간다 (막기 단추가 아니다)
+	s = s:gsub("각성기%(F%)", "각성기"):gsub("awakening skill %(F%)", "awakening skill")
+	if Lang.en then
+		s = s:gsub("%(T%)", "(tap)")
+		s = s:gsub("([Pp])ress ([FTZ])%f[%W]", function(p, k)
+			return (p == "P" and "T" or "t") .. "ap " .. k
+		end)
+		s = s:gsub("%f[%w]T%f[%W]", "the prompt")
+	else
+		s = s:gsub("%(T%)", "(말풍선)")
+		s = s:gsub("%f[%w]T를", "말풍선을"):gsub("%f[%w]T가", "말풍선이"):gsub("%f[%w]T는", "말풍선은")
+		s = s:gsub("%f[%w]T%f[%W]", "말풍선")
+	end
+	s = s:gsub("%f[%w]F%f[%W]", "🛡"):gsub("%f[%w]Z%f[%W]", "💥")
+	return s
+end
+local function render(s: string): string
+	return touchify(Lang.en and Lang.translate(s) or s)
+end
+Lang.render = render
+
+------------------------------------------------------------------------
 -- 화면 글자에 붙이기
 ------------------------------------------------------------------------
 local PROPS = {
@@ -203,7 +233,7 @@ local function apply(inst: Instance, prop: string)
 	end
 	orig[inst] = orig[inst] or {}
 	orig[inst][prop] = cur
-	local out = Lang.en and Lang.translate(cur) or cur
+	local out = render(cur)
 	last[inst] = L or {}
 	last[inst][prop] = out
 	if out ~= cur then
@@ -232,7 +262,7 @@ local function refreshAll()
 			for _, prop in ipairs(PROPS[inst.ClassName]) do
 				local o = orig[inst] and orig[inst][prop]
 				if o then
-					local out = Lang.en and Lang.translate(o) or o
+					local out = render(o)
 					last[inst] = last[inst] or {}
 					last[inst][prop] = out
 					;(inst :: any)[prop] = out
@@ -263,6 +293,8 @@ function Lang.start()
 		return LocalizationService.RobloxLocaleId
 	end)
 	Lang.en = not (ok and type(loc) == "string" and loc:sub(1, 2) == "ko")
+	local UIS = game:GetService("UserInputService")
+	Lang.touch = UIS.TouchEnabled and not (UIS.KeyboardEnabled and UIS.MouseEnabled)
 	local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
 	for _, root in ipairs({ pg, workspace }) do
 		root.DescendantAdded:Connect(function(d)

@@ -68,6 +68,7 @@ local function dress(u: any)
 	if st and st.premium and opts.passPreview then
 		local lv = (lastState and lastState.enh and lastState.enh[u.id]) or 15
 		pcall(opts.passPreview, doll, u.id, lv)
+		doll:SetAttribute("Enh", lv) -- 3.72판: 시범 연출도 그 강화 단계로
 	end
 end
 
@@ -175,8 +176,12 @@ function Gallery.start(o: any)
 						if busy < 3 and now >= u.next and not Anim.playing(d) then
 							local st = Config.STYLE_BY_ID[u.id]
 							local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
-							local mv = st and Config.move(u.id, picks[math.random(1, #picks)])
+							local slot = picks[math.random(1, #picks)]
+							local mv = st and Config.move(u.id, slot)
 							if mv then
+								if opts.passCast then
+									pcall(opts.passCast, u.id, slot, d, mv.dur)
+								end
 								pcall(Anim.play, d, mv.pose, mv.dur)
 								pcall(Fx.limbTrails, d, mv.pose, mv.dur, st.color, st.color2)
 								busy += 1

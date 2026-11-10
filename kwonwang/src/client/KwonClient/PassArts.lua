@@ -169,7 +169,8 @@ end
 -- 몸에 붙는 꾸밈 (사람마다 하나)
 ------------------------------------------------------------------------
 type Sword = { hand: BasePart, side: number, items: { { BasePart | CFrame } }, frame: CFrame? }
-type Rig = { model: Model, style: string, lv: number, parts: { BasePart }, tails: { { BasePart } }?, ghost: { { BasePart } }?, swords: { Sword }?, extra: { Instance } }
+type RingSeg = { p: BasePart, r: number, i: number, n: number, spin: number }
+type Rig = { model: Model, style: string, lv: number, parts: { BasePart }, tails: { { BasePart } }?, ghost: { { BasePart } }?, swords: { Sword }?, extra: { Instance }, orbs: { BasePart }?, ring: { RingSeg }? }
 local rigs: { [Model]: Rig } = {}
 
 local function clearRig(m: Model)
@@ -523,6 +524,75 @@ function PassArts.preview(model: Model, style: string, lv: number)
 	end
 end
 
+-- 3.72판: 늘 도는 오라. 구미호권은 몸 둘레를 도는 여우불 구슬 (+0 하나 → +15 여섯) 과 +10부터 발밑의 푸른 여우 문양진,
+-- 흑염마검장은 +5부터 검은 불꽃 구슬 셋, 발밑의 보랏빛 (+10 핏빛) 마검 문양진이 두 겹으로 엇갈려 돈다
+local function addAura(rig: Rig, lv: number)
+	if previewMode then
+		return
+	end
+	local fox = rig.style == "gumiho"
+	local orbs = {}
+	local n = fox and math.clamp(1 + math.floor(lv / 3), 1, 6) or (lv >= 5 and 3 or 0)
+	for i = 1, n do
+		local o = part(Vector3.one * (fox and 0.7 or 0.6), fox and FOX_PALE or (lv >= 10 and CRIMSON or PURPLE), Enum.Material.Neon, 0.05, "ball")
+		o.Parent = folder
+		emitter(o, TEX_FIRE, fox and cs(FOX_PALE, FOX, FOX_DEEP) or cs(PURPLE, VIOLET, INK), ns(fox and 0.9 or 0.85, 0.05), 14, 0.45, 0.6, { accel = Vector3.new(0, 5, 0), spread = Vector2.new(30, 30) })
+		if i <= 2 then
+			light(o, fox and FOX or PURPLE, 7, 1)
+		end
+		table.insert(orbs, o)
+		table.insert(rig.parts, o)
+	end
+	if n > 0 then
+		rig.orbs = orbs
+	end
+	if lv >= (fox and 10 or 5) then
+		local ring = {}
+		local col = fox and FOX or (lv >= 10 and CRIMSON or PURPLE)
+		local function circle(r: number, k: number, spin: number, width: number, alpha: number, c: Color3)
+			local len = 2 * math.pi * r / k * (fox and 0.92 or 0.6) -- 흑염은 끊어진 칼날 무늬
+			for i = 1, k do
+				local sp = part(Vector3.new(width, 0.06, len), c, Enum.Material.Neon, alpha, nil)
+				sp.Parent = folder
+				table.insert(rig.parts, sp)
+				table.insert(ring, { p = sp, r = r, i = i, n = k, spin = spin })
+			end
+		end
+		local k = Perf.low and 10 or 18
+		circle(3.4, k, fox and 0.5 or -0.7, 0.14, 0.2, col)
+		circle(2.3, math.floor(k * 0.6), fox and -0.9 or 1.1, fox and 0.3 or 0.22, 0.35, fox and FOX_PALE or INK)
+		if lv >= 15 then
+			circle(4.4, k, fox and 0.25 or 0.35, 0.1, 0.45, fox and GOLD or CRIMSON)
+		end
+		rig.ring = ring
+	end
+end
+local function poseAura(rig: Rig, t: number)
+	local r = rootOf(rig.model)
+	if not r then
+		return
+	end
+	local c = r.Position
+	local fox = rig.style == "gumiho"
+	if rig.orbs then
+		local n = #rig.orbs
+		for i, o in ipairs(rig.orbs) do
+			local a = t * (fox and 1.6 or -1.1) + i / n * math.pi * 2
+			local y = math.sin(t * 2.2 + i * 1.7) * 0.5 + (fox and 0.3 or 1.3)
+			local rad = fox and 2.8 + math.sin(t * 1.3 + i) * 0.3 or 2.4
+			o.CFrame = CFrame.new(c + Vector3.new(math.cos(a) * rad, y, math.sin(a) * rad))
+		end
+	end
+	if rig.ring then
+		local g = c - Vector3.new(0, 2.95, 0)
+		for _, it in ipairs(rig.ring) do
+			local a = it.i / it.n * math.pi * 2 + t * it.spin
+			local pos = g + Vector3.new(math.cos(a) * it.r, 0, math.sin(a) * it.r)
+			it.p.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), 0, math.cos(a)))
+		end
+	end
+end
+
 local function styleOf(m: Model): (string?, number)
 	local s = m:GetAttribute("Style")
 	local lv = tonumber(m:GetAttribute("Enh")) or 0
@@ -547,6 +617,7 @@ local function sweep()
 					local ok, rig = pcall(s == "gumiho" and buildFox or buildFlame, m, lv)
 					if ok and rig then
 						rigs[m] = rig
+						pcall(addAura, rig, lv)
 					end
 				end
 			end
@@ -585,6 +656,9 @@ function PassArts.start()
 					end
 					if rig.swords then
 						poseSwords(rig)
+					end
+					if rig.orbs or rig.ring then
+						poseAura(rig, t)
 					end
 				end
 			end
@@ -1319,6 +1393,298 @@ H.heukyeom.pulse = function(d)
 		flameBurst(d.at, PURPLE, INK, d.radius or 10, true)
 		Fx.sound("heavy", 0.5, 0.8, d.at)
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.72판: 내가 휘두를 때 (연타 · 강타 · 오의) 전용 연출. 세기는 그대로, 보이는 것만
+------------------------------------------------------------------------
+-- 호를 그리는 베기 자국: cf의 XY 평면에서 a0 → a1 로 휘어 지나가며 (sweep 초) 나타났다가 사라진다
+local function arcSlash(cf: CFrame, radius: number, a0: number, a1: number, width: number, core: Color3, edge: Color3, life: number, sweep: number)
+	local n = Perf.low and 7 or 12
+	local seg = 2 * radius * math.sin(math.abs(a1 - a0) / n / 2) + 0.2
+	for i = 0, n - 1 do
+		local u = (i + 0.5) / n
+		local am = a0 + (a1 - a0) * u
+		local w = width * (0.2 + 0.8 * math.sin(math.pi * u))
+		local at = cf * CFrame.Angles(0, 0, am)
+		task.delay(sweep * u, function()
+			local p = temp(part(Vector3.new(w, seg, 0.08), core, Enum.Material.Neon, 0.02, nil), life)
+			p.CFrame = at * CFrame.new(radius, 0, 0)
+			tween(p, life, { Transparency = 1, Size = Vector3.new(w * 0.15, seg, 0.04), CFrame = at * CFrame.new(radius + 0.8, 0, 0) })
+			local g = temp(part(Vector3.new(w * 2.2, seg, 0.04), edge, Enum.Material.Neon, 0.45, nil), life)
+			g.CFrame = at * CFrame.new(radius - w * 0.3, 0, 0.02)
+			tween(g, life * 0.8, { Transparency = 1, CFrame = at * CFrame.new(radius + 1.2, 0, 0.02) })
+		end)
+	end
+end
+-- 가로 베기 평면 (몸 앞, 기울기 roll 도)
+local function slashPlane(r: BasePart, roll: number, up: number, fwd: number): CFrame
+	return r.CFrame * CFrame.new(0, up, -fwd) * CFrame.Angles(0, 0, math.rad(roll)) * CFrame.Angles(math.rad(90), 0, 0)
+end
+local HALF = math.pi / 2
+
+-- 구미호권 연타: 세 줄 여우 발톱 (겹친 호) · 넷째는 몸을 한 바퀴 감는 여우불 고리
+local function foxCombo(r: BasePart, slot: any)
+	local big = slot == 4 or slot == "F"
+	if big then
+		for k = 0, 2 do
+			arcSlash(slashPlane(r, 0, -0.6 + k * 0.7, 0), 3.4 + k * 0.6, 0, math.pi * 2, 0.45, FOX_PALE, FOX, 0.4, 0.22)
+		end
+		task.delay(0.24, function()
+			if r.Parent then
+				foxBloom(r.Position + r.CFrame.LookVector * 3, slot == "F" and 9 or 6)
+			end
+		end)
+		return
+	end
+	local roll = ({ 30, -30, 65 })[slot :: number] or 0
+	local mid = -HALF
+	for k = 0, 2 do
+		arcSlash(slashPlane(r, roll, 0.3, 0.2), 3.6 + k * 0.55, mid - 1.05, mid + 1.05, 0.28, k == 1 and WHITE_HOT or FOX_PALE, FOX, 0.32, 0.1)
+	end
+	wisp(r.Position + r.CFrame.LookVector * 4 + Vector3.new(0, 0.5, 0), 0.8, 0.5)
+end
+-- 구미호권 강타: 거대한 여우 머리 혼령이 앞으로 뛰쳐나가 물어뜯고 여우불 꽃으로 터진다
+local function foxHead(r: BasePart)
+	local dir = flatOr(r.CFrame.LookVector)
+	local from = r.Position + Vector3.new(0, 0.8, 0) - dir * 1
+	local to = from + dir * 16
+	local items: { { BasePart | CFrame } } = {}
+	local function add(p: BasePart, off: CFrame)
+		p.Parent = folder
+		Debris:AddItem(p, 1)
+		table.insert(items, { p, off })
+	end
+	add(oval(Vector3.new(2.6, 2.2, 3.2), FOX, Enum.Material.Neon, 0.35), CFrame.new())
+	add(oval(Vector3.new(1.3, 1.1, 2.2), FOX_PALE, Enum.Material.Neon, 0.3), CFrame.new(0, -0.35, -1.6))
+	for sx = -1, 1, 2 do
+		add(part(Vector3.new(0.3, 1.5, 1.1), FOX_PALE, Enum.Material.Neon, 0.25, "wedge"), CFrame.new(0.75 * sx, 1.45, 0.3) * CFrame.Angles(0, 0, math.rad(-12 * sx)))
+		add(part(Vector3.new(0.42, 0.14, 0.1), GOLD, Enum.Material.Neon, 0, nil), CFrame.new(0.55 * sx, 0.35, -1.55) * CFrame.Angles(0, 0, math.rad(14 * sx)))
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local u = math.clamp((os.clock() - t0) / 0.28, 0, 1)
+		local e = 1 - (1 - u) * (1 - u)
+		local pos = from:Lerp(to, e) + Vector3.new(0, math.sin(u * math.pi) * 1.2, 0)
+		local base = CFrame.lookAt(pos, pos + dir) * CFrame.new(0, 0, 0)
+		local sc = 0.6 + 0.6 * e
+		for _, it in ipairs(items) do
+			local off = it[2] :: CFrame
+			(it[1] :: BasePart).CFrame = base * (off - off.Position + off.Position * sc)
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, it in ipairs(items) do
+				tween(it[1] :: BasePart, 0.25, { Transparency = 1 })
+			end
+			foxBloom(to, 7)
+			Fx.sound("ping", 0.5, 1.2, to)
+		end
+	end)
+	for i = 1, 6 do
+		task.delay(i * 0.04, function()
+			wisp(from:Lerp(to, i / 7) + Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5), 1, 0.5)
+		end)
+	end
+end
+
+-- 흑염마검장 연타: 검은 불꽃 초승달 검기 (안쪽은 칠흑, 바깥은 보랏빛 · 높은 단계는 핏빛)
+local function flameCombo(r: BasePart, slot: any, lv: number)
+	local edge = lv >= 10 and CRIMSON or PURPLE
+	if slot == 3 then
+		arcSlash(slashPlane(r, 0, 0, 0), 4.6, 0, math.pi * 2, 1.0, INK, edge, 0.45, 0.24)
+		arcSlash(slashPlane(r, 0, 0.1, 0), 4.0, 0, math.pi * 2, 0.25, VIOLET, edge, 0.35, 0.24)
+		return
+	end
+	if slot == 4 or slot == "F" then
+		-- 위에서 아래로 내리긋는 세로 초승달, 앞 땅에 검은 불꽃
+		local cf = r.CFrame * CFrame.new(0, 0.5, -1.5) * CFrame.Angles(0, HALF, 0)
+		arcSlash(cf, 5, HALF + 0.3, -HALF + 0.2, 1.2, INK, edge, 0.45, 0.14)
+		arcSlash(cf, 4.4, HALF + 0.3, -HALF + 0.2, 0.3, WHITE_HOT, edge, 0.3, 0.14)
+		task.delay(0.16, function()
+			if r.Parent then
+				flameBurst(r.Position + r.CFrame.LookVector * 5, edge, INK, slot == "F" and 9 or 6, true)
+				shake(0.35)
+			end
+		end)
+		return
+	end
+	local roll = slot == 1 and 20 or -20
+	local mid = -HALF
+	local a0, a1 = mid + 1.2, mid - 1.2
+	if slot == 2 then
+		a0, a1 = a1, a0
+	end
+	arcSlash(slashPlane(r, roll, 0.3, 0.4), 4.4, a0, a1, 0.95, INK, edge, 0.38, 0.1)
+	arcSlash(slashPlane(r, roll, 0.32, 0.4), 4.0, a0, a1, 0.22, WHITE_HOT:Lerp(edge, 0.5), edge, 0.26, 0.1)
+end
+-- 흑염마검장 강타: 발도 일섬. 숨을 멈춘 듯 한 박자 뒤, 앞으로 긴 가로 일섬이 그어지고 엇갈린 둘째 획과 함께 검은 불꽃이 터진다
+local function flameIaido(r: BasePart, lv: number)
+	local edge = lv >= 10 and CRIMSON or PURPLE
+	local dir = flatOr(r.CFrame.LookVector)
+	task.delay(0.24, function()
+		if not r.Parent then
+			return
+		end
+		local c = r.Position + dir * 8 + Vector3.new(0, 0.4, 0)
+		for k, roll in ipairs({ 0, 28 }) do
+			task.delay((k - 1) * 0.1, function()
+				local line = temp(part(Vector3.new(0.12, 0.5, 2), WHITE_HOT, Enum.Material.Neon, 0, nil), 0.6)
+				local base = CFrame.lookAt(c, c + dir) * CFrame.Angles(0, HALF, 0) * CFrame.Angles(math.rad(roll), 0, 0)
+				line.CFrame = base
+				tween(line, 0.1, { Size = Vector3.new(0.12, 0.5, 17) }, Enum.EasingStyle.Quart)
+				task.delay(0.12, function()
+					tween(line, 0.4, { Transparency = 1, Size = Vector3.new(0.05, 0.1, 19) })
+				end)
+				local glow = temp(part(Vector3.new(0.1, 1.6, 2), edge, Enum.Material.Neon, 0.4, nil), 0.6)
+				glow.CFrame = base
+				tween(glow, 0.1, { Size = Vector3.new(0.1, 1.6, 18) }, Enum.EasingStyle.Quart)
+				task.delay(0.12, function()
+					tween(glow, 0.45, { Transparency = 1, Size = Vector3.new(0.05, 3, 20) })
+				end)
+			end)
+		end
+		task.delay(0.2, function()
+			flameBurst(c, edge, INK, 7, true)
+			Fx.ring(c - Vector3.new(0, 2.6, 0), edge, 2, 16, 0.4)
+			shake(0.6)
+			Fx.sound("heavy", 0.6, 0.7, c)
+		end)
+	end)
+end
+
+-- 오의 연출 (내 화면): 위아래 검은 띠 · 화면을 가로지르는 한 획 · 큰 한자 이름 · 색 물들임
+local ULT = {
+	gumiho = { G = { "九尾天火", FOX_PALE, FOX } },
+	heukyeom = { G = { "魔王斬", WHITE_HOT, PURPLE }, X = { "黑炎滅天", CRIMSON, INK } },
+}
+local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
+	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	if not pg then
+		return
+	end
+	local g = Instance.new("ScreenGui")
+	g.Name = "KwonUltIntro"
+	g.IgnoreGuiInset = true
+	g.ResetOnSpawn = false
+	g.DisplayOrder = 40
+	local bars = {}
+	for k = 0, 1 do
+		local b = Instance.new("Frame")
+		b.BorderSizePixel = 0
+		b.BackgroundColor3 = Color3.new(0, 0, 0)
+		b.AnchorPoint = Vector2.new(0, k)
+		b.Position = UDim2.fromScale(0, k)
+		b.Size = UDim2.fromScale(1, 0)
+		b.Parent = g
+		table.insert(bars, b)
+	end
+	local stripe = Instance.new("Frame")
+	stripe.BorderSizePixel = 0
+	stripe.BackgroundColor3 = c2
+	stripe.AnchorPoint = Vector2.new(0, 0.5)
+	stripe.Position = UDim2.fromScale(0, 0.47)
+	stripe.Size = UDim2.new(0, 0, 0, 4)
+	stripe.Rotation = -4
+	stripe.Parent = g
+	local big = Instance.new("TextLabel")
+	big.BackgroundTransparency = 1
+	big.AnchorPoint = Vector2.new(0.5, 0.5)
+	big.Position = UDim2.fromScale(0.5, 0.42)
+	big.Size = UDim2.fromScale(0.7, 0.2)
+	big.Font = Enum.Font.Antique
+	big.TextScaled = true
+	big.Text = hanja
+	big.TextColor3 = c1
+	big.TextTransparency = 1
+	big.Parent = g
+	local st = Instance.new("UIStroke")
+	st.Color = c2
+	st.Thickness = 3
+	st.Transparency = 1
+	st.Parent = big
+	local sc = Instance.new("UIScale")
+	sc.Scale = 1.7
+	sc.Parent = big
+	local small = Instance.new("TextLabel")
+	small.BackgroundTransparency = 1
+	small.AnchorPoint = Vector2.new(0.5, 0)
+	small.Position = UDim2.fromScale(0.5, 0.53)
+	small.Size = UDim2.fromScale(0.5, 0.05)
+	small.Font = Enum.Font.GothamBlack
+	small.TextScaled = true
+	small.Text = name
+	small.TextColor3 = Color3.new(1, 1, 1)
+	small.TextStrokeTransparency = 0.3
+	small.TextTransparency = 1
+	small.Parent = g
+	g.Parent = pg
+	Debris:AddItem(g, 2.2)
+	for _, b in ipairs(bars) do
+		tween(b, 0.18, { Size = UDim2.fromScale(1, 0.1) })
+	end
+	tween(stripe, 0.22, { Size = UDim2.new(1, 0, 0, 4) }, Enum.EasingStyle.Quart)
+	tween(big, 0.2, { TextTransparency = 0 })
+	tween(st, 0.2, { Transparency = 0 })
+	tween(sc, 0.28, { Scale = 1 }, Enum.EasingStyle.Back)
+	task.delay(0.12, function()
+		tween(small, 0.2, { TextTransparency = 0 })
+	end)
+	if opts.tint then
+		pcall(opts.tint, c2, 0.35, 0.9)
+	end
+	if opts.fov then
+		pcall(opts.fov, -8, 0.7)
+	end
+	shake(0.5)
+	Fx.sound("heavy", 0.7, 0.5)
+	task.delay(1.1, function()
+		for _, b in ipairs(bars) do
+			tween(b, 0.3, { Size = UDim2.fromScale(1, 0) })
+		end
+		tween(stripe, 0.3, { BackgroundTransparency = 1 })
+		tween(big, 0.35, { TextTransparency = 1 })
+		tween(st, 0.35, { Transparency = 1 })
+		tween(small, 0.3, { TextTransparency = 1 })
+		tween(sc, 0.35, { Scale = 0.85 })
+	end)
+end
+
+-- 내가 기술을 쓸 때 (init.client 의 손놀림에서). 이름은 Config 그대로 받는다
+function PassArts.cast(styleId: string, slot: any, char: Model, _dur: number, moveName: string?)
+	if styleId ~= "gumiho" and styleId ~= "heukyeom" then
+		return
+	end
+	local r = rootOf(char)
+	if not r then
+		return
+	end
+	local lv = tonumber(char:GetAttribute("Enh")) or 0
+	local fox = styleId == "gumiho"
+	local ok, err = pcall(function()
+		if type(slot) == "number" or slot == "F" then
+			if fox then
+				foxCombo(r, slot)
+			else
+				flameCombo(r, slot, lv)
+			end
+		elseif slot == "H" then
+			if fox then
+				foxHead(r)
+			else
+				flameIaido(r, lv)
+			end
+		else
+			local u = ULT[styleId][slot]
+			if u and char == Players.LocalPlayer.Character then
+				ultIntro(moveName or "", u[1], u[2], u[3])
+			end
+		end
+	end)
+	if not ok then
+		warn("[권왕] 게임패스 권법 손놀림 연출 오류:", styleId, slot, err)
+	end
 end
 
 function PassArts.handles(data: any): boolean

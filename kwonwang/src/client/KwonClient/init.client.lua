@@ -489,6 +489,7 @@ local function tint(color: Color3, strength: number, time: number)
 	end)
 end
 Sin.init({ shake = shake, tint = tint, flash = UI.flash })
+PassArts.init({ shake = shake, tint = tint, fov = fovPunch }) -- 3.72판 오의 연출 (내 화면)
 task.spawn(function()
 	local ok, err = pcall(Ambience.start)
 	if not ok then
@@ -691,6 +692,7 @@ startMove = function(slot: any, charge: number?)
 	Sakura.cast(style.id, slot, char, dur)
 	Drunk.cast(style.id, slot, char, dur)
 	Reaper.cast(style.id, slot, char, dur)
+	PassArts.cast(style.id, slot, char, dur, move.name)
 	if Arts.ownsCast(style.id) then
 		Arts.cast(style.id, slot, char, dur)
 	else
@@ -1327,7 +1329,7 @@ local firstState = true
 -- 3.62판 · 3.66판: 배틀그라운드 권법 전시장 (서버가 지은 전시장에 내 잠금 · 발판 · 시범 · 장신구)
 local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) or nil
 if Gallery then
-	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, toast = UI.toast })
+	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, passCast = PassArts.cast, toast = UI.toast })
 end
 function handlers.state(data: any)
 	state = data
@@ -1762,6 +1764,7 @@ function handlers.act(data: any)
 		Sakura.cast(style.id, data.slot, m, data.dur)
 		Drunk.cast(style.id, data.slot, m, data.dur)
 		Reaper.cast(style.id, data.slot, m, data.dur)
+		PassArts.cast(style.id, data.slot, m, data.dur)
 		if Arts.ownsCast(style.id) then
 			Arts.cast(style.id, data.slot, m, data.dur)
 		else
@@ -2275,7 +2278,7 @@ function handlers.skillfx(data: any)
 	end
 	-- 3.41판 게임패스 권법의 기술 연출
 	if PassArts.handles(data) then
-		PassArts.init({ shake = shake, tint = tint })
+		PassArts.init({ shake = shake, tint = tint, fov = fovPunch })
 		PassArts.run(data)
 		return
 	end
