@@ -5160,7 +5160,15 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if action == "battleEnter" and type(a1) == "string" then
 			local bp = profiles[player]
 			if bp and bp.styles[a1] and bp.style ~= a1 and not Battle.inArena(player) then
+				-- 3.73판: 대기실은 싸움이 없다. 싸움터에서 쓰러져 막 나온 사람도 바로 권법을 바꿔 들어가게
+				local bf = Combat.fighterOfPlayer(player)
+				if bf then
+					bf.combatUntil = 0
+				end
 				Actions.learn(player, a1)
+				if bp.style ~= a1 then
+					return -- 바꾸지 못했으면 들어가지 않는다 (까닭은 learn이 알린다)
+				end
 			end
 		end
 		local msg = Battle.request(player, action, a1)

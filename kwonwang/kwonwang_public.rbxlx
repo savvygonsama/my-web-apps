@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.72.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.73.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2607,9 +2607,9 @@ table.insert(Config.Styles, {
 		skills = {
 			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고, 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
 				mech = { kind = "sinSeq", steps = {
-					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "天" },
-					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "地" },
-					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "人" },
+					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "천" },
+					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "지" },
+					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "인" },
 				} } },
 			R = { id = "snaR", name = "지축 진동", desc = "각성. 땅을 찍으면 충격이 안에서 바깥으로 세 겹의 물결이 되어 퍼져 나간다. 마지막에 발밑이 크게 솟는다", pose = "sn_stomp", dur = 1.7, cd = 10, chi = 28,
 				mech = { kind = "sinSeq", steps = {
@@ -2660,18 +2660,18 @@ table.insert(Config.Styles, {
 			-- 3.42판: 예전 '만상 천수' 는 진 금강불괴신공의 천수여래 (팔 여럿 달린 형상 + 하늘 손바닥) 와 장치 · 연출이 똑같았다. 신 삼재권만의 체술로 바꾼다
 			G = { id = "snsG", name = "신행 십이각", desc = "신의 걸음으로 둘레의 적들 사이를 오가며 열 번 걷어차고 (무적), 앞을 부채꼴로 쓸어 찬 뒤, 하늘에서 내리찍는 발꿈치로 둘레 30칸의 땅을 가른다", pose = "air_spin", dur = 3.0, cd = 24, chi = 100, armor = true,
 				mech = { kind = "sinSeq", steps = {
-					{ t = 0.3, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "一" },
+					{ t = 0.3, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "일" },
 					{ t = 0.46, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 0.62, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 0.78, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
-					{ t = 0.94, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "五" },
+					{ t = 0.94, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "오" },
 					{ t = 1.1, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.26, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.42, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.58, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
-					{ t = 1.74, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "十" },
+					{ t = 1.74, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "십" },
 					{ t = 2.1, shape = "cone", at = "self", length = 30, angle = 120, hit = hit(0, 0, 0, 180, 180, 1.0, 60, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 30, hit = hit(0, 0, 0, 360, 420, 1.8, 40, 20), big = true, name = "神" },
+					{ t = 2.6, shape = "circle", at = "self", radius = 30, hit = hit(0, 0, 0, 360, 420, 1.8, 40, 20), big = true, name = "신" },
 				} } },
 			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 얻을 때의 그 동작: 팔을 여섯 번 휘두르는 동안 둘레 70칸의 시간이 멈춰 모두 묶이고 세상에 금이 간다. 무릎을 들어 땅을 찍는 순간 하늘과 땅이 갈라지며 모두 부서진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
 				mech = { kind = "genesis", radius = 70, freeze = 4.6, crackAt = 3.0, breakAt = 4.3, final = hit(0, 0, 0, 720, 760, 2.0, 80, 30) } },
@@ -14712,7 +14712,15 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 		if action == "battleEnter" and type(a1) == "string" then
 			local bp = profiles[player]
 			if bp and bp.styles[a1] and bp.style ~= a1 and not Battle.inArena(player) then
+				-- 3.73판: 대기실은 싸움이 없다. 싸움터에서 쓰러져 막 나온 사람도 바로 권법을 바꿔 들어가게
+				local bf = Combat.fighterOfPlayer(player)
+				if bf then
+					bf.combatUntil = 0
+				end
 				Actions.learn(player, a1)
+				if bp.style ~= a1 then
+					return -- 바꾸지 못했으면 들어가지 않는다 (까닭은 learn이 알린다)
+				end
 			end
 		end
 		local msg = Battle.request(player, action, a1)
@@ -17805,7 +17813,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	t.TextScaled = true
 	t.Font = Enum.Font.Antique
 	t.TextColor3 = Color3.fromRGB(255, 214, 130)
-	t.Text = "比 武 堂"
+	t.Text = "비 무 당"
 	t.Parent = sg
 	-- 전각 가운데 문: 붉은 빛의 막 (싸움터로)
 	local veil = part({ Name = "ArenaVeil", Size = Vector3.new(9, 12, 0.4), Position = hall + Vector3.new(0, floorY + 6, -5.2), Color = Color3.fromRGB(255, 120, 80), Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = f })
@@ -30298,7 +30306,7 @@ local function trainingSpots(out: any)
 			for _, x in ipairs({ -1, 1 }) do
 				part({ Name = "WeightHandlePost", Size = Vector3.new(0.6, 1.2, 0.6), Position = at + Vector3.new(x * 1.5, 4.6, 0), Color = Color3.fromRGB(80, 80, 90), Material = Enum.Material.Metal, Parent = f })
 			end
-			sign(part({ Name = "WeightMark", Size = Vector3.new(2.4, 1.2, 0.1), Position = at + Vector3.new(0, 2.5, -2.55), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f }), Enum.NormalId.Front, { { "千斤", GOLD, 1 } })
+			sign(part({ Name = "WeightMark", Size = Vector3.new(2.4, 1.2, 0.1), Position = at + Vector3.new(0, 2.5, -2.55), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f }), Enum.NormalId.Front, { { "천근", GOLD, 1 } })
 		elseif spot.kind == "jucheon" then
 			-- 주천 운기: 태극 진 위의 방석, 머리 위에 도는 금빛 고리
 			disc("TaegeukDisc", at + Vector3.new(0, 0.15, 0), 5, 0.3, Color3.fromRGB(240, 235, 225), Enum.Material.Marble, f)
@@ -39515,7 +39523,7 @@ function handlers.learned(data: any)
 		if data.hidden then
 			-- 숨은 권법: 하늘이 갈라진다
 			UI.cinematic("🔓 " .. s.name, s.color, 2.6)
-			UI.banner("🔓 숨겨진 권법 " .. s.icon .. " " .. s.name, string.format("[%s] %s", s.grade, s.hanja), s.color)
+			UI.banner("🔓 숨겨진 권법 " .. s.icon .. " " .. s.name, string.format("[%s]", s.grade), s.color)
 			local char = myChar()
 			if char then
 				Fx.ult(s.id, char, 1.8)
@@ -39524,7 +39532,7 @@ function handlers.learned(data: any)
 			Fx.sound("ping", 1, 0.6)
 			if s.grade == "신" then
 				UI.flash(Color3.new(1, 1, 1), 0.6)
-				UI.banner("🌅 神 · 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
+				UI.banner("🌅 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
 				shake(2)
 				local ch = myChar()
 				local rr = ch and ch:FindFirstChild("HumanoidRootPart")
@@ -39538,7 +39546,7 @@ function handlers.learned(data: any)
 				end
 			end
 		else
-			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)
+			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] · 권법 창에서 바꿔 쓸 수 있다", s.grade), s.color)
 		end
 		UI.closeWindow()
 		UI.setGuide(nil)
@@ -40082,7 +40090,7 @@ end
 -- 3.31판: 신의 모습 (신 채우기). 누군가 신으로 바뀐다 (모두에게 보인다)
 function handlers.sinForm(data: any)
 	Sin.form(data)
-	UI.banner(string.format("🌅 神降臨 · %s", data.name or ""), "신의 모습이 되었다. 몸이 떠오르고 거대한 신의 잔상이 따른다. 기술이 모두 바뀐다 (쓰러질 때까지)", Color3.fromRGB(255, 226, 140))
+	UI.banner(string.format("🌅 신강림 · %s", data.name or ""), "신의 모습이 되었다. 몸이 떠오르고 거대한 신의 잔상이 따른다. 기술이 모두 바뀐다 (쓰러질 때까지)", Color3.fromRGB(255, 226, 140))
 end
 -- 3.29판 신의 동굴: 대좌에 극 권법의 기운을 보낸다 (모두에게 보인다)
 function handlers.sinOffer(data: any)
@@ -56925,7 +56933,7 @@ function Lang.translate(s: string): string
 end
 
 ------------------------------------------------------------------------
--- 3.72판: 터치 기기는 PC 키 글자를 단추로 (F 막기 → 🛡, Z 강타 → 💥, T 말 걸기 → 말풍선)
+-- 3.72판: 터치 기기는 PC 키 글자를 단추로 (F 막기 → 🛡, Z 강타 → 💥, T 말 걸기 → 화면의 단추)
 -- 원문은 그대로 두고 화면에 붙일 때만 바꾼다. 'M Y T H I C' 같이 띄어 쓴 큰 글자는 건드리지 않는다
 ------------------------------------------------------------------------
 Lang.touch = false
@@ -56942,9 +56950,9 @@ local function touchify(s: string): string
 		end)
 		s = s:gsub("%f[%w]T%f[%W]", "the prompt")
 	else
-		s = s:gsub("%(T%)", "(말풍선)")
-		s = s:gsub("%f[%w]T를", "말풍선을"):gsub("%f[%w]T가", "말풍선이"):gsub("%f[%w]T는", "말풍선은")
-		s = s:gsub("%f[%w]T%f[%W]", "말풍선")
+		s = s:gsub("%(T%)", "(단추)")
+		s = s:gsub("%f[%w]T를", "단추를"):gsub("%f[%w]T가", "단추가"):gsub("%f[%w]T는", "단추는")
+		s = s:gsub("%f[%w]T%f[%W]", "단추")
 	end
 	s = s:gsub("%f[%w]F%f[%W]", "🛡"):gsub("%f[%w]Z%f[%W]", "💥")
 	return s
@@ -61206,11 +61214,33 @@ return {
 	["권법마다 발판을 밟으면 그 권법으로 입장"] = "Step on a style's pad to enter with it",
 	["⚔ 대기실 · 남쪽 문 밖 권법 전시장에서 원하는 권법의 발판을 밟으면 입장 · 투표대에서 다음 맵"] = "⚔ Lobby · step on a style's pad in the Style Hall outside the south gate to enter · vote for the next map at the stands",
 	["＋－: 확대 · 끌기: 이동 · ✕: 닫기"] = "＋－: zoom · drag: move · ✕: close",
-	["청운 장로에게 말 걸기 (말풍선 누르기)"] = "Talk to Elder Cheongun (tap the speech bubble)",
+	["청운 장로에게 말 걸기 (단추 누르기)"] = "Talk to Elder Cheongun (tap the button)",
 	["목인 치기 (👊 단추)  %d / %d"] = "Hit the dummy (👊 button)  %d / %d",
 	["강타 맞히기 (💥 단추)  %d / %d"] = "Land a heavy strike (💥 button)  %d / %d",
 	["기술 쓰기 (E 단추)  %d / %d"] = "Use a skill (E button)  %d / %d",
 	["🗺 지도"] = "🗺 Map",
+	["천"] = "Heaven",
+	["지"] = "Earth",
+	["인"] = "Man",
+	["일"] = "One",
+	["오"] = "Five",
+	["십"] = "Ten",
+	["진"] = "True",
+	["천근"] = "Thousand-Weight",
+	["비 무 당"] = "DUELING HALL",
+	["천 지 개 벽"] = "HEAVEN AND EARTH SPLIT",
+	["🌅 신 등급 🌅"] = "🌅 Divine Grade 🌅",
+	["🌅 신 🌅"] = "🌅 Divine 🌅",
+	["🌅 신 등급"] = "🌅 Divine Grade",
+	["🌅 신강림 · %s"] = "🌅 Divine Descent · %s",
+	["[%s] · 권법 창에서 바꿔 쓸 수 있다"] = "[%s] · switch to it in the Styles window",
+	["흑염마검장 · 초 오의"] = "Black Flame Demon Sword · Super Ultimate",
+	["전시장 발판을 밟으면 입장"] = "Step on a pad in the gallery to enter",
+	["나  %d / %d%s  ·  누적 %d"] = "Me  %d / %d%s  ·  Total %d",
+	["%s 끝 · %s · 다음 %s"] = "%s over · %s · next %s",
+	["%d표"] = "%d votes",
+	["0표"] = "0 votes",
+	["싸움터 %d명 · 모두 %d명"] = "In arena %d · total %d",
 }
 ]]></string>
           </Properties>
@@ -67456,7 +67486,7 @@ local function foxHead(r: BasePart)
 		local sc = 0.6 + 0.6 * e
 		for _, it in ipairs(items) do
 			local off = it[2] :: CFrame
-			(it[1] :: BasePart).CFrame = base * (off - off.Position + off.Position * sc)
+			;(it[1] :: BasePart).CFrame = base * (off - off.Position + off.Position * sc)
 		end
 		if u >= 1 then
 			conn:Disconnect()
@@ -67539,12 +67569,12 @@ local function flameIaido(r: BasePart, lv: number)
 	end)
 end
 
--- 오의 연출 (내 화면): 위아래 검은 띠 · 화면을 가로지르는 한 획 · 큰 한자 이름 · 색 물들임
+-- 오의 연출 (내 화면): 위아래 검은 띠 · 화면을 가로지르는 한 획 · 큰 기술 이름 (3.73판: 한자 대신 한글) · 색 물들임
 local ULT = {
-	gumiho = { G = { "九尾天火", FOX_PALE, FOX } },
-	heukyeom = { G = { "魔王斬", WHITE_HOT, PURPLE }, X = { "黑炎滅天", CRIMSON, INK } },
+	gumiho = { G = { "구미호권", FOX_PALE, FOX } },
+	heukyeom = { G = { "흑염마검장", WHITE_HOT, PURPLE }, X = { "흑염마검장 · 초 오의", CRIMSON, INK } },
 }
-local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
+local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
 	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
 	if not pg then
 		return
@@ -67577,10 +67607,10 @@ local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
 	big.BackgroundTransparency = 1
 	big.AnchorPoint = Vector2.new(0.5, 0.5)
 	big.Position = UDim2.fromScale(0.5, 0.42)
-	big.Size = UDim2.fromScale(0.7, 0.2)
-	big.Font = Enum.Font.Antique
+	big.Size = UDim2.fromScale(0.7, 0.16)
+	big.Font = Enum.Font.GothamBlack
 	big.TextScaled = true
-	big.Text = hanja
+	big.Text = name
 	big.TextColor3 = c1
 	big.TextTransparency = 1
 	big.Parent = g
@@ -67599,7 +67629,7 @@ local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
 	small.Size = UDim2.fromScale(0.5, 0.05)
 	small.Font = Enum.Font.GothamBlack
 	small.TextScaled = true
-	small.Text = name
+	small.Text = sub
 	small.TextColor3 = Color3.new(1, 1, 1)
 	small.TextStrokeTransparency = 0.3
 	small.TextTransparency = 1
@@ -75283,7 +75313,7 @@ function Sin.rite(d: any)
 	title.Size = UDim2.fromScale(0.5, 0.14)
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
-	title.Text = "神 三才拳"
+	title.Text = "신 삼재권"
 	title.TextColor3 = Color3.new(1, 1, 1)
 	title.TextStrokeColor3 = Color3.fromRGB(255, 190, 70)
 	title.TextStrokeTransparency = 0.2
@@ -75433,7 +75463,7 @@ function Sin.rite(d: any)
 		big.Size = UDim2.fromScale(0.3, 0.12)
 		big.Font = Enum.Font.GothamBlack
 		big.TextScaled = true
-		big.Text = "天 地 開 闢"
+		big.Text = "천 지 개 벽"
 		big.TextColor3 = Color3.new(1, 1, 1)
 		big.TextStrokeColor3 = Color3.fromRGB(255, 190, 70)
 		big.TextStrokeTransparency = 0
@@ -75480,7 +75510,7 @@ local function stamp(at: Vector3, R: number)
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
-	tl.Text = "神"
+	tl.Text = "신"
 	tl.TextScaled = true
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextColor3 = Color3.fromRGB(255, 226, 140)
@@ -75816,7 +75846,7 @@ local function buildShell(m: Model)
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
-	tl.Text = "神"
+	tl.Text = "신"
 	tl.TextScaled = true
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextColor3 = Color3.fromRGB(255, 226, 140)
@@ -79700,7 +79730,7 @@ function UIB.buildStyles()
 		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
 		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
 		if gradeNow == "신" then
-			gradeTag = "<b>" .. UI.godText("🌅 神 · 신 등급 🌅") .. "</b>"
+			gradeTag = "<b>" .. UI.godText("🌅 신 등급 🌅") .. "</b>"
 		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
@@ -79732,7 +79762,7 @@ function UIB.buildStyles()
 		elseif tg then
 			tg:Destroy()
 		end
-		dHanja.Text = s.hanja
+		dHanja.Text = "[" .. s.grade .. "]"
 		local master = Config.MASTERS[id]
 		local pos = myPos()
 		if master and not found and not owned then
@@ -79980,7 +80010,7 @@ function UIB.buildStyles()
 			local god = s.grade == "신"
 			local head = new("Frame", { Size = UDim2.new(1, -10, 0, god and 40 or 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
 			local rule = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, god and 4 or 2), BackgroundColor3 = god and Color3.new(1, 1, 1) or gc, BackgroundTransparency = god and 0.1 or 0.5, BorderSizePixel = 0, Parent = head })
-			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 神 · 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
 			if god then
 				UI.shimmer(rule, 2.4)
 				UI.shimmer(tag, 1.8)
@@ -79996,12 +80026,12 @@ function UIB.buildStyles()
 			card.BackgroundColor3 = Color3.fromRGB(58, 48, 26)
 			UI.shimmer(cardStroke, 2.2)
 			TweenService:Create(cardStroke, TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Thickness = 4.4 }):Play()
-			local wm = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 90, 1, 0), Text = "神", TextSize = 56, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 226, 140), TextTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+			local wm = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 90, 1, 0), Text = "신", TextSize = 56, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 226, 140), TextTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
 			UI.shimmer(wm, 2.6)
 		end
 		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
-		sub.Text = s.hidden and "???" or s.hanja
+		sub.Text = s.hidden and "???" or ("[" .. s.grade .. "]")
 		cards[s.id] = card
 	end
 	refreshers.styles = function(reset: boolean?)
@@ -80022,7 +80052,7 @@ function UIB.buildStyles()
 					end
 				else
 					local mark = owned and "" or ((state.trials and state.trials[id]) and "  · 시험 통과" or ((state.found and state.found[id]) and "  · 사부 찾음" or (Config.MASTERS[id] and "  · ❓" or "")))
-					sub.Text = "[" .. Config.styleGrade(s, ups) .. string.rep("⬆", ups) .. "] " .. s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
+					sub.Text = "[" .. Config.styleGrade(s, ups) .. string.rep("⬆", ups) .. "]" .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
 					if title then
 						title.Text = s.icon .. " " .. s.name
 						title.TextColor3 = s.color
@@ -82614,7 +82644,7 @@ function UIB.goalText(s: any, g: any): string
 	local k = g.kind
 	local prog = s.prog or 0
 	if k == "talk" then
-		return V.device ~= "pc" and "청운 장로에게 말 걸기 (말풍선 누르기)" or "청운 장로에게 말 걸기 (T)"
+		return V.device ~= "pc" and "청운 장로에게 말 걸기 (단추 누르기)" or "청운 장로에게 말 걸기 (T)"
 	elseif k == "kill" then
 		return string.format("%s 쓰러뜨리기  %d / %d", nameOf(g.id), prog, g.n or 1)
 	elseif k == "train" then
@@ -83416,7 +83446,7 @@ function UI.battleState(data: any, myId: number)
 			local streak = (mine.streak or 0) >= 2 and string.format("  ·  %d연속", mine.streak) or ""
 			BH.me.Text = string.format("나  %d / %d%s  ·  누적 %d", mine.k, mine.d, streak, mine.total or 0)
 		else
-			BH.me.Text = here and "" or "전각 문에서 T로 입장"
+			BH.me.Text = here and "" or "전시장 발판을 밟으면 입장"
 		end
 	end
 end
@@ -87610,7 +87640,7 @@ function Ults.intro(styleId: any, model: Model)
 		glyph.BackgroundTransparency = 1
 		glyph.Font = Enum.Font.GothamBlack
 		glyph.TextScaled = true
-		glyph.Text = "眞"
+		glyph.Text = "진"
 		glyph.TextColor3 = c2
 		glyph.TextStrokeTransparency = 0.2
 		glyph.TextStrokeColor3 = c

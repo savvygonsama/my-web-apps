@@ -1471,7 +1471,7 @@ local function foxHead(r: BasePart)
 		local sc = 0.6 + 0.6 * e
 		for _, it in ipairs(items) do
 			local off = it[2] :: CFrame
-			(it[1] :: BasePart).CFrame = base * (off - off.Position + off.Position * sc)
+			;(it[1] :: BasePart).CFrame = base * (off - off.Position + off.Position * sc)
 		end
 		if u >= 1 then
 			conn:Disconnect()
@@ -1554,12 +1554,12 @@ local function flameIaido(r: BasePart, lv: number)
 	end)
 end
 
--- 오의 연출 (내 화면): 위아래 검은 띠 · 화면을 가로지르는 한 획 · 큰 한자 이름 · 색 물들임
+-- 오의 연출 (내 화면): 위아래 검은 띠 · 화면을 가로지르는 한 획 · 큰 기술 이름 (3.73판: 한자 대신 한글) · 색 물들임
 local ULT = {
-	gumiho = { G = { "九尾天火", FOX_PALE, FOX } },
-	heukyeom = { G = { "魔王斬", WHITE_HOT, PURPLE }, X = { "黑炎滅天", CRIMSON, INK } },
+	gumiho = { G = { "구미호권", FOX_PALE, FOX } },
+	heukyeom = { G = { "흑염마검장", WHITE_HOT, PURPLE }, X = { "흑염마검장 · 초 오의", CRIMSON, INK } },
 }
-local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
+local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
 	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
 	if not pg then
 		return
@@ -1592,10 +1592,10 @@ local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
 	big.BackgroundTransparency = 1
 	big.AnchorPoint = Vector2.new(0.5, 0.5)
 	big.Position = UDim2.fromScale(0.5, 0.42)
-	big.Size = UDim2.fromScale(0.7, 0.2)
-	big.Font = Enum.Font.Antique
+	big.Size = UDim2.fromScale(0.7, 0.16)
+	big.Font = Enum.Font.GothamBlack
 	big.TextScaled = true
-	big.Text = hanja
+	big.Text = name
 	big.TextColor3 = c1
 	big.TextTransparency = 1
 	big.Parent = g
@@ -1614,7 +1614,7 @@ local function ultIntro(name: string, hanja: string, c1: Color3, c2: Color3)
 	small.Size = UDim2.fromScale(0.5, 0.05)
 	small.Font = Enum.Font.GothamBlack
 	small.TextScaled = true
-	small.Text = name
+	small.Text = sub
 	small.TextColor3 = Color3.new(1, 1, 1)
 	small.TextStrokeTransparency = 0.3
 	small.TextTransparency = 1

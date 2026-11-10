@@ -183,7 +183,7 @@ function Lang.translate(s: string): string
 end
 
 ------------------------------------------------------------------------
--- 3.72판: 터치 기기는 PC 키 글자를 단추로 (F 막기 → 🛡, Z 강타 → 💥, T 말 걸기 → 말풍선)
+-- 3.72판: 터치 기기는 PC 키 글자를 단추로 (F 막기 → 🛡, Z 강타 → 💥, T 말 걸기 → 화면의 단추)
 -- 원문은 그대로 두고 화면에 붙일 때만 바꾼다. 'M Y T H I C' 같이 띄어 쓴 큰 글자는 건드리지 않는다
 ------------------------------------------------------------------------
 Lang.touch = false
@@ -200,9 +200,9 @@ local function touchify(s: string): string
 		end)
 		s = s:gsub("%f[%w]T%f[%W]", "the prompt")
 	else
-		s = s:gsub("%(T%)", "(말풍선)")
-		s = s:gsub("%f[%w]T를", "말풍선을"):gsub("%f[%w]T가", "말풍선이"):gsub("%f[%w]T는", "말풍선은")
-		s = s:gsub("%f[%w]T%f[%W]", "말풍선")
+		s = s:gsub("%(T%)", "(단추)")
+		s = s:gsub("%f[%w]T를", "단추를"):gsub("%f[%w]T가", "단추가"):gsub("%f[%w]T는", "단추는")
+		s = s:gsub("%f[%w]T%f[%W]", "단추")
 	end
 	s = s:gsub("%f[%w]F%f[%W]", "🛡"):gsub("%f[%w]Z%f[%W]", "💥")
 	return s

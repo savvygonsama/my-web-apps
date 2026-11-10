@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.72.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.73.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -2587,9 +2587,9 @@ table.insert(Config.Styles, {
 		skills = {
 			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고, 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
 				mech = { kind = "sinSeq", steps = {
-					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "天" },
-					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "地" },
-					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "人" },
+					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "천" },
+					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "지" },
+					{ t = 0.9, shape = "line", at = "self", length = 28, width = 6, hit = hit(0, 0, 0, 150, 100, 1.0, 60, 8), name = "인" },
 				} } },
 			R = { id = "snaR", name = "지축 진동", desc = "각성. 땅을 찍으면 충격이 안에서 바깥으로 세 겹의 물결이 되어 퍼져 나간다. 마지막에 발밑이 크게 솟는다", pose = "sn_stomp", dur = 1.7, cd = 10, chi = 28,
 				mech = { kind = "sinSeq", steps = {
@@ -2640,18 +2640,18 @@ table.insert(Config.Styles, {
 			-- 3.42판: 예전 '만상 천수' 는 진 금강불괴신공의 천수여래 (팔 여럿 달린 형상 + 하늘 손바닥) 와 장치 · 연출이 똑같았다. 신 삼재권만의 체술로 바꾼다
 			G = { id = "snsG", name = "신행 십이각", desc = "신의 걸음으로 둘레의 적들 사이를 오가며 열 번 걷어차고 (무적), 앞을 부채꼴로 쓸어 찬 뒤, 하늘에서 내리찍는 발꿈치로 둘레 30칸의 땅을 가른다", pose = "air_spin", dur = 3.0, cd = 24, chi = 100, armor = true,
 				mech = { kind = "sinSeq", steps = {
-					{ t = 0.3, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "一" },
+					{ t = 0.3, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "일" },
 					{ t = 0.46, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 0.62, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 0.78, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
-					{ t = 0.94, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "五" },
+					{ t = 0.94, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "오" },
 					{ t = 1.1, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.26, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.42, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
 					{ t = 1.58, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12) },
-					{ t = 1.74, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "十" },
+					{ t = 1.74, shape = "circle", at = "target", range = 40, radius = 9, hit = hit(0, 0, 0, 80, 80, 0.6, 24, 12), name = "십" },
 					{ t = 2.1, shape = "cone", at = "self", length = 30, angle = 120, hit = hit(0, 0, 0, 180, 180, 1.0, 60, 10) },
-					{ t = 2.6, shape = "circle", at = "self", radius = 30, hit = hit(0, 0, 0, 360, 420, 1.8, 40, 20), big = true, name = "神" },
+					{ t = 2.6, shape = "circle", at = "self", radius = 30, hit = hit(0, 0, 0, 360, 420, 1.8, 40, 20), big = true, name = "신" },
 				} } },
 			X = { id = "snsX", name = "천지개벽 · 신", desc = "신의 초 오의 (그동안 무적). 얻을 때의 그 동작: 팔을 여섯 번 휘두르는 동안 둘레 70칸의 시간이 멈춰 모두 묶이고 세상에 금이 간다. 무릎을 들어 땅을 찍는 순간 하늘과 땅이 갈라지며 모두 부서진다", pose = "sn_get", dur = 5.4, cd = 50, chi = 150, armor = true,
 				mech = { kind = "genesis", radius = 70, freeze = 4.6, crackAt = 3.0, breakAt = 4.3, final = hit(0, 0, 0, 720, 760, 2.0, 80, 30) } },

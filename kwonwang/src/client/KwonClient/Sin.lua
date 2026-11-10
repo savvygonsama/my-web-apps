@@ -871,7 +871,7 @@ function Sin.rite(d: any)
 	title.Size = UDim2.fromScale(0.5, 0.14)
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
-	title.Text = "神 三才拳"
+	title.Text = "신 삼재권"
 	title.TextColor3 = Color3.new(1, 1, 1)
 	title.TextStrokeColor3 = Color3.fromRGB(255, 190, 70)
 	title.TextStrokeTransparency = 0.2
@@ -1021,7 +1021,7 @@ function Sin.rite(d: any)
 		big.Size = UDim2.fromScale(0.3, 0.12)
 		big.Font = Enum.Font.GothamBlack
 		big.TextScaled = true
-		big.Text = "天 地 開 闢"
+		big.Text = "천 지 개 벽"
 		big.TextColor3 = Color3.new(1, 1, 1)
 		big.TextStrokeColor3 = Color3.fromRGB(255, 190, 70)
 		big.TextStrokeTransparency = 0
@@ -1068,7 +1068,7 @@ local function stamp(at: Vector3, R: number)
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
-	tl.Text = "神"
+	tl.Text = "신"
 	tl.TextScaled = true
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextColor3 = Color3.fromRGB(255, 226, 140)
@@ -1404,7 +1404,7 @@ local function buildShell(m: Model)
 	local tl = Instance.new("TextLabel")
 	tl.Size = UDim2.fromScale(1, 1)
 	tl.BackgroundTransparency = 1
-	tl.Text = "神"
+	tl.Text = "신"
 	tl.TextScaled = true
 	tl.Font = Enum.Font.GothamBlack
 	tl.TextColor3 = Color3.fromRGB(255, 226, 140)

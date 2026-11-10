@@ -2196,7 +2196,7 @@ function handlers.learned(data: any)
 		if data.hidden then
 			-- 숨은 권법: 하늘이 갈라진다
 			UI.cinematic("🔓 " .. s.name, s.color, 2.6)
-			UI.banner("🔓 숨겨진 권법 " .. s.icon .. " " .. s.name, string.format("[%s] %s", s.grade, s.hanja), s.color)
+			UI.banner("🔓 숨겨진 권법 " .. s.icon .. " " .. s.name, string.format("[%s]", s.grade), s.color)
 			local char = myChar()
 			if char then
 				Fx.ult(s.id, char, 1.8)
@@ -2205,7 +2205,7 @@ function handlers.learned(data: any)
 			Fx.sound("ping", 1, 0.6)
 			if s.grade == "신" then
 				UI.flash(Color3.new(1, 1, 1), 0.6)
-				UI.banner("🌅 神 · 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
+				UI.banner("🌅 신 등급", "극을 넘어선 궁극. 하늘과 땅과 사람이 하나로 모였다", Config.GRADE_COLOR["신"])
 				shake(2)
 				local ch = myChar()
 				local rr = ch and ch:FindFirstChild("HumanoidRootPart")
@@ -2219,7 +2219,7 @@ function handlers.learned(data: any)
 				end
 			end
 		else
-			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] %s · 권법 창에서 바꿔 쓸 수 있다", s.grade, s.hanja), s.color)
+			UI.banner(s.icon .. " " .. s.name .. " 입문!", string.format("[%s] · 권법 창에서 바꿔 쓸 수 있다", s.grade), s.color)
 		end
 		UI.closeWindow()
 		UI.setGuide(nil)
@@ -2763,7 +2763,7 @@ end
 -- 3.31판: 신의 모습 (신 채우기). 누군가 신으로 바뀐다 (모두에게 보인다)
 function handlers.sinForm(data: any)
 	Sin.form(data)
-	UI.banner(string.format("🌅 神降臨 · %s", data.name or ""), "신의 모습이 되었다. 몸이 떠오르고 거대한 신의 잔상이 따른다. 기술이 모두 바뀐다 (쓰러질 때까지)", Color3.fromRGB(255, 226, 140))
+	UI.banner(string.format("🌅 신강림 · %s", data.name or ""), "신의 모습이 되었다. 몸이 떠오르고 거대한 신의 잔상이 따른다. 기술이 모두 바뀐다 (쓰러질 때까지)", Color3.fromRGB(255, 226, 140))
 end
 -- 3.29판 신의 동굴: 대좌에 극 권법의 기운을 보낸다 (모두에게 보인다)
 function handlers.sinOffer(data: any)

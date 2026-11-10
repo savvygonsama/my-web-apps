@@ -2635,7 +2635,7 @@ function Ults.intro(styleId: any, model: Model)
 		glyph.BackgroundTransparency = 1
 		glyph.Font = Enum.Font.GothamBlack
 		glyph.TextScaled = true
-		glyph.Text = "眞"
+		glyph.Text = "진"
 		glyph.TextColor3 = c2
 		glyph.TextStrokeTransparency = 0.2
 		glyph.TextStrokeColor3 = c

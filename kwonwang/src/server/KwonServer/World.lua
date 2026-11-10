@@ -932,7 +932,7 @@ local function trainingSpots(out: any)
 			for _, x in ipairs({ -1, 1 }) do
 				part({ Name = "WeightHandlePost", Size = Vector3.new(0.6, 1.2, 0.6), Position = at + Vector3.new(x * 1.5, 4.6, 0), Color = Color3.fromRGB(80, 80, 90), Material = Enum.Material.Metal, Parent = f })
 			end
-			sign(part({ Name = "WeightMark", Size = Vector3.new(2.4, 1.2, 0.1), Position = at + Vector3.new(0, 2.5, -2.55), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f }), Enum.NormalId.Front, { { "千斤", GOLD, 1 } })
+			sign(part({ Name = "WeightMark", Size = Vector3.new(2.4, 1.2, 0.1), Position = at + Vector3.new(0, 2.5, -2.55), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal, CanCollide = false, Parent = f }), Enum.NormalId.Front, { { "천근", GOLD, 1 } })
 		elseif spot.kind == "jucheon" then
 			-- 주천 운기: 태극 진 위의 방석, 머리 위에 도는 금빛 고리
 			disc("TaegeukDisc", at + Vector3.new(0, 0.15, 0), 5, 0.3, Color3.fromRGB(240, 235, 225), Enum.Material.Marble, f)

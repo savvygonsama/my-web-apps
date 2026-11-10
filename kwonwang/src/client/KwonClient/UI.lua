@@ -916,7 +916,7 @@ function UIB.buildStyles()
 		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
 		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
 		if gradeNow == "신" then
-			gradeTag = "<b>" .. UI.godText("🌅 神 · 신 등급 🌅") .. "</b>"
+			gradeTag = "<b>" .. UI.godText("🌅 신 등급 🌅") .. "</b>"
 		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
@@ -948,7 +948,7 @@ function UIB.buildStyles()
 		elseif tg then
 			tg:Destroy()
 		end
-		dHanja.Text = s.hanja
+		dHanja.Text = "[" .. s.grade .. "]"
 		local master = Config.MASTERS[id]
 		local pos = myPos()
 		if master and not found and not owned then
@@ -1196,7 +1196,7 @@ function UIB.buildStyles()
 			local god = s.grade == "신"
 			local head = new("Frame", { Size = UDim2.new(1, -10, 0, god and 40 or 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
 			local rule = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, god and 4 or 2), BackgroundColor3 = god and Color3.new(1, 1, 1) or gc, BackgroundTransparency = god and 0.1 or 0.5, BorderSizePixel = 0, Parent = head })
-			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 神 · 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
 			if god then
 				UI.shimmer(rule, 2.4)
 				UI.shimmer(tag, 1.8)
@@ -1212,12 +1212,12 @@ function UIB.buildStyles()
 			card.BackgroundColor3 = Color3.fromRGB(58, 48, 26)
 			UI.shimmer(cardStroke, 2.2)
 			TweenService:Create(cardStroke, TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Thickness = 4.4 }):Play()
-			local wm = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 90, 1, 0), Text = "神", TextSize = 56, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 226, 140), TextTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
+			local wm = text({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0), Size = UDim2.new(0, 90, 1, 0), Text = "신", TextSize = 56, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 226, 140), TextTransparency = 0.7, TextXAlignment = Enum.TextXAlignment.Center, Parent = card })
 			UI.shimmer(wm, 2.6)
 		end
 		text({ Name = "Title", Position = UDim2.new(0, 10, 0, 4), Size = UDim2.new(1, -20, 0, 30), Text = s.hidden and "❓ 숨겨진 권법" or (s.icon .. " " .. s.name), TextSize = 20, Font = Enum.Font.GothamBlack, TextColor3 = s.hidden and C.dim or s.color, Parent = card })
 		local sub = text({ Name = "Sub", Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 24), TextSize = 15, TextColor3 = C.dim, Parent = card })
-		sub.Text = s.hidden and "???" or s.hanja
+		sub.Text = s.hidden and "???" or ("[" .. s.grade .. "]")
 		cards[s.id] = card
 	end
 	refreshers.styles = function(reset: boolean?)
@@ -1238,7 +1238,7 @@ function UIB.buildStyles()
 					end
 				else
 					local mark = owned and "" or ((state.trials and state.trials[id]) and "  · 시험 통과" or ((state.found and state.found[id]) and "  · 사부 찾음" or (Config.MASTERS[id] and "  · ❓" or "")))
-					sub.Text = "[" .. Config.styleGrade(s, ups) .. string.rep("⬆", ups) .. "] " .. s.hanja .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
+					sub.Text = "[" .. Config.styleGrade(s, ups) .. string.rep("⬆", ups) .. "]" .. (m and string.format("  ·  숙련 %d", m.lv) or "") .. mark .. (state.style == id and "  ✔" or "")
 					if title then
 						title.Text = s.icon .. " " .. s.name
 						title.TextColor3 = s.color
@@ -3830,7 +3830,7 @@ function UIB.goalText(s: any, g: any): string
 	local k = g.kind
 	local prog = s.prog or 0
 	if k == "talk" then
-		return V.device ~= "pc" and "청운 장로에게 말 걸기 (말풍선 누르기)" or "청운 장로에게 말 걸기 (T)"
+		return V.device ~= "pc" and "청운 장로에게 말 걸기 (단추 누르기)" or "청운 장로에게 말 걸기 (T)"
 	elseif k == "kill" then
 		return string.format("%s 쓰러뜨리기  %d / %d", nameOf(g.id), prog, g.n or 1)
 	elseif k == "train" then
@@ -4632,7 +4632,7 @@ function UI.battleState(data: any, myId: number)
 			local streak = (mine.streak or 0) >= 2 and string.format("  ·  %d연속", mine.streak) or ""
 			BH.me.Text = string.format("나  %d / %d%s  ·  누적 %d", mine.k, mine.d, streak, mine.total or 0)
 		else
-			BH.me.Text = here and "" or "전각 문에서 T로 입장"
+			BH.me.Text = here and "" or "전시장 발판을 밟으면 입장"
 		end
 	end
 end

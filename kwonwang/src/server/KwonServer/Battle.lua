@@ -870,7 +870,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	t.TextScaled = true
 	t.Font = Enum.Font.Antique
 	t.TextColor3 = Color3.fromRGB(255, 214, 130)
-	t.Text = "比 武 堂"
+	t.Text = "비 무 당"
 	t.Parent = sg
 	-- 전각 가운데 문: 붉은 빛의 막 (싸움터로)
 	local veil = part({ Name = "ArenaVeil", Size = Vector3.new(9, 12, 0.4), Position = hall + Vector3.new(0, floorY + 6, -5.2), Color = Color3.fromRGB(255, 120, 80), Material = Enum.Material.Neon, Transparency = 0.45, CanCollide = false, Parent = f })
