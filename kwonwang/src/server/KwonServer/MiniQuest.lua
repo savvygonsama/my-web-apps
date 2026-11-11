@@ -37,8 +37,8 @@ local function progressText(p: any, sid: string, step: any): string
 		return string.format(" (%d/%d)", n, #step.items)
 	elseif step.kind == "order" then
 		return string.format(" (%d/%d)", n, #step.stones)
-	elseif step.kind == "kill" then
-		return string.format(" (%d/%d)", n, step.n)
+	elseif step.kind == "kill" or step.kind == "boss" then
+		return string.format(" (%d/%d)", n, step.n or 1)
 	end
 	return ""
 end
@@ -97,6 +97,19 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 	if step.kind == "return" then
 		advance(player, sid)
 		ctx.dialog(player, { who = who, title = title, text = "...왔구나. 부탁을 들어주었으니 이제 네 차례다. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+		return false
+	end
+	-- 3.74판: 사부에게 은자를 바친다 (마지막 단계)
+	if step.kind == "offer" then
+		local need = step.coins or 0
+		if p.coins >= need then
+			p.coins -= need
+			st.dirty = true
+			advance(player, sid)
+			ctx.dialog(player, { who = who, title = title, text = "...받으마. 이것으로 네 마음을 보았다. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+		else
+			ctx.dialog(player, { who = who, title = title, text = string.format("...아직이다. 💰 %s을 가져오너라. (지금 💰 %s)", Config.formatNumber(need), Config.formatNumber(p.coins)) })
+		end
 		return false
 	end
 	ctx.dialog(player, { who = who, title = title, text = "아직 부탁이 남았다. " .. MiniQuest.line(p, sid) })
@@ -174,6 +187,27 @@ function MiniQuest.onKill(player: Player, typeId: string?)
 	end
 end
 
+-- 3.74판: 보스를 쓰러뜨렸다
+function MiniQuest.onBoss(player: Player, bossId: string)
+	local p = ctx.profiles[player]
+	if not p then
+		return
+	end
+	for sid, _ in pairs(Config.MINIQUEST or {}) do
+		local step = stepOf(p, sid)
+		if step and step.kind == "boss" and step.boss == bossId then
+			p.mqn[sid] = (p.mqn[sid] or 0) + 1
+			ctx.states[player].dirty = true
+			if p.mqn[sid] >= (step.n or 1) then
+				advance(player, sid)
+			else
+				ctx.toast(player, string.format("📜 %s (%d/%d)", step.text, p.mqn[sid], step.n or 1))
+				ctx.pushState(player)
+			end
+		end
+	end
+end
+
 -- 1초마다: 가야 할 곳에 닿았나
 function MiniQuest.tick(player: Player)
 	local p = ctx.profiles[player]
@@ -186,6 +220,17 @@ function MiniQuest.tick(player: Player)
 	end
 	for sid, _ in pairs(Config.MINIQUEST or {}) do
 		local step = stepOf(p, sid)
+		-- 3.74판: 숙련 · 천층탑 층 (조건을 채우면 저절로 넘어간다)
+		if step and step.kind == "mastery" then
+			local m = p.mastery and p.mastery[step.style]
+			if m and m.lv >= step.lv then
+				advance(player, sid)
+			end
+		elseif step and step.kind == "tower" then
+			if (p.towerBest or 0) >= step.floor then
+				advance(player, sid)
+			end
+		end
 		if step and step.kind == "visit" then
 			local d = Vector3.new(r.Position.X - step.at.X, 0, r.Position.Z - step.at.Z).Magnitude
 			if d <= step.r and math.abs(r.Position.Y - step.at.Y) < 200 then
@@ -194,6 +239,12 @@ function MiniQuest.tick(player: Player)
 					if os.clock() - (st.mqNightHint or 0) > 20 then
 						st.mqNightHint = os.clock()
 						ctx.toast(player, "🌙 여기는 밤에 와야 할 것 같다")
+					end
+				elseif step.day and not ctx.isDay() then
+					local st = ctx.states[player] :: any
+					if os.clock() - (st.mqNightHint or 0) > 20 then
+						st.mqNightHint = os.clock()
+						ctx.toast(player, "☀ 여기는 낮에 와야 할 것 같다")
 					end
 				else
 					if step.say then

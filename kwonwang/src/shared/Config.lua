@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.73.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.74.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -6180,8 +6180,10 @@ end
 
 ------------------------------------------------------------------------
 -- 3.7판 사부의 부탁 (미니 퀘스트): 높은 권법의 사부는 시험 전에 부탁을 하나씩 한다. 다 들어주어야 시험을 낸다
--- 단계: visit (그곳에 가기, night = 밤에만) · find (흩어진 것 찾기, T) · order (차례대로 짚기, T. 틀리면 처음부터) ·
+-- 단계: visit (그곳에 가기, night = 밤에만 · day = 낮에만) · find (흩어진 것 찾기, T) · order (차례대로 짚기, T. 틀리면 처음부터) ·
 --       kill (그 적 쓰러뜨리기) · return (사부에게 돌아가 말 걸기)
+--       3.74판: boss (그 보스 쓰러뜨리기) · offer (사부에게 은자 바치기, 마지막) · mastery (권법 숙련) · tower (천층탑 층)
+-- 3.74판: 후반 권법의 부탁을 길게. old = 예전 단계 수 (그때 다 끝낸 사람은 끝난 그대로)
 ------------------------------------------------------------------------
 local function ring(c: Vector3, r: number, n: number, y: number?): { Vector3 }
 	local out = {}
@@ -6193,75 +6195,186 @@ local function ring(c: Vector3, r: number, n: number, y: number?): { Vector3 }
 end
 local RAINBOW = { Color3.fromRGB(255, 120, 130), Color3.fromRGB(255, 180, 110), Color3.fromRGB(255, 232, 120), Color3.fromRGB(140, 226, 150), Color3.fromRGB(130, 180, 255) }
 Config.MINIQUEST = {
-	taecho = { title = "처음의 돌", steps = {
+	taecho = { title = "처음의 돌", old = 3, steps = {
 		{ kind = "visit", at = Vector3.new(1100, 0, -2700), r = 26, text = "세상의 처음은 하늘에서 떨어졌다. 별똥 분화구 한가운데에 서 보아라", say = "발밑이 따뜻하다. 아주 오래전, 여기에 별이 떨어졌다." },
 		{ kind = "find", name = "처음의 돌", icon = "🪨", items = ring(Vector3.new(1100, 0, -2700), 48, 3), text = "분화구 둘레에 흩어진 '처음의 돌' 셋을 주워라 (빛나는 돌, T)" },
+		{ kind = "kill", enemy = "meteorguard", n = 10, text = "천상의 운석이 떨어진 자리에서 운석 수호수 열을 쓰러뜨려라. 돌은 하늘에서 왔다" },
+		{ kind = "boss", boss = "cheonmun", n = 1, text = "천외봉 아래의 하늘 문지기 천문장을 꺾어라. 처음을 보려면 문을 지나야 한다" },
 		{ kind = "return", text = "처음의 돌을 시원자에게 가져가라" },
 	} },
-	ilwol = { title = "해와 달의 차례", steps = {
+	ilwol = { title = "해와 달의 차례", old = 3, steps = {
 		{ kind = "order", name = "해의 기둥", stones = { { at = Vector3.new(3200, 0, 3300) + Vector3.new(20, 0, 0), h = 2 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, 20), h = 3.5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(-20, 0, 0), h = 5 }, { at = Vector3.new(3200, 0, 3300) + Vector3.new(0, 0, -20), h = 6.5 } },
 			text = "해시계 광장의 해의 기둥 넷을, 해가 떠오르듯 가장 낮은 것부터 가장 높은 것까지 차례로 짚어라 (T)" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 16, night = true, text = "달이 뜬 밤, 거울 호수 가운데 섬에 서서 물에 비친 달을 보아라", say = "물속의 달이 하늘의 달보다 밝다." },
-		{ kind = "return", text = "해와 달을 모두 본 몸으로 권존에게 돌아가라" },
+		{ kind = "kill", enemy = "sunblade", n = 20, text = "천상의 일광 검사 스물을 꺾어 해의 칼을 꺾어라" },
+		{ kind = "boss", boss = "wolyeong", n = 1, text = "월광 호수의 주인 월영을 꺾어 달의 칼을 꺾어라" },
+		{ kind = "return", text = "해와 달을 모두 꺾은 몸으로 권존에게 돌아가라" },
 	} },
-	yeonggeop = { title = "멈춘 시계", steps = {
+	yeonggeop = { title = "멈춘 시계", old = 3, steps = {
 		{ kind = "find", name = "시계 톱니", icon = "⚙", items = { Vector3.new(40, 0, 2290), Vector3.new(-46, 0, 2210), Vector3.new(3236, 0, 3336), Vector3.new(3166, 0, 3262) }, text = "버려진 마을과 해시계 광장에 흩어진 멈춘 시계의 톱니 넷을 모아라 (T)" },
 		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리가 몇 번 울리는지 들어라", say = "종이 한 번 울렸다. 소리가 한참 동안 산을 돈다." },
+		{ kind = "kill", enemy = "throneguard", n = 15, text = "천궁 옥좌를 지키는 천위병 열다섯을 꺾어라. 멈춘 시간은 옥좌 아래에 묻혀 있다" },
+		{ kind = "boss", boss = "cheonjon", n = 1, text = "천궁 옥좌의 주인 천존을 꺾어라" },
 		{ kind = "return", text = "톱니를 영겁노인에게 가져가라" },
 	} },
-	agong = { title = "허공의 틈", steps = {
+	agong = { title = "허공의 틈", old = 3, steps = {
 		{ kind = "kill", enemy = "voidwalker", n = 5, text = "허공 균열의 허공 마인 다섯을 쓰러뜨려 틈을 닫아라" },
 		{ kind = "visit", at = Vector3.new(1400, 0, 1400), r = 24, text = "끊어진 하늘다리 끝에 서서, 다리 너머의 허공을 들여다보아라", say = "발밑이 아득하다. 한 걸음만 더 나가면 떨어진다." },
+		{ kind = "kill", enemy = "riftyaksha", n = 10, text = "허공 균열 깊은 곳의 균열 야차 열을 쓰러뜨려 틈을 아주 닫아라" },
 		{ kind = "return", text = "아공선인에게 돌아가라" },
 	} },
-	seongha = { title = "별을 헤아리는 밤", steps = {
+	seongha = { title = "별을 헤아리는 밤", old = 3, steps = {
 		{ kind = "visit", at = Vector3.new(-1900, 0, -800), r = 22, night = true, text = "밤에 별바위 고리 한가운데에서 별을 헤아려라", say = "별을 다 헤아렸을 즈음, 손끝이 차갑게 맑아졌다." },
 		{ kind = "find", name = "떨어진 별 조각", icon = "⭐", items = ring(Vector3.new(-620, SY, -160), 70, 5, 0), text = "천상계 성운원에 떨어진 별 조각 다섯을 주워라 (T)" },
+		{ kind = "kill", enemy = "starsage", n = 15, text = "성운원의 성운 도사 열다섯을 꺾어 별을 훔친 자들을 벌하라" },
+		{ kind = "boss", boss = "seonggun", n = 1, text = "성운원의 주인 성군을 꺾어라" },
 		{ kind = "return", text = "별 조각을 성하노군에게 가져가라" },
 	} },
-	manmok = { title = "시든 묘목", steps = {
+	manmok = { title = "시든 묘목", old = 3, steps = {
 		{ kind = "find", name = "시든 묘목", icon = "🌱", items = ring(Vector3.new(-1700, 0, 1600), 46, 4), text = "만목원 둘레의 시든 묘목 넷에 물을 주어라 (T)" },
 		{ kind = "kill", enemy = "bogbrute", n = 3, text = "숲을 썩게 하는 독안개 늪의 늪 거한 셋을 쓰러뜨려라" },
+		{ kind = "kill", enemy = "shroombrute", n = 15, text = "거균림의 버섯 거한 열다섯을 쓰러뜨려 포자를 걷어 내라" },
+		{ kind = "boss", boss = "gyunwang", n = 1, text = "거균림의 주인 균왕을 꺾어라. 숲을 썩게 하는 뿌리다" },
 		{ kind = "return", text = "목선에게 돌아가라" },
 	} },
-	chomaehwa = { title = "떨어진 부채 장식", steps = {
+	chomaehwa = { title = "떨어진 부채 장식", old = 2, steps = {
 		{ kind = "find", name = "부채 장식", icon = "🌸", items = ring(Config.SAKURA_HILL, 40, 3), text = "벚꽃 언덕 아래 떨어진 부채 장식 셋을 찾아라 (T)" },
-		{ kind = "return", text = "천앵선에게 돌아가라" },
+		{ kind = "kill", enemy = "mapleblade", n = 25, text = "단풍산의 단풍 검객들이 떨어진 꽃잎을 짓밟고 다닌다. 스물다섯을 꺾어라" },
+		{ kind = "boss", boss = "pungyeop", n = 1, text = "단풍산의 주인 풍엽을 꺾어 산의 가을을 끝내라" },
+		{ kind = "visit", at = Config.SAKURA_HILL, r = 22, night = true, text = "밤, 벚꽃 언덕 꼭대기에 서서 지는 꽃잎을 맞아라", say = "꽃잎 하나가 손바닥에 내려앉더니 녹지 않는다." },
+		{ kind = "offer", coins = 1000000, text = "천앵선에게 돌아가 꽃값으로 은자 백만을 바쳐라" },
 	} },
-	chochwi = { title = "술잔 찾기", steps = {
+	chochwi = { title = "술잔 찾기", old = 2, steps = {
 		{ kind = "find", name = "만취선의 술잔", icon = "🍶", items = ring(Config.SOJU_HILL, 36, 4), text = "술독 마루 둘레에 굴러간 만취선의 술잔 넷을 찾아라 (T)" },
-		{ kind = "return", text = "술잔을 만취선에게 가져가라" },
+		{ kind = "kill", enemy = "pirate", n = 30, text = "서해의 해적 도객들이 만취선의 술독을 털어 갔다. 서른을 꺾어라" },
+		{ kind = "boss", boss = "dason", n = 1, text = "운무 차밭의 다선을 꺾어라. 술을 차로 바꾸겠다며 술독을 깨뜨린 자다" },
+		{ kind = "visit", at = Config.SOJU_HILL, r = 20, night = true, text = "밤, 술독 마루에 서서 잔에 달을 띄워라", say = "잔 속의 달이 출렁인다. 어디선가 껄껄 웃는 소리가 들린다." },
+		{ kind = "offer", coins = 1000000, text = "만취선에게 돌아가 술값으로 은자 백만을 바쳐라" },
 	} },
-	chohyeolma = { title = "핏빛 달 아래", steps = {
+	chohyeolma = { title = "핏빛 달 아래", old = 2, steps = {
 		{ kind = "visit", at = Vector3.new(1000, 0, 1000), r = 28, night = true, text = "밤에 혈월곡의 핏빛 달 아래에 서라", say = "달빛이 손톱 끝까지 붉게 스민다." },
-		{ kind = "return", text = "혈월선에게 돌아가라" },
+		{ kind = "kill", enemy = "cultguard", n = 20, text = "혈교 본산의 혈교 호법 스물을 꺾어라" },
+		{ kind = "boss", boss = "hyeolma", n = 2, text = "혈교의 주인 혈마를 두 번 꺾어라. 피는 두 번 흘려야 맑아진다" },
+		{ kind = "boss", boss = "cheonma", n = 1, text = "마교의 교주 천마를 꺾어라" },
+		{ kind = "offer", coins = 1000000, text = "혈월선에게 돌아가 은자 백만을 바쳐라" },
 	} },
-	chobyeok = { title = "번개를 기다리다", steps = {
+	chobyeok = { title = "번개를 기다리다", old = 2, steps = {
 		{ kind = "visit", at = Vector3.new(1300, 0, -1000), r = 26, text = "만검총 한가운데, 가장 높은 검 아래에서 번개를 기다려라", say = "검 끝에서 파란 불꽃이 튄다. 팔의 털이 곤두선다." },
-		{ kind = "return", text = "뇌천선에게 돌아가라" },
+		{ kind = "kill", enemy = "thunderimp", n = 30, text = "뇌령 서른을 잡아 번개를 손에 익혀라" },
+		{ kind = "boss", boss = "noeje", n = 1, text = "천상 뇌정봉의 뇌제를 꺾어라" },
+		{ kind = "boss", boss = "cheonroeok", n = 1, text = "천상 하늘 감옥의 주인 천뢰를 꺾어라" },
+		{ kind = "offer", coins = 1000000, text = "뇌천선에게 돌아가 은자 백만을 바쳐라" },
 	} },
-	chochanghae = { title = "고래 뼈 조각", steps = {
+	chochanghae = { title = "고래 뼈 조각", old = 2, steps = {
 		{ kind = "find", name = "고래 뼈 조각", icon = "🦴", items = ring(Config.WHALE_ROCK, 44, 4), text = "서해 바닷가 고래 뼈 바위 둘레의 뼈 조각 넷을 찾아라 (T)" },
-		{ kind = "return", text = "고경선에게 돌아가라" },
+		{ kind = "kill", enemy = "pirate", n = 30, text = "서해의 해적 도객 서른을 꺾어 바다를 조용히 하라" },
+		{ kind = "boss", boss = "yuriwang", n = 1, text = "천상 유리해의 주인 유리 군주를 꺾어라" },
+		{ kind = "visit", at = Config.WHALE_ROCK, r = 20, night = true, text = "밤, 고래 뼈 바위에 올라 고래의 노래를 들어라", say = "바다 밑에서 낮고 긴 소리가 올라온다. 뼈가 따라 운다." },
+		{ kind = "offer", coins = 1000000, text = "고경선에게 돌아가 은자 백만을 바쳐라" },
 	} },
-	chosengha = { title = "별 등의 차례", steps = {
+	chosengha = { title = "별 등의 차례", old = 2, steps = {
 		{ kind = "order", name = "별 등", stones = { { at = Config.STAR_TERRACE + Vector3.new(10, 0, 4), h = 1.5 }, { at = Config.STAR_TERRACE + Vector3.new(-9, 0, 6), h = 2.5 }, { at = Config.STAR_TERRACE + Vector3.new(4, 0, -10), h = 3.5 }, { at = Config.STAR_TERRACE + Vector3.new(-6, 0, -8), h = 4.5 }, { at = Config.STAR_TERRACE + Vector3.new(0, 0, 10), h = 5.5 } },
 			text = "관성대의 별 등 다섯을, 가장 낮은 별부터 가장 높은 별까지 차례로 밝혀라 (T)" },
-		{ kind = "return", text = "천성선에게 돌아가라" },
+		{ kind = "kill", enemy = "starspirit", n = 25, text = "천상의 성령 스물다섯을 거두어라" },
+		{ kind = "boss", boss = "seonggun", n = 2, text = "성운원의 주인 성군을 두 번 꺾어라" },
+		{ kind = "offer", coins = 1000000, text = "천성선에게 돌아가 은자 백만을 바쳐라" },
 	} },
-	hojeop = { title = "몽선의 꿈", steps = {
+	hojeop = { title = "몽선의 꿈", old = 4, steps = {
 		{ kind = "find", name = "잠든 별", icon = "⭐", items = ring(Vector3.new(-2400, 0, 3100), 62, 5), text = "연화정 둘레에 떨어져 잠든 별 다섯을 깨워라 (T)" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달이 뜬 밤, 거울 호수에 비친 달 위에 서 보아라", say = "물에 비친 달이 흔들린다. 졸음이 한꺼번에 밀려온다." },
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
-		{ kind = "return", text = "몽선을 깨워라 (말을 걸어라)" },
+		{ kind = "boss", boss = "sinsunwang", n = 1, text = "꿈속의 호수를 다스리는 신선왕을 꺾어라" },
+		{ kind = "offer", coins = 3000000, text = "몽선을 깨우고, 꿈값으로 은자 삼백만을 바쳐라" },
 	} },
-	gongbaek = { title = "null", steps = {
+	gongbaek = { title = "null", old = 4, steps = {
 		{ kind = "find", name = "지워진 글자", icon = "⬛", items = { Vector3.new(3700, 0, -1806), Vector3.new(3700, 0, 214), Vector3.new(2100, 0, -3683), Vector3.new(-2200, 0, -3737) }, text = "강호의 랜드마크 넷 (버려진 광산 입구 · 일검 바위 틈 · 귀부 비석 뒤 · 선인송 아래)에 떨어진 지워진 글자를 주워라 (T)" },
 		{ kind = "visit", at = Vector3.new(-4120, 0, -4120), r = 30, night = true, text = "밤에, 세상의 반대편 끝 (북서쪽 맨 끝)의 아무것도 없는 곳에 서라", say = "...아무것도 없다. 정말로 아무것도 없다. 소리조차." },
 		{ kind = "order", name = "글자 상자", stones = { { at = Config.NULL_SPOT + Vector3.new(-9, 0, 12), label = "N" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, 12), label = "U" }, { at = Config.NULL_SPOT + Vector3.new(-9, 0, -12), label = "L" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, -12), label = "L" } },
 			text = "빈칸의 글자 상자 넷을 그 이름의 차례로 짚어라 (T)" },
-		{ kind = "return", text = "???에게 말을 걸어라" },
+		{ kind = "kill", enemy = "voidwalker", n = 30, text = "허공 마인 서른을 지워라. 빈칸을 채우려는 것들이다" },
+		{ kind = "offer", coins = 3000000, text = "???에게 은자 삼백만을 바쳐라. 아무것도 아닌 것을 사려면 그만큼 든다" },
+	} },
+	binghon = { title = "얼음 속에 잠든 이름", steps = {
+		{ kind = "kill", enemy = "snowblade", n = 20, text = "북방 설산의 설원 자객 스물을 꺾어라. 노니의 얼음 벼랑을 노리는 자들이다" },
+		{ kind = "find", name = "얼음 꽃", icon = "❄", items = ring(Vector3.new(260, 0, -1980), 46, 4), text = "얼음 벼랑 둘레에 핀 얼음 꽃 넷을 꺾어라 (T)" },
+		{ kind = "boss", boss = "bingma", n = 1, text = "설산의 주인 빙마를 꺾어라" },
+		{ kind = "visit", at = Vector3.new(0, 0, -1720), r = 30, night = true, text = "달 없는 밤, 설산 한가운데에 서서 얼음이 우는 소리를 들어라", say = "발밑 깊은 곳에서 얼음이 갈라지며 누군가의 이름을 부른다." },
+		{ kind = "return", text = "빙혼노니에게 돌아가라" },
+	} },
+	gaecheon = { title = "이름 없는 길", steps = {
+		{ kind = "visit", at = Vector3.new(0, 0, 4450), r = 30, text = "세상 끝 벼랑에 서서 끝 너머를 내려다보아라", say = "바닥이 보이지 않는다. 바람만 위로 올라온다." },
+		{ kind = "boss", boss = "mumyeong", n = 1, text = "세상 끝의 파수꾼 무명을 꺾어라. 노인은 그 이름을 오래 빌려 썼다" },
+		{ kind = "kill", enemy = "sandwraith", n = 20, text = "사왕릉의 모래 망령 스물을 잠재워라" },
+		{ kind = "visit", at = Vector3.new(-2100, 0, 2100), r = 20, night = true, text = "밤, 운해 끝자락으로 돌아와 구름이 걷히기를 기다려라", say = "구름이 갈라지고, 그 아래로 아무도 걸은 적 없는 길이 보인다." },
+		{ kind = "return", text = "무명 노인에게 말을 걸어라" },
+	} },
+	cheonok = { title = "옥 기둥의 노래", steps = {
+		{ kind = "kill", enemy = "karstsprite", n = 30, text = "석림의 석림 정령 서른을 잠재워라. 옥 기둥의 노래를 흐트러뜨린다" },
+		{ kind = "kill", enemy = "stonewarden", n = 10, text = "석림 수호석 열을 깨뜨려라" },
+		{ kind = "order", name = "옥 기둥", stones = { { at = Vector3.new(-3050, 0, 1050) + Vector3.new(22, 0, 6), h = 2 }, { at = Vector3.new(-3050, 0, 1050) + Vector3.new(-14, 0, 18), h = 3 }, { at = Vector3.new(-3050, 0, 1050) + Vector3.new(4, 0, -24), h = 4 }, { at = Vector3.new(-3050, 0, 1050) + Vector3.new(-22, 0, -8), h = 5 }, { at = Vector3.new(-3050, 0, 1050) + Vector3.new(14, 0, 20), h = 6 } },
+			text = "옥진인 둘레의 옥 기둥 다섯을 낮은 것부터 높은 것까지 차례로 울려라 (T)" },
+		{ kind = "boss", boss = "seokwang", n = 2, text = "석림의 주인 석왕을 두 번 꺾어라" },
+		{ kind = "offer", coins = 500000, text = "옥진인에게 돌아가 은자 오십만을 바쳐라" },
+	} },
+	cheonjong = { title = "백여덟 번째 종소리", steps = {
+		{ kind = "visit", at = Vector3.new(2700, 0, 900), r = 30, text = "천년 종루 아래에서 종소리를 귀에 새겨라", say = "종이 한 번 울렸다. 소리가 오래도록 귀에 남는다." },
+		{ kind = "kill", enemy = "mapleblade", n = 30, text = "단풍산의 단풍 검객 서른을 꺾어라" },
+		{ kind = "kill", enemy = "maplemonk", n = 20, text = "단풍산의 낙엽 승병 스물을 꺾어라" },
+		{ kind = "find", name = "깨진 종 조각", icon = "🔔", items = ring(Vector3.new(3000, 0, -2900), 52, 5), text = "단풍산 꼭대기 둘레에 묻힌 깨진 종 조각 다섯을 찾아라 (T)" },
+		{ kind = "boss", boss = "pungyeop", n = 2, text = "단풍산의 주인 풍엽을 두 번 꺾어라" },
+		{ kind = "visit", at = Vector3.new(3000, 0, -2900), r = 18, night = true, text = "밤, 종 아래에서 백여덟 번째 종소리를 기다려라", say = "아무도 치지 않았는데 종이 울린다. 백여덟 번째." },
+		{ kind = "offer", coins = 500000, text = "종지기에게 돌아가 종값으로 은자 오십만을 바쳐라" },
+	} },
+	myeonggyeong = { title = "거울 속의 나", steps = {
+		{ kind = "kill", enemy = "teaguard", n = 30, text = "운무 차밭의 차밭 지기 서른을 꺾어라" },
+		{ kind = "find", name = "깨진 거울 조각", icon = "🪞", items = ring(Vector3.new(-3300, 0, -3025), 34, 6), text = "거울 연못 둘레에 흩어진 깨진 거울 조각 여섯을 주워라 (T)" },
+		{ kind = "boss", boss = "dason", n = 2, text = "운무 차밭의 주인 다선을 두 번 꺾어라" },
+		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달 뜬 밤, 거울 호수 한가운데에서 물에 비친 너를 보아라", say = "물속의 내가 먼저 고개를 돌렸다." },
+		{ kind = "kill", enemy = "teasage", n = 20, text = "운무 다인 스물을 꺾어라" },
+		{ kind = "offer", coins = 3000000, text = "명경선에게 돌아가 은자 삼백만을 바쳐라" },
+	} },
+	chocheonryong = { title = "용의 등뼈", steps = {
+		{ kind = "kill", enemy = "dragonguard", n = 20, text = "천상 비룡령의 용린 무사 스물을 꺾어라" },
+		{ kind = "boss", boss = "biryong", n = 1, text = "용척령의 주인 비룡을 꺾어라" },
+		{ kind = "boss", boss = "unryongwang", n = 1, text = "구름 위의 용, 운룡왕을 꺾어라" },
+		{ kind = "visit", at = Vector3.new(1030, 0, -280), r = 22, night = true, text = "밤, 천룡봉 꼭대기에서 용이 잠든 숨소리를 들어라", say = "산 전체가 한 번 숨을 쉬었다." },
+		{ kind = "offer", coins = 1000000, text = "천룡진인에게 돌아가 은자 백만을 바쳐라" },
+	} },
+	cheonha = { title = "패자의 길", steps = {
+		{ kind = "boss", boss = "hwangsa", n = 3, text = "황사 협곡의 주인 황사를 세 번 꺾어라. 왕좌 앞을 지키는 개다" },
+		{ kind = "boss", boss = "cheonma", n = 1, text = "마교의 교주 천마를 꺾어라" },
+		{ kind = "boss", boss = "hyeolma", n = 1, text = "혈교의 주인 혈마를 꺾어라" },
+		{ kind = "boss", boss = "yeomra", n = 1, text = "지옥의 심판자 염라대왕을 꺾어라" },
+		{ kind = "boss", boss = "mugunwang", n = 1, text = "끝없는 낙하의 끝, 무간의 군주를 꺾어라" },
+		{ kind = "visit", at = Vector3.new(4300, 0, -250), r = 12, night = true, text = "밤, 무너진 왕좌 앞에 서라", say = "왕좌에 앉았던 자들의 이름이 모래에 묻혀 있다. 네 이름은 아직 없다." },
+		{ kind = "offer", coins = 20000000, text = "패왕에게 은자 이천만을 바쳐라. 왕좌의 값이다" },
+	} },
+	geukilwol = { title = "황혼을 걷는 자", steps = {
+		{ kind = "visit", at = Vector3.new(2500, 0, 2500), r = 24, day = true, text = "한낮, 일월대 한가운데에서 해를 마주하라", say = "해가 정수리에 박힌다. 그림자가 발밑으로 숨는다." },
+		{ kind = "visit", at = Vector3.new(2500, 0, 2500), r = 24, night = true, text = "그날 밤, 같은 자리에서 달을 마주하라", say = "달이 해가 있던 자리에 떠 있다. 둘은 같은 것이었다." },
+		{ kind = "boss", boss = "wolyeong", n = 2, text = "월광 호수의 주인 월영을 두 번 꺾어라" },
+		{ kind = "boss", boss = "geukgwang", n = 2, text = "극광대의 주인 극광을 두 번 꺾어라" },
+		{ kind = "kill", enemy = "sunblade", n = 30, text = "일광 검사 서른을 꺾어라" },
+		{ kind = "offer", coins = 10000000, text = "황혼권존에게 은자 천만을 바쳐라" },
+	} },
+	geuknull = { title = "네 개의 끝", steps = {
+		{ kind = "visit", at = Vector3.new(-1600, 0, -5750), r = 40, text = "북쪽 끝, 북명 빙원에 서라" },
+		{ kind = "boss", boss = "bukmyeongje", n = 1, text = "얼어붙은 끝의 북명제를 꺾어라" },
+		{ kind = "visit", at = Vector3.new(-5750, 0, -1500), r = 40, text = "서쪽 끝, 서역 사구에 서라" },
+		{ kind = "boss", boss = "seoyeoksawang", n = 1, text = "모래의 끝의 서역사왕을 꺾어라" },
+		{ kind = "visit", at = Vector3.new(5750, 0, 1500), r = 40, text = "동쪽 끝, 동극 불길 평원에 서라" },
+		{ kind = "boss", boss = "dongguckgun", n = 1, text = "불길의 끝의 동극군을 꺾어라" },
+		{ kind = "visit", at = Vector3.new(0, 0, 4450), r = 30, night = true, text = "밤, 남쪽 끝 세상 끝 벼랑에 서라. 네 끝을 모두 밟은 자에게만 그 너머가 보인다", say = "벼랑 너머의 허공에 줄 하나가 그어져 있다. 격자의 한 칸이다." },
+		{ kind = "offer", coins = 10000000, text = "격자지기에게 은자 천만을 바쳐라" },
+	} },
+	geukspeed = { title = "황천을 달리는 자", steps = {
+		{ kind = "kill", enemy = "jeoseungmusa", n = 40, text = "지옥의 저승 무사 마흔을 꺾어라" },
+		{ kind = "kill", enemy = "wongwi", n = 40, text = "원귀 마흔을 잠재워라" },
+		{ kind = "boss", boss = "talui", n = 1, text = "삼도천의 주인 탈의파를 꺾어라" },
+		{ kind = "boss", boss = "yeomra", n = 1, text = "염라대왕을 꺾어라" },
+		{ kind = "boss", boss = "mugunwang", n = 1, text = "무간의 군주를 꺾어라. 끝없이 떨어지는 곳에서 가장 빠른 자가 산다" },
+		{ kind = "offer", coins = 10000000, text = "질주귀에게 은자 천만을 바쳐라" },
 	} },
 }
 

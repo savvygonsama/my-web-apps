@@ -1,7 +1,7 @@
 -- 권왕 3.13판: 머리 위 칭호 (업적). 업적 등급이 높을수록 화려하다
 --   1 일반: 갈래 빛깔 글씨 · 2 희귀: 푸른 빛 테두리와 ◆ · 3 영웅: 보랏빛 판과 흐르는 빛깔 글씨 ◈
 --   4 전설: 금빛 판, 금빛이 흐르는 글씨, ❖ 날개, 머리 둘레 금빛 반짝임
---   5 신화: 붉은 먹빛 판에 무지갯빛 테가 돌고, 무지갯빛이 흐르는 글씨, ⭐ 신화 ⭐ 머리띠, 금빛·붉은 별이 흩날린다
+--   5 신화: 붉은 먹빛 판에 핏빛·금빛 테가 돌고, 핏빛·금빛이 흐르는 글씨, 신화 머리띠, 금빛·붉은 별이 흩날린다 (3.74판: 무지갯빛을 걷었다)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -31,7 +31,8 @@ local function seq(colors: { Color3 }): ColorSequence
 	end
 	return ColorSequence.new(kps)
 end
-local RAINBOW = { Color3.fromRGB(255, 90, 110), Color3.fromRGB(255, 200, 80), Color3.fromRGB(140, 255, 160), Color3.fromRGB(110, 200, 255), Color3.fromRGB(200, 120, 255), Color3.fromRGB(255, 90, 110) }
+-- 3.74판: 신화는 무지갯빛 대신 핏빛 → 금 → 흰빛 (무지개는 너무 요란했다)
+local RAINBOW = { Color3.fromRGB(255, 70, 90), Color3.fromRGB(255, 196, 90), Color3.fromRGB(255, 246, 225), Color3.fromRGB(255, 196, 90), Color3.fromRGB(255, 70, 90) }
 local GOLDS = { Color3.fromRGB(255, 196, 70), Color3.fromRGB(255, 250, 220), Color3.fromRGB(255, 196, 70) }
 
 local function clear(model: Model)
@@ -88,7 +89,7 @@ local function build(model: Model)
 		end
 	end
 	-- 장식 (양옆)
-	local orn = ({ nil, "◆", "◈", "❖", "⭐" } :: { any })[tier]
+	local orn = ({ nil, "◆", "◈", "❖", "✦" } :: { any })[tier]
 	local function ornament(order: number)
 		if not orn then
 			return
@@ -125,11 +126,11 @@ local function build(model: Model)
 	ornament(3)
 	-- 신화: 위에 작은 머리띠
 	if tier == 5 then
-		local band = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 160, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, Text = "⭐ 신 화 ⭐", TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4 }, gui)
+		local band = new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 160, 0, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 14, Text = "신화", TextColor3 = Color3.new(1, 1, 1), TextStrokeTransparency = 0.4 }, gui)
 		local g = new("UIGradient", { Color = seq(RAINBOW) }, band)
 		table.insert(L.grads, g)
 	elseif tier == 4 then
-		new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 120, 0, 14), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 11, Text = "· 전 설 ·", TextColor3 = Color3.fromRGB(255, 214, 120), TextStrokeTransparency = 0.5 }, gui)
+		new("TextLabel", { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), Size = UDim2.new(0, 120, 0, 14), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 11, Text = "전설", TextColor3 = Color3.fromRGB(255, 214, 120), TextStrokeTransparency = 0.5 }, gui)
 	end
 	gui.Parent = head
 	-- 전설·신화: 머리 둘레의 반짝임

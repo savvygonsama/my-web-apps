@@ -67,6 +67,7 @@ type Profile = {
 	swordPulls: number?, -- 3.6판: 세상 끝 바위의 검을 당긴 횟수
 	mq: { [string]: number }, -- 3.7판 사부의 부탁: 지금 단계
 	mqn: { [string]: number }, -- 3.7판 사부의 부탁: 그 단계에서 해낸 수
+	mqv: number?, -- 3.74판: 부탁 기록의 판 (부탁이 길어지기 전에 다 끝낸 사람은 끝난 그대로)
 	pvpUnlocked: boolean?, -- 3.4.1판: 사람에게 쓰러진 뒤에만 PvP를 끌 수 있다
 	enh: { [string]: number }?, -- 3.41판 게임패스 권법의 강화 단계 (0 ~ 15)
 	shards: number?, -- 3.41판 비급 조각 (강화 재료, 보스가 떨어뜨린다)
@@ -115,6 +116,7 @@ local function defaultProfile(): Profile
 		gradeUp = {},
 		mq = {},
 		mqn = {},
+		mqv = 2,
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -331,6 +333,15 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
+	-- 3.74판: 부탁이 길어졌다. 예전 부탁을 이미 다 들어준 사람은 늘어난 단계를 하지 않아도 된다
+	if (tonumber(data.mqv) or 1) < 2 then
+		for sid, q in pairs(Config.MINIQUEST or {}) do
+			if q.old and (p.mq[sid] or 0) > q.old then
+				p.mq[sid] = #q.steps + 1
+			end
+		end
+	end
+	p.mqv = 2
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고, 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
@@ -2341,6 +2352,7 @@ Combat.init(Push, {
 					for id, def in pairs(Config.Bosses) do
 						if def == f.npc then
 							p.bosses[id] = (p.bosses[id] or 0) + 1
+							MiniQuest.onBoss(killer, id)
 						end
 					end
 					-- 보스는 가끔 심법 두루마리를 떨어뜨린다

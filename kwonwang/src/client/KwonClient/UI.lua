@@ -916,7 +916,7 @@ function UIB.buildStyles()
 		local gradeColor = Config.GRADE_COLOR[gradeNow] or C.dim
 		local gradeTag = string.format('<font color="#%02X%02X%02X">[%s%s]</font>', math.floor(gradeColor.R * 255), math.floor(gradeColor.G * 255), math.floor(gradeColor.B * 255), gradeNow, ups > 0 and string.rep("⬆", ups) or "")
 		if gradeNow == "신" then
-			gradeTag = "<b>" .. UI.godText("🌅 신 등급 🌅") .. "</b>"
+			gradeTag = "<b>" .. UI.godText("신 등급") .. "</b>"
 		end
 		for sid, card in pairs(cards) do
 			local st = card:FindFirstChildOfClass("UIStroke")
@@ -1081,12 +1081,12 @@ function UIB.buildStyles()
 				local mark = (cur > i) and '<font color="#9CFF9C">✔</font>' or (cur == i and '<font color="#FFD27A">▶</font>' or '<font color="#8A8A8A">·</font>')
 				local extra = ""
 				if cur == i then
-					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or (stp.kind == "kill" and stp.n or 0))
+					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
 					if total > 0 then
 						extra = string.format(" (%d/%d)", got, total)
 					end
 				end
-				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, stp.night and " 🌙" or ""))
+				table.insert(lines, string.format("%s %s%s%s", mark, (cur >= i) and stp.text or "???", extra, (cur >= i and stp.night) and " 🌙" or ((cur >= i and stp.day) and " ☀" or "")))
 			end
 		end
 		-- 3.41판 게임패스 권법: 깨달음 대신 강화
@@ -1196,7 +1196,7 @@ function UIB.buildStyles()
 			local god = s.grade == "신"
 			local head = new("Frame", { Size = UDim2.new(1, -10, 0, god and 40 or 26), BackgroundTransparency = 1, LayoutOrder = gi * 1000, Parent = list })
 			local rule = new("Frame", { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, god and 4 or 2), BackgroundColor3 = god and Color3.new(1, 1, 1) or gc, BackgroundTransparency = god and 0.1 or 0.5, BorderSizePixel = 0, Parent = head })
-			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "🌅 신 🌅" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
+			local tag = text({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(0, god and 230 or 120, 1, 0), Text = god and "신" or ("◆ " .. s.grade .. " ◆"), TextSize = god and 22 or 16, Font = Enum.Font.GothamBlack, TextColor3 = god and Color3.new(1, 1, 1) or gc, TextXAlignment = Enum.TextXAlignment.Center, BackgroundTransparency = 0, BackgroundColor3 = C.bg, Parent = head })
 			if god then
 				UI.shimmer(rule, 2.4)
 				UI.shimmer(tag, 1.8)
@@ -2522,6 +2522,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 지도에 없는 사부와 특별한 조건으로 얻는 권법이 많다. 권법 창에서 잠긴 권법을 누르면 실마리가 나온다")
 		add("• 각성 권법(진): 원래 권법을 숙련 끝까지 올리고 두 번 깨달은 뒤 각성의 시련을 넘는다")
 		add("• 초월 권법(초): 원래 권법과 그 진 권법을 숙련 20까지 + 천상 재료 → 숨은 초월의 사부")
+		add("• 높은 권법의 사부는 시험 전에 <b>부탁</b>을 한다. 다음 일은 앞의 일을 끝내야 보인다 (보스 · 밤이나 낮에만 가는 곳 · 은자 바치기). 극 · 권왕 권법의 부탁은 아주 길다")
 	elseif tab == "ground" then
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
@@ -2597,7 +2598,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>⚔ 배틀그라운드</b> (모두 같은 힘으로 겨루는 곳)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
-		add("• 처음엔 대기실 (싸움이 없다): 권법을 고르고, 수련 목인으로 시험하고, 다음 맵에 투표하고, '⚔ 싸움터로 들어가기'. 메뉴 → 🏯 대기실로 나올 수 있다 (싸운 직후는 안 된다)")
+		add("• 처음엔 대기실 (싸움이 없다): 남쪽 권법 전시장에서 쓸 권법의 발판을 밟으면 그 권법으로 싸움터에 들어간다. 투표대에서 다음 맵을 고르고, 수련 목인으로 시험해 본다. 쓰러지면 대기실로 돌아온다")
 		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 쓰러지기까지 적어도 %d초. 들어가거나 일어나면 %d초 보호. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap, math.floor(Config.BATTLE.hp / Config.BATTLE.secCap), Config.BATTLE.shield))
 		local mapNames = {}
 		for _, m in ipairs(Config.BATTLE.maps) do

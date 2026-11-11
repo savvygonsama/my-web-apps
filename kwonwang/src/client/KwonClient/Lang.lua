@@ -207,8 +207,48 @@ local function touchify(s: string): string
 	s = s:gsub("%f[%w]F%f[%W]", "🛡"):gsub("%f[%w]Z%f[%W]", "💥")
 	return s
 end
+-- 3.74판: 을(를) · 은(는) · 이(가) · 과(와) · (으)로 를 앞 글자의 받침에 맞게 하나로 (한국어 화면)
+local SYL = "([\234-\237][\128-\191][\128-\191])"
+local function jong(ch: string): number?
+	local ok, cp = pcall(utf8.codepoint, ch)
+	if not ok or type(cp) ~= "number" or cp < 0xAC00 or cp > 0xD7A3 then
+		return nil
+	end
+	return (cp - 0xAC00) % 28
+end
+local function pick(pat: string, withB: string, without: string, rieulAsNone: boolean?)
+	return function(s: string): string
+		return (s:gsub(SYL .. pat, function(c)
+			local j = jong(c)
+			if j == nil then
+				return nil
+			end
+			local has = j > 0 and not (rieulAsNone and j == 8)
+			return c .. (has and withB or without)
+		end))
+	end
+end
+local JOSA = {
+	pick("을%(를%)", "을", "를"),
+	pick("를%(을%)", "을", "를"),
+	pick("은%(는%)", "은", "는"),
+	pick("이%(가%)", "이", "가"),
+	pick("과%(와%)", "과", "와"),
+	pick("와%(과%)", "과", "와"),
+	pick("%(으%)로", "으로", "로", true),
+}
+local function josa(s: string): string
+	if type(s) ~= "string" or not s:find("(", 1, true) then
+		return s
+	end
+	for _, f in ipairs(JOSA) do
+		s = f(s)
+	end
+	return s
+end
+Lang.josa = josa
 local function render(s: string): string
-	return touchify(Lang.en and Lang.translate(s) or s)
+	return touchify(Lang.en and Lang.translate(s) or josa(s))
 end
 Lang.render = render
 
