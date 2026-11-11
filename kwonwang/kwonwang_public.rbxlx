@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.75.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.76.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -66507,6 +66507,7 @@ local Debris = game:GetService("Debris")
 local Fx = require(script.Parent:WaitForChild("Fx"))
 local Perf = require(script.Parent:WaitForChild("Perf"))
 local Anim = require(script.Parent:WaitForChild("Anim"))
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Config"))
 
 local PassArts = {}
 
@@ -67024,6 +67025,15 @@ local KING_COL = {
 	kwonwangsin = { Color3.fromRGB(255, 204, 70), Color3.fromRGB(200, 30, 45) },
 	sashin = { Color3.fromRGB(240, 205, 110), Color3.fromRGB(130, 225, 255) },
 }
+-- 3.76판 모든 권법: 등급 (상급 1 ~ 신 10) 이 높을수록 연출이 크다
+local GRADE_TIER: { [string]: number } = {}
+for i, g in ipairs(Config.GRADE_ORDER or {}) do
+	GRADE_TIER[g] = i
+end
+local function tierOf(styleId: string): number
+	local st = Config.STYLE_BY_ID[styleId]
+	return st and GRADE_TIER[st.grade] or 1
+end
 local GOD_COL = { Color3.fromRGB(70, 170, 255), Color3.fromRGB(240, 244, 255), Color3.fromRGB(255, 80, 60), Color3.fromRGB(60, 50, 90) }
 local function buildKing(m: Model, lv: number): Rig
 	local s = m:GetAttribute("Style") :: string
@@ -67041,10 +67051,70 @@ local function buildKing(m: Model, lv: number): Rig
 	return rig
 end
 
+-- 3.76판 모든 권법의 등급 오라: 발밑에서 권법 빛깔의 불씨 (등급이 높을수록 많이),
+-- 태초 (4) 부터 발밑 고리, 윤회 (6) 부터 몸 둘레를 도는 구슬 (등급마다 하나씩 더)
+local function buildGeneric(m: Model, lv: number): Rig
+	local s = m:GetAttribute("Style") :: string
+	local rig: Rig = { model = m, style = s, lv = lv, parts = {}, extra = {} }
+	local st = Config.STYLE_BY_ID[s]
+	local r = rootOf(m)
+	if r and st and not previewMode then
+		local tier = GRADE_TIER[st.grade] or 1
+		local c1 = st.color or Color3.new(1, 1, 1)
+		local c2 = st.color2 or c1
+		local a = Instance.new("Attachment")
+		a.Position = Vector3.new(0, -2.8, 0)
+		a.Parent = r
+		table.insert(rig.extra, a)
+		emitter(a, TEX_SPARK, cs(c2, c1), ns(0.35 + tier * 0.03, 0), 1 + tier * 1.2, 1, 2, { spread = Vector2.new(35, 35), accel = Vector3.new(0, 3, 0), alpha = ns(0.3, 1) })
+		if tier >= 3 then
+			emitter(a, TEX_FIRE, cs(c1, c2), ns(0.6, 0), tier * 1.5, 0.8, 2.5, { spread = Vector2.new(20, 20), accel = Vector3.new(0, 4, 0), alpha = ns(0.5, 1) })
+		end
+	end
+	return rig
+end
+
 -- 3.72판: 늘 도는 오라. 구미호권은 몸 둘레를 도는 여우불 구슬 (+0 하나 → +15 여섯) 과 +10부터 발밑의 푸른 여우 문양진,
 -- 흑염마검장은 +5부터 검은 불꽃 구슬 셋, 발밑의 보랏빛 (+10 핏빛) 마검 문양진이 두 겹으로 엇갈려 돈다
 local function addAura(rig: Rig, lv: number)
 	if previewMode then
+		return
+	end
+	if lv == -1 then
+		local st = Config.STYLE_BY_ID[rig.style]
+		local tier = st and GRADE_TIER[st.grade] or 1
+		if not st or tier < 4 then
+			return
+		end
+		local c1 = st.color or Color3.new(1, 1, 1)
+		local c2 = st.color2 or c1
+		local ring = {}
+		local function circle(r: number, k: number, spin: number, width: number, alpha: number, c: Color3, fill: number)
+			local len = 2 * math.pi * r / k * fill
+			for i = 1, k do
+				local sp = part(Vector3.new(width, 0.06, len), c, Enum.Material.Neon, alpha, nil)
+				sp.Parent = folder
+				table.insert(rig.parts, sp)
+				table.insert(ring, { p = sp, r = r, i = i, n = k, spin = spin })
+			end
+		end
+		local k = Perf.low and 10 or 16
+		circle(3.3, k, 0.35, 0.12, 0.3, c1, tier >= 7 and 0.85 or 0.5)
+		if tier >= 5 then
+			circle(2.3, math.floor(k * 0.6), -0.6, 0.1, 0.4, c2, 0.6)
+		end
+		rig.ring = ring
+		if tier >= 6 then
+			local orbs = {}
+			for _ = 1, math.min(5, tier - 4) do
+				local o = part(Vector3.one * 0.5, c2, Enum.Material.Neon, 0.1, "ball")
+				o.Parent = folder
+				emitter(o, TEX_FIRE, cs(c2, c1), ns(0.6, 0.05), 10, 0.4, 0.5, { accel = Vector3.new(0, 4, 0), spread = Vector2.new(30, 30) })
+				table.insert(orbs, o)
+				table.insert(rig.parts, o)
+			end
+			rig.orbs = orbs
+		end
 		return
 	end
 	if KING_COL[rig.style] then
@@ -67195,6 +67265,10 @@ local function styleOf(m: Model): (string?, number)
 	if s == "cheonha" or s == "kwonwangsin" or s == "sashin" then
 		return s, 15
 	end
+	-- 3.76판: 그 밖의 모든 권법은 등급 오라
+	if type(s) == "string" and Config.STYLE_BY_ID[s] then
+		return s, -1
+	end
 	return nil, 0
 end
 
@@ -67210,7 +67284,7 @@ local function sweep()
 				seen[m] = true
 				if not r or r.style ~= s or r.lv ~= lv then
 					clearRig(m)
-					local ok, rig = pcall(s == "gumiho" and buildFox or (s == "heukyeom" and buildFlame or buildKing), m, lv)
+					local ok, rig = pcall(s == "gumiho" and buildFox or (s == "heukyeom" and buildFlame or (lv == -1 and buildGeneric or buildKing)), m, lv)
 					if ok and rig then
 						rigs[m] = rig
 						pcall(addAura, rig, lv)
@@ -68276,12 +68350,7 @@ local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3, king:
 end
 
 -- 3.75판 권왕 권법의 손놀림: 주먹마다 앞으로 터지는 충격파 고리, 넷째 · 강타는 땅이 갈라진다
-local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean)
-	local cc = KING_COL[styleId]
-	local c1, c2 = cc[1], cc[2]
-	if styleId == "sashin" and type(slot) == "number" then
-		c1 = GOD_COL[((slot - 1) % 4) + 1]
-	end
+local function impactCombo(r: BasePart, c1: Color3, c2: Color3, slot: any, heavy: boolean, crack: boolean, scale: number)
 	local look = r.CFrame.LookVector
 	local front = r.Position + look * 3.4 + Vector3.new(0, 0.4, 0)
 	local big = heavy or slot == 4 or slot == "F"
@@ -68293,11 +68362,11 @@ local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean
 		for k = 0, big and 2 or 1 do
 			local ringP = temp(part(Vector3.new(0.15, 1.6, 1.6), k == 0 and WHITE_HOT or c1, Enum.Material.Neon, 0.1, "cyl"), 0.4)
 			ringP.CFrame = CFrame.lookAt(front + look * k * 1.2, front + look * (k * 1.2 + 1)) * CFrame.Angles(0, math.rad(90), 0)
-			local sz = (big and 9 or 6) + k * 2
+			local sz = ((big and 9 or 6) + k * 2) * scale
 			tween(ringP, 0.3, { Size = Vector3.new(0.05, sz, sz), Transparency = 1 })
 		end
-		wisp(front, big and 1.2 or 0.7, 0.35, c2)
-		if big then
+		wisp(front, (big and 1.2 or 0.7) * scale, 0.35, c2)
+		if big and crack then
 			-- 땅이 갈라진다: 앞으로 퍼지는 금 여섯 줄
 			local g0 = r.Position - Vector3.new(0, 2.85, 0) + look * 3
 			for i = 1, 6 do
@@ -68319,14 +68388,44 @@ local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean
 	end)
 end
 
+local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean)
+	local cc = KING_COL[styleId]
+	local c1, c2 = cc[1], cc[2]
+	if styleId == "sashin" and type(slot) == "number" then
+		c1 = GOD_COL[((slot - 1) % 4) + 1]
+	end
+	impactCombo(r, c1, c2, slot, heavy, true, 1)
+end
+
+local function genericCast(r: BasePart, styleId: string, slot: any, char: Model, moveName: string?)
+	local st = Config.STYLE_BY_ID[styleId]
+	if not st then
+		return
+	end
+	local tier = tierOf(styleId)
+	local c1 = st.color or Color3.new(1, 1, 1)
+	local c2 = st.color2 or c1:Lerp(Color3.new(1, 1, 1), 0.5)
+	if type(slot) == "number" or slot == "F" or slot == "H" then
+		-- 낮은 등급은 작은 고리만, 신화 (3) 부터 넷째 타 · 강타에 땅이 갈라진다
+		impactCombo(r, c1, c2, slot, slot == "H", tier >= 3, 0.7 + tier * 0.05)
+	elseif slot == "G" and char == Players.LocalPlayer.Character then
+		-- 오의 이름 (등급이 높을수록 크게: 초월 (7) 부터 권왕과 같은 번쩍임)
+		ultIntro(moveName or "", st.name, c2:Lerp(Color3.new(1, 1, 1), 0.35), c1, tier >= 7)
+	end
+end
+
 -- 내가 기술을 쓸 때 (init.client 의 손놀림에서). 이름은 Config 그대로 받는다
 function PassArts.cast(styleId: string, slot: any, char: Model, _dur: number, moveName: string?)
 	local isKing = KING_COL[styleId] ~= nil
-	if styleId ~= "gumiho" and styleId ~= "heukyeom" and not isKing then
-		return
-	end
 	local r = rootOf(char)
 	if not r then
+		return
+	end
+	if styleId ~= "gumiho" and styleId ~= "heukyeom" and not isKing then
+		local ok, err = pcall(genericCast, r, styleId, slot, char, moveName)
+		if not ok then
+			warn("[권왕] 권법 손놀림 연출 오류:", styleId, slot, err)
+		end
 		return
 	end
 	if isKing then
