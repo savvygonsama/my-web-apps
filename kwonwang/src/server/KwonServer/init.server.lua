@@ -7000,7 +7000,7 @@ task.spawn(function()
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
 		if req and not sdef.geuk and not p.styles[styleId] and not p.styles[req.id] then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (styleId == "ilwol" or styleId == "yeonggeop") and string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) or string.format("...아직 그릇이 작다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
 		end
 		if not p.styles[styleId] and Config.GEUK_REQ[styleId] then
@@ -7019,7 +7019,7 @@ task.spawn(function()
 		end
 		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = styleId == "hojeop" and string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) or string.format("...한 번의 삶으로는 모자라다. 환생을 %d번 거친 몸이라야 내 앞에 설 수 있다.", sdef.rebirthReq) })
 			return
 		end
 		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다

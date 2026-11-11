@@ -2276,6 +2276,11 @@ function handlers.skillfx(data: any)
 		BossFx.init({ shake = shake })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
 	end
+	-- 3.75판 사신천왕권: 기본 연출 위에 신수의 혼령을 덧그린다
+	if data.style == "sashin" then
+		PassArts.init({ shake = shake, tint = tint, fov = fovPunch })
+		PassArts.overlay(data)
+	end
 	-- 3.41판 게임패스 권법의 기술 연출
 	if PassArts.handles(data) then
 		PassArts.init({ shake = shake, tint = tint, fov = fovPunch })

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.74.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.75.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3047,6 +3047,50 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.75판 권왕 · 사신천왕권: 동쪽의 청룡 · 서쪽의 백호 · 남쪽의 주작 · 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법
+-- 세기는 천하패권과 같은 줄 (권왕 ×3.4). 얻는 길: 환생 세 번 + 천외천 + 초·천룡파천장 → 동북쪽 끝 사신대의 사신왕 · 긴 부탁
+table.insert(Config.Styles, {
+	id = "sashin",
+	name = "사신천왕권",
+	hanja = "四神天王拳",
+	icon = "🧭",
+	color = Color3.fromRGB(240, 205, 110),
+	color2 = Color3.fromRGB(130, 225, 255),
+	fx = "king",
+	grade = "권왕",
+	keepGrade = true,
+	hidden = true,
+	secret = true,
+	rebirthReq = 3,
+	realmReq = 16,
+	styleReq = "chocheonryong",
+	trialHp = 12,
+	unlockHint = "세 번 환생해 초·천룡파천장을 익힌 자만이, 동북쪽 맨 끝 네 신수의 석상이 둘러선 사신대에서 사신왕을 만난다",
+	desc = "동쪽의 청룡, 서쪽의 백호, 남쪽의 주작, 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법. 연타마다 신수가 번갈아 깃들고, 기술마다 다른 신수가 나타난다.",
+	gimmick = "사신진: 네 번 맞힐 때마다 둘레에 네 신수의 기운이 한꺼번에 터진다. 공격의 10%를 비켜 간다",
+	deflect = 0.3,
+	dodgeChance = 0.1,
+	pulse = { every = 4, kind = "fourgods", radius = 13, delay = 0.3, name = "사신진", dmg = 40, posture = 70, stun = 0.8, kb = 18, up = 8 },
+	stance = "stance_king",
+	combo = {
+		{ id = "ssn1", name = "청룡조", pose = "dragon_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "ssn2", name = "백호조", pose = "blood_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "ssn3", name = "주작권", pose = "fire_jab_r", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
+		{ id = "ssn4", name = "현무진", pose = "grav_press_r", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 7, 18, 34, 0.7, 36, nil, true) } },
+	},
+	heavy = { id = "ssnH", name = "사신일격", pose = "punch_r_heavy", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
+	skills = {
+		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
+			mech = { kind = "lightDash", cut = 0.05, charge = 0.25, gap = 0.2, lens = { 20 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 56, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 16, 24, 0.5, 14, 8) } },
+		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고, 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 11, burst = hit(0, 0, 0, 32, 46, 0.7, 24, 8) } },
+		G = { id = "ssnG", name = "청룡승천", desc = "1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다", pose = "one_punch", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 215, 455, 1.6, 135, 14) } },
+		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고, 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 33, 53, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 235, 455, 1.8, 80, 30) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고, 강화할수록 생김새가 바뀐다
 -- enh = { base = +0 의 등급 배율, top = +15 의 등급 배율 } (사이는 고르게). 극 (3.8) · 신 (4.3) 은 넘지 않는다
@@ -3091,7 +3135,8 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 1.8, every = 0.15, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.3, 6, 4), finalRadius = 20, final = hit(0, 0, 0, 90, 90, 1.2, 40, 20) } },
 	},
 })
--- 권왕 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+-- 지존 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+-- 3.75판: 권왕 → 지존 (권왕은 오래 걸려 얻는 권법만). +0 지존 아래 (×2.5) → +15 초월 (×3.1)
 table.insert(Config.Styles, {
 	id = "heukyeom",
 	name = "흑염마검장",
@@ -3100,11 +3145,11 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(40, 16, 56),
 	color2 = Color3.fromRGB(196, 70, 255),
 	fx = "shadow",
-	grade = "권왕",
+	grade = "지존",
 	keepGrade = true,
 	hidden = true,
 	premium = "heukyeom",
-	enh = { base = 2.75, top = 3.7 },
+	enh = { base = 2.5, top = 3.1 },
 	unlockHint = "💎 상점의 '흑염마검장' 게임패스로 얻는다. 강화할수록 검은 불꽃 검이 둘로 늘고 화려해진다",
 	desc = "검은 불꽃으로 손에 검을 빚어 베는 마검의 권법. 처음엔 한 손, +5부터 두 손에 검이 선다. 강화할수록 불꽃이 짙어지고 보랏빛 · 핏빛으로 타오른다.",
 	gimmick = "흑염 각인: 여섯 번 맞힐 때마다 상대 자리에서 검은 불꽃이 터진다. 마지막 오의 흑염멸천은 하늘에서 불꽃 검이 쏟아진다",
@@ -3211,6 +3256,7 @@ local FINISHERS = {
 	myeonggyeong = { name = "명경승천각", pose = "mg_fin" },
 	chocheonryong = { name = "초 승룡파천", pose = "ccr_fin" },
 	cheonha = { name = "패왕승천권", pose = "ch_fin" },
+	sashin = { name = "사신승천권", pose = "king_uppercut" },
 	taeheo = { name = "만류회류장", pose = "double_palm" },
 	geumgang = { name = "금강파산추", pose = "elbow_r" },
 	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
@@ -4810,7 +4856,7 @@ Config.Premium = {
 	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
 		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
 	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
-		lines = { "권왕 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화해도 극 · 신 권법 아래 (배틀그라운드는 전설과 같은 세기)" } },
+		lines = { "지존 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화하면 초월 권법만큼 (권왕 · 극 · 신 아래, 배틀그라운드는 전설과 같은 세기)" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
@@ -5010,6 +5056,9 @@ Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1
 	quote = "힘을 빼야 멀리 친다. 용도 바람을 거스르지 않는다.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
 Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
 	quote = "왕좌는 금방 무너진다. 남는 건 몸에 익힌 것뿐이다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
+-- 3.75판 사신천왕권의 사부: 동북쪽 맨 끝 사신대 (네 신수의 석상이 둘러선 대. 지도에 나오지 않는다)
+Config.MASTERS.sashin = { name = "사신왕", at = Vector3.new(4100, 1.6, -4100), region = "동북쪽 맨 끝 사신대", regionId = "sashin", secret = true,
+	quote = "넷이 하나를 지킨다. 하나가 넷을 부린다.", rumor = "동북쪽 맨 끝, 아무도 가지 않는 들판에 네 신수의 석상이 둘러선 돌대가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
@@ -6369,6 +6418,15 @@ Config.MINIQUEST = {
 		{ kind = "boss", boss = "mugunwang", n = 1, text = "끝없는 낙하의 끝, 무간의 군주를 꺾어라" },
 		{ kind = "visit", at = Vector3.new(4300, 0, -250), r = 12, night = true, text = "밤, 무너진 왕좌 앞에 서라", say = "왕좌에 앉았던 자들의 이름이 모래에 묻혀 있다. 네 이름은 아직 없다." },
 		{ kind = "offer", coins = 10000000, text = "패왕에게 은자 천만을 바쳐라. 왕좌의 값이다" },
+	} },
+	sashin = { title = "네 신수의 증표", steps = {
+		{ kind = "boss", boss = "unryongwang", n = 1, text = "동쪽의 청룡: 구름 위의 용, 운룡왕을 꺾어 청룡의 비늘을 얻어라" },
+		{ kind = "visit", at = Vector3.new(-5750, 0, -1500), r = 40, night = true, text = "서쪽의 백호: 밤, 서쪽 끝 서역 사구에서 흰 범의 발자국을 찾아라", say = "모래 위에 사람 키만 한 범의 발자국이 찍혀 있다. 발자국은 달 쪽으로 사라졌다." },
+		{ kind = "boss", boss = "seoyeoksawang", n = 1, text = "백호의 발자국을 지키는 서역사왕을 꺾어라" },
+		{ kind = "boss", boss = "yeombong", n = 1, text = "남쪽의 주작: 천상 봉황대의 주인 염봉을 꺾어 주작의 깃을 얻어라" },
+		{ kind = "boss", boss = "hanbingwang", n = 1, text = "북쪽의 현무: 지옥 한빙지옥의 한빙대왕을 꺾어 현무의 등껍질 조각을 얻어라" },
+		{ kind = "visit", at = Vector3.new(4100, 0, -4100), r = 18, night = true, text = "밤, 사신대 한가운데에 서서 네 신수를 불러라", say = "네 석상의 눈이 차례로 빛난다. 푸른빛, 흰빛, 붉은빛, 검은빛." },
+		{ kind = "offer", coins = 10000000, text = "사신왕에게 은자 천만을 바쳐라" },
 	} },
 	geukilwol = { title = "황혼을 걷는 자", steps = {
 		{ kind = "visit", at = Vector3.new(2500, 0, 2500), r = 24, day = true, text = "한낮, 일월대 한가운데에서 해를 마주하라", say = "해가 정수리에 박힌다. 그림자가 발밑으로 숨는다." },
@@ -16665,7 +16723,7 @@ task.spawn(function()
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
 		if req and not sdef.geuk and not p.styles[styleId] and not p.styles[req.id] then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (styleId == "ilwol" or styleId == "yeonggeop") and string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) or string.format("...아직 그릇이 작다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
 		end
 		if not p.styles[styleId] and Config.GEUK_REQ[styleId] then
@@ -16684,7 +16742,7 @@ task.spawn(function()
 		end
 		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = styleId == "hojeop" and string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) or string.format("...한 번의 삶으로는 모자라다. 환생을 %d번 거친 몸이라야 내 앞에 설 수 있다.", sdef.rebirthReq) })
 			return
 		end
 		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다
@@ -37186,6 +37244,33 @@ ART_SITES.cheonha = function(g: Vector3, back: Vector3, f: Folder)
 		P(f, "OverlordBannerTorn", Vector3.new(2, 2.4, 0.1), CFrame.lookAt(at + Vector3.new(0.3 * s, 5.4, 0) - back * 0.4, at + Vector3.new(0.3 * s, 5.4, 0) - back * 2) * CFrame.Angles(0, 0, math.rad(-12 * s)), Color3.fromRGB(150, 30, 25), Enum.Material.Fabric, false)
 	end
 end
+-- 3.75판 사신왕: 사신대. 네 방위에 신수의 석상 (청룡 · 백호 · 주작 · 현무) 과 빛깔 등, 가운데 둥근 돌대
+ART_SITES.sashin = function(g: Vector3, _back: Vector3, f: Folder)
+	disc("FourGodsDais", g + Vector3.new(0, 0.3, 0), 15, 0.6, Color3.fromRGB(150, 145, 135), Enum.Material.Slate, f, true)
+	disc("FourGodsDaisInner", g + Vector3.new(0, 0.7, 0), 9, 0.3, Color3.fromRGB(175, 165, 140), Enum.Material.Marble, f, true)
+	local gods = {
+		{ Vector3.new(1, 0, 0), Color3.fromRGB(70, 170, 255), "청룡" },
+		{ Vector3.new(-1, 0, 0), Color3.fromRGB(235, 240, 250), "백호" },
+		{ Vector3.new(0, 0, 1), Color3.fromRGB(255, 80, 60), "주작" },
+		{ Vector3.new(0, 0, -1), Color3.fromRGB(40, 40, 55), "현무" },
+	}
+	for _, gd in ipairs(gods) do
+		local dir, col = gd[1], gd[2]
+		local at = g + dir * 19
+		local face = CFrame.lookAt(at, Vector3.new(g.X, at.Y, g.Z))
+		P(f, "GodPlinth", Vector3.new(6, 3, 6), face * CFrame.new(0, 1.5, 0), Color3.fromRGB(120, 115, 108), Enum.Material.Granite)
+		P(f, "GodBody", Vector3.new(4, 4, 5.5), face * CFrame.new(0, 5, 0.5), Color3.fromRGB(140, 135, 125), Enum.Material.Granite)
+		P(f, "GodHead", Vector3.new(3, 3, 3), face * CFrame.new(0, 7.6, -2.2), Color3.fromRGB(140, 135, 125), Enum.Material.Granite)
+		for _, sx in ipairs({ -1, 1 }) do
+			P(f, "GodEye", Vector3.new(0.5, 0.4, 0.2), face * CFrame.new(0.7 * sx, 8, -3.75), col, Enum.Material.Neon, false)
+		end
+		P(f, "GodBand", Vector3.new(6.2, 0.4, 6.2), face * CFrame.new(0, 3.1, 0), col, Enum.Material.Neon, false)
+		local lampAt = g + dir * 11
+		pillar(f, "GodLampPost", lampAt, 0.3, 4, Color3.fromRGB(70, 60, 50), Enum.Material.Wood)
+		local lamp = P(f, "GodLamp", Vector3.new(1.3, 1.6, 1.3), CFrame.new(lampAt + Vector3.new(0, 4.8, 0)), col, Enum.Material.Neon, false)
+		light(lamp, col, 16, 1.2)
+	end
+end
 local function artSites()
 	for id, build in pairs(ART_SITES) do
 		local m = Config.MASTERS[id]
@@ -39778,6 +39863,11 @@ function handlers.skillfx(data: any)
 		Speed.init({ shake = shake, flash = UI.flash })
 		BossFx.init({ shake = shake })
 		Arts.init({ shake = shake, flash = UI.flash, fov = fovPunch })
+	end
+	-- 3.75판 사신천왕권: 기본 연출 위에 신수의 혼령을 덧그린다
+	if data.style == "sashin" then
+		PassArts.init({ shake = shake, tint = tint, fov = fovPunch })
+		PassArts.overlay(data)
 	end
 	-- 3.41판 게임패스 권법의 기술 연출
 	if PassArts.handles(data) then
@@ -61589,6 +61679,47 @@ return {
 	["염라대왕을 꺾어라"] = "Defeat King Yama",
 	["무간의 군주를 꺾어라. 끝없이 떨어지는 곳에서 가장 빠른 자가 산다"] = "Defeat the Lord of Avici. Where the fall never ends, only the fastest survive",
 	["질주귀에게 은자 오백만을 바쳐라"] = "Offer five million silver to the Racing Ghost",
+	["천하패권 · 초 오의"] = "Overlord Fist · Super Ultimate",
+	["사신천왕권 · 청룡"] = "Four Gods Heavenly King Fist · Azure Dragon",
+	["사신천왕권 · 초 오의"] = "Four Gods Heavenly King Fist · Super Ultimate",
+	["주작"] = "Vermilion Bird",
+	["현무"] = "Black Tortoise",
+	["...아직 그릇이 작다. %s을(를) 익히고 다시 오너라."] = "...Your vessel is still too small. Learn %s and come back.",
+	["...한 번의 삶으로는 모자라다. 환생을 %d번 거친 몸이라야 내 앞에 설 수 있다."] = "...One life is not enough. Only one reborn %d times may stand before me.",
+	["사신천왕권"] = "Four Gods Heavenly King Fist",
+	["세 번 환생해 초·천룡파천장을 익힌 자만이, 동북쪽 맨 끝 네 신수의 석상이 둘러선 사신대에서 사신왕을 만난다"] = "Only one who has been reborn three times and learned Transcendent Heavenly Dragon Palm may meet the Four Gods King at the Four Gods Dais, ringed by four statues at the far northeast",
+	["동쪽의 청룡, 서쪽의 백호, 남쪽의 주작, 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법. 연타마다 신수가 번갈아 깃들고, 기술마다 다른 신수가 나타난다."] = "The Azure Dragon of the east, the White Tiger of the west, the Vermilion Bird of the south, the Black Tortoise of the north. A king's fist that carries the four guardian beasts. Each strike of a combo calls a different beast, and each skill summons its own.",
+	["사신진: 네 번 맞힐 때마다 둘레에 네 신수의 기운이 한꺼번에 터진다. 공격의 10%를 비켜 간다"] = "Four Gods Array: every four hits, the power of the four beasts bursts around you at once. Evades 10% of attacks",
+	["사신진"] = "Four Gods Array",
+	["청룡조"] = "Azure Dragon Claw",
+	["백호조"] = "White Tiger Claw",
+	["주작권"] = "Vermilion Bird Fist",
+	["현무진"] = "Black Tortoise Quake",
+	["사신일격"] = "Four Gods Strike",
+	["백호질주"] = "White Tiger Rush",
+	["흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다"] = "Become the spirit of the white tiger and pounce 20 studs forward (invincible). Claw marks burst one after another along the path",
+	["주작쌍익"] = "Twin Vermilion Wings",
+	["붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고, 앞에서 만나 불꽃 날개로 터진다"] = "Release two crimson fire birds. They fly crossing arcs, burning enemies they pass, and meet ahead to burst into wings of flame",
+	["청룡승천"] = "Azure Dragon Ascent",
+	["1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다"] = "Gather the azure dragon's power in your fist for 1 second, then strike. A giant azure dragon surges forward and sweeps away everything ahead",
+	["사신강림"] = "Descent of the Four Gods",
+	["초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고, 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다"] = "Super ultimate. The four beasts appear in the sky, circling for 2.4 seconds and diving onto enemies in turn. Finally the Black Tortoise's shell falls from the sky and crushes everything around",
+	["지존 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)"] = "Supreme style · forges blades of black flame in your hands (with a super ultimate X)",
+	["끝까지 강화하면 초월 권법만큼 (권왕 · 극 · 신 아래, 배틀그라운드는 전설과 같은 세기)"] = "Fully enhanced, as strong as a Transcendent style (below Fist King · Apex · Divine; Legendary strength in the Battleground)",
+	["사신왕"] = "Four Gods King",
+	["동북쪽 맨 끝 사신대"] = "Four Gods Dais at the far northeast",
+	["넷이 하나를 지킨다. 하나가 넷을 부린다."] = "Four guard the one. The one commands the four.",
+	["동북쪽 맨 끝, 아무도 가지 않는 들판에 네 신수의 석상이 둘러선 돌대가 있다더라"] = "They say at the far northeast, in a field no one visits, stands a stone dais ringed by statues of four guardian beasts",
+	["네 신수의 증표"] = "Tokens of the Four Beasts",
+	["동쪽의 청룡: 구름 위의 용, 운룡왕을 꺾어 청룡의 비늘을 얻어라"] = "Azure Dragon of the east: defeat the Cloud Dragon King, the dragon above the clouds, and take the dragon's scale",
+	["서쪽의 백호: 밤, 서쪽 끝 서역 사구에서 흰 범의 발자국을 찾아라"] = "White Tiger of the west: at night, find the white tiger's tracks on the Western Dunes at the western end",
+	["모래 위에 사람 키만 한 범의 발자국이 찍혀 있다. 발자국은 달 쪽으로 사라졌다."] = "A tiger's pawprint as big as a man is pressed into the sand. The tracks vanish toward the moon.",
+	["백호의 발자국을 지키는 서역사왕을 꺾어라"] = "Defeat the Western Snake King who guards the white tiger's tracks",
+	["남쪽의 주작: 천상 봉황대의 주인 염봉을 꺾어 주작의 깃을 얻어라"] = "Vermilion Bird of the south: defeat Yeombong, master of the Phoenix Terrace in the Heavenly Realm, and take the bird's feather",
+	["북쪽의 현무: 지옥 한빙지옥의 한빙대왕을 꺾어 현무의 등껍질 조각을 얻어라"] = "Black Tortoise of the north: defeat the Frost King of the Freezing Hell and take a piece of the tortoise's shell",
+	["밤, 사신대 한가운데에 서서 네 신수를 불러라"] = "At night, stand in the middle of the Four Gods Dais and call the four beasts",
+	["네 석상의 눈이 차례로 빛난다. 푸른빛, 흰빛, 붉은빛, 검은빛."] = "The eyes of the four statues light up in turn. Blue, white, red, black.",
+	["사신왕에게 은자 천만을 바쳐라"] = "Offer ten million silver to the Four Gods King",
 }
 ]]></string>
           </Properties>
@@ -66887,10 +67018,94 @@ function PassArts.preview(model: Model, style: string, lv: number)
 	end
 end
 
+-- 3.75판 권왕 권법 (천하패권 · 권왕신권 · 사신천왕권): 발밑에서 패기 (흙먼지 · 불씨) 가 피어오른다. 나머지는 addAura
+local KING_COL = {
+	cheonha = { Color3.fromRGB(255, 120, 60), Color3.fromRGB(255, 225, 140) },
+	kwonwangsin = { Color3.fromRGB(255, 204, 70), Color3.fromRGB(200, 30, 45) },
+	sashin = { Color3.fromRGB(240, 205, 110), Color3.fromRGB(130, 225, 255) },
+}
+local GOD_COL = { Color3.fromRGB(70, 170, 255), Color3.fromRGB(240, 244, 255), Color3.fromRGB(255, 80, 60), Color3.fromRGB(60, 50, 90) }
+local function buildKing(m: Model, lv: number): Rig
+	local s = m:GetAttribute("Style") :: string
+	local rig: Rig = { model = m, style = s, lv = lv, parts = {}, extra = {} }
+	local r = rootOf(m)
+	if r and not previewMode then
+		local cc = KING_COL[s] or KING_COL.cheonha
+		local a = Instance.new("Attachment")
+		a.Position = Vector3.new(0, -2.8, 0)
+		a.Parent = r
+		table.insert(rig.extra, a)
+		emitter(a, TEX_SMOKE, cs(Color3.fromRGB(150, 130, 105), Color3.fromRGB(90, 80, 70)), ns(1.2, 2.4), 5, 1.2, 2.5, { spread = Vector2.new(80, 80), accel = Vector3.new(0, 1.5, 0), light = 0, alpha = ns(0.7, 1) })
+		emitter(a, TEX_FIRE, cs(cc[1], cc[2]), ns(0.5, 0), 8, 1.1, 3, { spread = Vector2.new(25, 25), accel = Vector3.new(0, 5, 0), alpha = ns(0.3, 1) })
+	end
+	return rig
+end
+
 -- 3.72판: 늘 도는 오라. 구미호권은 몸 둘레를 도는 여우불 구슬 (+0 하나 → +15 여섯) 과 +10부터 발밑의 푸른 여우 문양진,
 -- 흑염마검장은 +5부터 검은 불꽃 구슬 셋, 발밑의 보랏빛 (+10 핏빛) 마검 문양진이 두 겹으로 엇갈려 돈다
 local function addAura(rig: Rig, lv: number)
 	if previewMode then
+		return
+	end
+	if KING_COL[rig.style] then
+		local cc = KING_COL[rig.style]
+		local ring = {}
+		local orbs = {}
+		local function circle(r: number, k: number, spin: number, width: number, alpha: number, c: Color3, fill: number)
+			local len = 2 * math.pi * r / k * fill
+			for i = 1, k do
+				local sp = part(Vector3.new(width, 0.06, len), c, Enum.Material.Neon, alpha, nil)
+				sp.Parent = folder
+				table.insert(rig.parts, sp)
+				table.insert(ring, { p = sp, r = r, i = i, n = k, spin = spin })
+			end
+		end
+		local k = Perf.low and 10 or 18
+		if rig.style == "sashin" then
+			-- 네 신수의 빛깔로 나뉜 고리 + 둘레를 도는 신수의 구슬 넷
+			local function quad(r: number, spin: number, width: number)
+				for q = 1, 4 do
+					for i = 1, 4 do
+						local idx = (q - 1) * 4 + i
+						local sp = part(Vector3.new(width, 0.06, 2 * math.pi * r / 16 * 0.85), GOD_COL[q], Enum.Material.Neon, 0.25, nil)
+						sp.Parent = folder
+						table.insert(rig.parts, sp)
+						table.insert(ring, { p = sp, r = r, i = idx, n = 16, spin = spin })
+					end
+				end
+			end
+			quad(3.6, 0.35, 0.16)
+			circle(2.4, math.floor(k * 0.6), -0.6, 0.12, 0.3, cc[1], 0.6)
+			for q = 1, 4 do
+				local o = part(Vector3.one * 0.75, GOD_COL[q], Enum.Material.Neon, 0.05, "ball")
+				o.Parent = folder
+				emitter(o, TEX_FIRE, cs(GOD_COL[q], GOD_COL[q]:Lerp(Color3.new(1, 1, 1), 0.5)), ns(0.8, 0.05), 12, 0.4, 0.5, { accel = Vector3.new(0, 4, 0), spread = Vector2.new(30, 30) })
+				if q <= 2 then
+					light(o, GOD_COL[q], 7, 1)
+				end
+				table.insert(orbs, o)
+				table.insert(rig.parts, o)
+			end
+		elseif rig.style == "kwonwangsin" then
+			-- 머리 위의 금빛 관 (작은 가시 여덟이 천천히 돈다) + 발밑 금빛 고리
+			for _ = 1, 8 do
+				local o = part(Vector3.new(0.18, 0.55, 0.18), cc[1], Enum.Material.Neon, 0.05, nil)
+				o.Parent = folder
+				table.insert(orbs, o)
+				table.insert(rig.parts, o)
+			end
+			circle(3.4, k, 0.3, 0.16, 0.2, cc[1], 0.9)
+			circle(2.3, math.floor(k * 0.6), -0.5, 0.12, 0.35, cc[2], 0.6)
+		else
+			-- 천하패권: 패기에 눌려 금이 간 땅 (끊어진 핏빛 금) 과 금빛 안쪽 고리
+			circle(3.8, k, 0.12, 0.2, 0.15, Color3.fromRGB(200, 40, 30), 0.45)
+			circle(2.6, math.floor(k * 0.7), -0.3, 0.14, 0.3, cc[2], 0.75)
+			circle(4.8, k, -0.08, 0.08, 0.5, cc[1], 0.3)
+		end
+		rig.ring = ring
+		if #orbs > 0 then
+			rig.orbs = orbs
+		end
 		return
 	end
 	local fox = rig.style == "gumiho"
@@ -66937,7 +67152,21 @@ local function poseAura(rig: Rig, t: number)
 	end
 	local c = r.Position
 	local fox = rig.style == "gumiho"
-	if rig.orbs then
+	if rig.orbs and rig.style == "kwonwangsin" then
+		local head = bodyPart(rig.model, "Head")
+		local hc = head and head.Position or (c + Vector3.new(0, 2.6, 0))
+		local n = #rig.orbs
+		for i, o in ipairs(rig.orbs) do
+			local a = t * 0.6 + i / n * math.pi * 2
+			local pos = hc + Vector3.new(math.cos(a) * 0.75, 0.95, math.sin(a) * 0.75)
+			o.CFrame = CFrame.new(pos) * CFrame.Angles(0, -a, math.rad(-12))
+		end
+	elseif rig.orbs and rig.style == "sashin" then
+		for i, o in ipairs(rig.orbs) do
+			local a = t * 1.1 + (i - 1) / 4 * math.pi * 2
+			o.CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 3, 0.9 + math.sin(t * 2 + i) * 0.4, math.sin(a) * 3))
+		end
+	elseif rig.orbs then
 		local n = #rig.orbs
 		for i, o in ipairs(rig.orbs) do
 			local a = t * (fox and 1.6 or -1.1) + i / n * math.pi * 2
@@ -66962,6 +67191,10 @@ local function styleOf(m: Model): (string?, number)
 	if s == "gumiho" or s == "heukyeom" then
 		return s, lv
 	end
+	-- 3.75판: 권왕 권법 셋 (강화가 없다: 늘 끝 단계의 오라)
+	if s == "cheonha" or s == "kwonwangsin" or s == "sashin" then
+		return s, 15
+	end
 	return nil, 0
 end
 
@@ -66977,7 +67210,7 @@ local function sweep()
 				seen[m] = true
 				if not r or r.style ~= s or r.lv ~= lv then
 					clearRig(m)
-					local ok, rig = pcall(s == "gumiho" and buildFox or buildFlame, m, lv)
+					local ok, rig = pcall(s == "gumiho" and buildFox or (s == "heukyeom" and buildFlame or buildKing), m, lv)
 					if ok and rig then
 						rigs[m] = rig
 						pcall(addAura, rig, lv)
@@ -67921,8 +68154,12 @@ end
 local ULT = {
 	gumiho = { G = { "구미호권", FOX_PALE, FOX } },
 	heukyeom = { G = { "흑염마검장", WHITE_HOT, PURPLE }, X = { "흑염마검장 · 초 오의", CRIMSON, INK } },
+	-- 3.75판 권왕 (권왕신권의 X는 따로 컷씬이 있다)
+	cheonha = { G = { "천하패권", Color3.fromRGB(255, 235, 170), Color3.fromRGB(255, 110, 50), true }, X = { "천하패권 · 초 오의", Color3.fromRGB(255, 225, 140), Color3.fromRGB(200, 30, 30), true } },
+	kwonwangsin = { G = { "권왕신권", Color3.fromRGB(255, 230, 140), Color3.fromRGB(200, 30, 45), true } },
+	sashin = { G = { "사신천왕권 · 청룡", Color3.fromRGB(200, 240, 255), Color3.fromRGB(70, 170, 255), true }, X = { "사신천왕권 · 초 오의", Color3.fromRGB(255, 240, 200), Color3.fromRGB(240, 205, 110), true } },
 }
-local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
+local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3, king: boolean?)
 	local pg = Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
 	if not pg then
 		return
@@ -67982,6 +68219,30 @@ local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
 	small.TextStrokeTransparency = 0.3
 	small.TextTransparency = 1
 	small.Parent = g
+	if king then
+		-- 권왕: 화면이 한 번 번쩍 (빛깔), 그리고 두 번째 획
+		local flash = Instance.new("Frame")
+		flash.BorderSizePixel = 0
+		flash.BackgroundColor3 = c1
+		flash.BackgroundTransparency = 0.35
+		flash.Size = UDim2.fromScale(1, 1)
+		flash.ZIndex = 0
+		flash.Parent = g
+		tween(flash, 0.45, { BackgroundTransparency = 1 })
+		local stripe2 = stripe:Clone()
+		stripe2.Position = UDim2.fromScale(1, 0.5)
+		stripe2.AnchorPoint = Vector2.new(1, 0.5)
+		stripe2.Rotation = 3
+		stripe2.BackgroundColor3 = c1
+		stripe2.Parent = g
+		task.delay(0.08, function()
+			tween(stripe2, 0.22, { Size = UDim2.new(1, 0, 0, 3) }, Enum.EasingStyle.Quart)
+		end)
+		task.delay(1.1, function()
+			tween(stripe2, 0.3, { BackgroundTransparency = 1 })
+		end)
+		big.Size = UDim2.fromScale(0.8, 0.18)
+	end
 	g.Parent = pg
 	Debris:AddItem(g, 2.2)
 	for _, b in ipairs(bars) do
@@ -67998,9 +68259,9 @@ local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
 		pcall(opts.tint, c2, 0.35, 0.9)
 	end
 	if opts.fov then
-		pcall(opts.fov, -8, 0.7)
+		pcall(opts.fov, king and -12 or -8, king and 0.9 or 0.7)
 	end
-	shake(0.5)
+	shake(king and 0.9 or 0.5)
 	Fx.sound("heavy", 0.7, 0.5)
 	task.delay(1.1, function()
 		for _, b in ipairs(bars) do
@@ -68014,13 +68275,74 @@ local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3)
 	end)
 end
 
+-- 3.75판 권왕 권법의 손놀림: 주먹마다 앞으로 터지는 충격파 고리, 넷째 · 강타는 땅이 갈라진다
+local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean)
+	local cc = KING_COL[styleId]
+	local c1, c2 = cc[1], cc[2]
+	if styleId == "sashin" and type(slot) == "number" then
+		c1 = GOD_COL[((slot - 1) % 4) + 1]
+	end
+	local look = r.CFrame.LookVector
+	local front = r.Position + look * 3.4 + Vector3.new(0, 0.4, 0)
+	local big = heavy or slot == 4 or slot == "F"
+	task.delay(0.1, function()
+		if not r.Parent then
+			return
+		end
+		-- 공기가 터지는 고리 (앞을 본다)
+		for k = 0, big and 2 or 1 do
+			local ringP = temp(part(Vector3.new(0.15, 1.6, 1.6), k == 0 and WHITE_HOT or c1, Enum.Material.Neon, 0.1, "cyl"), 0.4)
+			ringP.CFrame = CFrame.lookAt(front + look * k * 1.2, front + look * (k * 1.2 + 1)) * CFrame.Angles(0, math.rad(90), 0)
+			local sz = (big and 9 or 6) + k * 2
+			tween(ringP, 0.3, { Size = Vector3.new(0.05, sz, sz), Transparency = 1 })
+		end
+		wisp(front, big and 1.2 or 0.7, 0.35, c2)
+		if big then
+			-- 땅이 갈라진다: 앞으로 퍼지는 금 여섯 줄
+			local g0 = r.Position - Vector3.new(0, 2.85, 0) + look * 3
+			for i = 1, 6 do
+				local a = (i / 6 - 0.5) * math.pi * 0.9
+				local d = (look * math.cos(a) + Vector3.new(-look.Z, 0, look.X) * math.sin(a))
+				d = Vector3.new(d.X, 0, d.Z).Unit
+				local len = (heavy and 10 or 7) + (i % 2) * 2
+				local crack = temp(part(Vector3.new(0.35, 0.12, 0.3), c1, Enum.Material.Neon, 0, nil), 0.9)
+				crack.CFrame = CFrame.lookAt(g0, g0 + d)
+				tween(crack, 0.15, { Size = Vector3.new(0.35, 0.12, len), CFrame = CFrame.lookAt(g0 + d * len / 2, g0 + d * (len / 2 + 1)) }, Enum.EasingStyle.Quart)
+				task.delay(0.4, function()
+					tween(crack, 0.45, { Transparency = 1 })
+				end)
+			end
+			Fx.ring(g0, c1, 2, heavy and 22 or 16, 0.45)
+			shake(heavy and 0.7 or 0.45)
+			Fx.sound("heavy", 0.6, 0.8, g0)
+		end
+	end)
+end
+
 -- 내가 기술을 쓸 때 (init.client 의 손놀림에서). 이름은 Config 그대로 받는다
 function PassArts.cast(styleId: string, slot: any, char: Model, _dur: number, moveName: string?)
-	if styleId ~= "gumiho" and styleId ~= "heukyeom" then
+	local isKing = KING_COL[styleId] ~= nil
+	if styleId ~= "gumiho" and styleId ~= "heukyeom" and not isKing then
 		return
 	end
 	local r = rootOf(char)
 	if not r then
+		return
+	end
+	if isKing then
+		local ok, err = pcall(function()
+			if type(slot) == "number" or slot == "F" or slot == "H" then
+				kingCombo(r, styleId, slot, slot == "H")
+			else
+				local u = ULT[styleId][slot]
+				if u and char == Players.LocalPlayer.Character then
+					ultIntro(moveName or "", u[1], u[2], u[3], u[4])
+				end
+			end
+		end)
+		if not ok then
+			warn("[권왕] 권왕 권법 손놀림 연출 오류:", styleId, slot, err)
+		end
 		return
 	end
 	local lv = tonumber(char:GetAttribute("Enh")) or 0
@@ -68047,6 +68369,271 @@ function PassArts.cast(styleId: string, slot: any, char: Model, _dur: number, mo
 	end)
 	if not ok then
 		warn("[권왕] 게임패스 권법 손놀림 연출 오류:", styleId, slot, err)
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.75판 사신천왕권: 기본 기술 연출 위에 신수의 혼령을 덧그린다 (막지 않는다)
+------------------------------------------------------------------------
+type Piece = { BasePart | CFrame }
+local function spiritParts(list: { Piece }, life: number)
+	for _, it in ipairs(list) do
+		local p = it[1] :: BasePart
+		p.Parent = folder
+		Debris:AddItem(p, life + 0.2)
+	end
+end
+local function placeSpirit(list: { Piece }, cf: CFrame)
+	for _, it in ipairs(list) do
+		(it[1] :: BasePart).CFrame = cf * (it[2] :: CFrame)
+	end
+end
+local function fadeSpirit(list: { Piece }, time: number)
+	for _, it in ipairs(list) do
+		tween(it[1] :: BasePart, time, { Transparency = 1 })
+	end
+end
+-- 흰 범: 몸 · 머리 · 귀 · 검은 줄무늬 · 푸른 눈
+local function tigerSpirit(scale: number, life: number): { Piece }
+	local W = Color3.fromRGB(240, 244, 255)
+	local list: { Piece } = {
+		{ oval(Vector3.new(2.2, 1.8, 4.4) * scale, W, Enum.Material.Neon, 0.3), CFrame.new() },
+		{ oval(Vector3.new(1.7, 1.6, 1.9) * scale, W, Enum.Material.Neon, 0.25), CFrame.new(0, 0.5 * scale, -2.5 * scale) },
+	}
+	for _, sx in ipairs({ -1, 1 }) do
+		table.insert(list, { part(Vector3.new(0.25, 0.7, 0.6) * scale, W, Enum.Material.Neon, 0.25, "wedge"), CFrame.new(0.5 * sx * scale, 1.35 * scale, -2.3 * scale) })
+		table.insert(list, { part(Vector3.new(0.35, 0.12, 0.08) * scale, Color3.fromRGB(110, 210, 255), Enum.Material.Neon, 0, nil), CFrame.new(0.4 * sx * scale, 0.7 * scale, -3.4 * scale) })
+	end
+	for k = -1, 1 do
+		table.insert(list, { part(Vector3.new(2.3, 0.15, 0.3) * scale, Color3.fromRGB(30, 30, 40), Enum.Material.Neon, 0.4, nil), CFrame.new(0, 0.7 * scale, k * 1.1 * scale) * CFrame.Angles(0, 0, math.rad(20 * k)) })
+	end
+	spiritParts(list, life)
+	return list
+end
+-- 붉은 불새: 몸 · 날개 둘 · 긴 꼬리깃
+local function birdSpirit(scale: number, life: number): { Piece }
+	local R, Y = Color3.fromRGB(255, 80, 50), Color3.fromRGB(255, 200, 90)
+	local list: { Piece } = {
+		{ oval(Vector3.new(1.1, 1.0, 2.2) * scale, R, Enum.Material.Neon, 0.15), CFrame.new() },
+		{ oval(Vector3.new(0.7, 0.7, 0.8) * scale, Y, Enum.Material.Neon, 0.1), CFrame.new(0, 0.3 * scale, -1.2 * scale) },
+		{ oval(Vector3.new(0.4, 0.2, 3.2) * scale, Y, Enum.Material.Neon, 0.3), CFrame.new(0, 0, 2.4 * scale) },
+	}
+	for _, sx in ipairs({ -1, 1 }) do
+		table.insert(list, { part(Vector3.new(3.2, 0.15, 1.6) * scale, R, Enum.Material.Neon, 0.2, nil), CFrame.new(1.8 * sx * scale, 0.2 * scale, 0) * CFrame.Angles(0, 0, math.rad(-15 * sx)) })
+	end
+	spiritParts(list, life)
+	return list
+end
+-- 푸른 용: 이어진 몸 마디 (따로 움직인다) 와 뿔 달린 머리
+local function dragonSegments(n: number, scale: number, life: number): { BasePart }
+	local segs = {}
+	for i = 1, n do
+		local k = (i - 1) / (n - 1)
+		local w = (1.9 - 1.2 * k) * scale
+		local p = oval(Vector3.new(w, w, 2.4 * scale), Color3.fromRGB(70, 170, 255):Lerp(Color3.fromRGB(180, 235, 255), k), Enum.Material.Neon, 0.15 + 0.4 * k)
+		p.Parent = folder
+		Debris:AddItem(p, life + 0.2)
+		table.insert(segs, p)
+	end
+	return segs
+end
+
+local overlay: { [string]: (any) -> () } = {}
+overlay.lightDash = function(d)
+	local pts = d.pts
+	if not pts or #pts < 2 then
+		return
+	end
+	local a, b = pts[1], pts[#pts]
+	local dir = flatOr(b - a)
+	local T0 = (d.cut or 0) + (d.charge or 0.25)
+	local tiger = tigerSpirit(1.3, T0 + 0.7)
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local u = math.clamp((os.clock() - t0 - T0) / 0.22, 0, 1)
+		local pos = a:Lerp(b, u) + Vector3.new(0, 0.6 + math.sin(u * math.pi) * 1.6, 0)
+		placeSpirit(tiger, CFrame.lookAt(pos, pos + dir) * CFrame.Angles(math.rad(-10 + 20 * u), 0, 0))
+		if u >= 1 then
+			conn:Disconnect()
+			fadeSpirit(tiger, 0.35)
+			Fx.ring(b - Vector3.new(0, 2.4, 0), Color3.fromRGB(240, 244, 255), 2, 14, 0.4)
+		end
+	end)
+	-- 범의 발톱 자국 (세 줄)
+	task.delay(T0 + 0.3, function()
+		for k = -1, 1 do
+			local off = Vector3.new(-dir.Z, 0, dir.X) * k * 0.9
+			local len = (b - a).Magnitude
+			local mid = (a + b) / 2 + off - Vector3.new(0, 2.8, 0)
+			local cl = temp(part(Vector3.new(0.25, 0.1, len), Color3.fromRGB(230, 240, 255), Enum.Material.Neon, 0.1, nil), 1)
+			cl.CFrame = CFrame.lookAt(mid, mid + dir)
+			tween(cl, 0.9, { Transparency = 1 })
+		end
+	end)
+end
+overlay.twinDiscs = function(d)
+	local from, dir = d.from, d.dir
+	if not from or not dir then
+		return
+	end
+	dir = flatOr(dir)
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	local dist, swing, time = d.dist or 30, d.swing or 9, math.max(0.2, d.time or 0.6)
+	local birds = { { birdSpirit(1.1, time + 0.5), 1 }, { birdSpirit(1.1, time + 0.5), -1 } }
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local u = math.clamp((os.clock() - t0) / time, 0, 1)
+		for _, bd in ipairs(birds) do
+			local side = bd[2] :: number
+			local function at(v: number): Vector3
+				return from + dir * dist * v + right * side * swing * math.sin(math.pi * v) + Vector3.new(0, 1.5 + math.sin(math.pi * v) * 2, 0)
+			end
+			local pos, nxt = at(u), at(math.min(1, u + 0.02))
+			local flap = math.sin(os.clock() * 22) * 0.35
+			local cf = CFrame.lookAt(pos, nxt + (nxt == pos and dir or Vector3.zero))
+			local list = bd[1] :: { Piece }
+			for i, it in ipairs(list) do
+				local off = it[2] :: CFrame
+				if i >= 4 then
+					local sx = i == 4 and -1 or 1
+					off = off * CFrame.Angles(0, 0, flap * sx)
+				end
+				(it[1] :: BasePart).CFrame = cf * off
+			end
+		end
+		if u >= 1 then
+			conn:Disconnect()
+			for _, bd in ipairs(birds) do
+				fadeSpirit(bd[1] :: { Piece }, 0.3)
+			end
+			local burst = from + dir * dist + Vector3.new(0, 1.5, 0)
+			flameBurst(burst, Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 70, 40), d.burstRadius or 11, false)
+			for _, sx in ipairs({ -1, 1 }) do
+				local wing = temp(part(Vector3.new(7, 0.2, 3), Color3.fromRGB(255, 90, 50), Enum.Material.Neon, 0.2, nil), 0.6)
+				wing.CFrame = CFrame.lookAt(burst, burst + dir) * CFrame.new(4 * sx, 1, 0) * CFrame.Angles(0, 0, math.rad(-25 * sx))
+				tween(wing, 0.5, { Transparency = 1, Size = Vector3.new(11, 0.1, 4) })
+			end
+		end
+	end)
+end
+overlay.onepunch = function(d)
+	local r = rootOf(d.m)
+	local from = d.from or (r and r.Position)
+	if not from then
+		return
+	end
+	local dir = flatOr(d.dir or (r and r.CFrame.LookVector) or Vector3.new(0, 0, -1))
+	local range = d.range or 54
+	local n = Perf.low and 10 or 16
+	local segs = dragonSegments(n, 1.6, 1.4)
+	local head = { oval(Vector3.new(2.6, 2.2, 3.4), Color3.fromRGB(90, 185, 255), Enum.Material.Neon, 0.05), part(Vector3.new(0.3, 2.2, 0.3), Color3.fromRGB(255, 230, 150), Enum.Material.Neon, 0, nil), part(Vector3.new(0.3, 2.2, 0.3), Color3.fromRGB(255, 230, 150), Enum.Material.Neon, 0, nil) }
+	for _, h in ipairs(head) do
+		h.Parent = folder
+		Debris:AddItem(h, 1.6)
+	end
+	local right = Vector3.new(-dir.Z, 0, dir.X)
+	local t0 = os.clock()
+	local T = 0.5
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local e = math.clamp((os.clock() - t0) / T, 0, 1)
+		local function spine(v: number): Vector3
+			local d0 = math.max(0, v) * range
+			return from + dir * d0 + right * math.sin(v * 9 - os.clock() * 6) * 2.4 + Vector3.new(0, 2 + math.sin(v * 3.1) * 2.5, 0)
+		end
+		local headU = e * 1.05
+		for i, p in ipairs(segs) do
+			local v = headU - i * 0.045
+			local pos = spine(v)
+			p.CFrame = CFrame.lookAt(spine(v - 0.01), pos)
+			p.Transparency = v < 0 and 1 or math.min(1, 0.15 + (i / n) * 0.45)
+		end
+		local hp = spine(headU)
+		local hcf = CFrame.lookAt(spine(headU - 0.01), hp)
+		head[1].CFrame = hcf * CFrame.new(0, 0, -0.8)
+		head[2].CFrame = hcf * CFrame.new(0.7, 1.2, 0.6) * CFrame.Angles(math.rad(-40), 0, math.rad(-15))
+		head[3].CFrame = hcf * CFrame.new(-0.7, 1.2, 0.6) * CFrame.Angles(math.rad(-40), 0, math.rad(15))
+		if e >= 1 then
+			conn:Disconnect()
+			for _, p in ipairs(segs) do
+				tween(p, 0.5, { Transparency = 1 })
+			end
+			for _, h in ipairs(head) do
+				tween(h, 0.5, { Transparency = 1 })
+			end
+			Fx.ring(from + dir * range - Vector3.new(0, 2.4, 0), Color3.fromRGB(90, 185, 255), 4, 26, 0.5)
+		end
+	end)
+	shake(0.8)
+end
+overlay.stormcloud = function(d)
+	local r = rootOf(d.m)
+	if not r then
+		return
+	end
+	local dur = d.dur or 2.4
+	local center = r.Position
+	local orbs = {}
+	for q = 1, 4 do
+		local o = temp(part(Vector3.one * 3, GOD_COL[q], Enum.Material.Neon, 0.1, "ball"), dur + 1)
+		local e = emitter(o, TEX_FIRE, cs(GOD_COL[q], Color3.new(1, 1, 1)), ns(2.4, 0.2), 30, 0.6, 2, { spread = Vector2.new(180, 180), accel = Vector3.zero })
+		e.Parent = o
+		light(o, GOD_COL[q], 20, 2)
+		table.insert(orbs, o)
+	end
+	local t0 = os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		for q, o in ipairs(orbs) do
+			local a = t * 2.2 + (q - 1) / 4 * math.pi * 2
+			o.Position = center + Vector3.new(math.cos(a) * 14, 18 + math.sin(t * 3 + q) * 2, math.sin(a) * 14)
+		end
+		if t >= dur then
+			conn:Disconnect()
+			for _, o in ipairs(orbs) do
+				tween(o, 0.25, { Position = center + Vector3.new(0, 1, 0), Size = Vector3.one * 0.5 })
+			end
+			-- 현무의 등껍질이 내려와 누른다
+			local shell = temp(oval(Vector3.new(30, 12, 30), Color3.fromRGB(40, 60, 55), Enum.Material.Neon, 0.35), 1.6)
+			shell.Position = center + Vector3.new(0, 40, 0)
+			tween(shell, 0.3, { Position = center + Vector3.new(0, 2, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			task.delay(0.3, function()
+				tween(shell, 0.8, { Transparency = 1, Size = Vector3.new(44, 4, 44) })
+				for q = 1, 4 do
+					Fx.ring(center - Vector3.new(0, 2.4, 0), GOD_COL[q], 3, 36 + q * 6, 0.5 + q * 0.08)
+				end
+				shake(1.2)
+				Fx.sound("heavy", 1, 0.5, center)
+			end)
+		end
+	end)
+end
+overlay.pulse = function(d)
+	if d.fx ~= "fourgods" or not d.at then
+		return
+	end
+	task.delay(d.delay or 0, function()
+		for q = 1, 4 do
+			local a = (q - 1) / 4 * math.pi * 2
+			local at = d.at + Vector3.new(math.cos(a), 0, math.sin(a)) * (d.radius or 13) * 0.6
+			flameBurst(at, GOD_COL[q], GOD_COL[q]:Lerp(Color3.new(1, 1, 1), 0.4), 4, q == 4)
+		end
+		Fx.ring(d.at - Vector3.new(0, 2.4, 0), Color3.fromRGB(240, 205, 110), 2, (d.radius or 13) * 2, 0.4)
+	end)
+end
+function PassArts.overlay(data: any)
+	if data.style ~= "sashin" then
+		return
+	end
+	local fn = overlay[data.kind]
+	if fn then
+		local ok, err = pcall(fn, data)
+		if not ok then
+			warn("[권왕] 사신천왕권 연출 오류:", data.kind, err)
+		end
 	end
 end
 

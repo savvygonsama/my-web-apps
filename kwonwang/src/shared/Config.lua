@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.74.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.75.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3027,6 +3027,50 @@ table.insert(Config.Styles, {
 	},
 })
 
+-- 3.75판 권왕 · 사신천왕권: 동쪽의 청룡 · 서쪽의 백호 · 남쪽의 주작 · 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법
+-- 세기는 천하패권과 같은 줄 (권왕 ×3.4). 얻는 길: 환생 세 번 + 천외천 + 초·천룡파천장 → 동북쪽 끝 사신대의 사신왕 · 긴 부탁
+table.insert(Config.Styles, {
+	id = "sashin",
+	name = "사신천왕권",
+	hanja = "四神天王拳",
+	icon = "🧭",
+	color = Color3.fromRGB(240, 205, 110),
+	color2 = Color3.fromRGB(130, 225, 255),
+	fx = "king",
+	grade = "권왕",
+	keepGrade = true,
+	hidden = true,
+	secret = true,
+	rebirthReq = 3,
+	realmReq = 16,
+	styleReq = "chocheonryong",
+	trialHp = 12,
+	unlockHint = "세 번 환생해 초·천룡파천장을 익힌 자만이, 동북쪽 맨 끝 네 신수의 석상이 둘러선 사신대에서 사신왕을 만난다",
+	desc = "동쪽의 청룡, 서쪽의 백호, 남쪽의 주작, 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법. 연타마다 신수가 번갈아 깃들고, 기술마다 다른 신수가 나타난다.",
+	gimmick = "사신진: 네 번 맞힐 때마다 둘레에 네 신수의 기운이 한꺼번에 터진다. 공격의 10%를 비켜 간다",
+	deflect = 0.3,
+	dodgeChance = 0.1,
+	pulse = { every = 4, kind = "fourgods", radius = 13, delay = 0.3, name = "사신진", dmg = 40, posture = 70, stun = 0.8, kb = 18, up = 8 },
+	stance = "stance_king",
+	combo = {
+		{ id = "ssn1", name = "청룡조", pose = "dragon_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "ssn2", name = "백호조", pose = "blood_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+		{ id = "ssn3", name = "주작권", pose = "fire_jab_r", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
+		{ id = "ssn4", name = "현무진", pose = "grav_press_r", dur = 0.52, lunge = 3, hits = { hit(0.26, 7, 7, 18, 34, 0.7, 36, nil, true) } },
+	},
+	heavy = { id = "ssnH", name = "사신일격", pose = "punch_r_heavy", dur = 0.6, lunge = 6, hits = { hit(0.28, 8, 7, 25, 48, 0.8, 60) } },
+	skills = {
+		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
+			mech = { kind = "lightDash", cut = 0.05, charge = 0.25, gap = 0.2, lens = { 20 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 56, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 16, 24, 0.5, 14, 8) } },
+		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고, 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
+			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 11, burst = hit(0, 0, 0, 32, 46, 0.7, 24, 8) } },
+		G = { id = "ssnG", name = "청룡승천", desc = "1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다", pose = "one_punch", dur = 1.8, cd = 30, chi = 100, armor = true,
+			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 215, 455, 1.6, 135, 14) } },
+		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고, 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
+			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 33, 53, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 235, 455, 1.8, 80, 30) } },
+	},
+})
+
 ------------------------------------------------------------------------
 -- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고, 강화할수록 생김새가 바뀐다
 -- enh = { base = +0 의 등급 배율, top = +15 의 등급 배율 } (사이는 고르게). 극 (3.8) · 신 (4.3) 은 넘지 않는다
@@ -3071,7 +3115,8 @@ table.insert(Config.Styles, {
 			mech = { kind = "storm", dur = 1.8, every = 0.15, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.3, 6, 4), finalRadius = 20, final = hit(0, 0, 0, 90, 90, 1.2, 40, 20) } },
 	},
 })
--- 권왕 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+-- 지존 · 흑염마검장: 검은 불꽃으로 손에 검을 빚어 벤다. 검은 둘까지, 강화할수록 불꽃이 짙고 화려해진다
+-- 3.75판: 권왕 → 지존 (권왕은 오래 걸려 얻는 권법만). +0 지존 아래 (×2.5) → +15 초월 (×3.1)
 table.insert(Config.Styles, {
 	id = "heukyeom",
 	name = "흑염마검장",
@@ -3080,11 +3125,11 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(40, 16, 56),
 	color2 = Color3.fromRGB(196, 70, 255),
 	fx = "shadow",
-	grade = "권왕",
+	grade = "지존",
 	keepGrade = true,
 	hidden = true,
 	premium = "heukyeom",
-	enh = { base = 2.75, top = 3.7 },
+	enh = { base = 2.5, top = 3.1 },
 	unlockHint = "💎 상점의 '흑염마검장' 게임패스로 얻는다. 강화할수록 검은 불꽃 검이 둘로 늘고 화려해진다",
 	desc = "검은 불꽃으로 손에 검을 빚어 베는 마검의 권법. 처음엔 한 손, +5부터 두 손에 검이 선다. 강화할수록 불꽃이 짙어지고 보랏빛 · 핏빛으로 타오른다.",
 	gimmick = "흑염 각인: 여섯 번 맞힐 때마다 상대 자리에서 검은 불꽃이 터진다. 마지막 오의 흑염멸천은 하늘에서 불꽃 검이 쏟아진다",
@@ -3191,6 +3236,7 @@ local FINISHERS = {
 	myeonggyeong = { name = "명경승천각", pose = "mg_fin" },
 	chocheonryong = { name = "초 승룡파천", pose = "ccr_fin" },
 	cheonha = { name = "패왕승천권", pose = "ch_fin" },
+	sashin = { name = "사신승천권", pose = "king_uppercut" },
 	taeheo = { name = "만류회류장", pose = "double_palm" },
 	geumgang = { name = "금강파산추", pose = "elbow_r" },
 	maehwa = { name = "매화낙영각", pose = "crescent_kick" },
@@ -4790,7 +4836,7 @@ Config.Premium = {
 	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
 		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
 	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
-		lines = { "권왕 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화해도 극 · 신 권법 아래 (배틀그라운드는 전설과 같은 세기)" } },
+		lines = { "지존 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화하면 초월 권법만큼 (권왕 · 극 · 신 아래, 배틀그라운드는 전설과 같은 세기)" } },
 	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
@@ -4990,6 +5036,9 @@ Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1
 	quote = "힘을 빼야 멀리 친다. 용도 바람을 거스르지 않는다.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
 Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
 	quote = "왕좌는 금방 무너진다. 남는 건 몸에 익힌 것뿐이다.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
+-- 3.75판 사신천왕권의 사부: 동북쪽 맨 끝 사신대 (네 신수의 석상이 둘러선 대. 지도에 나오지 않는다)
+Config.MASTERS.sashin = { name = "사신왕", at = Vector3.new(4100, 1.6, -4100), region = "동북쪽 맨 끝 사신대", regionId = "sashin", secret = true,
+	quote = "넷이 하나를 지킨다. 하나가 넷을 부린다.", rumor = "동북쪽 맨 끝, 아무도 가지 않는 들판에 네 신수의 석상이 둘러선 돌대가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
 	quote = "별은 떨어지지 않는다. 내려올 뿐이다.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
@@ -6349,6 +6398,15 @@ Config.MINIQUEST = {
 		{ kind = "boss", boss = "mugunwang", n = 1, text = "끝없는 낙하의 끝, 무간의 군주를 꺾어라" },
 		{ kind = "visit", at = Vector3.new(4300, 0, -250), r = 12, night = true, text = "밤, 무너진 왕좌 앞에 서라", say = "왕좌에 앉았던 자들의 이름이 모래에 묻혀 있다. 네 이름은 아직 없다." },
 		{ kind = "offer", coins = 10000000, text = "패왕에게 은자 천만을 바쳐라. 왕좌의 값이다" },
+	} },
+	sashin = { title = "네 신수의 증표", steps = {
+		{ kind = "boss", boss = "unryongwang", n = 1, text = "동쪽의 청룡: 구름 위의 용, 운룡왕을 꺾어 청룡의 비늘을 얻어라" },
+		{ kind = "visit", at = Vector3.new(-5750, 0, -1500), r = 40, night = true, text = "서쪽의 백호: 밤, 서쪽 끝 서역 사구에서 흰 범의 발자국을 찾아라", say = "모래 위에 사람 키만 한 범의 발자국이 찍혀 있다. 발자국은 달 쪽으로 사라졌다." },
+		{ kind = "boss", boss = "seoyeoksawang", n = 1, text = "백호의 발자국을 지키는 서역사왕을 꺾어라" },
+		{ kind = "boss", boss = "yeombong", n = 1, text = "남쪽의 주작: 천상 봉황대의 주인 염봉을 꺾어 주작의 깃을 얻어라" },
+		{ kind = "boss", boss = "hanbingwang", n = 1, text = "북쪽의 현무: 지옥 한빙지옥의 한빙대왕을 꺾어 현무의 등껍질 조각을 얻어라" },
+		{ kind = "visit", at = Vector3.new(4100, 0, -4100), r = 18, night = true, text = "밤, 사신대 한가운데에 서서 네 신수를 불러라", say = "네 석상의 눈이 차례로 빛난다. 푸른빛, 흰빛, 붉은빛, 검은빛." },
+		{ kind = "offer", coins = 10000000, text = "사신왕에게 은자 천만을 바쳐라" },
 	} },
 	geukilwol = { title = "황혼을 걷는 자", steps = {
 		{ kind = "visit", at = Vector3.new(2500, 0, 2500), r = 24, day = true, text = "한낮, 일월대 한가운데에서 해를 마주하라", say = "해가 정수리에 박힌다. 그림자가 발밑으로 숨는다." },

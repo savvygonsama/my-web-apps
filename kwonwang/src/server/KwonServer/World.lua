@@ -7636,6 +7636,33 @@ ART_SITES.cheonha = function(g: Vector3, back: Vector3, f: Folder)
 		P(f, "OverlordBannerTorn", Vector3.new(2, 2.4, 0.1), CFrame.lookAt(at + Vector3.new(0.3 * s, 5.4, 0) - back * 0.4, at + Vector3.new(0.3 * s, 5.4, 0) - back * 2) * CFrame.Angles(0, 0, math.rad(-12 * s)), Color3.fromRGB(150, 30, 25), Enum.Material.Fabric, false)
 	end
 end
+-- 3.75판 사신왕: 사신대. 네 방위에 신수의 석상 (청룡 · 백호 · 주작 · 현무) 과 빛깔 등, 가운데 둥근 돌대
+ART_SITES.sashin = function(g: Vector3, _back: Vector3, f: Folder)
+	disc("FourGodsDais", g + Vector3.new(0, 0.3, 0), 15, 0.6, Color3.fromRGB(150, 145, 135), Enum.Material.Slate, f, true)
+	disc("FourGodsDaisInner", g + Vector3.new(0, 0.7, 0), 9, 0.3, Color3.fromRGB(175, 165, 140), Enum.Material.Marble, f, true)
+	local gods = {
+		{ Vector3.new(1, 0, 0), Color3.fromRGB(70, 170, 255), "청룡" },
+		{ Vector3.new(-1, 0, 0), Color3.fromRGB(235, 240, 250), "백호" },
+		{ Vector3.new(0, 0, 1), Color3.fromRGB(255, 80, 60), "주작" },
+		{ Vector3.new(0, 0, -1), Color3.fromRGB(40, 40, 55), "현무" },
+	}
+	for _, gd in ipairs(gods) do
+		local dir, col = gd[1], gd[2]
+		local at = g + dir * 19
+		local face = CFrame.lookAt(at, Vector3.new(g.X, at.Y, g.Z))
+		P(f, "GodPlinth", Vector3.new(6, 3, 6), face * CFrame.new(0, 1.5, 0), Color3.fromRGB(120, 115, 108), Enum.Material.Granite)
+		P(f, "GodBody", Vector3.new(4, 4, 5.5), face * CFrame.new(0, 5, 0.5), Color3.fromRGB(140, 135, 125), Enum.Material.Granite)
+		P(f, "GodHead", Vector3.new(3, 3, 3), face * CFrame.new(0, 7.6, -2.2), Color3.fromRGB(140, 135, 125), Enum.Material.Granite)
+		for _, sx in ipairs({ -1, 1 }) do
+			P(f, "GodEye", Vector3.new(0.5, 0.4, 0.2), face * CFrame.new(0.7 * sx, 8, -3.75), col, Enum.Material.Neon, false)
+		end
+		P(f, "GodBand", Vector3.new(6.2, 0.4, 6.2), face * CFrame.new(0, 3.1, 0), col, Enum.Material.Neon, false)
+		local lampAt = g + dir * 11
+		pillar(f, "GodLampPost", lampAt, 0.3, 4, Color3.fromRGB(70, 60, 50), Enum.Material.Wood)
+		local lamp = P(f, "GodLamp", Vector3.new(1.3, 1.6, 1.3), CFrame.new(lampAt + Vector3.new(0, 4.8, 0)), col, Enum.Material.Neon, false)
+		light(lamp, col, 16, 1.2)
+	end
+end
 local function artSites()
 	for id, build in pairs(ART_SITES) do
 		local m = Config.MASTERS[id]
