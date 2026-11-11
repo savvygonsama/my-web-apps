@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.74.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.74.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -6285,7 +6285,7 @@ Config.MINIQUEST = {
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
 		{ kind = "boss", boss = "sinsunwang", n = 1, text = "꿈속의 호수를 다스리는 신선왕을 꺾어라" },
-		{ kind = "offer", coins = 3000000, text = "몽선을 깨우고, 꿈값으로 은자 삼백만을 바쳐라" },
+		{ kind = "offer", coins = 2000000, text = "몽선을 깨우고, 꿈값으로 은자 이백만을 바쳐라" },
 	} },
 	gongbaek = { title = "null", old = 4, steps = {
 		{ kind = "find", name = "지워진 글자", icon = "⬛", items = { Vector3.new(3700, 0, -1806), Vector3.new(3700, 0, 214), Vector3.new(2100, 0, -3683), Vector3.new(-2200, 0, -3737) }, text = "강호의 랜드마크 넷 (버려진 광산 입구 · 일검 바위 틈 · 귀부 비석 뒤 · 선인송 아래)에 떨어진 지워진 글자를 주워라 (T)" },
@@ -6293,7 +6293,7 @@ Config.MINIQUEST = {
 		{ kind = "order", name = "글자 상자", stones = { { at = Config.NULL_SPOT + Vector3.new(-9, 0, 12), label = "N" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, 12), label = "U" }, { at = Config.NULL_SPOT + Vector3.new(-9, 0, -12), label = "L" }, { at = Config.NULL_SPOT + Vector3.new(9, 0, -12), label = "L" } },
 			text = "빈칸의 글자 상자 넷을 그 이름의 차례로 짚어라 (T)" },
 		{ kind = "kill", enemy = "voidwalker", n = 30, text = "허공 마인 서른을 지워라. 빈칸을 채우려는 것들이다" },
-		{ kind = "offer", coins = 3000000, text = "???에게 은자 삼백만을 바쳐라. 아무것도 아닌 것을 사려면 그만큼 든다" },
+		{ kind = "offer", coins = 2000000, text = "???에게 은자 이백만을 바쳐라. 아무것도 아닌 것을 사려면 그만큼 든다" },
 	} },
 	binghon = { title = "얼음 속에 잠든 이름", steps = {
 		{ kind = "kill", enemy = "snowblade", n = 20, text = "북방 설산의 설원 자객 스물을 꺾어라. 노니의 얼음 벼랑을 노리는 자들이다" },
@@ -6332,7 +6332,7 @@ Config.MINIQUEST = {
 		{ kind = "boss", boss = "dason", n = 2, text = "운무 차밭의 주인 다선을 두 번 꺾어라" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달 뜬 밤, 거울 호수 한가운데에서 물에 비친 너를 보아라", say = "물속의 내가 먼저 고개를 돌렸다." },
 		{ kind = "kill", enemy = "teasage", n = 20, text = "운무 다인 스물을 꺾어라" },
-		{ kind = "offer", coins = 3000000, text = "명경선에게 돌아가 은자 삼백만을 바쳐라" },
+		{ kind = "offer", coins = 2000000, text = "명경선에게 돌아가 은자 이백만을 바쳐라" },
 	} },
 	chocheonryong = { title = "용의 등뼈", steps = {
 		{ kind = "kill", enemy = "dragonguard", n = 20, text = "천상 비룡령의 용린 무사 스물을 꺾어라" },
@@ -6342,13 +6342,13 @@ Config.MINIQUEST = {
 		{ kind = "offer", coins = 1000000, text = "천룡진인에게 돌아가 은자 백만을 바쳐라" },
 	} },
 	cheonha = { title = "패자의 길", steps = {
-		{ kind = "boss", boss = "hwangsa", n = 3, text = "황사 협곡의 주인 황사를 세 번 꺾어라. 왕좌 앞을 지키는 개다" },
+		{ kind = "boss", boss = "hwangsa", n = 1, text = "황사 협곡의 주인 황사를 꺾어라. 왕좌 앞을 지키는 개다" },
 		{ kind = "boss", boss = "cheonma", n = 1, text = "마교의 교주 천마를 꺾어라" },
 		{ kind = "boss", boss = "hyeolma", n = 1, text = "혈교의 주인 혈마를 꺾어라" },
 		{ kind = "boss", boss = "yeomra", n = 1, text = "지옥의 심판자 염라대왕을 꺾어라" },
 		{ kind = "boss", boss = "mugunwang", n = 1, text = "끝없는 낙하의 끝, 무간의 군주를 꺾어라" },
 		{ kind = "visit", at = Vector3.new(4300, 0, -250), r = 12, night = true, text = "밤, 무너진 왕좌 앞에 서라", say = "왕좌에 앉았던 자들의 이름이 모래에 묻혀 있다. 네 이름은 아직 없다." },
-		{ kind = "offer", coins = 20000000, text = "패왕에게 은자 이천만을 바쳐라. 왕좌의 값이다" },
+		{ kind = "offer", coins = 10000000, text = "패왕에게 은자 천만을 바쳐라. 왕좌의 값이다" },
 	} },
 	geukilwol = { title = "황혼을 걷는 자", steps = {
 		{ kind = "visit", at = Vector3.new(2500, 0, 2500), r = 24, day = true, text = "한낮, 일월대 한가운데에서 해를 마주하라", say = "해가 정수리에 박힌다. 그림자가 발밑으로 숨는다." },
@@ -6356,7 +6356,7 @@ Config.MINIQUEST = {
 		{ kind = "boss", boss = "wolyeong", n = 2, text = "월광 호수의 주인 월영을 두 번 꺾어라" },
 		{ kind = "boss", boss = "geukgwang", n = 2, text = "극광대의 주인 극광을 두 번 꺾어라" },
 		{ kind = "kill", enemy = "sunblade", n = 30, text = "일광 검사 서른을 꺾어라" },
-		{ kind = "offer", coins = 10000000, text = "황혼권존에게 은자 천만을 바쳐라" },
+		{ kind = "offer", coins = 5000000, text = "황혼권존에게 은자 오백만을 바쳐라" },
 	} },
 	geuknull = { title = "네 개의 끝", steps = {
 		{ kind = "visit", at = Vector3.new(-1600, 0, -5750), r = 40, text = "북쪽 끝, 북명 빙원에 서라" },
@@ -6366,7 +6366,7 @@ Config.MINIQUEST = {
 		{ kind = "visit", at = Vector3.new(5750, 0, 1500), r = 40, text = "동쪽 끝, 동극 불길 평원에 서라" },
 		{ kind = "boss", boss = "dongguckgun", n = 1, text = "불길의 끝의 동극군을 꺾어라" },
 		{ kind = "visit", at = Vector3.new(0, 0, 4450), r = 30, night = true, text = "밤, 남쪽 끝 세상 끝 벼랑에 서라. 네 끝을 모두 밟은 자에게만 그 너머가 보인다", say = "벼랑 너머의 허공에 줄 하나가 그어져 있다. 격자의 한 칸이다." },
-		{ kind = "offer", coins = 10000000, text = "격자지기에게 은자 천만을 바쳐라" },
+		{ kind = "offer", coins = 5000000, text = "격자지기에게 은자 오백만을 바쳐라" },
 	} },
 	geukspeed = { title = "황천을 달리는 자", steps = {
 		{ kind = "kill", enemy = "jeoseungmusa", n = 40, text = "지옥의 저승 무사 마흔을 꺾어라" },
@@ -6374,7 +6374,7 @@ Config.MINIQUEST = {
 		{ kind = "boss", boss = "talui", n = 1, text = "삼도천의 주인 탈의파를 꺾어라" },
 		{ kind = "boss", boss = "yeomra", n = 1, text = "염라대왕을 꺾어라" },
 		{ kind = "boss", boss = "mugunwang", n = 1, text = "무간의 군주를 꺾어라. 끝없이 떨어지는 곳에서 가장 빠른 자가 산다" },
-		{ kind = "offer", coins = 10000000, text = "질주귀에게 은자 천만을 바쳐라" },
+		{ kind = "offer", coins = 5000000, text = "질주귀에게 은자 오백만을 바쳐라" },
 	} },
 }
 
