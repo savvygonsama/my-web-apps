@@ -811,7 +811,9 @@ startMove = function(slot: any, charge: number?)
 		Geuk.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "twilightCollapse")
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "G" or slot == "X" then
-		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		if not PassArts.ownsUlt(style.id, slot) then
+			UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		end
 		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
 		end

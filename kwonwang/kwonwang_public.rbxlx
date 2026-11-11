@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.76.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.76.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -38399,7 +38399,9 @@ startMove = function(slot: any, charge: number?)
 		Geuk.superCut(char, ((move.mech and move.mech.cut) or 1.4) / speed, move.name, shake, move.mech ~= nil and move.mech.kind == "twilightCollapse")
 		Fx.skillAura(char, style.color, style.color2, dur, true)
 	elseif slot == "G" or slot == "X" then
-		UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		if not PassArts.ownsUlt(style.id, slot) then
+			UI.cinematic((slot == "X" and "초 오의 · " or "") .. move.name, style.color, dur)
+		end
 		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
 		end
@@ -67104,7 +67106,9 @@ local function addAura(rig: Rig, lv: number)
 			circle(2.3, math.floor(k * 0.6), -0.6, 0.1, 0.4, c2, 0.6)
 		end
 		rig.ring = ring
-		if tier >= 6 then
+		-- 이미 몸에 꾸밈이 있는 권법 (뇌전 토시 · 큰 낫 · 술병 · 격자 상자 · 해와 달 · 부채 · 신의 모습) 에는 구슬을 더하지 않는다 (어수선해진다)
+		local decorated = st.gauntlets or st.scythe or st.soju or st.nullCubes or st.sunMoonOrbs or st.fans or tier >= 10
+		if tier >= 6 and not decorated then
 			local orbs = {}
 			for _ = 1, math.min(5, tier - 4) do
 				local o = part(Vector3.one * 0.5, c2, Enum.Material.Neon, 0.1, "ball")
@@ -68329,13 +68333,7 @@ local function ultIntro(name: string, sub: string, c1: Color3, c2: Color3, king:
 	task.delay(0.12, function()
 		tween(small, 0.2, { TextTransparency = 0 })
 	end)
-	if opts.tint then
-		pcall(opts.tint, c2, 0.35, 0.9)
-	end
-	if opts.fov then
-		pcall(opts.fov, king and -12 or -8, king and 0.9 or 0.7)
-	end
-	shake(king and 0.9 or 0.5)
+	-- 3.76.1판: 물들임 · 시야 · 흔들림은 원래의 오의 연출 (모든 권법) 이 한다. 여기서 또 하면 두 번 겹친다
 	Fx.sound("heavy", 0.7, 0.5)
 	task.delay(1.1, function()
 		for _, b in ipairs(bars) do
@@ -68397,7 +68395,7 @@ local function kingCombo(r: BasePart, styleId: string, slot: any, heavy: boolean
 	impactCombo(r, c1, c2, slot, heavy, true, 1)
 end
 
-local function genericCast(r: BasePart, styleId: string, slot: any, char: Model, moveName: string?)
+local function genericCast(r: BasePart, styleId: string, slot: any, _char: Model, _moveName: string?)
 	local st = Config.STYLE_BY_ID[styleId]
 	if not st then
 		return
@@ -68406,12 +68404,13 @@ local function genericCast(r: BasePart, styleId: string, slot: any, char: Model,
 	local c1 = st.color or Color3.new(1, 1, 1)
 	local c2 = st.color2 or c1:Lerp(Color3.new(1, 1, 1), 0.5)
 	if type(slot) == "number" or slot == "F" or slot == "H" then
-		-- 낮은 등급은 작은 고리만, 신화 (3) 부터 넷째 타 · 강타에 땅이 갈라진다
-		impactCombo(r, c1, c2, slot, slot == "H", tier >= 3, 0.7 + tier * 0.05)
-	elseif slot == "G" and char == Players.LocalPlayer.Character then
-		-- 오의 이름 (등급이 높을수록 크게: 초월 (7) 부터 권왕과 같은 번쩍임)
-		ultIntro(moveName or "", st.name, c2:Lerp(Color3.new(1, 1, 1), 0.35), c1, tier >= 7)
+		-- 상급 · 전설은 넷째 타 · 강타에만 고리, 신화 (3) 부터 주먹마다 고리 + 넷째 타 · 강타에 땅이 갈라진다
+		local big = slot == 4 or slot == "F" or slot == "H"
+		if tier >= 3 or big then
+			impactCombo(r, c1, c2, slot, slot == "H", tier >= 3, 0.7 + tier * 0.05)
+		end
 	end
+	-- (오의 G · X 의 화면 연출은 모든 권법에 원래 있다: 검은 띠 · 이름 · 집중선 · 시야)
 end
 
 -- 내가 기술을 쓸 때 (init.client 의 손놀림에서). 이름은 Config 그대로 받는다
@@ -68736,6 +68735,11 @@ function PassArts.overlay(data: any)
 	end
 end
 
+-- 3.76.1판: 이 권법 · 이 오의는 여기서 이름 띠를 그린다 (원래의 '오의 · 이름' 띠는 빼서 두 번 겹치지 않게)
+function PassArts.ownsUlt(styleId: string, slot: any): boolean
+	local u = ULT[styleId]
+	return u ~= nil and u[slot] ~= nil
+end
 function PassArts.handles(data: any): boolean
 	local h = H[data.style]
 	if not h then
