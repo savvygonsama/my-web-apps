@@ -12801,7 +12801,7 @@ function Rebirth.check(player: Player): boolean
 	end
 	local RB = Config.REBIRTH
 	if p.rebirth >= RB.max then
-		toast(player, "♻ 이미 네 번 환생했어요 (더는 환생할 수 없어요)")
+		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
 		return false
 	end
 	local cap = Config.realmCap(p.rebirth)
@@ -12872,7 +12872,7 @@ function Rebirth.go(player: Player)
 	end
 	local RB = Config.REBIRTH
 	if p.rebirth >= RB.max then
-		toast(player, "♻ 이미 네 번 환생했어요 (더는 환생할 수 없어요)")
+		toast(player, string.format("♻ 이미 %d번 환생했어요 (더는 환생할 수 없어요)", Config.REBIRTH.max))
 		return
 	end
 	local cap = Config.realmCap(p.rebirth)
