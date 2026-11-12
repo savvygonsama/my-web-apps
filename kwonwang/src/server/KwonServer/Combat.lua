@@ -749,6 +749,22 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = true
 	end
 	d = battleShape(att, tgt, d)
+	-- 3.77판: 오의 (G) · 초 오의 (X) 한 번으로는 보스 최대 체력의 일정 몫까지만 (Config.ULT_BOSS_CAP). 같은 오의의 벼락 · 메아리를 모두 더해 센다
+	if opt.isSkill and tgt.npc and tgt.model:GetAttribute("Boss") == true then
+		local mid = type(move.id) == "string" and move.id or ""
+		local frac = Config.ULT_BOSS_CAP and Config.ULT_BOSS_CAP[string.sub(mid, -1)]
+		if frac then
+			local fa = tgt :: any
+			fa.ultTaken = fa.ultTaken or setmetatable({}, { __mode = "k" })
+			local rec = fa.ultTaken[att]
+			if not rec or rec.id ~= mid or t - rec.at > 8 then
+				rec = { id = mid, at = t, used = 0 }
+				fa.ultTaken[att] = rec
+			end
+			d = math.min(d, math.max(0, tgt.maxHp * frac - rec.used))
+			rec.used += d
+		end
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)

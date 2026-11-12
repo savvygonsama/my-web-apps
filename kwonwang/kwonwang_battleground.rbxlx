@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.76.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.77.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -303,8 +303,9 @@ Config.LATE_BOSS_KILLS = 15 -- 2.7.2판: 후반 보스 하나의 능력치 몫�
 -- 환생으로 열리는 경지의 적은 그 환생 배수만큼 덜 준다 (환생 배수는 다시 오르는 앞 경지를 빠르게 하는 몫)
 -- 3.2.6판: 초반 적이 너무 적게 줬다 (특급~현경은 경지 하나에 그 경지 적 80~130마리). 삼류~사경을 올려
 -- 삼류 10 · 이류 15 · 일류 16 · 특급 25 · 절정 26 · 초절정 31 · 화경 36 · 현경 39 · 사경 88마리 남짓. 생사경부터는 그대로
+-- 3.77판: 현경 31 → 사경 70 → 생사경 127 로 갑자기 뛰었다. 사경 · 생사경 적이 주는 양을 올려 31 → 50 → 85 → 139 로 고르게
 local GAIN_TABLE: { { number } } = {
-	{ 100, 15 }, { 168, 30 }, { 256, 55 }, { 374, 140 }, { 516, 190 }, { 686, 320 }, { 905, 450 }, { 1174, 620 }, { 1508, 1800 }, { 2343, 3600 },
+	{ 100, 15 }, { 168, 30 }, { 256, 55 }, { 374, 140 }, { 516, 190 }, { 686, 320 }, { 905, 450 }, { 1174, 620 }, { 1508, 2520 }, { 2343, 5380 },
 	{ 3595, 12000 }, { 5460, 40000 }, { 8223, 130000 }, { 12298, 470000 }, { 18283, 1600000 }, { 27041, 8000000 }, { 40433, 19000000 }, { 60098, 63000000 }, { 88871, 210000000 }, { 130833, 210000000 },
 }
 -- 그 경지 적의 전투력 (경지 번호로 위 표를 읽는다)
@@ -3337,6 +3338,9 @@ Config.SKILL_UNLOCK = { E = 1, R = 3, G = 5, X = 5 }
 Config.PETAL_KEEP = 6
 Config.PETAL_KEEP_FULL = 15
 Config.PETAL_DRAIN = 3
+-- 3.77판: 오의 (G) · 초 오의 (X) 한 번이 보스에게 주는 피해는 그 보스 최대 체력의 이 몫까지 (보스 한 방 막기)
+-- 초 오의의 벼락 비 (storm) 는 여럿에게 나눠 맞는다고 어림했는데, 보스 하나만 있으면 모두 보스에 꽂혀 한 방에 끝났다
+Config.ULT_BOSS_CAP = { G = 0.12, X = 0.18 }
 Config.SUPER_ULT_MULT = 1.25 -- 3.24.2판: 1.6 → 1.25 (초 오의: 예전 ×2.24 → ×1.25)
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
@@ -6247,6 +6251,89 @@ do
 	end
 end
 
+------------------------------------------------------------------------
+-- 3.77판 사냥터 보정: 그 경지 보통 플레이어 기준으로 땅마다 어림해 (계산: 졸병 잡는 시간 · 버티는 대 수 · 은자/분)
+--   hp: 졸병이 너무 질긴 땅 (한 마리 7초 넘게) 은 체력을 낮춘다 · dmg: 13대 안에 쓰러지는 땅은 피해를 낮추고, 45대 넘게 버티는 땅은 올린다
+--   coin: 같은 경지의 땅끼리 은자/분이 ±30% 안에 들고 경지가 오를수록 줄지 않게 · bossCoin: 보스 은자도 같은 식으로
+--   (hp · dmg 는 졸병에만. 보스의 체력 · 피해는 그대로)
+------------------------------------------------------------------------
+Config.ZONE_TUNE = {
+	["비류 폭포 계곡"] = { hp = 1.00, dmg = 1.00, coin = 0.96, bossCoin = 1.00 }, -- 삼류 지상 은자/분 198→190 · 잡기 4.0→4.0s · 버팀 16.4→16.4대 · 보스 0→0
+	["강호 들판"] = { hp = 1.00, dmg = 0.76, coin = 1.00, bossCoin = 1.00 }, -- 이류 지상 은자/분 174→174 · 잡기 6.3→6.3s · 버팀 9.8→13.0대 · 보스 0→0
+	["흑호채 (산적 소굴)"] = { hp = 1.00, dmg = 0.80, coin = 1.00, bossCoin = 1.00 }, -- 일류 지상 은자/분 233→233 · 잡기 6.8→6.8s · 버팀 10.4→13.0대 · 보스 1499→1499
+	["붉은 황야"] = { hp = 1.00, dmg = 1.00, coin = 1.33, bossCoin = 1.00 }, -- 절정 지상 은자/분 411→547 · 잡기 3.8→3.8s · 버팀 23.6→23.6대 · 보스 0→0
+	["서해 절벽"] = { hp = 1.00, dmg = 1.00, coin = 1.24, bossCoin = 1.00 }, -- 절정 지상 은자/분 442→547 · 잡기 3.7→3.7s · 버팀 22.5→22.5대 · 보스 0→0
+	["혈월곡"] = { hp = 1.00, dmg = 1.00, coin = 0.78, bossCoin = 1.00 }, -- 절정 지상 은자/분 1181→924 · 잡기 3.4→3.4s · 버팀 16.1→16.1대 · 보스 4200→4200
+	["독안개 늪"] = { hp = 1.00, dmg = 1.00, coin = 0.78, bossCoin = 1.00 }, -- 절정 지상 은자/분 1192→924 · 잡기 3.6→3.6s · 버팀 15.3→15.3대 · 보스 0→0
+	["천외봉 운해"] = { hp = 1.00, dmg = 0.90, coin = 1.00, bossCoin = 1.00 }, -- 무극 지상 은자/분 8439→8439 · 잡기 4.1→4.1s · 버팀 11.7→13.0대 · 보스 34597→34597
+	["석림"] = { hp = 1.00, dmg = 1.00, coin = 1.44, bossCoin = 1.27 }, -- 무극 지상 은자/분 4539→6528 · 잡기 4.1→4.1s · 버팀 26.1→26.1대 · 보스 18811→23830
+	["운해 평원"] = { hp = 1.00, dmg = 1.00, coin = 2.00, bossCoin = 1.00 }, -- 무극 천상 은자/분 2835→5670 · 잡기 5.7→5.7s · 버팀 15.9→15.9대 · 보스 0→0
+	["거균림 (버섯 숲)"] = { hp = 1.00, dmg = 1.00, coin = 1.50, bossCoin = 1.10 }, -- 무극 지상 은자/분 4344→6528 · 잡기 5.1→5.1s · 버팀 22.9→22.9대 · 보스 21597→23830
+	["뇌정봉"] = { hp = 1.00, dmg = 1.00, coin = 1.50, bossCoin = 1.10 }, -- 무극 천상 은자/분 4344→6528 · 잡기 5.1→5.1s · 버팀 22.9→22.9대 · 보스 21587→23830
+	["황사 협곡"] = { hp = 1.00, dmg = 0.81, coin = 1.26, bossCoin = 1.24 }, -- 무극 지상 은자/분 5191→6528 · 잡기 4.5→4.5s · 버팀 10.6→13.0대 · 보스 19289→23830
+	["단풍산"] = { hp = 1.00, dmg = 1.00, coin = 1.26, bossCoin = 1.11 }, -- 반선 지상 은자/분 6189→7790 · 잡기 4.1→4.1s · 버팀 13.6→13.6대 · 보스 27485→30512
+	["북명 빙원"] = { hp = 1.00, dmg = 1.00, coin = 0.98, bossCoin = 1.00 }, -- 반선 지상 은자/분 13453→13165 · 잡기 2.5→2.5s · 버팀 18.1→18.1대 · 보스 38116→38116
+	["운무 차밭"] = { hp = 1.00, dmg = 1.00, coin = 1.54, bossCoin = 1.43 }, -- 반선 지상 은자/분 5066→7790 · 잡기 4.2→4.2s · 버팀 16.0→16.0대 · 보스 21322→30512
+	["옥좌대"] = { hp = 1.00, dmg = 0.74, coin = 1.00, bossCoin = 1.00 }, -- 반선 천상 은자/분 9826→9826 · 잡기 6.1→6.1s · 버팀 9.6→13.0대 · 보스 50970→50970
+	["서역 사구"] = { hp = 1.00, dmg = 0.88, coin = 0.63, bossCoin = 0.73 }, -- 반선 지상 은자/분 20892→13165 · 잡기 3.2→3.2s · 버팀 11.4→13.0대 · 보스 70736→51565
+	["빙정궁"] = { hp = 1.00, dmg = 1.00, coin = 1.61, bossCoin = 1.39 }, -- 등선 천상 은자/분 5227→8413 · 잡기 4.6→4.6s · 버팀 19.0→19.0대 · 보스 23727→32953
+	["비천폭"] = { hp = 1.00, dmg = 1.00, coin = 1.65, bossCoin = 1.27 }, -- 등선 천상 은자/분 5090→8413 · 잡기 5.2→5.2s · 버팀 17.4→17.4대 · 보스 25883→32953
+	["극광대"] = { hp = 1.00, dmg = 1.00, coin = 1.58, bossCoin = 0.86 }, -- 등선 천상 은자/분 5331→8413 · 잡기 5.3→5.3s · 버팀 16.6→16.6대 · 보스 64910→55690
+	["청학봉"] = { hp = 1.00, dmg = 1.00, coin = 1.29, bossCoin = 1.13 }, -- 등선 천상 은자/분 6511→8413 · 잡기 5.7→5.7s · 버팀 25.0→25.0대 · 보스 29147→32953
+	["운무 죽림"] = { hp = 1.00, dmg = 1.00, coin = 1.40, bossCoin = 1.00 }, -- 등선 천상 은자/분 6015→8413 · 잡기 6.0→6.0s · 버팀 25.4→25.4대 · 보스 34750→34750
+	["봉황대"] = { hp = 1.00, dmg = 0.66, coin = 1.00, bossCoin = 0.69 }, -- 등선 천상 은자/분 14186→14186 · 잡기 6.2→6.2s · 버팀 8.6→13.0대 · 보스 80655→55690
+	["월광 호수"] = { hp = 1.00, dmg = 1.00, coin = 0.95, bossCoin = 1.00 }, -- 천외천 천상 은자/분 20500→19402 · 잡기 3.7→3.7s · 버팀 17.5→17.5대 · 보스 78503→78503
+	["선계 정원"] = { hp = 1.00, dmg = 1.00, coin = 0.93, bossCoin = 1.00 }, -- 천외천 천상 은자/분 20787→19402 · 잡기 4.0→4.0s · 버팀 16.2→16.2대 · 보스 83798→83798
+	["금운사"] = { hp = 1.00, dmg = 0.94, coin = 1.47, bossCoin = 1.10 }, -- 천외천 천상 은자/분 7801→11480 · 잡기 6.6→6.6s · 버팀 12.2→13.0대 · 보스 47220→52096
+	["천뢰옥"] = { hp = 0.86, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 혼원경 천상 은자/분 17046→19602 · 잡기 8.2→7.0s · 버팀 13.2→13.2대 · 보스 126833→126833
+	["운룡대"] = { hp = 0.56, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 무량경 천상 은자/분 13488→22920 · 잡기 12.5→7.0s · 버팀 17.6→17.6대 · 보스 150857→150857
+	["비상문"] = { hp = 0.60, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 태허경 천상 은자/분 14573→23032 · 잡기 11.6→7.0s · 버팀 28.2→28.2대 · 보스 151596→151596
+	["신선호"] = { hp = 0.73, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 태허경 천상 은자/분 16357→21825 · 잡기 9.6→7.0s · 버팀 41.0→41.0대 · 보스 141431→141431
+	["화탕지옥"] = { hp = 0.66, dmg = 1.00, coin = 0.98, bossCoin = 0.96 }, -- 태허경 지옥 은자/분 24050→34236 · 잡기 10.6→7.0s · 버팀 16.4→16.4대 · 보스 230554→221970
+	["도산지옥"] = { hp = 0.95, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 권왕 지옥 은자/분 34782→36412 · 잡기 7.4→7.0s · 버팀 32.9→32.9대 · 보스 239686→239686
+	["독사지옥"] = { hp = 1.00, dmg = 1.15, coin = 1.00, bossCoin = 1.00 }, -- 허무경 지옥 은자/분 90439→90439 · 잡기 3.9→3.9s · 버팀 51.8→45.0대 · 보스 358842→358842
+	["발설지옥"] = { hp = 1.00, dmg = 1.03, coin = 1.00, bossCoin = 1.00 }, -- 허무경 지옥 은자/분 83602→83602 · 잡기 4.8→4.8s · 버팀 46.2→45.0대 · 보스 400077→400077
+	["무간지옥"] = { hp = 0.91, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 허무경 지옥 은자/분 70729→76587 · 잡기 7.7→7.0s · 버팀 26.7→26.7대 · 보스 504086→504086
+	["혈지옥"] = { hp = 0.87, dmg = 1.00, coin = 1.00, bossCoin = 1.00 }, -- 허무경 지옥 은자/분 66433→75616 · 잡기 8.1→7.0s · 버팀 43.9→43.9대 · 보스 497788→497788
+	["철환지옥"] = { hp = 0.55, dmg = 1.56, coin = 1.46, bossCoin = 1.19 }, -- 허무경 지옥 은자/분 23846→60151 · 잡기 12.7→7.0s · 버팀 70.2→45.0대 · 보스 270672→321720
+	["한빙지옥"] = { hp = 0.68, dmg = 1.00, coin = 1.00, bossCoin = 0.99 }, -- 허무경 지옥 은자/분 59147→83392 · 잡기 10.2→7.0s · 버팀 39.5→39.5대 · 보스 548894→543707
+}
+-- 진영 · 보스 자리 → 그 땅의 보정 (Npc.spawn 은 진영의 가운데 자리로 부른다)
+local tuneByAt: { [string]: any } = {}
+local function atKey(v: Vector3): string
+	return string.format("%d:%d:%d", math.floor(v.X + 0.5), math.floor(v.Y + 0.5), math.floor(v.Z + 0.5))
+end
+function Config.buildZoneTune()
+	local function add(name: string?, zone: any)
+		local t = name and Config.ZONE_TUNE[name]
+		if not t then
+			return
+		end
+		for _, c in ipairs(zone.camps or {}) do
+			tuneByAt[atKey(c.at)] = t
+		end
+		if zone.boss and zone.boss.at then
+			tuneByAt[atKey(zone.boss.at)] = t
+		end
+	end
+	for _, r in ipairs(Config.Regions or {}) do
+		add(r.name, r)
+	end
+	for _, isl in ipairs((Config.SKY and Config.SKY.islands) or {}) do
+		add(isl.name or isl.id, isl)
+	end
+	for _, z in ipairs((Config.HELL and Config.HELL.zones) or {}) do
+		add(z.name, z)
+	end
+end
+local tuneBuilt = false
+function Config.tuneAt(at: Vector3): any
+	if not tuneBuilt then
+		tuneBuilt = true
+		Config.buildZoneTune()
+	end
+	return tuneByAt[atKey(at)]
+end
 ------------------------------------------------------------------------
 -- 3.7판 사부의 부탁 (미니 퀘스트): 높은 권법의 사부는 시험 전에 부탁을 하나씩 한다. 다 들어주어야 시험을 낸다
 -- 단계: visit (그곳에 가기, night = 밤에만 · day = 낮에만) · find (흩어진 것 찾기, T) · order (차례대로 짚기, T. 틀리면 처음부터) ·
@@ -12030,7 +12117,7 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -19312,6 +19399,22 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = true
 	end
 	d = battleShape(att, tgt, d)
+	-- 3.77판: 오의 (G) · 초 오의 (X) 한 번으로는 보스 최대 체력의 일정 몫까지만 (Config.ULT_BOSS_CAP). 같은 오의의 벼락 · 메아리를 모두 더해 센다
+	if opt.isSkill and tgt.npc and tgt.model:GetAttribute("Boss") == true then
+		local mid = type(move.id) == "string" and move.id or ""
+		local frac = Config.ULT_BOSS_CAP and Config.ULT_BOSS_CAP[string.sub(mid, -1)]
+		if frac then
+			local fa = tgt :: any
+			fa.ultTaken = fa.ultTaken or setmetatable({}, { __mode = "k" })
+			local rec = fa.ultTaken[att]
+			if not rec or rec.id ~= mid or t - rec.at > 8 then
+				rec = { id = mid, at = t, used = 0 }
+				fa.ultTaken[att] = rec
+			end
+			d = math.min(d, math.max(0, tgt.maxHp * frac - rec.used))
+			rec.used += d
+		end
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)
@@ -22477,6 +22580,16 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		f.dmgMult *= fh
 	end
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
+	-- 3.77판 사냥터 보정 (Config.ZONE_TUNE): 졸병의 체력 · 피해, 은자
+	local tune = (not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" and region ~= "summon") and Config.tuneAt(at) or nil
+	if tune then
+		if not isBoss then
+			f.maxHp = math.max(1, math.floor(f.maxHp * (tune.hp or 1)))
+			f.hp = f.maxHp
+			f.dmgMult *= tune.dmg or 1
+		end
+		;(f :: any).coinTune = isBoss and (tune.bossCoin or 1) or (tune.coin or 1)
+	end
 	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
 	if not isBoss and not def.elite and not def.duel and lv <= 4 then
 		(f :: any).deflectMul = 0.45

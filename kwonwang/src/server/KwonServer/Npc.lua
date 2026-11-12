@@ -385,6 +385,16 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		f.dmgMult *= fh
 	end
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
+	-- 3.77판 사냥터 보정 (Config.ZONE_TUNE): 졸병의 체력 · 피해, 은자
+	local tune = (not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" and region ~= "summon") and Config.tuneAt(at) or nil
+	if tune then
+		if not isBoss then
+			f.maxHp = math.max(1, math.floor(f.maxHp * (tune.hp or 1)))
+			f.hp = f.maxHp
+			f.dmgMult *= tune.dmg or 1
+		end
+		;(f :: any).coinTune = isBoss and (tune.bossCoin or 1) or (tune.coin or 1)
+	end
 	-- 초반 적은 흘리기 판정이 좁다 (막아도 잘 흘리지 못한다)
 	if not isBoss and not def.elite and not def.duel and lv <= 4 then
 		(f :: any).deflectMul = 0.45

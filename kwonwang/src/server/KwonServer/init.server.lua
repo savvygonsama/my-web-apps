@@ -2299,7 +2299,7 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
