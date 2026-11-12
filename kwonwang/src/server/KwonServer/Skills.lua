@@ -78,6 +78,24 @@ local function strike(f: any, tgt: any, h: any, move: any)
 	if tgt.dead or f.dead then
 		return
 	end
+	-- 3.78판: 오의의 같은 타격이 한 상대에 여러 번 꽂히면 FULL 번 뒤로는 약하게 (Config.ULT_REPEAT)
+	local tl = f.ultTally
+	if tl and move and tl.id == move.id and os.clock() - tl.at < 10 and h then
+		local per = tl.n[tgt]
+		if not per then
+			per = {}
+			tl.n[tgt] = per
+		end
+		local k = (per[h] or 0) + 1
+		per[h] = k
+		local R = Config.ULT_REPEAT
+		if R and k > R.full then
+			local c = table.clone(h)
+			c.dmg = (c.dmg or 0) * R.tail
+			c.posture = (c.posture or 0) * R.tail
+			h = c
+		end
+	end
 	Combat.applyHit(f, tgt, h, { move = move, isSkill = true, chain = true })
 end
 
@@ -162,6 +180,9 @@ function Skills.run(f: any, move: any, ctx: any)
 	end
 	local hit = m.hit and scaled(m.hit, sc) or nil
 	local kind = m.kind
+	if isUlt then
+		f.ultTally = { id = move.id, at = os.clock(), n = setmetatable({}, { __mode = "k" }) }
+	end
 
 	if kind == "zone" then
 		local center = m.at == "self" and f.root.Position or f.root.Position + look * (m.dist or 8)

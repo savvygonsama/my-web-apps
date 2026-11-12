@@ -106,7 +106,7 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 			p.coins -= need
 			st.dirty = true
 			advance(player, sid)
-			ctx.dialog(player, { who = who, title = title, text = "...받으마. 이것으로 네 마음을 보았다. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
+			ctx.dialog(player, { who = who, title = title, text = "...그래, 받았다. 생각보다 빨리 왔구나. 시험을 내마. (다시 T를 누르면 시험이 시작된다)" })
 		else
 			ctx.dialog(player, { who = who, title = title, text = string.format("...아직이다. 💰 %s을 가져오너라. (지금 💰 %s)", Config.formatNumber(need), Config.formatNumber(p.coins)) })
 		end

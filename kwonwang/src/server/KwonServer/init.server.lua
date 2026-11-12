@@ -3582,7 +3582,7 @@ function Gate.notify(player: Player, p: Profile, st: State)
 	if nxt and (st :: any).gateNotified ~= nxt then
 		(st :: any).gateNotified = nxt
 		Push:FireClient(player, "dialog", { who = "⛩ 경지의 관문", title = Config.Realms[nxt].name .. "의 관문이 열렸다",
-			text = "몸은 이미 다음 경지에 닿았다. 그러나 경지는 몸만으로 오르지 않는다. 관문 수호자를 꺾어라. 관문을 넘기 전에는 능력치가 더 오르지 않는다. (능력치 창의 '⛩ 관문 도전')" })
+			text = "몸은 이미 다음 경지에 닿았다. 남은 건 관문 수호자다. 꺾어라. 관문을 넘기 전에는 능력치가 더 오르지 않는다. (능력치 창의 '⛩ 관문 도전')" })
 		pushState(player)
 	end
 end
@@ -6256,7 +6256,7 @@ if W.eggs then
 					p.seen.egg_sword = true
 					p.coins += E.sword.coins
 					Push:FireClient(player, "dialog", { who = "🗡 바위에 박힌 검", title = "검이 빠졌다",
-						text = string.format("백 번째 당기자 검이 스르륵 빠졌다. 칼자루에 작은 글씨가 있다. '힘이 아니라 끈기였다.' 검은 녹슬었지만, 칼자루 속에서 💰 %s 은자가 쏟아졌다.", Config.formatNumber(E.sword.coins)) })
+						text = string.format("백 번째 당기자 검이 스르륵 빠졌다. 칼자루에 누가 칼끝으로 새겨 놨다. '백 번 당긴 놈, 이름 여기 적어라.' 검은 녹슬었지만, 칼자루 속에서 💰 %s 은자가 쏟아졌다.", Config.formatNumber(E.sword.coins)) })
 				elseif n % 10 == 0 then
 					toast(player, string.format("🗡 검이 아주 조금 움직인 것 같다 (%d/%d)", n, E.sword.pulls))
 				else
@@ -6291,7 +6291,7 @@ if W.eggs then
 				p.skyGems += EE.gems
 				p.scrolls += EE.scrolls
 				Push:FireClient(player, "dialog", { who = "🌫 망각의 정원", title = "세상의 끝, 그 너머",
-					text = string.format("무너지는 돌길을 건너 아무도 오지 않는 정원에 닿았다. 낡은 상자 속에 누군가 남긴 글이 있다. '끝이라 부르는 곳은, 대개 아직 아무도 건너지 않은 곳이다.' 💰 %s 은자 · 💠 천정 %d · 📜 두루마리 %d개를 얻었다.", Config.formatNumber(EE.coins), EE.gems, EE.scrolls) })
+					text = string.format("무너지는 돌길을 건너 아무도 오지 않는 정원에 닿았다. 낡은 상자 속에 쪽지가 있다. '여기까지 오느라 고생했다. 뚜껑은 닫아 두고 가라.' 💰 %s 은자 · 💠 천정 %d · 📜 두루마리 %d개를 얻었다.", Config.formatNumber(EE.coins), EE.gems, EE.scrolls) })
 			elseif id == "ducks" then
 				if not p.seen.egg_ducks then
 					p.seen.egg_ducks = true
