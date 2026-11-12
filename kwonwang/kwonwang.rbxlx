@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.77.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.77.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3340,7 +3340,8 @@ Config.PETAL_KEEP_FULL = 15
 Config.PETAL_DRAIN = 3
 -- 3.77판: 오의 (G) · 초 오의 (X) 한 번이 보스에게 주는 피해는 그 보스 최대 체력의 이 몫까지 (보스 한 방 막기)
 -- 초 오의의 벼락 비 (storm) 는 여럿에게 나눠 맞는다고 어림했는데, 보스 하나만 있으면 모두 보스에 꽂혀 한 방에 끝났다
-Config.ULT_BOSS_CAP = { G = 0.12, X = 0.18 }
+-- 3.77.1판: 상한을 올렸다 (오의는 세야 한다). 등급이 높을수록 더 (상급 ×1 → 신 ×1.45). 내 전투력이 보스의 OVER 배를 넘으면 상한 없음 (지난 보스는 한 방)
+Config.ULT_BOSS_CAP = { G = 0.2, X = 0.3, gradeStep = 0.05, over = 2.5 }
 Config.SUPER_ULT_MULT = 1.25 -- 3.24.2판: 1.6 → 1.25 (초 오의: 예전 ×2.24 → ×1.25)
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
@@ -19386,8 +19387,23 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 3.77판: 오의 (G) · 초 오의 (X) 한 번으로는 보스 최대 체력의 일정 몫까지만 (Config.ULT_BOSS_CAP). 같은 오의의 벼락 · 메아리를 모두 더해 센다
 	if opt.isSkill and tgt.npc and tgt.model:GetAttribute("Boss") == true then
 		local mid = type(move.id) == "string" and move.id or ""
-		local frac = Config.ULT_BOSS_CAP and Config.ULT_BOSS_CAP[string.sub(mid, -1)]
+		local CAP = Config.ULT_BOSS_CAP
+		local frac = CAP and CAP[string.sub(mid, -1)]
+		-- 내가 보스보다 훨씬 세면 (지난 땅의 보스) 상한 없이
+		local ap, tp = (att :: any).power or 0, (tgt :: any).power or 0
+		if frac and tp > 0 and ap >= tp * (CAP.over or 2.5) then
+			frac = nil
+		end
 		if frac then
+			-- 등급이 높을수록 한 번에 더 깎는다
+			local st = Combat.styleOf(att)
+			local tier = 1
+			for i, g in ipairs(Config.GRADE_ORDER or {}) do
+				if st and st.grade == g then
+					tier = i
+				end
+			end
+			frac = math.min(0.6, frac * (1 + (CAP.gradeStep or 0) * (tier - 1)))
 			local fa = tgt :: any
 			fa.ultTaken = fa.ultTaken or setmetatable({}, { __mode = "k" })
 			local rec = fa.ultTaken[att]

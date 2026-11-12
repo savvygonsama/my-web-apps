@@ -752,8 +752,23 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 3.77판: 오의 (G) · 초 오의 (X) 한 번으로는 보스 최대 체력의 일정 몫까지만 (Config.ULT_BOSS_CAP). 같은 오의의 벼락 · 메아리를 모두 더해 센다
 	if opt.isSkill and tgt.npc and tgt.model:GetAttribute("Boss") == true then
 		local mid = type(move.id) == "string" and move.id or ""
-		local frac = Config.ULT_BOSS_CAP and Config.ULT_BOSS_CAP[string.sub(mid, -1)]
+		local CAP = Config.ULT_BOSS_CAP
+		local frac = CAP and CAP[string.sub(mid, -1)]
+		-- 내가 보스보다 훨씬 세면 (지난 땅의 보스) 상한 없이
+		local ap, tp = (att :: any).power or 0, (tgt :: any).power or 0
+		if frac and tp > 0 and ap >= tp * (CAP.over or 2.5) then
+			frac = nil
+		end
 		if frac then
+			-- 등급이 높을수록 한 번에 더 깎는다
+			local st = Combat.styleOf(att)
+			local tier = 1
+			for i, g in ipairs(Config.GRADE_ORDER or {}) do
+				if st and st.grade == g then
+					tier = i
+				end
+			end
+			frac = math.min(0.6, frac * (1 + (CAP.gradeStep or 0) * (tier - 1)))
 			local fa = tgt :: any
 			fa.ultTaken = fa.ultTaken or setmetatable({}, { __mode = "k" })
 			local rec = fa.ultTaken[att]

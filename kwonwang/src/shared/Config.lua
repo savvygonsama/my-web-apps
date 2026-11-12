@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.77.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.77.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3320,7 +3320,8 @@ Config.PETAL_KEEP_FULL = 15
 Config.PETAL_DRAIN = 3
 -- 3.77판: 오의 (G) · 초 오의 (X) 한 번이 보스에게 주는 피해는 그 보스 최대 체력의 이 몫까지 (보스 한 방 막기)
 -- 초 오의의 벼락 비 (storm) 는 여럿에게 나눠 맞는다고 어림했는데, 보스 하나만 있으면 모두 보스에 꽂혀 한 방에 끝났다
-Config.ULT_BOSS_CAP = { G = 0.12, X = 0.18 }
+-- 3.77.1판: 상한을 올렸다 (오의는 세야 한다). 등급이 높을수록 더 (상급 ×1 → 신 ×1.45). 내 전투력이 보스의 OVER 배를 넘으면 상한 없음 (지난 보스는 한 방)
+Config.ULT_BOSS_CAP = { G = 0.2, X = 0.3, gradeStep = 0.05, over = 2.5 }
 Config.SUPER_ULT_MULT = 1.25 -- 3.24.2판: 1.6 → 1.25 (초 오의: 예전 ×2.24 → ×1.25)
 
 -- 모든 권법이 함께 쓰는 몸놀림 기술
