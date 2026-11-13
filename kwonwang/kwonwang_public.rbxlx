@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.80.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.81.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -30239,22 +30239,24 @@ end
 World.nearRoad = nearRoad
 
 local function roads()
+	-- 3.81판: 길이 만나는 곳에서 한 길의 어두운 가장자리가 다른 길 바닥 위로 올라와 선이 길을 가로질렀다.
+	-- 이제 모든 가장자리는 모든 길 바닥보다 아래에 깐다 (만나는 곳은 바닥끼리 이어진다).
+	-- 바닥끼리 겹친 곳의 깜빡임은 ZFix 가 고친다. 가장자리는 길마다 조금씩 낮게 (서로 깜빡이지 않게, ZFix 는 건드리지 않는다)
+	local SURF_Y = 0.12
 	for k, road in ipairs(Config.Roads) do
+		local ey = 0.06 - k * 0.01
 		for i = 1, #road - 1 do
 			local a, b = road[i], road[i + 1]
 			local len = (b - a).Magnitude
 			if len > 0.5 then
-				-- 길마다 살짝 다른 높이 (겹치는 곳이 깜빡이지 않게). 자갈 가장자리 위에 돌을 깐 가운데 길
-				local y = -0.08 + k * 0.02
-				local mid = (a + b) / 2 + Vector3.new(0, y, 0)
-				local cf = CFrame.lookAt(mid, mid + (b - a))
+				local flat = (a + b) / 2
+				local cf = CFrame.lookAt(Vector3.new(flat.X, 0, flat.Z), Vector3.new(flat.X, 0, flat.Z) + Vector3.new(b.X - a.X, 0, b.Z - a.Z))
 				-- 3.31.1판: 조각 끝을 늘이지 않고 (늘이면 모퉁이마다 네모 귀가 겹쳐 튀어나왔다), 꼭짓점마다 둥근 이음을 둔다
-				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len), CFrame = cf, Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
-				part({ Name = "Road", Size = Vector3.new(14, 1, len), CFrame = cf + Vector3.new(0, 0.01, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+				part({ Name = "RoadEdge", Size = Vector3.new(22, 1, len), CFrame = cf + Vector3.new(0, ey, 0), Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+				part({ Name = "Road", Size = Vector3.new(14, 1, len), CFrame = cf + Vector3.new(0, SURF_Y, 0), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
 				for _, v in ipairs({ a, b }) do
-					local jp = Vector3.new(v.X, y, v.Z)
-					part({ Name = "RoadJointEdge", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 22, 22), CFrame = CFrame.new(jp) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
-					part({ Name = "RoadJoint", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 14, 14), CFrame = CFrame.new(jp + Vector3.new(0, 0.01, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
+					part({ Name = "RoadJointEdge", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 22, 22), CFrame = CFrame.new(v.X, ey, v.Z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(150, 136, 112), Material = Enum.Material.Pebble, Parent = folder })
+					part({ Name = "RoadJoint", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 14, 14), CFrame = CFrame.new(v.X, SURF_Y, v.Z) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(188, 172, 140), Material = Enum.Material.Cobblestone, Parent = folder })
 				end
 			end
 		end
@@ -37567,6 +37569,10 @@ local function flatTop(p: BasePart): Item?
 		return nil
 	end
 	if p:FindFirstChildOfClass("SpecialMesh") then
+		return nil
+	end
+	-- 3.81판: 길 가장자리는 일부러 길마다 다른 높이로 바닥 아래에 깔았다 (올리면 길 바닥 위로 튀어나온다)
+	if p.Name == "RoadEdge" or p.Name == "RoadJointEdge" then
 		return nil
 	end
 	local cf, sz = p.CFrame, p.Size

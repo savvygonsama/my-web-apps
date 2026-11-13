@@ -18,6 +18,10 @@ local function flatTop(p: BasePart): Item?
 	if p:FindFirstChildOfClass("SpecialMesh") then
 		return nil
 	end
+	-- 3.81판: 길 가장자리는 일부러 길마다 다른 높이로 바닥 아래에 깔았다 (올리면 길 바닥 위로 튀어나온다)
+	if p.Name == "RoadEdge" or p.Name == "RoadJointEdge" then
+		return nil
+	end
 	local cf, sz = p.CFrame, p.Size
 	local shape = p:IsA("Part") and (p :: Part).Shape or Enum.PartType.Block
 	local hx, hz
