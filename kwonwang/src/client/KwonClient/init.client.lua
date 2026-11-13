@@ -1,4 +1,4 @@
--- 권왕(拳王): 맨손의 강호 — 화면
+-- 권왕(拳王): 맨손의 강호: 화면
 -- 누르는 순간 내 몸이 먼저 움직이고(기다리지 않는다), 맞힌 상대는 서버에 알린다
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -154,7 +154,7 @@ local function watchChar(char: Model)
 	Sakura.watch(char)
 	-- 3.19.9판 업적 오라 (무협 기운)
 	AchAura.watch(char)
-	-- 탈것: 아래에 말·범·구름을 그리고, 탄 자세로
+	-- 탈것: 아래에 말·범·구름을 그리고 탄 자세로
 	Mount.watch(char)
 	char:GetAttributeChangedSignal("Mount"):Connect(function()
 		Anim.setLoop(char, char:GetAttribute("Mount") and "ride" or nil, 0.8)
@@ -293,7 +293,7 @@ task.spawn(function()
 		label.TextScaled = true
 		label.TextWrapped = true
 		label.TextColor3 = Color3.fromRGB(255, 245, 225)
-		label.Text = "「" .. text .. "」"
+		label.Text = "‘" .. text .. "’"
 		label.Parent = frame
 		bb.Parent = head
 		task.delay(5, function()
@@ -817,7 +817,7 @@ startMove = function(slot: any, charge: number?)
 		if slot == "X" and style.fans then
 			Sakura.superIntro(char)
 		end
-		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며, 시야가 좁혀졌다가 터진다
+		-- 오의: 화면이 한순간 뒤집히고 집중선이 몰려들며 시야가 좁혀졌다가 터진다
 		UI.ultFrame(style.color, style.color2)
 		fovPunch(-10, 0.55)
 		Fx.skillAura(char, style.color, style.color2, math.max(1.2, dur), true)
@@ -1214,7 +1214,7 @@ UserInputService.InputEnded:Connect(function(input: InputObject)
 end)
 UI.mobile({
 	attack = attack,
-	-- 3.11.3판: 묶음 안의 점프 단추 (땅에서는 뛰고, 공중에서는 두 번 뛰기)
+	-- 3.11.3판: 묶음 안의 점프 단추 (땅에서는 뛰고 공중에서는 두 번 뛰기)
 	jump = function()
 		local hum = myHum()
 		if not hum or dead then
@@ -1542,7 +1542,7 @@ function handlers.raidReward(data: any)
 	Fx.sound("ping", 0.9, 1.1)
 end
 
--- 운석 낙하: 하늘에서 불덩이가 떨어지고, 자리에 표시
+-- 운석 낙하: 하늘에서 불덩이가 떨어지고 자리에 표시
 function handlers.meteor(data: any)
 	UI.banner("☄ 운석이 떨어진다!", data.island .. "에 운석 수호수가 나타난다", Color3.fromRGB(200, 150, 255))
 	local at: Vector3 = data.at
@@ -1981,7 +1981,7 @@ function handlers.hit(data: any)
 			shake(0.35)
 		end
 	elseif kind == "deflect" then
-		-- 흘리기: 모든 게 아주 잠깐 멈추고, 차가운 빛이 번쩍
+		-- 흘리기: 모든 게 아주 잠깐 멈추고 차가운 빛이 번쩍
 		Fx.hitstop({ a, t }, 0.18)
 		Fx.spark(pos, Color3.fromRGB(180, 230, 255), 1.6, 12)
 		Fx.ring(pos, Color3.fromRGB(200, 240, 255), 1, 10, 0.3, dir)
@@ -1991,7 +1991,7 @@ function handlers.hit(data: any)
 			deflectAt = os.clock()
 			Fx.text(pos + Vector3.new(0, 7, 0), "지금 클릭 → 반격", Color3.fromRGB(255, 220, 120), 26, 1)
 		end
-		-- 흘린 쪽은 몸을 돌려 바깥으로 쓸어 내고, 친 쪽은 헛힘에 지나쳐 휘청인다
+		-- 흘린 쪽은 몸을 돌려 바깥으로 쓸어 내고 친 쪽은 헛힘에 지나쳐 휘청인다
 		local side = (type(data.side) == "number" and data.side < 0) and -1 or 1
 		if t then
 			Anim.play(t, side > 0 and "parry_r" or "parry_l", 0.6, { fadeOut = 0.2 })
@@ -2495,7 +2495,7 @@ function handlers.mastery(data: any)
 		-- 각성! 하늘로 빛이 솟고 화면이 갈라진다
 		local a = Config.AWAKEN[data.awaken]
 		UI.cinematic(a.mark .. " " .. s.name .. " " .. a.name, s.color, 2.2)
-		UI.banner(a.mark .. " " .. a.name .. "!", data.awaken == 1 and "기술이 세지고, 연타 다섯 번째 '" .. s.finisher.name .. "'가 열렸다" or "모든 기술이 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다", s.color)
+		UI.banner(a.mark .. " " .. a.name .. "!", data.awaken == 1 and "기술이 세지고 연타 다섯 번째 '" .. s.finisher.name .. "'가 열렸다" or "모든 기술이 세지고 그림자 메아리가 기술을 한 번 더 되풀이한다", s.color)
 		local char = myChar()
 		if char then
 			Fx.ult(s.id, char, 1.6)
@@ -2664,15 +2664,15 @@ function handlers.ach(data: any)
 		table.insert(parts, "📜 +" .. a.scrolls)
 	end
 	if a.title then
-		table.insert(parts, "칭호 「" .. a.title .. "」 (🏆 업적에서 달기)")
+		table.insert(parts, "칭호 ‘" .. a.title .. "’ (🏆 업적에서 달기)")
 	end
 	local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 	if mt then
-		table.insert(parts, mt.icon .. " 전용 탈것 「" .. mt.name .. "」 (만물상 → 🐎 탈것에서 고르기)")
+		table.insert(parts, mt.icon .. " 전용 탈것 ‘" .. mt.name .. "’ (만물상 → 🐎 탈것에서 고르기)")
 	end
 	local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
 	if au then
-		table.insert(parts, "✨ 업적 오라 「" .. au.name .. "」 (만물상 → 🎨 꾸미기에서 바꾸기)")
+		table.insert(parts, "✨ 업적 오라 ‘" .. au.name .. "’ (만물상 → 🎨 꾸미기에서 바꾸기)")
 	end
 	-- 3.13판: 업적 등급에 따라 알림도 커진다 (전설·신화는 화면이 번쩍이고 종이 크게 울린다)
 	local tier = a.tier or 1
@@ -2690,7 +2690,7 @@ function handlers.ach(data: any)
 	end
 end
 
--- 1.9판: 누군가 환생한다. 빛기둥이 솟고, 몸이 한순간 하얗게 비었다가 환생 빛깔로 다시 차오른다
+-- 1.9판: 누군가 환생한다. 빛기둥이 솟고 몸이 한순간 하얗게 비었다가 환생 빛깔로 다시 차오른다
 function handlers.rebirth(data: any)
 	local m: Model? = data.m
 	local r = m and rootOf(m)
@@ -2784,13 +2784,13 @@ end
 -- 3.22판: 극 광속권 · 초가속 (모두에게 알림, 가까우면 시간이 느려지는 연출)
 function handlers.geukHaste(data: any)
 	Speed.init({ shake = shake, flash = UI.flash })
-	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "세상이 느려 보일 만큼 빨라진다. 둘레의 적은 굼뜨고, 그의 걸음은 눈에 보이지 않으며, 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
+	UI.banner(string.format("🌠 초가속 · %s", data.name or ""), "세상이 느려 보일 만큼 빨라진다. 둘레의 적은 굼뜨고 그의 걸음은 눈에 보이지 않으며 모든 타격이 잔상으로 한 번 더 친다", Color3.fromRGB(255, 215, 110))
 	Speed.haste(data)
 end
 -- 3.16판: 극 공백권 · 격자 전개 (모두에게 알림, 가까우면 격자가 보인다)
 function handlers.geukDomain(data: any)
 	Null.init({ shake = shake, flash = UI.flash })
-	UI.banner(string.format("⬜ 격자 전개 · %s", data.name or ""), "한 점에서 흰 격자가 천천히 펼쳐진다. 격자 안의 적은 굼뜨고 격자에 베이며, 그의 기술이 모두 바뀐다", Color3.fromRGB(240, 240, 245))
+	UI.banner(string.format("⬜ 격자 전개 · %s", data.name or ""), "한 점에서 흰 격자가 천천히 펼쳐진다. 격자 안의 적은 굼뜨고 격자에 베이며 그의 기술이 모두 바뀐다", Color3.fromRGB(240, 240, 245))
 	Null.domain(data)
 end
 -- 3.1판: 윤회대 제단의 환생 의식 (모두에게 보인다)

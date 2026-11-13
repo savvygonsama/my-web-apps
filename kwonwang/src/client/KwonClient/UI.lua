@@ -112,7 +112,7 @@ function UIB.styleShowcase(card: Frame, sdef: any, left: number)
 	for _, slot in ipairs({ "E", "R", "G", "X" }) do
 		local m = sdef.skills and sdef.skills[slot]
 		if m then
-			table.insert(sk, string.format("<b>%s</b> %s — %s", slot, m.name, m.desc))
+			table.insert(sk, string.format("<b>%s</b> %s: %s", slot, m.name, m.desc))
 		end
 	end
 	local info = Instance.new("TextLabel")
@@ -234,7 +234,7 @@ function UI.device(): string
 end
 
 -- 화면 크기에 맞춘 확대. 게임 시작 직후엔 화면 크기가 1×1로 잡힐 때가 있어
--- (그때 재면 창이 안 보일 만큼 작아진다) 크기가 바뀔 때마다 다시 재고, 너무 작으면 무시한다
+-- (그때 재면 창이 안 보일 만큼 작아진다) 크기가 바뀔 때마다 다시 재고 너무 작으면 무시한다
 local scales: { { s: UIScale, kind: string } } = {}
 local function scaleFor(kind: string): number
 	if kind == "window" then
@@ -625,7 +625,7 @@ end
 ------------------------------------------------------------------------
 -- 적 머리 위 이름표 (이름, 체력, 균형)
 ------------------------------------------------------------------------
--- 3.23.3판: 이름표가 서로 겹치면 (몹이 뭉쳐 있을 때) 가까운 것부터 두고, 겹치는 먼 것은 한 칸씩 위로 올린다
+-- 3.23.3판: 이름표가 서로 겹치면 (몹이 뭉쳐 있을 때) 가까운 것부터 두고 겹치는 먼 것은 한 칸씩 위로 올린다
 local enemyTags: { { bb: BillboardGui, head: BasePart } } = {}
 local tagLoop = false
 function UIB.startTagLoop()
@@ -1073,7 +1073,7 @@ function UIB.buildStyles()
 			local cur = (state and state.mq and state.mq[id]) or 0
 			local got = (state and state.mqn and state.mqn[id]) or 0
 			table.insert(lines, "")
-			table.insert(lines, string.format('<font color="#B8E0FF"><b>📜 사부의 부탁 「%s」</b></font>', MQ.title))
+			table.insert(lines, string.format('<font color="#B8E0FF"><b>📜 사부의 부탁 ‘%s’</b></font>', MQ.title))
 			if cur == 0 then
 				table.insert(lines, '<font color="#C8C8C8">사부를 찾아 말을 걸면 시험 전에 부탁을 한다</font>')
 			end
@@ -1376,7 +1376,7 @@ function UIB.buildStats()
 		table.insert(lines, "")
 		for _, s in ipairs(Config.Stats) do
 			local v = state.stats[s.id] or 0
-			table.insert(lines, string.format("%s <b>%s %s</b>  — %s ×%.2f", s.icon, s.name, Config.formatNumber(v), s.desc, Config.statMult(v)))
+			table.insert(lines, string.format("%s <b>%s %s</b>: %s ×%.2f", s.icon, s.name, Config.formatNumber(v), s.desc, Config.statMult(v)))
 		end
 		table.insert(lines, "")
 		table.insert(lines, "<b>수련하는 곳</b>")
@@ -1464,17 +1464,17 @@ function UIB.buildAch()
 		end
 		local mt = a.mount and Config.MOUNT_BY_ID[a.mount]
 		if mt then
-			table.insert(rewards, mt.icon .. " 전용 탈것 「" .. mt.name .. "」")
+			table.insert(rewards, mt.icon .. " 전용 탈것 ‘" .. mt.name .. "’")
 		end
 		local au = a.aura and Config.ACH_AURA_BY_ID[a.aura]
 		if au then
-			table.insert(rewards, "✨ 오라 「" .. au.name .. "」")
+			table.insert(rewards, "✨ 오라 ‘" .. au.name .. "’")
 		end
 		local sub = text({ Position = UDim2.new(0, 64, 0, 32), Size = UDim2.new(1, -260, 0, 18), Text = a.desc .. "   ·   " .. table.concat(rewards, "  "), TextSize = 14, TextColor3 = C.dim, TextTruncate = Enum.TextTruncate.AtEnd, TextWrapped = false, Parent = card })
 		-- 칭호 미리보기: 등급 빛깔 (전설·신화는 흐르는 빛깔)
 		local tp: TextLabel? = nil
 		if a.title then
-			local t = text({ Position = UDim2.new(0, 64, 0, 50), Size = UDim2.new(1, -260, 0, 18), Text = "칭호 「" .. a.title .. "」", TextSize = 14, Font = Enum.Font.GothamBlack, TextColor3 = (a.tier or 1) >= 3 and Color3.new(1, 1, 1) or T.color, Parent = card })
+			local t = text({ Position = UDim2.new(0, 64, 0, 50), Size = UDim2.new(1, -260, 0, 18), Text = "칭호 ‘" .. a.title .. "’", TextSize = 14, Font = Enum.Font.GothamBlack, TextColor3 = (a.tier or 1) >= 3 and Color3.new(1, 1, 1) or T.color, Parent = card })
 			if (a.tier or 1) >= 3 then
 				local cols = (a.tier == 5) and { Color3.fromRGB(255, 90, 110), Color3.fromRGB(255, 200, 80), Color3.fromRGB(140, 255, 160), Color3.fromRGB(110, 200, 255), Color3.fromRGB(200, 120, 255) }
 					or (a.tier == 4 and { Color3.fromRGB(255, 196, 70), Color3.fromRGB(255, 250, 220), Color3.fromRGB(255, 196, 70) } or { Color3.fromRGB(255, 255, 255), Color3.fromRGB(210, 150, 255) })
@@ -1554,7 +1554,7 @@ function UIB.buildAch()
 		end
 		local t = state.title and Config.ACH_BY_ID[state.title]
 		local tierTxt = t and Config.ACH_TIERS[t.tier or 1] or nil
-		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">「%s」 [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
+		head.Text = string.format("<b>이룬 업적 %d / %d</b>\n칭호: %s", done, total, t and string.format('<font color="#%02X%02X%02X">‘%s’ [%s]</font>', math.floor(tierTxt.color.R * 255), math.floor(tierTxt.color.G * 255), math.floor(tierTxt.color.B * 255), t.title, tierTxt.name) or "없음 · 칭호가 붙은 업적을 이루면 단다 (등급이 높을수록 화려하다)")
 	end
 end
 
@@ -1967,7 +1967,7 @@ function UIB.buildShop()
 		-- 꾸미기 요약
 		if state then
 			local t = state.title and Config.ACH_BY_ID[state.title]
-			lookRows.title.value.Text = (t and t.title) and ("「" .. t.title .. "」") or "없음"
+			lookRows.title.value.Text = (t and t.title) and ("‘" .. t.title .. "’") or "없음"
 			local mt = state.mountSel and Config.MOUNT_BY_ID[state.mountSel]
 			lookRows.mount.value.Text = mt and (mt.icon .. " " .. mt.name) or "없음"
 			local au = state.achAura and Config.ACH_AURA_BY_ID[state.achAura]
@@ -2429,7 +2429,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🎮 조작</b>")
 		add("• 클릭: 연타 (네 번까지 이어진다) · Z: 강타 (강한 한 방, 천룡장은 누르고 있다 놓기)")
 		add(string.format("• E: 기술 · R: 기술 (숙련 %d) · G: 오의 (숙련 %d, 내공 가득) · X: 초 오의 (초월·환생 권법)", Config.SKILL_UNLOCK.R, Config.SKILL_UNLOCK.G))
-		add("• F: 막기. <b>맞기 직전에 누르면 흘리기</b> — 피해 없이 흘려 내고 상대가 휘청인다")
+		add("• F: 막기. <b>맞기 직전에 누르면 흘리기</b>: 피해 없이 흘려 내고 상대가 휘청인다")
 		add("• Q: 대시 (잠깐 무적) · 공중에서 Space: 두 번 뛰기 · C (또는 Ctrl): 달리기")
 		add("• T (가까이): 사부·수련·상점·문 · H: 금창약 · Tab: 능력치 · M: 지도")
 		add("• 휴대폰·태블릿: 오른쪽 아래 둥근 단추. 가운데 👊 공격, 안쪽 고리 💥 강타 · 💨 대시 · 🛡 막기, 바깥 고리 E · R · G · X")
@@ -2447,11 +2447,11 @@ function HELP.helpText(tab: string): { string }
 		add("<b>몸놀림</b>")
 		add("• 대시 바로 뒤 클릭: <b>돌진 일격</b> · 공중에서 클릭: <b>낙하격</b>")
 		add("• 흘리기 바로 뒤 클릭: <b>반격</b> (크게 아프고 균형을 많이 깎는다)")
-		add("• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고, 곧바로 클릭하면 반격")
+		add("• 맞기 직전에 대시로 피하면 <b>간파</b>: 상대가 굳고 곧바로 클릭하면 반격")
 		add("")
 		add("<b>합을 겨루는 법</b>")
-		add("• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b> — 무릎이 꺾여 큰 피해를 받는다")
-		add("• 적의 무기가 반짝이면 곧 휘두른다 — 흘릴 때다")
+		add("• 🟧 균형 막대: 막을 때마다 차오른다. 꽉 차면 <b>파훼</b>: 무릎이 꺾여 큰 피해를 받는다")
+		add("• 적의 무기가 반짝이면 곧 휘두른다: 흘릴 때다")
 		add("• <b>붉게 빛나는 공격</b>은 막을 수 없다. 대시로 피해라")
 		add("• 서로 같은 순간에 치면 <b>격돌</b>: 주먹이 부딪혀 둘 다 튕겨 난다")
 		add("")
@@ -2491,7 +2491,7 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🎯 권법 시험장</b>")
 		add("• 청운 마을 (천상 문 맞은편) 이나 천궁 (서쪽 큰길 옆) 의 🎯 권법 시험장 문으로 간다. 하늘에 떠 있는 큰 돌 마당에 작은 목인 다섯과 큰 목인 셋이 서 있다. 목인 머리 위에 초당 피해와 가장 센 한 대가 보인다. 사람끼리는 싸우지 않는다. 남쪽 붉은 문으로 들어왔던 문 앞에 돌아온다")
 		add("• 서쪽 🛡 반격 코너: 흘리기 사범 셋이 천천히 박자 맞춰 친다. 맞아도 피해·경직·균형이 없다. 칠 때 막기를 막 잡으면 흘리기, 흘려 균형을 다 깎으면 무너져 반격할 틈. 붉은 공격은 피하기")
-		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고, 이 서버 기록판에 다섯 명까지")
+		add("• 동쪽 🎯 데미지 챌린지: 기둥에서 시작하면 3초 세고 20초 동안 챌린지 목인에게 준 피해를 모두 센다. 내 최고 기록은 저장되고 이 서버 기록판에 다섯 명까지")
 		add("")
 		add("<b>심법 · 천층탑</b>")
 		add("• 적과 보스가 떨어뜨리는 심법 두루마리를 펼치면 심법이 나온다. 세 칸에 끼우면 권법 전체를 받쳐 준다 (메뉴 → 만물상 → 📜 심법)")
@@ -2501,7 +2501,7 @@ function HELP.helpText(tab: string): { string }
 		add("• 화면 왼쪽의 이야기 목표를 따라가면 게임 전체를 차례로 배운다. 청운 장로에게 말을 걸면 다음 장을 받는다")
 	elseif tab == "styles" then
 		add("<b>🥋 권법 얻기</b>")
-		add("• 처음엔 삼재권. 다른 권법은 <b>그 사부를 찾아가</b> T로 시험을 청하고, 넘으면 은자를 내고 배운다")
+		add("• 처음엔 삼재권. 다른 권법은 <b>그 사부를 찾아가</b> T로 시험을 청하고 넘으면 은자를 내고 배운다")
 		local cost = {}
 		for i = 2, 5 do
 			table.insert(cost, Config.formatNumber(Config.LEARN_COST[i]))
@@ -2514,7 +2514,7 @@ function HELP.helpText(tab: string): { string }
 		for _, r in ipairs(Config.Regions) do
 			local st = r.master and Config.STYLE_BY_ID[r.master]
 			if st then
-				add(string.format("• %s %s — %s의 %s", st.icon or "", st.name, r.name, r.masterName or "사부"))
+				add(string.format("• %s %s: %s의 %s", st.icon or "", st.name, r.name, r.masterName or "사부"))
 			end
 		end
 		add("")
@@ -2527,13 +2527,13 @@ function HELP.helpText(tab: string): { string }
 		add("<b>🏔 지상 강호</b> (마을에서 멀수록 세다. 권장 전투력이 낮은 땅부터)")
 		add("• 청운 마을 (안전): 청운 장로 · 사부 안내판 · 만물상 · 배틀그라운드 문 · 수련터 · 천층탑 · 천상 문")
 		add("• 상급 수련장 (안전, 마을 북동): 금종조·천근추·주천 운기·허공답보 수련")
-		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고, 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
+		add("• 🏮 주막 (강호 곳곳 열 곳, 지도에 등): 탁자에서 T를 누르면 쉬고 그 주막이 깨어날 곳이 된다 (쓰러지면 거기서 일어난다). 마을 객잔에서 쉬면 다시 마을로")
 		for _, r in ipairs(HELP.helpSorted(Config.Regions, function(r)
 			return r.id
 		end)) do
 			if not r.safe and (r.camps or r.boss) and r.id ~= "wilds" then
 				local bn = r.boss and HELP.helpBossName(r.boss.id)
-				add(string.format("• <b>%s</b>%s%s", r.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec(r.id)))
+				add(string.format("• <b>%s</b>%s%s", r.name, bn and (": 보스 " .. bn) or "", HELP.helpRec(r.id)))
 			end
 		end
 		add("• 사부 가는 길목 (강호 들판): 창병 · 곤봉 산적 · 쌍도 자객. 아주 먼 곳엔 흑영 자객 · 철갑 무사")
@@ -2553,13 +2553,13 @@ function HELP.helpText(tab: string): { string }
 		end)) do
 			if not isl.safe and (isl.camps or isl.boss) then
 				local bn = isl.boss and HELP.helpBossName(isl.boss.id)
-				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (" — 보스 " .. bn) or "", HELP.helpRec("sky_" .. isl.id)))
+				add(string.format("• <b>%s</b>%s%s", isl.name, bn and (": 보스 " .. bn) or "", HELP.helpRec("sky_" .. isl.id)))
 			end
 		end
 		add("")
 		add("<b>천상 재료</b> (초월 권법에 든다. 한 번에 많아야 둘)")
 		for _, m in ipairs(Config.SKY_MATS) do
-			add(string.format("• %s %s — %s", m.icon, m.name, m.how))
+			add(string.format("• %s %s: %s", m.icon, m.name, m.how))
 		end
 		add("")
 		add("• 구름 미궁: 방을 넘어 미궁의 주인을 꺾는다. 들어간 사람의 세기에 맞춰 적이 선다")
@@ -2588,17 +2588,17 @@ function HELP.helpText(tab: string): { string }
 		add("")
 		add("<b>💎 게임패스</b> (로벅스. 한 번 사면 영구)")
 		for _, g in ipairs(Config.Premium) do
-			add(string.format("• %s %s — R$ %d", g.icon, g.name, g.price))
+			add(string.format("• %s %s: R$ %d", g.icon, g.name, g.price))
 		end
 		add("")
 		add("<b>⚔ 들판 PvP</b>")
 		add("• 마을·사당·사부의 자리 같은 안전한 곳 밖에서는 사람끼리도 싸운다")
-		add("• 처음엔 끌 수 없다 (🔒). 사람에게 한 번 쓰러지면 메뉴의 ⚔ PvP 단추로 끄고 켤 수 있다 (싸우는 중에는 못 바꾸고, 한 번 바꾸면 잠시 기다린다)")
+		add("• 처음엔 끌 수 없다 (🔒). 사람에게 한 번 쓰러지면 메뉴의 ⚔ PvP 단추로 끄고 켤 수 있다 (싸우는 중에는 못 바꾸고 한 번 바꾸면 잠시 기다린다)")
 		add("")
 		add("<b>⚔ 배틀그라운드</b> (모두 같은 힘으로 겨루는 곳)")
 		add("• 마을의 배틀그라운드 문 (예전 비무대 자리)이나 메뉴 → ⚔ 배틀그라운드로 간다. 돌아올 때는 메뉴 → 🏠 메인 월드로")
 		add(string.format("• 모두 체력 %d, 공격력도 같다. 메인 월드에서 익힌 권법만 쓴다 (기술은 모두 열려 있다). 좋은 권법이 아주 조금 세다", Config.BATTLE.hp))
-		add("• 처음엔 대기실 (싸움이 없다): 남쪽 권법 전시장에서 쓸 권법의 발판을 밟으면 그 권법으로 싸움터에 들어간다. 투표대에서 다음 맵을 고르고, 수련 목인으로 시험해 본다. 쓰러지면 대기실로 돌아온다")
+		add("• 처음엔 대기실 (싸움이 없다): 남쪽 권법 전시장에서 쓸 권법의 발판을 밟으면 그 권법으로 싸움터에 들어간다. 투표대에서 다음 맵을 고르고 수련 목인으로 시험해 본다. 쓰러지면 대기실로 돌아온다")
 		add(string.format("• 한 대는 %d까지, 1초에 받는 피해는 %d까지: 쓰러지기까지 적어도 %d초. 들어가거나 일어나면 %d초 보호. 오래 묶이면 잠깐 버틴다", Config.BATTLE.hitCap, Config.BATTLE.secCap, math.floor(Config.BATTLE.hp / Config.BATTLE.secCap), Config.BATTLE.shield))
 		local mapNames = {}
 		for _, m in ipairs(Config.BATTLE.maps) do
@@ -2864,7 +2864,7 @@ function UIB.buildTest()
 		eophwa = "두 번 환생하고 두 번째 윤회의 시련을 넘으면 얻는다",
 		musangkwon = "세 번 환생하고 세 번째 윤회의 시련을 넘으면 얻는다",
 		kwonwangsin = "네 번 환생하고 마지막 윤회의 시련을 넘으면 얻는다",
-		sinsamjae = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻고, 세상 북서쪽 맨 끝 (지옥 입구의 정반대)의 사람 모양 돌에게 💰 9,990,000 은자를 바친다 → 땅 밑 어두운 동굴의 대좌 셋에 극 권법을 하나씩 장착해 기운을 보내면 컷씬과 함께 얻는다",
+		sinsamjae = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 얻고 세상 북서쪽 맨 끝 (지옥 입구의 정반대)의 사람 모양 돌에게 💰 9,990,000 은자를 바친다 → 땅 밑 어두운 동굴의 대좌 셋에 극 권법을 하나씩 장착해 기운을 보내면 컷씬과 함께 얻는다",
 		geukspeed = "진 풍신각 숙련 20 + 세 번 환생한 몸으로 지옥 황천 나루의 질주귀를 찾아가 속도의 시련을 넘는다",
 		geukilwol = "일월신권 숙련 20 + 세 번 환생한 몸으로 천상 윤회대의 황혼권존을 찾아가 극의 시련을 넘는다",
 	}
@@ -3210,7 +3210,7 @@ local function refreshRec()
 	end
 end
 
--- 2.7.1판: 천상 전용 지도. 천상계에 오르면 지도가 저절로 천상 지도로 바뀌고, 큰 지도의 ☁ 단추로 땅과 하늘을 골라 볼 수도 있다
+-- 2.7.1판: 천상 전용 지도. 천상계에 오르면 지도가 저절로 천상 지도로 바뀌고 큰 지도의 ☁ 단추로 땅과 하늘을 골라 볼 수도 있다
 local SKY_MAP_C = Vector3.new(0, 0, -180) -- 천상 지도의 가운데 (섬들이 남북으로 길게 늘어서 있다)
 local SKY_MAP_H = 1700 -- 천상 지도 한 변의 절반
 local function mapFrameOf(sky: boolean): (Vector3, number)
@@ -3320,7 +3320,7 @@ local function placeMap()
 		mapFrame.Position = UDim2.new(1, -16, 0, 160)
 		mapFrame.Size = UDim2.new(0, MAP_SMALL, 0, MAP_SMALL)
 	end
-	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고, 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
+	-- 휴대폰은 단추와 겹치지 않게 작은 지도를 숨기고 메뉴로 크게만 본다 (태블릿은 자리가 넉넉해 보인다)
 	mapFrame.Visible = (mapBig or V.device ~= "phone") and not Config.BATTLE_MODE
 	for _, list in ipairs({ mapTexts, skyTexts, hellTexts }) do
 		for _, t in ipairs(list) do
@@ -3594,7 +3594,7 @@ function UIB.buildMap()
 			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV((a + b) / 2), Size = UDim2.new(d.Magnitude / (2 * H), 0, 0, 3), Rotation = math.deg(math.atan2(d.Z, d.X)), BackgroundColor3 = Color3.fromRGB(190, 165, 120), BorderSizePixel = 0, ZIndex = 6, Parent = canvas })
 		end
 	end
-	-- 지역과 사부: 표시(사부·보스)는 늘 보이고, 이름과 권장 전투력은 한 덩어리
+	-- 지역과 사부: 표시(사부·보스)는 늘 보이고 이름과 권장 전투력은 한 덩어리
 	for _, r in ipairs(Config.Regions) do
 		if not r.noGround then
 			local f = rect(r.center, r.size, r.ground, 6)
@@ -3982,7 +3982,7 @@ function UIB.storyTick(pos: Vector3)
 	end
 end
 
--- 찾은 사부만 지도에 나오고, 하늘로 빛기둥이 솟는다
+-- 찾은 사부만 지도에 나오고 하늘로 빛기둥이 솟는다
 function UIB.refreshFound(s: any)
 	for id, mk in pairs(masterMarks) do
 		local found = (s.found and s.found[id]) or table.find(s.styles, id) ~= nil
@@ -4391,7 +4391,7 @@ function UI.mobile(actions: { [string]: any })
 		return
 	end
 	-- 3.11.3판: 로블록스 기본 점프 단추가 이 묶음과 같은 자리 (오른쪽 아래)에 있어 겹쳤다.
-	-- 기본 점프 단추는 숨기고, 점프를 이 묶음 안에 넣는다. 공격 단추를 가운데로 두 겹 부채꼴로 고르게 벌려 놓는다
+	-- 기본 점프 단추는 숨기고 점프를 이 묶음 안에 넣는다. 공격 단추를 가운데로 두 겹 부채꼴로 고르게 벌려 놓는다
 	local pad = new("Frame", { Name = "TouchPad", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -16, 1, -12), Size = UDim2.new(0, 260, 0, 260), BackgroundTransparency = 1, Parent = gui })
 	scaled(pad, "pad")
 	local function round(key: string?, label: string, cx: number, cy: number, size: number, color: Color3, down: () -> (), up: (() -> ())?, textSize: number?): TextButton
@@ -4461,7 +4461,7 @@ function UI.mobile(actions: { [string]: any })
 			jb:GetPropertyChangedSignal("Visible"):Connect(syncJump)
 		end
 	end)
-	-- 터치 화면이 달린 컴퓨터: 마우스·자판을 쓰면 단추 묶음을 감추고, 화면을 만지면 다시 보인다
+	-- 터치 화면이 달린 컴퓨터: 마우스·자판을 쓰면 단추 묶음을 감추고 화면을 만지면 다시 보인다
 	local function touchMode(): boolean
 		local lt = UserInputService:GetLastInputType()
 		if lt == Enum.UserInputType.Touch then
@@ -4678,7 +4678,7 @@ function UI.init(req: RemoteEvent)
 	local topLeft = new("Frame", { Name = "TopLeft", Position = UDim2.new(0, 16, 0, 60), Size = UDim2.new(0, 820, 0, 500), BackgroundTransparency = 1, Parent = gui }) :: Frame
 	scaled(topLeft)
 	topInfo = text({ Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -44, 0, 34), TextSize = 20, Font = Enum.Font.GothamBlack, TextStrokeTransparency = 0.3, Parent = topLeft })
-	-- 3.2.9판: 메뉴는 ☰ 단추로 접고 편다 (PC는 처음부터 펴 있고, 터치 기기는 접혀 있다가 하나를 고르면 다시 접힌다)
+	-- 3.2.9판: 메뉴는 ☰ 단추로 접고 편다 (PC는 처음부터 펴 있고 터치 기기는 접혀 있다가 하나를 고르면 다시 접힌다)
 	local menu = new("Frame", { Name = "Menu", Position = UDim2.new(0, 0, 0, 40), Size = UDim2.new(0, 144, 0, 424), BackgroundTransparency = 1, ZIndex = 5, Parent = topLeft }, { new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 	V.menuFrame = menu
 	V.menuToggle = button({ Size = UDim2.new(0, 38, 0, 34), Text = "", BackgroundColor3 = C.bg, BackgroundTransparency = 0.15, Parent = topLeft }, function()

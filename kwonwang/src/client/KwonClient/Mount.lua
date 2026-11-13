@@ -1,7 +1,7 @@
 -- 권왕: 탈것 (화면마다 직접 그린다). 몸에 "Mount" 표시가 붙은 사람 아래에 말·범·구름·청룡을 빚는다
 -- 1.0판: 둥근 타원 조각으로 빚은 몸, 뼈마다 붙은 조각, 땅을 딛는 걸음 (두 마디 다리를 발끝까지 맞춰 굽힌다),
 -- 걸음새 (평보 → 습보, 범은 튀어 오르듯), 늦게 따라오는 꼬리와 갈기, 돌 때 기우는 몸, 고삐와 등자,
--- 용은 지나온 길을 몸이 그대로 따라 흐르고, 구름은 뒤로 흩어진다
+-- 용은 지나온 길을 몸이 그대로 따라 흐르고 구름은 뒤로 흩어진다
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -500,7 +500,7 @@ local function updateQuad(rig: Rig, yawCF: CFrame, groundLocal: number, t: numbe
 	local twR = math.max(0, math.sin(t * 0.83 + 2)) ^ 14 * 0.6
 	local look = math.sin(t * 0.37) * 0.14 * (1 - m) + math.clamp(rig.yawRate * 0.08, -0.3, 0.3)
 	if rig.kind == "horse" then
-		-- 목과 머리: 걸음에 맞춰 끄덕이고, 달리면 목을 앞으로 뻗는다. 도는 쪽을 먼저 본다
+		-- 목과 머리: 걸음에 맞춰 끄덕이고 달리면 목을 앞으로 뻗는다. 도는 쪽을 먼저 본다
 		local nod = math.sin(A * 2 + 0.5) * 0.05 * m * (1 - run) + math.sin(A + 2.2) * 0.12 * run
 		local e = lerp(52, 34, run) * RAD + rear * 0.5 + nod * 0.5
 		local cf = bones.front * CF(0, -1.05 * k, -2.95 * k) * ANG(e, look * 0.5, 0)
@@ -521,13 +521,13 @@ local function updateQuad(rig: Rig, yawCF: CFrame, groundLocal: number, t: numbe
 			tc = tc * CF(0, -0.6 * k, 0) * ANG(lerp(9, 2, run) * RAD, 0, sway)
 		end
 	else
-		-- 범: 고개를 낮게 들고, 달리면 더 숙인다
+		-- 범: 고개를 낮게 들고 달리면 더 숙인다
 		local nod = math.sin(A * 2) * 0.04 * m * (1 - run) + math.sin(A + 1.8) * 0.08 * run
 		local head = bones.front * CF(0, -0.85 * k, -3.35 * k) * ANG(-0.12 + nod - run * 0.15, look, 0)
 		bones.head = head
 		bones.earL = head * CF(-0.6 * k, 0.62 * k, 0.25 * k) * ANG(-twL, 0, 0.35)
 		bones.earR = head * CF(0.6 * k, 0.62 * k, 0.25 * k) * ANG(-twR, 0, -0.35)
-		-- 꼬리: 뒤로 뻗었다가 끝이 위로 말리고, 물결치듯 흔들린다
+		-- 꼬리: 뒤로 뻗었다가 끝이 위로 말리고 물결치듯 흔들린다
 		local tc = bones.rear * CF(0, -0.75 * k, 2.75 * k) * ANG(-lerp(100, 92, run) * RAD, 0, 0)
 		for i = 1, 9 do
 			bones["t" .. i] = tc
@@ -539,7 +539,7 @@ local function updateQuad(rig: Rig, yawCF: CFrame, groundLocal: number, t: numbe
 end
 
 ------------------------------------------------------------------------
--- 날개구름: 탄 사람은 구름 위에 선다. 뭉치마다 따로 둥실거리고, 뒤로 작은 구름이 흩어진다
+-- 날개구름: 탄 사람은 구름 위에 선다. 뭉치마다 따로 둥실거리고 뒤로 작은 구름이 흩어진다
 ------------------------------------------------------------------------
 local CLOUD = { B = 6.05 }
 local function buildCloud(rig: Rig)
@@ -1021,7 +1021,7 @@ local function update(rig: Rig, root: BasePart, hum: Humanoid, dt: number, t: nu
 		flat = V(0, 0, -1)
 	end
 	flat = flat.Unit
-	-- 방향은 살짝 늦게 따라오고, 도는 만큼 안쪽으로 기운다
+	-- 방향은 살짝 늦게 따라오고 도는 만큼 안쪽으로 기운다
 	local yawT = math.atan2(-flat.X, -flat.Z)
 	if not rig.yaw then
 		rig.yaw = yawT

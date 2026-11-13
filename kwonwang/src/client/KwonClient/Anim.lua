@@ -1,5 +1,5 @@
 -- 권왕: 관절을 직접 움직이는 몸동작 (모든 화면에서, 모든 무인에게)
--- 로블록스 기본 걷기 동작 위에 권법 자세를 얹고, 기술을 쓰면 온몸을 그 동작으로 덮는다
+-- 로블록스 기본 걷기 동작 위에 권법 자세를 얹고 기술을 쓰면 온몸을 그 동작으로 덮는다
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -362,7 +362,7 @@ local function trackPose(tr: Track, t: number, dt: number): ({ [string]: { numbe
 	else
 		p = elapsed / tr.dur
 	end
-	-- 처음엔 재빨리 들어오고, 끝에서 자세로 녹아 돌아간다
+	-- 처음엔 재빨리 들어오고 끝에서 자세로 녹아 돌아간다
 	local w = math.min(1, elapsed / 0.05)
 	local left = tr.dur - elapsed
 	if left < tr.fadeOut then
@@ -605,7 +605,7 @@ local function step(dt0: number)
 			end
 			continue
 		end
-		-- 초·취: 쓰러질 듯 크게 비틀거리고, 몇 초마다 한쪽으로 크게 휘청한다 (고개는 한 박자 늦게 따라간다)
+		-- 초·취: 쓰러질 듯 크게 비틀거리고 몇 초마다 한쪽으로 크게 휘청한다 (고개는 한 박자 늦게 따라간다)
 		local wob = 0
 		local sw, sw2, swN, lurch = 0, 0, 0, 0
 		local wsid = model:GetAttribute("Style")

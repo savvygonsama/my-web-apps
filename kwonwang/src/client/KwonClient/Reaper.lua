@@ -1,6 +1,6 @@
 -- 권왕 1.9판: 초월 권법 초·혈마신수의 화면
--- 오른손에 피처럼 붉은 큰 낫 (자루는 검붉고, 날은 핏빛으로 빛나며 끝에서 피가 떨어진다), 왼손엔 붉은 손톱
--- 몸짓마다 핏빛 초승달이 남고, 오의는 하늘만 한 피의 낫, 초 오의는 붉은 달과 하늘을 가르는 낫질
+-- 오른손에 피처럼 붉은 큰 낫 (자루는 검붉고 날은 핏빛으로 빛나며 끝에서 피가 떨어진다), 왼손엔 붉은 손톱
+-- 몸짓마다 핏빛 초승달이 남고 오의는 하늘만 한 피의 낫, 초 오의는 붉은 달과 하늘을 가르는 낫질
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -518,7 +518,7 @@ local function harvestBurst(data: any)
 end
 
 ------------------------------------------------------------------------
--- 혈월만겸 (초 오의): 붉은 달이 뜨고, 핏빛 초승달이 쏟아지고, 마지막에 하늘과 땅과 화면을 가른다
+-- 혈월만겸 (초 오의): 붉은 달이 뜨고 핏빛 초승달이 쏟아지고 마지막에 하늘과 땅과 화면을 가른다
 ------------------------------------------------------------------------
 local moonState: { cc: ColorCorrectionEffect?, moon: BasePart?, untilT: number } = { untilT = 0 }
 -- 2.1판: 혈월의 우두머리 악마 (쓴 사람마다 하나). 낫을 머리 뒤로 치켜들고 있다가 휘두른다
@@ -910,7 +910,7 @@ function Reaper.superCut(model: Model, dur: number, name: string, shake: ((numbe
 		end
 		focus = focus:Lerp(r.Position, math.min(1, dt * 10))
 		local e = u * u * (3 - 2 * u)
-		-- 처음엔 앞쪽 낮은 곳에서 얼굴을 올려다보고, 끝으로 갈수록 뒤로 크게 빠지며 달까지 담는다
+		-- 처음엔 앞쪽 낮은 곳에서 얼굴을 올려다보고 끝으로 갈수록 뒤로 크게 빠지며 달까지 담는다
 		local pos = focus + look * (5 - 15 * e) + side * (2 + 4 * e) + Vector3.new(0, -1.2 + 5 * e, 0)
 		local target = focus + Vector3.new(0, 1.2 + 6 * e, 0) - look * (40 * e)
 		cam.CFrame = CamGuard.frame(pos, target, focus)

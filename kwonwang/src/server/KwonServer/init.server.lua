@@ -1,4 +1,4 @@
--- 권왕(拳王): 맨손의 강호 — 서버
+-- 권왕(拳王): 맨손의 강호: 서버
 -- 기록, 캐릭터, 기술 확인, 수련, 상점, 권법 배우기
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -342,7 +342,7 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.mqv = 2
-	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고, 골라 둔 것이 없어졌으면 말로
+	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
 			p.mounts[id] = nil
@@ -801,7 +801,7 @@ Players.PlayerRemoving:Connect(function(pl: Player)
 	end
 end)
 
--- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고, 한 번만 다시 해 본다 (일시 오류일 때)
+-- 장소 이동 실패 (예: 773) 까닭을 화면에 보이고 한 번만 다시 해 본다 (일시 오류일 때)
 local tpRetried: { [Player]: boolean? } = {}
 game:GetService("TeleportService").TeleportInitFailed:Connect(function(player: Player, result: Enum.TeleportResult, err: string)
 	local t = Battle.lastTry[player]
@@ -917,7 +917,7 @@ function Dex.check(player: Player, p: Profile)
 		end
 	end
 end
--- 쓰러뜨릴 때: 적 종류의 수를 세고, 처음 만난 적·보스와 별이 오를 때 알린다
+-- 쓰러뜨릴 때: 적 종류의 수를 세고 처음 만난 적·보스와 별이 오를 때 알린다
 function Dex.onKill(player: Player, p: Profile, rawId: string?, isBoss: boolean)
 	if type(rawId) ~= "string" then
 		return
@@ -1267,7 +1267,7 @@ local function rewardPower(player: Player): number
 	local f = Combat.fighterOfPlayer(player)
 	local pw = ((f :: any) and (f :: any).power) or 100
 	if p then
-		-- 2.4.1판: 피해 쪽 배율(후반 공격력·환생 피해·환생 경지의 피해 배율)을 빼고, 경지 표의 전투력과 같은 잣대로
+		-- 2.4.1판: 피해 쪽 배율(후반 공격력·환생 피해·환생 경지의 피해 배율)을 빼고 경지 표의 전투력과 같은 잣대로
 		local idx = Calc.realm(p)
 		pw /= math.sqrt(Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Config.rebirthPower(p.rebirth) * Config.realmDmg(idx) / Config.realmPower(idx))
 		-- 2.9판: 환생 특전의 체력·피해도 빼고 센다
@@ -1725,7 +1725,7 @@ function Story.talk(player: Player)
 		local miss = Sin.missing(p)
 		if #miss < #Config.SIN_NEED and not Config.Story[p.story] then
 			local S = Config.SINROAD
-			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = string.format("극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고, 환생을 %d번 거친 몸이면... 세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양 돌이 하나 서 있네. 그 앞에 💰 %s 은자를 바치면 길이 열린다더군. %s", S.rebirth, Config.formatNumber(S.cost), #miss > 0 and ("아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼.") or "자네는 이미 다 갖췄구먼.") })
+			Push:FireClient(player, "dialog", { who = "청운 장로", title = "극 너머", text = string.format("극 하나쯤 이루었다고 우쭐하지 말게. 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 모두 이루고 환생을 %d번 거친 몸이면... 세상 북서쪽 맨 끝, 지옥 입구의 정반대 자리에 사람 모양 돌이 하나 서 있네. 그 앞에 💰 %s 은자를 바치면 길이 열린다더군. %s", S.rebirth, Config.formatNumber(S.cost), #miss > 0 and ("아직 " .. table.concat(miss, ", ") .. "이(가) 남았구먼.") or "자네는 이미 다 갖췄구먼.") })
 			return
 		end
 	end
@@ -2144,7 +2144,7 @@ function Trial.start(player: Player, styleId: string)
 	elseif style.trialBoss then
 		-- 일월의 시련: 한낮에 시작해, 2단계에서 밤이 되고, 3단계에서 동이 튼다
 		World.setClock(12)
-		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고, 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
+		Push:FireClient(player, "dialog", { who = master.name, title = "일월의 시련", text = "분신 따위는 없다. 내가 직접 상대하마. 해가 지고 달이 뜨고 다시 해가 뜰 때까지 서 있다면 이 두 손을 넘겨주지." })
 		task.spawn(function()
 			local seen = 1
 			while activeTrial[player] == T and not ef.dead do
@@ -2419,7 +2419,7 @@ Combat.init(Push, {
 			end
 			-- 쓰러지면 보스 체력 막대를 걷는다 (다시 맞붙으면 다시 뜬다)
 			Npc.forget(player)
-			-- 3.3판 배틀그라운드: 점수를 세고, 잠시 뒤 지금 맵에서 일어난다 (메인 월드에는 사람끼리 싸움이 없다)
+			-- 3.3판 배틀그라운드: 점수를 세고 잠시 뒤 지금 맵에서 일어난다 (메인 월드에는 사람끼리 싸움이 없다)
 			if BATTLE then
 				Battle.onDeath(player, by and by.player or nil)
 				return
@@ -2502,7 +2502,7 @@ Combat.init(Push, {
 ------------------------------------------------------------------------
 -- 맵과 적
 ------------------------------------------------------------------------
--- 맵을 먼저 짓고, 요청·사부·적은 아래에서 차례로 (적 만들기가 늦거나 틀려도 나머지는 돈다)
+-- 맵을 먼저 짓고 요청·사부·적은 아래에서 차례로 (적 만들기가 늦거나 틀려도 나머지는 돈다)
 pcall(World.setupLighting)
 local okWorld, builtWorld = pcall(BATTLE and Battle.build or World.build)
 if not okWorld then
@@ -3343,13 +3343,13 @@ end
 
 ------------------------------------------------------------------------
 -- 3.1판 극 패시브 (일월극변): 맞히고 맞으며 극을 채우면 서버 전체에 컷씬이 흐르고,
--- 세상이 황혼에 멈추고, 그동안 그 사람의 기술이 모두 황혼의 기술로 바뀐다
+-- 세상이 황혼에 멈추고 그동안 그 사람의 기술이 모두 황혼의 기술로 바뀐다
 ------------------------------------------------------------------------
 local function geukStyle(f: any): any
 	local st = Combat.styleOf(f)
 	return (st and st.geukGauge) and st or nil
 end
--- 3.22판 극 광속권 · 가속: 맞힐수록 걸음이 빨라지고 (단계마다 +5%), 3초 안 맞히면 풀리고, 맞으면 반으로 줄어든다
+-- 3.22판 극 광속권 · 가속: 맞힐수록 걸음이 빨라지고 (단계마다 +5%), 3초 안 맞히면 풀리고 맞으면 반으로 줄어든다
 local Haste = {}
 function Haste.refresh(f: any)
 	local st = Combat.styleOf(f)
@@ -3465,7 +3465,7 @@ function Geuk.trigger(f: any, st: any)
 	end
 	local HS = st.geukHaste
 	if HS then
-		-- 3.22판 극 광속권 · 초가속: 둘레의 적이 굼떠지고, 내 걸음이 빨라지며, 모든 타격이 잔상으로 한 번 더 친다
+		-- 3.22판 극 광속권 · 초가속: 둘레의 적이 굼떠지고 내 걸음이 빨라지며 모든 타격이 잔상으로 한 번 더 친다
 		f.hasteTwilight = true
 		Haste.refresh(f)
 		Push:FireAllClients("geukHaste", { m = f.model, name = name, style = st.id, cut = G.cut, dur = G.dur })
@@ -3629,7 +3629,7 @@ function Gate.start(player: Player)
 	ef.name = Config.Realms[nxt].name .. "의 관문 수호자"
 	ef.model:SetAttribute("Label", ef.name)
 	-- 수호자는 도전자와 비슷한 힘, 체력은 넉넉히 (경지가 높을수록 더)
-	-- 3.2.4판: 처음부터 더 센 수호자도 도전자에 맞춰 낮추고, 초반 관문은 체력·피해를 덜어 준다
+	-- 3.2.4판: 처음부터 더 센 수호자도 도전자에 맞춰 낮추고 초반 관문은 체력·피해를 덜어 준다
 	local want = ((f :: any).power or 100) * Config.GATE.power
 	local k = want / math.max(1, ef.power or 100)
 	local easeHp, easeDmg = Config.gateEase(nxt)
@@ -4008,7 +4008,7 @@ function Maze.room(player: Player, run: any, i: number)
 				run.alive[ef] = true
 			end
 		end
-		-- 함정 방: 적이 남아 있는 동안 바닥에 원이 차오르고, 다 차면 벼락 (서리) 이 떨어진다
+		-- 함정 방: 적이 남아 있는 동안 바닥에 원이 차오르고 다 차면 벼락 (서리) 이 떨어진다
 		if room.trap then
 			local T = M.trap
 			task.spawn(function()
@@ -4256,7 +4256,7 @@ function Maze.start(player: Player, back: Vector3?, force: boolean?)
 end
 
 ------------------------------------------------------------------------
--- 심법 뽑기: 두루마리를 먼저 쓰고, 없으면 은자. 같은 심법이 더 높은 등급으로 나오면 바뀐다
+-- 심법 뽑기: 두루마리를 먼저 쓰고 없으면 은자. 같은 심법이 더 높은 등급으로 나오면 바뀐다
 ------------------------------------------------------------------------
 local Manual = {}
 
@@ -4866,7 +4866,7 @@ local function testAction(player: Player, p: Profile, action: string, arg: any)
 			end
 		end
 	elseif action == "testHell" then
-		-- 3.21판: 지옥 입구 테스트 — 환생 3으로 맞추고 지상 희미한 풀 곁으로 (은자도 채워 준다)
+		-- 3.21판: 지옥 입구 테스트: 환생 3으로 맞추고 지상 희미한 풀 곁으로 (은자도 채워 준다)
 		if f then
 			local H = Config.HELL
 			p.rebirth = math.max(p.rebirth or 0, H.rebirth)
@@ -5611,7 +5611,7 @@ end)
 if W.awaken then
 	W.awaken.Triggered:Connect(function(player: Player)
 		local AM = Config.AWAKEN_MASTER
-		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "「" .. AM.quote .. "」", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
+		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "‘" .. AM.quote .. "’", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
 		Push:FireClient(player, "open", { page = "styles" })
 	end)
 end
@@ -5626,7 +5626,7 @@ if W.tower then
 		Tower.start(player)
 	end)
 end
--- 천궁의 미궁 문: 미궁에 들어가고, 끝나면 문 앞으로 돌아온다
+-- 천궁의 미궁 문: 미궁에 들어가고 끝나면 문 앞으로 돌아온다
 if W.mazeGate then
 	W.mazeGate.Triggered:Connect(function(player: Player)
 		local gate = W.mazeGate.Parent
@@ -5634,7 +5634,7 @@ if W.mazeGate then
 		Maze.start(player, back)
 	end)
 end
--- 천궁의 탑 문: 바로 탑에 오르고, 끝나면 천궁으로 돌아온다
+-- 천궁의 탑 문: 바로 탑에 오르고 끝나면 천궁으로 돌아온다
 if W.towerGate then
 	W.towerGate.Triggered:Connect(function(player: Player)
 		local gate = W.towerGate.Parent
@@ -5684,7 +5684,7 @@ if W.skyDown then
 	end)
 end
 
--- 천상계에서 떨어지면: 사람은 천궁으로 되돌리고, 적은 쓰러뜨린 것으로 친다 (땅으로 떨어지지 않게)
+-- 천상계에서 떨어지면: 사람은 천궁으로 되돌리고 적은 쓰러뜨린 것으로 친다 (땅으로 떨어지지 않게)
 task.spawn(function()
 	if BATTLE then
 		return -- 배틀그라운드에는 없다
@@ -5946,7 +5946,7 @@ end)
 
 ------------------------------------------------------------------------
 -- 1.7판 천상 레이드: 천공 투기장에 정해진 때마다 천겁이 내려온다
--- 그때 천상계에 있는 사람 수만큼 체력이 늘고, 체력의 1% 이상 친 사람은 친 만큼 나눠 받는다
+-- 그때 천상계에 있는 사람 수만큼 체력이 늘고 체력의 1% 이상 친 사람은 친 만큼 나눠 받는다
 ------------------------------------------------------------------------
 Raid.cur = nil :: any
 local function playersInSky(): { Player }
@@ -6085,7 +6085,7 @@ function Raid.killed(f: any)
 		Push:FireClient(player, "raid", nil)
 	end
 end
--- 때가 되면 알리고, 잠시 뒤 내려온다 (천상계에 아무도 없으면 미룬다)
+-- 때가 되면 알리고 잠시 뒤 내려온다 (천상계에 아무도 없으면 미룬다)
 task.spawn(function()
 	if BATTLE then
 		return -- 배틀그라운드에는 없다
@@ -6345,7 +6345,7 @@ if W.hell or W.hellGrass then
 									Combat.dismount(fighter)
 								end
 								local model = ch :: Model
-								-- 풀이 꺼지며 화면이 어두워지고, 암전 사이에 저승 방 높은 곳으로 옮겨져 바닥까지 떨어진다
+								-- 풀이 꺼지며 화면이 어두워지고 암전 사이에 저승 방 높은 곳으로 옮겨져 바닥까지 떨어진다
 								Push:FireClient(player, "hellFall", { from = hrp.Position })
 								toast(player, "🕳 희미한 풀이 꺼지며 발밑이 사라졌다")
 								task.delay(0.55, function()
@@ -6506,7 +6506,7 @@ if W.inn then
 		pushState(player)
 	end)
 end
--- 3.16.4판: 강호 곳곳의 주막. 쉬면 체력·내공이 차고, 그 주막이 깨어날 곳이 된다
+-- 3.16.4판: 강호 곳곳의 주막. 쉬면 체력·내공이 차고 그 주막이 깨어날 곳이 된다
 for _, jp in ipairs(W.jumak or {}) do
 	jp.prompt.Triggered:Connect(function(player: Player)
 		local p = profiles[player]
@@ -6961,7 +6961,7 @@ task.spawn(function()
 	end
 end)
 
--- 서버가 닫힐 때: 모두 저장하고, 저장이 끝날 때까지 (최대 25초) 기다린다
+-- 서버가 닫힐 때: 모두 저장하고 저장이 끝날 때까지 (최대 25초) 기다린다
 game:BindToClose(function()
 	if BATTLE then
 		Battle.saveAll()
@@ -6995,31 +6995,31 @@ task.spawn(function()
 		local m = Config.MASTERS[styleId]
 		local sdef = Config.STYLE_BY_ID[styleId]
 		if sdef and sdef.realmReq and not p.styles[styleId] and Calc.realm(p) < sdef.realmReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = string.format("...아직 이르다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = string.format("...아직 이르다. %s에 이르거든 다시 오너라.", Config.Realms[sdef.realmReq].name) })
 			return
 		end
 		local req = sdef and sdef.styleReq and Config.STYLE_BY_ID[sdef.styleReq]
 		if req and not sdef.geuk and not p.styles[styleId] and not p.styles[req.id] then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (styleId == "ilwol" or styleId == "yeonggeop") and string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) or string.format("...아직 그릇이 작다. %s을(를) 익히고 다시 오너라.", req.name) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = (styleId == "ilwol" or styleId == "yeonggeop") and string.format("...해와 달을 쥐려면 먼저 세상의 처음을 알아야 한다. %s을(를) 익히고 다시 오너라.", req.name) or string.format("...아직 그릇이 작다. %s을(를) 익히고 다시 오너라.", req.name) })
 			return
 		end
 		if not p.styles[styleId] and Config.GEUK_REQ[styleId] then
 			local ok, msg = geukCheck(p, styleId)
 			if not ok then
-				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...극은 한 번의 삶으로는 닿지 않는다. " .. msg .. "." })
+				Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = "...극은 한 번의 삶으로는 닿지 않는다. " .. msg .. "." })
 				return
 			end
 		end
 		if not p.styles[styleId] and not p.trials[styleId] and Config.TRANSCEND_REQ[styleId] then
 			local ok, msg = transcendCheck(p, styleId, "challenge")
 			if not ok then
-				Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
+				Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = "...초월은 아무에게나 열리지 않는다. " .. msg .. ". 시련을 청하려면 " .. matList(Config.TRANSCEND_REQ[styleId].challenge) .. ", 배우려면 " .. matList(Config.TRANSCEND_REQ[styleId].learn) .. "을(를) 가져오너라." })
 				return
 			end
 		end
 		-- 3.7판: 두 번 환생해야 만나 주는 사부 (몽유권)
 		if sdef and sdef.rebirthReq and not p.styles[styleId] and (p.rebirth or 0) < sdef.rebirthReq then
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = styleId == "hojeop" and string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) or string.format("...한 번의 삶으로는 모자라다. 환생을 %d번 거친 몸이라야 내 앞에 설 수 있다.", sdef.rebirthReq) })
+			Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = styleId == "hojeop" and string.format("...깊은 잠에 든 노인은 깨지 않는다. 환생을 %d번 거친 혼이라야 이 꿈에 들어설 수 있을 듯하다.", sdef.rebirthReq) or string.format("...한 번의 삶으로는 모자라다. 환생을 %d번 거친 몸이라야 내 앞에 설 수 있다.", sdef.rebirthReq) })
 			return
 		end
 		-- 3.7판 사부의 부탁: 다 들어주어야 시험을 낸다
@@ -7029,7 +7029,7 @@ task.spawn(function()
 		end
 		if not p.styles[styleId] and not p.trials[styleId] then
 			-- 아직 시험을 안 넘었다: 사부가 시험을 낸다
-			Push:FireClient(player, "dialog", { who = m.name, title = "「" .. m.quote .. "」", text = (function()
+			Push:FireClient(player, "dialog", { who = m.name, title = "‘" .. m.quote .. "’", text = (function()
 				local kind, need = Config.trialNeed(styleId)
 				local K = Config.TRIAL_KINDS[kind]
 				local what = K and (K.icon .. " " .. K.title .. ": " .. string.format(K.ask, need)) or "먼저 내 분신을 꺾어라."
@@ -7245,7 +7245,7 @@ if W.sin and not BATTLE then
 			Push:FireAllClients("sinOffer", { from = hrp and hrp.Position or SW.sockets[i].Position, at = SW.sockets[i].Position, core = SW.core.Position, color = sd.color, n = n })
 			toast(player, string.format("🌠 %s의 기운을 보냈다 (%d / 3)", sd.name, n))
 			if n >= 3 then
-				-- 셋이 모이면: 핵이 터질 듯 빛나고, 제단 앞에서 컷씬이 시작된다
+				-- 셋이 모이면: 핵이 터질 듯 빛나고 제단 앞에서 컷씬이 시작된다
 				task.delay(2.2, function()
 					if not inCave(player) or p.styles.sinsamjae then
 						return
@@ -7349,7 +7349,7 @@ if not BATTLE then
 end
 
 ------------------------------------------------------------------------
--- 3.3판 배틀그라운드: 맵을 돌리고, 떨어진 사람을 쓰러뜨리고, 판 상태를 알린다
+-- 3.3판 배틀그라운드: 맵을 돌리고 떨어진 사람을 쓰러뜨리고 판 상태를 알린다
 ------------------------------------------------------------------------
 if BATTLE then
 	-- 대기실의 싸움터 문과 연습용 목인

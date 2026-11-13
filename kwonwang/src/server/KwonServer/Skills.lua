@@ -1,26 +1,26 @@
 -- 권왕: 권법마다 다른 기술 장치 (서버)
 -- 기술 정의의 mech = { kind = ... } 를 읽어 그 권법만의 방식으로 친다
 --   zone     정해진 자리에 오래 남아 끌어당기거나 피를 빨아들이는 소용돌이
---   reflect  잠깐 모든 공격을 저절로 흘려 되받아치고, 끝에 큰 물결
+--   reflect  잠깐 모든 공격을 저절로 흘려 되받아치고 끝에 큰 물결
 --   cone     앞쪽 부채꼴 (사자후: 막기를 깬다 / 취화: 불길이 이어진다)
---   drop     가까운 적 자리에 붉은 원이 뜨고, 잠시 뒤 하늘에서 내리찍는다
+--   drop     가까운 적 자리에 붉은 원이 뜨고 잠시 뒤 하늘에서 내리찍는다
 --   line     앞으로 한 줄로 차례차례 솟는 기둥
 --   chainTp  적들 사이를 순간이동하며 차례로 찬다
 --   targets  둘레의 적 몇을 골라 그 머리 위로 내리꽂는다 (번개, 별)
 --   storm    한동안 둘레 아무 데나 벼락이 쏟아진다
---   freeze   둘레의 시간이 멈추고, 멈춘 적을 한 번에 지운다
+--   freeze   둘레의 시간이 멈추고 멈춘 적을 한 번에 지운다
 --   launch   둘레의 적을 모두 하늘로 띄웠다가 빛으로 내리친다
 --   moving   내 몸을 따라다니며 계속 베는 꽃잎 폭풍
 --   trail    돌진한 길에 남은 향기가 잠시 뒤 터진다
---   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고, 끝에 안으로 무너지며 터진다
---   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고, 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
+--   blackhole 하늘에 검은 해가 떠서 둘레의 적을 끌어올려 짓이기고 끝에 안으로 무너지며 터진다
+--   genesis  세상이 멈추고 별바다로 바뀐 뒤, 금이 가고 유리처럼 깨지며 둘레의 모든 적이 함께 부서진다
 --   rewind   지나간 뒤 시간이 거꾸로 돌아 제자리로 돌아오며 지나온 길을 다시 벤다
 --   clock    하늘에 해시계, 둘레의 시간이 멎고 열두 번의 종마다 베이며 자정에 깨진다
---   eruption 적마다 발밑에서 불기둥이 솟고, 마지막에 내 자리에서 화산이 터진다
+--   eruption 적마다 발밑에서 불기둥이 솟고 마지막에 내 자리에서 화산이 터진다
 --   shock    기술의 마지막 타격 뒤 앞쪽에 충격파가 터진다 (맨 타격뿐인 기술을 보완)
---   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고, 끝에서 부서진다
---   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고, 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고, 새벽처럼 터진다
---   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고, 한가운데로 모여 터진다
+--   tsunami  하늘을 가리는 해일이 앞으로 밀려가며 적을 휩쓸어 끌고 가고 끝에서 부서진다
+--   eclipse  하늘이 밤이 되고 해와 달이 뜬다. 달빛이 베고 해와 달이 겹쳐 일식이 되면 빛살이 꿰뚫고 새벽처럼 터진다
+--   sakuraStorm  (초·매화 천본앵) 내 둘레가 벚꽃 칼바람의 소용돌이가 되어 끌어당기며 베고 한가운데로 모여 터진다
 --   sakuraSever  (초·매화 만앵참월, 초 오의) 보이지 않게 적들을 베고 지나가 칼자국을 남기고 → 세상이 잿빛으로 멈추고 →
 --                칼바람이 적들을 휘감고 → 마지막에 터지며 화면까지 한칼에 가른다
 --   zigzag   (초·취 팔선취보) 갈지자로 비틀비틀 여덟 걸음, 걸음마다 둘레를 후려친다 (그동안 무적)
@@ -443,7 +443,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "genesis" then
-		-- 천지개벽: 둘레의 시간이 멈추고(모두 묶인다), 세상에 금이 가고, 깨진다
+		-- 천지개벽: 둘레의 시간이 멈추고(모두 묶인다), 세상에 금이 가고 깨진다
 		local center = f.root.Position
 		local list = hostilesNear(f, center, m.radius)
 		local models = {}
@@ -904,7 +904,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end
 	elseif kind == "giant" then
-		-- 금강 법신: 내 몸이 금빛 거인이 된다 (안 밀리고, 받는 피해 절반, 주먹 1.6배 + 여진)
+		-- 금강 법신: 내 몸이 금빛 거인이 된다 (안 밀리고 받는 피해 절반, 주먹 1.6배 + 여진)
 		local dur = m.dur
 		f.buffs.giant = os.clock() + dur
 		f.model:SetAttribute("Giant", true)
@@ -927,7 +927,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end)
 	elseif kind == "lake" then
-		-- 태허: 발밑이 호수가 되어 소용돌이가 모두 삼키고, 마지막에 물기둥이 솟는다
+		-- 태허: 발밑이 호수가 되어 소용돌이가 모두 삼키고 마지막에 물기둥이 솟는다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "lake", at = center, radius = m.radius, dur = m.dur / sp, style = style })
 		local n = math.floor(m.dur / m.every)
@@ -1152,7 +1152,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end)
 	elseif kind == "flash" or kind == "bolt" then
 		-- 매화 일순천참: 보이지 않게 모두를 꿰뚫고 지나간 뒤, 한 박자 늦게 한꺼번에 베인다
-		-- 벽력 뇌신화: 번개가 되어 적에서 적으로 튀며, 닿는 순간마다 벼락
+		-- 벽력 뇌신화: 번개가 되어 적에서 적으로 튀며 닿는 순간마다 벼락
 		local list = nearestList(f, m.range, m.n)
 		if #list == 0 then
 			return
@@ -1258,7 +1258,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "swords" then
-		-- 천제 만검: 하늘의 문에서 빛의 검이 적마다 떨어지고, 마지막에 거대한 검이 꽂혀 터진다
+		-- 천제 만검: 하늘의 문에서 빛의 검이 적마다 떨어지고 마지막에 거대한 검이 꽂혀 터진다
 		Push:FireAllClients("skillfx", { kind = "skygate", m = f.model, dur = m.dur / sp, style = style })
 		local list = nearestList(f, m.range, m.n)
 		for i = 1, m.n do
@@ -1350,7 +1350,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "galaxy" then
-		-- 성하강림: 머리 위에 은하가 열리고, 별이 안에서 밖으로 나선을 그리며 떨어진 뒤, 한가운데에서 별이 터진다
+		-- 성하강림: 머리 위에 은하가 열리고 별이 안에서 밖으로 나선을 그리며 떨어진 뒤, 한가운데에서 별이 터진다
 		local center = f.root.Position
 		local pts = {}
 		for i = 1, m.count do
@@ -1418,7 +1418,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "palm" then
-		-- 1.9판 만불조종: 하늘에서 산만 한 금빛 손바닥이 내려와 둘레를 누르고, 땅이 몇 번 더 울린다
+		-- 1.9판 만불조종: 하늘에서 산만 한 금빛 손바닥이 내려와 둘레를 누르고 땅이 몇 번 더 울린다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "buddhaPalm", at = center, radius = m.radius, delay = m.delay / sp, quakes = m.quakes, every = m.every / sp, style = style })
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + 0.3) / sp)
@@ -1438,7 +1438,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "parade" then
-		-- 1.9판 백귀야행: 그림자들이 둘레를 엇갈려 가로지르며 짓밟고, 마지막에 한가운데로 모여 걷어찬다
+		-- 1.9판 백귀야행: 그림자들이 둘레를 엇갈려 가로지르며 짓밟고 마지막에 한가운데로 모여 걷어찬다
 		local center = f.root.Position
 		local total = m.delay + m.passes * m.every + 0.5
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
@@ -1469,7 +1469,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "waterDragons" then
-		-- 1.9판 천하수류: 물의 용들이 몸을 감아 돌며 둘레를 휩쓸고, 마지막에 하나로 엉겨 앞으로 덮친다
+		-- 1.9판 천하수류: 물의 용들이 몸을 감아 돌며 둘레를 휩쓸고 마지막에 하나로 엉겨 앞으로 덮친다
 		Push:FireAllClients("skillfx", { kind = "waterDragons", m = f.model, n = m.n, radius = m.radius, dur = m.dur / sp, delay = m.delay / sp, style = style })
 		local ticks = math.floor(m.dur / m.every)
 		for i = 0, ticks - 1 do
@@ -1521,7 +1521,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "reapCleave" then
-		-- 1.9판 혈월낙참: 내리꽂은 낫이 앞의 땅에 핏빛 초승달 자국을 새기고, 한 박자 뒤 자국이 터진다
+		-- 1.9판 혈월낙참: 내리꽂은 낫이 앞의 땅에 핏빛 초승달 자국을 새기고 한 박자 뒤 자국이 터진다
 		after(m.delay, function()
 			local fwd = flat(Combat.look(f))
 			local from = f.root.Position + fwd * 2
@@ -1630,7 +1630,7 @@ function Skills.run(f: any, move: any, ctx: any)
 	-- 2.0판: 새 오의들 (각성 권법 아홉 · 초·벽력신권)
 	------------------------------------------------------------------------
 	elseif kind == "bloodSea" then
-		-- 진 혈마신수 혈해만마: 발밑이 피의 바다가 되고, 피에서 마수의 손톱이 연달아 솟는다. 마지막에 바다가 소용돌이 기둥으로 솟아 터진다
+		-- 진 혈마신수 혈해만마: 발밑이 피의 바다가 되고 피에서 마수의 손톱이 연달아 솟는다. 마지막에 바다가 소용돌이 기둥으로 솟아 터진다
 		local center = f.root.Position
 		local total = m.delay + m.claws * m.every
 		Push:FireAllClients("skillfx", { kind = "bloodSea", at = center, radius = m.radius, dur = (total + 0.6) / sp, style = style })
@@ -1707,7 +1707,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "thunderNet" then
-		-- 진 벽력신권 뇌정천망: 둘레의 적을 모두 번개 그물로 잇는다. 그물이 몇 번 고동치고, 마지막에 적마다 벼락이 떨어진다
+		-- 진 벽력신권 뇌정천망: 둘레의 적을 모두 번개 그물로 잇는다. 그물이 몇 번 고동치고 마지막에 적마다 벼락이 떨어진다
 		local list = nearestList(f, m.range, m.n)
 		Push:FireAllClients("skillfx", { kind = "netStart", m = f.model, targets = modelsOf(list), dur = (m.delay + m.pulses * m.every) / sp, style = style })
 		for i = 1, m.pulses do
@@ -1730,7 +1730,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "thousandArms" then
-		-- 진 금강불괴신공 천수여래: 등 뒤로 거대한 금빛 여래가 솟아 여러 팔로 적들을 차례로 내리치고, 마지막에 하늘의 손바닥이 땅을 누른다
+		-- 진 금강불괴신공 천수여래: 등 뒤로 거대한 금빛 여래가 솟아 여러 팔로 적들을 차례로 내리치고 마지막에 하늘의 손바닥이 땅을 누른다
 		local center = f.root.Position
 		local list = nearestList(f, m.range, m.count)
 		Push:FireAllClients("skillfx", { kind = "armsStart", m = f.model, dur = (m.delay + m.count * m.every + m.palmDelay + 0.6) / sp, style = style })
@@ -1758,7 +1758,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "shadowKill" then
-		-- 진 무영귀각 무영천살: 세상이 어두워지고 몸이 사라진다. 적들에게 붉은 표식이 하나씩 새겨지고, 한꺼번에 터진 뒤 하늘에서 그림자의 발이 짓밟는다
+		-- 진 무영귀각 무영천살: 세상이 어두워지고 몸이 사라진다. 적들에게 붉은 표식이 하나씩 새겨지고 한꺼번에 터진 뒤 하늘에서 그림자의 발이 짓밟는다
 		local list = nearestList(f, m.range, m.n)
 		local total = m.delay + #list * m.every + m.hold
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.6) / sp)
@@ -1792,7 +1792,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "maelstrom" or kind == "abyss" then
-		-- 진 태허유수장 창해만류: 큰 소용돌이가 적을 가운데로 빨아들이고, 둘레에 솟은 물의 벽이 안쪽으로 무너진다
+		-- 진 태허유수장 창해만류: 큰 소용돌이가 적을 가운데로 빨아들이고 둘레에 솟은 물의 벽이 안쪽으로 무너진다
 		-- 진 창해신권 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고 (묶인다), 한가운데서 거대한 물기둥이 솟아 하늘로 쳐올린다
 		local center = f.root.Position + look * (m.dist or 0)
 		Push:FireAllClients("skillfx", { kind = kind, at = center, radius = m.radius, dur = m.dur / sp, style = style })
@@ -1825,7 +1825,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "galeBlades" then
-		-- 진 풍신각 천풍만검: 바람의 칼날이 몸을 돌다가 사방으로 쏘아지고, 마지막에 한가운데 회오리가 모두 들어 올려 내던진다
+		-- 진 풍신각 천풍만검: 바람의 칼날이 몸을 돌다가 사방으로 쏘아지고 마지막에 한가운데 회오리가 모두 들어 올려 내던진다
 		Push:FireAllClients("skillfx", { kind = "galeBlades", m = f.model, n = m.blades, radius = m.orbit, spin = m.spin / sp, style = style })
 		local ticks = math.floor(m.spin / m.every)
 		for i = 0, ticks - 1 do
@@ -1891,7 +1891,7 @@ function Skills.run(f: any, move: any, ctx: any)
 	------------------------------------------------------------------------
 	elseif kind == "thunderDrums" then
 		-- 초·벽력신권 뇌고천무 (초 오의, 2.3판): 등 뒤 하늘에 뇌고 여덟이 둥글게 뜬다 (컷씬, 무적).
-		-- 북을 열여섯 번 친다 (점점 빨라진다). 칠 때마다 그 북에서 적에게 벼락이 꽂히고, 네 번째마다 둘레로 천둥이 울린다.
+		-- 북을 열여섯 번 친다 (점점 빨라진다). 칠 때마다 그 북에서 적에게 벼락이 꽂히고 네 번째마다 둘레로 천둥이 울린다.
 		-- 마지막에 북이 모두 한가운데로 모여 하나의 뇌구가 되어 앞의 땅에 내리꽂힌다
 		local gaps = {}
 		local sum = 0
@@ -2002,7 +2002,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "bloomBud" then
-		-- 만목신권 개화: 앞의 땅에서 거대한 꽃봉오리가 솟고, 활짝 피며 꽃가루가 터진다 (적은 잠들고 나는 체력을 되찾는다)
+		-- 만목신권 개화: 앞의 땅에서 거대한 꽃봉오리가 솟고 활짝 피며 꽃가루가 터진다 (적은 잠들고 나는 체력을 되찾는다)
 		local at = f.root.Position + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "budRise", at = at, radius = m.radius, delay = m.delay / sp, sleep = m.sleep / sp, style = style })
 		after(m.delay, function()
@@ -2025,7 +2025,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "treant" then
-		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고, 팔로 휩쓸고, 땅 곳곳에서 뿌리가 솟는다
+		-- 만목신권 목령강림 (오의): 등 뒤에서 거대한 나무 정령이 솟아 앞을 내리치고 팔로 휩쓸고 땅 곳곳에서 뿌리가 솟는다
 		local base = f.root.Position
 		local lk = look
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + m.rise / sp)
@@ -2085,7 +2085,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			heal(f, m.heal)
 		end)
 	elseif kind == "bloodNeedles" then
-		-- 진 혈마 혈침: 피의 바늘을 적들에게 꽂고, 잠시 뒤 바늘이 몸속에서 터지며 체력을 빨아온다
+		-- 진 혈마 혈침: 피의 바늘을 적들에게 꽂고 잠시 뒤 바늘이 몸속에서 터지며 체력을 빨아온다
 		local list = nearestList(f, m.range, m.n)
 		Push:FireAllClients("skillfx", { kind = "needleShot", m = f.model, targets = modelsOf(list), delay = m.delay / sp, mark = m.mark / sp, style = style })
 		after(m.delay + 0.12, function()
@@ -2112,7 +2112,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "bloodGrip" then
-		-- 진 혈마 혈마수인: 앞의 땅에서 피의 손이 솟아 움켜쥐고, 쥐어짜고, 내리꽂는다
+		-- 진 혈마 혈마수인: 앞의 땅에서 피의 손이 솟아 움켜쥐고 쥐어짜고 내리꽂는다
 		local at = f.root.Position + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "gripRise", at = at, radius = m.radius, dur = (m.delay + (m.squeezes + 1) * m.every + 0.4) / sp, delay = m.delay / sp, style = style })
 		local caught: { any } = {}
@@ -2154,7 +2154,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "dragonPalm" then
-		-- 진 천룡 항룡장: 금룡 머리 모양의 장력이 앞으로 뻗어 꿰뚫고, 끝에서 터진다
+		-- 진 천룡 항룡장: 금룡 머리 모양의 장력이 앞으로 뻗어 꿰뚫고 끝에서 터진다
 		local from = f.root.Position + look * 2
 		local travel = m.length / m.speed
 		Push:FireAllClients("skillfx", { kind = "palmWave", from = from, dir = look, length = m.length, time = travel / sp, delay = m.delay / sp, width = m.width, style = style })
@@ -2253,7 +2253,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "vajra" then
-		-- 진 금강 항마저: 금강저를 던진다. 앞으로 날아갔다가 손으로 되돌아오며, 가는 길과 오는 길에 한 번씩 친다
+		-- 진 금강 항마저: 금강저를 던진다. 앞으로 날아갔다가 손으로 되돌아오며 가는 길과 오는 길에 한 번씩 친다
 		local from = f.root.Position
 		local dir = look
 		local tip = from + dir * m.dist
@@ -2367,7 +2367,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "fireWheel" then
-		-- 진 열화 화륜: 불의 바퀴를 굴린다. 닿는 적을 치고, 지나간 길이 한동안 불탄다
+		-- 진 열화 화륜: 불의 바퀴를 굴린다. 닿는 적을 치고 지나간 길이 한동안 불탄다
 		local from = f.root.Position + look * 2
 		local dir = look
 		Push:FireAllClients("skillfx", { kind = "wheelRoll", from = from, dir = dir, dist = m.dist, time = m.time / sp, burn = m.burn / sp, style = style })
@@ -2412,7 +2412,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "volcano" then
-		-- 진 열화 화산천붕 (오의): 앞의 땅이 부풀어 오르고, 적의 발밑마다 용암이 뿜어진 뒤, 한가운데 화산이 터져 불덩이가 쏟아진다
+		-- 진 열화 화산천붕 (오의): 앞의 땅이 부풀어 오르고 적의 발밑마다 용암이 뿜어진 뒤, 한가운데 화산이 터져 불덩이가 쏟아진다
 		local c = f.root.Position + look * m.dist
 		local mainAt = m.delay + m.vents * m.every + m.mainDelay
 		local total = mainAt + 0.3 + m.meteors * m.meteorEvery + 0.4
@@ -2453,7 +2453,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "bubbles" then
-		-- 진 창해 수포옥: 가까운 적 셋을 물방울 감옥에 가둬 띄운다. 갇힌 동안 지지고, 끝에 펑 터진다
+		-- 진 창해 수포옥: 가까운 적 셋을 물방울 감옥에 가둬 띄운다. 갇힌 동안 지지고 끝에 펑 터진다
 		local list = nearestList(f, m.range, m.n)
 		Push:FireAllClients("skillfx", { kind = "bubbleTrap", targets = modelsOf(list), dur = m.dur / sp, delay = m.delay / sp, style = style })
 		after(m.delay, function()
@@ -2725,7 +2725,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end)
 	elseif kind == "inkSlash" then
-		-- 2.7판 진 무극 일획 (E): 허공에 먹으로 한 획을 긋는다. 지나간 적을 베고, 잠시 뒤 획이 금빛으로 타오르며 터진다
+		-- 2.7판 진 무극 일획 (E): 허공에 먹으로 한 획을 긋는다. 지나간 적을 베고 잠시 뒤 획이 금빛으로 타오르며 터진다
 		local from = f.root.Position + look * 2
 		local to = from + look * m.length
 		local seed = math.random(1, 1000)
@@ -2743,7 +2743,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "enso" then
-		-- 2.7판 진 무극 원상 (R): 발밑에 먹 원을 그린다. 원 안의 적은 먹에 붙잡히고, 다 그리면 먹 벽이 솟았다가 금빛으로 무너진다
+		-- 2.7판 진 무극 원상 (R): 발밑에 먹 원을 그린다. 원 안의 적은 먹에 붙잡히고 다 그리면 먹 벽이 솟았다가 금빛으로 무너진다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "enso", at = center, radius = m.radius, draw = m.draw / sp, burstAt = m.burstAt / sp, style = style })
 		after(m.draw, function()
@@ -2758,7 +2758,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "plumBranch" then
-		-- 2.9판 진 매화 설중매 (E): 땅을 따라 매화 가지가 뻗고, 마디마다 차례로 꽃이 피며 벤다. 잠시 뒤 가지의 꽃이 한꺼번에 터진다
+		-- 2.9판 진 매화 설중매 (E): 땅을 따라 매화 가지가 뻗고 마디마다 차례로 꽃이 피며 벤다. 잠시 뒤 가지의 꽃이 한꺼번에 터진다
 		local from = f.root.Position
 		local right = rightOf(look)
 		local nodes = {}
@@ -2829,7 +2829,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "plumSnow" then
-		-- 2.9판 진 매화 설중매화 (오의): 둘레에 함박눈과 붉은 꽃잎이 휘몰아쳐 계속 베고, 마지막에 하늘의 거대한 매화에서 꽃잎이 쏟아진다
+		-- 2.9판 진 매화 설중매화 (오의): 둘레에 함박눈과 붉은 꽃잎이 휘몰아쳐 계속 베고 마지막에 하늘의 거대한 매화에서 꽃잎이 쏟아진다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "plumSnow", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
 		local n = math.floor(m.dur / m.every)
@@ -2871,7 +2871,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "wineRiver" then
-		-- 2.9판 진 취팔선 주천강 (R): 호리병의 술이 앞으로 강이 되어 흐른다. 강 위의 적은 굼뜨고, 마지막에 강에 불이 붙는다
+		-- 2.9판 진 취팔선 주천강 (R): 호리병의 술이 앞으로 강이 되어 흐른다. 강 위의 적은 굼뜨고 마지막에 강에 불이 붙는다
 		local from = f.root.Position + look * 2
 		local to = from + look * m.length
 		Push:FireAllClients("skillfx", { kind = "wineRiver", m = f.model, from = from, to = to, width = m.width, delay = m.delay / sp, dur = m.dur / sp, style = style })
@@ -2891,7 +2891,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "eightImmortals" then
-		-- 2.9판 진 취팔선 팔선강림 (오의): 여덟 신선의 그림자가 둘레에 나타나 차례로 가까운 적에게 덮쳐 들고, 하늘에서 거대한 호리병이 내리꽂힌다
+		-- 2.9판 진 취팔선 팔선강림 (오의): 여덟 신선의 그림자가 둘레에 나타나 차례로 가까운 적에게 덮쳐 들고 하늘에서 거대한 호리병이 내리꽂힌다
 		local center = f.root.Position
 		local spots = {}
 		for i = 1, m.n do
@@ -2948,7 +2948,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end
 	elseif kind == "threeLives" then
-		-- 윤회권 삼생보 (R): 미끄러지며 베면, 지난 세 삶의 그림자가 같은 길을 차례로 다시 내달리고, 끝에서 하나로 모여 터진다
+		-- 윤회권 삼생보 (R): 미끄러지며 베면, 지난 세 삶의 그림자가 같은 길을 차례로 다시 내달리고 끝에서 하나로 모여 터진다
 		local a = f.root.Position
 		local b = a + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "threeLives", m = f.model, from = a, to = b, delay = m.delay / sp, gap = m.gap / sp, merge = m.merge / sp, style = style })
@@ -3046,7 +3046,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "karmaChains" then
-		-- 업화권 업화쇄 (E): 두 팔의 달군 사슬이 가까운 적 셋에게 날아가 걸리고, 검은 불이 사슬을 타고 번지며 끌어온 뒤 적 발밑에서 터진다
+		-- 업화권 업화쇄 (E): 두 팔의 달군 사슬이 가까운 적 셋에게 날아가 걸리고 검은 불이 사슬을 타고 번지며 끌어온 뒤 적 발밑에서 터진다
 		local list = nearestList(f, m.range, m.n)
 		local to = f.root.Position + look * 14
 		Push:FireAllClients("skillfx", { kind = "karmaChains", m = f.model, targets = modelsOf(list), to = to, hook = m.hook / sp, hold = m.hold / sp, style = style })
@@ -3074,7 +3074,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "hellDash" then
-		-- 업화권 겁화질주 (R): 검은 불꽃이 되어 내달리면 지난 길이 용암 틈으로 갈라져 타고, 도화선처럼 불기둥이 차례로 치솟아 끝에서 크게 터진다
+		-- 업화권 겁화질주 (R): 검은 불꽃이 되어 내달리면 지난 길이 용암 틈으로 갈라져 타고 도화선처럼 불기둥이 차례로 치솟아 끝에서 크게 터진다
 		local a = f.root.Position
 		local b = a + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "hellDash", m = f.model, from = a, to = b, burn = m.burn / sp, erupt = m.erupt / sp, pillars = m.pillars, step = m.step / sp, style = style })
@@ -3105,8 +3105,8 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "hellGate" then
-		-- 업화권 업화지옥문 (오의): 앞의 땅에서 거대한 지옥문이 솟아 열리고, 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다.
-		-- 문이 쾅 닫히고, 땅속으로 가라앉으며 지옥불 고리로 터진다
+		-- 업화권 업화지옥문 (오의): 앞의 땅에서 거대한 지옥문이 솟아 열리고 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다.
+		-- 문이 쾅 닫히고 땅속으로 가라앉으며 지옥불 고리로 터진다
 		local from = f.root.Position
 		local c = from + look * m.dist
 		local T2 = m.rise + m.open
@@ -3220,7 +3220,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end)
 	elseif kind == "mistStar" then
 		-- 무상권 허실분신 (R): 몸이 흩어져 (보이지 않는다) 안개 분신 다섯이 별처럼 사방으로 뻗어 베고,
-		-- 서로 엇갈려 되돌아오며 오각별을 긋고, 가운데에서 내가 다시 나타나며 터진다
+		-- 서로 엇갈려 되돌아오며 오각별을 긋고 가운데에서 내가 다시 나타나며 터진다
 		local C = f.root.Position
 		local rot = math.atan2(look.Z, look.X)
 		local pts = {}
@@ -3318,7 +3318,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "kingBarrage" then
-		-- 권왕신권 왕권천타 (E): 등 뒤에 금빛 주먹 여섯이 부채꼴로 나타나 차례로 앞으로 내지르고, 마지막에 큰 주먹이 가운데를 꿰뚫는다
+		-- 권왕신권 왕권천타 (E): 등 뒤에 금빛 주먹 여섯이 부채꼴로 나타나 차례로 앞으로 내지르고 마지막에 큰 주먹이 가운데를 꿰뚫는다
 		-- k번째 주먹의 줄 = 옆으로 (짝수 +, 홀수 -) × ceil(k/2) × 1.6 (화면도 같은 식)
 		local from = f.root.Position
 		local right = rightOf(look)
@@ -3356,7 +3356,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end)
 	elseif kind == "crownCage" then
-		-- 권왕신권 만인지상 (오의): 하늘에서 거대한 금빛 왕관이 내려와 적들을 가두고, 돌며 조여 들고, 보석이 빛줄기를 쏘고,
+		-- 권왕신권 만인지상 (오의): 하늘에서 거대한 금빛 왕관이 내려와 적들을 가두고 돌며 조여 들고 보석이 빛줄기를 쏘고,
 		-- 한 번 더 내리박혀 금빛으로 터진다
 		local from = f.root.Position
 		local c = from + look * m.dist
@@ -3451,7 +3451,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "solarLunarStep" then
-		-- 일월환보 (R): 제자리에 해가 터지고, 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 터진다
+		-- 일월환보 (R): 제자리에 해가 터지고 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 터진다
 		local a = f.root.Position
 		local b = a + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "solarLunarStep", m = f.model, from = a, to = b, style = style })
@@ -3471,7 +3471,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "sunMoonFall" then
-		-- 대일월천 (오의, 3.1.1판): 등 뒤에 해와 달이 떠오르고, 해의 빛줄기가 앞의 땅을 앞뒤로 쓸고, 달의 초승달 셋이 내리꽂히고,
+		-- 대일월천 (오의, 3.1.1판): 등 뒤에 해와 달이 떠오르고 해의 빛줄기가 앞의 땅을 앞뒤로 쓸고 달의 초승달 셋이 내리꽂히고,
 		-- 둘이 적 위에서 부딪쳐 일식이 되어 땅에 박히며 터진다
 		local from = f.root.Position
 		local c = from + look * m.dist
@@ -3551,7 +3551,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end)
 	-- 3.22판 극 광속권 ------------------------------------------------
 	elseif kind == "lightLance" then
-		-- 광속 관통 (E): 앞으로 쏘아 지나는 적을 베고, 지나간 줄이 잠시 뒤 한꺼번에 터진다 (움직임은 기술의 lunge가 한다)
+		-- 광속 관통 (E): 앞으로 쏘아 지나는 적을 베고 지나간 줄이 잠시 뒤 한꺼번에 터진다 (움직임은 기술의 lunge가 한다)
 		local from = f.root.Position
 		local to = from + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "lightLance", m = f.model, from = from, to = to, delay = m.delay / sp, style = style })
@@ -3584,7 +3584,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "meteorRun" then
-		-- 유성 질주 (G): 둘레를 별 모양으로 열 번 가로지른다. 달린 길마다 빛의 선이 남고, 마지막에 모든 선이 한꺼번에 터진다
+		-- 유성 질주 (G): 둘레를 별 모양으로 열 번 가로지른다. 달린 길마다 빛의 선이 남고 마지막에 모든 선이 한꺼번에 터진다
 		local C = f.root.Position
 		local R = m.radius
 		local base = math.atan2(look.Z, look.X)
@@ -3685,7 +3685,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "machStorm" then
-		-- 마하 폭풍 (초가속 G): 한 줄기 길을 네 번 왕복한다. 지날 때마다 소리의 벽이 깨져 양옆의 적을 한가운데로 쓸어 모으고, 마지막에 한복판에서 터진다
+		-- 마하 폭풍 (초가속 G): 한 줄기 길을 네 번 왕복한다. 지날 때마다 소리의 벽이 깨져 양옆의 적을 한가운데로 쓸어 모으고 마지막에 한복판에서 터진다
 		local A = f.root.Position
 		local B = A + look * m.length
 		local M = (A + B) / 2
@@ -3707,7 +3707,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "ricochet" then
-		-- 유성 연쇄 (초가속 X): 빛의 구슬이 되어 적들 사이를 튕겨 다니고, 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다
+		-- 유성 연쇄 (초가속 X): 빛의 구슬이 되어 적들 사이를 튕겨 다니고 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다
 		local C = f.root.Position
 		local list = nearestList(f, m.range, m.n)
 		local seq = {}
@@ -3789,7 +3789,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "duskChain" then
-		-- 석양보 (황혼 R): 노을이 되어 적들의 등 뒤로 차례로 나타나며 베고, 지나간 노을빛 줄이 한꺼번에 터진다
+		-- 석양보 (황혼 R): 노을이 되어 적들의 등 뒤로 차례로 나타나며 베고 지나간 노을빛 줄이 한꺼번에 터진다
 		local list = nearestList(f, m.range, m.n)
 		local start = f.root.Position
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (m.delay + math.max(1, #list) * m.every + m.burstAt + 0.2) / sp)
@@ -3821,7 +3821,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "sunsetSea" then
-		-- 황혼낙일 (황혼 G, 3.1.1판): 거대한 석양이 내려와 앞의 땅으로 가라앉는다. 바다 위의 적은 타며 굼뜨고, 노을 물결 넷이 퍼지고,
+		-- 황혼낙일 (황혼 G, 3.1.1판): 거대한 석양이 내려와 앞의 땅으로 가라앉는다. 바다 위의 적은 타며 굼뜨고 노을 물결 넷이 퍼지고,
 		-- 달빛 기둥이 솟는다. 다 잠기면 잠깐 고요하다가 바다가 노을 불꽃의 왕관으로 솟구친다
 		local c = f.root.Position + look * m.dist
 		local beams = {}
@@ -3863,8 +3863,8 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "twilightCollapse" then
-		-- 일월동귀 (황혼 X, 3.1.1판): 컷씬 동안 석양과 달이 내려와 (그동안 무적) 내 두 손에 맺히고, 발밑 진의 테두리를 서로 반대로 내달려
-		-- 불의 원을 그린다. 앞에서 만나 황혼의 구슬이 되어 둘레를 빨아들이다가 한 점으로 줄어들고, 노을빛으로 하얗게 터진다
+		-- 일월동귀 (황혼 X, 3.1.1판): 컷씬 동안 석양과 달이 내려와 (그동안 무적) 내 두 손에 맺히고 발밑 진의 테두리를 서로 반대로 내달려
+		-- 불의 원을 그린다. 앞에서 만나 황혼의 구슬이 되어 둘레를 빨아들이다가 한 점으로 줄어들고 노을빛으로 하얗게 터진다
 		local center = f.root.Position
 		local T1 = m.cut
 		local T2 = T1 + m.gather
@@ -3897,7 +3897,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "inkFlower" then
-		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고, 둘레에 원을 둘러 금빛으로 터뜨린다.
+		-- 2.7판 진 무극 무극필 (오의): 하늘의 붓이 땅에 소용돌이치는 먹 획 여덟을 차례로 긋고 둘레에 원을 둘러 금빛으로 터뜨린다.
 		-- 획의 모양은 화면과 같은 식으로 (가운데에서 바깥으로 휘어 나가는 나선)
 		local center = f.root.Position + look * 2
 		local rot = math.random() * math.pi * 2
@@ -3953,7 +3953,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "petalShadow" then
-		-- 2.7판 초·매화 화영보 (R): 앞으로 미끄러지며 지나간 길에 꽃 그림자 셋을 남긴다. 그림자가 차례로 베고, 마지막에 모두 꽃잎으로 터진다
+		-- 2.7판 초·매화 화영보 (R): 앞으로 미끄러지며 지나간 길에 꽃 그림자 셋을 남긴다. 그림자가 차례로 베고 마지막에 모두 꽃잎으로 터진다
 		local from = f.root.Position
 		local spots = {}
 		for i = 1, m.n do
@@ -3979,7 +3979,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "skyFan" then
-		-- 2.7판 초·매화 만화천선 (오의): 하늘에 큰 부채가 펼쳐져 앞의 땅을 두 번 쓸고, 접히며 꽃잎 폭풍을 일으킨다
+		-- 2.7판 초·매화 만화천선 (오의): 하늘에 큰 부채가 펼쳐져 앞의 땅을 두 번 쓸고 접히며 꽃잎 폭풍을 일으킨다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "skyFan", m = f.model, at = center, dir = look, open = m.open / sp, sweeps = m.sweeps, sweepTime = m.sweepTime / sp, range = m.range, angle = m.angle, closeAt = m.closeAt / sp, closeRadius = m.closeRadius, style = style })
 		local half = math.cos(math.rad(m.angle / 2))
@@ -3999,7 +3999,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "tideSpear" then
-		-- 2.7판 초·창해 조류창 (E): 소용돌이치는 물의 창이 앞을 꿰뚫고, 끝에서 소용돌이가 되어 끌어당기다 터진다
+		-- 2.7판 초·창해 조류창 (E): 소용돌이치는 물의 창이 앞을 꿰뚫고 끝에서 소용돌이가 되어 끌어당기다 터진다
 		local from = f.root.Position + look * 2
 		local to = from + look * m.length
 		Push:FireAllClients("skillfx", { kind = "tideSpear", from = from, to = to, delay = m.delay / sp, travel = m.travel / sp, vortex = m.vortexDur / sp, radius = m.radius, style = style })
@@ -4067,7 +4067,7 @@ function Skills.run(f: any, move: any, ctx: any)
 		end)
 	elseif kind == "ancientWhale" then
 		-- 2.7판 초·창해 고경승천 (초 오의): 땅이 바다가 되고 (컷씬, 무적) 고대의 고래가 뒤에서 솟구쳐 머리 위를 지나 앞으로 뛰어든다.
-		-- 고래 그림자 아래의 적은 떠오르고, 앞의 바다에 떨어질 때 해일이 둘레를 덮친다
+		-- 고래 그림자 아래의 적은 떠오르고 앞의 바다에 떨어질 때 해일이 둘레를 덮친다
 		local center = f.root.Position
 		-- 2.7.7판: 자동 타깃. 쓰는 순간 둘레에서 가장 가까운 적 (보스가 있으면 보스)을 골라 그쪽으로 뛰어든다 (뒤쫓지는 않는다)
 		local ahead = m.ahead
@@ -4150,7 +4150,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "starSeal" then
-		-- 3.4판 초·성하 성좌진 (R): 앞의 땅에 마법진. 별이 하나씩 떠올라 선으로 이어지는 동안 끌어모으고, 별자리가 다 그려지면 별빛 기둥
+		-- 3.4판 초·성하 성좌진 (R): 앞의 땅에 마법진. 별이 하나씩 떠올라 선으로 이어지는 동안 끌어모으고 별자리가 다 그려지면 별빛 기둥
 		local center = f.root.Position + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "starSeal", at = center, dir = look, radius = m.radius, stars = m.stars, delay = m.delay / sp, link = m.link / sp, style = style })
 		for i = 1, m.stars do
@@ -4167,7 +4167,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "galaxyStaff" then
-		-- 3.4판 초·성하 은하수 (오의): 지팡이가 커져 땅에 꽂히고, 세 빛 안개 속에서 별이 소용돌이친다. 끌어들이며 치다가 은하가 가운데로 모여 터진다
+		-- 3.4판 초·성하 은하수 (오의): 지팡이가 커져 땅에 꽂히고 세 빛 안개 속에서 별이 소용돌이친다. 끌어들이며 치다가 은하가 가운데로 모여 터진다
 		local center = f.root.Position + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "galaxyStaff", m = f.model, at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
 		local ticks = math.floor(m.dur / m.every)
@@ -4234,7 +4234,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "ashStatues" then
-		-- 3.6판 무상 잔영멸 (E): 재가 되어 스치고, 지나간 자리의 재 조각상 다섯이 차례로 무너지며 친다
+		-- 3.6판 무상 잔영멸 (E): 재가 되어 스치고 지나간 자리의 재 조각상 다섯이 차례로 무너지며 친다
 		local from = f.root.Position
 		local to = from + look * m.dist
 		Push:FireAllClients("skillfx", { kind = "ashStatues", m = f.model, from = from, to = to, n = m.n, crumble = m.crumble / sp, step = m.step / sp, radius = m.radius, style = style })
@@ -4270,7 +4270,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "hourglass" then
-		-- 3.6판 무상 제행무상 (오의): 모래시계가 내려서고, 모래가 흐르는 동안 굼뜨고 재의 비. 다 흐르면 깨지며 터진다
+		-- 3.6판 무상 제행무상 (오의): 모래시계가 내려서고 모래가 흐르는 동안 굼뜨고 재의 비. 다 흐르면 깨지며 터진다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "hourglass", at = center, radius = m.radius, descend = m.descend / sp, run = m.run / sp, crack = m.crack / sp, style = style })
 		local ticks = math.floor(m.run / m.every)
@@ -4341,7 +4341,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "nullOut" then
-		-- 3.8판 공백 존재소거 (초 오의): 컷씬 (무적) 뒤 화면 균열, 하늘에서 빈칸 상자들이 떨어지고, 멈췄다가, 화소 조각으로 무너진다
+		-- 3.8판 공백 존재소거 (초 오의): 컷씬 (무적) 뒤 화면 균열, 하늘에서 빈칸 상자들이 떨어지고 멈췄다가, 화소 조각으로 무너진다
 		local center = f.root.Position
 		local total = m.cut + m.rain + m.freeze + 0.4
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
@@ -4376,7 +4376,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "coordSlash" then
-		-- 3.16.2판 극 공백권 좌표선 (E): 앞의 허공에 좌표축 n줄이 별 모양으로 그어지고, 줄을 따라 공간이 어긋났다가 다시 붙는다
+		-- 3.16.2판 극 공백권 좌표선 (E): 앞의 허공에 좌표축 n줄이 별 모양으로 그어지고 줄을 따라 공간이 어긋났다가 다시 붙는다
 		local center = f.root.Position + look * m.dist
 		local right = rightOf(look)
 		local segs = {}
@@ -4432,7 +4432,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "planeShear" then
-		-- 3.16.2판 극 공백권 좌표 평면 (오의): 허리 높이에 둥근 격자 평면이 펼쳐지고, 평면 위아래의 공간이 서로 반대로 미끄러지며 벤다. 끝에 평면이 조각나 흩어진다
+		-- 3.16.2판 극 공백권 좌표 평면 (오의): 허리 높이에 둥근 격자 평면이 펼쳐지고 평면 위아래의 공간이 서로 반대로 미끄러지며 벤다. 끝에 평면이 조각나 흩어진다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "planeShear", at = center, radius = m.radius, delay = m.delay / sp, shears = m.shears, every = m.every / sp, shift = m.shift, finalAt = m.finalAt / sp, style = style })
 		for i = 1, m.shears do
@@ -4595,7 +4595,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				end)
 			end
 		elseif kind == "gridCrush" then
-			-- G 격자 수축: 펼친 격자 전체가 적이 가장 많은 곳으로 오그라들며 공간 안의 적을 끌어모으고, 다시 튕겨 펼쳐지며 터진다
+			-- G 격자 수축: 펼친 격자 전체가 적이 가장 많은 곳으로 오그라들며 공간 안의 적을 끌어모으고 다시 튕겨 펼쳐지며 터진다
 			local list = inDomain()
 			local point = dAt + Vector3.new(0, 3, 0)
 			if #list > 0 then
@@ -4623,7 +4623,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				end
 			end)
 		else
-			-- X 공간 접기: 펼친 공간의 네 벽이 안으로 접혀 들며 (접힐 때마다 공간 안의 적을 짓누른다), 위아래로 눌려 한 점이 되고, 공간째 지워진다.
+			-- X 공간 접기: 펼친 공간의 네 벽이 안으로 접혀 들며 (접힐 때마다 공간 안의 적을 짓누른다), 위아래로 눌려 한 점이 되고 공간째 지워진다.
 			-- 격자 공간은 여기서 끝난다 (극을 다 쓴다)
 			local total = m.cut + m.folds * m.every + m.squash + 0.5
 			f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
@@ -4657,7 +4657,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end)
 		end
 	elseif kind == "mirrorWorld" then
-		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고, 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
+		-- 3.10판 무상 경화수월 (초 오의): 컷씬 (무적) 뒤 거울 열둘이 솟고 거울 속 잿빛 그림자가 제 주인을 친다. 금이 가고 한가운데로 깨져 쏟아진다
 		local center = f.root.Position
 		local total = m.cut + m.rise + m.echo + m.crack + 0.4
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)
@@ -4681,7 +4681,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "kingArena" then
-		-- 3.10판 권왕 패왕난무 (오의): 금빛 기둥 여덟의 투기장, 기둥마다 거대한 주먹이 차례로 한가운데를 내지르고, 땅속 주먹이 올려친다
+		-- 3.10판 권왕 패왕난무 (오의): 금빛 기둥 여덟의 투기장, 기둥마다 거대한 주먹이 차례로 한가운데를 내지르고 땅속 주먹이 올려친다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "kingArena", m = f.model, at = center, radius = m.radius, rise = m.rise / sp, fists = m.fists, every = m.every / sp, upper = m.upper / sp, style = style })
 		after(m.rise * 0.5, function()
@@ -4812,7 +4812,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "dreamIsles" then
-		-- 3.10판 몽유 몽중몽 (오의): 둘레가 꿈속이 된다 (달, 떠다니는 섬·계단·문). 문이 열리고 닫힐 때마다 베이고, 마지막에 모두 떨어지며 깬다
+		-- 3.10판 몽유 몽중몽 (오의): 둘레가 꿈속이 된다 (달, 떠다니는 섬·계단·문). 문이 열리고 닫힐 때마다 베이고 마지막에 모두 떨어지며 깬다
 		local center = f.root.Position
 		Push:FireAllClients("skillfx", { kind = "dreamIsles", at = center, radius = m.radius, delay = m.delay / sp, dur = m.dur / sp, style = style })
 		local ticks = math.floor(m.dur / m.every)
@@ -4831,7 +4831,7 @@ function Skills.run(f: any, move: any, ctx: any)
 			end
 		end)
 	elseif kind == "moonDream" then
-		-- 3.10판 몽유 월하몽 (초 오의): 컷씬 (무적) 뒤 보름달과 밤 호수. 적은 잠든 듯 떠올라 별의 소용돌이에 감기고, 달이 내려와 호수에 닿으면 터진다
+		-- 3.10판 몽유 월하몽 (초 오의): 컷씬 (무적) 뒤 보름달과 밤 호수. 적은 잠든 듯 떠올라 별의 소용돌이에 감기고 달이 내려와 호수에 닿으면 터진다
 		local center = f.root.Position
 		local total = m.cut + m.rise + m.drift + m.descend + 0.4
 		f.iframeUntil = math.max(f.iframeUntil, os.clock() + total / sp)

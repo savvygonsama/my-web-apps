@@ -1,9 +1,9 @@
 -- 권왕 3.48판: 모든 권법에 함께 얹는 연출 한 겹 (권법마다의 연출은 그대로 두고 그 위에)
 --   · 빛: 기술을 쓸 때 · 맞힐 때 그 권법 빛깔의 빛이 둘레를 실제로 비춘다 (Future 조명이라 땅 · 몸 · 벽이 물든다)
 --   · 기술 (E · R): 손끝의 번쩍임과 두 빛깔의 고리, 몸에서 튀는 빛가루
---   · 오의 (G) · 초 오의 (X): 기가 몸으로 빨려 들어왔다가 (모으기) 터진다 — 세 겹 충격파, 하늘로 솟는 빛기둥, 바닥에 새겨졌다 사라지는 문양, 화면 울림
+--   · 오의 (G) · 초 오의 (X): 기가 몸으로 빨려 들어왔다가 (모으기) 터진다: 세 겹 충격파, 하늘로 솟는 빛기둥, 바닥에 새겨졌다 사라지는 문양, 화면 울림
 --   · 강타 (Z) 와 기술로 맞힐 때: 맞은 자리에서 하얀 섬광 별이 번쩍
--- 가벼운 모드 (Perf.low) 에서는 빛 · 조각을 줄이고, 한꺼번에 켜진 빛은 MAX_LIGHTS까지만
+-- 가벼운 모드 (Perf.low) 에서는 빛 · 조각을 줄이고 한꺼번에 켜진 빛은 MAX_LIGHTS까지만
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")

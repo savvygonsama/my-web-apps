@@ -135,7 +135,7 @@ function Combat.hostile(a: Fighter, b: Fighter): boolean
 		return false
 	end
 	if a.player and b.player then
-		-- 3.4.1판: 메인 월드의 들판 PvP를 되살린다. 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고, 끄려면 사람에게 한 번 쓰러져야)
+		-- 3.4.1판: 메인 월드의 들판 PvP를 되살린다. 안전한 곳 밖에서는 사람끼리도 싸운다 (PvP를 끈 사람은 빼고 끄려면 사람에게 한 번 쓰러져야)
 		if not Config.BATTLE_MODE then
 			if Config.inSafe(a.root.Position) or Config.inSafe(b.root.Position) then
 				return false
@@ -296,7 +296,7 @@ local function knock(f: Fighter, vel: Vector3, stun: number)
 	end
 end
 
--- 흘리기: 친 쪽은 헛힘에 앞으로 지나쳐 옆으로 흘러가고, 흘린 쪽은 반대로 살짝 비켜선다
+-- 흘리기: 친 쪽은 헛힘에 앞으로 지나쳐 옆으로 흘러가고 흘린 쪽은 반대로 살짝 비켜선다
 local function redirect(tgt: Fighter, att: Fighter): number
 	local right = tgt.root.CFrame.RightVector
 	local rel = att.root.Position - tgt.root.Position
@@ -479,7 +479,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	local t = now()
 	if t < tgt.iframeUntil then
-		-- 見切り: 맞기 직전에 대시로 피했다 → 상대가 잠깐 굳고, 곧바로 클릭하면 반격
+		-- 見切り: 맞기 직전에 대시로 피했다 → 상대가 잠깐 굳고 곧바로 클릭하면 반격
 		local fa = tgt :: any
 		if tgt.player and t - tgt.dashAt < 0.4 and t - (fa.pdodgeAt or 0) > 0.6 then
 			fa.pdodgeAt = t

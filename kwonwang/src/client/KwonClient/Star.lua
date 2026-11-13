@@ -202,7 +202,7 @@ local function sigil(cf: CFrame, R: number, c: Color3, c2: Color3, life: number,
 	table.insert(inner.list, { p = core, off = CFrame.new() })
 	local sg: Sigil = { outer = outer, inner = inner, cf = cf, R = R, spin = spin or 1.5, scale = 0.05, alive = true }
 	table.insert(sigils, sg)
-	-- 커지며 열리고, 다 쓰면 줄며 닫힌다
+	-- 커지며 열리고 다 쓰면 줄며 닫힌다
 	local t0 = os.clock()
 	task.spawn(function()
 		while sg.alive and os.clock() - t0 < 0.22 do
@@ -471,7 +471,7 @@ local function starVolley(data: any)
 end
 
 ------------------------------------------------------------------------
--- R 성좌진: 땅의 큰 마법진, 별 일곱이 떠올라 선으로 이어지고, 별빛 기둥
+-- R 성좌진: 땅의 큰 마법진, 별 일곱이 떠올라 선으로 이어지고 별빛 기둥
 ------------------------------------------------------------------------
 local function starSeal(data: any)
 	local at: Vector3 = data.at
@@ -556,7 +556,7 @@ local function starSeal(data: any)
 end
 
 ------------------------------------------------------------------------
--- G 은하수: 커다란 지팡이가 내리꽂히고, 보라·남색·노란 안개 속에서 별이 두 팔의 나선으로 소용돌이친다
+-- G 은하수: 커다란 지팡이가 내리꽂히고 보라·남색·노란 안개 속에서 별이 두 팔의 나선으로 소용돌이친다
 ------------------------------------------------------------------------
 local function bigStaff(length: number): { BasePart }
 	local parts: { BasePart } = {}
@@ -852,7 +852,7 @@ local function domeMeteor(data: any)
 		end
 	end)
 end
--- 돔 표면에 별자리를 빛으로 긋고, 다 그으면 모두 한꺼번에 터진다
+-- 돔 표면에 별자리를 빛으로 긋고 다 그으면 모두 한꺼번에 터진다
 local function domeDraw(data: any)
 	local d = domes[data.id]
 	if not d or d.done then

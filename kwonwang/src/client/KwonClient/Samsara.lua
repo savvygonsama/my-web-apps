@@ -216,7 +216,7 @@ local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, l
 	p.Parent = holder
 	table.insert(list, p)
 end
--- 굴대 하나에 붙여 함께 도는 조각들 (굴대는 Weld 로 움직이고, 조각은 굴대에 고정)
+-- 굴대 하나에 붙여 함께 도는 조각들 (굴대는 Weld 로 움직이고 조각은 굴대에 고정)
 local function hubbed(hub: BasePart, items: { { any } }, holder: Instance, list: { Instance })
 	for _, it in ipairs(items) do
 		local p = it[1] :: BasePart
@@ -575,7 +575,7 @@ end
 ------------------------------------------------------------------------
 local H: { [string]: (any) -> () } = {}
 
--- 전생의 메아리 (연타 넷마다): 쪽빛 손바닥이 옆에서 날아와 같은 자리를 다시 치고, 금빛 바퀴 무늬가 번쩍인다
+-- 전생의 메아리 (연타 넷마다): 쪽빛 손바닥이 옆에서 날아와 같은 자리를 다시 치고 금빛 바퀴 무늬가 번쩍인다
 function H.echoPulse(d: any)
 	local at: Vector3 = d.at
 	if not near(at, 250) then
@@ -1063,7 +1063,7 @@ function H.rinneTriWheel(d: any)
 	end)
 end
 
--- 삼생보 (R): 떠난 자리에 멈춰 선 지난 세 삶이 차례로 같은 길을 다시 내달려 베고, 끝에서 나에게 모여들며 바퀴 무늬로 터진다
+-- 삼생보 (R): 떠난 자리에 멈춰 선 지난 세 삶이 차례로 같은 길을 다시 내달려 베고 끝에서 나에게 모여들며 바퀴 무늬로 터진다
 function H.threeLives(d: any)
 	local a: Vector3, b: Vector3 = d.from, d.to
 	if not near(a, 300) then
@@ -1396,7 +1396,7 @@ function H.rebirthCycle(d: any)
 		end
 	end)
 end
--- 전생의 군세: 지난 삶 하나가 적에게 덮쳐 엇갈려 베고, 하늘 바퀴의 구슬이 빛줄기를 꽂는다
+-- 전생의 군세: 지난 삶 하나가 적에게 덮쳐 엇갈려 베고 하늘 바퀴의 구슬이 빛줄기를 꽂는다
 function H.rebirthStrike(d: any)
 	local st = cycleState[d.m]
 	local k = d.k or 1
@@ -1436,7 +1436,7 @@ local function blackFlame(p: Vector3, size: number, rise: number, life: number)
 	fl.Position = p
 	fadeOut(fl, life, { Size = v3(size * 0.25), Position = p + UP * rise })
 end
--- 업화쇄 (E): 사슬이 적 셋에게 날아가 걸리고, 검은 불이 사슬을 타고 번지며 끌어온 뒤, 발밑에서 지옥불로 터진다
+-- 업화쇄 (E): 사슬이 적 셋에게 날아가 걸리고 검은 불이 사슬을 타고 번지며 끌어온 뒤, 발밑에서 지옥불로 터진다
 function H.karmaChains(d: any)
 	local m = d.m
 	local r = rootOf(m)
@@ -1503,7 +1503,7 @@ function H.karmaChains(d: any)
 	end
 end
 
--- 겁화질주 (R): 지난 길이 용암 틈으로 갈라져 타고, 양옆으로 사슬이 휘몰아치고, 도화선처럼 불기둥 여덟이 차례로 솟아 끝에서 크게 터진다
+-- 겁화질주 (R): 지난 길이 용암 틈으로 갈라져 타고 양옆으로 사슬이 휘몰아치고 도화선처럼 불기둥 여덟이 차례로 솟아 끝에서 크게 터진다
 function H.hellDash(d: any)
 	local a: Vector3, b: Vector3 = d.from, d.to
 	if not near(a, 300) then
@@ -1911,7 +1911,7 @@ end
 ------------------------------------------------------------------------
 -- 무상권 (3.2판)
 ------------------------------------------------------------------------
--- 무상섬 (E): 적 다섯의 등 뒤로 차례로 나타나며 베고, 남은 잔상이 마지막에 한꺼번에 다시 베고 흩어진다
+-- 무상섬 (E): 적 다섯의 등 뒤로 차례로 나타나며 베고 남은 잔상이 마지막에 한꺼번에 다시 베고 흩어진다
 function H.phantomRush(d: any)
 	local m = d.m
 	local from: Vector3 = d.from
@@ -1960,7 +1960,7 @@ function H.phantomRush(d: any)
 	end)
 end
 
--- 허실분신 (R): 분신 다섯이 별처럼 뻗어 베고, 서로 엇갈려 오각별을 긋고, 가운데에서 내가 나타나며 별이 터진다
+-- 허실분신 (R): 분신 다섯이 별처럼 뻗어 베고 서로 엇갈려 오각별을 긋고 가운데에서 내가 나타나며 별이 터진다
 function H.mistStar(d: any)
 	local C: Vector3 = d.at
 	if not near(C, 300) then
@@ -2252,7 +2252,7 @@ function H.allReturn(d: any)
 			shakeNear(C, 1.6, 260)
 		end)
 	end
-	-- 그림자가 내 자리로 흩어져 모이고, 빛깔이 돌아온다
+	-- 그림자가 내 자리로 흩어져 모이고 빛깔이 돌아온다
 	task.delay(T4 - 0.3, function()
 		for k = 1, 16 do
 			local a = k / 16 * math.pi * 2
@@ -2317,7 +2317,7 @@ end
 ------------------------------------------------------------------------
 -- 권왕신권 (3.2판)
 ------------------------------------------------------------------------
--- 왕권천타 (E): 등 뒤에 부채꼴로 나타난 금빛 주먹 여섯이 차례로 내지르고, 왕의 큰 주먹이 가운데를 꿰뚫는다
+-- 왕권천타 (E): 등 뒤에 부채꼴로 나타난 금빛 주먹 여섯이 차례로 내지르고 왕의 큰 주먹이 가운데를 꿰뚫는다
 function H.kingBarrage(d: any)
 	local from: Vector3 = d.from
 	if not near(from, 300) then
@@ -2487,7 +2487,7 @@ local function goldClouds(at: Vector3, h: number, r0: number, r1: number, time: 
 		end)
 	end
 end
--- 만인지상 (오의): 금빛 구름이 열리고 거대한 왕관이 내려와 가두고, 돌며 조이고, 보석이 빛줄기를 쏘고, 내리박혀 터진다
+-- 만인지상 (오의): 금빛 구름이 열리고 거대한 왕관이 내려와 가두고 돌며 조이고 보석이 빛줄기를 쏘고 내리박혀 터진다
 function H.crownCage(d: any)
 	local c: Vector3 = d.at
 	if not near(c, 400) then
@@ -2919,7 +2919,7 @@ RunService.Heartbeat:Connect(function(dt: number)
 	end
 end)
 
--- 환생 의식: 하늘에서 빛기둥이 내려오고, 바퀴가 빠르게 돌고, 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
+-- 환생 의식: 하늘에서 빛기둥이 내려오고 바퀴가 빠르게 돌고 몸이 떠올라 빛으로 흩어졌다가 다시 태어난다
 function Samsara.rite(d: any)
 	local at: Vector3 = d.at
 	local dur = d.dur or 3.4
@@ -2944,7 +2944,7 @@ function Samsara.rite(d: any)
 		halo.CFrame = beam.CFrame
 	end)
 	Fx.breakSound("boom", 0.8, 0.5, at)
-	-- 떠오르는 동안 빛 고리가 기둥을 타고 오르고, 빛 가루가 몸으로 빨려 든다
+	-- 떠오르는 동안 빛 고리가 기둥을 타고 오르고 빛 가루가 몸으로 빨려 든다
 	for k = 0, 7 do
 		task.delay(0.3 + k * 0.17, function()
 			Fx.ring(at - Vector3.new(0, 3, 0) + Vector3.new(0, k * 1.2, 0), k % 2 == 0 and col or WHITE, 4, 22, 0.5)

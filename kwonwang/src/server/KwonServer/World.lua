@@ -468,7 +468,7 @@ local function tree(at: Vector3, s: number, parent: Instance, blossom: boolean?)
 	end
 end
 
--- 바위 (1.8판에 다듬음): 큰 돌에 작은 돌이 기대고, 윗면엔 가끔 이끼
+-- 바위 (1.8판에 다듬음): 큰 돌에 작은 돌이 기대고 윗면엔 가끔 이끼
 local function rock(at: Vector3, s: number, parent: Instance, color: Color3?)
 	local c = color or Color3.fromRGB(120, 115, 110)
 	local main = part({
@@ -726,7 +726,7 @@ local function village(out: any)
 	sign(board, Enum.NormalId.Front, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
 	sign(board, Enum.NormalId.Back, { { "⚔ 배틀그라운드", Color3.fromRGB(255, 220, 140), 0.6 }, { "체력 200 · 모두 같은 힘", Color3.fromRGB(255, 255, 255), 0.4 } })
 
-	-- 3.51판: 장로 옆 소문 게시판을 걷어 내고, 큰길 양옆을 작은 정원으로 (서쪽은 장로 뒤 소나무 뜰, 동쪽은 연못)
+	-- 3.51판: 장로 옆 소문 게시판을 걷어 내고 큰길 양옆을 작은 정원으로 (서쪽은 장로 뒤 소나무 뜰, 동쪽은 연못)
 	do
 		local garden = Instance.new("Folder")
 		garden.Name = "ElderGarden"
@@ -1162,7 +1162,7 @@ function SITES.taeheo(r: any, at: Vector3, color: Color3, f: Instance)
 end
 
 -- 금강사: 돌 기단 위의 절, 큰 종과 향로
--- 염화단: 검은 현무암 단 위의 꺼지지 않는 불. 용암 고랑이 둘레를 돌고, 흑요석 기둥마다 불꽃
+-- 염화단: 검은 현무암 단 위의 꺼지지 않는 불. 용암 고랑이 둘레를 돌고 흑요석 기둥마다 불꽃
 function SITES.yeolhwa(r: any, at: Vector3, color: Color3, f: Instance)
 	local d = Vector3.new(at.X, 0, at.Z)
 	local LAVA = Color3.fromRGB(255, 110, 30)
@@ -1904,7 +1904,7 @@ function LANDMARK.belltower(at: Vector3, f: Instance)
 	end
 end
 
--- 거울 호수: 하늘을 비추는 둥근 호수. 디딤돌이 가운데 섬의 정자로 이어지고, 연잎이 떠 있다
+-- 거울 호수: 하늘을 비추는 둥근 호수. 디딤돌이 가운데 섬의 정자로 이어지고 연잎이 떠 있다
 function LANDMARK.mirrorlake(at: Vector3, f: Instance)
 	local R = 72
 	for k = 0, 47 do
@@ -2848,7 +2848,7 @@ local function roadside()
 			end
 		end
 	end
-	-- 들판의 작은 숲 (흩뿌리지 않고, 몇 군데에 모아 심는다)
+	-- 들판의 작은 숲 (흩뿌리지 않고 몇 군데에 모아 심는다)
 	local groves = {
 		Vector3.new(-760, 0, 760), Vector3.new(760, 0, -760), Vector3.new(-1300, 0, 450), Vector3.new(1250, 0, -420),
 		Vector3.new(700, 0, 1200), Vector3.new(-700, 0, -1200), Vector3.new(1100, 0, 1950), Vector3.new(-1900, 0, 1300),
@@ -2897,7 +2897,7 @@ end
 ------------------------------------------------------------------------
 -- 1.0판: 지역의 경계를 자연스럽게. 낮은 돌 턱 대신 그 땅의 생김새를 따른다
 -- (풀밭은 낮은 언덕과 나무숲, 대숲은 대나무, 산적 소굴은 목책, 설산은 눈 둔덕과 전나무, 황야는 붉은 바위기둥 ...).
--- 길이 드는 곳과 군데군데 자연스러운 틈은 비워 두고, 이웃한 지역끼리는 덤불 정도로만 가른다
+-- 길이 드는 곳과 군데군데 자연스러운 틈은 비워 두고 이웃한 지역끼리는 덤불 정도로만 가른다
 ------------------------------------------------------------------------
 local BORDER_THEME: { [string]: string } = {
 	bamboo = "bamboo", fort = "fort", valley = "grass", field = "grass", windhill = "grass", lake = "grass", plum = "blossom", tavern = "fence",
@@ -3487,7 +3487,7 @@ function LANDMARK.fallengiant(at: Vector3, f: Instance)
 	end
 end
 
--- 별바위 고리: 열두 선돌이 둥글게 서 있고, 가운데 돌단 위에서 별빛이 피어오른다
+-- 별바위 고리: 열두 선돌이 둥글게 서 있고 가운데 돌단 위에서 별빛이 피어오른다
 function LANDMARK.stonecircle(at: Vector3, f: Instance)
 	local stone = Color3.fromRGB(120, 118, 130)
 	local glow = Color3.fromRGB(170, 200, 255)
@@ -3723,7 +3723,7 @@ function LANDMARK.lotuspond(at: Vector3, f: Instance)
 	end
 end
 
--- 일검 바위: 칼로 벤 듯 반듯하게 갈라진 큰 바위. 벤 면은 매끈하고, 틈 사이로 지나갈 수 있다
+-- 일검 바위: 칼로 벤 듯 반듯하게 갈라진 큰 바위. 벤 면은 매끈하고 틈 사이로 지나갈 수 있다
 function LANDMARK.splitrock(at: Vector3, f: Instance)
 	local c = Color3.fromRGB(128, 124, 118)
 	for _, sx in ipairs({ -1, 1 }) do
@@ -3742,7 +3742,7 @@ function LANDMARK.splitrock(at: Vector3, f: Instance)
 	part({ Name = "SplitPath", Size = Vector3.new(5, 0.3, 70), Position = at + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(150, 138, 118), Material = Enum.Material.Ground, CanCollide = false, Parent = f })
 end
 
--- 천등 회랑: 곧은 돌길 양옆에 불 켠 석등이 줄지어 서고, 붉은 문 셋을 지나 작은 사당에 닿는다
+-- 천등 회랑: 곧은 돌길 양옆에 불 켠 석등이 줄지어 서고 붉은 문 셋을 지나 작은 사당에 닿는다
 function LANDMARK.lanternway(at: Vector3, f: Instance)
 	local L = 130
 	local from = at + Vector3.new(0, 0, L / 2)
@@ -4532,7 +4532,7 @@ local function sakuraHill()
 	end
 end
 
--- 술독 마루: 초·취팔선권의 만취선이 코를 고는 나무 마루. 둘레에 술독이 산처럼 쌓이고, 하나는 엎어져 웅덩이가 졌다
+-- 술독 마루: 초·취팔선권의 만취선이 코를 고는 나무 마루. 둘레에 술독이 산처럼 쌓이고 하나는 엎어져 웅덩이가 졌다
 local function sojuHill()
 	local at = Config.SOJU_HILL
 	if not at then
@@ -5952,7 +5952,7 @@ end
 
 ------------------------------------------------------------------------
 -- 3.15판 세상 끝 너머: 남쪽 끝 높은 벼랑과 그 아래 바다, 벼랑 끝에서 하늘로 이어지는 무너지는 돌길,
--- 그 끝에 떠 있는 숨은 정원 (상자 하나). 돌을 밟으면 흔들리다 떨어지고, 잠시 뒤 제자리로 돌아온다 (여섯째마다 쉬는 돌)
+-- 그 끝에 떠 있는 숨은 정원 (상자 하나). 돌을 밟으면 흔들리다 떨어지고 잠시 뒤 제자리로 돌아온다 (여섯째마다 쉬는 돌)
 ------------------------------------------------------------------------
 local function edgeSecret(out: any)
 	local E = Config.EGGS.edge
@@ -6349,7 +6349,7 @@ local function hellGate(out: any)
 		rp("ReaperHoodPeak", Vector3.new(2.4, 3.2, 2.4), Vector3.new(0, 13.6, -0.9), BLK, Enum.Material.Fabric, Enum.PartType.Ball).CFrame = CFrame.new(P + Vector3.new(0, 13.6, -0.9) * K) * CFrame.Angles(math.rad(-25), 0, 0)
 				-- 얼굴은 없다: 두건 속은 빛이 닿지 않는 텅 빈 어둠뿐
 		rp("ReaperFaceVoid", Vector3.new(3.4, 3.8, 2.4), Vector3.new(0, 10.9, 1.2), Color3.fromRGB(0, 0, 0), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		-- 앙상한 팔: 한 손은 낫을 쥐고, 한 손은 사람을 가리키듯 뻗는다
+		-- 앙상한 팔: 한 손은 낫을 쥐고 한 손은 사람을 가리키듯 뻗는다
 		local function bonyArm(sx: number, reach: number)
 			local up = rp("ReaperArm", Vector3.new(0.55, 3.2, 0.55), Vector3.new(sx * 2.5, 7.6, 0.6), BONE, Enum.Material.Slate)
 			up.CFrame = CFrame.new(up.Position) * CFrame.Angles(math.rad(-30 * reach), 0, sx * math.rad(-12))
@@ -6458,7 +6458,7 @@ local function hellGate(out: any)
 			wisps[i] = prompt(w, "달래기", "원혼", "HellWisp" .. i)
 		end
 
-		-- 올라가는 문 (이승으로) — 떨어진 자리 옆, 남쪽 벽 가까이
+		-- 올라가는 문 (이승으로): 떨어진 자리 옆, 남쪽 벽 가까이
 		local exitStone = part({ Name = "HellExit", Size = Vector3.new(7, 10, 2), Position = R + Vector3.new(-40, 5, HALF - 4), Color = Color3.fromRGB(190, 200, 190), Material = Enum.Material.Marble, Parent = f })
 		light(exitStone, Color3.fromRGB(200, 240, 210), 28, 1.2)
 		local exitSign = part({ Name = "HellExitSign", Size = Vector3.new(6, 2, 0.4), Position = R + Vector3.new(-40, 11.5, HALF - 4.6), Color = Color3.fromRGB(90, 80, 70), Material = Enum.Material.Wood, Parent = f })
@@ -6844,7 +6844,7 @@ local function hellWorld(out: any)
 		roof(CFrame.new(hall + Vector3.new(0, 25, 0)), 84, 38, rgb(30, 26, 34), rgb(40, 30, 36), f)
 		local hs = part({ Name = "HallSign", Size = Vector3.new(26, 5, 0.6), Position = hall + Vector3.new(0, 20, 14.6), Color = rgb(20, 14, 16), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 		sign(hs, Enum.NormalId.Front, { { "명부전", rgb(255, 120, 90), 1 } })
-		-- 업경대 (죄를 비추는 큰 거울) — 전각 앞 가운데
+		-- 업경대 (죄를 비추는 큰 거울): 전각 앞 가운데
 		local mirror = c + Vector3.new(0, 0, -50)
 		part({ Name = "MirrorStand", Size = Vector3.new(8, 3, 3), Position = mirror + Vector3.new(0, 1.5, 0), Color = rgb(40, 30, 36), Material = Enum.Material.Basalt, Parent = f })
 		local glass = part({ Name = "MirrorGlass", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 16, 16), CFrame = CFrame.new(mirror + Vector3.new(0, 13, 0)) * CFrame.Angles(0, math.rad(90), 0), Color = rgb(190, 60, 70), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = f })
@@ -7243,7 +7243,7 @@ function World.towerArena(slot: number): Vector3
 	return center
 end
 
--- 1.7판 구름 미궁: 사람마다 한 줄. 일곱 방(둥근 구름 단)을 구름 다리로 잇고, 다리 입구마다 구름 문을 둔다
+-- 1.7판 구름 미궁: 사람마다 한 줄. 일곱 방(둥근 구름 단)을 구름 다리로 잇고 다리 입구마다 구름 문을 둔다
 -- 돌려주는 것: { centers = 방 가운데들, gates = 다리마다 구름 문, chest = 보물방의 상자 (T) }
 local mazes: { [number]: any } = {}
 function World.mazeRooms(slot: number): any
@@ -7322,11 +7322,11 @@ function World.mazeGate(gate: BasePart, closed: boolean)
 end
 
 ------------------------------------------------------------------------
--- 3.19.1판: 새 권법 사부 열하나의 자리. 사부가 선 자리 (반지름 6)는 비우고, 그 권법에 맞는 꾸밈을 둘레에 놓는다
+-- 3.19.1판: 새 권법 사부 열하나의 자리. 사부가 선 자리 (반지름 6)는 비우고 그 권법에 맞는 꾸밈을 둘레에 놓는다
 -- (등 뒤 = 지도 가운데에서 먼 쪽. 다가오는 사람에게 사부와 꾸밈이 함께 보인다)
 ------------------------------------------------------------------------
 local ART_SITES: { [string]: (Vector3, Vector3, Folder) -> () } = {}
--- 얼음 벽을 상자처럼 보이지 않게: 위와 앞에 크고 작은 얼음 덩이를 비스듬히 얹고, 꼭대기에 눈을 덮는다
+-- 얼음 벽을 상자처럼 보이지 않게: 위와 앞에 크고 작은 얼음 덩이를 비스듬히 얹고 꼭대기에 눈을 덮는다
 local function jag(f: Instance, center: Vector3, back: Vector3, w: number, top: number, n: number)
 	local side = Vector3.new(-back.Z, 0, back.X)
 	for k = 1, n do
@@ -7683,7 +7683,7 @@ end
 
 -- 3.18판: 맵 가볍게 (생김새는 그대로). 부품이 5만 개가 넘어 휴대폰·낮은 PC에서 끊긴다
 -- · 그림자: 작은 것 (8 미만) · 빛나는 것 · 반투명한 것 · 안 부딪히는 장식 (24 미만)은 그림자를 드리우지 않는다
---   (그림자 계산이 가장 무겁고, 이런 것의 그림자는 거의 보이지 않는다. 집·바위·나무 둥치 같은 큰 것은 그대로)
+--   (그림자 계산이 가장 무겁고 이런 것의 그림자는 거의 보이지 않는다. 집·바위·나무 둥치 같은 큰 것은 그대로)
 -- · 닿음 검사: 밟으면 무너지는 돌길 (EdgeStep)만 쓴다. 나머지는 끈다 (부딪힘·밟기는 그대로)
 -- 나무 지붕 (잎)은 크고 그림자가 땅에 드리워야 나무답다: 안 부딪혀도 그림자는 남긴다
 local CANOPY = { Leaves = true, LLeaves = true, PineLayer = true, PineSnow = true, GroveLeaves = true }

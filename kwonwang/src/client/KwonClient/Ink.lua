@@ -1,5 +1,5 @@
 -- 권왕 2.7판: 진 무극신권의 먹과 붓 (화면)
--- 획은 겹쳐 찍은 먹 방울로 그린다: 붓을 누른 처음은 굵고, 끝으로 갈수록 가늘어지며, 가장자리에 먹이 튄다.
+-- 획은 겹쳐 찍은 먹 방울로 그린다: 붓을 누른 처음은 굵고 끝으로 갈수록 가늘어지며 가장자리에 먹이 튄다.
 -- 먹은 잠시 뒤 금빛으로 타오르며 터진다
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -73,7 +73,7 @@ local function shakeNear(pos: Vector3, amount: number, range: number)
 	end
 end
 
--- 붓의 누름: 처음 0.15까지 굵어지고, 끝으로 가며 가늘어진다 (조금 물결친다)
+-- 붓의 누름: 처음 0.15까지 굵어지고 끝으로 가며 가늘어진다 (조금 물결친다)
 local function pressure(u: number, seed: number): number
 	local rise = math.clamp(u / 0.15, 0, 1)
 	local fall = 1 - u * 0.7
@@ -126,7 +126,7 @@ local function groundStroke(points: { Vector3 }, width: number, draw: number, se
 	end
 	return out
 end
--- 먹이 금빛으로 타올라 터진다: 조각들이 금빛이 되었다가 부풀며 사라지고, 몇 곳에서 금빛 기둥이 솟는다
+-- 먹이 금빛으로 타올라 터진다: 조각들이 금빛이 되었다가 부풀며 사라지고 몇 곳에서 금빛 기둥이 솟는다
 local function ignite(parts: { BasePart }, life: number, columns: number?)
 	for i, p in ipairs(parts) do
 		if p.Parent then

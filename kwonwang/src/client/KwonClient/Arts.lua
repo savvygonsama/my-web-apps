@@ -117,7 +117,7 @@ local function emitBurst(at: Vector3, c: Color3, n: number, speed: number, size:
 		holder:Destroy()
 	end)
 end
--- 부풀며 사라지는 빛 껍질 (안은 밝고, 바깥은 옅게)
+-- 부풀며 사라지는 빛 껍질 (안은 밝고 바깥은 옅게)
 local function shell(at: Vector3, c: Color3, c2: Color3, r: number, life: number)
 	local outer = part(Vector3.new(1, 1, 1), c, Enum.Material.Neon, 0.35, "ball")
 	outer.Position = at
@@ -202,7 +202,7 @@ local function cracks(g: Vector3, R: number, n: number, glow: Color3, life: numb
 		end)
 	end
 end
--- 회오리: 높이마다 띠 셋이 돌며, 위로 갈수록 넓어진다 (spin < 0 이면 거꾸로 돈다). follow가 있으면 그 몸을 따라간다
+-- 회오리: 높이마다 띠 셋이 돌며 위로 갈수록 넓어진다 (spin < 0 이면 거꾸로 돈다). follow가 있으면 그 몸을 따라간다
 local function tornado(base: Vector3, R: number, H: number, c: Color3, c2: Color3, dur: number, follow: any, spin: number)
 	local bands = {}
 	local L = 5
@@ -373,7 +373,7 @@ local function grabSlam(data: any)
 	local c, c2 = colors(data)
 	local R = data.radius or 8
 	crater(data.at, R, c, c2, 1.2)
-	-- 3.19.5판: 메친 자리가 쩍 갈라지고, 끊어진 쇠사슬 고리가 튄다
+	-- 3.19.5판: 메친 자리가 쩍 갈라지고 끊어진 쇠사슬 고리가 튄다
 	local g = data.at - Vector3.new(0, 2.5, 0)
 	cracks(g, R * 1.4, 9, Color3.fromRGB(255, 190, 120), 0.9)
 	for _ = 1, 6 do
@@ -562,7 +562,7 @@ local function rushBurst(data: any)
 	local at, R = data.at, data.radius or 12
 	Fx.blast(at, c, c2, math.clamp(R / 8, 1, 2.4))
 	Fx.ring(at - Vector3.new(0, 2.3, 0), c2, 1, R * 2.2, 0.4)
-	-- 3.19.5판: 한가운데서 하늘까지 닿는 회오리가 솟고, 바람 칼날 열둘이 사방으로 베어 나간다
+	-- 3.19.5판: 한가운데서 하늘까지 닿는 회오리가 솟고 바람 칼날 열둘이 사방으로 베어 나간다
 	tornado(at - Vector3.new(0, 2.6, 0), R * 0.7, 26, c, c2, 0.9, nil, 1)
 	for k = 0, 11 do
 		local a = k / 12 * math.pi * 2
@@ -672,7 +672,7 @@ local function pulseBell(data: any)
 		shakeNear(at, 0.35, 70)
 	end)
 end
--- 거울 분신: 상대 앞에 거울이 서고, 나의 잔상이 거울에서 튀어나와 친 뒤 거울이 깨진다
+-- 거울 분신: 상대 앞에 거울이 서고 나의 잔상이 거울에서 튀어나와 친 뒤 거울이 깨진다
 local function pulseMirror(data: any)
 	local c, c2 = colors(data)
 	local at = data.at
@@ -905,7 +905,7 @@ local function zoneCrystal(data: any)
 	Fx.breakSound("glass", 0.7, 1.1, g)
 	shakeNear(g, 0.4, 90)
 end
--- 3.19.5판 천종만향: 하늘에서 진짜 종 모양의 거대한 금종이 내려와 걸리고, 옆의 당목이 0.4초마다 종을 친다.
+-- 3.19.5판 천종만향: 하늘에서 진짜 종 모양의 거대한 금종이 내려와 걸리고 옆의 당목이 0.4초마다 종을 친다.
 -- 칠 때마다 종이 흔들리며 울림 고리가 퍼진다
 local function zoneBell(data: any)
 	local c, c2 = colors(data)
@@ -1437,7 +1437,7 @@ local function overlordPunch(data: any)
 		opts.flash(CRIMSON, 0.35)
 	end
 end
--- X 패천멸지: 먹구름 대신 하늘에 붉은·금빛 큰 인장이 돌고, 벼락 대신 금빛 주먹 기둥이 떨어진다
+-- X 패천멸지: 먹구름 대신 하늘에 붉은·금빛 큰 인장이 돌고 벼락 대신 금빛 주먹 기둥이 떨어진다
 local function overlordSeal(data: any)
 	local m = data.m
 	local r = rootOf(m)
@@ -1501,7 +1501,7 @@ end
 
 -- ── 빙혼신장 한빙결 ──
 local function binghonFreeze(data: any)
-	-- 빙혼: 발밑에서 눈꽃 무늬가 퍼지고, 적마다 얼음 꽃봉오리에 갇힌다
+	-- 빙혼: 발밑에서 눈꽃 무늬가 퍼지고 적마다 얼음 꽃봉오리에 갇힌다
 	local at, R = data.at, data.radius or 15
 	local g = groundAt(at)
 	for k = 0, 5 do
@@ -1530,7 +1530,7 @@ local function binghonErase(data: any)
 	end
 end
 
--- ── 천종신권 금종조: 하늘에서 반투명한 금종이 떨어져 몸을 덮고, 덮인 동안 종이 웅웅 울린다 ──
+-- ── 천종신권 금종조: 하늘에서 반투명한 금종이 떨어져 몸을 덮고 덮인 동안 종이 웅웅 울린다 ──
 local function bellGuard(data: any)
 	local m = data.m
 	local r = rootOf(m)
@@ -1832,7 +1832,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		end)
 		Fx.sound("splash", 0.8, 0.8, r.Position)
 	end,
-	-- 질풍연권: 몸에서 회오리가 솟고, 바람 칼날 여섯이 둘레로 쏘아진다
+	-- 질풍연권: 몸에서 회오리가 솟고 바람 칼날 여섯이 둘레로 쏘아진다
 	jilpung = function(m, r, feet, c, c2, dur, _slot)
 		tornado(feet, 8, 18, c, c2, math.clamp(dur * 0.45, 0.7, 1.1), m, 1)
 		for k = 0, 5 do
@@ -1841,7 +1841,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		Fx.burst("dust", feet + Vector3.new(0, 0.5, 0), Color3.fromRGB(200, 210, 190), 16, 1.4)
 		Fx.sound("swing", 1, 0.6, r.Position)
 	end,
-	-- 산악붕권: 발밑이 용암빛으로 갈라지고, 뜯겨 나온 바위 여덟이 몸 둘레를 돌며 떠오른다 (힘을 모으는 1초)
+	-- 산악붕권: 발밑이 용암빛으로 갈라지고 뜯겨 나온 바위 여덟이 몸 둘레를 돌며 떠오른다 (힘을 모으는 1초)
 	sanak = function(m, r, feet, _c, _c2, dur, _slot)
 		cracks(feet, 22, 12, Color3.fromRGB(255, 140, 60), math.clamp(dur, 1, 2))
 		local rocks = {}
@@ -1878,7 +1878,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		Fx.breakSound("rock", 0.8, 0.6, r.Position)
 		shakeNear(r.Position, 0.6, 90)
 	end,
-	-- 빙혼신장: 머리 위에 큰 눈꽃이 펼쳐져 돌고, 눈보라가 쏟아지며 발밑부터 서리가 번진다
+	-- 빙혼신장: 머리 위에 큰 눈꽃이 펼쳐져 돌고 눈보라가 쏟아지며 발밑부터 서리가 번진다
 	binghon = function(m, r, feet, c, _c2, dur, _slot)
 		local top = r.Position + Vector3.new(0, 22, 0)
 		local flake = {}
@@ -1939,7 +1939,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		Fx.breakSound("glass", 0.9, 0.7, r.Position)
 		shakeNear(r.Position, 0.5, 100)
 	end,
-	-- 천옥신권: 발밑에 옥 연꽃이 두 겹으로 피고, 둘레에 옥 벽 여섯 장이 솟아 육각 결계를 이룬다
+	-- 천옥신권: 발밑에 옥 연꽃이 두 겹으로 피고 둘레에 옥 벽 여섯 장이 솟아 육각 결계를 이룬다
 	cheonok = function(_m, r, feet, c, c2, dur, _slot)
 		local life = math.clamp(dur + 0.6, 1.2, 2.8)
 		for layer = 1, 2 do
@@ -1977,7 +1977,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		Fx.breakSound("glass", 0.8, 1.2, r.Position)
 		shakeNear(r.Position, 0.5, 90)
 	end,
-	-- 천종신권: 하늘에서 금빛 줄이 내려오고, 몸에서 세로로 선 울림 고리가 앞뒤좌우로 퍼진다 (종은 기술이 건다)
+	-- 천종신권: 하늘에서 금빛 줄이 내려오고 몸에서 세로로 선 울림 고리가 앞뒤좌우로 퍼진다 (종은 기술이 건다)
 	cheonjong = function(_m, r, _feet, c, c2, _dur, _slot)
 		beamLine(r.Position + Vector3.new(0, 60, 0), r.Position + Vector3.new(0, 14, 0), 0.8, c2, 0.1, 0.8)
 		for k = 0, 3 do
@@ -1987,7 +1987,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		end
 		Fx.sound("ping", 0.8, 0.4, r.Position)
 	end,
-	-- 명경권: 둘레에 거울이 솟아 회랑이 되고, 거울과 거울 사이로 빛이 별 모양으로 오간다 (X는 더 크게, 열여섯 장)
+	-- 명경권: 둘레에 거울이 솟아 회랑이 되고 거울과 거울 사이로 빛이 별 모양으로 오간다 (X는 더 크게, 열여섯 장)
 	myeonggyeong = function(_m, r, feet, c, c2, dur, slot)
 		local n = slot == "X" and 16 or 10
 		local R = slot == "X" and 20 or 13
@@ -2054,7 +2054,7 @@ local ULT_OPEN: { [string]: (Model, BasePart, Vector3, Color3, Color3, number, s
 		end)
 		Fx.sound("ping", 0.8, 0.3, r.Position)
 	end,
-	-- 천하패권: 몸에서 붉은 불꽃 같은 패기가 타오르고, 발밑이 금빛으로 짓눌려 갈라지며 먼지가 바깥으로 밀려난다
+	-- 천하패권: 몸에서 붉은 불꽃 같은 패기가 타오르고 발밑이 금빛으로 짓눌려 갈라지며 먼지가 바깥으로 밀려난다
 	cheonha = function(m, r, feet, _c, _c2, dur, slot)
 		local big = slot == "X"
 		local flames = {}

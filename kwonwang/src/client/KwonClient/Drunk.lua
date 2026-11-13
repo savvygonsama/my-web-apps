@@ -92,7 +92,7 @@ local function attach(p: BasePart, to: BasePart, cf: CFrame, holder: Instance, l
 	table.insert(list, p)
 end
 
--- 상표 없는 초록 유리병: 손이 목을 쥐고, 몸통은 새끼손가락 쪽으로 뻗는다
+-- 상표 없는 초록 유리병: 손이 목을 쥐고 몸통은 새끼손가락 쪽으로 뻗는다
 local function buildBottle(hand: BasePart, holder: Instance, list: { Instance })
 	local up = CFrame.Angles(0, 0, math.rad(90)) -- 원기둥의 축(X)을 손의 위아래(Y)로
 	local function cyl(len: number, d: number, y: number, color: Color3, mat: Enum.Material, alpha: number?)
@@ -121,7 +121,7 @@ local function buildBottle(hand: BasePart, holder: Instance, list: { Instance })
 	glow.Parent = mouth
 end
 
--- 머리에 질끈 동여맨 붉은 넥타이: 이마를 한 바퀴 두르고, 오른쪽 뒤에 매듭, 두 꼬리가 늘어져 흔들린다
+-- 머리에 질끈 동여맨 붉은 넥타이: 이마를 한 바퀴 두르고 오른쪽 뒤에 매듭, 두 꼬리가 늘어져 흔들린다
 local function buildTie(head: BasePart, holder: Instance, list: { Instance })
 	local r = math.max(head.Size.X, head.Size.Z) * 0.5 + 0.04
 	local y = head.Size.Y * 0.2
@@ -444,7 +444,7 @@ local function sojuThrow(data: any)
 		Debris:AddItem(pool, rain + 3)
 	end)
 end
--- 불똥 하나에 웅덩이가 타오르고, 여덟 취선의 그림자가 한가운데로 덮친다
+-- 불똥 하나에 웅덩이가 타오르고 여덟 취선의 그림자가 한가운데로 덮친다
 local function sojuIgnite(data: any)
 	local at: Vector3 = data.at
 	if not at or not near(at, 260) then

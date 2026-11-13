@@ -942,7 +942,7 @@ FORMS.wolf = function(model, look, k, boss)
 	-- 갈기: 목과 어깨를 두르는 한 덩어리의 털 (사자는 머리 둘레까지 크게)
 	wear(model, "UpperTorso", "Ruff", Vector3.new(2.2, 0.9, 1.4) * k, CFrame.new(0, 0.72 * k, 0.05 * k), pale, M.Fabric, Ball)
 	if look.lion then
-		-- 얼굴은 드러나고, 머리 둘레와 뒤를 덮는다
+		-- 얼굴은 드러나고 머리 둘레와 뒤를 덮는다
 		wear(model, "Head", "Mane", Vector3.new(2.1, 2.1, 1.1) * k, CFrame.new(0, 0.05 * k, 0.55 * k), dark(pale, 0.18), M.Fabric, Ball)
 		wear(model, "Head", "Mane2", Vector3.new(1.75, 1.8, 0.9) * k, CFrame.new(0, 0.12 * k, 0.32 * k), pale, M.Fabric, Ball)
 	end
@@ -1622,7 +1622,7 @@ end
 
 -- 균왕: 아래가 불룩한 자루 몸, 늘어진 턱받이, 큰 갓 (몸과 따로 읽히게 목을 가늘게), 가는 자루 팔과 작은 갓 주먹,
 -- 땅으로 퍼지는 뿌리 다리, 어깨와 등에서 돋은 작은 버섯
--- 3.20.2판: 균왕은 막대 팔다리에 공 손이 떠 있어 이상했다 → 옛 몸틀을 지우고, 둥글게 빚은 버섯 몸 (FORMS.shroom, 보스) 을 쓴다
+-- 3.20.2판: 균왕은 막대 팔다리에 공 손이 떠 있어 이상했다 → 옛 몸틀을 지우고 둥글게 빚은 버섯 몸 (FORMS.shroom, 보스) 을 쓴다
 
 ------------------------------------------------------------------------
 -- 입히기
@@ -1699,7 +1699,7 @@ local function hornPair(model: Model, color: Color3, k: number, len: number, spr
 		wear(model, "Head", "HornTip", Vector3.new(0.14 * k, len * 0.5 * k, 0.14 * k), CFrame.new(x * (0.5 + len * 0.28) * k, (0.55 + len * 0.42) * k, 0) * CFrame.Angles(0, 0, -x * math.rad(spread + 35)), dark(color, 0.1), M.SmoothPlastic)
 	end
 end
--- 원귀: 흐트러진 긴 머리가 얼굴을 덮고, 손목에 끊어진 쇠사슬
+-- 원귀: 흐트러진 긴 머리가 얼굴을 덮고 손목에 끊어진 쇠사슬
 HELLX.wongwi = function(model, look, k)
 	hairCurtain(model, C3(10, 8, 14), k, 9, 2.6)
 	for _, hn in ipairs({ "LeftHand", "RightHand" }) do

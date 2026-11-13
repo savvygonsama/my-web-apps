@@ -214,7 +214,7 @@ function H.twinDiscs(d: any)
 end
 
 ------------------------------------------------------------------------
--- 일월환보 (R): 제자리에 해가 터지고, 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다
+-- 일월환보 (R): 제자리에 해가 터지고 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다
 ------------------------------------------------------------------------
 function H.solarLunarStep(d: any)
 	local a: Vector3, b: Vector3 = d.from, d.to
@@ -322,7 +322,7 @@ local function sigil(R: number, c1: Color3, c2: Color3): (Group, Group)
 	galpha(inner, 1)
 	return outer, inner
 end
--- 진을 life 동안 돌린다 (처음에 밝아지고, 끝에 사라진다)
+-- 진을 life 동안 돌린다 (처음에 밝아지고 끝에 사라진다)
 local function runSigil(at: Vector3, R: number, c1: Color3, c2: Color3, life: number, speed: number?)
 	local outer, inner = sigil(R, c1, c2)
 	local g = ground(at) + Vector3.new(0, 0.15, 0)
@@ -345,7 +345,7 @@ local function trailDot(p: Vector3, d: number, color: Color3, life: number)
 	b.Position = p
 	fadeOut(b, life, { Size = v3(d * 0.2) })
 end
--- 땅이 가운데에서 사방으로 갈라진다 (금이 차례로 자라고, 끝에서 빛이 샌다)
+-- 땅이 가운데에서 사방으로 갈라진다 (금이 차례로 자라고 끝에서 빛이 샌다)
 local function groundCracks(c: Vector3, n: number, len: number, c1: Color3, c2: Color3, life: number, leak: boolean?)
 	local g0 = ground(c) + Vector3.new(0, 0.1, 0)
 	for k = 1, n do
@@ -387,7 +387,7 @@ end
 
 ------------------------------------------------------------------------
 -- 대일월천 (오의, 3.1.1판 새로)
--- 등 뒤에 해와 달이 떠오른다 → 해는 불의 빛줄기로 땅을 앞뒤로 가르고, 달은 거대한 초승달 셋을 내리꽂는다
+-- 등 뒤에 해와 달이 떠오른다 → 해는 불의 빛줄기로 땅을 앞뒤로 가르고 달은 거대한 초승달 셋을 내리꽂는다
 -- → 둘이 적 위에서 부딪쳐 일식이 되고 땅이 금빛·푸른빛으로 갈라진다 → 일식이 땅에 박히며 빛의 돔으로 터진다
 ------------------------------------------------------------------------
 function H.sunMoonFall(d: any)
@@ -480,7 +480,7 @@ function H.sunMoonFall(d: any)
 			end
 		end)
 	end)
-	-- 달의 초승달 셋: 하늘을 넘어 적 위에 내리꽂히고, 땅에 초승달 자국이 남는다
+	-- 달의 초승달 셋: 하늘을 넘어 적 위에 내리꽂히고 땅에 초승달 자국이 남는다
 	for i = 1, slams do
 		local t0 = slamAt + (i - 1) * slamEvery
 		task.delay(t0, function()
@@ -592,7 +592,7 @@ end
 
 ------------------------------------------------------------------------
 -- 일월개벽 (초 오의, 3.1.1판 새로)
--- 컷씬: 세상이 어두워지고, 내 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (나는 둘 사이에 떠오른다)
+-- 컷씬: 세상이 어두워지고 내 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (나는 둘 사이에 떠오른다)
 -- → 일월윤전: 해와 달이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 (해는 불기둥, 달은 초승달). 하늘빛이 따라 바뀐다
 -- → 합삭: 둘이 머리 위에서 부딪쳐 거대한 일식이 걸리고 세상의 빛깔이 빠진다 (시간이 멈춘 듯)
 -- → 빛살: 일식의 테에서 빛살이 쏟아진다 → 개벽: 하늘로 주먹을 내지르면 일식이 금 가고 깨지며 새벽빛으로 터진다
@@ -844,7 +844,7 @@ function H.eclipseStrike(d: any)
 		end
 	end
 end
--- 일식의 빛살: 하늘의 일식에서 적에게 꽂히고, 그 자리에서 빛의 가시가 솟는다
+-- 일식의 빛살: 하늘의 일식에서 적에게 꽂히고 그 자리에서 빛의 가시가 솟는다
 function H.eclipseRay(d: any)
 	local from: Vector3 = d.from
 	for _, at in ipairs(d.ats or {}) do
@@ -928,7 +928,7 @@ function H.duskFan(d: any)
 	Fx.breakSound("whoosh", 0.8, 0.9, from)
 end
 
--- 석양보 (R): 노을이 되어 적들의 등 뒤로 차례로 나타나고, 지나간 노을빛 줄이 한꺼번에 터진다
+-- 석양보 (R): 노을이 되어 적들의 등 뒤로 차례로 나타나고 지나간 노을빛 줄이 한꺼번에 터진다
 function H.duskChain(d: any)
 	local prev: Vector3 = d.from
 	if not near(prev, 300) then
@@ -1161,7 +1161,7 @@ end
 -- 일월동귀 (황혼의 초 오의, 3.1.1판 새로)
 -- 컷씬: 하늘이 노을로 물들고 양쪽에서 거대한 석양과 보랏빛 달이 내게로 내려온다
 -- → 둘이 빨려 들며 작아져 내 오른손 (해) 과 왼손 (달) 에 맺힌다
--- → 손을 떠나 발밑 진의 테두리를 서로 반대로 내달리며 불의 원을 그리고, 앞에서 만난다
+-- → 손을 떠나 발밑 진의 테두리를 서로 반대로 내달리며 불의 원을 그리고 앞에서 만난다
 -- → 하나가 된 황혼의 구슬이 머리 위로 떠올라 커지며 둘레를 빨아들이다가, 한 점으로 줄어든다 (빛이 모두 꺼진다)
 -- → 세상이 노을빛으로 하얗게 터진다
 ------------------------------------------------------------------------
@@ -1277,7 +1277,7 @@ function H.twilightCollapse(d: any)
 			end
 		end
 	end)
-	-- 하나가 된다: 앞에서 만난 둘이 황혼의 구슬이 되어 머리 위로 떠오르며 커지고, 둘레를 빨아들이다가 한 점으로 줄어든다
+	-- 하나가 된다: 앞에서 만난 둘이 황혼의 구슬이 되어 머리 위로 떠오르며 커지고 둘레를 빨아들이다가 한 점으로 줄어든다
 	task.delay(T3, function()
 		local F = rimAt(math.pi / 2)
 		local O = C + UP * 18

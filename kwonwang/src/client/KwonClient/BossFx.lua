@@ -71,7 +71,7 @@ end
 local H: { [string]: (any) -> () } = {}
 local WHITE = Color3.new(1, 1, 1)
 
--- 패턴이 시작될 때: 보스 둘레로 큰 고리가 모여들고, 빛기둥이 솟아 기를 모은다
+-- 패턴이 시작될 때: 보스 둘레로 큰 고리가 모여들고 빛기둥이 솟아 기를 모은다
 function H.bossStart(d: any)
 	local r = rootOf(d.m)
 	if not r or not near(r.Position, 420) then

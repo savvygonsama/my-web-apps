@@ -49,7 +49,7 @@ function MiniQuest.line(p: any, sid: string): string
 	if not q or not step then
 		return ""
 	end
-	return string.format("「%s」 %d/%d · %s%s", q.title, i, #q.steps, step.text, progressText(p, sid, step))
+	return string.format("‘%s’ %d/%d · %s%s", q.title, i, #q.steps, step.text, progressText(p, sid, step))
 end
 
 local function advance(player: Player, sid: string)
@@ -81,12 +81,12 @@ function MiniQuest.talk(player: Player, sid: string): boolean
 	end
 	local m = Config.MASTERS[sid]
 	local who = m and m.name or "사부"
-	local title = m and ("「" .. m.quote .. "」") or ""
+	local title = m and ("‘" .. m.quote .. "’") or ""
 	if (p.mq[sid] or 0) == 0 then
 		p.mq[sid] = 1
 		p.mqn[sid] = 0
 		st.dirty = true
-		ctx.dialog(player, { who = who, title = title, text = "시험을 청하기 전에, 부탁이 하나 있다. 「" .. q.title .. "」\n" .. q.steps[1].text .. progressText(p, sid, q.steps[1]) })
+		ctx.dialog(player, { who = who, title = title, text = "시험을 청하기 전에, 부탁이 하나 있다. ‘" .. q.title .. "’\n" .. q.steps[1].text .. progressText(p, sid, q.steps[1]) })
 		ctx.pushState(player)
 		return false
 	end
@@ -124,7 +124,7 @@ function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: numb
 	end
 	local step, cur = stepOf(p, sid)
 	if not step or cur ~= stepIdx then
-		ctx.toast(player, "…아직은 그저 고운 것 같다")
+		ctx.toast(player, "…아직은 그냥 고운 돌이다")
 		return
 	end
 	if step.kind == "find" then
@@ -238,13 +238,13 @@ function MiniQuest.tick(player: Player)
 					local st = ctx.states[player] :: any
 					if os.clock() - (st.mqNightHint or 0) > 20 then
 						st.mqNightHint = os.clock()
-						ctx.toast(player, "🌙 여기는 밤에 와야 할 것 같다")
+						ctx.toast(player, "🌙 여기는 밤에 와야겠다")
 					end
 				elseif step.day and not ctx.isDay() then
 					local st = ctx.states[player] :: any
 					if os.clock() - (st.mqNightHint or 0) > 20 then
 						st.mqNightHint = os.clock()
-						ctx.toast(player, "☀ 여기는 낮에 와야 할 것 같다")
+						ctx.toast(player, "☀ 여기는 낮에 와야겠다")
 					end
 				else
 					if step.say then

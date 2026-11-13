@@ -323,7 +323,7 @@ local function emblemFallback(at: Vector3, c1: Color3, c2: Color3, f: Instance)
 	light(core, c1, 22, 2)
 end
 
--- 마네킹: 권법 빛깔의 R15 몸 (서버가 짓고, 몸동작 · 장신구는 저마다의 화면이)
+-- 마네킹: 권법 빛깔의 R15 몸 (서버가 짓고 몸동작 · 장신구는 저마다의 화면이)
 local RIG: { { any } } = {
 	{ "LowerTorso", Vector3.new(2, 0.4, 1), Vector3.new(0, -0.8, 0), "HumanoidRootPart", "Root", Vector3.new(0, -0.8, 0) },
 	{ "UpperTorso", Vector3.new(2, 1.6, 1), Vector3.new(0, 0.2, 0), "LowerTorso", "Waist", Vector3.new(0, -0.6, 0) },

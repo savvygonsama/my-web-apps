@@ -162,7 +162,7 @@ function Gallery.start(o: any)
 						onPad[u] = on
 					end
 				end
-				-- 가까운 마네킹: 장신구 입히고, 차례로 시범 (한 번에 셋까지)
+				-- 가까운 마네킹: 장신구 입히고 차례로 시범 (한 번에 셋까지)
 				local busy = 0
 				for _, u in ipairs(units) do
 					if u.doll and Anim.playing(u.doll) then

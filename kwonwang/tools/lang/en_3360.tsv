@@ -45,7 +45,7 @@
 3404	To request the trial
 3405	To learn
 3406	<font color="#C8B8A0">%s found at: %s (Heavenly Realm only)</font>
-3407	<font color="#B8E0FF"><b>📜 Master's Request 「%s」</b></font>
+3407	<font color="#B8E0FF"><b>📜 Master's Request ‘%s’</b></font>
 3408	<font color="#C8C8C8">Find the master and talk to them; they'll ask a favor before the test</font>
 3409	<font color="#FFD25A"><b>💎 Game Pass Style</b>  Get it in the shop · Enhance +0 ×%.2f → +%d ×%.2f</font>
 3410	<b>🔺 Enhance +%d → +%d</b>  🧩 Manual Fragments %d (owned %d) · 💰 %s → grade multiplier ×%.2f → ×%.2f
@@ -106,9 +106,9 @@
 3465	💊 Summoning Pill: %d s left (training x2)
 3466	Remove Title
 3467	All
-3468	\32Exclusive mount 「
-3469	✨ Aura 「
-3470	Title 「
+3468	\32Exclusive mount ‘
+3469	✨ Aura ‘
+3470	Title ‘
 3471	✔ Wearing
 3472	Wear Title
 3473	✔ Done
@@ -216,7 +216,7 @@
 3575	<b>🎮 Controls</b>
 3576	• Click: combo (chains up to four) · Z: heavy strike (one strong blow; for the Dragon Palm, hold and release)
 3577	• E: skill · R: skill (mastery %d) · G: Secret Art (mastery %d, full Ki) · X: Ultimate Art (Transcendent and rebirth styles)
-3578	• F: block. <b>Press right before a hit to deflect</b> — take no damage and stagger the attacker
+3578	• F: block. <b>Press right before a hit to deflect</b>: take no damage and stagger the attacker
 3579	• Q: dash (briefly invincible) · Space in the air: double jump · C (or Ctrl): run
 3580	• T (nearby): masters, training, shops, gates · H: Wound Salve · Tab: stats · M: map
 3581	• Phone/tablet: round buttons at the bottom right. Center 👊 attack, inner ring 💥 heavy · 💨 dash · 🛡 block, outer ring E · R · G · X
@@ -233,8 +233,8 @@
 3592	• Click right after a deflect: <b>Counter</b> (heavy damage and big balance damage)
 3593	• Dodge with a dash right before a hit for a <b>Read</b>: the attacker freezes; click right away to counter
 3594	<b>How to Trade Blows</b>
-3595	• 🟧 Balance bar: fills each time you block. When full, <b>Guard Break</b> — your knees buckle and you take heavy damage
-3596	• When an enemy's weapon glints, it's about to swing — time to deflect
+3595	• 🟧 Balance bar: fills each time you block. When full, <b>Guard Break</b>: your knees buckle and you take heavy damage
+3596	• When an enemy's weapon glints, it's about to swing: time to deflect
 3597	• <b>Attacks glowing red</b> can't be blocked. Dodge with a dash
 3598	• Strike at the same moment and you <b>clash</b>: fists collide and both of you bounce back
 3599	<b>Power</b>
@@ -270,7 +270,7 @@
 3629	• Tests differ by master: deflecting · enduring · sparring with disciples
 3630	• Press 📍 Guide in the Styles window for a guide on screen and map. The pillar of light rising into the sky marks the master's spot
 3631	<b>Masters of the Land</b>
-3632	• %s %s — %s at %s
+3632	• %s %s: %s at %s
 3633	<b>Hidden Styles</b>
 3634	• Many styles come from masters not on the map or from special conditions. Click a locked style in the Styles window for a hint
 3635	• Awakened (True) styles: max an original style's mastery, gain two insights, then pass the Awakening Trial
@@ -279,7 +279,7 @@
 3638	• Cheongun Village (safe): Elder Cheongun · master notice board · General Store · Battleground gate · training spots · Thousand-Floor Tower · Heaven Gate
 3639	• Advanced Training Grounds (safe, northeast of the village): Golden Bell, Thousand-Pound, Grand Circulation and Sky Walk training
 3640	• 🏮 Taverns (ten across the world, lanterns on the map): press T at the table to rest; that tavern becomes your respawn point. Rest at the village inn to respawn in the village again
-3641	\32— boss
+3641	\32: boss
 3642	• On the way to masters (Martial World Fields): spearmen · club bandits · twin-saber assassins. Far away: black shadow assassins · armored warriors
 3643	• Five manual fragments are hidden across the world (not on the map)
 3644	• Day and night cycle (day 10 min · night 2 min). The Sun-Moon Fist's strength changes with day and night

@@ -458,7 +458,7 @@ local function flyWhale(rig: Rig, from: Vector3, to: Vector3, flight: number, H:
 		local pos = posAt(u)
 		local nxt = posAt(math.min(1, u + 0.02))
 		local look = (nxt - pos).Magnitude > 1e-3 and (nxt - pos).Unit or dir
-		-- 오를 때는 꼬리를 아래로 휘고, 꼭대기에서 곧게, 떨어질 때는 몸을 감아 머리부터 들어간다
+		-- 오를 때는 꼬리를 아래로 휘고 꼭대기에서 곧게, 떨어질 때는 몸을 감아 머리부터 들어간다
 		local arch = 0.05 * math.cos(u * math.pi)
 		local roll = math.sin(u * math.pi) * 0.25
 		Whale.place(rig, CFrame.lookAt(pos, pos + look) * CFrame.Angles(0, 0, roll), t, 0.28, arch, 0.35)
@@ -657,7 +657,7 @@ local function whaleSong(data: any)
 end
 
 ------------------------------------------------------------------------
--- 초·창해 만경창파: 둘레가 바다가 되고, 사방의 파도 넷, 가운데의 소용돌이
+-- 초·창해 만경창파: 둘레가 바다가 되고 사방의 파도 넷, 가운데의 소용돌이
 ------------------------------------------------------------------------
 local function waveWall(center: Vector3, from: Vector3, R: number, travel: number, c: Color3, c2: Color3)
 	local g = ground(center)

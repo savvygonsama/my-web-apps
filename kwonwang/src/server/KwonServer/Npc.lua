@@ -333,7 +333,7 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	if isBoss then
 		pos = at + Vector3.new(0, 4 * (def.scale or 1), 0)
 	end
-	-- 3.25판: 보스 마당 둘레 (clear 칸) 안쪽에는 보통 적을 두지 않는다 — 보스는 따로 서 있게
+	-- 3.25판: 보스 마당 둘레 (clear 칸) 안쪽에는 보통 적을 두지 않는다: 보스는 따로 서 있게
 	if not isBoss then
 		local Z = Config.BOSS_ZONE
 		for _, bh in ipairs(Npc.bossHomes) do
@@ -837,7 +837,7 @@ local function dressMaster(model: Model, style: any)
 		end
 		wear(model, "UpperTorso", "GlitchLine", Vector3.new(2.2, 0.12, 1.2), CFrame.new(0.2, 0.1, 0) * CFrame.Angles(0, 0, math.rad(-8)), Color3.fromRGB(230, 40, 60), Enum.Material.Neon)
 	elseif id == "gongbaek" then
-		-- 3.16.3판 이름 없는 자: 빛나는 것 없이 수수하다. 잿빛 두건을 깊게 눌러써서 얼굴이 그늘에 잠겼고, 낡은 목도리와 해진 겉옷
+		-- 3.16.3판 이름 없는 자: 빛나는 것 없이 수수하다. 잿빛 두건을 깊게 눌러써서 얼굴이 그늘에 잠겼고 낡은 목도리와 해진 겉옷
 		local HOOD = Color3.fromRGB(70, 69, 68)
 		wear(model, "Head", "Hood", Vector3.new(hs.X * 1.18, hs.Y * 1.12, hs.Z * 1.2), CFrame.new(0, hs.Y * 0.08, hs.Z * 0.06), HOOD, Enum.Material.Fabric)
 		wear(model, "Head", "HoodBrim", Vector3.new(hs.X * 1.2, hs.Y * 0.22, hs.Z * 0.35), CFrame.new(0, hs.Y * 0.42, -hs.Z * 0.5) * CFrame.Angles(math.rad(-12), 0, 0), HOOD, Enum.Material.Fabric)
@@ -1064,7 +1064,7 @@ function Npc.find(model: Model): Enemy?
 	return nil
 end
 
--- 쓰러진 적: 잠시 뒤 치우고, 정해진 시간 뒤 다시 나타난다
+-- 쓰러진 적: 잠시 뒤 치우고 정해진 시간 뒤 다시 나타난다
 function Npc.onDeath(f: any)
 	for i, e in ipairs(Npc.list) do
 		if e.f == f then
@@ -1195,7 +1195,7 @@ local function attack(e: Enemy, move: any)
 end
 
 ------------------------------------------------------------------------
--- 보스 패턴: 바닥에 붉은 표시가 먼저 뜨고, 잠시 뒤 터진다 (대시로 피하거나 표시 밖으로)
+-- 보스 패턴: 바닥에 붉은 표시가 먼저 뜨고 잠시 뒤 터진다 (대시로 피하거나 표시 밖으로)
 --   quake  보스 둘레가 울린다            leap   표적 자리로 뛰어올라 내려찍는다
 --   charge 표적 쪽으로 한 줄 돌진         rain   표적 둘레 여러 곳에 벼락·얼음·피
 --   donut  보스에서 떨어진 고리가 터진다 (보스 품으로 파고들면 안전)
@@ -1691,7 +1691,7 @@ local function runPattern(e: Enemy, tgt: any, pat: any, phase: number)
 			end)
 		end
 	elseif kind == "crisscross" then
-		-- 분신 교차 돌진: 표적을 꿰뚫는 줄이 여러 방향에서 차례로 그어지고, 보스의 분신이 그 줄로 돌진한다
+		-- 분신 교차 돌진: 표적을 꿰뚫는 줄이 여러 방향에서 차례로 그어지고 보스의 분신이 그 줄로 돌진한다
 		local n = (pat.count or 3) + (phase >= 3 and 1 or 0)
 		local L, W = pat.length or 50, pat.width or 6
 		local a0 = math.random() * math.pi * 2
@@ -1928,7 +1928,7 @@ local function think(e: Enemy, t: number)
 		faceTo(e, tgt.root.Position)
 		return
 	end
-	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고, 막 잡은 막기엔 흘려진다
+	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고 막 잡은 막기엔 흘려진다
 	-- (상대가 칠 때를 기다려 흘리고 파고들거나, 균형을 깨거나, 뒤를 잡아야 한다)
 	local earlyIdle = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
 	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or (earlyIdle and 0.05 or 0.12))) then
@@ -1972,7 +1972,7 @@ local function think(e: Enemy, t: number)
 			return
 		end
 	end
-	-- 거리 맞추기: 멀면 다가가고, 가까우면 옆으로 돈다
+	-- 거리 맞추기: 멀면 다가가고 가까우면 옆으로 돈다
 	local keep = (e.def.keep or 5) + (waiting and 5 or 0)
 	local to = tgt.root.Position - pos
 	local flatTo = Vector3.new(to.X, 0, to.Z)

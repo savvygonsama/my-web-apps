@@ -209,7 +209,7 @@ end
 local function segCount(): number
 	return Perf.low and 9 or 14
 end
--- 꼬리 굵기: 뿌리는 가늘고, 가운데가 복슬하게 굵고, 끝은 뾰족하다
+-- 꼬리 굵기: 뿌리는 가늘고 가운데가 복슬하게 굵고 끝은 뾰족하다
 local function tailWidth(k: number): number
 	local w = 0.26 + 1.0 * math.sin(math.pi * (0.06 + 0.88 * k))
 	if k > 0.74 then
@@ -294,7 +294,7 @@ local function buildFox(m: Model, lv: number): Rig
 	return rig
 end
 
--- 꼬리를 흔든다: 허리 뒤에서 부채꼴로 솟아 끝으로 갈수록 위로 감기고, 물결이 뿌리에서 끝으로 흐른다
+-- 꼬리를 흔든다: 허리 뒤에서 부채꼴로 솟아 끝으로 갈수록 위로 감기고 물결이 뿌리에서 끝으로 흐른다
 local function poseTails(rig: Rig, t: number)
 	local base = bodyPart(rig.model, "LowerTorso", "Torso")
 	if not base then
@@ -332,7 +332,7 @@ local function sword(rig: Rig, hand: BasePart, tier: number, side: number)
 	local L = ({ [0] = 4.0, 4.3, 4.4, 4.6, 5.0, 5.3 })[tier] or 4.0
 	local W = ({ [0] = 0.56, 0.58, 0.6, 0.63, 0.68, 0.72 })[tier] or 0.56
 	local edgeCol = tier >= 4 and CRIMSON:Lerp(PURPLE, 0.3) or PURPLE
-	-- 검은 '검의 틀' (자루 한가운데, 칼날이 -Z) 에 맞춰 놓고, 매 장면 poseSwords가 틀을 정한다
+	-- 검은 '검의 틀' (자루 한가운데, 칼날이 -Z) 에 맞춰 놓고 매 장면 poseSwords가 틀을 정한다
 	local sw: Sword = { hand = hand, side = side, items = {} }
 	rig.swords = rig.swords or {}
 	table.insert(rig.swords :: { Sword }, sw)
@@ -404,7 +404,7 @@ local function sword(rig: Rig, hand: BasePart, tier: number, side: number)
 		local heart = part(Vector3.new(0.13, 0.05, L * 0.85), WHITE_HOT, Enum.Material.Neon, 0.1, nil)
 		table.insert(rig.parts, put(hand, heart, at(base - L * 0.45)))
 	end
-	-- +15: 칼에서 솟는 오라 (두 겹의 빛 칼날이 숨 쉬듯 일렁이고, 불꽃이 칼을 타고 솟는다)
+	-- +15: 칼에서 솟는 오라 (두 겹의 빛 칼날이 숨 쉬듯 일렁이고 불꽃이 칼을 타고 솟는다)
 	if tier >= 5 then
 		local aura = oval(Vector3.new(0.45, W * 2.2, L * 1.22), PURPLE, Enum.Material.Neon, 0.74)
 		table.insert(rig.parts, put(hand, aura, at(mid - 0.15)))
@@ -1070,7 +1070,7 @@ local function clawMarks(at: Vector3, face: Vector3, size: number)
 		tween(cl, 0.35, { Transparency = 1, Size = Vector3.new(0.05, size * 1.3, 0.05) })
 	end
 end
--- R 호혼도약: 몸이 푸른 여우 혼령이 되어 적에서 적으로 활을 그리며 뛰어 할퀴고, 마지막에 하늘에서 큰 여우가 내리 덮친다
+-- R 호혼도약: 몸이 푸른 여우 혼령이 되어 적에서 적으로 활을 그리며 뛰어 할퀴고 마지막에 하늘에서 큰 여우가 내리 덮친다
 H.gumiho.ricochet = function(d)
 	local r = rootOf(d.m)
 	local start = d.at or (r and r.Position)
@@ -1133,7 +1133,7 @@ H.gumiho.ricochet = function(d)
 		end)
 	end)
 end
--- G 구미천화: 땅에서 거대한 꼬리 혼령 아홉이 둘레로 솟아 일렁이고, 여우불 유성이 적에게 떨어지다가, 꼬리가 한가운데로 내리치며 푸른 불이 터진다
+-- G 구미천화: 땅에서 거대한 꼬리 혼령 아홉이 둘레로 솟아 일렁이고 여우불 유성이 적에게 떨어지다가, 꼬리가 한가운데로 내리치며 푸른 불이 터진다
 H.gumiho.stormcloud = function(d)
 	local r = rootOf(d.m)
 	if not r then
@@ -1377,7 +1377,7 @@ H.heukyeom.twinDiscs = function(d)
 	end)
 	Fx.sound("swing", 0.7, 0.8, from)
 end
--- G 마왕참: 등 뒤 하늘에 검은 불꽃이 모여 집채만 한 마검이 빚어지고, 그 검을 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다
+-- G 마왕참: 등 뒤 하늘에 검은 불꽃이 모여 집채만 한 마검이 빚어지고 그 검을 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다
 local giantOf: { [Instance]: any } = setmetatable({}, { __mode = "k" }) :: any
 local GL, GW = 30, 5
 local function giantCF(r: BasePart, dir: Vector3, theta: number): CFrame
@@ -1483,7 +1483,7 @@ H.heukyeom.onepunch = function(d)
 		Fx.sound("heavy", 1, 0.45, from)
 	end)
 end
--- 흑염멸천: 하늘에 검은 불의 소용돌이가 열리고, 불꽃 검이 비처럼 쏟아지다가, 마지막에 거대한 마검이 한가운데로 내리꽂힌다
+-- 흑염멸천: 하늘에 검은 불의 소용돌이가 열리고 불꽃 검이 비처럼 쏟아지다가, 마지막에 거대한 마검이 한가운데로 내리꽂힌다
 H.heukyeom.stormcloud = function(d)
 	local r = rootOf(d.m)
 	if not r then

@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.78.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.79.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -19,7 +19,7 @@ Config.BATTLE_MODE = battleMod ~= nil
 
 ------------------------------------------------------------------------
 -- 싸움의 기본 규칙
--- 흘리기: 막기(F)를 누른 직후 짧은 순간에 맞으면 피해 없이 흘려 내고, 상대 균형이 무너진다
+-- 흘리기: 막기(F)를 누른 직후 짧은 순간에 맞으면 피해 없이 흘려 내고 상대 균형이 무너진다
 -- 균형: 막히거나 흘려질 때 차오른다. 꽉 차면 파훼(자세 무너짐) → 큰 피해가 들어간다
 -- 격돌: 서로 같은 순간에 치면 주먹이 부딪혀 둘 다 튕겨 난다
 ------------------------------------------------------------------------
@@ -77,7 +77,7 @@ Config.Stats = {
 	{ id = "chi", name = "내공", icon = "🌀", desc = "내공 회복과 기술 위력" },
 }
 
--- 2.0판: 능력치 숫자를 줄였다 (천외천 5억 → 50만). 세기는 그대로 두려고, 효과는 예전 숫자로 되돌려 셈한다 (Config.statEquiv)
+-- 2.0판: 능력치 숫자를 줄였다 (천외천 5억 → 50만). 세기는 그대로 두려고 효과는 예전 숫자로 되돌려 셈한다 (Config.statEquiv)
 function Config.statMult(x: number): number
 	return 1 + 0.3 * math.log(1 + Config.statEquiv(math.max(0, x)) / 15)
 end
@@ -162,9 +162,9 @@ end
 function Config.realmPower(idx: number): number
 	return 1.22 ^ (math.min(idx, 9) - 1) * 1.38 ^ math.max(0, idx - 9)
 end
--- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고, 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
+-- 2.4.1판: 주는 피해의 경지 배율. 천외천까지는 위와 같고 환생으로 열린 경지는 피해가 경지마다 ×1.08만 (체력은 그대로 ×1.38씩)
 -- 2.8판: 체력의 경지 배율은 피해보다 완만하게 (경지 배율의 0.75제곱). 후반에 적이 스무 대를 때려야 쓰러질 만큼 단단했다
--- 3.24판: 경지에 따른 공격은 덜 가파르게, 체력은 더 가파르게 (공격 ^1 → ^0.9, 체력 ^0.75 → ^0.85: 곱은 그대로라 전투력은 같고, 후반 주먹이 한 방에 너무 세지 않게)
+-- 3.24판: 경지에 따른 공격은 덜 가파르게, 체력은 더 가파르게 (공격 ^1 → ^0.9, 체력 ^0.75 → ^0.85: 곱은 그대로라 전투력은 같고 후반 주먹이 한 방에 너무 세지 않게)
 Config.REALM_DMG_EXP = 0.9
 Config.REALM_HP_EXP = 0.85
 function Config.realmHp(idx: number): number
@@ -402,7 +402,7 @@ Config.Styles = {
 		color = Color3.fromRGB(110, 190, 255),
 		color2 = Color3.fromRGB(220, 245, 255),
 		fx = "water",
-		desc = "물처럼 받아 흘리고 되돌려 친다. 흘리기 판정이 넓고, 흘릴 때마다 기류가 쌓여 반탄장이 강해진다.",
+		desc = "물처럼 받아 흘리고 되돌려 친다. 흘리기 판정이 넓고 흘릴 때마다 기류가 쌓여 반탄장이 강해진다.",
 		gimmick = "기류: 흘릴 때마다 1 (최대 3). Z 반탄장이 기류만큼 강해진다",
 		deflect = 0.32,
 		stance = "stance_taeheo",
@@ -418,7 +418,7 @@ Config.Styles = {
 				counterHit = { pose = "push_palm", hit = hit(0, 7, 5, 18, 30, 0.8, 40) } },
 			R = { id = "thR", name = "선풍기류", desc = "앞에 물의 소용돌이를 3초 남긴다. 둘레의 적을 계속 끌어당기며 균형을 깎는다", pose = "water_spiral", dur = 0.8, cd = 11, chi = 25,
 				mech = { kind = "zone", dist = 9, radius = 12, dur = 3, every = 0.4, delay = 0.3, pull = 26, hit = hit(0, 0, 0, 4, 14, 0.3, 0), fx = "water" } },
-			G = { id = "thG", name = "만류귀해", desc = "발밑이 호수가 된다. 3초 동안 소용돌이가 둘레의 적을 모두 가운데로 삼키고, 마지막에 물기둥이 솟아 하늘로 쳐올린다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
+			G = { id = "thG", name = "만류귀해", desc = "발밑이 호수가 된다. 3초 동안 소용돌이가 둘레의 적을 모두 가운데로 삼키고 마지막에 물기둥이 솟아 하늘로 쳐올린다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
 				mech = { kind = "lake", radius = 26, dur = 3, every = 0.3, pull = 36, hit = hit(0, 0, 0, 5, 12, 0.25, 0), geyserRadius = 13, geyser = hit(0, 0, 0, 75, 110, 1.4, 0, 0) } },
 		},
 	},
@@ -459,7 +459,7 @@ Config.Styles = {
 		color = Color3.fromRGB(255, 130, 190),
 		color2 = Color3.fromRGB(255, 220, 235),
 		fx = "petal",
-		desc = "꽃잎이 어지럽게 흩날리는 빠른 연격. 연타를 끊기지 않게 이으면 꽃잎이 쌓이고, 다 차면 만개해 터진다.",
+		desc = "꽃잎이 어지럽게 흩날리는 빠른 연격. 연타를 끊기지 않게 이으면 꽃잎이 쌓이고 다 차면 만개해 터진다.",
 		gimmick = "꽃잎: 1.2초 안에 계속 맞히면 1씩 (최대 20). 20이면 다음 Z 강타가 만개 폭발",
 		deflect = 0.2,
 		speed = 1.15,
@@ -507,7 +507,7 @@ Config.Styles = {
 				proj = { speed = 80, life = 0.7, radius = 6, dmg = 21, posture = 20, stun = 0.6, kb = 35, size = 6, pierce = true }, hits = {} },
 			R = { id = "crR", name = "비룡승천", desc = "용처럼 솟구치며 올려 친다 (적을 띄움)", pose = "dragon_rise", dur = 0.7, cd = 9, chi = 20, lunge = 3, jump = 40,
 				hits = { hit(0.2, 5, 5, 18, 18, 0.9, 6, 55) } },
-			G = { id = "crG", name = "진룡강림", desc = "땅을 뚫고 진짜 용이 솟아올라 적에게 세 번 내리꽂히고, 마지막에 앞으로 용의 숨을 뿜는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
+			G = { id = "crG", name = "진룡강림", desc = "땅을 뚫고 진짜 용이 솟아올라 적에게 세 번 내리꽂히고 마지막에 앞으로 용의 숨을 뿜는다", pose = "ult_dragon", dur = 1.7, cd = 30, chi = 100, armor = true,
 				mech = { kind = "avatar", look = "dragon", dur = 2.6, strikes = {
 					{ t = 0.9, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
 					{ t = 1.3, at = "targets", n = 1, radius = 9, hit = hit(0, 0, 0, 48, 40, 0.8, 20, 30) },
@@ -524,7 +524,7 @@ Config.Styles = {
 		color = Color3.fromRGB(150, 100, 255),
 		color2 = Color3.fromRGB(40, 20, 70),
 		fx = "shadow",
-		desc = "그림자도 없이 들어오는 귀신의 발. 대시를 두 번 할 수 있고, 공중에서 발차기가 이어진다. 뒤에서 차면 치명타.",
+		desc = "그림자도 없이 들어오는 귀신의 발. 대시를 두 번 할 수 있고 공중에서 발차기가 이어진다. 뒤에서 차면 치명타.",
 		gimmick = "귀영: 대시 2번, 공중 연격, 등 뒤를 차면 피해 1.6배",
 		deflect = 0.18,
 		backstab = 1.6,
@@ -555,7 +555,7 @@ Config.Styles = {
 		color = Color3.fromRGB(255, 235, 90),
 		color2 = Color3.fromRGB(180, 220, 255),
 		fx = "lightning",
-		desc = "벼락처럼 빠르고 곧은 주먹. 맞힐 때마다 전하가 차오르고, 다 차면 다음 공격에서 번개가 주변으로 튀어 모두 마비시킨다.",
+		desc = "벼락처럼 빠르고 곧은 주먹. 맞힐 때마다 전하가 차오르고 다 차면 다음 공격에서 번개가 주변으로 튀어 모두 마비시킨다.",
 		gimmick = "전하: 맞힐 때마다 1 (최대 5). 5가 되면 다음 공격이 연쇄 번개 (주변 적 마비)",
 		deflect = 0.2,
 		chargeEvery = 5,
@@ -572,7 +572,7 @@ Config.Styles = {
 				hits = { hit(0.15, 4, 5, 6, 8, 0.8, 4) } },
 			R = { id = "bkR", name = "뇌격", desc = "둘레의 적 다섯을 골라 그 머리 위로 벼락을 내리꽂는다 (마비)", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
 				mech = { kind = "targets", n = 5, range = 34, delay = 0.4, stagger = 0.06, radius = 5, hit = hit(0, 0, 0, 20, 18, 1.1, 4), fx = "lightning" } },
-			G = { id = "bkG", name = "뇌신화", desc = "몸이 번개가 되어 적에서 적으로 일곱 번 튄다. 닿는 순간마다 벼락이 떨어지고, 마지막에 하늘이 갈라진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
+			G = { id = "bkG", name = "뇌신화", desc = "몸이 번개가 되어 적에서 적으로 일곱 번 튄다. 닿는 순간마다 벼락이 떨어지고 마지막에 하늘이 갈라진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
 				mech = { kind = "bolt", n = 7, range = 34, delay = 0.4, every = 0.14, radius = 6, hit = hit(0, 0, 0, 26, 24, 0.8, 10), finalRadius = 18, final = hit(0, 0, 0, 50, 70, 1.2, 40, 15) } },
 		},
 	},
@@ -584,7 +584,7 @@ Config.Styles = {
 		color = Color3.fromRGB(240, 150, 60),
 		color2 = Color3.fromRGB(255, 220, 160),
 		fx = "drunk",
-		desc = "술 취한 여덟 신선의 권법. 비틀거리는 몸이 공격을 저절로 피하고, 엉뚱한 각도에서 주먹이 날아든다. 막기는 약하다.",
+		desc = "술 취한 여덟 신선의 권법. 비틀거리는 몸이 공격을 저절로 피하고 엉뚱한 각도에서 주먹이 날아든다. 막기는 약하다.",
 		gimmick = "취보: 움직이거나 공격하는 중에 25% 확률로 공격을 저절로 피한다. 막을 때 받는 피해는 더 크다",
 		deflect = 0.2,
 		dodgeChance = 0.25,
@@ -598,7 +598,7 @@ Config.Styles = {
 		},
 		heavy = { id = "cwH", name = "취선도", pose = "headbutt", dur = 0.6, lunge = 9, hits = { hit(0.3, 5, 4.5, 15, 22, 0.7, 35) } },
 		skills = {
-			E = { id = "cwE", name = "취보", desc = "3초 동안 크게 비틀거려 공격을 60% 피하고, 피할 때마다 되받아친다", pose = "drunk_sway", dur = 0.5, cd = 12, chi = 20, buff = { kind = "sway", dur = 3 } },
+			E = { id = "cwE", name = "취보", desc = "3초 동안 크게 비틀거려 공격을 60% 피하고 피할 때마다 되받아친다", pose = "drunk_sway", dur = 0.5, cd = 12, chi = 20, buff = { kind = "sway", dur = 3 } },
 			R = { id = "cwR", name = "팔선과해", desc = "앞으로 데굴데굴 구르며 지나가는 적을 모두 차 올린다", pose = "drunk_roll", dur = 0.9, cd = 10, chi = 25, lunge = 16, iframes = 0.35,
 				hits = { hit(0.25, 3, 5, 9, 10, 0.4, 8), hit(0.5, 3, 5, 9, 10, 0.4, 8), hit(0.75, 4, 6, 14, 16, 0.6, 10, 30) } },
 			G = { id = "cwG", name = "취선굴렁쇠", desc = "불붙은 술독처럼 몸을 말아 적에서 적으로 여섯 번 튕겨 다니며 터진다. 마지막에 술불이 크게 터진다 (그동안 무적)", pose = "drunk_roll", dur = 2.2, cd = 30, chi = 100, armor = true,
@@ -649,7 +649,7 @@ table.insert(Config.Styles, {
 	hidden = true,
 	unlockHint = "강호 곳곳에 흩어진 비급 조각 다섯을 모두 모은 자만이 익힌다",
 	desc = "끝도 시작도 없는 권. 모든 권법이 하나로 돌아가는 자리. 손이 닿기도 전에 상대의 균형이 무너진다.",
-	gimmick = "무극: 모든 타격이 상대 균형을 두 배로 깎고, 흘리기 판정이 넓다",
+	gimmick = "무극: 모든 타격이 상대 균형을 두 배로 깎고 흘리기 판정이 넓다",
 	deflect = 0.32,
 	postureMult = 2,
 	stance = "stance_mugeuk",
@@ -662,11 +662,11 @@ table.insert(Config.Styles, {
 	heavy = { id = "mgH", name = "무극장", pose = "void_sink", dur = 0.6, lunge = 3, hits = { hit(0.28, 7, 5.5, 28, 50, 0.8, 50) } },
 	skills = {
 		-- 2.6판: 무극신권의 기술 셋을 흑백 음양으로 새로
-		E = { id = "mgE", name = "음양탄", desc = "두 손을 맞댔다가 밀어낸다. 검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 날아가 길의 적을 치고, 끝에서 부딪쳐 둘레의 적을 빨아들이며 터진다", pose = "void_point", dur = 0.55, cd = 6, chi = 15,
+		E = { id = "mgE", name = "음양탄", desc = "두 손을 맞댔다가 밀어낸다. 검은 구슬과 흰 구슬이 서로 감아 돌며 앞으로 날아가 길의 적을 치고 끝에서 부딪쳐 둘레의 적을 빨아들이며 터진다", pose = "void_point", dur = 0.55, cd = 6, chi = 15,
 			mech = { kind = "yinyangShot", delay = 0.15, length = 30, travel = 0.45, width = 4, radius = 8, pull = 30, hit = hit(0, 0, 0, 12, 22, 0.4, 10), burst = hit(0, 0, 0, 16, 30, 0.6, 0) } },
-		R = { id = "mgR", name = "태극선회", desc = "제자리에서 원을 그린다. 검은 구슬과 흰 구슬이 나를 축으로 소용돌이치며 16칸까지 퍼졌다가 되돌아오고, 돌아올 때 둘레의 적을 내 앞으로 끌어 모아 한 번 더 친다", pose = "void_circle", dur = 0.9, cd = 9, chi = 25,
+		R = { id = "mgR", name = "태극선회", desc = "제자리에서 원을 그린다. 검은 구슬과 흰 구슬이 나를 축으로 소용돌이치며 16칸까지 퍼졌다가 되돌아오고 돌아올 때 둘레의 적을 내 앞으로 끌어 모아 한 번 더 친다", pose = "void_circle", dur = 0.9, cd = 9, chi = 25,
 			mech = { kind = "taijiOrbit", delay = 0.1, radius = 16, dur = 1.1, every = 0.1, turns = 1.5, orbRadius = 4.5, pull = 36, hit = hit(0, 0, 0, 8, 14, 0.3, 0), final = hit(0, 0, 0, 16, 36, 0.6, 0) } },
-		G = { id = "mgG", name = "태극인", desc = "세상의 빛깔이 빠지고 발밑에 30칸 넓이의 태극이 그려진다. 그 위의 적은 모두 멈춘다. 태극이 돌며 하늘로 떠올라 뒤집힌 뒤 도장처럼 내리찍고, 흑과 백의 물결이 한 번 더 지나간다", pose = "ult_taiji", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "mgG", name = "태극인", desc = "세상의 빛깔이 빠지고 발밑에 30칸 넓이의 태극이 그려진다. 그 위의 적은 모두 멈춘다. 태극이 돌며 하늘로 떠올라 뒤집힌 뒤 도장처럼 내리찍고 흑과 백의 물결이 한 번 더 지나간다", pose = "ult_taiji", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "taijiSeal", delay = 0.35, radius = 30, liftAt = 1.1, hitAt = 1.75, hit = hit(0, 0, 0, 80, 300, 1.0, 50, 20), waveAt = 0.3, wave = hit(0, 0, 0, 24, 60, 0.4, 60, 8) } },
 	},
 })
@@ -696,7 +696,7 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "hmE", name = "혈영보", desc = "피의 그림자가 되어 적을 꿰뚫고 지나간다 (무적)", pose = "blood_phantom", dur = 0.45, cd = 7, chi = 15, lunge = 24, iframes = 0.4,
 			hits = { hit(0.15, 6, 4, 18, 18, 0.5, 10) } },
-		R = { id = "hmR", name = "혈해", desc = "발밑에 피의 바다를 4초 펼친다. 안의 적을 계속 베고, 벨 때마다 내 체력이 돌아온다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
+		R = { id = "hmR", name = "혈해", desc = "발밑에 피의 바다를 4초 펼친다. 안의 적을 계속 베고 벨 때마다 내 체력이 돌아온다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
 				mech = { kind = "zone", at = "self", radius = 14, dur = 4, every = 0.5, delay = 0.3, heal = 0.012, hit = hit(0, 0, 0, 7, 6, 0.2, 0), fx = "blood" } },
 		G = { id = "hmG", name = "혈마강림", desc = "등 뒤로 거대한 혈마의 허상이 솟아 손톱으로 적들을 네 번 찢고 포효한다. 그 뒤 8초 광란 (동작 ×1.2, 흡혈 1.5배)", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 8 },
 				mech = { kind = "avatar", look = "demon", dur = 4.2, strikes = {
@@ -738,9 +738,9 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "gcE", name = "천검강림", desc = "둘레의 적 셋 위로 하늘에서 빛의 검을 꽂는다", pose = "meteor_drop", dur = 0.9, cd = 7, chi = 20, jump = 40,
 			mech = { kind = "targets", n = 3, range = 30, delay = 0.45, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 30, 30, 0.7, 20, 8), fx = "sword" } },
-		R = { id = "gcR", name = "천제의 창", desc = "등 뒤에 하늘의 문이 열리고, 빛의 창이 앞으로 한 줄 쏟아져 꿰뚫는다", pose = "starfall", dur = 1.1, cd = 10, chi = 30,
+		R = { id = "gcR", name = "천제의 창", desc = "등 뒤에 하늘의 문이 열리고 빛의 창이 앞으로 한 줄 쏟아져 꿰뚫는다", pose = "starfall", dur = 1.1, cd = 10, chi = 30,
 			mech = { kind = "line", count = 9, start = 4, spacing = 4.2, step = 0.05, delay = 0.5, radius = 5.5, hit = hit(0, 0, 0, 22, 24, 0.5, 20), fx = "spear" } },
-		G = { id = "gcG", name = "만검천벌", desc = "하늘이 열려 천 자루의 빛의 검이 내려다본다. 적마다 검이 꽂히고, 마지막에 거대한 하늘의 검이 내리꽂혀 터진다", pose = "ult_heaven", dur = 2.0, cd = 28, chi = 100, armor = true,
+		G = { id = "gcG", name = "만검천벌", desc = "하늘이 열려 천 자루의 빛의 검이 내려다본다. 적마다 검이 꽂히고 마지막에 거대한 하늘의 검이 내리꽂혀 터진다", pose = "ult_heaven", dur = 2.0, cd = 28, chi = 100, armor = true,
 			mech = { kind = "swords", dur = 2.6, n = 10, range = 30, delay = 0.6, stagger = 0.08, radius = 6, hit = hit(0, 0, 0, 24, 24, 0.5, 10), bigAt = 1.5, bigRadius = 16, big = hit(0, 0, 0, 110, 150, 1.4, 60, 20) } },
 	},
 })
@@ -756,7 +756,7 @@ table.insert(Config.Styles, {
 	grade = "천외천",
 	hidden = true,
 	unlockHint = "강호의 마지막 적, 천마를 쓰러뜨려야 그 마공을 거꾸로 익힐 수 있다",
-	desc = "천마의 마공을 꺾어 거꾸로 익힌 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고, 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
+	desc = "천마의 마공을 꺾어 거꾸로 익힌 주먹. 주먹이 닿는 곳의 무게가 열 배가 되고 마지막에는 하늘에 검은 해를 띄워 모든 것을 끌어당겨 으스러뜨린다.",
 	gimmick = "중압: 여섯 번 맞힐 때마다 상대 자리에 중력 우물이 열려 둘레의 적을 끌어당겨 바닥에 짓누른다. 맞힌 적은 잠깐 느려진다",
 	deflect = 0.25,
 	postureMult = 1.45,
@@ -774,7 +774,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "zone", dist = 10, radius = 12, dur = 1.2, every = 0.3, delay = 0.25, pull = 40, hit = hit(0, 0, 0, 9, 14, 0.5, 0), fx = "gravity" } },
 		R = { id = "pcR", name = "천근추", desc = "가장 가까운 적 위로 몸이 천 근 무게가 되어 떨어진다. 떨어진 자리가 움푹 꺼진다", pose = "grav_drop", dur = 1.0, cd = 10, chi = 30, jump = 45,
 			mech = { kind = "drop", range = 28, radius = 13, delay = 0.55, hit = hit(0, 0, 0, 46, 60, 1.0, 10, -12), fx = "gravity" } },
-		G = { id = "pcG", name = "흑일강림", desc = "주먹으로 하늘을 찢어 검은 해를 띄운다. 검은 해가 둘레의 모든 적을 하늘로 끌어올려 짓이기고, 마지막에 안으로 무너지며 터진다", pose = "ult_gravity", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "pcG", name = "흑일강림", desc = "주먹으로 하늘을 찢어 검은 해를 띄운다. 검은 해가 둘레의 모든 적을 하늘로 끌어올려 짓이기고 마지막에 안으로 무너지며 터진다", pose = "ult_gravity", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "blackhole", dist = 12, radius = 30, height = 16, delay = 0.7, dur = 2.6, every = 0.2, hit = hit(0, 0, 0, 7, 8, 0.3, 0), final = hit(0, 0, 0, 120, 160, 1.4, 70, 18) } },
 	},
 })
@@ -793,7 +793,7 @@ table.insert(Config.Styles, {
 	realmReq = 13,
 	trialHp = 10, -- 시험의 분신 체력 열 배
 	unlockHint = "무극의 경지에 오른 자만이 하늘 끝 봉우리, 천외봉의 시원자를 만난다",
-	desc = "하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며, 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다.",
+	desc = "하늘과 땅이 갈라지기 전, 세상이 처음 열리던 그 한순간을 담은 주먹. 이 권을 쓰는 자는 땅을 딛지 않고 떠 있으며 마지막 한 주먹에 세상이 유리처럼 깨졌다가 다시 맞춰진다.",
 	gimmick = "창세: 네 번 맞힐 때마다 상대 자리에 빛의 결정이 피어나 터진다. 모든 기술 대기 20% 짧음, 몸이 땅에서 떠 있다",
 	deflect = 0.3,
 	postureMult = 1.6,
@@ -813,7 +813,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "chainTp", n = 5, range = 30, delay = 0.1, every = 0.14, hit = hit(0, 0, 0, 16, 16, 0.4, 12) } },
 		R = { id = "tcR", name = "창세주", desc = "둘레의 적 다섯 아래에서 빛의 결정 기둥이 솟아 하늘로 띄운다", pose = "origin_rise", dur = 1.0, cd = 10, chi = 30,
 			mech = { kind = "targets", n = 5, range = 34, delay = 0.4, stagger = 0.08, radius = 7, hit = hit(0, 0, 0, 30, 30, 0.7, 10, 22), fx = "prism" } },
-		G = { id = "tcG", name = "천지개벽", desc = "세상이 멈추고 하늘과 땅이 별바다로 바뀐다. 주먹을 쥐면 세상에 금이 가고, 내지르면 세상이 유리처럼 깨지며 모든 적이 함께 부서진다", pose = "ult_origin", dur = 3.0, cd = 34, chi = 100, armor = true,
+		G = { id = "tcG", name = "천지개벽", desc = "세상이 멈추고 하늘과 땅이 별바다로 바뀐다. 주먹을 쥐면 세상에 금이 가고 내지르면 세상이 유리처럼 깨지며 모든 적이 함께 부서진다", pose = "ult_origin", dur = 3.0, cd = 34, chi = 100, armor = true,
 			mech = { kind = "genesis", radius = 60, freeze = 2.6, crackAt = 1.6, breakAt = 2.5, final = hit(0, 0, 0, 180, 240, 1.6, 50, 26) } },
 	},
 })
@@ -833,8 +833,8 @@ table.insert(Config.Styles, {
 	styleReq = "taecho",
 	trialHp = 10, -- 시험 (권존이 직접 보스로) 체력 열 배
 	unlockHint = "태초신권을 익힌 무극의 고수만이 세상 동남쪽 끝 일월대에서 권존을 만난다",
-	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며, 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
-	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고, 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
+	desc = "권법의 정점. 오른손에 해를, 왼손에 달을 쥐었다. 낮에는 해처럼 태우고 밤에는 달처럼 베며 마지막 한 수에 해와 달을 하나로 겹쳐 하늘을 일식으로 덮는다.",
+	gimmick = "일월: 세 번 맞힐 때마다 해와 달이 번갈아 떨어진다 (해는 터지고 달은 벤다). 낮에는 주는 피해 +15%, 밤에는 받는 피해 -15%. 모든 기술 대기 25% 짧음",
 	deflect = 0.32,
 	postureMult = 1.7,
 	speed = 1.1,
@@ -854,7 +854,7 @@ table.insert(Config.Styles, {
 			proj = { speed = 110, life = 0.55, radius = 7, dmg = 40, posture = 40, stun = 0.5, kb = 26, size = 6, pierce = true }, hits = {} },
 		R = { id = "iwR", name = "대일강림", desc = "둘레의 적 여섯 머리 위로 작은 해가 떨어져 불기둥이 되어 터진다", pose = "sun_call", dur = 1.0, cd = 9, chi = 30,
 			mech = { kind = "targets", n = 6, range = 36, delay = 0.45, stagger = 0.07, radius = 8, hit = hit(0, 0, 0, 36, 34, 0.7, 14, 12), fx = "sun" } },
-		G = { id = "iwG", name = "일월동천", desc = "하늘이 밤이 되고 해와 달이 함께 떠오른다. 달빛이 둘레를 베고, 해와 달이 겹쳐 일식이 되면 검은 해의 빛살이 모든 적을 꿰뚫은 뒤, 새벽처럼 터진다", pose = "ult_eclipse", dur = 3.4, cd = 34, chi = 100, armor = true,
+		G = { id = "iwG", name = "일월동천", desc = "하늘이 밤이 되고 해와 달이 함께 떠오른다. 달빛이 둘레를 베고 해와 달이 겹쳐 일식이 되면 검은 해의 빛살이 모든 적을 꿰뚫은 뒤, 새벽처럼 터진다", pose = "ult_eclipse", dur = 3.4, cd = 34, chi = 100, armor = true,
 			mech = { kind = "eclipse", radius = 60, slashes = 5, slashFrom = 0.6, slashEvery = 0.24, slash = hit(0, 0, 0, 16, 16, 0.4, 0),
 				bindAt = 1.9, eclipseAt = 2.0, beamAt = 2.55, beam = hit(0, 0, 0, 70, 60, 0.9, 0, 10), finalAt = 3.2, final = hit(0, 0, 0, 220, 280, 1.8, 70, 30) } },
 	},
@@ -886,9 +886,9 @@ table.insert(Config.Styles, {
 		E = { id = "chE", name = "파도타기", desc = "파도를 타고 앞으로 미끄러지며 꿰뚫는다 (무적). 지나간 길에 물보라가 솟아 터진다", pose = "surf_dash", dur = 0.5, cd = 7, chi = 15, lunge = 26, iframes = 0.42,
 			hits = { hit(0.15, 6, 4.5, 14, 14, 0.45, 24) },
 			mech = { kind = "trail", delay = 0.5, count = 5, radius = 6, hit = hit(0, 0, 0, 16, 16, 0.5, 20, 12), fx = "tide" } },
-		R = { id = "chR", name = "해일벽", desc = "앞으로 물의 벽이 차례로 솟아 한 줄을 휩쓸고, 맞은 적을 멀리 밀어낸다", pose = "wall_raise", dur = 1.0, cd = 10, chi = 25,
+		R = { id = "chR", name = "해일벽", desc = "앞으로 물의 벽이 차례로 솟아 한 줄을 휩쓸고 맞은 적을 멀리 밀어낸다", pose = "wall_raise", dur = 1.0, cd = 10, chi = 25,
 			mech = { kind = "line", count = 8, start = 4, spacing = 4.4, step = 0.05, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 20, 22, 0.6, 40, 16), fx = "tide" } },
-		G = { id = "chG", name = "창해일소", desc = "등 뒤의 바다가 일어선다. 하늘을 가리는 해일이 앞으로 밀려가며 모든 적을 휩쓸어 끌고 가고, 마지막에 부서지며 거대한 소용돌이가 된다", pose = "ult_tsunami", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "chG", name = "창해일소", desc = "등 뒤의 바다가 일어선다. 하늘을 가리는 해일이 앞으로 밀려가며 모든 적을 휩쓸어 끌고 가고 마지막에 부서지며 거대한 소용돌이가 된다", pose = "ult_tsunami", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "tsunami", delay = 0.5, start = -6, width = 46, depth = 10, speed = 34, dur = 1.8, every = 0.2, hit = hit(0, 0, 0, 10, 10, 0.4, 0), finalRadius = 22, final = hit(0, 0, 0, 90, 120, 1.3, 60, 22) } },
 	},
 })
@@ -908,7 +908,7 @@ table.insert(Config.Styles, {
 	styleReq = "taecho",
 	trialHp = 12,
 	unlockHint = "태초신권을 익힌 무극의 고수만이 북서쪽 끝 천 개의 계단 위, 떠 있는 문 앞에서 영겁노인을 만난다",
-	desc = "시간을 쥔 주먹. 맞은 자의 시간이 멎고, 지나간 주먹이 메아리처럼 되돌아와 다시 친다. 마지막 한 수에 하늘에 거대한 해시계가 열리고 열두 번의 종이 울린다.",
+	desc = "시간을 쥔 주먹. 맞은 자의 시간이 멎고 지나간 주먹이 메아리처럼 되돌아와 다시 친다. 마지막 한 수에 하늘에 거대한 해시계가 열리고 열두 번의 종이 울린다.",
 	gimmick = "정지: 다섯 번 맞힐 때마다 상대 둘레의 시간이 1.4초 멎고 메아리가 친다. 모든 기술 대기 30% 짧음, 동작 +10%",
 	deflect = 0.3,
 	postureMult = 1.6,
@@ -929,7 +929,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "rewind", delay = 0.6, radius = 6, hit = hit(0, 0, 0, 34, 30, 0.6, 8) } },
 		R = { id = "ygR", name = "정지된 시간", desc = "앞에 시간이 멎은 구역을 2초 연다. 안의 적은 꼼짝 못 하고 째깍일 때마다 베인다", pose = "stop_palm", dur = 0.9, cd = 9, chi = 30,
 			mech = { kind = "zone", dist = 10, radius = 13, dur = 2, every = 0.25, delay = 0.25, hit = hit(0, 0, 0, 8, 10, 0.45, 0), fx = "time" } },
-		G = { id = "ygG", name = "만겁귀환", desc = "하늘에 거대한 해시계가 열리고 시곗바늘이 거꾸로 돈다. 둘레의 모든 적의 시간이 멎고, 열두 번의 종이 울릴 때마다 베이며, 자정에 시간이 깨진다", pose = "ult_clock", dur = 3.2, cd = 32, chi = 100, armor = true,
+		G = { id = "ygG", name = "만겁귀환", desc = "하늘에 거대한 해시계가 열리고 시곗바늘이 거꾸로 돈다. 둘레의 모든 적의 시간이 멎고 열두 번의 종이 울릴 때마다 베이며 자정에 시간이 깨진다", pose = "ult_clock", dur = 3.2, cd = 32, chi = 100, armor = true,
 			mech = { kind = "clock", radius = 55, delay = 0.6, bells = 12, every = 0.17, hit = hit(0, 0, 0, 20, 18, 0.3, 0), final = hit(0, 0, 0, 200, 260, 1.6, 60, 24) } },
 	},
 })
@@ -943,7 +943,7 @@ table.insert(Config.Styles, {
 	color2 = Color3.fromRGB(255, 225, 120),
 	fx = "fire",
 	grade = "전설",
-	desc = "타오르는 불꽃을 주먹에 담았다. 맞은 자는 불이 붙어 계속 타고, 불붙은 적에게 꽂는 강타는 터진다.",
+	desc = "타오르는 불꽃을 주먹에 담았다. 맞은 자는 불이 붙어 계속 타고 불붙은 적에게 꽂는 강타는 터진다.",
 	gimmick = "연소: 맞힌 적이 3초 동안 불탄다 (0.5초마다 피해). 불타는 적에게 강타(Z)를 꽂으면 폭발해 둘레까지 태운다",
 	deflect = 0.2,
 	burn = { dur = 3, every = 0.5, dmg = 5 },
@@ -961,7 +961,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "trail", delay = 0.45, count = 5, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.5, 10, 10), fx = "fire" } },
 		R = { id = "yhR", name = "염화폭풍", desc = "앞쪽 부채꼴로 불길을 1.2초 동안 내뿜는다 (맞은 적은 불탄다)", pose = "fire_breath_palm", dur = 1.2, cd = 10, chi = 25,
 			mech = { kind = "cone", range = 20, angle = 70, delay = 0.2, dur = 1.2, every = 0.2, hit = hit(0, 0, 0, 7, 8, 0.3, 6), fx = "fire" } },
-		G = { id = "yhG", name = "열화천멸", desc = "땅이 갈라져 용암이 둘레의 모든 적 발밑으로 흐르고, 적마다 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다", pose = "ult_volcano", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "yhG", name = "열화천멸", desc = "땅이 갈라져 용암이 둘레의 모든 적 발밑으로 흐르고 적마다 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다", pose = "ult_volcano", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "eruption", radius = 32, delay = 0.6, stagger = 0.08, pillar = hit(0, 0, 0, 48, 40, 0.8, 20, 30), finalAt = 1.7, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 60, 25) } },
 	},
 })
@@ -1013,8 +1013,8 @@ table.insert(Config.Styles, {
 	secret = true,
 	realmReq = 14,
 	unlockHint = "천상계 어딘가, 허공에 금이 간 작은 섬. 보이지 않는 다리를 건넌 반선의 고수만이 아공선인을 만난다",
-	desc = "공간의 틈에 사는 노인의 주먹. 주먹이 닿는 곳마다 공간이 접히고, 오의를 펼치면 그 자리에 바깥과 끊긴 공간이 열린다.",
-	gimmick = "틈새: 뒤에서 치면 1.4배. 기술 대기 15% 짧고, 회피를 두 번 이어 쓴다",
+	desc = "공간의 틈에 사는 노인의 주먹. 주먹이 닿는 곳마다 공간이 접히고 오의를 펼치면 그 자리에 바깥과 끊긴 공간이 열린다.",
+	gimmick = "틈새: 뒤에서 치면 1.4배. 기술 대기 15% 짧고 회피를 두 번 이어 쓴다",
 	deflect = 0.3,
 	backstab = 1.4,
 	cdMult = 0.85,
@@ -1032,7 +1032,7 @@ table.insert(Config.Styles, {
 			hits = { hit(0.2, 6, 4.5, 26, 24, 0.6, 20) } },
 		R = { id = "agR", name = "공간 균열", desc = "앞의 공간을 찢어 1.5초 동안 둘레의 적을 빨아들이며 벤다", pose = "void_gather", dur = 0.7, cd = 9, chi = 25,
 			mech = { kind = "zone", radius = 11, dist = 10, dur = 1.5, every = 0.15, delay = 0.15, pull = 40, hit = hit(0, 0, 0, 8, 9, 0.3, 0), fx = "subspace" } },
-		G = { id = "agG", name = "아공간", desc = "그 자리에 바깥과 끊긴 공간을 연다. 10초 동안 안의 적은 빠져나가지 못하고, 사방에서 공간이 베어 든다. 마지막에 공간이 닫히며 터진다", pose = "ult_void", dur = 1.6, cd = 32, chi = 100, armor = true,
+		G = { id = "agG", name = "아공간", desc = "그 자리에 바깥과 끊긴 공간을 연다. 10초 동안 안의 적은 빠져나가지 못하고 사방에서 공간이 베어 든다. 마지막에 공간이 닫히며 터진다", pose = "ult_void", dur = 1.6, cd = 32, chi = 100, armor = true,
 			mech = { kind = "subspace", radius = 26, dur = 10, every = 0.4, delay = 0.6, hit = hit(0, 0, 0, 13, 12, 0.3, 0), final = hit(0, 0, 0, 150, 170, 1.4, 30, 45) } },
 	},
 })
@@ -1047,7 +1047,7 @@ table.insert(Config.Styles, {
 	fx = "cloud",
 	grade = "상급",
 	desc = "구름이 흐르듯 손바닥을 밀어 적을 흩어 놓는다. 세지는 않지만 몸이 가볍고 빠져나가기 좋다.",
-	gimmick = "구름 걸음: 회피를 두 번 이어 쓰고, 흘리기 판정이 넓다. 손바닥은 적을 멀리 밀어낸다",
+	gimmick = "구름 걸음: 회피를 두 번 이어 쓰고 흘리기 판정이 넓다. 손바닥은 적을 멀리 밀어낸다",
 	deflect = 0.34,
 	dashCharges = 2,
 	kbMult = 1.4,
@@ -1083,8 +1083,8 @@ table.insert(Config.Styles, {
 	realmReq = 15,
 	trialHp = 10,
 	unlockHint = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에서 별을 헤아리는 노인. 등선에 오른 자에게만 별의 길을 보여 준다",
-	desc = "별의 강을 주먹에 담았다. 주먹이 닿는 곳마다 별빛이 흩어지고, 오의를 펼치면 머리 위에 은하가 열려 별이 쏟아진다.",
-	gimmick = "성하: 균형을 1.5배로 깎고, 기술 대기 20% 짧다",
+	desc = "별의 강을 주먹에 담았다. 주먹이 닿는 곳마다 별빛이 흩어지고 오의를 펼치면 머리 위에 은하가 열려 별이 쏟아진다.",
+	gimmick = "성하: 균형을 1.5배로 깎고 기술 대기 20% 짧다",
 	deflect = 0.28,
 	postureMult = 1.5,
 	cdMult = 0.8,
@@ -1101,7 +1101,7 @@ table.insert(Config.Styles, {
 			hits = { hit(0.15, 6, 5.5, 28, 28, 0.5, 24) } },
 		R = { id = "shR", name = "은하 소용돌이", desc = "둘레에 별의 소용돌이를 일으켜 1.4초 동안 적을 빨아들이며 친다", pose = "void_circle", dur = 0.7, cd = 9, chi = 25,
 			mech = { kind = "zone", at = "self", radius = 13, dur = 1.4, every = 0.14, delay = 0.1, pull = 50, hit = hit(0, 0, 0, 9, 10, 0.3, 0), fx = "galaxy" } },
-		G = { id = "shG", name = "성하강림", desc = "머리 위에 은하가 열리고, 별이 나선을 그리며 스물네 번 쏟아진 뒤 한가운데에서 별이 터진다", pose = "ult_heaven", dur = 3.0, cd = 34, chi = 100, armor = true,
+		G = { id = "shG", name = "성하강림", desc = "머리 위에 은하가 열리고 별이 나선을 그리며 스물네 번 쏟아진 뒤 한가운데에서 별이 터진다", pose = "ult_heaven", dur = 3.0, cd = 34, chi = 100, armor = true,
 			mech = { kind = "galaxy", radius = 32, delay = 0.8, count = 24, stagger = 0.09, strikeRadius = 7, hit = hit(0, 0, 0, 30, 30, 0.5, 10, 10), finalAt = 3.3, finalRadius = 20, final = hit(0, 0, 0, 160, 180, 1.5, 40, 50) } },
 	},
 })
@@ -1135,12 +1135,12 @@ table.insert(Config.Styles, {
 			mech = { kind = "trail", delay = 0.4, count = 4, radius = 6, hit = hit(0, 0, 0, 14, 12, 0.4, 16, 8) } },
 		R = { id = "psR", name = "회오리", desc = "앞에 회오리를 2.5초 세운다. 둘레의 적을 빨아들이며 계속 벤다", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25,
 			mech = { kind = "zone", dist = 9, radius = 11, dur = 2.5, every = 0.3, delay = 0.3, pull = 24, hit = hit(0, 0, 0, 5, 8, 0.3, 0), fx = "wind" } },
-		G = { id = "psG", name = "풍신강림", desc = "거대한 회오리가 일어 앞으로 나아가며 모든 적을 빨아올리고, 끝에서 사방으로 내던진다", pose = "ult_gale", dur = 1.6, cd = 30, chi = 100, armor = true,
+		G = { id = "psG", name = "풍신강림", desc = "거대한 회오리가 일어 앞으로 나아가며 모든 적을 빨아올리고 끝에서 사방으로 내던진다", pose = "ult_gale", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "tornado", dist = 8, speed = 10, dur = 3.2, every = 0.2, radius = 13, hit = hit(0, 0, 0, 6, 6, 0.3, 0), final = hit(0, 0, 0, 45, 60, 1.0, 0, 0) } },
 	},
 })
 -- 각성 권법 (진): 원래 권법을 완전 각성하고 두 번 깨달은 자가, 각성 시련에서 '각성한 자기 그림자'를 넘으면 얻는다
--- 기술은 원래 권법 그대로 (버전 2): 모든 기술이 더 세고, 빛깔이 바뀌고, 고유 장치와 오의가 한층 커진다
+-- 기술은 원래 권법 그대로 (버전 2): 모든 기술이 더 세고 빛깔이 바뀌고 고유 장치와 오의가 한층 커진다
 local function deepCopy(t: any): any
 	if type(t) ~= "table" then
 		return t
@@ -1200,7 +1200,7 @@ do
 		lifesteal = 0.03,
 		unlockHint = "혈마신수를 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 피에 물든 자기 그림자를 넘어라",
 		desc = "혈마의 손이 주인을 알아보고 깨어났다. 손톱 끝의 피가 금빛으로 끓는다. 혈마신수의 모든 기술이 그대로, 그러나 한층 더 깊고 붉다.",
-		gimmick = "진 흡혈: 준 피해의 3%를 되찾는다 (광란 중엔 1.5배, 1초에 최대 체력의 5%까지). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고, 광란 10초",
+		gimmick = "진 흡혈: 준 피해의 3%를 되찾는다 (광란 중엔 1.5배, 1초에 최대 체력의 5%까지). 모든 기술 1.5배. 진 혈마강림: 더 큰 혈마가 여섯 번 찢고 광란 10초",
 	})
 	local G = v.skills.G
 	G.buff = { kind = "frenzy", dur = 10 }
@@ -1220,11 +1220,11 @@ do
 		color = Color3.fromRGB(255, 195, 60), color2 = Color3.fromRGB(255, 248, 215),
 		charge = 1.0,
 		unlockHint = "천룡파천장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 용을 두른 자기 그림자를 넘어라",
-		desc = "푸른 용이 허물을 벗고 금빛 진룡이 되었다. 장풍은 더 빨리 모이고, 땅을 뚫고 나오는 용은 하늘을 다 덮는다.",
+		desc = "푸른 용이 허물을 벗고 금빛 진룡이 되었다. 장풍은 더 빨리 모이고 땅을 뚫고 나오는 용은 하늘을 다 덮는다.",
 		gimmick = "진 용기: 1초면 장풍이 가득 모인다. 모든 기술 1.5배. 진 진룡강림: 거대한 금룡이 다섯 번 내리꽂히고 더 큰 숨을 뿜는다",
 	})
 	local G = v.skills.G
-	G.desc = "땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고, 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"
+	G.desc = "땅을 뚫고 거대한 금룡이 솟아 적에게 다섯 번 내리꽂히고 마지막에 앞으로 하늘을 가르는 용의 숨을 뿜는다"
 	local strike = G.mech.strikes[1].hit
 	local breath = G.mech.strikes[#G.mech.strikes].hit
 	G.mech.dur = 3.6
@@ -1241,11 +1241,11 @@ do
 		color = Color3.fromRGB(175, 110, 255), color2 = Color3.fromRGB(235, 228, 255),
 		chargeEvery = 4, chainDmg = 22, chainRange = 22,
 		unlockHint = "벽력신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 보랏빛 벼락이 된 자기 그림자를 넘어라",
-		desc = "노란 벼락이 보랏빛 천뢰가 되었다. 주먹이 닿기 전에 소리가 먼저 터지고, 연쇄 번개가 더 멀리 더 세게 튄다.",
+		desc = "노란 벼락이 보랏빛 천뢰가 되었다. 주먹이 닿기 전에 소리가 먼저 터지고 연쇄 번개가 더 멀리 더 세게 튄다.",
 		gimmick = "진 전하: 네 번 맞히면 연쇄 천뢰 (더 넓고 더 세다). 모든 기술 1.5배. 진 뇌신화: 열한 번 튀고 하늘이 크게 갈라진다",
 	})
 	local G = v.skills.G
-	G.desc = "몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고, 마지막에 하늘이 크게 갈라진다"
+	G.desc = "몸이 보랏빛 천뢰가 되어 적에서 적으로 열한 번 튄다. 닿을 때마다 벼락이 떨어지고 마지막에 하늘이 크게 갈라진다"
 	G.mech.n = 11
 	G.mech.finalRadius = 26
 end
@@ -1259,7 +1259,7 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(255, 176, 40), color2 = Color3.fromRGB(255, 250, 225), fx = "gold",
 	awakenOf = "geumgang", hidden = true, rebirthReq = 1,
 	unlockHint = "불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라",
-	desc = "다시 태어난 몸에서 금강이 깨어났다. 이제 주먹이 아니라 몸 자체가 무기다. 맞을수록 단단해지고, 쌓인 충격은 땅을 울리는 진동이 되어 되돌아간다.",
+	desc = "다시 태어난 몸에서 금강이 깨어났다. 이제 주먹이 아니라 몸 자체가 무기다. 맞을수록 단단해지고 쌓인 충격은 땅을 울리는 진동이 되어 되돌아간다.",
 	gimmick = "불괴: 받는 피해 30% 감소. 여덟 번 맞을 때마다 (막아도 센다) 몸에서 금강 진동이 저절로 터져 둘레를 날린다. 오의 만불조종: 하늘에서 거대한 금빛 손바닥이 내려와 땅을 누른다",
 	deflect = 0.2, speed = 0.92, hurtTaken = 0.7, armorWhileAttacking = 0.8,
 	hurtPulse = { every = 8, radius = 16, dmg = 38, posture = 60, stun = 0.8, kb = 40, up = 14, name = "불괴진동" },
@@ -1272,11 +1272,11 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "gkH", name = "금강파산권", pose = "punch_r_heavy", dur = 0.75, lunge = 6, hits = { hit(0.36, 8, 6.5, 36, 55, 0.9, 60) }, chargeMult = 1.8 },
 	skills = {
-		E = { id = "gkE", name = "금강반탄", desc = "1.2초 동안 금빛 종이 몸을 덮는다. 그동안 받는 모든 공격을 튕겨 되돌리고, 끝에 종이 울려 둘레를 친다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
+		E = { id = "gkE", name = "금강반탄", desc = "1.2초 동안 금빛 종이 몸을 덮는다. 그동안 받는 모든 공격을 튕겨 되돌리고 끝에 종이 울려 둘레를 친다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "reflect", dur = 1.2, radius = 14, hit = hit(0, 0, 0, 22, 30, 0.6, 30), wave = hit(0, 0, 0, 28, 40, 0.8, 40, 12) } },
 		R = { id = "gkR", name = "항마금강저", desc = "땅을 내리찍으면 앞으로 금강저 일곱 개가 차례로 솟아 길을 가르고 적을 띄운다", pose = "grav_hammer", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "line", count = 7, start = 5, spacing = 4.6, step = 0.07, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 26, 30, 0.6, 18, 26), fx = "gold" } },
-		G = { id = "gkG", name = "만불조종", desc = "하늘이 갈라지며 산만 한 금빛 손바닥이 내려와 둘레의 땅을 누른다. 눌린 적은 오래 묶이고, 땅이 세 번 울린다", pose = "ult_buddha", dur = 1.6, cd = 30, chi = 100, armor = true,
+		G = { id = "gkG", name = "만불조종", desc = "하늘이 갈라지며 산만 한 금빛 손바닥이 내려와 둘레의 땅을 누른다. 눌린 적은 오래 묶이고 땅이 세 번 울린다", pose = "ult_buddha", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "palm", radius = 26, delay = 1.0, hit = hit(0, 0, 0, 120, 150, 1.6, 10, -10), quake = hit(0, 0, 0, 24, 30, 0.5, 20, 14), quakes = 3, every = 0.35 } },
 	},
 })
@@ -1301,7 +1301,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "chainTp", n = 3, range = 30, delay = 0.06, every = 0.16, hit = hit(0, 0, 0, 22, 18, 0.5, 18) } },
 		R = { id = "mkR", name = "그림자 감옥", desc = "발밑의 그림자가 둘레로 번져 적들의 발을 붙든다. 1.2초 뒤 그림자가 솟아 한꺼번에 걷어찬다", pose = "point_sky", dur = 0.7, cd = 12, chi = 25,
 			mech = { kind = "freeze", delay = 0.2, radius = 16, dur = 1.3, hitAt = 1.2, hit = hit(0, 0, 0, 34, 36, 0.8, 26, 22) } },
-		G = { id = "mkG", name = "백귀야행", desc = "세상이 어두워지고 그림자 여덟이 둘레의 땅에서 솟는다. 그림자들이 적들 사이를 엇갈려 가로지르며 열두 번 짓밟고, 마지막에 모두 한가운데로 모여 하늘로 걷어찬다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "mkG", name = "백귀야행", desc = "세상이 어두워지고 그림자 여덟이 둘레의 땅에서 솟는다. 그림자들이 적들 사이를 엇갈려 가로지르며 열두 번 짓밟고 마지막에 모두 한가운데로 모여 하늘로 걷어찬다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "parade", radius = 24, ghosts = 8, passes = 12, delay = 0.45, every = 0.16, width = 5, hit = hit(0, 0, 0, 14, 14, 0.4, 10), final = hit(0, 0, 0, 90, 110, 1.3, 20, 60), finalRadius = 18 } },
 	},
 })
@@ -1311,7 +1311,7 @@ table.insert(Config.Styles, {
 	awakenOf = "taeheo", hidden = true, rebirthReq = 1,
 	unlockHint = "태허유수장을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 물이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸이 물이 되었다. 흘려 낸 힘은 사라지지 않고 물결이 되어 둘레를 덮친다. 물은 다투지 않는다. 다만 모든 것을 덮을 뿐.",
-	gimmick = "역류: 흘리기 틈이 넓고 (0.3초), 흘려 낼 때마다 물결이 둘레로 터져 적을 밀어낸다. 오의 천하수류: 물의 용 셋이 나를 감아 돌며 둘레를 휩쓸고, 마지막에 한데 모여 앞으로 덮친다",
+	gimmick = "역류: 흘리기 틈이 넓고 (0.3초), 흘려 낼 때마다 물결이 둘레로 터져 적을 밀어낸다. 오의 천하수류: 물의 용 셋이 나를 감아 돌며 둘레를 휩쓸고 마지막에 한데 모여 앞으로 덮친다",
 	deflect = 0.3, speed = 1.05, deflectWave = { radius = 14, dmg = 26, posture = 40, stun = 0.6, kb = 36, up = 8 },
 	stance = "stance_taeheo",
 	combo = {
@@ -1340,7 +1340,7 @@ table.insert(Config.Styles, {
 	awakenOf = "yeolhwa", hidden = true, rebirthReq = 1,
 	unlockHint = "열화신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 꺼지지 않는 업화가 깨어났다. 불은 맞은 자를 태우는 것으로 끝나지 않는다. 쓰러지는 순간 터져 곁의 모두를 삼킨다.",
-	gimmick = "업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고, 떨어진 자리가 용암이 되어 터진다",
+	gimmick = "업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고 떨어진 자리가 용암이 되어 터진다",
 	deflect = 0.2, speed = 1.05,
 	burn = { dur = 4, every = 0.5, dmg = 8 },
 	burnBurst = { radius = 11, dmg = 26, posture = 30 },
@@ -1358,7 +1358,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "trail", delay = 0.45, count = 6, radius = 7, hit = hit(0, 0, 0, 22, 18, 0.5, 10, 14), fx = "fire" } },
 		R = { id = "ykR", name = "화산주", desc = "땅을 내리쳐 앞으로 불기둥 여덟을 차례로 세운다", pose = "blaze_hammer", dur = 0.9, cd = 10, chi = 25,
 			mech = { kind = "line", count = 8, start = 4, spacing = 4.4, step = 0.06, delay = 0.35, radius = 6, hit = hit(0, 0, 0, 24, 22, 0.6, 14, 24), fx = "fire" } },
-		G = { id = "ykG", name = "화룡천멸", desc = "몸에서 불의 용이 솟아 하늘을 한 바퀴 돌고, 적들에게 네 번 내리꽂힌다. 마지막에 떨어진 자리가 용암이 되어 세 번 터진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "ykG", name = "화룡천멸", desc = "몸에서 불의 용이 솟아 하늘을 한 바퀴 돌고 적들에게 네 번 내리꽂힌다. 마지막에 떨어진 자리가 용암이 되어 세 번 터진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "fireDragon", n = 1, ringRadius = 8, rise = 1.1, riseHit = hit(0, 0, 0, 24, 24, 0.6, 10, 26), range = 40, dives = 4, every = 0.34, diveRadius = 11, hit = hit(0, 0, 0, 44, 40, 0.8, 20, 10), finalRadius = 18, final = hit(0, 0, 0, 90, 110, 1.3, 50, 22), lava = 3, lavaHit = hit(0, 0, 0, 22, 24, 0.5, 10, 16) } },
 	},
 })
@@ -1368,7 +1368,7 @@ table.insert(Config.Styles, {
 	awakenOf = "changhae", hidden = true, rebirthReq = 1,
 	unlockHint = "창해신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 깊은 바다가 깨어났다. 파도는 더 자주, 더 깊이 밀려온다. 바다의 바닥은 아무도 본 적이 없다.",
-	gimmick = "심해: 세 번 맞힐 때마다 상대 자리에서 큰 물기둥이 솟는다 (더 넓고 세다). 밀어냄 1.4배. 오의 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고, 거대한 물기둥이 하늘로 쳐올린다",
+	gimmick = "심해: 세 번 맞힐 때마다 상대 자리에서 큰 물기둥이 솟는다 (더 넓고 세다). 밀어냄 1.4배. 오의 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고 거대한 물기둥이 하늘로 쳐올린다",
 	deflect = 0.24, kbMult = 1.4,
 	pulse = { every = 3, kind = "tide", radius = 14, delay = 0.25, name = "심해 파도", dmg = 30, posture = 30, stun = 0.6, kb = 38, up = 18 },
 	stance = "stance_ocean",
@@ -1383,9 +1383,9 @@ table.insert(Config.Styles, {
 		E = { id = "cyE", name = "해류보", desc = "물살을 타고 미끄러져 꿰뚫는다 (무적). 지나간 길에 물기둥이 솟는다", pose = "surf_dash", dur = 0.5, cd = 7, chi = 15, lunge = 28, iframes = 0.44,
 			hits = { hit(0.15, 6, 5, 16, 16, 0.45, 26) },
 			mech = { kind = "trail", delay = 0.5, count = 6, radius = 7, hit = hit(0, 0, 0, 20, 20, 0.5, 24, 16), fx = "tide" } },
-		R = { id = "cyR", name = "해일용권", desc = "발밑에서 물기둥이 솟아 둘레의 적을 하늘로 띄우고, 물줄기가 내리꽂힌다", pose = "wall_raise", dur = 0.9, cd = 11, chi = 25,
+		R = { id = "cyR", name = "해일용권", desc = "발밑에서 물기둥이 솟아 둘레의 적을 하늘로 띄우고 물줄기가 내리꽂힌다", pose = "wall_raise", dur = 0.9, cd = 11, chi = 25,
 			mech = { kind = "launch", delay = 0.3, radius = 15, up = 64, stun = 1.4, hitAt = 0.55, hit = hit(0, 0, 0, 34, 34, 0.8, 0, -12) } },
-		G = { id = "cyG", name = "심해강림", desc = "앞의 땅이 깊은 바다가 된다. 1.8초 동안 적이 가라앉아 움직이지 못하고, 마지막에 한가운데서 거대한 물기둥이 솟아 모두 하늘로 쳐올린다", pose = "ult_tsunami", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "cyG", name = "심해강림", desc = "앞의 땅이 깊은 바다가 된다. 1.8초 동안 적이 가라앉아 움직이지 못하고 마지막에 한가운데서 거대한 물기둥이 솟아 모두 하늘로 쳐올린다", pose = "ult_tsunami", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "abyss", radius = 24, dist = 6, dur = 1.8, every = 0.3, delay = 0.4, hit = hit(0, 0, 0, 10, 14, 0.3, 0), final = hit(0, 0, 0, 120, 150, 1.4, 20, 70) } },
 	},
 })
@@ -1394,8 +1394,8 @@ table.insert(Config.Styles, {
 	color = Color3.fromRGB(90, 240, 190), color2 = Color3.fromRGB(235, 255, 248), fx = "wind",
 	awakenOf = "pungsin", hidden = true, rebirthReq = 1,
 	unlockHint = "풍신각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바람이 된 자기 그림자를 넘어라",
-	desc = "다시 태어난 몸에서 바람의 칼이 깨어났다. 발끝이 지나간 자리마다 칼날이 남고, 그 칼날이 모여 하늘까지 닿는 회오리가 된다.",
-	gimmick = "칼바람: 대시 두 번, 대시 대기 0.4초, 밀어냄 1.5배, 더 빠르다. 오의 천풍만검: 바람의 칼날 열둘이 몸을 돌다가 사방으로 쏘아지고, 거대한 회오리가 모두 들어 올린다",
+	desc = "다시 태어난 몸에서 바람의 칼이 깨어났다. 발끝이 지나간 자리마다 칼날이 남고 그 칼날이 모여 하늘까지 닿는 회오리가 된다.",
+	gimmick = "칼바람: 대시 두 번, 대시 대기 0.4초, 밀어냄 1.5배, 더 빠르다. 오의 천풍만검: 바람의 칼날 열둘이 몸을 돌다가 사방으로 쏘아지고 거대한 회오리가 모두 들어 올린다",
 	deflect = 0.22, dashCd = 0.4, dashCharges = 2, speed = 1.15, kbMult = 1.5,
 	stance = "stance_gale",
 	combo = {
@@ -1411,18 +1411,18 @@ table.insert(Config.Styles, {
 			mech = { kind = "trail", delay = 0.4, count = 5, radius = 7, hit = hit(0, 0, 0, 18, 14, 0.4, 18, 10) } },
 		R = { id = "pkR", name = "칼바람 회오리", desc = "앞에 칼바람 회오리를 2.5초 세운다. 둘레의 적을 빨아들이며 계속 벤다", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25,
 			mech = { kind = "zone", dist = 9, radius = 13, dur = 2.5, every = 0.25, delay = 0.3, pull = 30, hit = hit(0, 0, 0, 7, 9, 0.3, 0), fx = "wind" } },
-		G = { id = "pkG", name = "천풍만검", desc = "바람의 칼날 열둘이 몸을 감아 돌며 둘레를 베고, 사방으로 쏘아진다. 마지막에 앞에서 하늘까지 닿는 회오리가 모두 들어 올려 내던진다", pose = "ult_gale", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "pkG", name = "천풍만검", desc = "바람의 칼날 열둘이 몸을 감아 돌며 둘레를 베고 사방으로 쏘아진다. 마지막에 앞에서 하늘까지 닿는 회오리가 모두 들어 올려 내던진다", pose = "ult_gale", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "galeBlades", blades = 12, orbit = 9, spin = 1.2, every = 0.2, delay = 0.3, hit = hit(0, 0, 0, 12, 10, 0.3, 6), range = 24, shoot = hit(0, 0, 0, 34, 30, 0.6, 30, 10), finalRadius = 16, final = hit(0, 0, 0, 90, 110, 1.3, 40, 60) } },
 	},
 })
--- 2.7판 진 무극신권 (각성): 먹과 붓의 권. 허공에 획을 긋고, 땅에 원을 그리고, 하늘의 붓이 먹의 꽃을 그린다
+-- 2.7판 진 무극신권 (각성): 먹과 붓의 권. 허공에 획을 긋고 땅에 원을 그리고 하늘의 붓이 먹의 꽃을 그린다
 table.insert(Config.Styles, {
 	id = "mugeuk2", name = "진 무극신권", hanja = "眞無極神拳", icon = "🖌", grade = "신화",
 	color = Color3.fromRGB(30, 30, 38), color2 = Color3.fromRGB(255, 214, 120), fx = "void",
 	awakenOf = "mugeuk", hidden = true, rebirthReq = 1,
 	unlockHint = "무극신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라",
-	desc = "다시 태어난 몸에서 무극이 붓을 들었다. 흑과 백을 넘어, 먹 한 방울에서 모든 것이 그려지고 지워진다. 손끝이 지나간 자리에 먹이 번지고, 먹은 금빛으로 타오른다.",
-	gimmick = "먹 번짐: 네 번 맞힐 때마다 상대 발밑에 먹이 번졌다가 금빛으로 터진다. 모든 타격이 균형을 두 배로 깎는다. 오의 무극필: 하늘의 큰 붓이 땅에 먹의 꽃을 그리고, 그림이 금빛으로 타오르며 터진다",
+	desc = "다시 태어난 몸에서 무극이 붓을 들었다. 흑과 백을 넘어, 먹 한 방울에서 모든 것이 그려지고 지워진다. 손끝이 지나간 자리에 먹이 번지고 먹은 금빛으로 타오른다.",
+	gimmick = "먹 번짐: 네 번 맞힐 때마다 상대 발밑에 먹이 번졌다가 금빛으로 터진다. 모든 타격이 균형을 두 배로 깎는다. 오의 무극필: 하늘의 큰 붓이 땅에 먹의 꽃을 그리고 그림이 금빛으로 타오르며 터진다",
 	deflect = 0.32, postureMult = 2,
 	pulse = { every = 4, kind = "ink", radius = 10, delay = 0.45, name = "먹 번짐", dmg = 32, posture = 40, stun = 0.7, kb = 10, up = 10 },
 	stance = "stance_mugeuk",
@@ -1436,9 +1436,9 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "mqE", name = "일획", desc = "팔을 크게 휘둘러 허공에 먹으로 한 획을 긋는다. 앞의 26칸을 가르는 굵은 먹 획이 지나간 적을 베고, 0.5초 뒤 획이 금빛으로 타오르며 한 번 더 터진다", pose = "brush_sweep", dur = 0.5, cd = 7, chi = 18,
 			mech = { kind = "inkSlash", length = 26, width = 5, delay = 0.15, hit = hit(0, 0, 0, 24, 34, 0.5, 10), burstAt = 0.5, burst = hit(0, 0, 0, 22, 30, 0.5, 0, 12) } },
-		R = { id = "mqR", name = "원상", desc = "붓 끝으로 발밑에 커다란 먹 원을 한 번에 그린다. 원 안의 적은 먹에 붙잡혀 1초 동안 움직이지 못하고, 원이 다 그려지면 먹 벽이 솟았다가 금빛으로 무너진다", pose = "brush_circle", dur = 0.8, cd = 11, chi = 26,
+		R = { id = "mqR", name = "원상", desc = "붓 끝으로 발밑에 커다란 먹 원을 한 번에 그린다. 원 안의 적은 먹에 붙잡혀 1초 동안 움직이지 못하고 원이 다 그려지면 먹 벽이 솟았다가 금빛으로 무너진다", pose = "brush_circle", dur = 0.8, cd = 11, chi = 26,
 			mech = { kind = "enso", radius = 16, draw = 0.55, hold = 1.0, hit = hit(0, 0, 0, 20, 40, 1.0, 0), burstAt = 0.35, burst = hit(0, 0, 0, 34, 44, 0.6, 30, 14) } },
-		G = { id = "mqG", name = "무극필", desc = "하늘에 커다란 붓이 나타나 둘레의 땅에 먹의 꽃을 그린다. 소용돌이치는 획 여덟이 차례로 내리그어질 때마다 그 아래의 적을 베고, 마지막에 둘레에 원을 둘러 그림 전체가 금빛으로 타오르며 터진다", pose = "ult_taiji", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "mqG", name = "무극필", desc = "하늘에 커다란 붓이 나타나 둘레의 땅에 먹의 꽃을 그린다. 소용돌이치는 획 여덟이 차례로 내리그어질 때마다 그 아래의 적을 베고 마지막에 둘레에 원을 둘러 그림 전체가 금빛으로 타오르며 터진다", pose = "ult_taiji", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "inkFlower", radius = 22, strokes = 8, delay = 0.35, every = 0.16, width = 5, hit = hit(0, 0, 0, 30, 50, 0.6, 10), ringAt = 0.3, finalAt = 0.45, finalRadius = 26, final = hit(0, 0, 0, 110, 260, 1.2, 50, 22) } },
 	},
 })
@@ -1450,11 +1450,11 @@ awakened("maehwa", 1.5, {
 	rebirthReq = 1, petals = true, petalMax = 20,
 	unlockHint = "매화난무권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 눈 속에 핀 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 한겨울의 매화가 피었다. 눈이 쌓일수록 붉게 피는 설중매처럼, 손끝이 지나간 자리마다 매화 가지가 뻗고 눈 속에서 꽃이 터진다.",
-	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고, 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
+	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
 	deflect = 0.24, speed = 1.2,
 	pulse = { every = 5, kind = "plum", radius = 10, delay = 0.35, name = "설중매", dmg = 31, posture = 28, stun = 0.6, kb = 8, up = 8 },
 	skills = {
-		E = { id = "mxE", name = "설중매", desc = "앞으로 손을 뻗으면 땅을 따라 매화 가지가 24칸 뻗는다. 마디마다 차례로 꽃이 피며 베고, 잠시 뒤 가지 전체의 꽃이 한꺼번에 터진다", pose = "plum_flash", dur = 0.55, cd = 7, chi = 18, lunge = 4,
+		E = { id = "mxE", name = "설중매", desc = "앞으로 손을 뻗으면 땅을 따라 매화 가지가 24칸 뻗는다. 마디마다 차례로 꽃이 피며 베고 잠시 뒤 가지 전체의 꽃이 한꺼번에 터진다", pose = "plum_flash", dur = 0.55, cd = 7, chi = 18, lunge = 4,
 			mech = { kind = "plumBranch", length = 24, nodes = 6, delay = 0.15, step = 0.08, radius = 5.5, hit = hit(0, 0, 0, 22, 20, 0.5, 8), burstAt = 0.45, burst = hit(0, 0, 0, 19, 18, 0.4, 0, 10) } },
 		R = { id = "mxR", name = "한매오판", desc = "둘레 다섯 곳에 커다란 매화가 핀다. 꽃이 둘레의 적을 꽃술로 끌어당긴 뒤 눈보라와 함께 터진다 (맞은 적은 1초 굼뜨다)", pose = "petal_spin", dur = 0.8, cd = 11, chi = 25,
 			mech = { kind = "plumRing", radius = 13, flowers = 5, delay = 0.3, pull = 26, hold = 0.6, every = 0.2, hit = hit(0, 0, 0, 12, 12, 0.3, 0), burst = hit(0, 0, 0, 36, 34, 0.7, 30, 14), slow = 1 } },
@@ -1468,14 +1468,14 @@ awakened("chwi", 1.5, {
 	color = Color3.fromRGB(200, 120, 255), color2 = Color3.fromRGB(255, 225, 150), fx = "drunk",
 	rebirthReq = 1, dodgeChance = 0.3, weakBlock = 1.4,
 	unlockHint = "취팔선권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 술에 취한 자기 그림자를 넘어라",
-	desc = "다시 태어난 몸에 여덟 신선이 함께 취했다. 호리병의 술이 강이 되어 흐르고, 비틀거리는 걸음 하나하나가 신선의 걸음이 된다.",
-	gimmick = "취선: 30% 확률로 공격을 저절로 피한다. 네 번 맞힐 때마다 상대 자리에서 술이 튀어 어지럽힌다. 오의 팔선강림: 여덟 신선의 그림자가 둘레에 나타나 차례로 덮치고, 하늘에서 거대한 호리병이 내리꽂힌다",
+	desc = "다시 태어난 몸에 여덟 신선이 함께 취했다. 호리병의 술이 강이 되어 흐르고 비틀거리는 걸음 하나하나가 신선의 걸음이 된다.",
+	gimmick = "취선: 30% 확률로 공격을 저절로 피한다. 네 번 맞힐 때마다 상대 자리에서 술이 튀어 어지럽힌다. 오의 팔선강림: 여덟 신선의 그림자가 둘레에 나타나 차례로 덮치고 하늘에서 거대한 호리병이 내리꽂힌다",
 	deflect = 0.22,
 	pulse = { every = 4, kind = "wine", radius = 9, delay = 0.25, name = "술 튐", dmg = 22, posture = 26, stun = 0.8, kb = 10, up = 6 },
 	skills = {
 		E = { id = "cxE", name = "취월삼보", desc = "비틀비틀 세 걸음, 좌우로 크게 휘청이며 9칸씩 뛰어든다 (무적). 내려설 때마다 둘레를 걷어찬다", pose = "drunk_low", dur = 0.7, cd = 7, chi = 18, iframes = 0.6,
 			mech = { kind = "drunkZig", hops = 3, dist = 9, every = 0.18, radius = 7, hit = hit(0, 0, 0, 16, 16, 0.5, 20, 8) } },
-		R = { id = "cxR", name = "주천강", desc = "호리병을 기울여 앞으로 술의 강을 쏟는다. 2초 동안 강 위의 적은 굼뜨고 젖어 들며, 마지막에 강에 불이 붙어 한꺼번에 타오른다", pose = "soju_spray", dur = 0.8, cd = 11, chi = 25,
+		R = { id = "cxR", name = "주천강", desc = "호리병을 기울여 앞으로 술의 강을 쏟는다. 2초 동안 강 위의 적은 굼뜨고 젖어 들며 마지막에 강에 불이 붙어 한꺼번에 타오른다", pose = "soju_spray", dur = 0.8, cd = 11, chi = 25,
 			mech = { kind = "wineRiver", length = 26, width = 6, dur = 2.0, every = 0.3, delay = 0.25, hit = hit(0, 0, 0, 7, 8, 0.25, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 10, 12) } },
 		G = { id = "cxG", name = "팔선강림", desc = "여덟 신선의 그림자가 둘레에 나타나 차례로 가까운 적에게 덮쳐 든다. 마지막에 하늘에서 거대한 호리병이 내리꽂혀 술 물결이 사방으로 터진다", pose = "drunk_sway", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "eightImmortals", n = 8, radius = 12, delay = 0.35, every = 0.18, range = 30, hit = hit(0, 0, 0, 30, 30, 0.6, 20, 10), finalAt = 0.45, finalRadius = 18, final = hit(0, 0, 0, 110, 130, 1.3, 50, 25) } },
@@ -1489,13 +1489,13 @@ do
 	local NEW_G: { [string]: any } = {
 		hyeolma2 = { id = "vhmG", name = "혈해만마", desc = "발밑이 피의 바다가 된다. 피에서 마수의 손톱이 열두 번 솟아 적들을 찢고 (찢을 때마다 체력이 돌아온다), 마지막에 바다가 핏빛 소용돌이 기둥으로 솟아 터진다. 그 뒤 10초 광란", pose = "ult_blood", dur = 1.8, cd = 30, chi = 100, armor = true, buff = { kind = "frenzy", dur = 10 },
 			mech = { kind = "bloodSea", radius = 26, delay = 0.45, claws = 12, every = 0.18, clawRadius = 7, heal = 0.006, hit = hit(0, 0, 0, 26, 24, 0.6, 10, 18), final = hit(0, 0, 0, 110, 140, 1.4, 50, 30) } },
-		cheonryong2 = { id = "vcrG", name = "구룡승천", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른다. 하늘을 돈 용들이 적들에게 하나씩 내리꽂히고, 마지막에 한가운데로 모여 터진다", pose = "ult_dragon", dur = 1.8, cd = 30, chi = 100, armor = true,
+		cheonryong2 = { id = "vcrG", name = "구룡승천", desc = "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른다. 하늘을 돈 용들이 적들에게 하나씩 내리꽂히고 마지막에 한가운데로 모여 터진다", pose = "ult_dragon", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "nineDragons", n = 9, ringRadius = 14, rise = 1.1, riseHit = hit(0, 0, 0, 24, 24, 0.6, 10, 30), range = 40, dives = 9, every = 0.13, diveRadius = 8, hit = hit(0, 0, 0, 30, 28, 0.7, 20, -6), finalRadius = 22, final = hit(0, 0, 0, 100, 130, 1.4, 60, 24) } },
-		byeokryeok2 = { id = "vbkG", name = "뇌정천망", desc = "둘레의 적 열을 보랏빛 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고, 마지막에 적마다 천뢰가 떨어진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
+		byeokryeok2 = { id = "vbkG", name = "뇌정천망", desc = "둘레의 적 열을 보랏빛 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고 마지막에 적마다 천뢰가 떨어진다", pose = "ult_thunder", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "thunderNet", range = 34, n = 10, delay = 0.4, pulses = 5, every = 0.36, hit = hit(0, 0, 0, 16, 16, 0.4, 0), finalRadius = 8, final = hit(0, 0, 0, 70, 90, 1.2, 30, 20) } },
 		geumgang2 = { id = "gkG", name = "천수여래", desc = "등 뒤로 팔이 여럿 달린 거대한 금빛 여래가 솟아 적들을 차례로 여덟 번 내리친다. 마지막에 하늘이 갈라지며 산만 한 손바닥이 땅을 누른다", pose = "ult_buddha", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "thousandArms", range = 34, count = 8, delay = 0.7, every = 0.2, armRadius = 8, hit = hit(0, 0, 0, 28, 34, 0.7, 20, -8), radius = 26, palmDelay = 0.9, final = hit(0, 0, 0, 110, 150, 1.6, 10, -10) } },
-		muyeong2 = { id = "mkG", name = "무영천살", desc = "세상이 어두워지고 몸이 사라진다. 적들의 몸에 붉은 표식이 하나씩 새겨지고, 빛이 돌아오는 순간 모두 한꺼번에 터진다. 마지막에 하늘에서 그림자의 발이 짓밟는다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
+		muyeong2 = { id = "mkG", name = "무영천살", desc = "세상이 어두워지고 몸이 사라진다. 적들의 몸에 붉은 표식이 하나씩 새겨지고 빛이 돌아오는 순간 모두 한꺼번에 터진다. 마지막에 하늘에서 그림자의 발이 짓밟는다 (그동안 무적)", pose = "ult_shadow", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "shadowKill", range = 36, n = 10, delay = 0.4, every = 0.12, hold = 0.5, hit = hit(0, 0, 0, 60, 60, 1.0, 20, 30), finalRadius = 20, final = hit(0, 0, 0, 80, 110, 1.3, 40, -10) } },
 		taeheo2 = { id = "tkG", name = "창해만류", desc = "발밑에 거대한 소용돌이가 일어 적들을 가운데로 빨아들인다. 둘레에 물의 벽이 높이 솟았다가, 마지막에 안쪽으로 한꺼번에 무너져 내린다", pose = "ult_tide", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "maelstrom", radius = 24, dur = 2.4, every = 0.24, delay = 0.3, pull = 34, hit = hit(0, 0, 0, 8, 12, 0.3, 0), final = hit(0, 0, 0, 110, 140, 1.4, 60, 30) } },
@@ -1521,27 +1521,27 @@ end
 do
 	local NEW: { [string]: { [string]: any } } = {
 		hyeolma2 = {
-			E = { id = "vhmE2", name = "혈침", desc = "손톱 끝의 피를 바늘로 날려 둘레의 적 넷에게 꽂는다. 1초 뒤 바늘이 몸속에서 터지고, 터진 만큼 체력을 빨아온다", pose = "blood_phantom", dur = 0.45, cd = 8, chi = 20,
+			E = { id = "vhmE2", name = "혈침", desc = "손톱 끝의 피를 바늘로 날려 둘레의 적 넷에게 꽂는다. 1초 뒤 바늘이 몸속에서 터지고 터진 만큼 체력을 빨아온다", pose = "blood_phantom", dur = 0.45, cd = 8, chi = 20,
 				mech = { kind = "bloodNeedles", n = 4, range = 30, delay = 0.2, mark = 1.0, radius = 5, heal = 0.012, hit = hit(0, 0, 0, 14, 10, 0.3, 0), burst = hit(0, 0, 0, 40, 34, 0.7, 14, 8) } },
-			R = { id = "vhmR2", name = "혈마수인", desc = "앞의 땅에서 거대한 피의 손이 솟아 둘레의 적을 움켜쥔다. 세 번 쥐어짜고, 마지막에 땅에 내리꽂는다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
+			R = { id = "vhmR2", name = "혈마수인", desc = "앞의 땅에서 거대한 피의 손이 솟아 둘레의 적을 움켜쥔다. 세 번 쥐어짜고 마지막에 땅에 내리꽂는다", pose = "blood_spread", dur = 0.9, cd = 12, chi = 25,
 				mech = { kind = "bloodGrip", dist = 10, radius = 10, delay = 0.35, squeezes = 3, every = 0.3, hit = hit(0, 0, 0, 16, 16, 0.4, 0), squeeze = hit(0, 0, 0, 14, 16, 0.3, 0), final = hit(0, 0, 0, 52, 60, 1.0, 10, -20) } },
 		},
 		cheonryong2 = {
 			E = { id = "vcrE2", name = "용음", desc = "금룡의 울음을 앞으로 토해낸다. 부채꼴 안의 적이 멀리 날아가고 1초 동안 몸이 굳는다 (막을 수 없다)", pose = "dragon_coil", dur = 0.55, cd = 8, chi = 20,
 				mech = { kind = "dragonRoar", range = 22, angle = 80, delay = 0.22, stun = 1.0, hit = hit(0, 0, 0, 26, 40, 0.6, 70, 10, true) } },
-			R = { id = "vcrR2", name = "항룡장", desc = "금룡의 머리 모양 장력이 앞으로 길게 뻗어 나가며 닿는 적을 모두 꿰뚫고, 끝에서 터진다", pose = "dragon_rise", dur = 0.7, cd = 10, chi = 25,
+			R = { id = "vcrR2", name = "항룡장", desc = "금룡의 머리 모양 장력이 앞으로 길게 뻗어 나가며 닿는 적을 모두 꿰뚫고 끝에서 터진다", pose = "dragon_rise", dur = 0.7, cd = 10, chi = 25,
 				mech = { kind = "dragonPalm", delay = 0.2, length = 34, speed = 70, width = 5, hit = hit(0, 0, 0, 34, 34, 0.6, 40), finalRadius = 10, final = hit(0, 0, 0, 40, 40, 0.8, 30, 20) } },
 		},
 		byeokryeok2 = {
 			E = { id = "vbkE2", name = "뇌인진", desc = "땅을 내리쳐 둘레 네 곳에 보랏빛 뇌인을 새긴다. 2.6초 동안 적이 밟으면 벼락이 떨어지고 (뇌인마다 두 번), 끝에 모두 터진다", pose = "thunder_hammer", dur = 0.5, cd = 9, chi = 20,
 				mech = { kind = "sigils", n = 4, dist = 9, radius = 4, dur = 2.6, every = 0.2, delay = 0.25, charges = 2, hit = hit(0, 0, 0, 22, 20, 0.6, 6), finalRadius = 7, final = hit(0, 0, 0, 30, 30, 0.7, 20, 10) } },
-			R = { id = "vbkR2", name = "섬뢰포", desc = "주먹에 뇌전을 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고, 지나간 줄이 1.2초 동안 지지직 지진다", pose = "thunder_jab", dur = 0.8, cd = 11, chi = 25,
+			R = { id = "vbkR2", name = "섬뢰포", desc = "주먹에 뇌전을 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고 지나간 줄이 1.2초 동안 지지직 지진다", pose = "thunder_jab", dur = 0.8, cd = 11, chi = 25,
 				mech = { kind = "railBeam", delay = 0.4, length = 40, width = 3.2, linger = 1.2, every = 0.3, hit = hit(0, 0, 0, 50, 46, 0.8, 30), tick = hit(0, 0, 0, 8, 8, 0.2, 0) } },
 		},
 		geumgang2 = {
-			E = { id = "gkE2", name = "금강종", desc = "하늘에서 금빛 큰 종이 떨어져 몸을 덮는다 (1.4초 무적). 종이 세 번 울릴 때마다 둘레를 밀어내고, 마지막 울림이 가장 크다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
+			E = { id = "gkE2", name = "금강종", desc = "하늘에서 금빛 큰 종이 떨어져 몸을 덮는다 (1.4초 무적). 종이 세 번 울릴 때마다 둘레를 밀어내고 마지막 울림이 가장 크다", pose = "brace", dur = 0.6, cd = 11, chi = 25,
 				mech = { kind = "goldenBell", dur = 1.4, rings = 3, every = 0.45, delay = 0.35, radius = 10, hit = hit(0, 0, 0, 18, 26, 0.5, 30), final = hit(0, 0, 0, 40, 50, 1.0, 50, 10) } },
-			R = { id = "gkR2", name = "항마저", desc = "금강저를 던진다. 앞으로 날아갔다가 손으로 되돌아오며, 가는 길과 오는 길에 한 번씩 친다", pose = "grav_hammer", dur = 0.7, cd = 10, chi = 25,
+			R = { id = "gkR2", name = "항마저", desc = "금강저를 던진다. 앞으로 날아갔다가 손으로 되돌아오며 가는 길과 오는 길에 한 번씩 친다", pose = "grav_hammer", dur = 0.7, cd = 10, chi = 25,
 				mech = { kind = "vajra", delay = 0.25, dist = 26, time = 0.45, radius = 5, hit = hit(0, 0, 0, 30, 34, 0.6, 24) } },
 		},
 		muyeong2 = {
@@ -1557,15 +1557,15 @@ do
 				mech = { kind = "geysers", n = 6, range = 28, delay = 0.3, every = 0.14, radius = 5, hit = hit(0, 0, 0, 30, 30, 0.9, 0, 48) } },
 		},
 		yeolhwa2 = {
-			E = { id = "ykE2", name = "화륜", desc = "불의 바퀴를 앞으로 굴린다. 닿는 적을 치고, 바퀴가 지나간 길이 2초 동안 불탄다", pose = "blaze_punch", dur = 0.45, cd = 8, chi = 20,
+			E = { id = "ykE2", name = "화륜", desc = "불의 바퀴를 앞으로 굴린다. 닿는 적을 치고 바퀴가 지나간 길이 2초 동안 불탄다", pose = "blaze_punch", dur = 0.45, cd = 8, chi = 20,
 				mech = { kind = "fireWheel", dist = 36, time = 0.8, radius = 4.5, trail = 3, burn = 2.0, every = 0.4, hit = hit(0, 0, 0, 26, 22, 0.5, 24, 10), tick = hit(0, 0, 0, 6, 4, 0.1, 0) } },
 			R = { id = "ykR2", name = "폭염륜", desc = "솟구쳤다가 내려앉으며 둘레로 불의 고리를 퍼뜨린다. 고리가 지나가는 순간 맞는다", pose = "blaze_hammer", dur = 0.9, cd = 10, chi = 25, jump = 26,
 				mech = { kind = "flameRing", delay = 0.5, radius = 20, expand = 0.55, hit = hit(0, 0, 0, 40, 36, 0.7, 40, 14) } },
-			G = { id = "ykG2", name = "화산천붕", desc = "앞의 땅이 부풀어 오른다. 적의 발밑마다 용암이 뿜어지고, 한가운데에서 화산이 터져 불덩이 열 개가 쏟아진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
+			G = { id = "ykG2", name = "화산천붕", desc = "앞의 땅이 부풀어 오른다. 적의 발밑마다 용암이 뿜어지고 한가운데에서 화산이 터져 불덩이 열 개가 쏟아진다", pose = "ult_volcano", dur = 1.8, cd = 30, chi = 100, armor = true,
 				mech = { kind = "volcano", dist = 8, radius = 26, range = 34, delay = 0.4, vents = 8, every = 0.12, ventRadius = 6, hit = hit(0, 0, 0, 30, 30, 0.6, 10, 30), mainDelay = 0.35, mainRadius = 16, main = hit(0, 0, 0, 100, 130, 1.3, 50, 30), meteors = 10, meteorEvery = 0.13, meteorRadius = 6, meteor = hit(0, 0, 0, 26, 24, 0.5, 16, 8) } },
 		},
 		changhae2 = {
-			E = { id = "cyE2", name = "수포옥", desc = "가까운 적 셋을 물방울 감옥에 가둬 띄운다. 1.6초 동안 지지고, 끝에 펑 터진다", pose = "push_palm", dur = 0.5, cd = 9, chi = 20,
+			E = { id = "cyE2", name = "수포옥", desc = "가까운 적 셋을 물방울 감옥에 가둬 띄운다. 1.6초 동안 지지고 끝에 펑 터진다", pose = "push_palm", dur = 0.5, cd = 9, chi = 20,
 				mech = { kind = "bubbles", n = 3, range = 26, delay = 0.25, dur = 1.6, every = 0.4, radius = 7, hit = hit(0, 0, 0, 10, 10, 0.3, 0), tick = hit(0, 0, 0, 8, 10, 0.2, 0), final = hit(0, 0, 0, 40, 40, 0.8, 30, 26) } },
 			R = { id = "cyR2", name = "해룡창", desc = "하늘에서 물의 창 일곱이 적들에게 차례로 내리꽂힌다 (적이 없으면 앞으로 한 줄)", pose = "point_sky", dur = 0.8, cd = 10, chi = 25,
 				mech = { kind = "waterSpears", count = 7, range = 30, start = 5, spacing = 4.5, delay = 0.3, every = 0.08, radius = 4.5, hit = hit(0, 0, 0, 30, 30, 0.6, 10, -8) } },
@@ -1573,7 +1573,7 @@ do
 				mech = { kind = "whaleBreach", dist = 30, delay = 0.35, flight = 1.3, launchRadius = 12, launch = hit(0, 0, 0, 40, 40, 0.8, 10, 50), radius = 20, hit = hit(0, 0, 0, 20, 20, 0.4, 10, 10), final = hit(0, 0, 0, 120, 150, 1.4, 60, 20) } },
 		},
 		pungsin2 = {
-			E = { id = "pkE2", name = "회풍", desc = "작은 회오리를 풀어 놓는다. 3초 동안 가까운 적을 쫓아다니며 들어 올리고, 끝에 흩어지며 친다", pose = "gale_spin", dur = 0.5, cd = 9, chi = 20,
+			E = { id = "pkE2", name = "회풍", desc = "작은 회오리를 풀어 놓는다. 3초 동안 가까운 적을 쫓아다니며 들어 올리고 끝에 흩어지며 친다", pose = "gale_spin", dur = 0.5, cd = 9, chi = 20,
 				mech = { kind = "wanderTornado", radius = 5, seek = 30, speed = 20, dur = 3, every = 0.1, gap = 0.35, hit = hit(0, 0, 0, 10, 10, 0.3, 0, 22), final = hit(0, 0, 0, 30, 30, 0.6, 30, 30) } },
 			R = { id = "pkR2", name = "풍압", desc = "솟구친 뒤 하늘의 바람을 끌어내린다. 둘레의 적을 가운데로 빨아들여 땅에 짓누른다 (1.2초 기절)", pose = "gale_spin", dur = 0.9, cd = 11, chi = 25, jump = 30,
 				mech = { kind = "downdraft", delay = 0.55, radius = 15, stun = 1.2, hit = hit(0, 0, 0, 40, 46, 0.8, 0, -30) } },
@@ -1585,7 +1585,7 @@ do
 			for slot, sk in pairs(n) do
 				st.skills[slot] = sk
 			end
-			st.gimmick = string.gsub(st.gimmick, "오의 화룡천멸: .*$", "오의 화산천붕: 적의 발밑마다 용암이 뿜어지고, 화산이 터져 불덩이가 쏟아진다")
+			st.gimmick = string.gsub(st.gimmick, "오의 화룡천멸: .*$", "오의 화산천붕: 적의 발밑마다 용암이 뿜어지고 화산이 터져 불덩이가 쏟아진다")
 			st.gimmick = string.gsub(st.gimmick, "오의 심해강림: .*$", "오의 고래강림: 거대한 물의 고래가 솟구쳤다가 땅을 덮친다")
 		end
 	end
@@ -1666,7 +1666,7 @@ function Config.styleGrade(style: any, _up: number?): string
 end
 -- 깨달음 한 번에 오르는 피해 (예전 등급 두 칸과 비슷하게). 신화는 예전처럼 한 칸만, 태초 이상과 초·극은 오르지 않는다
 local BREAK_BONUS = { ["상급"] = { 0.13, 0.26 }, ["전설"] = { 0.13, 0.26 }, ["신화"] = { 0.17, 0.17 } }
--- 3.24판: 후반 권법이 지나치게 셌다. 권법 등급 배율은 공격에 g^0.55, 체력에 g^0.15만 (예전엔 공격에 g^1 전부) — 극 ×3.8 → 전투력 ×1.95에서 ×1.6
+-- 3.24판: 후반 권법이 지나치게 셌다. 권법 등급 배율은 공격에 g^0.55, 체력에 g^0.15만 (예전엔 공격에 g^1 전부): 극 ×3.8 → 전투력 ×1.95에서 ×1.6
 Config.GRADE_DMG_EXP = 1 -- 3.24.2판: 원인은 권법 등급이 아니라 오의였다. 되돌린다
 Config.GRADE_HP_EXP = 0
 function Config.gradeDmg(style: any, up: number?): number
@@ -1745,21 +1745,21 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "cmH", name = "천앵일섬", pose = "fan_dash", dur = 0.5, lunge = 18, iframes = 0.25, hits = { hit(0.2, 8, 5.5, 20, 20, 0.55, 18) }, bloom = { radius = 18, dmg = 55, posture = 60 } },
 	skills = {
-		-- 2.7판: 초 오의를 뺀 기술을 새로 (부채가 날아가고, 꽃 그림자가 베고, 하늘의 큰 부채가 쓸어 낸다)
-		E = { id = "cmE", name = "선풍낙화", desc = "두 부채를 펼쳐 양옆으로 던진다. 부채는 꽃잎을 흘리며 둥글게 앞으로 날아갔다 되돌아오고, 지나는 길의 적을 오갈 때 한 번씩 벤다", pose = "fan_twirl", dur = 0.5, cd = 8, chi = 20,
+		-- 2.7판: 초 오의를 뺀 기술을 새로 (부채가 날아가고 꽃 그림자가 베고 하늘의 큰 부채가 쓸어 낸다)
+		E = { id = "cmE", name = "선풍낙화", desc = "두 부채를 펼쳐 양옆으로 던진다. 부채는 꽃잎을 흘리며 둥글게 앞으로 날아갔다 되돌아오고 지나는 길의 적을 오갈 때 한 번씩 벤다", pose = "fan_twirl", dur = 0.5, cd = 8, chi = 20,
 			mech = { kind = "fanBoomerang", dist = 24, width = 9, time = 1.0, every = 0.08, radius = 4.8, hit = hit(0, 0, 0, 20, 16, 0.35, 8) } },
-		R = { id = "cmR", name = "화영보", desc = "꽃잎이 되어 앞으로 미끄러진다 (무적). 지나간 길에 꽃 그림자 셋이 남아 차례로 부채를 휘두르고, 마지막에 모두 꽃잎으로 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25, lunge = 22, iframes = 0.4,
+		R = { id = "cmR", name = "화영보", desc = "꽃잎이 되어 앞으로 미끄러진다 (무적). 지나간 길에 꽃 그림자 셋이 남아 차례로 부채를 휘두르고 마지막에 모두 꽃잎으로 터진다", pose = "sakura_step", dur = 0.5, cd = 10, chi = 25, lunge = 22, iframes = 0.4,
 			mech = { kind = "petalShadow", n = 3, gap = 7, delay = 0.25, every = 0.14, radius = 7.5, hit = hit(0, 0, 0, 26, 22, 0.45, 16), burstAt = 0.45, burst = hit(0, 0, 0, 22, 24, 0.5, 20, 10) } },
-		G = { id = "cmG", name = "만화천선", desc = "하늘에 커다란 벚꽃 부채가 펼쳐진다. 부채가 앞의 땅을 칼날처럼 두 번 쓸고 지나가고, 마지막에 접히며 탁 소리와 함께 꽃잎 폭풍이 둘레를 휘감는다", pose = "ult_sakura", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "cmG", name = "만화천선", desc = "하늘에 커다란 벚꽃 부채가 펼쳐진다. 부채가 앞의 땅을 칼날처럼 두 번 쓸고 지나가고 마지막에 접히며 탁 소리와 함께 꽃잎 폭풍이 둘레를 휘감는다", pose = "ult_sakura", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "skyFan", open = 0.6, sweeps = 2, sweepTime = 0.55, range = 34, angle = 200, hit = hit(0, 0, 0, 44, 48, 0.8, 30), closeAt = 0.35, closeRadius = 26, final = hit(0, 0, 0, 100, 120, 1.4, 60, 20) } },
-		X = { id = "cmX", name = "만앵참월", desc = "초 오의. 보이지 않게 둘레의 적 열을 베고 지나가며 하늘에 칼자국을 남긴다. 세상이 잿빛으로 멈춘 한 박자 뒤, 칼바람이 일어 적들을 휘감고, 마지막에 터지며 화면까지 한칼에 두 동강 낸다 (그동안 무적)", pose = "ult_sever", dur = 1.2, cd = 60, chi = 150, armor = true,
+		X = { id = "cmX", name = "만앵참월", desc = "초 오의. 보이지 않게 둘레의 적 열을 베고 지나가며 하늘에 칼자국을 남긴다. 세상이 잿빛으로 멈춘 한 박자 뒤, 칼바람이 일어 적들을 휘감고 마지막에 터지며 화면까지 한칼에 두 동강 낸다 (그동안 무적)", pose = "ult_sever", dur = 1.2, cd = 60, chi = 150, armor = true,
 			mech = { kind = "sakuraSever", n = 10, range = 45, delay = 0.25, every = 0.06, still = 0.9, wind = 1.3, windEvery = 0.18, cut = hit(0, 0, 0, 40, 40, 0.8, 0), windHit = hit(0, 0, 0, 9, 10, 0.3, 0), final = hit(0, 0, 0, 170, 200, 1.8, 80, 26), finalRadius = 22 } },
 	},
 })
 
 ------------------------------------------------------------------------
 -- 초·취팔선권: 초록 술병을 들고 머리엔 넥타이를 질끈 동여맨 채, 쓰러질 듯 비틀거린다.
--- 막기는 아예 안 되고 (맞는다), 흘리기만 된다. 대신 흘리는 틈이 넓고, 움직이는 동안 저절로 잘 피한다
+-- 막기는 아예 안 되고 (맞는다), 흘리기만 된다. 대신 흘리는 틈이 넓고 움직이는 동안 저절로 잘 피한다
 ------------------------------------------------------------------------
 table.insert(Config.Styles, {
 	id = "chochwi",
@@ -1780,8 +1780,8 @@ table.insert(Config.Styles, {
 	styleReq = "chwi",
 	trialHp = 10,
 	unlockHint = "취팔선권을 익히고 천외천에 오른 자만이, 취선 주막 남쪽 술독 마루의 만취선을 만난다",
-	desc = "취팔선권을 넘어선 권법. 술병 하나와 넥타이 하나로 천하를 비틀거린다. 넘어지는 것처럼 보이는 모든 몸짓이 공격이고, 쓰러지는 순간이 가장 빠르다.",
-	gimmick = "만취: 막기가 되지 않는다 (막아도 그대로 맞는다). 대신 흘리기 틈이 넓고, 움직이거나 기술을 쓰는 동안 30% 확률로 저절로 피한다. 오의 위에 초 오의(X)가 있다",
+	desc = "취팔선권을 넘어선 권법. 술병 하나와 넥타이 하나로 천하를 비틀거린다. 넘어지는 것처럼 보이는 모든 몸짓이 공격이고 쓰러지는 순간이 가장 빠르다.",
+	gimmick = "만취: 막기가 되지 않는다 (막아도 그대로 맞는다). 대신 흘리기 틈이 넓고 움직이거나 기술을 쓰는 동안 30% 확률로 저절로 피한다. 오의 위에 초 오의(X)가 있다",
 	deflect = 0.32,
 	dodgeChance = 0.3,
 	speed = 1.2,
@@ -1796,17 +1796,17 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "ccE", name = "취화방사", desc = "술병을 흔들어 입구에 불똥을 튀긴다. 1.6초 동안 앞으로 초록 불길이 뿜어져 나가 부채꼴을 계속 태운다", pose = "soju_spray", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "cone", range = 20, angle = 60, dur = 1.6, every = 0.2, delay = 0.25, hit = hit(0, 0, 0, 6, 7, 0.2, 4), fx = "soju" } },
-		R = { id = "ccR", name = "팔선취보", desc = "쓰러질 듯 여덟 걸음을 갈지자로 내딛는다. 걸음마다 둘레를 후려치고, 그동안 무엇도 맞히지 못한다", pose = "soju_stagger", dur = 0.9, cd = 10, chi = 25,
+		R = { id = "ccR", name = "팔선취보", desc = "쓰러질 듯 여덟 걸음을 갈지자로 내딛는다. 걸음마다 둘레를 후려치고 그동안 무엇도 맞히지 못한다", pose = "soju_stagger", dur = 0.9, cd = 10, chi = 25,
 			mech = { kind = "zigzag", n = 8, step = 4.5, side = 4, every = 0.09, delay = 0.05, radius = 6.5, hit = hit(0, 0, 0, 10, 10, 0.3, 10) } },
-		G = { id = "ccG", name = "취몽팔선진", desc = "술병을 하늘 높이 던진다. 병이 깨지며 둘레에 술비가 쏟아져 적을 적시고, 불똥 하나에 온 땅이 초록 불길로 타오르며 여덟 취선의 그림자가 한꺼번에 덮친다", pose = "soju_throw", dur = 1.4, cd = 30, chi = 100, armor = true,
+		G = { id = "ccG", name = "취몽팔선진", desc = "술병을 하늘 높이 던진다. 병이 깨지며 둘레에 술비가 쏟아져 적을 적시고 불똥 하나에 온 땅이 초록 불길로 타오르며 여덟 취선의 그림자가 한꺼번에 덮친다", pose = "soju_throw", dur = 1.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "sojuRain", radius = 26, delay = 0.6, rain = 1.6, every = 0.3, slow = 0.5, hit = hit(0, 0, 0, 6, 8, 0.2, 0), ghosts = 8, final = hit(0, 0, 0, 95, 120, 1.4, 55, 22) } },
-		X = { id = "ccX", name = "취선만권", desc = "초 오의. 세상이 멈춘 듯한 한순간, 점점 빨라지는 앞구르기로 굴러 들어가 (그동안 무적) 적들에게 와다다다 수백 주먹을 퍼붓고, 마지막에 술병을 깨뜨리며 터뜨린다", pose = "soju_rolls", dur = 3.4, cd = 60, chi = 150, armor = true,
+		X = { id = "ccX", name = "취선만권", desc = "초 오의. 세상이 멈춘 듯한 한순간, 점점 빨라지는 앞구르기로 굴러 들어가 (그동안 무적) 적들에게 와다다다 수백 주먹을 퍼붓고 마지막에 술병을 깨뜨리며 터뜨린다", pose = "soju_rolls", dur = 3.4, cd = 60, chi = 150, armor = true,
 			mech = { kind = "drunkRush", cut = 1.6, roll = 26, rush = 1.8, every = 0.06, hop = 0.45, range = 36, n = 5, reach = 8, hit = hit(0, 0, 0, 4.5, 5, 0.15, 2), final = hit(0, 0, 0, 180, 200, 1.8, 80, 26), finalRadius = 22 } },
 	},
 })
 
 ------------------------------------------------------------------------
--- 1.9판 초·혈마신수: 오른손에 피처럼 붉은 큰 낫을 거머쥐고, 짐승처럼 웅크려 낫을 머리 위로 치켜든다
+-- 1.9판 초·혈마신수: 오른손에 피처럼 붉은 큰 낫을 거머쥐고 짐승처럼 웅크려 낫을 머리 위로 치켜든다
 -- 피의 계약: 체력이 깎일수록 낫이 무거워진다 (주는 피해가 오른다). 벤 만큼 되찾는다
 ------------------------------------------------------------------------
 table.insert(Config.Styles, {
@@ -1843,11 +1843,11 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "cqE", name = "혈사슬", desc = "낫을 사슬에 매달아 던진다. 둘레의 적 셋을 낫 끝으로 낚아 내 앞으로 끌어온 뒤, 한 바퀴 돌며 벤다", pose = "reap_hook", dur = 0.75, cd = 9, chi = 20,
 			mech = { kind = "reapHook", n = 3, range = 30, delay = 0.2, pull = 0.28, hit = hit(0, 0, 0, 10, 12, 0.6, 0), slash = hit(0, 0, 0, 22, 26, 0.6, 24), radius = 9 } },
-		R = { id = "cqR", name = "혈월낙참", desc = "하늘로 솟아 낫을 거꾸로 쥐고 내리꽂는다. 앞의 땅에 핏빛 초승달 자국이 새겨지고, 한 박자 뒤 자국이 터진다", pose = "reap_leap", dur = 0.85, cd = 10, chi = 25, jump = 34,
+		R = { id = "cqR", name = "혈월낙참", desc = "하늘로 솟아 낫을 거꾸로 쥐고 내리꽂는다. 앞의 땅에 핏빛 초승달 자국이 새겨지고 한 박자 뒤 자국이 터진다", pose = "reap_leap", dur = 0.85, cd = 10, chi = 25, jump = 34,
 			mech = { kind = "reapCleave", delay = 0.5, dist = 9, length = 22, width = 8, burst = 0.45, hit = hit(0, 0, 0, 34, 36, 0.8, 10, -10), burstHit = hit(0, 0, 0, 22, 26, 0.6, 20, 30) } },
-		G = { id = "cqG", name = "혈마수확", desc = "등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고, 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다", pose = "ult_reap", dur = 1.6, cd = 30, chi = 100, armor = true,
+		G = { id = "cqG", name = "혈마수확", desc = "등 뒤로 하늘만 한 피의 낫이 솟아 둘레를 두 바퀴 휩쓴다. 베인 적마다 핏빛 낙인이 찍히고 낫이 땅에 꽂히는 순간 낙인이 한꺼번에 터진다. 벤 만큼 체력이 돌아온다", pose = "ult_reap", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "harvest", radius = 26, delay = 0.45, sweeps = 2, sweepTime = 0.55, heal = 0.01, hit = hit(0, 0, 0, 30, 30, 0.6, 20), mark = 0.6, burst = hit(0, 0, 0, 60, 80, 1.2, 40, 24) } },
-		X = { id = "cqX", name = "혈월만겸", desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 달빛을 받은 낫이 수백 개의 핏빛 초승달이 되어 둘레에 쏟아지고, 마지막에 달까지 닿는 한 줄기 낫질이 하늘과 땅을, 화면까지 가른다", pose = "reap_moon", dur = 3.2, cd = 60, chi = 150, armor = true,
+		X = { id = "cqX", name = "혈월만겸", desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 달빛을 받은 낫이 수백 개의 핏빛 초승달이 되어 둘레에 쏟아지고 마지막에 달까지 닿는 한 줄기 낫질이 하늘과 땅을, 화면까지 가른다", pose = "reap_moon", dur = 3.2, cd = 60, chi = 150, armor = true,
 			mech = { kind = "bloodMoon", cut = 1.4, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 6, 0.2, 4), final = hit(0, 0, 0, 190, 210, 1.8, 80, 26), finalRadius = 26 } },
 	},
 })
@@ -1872,7 +1872,7 @@ table.insert(Config.Styles, {
 	styleReq = "byeokryeok",
 	trialHp = 10,
 	unlockHint = "벽력신권을 익히고 천외천에 오른 자만이, 뇌운 고원 동쪽 벼랑 끝 쇠기둥 봉우리의 뇌천선을 만난다",
-	desc = "벽력신권을 넘어선 권법. 두 팔에 두른 토시에 하늘의 번개가 깃들었다. 주먹은 소리보다 빠르고, 세 번째 주먹마다 하늘이 대답한다.",
+	desc = "벽력신권을 넘어선 권법. 두 팔에 두른 토시에 하늘의 번개가 깃들었다. 주먹은 소리보다 빠르고 세 번째 주먹마다 하늘이 대답한다.",
 	gimmick = "천뢰: 세 번 맞힐 때마다 둘레로 연쇄 천뢰가 튄다 (더 넓고 세다). 몸이 가볍다 (동작 ×1.25). 오의 위에 초 오의(X)가 있다",
 	deflect = 0.24,
 	chargeEvery = 3, chainDmg = 26, chainRange = 24,
@@ -1888,11 +1888,11 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "cbE", name = "뇌전쇄", desc = "손을 뻗어 둘레의 적 여섯에게 차례로 벼락을 꽂는다 (마비)", pose = "point_sky", dur = 0.6, cd = 8, chi = 20,
 			mech = { kind = "targets", n = 6, range = 34, delay = 0.3, stagger = 0.05, radius = 6, hit = hit(0, 0, 0, 20, 20, 1.0, 6), fx = "lightning" } },
-		R = { id = "cbR", name = "뇌운", desc = "머리 위로 먹구름을 부른다. 2.4초 동안 둘레의 적에게 번개가 떨어지고, 마지막에 큰 벼락이 내리친다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
+		R = { id = "cbR", name = "뇌운", desc = "머리 위로 먹구름을 부른다. 2.4초 동안 둘레의 적에게 번개가 떨어지고 마지막에 큰 벼락이 내리친다", pose = "point_sky", dur = 0.8, cd = 11, chi = 25,
 			mech = { kind = "storm", range = 22, dur = 2.4, every = 0.2, delay = 0.3, radius = 5, hit = hit(0, 0, 0, 10, 12, 0.5, 4), finalRadius = 16, final = hit(0, 0, 0, 41, 60, 1.0, 30, 12) } },
-		G = { id = "cbG", name = "뇌룡승천", desc = "몸에서 번개의 용이 솟아 하늘을 감아 돌고, 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
+		G = { id = "cbG", name = "뇌룡승천", desc = "몸에서 번개의 용이 솟아 하늘을 감아 돌고 적들에게 여섯 번 내리꽂힌다. 마지막에 용이 내 자리로 떨어지며 천둥이 터진다", pose = "ult_thunder", dur = 1.7, cd = 30, chi = 100, armor = true,
 			mech = { kind = "thunderDragon", n = 1, ringRadius = 8, rise = 0.9, riseHit = hit(0, 0, 0, 18, 22, 0.8, 8, 24), range = 40, dives = 6, every = 0.18, diveRadius = 8, hit = hit(0, 0, 0, 30, 32, 1.0, 16, 8), finalRadius = 20, final = hit(0, 0, 0, 82, 120, 1.4, 50, 22) } },
-		X = { id = "cbX", name = "구천뇌정", desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고, 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다", pose = "ult_thunder", dur = 3.0, cd = 60, chi = 150, armor = true,
+		X = { id = "cbX", name = "구천뇌정", desc = "초 오의. 하늘이 갈라지고 구름 사이로 거대한 천둥의 눈이 뜬다 (그동안 무적). 둘레에 벼락이 쏟아지고 마지막에 하늘에서 땅까지 닿는 벼락 기둥이 내리꽂힌다", pose = "ult_thunder", dur = 3.0, cd = 60, chi = 150, armor = true,
 			mech = { kind = "heavenThunder", cut = 1.3, rain = 1.4, every = 0.1, range = 40, n = 3, radius = 6, hit = hit(0, 0, 0, 7, 7, 0.3, 4), final = hit(0, 0, 0, 156, 210, 1.8, 80, 26), finalRadius = 24 } },
 	},
 })
@@ -1935,13 +1935,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "ccH", name = "거경격", pose = "billow_strike", dur = 0.65, lunge = 3, hits = { hit(0.32, 10, 7, 30, 44, 0.8, 76, 10, true) } },
 	skills = {
-		E = { id = "ccE", name = "조류창", desc = "손끝에 바다를 모아 소용돌이치는 물의 창을 던진다. 창은 앞의 적을 모두 꿰뚫고, 끝에서 1.2초 동안 소용돌이가 되어 둘레를 끌어당기다 물기둥으로 터진다", pose = "tidal_punch", dur = 0.55, cd = 8, chi = 20,
+		E = { id = "ccE", name = "조류창", desc = "손끝에 바다를 모아 소용돌이치는 물의 창을 던진다. 창은 앞의 적을 모두 꿰뚫고 끝에서 1.2초 동안 소용돌이가 되어 둘레를 끌어당기다 물기둥으로 터진다", pose = "tidal_punch", dur = 0.55, cd = 8, chi = 20,
 			mech = { kind = "tideSpear", delay = 0.18, length = 34, travel = 0.3, width = 4.5, hit = hit(0, 0, 0, 26, 22, 0.5, 10), vortexDur = 1.2, every = 0.3, radius = 9, pull = 30, tick = hit(0, 0, 0, 8, 8, 0.3, 0), burst = hit(0, 0, 0, 30, 30, 0.6, 20, 18) } },
-		R = { id = "ccR", name = "경음", desc = "두 손을 모아 깊은 바다의 노래를 부른다. 고래의 울음이 물의 고리 셋이 되어 차례로 퍼지고, 맞은 적을 밀어내며 굼뜨게 만든다. 마지막 고리가 가장 넓다", pose = "wall_raise", dur = 0.8, cd = 11, chi = 25,
+		R = { id = "ccR", name = "경음", desc = "두 손을 모아 깊은 바다의 노래를 부른다. 고래의 울음이 물의 고리 셋이 되어 차례로 퍼지고 맞은 적을 밀어내며 굼뜨게 만든다. 마지막 고리가 가장 넓다", pose = "wall_raise", dur = 0.8, cd = 11, chi = 25,
 			mech = { kind = "whaleSong", delay = 0.25, rings = 3, gap = 0.28, radius = 24, slow = 2.0, hit = hit(0, 0, 0, 22, 24, 0.5, 34) } },
-		G = { id = "ccG", name = "만경창파", desc = "둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고, 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다", pose = "ult_tsunami", dur = 2.0, cd = 30, chi = 100, armor = true,
+		G = { id = "ccG", name = "만경창파", desc = "둘레 26칸의 땅이 바다가 된다. 사방에서 큰 파도 넷이 차례로 가운데로 밀려와 적을 쓸어 모으고 마지막에 한가운데서 거대한 소용돌이가 솟아 모두 삼킨다", pose = "ult_tsunami", dur = 2.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "fourWaves", delay = 0.4, radius = 26, waves = 4, travel = 0.8, gap = 0.25, pull = 40, hit = hit(0, 0, 0, 26, 26, 0.5, 0), final = hit(0, 0, 0, 110, 130, 1.4, 30, 40) } },
-		X = { id = "ccX", name = "고경승천", desc = "초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고, 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다", pose = "ult_tsunami", dur = 4.6, cd = 60, chi = 150, armor = true,
+		X = { id = "ccX", name = "고경승천", desc = "초 오의. 하늘이 어두워지고 땅이 깊은 바다가 된다 (그동안 무적). 바다 밑에서 고대의 고래가 솟구쳐 머리 위를 지나 하늘 높이 뛰어오른다. 고래가 지나가는 그림자 아래의 적은 물살에 휩쓸려 떠오르고 고래가 앞의 바다로 떨어지며 거대한 해일이 둘레를 덮친다", pose = "ult_tsunami", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "ancientWhale", cut = 1.4, behind = 58, ahead = 58, flight = 2.4, height = 50, scale = 3.0, every = 0.25, width = 14, hit = hit(0, 0, 0, 16, 16, 0.4, 0, 30), finalRadius = 30, final = hit(0, 0, 0, 200, 220, 1.8, 80, 26), waveAt = 0.4, waveRadius = 30, wave = hit(0, 0, 0, 60, 70, 0.8, 60, 10) } },
 	},
 })
@@ -1969,8 +1969,8 @@ table.insert(Config.Styles, {
 	styleReq = "seongha",
 	trialHp = 10,
 	unlockHint = "성하신권을 익히고 천외천에 오른 자만이, 천상계 성운원 남쪽 끝 관성대에서 별을 헤아리는 천성선을 만난다",
-	desc = "성하신권을 넘어선 권법. 주먹에 담던 별을 이제 지팡이 끝에 매달았다. 휘두를 때마다 마법진이 열리고, 별이 쏟아지고, 하늘에 별자리가 그려진다.",
-	gimmick = "별진: 맞힐 때마다 25% (네 번째는 반드시) 상대 둘레에 마법진이 열리고 별이 튀어나와 찌른다. 균형을 1.3배로 깎고, 기술 대기 15% 짧다. 오의 위에 초 오의(X)가 있다",
+	desc = "성하신권을 넘어선 권법. 주먹에 담던 별을 이제 지팡이 끝에 매달았다. 휘두를 때마다 마법진이 열리고 별이 쏟아지고 하늘에 별자리가 그려진다.",
+	gimmick = "별진: 맞힐 때마다 25% (네 번째는 반드시) 상대 둘레에 마법진이 열리고 별이 튀어나와 찌른다. 균형을 1.3배로 깎고 기술 대기 15% 짧다. 오의 위에 초 오의(X)가 있다",
 	deflect = 0.24,
 	postureMult = 1.3,
 	cdMult = 0.85,
@@ -1985,19 +1985,19 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "cgH", name = "유성장", pose = "staff_thrust", dur = 0.62, lunge = 6, hits = { hit(0.28, 10, 6.5, 30, 42, 0.8, 70, 8) } },
 	skills = {
-		E = { id = "cgE", name = "별똥 화살", desc = "지팡이 끝에 마법진을 펼쳐 별 다섯을 쏜다. 별은 둘레의 적을 쫓아가 꽂히고, 꽂힌 자리에서 작게 터진다", pose = "staff_point", dur = 0.55, cd = 7, chi = 20,
+		E = { id = "cgE", name = "별똥 화살", desc = "지팡이 끝에 마법진을 펼쳐 별 다섯을 쏜다. 별은 둘레의 적을 쫓아가 꽂히고 꽂힌 자리에서 작게 터진다", pose = "staff_point", dur = 0.55, cd = 7, chi = 20,
 			mech = { kind = "starVolley", n = 5, range = 36, delay = 0.18, every = 0.07, travel = 0.28, radius = 4, hit = hit(0, 0, 0, 16, 14, 0.35, 10, 4) } },
-		R = { id = "cgR", name = "성좌진", desc = "앞의 땅에 큰 마법진을 그린다. 둘레에 별 일곱이 떠올라 하나씩 선으로 이어져 별자리가 되는 동안 적을 끌어모으고, 별자리가 완성되면 별빛 기둥이 솟는다", pose = "staff_sigil", dur = 0.8, cd = 10, chi = 25,
+		R = { id = "cgR", name = "성좌진", desc = "앞의 땅에 큰 마법진을 그린다. 둘레에 별 일곱이 떠올라 하나씩 선으로 이어져 별자리가 되는 동안 적을 끌어모으고 별자리가 완성되면 별빛 기둥이 솟는다", pose = "staff_sigil", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "starSeal", dist = 10, radius = 12, delay = 0.35, stars = 7, link = 0.1, pull = 26, tick = hit(0, 0, 0, 6, 8, 0.3, 0), burst = hit(0, 0, 0, 40, 44, 0.8, 20, 30) } },
-		G = { id = "cgG", name = "은하수", desc = "지팡이가 커다랗게 자라 땅에 꽂힌다. 둘레 24칸에 보라·남색·노란 안개가 피어오르고, 그 안에서 별들이 소용돌이치며 은하수가 된다. 소용돌이는 적을 끌어들이며 계속 치고, 마지막에 은하가 한가운데로 모여 터진다", pose = "staff_plant", dur = 1.6, cd = 30, chi = 100, armor = true,
+		G = { id = "cgG", name = "은하수", desc = "지팡이가 커다랗게 자라 땅에 꽂힌다. 둘레 24칸에 보라·남색·노란 안개가 피어오르고 그 안에서 별들이 소용돌이치며 은하수가 된다. 소용돌이는 적을 끌어들이며 계속 치고 마지막에 은하가 한가운데로 모여 터진다", pose = "staff_plant", dur = 1.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "galaxyStaff", dist = 5, delay = 0.55, radius = 24, dur = 3.2, every = 0.25, pull = 24, tick = hit(0, 0, 0, 9, 9, 0.3, 0), final = hit(0, 0, 0, 100, 120, 1.4, 30, 36) } },
-		X = { id = "cgX", name = "성천궁", desc = "초 오의. 하늘이 밤이 되고 (그동안 무적) 둘레 34칸을 덮는 커다란 남색 돔이 내려앉는다. 돔 안 곳곳에 마법진이 열려 별이 쏟아지고 메테오가 떨어진다. 마지막에 돔 표면에 별자리들이 빛으로 그려지고, 모두 한꺼번에 터진다", pose = "staff_dome", dur = 4.6, cd = 60, chi = 150, armor = true,
+		X = { id = "cgX", name = "성천궁", desc = "초 오의. 하늘이 밤이 되고 (그동안 무적) 둘레 34칸을 덮는 커다란 남색 돔이 내려앉는다. 돔 안 곳곳에 마법진이 열려 별이 쏟아지고 메테오가 떨어진다. 마지막에 돔 표면에 별자리들이 빛으로 그려지고 모두 한꺼번에 터진다", pose = "staff_dome", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "starDome", cut = 1.4, radius = 34, rain = 2.6, every = 0.15, n = 3, hit = hit(0, 0, 0, 6, 6, 0.2, 4), meteorEvery = 4, meteorRadius = 8, meteor = hit(0, 0, 0, 20, 24, 0.5, 20, 10), draw = 0.9, final = hit(0, 0, 0, 190, 210, 1.8, 60, 30) } },
 	},
 })
 
 ------------------------------------------------------------------------
--- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고, 네 번이면 가시덤불이 터진다.
+-- 2.4판 만목신권 (태초): 자연의 권법. 맞힐 때마다 씨앗이 박히고 네 번이면 가시덤불이 터진다.
 -- E 종자탄 · R 개화 (거대한 꽃봉오리가 피며 꽃가루로 잠재운다) · G 목령강림 (거대한 나무 정령이 솟아 내리친다)
 ------------------------------------------------------------------------
 table.insert(Config.Styles, {
@@ -2014,7 +2014,7 @@ table.insert(Config.Styles, {
 	realmReq = 14,
 	trialHp = 10,
 	unlockHint = "반선의 경지에 오른 자만이, 남서쪽 들판 깊은 숲 만목원의 이끼 좌대에 앉은 목선을 만난다",
-	desc = "나무는 서두르지 않는다. 그러나 멈추지도 않는다. 대숲의 바람처럼 부드럽게 흘러, 천 년 은행나무처럼 무겁게 내려앉는 권. 끝에는 숲 전체가 일어선다.",
+	desc = "서두르지도 멈추지도 않는 나무의 권. 대숲 바람처럼 부드럽게 흐르다 천 년 은행나무처럼 무겁게 내려앉는다. 끝에는 숲 전체가 일어선다.",
 	gimmick = "죽순: 네 번 맞힐 때마다 상대 발밑에서 죽순이 창처럼 솟아 띄운다. 몸이 단단하다 (균형 1.4배). 오의 신목강림: 천 년 은행나무가 솟아 금빛 잎을 쏟는다",
 	deflect = 0.28,
 	postureMult = 1.4,
@@ -2030,11 +2030,11 @@ table.insert(Config.Styles, {
 	heavy = { id = "mmH", name = "천년송", pose = "wood_slam", dur = 0.75, lunge = 2, hits = { hit(0.36, 6, 9, 50, 76, 1.0, 40, 12, true) } },
 	skills = {
 		-- 2.7판: 만목신권 기술을 모두 새로 (대숲 · 잎 · 은행나무)
-		E = { id = "mmE", name = "죽림창", desc = "손바닥으로 땅을 누른다. 앞으로 곧게 대나무 일곱 그루가 차례로 창처럼 솟구쳐 위의 적을 띄우고, 잠시 대숲으로 서 있다가 잎을 날리며 가라앉는다", pose = "wood_slam", dur = 0.5, cd = 8, chi = 20,
+		E = { id = "mmE", name = "죽림창", desc = "손바닥으로 땅을 누른다. 앞으로 곧게 대나무 일곱 그루가 차례로 창처럼 솟구쳐 위의 적을 띄우고 잠시 대숲으로 서 있다가 잎을 날리며 가라앉는다", pose = "wood_slam", dur = 0.5, cd = 8, chi = 20,
 			mech = { kind = "bambooLine", n = 7, start = 4, gap = 4.2, delay = 0.18, step = 0.06, radius = 3.8, stand = 0.9, hit = hit(0, 0, 0, 33, 40, 0.7, 8, 24) } },
-		R = { id = "mmR", name = "천엽비수", desc = "두 손을 돌리면 둘레에 푸른 잎 수십 장이 소용돌이친다. 잎은 가까운 적 여덟을 골라 세 줄기로 날아가 베고, 나는 체력 6%를 되찾는다", pose = "wood_bloom", dur = 0.8, cd = 11, chi = 28,
+		R = { id = "mmR", name = "천엽비수", desc = "두 손을 돌리면 둘레에 푸른 잎 수십 장이 소용돌이친다. 잎은 가까운 적 여덟을 골라 세 줄기로 날아가 베고 나는 체력 6%를 되찾는다", pose = "wood_bloom", dur = 0.8, cd = 11, chi = 28,
 			mech = { kind = "leafVolley", gather = 0.45, range = 30, n = 8, waves = 3, every = 0.12, travel = 0.22, heal = 0.06, hit = hit(0, 0, 0, 16, 18, 0.35, 6) } },
-		G = { id = "mmG", name = "신목강림", desc = "무릎을 꿇고 땅에 손을 대면 등 뒤에서 천 년 은행나무가 하늘 높이 솟는다. 2.4초 동안 금빛 잎이 둘레 24칸에 쏟아져 적을 베고, 나는 그 숲의 기운으로 체력 12%를 되찾는다. 끝에 나무가 빛나며 금빛 잎이 사방으로 휘몰아친다", pose = "ult_wood", dur = 2.2, cd = 32, chi = 100, armor = true,
+		G = { id = "mmG", name = "신목강림", desc = "무릎을 꿇고 땅에 손을 대면 등 뒤에서 천 년 은행나무가 하늘 높이 솟는다. 2.4초 동안 금빛 잎이 둘레 24칸에 쏟아져 적을 베고 나는 그 숲의 기운으로 체력 12%를 되찾는다. 끝에 나무가 빛나며 금빛 잎이 사방으로 휘몰아친다", pose = "ult_wood", dur = 2.2, cd = 32, chi = 100, armor = true,
 			mech = { kind = "worldTree", back = 10, rise = 0.8, dur = 2.4, every = 0.3, radius = 24, heal = 0.12, hit = hit(0, 0, 0, 15, 16, 0.25, 0), finalRadius = 28, final = hit(0, 0, 0, 98, 140, 1.4, 70, 18) } },
 	},
 })
@@ -2060,10 +2060,10 @@ do
 			local X = st.skills.X
 			X.mech.rain = 2.4
 			X.dur = 4.2
-			X.desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 등 뒤에서 날개 달린 우두머리 악마가 솟아 큰 낫을 휘두르고, 핏빛 초승달이 2.4초 동안 쏟아진다. 마지막에 악마의 낫이 하늘과 땅을, 화면까지 가른다"
+			X.desc = "초 오의. 하늘이 핏빛으로 물들고 거대한 붉은 달이 뜬다 (그동안 무적). 등 뒤에서 날개 달린 우두머리 악마가 솟아 큰 낫을 휘두르고 핏빛 초승달이 2.4초 동안 쏟아진다. 마지막에 악마의 낫이 하늘과 땅을, 화면까지 가른다"
 		elseif st.id == "chobyeok" then
 			-- 2.3판: 구천뇌정 → 뇌고천무 (하늘의 뇌고 여덟을 두드리는 춤)
-			st.skills.X = { id = "cbX2", name = "뇌고천무", desc = "초 오의. 등 뒤 하늘에 뇌고(천둥 북) 여덟이 둥글게 뜬다 (그동안 무적). 북을 열여섯 번 두드릴 때마다 그 북에서 적에게 벼락이 꽂히고, 박자는 점점 빨라진다. 네 번째마다 둘레로 천둥이 울린다. 마지막에 북이 모두 모여 하나의 뇌구가 되어 땅에 내리꽂힌다", pose = "ult_thunder", dur = 4.8, cd = 60, chi = 150, armor = true,
+			st.skills.X = { id = "cbX2", name = "뇌고천무", desc = "초 오의. 등 뒤 하늘에 뇌고(천둥 북) 여덟이 둥글게 뜬다 (그동안 무적). 북을 열여섯 번 두드릴 때마다 그 북에서 적에게 벼락이 꽂히고 박자는 점점 빨라진다. 네 번째마다 둘레로 천둥이 울린다. 마지막에 북이 모두 모여 하나의 뇌구가 되어 땅에 내리꽂힌다", pose = "ult_thunder", dur = 4.8, cd = 60, chi = 150, armor = true,
 				mech = { kind = "thunderDrums", cut = 1.3, drums = 8, beats = 16, first = 0.3, last = 0.1, range = 40, n = 10, radius = 7, hit = hit(0, 0, 0, 25, 24, 0.5, 10), shockRadius = 13, shock = hit(0, 0, 0, 20, 30, 0.5, 30, 8), finaleDelay = 0.35, finaleDist = 8, finalRadius = 26, final = hit(0, 0, 0, 164, 220, 1.8, 80, 26) } }
 		end
 	end
@@ -2089,7 +2089,7 @@ table.insert(Config.Styles, {
 	hidden = true,
 	unlockHint = "한 번 환생한 몸으로 첫 번째 윤회의 시련을 넘으면, 전생의 그림자가 이 권을 남기고 간다",
 	desc = "돌고 도는 삶의 바퀴를 등에 진 권. 주먹이 닿을 때마다 지난 삶의 내가 한 박자 늦게 같은 자리를 다시 친다. 바퀴가 구를 때 여섯 갈래 세상이 함께 돈다.",
-	gimmick = "전생의 메아리: 네 번 맞힐 때마다 지난 삶의 그림자가 나타나 같은 자리를 다시 친다. 등 뒤의 윤회륜을 던지고, 부르고, 하늘에 띄운다",
+	gimmick = "전생의 메아리: 네 번 맞힐 때마다 지난 삶의 그림자가 나타나 같은 자리를 다시 친다. 등 뒤의 윤회륜을 던지고 부르고 하늘에 띄운다",
 	deflect = 0.25,
 	speed = 1.2,
 	pulse = { every = 4, kind = "echo", radius = 8, delay = 0.4, name = "전생의 메아리", dmg = 28, posture = 26, stun = 0.5, kb = 10, up = 4 },
@@ -2102,13 +2102,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "rnH", name = "윤회일장", pose = "rinne_seal", dur = 0.6, lunge = 10, iframes = 0.15, hits = { hit(0.28, 8, 8, 24, 26, 0.6, 22, nil, true) } },
 	skills = {
-		E = { id = "rnE", name = "윤회삼륜", desc = "등 뒤의 윤회륜을 던진다. 금빛 바퀴가 세워진 채 구르며 26칸을 나아가고, 지난 삶의 쪽빛 바퀴 둘이 양옆으로 부채꼴을 그리며 뒤따른다. 셋 모두 땅에 금빛 바퀴 자국을 새기며 갈고, 되돌아와 등에 붙는다", pose = "rinne_throw", dur = 0.6, cd = 8, chi = 20,
+		E = { id = "rnE", name = "윤회삼륜", desc = "등 뒤의 윤회륜을 던진다. 금빛 바퀴가 세워진 채 구르며 26칸을 나아가고 지난 삶의 쪽빛 바퀴 둘이 양옆으로 부채꼴을 그리며 뒤따른다. 셋 모두 땅에 금빛 바퀴 자국을 새기며 갈고 되돌아와 등에 붙는다", pose = "rinne_throw", dur = 0.6, cd = 8, chi = 20,
 			mech = { kind = "rinneTriWheel", dist = 26, time = 1.3, every = 0.08, spread = 24, lag = 0.12, radius = 5.5, hit = hit(0, 0, 0, 14, 12, 0.3, 6), echo = hit(0, 0, 0, 10, 9, 0.25, 4) } },
-		R = { id = "rnR", name = "삼생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 떠난 자리에 지난 세 삶의 그림자가 멈춰 서 있다가 차례로 같은 길을 다시 내달려 베고, 끝에서 나에게 하나로 모여드는 순간 바퀴 무늬로 터진다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.35,
+		R = { id = "rnR", name = "삼생보", desc = "앞으로 18칸 미끄러지며 벤다 (무적). 떠난 자리에 지난 세 삶의 그림자가 멈춰 서 있다가 차례로 같은 길을 다시 내달려 베고 끝에서 나에게 하나로 모여드는 순간 바퀴 무늬로 터진다", pose = "rinne_dash", dur = 0.5, cd = 10, chi = 25, lunge = 18, iframes = 0.35,
 			mech = { kind = "threeLives", dist = 18, width = 5, delay = 0.4, gap = 0.16, merge = 1.05, hit = hit(0, 0, 0, 24, 22, 0.5, 12), echo = hit(0, 0, 0, 16, 14, 0.4, 10), burstRadius = 9, burst = hit(0, 0, 0, 40, 40, 0.7, 24, 14) } },
-		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘로 올라 집채만큼 커진다. 여섯 구슬 (여섯 갈래 세상) 이 차례로 떨어져 적 둘레의 여섯 자리에 빛기둥으로 꽂히고, 기둥끼리 이어져 땅에 육각별이 그려진다. 거대한 바퀴가 누워 내려와 별 위를 갈며 돌다가 내리박혀 터진다", pose = "ult_rinne", dur = 3.0, cd = 30, chi = 100, armor = true,
+		G = { id = "rnG", name = "육도윤회", desc = "윤회륜이 하늘로 올라 집채만큼 커진다. 여섯 구슬 (여섯 갈래 세상) 이 차례로 떨어져 적 둘레의 여섯 자리에 빛기둥으로 꽂히고 기둥끼리 이어져 땅에 육각별이 그려진다. 거대한 바퀴가 누워 내려와 별 위를 갈며 돌다가 내리박혀 터진다", pose = "ult_rinne", dur = 3.0, cd = 30, chi = 100, armor = true,
 			mech = { kind = "sixRealms", dist = 10, hexR = 14, rise = 0.55, every = 0.18, fly = 0.22, radius = 7, hit = hit(0, 0, 0, 30, 30, 0.6, 8, 16), link = 0.35, grind = 1.0, grindEvery = 0.2, pull = 20, grindHit = hit(0, 0, 0, 12, 12, 0.3, 0), finalRadius = 24, final = hit(0, 0, 0, 140, 160, 1.5, 60, 26) } },
-		X = { id = "rnX", name = "윤회전생", desc = "초 오의. 컷씬: 하늘이 쪽빛으로 저물고 등 뒤 하늘에 거대한 윤회륜이 걸리며, 둘레의 땅에서 지난 네 삶의 내가 일어선다 (그동안 무적). 전생의 군세가 적에게 번갈아 덮쳐 친다. 바퀴가 땅에 누워 둘레를 가두고 돌며 끌어당기고, 모두가 나에게 모여드는 순간 다시 태어나며 금빛으로 터진다", pose = "ult_rinne_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+		X = { id = "rnX", name = "윤회전생", desc = "초 오의. 컷씬: 하늘이 쪽빛으로 저물고 등 뒤 하늘에 거대한 윤회륜이 걸리며 둘레의 땅에서 지난 네 삶의 내가 일어선다 (그동안 무적). 전생의 군세가 적에게 번갈아 덮쳐 친다. 바퀴가 땅에 누워 둘레를 가두고 돌며 끌어당기고 모두가 나에게 모여드는 순간 다시 태어나며 금빛으로 터진다", pose = "ult_rinne_x", dur = 5.0, cd = 60, chi = 150, armor = true,
 			mech = { kind = "rebirthCycle", cut = 1.5, army = 1.8, every = 0.15, range = 45, n = 2, strike = hit(0, 0, 0, 22, 20, 0.4, 6), cage = 1.0, cageEvery = 0.2, cageR = 34, pull = 30, grind = hit(0, 0, 0, 14, 12, 0.3, 0), merge = 0.4, finalRadius = 38, final = hit(0, 0, 0, 240, 270, 1.8, 80, 30) } },
 	},
 })
@@ -2126,8 +2126,8 @@ table.insert(Config.Styles, {
 	chains = true, -- 두 팔에 감긴 붉게 달군 사슬과 검은 불꽃 (화면이 그린다)
 	hidden = true,
 	unlockHint = "두 번 환생한 몸으로 두 번째 윤회의 시련을 넘으면, 업을 진 그림자가 이 권을 남기고 간다",
-	desc = "두 삶 동안 쌓인 업이 검은 불꽃이 되었다. 달군 사슬을 팔에 감고 치는 주먹마다 업이 상대에게 옮겨 붙고, 업이 차면 발밑에서 지옥불이 솟는다.",
-	gimmick = "업보: 다섯 번 맞힐 때마다 상대에게 업의 낙인이 찍히고, 반 박자 뒤 발밑에서 검은 지옥불 기둥이 솟아 띄운다. 맞을수록 불은 더 무겁다 (균형 1.25배)",
+	desc = "두 삶 동안 쌓인 업이 검은 불꽃이 되었다. 달군 사슬을 팔에 감고 치는 주먹마다 업이 상대에게 옮겨 붙고 업이 차면 발밑에서 지옥불이 솟는다.",
+	gimmick = "업보: 다섯 번 맞힐 때마다 상대에게 업의 낙인이 찍히고 반 박자 뒤 발밑에서 검은 지옥불 기둥이 솟아 띄운다. 맞을수록 불은 더 무겁다 (균형 1.25배)",
 	deflect = 0.24,
 	postureMult = 1.25,
 	speed = 1.1,
@@ -2141,13 +2141,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "epH", name = "업화일권", pose = "karma_charge", dur = 0.66, lunge = 14, iframes = 0.2, hits = { hit(0.3, 9, 7, 30, 34, 0.7, 34) } },
 	skills = {
-		E = { id = "epE", name = "업화쇄", desc = "두 팔의 달군 사슬을 내던진다. 사슬은 가까운 적 셋에게 날아가 걸리고, 검은 불이 사슬을 타고 번지며 적을 끌어온 뒤 발밑에서 지옥불로 터진다", pose = "karma_throw", dur = 0.6, cd = 8, chi = 20,
+		E = { id = "epE", name = "업화쇄", desc = "두 팔의 달군 사슬을 내던진다. 사슬은 가까운 적 셋에게 날아가 걸리고 검은 불이 사슬을 타고 번지며 적을 끌어온 뒤 발밑에서 지옥불로 터진다", pose = "karma_throw", dur = 0.6, cd = 8, chi = 20,
 			mech = { kind = "karmaChains", n = 3, range = 28, hook = 0.18, hold = 0.42, pull = 40, hit = hit(0, 0, 0, 16, 14, 0.4, 0), burstRadius = 6, burst = hit(0, 0, 0, 30, 28, 0.6, 10, 14) } },
-		R = { id = "epR", name = "겁화질주", desc = "검은 불꽃이 되어 앞으로 22칸 내달린다 (무적). 지나간 땅이 용암 틈으로 갈라져 타고, 양옆으로 사슬이 휘몰아친다. 잠시 뒤 도화선처럼 불기둥 여덟이 차례로 치솟고, 끝에서 크게 터진다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 22, iframes = 0.4,
+		R = { id = "epR", name = "겁화질주", desc = "검은 불꽃이 되어 앞으로 22칸 내달린다 (무적). 지나간 땅이 용암 틈으로 갈라져 타고 양옆으로 사슬이 휘몰아친다. 잠시 뒤 도화선처럼 불기둥 여덟이 차례로 치솟고 끝에서 크게 터진다", pose = "karma_dash", dur = 0.5, cd = 11, chi = 25, lunge = 22, iframes = 0.4,
 			mech = { kind = "hellDash", dist = 22, width = 4.5, burn = 1.2, every = 0.3, hit = hit(0, 0, 0, 22, 20, 0.5, 10), burnHit = hit(0, 0, 0, 7, 6, 0.2, 0), erupt = 1.3, pillars = 8, step = 0.06, pillarRadius = 4.5, pillar = hit(0, 0, 0, 20, 20, 0.5, 4, 18), finalRadius = 9, final = hit(0, 0, 0, 40, 40, 0.8, 20, 24) } },
-		G = { id = "epG", name = "업화지옥문", desc = "주먹으로 땅을 치면 앞의 땅이 갈라지며 붉은 글이 새겨진 거대한 지옥문이 솟는다. 문이 열리며 붉은 빛과 검은 불이 쏟아지고, 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다. 문이 쾅 닫히고, 땅속으로 가라앉으며 지옥불 고리로 터진다", pose = "ult_karma", dur = 2.8, cd = 30, chi = 100, armor = true,
+		G = { id = "epG", name = "업화지옥문", desc = "주먹으로 땅을 치면 앞의 땅이 갈라지며 붉은 글이 새겨진 거대한 지옥문이 솟는다. 문이 열리며 붉은 빛과 검은 불이 쏟아지고 문 안에서 뻗은 사슬이 둘레의 적을 문 앞으로 끌고 간다. 문이 쾅 닫히고 땅속으로 가라앉으며 지옥불 고리로 터진다", pose = "ult_karma", dur = 2.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "hellGate", dist = 14, rise = 0.6, open = 0.4, drag = 1.0, every = 0.2, dragR = 26, pull = 34, hit = hit(0, 0, 0, 12, 12, 0.3, 0), shut = 0.4, sink = 0.5, shutR = 12, shutHit = hit(0, 0, 0, 70, 70, 0.9, 20, 10), finalRadius = 20, final = hit(0, 0, 0, 120, 140, 1.5, 50, 28) } },
-		X = { id = "epX", name = "팔열지옥", desc = "초 오의. 컷씬: 하늘이 핏빛이 되고 땅이 갈라지며 둘레에 검은 불기둥 여덟이 솟는다 (그동안 무적). 기둥이 하나씩 적에게 지옥불을 내리꽂고, 땅에서 솟은 거대한 불의 두 손이 가운데를 맞잡아 짓누른다. 여덟 기둥이 머리 위로 모여 검은 해가 되고, 땅을 내리치면 검은 해가 떨어져 둘레가 지옥불의 돔으로 터진다", pose = "ult_karma_x", dur = 5.0, cd = 60, chi = 150, armor = true,
+		X = { id = "epX", name = "팔열지옥", desc = "초 오의. 컷씬: 하늘이 핏빛이 되고 땅이 갈라지며 둘레에 검은 불기둥 여덟이 솟는다 (그동안 무적). 기둥이 하나씩 적에게 지옥불을 내리꽂고 땅에서 솟은 거대한 불의 두 손이 가운데를 맞잡아 짓누른다. 여덟 기둥이 머리 위로 모여 검은 해가 되고 땅을 내리치면 검은 해가 떨어져 둘레가 지옥불의 돔으로 터진다", pose = "ult_karma_x", dur = 5.0, cd = 60, chi = 150, armor = true,
 			mech = { kind = "eightHells", cut = 1.4, every = 0.2, ringR = 30, range = 42, radius = 8, hit = hit(0, 0, 0, 40, 40, 0.7, 6, 20), hands = 0.9, pull = 34, clapR = 16, clap = hit(0, 0, 0, 90, 90, 1.0, 10, 10), sun = 0.9, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 80, 30) } },
 	},
 })
@@ -2166,8 +2166,8 @@ table.insert(Config.Styles, {
 	ashHalo = true, -- 머리 뒤의 이 빠진 은빛 후광과 떨어지는 재 (화면이 그린다)
 	hidden = true,
 	unlockHint = "세 번 환생한 몸으로 세 번째 윤회의 시련을 넘으면, 재가 된 그림자가 이 권을 남기고 간다",
-	desc = "세 번을 살고 나니 모든 것이 지나간다는 것을 알았다. 닿는 것마다 금이 가고, 금 간 것은 재가 되어 흩어진다. 꽃은 지고, 모래는 다 흐르고, 촛불은 꺼진다.",
-	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대에게 사기 같은 금이 가고, 잠시 뒤 산산이 깨져 재로 흩어진다. 빠르다 (동작 ×1.3)",
+	desc = "세 번을 살고 나니 모든 것이 지나간다는 것을 알았다. 닿는 것마다 금이 가고 금 간 것은 재가 되어 흩어진다. 꽃은 지고 모래는 다 흐르고 촛불은 꺼진다.",
+	gimmick = "무상: 25% 확률로 공격이 몸을 비켜 간다. 네 번 맞힐 때마다 상대에게 사기 같은 금이 가고 잠시 뒤 산산이 깨져 재로 흩어진다. 빠르다 (동작 ×1.3)",
 	deflect = 0.26,
 	dodgeChance = 0.25,
 	speed = 1.3,
@@ -2185,9 +2185,9 @@ table.insert(Config.Styles, {
 			mech = { kind = "ashStatues", dist = 20, n = 5, width = 4, hit = hit(0, 0, 0, 14, 12, 0.4, 8), crumble = 0.45, step = 0.1, radius = 6, burst = hit(0, 0, 0, 20, 18, 0.5, 12, 8) } },
 		R = { id = "msR", name = "화무십일", desc = "앞의 땅에 커다란 잿빛 꽃이 피어난다. 꽃잎 여덟이 적을 감싸 안으로 끌어들이다가, 꽃이 시들어 재로 무너지며 터진다", pose = "ghost_split", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "witherBloom", dist = 9, radius = 11, bloom = 0.35, hold = 0.9, every = 0.3, pull = 28, tick = hit(0, 0, 0, 10, 10, 0.3, 0), burst = hit(0, 0, 0, 42, 40, 0.8, 16, 12) } },
-		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고, 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
+		G = { id = "msG", name = "제행무상", desc = "둘레 26칸 위로 커다란 모래시계가 내려선다. 모래가 흐르는 동안 그 안의 적은 굼뜨고 재의 비를 맞는다. 모래가 다 흐르면 모래시계에 금이 가고 산산이 깨지며 모든 것이 모래 폭풍으로 흩어진다", pose = "ult_mist", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "hourglass", radius = 26, descend = 0.5, run = 2.4, every = 0.3, slow = 0.5, tick = hit(0, 0, 0, 10, 10, 0.3, 0), crack = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 60, 20) } },
-		X = { id = "mkX", name = "경화수월", desc = "초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고, 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
+		X = { id = "mkX", name = "경화수월", desc = "초 오의. 세상의 빛깔이 빠진다 (그동안 무적). 둘레 36칸에 사람 키 세 배의 거울 열둘이 솟아 원을 이룬다. 거울 속에서 유리로 된 나의 그림자가 튀어나와 적을 치고 다른 거울로 돌아가기를 거듭한다. 거울마다 금이 번지고 모든 거울이 한가운데로 산산이 깨져 쏟아지며 모든 것이 재가 된다", pose = "ult_mist_x", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "mirrorWorld", cut = 1.4, radius = 36, rise = 0.5, echo = 1.6, every = 0.25, hit = hit(0, 0, 0, 12, 10, 0.3, 0), crack = 0.5, final = hit(0, 0, 0, 230, 260, 1.8, 70, 26) } },
 	},
 })
@@ -2205,8 +2205,8 @@ table.insert(Config.Styles, {
 	crown = true, -- 머리 위의 금빛 관, 붉은 망토, 금빛 팔찌 (화면이 그린다)
 	hidden = true,
 	unlockHint = "네 번 환생한 몸으로 마지막 윤회의 시련을 넘으면, 네 삶의 그림자가 하나가 되어 이 권을 남기고 간다",
-	desc = "네 번의 삶을 모두 넘은 자의 권. 맨손의 강호에 왕은 하나다. 주먹을 들면 하늘에서 금빛 주먹이 함께 내려오고, 마지막에는 금빛 왕이 일어선다.",
-	gimmick = "왕의 주먹: 네 번 맞힐 때마다 하늘에서 거대한 금빛 주먹이 상대를 내리찍는다. 앞의 세 권을 품었다: 공격의 10%를 비켜 가고, 준 피해의 1.5%를 되찾는다",
+	desc = "네 번의 삶을 모두 넘은 자의 권. 맨손의 강호에 왕은 하나다. 주먹을 들면 하늘에서 금빛 주먹이 함께 내려오고 마지막에는 금빛 왕이 일어선다.",
+	gimmick = "왕의 주먹: 네 번 맞힐 때마다 하늘에서 거대한 금빛 주먹이 상대를 내리찍는다. 앞의 세 권을 품었다: 공격의 10%를 비켜 가고 준 피해의 1.5%를 되찾는다",
 	deflect = 0.3,
 	dodgeChance = 0.1,
 	lifesteal = 0.015,
@@ -2223,16 +2223,16 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "kwE", name = "왕권천타", desc = "등 뒤에 금빛 주먹 여섯이 부채꼴로 나타나 차례로 28칸을 내지른다. 마지막에 커다란 왕의 주먹이 가운데를 꿰뚫고 금빛 충격파가 줄지어 터진다", pose = "king_cannon", dur = 0.9, cd = 8, chi = 22,
 			mech = { kind = "kingBarrage", n = 6, delay = 0.15, every = 0.08, length = 28, width = 3.5, hit = hit(0, 0, 0, 12, 12, 0.3, 10), finalAt = 0.12, final = hit(0, 0, 0, 34, 34, 0.7, 34, 8) } },
-		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고, 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고, 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
+		R = { id = "kwR", name = "왕도강림", desc = "발밑에서 앞으로 붉은 길이 깔리고 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 왕관의 금빛 가시 여덟이 솟고 가시가 안으로 무너지며 터진다", pose = "king_dash", dur = 0.6, cd = 11, chi = 25, lunge = 24, jump = 36, iframes = 0.5,
 			mech = { kind = "kingLeap", dist = 24, land = 0.42, landR = 9, hit = hit(0, 0, 0, 30, 30, 0.6, 14, 10), collapse = 0.4, spikeR = 8, burst = hit(0, 0, 0, 30, 30, 0.6, 8, 22) } },
-		G = { id = "kwG", name = "패왕난무", desc = "둘레에 금빛 기둥 여덟이 솟아 왕의 투기장이 되고 적을 안으로 끌어들인다. 기둥마다 붉은 소매의 거대한 금빛 주먹이 나타나 차례로 한가운데를 내지르고, 마지막에 땅속에서 솟은 주먹이 모두를 하늘로 올려친다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "kwG", name = "패왕난무", desc = "둘레에 금빛 기둥 여덟이 솟아 왕의 투기장이 되고 적을 안으로 끌어들인다. 기둥마다 붉은 소매의 거대한 금빛 주먹이 나타나 차례로 한가운데를 내지르고 마지막에 땅속에서 솟은 주먹이 모두를 하늘로 올려친다", pose = "ult_king", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "kingArena", radius = 22, rise = 0.35, pull = 34, fists = 8, every = 0.12, width = 6, hit = hit(0, 0, 0, 14, 14, 0.5, 10, 4), upper = 0.3, final = hit(0, 0, 0, 140, 160, 1.6, 10, 46) } },
 		X = { id = "kwX", name = "천하제일권", desc = "초 오의. 컷씬: 하늘이 금빛으로 갈라진다 (그동안 무적). 몸에서 금빛이 솟아 등 뒤에 관과 망토를 두른 하늘만 한 금빛 왕 (나의 모습)이 일어선다. 왕이 주먹을 당겨 하늘의 금빛을 모으고 가장 강한 적에게 내리꽂는다. 땅이 꺼지며 충격파 세 겹, 금빛 빛기둥 넷이 십자로 내달린 뒤, 하늘에서 빛의 왕관이 내려와 터진다", pose = "ult_king_x", dur = 5.0, cd = 60, chi = 150, armor = true,
 			mech = { kind = "kingAvatar", cut = 1.5, rise = 0.8, charge = 0.6, punch = 0.3, range = 44, fistR = 20, fist = hit(0, 0, 0, 170, 180, 1.4, 40, 20), rings = 3, ringEvery = 0.2, ringHit = hit(0, 0, 0, 26, 26, 0.6, 40, 8), cross = 0.6, crossLen = 40, crossW = 7, crossHit = hit(0, 0, 0, 40, 40, 0.7, 20, 14), crownAt = 0.4, finalRadius = 28, final = hit(0, 0, 0, 190, 220, 1.8, 60, 30) } },
 	},
 })
 
--- 3.10판 몽유권 (두 번째 윤회의 꿈, 예전 호접몽권): 반쯤 잠든 채 꿈속을 걷는 권. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고,
+-- 3.10판 몽유권 (두 번째 윤회의 꿈, 예전 호접몽권): 반쯤 잠든 채 꿈속을 걷는 권. 꿈에서는 문이 허공에 열리고 땅과 하늘이 뒤집히고,
 -- 달이 손에 닿는다. 빛깔은 밤하늘빛과 달빛 (안개처럼 번지는 보라·남빛, 따뜻한 달빛 금빛)
 -- E 꿈길 걸음 (달빛 디딤돌 길) · R 거꾸로 꿈 (중력이 뒤집힌다) · G 몽중몽 (떠다니는 섬·계단·문) · X 월하몽 (보름달과 밤 호수)
 table.insert(Config.Styles, {
@@ -2252,8 +2252,8 @@ table.insert(Config.Styles, {
 	realmReq = 16,
 	trialHp = 10,
 	unlockHint = "두 번 환생한 몸으로, 연화정에서 꾸벅꾸벅 조는 몽선의 꿈 이야기를 들어주어라",
-	desc = "두 번째 삶의 꿈속을 걷는 권. 반쯤 잠든 채 싸운다. 꿈에서는 문이 허공에 열리고, 땅과 하늘이 뒤집히고, 달이 손에 닿는다.",
-	gimmick = "꿈길: 네 번 맞힐 때마다 상대 등 뒤 허공에 꿈의 문이 열려 상대를 빨아들였다가 뱉어 낸다. 잠결처럼 가볍다: 공격의 15%가 비켜 가고, 동작 ×1.2",
+	desc = "두 번째 삶의 꿈속을 걷는 권. 반쯤 잠든 채 싸운다. 꿈에서는 문이 허공에 열리고 땅과 하늘이 뒤집히고 달이 손에 닿는다.",
+	gimmick = "꿈길: 네 번 맞힐 때마다 상대 등 뒤 허공에 꿈의 문이 열려 상대를 빨아들였다가 뱉어 낸다. 잠결처럼 가볍다: 공격의 15%가 비켜 가고 동작 ×1.2",
 	deflect = 0.24,
 	dodgeChance = 0.15,
 	speed = 1.2,
@@ -2267,13 +2267,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "hjH", name = "몽중일장", pose = "push_palm", dur = 0.6, lunge = 8, hits = { hit(0.28, 9, 7, 26, 28, 0.7, 40, 10, true) } },
 	skills = {
-		E = { id = "hjE", name = "꿈길 걸음", desc = "눈을 감은 채 앞으로 18칸을 걷는다 (그동안 무적). 발 앞 허공에 달빛 디딤돌이 하나씩 놓여 밤하늘 길이 되고, 길 위의 적은 꾸벅 잠이 든다 (0.8초 기절). 길 끝에 닿으면 디딤돌이 차례로 별가루가 되어 솟구치며 잠든 적을 한 번 더 친다", pose = "dash_strike", dur = 0.55, cd = 8, chi = 20,
+		E = { id = "hjE", name = "꿈길 걸음", desc = "눈을 감은 채 앞으로 18칸을 걷는다 (그동안 무적). 발 앞 허공에 달빛 디딤돌이 하나씩 놓여 밤하늘 길이 되고 길 위의 적은 꾸벅 잠이 든다 (0.8초 기절). 길 끝에 닿으면 디딤돌이 차례로 별가루가 되어 솟구치며 잠든 적을 한 번 더 친다", pose = "dash_strike", dur = 0.55, cd = 8, chi = 20,
 			mech = { kind = "dreamWalk", dist = 18, slide = 0.45, width = 4.5, sleep = 0.8, hit = hit(0, 0, 0, 20, 18, 0.3, 0, 4), final = hit(0, 0, 0, 50, 50, 0.9, 20, 14) } },
 		R = { id = "hjR", name = "거꾸로 꿈", desc = "앞의 땅이 밤하늘이 되고 중력이 뒤집힌다. 그 안의 적은 하늘로 떨어지듯 거꾸로 떠오르다가, 꿈이 바로 서는 순간 땅에 내리꽂힌다", pose = "circle_palm", dur = 0.6, cd = 11, chi = 25,
 			mech = { kind = "upsideDown", dist = 9, radius = 11, delay = 0.25, hold = 1.2, every = 0.3, tick = hit(0, 0, 0, 8, 8, 0.3, 0, 12), slam = hit(0, 0, 0, 40, 40, 0.8, 10, 0) } },
-		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈속이 된다. 밤하늘에 커다란 달이 뜨고, 풀이 덮인 작은 섬과 끝이 없는 계단과 문들이 둥실 떠다닌다. 문이 적 곁에서 열렸다 닫힐 때마다 꿈에 베이고, 마지막에 모든 것이 아래로 떨어지며 꿈에서 깬다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
+		G = { id = "hjG", name = "몽중몽", desc = "둘레 26칸이 꿈속이 된다. 밤하늘에 커다란 달이 뜨고 풀이 덮인 작은 섬과 끝이 없는 계단과 문들이 둥실 떠다닌다. 문이 적 곁에서 열렸다 닫힐 때마다 꿈에 베이고 마지막에 모든 것이 아래로 떨어지며 꿈에서 깬다", pose = "ult_raise", dur = 2.4, cd = 30, chi = 100, armor = true,
 			mech = { kind = "dreamIsles", radius = 26, delay = 0.4, dur = 3.0, every = 0.3, slow = 0.6, tick = hit(0, 0, 0, 10, 10, 0.3, 0), final = hit(0, 0, 0, 130, 150, 1.5, 40, 24) } },
-		X = { id = "hjX", name = "월하몽", desc = "초 오의. 컷씬: 밤이 내리고 하늘을 가득 채우는 보름달이 떠오른다 (그동안 무적). 둘레 40칸의 땅이 달을 비추는 고요한 밤 호수가 되고, 등불과 문이 떠오른다. 적은 잠든 듯 둥실 떠올라 별의 소용돌이에 감기고, 마지막에 달이 천천히 내려와 호수에 닿는 순간 하얀 빛이 소리 없이 번지며 모두 떨어진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
+		X = { id = "hjX", name = "월하몽", desc = "초 오의. 컷씬: 밤이 내리고 하늘을 가득 채우는 보름달이 떠오른다 (그동안 무적). 둘레 40칸의 땅이 달을 비추는 고요한 밤 호수가 되고 등불과 문이 떠오른다. 적은 잠든 듯 둥실 떠올라 별의 소용돌이에 감기고 마지막에 달이 천천히 내려와 호수에 닿는 순간 하얀 빛이 소리 없이 번지며 모두 떨어진다", pose = "ult_bloom", dur = 4.6, cd = 60, chi = 150, armor = true,
 			mech = { kind = "moonDream", cut = 1.4, rise = 0.5, drift = 2.0, every = 0.25, range = 40, hit = hit(0, 0, 0, 10, 10, 0.3, 0, 6), descend = 0.8, finalRadius = 36, final = hit(0, 0, 0, 230, 260, 1.8, 40, 20) } },
 	},
 })
@@ -2297,7 +2297,7 @@ table.insert(Config.Styles, {
 	realmReq = 16,
 	trialHp = 10,
 	unlockHint = "???",
-	desc = "null. 이 권법의 설명은 지워졌다. 주먹이 닿은 자리는 비어 버리고, 비어 버린 자리는 다시 채워지지 않는다.",
+	desc = "null. 이 권법의 설명은 지워졌다. 주먹이 닿은 자리는 비어 버리고 비어 버린 자리는 다시 채워지지 않는다.",
 	gimmick = "빈칸: 네 번 맞힐 때마다 상대가 검은 네모 칸에 지워졌다가 깨진 화면처럼 돌아온다. 끊김: 공격의 12%가 몸을 비켜 간다 (지직). 동작 ×1.25",
 	deflect = 0.24,
 	dodgeChance = 0.12,
@@ -2314,18 +2314,18 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "gbE", name = "소거", desc = "앞에 흰 선택 상자가 그어지고 깜박인다. 상자 안의 모든 것이 검게 지워졌다가, 상자가 화소 조각으로 부서진다", pose = "void_point", dur = 0.55, cd = 8, chi = 20,
 			mech = { kind = "eraseBox", dist = 3, length = 24, width = 9, delay = 0.35, hit = hit(0, 0, 0, 34, 30, 0.7, 10, 6), shardAt = 0.25, shard = hit(0, 0, 0, 14, 12, 0.3, 14) } },
-		R = { id = "gbR", name = "끊김", desc = "화면이 끊기듯 둘레의 적 넷 사이를 순간이동하며 친다 (그동안 무적). 지나간 자리마다 어긋난 잔상이 남고, 마지막 적의 등 뒤에 나타난다", pose = "void_sink", dur = 0.7, cd = 11, chi = 25, iframes = 0.7,
+		R = { id = "gbR", name = "끊김", desc = "화면이 끊기듯 둘레의 적 넷 사이를 순간이동하며 친다 (그동안 무적). 지나간 자리마다 어긋난 잔상이 남고 마지막 적의 등 뒤에 나타난다", pose = "void_sink", dur = 0.7, cd = 11, chi = 25, iframes = 0.7,
 			mech = { kind = "glitchBlink", n = 4, range = 26, delay = 0.08, every = 0.13, hit = hit(0, 0, 0, 22, 20, 0.5, 8, 4) } },
 		G = { id = "gbG", name = "허공 격자", desc = "둘레 26칸의 빛깔이 빠지고 땅이 흰 격자의 검은 허공이 된다. 허공 위로 붉은 null 글자가 떠다니며 적을 가운데로 끌어 지우다가, 허공이 한 점으로 오그라든 뒤 흰 잡음으로 터진다", pose = "void_gather", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "voidGrid", radius = 26, delay = 0.35, dur = 2.6, every = 0.3, pull = 26, tick = hit(0, 0, 0, 10, 10, 0.3, 0), collapse = 0.35, final = hit(0, 0, 0, 130, 150, 1.5, 30, 20) } },
-		X = { id = "gbX", name = "존재소거", desc = "초 오의. 화면이 깨진다 (그동안 무적). 둘레 40칸에 검은 화면 균열이 미끄러지고, 하늘에서 빈칸 상자들이 적에게 떨어진다. 모든 것이 멈추고 빛깔이 뒤집힌 뒤, 삑 소리 한 번에 둘레가 화소 조각으로 무너진다", pose = "ult_void", dur = 4.4, cd = 60, chi = 150, armor = true,
+		X = { id = "gbX", name = "존재소거", desc = "초 오의. 화면이 깨진다 (그동안 무적). 둘레 40칸에 검은 화면 균열이 미끄러지고 하늘에서 빈칸 상자들이 적에게 떨어진다. 모든 것이 멈추고 빛깔이 뒤집힌 뒤, 삑 소리 한 번에 둘레가 화소 조각으로 무너진다", pose = "ult_void", dur = 4.4, cd = 60, chi = 150, armor = true,
 			mech = { kind = "nullOut", cut = 1.4, range = 40, rain = 2.0, every = 0.12, n = 2, cubeRadius = 5, hit = hit(0, 0, 0, 10, 10, 0.3, 4, 4), freeze = 0.5, finalRadius = 40, final = hit(0, 0, 0, 230, 260, 1.8, 50, 20) } },
 	},
 })
 
 ------------------------------------------------------------------------
 -- 3.1판: 극 권법. 초 권법을 넘어선 권법으로, 세 번 환생한 몸만 얻는다 (천상 윤회대의 사부에게)
--- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고, 세상이 바뀌고, 기술이 모두 바뀐다
+-- 초 오의(X) 위에 극 패시브가 있다: 싸우며 극을 채우면 서버 전체에 컷씬이 흐르고 세상이 바뀌고 기술이 모두 바뀐다
 ------------------------------------------------------------------------
 Config.GEUK_REQ = { geukilwol = { base = "ilwol", lv = 20, rebirth = 3 } }
 -- 극 일월신권: 어깨 뒤에 작은 해와 달이 떠 돈다. 극이 차면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈춘다
@@ -2346,7 +2346,7 @@ table.insert(Config.Styles, {
 	styleReq = "ilwol",
 	trialHp = 12,
 	unlockHint = "일월신권을 숙련 20까지 쌓고 세 번 환생한 자만이, 천상 윤회대의 황혼권존을 만난다",
-	desc = "일월신권의 끝. 해와 달을 쥐는 것을 넘어, 해와 달을 부린다. 싸움이 무르익으면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈추고, 그 황혼 속에서 모든 수가 다른 것이 된다.",
+	desc = "일월신권의 끝. 해와 달을 쥐는 것을 넘어, 해와 달을 부린다. 싸움이 무르익으면 해와 달이 미친 듯이 번갈아 뜨다가 세상이 황혼에 멈추고 그 황혼 속에서 모든 수가 다른 것이 된다.",
 	gimmick = "극 패시브 · 일월극변: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 40초 동안 세상이 황혼이 된다. 그동안 모든 기술이 황혼의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 낮에는 주는 피해 +20%, 밤에는 받는 피해 -20%. 모든 기술 대기 30% 짧음. 초 오의(X)가 있다",
 	deflect = 0.34,
 	postureMult = 1.8,
@@ -2367,11 +2367,11 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "gwE", name = "일월쌍륜", desc = "해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다", pose = "moon_throw", dur = 0.6, cd = 7, chi = 20,
 			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5.5, hit = hit(0, 0, 0, 34, 26, 0.45, 10), burstRadius = 10, burst = hit(0, 0, 0, 57, 56, 0.8, 30, 10) } },
-		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고, 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
+		R = { id = "gwR", name = "일월환보", desc = "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다", pose = "sun_wheel", dur = 0.6, cd = 10, chi = 25, lunge = 22, iframes = 0.45,
 			mech = { kind = "solarLunarStep", dist = 22, width = 5, sunRadius = 9, sun = hit(0, 0, 0, 46, 40, 0.7, 24, 10), moon = hit(0, 0, 0, 46, 36, 0.6, 10), landRadius = 10, land = hit(0, 0, 0, 57, 56, 0.8, 30, 12) } },
-		G = { id = "gwG", name = "대일월천", desc = "등 뒤에 해와 달이 떠오른다. 해는 불의 빛줄기로 앞의 땅을 앞뒤로 쓸어 태우고, 달은 거대한 초승달 셋을 차례로 내리꽂는다. 둘이 적 위에서 부딪쳐 일식이 되고 땅이 갈라지며, 일식이 땅에 박혀 빛의 돔으로 터진다", pose = "sun_moon_call", dur = 2.6, cd = 30, chi = 100, armor = true,
+		G = { id = "gwG", name = "대일월천", desc = "등 뒤에 해와 달이 떠오른다. 해는 불의 빛줄기로 앞의 땅을 앞뒤로 쓸어 태우고 달은 거대한 초승달 셋을 차례로 내리꽂는다. 둘이 적 위에서 부딪쳐 일식이 되고 땅이 갈라지며 일식이 땅에 박혀 빛의 돔으로 터진다", pose = "sun_moon_call", dur = 2.6, cd = 30, chi = 100, armor = true,
 			mech = { kind = "sunMoonFall", dist = 14, summon = 0.7, beam = 1.2, every = 0.15, sweep = 9, width = 5, hit = hit(0, 0, 0, 18, 14, 0.3, 0), slams = 3, slamEvery = 0.36, travel = 0.22, slamRadius = 10, slam = hit(0, 0, 0, 57, 50, 0.7, 16, 12), merge = 0.5, finalRadius = 26, final = hit(0, 0, 0, 288, 290, 1.6, 70, 28) } },
-		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 컷씬: 세상이 어두워지고 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (그동안 무적). 해와 달이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 (해는 불기둥, 달은 초승달). 둘이 머리 위에서 부딪쳐 하늘에 거대한 일식이 걸리면 세상의 빛깔이 빠지고, 일식의 빛살이 쏟아진다. 하늘로 주먹을 내지르면 일식이 금 가고 깨지며 새벽빛으로 터진다", pose = "ult_genesis", dur = 5.2, cd = 60, chi = 150, armor = true,
+		X = { id = "gwX", name = "일월개벽", desc = "초 오의. 컷씬: 세상이 어두워지고 등 뒤 지평선 양쪽에서 거대한 해와 달이 솟는다 (그동안 무적). 해와 달이 나를 두고 점점 빨리 돌며 번갈아 적을 친다 (해는 불기둥, 달은 초승달). 둘이 머리 위에서 부딪쳐 하늘에 거대한 일식이 걸리면 세상의 빛깔이 빠지고 일식의 빛살이 쏟아진다. 하늘로 주먹을 내지르면 일식이 금 가고 깨지며 새벽빛으로 터진다", pose = "ult_genesis", dur = 5.2, cd = 60, chi = 150, armor = true,
 			mech = { kind = "eclipseGenesis", cut = 1.5, orbit = 1.4, orbitEvery = 0.2, orbitN = 3, orbitR = 30, orbitHit = hit(0, 0, 0, 28, 20, 0.35, 4), collide = 0.4, rays = 1.4, every = 0.1, range = 55, n = 5, radius = 6, hit = hit(0, 0, 0, 23, 16, 0.35, 4), finalAt = 0.4, finalRadius = 40, final = hit(0, 0, 0, 379, 370, 1.8, 80, 32) } },
 	},
 	-- 황혼 (일월극변 동안): 기술이 모두 바뀐다. 해와 달이 하나로 겹친 노을빛
@@ -2387,9 +2387,9 @@ table.insert(Config.Styles, {
 				mech = { kind = "duskFan", n = 5, spread = 80, dist = 28, time = 0.7, every = 0.05, radius = 4.5, hit = hit(0, 0, 0, 39, 30, 0.45, 10) } },
 			R = { id = "gtR", name = "석양보", desc = "노을이 되어 가까운 적 다섯의 등 뒤로 차례로 나타나며 벤다 (무적). 지나간 노을빛 줄이 모두 한꺼번에 터진다", pose = "sun_wheel", dur = 0.8, cd = 9, chi = 22,
 				mech = { kind = "duskChain", n = 5, range = 30, every = 0.12, delay = 0.08, hit = hit(0, 0, 0, 46, 36, 0.6, 8, 6), burstAt = 0.35, width = 4, burst = hit(0, 0, 0, 53, 50, 0.7, 20, 10) } },
-			G = { id = "gtG", name = "황혼낙일", desc = "하늘 저편에서 거대한 석양이 내려와 앞의 땅에 닿고, 땅이 노을빛 바다가 된다. 석양이 가라앉는 동안 바다 위의 적은 타며 굼뜨고, 노을빛 물결 넷이 퍼지고, 달빛 기둥이 솟는다. 다 잠기면 바다가 잠깐 식어 고요해졌다가 노을 불꽃의 왕관으로 솟구친다", pose = "sun_moon_call", dur = 2.6, cd = 26, chi = 100, armor = true,
+			G = { id = "gtG", name = "황혼낙일", desc = "하늘 저편에서 거대한 석양이 내려와 앞의 땅에 닿고 땅이 노을빛 바다가 된다. 석양이 가라앉는 동안 바다 위의 적은 타며 굼뜨고 노을빛 물결 넷이 퍼지고 달빛 기둥이 솟는다. 다 잠기면 바다가 잠깐 식어 고요해졌다가 노을 불꽃의 왕관으로 솟구친다", pose = "sun_moon_call", dur = 2.6, cd = 26, chi = 100, armor = true,
 				mech = { kind = "sunsetSea", dist = 12, descend = 0.7, sink = 1.6, every = 0.2, radius = 24, hit = hit(0, 0, 0, 14, 10, 0.3, 0), waves = 4, wave = hit(0, 0, 0, 44, 36, 0.6, 24, 8), beams = 8, beamRadius = 5, beam = hit(0, 0, 0, 41, 32, 0.6, 4, 20), dark = 0.3, finalRadius = 28, final = hit(0, 0, 0, 334, 330, 1.6, 70, 30) } },
-			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 컷씬: 하늘이 노을로 물들고 양쪽에서 거대한 석양과 달이 내려온다 (그동안 무적). 둘은 빨려 들며 작아져 두 손에 맺히고, 손을 떠나 발밑 진의 테두리를 서로 반대로 내달려 불의 원을 그린다. 앞에서 만난 둘은 황혼의 구슬이 되어 머리 위로 떠올라 둘레를 빨아들이다가 한 점으로 줄어들고, 세상이 노을빛으로 하얗게 터진다", pose = "ult_dusk", dur = 4.4, cd = 50, chi = 150, armor = true,
+			X = { id = "gtX", name = "일월동귀", desc = "황혼의 초 오의. 컷씬: 하늘이 노을로 물들고 양쪽에서 거대한 석양과 달이 내려온다 (그동안 무적). 둘은 빨려 들며 작아져 두 손에 맺히고 손을 떠나 발밑 진의 테두리를 서로 반대로 내달려 불의 원을 그린다. 앞에서 만난 둘은 황혼의 구슬이 되어 머리 위로 떠올라 둘레를 빨아들이다가 한 점으로 줄어들고 세상이 노을빛으로 하얗게 터진다", pose = "ult_dusk", dur = 4.4, cd = 50, chi = 150, armor = true,
 				mech = { kind = "twilightCollapse", cut = 1.3, gather = 0.8, circle = 1.2, every = 0.15, rim = 26, rimHit = hit(0, 0, 0, 32, 22, 0.4, 4), fuse = 0.6, pull = 40, collapse = 0.35, finalRadius = 50, final = hit(0, 0, 0, 494, 470, 2.0, 90, 34) } },
 		},
 	},
@@ -2415,8 +2415,8 @@ table.insert(Config.Styles, {
 	styleReq = "gongbaek",
 	trialHp = 14,
 	unlockHint = "공백권을 숙련 20까지 쌓고 세 번 환생한 자만이, 세상 끝 너머 망각의 정원에서 격자지기를 만난다",
-	desc = "공백권의 끝. 지우는 것을 넘어, 비어 있는 곳에 좌표를 긋는다. 싸움이 무르익으면 그가 선 자리에서 흰 격자가 한 점에서부터 천천히 펼쳐져 공간이 되고, 그 격자 안은 모두 그의 것이 된다.",
-	gimmick = "극 패시브 · 격자 전개: 맞히고 맞으며 극(100)을 채우면 서버 전체에 알림이 뜨고, 선 자리에서 흰 3차원 격자 공간이 한 점에서부터 천천히 펼쳐져 (4.5초) 30초 동안 머문다 (반지름 100칸, 높이 84칸. 둘레는 허공에서 끊긴다). 격자 안의 적은 굼뜨고 1초마다 격자에 베이며, 그동안 모든 기술이 격자의 기술로 바뀌고 연타·강타 피해 1.3배. 빈칸: 세 번 맞힐 때마다 빈칸이 터진다. 끊김: 공격의 15%가 몸을 비켜 간다. 동작 ×1.3",
+	desc = "공백권의 끝. 지우는 것을 넘어, 비어 있는 곳에 좌표를 긋는다. 싸움이 무르익으면 그가 선 자리에서 흰 격자가 한 점에서부터 천천히 펼쳐져 공간이 되고 그 격자 안은 모두 그의 것이 된다.",
+	gimmick = "극 패시브 · 격자 전개: 맞히고 맞으며 극(100)을 채우면 서버 전체에 알림이 뜨고 선 자리에서 흰 3차원 격자 공간이 한 점에서부터 천천히 펼쳐져 (4.5초) 30초 동안 머문다 (반지름 100칸, 높이 84칸. 둘레는 허공에서 끊긴다). 격자 안의 적은 굼뜨고 1초마다 격자에 베이며 그동안 모든 기술이 격자의 기술로 바뀌고 연타·강타 피해 1.3배. 빈칸: 세 번 맞힐 때마다 빈칸이 터진다. 끊김: 공격의 15%가 몸을 비켜 간다. 동작 ×1.3",
 	deflect = 0.26,
 	dodgeChance = 0.15,
 	postureMult = 1.6,
@@ -2435,13 +2435,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "gnH", name = "극 빈 주먹", pose = "void_point", dur = 0.56, lunge = 12, iframes = 0.25, hits = { hit(0.26, 10, 7, 72, 100, 0.9, 50, 8) } },
 	skills = {
-		E = { id = "gnE", name = "좌표선", desc = "앞의 허공에 흰 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고, 다시 붙으며 한 번 더 벤다", pose = "void_point", dur = 0.5, cd = 7, chi = 20,
+		E = { id = "gnE", name = "좌표선", desc = "앞의 허공에 흰 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고 다시 붙으며 한 번 더 벤다", pose = "void_point", dur = 0.5, cd = 7, chi = 20,
 			mech = { kind = "coordSlash", dist = 13, len = 32, n = 3, width = 3.5, delay = 0.35, hit = hit(0, 0, 0, 58, 52, 0.7, 12, 6), seamAt = 0.3, seam = hit(0, 0, 0, 26, 22, 0.35, 8) } },
-		R = { id = "gnR", name = "좌표 교환", desc = "가장 가까운 적과 나를 흰 격자 상자에 가두고 좌표를 맞바꾼다 (그동안 무적). 적이 서 있던 자리에 내가, 내가 서 있던 자리에 적이 놓이고, 그 상자가 오그라들며 터진다", pose = "void_sink", dur = 0.6, cd = 9, chi = 22, iframes = 0.6,
+		R = { id = "gnR", name = "좌표 교환", desc = "가장 가까운 적과 나를 흰 격자 상자에 가두고 좌표를 맞바꾼다 (그동안 무적). 적이 서 있던 자리에 내가, 내가 서 있던 자리에 적이 놓이고 그 상자가 오그라들며 터진다", pose = "void_sink", dur = 0.6, cd = 9, chi = 22, iframes = 0.6,
 			mech = { kind = "coordSwap", n = 1, range = 36, delay = 0.18, every = 0.3, radius = 9, hit = hit(0, 0, 0, 70, 64, 0.8, 4, 4), implode = 0.3, final = hit(0, 0, 0, 110, 100, 0.9, 20, 10) } },
 		G = { id = "gnG", name = "천공 격자", desc = "가까운 적의 하늘에 거대한 흰 격자 정육면체가 짜여 내려꽂힌다. 땅에 격자가 새겨지고 칸마다 붉게 세 번 터지다가, 정육면체가 산산이 흩어진다", pose = "void_gather", dur = 1.6, cd = 26, chi = 100, armor = true,
 			mech = { kind = "latticeDrop", range = 40, dist = 14, size = 26, appear = 0.55, fall = 0.3, hit = hit(0, 0, 0, 120, 140, 1.2, 10, 14), waves = 3, every = 0.28, tick = hit(0, 0, 0, 40, 40, 0.45, 0), finalAt = 0.35, final = hit(0, 0, 0, 230, 260, 1.5, 44, 20) } },
-		X = { id = "gnX", name = "차원 절단", desc = "초 오의. 컷씬 (그동안 무적): 손끝에서 흰 격자가 하늘로 뻗는다. 둘레 52칸에 흰 격자 하늘이 둥글게 짜이고, 거대한 빛의 칼날 판이 공간을 여섯 번 가른다 (가를 때마다 공간이 어긋난다). 멈추고 빛깔이 뒤집힌 뒤, 모든 격자가 한 점으로 빨려 들어 하얗게 터진다", pose = "ult_void", dur = 4.6, cd = 55, chi = 150, armor = true,
+		X = { id = "gnX", name = "차원 절단", desc = "초 오의. 컷씬 (그동안 무적): 손끝에서 흰 격자가 하늘로 뻗는다. 둘레 52칸에 흰 격자 하늘이 둥글게 짜이고 거대한 빛의 칼날 판이 공간을 여섯 번 가른다 (가를 때마다 공간이 어긋난다). 멈추고 빛깔이 뒤집힌 뒤, 모든 격자가 한 점으로 빨려 들어 하얗게 터진다", pose = "ult_void", dur = 4.6, cd = 55, chi = 150, armor = true,
 			mech = { kind = "dimensionCut", cut = 1.6, range = 52, build = 0.7, slices = 6, every = 0.32, hit = hit(0, 0, 0, 56, 56, 0.6, 0), freeze = 0.45, finalRadius = 52, final = hit(0, 0, 0, 400, 440, 2.0, 70, 26) } },
 	},
 	-- 격자 공간 (격자 전개 동안): 기술이 모두 바뀐다
@@ -2459,7 +2459,7 @@ table.insert(Config.Styles, {
 				mech = { kind = "gridRun", n = 5, delay = 0.08, every = 0.14, hit = hit(0, 0, 0, 70, 62, 0.6, 8, 4) } },
 			G = { id = "gxG", name = "격자 수축", desc = "펼친 격자 공간 전체가 적이 가장 많은 곳으로 오그라들며 (선이 붉어진다) 공간 안의 적을 모두 끌어모은다. 잠깐 버티다가 다시 튕겨 펼쳐지며 그 자리가 하얗게 터진다", pose = "void_gather", dur = 2.0, cd = 22, chi = 90, armor = true,
 				mech = { kind = "gridCrush", pull = 1.0, every = 0.2, power = 46, tick = hit(0, 0, 0, 30, 30, 0.3, 0), hold = 0.3, finalRadius = 26, final = hit(0, 0, 0, 340, 380, 1.7, 60, 28) } },
-			X = { id = "gxX", name = "공간 접기", desc = "격자의 초 오의 (그동안 무적). 펼친 공간의 네 벽이 네 번에 걸쳐 안으로 접혀 들며 공간 안의 적을 짓누르고, 위아래로 눌려 한 점이 된 뒤, 공간째 지워진다. 격자 공간은 여기서 끝난다", pose = "ult_void", dur = 4.4, cd = 50, chi = 140, armor = true,
+			X = { id = "gxX", name = "공간 접기", desc = "격자의 초 오의 (그동안 무적). 펼친 공간의 네 벽이 네 번에 걸쳐 안으로 접혀 들며 공간 안의 적을 짓누르고 위아래로 눌려 한 점이 된 뒤, 공간째 지워진다. 격자 공간은 여기서 끝난다", pose = "ult_void", dur = 4.4, cd = 50, chi = 140, armor = true,
 				mech = { kind = "domainFold", cut = 1.3, folds = 4, every = 0.38, power = 30, hit = hit(0, 0, 0, 72, 72, 0.8, 0), squash = 0.5, final = hit(0, 0, 0, 520, 560, 2.2, 80, 30) } },
 		},
 	},
@@ -2486,8 +2486,8 @@ table.insert(Config.Styles, {
 	styleReq = "pungsin2",
 	trialHp = 13,
 	unlockHint = "진 풍신각을 숙련 20까지 쌓고 세 번 환생한 자만이, 지옥 황천 나루에서 질주귀를 만난다",
-	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고, 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고, 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 느려 보일 만큼 빨라지고, 그 속에서 그만 홀로 번개처럼 달린다.",
-	gimmick = "극 패시브 · 초가속: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 30초 동안 초가속에 든다. 둘레 90칸의 적은 굼뜨고 (이동 ×0.35), 내 걸음은 ×1.6, 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다. 그동안 기술이 모두 초가속의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 가속: 맞힐 때마다 걸음이 5%씩 빨라진다 (최대 5단계, 3초 안 맞히면 풀리고, 맞으면 반으로). 네 번 맞힐 때마다 음속 충격. 모든 기술 대기 28% 짧음. 초 오의(X)가 있다",
+	desc = "진 풍신각의 끝. 바람을 앞지르는 것을 넘어, 소리를 앞지르고 마침내 빛을 앞지른다. 그의 주먹은 맞고 나서야 보이고 그가 지나간 자리엔 잔상만 남는다. 싸움이 무르익으면 세상이 느려 보일 만큼 빨라지고 그 속에서 그만 홀로 번개처럼 달린다.",
+	gimmick = "극 패시브 · 초가속: 맞히고 맞으며 극(100)을 채우면 서버 전체에 컷씬이 흐르고 30초 동안 초가속에 든다. 둘레 90칸의 적은 굼뜨고 (이동 ×0.35), 내 걸음은 ×1.6, 모든 타격이 0.2초 뒤 잔상으로 절반만큼 한 번 더 친다. 그동안 기술이 모두 초가속의 기술로 바뀌고 (더 세다), 연타·강타 피해 1.3배. 가속: 맞힐 때마다 걸음이 5%씩 빨라진다 (최대 5단계, 3초 안 맞히면 풀리고 맞으면 반으로). 네 번 맞힐 때마다 음속 충격. 모든 기술 대기 28% 짧음. 초 오의(X)가 있다",
 	deflect = 0.3,
 	postureMult = 1.5,
 	speed = 1.4,
@@ -2506,13 +2506,13 @@ table.insert(Config.Styles, {
 	},
 	heavy = { id = "gsH", name = "극 관통", pose = "lt_pierce", dur = 0.6, lunge = 18, iframes = 0.25, hits = { hit(0.28, 16, 7, 80, 100, 0.9, 56, 8, true) } },
 	skills = {
-		E = { id = "gsE", name = "광속 관통", desc = "몸을 빛으로 쏘아 앞의 적들을 34칸 꿰뚫고 나타난다 (무적). 지나간 자리에 빛의 줄이 남고, 잠시 뒤 줄 전체가 한꺼번에 터지며 한 번 더 벤다", pose = "lt_lance", dur = 0.55, cd = 7, chi = 20, lunge = 34, iframes = 0.35,
+		E = { id = "gsE", name = "광속 관통", desc = "몸을 빛으로 쏘아 앞의 적들을 34칸 꿰뚫고 나타난다 (무적). 지나간 자리에 빛의 줄이 남고 잠시 뒤 줄 전체가 한꺼번에 터지며 한 번 더 벤다", pose = "lt_lance", dur = 0.55, cd = 7, chi = 20, lunge = 34, iframes = 0.35,
 			mech = { kind = "lightLance", dist = 34, width = 5, hit = hit(0, 0, 0, 62, 52, 0.7, 10, 6), delay = 0.5, det = hit(0, 0, 0, 40, 34, 0.5, 18, 12) } },
-		R = { id = "gsR", name = "음속 돌파", desc = "소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며, 닿은 적이 크게 튕겨 나간다", pose = "lt_boom", dur = 0.6, cd = 10, chi = 25, lunge = 26, iframes = 0.5,
+		R = { id = "gsR", name = "음속 돌파", desc = "소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며 닿은 적이 크게 튕겨 나간다", pose = "lt_boom", dur = 0.6, cd = 10, chi = 25, lunge = 26, iframes = 0.5,
 			mech = { kind = "sonicBoom", dist = 26, width = 6, hit = hit(0, 0, 0, 48, 40, 0.6, 14, 4), coneAt = 0.3, coneLen = 22, coneWidth = 16, cone = hit(0, 0, 0, 78, 76, 1.0, 46, 12) } },
-		G = { id = "gsG", name = "유성 질주", desc = "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고, 마지막에 모든 선이 한꺼번에 번쩍이며 터진다", pose = "lt_run", dur = 2.0, cd = 28, chi = 100, armor = true,
+		G = { id = "gsG", name = "유성 질주", desc = "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다", pose = "lt_run", dur = 2.0, cd = 28, chi = 100, armor = true,
 			mech = { kind = "meteorRun", radius = 22, n = 10, every = 0.14, width = 5, hit = hit(0, 0, 0, 26, 22, 0.35, 6, 6), finalAt = 0.3, finalRadius = 26, final = hit(0, 0, 0, 250, 260, 1.5, 60, 24) } },
-		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 짧은 컷씬 (그동안 무적): 출발선에서 몸을 낮춘다. 음속, 광속, 초광속, 세 걸음으로 점점 더 길게 내달린다. 첫 걸음은 소리를 넘고, 둘째는 빛이 되고, 셋째는 지나간 자리마저 남기지 않는다. 달린 길 위의 모든 적을 베고, 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 4.2, cd = 55, chi = 150, armor = true,
+		X = { id = "gsX", name = "광속 일섬", desc = "초 오의. 짧은 컷씬 (그동안 무적): 출발선에서 몸을 낮춘다. 음속, 광속, 초광속, 세 걸음으로 점점 더 길게 내달린다. 첫 걸음은 소리를 넘고 둘째는 빛이 되고 셋째는 지나간 자리마저 남기지 않는다. 달린 길 위의 모든 적을 베고 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다", pose = "lt_ult", dur = 4.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "lightDash", cut = 1.0, charge = 0.5, gap = 0.3, lens = { 24, 38, 56 }, mul = { 0.25, 0.3, 0.45 }, width = 9, hit = hit(0, 0, 0, 340, 330, 1.6, 70, 26), boomAt = 0.45, boomRadius = 36, boom = hit(0, 0, 0, 220, 230, 1.5, 70, 30) } },
 	},
 	-- 초가속 (극 패시브 동안): 기술이 모두 바뀐다. 빛과 소리가 아닌 '시간'을 다룬다
@@ -2524,13 +2524,13 @@ table.insert(Config.Styles, {
 		pulse = { every = 3, kind = "sonicx", radius = 14, delay = 0.1, name = "초가속", dmg = 68, posture = 56, stun = 0.6, kb = 32, up = 6 },
 		heavy = { id = "gtsH", name = "초 관통", pose = "lt_pierce", dur = 0.55, lunge = 22, iframes = 0.3, hits = { hit(0.26, 18, 8, 112, 140, 1.1, 66, 10, true) } },
 		skills = {
-			E = { id = "gtsE", name = "광침", desc = "손목을 튕겨 빛의 바늘 아홉을 부채꼴로 쏜다. 바늘은 34칸을 순식간에 꿰뚫고 사라지며, 지나간 줄이 번쩍인다", pose = "lt_needle", dur = 0.4, cd = 5, chi = 16,
+			E = { id = "gtsE", name = "광침", desc = "손목을 튕겨 빛의 바늘 아홉을 부채꼴로 쏜다. 바늘은 34칸을 순식간에 꿰뚫고 사라지며 지나간 줄이 번쩍인다", pose = "lt_needle", dur = 0.4, cd = 5, chi = 16,
 				mech = { kind = "lightNeedles", n = 9, spread = 100, length = 34, width = 2.8, delay = 0.12, hit = hit(0, 0, 0, 46, 38, 0.5, 8, 4) } },
-			R = { id = "gtsR", name = "지그재그 질주", desc = "직각으로 꺾으며 앞으로 다섯 번 번개처럼 도약한다 (무적). 내려서는 자리마다 사방이 터지고, 지나간 길이 번개 줄로 남는다", pose = "lt_zig", dur = 0.7, cd = 8, chi = 22, iframes = 0.6,
+			R = { id = "gtsR", name = "지그재그 질주", desc = "직각으로 꺾으며 앞으로 다섯 번 번개처럼 도약한다 (무적). 내려서는 자리마다 사방이 터지고 지나간 길이 번개 줄로 남는다", pose = "lt_zig", dur = 0.7, cd = 8, chi = 22, iframes = 0.6,
 				mech = { kind = "zigzagStep", steps = 5, forward = 11, side = 9, every = 0.09, radius = 8, hit = hit(0, 0, 0, 54, 46, 0.6, 12, 6) } },
-			G = { id = "gtsG", name = "마하 폭풍", desc = "앞으로 뻗은 한 줄기 길을 64칸씩 네 번 왕복한다 (무적). 지날 때마다 소리의 벽이 깨지며 길 양옆의 적을 한가운데로 쓸어 모으고, 마지막에 길 한복판에서 충격파가 터진다", pose = "lt_run", dur = 2.2, cd = 24, chi = 100, armor = true,
+			G = { id = "gtsG", name = "마하 폭풍", desc = "앞으로 뻗은 한 줄기 길을 64칸씩 네 번 왕복한다 (무적). 지날 때마다 소리의 벽이 깨지며 길 양옆의 적을 한가운데로 쓸어 모으고 마지막에 길 한복판에서 충격파가 터진다", pose = "lt_run", dur = 2.2, cd = 24, chi = 100, armor = true,
 				mech = { kind = "machStorm", length = 64, passes = 4, every = 0.28, width = 14, pull = 38, hit = hit(0, 0, 0, 56, 46, 0.6, 10, 8), finalAt = 0.3, finalRadius = 34, final = hit(0, 0, 0, 330, 330, 1.6, 60, 28) } },
-			X = { id = "gtsX", name = "유성 연쇄", desc = "초가속의 초 오의 (그동안 무적). 몸이 빛의 구슬이 되어 눈에 보이지 않는 속도로 적들 사이를 열 번 튕겨 다닌다. 지나간 자리마다 빛의 줄이 거미줄처럼 남고, 마지막에 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다. 거미줄이 한꺼번에 번쩍인다", pose = "lt_comet", dur = 4.4, cd = 50, chi = 140, armor = true,
+			X = { id = "gtsX", name = "유성 연쇄", desc = "초가속의 초 오의 (그동안 무적). 몸이 빛의 구슬이 되어 눈에 보이지 않는 속도로 적들 사이를 열 번 튕겨 다닌다. 지나간 자리마다 빛의 줄이 거미줄처럼 남고 마지막에 하늘로 솟았다가 혜성처럼 한가운데로 내리꽂힌다. 거미줄이 한꺼번에 번쩍인다", pose = "lt_comet", dur = 4.4, cd = 50, chi = 140, armor = true,
 				mech = { kind = "ricochet", cut = 1.2, n = 6, range = 56, bounces = 10, every = 0.11, hit = hit(0, 0, 0, 72, 64, 0.7, 16, 10), diveAt = 0.45, finalRadius = 44, final = hit(0, 0, 0, 380, 380, 1.8, 70, 32) } },
 		},
 	},
@@ -2538,7 +2538,7 @@ table.insert(Config.Styles, {
 
 -- 3.27판: 신 삼재권. 극을 넘어선 궁극의 권법 (등급 신). 처음의 주먹으로 돌아온다
 -- 세 극 권법 (극 일월 · 극 공백 · 극 광속)을 모두 얻은 몸으로 청운 장로에게 말을 걸면, 장로가 마지막 가르침을 내린다 (컷씬)
--- 하늘·땅·사람: 연타는 팔을 몸 둘레로 휘두르고, 세 번 맞힐 때마다 땅이 울린다. 초 오의는 얻을 때의 그 동작 그대로
+-- 하늘·땅·사람: 연타는 팔을 몸 둘레로 휘두르고 세 번 맞힐 때마다 땅이 울린다. 초 오의는 얻을 때의 그 동작 그대로
 Config.SIN_NEED = { "geukilwol", "geuknull", "geukspeed" }
 table.insert(Config.Styles, {
 	id = "sinsamjae",
@@ -2552,8 +2552,8 @@ table.insert(Config.Styles, {
 	fx = "basic",
 	hidden = true,
 	secret = true,
-	unlockHint = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 얻고, 세상 북서쪽 끝의 사람 모양 돌에게 은자 9,990,000을 바쳐 땅 밑 동굴의 제단에서 얻는다",
-	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고, 땅을 딛고, 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고, 땅을 한 번 찍으면 천지가 갈라진다.",
+	unlockHint = "환생 5번 + 극 권법 셋 (극 일월 · 극 공백 · 극 광속)을 얻고 세상 북서쪽 끝의 사람 모양 돌에게 은자 9,990,000을 바쳐 땅 밑 동굴의 제단에서 얻는다",
+	desc = "극을 넘어선 궁극의 권법. 새로운 것이 아니라, 처음의 주먹으로 돌아온 것이다. 하늘을 받치고 땅을 딛고 사람이 휘두른다. 팔이 몸 둘레를 돌 때마다 하늘과 땅과 사람이 하나로 모이고 땅을 한 번 찍으면 천지가 갈라진다.",
 	gimmick = "신 채우기: 싸우며 신(100)을 채우면 신의 모습으로 바뀐다 (쓰러질 때까지). 몸이 떠올라 날아다니고 금빛 갑옷과 거대한 신의 잔상이 따르며 기술이 모두 바뀐다 (더 세다, 영역은 없다). 체술: 팔꿈치 · 쓸어차기 · 무릎 · 진각 · 메치기로 싸우는 몸의 권법. 붙잡아 휘돌리고 내리꽂는다. 삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
 	deflect = 0.38,
 	postureMult = 1.5,
@@ -2562,7 +2562,7 @@ table.insert(Config.Styles, {
 	cdMult = 0.75,
 	pulse = { every = 3, kind = "gravity", radius = 11, delay = 0.12, name = "삼재 진동", dmg = 60, posture = 48, stun = 0.45, kb = 20, up = 3 },
 	-- 신 채우기: 싸우며 신(100)을 채우면 신의 모습으로 바뀐다 (쓰러질 때까지). 영역은 없다. 몸이 조금 떠올라 날아다니고,
-	-- 몸을 감싼 금빛 갑옷과 뒤따르는 거대한 신의 잔상이 생기며, 기술이 모두 바뀐다 (더 세다)
+	-- 몸을 감싼 금빛 갑옷과 뒤따르는 거대한 신의 잔상이 생기며 기술이 모두 바뀐다 (더 세다)
 	geukGauge = { max = 100, hit = 2, skillHit = 1, hurt = 4, cut = 2.2, dur = 99999 },
 	godForm = { lift = 2.6, walk = 1.3 },
 	stance = "stance_sin",
@@ -2578,7 +2578,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "slam", range = 18, angle = 120, n = 3, reel = 0.2, hold = 0.35, hit = hit(0, 0, 0, 120, 120, 1.2, 8, 0), splashRadius = 12, splash = hit(0, 0, 0, 56, 60, 0.7, 30, 14) } },
 		R = { id = "snR", name = "지축 진각", desc = "무릎을 높이 들어 땅을 찍는다. 발밑에서 충격이 사방으로 퍼져 둘레의 적이 크게 튕겨 오른다", pose = "sn_stomp", dur = 0.7, cd = 9, chi = 26,
 			mech = { kind = "shock", delay = 0.38, dist = 0, radius = 17, hit = hit(0, 0, 0, 120, 120, 1.1, 50, 18) } },
-		G = { id = "snG", name = "천근 대회전", desc = "둘레의 적 다섯을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던지면 떨어진 자리마다 땅이 터진다", pose = "cs_swing", dur = 2.6, cd = 28, chi = 100, armor = true,
+		G = { id = "snG", name = "천근 대회전", desc = "둘레의 적 다섯을 붙잡아 온몸으로 휘돌린다 (그동안 무적). 도는 동안 닿는 적이 모두 맞고 마지막에 사방으로 내던지면 떨어진 자리마다 땅이 터진다", pose = "cs_swing", dur = 2.6, cd = 28, chi = 100, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 24, angle = 360, n = 5, reel = 0.25, spin = 1.6, every = 0.2, orbit = 8, radius = 13, tick = hit(0, 0, 0, 26, 30, 0.3, 16), dist = 44, flight = 0.6, hit = hit(0, 0, 0, 260, 300, 1.2, 0, 0), splashRadius = 12, splash = hit(0, 0, 0, 110, 120, 0.8, 40, 16) } },
 		X = { id = "snX", name = "천지개벽", desc = "초 오의. 얻을 때의 그 동작 그대로 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)", pose = "sn_get", dur = 5.2, cd = 55, chi = 150, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 32, angle = 360, n = 6, reel = 0.5, spin = 3.3, every = 0.18, orbit = 9, radius = 15, tick = hit(0, 0, 0, 34, 40, 0.3, 16), dist = 40, flight = 0.5, hit = hit(0, 0, 0, 420, 480, 1.6, 0, 0), splashRadius = 15, splash = hit(0, 0, 0, 220, 260, 1.2, 60, 24) } },
@@ -2586,7 +2586,7 @@ table.insert(Config.Styles, {
 	-- 각성 (숙련 6 이상): E · R · G · X가 모두 새 기술로 바뀐다. 하늘 · 땅 · 사람의 연속 타격 (장치 sinSeq: 때와 자리를 정한 타격의 연쇄)
 	awaken = {
 		skills = {
-			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고, 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
+			E = { id = "snaE", name = "천지인 삼연격", desc = "각성. 한 걸음 파고들며 하늘로 올려 치고 (적이 뜬다), 땅으로 내리꽂고 사람의 정권으로 앞을 꿰뚫는다. 세 번의 타격이 하나로 이어진다 (무적)", pose = "sn_palm", dur = 1.15, cd = 7, chi = 22,
 				mech = { kind = "sinSeq", steps = {
 					{ t = 0.15, shape = "circle", at = "self", dash = 7, radius = 10, hit = hit(0, 0, 0, 80, 56, 0.6, 18, 24), name = "천" },
 					{ t = 0.55, shape = "circle", at = "target", range = 26, radius = 10, hit = hit(0, 0, 0, 110, 80, 0.9, 10, 0), name = "지" },
@@ -2599,13 +2599,13 @@ table.insert(Config.Styles, {
 					{ t = 1.06, shape = "ring", at = "self", inner = 17, radius = 27, hit = hit(0, 0, 0, 104, 80, 0.7, 40, 12) },
 					{ t = 1.45, shape = "circle", at = "self", radius = 16, hit = hit(0, 0, 0, 170, 130, 1.2, 70, 28), big = true },
 				} } },
-			G = { id = "snaG", name = "천지인 일권", desc = "각성. 하늘·땅·사람의 기를 1초 모았다가 단 한 번 지른다. 주먹이 앞으로 길게 꿰뚫고 (무적), 뒤따르는 충격이 부채꼴로 퍼지고, 먼 땅이 터진다", pose = "one_punch", dur = 2.0, cd = 28, chi = 100, armor = true,
+			G = { id = "snaG", name = "천지인 일권", desc = "각성. 하늘·땅·사람의 기를 1초 모았다가 단 한 번 지른다. 주먹이 앞으로 길게 꿰뚫고 (무적), 뒤따르는 충격이 부채꼴로 퍼지고 먼 땅이 터진다", pose = "one_punch", dur = 2.0, cd = 28, chi = 100, armor = true,
 				mech = { kind = "sinSeq", steps = {
 					{ t = 1.0, shape = "line", at = "self", length = 72, width = 11, hit = hit(0, 0, 0, 340, 420, 1.6, 150, 14), big = true },
 					{ t = 1.35, shape = "cone", at = "self", length = 38, angle = 110, hit = hit(0, 0, 0, 200, 220, 1.2, 70, 10) },
 					{ t = 1.65, shape = "circle", at = "front", dist = 34, radius = 15, hit = hit(0, 0, 0, 170, 160, 1.0, 50, 18) },
 				} } },
-			X = { id = "snaX", name = "천지개벽 · 각", desc = "각성 초 오의. 컷씬 동작 그대로 (그동안 무적): 팔을 여섯 번 휘두를 때마다 몸 둘레로 큰 물결이 터져 나간다 (점점 커진다). 무릎을 들어 땅을 찍는 순간 천지가 갈라져 둘레 48칸이 터지고, 바깥 70칸까지 충격이 퍼진다", pose = "sn_get", dur = 5.4, cd = 55, chi = 150, armor = true,
+			X = { id = "snaX", name = "천지개벽 · 각", desc = "각성 초 오의. 컷씬 동작 그대로 (그동안 무적): 팔을 여섯 번 휘두를 때마다 몸 둘레로 큰 물결이 터져 나간다 (점점 커진다). 무릎을 들어 땅을 찍는 순간 천지가 갈라져 둘레 48칸이 터지고 바깥 70칸까지 충격이 퍼진다", pose = "sn_get", dur = 5.4, cd = 55, chi = 150, armor = true,
 				mech = { kind = "sinSeq", steps = {
 					{ t = 0.75, shape = "circle", at = "self", radius = 22, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
 					{ t = 1.2, shape = "circle", at = "self", radius = 25, hit = hit(0, 0, 0, 60, 60, 0.5, 20, 8) },
@@ -2690,7 +2690,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "slam", range = 14, angle = 80, n = 1, reel = 0.22, hold = 0.3, hit = hit(0, 0, 0, 28, 44, 1.0, 6, 0), splashRadius = 8, splash = hit(0, 0, 0, 12, 16, 0.5, 18, 8) } },
 		R = { id = "csR", name = "철쇄 던지기", desc = "적을 붙잡아 앞으로 멀리 집어 던진다. 날아가는 적에 부딪힌 적과 떨어진 자리의 적도 다친다", pose = "cs_heave", dur = 0.8, cd = 10, chi = 25,
 			mech = { kind = "grabThrow", mode = "throw", range = 14, angle = 80, n = 1, reel = 0.2, hold = 0.25, dist = 44, flight = 0.6, hit = hit(0, 0, 0, 26, 36, 1.0, 0, 0), splashRadius = 8, splash = hit(0, 0, 0, 18, 24, 0.7, 30, 12) } },
-		G = { id = "csG", name = "천근 대회전", desc = "둘레의 적 셋을 한꺼번에 붙잡아 크게 휘돌린다. 도는 동안 닿는 적이 모두 맞고, 마지막에 사방으로 내던진다", pose = "cs_swing", dur = 2.2, cd = 28, chi = 100, armor = true,
+		G = { id = "csG", name = "천근 대회전", desc = "둘레의 적 셋을 한꺼번에 붙잡아 크게 휘돌린다. 도는 동안 닿는 적이 모두 맞고 마지막에 사방으로 내던진다", pose = "cs_swing", dur = 2.2, cd = 28, chi = 100, armor = true,
 			mech = { kind = "grabThrow", mode = "spin", range = 20, angle = 360, n = 3, reel = 0.25, spin = 1.4, every = 0.2, orbit = 7, radius = 11, tick = hit(0, 0, 0, 8, 10, 0.3, 14), dist = 36, flight = 0.6, hit = hit(0, 0, 0, 46, 60, 1.0, 0, 0), splashRadius = 9, splash = hit(0, 0, 0, 24, 30, 0.7, 36, 14) } },
 	},
 })
@@ -2725,7 +2725,7 @@ table.insert(Config.Styles, {
 			counterHit = { pose = "yr_counter3", tp = true, strikes = 3, hit = hit(0, 7, 6, 26, 28, 0.6, 10), burstRadius = 16, burst = hit(0, 0, 0, 44, 54, 1.0, 50, 16), fallback = hit(0, 0, 0, 26, 30, 0.6, 30, 10) } },
 	},
 })
--- 상급 3 · 질풍연권: 파고들어 띄우고, 공중에서 이어 친다
+-- 상급 3 · 질풍연권: 파고들어 띄우고 공중에서 이어 친다
 table.insert(Config.Styles, {
 	id = "jilpung",
 	name = "질풍연권",
@@ -2735,8 +2735,8 @@ table.insert(Config.Styles, {
 	color2 = Color3.fromRGB(255, 245, 210),
 	fx = "wind",
 	grade = "상급",
-	desc = "거센 바람처럼 이어지는 주먹. 짧게 파고들어 적을 띄우고, 떠오른 적을 공중에서 몇 번이고 이어 친다. 빠르고 가볍다.",
-	gimmick = "연타: 몸이 빠르고 (1.1배) 대시 대기가 짧다 (0.8초). 기술이 적에게 파고들어 띄우고, 공중에서 이어 친다",
+	desc = "거센 바람처럼 이어지는 주먹. 짧게 파고들어 적을 띄우고 떠오른 적을 공중에서 몇 번이고 이어 친다. 빠르고 가볍다.",
+	gimmick = "연타: 몸이 빠르고 (1.1배) 대시 대기가 짧다 (0.8초). 기술이 적에게 파고들어 띄우고 공중에서 이어 친다",
 	deflect = 0.2,
 	speed = 1.1,
 	dashCd = 0.8,
@@ -2787,7 +2787,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "line", count = 5, start = 5, spacing = 5, step = 0.07, delay = 0.2, radius = 5, hit = hit(0, 0, 0, 17, 22, 0.6, 14, 18), fx = "rock" } },
 		R = { id = "saR", name = "낙석추", desc = "가장 가까운 적 머리 위에 집채만 한 바위를 떨어뜨린다", pose = "sa_boulder", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "drop", range = 26, delay = 0.5, radius = 10, hit = hit(0, 0, 0, 43, 50, 1.0, 20, -10), fx = "rock" } },
-		G = { id = "saG", name = "천붕지열", desc = "1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고, 떨어질 때 한 번 더 친다", pose = "sa_collapse", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "saG", name = "천붕지열", desc = "1초 동안 힘을 모아 땅을 내리친다. 둘레의 땅이 산처럼 솟았다 무너지며 모두 띄우고 떨어질 때 한 번 더 친다", pose = "sa_collapse", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "launch", delay = 1.0, radius = 20, stun = 1.6, up = 60, hitAt = 0.8, hit = hit(0, 0, 0, 130, 140, 1.4, 40, -20) } },
 	},
 })
@@ -2804,7 +2804,7 @@ table.insert(Config.Styles, {
 	hidden = true,
 	realmReq = 9,
 	unlockHint = "사경의 경지에 오른 자만이, 북방 설산 얼음 벼랑 아래 얼어붙은 폭포 앞의 빙혼노니를 만난다",
-	desc = "얼음의 넋을 담은 손바닥. 닿는 곳마다 서리가 내리고, 네 번 맞히면 상대가 얼어붙는다. 오의는 둘레를 만년 빙하로 덮는다.",
+	desc = "얼음의 넋을 담은 손바닥. 닿는 곳마다 서리가 내리고 네 번 맞히면 상대가 얼어붙는다. 오의는 둘레를 만년 빙하로 덮는다.",
 	gimmick = "빙결: 네 번 맞힐 때마다 상대 자리에 서리가 터지며 1초 동안 얼어붙는다 (움직이지 못함)",
 	deflect = 0.26,
 	pulse = { every = 4, kind = "frost", radius = 9, delay = 0.25, name = "빙결", dmg = 26, posture = 28, stun = 1.0, kb = 0, up = 0 },
@@ -2821,7 +2821,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "line", count = 6, start = 4, spacing = 4.5, step = 0.06, delay = 0.15, radius = 4.5, hit = hit(0, 0, 0, 24, 24, 0.7, 6, 14), fx = "ice" } },
 		R = { id = "bhR", name = "한빙결", desc = "둘레를 얼려 적을 1.6초 동안 얼음에 가둔 뒤 얼음째 깨뜨린다", pose = "bh_gather", dur = 0.7, cd = 10, chi = 25,
 			mech = { kind = "freeze", delay = 0.25, radius = 15, dur = 1.6, hitAt = 1.2, hit = hit(0, 0, 0, 60, 60, 0.8, 24, 10) } },
-		G = { id = "bhG", name = "만년빙하", desc = "하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고, 마지막에 발밑에서 빙하가 솟는다", pose = "bh_glacier", dur = 1.9, cd = 30, chi = 100, armor = true,
+		G = { id = "bhG", name = "만년빙하", desc = "하늘에서 얼음 기둥이 둘레의 적 여덟에게 차례로 내리꽂히고 마지막에 발밑에서 빙하가 솟는다", pose = "bh_glacier", dur = 1.9, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 8, range = 32, delay = 0.35, stagger = 0.12, radius = 7, hit = hit(0, 0, 0, 52, 52, 1.0, 10, 10), fx = "ice" } },
 	},
 })
@@ -2840,7 +2840,7 @@ table.insert(Config.Styles, {
 	realmReq = 13,
 	trialHp = 10,
 	unlockHint = "무극의 경지에 오른 자만이, 서쪽 끝 석림의 옥 기둥 사이에 앉은 옥진인을 만난다",
-	desc = "하늘의 옥을 깎아 만든 주먹. 맞을 때마다 옥 결정이 피어나 쌓이고, 오의를 펼치면 둘레가 옥의 숲이 되어 모두 꿰뚫는다.",
+	desc = "하늘의 옥을 깎아 만든 주먹. 맞을 때마다 옥 결정이 피어나 쌓이고 오의를 펼치면 둘레가 옥의 숲이 되어 모두 꿰뚫는다.",
 	gimmick = "옥결: 네 번 맞힐 때마다 상대 자리에 옥 결정이 피어 터진다. 몸이 단단해 받는 피해 10% 덜",
 	deflect = 0.28,
 	hurtTaken = 0.9,
@@ -2878,7 +2878,7 @@ table.insert(Config.Styles, {
 	realmReq = 14,
 	trialHp = 10,
 	unlockHint = "반선의 경지에 오른 자만이, 동북쪽 끝 단풍산 꼭대기의 낡은 종 아래 선 종지기를 만난다",
-	desc = "하늘의 종을 울리는 주먹. 칠 때마다 울림이 쌓이고, 다섯 번째에 종소리가 둘레로 퍼져 모두 흔든다. 오의는 하늘에 거대한 종을 건다.",
+	desc = "하늘의 종을 울리는 주먹. 칠 때마다 울림이 쌓이고 다섯 번째에 종소리가 둘레로 퍼져 모두 흔든다. 오의는 하늘에 거대한 종을 건다.",
 	gimmick = "울림: 다섯 번 맞힐 때마다 종소리 파동이 둘레로 퍼진다 (둘레 모두 맞는다). 막기가 단단하다 (막을 때 받는 피해 절반)",
 	deflect = 0.28,
 	weakBlock = 0.5,
@@ -2914,7 +2914,7 @@ table.insert(Config.Styles, {
 	rebirthReq = 1,
 	trialHp = 10,
 	unlockHint = "한 번 환생한 몸으로, 서북쪽 끝 운무 차밭 한가운데 거울 연못 앞의 명경선을 찾아가라",
-	desc = "맑은 거울과 같은 주먹. 거울 속의 내가 함께 싸운다. 네 번 맞히면 거울 분신이 같은 자리를 되받아 치고, 받아칠 자세에서 맞으면 그 힘을 거울처럼 되돌린다.",
+	desc = "맑은 거울과 같은 주먹. 거울 속의 내가 함께 싸운다. 네 번 맞히면 거울 분신이 같은 자리를 되받아 치고 받아칠 자세에서 맞으면 그 힘을 거울처럼 되돌린다.",
 	gimmick = "거울: 네 번 맞힐 때마다 거울 속 분신이 나타나 같은 자리를 되받아 친다. E는 받아칠 자세 (맞으면 피해 없이 되받아친다)",
 	deflect = 0.3,
 	speed = 1.1,
@@ -2934,7 +2934,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "clones", n = 4, range = 28, delay = 0.3, every = 0.1, hitsEach = 2, hit = hit(0, 0, 0, 26, 26, 0.5, 10, 6) } },
 		G = { id = "mgG", name = "만경회랑", desc = "둘레에 거울이 열 장 선다. 거울마다 빛이 튀어 둘레의 적 열에게 차례로 꽂힌다", pose = "mg_gallery", dur = 1.9, cd = 30, chi = 100, armor = true,
 			mech = { kind = "targets", n = 10, range = 34, delay = 0.35, stagger = 0.1, radius = 6, hit = hit(0, 0, 0, 42, 46, 0.7, 12, 8), fx = "mirror" } },
-		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고, 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "mg_shatter", dur = 3.0, cd = 50, chi = 140, armor = true,
+		X = { id = "mgX", name = "천경파쇄", desc = "초 오의. 하늘과 땅이 거울이 된다. 둘레의 적 여덟 앞에 거울 속의 내가 셋씩 나타나 몰아치고 마지막에 거울이 모두 깨지며 둘레가 터진다", pose = "mg_shatter", dur = 3.0, cd = 50, chi = 140, armor = true,
 			mech = { kind = "clones", n = 8, range = 40, delay = 0.6, every = 0.12, hitsEach = 3, hit = hit(0, 0, 0, 48, 50, 0.6, 10, 6) } },
 	},
 })
@@ -2955,7 +2955,7 @@ table.insert(Config.Styles, {
 	styleReq = "cheonryong",
 	trialHp = 10,
 	unlockHint = "천룡파천장을 익히고 천외천에 오른 자만이, 천룡봉 동쪽 구름 위 용의 등뼈 바위에 선 천룡진인을 만난다",
-	desc = "천룡파천장의 끝. 장풍 하나하나가 용이 되어 날아가고, 오의를 펼치면 황금 천룡이 하늘을 덮는다. 멀리서도, 가까이서도 무섭다.",
+	desc = "천룡파천장의 끝. 장풍 하나하나가 용이 되어 날아가고 오의를 펼치면 황금 천룡이 하늘을 덮는다. 멀리서도, 가까이서도 무섭다.",
 	gimmick = "천룡기: Z를 0.8초만 눌러도 장풍이 가득 모인다. 연격 네 번째와 강타가 용의 장풍. 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다",
 	deflect = 0.24,
 	charge = 0.8,
@@ -3003,7 +3003,7 @@ table.insert(Config.Styles, {
 	styleReq = "kwonwangsin",
 	trialHp = 12,
 	unlockHint = "네 번 환생해 권왕신권을 익힌 자만이, 동쪽 끝 황사 협곡의 무너진 왕좌에 앉은 패왕을 만난다",
-	desc = "권왕을 넘어선 패자의 주먹. 꾸밈이 없다. 파고들고, 붙잡아 내던지고, 단 한 주먹으로 앞을 모두 지운다. 여섯 번 맞히면 패기에 눌려 둘레의 적이 무릎을 꿇는다.",
+	desc = "권왕을 넘어선 패자의 주먹. 꾸밈이 없다. 파고들고 붙잡아 내던지고 단 한 주먹으로 앞을 모두 지운다. 여섯 번 맞히면 패기에 눌려 둘레의 적이 무릎을 꿇는다.",
 	gimmick = "패기: 여섯 번 맞힐 때마다 둘레로 패기가 터져 적이 무릎을 꿇는다 (오래 굳는다). 앞의 권왕신권처럼 공격의 10%를 비켜 간다",
 	deflect = 0.3,
 	dodgeChance = 0.1,
@@ -3023,7 +3023,7 @@ table.insert(Config.Styles, {
 			mech = { kind = "grabThrow", mode = "throw", range = 16, angle = 90, n = 1, reel = 0.18, hold = 0.3, dist = 50, flight = 0.6, hit = hit(0, 0, 0, 51, 90, 1.2, 0, 0), splashRadius = 10, splash = hit(0, 0, 0, 34, 60, 0.8, 34, 14) } },
 		G = { id = "chpG", name = "천하무쌍권", desc = "1초 동안 천하의 기를 한 주먹에 모았다가 앞으로 지른다. 앞의 모든 것이 지워진다", pose = "ch_onefist", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 217, 460, 1.6, 140, 14) } },
-		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고, 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
+		X = { id = "chpX", name = "패천멸지", desc = "초 오의. 하늘이 패기에 갈라져 2.4초 동안 둘레의 적에게 금빛 벼락이 쉬지 않고 떨어지고 마지막에 내가 땅을 내리쳐 둘레를 모두 무너뜨린다", pose = "ch_crush", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 34, 54, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 239, 460, 1.8, 80, 30) } },
 	},
 })
@@ -3047,7 +3047,7 @@ table.insert(Config.Styles, {
 	styleReq = "chocheonryong",
 	trialHp = 12,
 	unlockHint = "세 번 환생해 초·천룡파천장을 익힌 자만이, 동북쪽 맨 끝 네 신수의 석상이 둘러선 사신대에서 사신왕을 만난다",
-	desc = "동쪽의 청룡, 서쪽의 백호, 남쪽의 주작, 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법. 연타마다 신수가 번갈아 깃들고, 기술마다 다른 신수가 나타난다.",
+	desc = "동쪽의 청룡, 서쪽의 백호, 남쪽의 주작, 북쪽의 현무. 네 방위의 신수를 주먹에 깃들인 왕의 권법. 연타마다 신수가 번갈아 깃들고 기술마다 다른 신수가 나타난다.",
 	gimmick = "사신진: 네 번 맞힐 때마다 둘레에 네 신수의 기운이 한꺼번에 터진다. 공격의 10%를 비켜 간다",
 	deflect = 0.3,
 	dodgeChance = 0.1,
@@ -3063,17 +3063,17 @@ table.insert(Config.Styles, {
 	skills = {
 		E = { id = "ssnE", name = "백호질주", desc = "흰 범의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 범의 발톱 자국이 줄줄이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
 			mech = { kind = "lightDash", cut = 0.05, charge = 0.25, gap = 0.2, lens = { 20 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 56, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 16, 24, 0.5, 14, 8) } },
-		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고, 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
+		R = { id = "ssnR", name = "주작쌍익", desc = "붉은 불새 둘을 날린다. 불새는 엇갈리는 활을 그리며 지나는 적을 태우고 앞에서 만나 불꽃 날개로 터진다", pose = "eclipse_push", dur = 0.6, cd = 10, chi = 25,
 			mech = { kind = "twinDiscs", dist = 30, swing = 9, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 11, burst = hit(0, 0, 0, 32, 46, 0.7, 24, 8) } },
 		G = { id = "ssnG", name = "청룡승천", desc = "1초 동안 푸른 용의 기운을 주먹에 모았다가 지른다. 거대한 청룡이 앞으로 솟구치며 앞의 모든 것을 휩쓴다", pose = "one_punch", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 215, 455, 1.6, 135, 14) } },
-		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고, 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
+		X = { id = "ssnX", name = "사신강림", desc = "초 오의. 하늘에 네 신수가 나타나 2.4초 동안 둘레를 돌며 적에게 차례로 내리꽂히고 마지막에 현무의 등껍질이 하늘에서 떨어져 둘레를 누른다", pose = "heaven_split", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 33, 53, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 235, 455, 1.8, 80, 30) } },
 	},
 })
 
 ------------------------------------------------------------------------
--- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고, 강화할수록 생김새가 바뀐다
+-- 3.41판 게임패스 권법 둘: 산 날부터 최강이 아니다. 강화 (+0 ~ +15) 로 조금씩 세지고 강화할수록 생김새가 바뀐다
 -- enh = { base = +0 의 등급 배율, top = +15 의 등급 배율 } (사이는 고르게). 극 (3.8) · 신 (4.3) 은 넘지 않는다
 -- 깨달음 (승급) 대신 강화. 배틀그라운드에서는 전설 등급과 같은 세기
 ------------------------------------------------------------------------
@@ -3092,7 +3092,7 @@ table.insert(Config.Styles, {
 	premium = "gumiho",
 	enh = { base = 1.5, top = 2.75 },
 	unlockHint = "💎 상점의 '구미호권' 게임패스로 얻는다. 강화할수록 꼬리가 늘어난다 (+15에 아홉 꼬리)",
-	desc = "푸른 여우불을 두른 요호의 권법. 빠르고 가볍게 스치며, 맞힐 때마다 여우불이 쌓인다. 강화할수록 등 뒤의 꼬리가 늘어난다.",
+	desc = "푸른 여우불을 두른 요호의 권법. 빠르고 가볍게 스치며 맞힐 때마다 여우불이 쌓인다. 강화할수록 등 뒤의 꼬리가 늘어난다.",
 	gimmick = "여우불: 다섯 번 맞힐 때마다 상대 자리에서 푸른 여우불이 터진다. 몸이 가벼워 (1.06배) 공격의 8%를 흘려 보낸다",
 	deflect = 0.24,
 	dodgeChance = 0.08, -- 3.41.3판: 0.12 → 0.08 (전설인데 권왕 권법 (0.1) 보다 많이 흘렸다)
@@ -3108,11 +3108,11 @@ table.insert(Config.Styles, {
 	heavy = { id = "gmH", name = "호혼일격", pose = "ghost_flash", dur = 0.6, lunge = 5, hits = { hit(0.28, 7.5, 5.5, 25, 34, 0.8, 40) } },
 	skills = {
 		-- 3.55판: E · R 새로 (G는 그대로)
-		E = { id = "gmE", name = "여우구슬", desc = "푸른 여우구슬 둘을 던진다. 구슬은 불씨를 꼬리처럼 끌며 엇갈리는 활을 그려 날아가 지나는 적을 태우고, 앞에서 만나 여우불 꽃으로 터진다", pose = "eclipse_push", dur = 0.55, cd = 8, chi = 20,
+		E = { id = "gmE", name = "여우구슬", desc = "푸른 여우구슬 둘을 던진다. 구슬은 불씨를 꼬리처럼 끌며 엇갈리는 활을 그려 날아가 지나는 적을 태우고 앞에서 만나 여우불 꽃으로 터진다", pose = "eclipse_push", dur = 0.55, cd = 8, chi = 20,
 			mech = { kind = "twinDiscs", dist = 26, swing = 7, time = 0.55, every = 0.055, radius = 4.5, hit = hit(0, 0, 0, 14, 14, 0.4, 8), burstRadius = 9, burst = hit(0, 0, 0, 24, 24, 0.6, 16, 6) } },
 		R = { id = "gmR", name = "호혼도약", desc = "몸이 푸른 여우 혼령이 되어 둘레의 적 사이를 활을 그리며 네 번 뛰어 할퀸다 (무적). 마지막에 하늘에서 큰 여우 혼령이 한가운데로 내리 덮친다", pose = "ghost_flash", dur = 1.0, cd = 10, chi = 25,
 			mech = { kind = "ricochet", cut = 0.2, n = 4, range = 30, bounces = 4, every = 0.14, hit = hit(0, 0, 0, 10, 12, 0.4, 8, 4), diveAt = 0.3, finalRadius = 12, final = hit(0, 0, 0, 24, 26, 0.7, 20, 10) } },
-		G = { id = "gmG", name = "구미천화", desc = "땅에서 거대한 꼬리 혼령 아홉이 솟아 일렁이는 동안 여우불 유성이 둘레의 적에게 쏟아지고, 마지막에 아홉 꼬리가 한가운데로 내리치며 푸른 불이 터진다", pose = "gale_cyclone", dur = 2.2, cd = 30, chi = 100, armor = true,
+		G = { id = "gmG", name = "구미천화", desc = "땅에서 거대한 꼬리 혼령 아홉이 솟아 일렁이는 동안 여우불 유성이 둘레의 적에게 쏟아지고 마지막에 아홉 꼬리가 한가운데로 내리치며 푸른 불이 터진다", pose = "gale_cyclone", dur = 2.2, cd = 30, chi = 100, armor = true,
 			mech = { kind = "storm", dur = 1.8, every = 0.15, delay = 0.3, range = 26, radius = 6, hit = hit(0, 0, 0, 16, 14, 0.3, 6, 4), finalRadius = 20, final = hit(0, 0, 0, 90, 90, 1.2, 40, 20) } },
 	},
 })
@@ -3148,11 +3148,11 @@ table.insert(Config.Styles, {
 		-- 3.55판: E · R · G 새로 (X는 그대로)
 		E = { id = "hyE", name = "흑염발도", desc = "칼을 허리에 거두고 숨을 죽였다가, 눈에 보이지 않게 앞으로 18칸을 지나며 벤다 (무적). 한 박자 늦게 지나온 길에 베인 자국이 줄줄이 그어지며 검은 불꽃이 터진다", pose = "lightning_dash", dur = 0.7, cd = 7, chi = 20,
 			mech = { kind = "lightDash", cut = 0.05, charge = 0.3, gap = 0.2, lens = { 18 }, mul = { 1 }, width = 5, hit = hit(0, 0, 0, 34, 52, 0.7, 20, 6), boomAt = 0.3, boomRadius = 7, boom = hit(0, 0, 0, 14, 20, 0.5, 14, 8) } },
-		R = { id = "hyR", name = "쌍마비검", desc = "손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고, 앞에서 십자로 부딪쳐 터진다", pose = "reap_wave", dur = 0.6, cd = 10, chi = 25,
+		R = { id = "hyR", name = "쌍마비검", desc = "손의 마검 둘을 던진다. 검은 땅과 나란히 빙글빙글 돌며 엇갈리는 활을 그려 지나는 적을 베고 앞에서 십자로 부딪쳐 터진다", pose = "reap_wave", dur = 0.6, cd = 10, chi = 25,
 			mech = { kind = "twinDiscs", dist = 28, swing = 8, time = 0.6, every = 0.06, radius = 5, hit = hit(0, 0, 0, 24, 34, 0.5, 12), burstRadius = 10, burst = hit(0, 0, 0, 30, 44, 0.7, 24, 8) } },
-		G = { id = "hyG", name = "마왕참", desc = "1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고, 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
+		G = { id = "hyG", name = "마왕참", desc = "1초 동안 등 뒤 하늘에 검은 불꽃을 모아 집채만 한 마검을 빚고 앞으로 내리찍는다. 땅이 한 줄로 갈라지며 검은 불길이 끝까지 솟는다", pose = "reap_moon", dur = 1.8, cd = 30, chi = 100, armor = true,
 			mech = { kind = "onepunch", delay = 1.0, range = 54, angle = 40, hit = hit(0, 0, 0, 210, 440, 1.6, 130, 14) } },
-		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고, 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
+		X = { id = "hyX", name = "흑염멸천", desc = "초 오의. 하늘에 검은 불의 소용돌이가 열려 2.4초 동안 둘레의 적에게 불꽃 검이 쏟아지고 마지막에 거대한 마검이 한가운데로 내리꽂히며 둘레에 마검이 솟는다", pose = "ult_sever", dur = 3.2, cd = 50, chi = 140, armor = true,
 			mech = { kind = "storm", dur = 2.4, every = 0.15, delay = 0.4, range = 40, radius = 8, hit = hit(0, 0, 0, 32, 52, 0.5, 10, 8), finalRadius = 30, final = hit(0, 0, 0, 230, 450, 1.8, 80, 30) } },
 	},
 })
@@ -3210,8 +3210,8 @@ for i, s in ipairs(Config.Styles) do
 end
 
 ------------------------------------------------------------------------
--- 각성: 숙련 6이면 각성 (기술이 세지고, 연타 다섯 번째 '각성 마무리'가 열린다)
---       숙련 10이면 완전 각성 (모든 기술이 더 세지고, 그림자 메아리가 기술을 한 번 더 되풀이한다)
+-- 각성: 숙련 6이면 각성 (기술이 세지고 연타 다섯 번째 '각성 마무리'가 열린다)
+--       숙련 10이면 완전 각성 (모든 기술이 더 세지고 그림자 메아리가 기술을 한 번 더 되풀이한다)
 ------------------------------------------------------------------------
 Config.AWAKEN = {
 	{ lv = 6, name = "각성", mark = "⭐", dmg = 1.25, cd = 0.85 },
@@ -3416,7 +3416,7 @@ Config.Enemies = {
 			{ id = "sm3", name = "심마 참", pose = "w_sweep", windup = 0.6, dur = 1.2, range = 10, unblockable = true, hits = { hit(0.6, 0, 11, 28, 50, 0.9, 35, nil, true) } },
 		},
 	},
-	-- 수련 목인: 테스트용 허수아비. 움직이지도 치지도 않고, 맞은 피해를 초당으로 보여 준다
+	-- 수련 목인: 테스트용 허수아비. 움직이지도 치지도 않고 맞은 피해를 초당으로 보여 준다
 	dummy = {
 		name = "수련 목인", dummy = true, hp = 1000000, posture = 100000, speed = 0, aggro = 0, keep = 0,
 		shirt = Color3.fromRGB(150, 110, 70), pants = Color3.fromRGB(110, 80, 50), coins = 0, xp = 0, moves = {},
@@ -3427,7 +3427,7 @@ Config.Enemies = {
 		shirt = Color3.fromRGB(130, 96, 62), pants = Color3.fromRGB(96, 70, 46), coins = 0, xp = 0, moves = {},
 	},
 	-- 3.19.6판 흘리기 사범: 권법 시험장 반격 코너. 박자를 읽기 쉽게 천천히 치지만, 맞아도 피해·경직·균형은 없다 (흘리기·막기·반격 연습).
-	-- 흘리면 사범이 휘청이고, 균형이 다 깎이면 무너져 반격할 틈이 난다. 붉은 공격은 막을 수 없으니 피하는 연습
+	-- 흘리면 사범이 휘청이고 균형이 다 깎이면 무너져 반격할 틈이 난다. 붉은 공격은 막을 수 없으니 피하는 연습
 	practice = {
 		name = "흘리기 사범", practice = true, duel = true, weapon = "staff", hp = 1000000000, posture = 140, speed = 8, aggro = 18, keep = 5,
 		shirt = Color3.fromRGB(70, 92, 120), pants = Color3.fromRGB(40, 48, 62), coins = 0, xp = 0,
@@ -3594,7 +3594,7 @@ B.cheonma = variant(B.hyeolrang, { name = "천마 · 마교의 교주", shirt = 
 B.yeomje = variant(B.heukho, { name = "염제 · 화염산의 주인", shirt = Color3.fromRGB(235, 95, 25), pants = Color3.fromRGB(80, 20, 10), hp = 2600, posture = 560, scale = 1.7, coins = 20000, xp = 3000, respawn = 300, mult = 8 })
 B.sawang = variant(B.hyeolrang, { name = "사왕 · 모래 왕릉의 주인", shirt = Color3.fromRGB(215, 175, 70), pants = Color3.fromRGB(90, 60, 30), hp = 2600, posture = 560, scale = 1.6, speed = 22, coins = 24000, xp = 3500, respawn = 300, mult = 10 })
 B.cheonmun = variant(B.heukho, { name = "천문장 · 하늘 문지기", shirt = Color3.fromRGB(240, 245, 255), pants = Color3.fromRGB(120, 150, 210), hp = 3000, posture = 700, scale = 1.8, coins = 40000, xp = 6000, respawn = 300, mult = 16 })
--- 큰 보스: 몸이 크고(팔도 길다) 체력이 많고, 세 단계 패턴을 쓴다 (체력 2/3·1/3에서 다음 단계)
+-- 큰 보스: 몸이 크고(팔도 길다) 체력이 많고 세 단계 패턴을 쓴다 (체력 2/3·1/3에서 다음 단계)
 local function boss(id: string, over: { [string]: any })
 	local b = B[id]
 	for k, v in pairs(over) do
@@ -3735,7 +3735,7 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "manmok" then
 		local green = Color3.fromRGB(120, 220, 110)
-		st.trialIntro = { title = "목선의 시련", text = "숲은 쓰러뜨리는 것이 아니다. 버티는 것이다. 내 대숲의 창과 잎 속에서 끝까지 서 있거든, 나무의 주먹을 가르쳐 주마." }
+		st.trialIntro = { title = "목선의 시련", text = "내 대숲의 창과 잎을 다 받아 내고도 서 있으면 나무의 주먹을 가르쳐 주마." }
 		st.trialBoss = { hp = 3400, posture = 760, scale = 1.5, reach = 1.4, speed = 22, patterns = {
 			P("rain", "죽창 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.9, cd = 6, pose = "point_sky", fx = "star", color = green, hit = hit(0, 0, 0, 21, 34, 0.8, 16) }),
 			P("donut", "대숲 고리", 1, { inner = 8, outer = 24, warn = 1.0, cd = 8, pose = "grav_hammer", hit = hit(0, 0, 0, 28, 50, 1.0, 30) }),
@@ -3750,7 +3750,7 @@ end
 for _, st in ipairs(Config.Styles) do
 	if st.id == "chochanghae" then
 		local sea = Color3.fromRGB(90, 200, 240)
-		st.trialIntro = { title = "초월의 시련", text = "파도를 일으킬 줄 안다고 바다가 되는 건 아니다. 내 바다 한가운데서 끝까지 숨을 쉬거든, 고래의 노래를 가르쳐 주마." }
+		st.trialIntro = { title = "초월의 시련", text = "내 바다 한가운데서 끝까지 숨이 붙어 있으면 고래의 노래를 가르쳐 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
 			P("rain", "물방울 비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = sea, hit = hit(0, 0, 0, 21, 34, 0.8, 18) }),
 			P("donut", "소용돌이 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "wall_raise", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
@@ -3807,7 +3807,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "chosengha" then
 		local star = Color3.fromRGB(255, 226, 120)
-		st.trialIntro = { title = "초월의 시련", text = "별을 쥐었다고 별을 부리는 건 아니다. 내 별의 돔 아래서 끝까지 서 있거든, 이 지팡이 끝의 별을 네게 걸어 주마." }
+		st.trialIntro = { title = "초월의 시련", text = "내 별 돔 아래서 끝까지 버티면 이 지팡이 끝의 별을 네게 걸어 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 24, patterns = {
 			P("rain", "별똥비", 1, { count = 9, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = star, hit = hit(0, 0, 0, 21, 34, 0.8, 18) }),
 			P("donut", "성좌 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "staff_sigil", hit = hit(0, 0, 0, 28, 50, 0.9, 40) }),
@@ -3819,7 +3819,7 @@ for _, st in ipairs(Config.Styles) do
 	end
 	if st.id == "chobyeok" then
 		local violet = Color3.fromRGB(170, 130, 255)
-		st.trialIntro = { title = "초월의 시련", text = "번개를 쥐었다고 번개가 되는 건 아니다. 내 벼락을 세 번 맞고도 서 있거든, 이 토시를 네 팔에 채워 주마." }
+		st.trialIntro = { title = "초월의 시련", text = "내 벼락을 세 번 맞고도 서 있으면 이 토시를 네 팔에 채워 주마." }
 		st.trialBoss = { hp = 3800, posture = 780, scale = 1.6, reach = 1.5, speed = 26, patterns = {
 			P("rain", "벼락 비", 1, { count = 8, radius = 6, spread = 24, warn = 0.8, cd = 6, pose = "point_sky", fx = "star", color = violet, hit = hit(0, 0, 0, 22, 36, 0.8, 20) }),
 			P("donut", "뇌전 고리", 1, { inner = 7, outer = 25, warn = 1.0, cd = 8, pose = "thunder_hammer", hit = hit(0, 0, 0, 29, 52, 0.9, 40) }),
@@ -4068,44 +4068,44 @@ Config.Story = {
 	-- 3.9판 튜토리얼: 마을 목인으로 몸풀기 (공격 · 강타 · 기술)
 	{ title = "첫 주먹", text = "몸부터 풀자. 마을 입구의 수련 목인을 여덟 번 쳐라. 클릭 (휴대폰은 👊)을 이어 누르면 연타가 이어진다.", goal = { kind = "hit", n = 8, at = Vector3.new(0, 0, -46) }, reward = { coins = 40, stats = 4 } },
 	{ title = "강타", text = "힘을 실어 한 번에. 오른쪽 클릭 (휴대폰은 💥)으로 강타를 목인에게 두 번 맞혀라. 강타는 느리지만 상대의 균형을 크게 깎는다.", goal = { kind = "heavy", n = 2, at = Vector3.new(0, 0, -46) }, reward = { coins = 40, stats = 4 } },
-	{ title = "첫 기술", text = "권법마다 기술이 있다. E를 눌러 삼재권의 기술을 목인에게 써 보아라. 기술은 내공을 쓰고, 쓰면 잠시 기다려야 한다.", goal = { kind = "skill", n = 1, at = Vector3.new(0, 0, -46) }, reward = { coins = 60, stats = 6 } },
-	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고, 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
+	{ title = "첫 기술", text = "권법마다 기술이 있다. E를 눌러 삼재권의 기술을 목인에게 써 보아라. 기술은 내공을 쓰고 쓰면 잠시 기다려야 한다.", goal = { kind = "skill", n = 1, at = Vector3.new(0, 0, -46) }, reward = { coins = 60, stats = 6 } },
+	{ title = "들판의 무뢰배", text = "들판의 무뢰배 다섯을 쓰러뜨려라. 마구 휘두르지 말고 놈들이 칠 때 F로 흘린 뒤 파고들어라.", goal = { kind = "kill", id = "thug", n = 5, at = Vector3.new(0, 0, 400) }, reward = { coins = 80, stats = 10 } },
 	{ title = "몸을 만드는 법", text = "주먹은 몸에서 나온다. 마을 수련터에서 여덟 번 수련하라. 박자를 맞추면 두 배다.", goal = { kind = "train", n = 8, at = Vector3.new(-70, 0, -40) }, reward = { coins = 80, stats = 10 } },
 	{ title = "이류의 문턱", text = "싸움과 수련으로 능력치를 채워 이류에 올라라. 이류부터는 박자가 빠른 대신 세 배로 오르는 강화 수련이 열린다.", goal = { kind = "realm", n = 2 }, reward = { coins = 120, stats = 15 } },
 	{ title = "산적의 그림자", text = "서쪽 대나무 숲과 동쪽 계곡에 산적 떼가 진을 쳤다. 산적 도객 여섯을 꺾어라.", goal = { kind = "kill", id = "bandit", n = 6, at = Vector3.new(-300, 0, 120) }, reward = { coins = 200, stats = 20 } },
 	{ title = "사부를 찾아서", text = "삼재권만으로는 멀리 못 간다. 강호에는 열 사부가 숨어 산다. 안내판의 소문을 따라 한 분을 찾아가라. 남쪽 주막의 취한 노인 이야기가 가장 가깝지.", goal = { kind = "found", n = 1, at = Vector3.new(0, 0, 620) }, reward = { coins = 200 } },
-	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고, 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 25 } },
+	{ title = "사부의 시험", text = "사부는 아무나 받지 않는다. 사부 곁에서 T를 눌러 시험을 청하고 사부마다 다른 시험(흘리기·버티기·제자 연무)을 넘어라.", goal = { kind = "trial", n = 1 }, reward = { coins = 300, stats = 25 } },
 	{ title = "첫 진짜 권법", text = "시험을 넘었다면 은자를 바치고 그 권법을 배워라. 권법 창(메뉴)에서 언제든 바꿔 쓸 수 있다.", goal = { kind = "learn", n = 2 }, reward = { coins = 300 } },
 	{ title = "손에 익히기", text = "새 권법은 써야 손에 붙는다. 그 권법으로 적을 때려 숙련을 3까지 올려라. 숙련 3에 두 번째 기술(R)이 열린다.", goal = { kind = "mastery", n = 3 }, reward = { coins = 400, stats = 30 } },
 	{ title = "일류의 벽", text = "수련과 싸움으로 능력치를 쌓아 일류에 올라라. 경지가 오를 때마다 몸이 크게 달라진다. 일류부터 철사장 수련이 열린다.", goal = { kind = "realm", n = 3 }, reward = { coins = 500, stats = 40 } },
-	{ title = "두 번째 사부", text = "한 권법만 쓰면 상대가 읽는다. 안내판의 소문을 따라 다른 사부를 찾아가 시험을 넘고, 권법을 하나 더 익혀라.", goal = { kind = "learn", n = 3 }, reward = { coins = 600, stats = 50 } },
+	{ title = "두 번째 사부", text = "한 권법만 쓰면 상대가 읽는다. 안내판의 소문을 따라 다른 사부를 찾아가 시험을 넘고 권법을 하나 더 익혀라.", goal = { kind = "learn", n = 3 }, reward = { coins = 600, stats = 50 } },
 	{ title = "특급에 오르다", text = "일류를 넘어 특급에 오르면 몸이 한 번 더 달라진다. 특급부터 운기조식이 열린다. 수련과 사냥으로 능력치를 채워 특급에 올라라.", goal = { kind = "realm", n = 4 }, reward = { coins = 800, stats = 100 } },
 	{ title = "흑호채", text = "먼 북쪽 산적 소굴의 두목 흑호가 마을을 노린다. 놈을 꺾어라.", goal = { kind = "boss", id = "heukho", at = Vector3.new(0, 0, -1020) }, reward = { coins = 1000, stats = 150 } },
 	{ title = "오의를 열어라", text = "한 권법의 숙련을 5까지 올려라. 숙련 5에 그 권법의 오의(G)가 열린다. 내공이 가득 찼을 때 쓰는 한 수다.", goal = { kind = "mastery", n = 5 }, reward = { coins = 1000, stats = 150 } },
-	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고, 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
+	{ title = "심법 두루마리", text = "적과 보스는 가끔 심법 두루마리를 떨어뜨린다. 만물상의 📜 심법 탭에서 두루마리를 펼쳐 심법 하나를 얻고 세 칸 중 하나에 끼워라. 심법 하나가 권법 전체를 받쳐 준다.", goal = { kind = "manual", n = 1 }, reward = { coins = 1000 } },
 	{ title = "서해의 해적", text = "서쪽 끝 서해 절벽에 해적 떼가 배를 댔다. 특급이면 해볼 만하다. 해적 도객 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "pirate", n = 8, at = Vector3.new(-1800, 0, -250) }, reward = { coins = 1200, stats = 200 } },
 	{ title = "심법 셋", text = "심법은 셋까지 끼울 수 있다. 두루마리를 펼쳐 심법을 셋 모아라. 좋은 심법이 없어도 칸을 비워 두는 것보다 낫다.", goal = { kind = "manual", n = 3 }, reward = { coins = 1800, stats = 200 } },
 	{ title = "더 많은 사부", text = "한 사부의 권법만으로는 부족하다. 안내판의 소문을 따라 강호의 사부를 셋까지 찾아가 보아라. 찾아낸 사부는 지도에 나온다.", goal = { kind = "found", n = 3 }, reward = { coins = 1200, stats = 200 } },
-	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고, 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 250 } },
+	{ title = "천층탑", text = "마을 안 천층탑에 올라 보아라. 층마다 세기가 정해져 있고 열 층마다 보스가 지킨다. 처음 넘는 보스 층에는 두루마리와 큰 몫이 기다린다. 열 층을 넘어라.", goal = { kind = "tower", n = 10, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000, stats = 250 } },
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 2000, stats = 300 } },
 	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라.", goal = { kind = "realm", n = 5 }, reward = { coins = 2500, stats = 400 } },
 	{ title = "네 번째 권법", text = "찾아낸 사부들 가운데 아직 배우지 않은 분이 있다면 시험을 넘고 권법을 하나 더 익혀라. 적마다 잘 듣는 권법이 다르다.", goal = { kind = "learn", n = 4 }, reward = { coins = 3000, stats = 400 } },
-	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고, 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 500 } },
+	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 500 } },
 	{ title = "초절정의 몸", text = "절정을 넘어 초절정에 올라라. 초절정부터 상급 수련장의 금종조 수련이 열린다.", goal = { kind = "realm", n = 6 }, reward = { coins = 5000, stats = 600 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 5000, stats = 800 } },
-	{ title = "화경에 들다", text = "기를 불처럼 다루는 화경에 올라라. 화경부터 천근추 수련이 열리고, 두 번째 깨달음을 얻을 수 있다.", goal = { kind = "realm", n = 7 }, reward = { coins = 8000, stats = 1000 } },
+	{ title = "화경에 들다", text = "기를 불처럼 다루는 화경에 올라라. 화경부터 천근추 수련이 열리고 두 번째 깨달음을 얻을 수 있다.", goal = { kind = "realm", n = 7 }, reward = { coins = 8000, stats = 1000 } },
 	{ title = "첫 깨달음", text = "숙련 10에 이른 권법은 깨달음으로 한 등급 올라선다. 권법 창에서 숙련 10인 권법을 골라 깨달아라 (은자가 든다).", goal = { kind = "enlight", n = 1 }, reward = { coins = 8000, stats = 1000 } },
 	{ title = "혈교의 그림자", text = "북동쪽 끝 혈교 본산. 혈교도 열을 꺾고 길을 열어라.", goal = { kind = "kill", id = "cultist", n = 10, at = Vector3.new(1600, 0, -1550) }, reward = { coins = 8000, stats = 1000 } },
 	{ title = "현경의 고요", text = "현경에 올라라. 현경부터 주천 운기가 열린다. 혈마의 손을 마주하려면 이만한 몸이 필요하다.", goal = { kind = "realm", n = 8 }, reward = { coins = 10000, stats = 1500 } },
 	{ title = "혈마", text = "혈교의 주인 혈마. 모든 것을 걸고 맞서라. 그를 꺾으면 그 손이 네 것이 된다.", goal = { kind = "boss", id = "hyeolma", at = Vector3.new(1800, 0, -1950) }, reward = { coins = 15000, stats = 2000 } },
-	{ title = "두 번째 깨달음", text = "한 권법을 두 번 깨달으면 피해가 크게 오르고, 각성의 문이 열린다. 숙련 10인 권법을 골라 두 번째 깨달음을 얻어라.", goal = { kind = "enlight", n = 2 }, reward = { coins = 15000, stats = 2000 } },
+	{ title = "두 번째 깨달음", text = "한 권법을 두 번 깨달으면 피해가 크게 오르고 각성의 문이 열린다. 숙련 10인 권법을 골라 두 번째 깨달음을 얻어라.", goal = { kind = "enlight", n = 2 }, reward = { coins = 15000, stats = 2000 } },
 	{ title = "사경의 문", text = "죽음의 문턱, 사경에 올라라. 사경부터 마음속 마귀와 겨루는 심마 대련과 허공답보가 열린다. 심마를 꺾으면 능력치가 크게 오른다.", goal = { kind = "realm", n = 9 }, reward = { coins = 15000, stats = 2500 } },
 	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 5000 } },
 	{ title = "신화경에 들다", text = "생사경 다음은 신화경이다. 여기까지 온 사람은 손에 꼽는다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 각성 권법(진) 하나를 익혀라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
-	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고, 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
-	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고, 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
+	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
+	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
 	{ title = "무극에 오르다", text = "혈마도 쓰러졌다. 그런데 북서쪽 끝 허공 균열에서 이상한 기운이 새어 나온다. 무극의 경지에 올라라. 권법을 깨달음으로 승급시키는 것도 잊지 마라.", goal = { kind = "realm", n = 13 }, reward = { coins = 10000, stats = 500 } },
 	{ title = "이름 없는 노인", text = "무극에 오른 자는 들을 수 있다는 소문. 남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 있다. 그에게서 하늘을 여는 주먹을 얻어라.", goal = { kind = "learn", id = "gaecheon", n = 1 }, reward = { coins = 15000, stats = 800 } },
 	{ title = "구름 미궁", text = "천궁 광장의 구름 미궁 문으로 들어가 방들을 넘고 미궁의 주인을 꺾어라. 들어간 사람의 세기에 맞춰 적이 선다.", goal = { kind = "maze", n = 1, at = Vector3.new(72, 4000, -34) }, reward = { coins = 150000, stats = 15000 } },
@@ -4126,8 +4126,8 @@ Config.Story = {
 	{ title = "태초", text = "천외봉 아래 시원자를 찾아 시험을 넘고 태초신권을 얻어라. 세상이 처음 열리던 그 한 주먹이다.", goal = { kind = "learn", id = "taecho", n = 1 }, reward = { coins = 200000, stats = 10000 } },
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
-	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고, 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
-	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고, 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
+	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
+	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
 	{ title = "혼원경", text = "환생한 몸으로 다시 올라 천외천을 넘어라. 혼원경이 열려 있다.", goal = { kind = "realm", n = 17 }, reward = { coins = 1500000, stats = 300000 } },
@@ -4139,7 +4139,7 @@ Config.Story = {
 	{ title = "태허경", text = "텅 빈 하늘의 경지, 태허경에 올라라. 네 번째 환생이 기다린다.", goal = { kind = "realm", n = 19 }, reward = { coins = 9000000, stats = 1500000 } },
 	{ title = "네 번째 삶", text = "태허경에 올라 네 번째로 환생하라. 권왕 자리가 가깝다. 환생은 두 번 더 남았다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
 	{ title = "마지막 그림자", text = "윤회의 바퀴가 마지막 그림자를 내보낸다. 네 삶을 모두 넘어선 너만이 권왕의 자리에 앉는다.", goal = { kind = "samsara", n = 4 }, reward = { coins = 20000000, stats = 20000000 } },
-	{ title = "권왕", text = "네 삶을 넘었다. 권왕에 올라라. 맨손의 강호에 왕은 하나다. 그러나 왕의 자리 위에도 길은 이어진다.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
+	{ title = "권왕", text = "네 번의 삶을 넘었다. 이제 권왕에 올라라.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
 	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법, 숨은 사부, 완전 각성과 승급은 마음 가는 대로 하면 된다. 권왕한테 이래라저래라 할 사람은 없으니까.", goal = { kind = "done" }, reward = {} },
 }
 
@@ -4229,7 +4229,7 @@ Config.EGGS = {
 	edge = { cliff = Vector3.new(0, 0, 4780), garden = Vector3.new(0, 128, 5080), coins = 3000000, gems = 500, scrolls = 7 },
 }
 -- 3.21판 지옥 입구: 환생 3 이후, 세상 남동쪽 맨 끝의 희미한 풀을 밟으면 땅 밑 저승 방으로 떨어진다.
---   사신에게 은자를 내고, 방 안의 원혼 셋을 달래면 사슬이 풀려 큰 포탈이 붉은 오라를 뿜는다 (지옥 맵은 다음 판)
+--   사신에게 은자를 내고 방 안의 원혼 셋을 달래면 사슬이 풀려 큰 포탈이 붉은 오라를 뿜는다 (지옥 맵은 다음 판)
 Config.HELL = {
 	rebirth = 3, -- 이 환생부터 풀이 밟힌다
 	grass = Vector3.new(4880, 0, 4880), -- 희미한 풀 (지상)
@@ -4279,7 +4279,7 @@ Config.TRIAL_KINDS = {
 	disciples = { icon = "👥", title = "제자 연무", need = 3, time = 180,
 		ask = "내 제자들을 넘어 보아라. %d번 몰려온다. 마지막은 수제자다.", goal = "몰려오는 제자들을 꺾어라" },
 }
--- 3.17.6판: 초반 권법 (상급 권법의 사부)은 시험이 쉽다. 해낼 수가 적고, 사부·제자가 약하다
+-- 3.17.6판: 초반 권법 (상급 권법의 사부)은 시험이 쉽다. 해낼 수가 적고 사부·제자가 약하다
 --   need: 흘리기 6 → 4번 · 버티기 45 → 30초 · 제자 연무 세 번 → 두 번 (제자 둘 → 수제자)
 --   power: 사부·제자의 세기 배율 (내 전투력 기준, 보통 0.85 → 0.6), hit: 사부·제자가 주는 피해 배율
 Config.EASY_TRIAL = {
@@ -4490,7 +4490,7 @@ Config.POTION_HEAL = 0.4
 
 ------------------------------------------------------------------------
 -- 심법 (내공 수련서): 두루마리나 은자로 뽑는다. 세 칸에 끼우면 늘 효과가 있다
--- 등급이 높을수록 효과가 크다. 같은 심법을 더 높은 등급으로 뽑으면 바뀌고, 낮거나 같으면 은자로 돌려받는다
+-- 등급이 높을수록 효과가 크다. 같은 심법을 더 높은 등급으로 뽑으면 바뀌고 낮거나 같으면 은자로 돌려받는다
 ------------------------------------------------------------------------
 Config.MANUALS = {
 	{ id = "cheolgol", name = "철골공", icon = "🦴", stat = "hp", base = 0.04, desc = "최대 체력" },
@@ -4544,7 +4544,7 @@ Config.TOWER = {
 	bossPower = 1.3, -- 보스 층은 전투력 ×1.3, 체력 ×2.5
 	coins = 60, -- 층마다 은자 (× 층)
 	scrollEvery = 5, -- 최고 기록을 새로 넘을 때, 다섯 층마다 두루마리 하나 (열 층마다 둘 더)
-	-- 2.7.6판: 후반 보상. 51층부터 은자가 층마다 ×1.04로 붙고, 보스 층을 처음 넘으면 그 층 적 bestStats마리 몫의 능력치와 천정
+	-- 2.7.6판: 후반 보상. 51층부터 은자가 층마다 ×1.04로 붙고 보스 층을 처음 넘으면 그 층 적 bestStats마리 몫의 능력치와 천정
 	coinGrowth = 1.04,
 	bestStats = 8,
 	bestGems = 10,
@@ -4629,7 +4629,7 @@ Config.isBattle = function(): boolean
 	return Config.BATTLE_MODE
 end
 
--- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고, 적이 덤비지 않는다
+-- 안전한 곳 (마을·사당·사부의 자리): 사람끼리 싸울 수 없고 적이 덤비지 않는다
 function Config.inSafe(pos: Vector3): boolean
 	-- 3.9판 권법 시험장
 	local TR = Config.TEST_ROOM
@@ -4701,7 +4701,7 @@ do
 			{ title = "세상의 끝자락", text = "천존이 무릎을 꿇자 땅의 끝자락이 술렁인다. 동쪽 황사 협곡의 주인 황사와, 꺼지지 않는 불길의 평원을 다스리는 동극군이 세를 넓히고 있다. 둘을 꺾어라.", goal = { kind = "bosses", ids = { "hwangsa", "dongguckgun" }, n = 2 }, reward = rw(13, 3) },
 		},
 		["반선"] = {
-			{ title = "북명과 서역", text = "세상의 북쪽 끝은 얼어붙었고, 서쪽 끝은 모래에 묻혔다. 북명 빙원의 북명제와 서역 사구의 서역사왕을 꺾어 땅의 네 끝을 모두 밟아라.", goal = { kind = "bosses", ids = { "bukmyeongje", "seoyeoksawang" }, n = 2 }, reward = rw(14, 3) },
+			{ title = "북명과 서역", text = "세상의 북쪽 끝은 얼어붙었고 서쪽 끝은 모래에 묻혔다. 북명 빙원의 북명제와 서역 사구의 서역사왕을 꺾어 땅의 네 끝을 모두 밟아라.", goal = { kind = "bosses", ids = { "bukmyeongje", "seoyeoksawang" }, n = 2 }, reward = rw(14, 3) },
 		},
 		["등선"] = {
 			{ title = "하늘의 섬들", text = "천궁 너머 구름 사이에 섬마다 주인이 있다. 빙정궁의 빙제, 비천폭의 비천, 극광대의 극광. 하늘의 재료는 그들이 지키는 곳에서 난다.", goal = { kind = "bosses", ids = { "bingje", "pokryong", "geukgwang" }, n = 3 }, reward = rw(15, 3) },
@@ -5154,7 +5154,7 @@ Config.KILL_FX_REFUND = {
 	shadow = 350, blood = 450, sunmoon = 800, null = 700, cloud = 250, galaxy = 900, clock = 900, vine = 500, dream = 700, jar = 300,
 	taiji = 800, wheel = 800, mirror = 600, void = 700,
 }
--- 운석 낙하: 천상계에 사람이 있으면 몇 분마다 섬 어딘가에 운석이 떨어지고, 운석 수호수가 나타난다
+-- 운석 낙하: 천상계에 사람이 있으면 몇 분마다 섬 어딘가에 운석이 떨어지고 운석 수호수가 나타난다
 Config.METEOR = { every = 300, first = 90, warn = 6, life = 150 }
 -- 천상계의 보스 셋: 체력은 아주 많고 공격은 덜 아프다 (전투력은 땅의 마지막 보스보다 조금 위)
 Config.Bosses.noeje = variant(Config.Bosses.cheonmun, { name = "뇌제 · 뇌정봉의 주인", shirt = Color3.fromRGB(60, 70, 150), pants = Color3.fromRGB(25, 30, 70), hp = 450000, posture = 1200, scale = 3.0, speed = 15, coins = 120000, xp = 15000, respawn = 300, mult = 2.5,
@@ -5594,7 +5594,7 @@ do
 		Config.SKY_BY_ID[isl.id] = isl
 	end
 end
--- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고, 친 만큼 나눠 받는다
+-- 천공 투기장의 레이드: 정해진 때마다 천겁이 내려온다. 그때 천상계에 있는 사람 수만큼 체력이 늘고 친 만큼 나눠 받는다
 Config.RAID = {
 	island = "raidarena",
 	boss = "cheongeop",
@@ -5878,7 +5878,7 @@ for _, au in ipairs(Config.ACH_AURAS) do
 		a.aura = au.id
 	end
 end
--- 칭호 빛깔: 칭호가 붙은 업적의 차례(어려울수록 뒤)로 정하지 않고, 업적 갈래로 정한다
+-- 칭호 빛깔: 칭호가 붙은 업적의 차례(어려울수록 뒤)로 정하지 않고 업적 갈래로 정한다
 Config.ACH_COLOR = {
 	kills = Color3.fromRGB(255, 140, 120), bossSum = Color3.fromRGB(255, 110, 80), boss = Color3.fromRGB(255, 90, 90), raid = Color3.fromRGB(255, 170, 70),
 	maze = Color3.fromRGB(170, 210, 255), realm = Color3.fromRGB(255, 240, 160), rebirth = Color3.fromRGB(255, 120, 220), styles = Color3.fromRGB(160, 255, 190),
@@ -6012,7 +6012,7 @@ do
 			b.scale = 3.4
 		end
 	end
-	-- 3.45판 보스 패턴 다양하게: 예전엔 보스 마흔여덟이 모두 같은 여섯 가지 (낙뢰 · 돌진 · 부하 · 고리 · 도약 · 지진) 만 섞어 썼고, 열한 보스는 조합까지 똑같았다.
+	-- 3.45판 보스 패턴 다양하게: 예전엔 보스 마흔여덟이 모두 같은 여섯 가지 (낙뢰 · 돌진 · 부하 · 고리 · 도약 · 지진) 만 섞어 썼고 열한 보스는 조합까지 똑같았다.
 	-- 새 패턴 아홉 가운데 보스마다 다른 둘 (후반 보스는 셋) 을 더한다. 한 방은 그 보스 지진 (없으면 첫 패턴) 의 몫에 견준다. 아래 '더 크고 느리게' 를 함께 받는다
 	do
 		local NEW: { [string]: any } = {
@@ -6421,7 +6421,7 @@ Config.MINIQUEST = {
 		{ kind = "order", name = "연꽃 등", stones = { { at = Vector3.new(-2400, 0, 3100) + Vector3.new(30, 0, 52), color = RAINBOW[1] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-26, 0, 54), color = RAINBOW[2] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(0, 0, 58), color = RAINBOW[3] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(14, 0, 62), color = RAINBOW[4] }, { at = Vector3.new(-2400, 0, 3100) + Vector3.new(-12, 0, 63), color = RAINBOW[5] } },
 			text = "연화정 남쪽 물가의 연꽃 등 다섯을 무지개의 차례로 밝혀라 (빨강 → 주황 → 노랑 → 초록 → 파랑, T)" },
 		{ kind = "boss", boss = "sinsunwang", n = 1, text = "꿈속의 호수를 다스리는 신선왕을 꺾어라" },
-		{ kind = "offer", coins = 2000000, text = "몽선을 깨우고, 꿈값으로 은자 이백만을 바쳐라" },
+		{ kind = "offer", coins = 2000000, text = "몽선을 깨우고 꿈값으로 은자 이백만을 바쳐라" },
 	} },
 	gongbaek = { title = "null", old = 4, steps = {
 		{ kind = "find", name = "지워진 글자", icon = "⬛", items = { Vector3.new(3700, 0, -1806), Vector3.new(3700, 0, 214), Vector3.new(2100, 0, -3683), Vector3.new(-2200, 0, -3737) }, text = "강호의 랜드마크 넷 (버려진 광산 입구 · 일검 바위 틈 · 귀부 비석 뒤 · 선인송 아래)에 떨어진 지워진 글자를 주워라 (T)" },
@@ -6442,7 +6442,7 @@ Config.MINIQUEST = {
 		{ kind = "visit", at = Vector3.new(0, 0, 4450), r = 30, text = "세상 끝 벼랑에 서서 끝 너머를 내려다보아라", say = "바닥이 보이지 않는다. 바람만 위로 올라온다." },
 		{ kind = "boss", boss = "mumyeong", n = 1, text = "세상 끝의 파수꾼 무명을 꺾어라. 노인은 그 이름을 오래 빌려 썼다" },
 		{ kind = "kill", enemy = "sandwraith", n = 20, text = "사왕릉의 모래 망령 스물을 잠재워라" },
-		{ kind = "visit", at = Vector3.new(-2100, 0, 2100), r = 20, night = true, text = "밤, 운해 끝자락으로 돌아와 구름이 걷히기를 기다려라", say = "구름이 갈라지고, 그 아래로 아무도 걸은 적 없는 길이 보인다." },
+		{ kind = "visit", at = Vector3.new(-2100, 0, 2100), r = 20, night = true, text = "밤, 운해 끝자락으로 돌아와 구름이 걷히기를 기다려라", say = "구름이 갈라지고 그 아래로 아무도 걸은 적 없는 길이 보인다." },
 		{ kind = "return", text = "무명 노인에게 말을 걸어라" },
 	} },
 	cheonok = { title = "옥 기둥의 노래", steps = {
@@ -6524,7 +6524,7 @@ Config.MINIQUEST = {
 }
 
 ------------------------------------------------------------------------
--- 3.20판 도감: 권법 · 적 · 보스 · 사부. 만나거나 익히면 칸이 채워지고, 갈래마다 25 · 50 · 75 · 100%에 보상.
+-- 3.20판 도감: 권법 · 적 · 보스 · 사부. 만나거나 익히면 칸이 채워지고 갈래마다 25 · 50 · 75 · 100%에 보상.
 -- 적과 보스는 처치 수에 따라 별 (⭐ 셋까지). 아직 못 본 칸도 어디서 만나는지는 보인다 (이름은 ???)
 ------------------------------------------------------------------------
 Config.DEX_CATS = {

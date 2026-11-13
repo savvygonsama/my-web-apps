@@ -135,7 +135,7 @@ local function crackLine(at: Vector3, a: number, len: number, color: Color3, lif
 end
 
 P.pillar = function(cf, L, _m, _dur)
-	-- 앞의 땅에서 빛기둥이 솟고, 기둥을 감고 오르는 두 줄 띠, 꼭대기에서 사방으로 튀는 날 조각
+	-- 앞의 땅에서 빛기둥이 솟고 기둥을 감고 오르는 두 줄 띠, 꼭대기에서 사방으로 튀는 날 조각
 	local at = (cf * CFrame.new(0, -2.5, -5 * L.s)).Position
 	local H = 24 * L.s
 	local outer = bit(Vector3.new(1, 4.2 * L.s, 4.2 * L.s), L.c, L.mat, 0.35, 0.55, "cyl")

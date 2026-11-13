@@ -1,5 +1,5 @@
 -- 권왕 3.27판: 신 삼재권을 얻는 컷씬.
--- 팔을 몸 둘레로 여섯 번 휘두르고 (둘은 허리만 틀고, 넷은 몸째 돈다), 무릎을 높이 들었다가 발로 땅을 찍는다.
+-- 팔을 몸 둘레로 여섯 번 휘두르고 (둘은 허리만 틀고 넷은 몸째 돈다), 무릎을 높이 들었다가 발로 땅을 찍는다.
 -- 찍는 순간 컷씬이 끝나고 바닥이 깨진다 (갈라지는 틈 · 솟았다 떨어지는 바닥 조각 · 가라앉은 자리).
 -- 시간표는 Poses.sn_get과 같다 (전체 7.4초를 컷씬 길이에 맞춰 늘이고 줄인다)
 local Players = game:GetService("Players")
@@ -742,7 +742,7 @@ function Sin.rite(d: any)
 	end
 	local slam = buildUp(m, stomp, K)
 	giantOf(m, stomp, K)
-	-- 몸에서 번지는 금빛: 휘두를수록 짙어지고, 찍는 순간 하얗게 터졌다가 가라앉는다
+	-- 몸에서 번지는 금빛: 휘두를수록 짙어지고 찍는 순간 하얗게 터졌다가 가라앉는다
 	local aura = Instance.new("Highlight")
 	aura.Adornee = m
 	aura.FillColor = GOLD
@@ -769,7 +769,7 @@ function Sin.rite(d: any)
 			end
 		end)
 	end
-	-- 휘두름 여섯: 앞의 둘은 허리만 틀고, 뒤의 넷은 몸째 돈다 (점점 커지고 빨라진다)
+	-- 휘두름 여섯: 앞의 둘은 허리만 틀고 뒤의 넷은 몸째 돈다 (점점 커지고 빨라진다)
 	local sw = { 1.05 * K, 1.4 * K, 1.75 * K, 2.1 * K, 2.8 * K, 3.35 * K, 3.85 * K, 4.3 * K, 4.7 * K }
 	for i, sec in ipairs(sw) do
 		task.delay(sec, function()
@@ -989,7 +989,7 @@ function Sin.rite(d: any)
 		local focus = rr.Position + Vector3.new(0, fh, 0)
 		local a = a0 + math.pi + ang
 		local eye = focus + Vector3.new(math.cos(a) * dd, h, math.sin(a) * dd)
-		-- 몸째 돌 때는 화각을 넓히고 화면이 기울어 휘청이고, 무릎을 들 때는 좁혀 조인다
+		-- 몸째 돌 때는 화각을 넓히고 화면이 기울어 휘청이고 무릎을 들 때는 좁혀 조인다
 		local roll = 0
 		if e < stomp then
 			if e < 5.1 then

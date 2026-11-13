@@ -141,7 +141,7 @@ end
 -- 속이 빈 빛의 테 (조각을 둥글게 이어 붙인다) + 안쪽의 옅은 빛
 function Fx.ring(pos: Vector3, color: Color3, fromD: number, toD: number, life: number, faceDir: Vector3?)
 	local cf = faceDir and lookAt(pos, pos + faceDir) or CFrame.lookAt(pos, pos + Vector3.new(0, 1, 0), Vector3.new(0, 0, -1))
-	-- 바닥의 큰 충격파: 흙먼지가 고리를 따라 퍼지고, 아주 크면 돌 조각이 튄다
+	-- 바닥의 큰 충격파: 흙먼지가 고리를 따라 퍼지고 아주 크면 돌 조각이 튄다
 	if not faceDir and toD >= 24 and toD > fromD then
 		Fx.burst("dust", pos + Vector3.new(0, 0.5, 0), Color3.fromRGB(175, 160, 140), math.min(30, toD / 2.5), math.clamp(toD / 28, 0.8, 2.2))
 		Fx.flash(pos + Vector3.new(0, 2, 0), color, toD * 0.6, 2.5, life)
@@ -513,7 +513,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 		Fx.ring(pos, c, 1, (heavy and 13 or 9) * s, 0.3, dir)
 		Fx.flash(pos, c2, 16 * s, 3, 0.25)
 	elseif style.fx == "subspace" then
-		-- 아공: 맞은 자리의 공간이 접힌다 (유리 조각 넷이 안으로 모였다 튀고, 민트빛 십자)
+		-- 아공: 맞은 자리의 공간이 접힌다 (유리 조각 넷이 안으로 모였다 튀고 민트빛 십자)
 		for k = 0, 3 do
 			local a = k / 4 * math.pi * 2 + math.random()
 			local cube = piece(Vector3.new(0.9, 0.9, 0.9) * s, k % 2 == 0 and c or c2, Enum.Material.Glass, nil, 0.2)
@@ -567,7 +567,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 		Fx.ring(pos, c, 1, 11 * s, 0.32, dir)
 		Fx.flash(pos, c, 18 * s, 3, 0.3)
 	elseif style.fx == "ocean" then
-		-- 창해: 맞은 자리에서 물보라가 크게 튀고, 물결 고리 두 겹이 퍼진다
+		-- 창해: 맞은 자리에서 물보라가 크게 튀고 물결 고리 두 겹이 퍼진다
 		local splash = piece(Vector3.new(2, 2, 2) * s, c2, Enum.Material.Glass, Enum.PartType.Ball, 0.3)
 		splash.Position = pos
 		tween(splash, 0.25, { Size = Vector3.new(6, 6, 6) * s, Transparency = 1 })
@@ -587,7 +587,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 		Fx.ring(pos, c2, 1, 10 * s, 0.3, dir)
 		Fx.ring(pos, c, 1, 14 * s, 0.45, dir)
 	elseif style.fx == "eclipse" then
-		-- 일월: 금빛 해가 터지며 빛살이 뻗고, 은빛 초승달이 그 위를 가로질러 벤다
+		-- 일월: 금빛 해가 터지며 빛살이 뻗고 은빛 초승달이 그 위를 가로질러 벤다
 		local sun = piece(Vector3.new(1.4, 1.4, 1.4) * s, c, Enum.Material.Neon, Enum.PartType.Ball, 0)
 		sun.Position = pos
 		tween(sun, 0.22, { Size = Vector3.new(4, 4, 4) * s, Transparency = 1 })
@@ -642,7 +642,7 @@ function Fx.styleHit(styleId: any, pos: Vector3, heavy: boolean, dir: Vector3?)
 			Debris:AddItem(fire, 0.4)
 		end	-- 3.0판 환생 권법
 	elseif style.fx == "rinne" then
-		-- 윤회권: 금빛 고리 둘이 바퀴처럼 엇갈려 돌고, 쪽빛 빛 가루
+		-- 윤회권: 금빛 고리 둘이 바퀴처럼 엇갈려 돌고 쪽빛 빛 가루
 		Fx.ring(pos, c2, 1, 10 * s, 0.35, dir)
 		Fx.ring(pos, c, 1, 6 * s, 0.3, dir and Vector3.new(-dir.Z, 0, dir.X) or nil)
 		Fx.burst("glitter", pos, c, heavy and 10 or 5, 1)
@@ -933,7 +933,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 	end
 	local fx = style.fx
 	if fx == "water" then
-		-- 물의 돔이 솟고, 물의 용이 감아 오르다, 해일 고리가 퍼져 나간다
+		-- 물의 돔이 솟고 물의 용이 감아 오르다, 해일 고리가 퍼져 나간다
 		local dome = piece(Vector3.new(4, 4, 4), c2, Enum.Material.Glass, Enum.PartType.Ball, 0.55)
 		dome.Position = base
 		tween(dome, dur * 0.6, { Size = Vector3.new(30, 18, 30) })
@@ -1000,7 +1000,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 			Debris:AddItem(fg, dur + 1)
 		end
 	elseif fx == "petal" then
-		-- 꽃잎 회오리가 몸을 감싸 솟고, 다섯 번 피었다가 마지막에 크게 만개
+		-- 꽃잎 회오리가 몸을 감싸 솟고 다섯 번 피었다가 마지막에 크게 만개
 		spiral(base, 30, dur, 1.4, { c, c2, Color3.fromRGB(255, 240, 245) }, Enum.Material.SmoothPlastic, 9, 10, 9, Enum.PartType.Block)
 		for k = 0, 3 do
 			task.delay(k * dur * 0.2, function()
@@ -1027,7 +1027,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 			Fx.dust(base, 6)
 		end)
 	elseif fx == "shadow" then
-		-- 검은 구가 몸을 삼키고, 여섯 그림자가 사방에서 엇갈려 지나간다
+		-- 검은 구가 몸을 삼키고 여섯 그림자가 사방에서 엇갈려 지나간다
 		sphere(base + Vector3.new(0, 3, 0), Color3.fromRGB(20, 10, 35), 2, 14, 0.4, Enum.Material.SmoothPlastic, 0.2)
 		for k = 0, 5 do
 			task.delay(0.25 + k * (climax - 0.25) / 6, function()
@@ -1049,7 +1049,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 			Fx.ring(base + Vector3.new(0, 0.4, 0), c, 3, 40, 0.5)
 		end)
 	elseif fx == "lightning" then
-		-- 머리 위로 먹구름이 모이고, 벼락이 쏟아지다 마지막에 거대한 한 줄기
+		-- 머리 위로 먹구름이 모이고 벼락이 쏟아지다 마지막에 거대한 한 줄기
 		local cloud = piece(Vector3.new(4, 40, 40), Color3.fromRGB(40, 40, 60), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder, 0.4)
 		cloud.CFrame = CFrame.new(base + Vector3.new(0, 55, 0)) * CFrame.Angles(0, 0, math.rad(90))
 		tween(cloud, 0.6, { Size = Vector3.new(6, 70, 70) })
@@ -1089,7 +1089,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 			sphere(base + look * 12 + Vector3.new(0, 2, 0), Color3.fromRGB(255, 120, 30), 4, 22, 0.4)
 		end)
 	elseif fx == "basic" then
-		-- 하늘·땅·사람: 세 기둥이 셋으로 서고, 한 주먹에 모여 땅이 갈라진다
+		-- 하늘·땅·사람: 세 기둥이 셋으로 서고 한 주먹에 모여 땅이 갈라진다
 		for k = 0, 2 do
 			task.delay(k * 0.2, function()
 				local a = k / 3 * math.pi * 2
@@ -1158,7 +1158,7 @@ function Fx.ult(styleId: string, model: Model, dur: number)
 			Fx.ring(base + Vector3.new(0, 0.5, 0), c, 4, 46, 0.55)
 		end)
 	elseif fx == "cosmic" then
-		-- 개천벽지: 하늘에 문이 열리고, 은하가 땅에 돌고, 별들이 쏟아지다 하늘에서 빛이 내리꽂힌다
+		-- 개천벽지: 하늘에 문이 열리고 은하가 땅에 돌고 별들이 쏟아지다 하늘에서 빛이 내리꽂힌다
 		local gateC = base + Vector3.new(0, 60, 0)
 		local gate = {}
 		for k = 0, 17 do
@@ -2084,7 +2084,7 @@ function Fx.cast(styleId: any, slot: any, model: Model, dur: number)
 	end
 end
 
--- 흘리기의 빛: 흘린 손이 지나간 반원을 따라 빛이 흐르고, 물결처럼 퍼진다
+-- 흘리기의 빛: 흘린 손이 지나간 반원을 따라 빛이 흐르고 물결처럼 퍼진다
 function Fx.parryArc(model: Model, side: number, color: Color3)
 	local r = rootPart(model)
 	if not r then

@@ -5,7 +5,7 @@
 --   벽력: 몸이 번개가 되어 튀어 다닌다          취권: 불덩이가 되어 튕겨 다닌다
 --   무극: 빛깔이 뒤집히고 하늘에 눈이 열린다     삼재: 모았다가 단 한 번의 주먹
 --   천제: 하늘의 문과 빛의 검 비                파천: 하늘에 뜬 검은 해가 모두를 빨아올린다
---   풍신: 앞으로 나아가는 거대한 회오리          태초: 세상이 멈춰 별바다가 되고, 유리처럼 깨진다
+--   풍신: 앞으로 나아가는 거대한 회오리          태초: 세상이 멈춰 별바다가 되고 유리처럼 깨진다
 --   일월: 하늘이 밤이 되고 해와 달이 떠서 겹친다 (일식), 검은 해의 빛살이 꿰뚫고 새벽처럼 터진다
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
@@ -829,7 +829,7 @@ function H.burst(data: any)
 	end
 end
 
--- 무극: 빛깔이 뒤집히고, 하늘의 눈이 열리고, 하늘의 손이 지운다
+-- 무극: 빛깔이 뒤집히고 하늘의 눈이 열리고 하늘의 손이 지운다
 function H.freeze(data: any)
 	Fx.mech(data)
 	local at = data.at
@@ -1042,7 +1042,7 @@ function H.sword(data: any)
 	end
 end
 
--- 파천 흑일강림: 하늘이 찢기고 검은 해가 뜬다. 빛 고리가 돌고, 둘레의 빛이 빨려 들어간다
+-- 파천 흑일강림: 하늘이 찢기고 검은 해가 뜬다. 빛 고리가 돌고 둘레의 빛이 빨려 들어간다
 function H.blackhole(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -1181,7 +1181,7 @@ function H.genesis(data: any)
 	local crackAt, breakAt = data.crackAt or 1.6, data.breakAt or 2.5
 	local ground = at - Vector3.new(0, 2.4, 0)
 	local parts: { BasePart } = {}
-	-- 1) 세상이 멈춘다: 빛깔이 빠지고, 바닥이 별을 비추는 검푸른 거울이 된다
+	-- 1) 세상이 멈춘다: 빛깔이 빠지고 바닥이 별을 비추는 검푸른 거울이 된다
 	colorGrade(-0.85, 0.3, -0.3, Color3.fromRGB(180, 195, 255), breakAt)
 	local mirror = piece(Vector3.new(0.2, 2, 2), Color3.fromRGB(10, 14, 40), Enum.Material.Glass, Enum.PartType.Cylinder, 0.15)
 	mirror.CFrame = CFrame.new(ground + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
@@ -1267,10 +1267,10 @@ function H.genesis(data: any)
 			boom(at, 0.6)
 		end
 	end)
-	-- 3) 깨진다: 조각이 사방으로 흩어지고, 흰 빛이 세상을 덮는다
+	-- 3) 깨진다: 조각이 사방으로 흩어지고 흰 빛이 세상을 덮는다
 	task.delay(breakAt, function()
 		-- 별바다와 금은 그 자리에서 빛을 잃는다 (날아가는 것은 아래의 유리 조각)
-		-- 수백 개를 하나씩 트윈하지 않고, 몇 걸음에 걸쳐 한꺼번에 흐려 지운다
+		-- 수백 개를 하나씩 트윈하지 않고 몇 걸음에 걸쳐 한꺼번에 흐려 지운다
 		local from: { number } = {}
 		for i, p in ipairs(parts) do
 			from[i] = p.Transparency
@@ -1477,7 +1477,7 @@ function H.eclipse(data: any)
 			end
 		end)
 	end
-	-- 4) 일식: 해와 달이 머리 위에서 겹친다. 달이 검게 물들고, 해는 그 뒤에서 불꽃 테가 된다
+	-- 4) 일식: 해와 달이 머리 위에서 겹친다. 달이 검게 물들고 해는 그 뒤에서 불꽃 테가 된다
 	task.delay(eclipseAt - 0.45, function()
 		tween(sun, 0.45, { Position = top, Size = Vector3.new(19, 19, 19) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		tween(sunGlow, 0.45, { Position = top, Size = Vector3.new(30, 30, 30) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
@@ -1579,7 +1579,7 @@ function H.eclipseBeams(data: any)
 	end
 end
 
--- 창해일소: 하늘을 가리는 해일. 물의 벽(기둥 열둘)이 일어서서 앞으로 밀려가고, 꼭대기엔 하얀 물마루가 부서진다
+-- 창해일소: 하늘을 가리는 해일. 물의 벽(기둥 열둘)이 일어서서 앞으로 밀려가고 꼭대기엔 하얀 물마루가 부서진다
 function H.tsunami(data: any)
 	local c, c2 = styleColors(data.style)
 	local from: Vector3 = data.from
@@ -1723,7 +1723,7 @@ function H.rewind(data: any)
 	Fx.sound("swing", 0.6, 0.6, to)
 end
 
--- 만겁귀환: 하늘에 거대한 시계가 열린다. 열두 눈금, 거꾸로 도는 두 바늘, 종이 울릴 때마다 눈금이 하나씩 켜지고, 자정에 깨진다
+-- 만겁귀환: 하늘에 거대한 시계가 열린다. 열두 눈금, 거꾸로 도는 두 바늘, 종이 울릴 때마다 눈금이 하나씩 켜지고 자정에 깨진다
 function H.clock(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -1783,7 +1783,7 @@ function H.clock(data: any)
 		minH.CFrame = face * CFrame.Angles(0, 0, spin) * CFrame.new(0, R * 0.42, -0.8)
 	end)
 	Fx.text(at + Vector3.new(0, 12, 0), "만겁귀환", c2, 54, 1.6)
-	-- 종: 눈금이 하나씩 켜지고, 시계판에서 땅으로 빛이 울린다
+	-- 종: 눈금이 하나씩 켜지고 시계판에서 땅으로 빛이 울린다
 	for i = 1, bells do
 		task.delay(delay + (i - 1) * every, function()
 			local m = marks[((i - 1) % 12) + 1]
@@ -1822,7 +1822,7 @@ function H.clock(data: any)
 	end)
 end
 
--- 열화천멸: 시전자에게서 적마다 용암 고랑이 땅을 가르며 뻗고, 적 발밑에서 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다
+-- 열화천멸: 시전자에게서 적마다 용암 고랑이 땅을 가르며 뻗고 적 발밑에서 불기둥이 솟는다. 마지막에 내 자리에서 화산이 터진다
 function H.eruption(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -1896,8 +1896,8 @@ function H.eruption(data: any)
 	end)
 end
 
--- 성하 성하강림: 하늘이 짙푸르게 어두워지고, 머리 위에 세 팔 은하가 돌며 열린다.
--- 별이 나선 순서대로 하나씩 떨어져 땅에 꽂히고, 마지막에 은하의 심장이 내려와 터진다
+-- 성하 성하강림: 하늘이 짙푸르게 어두워지고 머리 위에 세 팔 은하가 돌며 열린다.
+-- 별이 나선 순서대로 하나씩 떨어져 땅에 꽂히고 마지막에 은하의 심장이 내려와 터진다
 function H.galaxy(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -2005,7 +2005,7 @@ function H.galaxy(data: any)
 end
 
 -- 아공 아공간: 그 자리에 바깥과 끊긴 공간이 열린다 (10초). 검보랏빛 막, 바닥의 빛 격자, 도는 세 고리,
--- 떠다니는 유리 조각. 째깍일 때마다 공간이 베이고, 끝에 막이 오그라들며 터진다
+-- 떠다니는 유리 조각. 째깍일 때마다 공간이 베이고 끝에 막이 오그라들며 터진다
 function H.subspace(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -2137,7 +2137,7 @@ function H.subspace(data: any)
 	end)
 end
 
--- 무쌍 천하무쌍: 빛의 울타리가 솟아 둘레를 가두고, 한가운데에서 여덟 번 몰아친 뒤 하늘로 쳐올린다
+-- 무쌍 천하무쌍: 빛의 울타리가 솟아 둘레를 가두고 한가운데에서 여덟 번 몰아친 뒤 하늘로 쳐올린다
 function H.arena(data: any)
 	local c, c2 = styleColors(data.style)
 	local at: Vector3 = data.at
@@ -2258,7 +2258,7 @@ function H.pulse(data: any)
 			Fx.burst("glitter", at, c2, 16, 1.4)
 		end)
 	elseif data.fx == "eclipse" then
-		-- 일월: 해와 달이 번갈아 (해는 떨어져 터지고, 달은 가로질러 벤다)
+		-- 일월: 해와 달이 번갈아 (해는 떨어져 터지고 달은 가로질러 벤다)
 		pulseFlip = not pulseFlip
 		if pulseFlip then
 			local sun = piece(Vector3.new(3, 3, 3), c, Enum.Material.Neon, Enum.PartType.Ball, 0)
@@ -2466,7 +2466,7 @@ function Ults.variant(data: any): boolean
 		return true
 	elseif data.fx == "sun" and data.kind == "strike" then
 		-- 대일강림: 작은 해가 하늘에서 떨어져 불기둥이 되어 터진다
-		-- (2.7.6판: 밤에는 월광낙하. 은빛 달이 떨어져 차가운 달빛 기둥이 되고, 땅에는 그을음 대신 서리가 남는다)
+		-- (2.7.6판: 밤에는 월광낙하. 은빛 달이 떨어져 차가운 달빛 기둥이 되고 땅에는 그을음 대신 서리가 남는다)
 		local st = type(data.style) == "string" and Config.STYLE_BY_ID[data.style]
 		local night = st and st.night == true
 		local at: Vector3 = data.at
@@ -2604,7 +2604,7 @@ function Ults.run(data: any)
 		f(data)
 	end
 end
--- 오의를 쓰는 순간: 몸에서 빛기둥이 솟고, 빛이 모인다 (진짜 연출은 서버가 알려 준다)
+-- 오의를 쓰는 순간: 몸에서 빛기둥이 솟고 빛이 모인다 (진짜 연출은 서버가 알려 준다)
 function Ults.intro(styleId: any, model: Model)
 	local r = rootOf(model)
 	if not r then
@@ -2664,7 +2664,7 @@ function Ults.intro(styleId: any, model: Model)
 		end
 	end
 	Fx.afterimage(model, c, 0.4)
-	-- 오의를 여는 순간: 빛 가루가 회오리치듯 솟고, 둘레가 크게 밝아지며 불씨가 흩날린다
+	-- 오의를 여는 순간: 빛 가루가 회오리치듯 솟고 둘레가 크게 밝아지며 불씨가 흩날린다
 	Fx.burst("glitter", r.Position, c2, 40, 1.4)
 	Fx.burst("ember", r.Position, c, 18, 1.2)
 	Fx.flash(r.Position, c, 40, 5, 0.8)

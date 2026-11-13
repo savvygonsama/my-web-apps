@@ -837,7 +837,7 @@ local function hotGeyser(data: any)
 	local c, c2 = colors(data.style)
 	local g = ground(at)
 	local R = data.radius or 5
-	-- 땅이 끓어오르다가 (0.1초) 물기둥이 솟고, 김이 퍼진다
+	-- 땅이 끓어오르다가 (0.1초) 물기둥이 솟고 김이 퍼진다
 	local boil = disc(g + Vector3.new(0, 0.1, 0), R * 1.6, c, 0.4)
 	task.delay(0.1, function()
 		fadeOut(boil, 0.3)
@@ -1710,7 +1710,7 @@ local function dot(at: Vector3, black: boolean, d: number, life: number)
 	p.CFrame = CFrame.new(at)
 	fadeOut(p, life, { Size = Vector3.new(0.1, 0.1, 0.1) })
 end
--- 태극 문양 (판의 위가 +Y). 흰 원 위에 왼쪽 반을 검게 덮고, 위 작은 원은 검게, 아래 작은 원은 희게, 눈 둘
+-- 태극 문양 (판의 위가 +Y). 흰 원 위에 왼쪽 반을 검게 덮고 위 작은 원은 검게, 아래 작은 원은 희게, 눈 둘
 -- 뒤집혀도 보이도록 아래쪽에도 같은 층을 거꾸로 쌓는다 (테두리는 얇게 사이에 끼운다)
 type Piece = { p: BasePart, cf: CFrame }
 local function buildTaiji(R: number, rim: Color3): { Piece }
@@ -1792,7 +1792,7 @@ local function yyShot(data: any)
 			for _, p in ipairs({ bk, bh, wk, wh }) do
 				p:Destroy()
 			end
-			-- 부딪친다: 작은 태극이 빠르게 돌며 터지고, 흑백 고리가 안으로 조였다가 밖으로 퍼진다
+			-- 부딪친다: 작은 태극이 빠르게 돌며 터지고 흑백 고리가 안으로 조였다가 밖으로 퍼진다
 			local at = axis
 			local R = data.radius or 8
 			local pieces = buildTaiji(2.2, c)
@@ -1866,7 +1866,7 @@ local function yyOrbit(data: any)
 			for _, p in ipairs({ bk, bh, wk, wh }) do
 				p:Destroy()
 			end
-			-- 되돌아와 하나로: 고리가 안으로 조이고, 발밑에 태극이 번쩍인다
+			-- 되돌아와 하나로: 고리가 안으로 조이고 발밑에 태극이 번쩍인다
 			Fx.ring(ground(at) + Vector3.new(0, 0.3, 0), WHITE, R * 2, 3, 0.3)
 			Fx.ring(ground(at) + Vector3.new(0, 0.35, 0), INK, R * 1.8, 3, 0.35)
 			local pieces = buildTaiji(5, c)
@@ -2349,7 +2349,7 @@ local function thornSprout(data: any)
 		Fx.sound("hit", 0.7, 0.8, first)
 	end
 end
--- 거대한 꽃봉오리: 줄기와 잎 둘이 솟고, 꽃잎 여섯이 닫혀 있다가 활짝 펴진다
+-- 거대한 꽃봉오리: 줄기와 잎 둘이 솟고 꽃잎 여섯이 닫혀 있다가 활짝 펴진다
 local buds: { [string]: { stem: BasePart, petals: { BasePart }, core: BasePart, leaves: { BasePart }, g: Vector3, R: number } } = {}
 local PETAL = Color3.fromRGB(255, 170, 210)
 local function petalCF(g: Vector3, R: number, k: number, open: number): CFrame
@@ -2519,7 +2519,7 @@ local function treantRise(data: any)
 			yaw = 1.1 * math.max(0, 1 - (t - sweep - 0.25) / 0.4)
 		end
 		local root = face * CFrame.new(0, y, 0) * CFrame.Angles(0, yaw, 0)
-		-- 팔: 오른팔을 치켜들었다 내리치고, 휩쓸 때는 앞으로 뻗고, 뿌리 때는 두 팔을 치켜들었다 땅을 친다
+		-- 팔: 오른팔을 치켜들었다 내리치고 휩쓸 때는 앞으로 뻗고 뿌리 때는 두 팔을 치켜들었다 땅을 친다
 		local aR, aL = 0.4, 0.4
 		if t < rise - 0.18 then
 			aR = 0.4 + 2.5 * math.clamp(t / (rise - 0.18), 0, 1)

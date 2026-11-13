@@ -135,7 +135,7 @@ local function vajraQuake(data: any)
 end
 
 ------------------------------------------------------------------------
--- 만불조종: 하늘이 갈라지고, 산만 한 금빛 손바닥이 내려와 둘레를 누른다
+-- 만불조종: 하늘이 갈라지고 산만 한 금빛 손바닥이 내려와 둘레를 누른다
 ------------------------------------------------------------------------
 local function buildPalm(size: number): Model
 	local m = Instance.new("Model")
@@ -181,7 +181,7 @@ local function buddhaPalm(data: any)
 	local r = data.radius or 26
 	local delay = data.delay or 1
 	local g = ground(at)
-	-- 하늘의 틈: 금빛 빛기둥이 둘레를 비추고, 바닥에 큰 원이 그려진다
+	-- 하늘의 틈: 금빛 빛기둥이 둘레를 비추고 바닥에 큰 원이 그려진다
 	local mark = disc(g + Vector3.new(0, 0.1, 0), r * 2, GOLD, 0.75)
 	tween(mark, delay, { Transparency = 0.45 })
 	local beam = part(Vector3.new(300, r * 1.6, r * 1.6), GOLD_PALE, Enum.Material.Neon, 0.92, "cyl")
@@ -502,7 +502,7 @@ local function waterDragons(data: any)
 		local grow = math.clamp(t / 0.5, 0, 1)
 		local c = root.Position
 		for _, dr in ipairs(dragons) do
-			-- 머리가 앞서고, 몸이 같은 길을 조금씩 늦게 따른다
+			-- 머리가 앞서고 몸이 같은 길을 조금씩 늦게 따른다
 			local function pos(tt: number): Vector3
 				local ang = dr.phase + tt * 4.2
 				local rad = (4 + (R - 4) * grow) * (0.75 + 0.25 * math.sin(tt * 2.3 + dr.phase))

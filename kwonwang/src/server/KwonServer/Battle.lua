@@ -1,5 +1,5 @@
 -- 권왕: 배틀그라운드 (3.3판). 따로 게시한 장소에서 늘 PvP. 맵 넷을 5분마다 바꿔 가며 싸운다
--- 메인 월드의 기록은 읽기만 한다 (권법·숙련). 배틀의 기록 (쓰러뜨린 수·은자 몫)은 따로 저장하고, 메인 월드가 돌아올 때 받아 간다
+-- 메인 월드의 기록은 읽기만 한다 (권법·숙련). 배틀의 기록 (쓰러뜨린 수·은자 몫)은 따로 저장하고 메인 월드가 돌아올 때 받아 간다
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
@@ -133,7 +133,7 @@ local function clean(d: any): Rec
 	return r
 end
 
--- 메인 월드: 들어올 때 배틀 기록을 읽고, 쌓인 은자 몫을 받아 간다 (받은 몫은 0으로). { kills, coins }
+-- 메인 월드: 들어올 때 배틀 기록을 읽고 쌓인 은자 몫을 받아 간다 (받은 몫은 0으로). { kills, coins }
 function Battle.claim(player: Player): (number, number)
 	local ds = store
 	if not ds then
@@ -203,7 +203,7 @@ local BUILD: { [string]: (Vector3, Folder) -> { spawns: { Vector3 }, floorY: num
 
 ------------------------------------------------------------------------
 -- 3.11판: 맵 넷을 두 배 반지름 (넓이 네 배)으로 새로 짓는다. 고리에 똑같이 늘어놓던 것을 버리고
--- 흩어 놓고 (서로 떨어지게), 땅에 낮은 둔덕을 깔고, 길·물길·쉼터 같은 자리를 둔다
+-- 흩어 놓고 (서로 떨어지게), 땅에 낮은 둔덕을 깔고 길·물길·쉼터 같은 자리를 둔다
 ------------------------------------------------------------------------
 local K2 = 2.6 -- 반지름 배율 (3.61판: 2 → 2.6, 넓이 1.7배)
 local KS = 1.3 -- 3.61판: 가운데 큰 것들 (마당 · 호수 · 단 · 누각) 도 같이 키운다
@@ -384,7 +384,7 @@ BUILD.bamboo = function(c: Vector3, f: Folder)
 		part({ Name = "LowWall", Size = Vector3.new(12 + G() * 6, 4.2, 2.2), CFrame = cf, Color = Color3.fromRGB(128, 124, 116), Material = Enum.Material.Cobblestone, Parent = f })
 		part({ Name = "WallCap", Size = Vector3.new(14 + G() * 4, 0.6, 2.8), CFrame = cf * CFrame.new(0, 2.4, 0), Color = Color3.fromRGB(70, 60, 50), Material = Enum.Material.Slate, Parent = f })
 	end
-	-- 개울: 북서에서 남동으로 굽이쳐 흐르고, 돌다리 둘
+	-- 개울: 북서에서 남동으로 굽이쳐 흐르고 돌다리 둘
 	local water = stream(c, Vector3.new(-R, 0, -R * 0.45), Vector3.new(R, 0, R * 0.55), 9, 40, Color3.fromRGB(90, 150, 190), Enum.Material.Glass, f)
 	local avoid: { any } = { { Vector3.zero, 85 * KS } }
 	for i, p in ipairs(water) do

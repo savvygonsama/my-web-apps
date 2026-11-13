@@ -386,7 +386,7 @@ end
 
 ------------------------------------------------------------------------
 -- 신목강림: 천 년 은행나무
--- 뿌리 다섯이 땅을 움켜쥐고, 굵은 줄기가 살짝 비틀리며 솟고, 큰 가지 여섯 끝에 금빛 우듬지가 뭉게뭉게 얹힌다
+-- 뿌리 다섯이 땅을 움켜쥐고 굵은 줄기가 살짝 비틀리며 솟고 큰 가지 여섯 끝에 금빛 우듬지가 뭉게뭉게 얹힌다
 ------------------------------------------------------------------------
 local function ginkgo(S: number): ({ Piece }, { Piece })
 	local wood: { Piece } = {}
@@ -415,7 +415,7 @@ local function ginkgo(S: number): ({ Piece }, { Piece })
 		cf = cf * CFrame.new(0, segH, 0) * CFrame.Angles(math.rad(i % 2 == 0 and 3 or -2), math.rad(14), math.rad(i % 2 == 0 and -2 or 3))
 	end
 	local topCf = cf
-	-- 큰 가지 여섯: 줄기 윗부분에서 바깥 위로 뻗고, 끝에 우듬지 덩이
+	-- 큰 가지 여섯: 줄기 윗부분에서 바깥 위로 뻗고 끝에 우듬지 덩이
 	local tips: { CFrame } = {}
 	for b = 0, 5 do
 		local hRatio = 0.55 + (b % 3) * 0.15

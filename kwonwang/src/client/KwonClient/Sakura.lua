@@ -1,5 +1,5 @@
 -- 권왕: 초월 권법 초·매화난무권의 화면 (벚꽃 부채, 흩날리는 꽃잎, 천본앵, 초 오의 만앵참월)
--- 벚꽃이 늘 앞에 서도록: 부채에서 꽃잎이 끊임없이 흘러내리고, 모든 기술이 꽃잎의 궤적을 남긴다
+-- 벚꽃이 늘 앞에 서도록: 부채에서 꽃잎이 끊임없이 흘러내리고 모든 기술이 꽃잎의 궤적을 남긴다
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -122,7 +122,7 @@ local function petalEmitter(parent: Instance, rate: number, size: number, speed:
 end
 
 ------------------------------------------------------------------------
--- 벚꽃 부채: 손에 쥔 손잡이에서 열한 개의 살이 퍼지고, 살 사이에 분홍 부채 면, 면 위에 다섯 잎 꽃
+-- 벚꽃 부채: 손에 쥔 손잡이에서 열한 개의 살이 퍼지고 살 사이에 분홍 부채 면, 면 위에 다섯 잎 꽃
 ------------------------------------------------------------------------
 local fans: { [Model]: { Instance } } = {}
 local function weldTo(p: BasePart, hand: BasePart, cf: CFrame)
@@ -371,7 +371,7 @@ function Sakura.forget(model: Model)
 	builtFor[model] = nil
 end
 local watched: { [Model]: boolean } = {}
--- 3.12판 천상 오라: 몸 둘레에 천정 조각 셋이 맴돌고, 걸을 때 발밑에 별빛이 인다
+-- 3.12판 천상 오라: 몸 둘레에 천정 조각 셋이 맴돌고 걸을 때 발밑에 별빛이 인다
 local auras: { [Model]: { parts: { BasePart }, conn: RBXScriptConnection } } = {}
 function Sakura.aura(model: Model)
 	local on = model:GetAttribute("SkyAura") == true and model.Parent ~= nil
@@ -561,7 +561,7 @@ function Sakura.cast(styleId: any, slot: any, model: Model, dur: number)
 end
 
 ------------------------------------------------------------------------
--- 천본앵 (G): 둘레가 벚꽃 칼바람의 소용돌이. 세 겹의 꽃잎 고리가 돌며 좁아지고, 끝에 한가운데로 모여 터진다
+-- 천본앵 (G): 둘레가 벚꽃 칼바람의 소용돌이. 세 겹의 꽃잎 고리가 돌며 좁아지고 끝에 한가운데로 모여 터진다
 ------------------------------------------------------------------------
 local storms: { [any]: any } = {}
 local function stormRun(data: any)
@@ -846,7 +846,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	local holdConn = RunService.RenderStepped:Connect(place)
 	place()
 
-	-- 3) 깨진다: 조각이 사방으로 튀며 떨어지고, 잿빛이 풀린다
+	-- 3) 깨진다: 조각이 사방으로 튀며 떨어지고 잿빛이 풀린다
 	task.delay(0.2, function()
 		holdConn:Disconnect()
 		Fx.breakSound("glass", 1, 1)
@@ -894,7 +894,7 @@ local function screenShatter(g: ScreenGui, angle: number, onBreak: (() -> ())?)
 	end)
 end
 
--- 화면을 비스듬히 한칼에 가르고, 두 쪽이 갈라지며 빛이 새어 나온 뒤 산산이 깨진다
+-- 화면을 비스듬히 한칼에 가르고 두 쪽이 갈라지며 빛이 새어 나온 뒤 산산이 깨진다
 local function screenSplit(onBreak: (() -> ())?)
 	local g = screenGui()
 	local angle = -26
@@ -1123,7 +1123,7 @@ local function growTree(m: Instance, r: BasePart)
 			table.insert(t.blooms, b)
 		end
 	end
-	-- 땅에서 솟는다: 나무 전체를 아래에서 끌어올리고, 꽃송이는 0에서 피어난다
+	-- 땅에서 솟는다: 나무 전체를 아래에서 끌어올리고 꽃송이는 0에서 피어난다
 	local sink = Vector3.new(0, -30, 0)
 	for _, q in ipairs(t.trunk) do
 		local cf = q.CFrame
@@ -1194,7 +1194,7 @@ local function severEnd(data: any)
 		cuts[key] = nil
 	end
 	if mineOrNear(data, 160) then
-		-- 화면을 한칼에 가르고, 잿빛이 풀리며 분홍빛이 번진다
+		-- 화면을 한칼에 가르고 잿빛이 풀리며 분홍빛이 번진다
 		screenSplit(function()
 			setGrey(false, 0.35)
 		end)
@@ -1241,7 +1241,7 @@ function Sakura.run(data: any)
 	end
 end
 
--- 초 오의를 펼칠 때 (내 화면): 화면 가장자리가 벚꽃빛으로 물들고, 꽃잎이 화면 가득 쏟아진다
+-- 초 오의를 펼칠 때 (내 화면): 화면 가장자리가 벚꽃빛으로 물들고 꽃잎이 화면 가득 쏟아진다
 function Sakura.superIntro(model: Model)
 	local r = rootOf(model)
 	if r then
