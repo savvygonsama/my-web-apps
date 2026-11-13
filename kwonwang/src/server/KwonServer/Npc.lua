@@ -1913,11 +1913,12 @@ local function think(e: Enemy, t: number)
 		local sloppy = (tgt :: any).sloppy or 0
 		-- 초반 적 (단계 4 이하, 정예 아님)은 덜 막는다
 		local early = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
-		local chance = (e.kind == "boss" and 0.4 or (early and 0.1 or 0.22)) + math.min(early and 0.2 or 0.5, sloppy * (early and 0.05 or 0.09))
+		-- 3.82판: 너무 자주 막아 잘 안 쓰러졌다. 보스 0.4 → 0.25, 보통 0.22 → 0.1, 초반 0.1 → 0.05, 마구 누를 때 더하는 몫도 절반
+		local chance = (e.kind == "boss" and 0.25 or (early and 0.05 or 0.1)) + math.min(early and 0.1 or 0.25, sloppy * (early and 0.03 or 0.05))
 		if math.random() < chance then
 			f.guarding = true
 			f.guardStart = t
-			e.guardUntil = t + 0.7
+			e.guardUntil = t + 0.55
 			f.model:SetAttribute("Guard", true)
 			faceTo(e, tgt.root.Position)
 			f.hum:MoveTo(pos)
@@ -1931,10 +1932,11 @@ local function think(e: Enemy, t: number)
 	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고 막 잡은 막기엔 흘려진다
 	-- (상대가 칠 때를 기다려 흘리고 파고들거나, 균형을 깨거나, 뒤를 잡아야 한다)
 	local earlyIdle = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
-	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or (earlyIdle and 0.05 or 0.12))) then
+	-- 3.82판: 공격 사이 막기 자세도 덜 (보스 0.22 → 0.12, 정예 0.18 → 0.09, 보통 0.12 → 0.06), 짧게
+	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.12 or (e.def.elite and 0.09 or (earlyIdle and 0.03 or 0.06))) then
 		f.guarding = true
 		f.guardStart = t
-		e.guardUntil = t + 0.6 + math.random() * 0.7
+		e.guardUntil = t + 0.45 + math.random() * 0.45
 		f.model:SetAttribute("Guard", true)
 		faceTo(e, tgt.root.Position)
 		f.hum:MoveTo(pos)

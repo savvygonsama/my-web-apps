@@ -4400,4 +4400,5 @@ return {
 	["네 번의 삶을 넘었다. 이제 권왕에 올라라."] = "You've lived four lives. Now climb to Fist King.",
 	["…아직은 그냥 고운 돌이다"] = "…For now it's just a pretty stone",
 	["강화 수련"] = "Enhanced Training",
+	["<font color=\"#FFD75A\"><b>★ 추천</b>  ⚔%s</font>"] = "<font color=\"#FFD75A\"><b>★ Best</b>  ⚔%s</font>",
 }

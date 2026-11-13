@@ -3175,7 +3175,17 @@ local function powerAdvice(rec: number): string
 end
 -- 1.9.1판: 지도 글자 정돈. 지역 이름과 권장 전투력은 한 덩어리 (지역 가운데)로 묶고,
 -- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
-local regionTags: { [string]: { label: TextLabel, name: string } } = {}
+local regionTags: { [string]: { label: TextLabel, name: string, hi: UIStroke? } } = {}
+-- 3.82판: 내 전투력에 알맞은 사냥터를 지도에서 강조 (테두리 · ★ 추천)
+local function addHi(shape: GuiObject, round: boolean): UIStroke
+	local ov = new("Frame", { Name = "FitHi", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = shape.ZIndex + 1, Parent = shape })
+	if round then
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ov })
+	end
+	local st = new("UIStroke", { Color = Color3.fromRGB(255, 215, 90), Thickness = 3, Enabled = false, Parent = ov })
+	TweenService:Create(st, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Transparency = 0.6 }):Play()
+	return st
+end
 local mapCanvas: Frame
 local skyCanvas: Frame? = nil
 local mapSky = false -- 2.7.1판: 지금 보이는 지도가 천상 지도인가
@@ -3193,11 +3203,40 @@ end
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
 	local mine = state and state.power or 0
+	-- 알맞은 곳 (내가 권장의 1 ~ 2.5배) 가운데 가장 버거운 셋이 '★ 추천' (얻는 몫이 가장 크다)
+	local fits = {}
+	for id in pairs(regionTags) do
+		local rec = regionPower(id)
+		if rec and mine > 0 then
+			local r = mine / rec
+			if r >= 1 and r < 2.5 then
+				table.insert(fits, { id = id, r = r })
+			end
+		end
+	end
+	table.sort(fits, function(x, y)
+		return x.r < y.r
+	end)
+	local best: { [string]: boolean } = {}
+	for i = 1, math.min(3, #fits) do
+		best[fits[i].id] = true
+	end
+	for id, tg in pairs(regionTags) do
+		if tg.hi then
+			tg.hi.Enabled = best[id] == true
+		end
+	end
 	for id, tg in pairs(regionTags) do
 		local rec, boss = regionPower(id)
 		local l = tg.label
 		if not rec then
 			l.Text = tg.name
+		elseif best[id] then
+			local line = string.format('<font color="#FFD75A"><b>★ 추천</b>  ⚔%s</font>', Config.formatNumber(rec))
+			if boss and mapBig then
+				line ..= string.format('  <font color="#FF9A9A">👹%s</font>', Config.formatNumber(boss))
+			end
+			l.Text = '<font color="#FFE9A8"><b>' .. tg.name .. "</b></font>\n" .. line
 		else
 			local r = mine > 0 and mine / rec or 1
 			local col = r < 0.6 and "#FF6A5F" or (r < 1 and "#FFBE5A" or (r < 2.5 and "#96F082" or "#CDCDCD"))
@@ -3477,7 +3516,7 @@ function UIB.buildHellLayer(cv: Frame)
 		end
 		local tag = label(z.at + Vector3.new(0, 0, z.safe and z.radius * 0.72 or 0), z.name, 11, 13, Color3.new(1, 1, 1), 9, z.safe and 2.5 or 2)
 		if not z.safe then
-			regionTags["sky_" .. z.id] = { label = tag, name = z.name }
+			regionTags["sky_" .. z.id] = { label = tag, name = z.name, hi = addHi(disc, true) }
 		end
 	end
 	label(H.zones[1].at + Vector3.new(-120, 0, 70), "⬆", 12, 15, Color3.new(1, 1, 1), 8, 1.5)
@@ -3518,7 +3557,7 @@ function UIB.buildSkyMap()
 	for _, isl in ipairs(SKY.islands) do
 		if not isl.hidden then
 			local d = 2 * isl.radius / (2 * H)
-			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(isl.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = isl.ground, BorderSizePixel = 0, ZIndex = 7, Parent = cv }, { corner(9999), stroke(Color3.new(1, 1, 1), 2) })
+			local islF = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(isl.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = isl.ground, BorderSizePixel = 0, ZIndex = 7, Parent = cv }, { corner(9999), stroke(Color3.new(1, 1, 1), 2) })
 			if isl.boss then
 				label(isl.boss.at, "👹", 13, 16, C.red, 9, 3)
 			elseif isl.raid then
@@ -3527,7 +3566,7 @@ function UIB.buildSkyMap()
 			local tagAt = isl.at + Vector3.new(0, 0, isl.safe and isl.radius * 0.72 or 0)
 			local tag = label(tagAt, isl.name, 11, 13, Color3.new(1, 1, 1), 9, isl.safe and 2.5 or 2)
 			if not isl.safe then
-				regionTags["sky_" .. isl.id] = { label = tag, name = isl.name }
+				regionTags["sky_" .. isl.id] = { label = tag, name = isl.name, hi = addHi(islF, true) }
 			end
 		end
 	end
@@ -3611,7 +3650,7 @@ function UIB.buildMap()
 				label(r.boss.at, "👹", 13, 16, C.red, 9, 3)
 			end
 			local tag = label(tagAt, r.name, 11, 12, Color3.new(1, 1, 1), 9, r.id == "village" and 2.5 or 2)
-			regionTags[r.id] = { label = tag, name = r.name }
+			regionTags[r.id] = { label = tag, name = r.name, hi = (not r.safe) and addHi(f, false) or nil }
 		end
 	end
 	-- 큰 볼거리 (표시는 조금 덜 중요, 이름은 가장 덜 중요)
@@ -4338,7 +4377,15 @@ function UIB.updateMap(dt: number)
 				n += 1
 				local d = mapDots[n]
 				d.Position = mapUV(r.Position)
-				d.Size = e:GetAttribute("Boss") == true and UDim2.new(0, 10, 0, 10) or UDim2.new(0, 6, 0, 6)
+				-- 3.82판: 내 전투력에 견준 빛깔 (알맞음 초록 · 버거움 주황 · 위험 빨강 · 약함 회색). 알맞은 적은 크게
+				local ep = tonumber(e:GetAttribute("Power")) or 0
+				local mine = state and state.power or 0
+				local ratio = (ep > 0 and mine > 0) and mine / ep or 1
+				local boss = e:GetAttribute("Boss") == true
+				local fit = ratio >= 1 and ratio < 2.5
+				d.BackgroundColor3 = ratio < 0.6 and Color3.fromRGB(255, 50, 45) or (ratio < 1 and Color3.fromRGB(255, 165, 50) or (fit and Color3.fromRGB(110, 255, 120) or Color3.fromRGB(150, 150, 150)))
+				local px = boss and 10 or (fit and 8 or (ratio >= 2.5 and 4 or 6))
+				d.Size = UDim2.new(0, px, 0, px)
 				d.Visible = true
 			end
 		end

@@ -637,6 +637,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 막기·흘리기 (앞에서 온 것만, 막을 수 없는 공격은 안 된다)
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain then
 		local window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) * ((tgt :: any).deflectMul or 1) + 0.06 -- 0.06 = 통신 늦음 여유
+		-- 3.82판: 적의 흘리기는 짧게 (막 잡은 막기에 흘려지는 일이 너무 잦았다). 통신 여유도 사람만
+		if tgt.npc then
+			window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) * ((tgt :: any).deflectMul or 1) * (Config.ENEMY_DEFLECT_MUL or 1)
+		end
 		if t - tgt.guardStart <= window then
 			-- 흘리기 성공
 			local broke = addPosture(att, postureDmg * Config.DEFLECT_POSTURE + 6)

@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.81.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.82.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -62,6 +62,7 @@ Config.CHI_HIT_MIN = 2 -- 3.68판: 맞힐 때마다 적어도 이만큼 (초반�
 Config.CHI_ON_HIT = 0.5 -- 준 피해 1당
 Config.CHI_ON_HURT = 0.3 -- 받은 피해 1당
 Config.CHI_ON_DEFLECT = 12
+Config.ENEMY_DEFLECT_MUL = 0.5 -- 3.82판: 적이 흘리는 틈 (막기를 잡은 직후) 은 사람의 절반
 
 -- 이동과 경공
 Config.WALK_SPEED = 22
@@ -19279,6 +19280,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	-- 막기·흘리기 (앞에서 온 것만, 막을 수 없는 공격은 안 된다)
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain then
 		local window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) * ((tgt :: any).deflectMul or 1) + 0.06 -- 0.06 = 통신 늦음 여유
+		-- 3.82판: 적의 흘리기는 짧게 (막 잡은 막기에 흘려지는 일이 너무 잦았다). 통신 여유도 사람만
+		if tgt.npc then
+			window = (tStyle and tStyle.deflect or Config.DEFLECT_WINDOW) * ((tgt :: any).deflectMul or 1) * (Config.ENEMY_DEFLECT_MUL or 1)
+		end
 		if t - tgt.guardStart <= window then
 			-- 흘리기 성공
 			local broke = addPosture(att, postureDmg * Config.DEFLECT_POSTURE + 6)
@@ -24084,11 +24089,12 @@ local function think(e: Enemy, t: number)
 		local sloppy = (tgt :: any).sloppy or 0
 		-- 초반 적 (단계 4 이하, 정예 아님)은 덜 막는다
 		local early = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
-		local chance = (e.kind == "boss" and 0.4 or (early and 0.1 or 0.22)) + math.min(early and 0.2 or 0.5, sloppy * (early and 0.05 or 0.09))
+		-- 3.82판: 너무 자주 막아 잘 안 쓰러졌다. 보스 0.4 → 0.25, 보통 0.22 → 0.1, 초반 0.1 → 0.05, 마구 누를 때 더하는 몫도 절반
+		local chance = (e.kind == "boss" and 0.25 or (early and 0.05 or 0.1)) + math.min(early and 0.1 or 0.25, sloppy * (early and 0.03 or 0.05))
 		if math.random() < chance then
 			f.guarding = true
 			f.guardStart = t
-			e.guardUntil = t + 0.7
+			e.guardUntil = t + 0.55
 			f.model:SetAttribute("Guard", true)
 			faceTo(e, tgt.root.Position)
 			f.hum:MoveTo(pos)
@@ -24102,10 +24108,11 @@ local function think(e: Enemy, t: number)
 	-- 공격 사이엔 자주 막기 자세를 잡는다: 마구 치면 막히고 막 잡은 막기엔 흘려진다
 	-- (상대가 칠 때를 기다려 흘리고 파고들거나, 균형을 깨거나, 뒤를 잡아야 한다)
 	local earlyIdle = e.kind ~= "boss" and not e.def.elite and not e.def.duel and e.level <= 4
-	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.22 or (e.def.elite and 0.18 or (earlyIdle and 0.05 or 0.12))) then
+	-- 3.82판: 공격 사이 막기 자세도 덜 (보스 0.22 → 0.12, 정예 0.18 → 0.09, 보통 0.12 → 0.06), 짧게
+	if d < 8 and t < e.nextAttack and math.random() < (e.kind == "boss" and 0.12 or (e.def.elite and 0.09 or (earlyIdle and 0.03 or 0.06))) then
 		f.guarding = true
 		f.guardStart = t
-		e.guardUntil = t + 0.6 + math.random() * 0.7
+		e.guardUntil = t + 0.45 + math.random() * 0.45
 		f.model:SetAttribute("Guard", true)
 		faceTo(e, tgt.root.Position)
 		f.hum:MoveTo(pos)
@@ -61945,6 +61952,7 @@ return {
 	["네 번의 삶을 넘었다. 이제 권왕에 올라라."] = "You've lived four lives. Now climb to Fist King.",
 	["…아직은 그냥 고운 돌이다"] = "…For now it's just a pretty stone",
 	["강화 수련"] = "Enhanced Training",
+	["<font color=\"#FFD75A\"><b>★ 추천</b>  ⚔%s</font>"] = "<font color=\"#FFD75A\"><b>★ Best</b>  ⚔%s</font>",
 }
 ]]></string>
           </Properties>
@@ -83251,7 +83259,17 @@ local function powerAdvice(rec: number): string
 end
 -- 1.9.1판: 지도 글자 정돈. 지역 이름과 권장 전투력은 한 덩어리 (지역 가운데)로 묶고,
 -- 글자끼리 겹치면 덜 중요한 것부터 감춘다. 작은 지도는 나를 따라 움직이고 (가까운 곳을 크게), 큰 지도는 온 세상을 다 보여 준다 (휠·끌기로 확대·이동)
-local regionTags: { [string]: { label: TextLabel, name: string } } = {}
+local regionTags: { [string]: { label: TextLabel, name: string, hi: UIStroke? } } = {}
+-- 3.82판: 내 전투력에 알맞은 사냥터를 지도에서 강조 (테두리 · ★ 추천)
+local function addHi(shape: GuiObject, round: boolean): UIStroke
+	local ov = new("Frame", { Name = "FitHi", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = shape.ZIndex + 1, Parent = shape })
+	if round then
+		new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ov })
+	end
+	local st = new("UIStroke", { Color = Color3.fromRGB(255, 215, 90), Thickness = 3, Enabled = false, Parent = ov })
+	TweenService:Create(st, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Transparency = 0.6 }):Play()
+	return st
+end
 local mapCanvas: Frame
 local skyCanvas: Frame? = nil
 local mapSky = false -- 2.7.1판: 지금 보이는 지도가 천상 지도인가
@@ -83269,11 +83287,40 @@ end
 -- 지도 위 권장 전투력: 내 전투력에 견주어 빨강(위험)·주황(버거움)·초록(알맞음)·회색(여유)
 local function refreshRec()
 	local mine = state and state.power or 0
+	-- 알맞은 곳 (내가 권장의 1 ~ 2.5배) 가운데 가장 버거운 셋이 '★ 추천' (얻는 몫이 가장 크다)
+	local fits = {}
+	for id in pairs(regionTags) do
+		local rec = regionPower(id)
+		if rec and mine > 0 then
+			local r = mine / rec
+			if r >= 1 and r < 2.5 then
+				table.insert(fits, { id = id, r = r })
+			end
+		end
+	end
+	table.sort(fits, function(x, y)
+		return x.r < y.r
+	end)
+	local best: { [string]: boolean } = {}
+	for i = 1, math.min(3, #fits) do
+		best[fits[i].id] = true
+	end
+	for id, tg in pairs(regionTags) do
+		if tg.hi then
+			tg.hi.Enabled = best[id] == true
+		end
+	end
 	for id, tg in pairs(regionTags) do
 		local rec, boss = regionPower(id)
 		local l = tg.label
 		if not rec then
 			l.Text = tg.name
+		elseif best[id] then
+			local line = string.format('<font color="#FFD75A"><b>★ 추천</b>  ⚔%s</font>', Config.formatNumber(rec))
+			if boss and mapBig then
+				line ..= string.format('  <font color="#FF9A9A">👹%s</font>', Config.formatNumber(boss))
+			end
+			l.Text = '<font color="#FFE9A8"><b>' .. tg.name .. "</b></font>\n" .. line
 		else
 			local r = mine > 0 and mine / rec or 1
 			local col = r < 0.6 and "#FF6A5F" or (r < 1 and "#FFBE5A" or (r < 2.5 and "#96F082" or "#CDCDCD"))
@@ -83553,7 +83600,7 @@ function UIB.buildHellLayer(cv: Frame)
 		end
 		local tag = label(z.at + Vector3.new(0, 0, z.safe and z.radius * 0.72 or 0), z.name, 11, 13, Color3.new(1, 1, 1), 9, z.safe and 2.5 or 2)
 		if not z.safe then
-			regionTags["sky_" .. z.id] = { label = tag, name = z.name }
+			regionTags["sky_" .. z.id] = { label = tag, name = z.name, hi = addHi(disc, true) }
 		end
 	end
 	label(H.zones[1].at + Vector3.new(-120, 0, 70), "⬆", 12, 15, Color3.new(1, 1, 1), 8, 1.5)
@@ -83594,7 +83641,7 @@ function UIB.buildSkyMap()
 	for _, isl in ipairs(SKY.islands) do
 		if not isl.hidden then
 			local d = 2 * isl.radius / (2 * H)
-			new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(isl.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = isl.ground, BorderSizePixel = 0, ZIndex = 7, Parent = cv }, { corner(9999), stroke(Color3.new(1, 1, 1), 2) })
+			local islF = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = mapUV(isl.at, true), Size = UDim2.fromScale(d, d), BackgroundColor3 = isl.ground, BorderSizePixel = 0, ZIndex = 7, Parent = cv }, { corner(9999), stroke(Color3.new(1, 1, 1), 2) })
 			if isl.boss then
 				label(isl.boss.at, "👹", 13, 16, C.red, 9, 3)
 			elseif isl.raid then
@@ -83603,7 +83650,7 @@ function UIB.buildSkyMap()
 			local tagAt = isl.at + Vector3.new(0, 0, isl.safe and isl.radius * 0.72 or 0)
 			local tag = label(tagAt, isl.name, 11, 13, Color3.new(1, 1, 1), 9, isl.safe and 2.5 or 2)
 			if not isl.safe then
-				regionTags["sky_" .. isl.id] = { label = tag, name = isl.name }
+				regionTags["sky_" .. isl.id] = { label = tag, name = isl.name, hi = addHi(islF, true) }
 			end
 		end
 	end
@@ -83687,7 +83734,7 @@ function UIB.buildMap()
 				label(r.boss.at, "👹", 13, 16, C.red, 9, 3)
 			end
 			local tag = label(tagAt, r.name, 11, 12, Color3.new(1, 1, 1), 9, r.id == "village" and 2.5 or 2)
-			regionTags[r.id] = { label = tag, name = r.name }
+			regionTags[r.id] = { label = tag, name = r.name, hi = (not r.safe) and addHi(f, false) or nil }
 		end
 	end
 	-- 큰 볼거리 (표시는 조금 덜 중요, 이름은 가장 덜 중요)
@@ -84414,7 +84461,15 @@ function UIB.updateMap(dt: number)
 				n += 1
 				local d = mapDots[n]
 				d.Position = mapUV(r.Position)
-				d.Size = e:GetAttribute("Boss") == true and UDim2.new(0, 10, 0, 10) or UDim2.new(0, 6, 0, 6)
+				-- 3.82판: 내 전투력에 견준 빛깔 (알맞음 초록 · 버거움 주황 · 위험 빨강 · 약함 회색). 알맞은 적은 크게
+				local ep = tonumber(e:GetAttribute("Power")) or 0
+				local mine = state and state.power or 0
+				local ratio = (ep > 0 and mine > 0) and mine / ep or 1
+				local boss = e:GetAttribute("Boss") == true
+				local fit = ratio >= 1 and ratio < 2.5
+				d.BackgroundColor3 = ratio < 0.6 and Color3.fromRGB(255, 50, 45) or (ratio < 1 and Color3.fromRGB(255, 165, 50) or (fit and Color3.fromRGB(110, 255, 120) or Color3.fromRGB(150, 150, 150)))
+				local px = boss and 10 or (fit and 8 or (ratio >= 2.5 and 4 or 6))
+				d.Size = UDim2.new(0, px, 0, px)
 				d.Visible = true
 			end
 		end
