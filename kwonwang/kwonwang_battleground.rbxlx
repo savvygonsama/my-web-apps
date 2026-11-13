@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.79.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.80.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -30701,14 +30701,24 @@ local function trainingSpots(out: any)
 		local info = Config.Training[spot.kind]
 		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배 (싸우는 수련엔 없다)
 		local hard: ProximityPrompt? = nil
+		-- 3.80판: 강화 수련도 그 수련의 경지를 따른다 (주천 운기는 현경부터인데 강화 수련만 '이류부터' 라고 했다).
+		-- '(○○부터)' 는 아직 그 경지가 안 된 사람의 화면에만 (NeedRealm · BaseAction 을 보고 화면이 붙인다)
+		local function needText(r: number): string
+			return r > 1 and (" (" .. Config.Realms[r].name .. "부터)") or ""
+		end
 		if not info.fight then
-			hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+			local hr = math.max(Config.HARD_TRAIN.realm, info.realm or 1)
+			hard = prompt(target, "강화 수련" .. needText(hr), "🔥 " .. info.name, "TrainHard")
 			;(hard :: ProximityPrompt).KeyboardKeyCode = Enum.KeyCode.Y
 			;(hard :: ProximityPrompt).UIOffset = Vector2.new(0, 70)
+			;(hard :: ProximityPrompt):SetAttribute("NeedRealm", hr)
+			;(hard :: ProximityPrompt):SetAttribute("BaseAction", "강화 수련")
 		end
 		local action = info.fight and "심마 불러내기" or "수련하기"
-		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
-		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
+		local tp = prompt(target, action .. needText(info.realm or 1), info.icon .. " " .. info.name, "Train")
+		tp:SetAttribute("NeedRealm", info.realm or 1)
+		tp:SetAttribute("BaseAction", action)
+		table.insert(out.train, { prompt = tp, hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- (경공 수련 고리는 없앴다)
 	out.rings = {}
@@ -39047,7 +39057,36 @@ local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) o
 if Gallery then
 	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, passCast = PassArts.cast, toast = UI.toast })
 end
+-- 3.80판: 수련 자리 안내의 '(○○부터)' 는 아직 그 경지가 안 됐을 때만
+local trainPrompts: { ProximityPrompt }? = nil
+local lastTrainRealm = -1
+local function refreshTrainPrompts(realm: number?)
+	if type(realm) ~= "number" or realm == lastTrainRealm then
+		return
+	end
+	if not trainPrompts then
+		local list = {}
+		for _, d in ipairs(workspace:GetDescendants()) do
+			if d:IsA("ProximityPrompt") and d:GetAttribute("NeedRealm") ~= nil then
+				table.insert(list, d)
+			end
+		end
+		if #list == 0 then
+			return -- 아직 맵이 안 왔다 (다음 상태에 다시)
+		end
+		trainPrompts = list
+	end
+	lastTrainRealm = realm
+	for _, pp in ipairs(trainPrompts :: { ProximityPrompt }) do
+		local need = tonumber(pp:GetAttribute("NeedRealm")) or 1
+		local base = pp:GetAttribute("BaseAction")
+		if type(base) == "string" then
+			pp.ActionText = (realm >= need or need <= 1) and base or (base .. " (" .. Config.Realms[need].name .. "부터)")
+		end
+	end
+end
 function handlers.state(data: any)
+	pcall(refreshTrainPrompts, data and data.realm)
 	state = data
 	UI.setState(data)
 	if Gallery then
@@ -61907,6 +61946,7 @@ return {
 	["서두르지도 멈추지도 않는 나무의 권. 대숲 바람처럼 부드럽게 흐르다 천 년 은행나무처럼 무겁게 내려앉는다. 끝에는 숲 전체가 일어선다."] = "The fist of a tree that neither hurries nor stops. It flows softly like wind through bamboo, then lands heavy like a thousand-year ginkgo. At the end, the whole forest rises.",
 	["네 번의 삶을 넘었다. 이제 권왕에 올라라."] = "You've lived four lives. Now climb to Fist King.",
 	["…아직은 그냥 고운 돌이다"] = "…For now it's just a pretty stone",
+	["강화 수련"] = "Enhanced Training",
 }
 ]]></string>
           </Properties>

@@ -4399,4 +4399,5 @@ return {
 	["서두르지도 멈추지도 않는 나무의 권. 대숲 바람처럼 부드럽게 흐르다 천 년 은행나무처럼 무겁게 내려앉는다. 끝에는 숲 전체가 일어선다."] = "The fist of a tree that neither hurries nor stops. It flows softly like wind through bamboo, then lands heavy like a thousand-year ginkgo. At the end, the whole forest rises.",
 	["네 번의 삶을 넘었다. 이제 권왕에 올라라."] = "You've lived four lives. Now climb to Fist King.",
 	["…아직은 그냥 고운 돌이다"] = "…For now it's just a pretty stone",
+	["강화 수련"] = "Enhanced Training",
 }

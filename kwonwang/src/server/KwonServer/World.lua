@@ -967,14 +967,24 @@ local function trainingSpots(out: any)
 		local info = Config.Training[spot.kind]
 		-- 강화 수련: 같은 자리, Y키. 빠르고 까다롭지만 세 배 (싸우는 수련엔 없다)
 		local hard: ProximityPrompt? = nil
+		-- 3.80판: 강화 수련도 그 수련의 경지를 따른다 (주천 운기는 현경부터인데 강화 수련만 '이류부터' 라고 했다).
+		-- '(○○부터)' 는 아직 그 경지가 안 된 사람의 화면에만 (NeedRealm · BaseAction 을 보고 화면이 붙인다)
+		local function needText(r: number): string
+			return r > 1 and (" (" .. Config.Realms[r].name .. "부터)") or ""
+		end
 		if not info.fight then
-			hard = prompt(target, "강화 수련 (이류부터)", "🔥 " .. info.name, "TrainHard")
+			local hr = math.max(Config.HARD_TRAIN.realm, info.realm or 1)
+			hard = prompt(target, "강화 수련" .. needText(hr), "🔥 " .. info.name, "TrainHard")
 			;(hard :: ProximityPrompt).KeyboardKeyCode = Enum.KeyCode.Y
 			;(hard :: ProximityPrompt).UIOffset = Vector2.new(0, 70)
+			;(hard :: ProximityPrompt):SetAttribute("NeedRealm", hr)
+			;(hard :: ProximityPrompt):SetAttribute("BaseAction", "강화 수련")
 		end
 		local action = info.fight and "심마 불러내기" or "수련하기"
-		local need = info.realm and info.realm > 1 and (" (" .. Config.Realms[info.realm].name .. "부터)") or ""
-		table.insert(out.train, { prompt = prompt(target, action .. need, info.icon .. " " .. info.name, "Train"), hard = hard, kind = spot.kind, index = i, pos = at })
+		local tp = prompt(target, action .. needText(info.realm or 1), info.icon .. " " .. info.name, "Train")
+		tp:SetAttribute("NeedRealm", info.realm or 1)
+		tp:SetAttribute("BaseAction", action)
+		table.insert(out.train, { prompt = tp, hard = hard, kind = spot.kind, index = i, pos = at })
 	end
 	-- (경공 수련 고리는 없앴다)
 	out.rings = {}

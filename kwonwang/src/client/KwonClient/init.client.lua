@@ -1333,7 +1333,36 @@ local Gallery = Config.BATTLE_MODE and require(script:WaitForChild("Gallery")) o
 if Gallery then
 	Gallery.start({ request = Request, previewGear = Sakura.preview, passPreview = PassArts.preview, passCast = PassArts.cast, toast = UI.toast })
 end
+-- 3.80판: 수련 자리 안내의 '(○○부터)' 는 아직 그 경지가 안 됐을 때만
+local trainPrompts: { ProximityPrompt }? = nil
+local lastTrainRealm = -1
+local function refreshTrainPrompts(realm: number?)
+	if type(realm) ~= "number" or realm == lastTrainRealm then
+		return
+	end
+	if not trainPrompts then
+		local list = {}
+		for _, d in ipairs(workspace:GetDescendants()) do
+			if d:IsA("ProximityPrompt") and d:GetAttribute("NeedRealm") ~= nil then
+				table.insert(list, d)
+			end
+		end
+		if #list == 0 then
+			return -- 아직 맵이 안 왔다 (다음 상태에 다시)
+		end
+		trainPrompts = list
+	end
+	lastTrainRealm = realm
+	for _, pp in ipairs(trainPrompts :: { ProximityPrompt }) do
+		local need = tonumber(pp:GetAttribute("NeedRealm")) or 1
+		local base = pp:GetAttribute("BaseAction")
+		if type(base) == "string" then
+			pp.ActionText = (realm >= need or need <= 1) and base or (base .. " (" .. Config.Realms[need].name .. "부터)")
+		end
+	end
+end
 function handlers.state(data: any)
+	pcall(refreshTrainPrompts, data and data.realm)
 	state = data
 	UI.setState(data)
 	if Gallery then
