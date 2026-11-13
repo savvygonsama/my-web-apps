@@ -9,8 +9,7 @@
   5. src/build.sh 로 index.html 을 다시 만듦
 
 쓰는 법
-  python3 add_episode.py --app /path/to/steel-grade-gacha --ep 4 --title "볼트 하나" \
-      --note "※ 자동차의 볼트·현가 스프링·타이어 속 강선은 모두 선재로 만듭니다." \
+  python3 add_episode.py --app /path/to/steel-grade-gacha --ep 4 --title "우산" \
       컷1.png 컷2.png ... 컷8.png
   선택: --date 2026.10.28 (기본 오늘) --thumb 6 (썸네일로 쓸 컷 번호, 기본 2)
         --replace (같은 화를 다시 올릴 때) --no-build
@@ -71,7 +70,7 @@ def main():
     ap.add_argument("--app", required=True, help="steel-grade-gacha 저장소 경로")
     ap.add_argument("--ep", type=int, required=True)
     ap.add_argument("--title", required=True)
-    ap.add_argument("--note", default="")
+    ap.add_argument("--note", default="", help="화 끝 각주. 쓰지 않는다(사용자 결정), 예전 호환용")
     ap.add_argument("--date", default=datetime.date.today().strftime("%Y.%m.%d"))
     ap.add_argument("--thumb", type=int, default=None)
     ap.add_argument("--replace", action="store_true")
