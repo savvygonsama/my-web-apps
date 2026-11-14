@@ -76,8 +76,10 @@ local function phaseOf(hour: number): number
 	end
 	return DAY_PART + (h - 13) / 11 * NIGHT_PART
 end
-local clockT0 = os.clock() - phaseOf(16.2)
-local clockFrozen: number? = nil
+-- 3.94판: 서버가 열리면 아침 8시부터 (예전엔 오후 4시 남짓에서 시작해 들어오자마자 2분 만에 저물었다)
+local clockT0 = os.clock() - phaseOf(8)
+-- 배틀그라운드는 늘 한낮 (밤이 없다)
+local clockFrozen: number? = Config.BATTLE_MODE and 13 or nil
 function World.clockHour(): number
 	if clockFrozen then
 		return clockFrozen
@@ -122,7 +124,7 @@ function World.toggleClockFreeze(): boolean
 end
 
 function World.setupLighting()
-	Lighting.ClockTime = 16.2
+	Lighting.ClockTime = Config.BATTLE_MODE and 13 or 8
 	Lighting.Brightness = 2.3
 	Lighting.Ambient = Color3.fromRGB(110, 100, 95)
 	Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130)
@@ -164,7 +166,7 @@ function World.setupLighting()
 	if Config.BATTLE_MODE then
 		cc.Saturation = -0.05
 		cc.Contrast = 0.05
-		Lighting.ExposureCompensation = -0.2
+		Lighting.ExposureCompensation = -0.1
 	end
 	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
 	local baseAtmo, baseDecay, baseTint = atmo.Color, atmo.Decay, cc.TintColor
@@ -208,7 +210,7 @@ function World.setupLighting()
 			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(125, 135, 175), k)
 			Lighting.Ambient = Color3.fromRGB(110, 100, 95):Lerp(Color3.fromRGB(118, 116, 132), k)
 			-- 3.92판: 배틀그라운드는 눈이 덜 부시게 (네온 · 기술 빛이 많은 곳)
-			Lighting.Brightness = (Config.BATTLE_MODE and 1.6 or 2.3) - k * 0.55
+			Lighting.Brightness = (Config.BATTLE_MODE and 1.9 or 2.3) - k * 0.55
 			task.wait(1)
 		end
 	end)
