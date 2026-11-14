@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.91.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.92.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -18245,7 +18245,14 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local WALL = Color3.fromRGB(236, 230, 214)
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
-	disc("LobbyGround", c + Vector3.new(0, -2, 0), 410, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
+	-- 3.92판: 전시장 크기 (넓어진 전시장을 땅 · 울타리가 다 품게)
+	local hallW, hallD = 348, 428
+	pcall(function()
+		local SH = require(script.Parent:WaitForChild("StyleHall"))
+		hallW, hallD = SH.width(), SH.depth()
+	end)
+	local outerR = math.max(400, math.sqrt((hallW / 2) ^ 2 + (D + 14 + hallD) ^ 2) + 12)
+	disc("LobbyGround", c + Vector3.new(0, -2, 0), outerR + 10, 4, Color3.fromRGB(92, 124, 70), Enum.Material.Grass, f)
 	-- 박석 마당 (줄눈이 보이게 판을 깐다)
 	part({ Name = "CourtBed", Size = Vector3.new(W * 2, 0.5, D * 2), Position = c + Vector3.new(0, 0.2, 0), Color = STONE:Lerp(Color3.new(0, 0, 0), 0.25), Material = Enum.Material.Slate, Parent = f })
 	for x = -W + 5, W - 5, 10 do
@@ -18365,13 +18372,14 @@ local function buildLobby(c: Vector3, f: Folder): any
 			part({ Name = "PineTop", Shape = Enum.PartType.Ball, Size = Vector3.new(s * 1.4, s * 0.55, s * 1.4), Position = at + Vector3.new((G() - 0.5) * 2, h * (0.55 + k * 0.17), (G() - 0.5) * 2), Color = Color3.fromRGB(46 + k * 8, 92 + k * 8, 58), Material = Enum.Material.Grass, CanCollide = false, Parent = f })
 		end
 	end
-	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 14 + 136), 215 } }
+	-- 3.92판: 전시장 크기를 따라간다 (전시장이 넓어지면 소나무가 칸 사이에 박히지 않게, 울타리도 전시장을 다 품게)
+	local avoidL = { { Vector3.new(W + 34, 0, 0), 32 }, { Vector3.new(0, 0, D + 20), 26 }, { Vector3.new(0, 0, D + 14 + hallD / 2), math.sqrt((hallW / 2) ^ 2 + (hallD / 2) ^ 2) + 10 } }
 	for _, v in ipairs(scatter(G, 46, 100, 360, 22, avoidL)) do
 		if math.abs(v.X) > W + 10 or math.abs(v.Z) > D + 10 then
 			pine(c + v, 18 + G() * 12)
 		end
 	end
-	fence(c, 400, 40, f)
+	fence(c, outerR, 40, f)
 	-- 3.66판: 남쪽 문 밖의 권법 전시장 (모든 권법이 한 칸씩, 발판을 밟으면 그 권법으로 입장)
 	pcall(function()
 		require(script.Parent:WaitForChild("StyleHall")).build(c + Vector3.new(0, 0, D + 14), f)
@@ -29500,8 +29508,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local StyleHall = {}
 
-local PER_ROW = 11 -- 3.67판: 16 → 11 (간격을 넓혀 여섯 줄)
-local DX, DZ = 24, 34 -- 3.67판: 14.5 · 25 → 24 · 34
+local PER_ROW = 8 -- 3.67판: 16 → 11. 3.92판: 11 → 8 (번잡하다: 간격을 더 넓혀 여덟 줄)
+local DX, DZ = 36, 46 -- 3.67판: 14.5 · 25 → 24 · 34. 3.92판: → 36 · 46
 local MARGIN = 30 -- 플랫폼 가장자리 여유
 local S = 1.5 -- 마네킹 키 배율
 local INK = Color3.fromRGB(16, 18, 24)
@@ -29955,8 +29963,8 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 	local Dp = rows * DZ + MARGIN * 2
 	-- 바닥: 어두운 돌 마당과 빛나는 테
 	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	local units = {}
 	for i, st in ipairs(list) do
 		local row = (i - 1) // PER_ROW
@@ -29972,13 +29980,24 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local c1, c2 = st.color, st.color2 or st.color
 		-- 받침대
 		disc("Base", at + Vector3.new(0, 0.4, 0), 4.4, 0.8, INK, Enum.Material.SmoothPlastic, u, 0, true)
-		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1, Enum.Material.Neon, u, 0.25)
+		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1:Lerp(INK, 0.35), Enum.Material.SmoothPlastic, u, 0)
 		-- 상징물
 		local fn = EMBLEM[st.fx or ""] or emblemFallback
 		local ef = Instance.new("Folder")
 		ef.Name = "Emblem"
 		ef.Parent = u
 		pcall(fn, at + Vector3.new(0, 17, 0), c1, c2, ef)
+		-- 3.92판: 상징물을 차분하게 (64칸이 다 번쩍이고 돌아서 어지러웠다). 빛 · 입자는 줄이고 네온은 비치게
+		for _, d in ipairs(ef:GetDescendants()) do
+			if d:IsA("PointLight") then
+				d.Brightness *= 0.35
+				d.Range *= 0.6
+			elseif d:IsA("ParticleEmitter") then
+				d.Rate *= 0.3
+			elseif d:IsA("BasePart") and d.Material == Enum.Material.Neon then
+				d.Transparency = math.max(d.Transparency, 0.35)
+			end
+		end
 		-- 푯말 (앞 왼쪽)
 		signpost(at + Vector3.new(-4.6, 0, -6.4), st, u)
 		-- 발판 (앞)
@@ -30170,6 +30189,13 @@ function World.setupLighting()
 	bloom.Size = 24
 	bloom.Threshold = 1.4
 	bloom.Parent = Lighting
+	if Config.BATTLE_MODE then
+		-- 3.92판: 배틀그라운드는 번짐 · 안개 빛을 줄인다 (너무 밝고 어지럽다)
+		bloom.Intensity = 0.18
+		bloom.Threshold = 1.7
+		atmo.Haze = 0.4
+		atmo.Density = 0.2
+	end
 	-- 햇살 줄기 (빛이 구름·나무 사이로 새어 든다)
 	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
 	rays.Intensity = 0.07
@@ -30181,6 +30207,11 @@ function World.setupLighting()
 	cc.Contrast = 0.1
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
+	if Config.BATTLE_MODE then
+		cc.Saturation = -0.05
+		cc.Contrast = 0.05
+		Lighting.ExposureCompensation = -0.2
+	end
 	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
 	local baseAtmo, baseDecay, baseTint = atmo.Color, atmo.Decay, cc.TintColor
 	local wasTwilight = false
@@ -30222,7 +30253,8 @@ function World.setupLighting()
 			-- 3.16.1판: 밤을 조금 밝게 (바깥 빛 95,105,150 → 125,135,175 · 밝기 1.4 → 1.75 · 안쪽 빛도 조금)
 			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(125, 135, 175), k)
 			Lighting.Ambient = Color3.fromRGB(110, 100, 95):Lerp(Color3.fromRGB(118, 116, 132), k)
-			Lighting.Brightness = 2.3 - k * 0.55
+			-- 3.92판: 배틀그라운드는 눈이 덜 부시게 (네온 · 기술 빛이 많은 곳)
+			Lighting.Brightness = (Config.BATTLE_MODE and 1.6 or 2.3) - k * 0.55
 			task.wait(1)
 		end
 	end)
@@ -54641,8 +54673,9 @@ local function paint()
 			local have = owned(u.id)
 			local using = lastState and lastState.style == u.id
 			u.pad.Color = using and GOLD or (have and st.color or LOCKED)
-			u.pad.Transparency = have and 0.3 or 0.05
-			u.pad.Material = have and Enum.Material.Neon or Enum.Material.SmoothPlastic
+			-- 3.92판: 지금 쓰는 권법만 빛난다 (익힌 칸이 다 네온이라 눈이 부셨다)
+			u.pad.Transparency = using and 0.3 or (have and 0.15 or 0.05)
+			u.pad.Material = using and Enum.Material.Neon or Enum.Material.SmoothPlastic
 			if u.label then
 				u.label.Text = using and "지금 쓰는 권법 · 밟으면 입장" or (have and "밟으면 입장" or "🔒 익히지 않음")
 				u.label.TextColor3 = have and Color3.new(1, 1, 1) or Color3.fromRGB(150, 156, 170)
@@ -54702,7 +54735,7 @@ local function collect(hall: Instance)
 			local center = padAt and (padAt + Vector3.new(0, 16.8, 12)) or nil
 			for _, d in ipairs(u:GetDescendants()) do
 				if d:IsA("BasePart") and string.sub(d.Name, 1, 4) == "Spin" and center then
-					table.insert(spinners, { d, d.CFrame, tonumber(d:GetAttribute("SpinRate")) or 0.3, center })
+					table.insert(spinners, { d, d.CFrame, (tonumber(d:GetAttribute("SpinRate")) or 0.3) * 0.4, center }) -- 3.92판: 천천히
 				end
 			end
 		end
@@ -54728,11 +54761,14 @@ function Gallery.start(o: any)
 		local t0 = os.clock()
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock() - t0
+			-- 3.92판: 가까운 상징물만 돈다 (멀리서 수십 개가 한꺼번에 돌아 어지러웠다)
+			local cam = workspace.CurrentCamera
+			local eye = cam and cam.CFrame.Position
 			for _, s in ipairs(spinners) do
 				local p, base, rate, center = s[1], s[2], s[3], s[4]
-				if p.Parent then
+				if p.Parent and (not eye or (center - eye).Magnitude < 90) then
 					if rate == 0 then
-						p.CFrame = CFrame.new(center) * CFrame.Angles(0, t * 0.8, 0) * (CFrame.new(-center) * base)
+						p.CFrame = CFrame.new(center) * CFrame.Angles(0, t * 0.3, 0) * (CFrame.new(-center) * base)
 					else
 						p.CFrame = CFrame.new(base.Position) * CFrame.Angles(0, t * rate * math.pi * 2, 0) * base.Rotation
 					end

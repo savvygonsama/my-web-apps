@@ -143,6 +143,13 @@ function World.setupLighting()
 	bloom.Size = 24
 	bloom.Threshold = 1.4
 	bloom.Parent = Lighting
+	if Config.BATTLE_MODE then
+		-- 3.92판: 배틀그라운드는 번짐 · 안개 빛을 줄인다 (너무 밝고 어지럽다)
+		bloom.Intensity = 0.18
+		bloom.Threshold = 1.7
+		atmo.Haze = 0.4
+		atmo.Density = 0.2
+	end
 	-- 햇살 줄기 (빛이 구름·나무 사이로 새어 든다)
 	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
 	rays.Intensity = 0.07
@@ -154,6 +161,11 @@ function World.setupLighting()
 	cc.Contrast = 0.1
 	cc.TintColor = Color3.fromRGB(255, 245, 232)
 	cc.Parent = Lighting
+	if Config.BATTLE_MODE then
+		cc.Saturation = -0.05
+		cc.Contrast = 0.05
+		Lighting.ExposureCompensation = -0.2
+	end
 	-- 낮과 밤: 한 바퀴 16분 (낮 10분 · 밤 6분). 밤에도 길이 보이게 바깥 빛을 조금 남긴다
 	local baseAtmo, baseDecay, baseTint = atmo.Color, atmo.Decay, cc.TintColor
 	local wasTwilight = false
@@ -195,7 +207,8 @@ function World.setupLighting()
 			-- 3.16.1판: 밤을 조금 밝게 (바깥 빛 95,105,150 → 125,135,175 · 밝기 1.4 → 1.75 · 안쪽 빛도 조금)
 			Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130):Lerp(Color3.fromRGB(125, 135, 175), k)
 			Lighting.Ambient = Color3.fromRGB(110, 100, 95):Lerp(Color3.fromRGB(118, 116, 132), k)
-			Lighting.Brightness = 2.3 - k * 0.55
+			-- 3.92판: 배틀그라운드는 눈이 덜 부시게 (네온 · 기술 빛이 많은 곳)
+			Lighting.Brightness = (Config.BATTLE_MODE and 1.6 or 2.3) - k * 0.55
 			task.wait(1)
 		end
 	end)

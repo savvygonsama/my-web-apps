@@ -33,8 +33,9 @@ local function paint()
 			local have = owned(u.id)
 			local using = lastState and lastState.style == u.id
 			u.pad.Color = using and GOLD or (have and st.color or LOCKED)
-			u.pad.Transparency = have and 0.3 or 0.05
-			u.pad.Material = have and Enum.Material.Neon or Enum.Material.SmoothPlastic
+			-- 3.92판: 지금 쓰는 권법만 빛난다 (익힌 칸이 다 네온이라 눈이 부셨다)
+			u.pad.Transparency = using and 0.3 or (have and 0.15 or 0.05)
+			u.pad.Material = using and Enum.Material.Neon or Enum.Material.SmoothPlastic
 			if u.label then
 				u.label.Text = using and "지금 쓰는 권법 · 밟으면 입장" or (have and "밟으면 입장" or "🔒 익히지 않음")
 				u.label.TextColor3 = have and Color3.new(1, 1, 1) or Color3.fromRGB(150, 156, 170)
@@ -94,7 +95,7 @@ local function collect(hall: Instance)
 			local center = padAt and (padAt + Vector3.new(0, 16.8, 12)) or nil
 			for _, d in ipairs(u:GetDescendants()) do
 				if d:IsA("BasePart") and string.sub(d.Name, 1, 4) == "Spin" and center then
-					table.insert(spinners, { d, d.CFrame, tonumber(d:GetAttribute("SpinRate")) or 0.3, center })
+					table.insert(spinners, { d, d.CFrame, (tonumber(d:GetAttribute("SpinRate")) or 0.3) * 0.4, center }) -- 3.92판: 천천히
 				end
 			end
 		end
@@ -120,11 +121,14 @@ function Gallery.start(o: any)
 		local t0 = os.clock()
 		RunService.RenderStepped:Connect(function()
 			local t = os.clock() - t0
+			-- 3.92판: 가까운 상징물만 돈다 (멀리서 수십 개가 한꺼번에 돌아 어지러웠다)
+			local cam = workspace.CurrentCamera
+			local eye = cam and cam.CFrame.Position
 			for _, s in ipairs(spinners) do
 				local p, base, rate, center = s[1], s[2], s[3], s[4]
-				if p.Parent then
+				if p.Parent and (not eye or (center - eye).Magnitude < 90) then
 					if rate == 0 then
-						p.CFrame = CFrame.new(center) * CFrame.Angles(0, t * 0.8, 0) * (CFrame.new(-center) * base)
+						p.CFrame = CFrame.new(center) * CFrame.Angles(0, t * 0.3, 0) * (CFrame.new(-center) * base)
 					else
 						p.CFrame = CFrame.new(base.Position) * CFrame.Angles(0, t * rate * math.pi * 2, 0) * base.Rotation
 					end

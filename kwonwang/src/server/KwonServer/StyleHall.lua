@@ -6,8 +6,8 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local StyleHall = {}
 
-local PER_ROW = 11 -- 3.67판: 16 → 11 (간격을 넓혀 여섯 줄)
-local DX, DZ = 24, 34 -- 3.67판: 14.5 · 25 → 24 · 34
+local PER_ROW = 8 -- 3.67판: 16 → 11. 3.92판: 11 → 8 (번잡하다: 간격을 더 넓혀 여덟 줄)
+local DX, DZ = 36, 46 -- 3.67판: 14.5 · 25 → 24 · 34. 3.92판: → 36 · 46
 local MARGIN = 30 -- 플랫폼 가장자리 여유
 local S = 1.5 -- 마네킹 키 배율
 local INK = Color3.fromRGB(16, 18, 24)
@@ -461,8 +461,8 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 	local Dp = rows * DZ + MARGIN * 2
 	-- 바닥: 어두운 돌 마당과 빛나는 테
 	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(255, 92, 70), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	local units = {}
 	for i, st in ipairs(list) do
 		local row = (i - 1) // PER_ROW
@@ -478,13 +478,24 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 		local c1, c2 = st.color, st.color2 or st.color
 		-- 받침대
 		disc("Base", at + Vector3.new(0, 0.4, 0), 4.4, 0.8, INK, Enum.Material.SmoothPlastic, u, 0, true)
-		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1, Enum.Material.Neon, u, 0.25)
+		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1:Lerp(INK, 0.35), Enum.Material.SmoothPlastic, u, 0)
 		-- 상징물
 		local fn = EMBLEM[st.fx or ""] or emblemFallback
 		local ef = Instance.new("Folder")
 		ef.Name = "Emblem"
 		ef.Parent = u
 		pcall(fn, at + Vector3.new(0, 17, 0), c1, c2, ef)
+		-- 3.92판: 상징물을 차분하게 (64칸이 다 번쩍이고 돌아서 어지러웠다). 빛 · 입자는 줄이고 네온은 비치게
+		for _, d in ipairs(ef:GetDescendants()) do
+			if d:IsA("PointLight") then
+				d.Brightness *= 0.35
+				d.Range *= 0.6
+			elseif d:IsA("ParticleEmitter") then
+				d.Rate *= 0.3
+			elseif d:IsA("BasePart") and d.Material == Enum.Material.Neon then
+				d.Transparency = math.max(d.Transparency, 0.35)
+			end
+		end
 		-- 푯말 (앞 왼쪽)
 		signpost(at + Vector3.new(-4.6, 0, -6.4), st, u)
 		-- 발판 (앞)
