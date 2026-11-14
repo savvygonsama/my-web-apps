@@ -1401,7 +1401,7 @@ local function refreshFighter(player: Player)
 	local cm = Config.chiMax(p.stats.chi, idx)
 	if BATTLE then
 		f.walk = Config.BATTLE.walk
-		cm = Config.CHI_MAX
+		cm = Config.BATTLE.chiMax
 	end
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
@@ -1446,7 +1446,7 @@ local function respawnPlayer(player: Player)
 		-- 배틀그라운드: 지금 맵에서 다른 사람과 가장 먼 자리, 잠깐 보호
 		char:PivotTo(Battle.spawnCF(player))
 		Battle.shield(f)
-		f.chi = 0
+		f.chi = Config.BATTLE.chiStart
 	elseif char then
 		-- 지옥에서 쓰러졌으면 황천 나루에서, 천상계에서 쓰러졌으면 천궁에서 일어난다
 		if st and (st :: any).diedInHell then

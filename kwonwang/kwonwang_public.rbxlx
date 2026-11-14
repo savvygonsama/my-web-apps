@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.88.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.89.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4657,6 +4657,13 @@ Config.BATTLE = {
 	hitCap = 22,
 	secCap = 32,
 	gradeStep = 0.02,
+	-- 3.89판: 내공 그릇 100 → 200 (초 오의 150을 쓸 수 있게). 일어날 때 40, 저절로 차는 속도 1.6배, 맞힐 때 1.5배
+	chiMax = 200,
+	chiStart = 40,
+	chiRegen = 1.6,
+	chiHit = 1.5,
+	-- 오의 (G) · 초 오의 (X) 한 번이 한 사람에게 넣는 피해는 체력의 이 비율까지 (200의 30% = 60, 45% = 90)
+	ultCap = { G = 0.3, X = 0.45 },
 	walk = 18,
 	respawn = 4,
 	shield = 5, -- 싸움터에 들어가거나 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
@@ -11263,7 +11270,7 @@ local function refreshFighter(player: Player)
 	local cm = Config.chiMax(p.stats.chi, idx)
 	if BATTLE then
 		f.walk = Config.BATTLE.walk
-		cm = Config.CHI_MAX
+		cm = Config.BATTLE.chiMax
 	end
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
@@ -11308,7 +11315,7 @@ local function respawnPlayer(player: Player)
 		-- 배틀그라운드: 지금 맵에서 다른 사람과 가장 먼 자리, 잠깐 보호
 		char:PivotTo(Battle.spawnCF(player))
 		Battle.shield(f)
-		f.chi = 0
+		f.chi = Config.BATTLE.chiStart
 	elseif char then
 		-- 지옥에서 쓰러졌으면 황천 나루에서, 천상계에서 쓰러졌으면 천궁에서 일어난다
 		if st and (st :: any).diedInHell then
@@ -19182,7 +19189,7 @@ function Combat.kill(f: Fighter, by: Fighter?)
 end
 
 -- 3.3판 배틀그라운드: 사람이 받는 피해를 눌러 담고 (기술 크기의 거듭제곱), 한 대·1초 상한을 둔다
-local function battleShape(att: Fighter, tgt: Fighter, d: number): number
+local function battleShape(att: Fighter, tgt: Fighter, d: number, move: any?): number
 	if not Config.BATTLE_MODE or not tgt.player or d <= 0 then
 		return d
 	end
@@ -19198,6 +19205,20 @@ local function battleShape(att: Fighter, tgt: Fighter, d: number): number
 		ft.bWinSum = 0
 	end
 	v = math.max(0, math.min(v, B.secCap - (ft.bWinSum or 0)))
+	-- 3.89판: 오의 · 초 오의 한 번이 한 사람에게 넣는 피해는 체력의 ultCap 비율까지 (한 번 쓰고 끝나지 않게)
+	local mid = move and type(move.id) == "string" and move.id or ""
+	local tail = string.match(mid, "([GX])%d*$") -- ykG2 처럼 둘째 오의도
+	local capFrac = tail and B.ultCap and B.ultCap[tail]
+	if capFrac then
+		ft.bUlt = ft.bUlt or {}
+		local u = ft.bUlt[att]
+		if not u or u.id ~= mid or t - u.at > 6 then
+			u = { id = mid, at = t, sum = 0 }
+			ft.bUlt[att] = u
+		end
+		v = math.max(0, math.min(v, capFrac * B.hp - u.sum))
+		u.sum += v
+	end
 	ft.bWinSum = (ft.bWinSum or 0) + v
 	return v
 end
@@ -19489,7 +19510,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
-		d = battleShape(att, tgt, d)
+		d = battleShape(att, tgt, d, move)
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
 		if not steady then
@@ -19545,7 +19566,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.posture = 0
 		crit = true
 	end
-	d = battleShape(att, tgt, d)
+	d = battleShape(att, tgt, d, move)
 	-- 3.83판 초반 보호: 처음 삶의 낮은 경지는 졸병 피해를 덜 받는다
 	if att.npc and tgt.player and att.model:GetAttribute("Boss") ~= true then
 		d *= Config.earlyShield((tgt :: any).realmIdx, (tgt :: any).rebirth)
@@ -19623,9 +19644,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	do
 		local CH = Config.CHI_HIT
 		local mid = type(move.id) == "string" and move.id or ""
-		local tail = string.sub(mid, -1)
-		if not (opt.isSkill and (tail == "G" or tail == "X")) then
-			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1)
+		local tail = string.match(mid, "([GX])%d*$")
+		if not (opt.isSkill and tail ~= nil) then
+			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1) * (Config.BATTLE_MODE and Config.BATTLE.chiHit or 1)
 			addChi(att, gain)
 		end
 		if tgt.maxHp > 0 then
@@ -19965,7 +19986,7 @@ function Combat.tick(dt: number)
 				f.chi = cmax
 				changed = true
 			elseif f.player and f.chi < cmax then
-				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)))
+				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)) * (Config.BATTLE_MODE and Config.BATTLE.chiRegen or 1))
 				changed = true
 			end
 			if f.act and t > f.act.start + f.act.dur then

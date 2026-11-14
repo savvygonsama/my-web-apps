@@ -399,7 +399,7 @@ function Combat.kill(f: Fighter, by: Fighter?)
 end
 
 -- 3.3판 배틀그라운드: 사람이 받는 피해를 눌러 담고 (기술 크기의 거듭제곱), 한 대·1초 상한을 둔다
-local function battleShape(att: Fighter, tgt: Fighter, d: number): number
+local function battleShape(att: Fighter, tgt: Fighter, d: number, move: any?): number
 	if not Config.BATTLE_MODE or not tgt.player or d <= 0 then
 		return d
 	end
@@ -415,6 +415,20 @@ local function battleShape(att: Fighter, tgt: Fighter, d: number): number
 		ft.bWinSum = 0
 	end
 	v = math.max(0, math.min(v, B.secCap - (ft.bWinSum or 0)))
+	-- 3.89판: 오의 · 초 오의 한 번이 한 사람에게 넣는 피해는 체력의 ultCap 비율까지 (한 번 쓰고 끝나지 않게)
+	local mid = move and type(move.id) == "string" and move.id or ""
+	local tail = string.match(mid, "([GX])%d*$") -- ykG2 처럼 둘째 오의도
+	local capFrac = tail and B.ultCap and B.ultCap[tail]
+	if capFrac then
+		ft.bUlt = ft.bUlt or {}
+		local u = ft.bUlt[att]
+		if not u or u.id ~= mid or t - u.at > 6 then
+			u = { id = mid, at = t, sum = 0 }
+			ft.bUlt[att] = u
+		end
+		v = math.max(0, math.min(v, capFrac * B.hp - u.sum))
+		u.sum += v
+	end
 	ft.bWinSum = (ft.bWinSum or 0) + v
 	return v
 end
@@ -706,7 +720,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	end
 	if tgt.guarding and facing > 0.2 and not opt.unblockable and not opt.chain and not (tStyle and tStyle.noBlock) then
 		local d = damageOf(att, hit, move, opt.isSkill, opt.act) * Config.BLOCK_DAMAGE * (tStyle and tStyle.weakBlock or 1) * defense(tgt) * gapMul
-		d = battleShape(att, tgt, d)
+		d = battleShape(att, tgt, d, move)
 		tgt.hp -= d
 		local broke = (not steady) and addPosture(tgt, postureDmg * Config.BLOCK_POSTURE)
 		if not steady then
@@ -762,7 +776,7 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		tgt.posture = 0
 		crit = true
 	end
-	d = battleShape(att, tgt, d)
+	d = battleShape(att, tgt, d, move)
 	-- 3.83판 초반 보호: 처음 삶의 낮은 경지는 졸병 피해를 덜 받는다
 	if att.npc and tgt.player and att.model:GetAttribute("Boss") ~= true then
 		d *= Config.earlyShield((tgt :: any).realmIdx, (tgt :: any).rebirth)
@@ -840,9 +854,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	do
 		local CH = Config.CHI_HIT
 		local mid = type(move.id) == "string" and move.id or ""
-		local tail = string.sub(mid, -1)
-		if not (opt.isSkill and (tail == "G" or tail == "X")) then
-			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1)
+		local tail = string.match(mid, "([GX])%d*$")
+		if not (opt.isSkill and tail ~= nil) then
+			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1) * (Config.BATTLE_MODE and Config.BATTLE.chiHit or 1)
 			addChi(att, gain)
 		end
 		if tgt.maxHp > 0 then
@@ -1182,7 +1196,7 @@ function Combat.tick(dt: number)
 				f.chi = cmax
 				changed = true
 			elseif f.player and f.chi < cmax then
-				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)))
+				f.chi = math.min(cmax, f.chi + Config.CHI_REGEN * dt * (f.skillMult or 1) * math.sqrt(cmax / Config.CHI_MAX) * (1 + ((f :: any).mChi or 0)) * (Config.BATTLE_MODE and Config.BATTLE.chiRegen or 1))
 				changed = true
 			end
 			if f.act and t > f.act.start + f.act.dur then

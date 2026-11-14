@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.88.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.89.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4637,6 +4637,13 @@ Config.BATTLE = {
 	hitCap = 22,
 	secCap = 32,
 	gradeStep = 0.02,
+	-- 3.89판: 내공 그릇 100 → 200 (초 오의 150을 쓸 수 있게). 일어날 때 40, 저절로 차는 속도 1.6배, 맞힐 때 1.5배
+	chiMax = 200,
+	chiStart = 40,
+	chiRegen = 1.6,
+	chiHit = 1.5,
+	-- 오의 (G) · 초 오의 (X) 한 번이 한 사람에게 넣는 피해는 체력의 이 비율까지 (200의 30% = 60, 45% = 90)
+	ultCap = { G = 0.3, X = 0.45 },
 	walk = 18,
 	respawn = 4,
 	shield = 5, -- 싸움터에 들어가거나 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
