@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.92.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.93.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -18254,7 +18254,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
 	-- 3.92판: 전시장 크기 (넓어진 전시장을 땅 · 울타리가 다 품게)
-	local hallW, hallD = 348, 428
+	local hallW, hallD = 480, 582
 	pcall(function()
 		local SH = require(script.Parent:WaitForChild("StyleHall"))
 		hallW, hallD = SH.width(), SH.depth()
@@ -29516,8 +29516,6 @@ local Config = require(ReplicatedStorage:WaitForChild("Config"))
 
 local StyleHall = {}
 
-local PER_ROW = 8 -- 3.67판: 16 → 11. 3.92판: 11 → 8 (번잡하다: 간격을 더 넓혀 여덟 줄)
-local DX, DZ = 36, 46 -- 3.67판: 14.5 · 25 → 24 · 34. 3.92판: → 36 · 46
 local MARGIN = 30 -- 플랫폼 가장자리 여유
 local S = 1.5 -- 마네킹 키 배율
 local INK = Color3.fromRGB(16, 18, 24)
@@ -29945,50 +29943,381 @@ local function signpost(at: Vector3, st: any, parent: Instance)
 end
 
 -- c = 전시장 북쪽 가운데 (대기실 남쪽 문 앞) 바닥. 북쪽 (-Z) 을 본다
+------------------------------------------------------------------------
+-- 3.93판: 정형화된 격자를 버리고 등급마다 다른 구역으로. 구역마다 바닥 · 문 · 늘어선 모양이 다르고,
+-- 칸마다 권법 갈래 (fx) 에 맞는 땅 꾸밈 (화로 · 연못 · 피뢰침 · 벚나무 · 얼음 · 술독 …) 이 놓인다
+------------------------------------------------------------------------
+local DISTRICTS = {
+	{ grades = { "상급" }, name = "수련 마당", shape = "rows", per = 5, floor = Color3.fromRGB(128, 104, 78), mat = Enum.Material.Ground, gate = Color3.fromRGB(120, 82, 52), gateMat = Enum.Material.Wood },
+	{ grades = { "전설" }, name = "청동 회랑", shape = "arc", floor = Color3.fromRGB(104, 98, 90), mat = Enum.Material.Cobblestone, gate = Color3.fromRGB(150, 108, 58), gateMat = Enum.Material.Metal },
+	{ grades = { "신화" }, name = "옥 정원", shape = "rows", per = 5, floor = Color3.fromRGB(72, 96, 86), mat = Enum.Material.Slate, gate = Color3.fromRGB(86, 150, 122), gateMat = Enum.Material.Marble },
+	{ grades = { "태초", "지존" }, name = "백옥 단", shape = "ring", floor = Color3.fromRGB(186, 182, 172), mat = Enum.Material.Marble, gate = Color3.fromRGB(226, 222, 210), gateMat = Enum.Material.Marble },
+	{ grades = { "윤회", "초월" }, name = "현무 뜰", shape = "rows", per = 5, floor = Color3.fromRGB(56, 52, 66), mat = Enum.Material.Basalt, gate = Color3.fromRGB(92, 72, 122), gateMat = Enum.Material.Wood },
+	{ grades = { "권왕", "극", "신" }, name = "왕좌 마당", shape = "throne", floor = Color3.fromRGB(38, 36, 40), mat = Enum.Material.Granite, gate = Color3.fromRGB(196, 156, 70), gateMat = Enum.Material.Metal },
+}
+-- 구역은 둘씩 나란히 (왼쪽 · 오른쪽), 가운데에 길. 문 쪽에서 안쪽으로 갈수록 높은 등급
+local CW = 210 -- 구역 하나의 너비
+local AISLE = 24 -- 가운데 길
+local GATE_GAP = 20 -- 구역 문에서 첫 칸까지
+local SEC_GAP = 14 -- 구역 줄 사이 길
+local ROW_Z = 42
+local HALL_W = CW * 2 + AISLE + 2 * 18
+
+-- 칸 자리 (전시장 원점 기준 x, z) 와 구역들
+local layoutCache: any = nil
+local function layout(): any
+	if layoutCache then
+		return layoutCache
+	end
+	local order = {}
+	for i, st in ipairs(Config.Styles) do
+		order[st] = i
+	end
+	local units, secs = {}, {}
+	local z = MARGIN
+	local bandDepth = 0
+	for di, D in ipairs(DISTRICTS) do
+		local col = (di - 1) % 2 -- 0 왼쪽, 1 오른쪽
+		local cx = (col == 0 and -1 or 1) * (CW / 2 + AISLE / 2)
+		local list = {}
+		for _, st in ipairs(Config.Styles) do
+			if table.find(D.grades, Config.styleGrade(st, 0)) then
+				table.insert(list, st)
+			end
+		end
+		table.sort(list, function(a, b)
+			local ra = table.find(Config.GRADE_ORDER, Config.styleGrade(a, 0)) or 0
+			local rb = table.find(Config.GRADE_ORDER, Config.styleGrade(b, 0)) or 0
+			if ra ~= rb then
+				return ra < rb
+			end
+			return order[a] < order[b]
+		end)
+		local n = #list
+		local zs = z + GATE_GAP
+		local pos: { Vector3 } = {}
+		local depth = 0
+		if D.shape == "rows" then
+			-- 엇갈린 줄 (홀수 줄은 반 칸 밀린다)
+			local per = D.per or 5
+			local dx = math.min(46, (CW - 30) / (per - 0.5))
+			local rows = math.ceil(n / per)
+			for i = 1, n do
+				local r = (i - 1) // per
+				local c = (i - 1) % per
+				local m = math.min(per, n - r * per)
+				local x = (c - (m - 1) / 2) * dx + ((r % 2 == 1 and m == per) and dx * 0.25 or 0)
+				table.insert(pos, Vector3.new(cx + x, 0, zs + 16 + r * ROW_Z))
+			end
+			depth = 16 + (rows - 1) * ROW_Z + 22
+		elseif D.shape == "arc" then
+			-- 반원: 양 끝이 문 쪽, 가운데가 깊다 (원형 극장처럼 감싼다)
+			local R = 100
+			local span = math.min(math.rad(150), (n - 1) * 38 / R)
+			for i = 1, n do
+				local a = n > 1 and (-span / 2 + span * (i - 1) / (n - 1)) or 0
+				table.insert(pos, Vector3.new(cx + R * math.sin(a) * 0.95, 0, zs + 16 + R * (math.cos(a) - math.cos(span / 2))))
+			end
+			depth = 16 + R * (1 - math.cos(span / 2)) + 22
+		elseif D.shape == "ring" then
+			-- 둥근 단: 가운데 빈 마당을 칸들이 둘러싼다
+			local R = math.max(44, n * 40 / (2 * math.pi))
+			for i = 1, n do
+				local a = (i - 1) / n * math.pi * 2 + math.pi / n
+				table.insert(pos, Vector3.new(cx + R * math.sin(a), 0, zs + 16 + R + R * math.cos(a)))
+			end
+			depth = 16 + 2 * R + 22
+		else
+			-- 왕좌: 맨 끝 가운데에 가장 높은 권법, 나머지는 그 앞에 양쪽으로 마주 선다 (가운데 길을 비운다)
+			local rest = n - 1
+			for i = 1, rest do
+				local side = (i % 2 == 1) and -1 or 1
+				local k = (i - 1) // 2
+				table.insert(pos, Vector3.new(cx + side * (34 + (k % 2) * 34), 0, zs + 16 + (k // 2) * ROW_Z + (k % 2) * 20))
+			end
+			local backZ = zs + 16 + math.max(1, math.ceil(math.ceil(rest / 2) / 2)) * ROW_Z + 26
+			table.insert(pos, Vector3.new(cx, 0, backZ))
+			depth = backZ - zs + 22
+		end
+		for i, st in ipairs(list) do
+			table.insert(units, { st = st, at = pos[i], d = di, k = #units + 1 })
+		end
+		table.insert(secs, { D = D, x = cx, w = CW, z0 = z, gateZ = z + 8, depth = GATE_GAP + depth })
+		bandDepth = math.max(bandDepth, GATE_GAP + depth)
+		if col == 1 or di == #DISTRICTS then
+			-- 한 줄 (둘) 이 끝났다: 둘의 바닥 길이를 맞춘다
+			for _, sc in ipairs(secs) do
+				if sc.z0 == z then
+					sc.z1 = z + bandDepth
+				end
+			end
+			z += bandDepth + SEC_GAP
+			bandDepth = 0
+		end
+	end
+	layoutCache = { units = units, secs = secs, W = HALL_W, D = z + MARGIN - SEC_GAP }
+	return layoutCache
+end
+
+-- 칸마다 땅 꾸밈 (상징물은 위에서 빛나고, 땅에는 그 권법 갈래의 살림이 놓인다). 발판 (앞 -8 ~ -16) 과 푯말 자리는 비운다
+local function rock(at: Vector3, s: number, col: Color3, mat: Enum.Material?, parent: Instance, rot: number?)
+	part({ Name = "Rock", Size = Vector3.new(s * 1.3, s * 0.8, s), CFrame = CFrame.new(at + Vector3.new(0, s * 0.3, 0)) * CFrame.Angles(0.2, rot or 0, 0.15), Color = col, Material = mat or Enum.Material.Slate, CanCollide = false, Parent = parent })
+end
+local function post(at: Vector3, h: number, w: number, col: Color3, mat: Enum.Material, parent: Instance, tilt: number?)
+	return part({ Name = "Post", Size = Vector3.new(w, h, w), CFrame = CFrame.new(at + Vector3.new(0, h / 2, 0)) * CFrame.Angles(tilt or 0, 0, (tilt or 0) * 0.6), Color = col, Material = mat, CanCollide = false, Parent = parent })
+end
+local function tree(at: Vector3, h: number, crown: Color3, parent: Instance, mat: Enum.Material?)
+	post(at, h * 0.6, 1.2, Color3.fromRGB(96, 66, 48), Enum.Material.Wood, parent)
+	for k = 0, 2 do
+		ball("Crown", at + Vector3.new((k - 1) * 1.6, h * 0.62 + (k % 2) * 1.2, (k % 2) * 1.2), h * 0.42 - k * 0.3, crown, mat or Enum.Material.Grass, parent)
+	end
+end
+local GROUND: { [string]: (Vector3, Color3, Color3, Instance, Random) -> () } = {}
+GROUND.fire = function(at, c1, c2, f, R)
+	-- 검은 현무암 둘레돌과 무쇠 화로 둘
+	for k = 0, 6 do
+		local a = math.rad(200 + k * 24)
+		rock(at + Vector3.new(math.cos(a) * 7.5, 0, math.sin(a) * 7.5 + 2), 1.6 + R:NextNumber(), Color3.fromRGB(40, 36, 36), Enum.Material.Basalt, f, a)
+	end
+	for _, x in ipairs({ -8, 8 }) do
+		post(at + Vector3.new(x, 0, 3), 3, 0.5, Color3.fromRGB(46, 44, 44), Enum.Material.Metal, f)
+		disc("Brazier", at + Vector3.new(x, 3.2, 3), 1.4, 0.6, Color3.fromRGB(56, 50, 48), Enum.Material.Metal, f)
+		ball("Ember", at + Vector3.new(x, 3.6, 3), 1.2, c1, Enum.Material.Neon, f, 0.3)
+	end
+end
+GROUND.karma = GROUND.fire
+GROUND.water = function(at, c1, c2, f, R)
+	-- 받침대를 두른 얕은 연못과 갈대
+	disc("Pool", at + Vector3.new(0, 0.12, 2), 9, 0.2, Color3.fromRGB(70, 120, 150), Enum.Material.Glass, f, 0.35)
+	disc("PoolRim", at + Vector3.new(0, 0.05, 2), 9.8, 0.16, Color3.fromRGB(150, 146, 136), Enum.Material.Cobblestone, f)
+	for k = 1, 7 do
+		local a = math.rad(160 + k * 30)
+		post(at + Vector3.new(math.cos(a) * 8.6, 0, 2 + math.sin(a) * 8.6), 3 + R:NextNumber() * 2, 0.2, Color3.fromRGB(120, 140, 80), Enum.Material.Grass, f, (R:NextNumber() - 0.5) * 0.4)
+	end
+end
+GROUND.ocean = GROUND.water
+GROUND.lightning = function(at, c1, c2, f, R)
+	-- 피뢰침 셋과 그을린 땅
+	disc("Scorch", at + Vector3.new(0, 0.08, 1), 8, 0.12, Color3.fromRGB(40, 38, 42), Enum.Material.Slate, f)
+	for k, x in ipairs({ -8, 0, 8 }) do
+		local h = k == 2 and 10 or 7
+		post(at + Vector3.new(x, 0, k == 2 and 7 or 4), h, 0.45, Color3.fromRGB(80, 82, 90), Enum.Material.Metal, f)
+		ball("RodTip", at + Vector3.new(x, h + 0.3, k == 2 and 7 or 4), 0.8, Color3.fromRGB(196, 130, 70), Enum.Material.Metal, f)
+	end
+end
+GROUND.wind = function(at, c1, c2, f, R)
+	-- 바람에 누운 풀과 깃발 둘
+	for k = 1, 12 do
+		local a = R:NextNumber() * math.pi * 2
+		local r = 6 + R:NextNumber() * 3
+		local p = at + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r * 0.7 + 2)
+		if p.Z - at.Z > -6 then
+			post(p, 1.6 + R:NextNumber(), 0.25, Color3.fromRGB(150, 160, 96), Enum.Material.Grass, f, 0.5)
+		end
+	end
+	for _, x in ipairs({ -7, 7 }) do
+		post(at + Vector3.new(x, 0, 4), 9, 0.3, Color3.fromRGB(110, 80, 56), Enum.Material.Wood, f)
+		part({ Name = "Flag", Size = Vector3.new(4, 2.4, 0.1), CFrame = CFrame.new(at + Vector3.new(x + 2.1, 7.6, 4)) * CFrame.Angles(0, 0.25, -0.08), Color = c1:Lerp(Color3.new(1, 1, 1), 0.3), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+	end
+end
+GROUND.cloud = GROUND.wind
+GROUND.mist = function(at, c1, c2, f, R)
+	-- 이끼 낀 바위 무리와 낮은 차나무
+	for k = 1, 4 do
+		local a = math.rad(190 + k * 40)
+		rock(at + Vector3.new(math.cos(a) * 7.5, 0, math.sin(a) * 7.5 + 2), 2 + R:NextNumber() * 1.5, Color3.fromRGB(90, 104, 86), Enum.Material.Slate, f, a)
+	end
+	for _, x in ipairs({ -9, 9 }) do
+		ball("TeaBush", at + Vector3.new(x, 1, 2), 3, Color3.fromRGB(70, 110, 70), Enum.Material.Grass, f)
+	end
+end
+GROUND.gold = function(at, c1, c2, f, R)
+	-- 두 단의 대리석 단과 금빛 석등
+	disc("Dais1", at + Vector3.new(0, 0.2, 0), 7.2, 0.4, Color3.fromRGB(214, 208, 192), Enum.Material.Marble, f, 0, true)
+	disc("Dais2", at + Vector3.new(0, 0.5, 0), 6, 0.4, Color3.fromRGB(226, 220, 204), Enum.Material.Marble, f, 0, true)
+	for _, x in ipairs({ -8, 8 }) do
+		post(at + Vector3.new(x, 0, 3), 4, 0.9, Color3.fromRGB(180, 170, 150), Enum.Material.Granite, f)
+		part({ Name = "LampBox", Size = Vector3.new(1.6, 1.4, 1.6), Position = at + Vector3.new(x, 4.6, 3), Color = Color3.fromRGB(210, 170, 80), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+	end
+end
+GROUND.king = function(at, c1, c2, f, R)
+	GROUND.gold(at, c1, c2, f, R)
+	-- 붉은 깔개 (발판 쪽으로)
+	part({ Name = "Carpet", Size = Vector3.new(4, 0.1, 10), Position = at + Vector3.new(0, 0.08, -4), Color = Color3.fromRGB(130, 30, 34), Material = Enum.Material.Fabric, CanCollide = false, Parent = f })
+end
+GROUND.shadow = function(at, c1, c2, f, R)
+	-- 비스듬히 솟은 검은 돌칼
+	for k = 1, 6 do
+		local a = math.rad(180 + k * 30)
+		local h = 3 + R:NextNumber() * 4
+		part({ Name = "Shard", Size = Vector3.new(0.9, h, 1.6), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 7.5, h / 2 - 0.4, math.sin(a) * 7.5 + 2)) * CFrame.Angles(math.cos(a) * 0.35, a, math.sin(a) * 0.35), Color = Color3.fromRGB(26, 24, 32), Material = Enum.Material.Glass, CanCollide = false, Parent = f })
+	end
+end
+GROUND.void = GROUND.shadow
+GROUND.subspace = function(at, c1, c2, f, R)
+	-- 흰 격자 바닥 (공백 · 아공간)
+	for i = -2, 2 do
+		part({ Name = "GridX", Size = Vector3.new(16, 0.1, 0.2), Position = at + Vector3.new(0, 0.08, 2 + i * 3), Color = Color3.fromRGB(220, 224, 236), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		part({ Name = "GridZ", Size = Vector3.new(0.2, 0.1, 13), Position = at + Vector3.new(i * 3.6, 0.08, 2), Color = Color3.fromRGB(220, 224, 236), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+end
+GROUND.blood = function(at, c1, c2, f, R)
+	-- 검붉은 바닥돌과 꽂힌 말뚝
+	disc("BloodStone", at + Vector3.new(0, 0.08, 1), 8.5, 0.12, Color3.fromRGB(70, 26, 28), Enum.Material.Slate, f)
+	for k = 1, 5 do
+		local a = math.rad(195 + k * 30)
+		post(at + Vector3.new(math.cos(a) * 8, 0, 1 + math.sin(a) * 8), 3.4, 0.4, Color3.fromRGB(220, 210, 190), Enum.Material.SmoothPlastic, f, (R:NextNumber() - 0.5) * 0.5)
+	end
+end
+GROUND.celestial = function(at, c1, c2, f, R)
+	-- 남빛 단과 그 위에 박힌 별 조각
+	disc("StarDais", at + Vector3.new(0, 0.2, 1), 8.5, 0.4, Color3.fromRGB(30, 34, 60), Enum.Material.Slate, f, 0, true)
+	for k = 1, 14 do
+		local a = R:NextNumber() * math.pi * 2
+		local r = 5.4 + R:NextNumber() * 2.8
+		ball("Star", at + Vector3.new(math.cos(a) * r, 0.42, 1 + math.sin(a) * r), 0.35, Color3.fromRGB(240, 240, 255), Enum.Material.Neon, f, 0.2)
+	end
+end
+GROUND.galaxy = GROUND.celestial
+GROUND.origin = GROUND.celestial
+GROUND.eclipse = function(at, c1, c2, f, R)
+	-- 반은 희고 반은 검은 둥근 단
+	part({ Name = "Half", Size = Vector3.new(8.5, 0.3, 17), Position = at + Vector3.new(-4.25, 0.15, 1), Color = Color3.fromRGB(226, 222, 212), Material = Enum.Material.Marble, CanCollide = false, Parent = f })
+	part({ Name = "Half", Size = Vector3.new(8.5, 0.3, 17), Position = at + Vector3.new(4.25, 0.15, 1), Color = Color3.fromRGB(30, 30, 36), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+end
+GROUND.gravity = function(at, c1, c2, f, R)
+	-- 가라앉은 동심원 돌테
+	for k = 1, 3 do
+		disc("SinkRing", at + Vector3.new(0, 0.06 + k * 0.02, 1), 5 + k * 1.6, 0.12, k % 2 == 0 and Color3.fromRGB(70, 66, 80) or Color3.fromRGB(110, 104, 120), Enum.Material.Slate, f)
+	end
+end
+GROUND.time = function(at, c1, c2, f, R)
+	-- 해시계: 바닥의 눈금과 비스듬한 바늘
+	disc("Dial", at + Vector3.new(0, 0.1, 1), 8.5, 0.16, Color3.fromRGB(176, 168, 150), Enum.Material.Granite, f)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		part({ Name = "Mark", Size = Vector3.new(0.3, 0.1, 1.4), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 7.4, 0.2, 1 + math.sin(a) * 7.4)) * CFrame.Angles(0, -a + math.pi / 2, 0), Color = Color3.fromRGB(60, 54, 48), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+	part({ Name = "Gnomon", Size = Vector3.new(0.4, 6, 3), CFrame = CFrame.new(at + Vector3.new(6, 2, 6)) * CFrame.Angles(math.rad(-30), 0, 0), Color = Color3.fromRGB(90, 80, 70), Material = Enum.Material.Metal, CanCollide = false, Parent = f })
+end
+GROUND.rinne = GROUND.gravity
+GROUND.dragon = function(at, c1, c2, f, R)
+	-- 받침대를 감은 돌용의 몸
+	for k = 0, 13 do
+		local a = math.rad(160 + k * 17)
+		ball("StoneCoil", at + Vector3.new(math.cos(a) * 6.6, 0.8 + math.sin(k * 0.9) * 0.6, 1 + math.sin(a) * 6.6), 2.2 - k * 0.08, Color3.fromRGB(120, 130, 120), Enum.Material.Slate, f)
+	end
+end
+GROUND.petal = function(at, c1, c2, f, R)
+	-- 뒤에 벚나무, 땅에 꽃잎
+	tree(at + Vector3.new(-7, 0, 7), 11, Color3.fromRGB(250, 186, 206), f, Enum.Material.SmoothPlastic)
+	for k = 1, 16 do
+		local p = at + Vector3.new((R:NextNumber() - 0.5) * 18, 0.08, R:NextNumber() * 10 - 2)
+		part({ Name = "FallenPetal", Size = Vector3.new(0.6, 0.06, 0.4), CFrame = CFrame.new(p) * CFrame.Angles(0, R:NextNumber() * 6, 0), Color = Color3.fromRGB(255, 196, 214), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+	end
+end
+GROUND.nature = function(at, c1, c2, f, R)
+	tree(at + Vector3.new(8, 0, 6), 12, Color3.fromRGB(70, 120, 60), f)
+	tree(at + Vector3.new(-8, 0, 7), 9, Color3.fromRGB(90, 130, 66), f)
+	ball("Bush", at + Vector3.new(-9, 1, 0), 3, Color3.fromRGB(80, 126, 70), Enum.Material.Grass, f)
+end
+GROUND.ice = function(at, c1, c2, f, R)
+	disc("Frost", at + Vector3.new(0, 0.08, 1), 8.6, 0.12, Color3.fromRGB(210, 230, 240), Enum.Material.Snow, f)
+	for k = 1, 7 do
+		local a = math.rad(185 + k * 25)
+		local h = 2.5 + R:NextNumber() * 4
+		part({ Name = "IceShard", Size = Vector3.new(1.2, h, 1.2), CFrame = CFrame.new(at + Vector3.new(math.cos(a) * 7.6, h / 2 - 0.3, 1 + math.sin(a) * 7.6)) * CFrame.Angles(math.cos(a) * 0.3, a, math.sin(a) * 0.3), Color = Color3.fromRGB(180, 220, 240), Material = Enum.Material.Ice, Transparency = 0.2, CanCollide = false, Parent = f })
+	end
+end
+GROUND.drunk = function(at, c1, c2, f, R)
+	-- 술독 몇 개 (하나는 쓰러졌다)
+	for k, v in ipairs({ Vector3.new(-8, 0, 2), Vector3.new(-9.5, 0, 5), Vector3.new(8, 0, 3), Vector3.new(9, 0, 6.5) }) do
+		local jar = part({ Name = "Jar", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 3, 2.6), CFrame = CFrame.new(at + v + Vector3.new(0, 1.4, 0)) * CFrame.Angles(k == 3 and math.rad(80) or 0, 0, 0), Color = Color3.fromRGB(120, 76, 50), Material = Enum.Material.SmoothPlastic, CanCollide = false, Parent = f })
+		jar.Name = "Jar"
+	end
+end
+GROUND.sand = function(at, c1, c2, f, R)
+	disc("Dune", at + Vector3.new(0, 0.1, 2), 9, 0.2, Color3.fromRGB(214, 190, 140), Enum.Material.Sand, f)
+	for _, x in ipairs({ -8, 8 }) do
+		rock(at + Vector3.new(x, 0, 4), 2.4, Color3.fromRGB(176, 140, 100), Enum.Material.Sandstone, f, x)
+	end
+end
+GROUND.duel = function(at, c1, c2, f, R)
+	-- 뒤에 무기 걸이
+	part({ Name = "Rack", Size = Vector3.new(10, 0.6, 0.6), Position = at + Vector3.new(0, 4.4, 8), Color = Color3.fromRGB(110, 80, 54), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	for _, x in ipairs({ -4.6, 4.6 }) do
+		post(at + Vector3.new(x, 0, 8), 5, 0.6, Color3.fromRGB(110, 80, 54), Enum.Material.Wood, f)
+	end
+	for k = -2, 2 do
+		post(at + Vector3.new(k * 1.6, 0.4, 7.6), 5.4, 0.2, Color3.fromRGB(170, 176, 186), Enum.Material.Metal, f, 0.12)
+	end
+end
+GROUND.basic = function(at, c1, c2, f, R)
+	-- 목인 하나와 짚단
+	post(at + Vector3.new(8, 0, 4), 5.6, 1.4, Color3.fromRGB(130, 92, 60), Enum.Material.Wood, f)
+	for _, y in ipairs({ 2.6, 3.8 }) do
+		part({ Name = "WoodArm", Size = Vector3.new(0.4, 0.4, 2.6), Position = at + Vector3.new(8, y, 3), Color = Color3.fromRGB(110, 76, 50), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	end
+	disc("Straw", at + Vector3.new(-8, 0.8, 4), 1.4, 1.6, Color3.fromRGB(206, 180, 110), Enum.Material.Grass, f)
+end
+
 function StyleHall.build(c: Vector3, parent: Instance): { any }
 	local f = Instance.new("Folder")
 	f.Name = "StyleHall"
 	f.Parent = parent
-	local list = {}
-	for _, st in ipairs(Config.Styles) do
-		table.insert(list, st) -- 모든 권법 (숨은 것 · 게임패스 것까지)
-	end
-	-- 등급 낮은 것부터 (같은 등급은 처음 실린 차례)
-	local order = {}
-	for i, st in ipairs(list) do
-		order[st] = i
-	end
-	table.sort(list, function(a, b)
-		local ra = table.find(Config.GRADE_ORDER, Config.styleGrade(a, 0)) or 0
-		local rb = table.find(Config.GRADE_ORDER, Config.styleGrade(b, 0)) or 0
-		if ra ~= rb then
-			return ra < rb -- 3.67판: 약한 등급부터 (문 가까운 첫 줄이 가장 약하다)
-		end
-		return order[a] < order[b]
-	end)
-	local rows = math.ceil(#list / PER_ROW)
-	local W = PER_ROW * DX + MARGIN * 2
-	local Dp = rows * DZ + MARGIN * 2
-	-- 바닥: 어두운 돌 마당과 빛나는 테
+	local L = layout()
+	local W, Dp = L.W, L.D
+	-- 바닥: 어두운 돌 마당 (구역은 그 위에 저마다의 바닥을 얇게 깐다)
 	part({ Name = "HallFloor", Size = Vector3.new(W, 0.6, Dp), Position = c + Vector3.new(0, 0.3, Dp / 2), Color = Color3.fromRGB(56, 58, 66), Material = Enum.Material.Slate, CanCollide = true, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, 0), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
-	part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, Dp), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	for _, z in ipairs({ 0, Dp }) do
+		part({ Name = "HallEdge", Size = Vector3.new(W + 1, 0.5, 0.8), Position = c + Vector3.new(0, 0.5, z), Color = Color3.fromRGB(96, 64, 46), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
+	end
+	-- 구역: 바닥 · 문 (기둥 둘, 들보, 현판)
+	for _, sec in ipairs(L.secs) do
+		local D = sec.D
+		local len = sec.z1 - sec.z0
+		part({ Name = "DistrictFloor", Size = Vector3.new(sec.w, 0.1, len), Position = c + Vector3.new(sec.x, 0.63, sec.z0 + len / 2), Color = D.floor, Material = D.mat, CanCollide = false, Parent = f })
+		local gz = c + Vector3.new(sec.x, 0.6, sec.gateZ)
+		for _, x in ipairs({ -15, 15 }) do
+			part({ Name = "GatePillar", Size = Vector3.new(2, 15, 2), Position = gz + Vector3.new(x, 7.5, 0), Color = D.gate, Material = D.gateMat, Parent = f })
+		end
+		part({ Name = "GateBeam", Size = Vector3.new(36, 1.6, 2.6), Position = gz + Vector3.new(0, 14.4, 0), Color = D.gate:Lerp(Color3.new(0, 0, 0), 0.25), Material = D.gateMat, Parent = f })
+		local plaque = part({ Name = "GatePlaque", Size = Vector3.new(16, 3.2, 0.4), Position = gz + Vector3.new(0, 11.6, -1.4), Color = Color3.fromRGB(36, 28, 24), Material = Enum.Material.Wood, Parent = f })
+		local sg = Instance.new("SurfaceGui")
+		sg.Face = Enum.NormalId.Front
+		sg.PixelsPerStud = 40
+		sg.LightInfluence = 0.3
+		sg.Parent = plaque
+		local t = Instance.new("TextLabel")
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.fromScale(1, 1)
+		t.Font = Enum.Font.GothamBlack
+		t.TextScaled = true
+		t.TextColor3 = Config.GRADE_COLOR[D.grades[#D.grades]] or Color3.fromRGB(255, 220, 140)
+		t.TextStrokeTransparency = 0.5
+		t.Text = table.concat(D.grades, " · ") .. "  " .. D.name
+		t.Parent = sg
+	end
 	local units = {}
-	for i, st in ipairs(list) do
-		local row = (i - 1) // PER_ROW
-		local col = (i - 1) % PER_ROW
-		local n = math.min(PER_ROW, #list - row * PER_ROW)
-		local x = (col - (n - 1) / 2) * DX
-		local z0 = MARGIN + 14 + row * DZ
-		local at = c + Vector3.new(x, 0.6, z0)
+	for _, U in ipairs(L.units) do
+		local st = U.st
+		local R = Random.new(U.k * 7919)
+		local at = c + Vector3.new(U.at.X + (R:NextNumber() - 0.5) * 4, 0.6, U.at.Z + (R:NextNumber() - 0.5) * 4)
 		local u = Instance.new("Model")
 		u.Name = "Unit"
 		u:SetAttribute("Style", st.id)
 		u.Parent = f
 		local c1, c2 = st.color, st.color2 or st.color
-		-- 받침대
-		disc("Base", at + Vector3.new(0, 0.4, 0), 4.4, 0.8, INK, Enum.Material.SmoothPlastic, u, 0, true)
+		-- 받침대 (구역마다 돌빛이 다르다)
+		local D = DISTRICTS[U.d]
+		disc("Base", at + Vector3.new(0, 0.4, 0), 4.4, 0.8, D.floor:Lerp(INK, 0.6), Enum.Material.SmoothPlastic, u, 0, true)
 		disc("Rim", at + Vector3.new(0, 0.82, 0), 4.7, 0.2, c1:Lerp(INK, 0.35), Enum.Material.SmoothPlastic, u, 0)
+		-- 땅 꾸밈
+		local gf = Instance.new("Folder")
+		gf.Name = "Ground"
+		gf.Parent = u
+		local gfn = GROUND[st.fx or ""] or GROUND.basic
+		pcall(gfn, at, c1, c2, gf, R)
 		-- 상징물
 		local fn = EMBLEM[st.fx or ""] or emblemFallback
 		local ef = Instance.new("Folder")
@@ -30006,12 +30335,12 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 				d.Transparency = math.max(d.Transparency, 0.35)
 			end
 		end
-		-- 푯말 (앞 왼쪽)
-		signpost(at + Vector3.new(-4.6, 0, -6.4), st, u)
+		-- 푯말 (칸마다 왼쪽 · 오른쪽을 번갈아)
+		signpost(at + Vector3.new(U.k % 2 == 0 and 4.6 or -4.6, 0, -6.4), st, u)
 		-- 발판 (앞)
 		local padAt = at + Vector3.new(0, 0, -12)
 		part({ Name = "PadEdge", Size = Vector3.new(8.8, 0.3, 8.8), Position = padAt + Vector3.new(0, 0.15, 0), Color = Color3.fromRGB(30, 32, 40), Material = Enum.Material.SmoothPlastic, CanCollide = true, Parent = u })
-		local pad = part({ Name = "Pad", Size = Vector3.new(8, 0.32, 8), Position = padAt + Vector3.new(0, 0.2, 0), Color = c1, Material = Enum.Material.Neon, Transparency = 0.3, CanCollide = false, Parent = u })
+		local pad = part({ Name = "Pad", Size = Vector3.new(8, 0.32, 8), Position = padAt + Vector3.new(0, 0.2, 0), Color = c1, Material = Enum.Material.SmoothPlastic, Transparency = 0.15, CanCollide = false, Parent = u })
 		local sg = Instance.new("SurfaceGui")
 		sg.Name = "PadText"
 		sg.Face = Enum.NormalId.Top
@@ -30036,13 +30365,14 @@ function StyleHall.build(c: Vector3, parent: Instance): { any }
 	return units
 end
 
+StyleHall.layout = layout
+
 -- 전시장의 크기 (대기실이 둘레 울타리를 넓힐 때)
 function StyleHall.depth(): number
-	local n = #Config.Styles
-	return math.ceil(n / PER_ROW) * DZ + MARGIN * 2
+	return layout().D
 end
 function StyleHall.width(): number
-	return PER_ROW * DX + MARGIN * 2
+	return layout().W
 end
 
 return StyleHall

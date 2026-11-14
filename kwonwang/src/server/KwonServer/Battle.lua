@@ -808,7 +808,7 @@ local function buildLobby(c: Vector3, f: Folder): any
 	local TILE = Color3.fromRGB(58, 62, 70)
 	local RED = Color3.fromRGB(160, 44, 36)
 	-- 3.92판: 전시장 크기 (넓어진 전시장을 땅 · 울타리가 다 품게)
-	local hallW, hallD = 348, 428
+	local hallW, hallD = 480, 582
 	pcall(function()
 		local SH = require(script.Parent:WaitForChild("StyleHall"))
 		hallW, hallD = SH.width(), SH.depth()
