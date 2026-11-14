@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.94.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.95.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4510,7 +4510,7 @@ Config.Shop = {
 	-- 3.44판: 값은 경지에 맞춰 오른다 (scale). 후반에도 은자를 쓸 곳이 되게
 	{ id = "potion", name = "금창약", icon = "🧪", desc = "체력 40% 회복 (H키, 최대 5개)", cost = 40, max = 5, scale = true },
 	{ id = "elixir", name = "소환단", icon = "💊", desc = "5분 동안 수련 효과 2배", cost = 250, scale = true },
-	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치가 오른다 (영구, 경지에 맞춰 커진다)", cost = 1500, scale = true },
+	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치가 오른다 (영구, 경지에 맞춰 커진다). 경지마다 다섯 알까지, 살수록 비싸진다", cost = 1500, scale = true },
 	-- 3.84판: 만물상이 허전했다. 싸움에 쓰는 소모품 다섯 (값은 경지에 맞춰 오른다)
 	{ id = "chiPill", name = "내공단", icon = "🌀", desc = "내공이 바로 가득 찬다 (오의 · 초 오의를 한 번 더)", cost = 80, scale = true },
 	{ id = "rage", name = "폭혈단", icon = "🩸", desc = "10분 동안 주는 피해 +15% (사면 시간이 늘어난다, 최대 1시간)", cost = 350, scale = true, buff = "dmg" },
@@ -4528,9 +4528,27 @@ function Config.shopCost(item: any, realmIdx: number): number
 	return item.scale and math.floor(item.cost * Config.coinScale(realmIdx)) or item.cost
 end
 -- 대환단 한 알: 그 경지 기준 적 스무 마리를 쓰러뜨린 만큼의 능력치 (넷으로 나눠). 값 (약 13분 사냥한 은자) 에 비해 사냥 시간의 약 1/4을 더 얻는다
+-- 3.95판 대환단: 한 알이 그 경지 구간 (다음 경지까지 필요한 능력치) 의 일정 몫. 경지마다 다섯 알, 살수록 1.6배 비싸진다
+-- (예전엔 한 알이 구간의 25~35% 인데 값은 경지마다 1.37배만 올라, 후반에 은자를 모아 두면 몇 초 만에 능력치가 두 배가 됐다)
+-- 한 알 몫은 초반엔 크고 경지가 오를수록 줄어든다: 구간의 25% × 0.8^(경지-1), 적어도 1% (삼류 25% · 절정 10% · 생사경 3.4% · 등선 이후 1%)
+Config.PILL = { first = 0.25, decay = 0.8, floor = 0.01, max = 5, step = 1.6 }
+function Config.pillFrac(realmIdx: number): number
+	local P = Config.PILL
+	return math.max(P.floor, P.first * P.decay ^ (math.max(1, math.floor(realmIdx or 1)) - 1))
+end
 function Config.pillStats(realmIdx: number): number
 	local i = math.clamp(math.floor(realmIdx or 1), 1, #Config.Realms)
-	return math.max(10, math.floor(Config.killGain(Config.realmRefPower(i)) * 20 / 4))
+	local R = Config.Realms
+	local gap
+	if i < #R then
+		gap = R[i + 1].need - R[i].need
+	else
+		gap = R[i].need - R[i - 1].need
+	end
+	return math.max(10, math.floor(gap * Config.pillFrac(i) / #Config.Stats))
+end
+function Config.pillCost(realmIdx: number, bought: number): number
+	return math.floor(Config.shopCost(Config.SHOP_BY_ID.pill, realmIdx) * Config.PILL.step ^ math.max(0, bought))
 end
 Config.SHOP_BY_ID = {}
 for _, it in ipairs(Config.Shop) do

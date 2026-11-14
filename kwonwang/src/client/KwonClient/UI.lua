@@ -1931,8 +1931,15 @@ function UIB.buildShop()
 		end
 		for _, item in ipairs(Config.Shop) do
 			local cost = Config.shopCost(item, state and state.realm or 1)
-			local can = state and state.coins >= cost
-			labels[item.id].Text = "💰 " .. Config.formatNumber(cost)
+			local soldOut = false
+			if item.id == "pill" then
+				-- 3.95판: 경지마다 다섯 알, 살수록 비싸진다
+				local n = state and state.pillN or 0
+				cost = Config.pillCost(state and state.realm or 1, n)
+				soldOut = n >= Config.PILL.max
+			end
+			local can = state and state.coins >= cost and not soldOut
+			labels[item.id].Text = soldOut and "다음 경지에" or ("💰 " .. Config.formatNumber(cost) .. (item.id == "pill" and string.format(" (%d/%d)", state and state.pillN or 0, Config.PILL.max) or ""))
 			labels[item.id].BackgroundColor3 = can and C.red or C.panel
 		end
 		local owned = state and state.premium or {}

@@ -4460,4 +4460,8 @@ return {
 	["백 번째 당기자 검이 스르륵 빠졌다. 칼자루에 칼끝으로 새긴 글이 있다. '백 번을 당긴 이에게 남긴다.' 검은 녹슬었지만, 칼자루 속에서 💰 %s 은자가 쏟아졌다."] = "On the hundredth pull, the sword slides free. Words are carved into the hilt with a blade's tip: 'Left for the one who pulled a hundred times.' The sword is rusted, but 💰 %s silver spills out of the hilt.",
 	["무너지는 돌길을 건너 아무도 오지 않는 정원에 닿았다. 낡은 상자 속에 쪽지가 있다. '여기까지 온 이에게 남긴다.' 💰 %s 은자 · 💠 천정 %d · 📜 두루마리 %d개를 얻었다."] = "You crossed the crumbling stone path and reached a garden no one visits. Inside an old chest is a note: 'Left for the one who came this far.' Got 💰 %s silver · 💠 %d sky gems · 📜 %d scrolls.",
 	["서북쪽 끝 운무 차밭 남쪽 가장자리, 거울처럼 맑은 연못가에 앉은 신선이 있다더라"] = "They say at the southern edge of the Misty Tea Fields in the far northwest, an immortal sits by a pond as clear as a mirror",
+	["🔮 대환단은 경지마다 %d알까지예요. 다음 경지에 오르면 다시 살 수 있어요"] = "🔮 Great Elixir Pills are limited to %d per realm. You can buy more after reaching the next realm",
+	["🔮 모든 능력치 +%s (이 경지에서 %d/%d알)"] = "🔮 All stats +%s (%d/%d this realm)",
+	["모든 능력치가 오른다 (영구, 경지에 맞춰 커진다). 경지마다 다섯 알까지, 살수록 비싸진다"] = "Raises all stats (permanent, scales with realm). Up to five per realm, each one costs more",
+	["다음 경지에"] = "Next realm",
 }

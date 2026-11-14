@@ -42,6 +42,8 @@ type Profile = {
 	mastery: { [string]: { lv: number, xp: number } },
 	potions: number,
 	elixirUntil: number,
+	pillRealm: number, -- 3.95판 대환단: 이 경지에서
+	pillN: number, -- 몇 알 샀나
 	kills: number,
 	bosses: { [string]: number },
 	dex: { [string]: number }, -- 3.20판 도감: 적 종류마다 쓰러뜨린 수
@@ -104,6 +106,8 @@ local function defaultProfile(): Profile
 		mastery = {},
 		potions = 2,
 		elixirUntil = 0,
+		pillRealm = 0,
+		pillN = 0,
 		kills = 0,
 		bosses = {},
 		pvpWins = 0,
@@ -189,6 +193,8 @@ local function sanitize(data: any): Profile
 	end
 	p.potions = math.floor(num(data.potions, 5))
 	p.elixirUntil = num(data.elixirUntil, 1e11)
+	p.pillRealm = math.floor(num(data.pillRealm, 100))
+	p.pillN = math.floor(num(data.pillN, 100))
 	p.kills = math.floor(num(data.kills, 1e9))
 	if type(data.bosses) == "table" then
 		for id, n in pairs(data.bosses) do
@@ -1116,6 +1122,7 @@ local function pushState(player: Player)
 		total = Calc.total(p),
 		realm = idx,
 		realmName = realm.name,
+		pillN = (p.pillRealm == idx) and p.pillN or 0, -- 3.95판: 이 경지에서 산 대환단
 		styles = owned,
 		style = p.style,
 		mastery = mastery,
@@ -3065,6 +3072,18 @@ function Actions.buy(player: Player, id: any)
 		return
 	end
 	local cost = Config.shopCost(item, (Calc.realm(p)))
+	-- 3.95판 대환단: 경지마다 PILL.max 알까지, 살수록 비싸진다 (모아 둔 은자로 몇 초 만에 능력치가 두 배가 되던 것)
+	if item.id == "pill" then
+		local r = (Calc.realm(p))
+		if p.pillRealm ~= r then
+			p.pillRealm, p.pillN = r, 0
+		end
+		if p.pillN >= Config.PILL.max then
+			toast(player, string.format("🔮 대환단은 경지마다 %d알까지예요. 다음 경지에 오르면 다시 살 수 있어요", Config.PILL.max))
+			return
+		end
+		cost = Config.pillCost(r, p.pillN)
+	end
 	if p.coins < cost then
 		toast(player, string.format("은자가 부족해요 (💰 %s 필요)", Config.formatNumber(cost)))
 		return
@@ -3075,11 +3094,12 @@ function Actions.buy(player: Player, id: any)
 	elseif item.id == "elixir" then
 		p.elixirUntil = math.max(os.time(), p.elixirUntil) + 300
 	elseif item.id == "pill" then
+		p.pillN += 1
 		local n = Config.pillStats((Calc.realm(p)))
 		for _, s in ipairs(Config.Stats) do
 			p.stats[s.id] += n
 		end
-		toast(player, string.format("🔮 모든 능력치 +%s", Config.formatNumber(n)))
+		toast(player, string.format("🔮 모든 능력치 +%s (이 경지에서 %d/%d알)", Config.formatNumber(n), p.pillN, Config.PILL.max))
 		refreshFighter(player)
 	elseif item.id == "chiPill" then
 		local f0 = Combat.fighterOfPlayer(player)
