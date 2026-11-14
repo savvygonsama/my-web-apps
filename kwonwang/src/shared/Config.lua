@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.96.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.97.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -6816,6 +6816,67 @@ end
 for _, z in ipairs(Config.HELL.zones or {}) do
 	if z.boss then
 		Config.BOSS_AT[z.boss.id] = z.boss.at
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.97판: 이야기 보상 은자가 너무 많았다 (권왕 장 1억 2500만, 태허경 2250만 … 그 경지 사냥 몇 시간 몫).
+-- 한 장의 은자는 그 무렵 경지에서 졸병을 STORY_COIN.mins 분 사냥한 만큼까지. 다만 바로 다음 장에 은자가 들면
+-- (권법 배우기 · 깨달음 · 각성 · 지옥 삯 · 신의 동굴) 그 값만큼은 남긴다
+------------------------------------------------------------------------
+Config.STORY_COIN = { mins = 12, perMin = 150 }
+do
+	local function needOf(ch: any): number
+		local g = ch and ch.goal
+		if not g then
+			return 0
+		end
+		if g.kind == "learn" then
+			if g.id == "sinsamjae" and Config.SINROAD then
+				return Config.SINROAD.cost
+			end
+			if type(g.n) == "number" then
+				return Config.LEARN_COST[g.n] or 0
+			end
+			return 0
+		elseif g.kind == "enlight" then
+			local b = Config.BREAKTHROUGH[g.n or 1]
+			return b and b.coins or 0
+		elseif g.kind == "awaken" then
+			return Config.AWAKEN_STYLE.coins
+		elseif g.kind == "bosses" and Config.HELL and Config.HELL.zones then
+			-- 지옥 보스를 처음 잡으러 가는 장: 사신에게 낼 삯
+			for _, id in ipairs(g.ids or {}) do
+				local b = Config.Bosses[id]
+				if b and Config.BOSS_AT and Config.BOSS_AT[id] and Config.inHell(Config.BOSS_AT[id]) then
+					return Config.HELL.cost
+				end
+			end
+		end
+		return 0
+	end
+	local realm = 1
+	local hellPaid = false
+	for i, ch in ipairs(Config.Story) do
+		local g = ch.goal
+		if g.kind == "realm" and type(g.n) == "number" then
+			realm = g.n
+		elseif g.kind == "rebirth" then
+			realm = math.max(realm, Config.REBIRTH.base)
+		end
+		local r = ch.reward
+		if r and r.coins and r.coins > 0 then
+			local cap = math.floor(Config.STORY_COIN.mins * Config.STORY_COIN.perMin * Config.coinScale(realm))
+			local need = needOf(Config.Story[i + 1])
+			if need == Config.HELL.cost then
+				-- 지옥 삯은 한 번만
+				if hellPaid then
+					need = 0
+				end
+				hellPaid = true
+			end
+			r.coins = math.min(r.coins, math.max(cap, need))
+		end
 	end
 end
 
