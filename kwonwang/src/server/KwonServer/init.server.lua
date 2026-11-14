@@ -1405,8 +1405,18 @@ local function refreshFighter(player: Player)
 	end
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
-	local cp = Config.playerPower(f.dmgMult, f.maxHp)
+	-- 3.84판: 각성 (치는 순간 곱한다) 도 전투력에 넣는다 (적 쪽은 권법 인플레이션만큼 키웠다. 지도의 추천 · 적 빛깔이 맞게)
+	local awk = Config.awakenTier(m)
+	local af = awk >= 2 and Config.AWAKEN[2].dmg or (awk == 1 and 1.08 or 1)
+	local cp = Config.playerPower(f.dmgMult * af, f.maxHp)
 	;(f :: any).power = cp
+	-- 3.84판 만물상 소모품 (폭혈단 · 철갑환) 은 몸이 바뀌어도 남는다
+	local stb = states[player] :: any
+	if stb then
+		local fa = f :: any
+		fa.shopDmgUntil = stb.shopDmgUntil
+		fa.shopDefUntil = stb.shopDefUntil
+	end
 	f.model:SetAttribute("Power", cp)
 	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
@@ -1866,6 +1876,7 @@ MiniQuest.init({
 })
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
+local activeGate: { [Player]: any } = {} -- 3.84판: 경지의 관문 (Gate) 이 쓴다. 귀환부가 먼저 보므로 여기서
 
 local function trialDef(style: any, master: any): any
 	local moves = {}
@@ -2302,7 +2313,8 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local fortune = ((states[killer] :: any).shopCoinUntil or 0) > os.clock() and Config.SHOP_BUFF.coin or 1
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * fortune * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -3031,6 +3043,18 @@ function Actions.buy(player: Player, id: any)
 	if not p or not st or not item then
 		return
 	end
+	-- 3.84판 귀환부: 싸우는 중 · 탑 · 미궁 · 시련 중에는 못 쓴다 (값을 받기 전에 본다)
+	if item.id == "recall" then
+		local f0 = Combat.fighterOfPlayer(player)
+		if not f0 or f0.dead or f0.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 귀환부를 쓸 수 없어요")
+			return
+		end
+		if Tower.active(player) or Maze.active(player) or activeGate[player] or activeTrial[player] then
+			toast(player, "지금은 귀환부를 쓸 수 없어요")
+			return
+		end
+	end
 	if item.id == "potion" and p.potions >= (Premium.owns(player, "bag") and item.max * 2 or item.max) then
 		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
@@ -3052,6 +3076,30 @@ function Actions.buy(player: Player, id: any)
 		end
 		toast(player, string.format("🔮 모든 능력치 +%s", Config.formatNumber(n)))
 		refreshFighter(player)
+	elseif item.id == "chiPill" then
+		local f0 = Combat.fighterOfPlayer(player)
+		if f0 then
+			f0.chi = (f0 :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f0)
+		end
+	elseif item.buff then
+		-- 폭혈단 · 철갑환 · 복전부: 10분씩 늘어난다 (최대 1시간)
+		local B = Config.SHOP_BUFF
+		local key = item.buff == "dmg" and "shopDmgUntil" or (item.buff == "def" and "shopDefUntil" or "shopCoinUntil")
+		local sa = st :: any
+		local now0 = os.clock()
+		sa[key] = math.min(now0 + B.max, math.max(now0, sa[key] or 0) + B.dur)
+		local f0 = Combat.fighterOfPlayer(player)
+		if f0 then
+			(f0 :: any)[key] = sa[key]
+		end
+		toast(player, string.format("%s %s · 남은 시간 %d분", item.icon, item.name, math.ceil((sa[key] - now0) / 60)))
+	elseif item.id == "recall" then
+		local char = player.Character
+		local J = p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+		if char then
+			char:PivotTo(J and Config.jumakSpawn(J) or CFrame.new(Config.SPAWN))
+		end
 	end
 	st.dirty = true
 	toast(player, item.icon .. " " .. item.name .. "을(를) 샀어요")
@@ -3065,7 +3113,7 @@ end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 관문 수호자를 꺾어야 그 경지에 오른다
 ------------------------------------------------------------------------
 Gate = {}
-local activeGate: { [Player]: any } = {}
+-- (activeGate 는 위에서 미리 만든다: 만물상 귀환부가 본다)
 
 ------------------------------------------------------------------------
 -- 1.9판: 환생. 열린 끝 경지에 오르면, 능력치를 모두 내려놓고 삼류로 다시 태어난다

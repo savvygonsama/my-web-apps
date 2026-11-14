@@ -385,6 +385,16 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		f.dmgMult *= fh
 	end
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
+	-- 3.84판 권법 인플레이션: 그 땅 적의 경지에 맞춰 체력 · 피해를 키운다 (시험 · 심마 · 시험장 · 허수아비는 빼고)
+	if not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" then
+		local cp1 = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
+		local inf = Config.INFLATION[Config.enemyRealm(cp1)]
+		if inf then
+			f.maxHp = math.max(1, math.floor(f.maxHp * inf[1]))
+			f.hp = f.maxHp
+			f.dmgMult *= inf[2]
+		end
+	end
 	-- 3.77판 사냥터 보정 (Config.ZONE_TUNE): 졸병의 체력 · 피해, 은자
 	local tune = (not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" and region ~= "summon") and Config.tuneAt(at) or nil
 	if tune then

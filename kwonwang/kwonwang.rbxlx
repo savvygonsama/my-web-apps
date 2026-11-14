@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.83.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.84.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4416,6 +4416,23 @@ function Config.powerGap(ratio: number, boss: boolean?): (number, boolean, boole
 	end
 	return 1, false, false
 end
+-- 3.84판 권법 인플레이션: 후반 플레이어는 등급 말고도 각성 (×1.55) · 숙련 20 · 깨달음 · 심법 · 환생 특전으로 계산보다 훨씬 세다.
+-- 그 땅의 적 (그 경지의 적 전투력으로 가른다) 체력 · 피해를 그만큼 키운다. 경지 번호 → { 체력, 피해 }
+Config.INFLATION = {
+	{ 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1.1, 1 }, { 1.1, 1 }, { 1.12, 1 }, { 1.15, 1 },
+	{ 1.3, 1.08 }, { 1.35, 1.08 }, { 1.4, 1.1 }, { 1.45, 1.1 },
+	{ 1.65, 1.15 }, { 1.7, 1.15 }, { 1.75, 1.18 }, { 1.8, 1.2 },
+	{ 1.9, 1.22 }, { 1.9, 1.22 }, { 1.95, 1.25 }, { 2, 1.25 }, { 2, 1.25 }, { 2, 1.25 },
+}
+function Config.enemyRealm(power: number): number
+	local idx = 1
+	for i = 1, 22 do
+		if power >= Config.realmRefPower(i) * 0.9 then
+			idx = i
+		end
+	end
+	return idx
+end
 Config.MAX_ATTACKERS = 2 -- 한 사람을 한꺼번에 치는 적은 둘까지 (나머지는 둘레를 돌며 틈을 본다)
 -- 3.83판 초반 보호: 처음 삶에서 경지가 낮을 때 졸병 (보스 말고) 의 피해를 줄인다 (삼류 ×0.55 → 초절정 ×1).
 -- 일류까지는 졸병이 한 번에 하나씩만 덤빈다. 전투력이 비슷해도 기술 · 숙련이 없는 초반에 졸병 무리가 너무 셌다
@@ -4500,7 +4517,15 @@ Config.Shop = {
 	{ id = "potion", name = "금창약", icon = "🧪", desc = "체력 40% 회복 (H키, 최대 5개)", cost = 40, max = 5, scale = true },
 	{ id = "elixir", name = "소환단", icon = "💊", desc = "5분 동안 수련 효과 2배", cost = 250, scale = true },
 	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치가 오른다 (영구, 경지에 맞춰 커진다)", cost = 1500, scale = true },
+	-- 3.84판: 만물상이 허전했다. 싸움에 쓰는 소모품 다섯 (값은 경지에 맞춰 오른다)
+	{ id = "chiPill", name = "내공단", icon = "🌀", desc = "내공이 바로 가득 찬다 (오의 · 초 오의를 한 번 더)", cost = 80, scale = true },
+	{ id = "rage", name = "폭혈단", icon = "🩸", desc = "10분 동안 주는 피해 +15% (사면 시간이 늘어난다, 최대 1시간)", cost = 350, scale = true, buff = "dmg" },
+	{ id = "ironPill", name = "철갑환", icon = "🛡", desc = "10분 동안 받는 피해 -15% (사면 시간이 늘어난다, 최대 1시간)", cost = 350, scale = true, buff = "def" },
+	{ id = "fortune", name = "복전부", icon = "🧧", desc = "10분 동안 적에게서 얻는 은자 +25% (최대 1시간)", cost = 300, scale = true, buff = "coin" },
+	{ id = "recall", name = "귀환부", icon = "🏮", desc = "마지막으로 쉰 주막 (없으면 청운 마을) 으로 바로 돌아간다 (싸우는 중엔 못 쓴다)", cost = 25, scale = true },
 }
+-- 3.84판 소모품의 효과 (buff 가 있는 것: 10분씩, 최대 1시간)
+Config.SHOP_BUFF = { dmg = 1.15, def = 0.85, coin = 1.25, dur = 600, max = 3600 }
 -- 3.44판 은자의 잣대: 그 경지에서 졸병을 사냥해 버는 은자가 이만큼씩 커진다 (삼류 1 → 허무경 약 744). 경지에 맞춰 오르는 값은 모두 이것으로
 function Config.coinScale(realmIdx: number): number
 	return 1.37 ^ (math.clamp(math.floor(realmIdx or 1), 1, 22) - 1)
@@ -11219,8 +11244,18 @@ local function refreshFighter(player: Player)
 	end
 	;(f :: any).chiMax = cm
 	f.model:SetAttribute("ChiMax", cm)
-	local cp = Config.playerPower(f.dmgMult, f.maxHp)
+	-- 3.84판: 각성 (치는 순간 곱한다) 도 전투력에 넣는다 (적 쪽은 권법 인플레이션만큼 키웠다. 지도의 추천 · 적 빛깔이 맞게)
+	local awk = Config.awakenTier(m)
+	local af = awk >= 2 and Config.AWAKEN[2].dmg or (awk == 1 and 1.08 or 1)
+	local cp = Config.playerPower(f.dmgMult * af, f.maxHp)
 	;(f :: any).power = cp
+	-- 3.84판 만물상 소모품 (폭혈단 · 철갑환) 은 몸이 바뀌어도 남는다
+	local stb = states[player] :: any
+	if stb then
+		local fa = f :: any
+		fa.shopDmgUntil = stb.shopDmgUntil
+		fa.shopDefUntil = stb.shopDefUntil
+	end
 	f.model:SetAttribute("Power", cp)
 	f.model:SetAttribute("Awaken", Config.awakenTier(m))
 	Combat.sync(f)
@@ -11680,6 +11715,7 @@ MiniQuest.init({
 })
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
+local activeGate: { [Player]: any } = {} -- 3.84판: 경지의 관문 (Gate) 이 쓴다. 귀환부가 먼저 보므로 여기서
 
 local function trialDef(style: any, master: any): any
 	local moves = {}
@@ -12116,7 +12152,8 @@ Combat.init(Push, {
 				local PS = Config.PASS
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local fortune = ((states[killer] :: any).shopCoinUntil or 0) > os.clock() and Config.SHOP_BUFF.coin or 1
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * fortune * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -12845,6 +12882,18 @@ function Actions.buy(player: Player, id: any)
 	if not p or not st or not item then
 		return
 	end
+	-- 3.84판 귀환부: 싸우는 중 · 탑 · 미궁 · 시련 중에는 못 쓴다 (값을 받기 전에 본다)
+	if item.id == "recall" then
+		local f0 = Combat.fighterOfPlayer(player)
+		if not f0 or f0.dead or f0.combatUntil > os.clock() then
+			toast(player, "싸우는 중에는 귀환부를 쓸 수 없어요")
+			return
+		end
+		if Tower.active(player) or Maze.active(player) or activeGate[player] or activeTrial[player] then
+			toast(player, "지금은 귀환부를 쓸 수 없어요")
+			return
+		end
+	end
 	if item.id == "potion" and p.potions >= (Premium.owns(player, "bag") and item.max * 2 or item.max) then
 		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
@@ -12866,6 +12915,30 @@ function Actions.buy(player: Player, id: any)
 		end
 		toast(player, string.format("🔮 모든 능력치 +%s", Config.formatNumber(n)))
 		refreshFighter(player)
+	elseif item.id == "chiPill" then
+		local f0 = Combat.fighterOfPlayer(player)
+		if f0 then
+			f0.chi = (f0 :: any).chiMax or Config.CHI_MAX
+			Combat.sync(f0)
+		end
+	elseif item.buff then
+		-- 폭혈단 · 철갑환 · 복전부: 10분씩 늘어난다 (최대 1시간)
+		local B = Config.SHOP_BUFF
+		local key = item.buff == "dmg" and "shopDmgUntil" or (item.buff == "def" and "shopDefUntil" or "shopCoinUntil")
+		local sa = st :: any
+		local now0 = os.clock()
+		sa[key] = math.min(now0 + B.max, math.max(now0, sa[key] or 0) + B.dur)
+		local f0 = Combat.fighterOfPlayer(player)
+		if f0 then
+			(f0 :: any)[key] = sa[key]
+		end
+		toast(player, string.format("%s %s · 남은 시간 %d분", item.icon, item.name, math.ceil((sa[key] - now0) / 60)))
+	elseif item.id == "recall" then
+		local char = player.Character
+		local J = p.spawnAt and Config.JUMAK_BY_ID[p.spawnAt]
+		if char then
+			char:PivotTo(J and Config.jumakSpawn(J) or CFrame.new(Config.SPAWN))
+		end
 	end
 	st.dirty = true
 	toast(player, item.icon .. " " .. item.name .. "을(를) 샀어요")
@@ -12879,7 +12952,7 @@ end
 -- 경지의 관문: 특급부터는 능력치가 닿아도 관문 수호자를 꺾어야 그 경지에 오른다
 ------------------------------------------------------------------------
 Gate = {}
-local activeGate: { [Player]: any } = {}
+-- (activeGate 는 위에서 미리 만든다: 만물상 귀환부가 본다)
 
 ------------------------------------------------------------------------
 -- 1.9판: 환생. 열린 끝 경지에 오르면, 능력치를 모두 내려놓고 삼류로 다시 태어난다
@@ -18911,6 +18984,10 @@ local function defense(f: Fighter): number
 	if (f.buffs.giant or 0) > t then
 		m *= 0.5
 	end
+	-- 3.84판 만물상 철갑환
+	if ((f :: any).shopDefUntil or 0) > os.clock() then
+		m *= Config.SHOP_BUFF.def
+	end
 	local style = Combat.styleOf(f)
 	local act = f.act
 	if style and style.armorWhileAttacking and act and t < act.start + act.dur then
@@ -19074,6 +19151,10 @@ local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act
 	end
 	if isSkill then
 		d *= att.skillMult
+	end
+	-- 3.84판 만물상 폭혈단
+	if ((att :: any).shopDmgUntil or 0) > os.clock() then
+		d *= Config.SHOP_BUFF.dmg
 	end
 	-- 1.9판 초·혈마 피의 계약: 체력이 깎일수록 더 깊이 벤다
 	local pact = Combat.styleOf(att)
@@ -22571,6 +22652,16 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		f.dmgMult *= fh
 	end
 	;(f :: any).rewardMult = (1 + 0.25 * (lv - 1)) * math.sqrt(mult)
+	-- 3.84판 권법 인플레이션: 그 땅 적의 경지에 맞춰 체력 · 피해를 키운다 (시험 · 심마 · 시험장 · 허수아비는 빼고)
+	if not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" then
+		local cp1 = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
+		local inf = Config.INFLATION[Config.enemyRealm(cp1)]
+		if inf then
+			f.maxHp = math.max(1, math.floor(f.maxHp * inf[1]))
+			f.hp = f.maxHp
+			f.dmgMult *= inf[2]
+		end
+	end
 	-- 3.77판 사냥터 보정 (Config.ZONE_TUNE): 졸병의 체력 · 피해, 은자
 	local tune = (not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" and region ~= "summon") and Config.tuneAt(at) or nil
 	if tune then
@@ -61966,6 +62057,19 @@ return {
 	["…아직은 그냥 고운 돌이다"] = "…For now it's just a pretty stone",
 	["강화 수련"] = "Enhanced Training",
 	["<font color=\"#FFD75A\"><b>★ 추천</b>  ⚔%s</font>"] = "<font color=\"#FFD75A\"><b>★ Best</b>  ⚔%s</font>",
+	["내공단"] = "Ki Pill",
+	["내공이 바로 가득 찬다 (오의 · 초 오의를 한 번 더)"] = "Fills your Ki instantly (one more ultimate or super ultimate)",
+	["폭혈단"] = "Blood Rage Pill",
+	["10분 동안 주는 피해 +15% (사면 시간이 늘어난다, 최대 1시간)"] = "+15% damage dealt for 10 minutes (buying again adds time, up to 1 hour)",
+	["철갑환"] = "Iron Shell Pill",
+	["10분 동안 받는 피해 -15% (사면 시간이 늘어난다, 최대 1시간)"] = "-15% damage taken for 10 minutes (buying again adds time, up to 1 hour)",
+	["복전부"] = "Fortune Charm",
+	["10분 동안 적에게서 얻는 은자 +25% (최대 1시간)"] = "+25% silver from enemies for 10 minutes (up to 1 hour)",
+	["귀환부"] = "Return Talisman",
+	["마지막으로 쉰 주막 (없으면 청운 마을) 으로 바로 돌아간다 (싸우는 중엔 못 쓴다)"] = "Instantly returns you to the last inn you rested at (or Cheongun Village). Can't be used in combat",
+	["싸우는 중에는 귀환부를 쓸 수 없어요"] = "You can't use the Return Talisman in combat",
+	["지금은 귀환부를 쓸 수 없어요"] = "You can't use the Return Talisman right now",
+	["%s %s · 남은 시간 %d분"] = "%s %s · %d min left",
 }
 ]]></string>
           </Properties>

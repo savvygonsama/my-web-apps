@@ -262,6 +262,10 @@ local function defense(f: Fighter): number
 	if (f.buffs.giant or 0) > t then
 		m *= 0.5
 	end
+	-- 3.84판 만물상 철갑환
+	if ((f :: any).shopDefUntil or 0) > os.clock() then
+		m *= Config.SHOP_BUFF.def
+	end
 	local style = Combat.styleOf(f)
 	local act = f.act
 	if style and style.armorWhileAttacking and act and t < act.start + act.dur then
@@ -425,6 +429,10 @@ local function damageOf(att: Fighter, hit: any, move: any, isSkill: boolean, act
 	end
 	if isSkill then
 		d *= att.skillMult
+	end
+	-- 3.84판 만물상 폭혈단
+	if ((att :: any).shopDmgUntil or 0) > os.clock() then
+		d *= Config.SHOP_BUFF.dmg
 	end
 	-- 1.9판 초·혈마 피의 계약: 체력이 깎일수록 더 깊이 벤다
 	local pact = Combat.styleOf(att)

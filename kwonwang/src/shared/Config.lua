@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.83.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.84.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4396,6 +4396,23 @@ function Config.powerGap(ratio: number, boss: boolean?): (number, boolean, boole
 	end
 	return 1, false, false
 end
+-- 3.84판 권법 인플레이션: 후반 플레이어는 등급 말고도 각성 (×1.55) · 숙련 20 · 깨달음 · 심법 · 환생 특전으로 계산보다 훨씬 세다.
+-- 그 땅의 적 (그 경지의 적 전투력으로 가른다) 체력 · 피해를 그만큼 키운다. 경지 번호 → { 체력, 피해 }
+Config.INFLATION = {
+	{ 1, 1 }, { 1, 1 }, { 1, 1 }, { 1, 1 }, { 1.1, 1 }, { 1.1, 1 }, { 1.12, 1 }, { 1.15, 1 },
+	{ 1.3, 1.08 }, { 1.35, 1.08 }, { 1.4, 1.1 }, { 1.45, 1.1 },
+	{ 1.65, 1.15 }, { 1.7, 1.15 }, { 1.75, 1.18 }, { 1.8, 1.2 },
+	{ 1.9, 1.22 }, { 1.9, 1.22 }, { 1.95, 1.25 }, { 2, 1.25 }, { 2, 1.25 }, { 2, 1.25 },
+}
+function Config.enemyRealm(power: number): number
+	local idx = 1
+	for i = 1, 22 do
+		if power >= Config.realmRefPower(i) * 0.9 then
+			idx = i
+		end
+	end
+	return idx
+end
 Config.MAX_ATTACKERS = 2 -- 한 사람을 한꺼번에 치는 적은 둘까지 (나머지는 둘레를 돌며 틈을 본다)
 -- 3.83판 초반 보호: 처음 삶에서 경지가 낮을 때 졸병 (보스 말고) 의 피해를 줄인다 (삼류 ×0.55 → 초절정 ×1).
 -- 일류까지는 졸병이 한 번에 하나씩만 덤빈다. 전투력이 비슷해도 기술 · 숙련이 없는 초반에 졸병 무리가 너무 셌다
@@ -4480,7 +4497,15 @@ Config.Shop = {
 	{ id = "potion", name = "금창약", icon = "🧪", desc = "체력 40% 회복 (H키, 최대 5개)", cost = 40, max = 5, scale = true },
 	{ id = "elixir", name = "소환단", icon = "💊", desc = "5분 동안 수련 효과 2배", cost = 250, scale = true },
 	{ id = "pill", name = "대환단", icon = "🔮", desc = "모든 능력치가 오른다 (영구, 경지에 맞춰 커진다)", cost = 1500, scale = true },
+	-- 3.84판: 만물상이 허전했다. 싸움에 쓰는 소모품 다섯 (값은 경지에 맞춰 오른다)
+	{ id = "chiPill", name = "내공단", icon = "🌀", desc = "내공이 바로 가득 찬다 (오의 · 초 오의를 한 번 더)", cost = 80, scale = true },
+	{ id = "rage", name = "폭혈단", icon = "🩸", desc = "10분 동안 주는 피해 +15% (사면 시간이 늘어난다, 최대 1시간)", cost = 350, scale = true, buff = "dmg" },
+	{ id = "ironPill", name = "철갑환", icon = "🛡", desc = "10분 동안 받는 피해 -15% (사면 시간이 늘어난다, 최대 1시간)", cost = 350, scale = true, buff = "def" },
+	{ id = "fortune", name = "복전부", icon = "🧧", desc = "10분 동안 적에게서 얻는 은자 +25% (최대 1시간)", cost = 300, scale = true, buff = "coin" },
+	{ id = "recall", name = "귀환부", icon = "🏮", desc = "마지막으로 쉰 주막 (없으면 청운 마을) 으로 바로 돌아간다 (싸우는 중엔 못 쓴다)", cost = 25, scale = true },
 }
+-- 3.84판 소모품의 효과 (buff 가 있는 것: 10분씩, 최대 1시간)
+Config.SHOP_BUFF = { dmg = 1.15, def = 0.85, coin = 1.25, dur = 600, max = 3600 }
 -- 3.44판 은자의 잣대: 그 경지에서 졸병을 사냥해 버는 은자가 이만큼씩 커진다 (삼류 1 → 허무경 약 744). 경지에 맞춰 오르는 값은 모두 이것으로
 function Config.coinScale(realmIdx: number): number
 	return 1.37 ^ (math.clamp(math.floor(realmIdx or 1), 1, 22) - 1)
