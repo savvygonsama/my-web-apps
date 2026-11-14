@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.85.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.86.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -58,7 +58,11 @@ Config.HIT_TOLERANCE = 4.5 -- 화면 판정을 서버가 믿어 주는 거리 �
 Config.COMBO_WINDOW = 0.6 -- 연타가 이어지는 시간
 Config.CHI_MAX = 100
 Config.CHI_REGEN = 5 -- 1초에 (3.68판: 2.5 → 5. 기술 둘 (E 20 · R 25) 을 대기 시간마다 쓰면 내공이 금방 바닥났다)
-Config.CHI_HIT_MIN = 2 -- 3.68판: 맞힐 때마다 적어도 이만큼 (초반에는 피해가 작아 거의 차지 않았다)
+Config.CHI_HIT_MIN = 2
+-- 3.86판: 내공은 피해 숫자가 아니라 그 동작의 기본 위력 (hit.dmg) 과 체력 비율로 찬다.
+-- 예전엔 '준 피해 × 0.5' 라 후반 (한 대에 수천) 엔 한 대에 가득 찼다. 연타 한 대 약 4, 강타 약 10 · 오의의 맞힘은 내공을 채우지 않는다
+Config.CHI_HIT = { per = 0.4, max = 12, skill = 0.5 }
+Config.CHI_HURT = { full = 60, max = 15 } -- 최대 체력만큼 맞으면 60 (한 대에 15까지) -- 3.68판: 맞힐 때마다 적어도 이만큼 (초반에는 피해가 작아 거의 차지 않았다)
 Config.CHI_ON_HIT = 0.5 -- 준 피해 1당
 Config.CHI_ON_HURT = 0.3 -- 받은 피해 1당
 Config.CHI_ON_DEFLECT = 12
@@ -19450,7 +19454,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		if not steady then
 			knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
 		end
-		addChi(tgt, d * Config.CHI_ON_HURT)
+		if tgt.maxHp > 0 then
+			addChi(tgt, math.min(Config.CHI_HURT.max, Config.CHI_HURT.full * d / tgt.maxHp))
+		end
 		Combat.sync(tgt)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = broke and "guardbreak" or "block", pos = pos, dmg = d })
 		if tgt.hp <= 0 then
@@ -19572,8 +19578,19 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
 		end
 	end
-	addChi(att, math.max(Config.CHI_HIT_MIN, d * Config.CHI_ON_HIT))
-	addChi(tgt, d * Config.CHI_ON_HURT)
+	-- 3.86판: 내공은 기본 위력 · 체력 비율로 (피해 숫자가 커지는 후반에 한 대로 가득 차지 않게)
+	do
+		local CH = Config.CHI_HIT
+		local mid = type(move.id) == "string" and move.id or ""
+		local tail = string.sub(mid, -1)
+		if not (opt.isSkill and (tail == "G" or tail == "X")) then
+			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1)
+			addChi(att, gain)
+		end
+		if tgt.maxHp > 0 then
+			addChi(tgt, math.min(Config.CHI_HURT.max, Config.CHI_HURT.full * d / tgt.maxHp))
+		end
+	end
 
 	-- 공격한 쪽 권법 장치: 꽃잎, 전하
 	local chain = false
@@ -83453,6 +83470,7 @@ end
 -- 지도 (오른쪽 위, M으로 크게)와 길잡이
 ------------------------------------------------------------------------
 local mapFrame: Frame
+local mapScaleObj: UIScale? = nil -- 3.86판: 지도가 화면 밖으로 잘리지 않게 placeMap 이 크기를 맞춘다
 local mapInner: Frame
 local mapMe: TextLabel
 local mapGuide: Frame
@@ -83662,6 +83680,18 @@ local function declutter()
 end
 local zoomBtns: { GuiObject } = {}
 local function placeMap()
+	-- 3.86판: 화면에 다 들어가게 (큰 지도는 가로 · 세로 모두, 작은 지도는 오른쪽 위에서 아래 막대 위까지)
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	if mapScaleObj then
+		local sc = V.mapScale or 1
+		if mapBig then
+			sc = math.min(sc, (vp.X - 24) / MAP_BIG, (vp.Y - 60) / MAP_BIG)
+		else
+			sc = math.min(sc, (vp.X * 0.45) / MAP_SMALL, (vp.Y - 160 - 200) / MAP_SMALL)
+		end
+		mapScaleObj.Scale = math.max(0.3, sc)
+	end
 	if mapBig then
 		mapFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 		mapFrame.Position = UDim2.fromScale(0.5, 0.5)
@@ -83685,6 +83715,12 @@ local function placeMap()
 	applyView(myPos())
 	task.defer(declutter)
 end
+-- 3.86판: 화면 크기가 바뀌면 (measure 가 크기를 다시 정한 뒤) 지도도 다시 맞춘다
+table.insert(V.hooks, function()
+	if mapFrame then
+		pcall(placeMap)
+	end
+end)
 
 -- 길잡이·이야기 표시는 그 자리가 지금 보이는 지도 (땅 또는 하늘) 위에 있을 때만
 local guideAt: Vector3? = nil
@@ -83923,7 +83959,7 @@ end
 
 function UIB.buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
-	scaled(mapFrame, "map")
+	mapScaleObj = scaled(mapFrame, "map")
 	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(70, 95, 120), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
 	-- 모든 것을 얹는 판 (작은 지도에서는 크게 키워 나를 따라 옮긴다)
 	mapCanvas = new("Frame", { Name = "Canvas", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(95, 125, 75), BorderSizePixel = 0, ZIndex = 5, Parent = mapInner })

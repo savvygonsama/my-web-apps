@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.85.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.86.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -38,7 +38,11 @@ Config.HIT_TOLERANCE = 4.5 -- 화면 판정을 서버가 믿어 주는 거리 �
 Config.COMBO_WINDOW = 0.6 -- 연타가 이어지는 시간
 Config.CHI_MAX = 100
 Config.CHI_REGEN = 5 -- 1초에 (3.68판: 2.5 → 5. 기술 둘 (E 20 · R 25) 을 대기 시간마다 쓰면 내공이 금방 바닥났다)
-Config.CHI_HIT_MIN = 2 -- 3.68판: 맞힐 때마다 적어도 이만큼 (초반에는 피해가 작아 거의 차지 않았다)
+Config.CHI_HIT_MIN = 2
+-- 3.86판: 내공은 피해 숫자가 아니라 그 동작의 기본 위력 (hit.dmg) 과 체력 비율로 찬다.
+-- 예전엔 '준 피해 × 0.5' 라 후반 (한 대에 수천) 엔 한 대에 가득 찼다. 연타 한 대 약 4, 강타 약 10 · 오의의 맞힘은 내공을 채우지 않는다
+Config.CHI_HIT = { per = 0.4, max = 12, skill = 0.5 }
+Config.CHI_HURT = { full = 60, max = 15 } -- 최대 체력만큼 맞으면 60 (한 대에 15까지) -- 3.68판: 맞힐 때마다 적어도 이만큼 (초반에는 피해가 작아 거의 차지 않았다)
 Config.CHI_ON_HIT = 0.5 -- 준 피해 1당
 Config.CHI_ON_HURT = 0.3 -- 받은 피해 1당
 Config.CHI_ON_DEFLECT = 12

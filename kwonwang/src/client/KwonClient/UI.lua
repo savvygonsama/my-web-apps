@@ -3151,6 +3151,7 @@ end
 -- 지도 (오른쪽 위, M으로 크게)와 길잡이
 ------------------------------------------------------------------------
 local mapFrame: Frame
+local mapScaleObj: UIScale? = nil -- 3.86판: 지도가 화면 밖으로 잘리지 않게 placeMap 이 크기를 맞춘다
 local mapInner: Frame
 local mapMe: TextLabel
 local mapGuide: Frame
@@ -3360,6 +3361,18 @@ local function declutter()
 end
 local zoomBtns: { GuiObject } = {}
 local function placeMap()
+	-- 3.86판: 화면에 다 들어가게 (큰 지도는 가로 · 세로 모두, 작은 지도는 오른쪽 위에서 아래 막대 위까지)
+	local cam = workspace.CurrentCamera
+	local vp = cam and cam.ViewportSize or Vector2.new(1280, 720)
+	if mapScaleObj then
+		local sc = V.mapScale or 1
+		if mapBig then
+			sc = math.min(sc, (vp.X - 24) / MAP_BIG, (vp.Y - 60) / MAP_BIG)
+		else
+			sc = math.min(sc, (vp.X * 0.45) / MAP_SMALL, (vp.Y - 160 - 200) / MAP_SMALL)
+		end
+		mapScaleObj.Scale = math.max(0.3, sc)
+	end
 	if mapBig then
 		mapFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 		mapFrame.Position = UDim2.fromScale(0.5, 0.5)
@@ -3383,6 +3396,12 @@ local function placeMap()
 	applyView(myPos())
 	task.defer(declutter)
 end
+-- 3.86판: 화면 크기가 바뀌면 (measure 가 크기를 다시 정한 뒤) 지도도 다시 맞춘다
+table.insert(V.hooks, function()
+	if mapFrame then
+		pcall(placeMap)
+	end
+end)
 
 -- 길잡이·이야기 표시는 그 자리가 지금 보이는 지도 (땅 또는 하늘) 위에 있을 때만
 local guideAt: Vector3? = nil
@@ -3621,7 +3640,7 @@ end
 
 function UIB.buildMap()
 	mapFrame = new("Frame", { Name = "Map", BackgroundColor3 = Color3.fromRGB(40, 50, 35), BackgroundTransparency = 0.1, ZIndex = 5, Parent = gui }, { corner(12), stroke(C.line, 2) })
-	scaled(mapFrame, "map")
+	mapScaleObj = scaled(mapFrame, "map")
 	mapInner = new("Frame", { Position = UDim2.new(0, 6, 0, 6), Size = UDim2.new(1, -12, 1, -12), BackgroundColor3 = Color3.fromRGB(70, 95, 120), ClipsDescendants = true, ZIndex = 5, Parent = mapFrame }, { corner(8) })
 	-- 모든 것을 얹는 판 (작은 지도에서는 크게 키워 나를 따라 옮긴다)
 	mapCanvas = new("Frame", { Name = "Canvas", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(95, 125, 75), BorderSizePixel = 0, ZIndex = 5, Parent = mapInner })

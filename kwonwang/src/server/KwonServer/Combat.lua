@@ -712,7 +712,9 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		if not steady then
 			knock(tgt, -toAtt * math.min(20, (hit.kb or 0) * 0.4 + 4), 0)
 		end
-		addChi(tgt, d * Config.CHI_ON_HURT)
+		if tgt.maxHp > 0 then
+			addChi(tgt, math.min(Config.CHI_HURT.max, Config.CHI_HURT.full * d / tgt.maxHp))
+		end
 		Combat.sync(tgt)
 		Push:FireAllClients("hit", { a = att.model, t = tgt.model, kind = broke and "guardbreak" or "block", pos = pos, dmg = d })
 		if tgt.hp <= 0 then
@@ -834,8 +836,19 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 			knock(tgt, dir * kb + Vector3.new(0, (hit.up or 0) + (kb > 25 and 12 or 0), 0), stun)
 		end
 	end
-	addChi(att, math.max(Config.CHI_HIT_MIN, d * Config.CHI_ON_HIT))
-	addChi(tgt, d * Config.CHI_ON_HURT)
+	-- 3.86판: 내공은 기본 위력 · 체력 비율로 (피해 숫자가 커지는 후반에 한 대로 가득 차지 않게)
+	do
+		local CH = Config.CHI_HIT
+		local mid = type(move.id) == "string" and move.id or ""
+		local tail = string.sub(mid, -1)
+		if not (opt.isSkill and (tail == "G" or tail == "X")) then
+			local gain = math.clamp((hit.dmg or 0) * CH.per, Config.CHI_HIT_MIN, CH.max) * (opt.isSkill and CH.skill or 1)
+			addChi(att, gain)
+		end
+		if tgt.maxHp > 0 then
+			addChi(tgt, math.min(Config.CHI_HURT.max, Config.CHI_HURT.full * d / tgt.maxHp))
+		end
+	end
 
 	-- 공격한 쪽 권법 장치: 꽃잎, 전하
 	local chain = false
