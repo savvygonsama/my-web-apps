@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.87.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.88.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -3915,7 +3915,8 @@ Config.Regions = {
 	-- 마을 남쪽 들판: 처음 싸워 보기 좋은 무뢰배
 	{ id = "dojo", name = "상급 수련장", center = Vector3.new(330, 0, -330), size = Vector3.new(170, 0, 170), ground = Color3.fromRGB(165, 150, 125), material = Enum.Material.Cobblestone, safe = true },
 	{ id = "field", name = "청운 들판", center = Vector3.new(0, 0, 400), size = Vector3.new(340, 0, 220), ground = Color3.fromRGB(125, 150, 85), material = Enum.Material.Grass,
-		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 360) }, { enemy = "thug", count = 3, at = Vector3.new(130, 0, 400) }, { enemy = "thug", count = 2, at = Vector3.new(0, 0, 460) } } },
+		camps = { { enemy = "thug", count = 3, at = Vector3.new(-120, 0, 360) }, { enemy = "thug", count = 3, at = Vector3.new(60, 0, 330) }, -- 3.88판: (130, 400) 은 철쇄노인 바로 옆이었다
+			 { enemy = "thug", count = 2, at = Vector3.new(0, 0, 460) } } },
 	-- 사부를 찾아가는 길목의 적 (바닥은 따로 깔지 않는다)
 	{ id = "wilds", name = "강호 들판", center = Vector3.new(0, 0, 0), size = Vector3.new(0, 0, 0), noGround = true,
 		camps = {
@@ -3962,30 +3963,30 @@ Config.Regions = {
 		boss = { id = "cheonmun", at = Vector3.new(0, 0, -2760) } },
 	-- 창해각: 서해 남쪽 바닷가의 사당 (창해신권의 사부)
 	{ id = "seashrine", name = "창해각 (바다 사당)", center = Vector3.new(-1700, 0, 950), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(190, 185, 150), material = Enum.Material.Sand, safe = true,
-		master = "changhae", rumor = "서해 절벽 남쪽 바닷가 사당에 파도와 함께 숨 쉬는 노인이 있다더라", quote = "파도 소리 시끄럽지? 난 육십 년째 듣는다.", masterName = "창해옹", masterAt = Vector3.new(-1700, 2.2, 950) },
+		master = "changhae", rumor = "서해 절벽 남쪽 바닷가 사당에 파도와 함께 숨 쉬는 노인이 있다더라", quote = "육십 년을 이 바다만 보며 살았다. 파도가 어디서 꺾이는지는 안다.", masterName = "창해옹", masterAt = Vector3.new(-1700, 2.2, 950) },
 	-- 불 제단: 붉은 황야 동쪽, 꺼지지 않는 불 (열화신권의 사부)
 	{ id = "fireshrine", name = "염화단 (불 제단)", center = Vector3.new(2300, 0, 250), size = Vector3.new(240, 0, 240), ground = Color3.fromRGB(95, 60, 50), material = Enum.Material.Basalt, safe = true,
-		master = "yeolhwa", rumor = "동쪽 붉은 황야 너머, 꺼지지 않는 불 제단에 불을 다루는 노장이 산다더라", quote = "가까이 오지 마라. 옷 탄다.", masterName = "염백", masterAt = Vector3.new(2300, 3, 250) },
+		master = "yeolhwa", rumor = "동쪽 붉은 황야 너머, 꺼지지 않는 불 제단에 불을 다루는 노장이 산다더라", quote = "더 가까이 오지 마라. 옷자락에 불이 옮겨붙는다.", masterName = "염백", masterAt = Vector3.new(2300, 3, 250) },
 	-- 일월대: 해와 달의 단 (정점의 사부, 권존이 홀로 선다)
 	{ id = "sunmoon", name = "일월대", center = Vector3.new(2500, 0, 2500), size = Vector3.new(420, 0, 420), ground = Color3.fromRGB(70, 62, 78), material = Enum.Material.Slate, safe = true },
 	-- 풍신대: 바람이 그치지 않는 언덕 (여덟째 사부)
 	{ id = "windhill", name = "풍신대 (바람의 언덕)", center = Vector3.new(-1100, 0, 1100), size = Vector3.new(260, 0, 260), ground = Color3.fromRGB(120, 165, 115), material = Enum.Material.Grass, safe = true,
-		master = "pungsin", rumor = "남서쪽 먼 언덕, 바람이 그치지 않는 곳에 바람을 차는 사람이 산다더라", quote = "모자 꽉 잡아. 여긴 하루 종일 이래.", masterName = "풍백", masterAt = Vector3.new(-1100, 6, 1100) },
+		master = "pungsin", rumor = "남서쪽 먼 언덕, 바람이 그치지 않는 곳에 바람을 차는 사람이 산다더라", quote = "이 언덕은 바람이 그치지 않는다. 흔들리지 않고 서 있을 수 있느냐.", masterName = "풍백", masterAt = Vector3.new(-1100, 6, 1100) },
 	-- 일곱 사부의 자리 (안전 지대). master = 그 권법, masterAt = 사부가 서 있는 곳
 	{ id = "lake", name = "태허호 (호수 정자)", center = Vector3.new(-650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(110, 150, 110), material = Enum.Material.Grass, safe = true,
-		master = "taeheo", rumor = "남서쪽 호수 한가운데 정자에 물처럼 앉은 노인이 있다더라", quote = "차 한잔 하게. 식기 전에 배우는 게 반이야.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
+		master = "taeheo", rumor = "남서쪽 호수 한가운데 정자에 물처럼 앉은 노인이 있다더라", quote = "차 한잔 들게. 식기 전에 배우는 것이 절반이네.", masterName = "수월진인", masterAt = Vector3.new(-650, 1.6, 650) },
 	{ id = "temple", name = "금강사", center = Vector3.new(650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(150, 140, 120), material = Enum.Material.Cobblestone, safe = true,
-		master = "geumgang", rumor = "북동쪽 돌 기단 위 절에서 종소리가 끊이지 않는다더라", quote = "아미타불. 먼저 그 신발 흙부터 털고 오시지요.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
+		master = "geumgang", rumor = "북동쪽 돌 기단 위 절에서 종소리가 끊이지 않는다더라", quote = "아미타불. 먼 길 오셨습니다. 신발의 흙부터 털고 드시지요.", masterName = "혜공대사", masterAt = Vector3.new(650, 6, -680) },
 	{ id = "plum", name = "매화원", center = Vector3.new(-650, 0, -650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(140, 150, 105), material = Enum.Material.Grass, safe = true,
-		master = "maehwa", rumor = "북서쪽 매화 숲 깊은 곳에 꽃잎과 함께 춤추는 여인이 있다더라", quote = "향 좋지? 이 철에만 나는 거야. 앉아.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
+		master = "maehwa", rumor = "북서쪽 매화 숲 깊은 곳에 꽃잎과 함께 춤추는 여인이 있다더라", quote = "향이 좋지요? 이 철에만 피는 매화랍니다. 앉으세요.", masterName = "매향선자", masterAt = Vector3.new(-650, 0, -660) },
 	{ id = "peak", name = "천룡봉", center = Vector3.new(1000, 0, -280), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(120, 115, 105), material = Enum.Material.Slate, safe = true,
-		master = "cheonryong", rumor = "동쪽 끝 바위 봉우리, 금빛 용 기둥 아래에 노인이 산다더라", quote = "봉우리까지 걸어 올라왔다고? 숨부터 고르고 말해라.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
+		master = "cheonryong", rumor = "동쪽 끝 바위 봉우리, 금빛 용 기둥 아래에 노인이 산다더라", quote = "이 봉우리를 걸어서 올라왔구나. 숨부터 고르고 말하거라.", masterName = "용천노조", masterAt = Vector3.new(1030, 14, -280) },
 	{ id = "ravine", name = "무영곡", center = Vector3.new(-1000, 0, 0), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(60, 58, 70), material = Enum.Material.Slate, safe = true,
-		master = "muyeong", rumor = "서쪽 끝 검은 골짜기에 발소리 없는 그림자가 산다더라", quote = "방금 내가 네 뒤에 있었던 거 알았어? 몰랐지?", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
+		master = "muyeong", rumor = "서쪽 끝 검은 골짜기에 발소리 없는 그림자가 산다더라", quote = "방금 내가 네 뒤에 서 있었다. 알아챘느냐.", masterName = "무영객", masterAt = Vector3.new(-1060, 3, 0) },
 	{ id = "plateau", name = "뇌운 고원", center = Vector3.new(650, 0, 650), size = Vector3.new(300, 0, 300), ground = Color3.fromRGB(125, 125, 135), material = Enum.Material.Granite, safe = true,
-		master = "byeokryeok", rumor = "남동쪽 쇠기둥 고원에 번개가 떨어지지 않는 날이 없다더라", quote = "또 생각하냐? 그사이 세 대는 맞았겠다.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
+		master = "byeokryeok", rumor = "남동쪽 쇠기둥 고원에 번개가 떨어지지 않는 날이 없다더라", quote = "구름이 낮게 깔렸다. 벼락이 치기 전에 용건을 말해라.", masterName = "뇌정진군", masterAt = Vector3.new(650, 2, 650) },
 	{ id = "tavern", name = "취선 주막", center = Vector3.new(0, 0, 700), size = Vector3.new(260, 0, 220), ground = Color3.fromRGB(150, 130, 95), material = Enum.Material.Ground, safe = true,
-		master = "chwi", rumor = "남쪽 주막에 늘 취해 있는 노인이 있는데, 넘어지는 걸 본 사람이 없다더라", quote = "끄윽… 누구더라. 술 사 왔으면 앉고.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
+		master = "chwi", rumor = "남쪽 주막에 늘 취해 있는 노인이 있는데, 넘어지는 걸 본 사람이 없다더라", quote = "끄윽… 누구더라. 술을 가져왔으면 앉게.", masterName = "취선옹", masterAt = Vector3.new(0, 0, 690) },
 	-- 1.8판: 세상 끝 네 귀퉁이의 새 땅 (천외봉보다 한층 위, 천상계 바로 아래의 세기)
 	{ id = "maple", name = "단풍산", center = Vector3.new(3200, 0, -3150), size = Vector3.new(1000, 0, 900), ground = Color3.fromRGB(150, 95, 60), material = Enum.Material.LeafyGrass, ambient = "maple",
 		camps = { { enemy = "mapleblade", count = 4, at = Vector3.new(2900, 0, -2900) }, { enemy = "maplemonk", count = 3, at = Vector3.new(3450, 0, -2950) }, { enemy = "mapleblade", count = 3, at = Vector3.new(3000, 0, -3400) }, { enemy = "maplemonk", count = 2, at = Vector3.new(3450, 0, -3400) } },
@@ -4025,19 +4026,19 @@ for _, r in ipairs(Config.Regions) do
 	end
 end
 -- 숨은 사부 (지도에도, 지역 목록에도 없다): 무극에 오른 자에게만 시험을 허락한다
-Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector3.new(-2100, 1.6, 2100), region = "운해 끝자락", quote = "이름? 그런 거 버린 지 오래다.",
+Config.SECRET_MASTER = { style = "gaecheon", name = "무명 노인", at = Vector3.new(-2100, 1.6, 2100), region = "운해 끝자락", quote = "이름 같은 건 오래전에 버렸다. 묻지 마라.",
 	rumor = "남서쪽 세상 끝, 구름이 땅에 닿는 곳에 이름 없는 노인이 앉아 있다더라", secret = true }
 Config.MASTERS.gaecheon = { name = Config.SECRET_MASTER.name, at = Config.SECRET_MASTER.at, region = Config.SECRET_MASTER.region, regionId = "secret",
 	quote = Config.SECRET_MASTER.quote, rumor = Config.SECRET_MASTER.rumor, secret = true }
 -- 궁극의 사부: 천외봉 아래의 시원자. 무극에 오른 자에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.taecho = { name = "시원자", at = Vector3.new(0, 3.2, -3080), region = "천외봉", regionId = "skysea", secret = true,
-	quote = "여기 처음 온 게 언제였더라. 아, 처음이 여기였지.", rumor = "북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라" }
+	quote = "여기에 처음 온 게 언제였던가. 아니, 처음부터 여기 있었구나.", rumor = "북쪽 끝 구름바다 위, 하늘에 닿은 봉우리 아래에 세상의 처음을 아는 이가 서 있다더라" }
 -- 정점의 사부: 동남쪽 끝 일월대의 권존. 태초신권을 익힌 무극의 고수에게만 시험을 허락한다 (지도에 나오지 않는다)
 Config.MASTERS.ilwol = { name = "권존", at = Vector3.new(2500, 6.2, 2500), region = "일월대", regionId = "sunmoon", secret = true,
-	quote = "낮에 왔으면 해 쪽에, 밤에 왔으면 달 쪽에 서라.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
+	quote = "낮에 왔으면 해를, 밤에 왔으면 달을 등지고 서라.", rumor = "동남쪽 세상 끝, 해와 달이 함께 뜨는 단 위에 주먹 하나로 정점에 선 이가 있다더라" }
 -- 정점 둘째의 사부: 천 개의 계단 꼭대기, 떠 있는 문 앞의 영겁노인 (지도에 나오지 않는다)
 Config.MASTERS.yeonggeop = { name = "영겁노인", at = Vector3.new(-2804, 62.6, -2804), region = "천 개의 계단", regionId = "steps", secret = true,
-	quote = "몇 년이 지났나… 아, 됐다. 세지 마라.", rumor = "북서쪽 끝, 구름까지 닿은 천 개의 계단 위에 시간을 멈춘 노인이 서 있다더라" }
+	quote = "몇 해가 지났는지 세지 마라. 나도 잊었다.", rumor = "북서쪽 끝, 구름까지 닿은 천 개의 계단 위에 시간을 멈춘 노인이 서 있다더라" }
 -- 비급 조각 다섯: 강호의 외진 곳에 숨어 있다. 다 모으면 무극신권
 Config.Fragments = {
 	{ at = Vector3.new(-300, 10.6, 540), hint = "거신상의 발치" },
@@ -4145,7 +4146,7 @@ Config.Story = {
 	{ title = "네 번째 삶", text = "태허경에 올라 네 번째로 환생하라. 권왕 자리가 가깝다. 환생은 두 번 더 남았다.", goal = { kind = "rebirth", n = 4 }, reward = { coins = 12000000 } },
 	{ title = "마지막 그림자", text = "윤회의 바퀴가 마지막 그림자를 내보낸다. 네 삶을 모두 넘어선 너만이 권왕의 자리에 앉는다.", goal = { kind = "samsara", n = 4 }, reward = { coins = 20000000, stats = 20000000 } },
 	{ title = "권왕", text = "네 번의 삶을 넘었다. 이제 권왕에 올라라.", goal = { kind = "realm", n = 20 }, reward = { coins = 50000000 } },
-	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법, 숨은 사부, 완전 각성과 승급은 마음 가는 대로 하면 된다. 권왕한테 이래라저래라 할 사람은 없으니까.", goal = { kind = "done" }, reward = {} },
+	{ title = "강호의 전설", text = "이제 강호에 네 이름을 모르는 자가 없다. 남은 권법, 숨은 사부, 완전 각성과 승급은 이제 네 뜻대로 걸어가면 된다.", goal = { kind = "done" }, reward = {} },
 }
 
 -- 3.9판: 보상을 늘린다. 흑호채부터 은자 ×2.5 · 능력치 ×2, 보스 장에는 심법 두루마리 (뒤로 갈수록 많이)
@@ -5055,68 +5056,69 @@ function Config.skyIslandAt(pos: Vector3): any
 end
 -- 숨은 사부: 금 간 허공의 아공선인 (지도에 나오지 않는다)
 Config.MASTERS.agong = { name = "아공선인", at = Vector3.new(-760, SY + 1.6, 640), region = "금 간 허공 (천상계)", regionId = "subspace", secret = true,
-	quote = "어, 거기 서지 마. 방금 네 발밑이 접혔다 펴졌거든.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
+	quote = "발밑을 잘 살펴라. 이곳의 땅은 가끔 접힌다.", rumor = "천상계 운해 평원의 서쪽 끝에서, 보이지 않는 다리가 허공으로 이어진다더라" }
 -- 천궁 정자의 운류자 (누구나 찾을 수 있다), 성운원 깊은 곳의 성하노군 (숨은 사부)
 -- 3.1판 극의 사부: 천상 윤회대의 황혼권존 (세 번 환생한 자에게만 모습을 보인다)
 -- 3.16판 극 공백권의 사부: 세상 끝 너머 망각의 정원의 격자지기 (지도에 나오지 않는다. 무너지는 돌길로만 닿는다)
 Config.MASTERS.geuknull = { name = "격자지기", at = Config.EGGS.edge.garden + Vector3.new(12, 2.6, -8), region = "세상 끝 너머 (망각의 정원)", regionId = "edge", secret = true,
-	quote = "여기까지 온 사람은 네가 열한 번째다. 앞의 열은 돌아갔지.", rumor = "세상 끝 벼랑 너머, 무너지는 돌길 끝에 떠 있는 정원에서 허공에 격자를 긋는 자가 있다더라" }
+	quote = "여기까지 온 자는 네가 열한 번째다. 앞의 열은 모두 돌아갔다.", rumor = "세상 끝 벼랑 너머, 무너지는 돌길 끝에 떠 있는 정원에서 허공에 격자를 긋는 자가 있다더라" }
 Config.MASTERS.geukilwol = { name = "황혼권존", at = Vector3.new(-590, SY + 41.6, 330), region = "윤회대 (천상계)", regionId = "rinnedae", secret = true,
-	quote = "해 질 녘이 제일 좋다. 둘 다 보이니까.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
+	quote = "해가 지는 이 짧은 때가 좋다. 해와 달이 함께 보이지.", rumor = "천상 윤회대, 해와 달 사이의 노을 속에 권존보다 먼저 권존이었던 이가 서 있다더라" }
 -- 3.22판 극 광속권의 사부: 지옥 황천 나루의 질주귀
 Config.MASTERS.geukspeed = { name = "질주귀", at = Vector3.new(96, 8000 + 1.6, 34), region = "지옥 (황천 나루)", regionId = "hwangcheon", secret = true,
-	quote = "말 다 듣고 출발하면 늦어. 셋, 둘, 하나.", rumor = "저승 너머 황천 나루에, 사신보다 빠르다는 귀신이 서 있다더라" }
+	quote = "말을 다 듣고 출발하면 늦는다. 따라와라.", rumor = "저승 너머 황천 나루에, 사신보다 빠르다는 귀신이 서 있다더라" }
 Config.MASTERS.unryu = { name = "운류자", at = Vector3.new(-100, SY + 1.6, -100), region = "천궁 (천상계)", regionId = "skytown",
-	quote = "어디 한번 밀어 봐. 꿈쩍도 안 할 테니.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
+	quote = "밀어 보거라. 구름은 밀린 만큼 되돌아온다.", rumor = "천상계 천궁 북서쪽 정자에 구름처럼 앉은 노인이 있다더라" }
 -- 3.19판 새 권법의 사부 열하나 (상급 셋은 마을 남쪽 청운 들판, 지도에 나온다. 나머지는 숨은 사부)
 Config.MASTERS.cheolsae = { name = "철쇄노인", at = Vector3.new(150, 1.6, 420), region = "청운 들판 동쪽", regionId = "field",
-	quote = "손목 내놔 봐. 아니, 악수하자는 게 아니고.", rumor = "청운 마을 남쪽 들판 동쪽에 쇠사슬을 허리에 감은 노인이 있다더라" }
+	quote = "손목을 내밀어 보거라. 쥐는 법부터 다시 가르쳐야겠구나.", rumor = "청운 마을 남쪽 들판 동쪽에 쇠사슬을 허리에 감은 노인이 있다더라" }
 Config.MASTERS.yeokryu = { name = "역류객", at = Vector3.new(-150, 1.6, 420), region = "청운 들판 서쪽", regionId = "field",
-	quote = "먼저 쳐 봐. 난 기다리는 게 일이라.", rumor = "청운 마을 남쪽 들판 서쪽에 늘 눈을 감고 서 있는 사람이 있다더라" }
+	quote = "먼저 쳐 보아라. 나는 기다리는 쪽이다.", rumor = "청운 마을 남쪽 들판 서쪽에 늘 눈을 감고 서 있는 사람이 있다더라" }
 Config.MASTERS.jilpung = { name = "질풍랑", at = Vector3.new(300, 1.6, 270), region = "청운 마을 동남쪽 들판", regionId = "wilds",
-	quote = "따라와 봐. 따라오면 가르쳐 줄게.", rumor = "청운 마을 동남쪽 들판에 잠시도 가만히 있지 않는 젊은이가 있다더라" }
+	quote = "따라와 보아라. 따라오면 가르쳐 주마.", rumor = "청운 마을 동남쪽 들판에 잠시도 가만히 있지 않는 젊은이가 있다더라" }
 Config.MASTERS.sanak = { name = "붕산노조", at = Vector3.new(1600, 1.6, 420), region = "붉은 황야", regionId = "badlands",
-	quote = "저 바위 내가 쪼갠 거다. 사십 년 걸렸지.", rumor = "붉은 황야 남쪽, 갈라진 바위 언덕 위에 산처럼 앉은 노인이 있다더라" }
+	quote = "저 바위는 내가 쪼갰다. 사십 년이 걸렸지.", rumor = "붉은 황야 남쪽, 갈라진 바위 언덕 위에 산처럼 앉은 노인이 있다더라" }
 Config.MASTERS.binghon = { name = "빙혼노니", at = Vector3.new(260, 1.6, -1980), region = "북방 설산 얼음 벼랑", regionId = "snow", secret = true,
-	quote = "추우면 저 벽 밑으로 와. 바람은 막아 줄 테니.", rumor = "북방 설산 동쪽 얼음 벼랑 아래, 얼어붙은 폭포 앞에 숨결이 하얀 노니가 있다더라" }
+	quote = "추위를 견디러 왔느냐, 얼음을 배우러 왔느냐.", rumor = "북방 설산 동쪽 얼음 벼랑 아래, 얼어붙은 폭포 앞에 숨결이 하얀 노니가 있다더라" }
 Config.MASTERS.cheonok = { name = "옥진인", at = Vector3.new(-3050, 1.6, 1050), region = "석림 옥 기둥", regionId = "stoneforest", secret = true,
-	quote = "기둥 만지지 마라. 손때 지우는 데 사흘 걸린다.", rumor = "서쪽 끝 석림, 옥처럼 푸른 기둥 사이에 앉아 돌을 다듬는 이가 있다더라" }
+	quote = "기둥에 손대지 마라. 옥은 사람의 손때를 오래 기억한다.", rumor = "서쪽 끝 석림, 옥처럼 푸른 기둥 사이에 앉아 돌을 다듬는 이가 있다더라" }
 Config.MASTERS.cheonjong = { name = "종지기", at = Vector3.new(3000, 1.6, -2900), region = "단풍산 꼭대기", regionId = "maple", secret = true,
-	quote = "오늘 종은 벌써 쳤다. 내일 아침에 다시 와.", rumor = "동북쪽 끝 단풍산 꼭대기, 낡은 종 아래 하루에 한 번 종을 치는 이가 있다더라" }
-Config.MASTERS.myeonggyeong = { name = "명경선", at = Vector3.new(-3300, 1.6, -3025), region = "운무 차밭 거울 연못", regionId = "teafield", secret = true,
-	quote = "연못 들여다보지 마라. 거기 비친 놈이 자꾸 말을 건다.", rumor = "서북쪽 끝 운무 차밭 한가운데, 거울처럼 맑은 연못가에 앉은 신선이 있다더라" }
+	quote = "오늘 종은 이미 울렸다. 내일 새벽에 다시 오너라.", rumor = "동북쪽 끝 단풍산 꼭대기, 낡은 종 아래 하루에 한 번 종을 치는 이가 있다더라" }
+-- 3.88판: 운무 차밭 보스 (다선) 싸움터 한가운데에 있었다. 차밭 남쪽 가장자리의 조용한 연못가로
+Config.MASTERS.myeonggyeong = { name = "명경선", at = Vector3.new(-3300, 1.6, -2610), region = "운무 차밭 거울 연못", regionId = "teafield", secret = true,
+	quote = "연못을 오래 들여다보지 마라. 비친 얼굴이 먼저 말을 걸어온다.", rumor = "서북쪽 끝 운무 차밭 남쪽 가장자리, 거울처럼 맑은 연못가에 앉은 신선이 있다더라" }
 Config.MASTERS.chocheonryong = { name = "천룡진인", at = Vector3.new(1250, 1.6, -120), region = "천룡봉 동쪽 용의 등뼈", regionId = "peak", secret = true,
-	quote = "어깨에 힘 빼. 아니, 더. 그래, 그거.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
+	quote = "어깨에 힘이 들어갔구나. 그 힘부터 빼고 오너라.", rumor = "천룡봉 동쪽, 용의 등뼈처럼 솟은 바위 위에 금빛 수염의 진인이 서 있다더라" }
 Config.MASTERS.cheonha = { name = "패왕", at = Vector3.new(4300, 1.6, -250), region = "황사 협곡 무너진 왕좌", regionId = "canyon", secret = true,
-	quote = "앉을 데가 이것밖에 없어서 앉아 있는 거다. 왕은 무슨.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
+	quote = "이 자리가 비어 있어 앉았을 뿐이다. 나를 왕이라 부르지 마라.", rumor = "동쪽 끝 황사 협곡, 무너진 돌 왕좌에 홀로 앉은 사내가 있다더라" }
 -- 3.75판 사신천왕권의 사부: 동북쪽 맨 끝 사신대 (네 신수의 석상이 둘러선 대. 지도에 나오지 않는다)
 Config.MASTERS.sashin = { name = "사신왕", at = Vector3.new(4100, 1.6, -4100), region = "동북쪽 맨 끝 사신대", regionId = "sashin", secret = true,
-	quote = "넷 중에 누가 제일 세냐고? 그거 물은 놈은 넷한테 다 맞았다.", rumor = "동북쪽 맨 끝, 아무도 가지 않는 들판에 네 신수의 석상이 둘러선 돌대가 있다더라" }
+	quote = "네 방위의 신수가 너를 지켜보고 있다. 함부로 움직이지 마라.", rumor = "동북쪽 맨 끝, 아무도 가지 않는 들판에 네 신수의 석상이 둘러선 돌대가 있다더라" }
 Config.MASTERS.seongha = { name = "성하노군", at = Vector3.new(-760, SY + 1.6, -270), region = "성운원 깊은 곳 (천상계)", regionId = "nebula", secret = true,
-	quote = "별 하나 떨어졌다. 주워 오면 얘기해 주지.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
+	quote = "방금 별 하나가 떨어졌다. 주워 오면 이야기를 들려주마.", rumor = "천상계 성운원의 가장 깊은 곳, 성군의 등 뒤에 별을 헤아리는 노인이 있다더라" }
 -- 초월 권법의 사부: 매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕의 천앵선 (지도에 나오지 않는다)
 Config.SAKURA_HILL = Vector3.new(-760, 0, -760)
 Config.MASTERS.chomaehwa = { name = "천앵선", at = Config.SAKURA_HILL + Vector3.new(0, 4.6, 0), region = "매화원 깊은 곳 (벚꽃 언덕)", regionId = "plum", secret = true,
-	quote = "꽃 밟지 말고 돌아서 와. 그래, 그쪽 길로.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
+	quote = "꽃잎을 밟지 말고 돌아서 오너라. 이 철엔 한 장 한 장이 아깝다.", rumor = "매화원 가장 깊은 곳, 철 모르고 벚꽃이 흩날리는 언덕에 부채 든 이가 있다더라" }
 
 -- 초·취팔선권의 사부: 취선 주막 남쪽 길가, 술독이 쌓인 마루의 만취선 (지도에 나오지 않는다)
 Config.SOJU_HILL = Vector3.new(-170, 0, 980)
 Config.MASTERS.chochwi = { name = "만취선", at = Config.SOJU_HILL + Vector3.new(0, 3.2, 0), region = "취선 주막 남쪽 (술독 마루)", regionId = "tavern", secret = true,
-	quote = "어이, 잔 비었다. 아, 네 잔 말고 내 잔.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 수건을 머리에 동여맨 노인이 코를 곤다더라" }
+	quote = "한잔하겠느냐. 싫으면 앉아서 바람이나 쐬다 가거라.", rumor = "취선 주막에서 남쪽 길로 조금 내려가면, 술독이 산처럼 쌓인 마루에서 수건을 머리에 동여맨 노인이 코를 곤다더라" }
 
 -- 1.9판 초·혈마신수의 사부: 혈교 본산 성벽 밖 북동쪽 끝, 혈월 제단의 혈월선 (지도에 나오지 않는다)
 Config.REAPER_ALTAR = Vector3.new(2080, 0, -2080)
 Config.MASTERS.chohyeolma = { name = "혈월선", at = Config.REAPER_ALTAR + Vector3.new(0, 3.3, 0), region = "혈교 본산 밖 (혈월 제단)", regionId = "cult", secret = true,
-	quote = "달 뜨기 전에 볼일 보고 가라. 그 뒤엔 나도 장담 못 한다.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
+	quote = "달이 뜨기 전에 볼일을 마치거라. 그 뒤로는 나도 낫을 거두지 못한다.", rumor = "혈교 본산의 북동쪽 성벽 너머, 핏빛 달이 걸린 돌단에 거꾸로 꽂힌 붉은 낫이 있다더라" }
 
 -- 2.0판 초·벽력신권의 사부: 뇌운 고원 동쪽 벼랑 끝, 쇠기둥 봉우리의 뇌천선 (지도에 나오지 않는다)
 Config.THUNDER_PEAK = Vector3.new(920, 0, 560)
 Config.MASTERS.chobyeok = { name = "뇌천선", at = Config.THUNDER_PEAK + Vector3.new(0, 6.4, 0), region = "뇌운 고원 동쪽 벼랑 끝 (쇠기둥 봉우리)", regionId = "plateau", secret = true,
-	quote = "머리카락 서는 거 느껴지냐? 곧 떨어진다. 비켜 서.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
+	quote = "공기가 비릿하지 않으냐. 곧 벼락이 떨어진다. 한 걸음 물러서라.", rumor = "뇌운 고원에서 동쪽 벼랑으로 가면, 벼락이 그치지 않는 쇠기둥 봉우리 위에 앉은 노인이 있다더라" }
 -- 2.7판 초·창해신권의 사부: 서해 바닷가, 반쯤 모래에 묻힌 옛 고래 뼈 위의 고경선 (지도에 나오지 않는다)
 Config.WHALE_ROCK = Vector3.new(-1880, 0, 1190)
 Config.MASTERS.chochanghae = { name = "고경선", at = Config.WHALE_ROCK + Vector3.new(0, 7.4, -6), region = "서해 바닷가 고래 뼈 바위", regionId = "coast", secret = true,
-	quote = "고래 뼈 위에 앉지 마. 아직 따뜻하거든.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
+	quote = "고래 뼈에 앉지 마라. 아직 바다의 숨이 남아 있다.", rumor = "창해각에서 북쪽 바닷가로 가면, 모래에 반쯤 묻힌 거대한 고래 뼈 위에 앉아 파도 소리를 듣는 노인이 있다더라" }
 -- 3.8판 공백권: 세상의 남동쪽 끝, 지도에 그려지지 않은 '빈칸'에 선 이름 없는 자 (이스터에그, 지도·이야기에 나오지 않는다)
 Config.NULL_SPOT = Vector3.new(4120, 0, 4120)
 -- 3.16.3판: 이름 없는 자는 빛나는 장식 없이, 큰 바위 바로 옆에 기대어 서 있는 수수한 사람이다 (멀리서는 잘 안 보인다)
@@ -5126,15 +5128,15 @@ Config.MASTERS.gongbaek = { name = "???", at = Config.NULL_SPOT + Vector3.new(0,
 	quote = "...", rumor = "...세상 남동쪽 끝, 큰 바위 옆에 누가 서 있다는데, 말을 들은 사람은 없다더라" }
 -- 3.7판 몽유권 (예전 호접몽권)의 사부: 남서쪽 연화정 정자 위에서 꾸벅꾸벅 조는 몽선 (지도에 나오지 않는다)
 Config.MASTERS.hojeop = { name = "몽선", at = Vector3.new(-2400, 4.1, 3100), region = "남서쪽 연못 연화정", regionId = "lotus", secret = true,
-	quote = "으음… 오 분만… 아니, 꿈에서 보자.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
+	quote = "으음… 아직 꿈속이다. 나를 만나려거든 꿈에서 만나세.", rumor = "남서쪽 먼 연못 한가운데 정자에서, 해가 떠도 졸고 있는 노인이 있다더라. 두 번 다시 태어난 자의 꿈만 들어준다고" }
 -- 3.4판 초·성하신권의 사부: 천상계 성운원 남쪽 끝, 혼천의가 도는 별 관측대 (관성대)의 천성선 (지도에 나오지 않는다)
 Config.STAR_TERRACE = Vector3.new(-600, SY, -20)
 Config.MASTERS.chosengha = { name = "천성선", at = Config.STAR_TERRACE + Vector3.new(0, 4.4, 0), region = "성운원 남쪽 끝 관성대 (천상계)", regionId = "nebula", secret = true,
-	quote = "쉿. 지금 백열세 개째 세고 있었다.", rumor = "성운원 남쪽 끝, 구리 고리가 저절로 도는 둥근 관측대 위에서 지팡이로 별을 헤아리는 노인이 있다더라" }
+	quote = "조용히 하거라. 별을 세던 중이었다.", rumor = "성운원 남쪽 끝, 구리 고리가 저절로 도는 둥근 관측대 위에서 지팡이로 별을 헤아리는 노인이 있다더라" }
 -- 2.4판 만목신권의 사부: 남서쪽 들판 만목원의 목선 (지도에는 만목원만 나온다)
 Config.ANCIENT_GROVE = Vector3.new(-1700, 0, 1600)
 Config.MASTERS.manmok = { name = "목선", at = Config.ANCIENT_GROVE + Vector3.new(0, 2.6, 0), region = "남서쪽 들판 깊은 숲 (만목원)", regionId = "grove", secret = true,
-	quote = "나무 한 그루 키우는 데 삼십 년이다. 너는 좀 빨리 크면 좋겠다.", rumor = "남서쪽 들판의 비틀린 고목들이 둥글게 선 숲 한가운데, 이끼 덮인 돌에 앉은 노인이 있다더라" }
+	quote = "나무 한 그루 키우는 데 삼십 년이 걸렸다. 너는 얼마나 걸리겠느냐.", rumor = "남서쪽 들판의 비틀린 고목들이 둥글게 선 숲 한가운데, 이끼 덮인 돌에 앉은 노인이 있다더라" }
 -- 2.0판 각성 사부: 모든 각성 권법(진)은 상급 수련장의 각성선인에게서만 각성할 수 있다 (가까이 가야 한다)
 Config.AWAKEN_MASTER = { name = "각성선인", at = Vector3.new(330, 0, -395), range = 30, quote = "권법이 바뀌려면 먼저 몸에 완전히 익어야 한다." }
 
@@ -6514,7 +6516,7 @@ Config.MINIQUEST = {
 	} },
 	myeonggyeong = { title = "거울 속의 나", steps = {
 		{ kind = "kill", enemy = "teaguard", n = 30, text = "운무 차밭의 차밭 지기 서른을 꺾어라" },
-		{ kind = "find", name = "깨진 거울 조각", icon = "🪞", items = ring(Vector3.new(-3300, 0, -3025), 34, 6), text = "거울 연못 둘레에 흩어진 깨진 거울 조각 여섯을 주워라 (T)" },
+		{ kind = "find", name = "깨진 거울 조각", icon = "🪞", items = ring(Vector3.new(-3300, 0, -2610), 34, 6), text = "거울 연못 둘레에 흩어진 깨진 거울 조각 여섯을 주워라 (T)" },
 		{ kind = "boss", boss = "dason", n = 2, text = "운무 차밭의 주인 다선을 두 번 꺾어라" },
 		{ kind = "visit", at = Vector3.new(1100, 0, 2500), r = 18, night = true, text = "달 뜬 밤, 거울 호수 한가운데에서 물에 비친 너를 보아라", say = "물속의 내가 먼저 고개를 돌렸다." },
 		{ kind = "kill", enemy = "teasage", n = 20, text = "운무 다인 스물을 꺾어라" },
