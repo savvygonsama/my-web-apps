@@ -327,7 +327,7 @@ local function grab(data: any)
 	local conn: RBXScriptConnection
 	conn = RunService.RenderStepped:Connect(function()
 		local el = os.clock() - t0
-		local from = handOf(m)
+		local from = handOf(m :: any)
 		for _, ch in ipairs(chains) do
 			local r = rootOf(ch.t)
 			if from and r then
