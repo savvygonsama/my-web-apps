@@ -11,6 +11,7 @@
 쓰는 법
   python3 add_episode.py --app /path/to/steel-grade-gacha --ep 4 --title "우산" \
       컷1.png 컷2.png ... 컷8.png
+  특별편: --ep 대신 --special 1  (목록에는 '특별편', 파일은 sp01-1.webp …)
   선택: --date 2026.10.28 (기본 오늘) --thumb 6 (썸네일로 쓸 컷 번호, 기본 2)
         --replace (같은 화를 다시 올릴 때) --no-build
 """
@@ -68,7 +69,8 @@ def find_entry(s, ep_id):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--app", required=True, help="steel-grade-gacha 저장소 경로")
-    ap.add_argument("--ep", type=int, required=True)
+    ap.add_argument("--ep", type=int, default=None)
+    ap.add_argument("--special", type=int, default=None, help="특별편 번호(1부터). --ep 대신")
     ap.add_argument("--title", required=True)
     ap.add_argument("--note", default="", help="화 끝 각주. 쓰지 않는다(사용자 결정), 예전 호환용")
     ap.add_argument("--date", default=datetime.date.today().strftime("%Y.%m.%d"))
@@ -89,7 +91,14 @@ def main():
     if not (1 <= a.thumb <= len(a.images)):
         sys.exit("!! --thumb 는 1~컷 수 사이")
 
-    ep_id = f"ep{a.ep:02d}"
+    if (a.ep is None) == (a.special is None):
+        sys.exit("!! --ep 와 --special 중 하나만 주세요")
+    if a.special:
+        ep_id = f"sp{a.special:02d}"
+        no = "특별편" if a.special == 1 else f"특별편 {a.special}"
+    else:
+        ep_id = f"ep{a.ep:02d}"
+        no = f"{a.ep}화"
     s = tpl.read_text(encoding="utf-8")
     if "var TOON = [" not in s:
         sys.exit("!! app_tpl.html 에 TOON 목록이 없습니다")
@@ -107,7 +116,7 @@ def main():
         pages.append((rel, w, h))
     save_thumb(a.images[a.thumb - 1], outdir / f"th-{ep_id}.webp")
 
-    block = entry_js(ep_id, f"{a.ep}화", a.title, a.date, a.note, pages)
+    block = entry_js(ep_id, no, a.title, a.date, a.note, pages)
     if old:
         s = s[:old[0]] + block + s[old[1]:]
     else:
