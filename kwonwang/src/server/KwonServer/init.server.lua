@@ -1399,6 +1399,11 @@ local function refreshFighter(player: Player)
 	end
 	f.walk = Config.walkSpeed(p.stats.agi) * (styleDef and Config.gradeWalk(styleDef, p.gradeUp[p.style]) or 1) * (1 + mb.speed) * Calc.perk(p, "spd")
 	local cm = Config.chiMax(p.stats.chi, idx)
+	-- 3.91판: 초 오의 (140 · 150) 가 있는 권법은 그릇이 적어도 그만큼 (게임패스 권법을 낮은 경지에 얻거나 환생한 뒤 초 오의를 못 쓰던 것)
+	local xs = styleDef and styleDef.skills and styleDef.skills.X
+	if xs and type(xs.chi) == "number" then
+		cm = math.max(cm, xs.chi)
+	end
 	if BATTLE then
 		f.walk = Config.BATTLE.walk
 		cm = Config.BATTLE.chiMax
@@ -6243,7 +6248,8 @@ local function hellCatch(pl: Player)
 		st.inHellAt = os.clock()
 		return
 	end
-	if os.clock() - (st.inHellAt or -99) < 15 and pos.Y < H.y - 40 and pos.Y > H.y - 6000 then
+	-- 3.91판: 실제로 떨어지는 중일 때만 (지옥에서 천상계 · 다른 곳으로 옮겨 간 직후엔 끌어올리지 않는다)
+	if os.clock() - (st.inHellAt or -99) < 15 and pos.Y < H.y - 40 and pos.Y > H.y - 6000 and f.root.AssemblyLinearVelocity.Y < -25 then
 		local best, bd = nil, math.huge
 		for _, z in ipairs(H.zones) do
 			local d = Vector3.new(pos.X - z.at.X, 0, pos.Z - z.at.Z).Magnitude
