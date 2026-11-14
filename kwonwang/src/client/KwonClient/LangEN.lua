@@ -4464,4 +4464,10 @@ return {
 	["🔮 모든 능력치 +%s (이 경지에서 %d/%d알)"] = "🔮 All stats +%s (%d/%d this realm)",
 	["모든 능력치가 오른다 (영구, 경지에 맞춰 커진다). 경지마다 다섯 알까지, 살수록 비싸진다"] = "Raises all stats (permanent, scales with realm). Up to five per realm, each one costs more",
 	["다음 경지에"] = "Next realm",
+	["💊 소환단은 만물상에서 한 시간까지만 쌓여요"] = "💊 Training Elixirs from the shop stack up to one hour",
+	["%s %s은(는) 이미 한 시간 가까이 남았어요"] = "%s %s already has almost an hour left",
+	["🌀 내공단은 %d초 뒤에 다시 먹을 수 있어요"] = "🌀 You can take another Chi Pill in %ds",
+	["🌀 내공이 이미 가득해요"] = "🌀 Your chi is already full",
+	["5분 동안 수련 효과 2배 (만물상에서는 한 시간까지 쌓인다)"] = "x2 training for 5 minutes (stacks up to one hour from the shop)",
+	["10분 동안 적에게서 얻는 은자 +30% (최대 1시간)"] = "+30% silver from enemies for 10 minutes (up to 1 hour)",
 }

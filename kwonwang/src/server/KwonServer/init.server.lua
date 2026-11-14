@@ -3071,6 +3071,34 @@ function Actions.buy(player: Player, id: any)
 		toast(player, string.format("금창약은 %d개까지 들 수 있어요", Premium.owns(player, "bag") and item.max * 2 or item.max))
 		return
 	end
+	-- 3.96판: 효과가 이미 가득이면 값을 받지 않는다 (예전엔 한 시간을 채운 뒤에도 은자만 빠졌다)
+	do
+		local SB = Config.SHOP_BUFF
+		local sa = st :: any
+		if item.id == "elixir" and p.elixirUntil - os.time() > SB.elixirMax - 300 then
+			toast(player, "💊 소환단은 만물상에서 한 시간까지만 쌓여요")
+			return
+		end
+		if item.buff then
+			local key = item.buff == "dmg" and "shopDmgUntil" or (item.buff == "def" and "shopDefUntil" or "shopCoinUntil")
+			if (sa[key] or 0) - os.clock() > SB.max - SB.dur then
+				toast(player, string.format("%s %s은(는) 이미 한 시간 가까이 남았어요", item.icon, item.name))
+				return
+			end
+		end
+		if item.id == "chiPill" then
+			local left = (sa.chiPillAt or -1e9) + SB.chiCd - os.clock()
+			if left > 0 then
+				toast(player, string.format("🌀 내공단은 %d초 뒤에 다시 먹을 수 있어요", math.ceil(left)))
+				return
+			end
+			local f1 = Combat.fighterOfPlayer(player)
+			if f1 and f1.chi >= ((f1 :: any).chiMax or Config.CHI_MAX) then
+				toast(player, "🌀 내공이 이미 가득해요")
+				return
+			end
+		end
+	end
 	local cost = Config.shopCost(item, (Calc.realm(p)))
 	-- 3.95판 대환단: 경지마다 PILL.max 알까지, 살수록 비싸진다 (모아 둔 은자로 몇 초 만에 능력치가 두 배가 되던 것)
 	if item.id == "pill" then
@@ -3102,6 +3130,7 @@ function Actions.buy(player: Player, id: any)
 		toast(player, string.format("🔮 모든 능력치 +%s (이 경지에서 %d/%d알)", Config.formatNumber(n), p.pillN, Config.PILL.max))
 		refreshFighter(player)
 	elseif item.id == "chiPill" then
+		(st :: any).chiPillAt = os.clock()
 		local f0 = Combat.fighterOfPlayer(player)
 		if f0 then
 			f0.chi = (f0 :: any).chiMax or Config.CHI_MAX
