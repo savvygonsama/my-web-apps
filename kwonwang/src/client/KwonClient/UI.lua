@@ -2508,14 +2508,24 @@ function HELP.helpText(tab: string): { string }
 		end
 		add("• 배우는 값 (둘째부터): 💰 " .. table.concat(cost, " → ") .. " → …")
 		add("• 시험은 사부마다 다르다: 흘리기 · 버티기 · 제자 연무")
-		add("• 권법 창의 📍 길 안내를 누르면 화면과 지도에 길잡이가 뜬다. 하늘로 솟은 빛기둥이 사부의 자리")
+		add("• 사부를 한 번 찾으면 지도에 나오고 하늘로 빛기둥이 솟는다. 그 뒤엔 권법 창의 📍 길 안내로 길잡이를 띄울 수 있다")
 		add("")
 		add("<b>지상의 사부</b>")
+		-- 3.85판: 찾은 사부만 자리를 적는다 (찾지 못한 사부는 몇 명 남았는지만)
+		local unknown = 0
 		for _, r in ipairs(Config.Regions) do
 			local st = r.master and Config.STYLE_BY_ID[r.master]
 			if st then
-				add(string.format("• %s %s: %s의 %s", st.icon or "", st.name, r.name, r.masterName or "사부"))
+				local found = state and ((state.found and state.found[r.master]) or (state.styles and table.find(state.styles, r.master) ~= nil))
+				if found then
+					add(string.format("• %s %s: %s의 %s", st.icon or "", st.name, r.name, r.masterName or "사부"))
+				else
+					unknown += 1
+				end
 			end
+		end
+		if unknown > 0 then
+			add(string.format("• ❓ 아직 찾지 못한 사부 %d명. 마을 사람들의 소문과 권법 창의 실마리를 따라가라", unknown))
 		end
 		add("")
 		add("<b>숨은 권법</b>")
@@ -4026,7 +4036,8 @@ function UIB.refreshFound(s: any)
 	for id, mk in pairs(masterMarks) do
 		local found = (s.found and s.found[id]) or table.find(s.styles, id) ~= nil
 		mk.stroke.Enabled = found
-		mk.icon.Text = found and mk.glyph or "❓"
+		-- 3.85판: 찾기 전엔 지도에 아무것도 없다 (예전엔 ❓ 가 사부 자리를 알려 주었다)
+		mk.icon.Text = found and mk.glyph or ""
 		mk.icon.TextColor3 = found and mk.color or Color3.fromRGB(220, 210, 190)
 		local m = Config.MASTERS[id]
 		if found and m and not beacons[id] then

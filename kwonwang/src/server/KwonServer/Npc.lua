@@ -547,14 +547,15 @@ end
 ------------------------------------------------------------------------
 -- 일곱 사부 (싸우지 않는다. 가까이 가서 T를 누르면 권법을 배운다)
 ------------------------------------------------------------------------
-local function masterTag(head: BasePart, name: string, style: any)
+local function masterTag(head: BasePart, name: string, style: any, secret: boolean?)
 	local g = Instance.new("BillboardGui")
 	g.Name = "MasterTag"
 	g.Size = UDim2.new(0, 320, 0, 74)
 	g.StudsOffset = Vector3.new(0, 3.2, 0)
-	g.AlwaysOnTop = true
+	-- 3.85판: 사부는 가까이 가야 이름이 보인다 (멀리서 · 벽 너머로 보이지 않게). 숨은 사부는 더 가까이. 장로는 그대로
+	g.AlwaysOnTop = style.elder == true
 	g.LightInfluence = 0
-	g.MaxDistance = 160
+	g.MaxDistance = style.elder and 160 or (secret and 22 or 40)
 	-- 장로는 이름 한 줄만 (말 걸기는 가까이 가면 뜨는 T 안내로)
 	local lines = style.elder and { { name, Color3.fromRGB(255, 225, 150), 0.52 } } or { { "사부 · " .. name, Color3.fromRGB(255, 225, 150), 0.52 }, { style.icon .. " " .. style.name .. "  (T)", style.color, 0.48 } }
 	for i, line in ipairs(lines) do
@@ -1010,7 +1011,7 @@ function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 				model:SetAttribute("Label", info.name)
 				local head = model:FindFirstChild("Head")
 				if head and head:IsA("BasePart") then
-					masterTag(head, info.name, style)
+					masterTag(head, info.name, style, info.secret == true)
 					local tag = head:FindFirstChild("MasterTag")
 					if info.plain and tag and tag:IsA("BillboardGui") then
 						-- 가까이 가야 이름표가 보인다

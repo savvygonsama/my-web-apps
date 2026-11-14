@@ -4907,18 +4907,61 @@ end
 ------------------------------------------------------------------------
 -- 문: 빛나는 고리와 소용돌이 (prompt를 달 받침을 돌려준다)
 local function portalGate(at: Vector3, yaw: number, color: Color3, parent: Instance, label: string): BasePart
+	-- 3.85판: 더 웅장하게. 세 단 돌 제단, 양옆 큰 기둥과 지붕 들보, 두 겹 빛 고리와 소용돌이, 떠도는 룬 돌, 화로 둘
 	local cf = CFrame.new(at) * CFrame.Angles(0, yaw, 0)
-	local n = 20
+	local CY, RR = 12, 10 -- 고리 가운데 높이 · 반지름
+	for k, rad in ipairs({ 15, 12, 9 }) do
+		local disk = part({ Name = "PortalDais", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, rad * 2, rad * 2), CFrame = cf * CFrame.new(0, 0.5 + (k - 1) * 1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+		local _ = disk
+	end
+	-- 바깥 돌 고리 (두꺼운 마디) + 안쪽 빛 고리 (가는 마디)
+	local n = 28
 	for k = 0, n - 1 do
 		local a = k / n * math.pi * 2
-		local p = cf * CFrame.new(math.cos(a) * 7, 8 + math.sin(a) * 7, 0)
-		part({ Name = "PortalRing", Size = Vector3.new(1, 2.4, 1), CFrame = CFrame.lookAt(p.Position, (cf * CFrame.new(0, 8, 0)).Position) * CFrame.Angles(0, 0, a), Color = color, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
+		local p = cf * CFrame.new(math.cos(a) * (RR + 1.6), CY + math.sin(a) * (RR + 1.6), 0)
+		part({ Name = "PortalFrame", Size = Vector3.new(2.6, 3, 2.2), CFrame = CFrame.lookAt(p.Position, (cf * CFrame.new(0, CY, 0)).Position) * CFrame.Angles(0, 0, a), Color = Color3.fromRGB(70, 66, 74), Material = Enum.Material.Slate, CanCollide = false, Parent = parent })
+		local q = cf * CFrame.new(math.cos(a) * RR, CY + math.sin(a) * RR, 0)
+		part({ Name = "PortalRing", Size = Vector3.new(1, 2.4, 1.2), CFrame = CFrame.lookAt(q.Position, (cf * CFrame.new(0, CY, 0)).Position) * CFrame.Angles(0, 0, a), Color = color, Material = Enum.Material.Neon, CanCollide = false, Parent = parent })
 	end
-	local swirl = part({ Name = "PortalSwirl", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 13, 13), CFrame = cf * CFrame.new(0, 8, 0) * CFrame.Angles(0, math.rad(90), 0), Color = color:Lerp(Color3.new(1, 1, 1), 0.5), Material = Enum.Material.Glass, Transparency = 0.35, CanCollide = false, Parent = parent })
-	light(swirl, color, 30, 2)
-	part({ Name = "PortalBase", Size = Vector3.new(18, 1, 6), CFrame = cf * CFrame.new(0, 0.5, 0), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
-	local pedestal = part({ Name = "PortalPedestal", Size = Vector3.new(3, 3.2, 3), CFrame = cf * CFrame.new(0, 1.6, -5), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
-	local board = part({ Name = "PortalSign", Size = Vector3.new(12, 2.6, 0.4), CFrame = cf * CFrame.new(0, 17.5, 0), Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	local swirl = part({ Name = "PortalSwirl", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, RR * 2 - 1, RR * 2 - 1), CFrame = cf * CFrame.new(0, CY, 0) * CFrame.Angles(0, math.rad(90), 0), Color = color:Lerp(Color3.new(1, 1, 1), 0.45), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = parent })
+	light(swirl, color, 45, 2.5)
+	local vortex = Instance.new("ParticleEmitter")
+	vortex.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	vortex.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.6), color)
+	vortex.Size = NumberSequence.new(1.6, 0)
+	vortex.Transparency = NumberSequence.new(0.2, 1)
+	vortex.LightEmission = 1
+	vortex.Rate = 26
+	vortex.Lifetime = NumberRange.new(1.2, 2)
+	vortex.Speed = NumberRange.new(2, 5)
+	vortex.RotSpeed = NumberRange.new(-200, 200)
+	vortex.SpreadAngle = Vector2.new(180, 180)
+	vortex.Parent = swirl
+	-- 양옆 큰 기둥 · 지붕 들보 (처마처럼 끝이 들린다)
+	for _, sx in ipairs({ -1, 1 }) do
+		part({ Name = "PortalPillar", Size = Vector3.new(3.2, 26, 3.2), CFrame = cf * CFrame.new(sx * (RR + 5), 13 + 1.5, 0), Color = Color3.fromRGB(150, 40, 36), Material = Enum.Material.Wood, Parent = parent })
+		part({ Name = "PortalPillarCap", Size = Vector3.new(4.4, 1.6, 4.4), CFrame = cf * CFrame.new(sx * (RR + 5), 27.5, 0), Color = GOLD, Material = Enum.Material.Metal, Parent = parent })
+		part({ Name = "PortalEave", Size = Vector3.new(6, 1.4, 3.6), CFrame = cf * CFrame.new(sx * (RR + 9.5), 30.2, 0) * CFrame.Angles(0, 0, math.rad(-14 * sx)), Color = Color3.fromRGB(40, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+		-- 화로
+		local bowl = part({ Name = "PortalBrazier", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.6, 4, 4), CFrame = cf * CFrame.new(sx * (RR + 5), 3.4, -4.5) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(60, 54, 50), Material = Enum.Material.Metal, Parent = parent })
+		local fire = Instance.new("Fire")
+		fire.Size = 8
+		fire.Heat = 12
+		fire.Color = color:Lerp(Color3.fromRGB(255, 160, 60), 0.4)
+		fire.SecondaryColor = color
+		fire.Parent = bowl
+		light(bowl, color, 24, 1.4)
+	end
+	part({ Name = "PortalBeam", Size = Vector3.new((RR + 5) * 2 + 8, 2.4, 4.2), CFrame = cf * CFrame.new(0, 29.2, 0), Color = Color3.fromRGB(40, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
+	part({ Name = "PortalBeamTrim", Size = Vector3.new((RR + 5) * 2 + 6, 0.6, 4.4), CFrame = cf * CFrame.new(0, 27.9, 0), Color = GOLD, Material = Enum.Material.Metal, CanCollide = false, Parent = parent })
+	-- 떠도는 룬 돌 넷 (빛나는 돌)
+	for k = 0, 3 do
+		local a = k / 4 * math.pi * 2 + math.pi / 4
+		local rune = part({ Name = "PortalRuneStone", Size = Vector3.new(1.6, 2.6, 1.6), CFrame = cf * CFrame.new(math.cos(a) * (RR + 3.5), CY + math.sin(a) * (RR + 3.5), 1.5) * CFrame.Angles(0.4, a, 0.3), Color = color, Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false, Parent = parent })
+		light(rune, color, 12, 0.8)
+	end
+	local pedestal = part({ Name = "PortalPedestal", Size = Vector3.new(3, 3.2, 3), CFrame = cf * CFrame.new(0, 3.6, -7), Color = STONE, Material = Enum.Material.Marble, Parent = parent })
+	local board = part({ Name = "PortalSign", Size = Vector3.new(14, 3.4, 0.4), CFrame = cf * CFrame.new(0, 32.6, 0), Color = Color3.fromRGB(30, 22, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = parent })
 	sign(board, Enum.NormalId.Front, { { label, GOLD, 1 } })
 	sign(board, Enum.NormalId.Back, { { label, GOLD, 1 } })
 	return pedestal
@@ -6252,9 +6295,48 @@ local function hellGate(out: any)
 		local fill = part({ Name = "PortalFill", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, RING * 2 - 6, RING * 2 - 6), CFrame = CFrame.new(C + Vector3.new(0, 0, 1)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(70, 8, 12), Material = Enum.Material.Neon, Transparency = 0.15, CanCollide = false, Parent = f })
 		local glow = Instance.new("PointLight")
 		glow.Color = RED
-		glow.Range = 40
-		glow.Brightness = 1.4
+		glow.Range = 60
+		glow.Brightness = 2
 		glow.Parent = fill
+		-- 3.85판: 더 웅장하게. 포탈 안쪽 소용돌이, 바깥 뿔 고리, 문 앞 큰 방 양옆의 용암 도랑과 솟는 불티
+		local vortex = Instance.new("ParticleEmitter")
+		vortex.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		vortex.Color = ColorSequence.new(Color3.fromRGB(255, 70, 40), Color3.fromRGB(30, 0, 4))
+		vortex.Size = NumberSequence.new(9, 1)
+		vortex.Transparency = NumberSequence.new(0.35, 1)
+		vortex.LightEmission = 0.6
+		vortex.Rate = 18
+		vortex.Lifetime = NumberRange.new(2, 3.5)
+		vortex.Speed = NumberRange.new(1, 3)
+		vortex.RotSpeed = NumberRange.new(-120, 120)
+		vortex.SpreadAngle = Vector2.new(180, 180)
+		vortex.Parent = fill
+		for k = 0, 15 do
+			local a = k / 16 * math.pi * 2
+			local p = C + Vector3.new(math.cos(a) * (RING + 6), math.sin(a) * (RING + 6), -1)
+			part({ Name = "PortalHorn", Size = Vector3.new(2.6, 9, 2.6), CFrame = CFrame.lookAt(p, p + Vector3.new(math.cos(a), math.sin(a), 0)) * CFrame.Angles(math.rad(-90), 0, 0), Color = k % 2 == 0 and BONE or Color3.fromRGB(150, 140, 140), Material = Enum.Material.Slate, CanCollide = false, Parent = f })
+		end
+		do
+			local hz = -HALF - CORR - HALLD / 2
+			for _, sx in ipairs({ -1, 1 }) do
+				local lava = part({ Name = "HallLava", Size = Vector3.new(6, 0.4, HALLD - 6), Position = R + Vector3.new(sx * (HALLW / 2 - 16), 0.15, hz), Color = Color3.fromRGB(255, 110, 30), Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				light(lava, Color3.fromRGB(255, 90, 30), 40, 1.6)
+				local ember = Instance.new("ParticleEmitter")
+				ember.Texture = "rbxasset://textures/particles/fire_main.dds"
+				ember.Color = ColorSequence.new(Color3.fromRGB(255, 180, 60), Color3.fromRGB(200, 30, 10))
+				ember.Size = NumberSequence.new(0.6, 0)
+				ember.LightEmission = 1
+				ember.Rate = 30
+				ember.Lifetime = NumberRange.new(2, 4)
+				ember.Speed = NumberRange.new(4, 9)
+				ember.SpreadAngle = Vector2.new(15, 15)
+				ember.Acceleration = Vector3.new(0, 3, 0)
+				ember.Parent = lava
+				for _, ex in ipairs({ -1, 1 }) do
+					part({ Name = "HallLavaEdge", Size = Vector3.new(1.2, 0.8, HALLD - 6), Position = R + Vector3.new(sx * (HALLW / 2 - 16) + ex * 3.4, 0.4, hz), Color = Color3.fromRGB(30, 26, 30), Material = Enum.Material.Basalt, Parent = f })
+				end
+			end
+		end
 		-- 붉은 오라: 평소엔 가늘게, 열리면 거세게
 		local aura = Instance.new("ParticleEmitter")
 		aura.Rate = 12
