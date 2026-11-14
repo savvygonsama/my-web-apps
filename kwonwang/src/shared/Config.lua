@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.97.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.98.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -25,6 +25,7 @@ Config.BATTLE_MODE = battleMod ~= nil
 ------------------------------------------------------------------------
 Config.DEFLECT_WINDOW = 0.2 -- 흘리기 판정 (초)
 Config.BLOCK_DAMAGE = 0.15 -- 막으면 받는 피해 비율
+Config.BOSS_HIT_CAP = 0.3 -- 3.98판: 보스 한 방은 내 최대 체력의 30% 까지 (적어도 네 대는 버틴다)
 Config.BLOCK_POSTURE = 1.0 -- 막을 때 내 균형에 쌓이는 비율
 Config.DEFLECT_POSTURE = 1.3 -- 흘려질 때 공격한 쪽 균형에 쌓이는 비율
 Config.DEFLECT_STAGGER = 0.45 -- 흘려진 쪽이 휘청이는 시간

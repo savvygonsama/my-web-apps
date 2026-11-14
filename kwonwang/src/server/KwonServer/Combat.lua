@@ -784,6 +784,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 	if att.npc and tgt.player and att.model:GetAttribute("Boss") ~= true then
 		d *= Config.earlyShield((tgt :: any).realmIdx, (tgt :: any).rebirth)
 	end
+	-- 3.98판: 보스 한 방은 내 최대 체력의 BOSS_HIT_CAP 까지 (천상 · 지옥 보스가 한 방에 쓰러뜨리면서 잡는 데 1분이 넘게 걸렸다)
+	if att.npc and tgt.player and att.model:GetAttribute("Boss") == true and tgt.maxHp > 0 then
+		d = math.min(d, tgt.maxHp * Config.BOSS_HIT_CAP)
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)
