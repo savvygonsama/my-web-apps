@@ -405,9 +405,12 @@ local function battleShape(att: Fighter, tgt: Fighter, d: number, move: any?): n
 	end
 	local B = Config.BATTLE
 	-- 그 권법의 연타 한 대를 ref로 (권법마다 기본 피해 크기가 다르다)
-	local n = d * B.ref / Config.battleScale(Combat.styleOf(att))
-	local v = B.dmgK * n ^ B.dmgPow
-	v = math.min(v, B.hitCap)
+	local ast = Combat.styleOf(att)
+	local n = d * B.ref / Config.battleScale(ast)
+	-- 3.90판: 권법끼리 맞추는 배율 (잘게 많이 치는 권법은 낮게, 크게 드물게 치는 권법은 높게)
+	-- 한 대 상한을 먼저 걸고 배율을 곱한다 (크게 치는 권법이 상한에 잘려 손해 보지 않게). 배율이 1을 넘어도 한 대는 hitCap × 1.3 까지
+	local v = math.min(B.dmgK * n ^ B.dmgPow, B.hitCap) * Config.battleBalance(ast)
+	v = math.min(v, B.hitCap * 1.3)
 	local t = now()
 	local ft = tgt :: any
 	if t - (ft.bWinAt or 0) >= 1 then

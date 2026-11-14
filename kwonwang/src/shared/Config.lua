@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.89.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.90.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4644,6 +4644,8 @@ Config.BATTLE = {
 	chiHit = 1.5,
 	-- 오의 (G) · 초 오의 (X) 한 번이 한 사람에게 넣는 피해는 체력의 이 비율까지 (200의 30% = 60, 45% = 90)
 	ultCap = { G = 0.3, X = 0.45 },
+	balRef = 22, -- 3.90판: 권법끼리 맞출 기준 초당 피해 (연타 + E · R, 상한 전 어림)
+	balClose = 0.9, -- 차이의 이만큼을 메운다
 	walk = 18,
 	respawn = 4,
 	shield = 5, -- 싸움터에 들어가거나 일어난 뒤 맞지 않는 시간 (먼저 때리면 풀린다)
@@ -4680,6 +4682,83 @@ function Config.battleScale(style: any): number
 	end
 	local v = n > 0 and math.max(1, tot / n) or 10
 	battleScaleCache[style] = v
+	return v
+end
+-- 3.90판: 배틀그라운드 권법끼리 맞추기. 피해를 거듭제곱 (0.6) 으로 눌러 담으니 잘게 여러 번 치는 권법 (극 광속 등) 이
+-- 크게 한 번 치는 권법 (금강 등) 보다 두 배 넘게 셌다. 권법마다 연타 · 기술 (E·R) 의 초당 피해를 어림해 기준 (BATTLE.balRef) 과의
+-- 차이를 balClose 만큼 메운다 (전부 메우면 권법 개성이 사라진다). 오의 · 초 오의는 ultCap 으로 따로 막는다
+local battleBalCache: { [any]: number } = {}
+local function battleRaw(style: any): number
+	local B = Config.BATTLE
+	local sc = Config.battleScale(style)
+	local function shape(d: number): number
+		return math.min(B.hitCap, B.dmgK * (d * B.ref / sc) ^ B.dmgPow)
+	end
+	local cd, cdur = 0, 0
+	for _, mv in ipairs(style.combo or {}) do
+		for _, h in ipairs(mv.hits or {}) do
+			cd += shape(h.dmg or 0)
+		end
+		cdur += mv.dur or 0
+	end
+	local combo = cdur > 0 and cd / cdur * (style.speed or 1) or 0
+	local sk = 0
+	for slot, m in pairs(style.skills or {}) do
+		if slot == "E" or slot == "R" then
+			local tot = 0
+			for _, h in ipairs(m.hits or {}) do
+				tot += shape(h.dmg or 0)
+			end
+			local mech = m.mech
+			if type(mech) == "table" then
+				local n = 1
+				if mech.dur and mech.every then
+					n = math.max(1, math.floor(mech.dur / mech.every))
+				end
+				local k = mech.kind
+				local function add(h: any, c: number)
+					if type(h) == "table" and h.dmg then
+						tot += shape(h.dmg) * c
+					end
+				end
+				if k == "zone" or k == "cone" then
+					add(mech.hit, n)
+				elseif k == "storm" then
+					add(mech.hit, math.ceil(n * 0.35))
+					add(mech.final, 1)
+				elseif k == "rushChain" then
+					add(mech.hit, (mech.hitsEach or 1) * math.min(mech.n or 1, 2))
+					add(mech.final, 1)
+					add(mech.slam, 1)
+				elseif k == "line" then
+					add(mech.hit, 2)
+				else
+					add(mech.hit, mech.hitsEach or 1)
+					add(mech.final, 1)
+					add(mech.slam, 1)
+				end
+			end
+			sk += tot / math.max(1, m.cd or 10)
+		end
+	end
+	return combo + sk
+end
+Config.battleRaw = battleRaw
+function Config.battleBalance(style: any): number
+	if not style then
+		return 1
+	end
+	local c = battleBalCache[style]
+	if c then
+		return c
+	end
+	local B = Config.BATTLE
+	local raw = battleRaw(style)
+	local v = 1
+	if raw > 0 then
+		v = math.clamp((B.balRef / raw) ^ B.balClose, 0.45, 1.8)
+	end
+	battleBalCache[style] = v
 	return v
 end
 Config.isBattle = function(): boolean
