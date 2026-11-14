@@ -753,6 +753,10 @@ function Combat.applyHit(att: Fighter, tgt: Fighter, hit: any, opt: any): string
 		crit = true
 	end
 	d = battleShape(att, tgt, d)
+	-- 3.83판 초반 보호: 처음 삶의 낮은 경지는 졸병 피해를 덜 받는다
+	if att.npc and tgt.player and att.model:GetAttribute("Boss") ~= true then
+		d *= Config.earlyShield((tgt :: any).realmIdx, (tgt :: any).rebirth)
+	end
 	tgt.hp -= d
 	if tgt.player then
 		Combat.dismount(tgt)

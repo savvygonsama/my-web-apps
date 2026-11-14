@@ -1951,7 +1951,10 @@ local function think(e: Enemy, t: number)
 				busy += 1
 			end
 		end
-		waiting = busy >= Config.MAX_ATTACKERS
+		-- 3.83판: 처음 삶의 일류까지는 졸병이 한 번에 하나씩
+		local tq = tgt :: any
+		local cap = (tgt.player and (tq.rebirth or 0) == 0 and (tq.realmIdx or 99) <= Config.EARLY_SHIELD.soloUpto) and 1 or Config.MAX_ATTACKERS
+		waiting = busy >= cap
 	end
 	if waiting and t >= e.nextAttack then
 		e.nextAttack = t + 0.3 + math.random() * 0.5

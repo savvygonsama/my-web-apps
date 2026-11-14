@@ -1302,6 +1302,9 @@ local function refreshFighter(player: Player)
 	local idx = Calc.realm(p)
 	local m = p.style ~= "" and Calc.mastery(p, p.style).lv or 1
 	f.style = p.style
+	-- 3.83판: 초반 보호 (Combat · Npc 가 본다)
+	;(f :: any).realmIdx = idx
+	;(f :: any).rebirth = p.rebirth or 0
 	-- 경지 배율: 경지가 오를 때마다 피해·체력이 크게 오른다
 	local styleDef = Config.STYLE_BY_ID[p.style]
 	-- 3.41판: 게임패스 권법은 깨달음 대신 강화 단계로 센다
