@@ -2314,7 +2314,7 @@ Combat.init(Push, {
 				local lucky = Premium.owns(killer, "luck")
 				local vip = Premium.owns(killer, "vip")
 				local fortune = ((states[killer] :: any).shopCoinUntil or 0) > os.clock() and Config.SHOP_BUFF.coin or 1
-				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * fortune * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
+				local coins = math.floor(f.npc.coins * (f.rewardMult or 1) * ((f :: any).coinTune or 1) * ((f :: any).areaCoin or 1) * fortune * Calc.perk(p, "coin") * (Premium.owns(killer, "coin2x") and 2 or 1) * (vip and PS.vipCoins or 1))
 				local xp = math.floor(f.npc.xp * (f.rewardMult or 1))
 				p.coins += coins
 				-- 천상계의 적은 천정을 떨어뜨린다
@@ -6230,7 +6230,45 @@ if W.mq then
 		end)
 	end
 end
+-- 3.87판: 지옥에서 떨어지면 (구역 판 밖으로 밀려나면 8000칸을 땅까지 떨어졌다) 가장 가까운 지옥 구역으로 끌어올린다
+local function hellCatch(pl: Player)
+	local H = Config.HELL
+	local f = Combat.fighterOfPlayer(pl)
+	local st = states[pl] :: any
+	if not H or not H.y or not H.zones or not f or f.dead or not st then
+		return
+	end
+	local pos = f.root.Position
+	if pos.Y > H.y - 300 then
+		st.inHellAt = os.clock()
+		return
+	end
+	if os.clock() - (st.inHellAt or -99) < 15 and pos.Y < H.y - 40 and pos.Y > H.y - 6000 then
+		local best, bd = nil, math.huge
+		for _, z in ipairs(H.zones) do
+			local d = Vector3.new(pos.X - z.at.X, 0, pos.Z - z.at.Z).Magnitude
+			if d < bd then
+				best, bd = z, d
+			end
+		end
+		local char = pl.Character
+		if best and char then
+			char:PivotTo(CFrame.new(best.at + Vector3.new(0, 6, 0)))
+			f.root.AssemblyLinearVelocity = Vector3.zero
+			st.inHellAt = os.clock()
+			toast(pl, "🔥 지옥의 열풍이 떨어지던 몸을 다시 끌어올렸다")
+		end
+	end
+end
 if not BATTLE then
+	task.spawn(function()
+		while true do
+			task.wait(0.4)
+			for _, pl in ipairs(Players:GetPlayers()) do
+				pcall(hellCatch, pl)
+			end
+		end
+	end)
 	task.spawn(function()
 		while true do
 			task.wait(1)

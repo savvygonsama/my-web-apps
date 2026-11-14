@@ -388,12 +388,26 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 	-- 3.84판 권법 인플레이션: 그 땅 적의 경지에 맞춰 체력 · 피해를 키운다 (시험 · 심마 · 시험장 · 허수아비는 빼고)
 	if not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" then
 		local cp1 = Config.enemyPower(f.dmgMult * Config.enemyMoveFactor(def, isBoss), f.maxHp, isBoss)
-		local inf = Config.INFLATION[Config.enemyRealm(cp1)]
+		local er = Config.enemyRealm(cp1)
+		local inf = Config.INFLATION[er]
 		if inf then
 			f.maxHp = math.max(1, math.floor(f.maxHp * inf[1]))
 			f.hp = f.maxHp
 			f.dmgMult *= inf[2]
 		end
+		-- 3.87판: 이승 · 천상 · 지옥의 세기 차이, 후반 보스 체력
+		local A = Config.AREA
+		local area = Config.inHell(at) and A.hell or ((Config.SKY and at.Y > Config.SKY.y - 300) and A.sky or nil)
+		if area then
+			f.maxHp = math.max(1, math.floor(f.maxHp * area.hp * (isBoss and area.bossHp or 1)))
+			f.dmgMult *= area.dmg * (isBoss and area.bossDmg or 1)
+		end
+		if isBoss then
+			f.maxHp = math.max(1, math.floor(f.maxHp * Config.bossHpMult(er)))
+		end
+		f.hp = f.maxHp
+		-- 체력이 늘어 오래 걸리는 만큼 은자도 (하늘 ×1.25 · 지옥 ×1.6, 지옥 보스는 더, 후반 보스는 체력 배율의 제곱근)
+		;(f :: any).areaCoin = (area and area.hp * (isBoss and (area.bossHp or 1) or 1) or 1) * (isBoss and math.sqrt(Config.bossHpMult(er)) or 1)
 	end
 	-- 3.77판 사냥터 보정 (Config.ZONE_TUNE): 졸병의 체력 · 피해, 은자
 	local tune = (not def.dummy and region ~= "trial" and region ~= "simma" and region ~= "test" and region ~= "summon") and Config.tuneAt(at) or nil

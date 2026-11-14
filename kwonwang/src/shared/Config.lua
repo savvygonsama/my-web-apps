@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.86.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.87.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4408,6 +4408,15 @@ Config.INFLATION = {
 	{ 1.65, 1.15 }, { 1.7, 1.15 }, { 1.75, 1.18 }, { 1.8, 1.2 },
 	{ 1.9, 1.22 }, { 1.9, 1.22 }, { 1.95, 1.25 }, { 2, 1.25 }, { 2, 1.25 }, { 2, 1.25 },
 }
+-- 3.87판 이승 · 천상 · 지옥의 세기 차이 (같은 경지 적이라도 하늘은 더, 지옥은 훨씬 세다). 지옥 보스는 모든 보스 가운데 가장 세다
+Config.AREA = {
+	sky = { hp = 1.25, dmg = 1.15 },
+	hell = { hp = 1.6, dmg = 1.3, bossHp = 1.8, bossDmg = 1.3 },
+}
+-- 3.87판: 후반 보스가 한 방에 쓰러졌다. 보스 체력을 그 보스 경지에 맞춰 (사경부터 ×1.5, 무극부터 ×3)
+function Config.bossHpMult(realm: number): number
+	return realm >= 13 and 3 or (realm >= 9 and 1.5 or 1)
+end
 function Config.enemyRealm(power: number): number
 	local idx = 1
 	for i = 1, 22 do
