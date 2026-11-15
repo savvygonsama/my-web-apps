@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7124,22 +7124,12 @@ do
 end
 
 ------------------------------------------------------------------------
--- 3.99.6판: 숨은 사부의 부탁에 '숨은 보스'. 단계만 늘리니 늘어졌다 (3.99.5판). 대신
---   ① 사부 둘레 졸병을 잡으면 가끔 봉인 조각이 떨어진다 (drop) → ② 모은 조각을 봉인 제단에 바치면 (T) 잠든 것이 깨어난다 (summon)
--- 사부마다 이름이 다른 숨은 보스 (가까운 땅 보스의 모습 · 체력 1.6배 · 몸 1.35배). 예전 단계는 그대로 두고 이 두 단계만 더한다
+-- 3.99.5판: 숨은 사부의 부탁이 너무 금방 끝났다 (4 ~ 6단계, 졸병 열 ~ 서른). 등급마다 단계를 늘리고 (신화 · 태초 9 · 지존 · 윤회 · 초월 10 · 극 · 권왕 11)
+-- (3.99.7판: 예전 단계의 처치 수는 그대로. 글과 개수가 어긋났다) 늘어난 단계는 사부 둘레의 다른 졸병 · 가까운 보스 (두 번) 로, 마지막 단계 (돌아가기 · 바치기) 앞에 넣는다
 ------------------------------------------------------------------------
-Config.HIDDEN_BOSS_NAMES = {
-	binghon = "빙혼마 · 얼음에 갇힌 넋", gaecheon = "무명귀 · 이름을 잃은 자", gongbaek = "공허 · 빈칸에서 온 것", hojeop = "몽마 · 꿈을 먹는 나비",
-	myeonggyeong = "거울귀 · 비친 얼굴", cheonjong = "파종귀 · 깨진 종의 울림", chobyeok = "뇌수 · 벼락을 삼킨 짐승", chochanghae = "해룡귀 · 가라앉은 용",
-	chocheonryong = "역룡 · 하늘을 등진 용", chochwi = "주마 · 술독의 마귀", chohyeolma = "혈월귀 · 붉은 달의 그림자", chomaehwa = "낙화귀 · 지지 않는 꽃",
-	chosengha = "유성마 · 떨어진 별", agong = "아공마 · 접힌 곳의 것", cheonok = "옥마 · 기둥에 갇힌 자", ilwol = "일식귀 · 해를 먹는 자",
-	manmok = "고목귀 · 천 년 묵은 뿌리", seongha = "성흔마 · 별의 흉터", taecho = "태초귀 · 처음의 그림자", yeonggeop = "겁귀 · 끝나지 않는 시간",
-	cheonha = "패도마 · 왕좌를 노리는 자", sashin = "사흉 · 네 방위의 흉수", geukilwol = "황혼마 · 저물지 않는 해", geuknull = "허무마 · 아무것도 아닌 것",
-	geukspeed = "광속귀 · 빛을 앞지른 자",
-}
 do
-	local TARGET = { ["신화"] = 8, ["태초"] = 8, ["지존"] = 9, ["윤회"] = 9, ["초월"] = 9, ["극"] = 10, ["권왕"] = 10 }
-	local DROPN = { ["신화"] = 3, ["태초"] = 3, ["지존"] = 4, ["윤회"] = 4, ["초월"] = 4, ["극"] = 5, ["권왕"] = 5 }
+	local TARGET = { ["신화"] = 9, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 10, ["초월"] = 10, ["극"] = 11, ["권왕"] = 11 }
+	local KILLN = { ["신화"] = 40, ["태초"] = 40, ["지존"] = 50, ["윤회"] = 50, ["초월"] = 50, ["극"] = 60, ["권왕"] = 60 }
 	local function layer(at: Vector3): string
 		if Config.inHell(at) then
 			return "hell"
@@ -7148,6 +7138,7 @@ do
 		end
 		return "ground"
 	end
+	-- 모든 졸병 무리 (흔한 졸병인지, 어디에 있는지)
 	local camps = {}
 	local function addCamps(list: any)
 		for _, c in ipairs(list or {}) do
@@ -7169,64 +7160,110 @@ do
 	for _, c in ipairs(camps) do
 		common[c.enemy] = true
 	end
-	local function flat(a: Vector3, b: Vector3): number
-		return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
-	end
 	for sid, q in pairs(Config.MINIQUEST or {}) do
 		local st = Config.STYLE_BY_ID[sid]
 		local m = Config.MASTERS[sid]
 		local want = st and TARGET[st.grade]
 		if st and m and want and #q.steps >= 2 then
-			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
+			local killN = KILLN[st.grade] or 40
 			local used = {}
+			local bossUsed = {}
 			for _, stp in ipairs(q.steps) do
 				if stp.kind == "kill" then
 					used[stp.enemy] = true
+				elseif stp.kind == "boss" then
+					bossUsed[stp.boss] = true
 				end
 			end
+			-- 사부 자리에서 가까운 같은 층의 졸병 · 보스
 			local lay = layer(m.at)
-			-- 사부에게서 가장 가까운 같은 층의 졸병 무리 (봉인 조각 · 제단 자리)
-			local near = {}
-			for _, c in ipairs(camps) do
-				if layer(c.at) == lay then
-					table.insert(near, { c, flat(c.at, m.at) })
-				end
+			-- 3.99.7판: 그 부탁에 원래 있던 졸병보다 많이 센 졸병은 고르지 않는다 (빙혼노니 부탁에 천외봉 천병이 끼었다)
+			local function powerAt(id: string, at: Vector3): number
+				local okP, _, _, pw = pcall(Config.npcStats, Config.Enemies[id], at, false)
+				return okP and (pw or 0) or 0
 			end
-			table.sort(near, function(x, y)
-				return x[2] < y[2]
-			end)
-			local camp = near[1] and near[1][1]
-			-- 그 무리에서 가장 가까운 같은 층의 땅 보스 (숨은 보스의 바탕)
-			local baseId, bd = nil, math.huge
-			if camp then
-				for bid, at in pairs(Config.BOSS_AT or {}) do
-					if Config.Bosses[bid] and layer(at) == lay and flat(at, camp.at) < bd then
-						baseId, bd = bid, flat(at, camp.at)
+			local refPw = 0
+			for id in pairs(used) do
+				for _, c in ipairs(camps) do
+					if c.enemy == id then
+						refPw = math.max(refPw, powerAt(id, c.at))
+						break
 					end
 				end
 			end
-			if camp and baseId then
-				local base = Config.Bosses[baseId]
-				local hid = "hb_" .. sid
-				local def = table.clone(base)
-				def.name = Config.HIDDEN_BOSS_NAMES[sid] or ("숨은 것 · " .. q.title)
-				def.scale = (base.scale or 1.5) * 1.35
-				def.hiddenBoss = true
-				def.hbLayer = lay
-				def.respawn = nil
-				Config.Bosses[hid] = def
-				local bt = Config.BOSS_TUNE[baseId]
-				Config.BOSS_TUNE[hid] = { (bt and bt[1] or 1) * 1.6, (bt and bt[2] or 1) * 1.1 }
-				-- 제단: 무리에서 사부 쪽으로 22칸 (무리와 사부 사이)
-				local dir = Vector3.new(m.at.X - camp.at.X, 0, m.at.Z - camp.at.Z)
-				local altar = camp.at + (dir.Magnitude > 30 and dir.Unit * 22 or Vector3.new(20, 0, 0))
-				local en = Config.Enemies[camp.enemy]
-				local last = table.remove(q.steps)
-				local dropN = DROPN[st.grade] or 3
-				table.insert(q.steps, { kind = "drop", enemy = camp.enemy, n = dropN, chance = 0.2, pity = 8, name = "봉인 조각", icon = "🔮", text = string.format("%s을(를) 쓰러뜨리면 가끔 봉인 조각이 떨어진다. %d개를 모아라", en and en.name or camp.enemy, dropN) })
-				table.insert(q.steps, { kind = "summon", at = altar, boss = hid, name = "봉인 제단", text = "모은 조각을 봉인 제단에 바쳐 잠든 것을 깨우고 쓰러뜨려라 (T)" })
-				table.insert(q.steps, last)
+			local near = {}
+			for pass = 1, 2 do
+				for _, c in ipairs(camps) do
+					-- 같은 층에서 먼저, 없으면 다른 층에서도
+					if (pass == 2 or layer(c.at) == lay) and not used[c.enemy] and (refPw <= 0 or (powerAt(c.enemy, c.at) <= refPw * 1.3 and powerAt(c.enemy, c.at) >= refPw * 0.4)) then
+						table.insert(near, { c.enemy, (Vector3.new(c.at.X - m.at.X, 0, c.at.Z - m.at.Z)).Magnitude, c.at })
+					end
+				end
+				if #near > 0 then
+					break
+				end
 			end
+			table.sort(near, function(a, b)
+				return a[2] < b[2]
+			end)
+			-- 보스도 그 부탁에 원래 있던 보스 (없으면 졸병) 보다 많이 세지 않은 것만
+			local function bossPw(bid: string, at: Vector3): number
+				local okP, _, _, pw = pcall(Config.npcStats, Config.Bosses[bid], at, true)
+				return okP and (pw or 0) or 0
+			end
+			local refBoss = 0
+			for _, stp in ipairs(q.steps) do
+				if stp.kind == "boss" and Config.BOSS_AT and Config.BOSS_AT[stp.boss] then
+					refBoss = math.max(refBoss, bossPw(stp.boss, Config.BOSS_AT[stp.boss]))
+				end
+			end
+			local bosses = {}
+			local anyLayer = false
+			for bid, at in pairs(Config.BOSS_AT or {}) do
+				if Config.Bosses[bid] and (anyLayer or layer(at) == lay) and not bossUsed[bid] then
+					local bp = bossPw(bid, at)
+					local okB = (refBoss > 0 and bp <= refBoss * 1.3) or (refBoss <= 0 and (refPw <= 0 or bp <= refPw * 8))
+					if okB then
+						table.insert(bosses, { bid, (Vector3.new(at.X - m.at.X, 0, at.Z - m.at.Z)).Magnitude })
+					end
+				end
+			end
+			table.sort(bosses, function(a, b)
+				return a[2] < b[2]
+			end)
+			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
+			local last = table.remove(q.steps)
+			local ni, bi, turn = 1, 1, 0
+			while #q.steps < want - 1 do
+				turn += 1
+				local added = false
+				if turn % 3 == 0 and bosses[bi] then
+					local bid = bosses[bi][1]
+					bi += 1
+					table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
+					added = true
+				else
+					while near[ni] and used[near[ni][1]] do
+						ni += 1
+					end
+					local c = near[ni]
+					if c then
+						ni += 1
+						used[c[1]] = true
+						table.insert(q.steps, { kind = "kill", enemy = c[1], n = killN, text = string.format("%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다", Config.Enemies[c[1]].name, killN) })
+						added = true
+					elseif bosses[bi] then
+						local bid = bosses[bi][1]
+						bi += 1
+						table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
+						added = true
+					end
+				end
+				if not added then
+					break
+				end
+			end
+			table.insert(q.steps, last)
 		end
 	end
 end
