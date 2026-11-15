@@ -2936,7 +2936,7 @@ RunService.RenderStepped:Connect(function()
 		local cap = style.petalMax or 20
 		stacks = n >= cap and (style.petals and "🌸 천앵만개 준비! (Z)" or "🌸 만개 준비! (Z)") or string.format("%s %d / %d", style.petals and "벚꽃" or "꽃잎", n, cap)
 	elseif style.noBlock then
-		stacks = "🍾 만취 · 막기 ✕ · 흘리기만 ○"
+		stacks = "🍾 만취 · 막기 불가 · 흘리기만 가능"
 	elseif style.bloodPact then
 		local php, pmx = tonumber(char:GetAttribute("Hp")) or 0, tonumber(char:GetAttribute("MaxHp")) or 1
 		local k = 1 + style.bloodPact * (1 - math.clamp(php / math.max(1, pmx), 0, 1))

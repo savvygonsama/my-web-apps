@@ -380,7 +380,7 @@ local function sanitize(data: any): Profile
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
 		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local titles = data.storyVer == 7 and Config.STORY_TITLES_V7 or data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title

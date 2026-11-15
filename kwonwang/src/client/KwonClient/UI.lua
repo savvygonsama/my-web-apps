@@ -3721,7 +3721,7 @@ function UIB.buildMap()
 	mapGuide = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), BackgroundTransparency = 1, Visible = false, ZIndex = 11, Parent = canvas }, { corner(99), stroke(Color3.fromRGB(255, 240, 120), 3) })
 	storyMark = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 14, 0, 14), Rotation = 45, BackgroundColor3 = Color3.fromRGB(255, 170, 60), BorderSizePixel = 0, Visible = false, ZIndex = 11, Parent = canvas }, { stroke(Color3.new(0, 0, 0), 1.5) })
 	mapMe = text({ AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 20, 0, 20), Text = "▲", TextSize = 18, TextColor3 = Color3.fromRGB(255, 255, 255), TextXAlignment = Enum.TextXAlignment.Center, TextStrokeTransparency = 0, TextWrapped = false, ZIndex = 12, Parent = canvas })
-	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = UIB.isTouch() and "＋－: 확대 · 끌기: 이동 · ✕: 닫기" or "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
+	text({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -8, 1, -6), Size = UDim2.new(0, 220, 0, 18), Text = UIB.isTouch() and "＋－: 확대 · 끌기: 이동 · X: 닫기" or "M: 지도 크게 · 휠: 확대", TextSize = 13, TextColor3 = C.text, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeTransparency = 0.2, ZIndex = 12, Parent = mapFrame })
 	-- 큰 지도: 확대·축소·내 자리 단추, 휠과 끌기
 	for i, spec in ipairs({ { "＋", 1.4 }, { "－", 1 / 1.4 }, { "◎", 0 } }) do
 		local b = button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, 10 + (i - 1) * 46), Size = UDim2.new(0, 40, 0, 40), Text = spec[1], TextSize = 22, BackgroundColor3 = C.panel2, ZIndex = 13, Visible = false, Parent = mapFrame }, function()
@@ -3742,7 +3742,7 @@ function UIB.buildMap()
 	end)
 	table.insert(zoomBtns, (skyBtn :: any) :: GuiObject)
 	-- 3.71판: 큰 지도 닫기 (휴대폰은 M 키가 없어 닫을 길이 없었다). 왼쪽 위, 손가락 크기
-	local closeBtn = button({ AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 10), Size = UDim2.new(0, 48, 0, 48), Text = "✕", TextSize = 26, BackgroundColor3 = Color3.fromRGB(170, 50, 45), ZIndex = 14, Visible = false, Parent = mapFrame }, function()
+	local closeBtn = button({ AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 10, 0, 10), Size = UDim2.new(0, 48, 0, 48), Text = "X", TextSize = 26, BackgroundColor3 = Color3.fromRGB(170, 50, 45), ZIndex = 14, Visible = false, Parent = mapFrame }, function()
 		if mapBig then
 			UI.toggleMap()
 		end
@@ -3973,7 +3973,7 @@ function UIB.goalText(s: any, g: any): string
 	elseif k == "samsara" then
 		return string.format("윤회의 시련 넘기  %d / %d (이번 삶에서 %s에 오른 뒤 능력치 창 → ☯)", s.samsara or 0, g.n or 1, Config.Realms[Config.SAMSARA.realm].name)
 	elseif k == "awaken" then
-		return "각성 권법(진) 하나 익히기 (원래 사부에게 각성의 시련)"
+		return "진 권법 하나 익히기 (지금은 혈마 · 천룡 · 벽력. 나머지는 환생 뒤)"
 	elseif k == "transcend" then
 		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
@@ -4155,13 +4155,20 @@ end
 function UIB.buildStory(topLeft: Frame)
 	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 424), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
-	storyGoal = text({ Position = UDim2.new(0, 10, 0, 36), Size = UDim2.new(1, -20, 0, 30), TextSize = 16, TextColor3 = C.text, TextWrapped = true, Parent = storyBox })
+	-- 3.99.2판: 목표가 두 줄이 되면 잘렸다 (영어는 특히). 칸 안에 맞춰 글자를 줄인다 (16 → 11까지)
+	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 36), TextSize = 16, TextColor3 = C.text, TextWrapped = true, TextScaled = true, Parent = storyBox })
+	do
+		local lim = Instance.new("UITextSizeConstraint")
+		lim.MaxTextSize = 16
+		lim.MinTextSize = 11
+		lim.Parent = storyGoal
+	end
 	-- 아직 받지 않은 이야기: 눌러서 받는다
 	storyAcceptBtn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -40, 0, 50), Size = UDim2.new(0, 90, 0, 30), Text = "📜 받기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(190, 130, 50), Visible = false, Parent = storyBox }, function()
 		Request:FireServer("storyAccept")
 	end)
 	-- 이야기 칸 숨기기 / 다시 보기
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.new(0, 26, 0, 26), Text = "✕", TextSize = 15, BackgroundColor3 = C.panel2, Parent = storyBox }, function()
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.new(0, 26, 0, 26), Text = "X", TextSize = 15, BackgroundColor3 = C.panel2, Parent = storyBox }, function()
 		UI.setStoryHidden(true)
 	end)
 	storyChip = button({ Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 120, 0, 34), Text = "📜 이야기 보기", TextSize = 15, BackgroundColor3 = C.bg, Visible = false, Parent = topLeft }, function()
@@ -4887,7 +4894,7 @@ function UI.init(req: RemoteEvent)
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 160, 150)), Parent = window })
 	windowTitle = text({ Position = UDim2.new(0, 18, 0, 10), Size = UDim2.new(1, -80, 0, 36), TextSize = 28, Font = Enum.Font.GothamBlack, TextColor3 = C.gold, Parent = window })
 	new("Frame", { Position = UDim2.new(0, 18, 0, 48), Size = UDim2.new(1, -36, 0, 2), BackgroundColor3 = C.line, BorderSizePixel = 0, Parent = window }, { new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.7, 0.4), NumberSequenceKeypoint.new(1, 1) }) }) })
-	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "✕", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
+	button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 48, 0, 40), Text = "X", TextSize = 22, BackgroundColor3 = C.red, Parent = window }, function()
 		window.Visible = false
 	end)
 	UIB.buildStyles()
