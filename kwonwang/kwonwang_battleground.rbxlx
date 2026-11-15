@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.12" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.13" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -86254,12 +86254,12 @@ local function refreshTracker(s: any)
 			hidden += 1
 		else
 			shown += 1
-			local row = new("Frame", { Name = e.key, Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = C.bg, BackgroundTransparency = 0.35, LayoutOrder = shown, Parent = box }, { corner(8), stroke(e.color, 1) })
+			local row = new("Frame", { Name = e.key, Size = UDim2.new(1, 0, 0, 66), BackgroundColor3 = C.bg, BackgroundTransparency = 0.35, LayoutOrder = shown, Parent = box }, { corner(8), stroke(e.color, 1) })
 			text({ Position = UDim2.new(0, 8, 0, 4), Size = UDim2.new(1, -44, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = e.color, TextTruncate = Enum.TextTruncate.AtEnd, Text = e.title, Parent = row })
-			local g = text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 30), TextSize = 14, TextColor3 = C.text, TextWrapped = true, TextScaled = true, Text = e.goal, Parent = row })
+			local g = text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 38), TextSize = 15, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Text = e.goal, Parent = row })
 			local lim = Instance.new("UITextSizeConstraint")
-			lim.MaxTextSize = 14
-			lim.MinTextSize = 10
+			lim.MaxTextSize = 15
+			lim.MinTextSize = 13
 			lim.Parent = g
 			local key = e.key
 			button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 4), Size = UDim2.new(0, 22, 0, 20), Text = "X", TextSize = 13, BackgroundColor3 = C.panel2, Parent = row }, function()
@@ -86443,14 +86443,15 @@ function UI.dialogOpen(): boolean
 end
 
 function UIB.buildStory(topLeft: Frame)
-	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 424), Size = UDim2.new(0, 400, 0, 74), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
+	storyBox = new("Frame", { Name = "Story", Position = UDim2.new(0, 0, 0, 424), Size = UDim2.new(0, 400, 0, 88), BackgroundColor3 = C.bg, BackgroundTransparency = 0.3, Parent = topLeft }, { corner(10), stroke(Color3.fromRGB(255, 190, 90), 1.5) })
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	-- 3.99.2판: 목표가 두 줄이 되면 잘렸다 (영어는 특히). 칸 안에 맞춰 글자를 줄인다 (16 → 11까지)
-	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 36), TextSize = 16, TextColor3 = C.text, TextWrapped = true, TextScaled = true, Parent = storyBox })
+	-- 3.99.13판: 두 줄이 들어가게 (36칸이면 두 줄째에서 글자가 11까지 작아졌다)
+	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 48), TextSize = 17, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = storyBox })
 	do
 		local lim = Instance.new("UITextSizeConstraint")
-		lim.MaxTextSize = 16
-		lim.MinTextSize = 11
+		lim.MaxTextSize = 17
+		lim.MinTextSize = 14
 		lim.Parent = storyGoal
 	end
 	-- 아직 받지 않은 이야기: 눌러서 받는다
@@ -86465,7 +86466,7 @@ function UIB.buildStory(topLeft: Frame)
 		UI.setStoryHidden(false)
 	end)
 	-- 3.99.3판: 퀘스트 목록 (이야기 칸 아래)
-	trackerBox = new("Frame", { Name = "QuestTracker", Position = UDim2.new(0, 0, 0, 504), Size = UDim2.new(0, 400, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Visible = false, Parent = topLeft })
+	trackerBox = new("Frame", { Name = "QuestTracker", Position = UDim2.new(0, 0, 0, 518), Size = UDim2.new(0, 400, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Visible = false, Parent = topLeft })
 	do
 		local lay = Instance.new("UIListLayout")
 		lay.Padding = UDim.new(0, 4)
@@ -87266,10 +87267,19 @@ function UI.init(req: RemoteEvent)
 		if storyBox then
 			-- PC는 메뉴 오른쪽 (아래 막대와 겹치지 않게)
 			storyBox.Position = touch and UDim2.new(0, 0, 0, 40) or UDim2.new(0, 154, 0, 40)
-			storyBox.Size = phone and UDim2.new(0, 340, 0, 74) or UDim2.new(0, 400, 0, 74)
+			-- 3.99.13판: 목표가 두 줄 들어가게 74 → 88
+			storyBox.Size = phone and UDim2.new(0, 340, 0, 88) or UDim2.new(0, 400, 0, 88)
 		end
 		if storyChip then
 			storyChip.Position = touch and UDim2.new(0, 44, 0, 40) or UDim2.new(0, 154, 0, 40)
+		end
+		-- 3.99.13판: 퀘스트 목록은 이야기 칸 바로 아래 (같은 너비), 숨긴 퀘스트 단추는 이야기 보기 단추 옆
+		if trackerBox then
+			trackerBox.Position = touch and UDim2.new(0, 0, 0, 134) or UDim2.new(0, 154, 0, 134)
+			trackerBox.Size = phone and UDim2.new(0, 340, 0, 0) or UDim2.new(0, 400, 0, 0)
+		end
+		if trackerChip then
+			trackerChip.Position = touch and UDim2.new(0, 170, 0, 40) or UDim2.new(0, 280, 0, 40)
 		end
 		-- 배틀그라운드 순위: 휴대폰은 맨 위 오른쪽 (터치 단추 고리 위)
 		if BH.board then
