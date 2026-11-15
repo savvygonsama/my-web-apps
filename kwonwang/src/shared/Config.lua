@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7119,6 +7119,118 @@ do
 	for _, a in ipairs(Config.ACHIEVEMENTS or {}) do
 		if a.id == "stAll" then
 			a.n = #lines.ground
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.5판: 숨은 사부의 부탁이 너무 금방 끝났다 (4 ~ 6단계, 졸병 열 ~ 서른). 등급마다 단계를 늘리고 (신화 · 태초 9 · 지존 · 윤회 · 초월 10 · 극 · 권왕 11)
+-- 흔한 졸병 처치 수는 두 배 (적어도 서른). 늘어난 단계는 사부 둘레의 다른 졸병 · 가까운 보스 (두 번) 로, 마지막 단계 (돌아가기 · 바치기) 앞에 넣는다
+------------------------------------------------------------------------
+do
+	local TARGET = { ["신화"] = 9, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 10, ["초월"] = 10, ["극"] = 11, ["권왕"] = 11 }
+	local KILLN = { ["신화"] = 40, ["태초"] = 40, ["지존"] = 50, ["윤회"] = 50, ["초월"] = 50, ["극"] = 60, ["권왕"] = 60 }
+	local function layer(at: Vector3): string
+		if Config.inHell(at) then
+			return "hell"
+		elseif Config.SKY and at.Y > Config.SKY.y - 300 then
+			return "sky"
+		end
+		return "ground"
+	end
+	-- 모든 졸병 무리 (흔한 졸병인지, 어디에 있는지)
+	local camps = {}
+	local function addCamps(list: any)
+		for _, c in ipairs(list or {}) do
+			if Config.Enemies[c.enemy] then
+				table.insert(camps, c)
+			end
+		end
+	end
+	for _, r in ipairs(Config.Regions) do
+		addCamps(r.camps)
+	end
+	for _, isl in ipairs(Config.SKY.islands) do
+		addCamps(isl.camps)
+	end
+	for _, z in ipairs(Config.HELL.zones or {}) do
+		addCamps(z.camps)
+	end
+	local common = {}
+	for _, c in ipairs(camps) do
+		common[c.enemy] = true
+	end
+	for sid, q in pairs(Config.MINIQUEST or {}) do
+		local st = Config.STYLE_BY_ID[sid]
+		local m = Config.MASTERS[sid]
+		local want = st and TARGET[st.grade]
+		if st and m and want and #q.steps >= 2 then
+			local killN = KILLN[st.grade] or 40
+			local used = {}
+			local bossUsed = {}
+			for _, stp in ipairs(q.steps) do
+				if stp.kind == "kill" and common[stp.enemy] then
+					stp.n = math.clamp((stp.n or 1) * 2, 30, 80)
+				end
+				if stp.kind == "kill" then
+					used[stp.enemy] = true
+				elseif stp.kind == "boss" then
+					bossUsed[stp.boss] = true
+				end
+			end
+			-- 사부 자리에서 가까운 같은 층의 졸병 · 보스
+			local lay = layer(m.at)
+			local near = {}
+			for _, c in ipairs(camps) do
+				if layer(c.at) == lay and not used[c.enemy] then
+					table.insert(near, { c.enemy, (Vector3.new(c.at.X - m.at.X, 0, c.at.Z - m.at.Z)).Magnitude, c.at })
+				end
+			end
+			table.sort(near, function(a, b)
+				return a[2] < b[2]
+			end)
+			local bosses = {}
+			for bid, at in pairs(Config.BOSS_AT or {}) do
+				if Config.Bosses[bid] and layer(at) == lay and not bossUsed[bid] then
+					table.insert(bosses, { bid, (Vector3.new(at.X - m.at.X, 0, at.Z - m.at.Z)).Magnitude })
+				end
+			end
+			table.sort(bosses, function(a, b)
+				return a[2] < b[2]
+			end)
+			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
+			local last = table.remove(q.steps)
+			local ni, bi, turn = 1, 1, 0
+			while #q.steps < want - 1 do
+				turn += 1
+				local added = false
+				if turn % 3 == 0 and bosses[bi] then
+					local bid = bosses[bi][1]
+					bi += 1
+					table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
+					added = true
+				else
+					while near[ni] and used[near[ni][1]] do
+						ni += 1
+					end
+					local c = near[ni]
+					if c then
+						ni += 1
+						used[c[1]] = true
+						table.insert(q.steps, { kind = "kill", enemy = c[1], n = killN, text = string.format("%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다", Config.Enemies[c[1]].name, killN) })
+						added = true
+					elseif bosses[bi] then
+						local bid = bosses[bi][1]
+						bi += 1
+						table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
+						added = true
+					end
+				end
+				if not added then
+					break
+				end
+			end
+			table.insert(q.steps, last)
 		end
 	end
 end

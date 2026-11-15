@@ -121,7 +121,7 @@ local function defaultProfile(): Profile
 		gradeUp = {},
 		mq = {},
 		mqn = {},
-		mqv = 2,
+		mqv = 3,
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -349,7 +349,15 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.mqv = 2
+	-- 3.99.5판: 부탁이 다시 길어졌다. 예전 단계를 다 들어준 사람은 끝난 그대로
+	if (tonumber(data.mqv) or 1) < 3 then
+		for sid, q in pairs(Config.MINIQUEST or {}) do
+			if q.v2len and (p.mq[sid] or 0) > q.v2len then
+				p.mq[sid] = #q.steps + 1
+			end
+		end
+	end
+	p.mqv = 3
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
@@ -2207,7 +2215,7 @@ function Trial.start(player: Player, styleId: string)
 			if easy then
 				dmgK *= EZ.hit
 			end
-			local ef = trialFoe(player, f, style, master, "master", spawnAt, (style.secret or (Config.MASTERS[style.id] and Config.MASTERS[style.id].secret)) and 1.0 or (easy and 0.85 * EZ.power or 0.85), nil, function(def)
+			local ef = trialFoe(player, f, style, master, "master", spawnAt, style.secret and 1.0 or (easy and 0.85 * EZ.power or 0.85), nil, function(def)
 				def.name = master.name
 				def.speed = speed
 				def.aggro = 140
@@ -2293,7 +2301,7 @@ function Trial.start(player: Player, styleId: string)
 	ef.trialOwner = player
 	ef.trialStyle = styleId
 	-- 분신은 시험을 청한 사람과 비슷한 힘으로 (센 사람에게도 시험이 시험이도록)
-	local want = ((f :: any).power or 100) * ((style.secret or (Config.MASTERS[style.id] and Config.MASTERS[style.id].secret)) and 1.15 or 0.85)
+	local want = ((f :: any).power or 100) * (style.secret and 1.15 or 0.85)
 	local k = want / math.max(1, ef.power or 100)
 	if k > 1 then
 		ef.maxHp = math.floor(ef.maxHp * k)

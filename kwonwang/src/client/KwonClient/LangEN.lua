@@ -4608,4 +4608,6 @@ return {
 	["무간지옥의 불꽃귀는 떨어지면서도 타오른다. 마흔을 꺼뜨려라."] = "The flame ghosts of the Endless Hell keep burning even as they fall. Snuff out forty.",
 	["철환지옥의 쇠고리 옥졸"] = "Ring Jailers of the Iron Ring Hell",
 	["쇠고리를 던지는 옥졸들이다. 고리가 목에 걸리기 전에 마흔을 쓰러뜨려라."] = "These jailers throw iron rings. Defeat forty before a ring catches your neck.",
+	["%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다"] = "%s: defeat %d more. The master watches your endurance more than your hands",
+	["%s을(를) %d번 꺾어라. 한 번은 운일 수 있다"] = "Defeat %s %d times. Once could be luck",
 }
