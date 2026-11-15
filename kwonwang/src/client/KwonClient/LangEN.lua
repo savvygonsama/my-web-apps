@@ -4471,4 +4471,5 @@ return {
 	["5분 동안 수련 효과 2배 (만물상에서는 한 시간까지 쌓인다)"] = "x2 training for 5 minutes (stacks up to one hour from the shop)",
 	["내공이 바로 가득 찬다 (한 번 먹으면 1분 뒤에 다시)"] = "Instantly fills your chi (again after 1 minute)",
 	["10분 동안 적에게서 얻는 은자 +30% (최대 1시간)"] = "+30% silver from enemies for 10 minutes (up to 1 hour)",
+	["한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 기술이 세지고, 연타를 네 번 이은 뒤 한 번 더 치면 적을 하늘로 띄우는 각성 마무리가 나간다. 지금 쓰는 권법의 숙련을 6까지 올려라."] = "Using one style for a long time raises its mastery. At mastery 6 the style awakens: its skills grow stronger, and striking once more after a four-hit combo unleashes an awakening finisher that launches the enemy into the air. Raise the mastery of your current style to 6.",
 }

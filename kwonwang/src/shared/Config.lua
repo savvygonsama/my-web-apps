@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.98.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.98.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4097,7 +4097,7 @@ Config.Story = {
 	{ title = "혈월곡의 혈랑", text = "남동쪽 끝 핏빛 달 아래에 혈교의 앞잡이 혈랑이 있다. 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "hyeolrang", at = Vector3.new(1080, 0, 1080) }, reward = { coins = 2000, stats = 300 } },
 	{ title = "절정에 오르다", text = "혈교와 맞서려면 절정의 경지가 필요하다. 경지별 수련과 사부들의 권법으로 몸을 끌어올려라.", goal = { kind = "realm", n = 5 }, reward = { coins = 2500, stats = 400 } },
 	{ title = "네 번째 권법", text = "찾아낸 사부들 가운데 아직 배우지 않은 분이 있다면 시험을 넘고 권법을 하나 더 익혀라. 적마다 잘 듣는 권법이 다르다.", goal = { kind = "learn", n = 4 }, reward = { coins = 3000, stats = 400 } },
-	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 각성기(F)가 열리고 기술이 세진다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 500 } },
+	{ title = "숙련과 각성", text = "한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 기술이 세지고, 연타를 네 번 이은 뒤 한 번 더 치면 적을 하늘로 띄우는 각성 마무리가 나간다. 지금 쓰는 권법의 숙련을 6까지 올려라.", goal = { kind = "mastery", n = 6 }, reward = { coins = 5000, stats = 500 } },
 	{ title = "초절정의 몸", text = "절정을 넘어 초절정에 올라라. 초절정부터 상급 수련장의 금종조 수련이 열린다.", goal = { kind = "realm", n = 6 }, reward = { coins = 5000, stats = 600 } },
 	{ title = "설산의 빙마", text = "북방 설산의 주인 빙마가 혈교와 손을 잡았다. 얼음을 깨고 놈을 쓰러뜨려라.", goal = { kind = "boss", id = "bingma", at = Vector3.new(0, 0, -1980) }, reward = { coins = 5000, stats = 800 } },
 	{ title = "화경에 들다", text = "기를 불처럼 다루는 화경에 올라라. 화경부터 천근추 수련이 열리고 두 번째 깨달음을 얻을 수 있다.", goal = { kind = "realm", n = 7 }, reward = { coins = 8000, stats = 1000 } },
