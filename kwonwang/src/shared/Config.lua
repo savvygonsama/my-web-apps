@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.4" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4067,7 +4067,7 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 -- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
 -- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
-Config.STORY_V = 9 -- 3.99.3판: 이야기를 지상 · 천상 · 지옥 세 줄기로 나누고 천상 · 지옥 졸병 장을 더했다 (8판까지는 장 이름으로 STORY_ALL 의 차례를 찾아 옮긴다). 3.99.2판: 사냥터마다 졸병 장을 더 끼웠다. 3.99판: 졸병 장 여덟을 끼웠다. 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
+Config.STORY_V = 10 -- 3.99.4판: 긴 경지 구간에 졸병 장을 더했다 (9판 기록은 줄기마다 장 이름으로 옮긴다). 3.99.3판: 이야기를 지상 · 천상 · 지옥 세 줄기로 나누고 천상 · 지옥 졸병 장을 더했다 (8판까지는 장 이름으로 STORY_ALL 의 차례를 찾아 옮긴다). 3.99.2판: 사냥터마다 졸병 장을 더 끼웠다. 3.99판: 졸병 장 여덟을 끼웠다. 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
 -- 3.49판: 5판에 이야기를 다 끝낸 사람 (강호의 전설) 은 새로 붙은 권왕 뒤의 첫 장부터 (이미 이룬 목표는 저절로 넘어간다)
 Config.STORY_REMAP_V5 = { ["강호의 전설"] = "칼의 산 · 굶주린 길" }
 Config.STORY_TITLES_V5 = { "강호의 문", "첫 주먹", "강타", "첫 기술", "들판의 무뢰배", "몸을 만드는 법", "이류의 문턱", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "손에 익히기", "일류의 벽", "두 번째 사부", "특급에 오르다", "흑호채", "오의를 열어라", "심법 두루마리", "서해의 해적", "심법 셋", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "네 번째 권법", "숙련과 각성", "초절정의 몸", "설산의 빙마", "화경에 들다", "첫 깨달음", "혈교의 그림자", "현경의 고요", "혈마", "두 번째 깨달음", "사경의 문", "생사의 경계", "신화경에 들다", "각성 권법", "천인합일", "천상의 문", "천상의 첫 사냥", "무극에 오르다", "이름 없는 노인", "구름 미궁", "천층탑 서른 층", "허공 균열", "다섯 번째 권법", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "반선", "등선", "하늘 밖의 하늘", "천공 투기장", "천층탑 쉰 층", "태초", "정점", "환생", "윤회의 공덕", "전생의 그림자", "초월", "천층탑 백 층", "혼원경", "두 번째 삶", "두 번째 그림자", "무량경", "세 번째 삶", "세 번째 그림자", "태허경", "네 번째 삶", "마지막 그림자", "권왕", "강호의 전설" }
@@ -6885,13 +6885,19 @@ do
 		{ after = "황천 나루", title = "삼도천의 원귀", id = "wongwi", n = 60, idx = 19, text = "삼도천을 건너지 못한 원귀들이 산 자의 숨을 쫓는다. 지옥에서 버티려면 먼저 이 강가에 익숙해져야 한다. 예순을 달래 보내라." },
 		{ after = "대라경", title = "독사지옥", id = "dokssagwi", n = 60, idx = 21, text = "독사지옥의 독사귀는 물리면 오래 아프다. 대라경의 몸으로도 독은 독이다. 예순을 쓰러뜨려 길을 내라." },
 	}
+	local batch: number? = nil
 	local function addAll(list: { any })
 		for _, a in ipairs(list) do
 			local at = campAt(a.id)
 			if at and Config.Enemies[a.id] then
-				for i, ch in ipairs(Config.Story) do
-					if ch.title == a.after then
-						table.insert(Config.Story, i + 1, { title = a.title, text = a.text, goal = { kind = "kill", id = a.id, n = a.n, at = at }, reward = rw(a.idx, 0.6) })
+				for i0, ch in ipairs(Config.Story) do
+					-- 3.99.4판: before = 그 장 앞에 (경지를 올리는 동안 할 일이 되게)
+					local i = a.before and (i0 - 1) or i0
+					if ch.title == (a.before or a.after) then
+						-- 3.99.4판: 졸병 장의 은자는 절반 (장이 늘어 은자가 많아졌다). 능력치는 그대로
+						local r = rw(a.idx, 0.6)
+						r.coins = math.floor(r.coins * 0.5)
+						table.insert(Config.Story, i + 1, { title = a.title, text = a.text, goal = { kind = "kill", id = a.id, n = a.n, at = at }, reward = r, batch = batch })
 						break
 					end
 				end
@@ -6950,6 +6956,30 @@ do
 		{ after = "지옥의 깊은 곳", title = "혈지옥의 혈귀", id = "hyeolgwi", n = 50, idx = 22, text = "피의 못에서 혈귀들이 기어오른다. 흡혈하는 권법이라도 이곳의 피는 독이다. 쉰을 쓰러뜨려라." },
 		{ after = "지옥의 깊은 곳", title = "철환지옥의 철귀", id = "cheolgwi", n = 50, idx = 22, text = "쇠사슬을 끌고 다니는 철귀들이다. 사슬이 감기기 전에 끊어라. 쉰을 쓰러뜨려라." },
 	})
+	-- 3.99.4판: 환생 뒤 다시 오르는 긴 경지 구간 (혼원경 · 무량경 · 태허경 · 권왕 · 대라경 · 허무경) 에 할 일을 더한다.
+	-- 그 무렵 실제로 머무는 땅의 다른 졸병들. 이 장들은 batch = 10 (9판 기록을 옮길 때 9판에 없던 장으로 친다)
+	batch = 10
+	addAll({
+		{ after = "무극에 오르다", title = "석림의 정령", id = "karstsprite", n = 40, idx = 13, text = "석림의 돌기둥 사이로 정령들이 숨바꼭질하듯 오간다. 기둥을 등지고 싸워라. 마흔을 쓰러뜨려라." },
+		{ after = "반선", title = "운무 차밭의 지기", id = "teaguard", n = 40, idx = 14, text = "운무 차밭을 지키는 지기들은 낯선 발소리에 예민하다. 찻잎을 밟지 말고 마흔을 쓰러뜨려라." },
+		{ after = "등선", title = "황사 협곡의 창수", id = "lancer", n = 40, idx = 15, text = "황사 협곡의 창수들은 바람을 등지고 찌른다. 모래가 눈에 들어가기 전에 마흔을 쓰러뜨려라." },
+		{ after = "혼원경", title = "유리해의 거수", id = "glassgolem", n = 40, idx = 17, text = "유리해의 거수는 맞을수록 금이 간다. 한곳만 노려라. 마흔을 부숴라." },
+		{ after = "혼원경", title = "비룡령의 풍룡", id = "windwyrm", n = 40, idx = 17, text = "비룡령의 풍룡들이 골짜기를 휘감는다. 날갯짓에 휩쓸리지 마라. 마흔을 떨어뜨려라." },
+		{ before = "무량경", title = "천뢰옥의 뇌옥사", id = "thunderjailer", n = 40, idx = 18, text = "뇌옥사들은 갇힌 번개를 채찍처럼 휘두른다. 채찍 끝을 흘리고 품으로 들어가라. 마흔을 쓰러뜨려라." },
+		{ before = "무량경", title = "운룡대의 이무기", id = "cloudwyrm", n = 40, idx = 18, text = "용이 되지 못한 이무기들이 구름 속에서 몸부림친다. 마흔을 잠재워라." },
+		{ before = "태허경", title = "삼도천의 아귀", id = "agwi", n = 40, idx = 19, text = "삼도천 강가의 아귀들은 끝없이 굶주려 있다. 내공을 뜯기지 말고 마흔을 쓰러뜨려라." },
+		{ before = "태허경", title = "화탕지옥의 화마귀", id = "hwamagwi", n = 40, idx = 19, text = "끓는 솥 사이를 화마귀들이 날아다닌다. 불길이 옷에 닿기 전에 마흔을 꺼뜨려라." },
+		{ before = "권왕", title = "도산지옥의 수문장", id = "swordwarden", n = 40, idx = 20, text = "칼의 산 입구를 지키는 수문장들이다. 권왕의 이름을 걸고 마흔을 넘어서라." },
+		{ before = "권왕", title = "아귀도의 아귀군", id = "agwigun", n = 40, idx = 20, text = "아귀군은 무리 지어 몰려온다. 둘러싸이기 전에 한쪽부터 무너뜨려라. 마흔을 쓰러뜨려라." },
+		{ before = "대라경", title = "독사지옥의 독충귀", id = "dokchunggwi", n = 40, idx = 21, text = "독충귀는 작지만 수가 많다. 독이 쌓이기 전에 마흔을 쓸어 버려라." },
+		{ before = "대라경", title = "염라전의 저승 무사", id = "jeoseungmusa", n = 40, idx = 21, text = "염라전의 저승 무사들은 산 자를 데려가려 한다. 끌려가지 말고 마흔을 쓰러뜨려라." },
+		{ before = "대라경", title = "발설지옥의 집게 옥졸", id = "jipgeseolkkun", n = 40, idx = 21, text = "집게를 든 옥졸들이 혀를 노린다. 입을 다물고 손으로 말해라. 마흔을 쓰러뜨려라." },
+		{ after = "허무경", title = "혈지옥의 피 옥졸", id = "hyeolsu", n = 40, idx = 22, text = "피의 못을 지키는 옥졸들이다. 발밑이 미끄럽다. 마흔을 쓰러뜨려라." },
+		{ after = "허무경", title = "한빙지옥의 얼음 옥졸", id = "bingok", n = 40, idx = 22, text = "얼음 옥졸들의 손이 닿으면 몸이 굳는다. 멈추지 말고 움직이며 마흔을 깨뜨려라." },
+		{ after = "허무경", title = "무간지옥의 불꽃귀", id = "muganbul", n = 40, idx = 22, text = "무간지옥의 불꽃귀는 떨어지면서도 타오른다. 마흔을 꺼뜨려라." },
+		{ after = "허무경", title = "철환지옥의 쇠고리 옥졸", id = "hwangsu", n = 40, idx = 22, text = "쇠고리를 던지는 옥졸들이다. 고리가 목에 걸리기 전에 마흔을 쓰러뜨려라." },
+	})
+	batch = nil
 end
 ------------------------------------------------------------------------
 -- 3.97판: 이야기 보상 은자가 너무 많았다 (권왕 장 1억 2500만, 태허경 2250만 … 그 경지 사냥 몇 시간 몫).
@@ -7065,6 +7095,18 @@ do
 	table.insert(lines.hell, { title = "저승의 끝", text = "지옥의 왕들이 모두 고개를 숙였다. 살아서 이 강을 다시 건너는 자는 드물다.", goal = { kind = "done" }, reward = {}, line = "hell" })
 	Config.StoryLines = lines
 	Config.Story = lines.ground
+	-- 3.99.4판: 9판의 줄기별 장 이름 (batch 10 장이 끼기 전)
+	local v9 = {}
+	for k, list in pairs(lines) do
+		local t = {}
+		for _, ch in ipairs(list) do
+			if ch.batch ~= 10 then
+				table.insert(t, ch.title)
+			end
+		end
+		v9[k] = t
+	end
+	Config.STORY_LINE_TITLES_V9 = v9
 	local town = Config.SKY and Config.SKY.islands[1]
 	local naru = Config.HELL and Config.HELL.zones and Config.HELL.zones[1]
 	Config.STORY_LINE_INFO = {

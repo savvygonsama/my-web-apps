@@ -926,12 +926,14 @@ function UIB.buildStyles()
 		end
 		guideBtn.Visible = found == true and not owned
 		-- 숨은 권법은 얻기 전엔 이름도 모른다
-		if s.hidden and not owned and not (s.secret and found) then
+		-- 3.99.4판: 숨은 사부는 권법 쪽 (secret) 이나 사부 쪽 (MASTERS[id].secret) 어느 한쪽에만 적혀 있다. 사부를 찾았으면 창이 열린다
+		local hasMaster = s.secret or Config.MASTERS[id] ~= nil
+		if s.hidden and not owned and not (hasMaster and found) then
 			dTitle.Text = "❓ 숨겨진 권법"
 			dTitle.TextColor3 = C.dim
 			dHanja.Text = "???"
 			dMaster.Text = gradeTag .. "  전해지는 이야기만 남아 있다"
-			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (s.secret and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
+			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (hasMaster and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
 			dBtn.Text = "🔒 조건을 채워야 익힌다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
@@ -1230,7 +1232,7 @@ function UIB.buildStyles()
 				local title = card:FindFirstChild("Title") :: TextLabel?
 				local found = state.found and state.found[id]
 				local ups = (state.gradeUp and state.gradeUp[id]) or 0
-				if s.hidden and not owned and not (s.secret and found) then
+				if s.hidden and not owned and not ((s.secret or Config.MASTERS[s.id] ~= nil) and found) then
 					sub.Text = "[" .. s.grade .. "]  ???"
 					if title then
 						title.Text = "❓ 숨겨진 권법"

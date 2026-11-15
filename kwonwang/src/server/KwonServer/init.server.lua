@@ -394,7 +394,7 @@ local function sanitize(data: any): Profile
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
 	-- 2.7.7판: 장이 끼어들어 번호가 바뀌었다. 예전 기록은 그 장의 이름으로 새 번호를 찾는다
 	-- 3.99.3판: 8판까지는 한 줄 (STORY_ALL) 의 번호. 그 자리까지 지나온 장을 줄기마다 나눠 이어 준다
-	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
+	if (tonumber(data.storyVer) or 0) < 9 and type(data.story) == "number" then
 		local all = Config.STORY_ALL
 		local oldN = math.floor(data.story)
 		local allIdx: number? = nil
@@ -435,6 +435,25 @@ local function sanitize(data: any): Profile
 					p.story, p.prog, p.accepted = L.story, L.prog, L.accepted
 				else
 					p.lines[k] = L
+				end
+			end
+		end
+	end
+	-- 3.99.4판: 9판 기록 (줄기별 번호) 은 줄기마다 장 이름으로 새 번호를 찾는다
+	if data.storyVer == 9 then
+		for _, k in ipairs(Config.STORY_LINE_ORDER) do
+			local L = k == "ground" and p or p.lines[k]
+			local oldT = Config.STORY_LINE_TITLES_V9[k]
+			local list = Config.StoryLines[k]
+			if L and oldT and list then
+				local wasAcc = L.accepted == L.story
+				local title = oldT[math.clamp(L.story, 1, #oldT)]
+				for i, ch in ipairs(list) do
+					if ch.title == title then
+						L.story = i
+						L.accepted = wasAcc and i or 0
+						break
+					end
 				end
 			end
 		end
@@ -2188,7 +2207,7 @@ function Trial.start(player: Player, styleId: string)
 			if easy then
 				dmgK *= EZ.hit
 			end
-			local ef = trialFoe(player, f, style, master, "master", spawnAt, style.secret and 1.0 or (easy and 0.85 * EZ.power or 0.85), nil, function(def)
+			local ef = trialFoe(player, f, style, master, "master", spawnAt, (style.secret or (Config.MASTERS[style.id] and Config.MASTERS[style.id].secret)) and 1.0 or (easy and 0.85 * EZ.power or 0.85), nil, function(def)
 				def.name = master.name
 				def.speed = speed
 				def.aggro = 140
@@ -2274,7 +2293,7 @@ function Trial.start(player: Player, styleId: string)
 	ef.trialOwner = player
 	ef.trialStyle = styleId
 	-- 분신은 시험을 청한 사람과 비슷한 힘으로 (센 사람에게도 시험이 시험이도록)
-	local want = ((f :: any).power or 100) * (style.secret and 1.15 or 0.85)
+	local want = ((f :: any).power or 100) * ((style.secret or (Config.MASTERS[style.id] and Config.MASTERS[style.id].secret)) and 1.15 or 0.85)
 	local k = want / math.max(1, ef.power or 100)
 	if k > 1 then
 		ef.maxHp = math.floor(ef.maxHp * k)
