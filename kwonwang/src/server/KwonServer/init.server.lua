@@ -94,6 +94,7 @@ type Profile = {
 	title: string?, -- 단 칭호 (업적 id)
 	counts: { [string]: number }, -- 업적용 횟수 (raid 레이드 승리, maze 미궁 완주)
 	storyVer: number, -- 2.7.7판: 이야기 장 번호의 판 (없음 = 2.7.6판까지)
+	lines: { [string]: any }, -- 3.99.3판: 천상 · 지옥 줄기의 이야기 { story, prog, accepted }
 	statVer: number, -- 능력치 숫자의 판 (없음 = 1.9판까지, 2 = 2.0판, 3 = 2.1판, 4 = 2.2판: 다시 1.9판 숫자)
 }
 
@@ -146,6 +147,7 @@ local function defaultProfile(): Profile
 		counts = {},
 		statVer = 4,
 		storyVer = Config.STORY_V,
+		lines = {},
 	}
 end
 
@@ -371,30 +373,69 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
+	-- 3.99.3판: 이야기 세 줄기 (지상은 p.story · p.prog · p.accepted 그대로, 천상 · 지옥은 p.lines)
+	p.lines = {}
+	if type(data.lines) == "table" then
+		for _, k in ipairs({ "sky", "hell" }) do
+			local d = data.lines[k]
+			local list = Config.StoryLines[k]
+			if type(d) == "table" and list then
+				p.lines[k] = {
+					story = math.clamp(math.floor(num(d.story, #list)), 1, #list),
+					prog = math.floor(num(d.prog, 1e6)),
+					accepted = math.clamp(math.floor(num(d.accepted, #list)), 0, #list),
+				}
+			end
+		end
+	end
 	p.story = math.clamp(math.floor(num(data.story, #Config.Story)), 1, #Config.Story)
 	p.prog = math.floor(num(data.prog, 1e6))
 	-- 받은 이야기 (예전 기록은 지금 장을 받은 것으로 친다)
 	p.accepted = type(data.accepted) == "number" and math.clamp(math.floor(num(data.accepted, #Config.Story)), 0, #Config.Story) or p.story
 	-- 2.7.7판: 장이 끼어들어 번호가 바뀌었다. 예전 기록은 그 장의 이름으로 새 번호를 찾는다
+	-- 3.99.3판: 8판까지는 한 줄 (STORY_ALL) 의 번호. 그 자리까지 지나온 장을 줄기마다 나눠 이어 준다
 	if data.storyVer ~= Config.STORY_V and type(data.story) == "number" then
+		local all = Config.STORY_ALL
 		local oldN = math.floor(data.story)
-		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
-		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 7 and Config.STORY_TITLES_V7 or data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
-		local title = titles[math.clamp(oldN, 1, #titles)]
-		if data.storyVer == 2 then
-			title = Config.STORY_REMAP_V2[title] or title
+		local allIdx: number? = nil
+		do
+			-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
+			-- 3.2.6판: 3판 기록은 3판 장 이름으로
+			local titles = data.storyVer == 8 and Config.STORY_TITLES_V8 or data.storyVer == 7 and Config.STORY_TITLES_V7 or data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+			local title = titles[math.clamp(oldN, 1, #titles)]
+			if data.storyVer == 2 then
+				title = Config.STORY_REMAP_V2[title] or title
+			end
+			title = Config.STORY_REMAP_V3[title] or title
+			if data.storyVer == 5 then
+				title = Config.STORY_REMAP_V5[title] or title
+			end
+			for i, ch in ipairs(all) do
+				if ch.title == title then
+					allIdx = i
+					break
+				end
+			end
 		end
-		title = Config.STORY_REMAP_V3[title] or title
-		if data.storyVer == 5 then
-			title = Config.STORY_REMAP_V5[title] or title
-		end
-		for i, ch in ipairs(Config.Story) do
-			if ch.title == title then
-				local wasAccepted = p.accepted == p.story or data.accepted == nil
-				p.story = i
-				p.accepted = wasAccepted and i or 0
-				break
+		if allIdx then
+			local cur = all[allIdx]
+			local wasAccepted = data.accepted == nil or math.floor(tonumber(data.accepted) or -1) == oldN
+			for _, k in ipairs(Config.STORY_LINE_ORDER) do
+				local list = Config.StoryLines[k]
+				local n = 1
+				for i, ch in ipairs(list) do
+					if (ch.allIdx or math.huge) < allIdx then
+						n = i + 1
+					end
+				end
+				n = math.min(n, #list)
+				local isCur = cur.line == k and list[n] == cur
+				local L = { story = n, prog = isCur and math.floor(num(data.prog, 1e6)) or 0, accepted = (isCur and wasAccepted) and n or 0 }
+				if k == "ground" then
+					p.story, p.prog, p.accepted = L.story, L.prog, L.accepted
+				else
+					p.lines[k] = L
+				end
 			end
 		end
 	end
@@ -1094,6 +1135,9 @@ function Ach.progress(p: Profile): { [string]: number }
 	return out
 end
 
+-- 3.99.3판: pushState 가 줄기 상태를 읽어서 위로 올린다
+local Story: any = {}
+
 local function pushState(player: Player)
 	local p, st = profiles[player], states[player]
 	if not p or not st then
@@ -1143,6 +1187,17 @@ local function pushState(player: Player)
 		prog = p.prog,
 		fragments = p.fragments,
 		accepted = p.accepted == p.story,
+		-- 3.99.3판: 천상 · 지옥 줄기
+		lines = (function()
+			local out = {}
+			for _, ln in ipairs({ "sky", "hell" }) do
+				if Story.lineOpen(p, ln) then
+					local L = Story.lineState(p, ln)
+					out[ln] = { story = L.story, prog = L.prog, accepted = L.accepted == L.story }
+				end
+			end
+			return out
+		end)(),
 		premium = st.owned or {},
 		gateNext = Calc.gateNext(p),
 		manuals = p.manuals,
@@ -1520,7 +1575,6 @@ end
 ------------------------------------------------------------------------
 -- 강호 이야기 (차례로 이어지는 장)
 ------------------------------------------------------------------------
-local Story = {}
 
 local function countKeys(t: { [any]: any }): number
 	local n = 0
@@ -1547,10 +1601,11 @@ local function grantStyle(player: Player, id: string, banner: boolean?)
 	end
 end
 
-function Story.done(p: Profile, g: any): boolean
+function Story.done(p: Profile, g: any, L: any?): boolean
+	local LS = L or p
 	local k = g.kind
 	if k == "kill" or k == "train" or k == "trial" or k == "boss" or k == "hit" or k == "heavy" or k == "skill" then
-		return p.prog >= (g.n or 1)
+		return LS.prog >= (g.n or 1)
 	elseif k == "found" then
 		return countKeys(p.found) >= g.n
 	elseif k == "learn" then
@@ -1564,7 +1619,7 @@ function Story.done(p: Profile, g: any): boolean
 		return countKeys(p.fragments) >= g.n
 	-- 2.7.7판: 게임 전체를 이끄는 목표들
 	elseif k == "sky" then
-		return p.prog >= 1
+		return LS.prog >= 1
 	elseif k == "manual" then
 		return countKeys(p.manuals) >= (g.n or 1)
 	elseif k == "tower" then
@@ -1595,7 +1650,7 @@ function Story.done(p: Profile, g: any): boolean
 				n += 1
 			end
 		end
-		p.prog = n
+		LS.prog = n
 		return n >= #(g.ids or {})
 	elseif k == "geuk" then
 		local n = 0
@@ -1605,7 +1660,7 @@ function Story.done(p: Profile, g: any): boolean
 				n += 1
 			end
 		end
-		p.prog = n
+		LS.prog = n
 		return n >= (g.n or 1)
 	elseif k == "awaken" or k == "transcend" then
 		local n = 0
@@ -1620,58 +1675,111 @@ function Story.done(p: Profile, g: any): boolean
 	return false
 end
 
-function Story.advance(player: Player)
+-- 3.99.3판: 줄기 (ground 지상 · sky 천상 · hell 지옥). 지상은 p 의 칸, 나머지는 p.lines
+local function lineState(p: Profile, line: string): (any, { any })
+	if line == "ground" then
+		return p, Config.Story
+	end
+	p.lines = p.lines or {}
+	local L = p.lines[line]
+	if not L then
+		L = { story = 1, prog = 0, accepted = 0 }
+		p.lines[line] = L
+	end
+	return L, Config.StoryLines[line]
+end
+Story.lineState = lineState
+-- 천상 · 지옥 줄기는 그곳에 처음 발을 디딘 뒤에 열린다 (예전 기록으로 이미 지나온 줄기는 열려 있다)
+local function lineOpen(p: Profile, line: string): boolean
+	if line == "ground" then
+		return true
+	end
+	local L = p.lines and p.lines[line]
+	if L and (L.story > 1 or L.accepted > 0) then
+		return true
+	end
+	return p.seen[line .. "_line"] == true
+end
+Story.lineOpen = lineOpen
+
+local function giveReward(player: Player, p: Profile, ch: any)
+	local r = ch.reward or {}
+	p.coins += r.coins or 0
+	p.scrolls += r.scrolls or 0
+	for _, stat in ipairs(Config.Stats) do
+		addStat(p, stat.id, r.stats or 0)
+	end
+	if (r.scrolls or 0) > 0 then
+		toast(player, string.format("📜 심법 두루마리 +%d", r.scrolls))
+	end
+end
+
+function Story.advance(player: Player, line: string?)
 	if BATTLE then
 		return -- 배틀그라운드에는 이야기가 없다
 	end
+	local ln = line or "ground"
 	local p = profiles[player]
-	for _ = 1, 3 do
-		local ch = p and Config.Story[p.story]
-		if not ch or ch.goal.kind == "done" then
+	if not p then
+		return
+	end
+	local L, list = lineState(p, ln)
+	local ch = list[L.story]
+	if not ch or ch.goal.kind == "done" then
+		return
+	end
+	giveReward(player, p, ch)
+	L.story = math.min(#list, L.story + 1)
+	L.prog = 0
+	-- 3.99.3판: 이미 이룬 경지 장은 받지 않아도 바로 넘긴다 (사냥하다 보면 경지가 먼저 올라 '절정에 올라라' 가 이미 화경일 때 나왔다)
+	local skipped = {}
+	while ln == "ground" do
+		local nx = list[L.story]
+		if not nx or nx.goal.kind ~= "realm" or not Story.done(p, nx.goal, L) then
 			break
 		end
-		local r = ch.reward or {}
-		p.coins += r.coins or 0
-		p.scrolls += r.scrolls or 0
-		for _, stat in ipairs(Config.Stats) do
-			addStat(p, stat.id, r.stats or 0)
-		end
-		if (r.scrolls or 0) > 0 then
-			toast(player, string.format("📜 심법 두루마리 +%d", r.scrolls))
-		end
-		p.story = math.min(#Config.Story, p.story + 1)
-		p.prog = 0
-		-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 장로에게 가서 선택해 받아야 이어진다
-		local nxt = Config.Story[p.story]
-		Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, next = nxt.goal.kind ~= "done" and "장로에게 가서 다음 이야기를 받으세요" or nil })
-		break
+		giveReward(player, p, nx)
+		table.insert(skipped, nx.title)
+		L.story = math.min(#list, L.story + 1)
 	end
+	if #skipped > 0 then
+		toast(player, "📜 이미 이룬 장: " .. table.concat(skipped, " · "))
+	end
+	-- 3.30판: 다음 이야기는 저절로 뜨지 않는다 (싸우는 중에 창이 겹쳐 불편했다). 그 줄기의 사람에게 가서 받아야 이어진다
+	local nxt = list[L.story]
+	local who = Config.STORY_LINE_INFO[ln].who
+	local r = ch.reward or {}
+	Push:FireClient(player, "storyDone", { title = ch.title, coins = r.coins, stats = r.stats, line = ln, next = nxt.goal.kind ~= "done" and string.format("%s에게 가서 다음 이야기를 받으세요", who) or nil })
 	states[player].dirty = true
 	refreshFighter(player)
 	pushState(player)
 end
 
--- 무슨 일이 일어났다 (적을 쓰러뜨림, 수련, 시험 통과 ...)
+-- 무슨 일이 일어났다 (적을 쓰러뜨림, 수련, 시험 통과 ...): 받은 줄기마다 센다
 function Story.event(player: Player, kind: string, id: string?, amount: number?)
 	if BATTLE then
 		return -- 배틀그라운드에는 이야기가 없다
 	end
 	local p = profiles[player]
-	local ch = p and Config.Story[p.story]
-	if not ch then
+	if not p then
 		return
 	end
-	-- 아직 받지 않은 이야기는 세지 않는다
-	if p.accepted ~= p.story then
-		return
-	end
-	local g = ch.goal
-	if g.kind == kind and (g.id == nil or g.id == id) then
-		p.prog += amount or 1
-		Push:FireClient(player, "storyProg", { prog = p.prog })
-	end
-	if Story.done(p, g) then
-		Story.advance(player)
+	for _, ln in ipairs(Config.STORY_LINE_ORDER) do
+		if lineOpen(p, ln) then
+			local L, list = lineState(p, ln)
+			local ch = list[L.story]
+			-- 아직 받지 않은 이야기는 세지 않는다
+			if ch and L.accepted == L.story and ch.goal.kind ~= "done" then
+				local g = ch.goal
+				if g.kind == kind and (g.id == nil or g.id == id) then
+					L.prog += amount or 1
+					Push:FireClient(player, "storyProg", { prog = L.prog, line = ln })
+				end
+				if Story.done(p, g, L) then
+					Story.advance(player, ln)
+				end
+			end
+		end
 	end
 end
 
@@ -1754,38 +1862,61 @@ function Story.talk(player: Player)
 			return
 		end
 	end
-	local ch = p and Config.Story[p.story]
-	if not ch then
-		return
-	end
-	if ch.goal.kind == "done" then
-		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
-		return
-	end
-	-- 3.30판: 이야기는 장로에게서 선택해 받아야 한다 (받기 / 나중에). 받은 뒤에만 목표가 보이고 세어진다
-	if p.accepted ~= p.story then
-		Push:FireClient(player, "dialog", { who = "📜 청운 장로 · " .. tostring(p.story) .. "장", title = ch.title, text = ch.text, accept = true })
-	else
-		Push:FireClient(player, "dialog", { who = "청운 장로", title = ch.title, text = ch.text })
+	if p then
+		Story.talkLine(player, "ground")
 	end
 end
 
+-- 3.99.3판: 줄기의 사람과 이야기 (지상 청운 장로 · 천상 천궁 선관 · 지옥 나루의 뱃사공)
+function Story.talkLine(player: Player, ln: string)
+	local p = profiles[player]
+	if not p or not Config.StoryLines[ln] then
+		return
+	end
+	local who = Config.STORY_LINE_INFO[ln].who
+	local L, list = lineState(p, ln)
+	local ch = list[L.story]
+	if not ch then
+		return
+	end
+	if ln ~= "ground" and not p.seen[ln .. "_line"] then
+		p.seen[ln .. "_line"] = true
+		states[player].dirty = true
+	end
+	if ch.goal.kind == "done" then
+		Push:FireClient(player, "dialog", { who = who, title = ch.title, text = ch.text })
+		return
+	end
+	-- 3.30판: 이야기는 선택해 받아야 한다 (받기 / 나중에). 받은 뒤에만 목표가 보이고 세어진다
+	if L.accepted ~= L.story then
+		Push:FireClient(player, "dialog", { who = Config.STORY_LINE_INFO[ln].icon .. " " .. who .. " · " .. tostring(L.story) .. "장", title = ch.title, text = ch.text, accept = true, line = ln })
+	else
+		Push:FireClient(player, "dialog", { who = who, title = ch.title, text = ch.text })
+	end
+	pushState(player)
+end
+
 -- 이야기 받기: 이때부터 목표가 보이고 세어진다
-function Story.accept(player: Player)
+function Story.accept(player: Player, line: string?)
 	if BATTLE then
 		return -- 배틀그라운드에는 이야기가 없다
 	end
+	local ln = (type(line) == "string" and Config.StoryLines[line]) and line or "ground"
 	local p = profiles[player]
-	if not p or p.accepted == p.story then
+	if not p then
 		return
 	end
-	p.accepted = p.story
+	local L, list = lineState(p, ln)
+	if L.accepted == L.story then
+		return
+	end
+	L.accepted = L.story
 	states[player].dirty = true
 	pushState(player)
-	local ch = Config.Story[p.story]
+	local ch = list[L.story]
 	if ch and ch.goal.kind == "talk" then
-		-- 장로에게 듣는 것이 목표인 이야기는 받는 순간 마친 것 (다음 이야기는 다시 받아야 한다)
-		Story.advance(player)
+		-- 듣는 것이 목표인 이야기는 받는 순간 마친 것 (다음 이야기는 다시 받아야 한다)
+		Story.advance(player, ln)
 		return
 	end
 	Story.check(player)
@@ -3057,6 +3188,14 @@ function Actions.buy(player: Player, id: any)
 	local item = type(id) == "string" and Config.SHOP_BY_ID[id]
 	if not p or not st or not item then
 		return
+	end
+	-- 3.99.3판: 싸우는 중에는 만물상을 쓸 수 없다 (싸움 한가운데서 내공단 · 폭혈단 · 금창약을 끝없이 사 먹었다)
+	do
+		local fc = Combat.fighterOfPlayer(player)
+		if fc and fc.combatUntil > os.clock() then
+			toast(player, string.format("⚔ 싸우는 중에는 만물상을 쓸 수 없어요 (마지막으로 맞거나 때린 뒤 %d초)", math.ceil(fc.combatUntil - os.clock())))
+			return
+		end
 	end
 	-- 3.84판 귀환부: 싸우는 중 · 탑 · 미궁 · 시련 중에는 못 쓴다 (값을 받기 전에 본다)
 	if item.id == "recall" then
@@ -5335,7 +5474,7 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 	elseif action == "talkElder" then
 		Story.talk(player)
 	elseif action == "storyAccept" then
-		Story.accept(player)
+		Story.accept(player, type(a1) == "string" and a1 or nil)
 	elseif action == "premiumBuy" then
 		Premium.prompt(player, tostring(a1))
 	elseif action == "productBuy" then
@@ -7196,6 +7335,15 @@ task.spawn(function()
 	if not ok then
 		warn("[권왕] 사부 만들기 오류:", err)
 	end
+	-- 3.99.3판: 천상 · 지옥 줄기의 사람
+	for _, ln in ipairs({ "sky", "hell" }) do
+		local okL, errL = pcall(Npc.spawnLineGiver, ln, function(player: Player)
+			Story.talkLine(player, ln)
+		end)
+		if not okL then
+			warn("[권왕] 이야기 사람 오류", ln, errL)
+		end
+	end
 	ok, err = pcall(Npc.spawnElder, function(player: Player)
 		Story.talk(player)
 	end)
@@ -7241,6 +7389,16 @@ task.spawn(function()
 			local f = Combat.fighterOfPlayer(player)
 			if f and not f.dead then
 				-- 2.7.7판: 이야기 '천상의 문' (하늘에 올랐는가)
+				-- 3.99.3판: 천상 · 지옥에 처음 발을 디디면 그 줄기의 이야기가 열린다
+				local pos0 = f.root.Position
+				local lnNew = (Config.inHell(pos0) and "hell") or ((pos0.Y > Config.SKY.y - 300) and "sky") or nil
+				if lnNew and not p.seen[lnNew .. "_line"] then
+					p.seen[lnNew .. "_line"] = true
+					states[player].dirty = true
+					local info = Config.STORY_LINE_INFO[lnNew]
+					toast(player, string.format("%s %s이(가) 이야기를 들려줄 사람을 기다린다 (%s)", info.icon, lnNew == "sky" and "천궁" or "황천 나루", info.who))
+					pushState(player)
+				end
 				if f.root.Position.Y > Config.SKY.y - 300 then
 					local ch = Config.Story[p.story]
 					if ch and ch.goal.kind == "sky" then

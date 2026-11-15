@@ -951,6 +951,65 @@ function Npc.spawnElder(onTalk: (Player) -> ())
 	model.Parent = mf
 end
 
+-- 3.99.3판: 천상 · 지옥 줄기의 이야기를 들려주는 사람 (천궁 선관 · 나루의 뱃사공)
+function Npc.spawnLineGiver(line: string, onTalk: (Player) -> ())
+	local info = Config.STORY_LINE_INFO and Config.STORY_LINE_INFO[line]
+	if not info or not info.at then
+		return
+	end
+	local mf = workspace:FindFirstChild("Masters") or Instance.new("Folder")
+	mf.Name = "Masters"
+	mf.Parent = workspace
+	local sky = line == "sky"
+	local robe = sky and Color3.fromRGB(226, 232, 244) or Color3.fromRGB(46, 40, 44)
+	local trim = sky and Color3.fromRGB(110, 150, 210) or Color3.fromRGB(150, 60, 40)
+	local model = body({ head = SKIN, torso = robe, arms = robe:Lerp(trim, 0.25), legs = robe:Lerp(Color3.new(0, 0, 0), 0.35) }, 1.05)
+	model.Name = sky and "SkyElder" or "HellElder"
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		hum.WalkSpeed = 0
+	end
+	local head = model:FindFirstChild("Head") :: BasePart?
+	local hs = head and head.Size or Vector3.new(1.2, 1.2, 1.2)
+	for _, z in ipairs({ -1, 1 }) do
+		wear(model, "LowerTorso", "RobePanel", Vector3.new(2.1, 2.4, 0.18), CFrame.new(0, -1.35, z * 0.55), robe)
+	end
+	wear(model, "UpperTorso", "Sash", Vector3.new(2.15, 0.3, 1.1), CFrame.new(0, -0.55, 0), trim)
+	if sky then
+		-- 선관: 높은 관과 흰 불자
+		wear(model, "Head", "Crown", Vector3.new(0.7, 0.9, 0.7), CFrame.new(0, hs.Y * 0.75, 0), Color3.fromRGB(40, 44, 60))
+		wear(model, "RightHand", "Whisk", Vector3.new(0.2, 2.6, 0.2), CFrame.new(0, 0.4, 0), Color3.fromRGB(160, 120, 70), Enum.Material.Wood)
+		wear(model, "RightHand", "WhiskHair", Vector3.new(0.5, 1.8, 0.5), CFrame.new(0, -1.6, 0), Color3.fromRGB(250, 250, 250), Enum.Material.Fabric)
+	else
+		-- 뱃사공: 넓은 삿갓과 긴 삿대
+		wear(model, "Head", "Hat", Vector3.new(0.3, 3.2, 3.2), CFrame.new(0, hs.Y * 0.6, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(120, 100, 60), Enum.Material.Fabric, Enum.PartType.Cylinder)
+		wear(model, "RightHand", "Pole", Vector3.new(0.3, 9, 0.3), CFrame.new(0, 2.4, 0), Color3.fromRGB(60, 44, 34), Enum.Material.Wood)
+	end
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
+	local up = (hum and hum.HipHeight or 2) + root.Size.Y / 2
+	local at = info.at
+	model:PivotTo(CFrame.lookAt(at + Vector3.new(0, up, 0), at + Vector3.new(0, up, -10)))
+	root.Anchored = true
+	model:SetAttribute("NPC", true)
+	model:SetAttribute("Master", true)
+	model:SetAttribute("Label", info.who)
+	if head then
+		masterTag(head, info.who, { icon = info.icon, name = "이야기 (T)", color = sky and Color3.fromRGB(200, 225, 255) or Color3.fromRGB(255, 170, 130), elder = true })
+	end
+	local pp = Instance.new("ProximityPrompt")
+	pp.Name = "Elder"
+	pp.ActionText = "이야기"
+	pp.ObjectText = info.who
+	pp.HoldDuration = 0
+	pp.MaxActivationDistance = 14
+	pp.RequiresLineOfSight = false
+	pp.KeyboardKeyCode = Enum.KeyCode.T
+	pp.Parent = root
+	pp.Triggered:Connect(onTalk)
+	model.Parent = mf
+end
+
 function Npc.spawnMasters(onTrigger: (Player, string) -> ())
 	local mf = Instance.new("Folder")
 	mf.Name = "Masters"

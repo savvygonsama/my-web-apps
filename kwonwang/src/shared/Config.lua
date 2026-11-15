@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.2" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.3" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4067,7 +4067,7 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 -- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
 -- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
-Config.STORY_V = 8 -- 3.99.2판: 사냥터마다 졸병 장을 더 끼웠다. 3.99판: 졸병 장 여덟을 끼웠다. 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
+Config.STORY_V = 9 -- 3.99.3판: 이야기를 지상 · 천상 · 지옥 세 줄기로 나누고 천상 · 지옥 졸병 장을 더했다 (8판까지는 장 이름으로 STORY_ALL 의 차례를 찾아 옮긴다). 3.99.2판: 사냥터마다 졸병 장을 더 끼웠다. 3.99판: 졸병 장 여덟을 끼웠다. 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
 -- 3.49판: 5판에 이야기를 다 끝낸 사람 (강호의 전설) 은 새로 붙은 권왕 뒤의 첫 장부터 (이미 이룬 목표는 저절로 넘어간다)
 Config.STORY_REMAP_V5 = { ["강호의 전설"] = "칼의 산 · 굶주린 길" }
 Config.STORY_TITLES_V5 = { "강호의 문", "첫 주먹", "강타", "첫 기술", "들판의 무뢰배", "몸을 만드는 법", "이류의 문턱", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "손에 익히기", "일류의 벽", "두 번째 사부", "특급에 오르다", "흑호채", "오의를 열어라", "심법 두루마리", "서해의 해적", "심법 셋", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "네 번째 권법", "숙련과 각성", "초절정의 몸", "설산의 빙마", "화경에 들다", "첫 깨달음", "혈교의 그림자", "현경의 고요", "혈마", "두 번째 깨달음", "사경의 문", "생사의 경계", "신화경에 들다", "각성 권법", "천인합일", "천상의 문", "천상의 첫 사냥", "무극에 오르다", "이름 없는 노인", "구름 미궁", "천층탑 서른 층", "허공 균열", "다섯 번째 권법", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "반선", "등선", "하늘 밖의 하늘", "천공 투기장", "천층탑 쉰 층", "태초", "정점", "환생", "윤회의 공덕", "전생의 그림자", "초월", "천층탑 백 층", "혼원경", "두 번째 삶", "두 번째 그림자", "무량경", "세 번째 삶", "세 번째 그림자", "태허경", "네 번째 삶", "마지막 그림자", "권왕", "강호의 전설" }
@@ -6925,6 +6925,31 @@ do
 		{ after = "권왕", title = "도산지옥의 검귀", id = "dosangeom", n = 40, idx = 20, text = "칼로 된 산을 오르내리는 검귀들이다. 권왕이라 불린다고 칼날이 비켜 가지는 않는다. 마흔을 쓰러뜨려라." },
 		{ after = "허무경", title = "한빙지옥의 빙귀", id = "binggwi", n = 40, idx = 22, text = "한빙지옥의 빙귀들은 숨결마저 얼린다. 허무경의 몸으로 마지막 지옥에 들어서기 전에 마흔을 깨뜨려라." },
 	})
+	-- 3.99.3판: 8판 장 이름 (천상 · 지옥 줄기의 장이 끼기 전)
+	local v8 = {}
+	for i, ch in ipairs(Config.Story) do
+		v8[i] = ch.title
+	end
+	Config.STORY_TITLES_V8 = v8
+	-- 3.99.3판: 천상 · 지옥 줄기에도 땅마다 졸병 장 (그 땅 보스 장 앞에. 졸병을 정리하고 주인을 만난다)
+	addAll({
+		{ after = "천상의 첫 사냥", title = "뇌정봉의 뇌령", id = "thunderimp", n = 40, idx = 14, text = "뇌정봉의 뇌령들은 번개를 머금고 떠다닌다. 봉우리의 주인을 만나기 전에 마흔을 흩어라." },
+		{ after = "뇌정봉의 뇌제", title = "옥좌대의 천위병", id = "throneguard", n = 40, idx = 15, text = "옥좌대로 오르는 계단을 천위병들이 지킨다. 옥좌의 주인은 그 위에 있다. 마흔을 쓰러뜨려라." },
+		{ after = "천존", title = "빙정궁의 수위", id = "frostguard", n = 40, idx = 16, text = "빙정궁의 수위들은 얼음 갑옷을 입었다. 강타로 금을 내고 연타로 부숴라. 마흔을 쓰러뜨려라." },
+		{ after = "천존", title = "비천폭의 수문장", id = "fallsguard", n = 40, idx = 16, text = "비천폭 아래의 수문장들은 물보라 속에서 창을 내지른다. 젖은 바위에서 발을 놓치지 마라. 마흔을 쓰러뜨려라." },
+		{ after = "봉황대의 무사", title = "청학봉의 위사", id = "craneguard", n = 40, idx = 16, text = "청학봉의 위사들은 학처럼 가볍게 내려앉는다. 내려앉는 순간을 노려라. 마흔을 쓰러뜨려라." },
+		{ after = "봉황대의 무사", title = "운무 죽림의 검객", id = "jukgeom", n = 40, idx = 16, text = "안개 낀 대숲에서 검이 먼저 보이고 사람은 나중에 보인다. 마흔을 쓰러뜨려라." },
+		{ after = "달빛 호수", title = "금운사의 무승", id = "goldmonk", n = 40, idx = 17, text = "금운사의 무승들은 맨손으로 바위를 쪼갠다. 같은 맨손이라면 물러설 까닭이 없다. 마흔을 쓰러뜨려라." },
+		{ after = "유리 바다", title = "천뢰옥의 수문병", id = "prisonguard", n = 50, idx = 18, text = "하늘 감옥의 문을 지키는 수문병들이다. 갇힌 뇌성이 벽을 울린다. 쉰을 쓰러뜨려라." },
+		{ after = "비상문의 수호병", title = "신선호의 신선", id = "immortalsage", n = 50, idx = 19, text = "신선호의 신선들은 싸움을 즐기지 않지만 길을 비켜 주지도 않는다. 쉰을 넘어서라." },
+		{ after = "삼도천의 원귀", title = "화탕지옥의 옥졸", id = "okjol", n = 50, idx = 19, text = "끓는 솥을 지키는 옥졸들이다. 김에 눈이 가려도 발소리는 들린다. 쉰을 쓰러뜨려라." },
+		{ after = "도산지옥의 검귀", title = "아귀도의 망령", id = "hungerwraith", n = 50, idx = 20, text = "아귀도의 굶주린 망령들은 산 자의 기운을 뜯어 먹는다. 내공을 단단히 여미고 쉰을 쓰러뜨려라." },
+		{ after = "독사지옥", title = "염라전의 옥졸장", id = "okjoljang", n = 50, idx = 21, text = "염라전 앞뜰을 옥졸장들이 지킨다. 심판의 자리에 서려면 이들부터 넘어라. 쉰을 쓰러뜨려라." },
+		{ after = "업경대 앞에서", title = "발설지옥의 설귀", id = "seolgwi", n = 50, idx = 21, text = "발설지옥의 설귀들은 말로 사람을 홀린다. 귀를 닫고 손을 써라. 쉰을 쓰러뜨려라." },
+		{ after = "한빙지옥의 빙귀", title = "무간지옥의 수문장", id = "mugansu", n = 50, idx = 22, text = "끝없이 떨어지는 무간지옥의 문을 수문장들이 지킨다. 한 번 밀리면 바닥이 없다. 쉰을 쓰러뜨려라." },
+		{ after = "지옥의 깊은 곳", title = "혈지옥의 혈귀", id = "hyeolgwi", n = 50, idx = 22, text = "피의 못에서 혈귀들이 기어오른다. 흡혈하는 권법이라도 이곳의 피는 독이다. 쉰을 쓰러뜨려라." },
+		{ after = "지옥의 깊은 곳", title = "철환지옥의 철귀", id = "cheolgwi", n = 50, idx = 22, text = "쇠사슬을 끌고 다니는 철귀들이다. 사슬이 감기기 전에 끊어라. 쉰을 쓰러뜨려라." },
+	})
 end
 ------------------------------------------------------------------------
 -- 3.97판: 이야기 보상 은자가 너무 많았다 (권왕 장 1억 2500만, 태허경 2250만 … 그 경지 사냥 몇 시간 몫).
@@ -6983,6 +7008,75 @@ do
 				hellPaid = true
 			end
 			r.coins = math.min(r.coins, math.max(cap, need))
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.3판: 이야기 세 줄기. 지상은 청운 장로, 천상은 천궁의 선관, 지옥은 황천 나루의 뱃사공이 따로 이끈다.
+-- 줄기마다 따로 이어지고 따로 끝난다 (천상의 장은 천상에서, 지옥의 장은 지옥에서). Config.Story 는 지상 줄기,
+-- Config.STORY_ALL 은 예전처럼 한 줄로 늘어놓은 차례 (8판까지의 기록을 옮길 때와 가상 플레이에 쓴다)
+------------------------------------------------------------------------
+do
+	local all = Config.Story
+	Config.STORY_ALL = all
+	local function where(at: Vector3?): string
+		if not at then
+			return "ground"
+		end
+		if Config.inHell(at) then
+			return "hell"
+		end
+		if Config.SKY and at.Y > Config.SKY.y - 300 then
+			return "sky"
+		end
+		return "ground"
+	end
+	local function lineOf(ch: any): string
+		local g = ch.goal
+		if g.kind == "raid" then
+			return "sky"
+		elseif g.kind == "boss" then
+			return where(Config.BOSS_AT[g.id] or g.at)
+		elseif g.kind == "bosses" then
+			local c = { ground = 0, sky = 0, hell = 0 }
+			for _, id in ipairs(g.ids or {}) do
+				local w = where(Config.BOSS_AT[id])
+				c[w] += 1
+			end
+			if c.hell > 0 and c.hell >= c.sky and c.hell >= c.ground then
+				return "hell"
+			elseif c.sky > 0 and c.sky >= c.ground then
+				return "sky"
+			end
+			return "ground"
+		elseif g.kind == "kill" then
+			return where(g.at)
+		end
+		return "ground"
+	end
+	local lines = { ground = {}, sky = {}, hell = {} }
+	for i, ch in ipairs(all) do
+		ch.allIdx = i
+		ch.line = lineOf(ch)
+		table.insert(lines[ch.line], ch)
+	end
+	table.insert(lines.sky, { title = "하늘의 끝", text = "천상의 섬들이 모두 너를 안다. 하늘에서 더 할 일은 네가 정하면 된다.", goal = { kind = "done" }, reward = {}, line = "sky" })
+	table.insert(lines.hell, { title = "저승의 끝", text = "지옥의 왕들이 모두 고개를 숙였다. 살아서 이 강을 다시 건너는 자는 드물다.", goal = { kind = "done" }, reward = {}, line = "hell" })
+	Config.StoryLines = lines
+	Config.Story = lines.ground
+	local town = Config.SKY and Config.SKY.islands[1]
+	local naru = Config.HELL and Config.HELL.zones and Config.HELL.zones[1]
+	Config.STORY_LINE_INFO = {
+		ground = { who = "청운 장로", icon = "📜", order = 1 },
+		sky = { who = "천궁 선관", icon = "☁", order = 2, at = town and (town.at + Vector3.new(24, 0.35, 24)) or nil }, -- 광장 가장자리 (길과 석등 사이)
+		hell = { who = "나루의 뱃사공", icon = "🔥", order = 3, at = naru and (naru.at + Vector3.new(-24, 0.8, 24)) or nil }, -- 나루 광장 위
+	}
+	Config.STORY_LINE_ORDER = { "ground", "sky", "hell" }
+	-- 업적 '강호를 걸어온 자' 는 지상 줄기의 마지막 장
+	for _, a in ipairs(Config.ACHIEVEMENTS or {}) do
+		if a.id == "stAll" then
+			a.n = #lines.ground
 		end
 	end
 end

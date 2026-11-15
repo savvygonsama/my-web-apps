@@ -3837,6 +3837,10 @@ local storyPart: Part? = nil
 local storyLabel: TextLabel? = nil
 local storyAt: Vector3? = nil
 local storyAcceptBtn: TextButton? = nil
+local dialogLine: string? = nil -- 3.99.3판: 받기를 누르면 이 줄기의 이야기를 받는다
+local trackerBox: Frame? = nil -- 3.99.3판: 천상 · 지옥 줄기와 사부의 부탁 (이야기 칸 아래)
+local trackerChip: TextButton? = nil
+local trackerHidden: { [string]: boolean } = {}
 local storyChip: TextButton? = nil
 local storyHidden = false
 local lastStoryState: any = nil
@@ -3988,7 +3992,95 @@ local function clearStoryPart()
 	storyLabel = nil
 end
 
+-- 3.99.3판: 퀘스트 목록 (천상 · 지옥 줄기, 진행 중인 사부의 부탁). 칸마다 X 로 숨기고, 숨긴 것은 아래 단추로 다시 띄운다
+local function refreshTracker(s: any)
+	local box = trackerBox
+	if not box then
+		return
+	end
+	for _, c in ipairs(box:GetChildren()) do
+		if c:IsA("Frame") then
+			c:Destroy()
+		end
+	end
+	if Config.BATTLE_MODE or not s then
+		box.Visible = false
+		if trackerChip then
+			trackerChip.Visible = false
+		end
+		return
+	end
+	local entries = {}
+	for _, ln in ipairs({ "sky", "hell" }) do
+		local L = s.lines and s.lines[ln]
+		local list = Config.StoryLines and Config.StoryLines[ln]
+		local info = Config.STORY_LINE_INFO and Config.STORY_LINE_INFO[ln]
+		if L and list and info then
+			local ch = list[L.story or 1]
+			if ch and ch.goal.kind ~= "done" then
+				if L.accepted then
+					local proxy = setmetatable({ prog = L.prog or 0 }, { __index = s })
+					table.insert(entries, { key = ln, title = string.format("%s %s %d장 · %s", info.icon, ln == "sky" and "천상" or "지옥", L.story or 1, ch.title), goal = "▶ " .. UIB.goalText(proxy, ch.goal), color = ln == "sky" and Color3.fromRGB(190, 220, 255) or Color3.fromRGB(255, 160, 120) })
+				else
+					table.insert(entries, { key = ln, title = string.format("%s %s · 새 이야기", info.icon, ln == "sky" and "천상" or "지옥"), goal = string.format("%s에게 말을 걸어 받으세요", info.who), color = Color3.fromRGB(200, 200, 200) })
+				end
+			end
+		end
+	end
+	-- 사부의 부탁: 시작했고 아직 그 권법을 익히지 않은 것
+	local owned = {}
+	for _, id in ipairs(s.styles or {}) do
+		owned[id] = true
+	end
+	for id, cur in pairs(s.mq or {}) do
+		local MQ = Config.MINIQUEST and Config.MINIQUEST[id]
+		if MQ and type(cur) == "number" and cur > 0 and not owned[id] then
+			local stp = MQ.steps[cur]
+			local goal
+			if stp then
+				local got = (s.mqn and s.mqn[id]) or 0
+				local total = stp.kind == "find" and #(stp.items or {}) or (stp.kind == "order" and #(stp.stones or {}) or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
+				goal = "▶ " .. stp.text .. (total > 0 and string.format(" (%d/%d)", got, total) or "") .. (stp.night and " 🌙" or (stp.day and " ☀" or ""))
+			else
+				goal = "▶ 사부에게 돌아가 시험을 청하라"
+			end
+			local m = Config.MASTERS[id]
+			table.insert(entries, { key = "mq:" .. id, title = string.format("🎴 %s의 부탁 · %s (%d/%d)", m and m.name or "사부", MQ.title, math.min(cur, #MQ.steps), #MQ.steps), goal = goal, color = Color3.fromRGB(184, 224, 255) })
+		end
+	end
+	table.sort(entries, function(a, b)
+		return a.key < b.key
+	end)
+	local shown, hidden = 0, 0
+	for _, e in ipairs(entries) do
+		if trackerHidden[e.key] then
+			hidden += 1
+		else
+			shown += 1
+			local row = new("Frame", { Name = e.key, Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = C.bg, BackgroundTransparency = 0.35, LayoutOrder = shown, Parent = box }, { corner(8), stroke(e.color, 1) })
+			text({ Position = UDim2.new(0, 8, 0, 4), Size = UDim2.new(1, -44, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = e.color, TextTruncate = Enum.TextTruncate.AtEnd, Text = e.title, Parent = row })
+			local g = text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 30), TextSize = 14, TextColor3 = C.text, TextWrapped = true, TextScaled = true, Text = e.goal, Parent = row })
+			local lim = Instance.new("UITextSizeConstraint")
+			lim.MaxTextSize = 14
+			lim.MinTextSize = 10
+			lim.Parent = g
+			local key = e.key
+			button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 4), Size = UDim2.new(0, 22, 0, 20), Text = "X", TextSize = 13, BackgroundColor3 = C.panel2, Parent = row }, function()
+				trackerHidden[key] = true
+				refreshTracker(s)
+			end)
+		end
+	end
+	box.Visible = shown > 0
+	if trackerChip then
+		trackerChip.Visible = hidden > 0
+		trackerChip.Text = string.format("📋 숨긴 퀘스트 %d", hidden)
+	end
+end
+UIB.refreshTracker = refreshTracker
+
 local function refreshStory(s: any)
+	pcall(refreshTracker, s)
 	local ch = Config.Story[s.story or 1]
 	if not storyBox or not ch then
 		return
@@ -4119,6 +4211,7 @@ function UI.dialog(data: any)
 	dialogText.Text = data.text or ""
 	dialogTrial = data.trial
 	dialogAccept = data.accept == true
+	dialogLine = data.line
 	dialogAct.Visible = dialogTrial ~= nil or dialogAccept
 	dialogAct.Text = dialogAccept and "📜 받기" or "⚔ 시험 받기"
 	dialogAct.BackgroundColor3 = dialogAccept and Color3.fromRGB(190, 130, 50) or C.red
@@ -4174,6 +4267,20 @@ function UIB.buildStory(topLeft: Frame)
 	storyChip = button({ Position = UDim2.new(0, 0, 0, 386), Size = UDim2.new(0, 120, 0, 34), Text = "📜 이야기 보기", TextSize = 15, BackgroundColor3 = C.bg, Visible = false, Parent = topLeft }, function()
 		UI.setStoryHidden(false)
 	end)
+	-- 3.99.3판: 퀘스트 목록 (이야기 칸 아래)
+	trackerBox = new("Frame", { Name = "QuestTracker", Position = UDim2.new(0, 0, 0, 504), Size = UDim2.new(0, 400, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Visible = false, Parent = topLeft })
+	do
+		local lay = Instance.new("UIListLayout")
+		lay.Padding = UDim.new(0, 4)
+		lay.SortOrder = Enum.SortOrder.LayoutOrder
+		lay.Parent = trackerBox
+	end
+	trackerChip = button({ Position = UDim2.new(0, 126, 0, 386), Size = UDim2.new(0, 150, 0, 34), Text = "📋 숨긴 퀘스트", TextSize = 14, BackgroundColor3 = C.bg, Visible = false, Parent = topLeft }, function()
+		table.clear(trackerHidden)
+		if lastStoryState then
+			refreshTracker(lastStoryState)
+		end
+	end)
 	-- 대화 창
 	dialogFrame = new("Frame", { Name = "Dialog", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -150), Size = UDim2.new(0, 820, 0, 200), BackgroundColor3 = C.bg, BackgroundTransparency = 0.08, Visible = false, ZIndex = 20, Parent = gui }, { corner(14), stroke(C.line, 2.5) })
 	scaled(dialogFrame)
@@ -4186,7 +4293,7 @@ function UIB.buildStory(topLeft: Frame)
 	end)
 	dialogAct = button({ AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -168, 1, -12), Size = UDim2.new(0, 180, 0, 42), Text = "⚔ 시험 받기", TextSize = 18, BackgroundColor3 = C.red, ZIndex = 21, Visible = false, Parent = dialogFrame }, function()
 		if dialogAccept then
-			Request:FireServer("storyAccept")
+			Request:FireServer("storyAccept", dialogLine)
 		elseif dialogTrial then
 			Request:FireServer("learn", dialogTrial)
 		end

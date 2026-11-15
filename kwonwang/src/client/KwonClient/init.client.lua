@@ -2491,7 +2491,14 @@ end
 
 function handlers.storyProg(data: any)
 	if state then
-		state.prog = data.prog
+		-- 3.99.3판: 천상 · 지옥 줄기
+		if data.line and data.line ~= "ground" then
+			if state.lines and state.lines[data.line] then
+				state.lines[data.line].prog = data.prog
+			end
+		else
+			state.prog = data.prog
+		end
 		UI.refreshWorld(state)
 	end
 end
