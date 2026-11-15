@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.14" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.15" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4126,7 +4126,7 @@ Config.Story = {
 	{ title = "사경의 문", text = "죽음의 문턱, 사경에 올라라. 사경부터 마음속 마귀와 겨루는 심마 대련과 허공답보가 열린다. 심마를 꺾으면 능력치가 크게 오른다.", goal = { kind = "realm", n = 9 }, reward = { coins = 15000, stats = 2500 } },
 	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 5000 } },
 	{ title = "신화경에 들다", text = "생사경 다음은 신화경이다. 여기까지 온 사람은 손에 꼽는다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
-	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 어느 권법이든 그 끝을 깨우면 된다. 하나를 깨워라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
+	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 상급 권법에서 깨는 진 권법은 지금 바로, 전설 이상의 권법에서 깨는 것은 한 번 환생한 뒤에 열린다. 하나를 깨워라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
 	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
 	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
@@ -7229,6 +7229,25 @@ do
 		end
 		if type(st.awakenFinisher) == "table" then
 			fix(st.awakenFinisher)
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.15판: 진 권법의 환생 조건은 원래 권법의 등급으로. 상급 권법에서 깨는 것은 환생 없이, 전설 이상에서 깨는 것은 한 번 환생한 뒤
+------------------------------------------------------------------------
+do
+	for _, st in ipairs(Config.Styles) do
+		local base = st.awakenOf and Config.STYLE_BY_ID[st.awakenOf]
+		if base then
+			if base.grade == "상급" then
+				st.rebirthReq = nil
+			else
+				st.rebirthReq = 1
+				if type(st.unlockHint) == "string" and not string.find(st.unlockHint, "환생", 1, true) then
+					st.unlockHint = string.gsub(st.unlockHint, "두 번 깨달은 뒤, ", "두 번 깨달은 뒤, 한 번 환생한 몸으로 ", 1)
+				end
+			end
 		end
 	end
 end

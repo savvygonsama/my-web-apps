@@ -3979,7 +3979,7 @@ function UIB.goalText(s: any, g: any): string
 	elseif k == "samsara" then
 		return string.format("윤회의 시련 넘기  %d / %d (이번 삶에서 %s에 오른 뒤 능력치 창 → ☯)", s.samsara or 0, g.n or 1, Config.Realms[Config.SAMSARA.realm].name)
 	elseif k == "awaken" then
-		return "진 권법 하나 익히기 (원래 사부에게 각성의 시련)"
+		return "진 권법 하나 익히기 (상급 권법에서 깨는 것은 지금, 전설 이상은 환생 뒤)"
 	elseif k == "transcend" then
 		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
