@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.7" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7144,150 +7144,45 @@ do
 end
 
 ------------------------------------------------------------------------
--- 3.99.5판: 숨은 사부의 부탁이 너무 금방 끝났다 (4 ~ 6단계, 졸병 열 ~ 서른). 등급마다 단계를 늘리고 (신화 · 태초 9 · 지존 · 윤회 · 초월 10 · 극 · 권왕 11)
--- (3.99.7판: 예전 단계의 처치 수는 그대로. 글과 개수가 어긋났다) 늘어난 단계는 사부 둘레의 다른 졸병 · 가까운 보스 (두 번) 로, 마지막 단계 (돌아가기 · 바치기) 앞에 넣는다
+-- 3.99.8판: 숨은 사부의 부탁은 3 ~ 5단계 (신화 · 태초 3 · 지존 · 윤회 · 초월 4 · 극 · 권왕 5). 9 ~ 11단계는 너무 늘어졌다.
+-- 마지막 단계 (돌아가기 · 바치기) 는 남기고, 앞 단계는 보스 → 찾기 · 차례 → 가기 → 쓰러뜨리기 → 나머지 차례로 남긴다 (원래 순서는 그대로)
 ------------------------------------------------------------------------
 do
-	local TARGET = { ["신화"] = 9, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 10, ["초월"] = 10, ["극"] = 11, ["권왕"] = 11 }
-	local KILLN = { ["신화"] = 40, ["태초"] = 40, ["지존"] = 50, ["윤회"] = 50, ["초월"] = 50, ["극"] = 60, ["권왕"] = 60 }
-	local function layer(at: Vector3): string
-		if Config.inHell(at) then
-			return "hell"
-		elseif Config.SKY and at.Y > Config.SKY.y - 300 then
-			return "sky"
-		end
-		return "ground"
-	end
-	-- 모든 졸병 무리 (흔한 졸병인지, 어디에 있는지)
-	local camps = {}
-	local function addCamps(list: any)
-		for _, c in ipairs(list or {}) do
-			if Config.Enemies[c.enemy] then
-				table.insert(camps, c)
-			end
-		end
-	end
-	for _, r in ipairs(Config.Regions) do
-		addCamps(r.camps)
-	end
-	for _, isl in ipairs(Config.SKY.islands) do
-		addCamps(isl.camps)
-	end
-	for _, z in ipairs(Config.HELL.zones or {}) do
-		addCamps(z.camps)
-	end
-	local common = {}
-	for _, c in ipairs(camps) do
-		common[c.enemy] = true
-	end
+	local TARGET = { ["신화"] = 3, ["태초"] = 3, ["지존"] = 4, ["윤회"] = 4, ["초월"] = 4, ["극"] = 5, ["권왕"] = 5 }
+	local PRI = { boss = 1, find = 2, order = 2, visit = 3, kill = 4 }
 	for sid, q in pairs(Config.MINIQUEST or {}) do
 		local st = Config.STYLE_BY_ID[sid]
-		local m = Config.MASTERS[sid]
 		local want = st and TARGET[st.grade]
-		if st and m and want and #q.steps >= 2 then
-			local killN = KILLN[st.grade] or 40
-			local used = {}
-			local bossUsed = {}
-			for _, stp in ipairs(q.steps) do
-				if stp.kind == "kill" then
-					used[stp.enemy] = true
-				elseif stp.kind == "boss" then
-					bossUsed[stp.boss] = true
-				end
+		q.v2len = #q.steps -- 예전 기록 옮기기용 (3.74 판 단계 수)
+		q.v3len = q.v3len or #q.steps
+		if want and #q.steps > want then
+			local last = q.steps[#q.steps]
+			local idx = {}
+			for i = 1, #q.steps - 1 do
+				table.insert(idx, i)
 			end
-			-- 사부 자리에서 가까운 같은 층의 졸병 · 보스
-			local lay = layer(m.at)
-			-- 3.99.7판: 그 부탁에 원래 있던 졸병보다 많이 센 졸병은 고르지 않는다 (빙혼노니 부탁에 천외봉 천병이 끼었다)
-			local function powerAt(id: string, at: Vector3): number
-				local okP, _, _, pw = pcall(Config.npcStats, Config.Enemies[id], at, false)
-				return okP and (pw or 0) or 0
-			end
-			local refPw = 0
-			for id in pairs(used) do
-				for _, c in ipairs(camps) do
-					if c.enemy == id then
-						refPw = math.max(refPw, powerAt(id, c.at))
-						break
-					end
+			table.sort(idx, function(x, y)
+				local px, py = PRI[q.steps[x].kind] or 5, PRI[q.steps[y].kind] or 5
+				if px ~= py then
+					return px < py
 				end
-			end
-			local near = {}
-			for pass = 1, 2 do
-				for _, c in ipairs(camps) do
-					-- 같은 층에서 먼저, 없으면 다른 층에서도
-					if (pass == 2 or layer(c.at) == lay) and not used[c.enemy] and (refPw <= 0 or (powerAt(c.enemy, c.at) <= refPw * 1.3 and powerAt(c.enemy, c.at) >= refPw * 0.4)) then
-						table.insert(near, { c.enemy, (Vector3.new(c.at.X - m.at.X, 0, c.at.Z - m.at.Z)).Magnitude, c.at })
-					end
-				end
-				if #near > 0 then
-					break
-				end
-			end
-			table.sort(near, function(a, b)
-				return a[2] < b[2]
+				return x < y
 			end)
-			-- 보스도 그 부탁에 원래 있던 보스 (없으면 졸병) 보다 많이 세지 않은 것만
-			local function bossPw(bid: string, at: Vector3): number
-				local okP, _, _, pw = pcall(Config.npcStats, Config.Bosses[bid], at, true)
-				return okP and (pw or 0) or 0
+			local keep = {}
+			for k = 1, want - 1 do
+				keep[idx[k]] = true
 			end
-			local refBoss = 0
-			for _, stp in ipairs(q.steps) do
-				if stp.kind == "boss" and Config.BOSS_AT and Config.BOSS_AT[stp.boss] then
-					refBoss = math.max(refBoss, bossPw(stp.boss, Config.BOSS_AT[stp.boss]))
+			local out = {}
+			for i = 1, #q.steps - 1 do
+				if keep[i] then
+					table.insert(out, q.steps[i])
 				end
 			end
-			local bosses = {}
-			local anyLayer = false
-			for bid, at in pairs(Config.BOSS_AT or {}) do
-				if Config.Bosses[bid] and (anyLayer or layer(at) == lay) and not bossUsed[bid] then
-					local bp = bossPw(bid, at)
-					local okB = (refBoss > 0 and bp <= refBoss * 1.3) or (refBoss <= 0 and (refPw <= 0 or bp <= refPw * 8))
-					if okB then
-						table.insert(bosses, { bid, (Vector3.new(at.X - m.at.X, 0, at.Z - m.at.Z)).Magnitude })
-					end
-				end
-			end
-			table.sort(bosses, function(a, b)
-				return a[2] < b[2]
-			end)
-			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
-			local last = table.remove(q.steps)
-			local ni, bi, turn = 1, 1, 0
-			while #q.steps < want - 1 do
-				turn += 1
-				local added = false
-				if turn % 3 == 0 and bosses[bi] then
-					local bid = bosses[bi][1]
-					bi += 1
-					table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
-					added = true
-				else
-					while near[ni] and used[near[ni][1]] do
-						ni += 1
-					end
-					local c = near[ni]
-					if c then
-						ni += 1
-						used[c[1]] = true
-						table.insert(q.steps, { kind = "kill", enemy = c[1], n = killN, text = string.format("%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다", Config.Enemies[c[1]].name, killN) })
-						added = true
-					elseif bosses[bi] then
-						local bid = bosses[bi][1]
-						bi += 1
-						table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
-						added = true
-					end
-				end
-				if not added then
-					break
-				end
-			end
-			table.insert(q.steps, last)
+			table.insert(out, last)
+			q.steps = out
 		end
 	end
 end
-
 ------------------------------------------------------------------------
 -- 3.99.6판: 천상 · 지옥 보스는 몸을 두 배로 (많아야 8). 맞는 판정은 몸 크기만큼 넉넉해진다 (Combat.bodyPad)
 ------------------------------------------------------------------------
@@ -10568,7 +10463,7 @@ local function defaultProfile(): Profile
 		gradeUp = {},
 		mq = {},
 		mqn = {},
-		mqv = 3,
+		mqv = 4,
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -10804,7 +10699,17 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.mqv = 3
+	-- 3.99.8판: 부탁이 3 ~ 5단계로 줄었다. 진행 중이던 단계가 넘치면 마지막 단계 (돌아가기 · 바치기) 로
+	if (tonumber(data.mqv) or 1) < 4 then
+		for sid, q in pairs(Config.MINIQUEST or {}) do
+			local cur = p.mq[sid] or 0
+			if cur > #q.steps then
+				p.mq[sid] = #q.steps + ((cur > (q.v2len or #q.steps)) and 1 or 0)
+				p.mqn[sid] = 0
+			end
+		end
+	end
+	p.mqv = 4
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then

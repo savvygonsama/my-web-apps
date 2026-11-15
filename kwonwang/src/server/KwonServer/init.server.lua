@@ -121,7 +121,7 @@ local function defaultProfile(): Profile
 		gradeUp = {},
 		mq = {},
 		mqn = {},
-		mqv = 3,
+		mqv = 4,
 		gates = {},
 		manuals = {},
 		equip = {},
@@ -357,7 +357,17 @@ local function sanitize(data: any): Profile
 			end
 		end
 	end
-	p.mqv = 3
+	-- 3.99.8판: 부탁이 3 ~ 5단계로 줄었다. 진행 중이던 단계가 넘치면 마지막 단계 (돌아가기 · 바치기) 로
+	if (tonumber(data.mqv) or 1) < 4 then
+		for sid, q in pairs(Config.MINIQUEST or {}) do
+			local cur = p.mq[sid] or 0
+			if cur > #q.steps then
+				p.mq[sid] = #q.steps + ((cur > (q.v2len or #q.steps)) and 1 or 0)
+				p.mqn[sid] = 0
+			end
+		end
+	end
+	p.mqv = 4
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
