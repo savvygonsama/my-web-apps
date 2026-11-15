@@ -1505,7 +1505,12 @@ function handlers.tower(data: any?)
 	UI.setTower(data)
 	if data then
 		local boss = data.boss == true
-		UI.banner(string.format("🗼 %d층", data.floor), boss and "👹 이 층의 주인이 기다린다" or "모든 적을 쓰러뜨려라", boss and Color3.fromRGB(255, 90, 70) or Color3.fromRGB(255, 210, 120))
+		-- 3.99.10판: 무대 이름과 층의 갈래
+		local sub = boss and "👹 이 층의 주인이 기다린다" or (data.kind == "swarm" and "🐜 졸병 떼가 몰려온다" or (data.kind == "elite" and "⚔ 정예 하나가 기다린다" or "모든 적을 쓰러뜨려라"))
+		if data.theme and (data.floor - 1) % 10 == 0 then
+			sub = "🏯 " .. data.theme .. " · " .. sub
+		end
+		UI.banner(string.format("🗼 %d층", data.floor), sub, boss and Color3.fromRGB(255, 90, 70) or (data.kind == "elite" and Color3.fromRGB(255, 160, 90) or Color3.fromRGB(255, 210, 120)))
 	end
 end
 function handlers.towerClear(data: any)

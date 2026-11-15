@@ -4132,7 +4132,11 @@ function Tower.next(player: Player, run: any)
 	run.token += 1
 	local floor, token = run.floor, run.token
 	local isBoss = floor % T.bossEvery == 0
-	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss })
+	-- 3.99.10판: 열 층마다 무대가 바뀌고, 층마다 갈래가 있다 (졸병 떼 · 정예 하나 · 보스)
+	local okT, themeName = pcall(World.towerTheme, run.slot, floor)
+	local inTen = ((floor - 1) % 10) + 1
+	local kind = isBoss and "boss" or (T.swarm and table.find(T.swarm.at, inTen) and "swarm") or (T.elite and table.find(T.elite.at, inTen) and "elite") or "normal"
+	Push:FireClient(player, "tower", { floor = floor, best = p.towerBest, boss = isBoss, theme = okT and themeName or nil, kind = kind })
 	task.delay(floor == 1 and 4 or 2.5, function()
 		local f = Combat.fighterOfPlayer(player)
 		if activeTower[player] ~= run or run.token ~= token or not f or f.dead then
@@ -4144,13 +4148,24 @@ function Tower.next(player: Player, run: any)
 			table.insert(list, { id, true })
 		else
 			local pool = T.bands[1][2]
-			for _, b in ipairs(T.bands) do
+			local nextPool = nil
+			for bi, b in ipairs(T.bands) do
 				if floor >= b[1] then
 					pool = b[2]
+					nextPool = T.bands[bi + 1] and T.bands[bi + 1][2] or b[2]
 				end
 			end
-			for _ = 1, math.min(5, 2 + math.floor(floor / 8)) do
-				table.insert(list, { pool[math.random(#pool)], false })
+			if kind == "swarm" then
+				for _ = 1, T.swarm.n do
+					table.insert(list, { pool[math.random(#pool)], false, T.swarm.power })
+				end
+			elseif kind == "elite" then
+				local ep = nextPool or pool
+				table.insert(list, { ep[math.random(#ep)], false, T.elite.power, T.elite.hp, true })
+			else
+				for _ = 1, math.min(5, 2 + math.floor(floor / 8)) do
+					table.insert(list, { pool[math.random(#pool)], false })
+				end
 			end
 		end
 		-- 층의 세기는 정해져 있다 (누가 오르든 같다)
@@ -4163,15 +4178,15 @@ function Tower.next(player: Player, run: any)
 				local ef = e.f :: any
 				ef.towerOwner = player
 				ef.trialOwner = player
-				local w = want * (item[2] and T.bossPower or 1)
+				local w = want * (item[2] and T.bossPower or 1) * (item[3] or 1)
 				local k = w / math.max(1, ef.power or 100)
-				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1)))
+				ef.maxHp = math.max(1, math.floor(ef.maxHp * k * (item[2] and 2.5 or 1) * (item[4] or 1)))
 				ef.hp = ef.maxHp
 				ef.dmgMult *= k
 				ef.power = math.floor(w)
 				ef.rewardMult = 0.3
 				ef.model:SetAttribute("Power", ef.power)
-				ef.model:SetAttribute("Label", string.format("%d층 · %s", floor, ef.name))
+				ef.model:SetAttribute("Label", string.format(item[5] and "%d층 · 정예 %s" or "%d층 · %s", floor, ef.name))
 				Combat.sync(ef)
 				e.target = f
 				run.alive[ef] = true

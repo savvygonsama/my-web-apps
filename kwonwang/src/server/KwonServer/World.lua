@@ -7330,6 +7330,86 @@ local function bossArenas(_out: any)
 end
 
 local arenas: { [number]: Vector3 } = {}
+-- 3.99.10판: 천층탑 시련장을 넓히고 (반지름 46 → 80) 열 층마다 무대가 바뀐다 (돌 마당 · 죽림 · 설원 · 화산 · 허공)
+local towerThemes: { [number]: any } = {}
+local TOWER_THEMES = {
+	{ name = "돌 마당", floor = Color3.fromRGB(165, 155, 140), mat = Enum.Material.Slate, ring = Color3.fromRGB(200, 60, 50), core = Color3.fromRGB(150, 140, 125) },
+	{ name = "죽림", floor = Color3.fromRGB(96, 120, 76), mat = Enum.Material.Grass, ring = Color3.fromRGB(70, 140, 80), core = Color3.fromRGB(120, 108, 80) },
+	{ name = "설원", floor = Color3.fromRGB(228, 236, 244), mat = Enum.Material.Snow, ring = Color3.fromRGB(120, 180, 230), core = Color3.fromRGB(200, 220, 236) },
+	{ name = "화산", floor = Color3.fromRGB(52, 44, 44), mat = Enum.Material.Basalt, ring = Color3.fromRGB(255, 90, 40), core = Color3.fromRGB(70, 56, 52) },
+	{ name = "허공", floor = Color3.fromRGB(58, 46, 84), mat = Enum.Material.Slate, ring = Color3.fromRGB(170, 120, 255), core = Color3.fromRGB(76, 62, 104) },
+}
+World.TOWER_THEMES = TOWER_THEMES
+local function themeProps(center: Vector3, R: number, k: number, g: Instance)
+	local function mark(pt: BasePart)
+		pt:SetAttribute("T0", pt.Transparency)
+		pt:SetAttribute("C0", pt.CanCollide)
+		return pt
+	end
+	local function ringAt(n: number, r: number, off: number, fn: (Vector3, number) -> ())
+		for i = 0, n - 1 do
+			local a = i / n * math.pi * 2 + off
+			fn(center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r), a)
+		end
+	end
+	if k == 1 then
+		-- 돌 마당: 무너진 돌단과 석상 받침
+		ringAt(4, R * 0.32, math.pi / 4, function(p)
+			mark(part({ Name = "TStone", Size = Vector3.new(7, 3, 7), Position = p + Vector3.new(0, 1.5, 0), Color = Color3.fromRGB(140, 132, 120), Material = Enum.Material.Cobblestone, Parent = g }))
+		end)
+		ringAt(6, R * 0.78, 0.3, function(p)
+			mark(part({ Name = "TStatue", Size = Vector3.new(4, 9, 4), Position = p + Vector3.new(0, 4.5, 0), Color = Color3.fromRGB(176, 168, 152), Material = Enum.Material.Granite, Parent = g }))
+		end)
+	elseif k == 2 then
+		-- 죽림: 대나무 덤불 (몸을 숨기고 돌아 들어간다)
+		ringAt(6, R * 0.32, 0.2, function(p)
+			for j = 0, 4 do
+				local o = Vector3.new(math.cos(j * 1.3) * 2.2, 0, math.sin(j * 1.3) * 2.2)
+				mark(part({ Name = "TBamboo", Shape = Enum.PartType.Cylinder, Size = Vector3.new(16 + j * 2, 0.9, 0.9), CFrame = CFrame.new(p + o + Vector3.new(0, 8 + j, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(110, 160, 70), Material = Enum.Material.Wood, Parent = g }))
+			end
+		end)
+		ringAt(8, R * 0.8, 0.5, function(p)
+			for j = 0, 3 do
+				local o = Vector3.new(math.cos(j * 1.7) * 2.6, 0, math.sin(j * 1.7) * 2.6)
+				mark(part({ Name = "TBamboo", Shape = Enum.PartType.Cylinder, Size = Vector3.new(20 + j * 2, 1, 1), CFrame = CFrame.new(p + o + Vector3.new(0, 10 + j, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(96, 146, 62), Material = Enum.Material.Wood, Parent = g }))
+			end
+		end)
+	elseif k == 3 then
+		-- 설원: 얼음 기둥
+		ringAt(6, R * 0.3, 0, function(p, a)
+			mark(part({ Name = "TIce", Size = Vector3.new(4, 14, 4), CFrame = CFrame.new(p + Vector3.new(0, 7, 0)) * CFrame.Angles(0.08, a, 0.1), Color = Color3.fromRGB(180, 220, 245), Material = Enum.Material.Ice, Transparency = 0.15, Parent = g }))
+		end)
+		ringAt(7, R * 0.78, 0.4, function(p, a)
+			mark(part({ Name = "TIce", Size = Vector3.new(5, 18, 5), CFrame = CFrame.new(p + Vector3.new(0, 9, 0)) * CFrame.Angles(-0.1, a, 0.06), Color = Color3.fromRGB(200, 232, 250), Material = Enum.Material.Ice, Transparency = 0.15, Parent = g }))
+		end)
+	elseif k == 4 then
+		-- 화산: 바닥의 용암 틈 (빛만) 과 바위 무더기
+		ringAt(6, R * 0.5, 0.25, function(p, a)
+			mark(part({ Name = "TCrack", Size = Vector3.new(1.6, 0.2, 22), CFrame = CFrame.new(p + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, a + 0.6, 0), Color = Color3.fromRGB(255, 100, 40), Material = Enum.Material.Neon, CanCollide = false, Parent = g }))
+		end)
+		ringAt(5, R * 0.3, 0.9, function(p)
+			mark(part({ Name = "TRock", Shape = Enum.PartType.Ball, Size = Vector3.new(9, 9, 9), Position = p + Vector3.new(0, 2.5, 0), Color = Color3.fromRGB(60, 50, 48), Material = Enum.Material.Basalt, Parent = g }))
+		end)
+		ringAt(6, R * 0.8, 0.1, function(p)
+			mark(part({ Name = "TRock", Shape = Enum.PartType.Ball, Size = Vector3.new(12, 10, 12), Position = p + Vector3.new(0, 3, 0), Color = Color3.fromRGB(70, 56, 52), Material = Enum.Material.Basalt, Parent = g }))
+		end)
+	else
+		-- 허공: 수정 첨탑과 떠 있는 바위
+		ringAt(4, R * 0.3, math.pi / 4, function(p, a)
+			mark(part({ Name = "TCrystal", Size = Vector3.new(4, 16, 4), CFrame = CFrame.new(p + Vector3.new(0, 8, 0)) * CFrame.Angles(0, a, 0.15), Color = Color3.fromRGB(170, 130, 255), Material = Enum.Material.Glass, Transparency = 0.2, Parent = g }))
+		end)
+		ringAt(8, R * 0.7, 0, function(p, a)
+			mark(part({ Name = "TFloat", Shape = Enum.PartType.Ball, Size = Vector3.new(7, 5, 7), Position = p + Vector3.new(0, 14 + math.sin(a * 3) * 4, 0), Color = Color3.fromRGB(84, 70, 110), Material = Enum.Material.Slate, CanCollide = false, Parent = g }))
+		end)
+	end
+	-- 처음에는 숨겨 둔다 (World.towerTheme 이 켠다)
+	for _, d in ipairs(g:GetDescendants()) do
+		if d:IsA("BasePart") then
+			d.Transparency = 1
+			d.CanCollide = false
+		end
+	end
+end
 function World.towerArena(slot: number): Vector3
 	local T = Config.TOWER
 	local center = T.arena + Vector3.new((slot - 1) * T.slotGap, 0, 0)
@@ -7340,27 +7420,66 @@ function World.towerArena(slot: number): Vector3
 	f.Name = "TowerArena" .. slot
 	f.Parent = folder
 	local R = T.radius
-	disc("ArenaFloor", center - Vector3.new(0, 2, 0), R, 4, Color3.fromRGB(165, 155, 140), Enum.Material.Slate, f)
+	local floor = disc("ArenaFloor", center - Vector3.new(0, 2, 0), R, 4, Color3.fromRGB(165, 155, 140), Enum.Material.Slate, f)
 	disc("ArenaUnder", center - Vector3.new(0, 7, 0), R * 0.8, 6, STONE_DARK, Enum.Material.Granite, f)
 	disc("ArenaUnder2", center - Vector3.new(0, 13, 0), R * 0.5, 6, STONE_DARK, Enum.Material.Granite, f)
-	disc("ArenaRing", center + Vector3.new(0, 0.05, 0), R * 0.55, 0.2, Color3.fromRGB(200, 60, 50), Enum.Material.Fabric, f, false)
-	disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
+	local ring = disc("ArenaRing", center + Vector3.new(0, 0.05, 0), R * 0.55, 0.2, Color3.fromRGB(200, 60, 50), Enum.Material.Fabric, f, false)
+	local core = disc("ArenaCore", center + Vector3.new(0, 0.1, 0), R * 0.5, 0.2, Color3.fromRGB(150, 140, 125), Enum.Material.Slate, f, false)
 	disc("ArenaTrim", center - Vector3.new(0, 0.2, 0), R + 0.8, 0.6, GOLD, Enum.Material.Metal, f)
-	-- 둘레의 낮은 난간과 여덟 기둥 (꼭대기에 불)
-	local n = 24
+	-- 둘레의 낮은 난간과 열두 기둥 (꼭대기에 불)
+	local n = 40
 	for k = 0, n - 1 do
 		local a = k / n * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R - 1), 1.5, math.sin(a) * (R - 1))
 		part({ Name = "ArenaRail", Size = Vector3.new(2 * math.pi * R / n + 0.4, 3, 1.2), CFrame = CFrame.lookAt(p, Vector3.new(center.X, p.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0), Color = STONE, Material = Enum.Material.Marble, Parent = f })
 	end
-	for k = 0, 7 do
-		local a = k / 8 * math.pi * 2
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
 		local p = center + Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2))
-		part({ Name = "ArenaPillar", Size = Vector3.new(3, 16, 3), Position = p + Vector3.new(0, 8, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
-		brazier(p + Vector3.new(0, 16, 0), 1, f)
+		part({ Name = "ArenaPillar", Size = Vector3.new(3.4, 20, 3.4), Position = p + Vector3.new(0, 10, 0), Color = GATE_RED, Material = Enum.Material.Wood, Parent = f })
+		brazier(p + Vector3.new(0, 20, 0), 1, f)
 	end
+	local groups = {}
+	for k = 1, #TOWER_THEMES do
+		local g = Instance.new("Folder")
+		g.Name = "Theme" .. k
+		g.Parent = f
+		pcall(themeProps, center, R, k, g)
+		groups[k] = g
+	end
+	towerThemes[slot] = { floor = floor, ring = ring, core = core, groups = groups, cur = 0 }
 	arenas[slot] = center
 	return center
+end
+-- 그 층의 무대로 (열 층마다 다음 무대). 돌려주는 것: 무대 이름
+function World.towerTheme(slot: number, floorNo: number): string
+	local th = towerThemes[slot]
+	local k = (math.floor((floorNo - 1) / 10) % #TOWER_THEMES) + 1
+	local T = TOWER_THEMES[k]
+	if not th then
+		return T.name
+	end
+	if th.cur ~= k then
+		th.cur = k
+		th.floor.Color = T.floor
+		th.floor.Material = T.mat
+		th.ring.Color = T.ring
+		th.core.Color = T.core
+		for gk, g in ipairs(th.groups) do
+			for _, d in ipairs(g:GetDescendants()) do
+				if d:IsA("BasePart") then
+					if gk == k then
+						d.Transparency = tonumber(d:GetAttribute("T0")) or 0
+						d.CanCollide = d:GetAttribute("C0") == true
+					else
+						d.Transparency = 1
+						d.CanCollide = false
+					end
+				end
+			end
+		end
+	end
+	return T.name
 end
 
 -- 1.7판 구름 미궁: 사람마다 한 줄. 일곱 방(둥근 구름 단)을 구름 다리로 잇고 다리 입구마다 구름 문을 둔다

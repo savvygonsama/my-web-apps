@@ -4680,4 +4680,13 @@ return {
 	["하늘이 좁다"] = "The Sky Is Too Small",
 	["허무경 너머 별 서른에 닿는다"] = "Reach thirty stars beyond the Void Realm",
 	["하늘이 좁은 자"] = "One for Whom the Sky Is Too Small",
+	["🐜 졸병 떼가 몰려온다"] = "🐜 A swarm is coming",
+	["⚔ 정예 하나가 기다린다"] = "⚔ An elite awaits",
+	["%d층 · 정예 %s"] = "Floor %d · Elite %s",
+	["돌 마당"] = "Stone Court",
+	["죽림"] = "Bamboo Grove",
+	["설원"] = "Snowfield",
+	["화산"] = "Volcano",
+	["허공"] = "The Void",
+	["🏯 %s · %s"] = "🏯 %s · %s",
 }
