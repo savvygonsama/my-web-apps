@@ -380,7 +380,7 @@ local function sanitize(data: any): Profile
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
 		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local titles = data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title
@@ -2412,12 +2412,15 @@ Combat.init(Push, {
 					local kgBase = math.min(Config.killGain((f :: any).basePower or f.power or 100), shareGain(killer) * KG.overCap)
 					local g = kgBase * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
-					if isBoss and (f.npc :: any).late and not f.towerOwner then
+					-- 3.99판: 모든 보스로 넓힌다 (절정 ~ 현경 무렵엔 흑호 · 혈랑을 돌아가며 잡는 게 졸병보다 능력치가 2 ~ 3배 빨랐다).
+					-- 보스 한 마리 = 그 땅 졸병 BOSS_STAT_MOBS 마리 몫까지 (후반 보스는 LATE_BOSS_KILLS). 보스는 은자 · 두루마리, 능력치는 졸병
+					if isBoss and not f.towerOwner then
 						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 						local key = (f :: any).regionKey
 						local rec = rp and key and rp:GetAttribute(key)
 						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
-						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
+						local mobs = (f.npc :: any).late and Config.LATE_BOSS_KILLS or Config.BOSS_STAT_MOBS
+						g = math.min(g, Config.killGain(base) * mobs * gainMult(p))
 					end
 					-- 게임패스 두 배·세 배 처치 · 권왕의 증표 (보스 상한을 맞춘 뒤에 곱한다)
 					g *= PassMult.kill(killer)

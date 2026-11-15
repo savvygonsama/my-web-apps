@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.98.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -303,6 +303,17 @@ Config.SAMSARA = {
 ------------------------------------------------------------------------
 -- overCap (2.7.4판): 나보다 센 적을 쓰러뜨려도 능력치는 내 전투력과 같은 적의 이 배수까지만 (보스·정예 배수는 그 위에 곱한다)
 Config.KILL_GAIN = { boss = 3, elite = 1.5, tower = 0.5, overCap = 1.5 } -- 3.2.2판: overCap 2 → 1.5, 잣대는 내 경지의 기준 적 (shareGain)
+Config.BOSS_TUNE = { -- 3.99판: [보스 id] = { 체력 배율, 피해 배율 }. 가상 플레이어 (bot.luau) 가 그 장에 이를 때의 몸으로 맞췄다: 싸움 18 + 1.2 × 경지 초 (6초에 한 대 맞아도 버틸 만큼까지), 네 대 남짓 버틴다
+	heukho = { 0.53, 0.62 }, hyeolrang = { 0.64, 0.58 }, bingma = { 0.83, 1.09 }, hyeolma = { 0.49, 0.39 }, cheonma = { 2.00, 1.54 },
+	yeomje = { 2.00, 1.44 }, sawang = { 2.00, 0.66 }, cheonmun = { 0.79, 0.35 }, noeje = { 0.40, 0.49 }, cheonjon = { 0.35, 0.35 },
+	hwangsa = { 0.57, 0.38 }, dongguckgun = { 0.69, 0.47 }, bukmyeongje = { 0.45, 0.76 }, seoyeoksawang = { 0.93, 0.35 }, bingje = { 0.48, 0.37 },
+	pokryong = { 0.57, 0.35 }, geukgwang = { 0.56, 0.35 }, seonhak = { 0.36, 0.35 }, jukwang = { 0.36, 0.35 }, yeombong = { 0.46, 0.35 },
+	wolyeong = { 0.58, 0.35 }, doseon = { 0.55, 0.35 }, geumgang = { 0.38, 0.35 }, biryong = { 0.49, 0.35 }, yuriwang = { 0.48, 0.35 },
+	cheonroeok = { 0.38, 0.35 }, unryongwang = { 0.40, 0.35 }, sinsunwang = { 0.38, 0.41 }, bisangwang = { 0.36, 0.37 }, talui = { 0.51, 0.38 },
+	hwatang = { 0.39, 0.35 }, dosan = { 0.45, 0.35 }, agwiwang = { 0.35, 0.35 }, yeomra = { 0.73, 0.35 }, dokssawang = { 0.73, 0.35 },
+	balseolwang = { 0.61, 0.35 }, mugunwang = { 0.46, 0.35 }, hyeolwang = { 0.46, 0.35 }, hanbingwang = { 0.39, 0.35 }, cheolhwanwang = { 0.35, 0.35 },
+}
+Config.BOSS_STAT_MOBS = 3 -- 3.99판: 후반이 아닌 보스 한 마리의 능력치 몫 (그 땅 졸병 세 마리. 보스는 은자 · 두루마리 쪽)
 Config.LATE_BOSS_KILLS = 15 -- 2.7.2판: 후반 보스 하나의 능력치 몫은 그 땅 졸병 열다섯 마리까지 (전엔 표 끝에 걸려 모두 6억 3천만)
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
 -- 2.2판: 문턱은 예전 숫자, 적이 주는 양은 2.0판 비율의 2/3 (경지 하나에 처치 수 1.5배: 앞 경지 스무 마리 남짓 · 천외천 이백오십 마리 남짓)
@@ -4075,7 +4086,7 @@ Config.ELDER_AT = Vector3.new(-24, 0, -104)
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
 -- 2.7.7판: 이야기가 게임 전체를 이끈다 (관문·심법·천층탑·숙련·각성 권법·천상·미궁·천상 보스·레이드·환생·초월·권왕). 장이 끼어들어
 -- 번호가 바뀌었으니, 예전 기록은 그 장의 이름으로 새 번호를 찾는다 (STORY_V)
-Config.STORY_V = 6 -- 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
+Config.STORY_V = 7 -- 3.99판: 졸병 장 여덟을 끼웠다. 3.49판: 늘어난 땅 · 지옥 · 극 · 신 권법을 이야기에 넣었다 (장 이름으로 옮긴다)
 -- 3.49판: 5판에 이야기를 다 끝낸 사람 (강호의 전설) 은 새로 붙은 권왕 뒤의 첫 장부터 (이미 이룬 목표는 저절로 넘어간다)
 Config.STORY_REMAP_V5 = { ["강호의 전설"] = "칼의 산 · 굶주린 길" }
 Config.STORY_TITLES_V5 = { "강호의 문", "첫 주먹", "강타", "첫 기술", "들판의 무뢰배", "몸을 만드는 법", "이류의 문턱", "산적의 그림자", "사부를 찾아서", "사부의 시험", "첫 진짜 권법", "손에 익히기", "일류의 벽", "두 번째 사부", "특급에 오르다", "흑호채", "오의를 열어라", "심법 두루마리", "서해의 해적", "심법 셋", "더 많은 사부", "천층탑", "혈월곡의 혈랑", "절정에 오르다", "네 번째 권법", "숙련과 각성", "초절정의 몸", "설산의 빙마", "화경에 들다", "첫 깨달음", "혈교의 그림자", "현경의 고요", "혈마", "두 번째 깨달음", "사경의 문", "생사의 경계", "신화경에 들다", "각성 권법", "천인합일", "천상의 문", "천상의 첫 사냥", "무극에 오르다", "이름 없는 노인", "구름 미궁", "천층탑 서른 층", "허공 균열", "다섯 번째 권법", "천마", "깨어난 화염산", "모래 왕릉", "하늘 문지기", "뇌정봉의 뇌제", "천존", "반선", "등선", "하늘 밖의 하늘", "천공 투기장", "천층탑 쉰 층", "태초", "정점", "환생", "윤회의 공덕", "전생의 그림자", "초월", "천층탑 백 층", "혼원경", "두 번째 삶", "두 번째 그림자", "무량경", "세 번째 삶", "세 번째 그림자", "태허경", "네 번째 삶", "마지막 그림자", "권왕", "강호의 전설" }
@@ -6840,6 +6851,71 @@ for _, z in ipairs(Config.HELL.zones or {}) do
 	end
 end
 
+
+------------------------------------------------------------------------
+-- 3.99판: 이야기가 보스 위주라 졸병을 잡을 까닭이 적었고, 경지 장에 닿기 전에 경지가 먼저 올라 장이 0분 만에 지나갔다.
+-- 새 땅마다 그 땅 졸병을 잡는 장을 끼운다 (장 이름으로 예전 기록을 옮기려고 6판 장 이름을 남긴다)
+------------------------------------------------------------------------
+do
+	local v6 = {}
+	for i, ch in ipairs(Config.Story) do
+		v6[i] = ch.title
+	end
+	Config.STORY_TITLES_V6 = v6
+	local function campAt(id: string): Vector3?
+		local function look(camps: any): Vector3?
+			for _, c in ipairs(camps or {}) do
+				if c.enemy == id then
+					return c.at
+				end
+			end
+			return nil
+		end
+		for _, r in ipairs(Config.Regions) do
+			local a = look(r.camps)
+			if a then
+				return a
+			end
+		end
+		for _, isl in ipairs(Config.SKY.islands) do
+			local a = look(isl.camps)
+			if a then
+				return a
+			end
+		end
+		for _, z in ipairs(Config.HELL.zones or {}) do
+			local a = look(z.camps)
+			if a then
+				return a
+			end
+		end
+		return nil
+	end
+	local function rw(idx: number, k: number): any
+		return { coins = math.floor(1500 * Config.coinScale(idx) * k), stats = math.floor(Config.killGain(Config.realmRefPower(idx)) * 6 * k) }
+	end
+	local ADD = {
+		{ after = "설산의 빙마", title = "독안개 늪", id = "swampfang", n = 25, idx = 6, text = "남쪽 독안개 늪에 독수 자객들이 숨어들었다. 늪의 독기 속에서 오래 머물면 칼보다 숨이 먼저 막힌다. 숨을 아끼며 스물다섯을 쓰러뜨려라." },
+		{ after = "생사의 경계", title = "화염산의 귀졸", id = "flameimp", n = 40, idx = 10, text = "화염산의 불길 속에서 귀졸들이 끝없이 기어 나온다. 하나하나는 약해도 무리를 이루면 산을 넘는다. 마흔을 꺼뜨려 길을 터라." },
+		{ after = "다섯 번째 권법", title = "버섯 숲의 포자", id = "sporeimp", n = 40, idx = 13, text = "거균림의 포자 귀졸들이 숲 밖으로 번지고 있다. 새로 익힌 권법을 몸에 붙일 때다. 마흔을 쓰러뜨려라." },
+		{ after = "반선", title = "북명의 칼바람", id = "snowblade", n = 50, idx = 14, text = "북명 빙원의 설원 자객들은 눈보라에 숨어 다가온다. 반선의 몸이라도 방심하면 등이 언다. 쉰을 쓰러뜨려라." },
+		{ after = "하늘 밖의 하늘", title = "달빛 호수", id = "moonspirit", n = 50, idx = 16, text = "월광 호수의 정령들이 밤낮없이 물가를 떠돈다. 하늘 밖의 하늘에 섰다면 그 빛에 눈이 멀지 마라. 쉰을 흩어 버려라." },
+		{ after = "혼원경", title = "유리 바다", id = "crystalspirit", n = 60, idx = 17, text = "다시 오른 혼원경이다. 유리해의 수정 정령은 깨질수록 날카로워진다. 예순을 부수고 손에 감을 되찾아라." },
+		{ after = "황천 나루", title = "삼도천의 원귀", id = "wongwi", n = 60, idx = 19, text = "삼도천을 건너지 못한 원귀들이 산 자의 숨을 쫓는다. 지옥에서 버티려면 먼저 이 강가에 익숙해져야 한다. 예순을 달래 보내라." },
+		{ after = "대라경", title = "독사지옥", id = "dokssagwi", n = 60, idx = 21, text = "독사지옥의 독사귀는 물리면 오래 아프다. 대라경의 몸으로도 독은 독이다. 예순을 쓰러뜨려 길을 내라." },
+	}
+	for _, a in ipairs(ADD) do
+		local at = campAt(a.id)
+		if at and Config.Enemies[a.id] then
+			for i, ch in ipairs(Config.Story) do
+				if ch.title == a.after then
+					table.insert(Config.Story, i + 1, { title = a.title, text = a.text, goal = { kind = "kill", id = a.id, n = a.n, at = at }, reward = rw(a.idx, 0.6) })
+					break
+				end
+			end
+		end
+	end
+end
 ------------------------------------------------------------------------
 -- 3.97판: 이야기 보상 은자가 너무 많았다 (권왕 장 1억 2500만, 태허경 2250만 … 그 경지 사냥 몇 시간 몫).
 -- 한 장의 은자는 그 무렵 경지에서 졸병을 STORY_COIN.mins 분 사냥한 만큼까지. 다만 바로 다음 장에 은자가 들면
@@ -10401,7 +10477,7 @@ local function sanitize(data: any): Profile
 		local oldN = math.floor(data.story)
 		-- 2.9판: 2판 기록은 2판 장 이름으로 (권왕 한 장은 환생의 첫 장으로)
 		-- 3.2.6판: 3판 기록은 3판 장 이름으로
-		local titles = data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
+		local titles = data.storyVer == 6 and Config.STORY_TITLES_V6 or data.storyVer == 5 and Config.STORY_TITLES_V5 or data.storyVer == 4 and Config.STORY_TITLES_V4 or data.storyVer == 3 and Config.STORY_TITLES_V3 or data.storyVer == 2 and Config.STORY_TITLES_V2 or Config.STORY_OLD_TITLES
 		local title = titles[math.clamp(oldN, 1, #titles)]
 		if data.storyVer == 2 then
 			title = Config.STORY_REMAP_V2[title] or title
@@ -12433,12 +12509,15 @@ Combat.init(Push, {
 					local kgBase = math.min(Config.killGain((f :: any).basePower or f.power or 100), shareGain(killer) * KG.overCap)
 					local g = kgBase * (isBoss and KG.boss or (f.npc.elite and KG.elite or 1)) * (f.towerOwner and KG.tower or 1) * gainMult(p)
 					-- 2.7.2판: 후반 보스는 전투력이 표 끝을 넘어 한 마리에 수억씩 올랐다. 그 땅 졸병 LATE_BOSS_KILLS마리 몫까지만
-					if isBoss and (f.npc :: any).late and not f.towerOwner then
+					-- 3.99판: 모든 보스로 넓힌다 (절정 ~ 현경 무렵엔 흑호 · 혈랑을 돌아가며 잡는 게 졸병보다 능력치가 2 ~ 3배 빨랐다).
+					-- 보스 한 마리 = 그 땅 졸병 BOSS_STAT_MOBS 마리 몫까지 (후반 보스는 LATE_BOSS_KILLS). 보스는 은자 · 두루마리, 능력치는 졸병
+					if isBoss and not f.towerOwner then
 						local rp = ReplicatedStorage:FindFirstChild("KwonRegionPower")
 						local key = (f :: any).regionKey
 						local rec = rp and key and rp:GetAttribute(key)
 						local base = type(rec) == "number" and rec / 1.15 or ((f :: any).basePower or f.power or 100) / 10
-						g = math.min(g, Config.killGain(base) * Config.LATE_BOSS_KILLS * gainMult(p))
+						local mobs = (f.npc :: any).late and Config.LATE_BOSS_KILLS or Config.BOSS_STAT_MOBS
+						g = math.min(g, Config.killGain(base) * mobs * gainMult(p))
 					end
 					-- 게임패스 두 배·세 배 처치 · 권왕의 증표 (보스 상한을 맞춘 뒤에 곱한다)
 					g *= PassMult.kill(killer)
@@ -22988,6 +23067,12 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		end
 		if isBoss then
 			f.maxHp = math.max(1, math.floor(f.maxHp * Config.bossHpMult(er)))
+			-- 3.99판: 이야기 순서에 맞춘 보스마다의 손질 (그 장에 이르는 플레이어에게 고르게 어렵게)
+			local bt = Config.BOSS_TUNE and Config.BOSS_TUNE[typeId]
+			if bt then
+				f.maxHp = math.max(1, math.floor(f.maxHp * bt[1]))
+				f.dmgMult *= bt[2]
+			end
 		end
 		f.hp = f.maxHp
 		-- 체력이 늘어 오래 걸리는 만큼 은자도 (하늘 ×1.25 · 지옥 ×1.6, 지옥 보스는 더, 후반 보스는 체력 배율의 제곱근)
@@ -59898,7 +59983,7 @@ return {
 	["강호 들판"] = "Martial World Fields",
 	["혈월곡"] = "Blood Moon Valley",
 	["북방 설산"] = "Northern Snow Mountains",
-	["독안개 늪"] = "Poison Mist Swamp",
+	["독안개 늪"] = "Poison Mist Marsh",
 	["붉은 황야"] = "Red Wasteland",
 	["서해 절벽"] = "West Sea Cliffs",
 	["혈교 본산"] = "Blood Cult Headquarters",
@@ -60692,7 +60777,7 @@ return {
 	["도산지옥"] = "Blade Mountain Hell",
 	["아귀도"] = "Hungry Ghost Realm",
 	["염라전"] = "Yama's Hall",
-	["독사지옥"] = "Viper Hell",
+	["독사지옥"] = "Hell of Vipers",
 	["발설지옥"] = "Tongue-Pulling Hell",
 	["무간지옥"] = "Avici Hell",
 	["용린 무사"] = "Dragonscale Warrior",
@@ -62902,6 +62987,20 @@ return {
 	["내공이 바로 가득 찬다 (한 번 먹으면 1분 뒤에 다시)"] = "Instantly fills your chi (again after 1 minute)",
 	["10분 동안 적에게서 얻는 은자 +30% (최대 1시간)"] = "+30% silver from enemies for 10 minutes (up to 1 hour)",
 	["한 권법을 오래 쓰면 숙련이 오른다. 숙련 6에 이르면 권법이 깨어나 기술이 세지고, 연타를 네 번 이은 뒤 한 번 더 치면 적을 하늘로 띄우는 각성 마무리가 나간다. 지금 쓰는 권법의 숙련을 6까지 올려라."] = "Using one style for a long time raises its mastery. At mastery 6 the style awakens: its skills grow stronger, and striking once more after a four-hit combo unleashes an awakening finisher that launches the enemy into the air. Raise the mastery of your current style to 6.",
+	["남쪽 독안개 늪에 독수 자객들이 숨어들었다. 늪의 독기 속에서 오래 머물면 칼보다 숨이 먼저 막힌다. 숨을 아끼며 스물다섯을 쓰러뜨려라."] = "Poison-hand assassins have slipped into the Poison Mist Marsh to the south. Linger in its fumes and your breath fails before any blade does. Save your breath and defeat twenty-five of them.",
+	["화염산의 귀졸"] = "Imps of the Fire Mountain",
+	["화염산의 불길 속에서 귀졸들이 끝없이 기어 나온다. 하나하나는 약해도 무리를 이루면 산을 넘는다. 마흔을 꺼뜨려 길을 터라."] = "Imps crawl endlessly out of the flames of the Fire Mountain. Each is weak, but in a swarm they spill over the peak. Snuff out forty and clear the way.",
+	["버섯 숲의 포자"] = "Spores of the Mushroom Forest",
+	["거균림의 포자 귀졸들이 숲 밖으로 번지고 있다. 새로 익힌 권법을 몸에 붙일 때다. 마흔을 쓰러뜨려라."] = "The spore imps of the Giant Mushroom Forest are spreading beyond the trees. Time to make your new style your own. Defeat forty.",
+	["북명의 칼바람"] = "Blades of the Northern Wastes",
+	["북명 빙원의 설원 자객들은 눈보라에 숨어 다가온다. 반선의 몸이라도 방심하면 등이 언다. 쉰을 쓰러뜨려라."] = "The snowfield assassins of the Northern Ice Plain close in under cover of the blizzard. Even a half-immortal freezes if careless. Defeat fifty.",
+	["달빛 호수"] = "Moonlit Lake",
+	["월광 호수의 정령들이 밤낮없이 물가를 떠돈다. 하늘 밖의 하늘에 섰다면 그 빛에 눈이 멀지 마라. 쉰을 흩어 버려라."] = "Spirits drift along the shore of the Moonlight Lake day and night. If you stand in the sky beyond the sky, don't let their light blind you. Scatter fifty.",
+	["유리 바다"] = "Sea of Glass",
+	["다시 오른 혼원경이다. 유리해의 수정 정령은 깨질수록 날카로워진다. 예순을 부수고 손에 감을 되찾아라."] = "You stand in the Primordial Realm once more. The crystal spirits of the Glass Sea grow sharper as they shatter. Break sixty and get your feel back.",
+	["삼도천의 원귀"] = "Wraiths of the Three Paths River",
+	["삼도천을 건너지 못한 원귀들이 산 자의 숨을 쫓는다. 지옥에서 버티려면 먼저 이 강가에 익숙해져야 한다. 예순을 달래 보내라."] = "Wraiths who never crossed the Three Paths River hunt the breath of the living. To endure hell, first grow used to this riverbank. Lay sixty to rest.",
+	["독사지옥의 독사귀는 물리면 오래 아프다. 대라경의 몸으로도 독은 독이다. 예순을 쓰러뜨려 길을 내라."] = "A bite from the viper ghosts of the Hell of Vipers aches for a long time. Poison is poison, even for one of the Great Net Realm. Defeat sixty and cut a path.",
 }
 ]]></string>
           </Properties>

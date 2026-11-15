@@ -404,6 +404,12 @@ function Npc.spawn(typeId: string, isBoss: boolean, at: Vector3, region: string)
 		end
 		if isBoss then
 			f.maxHp = math.max(1, math.floor(f.maxHp * Config.bossHpMult(er)))
+			-- 3.99판: 이야기 순서에 맞춘 보스마다의 손질 (그 장에 이르는 플레이어에게 고르게 어렵게)
+			local bt = Config.BOSS_TUNE and Config.BOSS_TUNE[typeId]
+			if bt then
+				f.maxHp = math.max(1, math.floor(f.maxHp * bt[1]))
+				f.dmgMult *= bt[2]
+			end
 		end
 		f.hp = f.maxHp
 		-- 체력이 늘어 오래 걸리는 만큼 은자도 (하늘 ×1.25 · 지옥 ×1.6, 지옥 보스는 더, 후반 보스는 체력 배율의 제곱근)
