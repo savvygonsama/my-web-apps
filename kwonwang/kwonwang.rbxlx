@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.13" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.14" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -1300,8 +1300,8 @@ end
 table.insert(Config.Styles, {
 	id = "geumgang2", name = "진 금강불괴신공", hanja = "眞金剛不壞神功", icon = "🗿", grade = "신화",
 	color = Color3.fromRGB(255, 176, 40), color2 = Color3.fromRGB(255, 250, 225), fx = "gold",
-	awakenOf = "geumgang", hidden = true, rebirthReq = 1,
-	unlockHint = "불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라",
+	awakenOf = "geumgang", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 금강이 깨어났다. 이제 주먹이 아니라 몸 자체가 무기다. 맞을수록 단단해지고 쌓인 충격은 땅을 울리는 진동이 되어 되돌아간다.",
 	gimmick = "불괴: 받는 피해 30% 감소. 여덟 번 맞을 때마다 (막아도 센다) 몸에서 금강 진동이 저절로 터져 둘레를 날린다. 오의 만불조종: 하늘에서 거대한 금빛 손바닥이 내려와 땅을 누른다",
 	deflect = 0.2, speed = 0.92, hurtTaken = 0.7, armorWhileAttacking = 0.8,
@@ -1326,8 +1326,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "muyeong2", name = "진 무영귀각", hanja = "眞無影鬼脚", icon = "👤", grade = "신화",
 	color = Color3.fromRGB(110, 60, 220), color2 = Color3.fromRGB(215, 200, 255), fx = "shadow",
-	awakenOf = "muyeong", hidden = true, rebirthReq = 1,
-	unlockHint = "무영귀각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 그림자뿐인 자기 그림자를 넘어라",
+	awakenOf = "muyeong", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "무영귀각을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 그림자뿐인 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 그림자가 따로 걷기 시작했다. 내 발이 닿은 곳에 한 박자 늦게 그림자의 발이 또 닿는다. 상대는 두 번 맞고도 한 번 본다.",
 	gimmick = "영각: 연타·강타가 맞을 때마다 그림자가 한 박자 뒤 같은 자리를 한 번 더 찬다 (45%). 대시 세 번, 등 뒤를 차면 1.7배. 오의 백귀야행: 그림자 여덟이 둘레를 가로지르며 짓밟는다",
 	deflect = 0.2, speed = 1.12, backstab = 1.7, dashCharges = 3, shadowEcho = 0.45,
@@ -1351,8 +1351,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "taeheo2", name = "진 태허유수장", hanja = "眞太虛流水掌", icon = "🌊", grade = "신화",
 	color = Color3.fromRGB(50, 200, 255), color2 = Color3.fromRGB(225, 252, 255), fx = "water",
-	awakenOf = "taeheo", hidden = true, rebirthReq = 1,
-	unlockHint = "태허유수장을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 시련에서 물이 된 자기 그림자를 넘어라",
+	awakenOf = "taeheo", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "태허유수장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 물이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸이 물이 되었다. 흘려 낸 힘은 사라지지 않고 물결이 되어 둘레를 덮친다. 물은 다투지 않는다. 다만 모든 것을 덮을 뿐.",
 	gimmick = "역류: 흘리기 틈이 넓고 (0.3초), 흘려 낼 때마다 물결이 둘레로 터져 적을 밀어낸다. 오의 천하수류: 물의 용 셋이 나를 감아 돌며 둘레를 휩쓸고 마지막에 한데 모여 앞으로 덮친다",
 	deflect = 0.3, speed = 1.05, deflectWave = { radius = 14, dmg = 26, posture = 40, stun = 0.6, kb = 36, up = 8 },
@@ -1380,8 +1380,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "yeolhwa2", name = "진 열화신권", hanja = "眞烈火神拳", icon = "🔥", grade = "신화",
 	color = Color3.fromRGB(255, 70, 20), color2 = Color3.fromRGB(255, 235, 150), fx = "fire",
-	awakenOf = "yeolhwa", hidden = true, rebirthReq = 1,
-	unlockHint = "열화신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라",
+	awakenOf = "yeolhwa", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "열화신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 꺼지지 않는 업화가 깨어났다. 불은 맞은 자를 태우는 것으로 끝나지 않는다. 쓰러지는 순간 터져 곁의 모두를 삼킨다.",
 	gimmick = "업화: 맞힌 적이 4초 동안 더 세게 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. 오의 화룡천멸: 하늘을 돈 불의 용이 적들에게 내리꽂히고 떨어진 자리가 용암이 되어 터진다",
 	deflect = 0.2, speed = 1.05,
@@ -1408,8 +1408,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "changhae2", name = "진 창해신권", hanja = "眞滄海神拳", icon = "🐋", grade = "신화",
 	color = Color3.fromRGB(20, 90, 210), color2 = Color3.fromRGB(190, 240, 255), fx = "ocean",
-	awakenOf = "changhae", hidden = true, rebirthReq = 1,
-	unlockHint = "창해신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라",
+	awakenOf = "changhae", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "창해신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 깊은 바다가 깨어났다. 파도는 더 자주, 더 깊이 밀려온다. 바다의 바닥은 아무도 본 적이 없다.",
 	gimmick = "심해: 세 번 맞힐 때마다 상대 자리에서 큰 물기둥이 솟는다 (더 넓고 세다). 밀어냄 1.4배. 오의 심해강림: 땅이 깊은 바다가 되어 적이 가라앉고 거대한 물기둥이 하늘로 쳐올린다",
 	deflect = 0.24, kbMult = 1.4,
@@ -1435,8 +1435,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "pungsin2", name = "진 풍신각", hanja = "眞風神脚", icon = "🌀", grade = "신화",
 	color = Color3.fromRGB(90, 240, 190), color2 = Color3.fromRGB(235, 255, 248), fx = "wind",
-	awakenOf = "pungsin", hidden = true, rebirthReq = 1,
-	unlockHint = "풍신각을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 바람이 된 자기 그림자를 넘어라",
+	awakenOf = "pungsin", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "풍신각을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 바람이 된 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 바람의 칼이 깨어났다. 발끝이 지나간 자리마다 칼날이 남고 그 칼날이 모여 하늘까지 닿는 회오리가 된다.",
 	gimmick = "칼바람: 대시 두 번, 대시 대기 0.4초, 밀어냄 1.5배, 더 빠르다. 오의 천풍만검: 바람의 칼날 열둘이 몸을 돌다가 사방으로 쏘아지고 거대한 회오리가 모두 들어 올린다",
 	deflect = 0.22, dashCd = 0.4, dashCharges = 2, speed = 1.15, kbMult = 1.5,
@@ -1462,8 +1462,8 @@ table.insert(Config.Styles, {
 table.insert(Config.Styles, {
 	id = "mugeuk2", name = "진 무극신권", hanja = "眞無極神拳", icon = "🖌", grade = "신화",
 	color = Color3.fromRGB(30, 30, 38), color2 = Color3.fromRGB(255, 214, 120), fx = "void",
-	awakenOf = "mugeuk", hidden = true, rebirthReq = 1,
-	unlockHint = "무극신권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라",
+	awakenOf = "mugeuk", hidden = true, -- 3.99.14판: 환생 조건을 뺐다 (이야기 「각성 권법」 이 환생 전에 나온다)
+	unlockHint = "무극신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 무극이 붓을 들었다. 흑과 백을 넘어, 먹 한 방울에서 모든 것이 그려지고 지워진다. 손끝이 지나간 자리에 먹이 번지고 먹은 금빛으로 타오른다.",
 	gimmick = "먹 번짐: 네 번 맞힐 때마다 상대 발밑에 먹이 번졌다가 금빛으로 터진다. 모든 타격이 균형을 두 배로 깎는다. 오의 무극필: 하늘의 큰 붓이 땅에 먹의 꽃을 그리고 그림이 금빛으로 타오르며 터진다",
 	deflect = 0.32, postureMult = 2,
@@ -1490,8 +1490,8 @@ table.insert(Config.Styles, {
 awakened("maehwa", 1.5, {
 	id = "maehwa2", name = "진 매화난무권", hanja = "眞梅花亂舞拳", icon = "❄", grade = "신화",
 	color = Color3.fromRGB(215, 30, 60), color2 = Color3.fromRGB(240, 248, 255), fx = "petal",
-	rebirthReq = 1, petals = true, petalMax = 20,
-	unlockHint = "매화난무권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 눈 속에 핀 자기 그림자를 넘어라",
+	petals = true, petalMax = 20, -- 3.99.14판: 환생 조건을 뺐다
+	unlockHint = "매화난무권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 눈 속에 핀 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에서 한겨울의 매화가 피었다. 눈이 쌓일수록 붉게 피는 설중매처럼, 손끝이 지나간 자리마다 매화 가지가 뻗고 눈 속에서 꽃이 터진다.",
 	gimmick = "설중매: 다섯 번 맞힐 때마다 상대 발밑에 매화 가지가 뻗어 꽃이 피고 터진다 (눈에 덮여 잠깐 굼뜨다). 꽃잎이 차면 강타가 만개. 오의 설중매화: 둘레에 눈이 내리며 붉은 꽃잎이 휘몰아치고 하늘에 거대한 매화가 피어 꽃잎이 쏟아진다",
 	deflect = 0.24, speed = 1.2,
@@ -1509,8 +1509,8 @@ awakened("maehwa", 1.5, {
 awakened("chwi", 1.5, {
 	id = "chwi2", name = "진 취팔선권", hanja = "眞醉八仙拳", icon = "🏺", grade = "신화",
 	color = Color3.fromRGB(200, 120, 255), color2 = Color3.fromRGB(255, 225, 150), fx = "drunk",
-	rebirthReq = 1, dodgeChance = 0.3, weakBlock = 1.4,
-	unlockHint = "취팔선권을 완전 각성하고 두 번 깨달은 뒤, 한 번 환생한 몸으로 각성 사부를 찾아가 술에 취한 자기 그림자를 넘어라",
+	dodgeChance = 0.3, weakBlock = 1.4, -- 3.99.14판: 환생 조건을 뺐다
+	unlockHint = "취팔선권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 술에 취한 자기 그림자를 넘어라",
 	desc = "다시 태어난 몸에 여덟 신선이 함께 취했다. 호리병의 술이 강이 되어 흐르고 비틀거리는 걸음 하나하나가 신선의 걸음이 된다.",
 	gimmick = "취선: 30% 확률로 공격을 저절로 피한다. 네 번 맞힐 때마다 상대 자리에서 술이 튀어 어지럽힌다. 오의 팔선강림: 여덟 신선의 그림자가 둘레에 나타나 차례로 덮치고 하늘에서 거대한 호리병이 내리꽂힌다",
 	deflect = 0.22,
@@ -4146,7 +4146,7 @@ Config.Story = {
 	{ title = "사경의 문", text = "죽음의 문턱, 사경에 올라라. 사경부터 마음속 마귀와 겨루는 심마 대련과 허공답보가 열린다. 심마를 꺾으면 능력치가 크게 오른다.", goal = { kind = "realm", n = 9 }, reward = { coins = 15000, stats = 2500 } },
 	{ title = "생사의 경계", text = "혈마를 꺾은 손이라면 생사경이 멀지 않다. 들판의 적은 내 수준의 땅에서 잡을 때 가장 알차다. 지도의 권장 전투력을 보고 땅을 골라 생사경에 올라라.", goal = { kind = "realm", n = 10 }, reward = { coins = 20000, stats = 5000 } },
 	{ title = "신화경에 들다", text = "생사경 다음은 신화경이다. 여기까지 온 사람은 손에 꼽는다. 신화경에 올라라.", goal = { kind = "realm", n = 11 }, reward = { coins = 40000, stats = 4000 } },
-	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 환생하지 않은 몸으로 깨울 수 있는 것은 혈마신수 · 천룡파천장 · 벽력신권 셋뿐이다. 나머지는 한 번 환생한 뒤에 열린다. 셋 가운데 하나를 깨워라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
+	{ title = "각성 권법", text = "생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 어느 권법이든 그 끝을 깨우면 된다. 하나를 깨워라.", goal = { kind = "awaken", n = 1 }, reward = { coins = 40000, stats = 4000 } },
 	{ title = "천인합일", text = "하늘과 사람이 하나가 되는 경지, 천인합일에 올라라. 그때 마을의 천상 문이 열린다.", goal = { kind = "realm", n = 12 }, reward = { coins = 60000, stats = 6000 } },
 	{ title = "천상의 문", text = "마을 안 천상 문으로 하늘에 올라라. 구름 위 천궁은 안전하고 천상 객잔과 천정 상점이 있다. 지도는 하늘에 오르면 저절로 천상 지도로 바뀐다.", goal = { kind = "sky", n = 1, at = Vector3.new(-90, 0, -205) }, reward = { coins = 60000 } },
 	{ title = "천상의 첫 사냥", text = "하늘의 적은 땅의 적보다 몫이 크고 천정과 천상 재료를 떨어뜨린다. 천궁 남쪽 운해 평원의 운병 여덟을 쓰러뜨려라.", goal = { kind = "kill", id = "cloudguard", n = 8, at = Vector3.new(-90, 4000, 520) }, reward = { coins = 30000, stats = 3000 } },
@@ -64048,6 +64048,17 @@ return {
 	["화산"] = "Volcano",
 	["허공"] = "The Void",
 	["🏯 %s · %s"] = "🏯 %s · %s",
+	["불괴금강신권을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 금빛 불상이 된 자기 그림자를 넘어라"] = "Fully awaken the Diamond Fist and gain two insights, then beat your golden-Buddha shadow in the Awakening Trial",
+	["무영귀각을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 그림자뿐인 자기 그림자를 넘어라"] = "Fully awaken the Ghost Kick and gain two insights, then beat your shadow-only shadow in the Awakening Trial",
+	["태허유수장을 완전 각성하고 두 번 깨달은 뒤, 각성 시련에서 물이 된 자기 그림자를 넘어라"] = "Fully awaken the Flowing Palm and gain two insights, then beat your water shadow in the Awakening Trial",
+	["열화신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 불이 된 자기 그림자를 넘어라"] = "Fully awaken the Blazing Fire Fist and gain two insights, then find the Awakening Master and beat your fire shadow",
+	["창해신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 바다가 된 자기 그림자를 넘어라"] = "Fully awaken the Azure Sea Fist and gain two insights, then find the Awakening Master and beat your sea shadow",
+	["풍신각을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 바람이 된 자기 그림자를 넘어라"] = "Fully awaken the Wind God Kick and gain two insights, then find the Awakening Master and beat your wind shadow",
+	["무극신권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 먹으로 그린 자기 그림자를 넘어라"] = "Fully awaken the Limitless Fist and gain two insights, then find the Awakening Master and beat your ink-painted shadow",
+	["매화난무권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 눈 속에 핀 자기 그림자를 넘어라"] = "Fully awaken the Plum Blossom Fist and gain two insights, then find the Awakening Master and beat your snow-bloom shadow",
+	["취팔선권을 완전 각성하고 두 번 깨달은 뒤, 각성 사부를 찾아가 술에 취한 자기 그림자를 넘어라"] = "Fully awaken the Drunken Fist and gain two insights, then find the Awakening Master and beat your drunken shadow",
+	["생사경에 오른 고수는 익힌 권법의 숨은 끝을 본다. 원래 권법의 숙련을 끝까지 올리고 깨달음을 두 번 얻은 뒤, 그 사부를 다시 찾아 각성의 시련을 넘어라. 어느 권법이든 그 끝을 깨우면 된다. 하나를 깨워라."] = "A master who reaches Life and Death sees the hidden end of the styles they know. Max out the original style's mastery, gain two enlightenments, then return to its master and pass the Awakening Trial. Any style will do once you wake its end. Awaken one.",
+	["진 권법 하나 익히기 (원래 사부에게 각성의 시련)"] = "Learn one True style (Awakening Trial with its original master)",
 }
 ]]></string>
           </Properties>
@@ -86158,7 +86169,7 @@ function UIB.goalText(s: any, g: any): string
 	elseif k == "samsara" then
 		return string.format("윤회의 시련 넘기  %d / %d (이번 삶에서 %s에 오른 뒤 능력치 창 → ☯)", s.samsara or 0, g.n or 1, Config.Realms[Config.SAMSARA.realm].name)
 	elseif k == "awaken" then
-		return "진 권법 하나 익히기 (지금은 혈마 · 천룡 · 벽력. 나머지는 환생 뒤)"
+		return "진 권법 하나 익히기 (원래 사부에게 각성의 시련)"
 	elseif k == "transcend" then
 		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
@@ -86240,11 +86251,7 @@ local function refreshTracker(s: any)
 			shown += 1
 			local row = new("Frame", { Name = e.key, Size = UDim2.new(1, 0, 0, 66), BackgroundColor3 = C.bg, BackgroundTransparency = 0.35, LayoutOrder = shown, Parent = box }, { corner(8), stroke(e.color, 1) })
 			text({ Position = UDim2.new(0, 8, 0, 4), Size = UDim2.new(1, -44, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = e.color, TextTruncate = Enum.TextTruncate.AtEnd, Text = e.title, Parent = row })
-			local g = text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 38), TextSize = 15, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Text = e.goal, Parent = row })
-			local lim = Instance.new("UITextSizeConstraint")
-			lim.MaxTextSize = 15
-			lim.MinTextSize = 13
-			lim.Parent = g
+			text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 38), TextSize = 14, TextColor3 = C.text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Text = e.goal, Parent = row })
 			local key = e.key
 			button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 4), Size = UDim2.new(0, 22, 0, 20), Text = "X", TextSize = 13, BackgroundColor3 = C.panel2, Parent = row }, function()
 				trackerHidden[key] = true
@@ -86431,13 +86438,8 @@ function UIB.buildStory(topLeft: Frame)
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	-- 3.99.2판: 목표가 두 줄이 되면 잘렸다 (영어는 특히). 칸 안에 맞춰 글자를 줄인다 (16 → 11까지)
 	-- 3.99.13판: 두 줄이 들어가게 (36칸이면 두 줄째에서 글자가 11까지 작아졌다)
-	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 48), TextSize = 17, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = storyBox })
-	do
-		local lim = Instance.new("UITextSizeConstraint")
-		lim.MaxTextSize = 17
-		lim.MinTextSize = 14
-		lim.Parent = storyGoal
-	end
+	-- 3.99.14판: 크기를 맞추는 TextScaled 를 끄고 16으로 고정 (칸에 맞추느라 글자가 아주 작아졌다)
+	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 48), TextSize = 16, TextColor3 = C.text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = storyBox })
 	-- 아직 받지 않은 이야기: 눌러서 받는다
 	storyAcceptBtn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -40, 0, 50), Size = UDim2.new(0, 90, 0, 30), Text = "📜 받기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(190, 130, 50), Visible = false, Parent = storyBox }, function()
 		Request:FireServer("storyAccept")

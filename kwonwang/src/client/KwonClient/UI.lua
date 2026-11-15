@@ -3979,7 +3979,7 @@ function UIB.goalText(s: any, g: any): string
 	elseif k == "samsara" then
 		return string.format("윤회의 시련 넘기  %d / %d (이번 삶에서 %s에 오른 뒤 능력치 창 → ☯)", s.samsara or 0, g.n or 1, Config.Realms[Config.SAMSARA.realm].name)
 	elseif k == "awaken" then
-		return "진 권법 하나 익히기 (지금은 혈마 · 천룡 · 벽력. 나머지는 환생 뒤)"
+		return "진 권법 하나 익히기 (원래 사부에게 각성의 시련)"
 	elseif k == "transcend" then
 		return "초월 권법(초) 하나 익히기 (숨은 초월의 사부)"
 	end
@@ -4061,11 +4061,7 @@ local function refreshTracker(s: any)
 			shown += 1
 			local row = new("Frame", { Name = e.key, Size = UDim2.new(1, 0, 0, 66), BackgroundColor3 = C.bg, BackgroundTransparency = 0.35, LayoutOrder = shown, Parent = box }, { corner(8), stroke(e.color, 1) })
 			text({ Position = UDim2.new(0, 8, 0, 4), Size = UDim2.new(1, -44, 0, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = e.color, TextTruncate = Enum.TextTruncate.AtEnd, Text = e.title, Parent = row })
-			local g = text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 38), TextSize = 15, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Text = e.goal, Parent = row })
-			local lim = Instance.new("UITextSizeConstraint")
-			lim.MaxTextSize = 15
-			lim.MinTextSize = 13
-			lim.Parent = g
+			text({ Position = UDim2.new(0, 8, 0, 25), Size = UDim2.new(1, -16, 0, 38), TextSize = 14, TextColor3 = C.text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Text = e.goal, Parent = row })
 			local key = e.key
 			button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -4, 0, 4), Size = UDim2.new(0, 22, 0, 20), Text = "X", TextSize = 13, BackgroundColor3 = C.panel2, Parent = row }, function()
 				trackerHidden[key] = true
@@ -4252,13 +4248,8 @@ function UIB.buildStory(topLeft: Frame)
 	storyTitle = text({ Position = UDim2.new(0, 10, 0, 6), Size = UDim2.new(1, -20, 0, 26), TextSize = 19, Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 200, 110), Parent = storyBox })
 	-- 3.99.2판: 목표가 두 줄이 되면 잘렸다 (영어는 특히). 칸 안에 맞춰 글자를 줄인다 (16 → 11까지)
 	-- 3.99.13판: 두 줄이 들어가게 (36칸이면 두 줄째에서 글자가 11까지 작아졌다)
-	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 48), TextSize = 17, TextColor3 = C.text, TextWrapped = true, TextScaled = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = storyBox })
-	do
-		local lim = Instance.new("UITextSizeConstraint")
-		lim.MaxTextSize = 17
-		lim.MinTextSize = 14
-		lim.Parent = storyGoal
-	end
+	-- 3.99.14판: 크기를 맞추는 TextScaled 를 끄고 16으로 고정 (칸에 맞추느라 글자가 아주 작아졌다)
+	storyGoal = text({ Position = UDim2.new(0, 10, 0, 34), Size = UDim2.new(1, -20, 0, 48), TextSize = 16, TextColor3 = C.text, TextWrapped = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = storyBox })
 	-- 아직 받지 않은 이야기: 눌러서 받는다
 	storyAcceptBtn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -40, 0, 50), Size = UDim2.new(0, 90, 0, 30), Text = "📜 받기", TextSize = 16, BackgroundColor3 = Color3.fromRGB(190, 130, 50), Visible = false, Parent = storyBox }, function()
 		Request:FireServer("storyAccept")
