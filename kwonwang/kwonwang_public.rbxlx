@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.18" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.19" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -64102,6 +64102,15 @@ return {
 	["<font color=\"#FF9AD8\"><b>♻ 환생할 수 있다!</b> 천상 윤회대의 제단에서 T를 길게 누른다. 능력치를 내려놓고 %s에서 다시 시작한다 (권법·숙련·심법·은자·관문은 그대로). 체력 ×%.2f · 주는 피해 ×%.2f, 얻는 능력치 ×%.1f, %s의 경지가 열린다</font>"] = "<font color=\"#FF9AD8\"><b>♻ You can be reborn!</b> Hold T at the altar of the Rebirth Terrace in the heavens. You set your stats down and start again at %s (styles, mastery, manuals, silver and gates stay). HP ×%.2f · damage ×%.2f, stat gains ×%.1f, the %s realm opens</font>",
 	["• 천외천에 오르면 천상 윤회대의 제단에서 환생한다 (모두 %d번). 경지는 낮아지지만 (첫 환생은 절정, 여섯째는 천인합일부터) 얻는 능력치가 커진다"] = "• Reach Beyond Heaven and be reborn at the altar of the Rebirth Terrace (%d times in all). Your realm drops (to Peak on the first rebirth, up to Heaven-Human Unity on the sixth), but your stat gains grow",
 	["%s(으)로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)"] = "Reborn at %s · damage and HP +%d%% · stat gains +%d%% · the %s realm opened · 💰 +%s · merit +%d (%d left)",
+	["수련 마당"] = "Training Yard",
+	["청동 회랑"] = "Bronze Gallery",
+	["옥 정원"] = "Jade Garden",
+	["백옥 단"] = "White Jade Terrace",
+	["현무 뜰"] = "Basalt Court",
+	["왕좌 마당"] = "Throne Court",
+	["%s 쓰러짐"] = "%s is down",
+	["%s 우승 (%d)"] = "%s wins (%d)",
+	["  ·  %d연속"] = "·  streak %d",
 }
 ]]></string>
           </Properties>
