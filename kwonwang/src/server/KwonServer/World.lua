@@ -4237,6 +4237,17 @@ local function questProps(out: any)
 					local pp = prompt(gem, "살펴보기", step.name or "빛나는 것", "MQFind")
 					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
 				end
+			elseif step.kind == "summon" then
+				-- 3.99.6판 봉인 제단: 검은 돌 단 위에 금 간 봉인석. 조각을 다 모은 사람이 짚으면 숨은 보스가 깨어난다
+				local at = step.at
+				cyl("SealBase", at + Vector3.new(0, 0.4, 0), 5.5, 0.8, Color3.fromRGB(44, 40, 48), Enum.Material.Slate, f)
+				cyl("SealStep", at + Vector3.new(0, 1.0, 0), 4, 0.5, Color3.fromRGB(60, 56, 66), Enum.Material.Slate, f)
+				local stone = part({ Name = "SealStone", Size = Vector3.new(2.6, 4.2, 2.6), CFrame = CFrame.new(at + Vector3.new(0, 3.3, 0)) * CFrame.Angles(0, math.rad(20), math.rad(4)), Color = Color3.fromRGB(30, 28, 34), Material = Enum.Material.Basalt, Parent = f })
+				local rune = part({ Name = "SealRune", Size = Vector3.new(0.2, 2.6, 1.4), CFrame = stone.CFrame * CFrame.new(1.32, 0, 0), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				rune.Transparency = 0.35
+				light(rune, glow, 9, 0.7)
+				local pp = prompt(stone, "봉인을 깨운다", step.name or "봉인 제단", "MQSeal")
+				table.insert(out.mq, { sid = sid, step = si, idx = 1, prompt = pp })
 			elseif step.kind == "order" then
 				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
 				for i, sd in ipairs(step.stones) do

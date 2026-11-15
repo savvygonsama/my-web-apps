@@ -2043,6 +2043,39 @@ MiniQuest.init({
 	fx = function(player: Player, kind: string, at: Vector3)
 		Push:FireClient(player, "skillfx", { kind = kind, at = at })
 	end,
+	-- 3.99.6판: 봉인 제단에서 숨은 보스를 깨운다 (깨운 사람마다 하나. 5분 안에 못 쓰러뜨리면 다시 잠든다)
+	summon = function(player: Player, sid: string, step: any)
+		local st = states[player] :: any
+		if not st then
+			return
+		end
+		st.mqBoss = st.mqBoss or {}
+		local cur = st.mqBoss[sid]
+		if cur and not cur.dead and cur.model and cur.model.Parent then
+			toast(player, "👁 이미 깨어나 있다. 쓰러뜨려라")
+			return
+		end
+		local ok, e = pcall(Npc.spawn, step.boss, true, step.at, "summon")
+		if not ok or not e then
+			warn("[권왕] 숨은 보스 깨우기 오류:", e)
+			return
+		end
+		local ef = (e :: any).f
+		ef.mqSummoner = player
+		ef.model:SetAttribute("Label", "👁 " .. ef.name)
+		Combat.sync(ef)
+		st.mqBoss[sid] = ef
+		Push:FireClient(player, "skillfx", { kind = "mqLight", at = step.at })
+		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = "조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · " .. ef.name })
+		task.delay(300, function()
+			if not ef.dead and ef.model and ef.model.Parent then
+				pcall(Npc.despawn, ef)
+				if player.Parent then
+					toast(player, "👁 깨어난 것이 다시 잠들었다. 제단에서 다시 깨울 수 있다")
+				end
+			end
+		end)
+	end,
 })
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
@@ -2538,6 +2571,11 @@ Combat.init(Push, {
 						if def == f.npc then
 							p.bosses[id] = (p.bosses[id] or 0) + 1
 							MiniQuest.onBoss(killer, id)
+							-- 3.99.6판: 숨은 보스는 깨운 사람도 친다 (다른 사람이 마지막 한 대를 쳤어도)
+							local sm = (f :: any).mqSummoner
+							if sm and sm ~= killer and sm.Parent and profiles[sm] then
+								MiniQuest.onBoss(sm, id)
+							end
 						end
 					end
 					-- 보스는 가끔 심법 두루마리를 떨어뜨린다

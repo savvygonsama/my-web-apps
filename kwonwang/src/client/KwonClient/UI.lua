@@ -1083,7 +1083,7 @@ function UIB.buildStyles()
 				local mark = (cur > i) and '<font color="#9CFF9C">✔</font>' or (cur == i and '<font color="#FFD27A">▶</font>' or '<font color="#8A8A8A">·</font>')
 				local extra = ""
 				if cur == i then
-					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
+					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or ((stp.kind == "kill" or stp.kind == "boss" or stp.kind == "drop") and (stp.n or 1) or 0))
 					if total > 0 then
 						extra = string.format(" (%d/%d)", got, total)
 					end
@@ -4041,7 +4041,7 @@ local function refreshTracker(s: any)
 			local goal
 			if stp then
 				local got = (s.mqn and s.mqn[id]) or 0
-				local total = stp.kind == "find" and #(stp.items or {}) or (stp.kind == "order" and #(stp.stones or {}) or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
+				local total = stp.kind == "find" and #(stp.items or {}) or (stp.kind == "order" and #(stp.stones or {}) or ((stp.kind == "kill" or stp.kind == "boss" or stp.kind == "drop") and (stp.n or 1) or 0))
 				goal = "▶ " .. stp.text .. (total > 0 and string.format(" (%d/%d)", got, total) or "") .. (stp.night and " 🌙" or (stp.day and " ☀" or ""))
 			else
 				goal = "▶ 사부에게 돌아가 시험을 청하라"

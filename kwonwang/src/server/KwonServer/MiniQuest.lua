@@ -37,7 +37,7 @@ local function progressText(p: any, sid: string, step: any): string
 		return string.format(" (%d/%d)", n, #step.items)
 	elseif step.kind == "order" then
 		return string.format(" (%d/%d)", n, #step.stones)
-	elseif step.kind == "kill" or step.kind == "boss" then
+	elseif step.kind == "kill" or step.kind == "boss" or step.kind == "drop" then
 		return string.format(" (%d/%d)", n, step.n or 1)
 	end
 	return ""
@@ -127,6 +127,13 @@ function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: numb
 		ctx.toast(player, "…아직은 그냥 고운 돌이다")
 		return
 	end
+	-- 3.99.6판: 봉인 제단에 조각을 바쳐 숨은 보스를 깨운다
+	if step.kind == "summon" then
+		if ctx.summon then
+			ctx.summon(player, sid, step)
+		end
+		return
+	end
 	if step.kind == "find" then
 		local key = string.format("mq_%s_%d_%d", sid, stepIdx, idx)
 		if p.seen[key] then
@@ -175,6 +182,26 @@ function MiniQuest.onKill(player: Player, typeId: string?)
 	end
 	for sid, _ in pairs(Config.MINIQUEST or {}) do
 		local step = stepOf(p, sid)
+		-- 3.99.6판: 봉인 조각 (가끔 떨어진다. pity 번 연달아 안 나오면 반드시)
+		if step and step.kind == "drop" and step.enemy == typeId then
+			local st = ctx.states[player] :: any
+			st.mqMiss = st.mqMiss or {}
+			local miss = (st.mqMiss[sid] or 0) + 1
+			if math.random() < (step.chance or 0.2) or miss >= (step.pity or 8) then
+				st.mqMiss[sid] = 0
+				p.mqn[sid] = (p.mqn[sid] or 0) + 1
+				ctx.states[player].dirty = true
+				if p.mqn[sid] >= (step.n or 1) then
+					ctx.toast(player, string.format("%s %s (%d/%d) · 봉인 제단을 찾아라", step.icon or "🔮", step.name or "봉인 조각", p.mqn[sid], step.n or 1))
+					advance(player, sid)
+				else
+					ctx.toast(player, string.format("%s %s이(가) 떨어졌다 (%d/%d)", step.icon or "🔮", step.name or "봉인 조각", p.mqn[sid], step.n or 1))
+					ctx.pushState(player)
+				end
+			else
+				st.mqMiss[sid] = miss
+			end
+		end
 		if step and step.kind == "kill" and step.enemy == typeId then
 			p.mqn[sid] = (p.mqn[sid] or 0) + 1
 			ctx.states[player].dirty = true
@@ -195,7 +222,7 @@ function MiniQuest.onBoss(player: Player, bossId: string)
 	end
 	for sid, _ in pairs(Config.MINIQUEST or {}) do
 		local step = stepOf(p, sid)
-		if step and step.kind == "boss" and step.boss == bossId then
+		if step and (step.kind == "boss" or step.kind == "summon") and step.boss == bossId then
 			p.mqn[sid] = (p.mqn[sid] or 0) + 1
 			ctx.states[player].dirty = true
 			if p.mqn[sid] >= (step.n or 1) then

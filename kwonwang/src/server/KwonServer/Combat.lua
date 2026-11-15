@@ -1086,6 +1086,16 @@ function Combat.busy(f: Fighter): boolean
 	return act ~= nil and now() < act.start + act.dur
 end
 
+-- 3.99.6판: 큰 몸 (보스 Scale) 은 그만큼 닿는 거리와 높이 차를 넉넉히 (천상 · 지옥 보스를 두 배로 키웠다)
+local function bodyPad(f: Fighter): (number, number)
+	local sc = tonumber(f.model:GetAttribute("Scale")) or 1
+	if sc <= 1.5 then
+		return 0, 0
+	end
+	return (sc - 1.5) * 1.1, (sc - 1.5) * 2.6
+end
+Combat.bodyPad = bodyPad
+
 -- 앞쪽 상자 안의 상대들 (서버 판정용)
 function Combat.query(att: Fighter, hit: any, from: Vector3?): { Fighter }
 	local origin = from or att.root.Position
@@ -1096,7 +1106,8 @@ function Combat.query(att: Fighter, hit: any, from: Vector3?): { Fighter }
 		if Combat.hostile(att, f) then
 			local dist = Vector3.new(f.root.Position.X - center.X, 0, f.root.Position.Z - center.Z).Magnitude
 			local reach = hit.aoe and hit.radius or (hit.range * 0.55 + hit.radius)
-			if dist <= reach + 1.5 and math.abs(f.root.Position.Y - origin.Y) < 9 then
+			local padR, padY = bodyPad(f)
+			if dist <= reach + 1.5 + padR and math.abs(f.root.Position.Y - origin.Y) < 9 + padY then
 				table.insert(list, f)
 			end
 		end
@@ -1108,7 +1119,8 @@ end
 function Combat.plausible(att: Fighter, tgt: Fighter, hit: any): boolean
 	local d = Vector3.new(tgt.root.Position.X - att.root.Position.X, 0, tgt.root.Position.Z - att.root.Position.Z).Magnitude
 	local reach = hit.aoe and hit.radius or (hit.range + hit.radius)
-	return d <= reach + Config.HIT_TOLERANCE + 3 and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14
+	local padR, padY = bodyPad(tgt)
+	return d <= reach + Config.HIT_TOLERANCE + 3 + padR and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14 + padY
 end
 
 ------------------------------------------------------------------------
@@ -1150,7 +1162,8 @@ function Combat.stepProjectiles(dt: number)
 					local along = math.clamp(v:Dot(seg), 0, step.Magnitude)
 					local closest = from + seg * along
 					local dist = Vector3.new(f.root.Position.X - closest.X, 0, f.root.Position.Z - closest.Z).Magnitude
-					if dist <= p.radius + 1.5 and math.abs(f.root.Position.Y - closest.Y) < 6 then
+					local padR, padY = bodyPad(f)
+					if dist <= p.radius + 1.5 + padR and math.abs(f.root.Position.Y - closest.Y) < 6 + padY then
 						p.hitSet[f] = true
 						Combat.applyHit(p.owner, f, p.hit, { move = p.opt.move, isSkill = p.opt.isSkill, proj = true })
 						if not p.pierce then

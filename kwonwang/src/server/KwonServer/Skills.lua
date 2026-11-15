@@ -47,7 +47,7 @@ local function hostilesNear(f: any, center: Vector3, radius: number): { any }
 	for _, o in pairs(Combat.fighters) do
 		if Combat.hostile(f, o) and not o.dead then
 			local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
-			if d <= radius and math.abs(o.root.Position.Y - center.Y) < 30 then
+			if d <= radius + (Combat.bodyPad(o)) and math.abs(o.root.Position.Y - center.Y) < 30 then
 				table.insert(out, o)
 			end
 		end
@@ -141,7 +141,7 @@ end
 local function hostilesOnSeg(f: any, a: Vector3, b: Vector3, width: number): { any }
 	local out = {}
 	for _, o in pairs(Combat.fighters) do
-		if Combat.hostile(f, o) and not o.dead and math.abs(o.root.Position.Y - a.Y) < 30 and segDist(o.root.Position, a, b) <= width then
+		if Combat.hostile(f, o) and not o.dead and math.abs(o.root.Position.Y - a.Y) < 30 and segDist(o.root.Position, a, b) <= width + (Combat.bodyPad(o)) then
 			table.insert(out, o)
 		end
 	end

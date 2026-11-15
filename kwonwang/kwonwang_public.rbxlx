@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.5" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.6" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -7144,12 +7144,22 @@ do
 end
 
 ------------------------------------------------------------------------
--- 3.99.5판: 숨은 사부의 부탁이 너무 금방 끝났다 (4 ~ 6단계, 졸병 열 ~ 서른). 등급마다 단계를 늘리고 (신화 · 태초 9 · 지존 · 윤회 · 초월 10 · 극 · 권왕 11)
--- 흔한 졸병 처치 수는 두 배 (적어도 서른). 늘어난 단계는 사부 둘레의 다른 졸병 · 가까운 보스 (두 번) 로, 마지막 단계 (돌아가기 · 바치기) 앞에 넣는다
+-- 3.99.6판: 숨은 사부의 부탁에 '숨은 보스'. 단계만 늘리니 늘어졌다 (3.99.5판). 대신
+--   ① 사부 둘레 졸병을 잡으면 가끔 봉인 조각이 떨어진다 (drop) → ② 모은 조각을 봉인 제단에 바치면 (T) 잠든 것이 깨어난다 (summon)
+-- 사부마다 이름이 다른 숨은 보스 (가까운 땅 보스의 모습 · 체력 1.6배 · 몸 1.35배). 예전 단계는 그대로 두고 이 두 단계만 더한다
 ------------------------------------------------------------------------
+Config.HIDDEN_BOSS_NAMES = {
+	binghon = "빙혼마 · 얼음에 갇힌 넋", gaecheon = "무명귀 · 이름을 잃은 자", gongbaek = "공허 · 빈칸에서 온 것", hojeop = "몽마 · 꿈을 먹는 나비",
+	myeonggyeong = "거울귀 · 비친 얼굴", cheonjong = "파종귀 · 깨진 종의 울림", chobyeok = "뇌수 · 벼락을 삼킨 짐승", chochanghae = "해룡귀 · 가라앉은 용",
+	chocheonryong = "역룡 · 하늘을 등진 용", chochwi = "주마 · 술독의 마귀", chohyeolma = "혈월귀 · 붉은 달의 그림자", chomaehwa = "낙화귀 · 지지 않는 꽃",
+	chosengha = "유성마 · 떨어진 별", agong = "아공마 · 접힌 곳의 것", cheonok = "옥마 · 기둥에 갇힌 자", ilwol = "일식귀 · 해를 먹는 자",
+	manmok = "고목귀 · 천 년 묵은 뿌리", seongha = "성흔마 · 별의 흉터", taecho = "태초귀 · 처음의 그림자", yeonggeop = "겁귀 · 끝나지 않는 시간",
+	cheonha = "패도마 · 왕좌를 노리는 자", sashin = "사흉 · 네 방위의 흉수", geukilwol = "황혼마 · 저물지 않는 해", geuknull = "허무마 · 아무것도 아닌 것",
+	geukspeed = "광속귀 · 빛을 앞지른 자",
+}
 do
-	local TARGET = { ["신화"] = 9, ["태초"] = 9, ["지존"] = 10, ["윤회"] = 10, ["초월"] = 10, ["극"] = 11, ["권왕"] = 11 }
-	local KILLN = { ["신화"] = 40, ["태초"] = 40, ["지존"] = 50, ["윤회"] = 50, ["초월"] = 50, ["극"] = 60, ["권왕"] = 60 }
+	local TARGET = { ["신화"] = 8, ["태초"] = 8, ["지존"] = 9, ["윤회"] = 9, ["초월"] = 9, ["극"] = 10, ["권왕"] = 10 }
+	local DROPN = { ["신화"] = 3, ["태초"] = 3, ["지존"] = 4, ["윤회"] = 4, ["초월"] = 4, ["극"] = 5, ["권왕"] = 5 }
 	local function layer(at: Vector3): string
 		if Config.inHell(at) then
 			return "hell"
@@ -7158,7 +7168,6 @@ do
 		end
 		return "ground"
 	end
-	-- 모든 졸병 무리 (흔한 졸병인지, 어디에 있는지)
 	local camps = {}
 	local function addCamps(list: any)
 		for _, c in ipairs(list or {}) do
@@ -7180,77 +7189,87 @@ do
 	for _, c in ipairs(camps) do
 		common[c.enemy] = true
 	end
+	local function flat(a: Vector3, b: Vector3): number
+		return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
+	end
 	for sid, q in pairs(Config.MINIQUEST or {}) do
 		local st = Config.STYLE_BY_ID[sid]
 		local m = Config.MASTERS[sid]
 		local want = st and TARGET[st.grade]
 		if st and m and want and #q.steps >= 2 then
-			local killN = KILLN[st.grade] or 40
+			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
 			local used = {}
-			local bossUsed = {}
 			for _, stp in ipairs(q.steps) do
-				if stp.kind == "kill" and common[stp.enemy] then
-					stp.n = math.clamp((stp.n or 1) * 2, 30, 80)
-				end
 				if stp.kind == "kill" then
 					used[stp.enemy] = true
-				elseif stp.kind == "boss" then
-					bossUsed[stp.boss] = true
 				end
 			end
-			-- 사부 자리에서 가까운 같은 층의 졸병 · 보스
 			local lay = layer(m.at)
+			-- 사부에게서 가장 가까운 같은 층의 졸병 무리 (봉인 조각 · 제단 자리)
 			local near = {}
 			for _, c in ipairs(camps) do
-				if layer(c.at) == lay and not used[c.enemy] then
-					table.insert(near, { c.enemy, (Vector3.new(c.at.X - m.at.X, 0, c.at.Z - m.at.Z)).Magnitude, c.at })
+				if layer(c.at) == lay then
+					table.insert(near, { c, flat(c.at, m.at) })
 				end
 			end
-			table.sort(near, function(a, b)
-				return a[2] < b[2]
+			table.sort(near, function(x, y)
+				return x[2] < y[2]
 			end)
-			local bosses = {}
-			for bid, at in pairs(Config.BOSS_AT or {}) do
-				if Config.Bosses[bid] and layer(at) == lay and not bossUsed[bid] then
-					table.insert(bosses, { bid, (Vector3.new(at.X - m.at.X, 0, at.Z - m.at.Z)).Magnitude })
-				end
-			end
-			table.sort(bosses, function(a, b)
-				return a[2] < b[2]
-			end)
-			q.v2len = #q.steps -- 늘리기 전 단계 수 (이미 다 들어준 기록은 끝난 그대로)
-			local last = table.remove(q.steps)
-			local ni, bi, turn = 1, 1, 0
-			while #q.steps < want - 1 do
-				turn += 1
-				local added = false
-				if turn % 3 == 0 and bosses[bi] then
-					local bid = bosses[bi][1]
-					bi += 1
-					table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
-					added = true
-				else
-					while near[ni] and used[near[ni][1]] do
-						ni += 1
-					end
-					local c = near[ni]
-					if c then
-						ni += 1
-						used[c[1]] = true
-						table.insert(q.steps, { kind = "kill", enemy = c[1], n = killN, text = string.format("%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다", Config.Enemies[c[1]].name, killN) })
-						added = true
-					elseif bosses[bi] then
-						local bid = bosses[bi][1]
-						bi += 1
-						table.insert(q.steps, { kind = "boss", boss = bid, n = 2, text = string.format("%s을(를) %d번 꺾어라. 한 번은 운일 수 있다", Config.Bosses[bid].name, 2) })
-						added = true
+			local camp = near[1] and near[1][1]
+			-- 그 무리에서 가장 가까운 같은 층의 땅 보스 (숨은 보스의 바탕)
+			local baseId, bd = nil, math.huge
+			if camp then
+				for bid, at in pairs(Config.BOSS_AT or {}) do
+					if Config.Bosses[bid] and layer(at) == lay and flat(at, camp.at) < bd then
+						baseId, bd = bid, flat(at, camp.at)
 					end
 				end
-				if not added then
-					break
-				end
 			end
-			table.insert(q.steps, last)
+			if camp and baseId then
+				local base = Config.Bosses[baseId]
+				local hid = "hb_" .. sid
+				local def = table.clone(base)
+				def.name = Config.HIDDEN_BOSS_NAMES[sid] or ("숨은 것 · " .. q.title)
+				def.scale = (base.scale or 1.5) * 1.35
+				def.hiddenBoss = true
+				def.hbLayer = lay
+				def.respawn = nil
+				Config.Bosses[hid] = def
+				local bt = Config.BOSS_TUNE[baseId]
+				Config.BOSS_TUNE[hid] = { (bt and bt[1] or 1) * 1.6, (bt and bt[2] or 1) * 1.1 }
+				-- 제단: 무리에서 사부 쪽으로 22칸 (무리와 사부 사이)
+				local dir = Vector3.new(m.at.X - camp.at.X, 0, m.at.Z - camp.at.Z)
+				local altar = camp.at + (dir.Magnitude > 30 and dir.Unit * 22 or Vector3.new(20, 0, 0))
+				local en = Config.Enemies[camp.enemy]
+				local last = table.remove(q.steps)
+				local dropN = DROPN[st.grade] or 3
+				table.insert(q.steps, { kind = "drop", enemy = camp.enemy, n = dropN, chance = 0.2, pity = 8, name = "봉인 조각", icon = "🔮", text = string.format("%s을(를) 쓰러뜨리면 가끔 봉인 조각이 떨어진다. %d개를 모아라", en and en.name or camp.enemy, dropN) })
+				table.insert(q.steps, { kind = "summon", at = altar, boss = hid, name = "봉인 제단", text = "모은 조각을 봉인 제단에 바쳐 잠든 것을 깨우고 쓰러뜨려라 (T)" })
+				table.insert(q.steps, last)
+			end
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.6판: 천상 · 지옥 보스는 몸을 두 배로 (많아야 8). 맞는 판정은 몸 크기만큼 넉넉해진다 (Combat.bodyPad)
+------------------------------------------------------------------------
+do
+	local done = {}
+	local function grow(def: any)
+		if def and not done[def] then
+			done[def] = true
+			def.scale = math.min(8, (def.scale or 1.5) * 2)
+		end
+	end
+	for bid, at in pairs(Config.BOSS_AT or {}) do
+		if Config.inHell(at) or (Config.SKY and at.Y > Config.SKY.y - 300) then
+			grow(Config.Bosses[bid])
+		end
+	end
+	for _, def in pairs(Config.Bosses) do
+		if def.hiddenBoss and (def.hbLayer == "sky" or def.hbLayer == "hell") then
+			grow(def)
 		end
 	end
 end
@@ -12426,6 +12445,39 @@ MiniQuest.init({
 	fx = function(player: Player, kind: string, at: Vector3)
 		Push:FireClient(player, "skillfx", { kind = kind, at = at })
 	end,
+	-- 3.99.6판: 봉인 제단에서 숨은 보스를 깨운다 (깨운 사람마다 하나. 5분 안에 못 쓰러뜨리면 다시 잠든다)
+	summon = function(player: Player, sid: string, step: any)
+		local st = states[player] :: any
+		if not st then
+			return
+		end
+		st.mqBoss = st.mqBoss or {}
+		local cur = st.mqBoss[sid]
+		if cur and not cur.dead and cur.model and cur.model.Parent then
+			toast(player, "👁 이미 깨어나 있다. 쓰러뜨려라")
+			return
+		end
+		local ok, e = pcall(Npc.spawn, step.boss, true, step.at, "summon")
+		if not ok or not e then
+			warn("[권왕] 숨은 보스 깨우기 오류:", e)
+			return
+		end
+		local ef = (e :: any).f
+		ef.mqSummoner = player
+		ef.model:SetAttribute("Label", "👁 " .. ef.name)
+		Combat.sync(ef)
+		st.mqBoss[sid] = ef
+		Push:FireClient(player, "skillfx", { kind = "mqLight", at = step.at })
+		Push:FireClient(player, "dialog", { who = "🔮 봉인 제단", title = "", text = "조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · " .. ef.name })
+		task.delay(300, function()
+			if not ef.dead and ef.model and ef.model.Parent then
+				pcall(Npc.despawn, ef)
+				if player.Parent then
+					toast(player, "👁 깨어난 것이 다시 잠들었다. 제단에서 다시 깨울 수 있다")
+				end
+			end
+		end)
+	end,
 })
 local Trial = {}
 local activeTrial: { [Player]: any } = {}
@@ -12921,6 +12973,11 @@ Combat.init(Push, {
 						if def == f.npc then
 							p.bosses[id] = (p.bosses[id] or 0) + 1
 							MiniQuest.onBoss(killer, id)
+							-- 3.99.6판: 숨은 보스는 깨운 사람도 친다 (다른 사람이 마지막 한 대를 쳤어도)
+							local sm = (f :: any).mqSummoner
+							if sm and sm ~= killer and sm.Parent and profiles[sm] then
+								MiniQuest.onBoss(sm, id)
+							end
 						end
 					end
 					-- 보스는 가끔 심법 두루마리를 떨어뜨린다
@@ -20641,6 +20698,16 @@ function Combat.busy(f: Fighter): boolean
 	return act ~= nil and now() < act.start + act.dur
 end
 
+-- 3.99.6판: 큰 몸 (보스 Scale) 은 그만큼 닿는 거리와 높이 차를 넉넉히 (천상 · 지옥 보스를 두 배로 키웠다)
+local function bodyPad(f: Fighter): (number, number)
+	local sc = tonumber(f.model:GetAttribute("Scale")) or 1
+	if sc <= 1.5 then
+		return 0, 0
+	end
+	return (sc - 1.5) * 1.1, (sc - 1.5) * 2.6
+end
+Combat.bodyPad = bodyPad
+
 -- 앞쪽 상자 안의 상대들 (서버 판정용)
 function Combat.query(att: Fighter, hit: any, from: Vector3?): { Fighter }
 	local origin = from or att.root.Position
@@ -20651,7 +20718,8 @@ function Combat.query(att: Fighter, hit: any, from: Vector3?): { Fighter }
 		if Combat.hostile(att, f) then
 			local dist = Vector3.new(f.root.Position.X - center.X, 0, f.root.Position.Z - center.Z).Magnitude
 			local reach = hit.aoe and hit.radius or (hit.range * 0.55 + hit.radius)
-			if dist <= reach + 1.5 and math.abs(f.root.Position.Y - origin.Y) < 9 then
+			local padR, padY = bodyPad(f)
+			if dist <= reach + 1.5 + padR and math.abs(f.root.Position.Y - origin.Y) < 9 + padY then
 				table.insert(list, f)
 			end
 		end
@@ -20663,7 +20731,8 @@ end
 function Combat.plausible(att: Fighter, tgt: Fighter, hit: any): boolean
 	local d = Vector3.new(tgt.root.Position.X - att.root.Position.X, 0, tgt.root.Position.Z - att.root.Position.Z).Magnitude
 	local reach = hit.aoe and hit.radius or (hit.range + hit.radius)
-	return d <= reach + Config.HIT_TOLERANCE + 3 and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14
+	local padR, padY = bodyPad(tgt)
+	return d <= reach + Config.HIT_TOLERANCE + 3 + padR and math.abs(tgt.root.Position.Y - att.root.Position.Y) < 14 + padY
 end
 
 ------------------------------------------------------------------------
@@ -20705,7 +20774,8 @@ function Combat.stepProjectiles(dt: number)
 					local along = math.clamp(v:Dot(seg), 0, step.Magnitude)
 					local closest = from + seg * along
 					local dist = Vector3.new(f.root.Position.X - closest.X, 0, f.root.Position.Z - closest.Z).Magnitude
-					if dist <= p.radius + 1.5 and math.abs(f.root.Position.Y - closest.Y) < 6 then
+					local padR, padY = bodyPad(f)
+					if dist <= p.radius + 1.5 + padR and math.abs(f.root.Position.Y - closest.Y) < 6 + padY then
 						p.hitSet[f] = true
 						Combat.applyHit(p.owner, f, p.hit, { move = p.opt.move, isSkill = p.opt.isSkill, proj = true })
 						if not p.pierce then
@@ -22886,7 +22956,7 @@ local function progressText(p: any, sid: string, step: any): string
 		return string.format(" (%d/%d)", n, #step.items)
 	elseif step.kind == "order" then
 		return string.format(" (%d/%d)", n, #step.stones)
-	elseif step.kind == "kill" or step.kind == "boss" then
+	elseif step.kind == "kill" or step.kind == "boss" or step.kind == "drop" then
 		return string.format(" (%d/%d)", n, step.n or 1)
 	end
 	return ""
@@ -22976,6 +23046,13 @@ function MiniQuest.touch(player: Player, sid: string, stepIdx: number, idx: numb
 		ctx.toast(player, "…아직은 그냥 고운 돌이다")
 		return
 	end
+	-- 3.99.6판: 봉인 제단에 조각을 바쳐 숨은 보스를 깨운다
+	if step.kind == "summon" then
+		if ctx.summon then
+			ctx.summon(player, sid, step)
+		end
+		return
+	end
 	if step.kind == "find" then
 		local key = string.format("mq_%s_%d_%d", sid, stepIdx, idx)
 		if p.seen[key] then
@@ -23024,6 +23101,26 @@ function MiniQuest.onKill(player: Player, typeId: string?)
 	end
 	for sid, _ in pairs(Config.MINIQUEST or {}) do
 		local step = stepOf(p, sid)
+		-- 3.99.6판: 봉인 조각 (가끔 떨어진다. pity 번 연달아 안 나오면 반드시)
+		if step and step.kind == "drop" and step.enemy == typeId then
+			local st = ctx.states[player] :: any
+			st.mqMiss = st.mqMiss or {}
+			local miss = (st.mqMiss[sid] or 0) + 1
+			if math.random() < (step.chance or 0.2) or miss >= (step.pity or 8) then
+				st.mqMiss[sid] = 0
+				p.mqn[sid] = (p.mqn[sid] or 0) + 1
+				ctx.states[player].dirty = true
+				if p.mqn[sid] >= (step.n or 1) then
+					ctx.toast(player, string.format("%s %s (%d/%d) · 봉인 제단을 찾아라", step.icon or "🔮", step.name or "봉인 조각", p.mqn[sid], step.n or 1))
+					advance(player, sid)
+				else
+					ctx.toast(player, string.format("%s %s이(가) 떨어졌다 (%d/%d)", step.icon or "🔮", step.name or "봉인 조각", p.mqn[sid], step.n or 1))
+					ctx.pushState(player)
+				end
+			else
+				st.mqMiss[sid] = miss
+			end
+		end
 		if step and step.kind == "kill" and step.enemy == typeId then
 			p.mqn[sid] = (p.mqn[sid] or 0) + 1
 			ctx.states[player].dirty = true
@@ -23044,7 +23141,7 @@ function MiniQuest.onBoss(player: Player, bossId: string)
 	end
 	for sid, _ in pairs(Config.MINIQUEST or {}) do
 		local step = stepOf(p, sid)
-		if step and step.kind == "boss" and step.boss == bossId then
+		if step and (step.kind == "boss" or step.kind == "summon") and step.boss == bossId then
 			p.mqn[sid] = (p.mqn[sid] or 0) + 1
 			ctx.states[player].dirty = true
 			if p.mqn[sid] >= (step.n or 1) then
@@ -25339,7 +25436,7 @@ local function hostilesNear(f: any, center: Vector3, radius: number): { any }
 	for _, o in pairs(Combat.fighters) do
 		if Combat.hostile(f, o) and not o.dead then
 			local d = Vector3.new(o.root.Position.X - center.X, 0, o.root.Position.Z - center.Z).Magnitude
-			if d <= radius and math.abs(o.root.Position.Y - center.Y) < 30 then
+			if d <= radius + (Combat.bodyPad(o)) and math.abs(o.root.Position.Y - center.Y) < 30 then
 				table.insert(out, o)
 			end
 		end
@@ -25433,7 +25530,7 @@ end
 local function hostilesOnSeg(f: any, a: Vector3, b: Vector3, width: number): { any }
 	local out = {}
 	for _, o in pairs(Combat.fighters) do
-		if Combat.hostile(f, o) and not o.dead and math.abs(o.root.Position.Y - a.Y) < 30 and segDist(o.root.Position, a, b) <= width then
+		if Combat.hostile(f, o) and not o.dead and math.abs(o.root.Position.Y - a.Y) < 30 and segDist(o.root.Position, a, b) <= width + (Combat.bodyPad(o)) then
 			table.insert(out, o)
 		end
 	end
@@ -35362,6 +35459,17 @@ local function questProps(out: any)
 					local pp = prompt(gem, "살펴보기", step.name or "빛나는 것", "MQFind")
 					table.insert(out.mq, { sid = sid, step = si, idx = i, prompt = pp })
 				end
+			elseif step.kind == "summon" then
+				-- 3.99.6판 봉인 제단: 검은 돌 단 위에 금 간 봉인석. 조각을 다 모은 사람이 짚으면 숨은 보스가 깨어난다
+				local at = step.at
+				cyl("SealBase", at + Vector3.new(0, 0.4, 0), 5.5, 0.8, Color3.fromRGB(44, 40, 48), Enum.Material.Slate, f)
+				cyl("SealStep", at + Vector3.new(0, 1.0, 0), 4, 0.5, Color3.fromRGB(60, 56, 66), Enum.Material.Slate, f)
+				local stone = part({ Name = "SealStone", Size = Vector3.new(2.6, 4.2, 2.6), CFrame = CFrame.new(at + Vector3.new(0, 3.3, 0)) * CFrame.Angles(0, math.rad(20), math.rad(4)), Color = Color3.fromRGB(30, 28, 34), Material = Enum.Material.Basalt, Parent = f })
+				local rune = part({ Name = "SealRune", Size = Vector3.new(0.2, 2.6, 1.4), CFrame = stone.CFrame * CFrame.new(1.32, 0, 0), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = f })
+				rune.Transparency = 0.35
+				light(rune, glow, 9, 0.7)
+				local pp = prompt(stone, "봉인을 깨운다", step.name or "봉인 제단", "MQSeal")
+				table.insert(out.mq, { sid = sid, step = si, idx = 1, prompt = pp })
 			elseif step.kind == "order" then
 				-- 놓는 자리는 섞지 않는다 (차례의 단서는 높이나 빛깔)
 				for i, sd in ipairs(step.stones) do
@@ -63662,6 +63770,67 @@ return {
 	["쇠고리를 던지는 옥졸들이다. 고리가 목에 걸리기 전에 마흔을 쓰러뜨려라."] = "These jailers throw iron rings. Defeat forty before a ring catches your neck.",
 	["%s %d마리를 더 쓰러뜨려라. 사부는 손보다 버티는 힘을 본다"] = "%s: defeat %d more. The master watches your endurance more than your hands",
 	["%s을(를) %d번 꺾어라. 한 번은 운일 수 있다"] = "Defeat %s %d times. Once could be luck",
+	["봉인 조각"] = "Seal Shard",
+	["봉인 제단"] = "Sealed Altar",
+	["봉인을 깨운다"] = "Break the seal",
+	["%s을(를) 쓰러뜨리면 가끔 봉인 조각이 떨어진다. %d개를 모아라"] = "Defeating %s sometimes drops a Seal Shard. Collect %d",
+	["모은 조각을 봉인 제단에 바쳐 잠든 것을 깨우고 쓰러뜨려라 (T)"] = "Offer the shards at the Sealed Altar, wake what sleeps there, and defeat it (T)",
+	["%s %s (%d/%d) · 봉인 제단을 찾아라"] = "%s %s (%d/%d) · Find the Sealed Altar",
+	["%s %s이(가) 떨어졌다 (%d/%d)"] = "%s %s dropped (%d/%d)",
+	["👁 이미 깨어나 있다. 쓰러뜨려라"] = "👁 It is already awake. Defeat it",
+	["🔮 봉인 제단"] = "🔮 Sealed Altar",
+	["조각이 제단에 스며들자 땅이 갈라진다. 잠들어 있던 것이 눈을 뜬다. · %s"] = "As the shards sink into the altar, the ground splits open. What slept there opens its eyes. · %s",
+	["👁 깨어난 것이 다시 잠들었다. 제단에서 다시 깨울 수 있다"] = "👁 The awakened one has fallen asleep again. You can wake it again at the altar",
+	["빙혼마 · 얼음에 갇힌 넋"] = "Ice Wraith · Soul Trapped in Ice",
+	["👁 빙혼마 · 얼음에 갇힌 넋"] = "👁 Ice Wraith · Soul Trapped in Ice",
+	["무명귀 · 이름을 잃은 자"] = "Nameless Ghost · One Who Lost His Name",
+	["👁 무명귀 · 이름을 잃은 자"] = "👁 Nameless Ghost · One Who Lost His Name",
+	["공허 · 빈칸에서 온 것"] = "Void · Thing from the Blank",
+	["👁 공허 · 빈칸에서 온 것"] = "👁 Void · Thing from the Blank",
+	["몽마 · 꿈을 먹는 나비"] = "Dream Demon · Butterfly That Eats Dreams",
+	["👁 몽마 · 꿈을 먹는 나비"] = "👁 Dream Demon · Butterfly That Eats Dreams",
+	["거울귀 · 비친 얼굴"] = "Mirror Ghost · The Reflected Face",
+	["👁 거울귀 · 비친 얼굴"] = "👁 Mirror Ghost · The Reflected Face",
+	["파종귀 · 깨진 종의 울림"] = "Broken Bell Ghost · Echo of a Cracked Bell",
+	["👁 파종귀 · 깨진 종의 울림"] = "👁 Broken Bell Ghost · Echo of a Cracked Bell",
+	["뇌수 · 벼락을 삼킨 짐승"] = "Thunder Beast · Beast That Swallowed Lightning",
+	["👁 뇌수 · 벼락을 삼킨 짐승"] = "👁 Thunder Beast · Beast That Swallowed Lightning",
+	["해룡귀 · 가라앉은 용"] = "Sea Dragon Ghost · The Sunken Dragon",
+	["👁 해룡귀 · 가라앉은 용"] = "👁 Sea Dragon Ghost · The Sunken Dragon",
+	["역룡 · 하늘을 등진 용"] = "Rebel Dragon · Dragon That Turned from Heaven",
+	["👁 역룡 · 하늘을 등진 용"] = "👁 Rebel Dragon · Dragon That Turned from Heaven",
+	["주마 · 술독의 마귀"] = "Wine Demon · Fiend of the Wine Jar",
+	["👁 주마 · 술독의 마귀"] = "👁 Wine Demon · Fiend of the Wine Jar",
+	["혈월귀 · 붉은 달의 그림자"] = "Blood Moon Ghost · Shadow of the Red Moon",
+	["👁 혈월귀 · 붉은 달의 그림자"] = "👁 Blood Moon Ghost · Shadow of the Red Moon",
+	["낙화귀 · 지지 않는 꽃"] = "Fallen Blossom Ghost · The Flower That Never Wilts",
+	["👁 낙화귀 · 지지 않는 꽃"] = "👁 Fallen Blossom Ghost · The Flower That Never Wilts",
+	["유성마 · 떨어진 별"] = "Meteor Demon · The Fallen Star",
+	["👁 유성마 · 떨어진 별"] = "👁 Meteor Demon · The Fallen Star",
+	["아공마 · 접힌 곳의 것"] = "Subspace Demon · Thing from the Folded Place",
+	["👁 아공마 · 접힌 곳의 것"] = "👁 Subspace Demon · Thing from the Folded Place",
+	["옥마 · 기둥에 갇힌 자"] = "Jade Demon · One Sealed in the Pillar",
+	["👁 옥마 · 기둥에 갇힌 자"] = "👁 Jade Demon · One Sealed in the Pillar",
+	["일식귀 · 해를 먹는 자"] = "Eclipse Ghost · Devourer of the Sun",
+	["👁 일식귀 · 해를 먹는 자"] = "👁 Eclipse Ghost · Devourer of the Sun",
+	["고목귀 · 천 년 묵은 뿌리"] = "Ancient Tree Ghost · Thousand-Year Root",
+	["👁 고목귀 · 천 년 묵은 뿌리"] = "👁 Ancient Tree Ghost · Thousand-Year Root",
+	["성흔마 · 별의 흉터"] = "Star Scar Demon · Scar of the Stars",
+	["👁 성흔마 · 별의 흉터"] = "👁 Star Scar Demon · Scar of the Stars",
+	["태초귀 · 처음의 그림자"] = "Primordial Ghost · Shadow of the Beginning",
+	["👁 태초귀 · 처음의 그림자"] = "👁 Primordial Ghost · Shadow of the Beginning",
+	["겁귀 · 끝나지 않는 시간"] = "Kalpa Ghost · Time Without End",
+	["👁 겁귀 · 끝나지 않는 시간"] = "👁 Kalpa Ghost · Time Without End",
+	["패도마 · 왕좌를 노리는 자"] = "Tyrant Demon · One Who Covets the Throne",
+	["👁 패도마 · 왕좌를 노리는 자"] = "👁 Tyrant Demon · One Who Covets the Throne",
+	["사흉 · 네 방위의 흉수"] = "Four Fiends · Evil Beasts of the Four Directions",
+	["👁 사흉 · 네 방위의 흉수"] = "👁 Four Fiends · Evil Beasts of the Four Directions",
+	["황혼마 · 저물지 않는 해"] = "Twilight Demon · The Sun That Never Sets",
+	["👁 황혼마 · 저물지 않는 해"] = "👁 Twilight Demon · The Sun That Never Sets",
+	["허무마 · 아무것도 아닌 것"] = "Nihil Demon · That Which Is Nothing",
+	["👁 허무마 · 아무것도 아닌 것"] = "👁 Nihil Demon · That Which Is Nothing",
+	["광속귀 · 빛을 앞지른 자"] = "Lightspeed Ghost · One Who Outran Light",
+	["👁 광속귀 · 빛을 앞지른 자"] = "👁 Lightspeed Ghost · One Who Outran Light",
 }
 ]]></string>
           </Properties>
@@ -82876,7 +83045,7 @@ function UIB.buildStyles()
 				local mark = (cur > i) and '<font color="#9CFF9C">✔</font>' or (cur == i and '<font color="#FFD27A">▶</font>' or '<font color="#8A8A8A">·</font>')
 				local extra = ""
 				if cur == i then
-					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
+					local total = stp.kind == "find" and #stp.items or (stp.kind == "order" and #stp.stones or ((stp.kind == "kill" or stp.kind == "boss" or stp.kind == "drop") and (stp.n or 1) or 0))
 					if total > 0 then
 						extra = string.format(" (%d/%d)", got, total)
 					end
@@ -85834,7 +86003,7 @@ local function refreshTracker(s: any)
 			local goal
 			if stp then
 				local got = (s.mqn and s.mqn[id]) or 0
-				local total = stp.kind == "find" and #(stp.items or {}) or (stp.kind == "order" and #(stp.stones or {}) or ((stp.kind == "kill" or stp.kind == "boss") and (stp.n or 1) or 0))
+				local total = stp.kind == "find" and #(stp.items or {}) or (stp.kind == "order" and #(stp.stones or {}) or ((stp.kind == "kill" or stp.kind == "boss" or stp.kind == "drop") and (stp.n or 1) or 0))
 				goal = "▶ " .. stp.text .. (total > 0 and string.format(" (%d/%d)", got, total) or "") .. (stp.night and " 🌙" or (stp.day and " ☀" or ""))
 			else
 				goal = "▶ 사부에게 돌아가 시험을 청하라"
