@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.16" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.17" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4550,7 +4550,9 @@ end
 -- 3.95판 대환단: 한 알이 그 경지 구간 (다음 경지까지 필요한 능력치) 의 일정 몫. 경지마다 다섯 알, 살수록 1.6배 비싸진다
 -- (예전엔 한 알이 구간의 25~35% 인데 값은 경지마다 1.37배만 올라, 후반에 은자를 모아 두면 몇 초 만에 능력치가 두 배가 됐다)
 -- 한 알 몫은 초반엔 크고 경지가 오를수록 줄어든다: 구간의 25% × 0.8^(경지-1), 적어도 1% (삼류 25% · 절정 10% · 생사경 3.4% · 등선 이후 1%)
-Config.PILL = { first = 0.25, decay = 0.8, floor = 0.01, max = 5, step = 1.6 }
+-- 3.99.17판: 0.25 → 0.1 · 0.8 → 0.85 · 바닥 1% → 0.4%. 다섯 알 합이 어느 경지에서도 다음 경지까지의 절반을 넘지 않게
+-- (초반엔 다섯 알로 경지가 오르고, 오른 경지에서 또 다섯 알을 사 연달아 오를 수 있었다)
+Config.PILL = { first = 0.1, decay = 0.85, floor = 0.004, max = 5, step = 1.6 }
 function Config.pillFrac(realmIdx: number): number
 	local P = Config.PILL
 	return math.max(P.floor, P.first * P.decay ^ (math.max(1, math.floor(realmIdx or 1)) - 1))
@@ -4564,7 +4566,7 @@ function Config.pillStats(realmIdx: number): number
 	else
 		gap = R[i].need - R[i - 1].need
 	end
-	return math.max(10, math.floor(gap * Config.pillFrac(i) / #Config.Stats))
+	return math.max(1, math.floor(gap * Config.pillFrac(i) / #Config.Stats))
 end
 function Config.pillCost(realmIdx: number, bought: number): number
 	return math.floor(Config.shopCost(Config.SHOP_BY_ID.pill, realmIdx) * Config.PILL.step ^ math.max(0, bought))
