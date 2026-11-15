@@ -2423,7 +2423,7 @@ Combat.init(Push, {
 						g = math.min(g, Config.killGain(base) * mobs * gainMult(p))
 					end
 					-- 게임패스 두 배·세 배 처치 · 권왕의 증표 (보스 상한을 맞춘 뒤에 곱한다)
-					g *= PassMult.kill(killer)
+					g *= PassMult.kill(killer) * Config.KILL_STAT_MULT
 					local each = math.max(1, math.floor(g / #Config.Stats))
 					statGain = 0
 					for _, sd in ipairs(Config.Stats) do

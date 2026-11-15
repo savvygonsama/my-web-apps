@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.0" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.1" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -293,6 +293,7 @@ Config.BOSS_TUNE = { -- 3.99판: [보스 id] = { 체력 배율, 피해 배율 }.
 	hwatang = { 0.39, 0.35 }, dosan = { 0.45, 0.35 }, agwiwang = { 0.35, 0.35 }, yeomra = { 0.73, 0.35 }, dokssawang = { 0.73, 0.35 },
 	balseolwang = { 0.61, 0.35 }, mugunwang = { 0.46, 0.35 }, hyeolwang = { 0.46, 0.35 }, hanbingwang = { 0.39, 0.35 }, cheolhwanwang = { 0.35, 0.35 },
 }
+Config.KILL_STAT_MULT = 0.7 -- 3.99.1판: 적을 쓰러뜨려 얻는 능력치 ×0.7 (싸움이 수련보다 너무 많이 주었다)
 Config.BOSS_STAT_MOBS = 3 -- 3.99판: 후반이 아닌 보스 한 마리의 능력치 몫 (그 땅 졸병 세 마리. 보스는 은자 · 두루마리 쪽)
 Config.LATE_BOSS_KILLS = 15 -- 2.7.2판: 후반 보스 하나의 능력치 몫은 그 땅 졸병 열다섯 마리까지 (전엔 표 끝에 걸려 모두 6억 3천만)
 -- { 적 전투력, 얻는 능력치 합 } (사이는 로그로 잇는다)
@@ -373,7 +374,7 @@ Config.TRAIN_REALM_BONUS = 0.12
 -- 2.7.5판: 후반 수련. 수련 효과가 경지마다 +12%씩만 늘어 후반엔 한 번에 수십밖에 오르지 않았다 (적 한 마리는 수백만).
 -- 이제 그 경지 적 한 마리 몫에 견준다: 상급 수련(천상 수련)을 '완벽'으로 한 번 하면 그 경지 적 한 마리의 TRAIN_LATE_SHARE만큼.
 -- 생사경 무렵부터 이쪽이 커진다 (그 앞은 예전 그대로). 싸움보다 훨씬 느리지만 오르는 게 눈에 보이게
-Config.TRAIN_LATE_SHARE = 1 / 100 -- 2.7.7판: 1/50 → 1/150. 2.8판: 1/100 (싸움의 약 1/7 빠르기: 수련은 덤이되, 하는 만큼 보이게)
+Config.TRAIN_LATE_SHARE = 1 / 16 -- 3.99.1판: 1/100 → 1/16 (절정부터 수련이 사냥의 5 ~ 50%뿐이었다. 이제 40 ~ 100%). 2.8판: -- 2.7.7판: 1/50 → 1/150. 2.8판: 1/100 (싸움의 약 1/7 빠르기: 수련은 덤이되, 하는 만큼 보이게)
 Config.TRAIN_LATE_REF = 12 -- 천상 수련 '완벽' 한 번에 오르는 몫의 합 (2 × 6). 3.3판: 천상 수련이 24 → 6이 되어 48 → 12 (후반 수련 몫은 그대로)
 function Config.trainMult(idx: number): number
 	local lin = Config.TRAIN_GAIN * (1 + Config.TRAIN_REALM_BONUS * (idx - 1))
