@@ -619,6 +619,7 @@ local function canAct(): boolean
 end
 
 local startMove: (any, number?) -> ()
+local actSlotNow: any = nil -- 3.99.11판: 지금 동작의 칸 (연타인지 기술인지)
 
 local function unlocked(slot: string): boolean
 	local need = Config.SKILL_UNLOCK[slot]
@@ -644,7 +645,9 @@ startMove = function(slot: any, charge: number?)
 	local now = os.clock()
 	-- 앞 기술이 남아 있으면 줄 세운다 (끝날 때 바로 나간다)
 	if busy() then
-		if now >= actStart + actDur * (type(slot) == "number" and 0.7 or 0.85) then
+		-- 3.99.11판: 연타 중의 기술은 SKILL_CANCEL 만큼 지나면 끊고 나간다
+		local fromCombo = type(actSlotNow) == "number" or actSlotNow == "F"
+		if now >= actStart + actDur * (type(slot) == "number" and 0.7 or (fromCombo and Config.SKILL_CANCEL or 0.85)) then
 			-- 이어 쓸 수 있는 순간
 		else
 			buffered = { slot = slot, charge = charge, at = now }
@@ -684,6 +687,7 @@ startMove = function(slot: any, charge: number?)
 	actSeq = mySeq
 	actStart = now
 	actDur = dur
+	actSlotNow = slot
 	buffered = nil
 	local first = move.hits and move.hits[1]
 	Anim.play(char, move.pose, dur, { align = first and first.t / speed or nil })

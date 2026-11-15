@@ -2906,8 +2906,14 @@ function Actions.act(player: Player, slotArg: any, seqArg: any, chargeArg: any, 
 	end
 	-- 앞 기술이 거의 끝났을 때만 다음 기술 (연타는 70%부터 이어진다)
 	local act = f.act
-	if act and t < act.start + act.dur * (type(slot) == "number" and 0.7 or 0.85) and slot ~= "C" then
-		return
+	-- 3.99.11판: 기술 (E · R · 강타 · 오의) 은 연타 동작을 SKILL_CANCEL 만큼 지나면 끊고 나간다 (예전엔 85%까지 기다렸다).
+	-- 화면과 서버의 시계 차이 (인터넷 지연) 만큼 ACT_SLACK 일찍 와도 받아 준다 (예전엔 조용히 버려져 헛손질처럼 보였다)
+	if act and slot ~= "C" then
+		local fromCombo = type(act.slot) == "number" or act.slot == "F"
+		local ratio = type(slot) == "number" and 0.7 or (fromCombo and Config.SKILL_CANCEL or 0.85)
+		if t < act.start + act.dur * ratio - Config.ACT_SLACK then
+			return
+		end
 	end
 	-- 강타(Z)는 연달아 못 쓴다 (정권 지르기 무한 연타 막기)
 	if slot == "H" then

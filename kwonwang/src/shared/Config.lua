@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.10" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.11" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -36,6 +36,8 @@ Config.BREAK_STUN = 1.6 -- 파훼되면 움직이지 못하는 시간
 Config.BROKEN_MULT = 1.6 -- 파훼된 상대에게 들어가는 피해 배율
 Config.CLASH_WINDOW = 0.12 -- 서로 이 시간 안에 치면 격돌
 Config.HIT_TOLERANCE = 4.5 -- 화면 판정을 서버가 믿어 주는 거리 여유
+Config.SKILL_CANCEL = 0.45 -- 3.99.11판: 연타 동작을 이만큼 지나면 기술로 끊는다
+Config.ACT_SLACK = 0.12 -- 3.99.11판: 서버가 받아 주는 입력의 이른 여유 (초)
 Config.COMBO_WINDOW = 0.6 -- 연타가 이어지는 시간
 Config.CHI_MAX = 100
 Config.CHI_REGEN = 5 -- 1초에 (3.68판: 2.5 → 5. 기술 둘 (E 20 · R 25) 을 대기 시간마다 쓰면 내공이 금방 바닥났다)
@@ -7192,6 +7194,41 @@ do
 	for _, def in pairs(Config.Bosses) do
 		if def.hiddenBoss and (def.hbLayer == "sky" or def.hbLayer == "hell") then
 			grow(def)
+		end
+	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.11판: 연타의 첫 타가 늦게 나가는 동작 (금강추 · 지진각 · 여동빈 … 0.3초 넘게 뜸을 들였다) 은 첫 타를 0.24초로 당기고
+-- 그만큼 동작을 줄인다 (자세는 첫 타에 맞춰 그려지므로 그대로 어울린다)
+------------------------------------------------------------------------
+do
+	local CAP = 0.24
+	local seen = {}
+	local function fix(mv: any)
+		if type(mv) ~= "table" or seen[mv] or type(mv.hits) ~= "table" or #mv.hits == 0 or not mv.dur then
+			return
+		end
+		seen[mv] = true
+		local first, last = math.huge, 0
+		for _, h in ipairs(mv.hits) do
+			first = math.min(first, h.t or 0)
+			last = math.max(last, h.t or 0)
+		end
+		if first > CAP then
+			local shift = first - CAP
+			for _, h in ipairs(mv.hits) do
+				h.t = (h.t or 0) - shift
+			end
+			mv.dur = math.max(last - shift + 0.18, mv.dur - shift)
+		end
+	end
+	for _, st in ipairs(Config.Styles) do
+		for _, mv in ipairs(st.combo or {}) do
+			fix(mv)
+		end
+		if type(st.awakenFinisher) == "table" then
+			fix(st.awakenFinisher)
 		end
 	end
 end
