@@ -3529,10 +3529,13 @@ function Rebirth.go(player: Player)
 		return
 	end
 	Train.stop(player)
-	for _, sd in ipairs(Config.Stats) do
-		p.stats[sd.id] = 0
-	end
 	p.rebirth += 1
+	-- 3.99.18판: 삼류가 아니라 RB.startRealm 의 경지에서 다시 시작 (그 경지에 막 오른 만큼의 능력치를 넷에 고루)
+	local startIdx = math.clamp((RB.startRealm and RB.startRealm[p.rebirth]) or 1, 1, Config.realmCap(p.rebirth))
+	local startNeed = Config.Realms[startIdx].need
+	for _, sd in ipairs(Config.Stats) do
+		p.stats[sd.id] = math.ceil(startNeed / #Config.Stats)
+	end
 	p.coins += RB.coins * p.rebirth
 	st.dirty = true
 	refreshFighter(player)
@@ -3540,7 +3543,7 @@ function Rebirth.go(player: Player)
 	Combat.sync(f)
 	local newRealm = Config.Realms[Config.realmCap(p.rebirth)]
 	Push:FireAllClients("rebirth", { m = f.model, n = p.rebirth, name = player.DisplayName, me = false })
-	Push:FireClient(player, "rebirthDone", { n = p.rebirth, name = RB.names[p.rebirth], realm = newRealm.name, coins = RB.coins * p.rebirth,
+	Push:FireClient(player, "rebirthDone", { n = p.rebirth, name = RB.names[p.rebirth], realm = newRealm.name, start = Config.Realms[startIdx].name, coins = RB.coins * p.rebirth,
 		power = math.floor((Config.rebirthPower(p.rebirth) - 1) * 100 + 0.5), gain = math.floor((Config.rebirthGain(p.rebirth) - 1) * 100 + 0.5),
 		perks = Config.PERK_PER_REBIRTH, points = Config.perkPoints(p.rebirth, p.samsara) - Calc.perkUsed(p) })
 	Story.check(player)

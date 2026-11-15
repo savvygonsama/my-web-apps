@@ -2844,7 +2844,7 @@ function handlers.rebirthRite(data: any)
 	Samsara.rite(data)
 end
 function handlers.rebirthDone(data: any)
-	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("삼류로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0), data.perks or 0, data.points or 0), Config.REBIRTH.colors[data.n or 1])
+	UI.banner(string.format("♻ %s 환생", data.name or ""), string.format("%s(으)로 다시 태어났다 · 피해·체력 +%d%% · 얻는 능력치 +%d%% · %s의 경지가 열렸다 · 💰 +%s · 공덕 +%d (남은 공덕 %d)", data.start or "삼류", data.power or 0, data.gain or 0, data.realm or "", Config.formatNumber(data.coins or 0), data.perks or 0, data.points or 0), Config.REBIRTH.colors[data.n or 1])
 	shake(1.2)
 end
 -- 2.9판: 윤회의 시련. 그림자가 선 자리에 검보랏빛 바퀴가 돈다

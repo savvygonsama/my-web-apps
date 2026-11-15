@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.17" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.18" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -213,6 +213,8 @@ Config.REBIRTH = {
 	power = 0.25,
 	gain = 1, -- 2.1판: 환생 한 번마다 얻는 능력치 배수 +1 (×2 · ×3 · ×4 · ×5)
 	coins = 1000000, -- 환생할 때 받는 은자 (횟수만큼)
+	-- 3.99.18판: 환생하면 삼류부터가 아니라 이 경지에서 다시 시작한다 (n번째 환생 → startRealm[n]). 낮은 경지를 다시 오르는 건 지루했다
+	startRealm = { 5, 7, 9, 10, 11, 12 }, -- 절정 · 화경 · 사경 · 생사경 · 신화경 · 천인합일
 	names = { "일환", "이환", "삼환", "사환", "오환", "육환" },
 	colors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(130, 255, 170), Color3.fromRGB(150, 170, 255), Color3.fromRGB(255, 70, 70), Color3.fromRGB(190, 110, 255), Color3.fromRGB(235, 40, 60) },
 }
@@ -4151,7 +4153,7 @@ Config.Story = {
 	{ title = "정점", text = "태초의 주먹마저 쥐었다면 들어라. 동남쪽 세상 끝 일월대에 해와 달을 두 손에 쥔 권존이 있다. 그를 넘어 일월신권을 얻어라. 그것이 권법의 정점이다.", goal = { kind = "learn", id = "ilwol", n = 1 }, reward = { coins = 500000, stats = 30000 } },
 	{ title = "환생", text = "천외천이 끝이 아니다. 환생하면 경지는 처음부터지만 몸은 더 세지고 (얻는 능력치 두 배), 천외천 너머의 경지가 하나씩 열린다. 메뉴에서 환생하라.", goal = { kind = "rebirth", n = 1 }, reward = { coins = 500000 } },
 	{ title = "윤회의 공덕", text = "환생할 때마다 공덕 둘이 쌓인다. 능력치 창의 '♻ 환생 특전'에서 공덕으로 특전(체력·피해·흡성·심공·재물운·오성·질풍)을 하나 사라. 특전은 환생해도 남고 언제든 되돌려 다시 고를 수 있다.", goal = { kind = "perk", n = 1 }, reward = { coins = 300000 } },
-	{ title = "전생의 그림자", text = "삼류에서 다시 오르다 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
+	{ title = "전생의 그림자", text = "다시 태어난 몸으로 생사경에 닿으면, 지난 삶의 네가 그림자로 나타난다. 능력치 창의 '☯ 윤회의 시련'으로 그림자를 불러 꺾어라. 넘을 때마다 공덕 하나와 천정·두루마리가 따르고 그림자가 환생 권법 하나를 남긴다 (윤회권 · 업화권 · 무상권 · 권왕신권).", goal = { kind = "samsara", n = 1 }, reward = { coins = 1000000, stats = 20000 } },
 	{ title = "초월", text = "원래 권법과 그 각성 권법을 숙련 20까지 올리고 천상에서만 나는 재료를 모으면, 숨은 초월의 사부가 시련을 내준다. 초월 권법(초) 하나를 익혀라. 초 오의(X)는 하늘이 뒤집히는 한 수다.", goal = { kind = "transcend", n = 1 }, reward = { coins = 1000000, stats = 100000 } },
 	{ title = "천층탑 백 층", text = "천층탑 백 층에 올라라. 위로 갈수록 은자와 능력치가 가파르게 붙는다.", goal = { kind = "tower", n = 100, at = Vector3.new(-185, 0, -185) }, reward = { coins = 2000000 } },
 	{ title = "혼원경", text = "환생한 몸으로 다시 올라 천외천을 넘어라. 혼원경이 열려 있다.", goal = { kind = "realm", n = 17 }, reward = { coins = 1500000, stats = 300000 } },
