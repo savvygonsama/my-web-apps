@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.11" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.12" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -10284,6 +10284,31 @@ do
 	}
 end
 
+-- 3.99.12판: 배틀그라운드 전시장의 취팔선권 마네킹이 추는 춤 (두 손을 머리 옆으로 올리고 박자에 맞춰 엉덩이를 좌우로 흔든다)
+-- 한 바퀴 = 왼쪽 · 가운데 (튀어 오름) · 오른쪽 · 가운데. 되풀이 (Anim.setLoop)
+do
+	local arms = function(tilt: number)
+		return { RS = { 155, 0, 25 + tilt }, RE = { 105, 0, 0 }, LS = { 155, 0, -25 + tilt }, LE = { 105, 0, 0 } }
+	end
+	local function key(t: number, side: number, up: number, bend: number, e: string?)
+		local j = arms(side * 6)
+		j.R = { 0, side * 10, side * 7, side * 0.38, up, 0 }
+		j.W = { 0, -side * 8, side * 9 }
+		j.N = { 0, side * 6, -side * 10 }
+		j.RH = { 0, 0, side > 0 and 6 or 0 }
+		j.LH = { 0, 0, side < 0 and -6 or 0 }
+		j.RK = { side > 0 and -bend or -6, 0, 0 }
+		j.LK = { side < 0 and -bend or -6, 0, 0 }
+		return { t = t, e = e, j = j }
+	end
+	A.dance_zerotwo = {
+		key(0, 1, -0.18, 24),
+		key(0.25, 0, 0.06, 6, "snap"),
+		key(0.5, -1, -0.18, 24),
+		key(0.75, 0, 0.06, 6, "snap"),
+		key(1, 1, -0.18, 24),
+	}
+end
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)
@@ -56028,6 +56053,7 @@ local lastState: any = nil
 local units: { any } = {}
 local spinners: { { any } } = {}
 local LOCKED = Color3.fromRGB(46, 48, 56)
+local DANCE: { [string]: string } = { chwi = "dance_zerotwo" } -- 3.99.12판: 시범 동작 대신 춤을 추는 마네킹
 local GOLD = Color3.fromRGB(255, 208, 110)
 
 local function owned(id: string): boolean
@@ -56099,6 +56125,14 @@ local function collect(hall: Instance)
 			table.insert(units, { id = id, pad = pad, padAt = padAt, label = label, grade = grade, doll = doll, next = os.clock() + math.random() * 4 })
 			if doll then
 				pcall(Anim.watch, doll)
+				-- 3.99.12판: 취팔선권 마네킹은 시범 대신 춤을 춘다
+				if DANCE[id] then
+					task.delay(1, function()
+						if doll.Parent then
+							pcall(Anim.setLoop, doll, DANCE[id], 0.95)
+						end
+					end)
+				end
 			end
 			-- 상징물 가운데 = 발판 뒤 12칸, 위 16.8칸 (StyleHall과 같은 자리)
 			local center = padAt and (padAt + Vector3.new(0, 16.8, 12)) or nil
@@ -56186,7 +56220,7 @@ function Gallery.start(o: any)
 					local d = u.doll
 					if d and d.Parent and u.padAt and (u.padAt - me.Position).Magnitude < 60 then
 						dress(u)
-						if busy < 3 and now >= u.next and not Anim.playing(d) then
+						if busy < 3 and now >= u.next and not Anim.playing(d) and not DANCE[u.id] then
 							local st = Config.STYLE_BY_ID[u.id]
 							local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
 							local slot = picks[math.random(1, #picks)]

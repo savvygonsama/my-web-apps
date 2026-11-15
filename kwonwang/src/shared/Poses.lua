@@ -3014,6 +3014,31 @@ do
 	}
 end
 
+-- 3.99.12판: 배틀그라운드 전시장의 취팔선권 마네킹이 추는 춤 (두 손을 머리 옆으로 올리고 박자에 맞춰 엉덩이를 좌우로 흔든다)
+-- 한 바퀴 = 왼쪽 · 가운데 (튀어 오름) · 오른쪽 · 가운데. 되풀이 (Anim.setLoop)
+do
+	local arms = function(tilt: number)
+		return { RS = { 155, 0, 25 + tilt }, RE = { 105, 0, 0 }, LS = { 155, 0, -25 + tilt }, LE = { 105, 0, 0 } }
+	end
+	local function key(t: number, side: number, up: number, bend: number, e: string?)
+		local j = arms(side * 6)
+		j.R = { 0, side * 10, side * 7, side * 0.38, up, 0 }
+		j.W = { 0, -side * 8, side * 9 }
+		j.N = { 0, side * 6, -side * 10 }
+		j.RH = { 0, 0, side > 0 and 6 or 0 }
+		j.LH = { 0, 0, side < 0 and -6 or 0 }
+		j.RK = { side > 0 and -bend or -6, 0, 0 }
+		j.LK = { side < 0 and -bend or -6, 0, 0 }
+		return { t = t, e = e, j = j }
+	end
+	A.dance_zerotwo = {
+		key(0, 1, -0.18, 24),
+		key(0.25, 0, 0.06, 6, "snap"),
+		key(0.5, -1, -0.18, 24),
+		key(0.75, 0, 0.06, 6, "snap"),
+		key(1, 1, -0.18, 24),
+	}
+end
 Poses.anims = A
 
 -- 이 동작에서 휘두르는 손발 (잔상을 그린다)

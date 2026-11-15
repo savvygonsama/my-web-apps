@@ -19,6 +19,7 @@ local lastState: any = nil
 local units: { any } = {}
 local spinners: { { any } } = {}
 local LOCKED = Color3.fromRGB(46, 48, 56)
+local DANCE: { [string]: string } = { chwi = "dance_zerotwo" } -- 3.99.12판: 시범 동작 대신 춤을 추는 마네킹
 local GOLD = Color3.fromRGB(255, 208, 110)
 
 local function owned(id: string): boolean
@@ -90,6 +91,14 @@ local function collect(hall: Instance)
 			table.insert(units, { id = id, pad = pad, padAt = padAt, label = label, grade = grade, doll = doll, next = os.clock() + math.random() * 4 })
 			if doll then
 				pcall(Anim.watch, doll)
+				-- 3.99.12판: 취팔선권 마네킹은 시범 대신 춤을 춘다
+				if DANCE[id] then
+					task.delay(1, function()
+						if doll.Parent then
+							pcall(Anim.setLoop, doll, DANCE[id], 0.95)
+						end
+					end)
+				end
 			end
 			-- 상징물 가운데 = 발판 뒤 12칸, 위 16.8칸 (StyleHall과 같은 자리)
 			local center = padAt and (padAt + Vector3.new(0, 16.8, 12)) or nil
@@ -177,7 +186,7 @@ function Gallery.start(o: any)
 					local d = u.doll
 					if d and d.Parent and u.padAt and (u.padAt - me.Position).Magnitude < 60 then
 						dress(u)
-						if busy < 3 and now >= u.next and not Anim.playing(d) then
+						if busy < 3 and now >= u.next and not Anim.playing(d) and not DANCE[u.id] then
 							local st = Config.STYLE_BY_ID[u.id]
 							local picks: { any } = { 1, 2, 3, 4, "H", "E", "R", "G" }
 							local slot = picks[math.random(1, #picks)]
