@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -278,6 +278,9 @@ function Config.perkMult(perks: { [string]: number }?, id: string): number
 end
 
 -- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
+-- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 허무경에 오른 뒤에도 끝없이). 능력치 합이 허무경의 growth 배가 될 때마다 별 하나,
+-- 별마다 피해 · 체력 +3% (더한다)
+Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03 }
 Config.SAMSARA = {
 	realm = 10, -- 생사경
 	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8 },
@@ -5976,6 +5979,10 @@ Config.ACHIEVEMENTS = {
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
+	-- 3.99.9판: 허무경 너머 ★
+	{ id = "star1", icon = "⭐", name = "허무 너머", desc = "허무경 너머 첫 별에 닿는다", kind = "stars", n = 1, coins = 10000000, title = "허무 너머", tier = 3 },
+	{ id = "star10", icon = "🌟", name = "열 개의 별", desc = "허무경 너머 별 열에 닿는다", kind = "stars", n = 10, coins = 50000000, scrolls = 20, title = "별을 센 자", tier = 3 },
+	{ id = "star30", icon = "💫", name = "하늘이 좁다", desc = "허무경 너머 별 서른에 닿는다", kind = "stars", n = 30, coins = 200000000, scrolls = 50, title = "하늘이 좁은 자", tier = 3 },
 	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5 },
 	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },
@@ -10694,6 +10701,8 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.mqv = 4
+	-- 3.99.9판: 허무경 너머 ★ 의 가장 높은 별 (다시 들어와도 알림을 되풀이하지 않게)
+	;(p :: any).starBest = math.floor(num(data.starBest, 1e6))
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
@@ -11018,6 +11027,22 @@ local function addStat(p: Profile, id: string, amount: number): number
 	return Calc.total(p) - before
 end
 
+-- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 마지막 경지에 오른 뒤의 별)
+function Calc.stars(p: Profile): number
+	if (p.rebirth or 0) < Config.REBIRTH.max then
+		return 0
+	end
+	local idx = Calc.realm(p)
+	if idx < #Config.Realms then
+		return 0
+	end
+	local need = Config.Realms[#Config.Realms].need
+	local t = Calc.total(p)
+	if need <= 0 or t < need * Config.STAR.growth then
+		return 0
+	end
+	return math.floor(math.log(t / need) / math.log(Config.STAR.growth) + 1e-9)
+end
 -- 2.9판: 지금 도전할 수 있는 윤회의 시련 (없으면 nil). n번째 환생 뒤 생사경에 오르면 n번째가 열린다
 function Calc.samsaraNext(p: Profile): number?
 	local n = (p.samsara or 0) + 1
@@ -11418,6 +11443,8 @@ function Ach.value(p: Profile, a: any): number
 	-- 3.13판
 	elseif k == "samsara" then
 		return p.samsara or 0
+	elseif k == "stars" then
+		return Calc.stars(p)
 	elseif k == "story" then
 		return p.story or 0
 	elseif k == "rebirthStyles" or k == "gear" then
@@ -11528,7 +11555,8 @@ local function pushState(player: Player)
 		stats = p.stats,
 		total = Calc.total(p),
 		realm = idx,
-		realmName = realm.name,
+		realmName = realm.name .. ((Calc.stars(p) > 0) and (" ★" .. Calc.stars(p)) or ""),
+		stars = Calc.stars(p),
 		pillN = (p.pillRealm == idx) and p.pillN or 0, -- 3.95판: 이 경지에서 산 대환단
 		styles = owned,
 		style = p.style,
@@ -11739,12 +11767,13 @@ local function refreshFighter(player: Player)
 	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
+	local starK = Calc.stars(p) -- 3.99.9판 허무경 너머 ★
+	f.dmgMult = (1 + Config.STAR.dmg * starK) * Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * gradeHp * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * gradeHp * (1 + mb.hp) * rb * Calc.perk(p, "hp") * (1 + Config.STAR.hp * starK))
 	-- 3.23.8판: 체력 쪽으로 옮긴다 (전투력은 그대로: 공격 ÷S, 체력 ×S)
 	do
 		local S = Config.PLAYER_HP_SHIFT
@@ -12149,6 +12178,19 @@ end
 -- 경지·권법 수처럼 저절로 이뤄지는 목표를 다시 본다
 function Story.check(player: Player)
 	Story.event(player, "check")
+	-- 3.99.9판: 허무경 너머 ★ 가 늘었나
+	local sp = profiles[player]
+	if sp and not BATTLE then
+		local sk = Calc.stars(sp)
+		if sk > ((sp :: any).starBest or 0) then
+			(sp :: any).starBest = sk
+			states[player].dirty = true
+			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[#Config.Realms].name .. " ★" .. sk })
+			toast(player, string.format("⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%", sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
+			refreshFighter(player)
+			pushState(player)
+		end
+	end
 end
 
 -- 3.27판 신 삼재권: 극 권법 셋을 얻은 몸으로 청운 장로를 찾으면 마지막 가르침(컷씬)을 받는다
@@ -63765,6 +63807,15 @@ return {
 	["👁 허무마 · 아무것도 아닌 것"] = "👁 Nihil Demon · That Which Is Nothing",
 	["광속귀 · 빛을 앞지른 자"] = "Lightspeed Ghost · One Who Outran Light",
 	["👁 광속귀 · 빛을 앞지른 자"] = "👁 Lightspeed Ghost · One Who Outran Light",
+	["⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%"] = "⭐ Star %d beyond the Void Realm · damage · HP +%d%%",
+	["허무 너머"] = "Beyond the Void",
+	["허무경 너머 첫 별에 닿는다"] = "Reach the first star beyond the Void Realm",
+	["열 개의 별"] = "Ten Stars",
+	["허무경 너머 별 열에 닿는다"] = "Reach ten stars beyond the Void Realm",
+	["별을 센 자"] = "Star Counter",
+	["하늘이 좁다"] = "The Sky Is Too Small",
+	["허무경 너머 별 서른에 닿는다"] = "Reach thirty stars beyond the Void Realm",
+	["하늘이 좁은 자"] = "One for Whom the Sky Is Too Small",
 }
 ]]></string>
           </Properties>

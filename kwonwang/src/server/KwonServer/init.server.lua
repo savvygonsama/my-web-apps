@@ -368,6 +368,8 @@ local function sanitize(data: any): Profile
 		end
 	end
 	p.mqv = 4
+	-- 3.99.9판: 허무경 너머 ★ 의 가장 높은 별 (다시 들어와도 알림을 되풀이하지 않게)
+	;(p :: any).starBest = math.floor(num(data.starBest, 1e6))
 	-- 3.38.2판: 금룡이 빠졌다. 없어진 탈것은 기록에서 지우고 골라 둔 것이 없어졌으면 말로
 	for id in pairs(p.mounts) do
 		if not Config.MOUNT_BY_ID[id] then
@@ -692,6 +694,22 @@ local function addStat(p: Profile, id: string, amount: number): number
 	return Calc.total(p) - before
 end
 
+-- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 마지막 경지에 오른 뒤의 별)
+function Calc.stars(p: Profile): number
+	if (p.rebirth or 0) < Config.REBIRTH.max then
+		return 0
+	end
+	local idx = Calc.realm(p)
+	if idx < #Config.Realms then
+		return 0
+	end
+	local need = Config.Realms[#Config.Realms].need
+	local t = Calc.total(p)
+	if need <= 0 or t < need * Config.STAR.growth then
+		return 0
+	end
+	return math.floor(math.log(t / need) / math.log(Config.STAR.growth) + 1e-9)
+end
 -- 2.9판: 지금 도전할 수 있는 윤회의 시련 (없으면 nil). n번째 환생 뒤 생사경에 오르면 n번째가 열린다
 function Calc.samsaraNext(p: Profile): number?
 	local n = (p.samsara or 0) + 1
@@ -1092,6 +1110,8 @@ function Ach.value(p: Profile, a: any): number
 	-- 3.13판
 	elseif k == "samsara" then
 		return p.samsara or 0
+	elseif k == "stars" then
+		return Calc.stars(p)
 	elseif k == "story" then
 		return p.story or 0
 	elseif k == "rebirthStyles" or k == "gear" then
@@ -1202,7 +1222,8 @@ local function pushState(player: Player)
 		stats = p.stats,
 		total = Calc.total(p),
 		realm = idx,
-		realmName = realm.name,
+		realmName = realm.name .. ((Calc.stars(p) > 0) and (" ★" .. Calc.stars(p)) or ""),
+		stars = Calc.stars(p),
 		pillN = (p.pillRealm == idx) and p.pillN or 0, -- 3.95판: 이 경지에서 산 대환단
 		styles = owned,
 		style = p.style,
@@ -1413,12 +1434,13 @@ local function refreshFighter(player: Player)
 	f.model:SetAttribute("Enh", (styleDef and styleDef.enh) and upArg or nil)
 	local mb = Calc.manualBonus(p)
 	local rb = Config.rebirthPower(p.rebirth)
-	f.dmgMult = Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
+	local starK = Calc.stars(p) -- 3.99.9판 허무경 너머 ★
+	f.dmgMult = (1 + Config.STAR.dmg * starK) * Config.statMult(p.stats.str) * Config.masteryDmg(m) * Config.realmDmg(idx) * grade * (1 + mb.dmg) * (p.skyBuffUntil > os.time() and 1.15 or 1) * Config.lateAtk(idx) * Config.rebirthDmg(p.rebirth) * Calc.perk(p, "dmg")
 	f.skillMult = math.sqrt(Config.statMult(p.stats.chi))
 	local fm = f :: any
 	fm.mDef, fm.mSteal, fm.mChi, fm.mCd, fm.mUlt = mb.def, mb.steal, mb.chi, mb.cd, mb.ult
 	local oldMax = f.maxHp
-	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * gradeHp * (1 + mb.hp) * rb * Calc.perk(p, "hp"))
+	f.maxHp = math.floor(Config.maxHp(p.stats.vit) * Config.realmHp(idx) * gradeHp * (1 + mb.hp) * rb * Calc.perk(p, "hp") * (1 + Config.STAR.hp * starK))
 	-- 3.23.8판: 체력 쪽으로 옮긴다 (전투력은 그대로: 공격 ÷S, 체력 ×S)
 	do
 		local S = Config.PLAYER_HP_SHIFT
@@ -1823,6 +1845,19 @@ end
 -- 경지·권법 수처럼 저절로 이뤄지는 목표를 다시 본다
 function Story.check(player: Player)
 	Story.event(player, "check")
+	-- 3.99.9판: 허무경 너머 ★ 가 늘었나
+	local sp = profiles[player]
+	if sp and not BATTLE then
+		local sk = Calc.stars(sp)
+		if sk > ((sp :: any).starBest or 0) then
+			(sp :: any).starBest = sk
+			states[player].dirty = true
+			Push:FireAllClients("realm", { name = player.DisplayName, realm = Config.Realms[#Config.Realms].name .. " ★" .. sk })
+			toast(player, string.format("⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%", sk, math.floor(Config.STAR.dmg * sk * 100 + 0.5)))
+			refreshFighter(player)
+			pushState(player)
+		end
+	end
 end
 
 -- 3.27판 신 삼재권: 극 권법 셋을 얻은 몸으로 청운 장로를 찾으면 마지막 가르침(컷씬)을 받는다

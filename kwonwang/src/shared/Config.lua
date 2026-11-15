@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.8" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.9" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -258,6 +258,9 @@ function Config.perkMult(perks: { [string]: number }?, id: string): number
 end
 
 -- 윤회의 시련: n번째 환생 뒤 생사경에 다시 오르면 n번째 시련이 열린다. 전생의 그림자는 지금 내 힘보다 조금 세다
+-- 3.99.9판: 허무경 너머 ★ (환생을 모두 마치고 허무경에 오른 뒤에도 끝없이). 능력치 합이 허무경의 growth 배가 될 때마다 별 하나,
+-- 별마다 피해 · 체력 +3% (더한다)
+Config.STAR = { growth = 1.2, dmg = 0.03, hp = 0.03 }
 Config.SAMSARA = {
 	realm = 10, -- 생사경
 	power = { 1.15, 1.25, 1.35, 1.5, 1.65, 1.8 },
@@ -5956,6 +5959,10 @@ Config.ACHIEVEMENTS = {
 	{ id = "raid100", icon = "☄", name = "재앙의 끝", desc = "천상 레이드를 100번 이긴다", kind = "raid", n = 100, gems = 15000, scrolls = 30, title = "재앙의 끝", tier = 5, mount = "rainbowcloud" },
 	{ id = "maze100", icon = "🌀", name = "구름의 왕", desc = "구름 미궁을 100번 끝까지 간다", kind = "maze", n = 100, gems = 6000, scrolls = 20, title = "구름의 왕", tier = 5, mount = "rainbowcloud" },
 	{ id = "sm1", icon = "🔱", name = "시련을 넘다", desc = "윤회의 시련을 한 번 넘는다", kind = "samsara", n = 1, coins = 5000000, title = "시련을 넘은 자", tier = 3 },
+	-- 3.99.9판: 허무경 너머 ★
+	{ id = "star1", icon = "⭐", name = "허무 너머", desc = "허무경 너머 첫 별에 닿는다", kind = "stars", n = 1, coins = 10000000, title = "허무 너머", tier = 3 },
+	{ id = "star10", icon = "🌟", name = "열 개의 별", desc = "허무경 너머 별 열에 닿는다", kind = "stars", n = 10, coins = 50000000, scrolls = 20, title = "별을 센 자", tier = 3 },
+	{ id = "star30", icon = "💫", name = "하늘이 좁다", desc = "허무경 너머 별 서른에 닿는다", kind = "stars", n = 30, coins = 200000000, scrolls = 50, title = "하늘이 좁은 자", tier = 3 },
 	{ id = "sm3", icon = "🔱", name = "윤회를 끊다", desc = "윤회의 시련을 세 번 넘는다", kind = "samsara", n = 3, coins = 40000000, scrolls = 30, title = "윤회를 끊은 자", tier = 5 },
 	{ id = "st20", icon = "📖", name = "강호 입문", desc = "이야기 20장까지 나아간다", kind = "story", n = 20, coins = 50000, tier = 1 },
 	{ id = "stAll", icon = "📖", name = "강호를 걸어온 자", desc = "이야기의 마지막 장까지 나아간다", kind = "story", n = #Config.Story, coins = 20000000, scrolls = 20, title = "강호를 걸어온 자", tier = 4 },

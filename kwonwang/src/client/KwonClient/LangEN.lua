@@ -4671,4 +4671,13 @@ return {
 	["👁 허무마 · 아무것도 아닌 것"] = "👁 Nihil Demon · That Which Is Nothing",
 	["광속귀 · 빛을 앞지른 자"] = "Lightspeed Ghost · One Who Outran Light",
 	["👁 광속귀 · 빛을 앞지른 자"] = "👁 Lightspeed Ghost · One Who Outran Light",
+	["⭐ 허무경 너머 별 %d · 피해 · 체력 +%d%%"] = "⭐ Star %d beyond the Void Realm · damage · HP +%d%%",
+	["허무 너머"] = "Beyond the Void",
+	["허무경 너머 첫 별에 닿는다"] = "Reach the first star beyond the Void Realm",
+	["열 개의 별"] = "Ten Stars",
+	["허무경 너머 별 열에 닿는다"] = "Reach ten stars beyond the Void Realm",
+	["별을 센 자"] = "Star Counter",
+	["하늘이 좁다"] = "The Sky Is Too Small",
+	["허무경 너머 별 서른에 닿는다"] = "Reach thirty stars beyond the Void Realm",
+	["하늘이 좁은 자"] = "One for Whom the Sky Is Too Small",
 }
