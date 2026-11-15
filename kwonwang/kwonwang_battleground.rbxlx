@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.15" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.16" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -35736,7 +35736,8 @@ local function testRoom(out: any)
 		out.challengeStart = prompt(pil, "데미지 챌린지 시작 (20초)", "데미지 챌린지", "ChallengeStart")
 		local board = part({ Name = "ChallengeBoard", Size = Vector3.new(20, 12, 0.5), CFrame = CFrame.lookAt(cc + Vector3.new(18, 8, 18), cc + Vector3.new(18, 8, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 		for _, sx in ipairs({ -1, 1 }) do
-			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 14, 0.7), Position = cc + Vector3.new(18 + sx * 9, 7, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+			-- 3.99.16판: 기둥이 판 앞 (글자 쪽) 에 박혀 글자를 가로질렀다. 판 뒤 바깥 끝으로, 판 윗변보다 조금 낮게
+			part({ Name = "ChallengeBoardPost", Size = Vector3.new(0.7, 13.4, 0.7), Position = cc + Vector3.new(18 + sx * 10.2, 6.7, 17.5), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		end
 		local gui = Instance.new("SurfaceGui")
 		gui.Face = Enum.NormalId.Front
@@ -35760,7 +35761,7 @@ local function testRoom(out: any)
 		local cb = part({ Name = "ChallengeSign", Size = Vector3.new(18, 4, 0.4), CFrame = CFrame.lookAt(cc + Vector3.new(-14, 6, 18), cc + Vector3.new(-14, 6, 28)), Color = Color3.fromRGB(46, 34, 30), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 		sign(cb, Enum.NormalId.Front, { { "🎯 데미지 챌린지", Color3.fromRGB(255, 200, 150), 0.55 }, { "기둥에서 시작 · 3초 뒤 20초 동안 목인에게 준 피해를 모두 센다", Color3.fromRGB(240, 230, 220), 0.32 } })
 		for _, sx in ipairs({ -1, 1 }) do
-			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 6, 0.6), Position = cc + Vector3.new(-14 + sx * 8, 3, 18.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
+			part({ Name = "ChallengeSignPost", Size = Vector3.new(0.6, 7.6, 0.6), Position = cc + Vector3.new(-14 + sx * 9.2, 3.8, 17.6), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		end
 	end
 	-- 들어오는 자리와 돌아가는 문
