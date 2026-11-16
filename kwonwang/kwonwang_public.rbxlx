@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.21" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.22" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4862,7 +4862,7 @@ Config.MOUNTS = {
 	{ id = "horse", name = "갈색 말", icon = "🐎", kind = "horse", speed = 2.0, cost = 0, color = Color3.fromRGB(130, 85, 50), mane = Color3.fromRGB(50, 35, 25), desc = "누구나 처음부터 가진 말" },
 	{ id = "blackhorse", name = "흑룡마", icon = "🐴", kind = "horse", speed = 2.25, cost = 60000, color = Color3.fromRGB(28, 24, 28), mane = Color3.fromRGB(160, 25, 30), desc = "붉은 갈기의 검은 준마" },
 	{ id = "tiger", name = "백호", icon = "🐅", kind = "tiger", speed = 2.5, cost = 400000, color = Color3.fromRGB(236, 234, 228), mane = Color3.fromRGB(30, 30, 36), desc = "흰 범. 땅을 박차고 달린다" },
-	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
+	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.6, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
 	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 	-- 3.14판: 신화 업적 전용 탈것 (살 수 없다. 그 갈래의 신화 업적을 이루면 저절로 얻는다). 모두 날개구름보다 빠르다 (3.38.2판: 금룡을 없앴다. 가장 빠른 탈것은 청룡)
 	{ id = "hyeolyeom", name = "혈염마", icon = "🐎", kind = "horse", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "flame",
@@ -5018,7 +5018,7 @@ Config.Premium = {
 	{ id = "bag", gamepass = 0, price = 99, icon = "🎒", name = "가방 확장", tag = "영구",
 		lines = { "금창약을 5개 → 10개까지 들 수 있다", "마을 상점에서 한 번에 채우기가 편해진다", "큰 싸움 (보스·레이드) 에서 버틸 수 있는 횟수가 두 배" } },
 	{ id = "dragon", gamepass = 2058382534, price = 399, icon = "🐉", name = "청룡 탈것", tag = "탈것",
-		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.1)", "금빛 뿔과 수염, 몸을 따라 흐르는 금빛 가루" } },
+		lines = { "비늘이 빛나는 청룡을 타고 하늘을 헤엄치듯 달린다", "모든 탈것 중 가장 빠르다 (×3.6)", "금빛 물결 · 몸을 타고 튀는 번개 · 포효하면 하늘에서 벼락" } },
 	-- 3.37판 출시 게임패스 셋 (gamepass 번호는 로블록스 사이트에서 만든 뒤 채운다. 0이면 상점에 '준비 중'으로 뜬다)
 	{ id = "kill2x", gamepass = 0, price = 199, icon = "🗡", name = "두 배 처치", tag = "영구",
 		lines = { "적을 쓰러뜨려 오르는 능력치가 영원히 두 배", "졸병·정예·보스·천층탑 모두", "두 배 수련과 겹친다 (수련은 수련, 처치는 처치)" } },
@@ -64099,6 +64099,8 @@ return {
 	["%s 쓰러짐"] = "%s is down",
 	["%s 우승 (%d)"] = "%s wins (%d)",
 	["  ·  %d연속"] = "·  streak %d",
+	["모든 탈것 중 가장 빠르다 (×3.6)"] = "The fastest of all mounts (×3.6)",
+	["금빛 물결 · 몸을 타고 튀는 번개 · 포효하면 하늘에서 벼락"] = "Rippling gold light · lightning across its body · a thunderbolt from the sky when it roars",
 }
 ]]></string>
           </Properties>

@@ -4717,4 +4717,6 @@ return {
 	["%s 쓰러짐"] = "%s is down",
 	["%s 우승 (%d)"] = "%s wins (%d)",
 	["  ·  %d연속"] = "·  streak %d",
+	["모든 탈것 중 가장 빠르다 (×3.6)"] = "The fastest of all mounts (×3.6)",
+	["금빛 물결 · 몸을 타고 튀는 번개 · 포효하면 하늘에서 벼락"] = "Rippling gold light · lightning across its body · a thunderbolt from the sky when it roars",
 }
