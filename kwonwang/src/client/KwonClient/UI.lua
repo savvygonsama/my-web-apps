@@ -2801,7 +2801,7 @@ function UIB.buildTest()
 	section("💎 상품 (테스트로 켜기)", {
 		{ "💎 두 배 수련", "testPremium", "train2x" }, { "🤖 자동 수련", "testPremium", "autoTrain" }, { "⚙ 고급 자동 수련", "testPremium", "autoTrain2" }, { "💰 은자 두 배", "testPremium", "coin2x" }, { "🎒 가방 확장", "testPremium", "bag" },
 		{ "🐉 청룡 탈것", "testPremium", "dragon" }, { "🦊 구미호권", "testPremium", "gumiho" }, { "🗡 흑염마검장", "testPremium", "heukyeom" },
-		{ "🐲 흑룡", "testPremium", "heukryong" }, { "📜 심법 넷째 칸", "testPremium", "slot4" },
+		{ "📜 심법 넷째 칸", "testPremium", "slot4" },
 	})
 	-- 3.41판 게임패스 권법 강화 (지금 든 권법)
 	section("🔺 게임패스 권법 강화", {

@@ -7034,11 +7034,6 @@ function Premium.grant(player: Player, id: string)
 		p.mountSel = "dragon"
 		toast(player, "🐉 청룡을 얻었어요! V로 타기")
 	end
-	-- 3.40판 흑룡: 사면 바로 고른다 (들어올 때 다시 확인될 때는 고른 것을 바꾸지 않는다)
-	if p and id == "heukryong" and (states[player] :: any).premiumLoaded then
-		p.mountSel = "heukryong"
-		toast(player, "🐲 흑룡을 얻었어요! V로 타기")
-	end
 	pushState(player)
 end
 

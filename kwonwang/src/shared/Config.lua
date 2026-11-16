@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.19" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.20" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4845,10 +4845,6 @@ Config.MOUNTS = {
 	{ id = "dragon", name = "청룡", icon = "🐉", kind = "dragon", speed = 3.1, cost = 0, premium = "dragon", color = Color3.fromRGB(40, 150, 130), mane = Color3.fromRGB(255, 210, 90), desc = "💎 로벅스 상품. 하늘을 헤엄치는 비늘 용. 가장 빠르다" },
 	{ id = "cloud", name = "날개구름", icon = "☁", kind = "cloud", speed = 2.75, cost = 1500000, gemsOnly = true, color = Color3.fromRGB(250, 250, 255), mane = Color3.fromRGB(255, 215, 140), desc = "구름을 타고 미끄러진다. 청룡 다음으로 빠르다" },
 	-- 3.14판: 신화 업적 전용 탈것 (살 수 없다. 그 갈래의 신화 업적을 이루면 저절로 얻는다). 모두 날개구름보다 빠르다 (3.38.2판: 금룡을 없앴다. 가장 빠른 탈것은 청룡)
-	-- 3.40판 꾸미기 게임패스 탈것 (청룡보다 느리다)
-	{ id = "heukryong", name = "흑룡", icon = "🐲", kind = "dragon", speed = 3.0, cost = 0, premium = "heukryong", mythic = true, fx = "flame",
-		color = Color3.fromRGB(30, 26, 34), mane = Color3.fromRGB(220, 40, 40), deep = Color3.fromRGB(14, 12, 18), belly = Color3.fromRGB(90, 30, 30), sheen = Color3.fromRGB(255, 90, 60), spirit = Color3.fromRGB(255, 70, 40), glow = Color3.fromRGB(255, 110, 60),
-		desc = "💎 로벅스 상품. 검은 비늘에 붉은 불길이 타오르는 용 (청룡 다음으로 빠르다)" },
 	{ id = "hyeolyeom", name = "혈염마", icon = "🐎", kind = "horse", speed = 3.0, cost = 0, achOnly = true, mythic = true, fx = "flame",
 		color = Color3.fromRGB(22, 14, 16), mane = Color3.fromRGB(255, 70, 36), glow = Color3.fromRGB(255, 80, 40),
 		desc = "칠흑의 몸에 불타는 갈기. 발굽마다 핏빛 불꽃이 인다 (전투 신화 업적: 천하무적 · 보스의 악몽)" },
@@ -5013,9 +5009,6 @@ Config.Premium = {
 	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' 같은 것)
 	{ id = "slot4", gamepass = 0, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
-	-- 3.40판 꾸미기 게임패스: 생김새만 특별한 탈것 (힘은 오르지 않는다)
-	{ id = "heukryong", gamepass = 0, price = 999, icon = "🐲", name = "흑룡 탈것", tag = "탈것",
-		lines = { "검은 비늘에 붉은 불길이 타오르는 흑룡", "청룡 다음으로 빠르다 (×3.0, 가장 빠른 건 그대로 청룡)", "흑룡만의 불꽃 기운이 몸을 따라 흐른다" } },
 	-- 3.41판 게임패스 권법 둘 (강화로 키운다)
 	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
 		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
