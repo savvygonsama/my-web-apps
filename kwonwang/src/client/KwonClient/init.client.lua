@@ -2282,6 +2282,19 @@ function handlers.breakthrough(data: any)
 	Fx.sound("ping", 1, 0.7)
 end
 
+-- 3.99.23판 권법 제작소: 벼린 순간 단로에서 불기둥이 솟는다
+function handlers.forged(data: any)
+	local st = Config.STYLE_BY_ID[data.style or ""]
+	if not st then
+		return
+	end
+	local at = Config.FORGE_AT + Vector3.new(0, 11, 0)
+	pcall(Fx.blast, at, st.color, st.color2, 1.6)
+	pcall(Fx.lightning, at + Vector3.new(0, 60, 0), at, st.color2, 0.8)
+	pcall(Fx.burst, "spark", at, Color3.fromRGB(255, 200, 90), 30, 1.6)
+	shake(0.8)
+end
+
 -- 권법마다 다른 기술 장치의 연출
 local ultsReady = false
 function handlers.skillfx(data: any)

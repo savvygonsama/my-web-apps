@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.22" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.23" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4089,6 +4089,7 @@ Config.Fragments = {
 }
 
 Config.INN_AT = Vector3.new(82, 0, 40)
+Config.FORGE_AT = Vector3.new(-170, 0, 172) -- 3.99.23판 권법 제작소 (마을 남서쪽 모퉁이)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
@@ -7267,6 +7268,138 @@ do
 			end
 		end
 	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다 (신화 · 권왕 · 신 하나씩)
+--   세 사부의 기술을 한 몸에 녹인 권법. 기술은 원래 것의 동작 그대로 (연출도 원래 권법의 것: visStyle)
+--   세기는 그 등급에 맞춘다 (낮은 등급에서 빌린 기술은 등급 차이만큼 줄인다)
+------------------------------------------------------------------------
+do
+	local function scaleHits(t: any, k: number)
+		if type(t) ~= "table" then
+			return
+		end
+		if type(t.dmg) == "number" then
+			t.dmg *= k
+		end
+		for _, v in pairs(t) do
+			if type(v) == "table" then
+				scaleHits(v, k)
+			end
+		end
+	end
+	local BASE_KEYS = { "stance", "deflect", "speed", "postureMult", "cdMult", "dashCd", "dashCharges", "armorWhileAttacking", "dodgeChance", "kbMult", "burn", "burnBurst" }
+	-- def.base = 연타 · 강타 · 몸놀림을 가져올 권법, def.take = { 칸 = { 권법, 칸, 이름, 설명 } }, def.names = 연타 넷과 강타 이름
+	local function forge(def: any): any
+		local base = Config.STYLE_BY_ID[def.base]
+		local st: any = {
+			id = def.id, name = def.name, hanja = def.hanja, icon = def.icon, color = def.color, color2 = def.color2, fx = def.fx,
+			grade = def.grade, keepGrade = true, hidden = true, forge = true, desc = def.desc, gimmick = def.gimmick, unlockHint = def.unlockHint,
+		}
+		st.rank = OLD_RANK[def.grade] or 1
+		for _, k in ipairs(BASE_KEYS) do
+			if base[k] ~= nil then
+				st[k] = deepCopy(base[k])
+			end
+		end
+		st.combo = deepCopy(base.combo)
+		st.heavy = deepCopy(base.heavy)
+		for i, mv in ipairs(st.combo) do
+			mv.name = def.names[i] or mv.name
+		end
+		st.heavy.name = def.names[5] or st.heavy.name
+		if base.finisher then
+			st.finisher = deepCopy(base.finisher)
+			st.finisher.name = def.finisher or st.finisher.name
+		end
+		if def.pulse then
+			local ps = Config.STYLE_BY_ID[def.pulse]
+			st.pulse = ps and deepCopy(ps.pulse) or nil
+		end
+		st.skills = {}
+		for slot, t in pairs(def.take) do
+			local src = Config.STYLE_BY_ID[t[1]]
+			local mv = deepCopy(src.skills[t[2]])
+			local g0 = Config.GRADES[src.grade] or 1
+			local g1 = Config.GRADES[def.grade] or 1
+			if g0 < g1 then
+				scaleHits(mv, g0 / g1)
+			end
+			mv.name = t[3]
+			mv.desc = t[4]
+			mv.visStyle = src.id
+			st.skills[slot] = mv
+		end
+		table.insert(Config.Styles, st)
+		st.index = #Config.Styles
+		Config.STYLE_BY_ID[st.id] = st
+		return st
+	end
+
+	forge({
+		id = "samwon", name = "삼원혼천권", hanja = "三元混天拳", icon = "🌀", grade = "신화", fx = "fire",
+		color = Color3.fromRGB(255, 120, 60), color2 = Color3.fromRGB(130, 220, 255),
+		desc = "불의 주먹에 물과 벼락을 함께 실은 권법. 세 사부의 무공을 한 화로에 녹여 다시 벼렸다. 주먹은 불로 태우고, 물로 띄우고, 벼락으로 묶는다.",
+		gimmick = "업화: 맞힌 적이 4초 동안 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. E는 벼락, R은 물, 오의는 벼락 그물",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (한 번 환생한 몸으로)",
+		base = "yeolhwa2",
+		names = { "혼천장", "역화조", "삼원선풍", "혼원권", "삼원폭추" },
+		finisher = "삼원승천권",
+		take = {
+			E = { "byeokryeok2", "R", "뇌화포", "주먹에 불과 벼락을 함께 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고 지나간 줄이 1.2초 동안 지진다" },
+			R = { "taeheo2", "R", "열수천", "가까운 적 여섯의 발밑에서 차례로 끓는 물기둥이 솟아 하늘로 쳐올린다" },
+			G = { "byeokryeok2", "G", "삼원천망", "둘레의 적 열을 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고 마지막에 적마다 천뢰가 떨어진다" },
+		},
+	})
+	forge({
+		id = "guryong", name = "구룡패천권", hanja = "九龍覇天拳", icon = "🐲", grade = "권왕", fx = "dragon",
+		color = Color3.fromRGB(255, 200, 70), color2 = Color3.fromRGB(255, 90, 60),
+		desc = "천하를 쥔 패왕의 주먹에 아홉 용을 깃들였다. 덮치고 뛰어내려 누르고, 끝에는 하늘에서 용이 내려온다.",
+		gimmick = "용의 이빨: 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다. 패왕의 몸놀림으로 공격의 10%를 비켜 간다. 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (세 번 환생한 몸으로)",
+		base = "cheonha",
+		pulse = "chocheonryong",
+		names = { "용권", "패룡권", "승룡패천", "구룡일격", "항룡패추" },
+		finisher = "구룡승천권",
+		take = {
+			E = { "sashin", "E", "비룡질주", "용의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 발톱 자국이 줄줄이 터진다" },
+			R = { "kwonwangsin", "R", "용왕강림", "발밑에서 앞으로 붉은 길이 깔리고 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 금빛 가시 여덟이 솟고 안으로 무너지며 터진다" },
+			G = { "chocheonryong", "G", "구룡패천", "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다" },
+			X = { "chocheonryong", "X", "구룡멸세", "초 오의. 하늘이 갈라지며 산만 한 황금 용이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다" },
+		},
+	})
+	forge({
+		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "subspace",
+		color = Color3.fromRGB(170, 120, 255), color2 = Color3.fromRGB(255, 240, 200),
+		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 몸으로 싸우는 신의 권법에 공간을 베는 좌표, 해와 달의 걸음, 빛보다 빠른 질주를 녹여 넣었다.",
+		gimmick = "삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)",
+		base = "sinsamjae",
+		pulse = "sinsamjae",
+		names = { "개천 팔꿈치", "혼돈 쓸어차기", "천지 무릎", "개벽 진각", "혼돈 철산고" },
+		finisher = "혼돈승천권",
+		take = {
+			E = { "geuknull", "E", "혼돈선", "앞의 허공에 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고 다시 붙으며 한 번 더 벤다" },
+			R = { "geukilwol", "R", "일월환영보", "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다" },
+			G = { "geukspeed", "G", "유성개천", "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다" },
+			X = { "sinsamjae", "X", "혼돈개벽", "초 오의 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)" },
+		},
+	})
+end
+
+-- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)
+Config.FORGE = {
+	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
+	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
+	{ style = "hondon", rebirth = 6, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+}
+Config.FORGE_BY_STYLE = {}
+for _, r in ipairs(Config.FORGE) do
+	Config.FORGE_BY_STYLE[r.style] = r
+end
+function Config.forgeCoins(r: any, realmIdx: number): number
+	return r.coinShares * Config.productCoins(realmIdx)
 end
 
 return Config
@@ -13620,6 +13753,61 @@ function Actions.potion(player: Player)
 	pushState(player)
 end
 
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다
+function Actions.forge(player: Player, id: any)
+	local p = profiles[player]
+	local r = type(id) == "string" and Config.FORGE_BY_STYLE[id]
+	local style = r and Config.STYLE_BY_ID[r.style]
+	if not p or not r or not style then
+		return
+	end
+	if p.styles[style.id] then
+		toast(player, "⚒ " .. style.name .. "은(는) 이미 익혔어요")
+		return
+	end
+	local f0 = Combat.fighterOfPlayer(player)
+	local pos = f0 and f0.root.Position
+	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
+		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		return
+	end
+	if (p.rebirth or 0) < r.rebirth then
+		toast(player, string.format("⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)", style.name, r.rebirth, p.rebirth or 0))
+		return
+	end
+	local idx = Calc.realm(p)
+	local coins = Config.forgeCoins(r, idx)
+	local miss = {}
+	if (p.shards or 0) < r.shards then
+		table.insert(miss, string.format("🧩 비급 조각 %d/%d", p.shards or 0, r.shards))
+	end
+	if (p.skyGems or 0) < r.gems then
+		table.insert(miss, string.format("💠 천정 %s/%s", Config.formatNumber(p.skyGems or 0), Config.formatNumber(r.gems)))
+	end
+	for _, M in ipairs(Config.SKY_MATS) do
+		local need = r.mats[M.id]
+		if need and (p.mats[M.id] or 0) < need then
+			table.insert(miss, string.format("%s %s %d/%d", M.icon, M.name, p.mats[M.id] or 0, need))
+		end
+	end
+	if p.coins < coins then
+		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
+	end
+	if #miss > 0 then
+		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		return
+	end
+	p.shards = (p.shards or 0) - r.shards
+	p.skyGems -= r.gems
+	for mid, n in pairs(r.mats) do
+		p.mats[mid] = (p.mats[mid] or 0) - n
+	end
+	p.coins -= coins
+	grantStyle(player, style.id, true)
+	Push:FireClient(player, "forged", { style = style.id })
+	pushState(player)
+end
+
 -- 권법 배우기 (처음 하나는 공짜) / 바꾸기
 function Actions.learn(player: Player, id: any)
 	local p, st = profiles[player], states[player]
@@ -16172,6 +16360,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Combat.mount(f, m.id)
 		end
 		pushState(player)
+	elseif action == "forge" then
+		Actions.forge(player, a1)
 	elseif action == "skyBuy" then
 		-- 천상 상점 (천정으로)
 		local it = type(a1) == "string" and Config.SKY_SHOP_BY_ID[a1]
@@ -16416,6 +16606,11 @@ if W.awaken then
 		local AM = Config.AWAKEN_MASTER
 		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "‘" .. AM.quote .. "’", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
 		Push:FireClient(player, "open", { page = "styles" })
+	end)
+end
+if W.forge then
+	W.forge.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "forge" })
 	end)
 end
 if W.shop then
@@ -25640,7 +25835,8 @@ function Skills.run(f: any, move: any, ctx: any)
 	local isUlt = tail == "G" or tail == "X"
 	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1) * (tail == "X" and Config.SUPER_ULT_MULT or 1)
 	local look = flat(Combat.look(f))
-	local style = f.style
+	-- 3.99.23판: 제작소 권법이 빌려 온 기술은 원래 권법의 연출로 보인다
+	local style = move.visStyle or f.style
 	local function alive(): boolean
 		return not f.dead and f.root.Parent ~= nil
 	end
@@ -32097,6 +32293,132 @@ local function village(out: any)
 	local shopSign = part({ Name = "ShopSign", Size = Vector3.new(12, 3, 0.4), Position = Vector3.new(-75, 7, 21.2), Color = Color3.fromRGB(30, 20, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
+
+	-- 3.99.23판 권법 제작소 (마을 남서쪽 모퉁이): 붉은 기둥 정자 아래 청동 단로, 모루 둘, 뒤편에 세 권법의 좌대
+	do
+		local at = Config.FORGE_AT
+		local toC = Vector3.new(-at.X, 0, -at.Z).Unit
+		local cf = CFrame.lookAt(at, at + toC) -- 앞 (-Z) 이 마을 가운데를 본다
+		local BRONZE = Color3.fromRGB(150, 105, 60)
+		local EMBER = Color3.fromRGB(255, 120, 40)
+		local g = Instance.new("Folder")
+		g.Name = "StyleForge"
+		g.Parent = f
+		local function P(name: string, size: Vector3, off: CFrame, color: Color3, mat: Enum.Material, extra: { [string]: any }?): Part
+			local props: { [string]: any } = { Name = name, Size = size, CFrame = cf * off, Color = color, Material = mat, Parent = g }
+			for k, v in pairs(extra or {}) do
+				props[k] = v
+			end
+			return part(props)
+		end
+		local function cyl(name: string, r: number, h: number, off: CFrame, color: Color3, mat: Enum.Material, collide: boolean?): Part
+			return P(name, Vector3.new(h, r * 2, r * 2), off * CFrame.Angles(0, 0, math.rad(90)), color, mat, { Shape = Enum.PartType.Cylinder, CanCollide = collide ~= false })
+		end
+		-- 기단과 디딤돌
+		P("ForgeBase", Vector3.new(32, 1.2, 28), CFrame.new(0, 0.6, 0), STONE_DARK, Enum.Material.Slate)
+		P("ForgeFloor", Vector3.new(29, 0.2, 25), CFrame.new(0, 1.3, 0), Color3.fromRGB(120, 110, 100), Enum.Material.Cobblestone)
+		P("ForgeStep", Vector3.new(12, 0.6, 3), CFrame.new(0, 0.3, -15.2), STONE, Enum.Material.Granite)
+		-- 붉은 기둥 넷과 지붕
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				P("ForgePillar", Vector3.new(1.6, 14, 1.6), CFrame.new(sx * 13, 8.2, sz * 11), GATE_RED, Enum.Material.Wood)
+				P("ForgePillarFoot", Vector3.new(2.4, 1, 2.4), CFrame.new(sx * 13, 1.7, sz * 11), STONE, Enum.Material.Granite)
+			end
+		end
+		P("ForgeBeam", Vector3.new(28, 1.2, 1.2), CFrame.new(0, 15.2, -11), GATE_RED, Enum.Material.Wood)
+		P("ForgeBeam", Vector3.new(28, 1.2, 1.2), CFrame.new(0, 15.2, 11), GATE_RED, Enum.Material.Wood)
+		roof(cf * CFrame.new(0, 15.8, 0), 28, 24, Color3.fromRGB(40, 36, 44), Color3.fromRGB(70, 40, 34), g)
+		-- 가운데 청동 단로: 세 다리, 둥근 몸, 겹친 뚜껑, 귀 둘. 아래에서 불이 타고 위로 불티가 오른다
+		for k = 0, 2 do
+			local a = k / 3 * math.pi * 2
+			P("CauldronLeg", Vector3.new(1, 3.2, 1), CFrame.new(math.cos(a) * 3.4, 2.9, math.sin(a) * 3.4) * CFrame.Angles(math.sin(a) * 0.25, 0, -math.cos(a) * 0.25), BRONZE, Enum.Material.Metal)
+		end
+		local coals = cyl("ForgeCoals", 3.2, 0.6, CFrame.new(0, 1.7, 0), EMBER, Enum.Material.Neon, false)
+		local fire = Instance.new("Fire")
+		fire.Size = 7
+		fire.Heat = 4
+		fire.Color = Color3.fromRGB(255, 130, 40)
+		fire.SecondaryColor = Color3.fromRGB(255, 220, 120)
+		fire.Parent = coals
+		light(coals, Color3.fromRGB(255, 140, 60), 34, 2.4)
+		local body = cyl("Cauldron", 4.4, 6, CFrame.new(0, 7, 0), BRONZE, Enum.Material.Metal)
+		cyl("CauldronBand", 4.6, 0.6, CFrame.new(0, 5.2, 0), GOLD, Enum.Material.Metal)
+		cyl("CauldronBand", 4.6, 0.6, CFrame.new(0, 8.8, 0), GOLD, Enum.Material.Metal)
+		cyl("CauldronLip", 4.9, 0.6, CFrame.new(0, 10.2, 0), BRONZE:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Metal)
+		cyl("CauldronLid", 3.6, 0.8, CFrame.new(0, 10.9, 0), BRONZE, Enum.Material.Metal)
+		cyl("CauldronLid2", 2.2, 0.8, CFrame.new(0, 11.7, 0), BRONZE, Enum.Material.Metal)
+		P("CauldronKnob", Vector3.new(1.4, 1.4, 1.4), CFrame.new(0, 12.7, 0), GOLD, Enum.Material.Metal, { Shape = Enum.PartType.Ball })
+		for _, sx in ipairs({ -1, 1 }) do
+			P("CauldronEar", Vector3.new(0.7, 2.6, 2.2), CFrame.new(sx * 5.2, 10.6, 0), BRONZE, Enum.Material.Metal)
+		end
+		-- 단로 앞의 빛나는 아궁이 (불길이 새어 나온다)
+		P("CauldronMouth", Vector3.new(2.6, 1.6, 0.4), CFrame.new(0, 5.6, -4.3), EMBER, Enum.Material.Neon, { CanCollide = false })
+		local sparks = P("ForgeSparks", Vector3.new(2, 1, 2), CFrame.new(0, 12, 0), WARM, Enum.Material.Neon, { Transparency = 1, CanCollide = false })
+		local pe = Instance.new("ParticleEmitter")
+		pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 90, 30))
+		pe.LightEmission = 1
+		pe.Size = NumberSequence.new(0.35, 0)
+		pe.Rate = 18
+		pe.Lifetime = NumberRange.new(1.2, 2)
+		pe.Speed = NumberRange.new(4, 8)
+		pe.SpreadAngle = Vector2.new(25, 25)
+		pe.Acceleration = Vector3.new(0, 2, 0)
+		pe.Parent = sparks
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromRGB(90, 85, 85)
+		smoke.Opacity = 0.08
+		smoke.RiseVelocity = 4
+		smoke.Size = 3
+		smoke.Parent = sparks
+		out.forge = prompt(body, "재료 넣기", "⚒ 권법 제작소", "StyleForge")
+		out.forge.MaxActivationDistance = 14
+		-- 양옆의 모루와 망치
+		for _, sx in ipairs({ -1, 1 }) do
+			local ax = sx * 8.5
+			P("AnvilStump", Vector3.new(2.4, 2, 2.4), CFrame.new(ax, 2.4, -2), WOOD, Enum.Material.Wood)
+			P("Anvil", Vector3.new(1.6, 1.2, 3.4), CFrame.new(ax, 4, -2), IRON, Enum.Material.Metal)
+			P("AnvilHorn", Vector3.new(1, 0.8, 1.6), CFrame.new(ax, 4.1, -4.2), IRON, Enum.Material.Metal)
+			P("HammerHandle", Vector3.new(0.3, 0.3, 2.6), CFrame.new(ax + sx * 0.4, 4.8, -1.6) * CFrame.Angles(0, sx * 0.5, 0), WOOD, Enum.Material.Wood, { CanCollide = false })
+			P("HammerHead", Vector3.new(0.9, 0.9, 1.4), CFrame.new(ax + sx * 0.4, 4.8, -2.8) * CFrame.Angles(0, sx * 0.5, math.rad(90)), IRON, Enum.Material.Metal, { CanCollide = false })
+			-- 벽에 건 연장 걸이
+			P("ToolRack", Vector3.new(0.4, 5, 7), CFrame.new(sx * 12.6, 5.2, 2), WOOD, Enum.Material.Wood)
+			for k = 0, 2 do
+				P("RackTool", Vector3.new(0.25, 3.4, 0.25), CFrame.new(sx * 12.3, 5.4, -0.4 + k * 2.4), IRON, Enum.Material.Metal, { CanCollide = false })
+			end
+		end
+		-- 뒤편 세 좌대: 그 권법의 표식이 빛을 내며 떠 있다 (등급 빛깔)
+		for i, r in ipairs(Config.FORGE) do
+			local st = Config.STYLE_BY_ID[r.style]
+			local x = (i - 2) * 7
+			P("ForgePlinth", Vector3.new(3.2, 3, 3.2), CFrame.new(x, 2.8, 8.5), STONE, Enum.Material.Marble)
+			P("ForgePlinthCap", Vector3.new(3.8, 0.5, 3.8), CFrame.new(x, 4.5, 8.5), GOLD, Enum.Material.Metal)
+			local gc = Config.GRADE_COLOR[st.grade] or GOLD
+			local orb = P("ForgeSeal", Vector3.new(1.8, 1.8, 1.8), CFrame.new(x, 6.6, 8.5), gc, Enum.Material.Neon, { Shape = Enum.PartType.Ball, CanCollide = false, Transparency = 0.25 })
+			light(orb, gc, 12, 1.2)
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.fromOffset(160, 50)
+			bb.StudsOffset = Vector3.new(0, 2.4, 0)
+			bb.MaxDistance = 60
+			bb.LightInfluence = 0
+			bb.Parent = orb
+			local t = Instance.new("TextLabel")
+			t.BackgroundTransparency = 1
+			t.Size = UDim2.fromScale(1, 1)
+			t.Font = Enum.Font.GothamBlack
+			t.TextScaled = true
+			t.TextColor3 = gc
+			t.TextStrokeTransparency = 0.3
+			t.Text = st.icon .. " [" .. st.grade .. "]"
+			t.Parent = bb
+		end
+		-- 현판 (앞 처마 아래)과 앞의 화로 둘
+		local fboard = P("ForgeSign", Vector3.new(14, 3.2, 0.5), CFrame.new(0, 13, -11.6), Color3.fromRGB(30, 20, 18), Enum.Material.Wood, { CanCollide = false })
+		sign(fboard, Enum.NormalId.Front, { { "⚒ 권법 제작소", Color3.fromRGB(255, 210, 120), 0.62 }, { "재료를 녹여 새 권법을 벼린다", Color3.fromRGB(235, 225, 210), 0.38 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			brazier((cf * CFrame.new(sx * 9, 1.2, -13)).Position, 0.9, g)
+		end
+	end
 	-- 객잔: 쉬면 체력과 내공이 가득 찬다
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })
@@ -41810,6 +42132,19 @@ function handlers.breakthrough(data: any)
 	end
 	shake(1.2)
 	Fx.sound("ping", 1, 0.7)
+end
+
+-- 3.99.23판 권법 제작소: 벼린 순간 단로에서 불기둥이 솟는다
+function handlers.forged(data: any)
+	local st = Config.STYLE_BY_ID[data.style or ""]
+	if not st then
+		return
+	end
+	local at = Config.FORGE_AT + Vector3.new(0, 11, 0)
+	pcall(Fx.blast, at, st.color, st.color2, 1.6)
+	pcall(Fx.lightning, at + Vector3.new(0, 60, 0), at, st.color2, 0.8)
+	pcall(Fx.burst, "spark", at, Color3.fromRGB(255, 200, 90), 30, 1.6)
+	shake(0.8)
 end
 
 -- 권법마다 다른 기술 장치의 연출
@@ -60252,7 +60587,7 @@ return {
 	["일월쌍륜"] = "Sun-Moon Twin Discs",
 	["해의 원반과 달의 원반을 양옆으로 던진다. 두 원반은 서로 엇갈리는 활을 그리며 앞으로 날아가 지나는 적을 태우고 베다가, 30칸 앞에서 만나 일식처럼 터진다"] = "Throw a sun disc and a moon disc to the sides. They fly forward in crossing arcs, burning and cutting enemies on the way, and meet 30 studs ahead in an eclipse burst",
 	["일월환보"] = "Sun-Moon Blink",
-	["제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다"] = "Burst a sun in place and vanish, reappearing 22 studs ahead (invincible). Moonlight cuts your path, and a crescent bursts in a circle where you land",
+	["제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다"] = "Bursts a sun in place and vanishes 22 studs ahead (invincible). Moonlight cuts the path, and a crescent bursts in a ring where you land",
 	["대일월천"] = "Great Sun-Moon Heaven",
 	["등 뒤에 해와 달이 떠오른다. 해는 불의 빛줄기로 앞의 땅을 앞뒤로 쓸어 태우고 달은 거대한 초승달 셋을 차례로 내리꽂는다. 둘이 적 위에서 부딪쳐 일식이 되고 땅이 갈라지며 일식이 땅에 박혀 빛의 돔으로 터진다"] = "The sun and moon rise behind you. The sun sweeps the ground ahead back and forth with a beam of fire while the moon drives down three giant crescents. They collide over enemies into an eclipse, the ground splits, and the eclipse sinks in and bursts into a dome of light",
 	["일월개벽"] = "Sun-Moon Genesis",
@@ -60310,7 +60645,7 @@ return {
 	["음속 돌파"] = "Sonic Breakthrough",
 	["소리의 벽을 뚫고 26칸을 달린다 (무적). 벽이 깨지는 순간 몸 뒤로 하얀 증기 원뿔이 터지며 닿은 적이 크게 튕겨 나간다"] = "Break the sound barrier and run 26 studs (invincible). The moment it breaks, a white vapor cone bursts behind you and enemies it touches are flung away",
 	["유성 질주"] = "Meteor Run",
-	["순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다"] = "Vanish and cross the area ten times in a star pattern (invincible). Each path leaves a line of light that cuts enemies passing through, and at the end all lines flash and burst at once",
+	["순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다"] = "Vanishes and crosses the area ten times in a star (invincible). Each path leaves a line of light that cuts enemies, and finally every line flashes and explodes at once",
 	["광속 일섬"] = "Lightspeed Flash",
 	["초 오의. 짧은 컷씬 (그동안 무적): 출발선에서 몸을 낮춘다. 음속, 광속, 초광속, 세 걸음으로 점점 더 길게 내달린다. 첫 걸음은 소리를 넘고 둘째는 빛이 되고 셋째는 지나간 자리마저 남기지 않는다. 달린 길 위의 모든 적을 베고 끝에서 소리가 한꺼번에 따라붙어 충격파로 터진다"] = "Ultimate Art. Short cutscene (invincible meanwhile): crouch at the starting line. Three ever-longer dashes: sonic, light speed, beyond light. The first breaks sound, the second becomes light, the third leaves not even a trace. Every enemy on the path is cut, and at the end the sound catches up all at once in a shockwave",
 	["초가속"] = "Hyper Speed",
@@ -60494,7 +60829,7 @@ return {
 	["비룡천"] = "Flying Dragon Heaven",
 	["용처럼 솟구치며 둘레의 적을 모두 하늘로 올려 친다"] = "Rise like a dragon, launching every nearby enemy skyward",
 	["구룡천강"] = "Nine Dragons Descend",
-	["땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다"] = "Nine gold dragons burst from the ground and coil into the sky, then slam into enemies one by one and burst at the center",
+	["땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다"] = "Nine golden dragons burst from the ground, coil into the sky, dive onto enemies one by one and explode at the center",
 	["천룡멸세"] = "Heavenly Dragon Cataclysm",
 	["초 오의. 하늘이 갈라지며 산만 한 황금 천룡이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다"] = "Ultimate Art. The sky splits and a huge golden dragon descends. It slams down eight times, then breathes a searing blast forward",
 	["천하패권"] = "Overlord's Supremacy",
@@ -64101,6 +64436,66 @@ return {
 	["  ·  %d연속"] = "·  streak %d",
 	["모든 탈것 중 가장 빠르다 (×3.6)"] = "The fastest of all mounts (×3.6)",
 	["금빛 물결 · 몸을 타고 튀는 번개 · 포효하면 하늘에서 벼락"] = "Rippling gold light · lightning across its body · a thunderbolt from the sky when it roars",
+	["삼원혼천권"] = "Three-Origin Chaos Fist",
+	["구룡패천권"] = "Nine-Dragon Overlord Fist",
+	["혼돈개천권"] = "Primordial Chaos Fist",
+	["불의 주먹에 물과 벼락을 함께 실은 권법. 세 사부의 무공을 한 화로에 녹여 다시 벼렸다. 주먹은 불로 태우고, 물로 띄우고, 벼락으로 묶는다."] = "A fist of fire carrying water and lightning together. Three masters' arts melted in one furnace and forged anew. It burns with fire, lifts with water and binds with lightning.",
+	["업화: 맞힌 적이 4초 동안 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. E는 벼락, R은 물, 오의는 벼락 그물"] = "Hellfire: struck enemies burn for 4 seconds. A burning enemy that falls explodes and burns those around it. E is lightning, R is water, the ultimate is a lightning net",
+	["⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (한 번 환생한 몸으로)"] = "⚒ Forged from materials at the Style Forge in the southwest of Cheongun Village (after one rebirth)",
+	["⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (세 번 환생한 몸으로)"] = "⚒ Forged from materials at the Style Forge in the southwest of Cheongun Village (after three rebirths)",
+	["⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)"] = "⚒ Forged from materials at the Style Forge in the southwest of Cheongun Village (after all six rebirths)",
+	["혼천장"] = "Chaos Palm",
+	["역화조"] = "Backfire Claw",
+	["삼원선풍"] = "Three-Origin Whirl",
+	["혼원권"] = "Primal Fist",
+	["삼원폭추"] = "Three-Origin Blast Hammer",
+	["삼원승천권"] = "Three-Origin Rising Fist",
+	["뇌화포"] = "Thunderfire Cannon",
+	["주먹에 불과 벼락을 함께 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고 지나간 줄이 1.2초 동안 지진다"] = "Gathers fire and lightning in the fist and fires it straight ahead. Pierces every enemy in the line, and the line keeps searing for 1.2 seconds",
+	["열수천"] = "Boiling Springs",
+	["가까운 적 여섯의 발밑에서 차례로 끓는 물기둥이 솟아 하늘로 쳐올린다"] = "Boiling water columns burst one after another under the six nearest enemies and launch them skyward",
+	["삼원천망"] = "Three-Origin Sky Net",
+	["둘레의 적 열을 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고 마지막에 적마다 천뢰가 떨어진다"] = "Links up to ten nearby enemies with a net of lightning. The net pulses five times, searing everyone bound, and finally heavenly thunder strikes each enemy",
+	["천하를 쥔 패왕의 주먹에 아홉 용을 깃들였다. 덮치고 뛰어내려 누르고, 끝에는 하늘에서 용이 내려온다."] = "Nine dragons dwell in the overlord's fist that holds the world. It pounces, leaps down and crushes, and at the end a dragon descends from the sky.",
+	["용의 이빨: 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다. 패왕의 몸놀림으로 공격의 10%를 비켜 간다. 초 오의(X)가 있다"] = "Dragon Fang: every fourth hit a small dragon bites the target. The overlord's footwork dodges 10% of attacks. Has a super ultimate (X)",
+	["용권"] = "Dragon Fist",
+	["패룡권"] = "Overlord Dragon Fist",
+	["승룡패천"] = "Rising Dragon Overlord",
+	["구룡일격"] = "Nine-Dragon Strike",
+	["항룡패추"] = "Dragon-Subduing Hammer",
+	["구룡승천권"] = "Nine-Dragon Rising Fist",
+	["비룡질주"] = "Flying Dragon Dash",
+	["용의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 발톱 자국이 줄줄이 터진다"] = "Becomes a dragon's spirit and pounces 20 studs forward (invincible). Claw marks burst one after another along the path",
+	["용왕강림"] = "Dragon King's Descent",
+	["발밑에서 앞으로 붉은 길이 깔리고 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 금빛 가시 여덟이 솟고 안으로 무너지며 터진다"] = "A red road unrolls ahead; you leap high along it and land 24 studs ahead (invincible). Eight golden spikes rise around the landing spot, then collapse inward and explode",
+	["구룡패천"] = "Nine-Dragon Overlord",
+	["구룡멸세"] = "Nine-Dragon World's End",
+	["초 오의. 하늘이 갈라지며 산만 한 황금 용이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다"] = "Super ultimate. The sky splits and a golden dragon the size of a mountain descends. It dives eight times, then breathes sky-burning fire ahead",
+	["하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 몸으로 싸우는 신의 권법에 공간을 베는 좌표, 해와 달의 걸음, 빛보다 빠른 질주를 녹여 넣었다."] = "The chaos before heaven and earth were divided, held in a fist. Into the god's body-fighting art it melts space-cutting coordinates, the steps of sun and moon, and a dash faster than light.",
+	["삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다"] = "Three Powers Tremor: every third combo or heavy hit, the ground shakes around you. The sturdiest blocks and parries (posture ×1.5), all cooldowns 25% shorter. Has a super ultimate (X)",
+	["개천 팔꿈치"] = "Sky-Splitting Elbow",
+	["혼돈 쓸어차기"] = "Chaos Sweep",
+	["천지 무릎"] = "Heaven-Earth Knee",
+	["개벽 진각"] = "Genesis Stomp",
+	["혼돈 철산고"] = "Chaos Iron Mountain",
+	["혼돈승천권"] = "Chaos Rising Fist",
+	["혼돈선"] = "Chaos Lines",
+	["앞의 허공에 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고 다시 붙으며 한 번 더 벤다"] = "Three coordinate axes are drawn in a star ahead. Space shears apart along the lines, cutting, then snaps back and cuts once more",
+	["일월환영보"] = "Sun-Moon Phantom Step",
+	["유성개천"] = "Meteor Genesis",
+	["혼돈개벽"] = "Chaos Genesis",
+	["초 오의 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)"] = "Super ultimate (invincible meanwhile): grabs six nearby enemies and whirls them six times. Raising a knee and stomping, you hurl them all outward and heaven and earth split wherever they land (bosses can't be grabbed and take the hit in place)",
+	["⚒ 권법 제작소"] = "⚒ Style Forge",
+	["재료를 녹여 새 권법을 벼린다"] = "Melt materials, forge a new style",
+	["재료 넣기"] = "Add materials",
+	["⚒ 벼리기"] = "⚒ Forge",
+	["♻ 환생"] = "♻ Rebirth",
+	["🔥 세 사부의 기술을 한 몸에 녹인 권법. 재료와 은자는 벼리는 순간 녹아 사라진다"] = "🔥 Styles that melt three masters' arts into one body. Materials and silver are consumed the moment you forge",
+	["사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다."] = "This style isn't taught by a master. Gather materials and forge it yourself.",
+	["⚒ %s은(는) 이미 익혔어요"] = "⚒ You already know %s",
+	["⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요"] = "⚒ You can only forge at the furnace of the Style Forge in southwest Cheongun Village",
+	["⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)"] = "⚒ %s needs %d rebirths to forge (you have %d)",
+	["⚒ 재료가 모자라요: %s"] = "⚒ Not enough materials: %s",
 }
 ]]></string>
           </Properties>
@@ -83086,7 +83481,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -83216,7 +83611,7 @@ function UIB.buildStyles()
 			dTitle.TextColor3 = C.dim
 			dHanja.Text = "???"
 			dMaster.Text = gradeTag .. "  전해지는 이야기만 남아 있다"
-			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (hasMaster and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
+			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (s.forge and "\n\n사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다." or hasMaster and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
 			dBtn.Text = "🔒 조건을 채워야 익힌다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
@@ -84484,6 +84879,79 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다 (마을 남서쪽 단로에서 열린다)
+------------------------------------------------------------------------
+function UIB.buildForge()
+	local page = makePage("forge")
+	local head = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 16, TextColor3 = C.dim, RichText = true, Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
+	new("UIListLayout", { Padding = UDim.new(0, 10), Parent = list })
+	local rows: { any } = {}
+	local SLOT_NAME = { E = "E", R = "R", G = "오의", X = "초 오의" }
+	local function hex(c: Color3): string
+		return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+	end
+	for _, r in ipairs(Config.FORGE) do
+		local st = Config.STYLE_BY_ID[r.style]
+		local gc = Config.GRADE_COLOR[st.grade] or C.gold
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 176), BackgroundColor3 = Color3.fromRGB(34, 26, 22), Parent = list }, { corner(10), stroke(gc, 1.5) })
+		local title = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -200, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, RichText = true, TextColor3 = st.color, Parent = row })
+		local gradeTag = st.grade == "신" and ("<b>" .. UI.godText("신 등급") .. "</b>") or string.format('<font color="%s">[%s]</font>', hex(gc), st.grade)
+		title.Text = st.icon .. " " .. st.name .. "  " .. gradeTag
+		local skills = {}
+		for _, k in ipairs({ "E", "R", "G", "X" }) do
+			local mv = st.skills[k]
+			if mv then
+				table.insert(skills, SLOT_NAME[k] .. " " .. mv.name)
+			end
+		end
+		text({ Position = UDim2.new(0, 14, 0, 40), Size = UDim2.new(1, -200, 0, 20), TextSize = 15, TextColor3 = Color3.fromRGB(255, 220, 160), Text = table.concat(skills, "  ·  "), Parent = row })
+		text({ Position = UDim2.new(0, 14, 0, 62), Size = UDim2.new(1, -200, 0, 44), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Text = st.desc, Parent = row })
+		local need = text({ Position = UDim2.new(0, 14, 0, 110), Size = UDim2.new(1, -200, 0, 58), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
+		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 168, 0, 54), Text = "⚒ 벼리기", TextSize = 19, BackgroundColor3 = C.panel, Parent = row }, function()
+			Request:FireServer("forge", r.style)
+		end)
+		table.insert(rows, { r = r, st = st, need = need, btn = btn })
+	end
+	refreshers.forge = function()
+		local s = state or {}
+		local realm = s.realm or 1
+		head.Text = "🔥 세 사부의 기술을 한 몸에 녹인 권법. 재료와 은자는 벼리는 순간 녹아 사라진다"
+		for _, it in ipairs(rows) do
+			local r, st = it.r, it.st
+			local owned = s.styles and table.find(s.styles, st.id) ~= nil
+			local parts = {}
+			local ok = true
+			local function req(label: string, have: number, want: number, fmt: boolean?)
+				local good = have >= want
+				ok = ok and good
+				local h = fmt and Config.formatNumber(have) or tostring(have)
+				local w = fmt and Config.formatNumber(want) or tostring(want)
+				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
+			end
+			req("♻ 환생", s.rebirth or 0, r.rebirth)
+			req("🧩 비급 조각", s.shards or 0, r.shards)
+			req("💠 천정", s.skyGems or 0, r.gems, true)
+			for _, M in ipairs(Config.SKY_MATS) do
+				local n = r.mats[M.id]
+				if n then
+					req(M.icon .. " " .. M.name, (s.mats and s.mats[M.id]) or 0, n)
+				end
+			end
+			req("💰 은자", s.coins or 0, Config.forgeCoins(r, realm), true)
+			it.need.Text = table.concat(parts, "   ")
+			if owned then
+				it.btn.Text = "✔ 익힘"
+				it.btn.BackgroundColor3 = Color3.fromRGB(50, 110, 70)
+			else
+				it.btn.Text = "⚒ 벼리기"
+				it.btn.BackgroundColor3 = ok and Color3.fromRGB(200, 110, 40) or C.panel
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -87288,6 +87756,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildShop()
 	UIB.buildManuals()
 	UIB.buildSkyShop()
+	UIB.buildForge()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()

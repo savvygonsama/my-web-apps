@@ -167,7 +167,8 @@ function Skills.run(f: any, move: any, ctx: any)
 	local isUlt = tail == "G" or tail == "X"
 	local sc = (ctx.scale or 1) * (isUlt and Config.ULT_MULT * (1 + (f.mUlt or 0)) or 1) * (tail == "X" and Config.SUPER_ULT_MULT or 1)
 	local look = flat(Combat.look(f))
-	local style = f.style
+	-- 3.99.23판: 제작소 권법이 빌려 온 기술은 원래 권법의 연출로 보인다
+	local style = move.visStyle or f.style
 	local function alive(): boolean
 		return not f.dead and f.root.Parent ~= nil
 	end

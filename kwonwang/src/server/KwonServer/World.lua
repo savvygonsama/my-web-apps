@@ -791,6 +791,132 @@ local function village(out: any)
 	local shopSign = part({ Name = "ShopSign", Size = Vector3.new(12, 3, 0.4), Position = Vector3.new(-75, 7, 21.2), Color = Color3.fromRGB(30, 20, 18), Material = Enum.Material.Wood, CanCollide = false, Parent = f })
 	sign(shopSign, Enum.NormalId.Front, { { "🧪 만물상", Color3.fromRGB(255, 220, 140), 1 } })
 	out.shop = prompt(stall, "물건 보기", "만물상", "Shop")
+
+	-- 3.99.23판 권법 제작소 (마을 남서쪽 모퉁이): 붉은 기둥 정자 아래 청동 단로, 모루 둘, 뒤편에 세 권법의 좌대
+	do
+		local at = Config.FORGE_AT
+		local toC = Vector3.new(-at.X, 0, -at.Z).Unit
+		local cf = CFrame.lookAt(at, at + toC) -- 앞 (-Z) 이 마을 가운데를 본다
+		local BRONZE = Color3.fromRGB(150, 105, 60)
+		local EMBER = Color3.fromRGB(255, 120, 40)
+		local g = Instance.new("Folder")
+		g.Name = "StyleForge"
+		g.Parent = f
+		local function P(name: string, size: Vector3, off: CFrame, color: Color3, mat: Enum.Material, extra: { [string]: any }?): Part
+			local props: { [string]: any } = { Name = name, Size = size, CFrame = cf * off, Color = color, Material = mat, Parent = g }
+			for k, v in pairs(extra or {}) do
+				props[k] = v
+			end
+			return part(props)
+		end
+		local function cyl(name: string, r: number, h: number, off: CFrame, color: Color3, mat: Enum.Material, collide: boolean?): Part
+			return P(name, Vector3.new(h, r * 2, r * 2), off * CFrame.Angles(0, 0, math.rad(90)), color, mat, { Shape = Enum.PartType.Cylinder, CanCollide = collide ~= false })
+		end
+		-- 기단과 디딤돌
+		P("ForgeBase", Vector3.new(32, 1.2, 28), CFrame.new(0, 0.6, 0), STONE_DARK, Enum.Material.Slate)
+		P("ForgeFloor", Vector3.new(29, 0.2, 25), CFrame.new(0, 1.3, 0), Color3.fromRGB(120, 110, 100), Enum.Material.Cobblestone)
+		P("ForgeStep", Vector3.new(12, 0.6, 3), CFrame.new(0, 0.3, -15.2), STONE, Enum.Material.Granite)
+		-- 붉은 기둥 넷과 지붕
+		for _, sx in ipairs({ -1, 1 }) do
+			for _, sz in ipairs({ -1, 1 }) do
+				P("ForgePillar", Vector3.new(1.6, 14, 1.6), CFrame.new(sx * 13, 8.2, sz * 11), GATE_RED, Enum.Material.Wood)
+				P("ForgePillarFoot", Vector3.new(2.4, 1, 2.4), CFrame.new(sx * 13, 1.7, sz * 11), STONE, Enum.Material.Granite)
+			end
+		end
+		P("ForgeBeam", Vector3.new(28, 1.2, 1.2), CFrame.new(0, 15.2, -11), GATE_RED, Enum.Material.Wood)
+		P("ForgeBeam", Vector3.new(28, 1.2, 1.2), CFrame.new(0, 15.2, 11), GATE_RED, Enum.Material.Wood)
+		roof(cf * CFrame.new(0, 15.8, 0), 28, 24, Color3.fromRGB(40, 36, 44), Color3.fromRGB(70, 40, 34), g)
+		-- 가운데 청동 단로: 세 다리, 둥근 몸, 겹친 뚜껑, 귀 둘. 아래에서 불이 타고 위로 불티가 오른다
+		for k = 0, 2 do
+			local a = k / 3 * math.pi * 2
+			P("CauldronLeg", Vector3.new(1, 3.2, 1), CFrame.new(math.cos(a) * 3.4, 2.9, math.sin(a) * 3.4) * CFrame.Angles(math.sin(a) * 0.25, 0, -math.cos(a) * 0.25), BRONZE, Enum.Material.Metal)
+		end
+		local coals = cyl("ForgeCoals", 3.2, 0.6, CFrame.new(0, 1.7, 0), EMBER, Enum.Material.Neon, false)
+		local fire = Instance.new("Fire")
+		fire.Size = 7
+		fire.Heat = 4
+		fire.Color = Color3.fromRGB(255, 130, 40)
+		fire.SecondaryColor = Color3.fromRGB(255, 220, 120)
+		fire.Parent = coals
+		light(coals, Color3.fromRGB(255, 140, 60), 34, 2.4)
+		local body = cyl("Cauldron", 4.4, 6, CFrame.new(0, 7, 0), BRONZE, Enum.Material.Metal)
+		cyl("CauldronBand", 4.6, 0.6, CFrame.new(0, 5.2, 0), GOLD, Enum.Material.Metal)
+		cyl("CauldronBand", 4.6, 0.6, CFrame.new(0, 8.8, 0), GOLD, Enum.Material.Metal)
+		cyl("CauldronLip", 4.9, 0.6, CFrame.new(0, 10.2, 0), BRONZE:Lerp(Color3.new(0, 0, 0), 0.2), Enum.Material.Metal)
+		cyl("CauldronLid", 3.6, 0.8, CFrame.new(0, 10.9, 0), BRONZE, Enum.Material.Metal)
+		cyl("CauldronLid2", 2.2, 0.8, CFrame.new(0, 11.7, 0), BRONZE, Enum.Material.Metal)
+		P("CauldronKnob", Vector3.new(1.4, 1.4, 1.4), CFrame.new(0, 12.7, 0), GOLD, Enum.Material.Metal, { Shape = Enum.PartType.Ball })
+		for _, sx in ipairs({ -1, 1 }) do
+			P("CauldronEar", Vector3.new(0.7, 2.6, 2.2), CFrame.new(sx * 5.2, 10.6, 0), BRONZE, Enum.Material.Metal)
+		end
+		-- 단로 앞의 빛나는 아궁이 (불길이 새어 나온다)
+		P("CauldronMouth", Vector3.new(2.6, 1.6, 0.4), CFrame.new(0, 5.6, -4.3), EMBER, Enum.Material.Neon, { CanCollide = false })
+		local sparks = P("ForgeSparks", Vector3.new(2, 1, 2), CFrame.new(0, 12, 0), WARM, Enum.Material.Neon, { Transparency = 1, CanCollide = false })
+		local pe = Instance.new("ParticleEmitter")
+		pe.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		pe.Color = ColorSequence.new(Color3.fromRGB(255, 200, 90), Color3.fromRGB(255, 90, 30))
+		pe.LightEmission = 1
+		pe.Size = NumberSequence.new(0.35, 0)
+		pe.Rate = 18
+		pe.Lifetime = NumberRange.new(1.2, 2)
+		pe.Speed = NumberRange.new(4, 8)
+		pe.SpreadAngle = Vector2.new(25, 25)
+		pe.Acceleration = Vector3.new(0, 2, 0)
+		pe.Parent = sparks
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromRGB(90, 85, 85)
+		smoke.Opacity = 0.08
+		smoke.RiseVelocity = 4
+		smoke.Size = 3
+		smoke.Parent = sparks
+		out.forge = prompt(body, "재료 넣기", "⚒ 권법 제작소", "StyleForge")
+		out.forge.MaxActivationDistance = 14
+		-- 양옆의 모루와 망치
+		for _, sx in ipairs({ -1, 1 }) do
+			local ax = sx * 8.5
+			P("AnvilStump", Vector3.new(2.4, 2, 2.4), CFrame.new(ax, 2.4, -2), WOOD, Enum.Material.Wood)
+			P("Anvil", Vector3.new(1.6, 1.2, 3.4), CFrame.new(ax, 4, -2), IRON, Enum.Material.Metal)
+			P("AnvilHorn", Vector3.new(1, 0.8, 1.6), CFrame.new(ax, 4.1, -4.2), IRON, Enum.Material.Metal)
+			P("HammerHandle", Vector3.new(0.3, 0.3, 2.6), CFrame.new(ax + sx * 0.4, 4.8, -1.6) * CFrame.Angles(0, sx * 0.5, 0), WOOD, Enum.Material.Wood, { CanCollide = false })
+			P("HammerHead", Vector3.new(0.9, 0.9, 1.4), CFrame.new(ax + sx * 0.4, 4.8, -2.8) * CFrame.Angles(0, sx * 0.5, math.rad(90)), IRON, Enum.Material.Metal, { CanCollide = false })
+			-- 벽에 건 연장 걸이
+			P("ToolRack", Vector3.new(0.4, 5, 7), CFrame.new(sx * 12.6, 5.2, 2), WOOD, Enum.Material.Wood)
+			for k = 0, 2 do
+				P("RackTool", Vector3.new(0.25, 3.4, 0.25), CFrame.new(sx * 12.3, 5.4, -0.4 + k * 2.4), IRON, Enum.Material.Metal, { CanCollide = false })
+			end
+		end
+		-- 뒤편 세 좌대: 그 권법의 표식이 빛을 내며 떠 있다 (등급 빛깔)
+		for i, r in ipairs(Config.FORGE) do
+			local st = Config.STYLE_BY_ID[r.style]
+			local x = (i - 2) * 7
+			P("ForgePlinth", Vector3.new(3.2, 3, 3.2), CFrame.new(x, 2.8, 8.5), STONE, Enum.Material.Marble)
+			P("ForgePlinthCap", Vector3.new(3.8, 0.5, 3.8), CFrame.new(x, 4.5, 8.5), GOLD, Enum.Material.Metal)
+			local gc = Config.GRADE_COLOR[st.grade] or GOLD
+			local orb = P("ForgeSeal", Vector3.new(1.8, 1.8, 1.8), CFrame.new(x, 6.6, 8.5), gc, Enum.Material.Neon, { Shape = Enum.PartType.Ball, CanCollide = false, Transparency = 0.25 })
+			light(orb, gc, 12, 1.2)
+			local bb = Instance.new("BillboardGui")
+			bb.Size = UDim2.fromOffset(160, 50)
+			bb.StudsOffset = Vector3.new(0, 2.4, 0)
+			bb.MaxDistance = 60
+			bb.LightInfluence = 0
+			bb.Parent = orb
+			local t = Instance.new("TextLabel")
+			t.BackgroundTransparency = 1
+			t.Size = UDim2.fromScale(1, 1)
+			t.Font = Enum.Font.GothamBlack
+			t.TextScaled = true
+			t.TextColor3 = gc
+			t.TextStrokeTransparency = 0.3
+			t.Text = st.icon .. " [" .. st.grade .. "]"
+			t.Parent = bb
+		end
+		-- 현판 (앞 처마 아래)과 앞의 화로 둘
+		local fboard = P("ForgeSign", Vector3.new(14, 3.2, 0.5), CFrame.new(0, 13, -11.6), Color3.fromRGB(30, 20, 18), Enum.Material.Wood, { CanCollide = false })
+		sign(fboard, Enum.NormalId.Front, { { "⚒ 권법 제작소", Color3.fromRGB(255, 210, 120), 0.62 }, { "재료를 녹여 새 권법을 벼린다", Color3.fromRGB(235, 225, 210), 0.38 } })
+		for _, sx in ipairs({ -1, 1 }) do
+			brazier((cf * CFrame.new(sx * 9, 1.2, -13)).Position, 0.9, g)
+		end
+	end
 	-- 객잔: 쉬면 체력과 내공이 가득 찬다
 	building(Config.INN_AT, 18, 14, math.rad(90), f, { tiers = 2, sign = "객잔", awningColor = Color3.fromRGB(150, 60, 40) })
 	local innDesk = part({ Name = "InnDesk", Size = Vector3.new(3, 3.2, 6), Position = Config.INN_AT + Vector3.new(-11, 1.6, 0), Color = Color3.fromRGB(110, 75, 50), Material = Enum.Material.Wood, Parent = f })

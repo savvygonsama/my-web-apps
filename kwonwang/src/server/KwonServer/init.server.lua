@@ -3198,6 +3198,61 @@ function Actions.potion(player: Player)
 	pushState(player)
 end
 
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다
+function Actions.forge(player: Player, id: any)
+	local p = profiles[player]
+	local r = type(id) == "string" and Config.FORGE_BY_STYLE[id]
+	local style = r and Config.STYLE_BY_ID[r.style]
+	if not p or not r or not style then
+		return
+	end
+	if p.styles[style.id] then
+		toast(player, "⚒ " .. style.name .. "은(는) 이미 익혔어요")
+		return
+	end
+	local f0 = Combat.fighterOfPlayer(player)
+	local pos = f0 and f0.root.Position
+	if not pos or Vector3.new(pos.X - Config.FORGE_AT.X, 0, pos.Z - Config.FORGE_AT.Z).Magnitude > 40 then
+		toast(player, "⚒ 청운 마을 남서쪽 권법 제작소의 단로 앞에서만 벼릴 수 있어요")
+		return
+	end
+	if (p.rebirth or 0) < r.rebirth then
+		toast(player, string.format("⚒ %s은(는) 환생 %d번을 넘긴 몸이어야 벼릴 수 있어요 (지금 %d번)", style.name, r.rebirth, p.rebirth or 0))
+		return
+	end
+	local idx = Calc.realm(p)
+	local coins = Config.forgeCoins(r, idx)
+	local miss = {}
+	if (p.shards or 0) < r.shards then
+		table.insert(miss, string.format("🧩 비급 조각 %d/%d", p.shards or 0, r.shards))
+	end
+	if (p.skyGems or 0) < r.gems then
+		table.insert(miss, string.format("💠 천정 %s/%s", Config.formatNumber(p.skyGems or 0), Config.formatNumber(r.gems)))
+	end
+	for _, M in ipairs(Config.SKY_MATS) do
+		local need = r.mats[M.id]
+		if need and (p.mats[M.id] or 0) < need then
+			table.insert(miss, string.format("%s %s %d/%d", M.icon, M.name, p.mats[M.id] or 0, need))
+		end
+	end
+	if p.coins < coins then
+		table.insert(miss, string.format("💰 은자 %s/%s", Config.formatNumber(p.coins), Config.formatNumber(coins)))
+	end
+	if #miss > 0 then
+		toast(player, "⚒ 재료가 모자라요: " .. table.concat(miss, " · "))
+		return
+	end
+	p.shards = (p.shards or 0) - r.shards
+	p.skyGems -= r.gems
+	for mid, n in pairs(r.mats) do
+		p.mats[mid] = (p.mats[mid] or 0) - n
+	end
+	p.coins -= coins
+	grantStyle(player, style.id, true)
+	Push:FireClient(player, "forged", { style = style.id })
+	pushState(player)
+end
+
 -- 권법 배우기 (처음 하나는 공짜) / 바꾸기
 function Actions.learn(player: Player, id: any)
 	local p, st = profiles[player], states[player]
@@ -5750,6 +5805,8 @@ Request.OnServerEvent:Connect(function(player: Player, action: any, a1: any, a2:
 			Combat.mount(f, m.id)
 		end
 		pushState(player)
+	elseif action == "forge" then
+		Actions.forge(player, a1)
 	elseif action == "skyBuy" then
 		-- 천상 상점 (천정으로)
 		local it = type(a1) == "string" and Config.SKY_SHOP_BY_ID[a1]
@@ -5994,6 +6051,11 @@ if W.awaken then
 		local AM = Config.AWAKEN_MASTER
 		Push:FireClient(player, "dialog", { who = "🔥 " .. AM.name, title = "‘" .. AM.quote .. "’", text = "깨달음을 모두 얻고 숙련을 끝까지 올린 권법이 있다면, 권법 창에서 '🔥 각성 시련'을 골라라. 각성한 네 그림자를 넘으면 그 권법이 다시 태어난다." })
 		Push:FireClient(player, "open", { page = "styles" })
+	end)
+end
+if W.forge then
+	W.forge.Triggered:Connect(function(player: Player)
+		Push:FireClient(player, "open", { page = "forge" })
 	end)
 end
 if W.shop then

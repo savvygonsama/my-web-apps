@@ -803,7 +803,7 @@ local pages: { [string]: Frame } = {}
 local refreshers: { [string]: (boolean?) -> () } = {}
 local current = ""
 local state: any = nil
-local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", ach = "🏆 업적과 칭호", dex = "📖 도감" }
+local TITLES = { styles = "🥋 권법", stats = "📊 능력치와 경지", shop = "🧪 만물상", help = "📜 도움말", test = "🧪 테스트", manuals = "📜 심법 (내공 수련서)", skyshop = "💠 천상 상점", forge = "⚒ 권법 제작소", ach = "🏆 업적과 칭호", dex = "📖 도감" }
 
 local function makePage(name: string): Frame
 	local f = new("Frame", { Position = UDim2.new(0, 16, 0, 56), Size = UDim2.new(1, -32, 1, -68), BackgroundTransparency = 1, Visible = false, Parent = window })
@@ -933,7 +933,7 @@ function UIB.buildStyles()
 			dTitle.TextColor3 = C.dim
 			dHanja.Text = "???"
 			dMaster.Text = gradeTag .. "  전해지는 이야기만 남아 있다"
-			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (hasMaster and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
+			dBody.Text = "🔒 " .. (s.unlockHint or "") .. (s.forge and "\n\n사부에게 배우는 권법이 아니다. 재료를 모아 직접 벼린다." or hasMaster and "\n\n지도에 나오지 않는 숨은 사부가 있다." or "\n\n이 권법은 사부에게 배울 수 없다. 강호를 누비며 길을 찾아라.")
 			dBtn.Text = "🔒 조건을 채워야 익힌다"
 			dBtn.BackgroundColor3 = C.panel
 			action = "none"
@@ -2201,6 +2201,79 @@ function UI.manualReveal(results: { any })
 	Gacha.play(results, function()
 		UI.openPage("shop", { tab = "manuals" })
 	end)
+end
+
+------------------------------------------------------------------------
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다 (마을 남서쪽 단로에서 열린다)
+------------------------------------------------------------------------
+function UIB.buildForge()
+	local page = makePage("forge")
+	local head = text({ Size = UDim2.new(1, 0, 0, 30), TextSize = 16, TextColor3 = C.dim, RichText = true, Parent = page })
+	local list = scroller(page, UDim2.new(1, 0, 1, -40), UDim2.new(0, 0, 0, 38))
+	new("UIListLayout", { Padding = UDim.new(0, 10), Parent = list })
+	local rows: { any } = {}
+	local SLOT_NAME = { E = "E", R = "R", G = "오의", X = "초 오의" }
+	local function hex(c: Color3): string
+		return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+	end
+	for _, r in ipairs(Config.FORGE) do
+		local st = Config.STYLE_BY_ID[r.style]
+		local gc = Config.GRADE_COLOR[st.grade] or C.gold
+		local row = new("Frame", { Size = UDim2.new(1, -12, 0, 176), BackgroundColor3 = Color3.fromRGB(34, 26, 22), Parent = list }, { corner(10), stroke(gc, 1.5) })
+		local title = text({ Position = UDim2.new(0, 14, 0, 8), Size = UDim2.new(1, -200, 0, 30), TextSize = 22, Font = Enum.Font.GothamBlack, RichText = true, TextColor3 = st.color, Parent = row })
+		local gradeTag = st.grade == "신" and ("<b>" .. UI.godText("신 등급") .. "</b>") or string.format('<font color="%s">[%s]</font>', hex(gc), st.grade)
+		title.Text = st.icon .. " " .. st.name .. "  " .. gradeTag
+		local skills = {}
+		for _, k in ipairs({ "E", "R", "G", "X" }) do
+			local mv = st.skills[k]
+			if mv then
+				table.insert(skills, SLOT_NAME[k] .. " " .. mv.name)
+			end
+		end
+		text({ Position = UDim2.new(0, 14, 0, 40), Size = UDim2.new(1, -200, 0, 20), TextSize = 15, TextColor3 = Color3.fromRGB(255, 220, 160), Text = table.concat(skills, "  ·  "), Parent = row })
+		text({ Position = UDim2.new(0, 14, 0, 62), Size = UDim2.new(1, -200, 0, 44), TextSize = 14, TextColor3 = C.dim, TextYAlignment = Enum.TextYAlignment.Top, Text = st.desc, Parent = row })
+		local need = text({ Position = UDim2.new(0, 14, 0, 110), Size = UDim2.new(1, -200, 0, 58), TextSize = 14, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, Parent = row })
+		local btn = button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.new(0, 168, 0, 54), Text = "⚒ 벼리기", TextSize = 19, BackgroundColor3 = C.panel, Parent = row }, function()
+			Request:FireServer("forge", r.style)
+		end)
+		table.insert(rows, { r = r, st = st, need = need, btn = btn })
+	end
+	refreshers.forge = function()
+		local s = state or {}
+		local realm = s.realm or 1
+		head.Text = "🔥 세 사부의 기술을 한 몸에 녹인 권법. 재료와 은자는 벼리는 순간 녹아 사라진다"
+		for _, it in ipairs(rows) do
+			local r, st = it.r, it.st
+			local owned = s.styles and table.find(s.styles, st.id) ~= nil
+			local parts = {}
+			local ok = true
+			local function req(label: string, have: number, want: number, fmt: boolean?)
+				local good = have >= want
+				ok = ok and good
+				local h = fmt and Config.formatNumber(have) or tostring(have)
+				local w = fmt and Config.formatNumber(want) or tostring(want)
+				table.insert(parts, string.format('<font color="%s">%s %s/%s</font>', good and "#8CE68C" or "#FF8C78", label, h, w))
+			end
+			req("♻ 환생", s.rebirth or 0, r.rebirth)
+			req("🧩 비급 조각", s.shards or 0, r.shards)
+			req("💠 천정", s.skyGems or 0, r.gems, true)
+			for _, M in ipairs(Config.SKY_MATS) do
+				local n = r.mats[M.id]
+				if n then
+					req(M.icon .. " " .. M.name, (s.mats and s.mats[M.id]) or 0, n)
+				end
+			end
+			req("💰 은자", s.coins or 0, Config.forgeCoins(r, realm), true)
+			it.need.Text = table.concat(parts, "   ")
+			if owned then
+				it.btn.Text = "✔ 익힘"
+				it.btn.BackgroundColor3 = Color3.fromRGB(50, 110, 70)
+			else
+				it.btn.Text = "⚒ 벼리기"
+				it.btn.BackgroundColor3 = ok and Color3.fromRGB(200, 110, 40) or C.panel
+			end
+		end
+	end
 end
 
 ------------------------------------------------------------------------
@@ -5005,6 +5078,7 @@ function UI.init(req: RemoteEvent)
 	UIB.buildShop()
 	UIB.buildManuals()
 	UIB.buildSkyShop()
+	UIB.buildForge()
 	UIB.buildHelp()
 	UIB.buildTest()
 	UIB.buildMap()

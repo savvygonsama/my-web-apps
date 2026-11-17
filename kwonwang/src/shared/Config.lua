@@ -2,7 +2,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.22" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.23" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -4069,6 +4069,7 @@ Config.Fragments = {
 }
 
 Config.INN_AT = Vector3.new(82, 0, 40)
+Config.FORGE_AT = Vector3.new(-170, 0, 172) -- 3.99.23판 권법 제작소 (마을 남서쪽 모퉁이)
 Config.ELDER_AT = Vector3.new(-24, 0, -104)
 
 -- 이야기 (강호 이야기): 차례로 이어지는 장. goal = { kind, id, n, at }
@@ -7247,6 +7248,138 @@ do
 			end
 		end
 	end
+end
+
+------------------------------------------------------------------------
+-- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다 (신화 · 권왕 · 신 하나씩)
+--   세 사부의 기술을 한 몸에 녹인 권법. 기술은 원래 것의 동작 그대로 (연출도 원래 권법의 것: visStyle)
+--   세기는 그 등급에 맞춘다 (낮은 등급에서 빌린 기술은 등급 차이만큼 줄인다)
+------------------------------------------------------------------------
+do
+	local function scaleHits(t: any, k: number)
+		if type(t) ~= "table" then
+			return
+		end
+		if type(t.dmg) == "number" then
+			t.dmg *= k
+		end
+		for _, v in pairs(t) do
+			if type(v) == "table" then
+				scaleHits(v, k)
+			end
+		end
+	end
+	local BASE_KEYS = { "stance", "deflect", "speed", "postureMult", "cdMult", "dashCd", "dashCharges", "armorWhileAttacking", "dodgeChance", "kbMult", "burn", "burnBurst" }
+	-- def.base = 연타 · 강타 · 몸놀림을 가져올 권법, def.take = { 칸 = { 권법, 칸, 이름, 설명 } }, def.names = 연타 넷과 강타 이름
+	local function forge(def: any): any
+		local base = Config.STYLE_BY_ID[def.base]
+		local st: any = {
+			id = def.id, name = def.name, hanja = def.hanja, icon = def.icon, color = def.color, color2 = def.color2, fx = def.fx,
+			grade = def.grade, keepGrade = true, hidden = true, forge = true, desc = def.desc, gimmick = def.gimmick, unlockHint = def.unlockHint,
+		}
+		st.rank = OLD_RANK[def.grade] or 1
+		for _, k in ipairs(BASE_KEYS) do
+			if base[k] ~= nil then
+				st[k] = deepCopy(base[k])
+			end
+		end
+		st.combo = deepCopy(base.combo)
+		st.heavy = deepCopy(base.heavy)
+		for i, mv in ipairs(st.combo) do
+			mv.name = def.names[i] or mv.name
+		end
+		st.heavy.name = def.names[5] or st.heavy.name
+		if base.finisher then
+			st.finisher = deepCopy(base.finisher)
+			st.finisher.name = def.finisher or st.finisher.name
+		end
+		if def.pulse then
+			local ps = Config.STYLE_BY_ID[def.pulse]
+			st.pulse = ps and deepCopy(ps.pulse) or nil
+		end
+		st.skills = {}
+		for slot, t in pairs(def.take) do
+			local src = Config.STYLE_BY_ID[t[1]]
+			local mv = deepCopy(src.skills[t[2]])
+			local g0 = Config.GRADES[src.grade] or 1
+			local g1 = Config.GRADES[def.grade] or 1
+			if g0 < g1 then
+				scaleHits(mv, g0 / g1)
+			end
+			mv.name = t[3]
+			mv.desc = t[4]
+			mv.visStyle = src.id
+			st.skills[slot] = mv
+		end
+		table.insert(Config.Styles, st)
+		st.index = #Config.Styles
+		Config.STYLE_BY_ID[st.id] = st
+		return st
+	end
+
+	forge({
+		id = "samwon", name = "삼원혼천권", hanja = "三元混天拳", icon = "🌀", grade = "신화", fx = "fire",
+		color = Color3.fromRGB(255, 120, 60), color2 = Color3.fromRGB(130, 220, 255),
+		desc = "불의 주먹에 물과 벼락을 함께 실은 권법. 세 사부의 무공을 한 화로에 녹여 다시 벼렸다. 주먹은 불로 태우고, 물로 띄우고, 벼락으로 묶는다.",
+		gimmick = "업화: 맞힌 적이 4초 동안 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. E는 벼락, R은 물, 오의는 벼락 그물",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (한 번 환생한 몸으로)",
+		base = "yeolhwa2",
+		names = { "혼천장", "역화조", "삼원선풍", "혼원권", "삼원폭추" },
+		finisher = "삼원승천권",
+		take = {
+			E = { "byeokryeok2", "R", "뇌화포", "주먹에 불과 벼락을 함께 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고 지나간 줄이 1.2초 동안 지진다" },
+			R = { "taeheo2", "R", "열수천", "가까운 적 여섯의 발밑에서 차례로 끓는 물기둥이 솟아 하늘로 쳐올린다" },
+			G = { "byeokryeok2", "G", "삼원천망", "둘레의 적 열을 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고 마지막에 적마다 천뢰가 떨어진다" },
+		},
+	})
+	forge({
+		id = "guryong", name = "구룡패천권", hanja = "九龍覇天拳", icon = "🐲", grade = "권왕", fx = "dragon",
+		color = Color3.fromRGB(255, 200, 70), color2 = Color3.fromRGB(255, 90, 60),
+		desc = "천하를 쥔 패왕의 주먹에 아홉 용을 깃들였다. 덮치고 뛰어내려 누르고, 끝에는 하늘에서 용이 내려온다.",
+		gimmick = "용의 이빨: 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다. 패왕의 몸놀림으로 공격의 10%를 비켜 간다. 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (세 번 환생한 몸으로)",
+		base = "cheonha",
+		pulse = "chocheonryong",
+		names = { "용권", "패룡권", "승룡패천", "구룡일격", "항룡패추" },
+		finisher = "구룡승천권",
+		take = {
+			E = { "sashin", "E", "비룡질주", "용의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 발톱 자국이 줄줄이 터진다" },
+			R = { "kwonwangsin", "R", "용왕강림", "발밑에서 앞으로 붉은 길이 깔리고 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 금빛 가시 여덟이 솟고 안으로 무너지며 터진다" },
+			G = { "chocheonryong", "G", "구룡패천", "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다" },
+			X = { "chocheonryong", "X", "구룡멸세", "초 오의. 하늘이 갈라지며 산만 한 황금 용이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다" },
+		},
+	})
+	forge({
+		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "subspace",
+		color = Color3.fromRGB(170, 120, 255), color2 = Color3.fromRGB(255, 240, 200),
+		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 몸으로 싸우는 신의 권법에 공간을 베는 좌표, 해와 달의 걸음, 빛보다 빠른 질주를 녹여 넣었다.",
+		gimmick = "삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)",
+		base = "sinsamjae",
+		pulse = "sinsamjae",
+		names = { "개천 팔꿈치", "혼돈 쓸어차기", "천지 무릎", "개벽 진각", "혼돈 철산고" },
+		finisher = "혼돈승천권",
+		take = {
+			E = { "geuknull", "E", "혼돈선", "앞의 허공에 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고 다시 붙으며 한 번 더 벤다" },
+			R = { "geukilwol", "R", "일월환영보", "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다" },
+			G = { "geukspeed", "G", "유성개천", "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다" },
+			X = { "sinsamjae", "X", "혼돈개벽", "초 오의 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)" },
+		},
+	})
+end
+
+-- 제작소 조리법: 환생 횟수 · 비급 조각 · 천상 재료 · 천정 · 은자 (은자는 지금 경지의 '은자 몫'으로 센다: Config.productCoins)
+Config.FORGE = {
+	{ style = "samwon", rebirth = 1, shards = 40, gems = 1500, coinShares = 20, mats = { bloodmoon = 12, thunderstone = 10, tidepearl = 12 } },
+	{ style = "guryong", rebirth = 3, shards = 150, gems = 4000, coinShares = 40, mats = { thunderstone = 25, stardust = 20, petal = 30, bloodmoon = 20 } },
+	{ style = "hondon", rebirth = 6, shards = 400, gems = 10000, coinShares = 60, mats = { petal = 40, wine = 10, bloodmoon = 40, thunderstone = 40, tidepearl = 40, stardust = 40 } },
+}
+Config.FORGE_BY_STYLE = {}
+for _, r in ipairs(Config.FORGE) do
+	Config.FORGE_BY_STYLE[r.style] = r
+end
+function Config.forgeCoins(r: any, realmIdx: number): number
+	return r.coinShares * Config.productCoins(realmIdx)
 end
 
 return Config
