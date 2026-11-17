@@ -764,14 +764,18 @@ function Skills.run(f: any, move: any, ctx: any)
 				strike(f, o, hit, move)
 			end
 		end)
-	elseif kind == "sinSeq" then
+	elseif kind == "sinSeq" or kind == "forgeSeq" then
 		-- 3.33판 신 삼재권 각성: 때와 자리를 정한 타격의 연쇄. steps = { t(초), shape(circle · ring · line · cone), at(self · front · target), dash, dist, radius, inner, length, width, angle, hit }
 		local total = 0
 		for _, st in ipairs(m.steps) do
 			total = math.max(total, st.t)
 		end
-		f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.4) / sp)
-		Push:FireAllClients("skillfx", { kind = "sinStart", m = f.model, dur = total / sp, style = style })
+		local forged = kind == "forgeSeq"
+		if not forged or m.iframes then
+			f.iframeUntil = math.max(f.iframeUntil, os.clock() + (total + 0.4) / sp)
+		end
+		-- 3.99.23판 제작소 권법 (forgeSeq): 같은 연쇄에 연출 이름 (vfx) 을 실어 보낸다. at = "each" 면 가까운 적 n 마다 따로 터진다 (한 적은 한 번만)
+		Push:FireAllClients("skillfx", { kind = forged and "forgeStart" or "sinStart", m = f.model, dur = total / sp, style = style })
 		for _, st in ipairs(m.steps) do
 			after(st.t, function()
 				local base = f.root.Position
@@ -782,6 +786,25 @@ function Skills.run(f: any, move: any, ctx: any)
 					base = f.root.Position
 				end
 				local origin = base
+				if forged and st.at == "each" then
+					local h = scaled(st.hit, sc)
+					local list = nearestList(f, st.range or 30, st.n or 3)
+					if #list == 0 then
+						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = base + fwd * 10, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+					end
+					local done: { [any]: boolean } = {}
+					for _, o in ipairs(list) do
+						local at = o.root.Position
+						Push:FireAllClients("skillfx", { kind = "forgeStep", vfx = st.vfx, shape = "circle", at = at, from = base, dir = fwd, radius = st.radius, col = st.col, big = st.big, style = style })
+						for _, v in ipairs(hostilesNear(f, at, st.radius)) do
+							if not done[v] then
+								done[v] = true
+								strike(f, v, h, move)
+							end
+						end
+					end
+					return
+				end
 				if st.at == "front" then
 					origin = base + fwd * (st.dist or 8)
 				elseif st.at == "target" then
@@ -809,7 +832,7 @@ function Skills.run(f: any, move: any, ctx: any)
 				else
 					victims = hostilesNear(f, origin, st.radius)
 				end
-				Push:FireAllClients("skillfx", { kind = "sinStep", shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
+				Push:FireAllClients("skillfx", { kind = forged and "forgeStep" or "sinStep", vfx = st.vfx, col = st.col, shape = st.shape, at = origin, from = base, dir = fwd, radius = st.radius, inner = st.inner, length = st.length, width = st.width, angle = st.angle, big = st.big, label = st.name, style = style })
 				for _, o in ipairs(victims) do
 					if st.pull then
 						pullTo(o, origin, st.pull)

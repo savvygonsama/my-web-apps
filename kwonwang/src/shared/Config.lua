@@ -7252,118 +7252,164 @@ end
 
 ------------------------------------------------------------------------
 -- 3.99.23판 권법 제작소: 재료를 녹여 새 권법을 벼린다 (신화 · 권왕 · 신 하나씩)
---   세 사부의 기술을 한 몸에 녹인 권법. 기술은 원래 것의 동작 그대로 (연출도 원래 권법의 것: visStyle)
---   세기는 그 등급에 맞춘다 (낮은 등급에서 빌린 기술은 등급 차이만큼 줄인다)
+--   기술은 모두 새것: 장치 forgeSeq (때와 자리를 정한 타격의 연쇄 + 연출 이름 vfx, 화면 쪽은 ForgeFx.lua)
+--   palette = 연출 빛깔 셋 (step.col 이 고른다)
 ------------------------------------------------------------------------
 do
-	local function scaleHits(t: any, k: number)
-		if type(t) ~= "table" then
-			return
-		end
-		if type(t.dmg) == "number" then
-			t.dmg *= k
-		end
-		for _, v in pairs(t) do
-			if type(v) == "table" then
-				scaleHits(v, k)
-			end
-		end
+	local function seq(steps: { any }): any
+		return { kind = "forgeSeq", steps = steps }
 	end
-	local BASE_KEYS = { "stance", "deflect", "speed", "postureMult", "cdMult", "dashCd", "dashCharges", "armorWhileAttacking", "dodgeChance", "kbMult", "burn", "burnBurst" }
-	-- def.base = 연타 · 강타 · 몸놀림을 가져올 권법, def.take = { 칸 = { 권법, 칸, 이름, 설명 } }, def.names = 연타 넷과 강타 이름
-	local function forge(def: any): any
-		local base = Config.STYLE_BY_ID[def.base]
-		local st: any = {
-			id = def.id, name = def.name, hanja = def.hanja, icon = def.icon, color = def.color, color2 = def.color2, fx = def.fx,
-			grade = def.grade, keepGrade = true, hidden = true, forge = true, desc = def.desc, gimmick = def.gimmick, unlockHint = def.unlockHint,
-		}
-		st.rank = OLD_RANK[def.grade] or 1
-		for _, k in ipairs(BASE_KEYS) do
-			if base[k] ~= nil then
-				st[k] = deepCopy(base[k])
-			end
-		end
-		st.combo = deepCopy(base.combo)
-		st.heavy = deepCopy(base.heavy)
-		for i, mv in ipairs(st.combo) do
-			mv.name = def.names[i] or mv.name
-		end
-		st.heavy.name = def.names[5] or st.heavy.name
-		if base.finisher then
-			st.finisher = deepCopy(base.finisher)
-			st.finisher.name = def.finisher or st.finisher.name
-		end
-		if def.pulse then
-			local ps = Config.STYLE_BY_ID[def.pulse]
-			st.pulse = ps and deepCopy(ps.pulse) or nil
-		end
-		st.skills = {}
-		for slot, t in pairs(def.take) do
-			local src = Config.STYLE_BY_ID[t[1]]
-			local mv = deepCopy(src.skills[t[2]])
-			local g0 = Config.GRADES[src.grade] or 1
-			local g1 = Config.GRADES[def.grade] or 1
-			if g0 < g1 then
-				scaleHits(mv, g0 / g1)
-			end
-			mv.name = t[3]
-			mv.desc = t[4]
-			mv.visStyle = src.id
-			st.skills[slot] = mv
-		end
+	local function add(st: any)
+		st.keepGrade = true
+		st.hidden = true
+		st.forge = true
+		st.rank = OLD_RANK[st.grade] or 1
 		table.insert(Config.Styles, st)
 		st.index = #Config.Styles
 		Config.STYLE_BY_ID[st.id] = st
-		return st
 	end
 
-	forge({
+	-- 🌀 삼원혼천권 [신화]: 불 · 물 · 벼락이 차례로 돈다
+	add({
 		id = "samwon", name = "삼원혼천권", hanja = "三元混天拳", icon = "🌀", grade = "신화", fx = "fire",
 		color = Color3.fromRGB(255, 120, 60), color2 = Color3.fromRGB(130, 220, 255),
-		desc = "불의 주먹에 물과 벼락을 함께 실은 권법. 세 사부의 무공을 한 화로에 녹여 다시 벼렸다. 주먹은 불로 태우고, 물로 띄우고, 벼락으로 묶는다.",
-		gimmick = "업화: 맞힌 적이 4초 동안 불탄다. 불타는 적이 쓰러지면 그 자리에서 터져 둘레를 태운다. E는 벼락, R은 물, 오의는 벼락 그물",
+		palette = { Color3.fromRGB(255, 120, 50), Color3.fromRGB(90, 200, 255), Color3.fromRGB(190, 140, 255) },
+		desc = "불과 물과 벼락, 서로 먹고 먹히는 세 기운을 한 화로에서 녹여 벼린 권법. 불로 태우고, 물로 띄우고, 벼락으로 끝낸다. 세 기운이 한 바퀴 돌 때마다 김이 되어 터진다.",
+		gimmick = "업화: 맞힌 적이 4초 동안 불탄다. 기술은 모두 불 → 물 → 벼락의 순서로 터지고, 오의는 세 기운이 한데 모여 한 번에 터진다",
 		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (한 번 환생한 몸으로)",
-		base = "yeolhwa2",
-		names = { "혼천장", "역화조", "삼원선풍", "혼원권", "삼원폭추" },
-		finisher = "삼원승천권",
-		take = {
-			E = { "byeokryeok2", "R", "뇌화포", "주먹에 불과 벼락을 함께 모았다가 앞으로 곧게 쏜다. 한 줄의 적을 모두 꿰뚫고 지나간 줄이 1.2초 동안 지진다" },
-			R = { "taeheo2", "R", "열수천", "가까운 적 여섯의 발밑에서 차례로 끓는 물기둥이 솟아 하늘로 쳐올린다" },
-			G = { "byeokryeok2", "G", "삼원천망", "둘레의 적 열을 번개 그물로 모두 잇는다. 그물이 다섯 번 고동치며 묶인 적을 지지고 마지막에 적마다 천뢰가 떨어진다" },
+		deflect = 0.24, speed = 1.08, stance = "stance_fire",
+		burn = { dmg = 7, dur = 4, every = 0.5 },
+		combo = {
+			{ id = "sw1", name = "화장", pose = "palm_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "sw2", name = "수장", pose = "wave_palm_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 4.5, 12, 10, 0.35, 8) } },
+			{ id = "sw3", name = "뇌퇴", pose = "knee_strike", dur = 0.4, lunge = 2, hits = { hit(0.16, 5, 5.5, 10, 10, 0.4, 10, 10, true), hit(0.28, 5, 5.5, 8, 8, 0.3, 12) } },
+			{ id = "sw4", name = "삼원권", pose = "tidal_punch", dur = 0.5, lunge = 4, hits = { hit(0.24, 8, 5.5, 24, 28, 0.6, 38) } },
+		},
+		heavy = { id = "swH", name = "증기폭추", pose = "thunder_hammer", dur = 0.7, lunge = 2, hits = { hit(0.34, 7, 7.5, 34, 46, 0.85, 46, 10, true) } },
+		finisher = { id = "swF", name = "삼원승천", pose = "uppercut", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "swE", name = "삼원탄", desc = "불길을 한 줄로 내뻗는다. 줄 끝에서 물이 터져 적을 띄우고, 뜬 자리에 벼락이 떨어진다", pose = "push_palm", dur = 0.7, cd = 8, chi = 20,
+				mech = seq({
+					{ t = 0.15, shape = "line", at = "self", length = 26, width = 5, vfx = "fireLine", col = 1, hit = hit(0, 0, 0, 18, 18, 0.4, 14) },
+					{ t = 0.4, shape = "circle", at = "front", dist = 26, radius = 8, vfx = "waterBurst", col = 2, hit = hit(0, 0, 0, 14, 14, 0.4, 6, 16) },
+					{ t = 0.62, shape = "circle", at = "front", dist = 26, radius = 7, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 18, 20, 0.5, 10) },
+				}) },
+			R = { id = "swR", name = "수화뇌진", desc = "발밑에서 불이 터지고, 물결이 고리로 퍼져 적을 띄운 뒤, 가까운 적 넷에게 벼락이 하나씩 떨어진다", pose = "water_spiral", dur = 1.0, cd = 11, chi = 25,
+				mech = seq({
+					{ t = 0.3, shape = "circle", at = "self", radius = 11, vfx = "fireBurst", col = 1, hit = hit(0, 0, 0, 20, 22, 0.5, 20) },
+					{ t = 0.6, shape = "ring", at = "self", inner = 7, radius = 18, vfx = "waterRing", col = 2, hit = hit(0, 0, 0, 16, 18, 0.4, 10, 14) },
+					{ t = 0.9, at = "each", n = 4, range = 22, radius = 5, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 18, 20, 0.5, 8) },
+				}) },
+			G = { id = "swG", name = "삼원개벽", desc = "가까운 적 여섯의 발밑에서 불기둥이, 이어서 물기둥이 솟고, 하늘에서 벼락이 꽂힌다. 마지막에 세 기운이 내 둘레로 모여 김의 폭풍으로 터진다", pose = "ult_star", dur = 2.2, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.4, at = "each", n = 6, range = 30, radius = 6, vfx = "firePillar", col = 1, hit = hit(0, 0, 0, 30, 30, 0.6, 6, 20) },
+					{ t = 0.9, at = "each", n = 6, range = 30, radius = 6, vfx = "waterSpout", col = 2, hit = hit(0, 0, 0, 30, 30, 0.6, 6, 24) },
+					{ t = 1.4, at = "each", n = 6, range = 30, radius = 6, vfx = "thunder", col = 3, hit = hit(0, 0, 0, 30, 34, 0.7, 10) },
+					{ t = 1.9, shape = "circle", at = "self", radius = 20, vfx = "triad", big = true, hit = hit(0, 0, 0, 110, 130, 1.3, 50, 20) },
+				}) },
 		},
 	})
-	forge({
+
+	-- 🐲 구룡패천권 [권왕]: 발톱 · 용의 몸 · 내리꽂는 아홉 용
+	add({
 		id = "guryong", name = "구룡패천권", hanja = "九龍覇天拳", icon = "🐲", grade = "권왕", fx = "dragon",
 		color = Color3.fromRGB(255, 200, 70), color2 = Color3.fromRGB(255, 90, 60),
-		desc = "천하를 쥔 패왕의 주먹에 아홉 용을 깃들였다. 덮치고 뛰어내려 누르고, 끝에는 하늘에서 용이 내려온다.",
-		gimmick = "용의 이빨: 네 번 맞힐 때마다 작은 용이 상대를 물어뜯는다. 패왕의 몸놀림으로 공격의 10%를 비켜 간다. 초 오의(X)가 있다",
+		palette = { Color3.fromRGB(255, 205, 80), Color3.fromRGB(255, 80, 50), Color3.fromRGB(255, 245, 200) },
+		desc = "패왕의 주먹에 아홉 용을 깃들인 권법. 발톱으로 찢고, 용의 몸으로 꿰뚫고, 하늘을 돌던 용들이 차례로 내리꽂힌다.",
+		gimmick = "용린: 공격의 10%를 비늘로 흘려 비켜 간다. 기술마다 용이 나타나 싸운다. 초 오의(X)가 있다",
 		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (세 번 환생한 몸으로)",
-		base = "cheonha",
-		pulse = "chocheonryong",
-		names = { "용권", "패룡권", "승룡패천", "구룡일격", "항룡패추" },
-		finisher = "구룡승천권",
-		take = {
-			E = { "sashin", "E", "비룡질주", "용의 혼이 되어 앞으로 20칸을 덮치듯 내달린다 (무적). 지나온 길에 발톱 자국이 줄줄이 터진다" },
-			R = { "kwonwangsin", "R", "용왕강림", "발밑에서 앞으로 붉은 길이 깔리고 그 위로 크게 뛰어올라 24칸 앞에 내려앉는다 (무적). 내려앉은 자리 둘레에서 금빛 가시 여덟이 솟고 안으로 무너지며 터진다" },
-			G = { "chocheonryong", "G", "구룡패천", "땅을 뚫고 금룡 아홉이 둘레에서 솟아 하늘로 감아 오른 뒤, 차례로 적에게 내리꽂히고 한가운데서 터진다" },
-			X = { "chocheonryong", "X", "구룡멸세", "초 오의. 하늘이 갈라지며 산만 한 황금 용이 내려온다. 여덟 번 내리꽂히고 마지막에 앞으로 하늘을 태우는 숨을 뿜는다" },
+		deflect = 0.3, stance = "stance_overlord", dodgeChance = 0.1,
+		combo = {
+			{ id = "gy1", name = "용조", pose = "dragon_claw_r", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+			{ id = "gy2", name = "역린", pose = "king_jab_l", dur = 0.3, lunge = 3, hits = { hit(0.12, 6, 5, 9, 14, 0.35, 8) } },
+			{ id = "gy3", name = "승룡", pose = "uppercut", dur = 0.44, lunge = 2, hits = { hit(0.2, 6, 5, 13, 24, 0.5, 10, 26) } },
+			{ id = "gy4", name = "용미격", pose = "dragon_wave", dur = 0.5, lunge = 3, hits = { hit(0.24, 7, 7, 18, 34, 0.7, 36, nil, true) } },
+		},
+		heavy = { id = "gyH", name = "항룡격", pose = "dragon_cannon", dur = 0.62, lunge = 3, hits = { hit(0.3, 10, 6, 25, 48, 0.8, 60) } },
+		finisher = { id = "gyF", name = "구룡승천", pose = "dragon_rise", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "gyE", name = "용조삼격", desc = "세 걸음 파고들며 금빛 발톱으로 두 번 찢고, 마지막 걸음에 용의 아가리처럼 물어 터뜨린다", pose = "dragon_claw_r", dur = 0.85, cd = 7, chi = 20,
+				mech = seq({
+					{ t = 0.1, dash = 8, shape = "cone", at = "self", length = 11, angle = 110, vfx = "claw", col = 1, hit = hit(0, 0, 0, 28, 50, 0.5, 10) },
+					{ t = 0.35, dash = 8, shape = "cone", at = "self", length = 11, angle = 110, vfx = "claw", col = 2, hit = hit(0, 0, 0, 28, 50, 0.5, 10) },
+					{ t = 0.62, dash = 6, shape = "circle", at = "front", dist = 4, radius = 8, vfx = "jaw", col = 1, hit = hit(0, 0, 0, 40, 70, 0.8, 30, 16) },
+				}) },
+			R = { id = "gyR", name = "황룡출해", desc = "장력이 금빛 용이 되어 앞으로 40칸을 헤엄쳐 나가며 닿는 적을 모두 휩쓸고, 끝에서 똬리를 틀며 터진다", pose = "push_palm", dur = 1.0, cd = 10, chi = 25,
+				mech = seq({
+					{ t = 0.4, shape = "line", at = "self", length = 40, width = 8, vfx = "serpent", col = 1, hit = hit(0, 0, 0, 50, 80, 0.8, 40, 8) },
+					{ t = 0.85, shape = "circle", at = "front", dist = 40, radius = 12, vfx = "coil", col = 2, hit = hit(0, 0, 0, 40, 70, 0.9, 20, 22) },
+				}) },
+			G = { id = "gyG", name = "구룡천강", desc = "하늘에 금룡 아홉이 돈다. 용이 하나씩 가까운 적에게 내리꽂히고, 마지막에 내 둘레에 금빛 용왕관이 솟으며 땅이 무너진다", pose = "point_sky", dur = 2.2, cd = 30, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.5, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 0.62, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 2, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 0.74, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 0.86, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 2, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 0.98, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 1.1, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 2, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 1.22, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 1.34, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 2, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 1.46, at = "target", range = 34, shape = "circle", radius = 7, vfx = "dragonDive", col = 1, hit = hit(0, 0, 0, 14, 30, 0.4, 10, 10) },
+					{ t = 1.9, shape = "circle", at = "self", radius = 20, vfx = "crown", big = true, hit = hit(0, 0, 0, 120, 300, 1.5, 70, 20) },
+				}) },
+			X = { id = "gyX", name = "구룡멸세", desc = "초 오의 (그동안 무적). 하늘이 금빛으로 갈라지고 아홉 용이 쉬지 않고 적에게 내리꽂힌다. 마지막에 하늘만 한 용왕관이 내 둘레를 짓눌러 모두 무너뜨린다", pose = "point_sky", dur = 3.6, cd = 50, chi = 140, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = (function()
+					local t = {}
+					for k = 0, 12 do
+						table.insert(t, { t = 0.5 + k * 0.2, at = "target", range = 40, shape = "circle", radius = 8, vfx = "dragonDive", col = (k % 2) + 1, hit = hit(0, 0, 0, 30, 50, 0.5, 10, 10) })
+					end
+					table.insert(t, { t = 3.3, shape = "circle", at = "self", radius = 30, vfx = "crown", big = true, hit = hit(0, 0, 0, 240, 460, 1.8, 80, 30) })
+					return t
+				end)() } },
 		},
 	})
-	forge({
+
+	-- 🌌 혼돈개천권 [신]: 공간을 삼키고 터뜨리는 혼돈
+	add({
 		id = "hondon", name = "혼돈개천권", hanja = "混沌開天拳", icon = "🌌", grade = "신", fx = "subspace",
 		color = Color3.fromRGB(170, 120, 255), color2 = Color3.fromRGB(255, 240, 200),
-		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 몸으로 싸우는 신의 권법에 공간을 베는 좌표, 해와 달의 걸음, 빛보다 빠른 질주를 녹여 넣었다.",
-		gimmick = "삼재 진동: 연타·강타를 세 번 맞힐 때마다 발밑에서 땅이 울려 둘레를 흔든다. 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 25% 짧음. 초 오의(X)가 있다",
+		palette = { Color3.fromRGB(150, 90, 255), Color3.fromRGB(255, 245, 220), Color3.fromRGB(40, 20, 70) },
+		desc = "하늘과 땅이 나뉘기 전의 혼돈을 주먹에 담았다. 주먹이 닿는 곳마다 공간이 삼켜지고 금이 가며, 끝에는 무너진 자리에서 새 하늘이 열린다.",
+		gimmick = "혼돈체: 막기와 흘리기가 가장 단단하고 (균형 ×1.5), 모든 기술 대기 20% 짧음. 기술마다 공간을 삼켰다가 터뜨린다. 초 오의(X)가 있다",
 		unlockHint = "⚒ 청운 마을 남서쪽 권법 제작소에서 재료를 녹여 벼린다 (여섯 번 모두 환생한 몸으로)",
-		base = "sinsamjae",
-		pulse = "sinsamjae",
-		names = { "개천 팔꿈치", "혼돈 쓸어차기", "천지 무릎", "개벽 진각", "혼돈 철산고" },
-		finisher = "혼돈승천권",
-		take = {
-			E = { "geuknull", "E", "혼돈선", "앞의 허공에 좌표축 세 줄이 별 모양으로 그어진다. 줄을 따라 공간이 위아래로 어긋나며 베고 다시 붙으며 한 번 더 벤다" },
-			R = { "geukilwol", "R", "일월환영보", "제자리에 해를 터뜨리며 앞으로 22칸 사라졌다 나타난다 (무적). 지나간 길을 달빛이 베고 내려선 자리에서 초승달이 둥글게 터진다" },
-			G = { "geukspeed", "G", "유성개천", "순식간에 사라져 둘레를 별 모양으로 열 번 가로지른다 (무적). 달린 길마다 빛의 선이 남아 지나는 적을 베고 마지막에 모든 선이 한꺼번에 번쩍이며 터진다" },
-			X = { "sinsamjae", "X", "혼돈개벽", "초 오의 (그동안 무적): 둘레의 적 여섯을 붙잡아 팔을 여섯 번 휘두르며 몸째 휘돌린다. 무릎을 들어 땅을 찍는 순간 모두를 사방으로 내던져 떨어진 자리마다 천지가 갈라진다 (보스는 붙잡지 못하고 그 자리에서 맞는다)" },
+		deflect = 0.34, postureMult = 1.5, speed = 1.2, cdMult = 0.8, dashCd = 0.55, stance = "stance_subspace",
+		combo = {
+			{ id = "hd1", name = "혼돈장", pose = "void_palm_r", dur = 0.32, lunge = 4, hits = { hit(0.14, 6, 5, 34, 24, 0.4, 14, nil, true) } },
+			{ id = "hd2", name = "열공퇴", pose = "roundhouse", dur = 0.38, lunge = 3, hits = { hit(0.18, 7, 7, 34, 26, 0.5, 18, nil, true) } },
+			{ id = "hd3", name = "흡공권", pose = "back_spin_kick", dur = 0.44, lunge = 3, hits = { hit(0.2, 6, 5, 46, 34, 0.6, 22, 12, true), hit(0.3, 6, 5, 30, 20, 0.4, 14, nil, true) } },
+			{ id = "hd4", name = "붕천장", pose = "void_push", dur = 0.5, lunge = 2, hits = { hit(0.26, 8, 9, 78, 70, 0.8, 40, 12, true) } },
+		},
+		heavy = { id = "hdH", name = "허공일지", pose = "void_point", dur = 0.62, lunge = 10, hits = { hit(0.3, 14, 6, 130, 140, 1.1, 70, 10, true) } },
+		finisher = { id = "hdF", name = "개천승천", pose = "void_push", dur = 0.62, lunge = 4, launcher = true, hits = { hit(0.26, 6, 5, 11, 24, 0.7, 6, 62) } },
+		skills = {
+			E = { id = "hdE", name = "혼돈구", desc = "앞에 검은 혼돈의 구슬을 띄운다. 구슬이 둘레의 적을 빨아들인 뒤 안으로 무너지며 터진다", pose = "void_push", dur = 0.9, cd = 7, chi = 22,
+				mech = seq({
+					{ t = 0.3, shape = "circle", at = "front", dist = 14, radius = 10, pull = 30, vfx = "voidOrb", col = 1, hit = hit(0, 0, 0, 60, 60, 0.6, 0) },
+					{ t = 0.78, shape = "circle", at = "front", dist = 14, radius = 11, vfx = "implode", col = 2, hit = hit(0, 0, 0, 110, 110, 1.0, 40, 14) },
+				}) },
+			R = { id = "hdR", name = "천붕지열", desc = "손끝으로 땅을 가리키면 발밑에 별 모양 금이 가고, 앞으로 공간이 찢어지며, 가까운 적 셋의 둘레 공간이 유리처럼 깨진다", pose = "void_point", dur = 1.1, cd = 9, chi = 26,
+				mech = seq({
+					{ t = 0.35, shape = "circle", at = "self", radius = 10, vfx = "starCrack", col = 1, hit = hit(0, 0, 0, 50, 60, 0.6, 30, 10) },
+					{ t = 0.65, shape = "line", at = "self", length = 30, width = 7, vfx = "rift", col = 2, hit = hit(0, 0, 0, 70, 80, 0.8, 40) },
+					{ t = 0.95, at = "each", n = 3, range = 30, radius = 6, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 40, 50, 0.6, 20, 14) },
+				}) },
+			G = { id = "hdG", name = "혼돈개천", desc = "하늘에 검은 구멍이 열려 둘레의 적을 세 번 빨아들이며 짓누른다. 마지막에 구멍이 뒤집혀 흰 빛으로 터지며 새 하늘이 열린다", pose = "ult_origin", dur = 2.5, cd = 28, chi = 100, armor = true,
+				mech = seq({
+					{ t = 0.5, shape = "circle", at = "self", radius = 26, pull = 40, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 30, 40, 0.5, 0) },
+					{ t = 0.9, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.3, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 1.7, shape = "circle", at = "self", radius = 24, pull = 30, vfx = "voidPulse", col = 1, hit = hit(0, 0, 0, 40, 40, 0.5, 0) },
+					{ t = 2.2, shape = "circle", at = "self", radius = 28, vfx = "genesis", big = true, hit = hit(0, 0, 0, 260, 300, 1.6, 60, 30) },
+				}) },
+			X = { id = "hdX", name = "태초이전", desc = "초 오의 (그동안 무적). 세상이 어두워지고 가까운 적 여덟의 둘레 공간이 네 번 거듭 깨진다. 마지막에 모든 것이 한 점으로 삼켜졌다가 둘레 40칸이 흰 빛으로 다시 태어난다", pose = "ult_star", dur = 3.6, cd = 55, chi = 150, armor = true,
+				mech = { kind = "forgeSeq", iframes = true, steps = {
+					{ t = 0.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.1, at = "each", n = 8, range = 40, radius = 7, vfx = "voidOrb", col = 3, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 1.6, at = "each", n = 8, range = 40, radius = 7, vfx = "shatter", col = 2, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.1, at = "each", n = 8, range = 40, radius = 7, vfx = "implode", col = 1, hit = hit(0, 0, 0, 60, 70, 0.6, 10, 10) },
+					{ t = 2.6, shape = "circle", at = "self", radius = 40, pull = 50, vfx = "blackhole", col = 3, hit = hit(0, 0, 0, 40, 60, 0.6, 0) },
+					{ t = 3.2, shape = "circle", at = "self", radius = 40, vfx = "genesis", big = true, hit = hit(0, 0, 0, 420, 480, 1.8, 80, 30) },
+				} } },
 		},
 	})
 end

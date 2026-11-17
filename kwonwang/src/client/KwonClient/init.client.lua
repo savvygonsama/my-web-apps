@@ -57,6 +57,7 @@ local Speed = require(script:WaitForChild("Speed"))
 local BossFx = require(script:WaitForChild("BossFx"))
 local Ambience = require(script:WaitForChild("Ambience"))
 local Sin = require(script:WaitForChild("Sin"))
+local ForgeFx = require(script:WaitForChild("ForgeFx")) -- 3.99.23판 권법 제작소 권법의 연출
 local Gourd = require(script:WaitForChild("Gourd"))
 local Polish = require(script:WaitForChild("Polish"))
 local SkillFx = require(script:WaitForChild("SkillFx"))
@@ -2298,6 +2299,11 @@ end
 -- 권법마다 다른 기술 장치의 연출
 local ultsReady = false
 function handlers.skillfx(data: any)
+	if ForgeFx.handles(data) then
+		ForgeFx.init({ shake = shake })
+		ForgeFx.run(data)
+		return
+	end
 	if data.style == "sinsamjae" then
 		Sin.init({ shake = shake, tint = tint, flash = UI.flash })
 		pcall(Sin.extra, data)
