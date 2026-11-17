@@ -22,7 +22,7 @@
 local Config = {}
 
 Config.GAME_TITLE = "권왕"
-Config.VERSION = "3.99.24" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
+Config.VERSION = "3.99.25" -- 화면 오른쪽 아래 구석에 작게 보인다 (게시한 판이 맞는지 확인용)
 -- 스튜디오와 게임 주인은 테스트 계정 (기록 저장 안 함, 테스트 창).
 -- 공개판(public.project.json)으로 만들면 ReplicatedStorage.KwonBuild가 들어가 테스트가 모두 꺼진다
 local buildMod = script.Parent and script.Parent:FindFirstChild("KwonBuild")
@@ -5014,7 +5014,7 @@ Config.Premium = {
 		lines = { "수련 화면에서 박자마다 대신 눌러 준다 ('좋음')", "수련 자리를 떠나면 멈춘다 (어디서나 오르지 않는다)", "손은 편해지지만 사람보다 빠르지 않다" } },
 	{ id = "autoTrain2", gamepass = 2058388537, price = 299, icon = "⚙", name = "고급 자동 수련", tag = "영구", toggle = true, best = true,
 		lines = { "수련 화면에서 박자마다 '완벽'으로 대신 눌러 준다", "강화 수련에서도 쓸 수 있다", "수련 자리를 떠나면 멈춘다" } },
-	{ id = "coin2x", gamepass = 0, price = 199, icon = "💰", name = "은자 두 배", tag = "영구",
+	{ id = "coin2x", gamepass = 2088521292, price = 199, icon = "💰", name = "은자 두 배", tag = "영구",
 		lines = { "적·보스·천층탑에서 얻는 은자가 영원히 두 배", "업적·도감 보상처럼 한 번 받는 것은 그대로", "은자가 필요한 곳 (권법·심법·탈것)을 훨씬 빨리 채운다" } },
 	{ id = "bag", gamepass = 0, price = 99, icon = "🎒", name = "가방 확장", tag = "영구",
 		lines = { "금창약을 5개 → 10개까지 들 수 있다", "마을 상점에서 한 번에 채우기가 편해진다", "큰 싸움 (보스·레이드) 에서 버틸 수 있는 횟수가 두 배" } },
@@ -5025,17 +5025,17 @@ Config.Premium = {
 		lines = { "적을 쓰러뜨려 오르는 능력치가 영원히 두 배", "졸병·정예·보스·천층탑 모두", "두 배 수련과 겹친다 (수련은 수련, 처치는 처치)" } },
 	{ id = "luck", gamepass = 0, price = 149, icon = "🍀", name = "행운의 부적", tag = "영구",
 		lines = { "보스의 심법 두루마리 확률 두 배 (15% → 30%)", "천상 재료가 떨어질 확률 두 배 (한 번에 둘까지는 그대로)", "천상계 적의 천정 1.5배" } },
-	{ id = "vip", gamepass = 0, price = 249, icon = "👑", name = "VIP", tag = "VIP",
+	{ id = "vip", gamepass = 2089583365, price = 249, icon = "👑", name = "VIP", tag = "VIP",
 		lines = { "머리 위 이름 앞에 금빛 👑", "권법 숙련이 두 배로 빨리 오른다", "적·보스의 은자 +25% (은자 두 배와 겹친다)" } },
 	-- 3.38판 게임패스 (블록스피스의 '보관함 +1' 같은 것)
-	{ id = "slot4", gamepass = 0, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
+	{ id = "slot4", gamepass = 2089295362, price = 349, icon = "📜", name = "심법 넷째 칸", tag = "영구", best = true,
 		lines = { "심법을 셋이 아니라 넷까지 끼운다", "체력·공격·흡혈·대기 시간 효과가 한 칸 더", "심법 화면에 넷째 칸이 열린다" } },
 	-- 3.41판 게임패스 권법 둘 (강화로 키운다)
-	{ id = "gumiho", gamepass = 0, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
+	{ id = "gumiho", gamepass = 2087939314, price = 899, icon = "🦊", name = "구미호권", tag = "권법", style = "gumiho",
 		lines = { "전설 권법 · 푸른 여우불과 여우 꼬리 (빠르고 가볍다)", "강화 +15까지: 꼬리가 하나에서 아홉으로 늘어나며 세진다", "강화 재료는 보스의 비급 조각 · 은자 (게임 안에서 모은다)" } },
-	{ id = "heukyeom", gamepass = 0, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
+	{ id = "heukyeom", gamepass = 2088077217, price = 2199, icon = "🗡", name = "흑염마검장", tag = "권법", best = true, style = "heukyeom",
 		lines = { "지존 권법 · 검은 불꽃으로 손에 검을 빚어 벤다 (초 오의 X까지)", "강화 +15까지: 검이 둘로 늘고 불꽃이 보랏빛 · 핏빛으로 타오르며 세진다", "끝까지 강화하면 초월 권법만큼 (권왕 · 극 · 신 아래, 배틀그라운드는 전설과 같은 세기)" } },
-	{ id = "gems2x", gamepass = 0, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
+	{ id = "gems2x", gamepass = 2088641406, price = 249, icon = "💠", name = "천정 두 배", tag = "영구",
 		lines = { "천상계 적·보스에게서 얻는 천정 두 배", "천층탑 최고 층 천정도 두 배", "행운의 부적 (1.5배)과 겹친다" } },
 }
 -- 3.38판: 심법 칸 (넷째 칸 게임패스가 있으면 하나 더)
